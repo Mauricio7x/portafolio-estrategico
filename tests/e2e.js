@@ -1482,6 +1482,22 @@ function invocar(handler, urlStr, headers = {}, opciones = {}) {
     Promise.resolve(handler(req, res)).catch(reject);
   });
 }
+/* La fila que una prueba necesita se busca en TODAS las páginas del listado (16-oct-2026).
+   Las seis búsquedas que miraban solo la primera página (100 filas) caían con el calendario:
+   el generador añade 9 filas EXTRA sin cierre por cada mes transcurrido del año, y desde
+   noviembre (99 EXTRA más las urgentes de manifestación) los procesos con cierre quedaban en la
+   página 2. Recorre en el mismo orden que sirve el listado, así que dos búsquedas con el mismo
+   predicado siguen eligiendo la misma fila. */
+async function filaDelListado(handler, urlStr, headers, predicado) {
+  for (let pagina = 1; pagina <= 50; pagina++) {
+    const r = await invocar(handler, `${urlStr}&pagina=${pagina}`, headers);
+    const filas = (r.cuerpo && r.cuerpo.resultados) || [];
+    const fila = filas.find(predicado);
+    if (fila) return fila;
+    if (!filas.length || pagina * (r.cuerpo.por_pagina || filas.length) >= (r.cuerpo.total || 0)) return undefined;
+  }
+  return undefined;
+}
 const invocarPost = (handler, urlStr, body, headers = {}) =>
   invocar(handler, urlStr, { "content-type": "application/json", ...headers }, { metodo: "POST", body });
 
@@ -19994,7 +20010,7 @@ async function main() {
         assert.strictEqual((await invocar(routerPerfilSeg, "/api/perfil?op=seguimiento&perfil=helder")).status, 401, "el seguimiento exige token");
         // un proceso ABIERTO del corpus activo (el listado lo sirve): se guarda con la foto de la tarjeta
         const li = await invocar(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=200", CAB_TOKEN);
-        const fila = li.cuerpo.resultados.find((f) => f.fecha_cierre);
+        const fila = await filaDelListado(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=200", CAB_TOKEN, (f) => f.fecha_cierre);
         assert.ok(fila, `hace falta un proceso del listado CON fecha de cierre (${li.cuerpo.resultados.length} servidos)`);
         assert.ok(fila && fila.id_del_proceso, "hace falta un proceso del listado para guardarlo");
         const g1 = await seg("", { metodo: "POST", body: { perfil: "helder", id: fila.id_del_proceso, estado: "interesa", foto: fila } });
@@ -20397,7 +20413,7 @@ async function main() {
            creían el mismo—: aquí se pide ya la fila sin llave. */
         const llavesG = new Map((await require("../lib/handlers/procesos/listar.js").cargarCorpus(redis, await require("../lib/almacen.js").leerJSON(redis, CLAVES.meta)))
           .map((r) => [r.id_del_proceso, String(r.id_del_portafolio || "").trim()]));
-        const fila = li.cuerpo.resultados.find((f) => f.fecha_cierre && f.precio_base && !llavesG.get(f.id_del_proceso));
+        const fila = await filaDelListado(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=200", CAB_TOKEN, (f) => f.fecha_cierre && f.precio_base && !llavesG.get(f.id_del_proceso));
         assert.ok(fila, "hace falta un proceso del listado con cierre, presupuesto y sin id_del_portafolio (el bloque de documentos usa el mismo)");
         // (1) la guía viaja en la respuesta del GUARDADO (automático) y en el listado
         await seg(`&perfil=helder&id=${encodeURIComponent(fila.id_del_proceso)}`, { metodo: "DELETE" }); // el bloque anterior lo dejó guardado
@@ -21249,7 +21265,7 @@ async function main() {
         const conLlaveD = (f) => Boolean(llavesD.get(f && f.id_del_proceso));
         assert.ok([...llavesD.values()].some(Boolean) && [...llavesD.values()].some((v) => !v),
           "el fixture tiene que traer los DOS estados del corpus el día del despliegue: registros con la llave y registros de antes de la full");
-        const filaD = liD.cuerpo.resultados.find((f) => f.fecha_cierre && f.precio_base && !conLlaveD(f));
+        const filaD = await filaDelListado(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=200", CAB_TOKEN, (f) => f.fecha_cierre && f.precio_base && !conLlaveD(f));
         assert.ok(filaD, "el fixture tiene que ofrecer una fila SIN id_del_portafolio (el corpus anterior a la full)");
         const idD = filaD.id_del_proceso, qD = `id_proceso=${encodeURIComponent(idD)}`;
         const fetchOriginalD = global.fetch;
@@ -21845,7 +21861,7 @@ async function main() {
         assert.ok(/Avisar que le interesa/.test(icsM.cuerpo) && /CALCULADA/.test(icsM.cuerpo), "el .ics trae el aviso de interés y dice que la fecha es calculada, no publicada");
         // cambio de cronograma: el proceso del listado, guardado antes con foto vieja → el corpus vivo difiere en el cierre
         const yaGuardados = new Set(l2.procesos.map((p) => p.id));
-        const filaV = liT.resultados.find((f) => f.fecha_cierre && !yaGuardados.has(f.id_del_proceso));
+        const filaV = await filaDelListado(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=200&tipo=todos", CAB_TOKEN, (f) => f.fecha_cierre && !yaGuardados.has(f.id_del_proceso));
         const cierreViejo = `${H.sumarDias(String(filaV.fecha_cierre).slice(0, 10), -5)}T10:00:00`;
         const gC = await seg2("", { metodo: "POST", body: { perfil: "helder", id: filaV.id_del_proceso, estado: "interesa", foto: { ...filaV, fecha_cierre: cierreViejo } } });
         assert.strictEqual(gC.status, 200);
@@ -21976,7 +21992,7 @@ async function main() {
           const listaAntes = Number(((await rU_.hgetall(U_.claveUso("helder", U_.mesDe(Date.now())))) || {}).lista || 0);
           const liAv = (await invocar(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=200&tipo=todos", CAB_TOKEN)).cuerpo;
           assert.strictEqual(Number(((await rU_.hgetall(U_.claveUso("helder", U_.mesDe(Date.now())))) || {}).lista || 0), listaAntes + 1, "consultar la lista cuenta una (lib/uso)");
-          const filaAv = liAv.resultados.find((f) => f.fecha_cierre);
+          const filaAv = await filaDelListado(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=200&tipo=todos", CAB_TOKEN, (f) => f.fecha_cierre);
           const gAv2 = await segAv("", { metodo: "POST", body: { perfil: PERFIL_AV, id: filaAv.id_del_proceso, estado: "interesa", foto: { ...filaAv, fecha_cierre: `${Hav.sumarDias(String(filaAv.fecha_cierre).slice(0, 10), -5)}T10:00:00` } } });
           assert.strictEqual(gAv2.status, 200);
 
@@ -35640,7 +35656,7 @@ async function main() {
       assert.strictEqual(rics.status, 200); assert.ok(/text\/calendar/.test(rics.cabeceras["content-type"]));
       assert.ok(/BEGIN:VCALENDAR/.test(rics.cuerpo) && /TRIGGER:-P7D/.test(rics.cuerpo) && /TRIGGER:-P3D/.test(rics.cuerpo) && /TRIGGER:-P1D/.test(rics.cuerpo) && /DTSTART;VALUE=DATE:20260825/.test(rics.cuerpo), "el .ics lleva los tres avisos como alarmas");
       // con un proceso del corpus, el hito de cierre sale del dataset aunque no haya texto
-      const idCorpus = rl.cuerpo.resultados.find((f) => f.fecha_cierre).id_del_proceso;
+      const idCorpus = (await filaDelListado(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=100&incluir_cerradas=1&solo_viables=false", CAB_TOKEN, (f) => f.fecha_cierre)).id_del_proceso;
       const rd = await invocar(routerPliego, `/api/pliego?op=cronograma&id_proceso=${encodeURIComponent(idCorpus)}`);
       assert.ok(rd.cuerpo.hitos.some((h) => h.id === "cierre" && h.origen === "dataset"), "el cierre del dataset entra al cronograma");
       /* ---- (3-bis) EL PELDAÑO 1 DE LA MANIFESTACIÓN, EXTREMO A EXTREMO ----
