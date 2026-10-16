@@ -45,7 +45,7 @@ jobs:
         env:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
-          URL="https://portafolio-estrategico.vercel.app/api/sync?modo=auto"
+          URL="https://detekta-app.vercel.app/api/sync?modo=auto"
           CODIGO=$(curl -sS --max-time 300 -o respuesta.json -w '%{http_code}' \
             -H "Authorization: Bearer ${CRON_SECRET}" "$URL")
           echo "HTTP $CODIGO"
@@ -56,6 +56,6 @@ jobs:
             exit 1
           fi
           if [ "$CODIGO" != "200" ]; then
-            echo "La actualización no respondió 200. Mire https://portafolio-estrategico.vercel.app/api/procesos?op=salud"
+            echo "La actualización no respondió 200. Mire https://detekta-app.vercel.app/api/procesos?op=salud"
             exit 1
           fi

@@ -39,7 +39,7 @@ jobs:
         env:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
-          URL="https://portafolio-estrategico.vercel.app/api/sync?modo=auto&chain=0"
+          URL="https://detekta-app.vercel.app/api/sync?modo=auto&chain=0"
           fallos=0; tramo=0; quietos=0; maximo=-1
           for vuelta in $(seq 1 600); do
             CODIGO=$(curl -sS --max-time 300 -o respuesta.json -w '%{http_code}' \
@@ -51,7 +51,7 @@ jobs:
             if [ "$CODIGO" != "200" ]; then
               fallos=$((fallos + 1))
               echo "Tramo $tramo: la aplicación respondió $CODIGO (fallo $fallos de 5 seguidos). Se reintenta en 30 s."
-              if [ "$fallos" -ge 5 ]; then echo "Cinco fallos seguidos: se detiene. Mire https://portafolio-estrategico.vercel.app/api/procesos?op=salud"; exit 1; fi
+              if [ "$fallos" -ge 5 ]; then echo "Cinco fallos seguidos: se detiene. Mire https://detekta-app.vercel.app/api/procesos?op=salud"; exit 1; fi
               sleep 30
               continue
             fi
@@ -74,7 +74,7 @@ jobs:
             ahora=$(jq -r 'if (.progreso.mesIdx != null and .progreso.leidasMes != null) then (.progreso.mesIdx * 1000000000 + .progreso.leidasMes) else -1 end' respuesta.json)
             if [ "$ahora" -gt "$maximo" ]; then maximo=$ahora; quietos=0; else quietos=$((quietos + 1)); fi
             if [ "$quietos" -ge 10 ]; then
-              echo "Diez tramos seguidos sin avanzar (o volviendo atrás): se detiene. Mire https://portafolio-estrategico.vercel.app/api/procesos?op=salud"
+              echo "Diez tramos seguidos sin avanzar (o volviendo atrás): se detiene. Mire https://detekta-app.vercel.app/api/procesos?op=salud"
               exit 1
             fi
             if [ "$tramo" -ge 200 ]; then break; fi
@@ -99,7 +99,7 @@ jobs:
             exit 1
           fi
           # con &hasta: sin él el rango por omisión es otro y la extracción empezaría de cero
-          URL="https://portafolio-estrategico.vercel.app/api/sync/historico?desde=2024-01&hasta=2026-09&chain=0"
+          URL="https://detekta-app.vercel.app/api/sync/historico?desde=2024-01&hasta=2026-09&chain=0"
           fallos=0
           for tramo in $(seq 1 300); do
             CODIGO=$(curl -sS --max-time 300 -o respuesta.json -w '%{http_code}' \
@@ -111,7 +111,7 @@ jobs:
             if [ "$CODIGO" != "200" ]; then
               fallos=$((fallos + 1))
               echo "Tramo $tramo: la aplicación respondió $CODIGO (fallo $fallos de 5 seguidos). Se reintenta en 30 s."
-              if [ "$fallos" -ge 5 ]; then echo "Cinco fallos seguidos: se detiene. Mire https://portafolio-estrategico.vercel.app/api/procesos?op=salud"; exit 1; fi
+              if [ "$fallos" -ge 5 ]; then echo "Cinco fallos seguidos: se detiene. Mire https://detekta-app.vercel.app/api/procesos?op=salud"; exit 1; fi
               sleep 30
               continue
             fi

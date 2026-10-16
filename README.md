@@ -134,7 +134,7 @@ rewrites (son compatibilidad para direcciones guardadas):
 | Dirección clásica | Va a |
 | --- | --- |
 | `/api/sync` · `/api/sync/historico` | `/api/procesos?op=sync` · `?op=historico` |
-| `/api/latido` | `/api/procesos?op=latido` (retoma lo que quedó a medias; lo llama `.github/workflows/latido.yml` cada 10 min) |
+| `/api/latido` | `/api/procesos?op=latido` (retoma lo que quedó a medias; lo llama `.github/workflows/latido.yml` cada hora) |
 | `/api/oportunidades` · `/api/indice-baja` | `/api/procesos?op=listar` · `?op=baja` |
 | `/api/resumen` · `/api/diagnostico` | `/api/perfil?op=resumen` · `?op=diagnostico` |
 | `/api/avisos` | `/api/perfil?op=avisos` (el aviso diario por correo; lo llama el cron) |

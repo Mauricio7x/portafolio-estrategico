@@ -33,9 +33,10 @@
     nombre: "Detekta",
     nombreLargo: "Detekta — inteligencia de licitaciones",
     lema: "Licitaciones de obra en Colombia",
-    // Cambiar SOLO cuando se compre un dominio propio (docs/marca.md §4). La
-    // aplicación no necesita ningún otro cambio de código.
-    dominio: "portafolio-estrategico.vercel.app",
+    // Cambia con el dominio de producción (docs/marca.md §4): el 16-oct-2026 pasó de
+    // portafolio-estrategico.vercel.app (cuenta pausada por Vercel) a la cuenta nueva.
+    // Lo leen el enlace del correo, la suite y los flujos de GitHub (que lo copian).
+    dominio: "detekta-app.vercel.app",
   });
 
   /* Título de la pestaña y descripción: los mismos literales que index.html

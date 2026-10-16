@@ -1,9 +1,16 @@
 # Detekta · el latido: termina solas las cargas cortadas (27-sep-2026, lib/latido).
 #
 # Por qué existe: la carga completa, la actualización y la extracción del histórico
-# avanzan por tramos que se llaman a sí mismos, y esa llamada se pierde. Cada 10 min
+# avanzan por tramos que se llaman a sí mismos, y esa llamada se pierde. Cada hora
 # este flujo pregunta a la aplicación «¿quedó algo a medias?» y, si quedó, ella lanza
 # UN tramo con el cursor que ya tenía guardado. Si no hay nada, cuesta un MGET.
+#
+# Cada hora y no cada 10 min (16-oct-2026): Vercel Hobby pausó el proyecto el
+# 30-sep por CPU activa, y cada llamada despierta una función (144 al día eran 144
+# arranques). Además vercel.json ya trae un latido una hora después de cada cron de
+# actualización. Un latido en reposo gasta unos 66 ms de CPU en frío (medido en local);
+# cada hora y no cada 3 para que el correo de la salud en rojo (dos latidos separados
+# 20 min o más) no llegue horas tarde (revisión adversaria del 16-oct-2026).
 #
 # Por qué en GitHub y no en vercel.json: en el plan gratuito de Vercel un cron más
 # frecuente que diario tumba el despliegue entero, y el plan no consta medido. Con
@@ -19,7 +26,7 @@ name: Latido (retoma lo que quedó a medias)
 
 on:
   schedule:
-    - cron: '*/10 * * * *'
+    - cron: '17 * * * *'
   workflow_dispatch:
 
 jobs:
@@ -32,7 +39,7 @@ jobs:
         env:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
-          URL="https://portafolio-estrategico.vercel.app/api/latido"
+          URL="https://detekta-app.vercel.app/api/latido"
           CODIGO=$(curl -sS --max-time 320 -o respuesta.json -w '%{http_code}' \
             -H "Authorization: Bearer ${CRON_SECRET}" "$URL" || echo "000")
           echo "HTTP $CODIGO"
@@ -42,6 +49,6 @@ jobs:
             exit 1
           fi
           if [ "$CODIGO" != "200" ]; then
-            echo "El latido no respondió 200. Mire https://portafolio-estrategico.vercel.app/api/procesos?op=salud"
+            echo "El latido no respondió 200. Mire https://detekta-app.vercel.app/api/procesos?op=salud"
             exit 1
           fi
