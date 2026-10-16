@@ -18635,7 +18635,8 @@ En una línea: el 30-sep Vercel Hobby pausó el proyecto por «Fluid Active CPU�
 
 - **Lo medido el 16-oct.** `portafolio-estrategico.vercel.app` responde «402 DEPLOYMENT_DISABLED».
   - La captura de «Usage» del dueño dice «Paused Sep 30 · Fluid Active CPU» y 1h 43m de 4h en los últimos 30 días. Las demás cifras estaban lejos de su tope: solo se agotó la CPU.
-  - El disparador no está medido. [Inferencia] El `op=compactar` de producción del 30-sep (03:31 a 04:26 UTC, sección «La base de datos se llenó…»), sumado a la carga completa del 26-sep y al histórico del 15 al 25-sep.
+  - Lo que más gasta, medido en local el 16-oct con datos reales de SECOP y Upstash simulado: SECOP vuelve a sellar TODAS sus filas de golpe (las 9.327.848 con el mismo `:updated_at` el 15-oct; hay re-sellados registrados también el 24 y el 26-sep), y durante las 48 h siguientes (`SOLAPE_DELTA_MS`) cada delta relee el año competitivo entero, unas 123.669 filas: de 70 a 87 s de CPU por ciclo. Con el latido de 30 min eran hasta 32 al día, de 4,6 a 5,8 veces el tope diario (unos 480 s). [Inferencia] Ese fue el disparador, más que el `op=compactar` del 30-sep, que se había supuesto.
+  - Con esta dieta quedan 2 a 4 ciclos al día: de 139 a 347 s, del 29 al 72 % del tope, solo en actualizaciones. El margen es corto; la salida de fondo (no reprocesar lo que SECOP solo re-selló) se planea aparte, con visto bueno del dueño.
 - **Por qué cuenta nueva y no Pro.** Es decisión del dueño: uso propio, en desarrollo y sin gasto.
   - Riesgo aceptado y dicho una vez: el uso justo de Vercel prohíbe «Circumventing or otherwise misusing Vercel's limits», y la cuenta nueva también puede pausarse o bloquearse.
   - Si pasa, la salida es Pro o `tests/servidor_local.js`, no una tercera cuenta.
