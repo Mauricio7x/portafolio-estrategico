@@ -26,5 +26,27 @@
       "Bash(git diff:*)",
       "Bash(git branch:*)"
     ]
-  }
+  },
+  "$comentario_complementos": [
+    "16-oct-2026, decisión del dueño: complementos oficiales de Anthropic (claude-plugins-official)",
+    "para revisar seguridad (claude-security), revisar cambios (code-review) y supervisar el gasto",
+    "de una sesión (session-report); y el navegador real de .mcp.json (playwright), fijado a una",
+    "versión y sin perfil guardado. Solo corren dentro de las sesiones de Claude: no tocan Vercel."
+  ],
+  "extraKnownMarketplaces": {
+    "claude-plugins-official": {
+      "source": {
+        "source": "github",
+        "repo": "anthropics/claude-plugins-official"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "claude-security@claude-plugins-official": true,
+    "code-review@claude-plugins-official": true,
+    "session-report@claude-plugins-official": true
+  },
+  "enabledMcpjsonServers": [
+    "playwright"
+  ]
 }

@@ -18619,6 +18619,8 @@ En una línea: la palabra «combustible» de la lista negra de ingesta descartab
 
 ### Tres pruebas con fecha fija tumbaron main al cambiar de mes, y la cuarta espera (1-oct-2026)
 
+> SUPERADA el 16-oct-2026 por «Las pruebas con fecha: la compactación caía el 31-oct y la lista se queda sin procesos con cierre en noviembre (16-oct-2026)» — solo su PENDIENTE: la fecha medida es del 1 al 5-nov, y la causa no es una fecha fija.
+
 En una línea: el 1-oct-2026 `main` amaneció en rojo sin que nadie tocara nada —dos casos de prueba con cierre fijo el 30-sep pasaron a «cerrado» y una tercera aserción de la ganancia, que reconstruía el costo desde una cifra ya redondeada, cayó por 1 peso cuando el reloj cambió el primer proceso del listado simulado—; las tres se corrigieron donde estaba el fallo y queda una cuarta que caerá entre el 31-oct y el 10-nov.
 
 - **Las fechas fijas.** «sin pedirlo, un anticipo declarado bajo ya no esconde nada» y «y las 112 con Publicado entran» probaban el anticipo y el estado, pero con `fecha_cierre: "2026-09-30…"` caían por la fecha. El cierre se calcula ahora a 30 días del reloj real; el resto del bloque sigue con sus fechas fijas porque lo prueba con un «hoy» fijo.
@@ -18677,3 +18679,13 @@ En una línea: el 30-sep Vercel Hobby pausó el proyecto por «Fluid Active CPU�
   - `delta_ciclo` en `decidirAuto`;
   - el fallo posterior en `decidirAuto`;
   - el reintento del fallo en el latido.
+
+### Las pruebas con fecha: la compactación caía el 31-oct y la lista se queda sin procesos con cierre en noviembre (16-oct-2026)
+
+En una línea: medido con el reloj adelantado, la suite caía el 31-oct por una quinta prueba con cierres fijos (la de la historia de un proceso al compactar el mes), que ya usa cierres relativos; la cuarta, la de «hace falta un proceso del listado…», cae entre el 1 y el 5-nov y sigue abierta, porque su causa es otra: no es una fecha fija.
+
+- **Cómo se midió.** Un precargador que adelanta `Date` (solo en el espacio de la sesión, no en el repositorio) y la suite entera, una vuelta, a +0, +15, +20, +25, +30, +35 y +40 días desde el 16-oct. Verde hasta +15 (31-oct); rojo desde +20 (5-nov).
+- **La compactación.** `compactarMes` solo guarda lo abierto (`estado_abierto`), y es correcto. La prueba montaba P1 con cierres el 20, 27 y 30-oct y el delta al 5-nov: desde el 31-oct P1 desaparecía y la aserción recibía `null`. Ahora usa +30, +37, +40 y +46 días del reloj, con las mismas distancias. Probado verde a +0, +30, +60 y +120 días. No se tocó el código del producto.
+- **La que sigue abierta.** En noviembre, la primera página de `/api/oportunidades` (100 filas, orden por atractividad) trae 4 filas con cierre, frente a 10 a +10 días; las filas del mes nuevo suben al tope. [Inferencia] El orden y el generador de datos simulados se cruzan con el cambio de mes; falta confirmarlo. El mismo supuesto, «la primera página trae una fila con cierre», está en seis sitios de `tests/e2e.js` (los `.find((f) => f.fecha_cierre…)`): un arreglo que solo cubra el primero deja hermanos vivos.
+
+> PENDIENTE · antes del 1-nov-2026: la prueba «hace falta un proceso del listado con cierre, presupuesto y sin id_del_portafolio» cae desde el 1 al 5-nov (medido el 16-oct con el reloj adelantado). Hallar por qué la primera página del listado simulado se queda sin filas con cierre al cambiar de mes y corregir los seis `.find` que dependen de ella, no solo el primero.

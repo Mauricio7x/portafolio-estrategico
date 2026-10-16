@@ -44097,16 +44097,21 @@ async function main() {
       assert.ok(conIlegible.versiones === 4 && conIlegible.inicial === "2026-10-20T00:00:00.000", `una historia ilegible no suma nada, ni siquiera sus cierres: ${JSON.stringify(conIlegible)}`);
       const planas = await A.leerChunksDedup(redis, await redis.scan(CL.patronChunksMes("2026-09")));
       assert.ok(planas.every((f) => !("_historia" in f) && !("_traza" in f)), "sin señales tampoco sale la historia (MUTACIÓN: quitarla solo con señales)");
+      /* Cierres RELATIVOS al reloj (16-oct-2026): con los fijos (20, 27 y 30-oct, 5-nov) la compactación,
+         que con razón solo guarda lo abierto, descartaba P1 desde el 31-oct y el bloque caía con el
+         calendario. Se mantienen sus distancias: 20 → 27 → 30 y el delta al 5, ahora a +30, +37, +40, +46 días. */
+      const cRel = (dias) => new Date(Date.now() + dias * 864e5).toISOString().slice(0, 10) + "T00:00:00.000";
+      const c20 = cRel(30), c27 = cRel(37), c30 = cRel(40), c36 = cRel(46);
       /* (2) LA COMPACTACIÓN DEL MES: tres versiones repartidas, el cierre movido 20 → 27 → 30 oct y el
          precio cambiado; las señales son las mismas antes y después, y compactar dos veces no cambia nada */
       await limpiar();
       const fc = (k, u, cierre, precio) => ({ _k: k, ":updated_at": u, fecha_de_publicacion_del: "2026-09-02T00:00:00.000", fecha_cierre: cierre,
         estado_del_procedimiento: "Publicado", fase: "Presentación de oferta", adjudicado: "No", precio_base: precio, nombre_del_procedimiento: `OBRA ${k}`, modalidad_de_contratacion: "Licitación pública" });
-      const vP = [fc("P1", "2026-09-03T00:00:00", "2026-10-20T00:00:00.000", 100), fc("P1", "2026-09-10T00:00:00", "2026-10-27T00:00:00.000", 120), fc("P1", "2026-09-15T00:00:00", "2026-10-30T00:00:00.000", 120)];
-      for (let i = 0; i < 27; i++) await redis.set(CL.chunk("2026-09", i), A.comprimir(i < 3 ? [vP[i]] : [fc(`R${i}`, "2026-09-01T00:00:00", "2026-10-30T00:00:00.000", 1)]));
+      const vP = [fc("P1", "2026-09-03T00:00:00", c20, 100), fc("P1", "2026-09-10T00:00:00", c27, 120), fc("P1", "2026-09-15T00:00:00", c30, 120)];
+      for (let i = 0; i < 27; i++) await redis.set(CL.chunk("2026-09", i), A.comprimir(i < 3 ? [vP[i]] : [fc(`R${i}`, "2026-09-01T00:00:00", c30, 1)]));
       await A.escribirJSON(redis, CL.manifest("2026-09"), { base: 0, sig: 27, count: 27 });
       const antesC = await senal("2026-09", "P1");
-      assert.deepStrictEqual(antesC, { versiones: 3, prorrogado: true, inicial: "2026-10-20T00:00:00.000", cambios: "fecha_cierre,precio_base", historia: false }, "montaje");
+      assert.deepStrictEqual(antesC, { versiones: 3, prorrogado: true, inicial: c20, cambios: "fecha_cierre,precio_base", historia: false }, "montaje");
       await sync.compactarMes(redis, "2026-09");
       assert.ok((await redis.scan(CL.patronChunksMes("2026-09"))).length < 27, "montaje: el mes se compactó");
       assert.deepStrictEqual(await senal("2026-09", "P1"), antesC, "la compactación del mes conserva prórroga, versiones, cierre inicial y adendas (MUTACIÓN: sin historia)");
@@ -44115,13 +44120,13 @@ async function main() {
       assert.strictEqual((await senal("2026-09", "R5")).versiones, 1, "un proceso de una sola versión sigue con una");
       // una versión nueva del delta, después: se suma a la historia
       const man = await A.leerJSON(redis, CL.manifest("2026-09"));
-      await redis.set(CL.chunk("2026-09", man.sig), A.comprimir([fc("P1", "2026-09-20T00:00:00", "2026-11-05T00:00:00.000", 120)]));
+      await redis.set(CL.chunk("2026-09", man.sig), A.comprimir([fc("P1", "2026-09-20T00:00:00", c36, 120)]));
       const trasDelta = await senal("2026-09", "P1");
-      assert.ok(trasDelta.versiones === 4 && trasDelta.prorrogado === true && trasDelta.inicial === "2026-10-20T00:00:00.000", `lo que el delta ve después se suma: ${JSON.stringify(trasDelta)}`);
+      assert.ok(trasDelta.versiones === 4 && trasDelta.prorrogado === true && trasDelta.inicial === c20, `lo que el delta ve después se suma: ${JSON.stringify(trasDelta)}`);
       // el delta vuelve a escribir esa MISMA versión (mismo sello) y el mes se compacta dos veces: sigue en 4 (revisión: H2)
       const man2 = await A.leerJSON(redis, CL.manifest("2026-09"));
       await A.escribirJSON(redis, CL.manifest("2026-09"), { ...man2, sig: man2.sig + 1 });
-      await redis.set(CL.chunk("2026-09", man2.sig + 1), A.comprimir([fc("P1", "2026-09-20T00:00:00", "2026-11-05T00:00:00.000", 120)]));
+      await redis.set(CL.chunk("2026-09", man2.sig + 1), A.comprimir([fc("P1", "2026-09-20T00:00:00", c36, 120)]));
       await A.escribirJSON(redis, CL.manifest("2026-09"), { ...man2, sig: man2.sig + 2 });
       await sync.compactarMes(redis, "2026-09");
       await sync.compactarMes(redis, "2026-09");
