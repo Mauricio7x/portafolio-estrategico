@@ -26,13 +26,13 @@ solicitud de «en_cola» y hace de candado: dos sesiones sobre la misma solicitu
 
    ```bash
    TOKEN=$(grep -o 'const TOKEN = "[^"]*"' public/app.js | head -1 | cut -d'"' -f2)
-   BASE=https://portafolio-estrategico.vercel.app
+   BASE=https://detekta-app.vercel.app
    curl -s -H "x-historico-token: $TOKEN" "$BASE/api/apu?op=ia&pendientes=1" -o /tmp/cola.json
    node -e 'const c=require("/tmp/cola.json"); for (const s of c.solicitudes) console.log(s.estado, s.perfil, s.id, s.filas, "filas ·", s.nombre, "·", s.ciudad||"", s.departamento||"", "·", s.solicitado_el, s.progreso?`· ${s.progreso.pct} % el ${s.progreso.actualizado_el}`:"")'
    ```
 
    Si esta primera llamada responde 403 del proxy de egreso, la red del entorno no alcanza la
-   aplicación: diga exactamente «La red del entorno no alcanza portafolio-estrategico.vercel.app: abra
+   aplicación: diga exactamente «La red del entorno no alcanza detekta-app.vercel.app: abra
    claude.ai/code/routines → esta rutina → el entorno → Network access: Full» y termine, sin rodearlo.
    Si se pasó un `id_borrador`, atienda solo ese. Si la cola está vacía, dígalo y termine. Dos solicitudes
    con las mismas filas son el mismo presupuesto pedido dos veces: haga el trabajo una vez y envíelo a las dos.

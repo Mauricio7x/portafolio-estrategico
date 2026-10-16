@@ -21,7 +21,7 @@ clave de caché es `reglas-<versión>`, `sesion` o el nombre del modelo). La pan
 
 ## Cómo pedir un dictamen desde Claude Code (rutas exactas)
 
-1. Cargar el pliego una vez: en `https://portafolio-estrategico.vercel.app`, pestaña **Licitaciones**,
+1. Cargar el pliego una vez: en `https://detekta-app.vercel.app`, pestaña **Licitaciones**,
    botón **Calcular mi precio** de la tarjeta → pestaña **Precios** → sección del lector → subir el PDF
    del pliego. (O desde **Mis procesos**: abrir la guía del proceso guardado → «Cargar el pliego
    (PDF)», que lo abre en Precios con el proceso ya puesto.) Al terminar, el texto queda guardado bajo el id del proceso.

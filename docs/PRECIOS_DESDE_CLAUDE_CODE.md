@@ -108,12 +108,12 @@ Por HTTP: `GET /api/apu?op=ia&encargo=1&id=<id>&perfil=<perfil>` devuelve el tex
 
 Abra <https://claude.ai/code> con el repositorio (rama main) y escriba `/precios`; para un solo borrador,
 `/precios <id_del_borrador> helder`. Exige que el entorno de esa sesión alcance la aplicación (Network
-access: Full o Custom con `portafolio-estrategico.vercel.app`).
+access: Full o Custom con `detekta-app.vercel.app`).
 
 ## Ver la cola sin abrir Claude Code
 
 ```
-https://portafolio-estrategico.vercel.app/api/apu?op=ia&pendientes=1&token=<SU_TOKEN>
+https://detekta-app.vercel.app/api/apu?op=ia&pendientes=1&token=<SU_TOKEN>
 ```
 
 Responde `total`, `en_cola` y cada solicitud con estado (`en_cola`, `buscando` con `progreso`, `listo`) y, desde el

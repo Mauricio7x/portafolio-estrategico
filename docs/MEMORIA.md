@@ -18626,3 +18626,54 @@ En una línea: el 1-oct-2026 `main` amaneció en rojo sin que nadie tocara nada 
 - **Cómo se buscaron los hermanos.** Con un precargador que adelanta `Date` (solo en /tmp, no en el repositorio) la suite se corrió con el reloj a +7, +14, +21, +30 y +40 días: verde hasta +30; a +40 cae «hace falta un proceso del listado con cierre, presupuesto y sin id_del_portafolio» (los datos simulados se agotan). Queda como pendiente con fecha.
 
 > PENDIENTE · antes del 31-oct-2026: la prueba «hace falta un proceso del listado con cierre, presupuesto y sin id_del_portafolio» (unidad de iteraciones) cae con el reloj adelantado entre +30 y +40 días; reproducir con un precargador que adelante `Date` y corregir donde se agotan los datos simulados, antes de que tumbe `main`.
+
+### Vercel pausó Detekta por CPU: cuenta nueva y menos llamadas automáticas (16-oct-2026)
+
+En una línea: el 30-sep Vercel Hobby pausó el proyecto por «Fluid Active CPU» y la pausa no se levanta sola; el dueño eligió (16-oct) una cuenta nueva de Vercel con `detekta-app.vercel.app`, y lo automático deja de despertar funciones que nadie necesita: `FRESCO_MS` de 5 min a 6 h, latido a 13 h y cada hora, tablero cada 30 min, Precios cada 60 s; «Actualizar datos» manda `forzar=1` para no esperar.
+
+> PENDIENTE · cuando la cuenta nueva lleve una semana desplegada: leer su «Usage» (CPU activa de 30 días) y, con esa cifra y la medición local de CPU por operación, decidir con el dueño las dos vueltas nocturnas de compactar, el cron de `/api/respaldo` (responde 503 mientras R2 no exista) y las tareas mensuales (carga de higiene y refresco del histórico); ninguna se toca sin su visto bueno.
+
+- **Lo medido el 16-oct.** `portafolio-estrategico.vercel.app` responde «402 DEPLOYMENT_DISABLED».
+  - La captura de «Usage» del dueño dice «Paused Sep 30 · Fluid Active CPU» y 1h 43m de 4h en los últimos 30 días. Las demás cifras estaban lejos de su tope: solo se agotó la CPU.
+  - Lo que más gasta, medido en local el 16-oct con datos reales de SECOP y Upstash simulado: SECOP vuelve a sellar TODAS sus filas de golpe (las 9.327.848 con el mismo `:updated_at` el 15-oct; hay re-sellados registrados también el 24 y el 26-sep), y durante las 48 h siguientes (`SOLAPE_DELTA_MS`) cada delta relee el año competitivo entero, unas 123.669 filas: de 70 a 87 s de CPU por ciclo. Con el latido de 30 min eran hasta 32 al día, de 4,6 a 5,8 veces el tope diario (unos 480 s). [Inferencia] Ese fue el disparador, más que el `op=compactar` del 30-sep, que se había supuesto.
+  - Con esta dieta quedan 2 a 4 ciclos al día: de 139 a 347 s, del 29 al 72 % del tope, solo en actualizaciones. El margen es corto; la salida de fondo (no reprocesar lo que SECOP solo re-selló) se planea aparte, con visto bueno del dueño.
+- **Por qué cuenta nueva y no Pro.** Es decisión del dueño: uso propio, en desarrollo y sin gasto.
+  - Riesgo aceptado y dicho una vez: el uso justo de Vercel prohíbe «Circumventing or otherwise misusing Vercel's limits», y la cuenta nueva también puede pausarse o bloquearse.
+  - Si pasa, la salida es Pro o `tests/servidor_local.js`, no una tercera cuenta.
+- **La base se queda donde está.** Upstash es una integración del Marketplace del equipo VIEJO, y la cuenta nueva la usa con su URL y su token REST.
+  - «Uninstall Integration» la borra. Por eso el proyecto viejo y su integración no se borran, y la cuenta vieja conserva acceso por correo.
+  - Los términos de Upstash permiten borrar un recurso gratis que pase una semana sin peticiones; su FAQ habla de archivar tras 30 días. Se exporta antes de cualquier movimiento y no se deja sin peticiones.
+- **El dominio no viaja entre cuentas.** `detekta.vercel.app` es de otro, y `detekta-app.vercel.app` respondía 404 DEPLOYMENT_NOT_FOUND el 16-oct.
+  - Se cambió en `MARCA.dominio`, en los tres flujos de GitHub que llaman a producción, en las habilidades de dictamen y precios y en los documentos que lo citan.
+  - La lista de sitios está en `docs/marca.md` §4.
+- **`FRESCO_MS` a 6 h, con dos topes.** Cada visita a la lista con el dato de más de 5 min disparaba un delta que relee 48 h de SECOP.
+  - Techo: menos que el hueco más corto entre los dos crons con su desfase. Los crons llaman en modo auto, así que si el dato pareciera fresco no actualizarían.
+  - Suelo: 1 h.
+  - La suite fija los dos topes.
+- **La pulsación no espera.** Con 6 h, «Actualizar datos» no habría hecho nada.
+  - `llamarConReintentos` manda `forzar=1` y el servidor convierte un «al día» en delta; el resto de la decisión no cambia.
+  - La lista al abrirse NO lo manda, y una cerradura lo vigila: si lo mandara, volvería el gasto.
+- **El latido es red de seguridad, no horario.** `INTERVALO_MS` pasa de 30 min a 13 h, más que el hueco mayor entre crons (12 h 10 min), así que actúa solo cuando un cron no llegó.
+  - `latido.yml` va cada hora, en el minuto 17, y no cada 10 min. Cada 3 h ahorraba poco (un latido en reposo gasta unos 66 ms de CPU en frío, medido en local) y retrasaba horas el correo de la salud en rojo, que pide dos latidos separados 20 min.
+  - Retomar una carga cortada funciona igual; solo puede tardar más.
+- **El navegador.** El tablero se refresca cada 30 min. Antes iba cada 5, y cada vuelta encontraba vencida la caché de `/api/resumen`.
+  - Precios consulta cada 60 s (antes 20 s). El tope sigue en 600 porque el contador es el mismo de la cola: con 200, una solicitud que esperó en cola perdía el seguimiento.
+- **Lo a medias y lo fallido no están «al día».** Con 6 h, la revisión adversaria reprodujo dos defectos: un ciclo de delta cortado quedaba varado hasta 6 h, y un fallo quedaba pegado con la pantalla diciendo «se reintenta».
+  - `decidirAuto` devuelve «delta» si hay `delta_ciclo` o si el último fallo es posterior a `last_sync`.
+  - El latido reintenta un fallo de más de 30 min sin actualización posterior.
+  - `forzar=1` tiene un suelo de 5 min: dos pulsaciones seguidas no hacen dos deltas de 48 h.
+- **Lo que NO se tocó, a propósito.** Los crons de `vercel.json` y las tareas mensuales mueven datos que deciden. Quedan en el pendiente de arriba.
+- **La prueba del ritmo de la memoria dependía del reloj.** Clonaba el HEAD con `--depth 1`.
+  - Con el repositorio 15 días sin commits, la frontera caía fuera de la ventana. `estado.js` decía «sin cambios», que era cierto, y la suite se ponía roja sin ejercer la guarda.
+  - Ahora fabrica un commit de hoy y clona sobre él. Sin la guarda, la prueba falla con «+18628 líneas» (medido).
+- **Verificado por mutación.** 10 de 10 cerraduras nuevas caen contra el árbol anterior:
+  - `FRESCO_MS` de 5 min;
+  - latido de 30 min;
+  - sin `forzar` en el servidor;
+  - sin `forzar` en el cliente;
+  - `forzar` en la lista;
+  - `latido.yml` cada 10 min;
+  - la guarda del ritmo;
+  - `delta_ciclo` en `decidirAuto`;
+  - el fallo posterior en `decidirAuto`;
+  - el reintento del fallo en el latido.

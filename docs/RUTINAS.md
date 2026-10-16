@@ -57,7 +57,7 @@ Se crea **en la web**, que es donde existe el selector de repositorios:
 ## Lo que falta del entorno
 
 - **La red.** El entorno «Default» solo alcanza GitHub, Anthropic y los registros de paquetes.
-  `portafolio-estrategico.vercel.app`, `datos.gov.co`, `community.secop.gov.co` y las tiendas de
+  `detekta-app.vercel.app`, `datos.gov.co`, `community.secop.gov.co` y las tiendas de
   precios responden **403 del proxy de egreso** (medido el 12 y el 13-sep-2026). Con la red así, ni
   la skill `/precios` ni la `/dictamen` pueden ejecutarse: las dos empiezan pidiéndole el expediente
   al servidor. Se abre en claude.ai/code → el entorno → **Red: Custom** → dominios permitidos,
@@ -153,9 +153,9 @@ Si no aparece ninguno no puedes hacer nada: la llave de la aplicación sale de p
 en el repositorio. Termina diciendo que la rutina no tiene repositorio adjunto y dónde se añade.
 
 PASO 0 bis · ¿SE ABRE LA PUERTA?
-curl -s -o /dev/null -w "%{http_code}\n" --max-time 20 "https://portafolio-estrategico.vercel.app/api/procesos?op=salud"
+curl -s -o /dev/null -w "%{http_code}\n" --max-time 20 "https://detekta-app.vercel.app/api/procesos?op=salud"
 Si responde 000 o 403 del proxy de egreso, para y di solo: «La red del entorno sigue cerrada: abra
-claude.ai/code → el entorno → Red: Custom y permita portafolio-estrategico.vercel.app.»
+claude.ai/code → el entorno → Red: Custom y permita detekta-app.vercel.app.»
 
 LA LLAVE sale del repositorio, como hacen las skills. No la imprimas nunca:
 TOKEN=$(grep -o 'const TOKEN = "[^"]*"' public/app.js | head -1 | cut -d'"' -f2)

@@ -7859,7 +7859,10 @@
       const p = s.progreso || {};
       msgIa(`Buscando… completado ${p.pct != null ? p.pct : 0} %${p.total ? ` (${p.hecho} de ${p.total} ítems)` : ""}${p.mensaje ? ` · ${p.mensaje}` : ""}`);
       barraIa(p.pct != null ? p.pct : 2); caja.classList.add("hidden");
-      if (iaSondeos < 600) iaSondeo = setTimeout(() => { iaSondeos++; consultarIa({ silencioso: true }); }, 20000);
+      /* cada 60 s y no cada 20 (16-oct-2026): cada consulta despierta una función de Vercel, y el plan
+         gratuito se pausó el 30-sep por CPU activa. El tope sigue en 600 porque el contador es el MISMO de la
+         cola (tope 240): con 200, una solicitud que esperó en cola perdía el seguimiento de «Buscando…» */
+      if (iaSondeos < 600) iaSondeo = setTimeout(() => { iaSondeos++; consultarIa({ silencioso: true }); }, 60000);
       return;
     }
     barraIa(null);
@@ -9640,7 +9643,10 @@
       if (!activo) return null;
       let r = null, cuerpo = null, fallo = null;
       try {
-        r = await fetch(`/api/procesos?op=sync&modo=${modo}&presupuesto=${presupuesto}`, opcionesSync({ Accept: "application/json" }));
+        /* `forzar=1`: este bucle solo lo arranca una pulsación («Actualizar datos», la carga completa),
+           y una persona que pulsa quiere lo último aunque el dato tenga menos de 6 h (FRESCO_MS del
+           servidor, que ya no es de 5 min: 16-oct-2026). */
+        r = await fetch(`/api/procesos?op=sync&modo=${modo}&presupuesto=${presupuesto}&forzar=1`, opcionesSync({ Accept: "application/json" }));
         cuerpo = await leerJson(r); // el muro del edge devuelve HTML
       } catch (e) {
         fallo = fraseDeFallo(e);
@@ -10060,7 +10066,11 @@
   /* ══════════════════════════════════════════════════════════════════════════
      DASHBOARD de procesos (/api/resumen)
      ══════════════════════════════════════════════════════════════════════════ */
-  const REFRESCO_MS = 300000;              // el mismo TTL de la caché del endpoint
+  /* Cada 30 min (16-oct-2026). Era cada 5 min, el TTL de la caché de /api/resumen: con la
+     pestaña abierta, cada refresco encontraba la caché vencida y el servidor volvía a leer y
+     agregar el corpus entero; Vercel Hobby pausó el proyecto el 30-sep por CPU activa. Los
+     datos cambian dos veces al día (los crons de 7:50 y 20:00), así que 30 min no esconde nada. */
+  const REFRESCO_MS = 1800000;
   /* SIN COLUMNA DE COLOR, Y EL MOTIVO IMPORTA (13-sep-2026). Estas cuatro filas llevaban
      una tercera columna («bg-green-500», «bg-amber-500», «bg-blue-500», «bg-gray-400») que
      NINGUNA línea del árbol leía: el único consumidor destructura `[clave, etiqueta]` y el
@@ -10493,7 +10503,7 @@
   function fraseRefresco(pausado, desdeMs, ahoraMs) {
     const minutos = desdeMs ? Math.floor((ahoraMs - desdeMs) / 60000) : null;
     const cuando = desdeMs ? (minutos < 1 ? "Actualizado hace un momento" : `Actualizado hace ${minutos} min`) : "";
-    const modo = pausado ? "la actualización automática está detenida" : "se actualiza solo cada 5 min";
+    const modo = pausado ? "la actualización automática está detenida" : "se actualiza solo cada 30 min";
     return cuando ? `${cuando} · ${modo}` : modo.charAt(0).toUpperCase() + modo.slice(1);
   }
   function pintarCuentaAtras() {
@@ -10505,7 +10515,7 @@
     if (b) b.textContent = refrescoPausado ? "Volver a actualizar" : "Dejar de actualizar";
   }
 
-  /* Refresco automático cada 5 min SOLO con la pestaña visible: refrescar en
+  /* Refresco automático cada 30 min SOLO con la pestaña visible: refrescar en
      segundo plano gasta invocaciones de Vercel para que nadie lo mire. Si la
      pestaña estaba oculta cuando tocaba, se refresca al volver a ella. Y si la
      persona lo detuvo, no se programa NADA: ni el refresco ni el repintado. */

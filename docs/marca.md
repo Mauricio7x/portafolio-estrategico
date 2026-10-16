@@ -37,7 +37,7 @@ Renombrar cualquiera de estas cosas rompería producción sin darle nada al usua
 | Se conserva | Motivo |
 |---|---|
 | Repositorio `Mauricio7x/portafolio-estrategico`, rama `main` | Vercel despliega desde él |
-| URL de producción `https://portafolio-estrategico.vercel.app` | Es la que el dueño tiene pegada en Chrome, y la que citan todas las docs. Ver §4 para el dominio propio |
+| URL de producción `https://detekta-app.vercel.app` | Desde el 16-oct-2026, en la cuenta nueva de Vercel (la vieja, `portafolio-estrategico.vercel.app`, quedó pausada por CPU el 30-sep). Ver §4 para cambiarla |
 | Claves de Redis (`licitaciones:*`, `config:*`, `indice:*`, `apu:*`, …) | Renombrarlas exigiría migrar el corpus entero |
 | Variables de entorno (`HISTORICO_TOKEN`, `SOCRATA_APP_TOKEN`, `OCRSPACE_API_KEY`, Upstash) | Vercel las inyecta por nombre |
 | Nombres de archivos, funciones y endpoints (`/api/{router}?op=…` y los rewrites) | Son contratos, no marca |
@@ -76,11 +76,15 @@ Pasos, sin terminal:
    proveedor del dominio.
 4. Esperar a que Vercel marque el dominio como **Valid Configuration** (minutos, a veces horas por
    la propagación DNS). El certificado HTTPS lo emite Vercel solo.
-5. En el repositorio, cambiar **una sola línea**: `dominio: "portafolio-estrategico.vercel.app"`
-   en `public/glosario.js` por el dominio nuevo, y actualizar la prueba que fija ese valor en
-   `tests/e2e.js` (bloque j-quinquies) y la tabla de §2 de este documento.
-6. La URL vieja `portafolio-estrategico.vercel.app` **sigue funcionando** (Vercel la conserva como
-   alias): los enlaces que el dueño tiene pegados en Chrome no se rompen.
+5. En el repositorio, cambiar `dominio:` en `public/glosario.js` por el dominio nuevo, y con él
+   la prueba que fija ese valor en `tests/e2e.js` (bloque j-quinquies), la tabla de §2 de este
+   documento, la URL de los tres flujos `.github/workflows/{sync,latido,carga_completa}.yml` (la
+   suite exige que la de `sync.yml` empiece por el dominio), las dos habilidades
+   `.claude/skills/{dictamen,precios}/SKILL.md` y las guías de `docs/` que la pegan (el cambio del
+   16-oct-2026 tocó esos sitios: no era «una sola línea»).
+6. Con un dominio propio en el MISMO proyecto, la URL `*.vercel.app` sigue funcionando (Vercel la
+   conserva como alias). Con un proyecto en otra cuenta, como el 16-oct-2026, no: la vieja queda
+   donde estaba.
 
 Lo que sí conviene revisar ese día: si Vercel Password Protection está activa, aplica igual al
 dominio nuevo (es del proyecto, no de la URL); y la meta `robots noindex` de `index.html` sigue

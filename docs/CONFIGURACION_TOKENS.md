@@ -183,7 +183,7 @@ MiExtraccion2025
 decir, después de haber pasado la contraseña de Vercel si está activa):
 
 ```
-https://portafolio-estrategico.vercel.app/api/resumen?perfil=helder&token=MiExtraccion2025
+https://detekta-app.vercel.app/api/resumen?perfil=helder&token=MiExtraccion2025
 ```
 
 - Si responde un texto largo con cifras → **correcto**.
@@ -218,7 +218,7 @@ configúrela**.
 3. Pulsar **Create New App Token** / *Crear nuevo token de aplicación*.
 4. Le pedirá un nombre y una descripción de la aplicación: escriba `Detekta` y
    «Consulta de procesos de contratación pública». La URL puede quedar en blanco o poner
-   `https://portafolio-estrategico.vercel.app`.
+   `https://detekta-app.vercel.app`.
 5. Al guardar aparece el **App Token**: una cadena de letras y números. Ese es el valor.
 
 - **Nombre de la variable:** `SOCRATA_APP_TOKEN`
@@ -230,7 +230,7 @@ configúrela**.
 sola —si el token es rechazado, reintenta sin él y sigue funcionando— pero **avisa**. Se ve así:
 
 ```
-https://portafolio-estrategico.vercel.app/api/sync?modo=auto
+https://detekta-app.vercel.app/api/sync?modo=auto
 ```
 
 Si en la respuesta aparece `"app_token_rechazado"`, el token está mal. **Y entonces es preferible
@@ -284,7 +284,7 @@ Este secreto es el pase que deja atravesar el muro a esas llamadas internas.
    aparece.** Si no aparece, copiar el valor y añadirla a mano con ese nombre exacto.
 
 **¿Cómo sé si tengo Password Protection activa?** Abra
-`https://portafolio-estrategico.vercel.app` en una ventana de incógnito. Si le pide una contraseña
+`https://detekta-app.vercel.app` en una ventana de incógnito. Si le pide una contraseña
 antes de ver nada, está activa.
 
 **Síntoma de que falta:** la extracción histórica avanza un mes y se detiene. Al consultar el estado
@@ -317,9 +317,9 @@ ningún chat.
 
 **Cómo se comprueba que quedó bien:**
 
-1. Pegar en Chrome `https://portafolio-estrategico.vercel.app/api/procesos?op=salud`: tiene que
+1. Pegar en Chrome `https://detekta-app.vercel.app/api/procesos?op=salud`: tiene que
    decir `"sincronizacion_protegida": true`.
-2. Pegar `https://portafolio-estrategico.vercel.app/api/sync?modo=auto` **sin** `&token=`: tiene
+2. Pegar `https://detekta-app.vercel.app/api/sync?modo=auto` **sin** `&token=`: tiene
    que responder `401` (antes respondía `200`).
 3. Al día siguiente, otra vez `op=salud`: `ultima_sincronizacion` tiene que ser de esa mañana. Si
    no lo es, el cron no está pasando la guarda: quite la variable, vuelva a desplegar y avise —la
@@ -393,7 +393,7 @@ entran en despliegues nuevos.
 **Cómo se comprueba que quedó bien.** Pegue en Chrome, con su llave al final:
 
 ```
-https://portafolio-estrategico.vercel.app/api/avisos?enviar=no&token=MiExtraccion2025
+https://detekta-app.vercel.app/api/avisos?enviar=no&token=MiExtraccion2025
 ```
 
 `enviar=no` calcula el aviso y le enseña el texto SIN mandarlo, en `vista_previa`. Si en `correo`
@@ -433,7 +433,7 @@ funciona sin configurar nada. Cómo funciona el circuito completo: `docs/PRECIOS
    que hay encima del cuadro de mensaje (el selector de entornos) → **Add cloud environment** → nombre
    «Detekta · Precios» → **Network access**: **Full** → **Create environment**. Vuelva a la rutina → lápiz →
    bajo las instrucciones, el icono de nube con el nombre del entorno → elija «Detekta · Precios» → guarde.
-   Sin red abierta la sesión no alcanza `portafolio-estrategico.vercel.app` ni las tiendas de materiales
+   Sin red abierta la sesión no alcanza `detekta-app.vercel.app` ni las tiendas de materiales
    (medido el 12-sep-2026: 403 del proxy de egreso) y la solicitud queda «sin atender» a la media hora.
 6. Pegue las dos variables en Vercel (§4) con esos nombres exactos y vuelva a desplegar (§5).
 
@@ -442,7 +442,7 @@ solicitud quedó registrada … y la búsqueda arrancó»; en <https://claude.ai
 con el nombre de la rutina, y después «Buscando… completado x %». Si dice «la búsqueda automática no
 arrancó: …», la pantalla da el motivo en palabras llanas; el detalle técnico (el código de respuesta y
 qué variable revisar) está en la cola, que se ve pegando esta dirección en Chrome:
-`https://portafolio-estrategico.vercel.app/api/apu?op=ia&pendientes=1&token=<SU_TOKEN>` → en cada
+`https://detekta-app.vercel.app/api/apu?op=ia&pendientes=1&token=<SU_TOKEN>` → en cada
 solicitud, `despertada.detalle` («401 … regenérelo» → paso 4; «403 … permission_error» → las rutinas
 están desactivadas para la cuenta; «429 … tope diario» → espere al siguiente periodo o active los
 créditos de uso en <https://claude.ai/settings/usage>). «No respondió a tiempo» es indeterminado: la
@@ -468,7 +468,7 @@ aparece y el dictamen completo se pide como siempre, desde Claude Code con `/dic
 3. **Select a trigger** → **API** → copie la **URL** (termina en `/fire`): es `RUTINA_DICTAMEN_URL`.
    **Generate token** → cópielo en ese momento: es `RUTINA_DICTAMEN_TOKEN` (una contraseña: solo en Vercel).
 4. **Entorno con la red abierta**: elija el mismo entorno «Detekta · Precios» de §3.9 (la sesión tiene que
-   alcanzar `portafolio-estrategico.vercel.app`; con el entorno por defecto responde 403).
+   alcanzar `detekta-app.vercel.app`; con el entorno por defecto responde 403).
 5. Pegue las dos variables en Vercel (§4) y vuelva a desplegar (§5).
 
 **Cómo saber que quedó bien.** Abra un proceso con el pliego cargado → «Dictamen del pliego»: aparece
@@ -477,7 +477,7 @@ pedida a las …»; en <https://claude.ai/code> aparece una sesión nueva con el
 pocos minutos **«Ver si ya está lista»** enseña el dictamen, que termina con «Dictamen escrito en una sesión
 de Claude Code…». Si la caja dice «La lectura completa no arrancó: …», el motivo va en palabras llanas; el
 detalle técnico (el código de respuesta y qué variable revisar) sale en el campo `pedido_sesion.detalle`
-pegando en Chrome `https://portafolio-estrategico.vercel.app/api/pliego?op=dictamen&id_proceso=<ID>&perfil=helder&token=<SU_TOKEN>`
+pegando en Chrome `https://detekta-app.vercel.app/api/pliego?op=dictamen&id_proceso=<ID>&perfil=helder&token=<SU_TOKEN>`
 justo después de pedirla (la marca dura media hora).
 
 **Cuánto gasta.** Cada lectura completa es una sesión de Claude Code: descuenta de la suscripción y cuenta
@@ -529,14 +529,14 @@ Entorno *Production* → **Save** → **Deployments** → **Redeploy** (§5).
 **Cómo se comprueba que quedó bien.** Pegue en Chrome, con su llave al final:
 
 ```
-https://portafolio-estrategico.vercel.app/api/admin?op=respaldo&token=MiExtraccion2025
+https://detekta-app.vercel.app/api/admin?op=respaldo&token=MiExtraccion2025
 ```
 
 La primera vez copia el histórico mes por mes; si no le alcanza el tiempo, dice cuántos meses quedan y
 los copia la noche siguiente (o al volver a abrir la dirección). Después, pruebe la copia:
 
 ```
-https://portafolio-estrategico.vercel.app/api/admin?op=respaldo&prueba=1&token=MiExtraccion2025
+https://detekta-app.vercel.app/api/admin?op=respaldo&prueba=1&token=MiExtraccion2025
 ```
 
 La prueba baja cada archivo, comprueba su huella y cuenta sus filas. «La copia sirve» es la única
@@ -601,7 +601,7 @@ Chrome, en una pestaña donde ya haya pasado la contraseña del sitio.
 ### Prueba 1 · ¿El sitio está arriba?
 
 ```
-https://portafolio-estrategico.vercel.app
+https://detekta-app.vercel.app
 ```
 
 Debe verse la portada de Detekta. Si sale un error de Vercel, el problema es el despliegue, no los
@@ -610,7 +610,7 @@ tokens: mire en *Deployments* si el último salió en rojo.
 ### Prueba 2 · ¿La base de datos está conectada?
 
 ```
-https://portafolio-estrategico.vercel.app/api/sync?modo=auto
+https://detekta-app.vercel.app/api/sync?modo=auto
 ```
 
 | Lo que responde | Qué significa |
@@ -624,7 +624,7 @@ https://portafolio-estrategico.vercel.app/api/sync?modo=auto
 ### Prueba 3 · ¿La llave cuadra?
 
 ```
-https://portafolio-estrategico.vercel.app/api/resumen?perfil=helder&token=MiExtraccion2025
+https://detekta-app.vercel.app/api/resumen?perfil=helder&token=MiExtraccion2025
 ```
 
 | Lo que responde | Qué significa | Arreglo |
@@ -662,7 +662,7 @@ Abrir el sitio y entrar con la clave `231105`. Debe verse:
 **Para diagnosticar la extracción sin terminal**, esta URL solo lee y no toca nada:
 
 ```
-https://portafolio-estrategico.vercel.app/api/sync/historico?token=MiExtraccion2025&estado=true
+https://detekta-app.vercel.app/api/sync/historico?token=MiExtraccion2025&estado=true
 ```
 
 Responde si hay una tanda corriendo, por qué mes va y qué hacer a continuación. **Léala antes de
@@ -679,7 +679,7 @@ Una sola vez, cuando las tres variables obligatorias ya estén bien y el sitio r
 reglas de ingesta):
 
 ```
-https://portafolio-estrategico.vercel.app/api/sync?modo=full&token=MiExtraccion2025
+https://detekta-app.vercel.app/api/sync?modo=full&token=MiExtraccion2025
 ```
 
 (El `&token=` es la llave de la aplicación: hace falta si `CRON_SECRET` está puesto —§3.6— y no
@@ -690,7 +690,7 @@ hace lo mismo con un botón, y encadena las tandas siguientes solo.
 de ganar; sin esto todo sale en ⚪ «sin datos históricos»):
 
 ```
-https://portafolio-estrategico.vercel.app/api/sync/historico?desde=2024-01&hasta=2025-12&token=MiExtraccion2025
+https://detekta-app.vercel.app/api/sync/historico?desde=2024-01&hasta=2025-12&token=MiExtraccion2025
 ```
 
 Tarda. Va respondiendo `done:false` mientras quede trabajo; se vuelve a pegar la misma URL y

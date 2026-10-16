@@ -11322,7 +11322,18 @@ async function main() {
     const dh = LT.decidirLatido({ meta: fresco, progresoHist: { tipo: "historico", terminado: false, desde: "2025-01", hasta: "2025-03" }, ahora: noche });
     assert.deepStrictEqual([dh.accion, dh.desde, dh.hasta], ["historico", "2025-01", "2025-03"]);
     const viejo = { last_sync: new Date(mediodia - LT.INTERVALO_MS - 60e3).toISOString() };
-    assert.strictEqual(LT.decidirLatido({ meta: viejo, ahora: mediodia }).accion, "sync", "en horario, pasados 30 min, toca actualizar");
+    assert.strictEqual(LT.decidirLatido({ meta: viejo, ahora: mediodia }).accion, "sync", "en horario, si el dato pasa de INTERVALO_MS (no llegó un cron), toca actualizar");
+    /* LA PAUSA DEL 30-SEP (16-oct-2026): el latido pedía una actualización cada 30 min (hasta 32 al día) y
+       Vercel Hobby pausó el proyecto por CPU activa. Ahora es red de seguridad: con el dato de 2 h o de 12 h
+       (entre los dos crons del dueño) no hace nada; el umbral supera el hueco mayor entre crons. */
+    assert.strictEqual(LT.decidirLatido({ meta: { last_sync: new Date(mediodia - 2 * 3600e3).toISOString() }, ahora: mediodia }).accion, "nada", "con el dato de 2 h el latido no actualiza: ya no hay actualización cada 30 min");
+    assert.strictEqual(LT.decidirLatido({ meta: { last_sync: new Date(mediodia - 12 * 3600e3).toISOString() }, ahora: mediodia }).accion, "nada", "con el dato de 12 h (entre los dos crons) el latido no actualiza");
+    assert.ok(LT.INTERVALO_MS > (12 * 60 + 10) * 60e3, "el latido actúa solo pasado el hueco mayor entre los crons de 7:50 y 20:00");
+    {
+      const SF = require("../lib/handlers/procesos/sync.js");
+      assert.ok(SF.FRESCO_MS < (11 * 60 + 50 - 59) * 60e3, "FRESCO_MS es menor que el hueco más corto entre los dos crons con el desfase del plan gratuito: si no, el cron encontraría el dato fresco y no actualizaría");
+      assert.ok(SF.FRESCO_MS >= 3600e3, "FRESCO_MS no vuelve a minutos: cada visita a la lista dispararía un delta (la causa de la pausa del 30-sep)");
+    }
     assert.strictEqual(LT.decidirLatido({ meta: { last_sync: new Date(noche - 5 * 3600e3).toISOString() }, ahora: noche }).accion, "nada", "de noche no hay actualización programada");
     assert.strictEqual(LT.decidirLatido({ meta: {}, ahora: noche }).accion, "sync", "sin fecha legible es «no sé», y ante «no sé» se sincroniza");
     const falloReciente = { ...viejo, ultimo_error: { ts: new Date(mediodia - 5 * 60e3).toISOString() } };
@@ -11525,7 +11536,27 @@ async function main() {
       const vjL = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "vercel.json"), "utf8"));
       assert.ok(vjL.rewrites.some((r) => r.source === "/api/latido" && r.destination === "/api/procesos?op=latido"));
       const ymlL = fs.readFileSync(path.join(__dirname, "..", ".github", "workflows", "latido.yml"), "utf8");
-      assert.ok(/cron: '\*\/10 \* \* \* \*'/.test(ymlL) && /\/api\/latido/.test(ymlL) && /Bearer \$\{CRON_SECRET\}/.test(ymlL));
+      assert.ok(/\/api\/latido/.test(ymlL) && /Bearer \$\{CRON_SECRET\}/.test(ymlL));
+      /* EL RELOJ NO VUELVE A CADA 10 MIN (16-oct-2026): Vercel Hobby pausó el proyecto el 30-sep por CPU
+         activa y cada latido despierta una función. Minuto fijo y un paso de horas: como mucho 12 al día. */
+      const cronL = (/cron: '([^']+)'/.exec(ymlL) || [, ""])[1];
+      const pasoL = /^\d{1,2} (\*|\*\/\d{1,2}) \* \* \*$/.exec(cronL);
+      assert.ok(pasoL, `el latido de GitHub va con minuto fijo, como mucho una vez por hora (hoy «${cronL}»): cada llamada despierta una función y gasta CPU del plan`);
+      /* LO A MEDIAS Y LO FALLIDO NO ESTÁN «AL DÍA» (16-oct-2026, revisión adversaria): con FRESCO_MS
+         de 6 h un ciclo de delta cortado o un fallo posterior quedaban varados. */
+      {
+        const SFx = require("../lib/handlers/procesos/sync.js");
+        const ahoraX = Date.now();
+        const baseX = { last_full: new Date(ahoraX - 86400e3).toISOString(), ano: new Date(ahoraX - 5 * 3600e3).getUTCFullYear(), last_sync: new Date(ahoraX - 3600e3).toISOString() };
+        assert.strictEqual(SFx.decidirAuto({ meta: baseX, ahora: ahoraX }), "al_dia", "control: dato de 1 h sin nada pendiente está al día");
+        assert.strictEqual(SFx.decidirAuto({ meta: { ...baseX, delta_ciclo: { desde: "x" } }, ahora: ahoraX }), "delta", "un ciclo de delta a medias se continúa aunque el dato tenga menos de FRESCO_MS");
+        assert.strictEqual(SFx.decidirAuto({ meta: { ...baseX, ultimo_error: { ts: new Date(ahoraX - 600e3).toISOString() } }, ahora: ahoraX }), "delta", "un fallo posterior a la última actualización no está al día");
+        assert.strictEqual(SFx.decidirAuto({ meta: { ...baseX, ultimo_error: { ts: new Date(ahoraX - 7200e3).toISOString() } }, ahora: ahoraX }), "al_dia", "un fallo ANTERIOR a la última actualización ya se resolvió");
+        const LTx = require("../lib/latido.js");
+        const metaFallo = { last_sync: new Date(ahoraX - 3600e3).toISOString(), ultimo_error: { ts: new Date(ahoraX - 45 * 60e3).toISOString() } };
+        assert.strictEqual(LTx.decidirLatido({ meta: metaFallo, ahora: ahoraX }).accion, "sync", "un fallo de hace más de 30 min sin actualización posterior lo reintenta el latido");
+        assert.strictEqual(LTx.decidirLatido({ meta: { ...metaFallo, ultimo_error: { ts: new Date(ahoraX - 10 * 60e3).toISOString() } }, ahora: ahoraX }).accion, "nada", "pero no antes de 30 min");
+      }
       console.log(`· latido que retoma lo cortado: decisión pura en ${10} casos (candado, fallo reciente, full, delta, histórico, horario, «no sé»), 1 comando en reposo, histórico continuado con su rango sin reiniciar el cursor, carga completa retomada`);
     } finally {
       if (antesCron === undefined) delete process.env.CRON_SECRET; else process.env.CRON_SECRET = antesCron;
@@ -31239,7 +31270,7 @@ async function main() {
         assert.ok(admJs.includes(debe), `app.js sin ${debe} (el panel o la carga de RUP no están cableados)`);
       }
       // el refresco automático es el mismo TTL de la caché del endpoint
-      assert.ok(/REFRESCO_MS = 300000/.test(admJs), "el refresco automático debe ser de 5 minutos");
+      assert.ok(/REFRESCO_MS = 1800000;/.test(admJs), "el refresco automático del tablero es cada 30 min (16-oct-2026): cada 5 min recalculaba el corpus entero con la pestaña abierta y gastaba la CPU del plan");
       // …y NO se dispara con la pestaña oculta
       assert.ok(/document\.visibilityState === "visible"\) cargarDashboard\(\)/.test(admJs),
         "el refresco automático no puede correr con la pestaña oculta");
@@ -31644,7 +31675,7 @@ async function main() {
       const { MARCA } = Glosario;
       assert.strictEqual(MARCA.nombre, "Detekta");
       assert.ok(MARCA.nombreLargo.startsWith(MARCA.nombre + " —"), "el nombre largo empieza por el nombre");
-      assert.strictEqual(MARCA.dominio, "portafolio-estrategico.vercel.app", "la URL de producción NO cambia con la marca");
+      assert.strictEqual(MARCA.dominio, "detekta-app.vercel.app", "la URL de producción es la de la cuenta nueva (16-oct-2026): cambia solo con docs/marca.md §4");
       assert.ok(Object.isFrozen(MARCA), "MARCA es de solo lectura: nadie la reescribe en caliente");
       assert.strictEqual(Glosario.titulo(), `${MARCA.nombre} · ${MARCA.lema}`);
       assert.ok(Glosario.descripcion().startsWith(MARCA.nombreLargo));
@@ -39376,8 +39407,8 @@ async function main() {
           const exRef = (n) => { const i = appRef.indexOf(`function ${n}(`); assert.ok(i > 0, `app.js sin ${n}`); return appRef.slice(i, appRef.indexOf("\n  }", i) + 4); };
           const frase = new Function(`${exRef("fraseRefresco")}; return fraseRefresco;`)();
           const t0 = Date.parse("2026-09-05T10:00:00Z");
-          assert.strictEqual(frase(false, t0, t0 + 4 * 60000), "Actualizado hace 4 min · se actualiza solo cada 5 min");
-          assert.strictEqual(frase(false, t0, t0 + 30000), "Actualizado hace un momento · se actualiza solo cada 5 min",
+          assert.strictEqual(frase(false, t0, t0 + 4 * 60000), "Actualizado hace 4 min · se actualiza solo cada 30 min");
+          assert.strictEqual(frase(false, t0, t0 + 30000), "Actualizado hace un momento · se actualiza solo cada 30 min",
             "medio minuto NO se redondea a «hace 0 min»");
           assert.ok(/detenida/.test(frase(true, t0, t0 + 60000)), `con el refresco parado, la línea lo dice: ${frase(true, t0, t0 + 60000)}`);
           assert.ok(!/\d+:\d\d/.test(frase(false, t0, t0 + 60000)), "se acabó la cuenta atrás mm:ss que reescribía la pantalla cada segundo");
@@ -40484,7 +40515,9 @@ async function main() {
         await redis.set(CLAVES.meta, JSON.stringify({ ...metaFull, last_full: new Date(AHORA).toISOString(), last_sync: new Date(AHORA).toISOString() }));
         // SECOP actualiza el proceso (adenda) → el delta lo vuelve a leer
         consultas.length = 0;
-        AHORA += 10 * 60e3;
+        /* la segunda visita llega pasado FRESCO_MS (16-oct-2026: ya no son 5 min sino 6 h): antes
+           bastaban 10 min para que el modo auto hiciera un delta, y es el delta lo que se prueba aquí */
+        AHORA += sync.FRESCO_MS + 10 * 60e3;
         socrata.setDataset([...datasetAntes, { ...pDic, ":id": "row-cambio-ano-2", ":updated_at": `${ANO_SIG}-01-05T15:05:00.000Z` }]);
         const r2 = await invocar(sync, "/api/sync?modo=auto&chain=0");
         assert.strictEqual(r2.cuerpo.ok, true, `el delta de enero falló: ${JSON.stringify(r2.cuerpo).slice(0, 200)}`);
@@ -46864,6 +46897,27 @@ async function main() {
       medido39.alDia = alDia39.comandos;
       assert.ok(alDia39.comandos <= 30, `«al día» gastó ${alDia39.comandos} comandos de Redis: el índice de baja volvió a correr`);
 
+      /* LA PULSACIÓN NO ESPERA A FRESCO_MS (16-oct-2026). Con el dato de hace 10 min, el modo auto de
+         los crons y de la lista no relee SECOP (FRESCO_MS ya no es de 5 min); quien pulsa «Actualizar
+         datos» manda `forzar=1` y sí actualiza. Sin esto, el botón respondería «al día» y no traería
+         lo publicado en esas horas. Y el navegador la manda: la cerradura mira el bucle de app.js. */
+      await corpusAlDia39(new Date(Date.now() - 10 * 60e3).toISOString());
+      const sinForzar39 = await invocarSync39("/api/procesos?op=sync&modo=auto&chain=0&presupuesto=20000");
+      assert.strictEqual(sinForzar39.cuerpo.alDia, true, `con el dato de 10 min el modo auto sin pulsación no relee SECOP: ${JSON.stringify(sinForzar39.cuerpo).slice(0, 200)}`);
+      await corpusAlDia39(new Date(Date.now() - 10 * 60e3).toISOString());
+      const forzado39 = await invocarSync39("/api/procesos?op=sync&modo=auto&chain=0&presupuesto=20000&forzar=1");
+      assert.strictEqual(forzado39.status, 200, JSON.stringify(forzado39.cuerpo).slice(0, 200));
+      assert.notStrictEqual(forzado39.cuerpo.alDia, true, `con forzar=1 la pulsación actualiza aunque el dato sea de hace 10 min: ${JSON.stringify(forzado39.cuerpo).slice(0, 200)}`);
+      assert.ok(forzado39.cuerpo.delta, `con forzar=1 corre un delta: ${JSON.stringify(forzado39.cuerpo).slice(0, 200)}`);
+      {
+        const appF39 = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+        const i = appF39.indexOf("async function llamarConReintentos(");
+        const cuerpoF = appF39.slice(i, appF39.indexOf("\n  }\n", i));
+        assert.ok(i > 0 && /op=sync&modo=\$\{modo\}[^`]*&forzar=1/.test(cuerpoF), "el bucle de «Actualizar datos» manda forzar=1: sin él la pulsación respondería «al día» con el dato de menos de 6 h");
+        const fueraDelBucle = appF39.slice(0, i) + appF39.slice(i + cuerpoF.length);
+        assert.ok(!/op=sync[^"`']*forzar=1/.test(fueraDelBucle), "solo la pulsación fuerza: el refresco de la lista y la primera visita siguen respetando FRESCO_MS");
+      }
+
       await corpusAlDia39(new Date(Date.now() - 3600e3).toISOString());
       const delta39 = await invocarSync39("/api/procesos?op=sync&modo=delta&chain=0&presupuesto=20000");
       assert.strictEqual(delta39.status, 200, JSON.stringify(delta39.cuerpo).slice(0, 200));
@@ -46906,7 +46960,8 @@ async function main() {
         "un `last_sync` ILEGIBLE es «no sé», no «al día»: si no, el corpus se congela sin que nadie lo vea");
       assert.strictEqual(sync.decidirAuto({ meta: { ...base39, last_sync: null }, progreso: null, ahora: t39 }), "delta", "`null` es ausencia, no una fecha");
       assert.strictEqual(sync.decidirAuto({ meta: { ...base39, last_sync: new Date(t39 - 1000).toISOString() }, progreso: null, ahora: t39 }), "al_dia");
-      assert.strictEqual(sync.decidirAuto({ meta: { ...base39, last_sync: new Date(t39 - 10 * 60e3).toISOString() }, progreso: null, ahora: t39 }), "delta");
+      assert.strictEqual(sync.decidirAuto({ meta: { ...base39, last_sync: new Date(t39 - sync.FRESCO_MS - 10 * 60e3).toISOString() }, progreso: null, ahora: t39 }), "delta");
+      assert.strictEqual(sync.decidirAuto({ meta: { ...base39, last_sync: new Date(t39 - 10 * 60e3).toISOString() }, progreso: null, ahora: t39 }), "al_dia", "con el dato de 10 min el modo auto no relee SECOP (16-oct-2026: la causa de la pausa por CPU)");
       /* EL CENSO DE LA FECHA ILEGIBLE, no solo el caso reproducido: si la guarda valía para
          `last_sync`, hay que mirar a su gemela `last_full` — y las dos a la vez. */
       assert.strictEqual(sync.decidirAuto({ meta: { ano: 2026, last_full: "ayer", last_sync: new Date(t39 - 1000).toISOString() }, progreso: null, ahora: t39 }), "full",
@@ -51827,13 +51882,22 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
          `git clone --depth 1` —lo que hace actions/checkout sin fetch-depth— el commit
          frontera se diffea contra el árbol vacío y estado.js daba «+8964 líneas» del
          archivo entero (6-sep-2026, B6b-H1). Se EJECUTA estado.js dentro de un clon
-         superficial real del árbol, con el estado.js de ESTA copia de trabajo. */
+         superficial real del árbol, con el estado.js de ESTA copia de trabajo.
+         El commit frontera se fabrica con fecha de HOY (16-oct-2026): clonar el HEAD
+         tal cual dejaba la prueba atada al reloj. Con el repositorio 15 días sin
+         commits, la frontera caía FUERA de la ventana, estado.js decía «sin cambios»
+         (cierto) y la prueba se ponía roja; peor, en ese caso no ejercía la guarda
+         que vigila. Un commit vacío sobre el clon y un segundo clon --depth 1 dejan
+         la frontera dentro de la ventana siempre. */
       {
         const os = require("os");
-        let tmp = null;
+        let tmp = null, base = null;
         try {
+          base = fs.mkdtempSync(path.join(os.tmpdir(), "detekta-base-"));
           tmp = fs.mkdtempSync(path.join(os.tmpdir(), "detekta-superficial-"));
-          execFileSync("git", ["clone", "--quiet", "--depth", "1", "file://" + raizM, tmp], { stdio: ["ignore", "ignore", "ignore"] });
+          execFileSync("git", ["clone", "--quiet", "--depth", "1", "file://" + raizM, base], { stdio: ["ignore", "ignore", "ignore"] });
+          execFileSync("git", ["-C", base, "-c", "user.name=suite", "-c", "user.email=suite@local", "-c", "commit.gpgsign=false", "commit", "--quiet", "--allow-empty", "--no-verify", "-m", "frontera de hoy"], { stdio: ["ignore", "ignore", "ignore"] });
+          execFileSync("git", ["clone", "--quiet", "--depth", "1", "file://" + base, tmp], { stdio: ["ignore", "ignore", "ignore"] });
           fs.copyFileSync(path.join(__dirname, "estado.js"), path.join(tmp, "tests", "estado.js"));
           const salidaSuperficial = execFileSync(process.execPath, [path.join(tmp, "tests", "estado.js")], { encoding: "utf8" });
           const linea = (salidaSuperficial.split("\n").find((l) => l.includes("ritmo de 7 días")) || "").trim();
@@ -51845,6 +51909,7 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
           console.log("  · (el clon superficial de la comprobación del ritmo no se pudo hacer: " + String(e.message).slice(0, 60) + ")");
         } finally {
           if (tmp) fs.rmSync(tmp, { recursive: true, force: true });
+          if (base) fs.rmSync(base, { recursive: true, force: true });
         }
       }
       // (f) «En una línea:» desde la sección que abrió la convención
