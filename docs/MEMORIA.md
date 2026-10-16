@@ -18682,6 +18682,8 @@ En una línea: el 30-sep Vercel Hobby pausó el proyecto por «Fluid Active CPU�
 
 ### Las pruebas con fecha: la compactación caía el 31-oct y la lista se queda sin procesos con cierre en noviembre (16-oct-2026)
 
+> SUPERADA el 16-oct-2026 por «La fila de prueba se busca en todas las páginas del listado, y enero espera (16-oct-2026)» — solo su PENDIENTE: la causa quedó medida y corregida.
+
 En una línea: medido con el reloj adelantado, la suite caía el 31-oct por una quinta prueba con cierres fijos (la de la historia de un proceso al compactar el mes), que ya usa cierres relativos; la cuarta, la de «hace falta un proceso del listado…», cae entre el 1 y el 5-nov y sigue abierta, porque su causa es otra: no es una fecha fija.
 
 - **Cómo se midió.** Un precargador que adelanta `Date` (solo en el espacio de la sesión, no en el repositorio) y la suite entera, una vuelta, a +0, +15, +20, +25, +30, +35 y +40 días desde el 16-oct. Verde hasta +15 (31-oct); rojo desde +20 (5-nov).
@@ -18689,3 +18691,14 @@ En una línea: medido con el reloj adelantado, la suite caía el 31-oct por una 
 - **La que sigue abierta.** En noviembre, la primera página de `/api/oportunidades` (100 filas, orden por atractividad) trae 4 filas con cierre, frente a 10 a +10 días; las filas del mes nuevo suben al tope. [Inferencia] El orden y el generador de datos simulados se cruzan con el cambio de mes; falta confirmarlo. El mismo supuesto, «la primera página trae una fila con cierre», está en seis sitios de `tests/e2e.js` (los `.find((f) => f.fecha_cierre…)`): un arreglo que solo cubra el primero deja hermanos vivos.
 
 > PENDIENTE · antes del 1-nov-2026: la prueba «hace falta un proceso del listado con cierre, presupuesto y sin id_del_portafolio» cae desde el 1 al 5-nov (medido el 16-oct con el reloj adelantado). Hallar por qué la primera página del listado simulado se queda sin filas con cierre al cambiar de mes y corregir los seis `.find` que dependen de ella, no solo el primero.
+
+### La fila de prueba se busca en todas las páginas del listado, y enero espera (16-oct-2026)
+
+En una línea: la prueba que caía del 1 al 5-nov no era una fecha fija sino la primera página del listado simulado, que el calendario va llenando; las seis búsquedas que la miraban sola ahora recorren todas las páginas (`filaDelListado` en `tests/e2e.js`), y queda otra prueba que caerá el 1-ene-2027.
+
+- **La causa, medida.** `extrasDelMes` añade 9 filas EXTRA sin cierre por cada mes transcurrido del año, y el orden por atractividad las pone arriba. En octubre la primera página (100 filas, el tope de `por_pagina`) llevaba 90 EXTRA y 10 procesos con cierre sin llave; en noviembre, 99 EXTRA y 8 de manifestación urgente con llave, y ningún proceso con cierre sin llave. No es un defecto del producto.
+- **Por qué recorrer páginas y no tocar el generador.** Quitar filas EXTRA mueve los conteos de muchas otras aserciones. Recorrer las páginas en el orden servido conserva lo que el comentario del 15-sep exige: las dos búsquedas con el mismo predicado (guía y documentos) siguen eligiendo la misma fila.
+- **Los seis gemelos.** Se cambiaron todos, no solo el que caía: con 12 meses (diciembre) habría 108 EXTRA y también caerían los que solo piden «una fila con cierre».
+- **Medido** con el reloj adelantado: verde a +0, +20 (5-nov), +45 (30-nov), +60, +70 y +76 (31-dic) días desde el 16-oct. La versión anterior de la prueba caía a +20.
+
+> PENDIENTE · antes del 1-ene-2027: la prueba «la carga completa tiene que quedar a medias para la prueba» cae con el reloj en enero (medido a +80 días desde el 16-oct, con el árbol de main y con este cambio por igual; verde a +76): en enero el año tiene un solo mes y la carga completa termina de una vez. Reproducir con el precargador que adelanta `Date` y corregir donde el montaje supone varios meses.
