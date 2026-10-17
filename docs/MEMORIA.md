@@ -18105,6 +18105,8 @@ En una línea: `/api/respaldo` (cron diario 07:15 UTC → `op=respaldo` de `api/
 
 ### El latido: un reloj de fuera que retoma lo que quedó a medias, sin decidir nada nuevo (27-sep-2026)
 
+> SUPERADA el 17-oct-2026 por «Pedir otro rango ya no vuelve a empezar el histórico: el servidor responde 409 y el botón continúa el rango guardado (17-oct-2026)» — solo la frase «`extraerHistorico` reinicia el cursor si el rango pedido es otro»: ahora responde 409 si no viene `reiniciar`. Continuar con el rango exacto del cursor sigue siendo la regla.
+
 En una línea: `op=latido` (`/api/latido`) lee en un MGET la meta, los dos cursores y los dos candados y, si una carga completa, una actualización o la extracción del histórico quedó a medias —o la lista tiene más de 30 min en horario de 6:00 a 22:00 de Colombia—, lanza UN tramo del handler de siempre (`op=sync&modo=auto` u `op=historico` con el rango de su cursor, `chain=0`); lo llama `.github/workflows/latido.yml` cada 10 min porque en Hobby un cron de Vercel más que diario tumba el despliegue.
 
 > PENDIENTE · con Vercel Pro confirmado, sustituir el flujo de GitHub por `{ "path": "/api/latido", "schedule": "* * * * *" }` en `vercel.json` y relajar a la vez la cerradura de la suite que exige crons diarios: GitHub retrasa los flujos programados (el de las 20:30 UTC llegó 2 h 30 a 2 h 53 tarde en 6 de 6), así que este reloj retoma una carga cortada en horas, no en minutos. Y medir en «Actions» durante una semana cuántos latidos llegan de verdad.
@@ -18973,3 +18975,45 @@ ningún disparo. (e) «Volver a leer» (refrescar) también cuenta: también gas
 Medido: con la condición del tope apagada la suite falla con «con 3 lecturas sin respuesta no se gasta otra: 1 disparos»,
 y sin el borrado al guardar el dictamen falla la cuenta. La pantalla no cambió: `public/pliego.js` (`pedirLecturaCompleta`)
 ya escribe `error` y `que_hacer` en `#dictamen-estado`; leído, no ejecutado en navegador.
+
+### Pedir otro rango ya no vuelve a empezar el histórico: el servidor responde 409 y el botón continúa el rango guardado (17-oct-2026)
+
+En una línea: el 17-oct a las 13:50 UTC una llamada sin fechas (el rango por omisión, 2024-01…2025-12) volvió a bajar desde enero de 2024 una extracción del histórico que la del 26-sep (2024-01…2026-09, 301.779 filas) ya había dejado completa, porque `extraerHistorico` creaba un cursor nuevo siempre que el rango pedido era otro; ahora reemplazar lo guardado exige `reiniciar`, el servidor responde 409 con qué hay y cómo seguir, el estado da el rango exacto y el botón «Carga completa» continúa ese rango en vez de imponer el suyo.
+
+> PENDIENTE · decidir con el dueño la puerta de producción. `docs/CONFIGURACION_TOKENS.md` §9 dice que la llave puede ser pública porque «la puerta es el muro de Vercel» (Password Protection). Pero el 17-oct, desde una sesión de Claude, `curl` con solo la cabecera de la llave a `https://detekta-app.vercel.app/api/sync/historico?estado=true` respondió 200, sin muro (cuenta nueva del 16-oct). Mientras tanto, cualquiera con la llave puede pedir `&reiniciar=1` o `/api/sync?modo=full`, que siguen empezando de cero. Opciones: volver a poner el muro, o exigir `CRON_SECRET` para reiniciar y para `modo=full` (el botón de GitHub ya lo tiene).
+
+**Lo medido.** `?estado=true` en producción a las 21:05 UTC: extracción `2024-01…2025-12`, `15/24 meses`, `iniciada` 13:50:48Z; última completa `2024-01…2026-09` del 26-sep. Lo vio el latido lanzado a mano desde la app del celular («la extracción del histórico quedó a medias»).
+- **Nadie sabe quién la lanzó.** El dueño dice que no fue él. Ningún llamador del código pide un rango nuevo sin `reiniciar`: el latido y la cadena continúan el del cursor, el refresco mensual pediría hasta el mes en curso y no tocaba hasta el 26-oct, y la pantalla y la compactación solo reconstruyen. Las dos sesiones de Claude abiertas no tuvieron actividad entre las 13:00 y las 14:30 UTC (leídos sus registros), y las rutinas de ese día corrieron a otras horas. El plan gratuito de Vercel guarda una hora de registros.
+- **[Inferencia]** Alguien con la llave, que es pública por decisión, llamó una URL sin fechas o la de la guía (`docs/CONFIGURACION_TOKENS.md` §8, con ese mismo rango). La propia respuesta del estado mandaba a eso: «Llame sin parámetros de diagnóstico» y «vuelva a llamar esta URL sin ?estado».
+
+**Lo que cambió.**
+- `extraerHistorico`: con un cursor legible de tipo `historico` y otro rango, sin `reiniciar`, devuelve `otroRango` sin tocar nada. El handler responde 409 con `error`, `que_hacer`, `guardada`, `pedida`, `como_continuar` (solo a medias) y `como_reemplazar`, y NO se re-invoca: con `done: false` la cadena se volvería a llamar con el mismo rango.
+- `?estado=true` da `extraccion.desde` y `extraccion.hasta` por separado, y `siguiente_paso` nombra el rango exacto: continuar, «terminó de bajar pero los índices quedaron a medias» (la regla `DERIVADOS` del latido, llamada y no copiada), «está terminada», «ilegible» o, sin cursor, que se pida un rango.
+- `carga_completa.yml` (trabajo `historico`): lee el estado y continúa su rango; sin cursor, de 2024-01 al mes en curso de Colombia, como el refresco mensual; sin estado (no 200) se detiene sin pedir nada; un 409 se detiene sin reintentar.
+- `docs/CONFIGURACION_TOKENS.md` §8: los dos disparos van con el botón de GitHub; ya no da las URL con `modo=full` y `hasta=2025-12`. Los documentos fechados no se reescribieron: usan la dirección vieja, que hoy responde 404.
+
+**Lo que no hay que deshacer.**
+- (a) **La cerradura vive en `extraerHistorico`, no en cada llamador**: así vale para la URL pegada, el robot, el botón, la cadena y las pruebas que la ejecutan directo. Una lista de llamadores con guarda propia deja huecos.
+- (b) **Reconstruir índices sin fechas sigue funcionando**: `soloDerivados` no llama a `extraerHistorico`.
+- (c) **El refresco mensual manda `reiniciar`.** Si alguien se lo quita, el refresco responde 409 y deja de refrescar en silencio.
+- (d) **Un avance guardado que no se puede leer es «no sé»**: 409 sin `reiniciar`, y el estado dice `ilegible` en vez de «no hay ninguna» (antes `leerJSON` lo volvía `null` y la llamada lo pisaba). Un cursor legible sin `desde`/`hasta` sigue reiniciándose como antes: no hay rango que proteger, y el estado lo dice.
+- (e) **El botón no pide un rango a ciegas**: sin estado, con 401 (lo dice como llave equivocada) o con una página en vez de datos, se detiene. Inventar el rango por omisión es justo el defecto; por eso no hay `|| true` en la lectura con `jq`.
+- (f) **El mes en curso del botón se calcula como `decidirRefrescoHistorico`** (`date -u -d '-5 hours'`): con `TZ=America/Bogota`, sin la base de zonas horarias caía mudo a UTC.
+
+**Lo que tumbó la revisión adversaria** (un agente que no escribió el cambio, con reproducción): (1) con la bajada terminada y los índices a medias, el estado decía «no hace falta llamar» y ofrecía `reiniciar=1` (horas de bajada) mientras el latido sí los retomaba; (2) las pruebas dejaban vivos dos mutantes: la cerradura comparando solo `hasta` y el botón con `DESDE=2024-01` fijo, porque los casos solo cambiaban `hasta` y el `desde` guardado era el de siempre; (3) con la llave equivocada, el botón decía «no se pudo leer el estado» sin nombrar la llave; (4) un estado que llega como página hacía caer `jq` con un error críptico; (5) el avance ilegible, de (d); (6) §8 prometía que el botón recarga el año, y con `modo=auto` lo pone al día: recargar desde enero es el botón de la pantalla «Carga completa (reinicia desde enero)». Señalado y no cambiado: `lib/handlers/admin/cobertura.js` y `lib/columnas_historicas.js` aún sugieren `desde=2024-01&hasta=2025-12`. Solo salen sin corpus, y con cursor guardado ahora responden 409.
+
+**La extracción de hoy se deja terminar.** El latido la sigue con su mismo rango y la cerradura no la toca. El índice de competencia, el de baja y las equivalencias leen todos los meses guardados con SCAN (`patronChunksHist`), no el rango del cursor, así que 2026 sigue contando. Pararla exigiría `reset`, que borra también `metaHistorico` y con él el refresco mensual (`decidirRefrescoHistorico` sin `metaHist` no dispara).
+
+**Verificado.** Dos bloques de `tests/e2e.js` tras «LO QUE LA CADENA YA CONSTRUYÓ».
+- El primero EJECUTA el handler real con el cursor terminado de la iteración, con uno a medias, con uno ilegible y con los índices a medias: 409, cursor, meta y corpus intactos, cero peticiones a SECOP, sin re-llamada, el estado de cada caso y la reconstrucción sin fechas.
+- El segundo EJECUTA con `bash -e` el paso del flujo, con un `curl` simulado y el `jq` real: rango guardado, sin cursor, sin estado, llave equivocada, página en vez de datos y 409.
+- Quince mutaciones, las quince mueren:
+  - la cerradura quitada, o mirando solo `hasta`;
+  - el 409 quitado del handler («200 !== 409»);
+  - la guarda del ilegible quitada;
+  - el estado sin `desde`/`hasta`, sin «ilegible» o sin los índices a medias;
+  - los dos `siguiente_paso` viejos;
+  - el botón con el rango fijo de antes, o con `DESDE=2024-01`;
+  - el botón que sigue sin estado, que no nombra la llave o que no comprueba que el estado es JSON;
+  - el botón que reintenta el 409: se cuelga en los `sleep 30` y la prueba lo corta a los 20 s.
+- La prueba del flujo pide `bash` y `jq` en quien corre la suite (los dos están en el corredor de GitHub): sin ellos sale en rojo, no se salta.

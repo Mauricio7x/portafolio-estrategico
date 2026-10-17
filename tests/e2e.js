@@ -16885,6 +16885,175 @@ async function main() {
           `una reconstrucción pedida a mano se hace, memoria o no: ${JSON.stringify(aMano.cuerpo.indice).slice(0, 160)}`);
       }
 
+      /* OTRO RANGO NO REEMPLAZA LO GUARDADO SI NADIE LO PIDE (17-oct-2026). En producción, una
+         llamada sin fechas (el rango por omisión) volvió a bajar desde el primer mes una extracción
+         completa de otro rango, y nadie sabe quién la hizo. Se EJECUTA el handler real con el cursor
+         terminado del paso anterior y con uno a medias: pedir otro rango sin `reiniciar` responde 409,
+         no toca el cursor ni el corpus, no pide nada a SECOP y no se vuelve a llamar sola; el estado
+         dice el rango exacto; y reconstruir índices sin fechas no es una extracción y no se frena. */
+      {
+        const otroRango = `desde=${ANOS_HIST[0]}-01&hasta=${ANOS_HIST[0]}-06`;
+        const crudoAntes = await redis.get(CLAVES.progresoHistorico);
+        const metaAntes = await redis.get(CLAVES.metaHistorico);
+        const cursorAntes = JSON.parse(crudoAntes);
+        assert.ok(cursorAntes && cursorAntes.terminado === true && cursorAntes.desde && cursorAntes.hasta,
+          `la prueba necesita la extracción terminada del paso anterior: ${String(crudoAntes).slice(0, 160)}`);
+        const chunksAntes = (await redis.scan(CLAVES.patronChunksHist)).length;
+        const fetchReal = global.fetch, reLlamadas = [];
+        global.fetch = (u, ...resto) => {
+          if (String(u).includes("op=historico")) { reLlamadas.push(String(u)); return Promise.resolve(new Response("{}")); }
+          return fetchReal(u, ...resto);
+        };
+        try {
+          const peticionesAntes = socrata.peticiones();
+          // sin chain=0 a propósito: un 409 tampoco puede volver a llamarse solo
+          const t = await invocar(historico, `/api/sync/historico?${otroRango}`, TOKEN);
+          assert.strictEqual(t.status, 409, `otro rango sobre una extracción terminada no puede empezar otra: ${JSON.stringify(t.cuerpo).slice(0, 240)}`);
+          assert.strictEqual(await redis.get(CLAVES.progresoHistorico), crudoAntes, "el cursor guardado no se toca");
+          assert.strictEqual(await redis.get(CLAVES.metaHistorico), metaAntes, "la última extracción completa no se toca");
+          assert.strictEqual((await redis.scan(CLAVES.patronChunksHist)).length, chunksAntes, "el corpus histórico no se toca");
+          assert.strictEqual(socrata.peticiones(), peticionesAntes, "un 409 no le pide nada a SECOP");
+          assert.deepStrictEqual(reLlamadas, [], "un 409 no se vuelve a llamar solo");
+          assert.deepStrictEqual([t.cuerpo.guardada.desde, t.cuerpo.guardada.hasta, t.cuerpo.guardada.terminada], [cursorAntes.desde, cursorAntes.hasta, true],
+            `el 409 dice qué hay guardado: ${JSON.stringify(t.cuerpo.guardada)}`);
+          assert.strictEqual(t.cuerpo.como_reemplazar, `?${otroRango}&reiniciar=1`, "el 409 dice cómo reemplazarla a propósito");
+          assert.ok(!("como_continuar" in t.cuerpo), "una extracción terminada no tiene nada que continuar");
+          assert.ok(t.cuerpo.que_hacer.includes(`?${otroRango}&reiniciar=1`), `el qué hacer nombra la URL exacta: ${t.cuerpo.que_hacer}`);
+
+          // solo cambia `desde`: también es otro rango (la cerradura compara los dos extremos)
+          const soloDesde = await invocar(historico, `/api/sync/historico?desde=${ANOS_HIST[0]}-02&hasta=${cursorAntes.hasta}&chain=0`, TOKEN);
+          assert.strictEqual(soloDesde.status, 409, `otro «desde» con el mismo «hasta» tampoco empieza otra: ${JSON.stringify(soloDesde.cuerpo).slice(0, 200)}`);
+          assert.strictEqual(await redis.get(CLAVES.progresoHistorico), crudoAntes, "el cursor guardado sigue sin tocarse");
+
+          // un avance guardado que no se puede leer es «no sé»: tampoco se empieza otra encima
+          const ilegible = '{"tipo":"historico","terminado":fal';
+          await redis.set(CLAVES.progresoHistorico, ilegible);
+          const il = await invocar(historico, `/api/sync/historico?${rango}&chain=0`, TOKEN);
+          assert.strictEqual(il.status, 409, `con el avance ilegible no se empieza otra sin reiniciar: ${JSON.stringify(il.cuerpo).slice(0, 200)}`);
+          assert.strictEqual(await redis.get(CLAVES.progresoHistorico), ilegible, "el avance ilegible no se pisa");
+          assert.strictEqual(socrata.peticiones(), peticionesAntes, "con el avance ilegible no se pide nada a SECOP");
+          const eIl = await invocar(historico, "/api/sync/historico?estado=true", TOKEN);
+          assert.strictEqual(eIl.cuerpo.estado.extraccion && eIl.cuerpo.estado.extraccion.ilegible, true,
+            `el estado dice «ilegible», no «no hay ninguna»: ${JSON.stringify(eIl.cuerpo.estado.extraccion)}`);
+          assert.ok(!eIl.cuerpo.estado.siguiente_paso.includes("No hay ninguna"), `el estado no confunde ilegible con ausente: ${eIl.cuerpo.estado.siguiente_paso}`);
+          await redis.set(CLAVES.progresoHistorico, crudoAntes);
+
+          // terminada la bajada pero con los índices a medias: el estado manda a terminarlos con el mismo rango, no a reiniciar
+          const hechosAntes = await redis.get(CLAVES.derivadosHechos);
+          try {
+            await redis.set(CLAVES.derivadosHechos, JSON.stringify({}));
+            const eD = await invocar(historico, "/api/sync/historico?estado=true", TOKEN);
+            assert.ok(eD.cuerpo.estado.siguiente_paso.includes(`?desde=${cursorAntes.desde}&hasta=${cursorAntes.hasta})`) && !eD.cuerpo.estado.siguiente_paso.includes("reiniciar"),
+              `con los índices a medias el estado manda a terminarlos con el mismo rango: ${eD.cuerpo.estado.siguiente_paso}`);
+          } finally {
+            if (hechosAntes == null) await redis.del(CLAVES.derivadosHechos); else await redis.set(CLAVES.derivadosHechos, hechosAntes);
+          }
+
+          // a medias y con otro rango; la llamada va SIN fechas, como la del 17-oct
+          const aMedias = { ...cursorAntes, hasta: `${ANOS_HIST[1]}-06`, meses: (cursorAntes.meses || []).slice(0, 18), mesIdx: 3, terminado: false };
+          await redis.set(CLAVES.progresoHistorico, JSON.stringify(aMedias));
+          const m = await invocar(historico, "/api/sync/historico", TOKEN);
+          assert.strictEqual(m.status, 409, `sin fechas (rango por omisión) sobre una extracción a medias de otro rango: ${JSON.stringify(m.cuerpo).slice(0, 240)}`);
+          assert.strictEqual(await redis.get(CLAVES.progresoHistorico), JSON.stringify(aMedias), "el cursor a medias no se toca");
+          assert.strictEqual(m.cuerpo.como_continuar, `?desde=${aMedias.desde}&hasta=${aMedias.hasta}`, "el 409 dice cómo continuarla");
+          assert.strictEqual(m.cuerpo.guardada.avance, "3/18 meses", `el 409 dice cuánto lleva: ${JSON.stringify(m.cuerpo.guardada)}`);
+          assert.deepStrictEqual(reLlamadas, [], "tampoco se vuelve a llamar sola");
+
+          const e = await invocar(historico, "/api/sync/historico?estado=true", TOKEN);
+          assert.deepStrictEqual([e.cuerpo.estado.extraccion.desde, e.cuerpo.estado.extraccion.hasta], [aMedias.desde, aMedias.hasta],
+            "el estado da el rango por separado: el botón de GitHub continúa con él");
+          assert.ok(e.cuerpo.estado.siguiente_paso.includes(`?desde=${aMedias.desde}&hasta=${aMedias.hasta}`),
+            `el estado manda a continuar con el rango exacto, no con una URL sin fechas: ${e.cuerpo.estado.siguiente_paso}`);
+
+          const rv = await invocar(historico, "/api/sync/historico?reconstruir_vocabulario=true&chain=0", TOKEN);
+          assert.strictEqual(rv.status, 200, `reconstruir sin fechas no es una extracción y no se frena: ${JSON.stringify(rv.cuerpo).slice(0, 200)}`);
+          assert.strictEqual(rv.cuerpo.extraccion, null, "reconstruir no extrae nada");
+          assert.strictEqual(await redis.get(CLAVES.progresoHistorico), JSON.stringify(aMedias), "reconstruir no toca el cursor");
+        } finally {
+          global.fetch = fetchReal;
+          await redis.set(CLAVES.progresoHistorico, crudoAntes);
+        }
+        const eT = await invocar(historico, "/api/sync/historico?estado=true", TOKEN);
+        assert.ok(eT.cuerpo.estado.siguiente_paso.includes("está terminada") && eT.cuerpo.estado.siguiente_paso.includes("reiniciar=1"),
+          `con la extracción terminada, el estado no manda a «llamar sin parámetros»: ${eT.cuerpo.estado.siguiente_paso}`);
+      }
+
+      /* EL BOTÓN DE GITHUB CONTINÚA EL RANGO GUARDADO (17-oct-2026). Se EJECUTA con bash el paso
+         del histórico de .github/workflows/carga_completa.yml (como lo corre GitHub: `bash -e`),
+         con un `curl` simulado y el `jq` real: pedía 2024-01…2026-09 fijo y, con otro rango
+         guardado, la extracción empezaba desde el primer mes. Sin bash o sin jq esta prueba sale
+         en rojo: no se salta. */
+      {
+        const { spawnSync } = require("child_process");
+        const os = require("os");
+        const yml = fs.readFileSync(path.join(__dirname, "..", ".github", "workflows", "carga_completa.yml"), "utf8").split("\n");
+        const iJob = yml.findIndex((l) => /^ {2}historico:\s*$/.test(l));
+        const iRun = yml.findIndex((l, i) => i > iJob && /^\s+run: \|\s*$/.test(l));
+        assert.ok(iJob > 0 && iRun > iJob, "carga_completa.yml no tiene el paso «run» del trabajo historico");
+        const sangria = yml[iRun].match(/^\s*/)[0].length;
+        const cuerpo = [];
+        for (let i = iRun + 1; i < yml.length; i++) {
+          if (yml[i].trim() && yml[i].match(/^\s*/)[0].length <= sangria) break;
+          cuerpo.push(yml[i]);
+        }
+        const margen = Math.min(...cuerpo.filter((l) => l.trim()).map((l) => l.match(/^\s*/)[0].length));
+        const dir = fs.mkdtempSync(path.join(os.tmpdir(), "boton-historico-"));
+        try {
+          fs.writeFileSync(path.join(dir, "paso.sh"), cuerpo.map((l) => l.slice(margen)).join("\n"));
+          fs.writeFileSync(path.join(dir, "curl"), [
+            "#!/usr/bin/env bash",
+            'out=""; url=""',
+            'while [ $# -gt 0 ]; do case "$1" in -o) out="$2"; shift 2;; -w|-H|--max-time) shift 2;; -*) shift;; *) url="$1"; shift;; esac; done',
+            'echo "$url" >> "$LLAMADAS"',
+            'case "$url" in *estado=true*) printf "%s" "$CUERPO_ESTADO" > "$out"; printf "%s" "$CODIGO_ESTADO";; *) printf "%s" "$CUERPO_TRAMO" > "$out"; printf "%s" "$CODIGO_TRAMO";; esac',
+          ].join("\n"), { mode: 0o755 });
+          const correr = (caso) => {
+            const llamadas = path.join(dir, `llamadas-${Math.random().toString(36).slice(2)}.txt`);
+            const r = spawnSync("bash", ["-e", path.join(dir, "paso.sh")], {
+              cwd: dir, encoding: "utf8", timeout: 20000,
+              env: { ...process.env, PATH: `${dir}:${process.env.PATH}`, HISTORICO_TOKEN: "llave-de-prueba", LLAMADAS: llamadas, ...caso },
+            });
+            assert.ok(!r.error, `no se pudo ejecutar el paso (faltan bash o jq, o se quedó esperando más de 20 s, como un reintento con sleep): ${r.error && r.error.message}`);
+            return { codigo: r.status, salida: `${r.stdout}${r.stderr}`, urls: fs.existsSync(llamadas) ? fs.readFileSync(llamadas, "utf8").trim().split("\n") : [] };
+          };
+          const estadoCon = (extraccion) => JSON.stringify({ ok: true, estado: { extraccion } });
+
+          // un «desde» guardado distinto del de siempre: si el paso fijara el suyo, aquí se vería
+          const guardada = correr({ CODIGO_ESTADO: "200", CUERPO_ESTADO: estadoCon({ desde: "2023-07", hasta: "2025-12", terminada: false }), CODIGO_TRAMO: "200", CUERPO_TRAMO: '{"done":true}' });
+          assert.strictEqual(guardada.codigo, 0, `el paso termina en verde: ${guardada.salida.slice(-300)}`);
+          assert.ok(/estado=true/.test(guardada.urls[0]), `lo primero es leer el estado: ${guardada.urls.join(" | ")}`);
+          assert.ok(guardada.urls[1] && guardada.urls[1].includes("desde=2023-07&hasta=2025-12&chain=0"),
+            `el botón continúa el rango guardado, no uno fijo: ${guardada.urls.join(" | ")}`);
+
+          const llaveMala = correr({ CODIGO_ESTADO: "401", CUERPO_ESTADO: "{}", CODIGO_TRAMO: "200", CUERPO_TRAMO: '{"done":true}' });
+          assert.strictEqual(llaveMala.codigo, 1, "con la llave equivocada el paso falla");
+          assert.ok(llaveMala.salida.includes("HISTORICO_TOKEN") && llaveMala.urls.length === 1,
+            `con la llave equivocada dice que es la llave y no pide nada más: ${llaveMala.salida.slice(-300)}`);
+
+          const pagina = correr({ CODIGO_ESTADO: "200", CUERPO_ESTADO: "<!doctype html><html><body>Muro</body></html>", CODIGO_TRAMO: "200", CUERPO_TRAMO: '{"done":true}' });
+          assert.strictEqual(pagina.codigo, 1, "un estado que llega como página detiene el paso");
+          assert.ok(pagina.salida.includes("no llegó como datos") && pagina.urls.length === 1,
+            `un estado ilegible no se convierte en «no hay nada guardado»: ${pagina.salida.slice(-300)} · ${pagina.urls.join(" | ")}`);
+
+          const mesColombia = new Date(Date.now() - 5 * 3600e3).toISOString().slice(0, 7);
+          const vacio = correr({ CODIGO_ESTADO: "200", CUERPO_ESTADO: estadoCon(null), CODIGO_TRAMO: "200", CUERPO_TRAMO: '{"done":true}' });
+          assert.ok(vacio.urls[1] && vacio.urls[1].includes(`desde=2024-01&hasta=${mesColombia}&chain=0`),
+            `sin nada guardado empieza de 2024-01 al mes en curso de Colombia: ${vacio.urls.join(" | ")}`);
+
+          const sinEstado = correr({ CODIGO_ESTADO: "503", CUERPO_ESTADO: "{}", CODIGO_TRAMO: "200", CUERPO_TRAMO: '{"done":true}' });
+          assert.strictEqual(sinEstado.codigo, 1, "sin estado el paso falla");
+          assert.strictEqual(sinEstado.urls.length, 1, `sin estado no se pide ningún rango a ciegas: ${sinEstado.urls.join(" | ")}`);
+
+          const choque = correr({
+            CODIGO_ESTADO: "200", CUERPO_ESTADO: estadoCon({ desde: "2024-01", hasta: "2025-12" }), CODIGO_TRAMO: "409",
+            CUERPO_TRAMO: JSON.stringify({ ok: false, error: "Ya hay otra extracción guardada.", que_hacer: "Pida el mismo rango." }),
+          });
+          assert.strictEqual(choque.codigo, 1, "un 409 detiene el paso");
+          assert.strictEqual(choque.urls.length, 2, `un 409 no se reintenta: ${choque.urls.join(" | ")}`);
+          assert.ok(choque.salida.includes("Pida el mismo rango."), `un 409 dice qué hacer: ${choque.salida.slice(-300)}`);
+        } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+      }
+
       /* el histórico guardó todo el rango CON datos de adjudicación */
       const hist = await leerHistorico();
       const conOferentes = [...ENTIDADES_HIST, ...ENTIDADES_HIST_IDENTIDAD]
