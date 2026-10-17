@@ -16408,8 +16408,12 @@ async function main() {
        full que termina bien tiene que borrarlo (M-INF-04) — se comprueba tras b. */
     await redis.set(CLAVES.meta, JSON.stringify({ ultimo_error: { ts: "2026-09-05T08:31:00.000Z", modo: "auto", texto: "fallo anterior de prueba" } }));
 
-    /* b. carga completa con presupuesto corto (reanudable) + fallos inyectados */
-    let r = await invocar(sync, "/api/sync?modo=full&presupuesto=150&chain=0");
+    /* b. carga completa con presupuesto corto (reanudable) + fallos inyectados.
+       ENERO (17-oct-2026): con un solo mes el año trae 3 páginas, y en una máquina rápida cabían
+       enteras en 150 ms: la prueba dependía del calendario y del reloj del corredor. La PRIMERA
+       invocación va con presupuesto mínimo, que se rinde tras la primera página guardada, y así el
+       corte es seguro con cualquier número de meses; las continuaciones siguen con 150. */
+    let r = await invocar(sync, "/api/sync?modo=full&presupuesto=1&chain=0");
     assert.strictEqual(r.status, 200);
     assert.strictEqual(r.cuerpo.ok, true, `sync full falló: ${JSON.stringify(r.cuerpo)}`);
     let invocaciones = 1;
@@ -24683,8 +24687,16 @@ async function main() {
         const esMuro = (l) => /muro de contención/i.test(l.nombre_del_procedimiento || "");
         assert.ok((await todasLasOportunidades("perfil=genesis")).some((l) => esMuro(l) && l.rup.tier === "clase"),
           "Génesis tiene 72141200 y debía ver por CLASE los muros de contención del corpus");
-        assert.ok(!op.cuerpo.resultados.some((l) => esMuro(l)),
-          "72141200 NO está en el RUP subido (72141000, 72141100, 72154100, 81101500) y no debía servirse");
+        /* ENERO (17-oct-2026): esta negación miraba solo la primera página y pasaba porque los muros
+           quedaban más abajo; en enero el año trae menos filas, suben a ella y la prueba caía. Medido con
+           el reloj real: en TODAS las páginas el perfil subido ve 80 muros, todos por el objeto («muro,
+           gaviones, contención» → familia 7214, que sí tiene) y ninguno por código. Lo que la prueba
+           cierra es lo segundo: 72141200 no casa con este RUP. Se barren todas las páginas y se exige
+           que ningún muro llegue por código; la ruta del texto (que no esconde obras) no es el defecto. */
+        const murosSubido = (await todasLasOportunidades(`perfil=${id}`)).filter(esMuro);
+        assert.ok(!murosSubido.some((l) => l.rup.tier !== "texto"),
+          "72141200 NO está en el RUP subido (72141000, 72141100, 72154100, 81101500) y no debía casar por código: " +
+          JSON.stringify(murosSubido.filter((l) => l.rup.tier !== "texto").map((l) => [l.id_del_proceso, l.rup.tier]).slice(0, 3)));
         for (const l of op.cuerpo.resultados) {
           assert.strictEqual(l.rup.k_cop, null, "sin token, la K del perfil dinámico también viaja redactada");
         }
