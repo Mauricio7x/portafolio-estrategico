@@ -1,6 +1,6 @@
 "use strict";
 /* Base nacional de licitaciones de obra · FASE 0: inventario y calidad (17-oct-2026).
-   Uso:  node scripts/base_obra/inventario.js <carpeta_de_salida> [desde=2024-01-01]
+   Uso:  node scripts/base_obra/inventario.js <carpeta_de_salida> [desde=2024-01-01] [--reusar]
    Solo LEE datos abiertos (datos.gov.co) y escribe en la carpeta dada, que va FUERA del
    repositorio. No toca producción, Redis ni Vercel. Transporte: lib/socrata.crearCliente
    (reintentos, 429/5xx con retroceso, token opcional que no puede parar nada).
@@ -19,6 +19,10 @@ const DS = { procesos: "p6dx-8zbt", ofertas: "wi7w-2nvm", ofertas_hist: "b28v-ed
 const MODALIDADES_P6DX_LITERALES = ["Licitación pública", "Licitación pública Obra Publica",
   "Selección Abreviada de Menor Cuantía", "Seleccion Abreviada Menor Cuantia Sin Manifestacion Interes", "Mínima cuantía"];
 const PAGINA = 5000, LOTE_IDS = 80;
+/* Solo las columnas que se usan: con `*` cada oferta repetía la descripción larga del proceso y
+   la corrida llegó a 6,7 GB de memoria (medido el 17-oct-2026, 13.146 procesos adjudicados). */
+const COLS_OFERTA = "id_del_proceso_de_compra,identificador_de_la_oferta,referencia_de_la_oferta,valor_de_la_oferta,"
+  + "nombre_proveedor,nit_del_proveedor,c_digo_proveedor,fecha_de_registro,modalidad,:id";
 
 const log = (m) => process.stderr.write(m + "\n");
 const cliente = (ds) => crearCliente({ baseUrl: RAIZ + DS[ds] + ".json", log });
@@ -59,7 +63,7 @@ function lugarDeDireccion(dir) {
 
 async function main() {
   const salida = process.argv[2];
-  const desde = process.argv[3] || "2024-01-01";
+  const desde = process.argv.slice(3).find((a) => /^\d{4}-\d{2}-\d{2}$/.test(a)) || "2024-01-01";
   if (!salida) { log("uso: node scripts/base_obra/inventario.js <carpeta_de_salida> [desde]"); process.exit(2); }
   fs.mkdirSync(salida, { recursive: true });
   const R = { desde, inicio: ahora(), fuentes: {}, notas: [] };
@@ -75,9 +79,17 @@ async function main() {
   const whereComp = `${whereObra} AND ${enLista("modalidad_de_contratacion",
     (R.modalidades.ok ? [...new Set(R.modalidades.valor.map((r) => r.modalidad_de_contratacion))] : MODALIDADES_P6DX_LITERALES)
       .filter((m) => L.clasificarModalidad(m) !== "otra"))}`;
-  const filas = await todas(P, whereComp, "*,:id", "p6dx competitivas");
-  R.fuentes.procesos = { dataset: DS.procesos, filas: filas.length, corte: ahora() };
-  fs.writeFileSync(path.join(salida, "p6dx_obra.json"), JSON.stringify(filas));
+  /* `--reusar`: si la carpeta ya trae la descarga de p6dx, se usa (su corte queda anotado). */
+  const archP = path.join(salida, "p6dx_obra.json");
+  let filas;
+  if (process.argv.includes("--reusar") && fs.existsSync(archP)) {
+    filas = JSON.parse(fs.readFileSync(archP, "utf8"));
+    R.fuentes.procesos = { dataset: DS.procesos, filas: filas.length, corte: fs.statSync(archP).mtime.toISOString(), reusado: true };
+  } else {
+    filas = await todas(P, whereComp, "*,:id", "p6dx competitivas");
+    R.fuentes.procesos = { dataset: DS.procesos, filas: filas.length, corte: ahora() };
+    fs.writeFileSync(archP, JSON.stringify(filas));
+  }
 
   /* 3 · Una fila por proceso (id_del_portafolio), regla declarada en limpieza.elegirFila. */
   const grupos = new Map(); let sinPortafolio = 0;
@@ -104,10 +116,11 @@ async function main() {
   const ofertasDe = new Map();
   const fallosOfertas = []; const idsSinMedir = new Set();
   for (const ds of ["ofertas", "ofertas_hist"]) {
-    const C = cliente(ds); let n = 0;
-    for (const lote of trozos(adj.map((p) => p.portafolio), LOTE_IDS)) {
+    const C = cliente(ds); let n = 0; const lotes = trozos(adj.map((p) => p.portafolio), LOTE_IDS);
+    for (const [i, lote] of lotes.entries()) {
+      if (i % 20 === 0) log(`${DS[ds]}: lote ${i + 1}/${lotes.length} · ${n} filas · ${ahora()}`);
       try {
-        const fil = await todas(C, enLista("id_del_proceso_de_compra", lote), "*,:id", `${DS[ds]} lote`);
+        const fil = await todas(C, enLista("id_del_proceso_de_compra", lote), COLS_OFERTA, `${DS[ds]} lote`);
         for (const o of fil) {
           const k = o.id_del_proceso_de_compra;
           if (!ofertasDe.has(k)) ofertasDe.set(k, []);
@@ -217,7 +230,7 @@ async function main() {
     const pf = f0.id_del_portafolio; const fs2 = filas.filter((f) => f.id_del_portafolio === pf); const base = L.numeroONull(L.elegirFila(fs2).precio_base);
     let os = ofertasDe.get(pf);
     if (!os || idsSinMedir.has(pf)) {
-      try { os = await todas(cliente("ofertas"), enLista("id_del_proceso_de_compra", [pf]), "*,:id", `oferta ${c}`); }
+      try { os = await todas(cliente("ofertas"), enLista("id_del_proceso_de_compra", [pf]), COLS_OFERTA, `oferta ${c}`); }
       catch (e) { R.validacion[c] = { ...v, portafolio: pf, sin_medir: true, status: e.status || null, error: e.detalle || e.message }; continue; }
     }
     const r = L.limpiarOfertas(os, base); const st = L.estadisticas(r.validas.map((o) => o.valor));
