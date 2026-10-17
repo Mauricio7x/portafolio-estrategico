@@ -8444,6 +8444,67 @@ async function main() {
      navegador, pdf.js) encontró tres «hay anticipo» falsos, un capital de trabajo estimado 3,3
      veces el publicado, y cifras de la Matriz 2 que no se leían por estar en otra línea que su
      nombre. Cada caso va con el texto real, recortado. */
+  /* EL PRESUPUESTO DEL PLIEGO FRENTE A SECOP II (Fase 2, 17-oct-2026): texto real de pdf.js (lineasDePagina) de la
+     tabla 1.1, con las columnas entrelazadas. Solo AVISA; la cifra que usan las cuentas no cambia. */
+  bqPresupuestoPliego: { if (!corre("unidad presupuesto del pliego")) break bqPresupuestoPliego;
+    const PP = require("../lib/presupuesto_pliego.js");
+    const Dp = require("../lib/documentos_proceso.js");
+    const titulo = "1.1.\tOBJETO, PRESUPUESTO OFICIAL, PLAZO Y UBICACIÓN";
+    const indice = "1.1.\tOBJETO, PRESUPUESTO OFICIAL, PLAZO Y UBICACIÓN\t6";
+    const def = ["\f2", indice, "\f6", titulo, "contratación se identifican en la siguiente tabla:", "MIL", "VÍA DE ACCESO AL\tEl lugar de ejecución", "OCHOCIENTOS", "DIEZ PESOS",
+      "M/CTE ( $", "DEL DISTRITO ESPECIAL\tOeste y Calle 3A barrio", "1.581.425.810)", "DE SANTIAGO DE CALI,\tAltos de Santa Elena,", "Dos meses (02) y\tincluido AIU del", "1.2.\tDOCUMENTOS DEL PROCESO"].join("\n");
+    const bor = ["\f6", titulo, "($1.744.426.146),", "QUE COMPRENDEN LA\tTres (03) meses\tcomuna 18 de la zona", "1.2.\tDOCUMENTOS DEL PROCESO"].join("\n");
+    // la cifra partida por las columnas (Santa Elena definitivo) y no la del índice
+    assert.deepStrictEqual([PP.leerPresupuestoDelPliego(def).presupuesto.valor, PP.leerPresupuestoDelPliego(def).presupuesto.pagina], [1581425810, 6], JSON.stringify(PP.leerPresupuestoDelPliego(def)));
+    assert.strictEqual(PP.leerPresupuestoDelPliego(bor).presupuesto.valor, 1744426146);
+    // formato inglés sin «$» (Caldas, CO1.REQ.10710451) y centavos (Turbaco, CO1.REQ.10650320)
+    assert.strictEqual(PP.leerPresupuestoDelPliego(["\f6", titulo, "QUEBRADA LA HONDA EN\tMunicipio de Filadelfia -", "2 Meses\t993,687,600.00", "1.2.\tDOCUMENTOS"].join("\n")).presupuesto.valor, 993687600);
+    assert.strictEqual(PP.leerPresupuestoDelPliego(["\f7", titulo, "8B Y CALLE 2G,\t($511.587.015,10) M/CTE", "1.2.\tDOCUMENTOS"].join("\n")).presupuesto.valor, 511587015.1);
+    // dos cifras distintas: no se escoge; sin la sección (solo el índice): null
+    const dos = PP.leerPresupuestoDelPliego(["\f6", titulo, "($1.744.426.146)", "($1.581.425.810)", "1.2.\tDOCUMENTOS"].join("\n"));
+    assert.deepStrictEqual([dos.presupuesto.valor, dos.presupuesto.leidas.length], [null, 2], JSON.stringify(dos));
+    assert.strictEqual(PP.leerPresupuestoDelPliego(["\f2", indice, "1.2.\tDOCUMENTOS DEL PROCESO\t6"].join("\n")), null, "la línea del índice no es la sección");
+    // el aviso: definitivo distinto de SECOP → riesgo y PRIMERO; solo borrador → «confírmelo»; igual (centavos) → nada
+    const doc = (texto, tipo) => ({ nombre: `${tipo}.pdf`, tipo, hechos: Dp.hechosDeTexto(texto, { tipo }) });
+    const dicen = (leidos, cop) => Dp.loQueDicen({ indice: { archivos: [], plan: [] }, ilegibles: {}, leidos }, { presupuestoCOP: cop }).hechos;
+    const h1 = dicen({ a: doc(def, "pliego"), b: doc(bor, "pliego_borrador"), c: doc("\f9\nEn el presente proceso de contratación la entidad no entregará anticipo al contratista.\n", "estudio_previo") }, 1744426146);
+    assert.ok(h1.length >= 2 && h1.some((h) => h.clave === "anticipo"), "hay otro aviso antes del presupuesto para que el orden se note");
+    assert.deepStrictEqual([h1[0].clave, h1[0].estado, h1[0].presupuesto_pliego, h1[0].pagina], ["presupuesto_pliego", "riesgo", 1581425810, 6], JSON.stringify(h1[0]));
+    assert.ok(/\$1\.581\.425\.810 y SECOP II publica \$1\.744\.426\.146, una diferencia de \$163\.000\.336 \(−9,3 %\)/.test(h1[0].texto) && /Confirme con la entidad cuál cifra rige/.test(h1[0].texto), h1[0].texto);
+    const h2 = dicen({ b: doc(bor, "pliego_borrador") }, 1581425810).find((h) => h.clave === "presupuesto_pliego");
+    assert.ok(h2 && h2.estado === "revisar" && /borrador/.test(h2.texto) && /pliego definitivo/.test(h2.texto), JSON.stringify(h2));
+    assert.ok(!dicen({ a: doc(["\f7", titulo, "8B Y CALLE 2G,\t($511.587.015,10) M/CTE", "1.2.\tDOCUMENTOS"].join("\n"), "pliego") }, 511587015).some((h) => h.clave === "presupuesto_pliego"), "SECOP II corta los centavos: $0,10 no es diferencia");
+    /* la revisión adversaria (17-oct-2026), cada caso con su cerradura */
+    const sec = (...l) => ["\f6", titulo, ...l, "1.2.\tDOCUMENTOS DEL PROCESO"].join("\n");
+    const cuantos = (leidos, cop) => dicen(leidos, cop).filter((h) => h.clave === "presupuesto_pliego");
+    // H1: la adenda más reciente con cifra gana al pliego (SECOP II ya publica la de la adenda: no hay aviso)
+    assert.strictEqual(cuantos({ a: { ...doc(def, "pliego"), fecha_carga: "2026-09-01" }, b: { ...doc(sec("queda en ($1.500.000.000)"), "adenda"), fecha_carga: "2026-09-10" } }, 1500000000).length, 0, "la adenda reciente gana al pliego");
+    // …y una adenda sin cifra no deja ORDENAR la del pliego: «revisar»
+    const conAdenda = cuantos({ a: { ...doc(def, "pliego"), fecha_carga: "2026-09-01" }, b: { ...doc("\f1\nSe modifica el cronograma del proceso.\n", "adenda"), fecha_carga: "2026-09-10" } }, 1744426146);
+    assert.ok(conAdenda.length === 1 && conAdenda[0].estado === "revisar" && /adenda/.test(conAdenda[0].texto), JSON.stringify(conAdenda));
+    // H2: con un definitivo LEÍDO (aunque no rinda cifra) el borrador no habla
+    assert.strictEqual(cuantos({ a: doc(sec("sin cifra legible en esta tabla"), "pliego"), b: doc(bor, "pliego_borrador") }, 1581425810).length, 0, "el borrador no habla si hay definitivo leído");
+    // H3: por lotes no se avisa (dos lotes iguales dejaban una sola cifra: «−50 %» falso)
+    assert.strictEqual(cuantos({ a: doc(sec("Lote 1\t$ 500.000.000", "Lote 2\t$ 500.000.000"), "pliego") }, 1000000000).length, 0, "por lotes no hay aviso");
+    // H4: «1.1.OBJETO» sin espacio (Manizales, CO1.REQ.10287523)
+    assert.strictEqual(PP.leerPresupuestoDelPliego(["\f6", "1.1.OBJETO, PRESUPUESTO OFICIAL, PLAZO Y UBICACIÓN", "Mantenimiento\t$1.012.000.000", "1.2.DOCUMENTOS DEL PROCESO"].join("\n")).presupuesto.valor, 1012000000);
+    // H5: una diferencia de más del 50 % es más probablemente una lectura equivocada: «revisar», nunca «riesgo»
+    const absurda = cuantos({ a: doc(sec("salario de ($ 1.423.500)"), "pliego") }, 1581425810);
+    assert.ok(absurda.length === 1 && absurda[0].estado === "revisar" && /lectura equivocada/.test(absurda[0].texto), JSON.stringify(absurda));
+    // N2: la adenda de cronograma, más reciente, no tapa a la anterior que cambió el presupuesto (SECOP II ya la publica)
+    assert.strictEqual(cuantos({ a: { ...doc(def, "pliego"), fecha_carga: "2026-09-01" }, b: { ...doc(sec("queda en ($1.500.000.000)"), "adenda"), fecha_carga: "2026-09-10" }, c: { ...doc("\f1\nSe modifica el cronograma del proceso.\n", "adenda"), fecha_carga: "2026-09-20" } }, 1500000000).length, 0, "la adenda de cronograma no tapa a la que trae la cifra");
+    // N5: un «Documento base» que es borrador por su nombre no cuenta como definitivo
+    const docBor = { ...doc(bor, "documento_base"), nombre: "DOCUMENTO BASE PROYECTO DE PLIEGO.pdf" };
+    const n5 = cuantos({ a: docBor }, 1581425810);
+    assert.ok(n5.length === 1 && n5[0].estado === "revisar" && /borrador/.test(n5[0].texto), JSON.stringify(n5));
+    // N8: el pliego por DEBAJO de SECOP II, aunque sea poco, no es un simple dato (una oferta al techo se rechazaría)
+    assert.strictEqual(cuantos({ a: doc(sec("($1.580.000.000)"), "pliego") }, 1581425810)[0].estado, "riesgo");
+    // H6: $2 de diferencia es un dato, no un riesgo, y se dice en pesos
+    const dos2 = cuantos({ a: doc(sec("($1.581.425.812)"), "pliego") }, 1581425810);
+    assert.ok(dos2.length === 1 && dos2[0].estado === "dato" && /diferencia de \$2\./.test(dos2[0].texto), JSON.stringify(dos2));
+    // un documento que no es pliego no se lee para esto
+    assert.strictEqual(Dp.hechosDeTexto(def, { tipo: "estudio_previo" }).presupuesto_pliego, null);
+  }
   bqNueveProcesos: { if (!corre("unidad los nueve procesos del dueño")) break bqNueveProcesos;
     const Dp = require("../lib/documentos_proceso.js");
     const Df = require("../lib/diff.js");
@@ -21016,7 +21077,7 @@ async function main() {
           const texto = "\f1\nPLIEGO\nExperiencia general: 2.500 SMMLV\nExperiencia específica: 1.000 SMMLV\nÍndice de liquidez mayor o igual a 1,5\nNivel de endeudamiento menor o igual a 60%\nCapital de trabajo: mayor o igual a $650.000.000\nPatrimonio: mayor o igual a $9.000.000.000\n\f2\nNo se entregará anticipo al contratista.";
           const h = D.hechosDeTexto(texto, { tipo: "pliego" });
           assert.ok(h.requisitos_numericos.experiencia_general && h.requisitos_numericos.experiencia_general.valor === 2500 && h.requisitos_numericos.experiencia_especifica && h.requisitos_numericos.experiencia_especifica.valor === 1000, "lib/diff separa la experiencia general de la específica");
-          assert.ok(h.version.startsWith("16|"), "los hechos guardados con las reglas viejas se rehacen: la versión del módulo subió");
+          assert.ok(h.version.startsWith("17|"), "los hechos guardados con las reglas viejas se rehacen: la versión del módulo subió");
           const docs = { indice: { archivos: [{ id_documento: "d1", nombre: "pliego.pdf", tipo: "pliego", de_la_entidad: true, legible: true }], plan: ["d1"], consultado_el: "2026-09-04" }, leidos: { d1: { nombre: "pliego.pdf", tipo: "pliego", tipo_legible: "Pliego", hechos: h, paginas: 2 } }, ilegibles: {} };
           const con = G.guiaDe({ fila: base, perfil: "helder", ctx: { ahoraMs: ahoraG, documentos: docs } });
           const ex = Object.fromEntries(con.exigencias.map((x) => [x.clave, x]));

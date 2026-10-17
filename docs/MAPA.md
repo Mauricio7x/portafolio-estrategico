@@ -22,7 +22,7 @@
   pliego.js                   Router del dominio PLIEGO (Fase 0 · consolidación a 6 funciones)
   procesos.js                 Router del dominio PROCESOS (Fase 0 · consolidación a 6 funciones)
 
-· lib/ — 95 módulos:
+· lib/ — 96 módulos:
   accesibilidad.js            Accesibilidad operativa de la zona de la obra
   adendas.js                  Vigía de adendas · lo que el DATASET dice que cambió (Fase 5)
   almacen.js                  Esquema de claves Redis + compresión de chunks
@@ -94,6 +94,7 @@
   perfiles.js                 FUENTE ÚNICA DE VERDAD del perfil del dueño y de sus socias
   portada.js                  El pulso del mercado y la manifestación de interés (Fase 9 · Detekta v4)
   presupuesto.js              El reloj de una tanda REANUDABLE (7-sep-2026)
+  presupuesto_pliego.js       El presupuesto que DICE el pliego (17-oct-2026, Fase 2)
   probabilidad.js             P(ganar) estimada con lo que YA hay en Redis
   probabilidad_desglose.js    POR QUÉ ese 23 %, paso por paso
   proponentes.js              Quiénes se PRESENTAN a los procesos de una entidad
@@ -213,8 +214,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 326 secciones (20 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 18621  Tres pruebas con fecha fija tumbaron main al cambiar de mes, y la cuarta espera (1-oct-2026)  (superada)
+· MEMORIA · docs/MEMORIA.md — 327 secciones (20 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 18633  Vercel pausó Detekta por CPU: cuenta nueva y menos llamadas automáticas (16-oct-2026)
   L 18684  Las pruebas con fecha: la compactación caía el 31-oct y la lista se queda sin procesos con …  (superada)
   L 18696  La fila de prueba se busca en todas las páginas del listado, y enero espera (16-oct-2026)  (superada)
@@ -224,6 +224,7 @@
   L 18768  El anticipo «N/A» bajo su título y el amparo «Devolución del pago anticipado» (17-oct-2026)
   L 18791  Lo que mostraron 5 procesos de menor cuantía ya adjudicados (17-oct-2026)
   L 18830  El anticipo «…PAGO ANTICIPADO: No aplica» en una sola línea (17-oct-2026)
+  L 18850  El presupuesto del pliego frente al de SECOP II: un aviso, no un reemplazo (17-oct-2026)
 
 · DOCUMENTOS docs/ — 71 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)

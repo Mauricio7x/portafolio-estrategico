@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 1795241 bytes · 326 secciones · 20 con marcador de superación.
+Derivado del árbol: 1798782 bytes · 327 secciones · 20 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -336,4 +336,5 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | La fila partida de la tabla de códigos de la experiencia (17-oct-2026) | 17-oct-2026 | 18745-18767 | 2305 |  |
 | El anticipo «N/A» bajo su título y el amparo «Devolución del pago anticipado» (17-oct-2026) | 17-oct-2026 | 18768-18790 | 2304 |  |
 | Lo que mostraron 5 procesos de menor cuantía ya adjudicados (17-oct-2026) | 17-oct-2026 | 18791-18829 | 3373 |  |
-| El anticipo «…PAGO ANTICIPADO: No aplica» en una sola línea (17-oct-2026) | 17-oct-2026 | 18830-18848 | 2021 |  |
+| El anticipo «…PAGO ANTICIPADO: No aplica» en una sola línea (17-oct-2026) | 17-oct-2026 | 18830-18849 | 2022 |  |
+| El presupuesto del pliego frente al de SECOP II: un aviso, no un reemplazo (17-oct-2026) | 17-oct-2026 | 18850-18882 | 3540 |  |
