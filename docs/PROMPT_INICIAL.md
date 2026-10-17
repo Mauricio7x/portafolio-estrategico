@@ -138,15 +138,15 @@ la primera corrección. El porqué de cada una, con su defecto de origen, se bus
 
 ## 5. El token y la seguridad (decisión, no estado)
 
-- `const TOKEN` está **integrado** en el frontend y **no es un secreto**: la seguridad real es
-  Vercel Password Protection más el gate de clave del cliente. Los endpoints NO se relajan por
-  eso — siguen exigiendo `HISTORICO_TOKEN` en el servidor (`lib/auth.js`, una sola puerta).
-- `HISTORICO_TOKEN` en Vercel debe valer **exactamente** el literal integrado; otro valor deja la
-  app a medias y sin error visible (docs/CONFIGURACION_TOKENS.md). Cuál es el literal y qué
-  archivos lo llevan lo imprime `estado.js` — no se escribe aquí.
-- `?token=` por query existe **a propósito** (el dueño dispara pegando URLs en Chrome; el header
-  gana si vienen los dos). Lo prohibido —con prueba— es que **el frontend** construya una URL con
-  el token dentro. No «arregles» ninguna de las dos mitades.
+- **Ninguna llave vive en el navegador** (decisión del dueño, 17-oct-2026). El dueño entra con correo
+  y contraseña; la sesión es una cookie HttpOnly que el servidor abre, comprueba y cierra
+  (`lib/sesion.js`); `lib/auth.js` sigue siendo la única puerta y acepta la sesión o la llave.
+  `HISTORICO_TOKEN` es una contraseña que solo vive en Vercel (y en GitHub y en el entorno de
+  Claude Code): crea la cuenta UNA vez y la usan flujos, rutinas y skills; desde el código de una
+  página se rechaza. La suite censa todos los `public/*.js`: una credencial escrita ahí es rojo.
+- `?token=` por query existe **a propósito** (pegar una URL en la barra sin haber entrado; el
+  header gana si vienen los dos). Lo prohibido —con prueba— es que **el frontend** lleve o mande la
+  llave. No «arregles» ninguna de las dos mitades.
 - Qué sale sin credencial: **las cifras del PERFIL no salen**; los datos de mercado derivados de
   fuentes públicas sí. Token presente e inválido = **401**, jamás degradación silenciosa.
 

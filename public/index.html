@@ -745,7 +745,7 @@
        censa uno a uno contra los que onboarding.js y el gate tocan. */
     #onboarding .hidden, #entrada-inicio.hidden, #rup-archivo.hidden, #rup-progreso.hidden,
     #rup-mensaje.hidden, #rup-avisos.hidden, #rup-cifras.hidden, #completar-form.hidden,
-    #manual-form.hidden, #resultado-entrada.hidden, #gate-error.hidden,
+    #manual-form.hidden, #resultado-entrada.hidden, #gate-error.hidden, #gate-form.hidden, #alta-form.hidden,
     #exp-mensaje.hidden { display: none; } /* el mensaje de experiencia lo toca onboarding.js y vive fuera de #onboarding */
 
     /* ══════════ LA PIEL SOBRE LAS UTILIDADES DE LAS PLANTILLAS ══════════
@@ -2288,10 +2288,14 @@
     </main>
   </div>
 
-  <!-- ══════════ Gate de acceso (clave del sitio) ══════════
-       Nace oculto: la primera pantalla es el onboarding. Se abre desde
-       «Acceso con clave» (onboarding.js) o no llega a verse si ya hay
-       sesión o un perfil de RUP guardado (app.js). -->
+  <!-- ══════════ Gate de acceso: ENTRAR con correo y contraseña ══════════
+       (17-oct-2026, decisión del dueño). Nace oculto: la primera pantalla es
+       el onboarding. Se abre desde «Entrar con clave» (onboarding.js), y
+       app.js lo vuelve a enseñar ENCIMA de la aplicación si la sesión termina
+       (un 401). Lo comprueba el SERVIDOR (op=entrar): aquí no vive ninguna
+       clave ni ningún contador de intentos.
+       Dos formularios y se enseña uno: entrar, o —solo mientras op=sesion diga
+       que no existe ninguna cuenta— crearla con la llave del servidor. -->
   <div id="gate" class="fixed inset-0 z-50 hidden items-center justify-center" style="background: var(--bg-primary);">
     <div class="w-full max-w-sm px-8 text-center">
       <!-- Sin emoji: un pictograma de sistema operativo en la primera pantalla
@@ -2299,36 +2303,57 @@
            marca es la palabra. -->
       <h1 class="marca-gate text-3xl font-semibold tracking-tight" style="color: var(--text-primary); letter-spacing: -0.5px;" data-marca="nombre"></h1>
       <p class="mt-1 text-sm" style="color: var(--text-secondary);">Licitaciones de obra en Colombia</p>
-      <p class="mt-4 text-sm" style="color: var(--text-secondary);">Sitio privado. Ingrese la clave de acceso.</p>
-      <!-- ══════ UNA PULSACIÓN TEMPRANA EN LA CLAVE NO PUEDE BORRARLO TODO ══════
+      <p id="gate-intro" class="mt-4 text-sm" style="color: var(--text-secondary);">Entre con su correo y su contraseña.</p>
+      <!-- ══════ UNA PULSACIÓN TEMPRANA NO PUEDE BORRARLO TODO ══════
            (12-sep-2026) El `submit` de este formulario lo ata public/app.js, que es
-           el ÚLTIMO de los diecinueve módulos. Hasta entonces el formulario no
-           declaraba `action` ni `method`, así que pulsar «Entrar» disparaba el envío
-           NATIVO: reproducido en Chromium a 390 px con CPU por 6 y 3G, la página
-           navegaba a «/?», se recargaba entera y el usuario aparecía OTRA VEZ en la
-           portada con la clave borrada — y en un teléfono lento el ciclo se repite.
-           No era una pulsación muda: era una pulsación que deshacía el trabajo.
-           `method="dialog"` fuera de un <dialog> deja el envío nativo en NADA (así
-           lo define la norma), sin tocar el `submit` que app.js escucha ni el
-           `preventDefault` que ya hace: mientras app.js no ha llegado, la pulsación
-           es inerte y la clave escrita SE QUEDA; en cuanto llega, el mismo Intro
-           entra. No cierra la ventana muda —eso pide un estado visible, y eso pide
-           guion, que en index.html no puede ir (la política de contenido prohíbe el
-           <script> en línea y la suite lo censa)— pero le quita el daño. -->
+           el ÚLTIMO de los diecinueve módulos. Sin `method`, pulsar «Entrar» antes
+           disparaba el envío NATIVO: la página navegaba, se recargaba entera y lo
+           escrito se perdía. `method="dialog"` fuera de un <dialog> deja el envío
+           nativo en NADA (así lo define la norma): mientras app.js no ha llegado,
+           la pulsación es inerte y lo escrito SE QUEDA; en cuanto llega, app.js
+           reproduce el envío si el botón quedó pulsado. -->
       <form id="gate-form" method="dialog" class="mt-6">
-        <input id="gate-clave" type="password" inputmode="numeric" autocomplete="off" autofocus
-               class="campo-gate w-full px-4 py-3 text-center text-lg tracking-widest outline-none"
-               placeholder="••••••" aria-label="Clave de acceso">
+        <input id="gate-correo" type="email" autocomplete="username" inputmode="email" autocapitalize="off" spellcheck="false" autofocus
+               class="campo-gate w-full px-4 py-3 text-base outline-none"
+               placeholder="Correo" aria-label="Correo">
+        <input id="gate-contrasena" type="password" autocomplete="current-password"
+               class="campo-gate mt-3 w-full px-4 py-3 text-base outline-none"
+               placeholder="Contraseña" aria-label="Contraseña">
         <button type="submit" class="btn-vidrio-acento mt-3 w-full">
           Entrar
         </button>
       </form>
-      <p id="gate-error" class="mt-4 hidden text-sm font-medium" style="color: var(--danger);"></p>
-      <!-- NADIE SE QUEDA ATRAPADO EN LA PANTALLA DE CLAVE (5-sep-2026): esta era
-           la única pantalla sin salida —solo recargar devolvía la portada—, y al
-           tercer intento el bloqueo dejaba al usuario sin decirle qué hacer. El
-           enlace invierte lo que hizo «Entrar con clave» y devuelve las otras
-           dos puertas (subir el RUP o escribir tres datos). -->
+      <!-- CREAR LA ÚNICA CUENTA (17-oct-2026). Solo funciona mientras no exista
+           ninguna, y pide la llave del servidor (HISTORICO_TOKEN), que el dueño
+           copia de Vercel: así nadie más puede crearla antes que él. Después el
+           servidor responde 409 para siempre y este formulario no vuelve. -->
+      <form id="alta-form" method="dialog" class="mt-6 hidden text-left">
+        <label class="block">
+          <span class="text-xs font-medium uppercase tracking-wide" style="color: var(--text-secondary);">Llave del servidor (la de la configuración del sitio)</span>
+          <input id="alta-llave" type="password" autocomplete="off" spellcheck="false"
+                 class="campo-gate mt-1 w-full px-4 py-3 text-base outline-none" aria-label="Llave del servidor">
+        </label>
+        <label class="mt-3 block">
+          <span class="text-xs font-medium uppercase tracking-wide" style="color: var(--text-secondary);">Su correo</span>
+          <input id="alta-correo" type="email" autocomplete="username" inputmode="email" autocapitalize="off" spellcheck="false"
+                 class="campo-gate mt-1 w-full px-4 py-3 text-base outline-none" aria-label="Su correo">
+        </label>
+        <label class="mt-3 block">
+          <span class="text-xs font-medium uppercase tracking-wide" style="color: var(--text-secondary);">Contraseña (10 caracteres o más)</span>
+          <input id="alta-contrasena" type="password" autocomplete="new-password"
+                 class="campo-gate mt-1 w-full px-4 py-3 text-base outline-none" aria-label="Contraseña nueva">
+        </label>
+        <label class="mt-3 block">
+          <span class="text-xs font-medium uppercase tracking-wide" style="color: var(--text-secondary);">Repita la contraseña</span>
+          <input id="alta-repetir" type="password" autocomplete="new-password"
+                 class="campo-gate mt-1 w-full px-4 py-3 text-base outline-none" aria-label="Repita la contraseña">
+        </label>
+        <button type="submit" class="btn-vidrio-acento mt-4 w-full">Crear su cuenta</button>
+        <p class="mt-2 text-xs" style="color: var(--text-secondary);">Una frase que recuerde sirve mejor que una palabra corta con símbolos.</p>
+      </form>
+      <p id="gate-error" class="mt-4 hidden text-sm font-medium" style="color: var(--danger);" role="alert"></p>
+      <!-- NADIE SE QUEDA ATRAPADO EN ESTA PANTALLA (5-sep-2026): el enlace
+           invierte lo que hizo «Entrar con clave» y devuelve la portada. -->
       <p class="mt-6 text-sm">
         <a href="#" id="gate-volver" class="underline" style="color: var(--text-secondary);">Volver al inicio</a>
       </p>
@@ -2414,6 +2439,9 @@
               <option value="helder">Helder (persona natural)</option>
             </select>
           </label>
+          <!-- SALIR (17-oct-2026): solo con la sesión del dueño (app.js lo
+               enseña). Borra la sesión en el servidor y vuelve a la portada. -->
+          <button id="btn-salir" type="button" class="enlace-discreto shrink-0 text-sm underline" hidden>Salir</button>
         </div>
       </div>
     </header>

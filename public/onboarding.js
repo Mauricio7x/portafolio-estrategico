@@ -29,9 +29,10 @@
      rewrites de vercel.json y, si fallaran, el botón tiene que seguir funcionando */
   const CANONICA = "/api/admin?op=rup&origen=pdf";
   const CLAVE_PERFIL_RUP = "detecta_perfil_rup";
-  // token integrado (decisión del dueño, ago 2026): la carga de experiencia
-  // escribe configuración compartida y el servidor sigue exigiéndolo
-  const TOKEN = "MiExtraccion2025";
+  /* la carga de experiencia escribe configuración compartida y el servidor exige
+     la SESIÓN del dueño (17-oct-2026): viaja en la cookie HttpOnly que el
+     navegador manda solo; en este archivo no vive ninguna llave */
+  const conSesion = (opciones) => ({ ...(opciones || {}), credentials: "same-origin" });
 
   /* LA COPIA LOCAL PRIMERO, EL CDN COMO RESPALDO (M-INF-18, 6-sep-2026). La red
      del dueño bloquea cdnjs, y sin pdf.js no se puede leer un PDF en el
@@ -774,8 +775,8 @@
     gate.classList.remove("hidden");
     gate.classList.add("flex");
     gate.style.display = "flex"; // hidden/flex declaran display: el inline decide (lección del modal)
-    const clave = $("gate-clave");
-    if (clave) clave.focus();
+    const correo = $("gate-correo");
+    if (correo) correo.focus();
   });
   /* Y LA VUELTA (5-sep-2026): exactamente lo contrario del botón de arriba. Sin
      esto, la pantalla de clave era la única sin salida de toda la aplicación —
@@ -800,6 +801,10 @@
        conocía quien supiera recargar a mano: la recarga. Así la instrucción pasa
        a ser posible, que es lo que la decisión del 11-sep exige de este panel. */
     if (!$("gate-form")) { location.reload(); return; }
+    /* el gate abierto ENCIMA de la aplicación (la sesión terminó, 17-oct-2026): volver al
+       inicio es volver a arrancar sin sesión, y eso lo decide el arranque al recargar */
+    const app = $("app");
+    if (app && !app.classList.contains("hidden")) { location.reload(); return; }
     gate.classList.add("hidden");
     gate.classList.remove("flex");
     gate.style.display = "";      // el inline decide: hay que soltarlo para que `hidden` mande
@@ -891,8 +896,6 @@
     mensajeExp(null);
     const archivo = $("exp-archivo").files && $("exp-archivo").files[0];
     if (!archivo) return mensajeExp("Elija primero el archivo CSV (puede partir del formato de ejemplo).", "error");
-    const token = TOKEN;
-
     let convertido = null;
     try {
       /* Excel-Windows guarda «CSV» en ANSI (windows-1252): decodificarlo como
@@ -907,20 +910,21 @@
 
     let r = null, cuerpo = null;
     try {
-      r = await fetch("/api/admin?op=experiencia", {
+      r = await fetch("/api/admin?op=experiencia", conSesion({
         method: "POST",
-        headers: { "Content-Type": "application/json", "x-historico-token": token },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ contratos: convertido.contratos }),
-      });
+      }));
     } catch (e) {
       return mensajeExp(window.Glosario.mensajeDeFallo(e, "cargar su experiencia"), "error");
     }
     try { cuerpo = await r.json(); } catch {
       return mensajeExp(window.Glosario.fraseDeFallo({ status: r.status }), "error");
     }
+    /* la sesión terminó: app.js (dueño del gate) abre la pantalla de entrar */
     if (r.status === 401) {
-      return mensajeExp("La aplicación no pudo autenticarse con el servidor. No es un problema suyo: es configuración "
-        + "del sitio — avise a quien lo administra (HISTORICO_TOKEN no coincide con el token integrado).", "error");
+      try { document.dispatchEvent(new CustomEvent("detekta:sesion-vencida")); } catch { /* sin eventos */ }
+      return mensajeExp("Su sesión terminó. Entre de nuevo con su correo y contraseña y vuelva a cargar el archivo.", "error");
     }
     if (!r.ok || !cuerpo.ok) {
       const detalle = cuerpo && cuerpo.errores && cuerpo.errores.length
