@@ -18875,3 +18875,32 @@ y una regla con dos copias diverge a la primera corrección. (e) danielmiessler/
 contratos ordena «Do not output warnings or notes», lo contrario de marcar lo no verificado, y `/dictamen` ya revisa
 pliegos verificando cada cita. (f) yamadashy/repomix: empaca el repositorio entero en un archivo, justo lo que
 CLAUDE.md prohíbe («se BUSCA, no se lee»: leerlo todo quemaba 250-400k tokens por arranque).
+
+### Precios deja de despertar la rutina cuando ya se despertó 3 veces sin dar señal (17-oct-2026)
+
+En una línea: pasados los 15 min de «repetida», cada «Buscar» despertaba otra corrida del día aunque las anteriores no
+hubieran mandado ningún progreso, y la solicitud nueva pisaba la cuenta; con la rutina dañada (entorno, clave, cuota) la
+pantalla decía «Vuelva a pulsar Buscar» y cada pulsación gastaba un intento sin arreglar nada. Ahora la solicitud guarda
+`despertadas_sin_senal` y a partir de `RUTINA_TOPE_SIN_SENAL` (3) ya no se despierta otra: la respuesta trae
+`tope_alcanzado` y la pantalla dice el hecho y abre el chat.
+
+**Cómo se halló.** El estudio de repositorios del 17-oct (Bull: «contar cuántas veces se quedó muda una tarea y darla por
+fallida») lo propuso como hipótesis; se verificó leyendo `lib/handlers/apu/editor.js` (la solicitud nueva no heredaba nada
+de la anterior) y `public/app.js` (la pantalla pedía volver a pulsar). La premisa del estudio, «Buscar puede repetirse sin
+fin», era FALSA en su forma fuerte: la pantalla nunca vuelve a pedir sola (los sondeos solo leen, con tope de 240 y 600);
+solo el usuario repetía.
+
+**Lo que no hay que deshacer.** (a) Cuenta solo un despertar que arrancó o pudo arrancar (`ok` o `indeterminada`): uno que
+falló no gastó corrida y no suma, pero conserva la cuenta que traía. (b) Cualquier señal de una sesión —«buscando» o
+«listo»— la pone en cero, aunque después enmudezca: la rutina funciona, el fallo es otro. (c) Una solicitud de antes de
+este cambio, sin el campo y despertada, cuenta 1, no 0 («sin dato» no es cero). (d) Pasadas `RUTINA_TOPE_VENTANA_H` (24)
+horas desde la ÚLTIMA solicitud, o con una fecha ilegible, se vuelve a intentar: es el lado seguro, como ya lo era para la
+vida de una sesión. (e) Sin rutina configurada no hay tope: no hay nada que gastar. (f) El tope se evalúa ANTES del
+candado del disparo, para no tomarlo sin disparar. (g) El mensaje no promete cuándo se arregla: dice el hecho y lleva al
+chat, que funciona sin ninguna variable.
+Medido: la prueba falla contra el manejador anterior («con 3 despertares sin señal no se gasta otro: 1 disparos») y la de
+la pantalla contra el `app.js` anterior; en Chromium real (Playwright, API interceptada) el texto y el color salen con 3 y
+el mensaje de siempre con 2. **Límite conocido:** entre los 15 y los 30 min tras el tercer despertar, un «Buscar» rechazado
+muestra el tope y el siguiente sondeo vuelve a decir «la búsqueda arrancó» hasta que la solicitud pasa a «sin_atender».
+**Hermano vivo, sin tocar:** el dictamen (`lib/handlers/pliego/dictamen.js`, `pedir_sesion`) tiene el mismo hueco: su marca
+dura 30 min y después cada clic vuelve a despertar su rutina, sin cuenta; queda para un encargo propio.
