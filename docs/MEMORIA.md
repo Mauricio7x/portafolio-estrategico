@@ -18694,6 +18694,8 @@ En una línea: medido con el reloj adelantado, la suite caía el 31-oct por una 
 
 ### La fila de prueba se busca en todas las páginas del listado, y enero espera (16-oct-2026)
 
+> SUPERADA el 17-oct-2026 por «Enero de 2027: las pruebas caen en cadena cuando el año tiene pocos meses (17-oct-2026)» — solo su PENDIENTE: hay más de una prueba detrás.
+
 En una línea: la prueba que caía del 1 al 5-nov no era una fecha fija sino la primera página del listado simulado, que el calendario va llenando; las seis búsquedas que la miraban sola ahora recorren todas las páginas (`filaDelListado` en `tests/e2e.js`), y queda otra prueba que caerá el 1-ene-2027.
 
 - **La causa, medida.** `extrasDelMes` añade 9 filas EXTRA sin cierre por cada mes transcurrido del año, y el orden por atractividad las pone arriba. En octubre la primera página (100 filas, el tope de `por_pagina`) llevaba 90 EXTRA y 10 procesos con cierre sin llave; en noviembre, 99 EXTRA y 8 de manifestación urgente con llave, y ningún proceso con cierre sin llave. No es un defecto del producto.
@@ -18702,3 +18704,13 @@ En una línea: la prueba que caía del 1 al 5-nov no era una fecha fija sino la 
 - **Medido** con el reloj adelantado: verde a +0, +20 (5-nov), +45 (30-nov), +60, +70 y +76 (31-dic) días desde el 16-oct. La versión anterior de la prueba caía a +20.
 
 > PENDIENTE · antes del 1-ene-2027: la prueba «la carga completa tiene que quedar a medias para la prueba» cae con el reloj en enero (medido a +80 días desde el 16-oct, con el árbol de main y con este cambio por igual; verde a +76): en enero el año tiene un solo mes y la carga completa termina de una vez. Reproducir con el precargador que adelanta `Date` y corregir donde el montaje supone varios meses.
+
+### Enero de 2027: las pruebas caen en cadena cuando el año tiene pocos meses (17-oct-2026)
+
+En una línea: con el reloj adelantado a 2027 la suite cae en cadena —se detiene en la primera falla y cada arreglo destapa la siguiente—; se corrigieron dos y quedan al menos dos que caen de enero a mayo; en agosto de 2027 (+300 días) ya pasa entera.
+
+- **Corregidas.** (1) «la carga completa tiene que quedar a medias para la prueba»: en enero el año tiene un solo mes y la carga entera cabe en el primer tramo; solo en ese caso se reabre el cursor real que dejó la carga, vuelto al inicio de su único mes, y el latido lo continúa igual. (2) «un sello viejo con el estado vigente abierto ya no esconde el proceso»: el proceso de prueba cerraba el 1-ene-2027 fijo; ahora cierra a 60 días del reloj.
+- **Medido** con el precargador que adelanta `Date`, desde el 16-oct: a +80 días cae «el presupuesto corto debía forzar varias invocaciones (reanudable)»; a +110 y +200, «72141200 NO está en el RUP subido … y no debía servirse»; a +300, verde. Como la suite se detiene en la primera falla, no se sabe cuántas más hay detrás de cada una.
+- [Inferencia] El patrón común es el mismo de noviembre: los datos simulados dependen de cuántos meses lleva el año (`MESES`, `mesesDelAno`), y con 1 a 5 meses no alcanzan para lo que la prueba monta. Lo confirmaría ver, en cada falla, cuántas filas simuladas hay del año corriente.
+
+> PENDIENTE · antes del 1-ene-2027: con el reloj adelantado a +80, +110 y +200 días desde el 16-oct caen «el presupuesto corto debía forzar varias invocaciones (reanudable)» y «72141200 NO está en el RUP subido … y no debía servirse», y puede haber más detrás. Repetir el barrido con el precargador (+77 a +260 días) hasta que todos los meses de enero a julio de 2027 pasen.

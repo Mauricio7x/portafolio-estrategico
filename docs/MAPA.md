@@ -2,7 +2,7 @@
      Es una FOTO para leer en GitHub; la fuente de verdad es ejecutar la herramienta. -->
 
 ```
-== MAPA DE DETEKTA · generado del árbol el 2026-10-16 ==
+== MAPA DE DETEKTA · generado del árbol el 2026-10-17 ==
 (no editar a mano: sale de `node tests/mapa.js --escribir`. Para ir a un sitio concreto,
  `node tests/mapa.js <término>` da la ruta, la línea y el sed exacto — más barato que leer esto)
 
@@ -211,8 +211,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 320 secciones (18 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 18537  El tipo de contrato de obra sin códigos entra, en ámbar (30-sep-2026)
+· MEMORIA · docs/MEMORIA.md — 321 secciones (19 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 18557  El corpus del año se recomprime en su sitio: no se junta como el histórico (30-sep-2026)
   L 18574  Consorcios de tres o más socios: no hay ninguno con reparto supuesto, y si llega a haberlo …
   L 18582  La historia de un proceso sobrevive a quien reescribe su mes (1-oct-2026)
@@ -221,7 +220,8 @@
   L 18620  Tres pruebas con fecha fija tumbaron main al cambiar de mes, y la cuarta espera (1-oct-2026)  (superada)
   L 18632  Vercel pausó Detekta por CPU: cuenta nueva y menos llamadas automáticas (16-oct-2026)
   L 18683  Las pruebas con fecha: la compactación caía el 31-oct y la lista se queda sin procesos con …  (superada)
-  L 18695  La fila de prueba se busca en todas las páginas del listado, y enero espera (16-oct-2026)
+  L 18695  La fila de prueba se busca en todas las páginas del listado, y enero espera (16-oct-2026)  (superada)
+  L 18708  Enero de 2027: las pruebas caen en cadena cuando el año tiene pocos meses (17-oct-2026)
 
 · DOCUMENTOS docs/ — 71 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)

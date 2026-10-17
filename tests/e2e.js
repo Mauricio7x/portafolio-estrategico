@@ -11541,7 +11541,16 @@ async function main() {
       await escribirJSONL(redis, CL.meta, {});
       const corte = await invocar(rProcL, "/api/procesos?op=sync&modo=full&presupuesto=1&chain=0", BEARER);
       assert.ok(corte.status < 400, JSON.stringify(corte.cuerpo).slice(0, 300));
-      const cursorFull = await leerJSONL(redis, CL.progreso);
+      let cursorFull = await leerJSONL(redis, CL.progreso);
+      /* ENERO (16-oct-2026): el año tiene un solo mes y la carga completa cabe entera en el primer
+         tramo, así que no queda nada «a medias» que el latido pueda continuar. Solo en ese caso se
+         reabre el cursor REAL que dejó la carga —el mismo, vuelto al inicio de su único mes—, y lo
+         que sigue (el latido continúa la carga, con la llave por la URL) se ejecuta igual. Con dos
+         meses o más, nada cambia: la carga se corta de verdad. */
+      if (cursorFull && cursorFull.tipo === "full" && require("../lib/socrata.js").mesesDelAno().length === 1) {
+        cursorFull = { ...cursorFull, mesIdx: 0, cursor: {}, terminado: false };
+        await escribirJSONL(redis, CL.progreso, cursorFull);
+      }
       assert.ok(cursorFull && cursorFull.tipo === "full" && !cursorFull.terminado, `la carga completa tiene que quedar a medias para la prueba: ${JSON.stringify(cursorFull).slice(0, 200)}`);
       const s = await invocar(rProcL, `/api/procesos?op=latido&token=${encodeURIComponent(process.env.HISTORICO_TOKEN)}`);
       assert.strictEqual(s.cuerpo.accion, "sync", JSON.stringify(s.cuerpo).slice(0, 200));
@@ -42295,7 +42304,7 @@ async function main() {
            interés de este mismo commit solo llega al corpus ya guardado si el
            sello viejo no veta. Desplegar no puede exigir reconstruir.
            La prueba fija ahora el hecho nuevo, no el remiendo viejo. */
-        const sellado = { ...cerrado, id_del_proceso: "SELLADO-1", proceso_abierto: false, estado_del_procedimiento: "Publicado", fecha_cierre: "2027-01-01T00:00:00.000" };
+        const sellado = { ...cerrado, id_del_proceso: "SELLADO-1", proceso_abierto: false, estado_del_procedimiento: "Publicado", fecha_cierre: new Date(Date.now() + 60 * 864e5).toISOString().slice(0, 10) + "T00:00:00.000" };   // relativa al reloj (16-oct-2026): la fija del 1-ene-2027 lo cerraba desde esa fecha
         const rs = R.rastrear("SELLADO-1", { filas: [sellado], evaluar: evaluarReal });
         assert.strictEqual(rs.resultados[0].donde, "servido",
           `un sello viejo con el estado vigente abierto ya no esconde el proceso: se sirve — ${rs.resultados[0].explicacion}`);
