@@ -18973,3 +18973,30 @@ ningún disparo. (e) «Volver a leer» (refrescar) también cuenta: también gas
 Medido: con la condición del tope apagada la suite falla con «con 3 lecturas sin respuesta no se gasta otra: 1 disparos»,
 y sin el borrado al guardar el dictamen falla la cuenta. La pantalla no cambió: `public/pliego.js` (`pedirLecturaCompleta`)
 ya escribe `error` y `que_hacer` en `#dictamen-estado`; leído, no ejecutado en navegador.
+
+### El anticipo negado para UNA parte numerada del contrato no es «no hay anticipo» (17-oct-2026)
+
+En una línea: en la ronda 6 de detekta-lector, la Gobernación del Amazonas (CO1.REQ.11022945, llave en mano) decía «no hay
+anticipo» porque «La Entidad no reconocerá anticipo alguno para la ejecución del componente 1…» pesaba más que «Dará en
+calidad de anticipo un 30% del valor del componente dos» del mismo numeral; un «no» falso deja el capital de trabajo en
+«no llega». Ahora la negación de una parte NUMERADA pesa como mención y Amazonas dice «sí», citando la cláusula (pág. 84).
+
+**Lo que no hay que deshacer (dos revisiones adversarias, cada punto con su cerradura).** (a) Solo es parcial la parte
+NUMERADA y SINGULAR justo después de la negación: «para (la ejecución del) componente 1 / etapa 2 / lote uno / fase II».
+Entre la negación y la parte solo cabe «alguno», «al contratista» o «y/o pago anticipado». La primera versión aceptaba
+cualquier «para … etapa/actividades/ítems» a 60 caracteres: once negaciones reales pasaban a mención y dos a un «sí»
+falso; la segunda aún saltaba a la parte de otra frase («no otorgará anticipo, por lo que … para la etapa 1»), a «ni para
+la etapa 1 ni para la etapa 2», a «lote 1 de 1», a «etapa 2026» y a «lotes 1, 2 y 3»: todo eso sigue negando. (b) La línea
+de abajo solo se mira si la frase queda ABIERTA (termina en conector o en el nombre de la parte, o la de abajo sigue en
+minúscula), y solo puede volver PARCIAL una negación de esta línea, nunca crearla: sin eso «…: No aplica» / «Plazo para
+la etapa 1» pasaba a mención y las citas «8.3 … / NO APLICA» perdían su segunda línea. (c) `hechosDeTexto` y el dictamen
+respetan el `niega` que decide `detectar`; releer la cita sola daba «no» con la parte en la línea siguiente. (d) En
+`lib/negocio`, con una negación parcial NO se lee porcentaje: «… para el componente uno, con pagos parciales del 90 %» o la
+garantía «del 100 %» de al lado se tomaban como anticipo, y un anticipo falso baja la carga de la K y abre la puerta de
+caja. Queda «sin dato». (e) Se excluye la fila partida de la tabla de garantías «(correcta) inversión del anticipo⇥
+liquidación…⇥100%», salvo que la línea pacte o niegue: era la cita del «sí» en Amazonas, Samacá y Sucre. (f) REGLAS_VERSION .9.
+Medido en los 31 textos de pdf.js (Fase 0, Santa Elena, rondas 5 y 6): solo cambia el estado de Amazonas; tres citas pasan
+de la tabla de garantías a la cláusula (Pasto sigue citando otra fila de la garantía). Límites conocidos (previos, del
+lado caro, medidos por la revisión): la parte ANTES de la negación («Para la etapa 1 no se entregará anticipo»), «la primera
+etapa», «en el componente 1» sin «para» y la frase partida en tres líneas siguen diciendo «no»; las filas ya enriquecidas
+en Redis conservan `anticipo_declarado` hasta que se re-enriquecen.
