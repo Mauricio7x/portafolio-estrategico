@@ -121,12 +121,18 @@ async function main() {
   R.procesos = { distintos: procesos.length, sin_portafolio: sinPortafolio, varias_filas: multi };
 
   /* 4 · Ofertas de los adjudicados, por lista de ids, en wi7w y en b28v. */
-  const adj = procesos.filter((p) => p.fila.adjudicado === "Si");
+  /* Solo se bajan ofertas de quien puede quedar USABLE: adjudicado, con precio base y sin lotes
+     en p6dx. Los lotes son justo los procesos de cientos de miles de filas que agotaban el
+     tiempo (medido: 20 lotes de 40 ids en 16 min), y se excluyen igual. */
+  const adj = procesos.filter((p) => p.fila.adjudicado === "Si" && !p.lote_p6dx
+    && (L.numeroONull(p.fila.precio_base) || 0) > 0);
   const ofertasDe = new Map();
   const fallosOfertas = []; const idsSinMedir = new Set();
   for (const ds of ["ofertas", "ofertas_hist"]) {
     const C = cliente(ds); let n = 0; const lotes = trozos(adj.map((p) => p.portafolio), LOTE_IDS);
-    for (const [i, lote] of lotes.entries()) {
+    /* 3 consultas a la vez: cada trabajador toma el siguiente lote libre. */
+    let siguiente = 0;
+    const trabajador = async () => { for (;;) { const i = siguiente++; if (i >= lotes.length) return; const lote = lotes[i];
       if (i % 20 === 0) log(`${DS[ds]}: lote ${i + 1}/${lotes.length} · ${n} grupos · ${ahora()}`);
       /* Un lote que falla se parte en mitades hasta 1 id; el id que aun así falla queda
          «sin medir» (con su error literal), jamás «sin ofertas». */
@@ -144,7 +150,8 @@ async function main() {
         }
       };
       await bajar(lote);
-    }
+    } };
+    await Promise.all([trabajador(), trabajador(), trabajador()]);
     R.fuentes[ds] = { dataset: DS[ds], filas_cruzadas: n, corte: ahora() };
   }
   R.fallos_ofertas = fallosOfertas;
