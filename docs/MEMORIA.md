@@ -18780,3 +18780,37 @@ Era el límite que dejó anotado la revisión adversaria de la sección anterior
 Límites conocidos (segunda revisión adversaria, no vistos en los 9 pliegos): «Anticipo y/o pago anticipado: 0 si la
 entidad no lo pacta…» con dos puntos niega aunque otra página pacte el 30 %; y en `lib/negocio` una descripción de SECOP
 con el texto de la garantía «…anticipo y/o pago anticipado: N/A» pondría el anticipo en 0.
+
+### El presupuesto del pliego frente al de SECOP II: un aviso, no un reemplazo (17-oct-2026)
+
+En una línea: `lib/presupuesto_pliego` lee la cifra en pesos de la tabla 1.1 del pliego (definitivo, adenda, documento
+base o borrador) y `documentos_proceso.loQueDicen` AVISA, primero en «Ojo con lo que dice el pliego», si difiere de la de
+SECOP II en más de $1; las cuentas (K, capital de trabajo, experiencia) siguen con la de SECOP II.
+
+**Por qué.** Santa Elena (Cali): SECOP II mostraba el valor del borrador ($1.744.426.146) y el pliego definitivo decía
+$1.581.425.810 (−9,3 %); la oferta se armó sobre la base equivocada. Medido el 17-oct-2026 en 9 pliegos reales: SECOP II
+coincide con el pliego al peso en los 9 (corta los centavos), así que el aviso es para la excepción, no la regla.
+
+**Lo que no hay que deshacer.** (a) Decisión del dueño (17-oct-2026): avisar, NO reemplazar en silencio la cifra que decide;
+reemplazarla sería otro paso con su visto bueno. (b) Tres formas reales de la cifra, cada una con su cerradura: «$ x.xxx»,
+la que cierra paréntesis con el «( $» en otra línea por las columnas entrelazadas (Santa Elena definitivo) y el formato inglés
+con centavos con o sin «$» (Caldas, «993,687,600.00»). Dos cifras distintas en la sección: null, no se escoge. (c) Solo la
+sección que está SOLA en su línea; la del índice («…UBICACIÓN⇥6») no. (d) Diferencia de hasta $1 no avisa: SECOP II corta los
+centavos. Solo borrador: «Confírmelo» y esperar el definitivo; el definitivo distinto: «Riesgo». (e) El PLAZO no se lee aquí:
+en CO1.REQ.10955924 la única cifra pegada a su unidad era la vigencia («seis (6) meses más») y el plazo real (75 días) quedaba
+partido entre columnas; leerlo exige las coordenadas de pdf.js. Y en Turbaco SECOP II publica «0 meses» (el pliego dice 4):
+la guía lo da por «sin dato», pero `lib/capacidad.plazoMesesDe` pone 12 por defecto (inocuo para menor cuantía, no dicho).
+(f) VERSION de documentos_proceso 16 → 17.
+(g) Revisión adversaria (mismo día), cada caso con su cerradura: la ADENDA más reciente con cifra gana al pliego (como la
+garantía y los requisitos) y una adenda sin cifra baja el aviso a «revisar» sin ordenar cuál cifra usar; con un pliego
+definitivo o documento base LEÍDO el borrador no habla; por LOTES no se avisa (dos lotes iguales dejaban «−50 %» falso);
+más del 50 % de diferencia es «revisar» con «puede ser una lectura equivocada»; menos de 0,1 % es «dato»; el texto dice la
+diferencia en pesos y no ordena: «confirme con la entidad cuál cifra rige». (h) El aviso «riesgo» o «revisar» va en la
+CABECERA del expediente, bajo la cifra del presupuesto (`public/expediente.js htmlAvisoPresupuesto`): en la guía quedaba
+plegado en «Todo lo demás», a dos clics. Visto en Chromium (escritorio y 390 px). Segunda revisión: gana la adenda más reciente QUE TRAE la cifra (una de cronograma, posterior, no la tapa; antes
+rebajaba un «Riesgo» verdadero); un «Documento base» cuyo NOMBRE dice proyecto/borrador es borrador (la misma RE_BORRADOR de
+clasificarArchivo); y «dato» solo si el pliego dice MÁS que SECOP II: si dice menos, una oferta al techo de SECOP II se pasa
+del presupuesto oficial. (i) Límite conocido: el techo de la
+validación de Precios sigue siendo el presupuesto de SECOP II; el aviso no llega a esa pestaña.
+Medido después: 11 de 11 cifras correctas en los 9 pliegos y las dos versiones de Santa Elena (Manizales escribe
+«1.1.OBJETO» sin espacio y ahora se lee).
