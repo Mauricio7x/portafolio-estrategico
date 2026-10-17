@@ -8060,6 +8060,22 @@ async function main() {
     const dos = PP.leerPresupuestoDelPliego(["\f6", titulo, "($1.744.426.146)", "($1.581.425.810)", "1.2.\tDOCUMENTOS"].join("\n"));
     assert.deepStrictEqual([dos.presupuesto.valor, dos.presupuesto.leidas.length], [null, 2], JSON.stringify(dos));
     assert.strictEqual(PP.leerPresupuestoDelPliego(["\f2", indice, "1.2.\tDOCUMENTOS DEL PROCESO\t6"].join("\n")), null, "la línea del índice no es la sección");
+    /* ronda 5 de detekta-lector (17-oct-2026, licitación pública): los centavos con punto (Mariquita CO1.REQ.11169004),
+       el título «…PLAZO, UBICACIÓN Y ESPECIFICACIONES» (Paicol CO1.REQ.11151463) y el título SIN número, que acaba en
+       «DOCUMENTOS DEL PROCESO» sin número (Sucre CO1.REQ.11092753: sin ese fin, la sección llegaba al valor del CDP) */
+    assert.strictEqual(PP.leerPresupuestoDelPliego(["\f5", titulo, "TOLIMA\tCENTAVOS", "($685.335.300.87)", "M/CTE", "1.2.\tDOCUMENTOS DEL PROCESO"].join("\n")).presupuesto.valor, 685335300.87, "los centavos con punto (MUTACIÓN: sin el punto, «sin cifra legible»)");
+    assert.strictEqual(PP.leerPresupuestoDelPliego(["\f6", "1.1.\tOBJETO, PRESUPUESTO OFICIAL, PLAZO, UBICACIÓN Y ESPECIFICACIONES", "Y CONDICIONES TÉCNICAS.", "Públicas o en su defecto por\tY DOS PESOS\tHuila", "quien se designe por parte del ($1.313.400.392,00) M/CTE.", "1.2\tDOCUMENTOS DEL PROCESO"].join("\n")).presupuesto.valor, 1313400392, "«PLAZO, UBICACIÓN Y ESPECIFICACIONES» es el mismo título");
+    assert.strictEqual(PP.leerPresupuestoDelPliego(["\f2", "1.1.\tOBJETO, PRESUPUESTO OFICIAL, PLAZO, UBICACIÓN Y", "ESPECIFICACIONES Y CONDICIONES TÉCNICAS......................14", "1.2\tDOCUMENTOS DEL PROCESO........15"].join("\n")), null, "la línea partida del índice no es la sección");
+    const sucre = ["\f2", "OBJETO, PRESUPUESTO OFICIAL, PLAZO Y UBICACIÓN .................................................. 5", "\f5", "1. CAPÍTULO I INFORMACIÓN GENERAL", "OBJETO, PRESUPUESTO OFICIAL, PLAZO Y UBICACIÓN", "El objeto, Presupuesto Oficial, plazo y ubicación del proyecto objeto del Proceso de Contratación se", "DE SUCRE\tCENTAVOS M/CTE", "($1.258.962.674,74)", "DOCUMENTOS DEL PROCESO", "Los Documentos del Proceso son los señalados tanto en el capítulo IX.", "CLASIFICADOR DE BIENES Y SERVICIOS DE NACIONES UNIDAS (UNSPSC)", "Disponibilidad Presupuestal\tDisponibilidad Presupuestal\tDisponibilidad Presupuestal", "647\t3 de junio de 2026\t$1.366.136.574,00"].join("\n");
+    assert.deepStrictEqual([PP.leerPresupuestoDelPliego(sucre).presupuesto.valor, PP.leerPresupuestoDelPliego(sucre).presupuesto.pagina], [1258962674.74, 5], `el título sin número, y la sección acaba en «DOCUMENTOS DEL PROCESO» (MUTACIÓN: sin ese fin, dos cifras con la del CDP): ${JSON.stringify(PP.leerPresupuestoDelPliego(sucre))}`);
+    assert.strictEqual(PP.leerPresupuestoDelPliego(["\f2", "OBJETO, PRESUPUESTO OFICIAL, PLAZO Y UBICACIÓN .................................................. 5", "DOCUMENTOS DEL PROCESO ........ 5"].join("\n")), null, "la línea del índice sin número no es la sección");
+    // cada título que cierra la sección sin número, solo, deja fuera el valor del CDP que viene después
+    for (const fin of ["DOCUMENTOS DEL PROCESO", "COMUNICACIONES Y OBSERVACIONES AL PROCESO", "CLASIFICADOR DE BIENES Y SERVICIOS DE NACIONES UNIDAS (UNSPSC)", "RECURSOS QUE RESPALDAN LA CONTRATACIÓN"]) {
+      const r = PP.leerPresupuestoDelPliego(["\f5", "OBJETO, PRESUPUESTO OFICIAL, PLAZO Y UBICACIÓN", "DE SUCRE\tCENTAVOS M/CTE", "($1.258.962.674,74)", fin, "647\t3 de junio de 2026\t$1.366.136.574,00"].join("\n"));
+      assert.strictEqual(r.presupuesto.valor, 1258962674.74, `«${fin}» cierra la sección (MUTACIÓN: sin ese fin, dos cifras con la del CDP): ${JSON.stringify(r)}`);
+    }
+    // la cifra partida por las columnas en dos líneas (Samacá CO1.REQ.11184065, «$1.773´266.41 / 9.00).») no se adivina
+    assert.strictEqual(PP.leerPresupuestoDelPliego(["\f6", "1.1.OBJETO, PRESUPUESTO OFICIAL, PLAZO Y UBICACIÓN", "MESES ($1.773´266.41", "MÁS.\t9.00).\t15 ACUEDUCTO RANCHERIA - VDA QUITE", "1.2.\tDOCUMENTOS DEL PROCESO"].join("\n")).presupuesto.valor, null, "la cifra partida entre columnas queda sin dato");
     // el aviso: definitivo distinto de SECOP → riesgo y PRIMERO; solo borrador → «confírmelo»; igual (centavos) → nada
     const doc = (texto, tipo) => ({ nombre: `${tipo}.pdf`, tipo, hechos: Dp.hechosDeTexto(texto, { tipo }) });
     const dicen = (leidos, cop) => Dp.loQueDicen({ indice: { archivos: [], plan: [] }, ilegibles: {}, leidos }, { presupuestoCOP: cop }).hechos;
@@ -8100,6 +8116,11 @@ async function main() {
     assert.ok(dos2.length === 1 && dos2[0].estado === "dato" && /diferencia de \$2\./.test(dos2[0].texto), JSON.stringify(dos2));
     /* EL TECHO DE LA OFERTA PARA PRECIOS (17-oct-2026): la más baja entre SECOP II y el pliego definitivo; solo BAJA */
     const tope = (leidos, cop) => Dp.loQueDicen({ indice: { archivos: [], plan: [] }, ilegibles: {}, leidos }, { presupuestoCOP: cop }).tope_oferta;
+    // revisión adversaria (17-oct-2026): una cifra mal escrita no se lee mil veces menor, y sin título de cierre no hay sección
+    for (const mal of ["($1.581.425.810,0)", "$1.581.425.810.0 M/CTE"]) assert.strictEqual(PP.leerPresupuestoDelPliego(sec(mal)).presupuesto.valor, null, `«${mal}» no es «1.581.425,81» (MUTACIÓN: con el lookahead viejo, mil veces menos)`);
+    const adendaSinCierre = ["\f1", "ADENDA No. 2", "Se modifican los siguientes numerales:", "OBJETO, PRESUPUESTO OFICIAL, PLAZO Y UBICACIÓN", "en el sentido de aclarar la ubicación de la obra.", "Capital de trabajo: CT ≥ $ 400.000.000,00"].join("\n");
+    assert.strictEqual(PP.leerPresupuestoDelPliego(adendaSinCierre), null, "sin título de cierre no hay sección (MUTACIÓN: se leía el capital de trabajo como presupuesto)");
+    assert.strictEqual(tope({ a: { ...doc(def, "pliego"), fecha_carga: "2026-09-01" }, b: { ...doc(adendaSinCierre, "adenda"), fecha_carga: "2026-09-10" } }, 1581425810).valor, 1581425810, "una adenda que solo nombra el numeral no baja el techo");
     assert.deepStrictEqual([tope({ a: doc(def, "pliego"), b: doc(bor, "pliego_borrador") }, 1744426146).valor, tope({ a: doc(def, "pliego") }, 1744426146).fuente, tope({ a: doc(def, "pliego") }, 1744426146).pagina], [1581425810, "pliego", 6], "Santa Elena: el techo es el del pliego definitivo");
     assert.strictEqual(tope({ a: doc(bor, "pliego") }, 1581425810).fuente, "secop", "el pliego MAYOR que SECOP II no sube el techo");
     assert.strictEqual(tope({ b: doc(bor, "pliego_borrador") }, 1900000000).fuente, "secop", "un borrador nunca fija el techo, aunque diga menos que SECOP II");
@@ -8152,6 +8173,22 @@ async function main() {
     // el título y la negación en UNA línea: «anticipado:» también niega, y el «N/A» solo con dos puntos (17-oct-2026)
     assert.strictEqual(ant("\f87\nconstituyen su propuesta económica autónoma.\n8.3. ANTICIPO Y/O PAGO ANTICIPADO: No aplica\nCAPITULO IX LISTA DE ANEXOS\n").estado, "no", "«…PAGO ANTICIPADO: No aplica» en una línea niega");
     assert.strictEqual(ant("\f87\n8.3. ANTICIPO Y/O PAGO ANTICIPADO: N/A\n").estado, "no", "«…PAGO ANTICIPADO: N/A» en una línea niega");
+    /* ronda 5 de detekta-lector (17-oct-2026, texto de pdf.js): el corchete de la plantilla sin borrar (Garagoa,
+       CO1.REQ.11091702) y la frase modelo que REMITE al numeral 8.3 (Paicol, CO1.REQ.11151463) decían «hay anticipo» */
+    const garagoa = ant("\f59\n8.3.ANTICIPO Y/O PAGO ANTICIPADO\nEn el presente proceso de contratación la entidad no entregará al contratista [anticipo y/o pago\nanticipado]\nCAPITULO IX LISTA DE ANEXOS, FORMATOS, MATRICES Y FORMULARIOS\n");
+    assert.deepStrictEqual([garagoa.estado, garagoa.pagina], ["no", 59], `«no entregará al contratista [anticipo…» niega (MUTACIÓN: sin el corchete, «sí»): ${JSON.stringify(garagoa)}`);
+    const modeloPaicol = "\f17\nProponente haya demostrado lo contrario, y procederá a rechazar la oferta.\nNo se configura este supuesto cuando la Entidad establece en el numeral 8.3 que no va a entregar anticipo\ny/o pago anticipado y el Proponente no renuncia a ellos. Tampoco cuando a pesar de que las personas\n";
+    assert.strictEqual(ant(modeloPaicol).estado, "sin_dato", "la frase modelo que remite al numeral 8.3 ni afirma ni niega (MUTACIÓN: sin la exclusión, «sí»)");
+    assert.strictEqual(ant("\f17\nNo se configura este supuesto cuando la Entidad establece en el numeral 8.3 que no va a entregar\nanticipo y/o pago anticipado y el Proponente no renuncia a ellos.\n").estado, "sin_dato", "la frase modelo partida antes de «anticipo» tampoco decide");
+    assert.strictEqual(ant("\f17\nNo se configura este supuesto cuando la Entidad establece en el numeral 8.3 que no va a\nentregar anticipo y/o pago anticipado y el Proponente no\nrenuncia a ellos.\n").estado, "sin_dato", "la frase modelo partida en tres líneas no afirma (MUTACIÓN: sin `excluyeUnida`, «sí»)");
+    assert.strictEqual(ant(modeloPaicol + "\f61\n8.3. ANTICIPO\nLa entidad entregará al contratista un anticipo del treinta por ciento (30 %) del valor del contrato.\n").estado, "si", "la frase modelo no tapa un anticipo pactado en su numeral");
+    assert.strictEqual(ant(modeloPaicol + "\f61\n8.3. ANTICIPO Y/O PAGO ANTICIPADO\nEn el presente proceso de contratación la entidad no entregará al contratista anticipo y/o pago\nanticipado.\n").estado, "no", "la frase modelo no tapa la cláusula que niega");
+    // las variantes de la frase modelo y el condicional con «va a» no niegan un anticipo pactado (revisión adversaria, 17-oct-2026)
+    const pactado = "\f61\n8.3. ANTICIPO\nLa entidad entregará al contratista un anticipo del treinta por ciento (30 %) del valor del contrato.\n";
+    for (const v of ["No se configura este supuesto cuando la Entidad establece en el numeral 8.3 del Documento Base que no va a entregar anticipo\ny/o pago anticipado y el Proponente no renuncia a ellos.", "No se configura este supuesto cuando la Entidad establece en la sección 8. 3, que no va a entregar anticipo y/o pago anticipado.", "No se configura este supuesto cuando la Entidad establece en el numeral 8.3 del Pliego\nque no va a entregar anticipo y/o pago anticipado y el Proponente\nno renuncia a ellos.", "Si la Entidad no va a entregar anticipo, el valor del anticipo en la fórmula del capital de trabajo será cero.", "La Entidad no reconocerá pagos distintos a los siguientes (anticipo y actas parciales de obra)."]) {
+      assert.strictEqual(ant(`\f17\n${v}\n${pactado}`).estado, "si", `no tapa el anticipo pactado (MUTACIÓN: con «va a» o «(» en la negación, «no»): «${v}»`);
+      assert.strictEqual(require("../lib/negocio.js").anticipoPct({}, `${v} El anticipo será del 30 % del valor del contrato.`), 30, `lib/negocio no pone el anticipo en 0: «${v}»`);
+    }
     assert.strictEqual(ant("\f74\nBuen manejo del anticipo\tN/A\tN/A\n\f78\nLa entidad entregará al contratista un anticipo del 30 %.\n").estado, "si", "una celda «N/A» de la tabla de garantías (sin dos puntos) no niega el anticipo pactado");
     // …pero «pago anticipado» SUELTO no niega el anticipo: son figuras distintas (revisión adversaria, 17-oct-2026)
     assert.strictEqual(ant("\f20\nVALOR DEL ANTICIPO: Treinta por ciento (30 %) del valor del contrato, previa aprobación del plan.\nPAGO ANTICIPADO: No aplica para el presente proceso de contratación.\n").estado, "si", "«PAGO ANTICIPADO: No aplica» junto a un anticipo del 30 % no niega el anticipo");
@@ -8166,7 +8203,7 @@ async function main() {
     assert.strictEqual(ant("\f3\nNo se pagará el ajuste.\nEl anticipo será del treinta por ciento del valor del contrato y se girará a la fiducia.\n").estado, "si", "«No se pagará el ajuste.» no niega el anticipo de la línea siguiente (MUTACIÓN: sin la guarda del punto)");
     // la gemela de lib/negocio reconoce las tres formas nuevas
     const Ng = require("../lib/negocio.js");
-    for (const t of ["La Entidad considera que no es procedente establecer un anticipo", "no considera prudente gestionar anticipo, toda vez", "ANTICIPO (19 | SÍ NO_X_ Porcentaje", "8.3. ANTICIPO Y/O PAGO ANTICIPADO: No aplica"]) assert.strictEqual(Ng.anticipoDeclarado({}, t), true, `lib/negocio lee la negación como la de los documentos: «${t}»`);
+    for (const t of ["La Entidad considera que no es procedente establecer un anticipo", "no considera prudente gestionar anticipo, toda vez", "ANTICIPO (19 | SÍ NO_X_ Porcentaje", "8.3. ANTICIPO Y/O PAGO ANTICIPADO: No aplica", "la entidad no entregará al contratista [anticipo]"]) assert.strictEqual(Ng.anticipoDeclarado({}, t), true, `lib/negocio lee la negación como la de los documentos: «${t}»`);
     // (5) el anticipo entre documentos: una mención no tapa al que decide, y dos que se contradicen se dicen
     const doc = (tipo, a) => ({ nombre: `${tipo}.pdf`, tipo, hechos: { ...Dp.hechosDeTexto("", { tipo }), anticipo: a } });
     const antDe = (leidos) => Dp.loQueDicen({ indice: { archivos: [], plan: [] }, leidos, ilegibles: {} }).hechos.find((x) => x.clave === "anticipo");
@@ -20686,7 +20723,7 @@ async function main() {
           const texto = "\f1\nPLIEGO\nExperiencia general: 2.500 SMMLV\nExperiencia específica: 1.000 SMMLV\nÍndice de liquidez mayor o igual a 1,5\nNivel de endeudamiento menor o igual a 60%\nCapital de trabajo: mayor o igual a $650.000.000\nPatrimonio: mayor o igual a $9.000.000.000\n\f2\nNo se entregará anticipo al contratista.";
           const h = D.hechosDeTexto(texto, { tipo: "pliego" });
           assert.ok(h.requisitos_numericos.experiencia_general && h.requisitos_numericos.experiencia_general.valor === 2500 && h.requisitos_numericos.experiencia_especifica && h.requisitos_numericos.experiencia_especifica.valor === 1000, "lib/diff separa la experiencia general de la específica");
-          assert.ok(h.version.startsWith("17|"), "los hechos guardados con las reglas viejas se rehacen: la versión del módulo subió");
+          assert.ok(h.version.startsWith("18|"), "los hechos guardados con las reglas viejas se rehacen: la versión del módulo subió");
           const docs = { indice: { archivos: [{ id_documento: "d1", nombre: "pliego.pdf", tipo: "pliego", de_la_entidad: true, legible: true }], plan: ["d1"], consultado_el: "2026-09-04" }, leidos: { d1: { nombre: "pliego.pdf", tipo: "pliego", tipo_legible: "Pliego", hechos: h, paginas: 2 } }, ilegibles: {} };
           const con = G.guiaDe({ fila: base, perfil: "helder", ctx: { ahoraMs: ahoraG, documentos: docs } });
           const ex = Object.fromEntries(con.exigencias.map((x) => [x.clave, x]));

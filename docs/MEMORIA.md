@@ -18876,6 +18876,53 @@ contratos ordena «Do not output warnings or notes», lo contrario de marcar lo 
 pliegos verificando cada cita. (f) yamadashy/repomix: empaca el repositorio entero en un archivo, justo lo que
 CLAUDE.md prohíbe («se BUSCA, no se lee»: leerlo todo quemaba 250-400k tokens por arranque).
 
+### El anticipo con el corchete de la plantilla y la frase modelo que remite al 8.3 (17-oct-2026)
+
+En una línea: en la ronda 5 de detekta-lector (10 pliegos nuevos, texto de pdf.js) el anticipo dio dos «sí» falsos:
+Garagoa (CO1.REQ.11091702) dice «la entidad no entregará al contratista [anticipo y/o pago anticipado]», con el corchete
+de la plantilla sin borrar, y Paicol (CO1.REQ.11151463) solo trae la frase modelo «No se configura este supuesto cuando
+la Entidad establece en el numeral 8.3 que no va a entregar anticipo…». Ahora Garagoa da «no» y Paicol «sin dato».
+
+**Lo que no hay que deshacer.** (a) `SIN_ANTICIPO_RE` (y su gemela de `lib/negocio`) acepta SOLO un `[` pegado a
+«anticipo». El paréntesis y las comillas abrían «no» falsos que tapaban un anticipo pactado («La Entidad no reconocerá
+pagos distintos a los siguientes (anticipo y actas parciales…)»), y ningún pliego real los necesitaba. (b) «no VA A
+entregar» NO es negación, a propósito: solo se ha visto en la frase modelo; con él, un condicional («Si la Entidad no va
+a entregar anticipo, el valor… será cero») o cualquier variante de la frase modelo que la exclusión no cubriera negaba con
+peso de frase (3) y le ganaba a «la entidad entregará un anticipo del 30 %» (revisión adversaria, reproducido; en
+`lib/negocio` ponía el anticipo en 0). Sin «va a», una variante no cubierta solo puede decir «sí» cuando no hay otra
+cláusula, que es lo que ya pasaba. (c) La frase modelo NO decide: remite a lo que diga el 8.3. Se excluye en la línea
+(`excluye`: «establec… que no va a entregar», «no se configura este supuesto», «y el Proponente no renuncia a ellos») y
+partida con la línea anterior (`excluyeUnida`); el tramo «establec…» cruza «8.3» pero no un punto de fin de frase.
+Paicol queda en «sin dato» (confírmelo): uno de los dos subagentes de la verdad dijo «no» y el otro null, y su numeral 8.3
+es de formularios. (d) REGLAS_VERSION .7 → .8: los hechos y los dictámenes por reglas se rehacen.
+Medido: en los 21 textos de pdf.js que hay (Fase 0, Santa Elena y ronda 5) solo cambian esos dos; la frase modelo aparece
+también en Samacá y Garagoa, sin efecto porque su 8.3 decide. Límites conocidos: la exclusión descarta la línea ENTERA, así
+que si pdf.js pega la cola de la frase modelo con el 8.3 en una sola línea, ese 8.3 no se lee; y «la Entidad no va a
+entregar anticipo», si fuera la única mención del pliego, saldría «sí» (no visto en ningún pliego real).
+
+### El presupuesto del pliego en licitación pública: título sin número, «…Y ESPECIFICACIONES» y centavos con punto (17-oct-2026)
+
+En una línea: en la ronda 5 de detekta-lector el lector de la tabla 1.1 (`lib/presupuesto_pliego`) leyó 3 de 10 pliegos
+de licitación pública, sin ningún falso; los 7 vacíos eran de forma, no de contenido. Ahora lee el título sin el número
+«1.1», la variante «…PLAZO, UBICACIÓN Y ESPECIFICACIONES…», corta la sección en «DOCUMENTOS DEL PROCESO» sin número y
+acepta los centavos con punto. Medido a ciegas en 10 pliegos nuevos (ronda 6): 9 de 9 con sección 1.1, 0 falsos (main: 5).
+
+**Lo que no hay que deshacer.** (a) El título sin número es el del documento tipo con numeración AUTOMÁTICA de Word: el
+«1.1» no queda en la capa de texto (Sucre, La Jagua, Arauca, Oporapa y cuatro de la ronda 6). La línea del índice no
+casa porque termina en puntos de guía y número de página; el título debe estar SOLO en su línea. (b) Sin el «1.2» no hay
+fin numerado, y la sección de 4.000 caracteres alcanzaba el valor del certificado de disponibilidad presupuestal (Sucre:
+$1.366.136.574 contra $1.258.962.674,74 del presupuesto): por eso el fin acepta los títulos que siguen en el documento
+tipo, cada uno con su prueba. Dos cifras distintas siguen dando null; nunca se escoge. (c) «$685.335.300.87»: tras miles
+con punto, un grupo final de DOS cifras solo puede ser de centavos. (d) Lo que sigue sin leerse, a propósito: la cifra
+partida entre columnas en dos líneas (Samacá, «$1.773´266.41» / «9.00).») y el pliego propio sin sección 1.1 (ESAP,
+numeral 2.6): callar es lo correcto, porque una cifra falsa menor que SECOP II bajaría el techo de Precios. (e) Lo que tumbó la revisión adversaria (cada uno con su cerradura): «$1.581.425.810,0» retrocedía y leía «1.581.425,81»,
+mil veces menos (el lookahead ahora prohíbe un dígito o «,d»/«.d» detrás); y SIN título de cierre ya no hay sección: una
+adenda que solo nombra el numeral en su línea y trae más abajo «CT ≥ $ 400.000.000» bajaba el techo a esa cifra (el hueco
+existía con el «1.1» delante; el título sin número lo ampliaba). Medido: los 30 textos reales con la sección encuentran su
+cierre, así que la regla no calla ninguno. (f) VERSION 17 → 18.
+En los 20 procesos de las rondas 5 y 6 la cifra del pliego coincide con la de SECOP II: ni aviso ni techo distinto. El
+valor del cambio es cazar el próximo Santa Elena en una licitación pública, no mover cifras de hoy.
+
 ### Precios deja de despertar la rutina cuando ya se despertó 3 veces sin dar señal (17-oct-2026)
 
 En una línea: pasados los 15 min de «repetida», cada «Buscar» despertaba otra corrida del día aunque las anteriores no
