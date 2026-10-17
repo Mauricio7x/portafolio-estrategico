@@ -44089,6 +44089,7 @@ async function main() {
       const appR = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
       const pliegoR = fs.readFileSync(path.join(__dirname, "..", "public", "pliego.js"), "utf8");
       assert.ok(/addEventListener\("toggle"/.test(appR) && /consultarDictamenGuardado\(det\.getAttribute\("data-seg-guia"\)\)/.test(appR), "al abrir la guía se consulta el dictamen solo");
+      assert.ok(/const apuBtn = e\.target\.closest\("\.btn-apu"\);\s*if \(apuBtn\) \{\s*abrirPreciosDesdeTarjeta\(apuBtn\);/.test(appR), "la tarjeta de Licitaciones abre Precios por abrirPreciosDesdeTarjeta, que trae el techo del pliego de un proceso guardado (17-oct-2026)");
       assert.ok(/data-seg-abrir-lector=/.test(appR) && /abrirEditorConProceso\(qApuDelExpediente\(pr, id, g\)\)/.test(appR) && /function qApuDelExpediente\(pr, id, g\) \{\s*return qApu\(\{ nombre_del_procedimiento: pr\.nombre/.test(appR), "«Cargar el pliego» abre Precios con la MISMA cadena que la tarjeta (qApu), más el techo de su guía (17-oct-2026)");
       assert.ok(/r\.origen_legible/.test(pliegoR), "la pantalla enseña de qué motor viene el dictamen");
       global.fetch = fetchOrig;
@@ -51197,7 +51198,7 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
         body: nodo(null), documentElement: nodo(null), readyState: "complete", visibilityState: "visible" };
       ctx.window = ctx; ctx.self = ctx; ctx.globalThis = ctx;
       vm.createContext(ctx);
-      const exponer = ["qApuDelExpediente", "techoDesdeGuia", "restituirContextoProceso", "leerConfig", "qApu", "ofertaParaRevision", "filasDesdePliego", "reiniciarEditorParaProceso", "precargarDesdeURL", "revisarOferta", "pintarTabla", "pintarIa", "precargarTrasCatalogo", "totalVisibleDeFila", "abrirEditorConProceso"];
+      const exponer = ["abrirPreciosDesdeTarjeta", "guardados", "qApuDelExpediente", "techoDesdeGuia", "restituirContextoProceso", "leerConfig", "qApu", "ofertaParaRevision", "filasDesdePliego", "reiniciarEditorParaProceso", "precargarDesdeURL", "revisarOferta", "pintarTabla", "pintarIa", "precargarTrasCatalogo", "totalVisibleDeFila", "abrirEditorConProceso"];
       for (const f of orden) {
         let src = fs.readFileSync(pub(f), "utf8");
         if (f === "app.js") {
@@ -51729,6 +51730,69 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
         T.abrirEditorConProceso(T.qApu({ id_del_proceso: "CO1.SE", cuantia_cop: 1744426146, ...args })); T.precargarDesdeURL();
         T.restituirContextoProceso({ id_proceso: "CO1.OTRO", cuantia: 1581425810 });
         okRO(T.leerConfig().cuantia_fuente === null && P2.get("cuantia-nota").clases.has("hidden") && T.leer().cdp === null, "(g) el borrador de otro proceso no hereda el techo ni la nota del pliego anterior");
+      }
+      /* (h) EL TECHO DESDE LA TARJETA DE LICITACIONES (17-oct-2026): «Calcular mi precio» de un proceso GUARDADO pide su
+         guía (GET ?expediente=, solo lee) y arranca con el techo del pliego; sin guardar, como siempre; con la consulta
+         caída o vencida, con SECOP II y lo dice; y una respuesta tardía no pisa lo que se abrió después (revisión adversaria) */
+      {
+        const { F: T, ctx: C3, porId: P3 } = cargarFrontRO();
+        await asentarRO();
+        const guiaSE = { tope_oferta: { valor: 1581425810, fuente: "pliego", secop: 1744426146, pagina: 6 } };
+        const boton = (l) => ({ innerHTML: "Calcular mi precio", textContent: "Calcular mi precio", disabled: false, getAttribute: (k) => (k === "data-apu-q" ? T.qApu(l) : null) });
+        const filaSE = { id_del_proceso: "CO1.SE", nombre_del_procedimiento: "MEJORAMIENTO VIA SANTA ELENA", cuantia_cop: 1744426146 };
+        const filaB = { id_del_proceso: "CO1.B", nombre_del_procedimiento: "OTRA OBRA", cuantia_cop: 900000000 };
+        const urls = [];
+        let responder = () => Promise.resolve(respuestaRO(200, { ok: true, proceso: { id: "CO1.SE", guia: guiaSE } }));
+        C3.fetch = (url) => { if (/op=seguimiento/.test(String(url))) { urls.push(String(url)); return responder(); } return new Promise(() => {}); };
+        const abrir = async (l) => { const b = boton(l); const pr = T.abrirPreciosDesdeTarjeta(b); const durante = [b.textContent, b.disabled]; await pr; T.precargarDesdeURL(); return { b, durante }; };
+        const nota = () => (P3.get("cuantia-nota").clases.has("hidden") ? "" : P3.get("cuantia-nota").textContent);
+        // sin guardar: no consulta nada y arranca con la cifra de SECOP II, sin nota
+        let r = await abrir(filaSE);
+        okRO(urls.length === 0 && P3.get("cuantia").value === "1744426146" && nota() === "", `(h) sin guardar, la tarjeta abre como siempre: ${JSON.stringify({ urls, c: P3.get("cuantia").value })}`);
+        // guardado y con techo del pliego: lo consulta, lo dice mientras tanto y arranca con el techo y su nota
+        T.guardados.set("CO1.SE", "interesa");
+        r = await abrir(filaSE);
+        okRO(urls.length === 1 && /expediente=CO1\.SE/.test(urls[0]), `(h) guardado: pide la guía del expediente: ${JSON.stringify(urls)}`);
+        okRO(r.durante[0] === "Consultando el pliego…" && r.durante[1] === true && r.b.disabled === false && r.b.innerHTML === "Calcular mi precio", `(h) la pulsación responde y el botón vuelve: ${JSON.stringify(r.durante)}`);
+        okRO(P3.get("cuantia").value === "1581425810" && /pliego definitivo/.test(nota()) && T.leerConfig().cuantia_fuente === "pliego", `(h) guardado con techo: Precios arranca con el del pliego (MUTACIÓN: sin la consulta, $1.744.426.146): «${P3.get("cuantia").value}»`);
+        // sin techo, o la guía de otro proceso, o de OTRA cifra de SECOP II que la de la tarjeta: la cifra de la tarjeta, sin nota
+        for (const [que, resp, fila] of [["sin techo", () => respuestaRO(200, { ok: true, proceso: { id: "CO1.SE", guia: { tope_oferta: { valor: 1744426146, fuente: "secop", secop: 1744426146 } } } }), filaSE], ["la guía de otro proceso", () => respuestaRO(200, { ok: true, proceso: { id: "CO1.OTRO", guia: guiaSE } }), filaSE], ["la guía con otra cifra de SECOP II", () => respuestaRO(200, { ok: true, proceso: { id: "CO1.SE", guia: guiaSE } }), { ...filaSE, cuantia_cop: 1700000000 }]]) {
+          responder = () => Promise.resolve(resp());
+          r = await abrir(fila);
+          okRO(P3.get("cuantia").value === String(fila.cuantia_cop) && T.leerConfig().cuantia_fuente === null && r.b.disabled === false, `(h) ${que}: arranca con la cifra de la tarjeta (MUTACIÓN: sin comparar la cifra de SECOP II, el techo): «${P3.get("cuantia").value}»`);
+        }
+        // la consulta cae: SECOP II, y la nota DICE que no se pudo consultar
+        responder = () => Promise.resolve(respuestaRO(500, { ok: false, error: "fallo" }));
+        r = await abrir(filaSE);
+        okRO(P3.get("cuantia").value === "1744426146" && /No se pudo consultar el pliego/.test(nota()) && T.leerConfig().cuantia_fuente === null, `(h) la consulta caída se dice (MUTACIÓN: sin el aviso, silencio): «${nota()}»`);
+        // la consulta no responde: pasado el plazo abre con SECOP II y lo dice
+        responder = () => new Promise(() => {});
+        const relojOriginal = C3.setTimeout; C3.setTimeout = (fn) => { fn(); return 1; };
+        try { r = await abrir(filaSE); } finally { C3.setTimeout = relojOriginal; }
+        okRO(P3.get("cuantia").value === "1744426146" && /No se pudo consultar el pliego/.test(nota()) && r.b.disabled === false, `(h) la consulta vencida abre con SECOP II y lo dice: «${nota()}»`);
+        // una respuesta tardía no pisa lo que se abrió después, ni abre con otro perfil
+        let soltar = null;
+        responder = () => new Promise((ok) => { soltar = () => ok(respuestaRO(200, { ok: true, proceso: { id: "CO1.SE", guia: guiaSE } })); });
+        const bA = boton(filaSE); const prA = T.abrirPreciosDesdeTarjeta(bA);
+        T.abrirEditorConProceso(T.qApu(filaB)); T.precargarDesdeURL();
+        soltar(); await prA; T.precargarDesdeURL();
+        okRO(P3.get("cuantia").value === "900000000" && bA.disabled === false && bA.innerHTML === "Calcular mi precio", `(h) la respuesta tardía de A no pisa a B, abierto después (MUTACIÓN: sin \`aperturasEditor\`, A): «${P3.get("cuantia").value}»`);
+        const prA2 = T.abrirPreciosDesdeTarjeta(boton(filaSE));
+        P3.get("f-perfil").value = "otro";
+        soltar(); await prA2; T.precargarDesdeURL();
+        okRO(P3.get("cuantia").value === "900000000", `(h) con el perfil cambiado mientras esperaba, no abre (MUTACIÓN: sin mirar el perfil, A): «${P3.get("cuantia").value}»`);
+        P3.get("f-perfil").value = "prueba";
+        // dos tarjetas guardadas seguidas: la PRIMERA responde antes y aun así queda abierta la ÚLTIMA pulsada
+        const filaC = { id_del_proceso: "CO1.C", nombre_del_procedimiento: "TERCERA OBRA", cuantia_cop: 2000000000 };
+        T.guardados.set("CO1.C", "interesa");
+        const pendientes = new Map();
+        responder = () => new Promise((ok) => { const u = urls[urls.length - 1]; const idq = /expediente=([^&]+)/.exec(u)[1];
+          pendientes.set(idq, () => ok(respuestaRO(200, { ok: true, proceso: { id: idq, guia: idq === "CO1.C" ? { tope_oferta: { valor: 1900000000, fuente: "pliego", secop: 2000000000, pagina: 4 } } : guiaSE } }))); });
+        const prSE = T.abrirPreciosDesdeTarjeta(boton(filaSE));
+        const prC = T.abrirPreciosDesdeTarjeta(boton(filaC));
+        pendientes.get("CO1.SE")(); await prSE; T.precargarDesdeURL();
+        pendientes.get("CO1.C")(); await prC; T.precargarDesdeURL();
+        okRO(P3.get("cuantia").value === "1900000000", `(h) de dos pulsaciones manda la última aunque la primera responda antes (MUTACIÓN: sin \`turnoTarjeta\`, la primera abre y la última no): «${P3.get("cuantia").value}»`);
       }
     } finally {
       if (tzRO === undefined) delete process.env.TZ; else process.env.TZ = tzRO;

@@ -576,7 +576,9 @@
      en el editor y cambia a su pestaña. Antes esto abría /apu.html con una
      querystring; la MISMA cadena de parámetros viaja ahora en memoria, así que
      `precargarDesdeURL` no cambió de contrato. */
+  let aperturasEditor = 0; // cuántas veces se abrió un proceso o un borrador en Precios (abrirPreciosDesdeTarjeta no pisa una posterior)
   function abrirEditorConProceso(q) {
+    aperturasEditor++;
     paramsProceso = q instanceof URLSearchParams ? q : new URLSearchParams(String(q || ""));
     const yaArrancado = arrancadas.apu;
     borradorAbierto = false;   // una tarjeta nueva manda sobre el borrador que estuviera abierto
@@ -2575,6 +2577,53 @@
     return qApu({ nombre_del_procedimiento: pr.nombre, entidad: pr.entidad, nit_entidad: pr.nit_entidad, departamento_entidad: pr.departamento,
       cuantia_cop: pr.presupuesto_cop, id_del_proceso: id, modalidad_de_contratacion: pr.modalidad, ...techoDesdeGuia(g) });
   }
+  /* EL TECHO DEL PLIEGO TAMBIÉN DESDE LA TARJETA (17-oct-2026, visto bueno del dueño). «Calcular mi precio» en Licitaciones
+     arrancaba siempre con la cifra de SECOP II; si el proceso está GUARDADO, su guía (la consulta del expediente, que solo
+     lee) ya sabe si el pliego definitivo dice menos (lib/documentos_proceso.topeOferta), y el techo sale de la MISMA
+     techoDesdeGuia del expediente y viaja con los nombres de qApu. Sin guardar abre como siempre; con la consulta caída o
+     pasados TECHO_TARJETA_MS abre con SECOP II y lo DICE en la nota de la cifra. Lo que tumbó la revisión adversaria:
+     una respuesta tardía no abre si después se pulsó otra tarjeta, se abrió otro proceso o un borrador en Precios
+     (`turnoTarjeta`, `aperturasEditor`) o cambió el perfil; los botones de la misma tarjeta esperan juntos; y el techo
+     solo vale si la guía habla de la MISMA cifra de SECOP II que la tarjeta. */
+  const TECHO_TARJETA_MS = 5000;
+  let turnoTarjeta = 0;
+  async function abrirPreciosDesdeTarjeta(btn) {
+    const turno = ++turnoTarjeta;
+    const q = new URLSearchParams(btn.getAttribute("data-apu-q") || "");
+    const id = q.get("id_proceso");
+    if (!id || !guardados.has(id) || q.get("cuantia_fuente") === "pliego") { abrirEditorConProceso(q); return; }
+    const aperturas = aperturasEditor;
+    const perfil = $("f-perfil").value;
+    const delMismo = [...document.querySelectorAll("#lista .btn-apu")].filter((b) => b !== btn && new URLSearchParams(b.getAttribute("data-apu-q") || "").get("id_proceso") === id);
+    const antes = btn.innerHTML;
+    btn.disabled = true;
+    btn.textContent = "Consultando el pliego…";
+    for (const b of delMismo) b.disabled = true;
+    let reloj = null, consultado = false;
+    try {
+      const r = await Promise.race([
+        api(`/api/perfil?op=seguimiento&perfil=${encodeURIComponent(perfil)}&expediente=${encodeURIComponent(id)}`),
+        new Promise((_, no) => { reloj = setTimeout(() => no(new Error("tiempo")), TECHO_TARJETA_MS); }),
+      ]);
+      const g = r && r.proceso && r.proceso.id === id ? r.proceso.guia : null;
+      consultado = !!g;
+      const techo = techoDesdeGuia(g);
+      if (techo.cuantia_cop && Number(g.tope_oferta.secop) === Number(q.get("cuantia"))) {
+        const t = new URLSearchParams(qApu(techo));
+        for (const k of ["cuantia", "cuantia_fuente", "cuantia_nota"]) q.set(k, t.get(k));
+      }
+    } catch { /* sin la guía, Precios arranca con la cifra de SECOP II y lo dice */ }
+    finally {
+      clearTimeout(reloj);
+      btn.disabled = false;
+      btn.innerHTML = antes;
+      for (const b of delMismo) b.disabled = false;
+    }
+    // otra pulsación, otro proceso o borrador abierto en Precios, u otro perfil mientras se esperaba: manda lo último
+    if (turno !== turnoTarjeta || aperturas !== aperturasEditor || $("f-perfil").value !== perfil) return;
+    if (!consultado) q.set("cuantia_aviso", "No se pudo consultar el pliego a tiempo: el presupuesto es el que publica SECOP II. Abra el proceso desde «Mis procesos» para ver si el pliego definitivo dice menos.");
+    abrirEditorConProceso(q);
+  }
   function qApu(l) {
     const q = new URLSearchParams();
     if (l.nombre_del_procedimiento) q.set("objeto", l.nombre_del_procedimiento);
@@ -4298,7 +4347,7 @@
     }
     const apuBtn = e.target.closest(".btn-apu");
     if (apuBtn) {
-      abrirEditorConProceso(new URLSearchParams(apuBtn.getAttribute("data-apu-q") || ""));
+      abrirPreciosDesdeTarjeta(apuBtn);
       return;
     }
     const gBtn = e.target.closest(".btn-guardar");
@@ -8750,7 +8799,7 @@
     poner("id-proceso", "id_proceso");
     poner("cuantia", "cuantia");
     cuantiaDelPliego = p.get("cuantia_fuente") === "pliego" && Number(p.get("cuantia")) > 0 && idEntrante ? { id: idEntrante, valor: Number(p.get("cuantia")) } : null;
-    pintarNotaCuantia(cuantiaDelPliego ? (p.get("cuantia_nota") || "") : "");
+    pintarNotaCuantia(cuantiaDelPliego ? (p.get("cuantia_nota") || "") : (p.get("cuantia_aviso") || ""));
     modalidadProceso = p.get("modalidad") || "";
     tipoProceso = p.get("tipo") || "";
     poner("plazo-meses", "plazo");
@@ -8792,6 +8841,7 @@
     };
   }
   function restituirContextoProceso(p) {
+    aperturasEditor++;
     const idAbierto = ($("id-proceso") && $("id-proceso").value.trim()) || "";
     const idBorrador = p.id_proceso ? String(p.id_proceso) : "";
     const mismo = !!idBorrador && idBorrador === idAbierto;
