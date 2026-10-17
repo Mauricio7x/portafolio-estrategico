@@ -212,8 +212,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 333 secciones (20 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 18764  El anticipo «…PAGO ANTICIPADO: No aplica» en una sola línea (17-oct-2026)
+· MEMORIA · docs/MEMORIA.md — 334 secciones (20 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 18784  El presupuesto del pliego frente al de SECOP II: un aviso, no un reemplazo (17-oct-2026)
   L 18818  El techo de la oferta en Precios: la cifra más baja entre SECOP II y el pliego definitivo (…  (superada)
   L 18844  Herramientas de terceros para las sesiones de Claude: lo que entró, lo que no y por qué (17…
@@ -223,6 +222,7 @@
   L 18957  El dictamen también deja de despertar la rutina tras 3 lecturas pedidas sin respuesta (17-o…
   L 18979  El anticipo negado para UNA parte numerada del contrato no es «no hay anticipo» (17-oct-202…
   L 19006  El techo del pliego también desde la tarjeta de Licitaciones, para un proceso guardado (17-…
+  L 19027  Las pruebas de 2027: un corte que dependía de la velocidad de la máquina y una negación que…
 
 · DOCUMENTOS docs/ — 71 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)
