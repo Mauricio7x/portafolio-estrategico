@@ -161,7 +161,8 @@
         Mis procesos
       </button>
       <h2 class="exp-nombre ${claseDeCaja(pr.nombre || p.id)}">${esc(pr.nombre || p.id)}</h2>
-      <p class="exp-entidad">${esc(pr.entidad || "Entidad no publicada")}${pr.departamento ? ` &middot; ${esc(pr.departamento)}` : ""} &middot; ${esc(p.id)}</p>
+      <p class="exp-entidad">${esc(pr.entidad || "Entidad no publicada")}${pr.departamento ? ` &middot; ${esc(pr.departamento)}` : ""} &middot; <span class="exp-id">${esc(p.id)}</span>
+        <button type="button" class="exp-doc-enlace" data-exp-copiar-id="${esc(p.id)}" aria-live="polite">Copiar número</button></p>
       <div class="exp-acciones">
         ${opciones.length ? `<label class="cas-carpeta-sel"><span class="cas-carpeta-rotulo">Etapa</span>
           <select class="control-select cas-carpeta-select" data-seg-estado="${esc(p.id)}" aria-label="Etapa de este proceso en su seguimiento">

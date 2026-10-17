@@ -4379,26 +4379,26 @@
      informe. `navigator.clipboard` no existe en contexto no seguro ni en
      navegadores viejos, así que hay respaldo con `execCommand` — y si las dos
      fallan se DICE, en vez de dejar el botón fingiendo que copió. */
-  $("modal-copiar").addEventListener("click", async () => {
-    const btn = $("modal-copiar");
-    if (!textoParaCopiar) { btn.textContent = "Nada que copiar"; return; }
-    let ok = false;
-    try {
-      await navigator.clipboard.writeText(textoParaCopiar);
-      ok = true;
-    } catch {
+  async function copiarTexto(texto) {
+    try { await navigator.clipboard.writeText(texto); return true; } catch {
       try {
         const ta = document.createElement("textarea");
-        ta.value = textoParaCopiar;
+        ta.value = texto;
         ta.setAttribute("readonly", "");
         ta.style.position = "fixed";
         ta.style.opacity = "0";
         document.body.appendChild(ta);
         ta.select();
-        ok = document.execCommand("copy");
+        const ok = document.execCommand("copy");
         document.body.removeChild(ta);
-      } catch { ok = false; }
+        return ok;
+      } catch { return false; }
     }
+  }
+  $("modal-copiar").addEventListener("click", async () => {
+    const btn = $("modal-copiar");
+    if (!textoParaCopiar) { btn.textContent = "Nada que copiar"; return; }
+    const ok = await copiarTexto(textoParaCopiar);
     btn.textContent = ok ? "Copiada ✓" : "No se pudo copiar — selecciónela a mano";
     setTimeout(() => { btn.textContent = "Copiar justificación"; }, 2500);
   });
@@ -6015,6 +6015,14 @@
       const abrir = ev.target.closest("[data-seg-abrir]");
       if (abrir) { await abrirExpediente(abrir.getAttribute("data-seg-abrir")); return; }
       if (ev.target.closest("[data-exp-volver]")) { cerrarExpediente(); return; }
+      /* el número del proceso, para pegarlo en SECOP II o en un mensaje: copiarlo a mano costaba (17-oct-2026) */
+      const copiarId = ev.target.closest("[data-exp-copiar-id]");
+      if (copiarId) {
+        const ok = await copiarTexto(copiarId.getAttribute("data-exp-copiar-id"));
+        copiarId.textContent = ok ? "Copiado" : "No se pudo copiar: selecciónelo a mano";
+        setTimeout(() => { copiarId.textContent = "Copiar número"; }, 2500);
+        return;
+      }
       if (ev.target.closest("[data-exp-reintentar]")) { const id = segExpId; segExpDatos = null; await abrirExpediente(id, { empujarHash: false }); return; }
       const secBtn = ev.target.closest("[data-exp-seccion]");
       if (secBtn) { segExpSeccion = secBtn.getAttribute("data-exp-seccion"); pintarExpediente(); try { window.scrollTo({ top: 0 }); } catch { /* sin scroll */ } return; }
