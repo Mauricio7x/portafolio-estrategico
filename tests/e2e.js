@@ -3953,11 +3953,25 @@ async function main() {
     const of = (nom, cod, v) => ({ nombre_proveedor: nom, c_digo_proveedor: cod, nit_del_proveedor: "000000000", valor_de_la_oferta: v });
     const r = lb.limpiarOfertas([of("A", "1", "950"), of("A", "1", "950"), of("Confidencial", "", "0"), of("B", "2", "0"),
       of("C", "3", ""), of("D", "4", "1001"), of("E", "5", "499"), of("F", "6", "900"), of("G", "7", "920")], "1000");
-    assert.deepStrictEqual(r.excluidas, { confidencial: 1, cero: 1, no_numerico: 1, sin_proveedor: 0, duplicada: 1, duplicada_entre_datasets: 0, sobre_base: 1, bajo_50: 1, sin_precio_base: 0 });
+    assert.deepStrictEqual(r.excluidas, { repetidas: 0, confidencial: 1, cero: 1, no_numerico: 1, sin_proveedor: 0, duplicada: 1, duplicada_entre_datasets: 0, sobre_base: 1, bajo_50: 1, sin_precio_base: 0 });
     assert.strictEqual(lb.limpiarOfertas([of("A", "1", "900"), of("A", "1", "9000")], "1000").lote_sospechoso, false, "un valor fuera de rango no vuelve lote al proceso");
     const misma = lb.limpiarOfertas([{ nombre_proveedor: "X", c_digo_proveedor: "77", nit_del_proveedor: "900111", valor_de_la_oferta: "900" },
       { nombre_proveedor: "X", c_digo_proveedor: "", nit_del_proveedor: "900111", valor_de_la_oferta: "900" }], "1000");
     assert.strictEqual(misma.validas.length, 1, "la misma empresa con y sin código es UN oferente");
+    // medido en wi7w (17-oct-2026): la misma empresa con dos códigos de SECOP, NIT «0000000» y el mismo valor
+    const dorf = lb.limpiarOfertas([{ nombre_proveedor: "DORF", c_digo_proveedor: "722966108", nit_del_proveedor: "0000000", valor_de_la_oferta: "900", n: "798" },
+      { nombre_proveedor: "Dorf", c_digo_proveedor: "728473109", nit_del_proveedor: "0000000", valor_de_la_oferta: "900", n: "798" }], "1000");
+    assert.strictEqual(dorf.validas.length, 1, "dos cuentas de SECOP de la misma empresa son UN oferente");
+    assert.strictEqual(dorf.excluidas.repetidas, 1594, "las filas que la consulta agrupada juntó se cuentan como réplicas, no como ofertas");
+    const puente = lb.limpiarOfertas([{ nombre_proveedor: "OBRAS SAS", nit_del_proveedor: "900111222", valor_de_la_oferta: "900" },
+      { nombre_proveedor: "No Definido", nit_del_proveedor: "900.111.222", valor_de_la_oferta: "900" }], "1000");
+    assert.strictEqual(puente.validas.length, 1, "el NIT une la fila con nombre y la que no lo trae");
+    const porNombre = lb.limpiarOfertas([{ nombre_proveedor: "CONSORCIO VIAS 1", nit_del_proveedor: "901222333", valor_de_la_oferta: "900" },
+      { nombre_proveedor: "Consorcio Vías 1", nit_del_proveedor: "No Definido", valor_de_la_oferta: "900" }], "1000");
+    assert.strictEqual(porNombre.validas.length, 1, "el nombre une la fila con NIT y la que trae «No Definido»");
+    assert.strictEqual(lb.nitValido("0000000"), null); assert.strictEqual(lb.nitValido("CONSORCIO SED COLEGIOS 18"), null);
+    assert.strictEqual(lb.lotePorPrecioBase([{ precio_base: "100" }, { precio_base: "100" }, { precio_base: "" }]), false, "filas repetidas con el mismo precio son fases, no lotes");
+    assert.strictEqual(lb.lotePorPrecioBase([{ precio_base: "100" }, { precio_base: "250" }]), true, "dos precios base en un portafolio = lotes");
     assert.deepStrictEqual(r.validas.map((o) => o.valor), [950, 900, 920]);
     assert.strictEqual(r.lote_sospechoso, false);
     assert.strictEqual(lb.limpiarOfertas([of("A", "1", "900"), of("A", "1", "800")], "1000").lote_sospechoso, true, "un proveedor con dos valores es lote");

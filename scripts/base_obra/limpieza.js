@@ -43,14 +43,43 @@ function elegirFila(filas) {
   return filas.slice().sort(cmp).pop();
 }
 
-const NIT_VACIO = /^(0+|no definido|sin descripcion|)$/;
-function claveProveedor(o) {
-  const nit = String(o.nit_del_proveedor || "").trim();
-  if (nit && !NIT_VACIO.test(norm(nit))) return "n:" + nit;
-  const cod = String(o.c_digo_proveedor || "").trim();
-  if (cod && !NIT_VACIO.test(norm(cod))) return "c:" + cod;
-  const nom = norm(o.nombre_proveedor || "").trim();
-  return nom ? "o:" + nom : null;
+/* Identidad del proveedor (medido el 17-oct-2026 en wi7w): `nit_del_proveedor` trae NIT, pero
+   también «0000000», «No Definido», «Confidencial» o el NOMBRE del consorcio; y una misma empresa
+   aparece con dos `c_digo_proveedor` (cuentas de SECOP) y el mismo valor. Por eso la identidad
+   son el NIT válido (solo dígitos, ≥ 6, no todo ceros) y el nombre normalizado, UNIDOS dentro del
+   proceso: dos filas que comparten uno de los dos son el mismo oferente. El código de SECOP solo
+   identifica cuando no hay ninguno de los dos. */
+const NO_ES_NOMBRE = /^(no definido|sin descripcion|confidencial|)$/;
+function nitValido(v) {
+  const d = String(v || "").replace(/[\s.\-]/g, "");
+  return /^\d{6,}$/.test(d) && !/^0+$/.test(d) ? d : null;
+}
+function identidades(o) {
+  const ids = [];
+  const nit = nitValido(o.nit_del_proveedor);
+  if (nit) ids.push("n:" + nit);
+  const nom = norm(o.nombre_proveedor || "").replace(/\s+/g, " ").trim();
+  if (!NO_ES_NOMBRE.test(nom)) ids.push("o:" + nom);
+  if (!ids.length) { const cod = String(o.c_digo_proveedor || "").trim(); if (cod && !/^0+$/.test(cod)) ids.push("c:" + cod); }
+  return ids;
+}
+function claveProveedor(o) { return identidades(o)[0] || null; }
+
+/* Unión de identidades dentro de UN proceso → proveedor canónico por oferta. */
+function proveedoresUnidos(ofertas) {
+  const padre = new Map();
+  const raiz = (x) => { while (padre.get(x) !== x) { padre.set(x, padre.get(padre.get(x))); x = padre.get(x); } return x; };
+  const unir = (a, b) => { const x = raiz(a), y = raiz(b); if (x !== y) padre.set(x < y ? y : x, x < y ? x : y); };
+  for (const o of ofertas) { const ids = identidades(o); for (const i of ids) if (!padre.has(i)) padre.set(i, i); for (let k = 1; k < ids.length; k++) unir(ids[0], ids[k]); }
+  return (o) => { const ids = identidades(o); return ids.length ? raiz(ids[0]) : null; };
+}
+
+/* Lote según p6dx: un mismo id_del_portafolio con ≥ 2 precios base positivos distintos (cada
+   lote publica su fila con su precio). Las demás filas repetidas son FASES del mismo proceso. */
+function lotePorPrecioBase(filas) {
+  const ps = new Set();
+  for (const f of filas || []) { const v = numeroONull(f.precio_base); if (v !== null && v > 0) ps.add(v); }
+  return ps.size > 1;
 }
 
 /* Ofertas de UN proceso → válidas + exclusiones contadas. precioBase null/≤0 → nada se
@@ -58,16 +87,21 @@ function claveProveedor(o) {
    Lote sospechoso = un proveedor con ≥2 valores distintos DENTRO del rango admisible (no se elige cuál: el proceso se
    aparta entero). Fuera de rango: > precio base o < 50 % → marcadas, fuera del piso. */
 function limpiarOfertas(ofertas, precioBase) {
-  const ex = { confidencial: 0, cero: 0, no_numerico: 0, sin_proveedor: 0, duplicada: 0, duplicada_entre_datasets: 0,
+  const ex = { repetidas: 0, confidencial: 0, cero: 0, no_numerico: 0, sin_proveedor: 0, duplicada: 0, duplicada_entre_datasets: 0,
     sobre_base: 0, bajo_50: 0, sin_precio_base: 0 };
   const vistos = new Map(), porProv = new Map(), validas = [];
   const base = numeroONull(precioBase);
+  const provDe = proveedoresUnidos(ofertas || []);
+  /* `n` = filas crudas que la consulta agrupada juntó en esta (proveedor, valor): las réplicas
+     exactas se cuentan en `repetidas` y no son ofertas nuevas. Sin `n`, la fila vale 1. */
   for (const o of ofertas || []) {
+    const nFil = numeroONull(o.n);
+    if (nFil !== null && nFil > 1) ex.repetidas += nFil - 1;
     if (/confidencial/.test(norm(o.nombre_proveedor || ""))) { ex.confidencial++; continue; }
     const v = numeroONull(o.valor_de_la_oferta);
     if (v === null) { ex.no_numerico++; continue; }
     if (v <= 0) { ex.cero++; continue; }
-    const p = claveProveedor(o);
+    const p = provDe(o);
     if (!p) { ex.sin_proveedor++; continue; }
     const k = p + "|" + v;
     if (vistos.has(k)) { if (vistos.get(k) !== o._ds) ex.duplicada_entre_datasets++; else ex.duplicada++; continue; }
@@ -104,5 +138,6 @@ function competencia(nValidas) {
   return nValidas >= 3 ? "real" : "baja";
 }
 
-module.exports = { MODALIDADES, clasificarModalidad, numeroONull, elegirFila, claveProveedor,
+module.exports = { MODALIDADES, clasificarModalidad, numeroONull, elegirFila, claveProveedor, nitValido,
+  proveedoresUnidos, lotePorPrecioBase,
   limpiarOfertas, mediana, estadisticas, competencia };

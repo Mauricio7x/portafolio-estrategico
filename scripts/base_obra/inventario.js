@@ -18,11 +18,18 @@ const DS = { procesos: "p6dx-8zbt", ofertas: "wi7w-2nvm", ofertas_hist: "b28v-ed
 // Respaldo si el inventario falla: los literales medidos el 17-oct-2026.
 const MODALIDADES_P6DX_LITERALES = ["Licitación pública", "Licitación pública Obra Publica",
   "Selección Abreviada de Menor Cuantía", "Seleccion Abreviada Menor Cuantia Sin Manifestacion Interes", "Mínima cuantía"];
-const PAGINA = 5000, LOTE_IDS = 80;
-/* Solo las columnas que se usan: con `*` cada oferta repetía la descripción larga del proceso y
-   la corrida llegó a 6,7 GB de memoria (medido el 17-oct-2026, 13.146 procesos adjudicados). */
-const COLS_OFERTA = "id_del_proceso_de_compra,identificador_de_la_oferta,referencia_de_la_oferta,valor_de_la_oferta,"
-  + "nombre_proveedor,nit_del_proveedor,c_digo_proveedor,fecha_de_registro,modalidad,:id";
+const PAGINA = 5000, LOTE_IDS = 40, TOPE_GRUPOS = 50000;
+/* Las ofertas se piden AGRUPADAS en el servidor por (proceso, proveedor, valor) con count(*):
+   un solo proceso por lotes trae 305.634 filas en wi7w que se reducen a 381 grupos (medido el
+   17-oct-2026), y con `*` la corrida llegó a 6,7 GB. 40 ids por consulta: ~1,5 s; con 80, 15 s. */
+const GRUPO_OFERTA = "id_del_proceso_de_compra,nit_del_proveedor,c_digo_proveedor,nombre_proveedor,valor_de_la_oferta";
+async function ofertasAgrupadas(cli, ids, etiqueta) {
+  const r = await cli.pedir({ $select: `${GRUPO_OFERTA},count(*) AS n,min(fecha_de_registro) AS fecha`,
+    $where: enLista("id_del_proceso_de_compra", ids), $group: GRUPO_OFERTA, $limit: TOPE_GRUPOS }, etiqueta);
+  if (!Array.isArray(r)) throw new Error(`${etiqueta}: respuesta no es lista`);
+  if (r.length >= TOPE_GRUPOS) { const e = new Error(`${etiqueta}: ${r.length} grupos, tope alcanzado`); e.tope = true; throw e; }
+  return r;
+}
 
 const log = (m) => process.stderr.write(m + "\n");
 const cliente = (ds) => crearCliente({ baseUrl: RAIZ + DS[ds] + ".json", log });
@@ -100,14 +107,16 @@ async function main() {
     grupos.get(k).push(f);
   }
   const procesos = [];
-  const multi = { procesos: 0, filas_extra: 0, adjudicacion_discrepa: 0 };
+  const multi = { procesos: 0, filas_extra: 0, adjudicacion_discrepa: 0, con_precio_base_distinto: 0 };
   for (const [k, fs_] of grupos) {
     const f = L.elegirFila(fs_);
     if (fs_.length > 1) {
       multi.procesos++; multi.filas_extra += fs_.length - 1;
       if (new Set(fs_.map((x) => x.adjudicado)).size > 1) multi.adjudicacion_discrepa++;
+      if (L.lotePorPrecioBase(fs_)) multi.con_precio_base_distinto++;
     }
-    procesos.push({ portafolio: k, fila: f, n_filas: fs_.length, mod: L.clasificarModalidad(f.modalidad_de_contratacion) });
+    procesos.push({ portafolio: k, fila: f, n_filas: fs_.length, lote_p6dx: L.lotePorPrecioBase(fs_),
+      mod: L.clasificarModalidad(f.modalidad_de_contratacion) });
   }
   R.procesos = { distintos: procesos.length, sin_portafolio: sinPortafolio, varias_filas: multi };
 
@@ -118,15 +127,23 @@ async function main() {
   for (const ds of ["ofertas", "ofertas_hist"]) {
     const C = cliente(ds); let n = 0; const lotes = trozos(adj.map((p) => p.portafolio), LOTE_IDS);
     for (const [i, lote] of lotes.entries()) {
-      if (i % 20 === 0) log(`${DS[ds]}: lote ${i + 1}/${lotes.length} · ${n} filas · ${ahora()}`);
-      try {
-        const fil = await todas(C, enLista("id_del_proceso_de_compra", lote), COLS_OFERTA, `${DS[ds]} lote`);
-        for (const o of fil) {
-          const k = o.id_del_proceso_de_compra;
-          if (!ofertasDe.has(k)) ofertasDe.set(k, []);
-          ofertasDe.get(k).push({ ...o, _ds: DS[ds] }); n++;
+      if (i % 20 === 0) log(`${DS[ds]}: lote ${i + 1}/${lotes.length} · ${n} grupos · ${ahora()}`);
+      /* Un lote que falla se parte en mitades hasta 1 id; el id que aun así falla queda
+         «sin medir» (con su error literal), jamás «sin ofertas». */
+      const bajar = async (ids) => {
+        try {
+          for (const o of await ofertasAgrupadas(C, ids, `${DS[ds]} ${ids.length} ids`)) {
+            const k = o.id_del_proceso_de_compra;
+            if (!ofertasDe.has(k)) ofertasDe.set(k, []);
+            ofertasDe.get(k).push({ ...o, _ds: DS[ds] }); n++;
+          }
+        } catch (e) {
+          if (ids.length > 1) { const m = Math.ceil(ids.length / 2); await bajar(ids.slice(0, m)); await bajar(ids.slice(m)); return; }
+          idsSinMedir.add(ids[0]);
+          fallosOfertas.push({ ds: DS[ds], id: ids[0], status: e.status || null, error: e.detalle || e.message });
         }
-      } catch (e) { for (const i of lote) idsSinMedir.add(i); fallosOfertas.push({ ds: DS[ds], ids: lote.length, status: e.status || null, error: e.detalle || e.message }); }
+      };
+      await bajar(lote);
     }
     R.fuentes[ds] = { dataset: DS[ds], filas_cruzadas: n, corte: ahora() };
   }
@@ -134,7 +151,7 @@ async function main() {
   fs.writeFileSync(path.join(salida, "ofertas_cruzadas.json"), JSON.stringify([...ofertasDe]));
 
   /* 5 · Embudo por proceso. */
-  const cal = { filas_oferta: 0, excl: {}, procesos_con_lote: 0, procesos_con_fuera_rango: 0, procesos_con_duplicadas: 0,
+  const cal = { grupos_oferta: 0, excl: {}, procesos_con_lote: 0, procesos_con_fuera_rango: 0, procesos_con_duplicadas: 0,
     procesos_con_cero_o_conf: 0, en_ambos_datasets: 0 };
   const embudo = {}; const porDepto = {};
   for (const p of procesos) {
@@ -144,11 +161,12 @@ async function main() {
     const base = L.numeroONull(f.precio_base);
     if (f.adjudicado !== "Si") motivo = "no_adjudicado:" + (f.estado_del_procedimiento || "sin estado");
     else if (base === null || base <= 0) motivo = "sin_precio_base";
+    else if (p.lote_p6dx) motivo = "lote_p6dx";
     else if (idsSinMedir.has(p.portafolio)) motivo = "sin_medir_ofertas";
     else if (!ofertasDe.has(p.portafolio)) motivo = "sin_ofertas_en_datos_abiertos";
     else {
       const os = ofertasDe.get(p.portafolio);
-      cal.filas_oferta += os.length;
+      cal.grupos_oferta += os.length;
       if (new Set(os.map((o) => o._ds)).size > 1) cal.en_ambos_datasets++;
       const r = L.limpiarOfertas(os, base);
       for (const [k, v] of Object.entries(r.excluidas)) inc(cal.excl, k, v);
@@ -156,7 +174,7 @@ async function main() {
       if (r.excluidas.cero || r.excluidas.confidencial) cal.procesos_con_cero_o_conf++;
       if (r.excluidas.sobre_base || r.excluidas.bajo_50) cal.procesos_con_fuera_rango++;
       p.limpieza = { n_validas: r.validas.length, lote: r.lote_sospechoso };
-      if (r.lote_sospechoso) { cal.procesos_con_lote++; motivo = "lote_sospechoso"; }
+      if (r.lote_sospechoso) { cal.procesos_con_lote++; motivo = "lote_por_ofertas"; }
       else if (!r.validas.length) motivo = "cero_ofertas_validas";
       else comp = L.competencia(r.validas.length);
     }
@@ -230,7 +248,7 @@ async function main() {
     const pf = f0.id_del_portafolio; const fs2 = filas.filter((f) => f.id_del_portafolio === pf); const base = L.numeroONull(L.elegirFila(fs2).precio_base);
     let os = ofertasDe.get(pf);
     if (!os || idsSinMedir.has(pf)) {
-      try { os = await todas(cliente("ofertas"), enLista("id_del_proceso_de_compra", [pf]), COLS_OFERTA, `oferta ${c}`); }
+      try { os = (await ofertasAgrupadas(cliente("ofertas"), [pf], `oferta ${c}`)).map((o) => ({ ...o, _ds: DS.ofertas })); }
       catch (e) { R.validacion[c] = { ...v, portafolio: pf, sin_medir: true, status: e.status || null, error: e.detalle || e.message }; continue; }
     }
     const r = L.limpiarOfertas(os, base); const st = L.estadisticas(r.validas.map((o) => o.valor));

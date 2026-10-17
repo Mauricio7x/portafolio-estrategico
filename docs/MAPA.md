@@ -212,8 +212,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 326 secciones (19 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 18620  Tres pruebas con fecha fija tumbaron main al cambiar de mes, y la cuarta espera (1-oct-2026)  (superada)
+· MEMORIA · docs/MEMORIA.md — 327 secciones (20 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 18632  Vercel pausó Detekta por CPU: cuenta nueva y menos llamadas automáticas (16-oct-2026)
   L 18683  Las pruebas con fecha: la compactación caía el 31-oct y la lista se queda sin procesos con …  (superada)
   L 18695  La fila de prueba se busca en todas las páginas del listado, y enero espera (16-oct-2026)  (superada)
@@ -222,7 +221,8 @@
   L 18741  El anticipo «N/A» bajo su título y el amparo «Devolución del pago anticipado» (17-oct-2026)
   L 18764  El anticipo «…PAGO ANTICIPADO: No aplica» en una sola línea (17-oct-2026)
   L 18784  El presupuesto del pliego frente al de SECOP II: un aviso, no un reemplazo (17-oct-2026)
-  L 18818  Base nacional de licitaciones de obra: un script que solo mide, fuera de la app (17-oct-202…
+  L 18818  Base nacional de licitaciones de obra: un script que solo mide, fuera de la app (17-oct-202…  (superada)
+  L 18832  Base nacional de obra: las ofertas se piden agrupadas, las filas repetidas de p6dx son fase…
 
 · DOCUMENTOS docs/ — 71 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)

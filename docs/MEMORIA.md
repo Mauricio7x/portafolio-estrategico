@@ -18817,6 +18817,8 @@ Medido después: 11 de 11 cifras correctas en los 9 pliegos y las dos versiones 
 
 ### Base nacional de licitaciones de obra: un script que solo mide, fuera de la app (17-oct-2026)
 
+> SUPERADA el 17-oct-2026 por «Base nacional de obra: las ofertas se piden agrupadas, las filas repetidas de p6dx son fases y el proveedor se identifica por unión» — solo la clave de proveedor («NIT primero») y la idea de que varias filas en p6dx son el problema; el resto sigue vigente.
+
 En una línea: `scripts/base_obra/` (inventario + capa pura `limpieza.js`) lee p6dx, wi7w/b28v, jbjy y 9sue para medir el piso real y la competencia; no lo llama la aplicación, escribe fuera del repositorio y sus reglas de limpieza son decisiones que no hay que deshacer.
 
 - **Encargo del dueño, solo medición**: no toca producción, la alerta del 80 % ni pantallas. Lo que llegue a Detekta es otro encargo con su plan.
@@ -18826,3 +18828,11 @@ En una línea: `scripts/base_obra/` (inventario + capa pura `limpieza.js`) lee p
 - **Duplicado entre wi7w y b28v se cuenta aparte** (`duplicada_entre_datasets`): no es un problema de calidad del proceso.
 - **Fila elegida en p6dx**: adjudicada → con valor adjudicado > 0 → fecha de adjudicación → publicación → número final de `id_del_proceso` (comparado como número; como texto «999» ganaba a «1000»). `:updated_at` no interviene: p6dx re-sella en masa.
 - **Un lote de consulta que falla deja sus procesos «sin_medir_ofertas»**, nunca «sin ofertas»; el departamento se compara por igualdad exacta normalizada con alias solo para Bogotá (un `includes` casaba Santander con Norte de Santander, y el vacío con todo), y el vacío cuenta como «sin dato».
+
+### Base nacional de obra: las ofertas se piden agrupadas, las filas repetidas de p6dx son fases y el proveedor se identifica por unión (17-oct-2026)
+
+En una línea: wi7w repite cada oferta cientos de veces (un proceso por lotes trae 305.634 filas que son 381 combinaciones proveedor-valor), así que se pide agrupado en el servidor; en p6dx las filas repetidas de un portafolio son FASES salvo que traigan precios base distintos (lotes), y el oferente es la unión de NIT válido y nombre.
+
+- **Consulta agrupada** `$group` por (proceso, NIT, código, nombre, valor) con `count(*)`, 40 ids por consulta (~1,5 s; con 80, 15 s, medido). Con `*` y filas sueltas la corrida llegó a 6,7 GB de memoria y se quedó 13 min en el primer lote. Un lote que falla se parte en mitades hasta 1 id; el que aun así falla queda «sin medir».
+- **Filas repetidas en p6dx**: de 17.054 portafolios, 11.119 tienen más de una fila; en B las 3 filas cambian `fase` e `id_del_proceso` con el mismo precio base. Solo 367 traen precios base distintos: esos son lotes y se apartan (`lote_p6dx`). El gigante (CO1.BDOS.7690096, licitación de colegios) tiene 325 filas.
+- **Identidad del oferente**: `nit_del_proveedor` trae «0000000», «No Definido», «Confidencial» o el nombre del consorcio, y una empresa aparece con dos códigos de SECOP y el mismo valor (DORF). Se unen dentro del proceso el NIT válido (≥ 6 dígitos, no todo ceros) y el nombre normalizado; el código solo cuenta si no hay ninguno. Dos empresas distintas con nombre idéntico se fundirían: riesgo aceptado y declarado.
