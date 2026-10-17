@@ -18814,3 +18814,15 @@ del presupuesto oficial. (i) Límite conocido: el techo de la
 validación de Precios sigue siendo el presupuesto de SECOP II; el aviso no llega a esa pestaña.
 Medido después: 11 de 11 cifras correctas en los 9 pliegos y las dos versiones de Santa Elena (Manizales escribe
 «1.1.OBJETO» sin espacio y ahora se lee).
+
+### Base nacional de licitaciones de obra: un script que solo mide, fuera de la app (17-oct-2026)
+
+En una línea: `scripts/base_obra/` (inventario + capa pura `limpieza.js`) lee p6dx, wi7w/b28v, jbjy y 9sue para medir el piso real y la competencia; no lo llama la aplicación, escribe fuera del repositorio y sus reglas de limpieza son decisiones que no hay que deshacer.
+
+- **Encargo del dueño, solo medición**: no toca producción, la alerta del 80 % ni pantallas. Lo que llegue a Detekta es otro encargo con su plan.
+- **Keyset por `:id`, no `$offset`**, aunque el encargo dijera `$offset`: lo manda «Decisiones que no hay que re-aprender». Transporte: `lib/socrata.crearCliente({ baseUrl })`, no un segundo cliente.
+- **Clave de proveedor = NIT primero, código de SECOP después, nombre al final**: la misma empresa trae código en una fila y no en otra, y con el código primero contaba dos oferentes (σ falsa). Revisión adversaria, reproducida.
+- **Lote = un proveedor con ≥2 valores DENTRO del rango admisible** (≤ precio base y ≥ 50 %): un error de digitación fuera de rango ya se excluye y no puede apartar el proceso entero.
+- **Duplicado entre wi7w y b28v se cuenta aparte** (`duplicada_entre_datasets`): no es un problema de calidad del proceso.
+- **Fila elegida en p6dx**: adjudicada → con valor adjudicado > 0 → fecha de adjudicación → publicación → número final de `id_del_proceso` (comparado como número; como texto «999» ganaba a «1000»). `:updated_at` no interviene: p6dx re-sella en masa.
+- **Un lote de consulta que falla deja sus procesos «sin_medir_ofertas»**, nunca «sin ofertas»; el departamento se compara por igualdad exacta normalizada con alias solo para Bogotá (un `includes` casaba Santander con Norte de Santander, y el vacío con todo), y el vacío cuenta como «sin dato».

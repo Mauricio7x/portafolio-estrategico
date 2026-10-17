@@ -3939,6 +3939,43 @@ async function main() {
     console.log(`· unidad modalidades: ${casos.length} clasificaciones correctas (lista blanca)`);
   }
 
+  /* unidad: base nacional de obra — limpieza de ofertas (scripts/base_obra, solo mide) */
+  bqBaseObra: { if (!corre("unidad base de obra")) break bqBaseObra;
+    const lb = require("../scripts/base_obra/limpieza");
+    // «sin dato» ≠ cero: la ausencia se descarta ANTES de convertir
+    for (const v of [null, undefined, "", "  ", "No Definido", "abc", "1.2.3"]) assert.strictEqual(lb.numeroONull(v), null, `numeroONull(${JSON.stringify(v)}) debía ser null`);
+    assert.strictEqual(lb.numeroONull("0"), 0, "un 0 publicado es un dato, no una ausencia");
+    assert.strictEqual(lb.clasificarModalidad("Seleccion Abreviada Menor Cuantia Sin Manifestacion Interes"), "menor_cuantia");
+    assert.strictEqual(lb.clasificarModalidad("Licitación pública Obra Publica"), "licitacion");
+    assert.strictEqual(lb.clasificarModalidad("Mínima cuantía"), "minima", "mínima va SEPARADA");
+    assert.strictEqual(lb.clasificarModalidad("Contratación directa"), "otra");
+    assert.strictEqual(lb.clasificarModalidad(undefined), "otra", "desconocida es inerte");
+    const of = (nom, cod, v) => ({ nombre_proveedor: nom, c_digo_proveedor: cod, nit_del_proveedor: "000000000", valor_de_la_oferta: v });
+    const r = lb.limpiarOfertas([of("A", "1", "950"), of("A", "1", "950"), of("Confidencial", "", "0"), of("B", "2", "0"),
+      of("C", "3", ""), of("D", "4", "1001"), of("E", "5", "499"), of("F", "6", "900"), of("G", "7", "920")], "1000");
+    assert.deepStrictEqual(r.excluidas, { confidencial: 1, cero: 1, no_numerico: 1, sin_proveedor: 0, duplicada: 1, duplicada_entre_datasets: 0, sobre_base: 1, bajo_50: 1, sin_precio_base: 0 });
+    assert.strictEqual(lb.limpiarOfertas([of("A", "1", "900"), of("A", "1", "9000")], "1000").lote_sospechoso, false, "un valor fuera de rango no vuelve lote al proceso");
+    const misma = lb.limpiarOfertas([{ nombre_proveedor: "X", c_digo_proveedor: "77", nit_del_proveedor: "900111", valor_de_la_oferta: "900" },
+      { nombre_proveedor: "X", c_digo_proveedor: "", nit_del_proveedor: "900111", valor_de_la_oferta: "900" }], "1000");
+    assert.strictEqual(misma.validas.length, 1, "la misma empresa con y sin código es UN oferente");
+    assert.deepStrictEqual(r.validas.map((o) => o.valor), [950, 900, 920]);
+    assert.strictEqual(r.lote_sospechoso, false);
+    assert.strictEqual(lb.limpiarOfertas([of("A", "1", "900"), of("A", "1", "800")], "1000").lote_sospechoso, true, "un proveedor con dos valores es lote");
+    const sinBase = lb.limpiarOfertas([of("A", "1", "900")], null);
+    assert.strictEqual(sinBase.validas.length, 0); assert.strictEqual(sinBase.excluidas.sin_precio_base, 1, "sin precio base nada se juzga en %");
+    const st = lb.estadisticas([1, 2, 3, 4]);
+    assert.strictEqual(st.mediana, 2.5, "mediana con número PAR = promedio de los dos centrales");
+    assert.ok(Math.abs(st.sigma_pob - Math.sqrt(1.25)) < 1e-12 && Math.abs(st.sigma_muestral - Math.sqrt(5 / 3)) < 1e-12, "las dos σ");
+    assert.strictEqual(lb.estadisticas([7]).sigma_muestral, null, "con 1 oferta no hay σ muestral");
+    assert.strictEqual(lb.competencia(3), "real"); assert.strictEqual(lb.competencia(2), "baja"); assert.strictEqual(lb.competencia(0), null);
+    const fila = lb.elegirFila([{ adjudicado: "No", id_del_proceso: "Z" }, { adjudicado: "Si", valor_total_adjudicacion: "", id_del_proceso: "A" },
+      { adjudicado: "Si", valor_total_adjudicacion: "10", fecha_adjudicacion: "2025-01-01", id_del_proceso: "B" }]);
+    assert.strictEqual(lb.elegirFila([{ adjudicado: "Si", id_del_proceso: "CO1.REQ.999" }, { adjudicado: "Si", id_del_proceso: "CO1.REQ.1000" }]).id_del_proceso,
+      "CO1.REQ.1000", "el desempate compara el número, no el texto");
+    assert.strictEqual(fila.id_del_proceso, "B", "regla de fila: adjudicada, con valor, más reciente");
+    console.log("· unidad base de obra: «sin dato» ≠ 0, mapeo de modalidades, exclusiones contadas por motivo, lote, las dos σ y la regla de fila");
+  }
+
   /* unidad: capa anti-suministro sobre segmentos de bienes. Cada caso se
      evalúa contra un perfil cuyo RUP SÍ contiene la clase — así el rechazo
      solo puede venir de la capa (se verifica anti_suministro como causa). */
