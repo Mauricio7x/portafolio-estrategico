@@ -211,8 +211,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 323 secciones (19 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 18582  La historia de un proceso sobrevive a quien reescribe su mes (1-oct-2026)
+· MEMORIA · docs/MEMORIA.md — 324 secciones (19 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 18593  «Parque automotor» también es lo que se guarda bajo techo: el garaje y los hangares entran …
   L 18606  «Combustible» suelto también mataba obra: las redes de gas y los surtidores entran (1-oct-2…
   L 18620  Tres pruebas con fecha fija tumbaron main al cambiar de mes, y la cuarta espera (1-oct-2026)  (superada)
@@ -222,6 +221,7 @@
   L 18708  Enero de 2027: las pruebas caen en cadena cuando el año tiene pocos meses (17-oct-2026)
   L 18718  La fila partida de la tabla de códigos de la experiencia (17-oct-2026)
   L 18741  El anticipo «N/A» bajo su título y el amparo «Devolución del pago anticipado» (17-oct-2026)
+  L 18764  El anticipo «…PAGO ANTICIPADO: No aplica» en una sola línea (17-oct-2026)
 
 · DOCUMENTOS docs/ — 71 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)
