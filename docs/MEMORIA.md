@@ -18815,6 +18815,30 @@ validación de Precios sigue siendo el presupuesto de SECOP II; el aviso no lleg
 Medido después: 11 de 11 cifras correctas en los 9 pliegos y las dos versiones de Santa Elena (Manizales escribe
 «1.1.OBJETO» sin espacio y ahora se lee).
 
+### El techo de la oferta en Precios: la cifra más baja entre SECOP II y el pliego definitivo (17-oct-2026)
+
+En una línea: al abrir Precios desde un proceso guardado («Cargue el pliego en Precios»), el campo «Presupuesto oficial
+(COP)» arranca con `guia.tope_oferta` (`lib/documentos_proceso.topeOferta`): la del pliego definitivo si es MENOR que la de
+SECOP II, con una nota que dice de dónde sale; y el hallazgo G.5 dice «por encima del presupuesto del pliego definitivo».
+
+**Por qué.** Santa Elena: con el techo de SECOP II ($1.744.426.146, el del borrador) Precios aceptaba una oferta por encima
+del presupuesto real ($1.581.425.810). Visto bueno del dueño el 17-oct-2026.
+
+**Lo que no hay que deshacer.** (a) El techo solo BAJA: si el pliego dice más o lo mismo (o difiere en centavos), queda el de
+SECOP II. (b) La elección del documento es UNA (`elegirPresupuestoPliego`), la misma del aviso de la cabecera: adenda más
+reciente con cifra, borrador callado con definitivo leído, sin lotes. (c) No fijan el techo: un borrador (aunque diga menos),
+una adenda posterior sin la tabla, una lectura dudosa (más del 50 % de diferencia), los lotes; ahí el techo es el de SECOP II
+y el aviso sigue en la cabecera. (d) `cuantia_fuente` viaja solo mientras el usuario no cambie la cifra; cualquier otro valor
+es inerte (`normalizarConfig`). (e) La tarjeta de Licitaciones («Calcular mi precio») sigue abriendo Precios con SECOP II aunque el
+pliego de ese proceso ya se haya leído (la lista no trae la guía): llevar ahí el techo es una decisión pendiente del dueño. La K,
+el capital de trabajo y la experiencia no cambian. (f) Revisión adversaria del mismo día, cada caso con su cerradura (la de la
+PANTALLA con el arnés `cargarFrontRO` del bloque «revisor de la oferta», que ejecuta el public/app.js real): sin cifra de SECOP II
+no se fija techo (no hay contra qué contrastar la lectura, y la nota decía «SECOP II publica $ 0»); `cuantiaDelPliego` es
+{id, valor} y solo viaja para ESE proceso; abrir el borrador de otro proceso la borra con su nota; cambiar la cifra a mano calla
+la nota; el pliego por debajo fija el techo aunque sea por centavos (SECOP II los corta hacia abajo). Límites conocidos: con dos
+documentos definitivos de cifra distinta manda la prioridad, no la más baja; el techo sale de la guía con que se abrió el
+expediente (una lectura posterior no lo refresca hasta reabrirlo). Visto en Chromium.
+
 ### Herramientas de terceros para las sesiones de Claude: lo que entró, lo que no y por qué (17-oct-2026)
 
 En una línea: el dueño pidió una búsqueda de repositorios públicos que ayudaran a Detekta y a Claude, y aprobó instalar los
