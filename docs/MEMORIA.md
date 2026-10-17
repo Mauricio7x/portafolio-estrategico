@@ -18760,3 +18760,23 @@ Límites conocidos, previos a este cambio: «8.3. ANTICIPO Y/O PAGO ANTICIPADO: 
 cambia la clave de caché del dictamen por reglas y la versión de los hechos (se rehacen). (d) `lib/negocio.SIN_ANTICIPO_RE`
 no cambia: lee «anticipo: n/a» seguido, y el título dice «anticipado», así que tampoco ve este caso; queda anotado.
 Medido después: 9 de 9 pliegos con el anticipo de la verdad (Pasto A «sí», los otros ocho «no»).
+
+### El anticipo «…PAGO ANTICIPADO: No aplica» en una sola línea (17-oct-2026)
+
+En una línea: «8.3. ANTICIPO Y/O PAGO ANTICIPADO: No aplica» (y «…: N/A») en UNA línea decía «hay anticipo»: la negación
+pedía «anticipo:» y el título termina en «anticipado:». Ahora `SIN_ANTICIPO_RE` acepta el título COMPUESTO
+(«anticipo y/o | o | y pago anticipado») seguido de 0 / cero / no aplica, y «N/A» solo tras DOS PUNTOS.
+
+**Lo que no hay que deshacer.** (a) El «N/A» sin dos puntos no niega: «Buen manejo del anticipo⇥N/A» es la celda de la
+tabla de garantías y negaría con peso fuerte, tapando un anticipo pactado (el mismo riesgo que la sección «El anticipo
+«N/A» bajo su título…» resolvió con la negación débil); lo cierra una prueba. (b) NUNCA «pago anticipado» SUELTO: anticipo y
+pago anticipado son figuras distintas, y la primera versión de este cambio («anticip(o|ado)») leía «Pago anticipado:
+no aplica» al lado de «Anticipo: 30 %» como «no hay anticipo» (peso 3, gana a cualquier frase): en `lib/negocio` ponía
+anticipo_pct 0 y la puerta de capital de trabajo cerraba, y con «solo viables» el proceso DESAPARECÍA de la lista
+(revisión adversaria, reproducido). Lo cierran tres pruebas. (b2) La gemela `lib/negocio.SIN_ANTICIPO_RE` acepta el
+mismo título compuesto (la prueba de paridad incluye la frase nueva); allí el «n/a» sigue valiendo con espacio porque
+lee la descripción de SECOP, sin tablas. (c) REGLAS_VERSION .6 → .7: los hechos y los dictámenes por reglas se rehacen.
+Era el límite que dejó anotado la revisión adversaria de la sección anterior; en los 9 pliegos de la Fase 0 no cambia nada.
+Límites conocidos (segunda revisión adversaria, no vistos en los 9 pliegos): «Anticipo y/o pago anticipado: 0 si la
+entidad no lo pacta…» con dos puntos niega aunque otra página pacte el 30 %; y en `lib/negocio` una descripción de SECOP
+con el texto de la garantía «…anticipo y/o pago anticipado: N/A» pondría el anticipo en 0.
