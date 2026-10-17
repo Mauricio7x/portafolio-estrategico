@@ -2562,6 +2562,19 @@
 
   /* La querystring que antes viajaba a /apu.html: mismos nombres de parámetro
      (el editor los lee con el MISMO precargarDesdeURL de siempre). */
+  /* el techo de la oferta que trae la guía (lib/documentos_proceso.topeOferta): solo cuando sale del pliego definitivo
+     (MENOR que SECOP II) cambia lo que Precios recibe; si no, nada, y queda la cifra de SECOP II de siempre */
+  function techoDesdeGuia(g) {
+    const t = g && g.tope_oferta;
+    if (!t || t.fuente !== "pliego" || !(Number(t.valor) > 0) || !(Number(t.secop) > 0)) return {};
+    return { cuantia_cop: t.valor, cuantia_fuente: "pliego",
+      cuantia_nota: `Techo: ${fmtCOP.format(t.valor)}, del pliego definitivo${t.pagina != null ? ` (pág. ${t.pagina})` : ""}; SECOP II publica ${fmtCOP.format(t.secop)}. Su oferta no puede pasar la más baja.` };
+  }
+  // «Cargue el pliego en Precios» desde el expediente: la foto del guardado más el techo de su guía
+  function qApuDelExpediente(pr, id, g) {
+    return qApu({ nombre_del_procedimiento: pr.nombre, entidad: pr.entidad, nit_entidad: pr.nit_entidad, departamento_entidad: pr.departamento,
+      cuantia_cop: pr.presupuesto_cop, id_del_proceso: id, modalidad_de_contratacion: pr.modalidad, ...techoDesdeGuia(g) });
+  }
   function qApu(l) {
     const q = new URLSearchParams();
     if (l.nombre_del_procedimiento) q.set("objeto", l.nombre_del_procedimiento);
@@ -2572,6 +2585,8 @@
       || (l.rup && l.rup.unspsc && l.rup.unspsc.codigo_proceso) || "";
     if (unspsc) q.set("unspsc", String(unspsc));
     if (l.cuantia_cop != null) q.set("cuantia", String(l.cuantia_cop));
+    if (l.cuantia_fuente === "pliego") q.set("cuantia_fuente", "pliego");
+    if (l.cuantia_nota) q.set("cuantia_nota", String(l.cuantia_nota));
     if (l.id_del_proceso != null) q.set("id_proceso", String(l.id_del_proceso));
     if (l.plazo_meses != null) q.set("plazo", String(l.plazo_meses));
     if (l.modalidad_de_contratacion) q.set("modalidad", l.modalidad_de_contratacion);
@@ -6143,8 +6158,10 @@
         const id = al.getAttribute("data-seg-abrir-lector");
         const p = ((ultimoSeguimiento && ultimoSeguimiento.procesos) || []).find((x) => x.id === id) || {};
         const pr = p.proceso || {};
-        abrirEditorConProceso(qApu({ nombre_del_procedimiento: pr.nombre, entidad: pr.entidad, nit_entidad: pr.nit_entidad, departamento_entidad: pr.departamento,
-          cuantia_cop: pr.presupuesto_cop, id_del_proceso: id, modalidad_de_contratacion: pr.modalidad }));
+        /* EL TECHO DE LA OFERTA (17-oct-2026): si el pliego definitivo dice MENOS que SECOP II, Precios arranca con la
+           del pliego (lib/documentos_proceso.topeOferta) y dice de dónde sale; si no, la de SECOP II, como siempre */
+        const g = segExpDatos && segExpDatos.proceso && segExpDatos.proceso.id === id ? segExpDatos.proceso.guia : null;
+        abrirEditorConProceso(qApuDelExpediente(pr, id, g));
         return;
       }
       const ics = ev.target.closest("[data-seg-ics]");
@@ -6306,6 +6323,8 @@
          acabarían con dos cifras distintas. Vacío = sin dato y entonces no se
          compara contra nada, en vez de inventarle un techo al presupuesto. */
       cuantia_cop: $("cuantia").value.trim() === "" ? null : Number($("cuantia").value),
+      // si el techo sigue siendo la cifra del pliego, el hallazgo G.5 lo nombra así; si el usuario lo cambió, ya no
+      cuantia_fuente: techoSigueDelPliego() ? "pliego" : null,
       /* Utilidad MÍNIMA aceptable (Fase 3): con ella se calcula el precio piso
          del panel «¿Me presento?». Vacío = sin declarar → el servidor usa la U
          del AIU y lo dice; NO se rellena aquí con la U para que el panel pueda
@@ -7693,6 +7712,8 @@
     if (bj) bj.addEventListener("click", () => { const b = $("btn-justificacion"); if (b && !b.disabled) b.click(); else msgApu("Para generar la justificación calcule primero la rentabilidad del proceso (sección de arriba).", "info"); });
   }
   $("btn-revisar-oferta").addEventListener("click", revisarOferta);
+  // la nota del techo del pliego se calla en cuanto el usuario cambia la cifra a mano (revisión adversaria, 17-oct-2026)
+  $("cuantia").addEventListener("input", () => { if (cuantiaDelPliego && !techoSigueDelPliego()) { cuantiaDelPliego = null; pintarNotaCuantia(""); } });
 
   /* ──────────────────────── guardar / cargar ───────────────────────── */
   /* Guardar el borrador: lo pulsa el usuario, y también lo llama «Pedir precios»
@@ -8584,6 +8605,11 @@
      departamento, la entidad y la cuantía de cada proceso, que es justo el
      trabajo que el botón existe para ahorrar. */
   let paramsProceso = null;   // los fija abrirEditorConProceso (botón APU de una tarjeta)
+  let cuantiaDelPliego = null; // {id, valor}: el techo vino del pliego definitivo de ESE proceso; G.5 lo dice así mientras no se cambie
+  function pintarNotaCuantia(nota) { const n = $("cuantia-nota"); if (n) { n.textContent = nota || ""; n.classList.toggle("hidden", !nota); } }
+  // ¿el campo sigue con la cifra del pliego del proceso abierto? Si el usuario la cambió u otro proceso ocupa el editor, no
+  const techoSigueDelPliego = () => !!cuantiaDelPliego && $("cuantia").value.trim() !== "" && Number($("cuantia").value) === cuantiaDelPliego.valor
+    && (($("id-proceso") && $("id-proceso").value.trim()) || "") === cuantiaDelPliego.id;
 
   /* LA REVISIÓN PINTADA ES DE UNA OFERTA Y DE UN PROCESO (N11-A, 27-sep-2026):
      al abrir otro proceso quedaban el semáforo, el tope del AIU y el total de
@@ -8714,6 +8740,8 @@
     poner("entidad", "entidad");
     poner("id-proceso", "id_proceso");
     poner("cuantia", "cuantia");
+    cuantiaDelPliego = p.get("cuantia_fuente") === "pliego" && Number(p.get("cuantia")) > 0 && idEntrante ? { id: idEntrante, valor: Number(p.get("cuantia")) } : null;
+    pintarNotaCuantia(cuantiaDelPliego ? (p.get("cuantia_nota") || "") : "");
     modalidadProceso = p.get("modalidad") || "";
     tipoProceso = p.get("tipo") || "";
     poner("plazo-meses", "plazo");
@@ -8764,6 +8792,7 @@
     /* el borrador manda sobre la precarga de la URL: la segunda precarga (tras el catálogo)
        ya no reinicia el editor para volver al proceso de la URL (segunda revisión) */
     borradorAbierto = true;
+    cuantiaDelPliego = null; pintarNotaCuantia("");   // el techo del pliego era del proceso anterior (revisión adversaria)
     if ($("id-proceso")) $("id-proceso").value = idBorrador;
     campo("cuantia", p.cuantia);
     campo("plazo-meses", p.plazo_meses);

@@ -8098,6 +8098,29 @@ async function main() {
     // H6: $2 de diferencia es un dato, no un riesgo, y se dice en pesos
     const dos2 = cuantos({ a: doc(sec("($1.581.425.812)"), "pliego") }, 1581425810);
     assert.ok(dos2.length === 1 && dos2[0].estado === "dato" && /diferencia de \$2\./.test(dos2[0].texto), JSON.stringify(dos2));
+    /* EL TECHO DE LA OFERTA PARA PRECIOS (17-oct-2026): la más baja entre SECOP II y el pliego definitivo; solo BAJA */
+    const tope = (leidos, cop) => Dp.loQueDicen({ indice: { archivos: [], plan: [] }, ilegibles: {}, leidos }, { presupuestoCOP: cop }).tope_oferta;
+    assert.deepStrictEqual([tope({ a: doc(def, "pliego"), b: doc(bor, "pliego_borrador") }, 1744426146).valor, tope({ a: doc(def, "pliego") }, 1744426146).fuente, tope({ a: doc(def, "pliego") }, 1744426146).pagina], [1581425810, "pliego", 6], "Santa Elena: el techo es el del pliego definitivo");
+    assert.strictEqual(tope({ a: doc(bor, "pliego") }, 1581425810).fuente, "secop", "el pliego MAYOR que SECOP II no sube el techo");
+    assert.strictEqual(tope({ b: doc(bor, "pliego_borrador") }, 1900000000).fuente, "secop", "un borrador nunca fija el techo, aunque diga menos que SECOP II");
+    assert.strictEqual(tope({ a: doc(sec("salario de ($ 1.423.500)"), "pliego") }, 1581425810).fuente, "secop", "una lectura dudosa nunca fija el techo");
+    assert.strictEqual(tope({ a: doc(sec("Lote 1\t$ 500.000.000", "Lote 2\t$ 500.000.000"), "pliego") }, 1000000000).fuente, "secop", "por lotes el techo no sale del pliego");
+    assert.strictEqual(tope({ a: { ...doc(def, "pliego"), fecha_carga: "2026-09-01" }, b: { ...doc("\f1\nSe modifica el cronograma del proceso.\n", "adenda"), fecha_carga: "2026-09-10" } }, 1744426146).fuente, "secop", "con una adenda posterior sin la tabla, el techo no sale del pliego");
+    assert.deepStrictEqual(tope({ a: doc(["\f7", titulo, "8B Y CALLE 2G,\t($511.587.015,10) M/CTE", "1.2.\tDOCUMENTOS"].join("\n"), "pliego") }, 511587015), { valor: 511587015, fuente: "secop", secop: 511587015, pagina: null, documento: null }, "los centavos que SECOP II corta no mueven el techo");
+    const { normalizarConfig: nc5 } = require("../lib/apu/calculo.js");
+    assert.deepStrictEqual([nc5({ cuantia_fuente: "pliego" }).cuantia_fuente, nc5({ cuantia_fuente: "<b>x</b>" }).cuantia_fuente, nc5({}).cuantia_fuente], ["pliego", null, null], "la fuente del techo: «pliego» o nada");
+    assert.strictEqual(tope({ a: doc(sec("($1.744.426.145,50)"), "pliego") }, 1744426146).fuente, "pliego", "el pliego por debajo, aunque sea por centavos, fija el techo (SECOP II los corta hacia abajo, no hacia arriba)");
+    assert.strictEqual(tope({ a: doc(def, "pliego") }, null), null, "sin cifra de SECOP II no se fija techo: no hay contra qué contrastar la lectura");
+    const Gp = require("../lib/guia_proceso.js");
+    const filaSE = { id_del_proceso: "CO1.SE", nombre_del_procedimiento: "MEJORAMIENTO VIA SANTA ELENA", entidad: "DISTRITO DE CALI", departamento_entidad: "Valle del Cauca", modalidad_de_contratacion: "Selección Abreviada de Menor Cuantía", precio_base: "1744426146", duracion: "2", unidad_de_duracion: "Meses", codigo_principal_de_categoria: "V1.72141000", fecha_de_publicacion_del: "2026-09-01T10:00:00.000", fecha_de_recepcion_de: "2026-09-20T15:00:00.000", tipo_de_contrato: "Obra" };
+    const gSE = Gp.guiaDe({ fila: filaSE, perfil: "helder", ctx: { ahoraMs: Date.parse("2026-09-03T15:00:00Z"), documentos: { indice: { archivos: [], plan: [] }, ilegibles: {}, leidos: { a: doc(def, "pliego") } } } });
+    assert.ok(gSE.tope_oferta && gSE.tope_oferta.valor === 1581425810 && gSE.tope_oferta.fuente === "pliego", `la guía entrega el techo del pliego: ${JSON.stringify(gSE.tope_oferta)}`);
+    // G.5 nombra contra qué compara, y un valor desconocido de la fuente es inerte
+    const V5 = require("../lib/apu/validaciones.js");
+    const g5 = V5.validarPresupuesto({ items: [], resumen: { precio_final: 1700000000 }, configuracion: { cuantia_fuente: "pliego" }, cuantia_cop: 1581425810 }).hallazgos.find((h) => h.codigo === "excede_la_cuantia" || h.id === "excede_la_cuantia" || /supera el presupuesto/.test(h.titulo || ""));
+    assert.ok(g5 && /por encima del presupuesto del pliego definitivo \(\$/.test(JSON.stringify(g5)), JSON.stringify(g5));
+    const g5b = V5.validarPresupuesto({ items: [], resumen: { precio_final: 1700000000 }, configuracion: { cuantia_fuente: "otra" }, cuantia_cop: 1581425810 }).hallazgos.find((h) => /supera el presupuesto/.test(h.titulo || ""));
+    assert.ok(g5b && /cuantía del proceso/.test(JSON.stringify(g5b)) && !/pliego definitivo/.test(JSON.stringify(g5b)), JSON.stringify(g5b));
     // un documento que no es pliego no se lee para esto
     assert.strictEqual(Dp.hechosDeTexto(def, { tipo: "estudio_previo" }).presupuesto_pliego, null);
   }
@@ -43912,7 +43935,7 @@ async function main() {
       const appR = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
       const pliegoR = fs.readFileSync(path.join(__dirname, "..", "public", "pliego.js"), "utf8");
       assert.ok(/addEventListener\("toggle"/.test(appR) && /consultarDictamenGuardado\(det\.getAttribute\("data-seg-guia"\)\)/.test(appR), "al abrir la guía se consulta el dictamen solo");
-      assert.ok(/data-seg-abrir-lector=/.test(appR) && /abrirEditorConProceso\(qApu\(\{ nombre_del_procedimiento: pr\.nombre/.test(appR), "«Cargar el pliego» abre Precios con la MISMA cadena que la tarjeta");
+      assert.ok(/data-seg-abrir-lector=/.test(appR) && /abrirEditorConProceso\(qApuDelExpediente\(pr, id, g\)\)/.test(appR) && /function qApuDelExpediente\(pr, id, g\) \{\s*return qApu\(\{ nombre_del_procedimiento: pr\.nombre/.test(appR), "«Cargar el pliego» abre Precios con la MISMA cadena que la tarjeta (qApu), más el techo de su guía (17-oct-2026)");
       assert.ok(/r\.origen_legible/.test(pliegoR), "la pantalla enseña de qué motor viene el dictamen");
       global.fetch = fetchOrig;
       await limpiar();
@@ -51020,13 +51043,13 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
         body: nodo(null), documentElement: nodo(null), readyState: "complete", visibilityState: "visible" };
       ctx.window = ctx; ctx.self = ctx; ctx.globalThis = ctx;
       vm.createContext(ctx);
-      const exponer = ["ofertaParaRevision", "filasDesdePliego", "reiniciarEditorParaProceso", "precargarDesdeURL", "revisarOferta", "pintarTabla", "pintarIa", "precargarTrasCatalogo", "totalVisibleDeFila", "abrirEditorConProceso"];
+      const exponer = ["qApuDelExpediente", "techoDesdeGuia", "restituirContextoProceso", "leerConfig", "qApu", "ofertaParaRevision", "filasDesdePliego", "reiniciarEditorParaProceso", "precargarDesdeURL", "revisarOferta", "pintarTabla", "pintarIa", "precargarTrasCatalogo", "totalVisibleDeFila", "abrirEditorConProceso"];
       for (const f of orden) {
         let src = fs.readFileSync(pub(f), "utf8");
         if (f === "app.js") {
           const i = src.lastIndexOf("})();"); assert.ok(i > 0, "app.js sin el cierre de su IIFE");
           src = `${src.slice(0, i)}window.__cerraduraRO = { ${exponer.map((n) => `${n}: typeof ${n} === "undefined" ? undefined : ${n}`).join(", ")},
-            leer: () => ({ filas, ultimoCalculo, modalidad: modalidadProceso }),
+            leer: () => ({ filas, ultimoCalculo, modalidad: modalidadProceso, cdp: cuantiaDelPliego }),
             fijar: (o) => { if ("filas" in o) filas = o.filas; if ("ultimoCalculo" in o) ultimoCalculo = o.ultimoCalculo; if ("importacion" in o) importacion = o.importacion; if ("modalidad" in o) modalidadProceso = o.modalidad; } };\n${src.slice(i)}`;
         }
         if (f === "pliego.js") {
@@ -51522,6 +51545,27 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
         await Promise.race([vig, asentarRO()]); await asentarRO();
         await disparar("btn-limpiar", "click", {}); await asentarRO();
         okRO(postMis && !postMis.cfg.signal.aborted, "(f) «Limpiar» en el lector no cancela el dictamen que se pidió desde Mis procesos");
+      }
+      /* (g) EL TECHO DEL PLIEGO EN PRECIOS (17-oct-2026), con la pantalla real: la guía → qApu → precarga → leerConfig */
+      {
+        const { F: T, porId: P2, disparar: dis2 } = cargarFrontRO();
+        await asentarRO();
+        const guiaSE = { tope_oferta: { valor: 1581425810, fuente: "pliego", secop: 1744426146, pagina: 6 } };
+        const args = T.techoDesdeGuia(guiaSE);
+        okRO(args.cuantia_cop === 1581425810 && args.cuantia_fuente === "pliego" && /pág\. 6/.test(args.cuantia_nota) && /1\.744\.426\.146/.test(args.cuantia_nota), `(g) la guía con techo del pliego lo pasa a Precios: ${JSON.stringify(args)}`);
+        okRO(Object.keys(T.techoDesdeGuia({ tope_oferta: { valor: 1744426146, fuente: "secop", secop: 1744426146 } })).length === 0 && Object.keys(T.techoDesdeGuia(null)).length === 0, "(g) sin techo del pliego no cambia nada");
+        okRO(Object.keys(T.techoDesdeGuia({ tope_oferta: { valor: 1581425810, fuente: "pliego", secop: null } })).length === 0, "(g) sin cifra de SECOP II no hay nota «SECOP II publica $ 0»");
+        T.abrirEditorConProceso(T.qApuDelExpediente({ nombre: "Santa Elena", presupuesto_cop: 1744426146 }, "CO1.SE", guiaSE));
+        T.precargarDesdeURL();
+        okRO(P2.get("cuantia").value === "1581425810" && /pliego definitivo/.test(P2.get("cuantia-nota").textContent) && !P2.get("cuantia-nota").clases.has("hidden"), `(g) Precios arranca con el techo del pliego y su nota: «${P2.get("cuantia").value}» «${P2.get("cuantia-nota").textContent}»`);
+        okRO(T.leerConfig().cuantia_fuente === "pliego" && T.leerConfig().cuantia_cop === 1581425810, `(g) el cálculo lleva la fuente mientras la cifra no cambie: ${JSON.stringify({ f: T.leerConfig().cuantia_fuente, c: T.leerConfig().cuantia_cop })}`);
+        // el usuario cambia la cifra: la nota se calla y la fuente ya no viaja
+        P2.get("cuantia").value = "1600000000"; await dis2("cuantia", "input", {});
+        okRO(T.leerConfig().cuantia_fuente === null && P2.get("cuantia-nota").clases.has("hidden"), "(g) cambiar la cifra a mano calla la nota y la fuente");
+        // otro proceso desde su borrador, con la MISMA cifra: no hereda nada del anterior
+        T.abrirEditorConProceso(T.qApu({ id_del_proceso: "CO1.SE", cuantia_cop: 1744426146, ...args })); T.precargarDesdeURL();
+        T.restituirContextoProceso({ id_proceso: "CO1.OTRO", cuantia: 1581425810 });
+        okRO(T.leerConfig().cuantia_fuente === null && P2.get("cuantia-nota").clases.has("hidden") && T.leer().cdp === null, "(g) el borrador de otro proceso no hereda el techo ni la nota del pliego anterior");
       }
     } finally {
       if (tzRO === undefined) delete process.env.TZ; else process.env.TZ = tzRO;
