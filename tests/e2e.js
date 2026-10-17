@@ -6725,6 +6725,8 @@ async function main() {
         await sinCuenta();
         Sesion.LLAVES_RETIRADAS_SHA256.add(huellaPrueba);
         try {
+          assert.ok(Sesion.esLlaveRetirada(LLAVE + "\n") && Sesion.esLlaveRetirada(" " + LLAVE + " "),
+            "la llave retirada con un espacio o un salto de línea al final (pegada así en Vercel) sigue siendo la retirada");
           const r = await post("/api/admin?op=crear-cuenta", { llave: LLAVE, correo: "intruso@x.co", contrasena: "contrasena-del-intruso" }, { "x-real-ip": "10.0.9.1" });
           assert.strictEqual(r.status, 503, `con la llave retirada en el entorno, el alta se niega: ${r.status}`);
           assert.strictEqual(r.cuerpo.motivo, "llave_retirada");
