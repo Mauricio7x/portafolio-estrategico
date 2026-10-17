@@ -27,7 +27,7 @@ async function lugares(ids) {
   for (let i = 0; i < ids.length; i += 80) {
     const lote = ids.slice(i, i + 80);
     try {
-      const r = await C.pedir({ $select: "proceso_de_compra,direcci_n_de_ejecuci_n_del_contrato",
+      const r = await C.pedir({ $select: "proceso_de_compra,direcci_n_de_ejecuci_n_del_contrato,proveedor_adjudicado,documento_proveedor,valor_del_contrato",
         $where: `proceso_de_compra in (${lote.map((x) => `'${escSoQL(x)}'`).join(",")})`, $limit: 5000 }, "jbjy lote");
       if (!Array.isArray(r)) throw new Error("jbjy: respuesta no es lista");
       if (r.length >= 5000) throw new Error("jbjy: lote con 5000 filas o más, se pudo cortar");
@@ -81,6 +81,25 @@ async function main() {
       R.proporcion_marcada[m][s] = { marcados: si, con_dato: con, pct: con ? Math.round(1000 * si / con) / 10 : null };
     }
   }
+  /* Censo del contrato (en vez de la muestra de 30): ¿el contratista de jbjy es el ganador de p6dx
+     y el valor del contrato es el adjudicado? Mismo SECOP II: coherencia interna, no validación
+     externa. Un valor mayor suele ser adición (en la muestra, 9 de 9 con modificación registrada). */
+  const { compararConContrato } = require("./muestra");
+  const censo = { procesos: 0, sin_contrato: 0, sin_medir: 0, ganador: { si: 0, no: 0, sin_dato: 0 }, valor: { igual: 0, mayor: 0, menor: 0, sin_dato: 0 } };
+  for (const x of base) {
+    if (!x.competencia) continue;
+    censo.procesos++;
+    const c = lugar.get(x.portafolio);
+    if (c === undefined && lugar.has(x.portafolio)) { censo.sin_medir++; continue; }
+    if (!c) { censo.sin_contrato++; continue; }
+    const k = compararConContrato(x, c);
+    censo.ganador[k.mismo_ganador === null ? "sin_dato" : k.mismo_ganador ? "si" : "no"]++;
+    censo.valor[k.valor_igual_adjudicado === null ? "sin_dato" : k.valor_igual_adjudicado ? "igual" : k.diferencia_valor_pct > 0 ? "mayor" : "menor"]++;
+  }
+  R.censo_contrato = censo;
+  R.validas_frente_a_respuestas = base.filter((x) => x.competencia).reduce((a, x) => {
+    const r = x.respuestas_publicadas; a[r === null ? "sin_dato" : x.n_validas === r ? "iguales" : x.n_validas < r ? "menos_validas" : "mas_validas"]++; return a;
+  }, { iguales: 0, menos_validas: 0, mas_validas: 0, sin_dato: 0 });
   R.inconsistencias = base.reduce((a, x) => { if (x.inconsistencia) a[x.inconsistencia] = (a[x.inconsistencia] || 0) + 1; return a; }, {});
 
   fs.writeFileSync(path.join(dir, "base.jsonl.gz"), zlib.gzipSync(base.map((x) => JSON.stringify(x)).join("\n")));

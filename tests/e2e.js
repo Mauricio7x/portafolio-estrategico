@@ -4249,8 +4249,32 @@ async function main() {
       const comp = CI2.competencia(Array.from({ length: 10 }, proc));
       assert.strictEqual(comp.entidades[0].oferentes_distintos, 3);
       const rB = comp.rivales_frecuentes.find((r) => r.nombre === "B SAS"), rA = comp.rivales_frecuentes.find((r) => r.nombre === "A SAS");
-      assert.strictEqual(rA.ganadas, 10); assert.strictEqual(rB.ganadas, 0, "ofrecer el mismo valor del ganador no es ganar: se cuenta por identidad");
+      assert.strictEqual(rA.ganadas_con_oferta_emparejada, 10); assert.strictEqual(rB.ganadas_con_oferta_emparejada, 0, "ofrecer el mismo valor del ganador no es ganar: se cuenta por identidad");
       assert.strictEqual(CI2.esPersonaNatural("JUAN PEREZ INGENIERIA"), true, "«ingeniería» no es una forma jurídica: el nombre no sale");
+    }
+    // Fase 3: muestra de validación (semilla fija, proporcional por modalidad) y cruce con el contrato
+    {
+      const MU = require("../scripts/base_obra/muestra");
+      const pob = [...Array.from({ length: 60 }, (_, i) => ({ portafolio: "M" + String(i).padStart(3, "0"), modalidad: "menor_cuantia" })),
+        ...Array.from({ length: 30 }, (_, i) => ({ portafolio: "N" + String(i).padStart(3, "0"), modalidad: "minima" })),
+        ...Array.from({ length: 10 }, (_, i) => ({ portafolio: "L" + String(i).padStart(3, "0"), modalidad: "licitacion" }))];
+      const m1 = MU.seleccionar(pob, 30, 20261017), m2 = MU.seleccionar(pob.slice().reverse(), 30, 20261017);
+      assert.deepStrictEqual(m1.map((x) => x.portafolio).sort(), m2.map((x) => x.portafolio).sort(), "la misma semilla da la misma muestra, aunque la base venga en otro orden");
+      assert.strictEqual(new Set(m1.map((x) => x.portafolio)).size, 30, "sin repetidos");
+      const cuenta = (mm, mod) => mm.filter((x) => x.modalidad === mod).length;
+      assert.deepStrictEqual([cuenta(m1, "menor_cuantia"), cuenta(m1, "minima"), cuenta(m1, "licitacion")], [18, 9, 3], "proporcional al tamaño de cada modalidad");
+      assert.notDeepStrictEqual(MU.seleccionar(pob, 30, 1).map((x) => x.portafolio), m1.map((x) => x.portafolio), "otra semilla, otra muestra");
+      const pob2 = [...Array.from({ length: 50 }, (_, i) => ({ portafolio: "A" + i, modalidad: "menor_cuantia" })), ...Array.from({ length: 26 }, (_, i) => ({ portafolio: "B" + i, modalidad: "minima" })),
+        ...Array.from({ length: 24 }, (_, i) => ({ portafolio: "C" + i, modalidad: "licitacion" }))];
+      const m3 = MU.seleccionar(pob2, 10, 7);
+      assert.deepStrictEqual([cuenta(m3, "menor_cuantia"), cuenta(m3, "minima"), cuenta(m3, "licitacion")], [5, 3, 2], "el sobrante va por mayor resto (50/26/24 con n = 10 → 5/3/2)");
+      const caida = MU.filaDeMuestra({ portafolio: "P", modalidad: "minima", competencia: "baja", n_validas: 1 }, [], { status: 503, error: "caída" });
+      assert.strictEqual(caida.contratos_en_jbjy, null, "jbjy caído: contratos «sin medir», no 0"); assert.strictEqual(caida.contrato, "sin_medir");
+      assert.strictEqual(MU.filaDeMuestra({ portafolio: "P", modalidad: "minima", competencia: "baja", n_validas: 1 }, [], null).contratos_en_jbjy, 0, "jbjy respondió y no hay contrato: 0 es un dato");
+      const cmp = MU.compararConContrato({ ganador_nit: "900111222", ganador: "OBRAS SAS", valor_adjudicado: 1000 }, { documento_proveedor: "900111222", proveedor_adjudicado: "OBRAS S.A.S.", valor_del_contrato: "1500" });
+      assert.strictEqual(cmp.mismo_ganador, true); assert.strictEqual(cmp.valor_igual_adjudicado, false); assert.strictEqual(cmp.diferencia_valor_pct, 50);
+      assert.deepStrictEqual(MU.compararConContrato({}, null), { contrato: false }, "sin contrato en jbjy: se dice, no se inventa");
+      assert.strictEqual(MU.compararConContrato({ ganador_nit: null, ganador: "Obras; S.A.S.", valor_adjudicado: null }, { documento_proveedor: "No Definido", proveedor_adjudicado: "OBRAS SAS", valor_del_contrato: "" }).valor_igual_adjudicado, null, "valor sin dato: null, no «distinto»");
     }
     console.log("· unidad base de obra: «sin dato» ≠ 0, mapeo de modalidades, exclusiones contadas por motivo, lote, las dos σ, la regla de fila y el almacén que frena antes de pasar su tope (ida y vuelta contra un S3 falso)");
   }

@@ -110,12 +110,12 @@ function competencia(filas) {
     e.procesos++; e.ofertas += x.n_validas; e[x.competencia]++;
     for (const o of x.ofertas_validas) {
       e.proveedores.add(o.proveedor);
-      const r = rivales.get(o.proveedor) || { nombre: o.nombre, ofertas: 0, pcts: [], ganadas: 0, entidades: new Set(), deptos: new Map() };
+      const r = rivales.get(o.proveedor) || { nombre: o.nombre, ofertas: 0, pcts: [], ganadas_con_oferta_emparejada: 0, entidades: new Set(), deptos: new Map() };
       r.ofertas++; r.pcts.push(o.pct); r.entidades.add(x.codigo_entidad);
       const dk = deptoClave(deptoDe(x)); r.deptos.set(dk, (r.deptos.get(dk) || 0) + 1);
       // ganada = este proveedor ES el ganador emparejado (por identidad, no por igualdad de valor:
       // el valor ganador repetido por otros oferentes sumaba 5.167 «ganadas» de más)
-      if (x.oferta_ganadora && x.oferta_ganadora.proveedor === o.proveedor) r.ganadas++;
+      if (x.oferta_ganadora && x.oferta_ganadora.proveedor === o.proveedor) r.ganadas_con_oferta_emparejada++;
       rivales.set(o.proveedor, r);
     }
     porEntidad.set(x.codigo_entidad, e);
@@ -124,7 +124,9 @@ function competencia(filas) {
     oferentes_distintos: e.proveedores.size, ofertas_por_proceso: +(e.ofertas / e.procesos).toFixed(2), real: e.real, baja: e.baja }))
     .sort((a, b) => b.procesos - a.procesos);
   const frecuentes = [...rivales.values()].filter((r) => r.ofertas >= 10).map((r) => ({
-    nombre: esPersonaNatural(r.nombre) ? "(persona natural)" : r.nombre, ofertas: r.ofertas, ganadas: r.ganadas,
+    nombre: esPersonaNatural(r.nombre) ? "(persona natural)" : r.nombre, ofertas: r.ofertas,
+    // solo las victorias cuya oferta se emparejó: es un PISO, no el total (389 procesos tienen ganador sin oferta emparejada)
+    ganadas_con_oferta_emparejada: r.ganadas_con_oferta_emparejada,
     descuento_tipico_pct: +(100 - 100 * percentil(r.pcts, 0.5)).toFixed(2), entidades: r.entidades.size, departamentos: [...r.deptos].sort((a, b) => b[1] - a[1]).slice(0, 5).map(([d]) => d) }))
     .sort((a, b) => b.ofertas - a.ofertas);
   return { entidades, rivales_frecuentes: frecuentes, n_rivales_10_o_mas: frecuentes.length };
