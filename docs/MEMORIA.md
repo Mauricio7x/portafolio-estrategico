@@ -18925,6 +18925,84 @@ cierre, así que la regla no calla ninguno. (f) VERSION 17 → 18.
 En los 20 procesos de las rondas 5 y 6 la cifra del pliego coincide con la de SECOP II: ni aviso ni techo distinto. El
 valor del cambio es cazar el próximo Santa Elena en una licitación pública, no mover cifras de hoy.
 
+### Precios deja de despertar la rutina cuando ya se despertó 3 veces sin dar señal (17-oct-2026)
+
+En una línea: pasados los 15 min de «repetida», cada «Buscar» despertaba otra corrida del día aunque las anteriores no
+hubieran mandado ningún progreso, y la solicitud nueva pisaba la cuenta; con la rutina dañada (entorno, clave, cuota) la
+pantalla decía «Vuelva a pulsar Buscar» y cada pulsación gastaba un intento sin arreglar nada. Ahora la solicitud guarda
+`despertadas_sin_senal` y a partir de `RUTINA_TOPE_SIN_SENAL` (3) ya no se despierta otra: la respuesta trae
+`tope_alcanzado` y la pantalla dice el hecho y abre el chat.
+
+**Cómo se halló.** El estudio de repositorios del 17-oct (Bull: «contar cuántas veces se quedó muda una tarea y darla por
+fallida») lo propuso como hipótesis; se verificó leyendo `lib/handlers/apu/editor.js` (la solicitud nueva no heredaba nada
+de la anterior) y `public/app.js` (la pantalla pedía volver a pulsar). La premisa del estudio, «Buscar puede repetirse sin
+fin», era FALSA en su forma fuerte: la pantalla nunca vuelve a pedir sola (los sondeos solo leen, con tope de 240 y 600);
+solo el usuario repetía.
+
+**Lo que no hay que deshacer.** (a) Cuenta solo un despertar que arrancó o pudo arrancar (`ok` o `indeterminada`): uno que
+falló no gastó corrida y no suma, pero conserva la cuenta que traía. (b) Cualquier señal de una sesión —«buscando» o
+«listo»— la pone en cero, aunque después enmudezca: la rutina funciona, el fallo es otro. (c) Una solicitud de antes de
+este cambio, sin el campo y despertada, cuenta 1, no 0 («sin dato» no es cero). (d) Pasadas `RUTINA_TOPE_VENTANA_H` (24)
+horas desde la ÚLTIMA solicitud, o con una fecha ilegible, se vuelve a intentar: es el lado seguro, como ya lo era para la
+vida de una sesión. (e) Sin rutina configurada no hay tope: no hay nada que gastar. (f) El tope se evalúa ANTES del
+candado del disparo, para no tomarlo sin disparar. (g) El mensaje no promete cuándo se arregla: dice el hecho y lleva al
+chat, que funciona sin ninguna variable.
+Medido: la prueba falla contra el manejador anterior («con 3 despertares sin señal no se gasta otro: 1 disparos») y la de
+la pantalla contra el `app.js` anterior; en Chromium real (Playwright, API interceptada) el texto y el color salen con 3 y
+el mensaje de siempre con 2. **Límite conocido:** entre los 15 y los 30 min tras el tercer despertar, un «Buscar» rechazado
+muestra el tope y el siguiente sondeo vuelve a decir «la búsqueda arrancó» hasta que la solicitud pasa a «sin_atender».
+**Hermano vivo, sin tocar:** el dictamen (`lib/handlers/pliego/dictamen.js`, `pedir_sesion`) tiene el mismo hueco: su marca
+dura 30 min y después cada clic vuelve a despertar su rutina, sin cuenta; queda para un encargo propio.
+
+### El dictamen también deja de despertar la rutina tras 3 lecturas pedidas sin respuesta (17-oct-2026)
+
+En una línea: el hermano vivo que dejó anotado «Precios deja de despertar la rutina cuando ya se despertó 3 veces sin dar
+señal»: vencida la marca de media hora de `dictamen:pedido:*`, cada clic en «Leer el pliego completo» despertaba otra
+corrida del día aunque las anteriores no hubieran escrito ningún dictamen. Ahora `dictamen:lecturas_sin_respuesta:*` cuenta
+los pedidos seguidos sin dictamen y a partir de `LECTURAS_TOPE_SIN_RESPUESTA` (3) ya no se despierta otra: la respuesta
+trae `tope_alcanzado` y el mensaje `LECTURA_TOPE` con su qué hacer, que la caja ya pinta debajo del botón.
+
+**Por qué una clave aparte y no un campo en la marca.** La marca del pedido vence a los 30 min (es también el candado) y la
+sesión del dictamen no manda avances: la única señal es el dictamen guardado. La cuenta tiene que sobrevivir a la marca, así
+que vive en su propia clave con 24 h desde el último pedido.
+
+**Lo que no hay que deshacer.** (a) Cuenta solo un disparo que arrancó o pudo arrancar (indeterminado); uno que falló seguro
+borra la marca, no gastó y no suma. (b) Guardar el dictamen de la sesión borra la cuenta junto con la marca: la rutina
+funciona. (c) Sin la clave no hubo pedidos sin respuesta: ese 0 es un hecho, no un «sin dato», porque la clave nace con el
+primer pedido; una cuenta ilegible NO frena (se pide, el lado seguro). (d) El tope se mira DESPUÉS de tomar la marca (para
+que un segundo clic dentro de la media hora siga diciendo «ya pedida») y, si frena, suelta esa marca: no corresponde a
+ningún disparo. (e) «Volver a leer» (refrescar) también cuenta: también gasta una corrida.
+Medido: con la condición del tope apagada la suite falla con «con 3 lecturas sin respuesta no se gasta otra: 1 disparos»,
+y sin el borrado al guardar el dictamen falla la cuenta. La pantalla no cambió: `public/pliego.js` (`pedirLecturaCompleta`)
+ya escribe `error` y `que_hacer` en `#dictamen-estado`; leído, no ejecutado en navegador.
+
+### El anticipo negado para UNA parte numerada del contrato no es «no hay anticipo» (17-oct-2026)
+
+En una línea: en la ronda 6 de detekta-lector, la Gobernación del Amazonas (CO1.REQ.11022945, llave en mano) decía «no hay
+anticipo» porque «La Entidad no reconocerá anticipo alguno para la ejecución del componente 1…» pesaba más que «Dará en
+calidad de anticipo un 30% del valor del componente dos» del mismo numeral; un «no» falso deja el capital de trabajo en
+«no llega». Ahora la negación de una parte NUMERADA pesa como mención y Amazonas dice «sí», citando la cláusula (pág. 84).
+
+**Lo que no hay que deshacer (dos revisiones adversarias, cada punto con su cerradura).** (a) Solo es parcial la parte
+NUMERADA y SINGULAR justo después de la negación: «para (la ejecución del) componente 1 / etapa 2 / lote uno / fase II».
+Entre la negación y la parte solo cabe «alguno», «al contratista» o «y/o pago anticipado». La primera versión aceptaba
+cualquier «para … etapa/actividades/ítems» a 60 caracteres: once negaciones reales pasaban a mención y dos a un «sí»
+falso; la segunda aún saltaba a la parte de otra frase («no otorgará anticipo, por lo que … para la etapa 1»), a «ni para
+la etapa 1 ni para la etapa 2», a «lote 1 de 1», a «etapa 2026» y a «lotes 1, 2 y 3»: todo eso sigue negando. (b) La línea
+de abajo solo se mira si la frase queda ABIERTA (termina en conector o en el nombre de la parte, o la de abajo sigue en
+minúscula), y solo puede volver PARCIAL una negación de esta línea, nunca crearla: sin eso «…: No aplica» / «Plazo para
+la etapa 1» pasaba a mención y las citas «8.3 … / NO APLICA» perdían su segunda línea. (c) `hechosDeTexto` y el dictamen
+respetan el `niega` que decide `detectar`; releer la cita sola daba «no» con la parte en la línea siguiente. (d) En
+`lib/negocio`, con una negación parcial NO se lee porcentaje: «… para el componente uno, con pagos parciales del 90 %» o la
+garantía «del 100 %» de al lado se tomaban como anticipo, y un anticipo falso baja la carga de la K y abre la puerta de
+caja. Queda «sin dato». (e) Se excluye la fila partida de la tabla de garantías «(correcta) inversión del anticipo⇥
+liquidación…⇥100%», salvo que la línea pacte o niegue: era la cita del «sí» en Amazonas, Samacá y Sucre. (f) REGLAS_VERSION .9.
+Medido en los 31 textos de pdf.js (Fase 0, Santa Elena, rondas 5 y 6): solo cambia el estado de Amazonas; tres citas pasan
+de la tabla de garantías a la cláusula (Pasto sigue citando otra fila de la garantía). Límites conocidos (previos, del
+lado caro, medidos por la revisión): la parte ANTES de la negación («Para la etapa 1 no se entregará anticipo»), «la primera
+etapa», «en el componente 1» sin «para» y la frase partida en tres líneas siguen diciendo «no»; las filas ya enriquecidas
+en Redis conservan `anticipo_declarado` hasta que se re-enriquecen.
+
 ### El techo del pliego también desde la tarjeta de Licitaciones, para un proceso guardado (17-oct-2026)
 
 En una línea: «Calcular mi precio» (y la cifra pulsable de la baja) en la tarjeta de Licitaciones arrancaba Precios siempre

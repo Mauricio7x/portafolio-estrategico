@@ -7909,7 +7909,16 @@
       /* el pliegue del chat se abre UNA vez por estado, no en cada sondeo: si el
          usuario lo cerró, cerrado se queda (revisión adversaria, 13-sep-2026) */
       const claveChat = [idActual, r.estado, d ? (d.ok ? "ok" : d.indeterminada ? "ind" : "no") : "sin"].join("|");
-      if (r.estado === "sin_atender") {
+      /* EL TOPE DE DESPERTARES SIN SEÑAL (17-oct-2026): con la rutina dañada, «Vuelva a pulsar
+         Buscar» gastaba un intento del día tras otro. Agotada (el servidor ya no despertó otra, o
+         la última de las del tope tampoco respondió), la pantalla dice el hecho y lleva al chat. */
+      const nSinSenal = Number.isInteger(s.despertadas_sin_senal) ? s.despertadas_sin_senal : null;
+      const agotada = r.tope_alcanzado === true || (r.estado === "sin_atender" && Number.isInteger(r.tope_sin_senal) && nSinSenal != null && nSinSenal >= r.tope_sin_senal);
+      if (agotada) {
+        msgIa(`La búsqueda automática se despertó ${nSinSenal != null ? `${nSinSenal} veces` : "varias veces"} sin dar señal: volver a pulsar Buscar no la arregla y gasta otro intento del día. `
+          + `Hágalo con su chat de inteligencia artificial (más abajo) o avise a quien atiende la cola. ${guardado}`, "error");
+        abrirChatUnaVez(`${claveChat}|agotada`);
+      } else if (r.estado === "sin_atender") {
         msgIa(`Sin atender${edad ? ` desde hace ${edad}` : ""}: ${d && d.ok ? "la búsqueda automática arrancó pero no ha dado señales" : "nadie ha atendido la cola desde que usted la pidió"}. `
           + `Vuelva a pulsar Buscar, hágalo con su chat de inteligencia artificial (más abajo) o avise a quien atiende la cola. ${guardado}`, "error");
         abrirChatUnaVez(claveChat);
