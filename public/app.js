@@ -9048,6 +9048,10 @@
     $("pt-detalle").classList.toggle("hidden", !pt.detalle);
     $("pt-precio-actual").textContent = pt.frase_precio_actual || "";
     $("pt-precio-actual").classList.toggle("hidden", !pt.frase_precio_actual);
+    /* el hecho medido del límite de la entidad (lib/apu/piso_techo, tabla única) */
+    const lim = pt.limite_entidad_medido;
+    $("pt-limite-entidad").textContent = lim && lim.frase ? lim.frase : "";
+    $("pt-limite-entidad").classList.toggle("hidden", !(lim && lim.frase));
     const fuentes = [];
     for (const [k, v] of Object.entries(pt.fuentes || {})) {
       fuentes.push(`<li><span class="font-medium">${esc(k.replace(/_/g, " "))}:</span> ${esc(v)}</li>`);

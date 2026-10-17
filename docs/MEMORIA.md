@@ -19075,3 +19075,12 @@ En una línea: el 17-oct a las 13:50 UTC una llamada sin fechas (el rango por om
   - el botón que sigue sin estado, que no nombra la llave o que no comprueba que el estado es JSON;
   - el botón que reintenta el 409: se cuelga en los `sleep 30` y la prueba lo corta a los 20 s.
 - La prueba del flujo pide `bash` y `jq` en quien corre la suite (los dos están en el corredor de GitHub): sin ellos sale en rojo, no se salta.
+
+### El límite que calculó la entidad, medido en 3 procesos cerrados, va debajo del aviso de precio bajo (17-oct-2026)
+
+En una línea: el Formulario 1 (verificación 5) y el panel Piso / Techo muestran el HECHO medido —en 3 procesos de menor cuantía cerrados el límite de la entidad quedó entre el 91,6 % y el 92,8 % del presupuesto, «solo 3 casos»— desde UNA tabla (`LIMITE_ENTIDAD_MEDIDO` en `lib/apu/piso_techo.js`); el 80 % de referencia NO cambió.
+
+- **Las cifras viven en una sola tabla con su fuente por fila** (Pasto SA-2026-9 92,78 %, subsanación final pág. 6; Caldas SAMC-SI-027-2026 92,33 % y SAMC-SI-020-2026 91,61 %, Apertura sobre No. 2, hoja Evaluación). `limiteEntidadMedido()` deriva rango, N y frase; el Formulario 1 y `pisoTecho` (campo `limite_entidad_medido`) la LLAMAN. Agregar un caso es agregar una fila; con 5 o más la frase deja de decir «solo N casos» (`MIN_CASOS_LIMITE_ENTIDAD`).
+- **No es un umbral nuevo, es un aviso**: decisión del dueño, el 80 % se queda. Única consecuencia en estado: si la oferta queda por debajo del máximo medido y la baja no pasa del 20 %, la verificación 5 pasa de «ok» a «informativo» (el nivel que ya existía; no se inventó uno). Se compara contra 92,78 SIN redondear: el 92,8 de la frase es solo para mostrar (la prueba fija 92,79 % → «ok»).
+- **Tensión conocida, sin resolver aquí**: el resumen de la revisión cuenta los «informativo» como «para arreglar sin riesgo» y los pinta en azul; para este aviso el texto correcto sería «para tener lista la justificación». Tres casos de dos entidades tampoco son una ley: el texto dice «algunas entidades».
+- **Verificado**: bloque «5b» en `tests/e2e.js` junto a la verificación 5, ejecutando `validarFormulario1` y `pisoTecho` reales; con `lib/formulario1.js` del árbol anterior falla («al 90 % del presupuesto queda bajo el rango medido», 'ok' ≠ 'informativo'). Navegador real a 390 px con `pintarPisoTecho` de `public/app.js` sobre la salida real del módulo: la línea se ve bajo la frase del precio actual, sin desborde.
