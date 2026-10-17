@@ -18875,3 +18875,27 @@ y una regla con dos copias diverge a la primera corrección. (e) danielmiessler/
 contratos ordena «Do not output warnings or notes», lo contrario de marcar lo no verificado, y `/dictamen` ya revisa
 pliegos verificando cada cita. (f) yamadashy/repomix: empaca el repositorio entero en un archivo, justo lo que
 CLAUDE.md prohíbe («se BUSCA, no se lee»: leerlo todo quemaba 250-400k tokens por arranque).
+
+### El anticipo con el corchete de la plantilla y la frase modelo que remite al 8.3 (17-oct-2026)
+
+En una línea: en la ronda 5 de detekta-lector (10 pliegos nuevos, texto de pdf.js) el anticipo dio dos «sí» falsos:
+Garagoa (CO1.REQ.11091702) dice «la entidad no entregará al contratista [anticipo y/o pago anticipado]», con el corchete
+de la plantilla sin borrar, y Paicol (CO1.REQ.11151463) solo trae la frase modelo «No se configura este supuesto cuando
+la Entidad establece en el numeral 8.3 que no va a entregar anticipo…». Ahora Garagoa da «no» y Paicol «sin dato».
+
+**Lo que no hay que deshacer.** (a) `SIN_ANTICIPO_RE` (y su gemela de `lib/negocio`) acepta SOLO un `[` pegado a
+«anticipo». El paréntesis y las comillas abrían «no» falsos que tapaban un anticipo pactado («La Entidad no reconocerá
+pagos distintos a los siguientes (anticipo y actas parciales…)»), y ningún pliego real los necesitaba. (b) «no VA A
+entregar» NO es negación, a propósito: solo se ha visto en la frase modelo; con él, un condicional («Si la Entidad no va
+a entregar anticipo, el valor… será cero») o cualquier variante de la frase modelo que la exclusión no cubriera negaba con
+peso de frase (3) y le ganaba a «la entidad entregará un anticipo del 30 %» (revisión adversaria, reproducido; en
+`lib/negocio` ponía el anticipo en 0). Sin «va a», una variante no cubierta solo puede decir «sí» cuando no hay otra
+cláusula, que es lo que ya pasaba. (c) La frase modelo NO decide: remite a lo que diga el 8.3. Se excluye en la línea
+(`excluye`: «establec… que no va a entregar», «no se configura este supuesto», «y el Proponente no renuncia a ellos») y
+partida con la línea anterior (`excluyeUnida`); el tramo «establec…» cruza «8.3» pero no un punto de fin de frase.
+Paicol queda en «sin dato» (confírmelo): uno de los dos subagentes de la verdad dijo «no» y el otro null, y su numeral 8.3
+es de formularios. (d) REGLAS_VERSION .7 → .8: los hechos y los dictámenes por reglas se rehacen.
+Medido: en los 21 textos de pdf.js que hay (Fase 0, Santa Elena y ronda 5) solo cambian esos dos; la frase modelo aparece
+también en Samacá y Garagoa, sin efecto porque su 8.3 decide. Límites conocidos: la exclusión descarta la línea ENTERA, así
+que si pdf.js pega la cola de la frase modelo con el 8.3 en una sola línea, ese 8.3 no se lee; y «la Entidad no va a
+entregar anticipo», si fuera la única mención del pliego, saldría «sí» (no visto en ningún pliego real).

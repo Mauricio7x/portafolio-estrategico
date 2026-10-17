@@ -8152,6 +8152,22 @@ async function main() {
     // el título y la negación en UNA línea: «anticipado:» también niega, y el «N/A» solo con dos puntos (17-oct-2026)
     assert.strictEqual(ant("\f87\nconstituyen su propuesta económica autónoma.\n8.3. ANTICIPO Y/O PAGO ANTICIPADO: No aplica\nCAPITULO IX LISTA DE ANEXOS\n").estado, "no", "«…PAGO ANTICIPADO: No aplica» en una línea niega");
     assert.strictEqual(ant("\f87\n8.3. ANTICIPO Y/O PAGO ANTICIPADO: N/A\n").estado, "no", "«…PAGO ANTICIPADO: N/A» en una línea niega");
+    /* ronda 5 de detekta-lector (17-oct-2026, texto de pdf.js): el corchete de la plantilla sin borrar (Garagoa,
+       CO1.REQ.11091702) y la frase modelo que REMITE al numeral 8.3 (Paicol, CO1.REQ.11151463) decían «hay anticipo» */
+    const garagoa = ant("\f59\n8.3.ANTICIPO Y/O PAGO ANTICIPADO\nEn el presente proceso de contratación la entidad no entregará al contratista [anticipo y/o pago\nanticipado]\nCAPITULO IX LISTA DE ANEXOS, FORMATOS, MATRICES Y FORMULARIOS\n");
+    assert.deepStrictEqual([garagoa.estado, garagoa.pagina], ["no", 59], `«no entregará al contratista [anticipo…» niega (MUTACIÓN: sin el corchete, «sí»): ${JSON.stringify(garagoa)}`);
+    const modeloPaicol = "\f17\nProponente haya demostrado lo contrario, y procederá a rechazar la oferta.\nNo se configura este supuesto cuando la Entidad establece en el numeral 8.3 que no va a entregar anticipo\ny/o pago anticipado y el Proponente no renuncia a ellos. Tampoco cuando a pesar de que las personas\n";
+    assert.strictEqual(ant(modeloPaicol).estado, "sin_dato", "la frase modelo que remite al numeral 8.3 ni afirma ni niega (MUTACIÓN: sin la exclusión, «sí»)");
+    assert.strictEqual(ant("\f17\nNo se configura este supuesto cuando la Entidad establece en el numeral 8.3 que no va a entregar\nanticipo y/o pago anticipado y el Proponente no renuncia a ellos.\n").estado, "sin_dato", "la frase modelo partida antes de «anticipo» tampoco decide");
+    assert.strictEqual(ant("\f17\nNo se configura este supuesto cuando la Entidad establece en el numeral 8.3 que no va a\nentregar anticipo y/o pago anticipado y el Proponente no\nrenuncia a ellos.\n").estado, "sin_dato", "la frase modelo partida en tres líneas no afirma (MUTACIÓN: sin `excluyeUnida`, «sí»)");
+    assert.strictEqual(ant(modeloPaicol + "\f61\n8.3. ANTICIPO\nLa entidad entregará al contratista un anticipo del treinta por ciento (30 %) del valor del contrato.\n").estado, "si", "la frase modelo no tapa un anticipo pactado en su numeral");
+    assert.strictEqual(ant(modeloPaicol + "\f61\n8.3. ANTICIPO Y/O PAGO ANTICIPADO\nEn el presente proceso de contratación la entidad no entregará al contratista anticipo y/o pago\nanticipado.\n").estado, "no", "la frase modelo no tapa la cláusula que niega");
+    // las variantes de la frase modelo y el condicional con «va a» no niegan un anticipo pactado (revisión adversaria, 17-oct-2026)
+    const pactado = "\f61\n8.3. ANTICIPO\nLa entidad entregará al contratista un anticipo del treinta por ciento (30 %) del valor del contrato.\n";
+    for (const v of ["No se configura este supuesto cuando la Entidad establece en el numeral 8.3 del Documento Base que no va a entregar anticipo\ny/o pago anticipado y el Proponente no renuncia a ellos.", "No se configura este supuesto cuando la Entidad establece en la sección 8. 3, que no va a entregar anticipo y/o pago anticipado.", "No se configura este supuesto cuando la Entidad establece en el numeral 8.3 del Pliego\nque no va a entregar anticipo y/o pago anticipado y el Proponente\nno renuncia a ellos.", "Si la Entidad no va a entregar anticipo, el valor del anticipo en la fórmula del capital de trabajo será cero.", "La Entidad no reconocerá pagos distintos a los siguientes (anticipo y actas parciales de obra)."]) {
+      assert.strictEqual(ant(`\f17\n${v}\n${pactado}`).estado, "si", `no tapa el anticipo pactado (MUTACIÓN: con «va a» o «(» en la negación, «no»): «${v}»`);
+      assert.strictEqual(require("../lib/negocio.js").anticipoPct({}, `${v} El anticipo será del 30 % del valor del contrato.`), 30, `lib/negocio no pone el anticipo en 0: «${v}»`);
+    }
     assert.strictEqual(ant("\f74\nBuen manejo del anticipo\tN/A\tN/A\n\f78\nLa entidad entregará al contratista un anticipo del 30 %.\n").estado, "si", "una celda «N/A» de la tabla de garantías (sin dos puntos) no niega el anticipo pactado");
     // …pero «pago anticipado» SUELTO no niega el anticipo: son figuras distintas (revisión adversaria, 17-oct-2026)
     assert.strictEqual(ant("\f20\nVALOR DEL ANTICIPO: Treinta por ciento (30 %) del valor del contrato, previa aprobación del plan.\nPAGO ANTICIPADO: No aplica para el presente proceso de contratación.\n").estado, "si", "«PAGO ANTICIPADO: No aplica» junto a un anticipo del 30 % no niega el anticipo");
@@ -8166,7 +8182,7 @@ async function main() {
     assert.strictEqual(ant("\f3\nNo se pagará el ajuste.\nEl anticipo será del treinta por ciento del valor del contrato y se girará a la fiducia.\n").estado, "si", "«No se pagará el ajuste.» no niega el anticipo de la línea siguiente (MUTACIÓN: sin la guarda del punto)");
     // la gemela de lib/negocio reconoce las tres formas nuevas
     const Ng = require("../lib/negocio.js");
-    for (const t of ["La Entidad considera que no es procedente establecer un anticipo", "no considera prudente gestionar anticipo, toda vez", "ANTICIPO (19 | SÍ NO_X_ Porcentaje", "8.3. ANTICIPO Y/O PAGO ANTICIPADO: No aplica"]) assert.strictEqual(Ng.anticipoDeclarado({}, t), true, `lib/negocio lee la negación como la de los documentos: «${t}»`);
+    for (const t of ["La Entidad considera que no es procedente establecer un anticipo", "no considera prudente gestionar anticipo, toda vez", "ANTICIPO (19 | SÍ NO_X_ Porcentaje", "8.3. ANTICIPO Y/O PAGO ANTICIPADO: No aplica", "la entidad no entregará al contratista [anticipo]"]) assert.strictEqual(Ng.anticipoDeclarado({}, t), true, `lib/negocio lee la negación como la de los documentos: «${t}»`);
     // (5) el anticipo entre documentos: una mención no tapa al que decide, y dos que se contradicen se dicen
     const doc = (tipo, a) => ({ nombre: `${tipo}.pdf`, tipo, hechos: { ...Dp.hechosDeTexto("", { tipo }), anticipo: a } });
     const antDe = (leidos) => Dp.loQueDicen({ indice: { archivos: [], plan: [] }, leidos, ilegibles: {} }).hechos.find((x) => x.clave === "anticipo");
