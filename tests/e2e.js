@@ -7963,6 +7963,26 @@ async function main() {
       "72", "10", "15", "Servicios de apoyo para la construcción", "72", "10", "29", "Servicios de mantenimiento y reparación de instalaciones", "81", "10", "15", "-", "Ingeniería Civil y Arquitectura", "72 14 11 20", "Pavimentación",
       "Las personas naturales o jurídicas extranjeras sin domicilio");
     assert.deepStrictEqual([cols[0].codigos, cols[0].completa], [["721015", "721029", "811015", "721411"], true], `tabla en columnas (CO1.REQ.8568178, 10335184): ${JSON.stringify(cols)}`);
+    /* LA FILA PARTIDA (Fase 0 del 17-oct-2026, texto de pdf.js con su lineasDePagina): el nombre en dos
+       líneas deja el segmento arriba con el nombre y «familia clase» abajo; la fila se perdía y la lista
+       salía CORTA y «completa» (faltaba 721411 en CO1.REQ.11036237, 10650320, 10512619 y 10955924) */
+    const intro = ["Los contratos aportados para efectos de acreditación de la experiencia requerida deben estar", "clasificados en alguno de los siguientes códigos:", "Segmentos\tFamilia\tClase\tNombre"];
+    const extranjeros = "Las personas naturales o jurídicas extranjeras sin domicilio o sucursal en Colombia deberán indicar";
+    const partida = leer("\f36", ...intro, "72\t14\t10\tServicio de construcción de autopistas y carreteras", "72\tServicio de construcción y revestimiento y pavimentación de", "14\t11", "infraestructura", extranjeros);
+    assert.deepStrictEqual([partida[0].codigos, partida[0].completa], [["721410", "721411"], true], `fila partida (CO1.REQ.11036237): ${JSON.stringify(partida)}`);
+    // la clase de la fila partida no se pega al segmento de la fila siguiente («11 INFRAESTRUCTURA. 72 14 15» no es 117214)
+    const partidaYMas = leer("\f34", ...intro, "72\t14\t10\tSERVICIOS DE CONSTRUCCION DE AUTOPISTAS Y CARRETERAS.", "72\tSERVICIOS DE CONSTRUCCIÓN Y REVESTIMIENTO Y PAVIMENTACION DE", "14\t11", "INFRAESTRUCTURA.",
+      "72\t14\t15\tSERVICIOS DE PREPARACION DE TIERRAS", "72\t15\t27\tSERVICIOS DE INSTALACION Y REPARACION DE CONCRETO", extranjeros);
+    assert.deepStrictEqual([partidaYMas[0].codigos, partidaYMas[0].completa], [["721410", "721411", "721415", "721527"], true], `fila partida entre filas enteras (CO1.REQ.10512619): ${JSON.stringify(partidaYMas)}`);
+    // el reconstruido es un código «corto»: solo dentro de una tabla abierta, no 200 caracteres después de la frase
+    const lejos = leer("\f36", "Los contratos aportados para efectos de acreditación de la experiencia requerida deben estar clasificados en alguno de los siguientes códigos:", "texto de relleno sin cifras ".repeat(9), "30 Apoyo a la industria nacional 20 42", "72141000 Servicios de construcción de autopistas", extranjeros);
+    assert.deepStrictEqual([lejos[0].codigos, lejos[0].completa], [["721410"], true], `la fila partida lejos de la frase no abre la tabla: ${JSON.stringify(lejos)}`);
+    // una tabla de solo segmento y familia no fabrica clases («72 14 Servicios … 72 10» no es 147210)
+    const familias = leer("\f36", ...intro, "72\t14\tServicios de construcción pesada", "72\t10\tServicios de mantenimiento", "72\t15\tServicios especializados", extranjeros);
+    assert.ok(!familias.some((l) => l.codigos.some((c) => c.length === 6 && !/^72(?:14|10|15)/.test(c))), `solo segmento y familia: ningún código inventado: ${JSON.stringify(familias)}`);
+    // la errata «14 111» en la fila partida no se reconstruye, y la tabla deja de darse por completa (no estrecha)
+    const partidaErrata = leer("\f39", ...intro, "72\t14\t10\tServicios de construcción de autopistas y carreteras", "72\tServicios de construcción y revestimiento y pavimentación de", "14\t111", "infraestructura", extranjeros);
+    assert.deepStrictEqual([partidaErrata[0].codigos, partidaErrata[0].completa], [["721410"], false], `errata en la fila partida (CO1.REQ.10650320): ${JSON.stringify(partidaErrata)}`);
     const comas = leer("\f49", "Los contratos para acreditar la experiencia específica deberán encontrarse inscritos en el RUP, podrán estar incluidos en cualquiera de los siguientes códigos: 72101500, 72101500, 72151900 y 811015.");
     assert.deepStrictEqual(comas[0].codigos, ["721015", "721519", "811015"], `lista con comas (CO1.REQ.9013511): ${JSON.stringify(comas)}`);
     assert.deepStrictEqual(leer("\f3", "La experiencia se acreditará con contratos clasificados en alguno de los siguientes códigos:", "Valor $72.101.500 y $ 72,101,500"), [], "una cifra con separadores de miles no es un código");
@@ -20970,7 +20990,7 @@ async function main() {
           const texto = "\f1\nPLIEGO\nExperiencia general: 2.500 SMMLV\nExperiencia específica: 1.000 SMMLV\nÍndice de liquidez mayor o igual a 1,5\nNivel de endeudamiento menor o igual a 60%\nCapital de trabajo: mayor o igual a $650.000.000\nPatrimonio: mayor o igual a $9.000.000.000\n\f2\nNo se entregará anticipo al contratista.";
           const h = D.hechosDeTexto(texto, { tipo: "pliego" });
           assert.ok(h.requisitos_numericos.experiencia_general && h.requisitos_numericos.experiencia_general.valor === 2500 && h.requisitos_numericos.experiencia_especifica && h.requisitos_numericos.experiencia_especifica.valor === 1000, "lib/diff separa la experiencia general de la específica");
-          assert.ok(h.version.startsWith("15|"), "los hechos guardados con las reglas viejas se rehacen: la versión del módulo subió");
+          assert.ok(h.version.startsWith("16|"), "los hechos guardados con las reglas viejas se rehacen: la versión del módulo subió");
           const docs = { indice: { archivos: [{ id_documento: "d1", nombre: "pliego.pdf", tipo: "pliego", de_la_entidad: true, legible: true }], plan: ["d1"], consultado_el: "2026-09-04" }, leidos: { d1: { nombre: "pliego.pdf", tipo: "pliego", tipo_legible: "Pliego", hechos: h, paginas: 2 } }, ilegibles: {} };
           const con = G.guiaDe({ fila: base, perfil: "helder", ctx: { ahoraMs: ahoraG, documentos: docs } });
           const ex = Object.fromEntries(con.exigencias.map((x) => [x.clave, x]));

@@ -18742,3 +18742,26 @@ En una línea: la llave del servidor (`HISTORICO_TOKEN`) vivía escrita en tres 
 - **El tramo del latido lleva solo lo del servidor** (`cabecerasDelTramo`: host, protocolo, `cabecerasDeAutoLlamada` y la llave): reenviar las del navegador mandaba `sec-fetch-site` junto a la llave y op=historico la rechazaba.
 - **[Sin verificar] El límite por conexión depende de que Vercel fije `x-real-ip` / `x-forwarded-for`** y no deje pasar los que manda el cliente (`perfil_dinamico.ipDePeticion`). Fuera de Vercel cualquiera los inventa (reproducido: 30 intentos con IP distinta, ningún 429); por eso el tope de 50 solo por correo no depende de la IP: frena a quien prueba un correo concreto aunque invente conexiones.
 
+### La fila partida de la tabla de códigos de la experiencia (17-oct-2026)
+
+En una línea: cuando el nombre de un código ocupa dos líneas en la tabla «Segmento | Familia | Clase | Nombre», pdf.js
+deja el segmento arriba con el nombre y «familia clase» abajo («72 Servicio de construcción y revestimiento y pavimentación
+de 14 11 infraestructura»); el lector la saltaba y la lista quedaba CORTA dándose por completa. Ahora se reconstruye.
+
+**Cómo se halló.** La Fase 0 del proyecto detekta-lector (repositorio aparte, 17-oct-2026) pasó el texto de 9 pliegos
+reales (pdf.js 3.11.174 de `public/vendor` + la `lineasDePagina` de `public/pliego.js`) por `hechosDeTexto` y lo comparó
+con una verdad armada por subagentes con cita: en 4 de 9 (CO1.REQ.11036237, 10650320, 10512619, 10955924) faltaba
+721411 y la lectura decía `completa: true`. Una lista corta y «completa» ESTRECHA la experiencia: un contrato con solo
+721411 dejaba de contar y el reparto o la casilla podían decir que la empresa no llega cuando sí llega.
+
+**Lo que no hay que deshacer.** (a) La reconstrucción exige segmento + texto SIN cifras (hasta 160 caracteres) + dos
+parejas de dos cifras; una errata («14 111», Turbaco) NO se reconstruye y vuelve la tabla incompleta (`ERRATA_FILA_RE`):
+se enseña, no estrecha. (b) Una reconstrucción que PISA un código ya leído se descarta: es la única guarda contra
+«15 Servicios de apoyo 72 10 29» → 157210, y la cierra la prueba de la tabla en columnas (quitarla la tumba). (c) El
+reconstruido cuenta como código «corto» (seis cifras), con la misma regla de solo dentro de una tabla ya abierta. Y el
+segmento no puede ir tras otras dos cifras: una tabla de solo segmento y familia («72 14 Servicios … 72 10») fabricaba
+147210 (revisión adversaria, 17-oct-2026; las dos guardas tienen su cerradura). Límite conocido: una fecha «14 11 2026»
+en un membrete a mitad de tabla puede reconstruirse como 721411 y tapar la guarda de tabla completa; solo ENSANCHA
+(no esconde contratos) y no apareció en 291 textos reales.
+(d) VERSION de `lib/documentos_proceso` 15 → 16: los hechos guardados con la lectura vieja se rehacen.
+Medido después: 3 de los 4 (Pasto ×2, Norte de Santander) dan la lista de la verdad; Turbaco queda incompleta (no estrecha), como debe.
