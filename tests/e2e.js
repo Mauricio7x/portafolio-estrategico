@@ -27616,6 +27616,56 @@ async function main() {
                 assert.strictEqual(await redis.get(CL_I.apuIaDisparo("helder", idIa)), "1", "el disparo que arrancó conserva el candado");
                 await redis.del(CL_I.apuIaDisparo("helder", idIa), CL_I.apuIaSolicitud("helder", idIa));
               }
+              /* ═══ EL TOPE DE DESPERTARES SIN SEÑAL (17-oct-2026) ═══
+                 Pasados los 15 min de «repetida», cada «Buscar» despertaba otra corrida del día aunque
+                 las anteriores no hubieran dado ninguna señal, y la solicitud nueva pisaba la cuenta:
+                 con la rutina dañada, «Vuelva a pulsar Buscar» gastaba intentos sin arreglar nada.
+                 Contra el árbol anterior: la tercera solicitud muda se volvía a disparar. */
+              {
+                const { escribirJSONComprimido: escribirT, CLAVES: CL_T } = require("../lib/almacen.js");
+                const claveT = CL_T.apuIaSolicitud("helder", idIa);
+                const muda = (n, minutos, extra = {}) => { const el = new Date(Date.now() - minutos * 60000).toISOString(); return { id: idIa, perfil: "helder", nombre: "IA prueba", estado: "en_cola", solicitado_el: el, respondida_el: null, progreso: null, despertada: { ok: true, el, status: 200, sesion_url: null }, ...(n == null ? {} : { despertadas_sin_senal: n }), ...extra }; };
+                respuestaRutina = () => ({ ok: true, status: 200, json: async () => ({ claude_code_session_id: "session_T", claude_code_session_url: "https://claude.ai/code/session_T" }) });
+                assert.ok(Number.isInteger(IA.RUTINA_TOPE_SIN_SENAL) && IA.RUTINA_TOPE_SIN_SENAL >= 2, `el tope existe y deja al menos un reintento: ${IA.RUTINA_TOPE_SIN_SENAL}`);
+                const tope = IA.RUTINA_TOPE_SIN_SENAL;
+                // (1) despertada `tope` veces sin señal y muda hace 40 min: «Buscar» NO despierta otra, lo dice, y deja la solicitud como estaba
+                await escribirT(redis, claveT, muda(tope, 40)); await soltarCandado();
+                const gT = await invocar(apu, `/api/apu/ia?id=${idIa}&perfil=helder`, CAB_TOKEN, { metodo: "GET" });
+                assert.ok(gT.cuerpo.estado === "sin_atender" && gT.cuerpo.tope_sin_senal === tope && gT.cuerpo.solicitud.despertadas_sin_senal === tope, `la pantalla recibe el tope y la cuenta: ${JSON.stringify({ e: gT.cuerpo.estado, t: gT.cuerpo.tope_sin_senal })}`);
+                const antesT = llamadas.length;
+                const sTope = await invocarPost(apu, "/api/apu/ia", { perfil: "helder", id: idIa, solicitar: true }, CAB_TOKEN);
+                assert.ok(sTope.status === 200 && sTope.cuerpo.tope_alcanzado === true && llamadas.length === antesT, `con ${tope} despertares sin señal no se gasta otro: ${llamadas.length - antesT} disparos, ${JSON.stringify(sTope.cuerpo).slice(0, 160)}`);
+                assert.ok(new RegExp(`${tope} veces`).test(sTope.cuerpo.nota) && /chat/.test(sTope.cuerpo.nota) && /no la arregla/.test(sTope.cuerpo.nota), `y lo dice con qué hacer: ${sTope.cuerpo.nota}`);
+                assert.strictEqual(await redis.get(CL_T.apuIaDisparo("helder", idIa)), null, "el tope no toma el candado del disparo");
+                // (2) una menos que el tope: se despierta, y la cuenta SUBE en vez de volver a 1
+                await escribirT(redis, claveT, muda(tope - 1, 40)); await soltarCandado();
+                const sUna = await invocarPost(apu, "/api/apu/ia", { perfil: "helder", id: idIa, solicitar: true }, CAB_TOKEN);
+                assert.ok(sUna.cuerpo.tope_alcanzado !== true && llamadas.length === antesT + 1 && sUna.cuerpo.solicitud.despertadas_sin_senal === tope, `la última permitida se dispara y deja la cuenta en ${tope}: ${sUna.cuerpo.solicitud.despertadas_sin_senal}`);
+                // (3) una solicitud de antes de este cambio (sin el campo) y despertada cuenta UNA, no cero
+                await escribirT(redis, claveT, muda(null, 40)); await soltarCandado();
+                const sVieja = await invocarPost(apu, "/api/apu/ia", { perfil: "helder", id: idIa, solicitar: true }, CAB_TOKEN);
+                assert.strictEqual(sVieja.cuerpo.solicitud.despertadas_sin_senal, 2, "la despertada vieja cuenta 1 y esta suma la segunda");
+                // (4) una sesión que dio señal (aunque luego enmudeciera) pone la cuenta en cero: la rutina funciona
+                await escribirT(redis, claveT, muda(tope, 180, { estado: "buscando", progreso: { hecho: 1, total: 3, pct: 33, mensaje: null, actualizado_el: new Date(Date.now() - 180 * 60000).toISOString() } })); await soltarCandado();
+                const sSenal = await invocarPost(apu, "/api/apu/ia", { perfil: "helder", id: idIa, solicitar: true }, CAB_TOKEN);
+                assert.ok(sSenal.cuerpo.tope_alcanzado !== true && sSenal.cuerpo.solicitud.despertadas_sin_senal === 1, `con señal la cuenta empieza de nuevo: ${sSenal.cuerpo.solicitud.despertadas_sin_senal}`);
+                // (5) pasada la ventana desde la última solicitud se puede volver a intentar
+                await escribirT(redis, claveT, muda(tope, IA.RUTINA_TOPE_VENTANA_H * 60 + 30)); await soltarCandado();
+                const sDia = await invocarPost(apu, "/api/apu/ia", { perfil: "helder", id: idIa, solicitar: true }, CAB_TOKEN);
+                assert.ok(sDia.cuerpo.tope_alcanzado !== true && sDia.cuerpo.solicitud.despertadas_sin_senal === 1, `pasadas ${IA.RUTINA_TOPE_VENTANA_H} h se intenta otra vez: ${sDia.cuerpo.solicitud.despertadas_sin_senal}`);
+                // (6) un disparo que no arrancó no gastó: no suma, y la cuenta que traía se conserva
+                respuestaRutina = () => ({ ok: false, status: 500, json: async () => ({}) });
+                await escribirT(redis, claveT, muda(tope - 1, 40)); await soltarCandado();
+                const sFallo = await invocarPost(apu, "/api/apu/ia", { perfil: "helder", id: idIa, solicitar: true }, CAB_TOKEN);
+                assert.ok(sFallo.cuerpo.despertada.ok === false && sFallo.cuerpo.solicitud.despertadas_sin_senal === tope - 1, `el disparo fallido no cuenta como intento gastado: ${sFallo.cuerpo.solicitud.despertadas_sin_senal}`);
+                // (7) sin rutina configurada no hay tope: no hay nada que gastar
+                delete process.env.RUTINA_PRECIOS_TOKEN;
+                await escribirT(redis, claveT, muda(tope, 40)); await soltarCandado();
+                const sSin = await invocarPost(apu, "/api/apu/ia", { perfil: "helder", id: idIa, solicitar: true }, CAB_TOKEN);
+                assert.ok(sSin.cuerpo.tope_alcanzado !== true && sSin.cuerpo.despertada === null, "sin rutina la solicitud se registra como siempre");
+                process.env.RUTINA_PRECIOS_TOKEN = "sk-ant-oat01-PRUEBA-secreta";
+                await redis.del(CL_T.apuIaDisparo("helder", idIa), claveT);
+              }
               // (j) el ENCARGO para un chat: el prompt del dueño con el contexto, los ítems sin los títulos, el esquema, y solo JSON
               const enc = await invocar(apu, `/api/apu/ia?encargo=1&id=${idIa}&perfil=helder`, CAB_TOKEN, { metodo: "GET" });
               assert.strictEqual(enc.status, 200);
@@ -43988,6 +44038,38 @@ async function main() {
           respuestaFire = () => ({ ok: true, status: 200, json: async () => ({}) });
           const sV = await pedir();
           assert.ok(sV.cuerpo.repetida !== true && disparos.length === antesV + 1 && sV.cuerpo.pedido_sesion.version_texto === sV.cuerpo.version_texto, `una versión nueva del pliego se puede pedir aunque la marca de la anterior siga viva: ${JSON.stringify(sV.cuerpo.pedido_sesion)}`);
+          /* ═══ EL TOPE DE LECTURAS SIN RESPUESTA (17-oct-2026, el hermano del de Precios) ═══
+             Vencida la marca de media hora, cada clic despertaba otra corrida del día aunque las
+             anteriores no hubieran escrito ningún dictamen. Contra el árbol anterior: con tres
+             pedidos sin respuesta se volvía a despertar la rutina. */
+          {
+            const claveSR = Dc.claveLecturasSinRespuesta(ID_RG, "genesis");
+            assert.ok(Number.isInteger(Dc.LECTURAS_TOPE_SIN_RESPUESTA) && Dc.LECTURAS_TOPE_SIN_RESPUESTA >= 2, "el tope existe y deja al menos un reintento");
+            const topeD = Dc.LECTURAS_TOPE_SIN_RESPUESTA;
+            // la cuenta subió con los disparos que arrancaron o pudieron arrancar (s4 indeterminado y sV), no con el que falló (s3)
+            assert.strictEqual(await redis.get(claveSR), "2", "s4 (indeterminado) y sV (arrancó) cuentan; s3 (falló seguro) no, y el dictamen de ps3 la había borrado");
+            // (1) con la cuenta en el tope y la marca ya vencida: no se despierta otra, se dice, y no queda marca
+            await redis.set(claveSR, String(topeD)); await redis.del(Dc.clavePedido(ID_RG, "genesis"));
+            const antesT = disparos.length;
+            const sT = await pedir({ refrescar: true });
+            assert.ok(sT.status === 200 && sT.cuerpo.tope_alcanzado === true && disparos.length === antesT, `con ${topeD} lecturas sin respuesta no se gasta otra: ${disparos.length - antesT} disparos`);
+            assert.ok(new RegExp(`${topeD} veces`).test(sT.cuerpo.error) && /«\/dictamen»/.test(sT.cuerpo.que_hacer) && /no lo arregla/.test(sT.cuerpo.que_hacer), `y dice qué hacer: ${sT.cuerpo.error} ${sT.cuerpo.que_hacer}`);
+            pasaCercas(sT.cuerpo.error, "lectura tope"); pasaCercas(sT.cuerpo.que_hacer, "lectura tope · qué hacer");
+            assert.strictEqual(await redis.get(Dc.clavePedido(ID_RG, "genesis")), null, "el tope no deja una marca de un disparo que no hubo");
+            // (2) una por debajo del tope: se despierta y la cuenta llega al tope
+            await redis.set(claveSR, String(topeD - 1));
+            const sU = await pedir({ refrescar: true });
+            assert.ok(sU.cuerpo.tope_alcanzado !== true && disparos.length === antesT + 1 && (await redis.get(claveSR)) === String(topeD), "la última permitida se despierta y suma");
+            // (3) el dictamen de la sesión llega: la cuenta se borra y se puede volver a pedir
+            const psT = await invocarPost(routerPliego, URL_DC, { id_proceso: ID_RG, perfil: "genesis", motor: "sesion", dictamen: crudoG }, CAB_TOKEN);
+            assert.strictEqual(psT.status, 200);
+            assert.strictEqual(await redis.get(claveSR), null, "el dictamen que llega borra la cuenta: la rutina funciona");
+            // (4) una cuenta ilegible no frena: se pide, que es el lado seguro
+            await redis.set(claveSR, "basura"); await redis.del(Dc.clavePedido(ID_RG, "genesis"));
+            const sB = await pedir({ refrescar: true });
+            assert.ok(sB.cuerpo.tope_alcanzado !== true && disparos.length === antesT + 2, "una cuenta ilegible no impide pedir");
+            await redis.del(claveSR, Dc.clavePedido(ID_RG, "genesis"));
+          }
           assert.ok(!/\.\.$/.test(Dc.mensaje("LECTURA_YA_PEDIDA", { hora: "10:31" })), "sin punto doble");
           const antesS5 = disparos.length;
           const s5 = await invocarPost(routerPliego, URL_DC, { id_proceso: ID_RG, perfil: "genesis", pedir_sesion: "si" }, CAB_TOKEN);
@@ -43996,7 +44078,7 @@ async function main() {
           global.fetch = fetchAntes;
           if (envU === undefined) delete process.env.RUTINA_DICTAMEN_URL; else process.env.RUTINA_DICTAMEN_URL = envU;
           if (envT === undefined) delete process.env.RUTINA_DICTAMEN_TOKEN; else process.env.RUTINA_DICTAMEN_TOKEN = envT;
-          await redis.del(Dc.clavePedido(ID_RG, "genesis"));
+          await redis.del(Dc.clavePedido(ID_RG, "genesis"), Dc.claveLecturasSinRespuesta(ID_RG, "genesis"));
         }
       }
       // (4) la skill de Claude Code y el documento
@@ -51248,6 +51330,15 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
       F.fijar({ filas: [{ descripcion: "Excavación", unidad: "m3", cantidad: null }] });
       F.pintarIa({ estado: "listo", solicitud: {}, propuesta: { resumen: {}, items: [{ fila: 0, descripcion: "Excavación", unidad: "m3", costo_directo_unitario: 1000 }] } });
       okRO(!/m3 · 0\b/.test(textoRO(porId.get("ia-propuesta").innerHTML)), `(c) la propuesta de precios no pinta la cantidad sin dato como 0: «${textoRO(porId.get("ia-propuesta").innerHTML).slice(0, 120)}»`);
+      /* c6b · EL TOPE DE DESPERTARES SIN SEÑAL en la pantalla (17-oct-2026): agotado, ya no se le
+         pide al usuario «Vuelva a pulsar Buscar» (gastaba otro intento del día sin arreglar nada) */
+      F.pintarIa({ estado: "sin_atender", edad_min: 45, tope_sin_senal: 3, solicitud: { despertadas_sin_senal: 3, despertada: { ok: true } } });
+      const msgTope = String(porId.get("ia-estado").textContent || "");
+      okRO(/3 veces/.test(msgTope) && /no la arregla/.test(msgTope) && /chat/.test(msgTope) && !/Vuelva a pulsar Buscar/.test(msgTope), `(c) agotados los despertares, la pantalla dice el hecho y lleva al chat: «${msgTope.slice(0, 160)}»`);
+      F.pintarIa({ estado: "en_cola", tope_alcanzado: true, tope_sin_senal: 3, solicitud: { despertadas_sin_senal: 3, despertada: { ok: true } } });
+      okRO(/3 veces/.test(String(porId.get("ia-estado").textContent || "")), "(c) el «Buscar» que el servidor ya no despertó también lo dice");
+      F.pintarIa({ estado: "sin_atender", edad_min: 45, tope_sin_senal: 3, solicitud: { despertadas_sin_senal: 2, despertada: { ok: true } } });
+      okRO(/Vuelva a pulsar Buscar/.test(String(porId.get("ia-estado").textContent || "")), "(c) por debajo del tope, volver a pulsar sigue siendo la indicación");
       // c7 · CENSO de public/*.js: ningún valor por defecto convierte una cantidad que falta en 0
       const censoC = [];
       for (const f of fs.readdirSync(path.join(__dirname, "..", "public")).filter((x) => x.endsWith(".js"))) {
