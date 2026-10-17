@@ -1,0 +1,5 @@
+# Excepciones DECLARADAS de gitleaks (17-oct-2026). Cada una lleva su motivo.
+# tests/e2e.js:10605 (commit e0555062): el ejemplo público de la documentación de AWS
+# Signature V4 (examplebucket, 24-may-2013) con que la prueba verifica la firma del
+# respaldo. No es una credencial real: es el vector de prueba que AWS publica.
+e0555062a6da45618c1269884248b870c4b5795f:tests/e2e.js:generic-api-key:10605
