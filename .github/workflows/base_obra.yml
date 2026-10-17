@@ -1,0 +1,60 @@
+# Base nacional de licitaciones de obra · corrida de MEDICIÓN (17-oct-2026).
+#
+# Qué hace: corre `scripts/base_obra/inventario.js` (solo LEE datos abiertos de
+# datos.gov.co), comprime lo que bajó y lo sube al almacén R2 `detekta-base` con
+# `scripts/base_obra/almacen.js`, que mide lo ocupado y lo gastado en el mes ANTES de
+# subir y se niega si se pasaría de la parte de la base del plan gratis (Cloudflare no
+# corta el gasto: la cerradura es del script). No toca Vercel, Upstash ni producción.
+#
+# Cuándo corre: al subir un cambio de ESTE archivo a la rama de trabajo de la base, o
+# con «Run workflow» cuando el archivo esté en main (GitHub solo ofrece el botón para
+# flujos de la rama principal). Nunca en pull request: los secretos no salen de aquí.
+# `concurrency` impide dos corridas a la vez (la cerradura además lo defiende con un
+# PUT condicional del registro del mes).
+name: Base de obra
+
+on:
+  push:
+    branches: [claude/base-licitaciones-obra-tnd6pl]
+    paths: [.github/workflows/base_obra.yml]
+  workflow_dispatch:
+
+concurrency:
+  group: r2-base-obra
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  medir:
+    name: Medir y guardar
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    env:
+      OBJETOS_ENDPOINT: ${{ secrets.OBJETOS_ENDPOINT }}
+      OBJETOS_BUCKET: ${{ secrets.OBJETOS_BUCKET }}
+      OBJETOS_ACCESS_KEY_ID: ${{ secrets.OBJETOS_ACCESS_KEY_ID }}
+      OBJETOS_SECRET_ACCESS_KEY: ${{ secrets.OBJETOS_SECRET_ACCESS_KEY }}
+    steps:
+      - name: Código
+        uses: actions/checkout@v4
+      - name: Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: El almacén responde y hay cupo (antes de gastar una hora bajando)
+        run: node scripts/base_obra/almacen.js medir
+      - name: Inventario (datos.gov.co)
+        run: |
+          codigo=0
+          node scripts/base_obra/inventario.js "$RUNNER_TEMP/base" > "$RUNNER_TEMP/inventario.log" 2>&1 || codigo=$?
+          tail -20 "$RUNNER_TEMP/inventario.log"
+          exit $codigo
+      - name: Comprimir
+        run: |
+          cp "$RUNNER_TEMP/inventario.log" "$RUNNER_TEMP/base/"
+          gzip -9 "$RUNNER_TEMP/base/"*.json "$RUNNER_TEMP/base/inventario.log"
+          ls -la "$RUNNER_TEMP/base"
+      - name: Subir con tope
+        run: node scripts/base_obra/almacen.js subir "$RUNNER_TEMP/base" "corte/$(date -u +%Y-%m-%d)"

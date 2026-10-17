@@ -3987,7 +3987,112 @@ async function main() {
     assert.strictEqual(lb.elegirFila([{ adjudicado: "Si", id_del_proceso: "CO1.REQ.999" }, { adjudicado: "Si", id_del_proceso: "CO1.REQ.1000" }]).id_del_proceso,
       "CO1.REQ.1000", "el desempate compara el número, no el texto");
     assert.strictEqual(fila.id_del_proceso, "B", "regla de fila: adjudicada, con valor, más reciente");
-    console.log("· unidad base de obra: «sin dato» ≠ 0, mapeo de modalidades, exclusiones contadas por motivo, lote, las dos σ y la regla de fila");
+    // el almacén con tope propio (el dueño: que nunca se pasen los topes gratis de R2); Cloudflare no corta el gasto
+    const alm = require("../scripts/base_obra/almacen");
+    const MBb = alm.MB, base = { opsMes: { a: 0, b: 0 }, opsNecesarias: { a: 3, b: 0 }, topeBytes: 4000 * MBb };
+    assert.strictEqual(alm.decidirSubida({ ...base, usadoBytes: null, nuevosBytes: 1 }).ok, false, "lo ocupado sin medir NO es vacío");
+    assert.strictEqual(alm.decidirSubida({ ...base, usadoBytes: 0, nuevosBytes: 1, opsMes: null }).ok, false, "el registro del mes sin leer no es cero");
+    assert.strictEqual(alm.decidirSubida({ ...base, usadoBytes: 3900 * MBb, nuevosBytes: 100 * MBb }).ok, true, "justo en el tope se sube");
+    assert.strictEqual(alm.decidirSubida({ ...base, usadoBytes: 3900 * MBb, nuevosBytes: 100 * MBb + 1 }).ok, false, "un byte sobre el tope no se sube");
+    assert.strictEqual(alm.decidirSubida({ ...base, usadoBytes: 3900 * MBb, nuevosBytes: 150 * MBb, reemplazaBytes: 60 * MBb }).ok, true, "lo que se sobrescribe no se cuenta dos veces");
+    for (const malo of [{ nuevosBytes: undefined }, { nuevosBytes: 1, reemplazaBytes: NaN }, { nuevosBytes: 1, reemplazaBytes: 5 }, { nuevosBytes: 1, opsNecesarias: { a: NaN, b: 0 } }, { nuevosBytes: 1, opsMes: { a: -1e9, b: 0 } }])
+      assert.strictEqual(alm.decidirSubida({ ...base, usadoBytes: 0, ...malo }).ok, false, `entrada ilegible debía negar: ${JSON.stringify(malo)}`);
+    assert.strictEqual(alm.decidirSubida({ ...base, usadoBytes: 0, nuevosBytes: 1, topeBytes: (alm.TOPE_BASE_MB_MAX + 1) * MBb }).ok, false, "la base no puede quedarse con la parte de la copia nocturna");
+    assert.strictEqual(alm.decidirSubida({ ...base, usadoBytes: 0, nuevosBytes: 1, topeBytes: NaN }).ok, false, "un BASE_TOPE_MB ilegible no sube");
+    assert.strictEqual(alm.decidirSubida({ ...base, usadoBytes: 0, nuevosBytes: 1, opsMes: { a: alm.TOPES_OPS_MES.a - 2, b: 0 } }).ok, false, "operaciones clase A sobre el tope del mes");
+    assert.strictEqual(alm.TOPE_CUENTA_MB, 9000, "el dueño fijó el tope de la cuenta en 9.000 MB (17-oct-2026): 10 % de margen bajo los 10 GB gratis");
+    assert.strictEqual(alm.TOPE_BASE_MB_MAX + alm.COPIA_TOPE_MB, alm.TOPE_CUENTA_MB, "base + copia = tope de la cuenta");
+    assert.ok(alm.TOPE_CUENTA_MB * MBb < 10e9, "el tope de la cuenta queda bajo los 10 GB gratis en la lectura menor (10^9)");
+    assert.strictEqual(alm.topeBaseBytes({}), alm.TOPE_BASE_MB_MAX * MBb);
+    for (const v of ["mucho", "0x1000", "0b11", "1e4", "-5"]) assert.ok(Number.isNaN(alm.topeBaseBytes({ BASE_TOPE_MB: v })), `BASE_TOPE_MB «${v}» debía ser ilegible`);
+    assert.ok(alm.TOPES_OPS_MES.a <= alm.GRATIS_OPS_MES.a / 10 && alm.TOPES_OPS_MES.b <= alm.GRATIS_OPS_MES.b / 10, "la base gasta como mucho el 10 % de las operaciones gratis");
+    assert.strictEqual(alm.decodXml("R&amp;amp;D &lt;x&gt; &#65;"), "R&amp;D <x> A", "el XML se decodifica en UNA pasada");
+    // ida y vuelta contra un almacén S3 falso con ETag y PUT condicional (R2 lo evalúa atómicamente)
+    {
+      const http = require("http"), osB = require("os"), fsB = require("fs"), pathB = require("path");
+      const guardado = new Map(); let etagN = 0; const ops = { A: 0, B: 0 }; const putsDatos = [];
+      let modo = {};
+      const srv = http.createServer((req, res) => {
+        const u = new URL(req.url, "http://x"); const partes = u.pathname.split("/").filter(Boolean); const clave = decodeURIComponent(partes.slice(1).join("/"));
+        if (!/AWS4-HMAC-SHA256 Credential=LLAVE\//.test(req.headers.authorization || "")) { res.writeHead(403); return res.end("<Error>sin firma</Error>"); }
+        if (req.method === "GET" && u.searchParams.get("list-type") === "2") {
+          ops.A++;
+          const responder = () => {
+            if (modo.html) { res.writeHead(200, { "content-type": "text/html" }); return res.end("<html>muro</html>"); }
+            if (modo.bucle) { res.writeHead(200); return res.end("<ListBucketResult><IsTruncated>true</IsTruncated><NextContinuationToken>T</NextContinuationToken></ListBucketResult>"); }
+            res.writeHead(200, { "content-type": "application/xml" });
+            res.end(`<ListBucketResult><IsTruncated>false</IsTruncated>${[...guardado].map(([k, v]) => `<Contents><Key>${k.replace(/&/g, "&amp;").replace(/</g, "&lt;")}</Key><LastModified>${v.fecha}</LastModified><Size>${v.buf.length}</Size></Contents>`).join("")}</ListBucketResult>`);
+          };
+          return modo.retrasoLista ? setTimeout(responder, modo.retrasoLista) : responder();
+        }
+        if (req.method === "GET") { ops.B++; const v = guardado.get(clave); if (!v) { res.writeHead(404); return res.end(); } res.writeHead(200, { etag: v.etag }); return res.end(v.buf); }
+        if (req.method === "PUT") {
+          ops.A++; const tr = []; req.on("data", (ch) => tr.push(ch)); req.on("end", () => {
+            const v = guardado.get(clave);
+            if (req.headers["if-none-match"] === "*" && v) { res.writeHead(412); return res.end(); }
+            if (req.headers["if-match"] && (!v || v.etag !== req.headers["if-match"])) { res.writeHead(412); return res.end(); }
+            if (!clave.startsWith("_cuota/")) { putsDatos.push({ clave, clase: req.headers["x-amz-storage-class"] }); if (modo.fallaDatos) { res.writeHead(500); return res.end(); } }
+            const etag = `"e${++etagN}"`; guardado.set(clave, { buf: Buffer.concat(tr), etag, fecha: new Date().toISOString() }); res.writeHead(200, { etag }); res.end();
+          }); return;
+        }
+        res.writeHead(405); res.end();
+      });
+      await new Promise((ok) => srv.listen(0, "127.0.0.1", ok));
+      const envB = { OBJETOS_ENDPOINT: `http://127.0.0.1:${srv.address().port}`, OBJETOS_BUCKET: "detekta-base", OBJETOS_ACCESS_KEY_ID: "LLAVE", OBJETOS_SECRET_ACCESS_KEY: "SECRETO", BASE_TOPE_MB: "0.01" };
+      const dirB = fsB.mkdtempSync(pathB.join(osB.tmpdir(), "base-obra-"));
+      const regMes = () => JSON.parse(guardado.get(alm.CLAVE_REGISTRO(new Date().toISOString().slice(0, 7))).buf.toString());
+      try {
+        fsB.writeFileSync(pathB.join(dirB, "resumen.json"), "x".repeat(600));
+        const r1 = await alm.subir(dirB, "corte/2026-10-17", envB);
+        assert.deepStrictEqual(r1.subidos, ["corte/2026-10-17/resumen.json"]);
+        assert.ok(putsDatos.every((x) => x.clase === "STANDARD"), "cada PUT de datos va en la clase STANDARD (la única con gratis)");
+        assert.ok(regMes().a >= ops.A && regMes().b >= ops.B, `el registro cuenta TODO lo gastado (registro ${JSON.stringify(regMes())}, servidor ${JSON.stringify(ops)})`);
+        // un tope que se pasaría: frena con CERO datos escritos y anota el rechazo
+        const datosAntes = putsDatos.length;
+        fsB.writeFileSync(pathB.join(dirB, "grande.json"), "y".repeat(6000));
+        await assert.rejects(alm.subir(dirB, "corte/2026-11-17", envB), /NO SE SUBIÓ: la subida dejaría/);
+        assert.strictEqual(putsDatos.length, datosAntes, "frenada = NI UN byte de datos escrito");
+        assert.ok(regMes().a >= ops.A && regMes().b >= ops.B, "el rechazo también queda anotado");
+        fsB.rmSync(pathB.join(dirB, "grande.json"));
+        // el muro del edge (200 con HTML) y un token repetido no son «vacío»
+        modo = { html: true }; await assert.rejects(alm.subir(dirB, "corte/x", envB), /listado ilegible/); 
+        modo = { bucle: true }; await assert.rejects(alm.subir(dirB, "corte/x", envB), /token repetido/);
+        modo = {};
+        // un registro negativo o borrado con objetos de este mes no se toma como cero
+        const kReg = alm.CLAVE_REGISTRO(new Date().toISOString().slice(0, 7));
+        const regBueno = guardado.get(kReg);
+        const opsAntesIlegible = { ...ops };   // un registro ilegible o borrado no se puede sumar: margen declarado
+        guardado.set(kReg, { ...regBueno, buf: Buffer.from('{"a":-5000000,"b":1}') });
+        await assert.rejects(alm.subir(dirB, "corte/x", envB), /negativas/);
+        guardado.delete(kReg);
+        await assert.rejects(alm.subir(dirB, "corte/x", envB), /falta el registro del mes pero hay/);
+        guardado.set(kReg, regBueno);
+        const sinAnotar = { A: ops.A - opsAntesIlegible.A, B: ops.B - opsAntesIlegible.B };
+        assert.ok(sinAnotar.A <= 2 && sinAnotar.B <= 2, `el margen sin anotar de dos corridas fallidas es de pocas operaciones (${JSON.stringify(sinAnotar)})`);
+        // dos corridas a la vez: el PUT condicional deja pasar UNA y la otra aborta
+        modo = { retrasoLista: 80 };
+        const dos = await Promise.allSettled([alm.subir(dirB, "corte/a", envB), alm.subir(dirB, "corte/b", envB)]);
+        assert.deepStrictEqual(dos.map((x) => x.status).sort(), ["fulfilled", "rejected"], "dos corridas simultáneas: una sola pasa");
+        assert.match(String(dos.find((x) => x.status === "rejected").reason.message), /otra corrida movió el registro/);
+        modo = {};
+        // un fallo a mitad: la reserva ya contaba las operaciones (la cuenta queda DE MÁS, lado seguro)
+        modo = { fallaDatos: true }; await assert.rejects(alm.subir(dirB, "corte/c", envB), /la reserva ya cuenta/); modo = {};
+        assert.ok(regMes().a >= ops.A - sinAnotar.A && regMes().b >= ops.B - sinAnotar.B,
+          `fuera del margen declarado, el registro cuenta TODO: abortos, carrera perdida y fallo a mitad (registro ${JSON.stringify(regMes())}, servidor ${JSON.stringify(ops)}, sin anotar ${JSON.stringify(sinAnotar)})`);
+      } finally { srv.close(); fsB.rmSync(dirB, { recursive: true, force: true }); }
+    }
+    // el flujo que sube a R2: sin pull_request (los secretos no salen), una corrida a la vez, mide antes de bajar
+    {
+      const ymlB = require("fs").readFileSync(require("path").join(__dirname, "..", ".github", "workflows", "base_obra.yml"), "utf8")
+        .split("\n").filter((l) => !/^\s*#/.test(l)).join("\n");
+      assert.ok(!/pull_request/.test(ymlB), "el flujo de la base no corre en pull request: expondría los secretos del almacén");
+      assert.ok(/concurrency:\s*\n\s*group:\s*r2-base-obra\s*\n\s*cancel-in-progress:\s*false/.test(ymlB), "el flujo de la base corre de a uno (concurrency r2-base-obra, sin cancelar la que va)");
+      const iMedir = ymlB.indexOf("almacen.js medir"), iInv = ymlB.indexOf("inventario.js"), iSubir = ymlB.indexOf("almacen.js subir");
+      assert.ok(iMedir > 0 && iInv > iMedir && iSubir > iInv, "orden: medir el almacén → inventario → subir con tope");
+      for (const v of ["OBJETOS_ENDPOINT", "OBJETOS_BUCKET", "OBJETOS_ACCESS_KEY_ID", "OBJETOS_SECRET_ACCESS_KEY"]) assert.ok(ymlB.includes(`secrets.${v}`), `el flujo lee ${v} de los secretos`);
+      assert.ok(!/vercel|upstash|\/api\//i.test(ymlB), "el flujo de la base no toca producción");
+    }
+    console.log("· unidad base de obra: «sin dato» ≠ 0, mapeo de modalidades, exclusiones contadas por motivo, lote, las dos σ, la regla de fila y el almacén que frena antes de pasar su tope (ida y vuelta contra un S3 falso)");
   }
 
   /* unidad: capa anti-suministro sobre segmentos de bienes. Cada caso se
