@@ -199,7 +199,7 @@ elegido: se muestra el hecho que hay detrás, no el modelo que lo produjo.
 5. `docs/PROMPT_INICIAL.md` al empezar una sesión de trabajo (rol, ciclo, verificación,
    orquestación, formato de cierre).
 6. Dominio, solo si el encargo toca reglas de negocio: `docs/GUIA_ANALISTA_LICITACIONES.md` junto
-   con `docs/COMPLEMENTO_ANALISTA_LICITACIONES.md` (corrige dos errores del manual; van juntos) y
+   con `docs/COMPLEMENTO_ANALISTA_LICITACIONES.md` (corrige errores del manual; van juntos) y
    `docs/APU_Y_RENTABILIDAD.md` para precios.
 
 Los documentos de análisis fechados (auditorías, investigaciones, consultorías) abren con «Foto del

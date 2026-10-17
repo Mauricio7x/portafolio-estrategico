@@ -18787,3 +18787,42 @@ Límites conocidos, previos a este cambio: «8.3. ANTICIPO Y/O PAGO ANTICIPADO: 
 cambia la clave de caché del dictamen por reglas y la versión de los hechos (se rehacen). (d) `lib/negocio.SIN_ANTICIPO_RE`
 no cambia: lee «anticipo: n/a» seguido, y el título dice «anticipado», así que tampoco ve este caso; queda anotado.
 Medido después: 9 de 9 pliegos con el anticipo de la verdad (Pasto A «sí», los otros ocho «no»).
+
+### Lo que mostraron 5 procesos de menor cuantía ya adjudicados (17-oct-2026)
+
+En una línea: en el Documento Tipo de menor cuantía V3 los métodos de ponderación y la regla de la TRM no son los que describe el manual, el piso de precio bajo se calculó en torno al 92 % y no al 80 % de referencia del panel, y en los cinco procesos los rechazos fueron por papeles, no por precio.
+
+> PENDIENTE · [Sin verificar] que la tabla de métodos del manual sea la del Documento
+> Tipo de licitación pública. Y decidir con el dueño si el 80 % de referencia se calibra con el
+> histórico (más de 3 casos) o se muestra junto con «en procesos ya cerrados el piso cayó en torno
+> al 92 %». Tres hallazgos de la muestra, revisados a fondo el mismo día, no son de la app: en
+> Floridablanca la evaluación puntuó con $984.249.295 y la resolución adjudicó $1.003.514.996, sin
+> explicación en los documentos (con esa cifra el ganador habría sido otro); en Caldas 020 el «valor
+> mínimo» ($910.338.610,15, mediana − desviación muestral de las 8 hábiles) es un cálculo de la hoja
+> de la entidad que el pliego no fija, y el ganador ($883.381.572) quedó debajo sin que conste una
+> solicitud de justificación; en Turbaco el capital de trabajo aplicado ($118.176.600,49) es la
+> fórmula del pliego × 0,70, como si hubiera un anticipo del 30 % que el proceso no tiene.
+
+**De dónde sale.** La muestra de `detekta-lector` (Pasto SA-2026-9, Caldas SAMC-SI-027-2026,
+Floridablanca FLO-INFRA-SA-MC-001-2026, Turbaco SAMC-006-2026 y Caldas SAMC-SI-020-2026): pliegos,
+evaluaciones, actas, resoluciones de adjudicación y contratos bajados de SECOP II por el dueño, leídos
+con cita verificada por `verificar_citas.py`. Las adjudicaciones coinciden con `p6dx-8zbt` en los
+cinco. Son 5 procesos: es evidencia, no una estadística.
+
+**Qué se decidió.**
+- La descripción de los métodos se corrige en `docs/COMPLEMENTO_ANALISTA_LICITACIONES.md` § V-18, no
+  en la guía: el complemento es el que corrige al manual y van juntos. En la tabla de cada pliego se
+  sortea por los CENTAVOS de la TRM del segundo día hábil tras el traslado del informe, entre
+  mediana con valor absoluto, media geométrica, media aritmética baja y menor valor. El modelo de la
+  app (`lib/apu/rentabilidad.js`: 25 % «menor valor» + 75 % métodos centrales) sigue valiendo, porque
+  el menor valor sigue saliendo en 1 de 4 rangos. No se toca código.
+- **El 80 % de `lib/apu/piso_techo.js` (`TEMERARIO_PCT = 20`) NO se cambia.** El piso real se calculó
+  después de abrir, con la mediana de las ofertas menos su desviación: 92,78 % (Pasto), 92,33 %
+  (Caldas 027) y 91,61 % (Caldas 020). Que el 80 % se quede corto en estos tres no basta para fijar
+  otra cifra con tres casos, y es una cifra que decide precio: va al dueño como plan, no se toca sola.
+- **Lo que tumbó ofertas fueron papeles.** Pasto: 2 rechazos por la capacidad residual (estado de
+  resultados sin dictamen, certificados de contador vencidos). Caldas 027: un Formato 5 de otro
+  proceso. Turbaco: no ser Mipyme del municipio cuando el pliego lo limitó (3 de 4). Ninguna causal de
+  precio actuó en los cinco. En Pasto, la oferta más barata perdió 20 puntos por quitar una frase del
+  Formato 14, y con ellos habría ganado.
+- **Adjudicado frente a presupuesto:** 93,80 %, 92,80 %, 99,95 %, 99,84 % y 88,90 %.

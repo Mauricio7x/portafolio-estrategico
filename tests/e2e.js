@@ -6842,6 +6842,15 @@ async function main() {
       assert.ok(![401, 403].includes(propioSf.status), "sin Origin pero con Sec-Fetch-Site: same-origin, también");
 
       // ── (5) EL LÍMITE DE INTENTOS ────────────────────────────────────────────
+      /* Las ventanas de intentos son FIJAS (15 min). Con el reloj de verdad, un bloque que cruza el
+         borde de una ventana empieza a contar de cero a mitad del bucle y el tope no salta (pasó el
+         17-oct-2026: «pasado el tope por CONEXIÓN» dio 200). Se fija el reloj a mitad de la ventana
+         en curso mientras corre la sección y se devuelve al final. */
+      const relojDeIntentos = Date.now;
+      const ventanaMs = Sesion.VENTANA_INTENTOS_SEG * 1000;
+      const mitadDeVentana = Math.floor(relojDeIntentos() / ventanaMs) * ventanaMs + ventanaMs / 2;
+      Date.now = () => mitadDeVentana;
+      try {
       await redis.del(...await redis.scan("intentos:*"));
       /* (5a) UN TERCERO NO DEJA FUERA AL DUEÑO (revisión adversaria, 17-oct-2026): cinco fallos con
          su correo desde cinco conexiones ajenas no le cierran la suya. Contra b73c38e, 429. */
@@ -6891,6 +6900,7 @@ async function main() {
         assert.strictEqual(caido.status, 503, `sin poder contar los intentos no se deja entrar: ${caido.status}`);
         assert.ok(!caido.cabeceras["set-cookie"]);
       } finally { upstash.romper(null); }
+      } finally { Date.now = relojDeIntentos; }
 
       /* (5d) SIN ORÁCULO DE EXISTENCIA (revisión adversaria): un intento fallido con el correo del
          dueño y otro con un correo que no existe cuestan los MISMOS comandos de Redis (antes 6 y 4:
