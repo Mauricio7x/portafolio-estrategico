@@ -18713,7 +18713,7 @@ En una línea: con el reloj adelantado a 2027 la suite cae en cadena —se detie
 - **Medido** con el precargador que adelanta `Date`, desde el 16-oct: a +80 días cae «el presupuesto corto debía forzar varias invocaciones (reanudable)»; a +110 y +200, «72141200 NO está en el RUP subido … y no debía servirse»; a +300, verde. Como la suite se detiene en la primera falla, no se sabe cuántas más hay detrás de cada una.
 - [Inferencia] El patrón común es el mismo de noviembre: los datos simulados dependen de cuántos meses lleva el año (`MESES`, `mesesDelAno`), y con 1 a 5 meses no alcanzan para lo que la prueba monta. Lo confirmaría ver, en cada falla, cuántas filas simuladas hay del año corriente.
 
-> PENDIENTE · antes del 1-ene-2027: con el reloj adelantado a +80, +110 y +200 días desde el 16-oct caen «el presupuesto corto debía forzar varias invocaciones (reanudable)» y «72141200 NO está en el RUP subido … y no debía servirse», y puede haber más detrás. Repetir el barrido con el precargador (+77 a +260 días) hasta que todos los meses de enero a julio de 2027 pasen.
+> RESUELTO el 17-oct-2026 por «Las pruebas de 2027: un corte que dependía de la velocidad de la máquina y una negación que miraba una sola página (17-oct-2026)» · Era: antes del 1-ene-2027: con el reloj adelantado a +80, +110 y +200 días desde el 16-oct caen «el presupuesto corto debía forzar varias invocaciones (reanudable)» y «72141200 NO está en el RUP subido … y no debía servirse», y puede haber más detrás. Repetir el barrido con el precargador (+77 a +260 días) hasta que todos los meses de enero a julio de 2027 pasen.
 
 ### La fila partida de la tabla de códigos de la experiencia (17-oct-2026)
 
@@ -18814,3 +18814,11 @@ del presupuesto oficial. (i) Límite conocido: el techo de la
 validación de Precios sigue siendo el presupuesto de SECOP II; el aviso no llega a esa pestaña.
 Medido después: 11 de 11 cifras correctas en los 9 pliegos y las dos versiones de Santa Elena (Manizales escribe
 «1.1.OBJETO» sin espacio y ahora se lee).
+
+### Las pruebas de 2027: un corte que dependía de la velocidad de la máquina y una negación que miraba una sola página (17-oct-2026)
+
+En una línea: las dos pruebas que caían de enero a mayo de 2027 no eran defectos del producto; una dependía de que 3 páginas no cupieran en 150 ms y la otra de que los muros quedaran fuera de la primera página. Con ambas corregidas, la suite pasa con el reloj adelantado de +80 a +260 días (4-ene a 4-jul-2027).
+
+- **«el presupuesto corto debía forzar varias invocaciones».** En enero el año simulado trae 120 filas, 3 páginas de 50, y en una máquina rápida cabían en los 150 ms del presupuesto. La primera invocación va ahora con `presupuesto=1`, que se rinde tras la primera página guardada; así hay corte con cualquier número de meses y cualquier velocidad. Las continuaciones siguen con 150. La gemela del histórico no se tocó, porque usa años completos fijos.
+- **«72141200 NO está en el RUP subido…».** Medido con el reloj real: el perfil subido (72141000, 72141100, 72154100, 81101500) ve 80 muros de contención (72141200) en todas las páginas, todos por el objeto: «muro, gaviones, contención» sugiere la familia 7214, que el RUP tiene. Ninguno entra por código. La prueba solo miraba la primera página y pasaba porque los muros quedaban más abajo. Ahora barre todas las páginas y exige que ningún muro case por código. **No se cambió el producto.** Servir por el objeto es la regla de oportunidades: lo caro es el falso negativo. Quien quiera esconder esos muros cambia una regla que decide qué procesos se ven, y eso necesita el visto bueno del dueño.
+- **Cómo se midió.** Un precargador de `Date` fuera del repositorio y la suite entera, una vuelta, en +0, +80, +110, +140, +170, +200, +230 y +260 días: verde en todas.
