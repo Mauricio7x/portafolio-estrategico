@@ -18951,3 +18951,25 @@ el mensaje de siempre con 2. **Límite conocido:** entre los 15 y los 30 min tra
 muestra el tope y el siguiente sondeo vuelve a decir «la búsqueda arrancó» hasta que la solicitud pasa a «sin_atender».
 **Hermano vivo, sin tocar:** el dictamen (`lib/handlers/pliego/dictamen.js`, `pedir_sesion`) tiene el mismo hueco: su marca
 dura 30 min y después cada clic vuelve a despertar su rutina, sin cuenta; queda para un encargo propio.
+
+### El dictamen también deja de despertar la rutina tras 3 lecturas pedidas sin respuesta (17-oct-2026)
+
+En una línea: el hermano vivo que dejó anotado «Precios deja de despertar la rutina cuando ya se despertó 3 veces sin dar
+señal»: vencida la marca de media hora de `dictamen:pedido:*`, cada clic en «Leer el pliego completo» despertaba otra
+corrida del día aunque las anteriores no hubieran escrito ningún dictamen. Ahora `dictamen:lecturas_sin_respuesta:*` cuenta
+los pedidos seguidos sin dictamen y a partir de `LECTURAS_TOPE_SIN_RESPUESTA` (3) ya no se despierta otra: la respuesta
+trae `tope_alcanzado` y el mensaje `LECTURA_TOPE` con su qué hacer, que la caja ya pinta debajo del botón.
+
+**Por qué una clave aparte y no un campo en la marca.** La marca del pedido vence a los 30 min (es también el candado) y la
+sesión del dictamen no manda avances: la única señal es el dictamen guardado. La cuenta tiene que sobrevivir a la marca, así
+que vive en su propia clave con 24 h desde el último pedido.
+
+**Lo que no hay que deshacer.** (a) Cuenta solo un disparo que arrancó o pudo arrancar (indeterminado); uno que falló seguro
+borra la marca, no gastó y no suma. (b) Guardar el dictamen de la sesión borra la cuenta junto con la marca: la rutina
+funciona. (c) Sin la clave no hubo pedidos sin respuesta: ese 0 es un hecho, no un «sin dato», porque la clave nace con el
+primer pedido; una cuenta ilegible NO frena (se pide, el lado seguro). (d) El tope se mira DESPUÉS de tomar la marca (para
+que un segundo clic dentro de la media hora siga diciendo «ya pedida») y, si frena, suelta esa marca: no corresponde a
+ningún disparo. (e) «Volver a leer» (refrescar) también cuenta: también gasta una corrida.
+Medido: con la condición del tope apagada la suite falla con «con 3 lecturas sin respuesta no se gasta otra: 1 disparos»,
+y sin el borrado al guardar el dictamen falla la cuenta. La pantalla no cambió: `public/pliego.js` (`pedirLecturaCompleta`)
+ya escribe `error` y `que_hacer` en `#dictamen-estado`; leído, no ejecutado en navegador.

@@ -44003,6 +44003,38 @@ async function main() {
           respuestaFire = () => ({ ok: true, status: 200, json: async () => ({}) });
           const sV = await pedir();
           assert.ok(sV.cuerpo.repetida !== true && disparos.length === antesV + 1 && sV.cuerpo.pedido_sesion.version_texto === sV.cuerpo.version_texto, `una versión nueva del pliego se puede pedir aunque la marca de la anterior siga viva: ${JSON.stringify(sV.cuerpo.pedido_sesion)}`);
+          /* ═══ EL TOPE DE LECTURAS SIN RESPUESTA (17-oct-2026, el hermano del de Precios) ═══
+             Vencida la marca de media hora, cada clic despertaba otra corrida del día aunque las
+             anteriores no hubieran escrito ningún dictamen. Contra el árbol anterior: con tres
+             pedidos sin respuesta se volvía a despertar la rutina. */
+          {
+            const claveSR = Dc.claveLecturasSinRespuesta(ID_RG, "genesis");
+            assert.ok(Number.isInteger(Dc.LECTURAS_TOPE_SIN_RESPUESTA) && Dc.LECTURAS_TOPE_SIN_RESPUESTA >= 2, "el tope existe y deja al menos un reintento");
+            const topeD = Dc.LECTURAS_TOPE_SIN_RESPUESTA;
+            // la cuenta subió con los disparos que arrancaron o pudieron arrancar (s4 indeterminado y sV), no con el que falló (s3)
+            assert.strictEqual(await redis.get(claveSR), "2", "s4 (indeterminado) y sV (arrancó) cuentan; s3 (falló seguro) no, y el dictamen de ps3 la había borrado");
+            // (1) con la cuenta en el tope y la marca ya vencida: no se despierta otra, se dice, y no queda marca
+            await redis.set(claveSR, String(topeD)); await redis.del(Dc.clavePedido(ID_RG, "genesis"));
+            const antesT = disparos.length;
+            const sT = await pedir({ refrescar: true });
+            assert.ok(sT.status === 200 && sT.cuerpo.tope_alcanzado === true && disparos.length === antesT, `con ${topeD} lecturas sin respuesta no se gasta otra: ${disparos.length - antesT} disparos`);
+            assert.ok(new RegExp(`${topeD} veces`).test(sT.cuerpo.error) && /«\/dictamen»/.test(sT.cuerpo.que_hacer) && /no lo arregla/.test(sT.cuerpo.que_hacer), `y dice qué hacer: ${sT.cuerpo.error} ${sT.cuerpo.que_hacer}`);
+            pasaCercas(sT.cuerpo.error, "lectura tope"); pasaCercas(sT.cuerpo.que_hacer, "lectura tope · qué hacer");
+            assert.strictEqual(await redis.get(Dc.clavePedido(ID_RG, "genesis")), null, "el tope no deja una marca de un disparo que no hubo");
+            // (2) una por debajo del tope: se despierta y la cuenta llega al tope
+            await redis.set(claveSR, String(topeD - 1));
+            const sU = await pedir({ refrescar: true });
+            assert.ok(sU.cuerpo.tope_alcanzado !== true && disparos.length === antesT + 1 && (await redis.get(claveSR)) === String(topeD), "la última permitida se despierta y suma");
+            // (3) el dictamen de la sesión llega: la cuenta se borra y se puede volver a pedir
+            const psT = await invocarPost(routerPliego, URL_DC, { id_proceso: ID_RG, perfil: "genesis", motor: "sesion", dictamen: crudoG }, CAB_TOKEN);
+            assert.strictEqual(psT.status, 200);
+            assert.strictEqual(await redis.get(claveSR), null, "el dictamen que llega borra la cuenta: la rutina funciona");
+            // (4) una cuenta ilegible no frena: se pide, que es el lado seguro
+            await redis.set(claveSR, "basura"); await redis.del(Dc.clavePedido(ID_RG, "genesis"));
+            const sB = await pedir({ refrescar: true });
+            assert.ok(sB.cuerpo.tope_alcanzado !== true && disparos.length === antesT + 2, "una cuenta ilegible no impide pedir");
+            await redis.del(claveSR, Dc.clavePedido(ID_RG, "genesis"));
+          }
           assert.ok(!/\.\.$/.test(Dc.mensaje("LECTURA_YA_PEDIDA", { hora: "10:31" })), "sin punto doble");
           const antesS5 = disparos.length;
           const s5 = await invocarPost(routerPliego, URL_DC, { id_proceso: ID_RG, perfil: "genesis", pedir_sesion: "si" }, CAB_TOKEN);
@@ -44011,7 +44043,7 @@ async function main() {
           global.fetch = fetchAntes;
           if (envU === undefined) delete process.env.RUTINA_DICTAMEN_URL; else process.env.RUTINA_DICTAMEN_URL = envU;
           if (envT === undefined) delete process.env.RUTINA_DICTAMEN_TOKEN; else process.env.RUTINA_DICTAMEN_TOKEN = envT;
-          await redis.del(Dc.clavePedido(ID_RG, "genesis"));
+          await redis.del(Dc.clavePedido(ID_RG, "genesis"), Dc.claveLecturasSinRespuesta(ID_RG, "genesis"));
         }
       }
       // (4) la skill de Claude Code y el documento
