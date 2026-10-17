@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 1779293 bytes · 322 secciones · 19 con marcador de superación.
+Derivado del árbol: 1781596 bytes · 323 secciones · 19 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -333,3 +333,4 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | La fila de prueba se busca en todas las páginas del listado, y enero espera (16-oct-2026) | 16-oct-2026 | 18695-18707 | 2056 | «Enero de 2027: las pruebas caen en cadena cuando el año tiene pocos meses (17-oct-2026)» |
 | Enero de 2027: las pruebas caen en cadena cuando el año tiene pocos meses (17-oct-2026) | 17-oct-2026 | 18708-18717 | 1839 |  |
 | La fila partida de la tabla de códigos de la experiencia (17-oct-2026) | 17-oct-2026 | 18718-18740 | 2305 |  |
+| El anticipo «N/A» bajo su título y el amparo «Devolución del pago anticipado» (17-oct-2026) | 17-oct-2026 | 18741-18762 | 2303 |  |
