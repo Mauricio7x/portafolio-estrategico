@@ -18817,6 +18817,8 @@ Medido después: 11 de 11 cifras correctas en los 9 pliegos y las dos versiones 
 
 ### El techo de la oferta en Precios: la cifra más baja entre SECOP II y el pliego definitivo (17-oct-2026)
 
+> SUPERADA el 17-oct-2026 por «El techo del pliego también desde la tarjeta de Licitaciones, para un proceso guardado (17-oct-2026)» — solo en el punto (e): la tarjeta ya arranca Precios con el techo del pliego cuando el proceso está guardado y su pliego se leyó; sin guardar, sigue con SECOP II.
+
 En una línea: al abrir Precios desde un proceso guardado («Cargue el pliego en Precios»), el campo «Presupuesto oficial
 (COP)» arranca con `guia.tope_oferta` (`lib/documentos_proceso.topeOferta`): la del pliego definitivo si es MENOR que la de
 SECOP II, con una nota que dice de dónde sale; y el hallazgo G.5 dice «por encima del presupuesto del pliego definitivo».
@@ -19000,6 +19002,27 @@ de la tabla de garantías a la cláusula (Pasto sigue citando otra fila de la ga
 lado caro, medidos por la revisión): la parte ANTES de la negación («Para la etapa 1 no se entregará anticipo»), «la primera
 etapa», «en el componente 1» sin «para» y la frase partida en tres líneas siguen diciendo «no»; las filas ya enriquecidas
 en Redis conservan `anticipo_declarado` hasta que se re-enriquecen.
+
+### El techo del pliego también desde la tarjeta de Licitaciones, para un proceso guardado (17-oct-2026)
+
+En una línea: «Calcular mi precio» (y la cifra pulsable de la baja) en la tarjeta de Licitaciones arrancaba Precios siempre
+con la cifra de SECOP II; ahora, si el proceso está GUARDADO, pide su guía con la consulta del expediente (GET, solo lee) y
+arranca con el techo del pliego definitivo cuando es menor, con la misma `techoDesdeGuia` y la misma nota del expediente.
+Visto bueno del dueño el 17-oct-2026.
+
+**Lo que no hay que deshacer (revisión adversaria, cada punto con su cerradura en el bloque (h) de «unidad revisor de la
+oferta», que ejecuta el public/app.js real).** (a) Solo se consulta un proceso guardado (`guardados`): sin guardar no hay
+guía que leer y la tarjeta abre como siempre, sin llamada. (b) La pulsación siempre responde: «Consultando el pliego…» y,
+si la consulta cae o pasan 5 s, Precios abre con SECOP II y la nota de la cifra lo DICE («No se pudo consultar el pliego a
+tiempo…»): abrir callado no distinguía «el pliego no dice menos» de «no se pudo saber». (c) Una respuesta tardía NO abre si
+mientras tanto se pulsó otra tarjeta (`turnoTarjeta`), se abrió otro proceso o un borrador en Precios (`aperturasEditor`,
+que suben `abrirEditorConProceso` y `restituirContextoProceso`) o cambió el perfil: antes de esto la respuesta de A
+reemplazaba a B, abierto después, y borraba lo empezado. (d) El techo solo vale si la guía habla de la MISMA cifra de SECOP
+II que la tarjeta (`tope_oferta.secop` = `cuantia`) y del mismo proceso (`proceso.id`). (e) Los botones de la misma tarjeta
+esperan juntos (desactivados). Límites: cada pulsación sobre un guardado calcula un expediente completo en el servidor (sin
+caché; solo por pulsación del usuario, no medido en CPU); la cerradura de que el clic llega a `abrirPreciosDesdeTarjeta`
+es por expresión regular, porque el arnés no despacha los clics de `#lista`. Visto en Chromium (escritorio y 390 px): con
+techo, sin guardar y con la consulta caída.
 
 ### Las pruebas de 2027: un corte que dependía de la velocidad de la máquina y una negación que miraba una sola página (17-oct-2026)
 
