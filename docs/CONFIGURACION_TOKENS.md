@@ -350,8 +350,9 @@ ningún chat.
    no lo es, el cron no está pasando la guarda: quite la variable, vuelva a desplegar y avise —la
    marca (que lleva la llave) sigue sincronizando mientras tanto.
 
-**Efecto en las URL que tenga pegadas en Chrome:** `/api/sync?modo=full` y `/api/sync?modo=auto`
-necesitan una credencial: péguelas en el Chrome donde ya entró a la aplicación (§0.3).
+**Efecto en las URL que tenga pegadas en Chrome:** `/api/sync?modo=auto` necesita una credencial:
+péguela en el Chrome donde ya entró a la aplicación (§0.3). La carga completa ya no se pega: va con
+el botón de GitHub del §8, porque `modo=full` la empieza de cero en cada llamada.
 
 ---
 
@@ -702,28 +703,38 @@ porque es reanudable.
 
 ## 8. Parte G · Después de configurar: los dos disparos de puesta en marcha
 
-Una sola vez, cuando las tres variables obligatorias ya estén bien y el sitio redesplegado.
+Una sola vez, cuando las tres variables obligatorias ya estén bien y el sitio redesplegado. Los dos
+disparos —cargar el año en curso y bajar el histórico, que es lo que hace que la app ordene por
+probabilidad de ganar (sin él todo sale en ⚪ «sin datos históricos»)— van en **un solo botón de
+GitHub**, «Carga completa (un botón)» (`.github/workflows/carga_completa.yml`). Llama tramo a tramo
+hasta terminar y enseña el avance de cada uno. El año va con `modo=auto`: si nunca se cargó, hace la
+carga completa; si ya se cargó, lo pone al día o continúa la que haya quedado a medias. Para
+**recargar el año desde enero** (obligatorio tras cambiar una regla de ingesta) está el botón de la
+pantalla «Carga completa (reinicia desde enero)», en el panel «Sincronización con SECOP II
+(avanzado)».
 
-**Disparo 1 — recargar todo el año en curso** (obligatorio si nunca se hizo o si se cambiaron las
-reglas de ingesta):
+- En el computador: pestaña «Actions» → «Carga completa (un botón)» → «Run workflow» → botón verde
+  «Run workflow».
+- En la app de GitHub del celular: repositorio → «Acciones» → «Carga completa (un botón)» →
+  «Ejecutar flujo de trabajo».
 
-```
-https://detekta-app.vercel.app/api/sync?modo=full
-```
+Necesita los secretos `CRON_SECRET` y `HISTORICO_TOKEN` en GitHub; si falta alguno, el propio flujo
+dice cómo crearlo.
 
-(Péguela en el Chrome donde ya entró a la aplicación: con `CRON_SECRET` puesto —§3.6— la
-sincronización pide credencial, y su sesión lo es.) Se auto-encadena en tandas. Desde el panel de Mi empresa → *Sistema* → **Iniciar sincronización**
-hace lo mismo con un botón, y encadena las tandas siguientes solo.
+**Por qué el botón y no una URL pegada (17-oct-2026).** Las dos URL que iban aquí empezaban de cero
+lo que ya había avanzado:
 
-**Disparo 2 — bajar los dos años de histórico** (es lo que hace que la app ordene por probabilidad
-de ganar; sin esto todo sale en ⚪ «sin datos históricos»):
+- `/api/sync?modo=full` vuelve a empezar la carga del año en CADA llamada (medido el 26-sep: 200
+  llamadas sin pasar de enero). El botón usa `modo=auto`, que continúa una carga a medias.
+- `/api/sync/historico` con un rango distinto del guardado empezaba otra extracción desde el primer
+  mes (pasó el 17-oct con `desde=2024-01&hasta=2025-12`, el rango de esta guía). Ahora el servidor
+  responde 409 y no empieza nada; el botón lee el rango guardado y continúa ese.
 
-```
-https://detekta-app.vercel.app/api/sync/historico?desde=2024-01&hasta=2025-12
-```
-
-Tarda. Va respondiendo `done:false` mientras quede trabajo; se vuelve a pegar la misma URL y
-continúa donde quedó. Cuando responde `done:true`, terminó.
+Si aun así hay que hacerlo a mano: primero la URL de diagnóstico del §7, que solo lee, y después la
+de extracción con el rango EXACTO que esa respuesta da en `extraccion.desde` y `extraccion.hasta`
+(`/api/sync/historico?desde=…&hasta=…`, pegada en el Chrome donde ya entró a la aplicación). Va
+respondiendo `done:false` mientras quede trabajo; se vuelve a pegar la misma URL y continúa donde
+quedó. Cuando responde `done:true`, terminó.
 
 ---
 
@@ -830,4 +841,4 @@ Si tuviera que empezar hoy desde cero, en este orden y nada más:
 7. **Deployments → … → Redeploy**, sin caché (§5).
 8. Abrir la aplicación y **crear su cuenta** con esa llave (§0.1).
 9. Correr las cuatro pruebas de §6.
-10. Disparar la sincronización completa y el histórico (§8).
+10. Disparar la sincronización completa y el histórico con el botón de GitHub (§8).

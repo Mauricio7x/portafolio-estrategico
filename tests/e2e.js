@@ -8464,6 +8464,22 @@ async function main() {
     const dos = PP.leerPresupuestoDelPliego(["\f6", titulo, "($1.744.426.146)", "($1.581.425.810)", "1.2.\tDOCUMENTOS"].join("\n"));
     assert.deepStrictEqual([dos.presupuesto.valor, dos.presupuesto.leidas.length], [null, 2], JSON.stringify(dos));
     assert.strictEqual(PP.leerPresupuestoDelPliego(["\f2", indice, "1.2.\tDOCUMENTOS DEL PROCESO\t6"].join("\n")), null, "la línea del índice no es la sección");
+    /* ronda 5 de detekta-lector (17-oct-2026, licitación pública): los centavos con punto (Mariquita CO1.REQ.11169004),
+       el título «…PLAZO, UBICACIÓN Y ESPECIFICACIONES» (Paicol CO1.REQ.11151463) y el título SIN número, que acaba en
+       «DOCUMENTOS DEL PROCESO» sin número (Sucre CO1.REQ.11092753: sin ese fin, la sección llegaba al valor del CDP) */
+    assert.strictEqual(PP.leerPresupuestoDelPliego(["\f5", titulo, "TOLIMA\tCENTAVOS", "($685.335.300.87)", "M/CTE", "1.2.\tDOCUMENTOS DEL PROCESO"].join("\n")).presupuesto.valor, 685335300.87, "los centavos con punto (MUTACIÓN: sin el punto, «sin cifra legible»)");
+    assert.strictEqual(PP.leerPresupuestoDelPliego(["\f6", "1.1.\tOBJETO, PRESUPUESTO OFICIAL, PLAZO, UBICACIÓN Y ESPECIFICACIONES", "Y CONDICIONES TÉCNICAS.", "Públicas o en su defecto por\tY DOS PESOS\tHuila", "quien se designe por parte del ($1.313.400.392,00) M/CTE.", "1.2\tDOCUMENTOS DEL PROCESO"].join("\n")).presupuesto.valor, 1313400392, "«PLAZO, UBICACIÓN Y ESPECIFICACIONES» es el mismo título");
+    assert.strictEqual(PP.leerPresupuestoDelPliego(["\f2", "1.1.\tOBJETO, PRESUPUESTO OFICIAL, PLAZO, UBICACIÓN Y", "ESPECIFICACIONES Y CONDICIONES TÉCNICAS......................14", "1.2\tDOCUMENTOS DEL PROCESO........15"].join("\n")), null, "la línea partida del índice no es la sección");
+    const sucre = ["\f2", "OBJETO, PRESUPUESTO OFICIAL, PLAZO Y UBICACIÓN .................................................. 5", "\f5", "1. CAPÍTULO I INFORMACIÓN GENERAL", "OBJETO, PRESUPUESTO OFICIAL, PLAZO Y UBICACIÓN", "El objeto, Presupuesto Oficial, plazo y ubicación del proyecto objeto del Proceso de Contratación se", "DE SUCRE\tCENTAVOS M/CTE", "($1.258.962.674,74)", "DOCUMENTOS DEL PROCESO", "Los Documentos del Proceso son los señalados tanto en el capítulo IX.", "CLASIFICADOR DE BIENES Y SERVICIOS DE NACIONES UNIDAS (UNSPSC)", "Disponibilidad Presupuestal\tDisponibilidad Presupuestal\tDisponibilidad Presupuestal", "647\t3 de junio de 2026\t$1.366.136.574,00"].join("\n");
+    assert.deepStrictEqual([PP.leerPresupuestoDelPliego(sucre).presupuesto.valor, PP.leerPresupuestoDelPliego(sucre).presupuesto.pagina], [1258962674.74, 5], `el título sin número, y la sección acaba en «DOCUMENTOS DEL PROCESO» (MUTACIÓN: sin ese fin, dos cifras con la del CDP): ${JSON.stringify(PP.leerPresupuestoDelPliego(sucre))}`);
+    assert.strictEqual(PP.leerPresupuestoDelPliego(["\f2", "OBJETO, PRESUPUESTO OFICIAL, PLAZO Y UBICACIÓN .................................................. 5", "DOCUMENTOS DEL PROCESO ........ 5"].join("\n")), null, "la línea del índice sin número no es la sección");
+    // cada título que cierra la sección sin número, solo, deja fuera el valor del CDP que viene después
+    for (const fin of ["DOCUMENTOS DEL PROCESO", "COMUNICACIONES Y OBSERVACIONES AL PROCESO", "CLASIFICADOR DE BIENES Y SERVICIOS DE NACIONES UNIDAS (UNSPSC)", "RECURSOS QUE RESPALDAN LA CONTRATACIÓN"]) {
+      const r = PP.leerPresupuestoDelPliego(["\f5", "OBJETO, PRESUPUESTO OFICIAL, PLAZO Y UBICACIÓN", "DE SUCRE\tCENTAVOS M/CTE", "($1.258.962.674,74)", fin, "647\t3 de junio de 2026\t$1.366.136.574,00"].join("\n"));
+      assert.strictEqual(r.presupuesto.valor, 1258962674.74, `«${fin}» cierra la sección (MUTACIÓN: sin ese fin, dos cifras con la del CDP): ${JSON.stringify(r)}`);
+    }
+    // la cifra partida por las columnas en dos líneas (Samacá CO1.REQ.11184065, «$1.773´266.41 / 9.00).») no se adivina
+    assert.strictEqual(PP.leerPresupuestoDelPliego(["\f6", "1.1.OBJETO, PRESUPUESTO OFICIAL, PLAZO Y UBICACIÓN", "MESES ($1.773´266.41", "MÁS.\t9.00).\t15 ACUEDUCTO RANCHERIA - VDA QUITE", "1.2.\tDOCUMENTOS DEL PROCESO"].join("\n")).presupuesto.valor, null, "la cifra partida entre columnas queda sin dato");
     // el aviso: definitivo distinto de SECOP → riesgo y PRIMERO; solo borrador → «confírmelo»; igual (centavos) → nada
     const doc = (texto, tipo) => ({ nombre: `${tipo}.pdf`, tipo, hechos: Dp.hechosDeTexto(texto, { tipo }) });
     const dicen = (leidos, cop) => Dp.loQueDicen({ indice: { archivos: [], plan: [] }, ilegibles: {}, leidos }, { presupuestoCOP: cop }).hechos;
@@ -8502,6 +8518,34 @@ async function main() {
     // H6: $2 de diferencia es un dato, no un riesgo, y se dice en pesos
     const dos2 = cuantos({ a: doc(sec("($1.581.425.812)"), "pliego") }, 1581425810);
     assert.ok(dos2.length === 1 && dos2[0].estado === "dato" && /diferencia de \$2\./.test(dos2[0].texto), JSON.stringify(dos2));
+    /* EL TECHO DE LA OFERTA PARA PRECIOS (17-oct-2026): la más baja entre SECOP II y el pliego definitivo; solo BAJA */
+    const tope = (leidos, cop) => Dp.loQueDicen({ indice: { archivos: [], plan: [] }, ilegibles: {}, leidos }, { presupuestoCOP: cop }).tope_oferta;
+    // revisión adversaria (17-oct-2026): una cifra mal escrita no se lee mil veces menor, y sin título de cierre no hay sección
+    for (const mal of ["($1.581.425.810,0)", "$1.581.425.810.0 M/CTE"]) assert.strictEqual(PP.leerPresupuestoDelPliego(sec(mal)).presupuesto.valor, null, `«${mal}» no es «1.581.425,81» (MUTACIÓN: con el lookahead viejo, mil veces menos)`);
+    const adendaSinCierre = ["\f1", "ADENDA No. 2", "Se modifican los siguientes numerales:", "OBJETO, PRESUPUESTO OFICIAL, PLAZO Y UBICACIÓN", "en el sentido de aclarar la ubicación de la obra.", "Capital de trabajo: CT ≥ $ 400.000.000,00"].join("\n");
+    assert.strictEqual(PP.leerPresupuestoDelPliego(adendaSinCierre), null, "sin título de cierre no hay sección (MUTACIÓN: se leía el capital de trabajo como presupuesto)");
+    assert.strictEqual(tope({ a: { ...doc(def, "pliego"), fecha_carga: "2026-09-01" }, b: { ...doc(adendaSinCierre, "adenda"), fecha_carga: "2026-09-10" } }, 1581425810).valor, 1581425810, "una adenda que solo nombra el numeral no baja el techo");
+    assert.deepStrictEqual([tope({ a: doc(def, "pliego"), b: doc(bor, "pliego_borrador") }, 1744426146).valor, tope({ a: doc(def, "pliego") }, 1744426146).fuente, tope({ a: doc(def, "pliego") }, 1744426146).pagina], [1581425810, "pliego", 6], "Santa Elena: el techo es el del pliego definitivo");
+    assert.strictEqual(tope({ a: doc(bor, "pliego") }, 1581425810).fuente, "secop", "el pliego MAYOR que SECOP II no sube el techo");
+    assert.strictEqual(tope({ b: doc(bor, "pliego_borrador") }, 1900000000).fuente, "secop", "un borrador nunca fija el techo, aunque diga menos que SECOP II");
+    assert.strictEqual(tope({ a: doc(sec("salario de ($ 1.423.500)"), "pliego") }, 1581425810).fuente, "secop", "una lectura dudosa nunca fija el techo");
+    assert.strictEqual(tope({ a: doc(sec("Lote 1\t$ 500.000.000", "Lote 2\t$ 500.000.000"), "pliego") }, 1000000000).fuente, "secop", "por lotes el techo no sale del pliego");
+    assert.strictEqual(tope({ a: { ...doc(def, "pliego"), fecha_carga: "2026-09-01" }, b: { ...doc("\f1\nSe modifica el cronograma del proceso.\n", "adenda"), fecha_carga: "2026-09-10" } }, 1744426146).fuente, "secop", "con una adenda posterior sin la tabla, el techo no sale del pliego");
+    assert.deepStrictEqual(tope({ a: doc(["\f7", titulo, "8B Y CALLE 2G,\t($511.587.015,10) M/CTE", "1.2.\tDOCUMENTOS"].join("\n"), "pliego") }, 511587015), { valor: 511587015, fuente: "secop", secop: 511587015, pagina: null, documento: null }, "los centavos que SECOP II corta no mueven el techo");
+    const { normalizarConfig: nc5 } = require("../lib/apu/calculo.js");
+    assert.deepStrictEqual([nc5({ cuantia_fuente: "pliego" }).cuantia_fuente, nc5({ cuantia_fuente: "<b>x</b>" }).cuantia_fuente, nc5({}).cuantia_fuente], ["pliego", null, null], "la fuente del techo: «pliego» o nada");
+    assert.strictEqual(tope({ a: doc(sec("($1.744.426.145,50)"), "pliego") }, 1744426146).fuente, "pliego", "el pliego por debajo, aunque sea por centavos, fija el techo (SECOP II los corta hacia abajo, no hacia arriba)");
+    assert.strictEqual(tope({ a: doc(def, "pliego") }, null), null, "sin cifra de SECOP II no se fija techo: no hay contra qué contrastar la lectura");
+    const Gp = require("../lib/guia_proceso.js");
+    const filaSE = { id_del_proceso: "CO1.SE", nombre_del_procedimiento: "MEJORAMIENTO VIA SANTA ELENA", entidad: "DISTRITO DE CALI", departamento_entidad: "Valle del Cauca", modalidad_de_contratacion: "Selección Abreviada de Menor Cuantía", precio_base: "1744426146", duracion: "2", unidad_de_duracion: "Meses", codigo_principal_de_categoria: "V1.72141000", fecha_de_publicacion_del: "2026-09-01T10:00:00.000", fecha_de_recepcion_de: "2026-09-20T15:00:00.000", tipo_de_contrato: "Obra" };
+    const gSE = Gp.guiaDe({ fila: filaSE, perfil: "helder", ctx: { ahoraMs: Date.parse("2026-09-03T15:00:00Z"), documentos: { indice: { archivos: [], plan: [] }, ilegibles: {}, leidos: { a: doc(def, "pliego") } } } });
+    assert.ok(gSE.tope_oferta && gSE.tope_oferta.valor === 1581425810 && gSE.tope_oferta.fuente === "pliego", `la guía entrega el techo del pliego: ${JSON.stringify(gSE.tope_oferta)}`);
+    // G.5 nombra contra qué compara, y un valor desconocido de la fuente es inerte
+    const V5 = require("../lib/apu/validaciones.js");
+    const g5 = V5.validarPresupuesto({ items: [], resumen: { precio_final: 1700000000 }, configuracion: { cuantia_fuente: "pliego" }, cuantia_cop: 1581425810 }).hallazgos.find((h) => h.codigo === "excede_la_cuantia" || h.id === "excede_la_cuantia" || /supera el presupuesto/.test(h.titulo || ""));
+    assert.ok(g5 && /por encima del presupuesto del pliego definitivo \(\$/.test(JSON.stringify(g5)), JSON.stringify(g5));
+    const g5b = V5.validarPresupuesto({ items: [], resumen: { precio_final: 1700000000 }, configuracion: { cuantia_fuente: "otra" }, cuantia_cop: 1581425810 }).hallazgos.find((h) => /supera el presupuesto/.test(h.titulo || ""));
+    assert.ok(g5b && /cuantía del proceso/.test(JSON.stringify(g5b)) && !/pliego definitivo/.test(JSON.stringify(g5b)), JSON.stringify(g5b));
     // un documento que no es pliego no se lee para esto
     assert.strictEqual(Dp.hechosDeTexto(def, { tipo: "estudio_previo" }).presupuesto_pliego, null);
   }
@@ -8533,6 +8577,57 @@ async function main() {
     // el título y la negación en UNA línea: «anticipado:» también niega, y el «N/A» solo con dos puntos (17-oct-2026)
     assert.strictEqual(ant("\f87\nconstituyen su propuesta económica autónoma.\n8.3. ANTICIPO Y/O PAGO ANTICIPADO: No aplica\nCAPITULO IX LISTA DE ANEXOS\n").estado, "no", "«…PAGO ANTICIPADO: No aplica» en una línea niega");
     assert.strictEqual(ant("\f87\n8.3. ANTICIPO Y/O PAGO ANTICIPADO: N/A\n").estado, "no", "«…PAGO ANTICIPADO: N/A» en una línea niega");
+    /* ronda 5 de detekta-lector (17-oct-2026, texto de pdf.js): el corchete de la plantilla sin borrar (Garagoa,
+       CO1.REQ.11091702) y la frase modelo que REMITE al numeral 8.3 (Paicol, CO1.REQ.11151463) decían «hay anticipo» */
+    const garagoa = ant("\f59\n8.3.ANTICIPO Y/O PAGO ANTICIPADO\nEn el presente proceso de contratación la entidad no entregará al contratista [anticipo y/o pago\nanticipado]\nCAPITULO IX LISTA DE ANEXOS, FORMATOS, MATRICES Y FORMULARIOS\n");
+    assert.deepStrictEqual([garagoa.estado, garagoa.pagina], ["no", 59], `«no entregará al contratista [anticipo…» niega (MUTACIÓN: sin el corchete, «sí»): ${JSON.stringify(garagoa)}`);
+    const modeloPaicol = "\f17\nProponente haya demostrado lo contrario, y procederá a rechazar la oferta.\nNo se configura este supuesto cuando la Entidad establece en el numeral 8.3 que no va a entregar anticipo\ny/o pago anticipado y el Proponente no renuncia a ellos. Tampoco cuando a pesar de que las personas\n";
+    assert.strictEqual(ant(modeloPaicol).estado, "sin_dato", "la frase modelo que remite al numeral 8.3 ni afirma ni niega (MUTACIÓN: sin la exclusión, «sí»)");
+    assert.strictEqual(ant("\f17\nNo se configura este supuesto cuando la Entidad establece en el numeral 8.3 que no va a entregar\nanticipo y/o pago anticipado y el Proponente no renuncia a ellos.\n").estado, "sin_dato", "la frase modelo partida antes de «anticipo» tampoco decide");
+    assert.strictEqual(ant("\f17\nNo se configura este supuesto cuando la Entidad establece en el numeral 8.3 que no va a\nentregar anticipo y/o pago anticipado y el Proponente no\nrenuncia a ellos.\n").estado, "sin_dato", "la frase modelo partida en tres líneas no afirma (MUTACIÓN: sin `excluyeUnida`, «sí»)");
+    assert.strictEqual(ant(modeloPaicol + "\f61\n8.3. ANTICIPO\nLa entidad entregará al contratista un anticipo del treinta por ciento (30 %) del valor del contrato.\n").estado, "si", "la frase modelo no tapa un anticipo pactado en su numeral");
+    assert.strictEqual(ant(modeloPaicol + "\f61\n8.3. ANTICIPO Y/O PAGO ANTICIPADO\nEn el presente proceso de contratación la entidad no entregará al contratista anticipo y/o pago\nanticipado.\n").estado, "no", "la frase modelo no tapa la cláusula que niega");
+    /* la negación de una PARTE NUMERADA no niega el anticipo (Gobernación del Amazonas, CO1.REQ.11022945, ronda 6 de
+       detekta-lector, 17-oct-2026, texto real de pdf.js): «no reconocerá anticipo alguno para la ejecución del componente 1»
+       ganaba al 30 % del componente dos, y la cita del «sí» era la fila de la tabla de garantías */
+    const amazonas = "\f78\nBuen manejo y correcta\tHasta la\ninversión del anticipo\tliquidación del\t100%\ncontrato o hasta la\namortización del\nanticipo\n\f82\n8.2.ANTICIPO Y/O PAGO ANTICIPADO\nLa Entidad no reconocerá anticipo alguno para la ejecución del componente 1 ELABORACION DE\nESTUDIOS Y DISEÑOS.\nEl valor total del componente se cancelará mediante actas parciales contra la entrega efectiva de\n\f84\nETAPA 2\nLa GOBERNACIÓN DE AMAZONAS, cancelará el valor que resulte ofertado por la etapa 2. Dicho\nvalor se cancelará al contratista así: Dará en calidad de anticipo un 30% del valor del componente\ndos una vez legalizado el mismo y, 1.) Pagos parciales de obras en cuantía hasta el noventa por\n";
+    const aAm = ant(amazonas);
+    assert.deepStrictEqual([aAm.estado, aAm.pagina], ["si", 84], `la negación del componente 1 no tapa el anticipo del componente 2, y se cita la cláusula (MUTACIÓN: sin \`niegaAnticipo\`, «no»; sin excluir la fila de garantías, pág. 78): ${JSON.stringify(aAm)}`);
+    const soloParcial = ant("\f82\nLa Entidad no reconocerá anticipo alguno para la ejecución del componente 1 ELABORACION DE\nESTUDIOS Y DISEÑOS.\n");
+    assert.strictEqual(soloParcial.estado, "mencion", `la negación de una parte, sola, es «confírmelo», ni «sí» ni «no» (MUTACIÓN: sin el tope de peso, «sí»; con la regex en lib/documentos_proceso, «no»): ${JSON.stringify(soloParcial)}`);
+    // la frase partida por pdf.js en cualquier punto: la parte en la línea de abajo, o la negación en la de arriba
+    for (const partida of ["\f82\nLa Entidad no reconocerá anticipo alguno para la ejecución del\ncomponente 1 ELABORACION DE ESTUDIOS Y DISEÑOS.\n", "\f82\nLa Entidad no reconocerá anticipo alguno para la\nejecución del componente 1 ELABORACION DE ESTUDIOS Y DISEÑOS.\n", "\f82\nPara este proceso la Entidad no reconocerá\nanticipo alguno para la ejecución del componente 1 ELABORACION DE\n"]) {
+      assert.strictEqual(ant(partida).estado, "mencion", `la negación parcial partida en dos líneas tampoco niega ni afirma (MUTACIÓN: sin mirar la línea vecina, «no» o «sí»): ${JSON.stringify(partida)}`);
+    }
+    // solo la parte NUMERADA es parcial: «la etapa de ejecución», «el lote único», «las actividades del contrato» son el contrato entero
+    for (const total of ["no se entregará anticipo para la ejecución de las actividades del contrato.", "no se entregará anticipo para las fases de ejecución de la obra.", "No habrá anticipo para el lote único de este proceso.", "no se entregará anticipo para los ítems del presupuesto oficial.", "no se entregará anticipo para la etapa de ejecución del contrato.", "En el presente proceso no se entregará anticipo para la ejecución del contrato de obra."]) {
+      assert.strictEqual(ant(`\f9\n${total}\n`).estado, "no", `«${total}» niega (MUTACIÓN: con la parte sin número, «mención»)`);
+    }
+    assert.strictEqual(ant("\f9\nNo se entregará anticipo para el lote 1, y en el presente proceso la entidad no entregará anticipo al contratista.\n").estado, "no", "una negación parcial y otra total en la misma línea: niega");
+    // la parte numerada de OTRA frase o una enumeración no vuelven parcial la negación total (segunda revisión adversaria, 17-oct-2026)
+    const amort = "\f70\nEl valor del anticipo, cuando lo hubiere, será amortizado en cada una de las actas parciales de obra.\n";
+    for (const total of ["En el presente proceso no se entregará anticipo, ni para la etapa 1 ni para la etapa 2 del contrato.", "La entidad no otorgará anticipo, por lo que el contratista usará recursos propios para la etapa 1.", "La entidad no entregará anticipo al contratista para la ejecución de la etapa 1 y la etapa 2.", "No se entregará anticipo para el lote 1 de 1.", "No se entregará anticipo para la etapa 2026.", "No se entregará anticipo para los lotes 1, 2 y 3."]) {
+      assert.strictEqual(ant(`\f60\n${total}\n${amort}`).estado, "no", `«${total}» niega, aunque el pliego nombre el anticipo en otra página (MUTACIÓN: con la ventana de 60 caracteres, «sí»)`);
+    }
+    for (const [linea, abajo] of [["Anticipo y/o pago anticipado: No aplica", "Plazo de ejecución para la etapa 1: dos (2) meses."], ["La obra se ejecutará sin anticipo", "Para la etapa 1 se pagará contra actas parciales."]]) {
+      assert.strictEqual(ant(`\f5\n${linea}\n${abajo}\n${amort}`).estado, "no", `la línea de abajo no vuelve parcial una frase que ya cerró: «${linea}» / «${abajo}» (MUTACIÓN: pegando siempre la siguiente, «sí»)`);
+    }
+    assert.strictEqual(ant("\f40\nInversión del anticipo: la entidad entregará un anticipo del treinta por ciento (30 %) del valor del contrato.\n").estado, "si", "la exclusión de la fila de garantías no tapa una frase que pacta el anticipo (MUTACIÓN: sin la guarda de verbos, «sin dato»)");
+    assert.strictEqual(ant(amazonas + "\f90\nEn el presente proceso de contratación la entidad no entregará al contratista anticipo y/o pago anticipado en ninguna etapa.\n").estado, "no", "una negación total en otra página sigue negando");
+    const NgP = require("../lib/negocio.js");
+    assert.deepStrictEqual([NgP.anticipoPct({}, "La Entidad no reconocerá anticipo alguno para la ejecución del componente 1; entregará un anticipo del 30% del componente dos."), NgP.anticipoDeclarado({}, "La Entidad no reconocerá anticipo alguno para la ejecución del componente 1; entregará un anticipo del 30% del componente dos.")], [0, false], "lib/negocio: con una negación parcial el anticipo queda SIN DATO: ni «sin anticipo» ni un porcentaje");
+    assert.strictEqual(NgP.anticipoDeclarado({}, "La Entidad no reconocerá anticipo alguno para la etapa 1 de estudios y diseños."), false, "lib/negocio: la negación parcial sola no declara «sin anticipo» (MUTACIÓN: con la regex sola, true)");
+    assert.strictEqual(NgP.anticipoDeclarado({}, "No se entregará anticipo para la etapa de ejecución del contrato."), true, "lib/negocio: la etapa sin número es el contrato entero: niega");
+    for (const frase of ["No se entregará anticipo para el componente uno, con pagos parciales del 90% y acta final del 10%.", "Sin anticipo para la etapa segunda: el contratista financia el 100% de la ejecución.", "No se entregará anticipo para la etapa 1. Garantía de buen manejo del anticipo: 100% del valor."]) {
+      assert.strictEqual(NgP.anticipoPct({}, frase), 0, `lib/negocio: con una negación parcial no se lee ningún porcentaje (MUTACIÓN: sin \`hayNegacionParcial\`, 90 o 100): «${frase}»`);
+      assert.strictEqual(NgP.anticipoDeclarado({}, frase), false, `lib/negocio: ni lo declara: «${frase}»`);
+    }
+    // las variantes de la frase modelo y el condicional con «va a» no niegan un anticipo pactado (revisión adversaria, 17-oct-2026)
+    const pactado = "\f61\n8.3. ANTICIPO\nLa entidad entregará al contratista un anticipo del treinta por ciento (30 %) del valor del contrato.\n";
+    for (const v of ["No se configura este supuesto cuando la Entidad establece en el numeral 8.3 del Documento Base que no va a entregar anticipo\ny/o pago anticipado y el Proponente no renuncia a ellos.", "No se configura este supuesto cuando la Entidad establece en la sección 8. 3, que no va a entregar anticipo y/o pago anticipado.", "No se configura este supuesto cuando la Entidad establece en el numeral 8.3 del Pliego\nque no va a entregar anticipo y/o pago anticipado y el Proponente\nno renuncia a ellos.", "Si la Entidad no va a entregar anticipo, el valor del anticipo en la fórmula del capital de trabajo será cero.", "La Entidad no reconocerá pagos distintos a los siguientes (anticipo y actas parciales de obra)."]) {
+      assert.strictEqual(ant(`\f17\n${v}\n${pactado}`).estado, "si", `no tapa el anticipo pactado (MUTACIÓN: con «va a» o «(» en la negación, «no»): «${v}»`);
+      assert.strictEqual(require("../lib/negocio.js").anticipoPct({}, `${v} El anticipo será del 30 % del valor del contrato.`), 30, `lib/negocio no pone el anticipo en 0: «${v}»`);
+    }
     assert.strictEqual(ant("\f74\nBuen manejo del anticipo\tN/A\tN/A\n\f78\nLa entidad entregará al contratista un anticipo del 30 %.\n").estado, "si", "una celda «N/A» de la tabla de garantías (sin dos puntos) no niega el anticipo pactado");
     // …pero «pago anticipado» SUELTO no niega el anticipo: son figuras distintas (revisión adversaria, 17-oct-2026)
     assert.strictEqual(ant("\f20\nVALOR DEL ANTICIPO: Treinta por ciento (30 %) del valor del contrato, previa aprobación del plan.\nPAGO ANTICIPADO: No aplica para el presente proceso de contratación.\n").estado, "si", "«PAGO ANTICIPADO: No aplica» junto a un anticipo del 30 % no niega el anticipo");
@@ -8547,7 +8642,7 @@ async function main() {
     assert.strictEqual(ant("\f3\nNo se pagará el ajuste.\nEl anticipo será del treinta por ciento del valor del contrato y se girará a la fiducia.\n").estado, "si", "«No se pagará el ajuste.» no niega el anticipo de la línea siguiente (MUTACIÓN: sin la guarda del punto)");
     // la gemela de lib/negocio reconoce las tres formas nuevas
     const Ng = require("../lib/negocio.js");
-    for (const t of ["La Entidad considera que no es procedente establecer un anticipo", "no considera prudente gestionar anticipo, toda vez", "ANTICIPO (19 | SÍ NO_X_ Porcentaje", "8.3. ANTICIPO Y/O PAGO ANTICIPADO: No aplica"]) assert.strictEqual(Ng.anticipoDeclarado({}, t), true, `lib/negocio lee la negación como la de los documentos: «${t}»`);
+    for (const t of ["La Entidad considera que no es procedente establecer un anticipo", "no considera prudente gestionar anticipo, toda vez", "ANTICIPO (19 | SÍ NO_X_ Porcentaje", "8.3. ANTICIPO Y/O PAGO ANTICIPADO: No aplica", "la entidad no entregará al contratista [anticipo]"]) assert.strictEqual(Ng.anticipoDeclarado({}, t), true, `lib/negocio lee la negación como la de los documentos: «${t}»`);
     // (5) el anticipo entre documentos: una mención no tapa al que decide, y dos que se contradicen se dicen
     const doc = (tipo, a) => ({ nombre: `${tipo}.pdf`, tipo, hechos: { ...Dp.hechosDeTexto("", { tipo }), anticipo: a } });
     const antDe = (leidos) => Dp.loQueDicen({ indice: { archivos: [], plan: [] }, leidos, ilegibles: {} }).hechos.find((x) => x.clave === "anticipo");
@@ -16727,8 +16822,12 @@ async function main() {
        full que termina bien tiene que borrarlo (M-INF-04) — se comprueba tras b. */
     await redis.set(CLAVES.meta, JSON.stringify({ ultimo_error: { ts: "2026-09-05T08:31:00.000Z", modo: "auto", texto: "fallo anterior de prueba" } }));
 
-    /* b. carga completa con presupuesto corto (reanudable) + fallos inyectados */
-    let r = await invocar(sync, "/api/sync?modo=full&presupuesto=150&chain=0");
+    /* b. carga completa con presupuesto corto (reanudable) + fallos inyectados.
+       ENERO (17-oct-2026): con un solo mes el año trae 3 páginas, y en una máquina rápida cabían
+       enteras en 150 ms: la prueba dependía del calendario y del reloj del corredor. La PRIMERA
+       invocación va con presupuesto mínimo, que se rinde tras la primera página guardada, y así el
+       corte es seguro con cualquier número de meses; las continuaciones siguen con 150. */
+    let r = await invocar(sync, "/api/sync?modo=full&presupuesto=1&chain=0");
     assert.strictEqual(r.status, 200);
     assert.strictEqual(r.cuerpo.ok, true, `sync full falló: ${JSON.stringify(r.cuerpo)}`);
     let invocaciones = 1;
@@ -17237,6 +17336,175 @@ async function main() {
         const aMano = await invocar(historico, "/api/sync/historico?reconstruir_indice=true&chain=0", TOKEN);
         assert.ok(aMano.cuerpo.indice && !aMano.cuerpo.indice.yaEstaba,
           `una reconstrucción pedida a mano se hace, memoria o no: ${JSON.stringify(aMano.cuerpo.indice).slice(0, 160)}`);
+      }
+
+      /* OTRO RANGO NO REEMPLAZA LO GUARDADO SI NADIE LO PIDE (17-oct-2026). En producción, una
+         llamada sin fechas (el rango por omisión) volvió a bajar desde el primer mes una extracción
+         completa de otro rango, y nadie sabe quién la hizo. Se EJECUTA el handler real con el cursor
+         terminado del paso anterior y con uno a medias: pedir otro rango sin `reiniciar` responde 409,
+         no toca el cursor ni el corpus, no pide nada a SECOP y no se vuelve a llamar sola; el estado
+         dice el rango exacto; y reconstruir índices sin fechas no es una extracción y no se frena. */
+      {
+        const otroRango = `desde=${ANOS_HIST[0]}-01&hasta=${ANOS_HIST[0]}-06`;
+        const crudoAntes = await redis.get(CLAVES.progresoHistorico);
+        const metaAntes = await redis.get(CLAVES.metaHistorico);
+        const cursorAntes = JSON.parse(crudoAntes);
+        assert.ok(cursorAntes && cursorAntes.terminado === true && cursorAntes.desde && cursorAntes.hasta,
+          `la prueba necesita la extracción terminada del paso anterior: ${String(crudoAntes).slice(0, 160)}`);
+        const chunksAntes = (await redis.scan(CLAVES.patronChunksHist)).length;
+        const fetchReal = global.fetch, reLlamadas = [];
+        global.fetch = (u, ...resto) => {
+          if (String(u).includes("op=historico")) { reLlamadas.push(String(u)); return Promise.resolve(new Response("{}")); }
+          return fetchReal(u, ...resto);
+        };
+        try {
+          const peticionesAntes = socrata.peticiones();
+          // sin chain=0 a propósito: un 409 tampoco puede volver a llamarse solo
+          const t = await invocar(historico, `/api/sync/historico?${otroRango}`, TOKEN);
+          assert.strictEqual(t.status, 409, `otro rango sobre una extracción terminada no puede empezar otra: ${JSON.stringify(t.cuerpo).slice(0, 240)}`);
+          assert.strictEqual(await redis.get(CLAVES.progresoHistorico), crudoAntes, "el cursor guardado no se toca");
+          assert.strictEqual(await redis.get(CLAVES.metaHistorico), metaAntes, "la última extracción completa no se toca");
+          assert.strictEqual((await redis.scan(CLAVES.patronChunksHist)).length, chunksAntes, "el corpus histórico no se toca");
+          assert.strictEqual(socrata.peticiones(), peticionesAntes, "un 409 no le pide nada a SECOP");
+          assert.deepStrictEqual(reLlamadas, [], "un 409 no se vuelve a llamar solo");
+          assert.deepStrictEqual([t.cuerpo.guardada.desde, t.cuerpo.guardada.hasta, t.cuerpo.guardada.terminada], [cursorAntes.desde, cursorAntes.hasta, true],
+            `el 409 dice qué hay guardado: ${JSON.stringify(t.cuerpo.guardada)}`);
+          assert.strictEqual(t.cuerpo.como_reemplazar, `?${otroRango}&reiniciar=1`, "el 409 dice cómo reemplazarla a propósito");
+          assert.ok(!("como_continuar" in t.cuerpo), "una extracción terminada no tiene nada que continuar");
+          assert.ok(t.cuerpo.que_hacer.includes(`?${otroRango}&reiniciar=1`), `el qué hacer nombra la URL exacta: ${t.cuerpo.que_hacer}`);
+
+          // solo cambia `desde`: también es otro rango (la cerradura compara los dos extremos)
+          const soloDesde = await invocar(historico, `/api/sync/historico?desde=${ANOS_HIST[0]}-02&hasta=${cursorAntes.hasta}&chain=0`, TOKEN);
+          assert.strictEqual(soloDesde.status, 409, `otro «desde» con el mismo «hasta» tampoco empieza otra: ${JSON.stringify(soloDesde.cuerpo).slice(0, 200)}`);
+          assert.strictEqual(await redis.get(CLAVES.progresoHistorico), crudoAntes, "el cursor guardado sigue sin tocarse");
+
+          // un avance guardado que no se puede leer es «no sé»: tampoco se empieza otra encima
+          const ilegible = '{"tipo":"historico","terminado":fal';
+          await redis.set(CLAVES.progresoHistorico, ilegible);
+          const il = await invocar(historico, `/api/sync/historico?${rango}&chain=0`, TOKEN);
+          assert.strictEqual(il.status, 409, `con el avance ilegible no se empieza otra sin reiniciar: ${JSON.stringify(il.cuerpo).slice(0, 200)}`);
+          assert.strictEqual(await redis.get(CLAVES.progresoHistorico), ilegible, "el avance ilegible no se pisa");
+          assert.strictEqual(socrata.peticiones(), peticionesAntes, "con el avance ilegible no se pide nada a SECOP");
+          const eIl = await invocar(historico, "/api/sync/historico?estado=true", TOKEN);
+          assert.strictEqual(eIl.cuerpo.estado.extraccion && eIl.cuerpo.estado.extraccion.ilegible, true,
+            `el estado dice «ilegible», no «no hay ninguna»: ${JSON.stringify(eIl.cuerpo.estado.extraccion)}`);
+          assert.ok(!eIl.cuerpo.estado.siguiente_paso.includes("No hay ninguna"), `el estado no confunde ilegible con ausente: ${eIl.cuerpo.estado.siguiente_paso}`);
+          await redis.set(CLAVES.progresoHistorico, crudoAntes);
+
+          // terminada la bajada pero con los índices a medias: el estado manda a terminarlos con el mismo rango, no a reiniciar
+          const hechosAntes = await redis.get(CLAVES.derivadosHechos);
+          try {
+            await redis.set(CLAVES.derivadosHechos, JSON.stringify({}));
+            const eD = await invocar(historico, "/api/sync/historico?estado=true", TOKEN);
+            assert.ok(eD.cuerpo.estado.siguiente_paso.includes(`?desde=${cursorAntes.desde}&hasta=${cursorAntes.hasta})`) && !eD.cuerpo.estado.siguiente_paso.includes("reiniciar"),
+              `con los índices a medias el estado manda a terminarlos con el mismo rango: ${eD.cuerpo.estado.siguiente_paso}`);
+          } finally {
+            if (hechosAntes == null) await redis.del(CLAVES.derivadosHechos); else await redis.set(CLAVES.derivadosHechos, hechosAntes);
+          }
+
+          // a medias y con otro rango; la llamada va SIN fechas, como la del 17-oct
+          const aMedias = { ...cursorAntes, hasta: `${ANOS_HIST[1]}-06`, meses: (cursorAntes.meses || []).slice(0, 18), mesIdx: 3, terminado: false };
+          await redis.set(CLAVES.progresoHistorico, JSON.stringify(aMedias));
+          const m = await invocar(historico, "/api/sync/historico", TOKEN);
+          assert.strictEqual(m.status, 409, `sin fechas (rango por omisión) sobre una extracción a medias de otro rango: ${JSON.stringify(m.cuerpo).slice(0, 240)}`);
+          assert.strictEqual(await redis.get(CLAVES.progresoHistorico), JSON.stringify(aMedias), "el cursor a medias no se toca");
+          assert.strictEqual(m.cuerpo.como_continuar, `?desde=${aMedias.desde}&hasta=${aMedias.hasta}`, "el 409 dice cómo continuarla");
+          assert.strictEqual(m.cuerpo.guardada.avance, "3/18 meses", `el 409 dice cuánto lleva: ${JSON.stringify(m.cuerpo.guardada)}`);
+          assert.deepStrictEqual(reLlamadas, [], "tampoco se vuelve a llamar sola");
+
+          const e = await invocar(historico, "/api/sync/historico?estado=true", TOKEN);
+          assert.deepStrictEqual([e.cuerpo.estado.extraccion.desde, e.cuerpo.estado.extraccion.hasta], [aMedias.desde, aMedias.hasta],
+            "el estado da el rango por separado: el botón de GitHub continúa con él");
+          assert.ok(e.cuerpo.estado.siguiente_paso.includes(`?desde=${aMedias.desde}&hasta=${aMedias.hasta}`),
+            `el estado manda a continuar con el rango exacto, no con una URL sin fechas: ${e.cuerpo.estado.siguiente_paso}`);
+
+          const rv = await invocar(historico, "/api/sync/historico?reconstruir_vocabulario=true&chain=0", TOKEN);
+          assert.strictEqual(rv.status, 200, `reconstruir sin fechas no es una extracción y no se frena: ${JSON.stringify(rv.cuerpo).slice(0, 200)}`);
+          assert.strictEqual(rv.cuerpo.extraccion, null, "reconstruir no extrae nada");
+          assert.strictEqual(await redis.get(CLAVES.progresoHistorico), JSON.stringify(aMedias), "reconstruir no toca el cursor");
+        } finally {
+          global.fetch = fetchReal;
+          await redis.set(CLAVES.progresoHistorico, crudoAntes);
+        }
+        const eT = await invocar(historico, "/api/sync/historico?estado=true", TOKEN);
+        assert.ok(eT.cuerpo.estado.siguiente_paso.includes("está terminada") && eT.cuerpo.estado.siguiente_paso.includes("reiniciar=1"),
+          `con la extracción terminada, el estado no manda a «llamar sin parámetros»: ${eT.cuerpo.estado.siguiente_paso}`);
+      }
+
+      /* EL BOTÓN DE GITHUB CONTINÚA EL RANGO GUARDADO (17-oct-2026). Se EJECUTA con bash el paso
+         del histórico de .github/workflows/carga_completa.yml (como lo corre GitHub: `bash -e`),
+         con un `curl` simulado y el `jq` real: pedía 2024-01…2026-09 fijo y, con otro rango
+         guardado, la extracción empezaba desde el primer mes. Sin bash o sin jq esta prueba sale
+         en rojo: no se salta. */
+      {
+        const { spawnSync } = require("child_process");
+        const os = require("os");
+        const yml = fs.readFileSync(path.join(__dirname, "..", ".github", "workflows", "carga_completa.yml"), "utf8").split("\n");
+        const iJob = yml.findIndex((l) => /^ {2}historico:\s*$/.test(l));
+        const iRun = yml.findIndex((l, i) => i > iJob && /^\s+run: \|\s*$/.test(l));
+        assert.ok(iJob > 0 && iRun > iJob, "carga_completa.yml no tiene el paso «run» del trabajo historico");
+        const sangria = yml[iRun].match(/^\s*/)[0].length;
+        const cuerpo = [];
+        for (let i = iRun + 1; i < yml.length; i++) {
+          if (yml[i].trim() && yml[i].match(/^\s*/)[0].length <= sangria) break;
+          cuerpo.push(yml[i]);
+        }
+        const margen = Math.min(...cuerpo.filter((l) => l.trim()).map((l) => l.match(/^\s*/)[0].length));
+        const dir = fs.mkdtempSync(path.join(os.tmpdir(), "boton-historico-"));
+        try {
+          fs.writeFileSync(path.join(dir, "paso.sh"), cuerpo.map((l) => l.slice(margen)).join("\n"));
+          fs.writeFileSync(path.join(dir, "curl"), [
+            "#!/usr/bin/env bash",
+            'out=""; url=""',
+            'while [ $# -gt 0 ]; do case "$1" in -o) out="$2"; shift 2;; -w|-H|--max-time) shift 2;; -*) shift;; *) url="$1"; shift;; esac; done',
+            'echo "$url" >> "$LLAMADAS"',
+            'case "$url" in *estado=true*) printf "%s" "$CUERPO_ESTADO" > "$out"; printf "%s" "$CODIGO_ESTADO";; *) printf "%s" "$CUERPO_TRAMO" > "$out"; printf "%s" "$CODIGO_TRAMO";; esac',
+          ].join("\n"), { mode: 0o755 });
+          const correr = (caso) => {
+            const llamadas = path.join(dir, `llamadas-${Math.random().toString(36).slice(2)}.txt`);
+            const r = spawnSync("bash", ["-e", path.join(dir, "paso.sh")], {
+              cwd: dir, encoding: "utf8", timeout: 20000,
+              env: { ...process.env, PATH: `${dir}:${process.env.PATH}`, HISTORICO_TOKEN: "llave-de-prueba", LLAMADAS: llamadas, ...caso },
+            });
+            assert.ok(!r.error, `no se pudo ejecutar el paso (faltan bash o jq, o se quedó esperando más de 20 s, como un reintento con sleep): ${r.error && r.error.message}`);
+            return { codigo: r.status, salida: `${r.stdout}${r.stderr}`, urls: fs.existsSync(llamadas) ? fs.readFileSync(llamadas, "utf8").trim().split("\n") : [] };
+          };
+          const estadoCon = (extraccion) => JSON.stringify({ ok: true, estado: { extraccion } });
+
+          // un «desde» guardado distinto del de siempre: si el paso fijara el suyo, aquí se vería
+          const guardada = correr({ CODIGO_ESTADO: "200", CUERPO_ESTADO: estadoCon({ desde: "2023-07", hasta: "2025-12", terminada: false }), CODIGO_TRAMO: "200", CUERPO_TRAMO: '{"done":true}' });
+          assert.strictEqual(guardada.codigo, 0, `el paso termina en verde: ${guardada.salida.slice(-300)}`);
+          assert.ok(/estado=true/.test(guardada.urls[0]), `lo primero es leer el estado: ${guardada.urls.join(" | ")}`);
+          assert.ok(guardada.urls[1] && guardada.urls[1].includes("desde=2023-07&hasta=2025-12&chain=0"),
+            `el botón continúa el rango guardado, no uno fijo: ${guardada.urls.join(" | ")}`);
+
+          const llaveMala = correr({ CODIGO_ESTADO: "401", CUERPO_ESTADO: "{}", CODIGO_TRAMO: "200", CUERPO_TRAMO: '{"done":true}' });
+          assert.strictEqual(llaveMala.codigo, 1, "con la llave equivocada el paso falla");
+          assert.ok(llaveMala.salida.includes("HISTORICO_TOKEN") && llaveMala.urls.length === 1,
+            `con la llave equivocada dice que es la llave y no pide nada más: ${llaveMala.salida.slice(-300)}`);
+
+          const pagina = correr({ CODIGO_ESTADO: "200", CUERPO_ESTADO: "<!doctype html><html><body>Muro</body></html>", CODIGO_TRAMO: "200", CUERPO_TRAMO: '{"done":true}' });
+          assert.strictEqual(pagina.codigo, 1, "un estado que llega como página detiene el paso");
+          assert.ok(pagina.salida.includes("no llegó como datos") && pagina.urls.length === 1,
+            `un estado ilegible no se convierte en «no hay nada guardado»: ${pagina.salida.slice(-300)} · ${pagina.urls.join(" | ")}`);
+
+          const mesColombia = new Date(Date.now() - 5 * 3600e3).toISOString().slice(0, 7);
+          const vacio = correr({ CODIGO_ESTADO: "200", CUERPO_ESTADO: estadoCon(null), CODIGO_TRAMO: "200", CUERPO_TRAMO: '{"done":true}' });
+          assert.ok(vacio.urls[1] && vacio.urls[1].includes(`desde=2024-01&hasta=${mesColombia}&chain=0`),
+            `sin nada guardado empieza de 2024-01 al mes en curso de Colombia: ${vacio.urls.join(" | ")}`);
+
+          const sinEstado = correr({ CODIGO_ESTADO: "503", CUERPO_ESTADO: "{}", CODIGO_TRAMO: "200", CUERPO_TRAMO: '{"done":true}' });
+          assert.strictEqual(sinEstado.codigo, 1, "sin estado el paso falla");
+          assert.strictEqual(sinEstado.urls.length, 1, `sin estado no se pide ningún rango a ciegas: ${sinEstado.urls.join(" | ")}`);
+
+          const choque = correr({
+            CODIGO_ESTADO: "200", CUERPO_ESTADO: estadoCon({ desde: "2024-01", hasta: "2025-12" }), CODIGO_TRAMO: "409",
+            CUERPO_TRAMO: JSON.stringify({ ok: false, error: "Ya hay otra extracción guardada.", que_hacer: "Pida el mismo rango." }),
+          });
+          assert.strictEqual(choque.codigo, 1, "un 409 detiene el paso");
+          assert.strictEqual(choque.urls.length, 2, `un 409 no se reintenta: ${choque.urls.join(" | ")}`);
+          assert.ok(choque.salida.includes("Pida el mismo rango."), `un 409 dice qué hacer: ${choque.salida.slice(-300)}`);
+        } finally { fs.rmSync(dir, { recursive: true, force: true }); }
       }
 
       /* el histórico guardó todo el rango CON datos de adjudicación */
@@ -21077,7 +21345,7 @@ async function main() {
           const texto = "\f1\nPLIEGO\nExperiencia general: 2.500 SMMLV\nExperiencia específica: 1.000 SMMLV\nÍndice de liquidez mayor o igual a 1,5\nNivel de endeudamiento menor o igual a 60%\nCapital de trabajo: mayor o igual a $650.000.000\nPatrimonio: mayor o igual a $9.000.000.000\n\f2\nNo se entregará anticipo al contratista.";
           const h = D.hechosDeTexto(texto, { tipo: "pliego" });
           assert.ok(h.requisitos_numericos.experiencia_general && h.requisitos_numericos.experiencia_general.valor === 2500 && h.requisitos_numericos.experiencia_especifica && h.requisitos_numericos.experiencia_especifica.valor === 1000, "lib/diff separa la experiencia general de la específica");
-          assert.ok(h.version.startsWith("17|"), "los hechos guardados con las reglas viejas se rehacen: la versión del módulo subió");
+          assert.ok(h.version.startsWith("18|"), "los hechos guardados con las reglas viejas se rehacen: la versión del módulo subió");
           const docs = { indice: { archivos: [{ id_documento: "d1", nombre: "pliego.pdf", tipo: "pliego", de_la_entidad: true, legible: true }], plan: ["d1"], consultado_el: "2026-09-04" }, leidos: { d1: { nombre: "pliego.pdf", tipo: "pliego", tipo_legible: "Pliego", hechos: h, paginas: 2 } }, ilegibles: {} };
           const con = G.guiaDe({ fila: base, perfil: "helder", ctx: { ahoraMs: ahoraG, documentos: docs } });
           const ex = Object.fromEntries(con.exigencias.map((x) => [x.clave, x]));
@@ -24833,8 +25101,16 @@ async function main() {
         const esMuro = (l) => /muro de contención/i.test(l.nombre_del_procedimiento || "");
         assert.ok((await todasLasOportunidades("perfil=genesis")).some((l) => esMuro(l) && l.rup.tier === "clase"),
           "Génesis tiene 72141200 y debía ver por CLASE los muros de contención del corpus");
-        assert.ok(!op.cuerpo.resultados.some((l) => esMuro(l)),
-          "72141200 NO está en el RUP subido (72141000, 72141100, 72154100, 81101500) y no debía servirse");
+        /* ENERO (17-oct-2026): esta negación miraba solo la primera página y pasaba porque los muros
+           quedaban más abajo; en enero el año trae menos filas, suben a ella y la prueba caía. Medido con
+           el reloj real: en TODAS las páginas el perfil subido ve 80 muros, todos por el objeto («muro,
+           gaviones, contención» → familia 7214, que sí tiene) y ninguno por código. Lo que la prueba
+           cierra es lo segundo: 72141200 no casa con este RUP. Se barren todas las páginas y se exige
+           que ningún muro llegue por código; la ruta del texto (que no esconde obras) no es el defecto. */
+        const murosSubido = (await todasLasOportunidades(`perfil=${id}`)).filter(esMuro);
+        assert.ok(!murosSubido.some((l) => l.rup.tier !== "texto"),
+          "72141200 NO está en el RUP subido (72141000, 72141100, 72154100, 81101500) y no debía casar por código: " +
+          JSON.stringify(murosSubido.filter((l) => l.rup.tier !== "texto").map((l) => [l.id_del_proceso, l.rup.tier]).slice(0, 3)));
         for (const l of op.cuerpo.resultados) {
           assert.strictEqual(l.rup.k_cop, null, "sin token, la K del perfil dinámico también viaja redactada");
         }
@@ -27947,6 +28223,56 @@ async function main() {
                 await invocarPost(apu, "/api/apu/ia", { perfil: "helder", id: idIa, solicitar: true }, CAB_TOKEN);
                 assert.strictEqual(await redis.get(CL_I.apuIaDisparo("helder", idIa)), "1", "el disparo que arrancó conserva el candado");
                 await redis.del(CL_I.apuIaDisparo("helder", idIa), CL_I.apuIaSolicitud("helder", idIa));
+              }
+              /* ═══ EL TOPE DE DESPERTARES SIN SEÑAL (17-oct-2026) ═══
+                 Pasados los 15 min de «repetida», cada «Buscar» despertaba otra corrida del día aunque
+                 las anteriores no hubieran dado ninguna señal, y la solicitud nueva pisaba la cuenta:
+                 con la rutina dañada, «Vuelva a pulsar Buscar» gastaba intentos sin arreglar nada.
+                 Contra el árbol anterior: la tercera solicitud muda se volvía a disparar. */
+              {
+                const { escribirJSONComprimido: escribirT, CLAVES: CL_T } = require("../lib/almacen.js");
+                const claveT = CL_T.apuIaSolicitud("helder", idIa);
+                const muda = (n, minutos, extra = {}) => { const el = new Date(Date.now() - minutos * 60000).toISOString(); return { id: idIa, perfil: "helder", nombre: "IA prueba", estado: "en_cola", solicitado_el: el, respondida_el: null, progreso: null, despertada: { ok: true, el, status: 200, sesion_url: null }, ...(n == null ? {} : { despertadas_sin_senal: n }), ...extra }; };
+                respuestaRutina = () => ({ ok: true, status: 200, json: async () => ({ claude_code_session_id: "session_T", claude_code_session_url: "https://claude.ai/code/session_T" }) });
+                assert.ok(Number.isInteger(IA.RUTINA_TOPE_SIN_SENAL) && IA.RUTINA_TOPE_SIN_SENAL >= 2, `el tope existe y deja al menos un reintento: ${IA.RUTINA_TOPE_SIN_SENAL}`);
+                const tope = IA.RUTINA_TOPE_SIN_SENAL;
+                // (1) despertada `tope` veces sin señal y muda hace 40 min: «Buscar» NO despierta otra, lo dice, y deja la solicitud como estaba
+                await escribirT(redis, claveT, muda(tope, 40)); await soltarCandado();
+                const gT = await invocar(apu, `/api/apu/ia?id=${idIa}&perfil=helder`, CAB_TOKEN, { metodo: "GET" });
+                assert.ok(gT.cuerpo.estado === "sin_atender" && gT.cuerpo.tope_sin_senal === tope && gT.cuerpo.solicitud.despertadas_sin_senal === tope, `la pantalla recibe el tope y la cuenta: ${JSON.stringify({ e: gT.cuerpo.estado, t: gT.cuerpo.tope_sin_senal })}`);
+                const antesT = llamadas.length;
+                const sTope = await invocarPost(apu, "/api/apu/ia", { perfil: "helder", id: idIa, solicitar: true }, CAB_TOKEN);
+                assert.ok(sTope.status === 200 && sTope.cuerpo.tope_alcanzado === true && llamadas.length === antesT, `con ${tope} despertares sin señal no se gasta otro: ${llamadas.length - antesT} disparos, ${JSON.stringify(sTope.cuerpo).slice(0, 160)}`);
+                assert.ok(new RegExp(`${tope} veces`).test(sTope.cuerpo.nota) && /chat/.test(sTope.cuerpo.nota) && /no la arregla/.test(sTope.cuerpo.nota), `y lo dice con qué hacer: ${sTope.cuerpo.nota}`);
+                assert.strictEqual(await redis.get(CL_T.apuIaDisparo("helder", idIa)), null, "el tope no toma el candado del disparo");
+                // (2) una menos que el tope: se despierta, y la cuenta SUBE en vez de volver a 1
+                await escribirT(redis, claveT, muda(tope - 1, 40)); await soltarCandado();
+                const sUna = await invocarPost(apu, "/api/apu/ia", { perfil: "helder", id: idIa, solicitar: true }, CAB_TOKEN);
+                assert.ok(sUna.cuerpo.tope_alcanzado !== true && llamadas.length === antesT + 1 && sUna.cuerpo.solicitud.despertadas_sin_senal === tope, `la última permitida se dispara y deja la cuenta en ${tope}: ${sUna.cuerpo.solicitud.despertadas_sin_senal}`);
+                // (3) una solicitud de antes de este cambio (sin el campo) y despertada cuenta UNA, no cero
+                await escribirT(redis, claveT, muda(null, 40)); await soltarCandado();
+                const sVieja = await invocarPost(apu, "/api/apu/ia", { perfil: "helder", id: idIa, solicitar: true }, CAB_TOKEN);
+                assert.strictEqual(sVieja.cuerpo.solicitud.despertadas_sin_senal, 2, "la despertada vieja cuenta 1 y esta suma la segunda");
+                // (4) una sesión que dio señal (aunque luego enmudeciera) pone la cuenta en cero: la rutina funciona
+                await escribirT(redis, claveT, muda(tope, 180, { estado: "buscando", progreso: { hecho: 1, total: 3, pct: 33, mensaje: null, actualizado_el: new Date(Date.now() - 180 * 60000).toISOString() } })); await soltarCandado();
+                const sSenal = await invocarPost(apu, "/api/apu/ia", { perfil: "helder", id: idIa, solicitar: true }, CAB_TOKEN);
+                assert.ok(sSenal.cuerpo.tope_alcanzado !== true && sSenal.cuerpo.solicitud.despertadas_sin_senal === 1, `con señal la cuenta empieza de nuevo: ${sSenal.cuerpo.solicitud.despertadas_sin_senal}`);
+                // (5) pasada la ventana desde la última solicitud se puede volver a intentar
+                await escribirT(redis, claveT, muda(tope, IA.RUTINA_TOPE_VENTANA_H * 60 + 30)); await soltarCandado();
+                const sDia = await invocarPost(apu, "/api/apu/ia", { perfil: "helder", id: idIa, solicitar: true }, CAB_TOKEN);
+                assert.ok(sDia.cuerpo.tope_alcanzado !== true && sDia.cuerpo.solicitud.despertadas_sin_senal === 1, `pasadas ${IA.RUTINA_TOPE_VENTANA_H} h se intenta otra vez: ${sDia.cuerpo.solicitud.despertadas_sin_senal}`);
+                // (6) un disparo que no arrancó no gastó: no suma, y la cuenta que traía se conserva
+                respuestaRutina = () => ({ ok: false, status: 500, json: async () => ({}) });
+                await escribirT(redis, claveT, muda(tope - 1, 40)); await soltarCandado();
+                const sFallo = await invocarPost(apu, "/api/apu/ia", { perfil: "helder", id: idIa, solicitar: true }, CAB_TOKEN);
+                assert.ok(sFallo.cuerpo.despertada.ok === false && sFallo.cuerpo.solicitud.despertadas_sin_senal === tope - 1, `el disparo fallido no cuenta como intento gastado: ${sFallo.cuerpo.solicitud.despertadas_sin_senal}`);
+                // (7) sin rutina configurada no hay tope: no hay nada que gastar
+                delete process.env.RUTINA_PRECIOS_TOKEN;
+                await escribirT(redis, claveT, muda(tope, 40)); await soltarCandado();
+                const sSin = await invocarPost(apu, "/api/apu/ia", { perfil: "helder", id: idIa, solicitar: true }, CAB_TOKEN);
+                assert.ok(sSin.cuerpo.tope_alcanzado !== true && sSin.cuerpo.despertada === null, "sin rutina la solicitud se registra como siempre");
+                process.env.RUTINA_PRECIOS_TOKEN = "sk-ant-oat01-PRUEBA-secreta";
+                await redis.del(CL_T.apuIaDisparo("helder", idIa), claveT);
               }
               // (j) el ENCARGO para un chat: el prompt del dueño con el contexto, los ítems sin los títulos, el esquema, y solo JSON
               const enc = await invocar(apu, `/api/apu/ia?encargo=1&id=${idIa}&perfil=helder`, CAB_TOKEN, { metodo: "GET" });
@@ -44375,6 +44701,38 @@ async function main() {
           respuestaFire = () => ({ ok: true, status: 200, json: async () => ({}) });
           const sV = await pedir();
           assert.ok(sV.cuerpo.repetida !== true && disparos.length === antesV + 1 && sV.cuerpo.pedido_sesion.version_texto === sV.cuerpo.version_texto, `una versión nueva del pliego se puede pedir aunque la marca de la anterior siga viva: ${JSON.stringify(sV.cuerpo.pedido_sesion)}`);
+          /* ═══ EL TOPE DE LECTURAS SIN RESPUESTA (17-oct-2026, el hermano del de Precios) ═══
+             Vencida la marca de media hora, cada clic despertaba otra corrida del día aunque las
+             anteriores no hubieran escrito ningún dictamen. Contra el árbol anterior: con tres
+             pedidos sin respuesta se volvía a despertar la rutina. */
+          {
+            const claveSR = Dc.claveLecturasSinRespuesta(ID_RG, "genesis");
+            assert.ok(Number.isInteger(Dc.LECTURAS_TOPE_SIN_RESPUESTA) && Dc.LECTURAS_TOPE_SIN_RESPUESTA >= 2, "el tope existe y deja al menos un reintento");
+            const topeD = Dc.LECTURAS_TOPE_SIN_RESPUESTA;
+            // la cuenta subió con los disparos que arrancaron o pudieron arrancar (s4 indeterminado y sV), no con el que falló (s3)
+            assert.strictEqual(await redis.get(claveSR), "2", "s4 (indeterminado) y sV (arrancó) cuentan; s3 (falló seguro) no, y el dictamen de ps3 la había borrado");
+            // (1) con la cuenta en el tope y la marca ya vencida: no se despierta otra, se dice, y no queda marca
+            await redis.set(claveSR, String(topeD)); await redis.del(Dc.clavePedido(ID_RG, "genesis"));
+            const antesT = disparos.length;
+            const sT = await pedir({ refrescar: true });
+            assert.ok(sT.status === 200 && sT.cuerpo.tope_alcanzado === true && disparos.length === antesT, `con ${topeD} lecturas sin respuesta no se gasta otra: ${disparos.length - antesT} disparos`);
+            assert.ok(new RegExp(`${topeD} veces`).test(sT.cuerpo.error) && /«\/dictamen»/.test(sT.cuerpo.que_hacer) && /no lo arregla/.test(sT.cuerpo.que_hacer), `y dice qué hacer: ${sT.cuerpo.error} ${sT.cuerpo.que_hacer}`);
+            pasaCercas(sT.cuerpo.error, "lectura tope"); pasaCercas(sT.cuerpo.que_hacer, "lectura tope · qué hacer");
+            assert.strictEqual(await redis.get(Dc.clavePedido(ID_RG, "genesis")), null, "el tope no deja una marca de un disparo que no hubo");
+            // (2) una por debajo del tope: se despierta y la cuenta llega al tope
+            await redis.set(claveSR, String(topeD - 1));
+            const sU = await pedir({ refrescar: true });
+            assert.ok(sU.cuerpo.tope_alcanzado !== true && disparos.length === antesT + 1 && (await redis.get(claveSR)) === String(topeD), "la última permitida se despierta y suma");
+            // (3) el dictamen de la sesión llega: la cuenta se borra y se puede volver a pedir
+            const psT = await invocarPost(routerPliego, URL_DC, { id_proceso: ID_RG, perfil: "genesis", motor: "sesion", dictamen: crudoG }, CAB_TOKEN);
+            assert.strictEqual(psT.status, 200);
+            assert.strictEqual(await redis.get(claveSR), null, "el dictamen que llega borra la cuenta: la rutina funciona");
+            // (4) una cuenta ilegible no frena: se pide, que es el lado seguro
+            await redis.set(claveSR, "basura"); await redis.del(Dc.clavePedido(ID_RG, "genesis"));
+            const sB = await pedir({ refrescar: true });
+            assert.ok(sB.cuerpo.tope_alcanzado !== true && disparos.length === antesT + 2, "una cuenta ilegible no impide pedir");
+            await redis.del(claveSR, Dc.clavePedido(ID_RG, "genesis"));
+          }
           assert.ok(!/\.\.$/.test(Dc.mensaje("LECTURA_YA_PEDIDA", { hora: "10:31" })), "sin punto doble");
           const antesS5 = disparos.length;
           const s5 = await invocarPost(routerPliego, URL_DC, { id_proceso: ID_RG, perfil: "genesis", pedir_sesion: "si" }, CAB_TOKEN);
@@ -44383,7 +44741,7 @@ async function main() {
           global.fetch = fetchAntes;
           if (envU === undefined) delete process.env.RUTINA_DICTAMEN_URL; else process.env.RUTINA_DICTAMEN_URL = envU;
           if (envT === undefined) delete process.env.RUTINA_DICTAMEN_TOKEN; else process.env.RUTINA_DICTAMEN_TOKEN = envT;
-          await redis.del(Dc.clavePedido(ID_RG, "genesis"));
+          await redis.del(Dc.clavePedido(ID_RG, "genesis"), Dc.claveLecturasSinRespuesta(ID_RG, "genesis"));
         }
       }
       // (4) la skill de Claude Code y el documento
@@ -44394,7 +44752,8 @@ async function main() {
       const appR = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
       const pliegoR = fs.readFileSync(path.join(__dirname, "..", "public", "pliego.js"), "utf8");
       assert.ok(/addEventListener\("toggle"/.test(appR) && /consultarDictamenGuardado\(det\.getAttribute\("data-seg-guia"\)\)/.test(appR), "al abrir la guía se consulta el dictamen solo");
-      assert.ok(/data-seg-abrir-lector=/.test(appR) && /abrirEditorConProceso\(qApu\(\{ nombre_del_procedimiento: pr\.nombre/.test(appR), "«Cargar el pliego» abre Precios con la MISMA cadena que la tarjeta");
+      assert.ok(/const apuBtn = e\.target\.closest\("\.btn-apu"\);\s*if \(apuBtn\) \{\s*abrirPreciosDesdeTarjeta\(apuBtn\);/.test(appR), "la tarjeta de Licitaciones abre Precios por abrirPreciosDesdeTarjeta, que trae el techo del pliego de un proceso guardado (17-oct-2026)");
+      assert.ok(/data-seg-abrir-lector=/.test(appR) && /abrirEditorConProceso\(qApuDelExpediente\(pr, id, g\)\)/.test(appR) && /function qApuDelExpediente\(pr, id, g\) \{\s*return qApu\(\{ nombre_del_procedimiento: pr\.nombre/.test(appR), "«Cargar el pliego» abre Precios con la MISMA cadena que la tarjeta (qApu), más el techo de su guía (17-oct-2026)");
       assert.ok(/r\.origen_legible/.test(pliegoR), "la pantalla enseña de qué motor viene el dictamen");
       global.fetch = fetchOrig;
       await limpiar();
@@ -51502,13 +51861,13 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
         body: nodo(null), documentElement: nodo(null), readyState: "complete", visibilityState: "visible" };
       ctx.window = ctx; ctx.self = ctx; ctx.globalThis = ctx;
       vm.createContext(ctx);
-      const exponer = ["ofertaParaRevision", "filasDesdePliego", "reiniciarEditorParaProceso", "precargarDesdeURL", "revisarOferta", "pintarTabla", "pintarIa", "precargarTrasCatalogo", "totalVisibleDeFila", "abrirEditorConProceso"];
+      const exponer = ["abrirPreciosDesdeTarjeta", "guardados", "qApuDelExpediente", "techoDesdeGuia", "restituirContextoProceso", "leerConfig", "qApu", "ofertaParaRevision", "filasDesdePliego", "reiniciarEditorParaProceso", "precargarDesdeURL", "revisarOferta", "pintarTabla", "pintarIa", "precargarTrasCatalogo", "totalVisibleDeFila", "abrirEditorConProceso"];
       for (const f of orden) {
         let src = fs.readFileSync(pub(f), "utf8");
         if (f === "app.js") {
           const i = src.lastIndexOf("})();"); assert.ok(i > 0, "app.js sin el cierre de su IIFE");
           src = `${src.slice(0, i)}window.__cerraduraRO = { ${exponer.map((n) => `${n}: typeof ${n} === "undefined" ? undefined : ${n}`).join(", ")},
-            leer: () => ({ filas, ultimoCalculo, modalidad: modalidadProceso }),
+            leer: () => ({ filas, ultimoCalculo, modalidad: modalidadProceso, cdp: cuantiaDelPliego }),
             fijar: (o) => { if ("filas" in o) filas = o.filas; if ("ultimoCalculo" in o) ultimoCalculo = o.ultimoCalculo; if ("importacion" in o) importacion = o.importacion; if ("modalidad" in o) modalidadProceso = o.modalidad; } };\n${src.slice(i)}`;
         }
         if (f === "pliego.js") {
@@ -51635,6 +51994,15 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
       F.fijar({ filas: [{ descripcion: "Excavación", unidad: "m3", cantidad: null }] });
       F.pintarIa({ estado: "listo", solicitud: {}, propuesta: { resumen: {}, items: [{ fila: 0, descripcion: "Excavación", unidad: "m3", costo_directo_unitario: 1000 }] } });
       okRO(!/m3 · 0\b/.test(textoRO(porId.get("ia-propuesta").innerHTML)), `(c) la propuesta de precios no pinta la cantidad sin dato como 0: «${textoRO(porId.get("ia-propuesta").innerHTML).slice(0, 120)}»`);
+      /* c6b · EL TOPE DE DESPERTARES SIN SEÑAL en la pantalla (17-oct-2026): agotado, ya no se le
+         pide al usuario «Vuelva a pulsar Buscar» (gastaba otro intento del día sin arreglar nada) */
+      F.pintarIa({ estado: "sin_atender", edad_min: 45, tope_sin_senal: 3, solicitud: { despertadas_sin_senal: 3, despertada: { ok: true } } });
+      const msgTope = String(porId.get("ia-estado").textContent || "");
+      okRO(/3 veces/.test(msgTope) && /no la arregla/.test(msgTope) && /chat/.test(msgTope) && !/Vuelva a pulsar Buscar/.test(msgTope), `(c) agotados los despertares, la pantalla dice el hecho y lleva al chat: «${msgTope.slice(0, 160)}»`);
+      F.pintarIa({ estado: "en_cola", tope_alcanzado: true, tope_sin_senal: 3, solicitud: { despertadas_sin_senal: 3, despertada: { ok: true } } });
+      okRO(/3 veces/.test(String(porId.get("ia-estado").textContent || "")), "(c) el «Buscar» que el servidor ya no despertó también lo dice");
+      F.pintarIa({ estado: "sin_atender", edad_min: 45, tope_sin_senal: 3, solicitud: { despertadas_sin_senal: 2, despertada: { ok: true } } });
+      okRO(/Vuelva a pulsar Buscar/.test(String(porId.get("ia-estado").textContent || "")), "(c) por debajo del tope, volver a pulsar sigue siendo la indicación");
       // c7 · CENSO de public/*.js: ningún valor por defecto convierte una cantidad que falta en 0
       const censoC = [];
       for (const f of fs.readdirSync(path.join(__dirname, "..", "public")).filter((x) => x.endsWith(".js"))) {
@@ -52004,6 +52372,90 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
         await Promise.race([vig, asentarRO()]); await asentarRO();
         await disparar("btn-limpiar", "click", {}); await asentarRO();
         okRO(postMis && !postMis.cfg.signal.aborted, "(f) «Limpiar» en el lector no cancela el dictamen que se pidió desde Mis procesos");
+      }
+      /* (g) EL TECHO DEL PLIEGO EN PRECIOS (17-oct-2026), con la pantalla real: la guía → qApu → precarga → leerConfig */
+      {
+        const { F: T, porId: P2, disparar: dis2 } = cargarFrontRO();
+        await asentarRO();
+        const guiaSE = { tope_oferta: { valor: 1581425810, fuente: "pliego", secop: 1744426146, pagina: 6 } };
+        const args = T.techoDesdeGuia(guiaSE);
+        okRO(args.cuantia_cop === 1581425810 && args.cuantia_fuente === "pliego" && /pág\. 6/.test(args.cuantia_nota) && /1\.744\.426\.146/.test(args.cuantia_nota), `(g) la guía con techo del pliego lo pasa a Precios: ${JSON.stringify(args)}`);
+        okRO(Object.keys(T.techoDesdeGuia({ tope_oferta: { valor: 1744426146, fuente: "secop", secop: 1744426146 } })).length === 0 && Object.keys(T.techoDesdeGuia(null)).length === 0, "(g) sin techo del pliego no cambia nada");
+        okRO(Object.keys(T.techoDesdeGuia({ tope_oferta: { valor: 1581425810, fuente: "pliego", secop: null } })).length === 0, "(g) sin cifra de SECOP II no hay nota «SECOP II publica $ 0»");
+        T.abrirEditorConProceso(T.qApuDelExpediente({ nombre: "Santa Elena", presupuesto_cop: 1744426146 }, "CO1.SE", guiaSE));
+        T.precargarDesdeURL();
+        okRO(P2.get("cuantia").value === "1581425810" && /pliego definitivo/.test(P2.get("cuantia-nota").textContent) && !P2.get("cuantia-nota").clases.has("hidden"), `(g) Precios arranca con el techo del pliego y su nota: «${P2.get("cuantia").value}» «${P2.get("cuantia-nota").textContent}»`);
+        okRO(T.leerConfig().cuantia_fuente === "pliego" && T.leerConfig().cuantia_cop === 1581425810, `(g) el cálculo lleva la fuente mientras la cifra no cambie: ${JSON.stringify({ f: T.leerConfig().cuantia_fuente, c: T.leerConfig().cuantia_cop })}`);
+        // el usuario cambia la cifra: la nota se calla y la fuente ya no viaja
+        P2.get("cuantia").value = "1600000000"; await dis2("cuantia", "input", {});
+        okRO(T.leerConfig().cuantia_fuente === null && P2.get("cuantia-nota").clases.has("hidden"), "(g) cambiar la cifra a mano calla la nota y la fuente");
+        // otro proceso desde su borrador, con la MISMA cifra: no hereda nada del anterior
+        T.abrirEditorConProceso(T.qApu({ id_del_proceso: "CO1.SE", cuantia_cop: 1744426146, ...args })); T.precargarDesdeURL();
+        T.restituirContextoProceso({ id_proceso: "CO1.OTRO", cuantia: 1581425810 });
+        okRO(T.leerConfig().cuantia_fuente === null && P2.get("cuantia-nota").clases.has("hidden") && T.leer().cdp === null, "(g) el borrador de otro proceso no hereda el techo ni la nota del pliego anterior");
+      }
+      /* (h) EL TECHO DESDE LA TARJETA DE LICITACIONES (17-oct-2026): «Calcular mi precio» de un proceso GUARDADO pide su
+         guía (GET ?expediente=, solo lee) y arranca con el techo del pliego; sin guardar, como siempre; con la consulta
+         caída o vencida, con SECOP II y lo dice; y una respuesta tardía no pisa lo que se abrió después (revisión adversaria) */
+      {
+        const { F: T, ctx: C3, porId: P3 } = cargarFrontRO();
+        await asentarRO();
+        const guiaSE = { tope_oferta: { valor: 1581425810, fuente: "pliego", secop: 1744426146, pagina: 6 } };
+        const boton = (l) => ({ innerHTML: "Calcular mi precio", textContent: "Calcular mi precio", disabled: false, getAttribute: (k) => (k === "data-apu-q" ? T.qApu(l) : null) });
+        const filaSE = { id_del_proceso: "CO1.SE", nombre_del_procedimiento: "MEJORAMIENTO VIA SANTA ELENA", cuantia_cop: 1744426146 };
+        const filaB = { id_del_proceso: "CO1.B", nombre_del_procedimiento: "OTRA OBRA", cuantia_cop: 900000000 };
+        const urls = [];
+        let responder = () => Promise.resolve(respuestaRO(200, { ok: true, proceso: { id: "CO1.SE", guia: guiaSE } }));
+        C3.fetch = (url) => { if (/op=seguimiento/.test(String(url))) { urls.push(String(url)); return responder(); } return new Promise(() => {}); };
+        const abrir = async (l) => { const b = boton(l); const pr = T.abrirPreciosDesdeTarjeta(b); const durante = [b.textContent, b.disabled]; await pr; T.precargarDesdeURL(); return { b, durante }; };
+        const nota = () => (P3.get("cuantia-nota").clases.has("hidden") ? "" : P3.get("cuantia-nota").textContent);
+        // sin guardar: no consulta nada y arranca con la cifra de SECOP II, sin nota
+        let r = await abrir(filaSE);
+        okRO(urls.length === 0 && P3.get("cuantia").value === "1744426146" && nota() === "", `(h) sin guardar, la tarjeta abre como siempre: ${JSON.stringify({ urls, c: P3.get("cuantia").value })}`);
+        // guardado y con techo del pliego: lo consulta, lo dice mientras tanto y arranca con el techo y su nota
+        T.guardados.set("CO1.SE", "interesa");
+        r = await abrir(filaSE);
+        okRO(urls.length === 1 && /expediente=CO1\.SE/.test(urls[0]), `(h) guardado: pide la guía del expediente: ${JSON.stringify(urls)}`);
+        okRO(r.durante[0] === "Consultando el pliego…" && r.durante[1] === true && r.b.disabled === false && r.b.innerHTML === "Calcular mi precio", `(h) la pulsación responde y el botón vuelve: ${JSON.stringify(r.durante)}`);
+        okRO(P3.get("cuantia").value === "1581425810" && /pliego definitivo/.test(nota()) && T.leerConfig().cuantia_fuente === "pliego", `(h) guardado con techo: Precios arranca con el del pliego (MUTACIÓN: sin la consulta, $1.744.426.146): «${P3.get("cuantia").value}»`);
+        // sin techo, o la guía de otro proceso, o de OTRA cifra de SECOP II que la de la tarjeta: la cifra de la tarjeta, sin nota
+        for (const [que, resp, fila] of [["sin techo", () => respuestaRO(200, { ok: true, proceso: { id: "CO1.SE", guia: { tope_oferta: { valor: 1744426146, fuente: "secop", secop: 1744426146 } } } }), filaSE], ["la guía de otro proceso", () => respuestaRO(200, { ok: true, proceso: { id: "CO1.OTRO", guia: guiaSE } }), filaSE], ["la guía con otra cifra de SECOP II", () => respuestaRO(200, { ok: true, proceso: { id: "CO1.SE", guia: guiaSE } }), { ...filaSE, cuantia_cop: 1700000000 }]]) {
+          responder = () => Promise.resolve(resp());
+          r = await abrir(fila);
+          okRO(P3.get("cuantia").value === String(fila.cuantia_cop) && T.leerConfig().cuantia_fuente === null && r.b.disabled === false, `(h) ${que}: arranca con la cifra de la tarjeta (MUTACIÓN: sin comparar la cifra de SECOP II, el techo): «${P3.get("cuantia").value}»`);
+        }
+        // la consulta cae: SECOP II, y la nota DICE que no se pudo consultar
+        responder = () => Promise.resolve(respuestaRO(500, { ok: false, error: "fallo" }));
+        r = await abrir(filaSE);
+        okRO(P3.get("cuantia").value === "1744426146" && /No se pudo consultar el pliego/.test(nota()) && T.leerConfig().cuantia_fuente === null, `(h) la consulta caída se dice (MUTACIÓN: sin el aviso, silencio): «${nota()}»`);
+        // la consulta no responde: pasado el plazo abre con SECOP II y lo dice
+        responder = () => new Promise(() => {});
+        const relojOriginal = C3.setTimeout; C3.setTimeout = (fn) => { fn(); return 1; };
+        try { r = await abrir(filaSE); } finally { C3.setTimeout = relojOriginal; }
+        okRO(P3.get("cuantia").value === "1744426146" && /No se pudo consultar el pliego/.test(nota()) && r.b.disabled === false, `(h) la consulta vencida abre con SECOP II y lo dice: «${nota()}»`);
+        // una respuesta tardía no pisa lo que se abrió después, ni abre con otro perfil
+        let soltar = null;
+        responder = () => new Promise((ok) => { soltar = () => ok(respuestaRO(200, { ok: true, proceso: { id: "CO1.SE", guia: guiaSE } })); });
+        const bA = boton(filaSE); const prA = T.abrirPreciosDesdeTarjeta(bA);
+        T.abrirEditorConProceso(T.qApu(filaB)); T.precargarDesdeURL();
+        soltar(); await prA; T.precargarDesdeURL();
+        okRO(P3.get("cuantia").value === "900000000" && bA.disabled === false && bA.innerHTML === "Calcular mi precio", `(h) la respuesta tardía de A no pisa a B, abierto después (MUTACIÓN: sin \`aperturasEditor\`, A): «${P3.get("cuantia").value}»`);
+        const prA2 = T.abrirPreciosDesdeTarjeta(boton(filaSE));
+        P3.get("f-perfil").value = "otro";
+        soltar(); await prA2; T.precargarDesdeURL();
+        okRO(P3.get("cuantia").value === "900000000", `(h) con el perfil cambiado mientras esperaba, no abre (MUTACIÓN: sin mirar el perfil, A): «${P3.get("cuantia").value}»`);
+        P3.get("f-perfil").value = "prueba";
+        // dos tarjetas guardadas seguidas: la PRIMERA responde antes y aun así queda abierta la ÚLTIMA pulsada
+        const filaC = { id_del_proceso: "CO1.C", nombre_del_procedimiento: "TERCERA OBRA", cuantia_cop: 2000000000 };
+        T.guardados.set("CO1.C", "interesa");
+        const pendientes = new Map();
+        responder = () => new Promise((ok) => { const u = urls[urls.length - 1]; const idq = /expediente=([^&]+)/.exec(u)[1];
+          pendientes.set(idq, () => ok(respuestaRO(200, { ok: true, proceso: { id: idq, guia: idq === "CO1.C" ? { tope_oferta: { valor: 1900000000, fuente: "pliego", secop: 2000000000, pagina: 4 } } : guiaSE } }))); });
+        const prSE = T.abrirPreciosDesdeTarjeta(boton(filaSE));
+        const prC = T.abrirPreciosDesdeTarjeta(boton(filaC));
+        pendientes.get("CO1.SE")(); await prSE; T.precargarDesdeURL();
+        pendientes.get("CO1.C")(); await prC; T.precargarDesdeURL();
+        okRO(P3.get("cuantia").value === "1900000000", `(h) de dos pulsaciones manda la última aunque la primera responda antes (MUTACIÓN: sin \`turnoTarjeta\`, la primera abre y la última no): «${P3.get("cuantia").value}»`);
       }
     } finally {
       if (tzRO === undefined) delete process.env.TZ; else process.env.TZ = tzRO;

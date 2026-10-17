@@ -103,5 +103,5 @@ con `node tests/estado.js`, y las coordenadas las da `node tests/mapa.js <térmi
 | `docs/datos.md` | referencia | — | `README.md` · `lib` · `public` · `tests` | Inventario de fuentes de datos y auditorías de la Fase 0 |
 | `docs/GUIA_ANALISTA_LICITACIONES.md` | referencia | — | `CLAUDE.md` · `README.md` · `lib` · `tests` | Manual del Analista de Licitaciones |
 | `docs/marca.md` | referencia | — | `README.md` · `public` · `tests` | Marca · Detekta (Fase 7 del plan maestro v4 · ago 2026) |
-| `docs/MEMORIA.md` | referencia | — | `CLAUDE.md` · `README.md` · `lib` · `public` · `tests` | MEMORIA.md · la crónica completa de decisiones de Detekta |
+| `docs/MEMORIA.md` | referencia | — | `.claude` · `CLAUDE.md` · `README.md` · `lib` · `public` · `tests` | MEMORIA.md · la crónica completa de decisiones de Detekta |
 | `docs/PROMPT_INICIAL.md` | referencia | — | `CLAUDE.md` · `README.md` · `tests` | PROMPT INICIAL DE DETEKTA · protocolo vivo |

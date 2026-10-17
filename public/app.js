@@ -665,7 +665,9 @@
      en el editor y cambia a su pestaña. Antes esto abría /apu.html con una
      querystring; la MISMA cadena de parámetros viaja ahora en memoria, así que
      `precargarDesdeURL` no cambió de contrato. */
+  let aperturasEditor = 0; // cuántas veces se abrió un proceso o un borrador en Precios (abrirPreciosDesdeTarjeta no pisa una posterior)
   function abrirEditorConProceso(q) {
+    aperturasEditor++;
     paramsProceso = q instanceof URLSearchParams ? q : new URLSearchParams(String(q || ""));
     const yaArrancado = arrancadas.apu;
     borradorAbierto = false;   // una tarjeta nueva manda sobre el borrador que estuviera abierto
@@ -2649,6 +2651,66 @@
 
   /* La querystring que antes viajaba a /apu.html: mismos nombres de parámetro
      (el editor los lee con el MISMO precargarDesdeURL de siempre). */
+  /* el techo de la oferta que trae la guía (lib/documentos_proceso.topeOferta): solo cuando sale del pliego definitivo
+     (MENOR que SECOP II) cambia lo que Precios recibe; si no, nada, y queda la cifra de SECOP II de siempre */
+  function techoDesdeGuia(g) {
+    const t = g && g.tope_oferta;
+    if (!t || t.fuente !== "pliego" || !(Number(t.valor) > 0) || !(Number(t.secop) > 0)) return {};
+    return { cuantia_cop: t.valor, cuantia_fuente: "pliego",
+      cuantia_nota: `Techo: ${fmtCOP.format(t.valor)}, del pliego definitivo${t.pagina != null ? ` (pág. ${t.pagina})` : ""}; SECOP II publica ${fmtCOP.format(t.secop)}. Su oferta no puede pasar la más baja.` };
+  }
+  // «Cargue el pliego en Precios» desde el expediente: la foto del guardado más el techo de su guía
+  function qApuDelExpediente(pr, id, g) {
+    return qApu({ nombre_del_procedimiento: pr.nombre, entidad: pr.entidad, nit_entidad: pr.nit_entidad, departamento_entidad: pr.departamento,
+      cuantia_cop: pr.presupuesto_cop, id_del_proceso: id, modalidad_de_contratacion: pr.modalidad, ...techoDesdeGuia(g) });
+  }
+  /* EL TECHO DEL PLIEGO TAMBIÉN DESDE LA TARJETA (17-oct-2026, visto bueno del dueño). «Calcular mi precio» en Licitaciones
+     arrancaba siempre con la cifra de SECOP II; si el proceso está GUARDADO, su guía (la consulta del expediente, que solo
+     lee) ya sabe si el pliego definitivo dice menos (lib/documentos_proceso.topeOferta), y el techo sale de la MISMA
+     techoDesdeGuia del expediente y viaja con los nombres de qApu. Sin guardar abre como siempre; con la consulta caída o
+     pasados TECHO_TARJETA_MS abre con SECOP II y lo DICE en la nota de la cifra. Lo que tumbó la revisión adversaria:
+     una respuesta tardía no abre si después se pulsó otra tarjeta, se abrió otro proceso o un borrador en Precios
+     (`turnoTarjeta`, `aperturasEditor`) o cambió el perfil; los botones de la misma tarjeta esperan juntos; y el techo
+     solo vale si la guía habla de la MISMA cifra de SECOP II que la tarjeta. */
+  const TECHO_TARJETA_MS = 5000;
+  let turnoTarjeta = 0;
+  async function abrirPreciosDesdeTarjeta(btn) {
+    const turno = ++turnoTarjeta;
+    const q = new URLSearchParams(btn.getAttribute("data-apu-q") || "");
+    const id = q.get("id_proceso");
+    if (!id || !guardados.has(id) || q.get("cuantia_fuente") === "pliego") { abrirEditorConProceso(q); return; }
+    const aperturas = aperturasEditor;
+    const perfil = $("f-perfil").value;
+    const delMismo = [...document.querySelectorAll("#lista .btn-apu")].filter((b) => b !== btn && new URLSearchParams(b.getAttribute("data-apu-q") || "").get("id_proceso") === id);
+    const antes = btn.innerHTML;
+    btn.disabled = true;
+    btn.textContent = "Consultando el pliego…";
+    for (const b of delMismo) b.disabled = true;
+    let reloj = null, consultado = false;
+    try {
+      const r = await Promise.race([
+        api(`/api/perfil?op=seguimiento&perfil=${encodeURIComponent(perfil)}&expediente=${encodeURIComponent(id)}`),
+        new Promise((_, no) => { reloj = setTimeout(() => no(new Error("tiempo")), TECHO_TARJETA_MS); }),
+      ]);
+      const g = r && r.proceso && r.proceso.id === id ? r.proceso.guia : null;
+      consultado = !!g;
+      const techo = techoDesdeGuia(g);
+      if (techo.cuantia_cop && Number(g.tope_oferta.secop) === Number(q.get("cuantia"))) {
+        const t = new URLSearchParams(qApu(techo));
+        for (const k of ["cuantia", "cuantia_fuente", "cuantia_nota"]) q.set(k, t.get(k));
+      }
+    } catch { /* sin la guía, Precios arranca con la cifra de SECOP II y lo dice */ }
+    finally {
+      clearTimeout(reloj);
+      btn.disabled = false;
+      btn.innerHTML = antes;
+      for (const b of delMismo) b.disabled = false;
+    }
+    // otra pulsación, otro proceso o borrador abierto en Precios, u otro perfil mientras se esperaba: manda lo último
+    if (turno !== turnoTarjeta || aperturas !== aperturasEditor || $("f-perfil").value !== perfil) return;
+    if (!consultado) q.set("cuantia_aviso", "No se pudo consultar el pliego a tiempo: el presupuesto es el que publica SECOP II. Abra el proceso desde «Mis procesos» para ver si el pliego definitivo dice menos.");
+    abrirEditorConProceso(q);
+  }
   function qApu(l) {
     const q = new URLSearchParams();
     if (l.nombre_del_procedimiento) q.set("objeto", l.nombre_del_procedimiento);
@@ -2659,6 +2721,8 @@
       || (l.rup && l.rup.unspsc && l.rup.unspsc.codigo_proceso) || "";
     if (unspsc) q.set("unspsc", String(unspsc));
     if (l.cuantia_cop != null) q.set("cuantia", String(l.cuantia_cop));
+    if (l.cuantia_fuente === "pliego") q.set("cuantia_fuente", "pliego");
+    if (l.cuantia_nota) q.set("cuantia_nota", String(l.cuantia_nota));
     if (l.id_del_proceso != null) q.set("id_proceso", String(l.id_del_proceso));
     if (l.plazo_meses != null) q.set("plazo", String(l.plazo_meses));
     if (l.modalidad_de_contratacion) q.set("modalidad", l.modalidad_de_contratacion);
@@ -4364,7 +4428,7 @@
     }
     const apuBtn = e.target.closest(".btn-apu");
     if (apuBtn) {
-      abrirEditorConProceso(new URLSearchParams(apuBtn.getAttribute("data-apu-q") || ""));
+      abrirPreciosDesdeTarjeta(apuBtn);
       return;
     }
     const gBtn = e.target.closest(".btn-guardar");
@@ -6223,8 +6287,10 @@
         const id = al.getAttribute("data-seg-abrir-lector");
         const p = ((ultimoSeguimiento && ultimoSeguimiento.procesos) || []).find((x) => x.id === id) || {};
         const pr = p.proceso || {};
-        abrirEditorConProceso(qApu({ nombre_del_procedimiento: pr.nombre, entidad: pr.entidad, nit_entidad: pr.nit_entidad, departamento_entidad: pr.departamento,
-          cuantia_cop: pr.presupuesto_cop, id_del_proceso: id, modalidad_de_contratacion: pr.modalidad }));
+        /* EL TECHO DE LA OFERTA (17-oct-2026): si el pliego definitivo dice MENOS que SECOP II, Precios arranca con la
+           del pliego (lib/documentos_proceso.topeOferta) y dice de dónde sale; si no, la de SECOP II, como siempre */
+        const g = segExpDatos && segExpDatos.proceso && segExpDatos.proceso.id === id ? segExpDatos.proceso.guia : null;
+        abrirEditorConProceso(qApuDelExpediente(pr, id, g));
         return;
       }
       const ics = ev.target.closest("[data-seg-ics]");
@@ -6386,6 +6452,8 @@
          acabarían con dos cifras distintas. Vacío = sin dato y entonces no se
          compara contra nada, en vez de inventarle un techo al presupuesto. */
       cuantia_cop: $("cuantia").value.trim() === "" ? null : Number($("cuantia").value),
+      // si el techo sigue siendo la cifra del pliego, el hallazgo G.5 lo nombra así; si el usuario lo cambió, ya no
+      cuantia_fuente: techoSigueDelPliego() ? "pliego" : null,
       /* Utilidad MÍNIMA aceptable (Fase 3): con ella se calcula el precio piso
          del panel «¿Me presento?». Vacío = sin declarar → el servidor usa la U
          del AIU y lo dice; NO se rellena aquí con la U para que el panel pueda
@@ -7773,6 +7841,8 @@
     if (bj) bj.addEventListener("click", () => { const b = $("btn-justificacion"); if (b && !b.disabled) b.click(); else msgApu("Para generar la justificación calcule primero la rentabilidad del proceso (sección de arriba).", "info"); });
   }
   $("btn-revisar-oferta").addEventListener("click", revisarOferta);
+  // la nota del techo del pliego se calla en cuanto el usuario cambia la cifra a mano (revisión adversaria, 17-oct-2026)
+  $("cuantia").addEventListener("input", () => { if (cuantiaDelPliego && !techoSigueDelPliego()) { cuantiaDelPliego = null; pintarNotaCuantia(""); } });
 
   /* ──────────────────────── guardar / cargar ───────────────────────── */
   /* Guardar el borrador: lo pulsa el usuario, y también lo llama «Pedir precios»
@@ -7919,7 +7989,16 @@
       /* el pliegue del chat se abre UNA vez por estado, no en cada sondeo: si el
          usuario lo cerró, cerrado se queda (revisión adversaria, 13-sep-2026) */
       const claveChat = [idActual, r.estado, d ? (d.ok ? "ok" : d.indeterminada ? "ind" : "no") : "sin"].join("|");
-      if (r.estado === "sin_atender") {
+      /* EL TOPE DE DESPERTARES SIN SEÑAL (17-oct-2026): con la rutina dañada, «Vuelva a pulsar
+         Buscar» gastaba un intento del día tras otro. Agotada (el servidor ya no despertó otra, o
+         la última de las del tope tampoco respondió), la pantalla dice el hecho y lleva al chat. */
+      const nSinSenal = Number.isInteger(s.despertadas_sin_senal) ? s.despertadas_sin_senal : null;
+      const agotada = r.tope_alcanzado === true || (r.estado === "sin_atender" && Number.isInteger(r.tope_sin_senal) && nSinSenal != null && nSinSenal >= r.tope_sin_senal);
+      if (agotada) {
+        msgIa(`La búsqueda automática se despertó ${nSinSenal != null ? `${nSinSenal} veces` : "varias veces"} sin dar señal: volver a pulsar Buscar no la arregla y gasta otro intento del día. `
+          + `Hágalo con su chat de inteligencia artificial (más abajo) o avise a quien atiende la cola. ${guardado}`, "error");
+        abrirChatUnaVez(`${claveChat}|agotada`);
+      } else if (r.estado === "sin_atender") {
         msgIa(`Sin atender${edad ? ` desde hace ${edad}` : ""}: ${d && d.ok ? "la búsqueda automática arrancó pero no ha dado señales" : "nadie ha atendido la cola desde que usted la pidió"}. `
           + `Vuelva a pulsar Buscar, hágalo con su chat de inteligencia artificial (más abajo) o avise a quien atiende la cola. ${guardado}`, "error");
         abrirChatUnaVez(claveChat);
@@ -8664,6 +8743,11 @@
      departamento, la entidad y la cuantía de cada proceso, que es justo el
      trabajo que el botón existe para ahorrar. */
   let paramsProceso = null;   // los fija abrirEditorConProceso (botón APU de una tarjeta)
+  let cuantiaDelPliego = null; // {id, valor}: el techo vino del pliego definitivo de ESE proceso; G.5 lo dice así mientras no se cambie
+  function pintarNotaCuantia(nota) { const n = $("cuantia-nota"); if (n) { n.textContent = nota || ""; n.classList.toggle("hidden", !nota); } }
+  // ¿el campo sigue con la cifra del pliego del proceso abierto? Si el usuario la cambió u otro proceso ocupa el editor, no
+  const techoSigueDelPliego = () => !!cuantiaDelPliego && $("cuantia").value.trim() !== "" && Number($("cuantia").value) === cuantiaDelPliego.valor
+    && (($("id-proceso") && $("id-proceso").value.trim()) || "") === cuantiaDelPliego.id;
 
   /* LA REVISIÓN PINTADA ES DE UNA OFERTA Y DE UN PROCESO (N11-A, 27-sep-2026):
      al abrir otro proceso quedaban el semáforo, el tope del AIU y el total de
@@ -8794,6 +8878,8 @@
     poner("entidad", "entidad");
     poner("id-proceso", "id_proceso");
     poner("cuantia", "cuantia");
+    cuantiaDelPliego = p.get("cuantia_fuente") === "pliego" && Number(p.get("cuantia")) > 0 && idEntrante ? { id: idEntrante, valor: Number(p.get("cuantia")) } : null;
+    pintarNotaCuantia(cuantiaDelPliego ? (p.get("cuantia_nota") || "") : (p.get("cuantia_aviso") || ""));
     modalidadProceso = p.get("modalidad") || "";
     tipoProceso = p.get("tipo") || "";
     poner("plazo-meses", "plazo");
@@ -8835,6 +8921,7 @@
     };
   }
   function restituirContextoProceso(p) {
+    aperturasEditor++;
     const idAbierto = ($("id-proceso") && $("id-proceso").value.trim()) || "";
     const idBorrador = p.id_proceso ? String(p.id_proceso) : "";
     const mismo = !!idBorrador && idBorrador === idAbierto;
@@ -8844,6 +8931,7 @@
     /* el borrador manda sobre la precarga de la URL: la segunda precarga (tras el catálogo)
        ya no reinicia el editor para volver al proceso de la URL (segunda revisión) */
     borradorAbierto = true;
+    cuantiaDelPliego = null; pintarNotaCuantia("");   // el techo del pliego era del proceso anterior (revisión adversaria)
     if ($("id-proceso")) $("id-proceso").value = idBorrador;
     campo("cuantia", p.cuantia);
     campo("plazo-meses", p.plazo_meses);

@@ -15,8 +15,13 @@
 # una carga a medias («continuar_full») o hace lo que toque si ya terminó.
 #
 # Cómo se usa: pestaña «Actions» → «Carga completa (un botón)» → «Run workflow» →
-# botón verde «Run workflow». Tarda lo que tarde la carga (puede pasar de una
-# hora); la página del flujo enseña el avance de cada tramo.
+# botón verde «Run workflow». En la app de GitHub del celular (en español, visto el
+# 17-oct-2026): repositorio → «Acciones» → «Carga completa (un botón)» → «Ejecutar
+# flujo de trabajo». Tarda lo que tarde la carga (puede pasar de una hora); la
+# página del flujo enseña el avance de cada tramo.
+#
+# El histórico continúa el rango que haya guardado (lo lee de `?estado=true`): el
+# botón no impone uno, porque pedir otro rango empezaba la extracción desde cero.
 #
 # Los secretos (Settings → Secrets and variables → Actions → Repository secrets):
 #   · CRON_SECRET     → el mismo de «Actualización de la tarde»; ya está creado.
@@ -98,14 +103,47 @@ jobs:
             echo "Falta el secreto HISTORICO_TOKEN. Créelo en GitHub (Settings → Secrets and variables → Actions → New repository secret) con la MISMA llave que usa en «&token=…» para la extracción del histórico, y vuelva a lanzar este flujo."
             exit 1
           fi
-          # con &hasta: sin él el rango por omisión es otro y la extracción empezaría de cero
-          URL="https://detekta-app.vercel.app/api/sync/historico?desde=2024-01&hasta=2026-09&chain=0"
+          # EL RANGO LO DICE LO GUARDADO, NO ESTE ARCHIVO (17-oct-2026): con un rango fijo, la
+          # extracción guardada con otro rango volvía a empezar desde el primer mes. Primero se
+          # lee el estado (solo lee) y se continúa ese rango; si no hay ninguno, de 2024-01 al
+          # mes en curso de Colombia, como el refresco mensual. Sin estado no se pide nada a ciegas.
+          CODIGO=$(curl -sS --max-time 120 -o estado.json -w '%{http_code}' \
+            -H "x-historico-token: ${HISTORICO_TOKEN}" "https://detekta-app.vercel.app/api/sync/historico?estado=true" || echo "000")
+          if [ "$CODIGO" = "401" ]; then
+            echo "La aplicación no reconoció la llave del histórico: el secreto HISTORICO_TOKEN de GitHub no es la misma llave que usa en «&token=…»."
+            exit 1
+          fi
+          if [ "$CODIGO" != "200" ]; then
+            echo "No se pudo leer el estado del histórico (la aplicación respondió $CODIGO): no se pide ningún rango a ciegas. Mire https://detekta-app.vercel.app/api/procesos?op=salud y vuelva a lanzar este flujo."
+            exit 1
+          fi
+          # el muro de Vercel puede responder 200 con una página: sin datos legibles no se adivina el rango
+          if ! jq -e . estado.json > /dev/null 2>&1; then
+            echo "El estado del histórico no llegó como datos (¿respondió una página del muro de Vercel?): no se pide ningún rango a ciegas. Vuelva a lanzar este flujo más tarde."
+            exit 1
+          fi
+          DESDE=$(jq -r '.estado.extraccion.desde // empty' estado.json)
+          HASTA=$(jq -r '.estado.extraccion.hasta // empty' estado.json)
+          if [ -n "$DESDE" ] && [ -n "$HASTA" ]; then
+            echo "Se continúa la extracción guardada, de $DESDE a $HASTA."
+          else
+            # el mes de Colombia (UTC-5 todo el año) con la cuenta de decidirRefrescoHistorico, sin depender de la base de zonas horarias
+            DESDE="2024-01"
+            HASTA=$(date -u -d '-5 hours' +%Y-%m)
+            echo "No hay extracción guardada: se empieza una de $DESDE a $HASTA."
+          fi
+          URL="https://detekta-app.vercel.app/api/sync/historico?desde=${DESDE}&hasta=${HASTA}&chain=0"
           fallos=0
           for tramo in $(seq 1 300); do
             CODIGO=$(curl -sS --max-time 300 -o respuesta.json -w '%{http_code}' \
               -H "x-historico-token: ${HISTORICO_TOKEN}" "$URL" || echo "000")
             if [ "$CODIGO" = "401" ]; then
               echo "La aplicación no reconoció la llave del histórico: el secreto HISTORICO_TOKEN de GitHub no es la misma llave que usa en «&token=…»."
+              exit 1
+            fi
+            # otro rango guardado entre la lectura y la llamada: reintentar no lo arregla
+            if [ "$CODIGO" = "409" ]; then
+              echo "$(jq -r '.error' respuesta.json) $(jq -r '.que_hacer' respuesta.json)"
               exit 1
             fi
             if [ "$CODIGO" != "200" ]; then
