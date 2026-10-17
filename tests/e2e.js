@@ -8469,6 +8469,14 @@ async function main() {
     const turbaco = ant("\f83\nBuen\tmanejo\ty\tcorrecta\tN/A\tN/A\ninversión del anticipo\nDevolución del pago anticipado\tN/A\tN/A\nAmparos,\n\f87\nconstituyen su propuesta económica autónoma.\n8.3.\tANTICIPO Y/O PAGO ANTICIPADO\nN/A\nCAPITULO IX LISTA DE ANEXOS, FORMATOS, MATRICES Y FORMULARIOS\n");
     assert.deepStrictEqual([turbaco.estado, turbaco.pagina], ["no", 87], `«8.3 ANTICIPO … / N/A» niega: ${JSON.stringify(turbaco)}`);
     assert.notStrictEqual(ant("\f83\nDevolución del pago anticipado\tN/A\tN/A\nPago de salarios, prestaciones\tPlazo del contrato y\tCinco por ciento (5 %)\n").estado, "si", "el amparo «Devolución del pago anticipado» de la tabla de garantías no es «hay anticipo»");
+    // el título y la negación en UNA línea: «anticipado:» también niega, y el «N/A» solo con dos puntos (17-oct-2026)
+    assert.strictEqual(ant("\f87\nconstituyen su propuesta económica autónoma.\n8.3. ANTICIPO Y/O PAGO ANTICIPADO: No aplica\nCAPITULO IX LISTA DE ANEXOS\n").estado, "no", "«…PAGO ANTICIPADO: No aplica» en una línea niega");
+    assert.strictEqual(ant("\f87\n8.3. ANTICIPO Y/O PAGO ANTICIPADO: N/A\n").estado, "no", "«…PAGO ANTICIPADO: N/A» en una línea niega");
+    assert.strictEqual(ant("\f74\nBuen manejo del anticipo\tN/A\tN/A\n\f78\nLa entidad entregará al contratista un anticipo del 30 %.\n").estado, "si", "una celda «N/A» de la tabla de garantías (sin dos puntos) no niega el anticipo pactado");
+    // …pero «pago anticipado» SUELTO no niega el anticipo: son figuras distintas (revisión adversaria, 17-oct-2026)
+    assert.strictEqual(ant("\f20\nVALOR DEL ANTICIPO: Treinta por ciento (30 %) del valor del contrato, previa aprobación del plan.\nPAGO ANTICIPADO: No aplica para el presente proceso de contratación.\n").estado, "si", "«PAGO ANTICIPADO: No aplica» junto a un anticipo del 30 % no niega el anticipo");
+    assert.strictEqual(ant("\f20\nForma de pago. Pago anticipado: no aplica; el anticipo será del 30 % del valor del contrato.\n").estado, "si", "«Pago anticipado: no aplica; el anticipo será del 30 %» no niega el anticipo");
+    assert.strictEqual(require("../lib/negocio.js").anticipoPct({}, "Forma de pago: anticipo del 30 %; pago anticipado: no aplica; actas parciales."), 30, "lib/negocio: «pago anticipado: no aplica» no borra el anticipo del 30 % de la fila de SECOP");
     // …y ese «N/A» suelto es DÉBIL: no tapa una frase que pacta el anticipo, antes o después (revisión adversaria, 17-oct-2026)
     assert.strictEqual(ant("\f5\nVALOR DEL ANTICIPO: Se entregará al contratista un anticipo del 30 % del valor del contrato.\nPAGO ANTICIPADO (SI APLICA):\nN/A\n").estado, "si", "el «N/A» del pago anticipado no niega el anticipo pactado antes");
     assert.strictEqual(ant("\f50\nGARANTÍA DE BUEN MANEJO DEL ANTICIPO\nN/A\n\f51\nLa entidad entregará al contratista un anticipo del treinta por ciento (30%).\n").estado, "si", "una celda «N/A» bajo el título de una garantía no niega el anticipo pactado después");
@@ -8478,7 +8486,7 @@ async function main() {
     assert.strictEqual(ant("\f3\nNo se pagará el ajuste.\nEl anticipo será del treinta por ciento del valor del contrato y se girará a la fiducia.\n").estado, "si", "«No se pagará el ajuste.» no niega el anticipo de la línea siguiente (MUTACIÓN: sin la guarda del punto)");
     // la gemela de lib/negocio reconoce las tres formas nuevas
     const Ng = require("../lib/negocio.js");
-    for (const t of ["La Entidad considera que no es procedente establecer un anticipo", "no considera prudente gestionar anticipo, toda vez", "ANTICIPO (19 | SÍ NO_X_ Porcentaje"]) assert.strictEqual(Ng.anticipoDeclarado({}, t), true, `lib/negocio lee la negación como la de los documentos: «${t}»`);
+    for (const t of ["La Entidad considera que no es procedente establecer un anticipo", "no considera prudente gestionar anticipo, toda vez", "ANTICIPO (19 | SÍ NO_X_ Porcentaje", "8.3. ANTICIPO Y/O PAGO ANTICIPADO: No aplica"]) assert.strictEqual(Ng.anticipoDeclarado({}, t), true, `lib/negocio lee la negación como la de los documentos: «${t}»`);
     // (5) el anticipo entre documentos: una mención no tapa al que decide, y dos que se contradicen se dicen
     const doc = (tipo, a) => ({ nombre: `${tipo}.pdf`, tipo, hechos: { ...Dp.hechosDeTexto("", { tipo }), anticipo: a } });
     const antDe = (leidos) => Dp.loQueDicen({ indice: { archivos: [], plan: [] }, leidos, ilegibles: {} }).hechos.find((x) => x.clave === "anticipo");

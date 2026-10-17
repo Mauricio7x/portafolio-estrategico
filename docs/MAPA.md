@@ -213,8 +213,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 325 secciones (20 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 18607  «Combustible» suelto también mataba obra: las redes de gas y los surtidores entran (1-oct-2…
+· MEMORIA · docs/MEMORIA.md — 326 secciones (20 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 18621  Tres pruebas con fecha fija tumbaron main al cambiar de mes, y la cuarta espera (1-oct-2026)  (superada)
   L 18633  Vercel pausó Detekta por CPU: cuenta nueva y menos llamadas automáticas (16-oct-2026)
   L 18684  Las pruebas con fecha: la compactación caía el 31-oct y la lista se queda sin procesos con …  (superada)
@@ -224,6 +223,7 @@
   L 18745  La fila partida de la tabla de códigos de la experiencia (17-oct-2026)
   L 18768  El anticipo «N/A» bajo su título y el amparo «Devolución del pago anticipado» (17-oct-2026)
   L 18791  Lo que mostraron 5 procesos de menor cuantía ya adjudicados (17-oct-2026)
+  L 18830  El anticipo «…PAGO ANTICIPADO: No aplica» en una sola línea (17-oct-2026)
 
 · DOCUMENTOS docs/ — 71 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)
