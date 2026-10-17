@@ -19075,3 +19075,21 @@ En una línea: el 17-oct a las 13:50 UTC una llamada sin fechas (el rango por om
   - el botón que sigue sin estado, que no nombra la llave o que no comprueba que el estado es JSON;
   - el botón que reintenta el 409: se cuelga en los `sleep 30` y la prueba lo corta a los 20 s.
 - La prueba del flujo pide `bash` y `jq` en quien corre la suite (los dos están en el corredor de GitHub): sin ellos sale en rojo, no se salta.
+
+### El techo de la tarjeta, sin la guía entera: `solo=tope` (17-oct-2026)
+
+En una línea: medido en producción, la primera consulta del expediente en una instancia tardó 13,1 s (luego 0,24 a 0,87 s):
+la guía carga los índices de competencia, baja y conocimiento, y el botón «Calcular mi precio» de la tarjeta espera 5 s,
+así que el primer clic del día abría con SECOP II y el aviso de «no se pudo consultar». El techo no usa esos índices: ahora
+la tarjeta pide `op=seguimiento&expediente=<id>&solo=tope`, que lee solo la fila viva y los documentos de ESE proceso.
+
+**Lo que no hay que deshacer.** (a) `lib/guia_proceso.topeOfertaDe` usa la MISMA fila (`filaDeLaGuia`), el MISMO
+presupuesto (`presupuestoDeFila`) y la MISMA `topeOferta` (vía `loQueDicen`) que la guía: una prueba compara los dos, también
+con la foto guardada de otro presupuesto (la fila viva manda) y con cuantía y precio base distintos. (b) `solo` con otro
+valor es inerte: el expediente completo. (c) La respuesta dice `documentos_leidos`: con 0, la tarjeta abre con SECOP II y la
+nota dice «el pliego de este proceso aún no se ha leído» (revisión adversaria: antes abría callada, y si el pliego dice
+menos la oferta se pasa). (d) El expediente comprueba que el id sea PROPIO de los guardados (`hasOwnProperty`): «constructor»
+o «toString» pasaban `ID_RE` y respondían 200. (e) `medicion.ms` viaja en la respuesta para medir el frío en producción.
+Medido en local: 0 escrituras y 5 lecturas de Redis (el expediente completo, 11). Sin medir en producción: `filaViva` sigue
+leyendo el corpus (`cargarCorpus`), que en frío también tarda; la lista de Mis procesos lo deja caliente en la misma función.
+Consumo estimado en el peor caso medido: ≤ 18 % del tope diario de CPU de Vercel con 30 clics al día (cotas de tiempo de reloj).
