@@ -4092,6 +4092,79 @@ async function main() {
       for (const v of ["OBJETOS_ENDPOINT", "OBJETOS_BUCKET", "OBJETOS_ACCESS_KEY_ID", "OBJETOS_SECRET_ACCESS_KEY"]) assert.ok(ymlB.includes(`secrets.${v}`), `el flujo lee ${v} de los secretos`);
       assert.ok(!/vercel|upstash|\/api\//i.test(ymlB), "el flujo de la base no toca producción");
     }
+    // Fase 1: una fila por proceso y sus señales (para revisar, nunca acusan)
+    {
+      const FI = require("../scripts/base_obra/fila");
+      const fase = (o) => ({ id_del_portafolio: "CO1.BDOS.1", modalidad_de_contratacion: "Selección Abreviada de Menor Cuantía", precio_base: "1000",
+        codigo_entidad: "E1", entidad: "ALCALDÍA X", departamento_entidad: "Tolima", ciudad_entidad: "No Definido", numero_de_lotes: "0", ...o });
+      const filas = [fase({ id_del_proceso: "CO1.REQ.9", adjudicado: "Si", fecha_de_publicacion_del: "2026-09-02T00:00:00.000", fecha_de_recepcion_de: "2026-09-07T00:00:00.000",
+          valor_total_adjudicacion: "940", nombre_del_proveedor: "OBRAS SAS", nit_del_proveedor_adjudicado: "900111222", respuestas_al_procedimiento: "3", proveedores_invitados: "10" }),
+        fase({ id_del_proceso: "CO1.REQ.8", adjudicado: "No", fecha_de_publicacion_del: "2026-08-04T00:00:00.000", proveedores_invitados: "0" })];
+      const of = (nom, nit, v) => ({ nombre_proveedor: nom, nit_del_proveedor: nit, valor_de_la_oferta: v });
+      const x = FI.filaDeProceso({ portafolio: "CO1.BDOS.1", filas, ofertas: [of("OBRAS SAS", "900111222", "940"), of("B", "800", "950"), of("C", "No Definido", "960")], lugar: { direcci_n_de_ejecuci_n_del_contrato: "Calle 1\nIbagué\nTolima\nCOLOMBIA" } });
+      assert.strictEqual(x.id_proceso, "CO1.REQ.9", "la fila es la de la fase adjudicada");
+      assert.strictEqual(x.plazo_dias, null, "sin fila de «observaciones» en p6dx el plazo es null, no el de la fase de ofertas");
+      assert.strictEqual(x.plazo_oferta_dias, 5, "el plazo de la fase de ofertas se guarda aparte");
+      const conObs = FI.filaDeProceso({ portafolio: "CO1.BDOS.1", filas: [filas[0], fase({ fase: "Presentación de observaciones", adjudicado: "No", fecha_de_publicacion_del: "2026-08-04T00:00:00.000" })], ofertas: [] });
+      assert.strictEqual(conObs.plazo_dias, 34, "licitación y menor cuantía: desde el prepliego (observaciones) hasta el cierre");
+      const minimaP = FI.filaDeProceso({ portafolio: "P", filas: [fase({ modalidad_de_contratacion: "Mínima cuantía", adjudicado: "Si", fecha_de_publicacion_del: "2026-09-01T00:00:00.000", fecha_de_recepcion_de: "2026-09-03T00:00:00.000" })], ofertas: [] });
+      assert.strictEqual(minimaP.plazo_dias, 2, "mínima: una sola fase, de su publicación al cierre");
+      assert.strictEqual(x.ciudad_entidad, null, "«No Definido» es sin dato, no una ciudad");
+      assert.strictEqual(x.municipio_ejecucion, "Ibagué"); assert.strictEqual(x.ubicacion_fuente, "direccion_del_contrato");
+      assert.strictEqual(x.pct_adjudicado, 0.94); assert.strictEqual(x.n_validas, 3); assert.strictEqual(x.competencia, "real");
+      assert.deepStrictEqual(x.oferta_ganadora, { valor: 940, pct: 0.94 }, "la oferta del ganador se halla por NIT");
+      assert.strictEqual(x.interesados, 10, "interesados = el máximo de invitados entre las fases");
+      assert.ok(!x.ofertas_validas.some((o) => "fila" in o), "la base no guarda la fila cruda de la oferta");
+      const nadie = FI.filaDeProceso({ portafolio: "CO1.BDOS.1", filas: [fase({ adjudicado: "Si", proveedores_invitados: "" })], ofertas: [of("A", "900111222", "900")] });
+      assert.strictEqual(nadie.interesados, null, "sin invitados publicados no hay «0 interesados»");
+      assert.strictEqual(nadie.competencia, "baja"); assert.strictEqual(nadie.plazo_dias, null, "sin fechas no hay plazo");
+      const lotes = FI.filaDeProceso({ portafolio: "CO1.BDOS.1", filas: [fase({ adjudicado: "Si", numero_de_lotes: "3" })], ofertas: [of("A", "900111222", "900")] });
+      assert.strictEqual(lotes.excluido, "lote_numero_de_lotes"); assert.strictEqual(lotes.competencia, null, "un excluido no recibe etiqueta de competencia");
+      const noAdj = FI.filaDeProceso({ portafolio: "CO1.BDOS.1", filas: [fase({ adjudicado: "No" })], ofertas: [] });
+      assert.strictEqual(noAdj.excluido, "no_adjudicado");
+      // señales: umbral de plazo MEDIDO (percentil 10) y ganador repetido por código de entidad
+      assert.strictEqual(FI.percentil([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], 0.1), 2);
+      assert.strictEqual(FI.percentil([null, undefined], 0.1), null, "sin datos no hay percentil");
+      const mk = (i, o) => ({ portafolio: "P" + i, adjudicado: true, modalidad: "menor_cuantia", codigo_entidad: "E1", ganador_id: "n:1", plazo_dias: 10 + i, n_validas: 1, pct_adjudicado: 0.995, interesados: 10, competencia: "baja", ...o });
+      const conj = [mk(1), mk(2), mk(3), mk(4, { ganador_id: "n:2", n_validas: 3, competencia: "real", pct_adjudicado: 0.9 }), mk(5, { codigo_entidad: "E2" }), mk(6, { competencia: null, excluido: "lote_p6dx", ganador_id: "n:9" })];
+      FI.senales(conj);
+      assert.strictEqual(conj[0].senales.ganador_repetido, true, "3 victorias del mismo ganador en la misma entidad");
+      assert.strictEqual(conj[4].senales.ganador_repetido, false, "otra entidad no suma");
+      assert.strictEqual(conj[0].senales.adjudicado_99_con_una, true); assert.strictEqual(conj[3].senales.una_oferta, false);
+      assert.strictEqual(conj[0].senales.plazo_corto, true, "plazo bajo el percentil 10 de su modalidad");
+      assert.strictEqual(conj[3].senales.plazo_corto, false, "plazo sobre el percentil 10 no es corto");
+      assert.strictEqual(conj[0].senales.ganador_repetido, true, "EXACTAMENTE 3 victorias ya alcanzan N = 3");
+      assert.strictEqual(conj[5].senales, undefined, "un excluido no recibe señales");
+      assert.strictEqual(FI.senales([mk(1, { modalidad: "licitacion", interesados: null })]) && true, true);
+      // arreglos de la revisión adversaria (17-oct-2026), cada uno con su caso medido
+      for (const n of ["900000000", "9000000000", "111111111", "2222222222", "11111111", "123456789"]) assert.strictEqual(lb.nitValido(n), null, `NIT de relleno «${n}» no identifica`);
+      assert.strictEqual(lb.nitValido("900111222"), "900111222");
+      const amb = lb.limpiarOfertas([{ nombre_proveedor: "CONSORCIO DIKH", nit_del_proveedor: "2222222222", valor_de_la_oferta: "900" },
+        { nombre_proveedor: "CONSORCIO INGENIERIA MEM", nit_del_proveedor: "2222222222", valor_de_la_oferta: "910" }], "1000");
+      assert.strictEqual(amb.lote_sospechoso, false, "un NIT de relleno no junta dos consorcios en un lote falso");
+      const amb2 = lb.limpiarOfertas([{ nombre_proveedor: "UT A", nit_del_proveedor: "901555666", valor_de_la_oferta: "900" },
+        { nombre_proveedor: "UT B", nit_del_proveedor: "901555666", valor_de_la_oferta: "910" }], "1000");
+      assert.strictEqual(amb2.validas.length, 2, "un NIT con dos nombres distintos en el mismo proceso no identifica: cuentan por nombre");
+      assert.strictEqual(amb2.lote_sospechoso, false, "…y por eso no inventa un lote");
+      assert.strictEqual(amb2.proveedores, 2, "dos oferentes, no uno");
+      assert.strictEqual(lb.nombreComparable("ESTRUCTURAS, ARQUITECTURA S.A.S."), lb.nombreComparable("Estructuras; Arquitectura SAS"), "puntuación y S.A.S. no separan al mismo oferente");
+      assert.deepStrictEqual(FI.lugarDeDireccion("CALLE 4 CARRERA 3 ESQUINA\nTolima\nCOLOMBIA"), { municipio: null, departamento: "Tolima" }, "con 3 líneas no hay municipio, solo departamento");
+      const sobre = FI.filaDeProceso({ portafolio: "P", filas: [fase({ adjudicado: "Si", valor_total_adjudicacion: "1000000" })], ofertas: [of("A", "900111222", "900")] });
+      assert.strictEqual(sobre.pct_adjudicado, null); assert.strictEqual(sobre.inconsistencia, "valor_adjudicado_sobre_precio_base", "adjudicar sobre el precio base es inconsistencia, no 100.000 %");
+      const contra = FI.filaDeProceso({ portafolio: "P", filas: [fase({ adjudicado: "Si", valor_total_adjudicacion: "1000", nombre_del_proveedor: "A", nit_del_proveedor_adjudicado: "900111222" })], ofertas: [of("A", "900111222", "530")] });
+      assert.strictEqual(contra.inconsistencia, "valor_adjudicado_distinto_de_la_oferta_ganadora");
+      FI.senales([contra]); assert.strictEqual(contra.senales.adjudicado_99_con_una, null, "un valor adjudicado que contradice la oferta del ganador no decide la señal");
+      const conf = [mk(1, { respuestas_publicadas: 3 }), mk(2, { pct_adjudicado: null }), mk(3, { interesados: 2, respuestas_publicadas: 4, n_validas: 1, interesados_contradictorio: true })];
+      FI.senales(conf);
+      assert.strictEqual(conf[0].senales.una_oferta, null, "1 válida de 3 presentadas no es oferente único");
+      assert.strictEqual(conf[1].senales.adjudicado_99_con_una, null, "sin % adjudicado la señal es «sin dato», no «no»");
+      assert.strictEqual(conf[2].senales.interes_sin_ofertas, null, "interesados menos que respuestas: el campo se contradice");
+      const reEnt = [0, 1, 2].map((i) => mk(10 + i, { ganador_id: "n:900000001", ganador_nit: "900000001", ganador: ["UT A", "UT B", "UT C"][i] }));
+      FI.senales(reEnt); assert.strictEqual(reEnt[0].senales.ganador_repetido, false, "un NIT que gana con 3 nombres distintos en la entidad no es «el mismo ganador»");
+      const tzAntes = process.env.TZ; process.env.TZ = "America/New_York";
+      try { assert.strictEqual(FI.filaDeProceso({ portafolio: "P", filas: [fase({ adjudicado: "Si", fecha_de_publicacion_del: "2026-03-01T00:00:00.000", fecha_de_recepcion_de: "2026-03-15T00:00:00.000" })], ofertas: [] }).plazo_oferta_dias, 14, "el cambio de horario no mueve el plazo"); }
+      finally { if (tzAntes === undefined) delete process.env.TZ; else process.env.TZ = tzAntes; }
+    }
     console.log("· unidad base de obra: «sin dato» ≠ 0, mapeo de modalidades, exclusiones contadas por motivo, lote, las dos σ, la regla de fila y el almacén que frena antes de pasar su tope (ida y vuelta contra un S3 falso)");
   }
 

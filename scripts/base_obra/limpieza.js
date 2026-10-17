@@ -50,15 +50,24 @@ function elegirFila(filas) {
    proceso: dos filas que comparten uno de los dos son el mismo oferente. El código de SECOP solo
    identifica cuando no hay ninguno de los dos. */
 const NO_ES_NOMBRE = /^(no definido|sin descripcion|confidencial|)$/;
+/* NIT de relleno (revisión adversaria, 17-oct-2026): «900000000» aparecía con 9 consorcios
+   distintos y «2222222222» / «11111111» juntaban oferentes distintos en un lote falso. Se
+   rechazan: un dígito repetido, un dígito seguido de 5+ ceros y la secuencia 123456789… */
 function nitValido(v) {
   const d = String(v || "").replace(/[\s.\-]/g, "");
-  return /^\d{6,}$/.test(d) && !/^0+$/.test(d) ? d : null;
+  if (!/^\d{6,}$/.test(d) || /^(\d)\1+$/.test(d) || /^[1-9]0{5,}$/.test(d) || "1234567890".startsWith(d)) return null;
+  return d;
 }
-function identidades(o) {
+/* Nombre comparable: sin acentos, sin puntuación y con «S.A.S.» = «SAS» (wi7w cambia comas por
+   punto y coma; p6dx y wi7w escriben la sociedad distinto). */
+function nombreComparable(s) {
+  return norm(s || "").replace(/[.,;:()"'´`]/g, " ").replace(/\bs\s+a\s+s\b/g, "sas").replace(/\bs\s+a\b/g, "sa").replace(/\s+/g, " ").trim();
+}
+function identidades(o, nitsAmbiguos) {
   const ids = [];
   const nit = nitValido(o.nit_del_proveedor);
-  if (nit) ids.push("n:" + nit);
-  const nom = norm(o.nombre_proveedor || "").replace(/\s+/g, " ").trim();
+  if (nit && !(nitsAmbiguos && nitsAmbiguos.has(nit))) ids.push("n:" + nit);
+  const nom = nombreComparable(o.nombre_proveedor);
   if (!NO_ES_NOMBRE.test(nom)) ids.push("o:" + nom);
   if (!ids.length) { const cod = String(o.c_digo_proveedor || "").trim(); if (cod && !/^0+$/.test(cod)) ids.push("c:" + cod); }
   return ids;
@@ -66,12 +75,22 @@ function identidades(o) {
 function claveProveedor(o) { return identidades(o)[0] || null; }
 
 /* Unión de identidades dentro de UN proceso → proveedor canónico por oferta. */
+/* Un NIT que dentro del MISMO proceso viene con 2+ nombres distintos no identifica a nadie
+   (relleno o error de digitación): esas filas se identifican por su nombre. */
+function nitsAmbiguosDe(ofertas) {
+  const nombres = new Map();
+  for (const o of ofertas) { const nit = nitValido(o.nit_del_proveedor), nom = nombreComparable(o.nombre_proveedor);
+    if (!nit || NO_ES_NOMBRE.test(nom)) continue; if (!nombres.has(nit)) nombres.set(nit, new Set()); nombres.get(nit).add(nom); }
+  return new Set([...nombres].filter(([, s]) => s.size > 1).map(([n]) => n));
+}
 function proveedoresUnidos(ofertas) {
+  const amb = nitsAmbiguosDe(ofertas);
+  const identidades_ = (o) => identidades(o, amb);
   const padre = new Map();
   const raiz = (x) => { while (padre.get(x) !== x) { padre.set(x, padre.get(padre.get(x))); x = padre.get(x); } return x; };
   const unir = (a, b) => { const x = raiz(a), y = raiz(b); if (x !== y) padre.set(x < y ? y : x, x < y ? x : y); };
-  for (const o of ofertas) { const ids = identidades(o); for (const i of ids) if (!padre.has(i)) padre.set(i, i); for (let k = 1; k < ids.length; k++) unir(ids[0], ids[k]); }
-  return (o) => { const ids = identidades(o); return ids.length ? raiz(ids[0]) : null; };
+  for (const o of ofertas) { const ids = identidades_(o); for (const i of ids) if (!padre.has(i)) padre.set(i, i); for (let k = 1; k < ids.length; k++) unir(ids[0], ids[k]); }
+  return (o) => { const ids = identidades_(o); return ids.length ? raiz(ids[0]) : null; };
 }
 
 /* Lote según p6dx: un mismo id_del_portafolio con ≥ 2 precios base positivos distintos (cada
@@ -111,7 +130,7 @@ function limpiarOfertas(ofertas, precioBase) {
     if (v < 0.5 * base) { ex.bajo_50++; continue; }
     if (!porProv.has(p)) porProv.set(p, new Set());
     porProv.get(p).add(v);
-    validas.push({ proveedor: p, nombre: o.nombre_proveedor || null, valor: v, pct: v / base });
+    validas.push({ proveedor: p, nombre: o.nombre_proveedor || null, valor: v, pct: v / base, fila: o });
   }
   const lote_sospechoso = [...porProv.values()].some((s) => s.size > 1);
   return { validas, excluidas: ex, lote_sospechoso, proveedores: porProv.size };
@@ -138,6 +157,6 @@ function competencia(nValidas) {
   return nValidas >= 3 ? "real" : "baja";
 }
 
-module.exports = { MODALIDADES, clasificarModalidad, numeroONull, elegirFila, claveProveedor, nitValido,
+module.exports = { MODALIDADES, clasificarModalidad, numeroONull, elegirFila, claveProveedor, nitValido, nombreComparable, nitsAmbiguosDe,
   proveedoresUnidos, lotePorPrecioBase,
   limpiarOfertas, mediana, estadisticas, competencia };

@@ -60,13 +60,7 @@ function trozos(xs, n) { const o = []; for (let i = 0; i < xs.length; i += n) o.
 const inc = (o, k, n = 1) => { o[k] = (o[k] || 0) + n; };
 const pct = (a, b) => (b > 0 ? Math.round((1000 * a) / b) / 10 : null);
 
-/* Lugar de ejecución desde la dirección de jbjy: «…\nMunicipio\nDepartamento\nCOLOMBIA». */
-function lugarDeDireccion(dir) {
-  const ls = String(dir || "").split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
-  if (ls.length < 3) return null;
-  if (!/^colombia$/i.test(ls[ls.length - 1] || "")) return null;
-  return { municipio: ls[ls.length - 3] || null, departamento: ls[ls.length - 2] || null };
-}
+const { lugarDeDireccion } = require("./fila"); // una sola regla (fila.js)
 
 async function main() {
   const salida = process.argv[2];
