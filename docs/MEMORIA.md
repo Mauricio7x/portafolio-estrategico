@@ -18815,6 +18815,192 @@ validación de Precios sigue siendo el presupuesto de SECOP II; el aviso no lleg
 Medido después: 11 de 11 cifras correctas en los 9 pliegos y las dos versiones de Santa Elena (Manizales escribe
 «1.1.OBJETO» sin espacio y ahora se lee).
 
+### El techo de la oferta en Precios: la cifra más baja entre SECOP II y el pliego definitivo (17-oct-2026)
+
+En una línea: al abrir Precios desde un proceso guardado («Cargue el pliego en Precios»), el campo «Presupuesto oficial
+(COP)» arranca con `guia.tope_oferta` (`lib/documentos_proceso.topeOferta`): la del pliego definitivo si es MENOR que la de
+SECOP II, con una nota que dice de dónde sale; y el hallazgo G.5 dice «por encima del presupuesto del pliego definitivo».
+
+**Por qué.** Santa Elena: con el techo de SECOP II ($1.744.426.146, el del borrador) Precios aceptaba una oferta por encima
+del presupuesto real ($1.581.425.810). Visto bueno del dueño el 17-oct-2026.
+
+**Lo que no hay que deshacer.** (a) El techo solo BAJA: si el pliego dice más o lo mismo (o difiere en centavos), queda el de
+SECOP II. (b) La elección del documento es UNA (`elegirPresupuestoPliego`), la misma del aviso de la cabecera: adenda más
+reciente con cifra, borrador callado con definitivo leído, sin lotes. (c) No fijan el techo: un borrador (aunque diga menos),
+una adenda posterior sin la tabla, una lectura dudosa (más del 50 % de diferencia), los lotes; ahí el techo es el de SECOP II
+y el aviso sigue en la cabecera. (d) `cuantia_fuente` viaja solo mientras el usuario no cambie la cifra; cualquier otro valor
+es inerte (`normalizarConfig`). (e) La tarjeta de Licitaciones («Calcular mi precio») sigue abriendo Precios con SECOP II aunque el
+pliego de ese proceso ya se haya leído (la lista no trae la guía): llevar ahí el techo es una decisión pendiente del dueño. La K,
+el capital de trabajo y la experiencia no cambian. (f) Revisión adversaria del mismo día, cada caso con su cerradura (la de la
+PANTALLA con el arnés `cargarFrontRO` del bloque «revisor de la oferta», que ejecuta el public/app.js real): sin cifra de SECOP II
+no se fija techo (no hay contra qué contrastar la lectura, y la nota decía «SECOP II publica $ 0»); `cuantiaDelPliego` es
+{id, valor} y solo viaja para ESE proceso; abrir el borrador de otro proceso la borra con su nota; cambiar la cifra a mano calla
+la nota; el pliego por debajo fija el techo aunque sea por centavos (SECOP II los corta hacia abajo). Límites conocidos: con dos
+documentos definitivos de cifra distinta manda la prioridad, no la más baja; el techo sale de la guía con que se abrió el
+expediente (una lectura posterior no lo refresca hasta reabrirlo). Visto en Chromium.
+
+### Herramientas de terceros para las sesiones de Claude: lo que entró, lo que no y por qué (17-oct-2026)
+
+En una línea: el dueño pidió una búsqueda de repositorios públicos que ayudaran a Detekta y a Claude, y aprobó instalar los
+que valieran la pena; leído el código, de cinco candidatos entró UNO (el servidor `secop` de `.mcp.json`) y además
+gitleaks en GitHub; los otros cuatro se descartaron por motivos que no se ven en la ficha del repositorio, solo en su código.
+
+**Lo que entró, y cómo no hay que tocarlo.** (a) `secop` en `.mcp.json`: juandavidsernav/secop-mcp-server 0.5.0 (MIT).
+Solo hace GET a `www.datos.gov.co`, no escribe archivos ni ejecuta comandos, y no pide clave. El paquete de PyPI se
+comparó archivo por archivo con el commit 0709a45 de su repositorio: idéntico. Va con TODO fijado (`==0.5.0`, `mcp==1.26.0`,
+`httpx==0.28.1`, las de su propio `uv.lock`, y `--exclude-newer 2026-10-01` para que ninguna dependencia de segunda mano
+cambie por debajo): quitar las versiones fijadas deja que el código que corre deje de ser el que se leyó. Sus herramientas
+NO van en `permissions.allow`: llaman a la red y esa lista es solo para lectura local. Tampoco va con la clave de Socrata
+de Detekta: una sesión de Claude no lleva secretos de producción. (b) `.github/workflows/gitleaks.yml`: el PROGRAMA
+gitleaks 8.30.1 (MIT) con su SHA-256 comprobado, no la acción `gitleaks/gitleaks-action`, que desde su v2.0.0 dejó la MIT
+por una licencia propia. Siempre con `--redact`: los registros de un repositorio público son públicos. En MODO AVISO
+(termina en verde con aviso amarillo); volverlo bloqueante lo decide el dueño. La única excepción, en `.gitleaksignore`
+con su motivo, es el vector de prueba que AWS publica para Signature V4 (examplebucket, 24-may-2013) en `tests/e2e.js`.
+Medido el 17-oct: 583 commits de la historia completa, 0 avisos con la excepción, 1 sin ella; y una clave falsa con forma
+de token de GitHub SÍ avisa (la cerca muerde).
+
+**Dos defectos del servidor `secop` que Claude NO debe creer.** (1) Un contrato sin `valor_pagado` sale como «Pagado: $0»
+(`format_summary`, `row.get("valor_pagado", "0")`; reproducido el 17-oct ejecutando solo esa función): es el «sin dato»
+convertido en cero que prohíbe la primera regla dura. Lo mismo en `contar_personas_contratadas` (`r.get(..., 0)`).
+(2) «Mostrando N de N resultados» cuenta solo las filas que trajo esa consulta (tope por petición), no el total de SECOP:
+no sirve como conteo. Para una cifra que decide, se consulta datos.gov.co con `$select=count(*)`. Sin clave, su README
+habla de unas 60 peticiones por hora (cifra suya, sin verificar).
+
+**Lo que se descartó leyendo el código, y no hay que volver a proponer sin leer esto.** (c) amgallego8/SECOP-MCP: no
+corre tal como está publicado (importa `_shared.config`, `_shared.http_client`, que no están en el repositorio) y los
+busca tres carpetas por encima de la suya con `sys.path.insert`, es decir, ejecutaría lo que haya ahí; además se presenta
+como un navegador Mac para bajar PDF. (d) obra/superpowers: sus habilidades útiles DUPLICAN reglas que ya viven aquí
+(«verification-before-completion» es «Nada se da por hecho sin comprobarlo»; «systematic-debugging» es `engineering:debug`),
+y una regla con dos copias diverge a la primera corrección. (e) danielmiessler/Fabric: instrucciones genéricas; la de
+contratos ordena «Do not output warnings or notes», lo contrario de marcar lo no verificado, y `/dictamen` ya revisa
+pliegos verificando cada cita. (f) yamadashy/repomix: empaca el repositorio entero en un archivo, justo lo que
+CLAUDE.md prohíbe («se BUSCA, no se lee»: leerlo todo quemaba 250-400k tokens por arranque).
+
+### El anticipo con el corchete de la plantilla y la frase modelo que remite al 8.3 (17-oct-2026)
+
+En una línea: en la ronda 5 de detekta-lector (10 pliegos nuevos, texto de pdf.js) el anticipo dio dos «sí» falsos:
+Garagoa (CO1.REQ.11091702) dice «la entidad no entregará al contratista [anticipo y/o pago anticipado]», con el corchete
+de la plantilla sin borrar, y Paicol (CO1.REQ.11151463) solo trae la frase modelo «No se configura este supuesto cuando
+la Entidad establece en el numeral 8.3 que no va a entregar anticipo…». Ahora Garagoa da «no» y Paicol «sin dato».
+
+**Lo que no hay que deshacer.** (a) `SIN_ANTICIPO_RE` (y su gemela de `lib/negocio`) acepta SOLO un `[` pegado a
+«anticipo». El paréntesis y las comillas abrían «no» falsos que tapaban un anticipo pactado («La Entidad no reconocerá
+pagos distintos a los siguientes (anticipo y actas parciales…)»), y ningún pliego real los necesitaba. (b) «no VA A
+entregar» NO es negación, a propósito: solo se ha visto en la frase modelo; con él, un condicional («Si la Entidad no va
+a entregar anticipo, el valor… será cero») o cualquier variante de la frase modelo que la exclusión no cubriera negaba con
+peso de frase (3) y le ganaba a «la entidad entregará un anticipo del 30 %» (revisión adversaria, reproducido; en
+`lib/negocio` ponía el anticipo en 0). Sin «va a», una variante no cubierta solo puede decir «sí» cuando no hay otra
+cláusula, que es lo que ya pasaba. (c) La frase modelo NO decide: remite a lo que diga el 8.3. Se excluye en la línea
+(`excluye`: «establec… que no va a entregar», «no se configura este supuesto», «y el Proponente no renuncia a ellos») y
+partida con la línea anterior (`excluyeUnida`); el tramo «establec…» cruza «8.3» pero no un punto de fin de frase.
+Paicol queda en «sin dato» (confírmelo): uno de los dos subagentes de la verdad dijo «no» y el otro null, y su numeral 8.3
+es de formularios. (d) REGLAS_VERSION .7 → .8: los hechos y los dictámenes por reglas se rehacen.
+Medido: en los 21 textos de pdf.js que hay (Fase 0, Santa Elena y ronda 5) solo cambian esos dos; la frase modelo aparece
+también en Samacá y Garagoa, sin efecto porque su 8.3 decide. Límites conocidos: la exclusión descarta la línea ENTERA, así
+que si pdf.js pega la cola de la frase modelo con el 8.3 en una sola línea, ese 8.3 no se lee; y «la Entidad no va a
+entregar anticipo», si fuera la única mención del pliego, saldría «sí» (no visto en ningún pliego real).
+
+### El presupuesto del pliego en licitación pública: título sin número, «…Y ESPECIFICACIONES» y centavos con punto (17-oct-2026)
+
+En una línea: en la ronda 5 de detekta-lector el lector de la tabla 1.1 (`lib/presupuesto_pliego`) leyó 3 de 10 pliegos
+de licitación pública, sin ningún falso; los 7 vacíos eran de forma, no de contenido. Ahora lee el título sin el número
+«1.1», la variante «…PLAZO, UBICACIÓN Y ESPECIFICACIONES…», corta la sección en «DOCUMENTOS DEL PROCESO» sin número y
+acepta los centavos con punto. Medido a ciegas en 10 pliegos nuevos (ronda 6): 9 de 9 con sección 1.1, 0 falsos (main: 5).
+
+**Lo que no hay que deshacer.** (a) El título sin número es el del documento tipo con numeración AUTOMÁTICA de Word: el
+«1.1» no queda en la capa de texto (Sucre, La Jagua, Arauca, Oporapa y cuatro de la ronda 6). La línea del índice no
+casa porque termina en puntos de guía y número de página; el título debe estar SOLO en su línea. (b) Sin el «1.2» no hay
+fin numerado, y la sección de 4.000 caracteres alcanzaba el valor del certificado de disponibilidad presupuestal (Sucre:
+$1.366.136.574 contra $1.258.962.674,74 del presupuesto): por eso el fin acepta los títulos que siguen en el documento
+tipo, cada uno con su prueba. Dos cifras distintas siguen dando null; nunca se escoge. (c) «$685.335.300.87»: tras miles
+con punto, un grupo final de DOS cifras solo puede ser de centavos. (d) Lo que sigue sin leerse, a propósito: la cifra
+partida entre columnas en dos líneas (Samacá, «$1.773´266.41» / «9.00).») y el pliego propio sin sección 1.1 (ESAP,
+numeral 2.6): callar es lo correcto, porque una cifra falsa menor que SECOP II bajaría el techo de Precios. (e) Lo que tumbó la revisión adversaria (cada uno con su cerradura): «$1.581.425.810,0» retrocedía y leía «1.581.425,81»,
+mil veces menos (el lookahead ahora prohíbe un dígito o «,d»/«.d» detrás); y SIN título de cierre ya no hay sección: una
+adenda que solo nombra el numeral en su línea y trae más abajo «CT ≥ $ 400.000.000» bajaba el techo a esa cifra (el hueco
+existía con el «1.1» delante; el título sin número lo ampliaba). Medido: los 30 textos reales con la sección encuentran su
+cierre, así que la regla no calla ninguno. (f) VERSION 17 → 18.
+En los 20 procesos de las rondas 5 y 6 la cifra del pliego coincide con la de SECOP II: ni aviso ni techo distinto. El
+valor del cambio es cazar el próximo Santa Elena en una licitación pública, no mover cifras de hoy.
+
+### Precios deja de despertar la rutina cuando ya se despertó 3 veces sin dar señal (17-oct-2026)
+
+En una línea: pasados los 15 min de «repetida», cada «Buscar» despertaba otra corrida del día aunque las anteriores no
+hubieran mandado ningún progreso, y la solicitud nueva pisaba la cuenta; con la rutina dañada (entorno, clave, cuota) la
+pantalla decía «Vuelva a pulsar Buscar» y cada pulsación gastaba un intento sin arreglar nada. Ahora la solicitud guarda
+`despertadas_sin_senal` y a partir de `RUTINA_TOPE_SIN_SENAL` (3) ya no se despierta otra: la respuesta trae
+`tope_alcanzado` y la pantalla dice el hecho y abre el chat.
+
+**Cómo se halló.** El estudio de repositorios del 17-oct (Bull: «contar cuántas veces se quedó muda una tarea y darla por
+fallida») lo propuso como hipótesis; se verificó leyendo `lib/handlers/apu/editor.js` (la solicitud nueva no heredaba nada
+de la anterior) y `public/app.js` (la pantalla pedía volver a pulsar). La premisa del estudio, «Buscar puede repetirse sin
+fin», era FALSA en su forma fuerte: la pantalla nunca vuelve a pedir sola (los sondeos solo leen, con tope de 240 y 600);
+solo el usuario repetía.
+
+**Lo que no hay que deshacer.** (a) Cuenta solo un despertar que arrancó o pudo arrancar (`ok` o `indeterminada`): uno que
+falló no gastó corrida y no suma, pero conserva la cuenta que traía. (b) Cualquier señal de una sesión —«buscando» o
+«listo»— la pone en cero, aunque después enmudezca: la rutina funciona, el fallo es otro. (c) Una solicitud de antes de
+este cambio, sin el campo y despertada, cuenta 1, no 0 («sin dato» no es cero). (d) Pasadas `RUTINA_TOPE_VENTANA_H` (24)
+horas desde la ÚLTIMA solicitud, o con una fecha ilegible, se vuelve a intentar: es el lado seguro, como ya lo era para la
+vida de una sesión. (e) Sin rutina configurada no hay tope: no hay nada que gastar. (f) El tope se evalúa ANTES del
+candado del disparo, para no tomarlo sin disparar. (g) El mensaje no promete cuándo se arregla: dice el hecho y lleva al
+chat, que funciona sin ninguna variable.
+Medido: la prueba falla contra el manejador anterior («con 3 despertares sin señal no se gasta otro: 1 disparos») y la de
+la pantalla contra el `app.js` anterior; en Chromium real (Playwright, API interceptada) el texto y el color salen con 3 y
+el mensaje de siempre con 2. **Límite conocido:** entre los 15 y los 30 min tras el tercer despertar, un «Buscar» rechazado
+muestra el tope y el siguiente sondeo vuelve a decir «la búsqueda arrancó» hasta que la solicitud pasa a «sin_atender».
+**Hermano vivo, sin tocar:** el dictamen (`lib/handlers/pliego/dictamen.js`, `pedir_sesion`) tiene el mismo hueco: su marca
+dura 30 min y después cada clic vuelve a despertar su rutina, sin cuenta; queda para un encargo propio.
+
+### El dictamen también deja de despertar la rutina tras 3 lecturas pedidas sin respuesta (17-oct-2026)
+
+En una línea: el hermano vivo que dejó anotado «Precios deja de despertar la rutina cuando ya se despertó 3 veces sin dar
+señal»: vencida la marca de media hora de `dictamen:pedido:*`, cada clic en «Leer el pliego completo» despertaba otra
+corrida del día aunque las anteriores no hubieran escrito ningún dictamen. Ahora `dictamen:lecturas_sin_respuesta:*` cuenta
+los pedidos seguidos sin dictamen y a partir de `LECTURAS_TOPE_SIN_RESPUESTA` (3) ya no se despierta otra: la respuesta
+trae `tope_alcanzado` y el mensaje `LECTURA_TOPE` con su qué hacer, que la caja ya pinta debajo del botón.
+
+**Por qué una clave aparte y no un campo en la marca.** La marca del pedido vence a los 30 min (es también el candado) y la
+sesión del dictamen no manda avances: la única señal es el dictamen guardado. La cuenta tiene que sobrevivir a la marca, así
+que vive en su propia clave con 24 h desde el último pedido.
+
+**Lo que no hay que deshacer.** (a) Cuenta solo un disparo que arrancó o pudo arrancar (indeterminado); uno que falló seguro
+borra la marca, no gastó y no suma. (b) Guardar el dictamen de la sesión borra la cuenta junto con la marca: la rutina
+funciona. (c) Sin la clave no hubo pedidos sin respuesta: ese 0 es un hecho, no un «sin dato», porque la clave nace con el
+primer pedido; una cuenta ilegible NO frena (se pide, el lado seguro). (d) El tope se mira DESPUÉS de tomar la marca (para
+que un segundo clic dentro de la media hora siga diciendo «ya pedida») y, si frena, suelta esa marca: no corresponde a
+ningún disparo. (e) «Volver a leer» (refrescar) también cuenta: también gasta una corrida.
+Medido: con la condición del tope apagada la suite falla con «con 3 lecturas sin respuesta no se gasta otra: 1 disparos»,
+y sin el borrado al guardar el dictamen falla la cuenta. La pantalla no cambió: `public/pliego.js` (`pedirLecturaCompleta`)
+ya escribe `error` y `que_hacer` en `#dictamen-estado`; leído, no ejecutado en navegador.
+
+### El anticipo negado para UNA parte numerada del contrato no es «no hay anticipo» (17-oct-2026)
+
+En una línea: en la ronda 6 de detekta-lector, la Gobernación del Amazonas (CO1.REQ.11022945, llave en mano) decía «no hay
+anticipo» porque «La Entidad no reconocerá anticipo alguno para la ejecución del componente 1…» pesaba más que «Dará en
+calidad de anticipo un 30% del valor del componente dos» del mismo numeral; un «no» falso deja el capital de trabajo en
+«no llega». Ahora la negación de una parte NUMERADA pesa como mención y Amazonas dice «sí», citando la cláusula (pág. 84).
+
+**Lo que no hay que deshacer (dos revisiones adversarias, cada punto con su cerradura).** (a) Solo es parcial la parte
+NUMERADA y SINGULAR justo después de la negación: «para (la ejecución del) componente 1 / etapa 2 / lote uno / fase II».
+Entre la negación y la parte solo cabe «alguno», «al contratista» o «y/o pago anticipado». La primera versión aceptaba
+cualquier «para … etapa/actividades/ítems» a 60 caracteres: once negaciones reales pasaban a mención y dos a un «sí»
+falso; la segunda aún saltaba a la parte de otra frase («no otorgará anticipo, por lo que … para la etapa 1»), a «ni para
+la etapa 1 ni para la etapa 2», a «lote 1 de 1», a «etapa 2026» y a «lotes 1, 2 y 3»: todo eso sigue negando. (b) La línea
+de abajo solo se mira si la frase queda ABIERTA (termina en conector o en el nombre de la parte, o la de abajo sigue en
+minúscula), y solo puede volver PARCIAL una negación de esta línea, nunca crearla: sin eso «…: No aplica» / «Plazo para
+la etapa 1» pasaba a mención y las citas «8.3 … / NO APLICA» perdían su segunda línea. (c) `hechosDeTexto` y el dictamen
+respetan el `niega` que decide `detectar`; releer la cita sola daba «no» con la parte en la línea siguiente. (d) En
+`lib/negocio`, con una negación parcial NO se lee porcentaje: «… para el componente uno, con pagos parciales del 90 %» o la
+garantía «del 100 %» de al lado se tomaban como anticipo, y un anticipo falso baja la carga de la K y abre la puerta de
+caja. Queda «sin dato». (e) Se excluye la fila partida de la tabla de garantías «(correcta) inversión del anticipo⇥
+liquidación…⇥100%», salvo que la línea pacte o niegue: era la cita del «sí» en Amazonas, Samacá y Sucre. (f) REGLAS_VERSION .9.
+Medido en los 31 textos de pdf.js (Fase 0, Santa Elena, rondas 5 y 6): solo cambia el estado de Amazonas; tres citas pasan
+de la tabla de garantías a la cláusula (Pasto sigue citando otra fila de la garantía). Límites conocidos (previos, del
+lado caro, medidos por la revisión): la parte ANTES de la negación («Para la etapa 1 no se entregará anticipo»), «la primera
+etapa», «en el componente 1» sin «para» y la frase partida en tres líneas siguen diciendo «no»; las filas ya enriquecidas
+en Redis conservan `anticipo_declarado` hasta que se re-enriquecen.
+
 ### Las pruebas de 2027: un corte que dependía de la velocidad de la máquina y una negación que miraba una sola página (17-oct-2026)
 
 En una línea: las dos pruebas que caían de enero a mayo de 2027 no eran defectos del producto; una dependía de que 3 páginas no cupieran en 150 ms y la otra de que los muros quedaran fuera de la primera página. Con ambas corregidas, la suite pasa con el reloj adelantado de +80 a +260 días (4-ene a 4-jul-2027).
