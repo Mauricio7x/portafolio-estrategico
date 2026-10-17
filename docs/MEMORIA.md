@@ -18765,3 +18765,25 @@ en un membrete a mitad de tabla puede reconstruirse como 721411 y tapar la guard
 (no esconde contratos) y no apareció en 291 textos reales.
 (d) VERSION de `lib/documentos_proceso` 15 → 16: los hechos guardados con la lectura vieja se rehacen.
 Medido después: 3 de los 4 (Pasto ×2, Norte de Santander) dan la lista de la verdad; Turbaco queda incompleta (no estrecha), como debe.
+### El anticipo «N/A» bajo su título y el amparo «Devolución del pago anticipado» (17-oct-2026)
+
+En una línea: en el pliego de Turbaco (CO1.REQ.10650320) el numeral «8.3. ANTICIPO Y/O PAGO ANTICIPADO» dice solo «N/A»
+en la línea siguiente, y la tabla de garantías trae el amparo «Devolución del pago anticipado N/A N/A»; la guía decía
+«hay anticipo» (ganaba el amparo, una línea larga de peso 2). Ahora el título + «N/A» niega y el amparo no afirma.
+
+**Por qué importa.** El anticipo entra en el capital de trabajo exigido: CTd = (POE − anticipo) × 33 %. Un «sí» falso
+lo baja y puede dar «cumple» donde no cumple. Lo halló la Fase 0 de detekta-lector (17-oct-2026): 9 pliegos reales,
+texto de pdf.js con la `lineasDePagina` del navegador, contra una verdad con cita.
+
+**Lo que no hay que deshacer.** (a) «Devolución del pago anticipado» se excluye como ya se excluían «buen manejo y
+correcta inversión» y «amortización» del anticipo: nombrar un amparo no es pactar un anticipo, y su «N/A» tampoco se usa
+para negar (es indirecto). (b) El «N/A» solo niega como línea SOLA justo debajo de un TÍTULO de anticipo (peso ≤ 1,
+misma página), por la rama que ya existía para «la Entidad no entregará al contratista.». Y es una negación DÉBIL
+(peso 0,5 + 1 = 1,5): gana a una mención (≤ 1) pero pierde ante cualquier frase que afirme (2), antes o después; sin
+eso, «PAGO ANTICIPADO (SI APLICA): / N/A» o una celda «N/A» bajo «GARANTÍA DE BUEN MANEJO DEL ANTICIPO» tapaban un anticipo
+del 30 % pactado en otra línea (revisión adversaria, 17-oct-2026), y un «no» falso SUBE el capital de trabajo exigido.
+Límites conocidos, previos a este cambio: «8.3. ANTICIPO Y/O PAGO ANTICIPADO: No aplica» en UNA línea sigue dando «sí»
+(SIN_ANTICIPO_RE pide «anticipo:» y la línea dice «anticipado:»), y la exclusión de un amparo descarta la línea entera. (c) REGLAS_VERSION .5 → .6:
+cambia la clave de caché del dictamen por reglas y la versión de los hechos (se rehacen). (d) `lib/negocio.SIN_ANTICIPO_RE`
+no cambia: lee «anticipo: n/a» seguido, y el título dice «anticipado», así que tampoco ve este caso; queda anotado.
+Medido después: 9 de 9 pliegos con el anticipo de la verdad (Pasto A «sí», los otros ocho «no»).

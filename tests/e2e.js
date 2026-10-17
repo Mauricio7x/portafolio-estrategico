@@ -8454,6 +8454,14 @@ async function main() {
     // (4) la negación partida en dos líneas y la casilla marcada (los dos escaneos, CO1.REQ.11033801 y CO1.REQ.11042743)
     assert.strictEqual(ant("\f35\nANTICIPO: Para el presente proceso la Secretaría de Infraestructura y obras públicas no considera prudente gestionar\nanticipo, toda vez que el proyecto en su ejecución se puede adelantar sin la necesidad de algún recurso\n", "estudio_previo").estado, "no", "«no considera prudente gestionar / anticipo» niega, partida en dos líneas");
     assert.strictEqual(ant("\f62\nANTICIPO (19 | si NO_X_ Porcentaje % - —\n", "estudio_previo").estado, "no", "la casilla «SI ___ NO _X_» niega");
+    /* Turbaco, CO1.REQ.10650320 (Fase 0 del 17-oct-2026, texto de pdf.js): el título del 8.3 seguido de «N/A» niega, y el
+       amparo de la tabla de garantías «Devolución del pago anticipado N/A N/A» no afirma nada (decía «hay anticipo») */
+    const turbaco = ant("\f83\nBuen\tmanejo\ty\tcorrecta\tN/A\tN/A\ninversión del anticipo\nDevolución del pago anticipado\tN/A\tN/A\nAmparos,\n\f87\nconstituyen su propuesta económica autónoma.\n8.3.\tANTICIPO Y/O PAGO ANTICIPADO\nN/A\nCAPITULO IX LISTA DE ANEXOS, FORMATOS, MATRICES Y FORMULARIOS\n");
+    assert.deepStrictEqual([turbaco.estado, turbaco.pagina], ["no", 87], `«8.3 ANTICIPO … / N/A» niega: ${JSON.stringify(turbaco)}`);
+    assert.notStrictEqual(ant("\f83\nDevolución del pago anticipado\tN/A\tN/A\nPago de salarios, prestaciones\tPlazo del contrato y\tCinco por ciento (5 %)\n").estado, "si", "el amparo «Devolución del pago anticipado» de la tabla de garantías no es «hay anticipo»");
+    // …y ese «N/A» suelto es DÉBIL: no tapa una frase que pacta el anticipo, antes o después (revisión adversaria, 17-oct-2026)
+    assert.strictEqual(ant("\f5\nVALOR DEL ANTICIPO: Se entregará al contratista un anticipo del 30 % del valor del contrato.\nPAGO ANTICIPADO (SI APLICA):\nN/A\n").estado, "si", "el «N/A» del pago anticipado no niega el anticipo pactado antes");
+    assert.strictEqual(ant("\f50\nGARANTÍA DE BUEN MANEJO DEL ANTICIPO\nN/A\n\f51\nLa entidad entregará al contratista un anticipo del treinta por ciento (30%).\n").estado, "si", "una celda «N/A» bajo el título de una garantía no niega el anticipo pactado después");
     assert.strictEqual(ant("\f62\nANTICIPO SI _X_ NO ___ Porcentaje 30 % del valor del contrato\n", "estudio_previo").estado, "si", "la casilla marcada en «SI» afirma");
     assert.strictEqual(ant("\f8\n-Informe de manejo e inversión del anticipo con los respectivos soportes.\n", "estudio_previo").estado, "sin_dato", "una obligación de formato (el informe del anticipo) no dice que lo haya");
     // la línea anterior solo se pega si no cierra frase
