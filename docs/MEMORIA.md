@@ -2665,7 +2665,7 @@ Encargo del dueño: «una sola página, cero fricción». Se retiraron `admin.ht
 📊 `#/apu` · ⚙️ `#/admin`, tema oscuro `#0f172a`, barra inferior en móvil) y `public/app.js` como
 único módulo principal, ENSAMBLADO de los tres anteriores. Decisiones que no hay que re-aprender:
 
-- **El TOKEN va INTEGRADO en el frontend** (`const TOKEN = "MiExtraccion2025"`, en app.js, pliego.js
+- **El TOKEN va INTEGRADO en el frontend** (`const TOKEN = "[llave retirada el 17-oct-2026]"`, en app.js, pliego.js
   y onboarding.js) y el usuario NO ve ningún formulario, prompt ni error de token. Es decisión
   explícita del dueño y hay que contarla exacta: **ese literal no es un secreto** — cualquiera que
   lea el fuente lo ve — y la capa de seguridad REAL es Vercel Password Protection (más el gate de
@@ -5147,7 +5147,7 @@ remotas y todo el trabajo va desde ahora directo a `main`. Decisiones que no hay
   `docs/CONFIGURACION_TOKENS.md`, la guía de variables de entorno para el dueño sin terminal. Se
   rescató, y con ella la corrección del paso 1 del `README.md` que la propia guía dejaba pendiente
   («una cadena larga y aleatoria» era la trampa número uno: con el token integrado en el frontend, el
-  valor de `HISTORICO_TOKEN` tiene que ser EXACTAMENTE `MiExtraccion2025` o la app se sirve a medias
+  valor de `HISTORICO_TOKEN` tiene que ser EXACTAMENTE `[llave retirada el 17-oct-2026]` o la app se sirve a medias
   **sin error visible**). Las dos fuentes dicen ya lo mismo y la guía lo declara.
 - **LO QUE LAS DEMÁS RAMAS «AÑADÍAN» ERAN ARCHIVOS RETIRADOS A PROPÓSITO**, y devolverlos habría sido
   una regresión disfrazada de rescate: los `api/*.js` sueltos (plegados en los 6 routers), los cinco
@@ -8088,7 +8088,7 @@ confirma el cron en `op=salud` (`ultima_sincronizacion` de esa mañana) el día 
 larga (la sesión se la genera), entorno Production → «Save» → «Deployments» → «Redeploy». Al día
 siguiente pegar en Chrome `/api/procesos?op=salud` y comprobar la hora de la última sincronización.
 Y desde ese momento, las URL pegadas en Chrome `/api/sync?modo=full` y `/api/sync?modo=auto` llevan
-`&token=MiExtraccion2025` (CONFIGURACION_TOKENS.md §3.6 y §8).
+`&token=[llave retirada el 17-oct-2026]` (CONFIGURACION_TOKENS.md §3.6 y §8).
 
 ### Lote «B4a-vista-de-visitante» de la consultoría del 4-sep · M-SEG-02 (6-sep-2026)
 
@@ -8835,7 +8835,7 @@ plano y no se abre otra convención), con la cabecera «> Archivado el 6-sep-202
 M-DOC-04 exigirá cuando se haga; el índice de M-DOC-10 no existe, así que el README remite a la lista
 de documentos que imprime `node tests/mapa.js`. Los requisitos que la suite ya imponía al README
 siguen en pie y el breve los cumple: Node 22, dos rutas «Mi empresa → …» que la página pinta, registro
-de usted, dos menciones del token integrado (`MiExtraccion2025`) y ninguna cifra del cupo de
+de usted, dos menciones del token integrado (`[llave retirada el 17-oct-2026]`) y ninguna cifra del cupo de
 datos.gov.co. El tope es **32 KiB**: lo largo va a `docs/`. (2) **Las citas no se pudren** (M-DOC-08):
 cualquier documento del árbol se cita por TÍTULO de sección (`X.md § «título»`), nunca por número de
 línea, en PROMPT_INICIAL § 10 y con cerradura por censo. Las 57 citas por línea que había en siete
@@ -16199,7 +16199,7 @@ el cálculo NO se cambió todavía, por orden del dueño.
 > RESUELTO el 26-sep-2026 por «El pliego dice el reparto: la cláusula de participación y la fórmula del plural (26-sep-2026)» · en `lib/participacion.js` (no en `lib/diff.js`), con el banco literal de los 21 en tests/e2e.js · el lector de pliegos (`lib/diff.js` REQUISITOS y la guía) aprende la cláusula de participación en sus tres formas principales (mínimo de quien aporta experiencia, mínimo de cada integrante, «el de mayor experiencia tiene la mayoría») y en sus variantes (el integrante con sucursal en la ciudad, quien asume las responsabilidades, el de mayor participación que debe acreditar la experiencia), también en los estudios previos, y dice «no la encontré» cuando no está; la tabla de los 21 pliegos con cláusula y el dudoso (cita y página) de `docs/PROPONENTE_PLURAL.md` es su banco de pruebas mínimo (los textos completos de los 241 pliegos quedaron en la máquina de la sesión, que es temporal, y no en el árbol).
 > RESUELTO el 25-sep-2026 por «El consorcio se calcula como el Documento Tipo, la capacidad como la Guía, y PICS entra como socia (25-sep-2026)» · el dueño dijo «sí» · el dueño decide si PICS (la sociedad del cuarto certificado de la carpeta «RUP´S», leído entero el 25-sep-2026) entra como tercera socia posible; hasta entonces sus cifras no van al árbol, que es público, y viven en el archivo que se le entregó al dueño.
 > RESUELTO el 25-sep-2026 por «El consorcio se calcula como el Documento Tipo, la capacidad como la Guía, y PICS entra como socia (25-sep-2026)» · corrida #43 en verde a las 22:07 UTC · el dueño crea en GitHub el secreto de la corrida de la tarde: `https://github.com/Mauricio7x/portafolio-estrategico/settings/secrets/actions` → botón «New repository secret» → Name `CRON_SECRET` → Secret: el MISMO valor que tiene `CRON_SECRET` en Vercel (proyecto portafolio-estrategico › Settings › Environment Variables) → «Add secret»; se comprueba en la pestaña «Actions» cuando la corrida «sync.yml» de la tarde salga en verde.
-> RESUELTO el 26-sep-2026 por «La carga completa se pide con modo=auto: modo=full la empieza de cero en cada llamada (26-sep-2026)» · la extracción terminó los 33 meses a las 09:13 UTC (ejecución 1 del flujo, «done: true») y `op=salud` da `historico_hace_dias: 0` · el dueño relanza la extracción del histórico pegando UNA vez `https://portafolio-estrategico.vercel.app/api/sync/historico?desde=2024-01&hasta=2026-09&token=MiExtraccion2025` (con `&hasta`: sin él el rango por omisión es otro y la extracción REINICIA desde el mes 0; nunca `&reset=true`) y la sigue con `https://portafolio-estrategico.vercel.app/api/sync/historico?estado=true&token=MiExtraccion2025` hasta `terminada: true`; entonces `historico_hace_dias` deja de ser null.
+> RESUELTO el 26-sep-2026 por «La carga completa se pide con modo=auto: modo=full la empieza de cero en cada llamada (26-sep-2026)» · la extracción terminó los 33 meses a las 09:13 UTC (ejecución 1 del flujo, «done: true») y `op=salud` da `historico_hace_dias: 0` · el dueño relanza la extracción del histórico pegando UNA vez `https://portafolio-estrategico.vercel.app/api/sync/historico?desde=2024-01&hasta=2026-09&token=[llave retirada el 17-oct-2026]` (con `&hasta`: sin él el rango por omisión es otro y la extracción REINICIA desde el mes 0; nunca `&reset=true`) y la sigue con `https://portafolio-estrategico.vercel.app/api/sync/historico?estado=true&token=[llave retirada el 17-oct-2026]` hasta `terminada: true`; entonces `historico_hace_dias` deja de ser null.
 > PENDIENTE · deudas medidas en esta sesión y sin arreglar: `lib/rup_pdf.js` (utilidad/pérdida operacional, primer corte sin firmeza, `MAX_LINEAS` que corta a PRODIAC, patrimonio redondeado); `op=salud` no avisa de una extracción histórica abierta y parada; el delta de la sincronización no detecta el re-sellado masivo de SECOP y relee el año entero; la auto-llamada de `sync.js` y `historico.js` sale sin esperar antes de responder.
 > PENDIENTE · antes de ofertar con un consorcio: certificados RUP nuevos de los tres (los de la carpeta ya pasaron sus 60 días), el de Helder con el corte 2025 en firme; y de Génesis, confirmar que los socios cuya experiencia inscribió siguen siéndolo, en qué renovación entró el bloque N.º 89-103, si el «0.5%» del N.º 82 es real y si el N.º 5 y el N.º 90 son el mismo contrato.
 
@@ -18731,5 +18731,14 @@ En una línea: la llave del servidor (`HISTORICO_TOKEN`) vivía escrita en tres 
 - **Lo que no se hizo, a propósito.** No hay recuperación por correo: con una sola cuenta, olvidar la contraseña se arregla borrando `cuenta:dueno` en la consola de Upstash y creándola otra vez con la llave (la guía lo dice). Vercel Password Protection no se tocó: quitarla es F3-11 del plan, aparte. No se rotó nada: eso lo hace el dueño en Vercel, y hasta que lo haga la llave vieja sigue en la historia de git.
 - **Medido.** Bloque «unidad sesión del dueño» con el handler real; diez mutaciones (aceptar la cookie sin validar, segunda alta, la marca sin NX, quitar el límite, aceptar la llave desde una página, quitar el CSRF, salir sin borrar, la llave eximiendo de la cuota, respuesta distinta para correo inexistente, sesión caducada aceptada) y las diez caen. Chromium a 390 px: crear la cuenta, ver la lista (20 tarjetas), recargar sin volver a entrar, salir (la cookie copiada responde 401), entrar mal y bien, y la sesión cerrada por detrás abre el gate al pulsar «Buscar»; 0 errores de JavaScript.
 
-> PENDIENTE · el dueño, en este orden: poner en Vercel un `HISTORICO_TOKEN` NUEVO (largo y aleatorio) ANTES de desplegar este cambio, desplegar, crear su cuenta en la aplicación con esa llave nueva, y copiar el mismo valor al secreto `HISTORICO_TOKEN` de GitHub (flujo de la carga completa) y al entorno de Claude Code (rutinas y skills). Mientras la llave vieja siga en Vercel, cualquiera que la lea en la historia de git puede crear la cuenta antes que él.
+> PENDIENTE · el dueño, en este orden (docs/CONFIGURACION_TOKENS.md § 0.1): desplegar (el alta se niega sola mientras la llave vieja siga en Vercel), cambiar `HISTORICO_TOKEN` en Vercel por una cadena nueva y volver a desplegar, crear su cuenta con la llave nueva, y copiar el mismo valor al secreto `HISTORICO_TOKEN` de GitHub (flujo de la carga completa) y al entorno de Claude Code (rutinas y skills).
+
+**Revisión adversaria del mismo día (lo que se corrigió y por qué no se deshace):**
+
+- **La llave publicada no crea la cuenta: se compara su HUELLA.** El repositorio es público y la llave vieja está en su historia: con el orden «desplegar → crear → rotar», quien la leyera creaba la única cuenta antes que el dueño (reproducido: 201 del desconocido, 409 del dueño, y su sesión sobrevivía a la rotación). `lib/sesion.LLAVES_RETIRADAS_SHA256` lleva solo el SHA-256 —jamás el valor— y con esa llave en el entorno el alta responde 503 diciendo qué hacer; así el orden de despliegue deja de importar. El literal se retiró de los ocho documentos que aún lo tenían («[llave retirada el 17-oct-2026]») y la suite barre TODO el árbol por huella: un valor no puede ir en una prueba, su huella sí.
+- **Entrar va por la marca, no por el índice del correo.** Dos altas a la vez con el MISMO correo dejaban sin índice al dueño (la perdedora borraba el de la ganadora: su contraseña correcta respondía 401 para siempre y la pantalla de alta ya estaba cerrada). Con una sola cuenta, `cuenta:dueno` dice cuál es y el correo se compara con el hash de la ficha; el índice se escribe solo tras ganar el NX. De paso, el intento fallido cuesta los mismos comandos de Redis exista o no el correo (antes 6 y 4: un oráculo).
+- **El tope de 5 es por correo Y conexión**, con 20 por conexión y 50 solo por correo: con 5 solo por correo, un tercero dejaba fuera al dueño desde cualquier sitio con cinco intentos.
+- **Un INCR que no devuelve un entero es 503**, no un intento libre («sin dato» ≠ cero).
+- **El tramo del latido lleva solo lo del servidor** (`cabecerasDelTramo`: host, protocolo, `cabecerasDeAutoLlamada` y la llave): reenviar las del navegador mandaba `sec-fetch-site` junto a la llave y op=historico la rechazaba.
+- **[Sin verificar] El límite por conexión depende de que Vercel fije `x-real-ip` / `x-forwarded-for`** y no deje pasar los que manda el cliente (`perfil_dinamico.ipDePeticion`). Fuera de Vercel cualquiera los inventa (reproducido: 30 intentos con IP distinta, ningún 429); por eso el tope de 50 solo por correo no depende de la IP: frena a quien prueba un correo concreto aunque invente conexiones.
 

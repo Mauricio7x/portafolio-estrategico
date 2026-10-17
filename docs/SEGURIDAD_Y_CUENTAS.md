@@ -8,7 +8,7 @@
 ## 1. LA SECUENCIA QUE NO SE PUEDE EQUIVOCAR
 
 **Hoy la única protección real de Detekta es Vercel Password Protection.** La llave de la aplicación
-(`const TOKEN = "MiExtraccion2025"`) está integrada en `public/app.js`, `public/onboarding.js` y
+(`const TOKEN = "[llave retirada el 17-oct-2026]"`) está integrada en `public/app.js`, `public/onboarding.js` y
 `public/pliego.js`, **a la vista de cualquiera que abra el código fuente**. Eso es una decisión
 correcta y documentada para un dueño sin terminal: el muro está delante.
 

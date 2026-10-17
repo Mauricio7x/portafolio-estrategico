@@ -6654,6 +6654,7 @@ async function main() {
     const rPerfil = require("../api/perfil.js");
     const rProcesos = require("../api/procesos.js");
     const LLAVE = process.env.HISTORICO_TOKEN;
+    const { tuteoEn: tuteoEnS } = require("../lib/lenguaje_pantalla.js");
     const ORIGEN = { origin: "https://app.local", "content-type": "application/json" };
     const post = (url, body, cab = {}) => invocar(rAdmin, url, { ...ORIGEN, ...cab }, { metodo: "POST", body });
     const limpiarCuentas = async () => {
@@ -6708,6 +6709,57 @@ async function main() {
       const fichaCuenta = JSON.parse(await redis.get(fichas[0]));
       assert.ok(!JSON.stringify(fichaCuenta).includes(claveDueno) && /^scrypt\$/.test(fichaCuenta.contrasena), "la contraseña se guarda derivada con scrypt, nunca en claro");
       assert.strictEqual(fichaCuenta.correo, correoDueno.toLowerCase(), "el correo se normaliza");
+
+      /* (1b) LA LLAVE QUE ESTUVO PUBLICADA NO CREA LA CUENTA (revisión adversaria, 17-oct-2026). Vivió
+         escrita en public/*.js y está en la historia pública de git: si el despliegue llega antes de
+         rotarla, quien la leyó crearía la única cuenta. La suite no lleva el valor —solo su huella—;
+         para ejecutar la negativa se añade un momento a la lista la huella de la llave de PRUEBA. */
+      assert.ok(Sesion.LLAVES_RETIRADAS_SHA256 instanceof Set
+        && Sesion.LLAVES_RETIRADAS_SHA256.has("75de4f9a31b94674ecb617552bbcf5c394ef5838156abee01348d780cecaa2eb"),
+        "la huella de la llave que estuvo en public/*.js hasta el 17-oct-2026 tiene que estar en la lista de retiradas");
+      {
+        const huellaPrueba = crypto.createHash("sha256").update(LLAVE).digest("hex");
+        const sinCuenta = async () => { const ks = [...await redis.scan("cuenta:*")]; if (ks.length) await redis.del(...ks); };
+        const fichasAntes = await redis.scan("cuenta:*");
+        const respaldoFichas = await Promise.all(fichasAntes.map(async (k) => [k, await redis.get(k)]));
+        await sinCuenta();
+        Sesion.LLAVES_RETIRADAS_SHA256.add(huellaPrueba);
+        try {
+          const r = await post("/api/admin?op=crear-cuenta", { llave: LLAVE, correo: "intruso@x.co", contrasena: "contrasena-del-intruso" }, { "x-real-ip": "10.0.9.1" });
+          assert.strictEqual(r.status, 503, `con la llave retirada en el entorno, el alta se niega: ${r.status}`);
+          assert.strictEqual(r.cuerpo.motivo, "llave_retirada");
+          assert.ok(/cámbiela en Vercel/.test(r.cuerpo.error) && /vuelva a desplegar/.test(r.cuerpo.error) && tuteoEnS(r.cuerpo.error) === null, `dice qué hacer, de usted: ${r.cuerpo.error}`);
+          assert.ok(!r.cabeceras["set-cookie"] && !(await Sesion.hayCuenta(redis)), "y no crea nada ni abre sesión");
+        } finally {
+          Sesion.LLAVES_RETIRADAS_SHA256.delete(huellaPrueba);
+          await sinCuenta();
+          for (const [k, v] of respaldoFichas) if (v != null) await redis.set(k, v);
+        }
+        /* (1c) DOS ALTAS A LA VEZ CON EL MISMO CORREO (revisión adversaria): la perdedora borraba el
+           índice del correo de la ganadora y el dueño no entraba NUNCA con su contraseña correcta.
+           Se ejecuta en una cuenta aparte y se devuelve la de la prueba tal como estaba. */
+        await sinCuenta();
+        try {
+          const cuerpoR = { llave: LLAVE, correo: "mismo@empresa.co", contrasena: "una frase larga de la carrera" };
+          /* la carrera necesita que los comandos de las tres se INTERCALEN: el Upstash falso responde
+             tan rápido que cada alta termina antes de que empiece la siguiente, así que aquí se le
+             presta a cada comando la latencia de un Redis real (5 ms), como en la reproducción del
+             revisor. Contra b73c38e, «entrar» responde 401 con la contraseña correcta. */
+          const lento = new Proxy(redis, { get: (t, k) => (typeof t[k] === "function"
+            ? async (...args) => { await new Promise((r) => setTimeout(r, 5)); return t[k](...args); } : t[k]) });
+          const reqR = { headers: { ...ORIGEN, host: "app.local", "x-real-ip": "10.0.9.2" }, method: "POST" };
+          const rs = await Promise.all([0, 1, 2].map(() => Sesion.crearCuentaDelDueno(lento, reqR, cuerpoR)));
+          assert.deepStrictEqual(rs.map((x) => x.status).sort(), [201, 409, 409], `tres altas a la vez con el mismo correo: ${rs.map((x) => x.status)}`);
+          const e = await post("/api/admin?op=entrar", { correo: "mismo@empresa.co", contrasena: "una frase larga de la carrera" }, { "x-real-ip": "10.0.9.3" });
+          assert.strictEqual(e.status, 200, `tras la carrera, el dueño entra con su contraseña: ${JSON.stringify(e.cuerpo)}`);
+          assert.strictEqual((await redis.scan("cuenta:cta_*")).length, 1, "y queda una sola ficha");
+        } finally {
+          await sinCuenta();
+          for (const [k, v] of respaldoFichas) if (v != null) await redis.set(k, v);
+          const ses = await redis.scan("sesion:*"); // las de la carrera no son de la cuenta de la prueba: no valen, pero no se dejan
+          for (const k of ses) { const v = JSON.parse(await redis.get(k) || "{}"); if (v.cuenta && v.cuenta !== (await redis.get(Sesion.CLAVE_DUENO))) await redis.del(k); }
+        }
+      }
 
       // ── (2) ENTRAR ───────────────────────────────────────────────────────────
       await redis.del(...await redis.scan("intentos:*"));
@@ -6789,15 +6841,34 @@ async function main() {
 
       // ── (5) EL LÍMITE DE INTENTOS ────────────────────────────────────────────
       await redis.del(...await redis.scan("intentos:*"));
+      /* (5a) UN TERCERO NO DEJA FUERA AL DUEÑO (revisión adversaria, 17-oct-2026): cinco fallos con
+         su correo desde cinco conexiones ajenas no le cierran la suya. Contra b73c38e, 429. */
       for (let i = 0; i < Sesion.MAX_INTENTOS_POR_CUENTA; i++) {
         const x = await post("/api/admin?op=entrar", { correo: correoDueno, contrasena: `mala ${i} de prueba` }, { "x-real-ip": `10.1.0.${i}` });
-        assert.strictEqual(x.status, 401, `intento ${i + 1}: 401`);
+        assert.strictEqual(x.status, 401, `intento ajeno ${i + 1}: 401`);
       }
-      const bloqueado = await post("/api/admin?op=entrar", { correo: correoDueno, contrasena: claveDueno }, { "x-real-ip": "10.1.9.9" });
-      assert.strictEqual(bloqueado.status, 429, `pasado el tope por CORREO, ni la contraseña buena entra (desde otra conexión): ${bloqueado.status}`);
+      const noBloqueado = await post("/api/admin?op=entrar", { correo: correoDueno, contrasena: claveDueno }, { "x-real-ip": "10.1.9.9" });
+      assert.strictEqual(noBloqueado.status, 200, `cinco fallos ajenos desde otras conexiones no pueden dejar fuera al dueño desde la suya: ${noBloqueado.status}`);
+      // (5b) el tope que frena a quien prueba: correo + conexión
+      await redis.del(...await redis.scan("intentos:*"));
+      for (let i = 0; i < Sesion.MAX_INTENTOS_POR_CUENTA; i++) {
+        const x = await post("/api/admin?op=entrar", { correo: correoDueno, contrasena: `mala ${i} de prueba` }, { "x-real-ip": "10.1.1.1" });
+        assert.strictEqual(x.status, 401, `intento ${i + 1} desde la misma conexión: 401`);
+      }
+      const bloqueado = await post("/api/admin?op=entrar", { correo: correoDueno, contrasena: claveDueno }, { "x-real-ip": "10.1.1.1" });
+      assert.strictEqual(bloqueado.status, 429, `pasado el tope de correo + conexión, ni la contraseña buena entra desde ella: ${bloqueado.status}`);
       assert.ok(/Vuelva a intentarlo en \d+ minutos?/.test(bloqueado.cuerpo.que_hacer) && !bloqueado.cabeceras["set-cookie"], "el 429 dice cuánto esperar y no abre sesión");
-      const nadie429 = await post("/api/admin?op=entrar", { correo: "nadie@ninguna.co", contrasena: "x" }, { "x-real-ip": "10.1.9.9" });
-      assert.strictEqual(nadie429.status, 401, "el tope es por correo: otro correo desde esa conexión no queda bloqueado");
+      const nadie429 = await post("/api/admin?op=entrar", { correo: "nadie@ninguna.co", contrasena: "x" }, { "x-real-ip": "10.1.1.1" });
+      assert.strictEqual(nadie429.status, 401, "otro correo desde esa conexión no queda bloqueado");
+      // (5c) y un tope ALTO solo por correo, desde todas las conexiones
+      await redis.del(...await redis.scan("intentos:*"));
+      for (let i = 0; i < Sesion.MAX_INTENTOS_POR_CORREO; i++) {
+        const x = await post("/api/admin?op=entrar", { correo: correoDueno, contrasena: "mala de prueba" }, { "x-real-ip": `10.8.${Math.floor(i / 200)}.${i % 200}` });
+        assert.strictEqual(x.status, 401, `intento ${i + 1} con el mismo correo: 401`);
+      }
+      assert.ok(Sesion.MAX_INTENTOS_POR_CORREO >= 10 * Sesion.MAX_INTENTOS_POR_CUENTA, "el tope solo por correo es alto: no puede convertirse en un botón para dejar fuera al dueño");
+      assert.strictEqual((await post("/api/admin?op=entrar", { correo: correoDueno, contrasena: claveDueno }, { "x-real-ip": "10.8.9.9" })).status, 429,
+        `pasados ${Sesion.MAX_INTENTOS_POR_CORREO} intentos con ese correo desde todas partes, se pausa`);
       await redis.del(...await redis.scan("intentos:*"));
       for (let i = 0; i < Sesion.MAX_INTENTOS_POR_IP; i++) {
         const x = await post("/api/admin?op=entrar", { correo: `prueba${i}@ninguna.co`, contrasena: "mala de prueba" }, { "x-real-ip": "10.2.0.1" });
@@ -6818,6 +6889,40 @@ async function main() {
         assert.strictEqual(caido.status, 503, `sin poder contar los intentos no se deja entrar: ${caido.status}`);
         assert.ok(!caido.cabeceras["set-cookie"]);
       } finally { upstash.romper(null); }
+
+      /* (5d) SIN ORÁCULO DE EXISTENCIA (revisión adversaria): un intento fallido con el correo del
+         dueño y otro con un correo que no existe cuestan los MISMOS comandos de Redis (antes 6 y 4:
+         el índice del correo solo se leía si casaba). Contadores en el mismo estado en los dos. */
+      {
+        const cuesta = async (correo, ip) => {
+          await redis.del(...await redis.scan("intentos:*"));
+          const antes = upstash.peticiones();
+          const x = await post("/api/admin?op=entrar", { correo, contrasena: "contrasena-equivocada" }, { "x-real-ip": ip });
+          return [x.status, upstash.peticiones() - antes];
+        };
+        const [sD, cD] = await cuesta(correoDueno, "10.9.0.1");
+        const [sN, cN] = await cuesta("nadie@ninguna.co", "10.9.0.2");
+        assert.deepStrictEqual([sD, sN], [401, 401]);
+        assert.strictEqual(cD, cN, `el número de comandos distingue si el correo existe: ${cD} con el del dueño, ${cN} con uno inexistente`);
+      }
+      /* (5e) «SIN DATO» NO ES CERO: un INCR que no devuelve un entero no es un intento libre */
+      {
+        const memoria = new Map();
+        const redisRaro = { _cmd: async () => null, expire: async () => 1, get: async (k) => memoria.get(k) ?? null, set: async () => "OK", mget: async (ks) => ks.map(() => null), del: async () => 1 };
+        const estados = new Set();
+        for (let i = 0; i < 8; i++) estados.add((await Sesion.entrar(redisRaro, { headers: { "x-real-ip": "1.2.3.4" } }, { correo: correoDueno, contrasena: `probando-${i}` })).status);
+        assert.deepStrictEqual([...estados], [503], `con el contador ilegible no se puede probar contraseñas sin límite: ${[...estados]}`);
+      }
+      /* (5f) EL TRAMO DEL LATIDO NO REENVÍA LAS CABECERAS DEL NAVEGADOR (revisión adversaria): con la
+         sesión y desde la página, el latido mandaba sec-fetch-site, la cookie y el Origin junto a la
+         llave, y op=historico la rechazaba «desde una página» */
+      {
+        const { cabecerasDelTramo } = require("../lib/handlers/procesos/latido.js");
+        const h = cabecerasDelTramo({ headers: { host: "app.local", cookie, origin: "https://app.local", "sec-fetch-site": "same-origin", "sec-fetch-mode": "cors" } });
+        assert.ok(!h.cookie && !h.origin && !h["sec-fetch-site"] && !h["sec-fetch-mode"] && h.host === "app.local", `el tramo lleva solo lo del servidor: ${Object.keys(h).join(", ")}`);
+        assert.strictEqual(h["x-historico-token"], LLAVE, "y la llave del servidor");
+        assert.strictEqual((await Auth.autorizarToken({ method: "GET", headers: h }, {})).via, "llave", "con esas cabeceras op=historico acepta la llave");
+      }
 
       // ── (6) SALIR ────────────────────────────────────────────────────────────
       await redis.del(...await redis.scan("intentos:*"));
@@ -6861,6 +6966,34 @@ async function main() {
       assert.ok(![401, 403].includes(altaRup.status), `el alta pública del RUP sigue sin credencial: ${altaRup.status}`);
       const altaManual = await invocar(rPerfil, "/api/perfil?op=entrada", { "content-type": "application/json", "x-real-ip": "10.7.0.2" }, { metodo: "POST", body: {} });
       assert.ok(![401, 403].includes(altaManual.status), `el alta pública por tres datos sigue sin credencial: ${altaManual.status}`);
+
+      /* ── (8b) CENSO: LA LLAVE RETIRADA NO VIVE EN NINGÚN ARCHIVO DEL REPOSITORIO (revisión
+         adversaria, 17-oct-2026). Seguía en ocho documentos (la memoria, las consultorías, los
+         planes, el README archivado). Se barren TODOS los archivos de texto del árbol —docs/
+         entero con docs/archivo, README, CLAUDE.md, .claude/, public/, lib/, api/, tests/, la
+         configuración— y cada palabra de 8 o más caracteres se compara por su HUELLA con la lista
+         de retiradas: el valor no puede ir en la suite. Contra b73c38e cae por los ocho. */
+      {
+        const raizC = path.join(__dirname, "..");
+        const textos = [];
+        const andarC = (d) => {
+          for (const e of fs.readdirSync(d, { withFileTypes: true })) {
+            if (e.name === ".git" || e.name === "node_modules") continue;
+            const q = path.join(d, e.name);
+            if (e.isDirectory()) andarC(q);
+            else if (/\.(md|json|js|html|css|yml|yaml|txt|csv)$/i.test(e.name)) textos.push(q);
+          }
+        };
+        andarC(raizC);
+        assert.ok(textos.some((q) => q.endsWith(path.join("docs", "MEMORIA.md"))) && textos.some((q) => q.includes(`${path.sep}archivo${path.sep}`)) && textos.length > 100,
+          `el censo de la llave retirada se quedó corto (${textos.length} archivos)`);
+        const conLlave = [];
+        for (const q of textos) {
+          const vistas = new Set(fs.readFileSync(q, "utf8").match(/[A-Za-z0-9_-]{8,}/g) || []);
+          for (const w of vistas) if (Sesion.esLlaveRetirada(w)) { conLlave.push(path.relative(raizC, q)); break; }
+        }
+        assert.deepStrictEqual(conLlave, [], `la llave que estuvo publicada sigue escrita en: ${conLlave.join(", ")} (sustitúyala por «[llave retirada el 17-oct-2026]»)`);
+      }
 
       // ── (9) CENSO: todo llamador del guardián lo ESPERA ──────────────────────
       const sinAwait = [];

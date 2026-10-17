@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 1782950 bytes · 322 secciones · 20 con marcador de superación.
+Derivado del árbol: 1785238 bytes · 322 secciones · 20 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -63,7 +63,7 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | Tres bancos oficiales más: EPC, FFIE e ICCU (18-ago-2026) | 18-ago-2026 | 2494-2551 | 5380 |  |
 | Los insumos de precios 2026 que aportó el dueño · el censo (18-ago-2026) | 18-ago-2026 | 2552-2603 | 4598 |  |
 | Los 526 APU de referencia del INVIAS como base de precios de ÍTEMS (ago 2026) | ago 2026 | 2604-2659 | 5680 | «El INVIAS es el ÚLTIMO recurso entre los bancos (24-ago-2026, encargo del dueño)» |
-| Página única y token integrado (ago 2026) | ago 2026 | 2660-2717 | 5289 | «La entrada del dueño: correo y contraseña, y ninguna llave en el navegador (17-oct-2026)» |
+| Página única y token integrado (ago 2026) | ago 2026 | 2660-2717 | 5304 | «La entrada del dueño: correo y contraseña, y ninguna llave en el navegador (17-oct-2026)» |
 | APU profesional: desglose visible, origen del precio y normativa (ago 2026) | ago 2026 | 2718-2727 | 640 |  |
 | Segunda pasada (ago 2026) · trazabilidad, subtotales y las cinco validaciones | ago 2026 | 2728-2939 | 18476 |  |
 | Plan Anual de Adquisiciones · qué va a salir antes de que salga (ago 2026) | ago 2026 | 2940-3029 | 8192 |  |
@@ -101,7 +101,7 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | Las deducciones se LEEN del pliego (ago 2026 · punto 6 de la hoja de ruta) | ago 2026 | 4903-4942 | 3364 |  |
 | ⚠️ UNA `fase` REZAGADA MATABA CONVOCATORIAS PUBLICADAS, Y NO DEJABA RASTRO (20-ago-2026) | 20-ago-2026 | 4943-5111 | 14307 |  |
 | Lo APARCADO por decisión del dueño (20-ago-2026) | 20-ago-2026 | 5112-5135 | 1825 |  |
-| Una sola rama: `main` (21-ago-2026) | 21-ago-2026 | 5136-5171 | 3163 |  |
+| Una sola rama: `main` (21-ago-2026) | 21-ago-2026 | 5136-5171 | 3178 |  |
 | Encargo del ingeniero · 24-ago-2026 (Mi empresa, ganancia, manifestación, rastreo) | 24-ago-2026 | 5172-5290 | 10808 |  |
 | La revisión adversaria del propio diff, y los tres defectos que encontró | — | 5291-5347 | 4785 |  |
 | Gráficos de verdad y Mi empresa como tablero (encargo del ingeniero, ago 2026) | ago 2026 | 5348-5404 | 5154 |  |
@@ -140,14 +140,14 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | Lote «precios por perfil» de la consultoría del 4-sep · M-SEG-01, M-SEG-06 (6-sep-2026) | 6-sep-2026 | 7728-7834 | 9807 |  |
 | Lote «zona y RUP en PDF» de la consultoría del 4-sep · M-SEG-10, M-INF-01 (6-sep-2026) | 6-sep-2026 | 7835-7915 | 7521 |  |
 | Lote «salud y tiempos» de la consultoría del 4-sep · M-INF-04, M-INF-08 (6-sep-2026) | 6-sep-2026 | 7916-7990 | 6599 |  |
-| Lote «B3b-sync-menor» de la consultoría del 4-sep · M-INF-10, M-INF-13, M-INF-14, M-SEG-08 (6-sep-2026) | 6-sep-2026 | 7991-8092 | 9401 |  |
+| Lote «B3b-sync-menor» de la consultoría del 4-sep · M-INF-10, M-INF-13, M-INF-14, M-SEG-08 (6-sep-2026) | 6-sep-2026 | 7991-8092 | 9416 |  |
 | Lote «B4a-vista-de-visitante» de la consultoría del 4-sep · M-SEG-02 (6-sep-2026) | 6-sep-2026 | 8093-8211 | 10780 |  |
 | Lote «B4b-pulso-cobertura» de la consultoría del 4-sep · M-DGF-03, M-DGF-04, M-DGF-12 (6-sep-2026) | 6-sep-2026 | 8212-8316 | 10090 |  |
 | Remates «R1a-remates-servidor-B1-B2» de la ola 1 · H-01, H-02, H-03, H-04, H-05, V-B2a-03, B2b-H1, B2b-H4 (6-sep-2026) | 6-sep-2026 | 8317-8437 | 11397 |  |
 | Remates «R1b-remates-servidor-B3-B4b» de la ola 1 · V-B3a-01, V-B3a-02, B3b-H1, B3b-H2, B4b-H1 (6-sep-2026) | 6-sep-2026 | 8438-8556 | 11384 |  |
 | Remates «R2-remates-pantalla» de la ola 1 · H1, H2, V-B2a-01, V-B2a-02, B2b-H2, B2b-H3, B2b-H6, V-B3a-03, B4b-H2, DV-R2 (6-sep-2026) | 6-sep-2026 | 8557-8711 | 15202 |  |
 | Lote «B5-documentacion-1» de la consultoría del 4-sep · M-DOC-02, M-DOC-03, M-DOC-07, M-DOC-09, M-DOC-12, M-INF-05 (6-sep-2026) | 6-sep-2026 | 8712-8821 | 10556 |  |
-| Lote «B6a-readme-y-citas» de la consultoría del 4-sep · M-DOC-05, M-DOC-08 (6-sep-2026) | 6-sep-2026 | 8822-8927 | 10236 |  |
+| Lote «B6a-readme-y-citas» de la consultoría del 4-sep · M-DOC-05, M-DOC-08 (6-sep-2026) | 6-sep-2026 | 8822-8927 | 10251 |  |
 | Lote «B6b-memoria-util» de la consultoría del 4-sep · M-DOC-06 (6-sep-2026) | 6-sep-2026 | 8928-9040 | 10745 |  |
 | Lote «B7a-tablero-mis-procesos» de la consultoría del 4-sep · M-DGF-09, M-DGF-11, M-DGF-15 (6-sep-2026) | 6-sep-2026 | 9041-9169 | 13050 |  |
 | Lote «B7b-tablero-mercado» de la consultoría del 4-sep · M-DGF-13, M-DGF-14, M-DGF-20 (6-sep-2026) | 6-sep-2026 | 9170-9301 | 13769 |  |
@@ -251,7 +251,7 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | Rezago de un día, no fechas viejas; y la licitación pública lee igual (22-sep-2026, noche) | 22-sep-2026 | 15917-15965 | 4748 |  |
 | La licitación con recepción futura solo trae filas «Abierto», y PALACIO sigue igual el 23-sep (23-sep-2026) | 23-sep-2026 | 15966-16012 | 4942 |  |
 | El histórico de la entidad vuelve a verse, la salud deja de pasar por obra y la tarjeta dice el hecho sin redondear ni suponer (24-sep-2026) | 24-sep-2026 | 16013-16188 | 21101 | «Lo que la lista enseñaba mal: el índice que ya no cabía, la obra repetida, la salud por la descripción y los números con coma (27-sep-2026)» |
-| Proponente plural: la norma dice sumar los balances, no promediar los índices, y el reparto lo ata la experiencia (25-sep-2026) | 25-sep-2026 | 16189-16305 | 15983 |  |
+| Proponente plural: la norma dice sumar los balances, no promediar los índices, y el reparto lo ata la experiencia (25-sep-2026) | 25-sep-2026 | 16189-16305 | 16013 |  |
 | El consorcio se calcula como el Documento Tipo, la capacidad como la Guía, y PICS entra como socia (25-sep-2026) | 25-sep-2026 | 16306-16401 | 11450 |  |
 | El reparto que más le deja al dueño, y «Perfil actual» con su empresa y sus socias (25-sep-2026) | 25-sep-2026 | 16402-16464 | 6412 |  |
 | El esfuerzo se fija por lo que está en juego, no por defecto (26-sep-2026) | 26-sep-2026 | 16465-16497 | 2341 |  |
@@ -332,4 +332,4 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | Las pruebas con fecha: la compactación caía el 31-oct y la lista se queda sin procesos con cierre en noviembre (16-oct-2026) | 16-oct-2026 | 18684-18695 | 2207 | «La fila de prueba se busca en todas las páginas del listado, y enero espera (16-oct-2026)» |
 | La fila de prueba se busca en todas las páginas del listado, y enero espera (16-oct-2026) | 16-oct-2026 | 18696-18708 | 2056 | «Enero de 2027: las pruebas caen en cadena cuando el año tiene pocos meses (17-oct-2026)» |
 | Enero de 2027: las pruebas caen en cadena cuando el año tiene pocos meses (17-oct-2026) | 17-oct-2026 | 18709-18718 | 1839 |  |
-| La entrada del dueño: correo y contraseña, y ninguna llave en el navegador (17-oct-2026) | 17-oct-2026 | 18719-18735 | 5637 |  |
+| La entrada del dueño: correo y contraseña, y ninguna llave en el navegador (17-oct-2026) | 17-oct-2026 | 18719-18744 | 7835 |  |

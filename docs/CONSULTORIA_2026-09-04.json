@@ -3565,7 +3565,7 @@
       "como_implementar": {
         "pasos": [
           "Dueño: https://console.upstash.com/ → la base → «Usage» (o «Details») → anotar Data Size, Bandwidth (mes) y Commands (mes); comparar con 256 MB / 10 GB / 500.000.",
-          "Dueño: pegar en Chrome https://portafolio-estrategico.vercel.app/api/procesos?op=historico&estado=true&token=MiExtraccion2025 (lib/auth.js admite ?token=; historico.js:12,94) y anotar el número de chunks/meses del activo y del histórico (MEMORIA.md:395-397).",
+          "Dueño: pegar en Chrome https://portafolio-estrategico.vercel.app/api/procesos?op=historico&estado=true&token=[llave retirada el 17-oct-2026] (lib/auth.js admite ?token=; historico.js:12,94) y anotar el número de chunks/meses del activo y del histórico (MEMORIA.md:395-397).",
           "Sesión: docs/ARQUITECTURA_MULTITENANT.md §4.2 — añadir columnas tamaño y tráfico a la proyección con las cifras medidas; docs/MEMORIA.md con fecha; corregir en el documento de consultoría la escalera con los valores medidos (hasta entonces, la escalera de fase 1 se conserva como supuesto declarado, ver notas del eje).",
           "Decisión con cifra: si Bandwidth > 10 GB/mes o Data Size > 200 MB → pago por uso con «Monthly budget» US$ 10 (200 GB gratis) o Fijo 250 MB US$ 10; si no, Free hasta la próxima medición mensual (la tarjeta de M-INF-06 ya habilita el pago por uso).",
           "Sesión: anotar en MEMORIA.md la decisión de compra de identidad (no comprar; SEG §2.2 vigente; el proveedor de correo por fetch se elige cuando exista op=cuenta, con su tope diario leído del panel, no del extracto)."
@@ -3783,7 +3783,7 @@
       "esfuerzo": {
         "quien": "ambos",
         "pasos_del_dueno": [
-          "Pegar en Chrome https://portafolio-estrategico.vercel.app/api/sync?modo=full (año en curso; se encadena solo en tandas) y después https://portafolio-estrategico.vercel.app/api/sync/historico?desde=2024-01&hasta=2025-12&token=MiExtraccion2025 (histórico 2024-2025; es la URL literal de docs/CONFIGURACION_TOKENS.md, líneas 409 y 418, con el token integrado), fuera de horas de uso, y volver a pegar la misma URL del histórico mientras responda done:false, hasta que responda done:true."
+          "Pegar en Chrome https://portafolio-estrategico.vercel.app/api/sync?modo=full (año en curso; se encadena solo en tandas) y después https://portafolio-estrategico.vercel.app/api/sync/historico?desde=2024-01&hasta=2025-12&token=[llave retirada el 17-oct-2026] (histórico 2024-2025; es la URL literal de docs/CONFIGURACION_TOKENS.md, líneas 409 y 418, con el token integrado), fuera de horas de uso, y volver a pegar la misma URL del histórico mientras responda done:false, hasta que responda done:true."
         ],
         "coste_mensual_usd": "0",
         "coste_mensual_cop": "0",
@@ -5136,7 +5136,7 @@
           "4. public/app.js modal de entidad: «Esta entidad suele tardar {mediana} días hábiles en adjudicar (de {base} procesos, {cobertura} traen las dos fechas)» y «Declaró desierto {n} de {base}» (frecuencia natural, no porcentaje sobre < 5).",
           "5. public/calendario.js: hito «adjudicación estimada» = cierre + mediana, rotulado «estimado por el histórico», SOLO si el cronograma del pliego no trae la fecha (publicado gana a calculado).",
           "6. tests/e2e.js, bloque del índice de competencia sobre el histórico de la suite (427 procesos): Σ procesos con pareja de fechas = cobertura publicada; fixture con «Desierto»; entidad con < 5 → null; y el calendario no pinta la estimación cuando el pliego trae fecha.",
-          "7. Reconstruir el índice en producción para verlo: pegar en Chrome https://portafolio-estrategico.vercel.app/api/indice-baja?reconstruir=true&token=MiExtraccion2025 (rewrite de vercel.json hacia /api/procesos?op=baja; documentado en la cabecera de lib/handlers/procesos/baja.js)."
+          "7. Reconstruir el índice en producción para verlo: pegar en Chrome https://portafolio-estrategico.vercel.app/api/indice-baja?reconstruir=true&token=[llave retirada el 17-oct-2026] (rewrite de vercel.json hacia /api/procesos?op=baja; documentado en la cabecera de lib/handlers/procesos/baja.js)."
         ],
         "archivos": [
           "lib/columnas_historicas.js",
@@ -5848,8 +5848,8 @@
       "severidad": "baja",
       "peldano": "ahora_5",
       "antes": {
-        "que_pasa_hoy": "El literal MiExtraccion2025 está en public/app.js:91, onboarding.js:34, pliego.js:41, en README.md:182 y :1302-1306 («tocar los CUATRO sitios a la vez») y se exige en la variable HISTORICO_TOKEN; la suite lo fija en dos aserciones (tests/e2e.js:13301 app.js y :15482 pliego.js) y NO mira onboarding.js. Una rotación hecha según el README deja la suite en rojo y, al revés, un onboarding.js desincronizado no la pone en rojo. docs/CONFIGURACION_TOKENS.md solo documenta rotar SOCRATA_APP_TOKEN. El literal está en la historia pública de git para siempre (repositorio público).",
-        "evidencia": "grep -n MiExtraccion2025 tests/e2e.js → 13301, 15482 (re-comprobado el 5-sep: las líneas se movieron desde 13278/15459 por el commit 66635a8); grep -n onboarding tests/e2e.js | grep TOKEN → 0; sed -n 1300,1307p README.md.",
+        "que_pasa_hoy": "El literal [llave retirada el 17-oct-2026] está en public/app.js:91, onboarding.js:34, pliego.js:41, en README.md:182 y :1302-1306 («tocar los CUATRO sitios a la vez») y se exige en la variable HISTORICO_TOKEN; la suite lo fija en dos aserciones (tests/e2e.js:13301 app.js y :15482 pliego.js) y NO mira onboarding.js. Una rotación hecha según el README deja la suite en rojo y, al revés, un onboarding.js desincronizado no la pone en rojo. docs/CONFIGURACION_TOKENS.md solo documenta rotar SOCRATA_APP_TOKEN. El literal está en la historia pública de git para siempre (repositorio público).",
+        "evidencia": "grep -n [llave retirada el 17-oct-2026] tests/e2e.js → 13301, 15482 (re-comprobado el 5-sep: las líneas se movieron desde 13278/15459 por el commit 66635a8); grep -n onboarding tests/e2e.js | grep TOKEN → 0; sed -n 1300,1307p README.md.",
         "impacto_usuario": "Si el dueño rota el token a medias, la aplicación «se sirve a medias y sin error visible» (README.md:1304)."
       },
       "despues": {
@@ -5894,7 +5894,7 @@
       "decision_previa_en_memoria": "README.md:1305 y MEMORIA.md:5125 (el token no es secreto; la puerta es el muro). Vigente condicionado a M-INF-03.",
       "verificacion": {
         "veredicto": "PRO-05 parcial/parcial · PRO-N1 reproducido",
-        "evidencia_ejecutada": "grep -n MiExtraccion2025 tests/e2e.js public/*.js README.md (5-sep-2026).",
+        "evidencia_ejecutada": "grep -n [llave retirada el 17-oct-2026] tests/e2e.js public/*.js README.md (5-sep-2026).",
         "lentes": "árbol+negocio"
       }
     },
@@ -7972,7 +7972,7 @@
         },
         {
           "origen": "Q-20",
-          "paso": "https://console.upstash.com/ → la base → «Usage»; y en Chrome https://portafolio-estrategico.vercel.app/api/procesos?op=historico&estado=true&token=MiExtraccion2025."
+          "paso": "https://console.upstash.com/ → la base → «Usage»; y en Chrome https://portafolio-estrategico.vercel.app/api/procesos?op=historico&estado=true&token=[llave retirada el 17-oct-2026]."
         },
         {
           "origen": "Q-21",
@@ -8096,7 +8096,7 @@
         },
         {
           "origen": "M-DGF-05",
-          "paso": "Pegar en Chrome https://portafolio-estrategico.vercel.app/api/sync?modo=full (año en curso; se encadena solo en tandas) y después https://portafolio-estrategico.vercel.app/api/sync/historico?desde=2024-01&hasta=2025-12&token=MiExtraccion2025 (histórico 2024-2025; es la URL literal de docs/CONFIGURACION_TOKENS.md, líneas 409 y 418, con el token integrado), fuera de horas de uso, y volver a pegar la misma URL del histórico mientras responda done:false, hasta que responda done:true."
+          "paso": "Pegar en Chrome https://portafolio-estrategico.vercel.app/api/sync?modo=full (año en curso; se encadena solo en tandas) y después https://portafolio-estrategico.vercel.app/api/sync/historico?desde=2024-01&hasta=2025-12&token=[llave retirada el 17-oct-2026] (histórico 2024-2025; es la URL literal de docs/CONFIGURACION_TOKENS.md, líneas 409 y 418, con el token integrado), fuera de horas de uso, y volver a pegar la misma URL del histórico mientras responda done:false, hasta que responda done:true."
         },
         {
           "origen": "M-SEG-08",
@@ -8713,7 +8713,7 @@
         "kb": 23.3,
         "veredicto": "actualizar",
         "motivo": "Anexo de variables y una línea sobre ANTHROPIC_API_KEY opcional (decisión del dueño de no pagar clave, DON_HECTOR §7.15)",
-        "desmentido_por_el_arbol": "No nombra 8 variables del código (ANTHROPIC_API_KEY, DICTAMEN_* ×5, DOCUMENTOS_TIEMPO_MS, ARCHIVOS_BASE_URL); línea 144 dice que el código acepta KV_REST_API_URL/TOKEN y no hay process.env.KV_REST_* literal (lectura dinámica no medida); el token literal «MiExtraccion2025» en tres archivos sí coincide",
+        "desmentido_por_el_arbol": "No nombra 8 variables del código (ANTHROPIC_API_KEY, DICTAMEN_* ×5, DOCUMENTOS_TIEMPO_MS, ARCHIVOS_BASE_URL); línea 144 dice que el código acepta KV_REST_API_URL/TOKEN y no hay process.env.KV_REST_* literal (lectura dinámica no medida); el token literal «[llave retirada el 17-oct-2026]» en tres archivos sí coincide",
         "accion_exacta": "Corregir lo que el árbol desmiente (columna desmentido_por_el_arbol) con cabecera fechada uniforme; mejora M-DOC-09."
       },
       {
@@ -10279,7 +10279,7 @@
       "id": "Q-20",
       "pregunta": "¿Cuánto marcan hoy Data Size, Bandwidth (mes) y Commands (mes) en la consola de Upstash, y cuántos chunks tiene el activo?",
       "por_que_importa": "Toda la escalera de coste de Upstash está construida sobre un supuesto de 100 chunks; sin estas cuatro cifras no se puede elegir plan (M-INF-11).",
-      "como_responderla": "https://console.upstash.com/ → la base → «Usage»; y en Chrome https://portafolio-estrategico.vercel.app/api/procesos?op=historico&estado=true&token=MiExtraccion2025.",
+      "como_responderla": "https://console.upstash.com/ → la base → «Usage»; y en Chrome https://portafolio-estrategico.vercel.app/api/procesos?op=historico&estado=true&token=[llave retirada el 17-oct-2026].",
       "ejes": [
         "infraestructura"
       ]

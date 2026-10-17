@@ -26,7 +26,20 @@ primera vez y para lo que funciona sin navegador (los flujos de GitHub, las ruti
 Su valor **no va en ningún documento, chat ni archivo del repositorio**: si alguna vez lo ve escrito
 en uno, cámbielo (§10).
 
-### 0.1 · Crear su cuenta (una sola vez, sin terminal)
+### 0.1 · La puesta en marcha, en este orden (una sola vez)
+
+1. **Despliegue** este cambio (se despliega solo al fusionarlo en `main`). Mientras en Vercel siga la
+   llave vieja —la que estuvo escrita en el código de la página—, la pantalla «Crear su cuenta» **se
+   niega sola** y le dice que primero la cambie: nadie que la haya leído puede crear la cuenta.
+2. **Cambie `HISTORICO_TOKEN` en Vercel** por una cadena nueva, larga y aleatoria (§3.2) y **vuelva a
+   desplegar** (§5).
+3. **Cree su cuenta** con esa llave nueva (§0.1 bis, abajo).
+4. **GitHub**: ponga el mismo valor en el secreto `HISTORICO_TOKEN`, si lo creó (flujo de la carga
+   completa; §10).
+5. **Claude Code**: ponga el mismo valor en la variable de entorno `HISTORICO_TOKEN` del entorno de
+   sus rutinas y de las skills `/dictamen` y `/precios` (claude.ai/code → el entorno → **Edit**).
+
+### 0.1 bis · Crear su cuenta (sin terminal)
 
 1. Abra Vercel → el proyecto → **Settings → Environment Variables** → `HISTORICO_TOKEN` → el ojo
    para verla → **cópiela** entera.
@@ -48,7 +61,7 @@ puede crear otra cuenta (la aplicación responde «La cuenta de esta aplicación
   30 días; después vuelve a pedírselo.
 - **Salir**: el enlace **Salir**, arriba a la derecha junto al perfil. Cierra la sesión en el
   servidor: aunque alguien hubiera copiado algo de ese Chrome, deja de valer en ese instante.
-- **Si se equivoca varias veces seguidas** (5 con el mismo correo, o 20 desde la misma conexión),
+- **Si se equivoca varias veces seguidas** (5 con su correo desde la misma conexión, 20 desde la misma conexión, o 50 con su correo desde todas),
   la entrada se pausa unos minutos y la pantalla dice cuántos. Es a propósito: así nadie puede
   probar contraseñas sin fin.
 - **Si su sesión termina con la aplicación abierta**, la pantalla de entrar aparece encima; entre de
@@ -56,7 +69,7 @@ puede crear otra cuenta (la aplicación responde «La cuenta de esta aplicación
 - **Si olvida la contraseña**: no hay correo de recuperación. Entre a <https://console.upstash.com>
   → su base → **Data Browser**, busque la clave `cuenta:dueno` y **bórrela**. Las sesiones viejas
   dejan de valer solas y la pantalla «Crear su cuenta» vuelve a aparecer: créela otra vez con la
-  llave de Vercel (§0.1).
+  llave de Vercel (§0.1 bis).
 
 ### 0.3 · Las URL que pega en Chrome
 
@@ -664,7 +677,8 @@ Abrir el sitio y entrar con su correo y su contraseña. Debe verse:
 | --- | --- | --- |
 | La app carga pero **sin ninguna cifra de dinero** en las tarjetas | No entró con su cuenta en ese Chrome | Entrar (§0.2) |
 | «Mi empresa» vacía o la pantalla de entrar aparece encima | La sesión caducó (30 días) o se cerró | Entrar de nuevo (§0.2) |
-| «Crear su cuenta» dice que la llave no coincide | Se copió mal `HISTORICO_TOKEN`, o se cambió en Vercel sin volver a desplegar | Copiarla entera otra vez (§0.1); si la cambió, §5 |
+| «Crear su cuenta» dice que la llave no coincide | Se copió mal `HISTORICO_TOKEN`, o se cambió en Vercel sin volver a desplegar | Copiarla entera otra vez (§0.1 bis); si la cambió, §5 |
+| «Crear su cuenta» dice que la llave es la que estuvo escrita en el código | Todavía no se cambió `HISTORICO_TOKEN` | Cambiarla en Vercel y volver a desplegar (§0.1, paso 2) |
 | «Demasiados intentos seguidos» | Cinco contraseñas malas seguidas con ese correo | Esperar los minutos que dice la pantalla |
 | Todo responde `503 Faltan UPSTASH…` | Falta la base de datos o el valor empieza por `redis://` | §3.1 + redeploy |
 | Cambió una variable y **no pasó nada** | No se volvió a desplegar | §5 |
