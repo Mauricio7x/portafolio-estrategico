@@ -46,7 +46,13 @@
     "code-review@claude-plugins-official": true,
     "session-report@claude-plugins-official": true
   },
+  "$comentario_secop": [
+    "17-oct-2026, decisión del dueño: servidor «secop» de .mcp.json (juandavidsernav/secop-mcp-server 0.5.0,",
+    "MIT, código leído y comparado con el paquete de PyPI). Solo LEE datos.gov.co, sin clave. Sus herramientas",
+    "siguen pidiendo confirmación porque llaman a la red. No creer su «$0» ni su «total»: docs/MEMORIA.md."
+  ],
   "enabledMcpjsonServers": [
-    "playwright"
+    "playwright",
+    "secop"
   ]
 }

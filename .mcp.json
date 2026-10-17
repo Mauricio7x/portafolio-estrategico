@@ -12,6 +12,20 @@
         "--executable-path",
         "/opt/pw-browsers/chromium"
       ]
+    },
+    "secop": {
+      "command": "uvx",
+      "args": [
+        "--exclude-newer",
+        "2026-10-01",
+        "--from",
+        "secop-mcp-server==0.5.0",
+        "--with",
+        "mcp==1.26.0",
+        "--with",
+        "httpx==0.28.1",
+        "secop-mcp"
+      ]
     }
   }
 }

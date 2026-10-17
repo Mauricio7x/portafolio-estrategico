@@ -18838,3 +18838,40 @@ no se fija techo (no hay contra qué contrastar la lectura, y la nota decía «S
 la nota; el pliego por debajo fija el techo aunque sea por centavos (SECOP II los corta hacia abajo). Límites conocidos: con dos
 documentos definitivos de cifra distinta manda la prioridad, no la más baja; el techo sale de la guía con que se abrió el
 expediente (una lectura posterior no lo refresca hasta reabrirlo). Visto en Chromium.
+
+### Herramientas de terceros para las sesiones de Claude: lo que entró, lo que no y por qué (17-oct-2026)
+
+En una línea: el dueño pidió una búsqueda de repositorios públicos que ayudaran a Detekta y a Claude, y aprobó instalar los
+que valieran la pena; leído el código, de cinco candidatos entró UNO (el servidor `secop` de `.mcp.json`) y además
+gitleaks en GitHub; los otros cuatro se descartaron por motivos que no se ven en la ficha del repositorio, solo en su código.
+
+**Lo que entró, y cómo no hay que tocarlo.** (a) `secop` en `.mcp.json`: juandavidsernav/secop-mcp-server 0.5.0 (MIT).
+Solo hace GET a `www.datos.gov.co`, no escribe archivos ni ejecuta comandos, y no pide clave. El paquete de PyPI se
+comparó archivo por archivo con el commit 0709a45 de su repositorio: idéntico. Va con TODO fijado (`==0.5.0`, `mcp==1.26.0`,
+`httpx==0.28.1`, las de su propio `uv.lock`, y `--exclude-newer 2026-10-01` para que ninguna dependencia de segunda mano
+cambie por debajo): quitar las versiones fijadas deja que el código que corre deje de ser el que se leyó. Sus herramientas
+NO van en `permissions.allow`: llaman a la red y esa lista es solo para lectura local. Tampoco va con la clave de Socrata
+de Detekta: una sesión de Claude no lleva secretos de producción. (b) `.github/workflows/gitleaks.yml`: el PROGRAMA
+gitleaks 8.30.1 (MIT) con su SHA-256 comprobado, no la acción `gitleaks/gitleaks-action`, que desde su v2.0.0 dejó la MIT
+por una licencia propia. Siempre con `--redact`: los registros de un repositorio público son públicos. En MODO AVISO
+(termina en verde con aviso amarillo); volverlo bloqueante lo decide el dueño. La única excepción, en `.gitleaksignore`
+con su motivo, es el vector de prueba que AWS publica para Signature V4 (examplebucket, 24-may-2013) en `tests/e2e.js`.
+Medido el 17-oct: 583 commits de la historia completa, 0 avisos con la excepción, 1 sin ella; y una clave falsa con forma
+de token de GitHub SÍ avisa (la cerca muerde).
+
+**Dos defectos del servidor `secop` que Claude NO debe creer.** (1) Un contrato sin `valor_pagado` sale como «Pagado: $0»
+(`format_summary`, `row.get("valor_pagado", "0")`; reproducido el 17-oct ejecutando solo esa función): es el «sin dato»
+convertido en cero que prohíbe la primera regla dura. Lo mismo en `contar_personas_contratadas` (`r.get(..., 0)`).
+(2) «Mostrando N de N resultados» cuenta solo las filas que trajo esa consulta (tope por petición), no el total de SECOP:
+no sirve como conteo. Para una cifra que decide, se consulta datos.gov.co con `$select=count(*)`. Sin clave, su README
+habla de unas 60 peticiones por hora (cifra suya, sin verificar).
+
+**Lo que se descartó leyendo el código, y no hay que volver a proponer sin leer esto.** (c) amgallego8/SECOP-MCP: no
+corre tal como está publicado (importa `_shared.config`, `_shared.http_client`, que no están en el repositorio) y los
+busca tres carpetas por encima de la suya con `sys.path.insert`, es decir, ejecutaría lo que haya ahí; además se presenta
+como un navegador Mac para bajar PDF. (d) obra/superpowers: sus habilidades útiles DUPLICAN reglas que ya viven aquí
+(«verification-before-completion» es «Nada se da por hecho sin comprobarlo»; «systematic-debugging» es `engineering:debug`),
+y una regla con dos copias diverge a la primera corrección. (e) danielmiessler/Fabric: instrucciones genéricas; la de
+contratos ordena «Do not output warnings or notes», lo contrario de marcar lo no verificado, y `/dictamen` ya revisa
+pliegos verificando cada cita. (f) yamadashy/repomix: empaca el repositorio entero en un archivo, justo lo que
+CLAUDE.md prohíbe («se BUSCA, no se lee»: leerlo todo quemaba 250-400k tokens por arranque).
