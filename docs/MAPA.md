@@ -212,8 +212,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 328 secciones (19 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 18683  Las pruebas con fecha: la compactación caía el 31-oct y la lista se queda sin procesos con …  (superada)
+· MEMORIA · docs/MEMORIA.md — 329 secciones (19 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 18695  La fila de prueba se busca en todas las páginas del listado, y enero espera (16-oct-2026)  (superada)
   L 18708  Enero de 2027: las pruebas caen en cadena cuando el año tiene pocos meses (17-oct-2026)
   L 18718  La fila partida de la tabla de códigos de la experiencia (17-oct-2026)
@@ -223,6 +222,7 @@
   L 18818  El techo de la oferta en Precios: la cifra más baja entre SECOP II y el pliego definitivo (…
   L 18842  Herramientas de terceros para las sesiones de Claude: lo que entró, lo que no y por qué (17…
   L 18879  El anticipo con el corchete de la plantilla y la frase modelo que remite al 8.3 (17-oct-202…
+  L 18903  El presupuesto del pliego en licitación pública: título sin número, «…Y ESPECIFICACIONES» y…
 
 · DOCUMENTOS docs/ — 71 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)
