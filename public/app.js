@@ -8,13 +8,13 @@
    propios (los cargan <script> de index.html) porque sus funciones están atadas
    por pruebas que las extraen por archivo.
 
-   EL TOKEN VA INTEGRADO (decisión del dueño, ago 2026). `TOKEN` se inyecta en
-   la cabecera `x-historico-token` de TODA llamada a la API y el usuario no ve
-   ningún formulario de token. No es un secreto: la capa de seguridad real del
-   despliegue es Vercel Password Protection, y el token queda como llave del
-   servidor (las APIs NO se relajaron). Rotarlo = cambiar HISTORICO_TOKEN en
-   Vercel y esta constante a la vez. Si no coinciden, la lista degrada a la
-   vista pública (cifras redactadas) y los paneles lo dicen con esas palabras.
+   EL DUEÑO ENTRA CON CORREO Y CONTRASEÑA (decisión del dueño, 17-oct-2026).
+   La página no lleva NINGUNA llave: la llave del servidor (HISTORICO_TOKEN)
+   vivía escrita aquí y la leía cualquiera. Ahora el servidor abre una sesión
+   en una cookie HttpOnly que este código no ve nunca; cada llamada viaja con
+   `credentials: "same-origin"` (`conSesion`) y un 401 abre la pantalla de
+   entrar (`sesionVencida`). Qué se enseña lo decide el servidor (op=sesion),
+   no una marca del navegador.
 
    Las lecciones caras siguen vigentes y las pruebas las vigilan aquí:
    · el arranque automático va AL FINAL del IIFE (zona muerta temporal);
@@ -25,8 +25,6 @@
 "use strict";
 
 (() => {
-  const CLAVE = "231105";
-  const MAX_INTENTOS_CLAVE = 3;
   const REINTENTO_SYNC_SEG = 20;   // espera entre reintentos tras un 503
   const MAX_REINTENTOS_SYNC = 30;  // ~10 min: suficiente para la carga inicial
   // encadenado de la sincronización (pestaña admin)
@@ -101,14 +99,16 @@
       : cuerpo;
   };
   /* UN 401 TIENE DOS CAUSAS Y SE DISTINGUEN POR EL CUERPO (ago 2026). El de la
-     API significa que `HISTORICO_TOKEN` no coincide con el token integrado; el
-     del EDGE (Vercel Password Protection) significa que hay que iniciar sesión,
+     API significa que la sesión del dueño terminó (o nunca empezó); el del EDGE
+     (Vercel Password Protection) significa que hay que pasar el muro del sitio,
      y responde HTML. Los sitios que miraban `r.status === 401` antes de mirar
-     el cuerpo enseñaban el mensaje del token sobre el muro del edge: un
-     diagnóstico tan falso como el «sin conexión» que se acaba de quitar, solo
-     que distinto. `sinJson` lo marca `leerJson` y esta función es el único
-     punto donde se decide cuál de los dos mensajes toca. */
-  const msg401 = (cuerpo) => (cuerpo && cuerpo.sinJson ? cuerpo.error : MSG_401);
+     el cuerpo enseñaban un mensaje sobre el muro del edge que no era el suyo:
+     un diagnóstico tan falso como el «sin conexión» que se acaba de quitar.
+     `sinJson` lo marca `leerJson` y esta función es el único punto donde se
+     decide cuál de los dos toca. El de la API, además, ABRE LA PANTALLA DE
+     ENTRAR (17-oct-2026): es el único punto por el que pasan los 401 de la
+     página, así que un censo y no una lista. */
+  const msg401 = (cuerpo) => (cuerpo && cuerpo.sinJson ? cuerpo.error : sesionVencida(MSG_401));
   /* ══════════ UN FALLO SE CUENTA EN CASTELLANO (5-sep-2026) ══════════
      La REDACCIÓN vive en public/glosario.js (`Glosario.mensajeDeFallo`), que es
      el módulo del lenguaje de pantalla y se carga ANTES que este: app.js,
@@ -144,44 +144,40 @@
     return esc(texto).replace(/\./g, ".<wbr>");
   }
 
-  /* ══════════ Token integrado ══════════
-     `tokenRechazado`: si el despliegue rechaza el token integrado (su
-     HISTORICO_TOKEN es otro), la lista pública DEGRADA a la vista sin cifras en
-     vez de entrar en bucle de 401 — el mismo contrato que tenía un token
-     caducado guardado en la pestaña. */
-  const TOKEN = "MiExtraccion2025";
-  /* El 401 se explica como lo que ES —la clave interna del sitio no coincide
-     con la del despliegue—, jamás como «token inválido, escriba otro»: no
-     existe ningún formulario donde escribirlo. Pero se dice PRIMERO en
-     lenguaje de personas: el usuario no puede arreglarlo y tiene que saber
-     que no es culpa suya; el paréntesis es para quien administra. */
-  const MSG_401 = "La aplicación no pudo autenticarse con el servidor. No es un problema suyo: es configuración "
-    + "del sitio — avise a quien lo administra (HISTORICO_TOKEN no coincide con el token integrado).";
-  let tokenRechazado = false;
-  const tokenGuardado = () => (tokenRechazado ? "" : TOKEN);
-  const leerToken = () => TOKEN;
-  function olvidarToken() { tokenRechazado = true; }
+  /* ══════════ La sesión del dueño (17-oct-2026) ══════════
+     NINGUNA LLAVE VIVE EN ESTE ARCHIVO. El servidor abre la sesión con correo y
+     contraseña (op=entrar) y la guarda en una cookie HttpOnly que este código no
+     puede leer; el navegador la manda sola en cada llamada al mismo sitio.
+     `conSesion` lo DECLARA en cada fetch (`credentials: "same-origin"`): es lo
+     que hace el navegador por omisión, y escrito no depende de esa omisión.
+     `sesionDueno` lo fija la respuesta del SERVIDOR (op=sesion al arrancar,
+     op=entrar al entrar), jamás una marca guardada en el navegador. */
+  const MSG_401 = "Su sesión terminó o no se reconoce. Entre de nuevo con su correo y contraseña.";
+  let sesionDueno = false;
+  let hayCuenta = null;   // null = todavía no se sabe (op=sesion no respondió)
+  const conSesion = (opciones) => ({ ...(opciones || {}), credentials: "same-origin" });
+  /* TODO fetch de este archivo pasa por aquí: un CENSO por construcción, no una
+     lista de sitios. Una llamada nueva que alguien escriba mañana viaja con la
+     sesión sin tener que acordarse. */
+  const fetch = (url, opciones) => window.fetch(url, conSesion(opciones));
   /* Las TRES llamadas del navegador a op=sync —el refresco tras la lista, la
-     espera de la primera carga y el panel «Actualizar datos»— van con la misma
-     llave que la lista (6-sep-2026, M-SEG-08): con CRON_SECRET en el
-     despliegue, un sync sin llave responde 401. Una sola función: tres copias
-     divergen a la primera corrección. */
+     espera de la primera carga y el panel «Actualizar datos»— van con la sesión
+     (6-sep-2026, M-SEG-08): con CRON_SECRET en el despliegue, un sync sin
+     credencial responde 401. Una sola función: tres copias divergen a la
+     primera corrección. */
   function opcionesSync(extra) {
-    const headers = { ...(extra || {}) };
-    const t = tokenGuardado();
-    if (t) headers["x-historico-token"] = t;
-    return Object.keys(headers).length ? { headers } : undefined;
+    return conSesion(extra ? { headers: { ...extra } } : undefined);
   }
 
-  /* ══════════ Gate (una sola copia para toda la página) ══════════ */
-  let intentosClave = 0;
-  /* abrirApp NO escribe `detecta-acceso`: esa marca significa «pasó el gate»
-     y la pone el propio gate al validar la clave. */
+  /* ══════════ Gate (una sola copia para toda la página) ══════════
+     El gate es la pantalla de ENTRAR (correo y contraseña) y, mientras no
+     exista ninguna cuenta, la de CREARLA. abrirApp lo OCULTA y no lo retira:
+     si la sesión termina con la aplicación abierta, un 401 lo vuelve a enseñar
+     encima (`sesionVencida`) sin perder lo que había en pantalla. */
   function abrirApp() {
     const onboarding = document.getElementById("onboarding");
     if (onboarding) onboarding.classList.add("hidden");
-    const gate = $("gate");
-    if (gate) gate.remove();
+    ocultarGate();
     $("app").classList.remove("hidden");
     let hash = "";
     try { hash = (location.hash.match(/^#\/([a-z-]+)/) || [])[1] || ""; } catch { hash = ""; }
@@ -302,9 +298,8 @@
     const sel = $("f-perfil");
     const perfil = sel ? sel.value : "";
     const nombre = sel && sel.selectedOptions[0] ? sel.selectedOptions[0].text.replace(/^Consorcio · /, "") : "";
-    // con el token viajan las cifras del perfil (patrimonio, capacidad) para «Tu registro»
-    const t = tokenGuardado();
-    window.Pulso.arrancar(perfil, { nombre, headers: t ? { "x-historico-token": t } : null, forzar: !!opciones.forzar }).catch(() => {});
+    // con la sesión del dueño viajan las cifras del perfil (patrimonio, capacidad) para «Tu registro»
+    window.Pulso.arrancar(perfil, { nombre, forzar: !!opciones.forzar }).catch(() => {});
   }
   document.getElementById("pulso").addEventListener("click", (ev) => {
     const el = ev.target.closest("[data-filtro]");
@@ -339,76 +334,170 @@
   /* El pliegue «El mercado completo hoy» se retiró de Mi empresa (encargo del
      ingeniero): el agregado nacional no responde «¿a qué me presento YO hoy?».
      `Portada.teaser()` sigue vivo para las tres cifras de la landing. */
-  /* EL BLOQUEO TAMBIÉN TIENE SALIDA (5-sep-2026). Decía «Acceso denegado / Este
-     sitio es privado.» y ahí terminaba: sin instrucción y sin vuelta, solo
-     recargar devolvía la portada. El bloqueo en sí y MAX_INTENTOS_CLAVE no
-     cambian (son la seguridad); lo que se añade es qué hacer y por dónde. El
-     enlace conserva el id #gate-volver: el oyente vive en #gate (onboarding.js)
-     y sobrevive a este reemplazo.
-     LA INSTRUCCIÓN TIENE QUE SER POSIBLE (11-sep-2026): decía «Vuelva al inicio
-     y suba su RUP o escriba tres datos», y esas dos puertas ya no se ofrecen —
-     mandar a alguien a pulsar algo que no está en pantalla es peor que no decir
-     nada. Ahora dice lo único que de verdad puede hacer. */
-  function bloquear() {
-    $("gate").innerHTML =
-      '<div class="text-center"><p class="text-2xl font-semibold">Acceso denegado</p>' +
-      '<p class="mt-2 text-sm text-gray-500">Este sitio es privado.</p>' +
-      '<p class="mt-4 text-sm text-gray-500">Vuelva al inicio y escriba de nuevo la clave. Si no la tiene, pídala a quien administra el sitio.</p>' +
-      '<p class="mt-4 text-sm"><a href="#" id="gate-volver" class="underline">Volver al inicio</a></p></div>';
+  /* ══════════ ENTRAR Y CREAR LA CUENTA (17-oct-2026) ══════════
+     Sustituye a la clave del sitio, que se comprobaba aquí, en el navegador
+     —cualquiera la leía en el fuente— y a sus tres intentos contados en la
+     pestaña. Ahora decide el SERVIDOR: op=entrar compara la contraseña con
+     scrypt, cuenta los intentos por conexión y por correo y abre la sesión en
+     una cookie que este código no ve. Aquí solo se pinta lo que respondió.
+
+     DOS FORMULARIOS EN EL MISMO GATE y se enseña uno: `#gate-form` (entrar) o,
+     mientras op=sesion diga que no existe ninguna cuenta, `#alta-form` (crearla
+     con la llave del servidor que el dueño copia de Vercel). Después de creada
+     esa pantalla no vuelve: el servidor responde 409 para siempre. */
+  function ensenarGate() {
+    const gate = $("gate");
+    if (!gate) return;
+    gate.classList.remove("hidden");
+    gate.classList.add("flex");
+    gate.style.display = "flex"; // hidden/flex declaran display: el inline decide (lección del modal)
   }
-  $("gate-form").addEventListener("submit", (e) => {
-    e.preventDefault();
-    if ($("gate-clave").value === CLAVE) {
-      // sessionStorage puede lanzar en modo restringido: la clave correcta
-      // tiene que abrir la app igual, solo que sin recordar la sesión
-      try { sessionStorage.setItem("detecta-acceso", "1"); } catch { /* sesión no recordada */ }
+  function ocultarGate() {
+    const gate = $("gate");
+    if (!gate) return;
+    gate.classList.add("hidden");
+    gate.classList.remove("flex");
+    gate.style.display = "";
+  }
+  function errorGate(texto) {
+    const err = $("gate-error");
+    if (!err) return;
+    err.textContent = texto || "";
+    err.classList.toggle("hidden", !texto);
+  }
+  /* qué formulario toca: el de crear SOLO cuando el servidor dijo que no hay cuenta */
+  function prepararGate() {
+    const alta = hayCuenta === false;
+    const fEntrar = $("gate-form"), fAlta = $("alta-form"), intro = $("gate-intro");
+    if (fEntrar) fEntrar.classList.toggle("hidden", alta);
+    if (fAlta) fAlta.classList.toggle("hidden", !alta);
+    if (intro) intro.textContent = alta
+      ? "Todavía no hay ninguna cuenta. Créela una sola vez: escriba la llave del servidor (la de la configuración del sitio), su correo y una contraseña."
+      : "Entre con su correo y su contraseña.";
+  }
+  /* LA SESIÓN TERMINÓ CON LA APLICACIÓN ABIERTA: el gate se enseña ENCIMA y,
+     al entrar, se oculta sin recargar (lo que había en pantalla sigue ahí y
+     se vuelve a pulsar). Devuelve el mensaje para que el sitio que recibió el
+     401 lo pinte también donde estaba mirando el usuario. */
+  let entradaPorVencimiento = false;
+  function sesionVencida(mensaje) {
+    sesionDueno = false;
+    try {
+      entradaPorVencimiento = !$("app").classList.contains("hidden");
+      prepararGate();
+      errorGate(entradaPorVencimiento ? mensaje : "");
+      ensenarGate();
+      const c = $("gate-correo");
+      if (c && c.focus) c.focus();
+    } catch { /* la pantalla no está: el mensaje sigue llegando a quien llamó */ }
+    return mensaje;
+  }
+  /* El POST de entrar y el de crear la cuenta comparten TODO menos la ruta y
+     los campos: una sola función. El botón se apaga mientras viaja y la
+     respuesta se pinta SIEMPRE (ninguna pulsación sin respuesta visible). */
+  async function enviarGate(ruta, datos, boton) {
+    if (boton) boton.disabled = true;
+    errorGate("");
+    let r;
+    try {
+      r = await fetch(ruta, conSesion({ method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json" }, body: JSON.stringify(datos) }));
+    } catch (e) {
+      if (boton) boton.disabled = false;
+      return errorGate(mensajeDeFallo(e, "entrar"));
+    }
+    const cuerpo = await leerJson(r);
+    if (boton) boton.disabled = false;
+    if (r.ok && cuerpo && cuerpo.ok && cuerpo.sesion) {
+      sesionDueno = true;
+      hayCuenta = true;
+      for (const id of ["gate-contrasena", "alta-llave", "alta-contrasena", "alta-repetir"]) { const x = $(id); if (x) x.value = ""; }
+      pintarSalir();
+      if (entradaPorVencimiento) {
+        /* la aplicación ya estaba abierta: se le devuelve tal cual, con todo lo del dueño */
+        entradaPorVencimiento = false;
+        ocultarGate();
+        vistaDeVisitante(false);
+        return;
+      }
       return abrirApp();
     }
-    intentosClave++;
-    if (intentosClave >= MAX_INTENTOS_CLAVE) return bloquear();
-    const err = $("gate-error");
-    err.textContent = `Acceso denegado (${MAX_INTENTOS_CLAVE - intentosClave} intento${MAX_INTENTOS_CLAVE - intentosClave === 1 ? "" : "s"} restante${MAX_INTENTOS_CLAVE - intentosClave === 1 ? "" : "s"}).`;
-    err.classList.remove("hidden");
-    $("gate-clave").value = "";
-    $("gate-clave").focus();
+    /* 409: la cuenta ya existe (otra pestaña la creó, o se intentó dos veces):
+       se pasa a la pantalla de entrar y se dice por qué */
+    if (r.status === 409) { hayCuenta = true; prepararGate(); }
+    const texto = cuerpo && cuerpo.error ? [cuerpo.error, cuerpo.que_hacer].filter(Boolean).join(" ") : fraseDeFallo({ status: r.status });
+    errorGate(texto);
+  }
+  /* pliego.js y onboarding.js no son dueños del gate: cuando una llamada suya
+     recibe el 401 de la sesión, lo AVISAN con este evento y aquí se abre la
+     pantalla de entrar (por msg401: es el único lector del mensaje del 401) */
+  document.addEventListener("detekta:sesion-vencida", () => { msg401({}); });
+  $("gate-form").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const correo = String($("gate-correo").value || "").trim();
+    const contrasena = String($("gate-contrasena").value || "");
+    if (!correo || !contrasena) {
+      errorGate("Escriba su correo y su contraseña.");
+      ($("gate-correo").value ? $("gate-contrasena") : $("gate-correo")).focus();
+      return;
+    }
+    enviarGate("/api/admin?op=entrar", { correo, contrasena }, e.submitter || null);
+  });
+  $("alta-form").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const llave = String($("alta-llave").value || "").trim();
+    const correo = String($("alta-correo").value || "").trim();
+    const contrasena = String($("alta-contrasena").value || "");
+    if (!llave || !correo || !contrasena) return errorGate("Escriba la llave del servidor, su correo y la contraseña.");
+    if (contrasena !== String($("alta-repetir").value || "")) return errorGate("Las dos contraseñas no son iguales. Escríbalas otra vez.");
+    enviarGate("/api/admin?op=crear-cuenta", { llave, correo, contrasena }, e.submitter || null);
+  });
+  /* SALIR: el servidor borra la sesión (la cookie copiada deja de valer en ese
+     instante) y la quita del navegador. Se recarga para que el arranque vuelva
+     a decidir la vista desde cero, ya sin sesión. Solo se enseña con sesión. */
+  function pintarSalir() {
+    const b = $("btn-salir");
+    if (b) b.hidden = !sesionDueno;
+  }
+  const botonSalir = $("btn-salir");
+  if (botonSalir) botonSalir.addEventListener("click", async () => {
+    botonSalir.disabled = true;
+    const rotulo = botonSalir.textContent;
+    botonSalir.textContent = "Saliendo…";
+    let r = null, cuerpo = null;
+    try { r = await fetch("/api/admin?op=salir", conSesion({ method: "POST", headers: { Accept: "application/json" } })); } catch { r = null; }
+    if (r) cuerpo = await leerJson(r);
+    if (r && r.ok && cuerpo && cuerpo.ok) {
+      try { history.replaceState(null, "", location.pathname); location.reload(); } catch { /* entorno raro */ }
+      return;
+    }
+    botonSalir.disabled = false;
+    botonSalir.textContent = "No se pudo salir: reintentar";
+    botonSalir.title = (cuerpo && cuerpo.error) || "No se pudo cerrar la sesión. Vuelva a intentarlo.";
+    botonSalir.setAttribute("aria-label", `${botonSalir.title} (${rotulo})`);
   });
 
-  /* ══════ EL ENVÍO DE LA CLAVE QUE LLEGÓ ANTES QUE ESTE ARCHIVO (13-sep-2026) ══════
+  /* ══════ EL ENVÍO DE «ENTRAR» QUE LLEGÓ ANTES QUE ESTE ARCHIVO (13-sep-2026) ══════
      El `submit` de arriba lo ata este archivo, que es el ÚLTIMO de los
      diecinueve módulos, y el gate se abre mucho antes: onboarding.js va tercero.
-     En medio, el formulario de la clave se ve, se deja teclear y su «Entrar» NO
-     HACE NADA. MEDIDO en Chromium sobre public/ con gzip (como en producción),
-     pulsando de verdad por CDP: a 390 px con CPU por 4 y 4G lenta (1,6 Mb/s /
-     150 ms) el gate se abre a los ~1.107 ms y el `submit` no queda atado hasta
-     los ~3.303 ms — VENTANA de 2.214 ms, y 6 de 6 envíos hechos dentro quedaron
-     mudos; con CPU por 6 y 3G, 8.984 ms y 8 de 8; en escritorio (1.280 px, CPU
-     por 4, 4G) 2.276 ms y 6 de 6. `method="dialog"` (12-sep-2026) ya le quitó el
-     DAÑO —la clave escrita se queda—, pero no el silencio, y el silencio es la
-     regla dura «ninguna pulsación sin respuesta visible».
+     En medio, el formulario se ve, se deja teclear y su «Entrar» NO HACE NADA
+     (medido en Chromium con CPU por 4 y 4G lenta: ventana de ~2,2 s, y 6 de 6
+     envíos hechos dentro quedaron mudos). `method="dialog"` le quita el DAÑO
+     —lo escrito se queda—, pero no el silencio.
 
-     ES EL MISMO PATRÓN DE public/onboarding.js, y lo es a propósito: no se
-     inventa una segunda forma de resolver el mismo problema. Un oyente al
-     principio del IIFE no cierra nada (este IIFE es SÍNCRONO: entre su primera
-     línea y ésta el navegador no despacha un solo evento). Lo único que sobrevive
-     a la ventana es el RASTRO del navegador: el botón pulsado con el puntero
-     QUEDA CON EL FOCO y ese foco no enciende `:focus-visible`; el del tabulador
-     sí. Comprobado ejecutando los seis gestos en Chromium dentro de la ventana:
-     sin tocar nada el foco queda en #gate-clave; pulsando «Entrar», en el botón
-     con `:focus-visible` falso; tabulando hasta él, en el botón con
-     `:focus-visible` verdadero; pulsando y marchándose, en BODY.
+     Lo único que sobrevive a la ventana es el RASTRO del navegador: el botón
+     pulsado con el puntero QUEDA CON EL FOCO y ese foco no enciende
+     `:focus-visible`; el del tabulador sí. Si ese rastro está y los dos campos
+     están escritos, se reproduce el clic con el manejador REAL.
 
-     DOS CASOS NO SE REPRODUCEN Y SE DECLARAN. (1) El campo VACÍO: un envío en
-     blanco no puede acertar la clave y sí gastaría uno de los tres intentos de
-     MAX_INTENTOS_CLAVE, que son la seguridad y no se tocan. (2) Quien pulsa
-     Intro DENTRO del campo no deja ningún rastro que lo separe de «solo estaba
-     escribiendo» —el foco se queda en #gate-clave—, así que su envío sigue mudo;
-     no se cierra inventando una regla, se dice.
+     DOS CASOS NO SE REPRODUCEN Y SE DECLARAN. (1) Un campo VACÍO: un envío en
+     blanco no puede entrar y sí gastaría uno de los intentos que cuenta el
+     servidor. (2) Quien pulsa Intro DENTRO de un campo no deja ningún rastro que
+     lo separe de «solo estaba escribiendo», así que su envío sigue mudo; no se
+     cierra inventando una regla, se dice.
 
      Y NO SE ENCIENDE NINGUNA LÍNEA DE «PREPARANDO…» EN EL MARCADO: solo este
-     archivo podría apagarla, y si este archivo no llega a cargar se quedaría
-     prometiendo para siempre un trabajo que nadie hace — la cicatriz del gate
-     bloqueado que prometía algo imposible (12-sep-2026). Sin app.js la pantalla
-     de la clave queda exactamente como hoy: muda, pero sin mentir. */
+     archivo podría apagarla, y si no llega a cargar se quedaría prometiendo
+     para siempre un trabajo que nadie hace. */
   function reproducirEnvioDeClaveAntesDeCargar() {
     const a = document.activeElement;
     if (!a || a.tagName !== "BUTTON" || a.type !== "submit" || a.disabled) return null;
@@ -416,8 +505,8 @@
     if (!formulario || !formulario.contains(a)) return null;   // otro botón: no es este envío
     const gate = $("gate");
     if (!gate || gate.classList.contains("hidden")) return null; // el gate no se está viendo
-    const campo = $("gate-clave");
-    if (!campo || !campo.value) return null;                     // sin clave escrita no hay envío que reproducir
+    const correo = $("gate-correo"), campo = $("gate-contrasena");
+    if (!correo || !correo.value || !campo || !campo.value) return null; // sin los dos campos no hay envío que reproducir
     /* `:focus-visible` es la única señal que separa PULSAR de TABULAR. Si el
        navegador no la conoce, la duda se resuelve sin actuar. */
     try { if (a.matches(":focus-visible")) return null; } catch { return null; }
@@ -1226,9 +1315,7 @@
     mostrar("estado-carga", "Buscando oportunidades…");
     let r, cuerpo;
     try {
-      const token = tokenGuardado();
-      r = await fetch(`/api/procesos?op=listar&${parametros()}`,
-        token ? { headers: { "x-historico-token": token } } : undefined);
+      r = await fetch(`/api/procesos?op=listar&${parametros()}`, conSesion());
     } catch (e) {
       if (peticion !== peticionActual) return "obsoleta"; // llegó tarde: ya hay otra búsqueda
       // durante la sincronización inicial un fallo transitorio no debe cortar
@@ -1245,13 +1332,15 @@
     if (peticion !== peticionActual) return "obsoleta"; // respuesta obsoleta: descartar
 
     if (r.status === 503 && cuerpo && cuerpo.sincronizando) return terminarBusqueda(esperarSincronizacion(), peticion);
-    /* Un 401 aquí solo puede venir de un token GUARDADO que ya no vale (rotado
-       o mal copiado). Se olvida y se reintenta SIN él: la lista pública sigue
-       estando disponible, así que degradar es mejor que bloquear al cliente
-       con un formulario que no necesita para nada. */
+    /* Un 401 aquí solo puede venir de una SESIÓN que ya no vale (caducó, o se
+       cerró desde otro sitio): el visitante no manda credencial y nunca lo
+       recibe. Se dice en la lista y se abre la pantalla de entrar encima; al
+       entrar, la lista se vuelve a pedir. Reintentar sin ella no se puede —la
+       cookie la manda el navegador— y degradar en silencio dejaría al dueño
+       mirando una lista sin cifras sin saber por qué. */
     if (r.status === 401) {
-      olvidarToken();
-      return buscar();
+      mostrar("estado-error", msg401(cuerpo));
+      return terminarBusqueda("error", peticion);
     }
     /* El perfil de un RUP subido CADUCA (TTL en el servidor). El 404 trae
        `perfil_caducado` para poder distinguirlo de cualquier otro error: se
@@ -1313,15 +1402,13 @@
     for (let pg = 1; pg <= paginas; pg++) {
       const p = parametros();
       p.set("pagina", String(pg)); p.set("por_pagina", String(EXCEL_POR_PAGINA));
-      const token = tokenGuardado();
       let r;
-      try { r = await fetch(`/api/procesos?op=listar&${p}`, token ? { headers: { "x-historico-token": token } } : undefined); }
+      try { r = await fetch(`/api/procesos?op=listar&${p}`, conSesion()); }
       catch (e) { throw new Error(mensajeDeFallo(e, "descargar la lista")); }
       /* el parseo va APARTE del fetch: el muro del edge responde HTML */
       const cuerpo = await leerJson(r);
-      /* un token guardado que ya no vale se olvida y la página se vuelve a pedir
-         sin él, como hace la lista: la descarga pública no se bloquea */
-      if (r.status === 401 && token) { olvidarToken(); pg--; continue; }
+      /* una sesión que ya no vale abre la pantalla de entrar, como en la lista */
+      if (r.status === 401) throw new Error(msg401(cuerpo));
       // el «qué hacer» del servidor viaja con el error, como en api() (V-B2a-02)
       if (!r.ok || !cuerpo || !cuerpo.ok) throw new Error(errorDelServidor(cuerpo) || fraseDeFallo({ status: r.status }));
       filas.push(...(cuerpo.resultados || []));
@@ -2959,9 +3046,9 @@
     try {
       /* Se llama a la URL CANÓNICA del router (/api/inteligencia), no al alias
          `/api/paa` ni a la histórica /api/competencia-detalle: si el rewrite
-         fallara, el PAA tiene que seguir funcionando. El token integrado viaja
-         por cabecera y nunca en la URL. */
-      r = await fetch(`/api/inteligencia?${qs}`, { headers: { "x-historico-token": leerToken() } });
+         fallara, el PAA tiene que seguir funcionando. La credencial es la
+         sesión del dueño, que viaja en la cookie y nunca en la URL. */
+      r = await fetch(`/api/inteligencia?${qs}`, conSesion());
     } catch {
       if (peticion !== peticionPaa) return;
       $("paa-resumen").textContent = "No se pudo contactar el servidor para consultar el PAA.";
@@ -3024,11 +3111,8 @@
   /* ══════════ Detalle de competencia (modal) ══════════
      El badge afirma «promedio 3 oferentes en 12 procesos». Aquí se ven los 12,
      con los que quedaron fuera del promedio y POR QUÉ. El endpoint exige
-     HISTORICO_TOKEN; el token integrado viaja por el header `x-historico-token`
-     (nunca en la URL) y el usuario no ve ningún formulario. */
-  /* el token va integrado (ver cabecera): las utilidades de sesión murieron
-     con el formulario. `tokenGuardado`/`olvidarToken` viven arriba, junto a
-     TOKEN, porque la degradación ante un 401 sigue siendo la misma. */
+     credencial: viaja con la sesión del dueño (la cookie que el navegador manda
+     solo) y nunca en la URL; un 401 abre la pantalla de entrar (msg401). */
 
   const MOTIVO_EXCLUSION = {
     sin_dato_oferentes: "El proceso se adjudicó pero el dataset no dice cuántos se presentaron",
@@ -3974,13 +4058,12 @@
   }
 
   async function cargarDesglose(id) {
-    const token = leerToken();
     $("modal-cuerpo").innerHTML = cargando("Reconstruyendo el cálculo…");
     let r, cuerpo;
     try {
       // el perfil viaja: la baja máxima del proceso sale de SUS borradores de APU (A4)
       r = await fetch(`/api/inteligencia?op=probabilidad&id_proceso=${encodeURIComponent(id)}&perfil=${encodeURIComponent($("f-perfil").value || "")}`,
-        { headers: { "x-historico-token": token } });
+        conSesion());
     } catch {
       $("modal-cuerpo").innerHTML = '<p class="py-6 text-center text-red-600">No se pudo contactar el servidor. Intente de nuevo.</p>';
       return;
@@ -4018,7 +4101,6 @@
      otra entidad). */
   async function cargarDetalle(entidad, nit) {
     recargarModal = () => cargarDetalle(entidad, nit);
-    const token = leerToken();
     const marca = `entidad-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
     const sigueAbierta = () => $("modal-cuerpo").innerHTML.includes(marca);
     $("modal-cuerpo").innerHTML = `<p class="py-8 text-center text-gray-400" data-carga="${marca}">Consultando esta entidad…</p>`;
@@ -4026,7 +4108,7 @@
       let r;
       try {
         r = await fetch(`/api/inteligencia?op=entidad&entidad=${encodeURIComponent(entidad)}${nit ? `&nit=${encodeURIComponent(nit)}` : ""}${extra}`,
-          { headers: { "x-historico-token": token } });
+          conSesion());
       } catch {
         return { r: null, cuerpo: null };
       }
@@ -4184,7 +4266,6 @@
   async function cargarAdjudicatario(clave, nombre) {
     recargarModal = () => cargarAdjudicatario(clave, nombre);
     abrirModal(nombre || "Competidor", "Dónde gana este competidor", "Buscando sus adjudicaciones…");
-    const token = leerToken();
     const marca = `competidor-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
     const sigueAbierta = () => $("modal-cuerpo").innerHTML.includes(marca);
     $("modal-cuerpo").innerHTML = `${cargando("Buscando sus adjudicaciones…")}<span hidden data-carga="${marca}"></span>`;
@@ -4198,7 +4279,7 @@
       let r;
       try {
         r = await fetch(`/api/inteligencia?op=competidor&adjudicatario=${encodeURIComponent(clave)}${extra}`,
-          { headers: { "x-historico-token": token } });
+          conSesion());
       } catch {
         return { r: null, cuerpo: null };
       }
@@ -4350,15 +4431,14 @@
   $("f-paa-entidad").addEventListener("change", () => buscarPaa());
 
 
-  /* Llamada autenticada del editor: el token integrado viaja en cabecera en
-     todas las peticiones. Un 401 solo puede significar que HISTORICO_TOKEN del
-     despliegue no coincide con el token integrado, y se dice con esas palabras
-     — no hay formulario que abrir ni token que re-pedir. */
+  /* Llamada autenticada del editor: viaja con la sesión del dueño (la cookie
+     la manda el navegador). Un 401 solo puede significar que la sesión terminó:
+     msg401 lo dice y abre la pantalla de entrar. */
   async function api(ruta, opciones = {}) {
-    const cfg = {
+    const cfg = conSesion({
       method: opciones.method || "GET",
-      headers: { "x-historico-token": leerToken() },
-    };
+      headers: {},
+    });
     if (opciones.body !== undefined) {
       cfg.headers["Content-Type"] = "application/json";
       cfg.body = JSON.stringify(opciones.body);
@@ -6083,7 +6163,7 @@
       if (icsTodos) {
         icsTodos.disabled = true;
         try {
-          const rIcs = await fetch(`/api/perfil?op=seguimiento&perfil=${encodeURIComponent($("f-perfil").value)}&ics=todos`, { headers: { "x-historico-token": leerToken() } });
+          const rIcs = await fetch(`/api/perfil?op=seguimiento&perfil=${encodeURIComponent($("f-perfil").value)}&ics=todos`, conSesion());
           if (!rIcs.ok) throw new Error(`El servidor respondió ${rIcs.status}.`);
           const blob = await rIcs.blob(); const url = URL.createObjectURL(blob);
           const a = document.createElement("a"); a.href = url; a.download = "detekta_mis_procesos.ics"; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 5000);
@@ -6151,7 +6231,7 @@
       if (ics) {
         const id = ics.getAttribute("data-seg-ics");
         try {
-          const r = await fetch(`/api/perfil?op=seguimiento&perfil=${encodeURIComponent($("f-perfil").value)}&ics=${encodeURIComponent(id)}`, { headers: { "x-historico-token": leerToken() } });
+          const r = await fetch(`/api/perfil?op=seguimiento&perfil=${encodeURIComponent($("f-perfil").value)}&ics=${encodeURIComponent(id)}`, conSesion());
           if (!r.ok) throw new Error(`El servidor respondió ${r.status}.`);
           const blob = await r.blob(); const url = URL.createObjectURL(blob);
           const a = document.createElement("a"); a.href = url; a.download = `detekta_${id.replace(/[^A-Za-z0-9._-]/g, "_")}.ics`; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 5000);
@@ -9661,9 +9741,11 @@
       }
       if (!activo) return null;
 
+      /* 401: la sesión del dueño terminó (msg401 abre la pantalla de entrar);
+         403: la petición no salió de esta página. Ninguna se arregla reintentando. */
       if (r && (r.status === 401 || r.status === 403)) {
-        mensaje(fraseDeFallo({ status: r.status }), "error");
-        falloPulsacion = "la clave del servidor no coincide; el detalle está en Mi empresa";
+        mensaje(r.status === 401 ? msg401(cuerpo) : ((cuerpo && cuerpo.error) || fraseDeFallo({ status: r.status })), "error");
+        falloPulsacion = "su sesión terminó o el servidor no reconoció la credencial; el detalle está en Mi empresa";
         return null;
       }
       if (r && r.ok && cuerpo && cuerpo.ok) return cuerpo;
@@ -9996,7 +10078,7 @@
       r = await fetch(`/api/perfil?op=diagnostico&perfil=${encodeURIComponent($("ra-perfil").value)}&buscar=${encodeURIComponent(consulta)}`
         + (campoRa && campoRa !== "todo" ? `&campo=${encodeURIComponent(campoRa)}` : "")
         + (modRa ? `&modalidad=${encodeURIComponent(modRa)}` : ""),
-        { headers: { "x-historico-token": TOKEN } });
+        conSesion());
     } catch {
       caja.innerHTML = '<p class="text-red-700">No se pudo contactar el servidor.</p>'; return;
     }
@@ -10138,7 +10220,6 @@
   async function cargarDashboard({ forzar = false } = {}) {
     if (vistaVisitanteActiva) return;   // lo que no se enseña no se pide (M-SEG-02)
     if (dashboardCargando) return;
-    const token = leerToken();
     const perfil = $("d-perfil").value;
     cargandoDashboard(true);
     let r = null, cuerpo = null;
@@ -10147,7 +10228,7 @@
       // navegador reutilice su propia respuesta al pulsar «Actualizar ahora»
       const bust = forzar ? `&cache_bust=${Date.now()}` : "";
       r = await fetch(`/api/perfil?op=resumen&perfil=${encodeURIComponent(perfil)}${bust}`,
-        { headers: { "x-historico-token": token, Accept: "application/json" }, cache: "no-store" });
+        { headers: { Accept: "application/json" }, cache: "no-store" });
       cuerpo = await leerJson(r);
     } catch (e) {
       cargandoDashboard(false);
@@ -10260,7 +10341,6 @@
   async function reconstruirBaja() {
     const btn = $("d-baja-reconstruir");
     const msg = $("d-baja-msg");
-    const token = leerToken();
     const decir = (texto, clases) => {
       msg.textContent = texto;
       msg.className = `mt-2 rounded-lg px-3 py-2 text-xs ${clases}`;
@@ -10270,7 +10350,7 @@
     decir("Reconstruyendo sobre el histórico ya descargado…", "bg-gray-50 text-gray-600");
     try {
       const r = await fetch("/api/procesos?op=baja&reconstruir=true",
-        { headers: { "x-historico-token": token, Accept: "application/json" }, cache: "no-store" });
+        { headers: { Accept: "application/json" }, cache: "no-store" });
       const c = await leerJson(r);
       if (!r.ok || !c.ok) {
         decir(r.status === 401 ? msg401(c) : (c.error || fraseDeFallo({ status: r.status })), "bg-red-50 text-red-700");
@@ -10678,7 +10758,6 @@
 
   $("btn-rup-cargar").addEventListener("click", async () => {
     if (!rupPendiente) return mensajeRup("Seleccione primero un archivo JSON.", "aviso");
-    const token = leerToken();
     // deshabilitar durante el envío: un doble clic cargaría dos veces
     $("btn-rup-cargar").disabled = true;
     const etiqueta = $("btn-rup-cargar").textContent;
@@ -10688,7 +10767,7 @@
     try {
       r = await fetch("/api/admin?op=rup", {
         method: "POST",
-        headers: { "Content-Type": "application/json", "x-historico-token": token },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(rupPendiente),
       });
       cuerpo = await leerJson(r);
@@ -10731,10 +10810,9 @@
   async function cargarRupActual() {
     if (vistaVisitanteActiva) return;   // el JSON de los perfiles es del dueño (M-SEG-02)
     const caja = $("rup-actual");
-    const token = leerToken();
     let r = null, cuerpo = null;
     try {
-      r = await fetch("/api/admin?op=rup", { headers: { "x-historico-token": token, Accept: "application/json" }, cache: "no-store" });
+      r = await fetch("/api/admin?op=rup", { headers: { Accept: "application/json" }, cache: "no-store" });
       cuerpo = await leerJson(r);
     } catch {
       caja.textContent = "No se pudo consultar el RUP vigente.";
@@ -10777,10 +10855,9 @@
   }
 
   $("btn-rup-descargar").addEventListener("click", async () => {
-    const token = leerToken();
     let cuerpo = null;
     try {
-      const r = await fetch("/api/admin?op=rup", { headers: { "x-historico-token": token }, cache: "no-store" });
+      const r = await fetch("/api/admin?op=rup", { cache: "no-store" });
       cuerpo = await leerJson(r);
       if (!r.ok || !cuerpo || !cuerpo.ok) throw new Error(errorDelServidor(cuerpo) || `El servidor respondió ${r.status}.`);
     } catch (e) {
@@ -10852,7 +10929,7 @@
     try {
       r = await fetch(`/api/admin?op=rup&perfil=${encodeURIComponent(perfil)}`, {
         method: "DELETE",
-        headers: { "x-historico-token": leerToken(), Accept: "application/json" },
+        headers: { Accept: "application/json" },
       });
     } catch (e) {
       eliminarEnVuelo = false;
@@ -10985,7 +11062,6 @@
 
   $("btn-exp-confirmar").addEventListener("click", async () => {
     if (!expPendiente) return mensajeExp("Pegue y revise primero el JSON de contratos.", "aviso");
-    const token = leerToken();
     // un doble clic cargaría dos veces
     $("btn-exp-confirmar").disabled = true;
     const etiqueta = $("btn-exp-confirmar").textContent;
@@ -10995,7 +11071,7 @@
     try {
       r = await fetch("/api/admin?op=experiencia", {
         method: "POST",
-        headers: { "Content-Type": "application/json", "x-historico-token": token },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(expPendiente),
       });
       cuerpo = await leerJson(r);
@@ -11035,10 +11111,9 @@
   async function cargarExperienciaActual() {
     if (vistaVisitanteActiva) return;   // los contratos ejecutados son del dueño (M-SEG-02)
     const caja = $("exp-actual");
-    const token = leerToken();
     let r = null, cuerpo = null;
     try {
-      r = await fetch("/api/admin?op=experiencia", { headers: { "x-historico-token": token, Accept: "application/json" }, cache: "no-store" });
+      r = await fetch("/api/admin?op=experiencia", { headers: { Accept: "application/json" }, cache: "no-store" });
       cuerpo = await leerJson(r);
     } catch {
       caja.textContent = "No se pudo consultar la experiencia cargada.";
@@ -11092,14 +11167,13 @@
   /* Paso 1 · los contratos del repositorio. Devuelve true solo si se guardaron:
      la cadena no puede seguir anunciando pasos sobre una carga que falló. */
   async function cargarExperienciaDelRepositorio() {
-    const token = leerToken();
     bitacora("▶ 1/3 cargando experiencia de Génesis desde el repositorio…");
     erroresExp(null);
     let r = null, cuerpo = null;
     try {
       r = await fetch("/api/admin?op=experiencia&origen=repositorio", {
         method: "POST",
-        headers: { "x-historico-token": token, Accept: "application/json" },
+        headers: { Accept: "application/json" },
       });
     } catch (e) {
       bitacora("✘ 1/3 sin conexión con el servidor");
@@ -11252,10 +11326,9 @@
   });
 
   $("btn-exp-descargar").addEventListener("click", async () => {
-    const token = leerToken();
     let cuerpo = null;
     try {
-      const r = await fetch("/api/admin?op=experiencia", { headers: { "x-historico-token": token }, cache: "no-store" });
+      const r = await fetch("/api/admin?op=experiencia", { cache: "no-store" });
       cuerpo = await leerJson(r);
       if (!r.ok || !cuerpo || !cuerpo.ok) throw new Error(errorDelServidor(cuerpo) || `El servidor respondió ${r.status}.`);
     } catch (e) {
@@ -11323,7 +11396,7 @@
     mensajeCopia("copia-descarga-mensaje", null);
     let r;
     try {
-      r = await fetch("/api/admin?op=exportar", { headers: { "x-historico-token": leerToken() } });
+      r = await fetch("/api/admin?op=exportar", conSesion());
     } catch (e) {
       btn.disabled = false; btn.textContent = etiqueta;
       return mensajeCopia("copia-descarga-mensaje", mensajeDeFallo(e, "descargar la copia"), "error");
@@ -11373,7 +11446,7 @@
     try {
       r = await fetch("/api/admin?op=importar", {
         method: "POST",
-        headers: { "Content-Type": "application/json", "x-historico-token": leerToken() },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ copia: copiaPendiente.base64, sobrescribir: $("copia-reemplazar").checked }),
       });
       cuerpo = await leerJson(r);
@@ -11448,7 +11521,6 @@
      sigue al paso siguiente sobre una auditoría que nunca corrió. */
   async function ejecutarAuditoria() {
     if (coberturaCargando) return false;
-    const token = leerToken();
     const perfil = $("c-perfil").value;
     const usar = $("c-usar-experiencia").checked ? "true" : "false";
     avisoCobertura(null);
@@ -11456,7 +11528,7 @@
     let r = null, cuerpo = null;
     try {
       r = await fetch(`/api/admin?op=cobertura&perfil=${encodeURIComponent(perfil)}&usar_experiencia=${usar}`,
-        { headers: { "x-historico-token": token, Accept: "application/json" }, cache: "no-store" });
+        { headers: { Accept: "application/json" }, cache: "no-store" });
       cuerpo = await leerJson(r);
     } catch (e) {
       cargandoCobertura(false);
@@ -11734,7 +11806,6 @@
        script lo pulsara, la reescritura del catálogo compartido no sale de su
        navegador: la guarda va en la FUENTE, no en el botón (6-sep-2026, B4a-H1) */
     if (vistaVisitanteActiva) return mensajeApu("El catálogo lo carga quien administra el sitio.", "aviso");
-    const token = leerToken();
     apuCargando = true;
     // doble clic: el botón se deshabilita durante el envío o se carga dos veces
     $("btn-apu-cargar").disabled = true;
@@ -11745,7 +11816,7 @@
     try {
       r = await fetch("/api/admin?op=cargar-catalogo&forzar=true", {
         method: "POST",
-        headers: { "x-historico-token": token, Accept: "application/json" },
+        headers: { Accept: "application/json" },
       });
     } catch {
       apuCargando = false;
@@ -11825,7 +11896,7 @@
     try {
       for (let tanda = 1; ; tanda++) {
         const r = await fetch("/api/procesos?op=historico&reconstruir_indice=true&chain=0",
-          { headers: { "x-historico-token": leerToken(), Accept: "application/json" }, cache: "no-store" });
+          { headers: { Accept: "application/json" }, cache: "no-store" });
         // el parseo va APARTE del fetch: el muro del edge responde HTML (`leerJson` nunca lanza)
         const c = await leerJson(r);
         if (r.status === 401) { msg.textContent = msg401(c); return; }
@@ -11998,7 +12069,7 @@
     try {
       resp = await fetch("/api/apu?op=parametros", {
         method: "POST",
-        headers: { "Content-Type": "application/json", "x-historico-token": leerToken() },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ parametros: leerParametrosForm() }),
       });
     } catch (e) {
@@ -12412,11 +12483,17 @@
 
      Tres vistas posibles, en este orden de decisión (ago 2026):
        1. hay un perfil de RUP (en la URL `?perfil=rup_…` o guardado por el
-          onboarding) → dashboard con ese perfil, sin gate: el gate protege el
-          acceso a los perfiles del dueño, no el tablero del propio RUP;
-       2. la pestaña ya pasó el gate → dashboard clásico;
+          onboarding) → dashboard con ese perfil: la sesión del dueño protege
+          sus perfiles, no el tablero del propio RUP;
+       2. el SERVIDOR dice que hay sesión del dueño → dashboard clásico;
        3. nada de lo anterior → la landing de onboarding (#onboarding, que
-          nace visible en el HTML precisamente para este caso). */
+          nace visible en el HTML precisamente para este caso).
+     LA SESIÓN LA DICE EL SERVIDOR (17-oct-2026): antes la decidía una marca de
+     sessionStorage que ponía la clave comprobada aquí mismo; hoy la cookie es
+     HttpOnly y solo op=sesion sabe si vale. Por eso el arranque ESPERA esa
+     respuesta antes de decidir la vista, y si no llega se arranca sin sesión
+     (la landing, con «Entrar» a la vista): ninguna marca del navegador abre
+     lo del dueño. */
   const perfilUrl = (() => {
     try { return new URLSearchParams(window.location.search).get("perfil") || ""; } catch { return ""; }
   })();
@@ -12424,50 +12501,64 @@
   const perfilRup = ID_RUP_RE.test(perfilUrl)
     ? { id: perfilUrl, nombre: guardadoRup && guardadoRup.id === perfilUrl ? guardadoRup.nombre : "" }
     : guardadoRup;
-  /* sessionStorage puede lanzar en modo restringido: el arranque no puede
-     morir por eso (la landing quedaría muda con la consola como único aviso) */
-  let sesionConClave = false;
-  try { sesionConClave = sessionStorage.getItem("detecta-acceso") === "1"; } catch { sesionConClave = false; }
   /* «#/inicio» pide la LANDING aunque haya un RUP guardado o sesión (6-sep-2026,
      M-SEG-02): es la salida de quien administra el sitio y entró por su RUP sin
-     la clave —sin ella, el arranque lo devolvía a la aplicación una y otra vez—. */
+     la sesión —sin ella, el arranque lo devolvía a la aplicación una y otra vez—. */
   let pideInicio = false;
   try { pideInicio = location.hash === "#/inicio"; } catch { pideInicio = false; }
-  if (pideInicio) {
-    if (window.Portada) window.Portada.teaser();
-    /* El hash se CONSUME al atenderlo (6-sep-2026, B4a-H2): quien entra con su
-       clave desde esta landing se quedaba con «#/inicio» en la URL y cada
-       recarga lo devolvía a la landing y al gate aunque la sesión ya estuviera
-       puesta (medido en Chromium). Sin el hash, la siguiente recarga vuelve a
-       decidir por sesión o por RUP, como siempre. */
-    try { history.replaceState(null, "", `${location.pathname}${location.search}`); } catch { /* entorno raro */ }
-  } else if (perfilRup) {
-    // sin gate pasado, el selector queda SOLO con el perfil del RUP: entrar
-    // por URL no puede regalar los perfiles del dueño — y la vista de
-    // visitante oculta (y deja de pedir) lo que es del dueño
-    activarPerfilRup(perfilRup, { soloEste: !sesionConClave });
-    vistaDeVisitante(!sesionConClave);
-    abrirApp();
-  } else if (/^cons_[a-z0-9]{6,24}$/.test(perfilUrl)) {
-    /* Fase 10 · un consorcio a la medida por URL («Ver su lista»): misma regla
-       que el RUP subido — sin gate, el selector queda SOLO con él. */
-    let nombreCons = "";
-    try { const g = JSON.parse(localStorage.getItem("detekta_consorcio") || "null"); if (g && g.id === perfilUrl) nombreCons = g.nombre || ""; } catch { /* sin almacenamiento */ }
-    const sel = $("f-perfil");
-    if (![...sel.options].some((o) => o.value === perfilUrl)) { const o = document.createElement("option"); o.value = perfilUrl; o.textContent = etiquetaConsorcio(nombreCons, perfilUrl); sel.appendChild(o); }
-    if (!sesionConClave) for (const o of [...sel.options]) { if (o.value !== perfilUrl) o.remove(); }
-    fijarPerfilBarra(perfilUrl);
-    vistaDeVisitante(!sesionConClave);
-    abrirApp();
-  } else if (sesionConClave) {
-    abrirApp();
-  } else if (window.Portada) {
-    /* sin perfil y sin sesión: se queda la landing, que nace visible en el
-       HTML. Sobre ella solo el TEASER (tres cifras del mercado, sin prosa):
-       la portada entera vive ahora DENTRO del tablero, plegada bajo el pulso
-       personalizado — el dueño pidió que los datos salieran DESPUÉS de elegir
-       cómo entrar, personalizados al RUP. */
-    window.Portada.teaser();
+  /* ¿hay sesión del dueño, y existe ya la cuenta? Nunca lanza: sin respuesta,
+     sin sesión (y `hayCuenta` queda en null: el gate ofrece entrar) */
+  async function preguntarSesion() {
+    try {
+      const r = await fetch("/api/admin?op=sesion", { cache: "no-store", headers: { Accept: "application/json" } });
+      const c = await leerJson(r);
+      if (r.ok && c && c.ok) {
+        hayCuenta = c.hay_cuenta === true ? true : c.hay_cuenta === false ? false : null;
+        return c.sesion === true;
+      }
+    } catch { /* sin respuesta: se arranca sin sesión */ }
+    return false;
+  }
+  async function arrancar() {
+    sesionDueno = await preguntarSesion();
+    prepararGate();
+    pintarSalir();
+    if (pideInicio) {
+      if (window.Portada) window.Portada.teaser();
+      /* El hash se CONSUME al atenderlo (6-sep-2026, B4a-H2): quien entra
+         desde esta landing se quedaba con «#/inicio» en la URL y cada recarga
+         lo devolvía a la landing y al gate aunque la sesión ya estuviera
+         puesta (medido en Chromium). Sin el hash, la siguiente recarga vuelve
+         a decidir por sesión o por RUP, como siempre. */
+      try { history.replaceState(null, "", `${location.pathname}${location.search}`); } catch { /* entorno raro */ }
+    } else if (perfilRup) {
+      // sin sesión del dueño, el selector queda SOLO con el perfil del RUP:
+      // entrar por URL no puede regalar los perfiles del dueño — y la vista de
+      // visitante oculta (y deja de pedir) lo que es del dueño
+      activarPerfilRup(perfilRup, { soloEste: !sesionDueno });
+      vistaDeVisitante(!sesionDueno);
+      abrirApp();
+    } else if (/^cons_[a-z0-9]{6,24}$/.test(perfilUrl)) {
+      /* Fase 10 · un consorcio a la medida por URL («Ver su lista»): misma regla
+         que el RUP subido — sin sesión, el selector queda SOLO con él. */
+      let nombreCons = "";
+      try { const g = JSON.parse(localStorage.getItem("detekta_consorcio") || "null"); if (g && g.id === perfilUrl) nombreCons = g.nombre || ""; } catch { /* sin almacenamiento */ }
+      const sel = $("f-perfil");
+      if (![...sel.options].some((o) => o.value === perfilUrl)) { const o = document.createElement("option"); o.value = perfilUrl; o.textContent = etiquetaConsorcio(nombreCons, perfilUrl); sel.appendChild(o); }
+      if (!sesionDueno) for (const o of [...sel.options]) { if (o.value !== perfilUrl) o.remove(); }
+      fijarPerfilBarra(perfilUrl);
+      vistaDeVisitante(!sesionDueno);
+      abrirApp();
+    } else if (sesionDueno) {
+      abrirApp();
+    } else if (window.Portada) {
+      /* sin perfil y sin sesión: se queda la landing, que nace visible en el
+         HTML. Sobre ella solo el TEASER (tres cifras del mercado, sin prosa):
+         la portada entera vive ahora DENTRO del tablero, plegada bajo el pulso
+         personalizado — el dueño pidió que los datos salieran DESPUÉS de elegir
+         cómo entrar, personalizados al RUP. */
+      window.Portada.teaser();
+    }
   }
 
   /* Las capas las abre y las cierra medio `app.js` cambiando clases, en más
@@ -12486,8 +12577,12 @@
 
   /* VA AQUÍ, EL ÚLTIMO DE TODO, por las dos razones de siempre: el arranque
      automático de este archivo va AL FINAL del IIFE (un fallo en la zona muerta
-     es MUDO), y esta reproducción solo puede correr DESPUÉS del `submit` de
-     arriba y DESPUÉS del arranque —que es quien decide si el gate sigue en
-     pantalla—, que es lo que la convierte en una respuesta y no en otro silencio. */
-  reproducirEnvioDeClaveAntesDeCargar();
+     es MUDO), y la reproducción del envío temprano solo puede correr DESPUÉS
+     del `submit` de arriba y DESPUÉS del arranque —que es quien decide si el
+     gate sigue en pantalla—, que es lo que la convierte en una respuesta y no
+     en otro silencio. El arranque es asíncrono (espera a op=sesion): un fallo
+     dentro se CUENTA en la consola en vez de quedar en una promesa muda. */
+  arrancar()
+    .then(() => reproducirEnvioDeClaveAntesDeCargar())
+    .catch((e) => { try { console.error("El arranque de la aplicación falló", e); } catch { /* sin consola */ } });
 })();

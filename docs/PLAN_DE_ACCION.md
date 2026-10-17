@@ -877,7 +877,7 @@ error se propaga como error; solo el 404 real borra.
 ### F3-10 · Retirar el token integrado del navegador
 **Frente:** E · **Clase:** BLOQUEADOR · **Esfuerzo:** 1,5 j · **Depende de:** F3-6
 
-**Qué se hace.** Quitar `const TOKEN = "MiExtraccion2025"` de `public/app.js`, `public/onboarding.js` y
+**Qué se hace.** Quitar `const TOKEN = "[llave retirada el 17-oct-2026]"` de `public/app.js`, `public/onboarding.js` y
 `public/pliego.js`. Las peticiones pasan a autenticarse con la sesión. **`lib/auth.js` y la variable
 `HISTORICO_TOKEN` se conservan** para las operaciones de administración del dueño.
 

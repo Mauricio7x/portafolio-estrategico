@@ -12,46 +12,71 @@ cambió de nombre, lo que hay que buscar va dicho en cada paso.
 
 ---
 
-## 0. Lo primero: la causa más probable de que «los tokens no cuadren»
+## 0. Lo primero: usted entra con su correo y su contraseña (desde el 17-oct-2026)
 
-La aplicación lleva el token de escritura **escrito dentro del código del navegador**, en tres
-archivos (`public/app.js`, `public/onboarding.js`, `public/pliego.js`):
+**Hasta el 17-oct-2026** la llave de la aplicación (`HISTORICO_TOKEN`) iba escrita dentro del código
+de la página, y cualquiera que abriera el código fuente la leía y podía usar todo lo protegido. Ya
+no: **la página no lleva ninguna llave**. Usted entra con **su correo y su contraseña**, una sola
+vez, y ese Chrome lo recuerda **30 días**. Hay **una sola cuenta**, la suya, y nadie más puede
+crear otra.
 
-```js
-const TOKEN = "MiExtraccion2025";
-```
+`HISTORICO_TOKEN` sigue existiendo, pero ahora es **una contraseña de verdad** que solo vive en
+Vercel (y en GitHub y en el entorno de Claude Code, si los usa): sirve para crear su cuenta la
+primera vez y para lo que funciona sin navegador (los flujos de GitHub, las rutinas de Claude Code).
+Su valor **no va en ningún documento, chat ni archivo del repositorio**: si alguna vez lo ve escrito
+en uno, cámbielo (§10).
 
-Eso significa que la variable `HISTORICO_TOKEN` de Vercel tiene que valer **exactamente**:
+### 0.1 · La puesta en marcha, en este orden (una sola vez)
 
-```
-MiExtraccion2025
-```
+1. **Despliegue** este cambio (se despliega solo al fusionarlo en `main`). Mientras en Vercel siga la
+   llave vieja —la que estuvo escrita en el código de la página—, la pantalla «Crear su cuenta» **se
+   niega sola** y le dice que primero la cambie: nadie que la haya leído puede crear la cuenta.
+2. **Cambie `HISTORICO_TOKEN` en Vercel** por una cadena nueva, larga y aleatoria (§3.2) y **vuelva a
+   desplegar** (§5).
+3. **Cree su cuenta** con esa llave nueva (§0.1 bis, abajo).
+4. **GitHub**: ponga el mismo valor en el secreto `HISTORICO_TOKEN`, si lo creó (flujo de la carga
+   completa; §10).
+5. **Claude Code**: ponga el mismo valor en la variable de entorno `HISTORICO_TOKEN` del entorno de
+   sus rutinas y de las skills `/dictamen` y `/precios` (claude.ai/code → el entorno → **Edit**).
 
-Ni una cadena larga y aleatoria, ni otra cosa. Si en Vercel hay un valor distinto, **la aplicación
-entera se queda a medias**: la lista de licitaciones se ve sin cifras, el tablero de Mi empresa no
-carga, no se puede subir el RUP, no se puede calcular un APU. Y **no sale ningún error visible en
-pantalla** — simplemente faltan datos.
+### 0.1 bis · Crear su cuenta (sin terminal)
 
-> **De dónde vino la confusión, y la corrección ya aplicada.** El `README.md` traía desde hace
-> meses la frase «Definir `HISTORICO_TOKEN` (una cadena larga y aleatoria)», en la sección *Cómo
-> ejecutar la extracción histórica inicial*, paso 1. Esa instrucción es **anterior** a la decisión
-> de integrar el token en el frontend (ago 2026) y era la trampa número uno: seguirla al pie de la
-> letra rompe el despliegue. Si alguna vez se siguió, ahí está el problema.
->
-> **Ese paso 1 ya está corregido en `README.md`** (21-ago-2026, al unificar las ramas en `main`):
-> la sesión que escribió esta guía no tenía permiso de escritura sobre el README, así que la
-> corrección quedó redactada aquí hasta poder aplicarse. Hoy las dos fuentes dicen lo mismo; si
-> alguna vez volvieran a discrepar, **manda esta guía**, que es la que se escribió mirando el código.
+1. Abra Vercel → el proyecto → **Settings → Environment Variables** → `HISTORICO_TOKEN` → el ojo
+   para verla → **cópiela** entera.
+2. Abra la aplicación en Chrome → **Entrar con clave**. Como todavía no hay cuenta, la pantalla dice
+   «Todavía no hay ninguna cuenta» y le pide cuatro cosas:
+   - **Llave del servidor (la de Vercel)**: pegue lo que copió en el paso 1.
+   - **Su correo**.
+   - **Contraseña**: 10 caracteres o más. Una frase que recuerde («la obra de la calle diez») sirve
+     mejor que una palabra corta con símbolos.
+   - **Repita la contraseña**.
+3. Pulse **Crear su cuenta**. Entra directo a la aplicación.
 
-**Ese literal no es un secreto.** Cualquiera que abra el código fuente de la página lo ve. La
-protección real del sitio es **Vercel Password Protection** (el muro que pide contraseña antes de
-entrar) más el gate de clave `231105` del navegador. No hay que angustiarse por él; hay que hacer
-que **cuadre**.
+Desde ese momento esa pantalla **queda cerrada para siempre**: aunque alguien tenga la llave, ya no
+puede crear otra cuenta (la aplicación responde «La cuenta de esta aplicación ya existe»).
 
-Si algún día se quiere cambiar por otro valor, hay que cambiarlo **en los seis sitios a la vez** —las
-tres líneas del código, este documento, el `README.md` y la variable de Vercel— y en el orden que
-explica §10 («Rotar `HISTORICO_TOKEN`»). Cambiarlo solo en Vercel rompe la aplicación; la suite
-automática exige que los tres archivos y los dos documentos lleven el mismo valor.
+### 0.2 · Entrar, salir y lo que pasa si se equivoca
+
+- **Entrar**: **Entrar con clave** → su correo y su contraseña → **Entrar**. Ese Chrome lo recuerda
+  30 días; después vuelve a pedírselo.
+- **Salir**: el enlace **Salir**, arriba a la derecha junto al perfil. Cierra la sesión en el
+  servidor: aunque alguien hubiera copiado algo de ese Chrome, deja de valer en ese instante.
+- **Si se equivoca varias veces seguidas** (5 con su correo desde la misma conexión, 20 desde la misma conexión, o 50 con su correo desde todas),
+  la entrada se pausa unos minutos y la pantalla dice cuántos. Es a propósito: así nadie puede
+  probar contraseñas sin fin.
+- **Si su sesión termina con la aplicación abierta**, la pantalla de entrar aparece encima; entre de
+  nuevo y vuelva a pulsar lo que estaba haciendo.
+- **Si olvida la contraseña**: no hay correo de recuperación. Entre a <https://console.upstash.com>
+  → su base → **Data Browser**, busque la clave `cuenta:dueno` y **bórrela**. Las sesiones viejas
+  dejan de valer solas y la pantalla «Crear su cuenta» vuelve a aparecer: créela otra vez con la
+  llave de Vercel (§0.1 bis).
+
+### 0.3 · Las URL que pega en Chrome
+
+Las direcciones de esta guía (`/api/sync?…`, `/api/admin?op=respaldo…`) se pegan **en el mismo
+Chrome donde ya entró a la aplicación**: la sesión viaja sola y no hace falta añadir nada. Desde
+otro navegador, o si no ha entrado, se puede añadir `&token=SU_LLAVE` al final (su llave de Vercel
+en lugar de `SU_LLAVE`); esa llave queda en el historial del navegador, así que es mejor entrar.
 
 ---
 
@@ -119,7 +144,7 @@ Resumen de todo lo que existe. Solo las tres primeras son obligatorias.
 | --- | --- | --- | --- |
 | `UPSTASH_REDIS_REST_URL` | **SÍ** | Dirección de la base de datos | La app no guarda ni lee nada: `503 Faltan UPSTASH…` |
 | `UPSTASH_REDIS_REST_TOKEN` | **SÍ** | Contraseña de la base de datos | Igual que la anterior |
-| `HISTORICO_TOKEN` | **SÍ** | Llave de todo lo protegido | `503` en todo lo protegido; la app se ve a medias |
+| `HISTORICO_TOKEN` | **SÍ** | Crear su cuenta la primera vez, y llave del servidor (flujos, rutinas) | No se puede crear la cuenta; `503` a lo que llegue sin sesión |
 | `SOCRATA_APP_TOKEN` | Recomendada; necesaria en cuanto la usen varias personas a la vez | Identifica a la aplicación ante datos.gov.co, que así limita menos las consultas; el portal no publica cuántas por hora permite, con llave ni sin ella (manual del desarrollador de Datos Abiertos Colombia, CO_417, num. 4.1, consultado el 26-sep-2026) | Funciona igual hasta que datos.gov.co limite, y cuando lo agota la app dice «datos.gov.co limitó las consultas por unos minutos; vuelva a intentarlo» |
 | `OCRSPACE_API_KEY` | Opcional | Leer pliegos **escaneados** (fotos) | Los pliegos con texto se leen igual; los escaneados no |
 | `VERCEL_AUTOMATION_BYPASS_SECRET` | Solo si hay Password Protection | Que la sincronización pueda llamarse a sí misma | La extracción larga se corta a mitad |
@@ -161,35 +186,35 @@ al depurar. Si hay duplicados, borre el par que no use.
 
 ---
 
-### 3.2 · `HISTORICO_TOKEN` — la llave de la aplicación
+### 3.2 · `HISTORICO_TOKEN` — la llave del servidor
 
-**Qué es.** Una sola llave que protege **todo** lo que no es la lista pública: el tablero de Mi
-empresa, la carga del RUP, la experiencia, la auditoría de códigos, los índices, el editor de precios
-y la extracción de datos. El nombre es histórico (nació para la extracción del histórico) pero hoy
-abre todo.
+**Qué es.** La llave de todo lo que no es la lista pública cuando lo pide algo que **no es un
+navegador**: el flujo de GitHub de la carga completa, las rutinas y las skills de Claude Code
+(`/dictamen`, `/precios`) y una URL con `&token=` pegada en la barra. Y es la que se escribe UNA vez
+para **crear su cuenta** (§0.1). En la aplicación usted entra con correo y contraseña: la página no
+la lleva ni la ve. El nombre es histórico (nació para la extracción del histórico).
 
-**De dónde sale.** De ningún sitio: **la elige usted**. Y por lo dicho en el punto 0, hoy tiene que
-valer exactamente:
-
-```
-MiExtraccion2025
-```
+**De dónde sale.** **La elige usted**: una cadena larga y aleatoria, de 32 caracteres o más (sirve
+cualquier generador de contraseñas). Es una contraseña de verdad: no va en el código, ni en un
+documento, ni en un chat.
 
 - **Nombre de la variable:** `HISTORICO_TOKEN`
-- **Valor:** `MiExtraccion2025`
-- Sin comillas. Sin espacios. Respetando mayúsculas y minúsculas (`M` mayúscula, `E` mayúscula).
+- **Valor:** su cadena aleatoria. Sin comillas ni espacios.
+- Si usa el flujo de GitHub de la carga completa, el mismo valor va en GitHub → **Settings → Secrets
+  and variables → Actions** → secreto `HISTORICO_TOKEN`.
+- Si usa las rutinas o skills de Claude Code, el mismo valor va en el entorno de Claude Code
+  (claude.ai/code → el entorno → **Edit** → variables de entorno), con el nombre `HISTORICO_TOKEN`.
 
-**Cómo se comprueba que quedó bien:** pegar esta URL en Chrome (estando ya dentro del sitio, es
-decir, después de haber pasado la contraseña de Vercel si está activa):
+**Cómo se comprueba que quedó bien:** entre a la aplicación y pegue en ese mismo Chrome:
 
 ```
-https://detekta-app.vercel.app/api/resumen?perfil=helder&token=MiExtraccion2025
+https://detekta-app.vercel.app/api/resumen?perfil=helder
 ```
 
-- Si responde un texto largo con cifras → **correcto**.
-- Si responde `503` diciendo «HISTORICO_TOKEN no está definida» → la variable **no existe**.
-- Si responde `401 Token inválido` → la variable existe **con otro valor**. Ese es el caso de «no
-  cuadran»: hay que cambiarla a `MiExtraccion2025` y volver a desplegar.
+- Si responde un texto largo con cifras → **correcto** (entró con su sesión).
+- Si responde `401` → no ha entrado en ese Chrome: entre primero (§0.2).
+- Si responde `503` diciendo «HISTORICO_TOKEN no está definida» → la variable **no existe** (sin
+  ella tampoco se puede crear la cuenta).
 
 ---
 
@@ -299,9 +324,9 @@ cadena continúa sola.
 nació pública: cualquiera que conociera la URL podía lanzarla contra SECOP II y gastar el cupo de
 Redis y de Vercel del proyecto. Con esta variable puesta, `/api/sync` solo acepta tres llamadores:
 el cron de Vercel (que, según la documentación de Vercel, envía la cabecera
-`Authorization: Bearer <CRON_SECRET>` a cada invocación cuando la variable existe), quien lleve la
-llave de la aplicación (la marca y «Actualizar datos» ya la mandan) y la propia cadena de tandas. A
-todo lo demás responde `401` diciendo qué hacer.
+`Authorization: Bearer <CRON_SECRET>` a cada invocación cuando la variable existe), usted con su
+sesión iniciada (la marca y «Actualizar datos» la llevan) o quien lleve la llave del servidor, y la
+propia cadena de tandas. A todo lo demás responde `401` diciendo qué hacer.
 
 **Sin la variable no cambia nada**: la sincronización sigue pública como hasta hoy, y
 `/api/procesos?op=salud` lo dice con `"sincronizacion_protegida": false`.
@@ -319,15 +344,14 @@ ningún chat.
 
 1. Pegar en Chrome `https://detekta-app.vercel.app/api/procesos?op=salud`: tiene que
    decir `"sincronizacion_protegida": true`.
-2. Pegar `https://detekta-app.vercel.app/api/sync?modo=auto` **sin** `&token=`: tiene
-   que responder `401` (antes respondía `200`).
+2. Pegar `https://detekta-app.vercel.app/api/sync?modo=auto` en un navegador donde **no** haya
+   entrado (una ventana de incógnito): tiene que responder `401` (antes respondía `200`).
 3. Al día siguiente, otra vez `op=salud`: `ultima_sincronizacion` tiene que ser de esa mañana. Si
    no lo es, el cron no está pasando la guarda: quite la variable, vuelva a desplegar y avise —la
    marca (que lleva la llave) sigue sincronizando mientras tanto.
 
 **Efecto en las URL que tenga pegadas en Chrome:** `/api/sync?modo=full` y `/api/sync?modo=auto`
-necesitan ahora `&token=MiExtraccion2025` al final (§8 ya lo trae). Sin la variable, ese `&token=`
-no estorba.
+necesitan una credencial: péguelas en el Chrome donde ya entró a la aplicación (§0.3).
 
 ---
 
@@ -390,10 +414,10 @@ sesión de trabajo no se pudo abrir ninguna página de precios). Los pasos:
 Entorno *Production* → **Save** → **Deployments** → **Redeploy** (§5): las variables de entorno solo
 entran en despliegues nuevos.
 
-**Cómo se comprueba que quedó bien.** Pegue en Chrome, con su llave al final:
+**Cómo se comprueba que quedó bien.** Pegue en el Chrome donde ya entró a la aplicación (§0.3):
 
 ```
-https://detekta-app.vercel.app/api/avisos?enviar=no&token=MiExtraccion2025
+https://detekta-app.vercel.app/api/avisos?enviar=no
 ```
 
 `enviar=no` calcula el aviso y le enseña el texto SIN mandarlo, en `vista_previa`. Si en `correo`
@@ -441,8 +465,8 @@ funciona sin configurar nada. Cómo funciona el circuito completo: `docs/PRECIOS
 solicitud quedó registrada … y la búsqueda arrancó»; en <https://claude.ai/code> aparece una sesión nueva
 con el nombre de la rutina, y después «Buscando… completado x %». Si dice «la búsqueda automática no
 arrancó: …», la pantalla da el motivo en palabras llanas; el detalle técnico (el código de respuesta y
-qué variable revisar) está en la cola, que se ve pegando esta dirección en Chrome:
-`https://detekta-app.vercel.app/api/apu?op=ia&pendientes=1&token=<SU_TOKEN>` → en cada
+qué variable revisar) está en la cola, que se ve pegando esta dirección en el Chrome donde ya entró (§0.3):
+`https://detekta-app.vercel.app/api/apu?op=ia&pendientes=1` → en cada
 solicitud, `despertada.detalle` («401 … regenérelo» → paso 4; «403 … permission_error» → las rutinas
 están desactivadas para la cuenta; «429 … tope diario» → espere al siguiente periodo o active los
 créditos de uso en <https://claude.ai/settings/usage>). «No respondió a tiempo» es indeterminado: la
@@ -477,7 +501,7 @@ pedida a las …»; en <https://claude.ai/code> aparece una sesión nueva con el
 pocos minutos **«Ver si ya está lista»** enseña el dictamen, que termina con «Dictamen escrito en una sesión
 de Claude Code…». Si la caja dice «La lectura completa no arrancó: …», el motivo va en palabras llanas; el
 detalle técnico (el código de respuesta y qué variable revisar) sale en el campo `pedido_sesion.detalle`
-pegando en Chrome `https://detekta-app.vercel.app/api/pliego?op=dictamen&id_proceso=<ID>&perfil=helder&token=<SU_TOKEN>`
+pegando en el Chrome donde ya entró (§0.3) `https://detekta-app.vercel.app/api/pliego?op=dictamen&id_proceso=<ID>&perfil=helder`
 justo después de pedirla (la marca dura media hora).
 
 **Cuánto gasta.** Cada lectura completa es una sesión de Claude Code: descuenta de la suscripción y cuenta
@@ -526,17 +550,17 @@ documentación de Cloudflare actualizada el 18-ago-2026 (su panel no se vio desd
 
 Entorno *Production* → **Save** → **Deployments** → **Redeploy** (§5).
 
-**Cómo se comprueba que quedó bien.** Pegue en Chrome, con su llave al final:
+**Cómo se comprueba que quedó bien.** Pegue en el Chrome donde ya entró a la aplicación (§0.3):
 
 ```
-https://detekta-app.vercel.app/api/admin?op=respaldo&token=MiExtraccion2025
+https://detekta-app.vercel.app/api/admin?op=respaldo
 ```
 
 La primera vez copia el histórico mes por mes; si no le alcanza el tiempo, dice cuántos meses quedan y
 los copia la noche siguiente (o al volver a abrir la dirección). Después, pruebe la copia:
 
 ```
-https://detekta-app.vercel.app/api/admin?op=respaldo&prueba=1&token=MiExtraccion2025
+https://detekta-app.vercel.app/api/admin?op=respaldo&prueba=1
 ```
 
 La prueba baja cada archivo, comprueba su huella y cuenta sus filas. «La copia sirve» es la única
@@ -596,7 +620,8 @@ Recién ahí las variables nuevas están vivas.
 ## 6. Parte E · Comprobar que todo quedó bien (4 pruebas, 5 minutos)
 
 Hágalas **en este orden**. Cada una supone que la anterior salió bien. Solo hay que pegar la URL en
-Chrome, en una pestaña donde ya haya pasado la contraseña del sitio.
+Chrome, en una pestaña donde ya haya pasado la contraseña del sitio y, desde la prueba 3, donde ya
+haya entrado con su correo y contraseña.
 
 ### Prueba 1 · ¿El sitio está arriba?
 
@@ -621,26 +646,28 @@ https://detekta-app.vercel.app/api/sync?modo=auto
 
 *(Esta llamada puede tardar hasta un minuto: está bajando datos de verdad.)*
 
-### Prueba 3 · ¿La llave cuadra?
+### Prueba 3 · ¿Entró con su cuenta?
+
+Entre a la aplicación (§0.2) y, en ese mismo Chrome:
 
 ```
-https://detekta-app.vercel.app/api/resumen?perfil=helder&token=MiExtraccion2025
+https://detekta-app.vercel.app/api/resumen?perfil=helder
 ```
 
 | Lo que responde | Qué significa | Arreglo |
 | --- | --- | --- |
 | Cifras (`totales`, `visibles`…) | **Correcto** | — |
+| `401 · Token ausente` o «Su sesión terminó» | No entró en ese Chrome, o la sesión caducó | Entrar de nuevo (§0.2) |
 | `503 · HISTORICO_TOKEN no está definida` | La variable no existe en este despliegue | Crearla (§3.2) y **redesplegar** (§5) |
-| `401 · Token inválido` | Existe, pero con otro valor | Editarla a `MiExtraccion2025` y **redesplegar** |
-| Una página HTML pidiendo contraseña | Es el muro de Vercel, no un error de token | Iniciar sesión en Vercel en esa misma pestaña |
+| Una página HTML pidiendo contraseña | Es el muro de Vercel, no un error de la cuenta | Iniciar sesión en Vercel en esa misma pestaña |
 
 ### Prueba 4 · ¿La aplicación se ve completa?
 
-Abrir el sitio y entrar con la clave `231105`. Debe verse:
+Abrir el sitio y entrar con su correo y su contraseña. Debe verse:
 
 - La pestaña **Mi empresa** con cifras (no vacía).
 - La pestaña **Licitaciones** con tarjetas que muestran chips verdes y cifras de dinero.
-- Si las tarjetas salen **sin cifras de dinero**, el token sigue sin cuadrar: repita la prueba 3.
+- Si las tarjetas salen **sin cifras de dinero**, no entró con su cuenta: repita la prueba 3.
 
 ---
 
@@ -648,9 +675,11 @@ Abrir el sitio y entrar con la clave `231105`. Debe verse:
 
 | Lo que usted ve | Causa casi segura | Qué hacer |
 | --- | --- | --- |
-| La app carga pero **sin ninguna cifra de dinero** en las tarjetas | `HISTORICO_TOKEN` distinto de `MiExtraccion2025` | §3.2 + redeploy |
-| «Mi empresa» vacía o dando vueltas | Lo mismo | §3.2 + redeploy |
-| No deja subir el RUP / no calcula precios | Lo mismo | §3.2 + redeploy |
+| La app carga pero **sin ninguna cifra de dinero** en las tarjetas | No entró con su cuenta en ese Chrome | Entrar (§0.2) |
+| «Mi empresa» vacía o la pantalla de entrar aparece encima | La sesión caducó (30 días) o se cerró | Entrar de nuevo (§0.2) |
+| «Crear su cuenta» dice que la llave no coincide | Se copió mal `HISTORICO_TOKEN`, o se cambió en Vercel sin volver a desplegar | Copiarla entera otra vez (§0.1 bis); si la cambió, §5 |
+| «Crear su cuenta» dice que la llave es la que estuvo escrita en el código | Todavía no se cambió `HISTORICO_TOKEN` | Cambiarla en Vercel y volver a desplegar (§0.1, paso 2) |
+| «Demasiados intentos seguidos» | Cinco contraseñas malas seguidas con ese correo | Esperar los minutos que dice la pantalla |
 | Todo responde `503 Faltan UPSTASH…` | Falta la base de datos o el valor empieza por `redis://` | §3.1 + redeploy |
 | Cambió una variable y **no pasó nada** | No se volvió a desplegar | §5 |
 | Funciona en producción pero no en una URL de vista previa | La variable solo se marcó para `Production` | Marcar las tres casillas (§4) + redeploy |
@@ -662,7 +691,7 @@ Abrir el sitio y entrar con la clave `231105`. Debe verse:
 **Para diagnosticar la extracción sin terminal**, esta URL solo lee y no toca nada:
 
 ```
-https://detekta-app.vercel.app/api/sync/historico?token=MiExtraccion2025&estado=true
+https://detekta-app.vercel.app/api/sync/historico?estado=true
 ```
 
 Responde si hay una tanda corriendo, por qué mes va y qué hacer a continuación. **Léala antes de
@@ -679,18 +708,18 @@ Una sola vez, cuando las tres variables obligatorias ya estén bien y el sitio r
 reglas de ingesta):
 
 ```
-https://detekta-app.vercel.app/api/sync?modo=full&token=MiExtraccion2025
+https://detekta-app.vercel.app/api/sync?modo=full
 ```
 
-(El `&token=` es la llave de la aplicación: hace falta si `CRON_SECRET` está puesto —§3.6— y no
-estorba si no lo está.) Se auto-encadena en tandas. Desde el panel de Mi empresa → *Sistema* → **Iniciar sincronización**
+(Péguela en el Chrome donde ya entró a la aplicación: con `CRON_SECRET` puesto —§3.6— la
+sincronización pide credencial, y su sesión lo es.) Se auto-encadena en tandas. Desde el panel de Mi empresa → *Sistema* → **Iniciar sincronización**
 hace lo mismo con un botón, y encadena las tandas siguientes solo.
 
 **Disparo 2 — bajar los dos años de histórico** (es lo que hace que la app ordene por probabilidad
 de ganar; sin esto todo sale en ⚪ «sin datos históricos»):
 
 ```
-https://detekta-app.vercel.app/api/sync/historico?desde=2024-01&hasta=2025-12&token=MiExtraccion2025
+https://detekta-app.vercel.app/api/sync/historico?desde=2024-01&hasta=2025-12
 ```
 
 Tarda. Va respondiendo `done:false` mientras quede trabajo; se vuelve a pegar la misma URL y
@@ -702,57 +731,42 @@ continúa donde quedó. Cuando responde `done:true`, terminó.
 
 **Lo que sí importa:**
 
-- **Mantener activa Vercel Password Protection.** Es la protección real del sitio, porque el token
-  de escritura está a la vista en el código.
+- **Su contraseña de Detekta y `HISTORICO_TOKEN` son contraseñas de verdad.** No van en ningún
+  chat, correo, documento ni archivo del repositorio. `HISTORICO_TOKEN` solo vive en Vercel (y en
+  GitHub y en el entorno de Claude Code si los usa).
 - **No pegar `UPSTASH_REDIS_REST_TOKEN` ni `OCRSPACE_API_KEY` en ningún chat, correo ni archivo del
-  repositorio.** Esas dos sí son contraseñas de verdad. Solo van en Vercel.
+  repositorio.** Solo van en Vercel.
+- **Mantener Vercel Password Protection mientras lo tenga puesto**: hoy ya no es la única puerta
+  (la sesión protege lo suyo en el servidor), pero quitarla es una decisión aparte, con su propio
+  plan (docs/PLAN_DE_ACCION.md, F3-11).
 - **Rotar `SOCRATA_APP_TOKEN`** si alguna vez se pegó en una URL pública.
 
 **Lo que no vale la pena:**
 
-- Preocuparse porque `MiExtraccion2025` esté en el código. Ya está decidido y documentado: el
-  usuario no teclea tokens, y la puerta es el muro de Vercel.
 - Crear *personal access tokens* de GitHub. No se usan.
 
-**Un detalle que sí conviene recordar:** cuando se dispara algo con `?token=…` pegado en Chrome, ese
-token queda escrito en el historial del navegador y en los registros de acceso de Vercel. Es un
-precio asumido a propósito (es la única vía sin terminal) y está documentado. Si el token dejara de
-ser el literal público de hoy, habría que rotarlo después de cada uso de esa vía.
+**Un detalle que sí conviene recordar:** cuando se pega una URL con `&token=…` en Chrome, la llave
+queda escrita en el historial del navegador y en los registros de acceso de Vercel. Por eso esta
+guía pide pegar las URL en el Chrome donde ya entró, sin `&token=` (§0.3). Si alguna vez la usó así,
+rótela (§10).
 
 ---
 
-## 10. Rotar `HISTORICO_TOKEN` (los seis sitios, en orden)
+## 10. Rotar `HISTORICO_TOKEN`
 
-El valor vive en **seis sitios** y tienen que cambiar juntos; si no, la aplicación «se sirve a medias
-y sin error visible» (§0). Desde el 6-sep-2026 la suite automática ya no fija el literal: lo LEE de
-los tres archivos de `public/`, exige que los tres coincidan y CENSA este documento y el `README.md`:
-cada `token=<valor>` de URL y cada valor con forma de token en una línea que hable del token (o que
-sea el valor a solas) tiene que ser el integrado. Una rotación a medias —una sola URL con el valor
-viejo— pone la suite en rojo antes de llegar a producción (remate B3b-H2, 6-sep-2026).
+Desde el 17-oct-2026 la llave **no está en el código**, así que rotarla ya no toca el repositorio:
+la suite automática exige justo lo contrario —que ningún archivo de `public/` lleve una credencial
+ni la cabecera de la llave—. Rotarla no le cierra la sesión: su cuenta no depende de la llave.
 
 | # | Sitio | Qué cambiar |
 | --- | --- | --- |
-| 1 | `public/app.js` | la línea `const TOKEN = "…";` |
-| 2 | `public/onboarding.js` | la misma línea |
-| 3 | `public/pliego.js` | la misma línea |
-| 4 | `docs/CONFIGURACION_TOKENS.md` (este documento) y `README.md` | todas las menciones del valor viejo |
-| 5 | Vercel → *Settings → Environment Variables* → `HISTORICO_TOKEN` | el valor nuevo |
-| 6 | El despliegue | **Redeploy** (§5): la variable solo entra en despliegues nuevos |
+| 1 | Vercel → *Settings → Environment Variables* → `HISTORICO_TOKEN` | el valor nuevo (una cadena larga y aleatoria) |
+| 2 | El despliegue | **Redeploy** (§5): la variable solo entra en despliegues nuevos |
+| 3 | GitHub → *Settings → Secrets and variables → Actions* → `HISTORICO_TOKEN` | el mismo valor, si creó ese secreto (flujo de la carga completa) |
+| 4 | claude.ai/code → el entorno → *Edit* → variables de entorno → `HISTORICO_TOKEN` | el mismo valor, si usa las rutinas o las skills `/dictamen` y `/precios` |
 
-**El orden importa**, porque cada despliegue lleva el valor del código Y el de la variable, y tienen
-que coincidir en el mismo despliegue:
-
-1. Cambiar la variable en Vercel al valor nuevo **sin** redesplegar todavía (no entra en vigor hasta
-   el próximo despliegue).
-2. En una sesión de Claude Code: cambiar los sitios 1-4, correr `node tests/e2e.js` (tiene que
-   terminar 4/4: si un archivo o un documento se quedó con el valor viejo, la suite lo dice) y hacer
-   el commit.
-3. El push a `main` despliega solo, ya con los dos valores nuevos a la vez.
-4. Comprobar con la **Prueba 3** de §6 usando el valor nuevo en `&token=`.
-
-Si se hace al revés (código primero, variable después), entre los dos pasos la aplicación entera
-responde `401` y no sale ninguna cifra. Y el valor viejo queda en la historia pública de git para
-siempre: por eso el literal no es un secreto y la puerta real sigue siendo el muro de Vercel (§9).
+Hasta que haga el paso 3 o el 4, el flujo o la rutina correspondiente responden `401` y lo dicen;
+la aplicación en su navegador sigue funcionando igual.
 
 ---
 
@@ -808,11 +822,12 @@ Si tuviera que empezar hoy desde cero, en este orden y nada más:
 
 1. Upstash → copiar `UPSTASH_REDIS_REST_URL` y `UPSTASH_REDIS_REST_TOKEN` (§3.1).
 2. Vercel → *Settings → Environment Variables* → pegar esas dos, las tres casillas marcadas (§4).
-3. Añadir `HISTORICO_TOKEN` = `MiExtraccion2025` (§3.2).
+3. Añadir `HISTORICO_TOKEN` con una cadena larga y aleatoria (§3.2).
 4. *(Opcional)* Añadir `SOCRATA_APP_TOKEN` y `OCRSPACE_API_KEY` (§3.3, §3.4). `ANTHROPIC_API_KEY` (§3.7)
    solo si el dueño decide encender el motor de pago del dictamen; hoy no.
 5. *(Si el sitio pide contraseña)* Generar `VERCEL_AUTOMATION_BYPASS_SECRET` (§3.5).
 6. *(Recomendado)* Añadir `CRON_SECRET` con una cadena aleatoria larga (§3.6).
 7. **Deployments → … → Redeploy**, sin caché (§5).
-8. Correr las cuatro pruebas de §6.
-9. Disparar la sincronización completa y el histórico (§8).
+8. Abrir la aplicación y **crear su cuenta** con esa llave (§0.1).
+9. Correr las cuatro pruebas de §6.
+10. Disparar la sincronización completa y el histórico (§8).
