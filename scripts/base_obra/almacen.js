@@ -133,12 +133,28 @@ async function leerRegistro(c, mes) {
 }
 
 /* PUT condicional del registro: si otra corrida lo cambió desde que se leyó, 412 → se aborta. */
-async function escribirRegistro(c, mes, etag, datos) {
+/* 412 con el registro SIN cambios (medido en R2 real el 17-oct-2026, corrida 39069539949: «otra
+   corrida movió el registro» sin que hubiera otra): R2 rechazó el If-Match aunque el objeto era
+   el mismo. Se relee: si la ETag cambió, la carrera es real y se aborta; si es la misma, se
+   escribe sin condición —el flujo ya corre de a uno por `concurrency`— y se deja en el registro
+   de GitHub la ETag leída y la enviada para diagnosticarlo. */
+async function escribirRegistro(c, mes, etag, datos, log = (m) => process.stderr.write(m + "\n")) {
+  const cuerpo = (d) => Buffer.from(JSON.stringify({ ...d, actualizado: new Date().toISOString() }));
   const extra = { "content-type": "application/json", "x-amz-storage-class": "STANDARD", ...(etag ? { "if-match": etag } : { "if-none-match": "*" }) };
-  const r = await c.pedir("PUT", CLAVE_REGISTRO(mes), { cuerpo: Buffer.from(JSON.stringify({ ...datos, actualizado: new Date().toISOString() })), extra });
-  if (r.status === 412) { const e = new Error("NO SE SUBIÓ: otra corrida movió el registro del mes al mismo tiempo; vuelva a correrlo"); e.tope = true; throw e; }
+  const r = await c.pedir("PUT", CLAVE_REGISTRO(mes), { cuerpo: cuerpo(datos), extra });
+  if (r.status === 412) {
+    const carrera = () => { const e = new Error("NO SE SUBIÓ: otra corrida movió el registro del mes al mismo tiempo; vuelva a correrlo"); e.tope = true; return e; };
+    if (!etag) throw carrera();                       // If-None-Match: * con 412 = alguien lo creó
+    const ahora = await leerRegistro(c, mes);
+    if (ahora.etag !== etag) throw carrera();
+    log(`AVISO: R2 respondió 412 al If-Match con el registro sin cambios (ETag enviada ${etag}, leída ${ahora.etag}); se escribe sin condición: el flujo corre de a uno`);
+    const d2 = { ...datos, b: datos.b + 1, a: datos.a + 1, condicional_rechazado: true };   // la relectura y este PUT también gastan
+    const r2 = await c.pedir("PUT", CLAVE_REGISTRO(mes), { cuerpo: cuerpo(d2), extra: { "content-type": "application/json", "x-amz-storage-class": "STANDARD" } });
+    if (!r2.ok) { const e = new Error(`escribir el registro respondió ${r2.status}`); e.status = r2.status; throw e; }
+    return { etag: r2.headers.get("etag"), datos: d2 };
+  }
   if (!r.ok) { const e = new Error(`escribir el registro respondió ${r.status}`); e.status = r.status; throw e; }
-  return r.headers.get("etag");
+  return { etag: r.headers.get("etag"), datos };
 }
 
 /* Lo gastado por una corrida que ABORTA se suma al registro (relectura + PUT condicional, hasta
@@ -149,7 +165,7 @@ async function anotarGasto(c, mes, gasto) {
     let reg;
     try { reg = await leerRegistro(c, mes); } catch { return false; }
     try { await escribirRegistro(c, mes, reg.etag, { a: reg.a + gasto.a + 1, b: reg.b + gasto.b + 1 }); return true; }
-    catch (e) { if (!/otra corrida/.test(e.message)) return false; gasto = { a: gasto.a + 1, b: gasto.b + 1 }; }
+    catch (e) { if (!/otra corrida/.test(e.message)) return false; gasto = { a: gasto.a + 1, b: gasto.b + 2 }; }   // PUT fallido + lectura + relectura del 412
   }
   return false;
 }
@@ -192,15 +208,15 @@ async function subir(carpeta, prefijo, env = process.env) {
   }
   // Reserva ANTES de gastar: lo medido + los PUT de datos + el PUT final del registro.
   const reservado = { a: ops.a + nuevos.length + 1, b: ops.b };
-  let etag;
-  try { etag = await escribirRegistro(c, mes, reg.etag, { ...reservado, reserva_bytes: d.usadoTras }); }
-  catch (e) { if (/otra corrida/.test(e.message)) await anotarGasto(c, mes, { a: l.paginas + 1, b: 1 }); throw e; }
+  let etag, enRegistro = reservado;
+  try { const w = await escribirRegistro(c, mes, reg.etag, { ...reservado, reserva_bytes: d.usadoTras }); etag = w.etag; enRegistro = { a: w.datos.a, b: w.datos.b }; }
+  catch (e) { if (/otra corrida/.test(e.message)) await anotarGasto(c, mes, { a: l.paginas + 1, b: 2 }); throw e; }   // lectura inicial + relectura del 412
   for (const x of nuevos) {
     const r = await c.pedir("PUT", x.clave, { cuerpo: x.buf, extra: { "content-type": x.clave.endsWith(".json") ? "application/json" : "application/gzip", "x-amz-storage-class": "STANDARD" } });
     if (!r.ok) { const e = new Error(`subir «${x.clave}» respondió ${r.status} (la reserva ya cuenta sus operaciones)`); e.status = r.status; throw e; }
   }
-  await escribirRegistro(c, mes, etag, reservado);
-  return { subidos: nuevos.map((x) => x.clave), usado_mb: +(d.usadoTras / MB).toFixed(3), tope_mb: topeBaseBytes(env) / MB, ops: reservado };
+  const fin = await escribirRegistro(c, mes, etag, enRegistro);
+  return { subidos: nuevos.map((x) => x.clave), usado_mb: +(d.usadoTras / MB).toFixed(3), tope_mb: topeBaseBytes(env) / MB, ops: { a: fin.datos.a, b: fin.datos.b } };
 }
 
 if (require.main === module) {

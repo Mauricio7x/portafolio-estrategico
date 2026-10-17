@@ -4030,7 +4030,7 @@ async function main() {
           ops.A++; const tr = []; req.on("data", (ch) => tr.push(ch)); req.on("end", () => {
             const v = guardado.get(clave);
             if (req.headers["if-none-match"] === "*" && v) { res.writeHead(412); return res.end(); }
-            if (req.headers["if-match"] && (!v || v.etag !== req.headers["if-match"])) { res.writeHead(412); return res.end(); }
+            if (req.headers["if-match"] && (modo.rechazaIfMatch || !v || v.etag !== req.headers["if-match"])) { res.writeHead(412); return res.end(); }
             if (!clave.startsWith("_cuota/")) { putsDatos.push({ clave, clase: req.headers["x-amz-storage-class"] }); if (modo.fallaDatos) { res.writeHead(500); return res.end(); } }
             const etag = `"e${++etagN}"`; guardado.set(clave, { buf: Buffer.concat(tr), etag, fecha: new Date().toISOString() }); res.writeHead(200, { etag }); res.end();
           }); return;
@@ -4075,6 +4075,17 @@ async function main() {
         assert.deepStrictEqual(dos.map((x) => x.status).sort(), ["fulfilled", "rejected"], "dos corridas simultáneas: una sola pasa");
         assert.match(String(dos.find((x) => x.status === "rejected").reason.message), /otra corrida movió el registro/);
         modo = {};
+        // R2 real (corrida 39069539949, 17-oct-2026) devolvió 412 al If-Match con el registro SIN cambios:
+        // se relee, la ETag es la misma, y se escribe sin condición (el flujo corre de a uno), sin perder la cuenta
+        modo = { rechazaIfMatch: true };
+        const avisos = []; const logAntes = process.stderr.write.bind(process.stderr);
+        process.stderr.write = (m) => { avisos.push(String(m)); return true; };
+        let rR2;
+        try { rR2 = await alm.subir(dirB, "corte/r2", envB); } finally { process.stderr.write = logAntes; }
+        modo = {};
+        assert.deepStrictEqual(rR2.subidos, ["corte/r2/resumen.json"], "con el If-Match rechazado y el registro sin cambios, la subida pasa");
+        assert.ok(avisos.some((m) => /412 al If-Match con el registro sin cambios/.test(m)), "y deja el aviso con las ETag para diagnosticar");
+        assert.ok(regMes().condicional_rechazado === true && regMes().a >= ops.A - sinAnotar.A, `la escritura sin condición no deja la cuenta corta (registro ${JSON.stringify(regMes())}, servidor ${JSON.stringify(ops)})`);
         // un fallo a mitad: la reserva ya contaba las operaciones (la cuenta queda DE MÁS, lado seguro)
         modo = { fallaDatos: true }; await assert.rejects(alm.subir(dirB, "corte/c", envB), /la reserva ya cuenta/); modo = {};
         assert.ok(regMes().a >= ops.A - sinAnotar.A && regMes().b >= ops.B - sinAnotar.B,
@@ -4112,7 +4123,7 @@ async function main() {
       assert.strictEqual(x.ciudad_entidad, null, "«No Definido» es sin dato, no una ciudad");
       assert.strictEqual(x.municipio_ejecucion, "Ibagué"); assert.strictEqual(x.ubicacion_fuente, "direccion_del_contrato");
       assert.strictEqual(x.pct_adjudicado, 0.94); assert.strictEqual(x.n_validas, 3); assert.strictEqual(x.competencia, "real");
-      assert.deepStrictEqual(x.oferta_ganadora, { valor: 940, pct: 0.94 }, "la oferta del ganador se halla por NIT");
+      assert.deepStrictEqual(x.oferta_ganadora, { valor: 940, pct: 0.94, proveedor: "n:900111222" }, "la oferta del ganador se halla por NIT y guarda quién es");
       assert.strictEqual(x.interesados, 10, "interesados = el máximo de invitados entre las fases");
       assert.ok(!x.ofertas_validas.some((o) => "fila" in o), "la base no guarda la fila cruda de la oferta");
       const nadie = FI.filaDeProceso({ portafolio: "CO1.BDOS.1", filas: [fase({ adjudicado: "Si", proveedores_invitados: "" })], ofertas: [of("A", "900111222", "900")] });
@@ -4164,6 +4175,82 @@ async function main() {
       const tzAntes = process.env.TZ; process.env.TZ = "America/New_York";
       try { assert.strictEqual(FI.filaDeProceso({ portafolio: "P", filas: [fase({ adjudicado: "Si", fecha_de_publicacion_del: "2026-03-01T00:00:00.000", fecha_de_recepcion_de: "2026-03-15T00:00:00.000" })], ofertas: [] }).plazo_oferta_dias, 14, "el cambio de horario no mueve el plazo"); }
       finally { if (tzAntes === undefined) delete process.env.TZ; else process.env.TZ = tzAntes; }
+    }
+    // Fase 2: piso por proceso, distribuciones con respaldo, umbral de la alerta por modalidad
+    {
+      const CI = require("../scripts/base_obra/cifras");
+      const ofs = (pcts) => pcts.map((p, i) => ({ proveedor: "n:" + i, nombre: "X" + i, valor: p * 1000, pct: p }));
+      assert.strictEqual(CI.pisoDeProceso({ ofertas_validas: ofs([0.9, 0.95]) }), null, "con menos de 3 válidas no hay piso");
+      const pz = CI.pisoDeProceso({ ofertas_validas: ofs([0.90, 0.92, 0.94, 0.96]), oferta_ganadora: { pct: 0.89 } });
+      assert.ok(Math.abs(pz.mediana - 0.93) < 1e-12 && pz.piso_muestral < pz.piso_pob, "mediana par y la σ muestral deja el piso más abajo");
+      assert.strictEqual(pz.ganador_bajo_piso_muestral, true);
+      assert.strictEqual(CI.pisoDeProceso({ ofertas_validas: ofs([0.9, 0.92, 0.94]) }).ganador_bajo_piso_pob, null, "sin oferta ganadora emparejada: sin dato, no «no»");
+      const ic1 = CI.intervaloMediana([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 500), ic2 = CI.intervaloMediana([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 500);
+      assert.deepStrictEqual(ic1, ic2, "el remuestreo con semilla fija da el mismo intervalo");
+      assert.ok(ic1[0] <= 5.5 && ic1[1] >= 5.5);
+      const filasT = [1, 2, 3, 4, 5, 6].map((v) => ({ modalidad: "menor_cuantia", precio_base: v * 100 }));
+      const cortesT = CI.cortesTerciles(filasT);
+      assert.deepStrictEqual([CI.tercil(cortesT, filasT[0]), CI.tercil(cortesT, filasT[3]), CI.tercil(cortesT, filasT[5])], ["pequeño", "mediano", "grande"]);
+      // un grupo con menos de 30 se apoya en el departamento; si tampoco alcanza, en el país
+      const mkG = (d, n, v) => Array.from({ length: n }, () => ({ modalidad: "menor_cuantia", departamento_ejecucion: d, precio_base: 100, m: v }));
+      const pg = CI.porGrupo([...mkG("Tolima", 5, 0.9), ...mkG("Huila", 40, 0.95)], (x) => x.m, { menor_cuantia: [100, 100] });
+      assert.strictEqual(pg.grupos["menor_cuantia|Tolima|pequeño"].se_apoya_en, "pais", "5 en el grupo y 5 en el departamento: se apoya en el país");
+      assert.strictEqual(pg.grupos["menor_cuantia|Huila|pequeño"].se_apoya_en, "grupo");
+      assert.strictEqual(pg.grupos["menor_cuantia|Tolima|pequeño"].n_grupo, 5, "dice cuántos tenía su grupo");
+      assert.strictEqual(CI.deptoClave("Distrito Capital de Bogotá"), CI.deptoClave("Bogotá D.C."), "Bogotá es una sola");
+      assert.strictEqual(CI.esPersonaNatural("JUAN PÉREZ GÓMEZ"), true); assert.strictEqual(CI.esPersonaNatural("CONSORCIO VÍAS 2026"), false); assert.strictEqual(CI.esPersonaNatural("OBRAS S.A.S."), false);
+      const ua = CI.umbralAlerta([{ oferta_ganadora: { pct: 0.75 }, competencia: "real", modalidad: "minima" }, { oferta_ganadora: { pct: 0.95 }, competencia: "real", modalidad: "licitacion" }]);
+      assert.strictEqual(ua.minima.find((f) => f.corte_pct === 80).todas.de_cada_100, 100, "mínima se mide aparte");
+      assert.strictEqual(ua.licitacion.find((f) => f.corte_pct === 80).todas.de_cada_100, 0, "la ganadora de licitación al 95 % no recibe la alerta del 80 %");
+    }
+    // Fase 2: los 4 métodos del pliego (SAMC-SI-020-2026, pp. 53–56) contra los casos reales del dueño
+    {
+      const ME = require("../scripts/base_obra/metodos");
+      const CI2 = require("../scripts/base_obra/cifras");
+      for (const [t, m] of [[3209.00, "mediana"], [3209.24, "mediana"], [3209.25, "geometrica"], [3209.49, "geometrica"], [3209.50, "aritmetica_baja"], [3349.63, "aritmetica_baja"], [3209.74, "aritmetica_baja"], [3209.75, "menor_valor"], [3213.97, "menor_valor"], [3678.15, "mediana"]])
+        assert.strictEqual(ME.metodoPorTrm(t), m, `TRM ${t} → ${m} (centavos, rango inclusive)`);
+      assert.strictEqual(ME.metodoPorTrm(null), null, "sin TRM no hay método");
+      const ganaCon = (v, m) => ME.primeros(v, m).map((i) => v[i]);
+      const E = [883381572, 912336926, 921837099, 924697981, 925922346, 926361567, 928080331, 929694066, 932960319];
+      assert.deepStrictEqual(ganaCon(E, "menor_valor"), [883381572], "E (menor valor): gana la de $883.381.572, la que adjudicaron");
+      const C = [979021151, 984249295, 992002622, 1003514996];
+      assert.deepStrictEqual(ganaCon(C, "mediana"), [984249295], "C (mediana, número PAR): el máximo va a la inmediatamente por debajo de la mediana — la que puntuó la evaluación");
+      assert.notDeepStrictEqual(ganaCon(C, "mediana"), [1003514996], "…y no la que adjudicó la resolución (la anomalía de C)");
+      assert.deepStrictEqual(ganaCon([10, 20, 30], "mediana"), [20], "mediana con número impar: el valor central");
+      const pz = ME.puntajes([100, 300], "menor_valor");
+      assert.deepStrictEqual(pz, [1, 0.3333333], "menor valor: Vmin/Vi al séptimo decimal");
+      assert.deepStrictEqual(ME.puntajes([100, 1000], "geometrica").map((x) => x >= 0), [true, true], "un puntaje negativo vale cero");
+      const xb = ME.puntajes([90, 100, 110], "aritmetica_baja"); // X̄B = (90 + 100)/2 = 95
+      assert.ok(xb[0] === Math.round((1 - 5 / 95) * 1e7) / 1e7 && xb[1] === Math.round((1 - 5 / 95) * 1e7) / 1e7, "media aritmética baja: las dos ramas a 5 de X̄B empatan");
+      assert.strictEqual(ME.primeros([100, 0], "menor_valor"), null, "un valor no positivo no se puntúa");
+      // simulador y fecha de la TRM
+      assert.deepStrictEqual(CI2.simularProceso([0.95, 0.96, 0.97], 0.90).menor_valor, "gana");
+      assert.strictEqual(CI2.simularProceso([0.95], 0.95).menor_valor, "empata", "el mismo precio empata: lo decide un criterio que los datos no traen");
+      assert.strictEqual(CI2.fechaTrmEstimada("2026-10-08T00:00:00.000"), "2026-10-06", "A: adjudicación jueves → TRM del martes");
+      assert.strictEqual(CI2.fechaTrmEstimada("2026-06-03T00:00:00.000"), "2026-06-01", "C: TRM del lunes 1-jun");
+      assert.strictEqual(CI2.fechaTrmEstimada("2026-10-05T00:00:00.000"), "2026-10-01", "un lunes salta el fin de semana");
+      const serie = [{ desde: "2026-05-30", hasta: "2026-06-01", valor: 3678.15 }];
+      assert.strictEqual(CI2.trmVigente(serie, "2026-06-01"), 3678.15, "la TRM rige hasta su vigencia «hasta»");
+      assert.strictEqual(CI2.trmVigente(serie, "2026-06-02"), null, "fuera de la serie: sin dato, no cero");
+      // arreglos de la revisión adversaria de la Fase 2 (17-oct-2026)
+      const sp = CI2.simularProceso([0.95, 0.96, 0.97], 0.80);
+      assert.strictEqual(sp.menor_valor, "gana"); assert.strictEqual(sp.bajo_piso, true, "al 80 % gana por menor valor pero queda bajo el piso: la entidad le pedirá justificar");
+      assert.strictEqual(CI2.simularProceso([0.95, 0.96, 0.97], 0.955).bajo_piso, false);
+      const ofs2 = (pcts) => pcts.map((q, i) => ({ proveedor: "n:" + i, pct: q }));
+      assert.strictEqual(CI2.sinPrecio({ ofertas_validas: ofs2([1, 1, 1]) }), true, "todas al mismo valor: sin competencia de precio, fuera del piso");
+      assert.strictEqual(CI2.sinPrecio({ ofertas_validas: ofs2([0.95, 1]) }), false);
+      assert.deepStrictEqual(ME.puntajes([100, 300], "menor_valor", 49.5), [49.5, 16.5], "el séptimo decimal va sobre el puntaje real (49,5 en menor cuantía)");
+      assert.strictEqual(ME.PUNTAJE_MAXIMO.menor_cuantia, 49.5); assert.strictEqual(ME.PUNTAJE_MAXIMO.licitacion, 48.5);
+      const hab = new Set(["2026-06-01", "2026-06-02", "2026-06-04"]);   // el 3-jun festivo en esta serie de prueba
+      assert.strictEqual(CI2.fechaTrmEstimada("2026-06-05T00:00:00.000", -2, hab), "2026-06-02", "con los días hábiles de la serie, el festivo no cuenta");
+      assert.strictEqual(CI2.fechaTrmEstimada("2026-06-02T00:00:00.000", 1, hab), "2026-06-04", "licitación: el día hábil SIGUIENTE a la audiencia");
+      const proc = () => ({ codigo_entidad: "E", entidad: "X", departamento_entidad: "Tolima", competencia: "real", n_validas: 3, oferta_ganadora: { pct: 0.9, proveedor: "n:1" },
+        ofertas_validas: [{ proveedor: "n:1", nombre: "A SAS", pct: 0.9 }, { proveedor: "n:2", nombre: "B SAS", pct: 0.9 }, { proveedor: "n:3", nombre: "C SAS", pct: 0.95 }] });
+      const comp = CI2.competencia(Array.from({ length: 10 }, proc));
+      assert.strictEqual(comp.entidades[0].oferentes_distintos, 3);
+      const rB = comp.rivales_frecuentes.find((r) => r.nombre === "B SAS"), rA = comp.rivales_frecuentes.find((r) => r.nombre === "A SAS");
+      assert.strictEqual(rA.ganadas, 10); assert.strictEqual(rB.ganadas, 0, "ofrecer el mismo valor del ganador no es ganar: se cuenta por identidad");
+      assert.strictEqual(CI2.esPersonaNatural("JUAN PEREZ INGENIERIA"), true, "«ingeniería» no es una forma jurídica: el nombre no sale");
     }
     console.log("· unidad base de obra: «sin dato» ≠ 0, mapeo de modalidades, exclusiones contadas por motivo, lote, las dos σ, la regla de fila y el almacén que frena antes de pasar su tope (ida y vuelta contra un S3 falso)");
   }

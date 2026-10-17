@@ -212,9 +212,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 329 secciones (20 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 18695  La fila de prueba se busca en todas las páginas del listado, y enero espera (16-oct-2026)  (superada)
-  L 18708  Enero de 2027: las pruebas caen en cadena cuando el año tiene pocos meses (17-oct-2026)
+· MEMORIA · docs/MEMORIA.md — 331 secciones (20 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 18718  La fila partida de la tabla de códigos de la experiencia (17-oct-2026)
   L 18741  El anticipo «N/A» bajo su título y el amparo «Devolución del pago anticipado» (17-oct-2026)
   L 18764  El anticipo «…PAGO ANTICIPADO: No aplica» en una sola línea (17-oct-2026)
@@ -223,6 +221,8 @@
   L 18832  Base nacional de obra: las ofertas se piden agrupadas, las filas repetidas de p6dx son fase…
   L 18840  El almacén R2 de la base nacional frena ANTES de pasar el gratis, porque Cloudflare no fren…
   L 18849  Base nacional de obra, Fase 1: una fila por proceso y cinco señales que solo invitan a revi…
+  L 18862  R2 rechazó el If-Match con el registro sin cambios, y la mínima cuantía no se mide con la v…
+  L 18871  Fase 2: el piso se reproduce, el ganador no — los datos abiertos no dicen quién quedó hábil…
 
 · DOCUMENTOS docs/ — 71 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)

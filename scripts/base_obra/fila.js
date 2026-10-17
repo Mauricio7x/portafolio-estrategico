@@ -99,7 +99,7 @@ function filaDeProceso({ portafolio, filas, ofertas, lugar, sinMedirOfertas = fa
         const prov = L.proveedoresUnidos([...ofertas, { nit_del_proveedor: f.nit_del_proveedor_adjudicado, nombre_proveedor: f.nombre_del_proveedor }]);
         const idG = prov({ nit_del_proveedor: f.nit_del_proveedor_adjudicado, nombre_proveedor: f.nombre_del_proveedor });
         const og = r.validas.filter((o) => prov(o.fila) === idG);
-        fila.oferta_ganadora = og.length === 1 ? { valor: og[0].valor, pct: og[0].pct } : null;   // 0 o 2+: no se adivina
+        fila.oferta_ganadora = og.length === 1 ? { valor: og[0].valor, pct: og[0].pct, proveedor: og[0].proveedor } : null;   // 0 o 2+: no se adivina
         // Un valor adjudicado que contradice a la oferta publicada del ganador (> 1 %) se manda a verificar
         if (fila.oferta_ganadora && fila.valor_adjudicado !== null && Math.abs(fila.valor_adjudicado - fila.oferta_ganadora.valor) / fila.oferta_ganadora.valor > 0.01)
           fila.inconsistencia = fila.inconsistencia || "valor_adjudicado_distinto_de_la_oferta_ganadora";

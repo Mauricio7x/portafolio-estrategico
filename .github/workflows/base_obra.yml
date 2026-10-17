@@ -51,6 +51,10 @@ jobs:
           node scripts/base_obra/inventario.js "$RUNNER_TEMP/base" > "$RUNNER_TEMP/inventario.log" 2>&1 || codigo=$?
           tail -20 "$RUNNER_TEMP/inventario.log"
           exit $codigo
+      - name: Base (una fila por proceso) y cifras
+        run: |
+          node scripts/base_obra/base.js "$RUNNER_TEMP/base"
+          node scripts/base_obra/cifras.js "$RUNNER_TEMP/base"
       - name: Comprimir
         run: |
           cp "$RUNNER_TEMP/inventario.log" "$RUNNER_TEMP/base/"
