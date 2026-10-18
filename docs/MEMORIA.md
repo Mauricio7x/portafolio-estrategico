@@ -19620,7 +19620,7 @@ ahora el navegador manda el NOMBRE del archivo y `op=diff` no guarda lo que la r
 (`Docs.clasificarArchivo` + `Docs.esVersionDelPliego`) reconoce como OTRA cosa: el formulario o presupuesto, una adenda
 suelta, un anexo, unas observaciones o sus respuestas, unos estudios previos.
 
-> PENDIENTE · el clasificador de nombres (`RE_TIPO`, lib/documentos_proceso) no reconoce los nombres nuevos de Colombia Compra ni las variantes con separadores: «DocBase_LicitacionObra_ISocialLV2.pdf», «Documento_base_…», «06_Documento Base…», «DOCUMENTO%20BASE», «Documentos Base», ni erratas como «DOCUEMENTO BASE». Quedan como «otro», orden 30, y la lectura automática NO los lee: 7 de 232 procesos de la muestra, 5 de 33 abiertos, y van en aumento (6 de 91 con cierre de sep a nov de 2026, 0 de 141 antes; 2.ª revisión adversaria, 18-oct). Arreglarlo cambia qué lee la app sola en esos procesos (presupuesto, anticipo, requisitos, dictamen): va con plan, medición y visto bueno.
+> RESUELTO el 18-oct-2026 por «El clasificador lee los nombres con separadores y los nuevos de Colombia Compra («DocBase_…») (18-oct-2026)» · lo que se había dicho: el clasificador de nombres (`RE_TIPO`, lib/documentos_proceso) no reconoce los nombres nuevos de Colombia Compra ni las variantes con separadores: «DocBase_LicitacionObra_ISocialLV2.pdf», «Documento_base_…», «06_Documento Base…», «DOCUMENTO%20BASE», «Documentos Base», ni erratas como «DOCUEMENTO BASE». Quedan como «otro», orden 30, y la lectura automática NO los lee: 7 de 232 procesos de la muestra, 5 de 33 abiertos, y van en aumento (6 de 91 con cierre de sep a nov de 2026, 0 de 141 antes; 2.ª revisión adversaria, 18-oct). Arreglarlo cambia qué lee la app sola en esos procesos (presupuesto, anticipo, requisitos, dictamen): va con plan, medición y visto bueno.
 
 **Lo que no hay que deshacer.** (a) Decide el nombre, con la regla de la lectura automática. Medido en 18.166 archivos reales
 de dmgg-8hin: los 40 nombres que juntan «presupuesto» y «pliego» son el Formulario 1, y los que la regla da por otro documento
@@ -19652,3 +19652,24 @@ DESPUÉS de la lectura automática, que ya no tapa el pliego y cuya frase nombra
 lector con el `pliego.js` real comprueba que el nombre viaja, que el motivo se pinta escapado y no como fallo, que el
 cronograma va sin el texto y que el dictamen se pide igual. Navegador real a 390 y 1280 px con la sesión del dueño: Formulario,
 adenda, «DocBase_» y pliego en ese orden; consola limpia.
+
+### El clasificador lee los nombres con separadores y los nuevos de Colombia Compra («DocBase_…») (18-oct-2026)
+
+En una línea: «DocBase_LicitacionObra_ISocialLV2.pdf», «Documento_base_…», «06_Documento Base…», «DOCUMENTO%20BASE»,
+«Documentos Base» y las erratas «DOCUEMENTO/DOCUEMNTO BASE» salían «otro» —el `\b` y el `\s+` de RE_TIPO no pasan por «_»,
+«%20» ni «-»— y la lectura automática no leía ese documento base; ahora `Docs.nombrePlegado` los pliega antes de clasificar, y
+es el MISMO plegado del clasificador, del borrador (`esBorradorDoc`), de `esVersionDelPliego` y de la carga en Precios.
+
+**Lo medido** (9.827 nombres distintos de 232 procesos reales de dmgg-8hin). Cambian 77 nombres, todos revisados a mano y todos a lo
+correcto: 48 de tipo (15 a documento base, y todos lo son; 11 a formato, anexos y pólizas; 10 a aviso; 7 a estudio previo; 3 a
+adenda, uno de ellos un .zip de formatos; 2 a anexo técnico, los APU) y 29 documentos de un proponente que se tomaban por de la
+entidad («16_GARANTIA DE SERIEDAD…», «09_RUT», «…_CONSORCIO…»). El plan de lectura cambia en 21 procesos. En la simulación con todo el plan leído, el
+texto del dictamen GANA en 6 procesos que no tenían ninguno, cambia en 1 del proyecto de pliego al documento base definitivo
+(CO1.REQ.11144592, abierto) y no se pierde en ninguno.
+
+**Lo que no hay que deshacer.** (a) Un solo plegado para el nombre (`nombrePlegado`): «_» y «%20» son espacio, «-» y «.»
+entre dos letras también; «docbase» y «doc base» son «documento base», el plural «documentos base» también, y cuatro erratas
+vistas en SECOP II («docuemento», «docuemnto», «documneto», «documetno» y «documeto»). (b) VERSION 18 → 19: los índices se
+vuelven a planear en la próxima consulta (no a las 12 h) y los hechos se rehacen. (c) Por el tope de 12 documentos del plan,
+en CO1.REQ.9763731 dos documentos de presupuesto ceden el sitio a dos de análisis de precios unitarios, que ahora se reconocen
+como anexo técnico, como ya pasaba con los mismos nombres escritos con espacios; los dos son fuentes de respaldo de los hechos.

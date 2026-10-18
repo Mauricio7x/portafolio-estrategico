@@ -9586,6 +9586,24 @@ async function main() {
     // (6) el DOCUMENTO BASE del pliego tipo se lee, y la plantilla en blanco no dice nada
     const cl = (nombre) => Dp.clasificarArchivo({ id_documento: "1", nombre, extension: "pdf", url: "https://community.secop.gov.co/x?DocumentId=1", entidad: true }).tipo;
     assert.deepStrictEqual(["DOCUMENTO BASE ALOJAMIENTO DE CADETES.pdf", "Documento Base o Documento Tipo CCE-EICP-GI-02 Menor Cuantía.docx", "DOCUMENTO BASE.pdf"].map(cl), ["documento_base", "documento_base", "documento_base"], "el documento base tiene su tipo (MUTACIÓN: «Otro documento», fuera del plan)");
+    /* (6b) LOS NOMBRES CON SEPARADORES Y LOS NUEVOS DE COLOMBIA COMPRA (18-oct-2026): «DocBase_…», «Documento_base_…»,
+       «DOCUMENTO%20BASE», «Documentos Base» y las erratas salían «otro» y la lectura automática no leía ese documento base
+       (7 de 232 procesos de la muestra, 5 de 33 abiertos). Nombres REALES de dmgg-8hin */
+    const nombresBase = ["DocBase_LicitacionObra_ISocialLV2.pdf", "3.DocBase_LicitacionObra_ISocialLV2.pdf", "DocBase_LicObra_APSBLV1.pdf", "Documento_base_Licitacion_Obra_Publica Definitivo.pdf",
+      "06_Documento Base CCE-EICP-GI-14 LICITACIÓN.pdf", "DOCUMENTO BASE_0001_compressed (2).pdf", "1L-003-2026 - Documentos Base Definitivo.pdf", "DOCUEMENTO BASE DEFINITIVO.pdf", "DOCUEMNTO BASE.pdf",
+      "1L-003-2026 - Docuemento Base.pdf", "DOCUMENTO%20BASE.pdf", "Documento-Base-Definitivo.pdf"];
+    for (const n of nombresBase) {
+      const a = Dp.clasificarArchivo({ id_documento: "1", nombre_archivo: n, url: "https://community.secop.gov.co/x?DocumentId=1" });
+      assert.ok(a.tipo === "documento_base" && Dp.esVersionDelPliego(a) && a.de_la_entidad === true, `«${n}» es el documento base (MUTACIÓN: sin plegar «_», «%20», «-» o sin «docbase»/erratas, «otro»): ${JSON.stringify({ tipo: a.tipo, version: Dp.esVersionDelPliego(a) })}`);
+    }
+    // …y el mismo plegado no cambia lo que ya se leía bien, ni vuelve documento base lo que no lo es
+    for (const [n, tipo] of [["1.Estudio_previo_mejoramientos_LP_CVV_005_2026_FINAL.pdf", "estudio_previo"], ["03_AVISO_CONVOCATORIA LP-003-2026.pdf", "aviso"], ["ADENDA_001_LP_CVV_005_2026.pdf", "adenda"],
+      ["FORMULARIO 1 PRESUPUESTO OFICIAL.pdf", "presupuesto"], ["PLIEGO DE CONDICIONES DEFINITIVO LP-001-2026.pdf", "pliego"], ["Base de datos de proveedores.pdf", "otro"], ["Anexo_2.pdf", "formato"]]) {
+      assert.strictEqual(Dp.clasificarArchivo({ nombre_archivo: n }).tipo, tipo, `«${n}» es ${tipo}`);
+    }
+    // el borrador con separadores sigue siendo borrador, y lo de un proponente con «_» se reconoce como suyo
+    assert.ok(Dp.esBorradorDoc({ ...Dp.clasificarArchivo({ nombre_archivo: "DocBase_Borrador_LP_01.pdf" }) }), "«DocBase_Borrador_…» es borrador (MUTACIÓN: esBorradorDoc con otro plegado)");
+    assert.strictEqual(Dp.clasificarArchivo({ nombre_archivo: "16_GARANTIA DE SERIEDAD DE LA OFERTA.pdf" }).de_la_entidad, false, "la garantía de seriedad de un proponente con «16_» delante no es de la entidad");
     const planDB = Dp.planDeLectura([{ id_documento: "7", nombre: "DOCUMENTO BASE CAMPO DE PARADA.pdf", extension: "pdf", url: "https://community.secop.gov.co/x?DocumentId=7", bytes: 1000000 }]);
     assert.ok(planDB.plan.includes("7"), `y se lee solo: ${JSON.stringify(planDB.archivos && planDB.archivos[0])}`);
     const marcas = ["[Nombre de la Entidad]", "[Incluir el objeto del Contrato]", "[Incluir plazo]", "[Incluir Presupuesto Oficial]", "[Incluir el número del lote]", "[Incluir objeto del proyecto, lote o segmento]", "[Incluir plazo]", "[Seleccionar la modalidad]"];
