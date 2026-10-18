@@ -817,7 +817,8 @@
       }
 
       chip("Analizando la tabla…", { girando: true });
-      await enviarTexto(texto, sello);
+      // el NOMBRE viaja hasta el vigía: el servidor solo guarda como versión del pliego lo que se llama así
+      await enviarTexto(texto, sello, entrada.nombre);
     } catch (e) {
       progreso(null);
       chip("Error", {});
@@ -827,7 +828,7 @@
     }
   }
 
-  async function enviarTexto(texto, sello = selloLectura()) {
+  async function enviarTexto(texto, sello = selloLectura(), nombre = null) {
     const ctx = contexto();
     const r = await pedir("/api/pliego?op=extraer-texto", {
       texto_extraido: texto,
@@ -841,7 +842,7 @@
        registra la versión del pliego (si el editor tiene un proceso abierto)
        y se pintan «la entidad cambió las reglas» y el cronograma. Nunca
        bloquea la extracción: falla en silencio hacia un aviso. */
-    vigilarPliego(texto, sello).catch(() => {});
+    vigilarPliego(texto, sello, nombre).catch(() => {});
   }
 
   /* El id del proceso lo tiene el editor de APU (campo id-proceso) cuando se
@@ -871,7 +872,7 @@
     mensaje("La lectura del pliego terminó después de que se abriera otro proceso o se limpiara el lector, "
       + "así que no se usó: pertenecía al proceso anterior. Vuelva a leer el pliego de este proceso.", "aviso");
   }
-  async function vigilarPliego(texto, sello = selloLectura()) {
+  async function vigilarPliego(texto, sello = selloLectura(), nombre = null) {
     const caja = document.getElementById("pl-vigia");
     if (!caja) return;
     const id = sello.id;
@@ -882,11 +883,16 @@
     if (!id) {
       html += `<p class="text-gray-600">Para vigilar las adendas de este pliego abra el proceso desde su tarjeta («Calcular mi precio»): así el lector sabe de qué proceso es el pliego y guarda cada versión.</p>`;
     } else {
-      const r = await pedir("/api/pliego?op=diff", { id_proceso: id, texto, perfil: perfilActual(), origen: "lector" });
+      const r = await pedir("/api/pliego?op=diff", { id_proceso: id, texto, perfil: perfilActual(), nombre_archivo: nombre || null });
       if (!lecturaVigente(sello)) return;
       const c = r.cuerpo || {};
-      dictamenArgs = { id, cambio: !!c.cambio, falloVigia: c.ok ? null : (c.error || window.Glosario.fraseDeFallo({ status: r.estado })) };
-      if (!c.ok) html += `<p class="text-gray-600">No se pudo guardar la versión del pliego: ${esc(c.error || window.Glosario.fraseDeFallo({ status: r.estado }))}.</p>`;
+      /* NO ERA EL PLIEGO (18-oct-2026): el Formulario 1, una adenda o un nombre que no dice qué es no se
+         guardan como versión del pliego. No es un fallo: se dice por qué, y el dictamen sigue mostrando
+         el del pliego que ya estaba guardado (sin «Primero hay que guardar el texto del pliego») */
+      const noEsElPliego = c.no_es_el_pliego === true;
+      dictamenArgs = { id, cambio: !!c.cambio, falloVigia: c.ok || noEsElPliego ? null : (c.error || window.Glosario.fraseDeFallo({ status: r.estado })) };
+      if (noEsElPliego) html += `<p class="font-medium text-amber-700">${esc(c.error || "Este archivo no es el pliego: no se guarda como versión del pliego")}.</p>`;
+      else if (!c.ok) html += `<p class="text-gray-600">No se pudo guardar la versión del pliego: ${esc(c.error || window.Glosario.fraseDeFallo({ status: r.estado }))}.</p>`;
       else {
         html += `<p class="font-medium" style="color: var(--text-primary);">${esc(c.mensaje || "")}</p>`;
         const cambios = (c.diff && c.diff.habilitantes && c.diff.habilitantes.cambios) || [];

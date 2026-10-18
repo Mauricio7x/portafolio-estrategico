@@ -9384,6 +9384,70 @@ async function main() {
     }
     console.log("· unidad el texto del pliego: el documento base leído llega al dictamen, los anexos con «pliego» en el nombre no entran al vigía ni dan el texto, lo cargado a mano después gana, el definitivo más reciente manda, y el tope de 400 KB");
   }
+  bqCargaEnPrecios: { if (!corre("unidad la carga en Precios")) break bqCargaEnPrecios;
+    /* LO QUE SE CARGA EN PRECIOS SOLO ENTRA AL VIGÍA SI ES EL PLIEGO (18-oct-2026). La pantalla pide también el
+       Formulario 1 de cantidades, y todo archivo leído con un proceso abierto entraba como «versión del pliego»:
+       el dictamen, el cronograma y los descuentos lo leían. Con el router REAL (op=diff y op=documentos) sobre
+       el Redis simulado y la `textoGuardado` real. */
+    const DocsP = require("../lib/documentos_proceso.js"), DvP = require("../lib/diff.js");
+    const { escribirJSONComprimido: escribirP } = require("../lib/almacen.js");
+    const { textoGuardado: textoP } = require("../lib/handlers/pliego/cronograma.js");
+    const routerP = require("../api/pliego.js");
+    const rellenoP = "Segunda página del documento del proceso, con texto suficiente para que la lectura cuente como texto.";
+    const txtP = (s) => `\f1\n${s}\n\f2\n${rellenoP}\n`;
+    const PLIEGO_P = txtP("PLIEGO DE CONDICIONES DEFINITIVO LP-001-2026. Patrimonio líquido mayor o igual a $ 950.000.000.");
+    const FORM_P = txtP("FORMULARIO 1 - FORMULARIO DE PRESUPUESTO OFICIAL. ITEM 1.1 Localización y replanteo m2 1200 4.500 5.400.000.");
+    const cargar = (id, nombre, texto) => invocarPost(routerP, "/api/pliego?op=diff", nombre === undefined ? { id_proceso: id, texto, perfil: "helder" } : { id_proceso: id, texto, perfil: "helder", nombre_archivo: nombre }, CAB_TOKEN);
+    const versionesDe = async (id) => ((await DvP.leerIndice(redis, id)).versiones || []);
+    // (1) lo que no es el pliego no se guarda, y se dice por qué
+    const casos = [
+      ["FORMULARIO 1 PRESUPUESTO OFICIAL.pdf", "formulario", /formulario de cantidades/],
+      ["Formulario 1 - Presupuesto Oficial - Pliego Definitivo.pdf", "formulario", /formulario de cantidades/],
+      ["ADENDA No. 1.pdf", "adenda", /es una adenda.*sin.*adenda|es una adenda.*no diga «adenda»/],
+      ["ANEXOS PLIEGO DE CONDICIONES.pdf", "acompana_al_pliego", /anexo, un formato o unas observaciones/],
+      ["OBSERVACIONES PLIEGO DEF LP-004-2026.pdf", "acompana_al_pliego", /anexo, un formato o unas observaciones/],
+      ["ESTUDIOS PREVIOS.pdf", "otro_documento", /«estudios previos»/],
+      ["scan001.pdf", "sin_nombre", /no se sabe si es el pliego.*SECOP II/],
+      ["Index?DocumentId=837410065&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=", "sin_nombre", /no se sabe si es el pliego/],
+      ["", "sin_nombre", /no se sabe si es el pliego/],
+      [undefined, "sin_nombre", /no se sabe si es el pliego/],
+    ];
+    let k = 0;
+    for (const [nombre, motivo, frase] of casos) {
+      const id = `CO1.REQ.PRE${String(++k).padStart(3, "0")}`;
+      const r = await cargar(id, nombre, FORM_P);
+      assert.ok(r.status === 200 && r.cuerpo.ok === false && r.cuerpo.no_es_el_pliego === true && r.cuerpo.motivo === motivo && frase.test(r.cuerpo.error || ""),
+        `«${nombre}» no es el pliego (${motivo}) y se dice por qué (MUTACIÓN: guardar sin mirar el nombre; el nombre mudo como pliego): ${r.status} ${JSON.stringify(r.cuerpo).slice(0, 300)}`);
+      assert.strictEqual((await versionesDe(id)).length, 0, `«${nombre}» no entra al vigía`);
+    }
+    // (2) el pliego, el borrador y el documento base sí; el origen lleva el nombre (lo manual deja de ser anónimo)
+    for (const [nombre, tipo] of [["PLIEGO DE CONDICIONES DEFINITIVO LP-001-2026 DEL MUNICIPIO.pdf", "pliego"], ["PROYECTO DE PLIEGO DE CONDICIONES.pdf", "pliego_borrador"], ["19. DOCUMENTO BASE.pdf", "documento_base"], ["Pliego definitivo ajustado con observaciones.pdf", "pliego"]]) {
+      const id = `CO1.REQ.PRE${String(++k).padStart(3, "0")}`;
+      const r = await cargar(id, nombre, PLIEGO_P);
+      const v = await versionesDe(id);
+      assert.ok(r.status === 200 && r.cuerpo.ok === true && r.cuerpo.version === 1 && v.length === 1 && v[0].origen === `lector:${nombre}`.slice(0, 40) && v[0].origen.length <= 40,
+        `«${nombre}» (${tipo}) se guarda, con el nombre en el origen (MUTACIÓN: anexo excluido por el nombre entero; origen sin nombre): ${JSON.stringify({ r: r.cuerpo.ok, v })}`.slice(0, 400));
+      assert.ok(DocsP.esVersionDelPliego(DocsP.clasificarArchivo({ nombre_archivo: nombre })), "premisa: la misma regla de la lectura automática");
+    }
+    // (3) el caso que quedó pendiente en la Fase A: el Formulario cargado DESPUÉS de que la lectura automática leyó el pliego
+    const idF = `CO1.REQ.PRE${String(++k).padStart(3, "0")}`;
+    const archP = { id_documento: "1", nombre: "PLIEGO DE CONDICIONES DEFINITIVO LP-001-2026.pdf", tipo: "pliego", tipo_legible: DocsP.TIPOS.pliego.legible, fecha_carga: "2026-09-10", de_la_entidad: true, legible: true, url: "https://community.secop.gov.co/x" };
+    await escribirP(redis, DocsP.claveDocs(idF), { version: DocsP.VERSION, id_proceso: idF, indice: { version: DocsP.VERSION, consultado_el: new Date().toISOString(), archivos: [archP], plan: ["1"] }, leidos: {}, ilegibles: {} });
+    const rAuto = await invocarPost(routerP, "/api/pliego?op=documentos", { id_proceso: idF, id_documento: "1", texto: PLIEGO_P }, CAB_TOKEN);
+    assert.ok(rAuto.status === 200 && rAuto.cuerpo.version_pliego === 1, `premisa: la lectura automática guardó el pliego: ${JSON.stringify(rAuto.cuerpo).slice(0, 200)}`);
+    const rForm = await cargar(idF, "FORMULARIO 1 PRESUPUESTO OFICIAL.pdf", FORM_P);
+    const tF = await textoP(redis, idF);
+    assert.ok(rForm.cuerpo.no_es_el_pliego === true && (await versionesDe(idF)).length === 1 && /PLIEGO DE CONDICIONES DEFINITIVO/.test(tF.texto) && tF.version === 1,
+      `el Formulario cargado DESPUÉS del pliego ya no pasa a ser el texto del dictamen (MUTACIÓN: guardarlo, la versión 2 es el formulario): ${JSON.stringify({ version: tF.version, origen: tF.origen })}`);
+    const dF = await invocar(routerP, `/api/pliego?op=dictamen&id_proceso=${idF}&perfil=helder`, CAB_TOKEN);
+    assert.ok(dF.status === 200 && dF.cuerpo.version_texto === 1, `y la consulta del dictamen sigue sobre el pliego: ${JSON.stringify(dF.cuerpo).slice(0, 200)}`);
+    // (4) un nombre larguísimo no rompe el origen ni la frase
+    const idL = `CO1.REQ.PRE${String(++k).padStart(3, "0")}`;
+    const largo = "PLIEGO DE CONDICIONES " + "X".repeat(400) + ".pdf";
+    const rL = await cargar(idL, largo, PLIEGO_P);
+    assert.ok(rL.cuerpo.ok === true && (await versionesDe(idL))[0].origen.length === 40, `un nombre larguísimo se guarda con el origen cortado a 40: ${JSON.stringify(await versionesDe(idL))}`.slice(0, 300));
+    console.log("· unidad la carga en Precios: el Formulario 1, una adenda, un anexo, otro documento o un nombre que no dice qué es no entran al vigía y se dice por qué; el pliego, el borrador y el documento base sí, con su nombre; el Formulario cargado después del pliego ya no lo tapa");
+  }
   bqNueveProcesos: { if (!corre("unidad los nueve procesos del dueño")) break bqNueveProcesos;
     const Dp = require("../lib/documentos_proceso.js");
     const Df = require("../lib/diff.js");
@@ -37669,19 +37733,19 @@ async function main() {
       const dp = D.diffParrafos(t1, t2);
       assert.ok(dp.modificados.some((m) => /650\.000\.000/.test(m.antes) && /800\.000\.000/.test(m.despues)), "el diff por párrafos empareja el párrafo modificado");
       // por el router: registrar, no-cambio, cambio, GET, retención, 401
-      assert.strictEqual((await invocarPost(routerPliego, "/api/pliego?op=diff", { id_proceso: "CO1.DIFF.1", texto: t1 })).status, 401);
-      const d1 = await invocarPost(routerPliego, "/api/pliego?op=diff", { id_proceso: "CO1.DIFF.1", texto: t1, perfil: "helder" }, CAB_TOKEN);
+      assert.strictEqual((await invocarPost(routerPliego, "/api/pliego?op=diff", { id_proceso: "CO1.DIFF.1", nombre_archivo: "PLIEGO DE CONDICIONES.pdf", texto: t1 })).status, 401);
+      const d1 = await invocarPost(routerPliego, "/api/pliego?op=diff", { id_proceso: "CO1.DIFF.1", nombre_archivo: "PLIEGO DE CONDICIONES.pdf", texto: t1, perfil: "helder" }, CAB_TOKEN);
       assert.strictEqual(d1.status, 200); assert.strictEqual(d1.cuerpo.version, 1); assert.strictEqual(d1.cuerpo.cambio, false);
-      const d1b = await invocarPost(routerPliego, "/api/pliego?op=diff", { id_proceso: "CO1.DIFF.1", texto: t1 + "\n", perfil: "helder" }, CAB_TOKEN);
+      const d1b = await invocarPost(routerPliego, "/api/pliego?op=diff", { id_proceso: "CO1.DIFF.1", nombre_archivo: "PLIEGO DE CONDICIONES.pdf", texto: t1 + "\n", perfil: "helder" }, CAB_TOKEN);
       assert.strictEqual(d1b.cuerpo.version, 1); assert.strictEqual(d1b.cuerpo.cambio, false, "el mismo texto no crea versión");
-      const d2 = await invocarPost(routerPliego, "/api/pliego?op=diff", { id_proceso: "CO1.DIFF.1", texto: t2, perfil: "helder" }, CAB_TOKEN);
+      const d2 = await invocarPost(routerPliego, "/api/pliego?op=diff", { id_proceso: "CO1.DIFF.1", nombre_archivo: "PLIEGO DE CONDICIONES.pdf", texto: t2, perfil: "helder" }, CAB_TOKEN);
       assert.strictEqual(d2.cuerpo.version, 2); assert.strictEqual(d2.cuerpo.cambio, true);
       assert.strictEqual(d2.cuerpo.diff.habilitantes.cambios[0].mensaje, cambiosH[0].mensaje, "tras un cambio los habilitantes se reevalúan automáticamente");
       assert.ok(/cambió las reglas/.test(d2.cuerpo.mensaje));
       assert.ok(await redis.get(D.claveVersion("CO1.DIFF.1", 2)) && await redis.get(D.claveDiff("CO1.DIFF.1", 2)), "pliego:{proceso}:v:2 y :diff:2 escritos");
       const g2 = await invocar(routerPliego, "/api/pliego?op=diff&id_proceso=CO1.DIFF.1&perfil=genesis", CAB_TOKEN);
       assert.strictEqual(g2.cuerpo.versiones.length, 2); assert.ok(/Usted no cumple\.$/.test(g2.cuerpo.diff.habilitantes.cambios[0].mensaje), "el GET reevalúa contra el perfil que pregunta");
-      for (let i = 3; i <= D.MAX_VERSIONES + 2; i++) await invocarPost(routerPliego, "/api/pliego?op=diff", { id_proceso: "CO1.DIFF.1", texto: t2 + `\nversión ${i}` }, CAB_TOKEN);
+      for (let i = 3; i <= D.MAX_VERSIONES + 2; i++) await invocarPost(routerPliego, "/api/pliego?op=diff", { id_proceso: "CO1.DIFF.1", nombre_archivo: "PLIEGO DE CONDICIONES.pdf", texto: t2 + `\nversión ${i}` }, CAB_TOKEN);
       const idx = await D.leerIndice(redis, "CO1.DIFF.1");
       assert.strictEqual(idx.versiones.length, D.MAX_VERSIONES, "retención: como mucho MAX_VERSIONES");
       assert.strictEqual(await redis.get(D.claveVersion("CO1.DIFF.1", 1)), null, "la versión 1 se purgó");
@@ -38007,11 +38071,11 @@ async function main() {
       assert.strictEqual(cmp[0].pagina, 2, "el cambio cita la página de la versión nueva");
       assert.ok(/pág\. \$\{x\.pagina\}/.test(plSin), "el vigía del lector pinta la página junto al cambio");
       // por el router: la versión guardada conserva los marcadores (para citar al reevaluar) y el hash es el de siempre
-      const dv1 = await invocarPost(routerPl, "/api/pliego?op=diff", { id_proceso: "CO1.PAG.1", texto: tSin, perfil: "helder" }, CAB_TOKEN);
-      const dv2 = await invocarPost(routerPl, "/api/pliego?op=diff", { id_proceso: "CO1.PAG.1", texto: tCon, perfil: "helder" }, CAB_TOKEN);
+      const dv1 = await invocarPost(routerPl, "/api/pliego?op=diff", { id_proceso: "CO1.PAG.1", nombre_archivo: "PLIEGO DE CONDICIONES.pdf", texto: tSin, perfil: "helder" }, CAB_TOKEN);
+      const dv2 = await invocarPost(routerPl, "/api/pliego?op=diff", { id_proceso: "CO1.PAG.1", nombre_archivo: "PLIEGO DE CONDICIONES.pdf", texto: tCon, perfil: "helder" }, CAB_TOKEN);
       assert.strictEqual(dv1.cuerpo.version, 1); assert.strictEqual(dv2.cuerpo.version, 1); assert.strictEqual(dv2.cuerpo.cambio, false, "guardar sin marcadores y volver a abrir CON marcadores no es una adenda");
       assert.strictEqual(dv2.cuerpo.hash, dv1.cuerpo.hash);
-      const dv3 = await invocarPost(routerPl, "/api/pliego?op=diff", { id_proceso: "CO1.PAG.1", texto: tCon2, perfil: "helder" }, CAB_TOKEN);
+      const dv3 = await invocarPost(routerPl, "/api/pliego?op=diff", { id_proceso: "CO1.PAG.1", nombre_archivo: "PLIEGO DE CONDICIONES.pdf", texto: tCon2, perfil: "helder" }, CAB_TOKEN);
       assert.strictEqual(dv3.cuerpo.version, 2); assert.strictEqual(dv3.cuerpo.diff.habilitantes.cambios[0].pagina, 2);
       const guardada = await D2.leerVersion(redis, "CO1.PAG.1", 2);
       assert.strictEqual(P.contarMarcadores(guardada.texto_normalizado), 4, "el texto guardado conserva los marcadores para poder citar la página al reevaluar");
@@ -53558,6 +53622,29 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
         okRO(/descart|no se us/i.test(mensajePL()), `(f) y el OCR (${momento}) lo dice: «${mensajePL()}»`);
       }
       ctx.fetch = fetchF; ctx.setTimeout = setTimeoutRO; cambiarEn = null;
+      /* (g) LO QUE NO ES EL PLIEGO NO SE GUARDA COMO VERSIÓN (18-oct-2026): el nombre del archivo viaja al
+         vigía; si el servidor responde que no es el pliego (el Formulario 1, una adenda…) se dice por qué, no
+         como un fallo, y el dictamen sigue con el del pliego ya guardado */
+      {
+        const desdeG = diferidos.length;
+        const soltarG = async (patron, c) => { const d = diferidos.slice(desdeG).find((x) => patron.test(x.url) && !x.hecho); okRO(!!d, `(g) premisa: hubo una petición ${patron}`); if (d) { d.hecho = true; d.resolver(c); } await asentarRO(); };
+        porId.get("id-proceso").value = "CO1.A"; ctx.__pliegoUltimo = null;
+        porId.get("pliego-archivo").files = [{ name: "FORMULARIO 1 PRESUPUESTO OFICIAL.txt", type: "text/plain", text: async () => textoArchivo }]; porId.get("pliego-url").value = "";
+        porId.get("pl-vigia").innerHTML = ""; porId.get("pl-dictamen").innerHTML = "";
+        disparar("btn-extraer", "click", {}); await asentarRO();
+        await soltarG(/op=extraer-texto/, ITEMS_F);
+        const diffG = diferidos.slice(desdeG).find((x) => /op=diff/.test(x.url));
+        okRO(diffG && diffG.cuerpo && diffG.cuerpo.nombre_archivo === "FORMULARIO 1 PRESUPUESTO OFICIAL.txt", `(g) el nombre del archivo viaja al vigía (MUTACIÓN: sin el nombre): ${JSON.stringify(diffG && diffG.cuerpo)}`.slice(0, 300));
+        await soltarG(/op=diff/, { ok: false, id_proceso: "CO1.A", guardada: false, no_es_el_pliego: true, motivo: "formulario", error: "Por su nombre («<b>F1</b>»), este archivo es el formulario de cantidades (presupuesto oficial), no el pliego: sirve para el precio, pero no se guarda como versión del pliego" });
+        await soltarG(/op=cronograma/, { ok: true, hitos: [] });
+        const vigiaG = porId.get("pl-vigia").innerHTML;
+        okRO(/es el formulario de cantidades/.test(textoRO(vigiaG)) && !/No se pudo guardar/.test(textoRO(vigiaG)) && !/<b>F1/.test(vigiaG),
+          `(g) se dice que no es el pliego, no como un fallo, y el nombre va escapado (MUTACIÓN: pintarlo como fallo): «${textoRO(vigiaG).slice(0, 220)}»`);
+        const dicG = diferidos.slice(desdeG).find((x) => /op=dictamen/.test(x.url) && !x.hecho);
+        okRO(!!dicG, "(g) y el dictamen del pliego guardado se pide igual (MUTACIÓN: tratarlo como un fallo del vigía, «Primero hay que guardar el texto del pliego»)");
+        if (dicG) { dicG.hecho = true; dicG.resolver({ ok: true, id_proceso: "CO1.A", hay_texto: true, hay_dictamen: false, en_curso: false }); await asentarRO(); }
+        okRO(!/Primero hay que guardar el texto del pliego/.test(textoRO(porId.get("pl-dictamen").innerHTML)), `(g) sin «Primero hay que guardar el texto del pliego»: «${textoRO(porId.get("pl-dictamen").innerHTML).slice(0, 160)}»`);
+      }
       /* hermano (segunda revisión, 28-sep-2026): un PDF que termina de abrirse DESPUÉS de abrir otro
          proceso quedaba como documento vivo, y «Reintentar con OCR» lo leía como pliego del nuevo */
       {

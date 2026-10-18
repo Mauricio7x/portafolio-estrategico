@@ -19331,7 +19331,9 @@ obra de 2026 eso era nada (el documento base no entra al vigía) y en 7 un anexo
 pliego, con una sola regla (`Docs.esVersionDelPliego`, `Docs.candidatosAlTextoDelPliego`) que también decide qué entra al
 vigía.
 
-> PENDIENTE · la carga en Precios no dice qué archivo es: todo PDF soltado ahí con un proceso abierto entra al vigía como versión del pliego (`vigilarPliego` → `op=diff`, origen «lector»), también el Formulario 1 de cantidades que la propia pantalla pide. Es de main: un Formulario cargado DESPUÉS de la lectura automática pasa a ser el texto del dictamen, del cronograma y de los descuentos, y frente a un documento base gana salvo que el base sea más nuevo. La salida que propuso la 2.ª revisión: mandar el nombre del archivo en el origen («lector:<nombre>»), clasificarlo con `clasificarArchivo`/`esVersionDelPliego`, y no registrar en el vigía lo que no sea el pliego. Toca `public/` y el vigía: va con plan y visto bueno. De paso, aclarar qué significa la hora `T19:00:00.000` que traen TODAS las `fecha_carga` de dmgg-8hin (¿el día es el escrito o el siguiente?): sin verificar.
+> RESUELTO el 18-oct-2026 por «La carga en Precios solo entra al vigía si el nombre dice que es el pliego (18-oct-2026)» · lo que se había dicho: la carga en Precios no dice qué archivo es: todo PDF soltado ahí con un proceso abierto entra al vigía como versión del pliego (`vigilarPliego` → `op=diff`, origen «lector»), también el Formulario 1 de cantidades que la propia pantalla pide. Es de main: un Formulario cargado DESPUÉS de la lectura automática pasa a ser el texto del dictamen, del cronograma y de los descuentos, y frente a un documento base gana salvo que el base sea más nuevo. La salida que propuso la 2.ª revisión: mandar el nombre del archivo en el origen («lector:<nombre>»), clasificarlo con `clasificarArchivo`/`esVersionDelPliego`, y no registrar en el vigía lo que no sea el pliego. Toca `public/` y el vigía: va con plan y visto bueno.
+
+> PENDIENTE · aclarar qué significa la hora `T19:00:00.000` que traen TODAS las `fecha_carga` de dmgg-8hin (¿el día es el escrito o el siguiente?): sin verificar. Decide los «publicado después» de lo manual y del aviso.
 
 > PENDIENTE · el cronograma toma como hito un párrafo de EJEMPLO del pliego tipo («[Por ejemplo, si la audiencia de adjudicación se realiza el 10 de febrero de 2020…]», pliego LP-008-2026 del departamento de Sucre, ronda 5) y `guardarFechaCronograma` guarda una fecha ya pasada sin mirarla (reproducido el 18-oct-2026 con `extraerHitos` y la función real: «adjudicacion=2020-02-10», `guardada: true`). En el calendario no se ve: `adjudicacionDeFila` la descarta por desfasada (anterior al cierre). En la lista de hitos del cronograma, sin verificar. Es de main, no de este cambio, pero el documento base que ahora llega al cronograma puede traer el mismo ejemplo: medido en 2 pliegos distintos entre 180 textos de pliego guardados en la sesión (el de Sucre con 2020, en tres extracciones; otro de la ronda 7 con un informe de evaluación de 2022), sin ningún documento base completo en la muestra.
 
@@ -19600,3 +19602,30 @@ En una línea: de 42 marcadores «> PENDIENTE» revisados el 18-oct contra el á
 - **Qué se cerró.** Los de las pruebas con fecha del 31-oct, 1-nov y enero (cerrados por la mañana y medidos con un precargador que adelanta `Date`); el sorteo en mínima cuantía y el consorcio (commit 9152f8f, 27-sep); el revisor de la oferta (commit 1830e61, 28-sep); las tres rutinas de `docs/RUTINAS.md` (existen desde el 26-sep, medido con la lista de tareas programadas), y el cambio de `HISTORICO_TOKEN` (hecho por el dueño el 18-oct: la llave vieja da 401 en producción, la nueva entra, la cuenta del dueño existe, y la variable está en GitHub y en el entorno «Detekta con internet» con 40 caracteres).
 - **Cómo se revisó el resto.** Cuatro agentes de solo lectura, cada uno con unas 10 líneas, con la regla de no marcar RESUELTO sin evidencia; la mayoría ejecutó la función real con `node -e`, y donde solo hubo lectura se dijo. Los 36 que quedan siguen abiertos, a medias, o dependen de una acción o decisión del dueño (R2, correo, OCR, Vercel Pro, el 80 %).
 - **La regla que hay que no volver a romper.** Quien arregla lo que pide un marcador edita ESE marcador a «> RESUELTO el … por «título» · …» en el mismo commit. Marcar la sección como SUPERADA no basta: el tablero del dueño lee el marcador, no el título.
+
+### La carga en Precios solo entra al vigía si el nombre dice que es el pliego (18-oct-2026)
+
+En una línea: Precios mandaba al vigía de adendas TODO archivo leído con un proceso abierto —también el Formulario 1 de
+cantidades que la propia pantalla pide— como «versión del pliego», y el dictamen, el cronograma y los descuentos lo leían;
+ahora el navegador manda el NOMBRE del archivo y `op=diff` solo guarda lo que la misma regla de la lectura automática
+(`Docs.clasificarArchivo` + `Docs.esVersionDelPliego`) reconoce como pliego, borrador o documento base.
+
+**Lo que no hay que deshacer.** (a) Decide el nombre, no el contenido: la regla es UNA con la lectura automática, y medido en
+18.166 archivos reales de dmgg-8hin los 40 nombres que juntan «presupuesto» y «pliego» son el Formulario 1. (b) Un nombre que
+no dice qué es («scan001.pdf», el final de un enlace pegado de SECOP II, o ninguno) NO se guarda: ante la duda no se dictamina
+sobre un texto desconocido (decisión del dueño, 18-oct). Pegar el enlace de SECOP II en Precios ya no alimenta el vigía; el
+mensaje dice que se descargue y se cargue con su nombre original. (c) Las adendas cargadas a mano tampoco (el dictamen leería
+solo la adenda como si fuera el pliego; decisión del dueño). El único pliego real que la regla rechaza en esos 18.166 archivos es
+«Documento Base … FINAL ADENDA 1.pdf», y su mensaje dice que se cargue con un nombre que no diga «adenda». (d) La respuesta es
+200 con `ok:false, no_es_el_pliego:true` y la frase en `error`: no es un fallo, y un navegador con el código de antes dice «No
+se pudo guardar la versión del pliego: <motivo>», que es la verdad. El de ahora lo dice sin «No se pudo» y NO le pasa el
+motivo al dictamen como fallo del vigía: el dictamen sigue mostrando el del pliego guardado. (e) El origen de lo cargado a mano
+lleva el nombre («lector:<nombre>», 40 caracteres): `textoGuardado` lo sigue tratando como manual (no empieza por
+«documentos:»). Lo ya guardado como «lector» sin nombre no se toca. (f) El cronograma sigue leyendo el texto cargado, sea el
+que sea (una adenda trae fechas nuevas); no se tocó.
+
+**Cómo se probó.** Bloque «unidad la carga en Precios» con los handlers reales (10 nombres que no se guardan, 4 que sí, el
+Formulario cargado DESPUÉS de la lectura automática que ya no tapa el pliego y un nombre larguísimo) y el (g) del lector con el
+`pliego.js` real (el nombre viaja, el motivo se pinta escapado y el dictamen se pide igual). Navegador real a 390 y 1280 px con
+la sesión del dueño: el Formulario 1 dice que no es el pliego y el dictamen sigue «No conviene presentarse» sobre la versión 1;
+el pliego después entra como versión 2 y el vigía avisa el cambio de patrimonio; consola limpia.
