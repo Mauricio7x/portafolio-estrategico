@@ -2,7 +2,7 @@
      Es una FOTO para leer en GitHub; la fuente de verdad es ejecutar la herramienta. -->
 
 ```
-== MAPA DE DETEKTA · generado del árbol el 2026-10-17 ==
+== MAPA DE DETEKTA · generado del árbol el 2026-10-18 ==
 (no editar a mano: sale de `node tests/mapa.js --escribir`. Para ir a un sitio concreto,
  `node tests/mapa.js <término>` da la ruta, la línea y el sed exacto — más barato que leer esto)
 
@@ -22,7 +22,7 @@
   pliego.js                   Router del dominio PLIEGO (Fase 0 · consolidación a 6 funciones)
   procesos.js                 Router del dominio PROCESOS (Fase 0 · consolidación a 6 funciones)
 
-· lib/ — 95 módulos:
+· lib/ — 96 módulos:
   accesibilidad.js            Accesibilidad operativa de la zona de la obra
   adendas.js                  Vigía de adendas · lo que el DATASET dice que cambió (Fase 5)
   almacen.js                  Esquema de claves Redis + compresión de chunks
@@ -92,6 +92,7 @@
   perfil_manual.js            Perfil APROXIMADO desde tres datos (Fase 2)
   perfil_resolver.js          el perfil que pide una petición, resuelto en UN solo sitio
   perfiles.js                 FUENTE ÚNICA DE VERDAD del perfil del dueño y de sus socias
+  plazo_pliego.js             El plazo de ejecución que DICE el pliego (17-oct-2026, Fase 1 del plazo)
   portada.js                  El pulso del mercado y la manifestación de interés (Fase 9 · Detekta v4)
   presupuesto.js              El reloj de una tanda REANUDABLE (7-sep-2026)
   presupuesto_pliego.js       El presupuesto que DICE el pliego (17-oct-2026, Fase 2)
@@ -212,8 +213,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 335 secciones (21 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 18820  El techo de la oferta en Precios: la cifra más baja entre SECOP II y el pliego definitivo (…  (superada)
+· MEMORIA · docs/MEMORIA.md — 336 secciones (21 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 18846  Herramientas de terceros para las sesiones de Claude: lo que entró, lo que no y por qué (17…
   L 18883  El anticipo con el corchete de la plantilla y la frase modelo que remite al 8.3 (17-oct-202…
   L 18907  El presupuesto del pliego en licitación pública: título sin número, «…Y ESPECIFICACIONES» y…
@@ -223,6 +223,7 @@
   L 19008  El techo del pliego también desde la tarjeta de Licitaciones, para un proceso guardado (17-…
   L 19029  Las pruebas de 2027: un corte que dependía de la velocidad de la máquina y una negación que…
   L 19037  Pedir otro rango ya no vuelve a empezar el histórico: el servidor responde 409 y el botón c…
+  L 19079  El plazo del pliego, por la columna de su tabla 1.1 y solo cuando SECOP II no lo publica (1…
 
 · DOCUMENTOS docs/ — 71 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)

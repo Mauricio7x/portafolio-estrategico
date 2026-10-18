@@ -19075,3 +19075,53 @@ En una línea: el 17-oct a las 13:50 UTC una llamada sin fechas (el rango por om
   - el botón que sigue sin estado, que no nombra la llave o que no comprueba que el estado es JSON;
   - el botón que reintenta el 409: se cuelga en los `sleep 30` y la prueba lo corta a los 20 s.
 - La prueba del flujo pide `bash` y `jq` en quien corre la suite (los dos están en el corredor de GitHub): sin ellos sale en rojo, no se salta.
+
+### El plazo del pliego, por la columna de su tabla 1.1 y solo cuando SECOP II no lo publica (17-oct-2026)
+
+En una línea: SECOP II publica la duración como «0 días» o vacía en 625 de 3.087 filas de licitación de obra de 2026
+(p6dx-8zbt, conteo por filas del 17-oct-2026) y ahí la casilla del capital de trabajo quedaba «sin cálculo»; ahora el
+navegador recorta con las coordenadas de pdf.js la COLUMNA «Plazo» de la tabla 1.1 (`public/pliego.js`, `columnaPlazoDe`), el
+servidor la interpreta (`lib/plazo_pliego`) y la guía la usa solo cuando SECOP II no publica la duración.
+
+**Medido.** Fase 0 (29 pliegos de desarrollo, verdad doble): leído del TEXTO, 15 correctos y 1 falso (la vigencia «seis (6)
+meses más» como plazo, el error de la Fase 2); por la COLUMNA, 27 correctos (24 cifras y 3 fechas), 2 vacíos y 0 falsos.
+Ronda 7 a ciegas (10 pliegos nuevos de licitación, salida congelada antes de la verdad doble): 6 correctos, 4 vacíos, 0
+falsos. Vacíos: el plazo en prosa dentro de la sección (sin tabla), un pliego propio sin 1.1, «DOS MESES Y QUINCE DIAS» solo en
+letras y un escaneo. Todo en detekta-lector (plazo_fase0_2026-10-17, medicion_ronda7_2026-10-17).
+
+**Lo que no hay que deshacer.** (a) Del texto NO se lee el plazo: las columnas entrelazadas lo confunden con la vigencia.
+Sin columna (documento leído antes de esto, OCR, sección en prosa) el plazo es null. (b) El encabezado es el de la TABLA:
+«Plazo…» con «Valor…» o «Lugar…» en su fila (la palabra «PLAZO» del título o de la frase de abajo daba una columna falsa); la
+columna va de la mitad entre su vecino izquierdo a la mitad con el derecho; se lee por RENGLONES (la misma línea visual tiene
+alturas que difieren en décimas: sin agrupar, «un (1) mes» salía al revés). (c) El título y el fin de la sección son las
+MISMAS expresiones del servidor (`lib/presupuesto_pliego` TITULO_RE y FIN_RE); una prueba compara el literal del navegador con
+el del servidor. (d) La interpretación: la vigencia («… meses más») no cuenta; dos plazos distintos, null; una fecha («hasta el
+31 de diciembre», «sin superar el…») se dice y no se vuelve meses (depende del acta de inicio); 200 días o más sin decir si son
+calendario o hábiles, sin meses (200 hábiles ya pasan de nueve meses y la fórmula cambia a los doce). (e) El documento que
+manda es el MISMO que el del presupuesto (`elegirDelPliego`, ahora común): la adenda más reciente que trae el dato; un borrador
+o una adenda posterior sin la tabla no fijan meses. (f) Un dato publicado no se reemplaza: con SECOP II, manda el de SECOP II y
+si el pliego dice otro (más de medio mes) hay aviso «revisar». (g) La columna se guarda con el texto del documento
+(`columna_plazo`) para rehacer los hechos; la de un texto de OCR no se acepta. (h) La versión de los documentos NO sube: los ya
+leídos no tienen columna y rehacerlos solo gastaría CPU. OJO, corregido por la revisión: nada los vuelve a leer
+(`resumenLectura` no los pone en pendientes), así que los procesos ya guardados NO ganan el plazo; solo los que se lean
+desde ahora. Volver a bajar esos pliegos es una decisión del dueño. (i) La lista de Licitaciones y su capacidad residual no
+cambian: no tienen el pliego.
+
+**Revisión adversaria del mismo día (0 falsos en los 36 pliegos reales con tabla, pero caminos construidos a un plazo
+falso marcado «dato»; cada uno con su cerradura).** (j) Ningún fragmento de la columna puede pasar el centro de la columna
+vecina: un renglón de prosa a todo el ancho, debajo de la tabla, tiene el centro en la franja de «Plazo», y con la celda sin
+cifra (una fecha, un plazo en letras) su «cuatro (4) meses para su liquidación» se leía como plazo. (k) El fin de la sección
+se busca por RENGLÓN, con las palabras unidas: pdf.js parte «1.2. DOCUMENTOS DEL PROCESO» en palabras (r6_02) y sin hallarlo
+la columna bajaba hasta el pie o se llevaba la página siguiente; con ese fin partido, 30 de las 36 columnas arrastraban
+texto de más, ahora 0. (l) El encabezado es el de MÁS ARRIBA (no el primero del flujo del PDF), con la «P» mayúscula de un
+encabezado y nunca un «Plazo de liquidación». (m) Plazos por ETAPA o FASE sin el total: null (quitar repetidos dejaba 3 meses
+donde son 6, y 8 donde son 16, que cruza los doce meses de la fórmula). (n) Una cifra que sigue a un punto o una coma no es
+suelta («1.095 días» no son 95, «1.50 meses» no son 50). (o) Los días HÁBILES no se pasan a meses: 120 hábiles son unos 5,5
+meses, no 4. (p) Otro pliego definitivo (o documento base) igual o más reciente SIN el dato no deja usar el del viejo: se
+dice y se manda a confirmar. El presupuesto usa la misma elección y tiene el mismo hueco: queda anotado, sin tocar (decide
+el techo de la oferta y necesita el visto bueno del dueño). (q) La cita termina en el plazo leído y lleva `cita_reconstruida`: es la
+columna rehecha por coordenadas, no una frase literal. OJO: la pantalla viva (`public/expediente.js`) no pinta los hechos
+del plazo; enseña solo el dato «Plazo» de la ficha, con «(según el pliego)» cuando sale de ahí. `htmlGuia` y su `liOjo`, que
+sí los pintarían entre comillas, no los llama ninguna pantalla desde el 7-sep: no se tocaron. El aviso «SECOP II y el pliego
+no dicen el mismo plazo» y el «por confirmar» quedan sin pantalla. Con el
+código final, las 36 lecturas reales son idénticas a las de antes y la ronda 7 da su misma salida congelada.

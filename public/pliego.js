@@ -80,6 +80,76 @@
      mismo error de categoría que `anticipo_pct = 0`. */
   const MIN_CARACTERES_POR_PAGINA = 100;
 
+  /* LA TABLA 1.1 DEL PLIEGO TIPO, POR COORDENADAS (17-oct-2026, Fase 1 del plazo). En el texto las columnas de esa tabla
+     se entrelazan y el plazo no se puede leer sin inventar (Fase 0: la vigencia «seis (6) meses más» salía como plazo);
+     aquí, con la posición de cada fragmento, se recorta solo la columna «Plazo» y el servidor la interpreta
+     (lib/plazo_pliego). Las MISMAS expresiones que lib/presupuesto_pliego: la suite exige que sean idénticas, porque
+     un título que uno reconoce y el otro no divergiría mudo. */
+  const TITULO_1_1_RE = /^[ \t]*(?:1\.1\.?[ \t]*)?OBJETO,?[ \t]+PRESUPUESTO[ \t]+OFICIAL,?[ \t]+PLAZO,?[ \t]+(?:Y[ \t]+)?UBICACI[ÓO]N(?:,?[ \t]+Y[ \t]+ESPECIFICACIONES(?:[ \t]+[A-ZÁÉÍÓÚÑ \t]*)?)?[ \t]*$/im;
+  const FIN_1_1_RE = /^[ \t]*1\.2\.?[ \t]*[A-ZÁÉÍÓÚÑ]|^[ \t]*(?:DOCUMENTOS[ \t]+DEL[ \t]+PROCESO|COMUNICACIONES[ \t]+Y[ \t]+OBSERVACIONES|CLASIFICADOR[ \t]+DE[ \t]+BIENES|RECURSOS[ \t]+QUE[ \t]+RESPALDAN)\b/m;
+  /* Función PURA (la suite la extrae del fuente y la ejecuta en Node): `paginas` = [{n, lineas, items:[{x, y, w, s}]}] con
+     la página del título y la siguiente. Devuelve {texto, pagina} de la columna «Plazo» o null si no hay tabla con ese
+     encabezado (una sección en prosa no se manda: leída entera, la vigencia se confundía con el plazo). */
+  function columnaPlazoDe(paginas, tituloRe, finRe) {
+    const plegarC = (t) => String(t || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\s+/g, " ").trim();
+    const sinG = (re) => new RegExp(re.source, re.flags.replace("g", ""));
+    const ps = (paginas || []).filter((x) => x && Array.isArray(x.items) && typeof x.lineas === "string");
+    const i0 = ps.findIndex((x) => sinG(tituloRe).test(x.lineas));
+    if (i0 < 0) return null;
+    const p0 = ps[i0];
+    const mt = sinG(tituloRe).exec(p0.lineas);
+    const restoP0 = p0.lineas.slice(mt.index + mt[0].length);
+    let pFin = null, lineaFin = null;
+    const mf0 = sinG(finRe).exec(restoP0);
+    if (mf0) { pFin = p0; lineaFin = restoP0.slice(mf0.index).split("\n")[0]; }
+    else if (ps[i0 + 1] && ps[i0 + 1].n === p0.n + 1) {
+      const mf1 = sinG(finRe).exec(ps[i0 + 1].lineas);
+      if (mf1) { pFin = ps[i0 + 1]; lineaFin = ps[i0 + 1].lineas.slice(mf1.index).split("\n")[0]; }
+    }
+    if (!pFin) return null; // sin el fin de la sección no se sabe hasta dónde llega la tabla
+    const finTxt = plegarC(lineaFin).replace(/^1\.2\.?\s*/, "").slice(0, 14);
+    const tit = p0.items.find((i) => /OBJETO/.test(i.s) && (/PRESUPUESTO/.test(i.s) || p0.items.some((j) => Math.abs(j.y - i.y) < 2 && /^PRESUPUESTO/.test(String(j.s).trim()))));
+    /* el fin se busca por RENGLÓN, con las palabras unidas: pdf.js parte «1.2. DOCUMENTOS DEL PROCESO» en palabras sueltas
+       (r6_02) y, sin hallarlo, la columna bajaba hasta el pie o se llevaba la página siguiente (revisión adversaria) */
+    const sinEsp = (t) => plegarC(t).replace(/\s+/g, "");
+    const renglonDesde = (pg, i) => pg.items.filter((j) => Math.abs(j.y - i.y) < 2 && j.x >= i.x).sort((a, b) => a.x - b.x).map((j) => j.s).join("");
+    const fin = pFin.items.find((i) => finTxt && sinEsp(renglonDesde(pFin, i)).replace(/^1\.2\.?/, "").startsWith(sinEsp(finTxt)) && (pFin !== p0 || !tit || i.y < tit.y));
+    const zona = [];
+    for (const pg of pFin === p0 ? [p0] : [p0, pFin]) {
+      for (const i of pg.items) {
+        if (pg === p0 && tit && !(i.y < tit.y - 1)) continue;
+        if (pg === pFin && fin && !(i.y > fin.y + 1)) continue;
+        zona.push({ x: i.x, y: i.y, w: i.w, s: String(i.s), pag: pg.n });
+      }
+    }
+    /* el encabezado de la TABLA: «Plazo…» con otro encabezado («Valor…», «Lugar…») en su fila, no la palabra del título; el
+       de MÁS ARRIBA (no el primero del flujo del PDF), con la «P» mayúscula de un encabezado (la palabra «plazo» de una frase
+       no lo es) y nunca un «Plazo de liquidación» (revisión adversaria) */
+    const cab = zona.filter((c) => /^P(?:LAZO|lazo)\b/.test(c.s.trim()) && !/^plazo (?:de |para )?(?:la )?liquidaci/.test(plegarC(c.s)) && zona.some((j) => j.pag === c.pag && Math.abs(j.y - c.y) < 30 && /^(valor|lugar)/i.test(j.s.trim())))
+      .sort((a, b) => a.pag - b.pag || b.y - a.y)[0];
+    if (!cab) return null;
+    const fila = zona.filter((i) => i.pag === cab.pag && Math.abs(i.y - cab.y) < 30 && /^(objeto|valor|lugar|plazo|ubicaci)/i.test(i.s.trim()));
+    const centros = [...new Set(fila.map((i) => i.x + i.w / 2))].sort((a, b) => a - b);
+    const cP = cab.x + cab.w / 2;
+    const k = centros.findIndex((c) => Math.abs(c - cP) < 1);
+    const izq = k > 0 ? (centros[k - 1] + cP) / 2 : -Infinity;
+    const der = k >= 0 && k < centros.length - 1 ? (centros[k + 1] + cP) / 2 : Infinity;
+    /* ningún fragmento puede pasar el centro de la columna vecina: un renglón de prosa a todo el ancho, debajo de la tabla,
+       tiene el centro en la franja de «Plazo», y con la celda sin cifra (una fecha, un plazo en letras) su «cuatro (4) meses
+       para su liquidación» se leía como plazo (revisión adversaria) */
+    const cruzaVecina = (i) => (k > 0 && i.x < centros[k - 1]) || (k < centros.length - 1 && i.x + i.w > centros[k + 1]);
+    const col = zona.filter((i) => (i.pag > cab.pag || i.y < cab.y + 1) && i.x + i.w / 2 > izq && i.x + i.w / 2 < der && !cruzaVecina(i));
+    // por renglones: la misma línea visual tiene alturas que difieren en décimas («un (1) mes» salía al revés sin agrupar)
+    col.sort((a, b) => a.pag - b.pag || b.y - a.y);
+    const renglones = [];
+    for (const i of col) {
+      const r = renglones[renglones.length - 1];
+      if (r && r.pag === i.pag && Math.abs(r.y - i.y) <= 3) r.items.push(i); else renglones.push({ pag: i.pag, y: i.y, items: [i] });
+    }
+    const texto = renglones.map((r) => r.items.sort((a, b) => a.x - b.x).map((i) => i.s).join(" ")).join(" ").replace(/\s+/g, " ").trim();
+    return texto ? { texto: texto.slice(0, 600), pagina: cab.pag } : null;
+  }
+
   const $ = (id) => document.getElementById(id);
   const fmt = new Intl.NumberFormat("es-CO", { maximumFractionDigits: 2 });
   const fmtCOP = new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
@@ -358,7 +428,8 @@
   /* `avisar` es la barra del panel; la lectura SILENCIOSA de Mis procesos (los
      documentos del proceso, 3-sep-2026) pasa una función vacía: el MISMO bucle,
      las mismas líneas y los mismos marcadores, sin tocar la pantalla del lector. */
-  async function textoDelPdf(doc, avisar = progreso) {
+  /* `alPagina(n, fragmentos, lineas)`: quien lee para Mis procesos guarda la página de la tabla 1.1 con coordenadas */
+  async function textoDelPdf(doc, avisar = progreso, alPagina = null) {
     const trozos = [];
     for (let n = 1; n <= doc.numPages; n++) {
       avisar(n - 1, doc.numPages, `Leyendo página ${n} de ${doc.numPages}…`);
@@ -367,6 +438,7 @@
       const pagina = await doc.getPage(n);
       const contenido = await pagina.getTextContent();
       const lineas = lineasDePagina(contenido.items);
+      if (alPagina) { try { alPagina(n, contenido.items, lineas); } catch { /* la tabla es un extra: el texto sigue */ } }
       trozos.push(marcadorPagina(n));
       if (lineas) trozos.push(lineas);
     }
@@ -1463,10 +1535,19 @@
     const doc = await pdfjs.getDocument({ data: datos, isEvalSupported: false }).promise;
     try {
       if (!doc.numPages) throw new Error("El PDF no tiene páginas.");
-      const texto = await textoDelPdf(doc, () => {});
+      // la página del título 1.1 y la siguiente, con las coordenadas de cada fragmento (columnaPlazoDe)
+      const tabla11 = [];
+      const texto = await textoDelPdf(doc, () => {}, (n, fragmentos, lineas) => {
+        const sigue = tabla11.length === 1 && tabla11[0].n === n - 1;
+        if (tabla11.length ? !sigue : !TITULO_1_1_RE.test(lineas || "")) return;
+        tabla11.push({ n, lineas: lineas || "", items: (fragmentos || []).filter((f) => f && typeof f.str === "string" && f.str.trim() && Array.isArray(f.transform))
+          .map((f) => ({ x: f.transform[4], y: f.transform[5], w: Number(f.width) || 0, s: f.str })) });
+      });
       const largo = texto.trim().length;
       const escaneado = largo < MIN_TEXTO_UTIL || largo / doc.numPages < MIN_CARACTERES_POR_PAGINA;
-      return { texto, paginas: doc.numPages, escaneado };
+      let columnaPlazo = null;
+      if (!escaneado) { try { columnaPlazo = columnaPlazoDe(tabla11, TITULO_1_1_RE, FIN_1_1_RE); } catch { columnaPlazo = null; } }
+      return { texto, paginas: doc.numPages, escaneado, columna_plazo: columnaPlazo };
     } finally { try { await doc.destroy(); } catch { /* ya liberado */ } }
   };
   /* …y un documento ESCANEADO lo lee con OCR (27-sep-2026): el mismo rasterizado y

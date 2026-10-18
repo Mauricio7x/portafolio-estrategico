@@ -5525,7 +5525,7 @@
         /* `saturado`: el OCR no atendió; el servidor guarda cuándo reintentarlo solo */
         const marcarIlegible = (motivo, definitivo, saturado) => api("/api/pliego?op=documentos", { method: "POST", body: { id_proceso: id, id_documento: a.id_documento, ilegible: true, definitivo: definitivo === true, saturado: saturado === true, motivo: String(motivo).slice(0, 200) } });
         try {
-          let texto, recortadoEnOrigen = false, paginasTotal = null, origen = null;
+          let texto, recortadoEnOrigen = false, paginasTotal = null, origen = null, columnaPlazo = null;
           if (String(a.extension || "").toLowerCase() === "docx") {
             /* el Word lo lee el servidor (lib/docx.js) y devuelve el texto, sin páginas */
             const d = await api("/api/pliego?op=descargar", { method: "POST", body: { url: a.url, formato: "docx" } });
@@ -5553,13 +5553,14 @@
             } else {
               texto = lect.texto;
               paginasTotal = lect.paginas;
+              columnaPlazo = lect.columna_plazo || null; // la columna «Plazo» de la tabla 1.1, por coordenadas (lib/plazo_pliego)
             }
           }
           /* el servidor guarda hasta `max_caracteres`: lo que pasa de ahí no se manda (un PDF de
              20 MB puede traer más texto del que cabe en la petición), y se dice que se cortó */
           const tope = Number(r.max_caracteres) > 0 ? Number(r.max_caracteres) : null;
           if (tope && texto.length > tope) { texto = texto.slice(0, tope); recortadoEnOrigen = true; }
-          await api("/api/pliego?op=documentos", { method: "POST", body: { id_proceso: id, id_documento: a.id_documento, texto, perfil, recortado_en_origen: recortadoEnOrigen, paginas_total: paginasTotal, origen } });
+          await api("/api/pliego?op=documentos", { method: "POST", body: { id_proceso: id, id_documento: a.id_documento, texto, perfil, recortado_en_origen: recortadoEnOrigen, paginas_total: paginasTotal, origen, ...(columnaPlazo ? { columna_plazo: columnaPlazo } : {}) } });
           leidos++;
         } catch (e) {
           fallidos++;

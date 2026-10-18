@@ -8145,6 +8145,133 @@ async function main() {
     // un documento que no es pliego no se lee para esto
     assert.strictEqual(Dp.hechosDeTexto(def, { tipo: "estudio_previo" }).presupuesto_pliego, null);
   }
+  /* EL PLAZO DEL PLIEGO (17-oct-2026, Fase 1): la columna «Plazo» de la tabla 1.1, recortada por coordenadas en el
+     navegador (public/pliego.js columnaPlazoDe) e interpretada en lib/plazo_pliego; se usa solo si SECOP II no publica la
+     duración. Medido: Fase 0 en 29 pliegos (27 correctos, 2 vacíos, 0 falsos) y ronda 7 a ciegas (detekta-lector) */
+  bqPlazoPliego: { if (!corre("unidad plazo del pliego")) break bqPlazoPliego;
+    const PZ = require("../lib/plazo_pliego.js");
+    const vm = require("vm");
+    const Dp = require("../lib/documentos_proceso.js");
+    const pz = (texto) => PZ.leerPlazoDeColumna({ texto, pagina: 6 });
+    // (1) el lector, con columnas reales de la Fase 0
+    const casos = [
+      ["Plazo del contrato TRES (03) MESES", 3, "meses"], ["Plazo del contrato CIENTO CINCO (105) DIAS CALENDARIO", 105, "dias"],
+      ["Plazo del contrato dos (0 2 ) meses", 2, "meses"], ["Plazo del contrato Dos punto cinco meses (2 .5 ) desde la suscripción del acta de inicio", 2.5, "meses"],
+      ["Plazo del contrato UN (1) MES Y QUINCE (15) DIAS", 45, "dias"], ["Plazo del contrato ETAPA I: Tres (03) meses ETAPA II: Tres (03) meses ETAPA III: Uno (01) mes PLAZO TOTAL SIETE (07) MESES", 7, "meses"],
+      ["Plazo del contrato - y a el plazo de ejecución será de 7 setenta y cinco (75) la días contados a partir de la suscripción del acta de inicio. el contrato tendrá vigencia durante el plazo de ejecución y y seis (6) meses más, previstos para su liquidación.", 75, "dias"],
+      ["Plazo del contrato CINCO (05) MESES sin superar el 31 de diciembre de 2026", 5, "meses"],
+    ];
+    for (const [t, v, u] of casos) { const r = pz(t); assert.deepStrictEqual([r.valor, r.unidad], [v, u], `«${t}» → ${v} ${u} (${JSON.stringify(r)})`); }
+    assert.strictEqual(pz(casos[6][0]).meses, 2.5, "75 días son 2,5 meses; la vigencia «seis (6) meses más» no cuenta (MUTACIÓN: sin la guarda de «más», dos plazos y null)");
+    assert.strictEqual(pz("Plazo del contrato CIENTO CINCO (105) DIAS CALENDARIO").tipo_dias, "calendario");
+    const fecha = pz("Plazo del contrato hasta el 31 de - diciembre de 2026");
+    assert.deepStrictEqual([fecha.valor, fecha.meses, fecha.hasta], [null, null, "2026-12-31"], "una fecha se dice pero no se convierte en meses: depende del acta de inicio");
+    assert.strictEqual(pz(casos[7][0]).hasta, "2026-12-31", "la cifra con tope de fecha lleva los dos");
+    const mas = pz("Plazo del contrato Desde la suscripción del ACTA DE INICIO Y DURANTE CINCO (05) MESES MÁS.");
+    assert.ok(mas.valor == null && mas.meses == null, `«… meses más» no es plazo: se calla (${JSON.stringify(mas)})`);
+    const dos = pz("Plazo del contrato TRES (03) MESES CUATRO (04) MESES");
+    assert.ok(dos.valor == null && /2 plazos/.test(dos.motivo), `dos plazos distintos: null, no se escoge (${JSON.stringify(dos)})`);
+    const amb = pz("Plazo del contrato DOSCIENTOS CINCUENTA (250) DIAS");
+    assert.ok(amb.valor === 250 && amb.meses === null && /calendario o hábiles/.test(amb.motivo), `250 días sin decir si son hábiles: sin meses (MUTACIÓN: 8,3 meses) ${JSON.stringify(amb)}`);
+    assert.strictEqual(pz("Plazo del contrato CIENTO CINCUENTA (150) DIAS").meses, 5, "150 días sin calificar: 5 meses (por debajo de 200 las dos lecturas quedan bajo doce meses)");
+    for (const malo of [null, "texto", { texto: 5 }, { texto: "   " }]) assert.strictEqual(PZ.leerPlazoDeColumna(malo), null, `lo que no es {texto, pagina} es inerte: ${JSON.stringify(malo)}`);
+    assert.strictEqual(PZ.columnaValida({ texto: "x".repeat(900), pagina: 6 }).texto.length, PZ.MAX_COLUMNA, "la columna tiene tope");
+    // (2) el navegador: columnaPlazoDe EXTRAÍDA del fuente y ejecutada, con las MISMAS expresiones que el servidor
+    const fuentePL = fs.readFileSync(path.join(__dirname, "..", "public", "pliego.js"), "utf8");
+    const { TITULO_RE: T11, FIN_RE: F11 } = require("../lib/presupuesto_pliego.js");
+    const litTit = /const TITULO_1_1_RE = (\/.*\/[a-z]*);/.exec(fuentePL), litFin = /const FIN_1_1_RE = (\/.*\/[a-z]*);/.exec(fuentePL);
+    assert.ok(litTit && litFin && litTit[1] === String(T11) && litFin[1] === String(F11), "el título y el fin de la tabla 1.1 son los MISMOS en el navegador y en el servidor (un censo, no una copia que diverge)");
+    const ini = fuentePL.indexOf("function columnaPlazoDe(");
+    let fin = ini, prof = 0, abierto = false;
+    for (; fin < fuentePL.length; fin++) { const c = fuentePL[fin]; if (c === "{") { prof++; abierto = true; } else if (c === "}") { prof--; if (abierto && prof === 0) { fin++; break; } } }
+    const columnaPlazoDe = vm.runInNewContext(`(${fuentePL.slice(ini, fin)})`, { Math, Number, Array, String, RegExp, Set, Infinity });
+    const it = (x, y, w, t) => ({ x, y, w, s: t });
+    // f0_C (CO1.REQ.10966766, pág. 6): el título dice «PLAZO» y la frase de abajo también; el encabezado es el de la tabla
+    const pag6 = { n: 6, lineas: "1.1.\tOBJETO, PRESUPUESTO OFICIAL, PLAZO Y UBICACIÓN\nEl objeto, presupuesto oficial, plazo y ubicación\nObjeto del proyecto\tPlazo del contrato\n1.2.\tDOCUMENTOS DEL PROCESO", items: [
+      it(85, 622, 17, "1.1."), it(121, 622, 44, "OBJETO,"), it(167, 622, 75, "PRESUPUESTO"), it(246, 622, 43, "OFICIAL,"), it(291, 622, 34, "PLAZO"), it(328, 622, 7, "Y"), it(337, 622, 56, "UBICACIÓN"),
+      it(85, 599, 9, "El"), it(99, 599, 30, "objeto,"), it(229, 599, 24, "plazo"), it(258, 599, 5, "y"),
+      it(108, 543, 94, "Objeto del proyecto"), it(230, 543, 86, "Plazo del contrato"), it(355, 563, 25, "Valor"), it(439, 549, 60, "Lugar(es) de"),
+      it(92, 512, 126, "MANTENIMIENTO Y REHABILITACIÓN"), it(256, 465, 35, "3 MESES"), it(339, 446, 56, "$1.004.015.042"), it(420, 489, 97, "Municipio de Floridablanca,"),
+      it(85, 346, 17, "1.2."), it(121, 346, 147, "DOCUMENTOS DEL PROCESO"), it(230, 300, 80, "seis (6) meses más") ] };
+    const c6 = columnaPlazoDe([pag6], T11, F11);
+    assert.ok(c6 && c6.pagina === 6 && /3 MESES/.test(c6.texto) && !/1\.004/.test(c6.texto) && !/seis/.test(c6.texto), `la columna «Plazo», sin el valor ni lo de después del fin (MUTACIÓN: con la palabra del título como encabezado, sin «3 MESES»): ${JSON.stringify(c6)}`);
+    assert.strictEqual(PZ.leerPlazoDeColumna(c6).meses, 3);
+    assert.strictEqual(columnaPlazoDe([{ ...pag6, items: pag6.items.filter((i) => !/^(Valor|Lugar)/.test(i.s)) }], T11, F11), null, "sin otro encabezado al lado de «Plazo» no hay tabla: null (una sección en prosa no se manda)");
+    assert.strictEqual(columnaPlazoDe([{ ...pag6, lineas: pag6.lineas.replace("1.2.\tDOCUMENTOS DEL PROCESO", "") }], T11, F11), null, "sin el fin de la sección: null");
+    // la línea visual con alturas que difieren en décimas se lee en orden (r6_02: «UN (1) MES Y QUINCE (15) DIAS»)
+    const pagR = { ...pag6, items: [...pag6.items.filter((i) => i.s !== "3 MESES"), it(240, 465.2, 20, "UN (1)"), it(262, 464.9, 20, "MES Y"), it(240, 455.1, 30, "QUINCE (15)"), it(272, 455.3, 20, "DIAS")] };
+    assert.strictEqual(PZ.leerPlazoDeColumna(columnaPlazoDe([pagR], T11, F11)).valor, 45, "por renglones (MUTACIÓN: ordenar solo por altura, «mes (1) un» y un mes)");
+    // (3) los hechos del documento y la elección: solo con columna, solo en pliegos, el definitivo manda
+    const col3 = { texto: "Plazo del contrato TRES (03) MESES", pagina: 6 };
+    assert.strictEqual(Dp.hechosDeTexto("\f6\nalgo de texto del pliego que no trae nada", { tipo: "pliego", columnaPlazo: col3 }).plazo_pliego.meses, 3);
+    assert.strictEqual(Dp.hechosDeTexto("\f6\nalgo de texto", { tipo: "pliego" }).plazo_pliego, null, "sin columna, del texto no se adivina");
+    assert.strictEqual(Dp.hechosDeTexto("\f6\nalgo de texto", { tipo: "estudio_previo", columnaPlazo: col3 }).plazo_pliego, null, "solo los documentos de la tabla 1.1");
+    const doc = (tipo, columna, extra = {}) => ({ nombre: `${tipo}.pdf`, tipo, ...extra, hechos: Dp.hechosDeTexto("\f6\nalgo de texto del documento", { tipo, columnaPlazo: columna }) });
+    const docs = (leidos) => ({ indice: { archivos: [], plan: [] }, ilegibles: {}, leidos });
+    const p1 = Dp.plazoDelProceso(docs({ a: doc("pliego", col3) }), null);
+    assert.deepStrictEqual([p1.meses, p1.fuente], [3, "pliego"], "SECOP II sin duración: el plazo del pliego");
+    const p2 = Dp.plazoDelProceso(docs({ a: doc("pliego", col3) }), 4);
+    assert.deepStrictEqual([p2.meses, p2.fuente], [4, "secop"], "SECOP II con duración: manda la de SECOP II (un dato publicado no se reemplaza)");
+    assert.strictEqual(Dp.plazoDelProceso(docs({ b: doc("pliego_borrador", col3) }), null).meses, null, "un borrador no fija el plazo");
+    assert.strictEqual(Dp.plazoDelProceso(docs({ a: doc("pliego", col3, { fecha_carga: "2026-09-01" }), b: doc("adenda", null, { fecha_carga: "2026-09-10" }) }), null).meses, null, "una adenda posterior sin la tabla no deja usar el del pliego");
+    assert.strictEqual(Dp.plazoDelProceso(docs({ a: doc("pliego", col3, { fecha_carga: "2026-09-01" }), b: doc("adenda", { texto: "Plazo del contrato CINCO (05) MESES", pagina: 2 }, { fecha_carga: "2026-09-10" }) }), null).meses, 5, "la adenda más reciente con el plazo manda");
+    assert.strictEqual(Dp.plazoDelProceso(docs({ a: doc("pliego", { texto: "Plazo del contrato hasta el 31 de diciembre de 2026", pagina: 6 }) }), null).meses, null, "una fecha no se vuelve meses");
+    // el aviso: de dónde sale, o por qué no se usa
+    const dicen = (lds, secop) => Dp.loQueDicen(docs(lds), { plazoMeses: Dp.plazoDelProceso(docs(lds), secop).meses, plazo: Dp.plazoDelProceso(docs(lds), secop) }).hechos.filter((h) => h.clave === "plazo_pliego");
+    const h1 = dicen({ a: doc("pliego", col3) }, null);
+    assert.ok(h1.length === 1 && h1[0].estado === "dato" && /no publica la duración/.test(h1[0].texto) && /3 meses/.test(h1[0].texto) && h1[0].pagina === 6, JSON.stringify(h1));
+    const h2 = dicen({ a: doc("pliego", col3) }, 5);
+    assert.ok(h2.length === 1 && h2[0].estado === "revisar" && /SECOP II publica 5 meses y el pliego dice 3 meses/.test(h2[0].texto), JSON.stringify(h2));
+    assert.strictEqual(dicen({ a: doc("pliego", col3) }, 3).length, 0, "si coinciden, nada que decir");
+    const h3 = dicen({ a: doc("pliego", { texto: "Plazo del contrato hasta el 31 de diciembre de 2026", pagina: 6 }) }, null);
+    assert.ok(h3.length === 1 && h3[0].estado === "revisar" && /acta de inicio/.test(h3[0].texto), JSON.stringify(h3));
+    // (4) la guía: con SECOP II en «0 días», el capital de trabajo del pliego se calcula con el plazo del pliego
+    const G = require("../lib/guia_proceso.js");
+    const FORMULA = "\f28\nCAPITAL DE TRABAJO\nPara el presente Proceso de Selección los proponentes acreditarán: CT = AC - PC ≥ CTd\nPara procesos de selección cuyo plazo estimado de ejecución del contrato sea menor a doce (12) meses, el cálculo del capital de trabajo demandado, se hará de acuerdo con la siguiente fórmula:\nCTd = (POE - Anticipo o Pago anticipado) x 33%\nEn ningún caso el capital de trabajo requerido excederá el valor del Presupuesto Oficial.\n";
+    const docG = { nombre: "pliego.pdf", tipo: "pliego", hechos: Dp.hechosDeTexto(FORMULA, { tipo: "pliego", columnaPlazo: col3 }) };
+    const filaG = { id_del_proceso: "CO1.PZ", nombre_del_procedimiento: "MEJORAMIENTO VIA", entidad: "MUNICIPIO", departamento_entidad: "Tolima", modalidad_de_contratacion: "Licitación pública Obra Publica", precio_base: "1000000000", duracion: "0", unidad_de_duracion: "Dia(s)", codigo_principal_de_categoria: "V1.72141000", fecha_de_publicacion_del: "2026-09-01T10:00:00.000", fecha_de_recepcion_de: "2026-09-20T15:00:00.000", tipo_de_contrato: "Obra" };
+    const guia = (d) => G.guiaDe({ fila: filaG, perfil: "helder", ctx: { ahoraMs: Date.parse("2026-09-03T15:00:00Z"), documentos: docs(d) } });
+    const gCon = guia({ a: docG }), gSin = guia({ a: { ...docG, hechos: { ...docG.hechos, plazo_pliego: null } } });
+    assert.ok(gCon.obra.plazo.meses === 3 && gCon.obra.plazo.fuente === "pliego" && /según el pliego/.test(gCon.obra.plazo.legible), `la guía usa el plazo del pliego con SECOP II en 0 días: ${JSON.stringify(gCon.obra.plazo)}`);
+    assert.strictEqual(gSin.obra.plazo.meses, null, "sin la columna, sin plazo (como antes)");
+    const ctCon = (gCon.exigencias || []).find((x) => x.clave === "capital_trabajo"), ctSin = (gSin.exigencias || []).find((x) => x.clave === "capital_trabajo");
+    assert.ok(ctCon && ctSin && /330\.000\.000/.test(JSON.stringify(ctCon)) && !/330\.000\.000/.test(JSON.stringify(ctSin)), `con el plazo del pliego el capital de trabajo se calcula (33 % de $1.000 millones; MUTACIÓN: sin el plazo, «sin cálculo»): ${JSON.stringify([ctCon, ctSin]).slice(0, 400)}`);
+    // (5) revisión adversaria del 17-oct-2026: cada camino a un plazo falso marcado «dato», con su cerradura
+    for (const t of ["Plazo del contrato ETAPA I: Tres (03) meses ETAPA II: Tres (03) meses", "Plazo del contrato FASE 1: ocho (8) meses FASE 2: ocho (8) meses", "Plazo del contrato ETAPA I: UN (1) MES Y QUINCE (15) DIAS ETAPA II: DOS (2) MESES"]) {
+      const r = pz(t);
+      assert.ok(r.meses == null && /por etapa/.test(r.motivo), `plazos por etapa sin el total: null, no el de una etapa (MUTACIÓN: sin la guarda, 3, 8 o 1,5 meses): «${t}» ${JSON.stringify(r)}`);
+    }
+    for (const t of ["Plazo del contrato 1.095 días calendario", "Plazo del contrato 1.50 meses"]) {
+      assert.strictEqual(pz(t).valor, null, `una cifra tras un punto no es suelta (MUTACIÓN: sin \`(?<![\\d.,])\`, 95 días o 50 meses): «${t}»`);
+    }
+    const habiles = pz("Plazo del contrato CIENTO VEINTE (120) DIAS HÁBILES");
+    assert.ok(habiles.valor === 120 && habiles.tipo_dias === "habiles" && habiles.meses === null && /festivos/.test(habiles.motivo), `los días hábiles no se pasan a meses (MUTACIÓN: entre 30, 4 meses): ${JSON.stringify(habiles)}`);
+    for (const [t, cita] of [["Plazo del contrato TRES (03) MESES La obra pública tiene las especificaciones técnicas descritas en el Anexo 1", "Plazo del contrato TRES (03) MESES"], ["Plazo del contrato Dos punto cinco meses (2 .5 ) desde la suscripción del acta de inicio", "Plazo del contrato Dos punto cinco meses (2 .5 )"], ["Plazo del contrato HASTA EL 31 DE DICIEMBRE DE 2026 a valor incluye", "Plazo del contrato HASTA EL 31 DE DICIEMBRE DE 2026"], ["Plazo del contrato CINCO (05) MESES y seis (6) meses más para liquidar", "Plazo del contrato CINCO (05) MESES"]]) {
+      assert.strictEqual(pz(t).cita, cita, `la cita termina en el plazo leído (MUTACIÓN: los primeros 190 caracteres de la columna): «${t}»`);
+    }
+    // la columna: un renglón a todo el ancho debajo de la tabla no entra (la celda trae una fecha y la prosa una cifra)
+    const conFecha = { ...pag6, items: [...pag6.items.filter((i) => i.s !== "3 MESES"), it(240, 465, 60, "Hasta el 31 de diciembre de 2026"), it(85, 400, 441, "La vigencia del contrato será igual al plazo de ejecución y cuatro (4) meses para su liquidación.")] };
+    const lFecha = PZ.leerPlazoDeColumna(columnaPlazoDe([conFecha], T11, F11));
+    assert.deepStrictEqual([lFecha.meses, lFecha.hasta], [null, "2026-12-31"], `la prosa a todo el ancho no es de la columna (MUTACIÓN: sin \`cruzaVecina\`, 4 meses): ${JSON.stringify(lFecha)}`);
+    // el fin partido en palabras (r6_02): sin hallarlo, la columna bajaba y se llevaba la cifra de la sección siguiente
+    const finPartido = { ...pag6, items: [...pag6.items.filter((i) => i.s !== "DOCUMENTOS DEL PROCESO"), it(121, 346, 60, "DOCUMENTOS"), it(185, 346, 20, "DEL"), it(209, 346, 55, "PROCESO"), it(240, 280, 60, "DOS (2) MESES")] };
+    assert.strictEqual(PZ.leerPlazoDeColumna(columnaPlazoDe([finPartido], T11, F11)).meses, 3, "el fin se halla por renglón con las palabras unidas (MUTACIÓN: buscándolo en un solo fragmento, dos plazos y null)");
+    // con dos tablas manda el encabezado de MÁS ARRIBA, nunca el de un «Plazo de liquidación»
+    const liqAbajo = { ...pag6, items: [it(229, 410, 85, "Plazo de ejecución"), it(354, 410, 25, "Valor"), it(255, 400, 60, "CUATRO (4) MESES"), ...pag6.items] };
+    const cLiq = columnaPlazoDe([liqAbajo], T11, F11);
+    assert.ok(cLiq && /^Plazo del contrato/.test(cLiq.texto) && PZ.leerPlazoDeColumna(cLiq).meses !== 4, `la tabla de más arriba, aunque la otra vaya antes en el flujo del PDF (MUTACIÓN: la primera del flujo, 4 meses): ${JSON.stringify(cLiq)}`);
+    const liqArriba = { ...pag6, items: [it(229, 585, 85, "Plazo de liquidación"), it(354, 585, 25, "Valor"), it(255, 575, 60, "CUATRO (4) MESES"), ...pag6.items] };
+    assert.strictEqual(PZ.leerPlazoDeColumna(columnaPlazoDe([liqArriba], T11, F11)).meses, 3, "un «Plazo de liquidación» no es el encabezado de la tabla 1.1 (MUTACIÓN: sin excluirlo, la tabla de la liquidación)");
+    // la elección: otro pliego definitivo igual o más reciente sin el dato no deja usar el del viejo
+    const viejoYNuevo = { a: doc("pliego", col3, { nombre: "PLIEGO DEFINITIVO.pdf", fecha_carga: "2026-09-01" }), b: doc("pliego", null, { nombre: "PLIEGO DEFINITIVO MODIFICADO.pdf", fecha_carga: "2026-09-20" }) };
+    assert.strictEqual(Dp.plazoDelProceso(docs(viejoYNuevo), null).meses, null, "un pliego definitivo más reciente sin la tabla no deja usar el del viejo (MUTACIÓN: sin `otroDefinitivoSinDato`, 3 meses)");
+    const hV = dicen(viejoYNuevo, null);
+    assert.ok(hV.length === 1 && hV[0].estado === "revisar" && /otro pliego definitivo igual o más reciente/.test(hV[0].texto), `y se dice por qué: ${JSON.stringify(hV)}`);
+    assert.strictEqual(Dp.plazoDelProceso(docs({ a: doc("pliego", col3, { fecha_carga: "2026-09-20" }), b: doc("pliego", null, { fecha_carga: "2026-09-01" }) }), null).meses, 3, "un pliego más VIEJO sin la tabla no tapa al nuevo que la trae");
+    assert.strictEqual(Dp.plazoDelProceso(docs({ a: doc("documento_base", col3, { nombre: "DOCUMENTO BASE.pdf" }) }), null).meses, 3, "un documento base solo sigue fijando el plazo");
+    assert.strictEqual(h1[0].cita_reconstruida, true, "la cita del plazo es la columna reconstruida, no una frase literal: quien la pinte lo sabe por este campo");
+    console.log("· unidad plazo del pliego: la columna «Plazo» de la tabla 1.1 por coordenadas, su lectura (vigencia, fecha, días ambiguos, dos plazos), la elección del documento y el uso solo cuando SECOP II no publica la duración");
+  }
   bqNueveProcesos: { if (!corre("unidad los nueve procesos del dueño")) break bqNueveProcesos;
     const Dp = require("../lib/documentos_proceso.js");
     const Df = require("../lib/diff.js");
@@ -21716,6 +21843,27 @@ async function main() {
           assert.strictEqual(p1.status, 200, JSON.stringify(p1.cuerpo));
           assert.ok(p1.cuerpo.version_pliego != null && p1.cuerpo.leidos["2"].hechos.anticipo.estado === "no" && p1.cuerpo.paginas === 3, `el pliego queda leído y registrado como versión: ${JSON.stringify({ v: p1.cuerpo.version_pliego, h: p1.cuerpo.hechos_n })}`);
           assert.deepStrictEqual(p1.cuerpo.pendientes.map((a) => a.id_documento), ["9"]);
+          /* la columna «Plazo» de la tabla 1.1 viaja con el texto, se guarda con él y el plazo se rehace desde lo guardado
+             (17-oct-2026); de un escaneo (OCR) no se acepta: sus «coordenadas» no son las del PDF */
+          {
+            const colP = { texto: "Plazo del contrato TRES (03) MESES", pagina: 6 };
+            const pc = await invocarPost(routerPliegoD, "/api/pliego?op=documentos", { id_proceso: idD, id_documento: "2", texto: textoPliegoD, perfil: "helder", columna_plazo: colP }, CAB_TOKEN);
+            assert.ok(pc.status === 200 && pc.cuerpo.leidos["2"].hechos.plazo_pliego && pc.cuerpo.leidos["2"].hechos.plazo_pliego.meses === 3, `el plazo de la columna llega a los hechos: ${JSON.stringify(pc.cuerpo.leidos["2"].hechos.plazo_pliego)}`);
+            const { crearRedis } = require("../lib/redis.js");
+            const Alm = require("../lib/almacen.js");
+            const H = require("../lib/handlers/pliego/documentos.js");
+            const rP = crearRedis({});
+            const guardadoP = await Alm.leerJSONComprimido(rP, Docs.claveDoc(idD, "2"));
+            assert.deepStrictEqual(guardadoP.columna_plazo, colP, "la columna se guarda con el texto");
+            const docsP = await H.leerDocs(rP, idD);
+            docsP.leidos["2"].hechos = { ...docsP.leidos["2"].hechos, version: "0|reglas-antiguas", plazo_pliego: null };
+            await H.actualizarHechos(rP, docsP);
+            assert.strictEqual(docsP.leidos["2"].hechos.plazo_pliego && docsP.leidos["2"].hechos.plazo_pliego.meses, 3, "al rehacer los hechos el plazo vuelve desde la columna guardada (MUTACIÓN: sin pasarla, null)");
+            const po = await invocarPost(routerPliegoD, "/api/pliego?op=documentos", { id_proceso: idD, id_documento: "2", texto: textoPliegoD, perfil: "helder", origen: "ocr", columna_plazo: colP }, CAB_TOKEN);
+            assert.strictEqual(po.cuerpo.leidos["2"].hechos.plazo_pliego, null, "de un texto de OCR la columna no se acepta");
+            const pj = await invocarPost(routerPliegoD, "/api/pliego?op=documentos", { id_proceso: idD, id_documento: "2", texto: textoPliegoD, perfil: "helder", columna_plazo: "<b>3 meses</b>" }, CAB_TOKEN);
+            assert.ok(pj.status === 200 && pj.cuerpo.leidos["2"].hechos.plazo_pliego === null, "una columna con otra forma es inerte");
+          }
           const dg = await invocar(routerPliegoD, `/api/pliego?op=diff&${qD}&perfil=helder`, CAB_TOKEN);
           assert.ok(dg.status === 200 && /documentos:PLIEGO DE CONDICIONES/.test(JSON.stringify(dg.cuerpo)), "el vigía de adendas ve la versión que llegó por los documentos, con su origen");
           // ilegible NO definitivo (la descarga falló): se reintenta al volver a buscar; el escaneado (definitivo) no
@@ -21875,7 +22023,7 @@ async function main() {
         // (6) el navegador: se lee solo al guardar y al abrir Mis procesos, con el pdf.js del lector y sin «|| 0»
         const appD = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
         const pliegoD = fs.readFileSync(path.join(__dirname, "..", "public", "pliego.js"), "utf8");
-        assert.ok(/window\.__pliegoLeerPdf = async/.test(pliegoD) && /textoDelPdf\(doc, \(\) => \{\}\)/.test(pliegoD), "pliego.js presta su lector sin tocar la barra ni el documento del panel");
+        assert.ok(/window\.__pliegoLeerPdf = async/.test(pliegoD) && /textoDelPdf\(doc, \(\) => \{\}[,)]/.test(pliegoD), "pliego.js presta su lector sin tocar la barra ni el documento del panel");
         assert.ok(/encolarLecturaDocumentos\(id, \{ manual: true \}\)/.test(appD) && /op=documentos&id_proceso=/.test(appD) && /window\.__pliegoLeerPdf\(datos\.slice\(\)\)/.test(appD) && /bajarPorTrozos\(a\.url/.test(appD) && /formato: "docx"/.test(appD) && /op=descargar/.test(appD), "al guardar, la app pide el índice, baja por trozos (o pide el texto del Word) y lee con el lector");
         assert.ok(/data-seg-docs-leer=/.test(appD) && /Ojo con lo que dice el pliego/.test(appD) && /ilegible: true, definitivo: definitivo === true/.test(appD), "botón de reintento, sección de hechos y el escaneo marcado como definitivo");
         assert.ok(!/(?:docs|documentos|lo_que_dicen)\.[a-z_]+ \|\| 0/.test(appD), "ningún dato de los documentos se convierte en 0 con «|| 0»");
