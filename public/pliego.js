@@ -110,7 +110,7 @@
     /* el «1.2» del fin tiene que ser un TÍTULO («1.2. DOCUMENTOS…»), no «1.2 KM de vía» de una celda; y el renglón del fin se
        reconoce por sus primeros 24 caracteres, no 14: «DOCUMENTOS DEL PROYECTO» de la celda del objeto no es «DOCUMENTOS DEL
        PROCESO» (tercera revisión adversaria). Sin un fin claro, null */
-    if (/^\s*1\.2\b/.test(lineaFin) && !/^\s*1\.2\.?\s*[A-ZÁÉÍÓÚÑ]{4,}/.test(lineaFin)) return null;
+    if (/^\s*1\.2\b/.test(lineaFin) && (!/^\s*1\.2\.?\s*[A-ZÁÉÍÓÚÑ]{4,}/.test(lineaFin) || /^\s*1\.2\.?\s*(?:KIL[OÓ]METROS?|METROS?|CENT[IÍ]METROS?|MIL[IÍ]METROS?|HECT[AÁ]REAS?|PULGADAS?)\b/i.test(lineaFin))) return null;
     const finTxt = plegarC(lineaFin).replace(/^1\.2\.?\s*/, "").slice(0, 24);
     const tit = p0.items.find((i) => /OBJETO/.test(i.s) && (/PRESUPUESTO/.test(i.s) || p0.items.some((j) => Math.abs(j.y - i.y) < 2 && /^PRESUPUESTO/.test(String(j.s).trim()))));
     /* los renglones visuales de una página, de arriba abajo y cada uno de izquierda a derecha (agrupar una vez: buscar los
@@ -188,8 +188,16 @@
        celda (dos celdas a menos de 6 puntos, una fila partida entre páginas) y dejar una etapa sola: de «sin dato» a un plazo
        falso. Si lo que se quita de la franja trae algo de plazo, la columna no se manda. Medido: en las 36 tablas reales lo
        quitado no trae ninguna de esas palabras */
-    const quitado = zona.filter((i) => enFranja(i) && (fuera.has(i) || !antesDelCorte(i))).map((i) => i.s).join(" ");
-    if (/\b(?:mes(?:es)?|dias?|etapas?|fases?|habiles|calendario|total|diciembre)\b|\(\s*\d/.test(plegarC(quitado))) return null;
+    /* también lo que se SALE del borde de la franja: cP es el centro de la palabra «Plazo», no de la celda, y una celda más
+       ancha pierde por el borde «… (15) DÍAS» o «HÁBILES» sin que nadie lo quite (cuarta revisión adversaria) */
+    const debajoDelEncabezado = (i) => i.pag > cab.pag || i.y < cab.y + 1;
+    const seSale = (i) => debajoDelEncabezado(i) && !enFranja(i) && i.x < der && i.x + i.w > izq && !fuera.has(i) && antesDelCorte(i);
+    const enOrden = (a, b) => a.pag - b.pag || b.y - a.y || a.x - b.x;
+    const quitados = zona.filter((i) => (enFranja(i) && (fuera.has(i) || !antesDelCorte(i))) || seSale(i)).sort(enOrden);
+    const quitado = quitados.map((i) => i.s).join(" ");
+    if (/\b(?:mes(?:es)?|dias?|anos?|etapas?|fases?|habiles|calendario|total|diciembre)\b|\(\s*\d/.test(plegarC(quitado))) return null;
+    /* …y un «MÁS» o «ADICIONALES» que pasa a la página siguiente era la vigencia de la cifra de arriba */
+    if (/^(?:mas|adicionales)\b/.test(plegarC(zona.filter((i) => enFranja(i) && !antesDelCorte(i) && !fuera.has(i)).sort(enOrden).map((i) => i.s).join(" ")))) return null;
     const col = zona.filter((i) => enFranja(i) && !fuera.has(i) && antesDelCorte(i));
     // por renglones: la misma línea visual tiene alturas que difieren en décimas («un (1) mes» salía al revés sin agrupar)
     col.sort((a, b) => a.pag - b.pag || b.y - a.y);

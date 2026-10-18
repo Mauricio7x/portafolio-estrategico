@@ -19160,12 +19160,25 @@ pantalla viva (`public/expediente.js`) no pinta los hechos del plazo; enseña so
 pliego)» cuando sale de ahí. `htmlGuia` y su `liOjo`, que sí los pintarían entre comillas, no los llama ninguna pantalla desde
 el 7-sep: no se tocaron. El aviso «SECOP II y el pliego no dicen el mismo plazo» y el «por confirmar» quedan sin pantalla.
 
+**LA PUERTA (cuarta revisión adversaria, 18-oct-2026): con meses, solo una columna LIMPIA.** Cuatro rondas de reglas «esto
+no» dejaron siempre otro camino a un plazo falso («plazo total» que era la vigencia, «UN (1) AÑO Y DOS (2) MESES», una
+etapa sola, un «HÁBILES» que se salía por el borde de la franja, un «MÁS» en la página siguiente, «1.2 KILÓMETROS» tomado por
+título). Se invirtió la regla: `leerPlazoDeColumna` solo da meses si la columna trae UNA expresión de plazo y, apartada la
+fecha tope («sin superar el 31 de diciembre de 20dd»), ninguna otra cifra, ninguna otra unidad de tiempo, ninguna palabra
+que la condicione (vigencia, etapa, fase, total, año, cada, liquidación, prórroga, adicional) y no sigue una «y». Si no,
+«por confirmar», sin cifra. Es un filtro final: solo puede volver null una lectura, nunca crearla. Medido en las 30 columnas
+reales con meses: pasan 27; f0_I y r5_02 (la vigencia «… meses más» dentro de la celda) y r6_10 (la Ley 80 de 1993 en la
+celda) pasan a «por confirmar». En el navegador, además: lo que se sale por el borde de la franja cuenta como quitado (cP es
+el centro de la palabra «Plazo», no de la celda), un «MÁS»/«ADICIONALES» al otro lado del corte anula la columna, y un «1.2»
+seguido de una unidad de medida no es título. Las reglas de dentro (etapas, repetidos, hábiles…) quedan como segunda capa.
+
 **Cobertura, medida en esos 34 índices reales (simulación con la tabla en cada pliego definitivo leído).** En 8 de 34 una
 adenda sin la tabla deja el plazo «por confirmar» (regla (e), la misma del presupuesto): con adendas, el plazo del pliego
 casi nunca se usa. Y un defecto previo, ajeno a esto: `planDeLectura` ordena los pliegos del más viejo al más nuevo y lee
 los 3 primeros (`MAX_PLIEGOS_PLAN`), así que con 4 versiones la más nueva no se lee; (p) lo convierte en «por confirmar»
 para el plazo, pero el presupuesto, el anticipo y los requisitos siguen leyendo las viejas. Con el código final, las 36
-lecturas reales son idénticas a las de antes y la ronda 7 da sus mismos plazos congelados.
+tablas reales dan las mismas lecturas que antes salvo las 3 que la puerta manda a confirmar, y la ronda 7 da sus mismos
+plazos congelados (ninguna de sus 6 lecturas tenía la celda sucia).
 
 ### La negación del anticipo con la parte ANTES («Para la etapa 1 no se entregará anticipo») NO se cubre (18-oct-2026)
 

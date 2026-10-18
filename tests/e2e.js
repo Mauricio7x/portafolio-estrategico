@@ -8162,12 +8162,25 @@ async function main() {
     const casos = [
       ["Plazo del contrato TRES (03) MESES", 3, "meses"], ["Plazo del contrato CIENTO CINCO (105) DIAS CALENDARIO", 105, "dias"],
       ["Plazo del contrato dos (0 2 ) meses", 2, "meses"], ["Plazo del contrato Dos punto cinco meses (2 .5 ) desde la suscripción del acta de inicio", 2.5, "meses"],
-      ["Plazo del contrato UN (1) MES Y QUINCE (15) DIAS", 45, "dias"], ["Plazo del contrato ETAPA I: Tres (03) meses ETAPA II: Tres (03) meses ETAPA III: Uno (01) mes PLAZO TOTAL SIETE (07) MESES", 7, "meses"],
-      ["Plazo del contrato - y a el plazo de ejecución será de 7 setenta y cinco (75) la días contados a partir de la suscripción del acta de inicio. el contrato tendrá vigencia durante el plazo de ejecución y y seis (6) meses más, previstos para su liquidación.", 75, "dias"],
+      ["Plazo del contrato UN (1) MES Y QUINCE (15) DIAS", 45, "dias"], ["Plazo del contrato SIETE (07) MESES", 7, "meses"],
+      ["Plazo del contrato - y a el plazo de ejecución será de setenta y cinco (75) la días contados a partir de la suscripción del acta de inicio.", 75, "dias"],
       ["Plazo del contrato CINCO (05) MESES sin superar el 31 de diciembre de 2026", 5, "meses"],
     ];
     for (const [t, v, u] of casos) { const r = pz(t); assert.deepStrictEqual([r.valor, r.unidad], [v, u], `«${t}» → ${v} ${u} (${JSON.stringify(r)})`); }
-    assert.strictEqual(pz(casos[6][0]).meses, 2.5, "75 días son 2,5 meses; la vigencia «seis (6) meses más» no cuenta (MUTACIÓN: sin la guarda de «más», dos plazos y null)");
+    assert.strictEqual(pz(casos[6][0]).meses, 2.5, "75 días son 2,5 meses");
+    /* la PUERTA (cuarta revisión adversaria): con meses, solo una columna LIMPIA. La vigencia en la celda (f0_I), las etapas
+       con su total, el año, «cada una», una «y» que deja algo fuera: «por confirmar», sin cifra */
+    for (const sucia of ["Plazo del contrato - y a el plazo de ejecución será de 7 setenta y cinco (75) la días contados a partir de la suscripción del acta de inicio. el contrato tendrá vigencia durante el plazo de ejecución y y seis (6) meses más, previstos para su liquidación.",
+      "Plazo del contrato ETAPA I: Tres (03) meses ETAPA II: Tres (03) meses ETAPA III: Uno (01) mes PLAZO TOTAL SIETE (07) MESES",
+      "Plazo del contrato y a el plazo total de ejecución será de setenta y cinco (75) días; vigencia: el plazo y seis (6) meses más",
+      "Plazo del contrato CINCO (05) MESES. VIGENCIA: EL PLAZO TOTAL Y CUATRO (04) MESES",
+      "Plazo del contrato UN (1) AÑO Y DOS (2) MESES", "Plazo del contrato TRES (03) MESES Y QUINCE DÍAS", "Plazo del contrato DOS (2) ETAPAS DE TRES (3) MESES CADA UNA",
+      "Plazo del contrato TRES (3) MESES Y", "Plazo del contrato CINCO (05) MESES conforme a la Ley 80 de 1993",
+      // cada una, la única regla que la atrapa: otra unidad sin cifra, una palabra que condiciona sin cifra
+      "Plazo del contrato TRES (03) MESES O NOVENTA DÍAS", "Plazo del contrato SIETE (07) MESES DE PLAZO TOTAL", "Plazo del contrato TRES (03) MESES para cada etapa"]) {
+      const r = pz(sucia);
+      assert.ok(r.meses === null && r.valor === null && r.motivo, `columna sucia, sin cifra (MUTACIÓN: sin la puerta, una cifra falsa): «${sucia}» ${JSON.stringify(r)}`);
+    }
     assert.strictEqual(pz("Plazo del contrato CIENTO CINCO (105) DIAS CALENDARIO").tipo_dias, "calendario");
     const fecha = pz("Plazo del contrato hasta el 31 de - diciembre de 2026");
     assert.deepStrictEqual([fecha.valor, fecha.meses, fecha.hasta], [null, null, "2026-12-31"], "una fecha se dice pero no se convierte en meses: depende del acta de inicio");
@@ -8315,6 +8328,16 @@ async function main() {
     const proyecto = { ...pag6, items: [...pag6.items.filter((i) => i.s !== "3 MESES"), it(240, 520, 70, "ETAPA I: DOS (2) MESES"), it(92, 500, 120, "DOCUMENTOS DEL PROYECTO Y"), it(240, 480, 80, "ETAPA II: CUATRO (4) MESES")] };
     const lProy = PZ.leerPlazoDeColumna(columnaPlazoDe([proyecto], T11, F11));
     assert.ok(lProy && lProy.meses === null && /por etapa/.test(lProy.motivo), `«DOCUMENTOS DEL PROYECTO» de la celda no corta la columna (MUTACIÓN: el fin por sus primeros 14 caracteres, 2 meses): ${JSON.stringify(lProy)}`);
+    // (8) cuarta revisión adversaria: lo que se SALE por el borde de la franja, el «MÁS» de la página siguiente, «1.2 KILÓMETROS»
+    const desborda = { ...pag6, items: [...pag6.items.filter((i) => i.s !== "3 MESES"), it(240, 470, 70, "CIENTO VEINTE"), it(250, 460, 25, "(120)"), it(277, 460, 22, "DÍAS"), it(301, 460, 40, "HÁBILES")] };
+    const lD = columnaPlazoDe([desborda], T11, F11);
+    assert.ok(!lD || PZ.leerPlazoDeColumna(lD).meses === null, `«HÁBILES» que se sale por el borde de la franja cuenta como quitado (MUTACIÓN: sin mirar el borde, 4 meses): ${JSON.stringify(lD)}`);
+    const p6tabla = { ...pag6, lineas: pag6.lineas.replace("\n1.2.\tDOCUMENTOS DEL PROCESO", ""), items: [...pag6.items.filter((i) => !/^1\.2\.$|DOCUMENTOS DEL PROCESO|seis \(6\)|3 MESES/.test(i.s)), it(240, 300, 70, "CINCO (05) MESES")] };
+    const p7mas = { n: 7, lineas: "LICITACIÓN DE OBRA PÚBLICA DE INFRAESTRUCTURA\nMÁS.\n1.2.\tDOCUMENTOS DEL PROCESO", items: [it(85, 780, 441, "LICITACIÓN DE OBRA PÚBLICA DE INFRAESTRUCTURA DE TRANSPORTE"), it(260, 760, 25, "MÁS."), it(85, 600, 17, "1.2."), it(121, 600, 147, "DOCUMENTOS DEL PROCESO")] };
+    assert.strictEqual(columnaPlazoDe([p6tabla, p7mas], T11, F11), null, "un «MÁS» al otro lado del corte (la página siguiente) era la vigencia de la cifra de arriba (MUTACIÓN: sin mirarlo, 5 meses)");
+    const kmPartido = { ...pag6, lineas: pag6.lineas.replace("Objeto del proyecto", "1.2 KILÓMETROS DE LA VÍA AL\nObjeto del proyecto"), items: [...pag6.items.filter((i) => i.s !== "3 MESES"), it(250, 520, 60, "TRES (3) MESES"), it(92, 500, 120, "1.2 KILÓMETROS DE LA VÍA AL"), it(245, 480, 70, "Y QUINCE (15) DÍAS")] };
+    const kilometros = columnaPlazoDe([kmPartido], T11, F11);
+    assert.ok(!kilometros || PZ.leerPlazoDeColumna(kilometros).meses === null, `«1.2 KILÓMETROS» no es el título 1.2: no corta la celda en «TRES (3) MESES» (MUTACIÓN: sin excluir las unidades, 3 meses): ${JSON.stringify(kilometros)}`);
     // la lectura: hábiles partidos o junto a «calendario», etapas sin cifra en la segunda, cifras repetidas y partidas
     for (const [t, motivo] of [["Plazo del contrato CIENTO VEINTE (120) DÍAS HÁ BILES", /hábiles/], ["Plazo del contrato CIENTO VEINTE (120) DÍAS HÁBILES según el calendario de obra", /hábiles y calendario/], ["Plazo del contrato ETAPA I: DOS (02) MESES ETAPA II: CUATRO MESES", /por etapa/], ["Plazo del contrato TRES (03) MESES TRES (03) MESES", /repite el plazo/], ["Plazo del contrato UN (1) MES Y QUINCE (15) DIAS y DOS (2) MESES", /plazos distintos/], ["Plazo del contrato 2. 5 MESES", /no trae una cifra/], ["Plazo del contrato 1 095 días calendario", /no trae una cifra/], ["Plazo del contrato 1,50 meses", /no trae una cifra/]]) {
       const r = pz(t);
