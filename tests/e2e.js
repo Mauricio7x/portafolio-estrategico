@@ -3648,6 +3648,12 @@ async function main() {
     assert.strictEqual(Cm.horaEnLinea("Manifestación de interés 14/09/2026"), null, "sin hora, null: la ausencia no se rellena");
     // los demás hitos NO cambian de criterio
     assert.strictEqual(Cm.extraerHitos("Cierre: presentación de ofertas 25/09/2026 al 30/09/2026").hitos[0].fecha, "2026-09-25", "el resto de hitos sigue tomando la primera fecha");
+    /* UN EJEMPLO ENTRE CORCHETES NO ES UN HITO (18-oct-2026): el de la plantilla entraba como
+       adjudicación de 2020 y tapaba la fecha real. Contra el árbol anterior, sale 2020-02-10. */
+    const conEjemplo = Cm.extraerHitos("[Por ejemplo, si la audiencia de adjudicación se realiza el 10 de febrero de 2020, el plazo empieza a contar desde el día siguiente.] La audiencia de adjudicación se realizará el 25 de noviembre de 2026.").hitos;
+    assert.deepStrictEqual(conEjemplo.map((h) => [h.id, h.fecha]), [["adjudicacion", "2026-11-25"]], `el ejemplo no entra y la fecha real sí: ${JSON.stringify(conEjemplo)}`);
+    assert.strictEqual(Cm.extraerHitos("[Fecha de cierre: 30 de noviembre de 2026] Cierre del proceso").hitos[0].fecha, "2026-11-30", "un corchete que no es ejemplo se sigue leyendo");
+    assert.strictEqual(Cm.extraerHitos("[Ejemplo: cierre el 5 de marzo de 2019]").hitos.length, 0, "«Ejemplo:» entre corchetes tampoco es un hito");
 
     /* (5) «VENCIDA» ES UNA CONSTATACIÓN, NUNCA UNA DEDUCCIÓN — y la HORA decide
        el día del vencimiento cuando el pliego la publica. */
@@ -7474,6 +7480,24 @@ async function main() {
       assert.ok(Sesion.MAX_INTENTOS_POR_CORREO >= 10 * Sesion.MAX_INTENTOS_POR_CUENTA, "el tope solo por correo es alto: no puede convertirse en un botón para dejar fuera al dueño");
       assert.strictEqual((await post("/api/admin?op=entrar", { correo: correoDueno, contrasena: claveDueno }, { "x-real-ip": "10.8.9.9" })).status, 429,
         `pasados ${Sesion.MAX_INTENTOS_POR_CORREO} intentos con ese correo desde todas partes, se pausa`);
+      /* (5d) LA CONEXIÓN DONDE EL DUEÑO YA ENTRÓ NO SE CIERRA POR ESE TOPE (18-oct-2026): el dueño
+         entra bien desde la suya, un tercero agota los 50 del correo desde diez conexiones, y el
+         dueño sigue entrando desde la suya; desde una conexión nueva, el tope sí lo frena. Contra el
+         árbol anterior, la entrada desde la conexión conocida da 429. */
+      await redis.del(...await redis.scan("intentos:*"));
+      assert.strictEqual((await post("/api/admin?op=entrar", { correo: correoDueno, contrasena: claveDueno }, { "x-real-ip": "10.9.0.1" })).status, 200,
+        "el dueño entra bien desde su conexión y la deja marcada");
+      // la entrada buena del dueño ya contó uno: con estos, el correo llega justo al tope
+      for (let i = 0; i < Sesion.MAX_INTENTOS_POR_CORREO - 1; i++) {
+        const x = await post("/api/admin?op=entrar", { correo: correoDueno, contrasena: "mala de prueba" }, { "x-real-ip": `10.7.${Math.floor(i / 5)}.${i % 5}` });
+        assert.strictEqual(x.status, 401, `intento ajeno ${i + 1}: 401`);
+      }
+      assert.strictEqual((await post("/api/admin?op=entrar", { correo: correoDueno, contrasena: claveDueno }, { "x-real-ip": "10.9.0.1" })).status, 200,
+        "con el tope del correo agotado por terceros, el dueño entra desde la conexión donde ya entró");
+      assert.strictEqual((await post("/api/admin?op=entrar", { correo: correoDueno, contrasena: claveDueno }, { "x-real-ip": "10.9.0.2" })).status, 429,
+        "desde una conexión nueva el tope del correo sigue valiendo");
+      const marcas = await redis.scan("intentos:conocida:*");
+      assert.ok(marcas.length >= 1 && await redis.ttl(marcas[0]) > 0, "la marca de conexión conocida existe y caduca");
       await redis.del(...await redis.scan("intentos:*"));
       for (let i = 0; i < Sesion.MAX_INTENTOS_POR_IP; i++) {
         const x = await post("/api/admin?op=entrar", { correo: `prueba${i}@ninguna.co`, contrasena: "mala de prueba" }, { "x-real-ip": "10.2.0.1" });
@@ -9553,6 +9577,15 @@ async function main() {
     // del documento base se lee la versión más nueva, y «documento tipo» en medio del nombre no lo es
     const planB = Dp.planDeLectura([{ id_documento: "1", nombre: "DOCUMENTO BASE BORRADOR.pdf", extension: "pdf", url: "https://community.secop.gov.co/x?DocumentId=1", fecha_carga: "2026-09-01" }, { id_documento: "2", nombre: "DOCUMENTO BASE DEFINITIVO.pdf", extension: "pdf", url: "https://community.secop.gov.co/x?DocumentId=2", fecha_carga: "2026-09-10" }]);
     assert.deepStrictEqual(planB.plan, ["2"], "una sola versión del documento base, la más nueva (MUTACIÓN: las dos, y el tope sacaba el presupuesto)");
+    /* LAS VERSIONES DEL PLIEGO QUE SE LEEN SON LAS MÁS NUEVAS (18-oct-2026): con cuatro, el tope dejaba fuera la
+       última —la que rige— con «ya se leen las últimas versiones». Contra el árbol anterior el plan es 1, 2, 3. */
+    {
+      const v = (n, fecha) => ({ id_documento: `P${n}`, nombre: `Pliego de condiciones definitivo v${n}.pdf`, extension: "pdf", url: `https://community.secop.gov.co/x?DocumentId=P${n}`, bytes: 1000 + n, fecha_carga: fecha });
+      const plan4 = Dp.planDeLectura([v(1, "2026-09-01"), v(2, "2026-09-05"), v(3, "2026-09-10"), v(4, "2026-09-20")]);
+      assert.deepStrictEqual(plan4.plan, ["P2", "P3", "P4"], `se leen las ${Dp.MAX_PLIEGOS_PLAN} más nuevas: ${JSON.stringify(plan4.plan)}`);
+      const fuera = plan4.archivos.find((a) => a.id_documento === "P1");
+      assert.ok(fuera && !fuera.en_plan && /más vieja/.test(fuera.motivo_omision), `la que queda fuera es la más vieja y lo dice: ${fuera && fuera.motivo_omision}`);
+    }
     assert.notStrictEqual(cl("Analisis del sector segun documento tipo.pdf"), "documento_base", "«documento tipo» en medio del nombre no es el documento base");
     // «¿Puede presentarse?» mira las rentabilidades (public/expediente.js)
     {
@@ -50737,6 +50770,31 @@ async function main() {
       const b6 = await invocar(indiceBajaApi, "/api/procesos?op=baja&reconstruir=true", CAB_TOKEN);
       romperR2 = null;
       okR2(b6.status === 502 && !JSON.stringify(b6.cuerpo).includes(tokR2), `el 502 de la reconstrucción tampoco lleva el token: ${b6.status} ${JSON.stringify(b6.cuerpo).slice(0, 200)}`);
+      /* NINGUNA RESPUESTA DE ERROR LLEVA UNA LLAVE (18-oct-2026): el tachado vive en los routers
+         (lib/error_interno.conLlavesTachadas), no en cada handler. La portada devolvía
+         `Redis: ${e.message}` crudo; por el router real ya sale tachada. Contra el árbol anterior,
+         el token aparece en el cuerpo. */
+      romperR2 = () => `ERR todo roto (auth ${tokR2})`;
+      const portadaErrR2 = await invocar(require("../api/procesos.js"), "/api/procesos?op=portada");
+      romperR2 = null;
+      okR2(portadaErrR2.status >= 400 && !JSON.stringify(portadaErrR2.cuerpo).includes(tokR2), `el error de la portada, por el router, no lleva el token: ${portadaErrR2.status} ${JSON.stringify(portadaErrR2.cuerpo).slice(0, 200)}`);
+      okR2(/clave tachada/.test(JSON.stringify(portadaErrR2.cuerpo)), `y dice que lo tachó: ${JSON.stringify(portadaErrR2.cuerpo).slice(0, 200)}`);
+      // los seis routers pasan por el mismo tachado (censo de api/, no lista)
+      const routersR2 = fs.readdirSync(path.join(__dirname, "..", "api")).filter((f) => f.endsWith(".js"));
+      for (const f of routersR2) {
+        okR2(/conLlavesTachadas\(res\)/.test(fs.readFileSync(path.join(__dirname, "..", "api", f), "utf8")), `api/${f} despacha con conLlavesTachadas(res)`);
+      }
+      // una respuesta correcta (2xx) no se toca: el tachado es solo para errores
+      {
+        const { conLlavesTachadas } = require("../lib/error_interno.js");
+        let visto = null;
+        const resOk = conLlavesTachadas({ status(n) { this.s = n; return this; }, json(o) { visto = o; } });
+        resOk.status(200).json({ dato: `x ${tokR2} y` });
+        okR2(visto && visto.dato === `x ${tokR2} y`, "un 200 sale tal cual");
+        const resMal = conLlavesTachadas({ status(n) { this.s = n; return this; }, json(o) { visto = o; } });
+        resMal.status(500).json({ error: "a", detalle: [{ m: `b ${tokR2}` }] });
+        okR2(!JSON.stringify(visto).includes(tokR2) && /clave tachada/.test(visto.detalle[0].m), "un 500 se tacha también en lo anidado");
+      }
 
       /* ── (4) LA FRASE DE LA BAJA NO LEÍDA ──────────────────────────────────── */
       const mR2 = IBR2.SIN_LECTURA_BAJA.mensaje;
