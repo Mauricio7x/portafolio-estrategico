@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 1917268 bytes · 362 secciones · 26 con marcador de superación.
+Derivado del árbol: 1919865 bytes · 362 secciones · 26 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -372,4 +372,4 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | Los pliegos de más de 20 MB que se midieron son escaneos: bajarlos por partes no da texto (18-oct-2026) | 18-oct-2026 | 19563-19594 | 3701 |  |
 | El tablero de pendientes mentía: la revisión del 18-oct, uno por uno contra el código (18-oct-2026) | 18-oct-2026 | 19595-19602 | 1742 |  |
 | Las tres lecturas del pliego del 18-oct: la versión que rige, el ejemplo entre corchetes y el techo con una versión sin tabla (18-oct-2026) | 18-oct-2026 | 19603-19610 | 1694 |  |
-| La cadena que no seguía con el muro: la llamada del servidor a sí mismo va con waitUntil y dice cómo le fue, y el latido hace hasta 3 tandas (18-oct-2026) | 18-oct-2026 | 19611-19638 | 6695 |  |
+| La cadena que no seguía con el muro: la llamada del servidor a sí mismo va con waitUntil y dice cómo le fue, y el latido hace hasta 3 tandas (18-oct-2026) | 18-oct-2026 | 19611-19642 | 9292 |  |

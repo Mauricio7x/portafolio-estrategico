@@ -13090,7 +13090,7 @@ async function main() {
       const s = http.createServer(fn); servidores.push(s);
       return { s, cab: { host: `127.0.0.1:${await escuchar(s)}`, "x-forwarded-proto": "http" } };
     };
-    const guardadasA = [CLa.meta, CLa.lock, CLa.lockHistorico, CLa.progreso, CLa.progresoHistorico, CLa.autoLlamada, CLa.latidoUltimo, CLa.avisoSalud, "sync:fallos_seguidos"];
+    const guardadasA = [CLa.meta, CLa.lock, CLa.lockHistorico, CLa.progreso, CLa.progresoHistorico, CLa.derivadosHechos, CLa.metaHistorico, CLa.autoLlamada, CLa.latidoUltimo, CLa.avisoSalud, "sync:fallos_seguidos"];
     const antesA = await redis.mget(guardadasA);
     try {
       // 1 · cómo le fue y qué dice la salud: puras
@@ -13220,6 +13220,79 @@ async function main() {
       const regS = await leerReg();
       assert.deepStrictEqual([regS.resultado, regS.origen, regS.destino], ["muro", "reintento", "sync"], JSON.stringify(regS));
 
+      /* 6 bis · LA CADENA CONTRA SU PROPIO CANDADO (revisión adversaria del 18-oct, con reproducción): si
+         el DEL del candado falla, la tanda siguiente chocaba con él («ya hay una sincronización
+         corriendo») y la anotación decía «siguió». Ahora se intenta soltar otra vez; si sigue puesto,
+         no se encadena y la respuesta lo dice. La carga completa de 1 ms se rinde tras la primera página
+         guardada (con cualquier número de meses: la iteración lo usa igual) y encadena. */
+      const ahoraC = Date.now();
+      const metaDelta = { last_full: new Date(ahoraC - 86400e3).toISOString(), last_sync: new Date(ahoraC - 3600e3).toISOString(), ano: new Date(ahoraC).getUTCFullYear() };
+      const borrarDel = (veces) => { let n = 0; upstash.romper((c) => (String(c[0]).toUpperCase() === "DEL" && c[1] === CLa.lock && n++ < veces ? "The operation was aborted due to timeout" : null)); };
+      await redis.del(CLa.lock, CLa.autoLlamada);
+      const nAntesC = llegadasM.length;
+      let rCand;
+      borrarDel(99);
+      try { rCand = await invocar(rProcA, "/api/procesos?op=sync&modo=full&presupuesto=1", muro.cab); }
+      finally { upstash.romper(null); }
+      assert.strictEqual(rCand.cuerpo.done, false, `montaje: la carga de 1 ms queda a medias: ${JSON.stringify(rCand.cuerpo).slice(0, 200)}`);
+      assert.ok(/candado no se pudo soltar/.test(rCand.cuerpo.sin_cadena || ""), `con el candado sin soltar no se encadena y se dice: ${JSON.stringify(rCand.cuerpo).slice(0, 300)}`);
+      assert.strictEqual(llegadasM.length, nAntesC, "con el candado sin soltar no sale ninguna llamada");
+      await redis.del(CLa.lock);
+      borrarDel(1);
+      try { rCand = await invocar(rProcA, "/api/procesos?op=sync&modo=full&presupuesto=1", muro.cab); }
+      finally { upstash.romper(null); }
+      assert.strictEqual(rCand.cuerpo.done, false);
+      assert.strictEqual(rCand.cuerpo.sin_cadena, undefined, "el segundo intento suelta el candado y la cadena sigue");
+      assert.strictEqual(llegadasM.length, nAntesC + 1, "y la llamada sale");
+      assert.strictEqual(await redis.get(CLa.lock), null, "el candado quedó libre antes de la llamada");
+      // el hermano del histórico: el mismo candado sin soltar, la misma guarda (su candado dura 600 s)
+      {
+        const rutaH = "/api/procesos?op=historico&desde=2025-01&hasta=2025-02&presupuesto=1";
+        const cabH = { ...muro.cab, "x-historico-token": process.env.HISTORICO_TOKEN };
+        const borrarDelH = (veces) => { let n = 0; upstash.romper((c) => (String(c[0]).toUpperCase() === "DEL" && c[1] === CLa.lockHistorico && n++ < veces ? "The operation was aborted due to timeout" : null)); };
+        await redis.del(CLa.lockHistorico, CLa.progresoHistorico, CLa.derivadosHechos);
+        const nH = llegadasM.length;
+        let rH;
+        borrarDelH(99);
+        try { rH = await invocar(rProcA, rutaH, cabH); } finally { upstash.romper(null); }
+        assert.strictEqual(rH.cuerpo.done, false, `montaje: la extracción de 1 ms queda a medias: ${JSON.stringify(rH.cuerpo).slice(0, 200)}`);
+        assert.ok(/candado no se pudo soltar/.test(rH.cuerpo.sin_cadena || ""), `histórico: con el candado sin soltar no se encadena y se dice: ${JSON.stringify(rH.cuerpo).slice(0, 300)}`);
+        assert.strictEqual(llegadasM.length, nH, "histórico: con el candado sin soltar no sale ninguna llamada");
+        await redis.del(CLa.lockHistorico, CLa.progresoHistorico, CLa.derivadosHechos);   // la segunda vuelve a empezar y vuelve a cortarse
+        borrarDelH(1);
+        try { rH = await invocar(rProcA, rutaH, cabH); } finally { upstash.romper(null); }
+        assert.strictEqual(rH.cuerpo.done, false);
+        assert.strictEqual(rH.cuerpo.sin_cadena, undefined, "histórico: el segundo intento suelta el candado y la cadena sigue");
+        assert.strictEqual(llegadasM.length, nH + 1, "histórico: y la llamada sale");
+        assert.ok(/op=historico&desde=2025-01&hasta=2025-02/.test(llegadasM[nH].url), llegadasM[nH].url);
+        await redis.del(CLa.lockHistorico, CLa.progresoHistorico, CLa.derivadosHechos);
+      }
+      // la tanda siguiente que encuentra otro candado no es «siguió»: lo dice, sin poner la salud en rojo
+      assert.strictEqual(AL.clasificarAutoLlamada({ status: 200, texto: JSON.stringify({ ok: true, enCurso: true, msg: "ya hay una sincronización corriendo" }) }), "candado_ocupado");
+      assert.strictEqual(AL.motivoDeAutoLlamada({ resultado: "candado_ocupado", ts: new Date().toISOString() }), null);
+
+      /* 6 ter · LO PASAJERO NO TIENE LA SALUD EN ROJO UN DÍA (revisión adversaria del 18-oct): un 504 de
+         hace 3 h no cuenta; el muro de hace 3 h, sí (configuración); un 504 de hace 10 min cuenta
+         con el ciclo abierto y no cuenta si el ciclo se cerró después */
+      const hace3h = new Date(Date.now() - 3 * 3600e3).toISOString(), hace10 = new Date(Date.now() - 10 * 60e3).toISOString();
+      const saludCon = async (reg, meta) => {
+        await redis.set(CLa.autoLlamada, JSON.stringify(reg), { ex: 600 });
+        if (meta) await escribirJSONa(redis, CLa.meta, meta);
+        return (await invocar(rProcA, "/api/procesos?op=salud")).cuerpo;
+      };
+      const base6 = { origen: "cadena", destino: "sync", pase_en_el_servidor: true, con_waitUntil: true, ms: 10, status: 504 };
+      let s6 = await saludCon({ ...base6, ts: hace3h, resultado: "otro_codigo" });
+      assert.ok(!/no pudo seguir sola/.test(s6.motivo || "") && s6.autollamada.falla === false, `un 504 de hace 3 h ya no cuenta: ${s6.motivo}`);
+      s6 = await saludCon({ ...base6, ts: hace3h, resultado: "muro", status: 302 });
+      assert.ok(/no pudo seguir sola/.test(s6.motivo || ""), "el muro de hace 3 h sigue contando: es configuración");
+      s6 = await saludCon({ ...base6, ts: hace10, resultado: "otro_codigo" }, { ...metaDelta, delta_ciclo: { desdeUTC: "x" }, ultimo_delta: { ts: new Date().toISOString() } });
+      assert.ok(/respondió 504/.test(s6.motivo || ""), `con el ciclo abierto, el 504 de hace 10 min cuenta: ${s6.motivo}`);
+      s6 = await saludCon({ ...base6, ts: hace10, resultado: "otro_codigo" }, { ...metaDelta, ultimo_delta: { ts: new Date().toISOString() } });
+      assert.ok(!/no pudo seguir sola/.test(s6.motivo || ""), `con el ciclo cerrado después, ya no cuenta: ${s6.motivo}`);
+      s6 = await saludCon({ ...base6, ts: hace10, resultado: "otro_codigo" }, { ...metaDelta, ultimo_delta: { ts: new Date(Date.now() - 20 * 60e3).toISOString() } });
+      assert.ok(/respondió 504/.test(s6.motivo || ""), "una tanda ANTERIOR al fallo no lo cierra");
+      await redis.del(CLa.autoLlamada);
+
       // 7 · el latido repite el tramo EN ESTE PROCESO, con sus topes: la regla, pura
       const b7 = { tandas: 1, transcurridoMs: 60e3, status: 200 };
       const aMedias = (leidas) => ({ ok: true, done: false, delta: { ciclo_leidas: leidas } });
@@ -13229,6 +13302,9 @@ async function main() {
       assert.deepStrictEqual(paso({ ...b7, tandas: 2, cuerpo: aMedias(10) }), [true, null]);
       assert.deepStrictEqual(paso({ ...b7, transcurridoMs: 170e3, cuerpo: aMedias(10) }), [false, "no queda tiempo para otra tanda en este latido"]);
       assert.deepStrictEqual(paso({ ...b7, transcurridoMs: 169e3, cuerpo: aMedias(10) }), [true, null]);
+      assert.deepStrictEqual(paso({ ...b7, transcurridoMs: 150e3, tandaMasLargaMs: 110e3, cuerpo: aMedias(10) }), [false, "no queda tiempo para otra tanda en este latido"],
+        "una tanda de 110 s con un 30 % de holgura ya no cabe antes de los 280 s");
+      assert.deepStrictEqual(paso({ ...b7, transcurridoMs: 120e3, tandaMasLargaMs: 60e3, cuerpo: aMedias(10) }), [true, null], "con tandas de 60 s, la tercera cabe");
       assert.deepStrictEqual(paso({ ...b7, status: 502, cuerpo: aMedias(10) }), [false, "el tramo respondió con error"]);
       assert.deepStrictEqual(paso({ ...b7, cuerpo: { ok: true, enCurso: true } }), [false, "otra tanda tiene el candado"]);
       assert.deepStrictEqual(paso({ ...b7, cuerpo: { ok: true, done: true } }), [false, "terminó"]);
@@ -13243,6 +13319,11 @@ async function main() {
       const hist = (leidasMes) => ({ ok: true, done: false, extraccion: { done: false, progreso: { mes: "2025-01", mesIdx: 0, leidasMes } } });
       assert.deepStrictEqual(paso({ ...b7, cuerpo: hist(5), huellaPrevia: LTa.huellaDeAvance(hist(5)) }), [false, "la tanda no avanzó"], "y la extracción del histórico");
       assert.deepStrictEqual(paso({ ...b7, cuerpo: hist(6), huellaPrevia: LTa.huellaDeAvance(hist(5)) }), [true, null]);
+      /* los derivados del histórico, con la FORMA que devuelven sus constructores ({ done, pendientes }: lib/indice_competencia,
+         lib/indice_baja, lib/equivalencias, lib/texto_unspsc): la revisión adversaria del 18-oct encontró la guarda muerta aquí */
+      const deriv = (pendientes) => ({ ok: true, done: false, extraccion: { done: true, yaEstaba: true }, indice: { done: true, yaEstaba: true }, baja: { done: false, pendientes, analizados: 10 } });
+      assert.deepStrictEqual(paso({ ...b7, cuerpo: deriv(4), huellaPrevia: LTa.huellaDeAvance(deriv(4)) }), [false, "la tanda no avanzó"], "un derivado que no baja sus pendientes detiene el latido");
+      assert.deepStrictEqual(paso({ ...b7, cuerpo: deriv(3), huellaPrevia: LTa.huellaDeAvance(deriv(4)) }), [true, null]);
 
       // 8 · el handler REAL del latido, con el tramo sustituido en la caché de módulos (el latido lo pide al llamar)
       process.env.CRON_SECRET = "cron-autollamada";
@@ -25150,6 +25231,12 @@ async function main() {
           assert.ok(!/fetch\(\s*`[^`]*\$\{host\}/.test(src), `${rel} arma a mano una llamada a su propia dirección: debe usar lib/autollamada.autoLlamar`);
           assert.ok(!/fetch\(\s*`[^`]*\/api\/procesos/.test(src), `${rel} llama a mano a /api/procesos: debe usar lib/autollamada.autoLlamar`);
           assert.ok(!/x-vercel-protection-bypass/.test(src), `${rel} construye a mano la cabecera del muro: debe llamar a cabecerasDeAutoLlamada`);
+          /* y las cabeceras de la llamada a sí mismo solo las pide quien llama (revisión adversaria del
+             18-oct: una llamada armada a mano hacia `/api/sync` con otro nombre de variable pasaba el
+             barrido). Excepción declarada: el latido, que las usa para el tramo EN SU PROCESO. */
+          if (rel !== "lib/handlers/procesos/latido.js") {
+            assert.ok(!/cabecerasDeAutoLlamada\(/.test(src), `${rel} pide las cabeceras de la llamada a sí mismo: esa llamada va por lib/autollamada.autoLlamar`);
+          }
         }
         for (const [h, n] of [["sync.js", 2], ["historico.js", 1], ["listar.js", 1]]) {
           const src = sinComentarios(fs.readFileSync(path.join(raizC, "lib", "handlers", "procesos", h), "utf8"));
