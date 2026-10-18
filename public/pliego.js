@@ -109,11 +109,23 @@
     if (!pFin) return null; // sin el fin de la sección no se sabe hasta dónde llega la tabla
     const finTxt = plegarC(lineaFin).replace(/^1\.2\.?\s*/, "").slice(0, 14);
     const tit = p0.items.find((i) => /OBJETO/.test(i.s) && (/PRESUPUESTO/.test(i.s) || p0.items.some((j) => Math.abs(j.y - i.y) < 2 && /^PRESUPUESTO/.test(String(j.s).trim()))));
-    /* el fin se busca por RENGLÓN, con las palabras unidas: pdf.js parte «1.2. DOCUMENTOS DEL PROCESO» en palabras sueltas
-       (r6_02) y, sin hallarlo, la columna bajaba hasta el pie o se llevaba la página siguiente (revisión adversaria) */
+    /* los renglones visuales de una página, de arriba abajo y cada uno de izquierda a derecha (agrupar una vez: buscar los
+       vecinos de cada fragmento era cuadrático) */
+    const renglonesDe = (items) => {
+      const out = [];
+      for (const i of [...items].sort((a, b) => b.y - a.y || a.x - b.x)) {
+        const r = out[out.length - 1];
+        if (r && r.y - i.y < 2) r.items.push(i); else out.push({ y: i.y, items: [i] });
+      }
+      for (const r of out) r.items.sort((a, b) => a.x - b.x);
+      return out;
+    };
+    /* el fin se busca por RENGLÓN, con las palabras unidas, y tiene que EMPEZAR el renglón (como el `^` de FIN_1_1_RE): pdf.js
+       parte «1.2. DOCUMENTOS DEL PROCESO» en palabras sueltas (r6_02) y, sin hallarlo, la columna bajaba hasta el pie; un
+       «… según los documentos del proceso» a media celda no es el fin (segunda revisión adversaria). El de más arriba */
     const sinEsp = (t) => plegarC(t).replace(/\s+/g, "");
-    const renglonDesde = (pg, i) => pg.items.filter((j) => Math.abs(j.y - i.y) < 2 && j.x >= i.x).sort((a, b) => a.x - b.x).map((j) => j.s).join("");
-    const fin = pFin.items.find((i) => finTxt && sinEsp(renglonDesde(pFin, i)).replace(/^1\.2\.?/, "").startsWith(sinEsp(finTxt)) && (pFin !== p0 || !tit || i.y < tit.y));
+    const finR = finTxt ? renglonesDe(pFin.items).find((r) => sinEsp(r.items.map((j) => j.s).join("")).replace(/^1\.2\.?/, "").startsWith(sinEsp(finTxt)) && (pFin !== p0 || !tit || r.y < tit.y)) : null;
+    const fin = finR ? { y: finR.y } : null;
     const zona = [];
     for (const pg of pFin === p0 ? [p0] : [p0, pFin]) {
       for (const i of pg.items) {
@@ -134,11 +146,40 @@
     const k = centros.findIndex((c) => Math.abs(c - cP) < 1);
     const izq = k > 0 ? (centros[k - 1] + cP) / 2 : -Infinity;
     const der = k >= 0 && k < centros.length - 1 ? (centros[k + 1] + cP) / 2 : Infinity;
-    /* ningún fragmento puede pasar el centro de la columna vecina: un renglón de prosa a todo el ancho, debajo de la tabla,
-       tiene el centro en la franja de «Plazo», y con la celda sin cifra (una fecha, un plazo en letras) su «cuatro (4) meses
-       para su liquidación» se leía como plazo (revisión adversaria) */
-    const cruzaVecina = (i) => (k > 0 && i.x < centros[k - 1]) || (k < centros.length - 1 && i.x + i.w > centros[k + 1]);
-    const col = zona.filter((i) => (i.pag > cab.pag || i.y < cab.y + 1) && i.x + i.w / 2 > izq && i.x + i.w / 2 < der && !cruzaVecina(i));
+    /* ningún TRAMO de texto puede pasar el centro de la columna vecina: un renglón de prosa a todo el ancho, debajo de la
+       tabla, tiene el centro en la franja de «Plazo», y con la celda sin cifra (una fecha, un plazo en letras) su «cuatro (4)
+       meses para su liquidación» se leía como plazo (revisión adversaria). El tramo son los fragmentos del renglón separados
+       por menos de HUECO_TRAMO puntos: la prosa justificada llega palabra a palabra y cada palabra sola no pasa ningún centro
+       (segunda revisión adversaria) */
+    /* …y la columna TERMINA en el primer renglón, debajo del encabezado, con un tramo que la atraviesa de lado a lado (de
+       vecina a vecina): es la fila combinada de las especificaciones o la prosa de debajo de la tabla, y lo que sigue ya no
+       es la celda del plazo. Medido en las 36 tablas reales: 6 puntos dejan las 36 lecturas iguales (con 8, r6_08 pierde su
+       fecha); 271 de 351 renglones de prosa partidos en palabras tienen todos sus huecos por debajo */
+    const HUECO_TRAMO = 6;
+    const cruza = (x0, x1) => (k > 0 && x0 < centros[k - 1]) || (k < centros.length - 1 && x1 > centros[k + 1]);
+    const atraviesa = (x0, x1) => x0 < cP && x1 > cP && (k === 0 || x0 < centros[k - 1]) && (k === centros.length - 1 || x1 > centros[k + 1]);
+    const fuera = new Set();
+    let corte = null; // {pag, y}: desde ahí hacia abajo, fuera
+    for (const pag of [...new Set(zona.map((i) => i.pag))].sort((a, b) => a - b)) {
+      for (const r of renglonesDe(zona.filter((i) => i.pag === pag))) {
+        const debajo = pag > cab.pag || r.y < cab.y - 1;
+        let tramo = [], x1 = -Infinity; // x1: el borde derecho del tramo, acumulado (recalcularlo en cada palabra era cuadrático)
+        const cerrar = () => {
+          if (!tramo.length) return;
+          const x0 = tramo[0].x;
+          if (cruza(x0, x1)) for (const j of tramo) fuera.add(j);
+          if (debajo && !corte && atraviesa(x0, x1)) corte = { pag, y: r.y };
+          tramo = []; x1 = -Infinity;
+        };
+        for (const i of r.items) {
+          if (tramo.length && i.x - x1 > HUECO_TRAMO) cerrar();
+          tramo.push(i); x1 = Math.max(x1, i.x + i.w);
+        }
+        cerrar();
+      }
+    }
+    const antesDelCorte = (i) => !corte || i.pag < corte.pag || (i.pag === corte.pag && i.y > corte.y + 1);
+    const col = zona.filter((i) => (i.pag > cab.pag || i.y < cab.y + 1) && i.x + i.w / 2 > izq && i.x + i.w / 2 < der && !fuera.has(i) && antesDelCorte(i));
     // por renglones: la misma línea visual tiene alturas que difieren en décimas («un (1) mes» salía al revés sin agrupar)
     col.sort((a, b) => a.pag - b.pag || b.y - a.y);
     const renglones = [];

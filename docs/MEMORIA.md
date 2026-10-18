@@ -19125,24 +19125,40 @@ leídos no tienen columna y rehacerlos solo gastaría CPU. OJO, corregido por la
 desde ahora. Volver a bajar esos pliegos es una decisión del dueño. (i) La lista de Licitaciones y su capacidad residual no
 cambian: no tienen el pliego.
 
-**Revisión adversaria del mismo día (0 falsos en los 36 pliegos reales con tabla, pero caminos construidos a un plazo
-falso marcado «dato»; cada uno con su cerradura).** (j) Ningún fragmento de la columna puede pasar el centro de la columna
-vecina: un renglón de prosa a todo el ancho, debajo de la tabla, tiene el centro en la franja de «Plazo», y con la celda sin
-cifra (una fecha, un plazo en letras) su «cuatro (4) meses para su liquidación» se leía como plazo. (k) El fin de la sección
-se busca por RENGLÓN, con las palabras unidas: pdf.js parte «1.2. DOCUMENTOS DEL PROCESO» en palabras (r6_02) y sin hallarlo
-la columna bajaba hasta el pie o se llevaba la página siguiente; con ese fin partido, 30 de las 36 columnas arrastraban
-texto de más, ahora 0. (l) El encabezado es el de MÁS ARRIBA (no el primero del flujo del PDF), con la «P» mayúscula de un
-encabezado y nunca un «Plazo de liquidación». (m) Plazos por ETAPA o FASE sin el total: null (quitar repetidos dejaba 3 meses
-donde son 6, y 8 donde son 16, que cruza los doce meses de la fórmula). (n) Una cifra que sigue a un punto o una coma no es
-suelta («1.095 días» no son 95, «1.50 meses» no son 50). (o) Los días HÁBILES no se pasan a meses: 120 hábiles son unos 5,5
-meses, no 4. (p) Otro pliego definitivo (o documento base) igual o más reciente SIN el dato no deja usar el del viejo: se
-dice y se manda a confirmar. El presupuesto usa la misma elección y tiene el mismo hueco: queda anotado, sin tocar (decide
-el techo de la oferta y necesita el visto bueno del dueño). (q) La cita termina en el plazo leído y lleva `cita_reconstruida`: es la
-columna rehecha por coordenadas, no una frase literal. OJO: la pantalla viva (`public/expediente.js`) no pinta los hechos
-del plazo; enseña solo el dato «Plazo» de la ficha, con «(según el pliego)» cuando sale de ahí. `htmlGuia` y su `liOjo`, que
-sí los pintarían entre comillas, no los llama ninguna pantalla desde el 7-sep: no se tocaron. El aviso «SECOP II y el pliego
-no dicen el mismo plazo» y el «por confirmar» quedan sin pantalla. Con el
-código final, las 36 lecturas reales son idénticas a las de antes y la ronda 7 da su misma salida congelada.
+**Dos revisiones adversarias (17 y 18-oct-2026): 0 falsos en los 36 pliegos reales con tabla, pero caminos construidos
+a un plazo falso marcado «dato»; cada uno con su cerradura y su mutación.** (j) Ningún TRAMO de texto puede pasar el centro
+de la columna vecina, y la columna TERMINA en el primer renglón, debajo del encabezado, con un tramo que la atraviesa de
+lado a lado (la fila combinada de las especificaciones o la prosa de debajo). El tramo son los fragmentos de un renglón con
+huecos de hasta 6 puntos: la prosa justificada llega palabra a palabra y, mirada palabra por palabra (la primera versión
+del arreglo), «cuatro (4) meses para su liquidación» seguía entrando. Medido en las 36 tablas: con 6 puntos las 36
+lecturas quedan iguales y con 8 r6_08 pierde su fecha; 271 de 351 renglones de prosa partidos tienen todos sus huecos por
+debajo de 6. (k) El fin de la sección se busca por renglón, con las palabras unidas, y tiene que EMPEZAR el renglón (como
+el `^` de FIN_1_1_RE): pdf.js parte «1.2. DOCUMENTOS DEL PROCESO» en palabras (r6_02), y un «según los documentos del
+proceso» a media celda cortaba la columna y dejaba una etapa sola. Los renglones se agrupan una vez (antes era cuadrático:
+911 ms con 6.000 fragmentos, ahora 7 ms). (l) El encabezado es el de MÁS ARRIBA por página y altura (no el primero del flujo
+del PDF), con la «P» mayúscula de un encabezado y nunca un «Plazo de liquidación». (m) UNA sola cifra de plazo por columna:
+dos, aunque sean iguales, no se escogen («TRES (03) MESES» dos veces puede ser de dos etapas con el rótulo en otra
+columna); dos rótulos de etapa o fase sin el total, null aunque la segunda vaya sin cifra. Medido: ninguna de las 36
+columnas reales trae dos cifras fuera de «un (1) mes y quince (15) días». (n) Una cifra suelta no sigue a un punto, una coma
+u otra cifra, ni con un espacio en medio («1.095 días», «1,50 meses», «2. 5 MESES», «1 095 días»). (o) Los días HÁBILES no se
+pasan a meses (120 hábiles son unos 5,5 meses, no 4), tampoco partidos («HÁ BILES») ni junto a «calendario». (p) Otro pliego
+definitivo o documento base igual o más reciente que NO CONFIRMA el plazo (no lo trae, trae otro, o está en el índice y no
+se leyó: un escaneo, uno fuera del plan) lo manda a confirmar, también frente a una adenda; sin fecha de carga en alguno,
+cuenta. No cuentan unos formatos o anexos «del pliego» (CO1.REQ.11135173: «FORMATOS PLIEGOS TIPO….rar» era el único aviso
+sin motivo en 34 índices reales de dmgg-8hin); un ilegible sí. Esto vive en `otroPliegoQueNoConfirma`, solo para el plazo:
+el presupuesto usa `elegirDelPliego` sin ello y tiene el mismo hueco (reproducido: el techo toma $900.000.000 de un pliego
+viejo aunque el modificado no traiga la tabla), anotado para el visto bueno del dueño porque decide el techo. (q) La cita
+termina en el plazo leído y lleva `cita_reconstruida`: es la columna rehecha por coordenadas, no una frase literal. OJO: la
+pantalla viva (`public/expediente.js`) no pinta los hechos del plazo; enseña solo el dato «Plazo» de la ficha, con «(según el
+pliego)» cuando sale de ahí. `htmlGuia` y su `liOjo`, que sí los pintarían entre comillas, no los llama ninguna pantalla desde
+el 7-sep: no se tocaron. El aviso «SECOP II y el pliego no dicen el mismo plazo» y el «por confirmar» quedan sin pantalla.
+
+**Cobertura, medida en esos 34 índices reales (simulación con la tabla en cada pliego definitivo leído).** En 8 de 34 una
+adenda sin la tabla deja el plazo «por confirmar» (regla (e), la misma del presupuesto): con adendas, el plazo del pliego
+casi nunca se usa. Y un defecto previo, ajeno a esto: `planDeLectura` ordena los pliegos del más viejo al más nuevo y lee
+los 3 primeros (`MAX_PLIEGOS_PLAN`), así que con 4 versiones la más nueva no se lee; (p) lo convierte en «por confirmar»
+para el plazo, pero el presupuesto, el anticipo y los requisitos siguen leyendo las viejas. Con el código final, las 36
+lecturas reales son idénticas a las de antes y la ronda 7 da sus mismos plazos congelados.
 
 ### La negación del anticipo con la parte ANTES («Para la etapa 1 no se entregará anticipo») NO se cubre (18-oct-2026)
 
