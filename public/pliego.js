@@ -1007,9 +1007,10 @@
       + `${r.recortado ? " El texto guardado está recortado: el dictamen no vio el final del pliego." : ""}`
       + `${Array.isArray(r.paginas_vacias) && r.paginas_vacias.length ? ` Las páginas ${esc(r.paginas_vacias.join(", "))} no se pudieron leer del escaneado.` : ""}`
       + `${apartadas.length ? ` Se apartaron ${apartadas.length} frases que no se pudieron comprobar.` : ""}</p>`;
-    /* SECOP II publicó después una versión que la aplicación no pudo leer (más de 20 MB, un escaneo…): se dice arriba */
+    /* SECOP II publicó después una versión que la aplicación no pudo leer (más de 20 MB, un escaneo…) o que todavía no leyó:
+       se dice arriba */
     const nuevo = r.mas_nuevo_sin_leer && typeof r.mas_nuevo_sin_leer === "object" && r.mas_nuevo_sin_leer.nombre ? r.mas_nuevo_sin_leer : null;
-    if (nuevo) html += `<p class="mt-1 text-xs font-medium text-amber-700">Ojo: SECOP II publicó después «${esc(nuevo.nombre)}»${nuevo.fecha_carga ? ` (${esc(fecha(nuevo.fecha_carga))})` : ""} y la aplicación no lo pudo leer${nuevo.motivo ? ` (${esc(nuevo.motivo)})` : ""}. Este dictamen es sobre una versión anterior: descargue ese PDF de SECOP II, cárguelo en Precios con este proceso abierto y vuelva a pedir el dictamen.</p>`;
+    if (nuevo) html += `<p class="mt-1 text-xs font-medium text-amber-700">Ojo: SECOP II publicó después «${esc(nuevo.nombre)}»${nuevo.fecha_carga ? ` (${esc(fecha(nuevo.fecha_carga))})` : ""} ${nuevo.pendiente === true ? "y la aplicación todavía no lo ha leído. Este dictamen es sobre una versión anterior: vuelva a pedirlo cuando la aplicación lo haya leído." : `y la aplicación no lo pudo leer${nuevo.motivo ? ` (${esc(nuevo.motivo)})` : ""}. Este dictamen es sobre una versión anterior: descargue ese PDF de SECOP II, cárguelo en Precios con este proceso abierto y vuelva a pedir el dictamen.`}</p>`;
     html += `<p class="mt-1 text-xs text-gray-500">Se comprobaron ${esc(ver.citas_verificadas || 0)} de ${esc(ver.citas_total || 0)} citas${r.paginas != null ? ` · ${esc(r.paginas - (Array.isArray(r.paginas_vacias) ? r.paginas_vacias.length : 0))} páginas leídas de ${esc(r.paginas)}` : ""} · faltan ${faltan} datos de su empresa</p>`;
     if (motivos.length) html += `<p class="mt-3 text-xs font-medium uppercase tracking-wide text-gray-500">Por qué</p><ul class="mt-1 space-y-1">${motivos.map(item).join("")}</ul>`;
     if (lecturas.length || r.capacidad_disponible_cop != null) {

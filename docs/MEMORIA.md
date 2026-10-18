@@ -19218,6 +19218,8 @@ obra de 2026 eso era nada (el documento base no entra al vigía) y en 7 un anexo
 pliego, con una sola regla (`Docs.esVersionDelPliego`, `Docs.candidatosAlTextoDelPliego`) que también decide qué entra al
 vigía.
 
+> PENDIENTE · la carga en Precios no dice qué archivo es: todo PDF soltado ahí con un proceso abierto entra al vigía como versión del pliego (`vigilarPliego` → `op=diff`, origen «lector»), también el Formulario 1 de cantidades que la propia pantalla pide. Es de main: un Formulario cargado DESPUÉS de la lectura automática pasa a ser el texto del dictamen, del cronograma y de los descuentos, y frente a un documento base gana salvo que el base sea más nuevo. La salida que propuso la 2.ª revisión: mandar el nombre del archivo en el origen («lector:<nombre>»), clasificarlo con `clasificarArchivo`/`esVersionDelPliego`, y no registrar en el vigía lo que no sea el pliego. Toca `public/` y el vigía: va con plan y visto bueno. De paso, aclarar qué significa la hora `T19:00:00.000` que traen TODAS las `fecha_carga` de dmgg-8hin (¿el día es el escrito o el siguiente?): sin verificar.
+
 > PENDIENTE · el cronograma toma como hito un párrafo de EJEMPLO del pliego tipo («[Por ejemplo, si la audiencia de adjudicación se realiza el 10 de febrero de 2020…]», pliego LP-008-2026 del departamento de Sucre, ronda 5) y `guardarFechaCronograma` guarda una fecha ya pasada sin mirarla (reproducido el 18-oct-2026 con `extraerHitos` y la función real: «adjudicacion=2020-02-10», `guardada: true`). En el calendario no se ve: `adjudicacionDeFila` la descarta por desfasada (anterior al cierre). En la lista de hitos del cronograma, sin verificar. Es de main, no de este cambio, pero el documento base que ahora llega al cronograma puede traer el mismo ejemplo: medido en 2 pliegos distintos entre 180 textos de pliego guardados en la sesión (el de Sucre con 2020, en tres extracciones; otro de la ronda 7 con un informe de evaluación de 2022), sin ningún documento base completo en la muestra.
 
 **Lo medido** (índices reales de dmgg-8hin: 200 licitaciones de obra de 2026 al azar entre 1.178, más 34 de las rondas;
@@ -19234,11 +19236,12 @@ distintos alternándose como «versiones» darían cambios falsos); el dictamen 
 (b) Un pliego que entró al vigía se lee de su versión del vigía (`version_pliego`): el mismo texto y el mismo sello de caché
 que antes, para no invalidar los dictámenes ya pagados. (c) El texto del documento base lleva el tope de 400 KB del vigía
 (`D.MAX_TEXTO`), con `recortado`: el dictamen lo manda entero al modelo y la habilidad lo lee entero. (d) Lo que el dueño
-carga A MANO (origen del vigía distinto de «documentos:…») gana sobre todo documento que SECOP II no haya publicado DESPUÉS
-del día de la carga (la `fecha_carga` del documento contra el día de la versión manual, no la hora de lectura): es como se
-lee un pliego de más de 20 MB que la lectura automática no trae, y la lectura automática posterior de un documento más
-VIEJO no lo tapa. La comparación es por candidato, dentro del recorrido: si el más nuevo perdió su texto, lo manual vuelve a
-ganarle al siguiente. (e) El orden: el definitivo antes que el borrador (con
+carga A MANO (origen del vigía distinto de «documentos:…»; es como se lee un pliego de más de 20 MB) NO DICE QUÉ ARCHIVO ES:
+Precios manda al vigía igual el pliego que el Formulario 1 de cantidades. Por eso, frente a un pliego que entró al vigía
+manda el orden del vigía, como en main (gana el registrado después: un Formulario 1 soltado ANTES de la lectura automática no
+tapa el pliego); frente al documento base (que main nunca leía: ahí daba siempre lo manual), lo manual cede solo ante uno
+publicado en SECOP II DESPUÉS del día de Colombia de la carga (a igual día, lo manual, como en main). La comparación es por
+candidato, dentro del recorrido: si el más nuevo perdió su texto, lo manual vuelve a ganarle al siguiente. (e) El orden: el definitivo antes que el borrador (con
 «borrador» en el nombre de un documento base también), el más reciente en SECOP II, a igual fecha el pliego antes que el
 documento base, y la plantilla en blanco no cuenta. (f) Un anexo, formato, apéndice, minuta, observaciones, respuesta,
 oficio, glosario o matriz con «pliego» en el nombre no es versión del pliego: ni entra al vigía ni da el texto; sin
@@ -19252,10 +19255,16 @@ distintos tendrían la misma versión nula. (h) La pantalla dice de qué archivo
 tiene el pase; se reprodujo con las funciones reales sobre el Redis simulado. (j) Si en el índice hay un pliego o documento
 base DEFINITIVO publicado después del texto elegido y sin leer (más de 20 MB, comprimido, escaneo), `textoGuardado` lo
 devuelve en `mas_nuevo_sin_leer` —también cuando el texto es una carga manual o una versión del vigía sin documento detrás,
-contra el día en que se guardó— y la pantalla del dictamen lo dice en ámbar bajo «Sobre…», con su motivo y qué hacer: el
-dictamen no opina sobre una versión vieja en silencio. Un borrador más nuevo no cuenta. (k) La revisión adversaria (18-oct)
+contra el día de Colombia en que se guardó— y la pantalla del dictamen lo dice en ámbar bajo «Sobre…», con su motivo y qué
+hacer: el dictamen no opina sobre una versión vieja en silencio. Un borrador más nuevo no cuenta, y uno que está en el plan
+de lectura y todavía no se intentó sale `pendiente` («todavía no lo ha leído»), no «no lo pudo leer». (k) La revisión adversaria (18-oct)
 tumbó la primera versión con tres casos en que leía un pliego viejo donde main leía el vigente (la exclusión por el nombre
 entero, lo manual contra la hora de lectura —CO1.REQ.10168183, documento base del 29-ene sobre el del 12-feb cargado a
 mano—, y la comparación contra el primer candidato aunque no tuviera texto) y un candado del pedido sin prueba; los cuatro
 tienen su cerradura, y las 14 mutaciones de estos arreglos mueren (incluidas las dos mitades del candado del pedido por
-`version`, que solo caían juntas hasta que la prueba pidió dos veces el mismo texto).
+`version`, que solo caían juntas hasta que la prueba pidió dos veces el mismo texto). (l) La SEGUNDA revisión adversaria
+tumbó el arreglo de lo manual: comparar la fecha de publicación también contra los pliegos del vigía hacía que un Formulario
+1 soltado en Precios antes de la lectura automática le ganara al pliego (reproducido con los handlers reales: main «No
+conviene presentarse» y descuentos 4,5 %; el arreglo, «Falta información para opinar» y descuentos sin dato), y el día de la
+carga en UTC contaba un día tarde las cargas de después de las 19:00. Con la regla de (d) los tres casos vuelven a dar lo de
+main, la simulación de los 232 índices reales da las mismas cifras (85/112/6/2) y las 23 mutaciones del conjunto mueren.

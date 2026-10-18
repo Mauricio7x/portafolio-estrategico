@@ -8243,6 +8243,44 @@ async function main() {
     const tN4 = await textoGuardado(redis, idN4);
     assert.ok(tN4.version === 1 && tN4.mas_nuevo_sin_leer && tN4.mas_nuevo_sin_leer.nombre === "PLIEGO DEFINITIVO MODIFICADO.pdf",
       `el pliego leído del vigía también avisa del más nuevo sin leer (MUTACIÓN: sin aviso en ese camino): ${JSON.stringify({ version: tN4.version, aviso: tN4.mas_nuevo_sin_leer })}`);
+    /* (4e) lo cargado en Precios NO dice qué archivo es (2.ª revisión adversaria): el Formulario 1 soltado ANTES de que la
+       lectura automática lea el pliego no le gana; frente a un pliego del vigía manda el orden del vigía, como en main */
+    const idF = "CO1.REQ.TXT015";
+    const FORM = txt("FORMULARIO 1 - FORMULARIO DE PRESUPUESTO OFICIAL. ITEM 1.1 Localización y replanteo m2 1200 4.500 5.400.000.");
+    await sembrar(idF, [arch("1", "PLIEGO DE CONDICIONES DEFINITIVO LP-001-2026.pdf", "pliego", "2026-09-10")]);
+    await Dv.registrarVersion(redis, { idProceso: idF, texto: FORM, origen: "lector", ahora: Date.parse("2026-09-15T15:00:00Z") });
+    await leer(idF, "1", PLIEGO);
+    const tF = await textoGuardado(redis, idF);
+    assert.ok(tF.version === 2 && /PLIEGO DE CONDICIONES DEFINITIVO/.test(tF.texto),
+      `el Formulario 1 cargado en Precios antes de la lectura automática no tapa el pliego (MUTACIÓN: la fecha de publicación también contra los pliegos del vigía, el Formulario): ${JSON.stringify({ version: tF.version, origen: tF.origen })}`);
+    await Dv.registrarVersion(redis, { idProceso: idF, texto: PLIEGO.replace("DEFINITIVO", "CON ADENDA 1"), origen: "lector", ahora: Date.now() + 60000 });
+    assert.ok(/CON ADENDA 1/.test((await textoGuardado(redis, idF)).texto), "lo cargado en Precios DESPUÉS del pliego del vigía gana, como en main (MUTACIÓN: el pliego del vigía siempre)");
+    /* (4f) el día de la carga es el de Colombia: a las 20:30 del 15-sep el ISO ya dice 16 */
+    const cargaNoche = Date.parse("2026-09-16T01:30:00Z");
+    const idZ = "CO1.REQ.TXT016";
+    await Dv.registrarVersion(redis, { idProceso: idZ, texto: PLIEGO.replace("DEFINITIVO", "DEL 15 DE SEPTIEMBRE"), origen: "lector", ahora: cargaNoche });
+    await sembrar(idZ, [{ ...arch("1", "PLIEGO DE CONDICIONES AJUSTADO.pdf", "pliego", "2026-09-16"), motivo_omision: pesado }]);
+    const tZ = await textoGuardado(redis, idZ);
+    assert.ok(/DEL 15 DE SEPTIEMBRE/.test(tZ.texto) && tZ.mas_nuevo_sin_leer && tZ.mas_nuevo_sin_leer.nombre === "PLIEGO DE CONDICIONES AJUSTADO.pdf",
+      `lo publicado el día siguiente a una carga nocturna se avisa (MUTACIÓN: el día del ISO en UTC, sin aviso): ${JSON.stringify(tZ.mas_nuevo_sin_leer)}`);
+    const idZ2 = "CO1.REQ.TXT017";
+    await Dv.registrarVersion(redis, { idProceso: idZ2, texto: PLIEGO.replace("DEFINITIVO", "DEL 15 DE SEPTIEMBRE"), origen: "lector", ahora: cargaNoche });
+    await sembrar(idZ2, [arch("1", "DOCUMENTO BASE.pdf", "documento_base", "2026-09-16")]);
+    await leer(idZ2, "1", BASE);
+    assert.ok(/DOCUMENTO BASE DEL PROCESO/.test((await textoGuardado(redis, idZ2)).texto), "el documento base publicado el día siguiente a una carga nocturna la tapa (MUTACIÓN: el día del ISO en UTC, lo manual)");
+    // a igual día no se sabe cuál es más nuevo: lo manual, como en main (que nunca leía el documento base)
+    const idZ3 = "CO1.REQ.TXT019";
+    await Dv.registrarVersion(redis, { idProceso: idZ3, texto: PLIEGO.replace("DEFINITIVO", "DEL 15 DE SEPTIEMBRE"), origen: "lector", ahora: Date.parse("2026-09-15T15:00:00Z") });
+    await sembrar(idZ3, [arch("1", "DOCUMENTO BASE.pdf", "documento_base", "2026-09-15")]);
+    await leer(idZ3, "1", BASE);
+    assert.ok(/DEL 15 DE SEPTIEMBRE/.test((await textoGuardado(redis, idZ3)).texto), "un documento base publicado el MISMO día de la carga manual no la tapa (MUTACIÓN: «>=», el documento base)");
+    /* (4g) uno más nuevo que está en el plan y todavía no se leyó es «pendiente», no «no se pudo leer» */
+    const idP = "CO1.REQ.TXT018";
+    await sembrar(idP, [arch("1", "CCE-EICP-GI-01 Documento base V4.pdf", "documento_base", "2026-01-29"), arch("2", "DOCUMENTO BASE DEFINITIVO.pdf", "documento_base", "2026-02-12")]);
+    await leer(idP, "1", BASE);
+    const tP = await textoGuardado(redis, idP);
+    assert.ok(tP.mas_nuevo_sin_leer && tP.mas_nuevo_sin_leer.pendiente === true && tP.mas_nuevo_sin_leer.motivo === null && tN.mas_nuevo_sin_leer.pendiente === false,
+      `el más nuevo por leer se dice pendiente; el de más de 20 MB, no (MUTACIÓN: sin \`pendiente\`): ${JSON.stringify([tP.mas_nuevo_sin_leer, tN.mas_nuevo_sin_leer])}`);
     // (5) el orden: el definitivo antes que el borrador, el más reciente, y a igual fecha el pliego antes que el documento base
     const ordenDe = (leidos) => DocsT.candidatosAlTextoDelPliego({ leidos }).map((x) => x.id_documento);
     assert.deepStrictEqual(ordenDe({ 1: { nombre: "PLIEGO DEFINITIVO.pdf", tipo: "pliego", fecha_carga: "2026-04-01" }, 2: { nombre: "PROYECTO DE PLIEGO.pdf", tipo: "pliego_borrador", fecha_carga: "2026-05-01" } }), ["1", "2"], "el definitivo antes que un borrador más nuevo (MUTACIÓN: sin la clave del borrador, el borrador)");
@@ -44364,6 +44402,9 @@ async function main() {
         const conNuevo = pintarDictamen({ ...fixture, version_texto: null, documento_texto: { tipo: "Documento base del pliego tipo", nombre: "CCE-EICP-GI-01 Documento base V4.pdf" }, mas_nuevo_sin_leer: { nombre: "DOCUMENTO BASE .pdf", fecha_carga: "2026-02-12", motivo: "pesa más de 20 MB: la aplicación no lo lee sola; ábralo en SECOP II" } }, { MARCA, esc: escF });
         assert.ok(/Ojo: SECOP II publicó después «DOCUMENTO BASE \.pdf» \(12\/02\/2026\) y la aplicación no lo pudo leer \(pesa más de 20 MB[^<]*\)\. Este dictamen es sobre una versión anterior: descargue ese PDF de SECOP II, cárguelo en Precios con este proceso abierto/.test(conNuevo) && !/Ojo: SECOP II publicó después/.test(delBase),
           `el aviso de la versión más nueva sin leer, solo cuando la hay (MUTACIÓN: sin pintarlo): ${(conNuevo.match(/Ojo:[^<]*/) || [""])[0]}`);
+        const conPendiente = pintarDictamen({ ...fixture, version_texto: null, documento_texto: { tipo: "Documento base del pliego tipo", nombre: "CCE-EICP-GI-01 Documento base V4.pdf" }, mas_nuevo_sin_leer: { nombre: "DOCUMENTO BASE DEFINITIVO.pdf", fecha_carga: "2026-02-12", motivo: null, pendiente: true } }, { MARCA, esc: escF });
+        assert.ok(/Ojo: SECOP II publicó después «DOCUMENTO BASE DEFINITIVO\.pdf» \(12\/02\/2026\) y la aplicación todavía no lo ha leído\. Este dictamen es sobre una versión anterior/.test(conPendiente) && !/no lo pudo leer|cárguelo en Precios/.test(conPendiente),
+          `uno por leer no se da por ilegible ni se manda a cargar a mano (MUTACIÓN: sin la rama de pendiente): ${(conPendiente.match(/Ojo:[^<]*/) || [""])[0]}`);
         /* la lectura completa (26-sep-2026): el botón solo con la rutina configurada; con un
            pedido en marcha, «Ver si ya está lista» y la hora; un dictamen de sesión se vuelve a
            pedir a la sesión, nunca a las reglas (que no se verían mientras haya uno de sesión) */
