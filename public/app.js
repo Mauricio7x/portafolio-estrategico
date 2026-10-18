@@ -2599,14 +2599,16 @@
     btn.disabled = true;
     btn.textContent = "Consultando el pliego…";
     for (const b of delMismo) b.disabled = true;
-    let reloj = null, consultado = false;
+    let reloj = null, consultado = false, sinPliego = false;
     try {
       const r = await Promise.race([
-        api(`/api/perfil?op=seguimiento&perfil=${encodeURIComponent(perfil)}&expediente=${encodeURIComponent(id)}`),
+        api(`/api/perfil?op=seguimiento&perfil=${encodeURIComponent(perfil)}&expediente=${encodeURIComponent(id)}&solo=tope`),
         new Promise((_, no) => { reloj = setTimeout(() => no(new Error("tiempo")), TECHO_TARJETA_MS); }),
       ]);
-      const g = r && r.proceso && r.proceso.id === id ? r.proceso.guia : null;
+      // `solo=tope`: el techo sin la guía entera (la primera vez en una instancia la guía tardó 13 s, medido)
+      const g = r && r.id === id ? { tope_oferta: r.tope_oferta || null } : null;
       consultado = !!g;
+      sinPliego = !!g && r.documentos_leidos === 0;
       const techo = techoDesdeGuia(g);
       if (techo.cuantia_cop && Number(g.tope_oferta.secop) === Number(q.get("cuantia"))) {
         const t = new URLSearchParams(qApu(techo));
@@ -2622,6 +2624,8 @@
     // otra pulsación, otro proceso o borrador abierto en Precios, u otro perfil mientras se esperaba: manda lo último
     if (turno !== turnoTarjeta || aperturas !== aperturasEditor || $("f-perfil").value !== perfil) return;
     if (!consultado) q.set("cuantia_aviso", "No se pudo consultar el pliego a tiempo: el presupuesto es el que publica SECOP II. Abra el proceso desde «Mis procesos» para ver si el pliego definitivo dice menos.");
+    // el pliego de este proceso no se ha leído: el techo no se pudo contrastar, y se dice (revisión adversaria, 17-oct-2026)
+    else if (sinPliego) q.set("cuantia_aviso", "El pliego de este proceso aún no se ha leído: el presupuesto es el que publica SECOP II. Abra el proceso en «Mis procesos» para leerlo y ver si dice menos.");
     abrirEditorConProceso(q);
   }
   function qApu(l) {
