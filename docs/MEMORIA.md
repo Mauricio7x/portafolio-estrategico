@@ -19571,7 +19571,7 @@ páginas; construir la descarga por partes de la Fase C sería pagar unas 15 pet
 
 > RESUELTO el 18-oct-2026 por «La Fase C se cierra: no se construye la descarga de pliegos de más de 20 MB (18-oct-2026)» · lo que se había dicho: decidir con el dueño si la Fase C se cierra (no construir la descarga de más de 20 MB, porque los 4 medidos son escaneos) o se cambia por OCR de esos escaneos; el OCR de la app es OCR.space, una petición por página (134-142 por pliego), y su tarifa no se ha podido verificar.
 
-> PENDIENTE · el detector del anticipo (`dictamen_reglas`) da «sí» con la frase de la capacidad residual «presupuesto oficial menos el anticipo o pago anticipado cuando haya lugar», también en una sola línea de texto nativo (reproducido el 18-oct-2026 con `hechosDeTexto` de main). CO1.REQ.10725252 no tiene anticipo (forma de pago 50 % / 40 % / 10 % por avance, pág. 9) y la lectura dice «sí» citando la pág. 43. En 41 textos nativos de pliego de la sesión, ninguno de los 10 «sí» cita una fórmula. El anticipo entra al capital de trabajo: va con plan y visto bueno.
+> RESUELTO el 18-oct-2026 por «La fórmula en prosa no afirma el anticipo: «presupuesto oficial menos el anticipo…» es mención (18-oct-2026)» · lo que se había dicho: el detector del anticipo (`dictamen_reglas`) da «sí» con la frase de la capacidad residual «presupuesto oficial menos el anticipo o pago anticipado cuando haya lugar», también en una sola línea de texto nativo (reproducido el 18-oct-2026 con `hechosDeTexto` de main). CO1.REQ.10725252 no tiene anticipo (forma de pago 50 % / 40 % / 10 % por avance, pág. 9) y la lectura dice «sí» citando la pág. 43. En 41 textos nativos de pliego de la sesión, ninguno de los 10 «sí» cita una fórmula. El anticipo entra al capital de trabajo: va con plan y visto bueno.
 
 **Cómo se midió.** SECOP II respondió 403 a la descarga desde la sesión (Microsoft-Azure-Application-Gateway, 18-oct
 05:08 UTC). El dueño bajó los 4 PDF en su navegador y los subió a una carpeta de Drive compartida «con el vínculo»; desde
@@ -19695,3 +19695,32 @@ En una línea: medido el 18-oct con el muro de Vercel puesto, ni la cadena de la
 **Lo que encontró la revisión adversaria** (un agente que no escribió el cambio, con una reproducción por hallazgo, y nada grave): (a) la cadena chocaba con el candado que su propia tanda no soltó y la anotación decía «siguió»; (b) la guarda de avance no miraba nada en los derivados del histórico; (c) un fallo pasajero tenía la salud en rojo 26 h aunque la actualización ya hubiera terminado; (d) sin `waitUntil` la espera pasaba de 10 s por las dos escrituras a Redis; (e) una llamada armada a mano hacia `/api/sync` desde otro archivo pasaba el censo. Los cinco están arreglados (puntos 2, 7, 9, 10 y 11), y de paso se arreglaron el reloj del latido y la cota de su tanda más larga. La revisión reprodujo además la causa (b) en el árbol anterior: la llamada suelta no llegó cuando el proceso terminó justo después de responder. Sin prueba propia: el tope de 3 s de cada anotación, porque el Upstash de la suite no sabe demorar un solo comando.
 
 **Verificado.** Bloque nuevo «autollamada del servidor»: ejecuta la pieza real contra servidores locales (muro, tanda que trabaja, credencial, puerto cerrado), `waitUntil` con un contexto falso, el reintento y la cadena reales del sync contra el muro y contra su propio candado sin soltar, la misma guarda en el histórico, la salud con lo pasajero y lo configurado, y el latido real con el tramo sustituido. También el censo de la guarda de la sincronización, ahora un barrido. 27 mutaciones en una copia del árbol, y las 27 mueren: redirección seguida, sin `waitUntil`, sin «enviada» previa, muro solo por texto, «enviada» nunca vieja, sin caducidad, sin esperar fuera de Vercel, salud muda, salud sin la clave, sync, histórico y listado con `fetch` suelto, latido de una tanda, cuatro tandas, sin guarda de avance, sin tope de reloj, latido que insiste con el candado puesto, motivo con «; », cadena del sync y del histórico sin la guarda del candado, huella de derivados muerta, salud que ignora el cierre, lo pasajero que nunca caduca, el muro que caduca a las 2 h, candado ocupado contado como «siguió», una llamada armada a mano en `compactar.js` y la cota de la tanda más larga.
+
+### La fórmula en prosa no afirma el anticipo: «presupuesto oficial menos el anticipo…» es mención (18-oct-2026)
+
+En una línea: la definición de la capacidad residual («…equivale al presupuesto oficial menos el anticipo o pago anticipado
+cuando haya lugar…») y el numerador del capital de trabajo que el OCR deja solo en su línea («POE — Anticipo y/o Pago
+anticipado», con raya) pesaban como frase y decían «hay anticipo»; ahora pesan como fórmula (1), es decir mención, y no le
+ganan a la cláusula que pacta o niega (`FORMULA_ANTICIPO_RE` en `lib/dictamen_reglas.detectar`). REGLAS_VERSION .9 → .10.
+
+**Lo medido.** Contra la verdad doble de las rondas 5 y 6 (20 pliegos de licitación con texto de pdf.js) y los 4 escaneos de
+la Fase C leídos con OCR local (verdad vista en la imagen de la página): cambia UNO de 24, CO1.REQ.10725252, de «sí» falso a
+«mención» (no tiene anticipo: paga 50/40/10 % por avance, pág. 9). Los 20 de texto nativo quedan igual.
+
+**Lo que no hay que deshacer.** (a) Solo con «oficial», «POE» o «PO» delante: «el valor del acta menos el anticipo amortizado»
+habla de un anticipo que existe y sigue siendo frase (prueba). (b) Las rayas cuentan como menos (U+2010 a U+2015 y U+2212,
+además del guion): el OCR y algunos PDF ponen raya en la fórmula. (c) Es un tope de peso, no una exclusión: un pliego cuya
+única mención es la fórmula queda en «mención» («confírmelo»), no en «sin dato». (d) Lo que tumbó la revisión adversaria, cada
+uno con su cerradura: el tope va DESPUÉS de saber si la línea niega (antes del +1 de la negación, «…oficial menos el anticipo;
+no se entregará anticipo» perdía contra una mención anterior y salía «sí»); no se aplica si tras «anticipo» viene «amortizado»,
+«entregado», «girado», «desembolsado», «pagado» u «otorgado», ni si la línea trae un porcentaje («Valor PO − Anticipo: se
+entregará el 30 %» pacta). Medido de nuevo por la revisión en 50 textos únicos con marcadores y 82 de pdftotext: solo cambia
+CO1.REQ.10725252.
+
+**Límites conocidos, sin tocar.** En los dos escaneos con anticipo el «sí» sigue siendo correcto, pero ahora cita una fila de
+la tabla de garantías que el OCR partió («(6) meses más calidad de anticipo»), no la cláusula del 8.3: la exclusión de esa
+fila está hecha para el texto de pdf.js. Un escaneo de documento base SIN anticipo podría dar «sí» por esa fila: no se ha
+visto (los 2 escaneos sin anticipo dan «mención» y «sin dato»). Tampoco se tocan los condicionales sueltos («el valor del
+anticipo, cuando lo hubiere, será amortizado…»), que siguen pesando como frase. Y si el pacto solo está en un rótulo corto
+(«a) Anticipo: 30 %», que pesa como título) junto a la prosa de la capacidad residual, sale «mención» donde main decía «sí»
+citando la fórmula, es decir acertando por suerte: 0 casos en los textos reales.

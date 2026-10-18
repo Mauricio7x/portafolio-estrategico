@@ -215,8 +215,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 364 secciones (26 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 19517  La fuente del corte se ve en la pantalla y la base se vuelve a medir cada mes, con un vigía…
+· MEMORIA · docs/MEMORIA.md — 365 secciones (26 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 19530  Las ganadoras que la base no cuenta: en licitación no mueven el corte; en mínima la regla d…
   L 19540  El rescate bajo el 50 %: la oferta ganadora que coincide con lo adjudicado y con su contrat…
   L 19552  La llave del servidor no se copia de Vercel: se anota al ponerla (18-oct-2026)
@@ -226,6 +225,7 @@
   L 19613  La carga en Precios no entra al vigía si el nombre dice que es otra cosa (18-oct-2026)
   L 19654  La Fase C se cierra: no se construye la descarga de pliegos de más de 20 MB (18-oct-2026)
   L 19666  La cadena que no seguía con el muro: la llamada del servidor a sí mismo va con waitUntil y …
+  L 19699  La fórmula en prosa no afirma el anticipo: «presupuesto oficial menos el anticipo…» es menc…
 
 · DOCUMENTOS docs/ — 71 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)

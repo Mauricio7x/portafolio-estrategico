@@ -9531,6 +9531,30 @@ async function main() {
     assert.strictEqual(ant("\f17\nNo se configura este supuesto cuando la Entidad establece en el numeral 8.3 que no va a\nentregar anticipo y/o pago anticipado y el Proponente no\nrenuncia a ellos.\n").estado, "sin_dato", "la frase modelo partida en tres líneas no afirma (MUTACIÓN: sin `excluyeUnida`, «sí»)");
     assert.strictEqual(ant(modeloPaicol + "\f61\n8.3. ANTICIPO\nLa entidad entregará al contratista un anticipo del treinta por ciento (30 %) del valor del contrato.\n").estado, "si", "la frase modelo no tapa un anticipo pactado en su numeral");
     assert.strictEqual(ant(modeloPaicol + "\f61\n8.3. ANTICIPO Y/O PAGO ANTICIPADO\nEn el presente proceso de contratación la entidad no entregará al contratista anticipo y/o pago\nanticipado.\n").estado, "no", "la frase modelo no tapa la cláusula que niega");
+    /* LA FÓRMULA EN PROSA NO AFIRMA EL ANTICIPO (18-oct-2026): la capacidad residual de CO1.REQ.10725252, que no tiene
+       anticipo (paga 50/40/10 % por avance), decía «sí»; y el numerador del capital de trabajo que el OCR deja solo en su
+       línea, con raya, también */
+    const crResidual = "El cálculo de la Capacidad Residual de Contratación del presente Proceso de selección equivale al presupuesto oficial menos el anticipo o pago anticipado cuando haya lugar, ya que el plazo estimado del contrato es menor a (5) meses.";
+    assert.strictEqual(ant(`\f43\n${crResidual}\n`).estado, "mencion", "la definición de la capacidad residual es mención, no «sí» (MUTACIÓN: sin la regla de la fórmula en prosa, «sí»)");
+    assert.strictEqual(ant("\f43\nEl cálculo de la Capacidad Residual de Contratación del presente Proceso de selección equivale al presupuesto\noficial menos el anticipo o pago anticipado cuando haya lugar, ya que el plazo estimado del contrato es menor\na (5) meses.\n").estado, "mencion", "…también partida como la deja el OCR");
+    for (const f of ["POE — Anticipo y/o Pago anticipado", "POE - Anticipo o pago anticipado", "PO − Anticipo y/o pago anticipado", "Presupuesto Oficial Estimado menos el valor del anticipo"]) {
+      assert.strictEqual(ant(`\f40\nEl cálculo del capital de trabajo demandado se hará así:\n${f}\nPlazo estimado de ejecución del contrato (en meses)\n`).estado, "mencion", `«${f}» es una fórmula, no «sí» (MUTACIÓN: solo el signo menos, «sí» con la raya)`);
+    }
+    const crConClausula = ant(`\f43\n${crResidual}\n\f79\n8.3 ANTICIPO Y/O PAGO ANTICIPADO\nEn el presente proceso de contratación la entidad entregará al contratista a título de anticipo un valor equivalente al 50 % del valor básico del contrato.\n`);
+    assert.deepStrictEqual([crConClausula.estado, crConClausula.pagina], ["si", 79], `con la cláusula que lo pacta, «sí» y se cita la cláusula, no la fórmula: ${JSON.stringify(crConClausula)}`);
+    assert.strictEqual(ant(`\f43\n${crResidual}\n\f79\nEn el presente proceso de contratación la entidad no entregará al contratista anticipo y/o pago anticipado.\n`).estado, "no", "con la cláusula que lo niega, «no»");
+    assert.strictEqual(ant("\f70\nEl contratista recibirá en cada acta el valor ejecutado menos el anticipo correspondiente a ese periodo de obra.\n").estado, "si", "«…ejecutado menos el anticipo correspondiente» no es la fórmula del presupuesto oficial: sigue siendo frase (MUTACIÓN: «menos el anticipo» sin «oficial/POE/PO» delante, «mención»)");
+    // revisión adversaria (18-oct-2026): la línea que niega con la fórmula NO pierde contra una mención anterior…
+    const v4 = ant(`\f9\nLa garantía de buen manejo del anticipo se exigirá solo cuando haya lugar a su entrega por parte de la entidad.\n\f43\nLa capacidad residual equivale al presupuesto oficial menos el anticipo o pago anticipado; en este proceso no se entregará anticipo al contratista.\n`);
+    assert.deepStrictEqual([v4.estado, v4.pagina], ["no", 43], `la fórmula que también niega sigue negando (MUTACIÓN: el tope antes de la negación, «sí» por la mención de la pág. 9): ${JSON.stringify(v4)}`);
+    // …y la prosa que habla de un anticipo que EXISTE (amortizado, entregado) o que trae su porcentaje sigue diciendo «sí»
+    for (const f of ["Pagos parciales hasta completar el 90 % del presupuesto oficial menos el anticipo amortizado, contra actas mensuales.".replace("90 %", "noventa por ciento"),
+      "El saldo, es decir el presupuesto oficial menos el anticipo entregado, se pagará mediante actas parciales de obra.",
+      "Anticipo del 30 %; el saldo, presupuesto oficial menos el anticipo, se pagará en actas parciales de obra ejecutada.",
+      "Valor PO - Anticipo: la entidad entregará al contratista el 30 % del valor del contrato como anticipo."]) {
+      assert.strictEqual(ant(`\f80\n${f}\n`).estado, "si", `«${f}» habla de un anticipo que existe: «sí» (MUTACIÓN: sin la mirada adelante de «amortizado/entregado» o sin la guarda del porcentaje, «mención»)`);
+    }
+    assert.strictEqual(ant("\f70\nEl valor a pagar en cada acta será el valor de la obra ejecutada menos el anticipo amortizado en ese periodo.\n").estado, "si", "«menos el anticipo» de un acta habla de un anticipo que existe: sigue siendo frase (MUTACIÓN: «menos el anticipo» sin «oficial/POE» delante, «mención»)");
     /* la negación de una PARTE NUMERADA no niega el anticipo (Gobernación del Amazonas, CO1.REQ.11022945, ronda 6 de
        detekta-lector, 17-oct-2026, texto real de pdf.js): «no reconocerá anticipo alguno para la ejecución del componente 1»
        ganaba al 30 % del componente dos, y la cita del «sí» era la fila de la tabla de garantías */
