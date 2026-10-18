@@ -38,14 +38,24 @@
 "use strict";
 
 (() => {
-  /* token integrado: la misma constante de app.js (decisión del dueño, ago
-     2026 — la capa de seguridad real es Vercel Password Protection) */
-  const TOKEN = "MiExtraccion2025";
-  // el mismo texto que app.js: el 401 se explica como lo que es, en lenguaje
-  // de personas primero y con el dato del administrador entre paréntesis
-  const MSG_401 = "La aplicación no pudo autenticarse con el servidor. No es un problema suyo: es configuración "
-    + "del sitio — avise a quien lo administra (HISTORICO_TOKEN no coincide con el token integrado).";
-  const leerToken = () => TOKEN;
+  /* LA SESIÓN DEL DUEÑO, NO UNA LLAVE (17-oct-2026). Aquí vivía escrita la llave
+     del servidor y la leía cualquiera; hoy el servidor abre una sesión en una
+     cookie HttpOnly que este código no ve. TODO fetch de este archivo pasa por
+     el de abajo: viaja con `credentials: "same-origin"` y, si el servidor
+     responde 401 en JSON (la sesión terminó; el muro del edge responde HTML y
+     no cuenta), avisa a app.js —dueño del gate— para que abra la pantalla de
+     entrar. Un censo por construcción, no una lista de sitios. */
+  const MSG_401 = "Su sesión terminó o no se reconoce. Entre de nuevo con su correo y contraseña.";
+  const conSesion = (opciones) => ({ ...(opciones || {}), credentials: "same-origin" });
+  const fetch = async (url, opciones) => {
+    const r = await window.fetch(url, conSesion(opciones));
+    let json = false;
+    try { json = /json/i.test(String((r.headers && r.headers.get && r.headers.get("content-type")) || "")); } catch { json = false; }
+    if (r.status === 401 && json) {
+      try { document.dispatchEvent(new CustomEvent("detekta:sesion-vencida")); } catch { /* sin eventos */ }
+    }
+    return r;
+  };
 
   /* La versión va CLAVADA por un motivo que no es cosmético: **desde la v4,
      `pdfjs-dist` ya no publica build UMD** — es ESM
@@ -86,8 +96,9 @@
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
   /* El gate y el formulario del token murieron con la página unificada: el
-     gate es UNO y vive en app.js; el token va integrado y se inyecta en cada
-     petición. Este módulo solo cablea su sección dentro de la pestaña APU. */
+     gate es UNO y vive en app.js; la credencial es la sesión del dueño, que
+     viaja en la cookie (el fetch de arriba). Este módulo solo cablea su
+     sección dentro de la pestaña APU. */
 
   /* ══════════ Mensajes, chip y progreso ══════════ */
   function mensaje(texto, tipo) {
@@ -406,17 +417,13 @@
 
   /* ══════════ Llamadas al servidor ══════════ */
   async function pedir(ruta, cuerpo) {
-    /* `leerToken()` devuelve el token integrado, una constante: la rama
-       «sin token» era inalcanzable y sus mensajes («Guarde primero el token
-       de acceso, arriba») apuntaban a un formulario retirado — documentación
-       falsa dentro del fuente, la misma razón por la que se quitó la guarda
-       muerta de celdaApuProceso. */
-    const token = leerToken();
+    /* la credencial es la sesión del dueño, que viaja en la cookie (el fetch de
+       arriba): aquí no hay ninguna rama «sin token» que pintar */
     let r = null, datos = null;
     try {
       r = await fetch(ruta, {
         method: "POST",
-        headers: { "Content-Type": "application/json", "x-historico-token": token },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(cuerpo),
       });
     } catch (e) {
@@ -428,10 +435,9 @@
 
   let contrato = null;
   async function cargarContrato() {
-    const token = leerToken(); // constante integrada: siempre presente
     try {
       const r = await fetch("/api/pliego?op=extraer-texto", {
-        headers: { "x-historico-token": token, Accept: "application/json" }, cache: "no-store",
+        headers: { Accept: "application/json" }, cache: "no-store",
       });
       if (!r.ok) return;
       contrato = await r.json();
@@ -938,7 +944,7 @@
   async function pedirGet(ruta) {
     let r = null, datos = null;
     try {
-      r = await fetch(ruta, { headers: { "x-historico-token": leerToken(), Accept: "application/json" }, cache: "no-store" });
+      r = await fetch(ruta, { headers: { Accept: "application/json" }, cache: "no-store" });
     } catch (e) {
       return { estado: 0, cuerpo: null, red: window.Glosario.fraseDeFallo(e) };
     }
@@ -1000,10 +1006,17 @@
     html += `<p class="mt-3 text-sm font-medium ${color}">● ${esc(TEXTO[veredicto] || TEXTO.sin_hechos_comprobados)} — ${esc(d.veredicto_frase || "")}</p>`;
     if (gris) html += `<p class="mt-1 text-sm text-gray-600">${esc(r.que_hacer || "")}</p>`;
     html += `<p class="mt-2 text-xs text-gray-500">${esc(r.advertencia || "")}</p>`;
-    html += `<p class="mt-1 text-xs text-gray-500">Sobre la versión ${esc(r.version_texto)} del pliego${r.paginas != null ? ` (${esc(r.paginas)} páginas)` : ""}. Para el precio use “Calcular mi precio”.`
+    /* el texto puede salir del documento base, que no tiene número de versión (18-oct-2026): se dice el archivo */
+    const docTexto = r.documento_texto && typeof r.documento_texto === "object" && r.documento_texto.nombre ? r.documento_texto : null;
+    const sobreTexto = r.version_texto != null ? `la versión ${esc(r.version_texto)} del pliego` : docTexto ? `«${esc(docTexto.nombre)}»${docTexto.tipo ? `, ${esc(String(docTexto.tipo).charAt(0).toLowerCase() + String(docTexto.tipo).slice(1))}` : ""}` : "el texto guardado del pliego";
+    html += `<p class="mt-1 text-xs text-gray-500">Sobre ${sobreTexto}${r.paginas != null ? ` (${esc(r.paginas)} páginas)` : ""}. Para el precio use “Calcular mi precio”.`
       + `${r.recortado ? " El texto guardado está recortado: el dictamen no vio el final del pliego." : ""}`
       + `${Array.isArray(r.paginas_vacias) && r.paginas_vacias.length ? ` Las páginas ${esc(r.paginas_vacias.join(", "))} no se pudieron leer del escaneado.` : ""}`
       + `${apartadas.length ? ` Se apartaron ${apartadas.length} frases que no se pudieron comprobar.` : ""}</p>`;
+    /* SECOP II publicó después una versión que la aplicación no pudo leer (más de 20 MB, un escaneo…) o que todavía no leyó:
+       se dice arriba */
+    const nuevo = r.mas_nuevo_sin_leer && typeof r.mas_nuevo_sin_leer === "object" && r.mas_nuevo_sin_leer.nombre ? r.mas_nuevo_sin_leer : null;
+    if (nuevo) html += `<p class="mt-1 text-xs font-medium text-amber-700">Ojo: SECOP II publicó después «${esc(nuevo.nombre)}»${nuevo.fecha_carga ? ` (${esc(fecha(nuevo.fecha_carga))})` : ""} ${nuevo.pendiente === true ? "y la aplicación todavía no lo ha leído. Este dictamen es sobre una versión anterior: vuelva a pedirlo cuando la aplicación lo haya leído." : `y la aplicación no lo pudo leer${nuevo.motivo ? ` (${esc(nuevo.motivo)})` : ""}. Este dictamen es sobre una versión anterior: descargue ese PDF de SECOP II, cárguelo en Precios con este proceso abierto y vuelva a pedir el dictamen.`}</p>`;
     html += `<p class="mt-1 text-xs text-gray-500">Se comprobaron ${esc(ver.citas_verificadas || 0)} de ${esc(ver.citas_total || 0)} citas${r.paginas != null ? ` · ${esc(r.paginas - (Array.isArray(r.paginas_vacias) ? r.paginas_vacias.length : 0))} páginas leídas de ${esc(r.paginas)}` : ""} · faltan ${faltan} datos de su empresa</p>`;
     if (motivos.length) html += `<p class="mt-3 text-xs font-medium uppercase tracking-wide text-gray-500">Por qué</p><ul class="mt-1 space-y-1">${motivos.map(item).join("")}</ul>`;
     if (lecturas.length || r.capacidad_disponible_cop != null) {
@@ -1051,7 +1064,7 @@
     const seg = Number.isFinite(Number(r.duracionMs)) ? Math.round(Number(r.duracionMs) / 1000) : null;
     if (r.origen_legible) html += `<p class="text-xs text-gray-500">${esc(r.origen_legible)}</p>`;
     const versionInstr = String(r.version_instrucciones || "").slice(0, 10);
-    html += `<p class="text-xs text-gray-400">Cómo se hizo: leído el ${esc(fecha(r.generado))}${r.paginas != null ? ` · ${esc(r.paginas)} páginas del pliego` : ""}, versión ${esc(r.version_texto)}${seg != null ? ` · ${seg} segundos` : ""}${versionInstr ? ` · instrucciones del ${esc(fecha(versionInstr))}` : ""}${r.uso_mes && r.uso_mes.dictamenes != null ? ` · este mes: ${esc(r.uso_mes.dictamenes)} dictámenes` : ""}${r.cache ? " · guardado" : ""}</p>`;
+    html += `<p class="text-xs text-gray-400">Cómo se hizo: leído el ${esc(fecha(r.generado))}${r.paginas != null ? ` · ${esc(r.paginas)} páginas del pliego` : ""}, ${r.version_texto != null ? `versión ${esc(r.version_texto)}` : docTexto ? `«${esc(docTexto.nombre)}»` : "texto guardado"}${seg != null ? ` · ${seg} segundos` : ""}${versionInstr ? ` · instrucciones del ${esc(fecha(versionInstr))}` : ""}${r.uso_mes && r.uso_mes.dictamenes != null ? ` · este mes: ${esc(r.uso_mes.dictamenes)} dictámenes` : ""}${r.cache ? " · guardado" : ""}</p>`;
     html += "</div></details>";
     /* LA LECTURA COMPLETA (26-sep-2026): con la rutina del dictamen configurada, el botón
        despierta una sesión que lee el pliego entero; mientras llega, se ve la lectura por
@@ -1196,7 +1209,7 @@
     try {
       const resp = await fetch("/api/pliego?op=dictamen", {
         method: "POST", signal: dictamenAbort.signal,
-        headers: { "Content-Type": "application/json", "x-historico-token": leerToken() },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id_proceso: id, perfil: perfilDictamen(), refrescar: !!refrescar, ...(esfuerzo ? { esfuerzo } : {}) }),
       });
       let datos = null;
@@ -1228,7 +1241,7 @@
     try {
       const resp = await fetch("/api/pliego?op=dictamen", {
         method: "POST",
-        headers: { "Content-Type": "application/json", "x-historico-token": leerToken() },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id_proceso: id, perfil: perfilDictamen(), pedir_sesion: true, refrescar: !!refrescar }),
       });
       let datos = null;

@@ -2658,13 +2658,14 @@ Decisiones que no hay que re-aprender:
   documentos del INVIAS prohíben el uso comercial sin autorización — está en `_meta` y en `meta()`.
 
 ### Página única y token integrado (ago 2026)
+> SUPERADA el 17-oct-2026 por «La entrada del dueño: correo y contraseña, y ninguna llave en el navegador (17-oct-2026)» — solo el token integrado y la clave del sitio: la llave salió del navegador y el dueño entra con correo y contraseña; la página única, sus ids y el arranque al final del IIFE siguen vigentes.
 
 Encargo del dueño: «una sola página, cero fricción». Se retiraron `admin.html`, `apu.html`,
 `pliego.html`, `admin.js` y `apu.js`; queda `index.html` (tres pestañas: 🏠 `#/licitaciones` ·
 📊 `#/apu` · ⚙️ `#/admin`, tema oscuro `#0f172a`, barra inferior en móvil) y `public/app.js` como
 único módulo principal, ENSAMBLADO de los tres anteriores. Decisiones que no hay que re-aprender:
 
-- **El TOKEN va INTEGRADO en el frontend** (`const TOKEN = "MiExtraccion2025"`, en app.js, pliego.js
+- **El TOKEN va INTEGRADO en el frontend** (`const TOKEN = "[llave retirada el 17-oct-2026]"`, en app.js, pliego.js
   y onboarding.js) y el usuario NO ve ningún formulario, prompt ni error de token. Es decisión
   explícita del dueño y hay que contarla exacta: **ese literal no es un secreto** — cualquiera que
   lea el fuente lo ve — y la capa de seguridad REAL es Vercel Password Protection (más el gate de
@@ -5148,7 +5149,7 @@ remotas y todo el trabajo va desde ahora directo a `main`. Decisiones que no hay
   `docs/CONFIGURACION_TOKENS.md`, la guía de variables de entorno para el dueño sin terminal. Se
   rescató, y con ella la corrección del paso 1 del `README.md` que la propia guía dejaba pendiente
   («una cadena larga y aleatoria» era la trampa número uno: con el token integrado en el frontend, el
-  valor de `HISTORICO_TOKEN` tiene que ser EXACTAMENTE `MiExtraccion2025` o la app se sirve a medias
+  valor de `HISTORICO_TOKEN` tiene que ser EXACTAMENTE `[llave retirada el 17-oct-2026]` o la app se sirve a medias
   **sin error visible**). Las dos fuentes dicen ya lo mismo y la guía lo declara.
 - **LO QUE LAS DEMÁS RAMAS «AÑADÍAN» ERAN ARCHIVOS RETIRADOS A PROPÓSITO**, y devolverlos habría sido
   una regresión disfrazada de rescate: los `api/*.js` sueltos (plegados en los 6 routers), los cinco
@@ -8089,7 +8090,7 @@ confirma el cron en `op=salud` (`ultima_sincronizacion` de esa mañana) el día 
 larga (la sesión se la genera), entorno Production → «Save» → «Deployments» → «Redeploy». Al día
 siguiente pegar en Chrome `/api/procesos?op=salud` y comprobar la hora de la última sincronización.
 Y desde ese momento, las URL pegadas en Chrome `/api/sync?modo=full` y `/api/sync?modo=auto` llevan
-`&token=MiExtraccion2025` (CONFIGURACION_TOKENS.md §3.6 y §8).
+`&token=[llave retirada el 17-oct-2026]` (CONFIGURACION_TOKENS.md §3.6 y §8).
 
 ### Lote «B4a-vista-de-visitante» de la consultoría del 4-sep · M-SEG-02 (6-sep-2026)
 
@@ -8836,7 +8837,7 @@ plano y no se abre otra convención), con la cabecera «> Archivado el 6-sep-202
 M-DOC-04 exigirá cuando se haga; el índice de M-DOC-10 no existe, así que el README remite a la lista
 de documentos que imprime `node tests/mapa.js`. Los requisitos que la suite ya imponía al README
 siguen en pie y el breve los cumple: Node 22, dos rutas «Mi empresa → …» que la página pinta, registro
-de usted, dos menciones del token integrado (`MiExtraccion2025`) y ninguna cifra del cupo de
+de usted, dos menciones del token integrado (`[llave retirada el 17-oct-2026]`) y ninguna cifra del cupo de
 datos.gov.co. El tope es **32 KiB**: lo largo va a `docs/`. (2) **Las citas no se pudren** (M-DOC-08):
 cualquier documento del árbol se cita por TÍTULO de sección (`X.md § «título»`), nunca por número de
 línea, en PROMPT_INICIAL § 10 y con cerradura por censo. Las 57 citas por línea que había en siete
@@ -16202,7 +16203,7 @@ el cálculo NO se cambió todavía, por orden del dueño.
 > RESUELTO el 26-sep-2026 por «El pliego dice el reparto: la cláusula de participación y la fórmula del plural (26-sep-2026)» · en `lib/participacion.js` (no en `lib/diff.js`), con el banco literal de los 21 en tests/e2e.js · el lector de pliegos (`lib/diff.js` REQUISITOS y la guía) aprende la cláusula de participación en sus tres formas principales (mínimo de quien aporta experiencia, mínimo de cada integrante, «el de mayor experiencia tiene la mayoría») y en sus variantes (el integrante con sucursal en la ciudad, quien asume las responsabilidades, el de mayor participación que debe acreditar la experiencia), también en los estudios previos, y dice «no la encontré» cuando no está; la tabla de los 21 pliegos con cláusula y el dudoso (cita y página) de `docs/PROPONENTE_PLURAL.md` es su banco de pruebas mínimo (los textos completos de los 241 pliegos quedaron en la máquina de la sesión, que es temporal, y no en el árbol).
 > RESUELTO el 25-sep-2026 por «El consorcio se calcula como el Documento Tipo, la capacidad como la Guía, y PICS entra como socia (25-sep-2026)» · el dueño dijo «sí» · el dueño decide si PICS (la sociedad del cuarto certificado de la carpeta «RUP´S», leído entero el 25-sep-2026) entra como tercera socia posible; hasta entonces sus cifras no van al árbol, que es público, y viven en el archivo que se le entregó al dueño.
 > RESUELTO el 25-sep-2026 por «El consorcio se calcula como el Documento Tipo, la capacidad como la Guía, y PICS entra como socia (25-sep-2026)» · corrida #43 en verde a las 22:07 UTC · el dueño crea en GitHub el secreto de la corrida de la tarde: `https://github.com/Mauricio7x/portafolio-estrategico/settings/secrets/actions` → botón «New repository secret» → Name `CRON_SECRET` → Secret: el MISMO valor que tiene `CRON_SECRET` en Vercel (proyecto portafolio-estrategico › Settings › Environment Variables) → «Add secret»; se comprueba en la pestaña «Actions» cuando la corrida «sync.yml» de la tarde salga en verde.
-> RESUELTO el 26-sep-2026 por «La carga completa se pide con modo=auto: modo=full la empieza de cero en cada llamada (26-sep-2026)» · la extracción terminó los 33 meses a las 09:13 UTC (ejecución 1 del flujo, «done: true») y `op=salud` da `historico_hace_dias: 0` · el dueño relanza la extracción del histórico pegando UNA vez `https://portafolio-estrategico.vercel.app/api/sync/historico?desde=2024-01&hasta=2026-09&token=MiExtraccion2025` (con `&hasta`: sin él el rango por omisión es otro y la extracción REINICIA desde el mes 0; nunca `&reset=true`) y la sigue con `https://portafolio-estrategico.vercel.app/api/sync/historico?estado=true&token=MiExtraccion2025` hasta `terminada: true`; entonces `historico_hace_dias` deja de ser null.
+> RESUELTO el 26-sep-2026 por «La carga completa se pide con modo=auto: modo=full la empieza de cero en cada llamada (26-sep-2026)» · la extracción terminó los 33 meses a las 09:13 UTC (ejecución 1 del flujo, «done: true») y `op=salud` da `historico_hace_dias: 0` · el dueño relanza la extracción del histórico pegando UNA vez `https://portafolio-estrategico.vercel.app/api/sync/historico?desde=2024-01&hasta=2026-09&token=[llave retirada el 17-oct-2026]` (con `&hasta`: sin él el rango por omisión es otro y la extracción REINICIA desde el mes 0; nunca `&reset=true`) y la sigue con `https://portafolio-estrategico.vercel.app/api/sync/historico?estado=true&token=[llave retirada el 17-oct-2026]` hasta `terminada: true`; entonces `historico_hace_dias` deja de ser null.
 > PENDIENTE · deudas medidas en esta sesión y sin arreglar: `lib/rup_pdf.js` (utilidad/pérdida operacional, primer corte sin firmeza, `MAX_LINEAS` que corta a PRODIAC, patrimonio redondeado); `op=salud` no avisa de una extracción histórica abierta y parada; el delta de la sincronización no detecta el re-sellado masivo de SECOP y relee el año entero; la auto-llamada de `sync.js` y `historico.js` sale sin esperar antes de responder.
 > PENDIENTE · antes de ofertar con un consorcio: certificados RUP nuevos de los tres (los de la carpeta ya pasaron sus 60 días), el de Helder con el corte 2025 en firme; y de Génesis, confirmar que los socios cuya experiencia inscribió siguen siéndolo, en qué renovación entró el bloque N.º 89-103, si el «0.5%» del N.º 82 es real y si el N.º 5 y el N.º 90 son el mismo contrato.
 
@@ -18721,6 +18722,32 @@ En una línea: con el reloj adelantado a 2027 la suite cae en cadena —se detie
 
 > RESUELTO el 17-oct-2026 por «Las pruebas de 2027: un corte que dependía de la velocidad de la máquina y una negación que miraba una sola página (17-oct-2026)» · Era: antes del 1-ene-2027: con el reloj adelantado a +80, +110 y +200 días desde el 16-oct caen «el presupuesto corto debía forzar varias invocaciones (reanudable)» y «72141200 NO está en el RUP subido … y no debía servirse», y puede haber más detrás. Repetir el barrido con el precargador (+77 a +260 días) hasta que todos los meses de enero a julio de 2027 pasen.
 
+### La entrada del dueño: correo y contraseña, y ninguna llave en el navegador (17-oct-2026)
+
+En una línea: la llave del servidor (`HISTORICO_TOKEN`) vivía escrita en tres `public/*.js` y abría todas las API a quien leyera el fuente; por decisión del dueño (17-oct-2026) hay UNA cuenta —la suya— con correo y contraseña, la sesión es una cookie HttpOnly de 30 días que el servidor abre, comprueba y cierra, y la suite exige ahora que NINGUNA credencial vuelva al navegador (antes exigía el literal).
+
+- **Por qué una cookie HttpOnly y no un token en el navegador.** Lo que el JavaScript de la página puede leer, lo puede leer quien abra el fuente o quien consiga ejecutar código en la página. La cookie `__Host-detekta_sesion` (`HttpOnly; Secure; SameSite=Strict; Path=/`, sin `Domain`) la manda el navegador solo y la página no la ve (`document.cookie` vacío, medido en Chromium). En Redis se guarda bajo el HASH del token: un volcado no entrega sesiones usables. Salir la BORRA en el servidor: una cookie copiada deja de valer en ese instante.
+- **Una sola cuenta y atómica.** La marca `cuenta:dueno` se escribe con `SET NX` y va la ÚLTIMA: dos altas a la vez crean una (la perdedora retira lo suyo). Una cuenta o sesión cuyo id no coincide con la marca no vale. Creada la cuenta, `op=crear-cuenta` responde 409 para siempre. El alta exige la llave del servidor escrita a mano: es lo único que el dueño tiene y un desconocido no (una vez rotada, §10 de la guía).
+- **La llave sigue valiendo, pero no desde una página.** Los flujos de GitHub, las rutinas y las skills (`/dictamen`, `/precios`) corren sin navegador y la usan; las skills la leen ahora de la variable de entorno `HISTORICO_TOKEN` del entorno de Claude Code (antes la sacaban con `grep` de `public/app.js`). Desde el CÓDIGO de una página se rechaza con 401. **Trampa medida:** el `fetch` de Node manda `sec-fetch-mode: cors` (Node 22) y la aplicación se llama a sí misma con él y con la llave (sync → histórico, el latido); la primera versión miraba solo el modo y rompía esa cadena. Se mira `Sec-Fetch-Site`, que los navegadores mandan siempre y Node no.
+- **El guardián es asíncrono.** `autorizarToken` y `autorizarSincronizacion` comprueban la sesión en Redis, así que todos sus llamadores de lib/ (más de treinta) llevan `await`. Un `await` olvidado falla cerrado (una promesa no tiene `.ok`), y aun así hay censo en la suite. La llave PRESENTE manda sobre la cookie: llave presente e inválida es 401 aunque haya sesión.
+- **Defensa contra envíos desde otro sitio, además de SameSite.** Con cookie, toda escritura exige `Origin` igual al host (o `Sec-Fetch-Site: same-origin`) y toda petición que el navegador declare de otro sitio se rechaza (403). Los tres POST de la entrada (entrar, salir, crear) también: otro sitio no puede ni meter al navegador del dueño en otra cuenta ni sacarlo de la suya.
+- **El límite de intentos lo cuenta el servidor.** 5 por correo escrito (exista o no la cuenta) y 20 por conexión cada 15 minutos, en Redis con caducidad, contados ANTES de comprobar la contraseña. «Correo inexistente» y «contraseña mala» responden idéntico, con una derivación scrypt ficticia para que tampoco el tiempo los distinga. Si Redis no responde, NO se entra (503): aquí el falso caro es abrir, al revés que en la cuota de altas públicas. El bloqueo de tres intentos que vivía en la pestaña se fue: bastaba recargar.
+- **La cuota de altas públicas ya no la exime la llave**, solo la sesión del dueño: la llave vivió en el navegador y eximirla era regalarle la puerta a quien la copiara.
+- **La página pregunta al servidor.** El arranque espera `op=sesion` (siempre 200: un 401 ahí sería un error de consola en cada visita) antes de decidir la vista; ninguna marca de `sessionStorage` abre lo del dueño. Todo `fetch` de `app.js` y `pliego.js` pasa por uno que declara `credentials: "same-origin"`; un 401 abre el gate ENCIMA de la aplicación (`msg401` en app.js; `pliego.js` y `onboarding.js` lo avisan con el evento `detekta:sesion-vencida`), y al entrar se devuelve la pantalla tal cual.
+- **Lo que no se hizo, a propósito.** No hay recuperación por correo: con una sola cuenta, olvidar la contraseña se arregla borrando `cuenta:dueno` en la consola de Upstash y creándola otra vez con la llave (la guía lo dice). Vercel Password Protection no se tocó: quitarla es F3-11 del plan, aparte. No se rotó nada: eso lo hace el dueño en Vercel, y hasta que lo haga la llave vieja sigue en la historia de git.
+- **Medido.** Bloque «unidad sesión del dueño» con el handler real; diez mutaciones (aceptar la cookie sin validar, segunda alta, la marca sin NX, quitar el límite, aceptar la llave desde una página, quitar el CSRF, salir sin borrar, la llave eximiendo de la cuota, respuesta distinta para correo inexistente, sesión caducada aceptada) y las diez caen. Chromium a 390 px: crear la cuenta, ver la lista (20 tarjetas), recargar sin volver a entrar, salir (la cookie copiada responde 401), entrar mal y bien, y la sesión cerrada por detrás abre el gate al pulsar «Buscar»; 0 errores de JavaScript.
+
+> PENDIENTE · el dueño, en este orden (docs/CONFIGURACION_TOKENS.md § 0.1): desplegar (el alta se niega sola mientras la llave vieja siga en Vercel), cambiar `HISTORICO_TOKEN` en Vercel por una cadena nueva y volver a desplegar, crear su cuenta con la llave nueva, y copiar el mismo valor al secreto `HISTORICO_TOKEN` de GitHub (flujo de la carga completa) y al entorno de Claude Code (rutinas y skills).
+
+**Revisión adversaria del mismo día (lo que se corrigió y por qué no se deshace):**
+
+- **La llave publicada no crea la cuenta: se compara su HUELLA.** El repositorio es público y la llave vieja está en su historia: con el orden «desplegar → crear → rotar», quien la leyera creaba la única cuenta antes que el dueño (reproducido: 201 del desconocido, 409 del dueño, y su sesión sobrevivía a la rotación). `lib/sesion.LLAVES_RETIRADAS_SHA256` lleva solo el SHA-256 —jamás el valor— y con esa llave en el entorno el alta responde 503 diciendo qué hacer; así el orden de despliegue deja de importar. El literal se retiró de los ocho documentos que aún lo tenían («[llave retirada el 17-oct-2026]») y la suite barre TODO el árbol por huella: un valor no puede ir en una prueba, su huella sí.
+- **Entrar va por la marca, no por el índice del correo.** Dos altas a la vez con el MISMO correo dejaban sin índice al dueño (la perdedora borraba el de la ganadora: su contraseña correcta respondía 401 para siempre y la pantalla de alta ya estaba cerrada). Con una sola cuenta, `cuenta:dueno` dice cuál es y el correo se compara con el hash de la ficha; el índice se escribe solo tras ganar el NX. De paso, el intento fallido cuesta los mismos comandos de Redis exista o no el correo (antes 6 y 4: un oráculo).
+- **El tope de 5 es por correo Y conexión**, con 20 por conexión y 50 solo por correo: con 5 solo por correo, un tercero dejaba fuera al dueño desde cualquier sitio con cinco intentos.
+- **Un INCR que no devuelve un entero es 503**, no un intento libre («sin dato» ≠ cero).
+- **El tramo del latido lleva solo lo del servidor** (`cabecerasDelTramo`: host, protocolo, `cabecerasDeAutoLlamada` y la llave): reenviar las del navegador mandaba `sec-fetch-site` junto a la llave y op=historico la rechazaba.
+- **[Sin verificar] El límite por conexión depende de que Vercel fije `x-real-ip` / `x-forwarded-for`** y no deje pasar los que manda el cliente (`perfil_dinamico.ipDePeticion`). Fuera de Vercel cualquiera los inventa (reproducido: 30 intentos con IP distinta, ningún 429); por eso el tope de 50 solo por correo no depende de la IP: frena a quien prueba un correo concreto aunque invente conexiones.
+
 ### La fila partida de la tabla de códigos de la experiencia (17-oct-2026)
 
 En una línea: cuando el nombre de un código ocupa dos líneas en la tabla «Segmento | Familia | Clase | Nombre», pdf.js
@@ -18766,6 +18793,45 @@ Límites conocidos, previos a este cambio: «8.3. ANTICIPO Y/O PAGO ANTICIPADO: 
 cambia la clave de caché del dictamen por reglas y la versión de los hechos (se rehacen). (d) `lib/negocio.SIN_ANTICIPO_RE`
 no cambia: lee «anticipo: n/a» seguido, y el título dice «anticipado», así que tampoco ve este caso; queda anotado.
 Medido después: 9 de 9 pliegos con el anticipo de la verdad (Pasto A «sí», los otros ocho «no»).
+
+### Lo que mostraron 5 procesos de menor cuantía ya adjudicados (17-oct-2026)
+
+En una línea: en el Documento Tipo de menor cuantía V3 los métodos de ponderación y la regla de la TRM no son los que describe el manual, el piso de precio bajo se calculó en torno al 92 % y no al 80 % de referencia del panel, y en los cinco procesos los rechazos fueron por papeles, no por precio.
+
+> PENDIENTE · [Sin verificar] que la tabla de métodos del manual sea la del Documento
+> Tipo de licitación pública. Y decidir con el dueño si el 80 % de referencia se calibra con el
+> histórico (más de 3 casos) o se muestra junto con «en procesos ya cerrados el piso cayó en torno
+> al 92 %». Tres hallazgos de la muestra, revisados a fondo el mismo día, no son de la app: en
+> Floridablanca la evaluación puntuó con $984.249.295 y la resolución adjudicó $1.003.514.996, sin
+> explicación en los documentos (con esa cifra el ganador habría sido otro); en Caldas 020 el «valor
+> mínimo» ($910.338.610,15, mediana − desviación muestral de las 8 hábiles) es un cálculo de la hoja
+> de la entidad que el pliego no fija, y el ganador ($883.381.572) quedó debajo sin que conste una
+> solicitud de justificación; en Turbaco el capital de trabajo aplicado ($118.176.600,49) es la
+> fórmula del pliego × 0,70, como si hubiera un anticipo del 30 % que el proceso no tiene.
+
+**De dónde sale.** La muestra de `detekta-lector` (Pasto SA-2026-9, Caldas SAMC-SI-027-2026,
+Floridablanca FLO-INFRA-SA-MC-001-2026, Turbaco SAMC-006-2026 y Caldas SAMC-SI-020-2026): pliegos,
+evaluaciones, actas, resoluciones de adjudicación y contratos bajados de SECOP II por el dueño, leídos
+con cita verificada por `verificar_citas.py`. Las adjudicaciones coinciden con `p6dx-8zbt` en los
+cinco. Son 5 procesos: es evidencia, no una estadística.
+
+**Qué se decidió.**
+- La descripción de los métodos se corrige en `docs/COMPLEMENTO_ANALISTA_LICITACIONES.md` § V-18, no
+  en la guía: el complemento es el que corrige al manual y van juntos. En la tabla de cada pliego se
+  sortea por los CENTAVOS de la TRM del segundo día hábil tras el traslado del informe, entre
+  mediana con valor absoluto, media geométrica, media aritmética baja y menor valor. El modelo de la
+  app (`lib/apu/rentabilidad.js`: 25 % «menor valor» + 75 % métodos centrales) sigue valiendo, porque
+  el menor valor sigue saliendo en 1 de 4 rangos. No se toca código.
+- **El 80 % de `lib/apu/piso_techo.js` (`TEMERARIO_PCT = 20`) NO se cambia.** El piso real se calculó
+  después de abrir, con la mediana de las ofertas menos su desviación: 92,78 % (Pasto), 92,33 %
+  (Caldas 027) y 91,61 % (Caldas 020). Que el 80 % se quede corto en estos tres no basta para fijar
+  otra cifra con tres casos, y es una cifra que decide precio: va al dueño como plan, no se toca sola.
+- **Lo que tumbó ofertas fueron papeles.** Pasto: 2 rechazos por la capacidad residual (estado de
+  resultados sin dictamen, certificados de contador vencidos). Caldas 027: un Formato 5 de otro
+  proceso. Turbaco: no ser Mipyme del municipio cuando el pliego lo limitó (3 de 4). Ninguna causal de
+  precio actuó en los cinco. En Pasto, la oferta más barata perdió 20 puntos por quitar una frase del
+  Formato 14, y con ellos habría ganado.
+- **Adjudicado frente a presupuesto:** 93,80 %, 92,80 %, 99,95 %, 99,84 % y 88,90 %.
 
 ### El anticipo «…PAGO ANTICIPADO: No aplica» en una sola línea (17-oct-2026)
 
@@ -19164,7 +19230,7 @@ para el lote No. 2» da mención en vez de «no».
 
 En una línea: la decisión de dejar la llave a la vista («Página única y token integrado», ago 2026) se apoyaba en «Vercel Password Protection», que no existe en el plan Hobby, y con la cuenta nueva del 16-oct la producción quedó abierta; el dueño eligió el 17-oct el muro gratis de Vercel en todo el sitio («All Deployments»), y todo lo que llama a producción sin navegador manda el pase `x-vercel-protection-bypass` con `VERCEL_AUTOMATION_BYPASS_SECRET`.
 
-> PENDIENTE · con el muro puesto, medir si las tareas programadas de Vercel (`vercel.json` → `crons`) lo pasan. La documentación no lo dice; además no siguen redirecciones, y un 302 no deja registro. Cómo: el dueño pulsa la de `/api/latido` en Settings → Cron Jobs y mira `op=salud` → `latido.ultimo` en su navegador. Si no pasan, la actualización y el latido siguen por GitHub, pero la compactación, los avisos y la copia nocturna (`/api/respaldo`, que hoy responde 503 mientras no exista el almacén) necesitan su propia tarea de GitHub.
+> RESUELTO el 17-oct-2026 por «El muro de Vercel quedó puesto: las tareas de Vercel lo pasan, y cómo se mide (17-oct-2026)» · el «Run» de `/api/latido` en Settings → Cron Jobs respondió 200 con el muro puesto: las tareas de Vercel lo pasan y no hay que moverlas a GitHub. El «Cómo» que decía este marcador no servía: `latido.ultimo` solo se reescribe cada 30 minutos o más; se midió en «View Logs».
 
 > PENDIENTE · la opción B del dueño: exigir `CRON_SECRET` para lo destructivo o caro (`reiniciar` y `reset` del histórico, `modo=full`), para que no dependa del muro de una cuenta de Vercel. Va con plan aparte y visto bueno.
 
@@ -19215,6 +19281,109 @@ En una línea: la decisión de dejar la llave a la vista («Página única y tok
   - un `curl` nuevo con `$APP` en `/dictamen`, sin el pase;
   - `latido.yml` sin reconocer el 401 del muro («no lo confunde con la llave»);
   - la rutina del primero de mes sin la instrucción del pase.
+
+## Dos capas: el muro de Vercel delante y la sesión del dueño detrás (18-oct-2026)
+
+En una línea: al mezclar el login del dueño (sin llave en `public/`) con el pase del muro (#261), se quedan las dos capas y ninguna sustituye a la otra.
+
+- **Capa 1, el muro**: «Vercel Authentication» en «All Deployments». Flujos, rutinas, skills y las
+  auto-llamadas (`cabecerasDeAutoLlamada`, también desde `cabecerasDelTramo` del latido) mandan
+  `x-vercel-protection-bypass` con `VERCEL_AUTOMATION_BYPASS_SECRET`.
+- **Capa 2, la sesión**: el dueño entra con correo y contraseña; las máquinas, con `HISTORICO_TOKEN`
+  leída de su entorno (`${HISTORICO_TOKEN:?…}`), nunca con un `grep` de `public/app.js`, que ya no
+  la tiene. El texto de main «el token integrado no es secreto» quedó desmentido y se reescribió.
+- Tentación a no seguir: «con la sesión ya no hace falta el muro» (o al revés). Quitar el muro deja
+  la pantalla de entrada expuesta a fuerza bruta y a cualquier defecto de `lib/sesion.js`; quitar la
+  sesión vuelve a una llave que cualquiera con acceso a Vercel lee.
+
+### El muro de Vercel quedó puesto: las tareas de Vercel lo pasan, y cómo se mide (17-oct-2026)
+
+En una línea: el dueño encendió «All Deployments» la noche del 17-oct y esa misma noche quedó medido que sin el pase la producción responde 302, que el latido de GitHub y el «Run» de una tarea de Vercel responden 200, y que el dueño entra desde Chrome y desde el iPhone; las tareas de Vercel NO hay que moverlas a GitHub.
+
+**Lo medido** (horas UTC del 18-oct; en Colombia, noche del 17-oct, de 22:26 a 22:58).
+- **Antes y después.** A las 03:26:52 y 03:27:19, `/` y `op=salud` respondían 200. A las 03:40:19 los dos responden 302 a `vercel.com/sso-api`, con el cuerpo «Protected by Vercel Authentication».
+- **GitHub pasa.** Latido lanzado a mano a las 03:40:28 (corrida 39094446919, con el pase): `HTTP 200` y `{"ok":true,"accion":"historico","motivo":"la extracción del histórico quedó a medias","hecho":true}`. En los registros de Vercel aparece con 200 y el dominio `detekta-app` como host.
+- **Las tareas de Vercel pasan.** A las 03:45:14 el dueño pulsó «Run» en la fila de `/api/latido` (Settings → Cron Jobs): 200, con host `detekta-fshk0ola…`, la dirección propia del despliegue y no el dominio. Lo muestra su captura de «View Logs».
+- **El pase está dentro del despliegue** [inferencia por la documentación]. La casilla «Enable access to System Environment Variables» (página Environment Variables del PROYECTO, al final) está marcada, según la captura del dueño. El despliegue de producción (`094a5c2`, la fusión del PR #261) se construyó después de crear el pase. Según Vercel, `VERCEL_AUTOMATION_BYPASS_SECRET` está en la compilación y en la ejecución «si el secreto se generó».
+- **El dueño entra.** En Chrome y en el iPhone, tras iniciar sesión en Vercel con el método de su cuenta. Con una cuenta de Google no unida, Vercel respondió «Social Account is not yet connected to any Vercel user. Sign up?», y también salió «Unauthorized to access the given account.». «Sign up?» crearía otra cuenta vacía, sin acceso a Detekta.
+
+**Lo que no hay que re-aprender.**
+- (a) **`op=salud` → `latido.ultimo` no sirve para medir una tarea.** Se reescribe solo si pasaron 30 minutos o más (`lib/handlers/procesos/latido.js`), y el latido de GitHub también lo escribe. Se mide en «View Logs» de la tarea: una llamada que el muro redirige no queda anotada; una que pasa sale con su código.
+- (b) **El registro de un latido no prueba la cadena de tandas.** El latido corre UNA tanda con `chain: "0"`, así que no ver llamadas a `/api/procesos` después es lo esperado. Esa noche se le dio al dueño ese criterio por error, y se corrigió en el mensaje siguiente.
+- (c) **Las pantallas reales no son las que suponía la guía.**
+  - La ventana «Add Bypass» de Vercel tiene dos cuadros. El primero es el VALOR del pase: si se escribe, debe tener 32 caracteres («Secret must be 32 characters, provided value is 16»). El segundo es la nota.
+  - En Claude (en español), «Editar entorno de nube» tiene dos secciones. «Secretos de red» («Agregar secreto»: tipo Bearer, sitios permitidos, encabezados personalizados) y «Variables de entorno» (formato .env). El pase va en «Variables de entorno», que es lo que leen las rutinas.
+  - Esa sección avisa que no se agreguen secretos, porque cualquiera que use el entorno los ve. Se aceptó porque solo lo usa el dueño. «Secretos de red» lo escondería de la sesión, pero no está probado con las rutinas.
+- (d) **Las variables de Vercel de esta cuenta son compartidas, del equipo** (pestaña «Shared»: `CRON_SECRET`, `HISTORICO_TOKEN`, Upstash, OCR, la rutina del dictamen). La página del proyecto no tiene variables propias. La casilla de las variables del sistema está en la página del PROYECTO, no en la del equipo.
+
+**Lo que sigue abierto.**
+- Las tareas PROGRAMADAS se dan por iguales al «Run» [inferencia]. Lo confirma la primera que corra con el muro: la copia a las 07:15, la compactación a las 08:40 y a las 10:40, los avisos a las 11:00 y la actualización a las 12:50 UTC.
+- La cadena de tandas no ha corrido todavía con el muro. Su primera prueba real es la actualización de las 7:50 a. m. del 18-oct. Si se corta, el síntoma es un latido que dice «quedó a medias» una y otra vez.
+- No consta si Vercel genera el pase solo cuando el primer cuadro de «Add Bypass» se deja vacío.
+- La opción B sigue PENDIENTE, en la sección anterior.
+
+### El dictamen, el cronograma y los descuentos leen el documento que ES el pliego, no la última versión del vigía (18-oct-2026)
+
+En una línea: `textoGuardado` (lib/handlers/pliego/cronograma.js), el único que da el texto al dictamen, al cronograma, a
+los descuentos y a la habilidad `/dictamen`, devolvía la ÚLTIMA versión del vigía de adendas; en 85 de 228 licitaciones de
+obra de 2026 eso era nada (el documento base no entra al vigía) y en 7 un anexo; ahora manda el documento leído que es el
+pliego, con una sola regla (`Docs.esVersionDelPliego`, `Docs.candidatosAlTextoDelPliego`) que también decide qué entra al
+vigía.
+
+> PENDIENTE · la carga en Precios no dice qué archivo es: todo PDF soltado ahí con un proceso abierto entra al vigía como versión del pliego (`vigilarPliego` → `op=diff`, origen «lector»), también el Formulario 1 de cantidades que la propia pantalla pide. Es de main: un Formulario cargado DESPUÉS de la lectura automática pasa a ser el texto del dictamen, del cronograma y de los descuentos, y frente a un documento base gana salvo que el base sea más nuevo. La salida que propuso la 2.ª revisión: mandar el nombre del archivo en el origen («lector:<nombre>»), clasificarlo con `clasificarArchivo`/`esVersionDelPliego`, y no registrar en el vigía lo que no sea el pliego. Toca `public/` y el vigía: va con plan y visto bueno. De paso, aclarar qué significa la hora `T19:00:00.000` que traen TODAS las `fecha_carga` de dmgg-8hin (¿el día es el escrito o el siguiente?): sin verificar.
+
+> PENDIENTE · el cronograma toma como hito un párrafo de EJEMPLO del pliego tipo («[Por ejemplo, si la audiencia de adjudicación se realiza el 10 de febrero de 2020…]», pliego LP-008-2026 del departamento de Sucre, ronda 5) y `guardarFechaCronograma` guarda una fecha ya pasada sin mirarla (reproducido el 18-oct-2026 con `extraerHitos` y la función real: «adjudicacion=2020-02-10», `guardada: true`). En el calendario no se ve: `adjudicacionDeFila` la descarta por desfasada (anterior al cierre). En la lista de hitos del cronograma, sin verificar. Es de main, no de este cambio, pero el documento base que ahora llega al cronograma puede traer el mismo ejemplo: medido en 2 pliegos distintos entre 180 textos de pliego guardados en la sesión (el de Sucre con 2020, en tres extracciones; otro de la ronda 7 con un informe de evaluación de 2022), sin ningún documento base completo en la muestra.
+
+**Lo medido** (índices reales de dmgg-8hin: 200 licitaciones de obra de 2026 al azar entre 1.178, más 34 de las rondas;
+corte 18-oct-2026; el plan de lectura de main con todos sus documentos leídos). Antes: 85 procesos tenían el documento base
+leído y el dictamen respondía «Todavía no hay texto guardado de este pliego» (reproducido con la función real); en 7 el
+último texto del vigía era un anexo («OBSERVACIONES PLIEGO DEF…» leídas DESPUÉS del «PLIEGO DEFINITIVO», «OFICIO PREGUNTAS
+Y RESPUESTAS…», «Anexo de condiciones»). Ahora: 85 ganan texto, 112 siguen con el mismo documento, 6 pasan del anexo al
+pliego o al documento base, y 2 pierden el texto porque su único «pliego» era un anexo (CO1.REQ.10312266, el definitivo venía
+en .zip; CO1.REQ.10439791): ahí el dictamen dice que no hay texto en vez de opinar sobre un anexo. De paso: el tope de 3
+versiones del pliego del plan (el pendiente de `planDeLectura`) no lo alcanza ninguno de los 228.
+
+**Lo que no hay que deshacer.** (a) El documento base SIGUE fuera del vigía (la decisión del 27-sep-2026: dos documentos
+distintos alternándose como «versiones» darían cambios falsos); el dictamen lo lee de su texto guardado, no del vigía.
+(b) Un pliego que entró al vigía se lee de su versión del vigía (`version_pliego`): el mismo texto y el mismo sello de caché
+que antes, para no invalidar los dictámenes ya pagados. (c) El texto del documento base lleva el tope de 400 KB del vigía
+(`D.MAX_TEXTO`), con `recortado`: el dictamen lo manda entero al modelo y la habilidad lo lee entero. (d) Lo que el dueño
+carga A MANO (origen del vigía distinto de «documentos:…»; es como se lee un pliego de más de 20 MB) NO DICE QUÉ ARCHIVO ES:
+Precios manda al vigía igual el pliego que el Formulario 1 de cantidades. Por eso, frente a los pliegos que entraron al
+vigía manda el orden del vigía, como en main: si uno se registró DESPUÉS de la carga manual, ella ya no compite con nada (un
+Formulario 1 soltado ANTES de la lectura automática no tapa el pliego, ni directamente ni por medio de un documento base más
+nuevo que el pliego); si todos se registraron antes, gana ella; frente al documento base (que main nunca leía: ahí daba siempre lo manual), lo manual cede solo ante uno
+publicado en SECOP II DESPUÉS del día de Colombia de la carga (a igual día, lo manual, como en main). La comparación es por
+candidato, dentro del recorrido: si el más nuevo perdió su texto, lo manual vuelve a ganarle al siguiente. (e) El orden: el definitivo antes que el borrador (con
+«borrador» en el nombre de un documento base también), el más reciente en SECOP II, a igual fecha el pliego antes que el
+documento base, y la plantilla en blanco no cuenta. (f) Un anexo, formato, apéndice, minuta, observaciones, respuesta,
+oficio, glosario o matriz con «pliego» en el nombre no es versión del pliego: ni entra al vigía ni da el texto; sin
+documentos leídos, el respaldo del vigía también salta los que entraron así antes de hoy. La palabra cuenta solo ANTES del
+nombre del pliego («OBSERVACIONES PLIEGO DEF…», «ANEXOS PLIEGO DE CONDICIONES»): «Pliego definitivo ajustado con
+observaciones», «PLIEGO DE CONDICIONES DEFINITIVO CON ANEXOS» o «Documento base definitivo con formularios» SON el pliego, y
+excluirlos por el nombre entero dejaba leer la versión anterior. (g) La identidad del texto para el
+pedido de lectura a la sesión es `texto_id` (el número de versión, o «doc:<id>:<sello>»): con el documento base, dos textos
+distintos tendrían la misma versión nula. (h) La pantalla dice de qué archivo salió el texto cuando no hay número de versión.
+(i) No se pudo comprobar en producción: desde el 18-oct responde 302 hacia el inicio de sesión de Vercel y esta sesión no
+tiene el pase; se reprodujo con las funciones reales sobre el Redis simulado. (j) Si en el índice hay un pliego o documento
+base DEFINITIVO publicado después del texto elegido y sin leer (más de 20 MB, comprimido, escaneo), `textoGuardado` lo
+devuelve en `mas_nuevo_sin_leer` —también cuando el texto es una carga manual o una versión del vigía sin documento detrás,
+contra el día de Colombia en que se guardó— y la pantalla del dictamen lo dice en ámbar bajo «Sobre…», con su motivo y qué
+hacer: el dictamen no opina sobre una versión vieja en silencio. Un borrador más nuevo no cuenta, y uno que está en el plan
+de lectura y todavía no se intentó sale `pendiente` («todavía no lo ha leído»), no «no lo pudo leer». (k) La revisión adversaria (18-oct)
+tumbó la primera versión con tres casos en que leía un pliego viejo donde main leía el vigente (la exclusión por el nombre
+entero, lo manual contra la hora de lectura —CO1.REQ.10168183, documento base del 29-ene sobre el del 12-feb cargado a
+mano—, y la comparación contra el primer candidato aunque no tuviera texto) y un candado del pedido sin prueba; los cuatro
+tienen su cerradura, y las 14 mutaciones de estos arreglos mueren (incluidas las dos mitades del candado del pedido por
+`version`, que solo caían juntas hasta que la prueba pidió dos veces el mismo texto). (l) La SEGUNDA revisión adversaria
+tumbó el arreglo de lo manual: comparar la fecha de publicación también contra los pliegos del vigía hacía que un Formulario
+1 soltado en Precios antes de la lectura automática le ganara al pliego (reproducido con los handlers reales: main «No
+conviene presentarse» y descuentos 4,5 %; el arreglo, «Falta información para opinar» y descuentos sin dato), y el día de la
+carga en UTC contaba un día tarde las cargas de después de las 19:00. Al releer el arreglo apareció el hermano (el Formulario
+ganándole al pliego por medio de un documento base más nuevo que el pliego, reproducido: main da el pliego). Con la regla de
+(d) los casos vuelven a dar lo de main, la simulación de los 232 índices reales da las mismas cifras (85/112/6/2) y mueren 22
+de las 23 mutaciones del conjunto; la que vive es equivalente (que un pliego registrado ANTES de la carga manual le gane por
+fecha exige que se publicara después de leerse: no pasa con datos reales).
 
 ### Base nacional de licitaciones de obra: un script que solo mide, fuera de la app (17-oct-2026)
 

@@ -7187,6 +7187,410 @@ async function main() {
     console.log("· unidad adjudicación fuera de calendario: 3 años imposibles (2202, 9999, 1970) descartados y auditables · 2027-06-30 se respeta · las dos guardas hermanas conviven");
   }
 
+  /* unidad: LA SESIÓN DEL DUEÑO (17-oct-2026, decisión del dueño). Un ÚNICO usuario con correo
+     y contraseña; la sesión en una cookie HttpOnly de 30 días; la llave del servidor ya no vive
+     en el navegador (la leía cualquiera y abría todas las API). Todo con el HANDLER REAL, por el
+     router, contra el Upstash falso:
+       (1) alta: solo sin cuenta, solo con la llave, con defensa de origen, y atómica (dos altas a
+           la vez crean UNA); después, 409 para siempre;
+       (2) entrar: bien/mal, «correo inexistente» y «contraseña mala» idénticos; la cookie con sus
+           banderas; el almacén guarda el HASH del token, no el token;
+       (3) la sesión abre lo protegido y lo opcional; sin nada, 401; caducada, cerrada o
+           inventada, 401; la llave válida desde un servidor sigue valiendo, desde el código de
+           una página NO; la llave presente e inválida es 401 aunque haya sesión;
+       (4) escrituras con cookie exigen el mismo origen (CSRF);
+       (5) el límite de intentos por correo y por conexión, y Redis caído no deja entrar;
+       (6) salir invalida EN EL SERVIDOR;
+       (7) la cuota de altas públicas: exime la sesión, ya no la llave;
+       (8) las rutas públicas siguen abiertas sin nada;
+       (9) censo: ningún llamador del guardián lo usa sin `await`. */
+  bqSesionDueno: { if (!corre("unidad sesión del dueño")) break bqSesionDueno;
+    const Sesion = require("../lib/sesion.js");
+    const Auth = require("../lib/auth.js");
+    const Ctas = require("../lib/cuentas.js");
+    const rAdmin = require("../api/admin.js");
+    const rPerfil = require("../api/perfil.js");
+    const rProcesos = require("../api/procesos.js");
+    const LLAVE = process.env.HISTORICO_TOKEN;
+    const { tuteoEn: tuteoEnS } = require("../lib/lenguaje_pantalla.js");
+    const ORIGEN = { origin: "https://app.local", "content-type": "application/json" };
+    const post = (url, body, cab = {}) => invocar(rAdmin, url, { ...ORIGEN, ...cab }, { metodo: "POST", body });
+    const limpiarCuentas = async () => {
+      const claves = [...await redis.scan("cuenta:*"), ...await redis.scan("sesion:*"), ...await redis.scan("intentos:*"), ...await redis.scan("cuota:alta:*")];
+      if (claves.length) await redis.del(...claves);
+    };
+    const cookieDe = (r) => { const c = r.cabeceras["set-cookie"] || ""; return c.split(";")[0]; };
+    const CORREO = "Dueno@Empresa.CO", CLAVE = "una frase larga que recuerdo";
+    await limpiarCuentas();
+    try {
+      // ── (1) EL ALTA ──────────────────────────────────────────────────────────
+      let r = await invocar(rAdmin, "/api/admin?op=sesion");
+      assert.deepStrictEqual([r.status, r.cuerpo.sesion, r.cuerpo.hay_cuenta], [200, false, false], `sin cuenta: ${JSON.stringify(r.cuerpo)}`);
+      r = await post("/api/admin?op=entrar", { correo: CORREO, contrasena: CLAVE });
+      assert.strictEqual(r.status, 401, "sin cuenta nadie entra");
+      r = await invocar(rAdmin, "/api/admin?op=crear-cuenta", { "content-type": "application/json" }, { metodo: "POST", body: { llave: LLAVE, correo: CORREO, contrasena: CLAVE } });
+      assert.strictEqual(r.status, 403, "el alta sin Origin (otro sitio) se rechaza");
+      r = await post("/api/admin?op=crear-cuenta", { llave: LLAVE, correo: CORREO, contrasena: CLAVE }, { origin: "https://atacante.example" });
+      assert.strictEqual(r.status, 403, "el alta desde un origen ajeno se rechaza");
+      r = await post("/api/admin?op=crear-cuenta", { llave: `${LLAVE}x`, correo: CORREO, contrasena: CLAVE });
+      assert.strictEqual(r.status, 401, `sin la llave del servidor no hay alta: ${JSON.stringify(r.cuerpo)}`);
+      assert.ok(!r.cabeceras["set-cookie"], "un alta rechazada no abre sesión");
+      r = await post("/api/admin?op=crear-cuenta", { correo: CORREO, contrasena: CLAVE });
+      assert.strictEqual(r.status, 401, "el alta sin llave tampoco");
+      r = await post("/api/admin?op=crear-cuenta", { llave: LLAVE, correo: CORREO, contrasena: "corta" });
+      assert.strictEqual(r.status, 400, "una contraseña corta se rechaza con el motivo");
+      assert.strictEqual(await Sesion.hayCuenta(redis), false, "nada de lo anterior creó una cuenta");
+      /* LA CARRERA: dos altas legítimas a la vez crean UNA cuenta (SET NX de la marca) */
+      const [a1, a2] = await Promise.all([
+        post("/api/admin?op=crear-cuenta", { llave: LLAVE, correo: CORREO, contrasena: CLAVE }),
+        post("/api/admin?op=crear-cuenta", { llave: LLAVE, correo: "otra@empresa.co", contrasena: "otra frase larga cualquiera" }),
+      ]);
+      assert.deepStrictEqual([a1.status, a2.status].sort(), [201, 409], `dos altas a la vez: ${a1.status} y ${a2.status}`);
+      const ganadora = a1.status === 201 ? a1 : a2;
+      const correoDueno = a1.status === 201 ? CORREO : "otra@empresa.co";
+      const claveDueno = a1.status === 201 ? CLAVE : "otra frase larga cualquiera";
+      const fichas = (await redis.scan("cuenta:cta_*"));
+      assert.strictEqual(fichas.length, 1, `queda UNA cuenta, no ${fichas.length}`);
+      const porCorreo = await redis.scan("cuenta:correo:*");
+      assert.strictEqual(porCorreo.length, 1, "y un solo índice por correo (la perdedora retiró lo suyo)");
+      // después: 409 para siempre, con la llave buena y con otro correo
+      r = await post("/api/admin?op=crear-cuenta", { llave: LLAVE, correo: "tercera@empresa.co", contrasena: "una tercera frase larga" });
+      assert.strictEqual(r.status, 409, "creada la cuenta, el alta queda cerrada (409)");
+      assert.strictEqual((await redis.scan("cuenta:cta_*")).length, 1, "no hay segunda cuenta");
+      // la cookie del alta, con todas sus banderas
+      const setAlta = ganadora.cabeceras["set-cookie"] || "";
+      for (const b of ["HttpOnly", "Secure", "SameSite=Strict", "Path=/", `Max-Age=${30 * 24 * 3600}`]) assert.ok(setAlta.includes(b), `la cookie de sesión sin «${b}»: ${setAlta.replace(/=[a-f0-9]{64}/, "=…")}`);
+      assert.ok(/^__Host-detekta_sesion=[a-f0-9]{64};/.test(setAlta), "cookie con prefijo __Host- y token de 32 bytes");
+      assert.ok(!/Domain=/i.test(setAlta), "sin Domain: la cookie no sale del host");
+      const tokenAlta = cookieDe(ganadora).split("=")[1];
+      assert.ok(!JSON.stringify(ganadora.cuerpo).includes(tokenAlta), "el token NO viaja en el cuerpo: el JavaScript de la página no lo ve");
+      const fichaCuenta = JSON.parse(await redis.get(fichas[0]));
+      assert.ok(!JSON.stringify(fichaCuenta).includes(claveDueno) && /^scrypt\$/.test(fichaCuenta.contrasena), "la contraseña se guarda derivada con scrypt, nunca en claro");
+      assert.strictEqual(fichaCuenta.correo, correoDueno.toLowerCase(), "el correo se normaliza");
+
+      /* (1b) LA LLAVE QUE ESTUVO PUBLICADA NO CREA LA CUENTA (revisión adversaria, 17-oct-2026). Vivió
+         escrita en public/*.js y está en la historia pública de git: si el despliegue llega antes de
+         rotarla, quien la leyó crearía la única cuenta. La suite no lleva el valor —solo su huella—;
+         para ejecutar la negativa se añade un momento a la lista la huella de la llave de PRUEBA. */
+      assert.ok(Sesion.LLAVES_RETIRADAS_SHA256 instanceof Set
+        && Sesion.LLAVES_RETIRADAS_SHA256.has("75de4f9a31b94674ecb617552bbcf5c394ef5838156abee01348d780cecaa2eb"),
+        "la huella de la llave que estuvo en public/*.js hasta el 17-oct-2026 tiene que estar en la lista de retiradas");
+      {
+        const huellaPrueba = crypto.createHash("sha256").update(LLAVE).digest("hex");
+        const sinCuenta = async () => { const ks = [...await redis.scan("cuenta:*")]; if (ks.length) await redis.del(...ks); };
+        const fichasAntes = await redis.scan("cuenta:*");
+        const respaldoFichas = await Promise.all(fichasAntes.map(async (k) => [k, await redis.get(k)]));
+        await sinCuenta();
+        Sesion.LLAVES_RETIRADAS_SHA256.add(huellaPrueba);
+        try {
+          assert.ok(Sesion.esLlaveRetirada(LLAVE + "\n") && Sesion.esLlaveRetirada(" " + LLAVE + " "),
+            "la llave retirada con un espacio o un salto de línea al final (pegada así en Vercel) sigue siendo la retirada");
+          const r = await post("/api/admin?op=crear-cuenta", { llave: LLAVE, correo: "intruso@x.co", contrasena: "contrasena-del-intruso" }, { "x-real-ip": "10.0.9.1" });
+          assert.strictEqual(r.status, 503, `con la llave retirada en el entorno, el alta se niega: ${r.status}`);
+          assert.strictEqual(r.cuerpo.motivo, "llave_retirada");
+          assert.ok(/cámbiela en Vercel/.test(r.cuerpo.error) && /vuelva a desplegar/.test(r.cuerpo.error) && tuteoEnS(r.cuerpo.error) === null, `dice qué hacer, de usted: ${r.cuerpo.error}`);
+          assert.ok(!r.cabeceras["set-cookie"] && !(await Sesion.hayCuenta(redis)), "y no crea nada ni abre sesión");
+        } finally {
+          Sesion.LLAVES_RETIRADAS_SHA256.delete(huellaPrueba);
+          await sinCuenta();
+          for (const [k, v] of respaldoFichas) if (v != null) await redis.set(k, v);
+        }
+        /* (1c) DOS ALTAS A LA VEZ CON EL MISMO CORREO (revisión adversaria): la perdedora borraba el
+           índice del correo de la ganadora y el dueño no entraba NUNCA con su contraseña correcta.
+           Se ejecuta en una cuenta aparte y se devuelve la de la prueba tal como estaba. */
+        await sinCuenta();
+        try {
+          const cuerpoR = { llave: LLAVE, correo: "mismo@empresa.co", contrasena: "una frase larga de la carrera" };
+          /* la carrera necesita que los comandos de las tres se INTERCALEN: el Upstash falso responde
+             tan rápido que cada alta termina antes de que empiece la siguiente, así que aquí se le
+             presta a cada comando la latencia de un Redis real (5 ms), como en la reproducción del
+             revisor. Contra b73c38e, «entrar» responde 401 con la contraseña correcta. */
+          const lento = new Proxy(redis, { get: (t, k) => (typeof t[k] === "function"
+            ? async (...args) => { await new Promise((r) => setTimeout(r, 5)); return t[k](...args); } : t[k]) });
+          const reqR = { headers: { ...ORIGEN, host: "app.local", "x-real-ip": "10.0.9.2" }, method: "POST" };
+          const rs = await Promise.all([0, 1, 2].map(() => Sesion.crearCuentaDelDueno(lento, reqR, cuerpoR)));
+          assert.deepStrictEqual(rs.map((x) => x.status).sort(), [201, 409, 409], `tres altas a la vez con el mismo correo: ${rs.map((x) => x.status)}`);
+          const e = await post("/api/admin?op=entrar", { correo: "mismo@empresa.co", contrasena: "una frase larga de la carrera" }, { "x-real-ip": "10.0.9.3" });
+          assert.strictEqual(e.status, 200, `tras la carrera, el dueño entra con su contraseña: ${JSON.stringify(e.cuerpo)}`);
+          assert.strictEqual((await redis.scan("cuenta:cta_*")).length, 1, "y queda una sola ficha");
+        } finally {
+          await sinCuenta();
+          for (const [k, v] of respaldoFichas) if (v != null) await redis.set(k, v);
+          const ses = await redis.scan("sesion:*"); // las de la carrera no son de la cuenta de la prueba: no valen, pero no se dejan
+          for (const k of ses) { const v = JSON.parse(await redis.get(k) || "{}"); if (v.cuenta && v.cuenta !== (await redis.get(Sesion.CLAVE_DUENO))) await redis.del(k); }
+        }
+      }
+
+      // ── (2) ENTRAR ───────────────────────────────────────────────────────────
+      await redis.del(...await redis.scan("intentos:*"));
+      const mala = await post("/api/admin?op=entrar", { correo: correoDueno, contrasena: "no es la contraseña" }, { "x-real-ip": "10.0.0.2" });
+      const inexistente = await post("/api/admin?op=entrar", { correo: "nadie@ninguna.co", contrasena: claveDueno }, { "x-real-ip": "10.0.0.2" });
+      assert.strictEqual(mala.status, 401);
+      assert.strictEqual(inexistente.status, 401);
+      assert.deepStrictEqual(mala.cuerpo, inexistente.cuerpo, "correo inexistente y contraseña mala responden EXACTAMENTE lo mismo");
+      assert.ok(!mala.cabeceras["set-cookie"], "entrar mal no abre sesión");
+      const bien = await post("/api/admin?op=entrar", { correo: `  ${correoDueno.toUpperCase()} `, contrasena: claveDueno }, { "x-real-ip": "10.0.0.2" });
+      assert.strictEqual(bien.status, 200, `entrar bien: ${JSON.stringify(bien.cuerpo)}`);
+      const cookie = cookieDe(bien);
+      const tok = cookie.split("=")[1];
+      assert.ok(Ctas.esTokenSesion(tok), "el token de sesión es opaco y de 64 hexadecimales");
+      assert.strictEqual(await redis.get(`sesion:${tok}`), null, "el almacén NO guarda el token en claro (un volcado no entrega sesiones)");
+      const claveS = Sesion.claveSesion(tok);
+      assert.ok(await redis.get(claveS), "guarda el registro bajo el hash del token");
+      const ttlS = Number(await redis.ttl(claveS));
+      assert.ok(ttlS > 29 * 24 * 3600 && ttlS <= 30 * 24 * 3600, `la sesión caduca en el almacén a los 30 días: ${ttlS} s`);
+      r = await invocar(rAdmin, "/api/admin?op=sesion", { cookie });
+      assert.deepStrictEqual([r.cuerpo.sesion, r.cuerpo.hay_cuenta], [true, true], "op=sesion reconoce la sesión");
+
+      // ── (3) LA SESIÓN ABRE LO PROTEGIDO ──────────────────────────────────────
+      const PROT = "/api/admin?op=rup";
+      assert.strictEqual((await invocar(rAdmin, PROT)).status, 401, "sin nada, 401");
+      assert.strictEqual((await invocar(rAdmin, PROT, { cookie })).status, 200, "con la sesión, 200");
+      assert.strictEqual((await invocar(rAdmin, PROT, { "x-historico-token": LLAVE })).status, 200, "la llave desde un SERVIDOR sigue valiendo (flujos de GitHub, rutinas)");
+      assert.strictEqual((await invocar(rAdmin, `${PROT}&token=${LLAVE}`, { "sec-fetch-mode": "navigate", "sec-fetch-site": "none" })).status, 200, "la llave pegada en la barra de Chrome sigue valiendo");
+      const desdePagina = await invocar(rAdmin, PROT, { "x-historico-token": LLAVE, "sec-fetch-mode": "cors", "sec-fetch-site": "same-origin" });
+      assert.strictEqual(desdePagina.status, 401, "la llave pedida desde el CÓDIGO de una página se rechaza: no puede volver al navegador");
+      /* …pero el fetch de NODE no es una página: manda `sec-fetch-mode: cors` sin Sec-Fetch-Site (medido
+         con Node 22), y así se llama la aplicación a sí misma con la llave (sync → histórico, el latido) */
+      assert.strictEqual((await invocar(rAdmin, PROT, { "x-historico-token": LLAVE, "sec-fetch-mode": "cors" })).status, 200,
+        "la auto-llamada del servidor (fetch de Node: sec-fetch-mode sin sec-fetch-site) sigue valiendo");
+      assert.strictEqual((await invocar(rAdmin, PROT, { "x-historico-token": LLAVE, "sec-fetch-mode": "no-cors", "sec-fetch-site": "cross-site" })).status, 401,
+        "ni desde la página de otro sitio");
+      assert.strictEqual((await invocar(rAdmin, PROT, { "x-historico-token": "llave-mala" })).status, 401, "llave inválida, 401");
+      assert.strictEqual((await invocar(rAdmin, PROT, { cookie, "x-historico-token": "llave-mala" })).status, 401, "llave PRESENTE e inválida = 401 aunque haya sesión");
+      assert.strictEqual((await invocar(rAdmin, PROT, { cookie: `${Sesion.COOKIE_SESION}=${"ab".repeat(32)}` })).status, 401, "una sesión inventada, 401");
+      assert.strictEqual((await invocar(rAdmin, PROT, { cookie: `${Sesion.COOKIE_SESION}=basura` })).status, 401, "una cookie mal formada, 401");
+      // lo de token OPCIONAL: público sin nada, con cifras con la sesión, 401 con una sesión que no vale
+      const rApu = require("../api/apu.js");
+      const OPC = "/api/apu?accion=parametros";
+      const pub = await invocar(rApu, OPC);
+      const conSes = await invocar(rApu, OPC, { cookie });
+      const mal = await invocar(rApu, OPC, { cookie: `${Sesion.COOKIE_SESION}=${"cd".repeat(32)}` });
+      assert.strictEqual(pub.status, 200, `la lectura pública sigue abierta sin nada: ${JSON.stringify(pub.cuerpo).slice(0, 160)}`);
+      assert.strictEqual(conSes.status, 200, "con la sesión del dueño, también");
+      assert.strictEqual(mal.status, 401, "una sesión presente e inválida es 401, jamás la vista pública en silencio");
+      const malLista = await invocar(rProcesos, "/api/procesos?op=listar&perfil=helder", { cookie: `${Sesion.COOKIE_SESION}=${"cd".repeat(32)}` });
+      assert.strictEqual(malLista.status, 401, "lo mismo en la lista: credencial presente e inválida = 401");
+      // CADUCADA: el registro dice que se abrió hace 31 días (aunque el almacén aún lo tuviera)
+      const reg = JSON.parse(await redis.get(claveS));
+      await redis.set(claveS, JSON.stringify({ ...reg, creada: new Date(Date.now() - 31 * 24 * 3600e3).toISOString() }), { ex: 3600 });
+      assert.strictEqual((await invocar(rAdmin, PROT, { cookie })).status, 401, "una sesión caducada, 401");
+      r = await invocar(rAdmin, "/api/admin?op=sesion", { cookie });
+      assert.ok(r.cuerpo.sesion === false && /Max-Age=0/.test(r.cabeceras["set-cookie"] || ""), "op=sesion dice que no hay sesión y retira la cookie vencida");
+      await redis.set(claveS, JSON.stringify(reg), { ex: 3600 });
+      assert.strictEqual((await invocar(rAdmin, PROT, { cookie })).status, 200, "(control) el mismo registro sin caducar abre");
+      // la sincronización protegida acepta la sesión (el botón «Actualizar» del dueño)
+      process.env.CRON_SECRET = "secreto-cron-sesion";
+      try {
+        assert.strictEqual((await Auth.autorizarSincronizacion({ headers: { cookie } }, {})).via, "sesion", "con CRON_SECRET, la sesión del dueño dispara la sincronización");
+        assert.strictEqual((await Auth.autorizarSincronizacion({ headers: {} }, {})).status, 401, "…y sin nada, no");
+      } finally { delete process.env.CRON_SECRET; }
+
+      // ── (4) CSRF: una escritura con cookie exige el mismo origen ──────────────
+      const ESCR = "/api/admin?op=importar";
+      const sinOrigen = await invocar(rAdmin, ESCR, { cookie, "content-type": "application/json" }, { metodo: "POST", body: {} });
+      assert.strictEqual(sinOrigen.status, 403, `una escritura con cookie y sin Origin: ${sinOrigen.status}`);
+      const ajeno = await invocar(rAdmin, ESCR, { cookie, "content-type": "application/json", origin: "https://atacante.example" }, { metodo: "POST", body: {} });
+      assert.strictEqual(ajeno.status, 403, "una escritura desde otro sitio, 403");
+      const cruzado = await invocar(rAdmin, PROT, { cookie, "sec-fetch-site": "cross-site" });
+      assert.strictEqual(cruzado.status, 403, "una lectura que el navegador declara de otro sitio, 403");
+      const propio = await invocar(rAdmin, ESCR, { cookie, ...ORIGEN }, { metodo: "POST", body: {} });
+      assert.ok(![401, 403].includes(propio.status), `la misma escritura desde la página pasa la guarda: ${propio.status}`);
+      const propioSf = await invocar(rAdmin, ESCR, { cookie, "content-type": "application/json", "sec-fetch-site": "same-origin" }, { metodo: "POST", body: {} });
+      assert.ok(![401, 403].includes(propioSf.status), "sin Origin pero con Sec-Fetch-Site: same-origin, también");
+
+      // ── (5) EL LÍMITE DE INTENTOS ────────────────────────────────────────────
+      /* Las ventanas de intentos son FIJAS (15 min). Con el reloj de verdad, un bloque que cruza el
+         borde de una ventana empieza a contar de cero a mitad del bucle y el tope no salta (pasó el
+         17-oct-2026: «pasado el tope por CONEXIÓN» dio 200). Se fija el reloj a mitad de la ventana
+         en curso mientras corre la sección y se devuelve al final. */
+      const relojDeIntentos = Date.now;
+      const ventanaMs = Sesion.VENTANA_INTENTOS_SEG * 1000;
+      const mitadDeVentana = Math.floor(relojDeIntentos() / ventanaMs) * ventanaMs + ventanaMs / 2;
+      Date.now = () => mitadDeVentana;
+      try {
+      await redis.del(...await redis.scan("intentos:*"));
+      /* (5a) UN TERCERO NO DEJA FUERA AL DUEÑO (revisión adversaria, 17-oct-2026): cinco fallos con
+         su correo desde cinco conexiones ajenas no le cierran la suya. Contra b73c38e, 429. */
+      for (let i = 0; i < Sesion.MAX_INTENTOS_POR_CUENTA; i++) {
+        const x = await post("/api/admin?op=entrar", { correo: correoDueno, contrasena: `mala ${i} de prueba` }, { "x-real-ip": `10.1.0.${i}` });
+        assert.strictEqual(x.status, 401, `intento ajeno ${i + 1}: 401`);
+      }
+      const noBloqueado = await post("/api/admin?op=entrar", { correo: correoDueno, contrasena: claveDueno }, { "x-real-ip": "10.1.9.9" });
+      assert.strictEqual(noBloqueado.status, 200, `cinco fallos ajenos desde otras conexiones no pueden dejar fuera al dueño desde la suya: ${noBloqueado.status}`);
+      // (5b) el tope que frena a quien prueba: correo + conexión
+      await redis.del(...await redis.scan("intentos:*"));
+      for (let i = 0; i < Sesion.MAX_INTENTOS_POR_CUENTA; i++) {
+        const x = await post("/api/admin?op=entrar", { correo: correoDueno, contrasena: `mala ${i} de prueba` }, { "x-real-ip": "10.1.1.1" });
+        assert.strictEqual(x.status, 401, `intento ${i + 1} desde la misma conexión: 401`);
+      }
+      const bloqueado = await post("/api/admin?op=entrar", { correo: correoDueno, contrasena: claveDueno }, { "x-real-ip": "10.1.1.1" });
+      assert.strictEqual(bloqueado.status, 429, `pasado el tope de correo + conexión, ni la contraseña buena entra desde ella: ${bloqueado.status}`);
+      assert.ok(/Vuelva a intentarlo en \d+ minutos?/.test(bloqueado.cuerpo.que_hacer) && !bloqueado.cabeceras["set-cookie"], "el 429 dice cuánto esperar y no abre sesión");
+      const nadie429 = await post("/api/admin?op=entrar", { correo: "nadie@ninguna.co", contrasena: "x" }, { "x-real-ip": "10.1.1.1" });
+      assert.strictEqual(nadie429.status, 401, "otro correo desde esa conexión no queda bloqueado");
+      // (5c) y un tope ALTO solo por correo, desde todas las conexiones
+      await redis.del(...await redis.scan("intentos:*"));
+      for (let i = 0; i < Sesion.MAX_INTENTOS_POR_CORREO; i++) {
+        const x = await post("/api/admin?op=entrar", { correo: correoDueno, contrasena: "mala de prueba" }, { "x-real-ip": `10.8.${Math.floor(i / 200)}.${i % 200}` });
+        assert.strictEqual(x.status, 401, `intento ${i + 1} con el mismo correo: 401`);
+      }
+      assert.ok(Sesion.MAX_INTENTOS_POR_CORREO >= 10 * Sesion.MAX_INTENTOS_POR_CUENTA, "el tope solo por correo es alto: no puede convertirse en un botón para dejar fuera al dueño");
+      assert.strictEqual((await post("/api/admin?op=entrar", { correo: correoDueno, contrasena: claveDueno }, { "x-real-ip": "10.8.9.9" })).status, 429,
+        `pasados ${Sesion.MAX_INTENTOS_POR_CORREO} intentos con ese correo desde todas partes, se pausa`);
+      await redis.del(...await redis.scan("intentos:*"));
+      for (let i = 0; i < Sesion.MAX_INTENTOS_POR_IP; i++) {
+        const x = await post("/api/admin?op=entrar", { correo: `prueba${i}@ninguna.co`, contrasena: "mala de prueba" }, { "x-real-ip": "10.2.0.1" });
+        assert.strictEqual(x.status, 401, `intento ${i + 1} desde la misma conexión: 401`);
+      }
+      const porIp = await post("/api/admin?op=entrar", { correo: correoDueno, contrasena: claveDueno }, { "x-real-ip": "10.2.0.1" });
+      assert.strictEqual(porIp.status, 429, "pasado el tope por CONEXIÓN, nada entra desde ella");
+      const otraIp = await post("/api/admin?op=entrar", { correo: correoDueno, contrasena: claveDueno }, { "x-real-ip": "10.2.0.2" });
+      assert.strictEqual(otraIp.status, 200, "desde otra conexión el dueño entra");
+      // la llave del alta también tiene tope por conexión
+      await redis.del(...await redis.scan("intentos:*"));
+      const altaCerrada = await post("/api/admin?op=crear-cuenta", { llave: "x", correo: "a@b.co", contrasena: "una frase larga" }, { "x-real-ip": "10.3.0.1" });
+      assert.strictEqual(altaCerrada.status, 409, "con la cuenta creada, el alta ni siquiera mira la llave");
+      // Redis caído durante el conteo: NO se deja entrar
+      upstash.romper((cmd) => (String(cmd[0]).toUpperCase() === "INCR" ? "ERR caído a propósito" : null));
+      try {
+        const caido = await post("/api/admin?op=entrar", { correo: correoDueno, contrasena: claveDueno }, { "x-real-ip": "10.4.0.1" });
+        assert.strictEqual(caido.status, 503, `sin poder contar los intentos no se deja entrar: ${caido.status}`);
+        assert.ok(!caido.cabeceras["set-cookie"]);
+      } finally { upstash.romper(null); }
+      } finally { Date.now = relojDeIntentos; }
+
+      /* (5d) SIN ORÁCULO DE EXISTENCIA (revisión adversaria): un intento fallido con el correo del
+         dueño y otro con un correo que no existe cuestan los MISMOS comandos de Redis (antes 6 y 4:
+         el índice del correo solo se leía si casaba). Contadores en el mismo estado en los dos. */
+      {
+        const cuesta = async (correo, ip) => {
+          await redis.del(...await redis.scan("intentos:*"));
+          const antes = upstash.peticiones();
+          const x = await post("/api/admin?op=entrar", { correo, contrasena: "contrasena-equivocada" }, { "x-real-ip": ip });
+          return [x.status, upstash.peticiones() - antes];
+        };
+        const [sD, cD] = await cuesta(correoDueno, "10.9.0.1");
+        const [sN, cN] = await cuesta("nadie@ninguna.co", "10.9.0.2");
+        assert.deepStrictEqual([sD, sN], [401, 401]);
+        assert.strictEqual(cD, cN, `el número de comandos distingue si el correo existe: ${cD} con el del dueño, ${cN} con uno inexistente`);
+      }
+      /* (5e) «SIN DATO» NO ES CERO: un INCR que no devuelve un entero no es un intento libre */
+      {
+        const memoria = new Map();
+        const redisRaro = { _cmd: async () => null, expire: async () => 1, get: async (k) => memoria.get(k) ?? null, set: async () => "OK", mget: async (ks) => ks.map(() => null), del: async () => 1 };
+        const estados = new Set();
+        for (let i = 0; i < 8; i++) estados.add((await Sesion.entrar(redisRaro, { headers: { "x-real-ip": "1.2.3.4" } }, { correo: correoDueno, contrasena: `probando-${i}` })).status);
+        assert.deepStrictEqual([...estados], [503], `con el contador ilegible no se puede probar contraseñas sin límite: ${[...estados]}`);
+      }
+      /* (5f) EL TRAMO DEL LATIDO NO REENVÍA LAS CABECERAS DEL NAVEGADOR (revisión adversaria): con la
+         sesión y desde la página, el latido mandaba sec-fetch-site, la cookie y el Origin junto a la
+         llave, y op=historico la rechazaba «desde una página» */
+      {
+        const { cabecerasDelTramo } = require("../lib/handlers/procesos/latido.js");
+        const h = cabecerasDelTramo({ headers: { host: "app.local", cookie, origin: "https://app.local", "sec-fetch-site": "same-origin", "sec-fetch-mode": "cors" } });
+        assert.ok(!h.cookie && !h.origin && !h["sec-fetch-site"] && !h["sec-fetch-mode"] && h.host === "app.local", `el tramo lleva solo lo del servidor: ${Object.keys(h).join(", ")}`);
+        assert.strictEqual(h["x-historico-token"], LLAVE, "y la llave del servidor");
+        assert.strictEqual((await Auth.autorizarToken({ method: "GET", headers: h }, {})).via, "llave", "con esas cabeceras op=historico acepta la llave");
+      }
+
+      // ── (6) SALIR ────────────────────────────────────────────────────────────
+      await redis.del(...await redis.scan("intentos:*"));
+      const otra = await post("/api/admin?op=entrar", { correo: correoDueno, contrasena: claveDueno }, { "x-real-ip": "10.5.0.1" });
+      const cookie2 = cookieDe(otra);
+      assert.strictEqual((await invocar(rAdmin, PROT, { cookie: cookie2 })).status, 200);
+      const salirSinOrigen = await invocar(rAdmin, "/api/admin?op=salir", { cookie: cookie2 }, { metodo: "POST" });
+      assert.strictEqual(salirSinOrigen.status, 403, "otro sitio no puede sacar al dueño de su sesión");
+      const salir = await invocar(rAdmin, "/api/admin?op=salir", { cookie: cookie2, ...ORIGEN }, { metodo: "POST" });
+      assert.strictEqual(salir.status, 200);
+      assert.ok(/Max-Age=0/.test(salir.cabeceras["set-cookie"] || ""), "salir retira la cookie del navegador");
+      assert.strictEqual((await invocar(rAdmin, PROT, { cookie: cookie2 })).status, 401, "y la INVALIDA en el servidor: la cookie copiada ya no abre nada");
+      assert.strictEqual((await invocar(rAdmin, PROT, { cookie })).status, 200, "salir de una sesión no cierra las demás del mismo dueño");
+
+      // ── (7) LA CUOTA DE ALTAS PÚBLICAS: exime la sesión, ya no la llave ──────
+      const PD = require("../lib/perfil_dinamico.js");
+      const ipCuota = "10.6.0.1";
+      const ahoraQ = Date.now();
+      const vent = Math.floor(ahoraQ / 1000 / PD.CUOTA_VENTANA_SEG);
+      await redis.set(PD.CLAVE_CUOTA(ipCuota, vent), String(PD.configuracionDeCuota().tope + 5), { ex: 3600 });
+      const conLlave = await PD.guardaDeAltaPublica(redis, { headers: { "x-real-ip": ipCuota, "x-historico-token": LLAVE } }, {}, ahoraQ);
+      assert.strictEqual(conLlave.permitido, false, "la llave del servidor ya NO exime de la cuota de altas (vivió en el navegador)");
+      const conSesionQ = await PD.guardaDeAltaPublica(redis, { headers: { "x-real-ip": ipCuota, cookie } }, {}, ahoraQ);
+      assert.ok(conSesionQ.permitido === true && conSesionQ.exento === "sesión del dueño", `la sesión del dueño sí exime: ${JSON.stringify(conSesionQ)}`);
+      const sesionFalsa = await PD.guardaDeAltaPublica(redis, { headers: { "x-real-ip": ipCuota, cookie: `${Sesion.COOKIE_SESION}=${"ef".repeat(32)}` } }, {}, ahoraQ);
+      assert.strictEqual(sesionFalsa.permitido, false, "una cookie inventada no exime");
+
+      // ── (8) LAS RUTAS PÚBLICAS SIGUEN ABIERTAS SIN NADA ──────────────────────
+      for (const [nombre, h, url] of [
+        ["salud", rProcesos, "/api/procesos?op=salud"],
+        ["la lista pública", rProcesos, "/api/procesos?op=listar&perfil=helder"],
+        ["el pulso público", rPerfil, "/api/perfil?op=pulso&perfil=helder"],
+        ["las actividades de la entrada", rPerfil, "/api/perfil?op=entrada"],
+        ["el interruptor del modo cuenta", rPerfil, "/api/perfil?op=cuenta"],
+        ["¿hay sesión?", rAdmin, "/api/admin?op=sesion"],
+      ]) {
+        const x = await invocar(h, url);
+        assert.ok(![401, 403].includes(x.status), `${nombre} tiene que seguir sin pedir credencial: ${x.status}`);
+      }
+      const altaRup = await invocar(rAdmin, "/api/admin?op=rup&origen=pdf", { "content-type": "application/json", "x-real-ip": "10.7.0.1" }, { metodo: "POST", body: {} });
+      assert.ok(![401, 403].includes(altaRup.status), `el alta pública del RUP sigue sin credencial: ${altaRup.status}`);
+      const altaManual = await invocar(rPerfil, "/api/perfil?op=entrada", { "content-type": "application/json", "x-real-ip": "10.7.0.2" }, { metodo: "POST", body: {} });
+      assert.ok(![401, 403].includes(altaManual.status), `el alta pública por tres datos sigue sin credencial: ${altaManual.status}`);
+
+      /* ── (8b) CENSO: LA LLAVE RETIRADA NO VIVE EN NINGÚN ARCHIVO DEL REPOSITORIO (revisión
+         adversaria, 17-oct-2026). Seguía en ocho documentos (la memoria, las consultorías, los
+         planes, el README archivado). Se barren TODOS los archivos de texto del árbol —docs/
+         entero con docs/archivo, README, CLAUDE.md, .claude/, public/, lib/, api/, tests/, la
+         configuración— y cada palabra de 8 o más caracteres se compara por su HUELLA con la lista
+         de retiradas: el valor no puede ir en la suite. Contra b73c38e cae por los ocho. */
+      {
+        const raizC = path.join(__dirname, "..");
+        const textos = [];
+        const andarC = (d) => {
+          for (const e of fs.readdirSync(d, { withFileTypes: true })) {
+            if (e.name === ".git" || e.name === "node_modules") continue;
+            const q = path.join(d, e.name);
+            if (e.isDirectory()) andarC(q);
+            else if (/\.(md|json|js|html|css|yml|yaml|txt|csv)$/i.test(e.name)) textos.push(q);
+          }
+        };
+        andarC(raizC);
+        assert.ok(textos.some((q) => q.endsWith(path.join("docs", "MEMORIA.md"))) && textos.some((q) => q.includes(`${path.sep}archivo${path.sep}`)) && textos.length > 100,
+          `el censo de la llave retirada se quedó corto (${textos.length} archivos)`);
+        const conLlave = [];
+        for (const q of textos) {
+          const vistas = new Set(fs.readFileSync(q, "utf8").match(/[A-Za-z0-9_-]{8,}/g) || []);
+          for (const w of vistas) if (Sesion.esLlaveRetirada(w)) { conLlave.push(path.relative(raizC, q)); break; }
+        }
+        assert.deepStrictEqual(conLlave, [], `la llave que estuvo publicada sigue escrita en: ${conLlave.join(", ")} (sustitúyala por «[llave retirada el 17-oct-2026]»)`);
+      }
+
+      // ── (9) CENSO: todo llamador del guardián lo ESPERA ──────────────────────
+      const sinAwait = [];
+      const recorrer = (dir) => {
+        for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+          const p = path.join(dir, e.name);
+          if (e.isDirectory()) recorrer(p);
+          else if (e.name.endsWith(".js") && !p.endsWith(path.join("lib", "auth.js"))) {
+            sinComentarios(fs.readFileSync(p, "utf8")).split("\n").forEach((l, i) => {
+              if (/\b(autorizarToken|autorizarSincronizacion)\(/.test(l) && !/await\s*\(?\s*(hayGuardaDeSincronizacion\(\)\s*\?\s*)?(autorizarToken|autorizarSincronizacion)\(/.test(l)) sinAwait.push(`${path.relative(path.join(__dirname, ".."), p)}:${i + 1}`);
+            });
+          }
+        }
+      };
+      recorrer(path.join(__dirname, "..", "lib"));
+      recorrer(path.join(__dirname, "..", "api"));
+      assert.deepStrictEqual(sinAwait, [], `el guardián es asíncrono: estos llamadores no lo esperan (fallarían cerrados, pero mal): ${sinAwait.join(" · ")}`);
+      console.log(`· unidad sesión del dueño: alta solo sin cuenta y con la llave (dos a la vez → ${[a1.status, a2.status].sort().join("/")}), 409 después · `
+        + `entrar bien/mal idénticos · cookie __Host- HttpOnly Secure SameSite=Strict 30 días, hash en el almacén · sesión 200, nada 401, caducada/cerrada/inventada 401 · `
+        + `llave de servidor 200, desde página 401 · CSRF 403 · tope ${Sesion.MAX_INTENTOS_POR_CUENTA} por correo y ${Sesion.MAX_INTENTOS_POR_IP} por conexión, Redis caído 503 · `
+        + `cuota de altas: exime la sesión, no la llave · rutas públicas abiertas · llamadores del guardián con await`);
+    } finally {
+      upstash.romper(null);
+      await limpiarCuentas();
+    }
+  }
+
   /* unidad: EL MODO CUENTA, CONSTRUIDO Y APAGADO (11-sep-2026).
      Lo que esta cerradura defiende es sobre todo que el modo APAGADO no cambie
      nada: el dueño pidió la infraestructura, no el cambio de producto. Y que
@@ -8708,6 +9112,218 @@ async function main() {
     // un documento que no es pliego no se lee para esto
     assert.strictEqual(Dp.hechosDeTexto(def, { tipo: "estudio_previo" }).presupuesto_pliego, null);
   }
+  bqTextoDelPliego: { if (!corre("unidad el texto del pliego")) break bqTextoDelPliego;
+    /* QUÉ TEXTO LEEN EL DICTAMEN, EL CRONOGRAMA Y LOS DESCUENTOS (18-oct-2026). Hasta hoy, la última versión del vigía:
+       el documento base (el pliego tipo) no entra al vigía y el dictamen decía «no hay texto» con el pliego leído (85 de
+       228 licitaciones de obra), y un anexo con «pliego» en el nombre leído después del pliego quedaba de último (7 de
+       228). Con el handler REAL de documentos sobre el Redis simulado y la `textoGuardado` real. */
+    const DocsT = require("../lib/documentos_proceso.js"), Dv = require("../lib/diff.js");
+    const { escribirJSONComprimido: escribirC } = require("../lib/almacen.js");
+    const { textoGuardado } = require("../lib/handlers/pliego/cronograma.js");
+    const routerT = require("../api/pliego.js");
+    const relleno = "Segunda página del documento del proceso, con texto suficiente para que la lectura cuente como texto.";
+    const txt = (s) => `\f1\n${s}\n\f2\n${relleno}\n`;
+    const PLIEGO = txt("PLIEGO DE CONDICIONES DEFINITIVO. La entidad no entregará al contratista anticipo y/o pago anticipado.");
+    const BASE = txt("DOCUMENTO BASE DEL PROCESO. 1.1. OBJETO, PRESUPUESTO OFICIAL, PLAZO Y UBICACIÓN del documento base.");
+    const OBS = txt("OBSERVACIONES AL PLIEGO DEFINITIVO. Pregunta 1: ¿se puede ampliar el plazo? Respuesta de la entidad: no.");
+    const arch = (id, nombre, tipo, fecha) => ({ id_documento: id, nombre, tipo, tipo_legible: DocsT.TIPOS[tipo].legible, fecha_carga: fecha, de_la_entidad: true, legible: true, url: "https://community.secop.gov.co/x" });
+    const sembrar = (id, archivos) => escribirC(redis, DocsT.claveDocs(id), { version: DocsT.VERSION, id_proceso: id, indice: { version: DocsT.VERSION, consultado_el: new Date().toISOString(), archivos, plan: archivos.map((a) => a.id_documento) }, leidos: {}, ilegibles: {} });
+    const leer = async (id, idDoc, texto) => { const r = await invocarPost(routerT, "/api/pliego?op=documentos", { id_proceso: id, id_documento: idDoc, texto }, CAB_TOKEN); assert.strictEqual(r.status, 200, JSON.stringify(r.cuerpo).slice(0, 300)); return r.cuerpo; };
+    // (1) el documento base leído es el texto del dictamen, aunque no entre al vigía
+    const idB = "CO1.REQ.TXT001";
+    await sembrar(idB, [arch("1", "DOCUMENTO BASE.pdf", "documento_base", "2026-09-10")]);
+    const rB = await leer(idB, "1", BASE);
+    assert.strictEqual(rB.version_pliego, null, "el documento base sigue fuera del vigía (decisión del 27-sep-2026)");
+    const tB = await textoGuardado(redis, idB);
+    assert.ok(/DOCUMENTO BASE DEL PROCESO/.test(tB.texto) && tB.version === null && /^doc:1:[0-9a-f]{12}$/.test(tB.texto_id) && tB.documento && tB.documento.nombre === "DOCUMENTO BASE.pdf",
+      `el dictamen lee el documento base leído (MUTACIÓN: solo el vigía, texto vacío): ${JSON.stringify({ ...tB, texto: tB.texto.slice(0, 40) })}`);
+    const dB = await invocar(routerT, `/api/pliego?op=dictamen&id_proceso=${idB}&perfil=helder`, CAB_TOKEN);
+    assert.ok(dB.status === 200 && dB.cuerpo.hay_texto === true && dB.cuerpo.documento_texto && dB.cuerpo.documento_texto.nombre === "DOCUMENTO BASE.pdf",
+      `y la consulta del dictamen ya no dice «no hay texto»: ${JSON.stringify(dB.cuerpo).slice(0, 300)}`);
+    // (2) el pliego y DESPUÉS unas observaciones con «pliego» en el nombre: el vigía no las registra y el texto es el pliego
+    const idO = "CO1.REQ.TXT002";
+    await sembrar(idO, [arch("1", "PLIEGO DEFINITIVO.pdf", "pliego", "2026-03-19"), arch("2", "OBSERVACIONES PLIEGO DEF LP-004-2026.pdf", "pliego", "2026-03-24")]);
+    const rP = await leer(idO, "1", PLIEGO), rO = await leer(idO, "2", OBS);
+    assert.ok(rP.version_pliego === 1 && rO.version_pliego === null && (await Dv.leerIndice(redis, idO)).versiones.length === 1,
+      `las observaciones no entran al vigía como versión del pliego (MUTACIÓN: sin \`esVersionDelPliego\` en el registro, versión 2): ${JSON.stringify([rP.version_pliego, rO.version_pliego])}`);
+    const tO = await textoGuardado(redis, idO);
+    assert.ok(/PLIEGO DE CONDICIONES DEFINITIVO/.test(tO.texto) && tO.version === 1 && tO.texto_id === 1 && tO.documento.nombre === "PLIEGO DEFINITIVO.pdf",
+      `el texto es el pliego, leído de su versión del vigía (el mismo sello de caché de antes; MUTACIÓN: sin excluir por nombre, las observaciones; leyendo siempre el guardado, versión nula): ${JSON.stringify({ ...tO, texto: tO.texto.slice(0, 40) })}`);
+    // (3) datos de antes: el vigía ya tiene las observaciones de última versión y no hay documentos leídos
+    const idV = "CO1.REQ.TXT003";
+    await Dv.registrarVersion(redis, { idProceso: idV, texto: PLIEGO, origen: "documentos:PLIEGO DEFINITIVO.pdf", ahora: Date.parse("2026-03-20T10:00:00Z") });
+    await Dv.registrarVersion(redis, { idProceso: idV, texto: OBS, origen: "documentos:OBSERVACIONES PLIEGO DEF LP-004-2026", ahora: Date.parse("2026-03-25T10:00:00Z") });
+    const tV = await textoGuardado(redis, idV);
+    assert.ok(tV.version === 1 && /PLIEGO DE CONDICIONES DEFINITIVO/.test(tV.texto), `sin documentos leídos, la última versión del vigía que sea del pliego, nunca un anexo de la lectura automática (MUTACIÓN: la última a secas, las observaciones): v${tV.version}`);
+    // (4) lo cargado A MANO después de la lectura automática gana; antes, no
+    const idM = "CO1.REQ.TXT004";
+    await sembrar(idM, [arch("1", "DOCUMENTO BASE.pdf", "documento_base", "2026-09-10")]);
+    await Dv.registrarVersion(redis, { idProceso: idM, texto: PLIEGO, origen: "lector", ahora: Date.parse("2026-01-01T00:00:00Z") });
+    await leer(idM, "1", BASE);
+    assert.ok(/DOCUMENTO BASE DEL PROCESO/.test((await textoGuardado(redis, idM)).texto), "lo cargado a mano ANTES de la lectura automática no tapa el documento leído (MUTACIÓN: lo manual siempre)");
+    await Dv.registrarVersion(redis, { idProceso: idM, texto: PLIEGO.replace("DEFINITIVO", "DEFINITIVO 2"), origen: "lector", ahora: Date.now() + 60000 });
+    const tM = await textoGuardado(redis, idM);
+    assert.ok(/DEFINITIVO 2/.test(tM.texto) && tM.version === 2 && tM.origen === "lector", `lo cargado a mano DESPUÉS gana: es como entra un pliego de más de 20 MB (MUTACIÓN: lo manual nunca): ${JSON.stringify({ ...tM, texto: tM.texto.slice(0, 40) })}`);
+    /* (4b) lo manual cede solo ante un documento PUBLICADO en SECOP II después de cargarlo, no ante uno más viejo leído
+       después (revisión adversaria, CO1.REQ.10168183: el documento base del 29-ene tapaba el del 12-feb cargado a mano) */
+    const idM2 = "CO1.REQ.TXT010";
+    await Dv.registrarVersion(redis, { idProceso: idM2, texto: PLIEGO.replace("DEFINITIVO", "DEL 12 DE FEBRERO"), origen: "lector", ahora: Date.parse("2026-02-15T12:00:00Z") });
+    await sembrar(idM2, [arch("1", "CCE-EICP-GI-01 Documento base V4.pdf", "documento_base", "2026-01-29"), arch("2", "DOCUMENTO BASE .pdf", "documento_base", "2026-03-02")]);
+    await leer(idM2, "1", BASE);
+    assert.ok(/DEL 12 DE FEBRERO/.test((await textoGuardado(redis, idM2)).texto), "un documento publicado ANTES de la carga manual y leído después no la tapa (MUTACIÓN: comparando la hora de lectura, el documento base viejo)");
+    await leer(idM2, "2", BASE.replace("del documento base", "del documento base de marzo"));
+    assert.ok(/documento base de marzo/.test((await textoGuardado(redis, idM2)).texto), "uno publicado DESPUÉS de la carga manual sí manda");
+    await redis.del(DocsT.claveDoc(idM2, "2"));
+    assert.ok(/DEL 12 DE FEBRERO/.test((await textoGuardado(redis, idM2)).texto), "si el más nuevo perdió su texto, lo manual vuelve a ganar al más viejo (MUTACIÓN: comparar con el primero aunque no tenga texto, el documento base viejo)");
+    // (4c) un definitivo MÁS NUEVO sin leer (más de 20 MB) se dice: el dictamen es de una versión anterior
+    const idN = "CO1.REQ.TXT011";
+    await sembrar(idN, [arch("1", "CCE-EICP-GI-01 Documento base V4.pdf", "documento_base", "2026-01-29"), { ...arch("2", "DOCUMENTO BASE .pdf", "documento_base", "2026-02-12"), motivo_omision: "pesa más de 20 MB: la aplicación no lo lee sola; ábralo en SECOP II" }, arch("3", "Proyecto de pliego.pdf", "pliego_borrador", "2026-03-01")]);
+    await leer(idN, "1", BASE);
+    const tN = await textoGuardado(redis, idN);
+    assert.ok(tN.mas_nuevo_sin_leer && tN.mas_nuevo_sin_leer.nombre === "DOCUMENTO BASE .pdf" && tN.mas_nuevo_sin_leer.fecha_carga === "2026-02-12" && /20 MB/.test(tN.mas_nuevo_sin_leer.motivo),
+      `el definitivo más nuevo sin leer se dice, con su motivo; un borrador más nuevo no cuenta (MUTACIÓN: sin el aviso): ${JSON.stringify(tN.mas_nuevo_sin_leer)}`);
+    const dN = await invocar(routerT, `/api/pliego?op=dictamen&id_proceso=${idN}&perfil=helder`, CAB_TOKEN);
+    assert.ok(dN.cuerpo.mas_nuevo_sin_leer && dN.cuerpo.mas_nuevo_sin_leer.nombre === "DOCUMENTO BASE .pdf", `y llega a la consulta del dictamen (MUTACIÓN: sin pasarlo): ${JSON.stringify(dN.cuerpo.mas_nuevo_sin_leer)}`);
+    assert.strictEqual((await textoGuardado(redis, idB)).mas_nuevo_sin_leer, null, "sin uno más nuevo, nada que decir");
+    /* (4d) el hermano: el texto cargado A MANO también avisa de lo publicado después del día de la carga (el pliego de 30 MB
+       cargado a mano y la adenda de 25 MB que vino después), y no del archivo pesado que él mismo reemplaza */
+    const idN2 = "CO1.REQ.TXT013";
+    await Dv.registrarVersion(redis, { idProceso: idN2, texto: PLIEGO.replace("DEFINITIVO", "DEL 12 DE FEBRERO"), origen: "lector", ahora: Date.parse("2026-02-15T12:00:00Z") });
+    const pesado = "pesa más de 20 MB: la aplicación no lo lee sola; ábralo en SECOP II";
+    await sembrar(idN2, [{ ...arch("1", "DOCUMENTO BASE .pdf", "documento_base", "2026-02-12"), motivo_omision: pesado }, { ...arch("2", "PLIEGO DE CONDICIONES ADENDA 1 INCORPORADA.pdf", "pliego", "2026-03-02"), motivo_omision: pesado }, arch("3", "CCE-EICP-GI-01 Documento base V4.pdf", "documento_base", "2026-01-29")]);
+    const tN2 = await textoGuardado(redis, idN2);
+    assert.ok(/DEL 12 DE FEBRERO/.test(tN2.texto) && tN2.mas_nuevo_sin_leer && tN2.mas_nuevo_sin_leer.nombre === "PLIEGO DE CONDICIONES ADENDA 1 INCORPORADA.pdf",
+      `sin documentos leídos, lo cargado a mano avisa del publicado después, no del que reemplaza (MUTACIÓN: la versión del vigía sin aviso): ${JSON.stringify(tN2.mas_nuevo_sin_leer)}`);
+    await leer(idN2, "3", BASE);
+    const tN3 = await textoGuardado(redis, idN2);
+    assert.ok(/DEL 12 DE FEBRERO/.test(tN3.texto) && tN3.mas_nuevo_sin_leer && tN3.mas_nuevo_sin_leer.fecha_carga === "2026-03-02",
+      `y con un documento más viejo leído, igual (MUTACIÓN: la carga manual sin aviso): ${JSON.stringify(tN3.mas_nuevo_sin_leer)}`);
+    // …y cuando el elegido es un pliego que entró al vigía (su texto sale de ahí)
+    const idN4 = "CO1.REQ.TXT014";
+    await sembrar(idN4, [arch("1", "PLIEGO DEFINITIVO.pdf", "pliego", "2026-03-19"), { ...arch("2", "PLIEGO DEFINITIVO MODIFICADO.pdf", "pliego", "2026-03-30"), motivo_omision: pesado }]);
+    await leer(idN4, "1", PLIEGO);
+    const tN4 = await textoGuardado(redis, idN4);
+    assert.ok(tN4.version === 1 && tN4.mas_nuevo_sin_leer && tN4.mas_nuevo_sin_leer.nombre === "PLIEGO DEFINITIVO MODIFICADO.pdf",
+      `el pliego leído del vigía también avisa del más nuevo sin leer (MUTACIÓN: sin aviso en ese camino): ${JSON.stringify({ version: tN4.version, aviso: tN4.mas_nuevo_sin_leer })}`);
+    /* (4e) lo cargado en Precios NO dice qué archivo es (2.ª revisión adversaria): el Formulario 1 soltado ANTES de que la
+       lectura automática lea el pliego no le gana; frente a un pliego del vigía manda el orden del vigía, como en main */
+    const idF = "CO1.REQ.TXT015";
+    const FORM = txt("FORMULARIO 1 - FORMULARIO DE PRESUPUESTO OFICIAL. ITEM 1.1 Localización y replanteo m2 1200 4.500 5.400.000.");
+    await sembrar(idF, [arch("1", "PLIEGO DE CONDICIONES DEFINITIVO LP-001-2026.pdf", "pliego", "2026-09-10")]);
+    await Dv.registrarVersion(redis, { idProceso: idF, texto: FORM, origen: "lector", ahora: Date.parse("2026-09-15T15:00:00Z") });
+    await leer(idF, "1", PLIEGO);
+    const tF = await textoGuardado(redis, idF);
+    assert.ok(tF.version === 2 && /PLIEGO DE CONDICIONES DEFINITIVO/.test(tF.texto),
+      `el Formulario 1 cargado en Precios antes de la lectura automática no tapa el pliego (MUTACIÓN: la fecha de publicación también contra los pliegos del vigía, el Formulario): ${JSON.stringify({ version: tF.version, origen: tF.origen })}`);
+    await Dv.registrarVersion(redis, { idProceso: idF, texto: PLIEGO.replace("DEFINITIVO", "CON ADENDA 1"), origen: "lector", ahora: Date.now() + 60000 });
+    assert.ok(/CON ADENDA 1/.test((await textoGuardado(redis, idF)).texto), "lo cargado en Precios DESPUÉS del pliego del vigía gana, como en main (MUTACIÓN: el pliego del vigía siempre)");
+    // …ni por medio de un documento base publicado después del pliego y antes de la carga (el hermano: main da el pliego)
+    const idF2 = "CO1.REQ.TXT020";
+    await sembrar(idF2, [arch("1", "PLIEGO DE CONDICIONES DEFINITIVO.pdf", "pliego", "2026-09-01"), arch("2", "DOCUMENTO BASE.pdf", "documento_base", "2026-09-05")]);
+    await Dv.registrarVersion(redis, { idProceso: idF2, texto: FORM, origen: "lector", ahora: Date.parse("2026-09-15T15:00:00Z") });
+    await leer(idF2, "1", PLIEGO); await leer(idF2, "2", BASE);
+    const tF2 = await textoGuardado(redis, idF2);
+    assert.ok(!/FORMULARIO 1/.test(tF2.texto) && /DOCUMENTO BASE DEL PROCESO/.test(tF2.texto),
+      `lo manual que un pliego del vigía registrado después reemplazó no compite con el documento base (MUTACIÓN: sin «reemplazada», el Formulario): ${JSON.stringify({ version: tF2.version, origen: tF2.origen })}`);
+    /* (4f) el día de la carga es el de Colombia: a las 20:30 del 15-sep el ISO ya dice 16 */
+    const cargaNoche = Date.parse("2026-09-16T01:30:00Z");
+    const idZ = "CO1.REQ.TXT016";
+    await Dv.registrarVersion(redis, { idProceso: idZ, texto: PLIEGO.replace("DEFINITIVO", "DEL 15 DE SEPTIEMBRE"), origen: "lector", ahora: cargaNoche });
+    await sembrar(idZ, [{ ...arch("1", "PLIEGO DE CONDICIONES AJUSTADO.pdf", "pliego", "2026-09-16"), motivo_omision: pesado }]);
+    const tZ = await textoGuardado(redis, idZ);
+    assert.ok(/DEL 15 DE SEPTIEMBRE/.test(tZ.texto) && tZ.mas_nuevo_sin_leer && tZ.mas_nuevo_sin_leer.nombre === "PLIEGO DE CONDICIONES AJUSTADO.pdf",
+      `lo publicado el día siguiente a una carga nocturna se avisa (MUTACIÓN: el día del ISO en UTC, sin aviso): ${JSON.stringify(tZ.mas_nuevo_sin_leer)}`);
+    const idZ2 = "CO1.REQ.TXT017";
+    await Dv.registrarVersion(redis, { idProceso: idZ2, texto: PLIEGO.replace("DEFINITIVO", "DEL 15 DE SEPTIEMBRE"), origen: "lector", ahora: cargaNoche });
+    await sembrar(idZ2, [arch("1", "DOCUMENTO BASE.pdf", "documento_base", "2026-09-16")]);
+    await leer(idZ2, "1", BASE);
+    assert.ok(/DOCUMENTO BASE DEL PROCESO/.test((await textoGuardado(redis, idZ2)).texto), "el documento base publicado el día siguiente a una carga nocturna la tapa (MUTACIÓN: el día del ISO en UTC, lo manual)");
+    // a igual día no se sabe cuál es más nuevo: lo manual, como en main (que nunca leía el documento base)
+    const idZ3 = "CO1.REQ.TXT019";
+    await Dv.registrarVersion(redis, { idProceso: idZ3, texto: PLIEGO.replace("DEFINITIVO", "DEL 15 DE SEPTIEMBRE"), origen: "lector", ahora: Date.parse("2026-09-15T15:00:00Z") });
+    await sembrar(idZ3, [arch("1", "DOCUMENTO BASE.pdf", "documento_base", "2026-09-15")]);
+    await leer(idZ3, "1", BASE);
+    assert.ok(/DEL 15 DE SEPTIEMBRE/.test((await textoGuardado(redis, idZ3)).texto), "un documento base publicado el MISMO día de la carga manual no la tapa (MUTACIÓN: «>=», el documento base)");
+    /* (4g) uno más nuevo que está en el plan y todavía no se leyó es «pendiente», no «no se pudo leer» */
+    const idP = "CO1.REQ.TXT018";
+    await sembrar(idP, [arch("1", "CCE-EICP-GI-01 Documento base V4.pdf", "documento_base", "2026-01-29"), arch("2", "DOCUMENTO BASE DEFINITIVO.pdf", "documento_base", "2026-02-12")]);
+    await leer(idP, "1", BASE);
+    const tP = await textoGuardado(redis, idP);
+    assert.ok(tP.mas_nuevo_sin_leer && tP.mas_nuevo_sin_leer.pendiente === true && tP.mas_nuevo_sin_leer.motivo === null && tN.mas_nuevo_sin_leer.pendiente === false,
+      `el más nuevo por leer se dice pendiente; el de más de 20 MB, no (MUTACIÓN: sin \`pendiente\`): ${JSON.stringify([tP.mas_nuevo_sin_leer, tN.mas_nuevo_sin_leer])}`);
+    // (5) el orden: el definitivo antes que el borrador, el más reciente, y a igual fecha el pliego antes que el documento base
+    const ordenDe = (leidos) => DocsT.candidatosAlTextoDelPliego({ leidos }).map((x) => x.id_documento);
+    assert.deepStrictEqual(ordenDe({ 1: { nombre: "PLIEGO DEFINITIVO.pdf", tipo: "pliego", fecha_carga: "2026-04-01" }, 2: { nombre: "PROYECTO DE PLIEGO.pdf", tipo: "pliego_borrador", fecha_carga: "2026-05-01" } }), ["1", "2"], "el definitivo antes que un borrador más nuevo (MUTACIÓN: sin la clave del borrador, el borrador)");
+    assert.deepStrictEqual(ordenDe({ 1: { nombre: "Documento base borrador.pdf", tipo: "documento_base", fecha_carga: "2026-05-01" }, 2: { nombre: "DOCUMENTO BASE DEFINITIVO.pdf", tipo: "documento_base", fecha_carga: "2026-04-01" } }), ["2", "1"], "un documento base con «borrador» en el nombre también es borrador");
+    assert.deepStrictEqual(ordenDe({ 1: { nombre: "PLIEGO DEFINITIVO.pdf", tipo: "pliego", fecha_carga: "2026-01-29" }, 2: { nombre: "DOCUMENTO BASE .pdf", tipo: "documento_base", fecha_carga: "2026-02-12" } }), ["2", "1"], "el más reciente en SECOP II (MUTACIÓN: sin la fecha, el pliego por tipo)");
+    assert.deepStrictEqual(ordenDe({ 1: { nombre: "DOCUMENTO BASE.pdf", tipo: "documento_base", fecha_carga: "2026-02-12" }, 2: { nombre: "PLIEGO DEFINITIVO.pdf", tipo: "pliego", fecha_carga: "2026-02-12" } }), ["2", "1"], "a igual fecha, el pliego antes que el documento base (MUTACIÓN: sin la prioridad, el base)");
+    assert.deepStrictEqual(ordenDe({ 1: { nombre: "DOCUMENTO BASE.pdf", tipo: "documento_base", fecha_carga: "2026-02-12", hechos: { plantilla_en_blanco: true } }, 2: { nombre: "6.1_ANEXO_PLIEGO LP-003-2026.pdf", tipo: "pliego", fecha_carga: "2026-04-05" }, 3: { nombre: "Estudios previos.pdf", tipo: "estudio_previo", fecha_carga: "2026-04-05" } }), [], "ni la plantilla en blanco ni un anexo ni otro tipo de documento (MUTACIÓN: sin la plantilla, el documento base en blanco)");
+    for (const [n, si] of [["PLIEGO DE CONDICIONES DEFINITIVO.pdf", true], ["DOCUMENTO COMPLEMENTARIO AL PLIEGO DE CONDICIONES.pdf", true], ["ANEXOS PLIEGO DE CONDICIONES.docx", false], ["OFICIO PREGUNTAS Y RESPUESTAS LP-SI-002-2026 PLIEGO DEF.pdf", false], ["Anexo 3 - Glosario - Proyecto de Pliego.pdf", false], ["FORMATOS DEL PLIEGO.docx", false], ["MATRICES PLIEGO TIPO.zip", false], ["Apendice B - Transversal Cusiana - Proyecto de pliego.pdf", false],
+      // la palabra DESPUÉS del nombre del pliego no lo vuelve anexo (revisión adversaria; «después de obsv.» es real, CO1.REQ.10197236)
+      ["Pliego definitivo ajustado con observaciones LP-001-2026.pdf", true], ["PLIEGO DE CONDICIONES DEFINITIVO CON ANEXOS.pdf", true], ["PLIEGO DEFINITIVO Y FORMATOS.pdf", true], ["Pliego definitivo despues de obsv.pdf", true]]) {
+      assert.strictEqual(DocsT.esVersionDelPliego({ tipo: "pliego", nombre: n }), si, `«${n}» ${si ? "es" : "no es"} una versión del pliego (nombres de los índices reales; MUTACIÓN: mirando todo el nombre, el ajustado queda fuera)`);
+    }
+    assert.strictEqual(DocsT.esVersionDelPliego({ tipo: "documento_base", nombre: "Documento base definitivo con formularios.pdf" }), true, "ni «con formularios» detrás de «documento base»");
+    // el pliego ajustado CON OBSERVACIONES, posterior, es el texto (antes de arreglar la regla, se leía la versión anterior)
+    const idAj = "CO1.REQ.TXT009";
+    await sembrar(idAj, [arch("1", "6. Pliego definitivo LP-001-2026.pdf", "pliego", "2026-06-16"), arch("2", "Pliego definitivo ajustado con observaciones LP-001-2026.pdf", "pliego", "2026-07-08")]);
+    await leer(idAj, "1", PLIEGO);
+    const rAj = await leer(idAj, "2", PLIEGO.replace("DEFINITIVO.", "DEFINITIVO AJUSTADO."));
+    const tAj = await textoGuardado(redis, idAj);
+    assert.ok(rAj.version_pliego === 2 && /AJUSTADO/.test(tAj.texto) && tAj.version === 2, `el ajustado entra al vigía y es el texto: v${rAj.version_pliego}, ${tAj.texto.slice(0, 60)}`);
+    // (6) el documento leído que caducó en Redis cede al siguiente; el texto tiene el tope del vigía
+    const idX = "CO1.REQ.TXT006";
+    await sembrar(idX, [arch("1", "PLIEGO DEFINITIVO.pdf", "pliego", "2026-01-10"), arch("2", "DOCUMENTO BASE.pdf", "documento_base", "2026-02-12")]);
+    const largo = `\f1\nDOCUMENTO BASE LARGO.\n${"x".repeat(Dv.MAX_TEXTO + 5000)}\n`;
+    await leer(idX, "1", PLIEGO); await leer(idX, "2", largo);
+    const tX = await textoGuardado(redis, idX);
+    assert.ok(tX.texto.length === Dv.MAX_TEXTO && tX.recortado === true && tX.documento.nombre === "DOCUMENTO BASE.pdf", `el documento base más nuevo, con el tope de 400 KB del vigía y dicho (MUTACIÓN: sin el tope, ${tX.texto.length}): ${tX.recortado}`);
+    // dos documentos base (ninguno en el vigía): sin el texto guardado del más nuevo, el siguiente
+    const idX2 = "CO1.REQ.TXT008";
+    await sembrar(idX2, [arch("1", "DOCUMENTO BASE.pdf", "documento_base", "2026-01-10"), arch("2", "DOCUMENTO BASE MODIFICADO.pdf", "documento_base", "2026-02-12")]);
+    await leer(idX2, "1", BASE); await leer(idX2, "2", BASE.replace("del documento base", "del documento base modificado"));
+    await redis.del(DocsT.claveDoc(idX2, "2"));
+    const tX2 = await textoGuardado(redis, idX2);
+    assert.ok(/DOCUMENTO BASE DEL PROCESO/.test(tX2.texto) && !/modificado/.test(tX2.texto) && tX2.documento.nombre === "DOCUMENTO BASE.pdf", `sin el texto guardado del más nuevo, el siguiente (MUTACIÓN: parar en el primero, sin texto): ${JSON.stringify({ ...tX2, texto: tX2.texto.slice(0, 40) })}`);
+    // (7) dos documentos base distintos son dos textos distintos para el pedido de lectura
+    const idI = "CO1.REQ.TXT007";
+    await sembrar(idI, [arch("1", "DOCUMENTO BASE.pdf", "documento_base", "2026-09-10"), arch("2", "DOCUMENTO BASE MODIFICADO.pdf", "documento_base", "2026-09-20")]);
+    await leer(idI, "1", BASE); const id1 = (await textoGuardado(redis, idI)).texto_id;
+    await leer(idI, "2", BASE.replace("del documento base", "del documento base modificado")); const id2 = (await textoGuardado(redis, idI)).texto_id;
+    assert.ok(id1 && id2 && id1 !== id2, `cada documento base tiene su identidad: ${id1} / ${id2}`);
+    // …y el pedido de lectura a la sesión se reconoce por esa identidad: el de otro documento base no es el de este
+    const Dct = require("../lib/dictamen.js");
+    await redis.set(Dct.clavePedido(idI, "helder"), JSON.stringify({ el: new Date().toISOString(), version_texto: id1, ok: true }));
+    const conPedidoViejo = await invocar(routerT, `/api/pliego?op=dictamen&id_proceso=${idI}&perfil=helder`, CAB_TOKEN);
+    assert.strictEqual(conPedidoViejo.cuerpo.pedido_sesion, null, `un pedido del documento base anterior no es el del nuevo (MUTACIÓN: comparando la versión, nula en los dos): ${JSON.stringify(conPedidoViejo.cuerpo.pedido_sesion)}`);
+    await redis.set(Dct.clavePedido(idI, "helder"), JSON.stringify({ el: new Date().toISOString(), version_texto: id2, ok: true }));
+    const conPedido = await invocar(routerT, `/api/pliego?op=dictamen&id_proceso=${idI}&perfil=helder`, CAB_TOKEN);
+    assert.ok(conPedido.cuerpo.pedido_sesion && conPedido.cuerpo.pedido_sesion.version_texto === id2, "el pedido del documento vigente sí se reconoce");
+    // …y al PEDIR la lectura: el pedido de un documento base no bloquea pedir la del siguiente (revisión adversaria)
+    {
+      const idS = "CO1.REQ.TXT012";
+      await sembrar(idS, [arch("1", "DOCUMENTO BASE.pdf", "documento_base", "2026-09-10"), arch("2", "DOCUMENTO BASE MODIFICADO.pdf", "documento_base", "2026-09-20")]);
+      await leer(idS, "1", BASE);
+      const envU = process.env.RUTINA_DICTAMEN_URL, envT = process.env.RUTINA_DICTAMEN_TOKEN, fetchAntes = global.fetch; const disparos = [];
+      global.fetch = async (u, o) => { if (/claude_code\/routines/.test(String(u))) { disparos.push(String(u)); return { ok: true, status: 200, json: async () => ({ claude_code_session_id: "session_T", claude_code_session_url: "https://claude.ai/code/session_T" }) }; } return fetchAntes(u, o); };
+      try {
+        process.env.RUTINA_DICTAMEN_URL = "https://api.anthropic.com/v1/claude_code/routines/trig_T/fire"; process.env.RUTINA_DICTAMEN_TOKEN = "sk-ant-oat01-T";
+        const pedirS = () => invocarPost(routerT, "/api/pliego?op=dictamen", { id_proceso: idS, perfil: "helder", pedir_sesion: true, refrescar: true }, CAB_TOKEN);
+        const s1 = await pedirS();
+        assert.ok(s1.status === 200 && disparos.length === 1, `la primera lectura se pide: ${JSON.stringify(s1.cuerpo).slice(0, 200)}`);
+        const s1b = await pedirS();
+        assert.ok(s1b.cuerpo.repetida === true && disparos.length === 1, `el mismo texto pedido otra vez es «ya pedida», sin otra sesión (MUTACIÓN: la marca o su comparación por \`version\`, que no casan con la identidad): ${JSON.stringify(s1b.cuerpo).slice(0, 200)}`);
+        await leer(idS, "2", BASE.replace("del documento base", "del documento base modificado"));
+        const s2 = await pedirS();
+        assert.ok(s2.cuerpo.repetida !== true && disparos.length === 2, `el documento base nuevo es otro texto: se pide otra lectura (MUTACIÓN: el candado por \`version\`, nula en los dos, «ya pedida»): ${JSON.stringify(s2.cuerpo).slice(0, 200)}`);
+      } finally {
+        global.fetch = fetchAntes;
+        if (envU === undefined) delete process.env.RUTINA_DICTAMEN_URL; else process.env.RUTINA_DICTAMEN_URL = envU;
+        if (envT === undefined) delete process.env.RUTINA_DICTAMEN_TOKEN; else process.env.RUTINA_DICTAMEN_TOKEN = envT;
+      }
+    }
+    console.log("· unidad el texto del pliego: el documento base leído llega al dictamen, los anexos con «pliego» en el nombre no entran al vigía ni dan el texto, lo cargado a mano después gana, el definitivo más reciente manda, y el tope de 400 KB");
+  }
   bqNueveProcesos: { if (!corre("unidad los nueve procesos del dueño")) break bqNueveProcesos;
     const Dp = require("../lib/documentos_proceso.js");
     const Df = require("../lib/diff.js");
@@ -10071,7 +10687,8 @@ async function main() {
         const htmlEntidadPorAnio = () => "", htmlProrrogaEntidad = () => "", htmlPlazoAdjudicacion = () => "", htmlDesiertos = () => "";
         const bloqueProponentes = () => "", bloqueEjecucion = () => "", tabla = () => "";
         const cargando = (m) => "<p>" + esc(m) + "</p>";
-        const leerToken = () => "t", msg401 = () => "401", fraseDeFallo = ({ status }) => "La consulta falló (código " + status + ").";
+        const conSesion = (o) => ({ ...(o || {}), credentials: "same-origin" });
+        const msg401 = () => "401", fraseDeFallo = ({ status }) => "La consulta falló (código " + status + ").";
         const leerJson = async (r) => r.cuerpo;
         const pedidas = [];
         const fetch = async (url) => { pedidas.push(url); const x = await respuestas(url); if (x instanceof Error) throw x; return x; };
@@ -11699,7 +12316,7 @@ async function main() {
       assert.ok(iCop > iSisC && iSisC > 0, "«Copia de sus datos» vive dentro de «Sistema»");
       for (const id of ["btn-copia-descargar", "copia-archivo", "copia-reemplazar", "btn-copia-restaurar", "copia-mensaje", "copia-descarga-mensaje"]) assert.ok(htmlCopia.includes(`id="${id}"`), `falta #${id}`);
       assert.ok(/accept="\.detekta"/.test(htmlCopia), "el selector de archivo solo ofrece la extensión de la copia");
-      assert.ok(/fetch\("\/api\/admin\?op=exportar",\s*\{\s*headers:\s*\{\s*"x-historico-token"/.test(appCopia) && !/op=exportar[^`"']*token=/.test(appCopia), "la descarga va con la cabecera del token y un Blob, jamás con el token en la URL");
+      assert.ok(/fetch\("\/api\/admin\?op=exportar",\s*conSesion\(\)\)/.test(appCopia) && !/op=exportar[^`"']*token=/.test(appCopia), "la descarga va con la sesión del dueño y un Blob, jamás con una llave en la URL");
       assert.ok(/"\/api\/admin\?op=importar"/.test(appCopia) && /sobrescribir: \$\("copia-reemplazar"\)\.checked/.test(appCopia), "la sobrescritura la decide la casilla, explícita");
       assert.ok(/x-copia-elementos/.test(appCopia) && /descargó vacía/.test(appCopia), "una copia vacía se avisa (no es un éxito mudo)");
 
@@ -14177,7 +14794,7 @@ async function main() {
       const cuerpoD = appL.slice(appL.indexOf("async function filasParaExcel("), fD);
       assert.ok(/ListaLibro\.libroDeLista\(/.test(cuerpoD) && /XLSXApu\.descargar\(XLSXApu\.construirLibro\(/.test(cuerpoD), "las hojas las arma lista_libro y los bytes xlsx.js: no hay un segundo escritor");
       assert.ok(/Nada que descargar/.test(cuerpoD) && /Preparando el archivo/.test(cuerpoD) && /Descargado «/.test(cuerpoD) && /No se pudo preparar el archivo/.test(cuerpoD), "ninguna pulsación sin respuesta: vacío, preparando, descargado y fallo");
-      assert.ok(/"x-historico-token": token/.test(cuerpoD) && !/token=/.test(cuerpoD), "el token va por cabecera, jamás en la URL");
+      assert.ok(/conSesion\(\)/.test(cuerpoD) && !/token=/.test(cuerpoD) && !/x-historico-token/.test(cuerpoD), "la lista se pide con la sesión del dueño, jamás con una llave (ni en cabecera ni en la URL)");
       assert.ok(/por_pagina", String\(EXCEL_POR_PAGINA\)/.test(cuerpoD) && /EXCEL_POR_PAGINA = 100/.test(appL) && /const cuerpo = await leerJson\(r\)/.test(cuerpoD), "las páginas restantes se piden con el tope de la paginación y el parseo va aparte del fetch");
       console.log(`  · lista en Excel: ${hojas[0].filas.length - 1} filas · ${cab.length} columnas · cuantía cruda ${celda(2, iCuantia)} · vacío donde no hay dato`);
     })();
@@ -15717,7 +16334,7 @@ async function main() {
     {
       const tokenGuardado9 = process.env.HISTORICO_TOKEN;
       delete process.env.HISTORICO_TOKEN;
-      const permiso9 = require("../lib/auth.js").autorizarToken({ headers: { "x-historico-token": "MiExtraccion2025" } }, {});
+      const permiso9 = await require("../lib/auth.js").autorizarToken({ headers: { "x-historico-token": "una-llave-cualquiera" } }, {});
       process.env.HISTORICO_TOKEN = tokenGuardado9;
       assert.strictEqual(permiso9.status, 503, "lib/auth ya no responde 503 sin la llave del despliegue: la premisa cambió");
 
@@ -15742,6 +16359,13 @@ async function main() {
       assert.strictEqual(c4.error, "Sincronizando por primera vez.", "el 503 de sincronización no se toca: la pantalla espera");
       const c5 = await leer9(200, { ok: true, error: undefined, resultados: [] });
       assert.strictEqual(c5.ok, true, "un 200 no se redacta");
+      /* EL 503 DE LA LLAVE RETIRADA SE LEE EN LA PANTALLA DE ALTA, Y QUIEN LA LEE ES EL QUE
+         ADMINISTRA (navegador real, 18-oct-2026): envuelto en «no hay nada que pueda hacer desde
+         aquí: avise a quien lo administra» contradecía su propia instrucción de rotar la llave. */
+      const SesionA9 = require("../lib/sesion.js");
+      const cRetirada9 = await leer9(503, { ok: false, motivo: "llave_retirada", error: SesionA9.MSG_LLAVE_RETIRADA });
+      assert.strictEqual(cRetirada9.error, SesionA9.MSG_LLAVE_RETIRADA,
+        `el 503 de la llave retirada le habla al dueño que la tiene que cambiar; no se envuelve en «avise a quien lo administra»:\n${cRetirada9.error}`);
       /* EL HERMANO VIVO: el tablero añadía «puede iniciar una carga» a TODO 503, y
          con el sitio mal configurado esa acción no puede funcionar. */
       assert.strictEqual(c1.sitio_mal_configurado, true, "el cuerpo redactado marca que es configuración del sitio");
@@ -16480,7 +17104,7 @@ async function main() {
         nodos.set(id, el);
         return el;
       };
-      for (const id of ["frase-portada", "onboarding", "gate", "gate-clave", "gate-form",
+      for (const id of ["frase-portada", "onboarding", "gate", "gate-correo", "gate-contrasena", "gate-form",
         "btn-subir-rup", "rup-archivo", "btn-manual", "manual-form", "btn-manual-enviar",
         "completar-form", "btn-completar-enviar", "btn-ir-gate", "btn-exp-cargar", "exp-archivo",
         "exp-mensaje", "rup-mensaje", "rup-avisos", "rup-progreso", "rup-barra", "rup-progreso-msg",
@@ -16596,10 +17220,11 @@ async function main() {
      Con `method="dialog"` (12-sep-2026) ese envío ya no destruye la clave escrita,
      pero sigue sin HACER NADA: la regla dura «ninguna pulsación sin respuesta
      visible», rota en la puerta de la aplicación.
-     AQUÍ EL FALSO CARO ES EL POSITIVO: reproducir un envío que nadie hizo quema uno
-     de los tres intentos de MAX_INTENTOS_CLAVE. Por eso la duda no se resuelve
-     actuando, y por eso un envío con el campo VACÍO —que no puede acertar y sí puede
-     quemar un intento— tampoco se reproduce. Queda vivo y DECLARADO el caso de
+     AQUÍ EL FALSO CARO ES EL POSITIVO: reproducir un envío que nadie hizo gasta uno
+     de los intentos que el SERVIDOR cuenta por correo y por conexión (op=entrar,
+     17-oct-2026; antes eran los tres de la clave del navegador). Por eso la duda no
+     se resuelve actuando, y por eso un envío con un campo VACÍO —que no puede entrar
+     y sí puede gastar un intento— tampoco se reproduce. Queda vivo y DECLARADO el caso de
      quien pulsa Intro dentro del campo: no hay rastro que lo separe de «solo
      escribí», y no se cierra inventando una regla.
      Se EJECUTA la función real recortada de public/app.js —el mismo idioma que el
@@ -16639,9 +17264,10 @@ async function main() {
         return el;
       };
       const gate = crear("gate"), form = crear("gate-form", "FORM");
-      const campo = crear("gate-clave", "INPUT"), boton = crear("__entrar", "BUTTON"), cuerpo = crear("__body", "BODY");
-      boton.type = "submit"; boton.__padre = form; form.__padre = gate; campo.__padre = form;
-      dom = { document: { activeElement: cuerpo, getElementById: (id) => nodos.get(id) || null }, gate, form, campo, boton, cuerpo };
+      const correo = crear("gate-correo", "INPUT"), campo = crear("gate-contrasena", "INPUT");
+      const boton = crear("__entrar", "BUTTON"), cuerpo = crear("__body", "BODY");
+      boton.type = "submit"; boton.__padre = form; form.__padre = gate; campo.__padre = form; correo.__padre = form;
+      dom = { document: { activeElement: cuerpo, getElementById: (id) => nodos.get(id) || null }, gate, form, correo, campo, boton, cuerpo };
       return dom;
     };
     /* la función real, con el MISMO `$` que usa app.js */
@@ -16649,11 +17275,13 @@ async function main() {
       const $B8 = (id) => dom.document.getElementById(id);
       return new Function("document", "$", `${CODIGO_B8}\n  return ${NOMBRE_B8};`)(dom.document, $B8)();
     };
-    /* el escenario base: el gate ABIERTO (onboarding.js le quitó `hidden`), la
-       clave escrita y el foco en «Entrar» sin `:focus-visible` — o sea, PULSADO */
+    /* el escenario base: el gate ABIERTO (onboarding.js le quitó `hidden`), el
+       correo y la contraseña escritos y el foco en «Entrar» sin `:focus-visible`
+       — o sea, PULSADO */
     const pulsadoB8 = () => {
       const dom = nuevoDomB8();
-      dom.campo.value = "231105";
+      dom.correo.value = "dueno@empresa.co";
+      dom.campo.value = "una frase larga de prueba";
       dom.document.activeElement = dom.boton;
       dom.boton.__focusVisible = false;
       return dom;
@@ -16668,9 +17296,10 @@ async function main() {
     // 2 · los seis rastros que NO son un envío: censo, y ninguno actúa
     const sinEnvioB8 = [
       ["quien solo TABULÓ hasta «Entrar» no ha enviado nada (:focus-visible verdadero)", (d) => { d.boton.__focusVisible = true; }],
-      ["sin gesto alguno: el foco sigue en el campo de la clave", (d) => { d.document.activeElement = d.campo; }],
+      ["sin gesto alguno: el foco sigue en el campo de la contraseña", (d) => { d.document.activeElement = d.campo; }],
       ["quien pulsó y se marchó a otro sitio: el foco acabó en BODY", (d) => { d.document.activeElement = d.cuerpo; }],
-      ["con el campo VACÍO: un envío en blanco no puede acertar y sí quema uno de los tres intentos", (d) => { d.campo.value = ""; }],
+      ["con la contraseña VACÍA: un envío en blanco no puede entrar y sí gasta un intento del servidor", (d) => { d.campo.value = ""; }],
+      ["con el correo VACÍO: tampoco puede entrar", (d) => { d.correo.value = ""; }],
       ["con el gate CERRADO (la aplicación ya abierta, o la portada a la vista)", (d) => { d.gate.classList.add("hidden"); }],
       ["si el navegador no conoce `:focus-visible`, la duda se resuelve SIN actuar", (d) => { d.boton.__matchesLanza = true; }],
       ["un botón con el foco que no es el `submit` de #gate-form", (d) => { d.boton.__padre = null; }],
@@ -16679,13 +17308,17 @@ async function main() {
       const dom = pulsadoB8();
       preparar(dom);
       assert.strictEqual(correrB8(dom), null, `se reprodujo un envío que nadie hizo — ${rotulo}`);
-      assert.strictEqual(dom.boton.__clicks, 0, `se gastó uno de los tres intentos de la clave — ${rotulo}`);
+      assert.strictEqual(dom.boton.__clicks, 0, `se gastó un intento de entrar que nadie pidió — ${rotulo}`);
     }
     // 3 · la reproducción corre DESPUÉS de atar el `submit` y AL FINAL del IIFE
     {
       const iAtado = FUENTE_APP_B8.indexOf('$("gate-form").addEventListener("submit"');
       assert.ok(iAtado > 0, "app.js ya no ata el `submit` de #gate-form");
-      const iLlamada = FUENTE_APP_B8.lastIndexOf(`${NOMBRE_B8}();`);
+      /* el arranque es asíncrono desde el 17-oct-2026 (espera a op=sesion): la reproducción
+         va en su `.then`, que es lo que la deja DESPUÉS de decidir si el gate sigue a la vista */
+      const iLlamada = FUENTE_APP_B8.lastIndexOf(`${NOMBRE_B8}()`);
+      assert.ok(/arrancar\(\)\s*\.then\(\(\) => reproducirEnvioDeClaveAntesDeCargar\(\)\)/.test(FUENTE_APP_B8),
+        "la reproducción tiene que correr cuando el arranque TERMINÓ (en su .then), no antes");
       assert.ok(iLlamada > 0, `app.js define ${NOMBRE_B8} pero no la LLAMA: una función que nadie invoca no cierra ninguna ventana`);
       assert.ok(iLlamada > iAtado, "la reproducción corre ANTES de atar el `submit`: el envío se perdería igual");
       assert.ok(FUENTE_APP_B8.slice(iLlamada).trim().split("\n").length <= 8,
@@ -16704,7 +17337,7 @@ async function main() {
 
     console.log(`· unidad pantalla · el envío de la clave antes de cargar: ${NOMBRE_B8} EJECUTADA `
       + `· el envío pulsado dentro de la ventana de 2.214 ms (4G/CPU x4) y 8.984 ms (3G/CPU x6) se reproduce con el manejador REAL `
-      + `· los ${sinEnvioB8.length} rastros que no son un envío dejan 0 clicks: ni un intento de tres quemado `
+      + `· los ${sinEnvioB8.length} rastros que no son un envío dejan 0 clicks: ni un intento del servidor gastado `
       + `· la llamada va al final del IIFE y detrás del addEventListener del submit · 0 promesas en el marcado del gate`);
   }
 
@@ -23976,8 +24609,13 @@ async function main() {
       const URL_AUTO = "/api/procesos?op=sync&modo=auto&chain=0";
       // sin la variable: abierta, sin cabeceras de auto-llamada, y salud lo dice
       assert.strictEqual(Auth.hayGuardaDeSincronizacion(), false);
-      assert.deepStrictEqual(Auth.autorizarSincronizacion({ headers: {} }, {}), { ok: true, via: "abierta" });
-      assert.strictEqual(Auth.cabecerasDeAutoLlamada(), undefined, "sin secretos la auto-llamada no manda cabeceras, como hasta hoy");
+      assert.deepStrictEqual(await Auth.autorizarSincronizacion({ headers: {} }, {}), { ok: true, via: "abierta" });
+      // el entorno de Claude Code del dueño trae el pase del muro de verdad: se aparta para medir «sin secretos»
+      const paseDelEntorno = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
+      delete process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
+      try {
+        assert.strictEqual(Auth.cabecerasDeAutoLlamada(), undefined, "sin secretos la auto-llamada no manda cabeceras, como hasta hoy");
+      } finally { ponerG("VERCEL_AUTOMATION_BYPASS_SECRET", paseDelEntorno); }
       assert.strictEqual((await invocar(rProcesosG, "/api/procesos?op=salud")).cuerpo.sincronizacion_protegida, false);
       ponerG("CRON_SECRET", SECRETO);
       let capturadas = [];
@@ -26291,10 +26929,23 @@ async function main() {
           assert.strictEqual(rSin.status, 200, "sin dirección legible la cuota no puede bloquear a nadie");
         }
 
-        // LA LLAVE DEL DUEÑO EXIME; una llave que no vale no exime, pero el 429 lo dice
-        for (let i = 0; i < 4; i++) {
-          const rD = await invocarPost(rPerfilQ, "/api/perfil?op=entrada", TRES_DATOS, { ...cabIp("203.0.113.43"), "x-historico-token": "token-historico-de-prueba" });
-          assert.strictEqual(rD.status, 200, "con la llave del dueño no hay límite por conexión");
+        /* LA SESIÓN DEL DUEÑO EXIME (17-oct-2026); LA LLAVE DEL SERVIDOR YA NO —vivió escrita en el
+           navegador y eximirla regalaba la puerta a quien la copiara—. Una credencial que no vale
+           no exime, pero el 429 lo dice. */
+        {
+          const SesQ = require("../lib/sesion.js");
+          const idQ = `cta_${"a1".repeat(10)}`;
+          await redis.set(SesQ.CLAVE_DUENO, idQ);
+          const tokQ = await SesQ.abrirSesion(redis, idQ);
+          try {
+            for (let i = 0; i < 4; i++) {
+              const rD = await invocarPost(rPerfilQ, "/api/perfil?op=entrada", TRES_DATOS, { ...cabIp("203.0.113.43"), cookie: `${SesQ.COOKIE_SESION}=${tokQ}` });
+              assert.strictEqual(rD.status, 200, "con la sesión del dueño no hay límite por conexión");
+            }
+            const conLlaveBuena = [];
+            for (let i = 0; i < 3; i++) conLlaveBuena.push(await invocarPost(rPerfilQ, "/api/perfil?op=entrada", TRES_DATOS, { ...cabIp("203.0.113.47"), "x-historico-token": "token-historico-de-prueba" }));
+            assert.ok(conLlaveBuena.some((r) => r.status === 429), `la llave del servidor ya no exime de la cuota: ${JSON.stringify(conLlaveBuena.map((r) => r.status))}`);
+          } finally { await redis.del(SesQ.CLAVE_DUENO, SesQ.claveSesion(tokQ)); }
         }
         {
           const conLlaveMala = [];
@@ -29153,7 +29804,8 @@ async function main() {
            frontend»). */
         assert.ok(!unoHtml.includes("cdn.tailwindcss.com"),
           "el CDN de Tailwind no puede volver: sin él la app se veía rota y la consola no decía nada");
-        assert.ok(unoJs.includes('"231105"'), "app.js sin la clave del gate");
+        assert.ok(/\/api\/admin\?op=entrar/.test(unoJs) && unoHtml.includes('id="gate-correo"') && unoHtml.includes('id="gate-contrasena"'),
+          "el gate entra con correo y contraseña contra el servidor (op=entrar), no con una clave comprobada en el navegador");
 
         /* ═══ SIN LISTA DESPLEGABLE DE ÍTEMS (ago 2026) ═══════════════════════
            El <select id="item-nuevo"> con los 174 ítems del catálogo era
@@ -29196,46 +29848,62 @@ async function main() {
             "la función compartida (1 declaración) y sus TRES llamadas: archivo detectado, columnas a mano y los ítems del pliego");
         }
 
-        /* EL TOKEN VA INTEGRADO (decisión del dueño, ago 2026): no existe
-           ningún formulario ni modal que lo pida — Vercel Password Protection
-           es la capa de seguridad real y el token solo guarda las escrituras
-           de Redis y las cifras del perfil. */
-        /* ROTARLO NO PUEDE DEJAR LA APLICACIÓN A MEDIAS (6-sep-2026, M-INF-13): el literal vive
-           en TRES archivos de public/ y la suite fijaba el valor en dos (app.js y pliego.js):
-           onboarding.js podía quedarse con otro token sin que nada se pusiera en rojo, y una
-           rotación hecha según el README dejaba la suite en rojo por el literal. CENSO de todos
-           los public/*.js: cada `const TOKEN = "…"` presente, no trivial e idéntico a los demás,
-           y los dos documentos que le dicen al dueño qué pegar en Vercel llevan el mismo valor.
-           El valor sale del censo (TOKEN_INTEGRADO), no de la suite: rotar es cambiar los tres
-           archivos y los dos documentos (docs/CONFIGURACION_TOKENS.md §10). */
-        const tokensIntegrados = fs.readdirSync(path.join(__dirname, "..", "public")).filter((f) => f.endsWith(".js")).sort()
-          .map((f) => ({ archivo: f, m: /const TOKEN = "([^"]*)"/.exec(fs.readFileSync(path.join(__dirname, "..", "public", f), "utf8")) }))
-          .filter((x) => x.m).map((x) => ({ archivo: x.archivo, token: x.m[1] }));
-        assert.deepStrictEqual(tokensIntegrados.map((x) => x.archivo), ["app.js", "onboarding.js", "pliego.js"],
-          "los archivos de public/ con token integrado son exactamente esos tres (uno nuevo se declara aquí y en la guía de rotación)");
-        const TOKEN_INTEGRADO = tokensIntegrados[0].token;
-        assert.ok(TOKEN_INTEGRADO.length >= 8, "el token integrado no puede estar vacío ni ser trivial");
-        for (const x of tokensIntegrados) {
-          assert.strictEqual(x.token, TOKEN_INTEGRADO, `public/${x.archivo} lleva otro token integrado que app.js: una rotación a medias sirve la aplicación a medias`);
+        /* NINGUNA CREDENCIAL VIVE EN EL NAVEGADOR (17-oct-2026, decisión del dueño). Hasta hoy
+           esta cerradura EXIGÍA lo contrario: el literal de la llave del servidor en tres archivos
+           de public/ («token integrado», ago 2026), idéntico en los tres y en dos documentos. Esa
+           llave la leía cualquiera y abría todas las API protegidas; el dueño entra ahora con
+           correo y contraseña y la sesión viaja en una cookie HttpOnly (lib/sesion).
+           CENSO, NO LISTA: se barren TODOS los public/*.js (readdirSync, también el que alguien
+           añada mañana) y los atributos de index.html, sin comentarios, y se exige:
+             · ninguna cabecera `x-historico-token`, ningún `token=` en una URL, ningún
+               `HISTORICO_TOKEN` ni `const TOKEN` en el código;
+             · ninguna cadena con forma de credencial (8 o más caracteres seguidos con minúscula,
+               mayúscula y dígito: la forma de la llave vieja) salvo las EXCEPCIONES declaradas,
+               cada una con su motivo;
+             · y que app.js, pliego.js y onboarding.js declaren `credentials: "same-origin"`.
+           Contra el árbol anterior cae por las tres primeras vías a la vez (los tres literales y
+           sus cabeceras). La otra mitad —que el servidor RECHACE la llave cuando la pide el código
+           de una página— la ejecuta el bloque «sesión del dueño» con el handler real. */
+        {
+          const FORMA_CREDENCIAL = /(?<![\w.\/-])(?=[A-Za-z0-9_-]{8,}(?![\w.\/-]))(?=[A-Za-z0-9_-]*[a-z])(?=[A-Za-z0-9_-]*[A-Z])(?=[A-Za-z0-9_-]*\d)[A-Za-z0-9_-]+/g;
+          const EXCEPCIONES_CREDENCIAL = {
+            moneda2Negrita: "nombre de un estilo de celda del libro de Excel (public/apu_libro.js), no una credencial",
+            "12h10M10": "trozo de la ruta de un icono SVG en index.html, no una credencial",
+          };
+          const dirPublic = path.join(__dirname, "..", "public");
+          const censados = fs.readdirSync(dirPublic).filter((f) => f.endsWith(".js")).sort();
+          assert.ok(censados.length >= 15 && censados.includes("app.js") && censados.includes("pliego.js") && censados.includes("onboarding.js"),
+            `el censo de public/*.js no encontró los módulos de siempre: ${censados.join(", ")}`);
+          const hallazgos = [];
+          for (const f of censados) {
+            const src = sinComentarios(fs.readFileSync(path.join(dirPublic, f), "utf8"));
+            if (/x-historico-token/i.test(src)) hallazgos.push(`${f}: manda la cabecera x-historico-token (la llave del servidor)`);
+            if (/[?&]token=/.test(src)) hallazgos.push(`${f}: pone «token=» en una URL`);
+            if (/\bHISTORICO_TOKEN\b/.test(src.replace(/(["'`])(?:\\.|(?!\1)[^\\\n])*\1/g, ""))) hallazgos.push(`${f}: nombra HISTORICO_TOKEN en el código`);
+            if (/const\s+TOKEN\s*=/.test(src)) hallazgos.push(`${f}: vuelve a declarar «const TOKEN»`);
+            for (const m of src.matchAll(/(["'`])((?:\\.|(?!\1)[^\\\n])*)\1/g)) {
+              for (const c of m[2].matchAll(FORMA_CREDENCIAL)) if (!EXCEPCIONES_CREDENCIAL[c[0]]) hallazgos.push(`${f}: cadena con forma de credencial «${c[0].slice(0, 3)}…» (${c[0].length} caracteres)`);
+            }
+          }
+          const htmlSinCom = unoHtml.replace(/<!--[\s\S]*?-->/g, "").replace(/\/\*[\s\S]*?\*\//g, "");
+          for (const m of htmlSinCom.matchAll(/="([^"]*)"/g)) {
+            for (const c of m[1].matchAll(FORMA_CREDENCIAL)) if (!EXCEPCIONES_CREDENCIAL[c[0]]) hallazgos.push(`index.html: atributo con forma de credencial «${c[0].slice(0, 3)}…»`);
+          }
+          assert.deepStrictEqual(hallazgos, [], `una credencial volvió al navegador (lo lee cualquiera que abra el código fuente):\n${hallazgos.join("\n")}`);
+          for (const f of ["app.js", "pliego.js", "onboarding.js"]) {
+            assert.ok(/credentials: "same-origin"/.test(sinComentarios(fs.readFileSync(path.join(dirPublic, f), "utf8"))),
+              `public/${f}: las llamadas al servidor tienen que declarar credentials: "same-origin" (la sesión viaja en la cookie)`);
+          }
+          /* la clave del sitio comprobada en el navegador tampoco vuelve: la reemplaza op=entrar */
+          assert.ok(!/const CLAVE = |MAX_INTENTOS_CLAVE|detecta-acceso/.test(sinComentarios(unoJs)),
+            "app.js vuelve a comprobar una clave en el navegador o a decidir la sesión con una marca de sessionStorage");
+          // y los documentos que el dueño lee no le dan ningún valor de llave para pegar
+          for (const doc of ["README.md", "docs/CONFIGURACION_TOKENS.md"]) {
+            const texto = fs.readFileSync(path.join(__dirname, "..", doc), "utf8");
+            const valores = [...texto.matchAll(/[?&]token=([A-Za-z0-9_-]+)/g)].map((m) => m[1]).filter((v) => !/^[A-Z_]+$/.test(v) && v !== "SU_LLAVE");
+            assert.deepStrictEqual(valores, [], `${doc} trae un valor de llave en una URL: ${valores.join(", ")}`);
+          }
         }
-        /* CENSO, no presencia (remate B3b-H2, 6-sep-2026): `includes(TOKEN_INTEGRADO)` daba verde con un
-           documento rotado A MEDIAS (una URL con el valor viejo y las demás con el vigente: medido, la
-           suite pasaba y el dueño pegaría esa URL y recibiría 401). Ahora TODAS las menciones cuentan:
-           cada `token=<valor>` de URL, y cada palabra con forma de token (≥ 8 caracteres con minúscula,
-           mayúscula y dígito) en una línea que hable de token o que sea el valor a solas. §10 exige
-           «todas las menciones del valor viejo»: esto es lo que lo comprueba. */
-        const FORMA_TOKEN = /(?<![\w.\/-])(?=[A-Za-z0-9_-]{8,}(?![\w.\/-]))(?=[A-Za-z0-9_-]*[a-z])(?=[A-Za-z0-9_-]*[A-Z])(?=[A-Za-z0-9_-]*\d)[A-Za-z0-9_-]+/g;
-        for (const doc of ["README.md", "docs/CONFIGURACION_TOKENS.md"]) {
-          const menciones = [];
-          fs.readFileSync(path.join(__dirname, "..", doc), "utf8").split("\n").forEach((l, i) => {
-            for (const m of l.matchAll(/[?&]token=([A-Za-z0-9_-]+)/g)) menciones.push({ linea: i + 1, valor: m[1] });
-            if (/token/i.test(l) || /^\s*[A-Za-z0-9_-]{8,}\s*$/.test(l)) for (const m of l.matchAll(FORMA_TOKEN)) menciones.push({ linea: i + 1, valor: m[0] });
-          });
-          assert.ok(menciones.length >= 2, `${doc} tiene que mencionar el token integrado (el dueño lo pega desde ahí)`);
-          const viejas = [...new Map(menciones.filter((m) => m.valor !== TOKEN_INTEGRADO).map((m) => [`${m.linea}:${m.valor}`, m])).values()];
-          assert.deepStrictEqual(viejas, [], `${doc} rotado a medias: menciones con otro valor que el integrado (${TOKEN_INTEGRADO}): ${JSON.stringify(viejas)}`);
-        }
-        assert.ok(unoJs.includes(`const TOKEN = "${TOKEN_INTEGRADO}"`), "app.js sin el token integrado");
         assert.ok(!unoHtml.includes('id="modal-token"') && !unoHtml.includes('id="form-token"'),
           "el formulario del token no puede reaparecer en la página");
 
@@ -29256,7 +29924,7 @@ async function main() {
         // el token va por CABECERA, jamás en la URL (logs de acceso e historial)
         assert.ok(!/\/api\/apu\?op=[a-z]+[^`"']*token=/.test(unoJs),
           "el token de /api/apu no puede viajar en la URL");
-        assert.ok(unoJs.includes('"x-historico-token"'), "app.js debe mandar el token por cabecera");
+        assert.ok(/const fetch = \(url, opciones\) => window\.fetch\(url, conSesion\(opciones\)\);/.test(unoJs), "todo fetch de app.js viaja con la sesión (credentials: same-origin)");
 
         /* NINGÚN `|| 0` SOBRE UNA CIFRA DEL SERVIDOR: convierte «no sé» en
            «cero» y lo hace creíble. */
@@ -31945,7 +32613,7 @@ async function main() {
       assert.strictEqual(opciones[0], '<option value="atractividad"', "«Más atractivas» debe ser la opción por defecto");
       const js = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
       new Function(js); // valida sintaxis sin ejecutar
-      assert.ok(js.includes('"231105"'), "app.js sin la clave de acceso");
+      assert.ok(!js.includes('"231105"'), "la clave del sitio comprobada en el navegador no puede volver: entra el servidor (op=entrar)");
 
       /* ---- «OFERTAS DEL PROCESO» NO PUEDE VOLVER (ago 2026) ----
          `nivel_competencia` sale de columnas EX-POST (`respuestas_al_procedimiento`
@@ -31985,8 +32653,11 @@ async function main() {
           "buscar() volvió a abrir el formulario del token: la lista pública no puede pedir credencial");
         assert.ok(!/if\s*\(!token\)/.test(cuerpo),
           "buscar() volvió a exigir token antes de consultar");
-        assert.ok(/olvidarToken\(\)/.test(cuerpo) && /return buscar\(\)/.test(cuerpo),
-          "un 401 por token caducado debe olvidarlo y reintentar sin él, no bloquear");
+        /* desde el 17-oct-2026 un 401 de la lista solo puede ser una SESIÓN que ya no vale (el
+           visitante no manda credencial): se dice en la lista y msg401 abre la pantalla de entrar,
+           sin bucle (no se reintenta solo) */
+        assert.ok(/if \(r\.status === 401\) \{\s*mostrar\("estado-error", msg401\(cuerpo\)\);\s*return terminarBusqueda\("error", peticion\);/.test(cuerpo),
+          "un 401 de la lista tiene que decirse y abrir la pantalla de entrar, sin reintentar en bucle");
       }
       // `pedirTokenParaBuscar` era el atajo que bloqueaba la lista: no vuelve
       assert.ok(!js.includes("pedirTokenParaBuscar"),
@@ -32042,16 +32713,16 @@ async function main() {
         assert.ok(/×0,\d+/.test(pintadoPrecio) && !/×\d+\.\d/.test(pintadoPrecio),
           `con el factor presente, el tooltip tiene que pintarlo, con coma decimal: «${pintadoPrecio}»`);
       }
-      /* …y el detalle de competencia usa el TOKEN INTEGRADO (ago 2026): el
-         endpoint sigue exigiendo credencial en el servidor, pero el usuario ya
-         no ve ningún formulario — `pedirToken` murió con la página única. */
+      /* …y el detalle de competencia viaja con la SESIÓN del dueño (17-oct-2026; antes,
+         el token integrado): el endpoint sigue exigiendo credencial en el servidor y
+         ningún formulario pide un token — `pedirToken` murió con la página única. */
       assert.ok(!/function pedirToken\(/.test(js),
         "pedirToken volvió: el token va integrado y ningún formulario debe pedirlo");
       {
         const i = js.indexOf("async function cargarDetalle");
         const cuerpo = js.slice(i, js.indexOf("\n  }", i));
-        assert.ok(i > 0 && /leerToken\(\)/.test(cuerpo),
-          "cargarDetalle debe mandar el token integrado: /api/competencia-detalle no se relajó");
+        assert.ok(i > 0 && /conSesion\(\)/.test(cuerpo) && !/x-historico-token/.test(cuerpo),
+          "cargarDetalle viaja con la sesión (conSesion), no con una llave: /api/competencia-detalle no se relajó");
       }
 
       /* LAS PÁGINAS RETIRADAS NO PUEDEN VOLVER: la app es UNA página y un
@@ -32220,11 +32891,12 @@ async function main() {
         assert.ok(iAuto > iEstado,
           "el gancho de arranque del lector se expone antes de declarar su estado: morirá en la zona muerta temporal");
       }
-      // el token va integrado también aquí (el VALOR lo fija el censo de public/*.js, M-INF-13):
-      // ni formulario ni sessionStorage
-      assert.ok(/const TOKEN = "[^"]+"/.test(apuJs), "pliego.js sin el token integrado");
+      // la credencial es la sesión del dueño también aquí (17-oct-2026; el censo de public/*.js
+      // prohíbe cualquier llave): ni formulario ni sessionStorage, y todo fetch con la cookie
+      assert.ok(!/const TOKEN = /.test(apuJs) && /const fetch = async \(url, opciones\) => \{\s*const r = await window\.fetch\(url, conSesion\(opciones\)\);/.test(apuJs),
+        "pliego.js: sin llave escrita, y TODO fetch pasa por el que lleva la sesión y avisa del 401");
       assert.ok(!/sessionStorage\.(?:get|set|remove)Item/.test(sinComentarios(apuJs)),
-        "pliego.js ya no guarda nada en sessionStorage: el token va integrado y el gate es de app.js");
+        "pliego.js ya no guarda nada en sessionStorage: la sesión es una cookie y el gate es de app.js");
 
       for (const [archivo, fuente] of [["app.js", js], ["pliego.js", apuJs]]) {
         // `Number(x) || 0` sí es legítimo: normaliza un valor YA leído. Lo que
@@ -32293,7 +32965,7 @@ async function main() {
       }
       assert.ok(/id="modal-competencia"[^>]*\bhidden\b/.test(html), "el modal debe arrancar oculto");
       for (const debe of ["banda-competencia", "cargarDetalle", "abrirModal", "cerrarModal",
-        "/api/competencia-detalle", "x-historico-token", "sessionStorage", "MOTIVO_EXCLUSION"]) {
+        "/api/competencia-detalle", "conSesion(", "sessionStorage", "MOTIVO_EXCLUSION"]) {
         assert.ok(js.includes(debe), `app.js sin ${debe} (el badge no abre el detalle)`);
       }
       /* «Quién gana aquí» (ago 2026): el modal pinta el agregado de
@@ -32323,9 +32995,9 @@ async function main() {
       assert.ok(!/CLAVE_TOKEN/.test(js), "la clave de sesión del token murió con el formulario");
       assert.ok(!js.includes("Guardar y ver detalle") && !/Pegue el token/.test(js),
         "reapareció el formulario del token: el usuario nunca debe teclearlo");
-      assert.ok(/HISTORICO_TOKEN no coincide/.test(js),
-        "un 401 debe explicarse como lo que es: el token integrado no coincide con el del despliegue");
-      assert.ok(/try \{ return sessionStorage\.getItem/.test(js) || /try \{ sesionConClave = sessionStorage\.getItem/.test(js),
+      assert.ok(/const MSG_401 = "Su sesión terminó/.test(js),
+        "un 401 debe explicarse como lo que es desde el 17-oct-2026: la sesión del dueño terminó (y se abre la pantalla de entrar)");
+      assert.ok(/try \{ return sessionStorage\.getItem/.test(js),
         "leer sessionStorage debe ir protegido: si lanza, el arranque moriría en silencio");
       // mostrar/ocultar el modal no puede depender del orden del CSS generado
       assert.ok(/style\.display = "flex"/.test(js) && /style\.display = "none"/.test(js),
@@ -32336,7 +33008,7 @@ async function main() {
          pestaña `buscar()` reventaba en la zona muerta temporal de
          `timerReintento` — la app se quedaba sin resultados en silencio. */
       {
-        const iAuto = js.indexOf('sessionStorage.getItem("detecta-acceso") === "1"');
+        const iAuto = js.indexOf("sesionDueno = await preguntarSesion();");
         const iEstado = js.indexOf("let pagina = 1, reintentosSync = 0, timerReintento = null;");
         assert.ok(iAuto > 0 && iEstado > 0, "no se encontraron el arranque automático y el estado de la vista");
         assert.ok(iAuto > iEstado,
@@ -32423,7 +33095,7 @@ async function main() {
       // el archivo del RUP en JSON solo acepta JSON
       assert.ok(/id="rup-json-archivo"[^>]*accept="\.json/.test(admHtml), "el input del RUP en JSON debe aceptar solo .json");
 
-      for (const debe of ["/api/resumen", "/api/admin/rup", "cache_bust", "X-Cache", "x-historico-token",
+      for (const debe of ["/api/resumen", "/api/admin/rup", "cache_bust", "X-Cache", "conSesion(",
         "FileReader", "readAsText", "revokeObjectURL", "visibilityState", "dashboard_perfil"]) {
         assert.ok(admJs.includes(debe), `app.js sin ${debe} (el panel o la carga de RUP no están cableados)`);
       }
@@ -32666,7 +33338,7 @@ async function main() {
       }
       assert.ok(/Cargar catálogo APU/.test(admHtml), "el botón debe decir «Cargar catálogo APU»");
       for (const debe of ["/api/apu/catalogo", "/api/admin/apu/cargar-catalogo", "cargarCatalogoApu",
-        "cargarEstadoApu", "x-historico-token"]) {
+        "cargarEstadoApu", "conSesion("]) {
         assert.ok(admJs.includes(debe), `app.js sin ${debe} (el catálogo APU no está cableado)`);
       }
       // doble clic: mismo blindaje que el RUP y la experiencia
@@ -32923,7 +33595,9 @@ async function main() {
 
       /* ---- (5) lo que NO cambia con la marca ---- */
       const appM = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
-      assert.ok(/sessionStorage\.setItem\("detecta-acceso"/.test(appM), "la clave de sesión del gate NO se renombra: cerraría la sesión de todos");
+      /* la marca «detecta-acceso» de sessionStorage murió el 17-oct-2026: la sesión del dueño es una
+         cookie HttpOnly con nombre fijo (lib/sesion.COOKIE_SESION), que tampoco se renombra */
+      assert.strictEqual(require("../lib/sesion.js").COOKIE_SESION, "__Host-detekta_sesion", "el nombre de la cookie de sesión NO se renombra: cerraría la sesión del dueño");
       assert.ok(/CLAVE_PERFIL_RUP = "detecta_perfil_rup"/.test(appM), "la clave del perfil guardado NO se renombra: borraría el perfil de todos");
       const descargar = fs.readFileSync(path.join(__dirname, "..", "lib", "apu_descargar.js"), "utf8");
       assert.ok(/require\("\.\/glosario\.js"\)/.test(descargar) && /\$\{MARCA\.nombre\}\/1\.0/.test(descargar),
@@ -34822,7 +35496,8 @@ async function main() {
          ningún enlace, y al tercer intento `bloquear()` la sustituía por
          «Acceso denegado / Este sitio es privado.» sin decir qué hacer. Solo
          recargar devolvía las otras dos puertas. El bloqueo en sí y
-         MAX_INTENTOS_CLAVE no se tocan: son la seguridad. */
+         MAX_INTENTOS_CLAVE no se tocan: son la seguridad. (Desde el 17-oct-2026 los
+         intentos los cuenta el servidor; la vuelta sigue igual.) */
       {
         const gateHtml = htmlL.slice(iGate, iTabAdmin);
         assert.ok(/id="gate-volver"/.test(gateHtml),
@@ -34843,31 +35518,27 @@ async function main() {
           "la vuelta del gate BLOQUEADO tiene que recargar: sin #gate-form, volver a la portada deja al usuario sin "
           + "ningún sitio donde escribir la clave que el propio mensaje le pide");
 
+        /* EL BLOQUEO DEL NAVEGADOR MURIÓ (17-oct-2026). `bloquear()` y MAX_INTENTOS_CLAVE
+           contaban tres intentos EN LA PESTAÑA —bastaba recargar para tener otros tres, y la
+           clave estaba en el fuente—. Ahora los cuenta el SERVIDOR (lib/sesion: por correo y
+           por conexión) y responde 429 con QUÉ hacer y CUÁNTO esperar; el gate pinta las dos
+           cosas. Se ejecuta el pintado real de app.js contra esa respuesta. */
         const appGate = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
-        const iBloq = appGate.indexOf("function bloquear(");
-        assert.ok(iBloq > 0, "app.js sin bloquear()");
-        const cajaGate = { html: "" };
-        Object.defineProperty(cajaGate, "innerHTML", { get: () => cajaGate.html, set: (v) => { cajaGate.html = String(v); } });
-        new Function("$", `${appGate.slice(iBloq, appGate.indexOf("\n  }", iBloq) + 4)}; return bloquear;`)(() => cajaGate)();
-        /* LA INSTRUCCIÓN DEL BLOQUEO TIENE QUE SER POSIBLE (11-sep-2026). Decía
-           «suba su RUP o escriba tres datos» y esas dos puertas dejaron de
-           ofrecerse: mandar a alguien a pulsar algo que no está en pantalla es
-           peor que no decir nada. MUTACIÓN: esta cerradura cae contra el texto
-           anterior. */
-        /* Esta promesa solo es CIERTA desde el 12-sep-2026, y por eso las dos
-           aserciones van juntas: hasta entonces `bloquear()` destruía el campo y
-           la vuelta llevaba a una portada desde la que ya no se podía escribir
-           nada. Lo que la hace verdad es la recarga del oyente de #gate-volver,
-           exigida cinco líneas más arriba. Si alguien quita aquella, esta frase
-           vuelve a ser mentira: no se toque una sin la otra. */
-        assert.ok(/escriba de nuevo la clave/.test(cajaGate.innerHTML),
-          `el bloqueo tiene que decir QUÉ hacer, y que se pueda hacer: ${cajaGate.innerHTML}`);
-        assert.ok(!/suba su RUP|escriba tres datos/.test(cajaGate.innerHTML),
-          "el bloqueo no puede mandar a dos puertas que la landing ya no enseña");
-        assert.ok(/administra el sitio/.test(cajaGate.innerHTML),
-          "…y decir a quién pedirle la clave si no la tiene");
-        assert.ok(/id="gate-volver"/.test(cajaGate.innerHTML),
-          "y dejar el mismo enlace de vuelta al inicio");
+        assert.ok(!/function bloquear\(|MAX_INTENTOS_CLAVE/.test(sinComentarios(appGate)),
+          "el bloqueo contado en el navegador no puede volver: lo cuenta el servidor");
+        const iEnv = appGate.indexOf("  async function enviarGate(");
+        assert.ok(iEnv > 0, "app.js sin enviarGate");
+        const fuenteEnv = appGate.slice(iEnv, appGate.indexOf("\n  }\n", iEnv) + 4);
+        const errG = { textContent: "", classList: { toggle() {}, add() {}, remove() {} } };
+        const enviarGate = new Function("$", "fetch", "conSesion", "leerJson", "mensajeDeFallo", "fraseDeFallo", "errorGate", "prepararGate", "abrirApp",
+          `let sesionDueno = false, hayCuenta = null, entradaPorVencimiento = false; ${fuenteEnv}; return enviarGate;`)(
+          () => null,
+          async () => ({ ok: false, status: 429 }),
+          (o) => o, async () => ({ ok: false, error: "Demasiados intentos seguidos.", que_hacer: "Vuelva a intentarlo en 12 minutos." }),
+          (e) => String(e), () => "falló", (t) => { errG.textContent = t; }, () => {}, () => { throw new Error("no debía abrir la aplicación"); });
+        await enviarGate("/api/admin?op=entrar", { correo: "a@b.co", contrasena: "x" }, null);
+        assert.ok(/Demasiados intentos/.test(errG.textContent) && /12 minutos/.test(errG.textContent),
+          `el gate tiene que decir el motivo del servidor y CUÁNTO esperar: «${errG.textContent}»`);
       }
       const inicio = landing.slice(landing.indexOf('id="entrada-inicio"'), landing.indexOf('<!-- progreso de la extracción -->'));
       /* LAS TRES PUERTAS SIGUEN EN EL ÁRBOL; SOLO UNA SE ENSEÑA (11-sep-2026).
@@ -40230,7 +40901,7 @@ async function main() {
           const cuerpo = jsSin.slice(i, jsSin.indexOf("\n  }", i));
           assert.ok(/olvidarPerfilRup\(\)/.test(cuerpo) && /classList\.remove\("hidden"\)/.test(cuerpo),
             "al eliminar un perfil dinámico hay que olvidarlo y volver a la LANDING");
-          assert.ok(/x-historico-token/.test(cuerpo), "el DELETE viaja con el token integrado, por cabecera");
+          assert.ok(!/x-historico-token/.test(cuerpo), "el DELETE viaja con la sesión del dueño (la cookie): ninguna llave en el navegador");
           assert.ok(/\$\("btn-eliminar-confirmar"\)/.test(jsSin) && /btn\.disabled = true/.test(cuerpo),
             "«Eliminar definitivamente» debe deshabilitarse durante el envío (un doble clic borraría dos veces)");
         }
@@ -40709,6 +41380,13 @@ async function main() {
           for (const m of fuentes.matchAll(/\/api\/procesos\?op=(sync|historico&reconstruir_indice|baja&reconstruir)/g)) escrituras.add(`procesos?op=${m[1]}`);
           if (/"\/api\/apu\?op=parametros",\s*\{\s*method: "POST"/.test(fuentes)) escrituras.add("apu?op=parametros (POST)");
           const CONTROLES = {
+            /* LA ENTRADA DEL DUEÑO (17-oct-2026) no escribe configuración compartida: abre o cierra
+               SU sesión. Vive en el gate, que por diseño ve cualquiera (es la puerta), y «Salir» solo
+               se enseña con sesión; el servidor decide en cada una (lib/sesion). */
+            "admin?op=sesion": [{ id: "gate", excepcion: "solo PREGUNTA si hay sesión y si existe la cuenta: lo pide el arranque de cualquier visita" }],
+            "admin?op=entrar": [{ id: "gate-form", excepcion: "la puerta de entrada: la ve cualquiera y el servidor comprueba correo, contraseña e intentos" }],
+            "admin?op=crear-cuenta": [{ id: "alta-form", excepcion: "solo mientras no exista ninguna cuenta y con la llave del servidor; después 409 para siempre" }],
+            "admin?op=salir": [{ id: "btn-salir", excepcion: "cierra la sesión de quien la tiene; el botón solo se enseña con sesión (pintarSalir)" }],
             "admin?op=rup": ["btn-rup-cargar", "btn-rup-descargar", "rup-actual",
               { id: "btn-eliminar-rup", excepcion: "borra el perfil ACTIVO de la barra, que para el visitante es el suyo (rup_…); va con confirmación" },
               { id: "rup-archivo", excepcion: "la subida del RUP en PDF es el alta pública del onboarding (sin token, por diseño)" }],
@@ -40746,7 +41424,10 @@ async function main() {
         }
 
         /* (c) el arranque real, ejecutado: visitante · dueño con clave · #/inicio · consorcio por URL */
-        const arrancarAppEnNode = async ({ search = "", hash = "", sesion = {} } = {}) => {
+        /* `dueno`: lo que responde op=sesion (17-oct-2026). La vista del dueño la decide el
+           SERVIDOR —la cookie es HttpOnly—, así que el doble contesta esa sola ruta y todo lo
+           demás sigue siendo «arnés sin API» */
+        const arrancarAppEnNode = async ({ search = "", hash = "", sesion = {}, dueno = false } = {}) => {
           const vm = require("vm");
           const porId = new Map();
           const reId = /<(\w+)([^>]*?)\sid="([^"]+)"([^>]*)>/g; let m;
@@ -40831,7 +41512,14 @@ async function main() {
             console, URL, URLSearchParams, TextEncoder, TextDecoder, AbortController, Intl, structuredClone, queueMicrotask,
             atob: (s) => Buffer.from(s, "base64").toString("binary"), btoa: (s) => Buffer.from(s, "binary").toString("base64"), crypto: require("crypto").webcrypto,
             setTimeout: () => 1, setInterval: () => 1, clearTimeout() {}, clearInterval() {}, requestAnimationFrame: () => 1, cancelAnimationFrame() {},
-            fetch: (url, opts) => { fetches.push({ url: String(url), opts: opts || null }); return Promise.resolve(respuesta()); },
+            fetch: (url, opts) => {
+              fetches.push({ url: String(url), opts: opts || null });
+              if (/\/api\/admin\?op=sesion(&|$)/.test(String(url))) {
+                const c = JSON.stringify({ ok: true, sesion: !!dueno, hay_cuenta: true });
+                return Promise.resolve({ ok: true, status: 200, headers: { get: () => "application/json" }, json: async () => JSON.parse(c), text: async () => c, arrayBuffer: async () => new ArrayBuffer(0) });
+              }
+              return Promise.resolve(respuesta());
+            },
             location: { search, hash, href: `http://localhost/${search}${hash}`, pathname: "/", origin: "http://localhost", host: "localhost", protocol: "http:", replace() {}, assign() {}, reload() {} },
             // `historial` registra las URL que el arranque escribe (B4a-H2: «#/inicio» se consume)
             history: { replaceState: (st, t, url) => { historial.push(String(url)); }, pushState: (st, t, url) => { historial.push(String(url)); }, back() {}, state: null },
@@ -40868,7 +41556,7 @@ async function main() {
         /* el dueño con clave arranca PRIMERO: es la referencia contra la que se compara lo
            «de todos» (un módulo puede ocultar lo suyo por falta de datos —el calendario sin
            cierres—, y eso no es la vista de visitante: tiene que pasar igual con y sin clave) */
-        const dueno = await arrancarAppEnNode({ search: "?perfil=rup_a1b2c3d4e5f6", sesion: { "detecta-acceso": "1" } });
+        const dueno = await arrancarAppEnNode({ search: "?perfil=rup_a1b2c3d4e5f6", dueno: true });
         const visitante = await arrancarAppEnNode({ search: "?perfil=rup_a1b2c3d4e5f6" });
         for (const id of ids("soloDueno")) assert.strictEqual(visitante.el(id).hidden, true, `visitante: #${id} (${CENSO.soloDueno[id]}) tiene que quedar oculto con hidden`);
         for (const id of ids("soloVisitante")) assert.strictEqual(visitante.el(id).hidden, false, `visitante: #${id} tiene que verse`);
@@ -40915,6 +41603,24 @@ async function main() {
           assert.ok(dueno.urls().some((u) => re.test(u)), `con clave se pide ${re}: el arranque del dueño no cambió`);
         }
         assert.ok(!dueno.el("btn-marca").classList.contains("marca-informativa") && /Pulse aquí|Actualizar/.test(dueno.el("sello-sync").innerHTML), "con clave la marca sigue siendo el botón de actualizar");
+        /* LA SESIÓN VIAJA EN CADA LLAMADA DEL DUEÑO (17-oct-2026), ejecutado y no por regex: todas
+           las peticiones del arranque a lo protegido llevan `credentials: "same-origin"` (la cookie
+           HttpOnly), ninguna lleva la cabecera de la llave, y la vista del dueño la decidió
+           op=sesion —el visitante pidió lo mismo y no la obtuvo— */
+        {
+          const protegidas = dueno.fetches.filter((f) => /op=(sesion|resumen|rup|experiencia|consorcio|seguimiento|listar|pulso)(&|$)/.test(f.url));
+          assert.ok(protegidas.length >= 6, `el arranque del dueño pidió muy poco: ${protegidas.map((f) => f.url).join(" · ")}`);
+          for (const f of protegidas) {
+            assert.strictEqual(f.opts && f.opts.credentials, "same-origin", `${f.url} sin credentials: "same-origin"`);
+            assert.ok(!JSON.stringify((f.opts && f.opts.headers) || {}).includes("x-historico-token"), `${f.url} manda la llave del servidor desde el navegador`);
+          }
+          const iSes = dueno.urls().indexOf("/api/admin?op=sesion");
+          const iPrimeraApp = dueno.urls().findIndex((u) => /op=(resumen|rup|experiencia|consorcio|seguimiento|listar|pulso)(&|$)/.test(u));
+          assert.ok(iSes >= 0 && iSes < iPrimeraApp && visitante.urls().includes("/api/admin?op=sesion"),
+            `el arranque pregunta al servidor si hay sesión ANTES de pedir nada de la aplicación: ${dueno.urls().slice(0, 4).join(" · ")}`);
+          assert.strictEqual(dueno.el("btn-salir").hidden, false, "con sesión se ofrece «Salir»");
+          assert.strictEqual(visitante.el("btn-salir").hidden, true, "sin sesión no hay «Salir»");
+        }
         /* LA BARRA DEL DUEÑO OFRECE UN SOLO PERFIL PROPIO (11-sep-2026). Traía
            cuatro opciones: helder, genesis, el consorcio fijo «juntos» y el RUP de
            la URL. Hoy trae dos —el dueño y ese RUP— y no es una poda cosmética:
@@ -40954,7 +41660,7 @@ async function main() {
            doble registra lo que el arranque escribe con history.replaceState. */
         assert.ok(inicio.historial.some((u) => u === "/?perfil=rup_a1b2c3d4e5f6"),
           `el arranque con #/inicio tiene que reescribir la URL sin el hash (pathname + search): ${JSON.stringify(inicio.historial)}`);
-        const recargaConSesion = await arrancarAppEnNode({ search: "?perfil=rup_a1b2c3d4e5f6", hash: "#/inicio", sesion: { "detecta-acceso": "1" } });
+        const recargaConSesion = await arrancarAppEnNode({ search: "?perfil=rup_a1b2c3d4e5f6", hash: "#/inicio", dueno: true });
         assert.ok(recargaConSesion.historial.some((u) => u === "/?perfil=rup_a1b2c3d4e5f6"),
           "también con la sesión puesta se consume: la recarga siguiente ya decide por sesión y abre la aplicación (el arranque del dueño, arriba)");
 
@@ -40979,7 +41685,7 @@ async function main() {
            deja de pintar `data-fl-quitar`, o le cambia el nombre, `closest` devuelve
            null, el manejador no hace nada y la aserción cae. */
         {
-          const app = await arrancarAppEnNode({ search: "?perfil=rup_a1b2c3d4e5f6&dep=73&q=placa", hash: "#/licitaciones", sesion: { "detecta-acceso": "1" } });
+          const app = await arrancarAppEnNode({ search: "?perfil=rup_a1b2c3d4e5f6&dep=73&q=placa", hash: "#/licitaciones", dueno: true });
           const listar = () => app.urls().filter((u) => u.includes("op=listar"));
           const ultima = () => listar()[listar().length - 1] || "";
           const fichas = app.el("fl-fichas"), caja = app.el("fl-q");
@@ -41607,9 +42313,9 @@ async function main() {
         assert.ok(/fetch\(`\/api\/inteligencia\?\$\{qs\}`/.test(js),
           "el frontend tiene que llamar a la canónica: si el rewrite fallara, el PAA debe seguir vivo");
         assert.ok(!/\/api\/paa\?|fetch\(["'`]\/api\/paa/.test(js), "el frontend no puede depender del alias");
-        // el token va por CABECERA, jamás en la URL (regla del token integrado)
-        assert.ok(/vista: "paa"[\s\S]{0,600}x-historico-token/.test(js),
-          "el token del PAA tiene que viajar por cabecera");
+        // la credencial es la sesión (la cookie), jamás un token en la URL (17-oct-2026)
+        assert.ok(/fetch\(`\/api\/inteligencia\?\$\{qs\}`, conSesion\(\)\)/.test(js),
+          "el PAA tiene que pedirse con la sesión del dueño (conSesion)");
         assert.ok(!/vista=paa[^`'"]*token=/.test(js), "el token no puede viajar en la URL");
         /* Ni un `|| 0` sobre la cuantía estimada: convertiría «el PAA no publicó
            el valor» en «$0», que es la confusión que este proyecto ya pagó tres
@@ -42554,8 +43260,8 @@ async function main() {
         const iApi = appFallo.indexOf("  async function api(ruta, opciones = {}) {"), fApi = appFallo.indexOf("\n  }", iApi) + 4;
         assert.ok(iApi > 0, "app.js sin api()");
         const respuestaDe = (status, cuerpo) => async () => ({ ok: status < 400, status, headers: { get: () => "application/json" }, json: async () => cuerpo, text: async () => JSON.stringify(cuerpo) });
-        const armarApi = (fetchFalso) => new Function("fetch", "leerToken", "fraseDeFallo", "leerJson", "msg401", "errorDelServidor",
-          `${appFallo.slice(iApi, fApi)}; return api;`)(fetchFalso, () => "t", Gf.fraseDeFallo, leerJsonFn, () => "401", Gf.errorDelServidor);
+        const armarApi = (fetchFalso) => new Function("fetch", "conSesion", "fraseDeFallo", "leerJson", "msg401", "errorDelServidor",
+          `${appFallo.slice(iApi, fApi)}; return api;`)(fetchFalso, (o) => ({ ...(o || {}), credentials: "same-origin" }), Gf.fraseDeFallo, leerJsonFn, () => "401", Gf.errorDelServidor);
         const mensajeDe = async (fn) => { try { await fn("/api/x", { method: "POST", body: {} }); return null; } catch (e) { return e.message; } };
         const c409 = { ok: false, error: "No se pudo guardar el proceso porque otra acción estaba en curso sobre los mismos datos.", que_hacer: "Espere unos segundos y vuelva a intentarlo." };
         assert.strictEqual(await mensajeDe(armarApi(respuestaDe(409, c409))), `${c409.error} ${c409.que_hacer}`, "el 409 llega a la pantalla CON su «qué hacer»");
@@ -44755,6 +45461,16 @@ async function main() {
         }
         assert.ok(!/<script/.test(html), "todo string del modelo pasa por esc()");
         assert.ok(!/pág\. null|undefined|\bK\b|anticipo_o_pago_anticipado/.test(html), "sin «pág. null», «undefined», «K» ni valores crudos del enum");
+        // el texto del documento base no tiene número de versión: se dice el archivo (18-oct-2026)
+        const delBase = pintarDictamen({ ...fixture, version_texto: null, documento_texto: { tipo: "Documento base del pliego tipo", nombre: "DOCUMENTO <b>BASE</b>.pdf", id_documento: "1" } }, { MARCA, esc: escF });
+        assert.ok(delBase.includes("Sobre «DOCUMENTO &lt;b&gt;BASE&lt;/b&gt;.pdf», documento base del pliego tipo (5 páginas)") && !/versión null|versión undefined|<b>BASE/.test(delBase) && delBase.includes("· 5 páginas del pliego, «DOCUMENTO &lt;b&gt;BASE&lt;/b&gt;.pdf»"),
+          `sin versión, el archivo de donde salió el texto, escapado (MUTACIÓN: «versión null»): ${delBase.match(/Sobre[^.]*\./) || ""}`);
+        const conNuevo = pintarDictamen({ ...fixture, version_texto: null, documento_texto: { tipo: "Documento base del pliego tipo", nombre: "CCE-EICP-GI-01 Documento base V4.pdf" }, mas_nuevo_sin_leer: { nombre: "DOCUMENTO BASE .pdf", fecha_carga: "2026-02-12", motivo: "pesa más de 20 MB: la aplicación no lo lee sola; ábralo en SECOP II" } }, { MARCA, esc: escF });
+        assert.ok(/Ojo: SECOP II publicó después «DOCUMENTO BASE \.pdf» \(12\/02\/2026\) y la aplicación no lo pudo leer \(pesa más de 20 MB[^<]*\)\. Este dictamen es sobre una versión anterior: descargue ese PDF de SECOP II, cárguelo en Precios con este proceso abierto/.test(conNuevo) && !/Ojo: SECOP II publicó después/.test(delBase),
+          `el aviso de la versión más nueva sin leer, solo cuando la hay (MUTACIÓN: sin pintarlo): ${(conNuevo.match(/Ojo:[^<]*/) || [""])[0]}`);
+        const conPendiente = pintarDictamen({ ...fixture, version_texto: null, documento_texto: { tipo: "Documento base del pliego tipo", nombre: "CCE-EICP-GI-01 Documento base V4.pdf" }, mas_nuevo_sin_leer: { nombre: "DOCUMENTO BASE DEFINITIVO.pdf", fecha_carga: "2026-02-12", motivo: null, pendiente: true } }, { MARCA, esc: escF });
+        assert.ok(/Ojo: SECOP II publicó después «DOCUMENTO BASE DEFINITIVO\.pdf» \(12\/02\/2026\) y la aplicación todavía no lo ha leído\. Este dictamen es sobre una versión anterior/.test(conPendiente) && !/no lo pudo leer|cárguelo en Precios/.test(conPendiente),
+          `uno por leer no se da por ilegible ni se manda a cargar a mano (MUTACIÓN: sin la rama de pendiente): ${(conPendiente.match(/Ojo:[^<]*/) || [""])[0]}`);
         /* la lectura completa (26-sep-2026): el botón solo con la rutina configurada; con un
            pedido en marcha, «Ver si ya está lista» y la hora; un dictamen de sesión se vuelve a
            pedir a la sesión, nunca a las reglas (que no se verían mientras haya uno de sesión) */
@@ -46486,7 +47202,7 @@ async function main() {
           `.cas-buscar tiene que maquetar la fila entera, no solo heredar el fondo: ${regla}`);
       }
 
-      /* el módulo nuevo no puede llevar el token integrado ni pedir nada por su cuenta */
+      /* el módulo nuevo no puede llevar ninguna llave ni pedir nada por su cuenta */
       const casSrc = fs.readFileSync(path.join(__dirname, "..", "public", "casillero.js"), "utf8");
       assert.ok(!/const TOKEN\s*=/.test(casSrc), "casillero.js no lleva el token: no habla con el servidor");
       assert.ok(!/\bfetch\s*\(/.test(casSrc), "casillero.js es capa de pintado: quien pide al servidor es app.js");

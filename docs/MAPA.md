@@ -6,8 +6,8 @@
 (no editar a mano: sale de `node tests/mapa.js --escribir`. Para ir a un sitio concreto,
  `node tests/mapa.js <término>` da la ruta, la línea y el sed exacto — más barato que leer esto)
 
-· SUPERFICIE HTTP — 38 op declaradas en los mapas de los routers:
-  /api/admin?op=  rup · experiencia · cobertura · cargar-catalogo · exportar · importar · uso · respaldo · espacio · compactar
+· SUPERFICIE HTTP — 42 op declaradas en los mapas de los routers:
+  /api/admin?op=  rup · experiencia · cobertura · cargar-catalogo · exportar · importar · uso · respaldo · espacio · compactar · sesion · entrar · salir · crear-cuenta
   /api/perfil?op=  resumen · diagnostico · entrada · pulso · consorcio · consorcio-simular · seguimiento · cuenta · avisos · empresa-datos
   /api/pliego?op=  extraer-texto · parsear · descargar · formulario1 · diff · cronograma · deducciones · dictamen · documentos
   /api/procesos?op=  sync · historico · listar · baja · entidades · portada · manifestacion · latido · salud
@@ -22,7 +22,7 @@
   pliego.js                   Router del dominio PLIEGO (Fase 0 · consolidación a 6 funciones)
   procesos.js                 Router del dominio PROCESOS (Fase 0 · consolidación a 6 funciones)
 
-· lib/ — 95 módulos:
+· lib/ — 96 módulos:
   accesibilidad.js            Accesibilidad operativa de la zona de la obra
   adendas.js                  Vigía de adendas · lo que el DATASET dice que cambió (Fase 5)
   almacen.js                  Esquema de claves Redis + compresión de chunks
@@ -50,7 +50,7 @@
   correo.js                   Transporte de correo por REST — sin SDK, sin dependencias
   costos.js                   el motor de costo real vive en public/costos.js (UMD) y aquí
   cronograma.js               Cronograma del proceso con avisos T-7 / T-3 / T-1 (Fase 5)
-  cuentas.js                  La infraestructura de las cuentas de usuario. CONSTRUIDA Y SIN
+  cuentas.js                  La infraestructura de las cuentas de usuario (la parte PURA)
   cuerpo.js                   Leer el cuerpo JSON de una petición, una sola vez
   deducciones.js              Qué le van a descontar de cada pago, leído del PLIEGO
   dictamen.js                 Dictamen del pliego (proyecto «Don Héctor», 2-sep-2026) — PURO
@@ -111,6 +111,7 @@
   rutina.js                   despertar una rutina de Claude Code por HTTP (26-sep-2026)
   seguimiento.js              MIS PROCESOS: guardar, seguir y estudiar a la competencia (ago 2026)
   semantica.js                Clasificación semántica del objeto contractual
+  sesion.js                   La sesión del DUEÑO: una cuenta, una cookie, un límite de intentos
   socio.js                    Verifique a su socio antes de firmar (due diligence de 20 minutos)
   socio_por_proceso.js        ¿Con cuál de mis socios conviene ESTE proceso?
   socrata.js                  Acceso al dataset p6dx-8zbt de SECOP II (API Socrata / SoQL)
@@ -141,7 +142,7 @@
   tipologias.js               Las 22 tipologías de obra y el mapa departamento→región
   validaciones.js             Las cinco puertas de control del presupuesto
 
-· lib/handlers/admin/ — 10 módulos:
+· lib/handlers/admin/ — 11 módulos:
   cargar_catalogo.js          Puebla Redis con el catálogo de precios APU
   cobertura.js                Qué códigos UNSPSC le faltan al RUP
   compactar.js                /api/admin?op=compactar · QUE LA BASE DE DATOS NO SE VUELVA A LLENAR (30-sep-2026)
@@ -151,6 +152,7 @@
   importar.js                 (sin cabecera)
   respaldo.js                 (sin cabecera)
   rup.js                      Cargar, consultar y eliminar el RUP del dueño (archivo JSON)
+  sesion.js                   (sin cabecera)
   uso.js                      /api/admin?op=uso · CUÁNTO SE USA DETEKTA, POR PERFIL (27-sep-2026)
 
 · lib/handlers/apu/ — 1 módulos:
@@ -212,17 +214,17 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 351 secciones (25 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 19233  Base nacional de obra: las ofertas se piden agrupadas, las filas repetidas de p6dx son fase…
-  L 19241  El almacén R2 de la base nacional frena ANTES de pasar el gratis, porque Cloudflare no fren…
-  L 19250  Base nacional de obra, Fase 1: una fila por proceso y cinco señales que solo invitan a revi…
-  L 19263  R2 rechazó el If-Match con el registro sin cambios, y la mínima cuantía no se mide con la v…
-  L 19272  Fase 2: el piso se reproduce, el ganador no — los datos abiertos no dicen quién quedó hábil…
-  L 19282  Fase 3: la validación posible sin SECOP es coherencia interna, y se hace por censo, no por …
-  L 19292  La alerta de precio bajo se corta por modalidad con lo medido en SECOP II (18-oct-2026)
-  L 19307  La fuente del corte se ve en la pantalla y la base se vuelve a medir cada mes, con un vigía…
-  L 19320  Las ganadoras que la base no cuenta: en licitación no mueven el corte; en mínima la regla d…
-  L 19330  El rescate bajo el 50 %: la oferta ganadora que coincide con lo adjudicado y con su contrat…
+· MEMORIA · docs/MEMORIA.md — 356 secciones (26 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
+  L 19402  Base nacional de obra: las ofertas se piden agrupadas, las filas repetidas de p6dx son fase…
+  L 19410  El almacén R2 de la base nacional frena ANTES de pasar el gratis, porque Cloudflare no fren…
+  L 19419  Base nacional de obra, Fase 1: una fila por proceso y cinco señales que solo invitan a revi…
+  L 19432  R2 rechazó el If-Match con el registro sin cambios, y la mínima cuantía no se mide con la v…
+  L 19441  Fase 2: el piso se reproduce, el ganador no — los datos abiertos no dicen quién quedó hábil…
+  L 19451  Fase 3: la validación posible sin SECOP es coherencia interna, y se hace por censo, no por …
+  L 19461  La alerta de precio bajo se corta por modalidad con lo medido en SECOP II (18-oct-2026)
+  L 19476  La fuente del corte se ve en la pantalla y la base se vuelve a medir cada mes, con un vigía…
+  L 19489  Las ganadoras que la base no cuenta: en licitación no mueven el corte; en mínima la regla d…
+  L 19499  El rescate bajo el 50 %: la oferta ganadora que coincide con lo adjudicado y con su contrat…
 
 · DOCUMENTOS docs/ — 71 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)

@@ -705,9 +705,10 @@
     if (!raiz || !perfil) return false;
     if (perfilPintado === perfil && !opciones.forzar) return true;
     let p = null;
-    /* con token viajan también las cifras del perfil (patrimonio, capacidad);
-       si el servidor lo rechaza (401), se reintenta SIN token: el pulso no
-       puede quedarse mudo por una credencial mal puesta */
+    /* con la sesión del dueño (la cookie, 17-oct-2026) viajan también las
+       cifras del perfil (patrimonio, capacidad); sin ella, el pulso público.
+       Una sesión que ya no vale responde 401 y el pulso queda oculto: la
+       pantalla de entrar la abre la lista, que pide lo mismo a la vez */
     const url = `/api/perfil?op=pulso&perfil=${encodeURIComponent(perfil)}`;
     /* GUARDA DE CARRERA (ago 2026). No había ninguna, y el selector de perfil
        llama aquí en cada `change`: con dos cambios rápidos ganaba la respuesta
@@ -718,8 +719,7 @@
        comprobación va ANTES de tocar un solo nodo. */
     const mio = ++peticion;
     try {
-      let r = await fetch(url, opciones.headers ? { headers: opciones.headers } : undefined);
-      if (r.status === 401 && opciones.headers) r = await fetch(url);
+      const r = await fetch(url, { credentials: "same-origin" });
       p = await r.json();
     } catch { p = null; }
     if (mio !== peticion) return false;                                        // llegó tarde: no pinta
