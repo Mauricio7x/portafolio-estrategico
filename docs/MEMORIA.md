@@ -19665,6 +19665,8 @@ Precios no llega al dictamen (sección «La carga en Precios no entra al vigía�
 
 ### La cadena que no seguía con el muro: la llamada del servidor a sí mismo va con waitUntil y dice cómo le fue, y el latido hace hasta 3 tandas (18-oct-2026)
 
+> SUPERADA el 18-oct-2026 por «La carga completa ya no para con una actualización a medias, y el tiempo agotado de Upstash dice qué comando fue (18-oct-2026)» — solo el punto abierto de «Carga completa (un botón)»: ahora mide también el avance de un delta (`delta.ciclo_leidas`).
+
 En una línea: medido el 18-oct con el muro de Vercel puesto, ni la cadena de la sincronización ni su reintento arrancaron una tanda más (el ciclo de la mañana llevaba 3 tandas en casi 3 horas); ahora las cuatro llamadas del servidor a sí mismo pasan por `lib/autollamada.autoLlamar` —dentro de `waitUntil` cuando Vercel da el contexto, sin seguir redirecciones, con su resultado anotado en `sync:autollamada` y publicado por op=salud en `autollamada`—, y el latido repite el tramo en el mismo proceso hasta 3 tandas.
 
 **Lo medido** (UTC del 18-oct; lecturas de op=salud desde una sesión hija y dos actualizaciones lanzadas desde GitHub con el visto bueno del dueño).
@@ -19752,3 +19754,16 @@ vuelven a planear en la próxima consulta (no a las 12 h) y los hechos se rehace
 salen documentos de los últimos de la prioridad de fuentes: en CO1.REQ.9763731 dos de presupuesto ceden el sitio a dos de
 análisis de precios unitarios (ahora anexo técnico, como ya pasaba con esos nombres escritos con espacios); la matriz de riesgos
 sale en CO1.REQ.10651650, 10518763, 11116078 y 9960307, y un aviso en .docx en CO1.REQ.10266309. Lo ya leído no se borra.
+
+### La carga completa ya no para con una actualización a medias, y el tiempo agotado de Upstash dice qué comando fue (18-oct-2026)
+
+En una línea: la tarea «Carga completa (un botón)» medía el avance solo con `progreso.mesIdx`, que un delta no trae, y con una actualización abierta paraba en rojo a los 10 tramos aunque avanzara; ahora mide también `delta.ciclo_leidas`. Y `lib/redis.js` convierte un tiempo agotado en «The operation was aborted due to timeout (Upstash: SET licitaciones:activo:2026-03:chunk:7, 812 KB, 10003 ms)»: el texto de siempre al principio, y después el verbo, la clave legible y el tamaño, sin ningún valor.
+
+**Por qué así.**
+- **Por qué no se buscó el comando en los registros.** El 17 y el 18-oct la sincronización cayó por un comando de Upstash de más de 10 s (corridas 84 y 86 de la actualización de respaldo), pero el error no decía cuál, y los registros de Vercel no lo guardan. La salida es que la próxima vez lo diga el propio error, que op=salud ya publica en `ultimo_error`.
+- **El texto original va al principio.** Quien reconoce el error por su texto lo sigue reconociendo. El nombre (`TimeoutError`) se conserva y el original queda en `cause`.
+- **De la clave solo quedan los tramos que son palabras, números cortos, fechas o `*`.** Todo lo demás se cambia por «…». Las claves de los intentos de entrada llevan el correo (`intentos:correo:<correo>:<ventana>`), otras llevan una huella o un NIT, y el error de Redis viaja en respuestas `Redis: …` y en op=salud.
+- **El tiempo agotado leyendo la respuesta también se dice.** Antes salía «Upstash: respuesta no JSON ()», que parecía otra cosa.
+- **Solo se envuelve el tiempo agotado.** Los demás errores, entre ellos el de «max request size» con el que `hgetallPorPartes` reduce el paso, siguen con el mismo texto.
+
+**Verificado.** En el bloque «unidad tiempo de espera», el cliente real con una conexión que no responde (SET, GET con correo y con huella, SCAN, MGET, cuerpo colgado y un fallo de red, que no cambia). La tarea de GitHub se ejecuta con bash, con un curl simulado, el jq real y un `sleep` que no espera: un delta que avanza en 12 tramos termina en verde, uno quieto para a los 11 llamados, y la carga completa se sigue midiendo por mes. 5 mutaciones, y las 5 mueren: la expresión vieja del flujo, la clave sin tapar, el tiempo agotado sin comando, el cuerpo colgado leído como vacío y el error sin su nombre.

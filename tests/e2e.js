@@ -1869,6 +1869,30 @@ async function main() {
       (e) => { assert.ok(!/PLAZO/.test(e.message), "redis.get con un servidor que acepta y no responde seguía pendiente: falta el tiempo de espera"); return /abort|timeout/i.test(e.message); },
       "redis.get tiene que lanzar por tiempo de espera");
     assert.ok(Date.now() - t < 1000, "…y en menos de un segundo");
+    /* ¿QUÉ COMANDO PASÓ DE 10 s? (18-oct-2026): el tiempo agotado dice el verbo, la clave legible y el
+       tamaño, conserva al principio el texto de siempre y no lleva ningún valor, correo ni huella */
+    {
+      const rT = crearRedisT({ url: "http://x", token: "t", fetchImpl: colgado, timeoutMs: 50 });
+      const eSet = await rT.set("licitaciones:activo:2026-03:chunk:7", "valor-secreto-" + "x".repeat(3000)).catch((e) => e);
+      assert.ok(/^The operation was aborted due to timeout \(Upstash: SET licitaciones:activo:2026-03:chunk:7, 3 KB, \d+ ms\)$/.test(eSet.message), eSet.message);
+      assert.strictEqual(eSet.name, "TimeoutError", "el error conserva su nombre");
+      assert.ok(!eSet.message.includes("valor-secreto"), "el error no lleva el valor");
+      const eCorreo = await rT.get("intentos:correo:duenio@ejemplo.co:2905").catch((e) => e);
+      assert.ok(/GET intentos:correo:…:2905/.test(eCorreo.message) && !/duenio|ejemplo/.test(eCorreo.message), `el correo de la clave no sale: ${eCorreo.message}`);
+      const eHuella = await rT.get("sesion:9f86d081884c7d659a2feaa0c55ad015").catch((e) => e);
+      assert.ok(/GET sesion:…/.test(eHuella.message) && !/9f86d0/.test(eHuella.message), eHuella.message);
+      const eScan = await rT.scan("licitaciones:activo:*").catch((e) => e);
+      assert.ok(/\(Upstash: SCAN de licitaciones:activo:\*, /.test(eScan.message), eScan.message);
+      const eMget = await rT.mget(["sync:meta", "sync:progreso"]).catch((e) => e);
+      assert.ok(/\(Upstash: MGET de 2 claves \(la primera, sync:meta\), /.test(eMget.message), eMget.message);
+      // el tiempo agotado leyendo la respuesta tampoco es «respuesta vacía»
+      const cuerpoColgado = async (u, o) => ({ ok: true, status: 200, text: () => new Promise((_, rej) => o.signal.addEventListener("abort", () => rej(o.signal.reason))) });
+      const eCuerpo = await crearRedisT({ url: "http://x", token: "t", fetchImpl: cuerpoColgado, timeoutMs: 50 }).get("sync:meta").catch((e) => e);
+      assert.ok(/aborted due to timeout \(Upstash: GET sync:meta, /.test(eCuerpo.message), eCuerpo.message);
+      // un fallo que no es tiempo agotado sigue igual
+      const eRed = await crearRedisT({ url: "http://x", token: "t", fetchImpl: async () => { throw new Error("fetch failed"); } }).get("k").catch((e) => e);
+      assert.strictEqual(eRed.message, "fetch failed");
+    }
     t = Date.now();
     await assert.rejects(() => conPlazo(crearClienteT({ appToken: "", fetchImpl: colgado, dormir: async () => {}, timeoutMs: 50 }).pedir({ "$limit": "1" }, "colgado"), 2000),
       (e) => { assert.ok(!/PLAZO/.test(e.message), "socrata.pedir con un servidor que acepta y no responde seguía pendiente: falta el tiempo de espera"); return /agotados 5 intentos/.test(e.message); },
@@ -18823,6 +18847,64 @@ async function main() {
           assert.strictEqual(choque.codigo, 1, "un 409 detiene el paso");
           assert.strictEqual(choque.urls.length, 2, `un 409 no se reintenta: ${choque.urls.join(" | ")}`);
           assert.ok(choque.salida.includes("Pida el mismo rango."), `un 409 dice qué hacer: ${choque.salida.slice(-300)}`);
+        } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+      }
+
+      /* LA CARGA COMPLETA NO PARA CON UNA ACTUALIZACIÓN A MEDIAS (18-oct-2026). Se EJECUTA con bash el paso
+         del trabajo carga_completa de .github/workflows/carga_completa.yml, con un `curl` simulado que
+         responde una lista de tramos, el `jq` real y un `sleep` que no espera. El avance se medía solo por
+         `progreso.mesIdx`, que un delta no trae: con una actualización abierta el flujo paraba en rojo a los
+         10 tramos aunque avanzara (reproducido con su jq sobre la respuesta de la corrida 87 del sync). */
+      {
+        const { spawnSync } = require("child_process");
+        const os = require("os");
+        const yml = fs.readFileSync(path.join(__dirname, "..", ".github", "workflows", "carga_completa.yml"), "utf8").split("\n");
+        const iJob = yml.findIndex((l) => /^ {2}carga_completa:\s*$/.test(l));
+        const iRun = yml.findIndex((l, i) => i > iJob && /^\s+run: \|\s*$/.test(l));
+        assert.ok(iJob > 0 && iRun > iJob, "carga_completa.yml no tiene el paso «run» del trabajo carga_completa");
+        const sangria = yml[iRun].match(/^\s*/)[0].length;
+        const cuerpo = [];
+        for (let i = iRun + 1; i < yml.length; i++) {
+          if (yml[i].trim() && yml[i].match(/^\s*/)[0].length <= sangria) break;
+          cuerpo.push(yml[i]);
+        }
+        const margen = Math.min(...cuerpo.filter((l) => l.trim()).map((l) => l.match(/^\s*/)[0].length));
+        const dir = fs.mkdtempSync(path.join(os.tmpdir(), "carga-completa-"));
+        try {
+          fs.writeFileSync(path.join(dir, "paso.sh"), cuerpo.map((l) => l.slice(margen)).join("\n"));
+          fs.writeFileSync(path.join(dir, "curl"), [
+            "#!/usr/bin/env bash",
+            'out=""',
+            'while [ $# -gt 0 ]; do case "$1" in -o) out="$2"; shift 2;; -w|-H|--max-time) shift 2;; *) shift;; esac; done',
+            'n=$(cat "$CONTADOR" 2>/dev/null || echo 0); n=$((n + 1)); echo "$n" > "$CONTADOR"',
+            'linea=$(sed -n "${n}p" "$RESPUESTAS"); [ -n "$linea" ] || linea=$(tail -n 1 "$RESPUESTAS")',
+            'printf "%s" "$linea" > "$out"; printf "200"',
+          ].join("\n"), { mode: 0o755 });
+          fs.writeFileSync(path.join(dir, "sleep"), "#!/usr/bin/env bash\nexit 0\n", { mode: 0o755 });   // el paso duerme 3 s entre tramos
+          const correr = (respuestas) => {
+            const id = Math.random().toString(36).slice(2);
+            const archivo = path.join(dir, `respuestas-${id}.txt`), contador = path.join(dir, `contador-${id}.txt`);
+            fs.writeFileSync(archivo, respuestas.join("\n") + "\n");
+            const r = spawnSync("bash", ["-e", path.join(dir, "paso.sh")], {
+              cwd: dir, encoding: "utf8", timeout: 20000,
+              env: { ...process.env, PATH: `${dir}:${process.env.PATH}`, CRON_SECRET: "cron-de-prueba", VERCEL_AUTOMATION_BYPASS_SECRET: "pase-de-prueba", RESPUESTAS: archivo, CONTADOR: contador },
+            });
+            assert.ok(!r.error, `no se pudo ejecutar el paso (faltan bash, jq o sed, o se quedó esperando): ${r.error && r.error.message}`);
+            return { codigo: r.status, salida: `${r.stdout}${r.stderr}`, llamadas: fs.existsSync(contador) ? Number(fs.readFileSync(contador, "utf8").trim()) : 0 };
+          };
+          const delta = (leidas, done = false) => JSON.stringify({ ok: true, modo: "auto", done, delta: { ciclo_leidas: leidas, ciclo_invocaciones: 1 } });
+          const avanza = correr([...Array.from({ length: 11 }, (_, i) => delta(25000 * (i + 1))), delta(300000, true)]);
+          assert.strictEqual(avanza.codigo, 0, `una actualización que avanza en 12 tramos termina en verde, sin parar a los 10: ${avanza.salida.slice(-400)}`);
+          assert.strictEqual(avanza.llamadas, 12);
+          assert.ok(/La carga completa terminó/.test(avanza.salida) && /"ciclo_leidas":275000/.test(avanza.salida), `el registro dice cuántas filas lleva el ciclo: ${avanza.salida.slice(-400)}`);
+          const quieto = correr(Array.from({ length: 20 }, () => delta(25000)));
+          assert.strictEqual(quieto.codigo, 1, "una actualización que no avanza sigue parando en rojo");
+          assert.ok(/Diez tramos seguidos sin avanzar/.test(quieto.salida), quieto.salida.slice(-300));
+          assert.strictEqual(quieto.llamadas, 11, "la primera fija el máximo y las diez siguientes son quietas");
+          const full = (mesIdx, leidasMes, done = false) => JSON.stringify({ ok: true, done, progreso: { mes: `2026-0${mesIdx + 1}`, mesIdx, leidasMes } });
+          const completa = correr([full(0, 5000), full(0, 10000), full(1, 0), full(1, 5000, true)]);
+          assert.strictEqual(completa.codigo, 0, `la carga completa se sigue midiendo por mes y filas: ${completa.salida.slice(-300)}`);
+          assert.strictEqual(completa.llamadas, 4);
         } finally { fs.rmSync(dir, { recursive: true, force: true }); }
       }
 
