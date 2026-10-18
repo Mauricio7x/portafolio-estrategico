@@ -28,7 +28,14 @@
 #   · HISTORICO_TOKEN → la llave de la extracción del histórico (la misma que va
 #                       en «&token=…» de su URL). Si no está, la carga completa se
 #                       hace igual y el paso del histórico dice cómo crearla.
-# Ninguno de los dos se escribe en este archivo: el repositorio es público.
+#   · VERCEL_AUTOMATION_BYPASS_SECRET → el pase del muro de Vercel (ver abajo).
+# Ninguno se escribe en este archivo: el repositorio es público.
+#
+# El pase del muro (17-oct-2026): VERCEL_AUTOMATION_BYPASS_SECRET, el mismo de Vercel → «Settings» →
+# «Deployment Protection» → «Protection Bypass for Automation». Con el muro de Vercel en todo el
+# sitio, sin él la llamada recibe 302 (o 401 si pide JSON) con «Protected by Vercel Authentication» y el
+# flujo lo dice; sin
+# el secreto curl no manda la cabecera, así que sin muro todo sigue igual.
 name: Carga completa (un botón)
 
 on:
@@ -43,12 +50,17 @@ jobs:
       - name: Llamar a la aplicación hasta terminar
         env:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
         run: |
           URL="https://detekta-app.vercel.app/api/sync?modo=auto&chain=0"
           fallos=0; tramo=0; quietos=0; maximo=-1
           for vuelta in $(seq 1 600); do
             CODIGO=$(curl -sS --max-time 300 -o respuesta.json -w '%{http_code}' \
-              -H "Authorization: Bearer ${CRON_SECRET}" "$URL" || echo "000")
+              -H "Authorization: Bearer ${CRON_SECRET}" -H "x-vercel-protection-bypass: ${VERCEL_AUTOMATION_BYPASS_SECRET}" "$URL" || echo "000")
+            if [ "$CODIGO" = "302" ] || grep -qs "Protected by Vercel Authentication" respuesta.json; then
+              echo "El muro de Vercel no dejó pasar la llamada (respondió $CODIGO, «Protected by Vercel Authentication»): falta el secreto VERCEL_AUTOMATION_BYPASS_SECRET en GitHub (Settings → Secrets and variables → Actions) o no es el mismo pase que el de Vercel (Settings → Deployment Protection → Protection Bypass for Automation)."
+              exit 1
+            fi
             if [ "$CODIGO" = "401" ]; then
               echo "La aplicación no reconoció la credencial. Cree el secreto CRON_SECRET en GitHub (Settings → Secrets and variables → Actions → New repository secret) con el MISMO valor que la variable CRON_SECRET de Vercel."
               exit 1
@@ -98,6 +110,7 @@ jobs:
       - name: Llamar a la extracción hasta terminar
         env:
           HISTORICO_TOKEN: ${{ secrets.HISTORICO_TOKEN }}
+          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
         run: |
           if [ -z "$HISTORICO_TOKEN" ]; then
             echo "Falta el secreto HISTORICO_TOKEN. Créelo en GitHub (Settings → Secrets and variables → Actions → New repository secret) con la MISMA llave que usa en «&token=…» para la extracción del histórico, y vuelva a lanzar este flujo."
@@ -108,7 +121,11 @@ jobs:
           # lee el estado (solo lee) y se continúa ese rango; si no hay ninguno, de 2024-01 al
           # mes en curso de Colombia, como el refresco mensual. Sin estado no se pide nada a ciegas.
           CODIGO=$(curl -sS --max-time 120 -o estado.json -w '%{http_code}' \
-            -H "x-historico-token: ${HISTORICO_TOKEN}" "https://detekta-app.vercel.app/api/sync/historico?estado=true" || echo "000")
+            -H "x-historico-token: ${HISTORICO_TOKEN}" -H "x-vercel-protection-bypass: ${VERCEL_AUTOMATION_BYPASS_SECRET}" "https://detekta-app.vercel.app/api/sync/historico?estado=true" || echo "000")
+          if [ "$CODIGO" = "302" ] || grep -qs "Protected by Vercel Authentication" estado.json; then
+            echo "El muro de Vercel no dejó pasar la llamada (respondió $CODIGO, «Protected by Vercel Authentication»): falta el secreto VERCEL_AUTOMATION_BYPASS_SECRET en GitHub (Settings → Secrets and variables → Actions) o no es el mismo pase que el de Vercel (Settings → Deployment Protection → Protection Bypass for Automation)."
+            exit 1
+          fi
           if [ "$CODIGO" = "401" ]; then
             echo "La aplicación no reconoció la llave del histórico: el secreto HISTORICO_TOKEN de GitHub no es la misma llave que usa en «&token=…»."
             exit 1
@@ -136,7 +153,11 @@ jobs:
           fallos=0
           for tramo in $(seq 1 300); do
             CODIGO=$(curl -sS --max-time 300 -o respuesta.json -w '%{http_code}' \
-              -H "x-historico-token: ${HISTORICO_TOKEN}" "$URL" || echo "000")
+              -H "x-historico-token: ${HISTORICO_TOKEN}" -H "x-vercel-protection-bypass: ${VERCEL_AUTOMATION_BYPASS_SECRET}" "$URL" || echo "000")
+            if [ "$CODIGO" = "302" ] || grep -qs "Protected by Vercel Authentication" respuesta.json; then
+              echo "El muro de Vercel no dejó pasar la llamada (respondió $CODIGO, «Protected by Vercel Authentication»): falta el secreto VERCEL_AUTOMATION_BYPASS_SECRET en GitHub (Settings → Secrets and variables → Actions) o no es el mismo pase que el de Vercel (Settings → Deployment Protection → Protection Bypass for Automation)."
+              exit 1
+            fi
             if [ "$CODIGO" = "401" ]; then
               echo "La aplicación no reconoció la llave del histórico: el secreto HISTORICO_TOKEN de GitHub no es la misma llave que usa en «&token=…»."
               exit 1

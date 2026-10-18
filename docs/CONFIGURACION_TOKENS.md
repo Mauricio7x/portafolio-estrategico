@@ -44,9 +44,11 @@ pantalla** — simplemente faltan datos.
 > alguna vez volvieran a discrepar, **manda esta guía**, que es la que se escribió mirando el código.
 
 **Ese literal no es un secreto.** Cualquiera que abra el código fuente de la página lo ve. La
-protección real del sitio es **Vercel Password Protection** (el muro que pide contraseña antes de
-entrar) más el gate de clave `231105` del navegador. No hay que angustiarse por él; hay que hacer
-que **cuadre**.
+protección real del sitio es **el muro de Vercel**: «Vercel Authentication» en todo el sitio («All
+Deployments»), que pide iniciar sesión en Vercel antes de entrar. Es gratis en el plan Hobby; la
+contraseña de Vercel («Password Protection») no existe en Hobby (§9). El gate de clave `231105` del
+navegador no protege nada: lo compara la pantalla y está en el código. No hay que angustiarse por el
+literal; hay que hacer que **cuadre** y que el muro esté puesto.
 
 Si algún día se quiere cambiar por otro valor, hay que cambiarlo **en los seis sitios a la vez** —las
 tres líneas del código, este documento, el `README.md` y la variable de Vercel— y en el orden que
@@ -122,7 +124,7 @@ Resumen de todo lo que existe. Solo las tres primeras son obligatorias.
 | `HISTORICO_TOKEN` | **SÍ** | Llave de todo lo protegido | `503` en todo lo protegido; la app se ve a medias |
 | `SOCRATA_APP_TOKEN` | Recomendada; necesaria en cuanto la usen varias personas a la vez | Identifica a la aplicación ante datos.gov.co, que así limita menos las consultas; el portal no publica cuántas por hora permite, con llave ni sin ella (manual del desarrollador de Datos Abiertos Colombia, CO_417, num. 4.1, consultado el 26-sep-2026) | Funciona igual hasta que datos.gov.co limite, y cuando lo agota la app dice «datos.gov.co limitó las consultas por unos minutos; vuelva a intentarlo» |
 | `OCRSPACE_API_KEY` | Opcional | Leer pliegos **escaneados** (fotos) | Los pliegos con texto se leen igual; los escaneados no |
-| `VERCEL_AUTOMATION_BYPASS_SECRET` | Solo si hay Password Protection | Que la sincronización pueda llamarse a sí misma | La extracción larga se corta a mitad |
+| `VERCEL_AUTOMATION_BYPASS_SECRET` | Obligatoria con el muro de Vercel (§3.5) | El pase del muro: las llamadas que la aplicación se hace a sí misma, las tareas de GitHub y las rutinas de Claude | La extracción larga se corta a mitad; las tareas de GitHub y las rutinas reciben 302 (o 401 si piden JSON) con «Protected by Vercel Authentication» |
 | `ANTHROPIC_API_KEY` | Opcional (hoy no se usa, por decisión del dueño) | Que el dictamen del pliego lo escriba un modelo de Anthropic desde el servidor | Nada se rompe: el dictamen sale por reglas o desde una sesión de Claude Code (§3.7) |
 
 ---
@@ -180,7 +182,7 @@ MiExtraccion2025
 - Sin comillas. Sin espacios. Respetando mayúsculas y minúsculas (`M` mayúscula, `E` mayúscula).
 
 **Cómo se comprueba que quedó bien:** pegar esta URL en Chrome (estando ya dentro del sitio, es
-decir, después de haber pasado la contraseña de Vercel si está activa):
+decir, después de haber iniciado sesión en Vercel para pasar el muro):
 
 ```
 https://detekta-app.vercel.app/api/resumen?perfil=helder&token=MiExtraccion2025
@@ -264,28 +266,37 @@ app la tacha antes de mostrarlo.
 
 ---
 
-### 3.5 · `VERCEL_AUTOMATION_BYPASS_SECRET` — solo si el sitio pide contraseña
+### 3.5 · `VERCEL_AUTOMATION_BYPASS_SECRET` — el pase del muro de Vercel
 
-**Qué es.** Si el proyecto tiene activada **Password Protection** (el muro de Vercel que pide una
-contraseña antes de ver el sitio), ese muro bloquea **también** las llamadas que la aplicación se
-hace a sí misma. Y la sincronización necesita hacérselas: baja los datos en tandas de 45 segundos y
-al terminar cada tanda se vuelve a llamar para seguir con la siguiente. Con el muro en medio, **la
-cadena muere a la primera tanda** y la extracción se queda a medias sin dar ningún error.
+**Qué es.** Con el muro de Vercel en todo el sitio («Vercel Authentication» en «All Deployments»,
+decisión del dueño del 17-oct-2026), toda llamada que no venga de un navegador con la sesión de
+Vercel iniciada recibe **302 «Protected by Vercel Authentication»**, o **401 «Protected deployment»** si
+pide JSON (medido el 17-oct en una versión de prueba). Eso incluye:
 
-Este secreto es el pase que deja atravesar el muro a esas llamadas internas.
+- las llamadas que la aplicación se hace a sí misma: la sincronización y el histórico bajan en
+  tandas de 45 segundos y cada tanda llama a la siguiente; sin el pase **la cadena muere a la primera
+  tanda** sin dar ningún error;
+- las tareas de GitHub que llaman a producción (`sync.yml`, `latido.yml`, `carga_completa.yml`);
+- las rutinas de Claude (Precios, dictamen, el vigilante de la mañana y la del primero de mes).
+
+Este secreto es el pase que deja atravesar el muro a todas ellas. Va en **tres sitios** con el mismo
+valor: Vercel (que lo crea), GitHub (secreto del repositorio con ese mismo nombre) y las variables
+de entorno del entorno de Claude donde corren las rutinas («Detekta con internet»: claude.ai/code, el
+menú del entorno en la barra del título de la sesión, Edit, y ahí la variable con ese nombre; una sesión
+nueva la toma). Sin el secreto, curl no manda la cabecera y todo sigue como sin muro.
 
 **De dónde se saca:**
 
 1. Vercel → el proyecto → **Settings** → **Deployment Protection**.
 2. Buscar el bloque **Protection Bypass for Automation**.
 3. Pulsar el botón para **generar** el secreto (si ya existe, hay un botón de copiar).
-4. Vercel normalmente crea sola la variable de entorno con el nombre
-   `VERCEL_AUTOMATION_BYPASS_SECRET`. **Comprobar en *Settings → Environment Variables* que
-   aparece.** Si no aparece, copiar el valor y añadirla a mano con ese nombre exacto.
+4. Vercel pone ese secreto como variable de sistema `VERCEL_AUTOMATION_BYPASS_SECRET` en cada
+   despliegue **nuevo** (documentación de Vercel, «Protection Bypass for Automation»): después de
+   crearlo hay que **volver a desplegar**. Si aun así la extracción larga se corta a mitad (síntoma
+   abajo), añádala a mano en *Settings → Environment Variables* con ese nombre exacto.
 
-**¿Cómo sé si tengo Password Protection activa?** Abra
-`https://detekta-app.vercel.app` en una ventana de incógnito. Si le pide una contraseña
-antes de ver nada, está activa.
+**¿Cómo sé si el muro está activo?** Abra `https://detekta-app.vercel.app` en una ventana de
+incógnito. Si le pide iniciar sesión en Vercel antes de ver nada, está activo.
 
 **Síntoma de que falta:** la extracción histórica avanza un mes y se detiene. Al consultar el estado
 (ver §7) dice `candado.tomado: false` y `extraccion.terminada: false`. Con la variable puesta, la
@@ -596,7 +607,7 @@ Recién ahí las variables nuevas están vivas.
 ## 6. Parte E · Comprobar que todo quedó bien (4 pruebas, 5 minutos)
 
 Hágalas **en este orden**. Cada una supone que la anterior salió bien. Solo hay que pegar la URL en
-Chrome, en una pestaña donde ya haya pasado la contraseña del sitio.
+Chrome, en una pestaña donde ya haya iniciado sesión en Vercel para pasar el muro.
 
 ### Prueba 1 · ¿El sitio está arriba?
 
@@ -632,7 +643,7 @@ https://detekta-app.vercel.app/api/resumen?perfil=helder&token=MiExtraccion2025
 | Cifras (`totales`, `visibles`…) | **Correcto** | — |
 | `503 · HISTORICO_TOKEN no está definida` | La variable no existe en este despliegue | Crearla (§3.2) y **redesplegar** (§5) |
 | `401 · Token inválido` | Existe, pero con otro valor | Editarla a `MiExtraccion2025` y **redesplegar** |
-| Una página HTML pidiendo contraseña | Es el muro de Vercel, no un error de token | Iniciar sesión en Vercel en esa misma pestaña |
+| Una página que pide iniciar sesión en Vercel, o un 302 «Protected by Vercel Authentication» | Es el muro de Vercel, no un error de token | En el navegador: iniciar sesión en Vercel en esa misma pestaña. En una tarea de GitHub o una rutina: el pase (§3.5) |
 
 ### Prueba 4 · ¿La aplicación se ve completa?
 
@@ -656,7 +667,7 @@ Abrir el sitio y entrar con la clave `231105`. Debe verse:
 | Funciona en producción pero no en una URL de vista previa | La variable solo se marcó para `Production` | Marcar las tres casillas (§4) + redeploy |
 | La sincronización dice «agotados 5 intentos (HTTP 403)» | `SOCRATA_APP_TOKEN` inválido | Corregirlo **o borrarlo** (§3.3) + redeploy |
 | El lector de pliegos dice que no puede leer un escaneado | Falta `OCRSPACE_API_KEY` | §3.4 (opcional) |
-| La extracción histórica se para a mitad y no sigue sola | Password Protection cortando la auto-llamada | §3.5, o volver a pegar la misma URL: **continúa, no reinicia** |
+| La extracción histórica se para a mitad y no sigue sola | El muro de Vercel cortando la auto-llamada | §3.5, o volver a pegar la misma URL: **continúa, no reinicia** |
 | Los cambios del código no llegan al sitio | La conexión con GitHub | §2 |
 
 **Para diagnosticar la extracción sin terminal**, esta URL solo lee y no toca nada:
@@ -711,8 +722,12 @@ se vuelve a pegar la misma URL y continúa donde quedó. Cuando responde `done:t
 
 **Lo que sí importa:**
 
-- **Mantener activa Vercel Password Protection.** Es la protección real del sitio, porque el token
-  de escritura está a la vista en el código.
+- **Mantener activo el muro de Vercel**: «Vercel Authentication» en «All Deployments» (Settings →
+  Deployment Protection). Es la protección real del sitio, porque el token de escritura está a la
+  vista en el código. Con «Standard Protection» —la que trae un proyecto nuevo— la dirección de
+  producción queda abierta: así estuvo la cuenta nueva del 16 al 17-oct-2026 (medido). La
+  contraseña de Vercel no existe en el plan Hobby; en Pro cuesta $20 al mes por proyecto
+  (documentación de Vercel, consultada el 17-oct-2026).
 - **No pegar `UPSTASH_REDIS_REST_TOKEN` ni `OCRSPACE_API_KEY` en ningún chat, correo ni archivo del
   repositorio.** Esas dos sí son contraseñas de verdad. Solo van en Vercel.
 - **Rotar `SOCRATA_APP_TOKEN`** si alguna vez se pegó en una URL pública.
@@ -820,7 +835,7 @@ Si tuviera que empezar hoy desde cero, en este orden y nada más:
 3. Añadir `HISTORICO_TOKEN` = `MiExtraccion2025` (§3.2).
 4. *(Opcional)* Añadir `SOCRATA_APP_TOKEN` y `OCRSPACE_API_KEY` (§3.3, §3.4). `ANTHROPIC_API_KEY` (§3.7)
    solo si el dueño decide encender el motor de pago del dictamen; hoy no.
-5. *(Si el sitio pide contraseña)* Generar `VERCEL_AUTOMATION_BYPASS_SECRET` (§3.5).
+5. Generar `VERCEL_AUTOMATION_BYPASS_SECRET` y ponerlo también en GitHub y en el entorno de Claude (§3.5).
 6. *(Recomendado)* Añadir `CRON_SECRET` con una cadena aleatoria larga (§3.6).
 7. **Deployments → … → Redeploy**, sin caché (§5).
 8. Correr las cuatro pruebas de §6.

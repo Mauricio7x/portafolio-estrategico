@@ -17098,6 +17098,114 @@ async function main() {
         } finally { fs.rmSync(dir, { recursive: true, force: true }); }
       }
 
+      /* EL PASE DEL MURO EN TODO LO QUE LLAMA A PRODUCCIÓN (17-oct-2026). Con el muro de Vercel en todo
+         el sitio («Vercel Authentication» en «All Deployments»), una llamada sin el pase recibe 302
+         «Protected by Vercel Authentication» (medido en una versión de prueba). CENSO, no lista: se
+         EJECUTA con `bash -e` cada paso `run` de .github/workflows que nombra el dominio de producción,
+         con un `curl` simulado que anota las cabeceras, y cada llamada al dominio tiene que llevar
+         `x-vercel-protection-bypass` con el secreto del paso; con un 302 el paso falla y nombra el
+         secreto que falta. Las rutinas de Claude son instrucciones, no código: cada `curl` a la
+         aplicación de cada .claude/skills/<habilidad>/SKILL.md y de docs/RUTINAS.md tiene que llevar
+         la cabecera. */
+      {
+        const { spawnSync } = require("child_process");
+        const os = require("os");
+        const dominio = require("../lib/glosario.js").MARCA.dominio;
+        const dirWf = path.join(__dirname, "..", ".github", "workflows");
+        const pasos = [];
+        for (const f of fs.readdirSync(dirWf).filter((n) => /\.ya?ml$/.test(n)).sort()) {
+          const lineas = fs.readFileSync(path.join(dirWf, f), "utf8").split("\n");
+          for (let i = 0; i < lineas.length; i++) {
+            const run = /^(\s+)(?:- )?run:\s*(.*)$/.exec(lineas[i]);
+            if (!run) continue;
+            const sangria = lineas[i].match(/^\s*/)[0].length;
+            let guion;
+            if (/^[|>][-+]?\s*$/.test(run[2])) {
+              const cuerpo = [];
+              for (let j = i + 1; j < lineas.length && !(lineas[j].trim() && lineas[j].match(/^\s*/)[0].length <= sangria); j++) cuerpo.push(lineas[j]);
+              const margen = Math.min(...cuerpo.filter((l) => l.trim()).map((l) => l.match(/^\s*/)[0].length));
+              guion = cuerpo.map((l) => l.slice(margen)).join("\n");
+            } else guion = run[2];
+            // el `env:` del mismo paso: desde el `- name:` (o `- uses:`) que lo abre hasta el `run:`
+            let k = i; while (k > 0 && !/^\s+- (name|uses):/.test(lineas[k])) k--;
+            const entorno = lineas.slice(k, i).join("\n");
+            if (!guion.includes(dominio) && !entorno.includes(dominio)) continue;
+            pasos.push({ donde: `${f}:${i + 1}`, entorno, guion });
+          }
+        }
+        assert.ok(pasos.length >= 4, `el censo tiene que encontrar los pasos que llaman a ${dominio}: halló ${pasos.map((p) => p.donde).join(", ")}`);
+        const dir = fs.mkdtempSync(path.join(os.tmpdir(), "pase-del-muro-"));
+        try {
+          fs.writeFileSync(path.join(dir, "curl"), [
+            "#!/usr/bin/env bash",
+            'out=""; url=""; cab=""',
+            'while [ $# -gt 0 ]; do case "$1" in -o) out="$2"; shift 2;; -H) cab="$cab[$2]"; shift 2;; -w|--max-time) shift 2;; -*) shift;; *) url="$1"; shift;; esac; done',
+            'echo "$url $cab" >> "$LLAMADAS"',
+            'if [ "$CODIGO_FALSO" = "302" ]; then printf "Protected by Vercel Authentication" > "$out"; printf 302; exit 0; fi',
+            'if [ "$CODIGO_FALSO" = "401" ]; then printf "%s" \'{"error":{"code":"401","message":"Protected deployment"},"message":"Protected by Vercel Authentication"}\' > "$out"; printf 401; exit 0; fi',
+            'case "$url" in *estado=true*) printf "%s" \'{"ok":true,"estado":{"extraccion":null}}\' > "$out";; *) printf "%s" \'{"ok":true,"done":true}\' > "$out";; esac',
+            "printf 200",
+          ].join("\n"), { mode: 0o755 });
+          for (const paso of pasos) {
+            assert.ok(/VERCEL_AUTOMATION_BYPASS_SECRET: \$\{\{ secrets\.VERCEL_AUTOMATION_BYPASS_SECRET \}\}/.test(paso.entorno),
+              `${paso.donde} llama a producción sin VERCEL_AUTOMATION_BYPASS_SECRET en su env: con el muro, cada llamada recibiría 302`);
+            fs.writeFileSync(path.join(dir, "paso.sh"), paso.guion);
+            const correr = (codigo) => {
+              const llamadas = path.join(dir, `llamadas-${Math.random().toString(36).slice(2)}.txt`);
+              const r = spawnSync("bash", ["-e", path.join(dir, "paso.sh")], {
+                cwd: dir, encoding: "utf8", timeout: 20000,
+                env: { ...process.env, PATH: `${dir}:${process.env.PATH}`, LLAMADAS: llamadas, CODIGO_FALSO: codigo,
+                  CRON_SECRET: "cron-de-prueba", HISTORICO_TOKEN: "llave-de-prueba", VERCEL_AUTOMATION_BYPASS_SECRET: "pase-de-prueba" },
+              });
+              assert.ok(!r.error, `${paso.donde}: no se pudo ejecutar el paso (faltan bash o jq, o se quedó esperando más de 20 s): ${r.error && r.error.message}`);
+              return { codigo: r.status, salida: `${r.stdout}${r.stderr}`, llamadas: fs.existsSync(llamadas) ? fs.readFileSync(llamadas, "utf8").trim().split("\n") : [] };
+            };
+            const bien = correr("200");
+            const alDominio = bien.llamadas.filter((l) => l.includes(dominio));
+            assert.ok(alDominio.length > 0, `${paso.donde}: el paso no llamó a ${dominio} (salida: ${bien.salida.slice(-200)})`);
+            for (const l of alDominio) {
+              assert.ok(l.includes("[x-vercel-protection-bypass: pase-de-prueba]"), `${paso.donde}: una llamada a producción va sin el pase del muro: ${l}`);
+            }
+            for (const codigo of ["302", "401"]) {
+              const muro = correr(codigo);
+              assert.strictEqual(muro.codigo, 1, `${paso.donde}: el muro (${codigo}) tiene que detener el paso`);
+              assert.ok(muro.salida.includes("VERCEL_AUTOMATION_BYPASS_SECRET") && muro.llamadas.length === 1,
+                `${paso.donde}: ante el muro (${codigo}) dice qué secreto falta, no lo confunde con la llave y no insiste: ${muro.salida.slice(-300)} · ${muro.llamadas.length} llamadas`);
+            }
+          }
+        } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+
+        // las rutinas: cada `curl` a la aplicación (con sus líneas de continuación) lleva el pase
+        const instrucciones = [path.join(__dirname, "..", "docs", "RUTINAS.md"),
+          ...fs.readdirSync(path.join(__dirname, "..", ".claude", "skills")).map((s) => path.join(__dirname, "..", ".claude", "skills", s, "SKILL.md")).filter((f) => fs.existsSync(f))];
+        let curlsALaApp = 0;
+        // un curl con una URL explícita a OTRO host no va a la aplicación; cualquier otro (el dominio, $BASE, $APP…) sí
+        const aOtroHost = (o) => [...o.matchAll(/https?:\/\/([^/\s"'$]+)/g)].some((m) => m[1] !== dominio) && !o.includes(dominio);
+        for (const f of instrucciones) {
+          const texto = fs.readFileSync(f, "utf8");
+          const ordenes = texto.replace(/\\\n\s*/g, " ").split("\n").filter((l) => /(^|[\s$(|;&])curl\s+-/.test(l) && !aOtroHost(l));
+          for (const o of ordenes) {
+            curlsALaApp++;
+            assert.ok(o.includes('-H "x-vercel-protection-bypass: $VERCEL_AUTOMATION_BYPASS_SECRET"'),
+              `${path.relative(path.join(__dirname, ".."), f)}: un curl a la aplicación va sin el pase del muro: ${o.trim().slice(0, 160)}`);
+          }
+          if (f.endsWith("RUTINAS.md")) {
+            /* Excepción declarada, por título de sección: la rutina de madrugada sirve public/ en un
+               servidor LOCAL y sus «/api/» son los 404 esperados de ese servidor, no producción. */
+            const SIN_PRODUCCION = new Set(["1 · La suite y el navegador de madrugada"]);
+            for (const seccion of texto.split(/^## /m).slice(1)) {
+              const titulo = seccion.split("\n")[0].trim();
+              if ([...SIN_PRODUCCION].some((s) => titulo.startsWith(s))) continue;
+              for (const bloque of seccion.split("```").filter((_, i) => i % 2 === 1)) {
+                if (/\/api\//.test(bloque)) assert.ok(bloque.includes("x-vercel-protection-bypass"),
+                  `la rutina «${titulo}» de RUTINAS.md llama a la aplicación (/api/) sin la instrucción del pase del muro`);
+              }
+            }
+          }
+        }
+        assert.ok(curlsALaApp >= 7, `el censo de las rutinas tiene que ver sus llamadas a la aplicación: vio ${curlsALaApp}`);
+      }
+
       /* el histórico guardó todo el rango CON datos de adjudicación */
       const hist = await leerHistorico();
       const conOferentes = [...ENTIDADES_HIST, ...ENTIDADES_HIST_IDENTIDAD]
@@ -32898,6 +33006,8 @@ async function main() {
           ["Network access", "campo del entorno de la rutina en claude.ai (interfaz ajena)"],
           ["Full", "valor del campo Network access en claude.ai (interfaz ajena)"],
           ["Save changes", "botón del entorno de la rutina en claude.ai (interfaz ajena)"],
+          ["Protected by Vercel Authentication", "texto con el que responde el muro de Vercel (interfaz ajena), medido con curl el 17-oct-2026 en una versión de prueba; no es un texto de la pantalla"],
+          ["Protected deployment", "mensaje del 401 del muro de Vercel a una petición JSON (interfaz ajena), medido el 17-oct-2026; no es un texto de la pantalla"],
         ]);
         for (const rel of textosDelDueno) {
           const texto = leerD(rel);
