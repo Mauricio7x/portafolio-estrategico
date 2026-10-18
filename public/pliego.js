@@ -817,7 +817,8 @@
       }
 
       chip("Analizando la tabla…", { girando: true });
-      await enviarTexto(texto, sello);
+      // el NOMBRE viaja hasta el vigía: el servidor solo guarda como versión del pliego lo que se llama así
+      await enviarTexto(texto, sello, entrada.nombre);
     } catch (e) {
       progreso(null);
       chip("Error", {});
@@ -827,7 +828,7 @@
     }
   }
 
-  async function enviarTexto(texto, sello = selloLectura()) {
+  async function enviarTexto(texto, sello = selloLectura(), nombre = null) {
     const ctx = contexto();
     const r = await pedir("/api/pliego?op=extraer-texto", {
       texto_extraido: texto,
@@ -841,7 +842,7 @@
        registra la versión del pliego (si el editor tiene un proceso abierto)
        y se pintan «la entidad cambió las reglas» y el cronograma. Nunca
        bloquea la extracción: falla en silencio hacia un aviso. */
-    vigilarPliego(texto, sello).catch(() => {});
+    vigilarPliego(texto, sello, nombre).catch(() => {});
   }
 
   /* El id del proceso lo tiene el editor de APU (campo id-proceso) cuando se
@@ -871,7 +872,7 @@
     mensaje("La lectura del pliego terminó después de que se abriera otro proceso o se limpiara el lector, "
       + "así que no se usó: pertenecía al proceso anterior. Vuelva a leer el pliego de este proceso.", "aviso");
   }
-  async function vigilarPliego(texto, sello = selloLectura()) {
+  async function vigilarPliego(texto, sello = selloLectura(), nombre = null) {
     const caja = document.getElementById("pl-vigia");
     if (!caja) return;
     const id = sello.id;
@@ -879,14 +880,20 @@
     /* el dictamen del pliego cuelga de aquí con su PROPIO try/catch: nada suyo
        puede romper el pintado del vigía ni del cronograma */
     let dictamenArgs = { id: "", cambio: false, falloVigia: null };
+    let noEsElPliego = false;
     if (!id) {
       html += `<p class="text-gray-600">Para vigilar las adendas de este pliego abra el proceso desde su tarjeta («Calcular mi precio»): así el lector sabe de qué proceso es el pliego y guarda cada versión.</p>`;
     } else {
-      const r = await pedir("/api/pliego?op=diff", { id_proceso: id, texto, perfil: perfilActual(), origen: "lector" });
+      const r = await pedir("/api/pliego?op=diff", { id_proceso: id, texto, perfil: perfilActual(), nombre_archivo: nombre || null });
       if (!lecturaVigente(sello)) return;
       const c = r.cuerpo || {};
-      dictamenArgs = { id, cambio: !!c.cambio, falloVigia: c.ok ? null : (c.error || window.Glosario.fraseDeFallo({ status: r.estado })) };
-      if (!c.ok) html += `<p class="text-gray-600">No se pudo guardar la versión del pliego: ${esc(c.error || window.Glosario.fraseDeFallo({ status: r.estado }))}.</p>`;
+      /* NO ERA EL PLIEGO (18-oct-2026): el Formulario 1, una adenda o un nombre que no dice qué es no se
+         guardan como versión del pliego. No es un fallo: se dice por qué, y el dictamen sigue mostrando
+         el del pliego que ya estaba guardado (sin «Primero hay que guardar el texto del pliego») */
+      noEsElPliego = c.no_es_el_pliego === true;
+      dictamenArgs = { id, cambio: !!c.cambio, falloVigia: c.ok || noEsElPliego ? null : (c.error || window.Glosario.fraseDeFallo({ status: r.estado })) };
+      if (noEsElPliego) html += `<p class="font-medium text-amber-700">${esc(c.error || "Este archivo no es el pliego: no se guarda como versión del pliego")}.</p>`;
+      else if (!c.ok) html += `<p class="text-gray-600">No se pudo guardar la versión del pliego: ${esc(c.error || window.Glosario.fraseDeFallo({ status: r.estado }))}.</p>`;
       else {
         html += `<p class="font-medium" style="color: var(--text-primary);">${esc(c.mensaje || "")}</p>`;
         const cambios = (c.diff && c.diff.habilitantes && c.diff.habilitantes.cambios) || [];
@@ -898,8 +905,9 @@
         html += `<p class="mt-1 text-xs text-gray-500">Versión ${c.version} de este pliego guardada${c.recortado ? " (texto recortado)" : ""}. La comparación de requisitos es una lectura automática del texto: confírmela contra el pliego.</p>`;
       }
     }
-    // cronograma (dataset + texto): siempre, con o sin id
-    const rc = await pedir("/api/pliego?op=cronograma", { id_proceso: id || undefined, texto });
+    /* cronograma (dataset + texto): siempre, con o sin id. Con un archivo que NO es el pliego, el del pliego guardado:
+       si no, la lista de aquí diría unas fechas y el .ics y Mis procesos otras (2.ª revisión adversaria, una adenda) */
+    const rc = await pedir("/api/pliego?op=cronograma", noEsElPliego ? { id_proceso: id } : { id_proceso: id || undefined, texto });
     if (!lecturaVigente(sello)) return;
     const cc = rc.cuerpo || {};
     if (cc.ok && Array.isArray(cc.hitos) && cc.hitos.length) {
@@ -1014,9 +1022,10 @@
       + `${Array.isArray(r.paginas_vacias) && r.paginas_vacias.length ? ` Las páginas ${esc(r.paginas_vacias.join(", "))} no se pudieron leer del escaneado.` : ""}`
       + `${apartadas.length ? ` Se apartaron ${apartadas.length} frases que no se pudieron comprobar.` : ""}</p>`;
     /* SECOP II publicó después una versión que la aplicación no pudo leer (más de 20 MB, un escaneo…) o que todavía no leyó:
-       se dice arriba */
+       se dice arriba. Cargarlo en Precios solo le llega al dictamen si el PDF trae texto: la lectura por OCR de Precios no
+       pasa por el vigía, y los 4 pliegos de más de 20 MB medidos el 18-oct-2026 son escaneos */
     const nuevo = r.mas_nuevo_sin_leer && typeof r.mas_nuevo_sin_leer === "object" && r.mas_nuevo_sin_leer.nombre ? r.mas_nuevo_sin_leer : null;
-    if (nuevo) html += `<p class="mt-1 text-xs font-medium text-amber-700">Ojo: SECOP II publicó después «${esc(nuevo.nombre)}»${nuevo.fecha_carga ? ` (${esc(fecha(nuevo.fecha_carga))})` : ""} ${nuevo.pendiente === true ? "y la aplicación todavía no lo ha leído. Este dictamen es sobre una versión anterior: vuelva a pedirlo cuando la aplicación lo haya leído." : `y la aplicación no lo pudo leer${nuevo.motivo ? ` (${esc(nuevo.motivo)})` : ""}. Este dictamen es sobre una versión anterior: descargue ese PDF de SECOP II, cárguelo en Precios con este proceso abierto y vuelva a pedir el dictamen.`}</p>`;
+    if (nuevo) html += `<p class="mt-1 text-xs font-medium text-amber-700">Ojo: SECOP II publicó después «${esc(nuevo.nombre)}»${nuevo.fecha_carga ? ` (${esc(fecha(nuevo.fecha_carga))})` : ""} ${nuevo.pendiente === true ? "y la aplicación todavía no lo ha leído. Este dictamen es sobre una versión anterior: vuelva a pedirlo cuando la aplicación lo haya leído." : `y la aplicación no lo pudo leer${nuevo.motivo ? ` (${esc(nuevo.motivo)})` : ""}. Este dictamen es sobre una versión anterior: revise ese documento en SECOP II antes de decidir. Si el PDF trae texto (no es un escaneo), cárguelo en Precios con este proceso abierto y vuelva a pedir el dictamen.`}</p>`;
     html += `<p class="mt-1 text-xs text-gray-500">Se comprobaron ${esc(ver.citas_verificadas || 0)} de ${esc(ver.citas_total || 0)} citas${r.paginas != null ? ` · ${esc(r.paginas - (Array.isArray(r.paginas_vacias) ? r.paginas_vacias.length : 0))} páginas leídas de ${esc(r.paginas)}` : ""} · faltan ${faltan} datos de su empresa</p>`;
     if (motivos.length) html += `<p class="mt-3 text-xs font-medium uppercase tracking-wide text-gray-500">Por qué</p><ul class="mt-1 space-y-1">${motivos.map(item).join("")}</ul>`;
     if (lecturas.length || r.capacidad_disponible_cop != null) {
