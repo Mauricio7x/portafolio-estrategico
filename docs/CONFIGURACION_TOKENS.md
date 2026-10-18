@@ -31,8 +31,13 @@ en uno, cámbielo (§10).
 1. **Despliegue** este cambio (se despliega solo al fusionarlo en `main`). Mientras en Vercel siga la
    llave vieja —la que estuvo escrita en el código de la página—, la pantalla «Crear su cuenta» **se
    niega sola** y le dice que primero la cambie: nadie que la haya leído puede crear la cuenta.
-2. **Cambie `HISTORICO_TOKEN` en Vercel** por una cadena nueva, larga y aleatoria (§3.2) y **vuelva a
-   desplegar** (§5).
+2. **Cambie `HISTORICO_TOKEN` en Vercel** por una cadena nueva, larga y aleatoria (§3.2), **anótela
+   en un lugar privado ANTES de guardarla** y **vuelva a desplegar** (§5). Vercel no la vuelve a
+   mostrar: una variable de tipo «Secret» —la del candado— no se puede ver ni copiar después de
+   guardarla, solo reemplazar (documentación de Vercel, «Config and Secret environment variables»,
+   leída el 18-oct-2026). En esta cuenta es una variable **compartida del equipo** (medido el
+   17-oct-2026): «All Projects» → «Environment Variables» → pestaña «Shared» → los tres puntos «⋯»
+   de su fila → «Edit» → el valor nuevo → «Save».
 3. **Cree su cuenta** con esa llave nueva (§0.1 bis, abajo).
 4. **GitHub**: ponga el mismo valor en el secreto `HISTORICO_TOKEN`, si lo creó (flujo de la carga
    completa; §10).
@@ -52,13 +57,14 @@ en uno, cámbielo (§10).
 
 ### 0.1 bis · Crear su cuenta (sin terminal)
 
-1. Abra Vercel → el proyecto → **Settings → Environment Variables** → `HISTORICO_TOKEN` → el ojo
-   para verla → **cópiela** entera.
+1. Tenga a mano la llave que anotó en el paso 2 de §0.1. **No se puede copiar de Vercel**: allí no
+   se vuelve a ver. Si no la anotó, póngale una nueva en Vercel (§0.1, paso 2), anótela y vuelva a
+   desplegar.
 2. Abra la aplicación en Chrome → **Entrar con clave**. Como todavía no hay cuenta, la pantalla dice
    «Todavía no hay ninguna cuenta» y le pide cuatro cosas:
-   - **Llave del servidor (la de Vercel)**: pegue lo que copió en el paso 1.
+   - **Llave del servidor (la de la configuración del sitio)**: pegue la de su nota (paso 1).
    - **Su correo**.
-   - **Contraseña**: 10 caracteres o más. Una frase que recuerde («la obra de la calle diez») sirve
+   - **Contraseña (10 caracteres o más)**: distinta de la llave. Una frase que recuerde («la obra de la calle diez») sirve
      mejor que una palabra corta con símbolos.
    - **Repita la contraseña**.
 3. Pulse **Crear su cuenta**. Entra directo a la aplicación.
@@ -726,7 +732,7 @@ Abrir el sitio y entrar con su correo y su contraseña. Debe verse:
 | --- | --- | --- |
 | La app carga pero **sin ninguna cifra de dinero** en las tarjetas | No entró con su cuenta en ese Chrome | Entrar (§0.2) |
 | «Mi empresa» vacía o la pantalla de entrar aparece encima | La sesión caducó (30 días) o se cerró | Entrar de nuevo (§0.2) |
-| «Crear su cuenta» dice que la llave no coincide | Se copió mal `HISTORICO_TOKEN`, o se cambió en Vercel sin volver a desplegar | Copiarla entera otra vez (§0.1 bis); si la cambió, §5 |
+| «Crear su cuenta» dice que la llave no coincide | La escrita no es la que se guardó en `HISTORICO_TOKEN`, o se cambió en Vercel sin volver a desplegar | Escribirla igual a la de su nota (Vercel no la muestra); si no la tiene, ponerle una nueva en Vercel y anotarla (§0.1, paso 2); si la cambió, volver a desplegar (§5) |
 | «Crear su cuenta» dice que la llave es la que estuvo escrita en el código | Todavía no se cambió `HISTORICO_TOKEN` | Cambiarla en Vercel y volver a desplegar (§0.1, paso 2) |
 | «Demasiados intentos seguidos» | Cinco contraseñas malas seguidas con ese correo | Esperar los minutos que dice la pantalla |
 | Todo responde `503 Faltan UPSTASH…` | Falta la base de datos o el valor empieza por `redis://` | §3.1 + redeploy |
