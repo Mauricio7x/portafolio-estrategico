@@ -159,6 +159,14 @@ claude.ai/code → el entorno → Red: Custom y permita detekta-app.vercel.app.�
 Si responde 302 (o 401 con «Protected deployment») es el muro de Vercel: para y di solo: «El muro de Vercel no deja pasar a esta rutina:
 falta VERCEL_AUTOMATION_BYPASS_SECRET en las variables de entorno de su entorno.»
 
+PASO 0 ter · ¿SIGUE PUESTO EL MURO? Esta llamada va SIN el pase, a propósito: con el pase siempre
+respondería 200 y no probaría nada.
+curl -s -o /dev/null -w "%{http_code}\n" --max-time 20 "https://detekta-app.vercel.app/"  # SONDA DEL MURO: sin el pase, a propósito
+Si responde 302, 401 o 403, el muro está puesto: no lo menciones. Si responde 200, la PRIMERA línea de
+tu informe es: «EL MURO DE VERCEL ESTÁ APAGADO: cualquiera con la dirección puede entrar a Detekta.
+Vuelva a ponerlo: Vercel → el proyecto → «Settings» → «Deployment Protection» → «Vercel
+Authentication» → «All Deployments» → «Save».» Y sigue con lo demás.
+
 LA LLAVE sale del repositorio, como hacen las skills. No la imprimas nunca:
 TOKEN=$(grep -o 'const TOKEN = "[^"]*"' public/app.js | head -1 | cut -d'"' -f2)
 Y EL PASE DEL MURO va en CADA llamada a la aplicación, también sin imprimirlo:

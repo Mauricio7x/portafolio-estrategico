@@ -62,3 +62,24 @@ jobs:
             echo "El latido no respondió 200. Mire https://detekta-app.vercel.app/api/procesos?op=salud"
             exit 1
           fi
+
+      # La sonda del muro (18-oct-2026): el 16-oct la cuenta nueva de Vercel trajo «Standard
+      # Protection» y la producción quedó abierta un día sin que nadie lo viera. Este paso llama a
+      # la portada SIN el pase, A PROPÓSITO: con el muro puesto responde 302 (o 401); si responde
+      # 200, cualquiera con la dirección entra, y la corrida falla para que se vea en rojo. Con el
+      # pase siempre respondería 200 y la alarma sonaría en falso: por eso no lleva ni el pase ni
+      # ningún secreto. Corre aunque el paso anterior falle. Sin respuesta (000) no es «apagado»:
+      # lo dice y no falla.
+      - name: ¿El muro de Vercel sigue puesto?
+        if: always()
+        run: |
+          CODIGO=$(curl -sS --max-time 20 -o /dev/null -w '%{http_code}' "https://detekta-app.vercel.app/" || true)  # SONDA DEL MURO: sin el pase, a propósito
+          CODIGO=${CODIGO:-000}
+          echo "Sin el pase, la portada respondió HTTP $CODIGO"
+          case "$CODIGO" in
+            302|401|403) echo "El muro de Vercel está puesto." ;;
+            200)
+              echo "EL MURO DE VERCEL ESTÁ APAGADO: cualquiera con la dirección puede entrar a Detekta y usar su llave. Vuelva a ponerlo: Vercel → el proyecto → «Settings» → «Deployment Protection» → «Vercel Authentication» → «All Deployments» → «Save»."
+              exit 1 ;;
+            *) echo "No se pudo comprobar el muro (respondió $CODIGO): sin dato, no se da por apagado." ;;
+          esac
