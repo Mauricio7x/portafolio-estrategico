@@ -65,21 +65,25 @@ jobs:
 
       # La sonda del muro (18-oct-2026): el 16-oct la cuenta nueva de Vercel trajo «Standard
       # Protection» y la producción quedó abierta un día sin que nadie lo viera. Este paso llama a
-      # la portada SIN el pase, A PROPÓSITO: con el muro puesto responde 302 (o 401); si responde
-      # 200, cualquiera con la dirección entra, y la corrida falla para que se vea en rojo. Con el
-      # pase siempre respondería 200 y la alarma sonaría en falso: por eso no lleva ni el pase ni
-      # ningún secreto. Corre aunque el paso anterior falle. Sin respuesta (000) no es «apagado»:
-      # lo dice y no falla.
+      # la portada SIN el pase, A PROPÓSITO: con el pase respondería 200 siempre y la alarma sonaría
+      # en falso, así que no lleva ni el pase ni ningún secreto. El muro se reconoce EN POSITIVO
+      # (medido el 18-oct): 302 hacia https://vercel.com/sso-api, o el texto «Protected by Vercel
+      # Authentication». Un 200 sin ese texto es el muro apagado y la corrida falla en rojo. Todo lo
+      # demás (un 403 del cortafuegos, un 429, un 5xx, otra redirección, sin respuesta) es «sin
+      # dato»: se avisa y no falla. `-q` va primero para que curl no lea un .curlrc del corredor.
+      # Corre aunque el paso anterior falle.
       - name: ¿El muro de Vercel sigue puesto?
         if: always()
         run: |
-          CODIGO=$(curl -sS --max-time 20 -o /dev/null -w '%{http_code}' "https://detekta-app.vercel.app/" || true)  # SONDA DEL MURO: sin el pase, a propósito
+          RESPUESTA=$(curl -q -sS --max-time 20 -o portada.txt -w '%{http_code} %{redirect_url}' "https://detekta-app.vercel.app/" || true)  # SONDA DEL MURO: sin el pase, a propósito
+          CODIGO=${RESPUESTA%% *}
           CODIGO=${CODIGO:-000}
-          echo "Sin el pase, la portada respondió HTTP $CODIGO"
-          case "$CODIGO" in
-            302|401|403) echo "El muro de Vercel está puesto." ;;
-            200)
-              echo "EL MURO DE VERCEL ESTÁ APAGADO: cualquiera con la dirección puede entrar a Detekta y usar su llave. Vuelva a ponerlo: Vercel → el proyecto → «Settings» → «Deployment Protection» → «Vercel Authentication» → «All Deployments» → «Save»."
-              exit 1 ;;
-            *) echo "No se pudo comprobar el muro (respondió $CODIGO): sin dato, no se da por apagado." ;;
-          esac
+          echo "Sin el pase, la portada respondió: ${RESPUESTA:-sin respuesta}"
+          if grep -qs "Protected by Vercel Authentication" portada.txt || [[ "$RESPUESTA" == "302 https://vercel.com/sso-api"* ]]; then
+            echo "El muro de Vercel está puesto."
+          elif [ "$CODIGO" = "200" ]; then
+            echo "::error title=Muro de Vercel apagado::EL MURO DE VERCEL ESTÁ APAGADO: cualquiera con la dirección puede entrar a Detekta y usar su llave. Vuelva a ponerlo: Vercel → el proyecto → «Settings» → «Deployment Protection» → «Vercel Authentication» → «All Deployments» → «Save»."
+            exit 1
+          else
+            echo "::warning title=Muro de Vercel sin medir::No se pudo comprobar el muro (respondió $CODIGO): sin dato, no se da por apagado."
+          fi

@@ -161,11 +161,16 @@ falta VERCEL_AUTOMATION_BYPASS_SECRET en las variables de entorno de su entorno.
 
 PASO 0 ter · ¿SIGUE PUESTO EL MURO? Esta llamada va SIN el pase, a propósito: con el pase siempre
 respondería 200 y no probaría nada.
-curl -s -o /dev/null -w "%{http_code}\n" --max-time 20 "https://detekta-app.vercel.app/"  # SONDA DEL MURO: sin el pase, a propósito
-Si responde 302, 401 o 403, el muro está puesto: no lo menciones. Si responde 200, la PRIMERA línea de
-tu informe es: «EL MURO DE VERCEL ESTÁ APAGADO: cualquiera con la dirección puede entrar a Detekta.
-Vuelva a ponerlo: Vercel → el proyecto → «Settings» → «Deployment Protection» → «Vercel
-Authentication» → «All Deployments» → «Save».» Y sigue con lo demás.
+curl -q -s -o /tmp/portada.txt -w "%{http_code} %{redirect_url}\n" --max-time 20 "https://detekta-app.vercel.app/"  # SONDA DEL MURO: sin el pase, a propósito
+grep -c "Protected by Vercel Authentication" /tmp/portada.txt
+- Si responde 302 seguido de una dirección que empieza por https://vercel.com/sso-api, o si el grep
+  cuenta 1 o más, el muro está puesto: no lo menciones.
+- Si responde 200 y el grep cuenta 0, la PRIMERA línea de tu informe es:
+  «EL MURO DE VERCEL ESTÁ APAGADO: cualquiera con la dirección puede entrar a Detekta. Vuelva a
+  ponerlo: Vercel → el proyecto → «Settings» → «Deployment Protection» → «Vercel Authentication» →
+  «All Deployments» → «Save».» Y sigue con lo demás.
+- Cualquier otra respuesta (403, 429, 5xx, otra dirección, sin respuesta): di en una línea
+  «Muro: no medido (respondió X)» y sigue. Sin dato no es «apagado».
 
 LA LLAVE sale del repositorio, como hacen las skills. No la imprimas nunca:
 TOKEN=$(grep -o 'const TOKEN = "[^"]*"' public/app.js | head -1 | cut -d'"' -f2)
