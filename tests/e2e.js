@@ -17739,11 +17739,18 @@ async function main() {
          `x-vercel-protection-bypass` con el secreto del paso; con un 302 el paso falla y nombra el
          secreto que falta. Las rutinas de Claude son instrucciones, no código: cada `curl` a la
          aplicación de cada .claude/skills/<habilidad>/SKILL.md y de docs/RUTINAS.md tiene que llevar
-         la cabecera. */
+         la cabecera.
+         Excepción declarada (18-oct-2026): LA SONDA DEL MURO. Un `curl` marcado «SONDA DEL MURO: sin el
+         pase, a propósito» llama a la portada SIN el pase para saber si el muro sigue puesto (con el
+         pase respondería 200 siempre y la alarma sonaría en falso). La marca no es un salvoconducto:
+         la sonda tiene una forma fija —un solo curl, a la portada, sin cabeceras ni secretos— y se
+         EJECUTA: 200 falla con el aviso; 302, 401 y 403 pasan; sin respuesta no se da por apagado. */
       {
         const { spawnSync } = require("child_process");
         const os = require("os");
         const dominio = require("../lib/glosario.js").MARCA.dominio;
+        const MARCA_SONDA = "SONDA DEL MURO: sin el pase, a propósito";
+        const PORTADA = `"https://${dominio}/"`;
         const dirWf = path.join(__dirname, "..", ".github", "workflows");
         const pasos = [];
         for (const f of fs.readdirSync(dirWf).filter((n) => /\.ya?ml$/.test(n)).sort()) {
@@ -17766,14 +17773,61 @@ async function main() {
             pasos.push({ donde: `${f}:${i + 1}`, entorno, guion });
           }
         }
+        const sondas = pasos.filter((p) => p.guion.includes(MARCA_SONDA));
+        pasos.splice(0, pasos.length, ...pasos.filter((p) => !p.guion.includes(MARCA_SONDA)));
         assert.ok(pasos.length >= 4, `el censo tiene que encontrar los pasos que llaman a ${dominio}: halló ${pasos.map((p) => p.donde).join(", ")}`);
+        /* El curl de la sonda es ESTRICTO: cualquier bandera fuera de las permitidas (-q primero, -s, -S,
+           --max-time, -o, -w) queda anotada como violación. Un `-L`, un `-b` con una cookie o un `-K`
+           con otra configuración cambian lo que mide la sonda y un curl simulado tolerante no lo vería
+           (revisión adversaria del 18-oct-2026: `-L` contra producción daba 200 = falsa alarma). */
+        const correrSonda = (guion, { codigo, destino = "", cuerpo = "", salidaCurl = 0 }) => {
+          const d = fs.mkdtempSync(path.join(os.tmpdir(), "sonda-del-muro-"));
+          try {
+            fs.writeFileSync(path.join(d, "curl"), [
+              "#!/usr/bin/env bash",
+              'out=""; fmt=""; url=""; n=0',
+              '[ "${1:-}" = "-q" ] || echo "falta -q como primera bandera: curl leería un .curlrc del corredor" >> "$VIOLACION"',
+              "while [ $# -gt 0 ]; do",
+              '  case "$1" in',
+              '    -q) [ "$n" -eq 0 ] || echo "-q no va primero" >> "$VIOLACION"; shift;;',
+              "    -s|-S|-sS|-Ss) shift;;",
+              "    --max-time) shift 2;;",
+              '    -o) out="$2"; shift 2;;',
+              '    -w) fmt="$2"; shift 2;;',
+              '    -*) echo "bandera no permitida: $1" >> "$VIOLACION"; shift;;',
+              '    *) [ -z "$url" ] || echo "dos direcciones: $url y $1" >> "$VIOLACION"; url="$1"; shift;;',
+              "  esac",
+              "  n=$((n + 1))",
+              "done",
+              'echo "$url" >> "$LLAMADAS"',
+              '[ -n "$out" ] && printf "%s" "$CUERPO_FALSO" > "$out"',
+              'r="${fmt//%\\{http_code\\}/$CODIGO_FALSO}"; r="${r//%\\{redirect_url\\}/$DESTINO_FALSO}"',
+              "printf '%b' \"$r\"",
+              'exit "$SALIDA_FALSA"',
+            ].join("\n"), { mode: 0o755 });
+            fs.writeFileSync(path.join(d, "sonda.sh"), guion);
+            const llamadas = path.join(d, "llamadas.txt"), violacion = path.join(d, "violacion.txt");
+            const r = spawnSync("bash", ["-e", path.join(d, "sonda.sh")], {
+              cwd: d, encoding: "utf8", timeout: 20000,
+              // el pase está en el entorno a propósito: la sonda tiene que NO usarlo
+              env: { ...process.env, PATH: `${d}:${process.env.PATH}`, LLAMADAS: llamadas, VIOLACION: violacion,
+                CODIGO_FALSO: codigo, DESTINO_FALSO: destino, CUERPO_FALSO: cuerpo, SALIDA_FALSA: String(salidaCurl),
+                VERCEL_AUTOMATION_BYPASS_SECRET: "pase-de-prueba", CRON_SECRET: "cron-de-prueba" },
+            });
+            assert.ok(!r.error, `no se pudo ejecutar la sonda: ${r.error && r.error.message}`);
+            const leer = (f) => (fs.existsSync(f) ? fs.readFileSync(f, "utf8").trim() : "");
+            return { codigo: r.status, salida: `${r.stdout}${r.stderr}`, violacion: leer(violacion), llamadas: leer(llamadas).split("\n").filter(Boolean) };
+          } finally { fs.rmSync(d, { recursive: true, force: true }); }
+        };
         const dir = fs.mkdtempSync(path.join(os.tmpdir(), "pase-del-muro-"));
         try {
           fs.writeFileSync(path.join(dir, "curl"), [
             "#!/usr/bin/env bash",
             'out=""; url=""; cab=""',
-            'while [ $# -gt 0 ]; do case "$1" in -o) out="$2"; shift 2;; -H) cab="$cab[$2]"; shift 2;; -w|--max-time) shift 2;; -*) shift;; *) url="$1"; shift;; esac; done',
+            'while [ $# -gt 0 ]; do case "$1" in -o) out="$2"; shift 2;; -H|--header) cab="$cab[$2]"; shift 2;; -w|--max-time) shift 2;; -*) shift;; *) url="$1"; shift;; esac; done',
             'echo "$url $cab" >> "$LLAMADAS"',
+            'if [ "$CODIGO_FALSO" = "000" ]; then printf 000; exit 28; fi',
+            'if [ "$CODIGO_FALSO" = "403" ]; then printf 403; exit 0; fi',
             'if [ "$CODIGO_FALSO" = "302" ]; then printf "Protected by Vercel Authentication" > "$out"; printf 302; exit 0; fi',
             'if [ "$CODIGO_FALSO" = "401" ]; then printf "%s" \'{"error":{"code":"401","message":"Protected deployment"},"message":"Protected by Vercel Authentication"}\' > "$out"; printf 401; exit 0; fi',
             'case "$url" in *estado=true*) printf "%s" \'{"ok":true,"estado":{"extraccion":null}}\' > "$out";; *) printf "%s" \'{"ok":true,"done":true}\' > "$out";; esac',
@@ -17806,18 +17860,67 @@ async function main() {
                 `${paso.donde}: ante el muro (${codigo}) dice qué secreto falta, no lo confunde con la llave y no insiste: ${muro.salida.slice(-300)} · ${muro.llamadas.length} llamadas`);
             }
           }
+
+          // la sonda del muro: una sola, en el latido, con su forma fija, y ejecutada
+          assert.strictEqual(sondas.length, 1, `tiene que haber UNA sonda del muro en los flujos de GitHub (el latido): halló ${sondas.map((p) => p.donde).join(", ") || "ninguna"}`);
+          const sonda = sondas[0];
+          assert.ok(sonda.donde.startsWith("latido.yml:"), `la sonda del muro va en el latido, el flujo que más veces corre: está en ${sonda.donde}`);
+          assert.ok(!/secrets\./.test(sonda.entorno), `${sonda.donde}: la sonda del muro no lleva secretos (con el pase respondería 200 siempre)`);
+          assert.ok(/^\s+if: always\(\)\s*$/m.test(sonda.entorno), `${sonda.donde}: la sonda del muro corre aunque el paso anterior falle (if: always())`);
+          assert.strictEqual((sonda.guion.match(/\bcurl\b/g) || []).length, 1, `${sonda.donde}: la sonda hace UNA llamada`);
+          assert.ok(!/VERCEL_AUTOMATION_BYPASS_SECRET|x-vercel-protection-bypass/.test(sonda.guion), `${sonda.donde}: la sonda no nombra el pase`);
+          fs.writeFileSync(path.join(dir, "sonda.sh"), sonda.guion);
+          const ESCENARIOS = [
+            // [código, destino de la redirección, cuerpo, salida de curl] → [salida del paso, lo que dice]
+            [["200", "", "<!doctype html><title>Detekta</title>", 0], [1, "::error title=Muro de Vercel apagado::EL MURO DE VERCEL ESTÁ APAGADO"]],
+            [["302", "https://vercel.com/sso-api?url=https%3A%2F%2Fx%2F&nonce=1a2b", "Protected by Vercel Authentication", 0], [0, "está puesto"]],
+            [["302", "https://vercel.com/sso-api?url=x", "", 0], [0, "está puesto"]],
+            [["401", "", '{"message":"Protected by Vercel Authentication"}', 0], [0, "está puesto"]],
+            [["200", "", "Protected by Vercel Authentication", 0], [0, "está puesto"]],
+            [["302", "https://otro-dominio.example/", "", 0], [0, "::warning title=Muro de Vercel sin medir::"]],
+            [["403", "", "Forbidden", 0], [0, "::warning title=Muro de Vercel sin medir::"]],
+            [["401", "", "", 0], [0, "::warning title=Muro de Vercel sin medir::"]],
+            [["307", "https://vercel.com/sso-api?url=x", "", 0], [0, "::warning title=Muro de Vercel sin medir::"]],
+            [["429", "", "", 0], [0, "::warning title=Muro de Vercel sin medir::"]],
+            [["503", "", "", 0], [0, "::warning title=Muro de Vercel sin medir::"]],
+            [["000", "", "", 28], [0, "::warning title=Muro de Vercel sin medir::"]],
+          ];
+          for (const [[codigo, destino, cuerpo, salidaCurl], [salida, esperado]] of ESCENARIOS) {
+            const r = correrSonda(sonda.guion, { codigo, destino, cuerpo, salidaCurl });
+            const caso = `${sonda.donde}: con ${codigo}${destino ? ` → ${destino.slice(0, 40)}` : ""}${cuerpo ? ` y «${cuerpo.slice(0, 30)}»` : ""}`;
+            assert.strictEqual(r.violacion, "", `${caso}: la sonda usa una bandera de curl fuera de las permitidas (-q primero, -s, -S, --max-time, -o, -w): ${r.violacion}`);
+            assert.strictEqual(r.codigo, salida, `${caso} la sonda tiene que ${salida ? "FALLAR (muro apagado)" : "pasar"}: ${r.salida.slice(-300)}`);
+            assert.ok(r.salida.includes(esperado), `${caso} la sonda dice «${esperado}»: ${r.salida.slice(-300)}`);
+            if (salida) assert.ok(r.salida.includes("All Deployments") && r.salida.includes("Deployment Protection"),
+              `${caso}: el aviso del muro apagado dice dónde se vuelve a poner: ${r.salida.slice(-300)}`);
+            assert.deepStrictEqual(r.llamadas, [`https://${dominio}/`], `${caso}: la sonda hace UNA llamada, exactamente a la portada: ${r.llamadas.join(" | ")}`);
+          }
         } finally { fs.rmSync(dir, { recursive: true, force: true }); }
 
         // las rutinas: cada `curl` a la aplicación (con sus líneas de continuación) lleva el pase
         const instrucciones = [path.join(__dirname, "..", "docs", "RUTINAS.md"),
           ...fs.readdirSync(path.join(__dirname, "..", ".claude", "skills")).map((s) => path.join(__dirname, "..", ".claude", "skills", s, "SKILL.md")).filter((f) => fs.existsSync(f))];
         let curlsALaApp = 0;
+        const sondasRutinas = [];
         // un curl con una URL explícita a OTRO host no va a la aplicación; cualquier otro (el dominio, $BASE, $APP…) sí
         const aOtroHost = (o) => [...o.matchAll(/https?:\/\/([^/\s"'$]+)/g)].some((m) => m[1] !== dominio) && !o.includes(dominio);
         for (const f of instrucciones) {
           const texto = fs.readFileSync(f, "utf8");
           const ordenes = texto.replace(/\\\n\s*/g, " ").split("\n").filter((l) => /(^|[\s$(|;&])curl\s+-/.test(l) && !aOtroHost(l));
           for (const o of ordenes) {
+            if (o.includes(MARCA_SONDA)) {
+              const donde = path.relative(path.join(__dirname, ".."), f);
+              sondasRutinas.push(donde);
+              assert.ok(!/VERCEL_AUTOMATION_BYPASS_SECRET|x-vercel-protection-bypass/.test(o) && (o.match(/\bcurl\b/g) || []).length === 1,
+                `${donde}: la marca de la sonda solo vale en UN curl, sin el pase: ${o.trim().slice(0, 160)}`);
+              // se ejecuta la línea tal cual, con el curl estricto: el muro puesto y el muro apagado
+              const puesto = correrSonda(o, { codigo: "302", destino: "https://vercel.com/sso-api?url=x", cuerpo: "Protected by Vercel Authentication" });
+              assert.ok(puesto.violacion === "" && puesto.llamadas.length === 1 && puesto.llamadas[0] === `https://${dominio}/`,
+                `${donde}: la marca de la sonda solo vale en UN curl a la portada ${PORTADA}, con las banderas permitidas (-q primero, -s, --max-time, -o, -w): ${puesto.violacion || puesto.llamadas.join(" | ")} · ${o.trim().slice(0, 160)}`);
+              assert.ok(/^302 https:\/\/vercel\.com\/sso-api/.test(puesto.salida.trim()),
+                `${donde}: la sonda del vigilante enseña el código y el destino de la redirección: ${puesto.salida.slice(0, 120)}`);
+              continue;
+            }
             curlsALaApp++;
             assert.ok(o.includes('-H "x-vercel-protection-bypass: $VERCEL_AUTOMATION_BYPASS_SECRET"'),
               `${path.relative(path.join(__dirname, ".."), f)}: un curl a la aplicación va sin el pase del muro: ${o.trim().slice(0, 160)}`);
@@ -17837,6 +17940,14 @@ async function main() {
           }
         }
         assert.ok(curlsALaApp >= 7, `el censo de las rutinas tiene que ver sus llamadas a la aplicación: vio ${curlsALaApp}`);
+        assert.deepStrictEqual(sondasRutinas, ["docs/RUTINAS.md"], `la sonda del muro va UNA vez, en el vigilante de la mañana: está en ${sondasRutinas.join(", ") || "ningún sitio"}`);
+        {
+          const vigilante = fs.readFileSync(instrucciones[0], "utf8").split(/^## /m).find((s) => s.startsWith("2 · El vigilante de la mañana"));
+          assert.ok(vigilante && vigilante.includes(MARCA_SONDA) && vigilante.includes("EL MURO DE VERCEL ESTÁ APAGADO")
+            && vigilante.includes("https://vercel.com/sso-api") && vigilante.includes("Protected by Vercel Authentication")
+            && vigilante.includes("Muro: no medido"),
+            "el vigilante de la mañana prueba el muro sin el pase, lo reconoce en positivo (la redirección a sso-api o su texto), si está apagado lo dice primero y lo demás lo da por «no medido»");
+        }
       }
 
       /* el histórico guardó todo el rango CON datos de adjudicación */
