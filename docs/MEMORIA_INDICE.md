@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 1917306 bytes · 363 secciones · 26 con marcador de superación.
+Derivado del árbol: 1918837 bytes · 363 secciones · 26 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -373,4 +373,4 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | El tablero de pendientes mentía: la revisión del 18-oct, uno por uno contra el código (18-oct-2026) | 18-oct-2026 | 19599-19606 | 1742 |  |
 | Las tres lecturas del pliego del 18-oct: la versión que rige, el ejemplo entre corchetes y el techo con una versión sin tabla (18-oct-2026) | 18-oct-2026 | 19607-19614 | 1694 |  |
 | La carga en Precios no entra al vigía si el nombre dice que es otra cosa (18-oct-2026) | 18-oct-2026 | 19615-19655 | 5180 |  |
-| El clasificador lee los nombres con separadores y los nuevos de Colombia Compra («DocBase_…») (18-oct-2026) | 18-oct-2026 | 19656-19675 | 2156 |  |
+| El clasificador lee los nombres con separadores y los nuevos de Colombia Compra («DocBase_…») (18-oct-2026) | 18-oct-2026 | 19656-19683 | 3687 |  |

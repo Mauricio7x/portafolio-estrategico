@@ -19660,16 +19660,24 @@ En una línea: «DocBase_LicitacionObra_ISocialLV2.pdf», «Documento_base_…»
 «%20» ni «-»— y la lectura automática no leía ese documento base; ahora `Docs.nombrePlegado` los pliega antes de clasificar, y
 es el MISMO plegado del clasificador, del borrador (`esBorradorDoc`), de `esVersionDelPliego` y de la carga en Precios.
 
-**Lo medido** (9.827 nombres distintos de 232 procesos reales de dmgg-8hin). Cambian 77 nombres, todos revisados a mano y todos a lo
-correcto: 48 de tipo (15 a documento base, y todos lo son; 11 a formato, anexos y pólizas; 10 a aviso; 7 a estudio previo; 3 a
-adenda, uno de ellos un .zip de formatos; 2 a anexo técnico, los APU) y 29 documentos de un proponente que se tomaban por de la
-entidad («16_GARANTIA DE SERIEDAD…», «09_RUT», «…_CONSORCIO…»). El plan de lectura cambia en 21 procesos. En la simulación con todo el plan leído, el
+> PENDIENTE · decisión del dueño sobre el techo con documentos de DISTINTO tipo: `elegirPresupuestoPliego.versionSinCifra` solo compara versiones del MISMO tipo (decisión con visto bueno del 18-oct). Ahora que se leen los «DocBase_…», en 3 procesos más (24 → 27 en la muestra: CO1.REQ.10583154, 11116078 y 11184065) se lee un documento base de la etapa de proyecto junto a un pliego definitivo más nuevo; si el definitivo no trae la tabla 1.1 legible, el techo de Precios sale de la cifra del documento base (con el aviso «riesgo» si difiere de SECOP II) en vez de la de SECOP II (reproducido con textos sintéticos, 2.ª revisión adversaria). Va hacia ABAJO, el lado seguro en precios, pero es una cifra vieja. Pedirle al dueño si una versión más nueva de OTRO tipo sin la tabla también manda el techo a SECOP II.
+
+> PENDIENTE · los otros nombres nuevos de Colombia Compra siguen sin reconocerse: «M2_IndFinOrg_ISocialLV2» (la Matriz 2 de indicadores, que se lee sola; CO1.REQ.11159769 y 11191342), «A1_Tecnico_…», «M3_Riesgos_…», «Form_PropEconomica_…». Reconocerlos cambia el plan de lectura: medir antes en los 232 índices.
+
+**Lo medido** (9.827 nombres distintos de 232 procesos reales de dmgg-8hin). Cambian 77 nombres, revisados a mano: 48 de tipo, todos a
+lo correcto (15 a documento base, y todos lo son; 11 a formato, anexos y pólizas; 10 a aviso; 7 a estudio previo; 3 a adenda,
+uno de ellos un .zip de formatos; 2 a anexo técnico, los APU), y 29 que pasan de «de la entidad» a «de un proponente»: 28 lo son
+(«16_GARANTIA DE SERIEDAD…», «09_RUT», «…_CONSORCIO…») y 1 no (CO1.REQ.10858204, «1010-F-GCT-158-V1_AUTORIZACION_CONSULTA_
+INHABILIDADES…docx», un formato en blanco de la entidad; es «otro», no entra al plan, y solo cambia la cuenta de «archivos de
+otros proponentes»; 2.ª revisión adversaria). El plan de lectura cambia en 21 procesos. En la simulación con todo el plan leído, el
 texto del dictamen GANA en 6 procesos que no tenían ninguno, cambia en 1 del proyecto de pliego al documento base definitivo
 (CO1.REQ.11144592, abierto) y no se pierde en ninguno.
 
 **Lo que no hay que deshacer.** (a) Un solo plegado para el nombre (`nombrePlegado`): «_» y «%20» son espacio, «-» y «.»
 entre dos letras también; «docbase» y «doc base» son «documento base», el plural «documentos base» también, y cuatro erratas
 vistas en SECOP II («docuemento», «docuemnto», «documneto», «documetno» y «documeto»). (b) VERSION 18 → 19: los índices se
-vuelven a planear en la próxima consulta (no a las 12 h) y los hechos se rehacen. (c) Por el tope de 12 documentos del plan,
-en CO1.REQ.9763731 dos documentos de presupuesto ceden el sitio a dos de análisis de precios unitarios, que ahora se reconocen
-como anexo técnico, como ya pasaba con los mismos nombres escritos con espacios; los dos son fuentes de respaldo de los hechos.
+vuelven a planear en la próxima consulta (no a las 12 h) y los hechos se rehacen. (c) Por el tope de 12 documentos del plan
+salen documentos de los últimos de la prioridad de fuentes: en CO1.REQ.9763731 dos de presupuesto ceden el sitio a dos de
+análisis de precios unitarios (ahora anexo técnico, como ya pasaba con esos nombres escritos con espacios); la matriz de riesgos
+sale en CO1.REQ.10651650, 10518763, 11116078 y 9960307, y un aviso en .docx en CO1.REQ.10266309. Lo ya leído no se borra.
+
