@@ -19417,3 +19417,16 @@ En una línea: el 16-oct la producción quedó abierta un día sin que nadie lo 
 **Lo medido.**
 - Con el muro puesto, el paso real y las dos líneas del vigilante, corridos contra producción el 18-oct, respondieron `302 https://vercel.com/sso-api?url=…` y el texto del muro: «El muro de Vercel está puesto.».
 - El dueño confirmó que, con el primer cuadro de «Add Bypass» vacío, Vercel creó el pase solo.
+
+### La llave del servidor no se copia de Vercel: se anota al ponerla (18-oct-2026)
+
+En una línea: la guía §0.1 bis y el mensaje de «la llave no coincide» mandaban a «copiar `HISTORICO_TOKEN` de Vercel con el ojo», y una variable de tipo «Secret» (la del candado, como quedó en la cuenta del 16-oct) no se puede ver ni copiar después de guardarla; el dueño se quedó en ese paso. Ahora la guía y los dos mensajes del alta dicen que la llave se ANOTA al ponerla, y que si no se tiene, se pone una nueva y se vuelve a desplegar.
+
+- **La fuente.** Documentación de Vercel, «Config and Secret environment variables», leída el 18-oct-2026: «Secret values are write-only after saving» y «For Secret variables, the current value is hidden. Provide a new value to rotate the secret».
+- **Dónde está la variable en esta cuenta.** Medido por captura del dueño el 17-oct: las variables son compartidas del equipo (pestaña «Shared» de «Environment Variables», con «All Projects» arriba), con candado. La página del proyecto no tiene variables propias. La guía §0.1, paso 2, da esa ruta.
+- **La cerradura.** El bloque «unidad sesión del dueño» comprueba tres cosas:
+  - el mensaje que REALMENTE responde un alta con la llave equivocada es `MSG_LLAVE_NO_COINCIDE`;
+  - ni ese mensaje ni `MSG_LLAVE_RETIRADA` mandan a copiarla de Vercel, y los dos dicen que Vercel no muestra las variables secretas y que se anota;
+  - la guía §0.1 no lo hace.
+  Tres mutaciones (el mensaje viejo, la guía vieja, el aviso sin la frase) ponen el bloque en rojo.
+- **Lo que no se tocó.** El mensaje de «falta `HISTORICO_TOKEN`» sigue nombrando «Settings → Environment Variables»: es la ruta de una variable del proyecto, y en esta cuenta la variable es compartida. No manda a copiar nada, así que se dejó como está.
