@@ -4279,6 +4279,114 @@ async function main() {
     console.log("· unidad base de obra: «sin dato» ≠ 0, mapeo de modalidades, exclusiones contadas por motivo, lote, las dos σ, la regla de fila y el almacén que frena antes de pasar su tope (ida y vuelta contra un S3 falso)");
   }
 
+  /* unidad: el corte de la alerta de precio artificialmente bajo, por modalidad (18-oct-2026).
+     EJECUTA las funciones reales (umbralTemerario, validarFormulario1, pisoTecho, guiaDe): con
+     el corte único del 80 % de antes este bloque falla. Los cortes salen de la base nacional de
+     obra (MEMORIA § «La alerta de precio bajo se corta por modalidad…»). */
+  bqUmbralModalidad: { if (!corre("unidad alerta de precio bajo por modalidad")) break bqUmbralModalidad;
+    const PT = require("../lib/apu/piso_techo.js");
+    const F1u = require("../lib/formulario1.js");
+    const LIC = "Licitación pública Obra Publica", SAMC = "Seleccion Abreviada de Menor Cuantia",
+      SAMC_SM = "Seleccion Abreviada Menor Cuantia Sin Manifestacion Interes", MIN = "Mínima cuantía";
+    // (1) la tabla, con los textos de modalidad tal como los publica SECOP II
+    const cortes = [[LIC, 88, true], [SAMC, 88, true], [SAMC_SM, 88, true], [MIN, 70, true], ["Subasta", 80, false],
+      ["Concurso de méritos abiertos", 80, false], ["Contratación régimen especial", 80, false], [null, 80, false], ["", 80, false], ["xyz", 80, false]];
+    for (const [m, corte, medido] of cortes) {
+      const u = PT.umbralTemerario(m);
+      assert.strictEqual(u.corte_pct, corte, `corte de «${m}»: ${u.corte_pct} (esperado ${corte})`);
+      assert.strictEqual(u.baja_pct, 100 - corte); assert.strictEqual(u.medido, medido, `«${m}» medido=${u.medido}`);
+      assert.ok(medido ? /SECOP II.*corte 17-oct-2026.*les habría saltado a [\d.]+ de [\d.]+ ganadoras/.test(u.fuente)
+        : (m ? /Sin medición para esta modalidad/ : /no publica su modalidad/).test(u.fuente), `«${m}»: la fuente va al lado de la cifra («${u.fuente}»)`);
+      assert.ok(!/\d ?%/.test(u.fuente) || medido, `«${m}»: sin medición la fuente no repite la cifra («${u.fuente}»)`);
+    }
+    // cada fila medida cita SU conteo (el de cifras.json, umbral_alerta, campo «todas»)
+    assert.ok(/17 de 1\.750/.test(PT.umbralTemerario(LIC).fuente) && /116 de 5\.387/.test(PT.umbralTemerario(SAMC).fuente) && /258 de 3\.708/.test(PT.umbralTemerario(MIN).fuente));
+    // las claves de la tabla son claves que de verdad emite el clasificador (si no, la fila sería inerte)
+    const emitidas = new Set([LIC, SAMC, MIN].map((m) => require("../lib/guia_proceso.js").modalidadEnLlano(m).clave));
+    for (const k of Object.keys(PT.TEMERARIO_POR_MODALIDAD)) assert.ok(emitidas.has(k), `clave «${k}» de la tabla que el clasificador no emite`);
+    assert.strictEqual(PT.TEMERARIO_PCT, 20, "sin medición sigue la referencia de siempre");
+    // (2) validación 5 del Formulario 1 (el total frente al presupuesto)
+    const tem = (total, modalidad, extra = {}) => F1u.validarFormulario1({ oferta: { items: [{ numeral: "1", descripcion: "Excavación", unidad: "m3", cantidad: 100, precio_unitario: total / 100, total }], total },
+      presupuesto_oficial: 100000000, modalidad, ...extra }).veredictos.find((v) => v.id === "temeraria");
+    for (const m of [LIC, SAMC, SAMC_SM]) {
+      assert.strictEqual(tem(85000000, m).nivel, "alerta", `«${m}» al 85 %: salta (corte 88 %)`);
+      assert.strictEqual(tem(87900000, m).nivel, "alerta", `«${m}» al 87,9 %: salta`);
+      assert.strictEqual(tem(88000000, m).nivel, "ok", `«${m}» justo en el 88 %: no salta (más del 12 % de descuento)`);
+      assert.strictEqual(tem(85000000, m).umbral_pct, 12);
+    }
+    assert.strictEqual(tem(85000000, null).nivel, "ok", "sin modalidad, al 85 % no salta: sigue el 80 %");
+    assert.strictEqual(tem(79000000, null).nivel, "alerta", "sin modalidad, al 79 % salta");
+    assert.strictEqual(tem(79000000, "Subasta").nivel, "alerta", "subasta (sin medición) al 79 %: salta");
+    assert.strictEqual(tem(79000000, MIN).nivel, "ok", "mínima al 79 %: ya no salta (corte 70 %)");
+    assert.strictEqual(tem(69000000, MIN).nivel, "alerta", "mínima al 69 %: salta");
+    assert.ok(/258 de 3\.708/.test(tem(69000000, MIN).umbral_fuente || ""), "la alerta de mínima lleva su fuente medida");
+    // lo que declara quien llama sigue mandando, y entonces no se le pega una fuente que no es la suya
+    const decl = tem(85000000, LIC, { umbral_temerario_pct: 20 });
+    assert.strictEqual(decl.nivel, "ok", "umbral_temerario_pct declarado gana al de la modalidad"); assert.strictEqual(decl.umbral_fuente, null);
+    // (3) validación 8 (por ítem): sigue en el 20 %, NO en el corte de la modalidad
+    const form = { items: [{ numeral: "1", descripcion: "Excavación", unidad: "m3", cantidad: 100, precio_unitario: 10000 }] };
+    const uni = (pu) => F1u.validarFormulario1({ oferta: { items: [{ numeral: "1", descripcion: "Excavación", unidad: "m3", cantidad: 100, precio_unitario: pu, total: pu * 100 }], total: pu * 100 },
+      formulario: form, presupuesto_oficial: 1000000, modalidad: LIC }).veredictos;
+    const v85 = uni(8500);
+    assert.strictEqual(v85.find((v) => v.id === "temeraria").nivel, "alerta", "el total al 85 % en licitación salta…");
+    assert.strictEqual(v85.find((v) => v.id === "unitarios").nivel, "ok", "…pero un ítem 15 % por debajo NO: por ítem sigue el 20 %");
+    assert.ok(/más de 20 % por debajo/.test(v85.find((v) => v.id === "unitarios").mensaje));
+    const v75 = uni(7500).find((v) => v.id === "unitarios");
+    assert.strictEqual(v75.nivel, "alerta"); assert.strictEqual(v75.umbral_pct, 20);
+    // el umbral declarado por quien llama también manda por ítem
+    const uniDecl = F1u.validarFormulario1({ oferta: { items: [{ numeral: "1", descripcion: "Excavación", unidad: "m3", cantidad: 100, precio_unitario: 8500, total: 850000 }], total: 850000 },
+      formulario: form, presupuesto_oficial: 1000000, modalidad: LIC, umbral_temerario_pct: 10 }).veredictos.find((v) => v.id === "unitarios");
+    assert.strictEqual(uniDecl.nivel, "alerta", "con umbral_temerario_pct 10 declarado, un ítem 15 % por debajo avisa"); assert.strictEqual(uniDecl.umbral_pct, 10);
+    // (4) panel Piso/Techo: la cifra del umbral y sus textos siguen la modalidad
+    const aiuP = { administracion_pct: 10, imprevistos_pct: 5, utilidad_pct: 5 };
+    const pt = (modalidad, extra = {}) => PT.pisoTecho({ presupuesto_oficial: 500e6, costo_directo: 300e6, aiu: aiuP, modalidad, iva_utilidad: { variante: "sin_iva" }, ...extra });
+    assert.strictEqual(pt(LIC).cifras.umbral_temerario, Math.round(500e6 * 0.88), "licitación: umbral en el 88 %");
+    assert.strictEqual(pt(MIN).cifras.umbral_temerario, Math.round(500e6 * 0.70), "mínima: umbral en el 70 %");
+    assert.strictEqual(pt(null).cifras.umbral_temerario, Math.round(500e6 * 0.80), "sin modalidad: 80 %");
+    assert.strictEqual(pt(LIC, { temerario_pct: 20 }).cifras.umbral_temerario, Math.round(500e6 * 0.80), "temerario_pct declarado gana");
+    assert.ok(/Referencia: 88 %.*17 de 1\.750/.test(pt(LIC).fuentes.umbral_temerario), pt(LIC).fuentes.umbral_temerario);
+    assert.ok(pt(LIC).supuestos.some((s) => /\(88 % del presupuesto oficial, medido para esta modalidad\)/.test(s)), "el supuesto dice el corte medido");
+    assert.ok(pt(null).supuestos.some((s) => /\(80 % del presupuesto oficial\)/.test(s)), "sin modalidad, el supuesto de siempre");
+    // con el corte DECLARADO no se le pega la fuente medida ni el «medido»
+    const ptDecl = pt(LIC, { temerario_pct: 20 });
+    assert.ok(/Corte declarado por quien llama/.test(ptDecl.fuentes.umbral_temerario) && !/ganadoras/.test(ptDecl.fuentes.umbral_temerario), ptDecl.fuentes.umbral_temerario);
+    assert.ok(!ptDecl.supuestos.some((s) => /medido para esta modalidad/.test(s)), "corte declarado: el supuesto no dice «medido»");
+    assert.ok(/Referencia: 80 %.*no publica su modalidad/.test(pt(null).fuentes.umbral_temerario) && (pt(null).fuentes.umbral_temerario.match(/80 %/g) || []).length === 1, pt(null).fuentes.umbral_temerario);
+    // (5) el consejo de la guía (mínima y subasta comparten consejo, no corte)
+    const G = require("../lib/guia_proceso.js");
+    const consejo = (m) => (G.guiaDe({ fila: { id_del_proceso: "CO1.UM", nombre_del_procedimiento: "MEJORAMIENTO DE VIA", modalidad_de_contratacion: m, precio_base: "90000000", departamento_entidad: "Tolima", entidad: "ALCALDIA" }, perfil: "helder" }).consejos || []).find((c) => c.clave === "precio_minima");
+    assert.ok(/por debajo del 70 % del presupuesto/.test(consejo(MIN).detalle), consejo(MIN).detalle);
+    assert.ok(/por debajo del 80 % del presupuesto/.test(consejo("Subasta").detalle), consejo("Subasta").detalle);
+    // (6) CENSO: ningún «80 %» del umbral escrito a mano en lib/ ni public/. Las excepciones se
+    //     DECLARAN por línea (archivo + texto exacto), no por archivo: un archivo eximido entero
+    //     dejaba volver el 80 % al texto visible de la alerta sin que nada fallara.
+    const EXC_80 = [
+      ["lib/apu/piso_techo.js", "const TEMERARIO_PCT = 20;       // «por debajo del 80 % del presupuesto»"],   // la referencia por defecto
+      ["lib/apu/piso_techo.js", "− una desviación: 93,3 % y 93,4 % del presupuesto) y a 80 % la alerta casi nunca saltaba"],   // la medición, en comentario
+    ];
+    const usadas = new Set();
+    const fsU = require("fs"), pathU = require("path");
+    const barrer = (dir) => fsU.readdirSync(dir, { withFileTypes: true }).flatMap((e) => e.isDirectory() ? barrer(pathU.join(dir, e.name)) : /\.(js|html)$/.test(e.name) ? [pathU.join(dir, e.name)] : []);
+    const raiz = pathU.join(__dirname, "..");
+    let barridos = 0;
+    for (const f of [...barrer(pathU.join(raiz, "lib")), ...barrer(pathU.join(raiz, "public"))]) {
+      const rel = pathU.relative(raiz, f).split(pathU.sep).join("/");
+      barridos++;
+      for (const [i, linea] of fsU.readFileSync(f, "utf8").split("\n").entries()) {
+        if (!(/(?<![\d,.])80 ?%|(?<![\d,.\-–])0[,.]80?(?!\d| ?%)|ochenta por ciento/i.test(linea) && /presupuesto|artificialmente|temerari/i.test(linea))) continue;
+        const exc = EXC_80.find(([a, t]) => a === rel && linea.includes(t));
+        if (exc) { usadas.add(exc); continue; }
+        assert.fail(`${rel}:${i + 1} escribe a mano el 80 % del umbral: ${linea.trim().slice(0, 140)}`);
+      }
+    }
+    assert.ok(barridos > 50, `el censo barrió ${barridos} archivos`);
+    for (const e of EXC_80) assert.ok(usadas.has(e), `excepción declarada que ya no casa con nada (bórrela): ${e.join(" · ")}`);
+    // la expresión del censo no confunde un 10,8 % con el umbral
+    assert.ok(!/(?<![\d,.\-–])0[,.]80?(?!\d| ?%)/.test("el presupuesto sube 10,8 %"));
+    assert.ok(!/(?<![\d,.\-–])0[,.]80?(?!\d| ?%)/.test("(0,5-0,8 % del presupuesto)") && /(?<![\d,.\-–])0[,.]80?(?!\d| ?%)/.test("presupuesto × 0,80"), "el factor 0,80 sí casa; un rango de porcentajes no");
+    console.log(`· unidad alerta de precio bajo por modalidad: 88 % en licitación y menor cuantía, 70 % en mínima, 80 % sin medición; por ítem sigue el 20 %; censo de ${barridos} archivos sin el 80 % a mano`);
+  }
+
   /* unidad: capa anti-suministro sobre segmentos de bienes. Cada caso se
      evalúa contra un perfil cuyo RUP SÍ contiene la clase — así el rechazo
      solo puede venir de la capa (se verifica anti_suministro como causa). */

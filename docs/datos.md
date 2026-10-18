@@ -193,7 +193,7 @@ respondieron **200** desde este entorno (`https://www.datos.gov.co/api/views/{id
 | Costo del usuario | Motor APU (`lib/apu/calculo` + parámetros de F1) | Costo directo × (1 + A + I + U mínima) ÷ (1 − contribución 5 % − deducciones cargadas). |
 | Baja histórica | `lib/indice_baja` (p6dx, adjudicados) | Cascada entidad+familia → entidad → departamento+familia, **solo con n ≥ 5**; si no, «Sin referencia» y NO hay techo. El índice por segmento (mínimo 3) NO se usa. |
 | Nº de oferentes | `lib/indice_competencia` (p6dx) | Promedio por entidad con n ≥ 5; del proceso abierto no existe (hgi6 = 0 filas) → «Sin referencia», jamás 0. |
-| Umbral temerario | Regla de referencia: 80 % del presupuesto | La media − σ de las ofertas del proceso no se conoce antes del cierre (hgi6 no trae precios). Declarado como referencia, no como norma. |
+| Umbral temerario | Referencia por modalidad (18-oct-2026): 88 % del presupuesto en licitación y menor cuantía, 70 % en mínima, 80 % sin medición — medido en la base nacional de obra de SECOP II | La media − σ de las ofertas del proceso no se conoce antes del cierre (hgi6 no trae precios). Declarado como referencia, no como norma. |
 
 ## 6. Censo de columnas de `p6dx-8zbt` para los filtros (Fase 8 · 2026-08-16)
 

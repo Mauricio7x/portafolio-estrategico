@@ -167,7 +167,7 @@ existe (no recalcula el costo ni la cascada de baja).
 | Costo total | `CD × (1 + A + I + U_min)` (aditivo; compuesto si así está el AIU) | Su APU (`lib/apu/calculo`) | `U_min` la declara el usuario en *Ajustes → Utilidad mínima aceptable*; sin declararla se usa la U del AIU **y se dice**. |
 | Piso rentable («precio mínimo para no perder plata») | `costo_total ÷ (1 − τ)`, `τ` = contribución de obra pública 5 % + deducciones de acta cargadas | Ley 418/1997 art. 120 (permanente por Ley 1738/2014); deducciones del usuario | Sin deducciones cargadas el piso es **cota inferior** y viaja `piso_es_cota_inferior:true`. |
 | Techo competitivo («precio al que probablemente se gana») | `presupuesto_oficial × (1 − baja_mediana)` | `lib/indice_baja` (p6dx adjudicados): entidad+familia → entidad → departamento+familia | **Solo con n ≥ 5** en el nivel usado. Con menos: «Sin referencia» y NO hay techo. El índice por segmento (mín. 3) no se usa. |
-| Umbral de precio artificialmente bajo | `presupuesto_oficial × 0,80` | Regla de referencia (la media − σ de las ofertas no se conoce antes del cierre); riesgo: D. 1082/2015 art. 2.2.1.1.2.2.4 | Se avisa solo cuando el piso queda por debajo. Declarado como referencia, no como norma. |
+| Umbral de precio artificialmente bajo | `presupuesto_oficial × (1 − baja)`, baja por modalidad (`umbralTemerario`): 12 en licitación y menor cuantía, 30 en mínima, 20 sin medición | Referencia MEDIDA en la base nacional de obra de SECOP II (corte 17-oct-2026; decisión del dueño 18-oct-2026); la media − σ de las ofertas no se conoce antes del cierre; riesgo: D. 1082/2015 art. 2.2.1.1.2.2.4 | Se avisa solo cuando el piso queda por debajo. Declarado como referencia, no como norma. |
 | Cuántos suelen presentarse | promedio de oferentes por entidad | `lib/indice_competencia` (p6dx), n ≥ 5 | Del proceso abierto no existe (hgi6 = 0 filas hasta la apertura): «Sin referencia», jamás 0. |
 
 Veredicto (frase completa, nunca un porcentaje suelto): `piso > presupuesto` → «No se presente…
@@ -222,6 +222,10 @@ panel que se ven en pantalla, nunca desde texto genérico.
    verificable de porcentajes por modalidad (los Documentos Tipo rechazan por EXCEDER el
    presupuesto y remiten la oferta baja al art. 2.2.1.1.2.2.4); el panel usa el 80 % de referencia
    y lo declara. Con la tabla verificada, `TEMERARIO_PCT` pasa a depender de la modalidad.
+   **Hecho el 18-oct-2026, sin tabla normativa** (no existe: el pliego tipo no trae fórmula):
+   el corte depende de la modalidad con lo MEDIDO en la base nacional de obra —88 % en
+   licitación y menor cuantía, 70 % en mínima, 80 % donde no hay medición—. Ver MEMORIA § «La
+   alerta de precio bajo se corta por modalidad con lo medido en SECOP II (18-oct-2026)».
 6. (Fase 3) ~~`hgi6-6wh3` en vivo para «contra quién compite»~~ **Hecho el 16-ago-2026**: bloque
    `proponentes` en la vista de entidad («Quiénes se presentan aquí», docs/datos.md §5.1). ~~`jbjy-vk9h`
    para «cómo se ejecuta»~~ **Hecho el 16-ago-2026**: bloque `ejecucion` («Cómo ejecuta sus contratos»,

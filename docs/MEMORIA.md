@@ -4026,6 +4026,8 @@ landing nueva en `index.html` + `onboarding.js`. Decisiones que no hay que re-ap
 
 ### Fase 3 · Panel Piso / Techo (ago 2026)
 
+> SUPERADA el 18-oct-2026 por «La alerta de precio bajo se corta por modalidad con lo medido en SECOP II (18-oct-2026)» — solo el 80 % único del umbral de precio artificialmente bajo: ahora depende de la modalidad; sigue siendo REFERENCIA declarada, no norma, y lo demás del panel sigue vigente.
+
 `lib/apu/piso_techo.js` (capa PURA), bloque `piso_techo` en `POST /api/apu?op=rentabilidad`,
 sección `#seccion-piso-techo` (primera entre los resultados de *Precios*), campo «Utilidad mínima
 aceptable» en Ajustes y `public/justificacion.js` (UMD). Decisiones que no hay que re-aprender:
@@ -10895,6 +10897,8 @@ borrado de plantillas viejo, el censo vuelve a señalar en falso; sin el `esc(` 
 suite cae nombrando el enlace.
 
 ### Dónde cae su precio: UNA escala en Piso/Techo · M-DGF-01 (con M-IE-15) (6-sep-2026)
+
+> SUPERADA el 18-oct-2026 por «La alerta de precio bajo se corta por modalidad con lo medido en SECOP II (18-oct-2026)» — solo el motivo «no es una cifra medida» para no dibujar el umbral en la escala: en licitación, menor cuantía y mínima ahora es una referencia medida. No dibujarlo sigue vigente hasta que el dueño decida otra cosa.
 
 En una línea: el panel donde se fija el precio dibuja una sola recta con lo que le cuesta, su
 precio mínimo, el precio al que suele ganarse, el presupuesto oficial y SU precio marcado —más la
@@ -18887,3 +18891,18 @@ En una línea: la página pública de SECOP no es revisable desde la sesión (40
 - **Mínima**: la más baja publicada ganó en 898 de 2.495; la causa («no cumplió requisitos») NO está medida (con 2 ofertas ganó la más alta en 60 %; hay hipótesis no descartadas: ofertas registradas que no se presentaron, IVA, parciales).
 - **Adiciones**: los 9 contratos de la muestra con valor mayor tienen modificación registrada en cb9c-h8sn (reproducción de la revisión adversaria; ese dataset no trae montos).
 - **Pendiente declarado** (regla de nombres): en `base.jsonl.gz` los campos `pct` son FRACCIÓN (0–1) y en `cifras.json` los `_pct` son PORCENTAJE; la muestra ya usa `fraccion_adjudicada`. Renombrar la base toca todo `cifras.js` y sus pruebas: queda para cuando la base alimente a Detekta. `ganadas_con_oferta_emparejada` es un piso, no el total de victorias.
+
+### La alerta de precio bajo se corta por modalidad con lo medido en SECOP II (18-oct-2026)
+
+En una línea: la alerta «Su precio puede parecer artificialmente bajo» (Formulario 1, validación 5) y el umbral del panel Piso/Techo ya no cortan en un 80 % único: 88 % en licitación y menor cuantía, 70 % en mínima y 80 % donde no hay medición; la revisión por ítem (validación 8) sigue en el 20 %. El N y la fecha de corte van en las fuentes del panel y en `umbral_fuente` de la respuesta del Formulario 1; la pantalla del Formulario 1 todavía no pinta ese campo. Decidido por el dueño el 18-oct-2026 sobre el plan aprobado.
+
+- **De dónde salen** (`cifras.json` de la base nacional, corrida local del 17-oct-2026, `umbral_alerta`; ganadoras de 2024 al corte, sin inconsistencias): con 80 % la alerta le habría saltado a 2 de 1.750 ganadoras de licitación, 27 de 5.387 de menor cuantía y 734 de 3.708 de mínima. Con 88 %: 17, 116 y 1.349. Con 70 % en mínima: 258. El piso medido (mediana − σ) está en 93,3 % y 93,4 %: a 80 % la alerta llegaba cuando ya nadie gana ahí.
+- **No es una norma y no se escribe como tal**: el Decreto 1082 (art. 2.2.1.1.2.2.4) no fija porcentaje y el pliego tipo (SAMC-SI-020-2026, pp. 50–56) no trae fórmula. El corte es dónde caen las ganadoras de verdad. La entidad decide con la media − σ de SU proceso, que no se conoce antes del cierre.
+- **Por qué 88 % y no la mediana − σ medida (93 %)**: a 92 % ya le saltaría a 6 de cada 100 ganadoras de licitación y a 7 de menor cuantía. En precios cuesta más la alerta falsa (regla dura): 88 % deja 1 y 2 de cada 100.
+- **Por qué mínima baja a 70 % y no se quita**: gana el menor precio que cumpla, y a 80 % la alerta tocaba a 1 de cada 5 ganadoras (ruido). A 70 % toca a 7 de cada 100 y sigue recordando la justificación. Un precio entre 70 y 80 % en mínima ya no avisa: es el costo aceptado.
+- **Sin medición, 80 %** (subasta, concurso, régimen especial, modalidad desconocida): no hay dato para moverlo. **Por ítem, 20 %**: la base mide TOTALES; un ítem suelto se aleja del unitario oficial mucho más que el total, y bajar a 12 % por ítem sería un umbral sin dato. Por eso la validación 8 tiene su propia variable (`bajaMaxItemPct`) y no comparte la de la 5.
+- **Una sola tabla**: `TEMERARIO_POR_MODALIDAD` en `lib/apu/piso_techo.js`; la modalidad la clasifica `guia_proceso.modalidadEnLlano` (la regla que ya existía, llamada en diferido). El consejo de la guía para mínima y subasta (comparten consejo, no corte) y el texto de `como_leerlo` del editor leen de ahí: el censo del bloque «unidad alerta de precio bajo por modalidad» barre `lib/` y `public/` y falla si alguien vuelve a escribir el 80 % a mano junto a «presupuesto».
+- **Las cifras de la sección del 17-oct** («R2 rechazó el If-Match…»: 6 de 1.858, 41 de 5.554, 785 de 3.824) son de una corrida anterior de `cifras.js`; la tabla usa la última.
+- **Revisión adversaria** (subagente, 18-oct-2026): 2.592 combinaciones del panel y 216 del Formulario 1 contra el árbol anterior; solo cambian el umbral y su frase, y sin modalidad nada. Lo que cazó y se arregló: el censo eximía archivos enteros (el 80 % podía volver al texto visible de la alerta) y ahora exime por línea declarada; cuatro mutaciones sobrevivían (umbral declarado por ítem, fuente y «medido» con corte declarado, el conteo de menor cuantía); el texto sin modalidad repetía el 80 % y decía «esta modalidad».
+- **Cuándo revisarlo**: cuando la base nacional se vuelva a correr. Si las cifras se mueven, cambia la tabla y su `fuente`, no el código que la usa.
+
