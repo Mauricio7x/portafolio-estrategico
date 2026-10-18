@@ -19085,3 +19085,21 @@ En una línea: el Formulario 1 (verificación 5) y el panel Piso / Techo muestra
 - **Ámbar y conteo aparte con una MARCA, no con un nivel nuevo (18-oct-2026, decisión del dueño)**: el resumen contaba los «informativo» como «para arreglar sin riesgo» y los pintaba en azul, que para este aviso es falso. La verificación lleva `marca: "justificar"` sobre el nivel «informativo»: el resultado la cuenta en `para_justificar` (fuera de `informativos`) y el render de `app.js` la pinta en ámbar y la rotula «Tenga lista la justificación (N)». No se creó un nivel: `NIVELES`, el semáforo y el `orden` del render siguen igual, así que el aviso no vuelve la oferta «no lista» (no es motivo de rechazo) y los demás informativos conservan color y conteo. Censo de consumidores de los veredictos del Formulario 1: `lib/formulario1.js`, `lib/handlers/pliego/formulario1.js` (no lee niveles) y el render de la revisión en `public/app.js`; no hay más. Tres casos de dos entidades tampoco son una ley: el texto dice «algunas entidades».
 - **Verificado (5c)**: el bloque ejecuta `validarFormulario1` y el trozo real del render de `app.js`; con `lib/formulario1.js` o `public/app.js` de 9c24a68 falla («'justificar'» ≠ undefined; «el aviso del rango se pinta en ámbar, no en azul»).
 - **Verificado**: bloque «5b» en `tests/e2e.js` junto a la verificación 5, ejecutando `validarFormulario1` y `pisoTecho` reales; con `lib/formulario1.js` del árbol anterior falla («al 90 % del presupuesto queda bajo el rango medido», 'ok' ≠ 'informativo'). Navegador real a 390 px con `pintarPisoTecho` de `public/app.js` sobre la salida real del módulo: la línea se ve bajo la frase del precio actual, sin desborde.
+
+### El techo de la tarjeta, sin la guía entera: `solo=tope` (17-oct-2026)
+
+En una línea: medido en producción, la primera consulta del expediente en una instancia tardó 13,1 s (luego 0,24 a 0,87 s):
+la guía carga los índices de competencia, baja y conocimiento, y el botón «Calcular mi precio» de la tarjeta espera 5 s,
+así que el primer clic del día abría con SECOP II y el aviso de «no se pudo consultar». El techo no usa esos índices: ahora
+la tarjeta pide `op=seguimiento&expediente=<id>&solo=tope`, que lee solo la fila viva y los documentos de ESE proceso.
+
+**Lo que no hay que deshacer.** (a) `lib/guia_proceso.topeOfertaDe` usa la MISMA fila (`filaDeLaGuia`), el MISMO
+presupuesto (`presupuestoDeFila`) y la MISMA `topeOferta` (vía `loQueDicen`) que la guía: una prueba compara los dos, también
+con la foto guardada de otro presupuesto (la fila viva manda) y con cuantía y precio base distintos. (b) `solo` con otro
+valor es inerte: el expediente completo. (c) La respuesta dice `documentos_leidos`: con 0, la tarjeta abre con SECOP II y la
+nota dice «el pliego de este proceso aún no se ha leído» (revisión adversaria: antes abría callada, y si el pliego dice
+menos la oferta se pasa). (d) El expediente comprueba que el id sea PROPIO de los guardados (`hasOwnProperty`): «constructor»
+o «toString» pasaban `ID_RE` y respondían 200. (e) `medicion.ms` viaja en la respuesta para medir el frío en producción.
+Medido en local: 0 escrituras y 5 lecturas de Redis (el expediente completo, 11). Sin medir en producción: `filaViva` sigue
+leyendo el corpus (`cargarCorpus`), que en frío también tarda; la lista de Mis procesos lo deja caliente en la misma función.
+Consumo estimado en el peor caso medido: ≤ 18 % del tope diario de CPU de Vercel con 30 clics al día (cotas de tiempo de reloj).

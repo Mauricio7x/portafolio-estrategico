@@ -8136,6 +8136,11 @@ async function main() {
     const filaSE = { id_del_proceso: "CO1.SE", nombre_del_procedimiento: "MEJORAMIENTO VIA SANTA ELENA", entidad: "DISTRITO DE CALI", departamento_entidad: "Valle del Cauca", modalidad_de_contratacion: "Selección Abreviada de Menor Cuantía", precio_base: "1744426146", duracion: "2", unidad_de_duracion: "Meses", codigo_principal_de_categoria: "V1.72141000", fecha_de_publicacion_del: "2026-09-01T10:00:00.000", fecha_de_recepcion_de: "2026-09-20T15:00:00.000", tipo_de_contrato: "Obra" };
     const gSE = Gp.guiaDe({ fila: filaSE, perfil: "helder", ctx: { ahoraMs: Date.parse("2026-09-03T15:00:00Z"), documentos: { indice: { archivos: [], plan: [] }, ilegibles: {}, leidos: { a: doc(def, "pliego") } } } });
     assert.ok(gSE.tope_oferta && gSE.tope_oferta.valor === 1581425810 && gSE.tope_oferta.fuente === "pliego", `la guía entrega el techo del pliego: ${JSON.stringify(gSE.tope_oferta)}`);
+    const docsSE = { indice: { archivos: [], plan: [] }, ilegibles: {}, leidos: { a: doc(def, "pliego") } };
+    assert.deepStrictEqual(Gp.topeOfertaDe({ fila: filaSE, documentos: docsSE }), gSE.tope_oferta, "topeOfertaDe (la consulta liviana de la tarjeta) da el MISMO techo que la guía");
+    const filaSE2 = { ...filaSE, cuantia_cop: 1700000000 };
+    assert.deepStrictEqual(Gp.topeOfertaDe({ fila: filaSE2, documentos: docsSE }), Gp.guiaDe({ fila: filaSE2, perfil: "helder", ctx: { ahoraMs: Date.parse("2026-09-03T15:00:00Z"), documentos: docsSE } }).tope_oferta, "la misma cifra de SECOP II que la guía, también cuando la fila trae cuantía y precio base distintos (MUTACIÓN: otro presupuesto)");
+    assert.deepStrictEqual(Gp.topeOfertaDe({ fila: null, foto: { presupuesto_cop: 1744426146 }, documentos: docsSE }), Gp.guiaDe({ fila: null, foto: { presupuesto_cop: 1744426146 }, perfil: "helder", ctx: { documentos: docsSE } }).tope_oferta, "sin fila viva, la misma foto para los dos");
     // G.5 nombra contra qué compara, y un valor desconocido de la fuente es inerte
     const V5 = require("../lib/apu/validaciones.js");
     const g5 = V5.validarPresupuesto({ items: [], resumen: { precio_final: 1700000000 }, configuracion: { cuantia_fuente: "pliego" }, cuantia_cop: 1581425810 }).hallazgos.find((h) => h.codigo === "excede_la_cuantia" || h.id === "excede_la_cuantia" || /supera el presupuesto/.test(h.titulo || ""));
@@ -21859,6 +21864,39 @@ async function main() {
           const sg = await segD(`&perfil=helder&expediente=${encodeURIComponent(idD)}`);
           assert.strictEqual(sg.status, 200, JSON.stringify(sg.cuerpo).slice(0, 200));
           const gD = (sg.cuerpo.proceso || {}).guia;
+          /* `solo=tope` (17-oct-2026): el MISMO techo que la guía, sin cargar los índices de la guía (en producción la guía
+             tardó 13,1 s la primera vez en una instancia; el botón de la tarjeta espera 5 s) */
+          {
+            const Lst = require("../lib/handlers/procesos/listar.js");
+            const orig = { i: Lst.cargarIndice, b: Lst.cargarIndiceBaja, c: Lst.cargarConocimiento };
+            let cargas = 0;
+            Lst.cargarIndice = async (...a) => { cargas++; return orig.i(...a); };
+            Lst.cargarIndiceBaja = async (...a) => { cargas++; return orig.b(...a); };
+            Lst.cargarConocimiento = async (...a) => { cargas++; return orig.c(...a); };
+            try {
+              const st = await segD(`&perfil=helder&expediente=${encodeURIComponent(idD)}&solo=tope`);
+              assert.ok(st.status === 200 && st.cuerpo.id === idD && !st.cuerpo.proceso, `solo=tope responde el techo y nada más: ${JSON.stringify(st.cuerpo).slice(0, 200)}`);
+              assert.deepStrictEqual(st.cuerpo.tope_oferta, gD.tope_oferta, "solo=tope da el MISMO techo que la guía del expediente");
+              assert.strictEqual(cargas, 0, `solo=tope no carga los índices de la guía (MUTACIÓN: con la guía entera, ${cargas})`);
+              const sgOtra = await segD(`&perfil=helder&expediente=${encodeURIComponent(idD)}&solo=otra_cosa`);
+              assert.ok(sgOtra.status === 200 && sgOtra.cuerpo.proceso && sgOtra.cuerpo.proceso.guia && cargas > 0, "un valor desconocido de `solo` es inerte: el expediente completo");
+              assert.strictEqual((await segD(`&perfil=helder&expediente=CO1.REQ.0&solo=tope`)).status, 404, "solo=tope de un proceso no guardado: 404, como el expediente");
+              assert.ok(st.cuerpo.documentos_leidos >= 1 && Number.isFinite(st.cuerpo.medicion.ms), `solo=tope dice cuántos documentos hay leídos y cuánto tardó: ${JSON.stringify([st.cuerpo.documentos_leidos, st.cuerpo.medicion])}`);
+              for (const raro of ["constructor", "toString", "hasOwnProperty"]) assert.strictEqual((await segD(`&perfil=helder&expediente=${raro}&solo=tope`)).status, 404, `«${raro}» no es un proceso guardado (MUTACIÓN: con \`!g.procesos[id]\`, 200)`);
+              /* la fila VIVA manda sobre la foto guardada, como en la guía: con la foto de otro presupuesto, el techo sigue
+                 siendo el de la fila viva (revisión adversaria: con `fila: null` en el handler, esta prueba seguía en verde) */
+              const Alm = require("../lib/almacen.js");
+              const gOrig = await Alm.leerJSON(redis, "seguimiento:helder");
+              const gFoto = JSON.parse(JSON.stringify(gOrig));
+              gFoto.procesos[idD].foto = { ...(gFoto.procesos[idD].foto || {}), presupuesto_cop: 123456789 };
+              await Alm.escribirJSON(redis, "seguimiento:helder", gFoto);
+              try {
+                const stF = await segD(`&perfil=helder&expediente=${encodeURIComponent(idD)}&solo=tope`);
+                const gF = (await segD(`&perfil=helder&expediente=${encodeURIComponent(idD)}`)).cuerpo.proceso.guia;
+                assert.ok(stF.cuerpo.tope_oferta && stF.cuerpo.tope_oferta.secop !== 123456789 && stF.cuerpo.tope_oferta.secop === gF.tope_oferta.secop, `la fila viva manda, en solo=tope y en la guía (MUTACIÓN: la foto, 123.456.789): ${JSON.stringify([stF.cuerpo.tope_oferta, gF.tope_oferta])}`);
+              } finally { await Alm.escribirJSON(redis, "seguimiento:helder", gOrig); }
+            } finally { Object.assign(Lst, { cargarIndice: orig.i, cargarIndiceBaja: orig.b, cargarConocimiento: orig.c }); }
+          }
           assert.ok(gD && gD.documentos && gD.documentos.estado === "leido" && gD.documentos.leidos.length === 1 && gD.documentos.ilegibles.length === 1, `la guía dice qué se leyó y qué no se pudo: ${JSON.stringify(gD && (gD.error || (gD.documentos && gD.documentos.frase) || Object.keys(gD)))}`);
           assert.ok(/no hay anticipo/.test(gD.obra.pago.anticipo_legible) && gD.lo_que_dicen.some((h) => h.clave === "anticipo" && h.anticipo === "no"), "lo que dice el pliego llega a la pantalla de Mis procesos");
           assert.ok(gD.documentos.no_legibles.some((x) => /PRESUPUESTO OFICIAL/.test(x.nombre) && x.motivo === "hoja de cálculo" && x.url), "lo no legible se lista con su motivo y su enlace, no se inventa");
@@ -51971,7 +52009,7 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
         const filaSE = { id_del_proceso: "CO1.SE", nombre_del_procedimiento: "MEJORAMIENTO VIA SANTA ELENA", cuantia_cop: 1744426146 };
         const filaB = { id_del_proceso: "CO1.B", nombre_del_procedimiento: "OTRA OBRA", cuantia_cop: 900000000 };
         const urls = [];
-        let responder = () => Promise.resolve(respuestaRO(200, { ok: true, proceso: { id: "CO1.SE", guia: guiaSE } }));
+        let responder = () => Promise.resolve(respuestaRO(200, { ok: true, id: "CO1.SE", tope_oferta: guiaSE.tope_oferta }));
         C3.fetch = (url) => { if (/op=seguimiento/.test(String(url))) { urls.push(String(url)); return responder(); } return new Promise(() => {}); };
         const abrir = async (l) => { const b = boton(l); const pr = T.abrirPreciosDesdeTarjeta(b); const durante = [b.textContent, b.disabled]; await pr; T.precargarDesdeURL(); return { b, durante }; };
         const nota = () => (P3.get("cuantia-nota").clases.has("hidden") ? "" : P3.get("cuantia-nota").textContent);
@@ -51981,15 +52019,19 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
         // guardado y con techo del pliego: lo consulta, lo dice mientras tanto y arranca con el techo y su nota
         T.guardados.set("CO1.SE", "interesa");
         r = await abrir(filaSE);
-        okRO(urls.length === 1 && /expediente=CO1\.SE/.test(urls[0]), `(h) guardado: pide la guía del expediente: ${JSON.stringify(urls)}`);
+        okRO(urls.length === 1 && /expediente=CO1\.SE/.test(urls[0]) && /[?&]solo=tope(&|$)/.test(urls[0]), `(h) guardado: pide SOLO el techo del expediente, sin la guía entera (MUTACIÓN: sin \`solo=tope\`, la guía con sus índices): ${JSON.stringify(urls)}`);
         okRO(r.durante[0] === "Consultando el pliego…" && r.durante[1] === true && r.b.disabled === false && r.b.innerHTML === "Calcular mi precio", `(h) la pulsación responde y el botón vuelve: ${JSON.stringify(r.durante)}`);
         okRO(P3.get("cuantia").value === "1581425810" && /pliego definitivo/.test(nota()) && T.leerConfig().cuantia_fuente === "pliego", `(h) guardado con techo: Precios arranca con el del pliego (MUTACIÓN: sin la consulta, $1.744.426.146): «${P3.get("cuantia").value}»`);
         // sin techo, o la guía de otro proceso, o de OTRA cifra de SECOP II que la de la tarjeta: la cifra de la tarjeta, sin nota
-        for (const [que, resp, fila] of [["sin techo", () => respuestaRO(200, { ok: true, proceso: { id: "CO1.SE", guia: { tope_oferta: { valor: 1744426146, fuente: "secop", secop: 1744426146 } } } }), filaSE], ["la guía de otro proceso", () => respuestaRO(200, { ok: true, proceso: { id: "CO1.OTRO", guia: guiaSE } }), filaSE], ["la guía con otra cifra de SECOP II", () => respuestaRO(200, { ok: true, proceso: { id: "CO1.SE", guia: guiaSE } }), { ...filaSE, cuantia_cop: 1700000000 }]]) {
+        for (const [que, resp, fila] of [["sin techo", () => respuestaRO(200, { ok: true, id: "CO1.SE", tope_oferta: { valor: 1744426146, fuente: "secop", secop: 1744426146 } }), filaSE], ["el techo de otro proceso", () => respuestaRO(200, { ok: true, id: "CO1.OTRO", tope_oferta: guiaSE.tope_oferta }), filaSE], ["el techo con otra cifra de SECOP II", () => respuestaRO(200, { ok: true, id: "CO1.SE", tope_oferta: guiaSE.tope_oferta }), { ...filaSE, cuantia_cop: 1700000000 }], ["sin presupuesto en SECOP II", () => respuestaRO(200, { ok: true, id: "CO1.SE", tope_oferta: null }), filaSE]]) {
           responder = () => Promise.resolve(resp());
           r = await abrir(fila);
           okRO(P3.get("cuantia").value === String(fila.cuantia_cop) && T.leerConfig().cuantia_fuente === null && r.b.disabled === false, `(h) ${que}: arranca con la cifra de la tarjeta (MUTACIÓN: sin comparar la cifra de SECOP II, el techo): «${P3.get("cuantia").value}»`);
         }
+        // el pliego no se ha leído (documentos_leidos 0): SECOP II, y la nota lo dice (revisión adversaria, 17-oct-2026)
+        responder = () => Promise.resolve(respuestaRO(200, { ok: true, id: "CO1.SE", tope_oferta: { valor: 1744426146, fuente: "secop", secop: 1744426146 }, documentos_leidos: 0 }));
+        r = await abrir(filaSE);
+        okRO(P3.get("cuantia").value === "1744426146" && /aún no se ha leído/.test(nota()), `(h) sin pliego leído, la nota lo dice (MUTACIÓN: sin \`sinPliego\`, silencio): «${nota()}»`);
         // la consulta cae: SECOP II, y la nota DICE que no se pudo consultar
         responder = () => Promise.resolve(respuestaRO(500, { ok: false, error: "fallo" }));
         r = await abrir(filaSE);
@@ -52001,7 +52043,7 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
         okRO(P3.get("cuantia").value === "1744426146" && /No se pudo consultar el pliego/.test(nota()) && r.b.disabled === false, `(h) la consulta vencida abre con SECOP II y lo dice: «${nota()}»`);
         // una respuesta tardía no pisa lo que se abrió después, ni abre con otro perfil
         let soltar = null;
-        responder = () => new Promise((ok) => { soltar = () => ok(respuestaRO(200, { ok: true, proceso: { id: "CO1.SE", guia: guiaSE } })); });
+        responder = () => new Promise((ok) => { soltar = () => ok(respuestaRO(200, { ok: true, id: "CO1.SE", tope_oferta: guiaSE.tope_oferta })); });
         const bA = boton(filaSE); const prA = T.abrirPreciosDesdeTarjeta(bA);
         T.abrirEditorConProceso(T.qApu(filaB)); T.precargarDesdeURL();
         soltar(); await prA; T.precargarDesdeURL();
@@ -52016,7 +52058,7 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
         T.guardados.set("CO1.C", "interesa");
         const pendientes = new Map();
         responder = () => new Promise((ok) => { const u = urls[urls.length - 1]; const idq = /expediente=([^&]+)/.exec(u)[1];
-          pendientes.set(idq, () => ok(respuestaRO(200, { ok: true, proceso: { id: idq, guia: idq === "CO1.C" ? { tope_oferta: { valor: 1900000000, fuente: "pliego", secop: 2000000000, pagina: 4 } } : guiaSE } }))); });
+          pendientes.set(idq, () => ok(respuestaRO(200, { ok: true, id: idq, tope_oferta: idq === "CO1.C" ? { valor: 1900000000, fuente: "pliego", secop: 2000000000, pagina: 4 } : guiaSE.tope_oferta }))); });
         const prSE = T.abrirPreciosDesdeTarjeta(boton(filaSE));
         const prC = T.abrirPreciosDesdeTarjeta(boton(filaC));
         pendientes.get("CO1.SE")(); await prSE; T.precargarDesdeURL();
