@@ -86,8 +86,10 @@ Pasos, sin terminal:
    conserva como alias). Con un proyecto en otra cuenta, como el 16-oct-2026, no: la vieja queda
    donde estaba.
 
-Lo que sí conviene revisar ese día: si Vercel Password Protection está activa, aplica igual al
-dominio nuevo (es del proyecto, no de la URL); y la meta `robots noindex` de `index.html` sigue
+Lo que sí conviene revisar ese día: si el muro de Vercel (Vercel Authentication en «All Deployments»;
+Password Protection no existe en Hobby) está activo, aplica igual al dominio nuevo (es del proyecto,
+no de la URL), y una cuenta nueva trae «Standard Protection», que deja abierta la producción (pasó
+el 16-oct-2026); y la meta `robots noindex` de `index.html` sigue
 siendo deliberada mientras la herramienta sea privada.
 
 ## 5. Historial

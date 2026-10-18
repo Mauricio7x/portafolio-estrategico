@@ -138,8 +138,11 @@ la primera corrección. El porqué de cada una, con su defecto de origen, se bus
 
 ## 5. El token y la seguridad (decisión, no estado)
 
-- **Ninguna llave vive en el navegador** (decisión del dueño, 17-oct-2026). El dueño entra con correo
-  y contraseña; la sesión es una cookie HttpOnly que el servidor abre, comprueba y cierra
+- **Dos capas** (decisión del dueño, 17-oct-2026). Delante, el muro de Vercel: «Vercel
+  Authentication» en «All Deployments» (Password Protection no existe en el plan Hobby); flujos,
+  rutinas y skills lo cruzan con el header `x-vercel-protection-bypass:
+  $VERCEL_AUTOMATION_BYPASS_SECRET`. Detrás, **ninguna llave vive en el navegador**: el dueño entra
+  con correo y contraseña; la sesión es una cookie HttpOnly que el servidor abre, comprueba y cierra
   (`lib/sesion.js`); `lib/auth.js` sigue siendo la única puerta y acepta la sesión o la llave.
   `HISTORICO_TOKEN` es una contraseña que solo vive en Vercel (y en GitHub y en el entorno de
   Claude Code): crea la cuenta UNA vez y la usan flujos, rutinas y skills; desde el código de una
