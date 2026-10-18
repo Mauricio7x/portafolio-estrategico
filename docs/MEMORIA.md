@@ -19329,7 +19329,9 @@ obra de 2026 eso era nada (el documento base no entra al vigía) y en 7 un anexo
 pliego, con una sola regla (`Docs.esVersionDelPliego`, `Docs.candidatosAlTextoDelPliego`) que también decide qué entra al
 vigía.
 
-> PENDIENTE · la carga en Precios no dice qué archivo es: todo PDF soltado ahí con un proceso abierto entra al vigía como versión del pliego (`vigilarPliego` → `op=diff`, origen «lector»), también el Formulario 1 de cantidades que la propia pantalla pide. Es de main: un Formulario cargado DESPUÉS de la lectura automática pasa a ser el texto del dictamen, del cronograma y de los descuentos, y frente a un documento base gana salvo que el base sea más nuevo. La salida que propuso la 2.ª revisión: mandar el nombre del archivo en el origen («lector:<nombre>»), clasificarlo con `clasificarArchivo`/`esVersionDelPliego`, y no registrar en el vigía lo que no sea el pliego. Toca `public/` y el vigía: va con plan y visto bueno. De paso, aclarar qué significa la hora `T19:00:00.000` que traen TODAS las `fecha_carga` de dmgg-8hin (¿el día es el escrito o el siguiente?): sin verificar.
+> RESUELTO el 18-oct-2026 por «La carga en Precios no entra al vigía si el nombre dice que es otra cosa (18-oct-2026)» · lo que se había dicho: la carga en Precios no dice qué archivo es: todo PDF soltado ahí con un proceso abierto entra al vigía como versión del pliego (`vigilarPliego` → `op=diff`, origen «lector»), también el Formulario 1 de cantidades que la propia pantalla pide. Es de main: un Formulario cargado DESPUÉS de la lectura automática pasa a ser el texto del dictamen, del cronograma y de los descuentos, y frente a un documento base gana salvo que el base sea más nuevo. La salida que propuso la 2.ª revisión: mandar el nombre del archivo en el origen («lector:<nombre>»), clasificarlo con `clasificarArchivo`/`esVersionDelPliego`, y no registrar en el vigía lo que no sea el pliego. Toca `public/` y el vigía: va con plan y visto bueno.
+
+> PENDIENTE · aclarar qué significa la hora `T19:00:00.000` que traen TODAS las `fecha_carga` de dmgg-8hin (¿el día es el escrito o el siguiente?): sin verificar. Decide los «publicado después» de lo manual y del aviso.
 
 > RESUELTO el 18-oct-2026 por «Las tres lecturas del pliego del 18-oct: la versión que rige, el ejemplo entre corchetes y el techo con una versión sin tabla (18-oct-2026)» · Era: el cronograma toma como hito un párrafo de EJEMPLO del pliego tipo («[Por ejemplo, si la audiencia de adjudicación se realiza el 10 de febrero de 2020…]», pliego LP-008-2026 del departamento de Sucre, ronda 5) y `guardarFechaCronograma` guarda una fecha ya pasada sin mirarla (reproducido el 18-oct-2026 con `extraerHitos` y la función real: «adjudicacion=2020-02-10», `guardada: true`). En el calendario no se ve: `adjudicacionDeFila` la descarta por desfasada (anterior al cierre). En la lista de hitos del cronograma, sin verificar. Es de main, no de este cambio, pero el documento base que ahora llega al cronograma puede traer el mismo ejemplo: medido en 2 pliegos distintos entre 180 textos de pliego guardados en la sesión (el de Sucre con 2020, en tres extracciones; otro de la ronda 7 con un informe de evaluación de 2022), sin ningún documento base completo en la muestra.
 > PENDIENTE · sigue abierta la otra mitad de ese marcador: `guardarFechaCronograma` (lib/manifestacion.js) guarda una fecha ya pasada sin mirarla; el 18-oct solo se arregló que el ejemplo entre corchetes no llegue como hito.
@@ -19567,7 +19569,7 @@ medición del plan con el definitivo por encima del tope) son escaneos sin una s
 páginas; construir la descarga por partes de la Fase C sería pagar unas 15 peticiones y ~400 MB de bajada por un PDF de
 45 MB (estimado del plan, sin medir) para no leer nada: el camino es el OCR, y en estos cuatro el OCR deja un anticipo «sí» falso que también da main con texto nativo.
 
-> PENDIENTE · decidir con el dueño si la Fase C se cierra (no construir la descarga de más de 20 MB, porque los 4 medidos son escaneos) o se cambia por OCR de esos escaneos; el OCR de la app es OCR.space, una petición por página (134-142 por pliego), y su tarifa no se ha podido verificar.
+> RESUELTO el 18-oct-2026 por «La Fase C se cierra: no se construye la descarga de pliegos de más de 20 MB (18-oct-2026)» · lo que se había dicho: decidir con el dueño si la Fase C se cierra (no construir la descarga de más de 20 MB, porque los 4 medidos son escaneos) o se cambia por OCR de esos escaneos; el OCR de la app es OCR.space, una petición por página (134-142 por pliego), y su tarifa no se ha podido verificar.
 
 > PENDIENTE · el detector del anticipo (`dictamen_reglas`) da «sí» con la frase de la capacidad residual «presupuesto oficial menos el anticipo o pago anticipado cuando haya lugar», también en una sola línea de texto nativo (reproducido el 18-oct-2026 con `hechosDeTexto` de main). CO1.REQ.10725252 no tiene anticipo (forma de pago 50 % / 40 % / 10 % por avance, pág. 9) y la lectura dice «sí» citando la pág. 43. En 41 textos nativos de pliego de la sesión, ninguno de los 10 «sí» cita una fórmula. El anticipo entra al capital de trabajo: va con plan y visto bueno.
 
@@ -19607,6 +19609,59 @@ En una línea: el plan de lectura elige las tres versiones MÁS NUEVAS del plieg
 - **Qué no hay que deshacer en el techo.** `elegirPresupuestoPliego` NO reordena `leidos`: loQueDicen ya los trae por tipo (`PRIORIDAD_FUENTE`) y, dentro del tipo, del más nuevo al más viejo. Una primera versión del arreglo ordenaba solo por fecha y la revisión adversaria midió dos subidas del techo: un documento base más nuevo le ganaba al pliego, y elegir la cifra solo entre versiones del pliego ignoraba unas «Observaciones» con cifra menor ($850 M frente a $900 M). Por eso el documento que da la cifra se elige igual que antes y lo nuevo es una comprobación que solo puede llevar el techo a SECOP II.
 - **El mismo día cuenta como posterior.** `fecha_carga` es solo el día; con dos versiones del mismo día no se sabe cuál rige, y en Precios lo caro es el falso positivo. Se compara el día de carga, nunca `leido_el` (la hora de lectura gana a cualquier día de SECOP).
 - **Lo medido.** Pruebas por mutación en «unidad presupuesto del pliego», «unidad los nueve procesos del dueño» y «unidad manifestación calibrada»; dos rondas de revisión adversaria sobre el techo, la última sin subidas fuera del caso aprobado.
+
+### La carga en Precios no entra al vigía si el nombre dice que es otra cosa (18-oct-2026)
+
+En una línea: Precios mandaba al vigía de adendas TODO archivo leído con un proceso abierto —también el Formulario 1 de
+cantidades que la propia pantalla pide— como «versión del pliego», y el dictamen, el cronograma y los descuentos lo leían;
+ahora el navegador manda el NOMBRE del archivo y `op=diff` no guarda lo que la regla de la lectura automática
+(`Docs.clasificarArchivo` + `Docs.esVersionDelPliego`) reconoce como OTRA cosa: el formulario o presupuesto, una adenda
+suelta, un anexo, unas observaciones o sus respuestas, unos estudios previos.
+
+> PENDIENTE · el clasificador de nombres (`RE_TIPO`, lib/documentos_proceso) no reconoce los nombres nuevos de Colombia Compra ni las variantes con separadores: «DocBase_LicitacionObra_ISocialLV2.pdf», «Documento_base_…», «06_Documento Base…», «DOCUMENTO%20BASE», «Documentos Base», ni erratas como «DOCUEMENTO BASE». Quedan como «otro», orden 30, y la lectura automática NO los lee: 7 de 232 procesos de la muestra, 5 de 33 abiertos, y van en aumento (6 de 91 con cierre de sep a nov de 2026, 0 de 141 antes; 2.ª revisión adversaria, 18-oct). Arreglarlo cambia qué lee la app sola en esos procesos (presupuesto, anticipo, requisitos, dictamen): va con plan, medición y visto bueno.
+
+**Lo que no hay que deshacer.** (a) Decide el nombre, con la regla de la lectura automática. Medido en 18.166 archivos reales
+de dmgg-8hin: los 40 nombres que juntan «presupuesto» y «pliego» son el Formulario 1, y los que la regla da por otro documento
+(respuestas a observaciones, estudios previos, anexos técnicos, avisos, matrices) no son el pliego. (b) Un nombre que NO dice
+qué es se GUARDA, como antes. El dueño había aceptado no guardarlo («ante la duda no se dictamina sobre un texto desconocido»),
+pero la 2.ª revisión adversaria reprodujo la regresión: los 11 nombres así de la muestra son documentos base reales («DocBase_…»,
+ver el pendiente), y en 4 de 33 procesos abiertos cargarlo en Precios era el ÚNICO camino del pliego al dictamen
+(CO1.REQ.11144592 se quedaba en «Puede presentarse» sobre el proyecto de pliego; CO1.REQ.11213139, sin texto). También se
+guarda lo que llega sin nombre: un navegador con el código de antes sigue funcionando como antes. (c) Una adenda SUELTA no se
+guarda (el dictamen leería solo la adenda; decisión del dueño), pero el pliego con la adenda incorporada sí: con el nombre del
+pliego DELANTE de «adenda» («Documento Base … MODIFICADO CON ADENDA No. 1», 3 en la muestra), salvo que antes diga
+«propuesta», «oferta», «presupuesto», «cantidades» o «formulario». La misma regla salva el pliego con todo junto: «PROYECTO DE
+PLIEGO, ANEXOS, FORMATOS, MATRICES Y FORMULARIO 1» (CO1.REQ.10367183) es el único de los 402 nombres de tipo presupuesto de la
+muestra con el nombre del pliego delante, y ningún formulario real cambia. (d) La respuesta es 200 con `ok:false, no_es_el_pliego:true` y la frase en `error`: no es un fallo, y un
+navegador con el código de antes dice «No se pudo guardar la versión del pliego: <motivo>», que es la verdad. La frase dice lo
+que el dictamen está leyendo DE VERDAD (`textoGuardado`: «siguen con «nombre»» o «la versión N del pliego») o que todavía no
+hay pliego guardado y qué cargar; el navegador de ahora no le pasa el motivo al dictamen como fallo del vigía. (e) Con un
+archivo rechazado, el cronograma se pide SIN su texto: el del pliego guardado, el mismo del .ics y de Mis procesos (con el texto
+de una adenda, la lista decía una fecha de cierre y el .ics otra). Las fechas que cambie una adenda se confirman en SECOP II.
+(f) El origen de lo cargado a mano lleva el nombre («lector:<nombre>», 40 caracteres); sin nombre, «lector». `textoGuardado`
+lo trata igual: no empieza por «documentos:». Lo ya guardado no se toca. (g) El aviso de la versión más nueva sin leer (Fase A)
+mandaba a «cargar ese PDF en Precios y volver a pedir el dictamen», pero la lectura por OCR de Precios NO pasa por el vigía y
+los 4 pliegos de más de 20 MB medidos son escaneos: el consejo no hacía nada. Ahora dice que se revise el documento en SECOP
+II antes de decidir, y que cargarlo en Precios sirve si el PDF trae texto.
+
+**Cómo se probó.** Bloque «unidad la carga en Precios» con los handlers reales: 9 nombres que no se guardan, cada uno con su
+frase; 13 que sí, entre ellos los «DocBase_», el enlace pegado, sin nombre y los pliegos con adenda; el Formulario cargado
+DESPUÉS de la lectura automática, que ya no tapa el pliego y cuya frase nombra lo que se lee; y un nombre larguísimo. El (g) del
+lector con el `pliego.js` real comprueba que el nombre viaja, que el motivo se pinta escapado y no como fallo, que el
+cronograma va sin el texto y que el dictamen se pide igual. Navegador real a 390 y 1280 px con la sesión del dueño: Formulario,
+adenda, «DocBase_» y pliego en ese orden; consola limpia.
+
+### La Fase C se cierra: no se construye la descarga de pliegos de más de 20 MB (18-oct-2026)
+
+En una línea: el dueño cerró la Fase C del plan del texto del pliego (18-oct-2026): los 4 pliegos de más de 20 MB que se
+midieron son escaneos sin texto, así que bajarlos por partes desde la app (unas 15 peticiones y ~400 MB por un PDF de 45 MB,
+estimado del plan) no daría nada que leer; esos procesos siguen con el aviso de que el documento no se lee solo y se revisa en
+SECOP II.
+
+**Lo que no hay que deshacer.** No construir la descarga por partes de documentos de más de 20 MB sin medir antes que traen
+texto: la medición de la sección «Los pliegos de más de 20 MB que se midieron son escaneos…» dio 0 caracteres en 456 páginas.
+El OCR de esos escaneos por la app (OCR.space, una petición por página) es otra decisión, no tomada; y la lectura por OCR de
+Precios no llega al dictamen (sección «La carga en Precios no entra al vigía…», punto g).
 
 ### La cadena que no seguía con el muro: la llamada del servidor a sí mismo va con waitUntil y dice cómo le fue, y el latido hace hasta 3 tandas (18-oct-2026)
 

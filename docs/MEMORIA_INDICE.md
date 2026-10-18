@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 1919865 bytes · 362 secciones · 26 con marcador de superación.
+Derivado del árbol: 1926195 bytes · 364 secciones · 26 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -355,21 +355,23 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | El muro de Vercel vuelve, gratis: «Vercel Authentication» en todo el sitio y el pase para lo automático (17-oct-2026) | 17-oct-2026 | 19228-19283 | 7782 |  |
 | Dos capas: el muro de Vercel delante y la sesión del dueño detrás (18-oct-2026) | 18-oct-2026 | 19284-19297 | 1098 |  |
 | El muro de Vercel quedó puesto: las tareas de Vercel lo pasan, y cómo se mide (17-oct-2026) | 17-oct-2026 | 19298-19323 | 4487 |  |
-| El dictamen, el cronograma y los descuentos leen el documento que ES el pliego, no la última versión del vigía (18-oct-2026) | 18-oct-2026 | 19324-19387 | 9034 |  |
-| La sonda del muro: el latido y el vigilante prueban la portada sin el pase (18-oct-2026) | 18-oct-2026 | 19388-19426 | 4440 |  |
-| Base nacional de licitaciones de obra: un script que solo mide, fuera de la app (17-oct-2026) | 17-oct-2026 | 19427-19440 | 2139 | «Base nacional de obra: las ofertas se piden agrupadas, las filas repetidas de p6dx son fases y el proveedor se identifica por unión (17-oct-2026)» |
-| Base nacional de obra: las ofertas se piden agrupadas, las filas repetidas de p6dx son fases y el proveedor se identifica por unión (17-oct-2026) | 17-oct-2026 | 19441-19448 | 1579 |  |
-| El almacén R2 de la base nacional frena ANTES de pasar el gratis, porque Cloudflare no frena (17-oct-2026) | 17-oct-2026 | 19449-19457 | 3029 |  |
-| Base nacional de obra, Fase 1: una fila por proceso y cinco señales que solo invitan a revisar (17-oct-2026) | 17-oct-2026 | 19458-19470 | 2499 |  |
-| R2 rechazó el If-Match con el registro sin cambios, y la mínima cuantía no se mide con la vara de las demás (17-oct-2026) | 17-oct-2026 | 19471-19479 | 2420 |  |
-| Fase 2: el piso se reproduce, el ganador no — los datos abiertos no dicen quién quedó hábil (17-oct-2026) | 17-oct-2026 | 19480-19489 | 2664 |  |
-| Fase 3: la validación posible sin SECOP es coherencia interna, y se hace por censo, no por muestra (17-oct-2026) | 17-oct-2026 | 19490-19499 | 2114 |  |
-| La alerta de precio bajo se corta por modalidad con lo medido en SECOP II (18-oct-2026) | 18-oct-2026 | 19500-19514 | 3640 |  |
-| La fuente del corte se ve en la pantalla y la base se vuelve a medir cada mes, con un vigía que avisa y no corrige (18-oct-2026) | 18-oct-2026 | 19515-19527 | 4296 |  |
-| Las ganadoras que la base no cuenta: en licitación no mueven el corte; en mínima la regla del 50 % esconde ganadoras reales (18-oct-2026) | 18-oct-2026 | 19528-19537 | 2616 |  |
-| El rescate bajo el 50 %: la oferta ganadora que coincide con lo adjudicado y con su contrato cuenta, en todas las modalidades (18-oct-2026) | 18-oct-2026 | 19538-19549 | 3226 |  |
-| La llave del servidor no se copia de Vercel: se anota al ponerla (18-oct-2026) | 18-oct-2026 | 19550-19562 | 1833 |  |
-| Los pliegos de más de 20 MB que se midieron son escaneos: bajarlos por partes no da texto (18-oct-2026) | 18-oct-2026 | 19563-19594 | 3701 |  |
-| El tablero de pendientes mentía: la revisión del 18-oct, uno por uno contra el código (18-oct-2026) | 18-oct-2026 | 19595-19602 | 1742 |  |
-| Las tres lecturas del pliego del 18-oct: la versión que rige, el ejemplo entre corchetes y el techo con una versión sin tabla (18-oct-2026) | 18-oct-2026 | 19603-19610 | 1694 |  |
-| La cadena que no seguía con el muro: la llamada del servidor a sí mismo va con waitUntil y dice cómo le fue, y el latido hace hasta 3 tandas (18-oct-2026) | 18-oct-2026 | 19611-19642 | 9292 |  |
+| El dictamen, el cronograma y los descuentos leen el documento que ES el pliego, no la última versión del vigía (18-oct-2026) | 18-oct-2026 | 19324-19389 | 9235 |  |
+| La sonda del muro: el latido y el vigilante prueban la portada sin el pase (18-oct-2026) | 18-oct-2026 | 19390-19428 | 4440 |  |
+| Base nacional de licitaciones de obra: un script que solo mide, fuera de la app (17-oct-2026) | 17-oct-2026 | 19429-19442 | 2139 | «Base nacional de obra: las ofertas se piden agrupadas, las filas repetidas de p6dx son fases y el proveedor se identifica por unión (17-oct-2026)» |
+| Base nacional de obra: las ofertas se piden agrupadas, las filas repetidas de p6dx son fases y el proveedor se identifica por unión (17-oct-2026) | 17-oct-2026 | 19443-19450 | 1579 |  |
+| El almacén R2 de la base nacional frena ANTES de pasar el gratis, porque Cloudflare no frena (17-oct-2026) | 17-oct-2026 | 19451-19459 | 3029 |  |
+| Base nacional de obra, Fase 1: una fila por proceso y cinco señales que solo invitan a revisar (17-oct-2026) | 17-oct-2026 | 19460-19472 | 2499 |  |
+| R2 rechazó el If-Match con el registro sin cambios, y la mínima cuantía no se mide con la vara de las demás (17-oct-2026) | 17-oct-2026 | 19473-19481 | 2420 |  |
+| Fase 2: el piso se reproduce, el ganador no — los datos abiertos no dicen quién quedó hábil (17-oct-2026) | 17-oct-2026 | 19482-19491 | 2664 |  |
+| Fase 3: la validación posible sin SECOP es coherencia interna, y se hace por censo, no por muestra (17-oct-2026) | 17-oct-2026 | 19492-19501 | 2114 |  |
+| La alerta de precio bajo se corta por modalidad con lo medido en SECOP II (18-oct-2026) | 18-oct-2026 | 19502-19516 | 3640 |  |
+| La fuente del corte se ve en la pantalla y la base se vuelve a medir cada mes, con un vigía que avisa y no corrige (18-oct-2026) | 18-oct-2026 | 19517-19529 | 4296 |  |
+| Las ganadoras que la base no cuenta: en licitación no mueven el corte; en mínima la regla del 50 % esconde ganadoras reales (18-oct-2026) | 18-oct-2026 | 19530-19539 | 2616 |  |
+| El rescate bajo el 50 %: la oferta ganadora que coincide con lo adjudicado y con su contrato cuenta, en todas las modalidades (18-oct-2026) | 18-oct-2026 | 19540-19551 | 3226 |  |
+| La llave del servidor no se copia de Vercel: se anota al ponerla (18-oct-2026) | 18-oct-2026 | 19552-19564 | 1833 |  |
+| Los pliegos de más de 20 MB que se midieron son escaneos: bajarlos por partes no da texto (18-oct-2026) | 18-oct-2026 | 19565-19596 | 3838 |  |
+| El tablero de pendientes mentía: la revisión del 18-oct, uno por uno contra el código (18-oct-2026) | 18-oct-2026 | 19597-19604 | 1742 |  |
+| Las tres lecturas del pliego del 18-oct: la versión que rige, el ejemplo entre corchetes y el techo con una versión sin tabla (18-oct-2026) | 18-oct-2026 | 19605-19612 | 1694 |  |
+| La carga en Precios no entra al vigía si el nombre dice que es otra cosa (18-oct-2026) | 18-oct-2026 | 19613-19653 | 5022 |  |
+| La Fase C se cierra: no se construye la descarga de pliegos de más de 20 MB (18-oct-2026) | 18-oct-2026 | 19654-19665 | 970 |  |
+| La cadena que no seguía con el muro: la llamada del servidor a sí mismo va con waitUntil y dice cómo le fue, y el latido hace hasta 3 tandas (18-oct-2026) | 18-oct-2026 | 19666-19697 | 9292 |  |
