@@ -6,8 +6,8 @@
 (no editar a mano: sale de `node tests/mapa.js --escribir`. Para ir a un sitio concreto,
  `node tests/mapa.js <término>` da la ruta, la línea y el sed exacto — más barato que leer esto)
 
-· SUPERFICIE HTTP — 38 op declaradas en los mapas de los routers:
-  /api/admin?op=  rup · experiencia · cobertura · cargar-catalogo · exportar · importar · uso · respaldo · espacio · compactar
+· SUPERFICIE HTTP — 42 op declaradas en los mapas de los routers:
+  /api/admin?op=  rup · experiencia · cobertura · cargar-catalogo · exportar · importar · uso · respaldo · espacio · compactar · sesion · entrar · salir · crear-cuenta
   /api/perfil?op=  resumen · diagnostico · entrada · pulso · consorcio · consorcio-simular · seguimiento · cuenta · avisos · empresa-datos
   /api/pliego?op=  extraer-texto · parsear · descargar · formulario1 · diff · cronograma · deducciones · dictamen · documentos
   /api/procesos?op=  sync · historico · listar · baja · entidades · portada · manifestacion · latido · salud
@@ -22,7 +22,7 @@
   pliego.js                   Router del dominio PLIEGO (Fase 0 · consolidación a 6 funciones)
   procesos.js                 Router del dominio PROCESOS (Fase 0 · consolidación a 6 funciones)
 
-· lib/ — 95 módulos:
+· lib/ — 96 módulos:
   accesibilidad.js            Accesibilidad operativa de la zona de la obra
   adendas.js                  Vigía de adendas · lo que el DATASET dice que cambió (Fase 5)
   almacen.js                  Esquema de claves Redis + compresión de chunks
@@ -50,7 +50,7 @@
   correo.js                   Transporte de correo por REST — sin SDK, sin dependencias
   costos.js                   el motor de costo real vive en public/costos.js (UMD) y aquí
   cronograma.js               Cronograma del proceso con avisos T-7 / T-3 / T-1 (Fase 5)
-  cuentas.js                  La infraestructura de las cuentas de usuario. CONSTRUIDA Y SIN
+  cuentas.js                  La infraestructura de las cuentas de usuario (la parte PURA)
   cuerpo.js                   Leer el cuerpo JSON de una petición, una sola vez
   deducciones.js              Qué le van a descontar de cada pago, leído del PLIEGO
   dictamen.js                 Dictamen del pliego (proyecto «Don Héctor», 2-sep-2026) — PURO
@@ -111,6 +111,7 @@
   rutina.js                   despertar una rutina de Claude Code por HTTP (26-sep-2026)
   seguimiento.js              MIS PROCESOS: guardar, seguir y estudiar a la competencia (ago 2026)
   semantica.js                Clasificación semántica del objeto contractual
+  sesion.js                   La sesión del DUEÑO: una cuenta, una cookie, un límite de intentos
   socio.js                    Verifique a su socio antes de firmar (due diligence de 20 minutos)
   socio_por_proceso.js        ¿Con cuál de mis socios conviene ESTE proceso?
   socrata.js                  Acceso al dataset p6dx-8zbt de SECOP II (API Socrata / SoQL)
@@ -141,7 +142,7 @@
   tipologias.js               Las 22 tipologías de obra y el mapa departamento→región
   validaciones.js             Las cinco puertas de control del presupuesto
 
-· lib/handlers/admin/ — 10 módulos:
+· lib/handlers/admin/ — 11 módulos:
   cargar_catalogo.js          Puebla Redis con el catálogo de precios APU
   cobertura.js                Qué códigos UNSPSC le faltan al RUP
   compactar.js                /api/admin?op=compactar · QUE LA BASE DE DATOS NO SE VUELVA A LLENAR (30-sep-2026)
@@ -151,6 +152,7 @@
   importar.js                 (sin cabecera)
   respaldo.js                 (sin cabecera)
   rup.js                      Cargar, consultar y eliminar el RUP del dueño (archivo JSON)
+  sesion.js                   (sin cabecera)
   uso.js                      /api/admin?op=uso · CUÁNTO SE USA DETEKTA, POR PERFIL (27-sep-2026)
 
 · lib/handlers/apu/ — 1 módulos:
@@ -212,17 +214,17 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 342 secciones (21 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 19008  El techo del pliego también desde la tarjeta de Licitaciones, para un proceso guardado (17-…
-  L 19029  Las pruebas de 2027: un corte que dependía de la velocidad de la máquina y una negación que…
-  L 19037  Pedir otro rango ya no vuelve a empezar el histórico: el servidor responde 409 y el botón c…
-  L 19079  El límite que calculó la entidad, medido en 3 procesos cerrados, va debajo del aviso de pre…
-  L 19089  El techo de la tarjeta, sin la guía entera: `solo=tope` (17-oct-2026)
-  L 19107  El plazo del pliego por la columna de su tabla 1.1: medido, NO fusionado (18-oct-2026)
-  L 19134  La negación del anticipo con la parte ANTES («Para la etapa 1 no se entregará anticipo») NO…
-  L 19157  El muro de Vercel vuelve, gratis: «Vercel Authentication» en todo el sitio y el pase para l…
-  L 19213  El muro de Vercel quedó puesto: las tareas de Vercel lo pasan, y cómo se mide (17-oct-2026)
-  L 19239  La sonda del muro: el latido y el vigilante prueban la portada sin el pase (18-oct-2026)
+· MEMORIA · docs/MEMORIA.md — 345 secciones (22 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
+  L 19095  Las pruebas de 2027: un corte que dependía de la velocidad de la máquina y una negación que…
+  L 19103  Pedir otro rango ya no vuelve a empezar el histórico: el servidor responde 409 y el botón c…
+  L 19145  El límite que calculó la entidad, medido en 3 procesos cerrados, va debajo del aviso de pre…
+  L 19155  El techo de la tarjeta, sin la guía entera: `solo=tope` (17-oct-2026)
+  L 19173  El plazo del pliego por la columna de su tabla 1.1: medido, NO fusionado (18-oct-2026)
+  L 19200  La negación del anticipo con la parte ANTES («Para la etapa 1 no se entregará anticipo») NO…
+  L 19223  El muro de Vercel vuelve, gratis: «Vercel Authentication» en todo el sitio y el pase para l…
+  L 19279  Dos capas: el muro de Vercel delante y la sesión del dueño detrás (18-oct-2026)
+  L 19293  El muro de Vercel quedó puesto: las tareas de Vercel lo pasan, y cómo se mide (17-oct-2026)
+  L 19319  La sonda del muro: el latido y el vigilante prueban la portada sin el pase (18-oct-2026)
 
 · DOCUMENTOS docs/ — 71 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)

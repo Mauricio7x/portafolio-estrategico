@@ -25,7 +25,7 @@ solicitud de «en_cola» y hace de candado: dos sesiones sobre la misma solicitu
 1. **Ver la cola.**
 
    ```bash
-   TOKEN=$(grep -o 'const TOKEN = "[^"]*"' public/app.js | head -1 | cut -d'"' -f2)
+   TOKEN="${HISTORICO_TOKEN:?Falta HISTORICO_TOKEN en el entorno de Claude Code: el dueño la añade en el entorno de la sesión o de la rutina (Edit → variables de entorno)}"
    BASE=https://detekta-app.vercel.app
    curl -s -H "x-historico-token: $TOKEN" -H "x-vercel-protection-bypass: $VERCEL_AUTOMATION_BYPASS_SECRET" "$BASE/api/apu?op=ia&pendientes=1" -o /tmp/cola.json
    grep -qs "Protected by Vercel Authentication" /tmp/cola.json && echo "EL MURO DE VERCEL RESPONDIÓ: falta el pase"

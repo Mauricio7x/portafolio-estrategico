@@ -61,6 +61,7 @@ pero **no son datos**. No deben citarse como estadística ni usarse para calibra
 | [V-15](#v-15--el-dataset-p6dx-8zbt-lo-que-sí-se-pudo-confirmar) | Dataset `p6dx-8zbt` | 🔴 Crítico *(para la app)* | No existe |
 | [V-16](#v-16--interventoría-el-otro-lado-del-mostrador) | Interventoría | 🟢 Bajo | Mención suelta |
 | [V-17](#v-17--reforma-al-estatuto-en-trámite) | Reforma al Estatuto en trámite | 🟢 Bajo *(hoy)* | No existe |
+| [V-18](#v-18--corrección-métodos-de-ponderación-y-piso-de-precio-en-menor-cuantía-medido-en-5-pliegos) | **Corrección:** métodos de ponderación y piso de precio en menor cuantía | 🟠 Alto | **Errado para SAMC v3** |
 
 ---
 
@@ -637,6 +638,46 @@ monitoreo, no de acción.**
 [Texto del PL 554 de 2025](https://franciscofajardoabogados.com/wp-content/uploads/2025/04/PL.554-2025C-REFORMA-LEY-80.pdf) ·
 [Transparencia por Colombia — seguimiento a la reforma](https://transparenciacolombia.org.co/agenda-legislativa/reforma-al-estatuto-de-la-contratacion-estatal/) ·
 [Portafolio — alertas sobre la reforma](https://www.portafolio.co/economia/gobierno/reforma-a-la-contratacion-publica-en-colombia-encenderia-alertas-al-incluir-a-organizaciones-comunales-como-contratistas-del-estado-630783)
+
+---
+
+## V-18 · CORRECCIÓN: métodos de ponderación y piso de precio en menor cuantía (medido en 5 pliegos)
+
+**Qué dice el manual** (§ «Los 4 métodos de ponderación económica»): media aritmética, media
+aritmética alta, media geométrica con presupuesto oficial y menor valor, sorteados con el **primer
+decimal** de la TRM **del día de la audiencia**.
+
+**Lo que dicen los pliegos.** Se leyeron, con cita verificada, los 5 pliegos definitivos de selección
+abreviada de menor cuantía de obra de transporte (Documento Tipo V3, 30-07-2024) de la muestra de
+`detekta-lector` (17-oct-2026): Pasto SA-2026-9 (pág. 52-53), Caldas SAMC-SI-027-2026 (pág. 39-40),
+Floridablanca FLO-INFRA-SA-MC-001-2026 (pág. 53), Turbaco SAMC-006-2026 (pág. 58-59) y Caldas
+SAMC-SI-020-2026 (pág. 53). Los cinco dicen lo mismo:
+
+1. **Los métodos son otros:** de 0,00 a 0,24 **mediana con valor absoluto**; de 0,25 a 0,49 **media
+   geométrica**; de 0,50 a 0,74 **media aritmética baja**; de 0,75 a 0,99 **menor valor**. No aparece
+   la «media aritmética alta» ni la geométrica «con presupuesto oficial».
+2. **Se usan los CENTAVOS de la TRM** (dos decimales), no el primer decimal.
+3. **La TRM es la que rija el segundo día hábil después de terminado el traslado del informe de
+   evaluación**, no la del día de la audiencia.
+
+Lo que pasó en los cuatro procesos donde consta: Pasto, TRM $3.209,78 → menor valor; Caldas 027,
+$3.349,63 → media aritmética baja; Floridablanca, $3.678,15 → mediana; Caldas 020, $3.213,97 → menor
+valor. Cada entidad aplicó la tabla de su pliego.
+
+**El piso de precio artificialmente bajo se calcula DESPUÉS de abrir las ofertas**, con la mediana de
+las ofertas menos su desviación estándar. Medido: Pasto 92,78 % del presupuesto (subsanación final,
+pág. 6), Caldas 027 92,33 % y Caldas 020 91,61 % (hojas «Apertura sobre No. 2», hoja Evaluación). El
+80 % que usa la app como referencia queda muy por debajo de lo que pasó en estos tres. Ningún pliego
+de los cinco fija un porcentaje antes del cierre.
+
+**Alcance.** Esto vale para el Documento Tipo de **menor cuantía V3**. La tabla del manual puede ser
+la de otro documento tipo (licitación pública); eso **no se verificó** aquí. La lógica de la app no
+cambia: sigue siendo un sorteo en el que el menor valor sale en 1 de 4 rangos. Lo que estaba mal es
+la descripción.
+
+**Fuentes:** los pliegos y documentos de evaluación de los 5 procesos (SECOP II), leídos con
+`detekta-lector` y verificados con `verificar_citas.py` el 17-oct-2026. Datos de adjudicación
+contrastados con `p6dx-8zbt` el mismo día.
 
 ---
 

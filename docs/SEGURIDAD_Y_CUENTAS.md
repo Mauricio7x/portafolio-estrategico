@@ -10,10 +10,11 @@
 **Hoy la única protección real de Detekta es el muro de Vercel** («Vercel Authentication» en «All
 Deployments», desde el 17-oct-2026: Password Protection no existe en el plan Hobby, y con la cuenta
 nueva del 16-oct la producción quedó abierta un día, medido). En lo que sigue, «Password Protection»
-se lee como «el muro». La llave de la aplicación
-(`const TOKEN = "MiExtraccion2025"`) está integrada en `public/app.js`, `public/onboarding.js` y
-`public/pliego.js`, **a la vista de cualquiera que abra el código fuente**. Eso es una decisión
-correcta y documentada para un dueño sin terminal: el muro está delante.
+se lee como «el muro». Detrás del muro está la segunda capa: **la sesión del dueño** (correo y
+contraseña, `lib/sesion.js`). Hasta el 17-oct-2026 la llave de la aplicación
+(`const TOKEN = "[llave retirada el 17-oct-2026]"`) estaba integrada en `public/app.js`,
+`public/onboarding.js` y `public/pliego.js`, a la vista de cualquiera; desde entonces ninguna llave
+vive en la página y la vieja está retirada (su huella, en `LLAVES_RETIRADAS_SHA256`).
 
 **El riesgo de secuencia:** vender obliga a quitar ese muro —no se puede dar una contraseña común a
 todos los clientes— y **en el instante en que se quita, la aplicación queda sin ninguna protección**,
