@@ -42,8 +42,13 @@ en uno, cámbielo (§10).
    El pase `VERCEL_AUTOMATION_BYPASS_SECRET` (§3.5) debe estar en los secretos de GitHub y en el
    entorno de Claude Code, junto a `HISTORICO_TOKEN`: sin él, flujos, rutinas y skills chocan con el
    muro antes de llegar a la aplicación.
-7. [sin verificar] Con el muro puesto, quien abra la aplicación necesita además acceso al proyecto
-   en Vercel: su correo y contraseña de Detekta solo sirven después de pasar el muro.
+7. Con el muro puesto, quien abra la aplicación necesita además acceso al proyecto en Vercel: su
+   correo y contraseña de Detekta solo sirven después de pasar el muro. Usted, dueño del proyecto,
+   pasa solo si su Chrome tiene abierta la sesión de Vercel (si no, Vercel le pide entrar y lo
+   devuelve a la aplicación); cualquier otra persona ve la pantalla de entrar de Vercel y, como
+   mucho, «pedir acceso» (documentación de Vercel, «Restrict access to deployments with Vercel
+   Authentication», leída el 18-oct-2026). Medido el mismo día en la vista previa: sin el pase,
+   302 hacia `vercel.com/sso-api`.
 
 ### 0.1 bis · Crear su cuenta (sin terminal)
 
@@ -65,7 +70,8 @@ puede crear otra cuenta (la aplicación responde «La cuenta de esta aplicación
 Authentication» en todo el sitio («All Deployments»), que pide iniciar sesión en Vercel antes de
 entrar. Es gratis en el plan Hobby; la contraseña de Vercel («Password Protection») no existe en
 Hobby (§9). Detrás del muro, **su sesión de dueño** (correo y contraseña): ninguna llave vive en la
-página. El gate de clave del navegador no protege nada.
+página. (Lo que antes se escribía aquí —«el gate de clave del navegador no protege nada»— valía para la
+clave que comparaba la pantalla; la entrada con correo y contraseña la comprueba el servidor.)
 
 ### 0.2 · Entrar, salir y lo que pasa si se equivoca
 

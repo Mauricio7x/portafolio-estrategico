@@ -15589,6 +15589,13 @@ async function main() {
       assert.strictEqual(c4.error, "Sincronizando por primera vez.", "el 503 de sincronización no se toca: la pantalla espera");
       const c5 = await leer9(200, { ok: true, error: undefined, resultados: [] });
       assert.strictEqual(c5.ok, true, "un 200 no se redacta");
+      /* EL 503 DE LA LLAVE RETIRADA SE LEE EN LA PANTALLA DE ALTA, Y QUIEN LA LEE ES EL QUE
+         ADMINISTRA (navegador real, 18-oct-2026): envuelto en «no hay nada que pueda hacer desde
+         aquí: avise a quien lo administra» contradecía su propia instrucción de rotar la llave. */
+      const SesionA9 = require("../lib/sesion.js");
+      const cRetirada9 = await leer9(503, { ok: false, motivo: "llave_retirada", error: SesionA9.MSG_LLAVE_RETIRADA });
+      assert.strictEqual(cRetirada9.error, SesionA9.MSG_LLAVE_RETIRADA,
+        `el 503 de la llave retirada le habla al dueño que la tiene que cambiar; no se envuelve en «avise a quien lo administra»:\n${cRetirada9.error}`);
       /* EL HERMANO VIVO: el tablero añadía «puede iniciar una carga» a TODO 503, y
          con el sitio mal configurado esa acción no puede funcionar. */
       assert.strictEqual(c1.sitio_mal_configurado, true, "el cuerpo redactado marca que es configuración del sitio");

@@ -78,7 +78,10 @@
     const MSG_503 = "Esta parte de la aplicación está fuera de servicio porque falta algo en la configuración del "
       + "sitio. No es un problema suyo y no hay nada que pueda hacer desde aquí: avise a quien lo administra";
     const esDeConfiguracion = (c) => {
-      if (!c || typeof c !== "object" || c.sincronizando) return false;
+      /* La llave retirada (op=crear-cuenta) le habla a quien la tiene que cambiar: el que
+         la lee en la pantalla de alta ES quien administra, y «no hay nada que pueda hacer»
+         contradecía su propia instrucción (navegador real, 18-oct-2026). */
+      if (!c || typeof c !== "object" || c.sincronizando || c.motivo === "llave_retirada") return false;
       const t = typeof c.error === "string" ? c.error : "";
       return /\b[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+\b/.test(t) || /faltan? credenciales/i.test(t);
     };
