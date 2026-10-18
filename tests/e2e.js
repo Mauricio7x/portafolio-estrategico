@@ -35693,6 +35693,30 @@ async function main() {
         assert.ok(!/solo \d+ casos/.test(PT.limiteEntidadMedido(tabla2).frase), "con 5 casos deja de decir «solo N casos»");
         const pt = PT.pisoTecho({ presupuesto_oficial: 100000000, costo_directo: 60000000, aiu: { administracion_pct: 10, imprevistos_pct: 3, utilidad_pct: 5 } });
         assert.strictEqual(pt.limite_entidad_medido && pt.limite_entidad_medido.frase, lim.frase, "el panel Piso / Techo lee la misma tabla");
+        /* 5c · ese aviso va en ÁMBAR y se cuenta APARTE (18-oct-2026, decisión del
+           dueño): marca «justificar» sobre el nivel informativo, sin tocar el
+           semáforo ni el color/conteo de los demás informativos. Se EJECUTA el
+           trozo real del render de app.js (la lista y la línea de conteos). */
+        const r90 = F1.validarFormulario1({ oferta: ofertaOk, formulario: form, presupuesto_oficial: total5 / 0.90, tope_aiu_pct: 30 });
+        assert.strictEqual(en90.marca, "justificar");
+        assert.strictEqual(r90.para_justificar, 1, "el aviso del rango se cuenta aparte");
+        assert.strictEqual(r90.informativos, r90.veredictos.filter((x) => x.nivel === "informativo" && x.id !== "temeraria").length, "y NO como «para arreglar sin riesgo»");
+        assert.notStrictEqual(r90.semaforo, "revisar", "no es motivo de rechazo");
+        assert.strictEqual(r90.semaforo, F1.validarFormulario1({ oferta: ofertaOk, formulario: form, presupuesto_oficial: total5 / 0.95, tope_aiu_pct: 30 }).semaforo, "el semáforo no cambia por el aviso");
+        const appJs = require("fs").readFileSync(require("path").join(__dirname, "..", "public", "app.js"), "utf8");
+        const iUl = appJs.indexOf('<ul class="mt-3 space-y-2 text-sm">${vs.map(');
+        const iFin = appJs.indexOf("</p>`;", iUl);
+        assert.ok(iUl > 0 && iFin > iUl, "app.js sin el render de la revisión");
+        const render = new Function("r", "vs", "esc", "return `" + appJs.slice(iUl, iFin + 4) + "`;");
+        const escR = (x) => String(x == null ? "" : x);
+        const html = render({ ...r90, guardado: false }, r90.veredictos, escR);
+        const liTem = html.split("<li").find((t) => t.includes(lim.frase));
+        assert.ok(liTem && /bg-amber-50/.test(liTem) && !/bg-blue-50/.test(liTem), "el aviso del rango se pinta en ámbar, no en azul");
+        assert.ok(html.includes("Tenga lista la justificación (1)"), "la etiqueta propia en el conteo");
+        const r6b = F1.validarFormulario1({ oferta: { ...ofertaOk, items: [{ ...ofertaOk.items[0], total: 5500000 }, ofertaOk.items[1], ofertaOk.items[2]], total: 20500000 }, formulario: form, presupuesto_oficial: 21000000, tope_aiu_pct: 30 });
+        const html6 = render({ ...r6b, guardado: false }, r6b.veredictos, escR);
+        assert.ok(/bg-blue-50/.test(html6.split("<li").find((t) => /Ley 1882/.test(t)) || ""), "los demás informativos siguen en azul");
+        assert.ok(!html6.includes("Tenga lista la justificación"), "sin el aviso no aparece la etiqueta");
       }
       // 6 · error aritmético → informativo (no rechaza)
       const r6 = F1.validarFormulario1({ oferta: { ...ofertaOk, items: [{ ...ofertaOk.items[0], total: 5500000 }, ofertaOk.items[1], ofertaOk.items[2]], total: 20500000 }, formulario: form, presupuesto_oficial: 21000000, tope_aiu_pct: 30 });
