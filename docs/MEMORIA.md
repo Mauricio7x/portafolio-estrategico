@@ -19561,6 +19561,38 @@ En una línea: la guía §0.1 bis y el mensaje de «la llave no coincide» manda
   Tres mutaciones (el mensaje viejo, la guía vieja, el aviso sin la frase) ponen el bloque en rojo.
 - **Lo que no se tocó.** El mensaje de «falta `HISTORICO_TOKEN`» sigue nombrando «Settings → Environment Variables»: es la ruta de una variable del proyecto, y en esta cuenta la variable es compartida. No manda a copiar nada, así que se dejó como está.
 
+### Los pliegos de más de 20 MB que se midieron son escaneos: bajarlos por partes no da texto (18-oct-2026)
+
+En una línea: los 4 pliegos y documentos base de más de 20 MB que se pudieron medir (de los 15 de 228 procesos de la
+medición del plan con el definitivo por encima del tope) son escaneos sin una sola letra de texto, 0 caracteres en 456
+páginas; construir la descarga por partes de la Fase C sería pagar unas 15 peticiones y ~400 MB de bajada por un PDF de
+45 MB (estimado del plan, sin medir) para no leer nada: el camino es el OCR, y en estos cuatro el OCR deja un anticipo «sí» falso que también da main con texto nativo.
+
+> PENDIENTE · decidir con el dueño si la Fase C se cierra (no construir la descarga de más de 20 MB, porque los 4 medidos son escaneos) o se cambia por OCR de esos escaneos; el OCR de la app es OCR.space, una petición por página (134-142 por pliego), y su tarifa no se ha podido verificar.
+
+> PENDIENTE · el detector del anticipo (`dictamen_reglas`) da «sí» con la frase de la capacidad residual «presupuesto oficial menos el anticipo o pago anticipado cuando haya lugar», también en una sola línea de texto nativo (reproducido el 18-oct-2026 con `hechosDeTexto` de main). CO1.REQ.10725252 no tiene anticipo (forma de pago 50 % / 40 % / 10 % por avance, pág. 9) y la lectura dice «sí» citando la pág. 43. En 41 textos nativos de pliego de la sesión, ninguno de los 10 «sí» cita una fórmula. El anticipo entra al capital de trabajo: va con plan y visto bueno.
+
+**Cómo se midió.** SECOP II respondió 403 a la descarga desde la sesión (Microsoft-Azure-Application-Gateway, 18-oct
+05:08 UTC). El dueño bajó los 4 PDF en su navegador y los subió a una carpeta de Drive compartida «con el vínculo»; desde
+la sesión se bajaron por `drive.usercontent.google.com` con el mismo número de bytes que publica dmgg-8hin. Esa vía sirve
+para las próximas mediciones con archivos que SECOP II no entrega aquí. Texto: el pdf.js de `public/vendor` con
+`lineasDePagina` de `public/pliego.js`, y pdftotext de control. OCR: tesseract 5 local en español a 300 ppp, que NO es el
+OCR.space de la app; sirve de indicio de lo que da un OCR, no de medida del de la app.
+
+| Proceso | Archivo | MB | Páginas | Hecho por | Texto | OCR: presupuesto 1.1 | OCR: anticipo (verdad en la imagen) |
+|---|---|---|---|---|---|---|---|
+| CO1.REQ.10168183 | DOCUMENTO BASE .pdf | 23,3 | 80 | Epson Scan 2 | 0 | $7.513.410.338,51, pág. 5 (bien) | «sí» citando la fórmula de la pág. 40; la verdad: 50 %, pág. 79 |
+| CO1.REQ.11187692 | DOCUMENTO BASE DEFINITIVO.pdf | 39,6 | 100 | HP Scan | 0 | sin dato: la tabla sale revuelta | «sí» citando la fórmula de la pág. 53; la verdad: 40 %, pág. 99 |
+| CO1.REQ.10725252 | PLIEGO DE CONDICIONES DEFINITIVO.pdf | 43,1 | 134 | Smart Touch | 0 | sin dato (pliego propio, sin 1.1) | «sí» FALSO, pág. 43; no hay anticipo |
+| CO1.REQ.11035775 | PLIEGO … LP-CARDIQUE-010-2026_0001_.pdf | 48,1 | 142 | HP Scan | 0 | sin dato (pliego propio) | sin dato; no hay anticipo (80 % / 20 %) |
+
+- El OCR no sacó ningún hito del cronograma en los cuatro: las tablas salen con las columnas revueltas.
+- Ninguna cifra inventada: donde la tabla no se leyó, el presupuesto queda sin dato, como debe.
+- Tiempo del OCR local: de 4,5 a 15,8 s por página con 4 a la vez en 4 núcleos (un tesseract con varios hilos por cada
+  proceso se atascó: con `OMP_THREAD_LIMIT=1` baja a 3,4 s por página a solas).
+- Lo que esto NO dice: cuántos de los otros 11 son escaneos. El tamaño lo sugiere, porque un pliego de 130 páginas con texto pesa
+  pocos MB y estos traen una imagen por página, pero no se midió [inferencia].
+
 ### El tablero de pendientes mentía: la revisión del 18-oct, uno por uno contra el código (18-oct-2026)
 
 En una línea: de 42 marcadores «> PENDIENTE» revisados el 18-oct contra el árbol, 6 ya estaban resueltos —uno de ellos agrupaba tres asuntos, y varios llevaban tres semanas hechos— y seguían contando como abiertos porque la sesión que los arregló marcó su sección como SUPERADA o abrió una nueva, pero no editó el marcador; `estado.js` solo lee los marcadores.
