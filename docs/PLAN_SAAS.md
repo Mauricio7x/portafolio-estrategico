@@ -94,7 +94,7 @@ entonces resuelve `rup_…`/`cons_…` por `lib/perfil_resolver` y exige perfil 
 El trabajo es acotado, no una reescritura.
 
 ### B3 · No hay cuentas, y la llave está a la vista
-`const TOKEN = "MiExtraccion2025"` vive en `public/app.js`, `public/onboarding.js` y
+`const TOKEN = "[llave retirada el 17-oct-2026]"` vive en `public/app.js`, `public/onboarding.js` y
 `public/pliego.js`. Es una decisión consciente y correcta **para un solo usuario**: el dueño no tiene
 terminal. Deja de serlo el día que hay clientes.
 
