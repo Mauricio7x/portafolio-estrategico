@@ -214,8 +214,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 346 secciones (22 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 19104  Pedir otro rango ya no vuelve a empezar el histórico: el servidor responde 409 y el botón c…
+· MEMORIA · docs/MEMORIA.md — 347 secciones (22 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 19146  El límite que calculó la entidad, medido en 3 procesos cerrados, va debajo del aviso de pre…
   L 19156  El techo de la tarjeta, sin la guía entera: `solo=tope` (17-oct-2026)
   L 19174  El plazo del pliego por la columna de su tabla 1.1: medido, NO fusionado (18-oct-2026)
@@ -225,6 +224,7 @@
   L 19294  El muro de Vercel quedó puesto: las tareas de Vercel lo pasan, y cómo se mide (17-oct-2026)
   L 19320  El dictamen, el cronograma y los descuentos leen el documento que ES el pliego, no la últim…
   L 19383  La sonda del muro: el latido y el vigilante prueban la portada sin el pase (18-oct-2026)
+  L 19422  El tablero de pendientes mentía: la revisión del 18-oct, uno por uno contra el código (18-o…
 
 · DOCUMENTOS docs/ — 71 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)

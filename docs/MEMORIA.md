@@ -16580,7 +16580,7 @@ commit que solo cambia `.md` corre la suite entera una vuelta (1/1); y el encarg
 claude.ai es un puntero al repositorio, no una copia —medido de paso que la cuenta no tiene ninguna
 rutina programada—.
 > RESUELTO el 26-sep-2026 por «Qué va a la memoria, una vuelta de suite para los textos y los encargos de rutina como punteros (26-sep-2026)» · el encargo de la rutina de Precios en claude.ai es ya el puntero de `docs/PRECIOS_DESDE_CLAUDE_CODE.md` § «La rutina», puesto tras la fusión del pull request 170 (sin verificar desde la sesión: si la rutina tiene el repositorio adjunto)
-> PENDIENTE · el dueño crea en la web (claude.ai/code/routines, con el repositorio adjunto) las tres rutinas de `docs/RUTINAS.md`, cada una con su encargo de una línea
+> RESUELTO el 18-oct-2026 por «El tablero de pendientes mentía: la revisión del 18-oct, uno por uno contra el código (18-oct-2026)» · medido con la lista de tareas programadas: las tres existen desde el 26-sep (suite de madrugada y vigilante de la mañana activas, calendario del mes en pausa). Era: el dueño crea en la web (claude.ai/code/routines, con el repositorio adjunto) las tres rutinas de `docs/RUTINAS.md`, cada una con su encargo de una línea
 
 **La memoria.** Crecía unos 15 KiB por día (`estado.js`, ritmo de 7 días) porque «toda decisión
 nueva» se leía como «todo cambio»: un ajuste de pocas líneas arrastraba sección, índice y mapa. El
@@ -18734,7 +18734,7 @@ En una línea: la llave del servidor (`HISTORICO_TOKEN`) vivía escrita en tres 
 - **Lo que no se hizo, a propósito.** No hay recuperación por correo: con una sola cuenta, olvidar la contraseña se arregla borrando `cuenta:dueno` en la consola de Upstash y creándola otra vez con la llave (la guía lo dice). Vercel Password Protection no se tocó: quitarla es F3-11 del plan, aparte. No se rotó nada: eso lo hace el dueño en Vercel, y hasta que lo haga la llave vieja sigue en la historia de git.
 - **Medido.** Bloque «unidad sesión del dueño» con el handler real; diez mutaciones (aceptar la cookie sin validar, segunda alta, la marca sin NX, quitar el límite, aceptar la llave desde una página, quitar el CSRF, salir sin borrar, la llave eximiendo de la cuota, respuesta distinta para correo inexistente, sesión caducada aceptada) y las diez caen. Chromium a 390 px: crear la cuenta, ver la lista (20 tarjetas), recargar sin volver a entrar, salir (la cookie copiada responde 401), entrar mal y bien, y la sesión cerrada por detrás abre el gate al pulsar «Buscar»; 0 errores de JavaScript.
 
-> PENDIENTE · el dueño, en este orden (docs/CONFIGURACION_TOKENS.md § 0.1): desplegar (el alta se niega sola mientras la llave vieja siga en Vercel), cambiar `HISTORICO_TOKEN` en Vercel por una cadena nueva y volver a desplegar, crear su cuenta con la llave nueva, y copiar el mismo valor al secreto `HISTORICO_TOKEN` de GitHub (flujo de la carga completa) y al entorno de Claude Code (rutinas y skills).
+> RESUELTO el 18-oct-2026 por «El tablero de pendientes mentía: la revisión del 18-oct, uno por uno contra el código (18-oct-2026)» · hecho por el dueño el 18-oct. Era: en este orden (docs/CONFIGURACION_TOKENS.md § 0.1): desplegar (el alta se niega sola mientras la llave vieja siga en Vercel), cambiar `HISTORICO_TOKEN` en Vercel por una cadena nueva y volver a desplegar, crear su cuenta con la llave nueva, y copiar el mismo valor al secreto `HISTORICO_TOKEN` de GitHub (flujo de la carga completa) y al entorno de Claude Code (rutinas y skills).
 
 **Revisión adversaria del mismo día (lo que se corrigió y por qué no se deshace):**
 
@@ -19418,3 +19418,12 @@ En una línea: el 16-oct la producción quedó abierta un día sin que nadie lo 
 **Lo medido.**
 - Con el muro puesto, el paso real y las dos líneas del vigilante, corridos contra producción el 18-oct, respondieron `302 https://vercel.com/sso-api?url=…` y el texto del muro: «El muro de Vercel está puesto.».
 - El dueño confirmó que, con el primer cuadro de «Add Bypass» vacío, Vercel creó el pase solo.
+
+### El tablero de pendientes mentía: la revisión del 18-oct, uno por uno contra el código (18-oct-2026)
+
+En una línea: de 42 marcadores «> PENDIENTE» revisados el 18-oct contra el árbol, 6 ya estaban resueltos —uno de ellos agrupaba tres asuntos, y varios llevaban tres semanas hechos— y seguían contando como abiertos porque la sesión que los arregló marcó su sección como SUPERADA o abrió una nueva, pero no editó el marcador; `estado.js` solo lee los marcadores.
+
+- **Qué se cerró.** Los de las pruebas con fecha del 31-oct, 1-nov y enero (cerrados por la mañana y medidos con un precargador que adelanta `Date`); el sorteo en mínima cuantía y el consorcio (commit 9152f8f, 27-sep); el revisor de la oferta (commit 1830e61, 28-sep); las tres rutinas de `docs/RUTINAS.md` (existen desde el 26-sep, medido con la lista de tareas programadas), y el cambio de `HISTORICO_TOKEN` (hecho por el dueño el 18-oct: la llave vieja da 401 en producción, la nueva entra, la cuenta del dueño existe, y la variable está en GitHub y en el entorno «Detekta con internet» con 40 caracteres).
+- **Cómo se revisó el resto.** Cuatro agentes de solo lectura, cada uno con unas 10 líneas, con la regla de no marcar RESUELTO sin evidencia; la mayoría ejecutó la función real con `node -e`, y donde solo hubo lectura se dijo. Los 36 que quedan siguen abiertos, a medias, o dependen de una acción o decisión del dueño (R2, correo, OCR, Vercel Pro, el 80 %).
+- **La regla que hay que no volver a romper.** Quien arregla lo que pide un marcador edita ESE marcador a «> RESUELTO el … por «título» · …» en el mismo commit. Marcar la sección como SUPERADA no basta: el tablero del dueño lee el marcador, no el título.
+
