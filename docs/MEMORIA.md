@@ -19571,7 +19571,7 @@ medición del plan con el definitivo por encima del tope) son escaneos sin una s
 páginas; construir la descarga por partes de la Fase C sería pagar unas 15 peticiones y ~400 MB de bajada por un PDF de
 45 MB (estimado del plan, sin medir) para no leer nada: el camino es el OCR, y en estos cuatro el OCR deja un anticipo «sí» falso que también da main con texto nativo.
 
-> PENDIENTE · decidir con el dueño si la Fase C se cierra (no construir la descarga de más de 20 MB, porque los 4 medidos son escaneos) o se cambia por OCR de esos escaneos; el OCR de la app es OCR.space, una petición por página (134-142 por pliego), y su tarifa no se ha podido verificar.
+> RESUELTO el 18-oct-2026 por «La Fase C se cierra: no se construye la descarga de pliegos de más de 20 MB (18-oct-2026)» · lo que se había dicho: decidir con el dueño si la Fase C se cierra (no construir la descarga de más de 20 MB, porque los 4 medidos son escaneos) o se cambia por OCR de esos escaneos; el OCR de la app es OCR.space, una petición por página (134-142 por pliego), y su tarifa no se ha podido verificar.
 
 > RESUELTO el 18-oct-2026 por «La fórmula en prosa no afirma el anticipo: «presupuesto oficial menos el anticipo…» es mención (18-oct-2026)» · lo que se había dicho: el detector del anticipo (`dictamen_reglas`) da «sí» con la frase de la capacidad residual «presupuesto oficial menos el anticipo o pago anticipado cuando haya lugar», también en una sola línea de texto nativo (reproducido el 18-oct-2026 con `hechosDeTexto` de main). CO1.REQ.10725252 no tiene anticipo (forma de pago 50 % / 40 % / 10 % por avance, pág. 9) y la lectura dice «sí» citando la pág. 43. En 41 textos nativos de pliego de la sesión, ninguno de los 10 «sí» cita una fórmula. El anticipo entra al capital de trabajo: va con plan y visto bueno.
 
@@ -19652,6 +19652,18 @@ DESPUÉS de la lectura automática, que ya no tapa el pliego y cuya frase nombra
 lector con el `pliego.js` real comprueba que el nombre viaja, que el motivo se pinta escapado y no como fallo, que el
 cronograma va sin el texto y que el dictamen se pide igual. Navegador real a 390 y 1280 px con la sesión del dueño: Formulario,
 adenda, «DocBase_» y pliego en ese orden; consola limpia.
+
+### La Fase C se cierra: no se construye la descarga de pliegos de más de 20 MB (18-oct-2026)
+
+En una línea: el dueño cerró la Fase C del plan del texto del pliego (18-oct-2026): los 4 pliegos de más de 20 MB que se
+midieron son escaneos sin texto, así que bajarlos por partes desde la app (unas 15 peticiones y ~400 MB por un PDF de 45 MB,
+estimado del plan) no daría nada que leer; esos procesos siguen con el aviso de que el documento no se lee solo y se revisa en
+SECOP II.
+
+**Lo que no hay que deshacer.** No construir la descarga por partes de documentos de más de 20 MB sin medir antes que traen
+texto: la medición de la sección «Los pliegos de más de 20 MB que se midieron son escaneos…» dio 0 caracteres en 456 páginas.
+El OCR de esos escaneos por la app (OCR.space, una petición por página) es otra decisión, no tomada; y la lectura por OCR de
+Precios no llega al dictamen (sección «La carga en Precios no entra al vigía…», punto g).
 
 ### La fórmula en prosa no afirma el anticipo: «presupuesto oficial menos el anticipo…» es mención (18-oct-2026)
 
