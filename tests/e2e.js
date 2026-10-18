@@ -6901,6 +6901,24 @@ async function main() {
       assert.ok(Sesion.MAX_INTENTOS_POR_CORREO >= 10 * Sesion.MAX_INTENTOS_POR_CUENTA, "el tope solo por correo es alto: no puede convertirse en un botón para dejar fuera al dueño");
       assert.strictEqual((await post("/api/admin?op=entrar", { correo: correoDueno, contrasena: claveDueno }, { "x-real-ip": "10.8.9.9" })).status, 429,
         `pasados ${Sesion.MAX_INTENTOS_POR_CORREO} intentos con ese correo desde todas partes, se pausa`);
+      /* (5d) LA CONEXIÓN DONDE EL DUEÑO YA ENTRÓ NO SE CIERRA POR ESE TOPE (18-oct-2026): el dueño
+         entra bien desde la suya, un tercero agota los 50 del correo desde diez conexiones, y el
+         dueño sigue entrando desde la suya; desde una conexión nueva, el tope sí lo frena. Contra el
+         árbol anterior, la entrada desde la conexión conocida da 429. */
+      await redis.del(...await redis.scan("intentos:*"));
+      assert.strictEqual((await post("/api/admin?op=entrar", { correo: correoDueno, contrasena: claveDueno }, { "x-real-ip": "10.9.0.1" })).status, 200,
+        "el dueño entra bien desde su conexión y la deja marcada");
+      // la entrada buena del dueño ya contó uno: con estos, el correo llega justo al tope
+      for (let i = 0; i < Sesion.MAX_INTENTOS_POR_CORREO - 1; i++) {
+        const x = await post("/api/admin?op=entrar", { correo: correoDueno, contrasena: "mala de prueba" }, { "x-real-ip": `10.7.${Math.floor(i / 5)}.${i % 5}` });
+        assert.strictEqual(x.status, 401, `intento ajeno ${i + 1}: 401`);
+      }
+      assert.strictEqual((await post("/api/admin?op=entrar", { correo: correoDueno, contrasena: claveDueno }, { "x-real-ip": "10.9.0.1" })).status, 200,
+        "con el tope del correo agotado por terceros, el dueño entra desde la conexión donde ya entró");
+      assert.strictEqual((await post("/api/admin?op=entrar", { correo: correoDueno, contrasena: claveDueno }, { "x-real-ip": "10.9.0.2" })).status, 429,
+        "desde una conexión nueva el tope del correo sigue valiendo");
+      const marcas = await redis.scan("intentos:conocida:*");
+      assert.ok(marcas.length >= 1 && await redis.ttl(marcas[0]) > 0, "la marca de conexión conocida existe y caduca");
       await redis.del(...await redis.scan("intentos:*"));
       for (let i = 0; i < Sesion.MAX_INTENTOS_POR_IP; i++) {
         const x = await post("/api/admin?op=entrar", { correo: `prueba${i}@ninguna.co`, contrasena: "mala de prueba" }, { "x-real-ip": "10.2.0.1" });
