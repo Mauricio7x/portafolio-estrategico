@@ -293,8 +293,9 @@ por su cuenta: no llevan nada de esto.
 1. Vercel → el proyecto → **Settings** → **Deployment Protection**.
 2. En el bloque **Protection Bypass for Automation**, pulsar **Add Secret**. Se abre la ventana
    **Add Bypass**, con dos cuadros:
-   - el **primero es el valor del pase**, no un nombre: si se escribe algo, Vercel exige exactamente
-     32 caracteres («Secret must be 32 characters…»);
+   - el **primero es el valor del pase**, no un nombre: **déjelo vacío** y Vercel lo crea solo
+     (así lo hizo el dueño el 17-oct-2026); si se escribe algo, Vercel exige exactamente 32
+     caracteres («Secret must be 32 characters…»);
    - el **segundo es una nota** para recordar para qué es (por ejemplo, «GitHub y rutinas»).
 3. Pulsar **Add Bypass** y copiar el pase de la fila nueva. No regenerarlo ni borrarlo después:
    invalida el pase en lo ya desplegado.
@@ -746,7 +747,10 @@ se vuelve a pegar la misma URL y continúa donde quedó. Cuando responde `done:t
   vista en el código. Con «Standard Protection» —la que trae un proyecto nuevo— la dirección de
   producción queda abierta: así estuvo la cuenta nueva del 16 al 17-oct-2026 (medido). La
   contraseña de Vercel no existe en el plan Hobby; en Pro cuesta $20 al mes por proyecto
-  (documentación de Vercel, consultada el 17-oct-2026).
+  (documentación de Vercel, consultada el 17-oct-2026). **Lo vigilan dos sondas** que llaman a la
+  portada SIN el pase: el paso «¿El muro de Vercel sigue puesto?» del latido de GitHub (la corrida
+  sale en rojo si la portada responde 200) y el vigilante de la mañana (lo dice en su primera
+  línea).
 - **No pegar `UPSTASH_REDIS_REST_TOKEN` ni `OCRSPACE_API_KEY` en ningún chat, correo ni archivo del
   repositorio.** Esas dos sí son contraseñas de verdad. Solo van en Vercel.
 - **Rotar `SOCRATA_APP_TOKEN`** si alguna vez se pegó en una URL pública.
