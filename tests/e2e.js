@@ -9406,6 +9406,7 @@ async function main() {
       ["ADENDA No. 1.pdf", "adenda", /es una adenda.*empiece por «pliego» o «documento base»/],
       ["ADENDA No. 1 AL PLIEGO DE CONDICIONES.pdf", "adenda", /es una adenda/],
       ["PROPUESTA ECONOMICA Bl 2 IUPB.(PLIEGOS DEFINITIVOS ADENDA 2) .pdf", "adenda", /es una adenda/],
+      ["CANTIDADES PLIEGO DEFINITIVO ADENDA 2.pdf", "adenda", /es una adenda/],
       ["ANEXOS PLIEGO DE CONDICIONES.pdf", "acompana_al_pliego", /anexo, un formato o unas observaciones/],
       ["OBSERVACIONES PLIEGO DEF LP-004-2026.pdf", "acompana_al_pliego", /anexo, un formato o unas observaciones/],
       ["RESPUESTA OBSERVACIONES PROYECTO PLIEGO DE CONDICIONES.pdf", "otro_documento", /«respuesta a observaciones»/],
@@ -9428,6 +9429,7 @@ async function main() {
       ["DocBase_LicitacionObra_ISocialLV2.pdf"], ["Documento_base_Licitacion_Obra_Publica Definitivo.pdf"], ["DOCUMENTO%20BASE.pdf"], ["scan001.pdf"],
       ["Index?DocumentId=837410065&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier="],
       ["8. Documento Base - Pliego de Condiciones Definitivo Adenda 1 - LIC 004 MT 2026.pdf"], ["Documento Base Villa María III MODIFICADO CON ADENDA No. 1.pdf"],
+      ["PROYECTO DE PLIEGO, ANEXOS, FORMATOS, MATRICES Y FORMULARIO 1.pdf"],
       ["", "lector"], [undefined, "lector"],
     ]) {
       const id = `CO1.REQ.PRE${String(++k).padStart(3, "0")}`;

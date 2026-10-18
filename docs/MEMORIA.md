@@ -19623,7 +19623,9 @@ ver el pendiente), y en 4 de 33 procesos abiertos cargarlo en Precios era el ÚN
 guarda lo que llega sin nombre: un navegador con el código de antes sigue funcionando como antes. (c) Una adenda SUELTA no se
 guarda (el dictamen leería solo la adenda; decisión del dueño), pero el pliego con la adenda incorporada sí: con el nombre del
 pliego DELANTE de «adenda» («Documento Base … MODIFICADO CON ADENDA No. 1», 3 en la muestra), salvo que antes diga
-«propuesta» u «oferta». (d) La respuesta es 200 con `ok:false, no_es_el_pliego:true` y la frase en `error`: no es un fallo, y un
+«propuesta», «oferta», «presupuesto», «cantidades» o «formulario». La misma regla salva el pliego con todo junto: «PROYECTO DE
+PLIEGO, ANEXOS, FORMATOS, MATRICES Y FORMULARIO 1» (CO1.REQ.10367183) es el único de los 402 nombres de tipo presupuesto de la
+muestra con el nombre del pliego delante, y ningún formulario real cambia. (d) La respuesta es 200 con `ok:false, no_es_el_pliego:true` y la frase en `error`: no es un fallo, y un
 navegador con el código de antes dice «No se pudo guardar la versión del pliego: <motivo>», que es la verdad. La frase dice lo
 que el dictamen está leyendo DE VERDAD (`textoGuardado`: «siguen con «nombre»» o «la versión N del pliego») o que todavía no
 hay pliego guardado y qué cargar; el navegador de ahora no le pasa el motivo al dictamen como fallo del vigía. (e) Con un
