@@ -8150,6 +8150,98 @@ async function main() {
     // un documento que no es pliego no se lee para esto
     assert.strictEqual(Dp.hechosDeTexto(def, { tipo: "estudio_previo" }).presupuesto_pliego, null);
   }
+  bqTextoDelPliego: { if (!corre("unidad el texto del pliego")) break bqTextoDelPliego;
+    /* QUÉ TEXTO LEEN EL DICTAMEN, EL CRONOGRAMA Y LOS DESCUENTOS (18-oct-2026). Hasta hoy, la última versión del vigía:
+       el documento base (el pliego tipo) no entra al vigía y el dictamen decía «no hay texto» con el pliego leído (85 de
+       228 licitaciones de obra), y un anexo con «pliego» en el nombre leído después del pliego quedaba de último (7 de
+       228). Con el handler REAL de documentos sobre el Redis simulado y la `textoGuardado` real. */
+    const DocsT = require("../lib/documentos_proceso.js"), Dv = require("../lib/diff.js");
+    const { escribirJSONComprimido: escribirC } = require("../lib/almacen.js");
+    const { textoGuardado } = require("../lib/handlers/pliego/cronograma.js");
+    const routerT = require("../api/pliego.js");
+    const relleno = "Segunda página del documento del proceso, con texto suficiente para que la lectura cuente como texto.";
+    const txt = (s) => `\f1\n${s}\n\f2\n${relleno}\n`;
+    const PLIEGO = txt("PLIEGO DE CONDICIONES DEFINITIVO. La entidad no entregará al contratista anticipo y/o pago anticipado.");
+    const BASE = txt("DOCUMENTO BASE DEL PROCESO. 1.1. OBJETO, PRESUPUESTO OFICIAL, PLAZO Y UBICACIÓN del documento base.");
+    const OBS = txt("OBSERVACIONES AL PLIEGO DEFINITIVO. Pregunta 1: ¿se puede ampliar el plazo? Respuesta de la entidad: no.");
+    const arch = (id, nombre, tipo, fecha) => ({ id_documento: id, nombre, tipo, tipo_legible: DocsT.TIPOS[tipo].legible, fecha_carga: fecha, de_la_entidad: true, legible: true, url: "https://community.secop.gov.co/x" });
+    const sembrar = (id, archivos) => escribirC(redis, DocsT.claveDocs(id), { version: DocsT.VERSION, id_proceso: id, indice: { version: DocsT.VERSION, consultado_el: new Date().toISOString(), archivos, plan: archivos.map((a) => a.id_documento) }, leidos: {}, ilegibles: {} });
+    const leer = async (id, idDoc, texto) => { const r = await invocarPost(routerT, "/api/pliego?op=documentos", { id_proceso: id, id_documento: idDoc, texto }, CAB_TOKEN); assert.strictEqual(r.status, 200, JSON.stringify(r.cuerpo).slice(0, 300)); return r.cuerpo; };
+    // (1) el documento base leído es el texto del dictamen, aunque no entre al vigía
+    const idB = "CO1.REQ.TXT001";
+    await sembrar(idB, [arch("1", "DOCUMENTO BASE.pdf", "documento_base", "2026-09-10")]);
+    const rB = await leer(idB, "1", BASE);
+    assert.strictEqual(rB.version_pliego, null, "el documento base sigue fuera del vigía (decisión del 27-sep-2026)");
+    const tB = await textoGuardado(redis, idB);
+    assert.ok(/DOCUMENTO BASE DEL PROCESO/.test(tB.texto) && tB.version === null && /^doc:1:[0-9a-f]{12}$/.test(tB.texto_id) && tB.documento && tB.documento.nombre === "DOCUMENTO BASE.pdf",
+      `el dictamen lee el documento base leído (MUTACIÓN: solo el vigía, texto vacío): ${JSON.stringify({ ...tB, texto: tB.texto.slice(0, 40) })}`);
+    const dB = await invocar(routerT, `/api/pliego?op=dictamen&id_proceso=${idB}&perfil=helder`, CAB_TOKEN);
+    assert.ok(dB.status === 200 && dB.cuerpo.hay_texto === true && dB.cuerpo.documento_texto && dB.cuerpo.documento_texto.nombre === "DOCUMENTO BASE.pdf",
+      `y la consulta del dictamen ya no dice «no hay texto»: ${JSON.stringify(dB.cuerpo).slice(0, 300)}`);
+    // (2) el pliego y DESPUÉS unas observaciones con «pliego» en el nombre: el vigía no las registra y el texto es el pliego
+    const idO = "CO1.REQ.TXT002";
+    await sembrar(idO, [arch("1", "PLIEGO DEFINITIVO.pdf", "pliego", "2026-03-19"), arch("2", "OBSERVACIONES PLIEGO DEF LP-004-2026.pdf", "pliego", "2026-03-24")]);
+    const rP = await leer(idO, "1", PLIEGO), rO = await leer(idO, "2", OBS);
+    assert.ok(rP.version_pliego === 1 && rO.version_pliego === null && (await Dv.leerIndice(redis, idO)).versiones.length === 1,
+      `las observaciones no entran al vigía como versión del pliego (MUTACIÓN: sin \`esVersionDelPliego\` en el registro, versión 2): ${JSON.stringify([rP.version_pliego, rO.version_pliego])}`);
+    const tO = await textoGuardado(redis, idO);
+    assert.ok(/PLIEGO DE CONDICIONES DEFINITIVO/.test(tO.texto) && tO.version === 1 && tO.texto_id === 1 && tO.documento.nombre === "PLIEGO DEFINITIVO.pdf",
+      `el texto es el pliego, leído de su versión del vigía (el mismo sello de caché de antes; MUTACIÓN: sin excluir por nombre, las observaciones; leyendo siempre el guardado, versión nula): ${JSON.stringify({ ...tO, texto: tO.texto.slice(0, 40) })}`);
+    // (3) datos de antes: el vigía ya tiene las observaciones de última versión y no hay documentos leídos
+    const idV = "CO1.REQ.TXT003";
+    await Dv.registrarVersion(redis, { idProceso: idV, texto: PLIEGO, origen: "documentos:PLIEGO DEFINITIVO.pdf", ahora: Date.parse("2026-03-20T10:00:00Z") });
+    await Dv.registrarVersion(redis, { idProceso: idV, texto: OBS, origen: "documentos:OBSERVACIONES PLIEGO DEF LP-004-2026", ahora: Date.parse("2026-03-25T10:00:00Z") });
+    const tV = await textoGuardado(redis, idV);
+    assert.ok(tV.version === 1 && /PLIEGO DE CONDICIONES DEFINITIVO/.test(tV.texto), `sin documentos leídos, la última versión del vigía que sea del pliego, nunca un anexo de la lectura automática (MUTACIÓN: la última a secas, las observaciones): v${tV.version}`);
+    // (4) lo cargado A MANO después de la lectura automática gana; antes, no
+    const idM = "CO1.REQ.TXT004";
+    await sembrar(idM, [arch("1", "DOCUMENTO BASE.pdf", "documento_base", "2026-09-10")]);
+    await Dv.registrarVersion(redis, { idProceso: idM, texto: PLIEGO, origen: "lector", ahora: Date.parse("2026-01-01T00:00:00Z") });
+    await leer(idM, "1", BASE);
+    assert.ok(/DOCUMENTO BASE DEL PROCESO/.test((await textoGuardado(redis, idM)).texto), "lo cargado a mano ANTES de la lectura automática no tapa el documento leído (MUTACIÓN: lo manual siempre)");
+    await Dv.registrarVersion(redis, { idProceso: idM, texto: PLIEGO.replace("DEFINITIVO", "DEFINITIVO 2"), origen: "lector", ahora: Date.now() + 60000 });
+    const tM = await textoGuardado(redis, idM);
+    assert.ok(/DEFINITIVO 2/.test(tM.texto) && tM.version === 2 && tM.origen === "lector", `lo cargado a mano DESPUÉS gana: es como entra un pliego de más de 20 MB (MUTACIÓN: lo manual nunca): ${JSON.stringify({ ...tM, texto: tM.texto.slice(0, 40) })}`);
+    // (5) el orden: el definitivo antes que el borrador, el más reciente, y a igual fecha el pliego antes que el documento base
+    const ordenDe = (leidos) => DocsT.candidatosAlTextoDelPliego({ leidos }).map((x) => x.id_documento);
+    assert.deepStrictEqual(ordenDe({ 1: { nombre: "PLIEGO DEFINITIVO.pdf", tipo: "pliego", fecha_carga: "2026-04-01" }, 2: { nombre: "PROYECTO DE PLIEGO.pdf", tipo: "pliego_borrador", fecha_carga: "2026-05-01" } }), ["1", "2"], "el definitivo antes que un borrador más nuevo (MUTACIÓN: sin la clave del borrador, el borrador)");
+    assert.deepStrictEqual(ordenDe({ 1: { nombre: "Documento base borrador.pdf", tipo: "documento_base", fecha_carga: "2026-05-01" }, 2: { nombre: "DOCUMENTO BASE DEFINITIVO.pdf", tipo: "documento_base", fecha_carga: "2026-04-01" } }), ["2", "1"], "un documento base con «borrador» en el nombre también es borrador");
+    assert.deepStrictEqual(ordenDe({ 1: { nombre: "PLIEGO DEFINITIVO.pdf", tipo: "pliego", fecha_carga: "2026-01-29" }, 2: { nombre: "DOCUMENTO BASE .pdf", tipo: "documento_base", fecha_carga: "2026-02-12" } }), ["2", "1"], "el más reciente en SECOP II (MUTACIÓN: sin la fecha, el pliego por tipo)");
+    assert.deepStrictEqual(ordenDe({ 1: { nombre: "DOCUMENTO BASE.pdf", tipo: "documento_base", fecha_carga: "2026-02-12" }, 2: { nombre: "PLIEGO DEFINITIVO.pdf", tipo: "pliego", fecha_carga: "2026-02-12" } }), ["2", "1"], "a igual fecha, el pliego antes que el documento base (MUTACIÓN: sin la prioridad, el base)");
+    assert.deepStrictEqual(ordenDe({ 1: { nombre: "DOCUMENTO BASE.pdf", tipo: "documento_base", fecha_carga: "2026-02-12", hechos: { plantilla_en_blanco: true } }, 2: { nombre: "6.1_ANEXO_PLIEGO LP-003-2026.pdf", tipo: "pliego", fecha_carga: "2026-04-05" }, 3: { nombre: "Estudios previos.pdf", tipo: "estudio_previo", fecha_carga: "2026-04-05" } }), [], "ni la plantilla en blanco ni un anexo ni otro tipo de documento (MUTACIÓN: sin la plantilla, el documento base en blanco)");
+    for (const [n, si] of [["PLIEGO DE CONDICIONES DEFINITIVO.pdf", true], ["DOCUMENTO COMPLEMENTARIO AL PLIEGO DE CONDICIONES.pdf", true], ["ANEXOS PLIEGO DE CONDICIONES.docx", false], ["OFICIO PREGUNTAS Y RESPUESTAS LP-SI-002-2026 PLIEGO DEF.pdf", false], ["Anexo 3 - Glosario - Proyecto de Pliego.pdf", false], ["FORMATOS DEL PLIEGO.docx", false], ["MATRICES PLIEGO TIPO.zip", false], ["Apendice B - Transversal Cusiana - Proyecto de pliego.pdf", false]]) {
+      assert.strictEqual(DocsT.esVersionDelPliego({ tipo: "pliego", nombre: n }), si, `«${n}» ${si ? "es" : "no es"} una versión del pliego (nombres de los índices reales)`);
+    }
+    // (6) el documento leído que caducó en Redis cede al siguiente; el texto tiene el tope del vigía
+    const idX = "CO1.REQ.TXT006";
+    await sembrar(idX, [arch("1", "PLIEGO DEFINITIVO.pdf", "pliego", "2026-01-10"), arch("2", "DOCUMENTO BASE.pdf", "documento_base", "2026-02-12")]);
+    const largo = `\f1\nDOCUMENTO BASE LARGO.\n${"x".repeat(Dv.MAX_TEXTO + 5000)}\n`;
+    await leer(idX, "1", PLIEGO); await leer(idX, "2", largo);
+    const tX = await textoGuardado(redis, idX);
+    assert.ok(tX.texto.length === Dv.MAX_TEXTO && tX.recortado === true && tX.documento.nombre === "DOCUMENTO BASE.pdf", `el documento base más nuevo, con el tope de 400 KB del vigía y dicho (MUTACIÓN: sin el tope, ${tX.texto.length}): ${tX.recortado}`);
+    // dos documentos base (ninguno en el vigía): sin el texto guardado del más nuevo, el siguiente
+    const idX2 = "CO1.REQ.TXT008";
+    await sembrar(idX2, [arch("1", "DOCUMENTO BASE.pdf", "documento_base", "2026-01-10"), arch("2", "DOCUMENTO BASE MODIFICADO.pdf", "documento_base", "2026-02-12")]);
+    await leer(idX2, "1", BASE); await leer(idX2, "2", BASE.replace("del documento base", "del documento base modificado"));
+    await redis.del(DocsT.claveDoc(idX2, "2"));
+    const tX2 = await textoGuardado(redis, idX2);
+    assert.ok(/DOCUMENTO BASE DEL PROCESO/.test(tX2.texto) && !/modificado/.test(tX2.texto) && tX2.documento.nombre === "DOCUMENTO BASE.pdf", `sin el texto guardado del más nuevo, el siguiente (MUTACIÓN: parar en el primero, sin texto): ${JSON.stringify({ ...tX2, texto: tX2.texto.slice(0, 40) })}`);
+    // (7) dos documentos base distintos son dos textos distintos para el pedido de lectura
+    const idI = "CO1.REQ.TXT007";
+    await sembrar(idI, [arch("1", "DOCUMENTO BASE.pdf", "documento_base", "2026-09-10"), arch("2", "DOCUMENTO BASE MODIFICADO.pdf", "documento_base", "2026-09-20")]);
+    await leer(idI, "1", BASE); const id1 = (await textoGuardado(redis, idI)).texto_id;
+    await leer(idI, "2", BASE.replace("del documento base", "del documento base modificado")); const id2 = (await textoGuardado(redis, idI)).texto_id;
+    assert.ok(id1 && id2 && id1 !== id2, `cada documento base tiene su identidad: ${id1} / ${id2}`);
+    // …y el pedido de lectura a la sesión se reconoce por esa identidad: el de otro documento base no es el de este
+    const Dct = require("../lib/dictamen.js");
+    await redis.set(Dct.clavePedido(idI, "helder"), JSON.stringify({ el: new Date().toISOString(), version_texto: id1, ok: true }));
+    const conPedidoViejo = await invocar(routerT, `/api/pliego?op=dictamen&id_proceso=${idI}&perfil=helder`, CAB_TOKEN);
+    assert.strictEqual(conPedidoViejo.cuerpo.pedido_sesion, null, `un pedido del documento base anterior no es el del nuevo (MUTACIÓN: comparando la versión, nula en los dos): ${JSON.stringify(conPedidoViejo.cuerpo.pedido_sesion)}`);
+    await redis.set(Dct.clavePedido(idI, "helder"), JSON.stringify({ el: new Date().toISOString(), version_texto: id2, ok: true }));
+    const conPedido = await invocar(routerT, `/api/pliego?op=dictamen&id_proceso=${idI}&perfil=helder`, CAB_TOKEN);
+    assert.ok(conPedido.cuerpo.pedido_sesion && conPedido.cuerpo.pedido_sesion.version_texto === id2, "el pedido del documento vigente sí se reconoce");
+    console.log("· unidad el texto del pliego: el documento base leído llega al dictamen, los anexos con «pliego» en el nombre no entran al vigía ni dan el texto, lo cargado a mano después gana, el definitivo más reciente manda, y el tope de 400 KB");
+  }
   bqNueveProcesos: { if (!corre("unidad los nueve procesos del dueño")) break bqNueveProcesos;
     const Dp = require("../lib/documentos_proceso.js");
     const Df = require("../lib/diff.js");
@@ -44191,6 +44283,10 @@ async function main() {
         }
         assert.ok(!/<script/.test(html), "todo string del modelo pasa por esc()");
         assert.ok(!/pág\. null|undefined|\bK\b|anticipo_o_pago_anticipado/.test(html), "sin «pág. null», «undefined», «K» ni valores crudos del enum");
+        // el texto del documento base no tiene número de versión: se dice el archivo (18-oct-2026)
+        const delBase = pintarDictamen({ ...fixture, version_texto: null, documento_texto: { tipo: "Documento base del pliego tipo", nombre: "DOCUMENTO <b>BASE</b>.pdf", id_documento: "1" } }, { MARCA, esc: escF });
+        assert.ok(delBase.includes("Sobre «DOCUMENTO &lt;b&gt;BASE&lt;/b&gt;.pdf», documento base del pliego tipo (5 páginas)") && !/versión null|versión undefined|<b>BASE/.test(delBase) && delBase.includes("· 5 páginas del pliego, «DOCUMENTO &lt;b&gt;BASE&lt;/b&gt;.pdf»"),
+          `sin versión, el archivo de donde salió el texto, escapado (MUTACIÓN: «versión null»): ${delBase.match(/Sobre[^.]*\./) || ""}`);
         /* la lectura completa (26-sep-2026): el botón solo con la rutina configurada; con un
            pedido en marcha, «Ver si ya está lista» y la hora; un dictamen de sesión se vuelve a
            pedir a la sesión, nunca a las reglas (que no se verían mientras haya uno de sesión) */

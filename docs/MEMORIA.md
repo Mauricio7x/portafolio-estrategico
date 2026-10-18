@@ -19209,3 +19209,36 @@ En una línea: la decisión de dejar la llave a la vista («Página única y tok
   - un `curl` nuevo con `$APP` en `/dictamen`, sin el pase;
   - `latido.yml` sin reconocer el 401 del muro («no lo confunde con la llave»);
   - la rutina del primero de mes sin la instrucción del pase.
+
+### El dictamen, el cronograma y los descuentos leen el documento que ES el pliego, no la última versión del vigía (18-oct-2026)
+
+En una línea: `textoGuardado` (lib/handlers/pliego/cronograma.js), el único que da el texto al dictamen, al cronograma, a
+los descuentos y a la habilidad `/dictamen`, devolvía la ÚLTIMA versión del vigía de adendas; en 85 de 228 licitaciones de
+obra de 2026 eso era nada (el documento base no entra al vigía) y en 7 un anexo; ahora manda el documento leído que es el
+pliego, con una sola regla (`Docs.esVersionDelPliego`, `Docs.candidatosAlTextoDelPliego`) que también decide qué entra al
+vigía.
+
+**Lo medido** (índices reales de dmgg-8hin: 200 licitaciones de obra de 2026 al azar entre 1.178, más 34 de las rondas;
+corte 18-oct-2026; el plan de lectura de main con todos sus documentos leídos). Antes: 85 procesos tenían el documento base
+leído y el dictamen respondía «Todavía no hay texto guardado de este pliego» (reproducido con la función real); en 7 el
+último texto del vigía era un anexo («OBSERVACIONES PLIEGO DEF…» leídas DESPUÉS del «PLIEGO DEFINITIVO», «OFICIO PREGUNTAS
+Y RESPUESTAS…», «Anexo de condiciones»). Ahora: 85 ganan texto, 112 siguen con el mismo documento, 6 pasan del anexo al
+pliego o al documento base, y 2 pierden el texto porque su único «pliego» era un anexo (CO1.REQ.10312266, el definitivo venía
+en .zip; CO1.REQ.10439791): ahí el dictamen dice que no hay texto en vez de opinar sobre un anexo. De paso: el tope de 3
+versiones del pliego del plan (el pendiente de `planDeLectura`) no lo alcanza ninguno de los 228.
+
+**Lo que no hay que deshacer.** (a) El documento base SIGUE fuera del vigía (la decisión del 27-sep-2026: dos documentos
+distintos alternándose como «versiones» darían cambios falsos); el dictamen lo lee de su texto guardado, no del vigía.
+(b) Un pliego que entró al vigía se lee de su versión del vigía (`version_pliego`): el mismo texto y el mismo sello de caché
+que antes, para no invalidar los dictámenes ya pagados. (c) El texto del documento base lleva el tope de 400 KB del vigía
+(`D.MAX_TEXTO`), con `recortado`: el dictamen lo manda entero al modelo y la habilidad lo lee entero. (d) Lo que el dueño
+carga A MANO (origen del vigía distinto de «documentos:…») gana si entró DESPUÉS de la última lectura automática: es como se
+lee un pliego de más de 20 MB que la lectura automática no trae. (e) El orden: el definitivo antes que el borrador (con
+«borrador» en el nombre de un documento base también), el más reciente en SECOP II, a igual fecha el pliego antes que el
+documento base, y la plantilla en blanco no cuenta. (f) Un anexo, formato, apéndice, minuta, observaciones, respuesta,
+oficio, glosario o matriz con «pliego» en el nombre no es versión del pliego: ni entra al vigía ni da el texto; sin
+documentos leídos, el respaldo del vigía también salta los que entraron así antes de hoy. (g) La identidad del texto para el
+pedido de lectura a la sesión es `texto_id` (el número de versión, o «doc:<id>:<sello>»): con el documento base, dos textos
+distintos tendrían la misma versión nula. (h) La pantalla dice de qué archivo salió el texto cuando no hay número de versión.
+(i) No se pudo comprobar en producción: desde el 18-oct responde 302 hacia el inicio de sesión de Vercel y esta sesión no
+tiene el pase; se reprodujo con las funciones reales sobre el Redis simulado.

@@ -1000,7 +1000,10 @@
     html += `<p class="mt-3 text-sm font-medium ${color}">● ${esc(TEXTO[veredicto] || TEXTO.sin_hechos_comprobados)} — ${esc(d.veredicto_frase || "")}</p>`;
     if (gris) html += `<p class="mt-1 text-sm text-gray-600">${esc(r.que_hacer || "")}</p>`;
     html += `<p class="mt-2 text-xs text-gray-500">${esc(r.advertencia || "")}</p>`;
-    html += `<p class="mt-1 text-xs text-gray-500">Sobre la versión ${esc(r.version_texto)} del pliego${r.paginas != null ? ` (${esc(r.paginas)} páginas)` : ""}. Para el precio use “Calcular mi precio”.`
+    /* el texto puede salir del documento base, que no tiene número de versión (18-oct-2026): se dice el archivo */
+    const docTexto = r.documento_texto && typeof r.documento_texto === "object" && r.documento_texto.nombre ? r.documento_texto : null;
+    const sobreTexto = r.version_texto != null ? `la versión ${esc(r.version_texto)} del pliego` : docTexto ? `«${esc(docTexto.nombre)}»${docTexto.tipo ? `, ${esc(String(docTexto.tipo).charAt(0).toLowerCase() + String(docTexto.tipo).slice(1))}` : ""}` : "el texto guardado del pliego";
+    html += `<p class="mt-1 text-xs text-gray-500">Sobre ${sobreTexto}${r.paginas != null ? ` (${esc(r.paginas)} páginas)` : ""}. Para el precio use “Calcular mi precio”.`
       + `${r.recortado ? " El texto guardado está recortado: el dictamen no vio el final del pliego." : ""}`
       + `${Array.isArray(r.paginas_vacias) && r.paginas_vacias.length ? ` Las páginas ${esc(r.paginas_vacias.join(", "))} no se pudieron leer del escaneado.` : ""}`
       + `${apartadas.length ? ` Se apartaron ${apartadas.length} frases que no se pudieron comprobar.` : ""}</p>`;
@@ -1051,7 +1054,7 @@
     const seg = Number.isFinite(Number(r.duracionMs)) ? Math.round(Number(r.duracionMs) / 1000) : null;
     if (r.origen_legible) html += `<p class="text-xs text-gray-500">${esc(r.origen_legible)}</p>`;
     const versionInstr = String(r.version_instrucciones || "").slice(0, 10);
-    html += `<p class="text-xs text-gray-400">Cómo se hizo: leído el ${esc(fecha(r.generado))}${r.paginas != null ? ` · ${esc(r.paginas)} páginas del pliego` : ""}, versión ${esc(r.version_texto)}${seg != null ? ` · ${seg} segundos` : ""}${versionInstr ? ` · instrucciones del ${esc(fecha(versionInstr))}` : ""}${r.uso_mes && r.uso_mes.dictamenes != null ? ` · este mes: ${esc(r.uso_mes.dictamenes)} dictámenes` : ""}${r.cache ? " · guardado" : ""}</p>`;
+    html += `<p class="text-xs text-gray-400">Cómo se hizo: leído el ${esc(fecha(r.generado))}${r.paginas != null ? ` · ${esc(r.paginas)} páginas del pliego` : ""}, ${r.version_texto != null ? `versión ${esc(r.version_texto)}` : docTexto ? `«${esc(docTexto.nombre)}»` : "texto guardado"}${seg != null ? ` · ${seg} segundos` : ""}${versionInstr ? ` · instrucciones del ${esc(fecha(versionInstr))}` : ""}${r.uso_mes && r.uso_mes.dictamenes != null ? ` · este mes: ${esc(r.uso_mes.dictamenes)} dictámenes` : ""}${r.cache ? " · guardado" : ""}</p>`;
     html += "</div></details>";
     /* LA LECTURA COMPLETA (26-sep-2026): con la rutina del dictamen configurada, el botón
        despierta una sesión que lee el pliego entero; mientras llega, se ve la lectura por
