@@ -2686,14 +2686,16 @@
     btn.disabled = true;
     btn.textContent = "Consultando el pliego…";
     for (const b of delMismo) b.disabled = true;
-    let reloj = null, consultado = false;
+    let reloj = null, consultado = false, sinPliego = false;
     try {
       const r = await Promise.race([
-        api(`/api/perfil?op=seguimiento&perfil=${encodeURIComponent(perfil)}&expediente=${encodeURIComponent(id)}`),
+        api(`/api/perfil?op=seguimiento&perfil=${encodeURIComponent(perfil)}&expediente=${encodeURIComponent(id)}&solo=tope`),
         new Promise((_, no) => { reloj = setTimeout(() => no(new Error("tiempo")), TECHO_TARJETA_MS); }),
       ]);
-      const g = r && r.proceso && r.proceso.id === id ? r.proceso.guia : null;
+      // `solo=tope`: el techo sin la guía entera (la primera vez en una instancia la guía tardó 13 s, medido)
+      const g = r && r.id === id ? { tope_oferta: r.tope_oferta || null } : null;
       consultado = !!g;
+      sinPliego = !!g && r.documentos_leidos === 0;
       const techo = techoDesdeGuia(g);
       if (techo.cuantia_cop && Number(g.tope_oferta.secop) === Number(q.get("cuantia"))) {
         const t = new URLSearchParams(qApu(techo));
@@ -2709,6 +2711,8 @@
     // otra pulsación, otro proceso o borrador abierto en Precios, u otro perfil mientras se esperaba: manda lo último
     if (turno !== turnoTarjeta || aperturas !== aperturasEditor || $("f-perfil").value !== perfil) return;
     if (!consultado) q.set("cuantia_aviso", "No se pudo consultar el pliego a tiempo: el presupuesto es el que publica SECOP II. Abra el proceso desde «Mis procesos» para ver si el pliego definitivo dice menos.");
+    // el pliego de este proceso no se ha leído: el techo no se pudo contrastar, y se dice (revisión adversaria, 17-oct-2026)
+    else if (sinPliego) q.set("cuantia_aviso", "El pliego de este proceso aún no se ha leído: el presupuesto es el que publica SECOP II. Abra el proceso en «Mis procesos» para leerlo y ver si dice menos.");
     abrirEditorConProceso(q);
   }
   function qApu(l) {
@@ -7831,12 +7835,12 @@
     caja.innerHTML = `
       <p class="flex items-center gap-2 text-base font-medium ${color}"><span class="inline-block h-3 w-3 shrink-0 rounded-full ${punto}" aria-hidden="true"></span>${esc(r.frase)}</p>
       ${deOtroProceso ? `<p class="mt-2 text-sm text-gray-600">El pliego que leyó es de otro proceso (${esc(leido.id_proceso)}): no se comparó con él. Lea el pliego de este proceso con el lector (arriba) y vuelva a revisar.</p>` : ""}
-      <ul class="mt-3 space-y-2 text-sm">${vs.map((v) => `<li class="rounded-lg px-3 py-2 ${v.nivel === "rechazo" ? "bg-red-50 text-red-800" : v.nivel === "alerta" ? "bg-amber-50 text-amber-900" : v.nivel === "informativo" ? "bg-blue-50 text-blue-900" : v.nivel === "sin_referencia" ? "bg-gray-50 text-gray-600" : "text-gray-600"}">
+      <ul class="mt-3 space-y-2 text-sm">${vs.map((v) => `<li class="rounded-lg px-3 py-2 ${v.nivel === "rechazo" ? "bg-red-50 text-red-800" : v.nivel === "alerta" || v.marca === "justificar" ? "bg-amber-50 text-amber-900" : v.nivel === "informativo" ? "bg-blue-50 text-blue-900" : v.nivel === "sin_referencia" ? "bg-gray-50 text-gray-600" : "text-gray-600"}">
         <span class="font-medium">${esc(v.titulo)}${v.nivel === "sin_referencia" ? " · pendiente" : ""}:</span> ${esc(v.mensaje)}
         ${v.nivel !== "ok" ? `<span class="block text-xs opacity-80" title="${esc(v.fundamento)}">Fundamento: ${esc(v.fundamento.slice(0, 140))}${v.fundamento.length > 140 ? "…" : ""}</span>` : ""}
         ${v.id === "temeraria" && v.nivel === "alerta" ? `<button type="button" id="rev-btn-justificacion" class="mt-2 rounded-lg border border-amber-700/30 bg-white px-3 py-1 text-xs font-medium hover:bg-amber-100">Descargar mi justificación</button>` : ""}
       </li>`).join("")}</ul>
-      <p class="mt-2 text-xs text-gray-500">${r.rechazos} motivo${r.rechazos === 1 ? "" : "s"} de rechazo automático · ${r.por_confirmar_en_pliego ? `${r.por_confirmar_en_pliego} diferencia con SECOP II que el pliego decide · ` : ""}${r.alertas} alerta${r.alertas === 1 ? "" : "s"} · ${r.informativos} para arreglar sin riesgo · ${(r.pendientes || []).length} sin referencia.${r.guardado ? " Revisión guardada para este proceso." : ""}</p>`;
+      <p class="mt-2 text-xs text-gray-500">${r.rechazos} motivo${r.rechazos === 1 ? "" : "s"} de rechazo automático · ${r.por_confirmar_en_pliego ? `${r.por_confirmar_en_pliego} diferencia con SECOP II que el pliego decide · ` : ""}${r.alertas} alerta${r.alertas === 1 ? "" : "s"} · ${r.para_justificar ? `Tenga lista la justificación (${r.para_justificar}) · ` : ""}${r.informativos} para arreglar sin riesgo · ${(r.pendientes || []).length} sin referencia.${r.guardado ? " Revisión guardada para este proceso." : ""}</p>`;
     const bj = $("rev-btn-justificacion");
     if (bj) bj.addEventListener("click", () => { const b = $("btn-justificacion"); if (b && !b.disabled) b.click(); else msgApu("Para generar la justificación calcule primero la rentabilidad del proceso (sección de arriba).", "info"); });
   }
@@ -9128,6 +9132,10 @@
     $("pt-detalle").classList.toggle("hidden", !pt.detalle);
     $("pt-precio-actual").textContent = pt.frase_precio_actual || "";
     $("pt-precio-actual").classList.toggle("hidden", !pt.frase_precio_actual);
+    /* el hecho medido del límite de la entidad (lib/apu/piso_techo, tabla única) */
+    const lim = pt.limite_entidad_medido;
+    $("pt-limite-entidad").textContent = lim && lim.frase ? lim.frase : "";
+    $("pt-limite-entidad").classList.toggle("hidden", !(lim && lim.frase));
     const fuentes = [];
     for (const [k, v] of Object.entries(pt.fuentes || {})) {
       fuentes.push(`<li><span class="font-medium">${esc(k.replace(/_/g, " "))}:</span> ${esc(v)}</li>`);
