@@ -281,19 +281,38 @@ pide JSON (medido el 17-oct en una versión de prueba). Eso incluye:
 
 Este secreto es el pase que deja atravesar el muro a todas ellas. Va en **tres sitios** con el mismo
 valor: Vercel (que lo crea), GitHub (secreto del repositorio con ese mismo nombre) y las variables
-de entorno del entorno de Claude donde corren las rutinas («Detekta con internet»: claude.ai/code, el
-menú del entorno en la barra del título de la sesión, Edit, y ahí la variable con ese nombre; una sesión
-nueva la toma). Sin el secreto, curl no manda la cabecera y todo sigue como sin muro.
+de entorno del entorno de Claude donde corren las rutinas («Detekta con internet»). Sin el secreto,
+curl no manda la cabecera y todo sigue como sin muro.
 
-**De dónde se saca:**
+Medido el 17-oct-2026 con el muro puesto: el latido de GitHub y el «Run» de una tarea programada de
+Vercel responden 200, y sin el pase la producción responde 302. Las tareas de Vercel pasan el muro
+por su cuenta: no llevan nada de esto.
+
+**De dónde se saca (Vercel):**
 
 1. Vercel → el proyecto → **Settings** → **Deployment Protection**.
-2. Buscar el bloque **Protection Bypass for Automation**.
-3. Pulsar el botón para **generar** el secreto (si ya existe, hay un botón de copiar).
-4. Vercel pone ese secreto como variable de sistema `VERCEL_AUTOMATION_BYPASS_SECRET` en cada
-   despliegue **nuevo** (documentación de Vercel, «Protection Bypass for Automation»): después de
-   crearlo hay que **volver a desplegar**. Si aun así la extracción larga se corta a mitad (síntoma
-   abajo), añádala a mano en *Settings → Environment Variables* con ese nombre exacto.
+2. En el bloque **Protection Bypass for Automation**, pulsar **Add Secret**. Se abre la ventana
+   **Add Bypass**, con dos cuadros:
+   - el **primero es el valor del pase**, no un nombre: si se escribe algo, Vercel exige exactamente
+     32 caracteres («Secret must be 32 characters…»);
+   - el **segundo es una nota** para recordar para qué es (por ejemplo, «GitHub y rutinas»).
+3. Pulsar **Add Bypass** y copiar el pase de la fila nueva. No regenerarlo ni borrarlo después:
+   invalida el pase en lo ya desplegado.
+4. Vercel pone ese pase como variable de sistema `VERCEL_AUTOMATION_BYPASS_SECRET` en cada
+   despliegue **nuevo**, si está marcada la casilla **Enable access to System Environment
+   Variables** (página **Environment Variables** del PROYECTO, al final; marcada el 17-oct-2026).
+   Después de crearlo hay que **volver a desplegar** (§5). Con eso la aplicación lo manda en las
+   llamadas que se hace a sí misma.
+
+**Dónde se guarda además:**
+
+- **GitHub:** «Settings» → «Secrets and variables» → «Actions» → «New repository secret», con el nombre
+  `VERCEL_AUTOMATION_BYPASS_SECRET`.
+- **Claude:** claude.ai/code → el nombre del entorno «Detekta con internet» en la barra de arriba de
+  la sesión → **Edit** → ventana «Editar entorno de nube» → cuadro **«Variables de entorno»** (el de
+  abajo, formato `.env`): una línea `VERCEL_AUTOMATION_BYPASS_SECRET=` con el pase pegado después
+  del `=` → «Guardar cambios». **No** en «Secretos de red» («Agregar secreto»), que pide un tipo de
+  autorización y no es lo que leen las rutinas. La toma la sesión nueva siguiente, no la abierta.
 
 **¿Cómo sé si el muro está activo?** Abra `https://detekta-app.vercel.app` en una ventana de
 incógnito. Si le pide iniciar sesión en Vercel antes de ver nada, está activo.

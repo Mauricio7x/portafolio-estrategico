@@ -19158,7 +19158,7 @@ para el lote No. 2» da mención en vez de «no».
 
 En una línea: la decisión de dejar la llave a la vista («Página única y token integrado», ago 2026) se apoyaba en «Vercel Password Protection», que no existe en el plan Hobby, y con la cuenta nueva del 16-oct la producción quedó abierta; el dueño eligió el 17-oct el muro gratis de Vercel en todo el sitio («All Deployments»), y todo lo que llama a producción sin navegador manda el pase `x-vercel-protection-bypass` con `VERCEL_AUTOMATION_BYPASS_SECRET`.
 
-> PENDIENTE · con el muro puesto, medir si las tareas programadas de Vercel (`vercel.json` → `crons`) lo pasan. La documentación no lo dice; además no siguen redirecciones, y un 302 no deja registro. Cómo: el dueño pulsa la de `/api/latido` en Settings → Cron Jobs y mira `op=salud` → `latido.ultimo` en su navegador. Si no pasan, la actualización y el latido siguen por GitHub, pero la compactación, los avisos y la copia nocturna (`/api/respaldo`, que hoy responde 503 mientras no exista el almacén) necesitan su propia tarea de GitHub.
+> RESUELTO el 17-oct-2026 por «El muro de Vercel quedó puesto: las tareas de Vercel lo pasan, y cómo se mide (17-oct-2026)» · el «Run» de `/api/latido` en Settings → Cron Jobs respondió 200 con el muro puesto: las tareas de Vercel lo pasan y no hay que moverlas a GitHub. El «Cómo» que decía este marcador no servía: `latido.ultimo` solo se reescribe cada 30 minutos o más; se midió en «View Logs».
 
 > PENDIENTE · la opción B del dueño: exigir `CRON_SECRET` para lo destructivo o caro (`reiniciar` y `reset` del histórico, `modo=full`), para que no dependa del muro de una cuenta de Vercel. Va con plan aparte y visto bueno.
 
@@ -19209,3 +19209,29 @@ En una línea: la decisión de dejar la llave a la vista («Página única y tok
   - un `curl` nuevo con `$APP` en `/dictamen`, sin el pase;
   - `latido.yml` sin reconocer el 401 del muro («no lo confunde con la llave»);
   - la rutina del primero de mes sin la instrucción del pase.
+
+### El muro de Vercel quedó puesto: las tareas de Vercel lo pasan, y cómo se mide (17-oct-2026)
+
+En una línea: el dueño encendió «All Deployments» la noche del 17-oct y esa misma noche quedó medido que sin el pase la producción responde 302, que el latido de GitHub y el «Run» de una tarea de Vercel responden 200, y que el dueño entra desde Chrome y desde el iPhone; las tareas de Vercel NO hay que moverlas a GitHub.
+
+**Lo medido** (horas UTC del 18-oct; en Colombia, noche del 17-oct, de 22:26 a 22:58).
+- **Antes y después.** A las 03:26:52 y 03:27:19, `/` y `op=salud` respondían 200. A las 03:40:19 los dos responden 302 a `vercel.com/sso-api`, con el cuerpo «Protected by Vercel Authentication».
+- **GitHub pasa.** Latido lanzado a mano a las 03:40:28 (corrida 39094446919, con el pase): `HTTP 200` y `{"ok":true,"accion":"historico","motivo":"la extracción del histórico quedó a medias","hecho":true}`. En los registros de Vercel aparece con 200 y el dominio `detekta-app` como host.
+- **Las tareas de Vercel pasan.** A las 03:45:14 el dueño pulsó «Run» en la fila de `/api/latido` (Settings → Cron Jobs): 200, con host `detekta-fshk0ola…`, la dirección propia del despliegue y no el dominio. Lo muestra su captura de «View Logs».
+- **El pase está dentro del despliegue** [inferencia por la documentación]. La casilla «Enable access to System Environment Variables» (página Environment Variables del PROYECTO, al final) está marcada, según la captura del dueño. El despliegue de producción (`094a5c2`, la fusión del PR #261) se construyó después de crear el pase. Según Vercel, `VERCEL_AUTOMATION_BYPASS_SECRET` está en la compilación y en la ejecución «si el secreto se generó».
+- **El dueño entra.** En Chrome y en el iPhone, tras iniciar sesión en Vercel con el método de su cuenta. Con una cuenta de Google no unida, Vercel respondió «Social Account is not yet connected to any Vercel user. Sign up?», y también salió «Unauthorized to access the given account.». «Sign up?» crearía otra cuenta vacía, sin acceso a Detekta.
+
+**Lo que no hay que re-aprender.**
+- (a) **`op=salud` → `latido.ultimo` no sirve para medir una tarea.** Se reescribe solo si pasaron 30 minutos o más (`lib/handlers/procesos/latido.js`), y el latido de GitHub también lo escribe. Se mide en «View Logs» de la tarea: una llamada que el muro redirige no queda anotada; una que pasa sale con su código.
+- (b) **El registro de un latido no prueba la cadena de tandas.** El latido corre UNA tanda con `chain: "0"`, así que no ver llamadas a `/api/procesos` después es lo esperado. Esa noche se le dio al dueño ese criterio por error, y se corrigió en el mensaje siguiente.
+- (c) **Las pantallas reales no son las que suponía la guía.**
+  - La ventana «Add Bypass» de Vercel tiene dos cuadros. El primero es el VALOR del pase: si se escribe, debe tener 32 caracteres («Secret must be 32 characters, provided value is 16»). El segundo es la nota.
+  - En Claude (en español), «Editar entorno de nube» tiene dos secciones. «Secretos de red» («Agregar secreto»: tipo Bearer, sitios permitidos, encabezados personalizados) y «Variables de entorno» (formato .env). El pase va en «Variables de entorno», que es lo que leen las rutinas.
+  - Esa sección avisa que no se agreguen secretos, porque cualquiera que use el entorno los ve. Se aceptó porque solo lo usa el dueño. «Secretos de red» lo escondería de la sesión, pero no está probado con las rutinas.
+- (d) **Las variables de Vercel de esta cuenta son compartidas, del equipo** (pestaña «Shared»: `CRON_SECRET`, `HISTORICO_TOKEN`, Upstash, OCR, la rutina del dictamen). La página del proyecto no tiene variables propias. La casilla de las variables del sistema está en la página del PROYECTO, no en la del equipo.
+
+**Lo que sigue abierto.**
+- Las tareas PROGRAMADAS se dan por iguales al «Run» [inferencia]. Lo confirma la primera que corra con el muro: la copia a las 07:15, la compactación a las 08:40 y a las 10:40, los avisos a las 11:00 y la actualización a las 12:50 UTC.
+- La cadena de tandas no ha corrido todavía con el muro. Su primera prueba real es la actualización de las 7:50 a. m. del 18-oct. Si se corta, el síntoma es un latido que dice «quedó a medias» una y otra vez.
+- No consta si Vercel genera el pase solo cuando el primer cuadro de «Add Bypass» se deja vacío.
+- La opción B sigue PENDIENTE, en la sección anterior.
