@@ -9154,6 +9154,27 @@ async function main() {
     assert.deepStrictEqual([nc5({ cuantia_fuente: "pliego" }).cuantia_fuente, nc5({ cuantia_fuente: "<b>x</b>" }).cuantia_fuente, nc5({}).cuantia_fuente], ["pliego", null, null], "la fuente del techo: «pliego» o nada");
     assert.strictEqual(tope({ a: doc(sec("($1.744.426.145,50)"), "pliego") }, 1744426146).fuente, "pliego", "el pliego por debajo, aunque sea por centavos, fija el techo (SECOP II los corta hacia abajo, no hacia arriba)");
     assert.strictEqual(tope({ a: doc(def, "pliego") }, null), null, "sin cifra de SECOP II no se fija techo: no hay contra qué contrastar la lectura");
+    /* UNA VERSIÓN MÁS NUEVA DEL PLIEGO SIN LA TABLA NO DEJA QUE LA CIFRA DE LA VIEJA FIJE EL TECHO (18-oct-2026,
+       visto bueno del dueño). Contra el árbol anterior, el techo quedaba en la cifra del pliego viejo. */
+    {
+      const viejo = { ...doc(def, "pliego"), nombre: "Pliego de condiciones definitivo.pdf", fecha_carga: "2026-09-01" };
+      const nuevoSinTabla = { ...doc("\f1\nSe ajustan los requisitos habilitantes del proceso.\n", "pliego"), nombre: "Pliego de condiciones definitivo modificado.pdf", fecha_carga: "2026-09-20" };
+      const t1 = tope({ a: viejo, b: nuevoSinTabla }, 1744426146);
+      assert.strictEqual(t1.fuente, "secop", `una versión más nueva sin la tabla no deja que la cifra del pliego viejo fije el techo: ${JSON.stringify(t1)}`);
+      const aviso = dicen({ a: viejo, b: nuevoSinTabla }, 1744426146).find((h) => h.clave === "presupuesto_pliego");
+      assert.ok(aviso && aviso.estado === "revisar" && /versión más nueva del pliego/.test(aviso.texto), `y el aviso lo dice y manda a confirmar: ${aviso && aviso.estado} · ${aviso && aviso.texto}`);
+      // el mismo día no se sabe cuál rige: del lado prudente
+      assert.strictEqual(tope({ a: viejo, b: { ...nuevoSinTabla, fecha_carga: "2026-09-01" } }, 1744426146).fuente, "secop", "dos versiones del mismo día, una sin tabla: el techo no sale del pliego");
+      // el orden por tipo NO cambia: un documento base más nuevo con más cifra no le gana al pliego (revisión adversaria: subía el techo)
+      const baseNuevo = { ...doc(sec("($1.650.000.000,00)"), "documento_base"), nombre: "Documento base definitivo.pdf", fecha_carga: "2026-09-20" };
+      assert.strictEqual(tope({ a: viejo, b: baseNuevo }, 1744426146).valor, 1581425810, "pliego viejo y documento base nuevo: manda el pliego, como antes");
+      // un pliego más viejo sin tabla no tapa al nuevo que sí la trae
+      assert.strictEqual(tope({ a: { ...viejo, fecha_carga: "2026-09-20" }, b: { ...nuevoSinTabla, fecha_carga: "2026-09-01" } }, 1744426146).valor, 1581425810, "la versión vieja sin tabla no cuenta contra la nueva con cifra");
+      assert.strictEqual(tope({ a: viejo }, 1744426146).valor, 1581425810, "con una sola versión, todo sigue igual");
+      // QUÉ documento da la cifra no cambia (segunda revisión adversaria): unas «observaciones» con cifra menor siguen fijándola, como antes
+      const obs = { ...doc(sec("($1.500.000.000,00)"), "pliego"), nombre: "Observaciones al pliego de condiciones definitivo.pdf", fecha_carga: "2026-09-20" };
+      assert.strictEqual(tope({ a: viejo, b: obs }, 1744426146).valor, 1500000000, "unas «observaciones» más nuevas con cifra menor la siguen fijando, como antes: este arreglo no sube el techo por esa vía");
+    }
     const Gp = require("../lib/guia_proceso.js");
     const filaSE = { id_del_proceso: "CO1.SE", nombre_del_procedimiento: "MEJORAMIENTO VIA SANTA ELENA", entidad: "DISTRITO DE CALI", departamento_entidad: "Valle del Cauca", modalidad_de_contratacion: "Selección Abreviada de Menor Cuantía", precio_base: "1744426146", duracion: "2", unidad_de_duracion: "Meses", codigo_principal_de_categoria: "V1.72141000", fecha_de_publicacion_del: "2026-09-01T10:00:00.000", fecha_de_recepcion_de: "2026-09-20T15:00:00.000", tipo_de_contrato: "Obra" };
     const gSE = Gp.guiaDe({ fila: filaSE, perfil: "helder", ctx: { ahoraMs: Date.parse("2026-09-03T15:00:00Z"), documentos: { indice: { archivos: [], plan: [] }, ilegibles: {}, leidos: { a: doc(def, "pliego") } } } });
