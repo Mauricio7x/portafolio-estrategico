@@ -19235,3 +19235,42 @@ En una línea: el dueño encendió «All Deployments» la noche del 17-oct y esa
 - La cadena de tandas no ha corrido todavía con el muro. Su primera prueba real es la actualización de las 7:50 a. m. del 18-oct. Si se corta, el síntoma es un latido que dice «quedó a medias» una y otra vez.
 - No consta si Vercel genera el pase solo cuando el primer cuadro de «Add Bypass» se deja vacío.
 - La opción B sigue PENDIENTE, en la sección anterior.
+
+### La sonda del muro: el latido y el vigilante prueban la portada sin el pase (18-oct-2026)
+
+En una línea: el 16-oct la producción quedó abierta un día sin que nadie lo viera; ahora el latido de GitHub llama a la portada SIN el pase, a propósito, reconoce el muro en positivo (302 hacia `https://vercel.com/sso-api` o el texto «Protected by Vercel Authentication») y falla en rojo si recibe un 200 sin ese texto, y el vigilante de la mañana hace la misma prueba y, si el muro está apagado, lo dice en su primera línea.
+
+**Qué se decidió.**
+- **Un paso aparte del latido**, «¿El muro de Vercel sigue puesto?», con `if: always()` y sin ningún secreto.
+  - El muro se reconoce en positivo: un 302 hacia `https://vercel.com/sso-api`, o el texto «Protected by Vercel Authentication» en la respuesta.
+  - Un 200 sin ese texto es el muro apagado: `::error` y la corrida falla.
+  - Todo lo demás (403, 429, 5xx, otra redirección, sin respuesta) es «sin dato»: `::warning`, y la corrida no falla.
+- **El vigilante de la mañana** (`docs/RUTINAS.md` §2, PASO 0 ter) hace la misma llamada después de comprobar que el pase funciona. Si el muro está apagado, lo dice en la primera línea; si no lo puede medir, escribe «Muro: no medido».
+- **Va sin el pase, a propósito.** Con el pase, la portada responde 200 siempre y la alarma sonaría en falso.
+
+**Por qué en GitHub y no en la aplicación.** El correo de la salud en rojo no está configurado. Medido el 18-oct: `aviso_por_correo.configurado: false`, y faltan `CORREO_API_KEY`, `CORREO_REMITENTE` y `CORREO_DESTINO`. Una salud en rojo no le llegaría a nadie.
+
+**Pero una corrida roja tampoco avisa sola.**
+- Según la ayuda de GitHub, los avisos de un flujo programado le llegan al usuario que lo creó. La opción de Actions en «Notification settings» empieza en «Don't notify». Fuentes: «Notifications for workflow runs» y «Managing GitHub Actions notifications».
+- El dueño tiene que elegir ahí «Email» y «Only notify for failed workflows». Sin eso, la sonda solo se ve si alguien abre la pestaña Actions.
+- El reloj de GitHub es irregular. La revisión midió 8 disparos en 25 horas, con huecos de 2 h 28 min a 5 h 40 min: la sonda detecta un muro apagado en horas, no en minutos.
+
+**Lo que no hay que deshacer** (casi todo salió de la revisión adversaria del 18-oct):
+- (a) **No contar el 403 ni cualquier 302 como muro.**
+  - Un 403 puede ser una regla Deny del cortafuegos de Vercel, que se evalúa ANTES de la protección (documentación de Vercel, «Firewall concepts»). Con el muro apagado, una regla así haría que la sonda diera «puesto».
+  - Lo mismo pasa con un 302 hacia cualquier otra parte.
+  - La primera versión de la sonda contaba 403 como muro. La revisión lo reprodujo y se corrigió antes de fusionar.
+- (b) **`curl -q` va primero.** Sin él, curl lee un `.curlrc`. La revisión reprodujo que un `.curlrc` con `location` convierte el 302 en 200, es decir, en una falsa alarma.
+- (c) **Una sola excepción en el censo del pase, con forma fija.** Es la marca «SONDA DEL MURO: sin el pase, a propósito». La suite exige UNA sonda en los flujos, en el latido, y UNA en las rutinas, en el vigilante.
+  - Las dos se EJECUTAN con un curl simulado ESTRICTO, que anota como violación:
+    - cualquier bandera fuera de `-q` primero, `-s`/`-S`, `--max-time`, `-o` y `-w`;
+    - dos direcciones;
+    - una dirección distinta de la portada exacta.
+  - El primer curl simulado era tolerante: `-L`, `-b` y `-K` pasaban en verde. Y `-L` contra producción da 200, otra falsa alarma.
+  - La sonda del latido se corre en 12 escenarios: 200; 302 a sso-api con y sin texto; 401 con texto; 200 con texto; 302 a otro sitio; 403; 401 sin texto; 307; 429; 503; y sin respuesta. Corre con el pase en el entorno, para comprobar que no lo usa.
+- (d) **El curl simulado del censo general entiende `--header`** igual que `-H`. Antes, una cabecera mandada con `--header` no se veía.
+- (e) **`|| true` y `${CODIGO:-000}`** evitan que un corte de red tumbe el paso con `bash -e`: un corte no es un muro apagado.
+
+**Lo medido.**
+- Con el muro puesto, el paso real y las dos líneas del vigilante, corridos contra producción el 18-oct, respondieron `302 https://vercel.com/sso-api?url=…` y el texto del muro: «El muro de Vercel está puesto.».
+- El dueño confirmó que, con el primer cuadro de «Add Bypass» vacío, Vercel creó el pase solo.
