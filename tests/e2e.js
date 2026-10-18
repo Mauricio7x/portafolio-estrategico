@@ -3939,6 +3939,564 @@ async function main() {
     console.log(`· unidad modalidades: ${casos.length} clasificaciones correctas (lista blanca)`);
   }
 
+  /* unidad: base nacional de obra — limpieza de ofertas (scripts/base_obra, solo mide) */
+  bqBaseObra: { if (!corre("unidad base de obra")) break bqBaseObra;
+    const lb = require("../scripts/base_obra/limpieza");
+    // «sin dato» ≠ cero: la ausencia se descarta ANTES de convertir
+    for (const v of [null, undefined, "", "  ", "No Definido", "abc", "1.2.3"]) assert.strictEqual(lb.numeroONull(v), null, `numeroONull(${JSON.stringify(v)}) debía ser null`);
+    assert.strictEqual(lb.numeroONull("0"), 0, "un 0 publicado es un dato, no una ausencia");
+    assert.strictEqual(lb.clasificarModalidad("Seleccion Abreviada Menor Cuantia Sin Manifestacion Interes"), "menor_cuantia");
+    assert.strictEqual(lb.clasificarModalidad("Licitación pública Obra Publica"), "licitacion");
+    assert.strictEqual(lb.clasificarModalidad("Mínima cuantía"), "minima", "mínima va SEPARADA");
+    assert.strictEqual(lb.clasificarModalidad("Contratación directa"), "otra");
+    assert.strictEqual(lb.clasificarModalidad(undefined), "otra", "desconocida es inerte");
+    const of = (nom, cod, v) => ({ nombre_proveedor: nom, c_digo_proveedor: cod, nit_del_proveedor: "000000000", valor_de_la_oferta: v });
+    const r = lb.limpiarOfertas([of("A", "1", "950"), of("A", "1", "950"), of("Confidencial", "", "0"), of("B", "2", "0"),
+      of("C", "3", ""), of("D", "4", "1001"), of("E", "5", "499"), of("F", "6", "900"), of("G", "7", "920")], "1000");
+    assert.deepStrictEqual(r.excluidas, { repetidas: 0, confidencial: 1, cero: 1, no_numerico: 1, sin_proveedor: 0, duplicada: 1, duplicada_entre_datasets: 0, sobre_base: 1, bajo_50: 1, rescatada_bajo_50: 0, sin_precio_base: 0 });
+    assert.strictEqual(lb.limpiarOfertas([of("A", "1", "900"), of("A", "1", "9000")], "1000").lote_sospechoso, false, "un valor fuera de rango no vuelve lote al proceso");
+    const misma = lb.limpiarOfertas([{ nombre_proveedor: "X", c_digo_proveedor: "77", nit_del_proveedor: "900111", valor_de_la_oferta: "900" },
+      { nombre_proveedor: "X", c_digo_proveedor: "", nit_del_proveedor: "900111", valor_de_la_oferta: "900" }], "1000");
+    assert.strictEqual(misma.validas.length, 1, "la misma empresa con y sin código es UN oferente");
+    // medido en wi7w (17-oct-2026): la misma empresa con dos códigos de SECOP, NIT «0000000» y el mismo valor
+    const dorf = lb.limpiarOfertas([{ nombre_proveedor: "DORF", c_digo_proveedor: "722966108", nit_del_proveedor: "0000000", valor_de_la_oferta: "900", n: "798" },
+      { nombre_proveedor: "Dorf", c_digo_proveedor: "728473109", nit_del_proveedor: "0000000", valor_de_la_oferta: "900", n: "798" }], "1000");
+    assert.strictEqual(dorf.validas.length, 1, "dos cuentas de SECOP de la misma empresa son UN oferente");
+    assert.strictEqual(dorf.excluidas.repetidas, 1594, "las filas que la consulta agrupada juntó se cuentan como réplicas, no como ofertas");
+    const puente = lb.limpiarOfertas([{ nombre_proveedor: "OBRAS SAS", nit_del_proveedor: "900111222", valor_de_la_oferta: "900" },
+      { nombre_proveedor: "No Definido", nit_del_proveedor: "900.111.222", valor_de_la_oferta: "900" }], "1000");
+    assert.strictEqual(puente.validas.length, 1, "el NIT une la fila con nombre y la que no lo trae");
+    const porNombre = lb.limpiarOfertas([{ nombre_proveedor: "CONSORCIO VIAS 1", nit_del_proveedor: "901222333", valor_de_la_oferta: "900" },
+      { nombre_proveedor: "Consorcio Vías 1", nit_del_proveedor: "No Definido", valor_de_la_oferta: "900" }], "1000");
+    assert.strictEqual(porNombre.validas.length, 1, "el nombre une la fila con NIT y la que trae «No Definido»");
+    assert.strictEqual(lb.nitValido("0000000"), null); assert.strictEqual(lb.nitValido("CONSORCIO SED COLEGIOS 18"), null);
+    assert.strictEqual(lb.lotePorPrecioBase([{ precio_base: "100" }, { precio_base: "100" }, { precio_base: "" }]), false, "filas repetidas con el mismo precio son fases, no lotes");
+    assert.strictEqual(lb.lotePorPrecioBase([{ precio_base: "100" }, { precio_base: "250" }]), true, "dos precios base en un portafolio = lotes");
+    assert.deepStrictEqual(r.validas.map((o) => o.valor), [950, 900, 920]);
+    assert.strictEqual(r.lote_sospechoso, false);
+    assert.strictEqual(lb.limpiarOfertas([of("A", "1", "900"), of("A", "1", "800")], "1000").lote_sospechoso, true, "un proveedor con dos valores es lote");
+    const sinBase = lb.limpiarOfertas([of("A", "1", "900")], null);
+    assert.strictEqual(sinBase.validas.length, 0); assert.strictEqual(sinBase.excluidas.sin_precio_base, 1, "sin precio base nada se juzga en %");
+    const st = lb.estadisticas([1, 2, 3, 4]);
+    assert.strictEqual(st.mediana, 2.5, "mediana con número PAR = promedio de los dos centrales");
+    assert.ok(Math.abs(st.sigma_pob - Math.sqrt(1.25)) < 1e-12 && Math.abs(st.sigma_muestral - Math.sqrt(5 / 3)) < 1e-12, "las dos σ");
+    assert.strictEqual(lb.estadisticas([7]).sigma_muestral, null, "con 1 oferta no hay σ muestral");
+    assert.strictEqual(lb.competencia(3), "real"); assert.strictEqual(lb.competencia(2), "baja"); assert.strictEqual(lb.competencia(0), null);
+    const fila = lb.elegirFila([{ adjudicado: "No", id_del_proceso: "Z" }, { adjudicado: "Si", valor_total_adjudicacion: "", id_del_proceso: "A" },
+      { adjudicado: "Si", valor_total_adjudicacion: "10", fecha_adjudicacion: "2025-01-01", id_del_proceso: "B" }]);
+    assert.strictEqual(lb.elegirFila([{ adjudicado: "Si", id_del_proceso: "CO1.REQ.999" }, { adjudicado: "Si", id_del_proceso: "CO1.REQ.1000" }]).id_del_proceso,
+      "CO1.REQ.1000", "el desempate compara el número, no el texto");
+    assert.strictEqual(fila.id_del_proceso, "B", "regla de fila: adjudicada, con valor, más reciente");
+    // el almacén con tope propio (el dueño: que nunca se pasen los topes gratis de R2); Cloudflare no corta el gasto
+    const alm = require("../scripts/base_obra/almacen");
+    const MBb = alm.MB, base = { opsMes: { a: 0, b: 0 }, opsNecesarias: { a: 3, b: 0 }, topeBytes: 4000 * MBb };
+    assert.strictEqual(alm.decidirSubida({ ...base, usadoBytes: null, nuevosBytes: 1 }).ok, false, "lo ocupado sin medir NO es vacío");
+    assert.strictEqual(alm.decidirSubida({ ...base, usadoBytes: 0, nuevosBytes: 1, opsMes: null }).ok, false, "el registro del mes sin leer no es cero");
+    assert.strictEqual(alm.decidirSubida({ ...base, usadoBytes: 3900 * MBb, nuevosBytes: 100 * MBb }).ok, true, "justo en el tope se sube");
+    assert.strictEqual(alm.decidirSubida({ ...base, usadoBytes: 3900 * MBb, nuevosBytes: 100 * MBb + 1 }).ok, false, "un byte sobre el tope no se sube");
+    assert.strictEqual(alm.decidirSubida({ ...base, usadoBytes: 3900 * MBb, nuevosBytes: 150 * MBb, reemplazaBytes: 60 * MBb }).ok, true, "lo que se sobrescribe no se cuenta dos veces");
+    for (const malo of [{ nuevosBytes: undefined }, { nuevosBytes: 1, reemplazaBytes: NaN }, { nuevosBytes: 1, reemplazaBytes: 5 }, { nuevosBytes: 1, opsNecesarias: { a: NaN, b: 0 } }, { nuevosBytes: 1, opsMes: { a: -1e9, b: 0 } }])
+      assert.strictEqual(alm.decidirSubida({ ...base, usadoBytes: 0, ...malo }).ok, false, `entrada ilegible debía negar: ${JSON.stringify(malo)}`);
+    assert.strictEqual(alm.decidirSubida({ ...base, usadoBytes: 0, nuevosBytes: 1, topeBytes: (alm.TOPE_BASE_MB_MAX + 1) * MBb }).ok, false, "la base no puede quedarse con la parte de la copia nocturna");
+    assert.strictEqual(alm.decidirSubida({ ...base, usadoBytes: 0, nuevosBytes: 1, topeBytes: NaN }).ok, false, "un BASE_TOPE_MB ilegible no sube");
+    assert.strictEqual(alm.decidirSubida({ ...base, usadoBytes: 0, nuevosBytes: 1, opsMes: { a: alm.TOPES_OPS_MES.a - 2, b: 0 } }).ok, false, "operaciones clase A sobre el tope del mes");
+    assert.strictEqual(alm.TOPE_CUENTA_MB, 9000, "el dueño fijó el tope de la cuenta en 9.000 MB (17-oct-2026): 10 % de margen bajo los 10 GB gratis");
+    assert.strictEqual(alm.TOPE_BASE_MB_MAX + alm.COPIA_TOPE_MB, alm.TOPE_CUENTA_MB, "base + copia = tope de la cuenta");
+    assert.ok(alm.TOPE_CUENTA_MB * MBb < 10e9, "el tope de la cuenta queda bajo los 10 GB gratis en la lectura menor (10^9)");
+    assert.strictEqual(alm.topeBaseBytes({}), alm.TOPE_BASE_MB_MAX * MBb);
+    for (const v of ["mucho", "0x1000", "0b11", "1e4", "-5"]) assert.ok(Number.isNaN(alm.topeBaseBytes({ BASE_TOPE_MB: v })), `BASE_TOPE_MB «${v}» debía ser ilegible`);
+    assert.ok(alm.TOPES_OPS_MES.a <= alm.GRATIS_OPS_MES.a / 10 && alm.TOPES_OPS_MES.b <= alm.GRATIS_OPS_MES.b / 10, "la base gasta como mucho el 10 % de las operaciones gratis");
+    assert.strictEqual(alm.decodXml("R&amp;amp;D &lt;x&gt; &#65;"), "R&amp;D <x> A", "el XML se decodifica en UNA pasada");
+    // ida y vuelta contra un almacén S3 falso con ETag y PUT condicional (R2 lo evalúa atómicamente)
+    {
+      const http = require("http"), osB = require("os"), fsB = require("fs"), pathB = require("path");
+      const guardado = new Map(); let etagN = 0; const ops = { A: 0, B: 0 }; const putsDatos = [];
+      let modo = {};
+      const srv = http.createServer((req, res) => {
+        const u = new URL(req.url, "http://x"); const partes = u.pathname.split("/").filter(Boolean); const clave = decodeURIComponent(partes.slice(1).join("/"));
+        if (!/AWS4-HMAC-SHA256 Credential=LLAVE\//.test(req.headers.authorization || "")) { res.writeHead(403); return res.end("<Error>sin firma</Error>"); }
+        if (req.method === "GET" && u.searchParams.get("list-type") === "2") {
+          ops.A++;
+          const responder = () => {
+            if (modo.html) { res.writeHead(200, { "content-type": "text/html" }); return res.end("<html>muro</html>"); }
+            if (modo.bucle) { res.writeHead(200); return res.end("<ListBucketResult><IsTruncated>true</IsTruncated><NextContinuationToken>T</NextContinuationToken></ListBucketResult>"); }
+            res.writeHead(200, { "content-type": "application/xml" });
+            res.end(`<ListBucketResult><IsTruncated>false</IsTruncated>${[...guardado].map(([k, v]) => `<Contents><Key>${k.replace(/&/g, "&amp;").replace(/</g, "&lt;")}</Key><LastModified>${v.fecha}</LastModified><Size>${v.buf.length}</Size></Contents>`).join("")}</ListBucketResult>`);
+          };
+          return modo.retrasoLista ? setTimeout(responder, modo.retrasoLista) : responder();
+        }
+        if (req.method === "GET") { ops.B++; const v = guardado.get(clave); if (!v) { res.writeHead(404); return res.end(); } res.writeHead(200, { etag: v.etag }); return res.end(v.buf); }
+        if (req.method === "PUT") {
+          ops.A++; const tr = []; req.on("data", (ch) => tr.push(ch)); req.on("end", () => {
+            const v = guardado.get(clave);
+            if (req.headers["if-none-match"] === "*" && v) { res.writeHead(412); return res.end(); }
+            if (req.headers["if-match"] && (modo.rechazaIfMatch || !v || v.etag !== req.headers["if-match"])) { res.writeHead(412); return res.end(); }
+            if (!clave.startsWith("_cuota/")) { putsDatos.push({ clave, clase: req.headers["x-amz-storage-class"] }); if (modo.fallaDatos) { res.writeHead(500); return res.end(); } }
+            const etag = `"e${++etagN}"`; guardado.set(clave, { buf: Buffer.concat(tr), etag, fecha: new Date().toISOString() }); res.writeHead(200, { etag }); res.end();
+          }); return;
+        }
+        res.writeHead(405); res.end();
+      });
+      await new Promise((ok) => srv.listen(0, "127.0.0.1", ok));
+      const envB = { OBJETOS_ENDPOINT: `http://127.0.0.1:${srv.address().port}`, OBJETOS_BUCKET: "detekta-base", OBJETOS_ACCESS_KEY_ID: "LLAVE", OBJETOS_SECRET_ACCESS_KEY: "SECRETO", BASE_TOPE_MB: "0.01" };
+      const dirB = fsB.mkdtempSync(pathB.join(osB.tmpdir(), "base-obra-"));
+      const regMes = () => JSON.parse(guardado.get(alm.CLAVE_REGISTRO(new Date().toISOString().slice(0, 7))).buf.toString());
+      try {
+        fsB.writeFileSync(pathB.join(dirB, "resumen.json"), "x".repeat(600));
+        const r1 = await alm.subir(dirB, "corte/2026-10-17", envB);
+        assert.deepStrictEqual(r1.subidos, ["corte/2026-10-17/resumen.json"]);
+        assert.ok(putsDatos.every((x) => x.clase === "STANDARD"), "cada PUT de datos va en la clase STANDARD (la única con gratis)");
+        assert.ok(regMes().a >= ops.A && regMes().b >= ops.B, `el registro cuenta TODO lo gastado (registro ${JSON.stringify(regMes())}, servidor ${JSON.stringify(ops)})`);
+        // un tope que se pasaría: frena con CERO datos escritos y anota el rechazo
+        const datosAntes = putsDatos.length;
+        fsB.writeFileSync(pathB.join(dirB, "grande.json"), "y".repeat(6000));
+        await assert.rejects(alm.subir(dirB, "corte/2026-11-17", envB), /NO SE SUBIÓ: la subida dejaría/);
+        assert.strictEqual(putsDatos.length, datosAntes, "frenada = NI UN byte de datos escrito");
+        assert.ok(regMes().a >= ops.A && regMes().b >= ops.B, "el rechazo también queda anotado");
+        fsB.rmSync(pathB.join(dirB, "grande.json"));
+        // el muro del edge (200 con HTML) y un token repetido no son «vacío»
+        modo = { html: true }; await assert.rejects(alm.subir(dirB, "corte/x", envB), /listado ilegible/); 
+        modo = { bucle: true }; await assert.rejects(alm.subir(dirB, "corte/x", envB), /token repetido/);
+        modo = {};
+        // un registro negativo o borrado con objetos de este mes no se toma como cero
+        const kReg = alm.CLAVE_REGISTRO(new Date().toISOString().slice(0, 7));
+        const regBueno = guardado.get(kReg);
+        const opsAntesIlegible = { ...ops };   // un registro ilegible o borrado no se puede sumar: margen declarado
+        guardado.set(kReg, { ...regBueno, buf: Buffer.from('{"a":-5000000,"b":1}') });
+        await assert.rejects(alm.subir(dirB, "corte/x", envB), /negativas/);
+        guardado.delete(kReg);
+        await assert.rejects(alm.subir(dirB, "corte/x", envB), /falta el registro del mes pero hay/);
+        guardado.set(kReg, regBueno);
+        const sinAnotar = { A: ops.A - opsAntesIlegible.A, B: ops.B - opsAntesIlegible.B };
+        assert.ok(sinAnotar.A <= 2 && sinAnotar.B <= 2, `el margen sin anotar de dos corridas fallidas es de pocas operaciones (${JSON.stringify(sinAnotar)})`);
+        // dos corridas a la vez: el PUT condicional deja pasar UNA y la otra aborta
+        modo = { retrasoLista: 80 };
+        const dos = await Promise.allSettled([alm.subir(dirB, "corte/a", envB), alm.subir(dirB, "corte/b", envB)]);
+        assert.deepStrictEqual(dos.map((x) => x.status).sort(), ["fulfilled", "rejected"], "dos corridas simultáneas: una sola pasa");
+        assert.match(String(dos.find((x) => x.status === "rejected").reason.message), /otra corrida movió el registro/);
+        modo = {};
+        // R2 real (corrida 39069539949, 17-oct-2026) devolvió 412 al If-Match con el registro SIN cambios:
+        // se relee, la ETag es la misma, y se escribe sin condición (el flujo corre de a uno), sin perder la cuenta
+        modo = { rechazaIfMatch: true };
+        const avisos = []; const logAntes = process.stderr.write.bind(process.stderr);
+        process.stderr.write = (m) => { avisos.push(String(m)); return true; };
+        let rR2;
+        try { rR2 = await alm.subir(dirB, "corte/r2", envB); } finally { process.stderr.write = logAntes; }
+        modo = {};
+        assert.deepStrictEqual(rR2.subidos, ["corte/r2/resumen.json"], "con el If-Match rechazado y el registro sin cambios, la subida pasa");
+        assert.ok(avisos.some((m) => /412 al If-Match con el registro sin cambios/.test(m)), "y deja el aviso con las ETag para diagnosticar");
+        assert.ok(regMes().condicional_rechazado === true && regMes().a >= ops.A - sinAnotar.A, `la escritura sin condición no deja la cuenta corta (registro ${JSON.stringify(regMes())}, servidor ${JSON.stringify(ops)})`);
+        // un fallo a mitad: la reserva ya contaba las operaciones (la cuenta queda DE MÁS, lado seguro)
+        modo = { fallaDatos: true }; await assert.rejects(alm.subir(dirB, "corte/c", envB), /la reserva ya cuenta/); modo = {};
+        assert.ok(regMes().a >= ops.A - sinAnotar.A && regMes().b >= ops.B - sinAnotar.B,
+          `fuera del margen declarado, el registro cuenta TODO: abortos, carrera perdida y fallo a mitad (registro ${JSON.stringify(regMes())}, servidor ${JSON.stringify(ops)}, sin anotar ${JSON.stringify(sinAnotar)})`);
+      } finally { srv.close(); fsB.rmSync(dirB, { recursive: true, force: true }); }
+    }
+    // el flujo que sube a R2: sin pull_request (los secretos no salen), una corrida a la vez, mide antes de bajar
+    {
+      const ymlB = require("fs").readFileSync(require("path").join(__dirname, "..", ".github", "workflows", "base_obra.yml"), "utf8")
+        .split("\n").filter((l) => !/^\s*#/.test(l)).join("\n");
+      assert.ok(!/pull_request/.test(ymlB), "el flujo de la base no corre en pull request: expondría los secretos del almacén");
+      assert.ok(/concurrency:\s*\n\s*group:\s*r2-base-obra\s*\n\s*cancel-in-progress:\s*false/.test(ymlB), "el flujo de la base corre de a uno (concurrency r2-base-obra, sin cancelar la que va)");
+      const iMedir = ymlB.indexOf("almacen.js medir"), iInv = ymlB.indexOf("inventario.js"), iSubir = ymlB.indexOf("almacen.js subir");
+      assert.ok(iMedir > 0 && iInv > iMedir && iSubir > iInv, "orden: medir el almacén → inventario → subir con tope");
+      for (const v of ["OBJETOS_ENDPOINT", "OBJETOS_BUCKET", "OBJETOS_ACCESS_KEY_ID", "OBJETOS_SECRET_ACCESS_KEY"]) assert.ok(ymlB.includes(`secrets.${v}`), `el flujo lee ${v} de los secretos`);
+      assert.ok(!/vercel|upstash|\/api\//i.test(ymlB), "el flujo de la base no toca producción");
+    }
+    // Fase 1: una fila por proceso y sus señales (para revisar, nunca acusan)
+    {
+      const FI = require("../scripts/base_obra/fila");
+      const fase = (o) => ({ id_del_portafolio: "CO1.BDOS.1", modalidad_de_contratacion: "Selección Abreviada de Menor Cuantía", precio_base: "1000",
+        codigo_entidad: "E1", entidad: "ALCALDÍA X", departamento_entidad: "Tolima", ciudad_entidad: "No Definido", numero_de_lotes: "0", ...o });
+      const filas = [fase({ id_del_proceso: "CO1.REQ.9", adjudicado: "Si", fecha_de_publicacion_del: "2026-09-02T00:00:00.000", fecha_de_recepcion_de: "2026-09-07T00:00:00.000",
+          valor_total_adjudicacion: "940", nombre_del_proveedor: "OBRAS SAS", nit_del_proveedor_adjudicado: "900111222", respuestas_al_procedimiento: "3", proveedores_invitados: "10" }),
+        fase({ id_del_proceso: "CO1.REQ.8", adjudicado: "No", fecha_de_publicacion_del: "2026-08-04T00:00:00.000", proveedores_invitados: "0" })];
+      const of = (nom, nit, v) => ({ nombre_proveedor: nom, nit_del_proveedor: nit, valor_de_la_oferta: v });
+      const x = FI.filaDeProceso({ portafolio: "CO1.BDOS.1", filas, ofertas: [of("OBRAS SAS", "900111222", "940"), of("B", "800", "950"), of("C", "No Definido", "960")], lugar: { direcci_n_de_ejecuci_n_del_contrato: "Calle 1\nIbagué\nTolima\nCOLOMBIA" } });
+      assert.strictEqual(x.id_proceso, "CO1.REQ.9", "la fila es la de la fase adjudicada");
+      { // RESCATE BAJO EL 50 % (18-oct-2026): igual a lo adjudicado, contratos SUMADOS ≤ 1,5 veces eso y otra válida en rango
+        const ofR = [of("OBRAS SAS", "900111222", "400"), of("B", "800", "900"), of("C", "700", "950")];
+        const filasR = [fase({ id_del_proceso: "CO1.REQ.9", adjudicado: "Si", valor_total_adjudicacion: "400", nombre_del_proveedor: "OBRAS SAS", nit_del_proveedor_adjudicado: "900111222", respuestas_al_procedimiento: "3" })];
+        const conR = (vc, ofs = ofR) => FI.filaDeProceso({ portafolio: "CO1.BDOS.1", filas: filasR, ofertas: ofs, valoresContrato: vc });
+        const real = conR([400]);   // contrato = lo adjudicado (8 de las 12 de mínima)
+        assert.strictEqual(real.excluidas.rescatada_bajo_50, 1); assert.strictEqual(real.excluidas.bajo_50, 0); assert.strictEqual(real.n_validas, 3);
+        assert.ok(real.oferta_ganadora && real.oferta_ganadora.pct === 0.4 && !real.inconsistencia, "la ganadora rescatada se identifica con su precio real");
+        assert.strictEqual(conR([600]).excluidas.rescatada_bajo_50, 1, "contrato 1,5 veces lo adjudicado (las 4 de mínima con adición): se rescata");
+        assert.strictEqual(conR([601]).excluidas.rescatada_bajo_50, 1, "a un peso del tope, todavía se rescata");
+        assert.strictEqual(conR([300, 300]).excluidas.rescatada_bajo_50, 1, "dos contratos cuya SUMA cabe en el tope: se rescata");
+        // Tibirita CO1.BDOS.8989826: dos LOTES, cada contrato cabe y la suma vale 2 veces lo adjudicado → no
+        for (const vc of [[400, 400], [400, 450], [602], [999], [400, 700]]) assert.strictEqual(conR(vc).excluidas.rescatada_bajo_50, 0, `contratos ${JSON.stringify(vc)} suman más de 1,5 veces lo adjudicado: no se rescata`);
+        // Cúcuta CO1.BDOS.7050304 (contrato al precio base o más) y «sin dato» (sin contratos, ilegible o en cero) → no
+        for (const vc of [[1000], [2348], [400, 1000], [], null, ["No Definido"], [0], ["No Definido", 400], [null, 400], [0, 400]]) {
+          const no = conR(vc);
+          assert.strictEqual(no.excluidas.rescatada_bajo_50, 0, `contratos ${JSON.stringify(vc)}: no se rescata`); assert.strictEqual(no.excluidas.bajo_50, 1);
+          assert.strictEqual(no.oferta_ganadora, null, `contratos ${JSON.stringify(vc)}: sin la oferta, no hay ganadora inventada`);
+        }
+        // sin otra válida en rango (SENA CO1.BDOS.7102769: las dos ofertas al 27,7 %), lo sospechoso es el precio base → no
+        const solas = conR([400], [of("OBRAS SAS", "900111222", "400"), of("B", "800", "390")]);
+        assert.strictEqual(solas.excluidas.rescatada_bajo_50, 0); assert.strictEqual(solas.excluidas.bajo_50, 2); assert.strictEqual(solas.n_validas, 0); assert.strictEqual(solas.excluido, "cero_ofertas_validas");
+        const L2 = require("../scripts/base_obra/limpieza");
+        // a un peso sí (redondeo), a dos no, por encima o por debajo de lo adjudicado
+        assert.strictEqual(L2.limpiarOfertas(ofR, "1000", { valor_adjudicado: 401, valores_contrato: [401] }).excluidas.rescatada_bajo_50, 1);
+        for (const adj of [402, 398]) assert.strictEqual(L2.limpiarOfertas(ofR, "1000", { valor_adjudicado: adj, valores_contrato: [adj] }).excluidas.rescatada_bajo_50, 0, `oferta 400, adjudicado ${adj}: no`);
+        // el tope a escala real: adjudicado $26.000.000 → la suma puede llegar a $39.000.001, no a $39.000.002
+        const ofG = [of("OBRAS SAS", "900111222", "26000000"), of("B", "800", "90000000")];
+        assert.strictEqual(L2.limpiarOfertas(ofG, "100000000", { valor_adjudicado: 26000000, valores_contrato: [39000001] }).excluidas.rescatada_bajo_50, 1);
+        assert.strictEqual(L2.limpiarOfertas(ofG, "100000000", { valor_adjudicado: 26000000, valores_contrato: [39000002] }).excluidas.rescatada_bajo_50, 0);
+        // el rescate es SOLO bajo el 50 %: una oferta sobre el precio base sigue fuera aunque coincida con lo adjudicado y su contrato
+        const sobre = L2.limpiarOfertas([of("OBRAS SAS", "900111222", "400000"), of("B", "800", "900")], "1000", { valor_adjudicado: 400000, valores_contrato: [400000] });
+        assert.strictEqual(sobre.excluidas.sobre_base, 1); assert.ok(!sobre.validas.some((o) => o.valor === 400000));
+        // base.js junta TODOS los contratos del proceso (se EJECUTA la función), con el ilegible como null
+        const BJ = require("../scripts/base_obra/base");
+        const jc = BJ.juntarContratos([{ proceso_de_compra: "CO1.BDOS.8989826", valor_del_contrato: "100000000" }, { proceso_de_compra: "CO1.BDOS.8989826", valor_del_contrato: "99755678" },
+          { proceso_de_compra: "CO1.BDOS.2", valor_del_contrato: "No Definido" }, { valor_del_contrato: "5" }]);
+        assert.deepStrictEqual(jc.get("CO1.BDOS.8989826"), [100000000, 99755678]); assert.deepStrictEqual(jc.get("CO1.BDOS.2"), [null]); assert.strictEqual(jc.size, 2);
+      }
+      assert.strictEqual(x.plazo_dias, null, "sin fila de «observaciones» en p6dx el plazo es null, no el de la fase de ofertas");
+      assert.strictEqual(x.plazo_oferta_dias, 5, "el plazo de la fase de ofertas se guarda aparte");
+      const conObs = FI.filaDeProceso({ portafolio: "CO1.BDOS.1", filas: [filas[0], fase({ fase: "Presentación de observaciones", adjudicado: "No", fecha_de_publicacion_del: "2026-08-04T00:00:00.000" })], ofertas: [] });
+      assert.strictEqual(conObs.plazo_dias, 34, "licitación y menor cuantía: desde el prepliego (observaciones) hasta el cierre");
+      const minimaP = FI.filaDeProceso({ portafolio: "P", filas: [fase({ modalidad_de_contratacion: "Mínima cuantía", adjudicado: "Si", fecha_de_publicacion_del: "2026-09-01T00:00:00.000", fecha_de_recepcion_de: "2026-09-03T00:00:00.000" })], ofertas: [] });
+      assert.strictEqual(minimaP.plazo_dias, 2, "mínima: una sola fase, de su publicación al cierre");
+      assert.strictEqual(x.ciudad_entidad, null, "«No Definido» es sin dato, no una ciudad");
+      assert.strictEqual(x.municipio_ejecucion, "Ibagué"); assert.strictEqual(x.ubicacion_fuente, "direccion_del_contrato");
+      assert.strictEqual(x.pct_adjudicado, 0.94); assert.strictEqual(x.n_validas, 3); assert.strictEqual(x.competencia, "real");
+      assert.deepStrictEqual(x.oferta_ganadora, { valor: 940, pct: 0.94, proveedor: "n:900111222" }, "la oferta del ganador se halla por NIT y guarda quién es");
+      assert.strictEqual(x.interesados, 10, "interesados = el máximo de invitados entre las fases");
+      assert.ok(!x.ofertas_validas.some((o) => "fila" in o), "la base no guarda la fila cruda de la oferta");
+      const nadie = FI.filaDeProceso({ portafolio: "CO1.BDOS.1", filas: [fase({ adjudicado: "Si", proveedores_invitados: "" })], ofertas: [of("A", "900111222", "900")] });
+      assert.strictEqual(nadie.interesados, null, "sin invitados publicados no hay «0 interesados»");
+      assert.strictEqual(nadie.competencia, "baja"); assert.strictEqual(nadie.plazo_dias, null, "sin fechas no hay plazo");
+      const lotes = FI.filaDeProceso({ portafolio: "CO1.BDOS.1", filas: [fase({ adjudicado: "Si", numero_de_lotes: "3" })], ofertas: [of("A", "900111222", "900")] });
+      assert.strictEqual(lotes.excluido, "lote_numero_de_lotes"); assert.strictEqual(lotes.competencia, null, "un excluido no recibe etiqueta de competencia");
+      const noAdj = FI.filaDeProceso({ portafolio: "CO1.BDOS.1", filas: [fase({ adjudicado: "No" })], ofertas: [] });
+      assert.strictEqual(noAdj.excluido, "no_adjudicado");
+      // señales: umbral de plazo MEDIDO (percentil 10) y ganador repetido por código de entidad
+      assert.strictEqual(FI.percentil([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], 0.1), 2);
+      assert.strictEqual(FI.percentil([null, undefined], 0.1), null, "sin datos no hay percentil");
+      const mk = (i, o) => ({ portafolio: "P" + i, adjudicado: true, modalidad: "menor_cuantia", codigo_entidad: "E1", ganador_id: "n:1", plazo_dias: 10 + i, n_validas: 1, pct_adjudicado: 0.995, interesados: 10, competencia: "baja", ...o });
+      const conj = [mk(1), mk(2), mk(3), mk(4, { ganador_id: "n:2", n_validas: 3, competencia: "real", pct_adjudicado: 0.9 }), mk(5, { codigo_entidad: "E2" }), mk(6, { competencia: null, excluido: "lote_p6dx", ganador_id: "n:9" })];
+      FI.senales(conj);
+      assert.strictEqual(conj[0].senales.ganador_repetido, true, "3 victorias del mismo ganador en la misma entidad");
+      assert.strictEqual(conj[4].senales.ganador_repetido, false, "otra entidad no suma");
+      assert.strictEqual(conj[0].senales.adjudicado_99_con_una, true); assert.strictEqual(conj[3].senales.una_oferta, false);
+      assert.strictEqual(conj[0].senales.plazo_corto, true, "plazo bajo el percentil 10 de su modalidad");
+      assert.strictEqual(conj[3].senales.plazo_corto, false, "plazo sobre el percentil 10 no es corto");
+      assert.strictEqual(conj[0].senales.ganador_repetido, true, "EXACTAMENTE 3 victorias ya alcanzan N = 3");
+      assert.strictEqual(conj[5].senales, undefined, "un excluido no recibe señales");
+      assert.strictEqual(FI.senales([mk(1, { modalidad: "licitacion", interesados: null })]) && true, true);
+      // arreglos de la revisión adversaria (17-oct-2026), cada uno con su caso medido
+      for (const n of ["900000000", "9000000000", "111111111", "2222222222", "11111111", "123456789"]) assert.strictEqual(lb.nitValido(n), null, `NIT de relleno «${n}» no identifica`);
+      assert.strictEqual(lb.nitValido("900111222"), "900111222");
+      const amb = lb.limpiarOfertas([{ nombre_proveedor: "CONSORCIO DIKH", nit_del_proveedor: "2222222222", valor_de_la_oferta: "900" },
+        { nombre_proveedor: "CONSORCIO INGENIERIA MEM", nit_del_proveedor: "2222222222", valor_de_la_oferta: "910" }], "1000");
+      assert.strictEqual(amb.lote_sospechoso, false, "un NIT de relleno no junta dos consorcios en un lote falso");
+      const amb2 = lb.limpiarOfertas([{ nombre_proveedor: "UT A", nit_del_proveedor: "901555666", valor_de_la_oferta: "900" },
+        { nombre_proveedor: "UT B", nit_del_proveedor: "901555666", valor_de_la_oferta: "910" }], "1000");
+      assert.strictEqual(amb2.validas.length, 2, "un NIT con dos nombres distintos en el mismo proceso no identifica: cuentan por nombre");
+      assert.strictEqual(amb2.lote_sospechoso, false, "…y por eso no inventa un lote");
+      assert.strictEqual(amb2.proveedores, 2, "dos oferentes, no uno");
+      assert.strictEqual(lb.nombreComparable("ESTRUCTURAS, ARQUITECTURA S.A.S."), lb.nombreComparable("Estructuras; Arquitectura SAS"), "puntuación y S.A.S. no separan al mismo oferente");
+      assert.deepStrictEqual(FI.lugarDeDireccion("CALLE 4 CARRERA 3 ESQUINA\nTolima\nCOLOMBIA"), { municipio: null, departamento: "Tolima" }, "con 3 líneas no hay municipio, solo departamento");
+      const sobre = FI.filaDeProceso({ portafolio: "P", filas: [fase({ adjudicado: "Si", valor_total_adjudicacion: "1000000" })], ofertas: [of("A", "900111222", "900")] });
+      assert.strictEqual(sobre.pct_adjudicado, null); assert.strictEqual(sobre.inconsistencia, "valor_adjudicado_sobre_precio_base", "adjudicar sobre el precio base es inconsistencia, no 100.000 %");
+      const contra = FI.filaDeProceso({ portafolio: "P", filas: [fase({ adjudicado: "Si", valor_total_adjudicacion: "1000", nombre_del_proveedor: "A", nit_del_proveedor_adjudicado: "900111222" })], ofertas: [of("A", "900111222", "530")] });
+      assert.strictEqual(contra.inconsistencia, "valor_adjudicado_distinto_de_la_oferta_ganadora");
+      FI.senales([contra]); assert.strictEqual(contra.senales.adjudicado_99_con_una, null, "un valor adjudicado que contradice la oferta del ganador no decide la señal");
+      const conf = [mk(1, { respuestas_publicadas: 3 }), mk(2, { pct_adjudicado: null }), mk(3, { interesados: 2, respuestas_publicadas: 4, n_validas: 1, interesados_contradictorio: true })];
+      FI.senales(conf);
+      assert.strictEqual(conf[0].senales.una_oferta, null, "1 válida de 3 presentadas no es oferente único");
+      assert.strictEqual(conf[1].senales.adjudicado_99_con_una, null, "sin % adjudicado la señal es «sin dato», no «no»");
+      assert.strictEqual(conf[2].senales.interes_sin_ofertas, null, "interesados menos que respuestas: el campo se contradice");
+      const reEnt = [0, 1, 2].map((i) => mk(10 + i, { ganador_id: "n:900000001", ganador_nit: "900000001", ganador: ["UT A", "UT B", "UT C"][i] }));
+      FI.senales(reEnt); assert.strictEqual(reEnt[0].senales.ganador_repetido, false, "un NIT que gana con 3 nombres distintos en la entidad no es «el mismo ganador»");
+      const tzAntes = process.env.TZ; process.env.TZ = "America/New_York";
+      try { assert.strictEqual(FI.filaDeProceso({ portafolio: "P", filas: [fase({ adjudicado: "Si", fecha_de_publicacion_del: "2026-03-01T00:00:00.000", fecha_de_recepcion_de: "2026-03-15T00:00:00.000" })], ofertas: [] }).plazo_oferta_dias, 14, "el cambio de horario no mueve el plazo"); }
+      finally { if (tzAntes === undefined) delete process.env.TZ; else process.env.TZ = tzAntes; }
+    }
+    // Fase 2: piso por proceso, distribuciones con respaldo, umbral de la alerta por modalidad
+    {
+      const CI = require("../scripts/base_obra/cifras");
+      const ofs = (pcts) => pcts.map((p, i) => ({ proveedor: "n:" + i, nombre: "X" + i, valor: p * 1000, pct: p }));
+      assert.strictEqual(CI.pisoDeProceso({ ofertas_validas: ofs([0.9, 0.95]) }), null, "con menos de 3 válidas no hay piso");
+      const pz = CI.pisoDeProceso({ ofertas_validas: ofs([0.90, 0.92, 0.94, 0.96]), oferta_ganadora: { pct: 0.89 } });
+      assert.ok(Math.abs(pz.mediana - 0.93) < 1e-12 && pz.piso_muestral < pz.piso_pob, "mediana par y la σ muestral deja el piso más abajo");
+      assert.strictEqual(pz.ganador_bajo_piso_muestral, true);
+      assert.strictEqual(CI.pisoDeProceso({ ofertas_validas: ofs([0.9, 0.92, 0.94]) }).ganador_bajo_piso_pob, null, "sin oferta ganadora emparejada: sin dato, no «no»");
+      const ic1 = CI.intervaloMediana([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 500), ic2 = CI.intervaloMediana([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 500);
+      assert.deepStrictEqual(ic1, ic2, "el remuestreo con semilla fija da el mismo intervalo");
+      assert.ok(ic1[0] <= 5.5 && ic1[1] >= 5.5);
+      const filasT = [1, 2, 3, 4, 5, 6].map((v) => ({ modalidad: "menor_cuantia", precio_base: v * 100 }));
+      const cortesT = CI.cortesTerciles(filasT);
+      assert.deepStrictEqual([CI.tercil(cortesT, filasT[0]), CI.tercil(cortesT, filasT[3]), CI.tercil(cortesT, filasT[5])], ["pequeño", "mediano", "grande"]);
+      // un grupo con menos de 30 se apoya en el departamento; si tampoco alcanza, en el país
+      const mkG = (d, n, v) => Array.from({ length: n }, () => ({ modalidad: "menor_cuantia", departamento_ejecucion: d, precio_base: 100, m: v }));
+      const pg = CI.porGrupo([...mkG("Tolima", 5, 0.9), ...mkG("Huila", 40, 0.95)], (x) => x.m, { menor_cuantia: [100, 100] });
+      assert.strictEqual(pg.grupos["menor_cuantia|Tolima|pequeño"].se_apoya_en, "pais", "5 en el grupo y 5 en el departamento: se apoya en el país");
+      assert.strictEqual(pg.grupos["menor_cuantia|Huila|pequeño"].se_apoya_en, "grupo");
+      assert.strictEqual(pg.grupos["menor_cuantia|Tolima|pequeño"].n_grupo, 5, "dice cuántos tenía su grupo");
+      assert.strictEqual(CI.deptoClave("Distrito Capital de Bogotá"), CI.deptoClave("Bogotá D.C."), "Bogotá es una sola");
+      assert.strictEqual(CI.esPersonaNatural("JUAN PÉREZ GÓMEZ"), true); assert.strictEqual(CI.esPersonaNatural("CONSORCIO VÍAS 2026"), false); assert.strictEqual(CI.esPersonaNatural("OBRAS S.A.S."), false);
+      const ua = CI.umbralAlerta([{ oferta_ganadora: { pct: 0.75 }, competencia: "real", modalidad: "minima" }, { oferta_ganadora: { pct: 0.95 }, competencia: "real", modalidad: "licitacion" }]);
+      assert.strictEqual(ua.minima.find((f) => f.corte_pct === 80).todas.de_cada_100, 100, "mínima se mide aparte");
+      assert.strictEqual(ua.licitacion.find((f) => f.corte_pct === 80).todas.de_cada_100, 0, "la ganadora de licitación al 95 % no recibe la alerta del 80 %");
+    }
+    // Fase 2: los 4 métodos del pliego (SAMC-SI-020-2026, pp. 53–56) contra los casos reales del dueño
+    {
+      const ME = require("../scripts/base_obra/metodos");
+      const CI2 = require("../scripts/base_obra/cifras");
+      for (const [t, m] of [[3209.00, "mediana"], [3209.24, "mediana"], [3209.25, "geometrica"], [3209.49, "geometrica"], [3209.50, "aritmetica_baja"], [3349.63, "aritmetica_baja"], [3209.74, "aritmetica_baja"], [3209.75, "menor_valor"], [3213.97, "menor_valor"], [3678.15, "mediana"]])
+        assert.strictEqual(ME.metodoPorTrm(t), m, `TRM ${t} → ${m} (centavos, rango inclusive)`);
+      assert.strictEqual(ME.metodoPorTrm(null), null, "sin TRM no hay método");
+      const ganaCon = (v, m) => ME.primeros(v, m).map((i) => v[i]);
+      const E = [883381572, 912336926, 921837099, 924697981, 925922346, 926361567, 928080331, 929694066, 932960319];
+      assert.deepStrictEqual(ganaCon(E, "menor_valor"), [883381572], "E (menor valor): gana la de $883.381.572, la que adjudicaron");
+      const C = [979021151, 984249295, 992002622, 1003514996];
+      assert.deepStrictEqual(ganaCon(C, "mediana"), [984249295], "C (mediana, número PAR): el máximo va a la inmediatamente por debajo de la mediana — la que puntuó la evaluación");
+      assert.notDeepStrictEqual(ganaCon(C, "mediana"), [1003514996], "…y no la que adjudicó la resolución (la anomalía de C)");
+      assert.deepStrictEqual(ganaCon([10, 20, 30], "mediana"), [20], "mediana con número impar: el valor central");
+      const pz = ME.puntajes([100, 300], "menor_valor");
+      assert.deepStrictEqual(pz, [1, 0.3333333], "menor valor: Vmin/Vi al séptimo decimal");
+      assert.deepStrictEqual(ME.puntajes([100, 1000], "geometrica").map((x) => x >= 0), [true, true], "un puntaje negativo vale cero");
+      const xb = ME.puntajes([90, 100, 110], "aritmetica_baja"); // X̄B = (90 + 100)/2 = 95
+      assert.ok(xb[0] === Math.round((1 - 5 / 95) * 1e7) / 1e7 && xb[1] === Math.round((1 - 5 / 95) * 1e7) / 1e7, "media aritmética baja: las dos ramas a 5 de X̄B empatan");
+      assert.strictEqual(ME.primeros([100, 0], "menor_valor"), null, "un valor no positivo no se puntúa");
+      // simulador y fecha de la TRM
+      assert.deepStrictEqual(CI2.simularProceso([0.95, 0.96, 0.97], 0.90).menor_valor, "gana");
+      assert.strictEqual(CI2.simularProceso([0.95], 0.95).menor_valor, "empata", "el mismo precio empata: lo decide un criterio que los datos no traen");
+      assert.strictEqual(CI2.fechaTrmEstimada("2026-10-08T00:00:00.000"), "2026-10-06", "A: adjudicación jueves → TRM del martes");
+      assert.strictEqual(CI2.fechaTrmEstimada("2026-06-03T00:00:00.000"), "2026-06-01", "C: TRM del lunes 1-jun");
+      assert.strictEqual(CI2.fechaTrmEstimada("2026-10-05T00:00:00.000"), "2026-10-01", "un lunes salta el fin de semana");
+      const serie = [{ desde: "2026-05-30", hasta: "2026-06-01", valor: 3678.15 }];
+      assert.strictEqual(CI2.trmVigente(serie, "2026-06-01"), 3678.15, "la TRM rige hasta su vigencia «hasta»");
+      assert.strictEqual(CI2.trmVigente(serie, "2026-06-02"), null, "fuera de la serie: sin dato, no cero");
+      // arreglos de la revisión adversaria de la Fase 2 (17-oct-2026)
+      const sp = CI2.simularProceso([0.95, 0.96, 0.97], 0.80);
+      assert.strictEqual(sp.menor_valor, "gana"); assert.strictEqual(sp.bajo_piso, true, "al 80 % gana por menor valor pero queda bajo el piso: la entidad le pedirá justificar");
+      assert.strictEqual(CI2.simularProceso([0.95, 0.96, 0.97], 0.955).bajo_piso, false);
+      const ofs2 = (pcts) => pcts.map((q, i) => ({ proveedor: "n:" + i, pct: q }));
+      assert.strictEqual(CI2.sinPrecio({ ofertas_validas: ofs2([1, 1, 1]) }), true, "todas al mismo valor: sin competencia de precio, fuera del piso");
+      assert.strictEqual(CI2.sinPrecio({ ofertas_validas: ofs2([0.95, 1]) }), false);
+      assert.deepStrictEqual(ME.puntajes([100, 300], "menor_valor", 49.5), [49.5, 16.5], "el séptimo decimal va sobre el puntaje real (49,5 en menor cuantía)");
+      assert.strictEqual(ME.PUNTAJE_MAXIMO.menor_cuantia, 49.5); assert.strictEqual(ME.PUNTAJE_MAXIMO.licitacion, 48.5);
+      const hab = new Set(["2026-06-01", "2026-06-02", "2026-06-04"]);   // el 3-jun festivo en esta serie de prueba
+      assert.strictEqual(CI2.fechaTrmEstimada("2026-06-05T00:00:00.000", -2, hab), "2026-06-02", "con los días hábiles de la serie, el festivo no cuenta");
+      assert.strictEqual(CI2.fechaTrmEstimada("2026-06-02T00:00:00.000", 1, hab), "2026-06-04", "licitación: el día hábil SIGUIENTE a la audiencia");
+      const proc = () => ({ codigo_entidad: "E", entidad: "X", departamento_entidad: "Tolima", competencia: "real", n_validas: 3, oferta_ganadora: { pct: 0.9, proveedor: "n:1" },
+        ofertas_validas: [{ proveedor: "n:1", nombre: "A SAS", pct: 0.9 }, { proveedor: "n:2", nombre: "B SAS", pct: 0.9 }, { proveedor: "n:3", nombre: "C SAS", pct: 0.95 }] });
+      const comp = CI2.competencia(Array.from({ length: 10 }, proc));
+      assert.strictEqual(comp.entidades[0].oferentes_distintos, 3);
+      const rB = comp.rivales_frecuentes.find((r) => r.nombre === "B SAS"), rA = comp.rivales_frecuentes.find((r) => r.nombre === "A SAS");
+      assert.strictEqual(rA.ganadas_con_oferta_emparejada, 10); assert.strictEqual(rB.ganadas_con_oferta_emparejada, 0, "ofrecer el mismo valor del ganador no es ganar: se cuenta por identidad");
+      assert.strictEqual(CI2.esPersonaNatural("JUAN PEREZ INGENIERIA"), true, "«ingeniería» no es una forma jurídica: el nombre no sale");
+    }
+    // Fase 3: muestra de validación (semilla fija, proporcional por modalidad) y cruce con el contrato
+    {
+      const MU = require("../scripts/base_obra/muestra");
+      const pob = [...Array.from({ length: 60 }, (_, i) => ({ portafolio: "M" + String(i).padStart(3, "0"), modalidad: "menor_cuantia" })),
+        ...Array.from({ length: 30 }, (_, i) => ({ portafolio: "N" + String(i).padStart(3, "0"), modalidad: "minima" })),
+        ...Array.from({ length: 10 }, (_, i) => ({ portafolio: "L" + String(i).padStart(3, "0"), modalidad: "licitacion" }))];
+      const m1 = MU.seleccionar(pob, 30, 20261017), m2 = MU.seleccionar(pob.slice().reverse(), 30, 20261017);
+      assert.deepStrictEqual(m1.map((x) => x.portafolio).sort(), m2.map((x) => x.portafolio).sort(), "la misma semilla da la misma muestra, aunque la base venga en otro orden");
+      assert.strictEqual(new Set(m1.map((x) => x.portafolio)).size, 30, "sin repetidos");
+      const cuenta = (mm, mod) => mm.filter((x) => x.modalidad === mod).length;
+      assert.deepStrictEqual([cuenta(m1, "menor_cuantia"), cuenta(m1, "minima"), cuenta(m1, "licitacion")], [18, 9, 3], "proporcional al tamaño de cada modalidad");
+      assert.notDeepStrictEqual(MU.seleccionar(pob, 30, 1).map((x) => x.portafolio), m1.map((x) => x.portafolio), "otra semilla, otra muestra");
+      const pob2 = [...Array.from({ length: 50 }, (_, i) => ({ portafolio: "A" + i, modalidad: "menor_cuantia" })), ...Array.from({ length: 26 }, (_, i) => ({ portafolio: "B" + i, modalidad: "minima" })),
+        ...Array.from({ length: 24 }, (_, i) => ({ portafolio: "C" + i, modalidad: "licitacion" }))];
+      const m3 = MU.seleccionar(pob2, 10, 7);
+      assert.deepStrictEqual([cuenta(m3, "menor_cuantia"), cuenta(m3, "minima"), cuenta(m3, "licitacion")], [5, 3, 2], "el sobrante va por mayor resto (50/26/24 con n = 10 → 5/3/2)");
+      const caida = MU.filaDeMuestra({ portafolio: "P", modalidad: "minima", competencia: "baja", n_validas: 1 }, [], { status: 503, error: "caída" });
+      assert.strictEqual(caida.contratos_en_jbjy, null, "jbjy caído: contratos «sin medir», no 0"); assert.strictEqual(caida.contrato, "sin_medir");
+      assert.strictEqual(MU.filaDeMuestra({ portafolio: "P", modalidad: "minima", competencia: "baja", n_validas: 1 }, [], null).contratos_en_jbjy, 0, "jbjy respondió y no hay contrato: 0 es un dato");
+      const cmp = MU.compararConContrato({ ganador_nit: "900111222", ganador: "OBRAS SAS", valor_adjudicado: 1000 }, { documento_proveedor: "900111222", proveedor_adjudicado: "OBRAS S.A.S.", valor_del_contrato: "1500" });
+      assert.strictEqual(cmp.mismo_ganador, true); assert.strictEqual(cmp.valor_igual_adjudicado, false); assert.strictEqual(cmp.diferencia_valor_pct, 50);
+      assert.deepStrictEqual(MU.compararConContrato({}, null), { contrato: false }, "sin contrato en jbjy: se dice, no se inventa");
+      assert.strictEqual(MU.compararConContrato({ ganador_nit: null, ganador: "Obras; S.A.S.", valor_adjudicado: null }, { documento_proveedor: "No Definido", proveedor_adjudicado: "OBRAS SAS", valor_del_contrato: "" }).valor_igual_adjudicado, null, "valor sin dato: null, no «distinto»");
+    }
+    { // vigía del corte de la alerta (vigilar_corte.js): solo mide y avisa; «sin_medir» ≠ 0
+      const VG = require("../scripts/base_obra/vigilar_corte");
+      const T = { licitacion: { baja_pct: 12, nombre: "licitaciones", ganadoras: 1750, bajo_el_corte: 17, datos_al: "17-oct-2026" },
+        minima: { baja_pct: 30, nombre: "mínimas cuantías", ganadoras: 3708, bajo_el_corte: 258, datos_al: "17-oct-2026" } };
+      // las filas vecinas (87,5 y 88,5, la rejilla real va de 0,5 en 0,5) llevan otros conteos: solo vale la del corte
+      const ua = (lic, min) => ({ umbral_alerta: { licitacion: lic ? [{ corte_pct: 80, todas: { ganadoras: 1, bajo_el_corte: 1 } }, { corte_pct: 87.5, todas: { ganadoras: 1750, bajo_el_corte: 3 } },
+        { corte_pct: 88, todas: lic }, { corte_pct: 88.5, todas: { ganadoras: 1750, bajo_el_corte: 90 } }] : undefined,
+        minima: min ? [{ corte_pct: 70, todas: min }] : undefined } });
+      const igual = VG.vigilarCorte(ua({ ganadoras: 1750, bajo_el_corte: 17 }, { ganadoras: 3708, bajo_el_corte: 258 }), T);
+      assert.deepStrictEqual(igual.map((f) => f.estado), ["igual", "igual"], "los datos de la tabla contra sí mismos: igual");
+      assert.ok(igual.every((f) => f.aviso === null));
+      // la fila que se compara es la del corte de la TABLA (88), no otra
+      assert.strictEqual(igual[0].ahora.bajo_el_corte, 17);
+      // +1,1 de cada 100 en licitación → avisa; +0,9 → no (umbral 1)
+      const mas11 = VG.vigilarCorte(ua({ ganadoras: 1750, bajo_el_corte: 17 + 20 }, { ganadoras: 3708, bajo_el_corte: 258 }), T)[0];
+      assert.strictEqual(mas11.estado, "movido"); assert.ok(/ya no dice lo mismo.*17 de 1\.750.*37 de 1\.750/.test(mas11.aviso), mas11.aviso);
+      assert.strictEqual(VG.vigilarCorte(ua({ ganadoras: 1750, bajo_el_corte: 17 + 15 }, { ganadoras: 3708, bajo_el_corte: 258 }), T)[0].estado, "igual", "+0,86 de cada 100: dentro");
+      // +18 → +1,03 de cada 100 SIN redondear (redondeado serían 2,0 − 1,0 = 1, que no pasaría): avisa
+      assert.strictEqual(VG.vigilarCorte(ua({ ganadoras: 1750, bajo_el_corte: 17 + 18 }, null), T)[0].estado, "movido", "decide la tasa sin redondear");
+      // conteos que no son conteos: sin medir, jamás «igual» ni «movido»
+      for (const malo of [{ ganadoras: 1750, bajo_el_corte: null }, { ganadoras: true, bajo_el_corte: 17 }, { ganadoras: 1750, bajo_el_corte: -5 }, { ganadoras: 10, bajo_el_corte: 11 }, { ganadoras: "1750", bajo_el_corte: 17 }, { ganadoras: 1750.5, bajo_el_corte: 17 }])
+        assert.strictEqual(VG.vigilarCorte(ua(malo, null), T)[0].estado, "sin_medir", `conteo inválido ${JSON.stringify(malo)} → sin medir`);
+      // sin redondear decide: 1750 → 2101 ganadoras es +20,06 % (avisa); 2100 es +20,0 % (no)
+      assert.strictEqual(VG.vigilarCorte(ua({ ganadoras: 2101, bajo_el_corte: 20 }, null), T)[0].estado, "movido");
+      assert.strictEqual(VG.vigilarCorte(ua({ ganadoras: 2100, bajo_el_corte: 20 }, null), T)[0].estado, "igual");
+      // la modalidad que la corrida no trae, o con 0 ganadoras, queda sin medir (jamás «0 de cada 100»)
+      const sinMin = VG.vigilarCorte(ua({ ganadoras: 1750, bajo_el_corte: 17 }, null), T)[1];
+      assert.strictEqual(sinMin.estado, "sin_medir"); assert.strictEqual(sinMin.ahora, null);
+      assert.strictEqual(VG.vigilarCorte(ua(null, { ganadoras: 0, bajo_el_corte: 0 }), T)[1].estado, "sin_medir");
+      assert.ok(VG.vigilarCorte(null, T).every((f) => f.estado === "sin_medir"), "sin cifras.json: todo sin medir");
+      // lo que no se midió no «no cambió»: el resumen avisa y no dice «Sin cambios»
+      const resSin = VG.resumenMarkdown(VG.vigilarCorte(ua({ ganadoras: 1750, bajo_el_corte: 17 }, null), T));
+      assert.ok(/AVISO:\*\* 1 modalidad quedó sin medir \(minima\)/.test(resSin) && !/Sin cambios/.test(resSin), resSin);
+      assert.ok(/Sin cambios que obliguen a revisar la tabla/.test(VG.resumenMarkdown(igual)), "todo medido e igual: sin cambios");
+      assert.ok(/sin medir/.test(VG.resumenMarkdown(VG.vigilarCorte(null, T))) && /2,2 de cada 100/.test(VG.resumenMarkdown(VG.vigilarCorte(null, { m: { baja_pct: 12, nombre: "x", ganadoras: 5387, bajo_el_corte: 116, datos_al: "d" } }))));
+      // la tabla REAL tiene lo que el vigía necesita, y main escribe vigilancia.json sin fallar ni con cifras.json ausente
+      const PTv = require("../lib/apu/piso_techo.js");
+      for (const [k, t] of Object.entries(PTv.TEMERARIO_POR_MODALIDAD)) assert.ok(t.ganadoras > 0 && Number.isInteger(t.bajo_el_corte) && /^\d{1,2}-[a-z]{3}-\d{4}$/.test(t.datos_al) && t.nombre, `fila ${k} de la tabla incompleta para el vigía`);
+      const osV = require("os"), fsV = require("fs"), pathV = require("path"), cpV = require("child_process");
+      const dV = fsV.mkdtempSync(pathV.join(osV.tmpdir(), "vigia-")), resumenV = pathV.join(dV, "resumen.md");
+      const salidaV = cpV.spawnSync(process.execPath, [pathV.join(__dirname, "..", "scripts", "base_obra", "vigilar_corte.js"), dV], { env: { ...process.env, GITHUB_STEP_SUMMARY: resumenV }, encoding: "utf8" });
+      assert.strictEqual(salidaV.status, 0, salidaV.stderr);
+      const vj = JSON.parse(fsV.readFileSync(pathV.join(dV, "vigilancia.json"), "utf8"));
+      assert.ok(vj.error_cifras && vj.filas.length === Object.keys(PTv.TEMERARIO_POR_MODALIDAD).length && vj.filas.every((f) => f.estado === "sin_medir"));
+      assert.ok(/Corte de la alerta de precio bajo/.test(fsV.readFileSync(resumenV, "utf8")));
+      assert.ok(/^::warning title=Corte de la alerta::No se pudo leer cifras\.json/m.test(salidaV.stdout), "sin cifras.json la corrida lleva su anotación en GitHub");
+      // con la tabla movida: anotación de GitHub, con el «%» escapado (%25) y en una sola línea
+      fsV.writeFileSync(pathV.join(dV, "cifras.json"), JSON.stringify({ umbral_alerta: { licitacion: [{ corte_pct: 88, todas: { ganadoras: 1750, bajo_el_corte: 60 } }],
+        menor_cuantia: [{ corte_pct: 88, todas: { ganadoras: 5387, bajo_el_corte: 116 } }], minima: [{ corte_pct: 70, todas: { ganadoras: 3720, bajo_el_corte: 270 } }] } }));
+      const movV = cpV.spawnSync(process.execPath, [pathV.join(__dirname, "..", "scripts", "base_obra", "vigilar_corte.js"), dV], { env: { ...process.env, GITHUB_STEP_SUMMARY: "" }, encoding: "utf8" });
+      const anot = movV.stdout.split("\n").filter((l) => l.startsWith("::warning"));
+      assert.strictEqual(movV.status, 0); assert.strictEqual(anot.length, 1, movV.stdout);
+      assert.ok(/::warning title=Corte de la alerta::El corte de licitaciones \(88 %25\) ya no dice lo mismo/.test(anot[0]) && !/ %\)/.test(anot[0]), anot[0]);
+      fsV.rmSync(dV, { recursive: true, force: true });
+      // el flujo: corre el día 3 de cada mes, vigila antes de comprimir y cada corte lleva el número de corrida
+      const yV = fsV.readFileSync(pathV.join(__dirname, "..", ".github", "workflows", "base_obra.yml"), "utf8");
+      assert.ok(/schedule:\s*\n\s*- cron: '23 9 3 \* \*'/.test(yV), "corrida mensual");
+      assert.ok(/- name: Vigilar el corte de la alerta[^\n]*\n(?:\s*#[^\n]*\n)*\s*continue-on-error: true\n\s*run: node scripts\/base_obra\/vigilar_corte\.js/.test(yV), "un fallo del vigía no frena la subida");
+      const pasoV = yV.indexOf("run: node scripts/base_obra/vigilar_corte.js");
+      assert.ok(pasoV > yV.indexOf("node scripts/base_obra/cifras.js \"$RUNNER_TEMP/base\"") && pasoV < yV.indexOf("- name: Comprimir") && pasoV > 0, "el vigía va después de las cifras y antes de comprimir");
+      assert.ok(/corte\/\$\(date -u \+%Y-%m-%d\)-\$\{\{ github\.run_id \}\}/.test(yV), "dos corridas el mismo día no se pisan");
+    }
+    console.log("· unidad base de obra: «sin dato» ≠ 0, mapeo de modalidades, exclusiones contadas por motivo, lote, las dos σ, la regla de fila y el almacén que frena antes de pasar su tope (ida y vuelta contra un S3 falso)");
+  }
+
+  /* unidad: el corte de la alerta de precio artificialmente bajo, por modalidad (18-oct-2026).
+     EJECUTA las funciones reales (umbralTemerario, validarFormulario1, pisoTecho, guiaDe): con
+     el corte único del 80 % de antes este bloque falla. Los cortes salen de la base nacional de
+     obra (MEMORIA § «La alerta de precio bajo se corta por modalidad…»). */
+  bqUmbralModalidad: { if (!corre("unidad alerta de precio bajo por modalidad")) break bqUmbralModalidad;
+    const PT = require("../lib/apu/piso_techo.js");
+    const F1u = require("../lib/formulario1.js");
+    const LIC = "Licitación pública Obra Publica", SAMC = "Seleccion Abreviada de Menor Cuantia",
+      SAMC_SM = "Seleccion Abreviada Menor Cuantia Sin Manifestacion Interes", MIN = "Mínima cuantía";
+    // (1) la tabla, con los textos de modalidad tal como los publica SECOP II
+    const cortes = [[LIC, 88, true], [SAMC, 88, true], [SAMC_SM, 88, true], [MIN, 70, true], ["Subasta", 80, false],
+      ["Concurso de méritos abiertos", 80, false], ["Contratación régimen especial", 80, false], [null, 80, false], ["", 80, false], ["xyz", 80, false]];
+    for (const [m, corte, medido] of cortes) {
+      const u = PT.umbralTemerario(m);
+      assert.strictEqual(u.corte_pct, corte, `corte de «${m}»: ${u.corte_pct} (esperado ${corte})`);
+      assert.strictEqual(u.baja_pct, 100 - corte); assert.strictEqual(u.medido, medido, `«${m}» medido=${u.medido}`);
+      assert.ok(medido ? new RegExp(`adjudicadas en SECOP II desde 2024 \\(datos al 17-oct-2026\\), [\\d.]+ de [\\d.]+ ofertas ganadoras con datos comparables tuvieron más del ${100 - corte} % de descuento\\.$`).test(u.fuente) && u.fuente.startsWith({ licitacion: "En licitaciones ", menor_cuantia: "En menores cuantías ", minima: "En mínimas cuantías " }[u.clave])
+        : (m ? /Sin medición para esta modalidad/ : /No se conoce la modalidad del proceso/).test(u.fuente), `«${m}»: la fuente va al lado de la cifra («${u.fuente}»)`);
+      assert.ok(!/\d ?%/.test(u.fuente) || medido, `«${m}»: sin medición la fuente no repite la cifra («${u.fuente}»)`);
+    }
+    // cada fila medida cita SU conteo (el de cifras.json, umbral_alerta, campo «todas»)
+    assert.ok(/17 de 1\.750/.test(PT.umbralTemerario(LIC).fuente) && /116 de 5\.387/.test(PT.umbralTemerario(SAMC).fuente) && /270 de 3\.720/.test(PT.umbralTemerario(MIN).fuente));
+    // la frase sale de los DATOS de la tabla, no de un texto escrito aparte
+    assert.ok(/2\.000 ofertas ganadoras/.test(PT.fraseCorte({ ...PT.TEMERARIO_POR_MODALIDAD.licitacion, ganadoras: 2000 })), "cambiar el conteo cambia la frase");
+    // las claves de la tabla son claves que de verdad emite el clasificador (si no, la fila sería inerte)
+    const emitidas = new Set([LIC, SAMC, MIN].map((m) => require("../lib/guia_proceso.js").modalidadEnLlano(m).clave));
+    for (const k of Object.keys(PT.TEMERARIO_POR_MODALIDAD)) assert.ok(emitidas.has(k), `clave «${k}» de la tabla que el clasificador no emite`);
+    assert.strictEqual(PT.TEMERARIO_PCT, 20, "sin medición sigue la referencia de siempre");
+    // (2) validación 5 del Formulario 1 (el total frente al presupuesto)
+    const tem = (total, modalidad, extra = {}) => F1u.validarFormulario1({ oferta: { items: [{ numeral: "1", descripcion: "Excavación", unidad: "m3", cantidad: 100, precio_unitario: total / 100, total }], total },
+      presupuesto_oficial: 100000000, modalidad, ...extra }).veredictos.find((v) => v.id === "temeraria");
+    for (const m of [LIC, SAMC, SAMC_SM]) {
+      assert.strictEqual(tem(85000000, m).nivel, "alerta", `«${m}» al 85 %: salta (corte 88 %)`);
+      assert.strictEqual(tem(87900000, m).nivel, "alerta", `«${m}» al 87,9 %: salta`);
+      assert.notStrictEqual(tem(88000000, m).nivel, "alerta", `«${m}» justo en el 88 %: no salta (más del 12 % de descuento)`);
+      assert.strictEqual(tem(85000000, m).umbral_pct, 12);
+    }
+    assert.notStrictEqual(tem(85000000, null).nivel, "alerta", "sin modalidad, al 85 % no salta: sigue el 80 %");
+    assert.strictEqual(tem(79000000, null).nivel, "alerta", "sin modalidad, al 79 % salta");
+    assert.strictEqual(tem(79000000, "Subasta").nivel, "alerta", "subasta (sin medición) al 79 %: salta");
+    assert.notStrictEqual(tem(79000000, MIN).nivel, "alerta", "mínima al 79 %: ya no salta (corte 70 %)");
+    assert.strictEqual(tem(69000000, MIN).nivel, "alerta", "mínima al 69 %: salta");
+    // convive con el aviso del límite medido de la entidad (main, 17-oct-2026): entre el corte y el
+    // máximo medido no hay alerta, hay ámbar «para justificar» con su fuente
+    const amb = tem(90000000, SAMC);
+    assert.strictEqual(amb.nivel, "informativo"); assert.strictEqual(amb.marca, "justificar"); assert.ok(/116 de 5\.387/.test(amb.umbral_fuente || ""), "el ámbar también lleva la fuente del corte");
+    assert.strictEqual(tem(95000000, SAMC).nivel, "ok", "sobre el máximo medido y sin llegar al corte: ok");
+    assert.ok(/270 de 3\.720/.test(tem(69000000, MIN).umbral_fuente || ""), "la alerta de mínima lleva su fuente medida");
+    // lo que declara quien llama sigue mandando, y entonces no se le pega una fuente que no es la suya
+    const decl = tem(85000000, LIC, { umbral_temerario_pct: 20 });
+    assert.notStrictEqual(decl.nivel, "alerta", "umbral_temerario_pct declarado gana al de la modalidad"); assert.strictEqual(decl.umbral_fuente, null);
+    // (3) validación 8 (por ítem): sigue en el 20 %, NO en el corte de la modalidad
+    const form = { items: [{ numeral: "1", descripcion: "Excavación", unidad: "m3", cantidad: 100, precio_unitario: 10000 }] };
+    const uni = (pu) => F1u.validarFormulario1({ oferta: { items: [{ numeral: "1", descripcion: "Excavación", unidad: "m3", cantidad: 100, precio_unitario: pu, total: pu * 100 }], total: pu * 100 },
+      formulario: form, presupuesto_oficial: 1000000, modalidad: LIC }).veredictos;
+    const v85 = uni(8500);
+    assert.strictEqual(v85.find((v) => v.id === "temeraria").nivel, "alerta", "el total al 85 % en licitación salta…");
+    assert.strictEqual(v85.find((v) => v.id === "unitarios").nivel, "ok", "…pero un ítem 15 % por debajo NO: por ítem sigue el 20 %");
+    assert.ok(/más de 20 % por debajo/.test(v85.find((v) => v.id === "unitarios").mensaje));
+    const v75 = uni(7500).find((v) => v.id === "unitarios");
+    assert.strictEqual(v75.nivel, "alerta"); assert.strictEqual(v75.umbral_pct, 20);
+    // el umbral declarado por quien llama también manda por ítem
+    const uniDecl = F1u.validarFormulario1({ oferta: { items: [{ numeral: "1", descripcion: "Excavación", unidad: "m3", cantidad: 100, precio_unitario: 8500, total: 850000 }], total: 850000 },
+      formulario: form, presupuesto_oficial: 1000000, modalidad: LIC, umbral_temerario_pct: 10 }).veredictos.find((v) => v.id === "unitarios");
+    assert.strictEqual(uniDecl.nivel, "alerta", "con umbral_temerario_pct 10 declarado, un ítem 15 % por debajo avisa"); assert.strictEqual(uniDecl.umbral_pct, 10);
+    // (4) panel Piso/Techo: la cifra del umbral y sus textos siguen la modalidad
+    const aiuP = { administracion_pct: 10, imprevistos_pct: 5, utilidad_pct: 5 };
+    const pt = (modalidad, extra = {}) => PT.pisoTecho({ presupuesto_oficial: 500e6, costo_directo: 300e6, aiu: aiuP, modalidad, iva_utilidad: { variante: "sin_iva" }, ...extra });
+    assert.strictEqual(pt(LIC).cifras.umbral_temerario, Math.round(500e6 * 0.88), "licitación: umbral en el 88 %");
+    assert.strictEqual(pt(MIN).cifras.umbral_temerario, Math.round(500e6 * 0.70), "mínima: umbral en el 70 %");
+    assert.strictEqual(pt(null).cifras.umbral_temerario, Math.round(500e6 * 0.80), "sin modalidad: 80 %");
+    assert.strictEqual(pt(LIC, { temerario_pct: 20 }).cifras.umbral_temerario, Math.round(500e6 * 0.80), "temerario_pct declarado gana");
+    assert.ok(/Referencia: 88 %.*17 de 1\.750/.test(pt(LIC).fuentes.umbral_temerario), pt(LIC).fuentes.umbral_temerario);
+    assert.ok(pt(LIC).supuestos.some((s) => /\(88 % del presupuesto oficial, medido para esta modalidad\)/.test(s)), "el supuesto dice el corte medido");
+    assert.ok(pt(null).supuestos.some((s) => /\(80 % del presupuesto oficial\)/.test(s)), "sin modalidad, el supuesto de siempre");
+    // con el corte DECLARADO no se le pega la fuente medida ni el «medido»
+    const ptDecl = pt(LIC, { temerario_pct: 20 });
+    assert.ok(/Corte declarado por quien llama/.test(ptDecl.fuentes.umbral_temerario) && !/ganadoras/.test(ptDecl.fuentes.umbral_temerario), ptDecl.fuentes.umbral_temerario);
+    assert.ok(!ptDecl.supuestos.some((s) => /medido para esta modalidad/.test(s)), "corte declarado: el supuesto no dice «medido»");
+    assert.ok(/Referencia: 80 %.*No se conoce la modalidad del proceso/.test(pt(null).fuentes.umbral_temerario) && (pt(null).fuentes.umbral_temerario.match(/80 %/g) || []).length === 1, pt(null).fuentes.umbral_temerario);
+    // la pantalla «Revisar antes de subir» pinta la fuente debajo de la alerta, escapada
+    const appUM = require("fs").readFileSync(require("path").join(__dirname, "..", "public", "app.js"), "utf8");
+    assert.ok(/v\.id === "temeraria" && v\.umbral_fuente \? `<span[^`]*data-umbral-fuente>\$\{esc\(v\.umbral_fuente\)\}<\/span>`/.test(appUM), "public/app.js pinta umbral_fuente con esc() bajo la alerta");
+    // (5) el consejo de la guía (mínima y subasta comparten consejo, no corte)
+    const G = require("../lib/guia_proceso.js");
+    const consejo = (m) => (G.guiaDe({ fila: { id_del_proceso: "CO1.UM", nombre_del_procedimiento: "MEJORAMIENTO DE VIA", modalidad_de_contratacion: m, precio_base: "90000000", departamento_entidad: "Tolima", entidad: "ALCALDIA" }, perfil: "helder" }).consejos || []).find((c) => c.clave === "precio_minima");
+    assert.ok(/por debajo del 70 % del presupuesto/.test(consejo(MIN).detalle), consejo(MIN).detalle);
+    assert.ok(/por debajo del 80 % del presupuesto/.test(consejo("Subasta").detalle), consejo("Subasta").detalle);
+    // (6) CENSO: ningún «80 %» del umbral escrito a mano en lib/ ni public/. Las excepciones se
+    //     DECLARAN por línea (archivo + texto exacto), no por archivo: un archivo eximido entero
+    //     dejaba volver el 80 % al texto visible de la alerta sin que nada fallara.
+    const EXC_80 = [
+      ["lib/apu/piso_techo.js", "const TEMERARIO_PCT = 20;       // «por debajo del 80 % del presupuesto»"],   // la referencia por defecto
+      ["lib/apu/piso_techo.js", "− una desviación: 93,3 % y 93,4 % del presupuesto) y a 80 % la alerta casi nunca saltaba"],   // la medición, en comentario
+    ];
+    const usadas = new Set();
+    const fsU = require("fs"), pathU = require("path");
+    const barrer = (dir) => fsU.readdirSync(dir, { withFileTypes: true }).flatMap((e) => e.isDirectory() ? barrer(pathU.join(dir, e.name)) : /\.(js|html)$/.test(e.name) ? [pathU.join(dir, e.name)] : []);
+    const raiz = pathU.join(__dirname, "..");
+    let barridos = 0;
+    for (const f of [...barrer(pathU.join(raiz, "lib")), ...barrer(pathU.join(raiz, "public"))]) {
+      const rel = pathU.relative(raiz, f).split(pathU.sep).join("/");
+      barridos++;
+      for (const [i, linea] of fsU.readFileSync(f, "utf8").split("\n").entries()) {
+        if (!(/(?<![\d,.])80 ?%|(?<![\d,.\-–])0[,.]80?(?!\d| ?%)|ochenta por ciento/i.test(linea) && /presupuesto|artificialmente|temerari/i.test(linea))) continue;
+        const exc = EXC_80.find(([a, t]) => a === rel && linea.includes(t));
+        if (exc) { usadas.add(exc); continue; }
+        assert.fail(`${rel}:${i + 1} escribe a mano el 80 % del umbral: ${linea.trim().slice(0, 140)}`);
+      }
+    }
+    assert.ok(barridos > 50, `el censo barrió ${barridos} archivos`);
+    for (const e of EXC_80) assert.ok(usadas.has(e), `excepción declarada que ya no casa con nada (bórrela): ${e.join(" · ")}`);
+    // la expresión del censo no confunde un 10,8 % con el umbral
+    assert.ok(!/(?<![\d,.\-–])0[,.]80?(?!\d| ?%)/.test("el presupuesto sube 10,8 %"));
+    assert.ok(!/(?<![\d,.\-–])0[,.]80?(?!\d| ?%)/.test("(0,5-0,8 % del presupuesto)") && /(?<![\d,.\-–])0[,.]80?(?!\d| ?%)/.test("presupuesto × 0,80"), "el factor 0,80 sí casa; un rango de porcentajes no");
+    console.log(`· unidad alerta de precio bajo por modalidad: 88 % en licitación y menor cuantía, 70 % en mínima, 80 % sin medición; por ítem sigue el 20 %; censo de ${barridos} archivos sin el 80 % a mano`);
+  }
+
   /* unidad: capa anti-suministro sobre segmentos de bienes. Cada caso se
      evalúa contra un perfil cuyo RUP SÍ contiene la clase — así el rechazo
      solo puede venir de la capa (se verifica anti_suministro como causa). */
@@ -24191,6 +24749,11 @@ async function main() {
       const Auth = require("../lib/auth.js");
       const { CLAVES: CLG } = require("../lib/almacen.js");
       const ponerG = (k, v) => { if (v === undefined) delete process.env[k]; else process.env[k] = v; };
+      /* HERMÉTICA (18-oct-2026): «sin secretos» quiere decir sin secretos AUNQUE el entorno de quien
+         corre la suite los tenga. Un contenedor con VERCEL_AUTOMATION_BYPASS_SECRET hacía fallar este
+         bloque sin defecto en el código; se guardan, se quitan y se devuelven al final. */
+      const previosG = { CRON_SECRET: process.env.CRON_SECRET, VERCEL_AUTOMATION_BYPASS_SECRET: process.env.VERCEL_AUTOMATION_BYPASS_SECRET };
+      for (const k of Object.keys(previosG)) ponerG(k, undefined);
       const rProcesosG = require("../api/procesos.js");
       const SECRETO = "secreto-cron-de-prueba";
       const URL_AUTO = "/api/procesos?op=sync&modo=auto&chain=0";
@@ -24275,6 +24838,7 @@ async function main() {
         assert.ok(!/x-vercel-protection-bypass/.test(src), `${h} construye a mano la cabecera del muro: debe llamar a cabecerasDeAutoLlamada`);
         assert.strictEqual((src.match(/cabecerasDeAutoLlamada\(/g) || []).length, disparos.length, `${h}: cada auto-llamada (${disparos.length}) pide sus cabeceras a lib/auth`);
       }
+      for (const [k, v] of Object.entries(previosG)) ponerG(k, v);   // el entorno de quien corre, como estaba
       console.log(`· guarda de la sincronización: sin CRON_SECRET abierta (como el cron actual); con ella 401 sin tocar el candado, pasan Bearer/header/?token=, y la auto-llamada real llegó con «${capturadas[0].headers.authorization.replace(SECRETO, "…")}»`);
     }
 
@@ -52789,6 +53353,35 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
         const cg = await invocar(editorI, "/api/apu/cargar?id=borrador-i&perfil=helder", CAB_TOKEN);
         const pr = (cg.cuerpo && cg.cuerpo.presupuesto) || {};
         okRO(gi.status === 200 && pr.cuantia === 40000000 && pr.plazo_meses === null && pr.unspsc === "72141000" && pr.tipo === "obra" && pr.entidad_nit === "800113389-7", `(i) el servidor guarda y devuelve el contexto del proceso (plazo 0 = sin dato): ${JSON.stringify([gi.status, pr.cuantia, pr.plazo_meses, pr.unspsc, pr.tipo, pr.entidad_nit])}`);
+      }
+
+      /* (j) LA FUENTE DEL CORTE SE PINTA BAJO LA ALERTA (18-oct-2026): se EJECUTA revisarOferta con
+             la respuesta real de validarFormulario1; una regex sobre el código fuente no cazaba una
+             condición que nunca se cumple (revisión adversaria). */
+      {
+        const fetchJ = ctx.fetch;
+        let respuestaJ = null;
+        ctx.fetch = (url, cfg) => {
+          if (/op=formulario1/.test(url)) return Promise.resolve(respuestaRO(200, respuestaJ ? respuestaJ(JSON.parse(cfg.body)) : { ok: true, ...F1.validarFormulario1(JSON.parse(cfg.body)) }));
+          return fetchJ(url, cfg);
+        };
+        ctx.__pliegoUltimo = null; porId.get("rev-tope-aiu").value = ""; porId.get("id-proceso").value = "CO1.J"; porId.get("cuantia").value = "100000000";
+        F.fijar({ filas: filasA.map((x) => ({ ...x })), ultimoCalculo: calculoDeRO(filasA.length), modalidad: "Mínima cuantía" });
+        await disparar("btn-revisar-oferta", "click", {}); await asentarRO();
+        const sinComentariosJ = (h) => h.replace(/<!--[\s\S]*?-->/g, "");   // lo que se VE, no lo que queda comentado
+        const hj = sinComentariosJ(porId.get("revision-oferta").innerHTML);
+        okRO(/Su precio puede parecer artificialmente bajo/.test(hj) && /data-umbral-fuente>En mínimas cuantías de obra adjudicadas en SECOP II desde 2024 \(datos al 17-oct-2026\), 270 de 3\.720 ofertas ganadoras con datos comparables tuvieron más del 30 % de descuento\.</.test(hj),
+          `(j) la alerta de mínima pinta debajo su fuente medida: ${(hj.match(/data-umbral-fuente>[^<]*/) || ["(no está)"])[0]}`);
+        // con el corte DECLARADO (umbral_fuente null) no se pinta una fuente que no es la suya
+        respuestaJ = (cuerpo) => { const r = F1.validarFormulario1({ ...cuerpo, umbral_temerario_pct: 20 }); return { ok: true, ...r }; };
+        await disparar("btn-revisar-oferta", "click", {}); await asentarRO();
+        okRO(!/data-umbral-fuente/.test(porId.get("revision-oferta").innerHTML), "(j) sin umbral_fuente no hay línea de fuente");
+        // y lo que llega del servidor se ESCAPA
+        respuestaJ = (cuerpo) => { const r = F1.validarFormulario1(cuerpo); return { ok: true, ...r, veredictos: r.veredictos.map((v) => (v.id === "temeraria" ? { ...v, umbral_fuente: "<img src=x onerror=alert(1)>" } : v)) }; };
+        await disparar("btn-revisar-oferta", "click", {}); await asentarRO();
+        const hj3 = sinComentariosJ(porId.get("revision-oferta").innerHTML);
+        okRO(/data-umbral-fuente>&lt;img src=x onerror=alert\(1\)&gt;</.test(hj3) && !/<img src=x/.test(hj3), "(j) la fuente se pinta escapada");
+        ctx.fetch = fetchJ;
       }
 
       /* (f) UNA LECTURA DEL PLIEGO QUE LLEGA TARDE NO SE PINTA EN OTRO PROCESO (revisión
