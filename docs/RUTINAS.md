@@ -149,8 +149,8 @@ que el dueño deba saber antes de empezar el día? Si no lo hay, dilo en una lí
 
 PASO 0 · ¿TIENES EL REPOSITORIO?
 test -f CLAUDE.md && pwd || find / -maxdepth 4 -name CLAUDE.md -not -path "*/node_modules/*" 2>/dev/null | head -3
-Si no aparece ninguno no puedes hacer nada: la llave de la aplicación sale de public/app.js, que está
-en el repositorio. Termina diciendo que la rutina no tiene repositorio adjunto y dónde se añade.
+Si no aparece ninguno no puedes hacer nada: termina diciendo que la rutina no tiene repositorio
+adjunto y dónde se añade.
 
 PASO 0 bis · ¿SE ABRE LA PUERTA?
 curl -s -o /dev/null -w "%{http_code}\n" --max-time 20 -H "x-vercel-protection-bypass: $VERCEL_AUTOMATION_BYPASS_SECRET" "https://detekta-app.vercel.app/api/procesos?op=salud"
@@ -159,8 +159,11 @@ claude.ai/code → el entorno → Red: Custom y permita detekta-app.vercel.app.�
 Si responde 302 (o 401 con «Protected deployment») es el muro de Vercel: para y di solo: «El muro de Vercel no deja pasar a esta rutina:
 falta VERCEL_AUTOMATION_BYPASS_SECRET en las variables de entorno de su entorno.»
 
-LA LLAVE sale del repositorio, como hacen las skills. No la imprimas nunca:
-TOKEN=$(grep -o 'const TOKEN = "[^"]*"' public/app.js | head -1 | cut -d'"' -f2)
+LA LLAVE sale de la variable de entorno HISTORICO_TOKEN del entorno de esta rutina, como en las
+skills (desde el 17-oct-2026 ya no está escrita en el repositorio). No la imprimas nunca. Si falta,
+di solo: «Falta HISTORICO_TOKEN en el entorno de la rutina: el dueño la añade en claude.ai/code →
+el entorno → Edit → variables de entorno, con el mismo valor que tiene en Vercel.»
+TOKEN="${HISTORICO_TOKEN:?Falta HISTORICO_TOKEN en el entorno de Claude Code: el dueño la añade en el entorno de la sesión o de la rutina (Edit → variables de entorno)}"
 Y EL PASE DEL MURO va en CADA llamada a la aplicación, también sin imprimirlo:
 -H "x-vercel-protection-bypass: $VERCEL_AUTOMATION_BYPASS_SECRET"
 
@@ -207,7 +210,7 @@ Termina diciendo que la rutina no tiene repositorio adjunto y dónde se añade.
 
 CUANDO LLAMES A LA APLICACIÓN (/api/paa, /api/admin/cobertura-rup), cada llamada lleva la llave y
 el pase del muro, sin imprimirlos:
-TOKEN=$(grep -o 'const TOKEN = "[^"]*"' public/app.js | head -1 | cut -d'"' -f2)
+TOKEN="${HISTORICO_TOKEN:?Falta HISTORICO_TOKEN en el entorno de Claude Code: el dueño la añade en el entorno de la sesión o de la rutina (Edit → variables de entorno)}"
 -H "x-historico-token: $TOKEN" -H "x-vercel-protection-bypass: $VERCEL_AUTOMATION_BYPASS_SECRET"
 Si responde 302, o 401 con «Protected deployment», es el muro de Vercel, no la fuente: di solo «El muro
 de Vercel no deja pasar a esta rutina: falta VERCEL_AUTOMATION_BYPASS_SECRET en las variables de

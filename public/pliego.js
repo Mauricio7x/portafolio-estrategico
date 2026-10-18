@@ -38,14 +38,24 @@
 "use strict";
 
 (() => {
-  /* token integrado: la misma constante de app.js (decisión del dueño, ago
-     2026 — la capa de seguridad real es Vercel Password Protection) */
-  const TOKEN = "MiExtraccion2025";
-  // el mismo texto que app.js: el 401 se explica como lo que es, en lenguaje
-  // de personas primero y con el dato del administrador entre paréntesis
-  const MSG_401 = "La aplicación no pudo autenticarse con el servidor. No es un problema suyo: es configuración "
-    + "del sitio — avise a quien lo administra (HISTORICO_TOKEN no coincide con el token integrado).";
-  const leerToken = () => TOKEN;
+  /* LA SESIÓN DEL DUEÑO, NO UNA LLAVE (17-oct-2026). Aquí vivía escrita la llave
+     del servidor y la leía cualquiera; hoy el servidor abre una sesión en una
+     cookie HttpOnly que este código no ve. TODO fetch de este archivo pasa por
+     el de abajo: viaja con `credentials: "same-origin"` y, si el servidor
+     responde 401 en JSON (la sesión terminó; el muro del edge responde HTML y
+     no cuenta), avisa a app.js —dueño del gate— para que abra la pantalla de
+     entrar. Un censo por construcción, no una lista de sitios. */
+  const MSG_401 = "Su sesión terminó o no se reconoce. Entre de nuevo con su correo y contraseña.";
+  const conSesion = (opciones) => ({ ...(opciones || {}), credentials: "same-origin" });
+  const fetch = async (url, opciones) => {
+    const r = await window.fetch(url, conSesion(opciones));
+    let json = false;
+    try { json = /json/i.test(String((r.headers && r.headers.get && r.headers.get("content-type")) || "")); } catch { json = false; }
+    if (r.status === 401 && json) {
+      try { document.dispatchEvent(new CustomEvent("detekta:sesion-vencida")); } catch { /* sin eventos */ }
+    }
+    return r;
+  };
 
   /* La versión va CLAVADA por un motivo que no es cosmético: **desde la v4,
      `pdfjs-dist` ya no publica build UMD** — es ESM
@@ -86,8 +96,9 @@
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
   /* El gate y el formulario del token murieron con la página unificada: el
-     gate es UNO y vive en app.js; el token va integrado y se inyecta en cada
-     petición. Este módulo solo cablea su sección dentro de la pestaña APU. */
+     gate es UNO y vive en app.js; la credencial es la sesión del dueño, que
+     viaja en la cookie (el fetch de arriba). Este módulo solo cablea su
+     sección dentro de la pestaña APU. */
 
   /* ══════════ Mensajes, chip y progreso ══════════ */
   function mensaje(texto, tipo) {
@@ -406,17 +417,13 @@
 
   /* ══════════ Llamadas al servidor ══════════ */
   async function pedir(ruta, cuerpo) {
-    /* `leerToken()` devuelve el token integrado, una constante: la rama
-       «sin token» era inalcanzable y sus mensajes («Guarde primero el token
-       de acceso, arriba») apuntaban a un formulario retirado — documentación
-       falsa dentro del fuente, la misma razón por la que se quitó la guarda
-       muerta de celdaApuProceso. */
-    const token = leerToken();
+    /* la credencial es la sesión del dueño, que viaja en la cookie (el fetch de
+       arriba): aquí no hay ninguna rama «sin token» que pintar */
     let r = null, datos = null;
     try {
       r = await fetch(ruta, {
         method: "POST",
-        headers: { "Content-Type": "application/json", "x-historico-token": token },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(cuerpo),
       });
     } catch (e) {
@@ -428,10 +435,9 @@
 
   let contrato = null;
   async function cargarContrato() {
-    const token = leerToken(); // constante integrada: siempre presente
     try {
       const r = await fetch("/api/pliego?op=extraer-texto", {
-        headers: { "x-historico-token": token, Accept: "application/json" }, cache: "no-store",
+        headers: { Accept: "application/json" }, cache: "no-store",
       });
       if (!r.ok) return;
       contrato = await r.json();
@@ -938,7 +944,7 @@
   async function pedirGet(ruta) {
     let r = null, datos = null;
     try {
-      r = await fetch(ruta, { headers: { "x-historico-token": leerToken(), Accept: "application/json" }, cache: "no-store" });
+      r = await fetch(ruta, { headers: { Accept: "application/json" }, cache: "no-store" });
     } catch (e) {
       return { estado: 0, cuerpo: null, red: window.Glosario.fraseDeFallo(e) };
     }
@@ -1196,7 +1202,7 @@
     try {
       const resp = await fetch("/api/pliego?op=dictamen", {
         method: "POST", signal: dictamenAbort.signal,
-        headers: { "Content-Type": "application/json", "x-historico-token": leerToken() },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id_proceso: id, perfil: perfilDictamen(), refrescar: !!refrescar, ...(esfuerzo ? { esfuerzo } : {}) }),
       });
       let datos = null;
@@ -1228,7 +1234,7 @@
     try {
       const resp = await fetch("/api/pliego?op=dictamen", {
         method: "POST",
-        headers: { "Content-Type": "application/json", "x-historico-token": leerToken() },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id_proceso: id, perfil: perfilDictamen(), pedir_sesion: true, refrescar: !!refrescar }),
       });
       let datos = null;

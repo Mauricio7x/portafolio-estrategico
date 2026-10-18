@@ -26,7 +26,7 @@ abra claude.ai/code/routines → esta rutina → el entorno → Network access: 
    (proceso, perfil, lecturas por reglas) y el pliego paginado con «=== Página N ===»:
 
    ```bash
-   TOKEN=$(grep -o 'const TOKEN = "[^"]*"' public/app.js | head -1 | cut -d'"' -f2)
+   TOKEN="${HISTORICO_TOKEN:?Falta HISTORICO_TOKEN en el entorno de Claude Code: el dueño la añade en el entorno de la sesión o de la rutina (Edit → variables de entorno)}"
    curl -s -H "x-historico-token: $TOKEN" -H "x-vercel-protection-bypass: $VERCEL_AUTOMATION_BYPASS_SECRET" \
      "https://detekta-app.vercel.app/api/pliego?op=dictamen&expediente=1&id_proceso=<ID>&perfil=<PERFIL>" \
      -o /tmp/expediente.json
