@@ -7685,6 +7685,7 @@
       ${deOtroProceso ? `<p class="mt-2 text-sm text-gray-600">El pliego que leyó es de otro proceso (${esc(leido.id_proceso)}): no se comparó con él. Lea el pliego de este proceso con el lector (arriba) y vuelva a revisar.</p>` : ""}
       <ul class="mt-3 space-y-2 text-sm">${vs.map((v) => `<li class="rounded-lg px-3 py-2 ${v.nivel === "rechazo" ? "bg-red-50 text-red-800" : v.nivel === "alerta" ? "bg-amber-50 text-amber-900" : v.nivel === "informativo" ? "bg-blue-50 text-blue-900" : v.nivel === "sin_referencia" ? "bg-gray-50 text-gray-600" : "text-gray-600"}">
         <span class="font-medium">${esc(v.titulo)}${v.nivel === "sin_referencia" ? " · pendiente" : ""}:</span> ${esc(v.mensaje)}
+        ${v.id === "temeraria" && v.umbral_fuente ? `<span class="mt-1 block text-xs opacity-80" data-umbral-fuente>${esc(v.umbral_fuente)}</span>` : ""}
         ${v.nivel !== "ok" ? `<span class="block text-xs opacity-80" title="${esc(v.fundamento)}">Fundamento: ${esc(v.fundamento.slice(0, 140))}${v.fundamento.length > 140 ? "…" : ""}</span>` : ""}
         ${v.id === "temeraria" && v.nivel === "alerta" ? `<button type="button" id="rev-btn-justificacion" class="mt-2 rounded-lg border border-amber-700/30 bg-white px-3 py-1 text-xs font-medium hover:bg-amber-100">Descargar mi justificación</button>` : ""}
       </li>`).join("")}</ul>

@@ -4276,6 +4276,68 @@ async function main() {
       assert.deepStrictEqual(MU.compararConContrato({}, null), { contrato: false }, "sin contrato en jbjy: se dice, no se inventa");
       assert.strictEqual(MU.compararConContrato({ ganador_nit: null, ganador: "Obras; S.A.S.", valor_adjudicado: null }, { documento_proveedor: "No Definido", proveedor_adjudicado: "OBRAS SAS", valor_del_contrato: "" }).valor_igual_adjudicado, null, "valor sin dato: null, no «distinto»");
     }
+    { // vigía del corte de la alerta (vigilar_corte.js): solo mide y avisa; «sin_medir» ≠ 0
+      const VG = require("../scripts/base_obra/vigilar_corte");
+      const T = { licitacion: { baja_pct: 12, nombre: "licitaciones", ganadoras: 1750, bajo_el_corte: 17, datos_al: "17-oct-2026" },
+        minima: { baja_pct: 30, nombre: "mínimas cuantías", ganadoras: 3708, bajo_el_corte: 258, datos_al: "17-oct-2026" } };
+      // las filas vecinas (87,5 y 88,5, la rejilla real va de 0,5 en 0,5) llevan otros conteos: solo vale la del corte
+      const ua = (lic, min) => ({ umbral_alerta: { licitacion: lic ? [{ corte_pct: 80, todas: { ganadoras: 1, bajo_el_corte: 1 } }, { corte_pct: 87.5, todas: { ganadoras: 1750, bajo_el_corte: 3 } },
+        { corte_pct: 88, todas: lic }, { corte_pct: 88.5, todas: { ganadoras: 1750, bajo_el_corte: 90 } }] : undefined,
+        minima: min ? [{ corte_pct: 70, todas: min }] : undefined } });
+      const igual = VG.vigilarCorte(ua({ ganadoras: 1750, bajo_el_corte: 17 }, { ganadoras: 3708, bajo_el_corte: 258 }), T);
+      assert.deepStrictEqual(igual.map((f) => f.estado), ["igual", "igual"], "los datos de la tabla contra sí mismos: igual");
+      assert.ok(igual.every((f) => f.aviso === null));
+      // la fila que se compara es la del corte de la TABLA (88), no otra
+      assert.strictEqual(igual[0].ahora.bajo_el_corte, 17);
+      // +1,1 de cada 100 en licitación → avisa; +0,9 → no (umbral 1)
+      const mas11 = VG.vigilarCorte(ua({ ganadoras: 1750, bajo_el_corte: 17 + 20 }, { ganadoras: 3708, bajo_el_corte: 258 }), T)[0];
+      assert.strictEqual(mas11.estado, "movido"); assert.ok(/ya no dice lo mismo.*17 de 1\.750.*37 de 1\.750/.test(mas11.aviso), mas11.aviso);
+      assert.strictEqual(VG.vigilarCorte(ua({ ganadoras: 1750, bajo_el_corte: 17 + 15 }, { ganadoras: 3708, bajo_el_corte: 258 }), T)[0].estado, "igual", "+0,86 de cada 100: dentro");
+      // +18 → +1,03 de cada 100 SIN redondear (redondeado serían 2,0 − 1,0 = 1, que no pasaría): avisa
+      assert.strictEqual(VG.vigilarCorte(ua({ ganadoras: 1750, bajo_el_corte: 17 + 18 }, null), T)[0].estado, "movido", "decide la tasa sin redondear");
+      // conteos que no son conteos: sin medir, jamás «igual» ni «movido»
+      for (const malo of [{ ganadoras: 1750, bajo_el_corte: null }, { ganadoras: true, bajo_el_corte: 17 }, { ganadoras: 1750, bajo_el_corte: -5 }, { ganadoras: 10, bajo_el_corte: 11 }, { ganadoras: "1750", bajo_el_corte: 17 }, { ganadoras: 1750.5, bajo_el_corte: 17 }])
+        assert.strictEqual(VG.vigilarCorte(ua(malo, null), T)[0].estado, "sin_medir", `conteo inválido ${JSON.stringify(malo)} → sin medir`);
+      // sin redondear decide: 1750 → 2101 ganadoras es +20,06 % (avisa); 2100 es +20,0 % (no)
+      assert.strictEqual(VG.vigilarCorte(ua({ ganadoras: 2101, bajo_el_corte: 20 }, null), T)[0].estado, "movido");
+      assert.strictEqual(VG.vigilarCorte(ua({ ganadoras: 2100, bajo_el_corte: 20 }, null), T)[0].estado, "igual");
+      // la modalidad que la corrida no trae, o con 0 ganadoras, queda sin medir (jamás «0 de cada 100»)
+      const sinMin = VG.vigilarCorte(ua({ ganadoras: 1750, bajo_el_corte: 17 }, null), T)[1];
+      assert.strictEqual(sinMin.estado, "sin_medir"); assert.strictEqual(sinMin.ahora, null);
+      assert.strictEqual(VG.vigilarCorte(ua(null, { ganadoras: 0, bajo_el_corte: 0 }), T)[1].estado, "sin_medir");
+      assert.ok(VG.vigilarCorte(null, T).every((f) => f.estado === "sin_medir"), "sin cifras.json: todo sin medir");
+      // lo que no se midió no «no cambió»: el resumen avisa y no dice «Sin cambios»
+      const resSin = VG.resumenMarkdown(VG.vigilarCorte(ua({ ganadoras: 1750, bajo_el_corte: 17 }, null), T));
+      assert.ok(/AVISO:\*\* 1 modalidad quedó sin medir \(minima\)/.test(resSin) && !/Sin cambios/.test(resSin), resSin);
+      assert.ok(/Sin cambios que obliguen a revisar la tabla/.test(VG.resumenMarkdown(igual)), "todo medido e igual: sin cambios");
+      assert.ok(/sin medir/.test(VG.resumenMarkdown(VG.vigilarCorte(null, T))) && /2,2 de cada 100/.test(VG.resumenMarkdown(VG.vigilarCorte(null, { m: { baja_pct: 12, nombre: "x", ganadoras: 5387, bajo_el_corte: 116, datos_al: "d" } }))));
+      // la tabla REAL tiene lo que el vigía necesita, y main escribe vigilancia.json sin fallar ni con cifras.json ausente
+      const PTv = require("../lib/apu/piso_techo.js");
+      for (const [k, t] of Object.entries(PTv.TEMERARIO_POR_MODALIDAD)) assert.ok(t.ganadoras > 0 && Number.isInteger(t.bajo_el_corte) && /^\d{1,2}-[a-z]{3}-\d{4}$/.test(t.datos_al) && t.nombre, `fila ${k} de la tabla incompleta para el vigía`);
+      const osV = require("os"), fsV = require("fs"), pathV = require("path"), cpV = require("child_process");
+      const dV = fsV.mkdtempSync(pathV.join(osV.tmpdir(), "vigia-")), resumenV = pathV.join(dV, "resumen.md");
+      const salidaV = cpV.spawnSync(process.execPath, [pathV.join(__dirname, "..", "scripts", "base_obra", "vigilar_corte.js"), dV], { env: { ...process.env, GITHUB_STEP_SUMMARY: resumenV }, encoding: "utf8" });
+      assert.strictEqual(salidaV.status, 0, salidaV.stderr);
+      const vj = JSON.parse(fsV.readFileSync(pathV.join(dV, "vigilancia.json"), "utf8"));
+      assert.ok(vj.error_cifras && vj.filas.length === Object.keys(PTv.TEMERARIO_POR_MODALIDAD).length && vj.filas.every((f) => f.estado === "sin_medir"));
+      assert.ok(/Corte de la alerta de precio bajo/.test(fsV.readFileSync(resumenV, "utf8")));
+      assert.ok(/^::warning title=Corte de la alerta::No se pudo leer cifras\.json/m.test(salidaV.stdout), "sin cifras.json la corrida lleva su anotación en GitHub");
+      // con la tabla movida: anotación de GitHub, con el «%» escapado (%25) y en una sola línea
+      fsV.writeFileSync(pathV.join(dV, "cifras.json"), JSON.stringify({ umbral_alerta: { licitacion: [{ corte_pct: 88, todas: { ganadoras: 1750, bajo_el_corte: 60 } }],
+        menor_cuantia: [{ corte_pct: 88, todas: { ganadoras: 5387, bajo_el_corte: 116 } }], minima: [{ corte_pct: 70, todas: { ganadoras: 3708, bajo_el_corte: 258 } }] } }));
+      const movV = cpV.spawnSync(process.execPath, [pathV.join(__dirname, "..", "scripts", "base_obra", "vigilar_corte.js"), dV], { env: { ...process.env, GITHUB_STEP_SUMMARY: "" }, encoding: "utf8" });
+      const anot = movV.stdout.split("\n").filter((l) => l.startsWith("::warning"));
+      assert.strictEqual(movV.status, 0); assert.strictEqual(anot.length, 1, movV.stdout);
+      assert.ok(/::warning title=Corte de la alerta::El corte de licitaciones \(88 %25\) ya no dice lo mismo/.test(anot[0]) && !/ %\)/.test(anot[0]), anot[0]);
+      fsV.rmSync(dV, { recursive: true, force: true });
+      // el flujo: corre el día 3 de cada mes, vigila antes de comprimir y cada corte lleva el número de corrida
+      const yV = fsV.readFileSync(pathV.join(__dirname, "..", ".github", "workflows", "base_obra.yml"), "utf8");
+      assert.ok(/schedule:\s*\n\s*- cron: '23 9 3 \* \*'/.test(yV), "corrida mensual");
+      assert.ok(/- name: Vigilar el corte de la alerta[^\n]*\n(?:\s*#[^\n]*\n)*\s*continue-on-error: true\n\s*run: node scripts\/base_obra\/vigilar_corte\.js/.test(yV), "un fallo del vigía no frena la subida");
+      const pasoV = yV.indexOf("run: node scripts/base_obra/vigilar_corte.js");
+      assert.ok(pasoV > yV.indexOf("node scripts/base_obra/cifras.js \"$RUNNER_TEMP/base\"") && pasoV < yV.indexOf("- name: Comprimir") && pasoV > 0, "el vigía va después de las cifras y antes de comprimir");
+      assert.ok(/corte\/\$\(date -u \+%Y-%m-%d\)-\$\{\{ github\.run_id \}\}/.test(yV), "dos corridas el mismo día no se pisan");
+    }
     console.log("· unidad base de obra: «sin dato» ≠ 0, mapeo de modalidades, exclusiones contadas por motivo, lote, las dos σ, la regla de fila y el almacén que frena antes de pasar su tope (ida y vuelta contra un S3 falso)");
   }
 
@@ -4295,12 +4357,14 @@ async function main() {
       const u = PT.umbralTemerario(m);
       assert.strictEqual(u.corte_pct, corte, `corte de «${m}»: ${u.corte_pct} (esperado ${corte})`);
       assert.strictEqual(u.baja_pct, 100 - corte); assert.strictEqual(u.medido, medido, `«${m}» medido=${u.medido}`);
-      assert.ok(medido ? /SECOP II.*corte 17-oct-2026.*les habría saltado a [\d.]+ de [\d.]+ ganadoras/.test(u.fuente)
-        : (m ? /Sin medición para esta modalidad/ : /no publica su modalidad/).test(u.fuente), `«${m}»: la fuente va al lado de la cifra («${u.fuente}»)`);
+      assert.ok(medido ? new RegExp(`adjudicadas en SECOP II desde 2024 \\(datos al 17-oct-2026\\), [\\d.]+ de [\\d.]+ ofertas ganadoras con datos comparables tuvieron más del ${100 - corte} % de descuento\\.$`).test(u.fuente) && u.fuente.startsWith({ licitacion: "En licitaciones ", menor_cuantia: "En menores cuantías ", minima: "En mínimas cuantías " }[u.clave])
+        : (m ? /Sin medición para esta modalidad/ : /No se conoce la modalidad del proceso/).test(u.fuente), `«${m}»: la fuente va al lado de la cifra («${u.fuente}»)`);
       assert.ok(!/\d ?%/.test(u.fuente) || medido, `«${m}»: sin medición la fuente no repite la cifra («${u.fuente}»)`);
     }
     // cada fila medida cita SU conteo (el de cifras.json, umbral_alerta, campo «todas»)
     assert.ok(/17 de 1\.750/.test(PT.umbralTemerario(LIC).fuente) && /116 de 5\.387/.test(PT.umbralTemerario(SAMC).fuente) && /258 de 3\.708/.test(PT.umbralTemerario(MIN).fuente));
+    // la frase sale de los DATOS de la tabla, no de un texto escrito aparte
+    assert.ok(/2\.000 ofertas ganadoras/.test(PT.fraseCorte({ ...PT.TEMERARIO_POR_MODALIDAD.licitacion, ganadoras: 2000 })), "cambiar el conteo cambia la frase");
     // las claves de la tabla son claves que de verdad emite el clasificador (si no, la fila sería inerte)
     const emitidas = new Set([LIC, SAMC, MIN].map((m) => require("../lib/guia_proceso.js").modalidadEnLlano(m).clave));
     for (const k of Object.keys(PT.TEMERARIO_POR_MODALIDAD)) assert.ok(emitidas.has(k), `clave «${k}» de la tabla que el clasificador no emite`);
@@ -4351,7 +4415,10 @@ async function main() {
     const ptDecl = pt(LIC, { temerario_pct: 20 });
     assert.ok(/Corte declarado por quien llama/.test(ptDecl.fuentes.umbral_temerario) && !/ganadoras/.test(ptDecl.fuentes.umbral_temerario), ptDecl.fuentes.umbral_temerario);
     assert.ok(!ptDecl.supuestos.some((s) => /medido para esta modalidad/.test(s)), "corte declarado: el supuesto no dice «medido»");
-    assert.ok(/Referencia: 80 %.*no publica su modalidad/.test(pt(null).fuentes.umbral_temerario) && (pt(null).fuentes.umbral_temerario.match(/80 %/g) || []).length === 1, pt(null).fuentes.umbral_temerario);
+    assert.ok(/Referencia: 80 %.*No se conoce la modalidad del proceso/.test(pt(null).fuentes.umbral_temerario) && (pt(null).fuentes.umbral_temerario.match(/80 %/g) || []).length === 1, pt(null).fuentes.umbral_temerario);
+    // la pantalla «Revisar antes de subir» pinta la fuente debajo de la alerta, escapada
+    const appUM = require("fs").readFileSync(require("path").join(__dirname, "..", "public", "app.js"), "utf8");
+    assert.ok(/v\.id === "temeraria" && v\.umbral_fuente \? `<span[^`]*data-umbral-fuente>\$\{esc\(v\.umbral_fuente\)\}<\/span>`/.test(appUM), "public/app.js pinta umbral_fuente con esc() bajo la alerta");
     // (5) el consejo de la guía (mínima y subasta comparten consejo, no corte)
     const G = require("../lib/guia_proceso.js");
     const consejo = (m) => (G.guiaDe({ fila: { id_del_proceso: "CO1.UM", nombre_del_procedimiento: "MEJORAMIENTO DE VIA", modalidad_de_contratacion: m, precio_base: "90000000", departamento_entidad: "Tolima", entidad: "ALCALDIA" }, perfil: "helder" }).consejos || []).find((c) => c.clave === "precio_minima");
@@ -51807,6 +51874,35 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
         const cg = await invocar(editorI, "/api/apu/cargar?id=borrador-i&perfil=helder", CAB_TOKEN);
         const pr = (cg.cuerpo && cg.cuerpo.presupuesto) || {};
         okRO(gi.status === 200 && pr.cuantia === 40000000 && pr.plazo_meses === null && pr.unspsc === "72141000" && pr.tipo === "obra" && pr.entidad_nit === "800113389-7", `(i) el servidor guarda y devuelve el contexto del proceso (plazo 0 = sin dato): ${JSON.stringify([gi.status, pr.cuantia, pr.plazo_meses, pr.unspsc, pr.tipo, pr.entidad_nit])}`);
+      }
+
+      /* (j) LA FUENTE DEL CORTE SE PINTA BAJO LA ALERTA (18-oct-2026): se EJECUTA revisarOferta con
+             la respuesta real de validarFormulario1; una regex sobre el código fuente no cazaba una
+             condición que nunca se cumple (revisión adversaria). */
+      {
+        const fetchJ = ctx.fetch;
+        let respuestaJ = null;
+        ctx.fetch = (url, cfg) => {
+          if (/op=formulario1/.test(url)) return Promise.resolve(respuestaRO(200, respuestaJ ? respuestaJ(JSON.parse(cfg.body)) : { ok: true, ...F1.validarFormulario1(JSON.parse(cfg.body)) }));
+          return fetchJ(url, cfg);
+        };
+        ctx.__pliegoUltimo = null; porId.get("rev-tope-aiu").value = ""; porId.get("id-proceso").value = "CO1.J"; porId.get("cuantia").value = "100000000";
+        F.fijar({ filas: filasA.map((x) => ({ ...x })), ultimoCalculo: calculoDeRO(filasA.length), modalidad: "Mínima cuantía" });
+        await disparar("btn-revisar-oferta", "click", {}); await asentarRO();
+        const sinComentariosJ = (h) => h.replace(/<!--[\s\S]*?-->/g, "");   // lo que se VE, no lo que queda comentado
+        const hj = sinComentariosJ(porId.get("revision-oferta").innerHTML);
+        okRO(/Su precio puede parecer artificialmente bajo/.test(hj) && /data-umbral-fuente>En mínimas cuantías de obra adjudicadas en SECOP II desde 2024 \(datos al 17-oct-2026\), 258 de 3\.708 ofertas ganadoras con datos comparables tuvieron más del 30 % de descuento\.</.test(hj),
+          `(j) la alerta de mínima pinta debajo su fuente medida: ${(hj.match(/data-umbral-fuente>[^<]*/) || ["(no está)"])[0]}`);
+        // con el corte DECLARADO (umbral_fuente null) no se pinta una fuente que no es la suya
+        respuestaJ = (cuerpo) => { const r = F1.validarFormulario1({ ...cuerpo, umbral_temerario_pct: 20 }); return { ok: true, ...r }; };
+        await disparar("btn-revisar-oferta", "click", {}); await asentarRO();
+        okRO(!/data-umbral-fuente/.test(porId.get("revision-oferta").innerHTML), "(j) sin umbral_fuente no hay línea de fuente");
+        // y lo que llega del servidor se ESCAPA
+        respuestaJ = (cuerpo) => { const r = F1.validarFormulario1(cuerpo); return { ok: true, ...r, veredictos: r.veredictos.map((v) => (v.id === "temeraria" ? { ...v, umbral_fuente: "<img src=x onerror=alert(1)>" } : v)) }; };
+        await disparar("btn-revisar-oferta", "click", {}); await asentarRO();
+        const hj3 = sinComentariosJ(porId.get("revision-oferta").innerHTML);
+        okRO(/data-umbral-fuente>&lt;img src=x onerror=alert\(1\)&gt;</.test(hj3) && !/<img src=x/.test(hj3), "(j) la fuente se pinta escapada");
+        ctx.fetch = fetchJ;
       }
 
       /* (f) UNA LECTURA DEL PLIEGO QUE LLEGA TARDE NO SE PINTA EN OTRO PROCESO (revisión

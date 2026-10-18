@@ -212,8 +212,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 333 secciones (22 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 18768  El anticipo «…PAGO ANTICIPADO: No aplica» en una sola línea (17-oct-2026)
+· MEMORIA · docs/MEMORIA.md — 334 secciones (22 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 18788  El presupuesto del pliego frente al de SECOP II: un aviso, no un reemplazo (17-oct-2026)
   L 18822  Base nacional de licitaciones de obra: un script que solo mide, fuera de la app (17-oct-202…  (superada)
   L 18836  Base nacional de obra: las ofertas se piden agrupadas, las filas repetidas de p6dx son fase…
@@ -223,6 +222,7 @@
   L 18875  Fase 2: el piso se reproduce, el ganador no — los datos abiertos no dicen quién quedó hábil…
   L 18885  Fase 3: la validación posible sin SECOP es coherencia interna, y se hace por censo, no por …
   L 18895  La alerta de precio bajo se corta por modalidad con lo medido en SECOP II (18-oct-2026)
+  L 18910  La fuente del corte se ve en la pantalla y la base se vuelve a medir cada mes, con un vigía…
 
 · DOCUMENTOS docs/ — 71 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)

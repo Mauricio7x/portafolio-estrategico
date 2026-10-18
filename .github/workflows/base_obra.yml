@@ -6,14 +6,24 @@
 # subir y se niega si se pasaría de la parte de la base del plan gratis (Cloudflare no
 # corta el gasto: la cerradura es del script). No toca Vercel, Upstash ni producción.
 #
-# Cuándo corre: al subir un cambio de ESTE archivo a la rama de trabajo de la base, o
-# con «Run workflow» cuando el archivo esté en main (GitHub solo ofrece el botón para
-# flujos de la rama principal). Nunca en pull request: los secretos no salen de aquí.
+# Cuándo corre: el día 3 de cada mes a las 09:23 UTC (18-oct-2026, decisión del dueño:
+# el corte de la alerta de precio bajo tiene que seguir al mercado); al subir un cambio
+# de ESTE archivo a la rama de trabajo de la base; o con «Run workflow». GitHub solo
+# corre el `schedule` y ofrece el botón para flujos que están en la rama principal: la
+# corrida mensual empieza cuando este archivo llegue a main. Nunca en pull request: los
+# secretos no salen de aquí. Cada corrida sube un corte nuevo (~23 MB el 17-oct-2026)
+# bajo el tope de la base que vigila almacen.js.
+#
+# El vigía (`vigilar_corte.js`) compara la corrida con la tabla del corte de la alerta
+# (lib/apu/piso_techo, TEMERARIO_POR_MODALIDAD) y AVISA en el resumen de la corrida;
+# no cambia la tabla ni falla el flujo.
 # `concurrency` impide dos corridas a la vez (la cerradura además lo defiende con un
 # PUT condicional del registro del mes).
 name: Base de obra
 
 on:
+  schedule:
+    - cron: '23 9 3 * *'
   push:
     branches: [claude/base-licitaciones-obra-tnd6pl]
     paths: [.github/workflows/base_obra.yml]
@@ -55,10 +65,15 @@ jobs:
         run: |
           node scripts/base_obra/base.js "$RUNNER_TEMP/base"
           node scripts/base_obra/cifras.js "$RUNNER_TEMP/base"
+      - name: Vigilar el corte de la alerta (solo avisa)
+        # un fallo del vigía no puede costar la subida de la base de esta corrida
+        continue-on-error: true
+        run: node scripts/base_obra/vigilar_corte.js "$RUNNER_TEMP/base"
       - name: Comprimir
         run: |
           cp "$RUNNER_TEMP/inventario.log" "$RUNNER_TEMP/base/"
           gzip -9 "$RUNNER_TEMP/base/"*.json "$RUNNER_TEMP/base/inventario.log"
           ls -la "$RUNNER_TEMP/base"
       - name: Subir con tope
-        run: node scripts/base_obra/almacen.js subir "$RUNNER_TEMP/base" "corte/$(date -u +%Y-%m-%d)"
+        # la fecha y el número de la corrida: dos corridas el mismo día no se pisan
+        run: node scripts/base_obra/almacen.js subir "$RUNNER_TEMP/base" "corte/$(date -u +%Y-%m-%d)-${{ github.run_id }}"
