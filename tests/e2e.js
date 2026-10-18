@@ -7256,6 +7256,21 @@ async function main() {
       r = await post("/api/admin?op=crear-cuenta", { llave: `${LLAVE}x`, correo: CORREO, contrasena: CLAVE });
       assert.strictEqual(r.status, 401, `sin la llave del servidor no hay alta: ${JSON.stringify(r.cuerpo)}`);
       assert.ok(!r.cabeceras["set-cookie"], "un alta rechazada no abre sesión");
+      /* LA LLAVE NO SE COPIA DE VERCEL (18-oct-2026): una variable «Secret» no se vuelve a ver después
+         de guardarla. El mensaje decía «Cópiela entera desde Vercel» y el dueño se quedó en ese paso.
+         Se mira el mensaje que REALMENTE responde el alta, y el de la llave retirada, y la guía. */
+      {
+        const COPIAR_DE_VERCEL = /c[oó]pie(la)?\b[^.]{0,90}vercel|el ojo para verla/i;
+        assert.strictEqual(r.cuerpo.error, Sesion.MSG_LLAVE_NO_COINCIDE, `la llave que no coincide responde su mensaje: ${r.cuerpo.error}`);
+        for (const [cual, msg] of [["no coincide", r.cuerpo.error], ["retirada", Sesion.MSG_LLAVE_RETIRADA]]) {
+          assert.ok(!COPIAR_DE_VERCEL.test(msg) && /no muestra las variables secretas/.test(msg) && /an[oó]t/.test(msg),
+            `el mensaje de la llave ${cual} no manda a copiarla de Vercel (no se vuelve a ver) y dice que se anota: ${msg}`);
+        }
+        const guia = fs.readFileSync(path.join(__dirname, "..", "docs", "CONFIGURACION_TOKENS.md"), "utf8");
+        const alta = guia.slice(guia.indexOf("### 0.1 · La puesta en marcha"), guia.indexOf("### 0.2"));
+        assert.ok(alta.length > 0 && !COPIAR_DE_VERCEL.test(alta) && /No se puede copiar de Vercel/.test(alta) && /anótela/.test(alta),
+          "la guía §0.1 no manda a copiar la llave de Vercel: dice que se anota al ponerla");
+      }
       r = await post("/api/admin?op=crear-cuenta", { correo: CORREO, contrasena: CLAVE });
       assert.strictEqual(r.status, 401, "el alta sin llave tampoco");
       r = await post("/api/admin?op=crear-cuenta", { llave: LLAVE, correo: CORREO, contrasena: "corta" });

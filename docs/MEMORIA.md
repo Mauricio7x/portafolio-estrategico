@@ -19547,6 +19547,19 @@ En una línea: `limpiarOfertas` ya no descarta una oferta bajo el 50 % del preci
 - **Lo que se movió y lo que no** (corrida local del 18-oct con los datos del 17-oct; jbjy sin fallos): umbral de la alerta a 88 % en licitación 17 de 1.750 y en menor cuantía 116 de 5.387 (iguales), a 70 % en mínima 270 de 3.720 (antes 258 de 3.708). El piso del país (mediana − σ) no cambió: 93,3 % en licitación y 93,43 % en menor cuantía, con el mismo N. El vigía, corrido sobre esa corrida, da «igual» en las tres filas.
 - **No resuelto, a propósito**: si dos proveedores ofertan exactamente lo adjudicado se rescatarían los dos (en procesos sin lotes no ocurre en los datos). Exigir que la oferta sea del ganador pide pasar su identidad a la limpieza; queda para cuando ocurra.
 
+### La llave del servidor no se copia de Vercel: se anota al ponerla (18-oct-2026)
+
+En una línea: la guía §0.1 bis y el mensaje de «la llave no coincide» mandaban a «copiar `HISTORICO_TOKEN` de Vercel con el ojo», y una variable de tipo «Secret» (la del candado, como quedó en la cuenta del 16-oct) no se puede ver ni copiar después de guardarla; el dueño se quedó en ese paso. Ahora la guía y los dos mensajes del alta dicen que la llave se ANOTA al ponerla, y que si no se tiene, se pone una nueva y se vuelve a desplegar.
+
+- **La fuente.** Documentación de Vercel, «Config and Secret environment variables», leída el 18-oct-2026: «Secret values are write-only after saving» y «For Secret variables, the current value is hidden. Provide a new value to rotate the secret».
+- **Dónde está la variable en esta cuenta.** Medido por captura del dueño el 17-oct: las variables son compartidas del equipo (pestaña «Shared» de «Environment Variables», con «All Projects» arriba), con candado. La página del proyecto no tiene variables propias. La guía §0.1, paso 2, da esa ruta.
+- **La cerradura.** El bloque «unidad sesión del dueño» comprueba tres cosas:
+  - el mensaje que REALMENTE responde un alta con la llave equivocada es `MSG_LLAVE_NO_COINCIDE`;
+  - ni ese mensaje ni `MSG_LLAVE_RETIRADA` mandan a copiarla de Vercel, y los dos dicen que Vercel no muestra las variables secretas y que se anota;
+  - la guía §0.1 no lo hace.
+  Tres mutaciones (el mensaje viejo, la guía vieja, el aviso sin la frase) ponen el bloque en rojo.
+- **Lo que no se tocó.** El mensaje de «falta `HISTORICO_TOKEN`» sigue nombrando «Settings → Environment Variables»: es la ruta de una variable del proyecto, y en esta cuenta la variable es compartida. No manda a copiar nada, así que se dejó como está.
+
 ### Los pliegos de más de 20 MB que se midieron son escaneos: bajarlos por partes no da texto (18-oct-2026)
 
 En una línea: los 4 pliegos y documentos base de más de 20 MB que se pudieron medir (de los 15 de 228 procesos de la
