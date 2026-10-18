@@ -19679,10 +19679,17 @@ la Fase C leídos con OCR local (verdad vista en la imagen de la página): cambi
 **Lo que no hay que deshacer.** (a) Solo con «oficial», «POE» o «PO» delante: «el valor del acta menos el anticipo amortizado»
 habla de un anticipo que existe y sigue siendo frase (prueba). (b) Las rayas cuentan como menos (U+2010 a U+2015 y U+2212,
 además del guion): el OCR y algunos PDF ponen raya en la fórmula. (c) Es un tope de peso, no una exclusión: un pliego cuya
-única mención es la fórmula queda en «mención» («confírmelo»), no en «sin dato».
+única mención es la fórmula queda en «mención» («confírmelo»), no en «sin dato». (d) Lo que tumbó la revisión adversaria, cada
+uno con su cerradura: el tope va DESPUÉS de saber si la línea niega (antes del +1 de la negación, «…oficial menos el anticipo;
+no se entregará anticipo» perdía contra una mención anterior y salía «sí»); no se aplica si tras «anticipo» viene «amortizado»,
+«entregado», «girado», «desembolsado», «pagado» u «otorgado», ni si la línea trae un porcentaje («Valor PO − Anticipo: se
+entregará el 30 %» pacta). Medido de nuevo por la revisión en 50 textos únicos con marcadores y 82 de pdftotext: solo cambia
+CO1.REQ.10725252.
 
 **Límites conocidos, sin tocar.** En los dos escaneos con anticipo el «sí» sigue siendo correcto, pero ahora cita una fila de
 la tabla de garantías que el OCR partió («(6) meses más calidad de anticipo»), no la cláusula del 8.3: la exclusión de esa
 fila está hecha para el texto de pdf.js. Un escaneo de documento base SIN anticipo podría dar «sí» por esa fila: no se ha
 visto (los 2 escaneos sin anticipo dan «mención» y «sin dato»). Tampoco se tocan los condicionales sueltos («el valor del
-anticipo, cuando lo hubiere, será amortizado…»), que siguen pesando como frase.
+anticipo, cuando lo hubiere, será amortizado…»), que siguen pesando como frase. Y si el pacto solo está en un rótulo corto
+(«a) Anticipo: 30 %», que pesa como título) junto a la prosa de la capacidad residual, sale «mención» donde main decía «sí»
+citando la fórmula, es decir acertando por suerte: 0 casos en los textos reales.
