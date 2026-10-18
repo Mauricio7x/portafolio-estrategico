@@ -19573,7 +19573,7 @@ páginas; construir la descarga por partes de la Fase C sería pagar unas 15 pet
 
 > PENDIENTE · decidir con el dueño si la Fase C se cierra (no construir la descarga de más de 20 MB, porque los 4 medidos son escaneos) o se cambia por OCR de esos escaneos; el OCR de la app es OCR.space, una petición por página (134-142 por pliego), y su tarifa no se ha podido verificar.
 
-> PENDIENTE · el detector del anticipo (`dictamen_reglas`) da «sí» con la frase de la capacidad residual «presupuesto oficial menos el anticipo o pago anticipado cuando haya lugar», también en una sola línea de texto nativo (reproducido el 18-oct-2026 con `hechosDeTexto` de main). CO1.REQ.10725252 no tiene anticipo (forma de pago 50 % / 40 % / 10 % por avance, pág. 9) y la lectura dice «sí» citando la pág. 43. En 41 textos nativos de pliego de la sesión, ninguno de los 10 «sí» cita una fórmula. El anticipo entra al capital de trabajo: va con plan y visto bueno.
+> RESUELTO el 18-oct-2026 por «La fórmula en prosa no afirma el anticipo: «presupuesto oficial menos el anticipo…» es mención (18-oct-2026)» · lo que se había dicho: el detector del anticipo (`dictamen_reglas`) da «sí» con la frase de la capacidad residual «presupuesto oficial menos el anticipo o pago anticipado cuando haya lugar», también en una sola línea de texto nativo (reproducido el 18-oct-2026 con `hechosDeTexto` de main). CO1.REQ.10725252 no tiene anticipo (forma de pago 50 % / 40 % / 10 % por avance, pág. 9) y la lectura dice «sí» citando la pág. 43. En 41 textos nativos de pliego de la sesión, ninguno de los 10 «sí» cita una fórmula. El anticipo entra al capital de trabajo: va con plan y visto bueno.
 
 **Cómo se midió.** SECOP II respondió 403 a la descarga desde la sesión (Microsoft-Azure-Application-Gateway, 18-oct
 05:08 UTC). El dueño bajó los 4 PDF en su navegador y los subió a una carpeta de Drive compartida «con el vínculo»; desde
@@ -19652,3 +19652,25 @@ DESPUÉS de la lectura automática, que ya no tapa el pliego y cuya frase nombra
 lector con el `pliego.js` real comprueba que el nombre viaja, que el motivo se pinta escapado y no como fallo, que el
 cronograma va sin el texto y que el dictamen se pide igual. Navegador real a 390 y 1280 px con la sesión del dueño: Formulario,
 adenda, «DocBase_» y pliego en ese orden; consola limpia.
+
+### La fórmula en prosa no afirma el anticipo: «presupuesto oficial menos el anticipo…» es mención (18-oct-2026)
+
+En una línea: la definición de la capacidad residual («…equivale al presupuesto oficial menos el anticipo o pago anticipado
+cuando haya lugar…») y el numerador del capital de trabajo que el OCR deja solo en su línea («POE — Anticipo y/o Pago
+anticipado», con raya) pesaban como frase y decían «hay anticipo»; ahora pesan como fórmula (1), es decir mención, y no le
+ganan a la cláusula que pacta o niega (`FORMULA_ANTICIPO_RE` en `lib/dictamen_reglas.detectar`). REGLAS_VERSION .9 → .10.
+
+**Lo medido.** Contra la verdad doble de las rondas 5 y 6 (20 pliegos de licitación con texto de pdf.js) y los 4 escaneos de
+la Fase C leídos con OCR local (verdad vista en la imagen de la página): cambia UNO de 24, CO1.REQ.10725252, de «sí» falso a
+«mención» (no tiene anticipo: paga 50/40/10 % por avance, pág. 9). Los 20 de texto nativo quedan igual.
+
+**Lo que no hay que deshacer.** (a) Solo con «oficial», «POE» o «PO» delante: «el valor del acta menos el anticipo amortizado»
+habla de un anticipo que existe y sigue siendo frase (prueba). (b) Las rayas cuentan como menos (U+2010 a U+2015 y U+2212,
+además del guion): el OCR y algunos PDF ponen raya en la fórmula. (c) Es un tope de peso, no una exclusión: un pliego cuya
+única mención es la fórmula queda en «mención» («confírmelo»), no en «sin dato».
+
+**Límites conocidos, sin tocar.** En los dos escaneos con anticipo el «sí» sigue siendo correcto, pero ahora cita una fila de
+la tabla de garantías que el OCR partió («(6) meses más calidad de anticipo»), no la cláusula del 8.3: la exclusión de esa
+fila está hecha para el texto de pdf.js. Un escaneo de documento base SIN anticipo podría dar «sí» por esa fila: no se ha
+visto (los 2 escaneos sin anticipo dan «mención» y «sin dato»). Tampoco se tocan los condicionales sueltos («el valor del
+anticipo, cuando lo hubiere, será amortizado…»), que siguen pesando como frase.
