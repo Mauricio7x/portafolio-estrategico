@@ -22,6 +22,11 @@
 # así que este reloj es irregular: retoma una carga cortada en horas, no en minutos.
 #
 # El secreto: el mismo CRON_SECRET de «Actualización de la tarde» (ya creado).
+# El pase del muro (17-oct-2026): VERCEL_AUTOMATION_BYPASS_SECRET, el mismo de Vercel → «Settings» →
+# «Deployment Protection» → «Protection Bypass for Automation». Con el muro de Vercel en todo el
+# sitio, sin él la llamada recibe 302 (o 401 si pide JSON) con «Protected by Vercel Authentication» y el
+# flujo lo dice; sin
+# el secreto curl no manda la cabecera, así que sin muro todo sigue igual.
 name: Latido (retoma lo que quedó a medias)
 
 on:
@@ -38,12 +43,17 @@ jobs:
       - name: Llamar a la aplicación
         env:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
         run: |
           URL="https://detekta-app.vercel.app/api/latido"
           CODIGO=$(curl -sS --max-time 320 -o respuesta.json -w '%{http_code}' \
-            -H "Authorization: Bearer ${CRON_SECRET}" "$URL" || echo "000")
+            -H "Authorization: Bearer ${CRON_SECRET}" -H "x-vercel-protection-bypass: ${VERCEL_AUTOMATION_BYPASS_SECRET}" "$URL" || echo "000")
           echo "HTTP $CODIGO"
           jq -c '{ok, accion, motivo, hecho}' respuesta.json 2>/dev/null || cat respuesta.json || true
+          if [ "$CODIGO" = "302" ] || grep -qs "Protected by Vercel Authentication" respuesta.json; then
+            echo "El muro de Vercel no dejó pasar la llamada (respondió $CODIGO, «Protected by Vercel Authentication»): falta el secreto VERCEL_AUTOMATION_BYPASS_SECRET en GitHub (Settings → Secrets and variables → Actions) o no es el mismo pase que el de Vercel (Settings → Deployment Protection → Protection Bypass for Automation)."
+            exit 1
+          fi
           if [ "$CODIGO" = "401" ]; then
             echo "La aplicación no reconoció la credencial. Cree el secreto CRON_SECRET en GitHub (Settings → Secrets and variables → Actions → New repository secret) con el MISMO valor que la variable CRON_SECRET de Vercel."
             exit 1

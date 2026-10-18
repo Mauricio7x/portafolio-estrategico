@@ -153,12 +153,16 @@ Si no aparece ninguno no puedes hacer nada: la llave de la aplicación sale de p
 en el repositorio. Termina diciendo que la rutina no tiene repositorio adjunto y dónde se añade.
 
 PASO 0 bis · ¿SE ABRE LA PUERTA?
-curl -s -o /dev/null -w "%{http_code}\n" --max-time 20 "https://detekta-app.vercel.app/api/procesos?op=salud"
+curl -s -o /dev/null -w "%{http_code}\n" --max-time 20 -H "x-vercel-protection-bypass: $VERCEL_AUTOMATION_BYPASS_SECRET" "https://detekta-app.vercel.app/api/procesos?op=salud"
 Si responde 000 o 403 del proxy de egreso, para y di solo: «La red del entorno sigue cerrada: abra
 claude.ai/code → el entorno → Red: Custom y permita detekta-app.vercel.app.»
+Si responde 302 (o 401 con «Protected deployment») es el muro de Vercel: para y di solo: «El muro de Vercel no deja pasar a esta rutina:
+falta VERCEL_AUTOMATION_BYPASS_SECRET en las variables de entorno de su entorno.»
 
 LA LLAVE sale del repositorio, como hacen las skills. No la imprimas nunca:
 TOKEN=$(grep -o 'const TOKEN = "[^"]*"' public/app.js | head -1 | cut -d'"' -f2)
+Y EL PASE DEL MURO va en CADA llamada a la aplicación, también sin imprimirlo:
+-H "x-vercel-protection-bypass: $VERCEL_AUTOMATION_BYPASS_SECRET"
 
 QUÉ MIRAR · todo es LECTURA: ni un POST, ninguna sincronización
 1. GET /api/procesos?op=salud — ok, motivo, edad_horas (umbral 30), ultimo_error,
@@ -200,6 +204,14 @@ PASO 0 · ¿TIENES EL REPOSITORIO?
 test -f CLAUDE.md && pwd || find / -maxdepth 4 -name CLAUDE.md -not -path "*/node_modules/*" 2>/dev/null | head -3
 Si no aparece ninguno no puedes hacer nada —todo lo tuyo se lee de ficheros del repositorio—.
 Termina diciendo que la rutina no tiene repositorio adjunto y dónde se añade.
+
+CUANDO LLAMES A LA APLICACIÓN (/api/paa, /api/admin/cobertura-rup), cada llamada lleva la llave y
+el pase del muro, sin imprimirlos:
+TOKEN=$(grep -o 'const TOKEN = "[^"]*"' public/app.js | head -1 | cut -d'"' -f2)
+-H "x-historico-token: $TOKEN" -H "x-vercel-protection-bypass: $VERCEL_AUTOMATION_BYPASS_SECRET"
+Si responde 302, o 401 con «Protected deployment», es el muro de Vercel, no la fuente: di solo «El muro
+de Vercel no deja pasar a esta rutina: falta VERCEL_AUTOMATION_BYPASS_SECRET en las variables de
+entorno de su entorno» y sigue con lo que no dependa de la aplicación.
 
 MIRA QUÉ MES ES Y HAZ SOLO LO QUE TOCA. Si no toca nada, dilo en una línea y termina.
 

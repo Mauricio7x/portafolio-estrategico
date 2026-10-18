@@ -46,7 +46,7 @@ con `node tests/estado.js`, y las coordenadas las da `node tests/mapa.js <térmi
 | `docs/DICTAMEN_DESDE_CLAUDE_CODE.md` | referencia | — | `README.md` · `tests` | Dictamen del pliego con la suscripción de Claude Code (sin clave de API) · 3-sep-2026 |
 | `docs/LEGAL_COLOMBIA.md` | referencia | — | — | Anexo A · Frente jurídico y regulatorio (Colombia) |
 | `docs/PRECIOS_DESDE_CLAUDE_CODE.md` | referencia | — | `README.md` · `tests` | Precios · cómo funciona «Buscar» y quién lo atiende |
-| `docs/RUTINAS.md` | referencia | — | — | Rutinas programadas · qué pueden hacer, qué no, y cómo se crea una que funcione |
+| `docs/RUTINAS.md` | referencia | — | `tests` | Rutinas programadas · qué pueden hacer, qué no, y cómo se crea una que funcione |
 
 ## Para ingeniero
 
@@ -103,5 +103,5 @@ con `node tests/estado.js`, y las coordenadas las da `node tests/mapa.js <térmi
 | `docs/datos.md` | referencia | — | `README.md` · `lib` · `public` · `tests` | Inventario de fuentes de datos y auditorías de la Fase 0 |
 | `docs/GUIA_ANALISTA_LICITACIONES.md` | referencia | — | `CLAUDE.md` · `README.md` · `lib` · `tests` | Manual del Analista de Licitaciones |
 | `docs/marca.md` | referencia | — | `README.md` · `public` · `tests` | Marca · Detekta (Fase 7 del plan maestro v4 · ago 2026) |
-| `docs/MEMORIA.md` | referencia | — | `CLAUDE.md` · `README.md` · `lib` · `public` · `tests` | MEMORIA.md · la crónica completa de decisiones de Detekta |
+| `docs/MEMORIA.md` | referencia | — | `.claude` · `CLAUDE.md` · `README.md` · `lib` · `public` · `tests` | MEMORIA.md · la crónica completa de decisiones de Detekta |
 | `docs/PROMPT_INICIAL.md` | referencia | — | `CLAUDE.md` · `README.md` · `tests` | PROMPT INICIAL DE DETEKTA · protocolo vivo |
