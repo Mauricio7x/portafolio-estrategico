@@ -741,6 +741,7 @@ Abrir el sitio y entrar con su correo y su contraseña. Debe verse:
 | La sincronización dice «agotados 5 intentos (HTTP 403)» | `SOCRATA_APP_TOKEN` inválido | Corregirlo **o borrarlo** (§3.3) + redeploy |
 | El lector de pliegos dice que no puede leer un escaneado | Falta `OCRSPACE_API_KEY` | §3.4 (opcional) |
 | La extracción histórica se para a mitad y no sigue sola | El muro de Vercel cortando la auto-llamada | §3.5, o volver a pegar la misma URL: **continúa, no reinicia** |
+| `op=salud` dice «la actualización no pudo seguir sola: …» | La llamada del servidor a sí mismo para seguir con la tanda siguiente no funcionó; el texto dice si fue el muro, la credencial, la red o una función que no siguió viva | Hacer lo que dice `autollamada.que_hacer` en esa misma respuesta. Mientras tanto, el latido avanza hasta 3 tandas cada vez que corre, y «Actualizar datos» en «Mi empresa» termina la actualización con la pestaña abierta |
 | Los cambios del código no llegan al sitio | La conexión con GitHub | §2 |
 
 **Para diagnosticar la extracción sin terminal**, esta URL solo lee y no toca nada:

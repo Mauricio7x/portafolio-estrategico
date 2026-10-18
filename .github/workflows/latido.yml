@@ -49,7 +49,7 @@ jobs:
           CODIGO=$(curl -sS --max-time 320 -o respuesta.json -w '%{http_code}' \
             -H "Authorization: Bearer ${CRON_SECRET}" -H "x-vercel-protection-bypass: ${VERCEL_AUTOMATION_BYPASS_SECRET}" "$URL" || echo "000")
           echo "HTTP $CODIGO"
-          jq -c '{ok, accion, motivo, hecho}' respuesta.json 2>/dev/null || cat respuesta.json || true
+          jq -c '{ok, accion, motivo, hecho, tandas: ((.tandas // []) | length), por_que_paro}' respuesta.json 2>/dev/null || cat respuesta.json || true
           if [ "$CODIGO" = "302" ] || grep -qs "Protected by Vercel Authentication" respuesta.json; then
             echo "El muro de Vercel no dejó pasar la llamada (respondió $CODIGO, «Protected by Vercel Authentication»): falta el secreto VERCEL_AUTOMATION_BYPASS_SECRET en GitHub (Settings → Secrets and variables → Actions) o no es el mismo pase que el de Vercel (Settings → Deployment Protection → Protection Bypass for Automation)."
             exit 1
