@@ -19125,8 +19125,13 @@ leídos no tienen columna y rehacerlos solo gastaría CPU. OJO, corregido por la
 desde ahora. Volver a bajar esos pliegos es una decisión del dueño. (i) La lista de Licitaciones y su capacidad residual no
 cambian: no tienen el pliego.
 
-**Dos revisiones adversarias (17 y 18-oct-2026): 0 falsos en los 36 pliegos reales con tabla, pero caminos construidos
-a un plazo falso marcado «dato»; cada uno con su cerradura y su mutación.** (j) Ningún TRAMO de texto puede pasar el centro
+**Tres revisiones adversarias (17 y 18-oct-2026): 0 falsos en los 36 pliegos reales con tabla, pero caminos construidos
+a un plazo falso marcado «dato»; cada uno con su cerradura y su mutación.** La regla que las resume, de la tercera: QUITAR
+TEXTO SOLO PUEDE LIMPIAR. El tramo y el corte de (j) se llevaban a veces una línea de la propia celda (dos celdas a menos
+de 6 puntos, que en r6_04 y r6_08 están a 6,8 y 7,2; una fila partida entre páginas; una fila combinada entre dos con
+plazo) y dejaban una etapa sola: de «sin dato» a «2 meses». Por eso, si lo quitado de la franja del plazo trae algo de
+plazo (mes, día, etapa, fase, hábiles, calendario, total, diciembre o una cifra entre paréntesis), la columna no se manda;
+en las 36 tablas reales lo quitado no trae ninguna de esas palabras. No se afina el umbral: se hace seguro el recorte. (j) Ningún TRAMO de texto puede pasar el centro
 de la columna vecina, y la columna TERMINA en el primer renglón, debajo del encabezado, con un tramo que la atraviesa de
 lado a lado (la fila combinada de las especificaciones o la prosa de debajo). El tramo son los fragmentos de un renglón con
 huecos de hasta 6 puntos: la prosa justificada llega palabra a palabra y, mirada palabra por palabra (la primera versión
@@ -19134,7 +19139,9 @@ del arreglo), «cuatro (4) meses para su liquidación» seguía entrando. Medido
 lecturas quedan iguales y con 8 r6_08 pierde su fecha; 271 de 351 renglones de prosa partidos tienen todos sus huecos por
 debajo de 6. (k) El fin de la sección se busca por renglón, con las palabras unidas, y tiene que EMPEZAR el renglón (como
 el `^` de FIN_1_1_RE): pdf.js parte «1.2. DOCUMENTOS DEL PROCESO» en palabras (r6_02), y un «según los documentos del
-proceso» a media celda cortaba la columna y dejaba una etapa sola. Los renglones se agrupan una vez (antes era cuadrático:
+proceso» a media celda cortaba la columna y dejaba una etapa sola. Se reconoce por sus primeros 24 caracteres (con 14,
+«DOCUMENTOS DEL PROYECTO» de la celda del objeto era el fin) y un «1.2» tiene que ser un título («1.2 KM de vía» no lo
+es: sin fin claro, null). FIN_1_1_RE no se toca: es el del servidor y decide también el presupuesto. Los renglones se agrupan una vez (antes era cuadrático:
 911 ms con 6.000 fragmentos, ahora 7 ms). (l) El encabezado es el de MÁS ARRIBA por página y altura (no el primero del flujo
 del PDF), con la «P» mayúscula de un encabezado y nunca un «Plazo de liquidación». (m) UNA sola cifra de plazo por columna:
 dos, aunque sean iguales, no se escogen («TRES (03) MESES» dos veces puede ser de dos etapas con el rótulo en otra

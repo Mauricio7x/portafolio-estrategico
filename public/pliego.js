@@ -107,7 +107,11 @@
       if (mf1) { pFin = ps[i0 + 1]; lineaFin = ps[i0 + 1].lineas.slice(mf1.index).split("\n")[0]; }
     }
     if (!pFin) return null; // sin el fin de la sección no se sabe hasta dónde llega la tabla
-    const finTxt = plegarC(lineaFin).replace(/^1\.2\.?\s*/, "").slice(0, 14);
+    /* el «1.2» del fin tiene que ser un TÍTULO («1.2. DOCUMENTOS…»), no «1.2 KM de vía» de una celda; y el renglón del fin se
+       reconoce por sus primeros 24 caracteres, no 14: «DOCUMENTOS DEL PROYECTO» de la celda del objeto no es «DOCUMENTOS DEL
+       PROCESO» (tercera revisión adversaria). Sin un fin claro, null */
+    if (/^\s*1\.2\b/.test(lineaFin) && !/^\s*1\.2\.?\s*[A-ZÁÉÍÓÚÑ]{4,}/.test(lineaFin)) return null;
+    const finTxt = plegarC(lineaFin).replace(/^1\.2\.?\s*/, "").slice(0, 24);
     const tit = p0.items.find((i) => /OBJETO/.test(i.s) && (/PRESUPUESTO/.test(i.s) || p0.items.some((j) => Math.abs(j.y - i.y) < 2 && /^PRESUPUESTO/.test(String(j.s).trim()))));
     /* los renglones visuales de una página, de arriba abajo y cada uno de izquierda a derecha (agrupar una vez: buscar los
        vecinos de cada fragmento era cuadrático) */
@@ -179,7 +183,14 @@
       }
     }
     const antesDelCorte = (i) => !corte || i.pag < corte.pag || (i.pag === corte.pag && i.y > corte.y + 1);
-    const col = zona.filter((i) => (i.pag > cab.pag || i.y < cab.y + 1) && i.x + i.w / 2 > izq && i.x + i.w / 2 < der && !fuera.has(i) && antesDelCorte(i));
+    const enFranja = (i) => (i.pag > cab.pag || i.y < cab.y + 1) && i.x + i.w / 2 > izq && i.x + i.w / 2 < der;
+    /* QUITAR SOLO PUEDE LIMPIAR (tercera revisión adversaria): el tramo y el corte se pueden llevar una línea de la propia
+       celda (dos celdas a menos de 6 puntos, una fila partida entre páginas) y dejar una etapa sola: de «sin dato» a un plazo
+       falso. Si lo que se quita de la franja trae algo de plazo, la columna no se manda. Medido: en las 36 tablas reales lo
+       quitado no trae ninguna de esas palabras */
+    const quitado = zona.filter((i) => enFranja(i) && (fuera.has(i) || !antesDelCorte(i))).map((i) => i.s).join(" ");
+    if (/\b(?:mes(?:es)?|dias?|etapas?|fases?|habiles|calendario|total|diciembre)\b|\(\s*\d/.test(plegarC(quitado))) return null;
+    const col = zona.filter((i) => enFranja(i) && !fuera.has(i) && antesDelCorte(i));
     // por renglones: la misma línea visual tiene alturas que difieren en décimas («un (1) mes» salía al revés sin agrupar)
     col.sort((a, b) => a.pag - b.pag || b.y - a.y);
     const renglones = [];

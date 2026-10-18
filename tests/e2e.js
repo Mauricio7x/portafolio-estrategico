@@ -8257,7 +8257,7 @@ async function main() {
     // la columna: un renglón a todo el ancho debajo de la tabla no entra (la celda trae una fecha y la prosa una cifra)
     const conFecha = { ...pag6, items: [...pag6.items.filter((i) => i.s !== "3 MESES"), it(240, 465, 60, "Hasta el 31 de diciembre de 2026"), it(85, 400, 441, "La vigencia del contrato será igual al plazo de ejecución y cuatro (4) meses para su liquidación.")] };
     const lFecha = PZ.leerPlazoDeColumna(columnaPlazoDe([conFecha], T11, F11));
-    assert.deepStrictEqual([lFecha.meses, lFecha.hasta], [null, "2026-12-31"], `la prosa a todo el ancho no es de la columna (MUTACIÓN: sin \`cruzaVecina\`, 4 meses): ${JSON.stringify(lFecha)}`);
+    assert.ok(!lFecha || lFecha.meses === null, `la prosa a todo el ancho no da un plazo (MUTACIÓN: sin el tramo que cruza, 4 meses): ${JSON.stringify(lFecha)}`);
     // el fin partido en palabras (r6_02): sin hallarlo, la columna bajaba y se llevaba la cifra de la sección siguiente
     const finPartido = { ...pag6, items: [...pag6.items.filter((i) => i.s !== "DOCUMENTOS DEL PROCESO"), it(121, 346, 60, "DOCUMENTOS"), it(185, 346, 20, "DEL"), it(209, 346, 55, "PROCESO"), it(240, 280, 60, "DOS (2) MESES")] };
     assert.strictEqual(PZ.leerPlazoDeColumna(columnaPlazoDe([finPartido], T11, F11)).meses, 3, "el fin se halla por renglón con las palabras unidas (MUTACIÓN: buscándolo en un solo fragmento, dos plazos y null)");
@@ -8279,15 +8279,16 @@ async function main() {
     const palabras = (x0, y, frase, hueco = 3) => { let x = x0; return frase.split(" ").map((w) => { const i = it(x, y, w.length * 4.6, w); x += w.length * 4.6 + hueco; return i; }); };
     const conFechaP = { ...pag6, items: [...pag6.items.filter((i) => i.s !== "3 MESES"), it(240, 465, 60, "Hasta el 31 de diciembre de 2026"), ...palabras(85, 400, "El contrato se liquidará dentro de los cuatro (4) meses siguientes a su terminación, de acuerdo con la ley.")] };
     const lP = PZ.leerPlazoDeColumna(columnaPlazoDe([conFechaP], T11, F11));
-    assert.deepStrictEqual([lP.meses, lP.hasta], [null, "2026-12-31"], `la prosa palabra a palabra no entra (MUTACIÓN: mirando cada fragmento solo, 4 meses): ${JSON.stringify(lP)}`);
+    assert.ok(!lP || lP.meses === null, `la prosa palabra a palabra no da un plazo (MUTACIÓN: mirando cada fragmento solo, 4 meses): ${JSON.stringify(lP)}`);
     // la columna termina en el primer renglón que la atraviesa: lo de debajo, aunque venga en tramos que no cruzan, ya no es la celda
     const corteP = { ...pag6, items: [...pag6.items.filter((i) => i.s !== "3 MESES"), it(240, 465, 60, "Hasta el 31 de diciembre de 2026"), it(85, 410, 441, "La vigencia del contrato será igual al plazo de ejecución y el contrato se liquidará"), it(85, 398, 120, "dentro de los"), it(240, 398, 60, "cuatro (4) meses"), it(312, 398, 200, "siguientes a su terminación.")] };
     const lC = PZ.leerPlazoDeColumna(columnaPlazoDe([corteP], T11, F11));
-    assert.deepStrictEqual([lC.meses, lC.hasta], [null, "2026-12-31"], `lo que va debajo del renglón que atraviesa la tabla no es de la columna (MUTACIÓN: sin el corte, 4 meses): ${JSON.stringify(lC)}`);
+    assert.ok(!lC || lC.meses === null, `lo que va debajo del renglón que atraviesa la tabla no da un plazo (MUTACIÓN: sin el corte, 4 meses): ${JSON.stringify(lC)}`);
     // un tramo que pasa SOLO el centro de la vecina izquierda, o SOLO el de la derecha, tampoco
     for (const [lado, item] of [["izquierda", it(150, 400, 170, "cuatro (4) meses para su liquidación")], ["derecha", it(230, 400, 150, "cinco (5) meses de garantía")]]) {
       const unLado = { ...pag6, items: [...pag6.items.filter((i) => i.s !== "3 MESES"), it(240, 465, 60, "Hasta el 31 de diciembre de 2026"), item] };
-      assert.strictEqual(PZ.leerPlazoDeColumna(columnaPlazoDe([unLado], T11, F11)).meses, null, `el tramo que pasa el centro de la vecina de la ${lado} no entra (MUTACIÓN: mirando un solo lado)`);
+      const lU = PZ.leerPlazoDeColumna(columnaPlazoDe([unLado], T11, F11));
+      assert.ok(!lU || lU.meses === null, `el tramo que pasa el centro de la vecina de la ${lado} no da un plazo (MUTACIÓN: mirando un solo lado)`);
     }
     // el fin EMPIEZA su renglón: «SEGÚN LOS DOCUMENTOS DEL PROCESO» a media celda, encima de la cifra, no corta la columna
     const finMedio = { ...pag6, items: [...pag6.items, it(92, 500, 30, "SEGÚN"), it(124, 500, 18, "LOS"), it(144, 500, 50, "DOCUMENTOS"), it(196, 500, 15, "DEL"), it(213, 500, 40, "PROCESO")] };
@@ -8297,6 +8298,23 @@ async function main() {
     const p7 = { n: 7, lineas: "Plazo de ejecución\tValor\n1.2.\tDOCUMENTOS DEL PROCESO", items: [it(230, 700, 80, "Plazo de ejecución"), it(355, 700, 25, "Valor"), it(256, 680, 60, "CUATRO (4) MESES"), it(85, 600, 17, "1.2."), it(121, 600, 147, "DOCUMENTOS DEL PROCESO")] };
     const c67 = columnaPlazoDe([p6sinFin, p7], T11, F11);
     assert.ok(c67 && c67.pagina === 6 && /^Plazo del contrato/.test(c67.texto) && PZ.leerPlazoDeColumna(c67).meses !== 4, `el encabezado es el de la primera página (MUTACIÓN: ordenando solo por altura, el de la pág. 7 y 4 meses): ${JSON.stringify(c67)}`);
+    /* (7) tercera revisión adversaria (18-oct-2026): QUITAR SOLO PUEDE LIMPIAR. El tramo y el corte se llevaban una línea de
+       la propia celda y dejaban una etapa sola: de «sin dato» a un plazo falso. Si lo quitado de la franja trae algo de plazo,
+       la columna no se manda */
+    const dosEtapas = (extra) => ({ ...pag6, items: [...pag6.items.filter((i) => i.s !== "3 MESES" && i.s !== "MANTENIMIENTO Y REHABILITACIÓN"), ...extra] });
+    const pegada = dosEtapas([it(92, 480, 140, "MANTENIMIENTO DE LA VÍA"), it(236, 480, 75, "ETAPA I: DOS (02) MESES"), it(240, 465, 70, "ETAPA II: TRES (03) MESES")]);
+    assert.strictEqual(columnaPlazoDe([pegada], T11, F11), null, "una línea de la celda pegada (≤ 6 puntos) a la del objeto sale con el tramo: la columna no se manda, no queda la otra etapa sola (MUTACIÓN: sin la guarda de lo quitado, 3 meses)");
+    const filaEnMedio = dosEtapas([it(92, 512, 126, "MANTENIMIENTO Y REHABILITACIÓN"), it(250, 480, 60, "DOS (2) MESES"), it(85, 470, 441, "ESPECIFICACIONES TÉCNICAS: las descritas en el Anexo 1 del pliego"), it(245, 455, 70, "CUATRO (4) MESES")]);
+    assert.strictEqual(columnaPlazoDe([filaEnMedio], T11, F11), null, "una fila combinada entre dos filas con plazo: el corte no deja la primera sola (MUTACIÓN: sin la guarda, 2 meses)");
+    const sinPlazoQuitado = { ...pag6, items: [...pag6.items, it(85, 400, 441, "La obra pública tiene las especificaciones técnicas descritas en el Anexo 1")] };
+    assert.strictEqual(PZ.leerPlazoDeColumna(columnaPlazoDe([sinPlazoQuitado], T11, F11)).meses, 3, "quitar prosa SIN nada de plazo no tumba la lectura (MUTACIÓN: la guarda siempre, sin plazo)");
+    // el fin: un «1.2 KM…» de una celda no es el título 1.2, y «DOCUMENTOS DEL PROYECTO» no es «DOCUMENTOS DEL PROCESO»
+    const etapasCon = (y, s) => ({ ...pag6, lineas: pag6.lineas.replace("Objeto del proyecto", `${s}\nObjeto del proyecto`), items: [...pag6.items.filter((i) => i.s !== "3 MESES"), it(240, 520, 70, "ETAPA I: DOS (2) MESES"), it(92, y, 120, s), it(240, 480, 80, "ETAPA II: CUATRO (4) MESES")] });
+    const km = columnaPlazoDe([etapasCon(500, "1.2 KM de vía en concreto")], T11, F11);
+    assert.ok(!km || PZ.leerPlazoDeColumna(km).meses === null, `«1.2 KM de vía» no es el fin de la sección (MUTACIÓN: sin exigir un título, la primera etapa sola, 2 meses): ${JSON.stringify(km)}`);
+    const proyecto = { ...pag6, items: [...pag6.items.filter((i) => i.s !== "3 MESES"), it(240, 520, 70, "ETAPA I: DOS (2) MESES"), it(92, 500, 120, "DOCUMENTOS DEL PROYECTO Y"), it(240, 480, 80, "ETAPA II: CUATRO (4) MESES")] };
+    const lProy = PZ.leerPlazoDeColumna(columnaPlazoDe([proyecto], T11, F11));
+    assert.ok(lProy && lProy.meses === null && /por etapa/.test(lProy.motivo), `«DOCUMENTOS DEL PROYECTO» de la celda no corta la columna (MUTACIÓN: el fin por sus primeros 14 caracteres, 2 meses): ${JSON.stringify(lProy)}`);
     // la lectura: hábiles partidos o junto a «calendario», etapas sin cifra en la segunda, cifras repetidas y partidas
     for (const [t, motivo] of [["Plazo del contrato CIENTO VEINTE (120) DÍAS HÁ BILES", /hábiles/], ["Plazo del contrato CIENTO VEINTE (120) DÍAS HÁBILES según el calendario de obra", /hábiles y calendario/], ["Plazo del contrato ETAPA I: DOS (02) MESES ETAPA II: CUATRO MESES", /por etapa/], ["Plazo del contrato TRES (03) MESES TRES (03) MESES", /repite el plazo/], ["Plazo del contrato UN (1) MES Y QUINCE (15) DIAS y DOS (2) MESES", /plazos distintos/], ["Plazo del contrato 2. 5 MESES", /no trae una cifra/], ["Plazo del contrato 1 095 días calendario", /no trae una cifra/], ["Plazo del contrato 1,50 meses", /no trae una cifra/]]) {
       const r = pz(t);
