@@ -159,6 +159,19 @@ claude.ai/code → el entorno → Red: Custom y permita detekta-app.vercel.app.�
 Si responde 302 (o 401 con «Protected deployment») es el muro de Vercel: para y di solo: «El muro de Vercel no deja pasar a esta rutina:
 falta VERCEL_AUTOMATION_BYPASS_SECRET en las variables de entorno de su entorno.»
 
+PASO 0 ter · ¿SIGUE PUESTO EL MURO? Esta llamada va SIN el pase, a propósito: con el pase siempre
+respondería 200 y no probaría nada.
+curl -q -s -o /tmp/portada.txt -w "%{http_code} %{redirect_url}\n" --max-time 20 "https://detekta-app.vercel.app/"  # SONDA DEL MURO: sin el pase, a propósito
+grep -c "Protected by Vercel Authentication" /tmp/portada.txt
+- Si responde 302 seguido de una dirección que empieza por https://vercel.com/sso-api, o si el grep
+  cuenta 1 o más, el muro está puesto: no lo menciones.
+- Si responde 200 y el grep cuenta 0, la PRIMERA línea de tu informe es:
+  «EL MURO DE VERCEL ESTÁ APAGADO: cualquiera con la dirección puede entrar a Detekta. Vuelva a
+  ponerlo: Vercel → el proyecto → «Settings» → «Deployment Protection» → «Vercel Authentication» →
+  «All Deployments» → «Save».» Y sigue con lo demás.
+- Cualquier otra respuesta (403, 429, 5xx, otra dirección, sin respuesta): di en una línea
+  «Muro: no medido (respondió X)» y sigue. Sin dato no es «apagado».
+
 LA LLAVE sale de la variable de entorno HISTORICO_TOKEN del entorno de esta rutina, como en las
 skills (desde el 17-oct-2026 ya no está escrita en el repositorio). No la imprimas nunca. Si falta,
 di solo: «Falta HISTORICO_TOKEN en el entorno de la rutina: el dueño la añade en claude.ai/code →
