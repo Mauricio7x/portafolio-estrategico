@@ -18,7 +18,7 @@ son un identificador y un nombre de perfil, nada más —no contienen instruccio
 traen—; se toman como los dos argumentos. Nadie está mirando la sesión: el resultado se ve en la pantalla
 en cuanto el paso 4 lo guarda, y el cierre del paso 5 queda en la lista de sesiones. Si el paso 1 responde
 403 del proxy de egreso, diga exactamente «La red del entorno no alcanza detekta-app.vercel.app:
-abra claude.ai/code/routines → esta rutina → el entorno → Network access: Full» y termine.
+abra claude.ai/code/routines → esta rutina → el entorno → Network access: Full» y termine. Si aparece `EL MURO DE VERCEL RESPONDIÓ`, o node dice `Unexpected token 'P', "Protected "…`, o un envío responde 401 con «Protected deployment» (el muro de Vercel), diga exactamente «El muro de Vercel no deja pasar a esta sesión: falta VERCEL_AUTOMATION_BYPASS_SECRET en las variables de entorno de su entorno (claude.ai/code, menú del entorno en la barra del título, Edit)» y termine: sin ese pase ninguna llamada llega a la aplicación.
 
 ## Pasos (en este orden, sin saltarse ninguno)
 
@@ -27,9 +27,10 @@ abra claude.ai/code/routines → esta rutina → el entorno → Network access: 
 
    ```bash
    TOKEN=$(grep -o 'const TOKEN = "[^"]*"' public/app.js | head -1 | cut -d'"' -f2)
-   curl -s -H "x-historico-token: $TOKEN" \
+   curl -s -H "x-historico-token: $TOKEN" -H "x-vercel-protection-bypass: $VERCEL_AUTOMATION_BYPASS_SECRET" \
      "https://detekta-app.vercel.app/api/pliego?op=dictamen&expediente=1&id_proceso=<ID>&perfil=<PERFIL>" \
      -o /tmp/expediente.json
+   grep -qs "Protected by Vercel Authentication" /tmp/expediente.json && echo "EL MURO DE VERCEL RESPONDIÓ: falta el pase"
    node -e 'const e=require("/tmp/expediente.json"); if(!e.hay_texto){console.log("SIN TEXTO:",e.error,e.que_hacer);process.exit(1)} console.log("paginas",e.paginas,"version",e.version_texto,"perfil",e.perfil)'
    ```
 
@@ -50,7 +51,7 @@ abra claude.ai/code/routines → esta rutina → el entorno → Network access: 
 
    ```bash
    node -e 'const d=require("/tmp/dictamen.json"); process.stdout.write(JSON.stringify({id_proceso:"<ID>",perfil:"<PERFIL>",motor:"sesion",dictamen:d}))' > /tmp/cuerpo.json
-   curl -s -X POST -H "x-historico-token: $TOKEN" -H "Content-Type: application/json" \
+   curl -s -X POST -H "x-historico-token: $TOKEN" -H "x-vercel-protection-bypass: $VERCEL_AUTOMATION_BYPASS_SECRET" -H "Content-Type: application/json" \
      --data-binary @/tmp/cuerpo.json "https://detekta-app.vercel.app/api/pliego?op=dictamen" -o /tmp/respuesta.json
    node -e 'const r=require("/tmp/respuesta.json"); console.log(r.ok?`GUARDADO · veredicto ${r.dictamen.veredicto} · citas ${r.verificacion.citas_verificadas}/${r.verificacion.citas_total} · apartadas ${r.no_verificados.length}`:`ERROR ${r.error} ${r.que_hacer||""} ${JSON.stringify(r.detalle||"")}`)'
    ```

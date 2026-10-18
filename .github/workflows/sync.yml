@@ -22,6 +22,12 @@
 # nombre CRON_SECRET. Sin él la llamada responde 401 y este flujo lo dice y falla:
 # un disparo que no dispara nada no puede quedar en verde.
 #
+# El pase del muro (17-oct-2026): VERCEL_AUTOMATION_BYPASS_SECRET, el mismo de Vercel → «Settings» →
+# «Deployment Protection» → «Protection Bypass for Automation». Con el muro de Vercel en todo el
+# sitio, sin él la llamada recibe 302 (o 401 si pide JSON) con «Protected by Vercel Authentication» y el
+# flujo lo dice; sin
+# el secreto curl no manda la cabecera, así que sin muro todo sigue igual.
+#
 # OJO: GitHub solo ejecuta los `schedule` de la rama por defecto (main), así que
 # esto no corre hasta que el cambio esté en main. Y GitHub deshabilita los flujos
 # programados de un repositorio sin actividad durante 60 días: si deja de correr,
@@ -44,13 +50,18 @@ jobs:
       - name: Llamar a la aplicación
         env:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
         run: |
           URL="https://detekta-app.vercel.app/api/sync?modo=auto"
           CODIGO=$(curl -sS --max-time 300 -o respuesta.json -w '%{http_code}' \
-            -H "Authorization: Bearer ${CRON_SECRET}" "$URL")
+            -H "Authorization: Bearer ${CRON_SECRET}" -H "x-vercel-protection-bypass: ${VERCEL_AUTOMATION_BYPASS_SECRET}" "$URL")
           echo "HTTP $CODIGO"
           cat respuesta.json || true
           echo
+          if [ "$CODIGO" = "302" ] || grep -qs "Protected by Vercel Authentication" respuesta.json; then
+            echo "El muro de Vercel no dejó pasar la llamada (respondió $CODIGO, «Protected by Vercel Authentication»): falta el secreto VERCEL_AUTOMATION_BYPASS_SECRET en GitHub (Settings → Secrets and variables → Actions) o no es el mismo pase que el de Vercel (Settings → Deployment Protection → Protection Bypass for Automation)."
+            exit 1
+          fi
           if [ "$CODIGO" = "401" ]; then
             echo "La aplicación no reconoció la credencial. Cree el secreto CRON_SECRET en GitHub (Settings → Secrets and variables → Actions → New repository secret) con el MISMO valor que la variable CRON_SECRET de Vercel."
             exit 1

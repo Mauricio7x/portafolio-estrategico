@@ -49,7 +49,8 @@ pliego se enseña sin despertar nada; un disparo que falla dice el motivo y deja
 
 Su encargo es un puntero, no una copia: las instrucciones viven en `.claude/skills/dictamen/SKILL.md`.
 Se crea en la web (**«New routine»** en <https://claude.ai/code/routines>, repositorio
-`Mauricio7x/portafolio-estrategico`, trigger **API**, entorno con la red abierta), con este texto:
+`Mauricio7x/portafolio-estrategico`, trigger **API**, entorno con la red abierta y, desde el muro de Vercel del
+17-oct-2026, con `VERCEL_AUTOMATION_BYPASS_SECRET` entre sus variables de entorno), con este texto:
 
 ```
 Usted es la rutina «Servicio al cliente · Dictamen»: la despierta el botón de lectura completa de la caja del

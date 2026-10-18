@@ -19038,7 +19038,7 @@ En una línea: las dos pruebas que caían de enero a mayo de 2027 no eran defect
 
 En una línea: el 17-oct a las 13:50 UTC una llamada sin fechas (el rango por omisión, 2024-01…2025-12) volvió a bajar desde enero de 2024 una extracción del histórico que la del 26-sep (2024-01…2026-09, 301.779 filas) ya había dejado completa, porque `extraerHistorico` creaba un cursor nuevo siempre que el rango pedido era otro; ahora reemplazar lo guardado exige `reiniciar`, el servidor responde 409 con qué hay y cómo seguir, el estado da el rango exacto y el botón «Carga completa» continúa ese rango en vez de imponer el suyo.
 
-> PENDIENTE · decidir con el dueño la puerta de producción. `docs/CONFIGURACION_TOKENS.md` §9 dice que la llave puede ser pública porque «la puerta es el muro de Vercel» (Password Protection). Pero el 17-oct, desde una sesión de Claude, `curl` con solo la cabecera de la llave a `https://detekta-app.vercel.app/api/sync/historico?estado=true` respondió 200, sin muro (cuenta nueva del 16-oct). Mientras tanto, cualquiera con la llave puede pedir `&reiniciar=1` o `/api/sync?modo=full`, que siguen empezando de cero. Opciones: volver a poner el muro, o exigir `CRON_SECRET` para reiniciar y para `modo=full` (el botón de GitHub ya lo tiene).
+> RESUELTO el 17-oct-2026 por «El muro de Vercel vuelve, gratis: «Vercel Authentication» en todo el sitio y el pase para lo automático (17-oct-2026)» · el dueño eligió el muro gratis de Vercel en todo el sitio y, después, exigir el secreto para lo destructivo. Lo que decía: `docs/CONFIGURACION_TOKENS.md` §9 dice que la llave puede ser pública porque «la puerta es el muro de Vercel» (Password Protection). Pero el 17-oct, desde una sesión de Claude, `curl` con solo la cabecera de la llave a `https://detekta-app.vercel.app/api/sync/historico?estado=true` respondió 200, sin muro (cuenta nueva del 16-oct). Mientras tanto, cualquiera con la llave puede pedir `&reiniciar=1` o `/api/sync?modo=full`, que siguen empezando de cero. Opciones: volver a poner el muro, o exigir `CRON_SECRET` para reiniciar y para `modo=full` (el botón de GitHub ya lo tiene).
 
 **Lo medido.** `?estado=true` en producción a las 21:05 UTC: extracción `2024-01…2025-12`, `15/24 meses`, `iniciada` 13:50:48Z; última completa `2024-01…2026-09` del 26-sep. Lo vio el latido lanzado a mano desde la app del celular («la extracción del histórico quedó a medias»).
 - **Nadie sabe quién la lanzó.** El dueño dice que no fue él. Ningún llamador del código pide un rango nuevo sin `reiniciar`: el latido y la cadena continúan el del cursor, el refresco mensual pediría hasta el mes en curso y no tocaba hasta el 26-oct, y la pantalla y la compactación solo reconstruyen. Las dos sesiones de Claude abiertas no tuvieron actividad entre las 13:00 y las 14:30 UTC (leídos sus registros), y las rutinas de ese día corrieron a otras horas. El plan gratuito de Vercel guarda una hora de registros.
@@ -19075,3 +19075,59 @@ En una línea: el 17-oct a las 13:50 UTC una llamada sin fechas (el rango por om
   - el botón que sigue sin estado, que no nombra la llave o que no comprueba que el estado es JSON;
   - el botón que reintenta el 409: se cuelga en los `sleep 30` y la prueba lo corta a los 20 s.
 - La prueba del flujo pide `bash` y `jq` en quien corre la suite (los dos están en el corredor de GitHub): sin ellos sale en rojo, no se salta.
+
+### El muro de Vercel vuelve, gratis: «Vercel Authentication» en todo el sitio y el pase para lo automático (17-oct-2026)
+
+En una línea: la decisión de dejar la llave a la vista («Página única y token integrado», ago 2026) se apoyaba en «Vercel Password Protection», que no existe en el plan Hobby, y con la cuenta nueva del 16-oct la producción quedó abierta; el dueño eligió el 17-oct el muro gratis de Vercel en todo el sitio («All Deployments»), y todo lo que llama a producción sin navegador manda el pase `x-vercel-protection-bypass` con `VERCEL_AUTOMATION_BYPASS_SECRET`.
+
+> PENDIENTE · con el muro puesto, medir si las tareas programadas de Vercel (`vercel.json` → `crons`) lo pasan. La documentación no lo dice; además no siguen redirecciones, y un 302 no deja registro. Cómo: el dueño pulsa la de `/api/latido` en Settings → Cron Jobs y mira `op=salud` → `latido.ultimo` en su navegador. Si no pasan, la actualización y el latido siguen por GitHub, pero la compactación, los avisos y la copia nocturna (`/api/respaldo`, que hoy responde 503 mientras no exista el almacén) necesitan su propia tarea de GitHub.
+
+> PENDIENTE · la opción B del dueño: exigir `CRON_SECRET` para lo destructivo o caro (`reiniciar` y `reset` del histórico, `modo=full`), para que no dependa del muro de una cuenta de Vercel. Va con plan aparte y visto bueno.
+
+**Lo medido.**
+- **Producción y versiones de prueba, el 17-oct.** `https://detekta-app.vercel.app/` respondía 200 sin nada. Una versión de prueba respondía 302 a `vercel.com/sso-api`: la cuenta nueva traía «Standard Protection», que deja abierta la producción.
+- **Lo que responde el muro.** En una versión de prueba, la API respondía 302 con el cuerpo «Protected by Vercel Authentication…», también con un pase falso. Una petición que pide JSON (`Accept` o un POST con `Content-Type: application/json`) recibía en cambio 401, con «Protected deployment» y «Protected by Vercel Authentication» en el cuerpo (lo midió la revisión adversaria).
+- **El gate de entrada no protege nada.** La clave la compara la pantalla (`public/app.js`) y su valor está en el código.
+- **Cabecera vacía.** Con curl 8.5.0, `-H "x-vercel-protection-bypass: "` con el valor vacío no manda la cabecera. Con valor, la manda.
+
+**Lo verificado en la documentación de Vercel** (consultada el 17-oct; las páginas dicen actualizadas en septiembre de 2026):
+- En Hobby: «Password Protection» no está disponible; en Pro cuesta $20 al mes por proyecto. Vienen incluidos «Vercel Authentication», el alcance «All Deployments», «Protection Bypass for Automation» y los enlaces para compartir (uno por cuenta).
+- «Team collaboration features» no existe en Hobby. En cambio, «Access requests» admite un usuario externo por cuenta: por ahí podría entrar una segunda persona.
+- `VERCEL_AUTOMATION_BYPASS_SECRET` es una variable de sistema que Vercel pone en cada despliegue nuevo.
+- Las tareas programadas de Vercel no siguen redirecciones, y una respuesta 302 no aparece en sus registros.
+
+**Lo que cambió.**
+- Las tres tareas de GitHub que llaman a producción (`sync.yml`, `latido.yml`, `carga_completa.yml`, cinco llamadas) leen el secreto del repositorio y mandan la cabecera. Con 302 se detienen con un mensaje que nombra el secreto y dónde se crea, y no reintentan.
+- Las rutinas de Claude llevan la cabecera en cada `curl`: `/precios` (4), `/dictamen` (2), el vigilante y la del primero de mes de `docs/RUTINAS.md`. Las dos habilidades revisan el muro tras su primera llamada (`grep` de «Protected by Vercel Authentication»), porque sin eso la sesión solo ve el error de `node` al leer un JSON que no es JSON.
+- `docs/CONFIGURACION_TOKENS.md`: §3.5 es el pase, con los tres sitios donde va; §9, el muro. También `PROMPT_INICIAL.md`, `SEGURIDAD_Y_CUENTAS.md`, `RIESGOS.md` (R-2 se cumplió sin que nadie lo propusiera), `marca.md` y las guías de las dos rutinas de servicio.
+- Las llamadas que la aplicación se hace a sí misma ya mandaban el pase (`cabecerasDeAutoLlamada`, `lib/auth.js`). No se tocaron.
+
+**Lo que no hay que deshacer.**
+- (a) **La cabecera va siempre, con el valor del secreto.** Sin el secreto curl no la manda, así que sin muro todo sigue igual. No se condiciona con un `if`, que sería un sitio más donde equivocarse.
+- (b) **El muro se reconoce por su texto, no solo por el 302.** Con una petición JSON el muro responde 401, el mismo código que la llave equivocada. Por eso cada tarea mira el 302 o «Protected by Vercel Authentication» en la respuesta ANTES del 401: confundir el muro con la llave mandaría a cambiar el secreto equivocado. La aplicación nunca responde 302 ni escribe esa frase.
+- (c) **La cerradura es un censo por el dominio** (`MARCA.dominio`), no una lista. La suite EJECUTA con `bash -e` cada paso `run` (de bloque o de una línea) que lo nombra en su guion o en su `env:`, con un `curl` simulado que anota las cabeceras. En las rutinas, cada `curl` sin un host ajeno explícito debe llevar el pase, y cada bloque de `RUTINAS.md` que nombra `/api/` debe dar la instrucción. La revisión adversaria encontró los huecos del primer censo (`run:` de una línea, `|-`, la URL en `env:`, otro nombre de variable): quedaron cerrados con su prueba.
+- (d) **Excepción declarada** en el censo de literales: «Protected by Vercel Authentication» es el texto del muro, no de la pantalla.
+- (e) **Excepciones declaradas del barrido de «Password Protection».**
+  - Los comentarios de `public/app.js` (líneas 14 y 105) no se tocaron, para no abrir `public/` por un comentario.
+  - Tampoco se tocaron los informes fechados ni los planes que esperan al dueño (`PLAN_DE_ACCION`, `PLAN_SAAS`, `CHECKLIST_PRODUCCION`, `APU_INFORME_COMPLETO`, `AUDITORIA_INTEGRAL`, `INFRAESTRUCTURA_2026-09-27`, `PROMPT_CONSULTORIA_SAAS`). Allí «Password Protection» se lee como «el muro».
+
+**Lo que sigue abierto.** La llave sigue en el código; detrás del muro deja de importar, salvo que el muro se quite (opción B). Y la puesta en marcha es del dueño, en este orden:
+1. Crear el pase en Vercel.
+2. Guardarlo en GitHub y en el entorno de Claude.
+3. Volver a desplegar.
+4. Cambiar a «All Deployments».
+5. Iniciar sesión en Vercel en Chrome y en el iPhone.
+
+**Verificado.** Bloque «EL PASE DEL MURO EN TODO LO QUE LLAMA A PRODUCCIÓN» de `tests/e2e.js`: ejecuta los cuatro pasos que nombran el dominio con 200 y con 302, y hace el censo de los `curl` de las rutinas. Siete mutaciones, las siete mueren:
+- `latido.yml` sin la cabecera;
+- `sync.yml` sin el secreto en `env`;
+- `sync.yml` sin el aviso del 302 («ante el muro dice qué secreto falta»);
+- la lectura del estado del histórico sin el pase;
+- un `curl` de `/precios` sin el pase;
+- el de `RUTINAS.md` sin el pase;
+- el envío de `/dictamen` sin el pase.
+- Tras la revisión adversaria, seis más, las seis mueren:
+  - un paso nuevo de una línea, `run: |-` o con la URL en `env:`, sin el pase;
+  - un `curl` nuevo con `$APP` en `/dictamen`, sin el pase;
+  - `latido.yml` sin reconocer el 401 del muro («no lo confunde con la llave»);
+  - la rutina del primero de mes sin la instrucción del pase.

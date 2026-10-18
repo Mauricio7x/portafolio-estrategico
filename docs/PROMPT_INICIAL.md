@@ -139,7 +139,8 @@ la primera corrección. El porqué de cada una, con su defecto de origen, se bus
 ## 5. El token y la seguridad (decisión, no estado)
 
 - `const TOKEN` está **integrado** en el frontend y **no es un secreto**: la seguridad real es
-  Vercel Password Protection más el gate de clave del cliente. Los endpoints NO se relajan por
+  el muro de Vercel: «Vercel Authentication» en «All Deployments» (Password Protection no existe en
+  el plan Hobby; el gate de clave del cliente no protege nada). Los endpoints NO se relajan por
   eso — siguen exigiendo `HISTORICO_TOKEN` en el servidor (`lib/auth.js`, una sola puerta).
 - `HISTORICO_TOKEN` en Vercel debe valer **exactamente** el literal integrado; otro valor deja la
   app a medias y sin error visible (docs/CONFIGURACION_TOKENS.md). Cuál es el literal y qué

@@ -7,7 +7,10 @@
 
 ## 1. LA SECUENCIA QUE NO SE PUEDE EQUIVOCAR
 
-**Hoy la única protección real de Detekta es Vercel Password Protection.** La llave de la aplicación
+**Hoy la única protección real de Detekta es el muro de Vercel** («Vercel Authentication» en «All
+Deployments», desde el 17-oct-2026: Password Protection no existe en el plan Hobby, y con la cuenta
+nueva del 16-oct la producción quedó abierta un día, medido). En lo que sigue, «Password Protection»
+se lee como «el muro». La llave de la aplicación
 (`const TOKEN = "MiExtraccion2025"`) está integrada en `public/app.js`, `public/onboarding.js` y
 `public/pliego.js`, **a la vista de cualquiera que abra el código fuente**. Eso es una decisión
 correcta y documentada para un dueño sin terminal: el muro está delante.
