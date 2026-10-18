@@ -19125,3 +19125,26 @@ del plazo; enseña solo el dato «Plazo» de la ficha, con «(según el pliego)�
 sí los pintarían entre comillas, no los llama ninguna pantalla desde el 7-sep: no se tocaron. El aviso «SECOP II y el pliego
 no dicen el mismo plazo» y el «por confirmar» quedan sin pantalla. Con el
 código final, las 36 lecturas reales son idénticas a las de antes y la ronda 7 da su misma salida congelada.
+
+### La negación del anticipo con la parte ANTES («Para la etapa 1 no se entregará anticipo») NO se cubre (18-oct-2026)
+
+En una línea: el hermano que dejó anotado «El anticipo negado para UNA parte numerada del contrato…» (la parte antes de
+la negación, «la primera etapa», «en el componente 1») se programó, pasó la suite 4/4 y 19 mutaciones, y aun así NO entró:
+dos revisiones adversarias lo tumbaron y no mueve ningún pliego real.
+
+**Lo medido.** En 137 textos reales (los 40 pliegos de Fase 0 y las rondas 5 a 7, sus versiones de pdftotext, documentos
+de Santa Elena y del paso 2) el arreglo no cambia ni un estado, ni una cita, ni el dictamen, ni `lib/negocio`: la forma
+«antes» no aparece. Con frases plausibles, en cambio, abría «sí» falsos donde main decía «no» (reproducidos):
+«Para la etapa 1 no se entregará anticipo… / Para la etapa 2 tampoco se entregará anticipo…» («tampoco se entregará»
+pasaba por frase que pacta), «Teniendo en cuenta que los pagos se realizarán por actas … en la etapa 1, no se entregará
+anticipo» junto al tope legal «el anticipo no podrá exceder del cincuenta por ciento (50%)», la fila de garantías «100% del
+anticipo…» y el condicional «Si la Entidad entregara anticipo…» (plegado, el subjuntivo es igual al futuro). También pasaba a
+«mención» negaciones totales como «De acuerdo con el análisis del sector realizado en la fase 1, la Entidad no entregará
+anticipo». La primera versión, además, volvía «sí» negaciones totales al pegar la línea de arriba.
+
+**Lo que no hay que deshacer.** Una parte numerada ANTES de la negación casi siempre es contexto («realizado en la fase 1»,
+«para la etapa 1, … no se entregará»), no el alcance: leerla como alcance cambia «no» por «sí» del lado que también cuesta
+(cuenta con plata que no llega). Si un pliego REAL trae la forma, se mide con él antes de tocar nada; sin caso real no se
+vuelve a intentar. Quedan anotados, sin tocar, dos fallos que main ya tenía con frases sintéticas: con una negación parcial
+en el documento, «El contratista no tendrá derecho a anticipo por ningún otro concepto…» da «sí», y «…para el lote No. 1 ni
+para el lote No. 2» da mención en vez de «no».
