@@ -19622,7 +19622,10 @@ se pudo guardar la versión del pliego: <motivo>», que es la verdad. El de ahor
 motivo al dictamen como fallo del vigía: el dictamen sigue mostrando el del pliego guardado. (e) El origen de lo cargado a mano
 lleva el nombre («lector:<nombre>», 40 caracteres): `textoGuardado` lo sigue tratando como manual (no empieza por
 «documentos:»). Lo ya guardado como «lector» sin nombre no se toca. (f) El cronograma sigue leyendo el texto cargado, sea el
-que sea (una adenda trae fechas nuevas); no se tocó.
+que sea (una adenda trae fechas nuevas); no se tocó. (g) El aviso de la versión más nueva sin leer (Fase A) mandaba a «cargar
+ese PDF en Precios y volver a pedir el dictamen», pero la lectura por OCR de Precios NO pasa por el vigía y los 4 pliegos de más
+de 20 MB medidos son escaneos: el consejo no hacía nada. Ahora dice que se revise el documento en SECOP II antes de decidir, y
+que cargarlo en Precios sirve si el PDF trae texto.
 
 **Cómo se probó.** Bloque «unidad la carga en Precios» con los handlers reales (10 nombres que no se guardan, 4 que sí, el
 Formulario cargado DESPUÉS de la lectura automática que ya no tapa el pliego y un nombre larguísimo) y el (g) del lector con el
