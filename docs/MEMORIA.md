@@ -19218,6 +19218,8 @@ obra de 2026 eso era nada (el documento base no entra al vigía) y en 7 un anexo
 pliego, con una sola regla (`Docs.esVersionDelPliego`, `Docs.candidatosAlTextoDelPliego`) que también decide qué entra al
 vigía.
 
+> PENDIENTE · el cronograma toma como hito un párrafo de EJEMPLO del pliego tipo («[Por ejemplo, si la audiencia de adjudicación se realiza el 10 de febrero de 2020…]», pliego LP-008-2026 del departamento de Sucre, ronda 5) y `guardarFechaCronograma` guarda una fecha ya pasada sin mirarla (reproducido el 18-oct-2026 con `extraerHitos` y la función real: «adjudicacion=2020-02-10», `guardada: true`). En el calendario no se ve: `adjudicacionDeFila` la descarta por desfasada (anterior al cierre). En la lista de hitos del cronograma, sin verificar. Es de main, no de este cambio, pero el documento base que ahora llega al cronograma puede traer el mismo ejemplo: medido en 2 pliegos distintos entre 180 textos de pliego guardados en la sesión (el de Sucre con 2020, en tres extracciones; otro de la ronda 7 con un informe de evaluación de 2022), sin ningún documento base completo en la muestra.
+
 **Lo medido** (índices reales de dmgg-8hin: 200 licitaciones de obra de 2026 al azar entre 1.178, más 34 de las rondas;
 corte 18-oct-2026; el plan de lectura de main con todos sus documentos leídos). Antes: 85 procesos tenían el documento base
 leído y el dictamen respondía «Todavía no hay texto guardado de este pliego» (reproducido con la función real); en 7 el
@@ -19257,5 +19259,3 @@ entero, lo manual contra la hora de lectura —CO1.REQ.10168183, documento base 
 mano—, y la comparación contra el primer candidato aunque no tuviera texto) y un candado del pedido sin prueba; los cuatro
 tienen su cerradura, y las 14 mutaciones de estos arreglos mueren (incluidas las dos mitades del candado del pedido por
 `version`, que solo caían juntas hasta que la prueba pidió dos veces el mismo texto).
-
-> PENDIENTE · el cronograma toma como hito un párrafo de EJEMPLO del pliego tipo («[Por ejemplo, si la audiencia de adjudicación se realiza el 10 de febrero de 2020…]», pliego LP-008-2026 del departamento de Sucre, ronda 5) y `guardarFechaCronograma` guarda una fecha ya pasada sin mirarla (reproducido el 18-oct-2026 con `extraerHitos` y la función real: «adjudicacion=2020-02-10», `guardada: true`). En el calendario no se ve: `adjudicacionDeFila` la descarta por desfasada (anterior al cierre). En la lista de hitos del cronograma, sin verificar. Es de main, no de este cambio, pero el documento base que ahora llega al cronograma puede traer el mismo ejemplo: medido en 2 pliegos distintos entre 180 textos de pliego guardados en la sesión (el de Sucre con 2020, en tres extracciones; otro de la ronda 7 con un informe de evaluación de 2022), sin ningún documento base completo en la muestra.
