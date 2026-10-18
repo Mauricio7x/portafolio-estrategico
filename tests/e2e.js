@@ -23966,6 +23966,11 @@ async function main() {
       const Auth = require("../lib/auth.js");
       const { CLAVES: CLG } = require("../lib/almacen.js");
       const ponerG = (k, v) => { if (v === undefined) delete process.env[k]; else process.env[k] = v; };
+      /* HERMÉTICA (18-oct-2026): «sin secretos» quiere decir sin secretos AUNQUE el entorno de quien
+         corre la suite los tenga. Un contenedor con VERCEL_AUTOMATION_BYPASS_SECRET hacía fallar este
+         bloque sin defecto en el código; se guardan, se quitan y se devuelven al final. */
+      const previosG = { CRON_SECRET: process.env.CRON_SECRET, VERCEL_AUTOMATION_BYPASS_SECRET: process.env.VERCEL_AUTOMATION_BYPASS_SECRET };
+      for (const k of Object.keys(previosG)) ponerG(k, undefined);
       const rProcesosG = require("../api/procesos.js");
       const SECRETO = "secreto-cron-de-prueba";
       const URL_AUTO = "/api/procesos?op=sync&modo=auto&chain=0";
@@ -24045,6 +24050,7 @@ async function main() {
         assert.ok(!/x-vercel-protection-bypass/.test(src), `${h} construye a mano la cabecera del muro: debe llamar a cabecerasDeAutoLlamada`);
         assert.strictEqual((src.match(/cabecerasDeAutoLlamada\(/g) || []).length, disparos.length, `${h}: cada auto-llamada (${disparos.length}) pide sus cabeceras a lib/auth`);
       }
+      for (const [k, v] of Object.entries(previosG)) ponerG(k, v);   // el entorno de quien corre, como estaba
       console.log(`· guarda de la sincronización: sin CRON_SECRET abierta (como el cron actual); con ella 401 sin tocar el candado, pasan Bearer/header/?token=, y la auto-llamada real llegó con «${capturadas[0].headers.authorization.replace(SECRETO, "…")}»`);
     }
 
