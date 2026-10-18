@@ -8202,6 +8202,47 @@ async function main() {
     await Dv.registrarVersion(redis, { idProceso: idM, texto: PLIEGO.replace("DEFINITIVO", "DEFINITIVO 2"), origen: "lector", ahora: Date.now() + 60000 });
     const tM = await textoGuardado(redis, idM);
     assert.ok(/DEFINITIVO 2/.test(tM.texto) && tM.version === 2 && tM.origen === "lector", `lo cargado a mano DESPUÉS gana: es como entra un pliego de más de 20 MB (MUTACIÓN: lo manual nunca): ${JSON.stringify({ ...tM, texto: tM.texto.slice(0, 40) })}`);
+    /* (4b) lo manual cede solo ante un documento PUBLICADO en SECOP II después de cargarlo, no ante uno más viejo leído
+       después (revisión adversaria, CO1.REQ.10168183: el documento base del 29-ene tapaba el del 12-feb cargado a mano) */
+    const idM2 = "CO1.REQ.TXT010";
+    await Dv.registrarVersion(redis, { idProceso: idM2, texto: PLIEGO.replace("DEFINITIVO", "DEL 12 DE FEBRERO"), origen: "lector", ahora: Date.parse("2026-02-15T12:00:00Z") });
+    await sembrar(idM2, [arch("1", "CCE-EICP-GI-01 Documento base V4.pdf", "documento_base", "2026-01-29"), arch("2", "DOCUMENTO BASE .pdf", "documento_base", "2026-03-02")]);
+    await leer(idM2, "1", BASE);
+    assert.ok(/DEL 12 DE FEBRERO/.test((await textoGuardado(redis, idM2)).texto), "un documento publicado ANTES de la carga manual y leído después no la tapa (MUTACIÓN: comparando la hora de lectura, el documento base viejo)");
+    await leer(idM2, "2", BASE.replace("del documento base", "del documento base de marzo"));
+    assert.ok(/documento base de marzo/.test((await textoGuardado(redis, idM2)).texto), "uno publicado DESPUÉS de la carga manual sí manda");
+    await redis.del(DocsT.claveDoc(idM2, "2"));
+    assert.ok(/DEL 12 DE FEBRERO/.test((await textoGuardado(redis, idM2)).texto), "si el más nuevo perdió su texto, lo manual vuelve a ganar al más viejo (MUTACIÓN: comparar con el primero aunque no tenga texto, el documento base viejo)");
+    // (4c) un definitivo MÁS NUEVO sin leer (más de 20 MB) se dice: el dictamen es de una versión anterior
+    const idN = "CO1.REQ.TXT011";
+    await sembrar(idN, [arch("1", "CCE-EICP-GI-01 Documento base V4.pdf", "documento_base", "2026-01-29"), { ...arch("2", "DOCUMENTO BASE .pdf", "documento_base", "2026-02-12"), motivo_omision: "pesa más de 20 MB: la aplicación no lo lee sola; ábralo en SECOP II" }, arch("3", "Proyecto de pliego.pdf", "pliego_borrador", "2026-03-01")]);
+    await leer(idN, "1", BASE);
+    const tN = await textoGuardado(redis, idN);
+    assert.ok(tN.mas_nuevo_sin_leer && tN.mas_nuevo_sin_leer.nombre === "DOCUMENTO BASE .pdf" && tN.mas_nuevo_sin_leer.fecha_carga === "2026-02-12" && /20 MB/.test(tN.mas_nuevo_sin_leer.motivo),
+      `el definitivo más nuevo sin leer se dice, con su motivo; un borrador más nuevo no cuenta (MUTACIÓN: sin el aviso): ${JSON.stringify(tN.mas_nuevo_sin_leer)}`);
+    const dN = await invocar(routerT, `/api/pliego?op=dictamen&id_proceso=${idN}&perfil=helder`, CAB_TOKEN);
+    assert.ok(dN.cuerpo.mas_nuevo_sin_leer && dN.cuerpo.mas_nuevo_sin_leer.nombre === "DOCUMENTO BASE .pdf", `y llega a la consulta del dictamen (MUTACIÓN: sin pasarlo): ${JSON.stringify(dN.cuerpo.mas_nuevo_sin_leer)}`);
+    assert.strictEqual((await textoGuardado(redis, idB)).mas_nuevo_sin_leer, null, "sin uno más nuevo, nada que decir");
+    /* (4d) el hermano: el texto cargado A MANO también avisa de lo publicado después del día de la carga (el pliego de 30 MB
+       cargado a mano y la adenda de 25 MB que vino después), y no del archivo pesado que él mismo reemplaza */
+    const idN2 = "CO1.REQ.TXT013";
+    await Dv.registrarVersion(redis, { idProceso: idN2, texto: PLIEGO.replace("DEFINITIVO", "DEL 12 DE FEBRERO"), origen: "lector", ahora: Date.parse("2026-02-15T12:00:00Z") });
+    const pesado = "pesa más de 20 MB: la aplicación no lo lee sola; ábralo en SECOP II";
+    await sembrar(idN2, [{ ...arch("1", "DOCUMENTO BASE .pdf", "documento_base", "2026-02-12"), motivo_omision: pesado }, { ...arch("2", "PLIEGO DE CONDICIONES ADENDA 1 INCORPORADA.pdf", "pliego", "2026-03-02"), motivo_omision: pesado }, arch("3", "CCE-EICP-GI-01 Documento base V4.pdf", "documento_base", "2026-01-29")]);
+    const tN2 = await textoGuardado(redis, idN2);
+    assert.ok(/DEL 12 DE FEBRERO/.test(tN2.texto) && tN2.mas_nuevo_sin_leer && tN2.mas_nuevo_sin_leer.nombre === "PLIEGO DE CONDICIONES ADENDA 1 INCORPORADA.pdf",
+      `sin documentos leídos, lo cargado a mano avisa del publicado después, no del que reemplaza (MUTACIÓN: la versión del vigía sin aviso): ${JSON.stringify(tN2.mas_nuevo_sin_leer)}`);
+    await leer(idN2, "3", BASE);
+    const tN3 = await textoGuardado(redis, idN2);
+    assert.ok(/DEL 12 DE FEBRERO/.test(tN3.texto) && tN3.mas_nuevo_sin_leer && tN3.mas_nuevo_sin_leer.fecha_carga === "2026-03-02",
+      `y con un documento más viejo leído, igual (MUTACIÓN: la carga manual sin aviso): ${JSON.stringify(tN3.mas_nuevo_sin_leer)}`);
+    // …y cuando el elegido es un pliego que entró al vigía (su texto sale de ahí)
+    const idN4 = "CO1.REQ.TXT014";
+    await sembrar(idN4, [arch("1", "PLIEGO DEFINITIVO.pdf", "pliego", "2026-03-19"), { ...arch("2", "PLIEGO DEFINITIVO MODIFICADO.pdf", "pliego", "2026-03-30"), motivo_omision: pesado }]);
+    await leer(idN4, "1", PLIEGO);
+    const tN4 = await textoGuardado(redis, idN4);
+    assert.ok(tN4.version === 1 && tN4.mas_nuevo_sin_leer && tN4.mas_nuevo_sin_leer.nombre === "PLIEGO DEFINITIVO MODIFICADO.pdf",
+      `el pliego leído del vigía también avisa del más nuevo sin leer (MUTACIÓN: sin aviso en ese camino): ${JSON.stringify({ version: tN4.version, aviso: tN4.mas_nuevo_sin_leer })}`);
     // (5) el orden: el definitivo antes que el borrador, el más reciente, y a igual fecha el pliego antes que el documento base
     const ordenDe = (leidos) => DocsT.candidatosAlTextoDelPliego({ leidos }).map((x) => x.id_documento);
     assert.deepStrictEqual(ordenDe({ 1: { nombre: "PLIEGO DEFINITIVO.pdf", tipo: "pliego", fecha_carga: "2026-04-01" }, 2: { nombre: "PROYECTO DE PLIEGO.pdf", tipo: "pliego_borrador", fecha_carga: "2026-05-01" } }), ["1", "2"], "el definitivo antes que un borrador más nuevo (MUTACIÓN: sin la clave del borrador, el borrador)");
@@ -8209,9 +8250,19 @@ async function main() {
     assert.deepStrictEqual(ordenDe({ 1: { nombre: "PLIEGO DEFINITIVO.pdf", tipo: "pliego", fecha_carga: "2026-01-29" }, 2: { nombre: "DOCUMENTO BASE .pdf", tipo: "documento_base", fecha_carga: "2026-02-12" } }), ["2", "1"], "el más reciente en SECOP II (MUTACIÓN: sin la fecha, el pliego por tipo)");
     assert.deepStrictEqual(ordenDe({ 1: { nombre: "DOCUMENTO BASE.pdf", tipo: "documento_base", fecha_carga: "2026-02-12" }, 2: { nombre: "PLIEGO DEFINITIVO.pdf", tipo: "pliego", fecha_carga: "2026-02-12" } }), ["2", "1"], "a igual fecha, el pliego antes que el documento base (MUTACIÓN: sin la prioridad, el base)");
     assert.deepStrictEqual(ordenDe({ 1: { nombre: "DOCUMENTO BASE.pdf", tipo: "documento_base", fecha_carga: "2026-02-12", hechos: { plantilla_en_blanco: true } }, 2: { nombre: "6.1_ANEXO_PLIEGO LP-003-2026.pdf", tipo: "pliego", fecha_carga: "2026-04-05" }, 3: { nombre: "Estudios previos.pdf", tipo: "estudio_previo", fecha_carga: "2026-04-05" } }), [], "ni la plantilla en blanco ni un anexo ni otro tipo de documento (MUTACIÓN: sin la plantilla, el documento base en blanco)");
-    for (const [n, si] of [["PLIEGO DE CONDICIONES DEFINITIVO.pdf", true], ["DOCUMENTO COMPLEMENTARIO AL PLIEGO DE CONDICIONES.pdf", true], ["ANEXOS PLIEGO DE CONDICIONES.docx", false], ["OFICIO PREGUNTAS Y RESPUESTAS LP-SI-002-2026 PLIEGO DEF.pdf", false], ["Anexo 3 - Glosario - Proyecto de Pliego.pdf", false], ["FORMATOS DEL PLIEGO.docx", false], ["MATRICES PLIEGO TIPO.zip", false], ["Apendice B - Transversal Cusiana - Proyecto de pliego.pdf", false]]) {
-      assert.strictEqual(DocsT.esVersionDelPliego({ tipo: "pliego", nombre: n }), si, `«${n}» ${si ? "es" : "no es"} una versión del pliego (nombres de los índices reales)`);
+    for (const [n, si] of [["PLIEGO DE CONDICIONES DEFINITIVO.pdf", true], ["DOCUMENTO COMPLEMENTARIO AL PLIEGO DE CONDICIONES.pdf", true], ["ANEXOS PLIEGO DE CONDICIONES.docx", false], ["OFICIO PREGUNTAS Y RESPUESTAS LP-SI-002-2026 PLIEGO DEF.pdf", false], ["Anexo 3 - Glosario - Proyecto de Pliego.pdf", false], ["FORMATOS DEL PLIEGO.docx", false], ["MATRICES PLIEGO TIPO.zip", false], ["Apendice B - Transversal Cusiana - Proyecto de pliego.pdf", false],
+      // la palabra DESPUÉS del nombre del pliego no lo vuelve anexo (revisión adversaria; «después de obsv.» es real, CO1.REQ.10197236)
+      ["Pliego definitivo ajustado con observaciones LP-001-2026.pdf", true], ["PLIEGO DE CONDICIONES DEFINITIVO CON ANEXOS.pdf", true], ["PLIEGO DEFINITIVO Y FORMATOS.pdf", true], ["Pliego definitivo despues de obsv.pdf", true]]) {
+      assert.strictEqual(DocsT.esVersionDelPliego({ tipo: "pliego", nombre: n }), si, `«${n}» ${si ? "es" : "no es"} una versión del pliego (nombres de los índices reales; MUTACIÓN: mirando todo el nombre, el ajustado queda fuera)`);
     }
+    assert.strictEqual(DocsT.esVersionDelPliego({ tipo: "documento_base", nombre: "Documento base definitivo con formularios.pdf" }), true, "ni «con formularios» detrás de «documento base»");
+    // el pliego ajustado CON OBSERVACIONES, posterior, es el texto (antes de arreglar la regla, se leía la versión anterior)
+    const idAj = "CO1.REQ.TXT009";
+    await sembrar(idAj, [arch("1", "6. Pliego definitivo LP-001-2026.pdf", "pliego", "2026-06-16"), arch("2", "Pliego definitivo ajustado con observaciones LP-001-2026.pdf", "pliego", "2026-07-08")]);
+    await leer(idAj, "1", PLIEGO);
+    const rAj = await leer(idAj, "2", PLIEGO.replace("DEFINITIVO.", "DEFINITIVO AJUSTADO."));
+    const tAj = await textoGuardado(redis, idAj);
+    assert.ok(rAj.version_pliego === 2 && /AJUSTADO/.test(tAj.texto) && tAj.version === 2, `el ajustado entra al vigía y es el texto: v${rAj.version_pliego}, ${tAj.texto.slice(0, 60)}`);
     // (6) el documento leído que caducó en Redis cede al siguiente; el texto tiene el tope del vigía
     const idX = "CO1.REQ.TXT006";
     await sembrar(idX, [arch("1", "PLIEGO DEFINITIVO.pdf", "pliego", "2026-01-10"), arch("2", "DOCUMENTO BASE.pdf", "documento_base", "2026-02-12")]);
@@ -8240,6 +8291,29 @@ async function main() {
     await redis.set(Dct.clavePedido(idI, "helder"), JSON.stringify({ el: new Date().toISOString(), version_texto: id2, ok: true }));
     const conPedido = await invocar(routerT, `/api/pliego?op=dictamen&id_proceso=${idI}&perfil=helder`, CAB_TOKEN);
     assert.ok(conPedido.cuerpo.pedido_sesion && conPedido.cuerpo.pedido_sesion.version_texto === id2, "el pedido del documento vigente sí se reconoce");
+    // …y al PEDIR la lectura: el pedido de un documento base no bloquea pedir la del siguiente (revisión adversaria)
+    {
+      const idS = "CO1.REQ.TXT012";
+      await sembrar(idS, [arch("1", "DOCUMENTO BASE.pdf", "documento_base", "2026-09-10"), arch("2", "DOCUMENTO BASE MODIFICADO.pdf", "documento_base", "2026-09-20")]);
+      await leer(idS, "1", BASE);
+      const envU = process.env.RUTINA_DICTAMEN_URL, envT = process.env.RUTINA_DICTAMEN_TOKEN, fetchAntes = global.fetch; const disparos = [];
+      global.fetch = async (u, o) => { if (/claude_code\/routines/.test(String(u))) { disparos.push(String(u)); return { ok: true, status: 200, json: async () => ({ claude_code_session_id: "session_T", claude_code_session_url: "https://claude.ai/code/session_T" }) }; } return fetchAntes(u, o); };
+      try {
+        process.env.RUTINA_DICTAMEN_URL = "https://api.anthropic.com/v1/claude_code/routines/trig_T/fire"; process.env.RUTINA_DICTAMEN_TOKEN = "sk-ant-oat01-T";
+        const pedirS = () => invocarPost(routerT, "/api/pliego?op=dictamen", { id_proceso: idS, perfil: "helder", pedir_sesion: true, refrescar: true }, CAB_TOKEN);
+        const s1 = await pedirS();
+        assert.ok(s1.status === 200 && disparos.length === 1, `la primera lectura se pide: ${JSON.stringify(s1.cuerpo).slice(0, 200)}`);
+        const s1b = await pedirS();
+        assert.ok(s1b.cuerpo.repetida === true && disparos.length === 1, `el mismo texto pedido otra vez es «ya pedida», sin otra sesión (MUTACIÓN: la marca o su comparación por \`version\`, que no casan con la identidad): ${JSON.stringify(s1b.cuerpo).slice(0, 200)}`);
+        await leer(idS, "2", BASE.replace("del documento base", "del documento base modificado"));
+        const s2 = await pedirS();
+        assert.ok(s2.cuerpo.repetida !== true && disparos.length === 2, `el documento base nuevo es otro texto: se pide otra lectura (MUTACIÓN: el candado por \`version\`, nula en los dos, «ya pedida»): ${JSON.stringify(s2.cuerpo).slice(0, 200)}`);
+      } finally {
+        global.fetch = fetchAntes;
+        if (envU === undefined) delete process.env.RUTINA_DICTAMEN_URL; else process.env.RUTINA_DICTAMEN_URL = envU;
+        if (envT === undefined) delete process.env.RUTINA_DICTAMEN_TOKEN; else process.env.RUTINA_DICTAMEN_TOKEN = envT;
+      }
+    }
     console.log("· unidad el texto del pliego: el documento base leído llega al dictamen, los anexos con «pliego» en el nombre no entran al vigía ni dan el texto, lo cargado a mano después gana, el definitivo más reciente manda, y el tope de 400 KB");
   }
   bqNueveProcesos: { if (!corre("unidad los nueve procesos del dueño")) break bqNueveProcesos;
@@ -44287,6 +44361,9 @@ async function main() {
         const delBase = pintarDictamen({ ...fixture, version_texto: null, documento_texto: { tipo: "Documento base del pliego tipo", nombre: "DOCUMENTO <b>BASE</b>.pdf", id_documento: "1" } }, { MARCA, esc: escF });
         assert.ok(delBase.includes("Sobre «DOCUMENTO &lt;b&gt;BASE&lt;/b&gt;.pdf», documento base del pliego tipo (5 páginas)") && !/versión null|versión undefined|<b>BASE/.test(delBase) && delBase.includes("· 5 páginas del pliego, «DOCUMENTO &lt;b&gt;BASE&lt;/b&gt;.pdf»"),
           `sin versión, el archivo de donde salió el texto, escapado (MUTACIÓN: «versión null»): ${delBase.match(/Sobre[^.]*\./) || ""}`);
+        const conNuevo = pintarDictamen({ ...fixture, version_texto: null, documento_texto: { tipo: "Documento base del pliego tipo", nombre: "CCE-EICP-GI-01 Documento base V4.pdf" }, mas_nuevo_sin_leer: { nombre: "DOCUMENTO BASE .pdf", fecha_carga: "2026-02-12", motivo: "pesa más de 20 MB: la aplicación no lo lee sola; ábralo en SECOP II" } }, { MARCA, esc: escF });
+        assert.ok(/Ojo: SECOP II publicó después «DOCUMENTO BASE \.pdf» \(12\/02\/2026\) y la aplicación no lo pudo leer \(pesa más de 20 MB[^<]*\)\. Este dictamen es sobre una versión anterior: descargue ese PDF de SECOP II, cárguelo en Precios con este proceso abierto/.test(conNuevo) && !/Ojo: SECOP II publicó después/.test(delBase),
+          `el aviso de la versión más nueva sin leer, solo cuando la hay (MUTACIÓN: sin pintarlo): ${(conNuevo.match(/Ojo:[^<]*/) || [""])[0]}`);
         /* la lectura completa (26-sep-2026): el botón solo con la rutina configurada; con un
            pedido en marcha, «Ver si ya está lista» y la hora; un dictamen de sesión se vuelve a
            pedir a la sesión, nunca a las reglas (que no se verían mientras haya uno de sesión) */

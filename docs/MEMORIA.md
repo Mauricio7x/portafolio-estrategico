@@ -19232,13 +19232,30 @@ distintos alternándose como «versiones» darían cambios falsos); el dictamen 
 (b) Un pliego que entró al vigía se lee de su versión del vigía (`version_pliego`): el mismo texto y el mismo sello de caché
 que antes, para no invalidar los dictámenes ya pagados. (c) El texto del documento base lleva el tope de 400 KB del vigía
 (`D.MAX_TEXTO`), con `recortado`: el dictamen lo manda entero al modelo y la habilidad lo lee entero. (d) Lo que el dueño
-carga A MANO (origen del vigía distinto de «documentos:…») gana si entró DESPUÉS de la última lectura automática: es como se
-lee un pliego de más de 20 MB que la lectura automática no trae. (e) El orden: el definitivo antes que el borrador (con
+carga A MANO (origen del vigía distinto de «documentos:…») gana sobre todo documento que SECOP II no haya publicado DESPUÉS
+del día de la carga (la `fecha_carga` del documento contra el día de la versión manual, no la hora de lectura): es como se
+lee un pliego de más de 20 MB que la lectura automática no trae, y la lectura automática posterior de un documento más
+VIEJO no lo tapa. La comparación es por candidato, dentro del recorrido: si el más nuevo perdió su texto, lo manual vuelve a
+ganarle al siguiente. (e) El orden: el definitivo antes que el borrador (con
 «borrador» en el nombre de un documento base también), el más reciente en SECOP II, a igual fecha el pliego antes que el
 documento base, y la plantilla en blanco no cuenta. (f) Un anexo, formato, apéndice, minuta, observaciones, respuesta,
 oficio, glosario o matriz con «pliego» en el nombre no es versión del pliego: ni entra al vigía ni da el texto; sin
-documentos leídos, el respaldo del vigía también salta los que entraron así antes de hoy. (g) La identidad del texto para el
+documentos leídos, el respaldo del vigía también salta los que entraron así antes de hoy. La palabra cuenta solo ANTES del
+nombre del pliego («OBSERVACIONES PLIEGO DEF…», «ANEXOS PLIEGO DE CONDICIONES»): «Pliego definitivo ajustado con
+observaciones», «PLIEGO DE CONDICIONES DEFINITIVO CON ANEXOS» o «Documento base definitivo con formularios» SON el pliego, y
+excluirlos por el nombre entero dejaba leer la versión anterior. (g) La identidad del texto para el
 pedido de lectura a la sesión es `texto_id` (el número de versión, o «doc:<id>:<sello>»): con el documento base, dos textos
 distintos tendrían la misma versión nula. (h) La pantalla dice de qué archivo salió el texto cuando no hay número de versión.
 (i) No se pudo comprobar en producción: desde el 18-oct responde 302 hacia el inicio de sesión de Vercel y esta sesión no
-tiene el pase; se reprodujo con las funciones reales sobre el Redis simulado.
+tiene el pase; se reprodujo con las funciones reales sobre el Redis simulado. (j) Si en el índice hay un pliego o documento
+base DEFINITIVO publicado después del texto elegido y sin leer (más de 20 MB, comprimido, escaneo), `textoGuardado` lo
+devuelve en `mas_nuevo_sin_leer` —también cuando el texto es una carga manual o una versión del vigía sin documento detrás,
+contra el día en que se guardó— y la pantalla del dictamen lo dice en ámbar bajo «Sobre…», con su motivo y qué hacer: el
+dictamen no opina sobre una versión vieja en silencio. Un borrador más nuevo no cuenta. (k) La revisión adversaria (18-oct)
+tumbó la primera versión con tres casos en que leía un pliego viejo donde main leía el vigente (la exclusión por el nombre
+entero, lo manual contra la hora de lectura —CO1.REQ.10168183, documento base del 29-ene sobre el del 12-feb cargado a
+mano—, y la comparación contra el primer candidato aunque no tuviera texto) y un candado del pedido sin prueba; los cuatro
+tienen su cerradura, y las 14 mutaciones de estos arreglos mueren (incluidas las dos mitades del candado del pedido por
+`version`, que solo caían juntas hasta que la prueba pidió dos veces el mismo texto).
+
+> PENDIENTE · el cronograma toma como hito un párrafo de EJEMPLO del pliego tipo («[Por ejemplo, si la audiencia de adjudicación se realiza el 10 de febrero de 2020…]», pliego LP-008-2026 del departamento de Sucre, ronda 5) y `guardarFechaCronograma` guarda una fecha ya pasada sin mirarla (reproducido el 18-oct-2026 con `extraerHitos` y la función real: «adjudicacion=2020-02-10», `guardada: true`). En el calendario no se ve: `adjudicacionDeFila` la descarta por desfasada (anterior al cierre). En la lista de hitos del cronograma, sin verificar. Es de main, no de este cambio, pero el documento base que ahora llega al cronograma puede traer el mismo ejemplo: medido en 2 pliegos distintos entre 180 textos de pliego guardados en la sesión (el de Sucre con 2020, en tres extracciones; otro de la ronda 7 con un informe de evaluación de 2022), sin ningún documento base completo en la muestra.
