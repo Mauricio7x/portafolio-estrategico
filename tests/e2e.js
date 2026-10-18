@@ -35818,6 +35818,54 @@ async function main() {
       assert.strictEqual(nivelDe(r5, "temeraria"), "alerta"); assert.strictEqual(r5.semaforo, "precaucion"); assert.strictEqual(r5.genera_justificacion, true);
       assert.ok(/33,3 % por debajo/.test(r5.veredictos.find((v) => v.id === "temeraria").mensaje) && /2\.2\.1\.1\.2\.2\.4/.test(r5.veredictos.find((v) => v.id === "temeraria").fundamento));
       assert.strictEqual(nivelDe(limpio, "temeraria"), "ok");
+      /* 5b · el límite que calculó la entidad, MEDIDO (17-oct-2026). Tabla ÚNICA en
+         lib/apu/piso_techo; el 80 % no cambia. Entre el 80 % y el máximo medido
+         (92,78 %, sin redondear) el estado pasa de «ok» a «informativo»; la alerta
+         y el panel llevan la frase con el rango y «solo N casos». Contra el árbol
+         anterior FALLAN (no existían ni la tabla, ni el estado, ni la frase). */
+      {
+        const PT = require("../lib/apu/piso_techo.js");
+        const lim = PT.limiteEntidadMedido();
+        assert.strictEqual(lim.n, 3); assert.strictEqual(lim.min_pct, 91.61); assert.strictEqual(lim.max_pct, 92.78);
+        assert.strictEqual(lim.frase, "En 3 procesos de menor cuantía ya cerrados, el límite que calculó la entidad quedó entre el 91,6 % y el 92,8 % del presupuesto (solo 3 casos). Si su oferta queda por debajo de ese rango, tenga lista la justificación de precios desde el APU.");
+        assert.strictEqual(lim.fuentes.length, 3);
+        const total5 = 20000000; // el total de ofertaOk
+        const conPres = (pres) => F1.validarFormulario1({ oferta: ofertaOk, formulario: form, presupuesto_oficial: pres, tope_aiu_pct: 30 }).veredictos.find((v) => v.id === "temeraria");
+        const en90 = conPres(total5 / 0.90);
+        assert.strictEqual(en90.nivel, "informativo", "al 90 % del presupuesto queda bajo el rango medido");
+        assert.ok(en90.mensaje.includes(lim.frase) && en90.umbral_pct === 20);
+        assert.strictEqual(conPres(total5 / 0.9279).nivel, "ok", "92,79 % está sobre el máximo SIN redondear (92,78): el 92,8 mostrado no decide");
+        assert.strictEqual(conPres(total5 / 0.95).nivel, "ok");
+        assert.ok(r5.veredictos.find((v) => v.id === "temeraria").mensaje.includes(lim.frase), "la alerta también muestra el hecho medido");
+        const tabla2 = { ...PT.LIMITE_ENTIDAD_MEDIDO, casos: [...PT.LIMITE_ENTIDAD_MEDIDO.casos, { limite_pct: 90 }, { limite_pct: 93 }] };
+        assert.ok(!/solo \d+ casos/.test(PT.limiteEntidadMedido(tabla2).frase), "con 5 casos deja de decir «solo N casos»");
+        const pt = PT.pisoTecho({ presupuesto_oficial: 100000000, costo_directo: 60000000, aiu: { administracion_pct: 10, imprevistos_pct: 3, utilidad_pct: 5 } });
+        assert.strictEqual(pt.limite_entidad_medido && pt.limite_entidad_medido.frase, lim.frase, "el panel Piso / Techo lee la misma tabla");
+        /* 5c · ese aviso va en ÁMBAR y se cuenta APARTE (18-oct-2026, decisión del
+           dueño): marca «justificar» sobre el nivel informativo, sin tocar el
+           semáforo ni el color/conteo de los demás informativos. Se EJECUTA el
+           trozo real del render de app.js (la lista y la línea de conteos). */
+        const r90 = F1.validarFormulario1({ oferta: ofertaOk, formulario: form, presupuesto_oficial: total5 / 0.90, tope_aiu_pct: 30 });
+        assert.strictEqual(en90.marca, "justificar");
+        assert.strictEqual(r90.para_justificar, 1, "el aviso del rango se cuenta aparte");
+        assert.strictEqual(r90.informativos, r90.veredictos.filter((x) => x.nivel === "informativo" && x.id !== "temeraria").length, "y NO como «para arreglar sin riesgo»");
+        assert.notStrictEqual(r90.semaforo, "revisar", "no es motivo de rechazo");
+        assert.strictEqual(r90.semaforo, F1.validarFormulario1({ oferta: ofertaOk, formulario: form, presupuesto_oficial: total5 / 0.95, tope_aiu_pct: 30 }).semaforo, "el semáforo no cambia por el aviso");
+        const appJs = require("fs").readFileSync(require("path").join(__dirname, "..", "public", "app.js"), "utf8");
+        const iUl = appJs.indexOf('<ul class="mt-3 space-y-2 text-sm">${vs.map(');
+        const iFin = appJs.indexOf("</p>`;", iUl);
+        assert.ok(iUl > 0 && iFin > iUl, "app.js sin el render de la revisión");
+        const render = new Function("r", "vs", "esc", "return `" + appJs.slice(iUl, iFin + 4) + "`;");
+        const escR = (x) => String(x == null ? "" : x);
+        const html = render({ ...r90, guardado: false }, r90.veredictos, escR);
+        const liTem = html.split("<li").find((t) => t.includes(lim.frase));
+        assert.ok(liTem && /bg-amber-50/.test(liTem) && !/bg-blue-50/.test(liTem), "el aviso del rango se pinta en ámbar, no en azul");
+        assert.ok(html.includes("Tenga lista la justificación (1)"), "la etiqueta propia en el conteo");
+        const r6b = F1.validarFormulario1({ oferta: { ...ofertaOk, items: [{ ...ofertaOk.items[0], total: 5500000 }, ofertaOk.items[1], ofertaOk.items[2]], total: 20500000 }, formulario: form, presupuesto_oficial: 21000000, tope_aiu_pct: 30 });
+        const html6 = render({ ...r6b, guardado: false }, r6b.veredictos, escR);
+        assert.ok(/bg-blue-50/.test(html6.split("<li").find((t) => /Ley 1882/.test(t)) || ""), "los demás informativos siguen en azul");
+        assert.ok(!html6.includes("Tenga lista la justificación"), "sin el aviso no aparece la etiqueta");
+      }
       // 6 · error aritmético → informativo (no rechaza)
       const r6 = F1.validarFormulario1({ oferta: { ...ofertaOk, items: [{ ...ofertaOk.items[0], total: 5500000 }, ofertaOk.items[1], ofertaOk.items[2]], total: 20500000 }, formulario: form, presupuesto_oficial: 21000000, tope_aiu_pct: 30 });
       assert.strictEqual(nivelDe(r6, "aritmetico"), "informativo"); assert.ok(r6.semaforo !== "revisar" || r6.rechazos > 0);
