@@ -50740,6 +50740,31 @@ async function main() {
       const b6 = await invocar(indiceBajaApi, "/api/procesos?op=baja&reconstruir=true", CAB_TOKEN);
       romperR2 = null;
       okR2(b6.status === 502 && !JSON.stringify(b6.cuerpo).includes(tokR2), `el 502 de la reconstrucción tampoco lleva el token: ${b6.status} ${JSON.stringify(b6.cuerpo).slice(0, 200)}`);
+      /* NINGUNA RESPUESTA DE ERROR LLEVA UNA LLAVE (18-oct-2026): el tachado vive en los routers
+         (lib/error_interno.conLlavesTachadas), no en cada handler. La portada devolvía
+         `Redis: ${e.message}` crudo; por el router real ya sale tachada. Contra el árbol anterior,
+         el token aparece en el cuerpo. */
+      romperR2 = () => `ERR todo roto (auth ${tokR2})`;
+      const portadaErrR2 = await invocar(require("../api/procesos.js"), "/api/procesos?op=portada");
+      romperR2 = null;
+      okR2(portadaErrR2.status >= 400 && !JSON.stringify(portadaErrR2.cuerpo).includes(tokR2), `el error de la portada, por el router, no lleva el token: ${portadaErrR2.status} ${JSON.stringify(portadaErrR2.cuerpo).slice(0, 200)}`);
+      okR2(/clave tachada/.test(JSON.stringify(portadaErrR2.cuerpo)), `y dice que lo tachó: ${JSON.stringify(portadaErrR2.cuerpo).slice(0, 200)}`);
+      // los seis routers pasan por el mismo tachado (censo de api/, no lista)
+      const routersR2 = fs.readdirSync(path.join(__dirname, "..", "api")).filter((f) => f.endsWith(".js"));
+      for (const f of routersR2) {
+        okR2(/conLlavesTachadas\(res\)/.test(fs.readFileSync(path.join(__dirname, "..", "api", f), "utf8")), `api/${f} despacha con conLlavesTachadas(res)`);
+      }
+      // una respuesta correcta (2xx) no se toca: el tachado es solo para errores
+      {
+        const { conLlavesTachadas } = require("../lib/error_interno.js");
+        let visto = null;
+        const resOk = conLlavesTachadas({ status(n) { this.s = n; return this; }, json(o) { visto = o; } });
+        resOk.status(200).json({ dato: `x ${tokR2} y` });
+        okR2(visto && visto.dato === `x ${tokR2} y`, "un 200 sale tal cual");
+        const resMal = conLlavesTachadas({ status(n) { this.s = n; return this; }, json(o) { visto = o; } });
+        resMal.status(500).json({ error: "a", detalle: [{ m: `b ${tokR2}` }] });
+        okR2(!JSON.stringify(visto).includes(tokR2) && /clave tachada/.test(visto.detalle[0].m), "un 500 se tacha también en lo anidado");
+      }
 
       /* ── (4) LA FRASE DE LA BAJA NO LEÍDA ──────────────────────────────────── */
       const mR2 = IBR2.SIN_LECTURA_BAJA.mensaje;
