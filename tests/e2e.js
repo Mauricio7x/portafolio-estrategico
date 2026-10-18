@@ -1501,6 +1501,19 @@ async function filaDelListado(handler, urlStr, headers, predicado) {
 const invocarPost = (handler, urlStr, body, headers = {}) =>
   invocar(handler, urlStr, { "content-type": "application/json", ...headers }, { metodo: "POST", body });
 
+/* EL SUMIDERO DE «app.local» (18-oct-2026, lib/autollamada). `invocar` llama a los handlers con
+   `host: app.local`, una dirección que no existe; en producción la llamada del servidor a sí
+   mismo va a la dirección del despliegue, que responde. Desde que esa llamada anota cómo le fue
+   y op=salud lo dice, la suite necesita ese mismo mundo: lo que va a «https://app.local/» recibe
+   un 200 con «{}», como la aplicación que acepta la tanda, SIN ejecutar nada (antes la llamada
+   fallaba en silencio y tampoco ejecutaba nada). Los fallos —el muro, la credencial, la red,
+   la tanda que tarda— los ejercita el bloque «autollamada del servidor» con servidores propios. */
+const fetchDeVerdad = globalThis.fetch;
+const SUMIDERO_APP_LOCAL = /^https:\/\/app\.local\//;
+globalThis.fetch = (u, o) => (SUMIDERO_APP_LOCAL.test(String(u && u.url ? u.url : u))
+  ? Promise.resolve(new Response("{}", { status: 200, headers: { "content-type": "application/json" } }))
+  : fetchDeVerdad(u, o));
+
 const escuchar = (server) => new Promise((r) => server.listen(0, "127.0.0.1", () => r(server.address().port)));
 
 /* Quita comentarios de un fuente antes de vigilarlo con expresiones regulares:
@@ -9405,6 +9418,81 @@ async function main() {
     }
     console.log("· unidad el texto del pliego: el documento base leído llega al dictamen, los anexos con «pliego» en el nombre no entran al vigía ni dan el texto, lo cargado a mano después gana, el definitivo más reciente manda, y el tope de 400 KB");
   }
+  bqCargaEnPrecios: { if (!corre("unidad la carga en Precios")) break bqCargaEnPrecios;
+    /* LO QUE SE CARGA EN PRECIOS SOLO ENTRA AL VIGÍA SI ES EL PLIEGO (18-oct-2026). La pantalla pide también el
+       Formulario 1 de cantidades, y todo archivo leído con un proceso abierto entraba como «versión del pliego»:
+       el dictamen, el cronograma y los descuentos lo leían. Con el router REAL (op=diff y op=documentos) sobre
+       el Redis simulado y la `textoGuardado` real. */
+    const DocsP = require("../lib/documentos_proceso.js"), DvP = require("../lib/diff.js");
+    const { escribirJSONComprimido: escribirP } = require("../lib/almacen.js");
+    const { textoGuardado: textoP } = require("../lib/handlers/pliego/cronograma.js");
+    const routerP = require("../api/pliego.js");
+    const rellenoP = "Segunda página del documento del proceso, con texto suficiente para que la lectura cuente como texto.";
+    const txtP = (s) => `\f1\n${s}\n\f2\n${rellenoP}\n`;
+    const PLIEGO_P = txtP("PLIEGO DE CONDICIONES DEFINITIVO LP-001-2026. Patrimonio líquido mayor o igual a $ 950.000.000.");
+    const FORM_P = txtP("FORMULARIO 1 - FORMULARIO DE PRESUPUESTO OFICIAL. ITEM 1.1 Localización y replanteo m2 1200 4.500 5.400.000.");
+    const cargar = (id, nombre, texto) => invocarPost(routerP, "/api/pliego?op=diff", nombre === undefined ? { id_proceso: id, texto, perfil: "helder" } : { id_proceso: id, texto, perfil: "helder", nombre_archivo: nombre }, CAB_TOKEN);
+    const versionesDe = async (id) => ((await DvP.leerIndice(redis, id)).versiones || []);
+    // (1) lo que el nombre dice que es OTRA cosa no se guarda, y se dice por qué y qué lee el dictamen (aquí, nada todavía)
+    const casos = [
+      ["FORMULARIO 1 PRESUPUESTO OFICIAL.pdf", "formulario", /formulario de cantidades/],
+      ["Formulario 1 - Presupuesto Oficial - Pliego Definitivo.pdf", "formulario", /formulario de cantidades/],
+      ["ADENDA No. 1.pdf", "adenda", /es una adenda.*empiece por «pliego» o «documento base»/],
+      ["ADENDA No. 1 AL PLIEGO DE CONDICIONES.pdf", "adenda", /es una adenda/],
+      ["PROPUESTA ECONOMICA Bl 2 IUPB.(PLIEGOS DEFINITIVOS ADENDA 2) .pdf", "adenda", /es una adenda/],
+      ["CANTIDADES PLIEGO DEFINITIVO ADENDA 2.pdf", "adenda", /es una adenda/],
+      ["ANEXOS PLIEGO DE CONDICIONES.pdf", "acompana_al_pliego", /anexo, un formato o unas observaciones/],
+      ["OBSERVACIONES PLIEGO DEF LP-004-2026.pdf", "acompana_al_pliego", /anexo, un formato o unas observaciones/],
+      ["RESPUESTA OBSERVACIONES PROYECTO PLIEGO DE CONDICIONES.pdf", "otro_documento", /«respuesta a observaciones»/],
+      ["ESTUDIOS PREVIOS.pdf", "otro_documento", /«estudios previos»/],
+    ];
+    let k = 0;
+    for (const [nombre, motivo, frase] of casos) {
+      const id = `CO1.REQ.PRE${String(++k).padStart(3, "0")}`;
+      const r = await cargar(id, nombre, FORM_P);
+      assert.ok(r.status === 200 && r.cuerpo.ok === false && r.cuerpo.no_es_el_pliego === true && r.cuerpo.motivo === motivo && frase.test(r.cuerpo.error || "") && /Todavía no hay pliego guardado de este proceso/.test(r.cuerpo.error),
+        `«${nombre}» no es el pliego (${motivo}), se dice por qué y que todavía no hay pliego guardado (MUTACIÓN: guardar sin mirar el nombre; «siguen leyendo el pliego» sin pliego): ${r.status} ${JSON.stringify(r.cuerpo).slice(0, 400)}`);
+      assert.strictEqual((await versionesDe(id)).length, 0, `«${nombre}» no entra al vigía`);
+    }
+    /* (2) el pliego, el borrador y el documento base se guardan, con el nombre en el origen; también un nombre que NO dice
+       qué es (como antes: el clasificador no reconoce «DocBase_…» y en procesos abiertos era el único camino del pliego al
+       dictamen, 2.ª revisión adversaria), un navegador con el código de antes que no manda nombre, y el pliego con la adenda
+       incorporada */
+    for (const [nombre, origen] of [
+      ["PLIEGO DE CONDICIONES DEFINITIVO LP-001-2026 DEL MUNICIPIO.pdf"], ["PROYECTO DE PLIEGO DE CONDICIONES.pdf"], ["19. DOCUMENTO BASE.pdf"], ["Pliego definitivo ajustado con observaciones.pdf"],
+      ["DocBase_LicitacionObra_ISocialLV2.pdf"], ["Documento_base_Licitacion_Obra_Publica Definitivo.pdf"], ["DOCUMENTO%20BASE.pdf"], ["scan001.pdf"],
+      ["Index?DocumentId=837410065&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier="],
+      ["8. Documento Base - Pliego de Condiciones Definitivo Adenda 1 - LIC 004 MT 2026.pdf"], ["Documento Base Villa María III MODIFICADO CON ADENDA No. 1.pdf"],
+      ["PROYECTO DE PLIEGO, ANEXOS, FORMATOS, MATRICES Y FORMULARIO 1.pdf"], ["Documento_Base_Villa_Maria_MODIFICADO_CON_ADENDA_1.pdf"],
+      ["", "lector"], [undefined, "lector"],
+    ]) {
+      const id = `CO1.REQ.PRE${String(++k).padStart(3, "0")}`;
+      const r = await cargar(id, nombre, PLIEGO_P);
+      const v = await versionesDe(id);
+      const esperado = origen || `lector:${nombre}`.slice(0, 40);
+      assert.ok(r.status === 200 && r.cuerpo.ok === true && r.cuerpo.version === 1 && v.length === 1 && v[0].origen === esperado && v[0].origen.length <= 40,
+        `«${nombre}» se guarda, con el nombre en el origen (MUTACIÓN: el nombre mudo o el pliego con adenda rechazados; anexo excluido por el nombre entero; origen sin nombre): ${JSON.stringify({ r: r.cuerpo.ok, motivo: r.cuerpo.motivo, v })}`.slice(0, 400));
+    }
+    // (3) el caso que quedó pendiente en la Fase A: el Formulario cargado DESPUÉS de que la lectura automática leyó el pliego
+    const idF = `CO1.REQ.PRE${String(++k).padStart(3, "0")}`;
+    const archP = { id_documento: "1", nombre: "PLIEGO DE CONDICIONES DEFINITIVO LP-001-2026.pdf", tipo: "pliego", tipo_legible: DocsP.TIPOS.pliego.legible, fecha_carga: "2026-09-10", de_la_entidad: true, legible: true, url: "https://community.secop.gov.co/x" };
+    await escribirP(redis, DocsP.claveDocs(idF), { version: DocsP.VERSION, id_proceso: idF, indice: { version: DocsP.VERSION, consultado_el: new Date().toISOString(), archivos: [archP], plan: ["1"] }, leidos: {}, ilegibles: {} });
+    const rAuto = await invocarPost(routerP, "/api/pliego?op=documentos", { id_proceso: idF, id_documento: "1", texto: PLIEGO_P }, CAB_TOKEN);
+    assert.ok(rAuto.status === 200 && rAuto.cuerpo.version_pliego === 1, `premisa: la lectura automática guardó el pliego: ${JSON.stringify(rAuto.cuerpo).slice(0, 200)}`);
+    const rForm = await cargar(idF, "FORMULARIO 1 PRESUPUESTO OFICIAL.pdf", FORM_P);
+    const tF = await textoP(redis, idF);
+    assert.ok(/siguen con «PLIEGO DE CONDICIONES DEFINITIVO LP-001-2026\.pdf»/.test(rForm.cuerpo.error || ""), `y la frase dice qué está leyendo el dictamen (MUTACIÓN: sin mirar textoGuardado): ${rForm.cuerpo.error}`);
+    assert.ok(rForm.cuerpo.no_es_el_pliego === true && (await versionesDe(idF)).length === 1 && /PLIEGO DE CONDICIONES DEFINITIVO/.test(tF.texto) && tF.version === 1,
+      `el Formulario cargado DESPUÉS del pliego ya no pasa a ser el texto del dictamen (MUTACIÓN: guardarlo, la versión 2 es el formulario): ${JSON.stringify({ version: tF.version, origen: tF.origen })}`);
+    const dF = await invocar(routerP, `/api/pliego?op=dictamen&id_proceso=${idF}&perfil=helder`, CAB_TOKEN);
+    assert.ok(dF.status === 200 && dF.cuerpo.version_texto === 1, `y la consulta del dictamen sigue sobre el pliego: ${JSON.stringify(dF.cuerpo).slice(0, 200)}`);
+    // (4) un nombre larguísimo no rompe el origen ni la frase
+    const idL = `CO1.REQ.PRE${String(++k).padStart(3, "0")}`;
+    const largo = "PLIEGO DE CONDICIONES " + "X".repeat(400) + ".pdf";
+    const rL = await cargar(idL, largo, PLIEGO_P);
+    assert.ok(rL.cuerpo.ok === true && (await versionesDe(idL))[0].origen.length === 40, `un nombre larguísimo se guarda con el origen cortado a 40: ${JSON.stringify(await versionesDe(idL))}`.slice(0, 300));
+    console.log("· unidad la carga en Precios: el Formulario 1, una adenda suelta, un anexo u otro documento no entran al vigía y se dice por qué y qué lee el dictamen; el pliego, el borrador, el documento base, el pliego con la adenda incorporada y un nombre que no dice qué es sí, con su nombre; el Formulario cargado después del pliego ya no lo tapa");
+  }
   bqNueveProcesos: { if (!corre("unidad los nueve procesos del dueño")) break bqNueveProcesos;
     const Dp = require("../lib/documentos_proceso.js");
     const Df = require("../lib/diff.js");
@@ -9443,6 +9531,30 @@ async function main() {
     assert.strictEqual(ant("\f17\nNo se configura este supuesto cuando la Entidad establece en el numeral 8.3 que no va a\nentregar anticipo y/o pago anticipado y el Proponente no\nrenuncia a ellos.\n").estado, "sin_dato", "la frase modelo partida en tres líneas no afirma (MUTACIÓN: sin `excluyeUnida`, «sí»)");
     assert.strictEqual(ant(modeloPaicol + "\f61\n8.3. ANTICIPO\nLa entidad entregará al contratista un anticipo del treinta por ciento (30 %) del valor del contrato.\n").estado, "si", "la frase modelo no tapa un anticipo pactado en su numeral");
     assert.strictEqual(ant(modeloPaicol + "\f61\n8.3. ANTICIPO Y/O PAGO ANTICIPADO\nEn el presente proceso de contratación la entidad no entregará al contratista anticipo y/o pago\nanticipado.\n").estado, "no", "la frase modelo no tapa la cláusula que niega");
+    /* LA FÓRMULA EN PROSA NO AFIRMA EL ANTICIPO (18-oct-2026): la capacidad residual de CO1.REQ.10725252, que no tiene
+       anticipo (paga 50/40/10 % por avance), decía «sí»; y el numerador del capital de trabajo que el OCR deja solo en su
+       línea, con raya, también */
+    const crResidual = "El cálculo de la Capacidad Residual de Contratación del presente Proceso de selección equivale al presupuesto oficial menos el anticipo o pago anticipado cuando haya lugar, ya que el plazo estimado del contrato es menor a (5) meses.";
+    assert.strictEqual(ant(`\f43\n${crResidual}\n`).estado, "mencion", "la definición de la capacidad residual es mención, no «sí» (MUTACIÓN: sin la regla de la fórmula en prosa, «sí»)");
+    assert.strictEqual(ant("\f43\nEl cálculo de la Capacidad Residual de Contratación del presente Proceso de selección equivale al presupuesto\noficial menos el anticipo o pago anticipado cuando haya lugar, ya que el plazo estimado del contrato es menor\na (5) meses.\n").estado, "mencion", "…también partida como la deja el OCR");
+    for (const f of ["POE — Anticipo y/o Pago anticipado", "POE - Anticipo o pago anticipado", "PO − Anticipo y/o pago anticipado", "Presupuesto Oficial Estimado menos el valor del anticipo"]) {
+      assert.strictEqual(ant(`\f40\nEl cálculo del capital de trabajo demandado se hará así:\n${f}\nPlazo estimado de ejecución del contrato (en meses)\n`).estado, "mencion", `«${f}» es una fórmula, no «sí» (MUTACIÓN: solo el signo menos, «sí» con la raya)`);
+    }
+    const crConClausula = ant(`\f43\n${crResidual}\n\f79\n8.3 ANTICIPO Y/O PAGO ANTICIPADO\nEn el presente proceso de contratación la entidad entregará al contratista a título de anticipo un valor equivalente al 50 % del valor básico del contrato.\n`);
+    assert.deepStrictEqual([crConClausula.estado, crConClausula.pagina], ["si", 79], `con la cláusula que lo pacta, «sí» y se cita la cláusula, no la fórmula: ${JSON.stringify(crConClausula)}`);
+    assert.strictEqual(ant(`\f43\n${crResidual}\n\f79\nEn el presente proceso de contratación la entidad no entregará al contratista anticipo y/o pago anticipado.\n`).estado, "no", "con la cláusula que lo niega, «no»");
+    assert.strictEqual(ant("\f70\nEl contratista recibirá en cada acta el valor ejecutado menos el anticipo correspondiente a ese periodo de obra.\n").estado, "si", "«…ejecutado menos el anticipo correspondiente» no es la fórmula del presupuesto oficial: sigue siendo frase (MUTACIÓN: «menos el anticipo» sin «oficial/POE/PO» delante, «mención»)");
+    // revisión adversaria (18-oct-2026): la línea que niega con la fórmula NO pierde contra una mención anterior…
+    const v4 = ant(`\f9\nLa garantía de buen manejo del anticipo se exigirá solo cuando haya lugar a su entrega por parte de la entidad.\n\f43\nLa capacidad residual equivale al presupuesto oficial menos el anticipo o pago anticipado; en este proceso no se entregará anticipo al contratista.\n`);
+    assert.deepStrictEqual([v4.estado, v4.pagina], ["no", 43], `la fórmula que también niega sigue negando (MUTACIÓN: el tope antes de la negación, «sí» por la mención de la pág. 9): ${JSON.stringify(v4)}`);
+    // …y la prosa que habla de un anticipo que EXISTE (amortizado, entregado) o que trae su porcentaje sigue diciendo «sí»
+    for (const f of ["Pagos parciales hasta completar el 90 % del presupuesto oficial menos el anticipo amortizado, contra actas mensuales.".replace("90 %", "noventa por ciento"),
+      "El saldo, es decir el presupuesto oficial menos el anticipo entregado, se pagará mediante actas parciales de obra.",
+      "Anticipo del 30 %; el saldo, presupuesto oficial menos el anticipo, se pagará en actas parciales de obra ejecutada.",
+      "Valor PO - Anticipo: la entidad entregará al contratista el 30 % del valor del contrato como anticipo."]) {
+      assert.strictEqual(ant(`\f80\n${f}\n`).estado, "si", `«${f}» habla de un anticipo que existe: «sí» (MUTACIÓN: sin la mirada adelante de «amortizado/entregado» o sin la guarda del porcentaje, «mención»)`);
+    }
+    assert.strictEqual(ant("\f70\nEl valor a pagar en cada acta será el valor de la obra ejecutada menos el anticipo amortizado en ese periodo.\n").estado, "si", "«menos el anticipo» de un acta habla de un anticipo que existe: sigue siendo frase (MUTACIÓN: «menos el anticipo» sin «oficial/POE» delante, «mención»)");
     /* la negación de una PARTE NUMERADA no niega el anticipo (Gobernación del Amazonas, CO1.REQ.11022945, ronda 6 de
        detekta-lector, 17-oct-2026, texto real de pdf.js): «no reconocerá anticipo alguno para la ejecución del componente 1»
        ganaba al 30 % del componente dos, y la cita del «sí» era la fila de la tabla de garantías */
@@ -9511,6 +9623,25 @@ async function main() {
     // (6) el DOCUMENTO BASE del pliego tipo se lee, y la plantilla en blanco no dice nada
     const cl = (nombre) => Dp.clasificarArchivo({ id_documento: "1", nombre, extension: "pdf", url: "https://community.secop.gov.co/x?DocumentId=1", entidad: true }).tipo;
     assert.deepStrictEqual(["DOCUMENTO BASE ALOJAMIENTO DE CADETES.pdf", "Documento Base o Documento Tipo CCE-EICP-GI-02 Menor Cuantía.docx", "DOCUMENTO BASE.pdf"].map(cl), ["documento_base", "documento_base", "documento_base"], "el documento base tiene su tipo (MUTACIÓN: «Otro documento», fuera del plan)");
+    /* (6b) LOS NOMBRES CON SEPARADORES Y LOS NUEVOS DE COLOMBIA COMPRA (18-oct-2026): «DocBase_…», «Documento_base_…»,
+       «DOCUMENTO%20BASE», «Documentos Base» y las erratas salían «otro» y la lectura automática no leía ese documento base
+       (7 de 232 procesos de la muestra, 5 de 33 abiertos). Nombres REALES de dmgg-8hin */
+    const nombresBase = ["DocBase_LicitacionObra_ISocialLV2.pdf", "3.DocBase_LicitacionObra_ISocialLV2.pdf", "DocBase_LicObra_APSBLV1.pdf", "Documento_base_Licitacion_Obra_Publica Definitivo.pdf",
+      "06_Documento Base CCE-EICP-GI-14 LICITACIÓN.pdf", "DOCUMENTO BASE_0001_compressed (2).pdf", "1L-003-2026 - Documentos Base Definitivo.pdf", "DOCUEMENTO BASE DEFINITIVO.pdf", "DOCUEMNTO BASE.pdf",
+      "1L-003-2026 - Docuemento Base.pdf", "DOCUMENTO%20BASE.pdf", "Documento-Base-Definitivo.pdf"];
+    for (const n of nombresBase) {
+      const a = Dp.clasificarArchivo({ id_documento: "1", nombre_archivo: n, url: "https://community.secop.gov.co/x?DocumentId=1" });
+      assert.ok(a.tipo === "documento_base" && Dp.esVersionDelPliego(a) && a.de_la_entidad === true, `«${n}» es el documento base (MUTACIÓN: sin plegar «_», «%20», «-» o sin «docbase»/erratas, «otro»): ${JSON.stringify({ tipo: a.tipo, version: Dp.esVersionDelPliego(a) })}`);
+    }
+    // …y el mismo plegado no cambia lo que ya se leía bien, ni vuelve documento base lo que no lo es
+    for (const [n, tipo] of [["1.Estudio_previo_mejoramientos_LP_CVV_005_2026_FINAL.pdf", "estudio_previo"], ["03_AVISO_CONVOCATORIA LP-003-2026.pdf", "aviso"], ["ADENDA_001_LP_CVV_005_2026.pdf", "adenda"],
+      ["FORMULARIO 1 PRESUPUESTO OFICIAL.pdf", "presupuesto"], ["PLIEGO DE CONDICIONES DEFINITIVO LP-001-2026.pdf", "pliego"], ["Base de datos de proveedores.pdf", "otro"], ["Anexo_2.pdf", "formato"]]) {
+      assert.strictEqual(Dp.clasificarArchivo({ nombre_archivo: n }).tipo, tipo, `«${n}» es ${tipo}`);
+    }
+    // el borrador con separadores sigue siendo borrador, y lo de un proponente con «_» se reconoce como suyo
+    assert.ok(Dp.esBorradorDoc({ ...Dp.clasificarArchivo({ nombre_archivo: "DocBase_Proyecto_LP_01.pdf" }) }), "«DocBase_Proyecto_…» es borrador (MUTACIÓN: esBorradorDoc con otro plegado, «_proyecto_» no casa `proyecto\\b`)");
+    assert.ok(Dp.esVersionDelPliego(Dp.clasificarArchivo({ nombre_archivo: "Documento_Base_Definitivo_con_Formatos.pdf" })), "«Documento_Base_…_con_Formatos» es el pliego: la palabra de anexo va DESPUÉS del nombre (MUTACIÓN: esVersionDelPliego con otro plegado)");
+    assert.strictEqual(Dp.clasificarArchivo({ nombre_archivo: "16_GARANTIA DE SERIEDAD DE LA OFERTA.pdf" }).de_la_entidad, false, "la garantía de seriedad de un proponente con «16_» delante no es de la entidad");
     const planDB = Dp.planDeLectura([{ id_documento: "7", nombre: "DOCUMENTO BASE CAMPO DE PARADA.pdf", extension: "pdf", url: "https://community.secop.gov.co/x?DocumentId=7", bytes: 1000000 }]);
     assert.ok(planDB.plan.includes("7"), `y se lee solo: ${JSON.stringify(planDB.archivos && planDB.archivos[0])}`);
     const marcas = ["[Nombre de la Entidad]", "[Incluir el objeto del Contrato]", "[Incluir plazo]", "[Incluir Presupuesto Oficial]", "[Incluir el número del lote]", "[Incluir objeto del proyecto, lote o segmento]", "[Incluir plazo]", "[Seleccionar la modalidad]"];
@@ -13048,6 +13179,318 @@ async function main() {
     } finally {
       if (antesCron === undefined) delete process.env.CRON_SECRET; else process.env.CRON_SECRET = antesCron;
       for (let i = 0; i < guardadas.length; i++) { if (antes[i] == null) await redis.del(guardadas[i]); else await redis.set(guardadas[i], antes[i]); }
+    }
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     UNIDAD · LA LLAMADA DEL SERVIDOR A SÍ MISMO (18-oct-2026, lib/autollamada)
+     ──────────────────────────────────────────────────────────────────────────
+     Medido ese día con el muro de Vercel puesto: tras una tanda con `done:false` y tras un
+     fallo con `reintento:true` no arrancó ninguna tanda más, y nada lo decía. Se EJECUTA la
+     pieza real contra servidores locales —el muro (302 hacia sso-api), la tanda que trabaja
+     (no responde en el plazo), la aplicación que no reconoce la credencial, un puerto
+     cerrado—, con y sin el contexto de Vercel (`waitUntil`); el handler REAL del sync se
+     reintenta contra el muro; la salud lo dice; y el latido repite el tramo con sus topes.
+     ══════════════════════════════════════════════════════════════════════════ */
+  bq57b: { if (!corre("autollamada del servidor")) break bq57b;
+    const AL = require("../lib/autollamada.js");
+    const LTa = require("../lib/latido.js");
+    const { CLAVES: CLa, escribirJSON: escribirJSONa } = require("../lib/almacen.js");
+    const rProcA = require("../api/procesos.js");
+    const leerReg = async () => JSON.parse((await redis.get(CLa.autoLlamada)) || "null");
+    const SIM_CTX = Symbol.for("@vercel/request-context");
+    const ctxPrevio = globalThis[SIM_CTX];
+    const pasePrevio = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
+    const cronPrevio = process.env.CRON_SECRET;
+    const ponerEnv = (k, v) => { if (v === undefined) delete process.env[k]; else process.env[k] = v; };
+    const servidores = [];
+    const servidor = async (fn) => {
+      const s = http.createServer(fn); servidores.push(s);
+      return { s, cab: { host: `127.0.0.1:${await escuchar(s)}`, "x-forwarded-proto": "http" } };
+    };
+    const guardadasA = [CLa.meta, CLa.lock, CLa.lockHistorico, CLa.progreso, CLa.progresoHistorico, CLa.derivadosHechos, CLa.metaHistorico, CLa.autoLlamada, CLa.latidoUltimo, CLa.avisoSalud, "sync:fallos_seguidos"];
+    const antesA = await redis.mget(guardadasA);
+    try {
+      // 1 · cómo le fue y qué dice la salud: puras
+      assert.strictEqual(AL.clasificarAutoLlamada({ status: 302, ubicacion: "https://vercel.com/sso-api?url=x&nonce=y" }), "muro");
+      assert.strictEqual(AL.clasificarAutoLlamada({ status: 401, texto: "<title>Protected by Vercel Authentication</title>" }), "muro", "el muro también se reconoce por su texto");
+      assert.strictEqual(AL.clasificarAutoLlamada({ status: 401, texto: JSON.stringify({ ok: false, error: "No autorizado" }) }), "credencial");
+      assert.strictEqual(AL.clasificarAutoLlamada({ status: 200, texto: "{}" }), "siguio");
+      assert.strictEqual(AL.clasificarAutoLlamada({ sinRespuesta: true }), "siguio", "sin respuesta en el plazo, la tanda siguiente está trabajando");
+      assert.strictEqual(AL.clasificarAutoLlamada({ error: "fetch failed" }), "fallo_de_red");
+      assert.strictEqual(AL.clasificarAutoLlamada({ status: 302, ubicacion: "https://otro.example/entrar" }), "otro_codigo", "una redirección que no es la del muro no se da por muro");
+      assert.strictEqual(AL.clasificarAutoLlamada({ status: 503, texto: "caido" }), "otro_codigo");
+      const ahoraA = Date.now();
+      const haceA = (s) => new Date(ahoraA - s * 1e3).toISOString();
+      assert.strictEqual(AL.motivoDeAutoLlamada(null, ahoraA), null);
+      assert.strictEqual(AL.motivoDeAutoLlamada({ resultado: "siguio", ts: haceA(5) }, ahoraA), null);
+      assert.strictEqual(AL.queHacerAutoLlamada({ resultado: "siguio" }), null);
+      assert.strictEqual(AL.motivoDeAutoLlamada({ resultado: "enviada", ts: haceA(5) }, ahoraA), null, "una llamada recién enviada todavía no tiene noticia: no es un fallo");
+      assert.ok(/no siguió viva/.test(AL.motivoDeAutoLlamada({ resultado: "enviada", ts: haceA(120) }, ahoraA) || ""), "un «enviada» de más de un minuto es la función que no siguió viva para ver la respuesta");
+      assert.strictEqual(AL.motivoDeAutoLlamada({ resultado: "enviada", ts: "ilegible" }, ahoraA), null, "«no sé» no pone la salud en rojo");
+      for (const reg of [{ resultado: "muro", pase_en_el_servidor: false }, { resultado: "muro", pase_en_el_servidor: true }, { resultado: "credencial" },
+        { resultado: "fallo_de_red", detalle: "getaddrinfo; ENOTFOUND" }, { resultado: "otro_codigo", status: 503 }, { resultado: "enviada", ts: haceA(120) }]) {
+        const m = AL.motivoDeAutoLlamada({ ts: haceA(1), ...reg }, ahoraA);
+        assert.ok(m && /la actualización no pudo seguir sola/.test(m), `cada fallo es un motivo: ${JSON.stringify(reg)} → ${m}`);
+        assert.ok(!m.includes("; "), `el motivo no lleva «; » (el aviso por correo parte los motivos por ahí): ${m}`);
+        assert.ok(AL.queHacerAutoLlamada(reg), `cada fallo dice qué hacer: ${reg.resultado}`);
+      }
+
+      // 2 · el muro: 302 hacia sso-api, sin seguirlo; «enviada» ya está anotada cuando la llamada llega
+      ponerEnv("VERCEL_AUTOMATION_BYPASS_SECRET", undefined);
+      delete globalThis[SIM_CTX];
+      const llegadasM = [];
+      const muro = await servidor(async (rq, rs) => {
+        llegadasM.push({ url: rq.url, headers: rq.headers, anotado: await redis.get(CLa.autoLlamada) });
+        rs.writeHead(302, { Location: "https://vercel.com/sso-api?url=https%3A%2F%2Fdetekta-app.vercel.app%2F&nonce=abc" }); rs.end();
+      });
+      await redis.del(CLa.autoLlamada);
+      const rM = await AL.autoLlamar({ headers: muro.cab }, "/api/procesos?op=sync&modo=auto", { origen: "cadena" });
+      assert.strictEqual(rM.con_waitUntil, false, "sin el contexto de Vercel no hay waitUntil");
+      assert.strictEqual(llegadasM.length, 1, "la llamada sale UNA vez y no sigue la redirección del muro");
+      assert.strictEqual(llegadasM[0].url, "/api/procesos?op=sync&modo=auto");
+      assert.strictEqual((JSON.parse(llegadasM[0].anotado || "{}")).resultado, "enviada", "«enviada» se anota ANTES de la llamada: si la función se congela ahí, el rastro queda");
+      const regM = await leerReg();
+      assert.deepStrictEqual(Object.keys(regM).sort(), ["con_waitUntil", "destino", "ms", "origen", "pase_en_el_servidor", "resultado", "status", "ts"], "la anotación publica esto y nada más");
+      assert.deepStrictEqual([regM.resultado, regM.status, regM.pase_en_el_servidor, regM.origen, regM.destino], ["muro", 302, false, "cadena", "sync"], JSON.stringify(regM));
+      const ttlM = await redis.ttl(CLa.autoLlamada);
+      assert.ok(ttlM > 0 && ttlM <= AL.TTL_SEG, `la anotación caduca sola (TTL ${ttlM} s)`);
+      const c0A = upstash.peticiones();
+      const sM = await invocar(rProcA, "/api/procesos?op=salud");
+      assert.ok(upstash.peticiones() - c0A <= 2, `op=salud sigue en ≤ 2 comandos con la anotación en su MGET (${upstash.peticiones() - c0A})`);
+      assert.strictEqual(sM.cuerpo.ok, false, "con la cadena rechazada por el muro la salud suena");
+      assert.ok(/no pudo seguir sola.*porque el servidor no tiene el pase/.test(sM.cuerpo.motivo || ""), sM.cuerpo.motivo);
+      assert.deepStrictEqual(Object.keys(sM.cuerpo.autollamada).sort(), ["con_waitUntil", "destino", "falla", "ms", "origen", "pase_en_el_servidor", "que_hacer", "resultado", "status", "ts"], "la salud publica la anotación, si falla y qué hacer");
+      assert.strictEqual(sM.cuerpo.autollamada.falla, true);
+      assert.ok(/Enable access to System Environment Variables/.test(sM.cuerpo.autollamada.que_hacer || ""), sM.cuerpo.autollamada.que_hacer);
+      // con el pase en el servidor: la cabecera viaja, su valor no se anota y el motivo cambia
+      ponerEnv("VERCEL_AUTOMATION_BYPASS_SECRET", "pase-de-la-prueba-autollamada");
+      await AL.autoLlamar({ headers: muro.cab }, "/api/procesos?op=historico&desde=2025-01&hasta=2025-02", { origen: "cadena", extra: { "x-historico-token": "llave-de-la-prueba-autollamada" } });
+      assert.strictEqual(llegadasM[1].headers["x-vercel-protection-bypass"], "pase-de-la-prueba-autollamada", "el pase del muro viaja en la llamada");
+      assert.strictEqual(llegadasM[1].headers["x-historico-token"], "llave-de-la-prueba-autollamada", "lo propio de cada disparo se suma a las cabeceras");
+      const crudoP = await redis.get(CLa.autoLlamada);
+      assert.ok(!crudoP.includes("pase-de-la-prueba-autollamada") && !crudoP.includes("llave-de-la-prueba-autollamada"), "la anotación no lleva el valor de ningún secreto");
+      assert.deepStrictEqual([JSON.parse(crudoP).pase_en_el_servidor, JSON.parse(crudoP).destino], [true, "historico"]);
+      assert.ok(/aunque el servidor tiene un pase/.test((await invocar(rProcA, "/api/procesos?op=salud")).cuerpo.motivo || ""));
+
+      // 3 · la tanda que trabaja: sin respuesta en el plazo es «siguió», y la salud no suena por ella
+      let soltarT = null;
+      const trabaja = await servidor((rq, rs) => { soltarT = () => { rs.writeHead(200); rs.end("{}"); }; });
+      const tT = Date.now();
+      await AL.autoLlamar({ headers: trabaja.cab }, "/api/procesos?op=sync&modo=auto", { origen: "cadena", esperaMs: 150 });
+      assert.ok(Date.now() - tT < 3000, "sin waitUntil se espera el plazo, no la tanda entera");
+      const regT = await leerReg();
+      assert.deepStrictEqual([regT.resultado, regT.status], ["siguio", null], JSON.stringify(regT));
+      const sT = await invocar(rProcA, "/api/procesos?op=salud");
+      assert.strictEqual(sT.cuerpo.autollamada.falla, false);
+      assert.ok(!/no pudo seguir sola/.test(sT.cuerpo.motivo || ""), sT.cuerpo.motivo);
+      if (soltarT) soltarT();
+
+      // 4 · la aplicación que no reconoce la credencial, y un puerto cerrado
+      const app401 = await servidor((rq, rs) => { rs.writeHead(401, { "Content-Type": "application/json" }); rs.end(JSON.stringify({ ok: false, error: "No autorizado" })); });
+      await AL.autoLlamar({ headers: app401.cab }, "/api/procesos?op=sync&modo=auto", { origen: "reintento" });
+      assert.strictEqual((await leerReg()).resultado, "credencial");
+      const cerradoA = http.createServer(); const pCerradoA = await escuchar(cerradoA); await new Promise((r) => cerradoA.close(r));
+      await AL.autoLlamar({ headers: { host: `127.0.0.1:${pCerradoA}`, "x-forwarded-proto": "http" } }, "/api/procesos?op=sync&modo=auto", { origen: "listado" });
+      const regC = await leerReg();
+      assert.strictEqual(regC.resultado, "fallo_de_red"); assert.ok(regC.detalle, "el fallo de red dice qué pasó");
+      assert.ok(/no salió/.test((await invocar(rProcA, "/api/procesos?op=salud")).cuerpo.motivo || ""));
+      // sin dirección no hay llamada ni anotación
+      await redis.del(CLa.autoLlamada);
+      assert.strictEqual((await AL.autoLlamar({ headers: {} }, "/api/procesos?op=sync&modo=auto")).enviada, false);
+      assert.strictEqual(await redis.get(CLa.autoLlamada), null);
+
+      // 5 · con el contexto de Vercel: el trabajo va a waitUntil y la respuesta no lo espera
+      const entregados = [];
+      globalThis[SIM_CTX] = { get: () => ({ waitUntil: (p) => { entregados.push(p); } }) };
+      let soltarW = null;
+      const lento = await servidor((rq, rs) => { soltarW = () => { rs.writeHead(200); rs.end("{}"); }; });
+      const tW = Date.now();
+      const rW = await AL.autoLlamar({ headers: lento.cab }, "/api/procesos?op=sync&modo=auto", { origen: "cadena", esperaMs: 2000 });
+      assert.ok(Date.now() - tW < 1500, `con waitUntil la función responde sin esperar el plazo (${Date.now() - tW} ms)`);
+      assert.strictEqual(rW.con_waitUntil, true);
+      assert.strictEqual(entregados.length, 1); assert.strictEqual(entregados[0], rW.trabajo, "lo que se entrega a waitUntil es el trabajo de la llamada");
+      assert.strictEqual((await leerReg()).resultado, "enviada", "mientras el trabajo sigue, la anotación dice «enviada»");
+      await entregados[0];
+      assert.deepStrictEqual([(await leerReg()).resultado, (await leerReg()).con_waitUntil], ["siguio", true]);
+      if (soltarW) soltarW();
+      // un contexto sin waitUntil es «sin contexto», sin reventar
+      globalThis[SIM_CTX] = { get: () => undefined };
+      assert.strictEqual(AL.contextoDeVercel(), null);
+      delete globalThis[SIM_CTX];
+
+      // 6 · el handler REAL del sync: un fallo con reintento se llama a sí mismo y, contra el muro, la salud lo dice
+      ponerEnv("VERCEL_AUTOMATION_BYPASS_SECRET", undefined);
+      ponerEnv("CRON_SECRET", undefined);   // sync abierto: aquí se prueba la llamada, no la guarda
+      await redis.del("sync:fallos_seguidos", CLa.lock, CLa.autoLlamada);
+      const baseSocA = process.env.SECOP_BASE_URL;
+      const cerradoS = http.createServer(); const pCerradoS = await escuchar(cerradoS); await new Promise((r) => cerradoS.close(r));
+      const nAntesS = llegadasM.length;
+      let rFalloA;
+      try {
+        process.env.SECOP_BASE_URL = `http://127.0.0.1:${pCerradoS}/resource/p6dx-8zbt.json`;
+        rFalloA = await invocar(rProcA, "/api/procesos?op=sync&modo=delta", muro.cab);
+      } finally { process.env.SECOP_BASE_URL = baseSocA; }
+      assert.strictEqual(rFalloA.status, 502, JSON.stringify(rFalloA.cuerpo).slice(0, 300));
+      assert.strictEqual(rFalloA.cuerpo.reintento, true, JSON.stringify(rFalloA.cuerpo).slice(0, 300));
+      assert.strictEqual(llegadasM.length, nAntesS + 1, "el reintento salió hacia la dirección por la que llegó la tanda");
+      assert.strictEqual(llegadasM[nAntesS].url, "/api/procesos?op=sync&modo=auto");
+      const regS = await leerReg();
+      assert.deepStrictEqual([regS.resultado, regS.origen, regS.destino], ["muro", "reintento", "sync"], JSON.stringify(regS));
+
+      /* 6 bis · LA CADENA CONTRA SU PROPIO CANDADO (revisión adversaria del 18-oct, con reproducción): si
+         el DEL del candado falla, la tanda siguiente chocaba con él («ya hay una sincronización
+         corriendo») y la anotación decía «siguió». Ahora se intenta soltar otra vez; si sigue puesto,
+         no se encadena y la respuesta lo dice. La carga completa de 1 ms se rinde tras la primera página
+         guardada (con cualquier número de meses: la iteración lo usa igual) y encadena. */
+      const ahoraC = Date.now();
+      const metaDelta = { last_full: new Date(ahoraC - 86400e3).toISOString(), last_sync: new Date(ahoraC - 3600e3).toISOString(), ano: new Date(ahoraC).getUTCFullYear() };
+      const borrarDel = (veces) => { let n = 0; upstash.romper((c) => (String(c[0]).toUpperCase() === "DEL" && c[1] === CLa.lock && n++ < veces ? "The operation was aborted due to timeout" : null)); };
+      await redis.del(CLa.lock, CLa.autoLlamada);
+      const nAntesC = llegadasM.length;
+      let rCand;
+      borrarDel(99);
+      try { rCand = await invocar(rProcA, "/api/procesos?op=sync&modo=full&presupuesto=1", muro.cab); }
+      finally { upstash.romper(null); }
+      assert.strictEqual(rCand.cuerpo.done, false, `montaje: la carga de 1 ms queda a medias: ${JSON.stringify(rCand.cuerpo).slice(0, 200)}`);
+      assert.ok(/candado no se pudo soltar/.test(rCand.cuerpo.sin_cadena || ""), `con el candado sin soltar no se encadena y se dice: ${JSON.stringify(rCand.cuerpo).slice(0, 300)}`);
+      assert.strictEqual(llegadasM.length, nAntesC, "con el candado sin soltar no sale ninguna llamada");
+      await redis.del(CLa.lock);
+      borrarDel(1);
+      try { rCand = await invocar(rProcA, "/api/procesos?op=sync&modo=full&presupuesto=1", muro.cab); }
+      finally { upstash.romper(null); }
+      assert.strictEqual(rCand.cuerpo.done, false);
+      assert.strictEqual(rCand.cuerpo.sin_cadena, undefined, "el segundo intento suelta el candado y la cadena sigue");
+      assert.strictEqual(llegadasM.length, nAntesC + 1, "y la llamada sale");
+      assert.strictEqual(await redis.get(CLa.lock), null, "el candado quedó libre antes de la llamada");
+      // el hermano del histórico: el mismo candado sin soltar, la misma guarda (su candado dura 600 s)
+      {
+        const rutaH = "/api/procesos?op=historico&desde=2025-01&hasta=2025-02&presupuesto=1";
+        const cabH = { ...muro.cab, "x-historico-token": process.env.HISTORICO_TOKEN };
+        const borrarDelH = (veces) => { let n = 0; upstash.romper((c) => (String(c[0]).toUpperCase() === "DEL" && c[1] === CLa.lockHistorico && n++ < veces ? "The operation was aborted due to timeout" : null)); };
+        await redis.del(CLa.lockHistorico, CLa.progresoHistorico, CLa.derivadosHechos);
+        const nH = llegadasM.length;
+        let rH;
+        borrarDelH(99);
+        try { rH = await invocar(rProcA, rutaH, cabH); } finally { upstash.romper(null); }
+        assert.strictEqual(rH.cuerpo.done, false, `montaje: la extracción de 1 ms queda a medias: ${JSON.stringify(rH.cuerpo).slice(0, 200)}`);
+        assert.ok(/candado no se pudo soltar/.test(rH.cuerpo.sin_cadena || ""), `histórico: con el candado sin soltar no se encadena y se dice: ${JSON.stringify(rH.cuerpo).slice(0, 300)}`);
+        assert.strictEqual(llegadasM.length, nH, "histórico: con el candado sin soltar no sale ninguna llamada");
+        await redis.del(CLa.lockHistorico, CLa.progresoHistorico, CLa.derivadosHechos);   // la segunda vuelve a empezar y vuelve a cortarse
+        borrarDelH(1);
+        try { rH = await invocar(rProcA, rutaH, cabH); } finally { upstash.romper(null); }
+        assert.strictEqual(rH.cuerpo.done, false);
+        assert.strictEqual(rH.cuerpo.sin_cadena, undefined, "histórico: el segundo intento suelta el candado y la cadena sigue");
+        assert.strictEqual(llegadasM.length, nH + 1, "histórico: y la llamada sale");
+        assert.ok(/op=historico&desde=2025-01&hasta=2025-02/.test(llegadasM[nH].url), llegadasM[nH].url);
+        await redis.del(CLa.lockHistorico, CLa.progresoHistorico, CLa.derivadosHechos);
+      }
+      // la tanda siguiente que encuentra otro candado no es «siguió»: lo dice, sin poner la salud en rojo
+      assert.strictEqual(AL.clasificarAutoLlamada({ status: 200, texto: JSON.stringify({ ok: true, enCurso: true, msg: "ya hay una sincronización corriendo" }) }), "candado_ocupado");
+      assert.strictEqual(AL.motivoDeAutoLlamada({ resultado: "candado_ocupado", ts: new Date().toISOString() }), null);
+
+      /* 6 ter · LO PASAJERO NO TIENE LA SALUD EN ROJO UN DÍA (revisión adversaria del 18-oct): un 504 de
+         hace 3 h no cuenta; el muro de hace 3 h, sí (configuración); un 504 de hace 10 min cuenta
+         con el ciclo abierto y no cuenta si el ciclo se cerró después */
+      const hace3h = new Date(Date.now() - 3 * 3600e3).toISOString(), hace10 = new Date(Date.now() - 10 * 60e3).toISOString();
+      const saludCon = async (reg, meta) => {
+        await redis.set(CLa.autoLlamada, JSON.stringify(reg), { ex: 600 });
+        if (meta) await escribirJSONa(redis, CLa.meta, meta);
+        return (await invocar(rProcA, "/api/procesos?op=salud")).cuerpo;
+      };
+      const base6 = { origen: "cadena", destino: "sync", pase_en_el_servidor: true, con_waitUntil: true, ms: 10, status: 504 };
+      let s6 = await saludCon({ ...base6, ts: hace3h, resultado: "otro_codigo" });
+      assert.ok(!/no pudo seguir sola/.test(s6.motivo || "") && s6.autollamada.falla === false, `un 504 de hace 3 h ya no cuenta: ${s6.motivo}`);
+      s6 = await saludCon({ ...base6, ts: hace3h, resultado: "muro", status: 302 });
+      assert.ok(/no pudo seguir sola/.test(s6.motivo || ""), "el muro de hace 3 h sigue contando: es configuración");
+      s6 = await saludCon({ ...base6, ts: hace10, resultado: "otro_codigo" }, { ...metaDelta, delta_ciclo: { desdeUTC: "x" }, ultimo_delta: { ts: new Date().toISOString() } });
+      assert.ok(/respondió 504/.test(s6.motivo || ""), `con el ciclo abierto, el 504 de hace 10 min cuenta: ${s6.motivo}`);
+      s6 = await saludCon({ ...base6, ts: hace10, resultado: "otro_codigo" }, { ...metaDelta, ultimo_delta: { ts: new Date().toISOString() } });
+      assert.ok(!/no pudo seguir sola/.test(s6.motivo || ""), `con el ciclo cerrado después, ya no cuenta: ${s6.motivo}`);
+      s6 = await saludCon({ ...base6, ts: hace10, resultado: "otro_codigo" }, { ...metaDelta, ultimo_delta: { ts: new Date(Date.now() - 20 * 60e3).toISOString() } });
+      assert.ok(/respondió 504/.test(s6.motivo || ""), "una tanda ANTERIOR al fallo no lo cierra");
+      await redis.del(CLa.autoLlamada);
+
+      // 7 · el latido repite el tramo EN ESTE PROCESO, con sus topes: la regla, pura
+      const b7 = { tandas: 1, transcurridoMs: 60e3, status: 200 };
+      const aMedias = (leidas) => ({ ok: true, done: false, delta: { ciclo_leidas: leidas } });
+      const paso = (o) => { const r = LTa.otraTandaDelLatido(o); return [r.seguir, r.motivo]; };
+      assert.deepStrictEqual(paso({ ...b7, cuerpo: aMedias(10) }), [true, null]);
+      assert.deepStrictEqual(paso({ ...b7, tandas: 3, cuerpo: aMedias(10) }), [false, "ya van 3 tandas en este latido"]);
+      assert.deepStrictEqual(paso({ ...b7, tandas: 2, cuerpo: aMedias(10) }), [true, null]);
+      assert.deepStrictEqual(paso({ ...b7, transcurridoMs: 170e3, cuerpo: aMedias(10) }), [false, "no queda tiempo para otra tanda en este latido"]);
+      assert.deepStrictEqual(paso({ ...b7, transcurridoMs: 169e3, cuerpo: aMedias(10) }), [true, null]);
+      assert.deepStrictEqual(paso({ ...b7, transcurridoMs: 150e3, tandaMasLargaMs: 110e3, cuerpo: aMedias(10) }), [false, "no queda tiempo para otra tanda en este latido"],
+        "una tanda de 110 s con un 30 % de holgura ya no cabe antes de los 280 s");
+      assert.deepStrictEqual(paso({ ...b7, transcurridoMs: 120e3, tandaMasLargaMs: 60e3, cuerpo: aMedias(10) }), [true, null], "con tandas de 60 s, la tercera cabe");
+      assert.deepStrictEqual(paso({ ...b7, status: 502, cuerpo: aMedias(10) }), [false, "el tramo respondió con error"]);
+      assert.deepStrictEqual(paso({ ...b7, cuerpo: { ok: true, enCurso: true } }), [false, "otra tanda tiene el candado"]);
+      assert.deepStrictEqual(paso({ ...b7, cuerpo: { ok: true, done: true } }), [false, "terminó"]);
+      assert.deepStrictEqual(paso({ ...b7, cuerpo: { ok: true } }), [false, "el tramo no dijo si terminó"]);
+      assert.deepStrictEqual(paso({ ...b7, cuerpo: { ok: false, done: false } }), [false, "el tramo no respondió bien"]);
+      const huellaD = LTa.huellaDeAvance(aMedias(10));
+      assert.deepStrictEqual(paso({ ...b7, cuerpo: aMedias(10), huellaPrevia: huellaD }), [false, "la tanda no avanzó"]);
+      assert.deepStrictEqual(paso({ ...b7, cuerpo: aMedias(11), huellaPrevia: huellaD }), [true, null]);
+      assert.deepStrictEqual(paso({ ...b7, cuerpo: { ok: true, done: false }, huellaPrevia: null }), [true, null], "sin nada que diga cuánto avanzó, no se da por quieto: lo acotan los dos topes");
+      const full = (leidasMes) => ({ ok: true, done: false, progreso: { mes: "2026-03", mesIdx: 2, leidasMes } });
+      assert.deepStrictEqual(paso({ ...b7, cuerpo: full(100), huellaPrevia: LTa.huellaDeAvance(full(100)) }), [false, "la tanda no avanzó"], "la carga completa que no avanza también para");
+      const hist = (leidasMes) => ({ ok: true, done: false, extraccion: { done: false, progreso: { mes: "2025-01", mesIdx: 0, leidasMes } } });
+      assert.deepStrictEqual(paso({ ...b7, cuerpo: hist(5), huellaPrevia: LTa.huellaDeAvance(hist(5)) }), [false, "la tanda no avanzó"], "y la extracción del histórico");
+      assert.deepStrictEqual(paso({ ...b7, cuerpo: hist(6), huellaPrevia: LTa.huellaDeAvance(hist(5)) }), [true, null]);
+      /* los derivados del histórico, con la FORMA que devuelven sus constructores ({ done, pendientes }: lib/indice_competencia,
+         lib/indice_baja, lib/equivalencias, lib/texto_unspsc): la revisión adversaria del 18-oct encontró la guarda muerta aquí */
+      const deriv = (pendientes) => ({ ok: true, done: false, extraccion: { done: true, yaEstaba: true }, indice: { done: true, yaEstaba: true }, baja: { done: false, pendientes, analizados: 10 } });
+      assert.deepStrictEqual(paso({ ...b7, cuerpo: deriv(4), huellaPrevia: LTa.huellaDeAvance(deriv(4)) }), [false, "la tanda no avanzó"], "un derivado que no baja sus pendientes detiene el latido");
+      assert.deepStrictEqual(paso({ ...b7, cuerpo: deriv(3), huellaPrevia: LTa.huellaDeAvance(deriv(4)) }), [true, null]);
+
+      // 8 · el handler REAL del latido, con el tramo sustituido en la caché de módulos (el latido lo pide al llamar)
+      process.env.CRON_SECRET = "cron-autollamada";
+      const BEARER_A = { authorization: "Bearer cron-autollamada" };
+      await redis.del(CLa.lock, CLa.lockHistorico, CLa.progreso, CLa.progresoHistorico);
+      await escribirJSONa(redis, CLa.meta, { last_sync: new Date().toISOString(), last_full: new Date().toISOString(), delta_ciclo: { desdeUTC: "2026-10-18T00:00:00.000Z" } });
+      const rutaSyncA = require.resolve("../lib/handlers/procesos/sync.js");
+      const syncRealA = require.cache[rutaSyncA].exports;
+      const guion = (respuestas) => {
+        const vistas = [];
+        require.cache[rutaSyncA].exports = (rq, rs) => {
+          vistas.push(rq.query);
+          const c = respuestas[Math.min(vistas.length, respuestas.length) - 1];
+          return rs.status(c.status || 200).json(c.cuerpo);
+        };
+        return vistas;
+      };
+      const latirA = () => invocar(rProcA, "/api/procesos?op=latido", BEARER_A);
+      try {
+        let vistas = guion([{ cuerpo: aMedias(10) }, { cuerpo: aMedias(20) }, { cuerpo: { ok: true, done: true, delta: { ciclo_leidas: 25 } } }]);
+        let l = await latirA();
+        assert.strictEqual(l.cuerpo.accion, "sync", JSON.stringify(l.cuerpo).slice(0, 300));
+        assert.strictEqual(vistas.length, 3, "a medias, a medias y terminado: tres tandas en el mismo latido");
+        assert.ok(vistas.every((v) => v.chain === "0" && v.modo === "auto"), `cada tanda es op=sync&modo=auto con chain=0: ${JSON.stringify(vistas)}`);
+        assert.deepStrictEqual(l.cuerpo.tandas.map((t) => t.done), [false, false, true]);
+        assert.deepStrictEqual([l.status, l.cuerpo.hecho, l.cuerpo.por_que_paro], [200, true, "terminó"]);
+        vistas = guion([{ cuerpo: aMedias(10) }, { cuerpo: aMedias(20) }, { cuerpo: aMedias(30) }, { cuerpo: aMedias(40) }]);
+        l = await latirA();
+        assert.strictEqual(vistas.length, 3, "siempre a medias y avanzando: para en el tope");
+        assert.strictEqual(l.cuerpo.por_que_paro, "ya van 3 tandas en este latido");
+        vistas = guion([{ cuerpo: aMedias(10) }, { cuerpo: aMedias(10) }, { cuerpo: aMedias(10) }]);
+        l = await latirA();
+        assert.strictEqual(vistas.length, 2, "una tanda que no avanzó detiene el latido: un ciclo atascado no gasta tres veces la CPU");
+        assert.strictEqual(l.cuerpo.por_que_paro, "la tanda no avanzó");
+        vistas = guion([{ cuerpo: aMedias(10) }, { status: 502, cuerpo: { ok: false, error: "corte simulado" } }, { cuerpo: aMedias(30) }]);
+        l = await latirA();
+        assert.strictEqual(vistas.length, 2, "un tramo que falla detiene el latido");
+        assert.deepStrictEqual([l.status, l.cuerpo.hecho, l.cuerpo.respuesta.status], [502, false, 502], "y el latido no se da por hecho");
+        vistas = guion([{ cuerpo: { ok: true, enCurso: true, msg: "ya hay una sincronización corriendo" } }, { cuerpo: aMedias(30) }]);
+        l = await latirA();
+        assert.strictEqual(vistas.length, 1, "si otra tanda tiene el candado, el latido no insiste");
+        assert.strictEqual(l.cuerpo.por_que_paro, "otra tanda tiene el candado");
+      } finally { require.cache[rutaSyncA].exports = syncRealA; }
+      console.log("· autollamada del servidor: el muro (302 a sso-api) se reconoce sin seguirlo y «enviada» queda antes de la llamada; sin pase, con pase, credencial, red y tanda que trabaja; waitUntil recibe el trabajo; el reintento real del sync anota «muro»; la salud lo dice en ≤ 2 comandos; el latido repite el tramo hasta 3 tandas y para si falla, si otro tiene el candado o si no avanza");
+    } finally {
+      if (ctxPrevio === undefined) delete globalThis[SIM_CTX]; else globalThis[SIM_CTX] = ctxPrevio;
+      ponerEnv("VERCEL_AUTOMATION_BYPASS_SECRET", pasePrevio); ponerEnv("CRON_SECRET", cronPrevio);
+      for (const s of servidores) { if (s.closeAllConnections) s.closeAllConnections(); s.close(); }
+      for (let i = 0; i < guardadasA.length; i++) { if (antesA[i] == null) await redis.del(guardadasA[i]); else await redis.set(guardadasA[i], antesA[i]); }
     }
   }
 
@@ -17469,6 +17912,10 @@ async function main() {
       // candados cortos de Mis procesos y consorcios (6-sep-2026): se liberan solos, pero un
       // bloque abortado a mitad no puede dejar a la iteración siguiente esperando 5 s
       ...(await redis.scan("lock:seguimiento:*")), ...(await redis.scan("lock:consorcios")),
+      /* la anotación de la última llamada del servidor a sí mismo (18-oct-2026, lib/autollamada)
+         vive 26 h: en la suite esas llamadas van a «app.local», que no existe, y sin borrarla la
+         salud de la prueba siguiente diría «la actualización no pudo seguir sola» */
+      ...(await redis.scan("sync:autollamada")),
     ];
     if (claves.length) await redis.del(...claves);
     for (const patron of ["licitaciones:*", "indice:*", "sync:historico:*", "equivalencias:*",
@@ -22436,7 +22883,7 @@ async function main() {
           const texto = "\f1\nPLIEGO\nExperiencia general: 2.500 SMMLV\nExperiencia específica: 1.000 SMMLV\nÍndice de liquidez mayor o igual a 1,5\nNivel de endeudamiento menor o igual a 60%\nCapital de trabajo: mayor o igual a $650.000.000\nPatrimonio: mayor o igual a $9.000.000.000\n\f2\nNo se entregará anticipo al contratista.";
           const h = D.hechosDeTexto(texto, { tipo: "pliego" });
           assert.ok(h.requisitos_numericos.experiencia_general && h.requisitos_numericos.experiencia_general.valor === 2500 && h.requisitos_numericos.experiencia_especifica && h.requisitos_numericos.experiencia_especifica.valor === 1000, "lib/diff separa la experiencia general de la específica");
-          assert.ok(h.version.startsWith("18|"), "los hechos guardados con las reglas viejas se rehacen: la versión del módulo subió");
+          assert.ok(h.version.startsWith("19|"), "los hechos guardados con las reglas viejas se rehacen: la versión del módulo subió");
           const docs = { indice: { archivos: [{ id_documento: "d1", nombre: "pliego.pdf", tipo: "pliego", de_la_entidad: true, legible: true }], plan: ["d1"], consultado_el: "2026-09-04" }, leidos: { d1: { nombre: "pliego.pdf", tipo: "pliego", tipo_legible: "Pliego", hechos: h, paginas: 2 } }, ilegibles: {} };
           const con = G.guiaDe({ fila: base, perfil: "helder", ctx: { ahoraMs: ahoraG, documentos: docs } });
           const ex = Object.fromEntries(con.exigencias.map((x) => [x.clave, x]));
@@ -24692,9 +25139,11 @@ async function main() {
          `respaldo` (27-sep-2026, lib/respaldo) publica si la copia nocturna fuera de Upstash
          está configurada (QUÉ variable falta, nunca su valor), de cuándo es la última copia
          completa, cuántos meses hay copiados y el texto del último fallo: su forma se cierra
-         aquí abajo. */
+         aquí abajo. `autollamada` (18-oct-2026, lib/autollamada) publica cómo le fue a la
+         última llamada del servidor a sí mismo: si el pase EXISTE (nunca su valor), el código
+         y el resultado; su forma se cierra en el bloque «autollamada del servidor». */
       assert.deepStrictEqual(Object.keys(rSalud.cuerpo).sort(),
-        ["aviso_por_correo", "candado_segundos", "edad_horas", "edad_maxima_horas", "escritura", "historico_hace_dias", "indice_baja", "indice_competencia", "latido", "lectura_indice_baja", "lectura_indice_competencia", "limite_de_registros_por_conexion", "medicion_listado", "motivo", "ok", "respaldo", "sincronizacion_protegida", "sincronizando", "ultima_sincronizacion", "ultimo_error"]);
+        ["autollamada", "aviso_por_correo", "candado_segundos", "edad_horas", "edad_maxima_horas", "escritura", "historico_hace_dias", "indice_baja", "indice_competencia", "latido", "lectura_indice_baja", "lectura_indice_competencia", "limite_de_registros_por_conexion", "medicion_listado", "motivo", "ok", "respaldo", "sincronizacion_protegida", "sincronizando", "ultima_sincronizacion", "ultimo_error"]);
       assert.deepStrictEqual(Object.keys(rSalud.cuerpo.respaldo).sort(),
         ["configurado", "falta", "hace_horas", "meses_en_copia", "meses_solo_en_copia", "nunca_corrio", "ultima_completa", "ultimo_error", "vieja"],
         "la copia nocturna publica su estado y qué falta, nada más");
@@ -24880,14 +25329,37 @@ async function main() {
       // sin la variable vuelve a ser abierta: la misma llamada responde 200 (el cron actual no manda cabecera)
       const abierta = await invocar(rProcesosG, URL_AUTO);
       assert.strictEqual(abierta.status, 200, `sin CRON_SECRET el sync sigue público: ${JSON.stringify(abierta.cuerpo)}`);
-      /* CENSO: toda auto-llamada de lib/ a un endpoint del dominio procesos (op=sync, op=historico)
-         va con `cabecerasDeAutoLlamada`, no con una copia de las cabeceras */
-      for (const h of ["sync.js", "listar.js", "historico.js"]) {
-        const src = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "lib", "handlers", "procesos", h), "utf8"));
-        const disparos = src.match(/fetch\(`\$\{proto\}:\/\/\$\{host\}\/api\/procesos\?op=[^`]*`[^\n]*/g) || [];
-        assert.ok(disparos.length >= 1, `${h}: no se encontró ninguna auto-llamada`);
-        assert.ok(!/x-vercel-protection-bypass/.test(src), `${h} construye a mano la cabecera del muro: debe llamar a cabecerasDeAutoLlamada`);
-        assert.strictEqual((src.match(/cabecerasDeAutoLlamada\(/g) || []).length, disparos.length, `${h}: cada auto-llamada (${disparos.length}) pide sus cabeceras a lib/auth`);
+      /* CENSO DE LAS LLAMADAS DEL SERVIDOR A SÍ MISMO (18-oct-2026, lib/autollamada). Antes miraba
+         una LISTA de tres archivos; ahora se barren TODOS los .js de lib/ y api/: ninguno arma a mano
+         un `fetch` a su propia dirección (`${host}`) ni a `/api/procesos`, y ninguno escribe a mano la
+         cabecera del muro. Excepciones, declaradas: lib/autollamada.js, que es quien hace la llamada
+         (con `cabecerasDeAutoLlamada`), y lib/auth.js, que define la cabecera. Y los tres que se
+         llaman a sí mismos lo hacen por `autoLlamar` (si uno dejara de hacerlo, su cadena moriría). */
+      {
+        const raizC = path.join(__dirname, "..");
+        const listarJs = (dir) => fs.readdirSync(dir, { withFileTypes: true })
+          .flatMap((e) => (e.isDirectory() ? listarJs(path.join(dir, e.name)) : e.name.endsWith(".js") ? [path.join(dir, e.name)] : []));
+        const EXCEPCIONES_C = { "lib/autollamada.js": "es la que hace la llamada", "lib/auth.js": "define la cabecera del muro (cabecerasDeAutoLlamada)" };
+        const fuentesC = [...listarJs(path.join(raizC, "lib")), ...listarJs(path.join(raizC, "api"))];
+        assert.ok(fuentesC.length > 50, `el barrido tiene que ver el árbol entero (vio ${fuentesC.length} archivos)`);
+        for (const f of fuentesC) {
+          const rel = path.relative(raizC, f).split(path.sep).join("/");
+          if (EXCEPCIONES_C[rel]) continue;
+          const src = sinComentarios(fs.readFileSync(f, "utf8"));
+          assert.ok(!/fetch\(\s*`[^`]*\$\{host\}/.test(src), `${rel} arma a mano una llamada a su propia dirección: debe usar lib/autollamada.autoLlamar`);
+          assert.ok(!/fetch\(\s*`[^`]*\/api\/procesos/.test(src), `${rel} llama a mano a /api/procesos: debe usar lib/autollamada.autoLlamar`);
+          assert.ok(!/x-vercel-protection-bypass/.test(src), `${rel} construye a mano la cabecera del muro: debe llamar a cabecerasDeAutoLlamada`);
+          /* y las cabeceras de la llamada a sí mismo solo las pide quien llama (revisión adversaria del
+             18-oct: una llamada armada a mano hacia `/api/sync` con otro nombre de variable pasaba el
+             barrido). Excepción declarada: el latido, que las usa para el tramo EN SU PROCESO. */
+          if (rel !== "lib/handlers/procesos/latido.js") {
+            assert.ok(!/cabecerasDeAutoLlamada\(/.test(src), `${rel} pide las cabeceras de la llamada a sí mismo: esa llamada va por lib/autollamada.autoLlamar`);
+          }
+        }
+        for (const [h, n] of [["sync.js", 2], ["historico.js", 1], ["listar.js", 1]]) {
+          const src = sinComentarios(fs.readFileSync(path.join(raizC, "lib", "handlers", "procesos", h), "utf8"));
+          assert.strictEqual((src.match(/autoLlamar\(/g) || []).length, n, `${h}: sus ${n} llamadas a sí mismo van por lib/autollamada.autoLlamar`);
+        }
       }
       for (const [k, v] of Object.entries(previosG)) ponerG(k, v);   // el entorno de quien corre, como estaba
       console.log(`· guarda de la sincronización: sin CRON_SECRET abierta (como el cron actual); con ella 401 sin tocar el candado, pasan Bearer/header/?token=, y la auto-llamada real llegó con «${capturadas[0].headers.authorization.replace(SECRETO, "…")}»`);
@@ -37690,19 +38162,19 @@ async function main() {
       const dp = D.diffParrafos(t1, t2);
       assert.ok(dp.modificados.some((m) => /650\.000\.000/.test(m.antes) && /800\.000\.000/.test(m.despues)), "el diff por párrafos empareja el párrafo modificado");
       // por el router: registrar, no-cambio, cambio, GET, retención, 401
-      assert.strictEqual((await invocarPost(routerPliego, "/api/pliego?op=diff", { id_proceso: "CO1.DIFF.1", texto: t1 })).status, 401);
-      const d1 = await invocarPost(routerPliego, "/api/pliego?op=diff", { id_proceso: "CO1.DIFF.1", texto: t1, perfil: "helder" }, CAB_TOKEN);
+      assert.strictEqual((await invocarPost(routerPliego, "/api/pliego?op=diff", { id_proceso: "CO1.DIFF.1", nombre_archivo: "PLIEGO DE CONDICIONES.pdf", texto: t1 })).status, 401);
+      const d1 = await invocarPost(routerPliego, "/api/pliego?op=diff", { id_proceso: "CO1.DIFF.1", nombre_archivo: "PLIEGO DE CONDICIONES.pdf", texto: t1, perfil: "helder" }, CAB_TOKEN);
       assert.strictEqual(d1.status, 200); assert.strictEqual(d1.cuerpo.version, 1); assert.strictEqual(d1.cuerpo.cambio, false);
-      const d1b = await invocarPost(routerPliego, "/api/pliego?op=diff", { id_proceso: "CO1.DIFF.1", texto: t1 + "\n", perfil: "helder" }, CAB_TOKEN);
+      const d1b = await invocarPost(routerPliego, "/api/pliego?op=diff", { id_proceso: "CO1.DIFF.1", nombre_archivo: "PLIEGO DE CONDICIONES.pdf", texto: t1 + "\n", perfil: "helder" }, CAB_TOKEN);
       assert.strictEqual(d1b.cuerpo.version, 1); assert.strictEqual(d1b.cuerpo.cambio, false, "el mismo texto no crea versión");
-      const d2 = await invocarPost(routerPliego, "/api/pliego?op=diff", { id_proceso: "CO1.DIFF.1", texto: t2, perfil: "helder" }, CAB_TOKEN);
+      const d2 = await invocarPost(routerPliego, "/api/pliego?op=diff", { id_proceso: "CO1.DIFF.1", nombre_archivo: "PLIEGO DE CONDICIONES.pdf", texto: t2, perfil: "helder" }, CAB_TOKEN);
       assert.strictEqual(d2.cuerpo.version, 2); assert.strictEqual(d2.cuerpo.cambio, true);
       assert.strictEqual(d2.cuerpo.diff.habilitantes.cambios[0].mensaje, cambiosH[0].mensaje, "tras un cambio los habilitantes se reevalúan automáticamente");
       assert.ok(/cambió las reglas/.test(d2.cuerpo.mensaje));
       assert.ok(await redis.get(D.claveVersion("CO1.DIFF.1", 2)) && await redis.get(D.claveDiff("CO1.DIFF.1", 2)), "pliego:{proceso}:v:2 y :diff:2 escritos");
       const g2 = await invocar(routerPliego, "/api/pliego?op=diff&id_proceso=CO1.DIFF.1&perfil=genesis", CAB_TOKEN);
       assert.strictEqual(g2.cuerpo.versiones.length, 2); assert.ok(/Usted no cumple\.$/.test(g2.cuerpo.diff.habilitantes.cambios[0].mensaje), "el GET reevalúa contra el perfil que pregunta");
-      for (let i = 3; i <= D.MAX_VERSIONES + 2; i++) await invocarPost(routerPliego, "/api/pliego?op=diff", { id_proceso: "CO1.DIFF.1", texto: t2 + `\nversión ${i}` }, CAB_TOKEN);
+      for (let i = 3; i <= D.MAX_VERSIONES + 2; i++) await invocarPost(routerPliego, "/api/pliego?op=diff", { id_proceso: "CO1.DIFF.1", nombre_archivo: "PLIEGO DE CONDICIONES.pdf", texto: t2 + `\nversión ${i}` }, CAB_TOKEN);
       const idx = await D.leerIndice(redis, "CO1.DIFF.1");
       assert.strictEqual(idx.versiones.length, D.MAX_VERSIONES, "retención: como mucho MAX_VERSIONES");
       assert.strictEqual(await redis.get(D.claveVersion("CO1.DIFF.1", 1)), null, "la versión 1 se purgó");
@@ -38028,11 +38500,11 @@ async function main() {
       assert.strictEqual(cmp[0].pagina, 2, "el cambio cita la página de la versión nueva");
       assert.ok(/pág\. \$\{x\.pagina\}/.test(plSin), "el vigía del lector pinta la página junto al cambio");
       // por el router: la versión guardada conserva los marcadores (para citar al reevaluar) y el hash es el de siempre
-      const dv1 = await invocarPost(routerPl, "/api/pliego?op=diff", { id_proceso: "CO1.PAG.1", texto: tSin, perfil: "helder" }, CAB_TOKEN);
-      const dv2 = await invocarPost(routerPl, "/api/pliego?op=diff", { id_proceso: "CO1.PAG.1", texto: tCon, perfil: "helder" }, CAB_TOKEN);
+      const dv1 = await invocarPost(routerPl, "/api/pliego?op=diff", { id_proceso: "CO1.PAG.1", nombre_archivo: "PLIEGO DE CONDICIONES.pdf", texto: tSin, perfil: "helder" }, CAB_TOKEN);
+      const dv2 = await invocarPost(routerPl, "/api/pliego?op=diff", { id_proceso: "CO1.PAG.1", nombre_archivo: "PLIEGO DE CONDICIONES.pdf", texto: tCon, perfil: "helder" }, CAB_TOKEN);
       assert.strictEqual(dv1.cuerpo.version, 1); assert.strictEqual(dv2.cuerpo.version, 1); assert.strictEqual(dv2.cuerpo.cambio, false, "guardar sin marcadores y volver a abrir CON marcadores no es una adenda");
       assert.strictEqual(dv2.cuerpo.hash, dv1.cuerpo.hash);
-      const dv3 = await invocarPost(routerPl, "/api/pliego?op=diff", { id_proceso: "CO1.PAG.1", texto: tCon2, perfil: "helder" }, CAB_TOKEN);
+      const dv3 = await invocarPost(routerPl, "/api/pliego?op=diff", { id_proceso: "CO1.PAG.1", nombre_archivo: "PLIEGO DE CONDICIONES.pdf", texto: tCon2, perfil: "helder" }, CAB_TOKEN);
       assert.strictEqual(dv3.cuerpo.version, 2); assert.strictEqual(dv3.cuerpo.diff.habilitantes.cambios[0].pagina, 2);
       const guardada = await D2.leerVersion(redis, "CO1.PAG.1", 2);
       assert.strictEqual(P.contarMarcadores(guardada.texto_normalizado), 4, "el texto guardado conserva los marcadores para poder citar la página al reevaluar");
@@ -45667,7 +46139,7 @@ async function main() {
         assert.ok(delBase.includes("Sobre «DOCUMENTO &lt;b&gt;BASE&lt;/b&gt;.pdf», documento base del pliego tipo (5 páginas)") && !/versión null|versión undefined|<b>BASE/.test(delBase) && delBase.includes("· 5 páginas del pliego, «DOCUMENTO &lt;b&gt;BASE&lt;/b&gt;.pdf»"),
           `sin versión, el archivo de donde salió el texto, escapado (MUTACIÓN: «versión null»): ${delBase.match(/Sobre[^.]*\./) || ""}`);
         const conNuevo = pintarDictamen({ ...fixture, version_texto: null, documento_texto: { tipo: "Documento base del pliego tipo", nombre: "CCE-EICP-GI-01 Documento base V4.pdf" }, mas_nuevo_sin_leer: { nombre: "DOCUMENTO BASE .pdf", fecha_carga: "2026-02-12", motivo: "pesa más de 20 MB: la aplicación no lo lee sola; ábralo en SECOP II" } }, { MARCA, esc: escF });
-        assert.ok(/Ojo: SECOP II publicó después «DOCUMENTO BASE \.pdf» \(12\/02\/2026\) y la aplicación no lo pudo leer \(pesa más de 20 MB[^<]*\)\. Este dictamen es sobre una versión anterior: descargue ese PDF de SECOP II, cárguelo en Precios con este proceso abierto/.test(conNuevo) && !/Ojo: SECOP II publicó después/.test(delBase),
+        assert.ok(/Ojo: SECOP II publicó después «DOCUMENTO BASE \.pdf» \(12\/02\/2026\) y la aplicación no lo pudo leer \(pesa más de 20 MB[^<]*\)\. Este dictamen es sobre una versión anterior: revise ese documento en SECOP II antes de decidir\. Si el PDF trae texto \(no es un escaneo\), cárguelo en Precios con este proceso abierto/.test(conNuevo) && !/Ojo: SECOP II publicó después/.test(delBase),
           `el aviso de la versión más nueva sin leer, solo cuando la hay (MUTACIÓN: sin pintarlo): ${(conNuevo.match(/Ojo:[^<]*/) || [""])[0]}`);
         const conPendiente = pintarDictamen({ ...fixture, version_texto: null, documento_texto: { tipo: "Documento base del pliego tipo", nombre: "CCE-EICP-GI-01 Documento base V4.pdf" }, mas_nuevo_sin_leer: { nombre: "DOCUMENTO BASE DEFINITIVO.pdf", fecha_carga: "2026-02-12", motivo: null, pendiente: true } }, { MARCA, esc: escF });
         assert.ok(/Ojo: SECOP II publicó después «DOCUMENTO BASE DEFINITIVO\.pdf» \(12\/02\/2026\) y la aplicación todavía no lo ha leído\. Este dictamen es sobre una versión anterior/.test(conPendiente) && !/no lo pudo leer|cárguelo en Precios/.test(conPendiente),
@@ -49029,9 +49501,10 @@ async function main() {
       assert.strictEqual(s39c.cuerpo.historico_hace_dias, null);
       // op=salud es PÚBLICA y su forma está cerrada: este arreglo no le añade ni le quita campos
       // (los dos del índice de competencia llegaron el 23-sep-2026, `respaldo` el 27-sep-2026, con su propia cerradura, y
-      // `escritura` el 30-sep-2026: null salvo con «&escritura=1», bloque «unidad base de datos llena»)
+      // `escritura` el 30-sep-2026: null salvo con «&escritura=1», bloque «unidad base de datos llena»;
+      // `autollamada` el 18-oct-2026, bloque «autollamada del servidor»)
       assert.deepStrictEqual(Object.keys(s39c.cuerpo).sort(),
-        ["aviso_por_correo", "candado_segundos", "edad_horas", "edad_maxima_horas", "escritura", "historico_hace_dias",
+        ["autollamada", "aviso_por_correo", "candado_segundos", "edad_horas", "edad_maxima_horas", "escritura", "historico_hace_dias",
           "indice_baja", "indice_competencia", "latido", "lectura_indice_baja", "lectura_indice_competencia",
           "limite_de_registros_por_conexion", "medicion_listado", "motivo", "ok", "respaldo", "sincronizacion_protegida",
           "sincronizando", "ultima_sincronizacion", "ultimo_error"]);
@@ -53579,6 +54052,31 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
         okRO(/descart|no se us/i.test(mensajePL()), `(f) y el OCR (${momento}) lo dice: «${mensajePL()}»`);
       }
       ctx.fetch = fetchF; ctx.setTimeout = setTimeoutRO; cambiarEn = null;
+      /* (g) LO QUE NO ES EL PLIEGO NO SE GUARDA COMO VERSIÓN (18-oct-2026): el nombre del archivo viaja al
+         vigía; si el servidor responde que no es el pliego (el Formulario 1, una adenda…) se dice por qué, no
+         como un fallo, y el dictamen sigue con el del pliego ya guardado */
+      {
+        const desdeG = diferidos.length;
+        const soltarG = async (patron, c) => { const d = diferidos.slice(desdeG).find((x) => patron.test(x.url) && !x.hecho); okRO(!!d, `(g) premisa: hubo una petición ${patron}`); if (d) { d.hecho = true; d.resolver(c); } await asentarRO(); };
+        porId.get("id-proceso").value = "CO1.A"; ctx.__pliegoUltimo = null;
+        porId.get("pliego-archivo").files = [{ name: "FORMULARIO 1 PRESUPUESTO OFICIAL.txt", type: "text/plain", text: async () => textoArchivo }]; porId.get("pliego-url").value = "";
+        porId.get("pl-vigia").innerHTML = ""; porId.get("pl-dictamen").innerHTML = "";
+        disparar("btn-extraer", "click", {}); await asentarRO();
+        await soltarG(/op=extraer-texto/, ITEMS_F);
+        const diffG = diferidos.slice(desdeG).find((x) => /op=diff/.test(x.url));
+        okRO(diffG && diffG.cuerpo && diffG.cuerpo.nombre_archivo === "FORMULARIO 1 PRESUPUESTO OFICIAL.txt", `(g) el nombre del archivo viaja al vigía (MUTACIÓN: sin el nombre): ${JSON.stringify(diffG && diffG.cuerpo)}`.slice(0, 300));
+        await soltarG(/op=diff/, { ok: false, id_proceso: "CO1.A", guardada: false, no_es_el_pliego: true, motivo: "formulario", error: "Por su nombre («<b>F1</b>»), este archivo es el formulario de cantidades (presupuesto oficial), no el pliego: sirve para el precio, pero no se guarda como versión del pliego" });
+        const cronoG = diferidos.slice(desdeG).find((x) => /op=cronograma/.test(x.url));
+        okRO(cronoG && cronoG.cuerpo && cronoG.cuerpo.id_proceso === "CO1.A" && cronoG.cuerpo.texto === undefined, `(g) el cronograma se pide del pliego guardado, sin el texto del archivo rechazado (MUTACIÓN: con el texto, la lista y el .ics dirían fechas distintas): ${JSON.stringify(cronoG && cronoG.cuerpo).slice(0, 160)}`);
+        await soltarG(/op=cronograma/, { ok: true, hitos: [] });
+        const vigiaG = porId.get("pl-vigia").innerHTML;
+        okRO(/es el formulario de cantidades/.test(textoRO(vigiaG)) && !/No se pudo guardar/.test(textoRO(vigiaG)) && !/<b>F1/.test(vigiaG),
+          `(g) se dice que no es el pliego, no como un fallo, y el nombre va escapado (MUTACIÓN: pintarlo como fallo): «${textoRO(vigiaG).slice(0, 220)}»`);
+        const dicG = diferidos.slice(desdeG).find((x) => /op=dictamen/.test(x.url) && !x.hecho);
+        okRO(!!dicG, "(g) y el dictamen del pliego guardado se pide igual (MUTACIÓN: tratarlo como un fallo del vigía, «Primero hay que guardar el texto del pliego»)");
+        if (dicG) { dicG.hecho = true; dicG.resolver({ ok: true, id_proceso: "CO1.A", hay_texto: true, hay_dictamen: false, en_curso: false }); await asentarRO(); }
+        okRO(!/Primero hay que guardar el texto del pliego/.test(textoRO(porId.get("pl-dictamen").innerHTML)), `(g) sin «Primero hay que guardar el texto del pliego»: «${textoRO(porId.get("pl-dictamen").innerHTML).slice(0, 160)}»`);
+      }
       /* hermano (segunda revisión, 28-sep-2026): un PDF que termina de abrirse DESPUÉS de abrir otro
          proceso quedaba como documento vivo, y «Reintentar con OCR» lo leía como pliego del nuevo */
       {

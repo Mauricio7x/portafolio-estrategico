@@ -16192,19 +16192,15 @@ real de Upstash desde Vercel; cuánto tarda en producción la reconstrucción de
 
 ### Proponente plural: la norma dice sumar los balances, no promediar los índices, y el reparto lo ata la experiencia (25-sep-2026)
 
-En una línea: la investigación con internet que el dueño pidió ANTES de tocar el cálculo del consorcio desmiente las dos
-premisas del combinador: todos los Documentos Tipo vigentes de obra calculan los indicadores del plural sumando los
-componentes de los socios SIN participación (el reparto no mueve la liquidez) y ninguno fija un «30 % o 40 %» a quien
-aporta la experiencia —lo que ata el reparto es la regla de EXPERIENCIA 50/5/10 y el factor E de la K—; 241 pliegos
-reales, los cuatro RUP leídos al centavo y el diagnóstico de la sincronización quedan en `docs/PROPONENTE_PLURAL.md`, y
-el cálculo NO se cambió todavía, por orden del dueño.
+En una línea: la investigación con internet que el dueño pidió ANTES de tocar el cálculo del consorcio desmiente las dos premisas del combinador: todos los Documentos Tipo vigentes de obra calculan los indicadores del plural sumando los componentes de los socios SIN participación (el reparto no mueve la liquidez) y ninguno fija un «30 % o 40 %» a quien aporta la experiencia —lo que ata el reparto es la regla de EXPERIENCIA 50/5/10 y el factor E de la K—; 241 pliegos reales, los cuatro RUP leídos al centavo y el diagnóstico de la sincronización quedan en `docs/PROPONENTE_PLURAL.md`, y el cálculo NO se cambió todavía, por orden del dueño.
 
 > RESUELTO el 25-sep-2026 por «El consorcio se calcula como el Documento Tipo, la capacidad como la Guía, y PICS entra como socia (25-sep-2026)» · partes (1), (2) y (3); la (4) y la (5) siguen como PENDIENTE en esa sección · el dueño decide, con `docs/PROPONENTE_PLURAL.md` a la vista, cómo se cambia el cálculo: (1) `derivarPlural` pasa a la suma de componentes del Documento Tipo, y cuando el pliego declare otra fórmula (opción 4, índices ponderados) se usa la del pliego; un método no leído se calcula con el del Documento Tipo y se dice «verificar en el pliego»; (2) los componentes certificados entran en `lib/perfiles.js` con su página y su firmeza; (3) `lib/capacidad.js` se alinea con la Guía (E con el total del segmento 72 y el % del socio, escalas de las Tablas 4 y 5, K negativa que resta, piso de CO); (4) el recomendador de reparto por proceso y por socia llama a `lib/consorcio.simular` y dice la frontera («a 60/40 cumple; a 61/39 deja de cumplir X») con la cita del pliego; (5) la pantalla de perfiles: «Su empresa: Helder», «Socios posibles: Génesis y PRODIAC» y los consorcios calculados con la misma regla, sin el tope fijo de 11.000 SMMLV.
 > RESUELTO el 26-sep-2026 por «El pliego dice el reparto: la cláusula de participación y la fórmula del plural (26-sep-2026)» · en `lib/participacion.js` (no en `lib/diff.js`), con el banco literal de los 21 en tests/e2e.js · el lector de pliegos (`lib/diff.js` REQUISITOS y la guía) aprende la cláusula de participación en sus tres formas principales (mínimo de quien aporta experiencia, mínimo de cada integrante, «el de mayor experiencia tiene la mayoría») y en sus variantes (el integrante con sucursal en la ciudad, quien asume las responsabilidades, el de mayor participación que debe acreditar la experiencia), también en los estudios previos, y dice «no la encontré» cuando no está; la tabla de los 21 pliegos con cláusula y el dudoso (cita y página) de `docs/PROPONENTE_PLURAL.md` es su banco de pruebas mínimo (los textos completos de los 241 pliegos quedaron en la máquina de la sesión, que es temporal, y no en el árbol).
 > RESUELTO el 25-sep-2026 por «El consorcio se calcula como el Documento Tipo, la capacidad como la Guía, y PICS entra como socia (25-sep-2026)» · el dueño dijo «sí» · el dueño decide si PICS (la sociedad del cuarto certificado de la carpeta «RUP´S», leído entero el 25-sep-2026) entra como tercera socia posible; hasta entonces sus cifras no van al árbol, que es público, y viven en el archivo que se le entregó al dueño.
 > RESUELTO el 25-sep-2026 por «El consorcio se calcula como el Documento Tipo, la capacidad como la Guía, y PICS entra como socia (25-sep-2026)» · corrida #43 en verde a las 22:07 UTC · el dueño crea en GitHub el secreto de la corrida de la tarde: `https://github.com/Mauricio7x/portafolio-estrategico/settings/secrets/actions` → botón «New repository secret» → Name `CRON_SECRET` → Secret: el MISMO valor que tiene `CRON_SECRET` en Vercel (proyecto portafolio-estrategico › Settings › Environment Variables) → «Add secret»; se comprueba en la pestaña «Actions» cuando la corrida «sync.yml» de la tarde salga en verde.
 > RESUELTO el 26-sep-2026 por «La carga completa se pide con modo=auto: modo=full la empieza de cero en cada llamada (26-sep-2026)» · la extracción terminó los 33 meses a las 09:13 UTC (ejecución 1 del flujo, «done: true») y `op=salud` da `historico_hace_dias: 0` · el dueño relanza la extracción del histórico pegando UNA vez `https://portafolio-estrategico.vercel.app/api/sync/historico?desde=2024-01&hasta=2026-09&token=[llave retirada el 17-oct-2026]` (con `&hasta`: sin él el rango por omisión es otro y la extracción REINICIA desde el mes 0; nunca `&reset=true`) y la sigue con `https://portafolio-estrategico.vercel.app/api/sync/historico?estado=true&token=[llave retirada el 17-oct-2026]` hasta `terminada: true`; entonces `historico_hace_dias` deja de ser null.
-> PENDIENTE · deudas medidas en esta sesión y sin arreglar: `lib/rup_pdf.js` (utilidad/pérdida operacional, primer corte sin firmeza, `MAX_LINEAS` que corta a PRODIAC, patrimonio redondeado); `op=salud` no avisa de una extracción histórica abierta y parada; el delta de la sincronización no detecta el re-sellado masivo de SECOP y relee el año entero; la auto-llamada de `sync.js` y `historico.js` sale sin esperar antes de responder.
+> PENDIENTE · deudas medidas en esta sesión y sin arreglar: `lib/rup_pdf.js` (utilidad/pérdida operacional, primer corte sin firmeza, `MAX_LINEAS` que corta a PRODIAC, patrimonio redondeado); `op=salud` no avisa de una extracción histórica abierta y parada; el delta de la sincronización no detecta el re-sellado masivo de SECOP y relee el año entero.
+> RESUELTO el 18-oct-2026 por «La cadena que no seguía con el muro: la llamada del servidor a sí mismo va con waitUntil y dice cómo le fue, y el latido hace hasta 3 tandas (18-oct-2026)» · La parte de la auto-llamada de `sync.js` y `historico.js` que salía sin esperar antes de responder: las cuatro llamadas del servidor a sí mismo (con la del listado) van por `lib/autollamada.autoLlamar`, dentro de `waitUntil` o esperando 10 s como mucho, y op=salud dice cómo le fue a la última.
 > PENDIENTE · antes de ofertar con un consorcio: certificados RUP nuevos de los tres (los de la carpeta ya pasaron sus 60 días), el de Helder con el corte 2025 en firme; y de Génesis, confirmar que los socios cuya experiencia inscribió siguen siéndolo, en qué renovación entró el bloque N.º 89-103, si el «0.5%» del N.º 82 es real y si el N.º 5 y el N.º 90 son el mismo contrato.
 
 **El encargo, en corto.** El dueño opera con HELDER (su empresa) y arma consorcio con GÉNESIS o PRODIAC según el proceso;
@@ -18111,6 +18107,8 @@ En una línea: `/api/respaldo` (cron diario 07:15 UTC → `op=respaldo` de `api/
 
 ### El latido: un reloj de fuera que retoma lo que quedó a medias, sin decidir nada nuevo (27-sep-2026)
 
+> SUPERADA el 18-oct-2026 por «La cadena que no seguía con el muro: la llamada del servidor a sí mismo va con waitUntil y dice cómo le fue, y el latido hace hasta 3 tandas (18-oct-2026)» — solo «lanza UN tramo»: ahora repite el tramo en el mismo proceso hasta 3 tandas, sin arrancar una pasados 170 s, y para si el tramo falla, si otro tiene el candado, si terminó o si no avanzó.
+
 > SUPERADA el 17-oct-2026 por «Pedir otro rango ya no vuelve a empezar el histórico: el servidor responde 409 y el botón continúa el rango guardado (17-oct-2026)» — solo la frase «`extraerHistorico` reinicia el cursor si el rango pedido es otro»: ahora responde 409 si no viene `reiniciar`. Continuar con el rango exacto del cursor sigue siendo la regla.
 
 En una línea: `op=latido` (`/api/latido`) lee en un MGET la meta, los dos cursores y los dos candados y, si una carga completa, una actualización o la extracción del histórico quedó a medias —o la lista tiene más de 30 min en horario de 6:00 a 22:00 de Colombia—, lanza UN tramo del handler de siempre (`op=sync&modo=auto` u `op=historico` con el rango de su cursor, `chain=0`); lo llama `.github/workflows/latido.yml` cada 10 min porque en Hobby un cron de Vercel más que diario tumba el despliegue.
@@ -19331,7 +19329,9 @@ obra de 2026 eso era nada (el documento base no entra al vigía) y en 7 un anexo
 pliego, con una sola regla (`Docs.esVersionDelPliego`, `Docs.candidatosAlTextoDelPliego`) que también decide qué entra al
 vigía.
 
-> PENDIENTE · la carga en Precios no dice qué archivo es: todo PDF soltado ahí con un proceso abierto entra al vigía como versión del pliego (`vigilarPliego` → `op=diff`, origen «lector»), también el Formulario 1 de cantidades que la propia pantalla pide. Es de main: un Formulario cargado DESPUÉS de la lectura automática pasa a ser el texto del dictamen, del cronograma y de los descuentos, y frente a un documento base gana salvo que el base sea más nuevo. La salida que propuso la 2.ª revisión: mandar el nombre del archivo en el origen («lector:<nombre>»), clasificarlo con `clasificarArchivo`/`esVersionDelPliego`, y no registrar en el vigía lo que no sea el pliego. Toca `public/` y el vigía: va con plan y visto bueno. De paso, aclarar qué significa la hora `T19:00:00.000` que traen TODAS las `fecha_carga` de dmgg-8hin (¿el día es el escrito o el siguiente?): sin verificar.
+> RESUELTO el 18-oct-2026 por «La carga en Precios no entra al vigía si el nombre dice que es otra cosa (18-oct-2026)» · lo que se había dicho: la carga en Precios no dice qué archivo es: todo PDF soltado ahí con un proceso abierto entra al vigía como versión del pliego (`vigilarPliego` → `op=diff`, origen «lector»), también el Formulario 1 de cantidades que la propia pantalla pide. Es de main: un Formulario cargado DESPUÉS de la lectura automática pasa a ser el texto del dictamen, del cronograma y de los descuentos, y frente a un documento base gana salvo que el base sea más nuevo. La salida que propuso la 2.ª revisión: mandar el nombre del archivo en el origen («lector:<nombre>»), clasificarlo con `clasificarArchivo`/`esVersionDelPliego`, y no registrar en el vigía lo que no sea el pliego. Toca `public/` y el vigía: va con plan y visto bueno.
+
+> PENDIENTE · aclarar qué significa la hora `T19:00:00.000` que traen TODAS las `fecha_carga` de dmgg-8hin (¿el día es el escrito o el siguiente?): sin verificar. Decide los «publicado después» de lo manual y del aviso.
 
 > RESUELTO el 18-oct-2026 por «Las tres lecturas del pliego del 18-oct: la versión que rige, el ejemplo entre corchetes y el techo con una versión sin tabla (18-oct-2026)» · Era: el cronograma toma como hito un párrafo de EJEMPLO del pliego tipo («[Por ejemplo, si la audiencia de adjudicación se realiza el 10 de febrero de 2020…]», pliego LP-008-2026 del departamento de Sucre, ronda 5) y `guardarFechaCronograma` guarda una fecha ya pasada sin mirarla (reproducido el 18-oct-2026 con `extraerHitos` y la función real: «adjudicacion=2020-02-10», `guardada: true`). En el calendario no se ve: `adjudicacionDeFila` la descarta por desfasada (anterior al cierre). En la lista de hitos del cronograma, sin verificar. Es de main, no de este cambio, pero el documento base que ahora llega al cronograma puede traer el mismo ejemplo: medido en 2 pliegos distintos entre 180 textos de pliego guardados en la sesión (el de Sucre con 2020, en tres extracciones; otro de la ronda 7 con un informe de evaluación de 2022), sin ningún documento base completo en la muestra.
 > RESUELTO el 18-oct-2026 por «Las tres lecturas del pliego del 18-oct: la versión que rige, el ejemplo entre corchetes y el techo con una versión sin tabla (18-oct-2026)» · decisión del dueño: NO se hace. Una fecha pasada del pliego es un hecho publicado (la manifestación que ya venció); rechazarla devolvería la ventana CALCULADA y podría mostrar abierto un proceso cerrado. El daño real —el ejemplo de 2020— se cortó en la fuente (`sinEjemplos` en lib/cronograma.js), y `adjudicacionDeFila` ya descarta una adjudicación anterior al cierre. Era: `guardarFechaCronograma` guarda una fecha ya pasada sin mirarla.
@@ -19569,9 +19569,9 @@ medición del plan con el definitivo por encima del tope) son escaneos sin una s
 páginas; construir la descarga por partes de la Fase C sería pagar unas 15 peticiones y ~400 MB de bajada por un PDF de
 45 MB (estimado del plan, sin medir) para no leer nada: el camino es el OCR, y en estos cuatro el OCR deja un anticipo «sí» falso que también da main con texto nativo.
 
-> PENDIENTE · decidir con el dueño si la Fase C se cierra (no construir la descarga de más de 20 MB, porque los 4 medidos son escaneos) o se cambia por OCR de esos escaneos; el OCR de la app es OCR.space, una petición por página (134-142 por pliego), y su tarifa no se ha podido verificar.
+> RESUELTO el 18-oct-2026 por «La Fase C se cierra: no se construye la descarga de pliegos de más de 20 MB (18-oct-2026)» · lo que se había dicho: decidir con el dueño si la Fase C se cierra (no construir la descarga de más de 20 MB, porque los 4 medidos son escaneos) o se cambia por OCR de esos escaneos; el OCR de la app es OCR.space, una petición por página (134-142 por pliego), y su tarifa no se ha podido verificar.
 
-> PENDIENTE · el detector del anticipo (`dictamen_reglas`) da «sí» con la frase de la capacidad residual «presupuesto oficial menos el anticipo o pago anticipado cuando haya lugar», también en una sola línea de texto nativo (reproducido el 18-oct-2026 con `hechosDeTexto` de main). CO1.REQ.10725252 no tiene anticipo (forma de pago 50 % / 40 % / 10 % por avance, pág. 9) y la lectura dice «sí» citando la pág. 43. En 41 textos nativos de pliego de la sesión, ninguno de los 10 «sí» cita una fórmula. El anticipo entra al capital de trabajo: va con plan y visto bueno.
+> RESUELTO el 18-oct-2026 por «La fórmula en prosa no afirma el anticipo: «presupuesto oficial menos el anticipo…» es mención (18-oct-2026)» · lo que se había dicho: el detector del anticipo (`dictamen_reglas`) da «sí» con la frase de la capacidad residual «presupuesto oficial menos el anticipo o pago anticipado cuando haya lugar», también en una sola línea de texto nativo (reproducido el 18-oct-2026 con `hechosDeTexto` de main). CO1.REQ.10725252 no tiene anticipo (forma de pago 50 % / 40 % / 10 % por avance, pág. 9) y la lectura dice «sí» citando la pág. 43. En 41 textos nativos de pliego de la sesión, ninguno de los 10 «sí» cita una fórmula. El anticipo entra al capital de trabajo: va con plan y visto bueno.
 
 **Cómo se midió.** SECOP II respondió 403 a la descarga desde la sesión (Microsoft-Azure-Application-Gateway, 18-oct
 05:08 UTC). El dueño bajó los 4 PDF en su navegador y los subió a una carpeta de Drive compartida «con el vínculo»; desde
@@ -19610,3 +19610,145 @@ En una línea: el plan de lectura elige las tres versiones MÁS NUEVAS del plieg
 - **El mismo día cuenta como posterior.** `fecha_carga` es solo el día; con dos versiones del mismo día no se sabe cuál rige, y en Precios lo caro es el falso positivo. Se compara el día de carga, nunca `leido_el` (la hora de lectura gana a cualquier día de SECOP).
 - **Lo medido.** Pruebas por mutación en «unidad presupuesto del pliego», «unidad los nueve procesos del dueño» y «unidad manifestación calibrada»; dos rondas de revisión adversaria sobre el techo, la última sin subidas fuera del caso aprobado.
 
+### La carga en Precios no entra al vigía si el nombre dice que es otra cosa (18-oct-2026)
+
+En una línea: Precios mandaba al vigía de adendas TODO archivo leído con un proceso abierto —también el Formulario 1 de
+cantidades que la propia pantalla pide— como «versión del pliego», y el dictamen, el cronograma y los descuentos lo leían;
+ahora el navegador manda el NOMBRE del archivo y `op=diff` no guarda lo que la regla de la lectura automática
+(`Docs.clasificarArchivo` + `Docs.esVersionDelPliego`) reconoce como OTRA cosa: el formulario o presupuesto, una adenda
+suelta, un anexo, unas observaciones o sus respuestas, unos estudios previos.
+
+> RESUELTO el 18-oct-2026 por «El clasificador lee los nombres con separadores y los nuevos de Colombia Compra («DocBase_…») (18-oct-2026)» · lo que se había dicho: el clasificador de nombres (`RE_TIPO`, lib/documentos_proceso) no reconoce los nombres nuevos de Colombia Compra ni las variantes con separadores: «DocBase_LicitacionObra_ISocialLV2.pdf», «Documento_base_…», «06_Documento Base…», «DOCUMENTO%20BASE», «Documentos Base», ni erratas como «DOCUEMENTO BASE». Quedan como «otro», orden 30, y la lectura automática NO los lee: 7 de 232 procesos de la muestra, 5 de 33 abiertos, y van en aumento (6 de 91 con cierre de sep a nov de 2026, 0 de 141 antes; 2.ª revisión adversaria, 18-oct). Arreglarlo cambia qué lee la app sola en esos procesos (presupuesto, anticipo, requisitos, dictamen): va con plan, medición y visto bueno.
+
+**Lo que no hay que deshacer.** (a) Decide el nombre, con la regla de la lectura automática. Medido en 18.166 archivos reales
+de dmgg-8hin: los 40 nombres que juntan «presupuesto» y «pliego» son el Formulario 1, y los que la regla da por otro documento
+(respuestas a observaciones, estudios previos, anexos técnicos, avisos, matrices) no son el pliego. (b) Un nombre que NO dice
+qué es se GUARDA, como antes. El dueño había aceptado no guardarlo («ante la duda no se dictamina sobre un texto desconocido»),
+pero la 2.ª revisión adversaria reprodujo la regresión: los 11 nombres así de la muestra son documentos base reales («DocBase_…»,
+ver el pendiente), y en 4 de 33 procesos abiertos cargarlo en Precios era el ÚNICO camino del pliego al dictamen
+(CO1.REQ.11144592 se quedaba en «Puede presentarse» sobre el proyecto de pliego; CO1.REQ.11213139, sin texto). También se
+guarda lo que llega sin nombre: un navegador con el código de antes sigue funcionando como antes. (c) Una adenda SUELTA no se
+guarda (el dictamen leería solo la adenda; decisión del dueño), pero el pliego con la adenda incorporada sí: con el nombre del
+pliego DELANTE de «adenda» («Documento Base … MODIFICADO CON ADENDA No. 1», 3 en la muestra), salvo que antes diga
+«propuesta», «oferta», «presupuesto», «cantidades» o «formulario». La misma regla salva el pliego con todo junto: «PROYECTO DE
+PLIEGO, ANEXOS, FORMATOS, MATRICES Y FORMULARIO 1» (CO1.REQ.10367183) es el único de los 402 nombres de tipo presupuesto de la
+muestra con el nombre del pliego delante, y ningún formulario real cambia. (d) La respuesta es 200 con `ok:false, no_es_el_pliego:true` y la frase en `error`: no es un fallo, y un
+navegador con el código de antes dice «No se pudo guardar la versión del pliego: <motivo>», que es la verdad. La frase dice lo
+que el dictamen está leyendo DE VERDAD (`textoGuardado`: «siguen con «nombre»» o «la versión N del pliego») o que todavía no
+hay pliego guardado y qué cargar; el navegador de ahora no le pasa el motivo al dictamen como fallo del vigía. (e) Con un
+archivo rechazado, el cronograma se pide SIN su texto: el del pliego guardado, el mismo del .ics y de Mis procesos (con el texto
+de una adenda, la lista decía una fecha de cierre y el .ics otra). Las fechas que cambie una adenda se confirman en SECOP II.
+(f) El origen de lo cargado a mano lleva el nombre («lector:<nombre>», 40 caracteres); sin nombre, «lector». `textoGuardado`
+lo trata igual: no empieza por «documentos:». Lo ya guardado no se toca. (g) El aviso de la versión más nueva sin leer (Fase A)
+mandaba a «cargar ese PDF en Precios y volver a pedir el dictamen», pero la lectura por OCR de Precios NO pasa por el vigía y
+los 4 pliegos de más de 20 MB medidos son escaneos: el consejo no hacía nada. Ahora dice que se revise el documento en SECOP
+II antes de decidir, y que cargarlo en Precios sirve si el PDF trae texto.
+
+**Cómo se probó.** Bloque «unidad la carga en Precios» con los handlers reales: 9 nombres que no se guardan, cada uno con su
+frase; 13 que sí, entre ellos los «DocBase_», el enlace pegado, sin nombre y los pliegos con adenda; el Formulario cargado
+DESPUÉS de la lectura automática, que ya no tapa el pliego y cuya frase nombra lo que se lee; y un nombre larguísimo. El (g) del
+lector con el `pliego.js` real comprueba que el nombre viaja, que el motivo se pinta escapado y no como fallo, que el
+cronograma va sin el texto y que el dictamen se pide igual. Navegador real a 390 y 1280 px con la sesión del dueño: Formulario,
+adenda, «DocBase_» y pliego en ese orden; consola limpia.
+
+### La Fase C se cierra: no se construye la descarga de pliegos de más de 20 MB (18-oct-2026)
+
+En una línea: el dueño cerró la Fase C del plan del texto del pliego (18-oct-2026): los 4 pliegos de más de 20 MB que se
+midieron son escaneos sin texto, así que bajarlos por partes desde la app (unas 15 peticiones y ~400 MB por un PDF de 45 MB,
+estimado del plan) no daría nada que leer; esos procesos siguen con el aviso de que el documento no se lee solo y se revisa en
+SECOP II.
+
+**Lo que no hay que deshacer.** No construir la descarga por partes de documentos de más de 20 MB sin medir antes que traen
+texto: la medición de la sección «Los pliegos de más de 20 MB que se midieron son escaneos…» dio 0 caracteres en 456 páginas.
+El OCR de esos escaneos por la app (OCR.space, una petición por página) es otra decisión, no tomada; y la lectura por OCR de
+Precios no llega al dictamen (sección «La carga en Precios no entra al vigía…», punto g).
+
+### La cadena que no seguía con el muro: la llamada del servidor a sí mismo va con waitUntil y dice cómo le fue, y el latido hace hasta 3 tandas (18-oct-2026)
+
+En una línea: medido el 18-oct con el muro de Vercel puesto, ni la cadena de la sincronización ni su reintento arrancaron una tanda más (el ciclo de la mañana llevaba 3 tandas en casi 3 horas); ahora las cuatro llamadas del servidor a sí mismo pasan por `lib/autollamada.autoLlamar` —dentro de `waitUntil` cuando Vercel da el contexto, sin seguir redirecciones, con su resultado anotado en `sync:autollamada` y publicado por op=salud en `autollamada`—, y el latido repite el tramo en el mismo proceso hasta 3 tandas.
+
+**Lo medido** (UTC del 18-oct; lecturas de op=salud desde una sesión hija y dos actualizaciones lanzadas desde GitHub con el visto bueno del dueño).
+- 15:26:17 a 15:26:29, corrida 86 de «Actualización de la mañana y de la noche (respaldo)»: 502 «The operation was aborted due to timeout» a los 11,6 s, `reintento: true`. A las 15:29:27, op=salud: `ultimo_error.ts` 15:26:28, sin candado. En 3 minutos el reintento no dejó ni un fallo nuevo ni un éxito.
+- 15:29:32 a 15:30:30, corrida 87: 200, `done: false`, `ciclo_invocaciones: 3`, `ciclo_leidas: 120000`. De 15:30:45 a 15:37:31, 27 lecturas de op=salud cada 15 s: el candado no volvió a tomarse.
+- El latido de GitHub de las 14:02 sí avanzó una tanda, porque llama al handler en el mismo proceso: «la actualización quedó a medias», `hecho: true`, 62 s.
+- No se pudo saber si el muro rechazaba la llamada o si Vercel congelaba la función: una llamada que el muro rechaza no queda en los registros de Vercel (sección del 17-oct). Por eso la pieza nueva anota qué pasó. Lo de que «se pierde» venía de antes del muro (cabecera de `lib/latido.js`, y de `.github/workflows/carga_completa.yml` del 26-sep).
+- El comando de Upstash de más de 10 s también salió el 17-oct a las 15:56 (corrida 84, antes del muro). Es otro problema y no se toca aquí.
+
+**Qué no hay que deshacer, y por qué.**
+1. **`waitUntil` sin dependencias, por el símbolo.** Es lo mismo que hace `@vercel/functions` 3.10.1, leído en el paquete descargado el 18-oct: `get-context.js` toma `globalThis[Symbol.for("@vercel/request-context")]?.get?.()` y `wait-until.js` llama a su `waitUntil`. Sin package.json no se instala nada.
+2. **Sin ese contexto se espera aquí: 10 s y las dos anotaciones, de 3 s como mucho cada una.** Así la llamada sale antes de responder también fuera de Vercel. Además, en la suite la anotación ya no cae tarde encima de otra prueba: la primera versión la dejaba suelta y puso en rojo «con el sello puesto la salud vuelve a ok» con una anotación que llegó después de `limpiarRedis`.
+3. **«enviada» se anota ANTES de enviar, y esa escritura se espera.** Si la función se congela al responder, el rastro queda. Un «enviada» de más de 1 minuto es un motivo de la salud: la anotación del resultado llega a los 10 s como mucho.
+4. **10 s sin respuesta cuenta como «siguió».** Una tanda dura 45 s o más. Esperar la respuesta entera mantendría viva cada función una tanda más: memoria y CPU del plan gratuito (la pausa del 30-sep). No está medido que Vercel deje terminar la tanda llamada cuando la que llama se apaga [sin verificar]; antes del cambio la llamada ya quedaba suelta del mismo modo.
+5. **`redirect: "manual"`, y el muro reconocido en positivo**: 302 hacia `https://vercel.com/sso-api` o el texto «Protected by Vercel Authentication», lo medido el 17-oct, igual que la sonda del muro. Si se sigue la redirección, la llamada termina en vercel.com con un 200 y se anota un «siguió» falso; la mutación lo mostró.
+6. **La anotación vive en su propia clave, con 26 h de caducidad, nunca en `meta`.** Fuera del candado pisaría el cursor del delta, la misma regla que el refresco del histórico. Va en el MGET de op=salud, así que la cerradura de 2 comandos o menos se conserva. Dice si el pase EXISTE, nunca su valor, y lo escribe con su propio cliente de Redis, de modo que `comandosRedis` de cada handler no cambia.
+7. **El latido para cuando el tramo falla, cuando otro tiene el candado, cuando termina, cuando no avanzó, a las 3 tandas, pasados 170 s o si la tanda más larga vista, con un 30 % de holgura, ya no cabe antes de los 280 s.** El reloj arranca al entrar al handler, no antes del tramo. Un ciclo atascado gastaría el triple de CPU en cada latido; la guarda de avance (`huellaDeAvance`) lo impide, y en los derivados del histórico mira `{ done, pendientes }`, que es lo que devuelven sus constructores (no traen `progreso`). 170 s porque la función tiene 300 y una tanda midió de 57 a 62 s. La tarea de GitHub espera 320 s (`--max-time`), así que cabe.
+8. **El sumidero de `app.local` en la suite.** `invocar` usa ese host, que no existe; en producción la dirección del despliegue responde. Lo que va a `https://app.local/` recibe un 200 con «{}» y no ejecuta nada. Los fallos se prueban con servidores locales propios, y `limpiarRedis` borra la anotación.
+9. **El censo barre todo `lib/` y `api/`, no una lista.** Ningún archivo arma a mano un `fetch` a su propia dirección o a `/api/procesos`, ni escribe la cabecera del muro, ni pide `cabecerasDeAutoLlamada`. Las excepciones son `lib/autollamada.js`, `lib/auth.js` y el latido (para su tramo en el mismo proceso), y están declaradas.
+10. **La cadena no sale con el candado sin soltar**, en el sync y en el histórico, igual que el reintento: si el DEL falló, se intenta otra vez y, si sigue puesto, la respuesta dice `sin_cadena` y no se encadena. Antes la tanda siguiente chocaba con él y esperaba su caducidad (300 s y 600 s). La tanda siguiente que encuentra OTRO candado se anota `candado_ocupado`: es información, no un fallo.
+11. **Lo pasajero no tiene la salud en rojo un día.** Un código raro, un fallo de red o un «enviada» sin noticia cuentan 2 h como mucho, y nada si el mismo trabajo se cerró después: sin ciclo de delta abierto y con la última tanda de delta posterior, o el histórico sellado después. `last_sync` no sirve para eso, porque es el INICIO del ciclo. El muro y la credencial son configuración y cuentan las 26 h.
+
+**Lo que queda abierto.**
+- La primera actualización de varias tandas que corra con este cambio desplegado dirá la causa en op=salud → `autollamada` (`con_waitUntil`, `pase_en_el_servidor`, `resultado`). Si dice «muro» sin pase, el arreglo es del dueño en Vercel: la casilla «Enable access to System Environment Variables» y volver a desplegar. Si dice «siguió» y el ciclo termina solo, la causa era la congelación.
+- No está medido que el entorno de Vercel ponga ese contexto en funciones Node sin Next.js [sin verificar]. `con_waitUntil` lo dirá.
+- La tarea «Carga completa (un botón)» mide el avance con `progreso.mesIdx`, que un delta no trae. Con un ciclo de delta abierto se detiene en rojo a los 10 tramos («Diez tramos seguidos sin avanzar»). Reproducido con su misma expresión de jq sobre la respuesta de la corrida 87; el flujo entero no se ejecutó.
+
+**Lo que encontró la revisión adversaria** (un agente que no escribió el cambio, con una reproducción por hallazgo, y nada grave): (a) la cadena chocaba con el candado que su propia tanda no soltó y la anotación decía «siguió»; (b) la guarda de avance no miraba nada en los derivados del histórico; (c) un fallo pasajero tenía la salud en rojo 26 h aunque la actualización ya hubiera terminado; (d) sin `waitUntil` la espera pasaba de 10 s por las dos escrituras a Redis; (e) una llamada armada a mano hacia `/api/sync` desde otro archivo pasaba el censo. Los cinco están arreglados (puntos 2, 7, 9, 10 y 11), y de paso se arreglaron el reloj del latido y la cota de su tanda más larga. La revisión reprodujo además la causa (b) en el árbol anterior: la llamada suelta no llegó cuando el proceso terminó justo después de responder. Sin prueba propia: el tope de 3 s de cada anotación, porque el Upstash de la suite no sabe demorar un solo comando.
+
+**Verificado.** Bloque nuevo «autollamada del servidor»: ejecuta la pieza real contra servidores locales (muro, tanda que trabaja, credencial, puerto cerrado), `waitUntil` con un contexto falso, el reintento y la cadena reales del sync contra el muro y contra su propio candado sin soltar, la misma guarda en el histórico, la salud con lo pasajero y lo configurado, y el latido real con el tramo sustituido. También el censo de la guarda de la sincronización, ahora un barrido. 27 mutaciones en una copia del árbol, y las 27 mueren: redirección seguida, sin `waitUntil`, sin «enviada» previa, muro solo por texto, «enviada» nunca vieja, sin caducidad, sin esperar fuera de Vercel, salud muda, salud sin la clave, sync, histórico y listado con `fetch` suelto, latido de una tanda, cuatro tandas, sin guarda de avance, sin tope de reloj, latido que insiste con el candado puesto, motivo con «; », cadena del sync y del histórico sin la guarda del candado, huella de derivados muerta, salud que ignora el cierre, lo pasajero que nunca caduca, el muro que caduca a las 2 h, candado ocupado contado como «siguió», una llamada armada a mano en `compactar.js` y la cota de la tanda más larga.
+
+### La fórmula en prosa no afirma el anticipo: «presupuesto oficial menos el anticipo…» es mención (18-oct-2026)
+
+En una línea: la definición de la capacidad residual («…equivale al presupuesto oficial menos el anticipo o pago anticipado
+cuando haya lugar…») y el numerador del capital de trabajo que el OCR deja solo en su línea («POE — Anticipo y/o Pago
+anticipado», con raya) pesaban como frase y decían «hay anticipo»; ahora pesan como fórmula (1), es decir mención, y no le
+ganan a la cláusula que pacta o niega (`FORMULA_ANTICIPO_RE` en `lib/dictamen_reglas.detectar`). REGLAS_VERSION .9 → .10.
+
+**Lo medido.** Contra la verdad doble de las rondas 5 y 6 (20 pliegos de licitación con texto de pdf.js) y los 4 escaneos de
+la Fase C leídos con OCR local (verdad vista en la imagen de la página): cambia UNO de 24, CO1.REQ.10725252, de «sí» falso a
+«mención» (no tiene anticipo: paga 50/40/10 % por avance, pág. 9). Los 20 de texto nativo quedan igual.
+
+**Lo que no hay que deshacer.** (a) Solo con «oficial», «POE» o «PO» delante: «el valor del acta menos el anticipo amortizado»
+habla de un anticipo que existe y sigue siendo frase (prueba). (b) Las rayas cuentan como menos (U+2010 a U+2015 y U+2212,
+además del guion): el OCR y algunos PDF ponen raya en la fórmula. (c) Es un tope de peso, no una exclusión: un pliego cuya
+única mención es la fórmula queda en «mención» («confírmelo»), no en «sin dato». (d) Lo que tumbó la revisión adversaria, cada
+uno con su cerradura: el tope va DESPUÉS de saber si la línea niega (antes del +1 de la negación, «…oficial menos el anticipo;
+no se entregará anticipo» perdía contra una mención anterior y salía «sí»); no se aplica si tras «anticipo» viene «amortizado»,
+«entregado», «girado», «desembolsado», «pagado» u «otorgado», ni si la línea trae un porcentaje («Valor PO − Anticipo: se
+entregará el 30 %» pacta). Medido de nuevo por la revisión en 50 textos únicos con marcadores y 82 de pdftotext: solo cambia
+CO1.REQ.10725252.
+
+**Límites conocidos, sin tocar.** En los dos escaneos con anticipo el «sí» sigue siendo correcto, pero ahora cita una fila de
+la tabla de garantías que el OCR partió («(6) meses más calidad de anticipo»), no la cláusula del 8.3: la exclusión de esa
+fila está hecha para el texto de pdf.js. Un escaneo de documento base SIN anticipo podría dar «sí» por esa fila: no se ha
+visto (los 2 escaneos sin anticipo dan «mención» y «sin dato»). Tampoco se tocan los condicionales sueltos («el valor del
+anticipo, cuando lo hubiere, será amortizado…»), que siguen pesando como frase. Y si el pacto solo está en un rótulo corto
+(«a) Anticipo: 30 %», que pesa como título) junto a la prosa de la capacidad residual, sale «mención» donde main decía «sí»
+citando la fórmula, es decir acertando por suerte: 0 casos en los textos reales.
+
+### El clasificador lee los nombres con separadores y los nuevos de Colombia Compra («DocBase_…») (18-oct-2026)
+
+En una línea: «DocBase_LicitacionObra_ISocialLV2.pdf», «Documento_base_…», «06_Documento Base…», «DOCUMENTO%20BASE»,
+«Documentos Base» y las erratas «DOCUEMENTO/DOCUEMNTO BASE» salían «otro» —el `\b` y el `\s+` de RE_TIPO no pasan por «_»,
+«%20» ni «-»— y la lectura automática no leía ese documento base; ahora `Docs.nombrePlegado` los pliega antes de clasificar, y
+es el MISMO plegado del clasificador, del borrador (`esBorradorDoc`), de `esVersionDelPliego` y de la carga en Precios.
+
+> PENDIENTE · decisión del dueño sobre el techo con documentos de DISTINTO tipo: `elegirPresupuestoPliego.versionSinCifra` solo compara versiones del MISMO tipo (decisión con visto bueno del 18-oct). Ahora que se leen los «DocBase_…», en 3 procesos más (24 → 27 en la muestra: CO1.REQ.10583154, 11116078 y 11184065) se lee un documento base de la etapa de proyecto junto a un pliego definitivo más nuevo; si el definitivo no trae la tabla 1.1 legible, el techo de Precios sale de la cifra del documento base (con el aviso «riesgo» si difiere de SECOP II) en vez de la de SECOP II (reproducido con textos sintéticos, 2.ª revisión adversaria). Va hacia ABAJO, el lado seguro en precios, pero es una cifra vieja. Pedirle al dueño si una versión más nueva de OTRO tipo sin la tabla también manda el techo a SECOP II.
+
+> PENDIENTE · los otros nombres nuevos de Colombia Compra siguen sin reconocerse: «M2_IndFinOrg_ISocialLV2» (la Matriz 2 de indicadores, que se lee sola; CO1.REQ.11159769 y 11191342), «A1_Tecnico_…», «M3_Riesgos_…», «Form_PropEconomica_…». Reconocerlos cambia el plan de lectura: medir antes en los 232 índices.
+
+**Lo medido** (9.827 nombres distintos de 232 procesos reales de dmgg-8hin). Cambian 77 nombres, revisados a mano: 48 de tipo, todos a
+lo correcto (15 a documento base, y todos lo son; 11 a formato, anexos y pólizas; 10 a aviso; 7 a estudio previo; 3 a adenda,
+uno de ellos un .zip de formatos; 2 a anexo técnico, los APU), y 29 que pasan de «de la entidad» a «de un proponente»: 28 lo son
+(«16_GARANTIA DE SERIEDAD…», «09_RUT», «…_CONSORCIO…») y 1 no (CO1.REQ.10858204, «1010-F-GCT-158-V1_AUTORIZACION_CONSULTA_
+INHABILIDADES…docx», un formato en blanco de la entidad; es «otro», no entra al plan, y solo cambia la cuenta de «archivos de
+otros proponentes»; 2.ª revisión adversaria). El plan de lectura cambia en 21 procesos. En la simulación con todo el plan leído, el
+texto del dictamen GANA en 6 procesos que no tenían ninguno, cambia en 1 del proyecto de pliego al documento base definitivo
+(CO1.REQ.11144592, abierto) y no se pierde en ninguno.
+
+**Lo que no hay que deshacer.** (a) Un solo plegado para el nombre (`nombrePlegado`): «_» y «%20» son espacio, «-» y «.»
+entre dos letras también; «docbase» y «doc base» son «documento base», el plural «documentos base» también, y cuatro erratas
+vistas en SECOP II («docuemento», «docuemnto», «documneto», «documetno» y «documeto»). (b) VERSION 18 → 19: los índices se
+vuelven a planear en la próxima consulta (no a las 12 h) y los hechos se rehacen. (c) Por el tope de 12 documentos del plan
+salen documentos de los últimos de la prioridad de fuentes: en CO1.REQ.9763731 dos de presupuesto ceden el sitio a dos de
+análisis de precios unitarios (ahora anexo técnico, como ya pasaba con esos nombres escritos con espacios); la matriz de riesgos
+sale en CO1.REQ.10651650, 10518763, 11116078 y 9960307, y un aviso en .docx en CO1.REQ.10266309. Lo ya leído no se borra.
