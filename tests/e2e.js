@@ -9450,7 +9450,7 @@ async function main() {
       ["DocBase_LicitacionObra_ISocialLV2.pdf"], ["Documento_base_Licitacion_Obra_Publica Definitivo.pdf"], ["DOCUMENTO%20BASE.pdf"], ["scan001.pdf"],
       ["Index?DocumentId=837410065&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier="],
       ["8. Documento Base - Pliego de Condiciones Definitivo Adenda 1 - LIC 004 MT 2026.pdf"], ["Documento Base Villa María III MODIFICADO CON ADENDA No. 1.pdf"],
-      ["PROYECTO DE PLIEGO, ANEXOS, FORMATOS, MATRICES Y FORMULARIO 1.pdf"],
+      ["PROYECTO DE PLIEGO, ANEXOS, FORMATOS, MATRICES Y FORMULARIO 1.pdf"], ["Documento_Base_Villa_Maria_MODIFICADO_CON_ADENDA_1.pdf"],
       ["", "lector"], [undefined, "lector"],
     ]) {
       const id = `CO1.REQ.PRE${String(++k).padStart(3, "0")}`;
@@ -9602,7 +9602,8 @@ async function main() {
       assert.strictEqual(Dp.clasificarArchivo({ nombre_archivo: n }).tipo, tipo, `«${n}» es ${tipo}`);
     }
     // el borrador con separadores sigue siendo borrador, y lo de un proponente con «_» se reconoce como suyo
-    assert.ok(Dp.esBorradorDoc({ ...Dp.clasificarArchivo({ nombre_archivo: "DocBase_Borrador_LP_01.pdf" }) }), "«DocBase_Borrador_…» es borrador (MUTACIÓN: esBorradorDoc con otro plegado)");
+    assert.ok(Dp.esBorradorDoc({ ...Dp.clasificarArchivo({ nombre_archivo: "DocBase_Proyecto_LP_01.pdf" }) }), "«DocBase_Proyecto_…» es borrador (MUTACIÓN: esBorradorDoc con otro plegado, «_proyecto_» no casa `proyecto\\b`)");
+    assert.ok(Dp.esVersionDelPliego(Dp.clasificarArchivo({ nombre_archivo: "Documento_Base_Definitivo_con_Formatos.pdf" })), "«Documento_Base_…_con_Formatos» es el pliego: la palabra de anexo va DESPUÉS del nombre (MUTACIÓN: esVersionDelPliego con otro plegado)");
     assert.strictEqual(Dp.clasificarArchivo({ nombre_archivo: "16_GARANTIA DE SERIEDAD DE LA OFERTA.pdf" }).de_la_entidad, false, "la garantía de seriedad de un proponente con «16_» delante no es de la entidad");
     const planDB = Dp.planDeLectura([{ id_documento: "7", nombre: "DOCUMENTO BASE CAMPO DE PARADA.pdf", extension: "pdf", url: "https://community.secop.gov.co/x?DocumentId=7", bytes: 1000000 }]);
     assert.ok(planDB.plan.includes("7"), `y se lee solo: ${JSON.stringify(planDB.archivos && planDB.archivos[0])}`);
