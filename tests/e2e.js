@@ -1881,6 +1881,13 @@ async function main() {
       assert.ok(/GET intentos:correo:…:2905/.test(eCorreo.message) && !/duenio|ejemplo/.test(eCorreo.message), `el correo de la clave no sale: ${eCorreo.message}`);
       const eHuella = await rT.get("sesion:9f86d081884c7d659a2feaa0c55ad015").catch((e) => e);
       assert.ok(/GET sesion:…/.test(eHuella.message) && !/9f86d0/.test(eHuella.message), eHuella.message);
+      // las claves reales del cupo de altas y de los intentos de entrada llevan la IP; un NIT o una cédula, más de 5 cifras
+      const eIp6 = await rT.get("cuota:alta:2800:484:cafe:1234:5678:beef:dead:face:497874").catch((e) => e);
+      assert.ok(/GET cuota:alta:…/.test(eIp6.message) && !/2800|cafe|beef|face/.test(eIp6.message), `la IPv6 de la clave no sale: ${eIp6.message}`);
+      const eIp4 = await rT.get("intentos:entrar-ip:10.0.9.2").catch((e) => e);
+      assert.ok(!/10\.0\.9\.2/.test(eIp4.message), `la IPv4 de la clave no sale: ${eIp4.message}`);
+      const eNit = await rT.get("perfil:nit:79123456").catch((e) => e);
+      assert.ok(/GET perfil:nit:…/.test(eNit.message) && !/79123456/.test(eNit.message), `el NIT de la clave no sale: ${eNit.message}`);
       const eScan = await rT.scan("licitaciones:activo:*").catch((e) => e);
       assert.ok(/\(Upstash: SCAN de licitaciones:activo:\*, /.test(eScan.message), eScan.message);
       const eMget = await rT.mget(["sync:meta", "sync:progreso"]).catch((e) => e);
@@ -18905,6 +18912,15 @@ async function main() {
           const completa = correr([full(0, 5000), full(0, 10000), full(1, 0), full(1, 5000, true)]);
           assert.strictEqual(completa.codigo, 0, `la carga completa se sigue midiendo por mes y filas: ${completa.salida.slice(-300)}`);
           assert.strictEqual(completa.llamadas, 4);
+          /* el latido cierra la carga completa mientras el flujo espera y sigue un delta (revisión adversaria del
+             18-oct, reproducido): las dos medidas son escalas distintas, y al cambiar de serie el máximo vuelve a empezar */
+          const cierraFull = correr([full(2, 5000), full(3, 10000), ...Array.from({ length: 11 }, (_, i) => delta(25000 * (i + 1))), delta(300000, true)]);
+          assert.strictEqual(cierraFull.codigo, 0, `una carga completa que da paso a un delta que avanza termina en verde: ${cierraFull.salida.slice(-300)}`);
+          assert.strictEqual(cierraFull.llamadas, 14);
+          // y una carga completa que vuelve a empezar (la de modo=full del 26-sep) sigue parando en rojo
+          const vuelve = correr([full(3, 10000), ...Array.from({ length: 15 }, () => full(0, 5000))]);
+          assert.strictEqual(vuelve.codigo, 1, "la carga completa que vuelve a enero sigue parando");
+          assert.ok(/Diez tramos seguidos sin avanzar/.test(vuelve.salida), vuelve.salida.slice(-300));
         } finally { fs.rmSync(dir, { recursive: true, force: true }); }
       }
 
@@ -37379,6 +37395,9 @@ async function main() {
           assert.strictEqual(Gl.causaDeActualizacion("x", { motivo: "base_llena" }).reintentar, false, "el motivo que publica el servidor también vale");
           assert.ok(/^SECOP II no respondió/.test(Gl.causaDeActualizacion("datos.gov.co no respondió o limitó las consultas; vuelva a intentarlo en unos minutos", null).frase), "SECOP caído sigue diciéndose SECOP");
           assert.ok(/no pudo leer o guardar/.test(Gl.causaDeActualizacion("Redis: The operation was aborted due to timeout", null).frase), "un fallo de la base que no es «llena» no se achaca a SECOP");
+          // desde el 18-oct el error de la base dice su clave, y hay claves que se llaman «secop:…»
+          assert.ok(/no pudo leer o guardar/.test(Gl.causaDeActualizacion("The operation was aborted due to timeout (Upstash: GET secop:contratos_en_ejecucion, 0 KB, 10003 ms)", null).frase),
+            "el tiempo agotado de la base en una clave «secop:…» no se achaca a SECOP II");
           assert.ok(/^el servidor no respondió/.test(Gl.causaDeActualizacion("La consulta tardó más de lo que el servidor permite y se cortó (código 504).", null).frase), "lo que no se reconoce no se achaca a nadie");
           for (const t of [LLENA_TXT, "datos.gov.co no respondió", "Redis: caído", "otra cosa"]) {
             const f = Gl.causaDeActualizacion(t, null).frase;
