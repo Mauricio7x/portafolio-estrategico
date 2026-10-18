@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 1898292 bytes · 357 secciones · 26 con marcador de superación.
+Derivado del árbol: 1899009 bytes · 357 secciones · 26 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -352,7 +352,7 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | El techo de la tarjeta, sin la guía entera: `solo=tope` (17-oct-2026) | 17-oct-2026 | 19161-19178 | 1835 |  |
 | El plazo del pliego por la columna de su tabla 1.1: medido, NO fusionado (18-oct-2026) | 18-oct-2026 | 19179-19205 | 3130 |  |
 | La negación del anticipo con la parte ANTES («Para la etapa 1 no se entregará anticipo») NO se cubre (18-oct-2026) | 18-oct-2026 | 19206-19228 | 2265 |  |
-| El muro de Vercel vuelve, gratis: «Vercel Authentication» en todo el sitio y el pase para lo automático (17-oct-2026) | 17-oct-2026 | 19229-19284 | 7065 |  |
+| El muro de Vercel vuelve, gratis: «Vercel Authentication» en todo el sitio y el pase para lo automático (17-oct-2026) | 17-oct-2026 | 19229-19284 | 7782 |  |
 | Dos capas: el muro de Vercel delante y la sesión del dueño detrás (18-oct-2026) | 18-oct-2026 | 19285-19298 | 1098 |  |
 | El muro de Vercel quedó puesto: las tareas de Vercel lo pasan, y cómo se mide (17-oct-2026) | 17-oct-2026 | 19299-19324 | 4487 |  |
 | El dictamen, el cronograma y los descuentos leen el documento que ES el pliego, no la última versión del vigía (18-oct-2026) | 18-oct-2026 | 19325-19387 | 8638 |  |
