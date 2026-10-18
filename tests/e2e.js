@@ -3953,7 +3953,7 @@ async function main() {
     const of = (nom, cod, v) => ({ nombre_proveedor: nom, c_digo_proveedor: cod, nit_del_proveedor: "000000000", valor_de_la_oferta: v });
     const r = lb.limpiarOfertas([of("A", "1", "950"), of("A", "1", "950"), of("Confidencial", "", "0"), of("B", "2", "0"),
       of("C", "3", ""), of("D", "4", "1001"), of("E", "5", "499"), of("F", "6", "900"), of("G", "7", "920")], "1000");
-    assert.deepStrictEqual(r.excluidas, { repetidas: 0, confidencial: 1, cero: 1, no_numerico: 1, sin_proveedor: 0, duplicada: 1, duplicada_entre_datasets: 0, sobre_base: 1, bajo_50: 1, sin_precio_base: 0 });
+    assert.deepStrictEqual(r.excluidas, { repetidas: 0, confidencial: 1, cero: 1, no_numerico: 1, sin_proveedor: 0, duplicada: 1, duplicada_entre_datasets: 0, sobre_base: 1, bajo_50: 1, rescatada_bajo_50: 0, sin_precio_base: 0 });
     assert.strictEqual(lb.limpiarOfertas([of("A", "1", "900"), of("A", "1", "9000")], "1000").lote_sospechoso, false, "un valor fuera de rango no vuelve lote al proceso");
     const misma = lb.limpiarOfertas([{ nombre_proveedor: "X", c_digo_proveedor: "77", nit_del_proveedor: "900111", valor_de_la_oferta: "900" },
       { nombre_proveedor: "X", c_digo_proveedor: "", nit_del_proveedor: "900111", valor_de_la_oferta: "900" }], "1000");
@@ -4114,6 +4114,44 @@ async function main() {
       const of = (nom, nit, v) => ({ nombre_proveedor: nom, nit_del_proveedor: nit, valor_de_la_oferta: v });
       const x = FI.filaDeProceso({ portafolio: "CO1.BDOS.1", filas, ofertas: [of("OBRAS SAS", "900111222", "940"), of("B", "800", "950"), of("C", "No Definido", "960")], lugar: { direcci_n_de_ejecuci_n_del_contrato: "Calle 1\nIbagué\nTolima\nCOLOMBIA" } });
       assert.strictEqual(x.id_proceso, "CO1.REQ.9", "la fila es la de la fase adjudicada");
+      { // RESCATE BAJO EL 50 % (18-oct-2026): igual a lo adjudicado, contratos SUMADOS ≤ 1,5 veces eso y otra válida en rango
+        const ofR = [of("OBRAS SAS", "900111222", "400"), of("B", "800", "900"), of("C", "700", "950")];
+        const filasR = [fase({ id_del_proceso: "CO1.REQ.9", adjudicado: "Si", valor_total_adjudicacion: "400", nombre_del_proveedor: "OBRAS SAS", nit_del_proveedor_adjudicado: "900111222", respuestas_al_procedimiento: "3" })];
+        const conR = (vc, ofs = ofR) => FI.filaDeProceso({ portafolio: "CO1.BDOS.1", filas: filasR, ofertas: ofs, valoresContrato: vc });
+        const real = conR([400]);   // contrato = lo adjudicado (8 de las 12 de mínima)
+        assert.strictEqual(real.excluidas.rescatada_bajo_50, 1); assert.strictEqual(real.excluidas.bajo_50, 0); assert.strictEqual(real.n_validas, 3);
+        assert.ok(real.oferta_ganadora && real.oferta_ganadora.pct === 0.4 && !real.inconsistencia, "la ganadora rescatada se identifica con su precio real");
+        assert.strictEqual(conR([600]).excluidas.rescatada_bajo_50, 1, "contrato 1,5 veces lo adjudicado (las 4 de mínima con adición): se rescata");
+        assert.strictEqual(conR([601]).excluidas.rescatada_bajo_50, 1, "a un peso del tope, todavía se rescata");
+        assert.strictEqual(conR([300, 300]).excluidas.rescatada_bajo_50, 1, "dos contratos cuya SUMA cabe en el tope: se rescata");
+        // Tibirita CO1.BDOS.8989826: dos LOTES, cada contrato cabe y la suma vale 2 veces lo adjudicado → no
+        for (const vc of [[400, 400], [400, 450], [602], [999], [400, 700]]) assert.strictEqual(conR(vc).excluidas.rescatada_bajo_50, 0, `contratos ${JSON.stringify(vc)} suman más de 1,5 veces lo adjudicado: no se rescata`);
+        // Cúcuta CO1.BDOS.7050304 (contrato al precio base o más) y «sin dato» (sin contratos, ilegible o en cero) → no
+        for (const vc of [[1000], [2348], [400, 1000], [], null, ["No Definido"], [0], ["No Definido", 400], [null, 400], [0, 400]]) {
+          const no = conR(vc);
+          assert.strictEqual(no.excluidas.rescatada_bajo_50, 0, `contratos ${JSON.stringify(vc)}: no se rescata`); assert.strictEqual(no.excluidas.bajo_50, 1);
+          assert.strictEqual(no.oferta_ganadora, null, `contratos ${JSON.stringify(vc)}: sin la oferta, no hay ganadora inventada`);
+        }
+        // sin otra válida en rango (SENA CO1.BDOS.7102769: las dos ofertas al 27,7 %), lo sospechoso es el precio base → no
+        const solas = conR([400], [of("OBRAS SAS", "900111222", "400"), of("B", "800", "390")]);
+        assert.strictEqual(solas.excluidas.rescatada_bajo_50, 0); assert.strictEqual(solas.excluidas.bajo_50, 2); assert.strictEqual(solas.n_validas, 0); assert.strictEqual(solas.excluido, "cero_ofertas_validas");
+        const L2 = require("../scripts/base_obra/limpieza");
+        // a un peso sí (redondeo), a dos no, por encima o por debajo de lo adjudicado
+        assert.strictEqual(L2.limpiarOfertas(ofR, "1000", { valor_adjudicado: 401, valores_contrato: [401] }).excluidas.rescatada_bajo_50, 1);
+        for (const adj of [402, 398]) assert.strictEqual(L2.limpiarOfertas(ofR, "1000", { valor_adjudicado: adj, valores_contrato: [adj] }).excluidas.rescatada_bajo_50, 0, `oferta 400, adjudicado ${adj}: no`);
+        // el tope a escala real: adjudicado $26.000.000 → la suma puede llegar a $39.000.001, no a $39.000.002
+        const ofG = [of("OBRAS SAS", "900111222", "26000000"), of("B", "800", "90000000")];
+        assert.strictEqual(L2.limpiarOfertas(ofG, "100000000", { valor_adjudicado: 26000000, valores_contrato: [39000001] }).excluidas.rescatada_bajo_50, 1);
+        assert.strictEqual(L2.limpiarOfertas(ofG, "100000000", { valor_adjudicado: 26000000, valores_contrato: [39000002] }).excluidas.rescatada_bajo_50, 0);
+        // el rescate es SOLO bajo el 50 %: una oferta sobre el precio base sigue fuera aunque coincida con lo adjudicado y su contrato
+        const sobre = L2.limpiarOfertas([of("OBRAS SAS", "900111222", "400000"), of("B", "800", "900")], "1000", { valor_adjudicado: 400000, valores_contrato: [400000] });
+        assert.strictEqual(sobre.excluidas.sobre_base, 1); assert.ok(!sobre.validas.some((o) => o.valor === 400000));
+        // base.js junta TODOS los contratos del proceso (se EJECUTA la función), con el ilegible como null
+        const BJ = require("../scripts/base_obra/base");
+        const jc = BJ.juntarContratos([{ proceso_de_compra: "CO1.BDOS.8989826", valor_del_contrato: "100000000" }, { proceso_de_compra: "CO1.BDOS.8989826", valor_del_contrato: "99755678" },
+          { proceso_de_compra: "CO1.BDOS.2", valor_del_contrato: "No Definido" }, { valor_del_contrato: "5" }]);
+        assert.deepStrictEqual(jc.get("CO1.BDOS.8989826"), [100000000, 99755678]); assert.deepStrictEqual(jc.get("CO1.BDOS.2"), [null]); assert.strictEqual(jc.size, 2);
+      }
       assert.strictEqual(x.plazo_dias, null, "sin fila de «observaciones» en p6dx el plazo es null, no el de la fase de ofertas");
       assert.strictEqual(x.plazo_oferta_dias, 5, "el plazo de la fase de ofertas se guarda aparte");
       const conObs = FI.filaDeProceso({ portafolio: "CO1.BDOS.1", filas: [filas[0], fase({ fase: "Presentación de observaciones", adjudicado: "No", fecha_de_publicacion_del: "2026-08-04T00:00:00.000" })], ofertas: [] });
@@ -4324,7 +4362,7 @@ async function main() {
       assert.ok(/^::warning title=Corte de la alerta::No se pudo leer cifras\.json/m.test(salidaV.stdout), "sin cifras.json la corrida lleva su anotación en GitHub");
       // con la tabla movida: anotación de GitHub, con el «%» escapado (%25) y en una sola línea
       fsV.writeFileSync(pathV.join(dV, "cifras.json"), JSON.stringify({ umbral_alerta: { licitacion: [{ corte_pct: 88, todas: { ganadoras: 1750, bajo_el_corte: 60 } }],
-        menor_cuantia: [{ corte_pct: 88, todas: { ganadoras: 5387, bajo_el_corte: 116 } }], minima: [{ corte_pct: 70, todas: { ganadoras: 3708, bajo_el_corte: 258 } }] } }));
+        menor_cuantia: [{ corte_pct: 88, todas: { ganadoras: 5387, bajo_el_corte: 116 } }], minima: [{ corte_pct: 70, todas: { ganadoras: 3720, bajo_el_corte: 270 } }] } }));
       const movV = cpV.spawnSync(process.execPath, [pathV.join(__dirname, "..", "scripts", "base_obra", "vigilar_corte.js"), dV], { env: { ...process.env, GITHUB_STEP_SUMMARY: "" }, encoding: "utf8" });
       const anot = movV.stdout.split("\n").filter((l) => l.startsWith("::warning"));
       assert.strictEqual(movV.status, 0); assert.strictEqual(anot.length, 1, movV.stdout);
@@ -4362,7 +4400,7 @@ async function main() {
       assert.ok(!/\d ?%/.test(u.fuente) || medido, `«${m}»: sin medición la fuente no repite la cifra («${u.fuente}»)`);
     }
     // cada fila medida cita SU conteo (el de cifras.json, umbral_alerta, campo «todas»)
-    assert.ok(/17 de 1\.750/.test(PT.umbralTemerario(LIC).fuente) && /116 de 5\.387/.test(PT.umbralTemerario(SAMC).fuente) && /258 de 3\.708/.test(PT.umbralTemerario(MIN).fuente));
+    assert.ok(/17 de 1\.750/.test(PT.umbralTemerario(LIC).fuente) && /116 de 5\.387/.test(PT.umbralTemerario(SAMC).fuente) && /270 de 3\.720/.test(PT.umbralTemerario(MIN).fuente));
     // la frase sale de los DATOS de la tabla, no de un texto escrito aparte
     assert.ok(/2\.000 ofertas ganadoras/.test(PT.fraseCorte({ ...PT.TEMERARIO_POR_MODALIDAD.licitacion, ganadoras: 2000 })), "cambiar el conteo cambia la frase");
     // las claves de la tabla son claves que de verdad emite el clasificador (si no, la fila sería inerte)
@@ -4388,7 +4426,7 @@ async function main() {
     const amb = tem(90000000, SAMC);
     assert.strictEqual(amb.nivel, "informativo"); assert.strictEqual(amb.marca, "justificar"); assert.ok(/116 de 5\.387/.test(amb.umbral_fuente || ""), "el ámbar también lleva la fuente del corte");
     assert.strictEqual(tem(95000000, SAMC).nivel, "ok", "sobre el máximo medido y sin llegar al corte: ok");
-    assert.ok(/258 de 3\.708/.test(tem(69000000, MIN).umbral_fuente || ""), "la alerta de mínima lleva su fuente medida");
+    assert.ok(/270 de 3\.720/.test(tem(69000000, MIN).umbral_fuente || ""), "la alerta de mínima lleva su fuente medida");
     // lo que declara quien llama sigue mandando, y entonces no se le pega una fuente que no es la suya
     const decl = tem(85000000, LIC, { umbral_temerario_pct: 20 });
     assert.notStrictEqual(decl.nivel, "alerta", "umbral_temerario_pct declarado gana al de la modalidad"); assert.strictEqual(decl.umbral_fuente, null);
@@ -52460,7 +52498,7 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
         await disparar("btn-revisar-oferta", "click", {}); await asentarRO();
         const sinComentariosJ = (h) => h.replace(/<!--[\s\S]*?-->/g, "");   // lo que se VE, no lo que queda comentado
         const hj = sinComentariosJ(porId.get("revision-oferta").innerHTML);
-        okRO(/Su precio puede parecer artificialmente bajo/.test(hj) && /data-umbral-fuente>En mínimas cuantías de obra adjudicadas en SECOP II desde 2024 \(datos al 17-oct-2026\), 258 de 3\.708 ofertas ganadoras con datos comparables tuvieron más del 30 % de descuento\.</.test(hj),
+        okRO(/Su precio puede parecer artificialmente bajo/.test(hj) && /data-umbral-fuente>En mínimas cuantías de obra adjudicadas en SECOP II desde 2024 \(datos al 17-oct-2026\), 270 de 3\.720 ofertas ganadoras con datos comparables tuvieron más del 30 % de descuento\.</.test(hj),
           `(j) la alerta de mínima pinta debajo su fuente medida: ${(hj.match(/data-umbral-fuente>[^<]*/) || ["(no está)"])[0]}`);
         // con el corte DECLARADO (umbral_fuente null) no se pinta una fuente que no es la suya
         respuestaJ = (cuerpo) => { const r = F1.validarFormulario1({ ...cuerpo, umbral_temerario_pct: 20 }); return { ok: true, ...r }; };

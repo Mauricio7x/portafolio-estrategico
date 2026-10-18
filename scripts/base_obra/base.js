@@ -21,9 +21,22 @@ const leerJson = (dir, nombre) => {
 };
 const inc = (o, k, n = 1) => { o[k] = (o[k] || 0) + n; };
 
+/* TODOS los valores de contrato de cada proceso (el rescate bajo el 50 % los suma): uno ilegible
+   entra como null, que el rescate lee como «no sé» y no rescata. PURA salvo el Map que llena. */
+function juntarContratos(filas, contratos = new Map()) {
+  for (const x of filas || []) {
+    if (!x || !x.proceso_de_compra) continue;
+    if (!contratos.has(x.proceso_de_compra)) contratos.set(x.proceso_de_compra, []);
+    contratos.get(x.proceso_de_compra).push(L.numeroONull(x.valor_del_contrato));
+  }
+  return contratos;
+}
+
 async function lugares(ids) {
   const C = crearCliente({ baseUrl: "https://www.datos.gov.co/resource/jbjy-vk9h.json", log });
   const out = new Map(); const fallos = [];
+  // TODOS los valores de contrato por proceso (el rescate bajo el 50 % los mira todos; `out` guarda la primera fila)
+  const contratos = new Map();
   for (let i = 0; i < ids.length; i += 80) {
     const lote = ids.slice(i, i + 80);
     try {
@@ -32,9 +45,10 @@ async function lugares(ids) {
       if (!Array.isArray(r)) throw new Error("jbjy: respuesta no es lista");
       if (r.length >= 5000) throw new Error("jbjy: lote con 5000 filas o más, se pudo cortar");
       for (const x of r) if (!out.has(x.proceso_de_compra)) out.set(x.proceso_de_compra, x);
+      juntarContratos(r, contratos);
     } catch (e) { fallos.push({ ids: lote.length, status: e.status || null, error: e.detalle || e.message }); for (const id of lote) out.set(id, undefined); }
   }
-  return { out, fallos };
+  return { out, fallos, contratos };
 }
 
 async function main() {
@@ -47,9 +61,9 @@ async function main() {
   const grupos = new Map();
   for (const f of filas) { if (!f.id_del_portafolio) continue; if (!grupos.has(f.id_del_portafolio)) grupos.set(f.id_del_portafolio, []); grupos.get(f.id_del_portafolio).push(f); }
   const adj = [...grupos].filter(([, fs_]) => L.elegirFila(fs_).adjudicado === "Si").map(([k]) => k);
-  const { out: lugar, fallos: fallosJ } = await lugares(adj);
+  const { out: lugar, fallos: fallosJ, contratos } = await lugares(adj);
   const base = [];
-  for (const [k, fs_] of grupos) base.push(F.filaDeProceso({ portafolio: k, filas: fs_, ofertas: ofertasDe.get(k), lugar: lugar.get(k) || null, sinMedirOfertas: sinMedir.has(k) }));
+  for (const [k, fs_] of grupos) base.push(F.filaDeProceso({ portafolio: k, filas: fs_, ofertas: ofertasDe.get(k), lugar: lugar.get(k) || null, sinMedirOfertas: sinMedir.has(k), valoresContrato: contratos.get(k) || null }));
   const { umbralPlazo, victorias } = F.senales(base);
 
   // Resumen: exclusiones, competencia y señales por modalidad, partidas por competencia
@@ -108,4 +122,4 @@ async function main() {
 }
 
 if (require.main === module) main().catch((e) => { log(`FALLO: ${e.detalle || e.message}`); process.exit(1); });
-module.exports = { leerJson };
+module.exports = { leerJson, juntarContratos };

@@ -104,10 +104,35 @@ function lotePorPrecioBase(filas) {
 /* Ofertas de UN proceso → válidas + exclusiones contadas. precioBase null/≤0 → nada se
    puede juzgar en % y todas quedan «sin_precio_base». Duplicado = mismo (proveedor, valor).
    Lote sospechoso = un proveedor con ≥2 valores distintos DENTRO del rango admisible (no se elige cuál: el proceso se
-   aparta entero). Fuera de rango: > precio base o < 50 % → marcadas, fuera del piso. */
-function limpiarOfertas(ofertas, precioBase) {
+   aparta entero). Fuera de rango: > precio base o < 50 % → marcadas, fuera del piso.
+   RESCATE BAJO EL 50 % (18-oct-2026, decisión del dueño): una oferta bajo la mitad del precio base es
+   casi siempre otra medida (un precio unitario, un valor en miles, un error de digitación) y se
+   descarta. Se RESCATA solo si es igual, al peso, a lo adjudicado; si los contratos firmados en jbjy,
+   SUMADOS, valen a lo más 1,5 veces lo adjudicado; y si en el mismo proceso hay al menos otra oferta
+   válida (entre el 50 y el 100 %). Revisado a mano, 12 ganadoras de mínima pasan las tres (8 con el
+   contrato igual a lo adjudicado, 4 entre 1,49 y 1,50 veces).
+   - La SUMA y no cada contrato: Tibirita CO1.BDOS.8989826 son dos lotes de un mismo precio base («LOTE 1»
+     $100.000.000 y «LOTE 2» $99.755.678, p6dx con numero_de_lotes 0); cada contrato cabía en el tope y
+     la suma vale 2 veces lo adjudicado (revisión adversaria).
+   - El tope: en los de otra medida el contrato vale de 3 a 1.500 veces lo adjudicado (Cúcuta
+     CO1.BDOS.7050304, menor cuantía CO1.BDOS.7958348: $139.800 ofertados, $139.800.564 firmados). Con la
+     oferta bajo el 50 %, el tope deja la suma bajo el 75 % del precio base.
+   - Otra válida: si todas las ofertas están bajo la mitad (SENA CO1.BDOS.7102769: dos ofertas al 27,7 %),
+     lo sospechoso es el precio base, no el precio.
+   - «Sin dato» no rescata: sin contratos, o con uno ilegible o en cero, no se rescata (ante la duda, no
+     se cuenta). `rescate` = { valor_adjudicado, valores_contrato: [número o null por cada contrato] }. */
+const RESCATE_CONTRATO_MAX_VECES = 1.5;
+function rescatable(v, base, rescate) {
+  if (!rescate || !Array.isArray(rescate.valores_contrato) || !rescate.valores_contrato.length) return false;
+  const adj = numeroONull(rescate.valor_adjudicado);
+  const cs = rescate.valores_contrato.map(numeroONull);
+  if (cs.some((c) => c === null || c <= 0)) return false;   // un contrato ilegible o en cero es «no sé»
+  const suma = cs.reduce((a, c) => a + c, 0);
+  return adj !== null && adj > 0 && Math.abs(v - adj) <= 1 && suma <= RESCATE_CONTRATO_MAX_VECES * adj + 1;
+}
+function limpiarOfertas(ofertas, precioBase, rescate = null) {
   const ex = { repetidas: 0, confidencial: 0, cero: 0, no_numerico: 0, sin_proveedor: 0, duplicada: 0, duplicada_entre_datasets: 0,
-    sobre_base: 0, bajo_50: 0, sin_precio_base: 0 };
+    sobre_base: 0, bajo_50: 0, rescatada_bajo_50: 0, sin_precio_base: 0 };
   const vistos = new Map(), porProv = new Map(), validas = [];
   const base = numeroONull(precioBase);
   const provDe = proveedoresUnidos(ofertas || []);
@@ -127,10 +152,17 @@ function limpiarOfertas(ofertas, precioBase) {
     vistos.set(k, o._ds);
     if (base === null || base <= 0) { ex.sin_precio_base++; continue; }
     if (v > base) { ex.sobre_base++; continue; }
-    if (v < 0.5 * base) { ex.bajo_50++; continue; }
+    const rescatada = v < 0.5 * base;
+    if (rescatada) { if (!rescatable(v, base, rescate)) { ex.bajo_50++; continue; } ex.rescatada_bajo_50++; }
     if (!porProv.has(p)) porProv.set(p, new Set());
     porProv.get(p).add(v);
-    validas.push({ proveedor: p, nombre: o.nombre_proveedor || null, valor: v, pct: v / base, fila: o });
+    validas.push({ proveedor: p, nombre: o.nombre_proveedor || null, valor: v, pct: v / base, fila: o, ...(rescatada ? { rescatada: true } : {}) });
+  }
+  // sin otra válida en rango, la rescatada vuelve a descartarse: lo sospechoso es el precio base
+  if (ex.rescatada_bajo_50 && !validas.some((o) => !o.rescatada)) {
+    for (const o of validas.filter((x) => x.rescatada)) { porProv.get(o.proveedor).delete(o.valor); if (!porProv.get(o.proveedor).size) porProv.delete(o.proveedor); }
+    ex.bajo_50 += ex.rescatada_bajo_50; ex.rescatada_bajo_50 = 0;
+    validas.length = 0;
   }
   const lote_sospechoso = [...porProv.values()].some((s) => s.size > 1);
   return { validas, excluidas: ex, lote_sospechoso, proveedores: porProv.size };

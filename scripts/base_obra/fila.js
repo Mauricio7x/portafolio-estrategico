@@ -41,7 +41,7 @@ function identidadGanador(f) {
 }
 
 /* filas: todas las de p6dx del portafolio · ofertas: grupos de wi7w/b28v · lugar: fila de jbjy o null */
-function filaDeProceso({ portafolio, filas, ofertas, lugar, sinMedirOfertas = false }) {
+function filaDeProceso({ portafolio, filas, ofertas, lugar, sinMedirOfertas = false, valoresContrato = null }) {
   const f = L.elegirFila(filas);
   const mod = L.clasificarModalidad(f.modalidad_de_contratacion);
   const base = L.numeroONull(f.precio_base);
@@ -86,7 +86,8 @@ function filaDeProceso({ portafolio, filas, ofertas, lugar, sinMedirOfertas = fa
   else if (!ofertas || !ofertas.length) fila.excluido = "sin_ofertas_en_datos_abiertos";
   if (!fila.excluido || fila.excluido === "lote_numero_de_lotes") {
     if (ofertas && ofertas.length && base > 0) {
-      const r = L.limpiarOfertas(ofertas, base);
+      // el rescate bajo el 50 % necesita lo adjudicado y los contratos firmados (jbjy); sin ellos no rescata
+      const r = L.limpiarOfertas(ofertas, base, fila.adjudicado ? { valor_adjudicado: fila.valor_adjudicado, valores_contrato: valoresContrato } : null);
       fila.excluidas = r.excluidas;
       fila.ofertas_validas = r.validas.map((o) => ({ proveedor: o.proveedor, nombre: o.nombre, valor: o.valor, pct: o.pct }));
       fila.n_validas = r.validas.length;
