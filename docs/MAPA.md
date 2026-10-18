@@ -224,7 +224,7 @@
   L 19553  La llave del servidor no se copia de Vercel: se anota al ponerla (18-oct-2026)
   L 19566  Los pliegos de más de 20 MB que se midieron son escaneos: bajarlos por partes no da texto (…
   L 19598  El tablero de pendientes mentía: la revisión del 18-oct, uno por uno contra el código (18-o…
-  L 19606  La carga en Precios solo entra al vigía si el nombre dice que es el pliego (18-oct-2026)
+  L 19606  La carga en Precios no entra al vigía si el nombre dice que es otra cosa (18-oct-2026)
 
 · DOCUMENTOS docs/ — 71 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)

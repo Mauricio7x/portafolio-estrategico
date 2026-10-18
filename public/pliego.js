@@ -880,6 +880,7 @@
     /* el dictamen del pliego cuelga de aquí con su PROPIO try/catch: nada suyo
        puede romper el pintado del vigía ni del cronograma */
     let dictamenArgs = { id: "", cambio: false, falloVigia: null };
+    let noEsElPliego = false;
     if (!id) {
       html += `<p class="text-gray-600">Para vigilar las adendas de este pliego abra el proceso desde su tarjeta («Calcular mi precio»): así el lector sabe de qué proceso es el pliego y guarda cada versión.</p>`;
     } else {
@@ -889,7 +890,7 @@
       /* NO ERA EL PLIEGO (18-oct-2026): el Formulario 1, una adenda o un nombre que no dice qué es no se
          guardan como versión del pliego. No es un fallo: se dice por qué, y el dictamen sigue mostrando
          el del pliego que ya estaba guardado (sin «Primero hay que guardar el texto del pliego») */
-      const noEsElPliego = c.no_es_el_pliego === true;
+      noEsElPliego = c.no_es_el_pliego === true;
       dictamenArgs = { id, cambio: !!c.cambio, falloVigia: c.ok || noEsElPliego ? null : (c.error || window.Glosario.fraseDeFallo({ status: r.estado })) };
       if (noEsElPliego) html += `<p class="font-medium text-amber-700">${esc(c.error || "Este archivo no es el pliego: no se guarda como versión del pliego")}.</p>`;
       else if (!c.ok) html += `<p class="text-gray-600">No se pudo guardar la versión del pliego: ${esc(c.error || window.Glosario.fraseDeFallo({ status: r.estado }))}.</p>`;
@@ -904,8 +905,9 @@
         html += `<p class="mt-1 text-xs text-gray-500">Versión ${c.version} de este pliego guardada${c.recortado ? " (texto recortado)" : ""}. La comparación de requisitos es una lectura automática del texto: confírmela contra el pliego.</p>`;
       }
     }
-    // cronograma (dataset + texto): siempre, con o sin id
-    const rc = await pedir("/api/pliego?op=cronograma", { id_proceso: id || undefined, texto });
+    /* cronograma (dataset + texto): siempre, con o sin id. Con un archivo que NO es el pliego, el del pliego guardado:
+       si no, la lista de aquí diría unas fechas y el .ics y Mis procesos otras (2.ª revisión adversaria, una adenda) */
+    const rc = await pedir("/api/pliego?op=cronograma", noEsElPliego ? { id_proceso: id } : { id_proceso: id || undefined, texto });
     if (!lecturaVigente(sello)) return;
     const cc = rc.cuerpo || {};
     if (cc.ok && Array.isArray(cc.hitos) && cc.hitos.length) {

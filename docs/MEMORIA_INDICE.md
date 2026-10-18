@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 1910716 bytes · 361 secciones · 26 con marcador de superación.
+Derivado del árbol: 1912248 bytes · 361 secciones · 26 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -355,7 +355,7 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | El muro de Vercel vuelve, gratis: «Vercel Authentication» en todo el sitio y el pase para lo automático (17-oct-2026) | 17-oct-2026 | 19230-19285 | 7782 |  |
 | Dos capas: el muro de Vercel delante y la sesión del dueño detrás (18-oct-2026) | 18-oct-2026 | 19286-19299 | 1098 |  |
 | El muro de Vercel quedó puesto: las tareas de Vercel lo pasan, y cómo se mide (17-oct-2026) | 17-oct-2026 | 19300-19325 | 4487 |  |
-| El dictamen, el cronograma y los descuentos leen el documento que ES el pliego, no la última versión del vigía (18-oct-2026) | 18-oct-2026 | 19326-19390 | 8841 |  |
+| El dictamen, el cronograma y los descuentos leen el documento que ES el pliego, no la última versión del vigía (18-oct-2026) | 18-oct-2026 | 19326-19390 | 8839 |  |
 | La sonda del muro: el latido y el vigilante prueban la portada sin el pase (18-oct-2026) | 18-oct-2026 | 19391-19429 | 4440 |  |
 | Base nacional de licitaciones de obra: un script que solo mide, fuera de la app (17-oct-2026) | 17-oct-2026 | 19430-19443 | 2139 | «Base nacional de obra: las ofertas se piden agrupadas, las filas repetidas de p6dx son fases y el proveedor se identifica por unión (17-oct-2026)» |
 | Base nacional de obra: las ofertas se piden agrupadas, las filas repetidas de p6dx son fases y el proveedor se identifica por unión (17-oct-2026) | 17-oct-2026 | 19444-19451 | 1579 |  |
@@ -371,4 +371,4 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | La llave del servidor no se copia de Vercel: se anota al ponerla (18-oct-2026) | 18-oct-2026 | 19553-19565 | 1833 |  |
 | Los pliegos de más de 20 MB que se midieron son escaneos: bajarlos por partes no da texto (18-oct-2026) | 18-oct-2026 | 19566-19597 | 3701 |  |
 | El tablero de pendientes mentía: la revisión del 18-oct, uno por uno contra el código (18-oct-2026) | 18-oct-2026 | 19598-19605 | 1742 |  |
-| La carga en Precios solo entra al vigía si el nombre dice que es el pliego (18-oct-2026) | 18-oct-2026 | 19606-19634 | 3172 |  |
+| La carga en Precios no entra al vigía si el nombre dice que es otra cosa (18-oct-2026) | 18-oct-2026 | 19606-19643 | 4706 |  |

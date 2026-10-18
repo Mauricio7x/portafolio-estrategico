@@ -9399,35 +9399,43 @@ async function main() {
     const FORM_P = txtP("FORMULARIO 1 - FORMULARIO DE PRESUPUESTO OFICIAL. ITEM 1.1 Localización y replanteo m2 1200 4.500 5.400.000.");
     const cargar = (id, nombre, texto) => invocarPost(routerP, "/api/pliego?op=diff", nombre === undefined ? { id_proceso: id, texto, perfil: "helder" } : { id_proceso: id, texto, perfil: "helder", nombre_archivo: nombre }, CAB_TOKEN);
     const versionesDe = async (id) => ((await DvP.leerIndice(redis, id)).versiones || []);
-    // (1) lo que no es el pliego no se guarda, y se dice por qué
+    // (1) lo que el nombre dice que es OTRA cosa no se guarda, y se dice por qué y qué lee el dictamen (aquí, nada todavía)
     const casos = [
       ["FORMULARIO 1 PRESUPUESTO OFICIAL.pdf", "formulario", /formulario de cantidades/],
       ["Formulario 1 - Presupuesto Oficial - Pliego Definitivo.pdf", "formulario", /formulario de cantidades/],
-      ["ADENDA No. 1.pdf", "adenda", /es una adenda.*sin.*adenda|es una adenda.*no diga «adenda»/],
+      ["ADENDA No. 1.pdf", "adenda", /es una adenda.*empiece por «pliego» o «documento base»/],
+      ["ADENDA No. 1 AL PLIEGO DE CONDICIONES.pdf", "adenda", /es una adenda/],
+      ["PROPUESTA ECONOMICA Bl 2 IUPB.(PLIEGOS DEFINITIVOS ADENDA 2) .pdf", "adenda", /es una adenda/],
       ["ANEXOS PLIEGO DE CONDICIONES.pdf", "acompana_al_pliego", /anexo, un formato o unas observaciones/],
       ["OBSERVACIONES PLIEGO DEF LP-004-2026.pdf", "acompana_al_pliego", /anexo, un formato o unas observaciones/],
+      ["RESPUESTA OBSERVACIONES PROYECTO PLIEGO DE CONDICIONES.pdf", "otro_documento", /«respuesta a observaciones»/],
       ["ESTUDIOS PREVIOS.pdf", "otro_documento", /«estudios previos»/],
-      ["scan001.pdf", "sin_nombre", /no se sabe si es el pliego.*SECOP II/],
-      ["Index?DocumentId=837410065&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=", "sin_nombre", /no se sabe si es el pliego/],
-      ["", "sin_nombre", /no se sabe si es el pliego/],
-      [undefined, "sin_nombre", /no se sabe si es el pliego/],
     ];
     let k = 0;
     for (const [nombre, motivo, frase] of casos) {
       const id = `CO1.REQ.PRE${String(++k).padStart(3, "0")}`;
       const r = await cargar(id, nombre, FORM_P);
-      assert.ok(r.status === 200 && r.cuerpo.ok === false && r.cuerpo.no_es_el_pliego === true && r.cuerpo.motivo === motivo && frase.test(r.cuerpo.error || ""),
-        `«${nombre}» no es el pliego (${motivo}) y se dice por qué (MUTACIÓN: guardar sin mirar el nombre; el nombre mudo como pliego): ${r.status} ${JSON.stringify(r.cuerpo).slice(0, 300)}`);
+      assert.ok(r.status === 200 && r.cuerpo.ok === false && r.cuerpo.no_es_el_pliego === true && r.cuerpo.motivo === motivo && frase.test(r.cuerpo.error || "") && /Todavía no hay pliego guardado de este proceso/.test(r.cuerpo.error),
+        `«${nombre}» no es el pliego (${motivo}), se dice por qué y que todavía no hay pliego guardado (MUTACIÓN: guardar sin mirar el nombre; «siguen leyendo el pliego» sin pliego): ${r.status} ${JSON.stringify(r.cuerpo).slice(0, 400)}`);
       assert.strictEqual((await versionesDe(id)).length, 0, `«${nombre}» no entra al vigía`);
     }
-    // (2) el pliego, el borrador y el documento base sí; el origen lleva el nombre (lo manual deja de ser anónimo)
-    for (const [nombre, tipo] of [["PLIEGO DE CONDICIONES DEFINITIVO LP-001-2026 DEL MUNICIPIO.pdf", "pliego"], ["PROYECTO DE PLIEGO DE CONDICIONES.pdf", "pliego_borrador"], ["19. DOCUMENTO BASE.pdf", "documento_base"], ["Pliego definitivo ajustado con observaciones.pdf", "pliego"]]) {
+    /* (2) el pliego, el borrador y el documento base se guardan, con el nombre en el origen; también un nombre que NO dice
+       qué es (como antes: el clasificador no reconoce «DocBase_…» y en procesos abiertos era el único camino del pliego al
+       dictamen, 2.ª revisión adversaria), un navegador con el código de antes que no manda nombre, y el pliego con la adenda
+       incorporada */
+    for (const [nombre, origen] of [
+      ["PLIEGO DE CONDICIONES DEFINITIVO LP-001-2026 DEL MUNICIPIO.pdf"], ["PROYECTO DE PLIEGO DE CONDICIONES.pdf"], ["19. DOCUMENTO BASE.pdf"], ["Pliego definitivo ajustado con observaciones.pdf"],
+      ["DocBase_LicitacionObra_ISocialLV2.pdf"], ["Documento_base_Licitacion_Obra_Publica Definitivo.pdf"], ["DOCUMENTO%20BASE.pdf"], ["scan001.pdf"],
+      ["Index?DocumentId=837410065&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier="],
+      ["8. Documento Base - Pliego de Condiciones Definitivo Adenda 1 - LIC 004 MT 2026.pdf"], ["Documento Base Villa María III MODIFICADO CON ADENDA No. 1.pdf"],
+      ["", "lector"], [undefined, "lector"],
+    ]) {
       const id = `CO1.REQ.PRE${String(++k).padStart(3, "0")}`;
       const r = await cargar(id, nombre, PLIEGO_P);
       const v = await versionesDe(id);
-      assert.ok(r.status === 200 && r.cuerpo.ok === true && r.cuerpo.version === 1 && v.length === 1 && v[0].origen === `lector:${nombre}`.slice(0, 40) && v[0].origen.length <= 40,
-        `«${nombre}» (${tipo}) se guarda, con el nombre en el origen (MUTACIÓN: anexo excluido por el nombre entero; origen sin nombre): ${JSON.stringify({ r: r.cuerpo.ok, v })}`.slice(0, 400));
-      assert.ok(DocsP.esVersionDelPliego(DocsP.clasificarArchivo({ nombre_archivo: nombre })), "premisa: la misma regla de la lectura automática");
+      const esperado = origen || `lector:${nombre}`.slice(0, 40);
+      assert.ok(r.status === 200 && r.cuerpo.ok === true && r.cuerpo.version === 1 && v.length === 1 && v[0].origen === esperado && v[0].origen.length <= 40,
+        `«${nombre}» se guarda, con el nombre en el origen (MUTACIÓN: el nombre mudo o el pliego con adenda rechazados; anexo excluido por el nombre entero; origen sin nombre): ${JSON.stringify({ r: r.cuerpo.ok, motivo: r.cuerpo.motivo, v })}`.slice(0, 400));
     }
     // (3) el caso que quedó pendiente en la Fase A: el Formulario cargado DESPUÉS de que la lectura automática leyó el pliego
     const idF = `CO1.REQ.PRE${String(++k).padStart(3, "0")}`;
@@ -9437,6 +9445,7 @@ async function main() {
     assert.ok(rAuto.status === 200 && rAuto.cuerpo.version_pliego === 1, `premisa: la lectura automática guardó el pliego: ${JSON.stringify(rAuto.cuerpo).slice(0, 200)}`);
     const rForm = await cargar(idF, "FORMULARIO 1 PRESUPUESTO OFICIAL.pdf", FORM_P);
     const tF = await textoP(redis, idF);
+    assert.ok(/siguen con «PLIEGO DE CONDICIONES DEFINITIVO LP-001-2026\.pdf»/.test(rForm.cuerpo.error || ""), `y la frase dice qué está leyendo el dictamen (MUTACIÓN: sin mirar textoGuardado): ${rForm.cuerpo.error}`);
     assert.ok(rForm.cuerpo.no_es_el_pliego === true && (await versionesDe(idF)).length === 1 && /PLIEGO DE CONDICIONES DEFINITIVO/.test(tF.texto) && tF.version === 1,
       `el Formulario cargado DESPUÉS del pliego ya no pasa a ser el texto del dictamen (MUTACIÓN: guardarlo, la versión 2 es el formulario): ${JSON.stringify({ version: tF.version, origen: tF.origen })}`);
     const dF = await invocar(routerP, `/api/pliego?op=dictamen&id_proceso=${idF}&perfil=helder`, CAB_TOKEN);
@@ -9446,7 +9455,7 @@ async function main() {
     const largo = "PLIEGO DE CONDICIONES " + "X".repeat(400) + ".pdf";
     const rL = await cargar(idL, largo, PLIEGO_P);
     assert.ok(rL.cuerpo.ok === true && (await versionesDe(idL))[0].origen.length === 40, `un nombre larguísimo se guarda con el origen cortado a 40: ${JSON.stringify(await versionesDe(idL))}`.slice(0, 300));
-    console.log("· unidad la carga en Precios: el Formulario 1, una adenda, un anexo, otro documento o un nombre que no dice qué es no entran al vigía y se dice por qué; el pliego, el borrador y el documento base sí, con su nombre; el Formulario cargado después del pliego ya no lo tapa");
+    console.log("· unidad la carga en Precios: el Formulario 1, una adenda suelta, un anexo u otro documento no entran al vigía y se dice por qué y qué lee el dictamen; el pliego, el borrador, el documento base, el pliego con la adenda incorporada y un nombre que no dice qué es sí, con su nombre; el Formulario cargado después del pliego ya no lo tapa");
   }
   bqNueveProcesos: { if (!corre("unidad los nueve procesos del dueño")) break bqNueveProcesos;
     const Dp = require("../lib/documentos_proceso.js");
@@ -53636,6 +53645,8 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
         const diffG = diferidos.slice(desdeG).find((x) => /op=diff/.test(x.url));
         okRO(diffG && diffG.cuerpo && diffG.cuerpo.nombre_archivo === "FORMULARIO 1 PRESUPUESTO OFICIAL.txt", `(g) el nombre del archivo viaja al vigía (MUTACIÓN: sin el nombre): ${JSON.stringify(diffG && diffG.cuerpo)}`.slice(0, 300));
         await soltarG(/op=diff/, { ok: false, id_proceso: "CO1.A", guardada: false, no_es_el_pliego: true, motivo: "formulario", error: "Por su nombre («<b>F1</b>»), este archivo es el formulario de cantidades (presupuesto oficial), no el pliego: sirve para el precio, pero no se guarda como versión del pliego" });
+        const cronoG = diferidos.slice(desdeG).find((x) => /op=cronograma/.test(x.url));
+        okRO(cronoG && cronoG.cuerpo && cronoG.cuerpo.id_proceso === "CO1.A" && cronoG.cuerpo.texto === undefined, `(g) el cronograma se pide del pliego guardado, sin el texto del archivo rechazado (MUTACIÓN: con el texto, la lista y el .ics dirían fechas distintas): ${JSON.stringify(cronoG && cronoG.cuerpo).slice(0, 160)}`);
         await soltarG(/op=cronograma/, { ok: true, hitos: [] });
         const vigiaG = porId.get("pl-vigia").innerHTML;
         okRO(/es el formulario de cantidades/.test(textoRO(vigiaG)) && !/No se pudo guardar/.test(textoRO(vigiaG)) && !/<b>F1/.test(vigiaG),
