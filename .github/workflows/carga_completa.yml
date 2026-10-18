@@ -53,7 +53,7 @@ jobs:
           VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
         run: |
           URL="https://detekta-app.vercel.app/api/sync?modo=auto&chain=0"
-          fallos=0; tramo=0; quietos=0; maximo=-1
+          fallos=0; tramo=0; quietos=0; maximo=-1; serie_previa=""
           for vuelta in $(seq 1 600); do
             CODIGO=$(curl -sS --max-time 300 -o respuesta.json -w '%{http_code}' \
               -H "Authorization: Bearer ${CRON_SECRET}" -H "x-vercel-protection-bypass: ${VERCEL_AUTOMATION_BYPASS_SECRET}" "$URL" || echo "000")
@@ -80,15 +80,22 @@ jobs:
               continue
             fi
             tramo=$((tramo + 1))
-            echo "Tramo $tramo: $(jq -c '{done, alDia, progreso, token: .app_token_rechazado}' respuesta.json)"
+            echo "Tramo $tramo: $(jq -c '{done, alDia, progreso, ciclo_leidas: .delta.ciclo_leidas, token: .app_token_rechazado}' respuesta.json)"
             if [ "$(jq -r '.done' respuesta.json)" = "true" ]; then
               echo "La carga completa terminó."
               exit 0
             fi
             # ¿avanza? (mes, filas leídas) tiene que SUPERAR lo máximo alcanzado: si se queda o
             # RETROCEDE (una carga que vuelve a empezar, como pasó el 26-sep-2026 con modo=full),
-            # cuenta como tramo quieto; diez seguidos = algo va mal, se detiene y lo dice
-            ahora=$(jq -r 'if (.progreso.mesIdx != null and .progreso.leidasMes != null) then (.progreso.mesIdx * 1000000000 + .progreso.leidasMes) else -1 end' respuesta.json)
+            # cuenta como tramo quieto; diez seguidos = algo va mal, se detiene y lo dice.
+            # Una actualización a medias (delta) no trae `progreso`: su avance son las filas que
+            # lleva el ciclo (`delta.ciclo_leidas`). Sin eso, con un delta abierto el flujo paraba
+            # en rojo a los 10 tramos aunque avanzara (18-oct-2026). Las dos medidas son escalas
+            # distintas: si la serie cambia (el latido cerró la carga completa y sigue un delta, o
+            # al revés), el máximo vuelve a empezar (revisión adversaria del 18-oct, reproducido).
+            serie=$(jq -r 'if (.progreso.mesIdx != null and .progreso.leidasMes != null) then "full" elif (.delta.ciclo_leidas != null) then "delta" else "nada" end' respuesta.json)
+            if [ "$serie" != "$serie_previa" ]; then maximo=-1; serie_previa=$serie; fi
+            ahora=$(jq -r 'if (.progreso.mesIdx != null and .progreso.leidasMes != null) then (.progreso.mesIdx * 1000000000 + .progreso.leidasMes) elif (.delta.ciclo_leidas != null) then .delta.ciclo_leidas else -1 end' respuesta.json)
             if [ "$ahora" -gt "$maximo" ]; then maximo=$ahora; quietos=0; else quietos=$((quietos + 1)); fi
             if [ "$quietos" -ge 10 ]; then
               echo "Diez tramos seguidos sin avanzar (o volviendo atrás): se detiene. Mire https://detekta-app.vercel.app/api/procesos?op=salud"
