@@ -19103,3 +19103,53 @@ o «toString» pasaban `ID_RE` y respondían 200. (e) `medicion.ms` viaja en la 
 Medido en local: 0 escrituras y 5 lecturas de Redis (el expediente completo, 11). Sin medir en producción: `filaViva` sigue
 leyendo el corpus (`cargarCorpus`), que en frío también tarda; la lista de Mis procesos lo deja caliente en la misma función.
 Consumo estimado en el peor caso medido: ≤ 18 % del tope diario de CPU de Vercel con 30 clics al día (cotas de tiempo de reloj).
+
+### El plazo del pliego por la columna de su tabla 1.1: medido, NO fusionado (18-oct-2026)
+
+En una línea: el plazo leído de la columna «Plazo» de la tabla 1.1 (para cuando SECOP II publica la duración en «0 días» o
+vacía, 625 de 3.087 filas de licitación de obra de 2026) dio 0 falsos en los 39 pliegos reales medidos, pero cinco
+revisiones adversarias encontraron, cada una, caminos nuevos y plausibles a un plazo FALSO que entraría al capital de
+trabajo; no se fusionó y la forma de usarlo es decisión del dueño.
+
+> PENDIENTE · decidir con el dueño cómo usar el plazo del pliego: (a) solo como aviso, sin entrar a ningún cálculo (como el presupuesto de la tabla 1.1); (b) que el dueño lo confirme en pantalla con la página y el texto de la celda a la vista, y solo entonces calcule; (c) no usarlo. El código está en la rama `plazo-pliego` (21479fb): lector por coordenadas, puerta, pruebas y mutaciones; no se fusiona tal cual
+
+> PENDIENTE · `planDeLectura` ordena los pliegos del más viejo al más nuevo y lee los 3 primeros (`MAX_PLIEGOS_PLAN`): con 4 versiones, la más nueva no se lee y el índice dice «ya se leen las últimas versiones del pliego» (reproducido el 18-oct-2026: plan ['1','2','3'] con la v4 fuera). Afecta al presupuesto, al anticipo y a los requisitos: decide dinero, necesita plan y visto bueno
+
+> PENDIENTE · `topeOferta` toma el presupuesto de un pliego definitivo viejo aunque haya uno modificado, igual o más reciente, sin la tabla (reproducido el 18-oct-2026: techo $900.000.000 del viejo con el modificado sin tabla). El hueco hermano del plazo se cerró en la rama `plazo-pliego` (`otroPliegoQueNoConfirma`); en el techo espera el visto bueno del dueño
+
+**Lo medido.** Ronda 7 a ciegas (detekta-lector, medicion_ronda7_2026-10-17): 6 correctos, 4 vacíos, 0 falsos en 10
+pliegos nuevos; con la Fase 0, 0 falsos en 39. En 34 índices reales de dmgg-8hin, con adendas el plazo quedaría «por
+confirmar» en 8 (una adenda sin la tabla no deja usar el del pliego, la regla del presupuesto).
+
+**Por qué no entró (lo que no hay que re-aprender).** La celda se reconstruye por coordenadas y pdf.js la entrega con
+palabras de las celdas vecinas, renglones partidos entre páginas y palabras cortadas en la tilde (40 cortes así en las 36
+tablas: «M»+«ÁS», «VIGEN CIA», «AÑ O»). Cada ronda de reglas cerró lo que vio y la siguiente revisión abrió otro camino: la
+prosa de debajo de la tabla, la vigencia («… meses más», «plazo total»), dos etapas con la misma cifra, un tramo que se
+llevaba una línea de la celda (los huecos reales entre celdas son de 6,8 a 7,2 puntos), el corte en el encabezado de la
+página siguiente, «1.2 KILÓMETROS» tomado por título, y al final una PUERTA (solo una columna limpia da meses) que aun así
+dejaba pasar «UN AÑ O Y DOS (2) MESES» (2 meses donde son 14) o una duración de otra cosa junto a la fecha tope. Un plazo
+falso de menos de 12 meses donde el real pasa de 12 cambia la fórmula del capital de trabajo, y en pantalla saldría «(según el
+pliego)»: no se acepta sin que el dueño decida cómo usarlo.
+
+### La negación del anticipo con la parte ANTES («Para la etapa 1 no se entregará anticipo») NO se cubre (18-oct-2026)
+
+En una línea: el hermano que dejó anotado «El anticipo negado para UNA parte numerada del contrato…» (la parte antes de
+la negación, «la primera etapa», «en el componente 1») se programó, pasó la suite 4/4 y 19 mutaciones, y aun así NO entró:
+dos revisiones adversarias lo tumbaron y no mueve ningún pliego real.
+
+**Lo medido.** En 137 textos reales (los 40 pliegos de Fase 0 y las rondas 5 a 7, sus versiones de pdftotext, documentos
+de Santa Elena y del paso 2) el arreglo no cambia ni un estado, ni una cita, ni el dictamen, ni `lib/negocio`: la forma
+«antes» no aparece. Con frases plausibles, en cambio, abría «sí» falsos donde main decía «no» (reproducidos):
+«Para la etapa 1 no se entregará anticipo… / Para la etapa 2 tampoco se entregará anticipo…» («tampoco se entregará»
+pasaba por frase que pacta), «Teniendo en cuenta que los pagos se realizarán por actas … en la etapa 1, no se entregará
+anticipo» junto al tope legal «el anticipo no podrá exceder del cincuenta por ciento (50%)», la fila de garantías «100% del
+anticipo…» y el condicional «Si la Entidad entregara anticipo…» (plegado, el subjuntivo es igual al futuro). También pasaba a
+«mención» negaciones totales como «De acuerdo con el análisis del sector realizado en la fase 1, la Entidad no entregará
+anticipo». La primera versión, además, volvía «sí» negaciones totales al pegar la línea de arriba.
+
+**Lo que no hay que deshacer.** Una parte numerada ANTES de la negación casi siempre es contexto («realizado en la fase 1»,
+«para la etapa 1, … no se entregará»), no el alcance: leerla como alcance cambia «no» por «sí» del lado que también cuesta
+(cuenta con plata que no llega). Si un pliego REAL trae la forma, se mide con él antes de tocar nada; sin caso real no se
+vuelve a intentar. Quedan anotados, sin tocar, dos fallos que main ya tenía con frases sintéticas: con una negación parcial
+en el documento, «El contratista no tendrá derecho a anticipo por ningún otro concepto…» da «sí», y «…para el lote No. 1 ni
+para el lote No. 2» da mención en vez de «no».
