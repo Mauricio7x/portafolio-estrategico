@@ -4184,6 +4184,27 @@ async function main() {
       assert.strictEqual(obraSinCodigo.ok, true, "la obra sin código no puede perderse: su pertinencia es verde");
       assert.strictEqual(obraSinCodigo.tier, "texto");
       assert.strictEqual(obraSinCodigo.pertinencia.nivel, "verde");
+      /* «SIN CÓDIGO» SOLO CUANDO NO HAY CÓDIGO (18-oct-2026): un muro con 72141200 frente a un
+         registro con otras clases de la familia 7214 entra por el objeto, y la tarjeta decía
+         «Sin código UNSPSC específico». Contra el árbol anterior, las aserciones del código caen. */
+      const perfilFamilia = { unspsc: ["72141000", "72141100", "72154100", "81101500"] };
+      const muro = filtros.evaluarObjeto({
+        nombre_del_procedimiento: "Construcción de muro de contención en gaviones sector 95",
+        descripci_n_del_procedimiento: "Obra de estabilización de talud",
+        codigo_principal_de_categoria: "V1.72141200" }, perfilFamilia, { vocabulario: voc });
+      assert.strictEqual(muro.ok, true, "el muro sigue entrando por el objeto: solo cambia el texto");
+      assert.strictEqual(muro.tier, "texto");
+      assert.ok(/72141200/.test(muro.unspsc.mensaje) && /no está en su registro/.test(muro.unspsc.mensaje),
+        `el mensaje nombra el código que trae y dice que no está en el registro: ${muro.unspsc.mensaje}`);
+      assert.ok(!/[Ss]in código/.test(muro.unspsc.mensaje), `un proceso con código no puede decir «sin código»: ${muro.unspsc.mensaje}`);
+      // el gemelo: sin vocabulario que case, la ruta del verbo de obra tampoco dice «sin código»
+      const porVerbo = textoUnspsc.evaluarTexto("construccion de una cosa", {
+        vocabulario: null, familiasPerfil: new Set(), hayVerboObra: true, segmentoAfin: false,
+        codigosProceso: [{ codigo: "72141200", nivel: 6 }] });
+      assert.ok(/72141200/.test(porVerbo.mensaje) && !/[Ss]in código/.test(porVerbo.mensaje), porVerbo.mensaje);
+      // y sin códigos (o con el segmento suelto) los mensajes de siempre siguen igual
+      assert.ok(/Objeto de obra sin código UNSPSC/.test(textoUnspsc.evaluarTexto("x", { hayVerboObra: true, codigosProceso: [] }).mensaje));
+      assert.ok(/solo declara el segmento/.test(textoUnspsc.evaluarTexto("x", { hayVerboObra: true, segmentoAfin: true, codigosProceso: [{ codigo: "72000000", nivel: 2 }] }).mensaje));
     }
 
     // el veredicto es GRADUADO, nunca booleano: tipo de trabajo detectado
