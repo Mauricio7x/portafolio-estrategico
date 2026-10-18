@@ -19237,9 +19237,10 @@ distintos alternándose como «versiones» darían cambios falsos); el dictamen 
 que antes, para no invalidar los dictámenes ya pagados. (c) El texto del documento base lleva el tope de 400 KB del vigía
 (`D.MAX_TEXTO`), con `recortado`: el dictamen lo manda entero al modelo y la habilidad lo lee entero. (d) Lo que el dueño
 carga A MANO (origen del vigía distinto de «documentos:…»; es como se lee un pliego de más de 20 MB) NO DICE QUÉ ARCHIVO ES:
-Precios manda al vigía igual el pliego que el Formulario 1 de cantidades. Por eso, frente a un pliego que entró al vigía
-manda el orden del vigía, como en main (gana el registrado después: un Formulario 1 soltado ANTES de la lectura automática no
-tapa el pliego); frente al documento base (que main nunca leía: ahí daba siempre lo manual), lo manual cede solo ante uno
+Precios manda al vigía igual el pliego que el Formulario 1 de cantidades. Por eso, frente a los pliegos que entraron al
+vigía manda el orden del vigía, como en main: si uno se registró DESPUÉS de la carga manual, ella ya no compite con nada (un
+Formulario 1 soltado ANTES de la lectura automática no tapa el pliego, ni directamente ni por medio de un documento base más
+nuevo que el pliego); si todos se registraron antes, gana ella; frente al documento base (que main nunca leía: ahí daba siempre lo manual), lo manual cede solo ante uno
 publicado en SECOP II DESPUÉS del día de Colombia de la carga (a igual día, lo manual, como en main). La comparación es por
 candidato, dentro del recorrido: si el más nuevo perdió su texto, lo manual vuelve a ganarle al siguiente. (e) El orden: el definitivo antes que el borrador (con
 «borrador» en el nombre de un documento base también), el más reciente en SECOP II, a igual fecha el pliego antes que el
@@ -19266,5 +19267,8 @@ tienen su cerradura, y las 14 mutaciones de estos arreglos mueren (incluidas las
 tumbó el arreglo de lo manual: comparar la fecha de publicación también contra los pliegos del vigía hacía que un Formulario
 1 soltado en Precios antes de la lectura automática le ganara al pliego (reproducido con los handlers reales: main «No
 conviene presentarse» y descuentos 4,5 %; el arreglo, «Falta información para opinar» y descuentos sin dato), y el día de la
-carga en UTC contaba un día tarde las cargas de después de las 19:00. Con la regla de (d) los tres casos vuelven a dar lo de
-main, la simulación de los 232 índices reales da las mismas cifras (85/112/6/2) y las 23 mutaciones del conjunto mueren.
+carga en UTC contaba un día tarde las cargas de después de las 19:00. Al releer el arreglo apareció el hermano (el Formulario
+ganándole al pliego por medio de un documento base más nuevo que el pliego, reproducido: main da el pliego). Con la regla de
+(d) los casos vuelven a dar lo de main, la simulación de los 232 índices reales da las mismas cifras (85/112/6/2) y mueren 22
+de las 23 mutaciones del conjunto; la que vive es equivalente (que un pliego registrado ANTES de la carga manual le gane por
+fecha exige que se publicara después de leerse: no pasa con datos reales).

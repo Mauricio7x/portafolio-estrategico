@@ -8255,6 +8255,14 @@ async function main() {
       `el Formulario 1 cargado en Precios antes de la lectura automática no tapa el pliego (MUTACIÓN: la fecha de publicación también contra los pliegos del vigía, el Formulario): ${JSON.stringify({ version: tF.version, origen: tF.origen })}`);
     await Dv.registrarVersion(redis, { idProceso: idF, texto: PLIEGO.replace("DEFINITIVO", "CON ADENDA 1"), origen: "lector", ahora: Date.now() + 60000 });
     assert.ok(/CON ADENDA 1/.test((await textoGuardado(redis, idF)).texto), "lo cargado en Precios DESPUÉS del pliego del vigía gana, como en main (MUTACIÓN: el pliego del vigía siempre)");
+    // …ni por medio de un documento base publicado después del pliego y antes de la carga (el hermano: main da el pliego)
+    const idF2 = "CO1.REQ.TXT020";
+    await sembrar(idF2, [arch("1", "PLIEGO DE CONDICIONES DEFINITIVO.pdf", "pliego", "2026-09-01"), arch("2", "DOCUMENTO BASE.pdf", "documento_base", "2026-09-05")]);
+    await Dv.registrarVersion(redis, { idProceso: idF2, texto: FORM, origen: "lector", ahora: Date.parse("2026-09-15T15:00:00Z") });
+    await leer(idF2, "1", PLIEGO); await leer(idF2, "2", BASE);
+    const tF2 = await textoGuardado(redis, idF2);
+    assert.ok(!/FORMULARIO 1/.test(tF2.texto) && /DOCUMENTO BASE DEL PROCESO/.test(tF2.texto),
+      `lo manual que un pliego del vigía registrado después reemplazó no compite con el documento base (MUTACIÓN: sin «reemplazada», el Formulario): ${JSON.stringify({ version: tF2.version, origen: tF2.origen })}`);
     /* (4f) el día de la carga es el de Colombia: a las 20:30 del 15-sep el ISO ya dice 16 */
     const cargaNoche = Date.parse("2026-09-16T01:30:00Z");
     const idZ = "CO1.REQ.TXT016";
