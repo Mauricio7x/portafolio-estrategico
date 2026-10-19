@@ -1,0 +1,38 @@
+{
+  "id": "CE-F-3203",
+  "tipo": "academia",
+  "autor": "Personas naturales, dos autores (nombres omitidos por la regla 5 del piloto)",
+  "titulo": "Los pliegos de condiciones en el contrato de obra",
+  "anio": 2021,
+  "institucion": "Universidad Santo Tomás · Revista IUSTA núm. 54 (vía Redalyc)",
+  "url": "https://www.redalyc.org/journal/5603/560368677003/560368677003.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: resumen y el apartado de deficiencias del pliego (págs. 12-15 del PDF de Redalyc); el resto se recorrió por palabras clave",
+  "localizador": "pág. 15 del PDF de Redalyc (14 impresa), apartado «Desconocimiento de los requisitos susceptibles de subsanación», párrafo «Conforme con esto…»",
+  "cita": "la etapa de subsanación de las ofertas es un derecho que tienen todos los oferentes […] pero muchas veces se convierten en armas de doble filo, teniendo en cuenta que las entidades del Estado en ocasiones no saben cuáles requisitos son subsanables y cuáles no",
+  "afirmacion": "Los autores sostienen que la subsanación es un derecho del oferente, pero que muchas veces se vuelve un arma de doble filo porque las entidades en ocasiones no saben qué requisitos son subsanables y cuáles no.",
+  "inferencia": null,
+  "eje": 3,
+  "etapa": [
+    "E5"
+  ],
+  "decision": [
+    "D3"
+  ],
+  "modulo": [
+    "M-OFERTA",
+    "M-ENTIDAD"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "No aplica: opinión doctrinal sobre la práctica",
+    "vigente": null,
+    "nota": "La regla vigente de subsanación está en la Ley 1150, art. 5, par. 1 (modificado por la Ley 1882 de 2018); este artículo no se usa como regla."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "La entidad no distingue con claridad lo subsanable de lo no subsanable y el oferente queda expuesto a un rechazo por un criterio subjetivo."
+}

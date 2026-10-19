@@ -1,0 +1,39 @@
+{
+  "id": "CE-F-3228",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Aplicabilidad modulada del régimen jurídico de la subsanabilidad de las ofertas",
+  "anio": 2019,
+  "institucion": "Universidad Externado de Colombia · Revista digital de Derecho Administrativo núm. 21, pp. 263-310 (vía Dialnet)",
+  "url": "https://dialnet.unirioja.es/descarga/articulo/6733367.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: resumen, introducción y apartado 3.4 «Requisitos eminentemente sustanciales» (págs. 1-3 y 30-32 del PDF); el resto se recorrió por palabras clave",
+  "localizador": "pág. 31 del PDF (impresa 293), apartado 3.4, caso sobre capacidad residual",
+  "cita": "el oferente no registró un contrato vigente al momento de la presentación de la propuesta […], lo que adicionalmente trajo como consecuencia que en la carta de presentación de la propuesta se certificara una capacidad residual no acorde a la realidad, por lo que su propuesta fue descalificada.",
+  "afirmacion": "La autora relata un caso demandado en que el oferente no registró un contrato vigente al presentar la propuesta, lo que llevó a que certificara en la carta de presentación una capacidad residual no acorde a la realidad, y por eso su propuesta fue descalificada.",
+  "inferencia": "Inferencia: según la autora, el oferente alegó que ese contrato no tenía valor determinado, y el Consejo de Estado trató el requisito como sustancial y no subsanable; todo contrato en ejecución se reporta para calcular la capacidad residual.",
+  "eje": 3,
+  "etapa": [
+    "E3",
+    "E5"
+  ],
+  "decision": [
+    "D3"
+  ],
+  "modulo": [
+    "M-CAPACIDAD",
+    "M-RUP"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "Ley 1150 de 2007, art. 5, par. 1 (modificado por la Ley 1882 de 2018), en http://www.secretariasenado.gov.co/senado/basedoc/ley_1150_2007.html; no reabierto en esta ficha",
+    "vigente": null,
+    "nota": "Lectura de la autora de sentencias del Consejo de Estado anteriores a la Ley 1882 de 2018; las sentencias no se abrieron. No se comprobó si el Decreto 0997 de 2026 tocó el tema."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Descalificación por certificar una capacidad residual que no descuenta un contrato en ejecución no reportado (requisito tratado como no subsanable)."
+}

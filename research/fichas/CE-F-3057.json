@@ -1,0 +1,53 @@
+{
+  "id": "CE-F-3057",
+  "tipo": "jurisprudencia",
+  "autor": "Consejo de Estado, Sala de lo Contencioso Administrativo, Sección Tercera, Subsección C",
+  "titulo": "Sentencia del 19 de agosto de 2026, radicación 52001-23-33-000-2021-00207-01 (72107), nulidad simple contra un acto de adjudicación de una licitación pública departamental",
+  "anio": 2026,
+  "institucion": "Consejo de Estado (PDF publicado en la relatoría de la Agencia Nacional de Contratación Pública - Colombia Compra Eficiente)",
+  "url": "https://relatoria.colombiacompra.gov.co/wp-content/uploads/2026/10/155_-52001233300020210020701-1.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: ficha de relatoría (págs. 1 a 5), encabezado y síntesis (págs. 6 y 7), consideraciones sobre subsanabilidad (pág. 43) y decisión (págs. 53 y 54) de las 54 páginas",
+  "localizador": "pág. 43 del PDF, párrafo sobre el numeral 8 del art. 30 de la Ley 80",
+  "cita": "si bien los proponentes pueden subsanar su ofrecimiento mediante la aportación de documentos dirigidos a acreditar requisitos que no sean necesarios para la comparación de las propuestas […], ello no los habilita para alterar sustancialmente el contenido del ofrecimiento inicialmente presentado.",
+  "afirmacion": "El Consejo de Estado sostuvo que subsanar con documentos de requisitos que no son necesarios para comparar las propuestas no habilita a alterar sustancialmente la oferta inicial.",
+  "inferencia": "Inferencia: en la decisión (pág. 54) la Sala declaró la nulidad del acto de adjudicación y, de oficio, la nulidad absoluta del contrato ya firmado.",
+  "eje": 3,
+  "etapa": [
+    "E5",
+    "E10"
+  ],
+  "decision": [
+    "D3",
+    "D4"
+  ],
+  "modulo": [
+    "M-OFERTA"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A4",
+  "unificacion": false,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://relatoria.colombiacompra.gov.co/wp-content/uploads/2026/10/155_-52001233300020210020701-1.pdf",
+    "vigente": true,
+    "nota": "Sentencia de segunda instancia de una subsección, no de unificación; no se buscó jurisprudencia posterior que la contradiga."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Providencia judicial; no rige desde un aviso."
+  },
+  "lista_cerrada": "L3-14",
+  "problema_candidato": "Un adjudicatario cuya subsanación se aceptó más allá de lo permitido puede perder el contrato años después: el Consejo de Estado anuló la adjudicación y el contrato ya celebrado.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje3-institucional:4",
+      "veredicto": "correcta",
+      "detalle": "Misma sentencia, pág. 43 del PDF, párrafo sobre el numeral 8º del art. 30 de la Ley 80. El texto es «si bien los proponentes pueden subsanar su ofrecimiento mediante la aportación de documentos dirigidos a acreditar requisitos que no sean necesarios para la comparación de las propuestas ni incidan en la asignación de puntaje, ello no los habilita para alterar sustancialmente el contenido del ofrecimiento inicialmente presentado.». La elipsis solo omite «ni incidan en la asignación de puntaje», que no cambia el sentido de la afirmación. La inferencia también la confirmé en la pág. 54: «PRIMERO: DECLARAR la nulidad de la Resolución No. 0437… SEGUNDO: DECLARAR de oficio la nulidad absoluta del contrato No. GN01050-2021»."
+    }
+  ]
+}

@@ -1,0 +1,52 @@
+{
+  "id": "CE-F-3045",
+  "tipo": "documento_tipo",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Documentos Tipo de mínima cuantía de obra pública de infraestructura de transporte, versión 2 con modificaciones · Invitación (Invitacion_TMinCV2.docx)",
+  "anio": 2024,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/30021/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: de la Invitación se leyeron las secciones 1.6, 3.5 y 7.1 y la tabla de contenido",
+  "localizador": "sección 1.6 (Reglas de subsanabilidad, explicaciones y aclaraciones), párrafos 1 y 2",
+  "cita": "No será posible subsanar los requisitos […] que afecten la asignación de puntaje, es decir, la oferta económica. La Entidad, al revisar la oferta de menor precio, verificará que cumpla las condiciones mínimas […]. Si no es así solicitará al Proponente, mínimo por el término de un (1) día hábil",
+  "afirmacion": "En la mínima cuantía de obra de transporte por documento tipo la oferta económica no es subsanable, y la entidad revisa la oferta de menor precio y, si no cumple, le pide subsanar por un término mínimo de un día hábil.",
+  "inferencia": "Inferencia: el mismo párrafo dice que, si la entidad no fija plazo, se entiende de un día hábil, y que si no se atiende se rechaza y se pasa a la segunda oferta de menor precio; difiere de la regla supletiva del Decreto 1082 (hasta el fin del traslado) porque la invitación tipo sí fija el término.",
+  "eje": 3,
+  "etapa": [
+    "E5"
+  ],
+  "decision": [
+    "D2",
+    "D3"
+  ],
+  "modulo": [
+    "M-OFERTA"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A3",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.colombiacompra.gov.co/documentos-tipo/vigentes/?sector=712&nodo=29401 y https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo",
+    "vigente": true,
+    "nota": "Por el art. 14, par. 3, del Decreto 0997 de 2026, los procesos con documento tipo siguen este texto hasta que CCE expida nuevas versiones."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": "2025-02-03",
+    "documento_tipo": "Documentos Tipo de mínima cuantía de obra pública de infraestructura de transporte, versión 2 con modificaciones (la página del nodo cita la Resolución 464 de 2024), vigente desde el 3-feb-2025 según el control de versiones",
+    "nota_desde_aviso": "Fecha de entrada en vigencia de la versión según el control de versiones de CCE; no se leyó la resolución de adopción para comprobar si se cuenta desde la publicación del aviso o del pliego."
+  },
+  "lista_cerrada": "L3-12",
+  "problema_candidato": "En mínima cuantía de obra el contratista tiene por defecto un solo día hábil para subsanar; si no responde, la entidad pasa a la siguiente oferta más barata.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje3-institucional:4",
+      "veredicto": "correcta",
+      "detalle": "Abrí https://www.colombiacompra.gov.co/documentos-tipo/descarga/30021/ (200, zip). Es el ítem 05 del nodo 29401, dentro de él está Invitacion_TMinCV2.docx. La sección 1.6 trae literalmente, en el párrafo 1, «No será posible subsanar los requisitos de la propuesta que afecten la asignación de puntaje, es decir, la oferta económica». El párrafo 2 trae «La Entidad, al revisar la oferta de menor precio, verificará que cumpla las condiciones mínimas de la invitación. Si no es así solicitará al Proponente, mínimo por el término de un (1) día hábil, que aclare, explique o aporte...». La afirmación no va más allá de la cita. Vigencia: el control de versiones dice «V.2 con modificaciones · Desde 03/02/2025». El art. 14, par. 3, del Decreto 0997 de 2026 lo leí en la relatoría de CCE (https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/, porque el PDF de Presidencia devolvió 200 con 0 bytes) y dice lo que la nota afirma. Hay un reparo menor que no cambia el veredicto: regla.documento_tipo dice que la Res. 464 es «de 2024» y no avisa que la misma página del nodo la fecha también en 2023 y que su encabezado dice «Desde: 3 de febrero de 2026». La CE-F-3050 sí lo advierte."
+    }
+  ]
+}

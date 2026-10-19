@@ -1,0 +1,38 @@
+{
+  "id": "CE-F-5251",
+  "tipo": "academia",
+  "autor": "Autoras del trabajo de grado (personas naturales, nombres omitidos por la regla 5)",
+  "titulo": "Análisis de la constructabilidad con oportunidad de mejora en los procesos de planeación y ejecución en proyectos de construcción de infraestructura vial en Bogotá",
+  "anio": 2018,
+  "institucion": "Universidad La Gran Colombia, Facultad de Posgrados, Especialización en Gerencia",
+  "url": "https://repository.ugc.edu.co/server/api/core/bitstreams/f437327b-37cf-4912-ac3a-58891d5a0ba3/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: 56 págs.; leídos el planteamiento y el estado del arte sobre causas de incumplimiento (págs. 27-30)",
+  "localizador": "pág. 28 del trabajo (pág. 31 del PDF), estado del arte, lista de factores de la Cámara Colombiana de la Infraestructura (2010), num. 4",
+  "cita": "Demoras en el cumplimiento de las obligaciones de la gestión social y ambiental en los proyectos, muchas veces decisiones administrativas simples como la autorización del traslado de un árbol o las decisiones para el manejo de los escombros, son tomadas de forma tardía e inoportuna",
+  "afirmacion": "Las autoras reportan, entre los factores que la Cámara Colombiana de la Infraestructura analizó en 2010, las demoras en la gestión social y ambiental de los proyectos, en las que decisiones administrativas simples como autorizar el traslado de un árbol o el manejo de escombros se toman de forma tardía e inoportuna.",
+  "inferencia": null,
+  "eje": 5,
+  "etapa": [
+    "E8"
+  ],
+  "decision": [
+    "D4"
+  ],
+  "modulo": [
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "el propio documento (fuente académica fechada)",
+    "vigente": null,
+    "nota": "Trabajo de grado de 2018 que reporta de segunda mano un análisis de la Cámara Colombiana de la Infraestructura de 2010 y un informe de la Sociedad Colombiana de Ingenieros; no es normativo."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Permisos menores que dependen de terceros (traslado de árboles, disposición de escombros) se demoran y atrasan la obra sin que el contratista los controle.",
+  "advertencia": "Dato de segunda mano (Cámara Colombiana de la Infraestructura, 2010) sin la fuente original abierta; no da frecuencia."
+}

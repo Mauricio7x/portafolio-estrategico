@@ -1,0 +1,48 @@
+{
+  "id": "CE-F-1219",
+  "tipo": "multilateral",
+  "autor": "OCDE (Organización para la Cooperación y el Desarrollo Económicos)",
+  "titulo": "Towards Efficient Public Procurement in Colombia: Making the Difference (OECD Public Governance Reviews)",
+  "anio": 2016,
+  "institucion": "OECD Publishing, París",
+  "url": "https://www.oecd.org/content/dam/oecd/en/publications/reports/2016/04/towards-efficient-public-procurement-in-colombia_g1g649e2/9789264252103-en.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: cap. 3, tablas 3.1 y 3.2 y texto siguiente (págs. 70-71 del PDF); el resto se recorrió por palabras clave",
+  "localizador": "págs. 68-69 impresas (págs. 70-71 del PDF), cap. 3, tabla 3.1 «Value and number of procurement contracts at a national level in Colombia, per type of contract, 2012 and 2014» y párrafo siguiente",
+  "cita": "Public tender 3 344.445 2 512.615 1 622 1 603 Special regime 7 016.137 2 261.675 32 188 11 946 […] It is important to note that the special regime contracts are not subject to the procurement statute but are funded by the government.",
+  "afirmacion": "La tabla 3.1 de la OCDE registra, en el nivel nacional, 3.344 millones de USD en licitación pública en 2014 frente a 7.016 millones en régimen especial, y el texto aclara que los contratos de régimen especial no están sujetos al estatuto de contratación pero se financian con recursos del Gobierno.",
+  "inferencia": "Inferencia: en 2014, en valor, la contratación nacional de régimen especial duplicaba la de licitación pública; buena parte de la obra pública que interesa al contratista puede no regirse por el Estatuto General ni por los documentos tipo.",
+  "eje": 1,
+  "etapa": [
+    "E0",
+    "T"
+  ],
+  "decision": [
+    "D1"
+  ],
+  "modulo": [
+    "M-ENTIDAD",
+    "M-LISTA"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.oecd.org/content/dam/oecd/en/publications/reports/2016/04/towards-efficient-public-procurement-in-colombia_g1g649e2/9789264252103-en.pdf",
+    "vigente": null,
+    "nota": "Datos SECOP 2012 y 2014 entregados por el Gobierno a la OCDE en 2015; las columnas son valor 2014, valor 2012, número 2014, número 2012; no se actualizaron."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Una parte muy grande del gasto contractual público va por régimen especial, fuera del Estatuto General y de los documentos tipo.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-academico:2",
+      "veredicto": "correcta",
+      "detalle": "Abrí el PDF de la OCDE (200, 115 págs.). La tabla 3.1 'Value and number of procurement contracts at a national level…' está en la pág. 70 del PDF (impresa 68). La fila Public tender dice 3 344.445 / 2 512.615 / 1 622 / 1 603, y la fila Special regime 7 016.137 / 2 261.675 / 32 188 / 11 946; las columnas son valor 2014 y 2012 en millones de USD, y número 2014 y 2012. La frase 'It is important to note that the special regime contracts are not subject to the procurement statute but are funded by the government.' está literal en la pág. 71 del PDF (impresa 69). Matiz menor del localizador: esa frase va después de la tabla 3.2, no justo después de la 3.1, pero el rango de páginas la cubre."
+    }
+  ]
+}

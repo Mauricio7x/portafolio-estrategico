@@ -1,0 +1,50 @@
+{
+  "id": "CE-F-1205",
+  "tipo": "gremio_ong",
+  "autor": "Transparencia por Colombia",
+  "titulo": "Análisis de la contratación del Gobierno Nacional posterior a la Ley de Garantías",
+  "anio": 2026,
+  "institucion": "Corporación Transparencia por Colombia (informe de 16 de julio de 2026)",
+  "url": "https://transparenciacolombia.org.co/wp-content/uploads/2026/07/ANALISIS-CONTRATACION-POST-LEY-DE-GARANTIAS_TPC.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa",
+  "localizador": "pág. 2 impresa (pág. 3 del PDF), apartado 1 «Introducción»",
+  "cita": "El periodo de Ley de Garantías de las elecciones presidenciales de 2026 inició el 31 de enero y se extendió hasta el 21 de junio de 2026.",
+  "afirmacion": "El informe de Transparencia por Colombia dice que el periodo de Ley de Garantías de las elecciones presidenciales de 2026 fue del 31 de enero al 21 de junio de 2026.",
+  "inferencia": "Inferencia: la misma introducción dice que el art. 33 de la Ley 996 de 2005 prohíbe la contratación directa en ese periodo, salvo excepciones; la licitación de obra no queda prohibida por esa regla. El informe afirma además que «A partir del 22 de junio las entidades públicas pudieron reanudar sus procesos de contratación», frase más amplia que la restricción que describe.",
+  "eje": 1,
+  "etapa": [
+    "E0",
+    "E1",
+    "T"
+  ],
+  "decision": [
+    "D1"
+  ],
+  "modulo": [
+    "M-LISTA",
+    "M-ENTIDAD"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A7",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://transparenciacolombia.org.co/wp-content/uploads/2026/07/ANALISIS-CONTRATACION-POST-LEY-DE-GARANTIAS_TPC.pdf",
+    "vigente": null,
+    "nota": "Fechas de 2026 dadas por una ONG; no se cotejaron con la circular de CCE ni con el calendario electoral oficial."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "La ley de garantías concentra la contratación: la directa se frena del 31 de enero al 21 de junio de 2026 y se acumula al levantarse la restricción.",
+  "advertencia": "La frase del mismo informe sobre que las entidades «pudieron reanudar sus procesos de contratación» desde el 22 de junio no distingue entre contratación directa (restringida) y licitación (no restringida); no se usa como regla.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-academico:1",
+      "veredicto": "correcta",
+      "detalle": "Abrí la URL de Transparencia por Colombia (200, 13 págs.). La cita aparece literal en la pág. 2 impresa (pág. 3 del PDF), apartado 1 «Introducción». La afirmación se la atribuye al informe y no la amplía. La advertencia sobre la frase de la «reanudación» desde el 22 de junio es correcta."
+    }
+  ]
+}

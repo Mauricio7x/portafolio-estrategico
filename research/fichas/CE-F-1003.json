@@ -1,0 +1,52 @@
+{
+  "id": "CE-F-1003",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República; Departamento Nacional de Planeación",
+  "titulo": "Decreto 0997 de 2026 (modifica y adiciona el Decreto 1082 de 2015)",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente (relatoría normativa)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: los 14 artículos y los considerandos en la relatoría de CCE",
+  "localizador": "art. 7 (sustituye el art. 2.2.1.1.2.1.1 del Decreto 1082 de 2015), parágrafo",
+  "cita": "La Entidad Estatal deberá justificar en los Documentos del Proceso la decisión de no incluir criterios o cláusulas ambientales o sociales con fundamento en los resultados del estudio previo.",
+  "afirmacion": "Si la entidad decide no incluir criterios o cláusulas ambientales o sociales, debe justificarlo en los Documentos del Proceso con base en el estudio previo.",
+  "inferencia": null,
+  "eje": 1,
+  "etapa": [
+    "E0",
+    "E1"
+  ],
+  "decision": [
+    "D1"
+  ],
+  "modulo": [
+    "M-PLIEGO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A2",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/",
+    "vigente": null,
+    "nota": "Art. 7: rige de forma progresiva, a los 6, 9, 12 o 15 meses de la publicación en el Diario Oficial según la entidad (art. 14, numerales 1 a 4). Con expedición el 04/08/2026, a la fecha de corte ningún plazo de 6 meses ha corrido. La fecha de publicación del Decreto 0997 de 2026 en el Diario Oficial no se comprobó en ninguna fuente abierta (la relatoría y la ficha de la Alcaldía de Bogotá solo dan la expedición, 04/08/2026)."
+  },
+  "lista_cerrada": "L1-01",
+  "problema_candidato": null,
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": "No aplica a procesos con documento tipo hasta que CCE expida la versión que lo incorpore (art. 14, parágrafo 3)",
+    "motivo_null": "Rige para procesos cuyo aviso, invitación o documento equivalente se publique después de la entrada en vigencia (art. 14, parágrafo 1); esa entrada es escalonada por tipo de entidad (6 a 15 meses desde la publicación en el Diario Oficial), y la fecha de esa publicación no se comprobó."
+  },
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-institucional:1",
+      "veredicto": "correcta",
+      "detalle": "La cita está literal en el parágrafo del 2.2.1.1.2.1.1 (art. 7), tanto en el HTML como en el PDF. El artículo excluye la mínima cuantía, pero para ella el art. 13 impone un deber de justificar equivalente, así que la afirmación no queda falsa en ningún régimen. La vigencia progresiva (null) está bien."
+    }
+  ]
+}

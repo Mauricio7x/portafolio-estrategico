@@ -1,0 +1,44 @@
+{
+  "id": "CE-F-3243",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Principales prácticas restrictivas a la libre competencia ejecutadas por los oferentes en el marco de procesos de selección de contratistas del Estado",
+  "anio": 2018,
+  "institucion": "Universidad Santo Tomás, Especialización en Contratación Estatal (Tunja) · revista VIeI vol. 13 núm. 2, pp. 11-52 (vía Dialnet)",
+  "url": "https://dialnet.unirioja.es/descarga/articulo/6551384.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: resumen, apartado sobre colusión como delito (pág. 27 del PDF) y casos de la SIC (págs. 29-31); el resto se recorrió por palabras clave",
+  "localizador": "pág. 27 del PDF, apartado sobre la colusión como delito, cita del art. 27 de la Ley 1474 de 2011 (art. 410A de la Ley 599 de 2000)",
+  "cita": "El que en un proceso de licitación pública, subasta pública, selección abreviada o concurso se concertare con otro con el fin de alterar ilícitamente el procedimiento contractual, incurrirá en prisión de seis (6) a doce (12) años y multa de doscientos (200) a mil (1.000) salarios mínimos",
+  "afirmacion": "El autor transcribe el artículo 410A del Código Penal, adicionado por la Ley 1474 de 2011, según el cual quien en una licitación, subasta, selección abreviada o concurso se concierte con otro para alterar ilícitamente el procedimiento contractual incurre en prisión de seis a doce años y multa de 200 a 1.000 salarios mínimos.",
+  "inferencia": "Inferencia: la frase transcrita sigue con una inhabilidad para contratar con entidades estatales por ocho años; la colusión le cuesta al contratista mucho más que la pérdida del proceso.",
+  "eje": 3,
+  "etapa": [
+    "E3",
+    "E4"
+  ],
+  "decision": [
+    "D3",
+    "D4"
+  ],
+  "modulo": [
+    "M-OFERTA"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "No reverificado contra el texto vigente de la Ley 599 de 2000; transcripción del autor (2018)",
+    "vigente": null,
+    "nota": "El texto se tomó de la transcripción del autor; la vigencia y posibles modificaciones del art. 410A no se comprobaron en esta ficha."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Norma penal (Ley 1474 de 2011, art. 27) que no rige desde un aviso concreto."
+  },
+  "lista_cerrada": null,
+  "problema_candidato": null
+}

@@ -1,0 +1,51 @@
+{
+  "id": "CE-F-3004",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República",
+  "titulo": "Decreto 1082 de 2015, Único Reglamentario del Sector Administrativo de Planeación Nacional (texto consolidado)",
+  "anio": 2015,
+  "institucion": "Departamento Administrativo de la Función Pública · Gestor Normativo",
+  "url": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=77653",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: art. 2.2.1.1.2.2.1 completo",
+  "localizador": "art. 2.2.1.1.2.2.1 (Modificación de los pliegos de condiciones), incisos 1 y 3",
+  "cita": "La Entidad Estatal puede modificar los pliegos de condiciones a través de Adendas expedidas antes del vencimiento del plazo para presentar ofertas. […] La Entidad Estatal debe publicar las Adendas en los días hábiles, entre las 7:00 a. m. y las 7:00 p. m.",
+  "afirmacion": "Los pliegos se modifican por adendas expedidas antes del vencimiento del plazo para presentar ofertas, que deben publicarse en días hábiles entre las 7:00 a. m. y las 7:00 p. m.",
+  "inferencia": "Inferencia: el mismo inciso fija la publicación a más tardar el día hábil anterior al cierre, salvo en la licitación pública, donde remite a la ley (tres días de anticipación).",
+  "eje": 3,
+  "etapa": [
+    "E2"
+  ],
+  "decision": [
+    "D3"
+  ],
+  "modulo": [
+    "M-ADENDAS"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A2",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=77653 (texto consolidado) y texto del Decreto 0997 de 2026 en https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/",
+    "vigente": true,
+    "nota": "Se comprobó que el Decreto 0997 de 2026 (arts. 1 a 13) no modifica este artículo; el consolidado de Función Pública aún no trae el 0997."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Norma reglamentaria compilada en el Decreto 1082 de 2015: rige desde su expedición, no desde un aviso de convocatoria."
+  },
+  "lista_cerrada": "L3-02",
+  "problema_candidato": null,
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje3-institucional:1",
+      "veredicto": "correcta",
+      "detalle": "Los incisos 1 y 3 del art. 2.2.1.1.2.2.1 son literales. La cita corta el inciso 3 sin marcarlo; después sigue «a más tardar el día hábil anterior… salvo en la licitación pública… tres (3) días de anticipación». También omite el inciso 2, que permite adendas al cronograma después del cierre y antes de adjudicar. La afirmación no dice que las adendas solo se puedan expedir antes del cierre, así que no se pasa de la cita. Aun así, sería mejor nombrar el inciso 2 para que no se lea como regla exclusiva. El Decreto 0997 no toca este artículo."
+    }
+  ]
+}

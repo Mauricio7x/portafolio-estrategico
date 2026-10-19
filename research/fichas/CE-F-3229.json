@@ -1,0 +1,41 @@
+{
+  "id": "CE-F-3229",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Los pliegos de condiciones tipo: entre los eslabones de la autonomía de la voluntad contractual",
+  "anio": 2025,
+  "institucion": "Universidad Externado de Colombia · Revista digital de Derecho Administrativo núm. 34, pp. 119-143 (vía Dialnet)",
+  "url": "https://dialnet.unirioja.es/descarga/articulo/10288695.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: resumen y apartado 4 «Breve recuento de los resultados de la utilización de los denominados pliegos de condiciones tipo» (págs. 19-21 del PDF); el resto se recorrió por palabras clave",
+  "localizador": "pág. 20 del PDF (impresa 138), apartado 4, Tabla 1 «Procedimientos de selección en donde se utilizaron pliegos de condiciones tipo»",
+  "cita": "Agencia Nacional de Infraestructura (ANI) 2 15 Instituto Nacional de Vías (Invías) 835 50.257 Instituto de Infraestructura y Concesiones de Cundinamarca (ICCU) 75 5.159 Instituto de Desarrollo Urbano (IDU) 169 3.559",
+  "afirmacion": "El autor reporta, con datos que consultó a las entidades en 2024, que en los procesos con pliegos tipo desde 2018 participaron 15 proponentes en 2 procesos de la ANI, 50.257 en 835 del Invías, 5.159 en 75 del ICCU y 3.559 en 169 del IDU.",
+  "inferencia": "Inferencia (cálculo propio, no del autor): son unos 60 proponentes por proceso en el Invías, 69 en el ICCU y 21 en el IDU; con documento tipo, la adjudicación se define entre decenas de ofertas, lo que vuelve decisivos el puntaje, el método de evaluación del precio y el desempate.",
+  "eje": 3,
+  "etapa": [
+    "E4",
+    "E5"
+  ],
+  "decision": [
+    "D1",
+    "D2"
+  ],
+  "modulo": [
+    "M-ENTIDAD",
+    "M-PRECIO"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "No aplica: dato empírico o descripción de práctica, no regla",
+    "vigente": null,
+    "nota": "Datos que el autor obtuvo consultando a las entidades en mayo y junio de 2024; cubren procesos con pliegos tipo desde 2018."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "En los procesos con documento tipo de grandes entidades de infraestructura compiten decenas de oferentes por proceso (Invías: 50.257 proponentes en 835 procesos).",
+  "advertencia": "Los encabezados de la tabla son «Procedimientos de selección en donde se utilizaron pliegos de condiciones tipo (desde 2018 a la fecha)» y «Número de proponentes participantes»; el promedio por proceso es cálculo propio de la ficha."
+}

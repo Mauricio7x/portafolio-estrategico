@@ -1,0 +1,38 @@
+{
+  "id": "CE-F-5208",
+  "tipo": "academia",
+  "autor": "Autores del artículo (personas naturales, nombres omitidos por la regla 5)",
+  "titulo": "Identificación de factores que generan diferencias de tiempo y costos en proyectos de construcción en Colombia",
+  "anio": 2018,
+  "institucion": "Universidad EAFIT, revista Ingeniería y Ciencia, vol. 14, núm. 27 (autores de la Pontificia Universidad Javeriana; vía Redalyc)",
+  "url": "https://www.redalyc.org/journal/835/83556831006/html/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: texto HTML de Redalyc (resumen, método, resultados y conclusiones; las figuras y tablas no se leyeron como imagen)",
+  "localizador": "apartado 4 (conclusiones), segundo párrafo",
+  "cita": "Los cinco aspectos más representativos en la variación del tiempo de ejecución de proyectos en Colombia son la planeación del cronograma, la maquinaria necesaria a tiempo, los cambios en los diseños, las fluctuaciones de la moneda y el sector dentro de la actividad económica",
+  "afirmacion": "Los autores concluyen que los cinco aspectos más representativos en la variación del tiempo de ejecución de proyectos en Colombia son la planeación del cronograma, la maquinaria a tiempo, los cambios en los diseños, las fluctuaciones de la moneda y el sector económico.",
+  "inferencia": null,
+  "eje": 5,
+  "etapa": [
+    "E8"
+  ],
+  "decision": [
+    "D4"
+  ],
+  "modulo": [
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "el propio documento (fuente académica fechada)",
+    "vigente": null,
+    "nota": "Estudio empírico por encuesta; no es normativo, no aplica comprobar vigencia."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Cambios en los diseños y falta de maquinaria a tiempo alargan el plazo de ejecución de la obra.",
+  "advertencia": "Resultado de una encuesta de percepción (75 proyectos públicos y privados); no da porcentaje de contratos afectados."
+}

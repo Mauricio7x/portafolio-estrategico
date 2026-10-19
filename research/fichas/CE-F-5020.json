@@ -1,0 +1,52 @@
+{
+  "id": "CE-F-5020",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 1437 de 2011, Código de Procedimiento Administrativo y de lo Contencioso Administrativo (CPACA)",
+  "anio": 2011,
+  "institucion": "Secretaría General del Senado de la República, base de leyes",
+  "url": "http://www.secretariasenado.gov.co/senado/basedoc/ley_1437_2011_pr003.html",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: art. 141 del texto de la Secretaría del Senado (página 4 de la ley)",
+  "localizador": "art. 141, inciso primero",
+  "cita": "el interesado podrá solicitar la liquidación judicial del contrato cuando esta no se haya logrado de mutuo acuerdo y la entidad estatal no lo haya liquidado unilateralmente dentro de los dos (2) meses siguientes al vencimiento del plazo convenido para liquidar de mutuo acuerdo",
+  "afirmacion": "El interesado puede pedir al juez la liquidación del contrato cuando no hubo liquidación de mutuo acuerdo y la entidad no liquidó unilateralmente dentro de los dos meses siguientes al plazo para hacerlo de mutuo acuerdo.",
+  "inferencia": null,
+  "eje": 5,
+  "etapa": [
+    "E9",
+    "E10"
+  ],
+  "decision": [
+    "D4"
+  ],
+  "modulo": [
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A1",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "http://www.secretariasenado.gov.co/senado/basedoc/ley_1437_2011_pr003.html",
+    "vigente": true,
+    "nota": "Texto de la Secretaría del Senado consultado el 2-oct-2026; el artículo trae notas de jurisprudencia de unificación que no se abrieron."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Norma legal: rige para los contratos del Estatuto General sin depender de la fecha de un aviso; no se buscó régimen de transición para contratos anteriores."
+  },
+  "lista_cerrada": "L5-09",
+  "problema_candidato": null,
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje5-institucional:2",
+      "veredicto": "correcta",
+      "detalle": "Abierta la URL (ley_1437_2011_pr003.html, 200). La cita está literal en el art. 141, inciso primero. La cita se detiene antes de «o, en su defecto, del término establecido por la ley», sin «[…]». La afirmación cubre solo el caso del plazo convenido, pero no afirma nada falso. Las notas de unificación del art. 141 (SUJ-001-CE-S3-2025 y la IJ de 14-feb-2012) tratan del enriquecimiento sin causa: no tocan la liquidación judicial. No hay modificación."
+    }
+  ]
+}

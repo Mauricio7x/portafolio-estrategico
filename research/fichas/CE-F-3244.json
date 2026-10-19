@@ -1,0 +1,44 @@
+{
+  "id": "CE-F-3244",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Contratación de los cabildos indígenas con el Estado: una mirada a las obligaciones y retos",
+  "anio": null,
+  "institucion": "Revista Doctrina Distrital (según el encabezado del PDF), vía Dialnet; número y año no visibles en las páginas leídas",
+  "url": "https://dialnet.unirioja.es/descarga/articulo/10362960.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: resumen y apartado sobre la contratación directa con pueblos indígenas (págs. 11-13 del PDF); el resto se recorrió por palabras clave",
+  "localizador": "pág. 12 del PDF, apartado sobre la contratación directa con cabildos y autoridades indígenas",
+  "cita": "serán a través de la modalidad de selección de contratación directa. Asimismo, incorpora mediate la Ley 2294 de 2023 la ejecución de obras públicas de mantenimiento o de mejoramientos en temas relacionados con infraestructura social y transporte",
+  "afirmacion": "El autor señala que la norma que comenta dispone que esas contrataciones con pueblos indígenas serán por contratación directa, y que se incorpora mediante la Ley 2294 de 2023 la ejecución de obras públicas de mantenimiento o mejoramiento de infraestructura social y de transporte.",
+  "inferencia": "Inferencia: una parte de las obras menores de mantenimiento y mejoramiento en territorios indígenas puede asignarse sin licitación; el contratista debe contar con que ese mercado no siempre se abre a competencia.",
+  "eje": 3,
+  "etapa": [
+    "E0"
+  ],
+  "decision": [
+    "D1"
+  ],
+  "modulo": [
+    "M-ENTIDAD"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "No reverificado: lectura del autor de la Ley 2294 de 2023",
+    "vigente": null,
+    "nota": "Lectura del autor de la Ley 2160 de 2021 y de la Ley 2294 de 2023; comprobar en esas leyes y su reglamentación el alcance exacto antes de usarlo como regla."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Contratación directa; no hay aviso de convocatoria."
+  },
+  "lista_cerrada": null,
+  "problema_candidato": "Obras de mantenimiento y mejoramiento de infraestructura social y de transporte que se contratan directamente con comunidades indígenas, por fuera de la licitación.",
+  "advertencia": "«mediate» está así en el original. El año del artículo no se pudo leer en el PDF (va null).",
+  "motivo_null": "anio: el PDF no muestra el año en las páginas leídas."
+}

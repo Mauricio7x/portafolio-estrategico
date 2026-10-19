@@ -1,0 +1,38 @@
+{
+  "id": "CE-F-6203",
+  "tipo": "academia",
+  "autor": "Una persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Colusión en licitaciones de contratación pública (artículo de investigación)",
+  "anio": 2023,
+  "institucion": "Universidad La Gran Colombia, Especialización en Contratación Estatal, Seminario de Investigación · repositorio institucional",
+  "url": "https://repository.ugc.edu.co/bitstreams/a3ff1644-070d-4ce8-b828-395161618ac2/download",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: tabla de contenido, marco conceptual (págs. 10-15) y conclusión (págs. 16-17)",
+  "localizador": "pág. 14 (marco conceptual, «Estudios de casos reales sobre colusión en licitación en contratación pública»)",
+  "cita": "realizado por la Superintendencia de Industria y Comercio a la Corporación Autónoma Regional del Canal del Dique por violación a la libre competencia, […] se inicia una investigación que concluye en sanciones y decide declarar desierta la licitación",
+  "afirmacion": "La autora relata un caso de la SIC sobre una licitación de la Corporación Autónoma Regional del Canal del Dique en el que una investigación por violación a la libre competencia terminó en sanciones y la licitación se declaró desierta.",
+  "inferencia": "Inferencia: para el proponente honesto, la colusión de otros puede terminar en una licitación desierta, con lo que pierde el costo de preparar la oferta.",
+  "eje": 6,
+  "etapa": [
+    "E5",
+    "E6"
+  ],
+  "decision": [
+    "D1"
+  ],
+  "modulo": [
+    "M-ENTIDAD"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "No se abrió la resolución de la SIC citada por la autora",
+    "vigente": null,
+    "nota": "Caso relatado por un trabajo de seminario de especialización; el hecho no se comprobó contra la resolución."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Colusión entre proponentes que, detectada, termina en sanción de la SIC y en licitación declarada desierta (caso relatado de una corporación autónoma regional)."
+}

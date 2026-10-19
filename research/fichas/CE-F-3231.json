@@ -1,0 +1,41 @@
+{
+  "id": "CE-F-3231",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Análisis de requisitos habilitantes de capacidad financiera, que no garantizan la pluralidad de oferentes, en las licitaciones públicas",
+  "anio": 2019,
+  "institucion": "Universidad Nacional de Colombia, Facultad de Minas (Medellín), Maestría en Ingeniería Administrativa (tesis)",
+  "url": "https://bffrepositorio.unal.edu.co/server/api/core/bitstreams/78e582a7-d51d-40a2-a691-7fae3a3bfd75/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: resumen, capítulo 4 (resultados 2017, págs. 79-90 del PDF) y conclusiones (págs. 128-129); el resto se recorrió por palabras clave",
+  "localizador": "pág. 128 del PDF, «Conclusiones», párrafo sobre el índice de liquidez",
+  "cita": "13,7% de los pre-pliegos de condiciones solicita índices de liquidez entre 1,7 – 2,0, seguido del 10,4% que solicitan índices entre 4,5 – 5,5; lo cual según el soporte teórico presentado no garantiza solidez financiera del proponente.",
+  "afirmacion": "La autora encontró que el 13,7 % de los proyectos de pliego de 2017 que estudió pedía un índice de liquidez entre 1,7 y 2,0 y el 10,4 % entre 4,5 y 5,5, lo que según su soporte teórico no garantiza la solidez financiera del proponente.",
+  "inferencia": "Inferencia: un índice de liquidez muy alto en el proyecto de pliego es una exigencia que deja por fuera a contratistas sanos y que vale la pena observar.",
+  "eje": 3,
+  "etapa": [
+    "E1",
+    "E2"
+  ],
+  "decision": [
+    "D1",
+    "D3"
+  ],
+  "modulo": [
+    "M-PLIEGO",
+    "M-RUP"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "No aplica: dato empírico o descripción de práctica, no regla",
+    "vigente": null,
+    "nota": "Licitaciones de 2017-2018 del segmento «Terrenos, Edificios, Estructuras y Vías» de SECOP, anteriores a los documentos tipo de obra, que hoy fijan los indicadores financieros en las modalidades que cubren."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Indicadores financieros exigidos en los pliegos sin relación con la solidez del proponente (liquidez de 4,5 a 5,5 en el 10,4 % de los proyectos de pliego estudiados).",
+  "advertencia": "La tesis da varias cifras de procesos sin pluralidad según el estado y el corte (80,5 %, 78 %, 90 %, 68 %): la frecuencia depende del universo y no se usa una sola."
+}

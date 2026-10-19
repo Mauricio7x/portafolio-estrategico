@@ -1,0 +1,58 @@
+{
+  "id": "CE-F-1214",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Comité de Documentos Tipo con Enfoque Regional. Una propuesta para garantizar el cumplimiento de la Ley 2022 de 2020",
+  "anio": 2022,
+  "institucion": "Universidad de los Andes, Facultad de Derecho, Maestría en Derecho Público para la Gestión Administrativa (trabajo de grado)",
+  "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/69a44334-a06d-444f-b66a-e502dd35f321/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: tabla de contenido, cap. II (los cuatro intentos de enfoque regional, págs. 34-43) y conclusiones finales (págs. 86-88)",
+  "localizador": "pág. 38 impresa (pág. 38 del PDF), cap. II, apartado 2.2, segundo intento (Resoluciones 240 y 241, cláusula 9 del Anexo 5 – Minuta del Contrato)",
+  "cita": "Destinar a la ejecución del contrato mano de obra no calificada de la región en un porcentaje no inferior [al diez por ciento (10%), sin perjuicio de incluir un porcentaje superior que no supere el treinta por ciento (30%)] de acuerdo con el personal del contratista de obra",
+  "afirmacion": "La autora transcribe, del soporte técnico de las Resoluciones 240 y 241 (año en conflicto, ver advertencia), la cláusula de la minuta del documento tipo que obliga a destinar a la ejecución del contrato mano de obra no calificada de la región en un porcentaje no inferior al 10 %, con un texto entre corchetes que admite incluir un porcentaje superior que no supere el 30 %, de acuerdo con el personal del contratista de obra.",
+  "inferencia": "Inferencia: es una obligación de ejecución que mueve el costo de mano de obra; el porcentaje mínimo que fije cada entidad hay que leerlo en la minuta antes de cotizar.",
+  "eje": 1,
+  "etapa": [
+    "E3",
+    "E8"
+  ],
+  "decision": [
+    "D2",
+    "D4"
+  ],
+  "modulo": [
+    "M-PLIEGO",
+    "M-APU"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/69a44334-a06d-444f-b66a-e502dd35f321/content",
+    "vigente": null,
+    "nota": "Texto de la versión de las Resoluciones 240 y 241 que cita el trabajo (año en conflicto, ver advertencia); no se comprobó contra la versión vigente del documento tipo a la fecha de corte."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Cada versión del documento tipo trae obligaciones de mano de obra local con rangos distintos que la entidad fija; cambian el costo de ejecución entre versiones.",
+  "advertencia": "Según el verificador (2-oct-2026): (1) el texto entre corchetes de la minuta lo llena la entidad: el mínimo es el 10 % y la entidad puede exigir uno mayor que no supere el 30 %; el 30 % es el tope del mínimo exigible, no un tope a la mano de obra local del contratista. (2) El documento dice Resoluciones 240 y 241 «de 2021» en la pág. 38 y «de 2020» en la pág. 37; una búsqueda web del verificador (resultados no abiertos) las sitúa el 27-nov-2020, versión 3, obligatoria desde el 1-ene-2021; sin verificar. (3) El trabajo tiene una sola autora; el segundo nombre de la portada parece ser el director.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-academico:1",
+      "veredicto": "no_sostiene",
+      "detalle": "Abrí la URL de Uniandes (200, 107 págs.). La cita aparece literal en la pág. 38, impresa y del PDF. Hay tres fallos. (1) La lectura del rango está mal. En la minuta, el texto entre corchetes lo llena la entidad: el mínimo es el 10 % y la entidad puede fijar uno mayor «que no supere el treinta por ciento». El 30 % es el tope del porcentaje mínimo que la entidad puede exigir, no un tope a la mano de obra local del contratista. La afirmación («no inferior al 10 % y que no supere el 30 %») hace leer que el contratista no puede pasar del 30 %. (2) El año está mal. La afirmación dice Resoluciones 240 y 241 «de 2021», como la pág. 38, pero el mismo documento dice «de 2020» en la pág. 37. Una WebSearch (resultados de Alcaldía de Bogotá y del Diario Oficial del 3-dic-2020; no los abrí) las sitúa el 27-nov-2020, versión 3, obligatoria desde el 1-ene-2021. La página de CCE para la Resolución 240 de 2020 dio 404 el 2-oct-2026. (3) El trabajo tiene una sola autora; el segundo nombre de la portada, con «Magister en Derecho», parece ser el director. La afirmación dice «Los autores». Sobre la vigencia: no comprobé la versión vigente del documento tipo en el control de versiones de CCE. La nota de la ficha lo reconoce («no se comprobó»), así que la vigencia se dejó abierta, no se declaró mal.",
+      "accion": "Se corrigió «Los autores» por «La autora», se quitó el año de las resoluciones (en conflicto dentro del documento) y se dejó el 30 % como lo trae la cita, entre corchetes; la lectura del rango y el año pasaron a advertencia; se ajustaron inferencia, localizador y nota de vigencia, que repetían el año 2021.",
+      "antes": {
+        "afirmacion": "Los autores transcriben, del soporte técnico de las Resoluciones 240 y 241 de 2021, que la minuta del documento tipo obliga a destinar al contrato mano de obra no calificada de la región en un porcentaje no inferior al 10 % y que no supere el 30 %, según el personal del contratista de obra.",
+        "inferencia": "Inferencia: es una obligación de ejecución que mueve el costo de mano de obra; el porcentaje que fije cada entidad dentro del rango hay que leerlo en la minuta antes de cotizar.",
+        "localizador": "pág. 38 impresa (pág. 38 del PDF), cap. II, apartado 2.2, segundo intento (Resoluciones 240 y 241 de 2021, cláusula 9 del Anexo 5 – Minuta del Contrato)",
+        "vigencia_verificada.nota": "Texto de las versiones de 2021; no se comprobó contra la versión vigente del documento tipo a la fecha de corte.",
+        "advertencia": null
+      }
+    }
+  ]
+}

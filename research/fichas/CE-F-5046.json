@@ -1,0 +1,46 @@
+{
+  "id": "CE-F-5046",
+  "tipo": "concepto_cce",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Concepto C-1733 de 2025 (30 de diciembre de 2025), sobre planeación, modificación y adición de contratos de obra",
+  "anio": 2025,
+  "institucion": "Relatoría de Colombia Compra Eficiente (ficha https://relatoria.colombiacompra.gov.co/conceptos/c-1733-de-2026/ y documento adjunto .docx)",
+  "url": "https://relatoria.colombiacompra.gov.co/wp-content/uploads/2026/01/C-1733.docx",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: el concepto entero (texto extraído del .docx adjunto) y la ficha de la relatoría",
+  "localizador": "apartado de respuesta, numeral iv), párrafo «Dicha norma además de consagrar…»",
+  "cita": "para adicionar un contrato debe dividirse el valor inicial por el salario mínimo vigente al momento de la suscripción del contrato, y luego dividirlo por dos (2); el resultado obtenido constituirá el número de SMLMV por los cuales podrá adicionarse el contrato.",
+  "afirmacion": "Según CCE, el cupo de adición se calcula dividiendo el valor inicial por el salario mínimo vigente al firmar el contrato y luego por dos; el resultado son los SMMLV que se pueden adicionar.",
+  "inferencia": "Inferencia: como cada adición se convierte a SMMLV del año en que se firma, en contratos largos el tope en pesos crece con el salario mínimo.",
+  "eje": 5,
+  "etapa": [
+    "E8"
+  ],
+  "decision": [
+    "D4"
+  ],
+  "modulo": [
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A5",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://relatoria.colombiacompra.gov.co/wp-content/uploads/2026/01/C-1733.docx",
+    "vigente": true,
+    "nota": "Concepto fechado el 30-dic-2025; interpreta el parágrafo del art. 40 de la Ley 80, cuyo texto vigente se comprobó en el Gestor Normativo el 2-oct-2026."
+  },
+  "regla": null,
+  "lista_cerrada": "L5-01",
+  "problema_candidato": null,
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje5-institucional:4",
+      "veredicto": "correcta",
+      "detalle": "La cita es literal en el C-1733, «Razones de la respuesta», numeral iv), párrafo «Dicha norma además de consagrar una prohibición…». Ese párrafo NO está en el apartado «Respuesta» (líneas 103-127 del texto extraído): el localizador dice «apartado de respuesta», pero el numeral iv) y el inicio del párrafo lo ubican sin ambigüedad. La afirmación es fiel a la cita. La inferencia va rotulada y se apoya en la frase siguiente del mismo párrafo: cada adición se estima en SMLMV vigentes al momento de la adición. El parágrafo del art. 40 de la Ley 80 se comprobó vigente."
+    }
+  ]
+}

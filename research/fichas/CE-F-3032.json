@@ -1,0 +1,53 @@
+{
+  "id": "CE-F-3032",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República",
+  "titulo": "Decreto 1082 de 2015, Único Reglamentario del Sector Administrativo de Planeación Nacional (texto consolidado)",
+  "anio": 2015,
+  "institucion": "Departamento Administrativo de la Función Pública · Gestor Normativo",
+  "url": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=77653",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: art. 2.2.1.2.3.1.6 completo",
+  "localizador": "art. 2.2.1.2.3.1.6 (Garantía de los Riesgos derivados del incumplimiento de la oferta)",
+  "cita": "2. El retiro de la oferta después de vencido el plazo fijado para la presentación de las ofertas. 3. La no suscripción del contrato sin justa causa por parte del adjudicatario. 4. La falta de otorgamiento por parte del proponente seleccionado de la garantía de cumplimiento del contrato.",
+  "afirmacion": "La garantía de seriedad cubre, entre otros eventos, el retiro de la oferta después del cierre, la no suscripción del contrato sin justa causa y la falta de otorgamiento de la garantía de cumplimiento por el seleccionado.",
+  "inferencia": null,
+  "eje": 3,
+  "etapa": [
+    "E4",
+    "E7"
+  ],
+  "decision": [
+    "D2",
+    "D4"
+  ],
+  "modulo": [
+    "M-OFERTA"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A2",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=77653 (texto consolidado) y texto del Decreto 0997 de 2026 en https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/",
+    "vigente": true,
+    "nota": "Se comprobó que el Decreto 0997 de 2026 (arts. 1 a 13) no modifica este artículo; el consolidado de Función Pública aún no trae el 0997."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Norma reglamentaria compilada en el Decreto 1082 de 2015: rige desde su expedición, no desde un aviso de convocatoria."
+  },
+  "lista_cerrada": "L3-11",
+  "problema_candidato": null,
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje3-institucional:3",
+      "veredicto": "correcta",
+      "detalle": "Abrí https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=77653 con --cacert bundle_normas2.pem (HTTP 200). El art. 2.2.1.2.3.1.6 trae literalmente los numerales 2, 3 y 4 citados y además el numeral 1 (no ampliación de la vigencia). Como la afirmación dice «entre otros eventos», no deja nada por fuera. Revisé el texto del Decreto 0997 de 2026 en relatoria.colombiacompra.gov.co: sus arts. 1 a 13 modifican o adicionan los arts. 2.2.1.1.1.4.5, 1.5.4, 1.5.7, 1.3.1, 1.6.1, 1.6.2, 2.1.1, 2.1.3, 2.2.2, 2.2.10, 2.2.1.2.1.2.1, 2.1.2.12 y 2.1.5.1, y ninguno toca este artículo."
+    }
+  ]
+}

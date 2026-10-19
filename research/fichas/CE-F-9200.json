@@ -1,0 +1,38 @@
+{
+  "id": "CE-F-9200",
+  "tipo": "academia",
+  "autor": "Tres personas naturales (nombres omitidos por la regla 5 del piloto)",
+  "titulo": "Aspectos tributarios para los contratos de obra pública en Colombia",
+  "anio": 2017,
+  "institucion": "Pontificia Universidad Javeriana, Facultad de Ciencias Jurídicas, Especialización en Derecho Tributario · monografía en el repositorio institucional",
+  "url": "https://apidspace.javeriana.edu.co/server/api/core/bitstreams/5899e088-e87d-4db3-878d-e83fcfcab2b2/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: 25 páginas, leídas en texto extraído con pdftotext",
+  "localizador": "pág. 4 del PDF (introducción)",
+  "cita": "Los costos directos por tasas y contribuciones a los que se ven enfrentados los contratistas1 de obra son altamente elevados pudiendo llegar a representar hasta un 18% cuando son ejecutados en determinados departamentos, situación que encarece el costo de las obras.",
+  "afirmacion": "Los autores afirman que los costos por tasas y contribuciones que enfrentan los contratistas de obra pueden llegar a representar hasta un 18 % cuando la obra se ejecuta en determinados departamentos, lo que encarece las obras.",
+  "inferencia": "Inferencia: un precio que no incorpora estampillas y contribuciones del lugar de la obra puede perder una porción del valor del contrato comparable o mayor que la utilidad esperada.",
+  "eje": 9,
+  "etapa": [
+    "E3"
+  ],
+  "decision": [
+    "D2"
+  ],
+  "modulo": [
+    "M-PRECIO",
+    "M-APU"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "Monografía de 2017; no se abrieron las leyes, ordenanzas ni acuerdos vigentes de estampillas y contribuciones",
+    "vigente": null,
+    "nota": "Anterior a las reformas tributarias de 2018, 2019, 2021 y 2022; las tarifas y su suma no se reverificaron."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "No incluir en el precio las estampillas y contribuciones del lugar de la obra: según los autores pueden llegar a cerca del 18 % del valor en algunos departamentos y se comen la utilidad."
+}

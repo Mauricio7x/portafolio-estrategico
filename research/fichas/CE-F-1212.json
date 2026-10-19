@@ -1,0 +1,47 @@
+{
+  "id": "CE-F-1212",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Documentos tipo: ¿Herramienta para mejorar la competencia en los procesos de contratación estatal?",
+  "anio": 2022,
+  "institucion": "Universidad de los Andes, Facultad de Economía, CEDE (Documento CEDE 2022-32, serie Estudiantes PEG, tesis de maestría en Economía; no evaluado por pares)",
+  "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/d99425d6-4b23-425a-9c13-bd1bc4902ea2/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: resumen, datos (págs. 15-22) y resultados y conclusiones (págs. 33-36 impresas); la estimación se recorrió",
+  "localizador": "pág. 35 impresa (pág. 37 del PDF), apartado 5 «Discusión y conclusiones»",
+  "cita": "Finalmente, no se puede atribuir ningún efecto (positivo o negativo) de la implementación de documentos estandarizados en los procesos de infraestructura vial sobre la medida de desempeño presupuestal",
+  "afirmacion": "La autora concluye que no se puede atribuir ningún efecto, positivo ni negativo, de los documentos tipo en infraestructura vial sobre la medida de desempeño presupuestal (diferencia entre presupuesto oficial y adjudicado).",
+  "inferencia": "Inferencia: el estudio no muestra que la mayor competencia haya movido el precio adjudicado frente al presupuesto oficial; no sirve para estimar descuentos de oferta.",
+  "eje": 1,
+  "etapa": [
+    "E5",
+    "E6"
+  ],
+  "decision": [
+    "D2"
+  ],
+  "modulo": [
+    "M-PRECIO"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/d99425d6-4b23-425a-9c13-bd1bc4902ea2/content",
+    "vigente": null,
+    "nota": "Base del Observatorio Oficial de Contratación Estatal (CCE), procesos de obra de infraestructura de transporte 2019-2022."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": null,
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-academico:1",
+      "veredicto": "correcta",
+      "detalle": "La cita aparece literal en la pág. 35 impresa (pág. 37 del PDF), apartado 5. Lo que va entre paréntesis en la afirmación (diferencia entre presupuesto oficial y adjudicado) es la definición que da el mismo documento en la nota de la tabla 5, pág. 4 del apartado de datos. Coincide además con la pág. 34 y con la tabla 10, donde la diferencia no es significativa. No dice más que la cita."
+    }
+  ]
+}

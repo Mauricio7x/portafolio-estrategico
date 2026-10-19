@@ -1,0 +1,57 @@
+{
+  "id": "CE-F-1237",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Análisis de la implementación de los documentos tipo en la contratación pública en Colombia, a partir de la Ley 1882 de 2018",
+  "anio": 2020,
+  "institucion": "Universidad Militar Nueva Granada, Facultad de Ciencias Económicas, Dirección de Posgrados (trabajo de grado, repositorio institucional)",
+  "url": "https://repository.umng.edu.co/server/api/core/bitstreams/603548aa-7d29-43a4-80db-be7efac333d4/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: datos de implementación (págs. 13-16 impresas, tablas 1-2 y gráficas 1-2) y conclusiones (pág. 18)",
+  "localizador": "pág. 14 impresa (pág. 19 del PDF), texto bajo la gráfica 2 «Principales modificaciones realizadas a los pliegos tipo» (fuente: Cámara Colombiana de la Infraestructura, 2019); el final de la frase sobre el AIU sigue en la pág. 15 impresa (pág. 20 del PDF)",
+  "cita": "el 50% del total de modificaciones realizadas a la estructura del pliego tipo están relacionados, un 25% con nuevos requisitos no establecidos en el pliego y el otro 25%, con lo referente a la experiencia […] Así mismo, se observa un 17% de interpretación inadecuada del AIU",
+  "afirmacion": "El autor, con datos de la Cámara Colombiana de la Infraestructura de 2019, dice que entre las modificaciones que las entidades hicieron al pliego tipo un 25 % fueron nuevos requisitos no establecidos, otro 25 % tocaron la experiencia y un 17 % fue interpretación inadecuada del AIU.",
+  "inferencia": "Inferencia: en las págs. 12-13 impresas el autor afirma que en el periodo abril-agosto de 2019 solo el 16 % de los procesos aplicó el documento tipo de manera adecuada y el 79 % de manera errónea; las desviaciones que más le tocan al contratista son experiencia, requisitos nuevos y AIU, que hay que revisar contra el documento tipo en cada proceso.",
+  "eje": 1,
+  "etapa": [
+    "E1",
+    "E2",
+    "E3"
+  ],
+  "decision": [
+    "D3",
+    "D2"
+  ],
+  "modulo": [
+    "M-PLIEGO",
+    "M-RUP",
+    "M-PRECIO"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://repository.umng.edu.co/server/api/core/bitstreams/603548aa-7d29-43a4-80db-be7efac333d4/content",
+    "vigente": null,
+    "nota": "Datos de la CCI de abril-agosto de 2019, primeros meses de obligatoriedad del documento tipo de transporte."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Entidades que modifican el documento tipo en la transición, sobre todo en experiencia, requisitos nuevos y AIU.",
+  "advertencia": "Las cifras de aplicación correcta difieren entre fuentes y periodos (16 % / 79 % / 5 % aquí, con datos CCI 2019; 17 % / 70 % / 13 % en otras fichas, con datos del Observatorio de CCE de 2021); no se suman ni se usan como una sola frecuencia.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-academico:3",
+      "veredicto": "error_localizador",
+      "detalle": "Abrí la URL (HTTP 200, Cárdenas Molina, UMNG 2020). La cita y la afirmación se sostienen: gráfica 2, con 25 % de nuevos requisitos, 25 % de experiencia y 17 % de interpretación inadecuada del AIU, fuente CCI 2019. Pero el texto está en la pág. 19 del PDF, que lleva impresa la página 14, no la «pág. 15 impresa». La 15 impresa (PDF 20) solo trae el final de la frase sobre el AIU («…por precios unitarios»). El periodo abril-agosto de 2019 de la nota sale de la pág. 12-13 impresa: es correcto.",
+      "accion": "Se corrigió el localizador a la pág. 14 impresa = pág. 19 del PDF, con el final de la frase del AIU en la pág. 15 impresa = pág. 20 del PDF, según el verificador; en la inferencia, «en la misma página» pasó a «en las págs. 12-13 impresas», que es donde el verificador ubica el dato del periodo abril-agosto de 2019.",
+      "antes": {
+        "localizador": "pág. 15 impresa (pág. 19 del PDF), texto bajo la gráfica 2 «Principales modificaciones realizadas a los pliegos tipo» (fuente: Cámara Colombiana de la Infraestructura, 2019)",
+        "inferencia": "Inferencia: en la misma página el autor afirma que en el periodo abril-agosto de 2019 solo el 16 % de los procesos aplicó el documento tipo de manera adecuada y el 79 % de manera errónea; las desviaciones que más le tocan al contratista son experiencia, requisitos nuevos y AIU, que hay que revisar contra el documento tipo en cada proceso."
+      }
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "id": "CE-F-5221",
+  "tipo": "academia",
+  "autor": "Autores del artículo (personas naturales, nombres omitidos por la regla 5)",
+  "titulo": "¿Para qué sirve la interventoría de las obras públicas en Colombia?",
+  "anio": 2011,
+  "institucion": "Universidad Externado de Colombia, Revista de Economía Institucional, vol. 13, núm. 24 (autores de la Pontificia Universidad Javeriana; vía Redalyc)",
+  "url": "https://www.redalyc.org/pdf/419/41921223016.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: las 17 págs. con pdftotext -layout",
+  "localizador": "págs. 413-414 de la revista (págs. 2-3 del PDF de Redalyc), introducción",
+  "cita": "Un estudio de Fedesarrollo (1997) encontró que durante la ejecución del contrato los interventores pueden condicionar la aprobación de las actas al pago de “peajes”",
+  "afirmacion": "Los autores citan un estudio de Fedesarrollo (1997) que encontró que, durante la ejecución del contrato, los interventores pueden condicionar la aprobación de las actas al pago de «peajes».",
+  "inferencia": null,
+  "eje": 5,
+  "etapa": [
+    "E8"
+  ],
+  "decision": [
+    "D4"
+  ],
+  "modulo": [
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "el propio documento (fuente académica fechada)",
+    "vigente": null,
+    "nota": "Estudio de casos de 2011 (Auditorías Visibles del Programa Presidencial); describe prácticas, no reglas; no aplica comprobar vigencia normativa."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "La aprobación de las actas de obra queda en manos del interventor, que puede retrasarla o condicionarla, y sin acta aprobada el contratista no cobra.",
+  "advertencia": "Dato de segunda mano (Fedesarrollo, 1997) y de hace casi tres décadas; no es una frecuencia actual."
+}

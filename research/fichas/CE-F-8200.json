@@ -1,0 +1,40 @@
+{
+  "id": "CE-F-8200",
+  "tipo": "academia",
+  "autor": "Dos autores de la Maestría en Gerencia de Proyectos (nombres omitidos por la regla 5 del piloto)",
+  "titulo": "Diseño de una propuesta metodológica basada en estándares de gerencia de proyectos para optimizar la estructuración de ofertas en licitaciones públicas de infraestructura de transporte en Colombia bajo el esquema de pliegos tipo de obra pública e interventoría",
+  "anio": 2026,
+  "institucion": "Institución Universitaria Politécnico Grancolombiano (repositorio Alejandría)",
+  "url": "https://alejandria.poligran.edu.co/server/api/core/bitstreams/1be8581c-8a67-4f16-b472-358298e625f6/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: resumen, planteamiento, metodología (8.6-8.7) y resultados sobre SECOP II (10.1.4) con pdftotext -layout; no se leyó el resto de los 124 páginas",
+  "localizador": "pág. 69 del PDF, § 8.6.1 (procesamiento preliminar de la encuesta)",
+  "cita": "se proyecta que más del 45% de las empresas encuestadas manifiestan no tener protocolos estandarizados para la revisión de requisitos en procesos licitatorios, mientras que un 38% ha presentado al menos una oferta rechazada en el último año por errores subsanables.",
+  "afirmacion": "Los autores proyectan, con datos preliminares de su encuesta a empresas, que más del 45 % no tiene protocolos estandarizados para revisar requisitos y que un 38 % tuvo al menos una oferta rechazada en el último año por errores subsanables.",
+  "inferencia": null,
+  "eje": 8,
+  "etapa": [
+    "E3",
+    "E5"
+  ],
+  "decision": [
+    "D3"
+  ],
+  "modulo": [
+    "M-OFERTA",
+    "M-PLIEGO"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "el propio documento",
+    "vigente": null,
+    "nota": "Fuente académica o de práctica: registra lo que dice su autor, no una regla; no se comprobó vigencia normativa."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "El contratista sin una lista de verificación de requisitos del pliego pierde ofertas por errores que la ley permitía subsanar.",
+  "advertencia": "Cifra presentada como proyección de resultados preliminares («se proyecta»), sin tamaño de muestra en este apartado; la tesis declara apoyo de un modelo de lenguaje en la codificación de entrevistas (pág. 70). No usar como frecuencia."
+}

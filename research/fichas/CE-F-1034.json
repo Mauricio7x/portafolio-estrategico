@@ -1,0 +1,52 @@
+{
+  "id": "CE-F-1034",
+  "tipo": "concepto_cce",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Concepto C-642 de 2026 (Decreto 0287 de 2026)",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente (relatoría)",
+  "url": "https://relatoria.colombiacompra.gov.co/conceptos/c-642-de-2026/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: el extracto publicado en la relatoría (descriptores y apartes); no se descargó el archivo íntegro",
+  "localizador": "apartado «DECRETO 0287 DE 2026 ‒ Puntaje adicional del 2% ‒ No acumulabilidad […]», párrafo único, última frase",
+  "cita": "Este puntaje aplica únicamente en entidades regidas por el Estatuto General de Contratación Pública, en las modalidades de licitación pública y concurso de méritos; no aplica en régimen especial, ni en selección abreviada, mínima cuantía ni contratación directa.",
+  "afirmacion": "Para CCE, el puntaje adicional del 2% del Decreto 287 solo aplica en licitación pública y concurso de méritos de entidades del Estatuto General; no en régimen especial, selección abreviada, mínima cuantía ni contratación directa.",
+  "inferencia": null,
+  "eje": 1,
+  "etapa": [
+    "E2",
+    "E5"
+  ],
+  "decision": [
+    "D2"
+  ],
+  "modulo": [
+    "M-PLIEGO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A5",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=273496",
+    "vigente": true,
+    "nota": "Concepto de CCE del 29/05/2026 sobre el Decreto 287, contrastado con el texto del decreto."
+  },
+  "lista_cerrada": "L1-02",
+  "problema_candidato": null,
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": "En procesos con documento tipo, solo cuando CCE incorpore las medidas (art. 2.2.1.2.4.2.7.8; Circular Externa 003 de 2026)",
+    "motivo_null": "El decreto no fija la transición por aviso; CCE (C-642 de 2026) la fija por la fecha de la resolución de apertura: desde el 20 de marzo de 2026."
+  },
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-institucional:3",
+      "veredicto": "correcta",
+      "detalle": "Abierta la Relatoría de CCE, C-642 de 2026 (HTTP 200; fecha 29/05/2026, radicado de salida 2_2026_05_29_005730). En el apartado «Puntaje adicional del 2% ‒ No acumulabilidad [...] ‒ Modalidades de selección aplicables», la última frase del único párrafo coincide literal con la cita. La afirmación está atribuida a CCE y no añade nada. Concuerda con el decreto: el art. 2.2.1.2.4.2.7.4 dice «en los procedimientos de licitación Pública y concurso de méritos»."
+    }
+  ]
+}

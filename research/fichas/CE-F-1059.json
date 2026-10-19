@@ -1,0 +1,45 @@
+{
+  "id": "CE-F-1059",
+  "tipo": "herramienta_oficial",
+  "autor": "Cámara de Representantes",
+  "titulo": "Ficha del Proyecto de Ley 554/2025C «Reforma Ley 80»",
+  "anio": 2025,
+  "institucion": "Cámara de Representantes",
+  "url": "https://www.camara.gov.co/reforma-ley-80-453/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: la ficha del proyecto",
+  "localizador": "ficha del proyecto, campos «Estado», «No. de Proyecto», «Fecha de Radicación» y «Observaciones»",
+  "cita": "No. de Proyecto Cámara 554/2025C […] Fecha de Radicación Cámara 19/3/2025 […] ARCHIVADO ARTICULO 190 LEY 5 DE 1992",
+  "afirmacion": "El Proyecto de Ley 554/2025C de la Cámara, que modificaba la Ley 80 de 1993, se radicó el 19/3/2025 y figura archivado por el art. 190 de la Ley 5 de 1992: no es norma vigente.",
+  "inferencia": null,
+  "eje": 1,
+  "etapa": [
+    "T"
+  ],
+  "decision": [
+    "D1"
+  ],
+  "modulo": [
+    "M-NINGUNO"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A7",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.camara.gov.co/reforma-ley-80-453/",
+    "vigente": false,
+    "nota": "Proyecto archivado; no vigente. No se buscaron otros proyectos en la Secretaría del Senado."
+  },
+  "lista_cerrada": "L1-11",
+  "problema_candidato": null,
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-institucional:4",
+      "veredicto": "correcta",
+      "detalle": "Abrí https://www.camara.gov.co/reforma-ley-80-453/ (200). La ficha muestra: Estado «Archivado»; Título «Por medio del cual se modifica la ley 80 de 1993 […]»; No. de Proyecto Cámara «554/2025C»; Fecha de Radicación Cámara «19/3/2025»; Observaciones «ARCHIVADO ARTICULO 190 LEY 5 DE 1992». Los tres fragmentos de la cita aparecen literales y la afirmación no dice más que ellos."
+    }
+  ]
+}

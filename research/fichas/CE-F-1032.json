@@ -1,0 +1,53 @@
+{
+  "id": "CE-F-1032",
+  "tipo": "guia_cce",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "ABC Decreto 0287 de 2026 · Contratación pública inclusiva para personas con discapacidad",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://colombiacompra.gov.co/wp-content/uploads/2026/04/ABC-Decreto-0287-de-2026-1.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: las 13 páginas",
+  "localizador": "pág. 12 del PDF, pregunta «¿El Decreto 0287 de 2026 aplica de inmediato en los documentos tipo?»",
+  "cita": "No. La aplicación del Decreto 0287 de 2026 en los documentos tipo está sujeta a que Colombia Compra Eficiente realice los ajustes correspondientes en estos instrumentos.",
+  "afirmacion": "Según el ABC de CCE, el Decreto 287 no se aplica de inmediato en los documentos tipo: depende de que CCE los ajuste.",
+  "inferencia": null,
+  "eje": 1,
+  "etapa": [
+    "E1",
+    "E2"
+  ],
+  "decision": [
+    "D1",
+    "D2"
+  ],
+  "modulo": [
+    "M-PLIEGO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A3",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=273496",
+    "vigente": true,
+    "nota": "Contrastado con el Decreto 287 de 2026 en el Gestor Normativo. Un ABC no reemplaza el decreto."
+  },
+  "lista_cerrada": "L1-02",
+  "problema_candidato": null,
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": "En procesos con documento tipo, solo cuando CCE incorpore las medidas (art. 2.2.1.2.4.2.7.8; Circular Externa 003 de 2026)",
+    "motivo_null": "El decreto no fija la transición por aviso; CCE (C-642 de 2026) la fija por la fecha de la resolución de apertura: desde el 20 de marzo de 2026."
+  },
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-institucional:3",
+      "veredicto": "correcta",
+      "detalle": "Pág. 12 del ABC, pregunta «¿El Decreto 0287 de 2026 aplica de inmediato en los documentos tipo?»: la cita está literal. La afirmación, atribuida al ABC, no añade nada. Está redactada como condición («depende de que CCE los ajuste»), así que sigue siendo cierta aunque CCE haya actualizado después algún documento tipo. No se revisó el control de versiones de los documentos tipo, porque la afirmación no depende de él."
+    }
+  ]
+}

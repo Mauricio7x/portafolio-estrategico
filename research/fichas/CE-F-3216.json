@@ -1,0 +1,40 @@
+{
+  "id": "CE-F-3216",
+  "tipo": "academia",
+  "autor": "Personas naturales, tres autoras (nombres omitidos por la regla 5 del piloto)",
+  "titulo": "Implementación de los pliegos tipo de infraestructura de transporte en la modalidad de licitación de obra pública desde el año 2018 al 2021",
+  "anio": 2022,
+  "institucion": "Universidad La Gran Colombia, Especialización en Contratación Estatal (trabajo de grado)",
+  "url": "https://repository.ugc.edu.co/server/api/core/bitstreams/0cfb2a74-5923-4980-ade2-1448daf025d2/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: portada, antecedentes (pág. 27) y apartado de resultados de la implementación (págs. 39-45 del PDF); el resto se recorrió por palabras clave",
+  "localizador": "pág. 39 del PDF, apartado de resultados de la implementación, párrafo «Materialmente se podría afirmar…»",
+  "cita": "dicho estudio reveló que solo el 17% de las entidades estatales aplica adecuadamente la figura de los documentos tipos, mientras que un 70% los ejecuta parcialmente omitiendo, modificando o alterando el contenido de los mismos.",
+  "afirmacion": "Las autoras recogen que un estudio del Observatorio Oficial de Contratación Estatal de inicios de 2021 reveló que solo el 17 % de las entidades aplica adecuadamente los documentos tipo y que el 70 % los ejecuta parcialmente, omitiendo, modificando o alterando su contenido.",
+  "inferencia": "Inferencia: el contratista no puede dar por hecho que el pliego de un proceso con documento tipo es el texto oficial; comparar el pliego con el documento tipo vigente y observar las alteraciones es parte de preparar la oferta.",
+  "eje": 3,
+  "etapa": [
+    "E1",
+    "E2"
+  ],
+  "decision": [
+    "D1",
+    "D3"
+  ],
+  "modulo": [
+    "M-PLIEGO"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "No aplica: dato empírico o descripción de práctica, no regla",
+    "vigente": null,
+    "nota": "Cifras de segunda mano que las autoras toman de otros autores y de la CCI; no se abrieron las fuentes originales."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Entidades que modifican o alteran los documentos tipo en sus pliegos (70 % de aplicación parcial según el estudio citado), con requisitos añadidos.",
+  "advertencia": "Las cifras de único proponente son de segunda mano (las autoras citan a otros autores, a la CCI y al Observatorio) y cambian según el año y la fuente que se cite: no se usan como frecuencia sin abrir la fuente original."
+}

@@ -1,0 +1,37 @@
+{
+  "id": "CE-F-8204",
+  "tipo": "academia",
+  "autor": "Dos autores de la Maestría en Gerencia de Proyectos (nombres omitidos por la regla 5 del piloto)",
+  "titulo": "Diseño de una propuesta metodológica basada en estándares de gerencia de proyectos para optimizar la estructuración de ofertas en licitaciones públicas de infraestructura de transporte en Colombia bajo el esquema de pliegos tipo de obra pública e interventoría",
+  "anio": 2026,
+  "institucion": "Institución Universitaria Politécnico Grancolombiano (repositorio Alejandría)",
+  "url": "https://alejandria.poligran.edu.co/server/api/core/bitstreams/1be8581c-8a67-4f16-b472-358298e625f6/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: resumen, planteamiento, metodología (8.6-8.7) y resultados sobre SECOP II (10.1.4) con pdftotext -layout; no se leyó el resto de los 124 páginas",
+  "localizador": "pág. 92 del PDF, § 10.1.4.2",
+  "cita": "Procesos lentos de carga de documentos: en horarios de alta concurrencia, el sistema se vuelve inestable y ralentiza la carga, generando frustración y pérdida de tiempo.",
+  "afirmacion": "Las empresas consultadas por los autores reportan que en horarios de alta concurrencia SECOP II se vuelve inestable y la carga de documentos se hace lenta.",
+  "inferencia": null,
+  "eje": 8,
+  "etapa": [
+    "E4"
+  ],
+  "decision": [
+    "D3"
+  ],
+  "modulo": [
+    "M-OFERTA"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "el propio documento",
+    "vigente": null,
+    "nota": "Fuente académica o de práctica: registra lo que dice su autor, no una regla; no se comprobó vigencia normativa."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Dejar la carga de la oferta para las horas cercanas al cierre expone a la lentitud de la plataforma y a no alcanzar a presentarla."
+}

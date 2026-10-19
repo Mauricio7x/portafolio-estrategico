@@ -1,0 +1,38 @@
+{
+  "id": "CE-F-4201",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Los pliegos tipo y su aplicación conforme al principio de transparencia en la contratación estatal",
+  "anio": 2022,
+  "institucion": "Universidad Militar Nueva Granada, Facultad de Derecho, Diplomado de Contratación Estatal (trabajo de grado, repositorio institucional)",
+  "url": "https://repository.umng.edu.co/server/api/core/bitstreams/e64a73a6-06bb-44c0-b6de-86ff0f0dec05/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: págs. 1-3 (portada, resumen), 8-11 (pliegos sastre) y 22-27 (impacto y conclusiones) del PDF; el resto por palabras clave",
+  "localizador": "pág. 10 del PDF, apartado sobre los pliegos de condiciones como fuente de corrupción",
+  "cita": "es con la estipulación de requisitos absurdos, exorbitantes, ilógicos o poco claros con el fin de que se declare desierto el proceso adelantado, por ejemplo una licitación pública y con esto se pueda llegar a hacer una contratación de carácter directo con el proponente",
+  "afirmacion": "La autora señala, apoyada en otro autor (Hernández Cortés, 2020), que una forma de corrupción en los pliegos es fijar requisitos absurdos, exorbitantes, ilógicos o poco claros para que el proceso, por ejemplo una licitación, se declare desierto y se pueda contratar de forma directa con el proponente que se quería favorecer.",
+  "inferencia": "Inferencia: para el contratista, un pliego con requisitos imposibles de cumplir no solo lo excluye: puede anticipar un proceso desierto y una contratación directa en la que no participa.",
+  "eje": 4,
+  "etapa": [
+    "E1",
+    "E2"
+  ],
+  "decision": [
+    "D1"
+  ],
+  "modulo": [
+    "M-PLIEGO"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://repository.umng.edu.co/server/api/core/bitstreams/e64a73a6-06bb-44c0-b6de-86ff0f0dec05/content",
+    "vigente": null,
+    "nota": "Descripción de una práctica, no una regla; no se midió su frecuencia."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Pliegos con requisitos exorbitantes o poco claros que llevan a declarar desierto el proceso y abren paso a una contratación directa con un proponente preferido."
+}

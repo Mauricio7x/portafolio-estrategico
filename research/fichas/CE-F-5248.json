@@ -1,0 +1,39 @@
+{
+  "id": "CE-F-5248",
+  "tipo": "academia",
+  "autor": "Autor del artículo (persona natural, nombre omitido por la regla 5)",
+  "titulo": "Una aproximación a la visión de la corrección del desequilibrio contractual desde la perspectiva de la jurisprudencia arbitral",
+  "anio": 2007,
+  "institucion": "Universidad Externado de Colombia, Revist@ e-Mercatoria, vol. 6, núm. 2 (vía Dialnet)",
+  "url": "https://dialnet.unirioja.es/descarga/articulo/3626158.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: 64 págs.; leídos la introducción (método: 68 laudos de 1970-2004), el apartado 2.2 y el apartado sobre renuncias anticipadas",
+  "localizador": "pág. 4 del PDF, apartado 2.2 «¿Restablecimiento del equilibrio económico hasta punto de no pérdida o con preservación de la utilidad del contratista?»",
+  "cita": "la doctrina del Consejo de Estado, hasta la sentencia del 9 de mayo de 1996, expediente 10151, había sostenido que, en tal hipótesis, la administración debía otorgar un apoyo económico de alcance restringido al contratista y, en el mencionado fallo, dio un giro importante",
+  "afirmacion": "El autor reporta que, ante un hecho sobreviniente no imputable a las partes, el Consejo de Estado sostuvo hasta la sentencia del 9 de mayo de 1996 (exp. 10151) que la administración debía dar al contratista un apoyo económico de alcance restringido, y que en ese fallo dio un giro importante.",
+  "inferencia": "Inferencia: el autor transcribe a continuación que el fallo de 1996 habló de compensación integral con utilidades razonables; esto choca con la ficha CE-F-5211 (otra fuente, 2023), que describe la indemnización por imprevisión como compensación hasta el punto de no pérdida. El alcance del reconocimiento por imprevisión no es pacífico entre las fuentes.",
+  "eje": 5,
+  "etapa": [
+    "E8",
+    "E10"
+  ],
+  "decision": [
+    "D4"
+  ],
+  "modulo": [
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "el propio documento (fuente académica fechada)",
+    "vigente": null,
+    "nota": "Artículo de 2007 sobre laudos de 1970-2005 y una sentencia del Consejo de Estado de 1996; no se comprobó la línea jurisprudencial posterior para esta ficha."
+  },
+  "regla": null,
+  "lista_cerrada": "L5-10",
+  "problema_candidato": "Cuánto se le reconoce al contratista por un hecho imprevisible (solo hasta no perder o también su utilidad) ha cambiado en la jurisprudencia, y el resultado de un reclamo no es predecible.",
+  "advertencia": "Contradice en el alcance a la ficha CE-F-5211: no usar ninguna de las dos como la regla sin verificar la jurisprudencia vigente."
+}

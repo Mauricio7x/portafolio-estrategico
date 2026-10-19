@@ -1,0 +1,61 @@
+{
+  "id": "CE-F-1029",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República; Departamento Nacional de Planeación",
+  "titulo": "Decreto 287 de 2026 (modifica los arts. 2.2.1.2.4.2.6, 2.2.1.2.4.2.7 y 2.2.1.2.4.2.8 del Decreto 1082 de 2015)",
+  "anio": 2026,
+  "institucion": "Departamento Administrativo de la Función Pública (Gestor Normativo)",
+  "url": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=273496",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: considerandos, art. 1 (arts. 2.2.1.2.4.2.6 a 2.2.1.2.4.2.8) y art. 2",
+  "localizador": "art. 1, nuevo art. 2.2.1.2.4.2.7.5, inciso 1 y numeral 1",
+  "cita": "las Entidades Estatales deberán incluir coma obligación contractual, en las Documentos del Proceso, previo análisis de conveniencia y oportunidad, al menos una (1) de las siguientes condiciones especiales de ejecución: […] Subcontratación inclusiva",
+  "afirmacion": "La norma dice que las entidades deben incluir como obligación contractual, previo análisis de conveniencia y oportunidad, al menos una condición especial de ejecución en favor de personas con discapacidad; una de ellas es la subcontratación inclusiva. La entidad puede omitirlas si lo justifica (ver advertencia).",
+  "inferencia": null,
+  "eje": 1,
+  "etapa": [
+    "E2",
+    "E8"
+  ],
+  "decision": [
+    "D2",
+    "D4"
+  ],
+  "modulo": [
+    "M-PLIEGO",
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A2",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=273496",
+    "vigente": true,
+    "nota": "Decreto 287 de 2026 en el Gestor Normativo (expedición y entrada en vigencia: 19 de marzo de 2026, según la ficha). Su art. 2 dice que rige desde el día siguiente a su publicación; ver advertencia de CE-F-1021."
+  },
+  "lista_cerrada": "L1-02",
+  "problema_candidato": "En obra, cuando el pliego la incluya, la subcontratación inclusiva obliga a priorizar a personas o empresas con discapacidad al subcontratar; el contratista debe preverlo en su plan de subcontratos y en el precio. Un pliego que no la trae debería justificar la omisión en los estudios previos.",
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": "En procesos con documento tipo, solo cuando CCE incorpore las medidas (art. 2.2.1.2.4.2.7.8; Circular Externa 003 de 2026)",
+    "motivo_null": "El decreto no fija la transición por aviso; CCE (C-642 de 2026) la fija por la fecha de la resolución de apertura: desde el 20 de marzo de 2026."
+  },
+  "advertencia": "La cita conserva las erratas del texto publicado en el Gestor Normativo («coma», «las Documentos»). Según el verificador, el inciso siguiente del mismo artículo, fuera de esta cita, dice: «En caso de que no se incluya alguna de estas condiciones especiales de ejecución, la Entidad Estatal deberá justificar dicha omisión en las estudios previos o documentos equivalentes»; un pliego puede no traerlas si la omisión está justificada en los estudios previos.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-institucional:2",
+      "veredicto": "no_sostiene",
+      "detalle": "La cita aparece literal en el inciso 1 y el numeral 1 del art. 2.2.1.2.4.2.7.5; el «[…]» sustituye a «1)» y las erratas se conservan. Pero la afirmación presenta la inclusión como obligatoria y quita el matiz del inciso siguiente del mismo artículo: «En caso de que no se incluya alguna de estas condiciones especiales de ejecución, la Entidad Estatal deberá justificar dicha omisión en las estudios previos o documentos equivalentes». La entidad puede omitirlas si lo justifica, lo que importa al leer un pliego que no las trae. Mantener «previo análisis de conveniencia» insinúa esa salida, pero no la dice. Además, la afirmación abrevia «conveniencia y oportunidad» a «conveniencia». La cita debe abarcar el inciso de la justificación con «[…]», o hace falta otra ficha.",
+      "accion": "afirmación estrechada a lo que sostiene la cita (y problema_candidato cuando se apoyaba en lo mismo); lo que la cita no cubre va en «advertencia», atribuido al verificador; la cita no se amplió",
+      "antes": {
+        "afirmacion": "Las entidades deben incluir como obligación contractual, previo análisis de conveniencia, al menos una condición especial de ejecución en favor de personas con discapacidad; una de ellas es la subcontratación inclusiva.",
+        "advertencia": "La cita conserva las erratas del texto publicado en el Gestor Normativo («coma», «las Documentos»).",
+        "problema_candidato": "En obra, la subcontratación inclusiva obliga a priorizar a personas o empresas con discapacidad al subcontratar; el contratista debe preverlo en su plan de subcontratos y en el precio."
+      }
+    }
+  ]
+}

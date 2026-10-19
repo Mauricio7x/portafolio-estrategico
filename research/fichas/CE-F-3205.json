@@ -1,0 +1,39 @@
+{
+  "id": "CE-F-3205",
+  "tipo": "gremio_ong",
+  "autor": "Corporación Transparencia por Colombia",
+  "titulo": "Mejores leyes son necesarias, pero no suficientes (en «Contratación Estatal: Transparencia y eficiencia», Economía Colombiana, edición 321)",
+  "anio": 2007,
+  "institucion": "Corporación Transparencia por Colombia; artículo publicado en la revista Economía Colombiana de la Contraloría General de la República, alojado en la biblioteca de la Red Interamericana de Compras Gubernamentales",
+  "url": "https://ricg.org/wp-content/uploads/legacy_content/biblioteca/archivos/Publicaciones/es/103/Articulo%20Economia%20Colombiana%20PDF.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: resumen (pág. 1), apartados sobre pliegos y adiciones (pág. 7) e incentivos a la integridad (pág. 12); el resto se recorrió por palabras clave",
+  "localizador": "pág. 8 del PDF, párrafo «También es posible y frecuente cambiar las reglas de juego…»",
+  "cita": "la falta de rigor al autorizar las adiciones en plazo o precio, puede ocasionar que los proponentes presenten ofertas que saben que no estarán en condiciones de cumplir, […] ser beneficiados en la adjudicación y luego solicitar las adiciones […], perjudicando a los oferentes de buena fe.",
+  "afirmacion": "Transparencia por Colombia sostiene que la falta de rigor al autorizar adiciones en plazo o precio puede llevar a que haya proponentes que ofrecen lo que saben que no podrán cumplir, para ser beneficiados en la adjudicación y luego pedir adiciones, en perjuicio de los oferentes de buena fe.",
+  "inferencia": "Inferencia: el contratista que oferta un precio realista puede perder frente a quien oferta por debajo contando con adiciones posteriores; la guía de ofertas artificialmente bajas es la herramienta para pedir explicación de ese precio.",
+  "eje": 3,
+  "etapa": [
+    "E3",
+    "E5",
+    "E8"
+  ],
+  "decision": [
+    "D2"
+  ],
+  "modulo": [
+    "M-PRECIO"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A7",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "No aplica: diagnóstico de práctica de 2007, anterior a la Ley 1474 de 2011, a la Ley 1882 de 2018 y a los documentos tipo",
+    "vigente": null,
+    "nota": "Documento anterior a las reformas que tocan adiciones y precio artificialmente bajo; vale como descripción del problema, no como regla."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Competidores que ofertan por debajo de lo que pueden cumplir para ganar y luego pedir adiciones desplazan al oferente de buena fe."
+}

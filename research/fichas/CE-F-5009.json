@@ -1,0 +1,51 @@
+{
+  "id": "CE-F-5009",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 80 de 1993, Estatuto General de Contratación de la Administración Pública",
+  "anio": 1993,
+  "institucion": "Departamento Administrativo de la Función Pública, Gestor Normativo (texto con notas de vigencia)",
+  "url": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=304",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: arts. 4, 5, 14 a 18, 27, 40 y 60 del texto del Gestor Normativo, con sus notas de modificación",
+  "localizador": "art. 60 (modificado por el art. 217 del Decreto Ley 019 de 2012), incisos segundo y tercero",
+  "cita": "También en esta etapa las partes acordarán los ajustes, revisiones y reconocimientos a que haya lugar. En el acta de liquidación constarán los acuerdos, conciliaciones y transacciones a que llegaren las partes para poner fin a las divergencias presentadas y poder declararse a paz y salvo.",
+  "afirmacion": "En la liquidación las partes acuerdan los ajustes, revisiones y reconocimientos pendientes, y el acta recoge los acuerdos, conciliaciones y transacciones con los que se declaran a paz y salvo.",
+  "inferencia": "Inferencia: lo que el contratista no lleve a la liquidación (reajustes, mayores cantidades, sobrecostos) queda en riesgo de entenderse transado al firmar el paz y salvo.",
+  "eje": 5,
+  "etapa": [
+    "E9"
+  ],
+  "decision": [
+    "D4"
+  ],
+  "modulo": [
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A1",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=304",
+    "vigente": true,
+    "nota": "Texto del Gestor Normativo de Función Pública consultado el 2-oct-2026, con las notas de modificación que trae el propio artículo."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Norma legal: rige para los contratos del Estatuto General sin depender de la fecha de un aviso; no se buscó régimen de transición para contratos anteriores."
+  },
+  "lista_cerrada": "L5-05",
+  "problema_candidato": null,
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje5-institucional:1",
+      "veredicto": "correcta",
+      "detalle": "Misma página. El art. 60 lleva «Modificado por el art. 217, Decreto Nacional 019 de 2012». Los incisos segundo («También en esta etapa las partes acordarán los ajustes, revisiones y reconocimientos a que haya lugar.») y tercero («En el acta de liquidación constarán los acuerdos, conciliaciones y transacciones [...] y poder declararse a paz y salvo.») son literales. La afirmación es fiel. La inferencia está marcada como tal."
+    }
+  ]
+}

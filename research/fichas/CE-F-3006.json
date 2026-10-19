@@ -1,0 +1,52 @@
+{
+  "id": "CE-F-3006",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República",
+  "titulo": "Decreto 1082 de 2015, Único Reglamentario del Sector Administrativo de Planeación Nacional (texto consolidado)",
+  "anio": 2015,
+  "institucion": "Departamento Administrativo de la Función Pública · Gestor Normativo",
+  "url": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=77653",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: art. 2.2.1.1.2.2.5 completo",
+  "localizador": "art. 2.2.1.1.2.2.5 (Inhabilidades con ocasión de la presentación de otras ofertas)",
+  "cita": "cuando en un mismo Proceso de Contratación se presentan oferentes en la situación descrita por los literales (g) y (h) del numeral 1 del artículo 8 de la Ley 80 […] y poder establecer la primera oferta en el tiempo, la Entidad Estatal debe dejar constancia de la fecha y hora de recibo de las ofertas",
+  "afirmacion": "Cuando en un mismo proceso hay oferentes en la situación de los literales g) y h) del numeral 1 del art. 8 de la Ley 80, para establecer la primera oferta en el tiempo la entidad debe dejar constancia de la fecha y hora de recibo de las ofertas.",
+  "inferencia": "Inferencia: el documento tipo de licitación de transporte (sección 1.15) dice que en ese caso la entidad solo admite la oferta presentada primero en el tiempo; entregar temprano protege al que llega primero.",
+  "eje": 3,
+  "etapa": [
+    "E4"
+  ],
+  "decision": [
+    "D1",
+    "D3"
+  ],
+  "modulo": [
+    "M-OFERTA"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A2",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=77653 (texto consolidado) y texto del Decreto 0997 de 2026 en https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/",
+    "vigente": true,
+    "nota": "Se comprobó que el Decreto 0997 de 2026 (arts. 1 a 13) no modifica este artículo; el consolidado de Función Pública aún no trae el 0997."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Norma reglamentaria compilada en el Decreto 1082 de 2015: rige desde su expedición, no desde un aviso de convocatoria."
+  },
+  "lista_cerrada": "L3-02",
+  "problema_candidato": "Si en el mismo proceso se presentan proponentes con la relación de los literales g) y h) del art. 8 de la Ley 80, solo cuenta la oferta que llegó primero: la otra queda por fuera.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje3-institucional:1",
+      "veredicto": "correcta",
+      "detalle": "La cita del art. 2.2.1.1.2.2.5 es literal; el «[…]» quita «de 1993». La afirmación es fiel y el Decreto 0997 no toca este artículo."
+    }
+  ]
+}

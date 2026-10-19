@@ -1,0 +1,46 @@
+{
+  "id": "CE-F-3240",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "La unión temporal y el consorcio en el pliego de condiciones y documento de constitución",
+  "anio": 2015,
+  "institucion": "Universidad de los Andes, Facultad de Derecho · Revista de Derecho Privado núm. 54 (vía Dialnet)",
+  "url": "https://dialnet.unirioja.es/descarga/articulo/7249165.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: resumen y apartado sobre la experiencia de las formas asociativas (págs. 13-15 del PDF); el resto se recorrió por palabras clave",
+  "localizador": "pág. 14 del PDF, apartado sobre la valoración de la experiencia de uniones temporales y consorcios",
+  "cita": "En el caso de uniones temporales […] la experiencia será solo respecto del porcentaje y actividades desarrolladas al interior de la unión […], situación que no ocurre en el consorcio […], de forma que la experiencia para este será por el total.",
+  "afirmacion": "El autor sostiene, en su lectura de 2015, que en la unión temporal la experiencia sería solo respecto del porcentaje y las actividades desarrolladas dentro de la unión, lo que no ocurre en el consorcio, donde la experiencia sería por el total.",
+  "inferencia": "Inferencia: cómo se cuenta la experiencia ganada dentro de un plural (por porcentaje o por el total) cambia lo que el contratista puede acreditar en el siguiente proceso; hay que leer la regla del pliego y del RUP vigentes antes de decidir con quién y cómo asociarse.",
+  "eje": 3,
+  "etapa": [
+    "E3",
+    "E5"
+  ],
+  "decision": [
+    "D1",
+    "D3"
+  ],
+  "modulo": [
+    "M-PLURAL",
+    "M-RUP"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "No reverificado en esta ficha contra el Decreto 1082 de 2015 consolidado ni contra el Decreto 0997 de 2026",
+    "vigente": null,
+    "nota": "Lectura doctrinal de 2015, anterior a los documentos tipo y al Decreto 0997 de 2026; la regla vigente sobre experiencia de plurales debe comprobarse en la norma y en el pliego."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Opinión doctrinal, no regla con fecha de aplicación."
+  },
+  "lista_cerrada": null,
+  "problema_candidato": "Incertidumbre sobre cómo se cuenta la experiencia obtenida en un consorcio o unión temporal (total o porcentaje de participación) al acreditarla en un proceso nuevo.",
+  "advertencia": "Es la interpretación del autor (opinión), no la regla vigente."
+}

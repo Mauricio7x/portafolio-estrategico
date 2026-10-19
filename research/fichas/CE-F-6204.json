@@ -1,0 +1,38 @@
+{
+  "id": "CE-F-6204",
+  "tipo": "academia",
+  "autor": "Una persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Tratamiento de la colusión en la contratación pública: una visión del caso colombiano",
+  "anio": 2014,
+  "institucion": "Universidad del Norte, Revista de Derecho núm. 42, págs. 233-263 · Redalyc",
+  "url": "https://www.redalyc.org/pdf/851/85132008010.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: introducción, régimen sancionatorio (págs. 239-241), análisis de la delación (págs. 254-255) y conclusiones (págs. 255-257); el modelo económico por palabras clave",
+  "localizador": "pág. 240 (cita de la SIC sobre los efectos de la colusión)",
+  "cita": "(i) otros proponentes al limitarles la competencia y la participación en un proceso de selección justo y regidos por los principios de igualdad de oportunidades y de transparencia; (ii) el Estado, por los costos monetarios y de transacción que representa la presencia de proponentes no idóneos",
+  "afirmacion": "El autor cita a la SIC según la cual la colusión en los procesos de selección perjudica, entre otros, a los otros proponentes, al limitarles la competencia y la participación en un proceso justo, y al Estado, por los costos de tener proponentes no idóneos.",
+  "inferencia": null,
+  "eje": 6,
+  "etapa": [
+    "E3",
+    "E5"
+  ],
+  "decision": [
+    "D1"
+  ],
+  "modulo": [
+    "M-ENTIDAD"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "No aplica: descripción de efectos citada por el autor",
+    "vigente": null,
+    "nota": "Artículo de 2014; la cita de la SIC no se comprobó en su fuente original."
+  },
+  "regla": null,
+  "lista_cerrada": "L6-01",
+  "problema_candidato": "El proponente que no participa del acuerdo colusorio compite en un proceso que no es justo: la colusión le limita la competencia y la participación."
+}

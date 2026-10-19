@@ -1,0 +1,53 @@
+{
+  "id": "CE-F-1204",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Reforma al sistema de contratación estatal colombiano; regímenes especiales, esquemas predominantes a redefinir para la adecuada ejecución de los recursos públicos",
+  "anio": 2022,
+  "institucion": "Universidad Carlos III de Madrid (tesis doctoral en Derecho, repositorio e-Archivo)",
+  "url": "https://e-archivo.uc3m.es/rest/api/core/bitstreams/8611881d-3aa0-4fc0-bdcd-890895b823c8/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: portada, cap. 1 (págs. del PDF 39-60) y el caso del Fondo Adaptación (págs. del PDF 108-109); el resto se recorrió por palabras clave",
+  "localizador": "pág. 48 del PDF, cap. 1, apartado sobre la inestabilidad de la reglamentación",
+  "cita": "existen más de 16 demandas en contra del D1510/13 hoy D1082/15, 8 demandas contra circulares de CCE, más de 7 demandas por normas nacionales35 que han producidos suspensiones provisionales en la normativa, que hacen que la operación y aplicación muchas veces resulte engorrosa",
+  "afirmacion": "El autor afirma que, a la fecha de la tesis, existen más de 16 demandas contra el Decreto 1510 de 2013 (hoy 1082 de 2015), 8 contra circulares de CCE y más de 7 por normas nacionales, que han producido suspensiones provisionales en la normativa y hacen que la operación y aplicación muchas veces resulte engorrosa.",
+  "inferencia": "Inferencia: una regla del reglamento puede quedar suspendida entre el aviso y el cierre de un proceso; el contratista tiene que comprobar la vigencia de la norma que lo afecta en la fecha del proceso.",
+  "eje": 1,
+  "etapa": [
+    "T"
+  ],
+  "decision": [
+    "D3",
+    "D1"
+  ],
+  "modulo": [
+    "M-PLIEGO"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://e-archivo.uc3m.es/rest/api/core/bitstreams/8611881d-3aa0-4fc0-bdcd-890895b823c8/content",
+    "vigente": null,
+    "nota": "Conteo de 2022; no se actualizó a la fecha de corte."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Inseguridad jurídica por demandas y suspensiones provisionales del reglamento de contratación (Decreto 1082 y circulares de CCE).",
+  "advertencia": "Conteo del autor «a la fecha» de la tesis (2022), sin listado en el pasaje leído; no sirve como cifra actual. Según el verificador (2-oct-2026), la nota 35 indica que el conteo sale de contratacionenlinea.co, consultado el 9-may-2022.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-academico:1",
+      "veredicto": "no_sostiene",
+      "detalle": "La cita aparece literal en la pág. 48 del PDF (36 impresa), apartado 1.2.3 «Suspensiones y nulidades de normas reglamentarias», y el localizador es aproximado pero sirve. La afirmación quita un matiz de la fuente. La fuente dice «hacen que la operación y aplicación muchas veces resulte engorrosa», y la afirmación dice «hacen engorrosa la aplicación», sin el «muchas veces». Además, la fuente dice «a la fecha» y la nota 35 indica que el conteo sale de contratacionenlinea.co, consultado el 9-may-2022. La afirmación no lo dice; la advertencia lo trata solo en parte.",
+      "accion": "Se devolvió a la afirmación el «muchas veces» y el «a la fecha» de la fuente; la advertencia se completó con el origen del conteo (nota 35).",
+      "antes": {
+        "afirmacion": "El autor afirma que existen más de 16 demandas contra el Decreto 1510 de 2013 (hoy 1082 de 2015), 8 contra circulares de CCE y más de 7 por normas nacionales, que han producido suspensiones provisionales y hacen engorrosa la aplicación.",
+        "advertencia": "Conteo del autor «a la fecha» de la tesis (2022), sin listado en el pasaje leído; no sirve como cifra actual."
+      }
+    }
+  ]
+}

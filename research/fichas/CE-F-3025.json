@@ -1,0 +1,53 @@
+{
+  "id": "CE-F-3025",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República",
+  "titulo": "Decreto 1082 de 2015, Único Reglamentario del Sector Administrativo de Planeación Nacional (texto consolidado)",
+  "anio": 2015,
+  "institucion": "Departamento Administrativo de la Función Pública · Gestor Normativo",
+  "url": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=77653",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: art. 2.2.1.2.4.2.2 completo",
+  "localizador": "art. 2.2.1.2.4.2.2 (Convocatorias limitadas a Mipyme), inciso 1 y numerales 1 y 2 (modificado por el art. 5 del Decreto 1860 de 2021)",
+  "cita": "deben limitar la convocatoria de los Procesos de Contratación con pluralidad de oferentes a las Mipyme colombianas con mínimo un (1) año de existencia, cuando concurran los siguientes requisitos: 1. El valor del Proceso de Contratación sea menor a ciento veinticinco mil dólares […] (US$125.000)",
+  "afirmacion": "Las entidades deben limitar a Mipyme colombianas con al menos un año de existencia los procesos con pluralidad de oferentes cuando, entre otros requisitos, el valor sea menor a US$125.000.",
+  "inferencia": "Inferencia: el numeral 2 exige además solicitudes de al menos dos Mipyme recibidas por lo menos un día hábil antes de la apertura; la limitación no es automática.",
+  "eje": 3,
+  "etapa": [
+    "E1",
+    "E2"
+  ],
+  "decision": [
+    "D1"
+  ],
+  "modulo": [
+    "M-LISTA",
+    "M-ENTIDAD"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A2",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=77653 (texto consolidado) y texto del Decreto 0997 de 2026 en https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/",
+    "vigente": true,
+    "nota": "Se comprobó que el Decreto 0997 de 2026 (arts. 1 a 13) no modifica este artículo; el consolidado de Función Pública aún no trae el 0997."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Norma reglamentaria compilada en el Decreto 1082 de 2015: rige desde su expedición, no desde un aviso de convocatoria."
+  },
+  "lista_cerrada": "L3-09",
+  "problema_candidato": "Una gran empresa puede encontrar cerrado un proceso pequeño de obra porque dos Mipyme pidieron limitarlo; una Mipyme que no lo pide a tiempo pierde esa protección.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje3-institucional:2",
+      "veredicto": "correcta",
+      "detalle": "El art. 2.2.1.2.4.2.2 en Función Pública (modificado por el art. 5 del Decreto 1860 de 2021) trae la cita literal: «deben limitar [...] a las Mipyme colombianas con mínimo un (1) año de existencia, cuando concurran [...] 1. El valor [...] sea menor a ciento veinticinco mil dólares [...] (US$125.000)». La afirmación conserva «entre otros requisitos». La inferencia del numeral 2 es fiel: «por lo menos un (1) día hábil antes de la expedición del acto administrativo de apertura». El 0997 de 2026 no toca este artículo."
+    }
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "id": "CE-F-5255",
+  "tipo": "academia",
+  "autor": "Autores del artículo (personas naturales, nombres omitidos por la regla 5)",
+  "titulo": "Los controles en la contratación estatal de obra pública frente a la seguridad y salud en el trabajo",
+  "anio": 2024,
+  "institucion": "Institución Universitaria de Envigado, revista Nuevo Derecho, vol. 20, núm. 34 (vía Redalyc)",
+  "url": "https://www.redalyc.org/journal/6697/669777877006/669777877006.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: 18 págs. del PDF; leídos el resumen, el apartado sobre controles de parafiscalidad (pág. 10) y las conclusiones",
+  "localizador": "pág. 10 del PDF, apartado sobre los controles de parafiscalidad en la contratación de obra pública",
+  "cita": "al momento de liquidar los contratos, incluidos los de obra pública, las entidades estatales garantizarán el cumplimiento de las obligaciones de parafiscalidad a cargo del contratista […] la entidad contratante deberá retener las sumas adeudadas al sistema en el momento de la liquidación",
+  "afirmacion": "Los autores afirman que, al liquidar los contratos, incluidos los de obra pública, las entidades estatales deben garantizar el cumplimiento de las obligaciones de parafiscalidad del contratista y, si el aporte no cubre lo que corresponde, retener las sumas adeudadas al sistema en la liquidación.",
+  "inferencia": "Inferencia: un contratista que no tiene al día los aportes de su personal de obra ve descontado el saldo de la liquidación; la planilla de aportes de cada mes es un soporte que conviene llevar con cada acta.",
+  "eje": 5,
+  "etapa": [
+    "E8",
+    "E9"
+  ],
+  "decision": [
+    "D4"
+  ],
+  "modulo": [
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "el propio documento (fuente académica fechada)",
+    "vigente": null,
+    "nota": "Artículo de 2024 que parafrasea el art. 50 de la Ley 789 de 2002 (modificado por la Ley 828 de 2003) y el art. 23 de la Ley 1150 de 2007; la regla no se comprobó contra el texto vigente para esta ficha."
+  },
+  "regla": null,
+  "lista_cerrada": "L5-05",
+  "problema_candidato": "En la liquidación, la entidad retiene del saldo del contratista lo que falte por aportes a seguridad social de su personal y lo gira directamente al sistema.",
+  "advertencia": "En el párrafo siguiente, los mismos autores dicen que la Ley 789 de 2002 «no genera obligación forzosa» para que las entidades retengan dineros: el texto es ambiguo sobre la obligación de retener."
+}

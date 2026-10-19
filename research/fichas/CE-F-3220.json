@@ -1,0 +1,40 @@
+{
+  "id": "CE-F-3220",
+  "tipo": "academia",
+  "autor": "Personas naturales, dos autores (nombres omitidos por la regla 5 del piloto)",
+  "titulo": "El riesgo inherente al proveedor como criterio preventivo en la contratación pública",
+  "anio": 2016,
+  "institucion": "Universidad Externado de Colombia · Revista Derecho del Estado núm. 37, pp. 95-125 (vía Dialnet)",
+  "url": "https://dialnet.unirioja.es/descarga/articulo/5805148.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: resumen y apartados III y IV (págs. 14-18 del PDF); el resto se recorrió por palabras clave",
+  "localizador": "pág. 17 del PDF (impresa 111), párrafo tras el cuadro de amparos en procesos de obra civil 2010-2013",
+  "cita": "en el amparo de cumplimiento algunas optan por un 20% del valor total del contrato, otra por el 10% y otra por el 15%; la garantía de calidad algunas veces se exige, mientras que otras no; el amparo de salarios y prestaciones también tiene porcentajes distintos",
+  "afirmacion": "Los autores observan, en un cuadro de procesos de obra civil de 2010-2013, que el amparo de cumplimiento se exige en unos al 20 %, en otro al 10 % y en otro al 15 % del valor del contrato, que la garantía de calidad unas veces se exige y otras no, y que el amparo de salarios y prestaciones tiene porcentajes distintos.",
+  "inferencia": "Inferencia: el costo de las pólizas cambia de un proceso a otro sin una regla de mercado detrás; el contratista lo lee en cada pliego y lo carga al precio.",
+  "eje": 3,
+  "etapa": [
+    "E2",
+    "E3",
+    "E7"
+  ],
+  "decision": [
+    "D2"
+  ],
+  "modulo": [
+    "M-PLIEGO",
+    "M-PRECIO"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "No aplica: dato empírico o descripción de práctica, no regla",
+    "vigente": null,
+    "nota": "Ejemplos de procesos de obra civil de 2010-2013 en SECOP I; anterior a los documentos tipo de obra, que hoy fijan buena parte de las garantías."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Porcentajes de garantías heterogéneos entre pliegos de obra, sin sustento en información de mercado, que mueven el costo de la oferta."
+}

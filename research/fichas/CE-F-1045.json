@@ -1,0 +1,53 @@
+{
+  "id": "CE-F-1045",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 2069 de 2020",
+  "anio": 2020,
+  "institucion": "Secretaría General del Senado (Leyes desde 1992, texto con notas de vigencia)",
+  "url": "http://www.secretariasenado.gov.co/senado/basedoc/ley_2069_2020.html",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: arts. 30 a 36",
+  "localizador": "art. 32 (modificado por el art. 21 de la Ley 2479 de 2025), parágrafo 3",
+  "cita": "El puntaje adicional, que se otorgará de conformidad con el parágrafo segundo, será hasta el 0.25% del puntaje máximo a asignar.",
+  "afirmacion": "El puntaje adicional del art. 32 de la Ley 2069 de 2020 es de hasta el 0,25% del puntaje máximo a asignar.",
+  "inferencia": "El parágrafo 2 del mismo artículo dice que ese puntaje es para emprendimientos y empresas de mujeres o de jóvenes egresados del sistema de protección del ICBF.",
+  "eje": 1,
+  "etapa": [
+    "E2",
+    "E5"
+  ],
+  "decision": [
+    "D2"
+  ],
+  "modulo": [
+    "M-PLIEGO",
+    "M-OFERTA"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A1",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "http://www.secretariasenado.gov.co/senado/basedoc/ley_2069_2020.html",
+    "vigente": true,
+    "nota": "Texto de la Secretaría del Senado («Última actualización: 15 de septiembre de 2026»), leído el 2-oct-2026. El art. 32 fue modificado por el art. 21 de la Ley 2479 de 2025 según la nota del Senado; la Ley 2479 no se abrió."
+  },
+  "lista_cerrada": "L1-07",
+  "problema_candidato": null,
+  "regla": {
+    "regimen": "Estatuto General y régimen especial (procesos competitivos)",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "La modificación es de la Ley 2479 de 2025, que no se abrió; no se sabe desde qué aviso rige."
+  },
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-institucional:4",
+      "veredicto": "correcta",
+      "detalle": "Abrí http://www.secretariasenado.gov.co/senado/basedoc/ley_2069_2020.html (200; «Última actualización: 15 de septiembre de 2026»). En el art. 32, que modificó el art. 21 de la Ley 2479 de 2025, el parágrafo 3o dice literal: «El puntaje adicional, que se otorgará de conformidad con el parágrafo segundo, será hasta el 0.25% del puntaje máximo a asignar.» La afirmación no dice más que la cita. La inferencia coincide con el inciso 1 y el parágrafo 2. No abrí la Ley 2479 (la ficha lo declara)."
+    }
+  ]
+}

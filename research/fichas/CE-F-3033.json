@@ -1,0 +1,53 @@
+{
+  "id": "CE-F-3033",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República",
+  "titulo": "Decreto 1082 de 2015, Único Reglamentario del Sector Administrativo de Planeación Nacional (texto consolidado)",
+  "anio": 2015,
+  "institucion": "Departamento Administrativo de la Función Pública · Gestor Normativo",
+  "url": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=77653",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: art. 2.2.1.2.3.1.9 completo",
+  "localizador": "art. 2.2.1.2.3.1.9 (Suficiencia de la garantía de seriedad de la oferta), inciso 1",
+  "cita": "La garantía de seriedad de la oferta debe estar vigente desde la presentación de la oferta y hasta la aprobación de la garantía de cumplimiento del contrato y su valor debe ser de por lo menos el diez por ciento (10%) del valor de la oferta.",
+  "afirmacion": "La garantía de seriedad debe estar vigente desde la presentación de la oferta hasta la aprobación de la garantía de cumplimiento, por al menos el 10 % del valor de la oferta.",
+  "inferencia": "Inferencia: el valor se calcula sobre la oferta, no sobre el presupuesto (salvo subasta y concurso de méritos, inciso 3); una póliza calculada sobre un precio menor al final ofrecido queda corta.",
+  "eje": 3,
+  "etapa": [
+    "E3",
+    "E4"
+  ],
+  "decision": [
+    "D2",
+    "D3"
+  ],
+  "modulo": [
+    "M-OFERTA"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A2",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=77653 (texto consolidado) y texto del Decreto 0997 de 2026 en https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/",
+    "vigente": true,
+    "nota": "Se comprobó que el Decreto 0997 de 2026 (arts. 1 a 13) no modifica este artículo; el consolidado de Función Pública aún no trae el 0997."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Norma reglamentaria compilada en el Decreto 1082 de 2015: rige desde su expedición, no desde un aviso de convocatoria."
+  },
+  "lista_cerrada": "L3-11",
+  "problema_candidato": null,
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje3-institucional:3",
+      "veredicto": "correcta",
+      "detalle": "Función Pública, norma.php?i=77653 (HTTP 200, --cacert). El inciso 1 del art. 2.2.1.2.3.1.9 coincide literalmente con la cita, y la afirmación no va más allá. El Decreto 0997 no toca el artículo. Advierto sobre la inferencia, que no es parte de lo que se verifica: el mismo artículo fija otras reglas que ella no menciona (Acuerdo Marco de Precios: 1.000 SMMLV; ofertas de más de 1.000.000 SMMLV: 2,5 %, 1 % o 0,5 %). Además, los documentos tipo de obra de transporte (licitación V4 7.1 y mínima cuantía 7.1) fijan el valor asegurado en el «Diez por ciento (10%) del presupuesto oficial». Por eso, en esos procesos, la póliza no se calcula sobre la oferta y no conviene usar esa inferencia para presupuestar."
+    }
+  ]
+}

@@ -1,0 +1,53 @@
+{
+  "id": "CE-F-1052",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 142 de 1994",
+  "anio": 1994,
+  "institucion": "Secretaría General del Senado (Leyes desde 1992, texto con notas de vigencia)",
+  "url": "http://www.secretariasenado.gov.co/senado/basedoc/ley_0142_1994.html",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: arts. 31 y 32",
+  "localizador": "art. 31 (modificado por el art. 3 de la Ley 689 de 2001), inciso 1",
+  "cita": "Los contratos que celebren las entidades estatales que prestan los servicios públicos a los que se refiere esta ley no estarán sujetos a las disposiciones del Estatuto General de Contratación de la Administración Pública, salvo en lo que la presente ley disponga otra cosa.",
+  "afirmacion": "Los contratos de las entidades estatales que prestan servicios públicos domiciliarios no se rigen por el Estatuto General, salvo lo que la Ley 142 disponga.",
+  "inferencia": null,
+  "eje": 1,
+  "etapa": [
+    "T"
+  ],
+  "decision": [
+    "D1",
+    "D3"
+  ],
+  "modulo": [
+    "M-ENTIDAD",
+    "M-PLIEGO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A1",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "http://www.secretariasenado.gov.co/senado/basedoc/ley_0142_1994.html",
+    "vigente": true,
+    "nota": "Texto de la Secretaría del Senado («Última actualización: 15 de septiembre de 2026»), leído el 2-oct-2026."
+  },
+  "lista_cerrada": "L1-12",
+  "problema_candidato": "En una obra de acueducto contratada por una empresa de servicios públicos no rigen los documentos tipo ni las causales del Estatuto General: el contratista tiene que leer el manual de contratación de la empresa.",
+  "regla": {
+    "regimen": "Régimen especial (servicios públicos domiciliarios)",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Norma legal en vigor antes de la fecha de corte; no fija una fecha de aviso."
+  },
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-institucional:4",
+      "veredicto": "correcta",
+      "detalle": "Abrí http://www.secretariasenado.gov.co/senado/basedoc/ley_0142_1994.html (200). En el art. 31, modificado por el art. 3 de la Ley 689 de 2001, el inciso 1 es literal. La afirmación es fiel. Nota sobre el problema_candidato, que no es la afirmación: el parágrafo del mismo art. 31 somete al Estatuto General los contratos de los entes territoriales con las empresas de servicios públicos para asumir la prestación. Además, el art. 13 de la Ley 1150 mantiene el régimen de inhabilidades. Por eso, «no rigen […] las causales del Estatuto General» es demasiado amplio."
+    }
+  ]
+}

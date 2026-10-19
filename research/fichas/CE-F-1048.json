@@ -1,0 +1,51 @@
+{
+  "id": "CE-F-1048",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 80 de 1993",
+  "anio": 1993,
+  "institucion": "Secretaría General del Senado (Leyes desde 1992, texto con notas de vigencia)",
+  "url": "http://www.secretariasenado.gov.co/senado/basedoc/ley_0080_1993.html",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: arts. 1, 2, 3, 13, 23, 26, 30 y 32 de la página principal",
+  "localizador": "art. 32, numeral 1 (Contrato de Obra), inciso 1",
+  "cita": "Son contratos de obra los que celebren las entidades estatales para la construcción, mantenimiento, instalación y, en general, para la realización de cualquier otro trabajo material sobre bienes inmuebles, cualquiera que sea la modalidad de ejecución y pago.",
+  "afirmacion": "La Ley 80 define el contrato de obra como el que celebran las entidades para construir, mantener, instalar o hacer cualquier otro trabajo material sobre inmuebles, sea cual sea la modalidad de ejecución y pago.",
+  "inferencia": null,
+  "eje": 1,
+  "etapa": [
+    "T"
+  ],
+  "decision": [
+    "D1"
+  ],
+  "modulo": [
+    "M-INGESTA"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A1",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "http://www.secretariasenado.gov.co/senado/basedoc/ley_0080_1993.html",
+    "vigente": true,
+    "nota": "Texto de la Secretaría del Senado («Última actualización: 15 de septiembre de 2026»), leído el 2-oct-2026."
+  },
+  "lista_cerrada": "L1-03",
+  "problema_candidato": null,
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Norma legal en vigor antes de la fecha de corte; no fija una fecha de aviso."
+  },
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-institucional:4",
+      "veredicto": "correcta",
+      "detalle": "Abrí http://www.secretariasenado.gov.co/senado/basedoc/ley_0080_1993.html (200). En el art. 32, numeral 1o «Contrato de Obra», el primer inciso es literal al de la cita. La afirmación es una paráfrasis fiel. La derogación del art. 32 de la Ley 1150 alcanza el inciso siguiente (interventoría), no este."
+    }
+  ]
+}

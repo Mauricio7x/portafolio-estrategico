@@ -1,0 +1,60 @@
+{
+  "id": "CE-F-1054",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 1474 de 2011",
+  "anio": 2011,
+  "institucion": "Secretaría General del Senado (Leyes desde 1992, texto con notas de vigencia)",
+  "url": "http://www.secretariasenado.gov.co/senado/basedoc/ley_1474_2011_pr001.html",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: arts. 82 a 92 (segunda página del texto en el Senado)",
+  "localizador": "art. 90 (modificado por el art. 43 de la Ley 1955 de 2019), literales a) y b)",
+  "cita": "a) Haber sido objeto de imposición de cinco (5) o más multas durante la ejecución de uno o varios contratos, con una o varias entidades estatales, durante los últimos tres (3) años; b) Haber sido objeto de declaratorias de incumplimiento contractual en por lo menos dos (2) contratos",
+  "afirmacion": "Queda inhabilitado el contratista con cinco o más multas en los últimos tres años (literal a); el literal b) añade una causal por declaratorias de incumplimiento contractual en por lo menos dos contratos, sujeta a una ventana de tiempo (ver advertencia).",
+  "inferencia": null,
+  "eje": 1,
+  "etapa": [
+    "E5",
+    "E8"
+  ],
+  "decision": [
+    "D1",
+    "D4"
+  ],
+  "modulo": [
+    "M-RUP",
+    "M-LISTA"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A1",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "http://www.secretariasenado.gov.co/senado/basedoc/ley_1474_2011_pr001.html",
+    "vigente": true,
+    "nota": "Texto de la Secretaría del Senado («Última actualización: 15 de septiembre de 2026»), leído el 2-oct-2026."
+  },
+  "lista_cerrada": "L1-05",
+  "problema_candidato": "Cada multa en firme suma hacia la inhabilidad por incumplimiento reiterado; el contratista de obra debe llevar la cuenta de sus multas de los últimos tres años, que figuran en su RUP.",
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Norma legal en vigor antes de la fecha de corte; no fija una fecha de aviso."
+  },
+  "advertencia": "«durante los últimos tres (3) años» del literal b) queda fuera de la cita por longitud. Según el verificador (fase 2, 2-oct-2026): el literal b) termina con «durante los últimos tres (3) años», fuera de la cita; sin esa ventana la regla inhabilitaría por incumplimientos de cualquier época. El art. 90 también lo modificó el art. 51 de la Ley 2195 de 2022 (literal d), que el localizador no menciona.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-institucional:4",
+      "veredicto": "no_sostiene",
+      "detalle": "Los literales a) y b) del art. 90 de la Ley 1474 (Senado), modificado por el art. 43 de la Ley 1955 de 2019, aparecen literales. El literal b) termina con «durante los últimos tres (3) años». La afirmación dice «con declaratorias de incumplimiento en al menos dos contratos» sin ventana de tiempo, así que inhabilitaría por incumplimientos de cualquier época. Quita un matiz que cambia la regla, y la advertencia no corrige la afirmación. Menor: el art. 90 también lo tocó el art. 51 de la Ley 2195 de 2022 (literal d), y el localizador no lo menciona.",
+      "accion": "afirmación estrechada a lo que sostiene la cita; lo que la cita no cubre va en «advertencia», atribuido al verificador",
+      "antes": {
+        "afirmacion": "Queda inhabilitado el contratista con cinco o más multas en los últimos tres años, o con declaratorias de incumplimiento en al menos dos contratos.",
+        "advertencia": "«durante los últimos tres (3) años» del literal b) queda fuera de la cita por longitud."
+      }
+    }
+  ]
+}

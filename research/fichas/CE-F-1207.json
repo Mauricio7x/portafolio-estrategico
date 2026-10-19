@@ -1,0 +1,48 @@
+{
+  "id": "CE-F-1207",
+  "tipo": "gremio_ong",
+  "autor": "Transparencia por Colombia",
+  "titulo": "Análisis de la contratación del Gobierno Nacional posterior a la Ley de Garantías",
+  "anio": 2026,
+  "institucion": "Corporación Transparencia por Colombia (informe de 16 de julio de 2026)",
+  "url": "https://transparenciacolombia.org.co/wp-content/uploads/2026/07/ANALISIS-CONTRATACION-POST-LEY-DE-GARANTIAS_TPC.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa",
+  "localizador": "pág. 10 impresa (pág. 11 del PDF), apartado 4.2 «Frente a la calidad de la información»",
+  "cita": "A pesar de que el marco normativo prevé la utilización de SECOP II, una parte importante de los contratos (15%) continúa registrándose en SECOP I.",
+  "afirmacion": "El informe dice que, aunque el marco normativo prevé SECOP II, el 15 % de los contratos del periodo analizado continúa registrándose en SECOP I.",
+  "inferencia": "Inferencia: quien busca procesos solo en SECOP II no ve una parte de la contratación; la transición de plataforma sigue incompleta en 2026.",
+  "eje": 1,
+  "etapa": [
+    "E1",
+    "T"
+  ],
+  "decision": [
+    "D1"
+  ],
+  "modulo": [
+    "M-INGESTA",
+    "M-LISTA"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A7",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://transparenciacolombia.org.co/wp-content/uploads/2026/07/ANALISIS-CONTRATACION-POST-LEY-DE-GARANTIAS_TPC.pdf",
+    "vigente": null,
+    "nota": "Medido sobre los contratos firmados del 22 de junio al 10 de julio de 2026."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Transición incompleta de SECOP I a SECOP II: parte de la contratación sigue en la plataforma vieja y se escapa a quien vigila solo la nueva.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-academico:1",
+      "veredicto": "correcta",
+      "detalle": "La cita aparece literal en la pág. 10 impresa (pág. 11 del PDF), apartado 4.2 «Frente a la calidad de la información». El informe no da otra cifra del 15 % que la contradiga. La afirmación no dice más que la cita."
+    }
+  ]
+}

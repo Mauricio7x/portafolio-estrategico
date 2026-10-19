@@ -1,0 +1,54 @@
+{
+  "id": "CE-F-1008",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República; Departamento Nacional de Planeación",
+  "titulo": "Decreto 0997 de 2026 (modifica y adiciona el Decreto 1082 de 2015)",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente (relatoría normativa)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: los 14 artículos y los considerandos en la relatoría de CCE",
+  "localizador": "art. 9 (sustituye el art. 2.2.1.1.2.2.2 del Decreto 1082 de 2015), parágrafo, inciso 2",
+  "cita": "Los criterios ambientales podrán referirse la reducción del nivel de emisión de gases de efecto invernadero; al empleo de medidas de ahorro y eficiencia energética y a la utilización de energía procedentes de fuentes renovables durante la ejecución del contrato",
+  "afirmacion": "El decreto da como ejemplos de criterios ambientales la reducción de emisiones de gases de efecto invernadero, el ahorro y la eficiencia energética y el uso de energía renovable durante la ejecución del contrato.",
+  "inferencia": null,
+  "eje": 1,
+  "etapa": [
+    "E2",
+    "E8"
+  ],
+  "decision": [
+    "D2",
+    "D4"
+  ],
+  "modulo": [
+    "M-PLIEGO",
+    "M-APU"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A2",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/",
+    "vigente": null,
+    "nota": "Art. 9: rige de forma progresiva, a los 6, 9, 12 o 15 meses de la publicación en el Diario Oficial según la entidad (art. 14, numerales 1 a 4). Con expedición el 04/08/2026, a la fecha de corte ningún plazo de 6 meses ha corrido. La fecha de publicación del Decreto 0997 de 2026 en el Diario Oficial no se comprobó en ninguna fuente abierta (la relatoría y la ficha de la Alcaldía de Bogotá solo dan la expedición, 04/08/2026)."
+  },
+  "lista_cerrada": "L1-01",
+  "problema_candidato": null,
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": "No aplica a procesos con documento tipo hasta que CCE expida la versión que lo incorpore (art. 14, parágrafo 3)",
+    "motivo_null": "Rige para procesos cuyo aviso, invitación o documento equivalente se publique después de la entrada en vigencia (art. 14, parágrafo 1); esa entrada es escalonada por tipo de entidad (6 a 15 meses desde la publicación en el Diario Oficial), y la fecha de esa publicación no se comprobó."
+  },
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-institucional:1",
+      "veredicto": "correcta",
+      "detalle": "La cita está literal, con el «referirse la reducción» del original, en el parágrafo del art. 9, inciso 2 (confirmado en el PDF, hoja 14-15). La afirmación los presenta como ejemplos, lo que respeta el «podrán» y el «entre otros» del texto. La vigencia progresiva (null) está bien."
+    }
+  ]
+}

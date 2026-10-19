@@ -1,0 +1,38 @@
+{
+  "id": "CE-F-5210",
+  "tipo": "academia",
+  "autor": "Autores del artículo (personas naturales, nombres omitidos por la regla 5)",
+  "titulo": "Análisis crítico del amparo de buen manejo de anticipo, de cara a las facultades exorbitantes de la Administración en Colombia",
+  "anio": 2013,
+  "institucion": "Pontificia Universidad Javeriana, Revista Ibero-Latinoamericana de Seguros (RIS), 39(22)",
+  "url": "https://revistas.javeriana.edu.co/index.php/iberoseguros/article/download/11270/9975/43861",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: texto completo extraído (50 págs.); leídos con detalle el resumen y el apartado 2.2.2 (págs. 143-146 de la revista)",
+  "localizador": "pág. 145 de la revista (pág. 33 del PDF), apartado 2.2.2.4 «Frente a la liquidación unilateral de los contratos»",
+  "cita": "tampoco resultaría viable recurrir a la figura exorbitante de la liquidación unilateral para que, existiendo dicha obligación y registrándose su posterior incumplimiento, se proceda directamente, vía acto administrativo, a la afectación del amparo del buen manejo y correcta inversión del anticipo",
+  "afirmacion": "Los autores sostienen que no sería viable usar la liquidación unilateral para afectar directamente, por acto administrativo, el amparo de buen manejo del anticipo cuando existe la obligación de restituir el anticipo y se incumple.",
+  "inferencia": null,
+  "eje": 5,
+  "etapa": [
+    "E9"
+  ],
+  "decision": [
+    "D4"
+  ],
+  "modulo": [
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "el propio documento (fuente académica fechada)",
+    "vigente": null,
+    "nota": "Fuente académica fechada; recoge doctrina y jurisprudencia de su época. No se comprobó contra el texto normativo vigente para esta ficha: sostiene la posición del autor y lo que reporta. Artículo de 2013, posterior a la Ley 1474 de 2011 (art. 86 y art. 91) que analiza."
+  },
+  "regla": null,
+  "lista_cerrada": "L5-07",
+  "problema_candidato": null,
+  "advertencia": "Es la posición de los autores, contraria a una práctica administrativa que ellos mismos dicen que el Consejo de Estado ha aceptado en algunas oportunidades: no es la regla."
+}

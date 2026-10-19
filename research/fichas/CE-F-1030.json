@@ -1,0 +1,51 @@
+{
+  "id": "CE-F-1030",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República; Departamento Nacional de Planeación",
+  "titulo": "Decreto 287 de 2026 (modifica los arts. 2.2.1.2.4.2.6, 2.2.1.2.4.2.7 y 2.2.1.2.4.2.8 del Decreto 1082 de 2015)",
+  "anio": 2026,
+  "institucion": "Departamento Administrativo de la Función Pública (Gestor Normativo)",
+  "url": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=273496",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: considerandos, art. 1 (arts. 2.2.1.2.4.2.6 a 2.2.1.2.4.2.8) y art. 2",
+  "localizador": "art. 1, nuevo art. 2.2.1.2.4.2.7.8",
+  "cita": "La Agencia Nacional de Contratación Pública - Colombia Compra Eficiente garantizara la adopción permanente de las acciones necesarias para que las medidas señaladas en esta subsección se incorporen a los documentos e instrumentos que genera.",
+  "afirmacion": "CCE debe incorporar las medidas del Decreto 287 en los documentos e instrumentos que genera.",
+  "inferencia": null,
+  "eje": 1,
+  "etapa": [
+    "T"
+  ],
+  "decision": [
+    "D3"
+  ],
+  "modulo": [
+    "M-PLIEGO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A2",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=273496",
+    "vigente": true,
+    "nota": "Decreto 287 de 2026 en el Gestor Normativo (expedición y entrada en vigencia: 19 de marzo de 2026, según la ficha). Su art. 2 dice que rige desde el día siguiente a su publicación; ver advertencia de CE-F-1021."
+  },
+  "lista_cerrada": "L1-02",
+  "problema_candidato": null,
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": "En procesos con documento tipo, solo cuando CCE incorpore las medidas (art. 2.2.1.2.4.2.7.8; Circular Externa 003 de 2026)",
+    "motivo_null": "El decreto no fija la transición por aviso; CCE (C-642 de 2026) la fija por la fecha de la resolución de apertura: desde el 20 de marzo de 2026."
+  },
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-institucional:3",
+      "veredicto": "correcta",
+      "detalle": "Abierto en el Gestor Normativo de Función Pública (i=273496, HTTP 200, curl --cacert bundle_normas2.pem). El art. 1 del Decreto 287 reemplaza los arts. 2.2.1.2.4.2.6 a 2.2.1.2.4.2.8, y dentro de ese texto está el art. 2.2.1.2.4.2.7.8 «PLIEGOS TIPO, INSTRUMENTOS DE AGREGACIÓN DE DEMANDA Y ACUERDOS MARCO DE PRECIOS». La cita aparece literal, con la errata «garantizara» incluida. La afirmación dice «debe incorporar»; la norma dice «garantizará la adopción permanente de las acciones necesarias para que [...] se incorporen». Es una reducción aceptable. La afirmación habla de las medidas del Decreto 287, que son parte de las de la subsección, así que dice menos que la norma, no más. Vigencia: la página de la Relatoría de CCE sobre el Decreto 0997 de 2026 lista los artículos que toca (2.2.1.1.1.x, 2.2.1.1.2.x, 2.2.1.2.1.x) y ninguno es de la subsección 2.2.1.2.4.2. Función Pública registra una sola vigencia («Modifica Decreto 1082»)."
+    }
+  ]
+}

@@ -1,0 +1,52 @@
+{
+  "id": "CE-F-3035",
+  "tipo": "documento_tipo",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Documentos Tipo de mínima cuantía de obra pública de infraestructura de transporte, versión 2 con modificaciones · Invitación (Invitacion_TMinCV2.docx)",
+  "anio": 2024,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/30021/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: de la Invitación se leyeron las secciones 1.6, 3.5 y 7.1 y la tabla de contenido",
+  "localizador": "sección 7.1 (Garantía de seriedad de la oferta), nota inicial y párrafo 2",
+  "cita": "[Es potestativo de la Entidad exigir Garantías conforme al artículo 2.2.1.2.1.5.5 del Decreto 1082 de 2015 […] Los errores o imprecisiones en el texto de la Garantía presentada son susceptibles de subsanación o aclaración por el proponente hasta el término previsto para subsanar.",
+  "afirmacion": "En la mínima cuantía de obra de transporte por documento tipo exigir garantía de seriedad es potestativo de la entidad, y si se exige, sus errores de texto se subsanan o aclaran hasta el término previsto para subsanar.",
+  "inferencia": "Inferencia: la misma sección dice que la no entrega de la garantía, cuando se exige, no es subsanable y causa rechazo; hay que leer la invitación para saber si se pidió.",
+  "eje": 3,
+  "etapa": [
+    "E3",
+    "E5"
+  ],
+  "decision": [
+    "D3"
+  ],
+  "modulo": [
+    "M-OFERTA"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A3",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.colombiacompra.gov.co/documentos-tipo/vigentes/?sector=712&nodo=29401 y https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo",
+    "vigente": true,
+    "nota": "Por el art. 14, par. 3, del Decreto 0997 de 2026, los procesos con documento tipo siguen este texto hasta que CCE expida nuevas versiones."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": "2025-02-03",
+    "documento_tipo": "Documentos Tipo de mínima cuantía de obra pública de infraestructura de transporte, versión 2 con modificaciones (la página del nodo cita la Resolución 464 de 2024), vigente desde el 3-feb-2025 según el control de versiones",
+    "nota_desde_aviso": "Fecha de entrada en vigencia de la versión según el control de versiones de CCE; no se leyó la resolución de adopción para comprobar si se cuenta desde la publicación del aviso o del pliego."
+  },
+  "lista_cerrada": "L3-11",
+  "problema_candidato": null,
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje3-institucional:3",
+      "veredicto": "correcta",
+      "detalle": "Abrí https://www.colombiacompra.gov.co/documentos-tipo/descarga/30021/ (HTTP 200, 05DT_Transp_MinimaCuantia_TMinC_V2-1.zip → ' Invitacion_TMinCV2.docx'). En la sección 7.1 están literales la nota «[Es potestativo de la Entidad exigir Garantías conforme al artículo 2.2.1.2.1.5.5 del Decreto 1082 de 2015 …]» y el párrafo «Los errores o imprecisiones en el texto de la Garantía presentada son susceptibles de subsanación o aclaración por el proponente hasta el término previsto para subsanar.» La inferencia sobre la no entrega también está en la misma sección. En el control de versiones de CCE figura «V.2 con modificaciones – Desde 03/02/2025 – Resolución 464». El art. 13 del Decreto 0997 modifica el 2.2.1.2.1.5.1, no el 2.2.1.2.1.5.5, y el par. 3 del art. 14 mantiene el documento tipo."
+    }
+  ]
+}

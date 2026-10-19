@@ -1,0 +1,36 @@
+{
+  "id": "CE-F-2208",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Las fallas de planeación y su incidencia en el contrato estatal de obra",
+  "anio": 2014,
+  "institucion": "Universidad Externado de Colombia · Revista Digital de Derecho Administrativo núm. 11, pp. 177-207 (vía Redalyc)",
+  "url": "https://www.redalyc.org/pdf/5038/503856212008.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: introducción, apartado 6 (jurisprudencia), apartado 7 (ejemplos) y conclusiones (págs. 177-181 y 197-201)",
+  "localizador": "pág. 199 de la revista (pág. 24 del PDF), apartado 7, párrafo inicial",
+  "cita": "contrataron obras que en muchos casos nunca pudieron operar o que haciéndolo duraron muy poco tiempo al servicio por múltiples razones, causadas por estudios incompletos o mal enfocados, cálculos presupuestales que no tuvieron en cuenta aspectos básicos de planeación técnica",
+  "afirmacion": "La autora atribuye a estudios incompletos o mal enfocados y a cálculos presupuestales sin planeación técnica básica que muchas obras contratadas con regalías nunca pudieron operar o duraron poco en servicio.",
+  "inferencia": null,
+  "eje": 2,
+  "etapa": [
+    "E0"
+  ],
+  "decision": [
+    "D4"
+  ],
+  "modulo": [
+    "M-ENTIDAD"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "No se reverificó contra jurisprudencia posterior; fuente académica",
+    "vigente": null,
+    "nota": "Ejemplos de Casanare previos a 2013; sin medición de frecuencia."
+  },
+  "lista_cerrada": null,
+  "problema_candidato": "Estudios incompletos y presupuestos sin planeación técnica producen obras que no pueden operar."
+}

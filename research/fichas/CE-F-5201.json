@@ -1,0 +1,38 @@
+{
+  "id": "CE-F-5201",
+  "tipo": "academia",
+  "autor": "Autor del artículo (persona natural, nombre omitido por la regla 5)",
+  "titulo": "La liquidación de los contratos estatales",
+  "anio": 2015,
+  "institucion": "Universidad Pontificia Bolivariana, Revista Facultad de Derecho y Ciencias Políticas, vol. 45, núm. 123 (vía Redalyc)",
+  "url": "https://www.redalyc.org/pdf/1514/151445901004.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: texto completo extraído con pdftotext (35 págs.); leídos con detalle el resumen y los apartados de salvedades y plazos (págs. 401-402, 415-419, 429-431)",
+  "localizador": "pág. 417 de la revista (pág. 18 del PDF de Redalyc), apartado «Se discutió y se dejó salvedad sin requisitos»",
+  "cita": "Se discutió y se dejó salvedad sin requisitos. En este caso la parte sienta su posición y además deja constancia de la respectiva salvedad, pero firma el acta sin argumentar ni expresar las razones técnicas o jurídicas; en este caso, no debe prosperar judicialmente",
+  "afirmacion": "El autor sostiene que si la parte deja constancia de salvedad pero firma el acta de liquidación sin expresar las razones técnicas o jurídicas, su pretensión no debe prosperar judicialmente.",
+  "inferencia": null,
+  "eje": 5,
+  "etapa": [
+    "E9",
+    "E10"
+  ],
+  "decision": [
+    "D4"
+  ],
+  "modulo": [
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "el propio documento (fuente académica fechada)",
+    "vigente": null,
+    "nota": "Artículo de 2015: recoge el art. 11 de la Ley 1150 de 2007 y el art. 164 del CPACA tal como estaban; no se comprobó contra el texto vigente para esta ficha. Lo que sostiene es la posición del autor y la jurisprudencia que transcribe."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "La salvedad sin razones técnicas o jurídicas equivale, en la práctica, a no haberla dejado: el reclamo económico se pierde al firmar."
+}

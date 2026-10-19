@@ -1,0 +1,54 @@
+{
+  "id": "CE-F-1005",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República; Departamento Nacional de Planeación",
+  "titulo": "Decreto 0997 de 2026 (modifica y adiciona el Decreto 1082 de 2015)",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente (relatoría normativa)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: los 14 artículos y los considerandos en la relatoría de CCE",
+  "localizador": "art. 8 (sustituye el art. 2.2.1.1.2.1.3 del Decreto 1082 de 2015), elementos 11 y 12 de la lista (la relatoría muestra la lista sin numerar salvo el 3; se contaron en orden)",
+  "cita": "Los términos, condiciones y minuta del contrato, incluyendo las cláusulas anti-corrupción que deberá cumplir el contratista. […] La declaración, pacto o compromiso anti-corrupción que deberán presentar los proponentes con la oferta.",
+  "afirmacion": "El pliego debe incluir en la minuta las cláusulas anticorrupción que cumplirá el contratista y exigir que los proponentes presenten con la oferta una declaración, pacto o compromiso anticorrupción.",
+  "inferencia": "Inferencia: el decreto no dice si la falta de esa declaración con la oferta es subsanable; eso lo dirá cada pliego o la versión nueva del documento tipo.",
+  "eje": 1,
+  "etapa": [
+    "E2",
+    "E3",
+    "E4"
+  ],
+  "decision": [
+    "D3"
+  ],
+  "modulo": [
+    "M-PLIEGO",
+    "M-OFERTA"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A2",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/",
+    "vigente": true,
+    "nota": "Art. 8: rige desde el día siguiente a la publicación en el Diario Oficial (art. 14, inciso 1). La fecha de publicación del Decreto 0997 de 2026 en el Diario Oficial no se comprobó en ninguna fuente abierta (la relatoría y la ficha de la Alcaldía de Bogotá solo dan la expedición, 04/08/2026)."
+  },
+  "lista_cerrada": "L1-01",
+  "problema_candidato": "La declaración anticorrupción es un documento nuevo de la oferta: un proponente que no la adjunte se expone a requerimiento o rechazo según lo que diga el pliego, y el decreto no fija si es subsanable.",
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": "No aplica a procesos con documento tipo hasta que CCE expida la versión que lo incorpore (art. 14, parágrafo 3)",
+    "motivo_null": "Rige para procesos cuyo aviso, invitación o documento equivalente se publique después de la entrada en vigencia (art. 14, parágrafo 1); esa entrada es el día siguiente a la publicación en el Diario Oficial, y la fecha de esa publicación no se comprobó."
+  },
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-institucional:1",
+      "veredicto": "correcta",
+      "detalle": "Las dos partes de la cita están literales y el PDF oficial numera esos elementos como 11 y 12, así que el localizador es correcto. La nota del localizador se equivoca en un punto: dice que la relatoría muestra la lista «sin numerar salvo el 3», pero el HTML es una lista ordenada (<ol>) que el navegador numera, y el elemento 3 lleva además un «3.» escrito a mano. La afirmación no dice más que la cita, y la inferencia va marcada como tal."
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "id": "CE-F-8201",
+  "tipo": "academia",
+  "autor": "Dos autores de la Maestría en Gerencia de Proyectos (nombres omitidos por la regla 5 del piloto)",
+  "titulo": "Diseño de una propuesta metodológica basada en estándares de gerencia de proyectos para optimizar la estructuración de ofertas en licitaciones públicas de infraestructura de transporte en Colombia bajo el esquema de pliegos tipo de obra pública e interventoría",
+  "anio": 2026,
+  "institucion": "Institución Universitaria Politécnico Grancolombiano (repositorio Alejandría)",
+  "url": "https://alejandria.poligran.edu.co/server/api/core/bitstreams/1be8581c-8a67-4f16-b472-358298e625f6/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: resumen, planteamiento, metodología (8.6-8.7) y resultados sobre SECOP II (10.1.4) con pdftotext -layout; no se leyó el resto de los 124 páginas",
+  "localizador": "pág. 76 del PDF, § 8.7.5 «Resultados preliminares de caracterización»",
+  "cita": "el 35% de las empresas locales reportó haber sido rechazadas en más del 40% de sus postulaciones, mayoritariamente por errores de tipo documental o por interpretación errada de los requisitos del pliego",
+  "afirmacion": "Según los autores, el 35 % de las empresas encuestadas reportó rechazo en más del 40 % de sus postulaciones, sobre todo por errores documentales o por interpretar mal los requisitos del pliego.",
+  "inferencia": null,
+  "eje": 8,
+  "etapa": [
+    "E3",
+    "E5"
+  ],
+  "decision": [
+    "D3"
+  ],
+  "modulo": [
+    "M-PLIEGO",
+    "M-OFERTA"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "el propio documento",
+    "vigente": null,
+    "nota": "Fuente académica o de práctica: registra lo que dice su autor, no una regla; no se comprobó vigencia normativa."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Interpretar mal un requisito del pliego o fallar en un documento es la causa de rechazo que más reportan las empresas encuestadas.",
+  "advertencia": "Resultado preliminar de una encuesta de la propia tesis; el tamaño exacto de la muestra no se comprobó en este apartado. No usar como frecuencia del mercado."
+}

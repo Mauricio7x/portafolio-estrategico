@@ -1,0 +1,40 @@
+{
+  "id": "CE-F-9205",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Las reclamaciones por desequilibrio económico en el contrato estatal: la buena fe y los actos propios en la jurisprudencia del Consejo de Estado",
+  "anio": 2022,
+  "institucion": "Revista de Derecho Privado, núm. 42, pp. 111-144, Universidad Externado de Colombia · versión HTML en Redalyc (DOI 10.18601/01234366.n42.06)",
+  "url": "https://www.redalyc.org/journal/4175/417571103006/html/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: resumen, línea jurisprudencial (tesis 1 a 3) y conclusiones; el resto por palabras clave",
+  "localizador": "Sección I.A, tesis 1, párrafo que sigue a la cita de la sentencia hito",
+  "cita": "[…] no basta siquiera con comunicaciones que se dirijan a la Administración haciendo las reclamaciones económicas a que haya lugar; estos documentos pierden su efecto con la suscripción posterior de los modificatorios del contrato, en los cuales se omite la consignación de salvedad alguna.",
+  "afirmacion": "El autor deduce de la tesis 1 de la jurisprudencia que no bastan las comunicaciones de reclamación dirigidas a la entidad: pierden su efecto si después se firman modificatorios sin salvedad.",
+  "inferencia": null,
+  "advertencia": "El mismo artículo describe una tesis 2 y una tesis 3 de la jurisprudencia que no exigen la salvedad en cada modificatorio; el autor critica la tesis 1. No es una regla única.",
+  "eje": 9,
+  "etapa": [
+    "E8",
+    "E9"
+  ],
+  "decision": [
+    "D4"
+  ],
+  "modulo": [
+    "M-SEGUIMIENTO",
+    "M-PRECIO"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "Artículo de 2022; no se abrieron las providencias del Consejo de Estado que analiza ni se comprobó si la línea cambió después",
+    "vigente": null,
+    "nota": "Es la lectura del autor sobre la jurisprudencia, no la jurisprudencia misma."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Las cartas de reclamación enviadas durante la obra pueden perder efecto si después se firma un modificatorio sin salvedad (tesis 1 de la jurisprudencia, según el autor)."
+}

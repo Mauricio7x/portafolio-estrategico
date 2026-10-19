@@ -1,0 +1,46 @@
+{
+  "id": "CE-F-2209",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Responsabilidad e impactos a las partes por la comisión de errores en la etapa precontractual",
+  "anio": 2022,
+  "institucion": "Universidad Externado de Colombia · Revista Digital de Derecho Administrativo núm. 27, pp. 135-156 (versión HTML de Redalyc)",
+  "url": "https://www.redalyc.org/journal/5038/503872656005/html/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: texto HTML completo con notas al pie",
+  "localizador": "nota al pie 27 (apartado 3), transcripción de la sentencia 27315 de 2013 del Consejo de Estado, Sección Tercera",
+  "cita": "la armonía de la información que tiene cada documento al interior de sí mismo, y sobre todo en relación con los demás, es una exigencia de calidad imputable a la entidad, de ahí que se haga responsable de sus defectos, por lo menos como regla general.",
+  "afirmacion": "En la sentencia que transcribe el autor, el Consejo de Estado dice que la coherencia de la información de los documentos previos (presupuesto, estudios, diseños, pliego) es una exigencia de calidad imputable a la entidad, que responde por sus defectos al menos como regla general.",
+  "inferencia": null,
+  "eje": 2,
+  "etapa": [
+    "E0",
+    "E1",
+    "E2"
+  ],
+  "decision": [
+    "D2",
+    "D4"
+  ],
+  "modulo": [
+    "M-PLIEGO",
+    "M-APU"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "No se reverificó contra jurisprudencia posterior; fuente académica",
+    "vigente": null,
+    "nota": "Transcripción hecha por el autor; la sentencia no se abrió en esta sesión."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Doctrina académica que reseña jurisprudencia; no rige desde un aviso concreto."
+  },
+  "lista_cerrada": "L2-09",
+  "problema_candidato": "Presupuesto, estudios y diseños contradictorios entre sí: la entidad responde como regla general, pero la regla tiene excepción (ver CE-F-2210)."
+}

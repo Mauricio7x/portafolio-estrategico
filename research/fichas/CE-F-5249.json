@@ -1,0 +1,39 @@
+{
+  "id": "CE-F-5249",
+  "tipo": "academia",
+  "autor": "Autor del artículo (persona natural, nombre omitido por la regla 5)",
+  "titulo": "Una aproximación a la visión de la corrección del desequilibrio contractual desde la perspectiva de la jurisprudencia arbitral",
+  "anio": 2007,
+  "institucion": "Universidad Externado de Colombia, Revist@ e-Mercatoria, vol. 6, núm. 2 (vía Dialnet)",
+  "url": "https://dialnet.unirioja.es/descarga/articulo/3626158.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: 64 págs.; leídos la introducción (método: 68 laudos de 1970-2004), el apartado 2.2 y el apartado sobre renuncias anticipadas",
+  "localizador": "pág. 19 del PDF, apartado sobre la renuncia anticipada al restablecimiento, transcripción de un laudo del 28 de mayo de 2000 (proceso contra Ecopetrol)",
+  "cita": "la renuncia anticipada que se haga a cualquier reconocimiento económico, carece de fuerza sustancial. La renuncia general y anticipada, por tanto, no puede servir de argumento o pretexto ala (sic) entidad estatal contratante para oponerse",
+  "afirmacion": "El autor transcribe un laudo arbitral según el cual la renuncia anticipada a cualquier reconocimiento económico carece de fuerza sustancial y no puede servir a la entidad para oponerse al pronunciamiento sobre el rompimiento de la ecuación económica.",
+  "inferencia": "Inferencia: el mismo laudo distingue la renuncia concreta ante una situación determinada, que sí produciría efecto; firmar un otrosí que renuncia a reclamar por un hecho concreto sí puede costarle el reclamo al contratista.",
+  "eje": 5,
+  "etapa": [
+    "E7",
+    "E8"
+  ],
+  "decision": [
+    "D4"
+  ],
+  "modulo": [
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "el propio documento (fuente académica fechada)",
+    "vigente": null,
+    "nota": "Artículo de 2007 sobre laudos de 1970-2005 y una sentencia del Consejo de Estado de 1996; no se comprobó la línea jurisprudencial posterior para esta ficha."
+  },
+  "regla": null,
+  "lista_cerrada": "L5-10",
+  "problema_candidato": "Pliegos y otrosíes traen cláusulas de renuncia a reclamaciones; la renuncia general anticipada se ha considerado sin fuerza en laudos, pero la renuncia concreta firmada ante un hecho determinado sí puede hacer perder el reclamo.",
+  "advertencia": "Es un laudo arbitral transcrito por el autor; el autor reporta otros laudos en la misma línea, no un conteo."
+}

@@ -1,0 +1,51 @@
+{
+  "id": "CE-F-3046",
+  "tipo": "documento_tipo",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Documentos Tipo de licitación de obra pública de infraestructura social, versión 2 · Documento Base transversal (DocBase_LicitacionObra_ISocialLV2.docx)",
+  "anio": 2025,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29837/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: del Documento Base se leyeron la sección 1.6, el cuadro de puntajes del capítulo IV y la tabla de contenido",
+  "localizador": "sección 1.6 (Reglas de subsanabilidad, explicaciones y aclaraciones), párrafo 2",
+  "cita": "No obstante, los Proponentes no podrán completar, adicionar, modificar o mejorar sus propuestas en los aspectos que otorgan puntaje, ni tampoco en los factores de desempate, los cuales podrán ser objeto de aclaraciones y explicaciones.",
+  "afirmacion": "En la licitación de obra de infraestructura social por documento tipo (versión 2), los proponentes no pueden completar, adicionar, modificar ni mejorar los aspectos que dan puntaje ni los factores de desempate, que solo admiten aclaraciones y explicaciones.",
+  "inferencia": "Inferencia: el mismo párrafo fija cinco días hábiles de traslado para subsanar, igual que en transporte; la versión 2 nombra expresamente los factores de desempate en esta frase.",
+  "eje": 3,
+  "etapa": [
+    "E5"
+  ],
+  "decision": [
+    "D3"
+  ],
+  "modulo": [
+    "M-OFERTA"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A3",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.colombiacompra.gov.co/documentos-tipo/modalidad/01-documentos-tipo-de-licitacion-de-obra-publica-de-infraestructura-social/01-documentos-tipo-transversales y https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo («V.2 · Desde 16/02/2026 · Versión vigente»)",
+    "vigente": true,
+    "nota": "Por el art. 14, par. 3, del Decreto 0997 de 2026, los procesos con documento tipo siguen este texto hasta que CCE expida nuevas versiones."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": "2026-02-16",
+    "documento_tipo": "Documentos Tipo de licitación de obra pública de infraestructura social, versión 2 (la página del nodo cita la Resolución 539 de 2025), vigente desde el 16-feb-2026",
+    "nota_desde_aviso": "Fecha de entrada en vigencia de la versión según el control de versiones de CCE; no se leyó la resolución de adopción para comprobar si se cuenta desde la publicación del aviso o del pliego."
+  },
+  "lista_cerrada": "L3-12",
+  "problema_candidato": null,
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje3-institucional:4",
+      "veredicto": "correcta",
+      "detalle": "Abrí descarga/29837 (200, zip; es el ítem 05 «Documentos Tipo transversales de infraestructura social — Licitación Pública — Versión 2» del nodo transversal). La cita aparece literal en DocBase_LicitacionObra_ISocialLV2.docx, sección 1.6, párrafo 2: «No obstante, los Proponentes no podrán completar, adicionar, modificar o mejorar sus propuestas en los aspectos que otorgan puntaje, ni tampoco en los factores de desempate, los cuales podrán ser objeto de aclaraciones y explicaciones.» La afirmación se sostiene, y el «solo» lo confirma el párrafo 5 («No obstante, pueden ser aclarados o ser objeto de explicación»). El mismo párrafo 2 fija los 5 días hábiles de traslado. Vigencia: control de versiones «V.2 Desde 16/02/2026 Versión vigente»; el nodo dice «Versión 2 – Vigente desde el 16 de febrero de 2026» y cita la Resolución 539 de 2025."
+    }
+  ]
+}

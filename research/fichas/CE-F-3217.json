@@ -1,0 +1,40 @@
+{
+  "id": "CE-F-3217",
+  "tipo": "academia",
+  "autor": "Personas naturales, tres autoras (nombres omitidos por la regla 5 del piloto)",
+  "titulo": "Implementación de los pliegos tipo de infraestructura de transporte en la modalidad de licitación de obra pública desde el año 2018 al 2021",
+  "anio": 2022,
+  "institucion": "Universidad La Gran Colombia, Especialización en Contratación Estatal (trabajo de grado)",
+  "url": "https://repository.ugc.edu.co/server/api/core/bitstreams/0cfb2a74-5923-4980-ade2-1448daf025d2/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: portada, antecedentes (pág. 27) y apartado de resultados de la implementación (págs. 39-45 del PDF); el resto se recorrió por palabras clave",
+  "localizador": "pág. 42 del PDF, lista de beneficios atribuida al portal Colombia Ágil (2019)",
+  "cita": "Después de la adopción de los documentos tipo aumentó el número de oferentes, porque ya no participan en promedio seis sino 32.",
+  "afirmacion": "Las autoras recogen, con base en el portal Colombia Ágil (2019), que después de la adopción de los documentos tipo de transporte el promedio de oferentes pasó de seis a 32.",
+  "inferencia": "Inferencia: con documento tipo el contratista compite contra muchos más oferentes, lo que vuelve decisivos el puntaje y el desempate.",
+  "eje": 3,
+  "etapa": [
+    "E5"
+  ],
+  "decision": [
+    "D1",
+    "D2"
+  ],
+  "modulo": [
+    "M-ENTIDAD",
+    "M-PRECIO"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "No aplica: dato empírico o descripción de práctica, no regla",
+    "vigente": null,
+    "nota": "Cifras de segunda mano que las autoras toman de otros autores y de la CCI; no se abrieron las fuentes originales."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Con documentos tipo la competencia sube (de 6 a 32 oferentes en promedio según la fuente citada) y la adjudicación se define por puntaje, precio y desempate.",
+  "advertencia": "Las cifras de único proponente son de segunda mano (las autoras citan a otros autores, a la CCI y al Observatorio) y cambian según el año y la fuente que se cite: no se usan como frecuencia sin abrir la fuente original."
+}

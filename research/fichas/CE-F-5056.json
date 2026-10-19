@@ -1,0 +1,54 @@
+{
+  "id": "CE-F-5056",
+  "tipo": "jurisprudencia",
+  "autor": "Consejo de Estado, Sección Tercera, Subsección A",
+  "titulo": "Sentencia del 1 de julio de 2025, radicación 05001-23-33-000-2013-01452-01 (63.532), controversias contractuales",
+  "anio": 2025,
+  "institucion": "Consejo de Estado (PDF publicado en la relatoría de Colombia Compra Eficiente, https://relatoria.colombiacompra.gov.co/providencias/05001233300020130145201-de-2025/)",
+  "url": "https://relatoria.colombiacompra.gov.co/wp-content/uploads/2025/07/05001233300020130145201.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: extracto de la relatoría (págs. 1-2 del PDF), consideraciones sobre liquidación, salvedades y precio global (págs. 14-19 del PDF) y parte resolutiva",
+  "localizador": "apartado 6.3 «Modalidad de pago a precio global», pág. 17 de la sentencia (pág. 19 del PDF)",
+  "cita": "en los contratos a precios globales, la obligación de mayores cantidades de obra es asumida, en principio, por el contratista, pues el precio pactado remunera todas las actividades necesarias para ejecutar el contrato",
+  "afirmacion": "El Consejo de Estado reitera que en los contratos a precio global las mayores cantidades de obra las asume, en principio, el contratista, porque el precio remunera todo lo necesario para ejecutar.",
+  "inferencia": null,
+  "eje": 5,
+  "etapa": [
+    "E3",
+    "E8"
+  ],
+  "decision": [
+    "D2",
+    "D4"
+  ],
+  "modulo": [
+    "M-PRECIO",
+    "M-APU"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A4",
+  "unificacion": false,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://relatoria.colombiacompra.gov.co/wp-content/uploads/2025/07/05001233300020130145201.pdf",
+    "vigente": true,
+    "nota": "Sentencia de segunda instancia fechada el 1-jul-2025; no se buscó providencia posterior que la contradiga."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Regla de origen jurisprudencial: no depende de la fecha de un aviso."
+  },
+  "lista_cerrada": "L5-10",
+  "problema_candidato": "En una licitación a precio global el error de cantidades del presupuesto oficial pasa al contratista: hay que medir las cantidades antes de ofertar.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje5-institucional:4",
+      "veredicto": "correcta",
+      "detalle": "La cita es literal en el apartado 6.3 «Modalidad de pago a precio global», pág. 17 de la sentencia (pág. 19 del PDF). La Sala la transcribe de la Subsección B (nota 51), y la afirmación usa «reitera» y conserva «en principio». En la pág. 18 la sentencia pone el límite (prestaciones ajenas al objeto, incumplimiento de la entidad, desequilibrio). La afirmación no lo contradice porque conserva «en principio»."
+    }
+  ]
+}

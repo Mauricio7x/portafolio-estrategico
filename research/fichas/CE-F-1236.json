@@ -1,0 +1,56 @@
+{
+  "id": "CE-F-1236",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Análisis crítico de la Ley Estatutaria 996 de 2005 sobre las restricciones de contratación directa en Colombia",
+  "anio": 2017,
+  "institucion": "Universidad Militar Nueva Granada (trabajo de grado, repositorio institucional)",
+  "url": "https://repository.umng.edu.co/server/api/core/bitstreams/765df33b-cbb9-41d9-814a-9db0f409b7a1/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: planteamiento (págs. del PDF 8-12), estudio de cinco municipios en SECOP (págs. 17-23) y conclusiones (págs. 23-24)",
+  "localizador": "pág. 22 del PDF, cap. III, análisis de los cinco municipios (gráfica 1)",
+  "cita": "El análisis de los cinco municipios muestra que en total 4.879 procesos de contratación se celebraron durante el periodo del 25 de noviembre de 2013 al 24 de enero de 2014 y, que de este total, 4.629 contratos se dieron a través de la modalidad directa",
+  "afirmacion": "El autor escribe que en cinco municipios se celebraron 4.879 procesos entre el 25 de noviembre de 2013 y el 24 de enero de 2014, de los cuales 4.629 fueron por contratación directa; el propio documento no cuadra esas cifras (ver advertencia).",
+  "inferencia": "Inferencia: según las conclusiones del autor, es el periodo previo a la restricción del art. 33 de la Ley 996 para las presidenciales de 2014, y los objetos incluyen «mantenimiento y recuperación de malla vial»; es un indicio de que la contratación directa municipal se adelanta antes de la veda, no una frecuencia.",
+  "eje": 1,
+  "etapa": [
+    "E0",
+    "T"
+  ],
+  "decision": [
+    "D1"
+  ],
+  "modulo": [
+    "M-LISTA",
+    "M-ENTIDAD"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://repository.umng.edu.co/server/api/core/bitstreams/765df33b-cbb9-41d9-814a-9db0f409b7a1/content",
+    "vigente": null,
+    "nota": "Cinco municipios elegidos al azar por el autor, 2013-2014; no es representativo del país."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Indicio, en cinco municipios y un solo periodo, de que la contratación directa se agolpa antes de que empiece la restricción de la ley de garantías.",
+  "advertencia": "Según el verificador (verificación fase 2, 2-oct-2026), el mismo documento contradice la cifra: los cuadros por municipio suman 76 + 850 + 1.954 + 1.991 + 6 = 4.877 procesos, no 4.879; en Leticia el texto da 75 contratos directos pero su desglose (25 + 48) suma 73, y el total de 4.629 solo cuadra con 75; el texto anuncia «cuadros 6 al 10» y los cuadros van del 1 al 5. Las cifras no se usan como frecuencia; cinco municipios elegidos por el autor no representan al país.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-academico:3",
+      "veredicto": "no_sostiene",
+      "detalle": "Abrí la URL (HTTP 200, Reyes Saavedra, UMNG 2017). La cita es literal en la pág. 22 del PDF y el localizador es correcto. Pero el mismo documento contradice la cifra: los cuadros por municipio suman 76 (Leticia) + 850 (Medellín) + 1.954 (Bucaramanga) + 1.991 (Barranquilla) + 6 (Florencia) = 4.877 procesos, no 4.879. Además, en Leticia el texto da «75 contratos» directos, pero su desglose es «25 por mínima cuantía y 48 por otras formas» = 73, y el total de 4.629 solo cuadra con 75. El texto anuncia «cuadros 6 al 10» y los cuadros se numeran del 1 al 5. La ficha es empírica, no trae advertencia y la cifra no debe usarse como frecuencia (§ 5.3). La atribución al autor sí es fiel.",
+      "accion": "Se dejó la afirmación como lo que el autor escribe, se quitaron de la inferencia el 94,8 % y la lectura como frecuencia, se estrechó el problema candidato a un indicio, y las inconsistencias internas pasaron a «advertencia», atribuidas al verificador.",
+      "antes": {
+        "afirmacion": "El autor dice que en cinco municipios se celebraron 4.879 procesos entre el 25 de noviembre de 2013 y el 24 de enero de 2014, de los cuales 4.629 fueron por contratación directa.",
+        "inferencia": "Inferencia: el texto sigue con un 94,8 % y, según las conclusiones, es el periodo previo a la restricción del art. 33 de la Ley 996 para las presidenciales de 2014; los objetos incluyen «mantenimiento y recuperación de malla vial». Para el contratista de obra menor, la contratación directa municipal se adelanta antes de la veda.",
+        "problema_candidato": "La contratación se agolpa antes de que empiece la restricción de la ley de garantías.",
+        "advertencia": null
+      }
+    }
+  ]
+}

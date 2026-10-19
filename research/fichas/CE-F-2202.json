@@ -1,0 +1,43 @@
+{
+  "id": "CE-F-2202",
+  "tipo": "academia",
+  "autor": "Personas naturales (nombres omitidos por la regla 5 del piloto)",
+  "titulo": "La planeación en los contratos de obra pública en Colombia ¿principio, deber o requisito? Obligatoriedad y consecuencias de su inaplicación",
+  "anio": 2019,
+  "institucion": "Universidad de Medellín · Opinión Jurídica 18(37), pp. 93-115 (vía Dialnet)",
+  "url": "https://dialnet.unirioja.es/descarga/articulo/7513032.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: texto completo recorrido; se leyeron con detalle las págs. 106-113",
+  "localizador": "págs. 107-108 de la revista (págs. 15-16 del PDF), párrafo «…abstenerse de participar en contratos…»",
+  "cita": "abstenerse de participar en contratos donde se observa la imposibilidad de la ejecución. La declaratoria de la nulidad por falta de planeación […] obliga a los participantes y a los posibles contratistas a investigar acerca de los elementos que deben hacer parte del contrato",
+  "afirmacion": "Los autores sostienen que la declaratoria de nulidad por falta de planeación obliga a los participantes y posibles contratistas a investigar los elementos del contrato y a abstenerse de participar donde se observa la imposibilidad de ejecución.",
+  "inferencia": null,
+  "eje": 2,
+  "etapa": [
+    "E1",
+    "E3"
+  ],
+  "decision": [
+    "D1"
+  ],
+  "modulo": [
+    "M-PLIEGO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "No se reverificó contra jurisprudencia posterior; fuente académica",
+    "vigente": null,
+    "nota": "Lectura de los autores sobre la jurisprudencia de 2013."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Doctrina académica que reseña jurisprudencia; no rige desde un aviso concreto."
+  },
+  "lista_cerrada": null,
+  "problema_candidato": "El contratista carga con el deber de revisar la planeación de la entidad antes de ofertar: si se presenta a una obra visiblemente inejecutable, comparte las consecuencias de la nulidad."
+}

@@ -1,0 +1,39 @@
+{
+  "id": "CE-F-6206",
+  "tipo": "academia",
+  "autor": "Cuatro personas naturales (nombres omitidos por la regla 5 del piloto)",
+  "titulo": "Análisis de la contratación estatal en proyectos de infraestructura vial: caso Valle del Cauca 2010-2015",
+  "anio": 2017,
+  "institucion": "Fundación Universitaria Católica del Norte, Revista Virtual Universidad Católica del Norte núm. 51, págs. 2-22 · Redalyc",
+  "url": "https://www.redalyc.org/pdf/1942/194252398002.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: resumen, metodología (págs. 6-8), indicadores financieros (págs. 11-13), experiencia y maquinaria (págs. 17-19) y tablas de personal",
+  "localizador": "pág. 3 (resumen)",
+  "cita": "Este trabajo deja entrever que, si bien existen requisitos habilitantes que permiten una participación igualitaria a los proponentes, en algunos municipios y en ciertos proyectos los indicadores financieros solicitados varían, lo cual tiende a favorecer a un grupo particular de proponentes.",
+  "afirmacion": "Los autores señalan que su trabajo deja entrever que, en algunos municipios y proyectos viales del Valle del Cauca, los indicadores financieros exigidos varían de un pliego a otro y eso tiende a favorecer a un grupo particular de proponentes.",
+  "inferencia": null,
+  "eje": 6,
+  "etapa": [
+    "E1",
+    "E2"
+  ],
+  "decision": [
+    "D1",
+    "D3"
+  ],
+  "modulo": [
+    "M-PLIEGO"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "No aplica: dato empírico de pliegos de 2010-2015",
+    "vigente": null,
+    "nota": "Muestra de 50 de 132 procesos viales de cuantía igual o superior a $350.000.000 en el Valle del Cauca, 2010-2015, anteriores a los documentos tipo obligatorios de obra (Ley 2022 de 2020); hoy los documentos tipo fijan esos requisitos donde aplican."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Pliego sastre por indicadores financieros: la variación discrecional de los indicadores exigidos entre pliegos tiende a favorecer a un grupo particular de proponentes."
+}

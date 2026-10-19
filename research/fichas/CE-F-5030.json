@@ -1,0 +1,60 @@
+{
+  "id": "CE-F-5030",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República y Departamento Nacional de Planeación",
+  "titulo": "Decreto 1082 de 2015, Único Reglamentario del Sector Administrativo de Planeación Nacional",
+  "anio": 2015,
+  "institucion": "Departamento Administrativo de la Función Pública, Gestor Normativo (texto consolidado)",
+  "url": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=77653",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: arts. 2.2.1.1.2.4.1 a 2.2.1.1.2.4.3 y 2.2.1.2.3.1.1 a 2.2.1.2.3.2.9 del texto consolidado",
+  "localizador": "art. 2.2.1.2.3.1.14 (modificado por el art. 3 del Decreto 399 de 2021), incisos primero y segundo",
+  "cita": "Suficiencia de la garantía de estabilidad y calidad de la obra. Esta garantía debe estar vigente por un término no inferior a cinco (5) años […] la Entidad Estatal recibe a satisfacción la obra. […] esta garantía podrá tener una vigencia inferior a cinco (5) años y en todo caso de mínimo un (1) año.",
+  "afirmacion": "La garantía de estabilidad y calidad de la obra debe estar vigente al menos cinco años desde que la entidad recibe a satisfacción la obra; la norma admite una vigencia inferior solo bajo condiciones que la cita abrevia con […], y en todo caso de mínimo un año.",
+  "inferencia": null,
+  "eje": 5,
+  "etapa": [
+    "E9",
+    "E10"
+  ],
+  "decision": [
+    "D2",
+    "D4"
+  ],
+  "modulo": [
+    "M-PRECIO",
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A2",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=77653",
+    "vigente": true,
+    "nota": "Texto consolidado de Función Pública (consultado el 2-oct-2026). Se revisó el índice de artículos que modifica el Decreto 0997 de 2026 (arts. 2.2.1.1.1.4.5, 2.2.1.1.1.5.4, 2.2.1.1.1.5.7, 2.2.1.1.1.6.1, 2.2.1.1.1.6.2, 2.2.1.1.2.1.1, 2.2.1.1.2.1.3, 2.2.1.1.2.2.2, 2.2.1.1.2.2.10, 2.2.1.2.1.2.1, 2.2.1.2.1.2.12, 2.2.1.2.1.5.1): no toca este artículo."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Norma reglamentaria compilada en el Decreto 1082 de 2015: no depende de la fecha de un aviso; no se buscó régimen de transición."
+  },
+  "lista_cerrada": "L5-07",
+  "problema_candidato": null,
+  "advertencia": "Según el verificador (2-oct-2026), la reducción por debajo de cinco años no es libre: «La Entidad Estatal puede aceptar que esta garantía tenga una vigencia inferior a cinco (5) años previa justificación técnica de un experto en la materia objeto del contrato, lo cual se debe reflejar en los documentos del proceso. Como consecuencia del análisis anterior y según la complejidad técnica del contrato a celebrar, esta garantía podrá tener...». La cita oculta ese matiz con […]; no hay que leer la afirmación como una reducción sin condición.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje5-institucional:3",
+      "veredicto": "no_sostiene",
+      "detalle": "Abrí la URL de Función Pública (curl --cacert bundle_normas2.pem, 200). Art. 2.2.1.2.3.1.14, modificado por el art. 3 del Decreto 399 de 2021: el localizador es correcto y la cita está literal, con sus omisiones marcadas. La afirmación quita el matiz que condiciona la reducción: «La Entidad Estatal puede aceptar que esta garantía tenga una vigencia inferior a cinco (5) años previa justificación técnica de un experto en la materia objeto del contrato, lo cual se debe reflejar en los documentos del proceso. Como consecuencia del análisis anterior y según la complejidad técnica del contrato a celebrar, esta garantía podrá tener...». Además, la cita misma oculta ese matiz con […]. La afirmación dice «puede tener una vigencia inferior» sin condición; que la advertencia lo reconozca no corrige la afirmación (§5.1). Vigencia: el Decreto 0997 de 2026 (PDF de Presidencia, 19 hojas) no toca el art. 2.2.1.2.3.1.14. La lista de la nota omite el art. 4 del 0997, que adiciona una definición al 2.2.1.1.1.3.1, pero esa omisión no afecta a este artículo.",
+      "accion": "Afirmación estrechada: la vigencia inferior a cinco años queda como posibilidad condicionada (la condición que la cita abrevia va en la advertencia, atribuida al verificador).",
+      "antes": {
+        "afirmacion": "La garantía de estabilidad y calidad de la obra va al menos cinco años desde el recibo a satisfacción; puede tener una vigencia inferior, pero en todo caso de mínimo un año.",
+        "advertencia": "La reducción por debajo de cinco años exige «previa justificación técnica de un experto» reflejada en los documentos del proceso; la cita abrevia esa condición con […]."
+      }
+    }
+  ]
+}

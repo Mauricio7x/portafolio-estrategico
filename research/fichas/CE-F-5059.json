@@ -1,0 +1,53 @@
+{
+  "id": "CE-F-5059",
+  "tipo": "jurisprudencia",
+  "autor": "Consejo de Estado, Sección Tercera, Sala Plena",
+  "titulo": "Sentencia de unificación del 27 de julio de 2023, radicación 05001-23-31-000-1999-02151-01 (39121), sobre los efectos de la ausencia de salvedades",
+  "anio": 2023,
+  "institucion": "Consejo de Estado (PDF publicado en la relatoría de Colombia Compra Eficiente, https://relatoria.colombiacompra.gov.co/providencias/05001233100019990215101/)",
+  "url": "https://relatoria.colombiacompra.gov.co/wp-content/uploads/2024/04/1706105808872-05001233100019990215101_39121.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: extracto de la relatoría (págs. 1-3 del PDF), encabezado y apartado de unificación con la parte resolutiva (págs. 38-39 del PDF)",
+  "localizador": "apartado «Unificación de jurisprudencia sobre los efectos de la ausencia de salvedades», numeral 44 (pág. 38 del PDF)",
+  "cita": "Cuando se llegue a acuerdos durante la ejecución de un contrato, el juez deberá estudiar las pretensiones, aunque la parte no haya elevado una reclamación específica o no haya formulado una salvedad cuando se firman suspensiones, adiciones o prórrogas del plazo contractual",
+  "afirmacion": "La Sección Tercera unificó que, cuando las partes firman suspensiones, adiciones o prórrogas, el juez debe estudiar las pretensiones aunque el contratista no haya dejado salvedad en esos acuerdos.",
+  "inferencia": "Inferencia: el juez sigue desentrañando si el acuerdo reguló el asunto; dejar la salvedad sigue siendo lo prudente, pero su falta ya no cierra la puerta por sí sola.",
+  "eje": 5,
+  "etapa": [
+    "E8",
+    "E10"
+  ],
+  "decision": [
+    "D4"
+  ],
+  "modulo": [
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A4",
+  "unificacion": true,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://relatoria.colombiacompra.gov.co/wp-content/uploads/2024/04/1706105808872-05001233100019990215101_39121.pdf",
+    "vigente": true,
+    "nota": "La sentencia de 2026 del exp. 68756 (Sección Tercera, Subsección C) la cita como jurisprudencia de unificación vigente (pág. 79 de ese PDF)."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Regla de origen jurisprudencial: no depende de la fecha de un aviso."
+  },
+  "lista_cerrada": "L5-10",
+  "problema_candidato": null,
+  "advertencia": "La unificación se refiere a acuerdos durante la ejecución (suspensiones, adiciones, prórrogas, otrosíes), no al acta de liquidación, donde la Sección sigue exigiendo salvedades concretas (exp. 63.532 de 2025). La ficha de la relatoría da fecha 27/08/2023; el encabezado del PDF dice 27 de julio de 2023.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje5-institucional:4",
+      "veredicto": "correcta",
+      "detalle": "Abrí el PDF (HTTP 200, 39 págs.). Su encabezado confirma Sección Tercera, Sala Plena, 27 de julio de 2023, radicación 05001-23-31-000-1999-02151-01 (39121). La ficha de la relatoría (HTTP 200) dice 27/08/2023, como señala la advertencia. La cita es literal en el apartado «Unificación de jurisprudencia sobre los efectos de la ausencia de salvedades», numeral 44 (pág. 38 del PDF). La afirmación es fiel a la cita; donde la fuente dice «la parte», la afirmación dice «el contratista», sin efecto. La inferencia la respalda el resto del numeral 44: el juez desentraña el acuerdo y su alcance. Comprobé la nota de vigencia: el exp. 68756 la cita como jurisprudencia de unificación en la pág. 75 de la sentencia (pág. 79 del PDF), nota 136."
+    }
+  ]
+}

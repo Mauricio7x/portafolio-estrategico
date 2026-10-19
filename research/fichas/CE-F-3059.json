@@ -1,0 +1,53 @@
+{
+  "id": "CE-F-3059",
+  "tipo": "jurisprudencia",
+  "autor": "Consejo de Estado, Sala de lo Contencioso Administrativo, Sección Tercera, Subsección C",
+  "titulo": "Sentencia del 23 de febrero de 2026, radicación 08001-23-33-000-2018-00391-01 (67378), nulidad y restablecimiento del derecho y controversias contractuales sobre una licitación distrital de obra (rehabilitación de mercados públicos)",
+  "anio": 2026,
+  "institucion": "Consejo de Estado (PDF publicado en la relatoría de la Agencia Nacional de Contratación Pública - Colombia Compra Eficiente)",
+  "url": "https://relatoria.colombiacompra.gov.co/wp-content/uploads/2026/05/08001233300020180039101.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: ficha de relatoría (págs. 1 a 6), encabezado y síntesis (págs. 7 y 8), consideraciones sobre la ineficacia, la subsanabilidad y la utilidad dejada de percibir (págs. 45 a 54) y decisión (pág. 59) de las 60 páginas",
+  "localizador": "pág. 54 del PDF, apartado sobre la utilidad dejada de percibir",
+  "cita": "aun cuando en el presente caso se acreditó la ilegalidad del acto de adjudicación, el consorcio demandante no demostró la certeza del perjuicio consistente en la utilidad dejada de percibir, al haber omitido aportar los elementos probatorios necesarios para acreditar el provecho económico esperado.",
+  "afirmacion": "El Consejo de Estado sostuvo que, aunque se probó la ilegalidad de la adjudicación, el consorcio demandante no demostró la utilidad dejada de percibir por no aportar las pruebas del provecho económico esperado.",
+  "inferencia": "Inferencia: en la decisión (pág. 59) anuló la adjudicación y el contrato, negó las demás pretensiones y solo condenó en costas; ganar la nulidad no garantiza cobrar la utilidad.",
+  "eje": 3,
+  "etapa": [
+    "E10"
+  ],
+  "decision": [
+    "D2",
+    "D4"
+  ],
+  "modulo": [
+    "M-PRECIO",
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A4",
+  "unificacion": false,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://relatoria.colombiacompra.gov.co/wp-content/uploads/2026/05/08001233300020180039101.pdf",
+    "vigente": true,
+    "nota": "Sentencia de segunda instancia de una subsección, no de unificación; no se buscó jurisprudencia posterior que la contradiga."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Providencia judicial; no rige desde un aviso."
+  },
+  "lista_cerrada": "L3-14",
+  "problema_candidato": "El oferente mal rechazado que demanda y gana la nulidad puede quedarse sin indemnización si no prueba la utilidad que esperaba (por ejemplo, con su análisis de precios y su AIU).",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje3-institucional:4",
+      "veredicto": "correcta",
+      "detalle": "Misma sentencia. En la pág. 54 del PDF (impresa como 48) aparece literal: «aun cuando en el presente caso se acreditó la ilegalidad del acto de adjudicación, el consorcio demandante no demostró la certeza del perjuicio consistente en la utilidad dejada de percibir, al haber omitido aportar los elementos probatorios necesarios para acreditar el provecho económico esperado.» La afirmación coincide con la cita. La decisión, en la pág. 59, anula la Resolución 203 de 2017 y el contrato 012017002333, en el ordinal «CUARTO: NEGAR las demás pretensiones», y condena en costas a la parte demandada, como dice la inferencia."
+    }
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "id": "CE-F-5226",
+  "tipo": "organo_control",
+  "autor": "Contraloría General de la República, Contraloría Delegada para el Sector Defensa, Justicia y Seguridad",
+  "titulo": "Informe de auditoría: obras inconclusas, año 2007 a junio de 2011 (CGR-CDDJS No. 051)",
+  "anio": 2011,
+  "institucion": "Contraloría General de la República",
+  "url": "https://www.contraloria.gov.co/documents/20125/344141/OBRAS+INCONCLUSAS.pdf/653bb48c-3d1e-dda5-bd9a-8746296e5201?t=1626413021918&download=true",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: las 14 págs. (PDF obtenido con WebFetch; curl directo dio 403) con pdftotext -layout",
+  "localizador": "pág. 8, Hallazgo No. 1 «Planeación (D y F)», Fondo Rotatorio de la Policía",
+  "cita": "la prórroga concedida permitió que el contrato de interventoría fuese adicionado en $39.8 millones, convirtiéndose esta cifra en un sobre-costo […] ya que la adición de los 86 días se otorgó por causas no imputables a la Entidad",
+  "afirmacion": "La Contraloría reporta que una prórroga de 86 días otorgada al contratista de obra por causas no imputables a la entidad obligó a adicionar la interventoría en $39,8 millones, cifra que calificó como sobrecosto (el hallazgo se clasifica con presunta connotación fiscal y disciplinaria).",
+  "inferencia": "Inferencia: la prórroga que se concede por causas del contratista le puede costar, además del plazo, el mayor valor de la interventoría que la entidad tiene que pagar, si la entidad lo descuenta o lo reclama.",
+  "eje": 5,
+  "etapa": [
+    "E8"
+  ],
+  "decision": [
+    "D4"
+  ],
+  "modulo": [
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "el propio informe (auditoría fechada en diciembre de 2011)",
+    "vigente": null,
+    "nota": "Informe de auditoría fechado: registra hallazgos sobre contratos concretos de 2007-2011, no una regla general; no aplica comprobar vigencia normativa."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Una prórroga pedida por el contratista sin causa imputable a la entidad genera un mayor costo de interventoría que el órgano de control califica como daño fiscal."
+}

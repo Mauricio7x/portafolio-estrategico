@@ -1,0 +1,52 @@
+{
+  "id": "CE-F-5019",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 1474 de 2011 (Estatuto Anticorrupción)",
+  "anio": 2011,
+  "institucion": "Secretaría General del Senado de la República, base de leyes (texto con notas de vigencia)",
+  "url": "http://www.secretariasenado.gov.co/senado/basedoc/ley_1474_2011_pr001.html",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: arts. 86 a 91 del texto de la Secretaría del Senado (página 2 de la ley)",
+  "localizador": "art. 91, inciso segundo",
+  "cita": "El costo de la comisión fiduciaria será cubierto directamente por el contratista.",
+  "afirmacion": "La comisión de la fiducia del anticipo la paga directamente el contratista.",
+  "inferencia": "Inferencia: la comisión fiduciaria es un costo indirecto que debe entrar en la administración del AIU cuando el pliego da anticipo.",
+  "eje": 5,
+  "etapa": [
+    "E3"
+  ],
+  "decision": [
+    "D2"
+  ],
+  "modulo": [
+    "M-PRECIO",
+    "M-APU"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A1",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "http://www.secretariasenado.gov.co/senado/basedoc/ley_1474_2011_pr001.html",
+    "vigente": true,
+    "nota": "Texto de la Secretaría del Senado consultado el 2-oct-2026, con las notas de modificación que trae el artículo."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Norma legal: rige para los contratos del Estatuto General sin depender de la fecha de un aviso; no se buscó régimen de transición para contratos anteriores."
+  },
+  "lista_cerrada": "L5-04",
+  "problema_candidato": null,
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje5-institucional:2",
+      "veredicto": "correcta",
+      "detalle": "La cita está literal y es el inciso segundo del art. 91. La afirmación es equivalente. La inferencia sobre el AIU va rotulada como «Inferencia», separada de la afirmación. El artículo no tiene modificaciones."
+    }
+  ]
+}

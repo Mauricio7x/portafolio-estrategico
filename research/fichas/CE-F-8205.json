@@ -1,0 +1,38 @@
+{
+  "id": "CE-F-8205",
+  "tipo": "academia",
+  "autor": "Estudiante del Diplomado de Contratación Estatal, Facultad de Derecho (nombre omitido por la regla 5 del piloto)",
+  "titulo": "La garantía de seriedad de la oferta como causal de rechazo en los procesos licitatorios",
+  "anio": 2021,
+  "institucion": "Universidad Militar Nueva Granada, sede Cajicá (repositorio institucional)",
+  "url": "https://repository.umng.edu.co/server/api/core/bitstreams/a967961e-80db-45bd-9a91-0618c18bfe87/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: las 20 páginas del PDF con pdftotext -layout",
+  "localizador": "pág. 17 del PDF (antes del cierre del § 6.2)",
+  "cita": "la ausencia o la no presentación de la garantía de seriedad de la oferta en los procesos de licitación pública constituye una causal de rechazo insubsanable, sin embargo, cuando se presenta dicho requisito, pero éste presenta errores, está incompleto o presenta algún defecto, sí se puede subsanar",
+  "afirmacion": "La autora concluye que no presentar la garantía de seriedad con la oferta es causal de rechazo insubsanable, mientras que una garantía presentada con errores, incompleta o con defectos sí se puede subsanar.",
+  "inferencia": "Inferencia: el error caro es no cargar la póliza; un defecto en la que sí se cargó admite corrección. La autora lee así el parágrafo 3 del art. 5 de la Ley 1150 de 2007, agregado por la Ley 1882 de 2018 (que cita en la pág. 13).",
+  "eje": 8,
+  "etapa": [
+    "E3",
+    "E5"
+  ],
+  "decision": [
+    "D3"
+  ],
+  "modulo": [
+    "M-OFERTA"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "el propio ensayo (2021)",
+    "vigente": null,
+    "nota": "No se comprobó en esta ficha el texto vigente del art. 5 de la Ley 1150 de 2007; la ficha registra la lectura de la autora, no la regla."
+  },
+  "regla": null,
+  "lista_cerrada": "L8-05",
+  "problema_candidato": "Olvidar cargar la garantía de seriedad con la oferta la deja rechazada sin posibilidad de subsanar."
+}

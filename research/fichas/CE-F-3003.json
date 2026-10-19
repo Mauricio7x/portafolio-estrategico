@@ -1,0 +1,62 @@
+{
+  "id": "CE-F-3003",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República",
+  "titulo": "Decreto 0997 de 2026 (4 de agosto), que modifica el Decreto 1082 de 2015 · texto publicado en la relatoría de CCE",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente · Relatoría (normativa)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: arts. 6 a 10, 13 y 14 leídos completos",
+  "localizador": "art. 8 (modifica el art. 2.2.1.1.2.1.3 del Decreto 1082 de 2015), contenido mínimo del pliego",
+  "cita": "Los términos, condiciones y minuta del contrato, incluyendo las cláusulas anti-corrupción que deberá cumplir el contratista. La declaración, pacto o compromiso anti-corrupción que deberán presentar los proponentes con la oferta.",
+  "afirmacion": "Con el texto que da el Decreto 0997 de 2026, el pliego debe incluir las cláusulas anticorrupción que cumplirá el contratista y la declaración, pacto o compromiso anticorrupción que los proponentes deben presentar con la oferta.",
+  "inferencia": "Inferencia: aparece un documento más que acompaña la oferta; el art. 14 del mismo decreto hace regir el art. 8 desde el día siguiente a su publicación en el Diario Oficial, y su par. 3 mantiene las reglas anteriores en los procesos con documento tipo hasta que CCE los actualice.",
+  "eje": 3,
+  "etapa": [
+    "E2",
+    "E3"
+  ],
+  "decision": [
+    "D3"
+  ],
+  "modulo": [
+    "M-PLIEGO",
+    "M-OFERTA"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A2",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/ (art. 14, Vigencia)",
+    "vigente": false,
+    "nota": "Según el verificador (verificacion_fase2, 2026-10-02): el art. 14, par. 1, del Decreto 0997 dice «Las disposiciones contenidas en el presente Decreto serán aplicables a los procedimientos de selección cuya invitación, aviso de convocatoria o documento equivalente se publique con posterioridad a la entrada en vigencia de las reglas aquí establecidas»; la regla sí se mide por la fecha del aviso, al contrario de lo que dice regla.motivo_null. La nota anterior no mencionaba ese parágrafo ni la opción de adoptar el decreto antes de tiempo y entero. El par. 3 (documentos tipo) está bien recogido. La fecha de publicación en el Diario Oficial no la comprobó nadie."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Rige desde el día siguiente a la publicación en el Diario Oficial (art. 14), no desde un aviso; la fecha de esa publicación no se comprobó. En procesos con documento tipo no aplica hasta que CCE actualice la versión (art. 14, par. 3)."
+  },
+  "lista_cerrada": "L3-01",
+  "problema_candidato": "Desde el Decreto 0997 de 2026 un pliego fuera de documento tipo puede exigir con la oferta una declaración o pacto anticorrupción; el contratista que reutiliza su carpeta de documentos de siempre puede omitirlo.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje3-institucional:1",
+      "veredicto": "vigencia_mal",
+      "detalle": "La cita es literal: son los numerales 11 y 12 del art. 2.2.1.1.2.1.3 en la redacción del art. 8 del Decreto 0997, según el texto de la relatoría de CCE. La afirmación es fiel. El error está en la vigencia: regla.motivo_null dice que la norma rige desde la publicación en el Diario Oficial, «no desde un aviso». Pero el art. 14, par. 1, del mismo decreto dice: «Las disposiciones contenidas en el presente Decreto serán aplicables a los procedimientos de selección cuya invitación, aviso de convocatoria o documento equivalente se publique con posterioridad a la entrada en vigencia de las reglas aquí establecidas». O sea, la regla sí se mide por la fecha del aviso, y la ficha dice lo contrario. Además, la nota de vigencia no menciona ese parágrafo, ni la opción de adoptar el decreto antes de tiempo y entero. El par. 3, sobre documentos tipo, sí está bien recogido. La fecha de publicación en el Diario Oficial tampoco la comprobé yo.",
+      "accion": "vigencia_verificada.vigente pasa a false y la nota recoge el art. 14, par. 1, señalado por el verificador; no se tocaron la cita ni la afirmación (fieles según el verificador) ni regla.",
+      "antes": {
+        "vigencia_verificada": {
+          "fecha": "2026-10-02",
+          "fuente": "https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/ (art. 14, Vigencia)",
+          "vigente": true,
+          "nota": "El art. 14 dispone que los arts. 2, 3, 8 y 11 rigen desde el día siguiente a la publicación en el Diario Oficial; el número y la fecha de esa edición no se comprobaron."
+        }
+      }
+    }
+  ]
+}

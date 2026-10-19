@@ -1,0 +1,53 @@
+{
+  "id": "CE-F-1027",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República; Departamento Nacional de Planeación",
+  "titulo": "Decreto 287 de 2026 (modifica los arts. 2.2.1.2.4.2.6, 2.2.1.2.4.2.7 y 2.2.1.2.4.2.8 del Decreto 1082 de 2015)",
+  "anio": 2026,
+  "institucion": "Departamento Administrativo de la Función Pública (Gestor Normativo)",
+  "url": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=273496",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: considerandos, art. 1 (arts. 2.2.1.2.4.2.6 a 2.2.1.2.4.2.8) y art. 2",
+  "localizador": "art. 1, nuevo art. 2.2.1.2.4.2.7.4, inciso sobre proponentes plurales",
+  "cita": "Cuando se trate de un proponente plural (consorcio o unión temporal), se tomará en cuenta únicamente la planta de personal del integrante con mayor participación porcentual.",
+  "afirmacion": "Para el puntaje por vinculación de personas con discapacidad, en un consorcio o unión temporal solo cuenta la planta de personal del integrante con mayor participación.",
+  "inferencia": null,
+  "eje": 1,
+  "etapa": [
+    "E3"
+  ],
+  "decision": [
+    "D1",
+    "D2"
+  ],
+  "modulo": [
+    "M-PLURAL",
+    "M-OFERTA"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A2",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=273496",
+    "vigente": true,
+    "nota": "Decreto 287 de 2026 en el Gestor Normativo (expedición y entrada en vigencia: 19 de marzo de 2026, según la ficha). Su art. 2 dice que rige desde el día siguiente a su publicación; ver advertencia de CE-F-1021."
+  },
+  "lista_cerrada": "L1-02",
+  "problema_candidato": "Para el mismo hecho (personas con discapacidad) el plural enfrenta tres reglas: 10% de participación para habilitantes diferenciales, el integrante de mayor participación para el puntaje del 2% y 25% de participación y de experiencia para el desempate de la Ley 2069; armar el consorcio con la regla equivocada pierde el beneficio.",
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": "En procesos con documento tipo, solo cuando CCE incorpore las medidas (art. 2.2.1.2.4.2.7.8; Circular Externa 003 de 2026)",
+    "motivo_null": "El decreto no fija la transición por aviso; CCE (C-642 de 2026) la fija por la fecha de la resolución de apertura: desde el 20 de marzo de 2026."
+  },
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-institucional:2",
+      "veredicto": "correcta",
+      "detalle": "La cita aparece literal en el art. 2.2.1.2.4.2.7.4, en el inciso que sigue a los documentos de verificación de la planta de personal. Lo de que se trata del puntaje por vinculación de personas con discapacidad sale del título y del contexto del artículo, que el localizador cubre. La afirmación es fiel."
+    }
+  ]
+}

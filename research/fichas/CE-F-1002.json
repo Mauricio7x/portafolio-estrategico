@@ -1,0 +1,60 @@
+{
+  "id": "CE-F-1002",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República; Departamento Nacional de Planeación",
+  "titulo": "Decreto 0997 de 2026 (modifica y adiciona el Decreto 1082 de 2015)",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente (relatoría normativa)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: los 14 artículos y los considerandos en la relatoría de CCE",
+  "localizador": "art. 7 (sustituye el art. 2.2.1.1.2.1.1 del Decreto 1082 de 2015), elemento sobre alternativas de sostenibilidad (sexto de la lista)",
+  "cita": "El análisis e identificación de las alternativas que promuevan la sostenibilidad social, ambiental y económica que pueden ser incluidas en el Proceso de Contratación. Este análisis incluirá una evaluación de la capacidad del mercado para cumplir con los criterios y/o obligaciones de sostenibilidad",
+  "afirmacion": "Entre los elementos de los estudios previos que enumera el art. 7 figura el análisis de las alternativas de sostenibilidad que pueden incluirse en el proceso, con una evaluación de la capacidad del mercado para cumplir esos criterios u obligaciones.",
+  "inferencia": null,
+  "eje": 1,
+  "etapa": [
+    "E0",
+    "E1"
+  ],
+  "decision": [
+    "D1",
+    "D2"
+  ],
+  "modulo": [
+    "M-PLIEGO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A2",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/",
+    "vigente": null,
+    "nota": "Art. 7: rige de forma progresiva, a los 6, 9, 12 o 15 meses de la publicación en el Diario Oficial según la entidad (art. 14, numerales 1 a 4). Con expedición el 04/08/2026, a la fecha de corte ningún plazo de 6 meses ha corrido. La fecha de publicación del Decreto 0997 de 2026 en el Diario Oficial no se comprobó en ninguna fuente abierta (la relatoría y la ficha de la Alcaldía de Bogotá solo dan la expedición, 04/08/2026)."
+  },
+  "lista_cerrada": "L1-01",
+  "problema_candidato": "Cuando el estudio previo incluya una obligación de sostenibilidad nueva, puede encarecer la oferta de obra; el contratista solo puede discutir si el mercado la puede cumplir durante las observaciones al proyecto de pliego.",
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": "No aplica a procesos con documento tipo hasta que CCE expida la versión que lo incorpore (art. 14, parágrafo 3)",
+    "motivo_null": "Rige para procesos cuyo aviso, invitación o documento equivalente se publique después de la entrada en vigencia (art. 14, parágrafo 1); esa entrada es escalonada por tipo de entidad (6 a 15 meses desde la publicación en el Diario Oficial), y la fecha de esa publicación no se comprobó."
+  },
+  "advertencia": "Según el verificador, el mismo art. 7, justo después de la lista, dice «El presente artículo no es aplicable a la contratación por mínima cuantía», y el art. 13 (lista de mínima cuantía) no exige este análisis ni la evaluación del mercado: en obra de mínima cuantía no rige. Eso no está en esta cita. La cita corta además «que se pretendan incorporar».",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-institucional:1",
+      "veredicto": "no_sostiene",
+      "detalle": "La cita es literal y el localizador (art. 7, elemento 6) es correcto: el PDF oficial numera la lista del 1 al 10 y este es el 6. Pero la afirmación dice «Los estudios previos deben contener…» en general y se salta el matiz del mismo artículo, justo después de la lista: «El presente artículo no es aplicable a la contratación por mínima cuantía». El art. 13, que da la lista de mínima cuantía, no exige el análisis de alternativas ni la evaluación de la capacidad del mercado. En obra de mínima cuantía la afirmación queda falsa. Además la cita corta «que se pretendan incorporar».",
+      "accion": "Estreché la afirmación a lo que dice la cita (un elemento de la lista del art. 7, no un deber general de todo estudio previo), condicioné el problema_candidato al caso en que el estudio previo incluya la obligación y pasé la exclusión de mínima cuantía a advertencia.",
+      "antes": {
+        "afirmacion": "Los estudios previos deben contener el análisis de las alternativas de sostenibilidad que pueden incluirse en el proceso, con una evaluación de la capacidad del mercado para cumplir esos criterios u obligaciones.",
+        "problema_candidato": "Una obligación de sostenibilidad nueva en el estudio previo puede encarecer la oferta de obra; el contratista solo puede discutir si el mercado la puede cumplir durante las observaciones al proyecto de pliego.",
+        "advertencia": null
+      }
+    }
+  ]
+}

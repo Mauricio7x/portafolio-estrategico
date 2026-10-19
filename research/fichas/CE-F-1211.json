@@ -1,0 +1,48 @@
+{
+  "id": "CE-F-1211",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Documentos tipo: ¿Herramienta para mejorar la competencia en los procesos de contratación estatal?",
+  "anio": 2022,
+  "institucion": "Universidad de los Andes, Facultad de Economía, CEDE (Documento CEDE 2022-32, serie Estudiantes PEG, tesis de maestría en Economía; no evaluado por pares)",
+  "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/d99425d6-4b23-425a-9c13-bd1bc4902ea2/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: resumen, datos (págs. 15-22) y resultados y conclusiones (págs. 33-36 impresas); la estimación se recorrió",
+  "localizador": "pág. 20 impresa (pág. 22 del PDF), texto previo a la tabla 9 «Sumario de estadísticas para implementación de documento tipo por año»",
+  "cita": "se observa que el año en el cual se generó la mayor no implementación de los documentos tipo fue en el 2020, el año siguiente a la entrada en vigor de las medidas adoptadas por el Gobierno.",
+  "afirmacion": "La autora observa que 2020, el año siguiente a la entrada en vigor de los documentos tipo, fue el año con mayor no implementación de esos documentos en su base.",
+  "inferencia": "Inferencia: la tabla 9 de la misma página registra 408 procesos sin implementación en 2020 y, en el total, 2.146 con implementación parcial frente a 1.509 completa; en la transición el contratista encuentra pliegos que no siguen o siguen a medias el documento tipo obligatorio.",
+  "eje": 1,
+  "etapa": [
+    "E1",
+    "E2"
+  ],
+  "decision": [
+    "D3",
+    "D1"
+  ],
+  "modulo": [
+    "M-PLIEGO"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/d99425d6-4b23-425a-9c13-bd1bc4902ea2/content",
+    "vigente": null,
+    "nota": "Base del Observatorio Oficial de Contratación Estatal (CCE), procesos de obra de infraestructura de transporte 2019-2022."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "En la transición a los documentos tipo muchas entidades no los aplicaron o los aplicaron a medias, de modo que el pliego que encuentra el contratista puede apartarse del documento tipo obligatorio.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-academico:1",
+      "veredicto": "correcta",
+      "detalle": "La cita aparece literal en la pág. 20 impresa (pág. 22 del PDF), texto previo a la tabla 9. La tabla 9 confirma que 2020 es el año con más casos de no implementación (408, frente a 31, 170 y 3). La afirmación lo atribuye a la autora y se refiere a «su base». Paráfrasis menor: la fuente dice «medidas adoptadas por el Gobierno» y la afirmación, «documentos tipo», que en el contexto equivale."
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "id": "CE-F-5220",
+  "tipo": "academia",
+  "autor": "Autores del artículo (personas naturales, nombres omitidos por la regla 5)",
+  "titulo": "Rol del interventor en la gestión de proyectos de infraestructura pública: estudio de caso del Valle del Cauca, Colombia",
+  "anio": 2022,
+  "institucion": "CIENCIA ergo-sum, Revista Científica Multidisciplinaria de Prospectiva, vol. 29, núm. 1 (vía Redalyc)",
+  "url": "https://www.redalyc.org/journal/104/10469617002/html/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: texto HTML de Redalyc (los cuadros solo como texto)",
+  "localizador": "Conclusiones, segundo párrafo",
+  "cita": "cambio del alcance en la ejecución del proyecto inicialmente contratado, ausencia o baja calidad de los estudios y diseños del proyecto con el consecuente incremento en costos y variaciones en el cronograma, uso inapropiado de fondos de anticipo, adiciones presupuestales y de tiempo",
+  "afirmacion": "Los autores enumeran como hallazgos relevantes de los procesos estudiados el cambio del alcance del proyecto, la ausencia o baja calidad de estudios y diseños con aumento de costos y del cronograma, el uso inapropiado de fondos de anticipo y las adiciones presupuestales y de tiempo.",
+  "inferencia": null,
+  "eje": 5,
+  "etapa": [
+    "E8"
+  ],
+  "decision": [
+    "D4"
+  ],
+  "modulo": [
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "el propio documento (fuente académica fechada)",
+    "vigente": null,
+    "nota": "Estudio empírico de 64 contratos de interventoría liquidados en SECOP I; no es normativo, no aplica comprobar vigencia."
+  },
+  "regla": null,
+  "lista_cerrada": "L5-06",
+  "problema_candidato": "El uso inapropiado de los fondos del anticipo aparece entre los hallazgos de los contratos de obra vigilados por interventoría, con riesgo de siniestro de la póliza y de responsabilidad fiscal para el contratista.",
+  "advertencia": "La muestra son 64 contratos de interventoría (concurso de méritos) liquidados en el Valle del Cauca; los hallazgos sobre la obra se leen a través de esos contratos y la cita no da cuántos casos tuvo cada uno."
+}

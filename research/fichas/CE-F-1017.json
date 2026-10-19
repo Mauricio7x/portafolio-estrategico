@@ -1,0 +1,51 @@
+{
+  "id": "CE-F-1017",
+  "tipo": "guia_cce",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "ABC Decreto 0997 de 2026 · RUP, Integridad y Transparencia",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2026/09/ABC-Decreto-0997-RUP-y-Transparencia.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: las 20 páginas",
+  "localizador": "pág. 12, pregunta 9 «¿Qué debo hacer con las listas internacionales?», recuadro «Muy Importante»",
+  "cita": "Aparecer en una lista NO genera automáticamente la inhabilidad. La entidad debe verificar, en cada caso concreto, que se cumplan los supuestos exigidos por el ordenamiento jurídico colombiano.",
+  "afirmacion": "Según el ABC de CCE, aparecer en una lista internacional no genera por sí solo la inhabilidad: la entidad debe verificar en cada caso los supuestos del ordenamiento colombiano.",
+  "inferencia": null,
+  "eje": 1,
+  "etapa": [
+    "E5"
+  ],
+  "decision": [
+    "D3"
+  ],
+  "modulo": [
+    "M-LISTA"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A3",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/",
+    "vigente": true,
+    "nota": "Se contrastó con el art. 14 del Decreto 0997 de 2026 en la relatoría de CCE. Un ABC no reemplaza el decreto."
+  },
+  "lista_cerrada": "L1-01",
+  "problema_candidato": null,
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Lectura orientadora del art. 11; la fecha de publicación en el Diario Oficial no se comprobó."
+  },
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-institucional:2",
+      "veredicto": "correcta",
+      "detalle": "La cita aparece literal en la pág. 12, pregunta 9, recuadro «Muy Importante». La afirmación es fiel y se atribuye al ABC. La base normativa que el ABC cita (art. 11 del Decreto 0997, nuevo art. 2.2.1.1.2.2.10) entra en vigencia al día siguiente de la publicación (art. 14)."
+    }
+  ]
+}

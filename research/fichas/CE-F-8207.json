@@ -1,0 +1,39 @@
+{
+  "id": "CE-F-8207",
+  "tipo": "academia",
+  "autor": "Dos autores adscritos a Unisangil y a la Universidad Santo Tomás (nombres omitidos por la regla 5 del piloto)",
+  "titulo": "Los pliegos de condiciones en el contrato de obra",
+  "anio": 2021,
+  "institucion": "Revista IUSTA, núm. 54, Universidad Santo Tomás (vía Redalyc)",
+  "url": "https://www.redalyc.org/journal/5603/560368677003/html/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: resumen y apartado de fortalezas del pliego (publicidad, subsanabilidad) del HTML de Redalyc",
+  "localizador": "apartado «La publicidad», párrafo que sigue a la cita del Consejo de Estado sobre la autonomía de la entidad",
+  "cita": "De acuerdo con lo expuesto por el Consejo de Estado, si la entidad comete un error dentro del pliego de condiciones, y no es corregido o modificado por medio de adendas, debe respetarse lo que está escrito, salvo si existe alguna condición o requisito que vaya en contra de la ley […]",
+  "afirmacion": "Los autores leen en el Consejo de Estado que un error del pliego que no se corrige por adenda debe respetarse tal como está escrito, salvo que la condición vaya en contra de la ley (la cita omite el resto de la salvedad).",
+  "inferencia": "Inferencia: el contratista que detecta un error en el pliego tiene que pedir su corrección en observaciones antes del cierre; si no hay adenda, se evalúa con lo escrito.",
+  "eje": 8,
+  "etapa": [
+    "E1",
+    "E2"
+  ],
+  "decision": [
+    "D3"
+  ],
+  "modulo": [
+    "M-PLIEGO",
+    "M-ADENDAS"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "el propio documento",
+    "vigente": null,
+    "nota": "Fuente académica o de práctica: registra lo que dice su autor, no una regla; no se comprobó vigencia normativa."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Un error del pliego que nadie hizo corregir por adenda se aplica tal como está escrito al evaluar la oferta."
+}

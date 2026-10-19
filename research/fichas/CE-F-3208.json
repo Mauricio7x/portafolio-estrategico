@@ -1,0 +1,39 @@
+{
+  "id": "CE-F-3208",
+  "tipo": "organo_control",
+  "autor": "Instituto de Estudios del Ministerio Público (IEMP), Procuraduría General de la Nación; investigador del IEMP (nombre omitido por la regla 5)",
+  "titulo": "La pluralidad es un indicador de probidad en la contratación de infraestructura",
+  "anio": 2020,
+  "institucion": "Instituto de Estudios del Ministerio Público (Procuraduría General de la Nación), síntesis del estudio SCI-IEMP (2019) con la Sociedad Colombiana de Ingenieros",
+  "url": "https://iemp.gov.co/noticias/investigaciones/la-pluralidad-es-un-indicador-de-probidad-en-la-contratacion-de-infraestructura/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: artículo web (síntesis); el informe SCI-IEMP 2019 no se abrió",
+  "localizador": "apartado «Conclusiones y recomendaciones del estudio», primer párrafo, última frase",
+  "cita": "En cuanto a los municipios, no se presentó evolución en la pluralidad de proponentes en las modalidades estudiadas entre los años 2017 a 2018, y para este último año, el 95 % de los contratos presentaba tres o menos proponentes.",
+  "afirmacion": "El IEMP reporta que en los municipios la pluralidad de proponentes no evolucionó entre 2017 y 2018 y que en 2018 el 95 % de los contratos tenía tres o menos proponentes.",
+  "inferencia": null,
+  "eje": 3,
+  "etapa": [
+    "E5",
+    "E6"
+  ],
+  "decision": [
+    "D1"
+  ],
+  "modulo": [
+    "M-ENTIDAD"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "No aplica: dato empírico o descripción de práctica, no regla",
+    "vigente": null,
+    "nota": "Datos de la vigencia 2018, anteriores a la obligatoriedad general de los documentos tipo de obra; el estudio mide contratación de infraestructura de entes territoriales en varias modalidades, no solo obra."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "En la contratación municipal casi todos los contratos (95 % en 2018) se disputan entre tres o menos proponentes.",
+  "advertencia": "Cifras tomadas de la síntesis web del IEMP; el informe fuente (SCI-IEMP 2019) no se abrió."
+}

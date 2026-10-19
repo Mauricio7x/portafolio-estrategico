@@ -1,0 +1,52 @@
+{
+  "id": "CE-F-3055",
+  "tipo": "concepto_cce",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente (Subdirección de Gestión Contractual)",
+  "titulo": "Concepto C-1302 de 2026 (radicado de salida 2_2026_09_24_010299), publicado en la relatoría",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente · Relatoría",
+  "url": "https://relatoria.colombiacompra.gov.co/wp-content/uploads/2026/10/C-1302.docx",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: documento del concepto (ficha de relatoría en https://relatoria.colombiacompra.gov.co/conceptos/c-1302-de-2026/)",
+  "localizador": "apartado «Respuesta», numeral i), párrafo 4",
+  "cita": "la subsanación no podría consistir en acreditar circunstancias ocurridas con posterioridad al cierre del proceso, dado que ese supuesto correspondería a la prohibición expresa que hace el parágrafo 1 del artículo 5 de la Ley 1150 de 2007",
+  "afirmacion": "CCE sostiene que la subsanación no puede consistir en acreditar circunstancias ocurridas después del cierre, porque eso cae en la prohibición expresa del parágrafo 1 del art. 5 de la Ley 1150.",
+  "inferencia": "Inferencia: la consulta trataba de hojas de vida del equipo de trabajo aportadas al subsanar; en el párrafo 2 del mismo apartado el concepto dice que en mínima cuantía se subsana hasta antes de que finalice el traslado (regla supletiva del Decreto 1082); los documentos tipo de mínima cuantía de obra fijan, en cambio, un día hábil por defecto.",
+  "eje": 3,
+  "etapa": [
+    "E5"
+  ],
+  "decision": [
+    "D3"
+  ],
+  "modulo": [
+    "M-OFERTA"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A5",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://relatoria.colombiacompra.gov.co/conceptos/c-1302-de-2026/ (fecha de la ficha de relatoría: 24/09/2026)",
+    "vigente": true,
+    "nota": "Concepto no vinculante (función consultiva de CCE); interpreta la Ley 1150 de 2007, art. 5, par. 1, con el texto de la Ley 1882 de 2018."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Concepto interpretativo: no rige desde un aviso."
+  },
+  "lista_cerrada": "L3-13",
+  "problema_candidato": null,
+  "advertencia": "El concepto presenta como regla de mínima cuantía «hasta antes que finalice el traslado del informe»; esa es la regla supletiva del art. 2.2.1.2.1.5.2, num. 5, cuando la invitación no fija término; las invitaciones tipo de obra sí lo fijan.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje3-institucional:4",
+      "veredicto": "correcta",
+      "detalle": "En C-1302.docx, apartado «Respuesta», numeral i), párrafo 4, aparece literal: «la subsanación no podría consistir en acreditar circunstancias ocurridas con posterioridad al cierre del proceso, dado que ese supuesto correspondería a la prohibición expresa que hace el parágrafo 1 del artículo 5 de la Ley 1150 de 2007». La afirmación es fiel. La inferencia y la advertencia también son exactas: el párrafo 2 dice «En cuanto al proceso de mínima cuantía, el Decreto 1860 de 2021, en su artículo 2.2.1.2.1.5.2., numeral 5° dispone que los proponentes podrán subsanar sus ofertas hasta antes que finalice el traslado del informe de evaluación», y las invitaciones tipo fijan un día hábil. La ficha de relatoría está fechada el 24/09/2026."
+    }
+  ]
+}

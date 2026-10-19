@@ -1,0 +1,39 @@
+{
+  "id": "CE-F-2201",
+  "tipo": "academia",
+  "autor": "Personas naturales (nombres omitidos por la regla 5 del piloto)",
+  "titulo": "La planeación en los contratos de obra pública en Colombia ¿principio, deber o requisito? Obligatoriedad y consecuencias de su inaplicación",
+  "anio": 2019,
+  "institucion": "Universidad de Medellín · Opinión Jurídica 18(37), pp. 93-115 (vía Dialnet)",
+  "url": "https://dialnet.unirioja.es/descarga/articulo/7513032.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: texto completo recorrido; se leyeron con detalle las págs. 106-113",
+  "localizador": "pág. 111 de la revista (pág. 19 del PDF), párrafo «La controversia sobre el tema…»",
+  "cita": "podría suceder lo que ordenó el Consejo de Estado (2013a), fallo en el cual se condenó al actor –contratista– […] a restituir al Área Metropolitana de Bucaramanga la suma de $11’367.829,75 que recibió a título de anticipo, actualizada a la fecha del fallo a $25.612.786, 87.",
+  "afirmacion": "Los autores relatan que en un fallo de 2013 el Consejo de Estado condenó al contratista demandante a restituir a la entidad el anticipo recibido ($11.367.829,75), actualizado a la fecha del fallo a $25.612.786,87.",
+  "inferencia": "Inferencia: el contratista que demanda perjuicios por una obra mal planeada puede terminar devolviendo el anticipo actualizado si el juez declara la nulidad del contrato por falta de planeación.",
+  "eje": 2,
+  "etapa": [
+    "E8",
+    "E10"
+  ],
+  "decision": [
+    "D1",
+    "D4"
+  ],
+  "modulo": [
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "No se reverificó contra jurisprudencia posterior; fuente académica",
+    "vigente": null,
+    "nota": "El propio artículo reseña tutelas de las Secciones Cuarta y Quinta (2014) contrarias a la nulidad por falta de planeación; la línea no es pacífica."
+  },
+  "lista_cerrada": "L2-09",
+  "problema_candidato": "Si la obra se cae por falta de planeación de la entidad y el juez anula el contrato, el contratista puede ser condenado a devolver el anticipo actualizado en vez de cobrar perjuicios.",
+  "advertencia": "El nombre del contratista que trae la fuente se omitió con […]. El fallo no se abrió; la cifra es la que relatan los autores."
+}

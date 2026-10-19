@@ -1,0 +1,39 @@
+{
+  "id": "CE-F-5233",
+  "tipo": "academia",
+  "autor": "Autor del artículo de grado (persona natural, nombre omitido por la regla 5)",
+  "titulo": "Responsabilidad contractual del Estado colombiano por retraso injustificado en contratos de obra pública",
+  "anio": 2025,
+  "institucion": "Corporación Universitaria Remington, Especialización en Responsabilidad Contractual y Extracontractual del Estado",
+  "url": "https://repositorio.uniremington.edu.co/bitstreams/21233d78-5d13-40d4-a437-01773fa8dd6d/download",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: las 19 págs. con pdftotext -layout",
+  "localizador": "pág. 11 del PDF, apartado sobre escenarios de retraso imputable al Estado, «i) Retraso en pagos» (caso que el autor atribuye a la sentencia 30776 de 2017 del Consejo de Estado)",
+  "cita": "se probó que solo dos de diecinueve actas de pago fueron abonadas oportunamente, y el contratista alegó que “este retraso… causó cambios en las condiciones […] y se incurrió en costos superiores a los presupuestados” […] la pretensión no prosperó por falta de prueba suficiente del perjuicio",
+  "afirmacion": "El autor reporta un caso judicial en que se probó que solo dos de diecinueve actas de pago se abonaron oportunamente y el contratista alegó sobrecostos, pero la pretensión no prosperó por falta de prueba suficiente del perjuicio.",
+  "inferencia": null,
+  "eje": 5,
+  "etapa": [
+    "E8",
+    "E10"
+  ],
+  "decision": [
+    "D4"
+  ],
+  "modulo": [
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "el propio documento (fuente académica fechada)",
+    "vigente": null,
+    "nota": "Trabajo de grado de 2025 que reporta sentencias del Consejo de Estado (2011, 2017, 2023, 2024); las providencias no se abrieron para esta ficha: lo que sostiene es lo que el autor reporta de ellas."
+  },
+  "regla": null,
+  "lista_cerrada": "L5-10",
+  "problema_candidato": "La entidad paga tarde las actas de obra y el contratista pierde el reclamo por los sobrecostos si no prueba el perjuicio concreto, aunque la mora esté probada.",
+  "advertencia": "Un caso judicial reportado por el autor; la providencia no se abrió."
+}

@@ -1,0 +1,38 @@
+{
+  "id": "CE-F-5203",
+  "tipo": "academia",
+  "autor": "Autora del artículo (persona natural, nombre omitido por la regla 5)",
+  "titulo": "La liquidación del contrato estatal",
+  "anio": 2009,
+  "institucion": "Universidad Externado de Colombia, Revista Digital de Derecho Administrativo, núm. 1 (vía Redalyc)",
+  "url": "https://www.redalyc.org/pdf/5038/503856222009.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: las 16 págs. con pdftotext -layout",
+  "localizador": "pág. 14 de la revista (pág. 15 del PDF de Redalyc), apartado «Cuestión final»",
+  "cita": "numerosas providencias judiciales que no resuelven el fondo de la litis por vicios relacionados con la liquidación —como cuando se confunde el punto inicial de la caducidad de la acción o cuando se demandó la responsabilidad contractual del Estado sin demandar el acto […] unilateralmente",
+  "afirmacion": "La autora afirma que numerosas providencias judiciales no resuelven el fondo del litigio por vicios relacionados con la liquidación, como confundir el punto inicial de la caducidad o no demandar el acto de liquidación unilateral.",
+  "inferencia": null,
+  "eje": 5,
+  "etapa": [
+    "E10"
+  ],
+  "decision": [
+    "D4"
+  ],
+  "modulo": [
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "el propio documento (fuente académica fechada)",
+    "vigente": null,
+    "nota": "Artículo de 2009, anterior al CPACA (Ley 1437 de 2011), que remplazó el art. 136 del C. C. A. que cita; la regla procesal que reporta no se reverificó contra el texto vigente para esta ficha."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Errores de forma en el reclamo posterior a la liquidación (fecha de inicio de la caducidad, acto no demandado) hacen perder pleitos sin que el juez mire el fondo.",
+  "advertencia": "«Numerosas» es la apreciación de la autora; no da un conteo, así que no sirve como frecuencia."
+}

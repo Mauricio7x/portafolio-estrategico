@@ -1,0 +1,38 @@
+{
+  "id": "CE-F-5242",
+  "tipo": "academia",
+  "autor": "Autor del artículo (persona natural, nombre omitido por la regla 5)",
+  "titulo": "Análisis de la ejecución de proyectos de obra pública en Colombia",
+  "anio": 2023,
+  "institucion": "Escuela Superior de Administración Pública (ESAP), Revista Polémica, núm. 26",
+  "url": "https://revistas.esap.edu.co/index.php/polemica/article/download/948/719",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: 32 págs. del PDF; leídos introducción, apartado 2.5 «Comparación de los proyectos» y conclusiones (págs. 31-34 de la revista)",
+  "localizador": "pág. 31 de la revista (pág. 25 del PDF), apartado 2.5, Tabla 2 «Aumento del plazo y el presupuesto»",
+  "cita": "Item Sena FAC SED Mompox Aumento del presupuesto 24 % 26 % 23 % 8% Aumento del plazo 58 % 86 % 33 % 7%",
+  "afirmacion": "Según la Tabla 2 del artículo, los cuatro contratos de obra analizados (SENA, FAC, SED y Mompox) aumentaron su presupuesto en 24 %, 26 %, 23 % y 8 %, y su plazo en 58 %, 86 %, 33 % y 7 %.",
+  "inferencia": null,
+  "eje": 5,
+  "etapa": [
+    "E8"
+  ],
+  "decision": [
+    "D4"
+  ],
+  "modulo": [
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "el propio documento (fuente académica fechada)",
+    "vigente": null,
+    "nota": "Estudio de cuatro contratos de obra (SENA, FAC, SED y hospital de Mompox) en SECOP; no es normativo, no aplica comprobar vigencia."
+  },
+  "regla": null,
+  "lista_cerrada": "L5-01",
+  "problema_candidato": "Los contratos de obra pública suelen terminar con más plazo que valor adicional: el plazo crece en proporción más que el presupuesto.",
+  "advertencia": "Cuatro contratos; el propio autor dice en las conclusiones que no son una muestra significativa."
+}

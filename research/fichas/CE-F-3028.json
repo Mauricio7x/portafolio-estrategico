@@ -1,0 +1,61 @@
+{
+  "id": "CE-F-3028",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 816 de 2003",
+  "anio": 2003,
+  "institucion": "Secretaría General del Senado · Base documental (texto con notas de vigencia)",
+  "url": "http://www.secretariasenado.gov.co/senado/basedoc/ley_0816_2003.html",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: arts. 1 a 5 (las notas de vigencia no se desplegaron)",
+  "localizador": "art. 2, incisos 1 y 2",
+  "cita": "asignarán, dentro de los criterios de calificación de las propuestas, un puntaje comprendido entre el diez (10) y el veinte por ciento (20%), para estimular la industria colombiana cuando los proponentes oferten bienes o servicios nacionales.",
+  "afirmacion": "Las entidades asignan entre el 10 % y el 20 % del puntaje para estimular la industria colombiana cuando se ofrecen bienes o servicios nacionales.",
+  "inferencia": "Inferencia: el inciso 2 fija entre el 5 % y el 15 % para incentivar componente colombiano en ofertas de bienes o servicios extranjeros.",
+  "eje": 3,
+  "etapa": [
+    "E3",
+    "E5"
+  ],
+  "decision": [
+    "D3"
+  ],
+  "modulo": [
+    "M-OFERTA"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A1",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "http://www.secretariasenado.gov.co/senado/basedoc/ley_0816_2003.html",
+    "vigente": false,
+    "nota": "Verificador (verificar:eje3-institucional:2, 2026-10-02): La cita del art. 2, inciso 1, de la Ley 816 es literal (Senado, ley_0816_2003.html). Pero la ficha dice que las «Notas de Vigencia» no se desplegaron. Las bajé de js/ley_0816_2003.js (insRow4): «El Artículo 2 o. Par. 2o. Num. 3o. de la Ley 1150 de 2007 excluye la aplicación de los Artículos 2 o. y 3 o. de esta ley» para la selección abreviada de bienes y servicios de características técnicas uniformes. En la Ley 1150, el art. 2 dice además, para la mínima cuantía: «En particular no se aplicará lo previsto en la Ley 816 de 2003». La afirmación generaliza («Las entidades asignan entre el 10 % y el 20 %») y la vigencia declarada no recoge esas exclusiones legales, que tocan el tema."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Norma legal: rige desde su promulgación, no desde un aviso de convocatoria."
+  },
+  "lista_cerrada": "L3-10",
+  "problema_candidato": null,
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje3-institucional:2",
+      "veredicto": "vigencia_mal",
+      "detalle": "La cita del art. 2, inciso 1, de la Ley 816 es literal (Senado, ley_0816_2003.html). Pero la ficha dice que las «Notas de Vigencia» no se desplegaron. Las bajé de js/ley_0816_2003.js (insRow4): «El Artículo 2 o. Par. 2o. Num. 3o. de la Ley 1150 de 2007 excluye la aplicación de los Artículos 2 o. y 3 o. de esta ley» para la selección abreviada de bienes y servicios de características técnicas uniformes. En la Ley 1150, el art. 2 dice además, para la mínima cuantía: «En particular no se aplicará lo previsto en la Ley 816 de 2003». La afirmación generaliza («Las entidades asignan entre el 10 % y el 20 %») y la vigencia declarada no recoge esas exclusiones legales, que tocan el tema.",
+      "accion": "vigencia_verificada.vigente pasa a false con la nota del verificador",
+      "antes": {
+        "vigencia_verificada": {
+          "fecha": "2026-10-02",
+          "fuente": "http://www.secretariasenado.gov.co/senado/basedoc/ley_0816_2003.html",
+          "vigente": true,
+          "nota": "El texto del Senado marca el artículo con «Ver Notas de Vigencia», pero el contenido de esas notas no se desplegó en la página descargada; el Decreto 1082 vigente (art. 2.2.1.2.4.2.9) sigue remitiendo al inciso 1 del art. 2 de esta ley."
+        }
+      }
+    }
+  ]
+}

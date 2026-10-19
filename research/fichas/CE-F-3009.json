@@ -1,0 +1,53 @@
+{
+  "id": "CE-F-3009",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República",
+  "titulo": "Decreto 1082 de 2015, Único Reglamentario del Sector Administrativo de Planeación Nacional (texto consolidado)",
+  "anio": 2015,
+  "institucion": "Departamento Administrativo de la Función Pública · Gestor Normativo",
+  "url": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=77653",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: art. 2.2.1.2.1.2.20 completo",
+  "localizador": "art. 2.2.1.2.1.2.20 (Selección abreviada de menor cuantía), numerales 1 y 2",
+  "cita": "1. En un término no mayor a tres (3) días hábiles contados a partir de la fecha de apertura […] los interesados deben manifestar su intención de participar […] 2. Si la Entidad Estatal recibe más de diez (10) manifestaciones de interés puede continuar el proceso o hacer un sorteo",
+  "afirmacion": "En la menor cuantía los interesados deben manifestar su intención de participar dentro de un término no mayor a tres días hábiles desde la apertura; con más de diez manifestaciones la entidad puede continuar con todos o hacer un sorteo.",
+  "inferencia": null,
+  "eje": 3,
+  "etapa": [
+    "E2",
+    "E4"
+  ],
+  "decision": [
+    "D1"
+  ],
+  "modulo": [
+    "M-OFERTA",
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A2",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=77653 (texto consolidado) y texto del Decreto 0997 de 2026 en https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/",
+    "vigente": true,
+    "nota": "Se comprobó que el Decreto 0997 de 2026 (arts. 1 a 13) no modifica este artículo; el consolidado de Función Pública aún no trae el 0997."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Norma reglamentaria compilada en el Decreto 1082 de 2015: rige desde su expedición, no desde un aviso de convocatoria."
+  },
+  "lista_cerrada": "L3-04",
+  "problema_candidato": "En menor cuantía el contratista que no manifiesta interés dentro de los tres días hábiles siguientes a la apertura queda por fuera, y aun manifestándolo puede perder el sorteo si hay más de diez interesados.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje3-institucional:1",
+      "veredicto": "correcta",
+      "detalle": "Los numerales 1 y 2 del art. 2.2.1.2.1.2.20 son literales, y lo omitido con «[…]» no cambia el sentido. «Continuar con todos» es una lectura razonable de «continuar el proceso». El Decreto 0997 no toca este artículo."
+    }
+  ]
+}

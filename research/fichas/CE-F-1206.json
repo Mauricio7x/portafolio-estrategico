@@ -1,0 +1,49 @@
+{
+  "id": "CE-F-1206",
+  "tipo": "gremio_ong",
+  "autor": "Transparencia por Colombia",
+  "titulo": "Análisis de la contratación del Gobierno Nacional posterior a la Ley de Garantías",
+  "anio": 2026,
+  "institucion": "Corporación Transparencia por Colombia (informe de 16 de julio de 2026)",
+  "url": "https://transparenciacolombia.org.co/wp-content/uploads/2026/07/ANALISIS-CONTRATACION-POST-LEY-DE-GARANTIAS_TPC.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa",
+  "localizador": "pág. 8 impresa (pág. 9 del PDF), apartado 3.3 «Contratos de entidades del Gobierno Nacional de mayor valor», viñetas tras la tabla 6",
+  "cita": "La mayoría de estos contratos fueron adjudicados mediante licitación pública. […] Estos 15 contratos concentran el 71 % del valor contratado por el Gobierno Nacional […] Los 8 contratos de mayor valor corresponden al programa Vías para la Paz, suscritos por el Instituto Nacional de Vías INVÍAS.",
+  "afirmacion": "El informe dice que la mayoría de los 15 mayores contratos del Gobierno Nacional firmados en las semanas posteriores a la Ley de Garantías se adjudicaron por licitación pública, que concentran el 71 % del valor contratado por el Gobierno Nacional y que los 8 de mayor valor son del programa Vías para la Paz de INVÍAS.",
+  "inferencia": "Inferencia: la tabla 6 muestra que esos contratos de INVÍAS son de obra pública por licitación; la firma de grandes obras se agolpa justo al levantarse la ley de garantías, lo que exige al contratista tener garantías, personal y capacidad listos para esa ventana.",
+  "eje": 1,
+  "etapa": [
+    "E6",
+    "E7"
+  ],
+  "decision": [
+    "D1",
+    "D4"
+  ],
+  "modulo": [
+    "M-LISTA",
+    "M-ENTIDAD"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A7",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://transparenciacolombia.org.co/wp-content/uploads/2026/07/ANALISIS-CONTRATACION-POST-LEY-DE-GARANTIAS_TPC.pdf",
+    "vigente": null,
+    "nota": "Periodo medido: 22 de junio a 10 de julio de 2026."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Agolpamiento de la firma de grandes contratos de obra en las semanas siguientes a la ley de garantías.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-academico:1",
+      "veredicto": "correcta",
+      "detalle": "Los tres apartes de la cita aparecen literales en la pág. 8 impresa (pág. 9 del PDF), viñetas tras la tabla 6. Los cotejé con la tabla. Las 15 primeras filas dan 10 licitaciones (la mayoría), 2 contrataciones directas del Ministerio del Interior, 2 de régimen especial de la Agencia Logística, 11 de INVÍAS y las 8 primeras de Vías para la Paz. Suman unos 2,43 billones sobre 3,44 billones del Gobierno Nacional (tabla 3), es decir, alrededor del 71 %. Observación: la tabla 6, titulada «15 mayores contratos», trae en realidad 20 filas (págs. 6-8 impresas). Con las 15 primeras, todas las cifras de la afirmación cuadran."
+    }
+  ]
+}

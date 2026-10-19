@@ -1,0 +1,49 @@
+{
+  "id": "CE-F-1215",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Comité de Documentos Tipo con Enfoque Regional. Una propuesta para garantizar el cumplimiento de la Ley 2022 de 2020",
+  "anio": 2022,
+  "institucion": "Universidad de los Andes, Facultad de Derecho, Maestría en Derecho Público para la Gestión Administrativa (trabajo de grado)",
+  "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/69a44334-a06d-444f-b66a-e502dd35f321/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: tabla de contenido, cap. II (los cuatro intentos de enfoque regional, págs. 34-43) y conclusiones finales (págs. 86-88)",
+  "localizador": "pág. 39 impresa (pág. 39 del PDF), cap. II, apartado 2.2, tercer intento (documentos tipo de infraestructura social, Resolución 219 de 2021)",
+  "cita": "La primera alternativa -opción A- establece el deber de incorporar como mano de obra no calificada al menos el quince por ciento (15 %) que sean mujeres, personal joven entre los 18 a los 28 años y personas adultas mayores de 29 años de la región, siempre que no supere el treinta por ciento (30 %).",
+  "afirmacion": "Los autores describen que, en los documentos tipo de infraestructura social adoptados por la Resolución 219 de 2021, la opción A obliga a incorporar como mano de obra no calificada al menos un 15 % de mujeres, jóvenes de 18 a 28 años y adultos mayores de 29 años de la región, sin superar el 30 %.",
+  "inferencia": "Inferencia: frente a las Resoluciones 240 y 241 del mismo año (10 % a 30 %), el piso y la población objetivo difieren según el documento tipo; un contratista que cotiza con la plantilla de otro sector puede subestimar el costo.",
+  "eje": 1,
+  "etapa": [
+    "E3",
+    "E8"
+  ],
+  "decision": [
+    "D2",
+    "D4"
+  ],
+  "modulo": [
+    "M-PLIEGO",
+    "M-APU"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/69a44334-a06d-444f-b66a-e502dd35f321/content",
+    "vigente": null,
+    "nota": "Texto de la versión de 2021; no se comprobó contra la versión vigente a la fecha de corte."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Cada versión del documento tipo trae obligaciones de mano de obra local con rangos distintos que la entidad fija; cambian el costo de ejecución entre versiones.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-academico:2",
+      "veredicto": "correcta",
+      "detalle": "Abrí la URL de Uniandes (200, PDF de 107 págs.). La cita aparece literal en la pág. 39 del PDF (pág. 39 impresa), apartado iii) sobre la Resolución 219 de 2021. La afirmación no dice más que la cita. En la frase siguiente la fuente aclara que 'las entidades estatales definirán el porcentaje exigido' dentro de ese rango, y que la opción A es una de dos alternativas; la afirmación no lo contradice. La vigencia se declara null con la nota 'no se comprobó contra la versión vigente': no afirma que siga vigente y es una descripción histórica. Atribución: la portada trae dos nombres (Núñez Aldana y Montoya Penagos), así que 'Los autores' es aceptable."
+    }
+  ]
+}

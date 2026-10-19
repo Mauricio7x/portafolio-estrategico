@@ -1,0 +1,38 @@
+{
+  "id": "CE-F-5257",
+  "tipo": "academia",
+  "autor": "Autora del artículo (persona natural, nombre omitido por la regla 5)",
+  "titulo": "La fiducia en el manejo de recursos de anticipos en los contratos estatales",
+  "anio": 2014,
+  "institucion": "Universidad de los Andes, Revista de Derecho Privado, núm. 52 (vía Redalyc)",
+  "url": "https://www.redalyc.org/pdf/3600/360033223012.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: 29 págs. a dos columnas; leídos el resumen, el apartado sobre el art. 91 de la Ley 1474 de 2011 (pág. 12 del PDF) y las conclusiones (págs. 25-26 del PDF); las columnas se extrajeron por separado con pdftotext -x/-W",
+  "localizador": "pág. 12 del PDF, apartado sobre el art. 91 de la Ley 1474 de 2011 (columna izquierda)",
+  "cita": "El costo de la comisión fiduciaria será cubierto directamente por el contratista.",
+  "afirmacion": "La autora, al exponer el art. 91 de la Ley 1474 de 2011, indica que el costo de la comisión fiduciaria del anticipo será cubierto directamente por el contratista.",
+  "inferencia": "Inferencia: la comisión fiduciaria es un costo que debe ir en la oferta (en la administración del AIU); la norma no se reverificó contra el texto vigente para esta ficha.",
+  "eje": 5,
+  "etapa": [
+    "E3",
+    "E7"
+  ],
+  "decision": [
+    "D2"
+  ],
+  "modulo": [
+    "M-PRECIO"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "el propio documento (fuente académica fechada)",
+    "vigente": null,
+    "nota": "Artículo de 2014 sobre el art. 91 de la Ley 1474 de 2011; no se comprobó contra el texto vigente para esta ficha."
+  },
+  "regla": null,
+  "lista_cerrada": "L5-04",
+  "problema_candidato": "La comisión de la fiducia del anticipo la paga el contratista: si no la incluye en el precio, sale de su utilidad."
+}

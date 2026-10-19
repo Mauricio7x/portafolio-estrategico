@@ -1,0 +1,38 @@
+{
+  "id": "CE-F-9202",
+  "tipo": "academia",
+  "autor": "Tres personas naturales (nombres omitidos por la regla 5 del piloto)",
+  "titulo": "Aspectos tributarios para los contratos de obra pública en Colombia",
+  "anio": 2017,
+  "institucion": "Pontificia Universidad Javeriana, Facultad de Ciencias Jurídicas, Especialización en Derecho Tributario · monografía en el repositorio institucional",
+  "url": "https://apidspace.javeriana.edu.co/server/api/core/bitstreams/5899e088-e87d-4db3-878d-e83fcfcab2b2/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: 25 páginas, leídas en texto extraído con pdftotext",
+  "localizador": "pág. 23 del PDF (nota ** al ejercicio, sobre la retención en la fuente)",
+  "cita": "[…] en muchos casos esta retención es flujo de caja atrapado ya que cuando las empresas tienen un margen muy bajo o compensación de pérdidas fiscales, se generan saldos a favor […] y la recuperación de esta liquidez se vuelve muy dispendiosa",
+  "afirmacion": "Los autores señalan que la retención en la fuente, en muchos casos, es flujo de caja atrapado para la empresa de margen muy bajo o con pérdidas fiscales, porque genera saldos a favor cuya recuperación es muy dispendiosa.",
+  "inferencia": null,
+  "eje": 9,
+  "etapa": [
+    "E8"
+  ],
+  "decision": [
+    "D2",
+    "D4"
+  ],
+  "modulo": [
+    "M-PRECIO"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "Monografía de 2017; no se abrieron las leyes, ordenanzas ni acuerdos vigentes de estampillas y contribuciones",
+    "vigente": null,
+    "nota": "Anterior a las reformas tributarias de 2018, 2019, 2021 y 2022; las tarifas y su suma no se reverificaron."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "La retención en la fuente sobre cada pago (2 % en el ejercicio de los autores) deja caja atrapada al contratista de margen bajo, que tarda en recuperar los saldos a favor."
+}

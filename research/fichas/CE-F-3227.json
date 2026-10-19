@@ -1,0 +1,40 @@
+{
+  "id": "CE-F-3227",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Aplicabilidad modulada del régimen jurídico de la subsanabilidad de las ofertas",
+  "anio": 2019,
+  "institucion": "Universidad Externado de Colombia · Revista digital de Derecho Administrativo núm. 21, pp. 263-310 (vía Dialnet)",
+  "url": "https://dialnet.unirioja.es/descarga/articulo/6733367.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: resumen, introducción y apartado 3.4 «Requisitos eminentemente sustanciales» (págs. 1-3 y 30-32 del PDF); el resto se recorrió por palabras clave",
+  "localizador": "pág. 31 del PDF (impresa 293), apartado 3.4 «Requisitos eminentemente sustanciales»",
+  "cita": "una unión temporal que, al momento de presentar su oferta, no contaba con capacidad jurídica en una de las sociedades integrantes […] por lo cual fue descalificada, pese a que, con posterioridad al cierre de la licitación, intentó subsanar la oferta",
+  "afirmacion": "La autora relata un caso estudiado en que una unión temporal fue descalificada porque, al presentar la oferta, una de sus sociedades integrantes no tenía capacidad jurídica, pese a que después del cierre de la licitación intentó subsanar la oferta.",
+  "inferencia": "Inferencia: según el mismo párrafo, el intento de subsanar consistió en acreditar en la audiencia de adjudicación el cambio del objeto social; la capacidad jurídica de cada integrante del plural se revisa antes del cierre.",
+  "eje": 3,
+  "etapa": [
+    "E3",
+    "E5",
+    "E6"
+  ],
+  "decision": [
+    "D1",
+    "D3"
+  ],
+  "modulo": [
+    "M-PLURAL"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "Ley 1150 de 2007, art. 5, par. 1 (modificado por la Ley 1882 de 2018), en http://www.secretariasenado.gov.co/senado/basedoc/ley_1150_2007.html; no reabierto en esta ficha",
+    "vigente": null,
+    "nota": "Lectura de la autora de sentencias del Consejo de Estado anteriores a la Ley 1882 de 2018; las sentencias no se abrieron. No se comprobó si el Decreto 0997 de 2026 tocó el tema."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Subsanación fallida: un plural descalificado porque el objeto social de una integrante no cubría el objeto del contrato, y el cambio posterior del objeto social no se aceptó."
+}

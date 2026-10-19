@@ -1,0 +1,38 @@
+{
+  "id": "CE-F-5259",
+  "tipo": "academia",
+  "autor": "Autores del artículo (personas naturales, nombres omitidos por la regla 5)",
+  "titulo": "Las adiciones y prórrogas como mecanismo excepcional frente a los principios de planeación y anualidad presupuestal",
+  "anio": 2019,
+  "institucion": "Escuela Superior de Administración Pública (ESAP), revista Administración & Desarrollo, vol. 49, núm. 2 (vía Dialnet)",
+  "url": "https://dialnet.unirioja.es/descarga/articulo/8121595.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: 17 págs.; leídos el resumen, el método y las tablas 4 a 7 de resultados (págs. 62-64 de la revista)",
+  "localizador": "pág. 64 de la revista (pág. 12 del PDF), texto que sigue a la Tabla 7 «Comparativo contratos adicionados … según su porcentaje de adición»",
+  "cita": "del total de contratos adicionados, aquellos que no superaron el tope que impone el artículo 40 de la Ley 80 de 1993 (Congreso de la República, 1993), fueron el 86 % de ellos en el año 2017, no obstante, el 14 % de los mismos lo superó en este año",
+  "afirmacion": "Los autores reportan que, de los contratos adicionados por el Departamento del Tolima, el 86 % no superó en 2017 el tope del artículo 40 de la Ley 80 de 1993 y el 14 % sí lo superó.",
+  "inferencia": "Inferencia: la consecuencia para el contratista de una adición por encima del tope no la trata el artículo; se deja como riesgo a verificar.",
+  "eje": 5,
+  "etapa": [
+    "E8"
+  ],
+  "decision": [
+    "D4"
+  ],
+  "modulo": [
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "el propio documento (fuente académica fechada)",
+    "vigente": null,
+    "nota": "Estudio empírico de contratos de licitación pública del Departamento del Tolima en SECOP I (2017-2018); no es normativo."
+  },
+  "regla": null,
+  "lista_cerrada": "L5-01",
+  "problema_candidato": "Hay contratos cuya adición supera el tope legal del 50 %; para el contratista, ejecutar obra amparada en una adición que excede el tope lo expone a que se cuestione su validez y su pago.",
+  "advertencia": "Según la Tabla 7, el 14 % corresponde a 1 de 7 contratos adicionados en 2017 (en 2018, 1 de 11). Base muy pequeña: no sirve como frecuencia general."
+}

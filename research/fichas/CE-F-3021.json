@@ -1,0 +1,52 @@
+{
+  "id": "CE-F-3021",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 80 de 1993",
+  "anio": 1993,
+  "institucion": "Secretaría General del Senado · Base documental (texto con notas de vigencia)",
+  "url": "http://www.secretariasenado.gov.co/senado/basedoc/ley_0080_1993.html",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: art. 30 completo, con sus notas de vigencia visibles",
+  "localizador": "art. 30, numeral 12",
+  "cita": "Si el adjudicatario no suscribe el contrato correspondiente dentro del término que se haya señalado, quedará a favor de la entidad contratante, en calidad de sanción, el valor del depósito o garantía constituidos para responder por la seriedad de la propuesta",
+  "afirmacion": "Si el adjudicatario no firma el contrato en el término señalado, la entidad se queda, como sanción, con el valor de la garantía de seriedad.",
+  "inferencia": "Inferencia: el inciso siguiente permite adjudicar al segundo dentro de los quince días siguientes si su propuesta es igualmente favorable; presentarse y luego no firmar cuesta al menos la garantía.",
+  "eje": 3,
+  "etapa": [
+    "E7"
+  ],
+  "decision": [
+    "D2",
+    "D4"
+  ],
+  "modulo": [
+    "M-OFERTA"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A1",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "http://www.secretariasenado.gov.co/senado/basedoc/ley_0080_1993.html",
+    "vigente": true,
+    "nota": "Texto del Senado con notas: numeral 4 modificado por el art. 220 del Decreto 19 de 2012; numeral 5, inciso 2, por el art. 89 de la Ley 1474 de 2011; apartes derogados por el art. 32 de la Ley 1150 de 2007."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Norma legal: rige desde su promulgación, no desde un aviso de convocatoria."
+  },
+  "lista_cerrada": "L3-07",
+  "problema_candidato": "El contratista que gana y no firma (por ejemplo, porque su precio quedó mal calculado) pierde el valor de la garantía de seriedad, además de las acciones por perjuicios no cubiertos.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje3-institucional:2",
+      "veredicto": "correcta",
+      "detalle": "El art. 30, numeral 12, trae la cita literal. La afirmación dice menos que la norma (omite «sin menoscabo de las acciones legales» por perjuicios no cubiertos), pero la inferencia lo recoge con «al menos la garantía». El inciso siguiente, adjudicar al segundo «dentro de los quince (15) días siguientes [...] siempre y cuando su propuesta sea igualmente favorable», coincide con la inferencia. Nota de jurisprudencia: numeral declarado EXEQUIBLE en la Sentencia C-452-99."
+    }
+  ]
+}

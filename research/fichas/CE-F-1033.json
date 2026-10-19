@@ -1,0 +1,53 @@
+{
+  "id": "CE-F-1033",
+  "tipo": "guia_cce",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "ABC Decreto 0287 de 2026 · Contratación pública inclusiva para personas con discapacidad",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://colombiacompra.gov.co/wp-content/uploads/2026/04/ABC-Decreto-0287-de-2026-1.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: las 13 páginas",
+  "localizador": "pág. 12 del PDF, pregunta «¿Y los consorcios o uniones temporales pueden usar estas medidas?»",
+  "cita": "la verificación de las condiciones relacionadas con la vinculación de personas con discapacidad podrá realizarse de manera conjunta o a través de alguno de sus integrantes, según corresponda a las reglas definidas en el proceso de contratación.",
+  "afirmacion": "El ABC de CCE dice que en consorcios y uniones temporales la vinculación de personas con discapacidad podrá verificarse de manera conjunta o a través de alguno de sus integrantes, según las reglas del proceso.",
+  "inferencia": null,
+  "eje": 1,
+  "etapa": [
+    "E3"
+  ],
+  "decision": [
+    "D1",
+    "D2"
+  ],
+  "modulo": [
+    "M-PLURAL"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A3",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=273496",
+    "vigente": true,
+    "nota": "Contrastado con el Decreto 287 de 2026 en el Gestor Normativo. Un ABC no reemplaza el decreto."
+  },
+  "lista_cerrada": "L1-02",
+  "problema_candidato": "Un plural que sume la planta de personal de varios integrantes siguiendo el ABC puede perder el puntaje adicional en la evaluación, que debe aplicar el decreto.",
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": "En procesos con documento tipo, solo cuando CCE incorpore las medidas (art. 2.2.1.2.4.2.7.8; Circular Externa 003 de 2026)",
+    "motivo_null": "El decreto no fija la transición por aviso; CCE (C-642 de 2026) la fija por la fecha de la resolución de apertura: desde el 20 de marzo de 2026."
+  },
+  "advertencia": "Contradice el art. 2.2.1.2.4.2.7.4 del Decreto 287 (CE-F-1027), que para el puntaje toma «únicamente la planta de personal del integrante con mayor participación porcentual». Manda el decreto.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-institucional:3",
+      "veredicto": "correcta",
+      "detalle": "Pág. 12 del ABC, pregunta «¿Y los consorcios o uniones temporales pueden usar estas medidas?»: la cita está literal. La afirmación está atribuida al ABC y la reproduce fielmente. Falta el matiz de la frase anterior («siempre que acrediten el cumplimiento de los requisitos exigidos en el decreto»), pero la advertencia lo cubre al decir que manda el decreto. Se comprobó en el Gestor Normativo que el art. 2.2.1.2.4.2.7.4 dice «se tomará en cuenta únicamente la planta de personal del integrante con mayor participación porcentual»: la contradicción que señala la advertencia es real."
+    }
+  ]
+}

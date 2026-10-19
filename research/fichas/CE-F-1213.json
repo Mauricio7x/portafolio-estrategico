@@ -1,0 +1,47 @@
+{
+  "id": "CE-F-1213",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Herramienta de validación de implementación de los pliegos tipo de infraestructura de transporte en la contratación pública",
+  "anio": 2021,
+  "institucion": "Universidad de los Andes, Departamento de Ingeniería Industrial, Maestría en Inteligencia Analítica para la Toma de Decisiones (trabajo de grado)",
+  "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/4778acf8-10b1-45a9-9c6d-e4633a52e16b/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa",
+  "localizador": "págs. 5-6 impresas (pág. 6 del PDF), «Introducción»",
+  "cita": "como consecuencia de la validación para el año 2020 se revisaron 1.522 procesos de contratación de 645 entidades del estado. […] Este mecanismo no es efectivo teniendo en cuenta que la revisión del 2020 abarco 645 entidades y deberían estar al menos los 1.123 municipios del país",
+  "afirmacion": "Los autores dicen que el Observatorio de CCE revisó en 2020 la aplicación del pliego tipo en 1.522 procesos de 645 entidades, y que el mecanismo de búsqueda no es efectivo porque deberían estar al menos los 1.123 municipios del país.",
+  "inferencia": "Inferencia: la vigilancia de CCE sobre si una entidad respetó el documento tipo es parcial; el contratista que detecta una desviación del pliego tipo no puede contar con que el Observatorio la vea a tiempo, y su herramienta propia es la observación al proyecto de pliego.",
+  "eje": 1,
+  "etapa": [
+    "E1",
+    "E2"
+  ],
+  "decision": [
+    "D3"
+  ],
+  "modulo": [
+    "M-PLIEGO"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/4778acf8-10b1-45a9-9c6d-e4633a52e16b/content",
+    "vigente": null,
+    "nota": "Datos de 2020 sobre el Observatorio Oficial de Contratación Estatal; su cobertura actual no se comprobó."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "La verificación de que las entidades aplicaron bien el documento tipo cubrió en 2020 una parte de las entidades; las desviaciones del pliego tipo pueden pasar sin control externo.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-academico:1",
+      "veredicto": "correcta",
+      "detalle": "Abrí la URL de Uniandes (200, 25 págs.). Las dos frases de la cita aparecen literales en la pág. 6, impresa y del PDF. El localizador dice «págs. 5-6 impresas» porque la presentación del Observatorio empieza en la pág. 5: no es un error, aunque la cita completa está en la 6. La autoría es plural (dos autores) y la afirmación lo dice bien. Omite «las gobernaciones y demás entidades» tras «1.123 municipios», pero mantiene el «al menos», así que no exagera."
+    }
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "id": "CE-F-3241",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Afectación al principio de selección objetiva a través de la celebración de convenios o contratos interadministrativos",
+  "anio": 2020,
+  "institucion": "Universidad Externado de Colombia · Revista digital de Derecho Administrativo núm. 24, pp. 103-126 (vía Dialnet)",
+  "url": "https://dialnet.unirioja.es/descarga/articulo/7471555.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: resumen y apartados sobre la subcontratación o contratación derivada y el caso disciplinario (págs. 13-18 del PDF); el resto se recorrió por palabras clave",
+  "localizador": "pág. 18 del PDF (impresa 120), caso de la Procuraduría (fallo de segunda instancia de 2014) citado por el autor",
+  "cita": "la realidad procesal demostró que a través de ellos se evadieron los procesos de selección y se terminó convirtiendo en una tercerización de la contratación, porque las empresas estatales contratadas para ejecutar las obras y elaborar los diseños y estudios terminaron subcontratando",
+  "afirmacion": "El autor recoge un fallo disciplinario de la Procuraduría según el cual, en el caso juzgado, a través de convenios interadministrativos se evadieron los procesos de selección y se terminó en una tercerización, porque las empresas estatales contratadas para ejecutar las obras y elaborar los diseños y estudios terminaron subcontratando.",
+  "inferencia": "Inferencia: la obra que se canaliza por un convenio interadministrativo y luego se subcontrata no pasa por licitación; el contratista privado pierde la oportunidad de competir por ella o entra solo como subcontratista de la entidad ejecutora.",
+  "eje": 3,
+  "etapa": [
+    "E0",
+    "E1"
+  ],
+  "decision": [
+    "D1"
+  ],
+  "modulo": [
+    "M-ENTIDAD"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "No aplica: dato empírico o descripción de práctica, no regla",
+    "vigente": null,
+    "nota": "Lectura del autor de la regulación de los contratos interadministrativos (Ley 1150 de 2007, art. 2, num. 4, lit. c, modificada por la Ley 1474 de 2011) y de un fallo disciplinario de 2014; no se reverificó contra el Decreto 0997 de 2026."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Obras que se sacan de la licitación mediante convenios interadministrativos y se subcontratan después, sin competencia abierta.",
+  "advertencia": "Es un caso juzgado citado por el autor, no una medición de frecuencia."
+}

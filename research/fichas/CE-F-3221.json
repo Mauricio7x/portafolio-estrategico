@@ -1,0 +1,39 @@
+{
+  "id": "CE-F-3221",
+  "tipo": "gremio_ong",
+  "autor": "Open Contracting Partnership",
+  "titulo": "Open for business: Colombia’s data-driven procurement reforms increase competition",
+  "anio": 2020,
+  "institucion": "Open Contracting Partnership (organización internacional sin ánimo de lucro), análisis propio de datos de SECOP II en formato OCDS y cifras de CCE",
+  "url": "https://www.open-contracting.org/2020/07/16/open-for-business-colombias-data-driven-procurement-reforms-increase-competition/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: artículo web del 16-jul-2020 (en inglés)",
+  "localizador": "párrafo «Public works is one sector where open data has informed…», cifras de SECOP II",
+  "cita": "According to figures from the SECOP II system, the proportion of single-bid tenders for road works using open tendering decreased from 17% to 12% in 2019, while the share of tenders with more than 4 bids rose to 68%, up from 57% the previous year.",
+  "afirmacion": "Open Contracting Partnership reporta que, según cifras de SECOP II, la proporción de licitaciones de obras viales con una sola oferta bajó del 17 % al 12 % en 2019 y la de licitaciones con más de 4 ofertas subió del 57 % al 68 %.",
+  "inferencia": "Inferencia: tras los documentos tipo de transporte (abril de 2019) la oferta única en licitación vial bajó pero no desapareció, y lo normal pasó a ser competir contra varios oferentes.",
+  "eje": 3,
+  "etapa": [
+    "E4",
+    "E5"
+  ],
+  "decision": [
+    "D1"
+  ],
+  "modulo": [
+    "M-ENTIDAD"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A7",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "No aplica: dato empírico o descripción de práctica, no regla",
+    "vigente": null,
+    "nota": "Datos de SECOP II de 2018-2019; cubren solo las entidades que usaban SECOP II (alrededor de la mitad de los procedimientos en 2020, según el mismo texto)."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Oferta única en licitación de obras viales (12 % en 2019 en SECOP II, frente al 17 % de 2018).",
+  "advertencia": "Las cifras de oferta única de esta fuente (SECOP II, licitación vial, 12-17 %) son muy distintas de las de la CCE y de otros autores sobre contratación territorial (53-87 %): miden universos distintos y no se suman ni se comparan como una sola frecuencia."
+}

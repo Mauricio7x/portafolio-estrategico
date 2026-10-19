@@ -1,0 +1,51 @@
+{
+  "id": "CE-F-5055",
+  "tipo": "jurisprudencia",
+  "autor": "Consejo de Estado, Sección Tercera, Subsección A",
+  "titulo": "Sentencia del 1 de julio de 2025, radicación 05001-23-33-000-2013-01452-01 (63.532), controversias contractuales",
+  "anio": 2025,
+  "institucion": "Consejo de Estado (PDF publicado en la relatoría de Colombia Compra Eficiente, https://relatoria.colombiacompra.gov.co/providencias/05001233300020130145201-de-2025/)",
+  "url": "https://relatoria.colombiacompra.gov.co/wp-content/uploads/2025/07/05001233300020130145201.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: extracto de la relatoría (págs. 1-2 del PDF), consideraciones sobre liquidación, salvedades y precio global (págs. 14-19 del PDF) y parte resolutiva",
+  "localizador": "pág. 14 de la sentencia (pág. 16 del PDF), apartado sobre la liquidación bilateral",
+  "cita": "las salvedades o manifestaciones de inconformidad que se plasmen en el acta de liquidación deben ser concretas y específicas, por lo que no puede tratarse de afirmaciones genéricas",
+  "afirmacion": "El Consejo de Estado reitera que las salvedades del acta de liquidación deben ser concretas y específicas, no afirmaciones genéricas.",
+  "inferencia": "Inferencia: en el caso, la salvedad remitía a un oficio que no se aportó al proceso; la misma página muestra que una salvedad por remisión depende de que el documento llegue al expediente.",
+  "eje": 5,
+  "etapa": [
+    "E9"
+  ],
+  "decision": [
+    "D4"
+  ],
+  "modulo": [
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A4",
+  "unificacion": false,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://relatoria.colombiacompra.gov.co/wp-content/uploads/2025/07/05001233300020130145201.pdf",
+    "vigente": true,
+    "nota": "Sentencia de segunda instancia fechada el 1-jul-2025; no se buscó providencia posterior que la contradiga."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Regla de origen jurisprudencial: no depende de la fecha de un aviso."
+  },
+  "lista_cerrada": "L5-10",
+  "problema_candidato": "Una salvedad que se limita a remitir a un oficio que luego no se aporta al proceso deja al contratista sin prueba de su reclamo.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje5-institucional:4",
+      "veredicto": "correcta",
+      "detalle": "Abrí el PDF (HTTP 200, 26 págs.). Su encabezado confirma Subsección A, 1 de julio de 2025, exp. 05001-23-33-000-2013-01452-01 (63.532). La cita es literal en la pág. 14 de la sentencia (pág. 16 del PDF), apartado de la liquidación bilateral. La afirmación («reitera») es fiel: la frase empieza «La Sección Tercera ha afirmado, además». La inferencia la sostiene la misma página: la salvedad remitía al oficio E1012-015997, que «no obra en el plenario»."
+    }
+  ]
+}

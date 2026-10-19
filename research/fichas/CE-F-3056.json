@@ -1,0 +1,52 @@
+{
+  "id": "CE-F-3056",
+  "tipo": "jurisprudencia",
+  "autor": "Consejo de Estado, Sala de lo Contencioso Administrativo, Sección Tercera, Subsección C",
+  "titulo": "Sentencia del 19 de agosto de 2026, radicación 52001-23-33-000-2021-00207-01 (72107), nulidad simple contra un acto de adjudicación de una licitación pública departamental",
+  "anio": 2026,
+  "institucion": "Consejo de Estado (PDF publicado en la relatoría de la Agencia Nacional de Contratación Pública - Colombia Compra Eficiente)",
+  "url": "https://relatoria.colombiacompra.gov.co/wp-content/uploads/2026/10/155_-52001233300020210020701-1.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: ficha de relatoría (págs. 1 a 5), encabezado y síntesis (págs. 6 y 7), consideraciones sobre subsanabilidad (pág. 43) y decisión (págs. 53 y 54) de las 54 páginas",
+  "localizador": "pág. 43 del PDF, consideraciones sobre el alcance de la subsanación",
+  "cita": "la falta de aportación inicial de documentos relativos a un requisito habilitante no implica necesariamente su incumplimiento, de modo que resulta procedente la subsanación […] siempre que se trate de una condición que ya se encontraba cumplida con anterioridad al cierre del proceso de selección.",
+  "afirmacion": "El Consejo de Estado sostuvo que no aportar con la oferta los documentos de un requisito habilitante no implica que no se cumpla, y que procede subsanar siempre que la condición ya estuviera cumplida antes del cierre.",
+  "inferencia": "Inferencia: el proceso era una licitación del Programa de Alimentación Escolar, no de obra; la regla interpreta el art. 5 de la Ley 1150, que aplica igual a la obra.",
+  "eje": 3,
+  "etapa": [
+    "E5",
+    "E6"
+  ],
+  "decision": [
+    "D3"
+  ],
+  "modulo": [
+    "M-OFERTA"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A4",
+  "unificacion": false,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://relatoria.colombiacompra.gov.co/wp-content/uploads/2026/10/155_-52001233300020210020701-1.pdf",
+    "vigente": true,
+    "nota": "Sentencia de segunda instancia de una subsección, no de unificación; no se buscó jurisprudencia posterior que la contradiga."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Providencia judicial; no rige desde un aviso."
+  },
+  "lista_cerrada": "L3-14",
+  "problema_candidato": null,
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje3-institucional:4",
+      "veredicto": "correcta",
+      "detalle": "Abrí https://relatoria.colombiacompra.gov.co/wp-content/uploads/2026/10/155_-52001233300020210020701-1.pdf (200). En la pág. 43 del PDF (impresa como 37) aparece literal: «la falta de aportación inicial de documentos relativos a un requisito habilitante no implica necesariamente su incumplimiento, de modo que resulta procedente la subsanación para acreditar su satisfacción, siempre que se trate de una condición que ya se encontraba cumplida con anterioridad al cierre del proceso de selección.» La afirmación coincide con la cita. El encabezado (pág. 6) confirma Sección Tercera, Subsección C, 19 de agosto de 2026, nulidad simple contra el acto de adjudicación, rad. 72107. La síntesis confirma que el contrato era del PAE en Nariño."
+    }
+  ]
+}

@@ -1,0 +1,53 @@
+{
+  "id": "CE-F-1021",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República; Departamento Nacional de Planeación",
+  "titulo": "Decreto 287 de 2026 (modifica los arts. 2.2.1.2.4.2.6, 2.2.1.2.4.2.7 y 2.2.1.2.4.2.8 del Decreto 1082 de 2015)",
+  "anio": 2026,
+  "institucion": "Departamento Administrativo de la Función Pública (Gestor Normativo)",
+  "url": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=273496",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: considerandos, art. 1 (arts. 2.2.1.2.4.2.6 a 2.2.1.2.4.2.8) y art. 2",
+  "localizador": "art. 2 (Vigencia y derogatorias)",
+  "cita": "El presente Decreto rige a partir del día siguiente a su Publicación",
+  "afirmacion": "El Decreto 287 de 2026 rige a partir del día siguiente a su publicación.",
+  "inferencia": null,
+  "eje": 1,
+  "etapa": [
+    "T"
+  ],
+  "decision": [
+    "D1",
+    "D3"
+  ],
+  "modulo": [
+    "M-PLIEGO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A2",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=273496",
+    "vigente": true,
+    "nota": "Decreto 287 de 2026 en el Gestor Normativo (expedición y entrada en vigencia: 19 de marzo de 2026, según la ficha). Su art. 2 dice que rige desde el día siguiente a su publicación; ver advertencia de CE-F-1021."
+  },
+  "lista_cerrada": "L1-02",
+  "problema_candidato": "Un proceso con resolución de apertura del 19 de marzo de 2026 queda con o sin las preferencias del Decreto 287 según la fuente que se lea (ABC o concepto C-642).",
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": "En procesos con documento tipo, solo cuando CCE incorpore las medidas (art. 2.2.1.2.4.2.7.8; Circular Externa 003 de 2026)",
+    "motivo_null": "El decreto no fija la transición por aviso; CCE (C-642 de 2026) la fija por la fecha de la resolución de apertura: desde el 20 de marzo de 2026."
+  },
+  "advertencia": "Tres fuentes oficiales dan fechas distintas del arranque: la ficha del Gestor Normativo pone «Fecha de Entrada en Vigencia: 19 de marzo de 2026» (igual a la expedición); el ABC de CCE dice que el decreto entra en vigor el 19 de marzo de 2026; el concepto C-642 de 2026 dice que se aplica a procesos con resolución de apertura del 20 de marzo de 2026 o posterior. No se abrió el Diario Oficial.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-institucional:2",
+      "veredicto": "correcta",
+      "detalle": "Abrí el Gestor Normativo, norma.php?i=273496, con curl --cacert bundle_normas2.pem (200). El art. 2 dice literal: «El presente Decreto rige a partir del día siguiente a su Publicación». La ficha del Gestor dice «Fecha de Expedición: 19 de marzo de 2026 / Fecha de Entrada en Vigencia: 19 de marzo de 2026» y el campo «Medio de Publicación» está vacío. La advertencia recoge bien esa discrepancia. Revisé el Decreto 0997 de 2026 en la relatoría de CCE y no modifica los arts. 2.2.1.2.4.2.6 a 2.2.1.2.4.2.8."
+    }
+  ]
+}

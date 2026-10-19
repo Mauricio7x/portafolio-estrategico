@@ -1,0 +1,49 @@
+{
+  "id": "CE-F-1242",
+  "tipo": "gremio_ong",
+  "autor": "Cámara Colombiana de la Infraestructura (columna de opinión de su presidencia ejecutiva; nombre omitido por la regla 5)",
+  "titulo": "Columna de opinión: Un muro invisible",
+  "anio": 2025,
+  "institucion": "Cámara Colombiana de la Infraestructura, sala de prensa (10 de noviembre de 2025)",
+  "url": "https://infraestructura.org.co/columna-de-opinion-un-muro-invisible",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa",
+  "localizador": "párrafos 2 y 3 de la columna",
+  "cita": "Las resoluciones que dieron vida a las Appa y ZPPA trazaron sobre el mapa amplias zonas […] en las que se restringen ciertas actividades económicas, entre ellas la construcción de nueva infraestructura. Pues bien, dentro de esos perímetros se cruzan 31 corredores de la red nacional de carreteras",
+  "afirmacion": "La columna de la CCI afirma que las resoluciones que crearon las Áreas y Zonas de Protección para la Producción Agraria (APPA y ZPPA) trazaron polígonos donde se restringen actividades económicas, entre ellas la construcción de nueva infraestructura, y que dentro de esos perímetros se cruzan 31 corredores de la red nacional de carreteras.",
+  "inferencia": "Inferencia: la columna añade que 13 de esos corredores están concesionados y que las resoluciones no consultaron a las entidades del transporte; para el contratista de obra vial, una norma de ordenamiento de otro sector puede frenar o impedir una obra contratada o por contratar en esas zonas, y debe revisarse en la etapa de planeación.",
+  "eje": 1,
+  "etapa": [
+    "E0",
+    "E8"
+  ],
+  "decision": [
+    "D1",
+    "D4"
+  ],
+  "modulo": [
+    "M-PLIEGO",
+    "M-ENTIDAD"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A7",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://infraestructura.org.co/columna-de-opinion-un-muro-invisible",
+    "vigente": null,
+    "nota": "Posición del gremio de noviembre de 2025; las resoluciones de APPA y ZPPA no se abrieron para esta ficha."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Normas de otro sector (zonas de protección para la producción agraria, APPA y ZPPA) que restringen construir infraestructura en polígonos donde hay corredores viales: riesgo de suspensión o de obra imposible.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-academico:3",
+      "veredicto": "correcta",
+      "detalle": "Abrí la URL (HTTP 200, fecha «10 Nov, 25», firma de la presidencia ejecutiva de la CCI). En los párrafos 2 y 3 la cita es literal, con «[…]» en lugar de «–los llamados polígonos–». El nombre completo de APPA y ZPPA sale del párrafo 1. La afirmación la atribuye a la columna y no añade nada. Los 13 corredores concesionados y la falta de consulta a las entidades del transporte, que recoge la inferencia, están en el texto."
+    }
+  ]
+}

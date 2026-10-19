@@ -1,0 +1,38 @@
+{
+  "id": "CE-F-9550",
+  "tipo": "documento_proceso",
+  "autor": "Municipio de Manizales, Secretaría de Infraestructura: comité evaluador (nombres omitidos por la regla 5)",
+  "titulo": "Informe definitivo de evaluación de ofertas · Selección abreviada de menor cuantía MC-035-2026 (SECOP II CO1.BDOS.10013699)",
+  "anio": 2026,
+  "institucion": "Municipio de Manizales, publicado en SECOP II (dmgg-8hin, documento 794582230)",
+  "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=794582230&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: las 16 páginas del PDF con pdftotext -layout; los anexos 2 a 5 (Excel) que el informe cita no se leyeron (no están entre los informes de este lote)",
+  "localizador": "pág. 14 del PDF, tabla de justificación de rechazo",
+  "cita": "El proponente no subsanó en debida forma, en tanto no amplió el plazo de cobertura de la garantía de seriedad de la oferta presentada, incurriendo en causal de rechazo conforme al literal E del numeral ‘1.15 CAUSALES DE RECHAZO’ del Pliego de Condiciones.",
+  "afirmacion": "En este proceso, un proponente plural fue rechazado porque, requerido para subsanar, no amplió el plazo de cobertura de su garantía de seriedad, lo que la entidad encuadró en el literal E del numeral 1.15 del pliego.",
+  "inferencia": "Inferencia, con la tabla de la pág. 13 del mismo informe: fue el único rechazado de seis proponentes, y su capacidad técnica, financiera y residual figuraba «HÁBIL»: un defecto de la póliza costó una oferta por lo demás habilitada.",
+  "eje": 3,
+  "etapa": [
+    "E4",
+    "E5"
+  ],
+  "decision": [
+    "D3"
+  ],
+  "modulo": [
+    "M-OFERTA"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A7",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "el propio informe (documento de un proceso de SECOP II, fechado el 13-may-2026)",
+    "vigente": null,
+    "nota": "Documento de un proceso: registra un hecho fechado de lo que hizo una entidad, no una regla general; no aplica comprobar vigencia normativa."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Un ajuste de la garantía de seriedad pedido en la subsanación (ampliar la vigencia tras un cambio de cronograma) que no se hace a tiempo, aunque dependa de la aseguradora, lleva al rechazo de la oferta entera."
+}

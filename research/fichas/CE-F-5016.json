@@ -1,0 +1,61 @@
+{
+  "id": "CE-F-5016",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 1474 de 2011 (Estatuto Anticorrupción)",
+  "anio": 2011,
+  "institucion": "Secretaría General del Senado de la República, base de leyes (texto con notas de vigencia)",
+  "url": "http://www.secretariasenado.gov.co/senado/basedoc/ley_1474_2011_pr001.html",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: arts. 86 a 91 del texto de la Secretaría del Senado (página 2 de la ley)",
+  "localizador": "art. 90 (modificado por el art. 43 de la Ley 1955 de 2019), literales a y b",
+  "cita": "a) Haber sido objeto de imposición de cinco (5) o más multas durante la ejecución de uno o varios contratos, con una o varias entidades estatales, durante los últimos tres (3) años; b) Haber sido objeto de declaratorias de incumplimiento contractual en por lo menos dos (2) contratos",
+  "afirmacion": "Queda inhabilitado el contratista con cinco o más multas en los últimos tres años (en uno o varios contratos, con una o varias entidades). Otra causal son las declaratorias de incumplimiento contractual en por lo menos dos contratos; el periodo en que se cuentan no está en esta cita.",
+  "inferencia": null,
+  "eje": 5,
+  "etapa": [
+    "E8",
+    "E10"
+  ],
+  "decision": [
+    "D1",
+    "D3"
+  ],
+  "modulo": [
+    "M-RUP",
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A1",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "http://www.secretariasenado.gov.co/senado/basedoc/ley_1474_2011_pr001.html",
+    "vigente": true,
+    "nota": "Texto de la Secretaría del Senado consultado el 2-oct-2026, con las notas de modificación que trae el artículo."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Norma legal: rige para los contratos del Estatuto General sin depender de la fecha de un aviso; no se buscó régimen de transición para contratos anteriores."
+  },
+  "lista_cerrada": "L5-04",
+  "problema_candidato": "Las multas se acumulan entre contratos y entidades: varias multas pequeñas en obras distintas pueden inhabilitar al contratista para presentarse a licitaciones.",
+  "advertencia": "Según el verificador: la cita corta el literal b antes de «, con una o varias entidades estatales, durante los últimos tres (3) años», así que la ventana de tres años de esa causal no está en la cita; el literal c (dos multas y un incumplimiento en una misma vigencia fiscal) tampoco está, y el literal d (contratos del PAE, Ley 2195 de 2022) no se menciona.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje5-institucional:2",
+      "veredicto": "no_sostiene",
+      "detalle": "La cita está literal en el art. 90 (texto de la Ley 1955/2019), pero corta el literal b justo antes de «, con una o varias entidades estatales, durante los últimos tres (3) años», y no pone «[…]». La afirmación dice entonces «declaratorias de incumplimiento contractual en al menos dos contratos» sin la ventana de tres años: quita un matiz que limita la regla y la vuelve más amplia que la fuente. La advertencia reconoce la omisión, pero no corrige la afirmación (§5.1). Además, el localizador dice «literales a, b y c» y la cita solo trae a y b. Tampoco menciona el literal d (PAE, Ley 2195/2022). Vigencia correcta.",
+      "accion": "afirmación estrechada a lo que sostiene la cita (el periodo del literal b no está en ella); localizador corregido a los literales que trae la cita; lo no cubierto va en «advertencia»",
+      "antes": {
+        "localizador": "art. 90 (modificado por el art. 43 de la Ley 1955 de 2019), literales a, b y c",
+        "afirmacion": "Queda inhabilitado el contratista con cinco o más multas en los últimos tres años (en uno o varios contratos y entidades) o con declaratorias de incumplimiento contractual en al menos dos contratos.",
+        "advertencia": "El literal c (dos multas y un incumplimiento en una misma vigencia fiscal) completa la lista y no está en la cita; la cita omite «durante los últimos tres (3) años» del literal b, que el artículo sí trae."
+      }
+    }
+  ]
+}

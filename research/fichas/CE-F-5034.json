@@ -1,0 +1,59 @@
+{
+  "id": "CE-F-5034",
+  "tipo": "documento_tipo",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Documentos Tipo de licitación de obra pública de infraestructura de transporte, versión 4 · Anexo 5 Minuta del Contrato (A5_MinutaContrato_TLPV4.docx)",
+  "anio": 2024,
+  "institucion": "Colombia Compra Eficiente (paquete descargable de los documentos tipo vigentes)",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29920/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: el Anexo 5 entero (texto extraído del .docx); además se buscó en los otros 25 archivos del paquete",
+  "localizador": "Anexo 5, nota inicial entre corchetes",
+  "cita": "[La Entidad debe incluir el contenido mínimo del presente Documento. Podrá incluir condiciones adicionales que no contradigan lo dispuesto en el presente Anexo.",
+  "afirmacion": "La minuta del documento tipo de transporte es un contenido mínimo: la entidad puede agregar condiciones que no lo contradigan.",
+  "inferencia": "Inferencia: en el paquete V4 no se halló regla sobre mayores cantidades de obra ni sobre reajuste de precios (búsqueda de texto en el anexo y en los demás archivos del paquete; el verificador tampoco la encontró); si existen, las pone cada entidad en su minuta o anexos, y hay que leerlas proceso por proceso.",
+  "eje": 5,
+  "etapa": [
+    "E2",
+    "E7"
+  ],
+  "decision": [
+    "D4"
+  ],
+  "modulo": [
+    "M-PLIEGO",
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A3",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29920/",
+    "vigente": true,
+    "nota": "Página oficial de la versión 4 (https://www.colombiacompra.gov.co/documentos-tipo/vigentes/?sector=712&nodo=29383, consultada el 2-oct-2026): «Versión 4 – Vigente desde el 3 de febrero de 2025 hasta la fecha», adoptada por la Resolución 465 de 2024."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": "2025-02-03",
+    "documento_tipo": "Documentos Tipo de licitación de obra pública de infraestructura de transporte, versión 4 (Resolución 465 de 2024), vigente desde el 3-feb-2025"
+  },
+  "lista_cerrada": "L5-08",
+  "problema_candidato": "El documento tipo no fija si hay reajuste de precios ni cómo se pagan las mayores cantidades de obra: el contratista ofrece sin saber esas reglas si la entidad no las escribe en su minuta.",
+  "advertencia": "Según el verificador (2-oct-2026), el mismo paquete sí trae reglas sobre ítems no previstos: A1_AnexoTec_TLPV4 («estos costos serán reconocidos mediante aprobación de precios no previstos, incluidos en las correspondientes actas de obra aprobadas por el Interventor») y Form_PresupOficial_TLPV4, Nota 2 («el Interventor aprueba el desglose y precio unitario de cada ítem no previsto, exigiendo la aplicación de los costos correspondientes a insumos y tarifas de la propuesta económica inicial cuando estén contemplados»); y la cláusula 6 de la minuta menciona «suspensiones y reanudaciones». Esas citas no se transcribieron en esta ficha.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje5-institucional:3",
+      "veredicto": "no_sostiene",
+      "detalle": "Bajé el ZIP 29920 de CCE (200). La nota inicial del A5_MinutaContrato_TLPV4 está literal y la afirmación es fiel. La inferencia, en cambio, afirma algo falso sobre el paquete: dice que no hay reglas sobre ítems no previstos en «los 25 archivos del paquete» y que esas reglas «las pone cada entidad». El mismo paquete sí las trae. A1_AnexoTec_TLPV4: «estos costos serán reconocidos mediante aprobación de precios no previstos, incluidos en las correspondientes actas de obra aprobadas por el Interventor». Form_PresupOficial_TLPV4, Nota 2: «Cuando se trate de Análisis de precios unitarios de ítems no previstos, el Interventor aprueba el desglose y precio unitario de cada ítem no previsto, exigiendo la aplicación de los costos correspondientes a insumos y tarifas de la propuesta económica inicial cuando estén contemplados». Además, la cláusula 6 de la minuta menciona «suspensiones y reanudaciones». Para reajuste y mayores cantidades no encontré ninguna regla. Vigencia V4 confirmada en la página de CCE (nodo 29383): «Versión 4 – Vigente desde el 3 de febrero de 2025 hasta la fecha», Resolución 465 de 2024.",
+      "accion": "Inferencia y problema_candidato estrechados: se retira lo de ítems no previstos y suspensión (el paquete sí trae reglas, según el verificador); queda solo mayores cantidades y reajuste, donde el verificador tampoco halló regla. Se crea la advertencia con lo hallado por el verificador.",
+      "antes": {
+        "inferencia": "Inferencia: la minuta V4 no tiene cláusula sobre mayores cantidades de obra, ítems no previstos, reajuste de precios ni suspensión (búsqueda de texto en el anexo y en los 25 archivos del paquete); esas reglas, si existen, las pone cada entidad en su minuta o anexos, y hay que leerlas proceso por proceso.",
+        "problema_candidato": "El documento tipo no fija cómo se pagan ítems no previstos ni si hay reajuste: el contratista ofrece sin saber esas reglas si la entidad no las escribe en su minuta.",
+        "advertencia": null
+      }
+    }
+  ]
+}

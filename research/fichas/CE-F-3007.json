@@ -1,0 +1,57 @@
+{
+  "id": "CE-F-3007",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República",
+  "titulo": "Decreto 1082 de 2015, Único Reglamentario del Sector Administrativo de Planeación Nacional (texto consolidado)",
+  "anio": 2015,
+  "institucion": "Departamento Administrativo de la Función Pública · Gestor Normativo",
+  "url": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=77653",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: art. 2.2.1.1.2.2.6 completo",
+  "localizador": "art. 2.2.1.1.2.2.6 (Adjudicación con oferta única)",
+  "cita": "La Entidad Estatal puede adjudicar el contrato cuando solo se haya presentado una oferta siempre que cumpla con los requisitos habilitantes exigidos y satisfaga los requisitos de los pliegos de condiciones",
+  "afirmacion": "Según el fragmento citado del art. 2.2.1.1.2.2.6, la entidad puede adjudicar con una sola oferta si esta cumple los habilitantes y los requisitos del pliego; la frase del artículo sigue con salvedades que esta cita no recoge (ver advertencia).",
+  "inferencia": null,
+  "eje": 3,
+  "etapa": [
+    "E6"
+  ],
+  "decision": [
+    "D1"
+  ],
+  "modulo": [
+    "M-OFERTA"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A2",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=77653 (texto consolidado) y texto del Decreto 0997 de 2026 en https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/",
+    "vigente": true,
+    "nota": "Se comprobó que el Decreto 0997 de 2026 (arts. 1 a 13) no modifica este artículo; el consolidado de Función Pública aún no trae el 0997."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Norma reglamentaria compilada en el Decreto 1082 de 2015: rige desde su expedición, no desde un aviso de convocatoria."
+  },
+  "lista_cerrada": "L3-02",
+  "problema_candidato": null,
+  "advertencia": "Según el verificador (verificacion_fase2, 2026-10-02), la frase citada sigue: «sin perjuicio de las disposiciones especiales establecidas en la ley y el presente título para la subasta inversa, el concurso de méritos y las reglas particulares para los procesos con convocatoria limitada a las Mipyme». La oferta única no es regla general sin esa salvedad; no está en esta cita.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje3-institucional:1",
+      "veredicto": "no_sostiene",
+      "detalle": "La cita es literal, pero la corta a mitad de la frase. El art. 2.2.1.1.2.2.6 sigue: «sin perjuicio de las disposiciones especiales establecidas en la ley y el presente título para la subasta inversa, el concurso de méritos y las reglas particulares para los procesos con convocatoria limitada a las Mipyme». La afirmación da la oferta única como regla general sin esa salvedad. Quita un matiz de la propia frase, que es justo lo que prohíbe el § 5.1. La vigencia está bien: el Decreto 0997 no toca este artículo.",
+      "accion": "Se estrechó la afirmación al fragmento citado y se llevó a «advertencia» la salvedad que el verificador halló en el resto de la frase; cita sin cambios.",
+      "antes": {
+        "afirmacion": "La entidad puede adjudicar con una sola oferta si esta cumple los habilitantes y los requisitos del pliego.",
+        "advertencia": null
+      }
+    }
+  ]
+}

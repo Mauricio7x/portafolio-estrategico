@@ -1,0 +1,40 @@
+{
+  "id": "CE-F-3242",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Principales prácticas restrictivas a la libre competencia ejecutadas por los oferentes en el marco de procesos de selección de contratistas del Estado",
+  "anio": 2018,
+  "institucion": "Universidad Santo Tomás, Especialización en Contratación Estatal (Tunja) · revista VIeI vol. 13 núm. 2, pp. 11-52 (vía Dialnet)",
+  "url": "https://dialnet.unirioja.es/descarga/articulo/6551384.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: resumen, apartado sobre colusión como delito (pág. 27 del PDF) y casos de la SIC (págs. 29-31); el resto se recorrió por palabras clave",
+  "localizador": "pág. 30 del PDF (impresa 40), apartado 4.1, caso de dos sociedades de ingeniería investigadas por la SIC (Resolución 70225 de 2016)",
+  "cita": "aunque las empresas investigadas eran representadas legalmente por personas distintas, ellas sí poseían el mismo contador público y el mismo revisor fiscal, […] las dos empresas certificaron experiencia dentro del proceso […] con contratos celebrados con las mismas empresas",
+  "afirmacion": "El autor relata que, en un caso que la SIC investigó en 2016, las dos sociedades proponentes, aunque tenían representantes legales distintos, tenían el mismo contador público y el mismo revisor fiscal y certificaron experiencia con contratos celebrados con las mismas empresas.",
+  "inferencia": "Inferencia: el mismo párrafo añade ofertas con similitudes de forma y escritura y pólizas del mismo intermediario en la misma fecha; compartir asesores, formatos o intermediario de seguros con otro oferente del mismo proceso puede bastar para que la entidad denuncie y la SIC abra investigación.",
+  "eje": 3,
+  "etapa": [
+    "E3",
+    "E4",
+    "E5"
+  ],
+  "decision": [
+    "D1",
+    "D3"
+  ],
+  "modulo": [
+    "M-OFERTA"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "No aplica: dato empírico o descripción de práctica, no regla",
+    "vigente": null,
+    "nota": "Casos de la SIC de 2016 relatados por el autor; las resoluciones no se abrieron."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Ofertas de dos proponentes con el mismo contador, revisor fiscal o intermediario de seguros que la entidad denuncia como posible colusión ante la SIC."
+}

@@ -1,0 +1,40 @@
+{
+  "id": "CE-F-6202",
+  "tipo": "academia",
+  "autor": "Una persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Análisis de los factores que generan atraso o abandono en las obras públicas de infraestructura en Bogotá",
+  "anio": 2017,
+  "institucion": "Universidad La Gran Colombia, Facultad de Postgrados, Especialización en Gerencia · trabajo de grado en el repositorio institucional",
+  "url": "https://repository.ugc.edu.co/bitstream/handle/11396/3867/An%C3%A1lisis_abandono_obras_p%C3%BAblicas.pdf?sequence=1",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: tabla de contenido, capítulo II (págs. 34-41) y conclusión (págs. 50-53); el resto por palabras clave",
+  "localizador": "pág. 38 (capítulo II, caso del edificio de una universidad distrital)",
+  "cita": "de $12.441,6 millones de los que se giraron $1.928,6 millones correspondientes a un avance de 16% de ejecución. Una de sus causas por las que la obra se encuentra parada obedece a la falta de licencias de construcción y demás permisos.",
+  "afirmacion": "El autor reporta un contrato de obra de $12.441,6 millones con $1.928,6 millones girados y 16 % de avance, parado, entre otras causas, por falta de licencias de construcción y demás permisos.",
+  "inferencia": "Inferencia: la falta de licencia es una señal verificable antes de ofertar (estudios previos y anexos del proceso) y su ausencia deja al contratista expuesto a suspensión con equipo y personal comprometidos.",
+  "eje": 6,
+  "etapa": [
+    "E0",
+    "E8"
+  ],
+  "decision": [
+    "D1",
+    "D4"
+  ],
+  "modulo": [
+    "M-PLIEGO",
+    "M-ENTIDAD"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "No aplica: dato empírico citado por un trabajo académico",
+    "vigente": null,
+    "nota": "La cifra la toma el autor del informe de la Contraloría de Bogotá de 2016 (25 obras inconclusas); no se abrió ese informe en esta sesión."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Obra contratada sin licencia de construcción ni permisos que queda parada con avance bajo (16 % en el caso citado)."
+}

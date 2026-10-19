@@ -1,0 +1,52 @@
+{
+  "id": "CE-F-5045",
+  "tipo": "concepto_cce",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Concepto C-1733 de 2025 (30 de diciembre de 2025), sobre planeación, modificación y adición de contratos de obra",
+  "anio": 2025,
+  "institucion": "Relatoría de Colombia Compra Eficiente (ficha https://relatoria.colombiacompra.gov.co/conceptos/c-1733-de-2026/ y documento adjunto .docx)",
+  "url": "https://relatoria.colombiacompra.gov.co/wp-content/uploads/2026/01/C-1733.docx",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: el concepto entero (texto extraído del .docx adjunto) y la ficha de la relatoría",
+  "localizador": "apartado de respuesta, numeral iv), párrafo «Lo importante es que…»",
+  "cita": "frente a cualquier incremento del valor inicial del contrato, por cualquiera de los dos supuestos señalados previamente, e independiente del nombre que se le dé al acuerdo […] aplica el límite previsto en el parágrafo del artículo 40 de la Ley 80 de 1993",
+  "afirmacion": "CCE sostiene en el concepto C-1733 que a cualquier incremento del valor inicial del contrato, por cualquiera de los dos supuestos que expone y sin importar el nombre del acuerdo, se le aplica el tope del parágrafo del art. 40 de la Ley 80.",
+  "inferencia": null,
+  "eje": 5,
+  "etapa": [
+    "E8"
+  ],
+  "decision": [
+    "D4"
+  ],
+  "modulo": [
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A5",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://relatoria.colombiacompra.gov.co/wp-content/uploads/2026/01/C-1733.docx",
+    "vigente": true,
+    "nota": "Concepto fechado el 30-dic-2025; interpreta el parágrafo del art. 40 de la Ley 80, cuyo texto vigente se comprobó en el Gestor Normativo el 2-oct-2026."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Concepto de CCE: interpreta normas legales, no fija una fecha de aplicación."
+  },
+  "lista_cerrada": "L5-11",
+  "problema_candidato": "Dos conceptos de CCE se contradicen sobre si las mayores cantidades cuentan para el tope del 50 %: el contratista no sabe si la entidad le reconocerá cantidades por encima de ese límite.",
+  "advertencia": "Los «dos supuestos», definidos en el párrafo anterior del concepto, son las mayores cantidades de ítems previstos y los ítems o actividades nuevos no incluidos en el contrato. Choca con el concepto C-915 de 2026 de la misma Agencia, que dice que las mayores cantidades en contratos a precios unitarios no son adición y no les aplica el tope. La ficha de la relatoría lo rotula «C-1733 de 2026» y el documento, «C-1733 de 2025».",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje5-institucional:4",
+      "veredicto": "correcta",
+      "detalle": "Abrí el .docx de la URL (HTTP 200) y la ficha de la relatoría (200), que rotula «C-1733 de 2026», tiene fecha 30/12/2025 y radicado interno «C-1733 de 2025», como dice la advertencia. La cita es literal en «Razones de la respuesta», numeral iv), párrafo «Lo importante es que…». El mismo párrafo está en el apartado «Respuesta» bajo la pregunta iv), al que solo le falta una coma. Lo omitido con […] es «-otrosí, adición, modificación o cualquier denominación-». Los «dos supuestos» del párrafo anterior son las mayores cantidades de ítems previstos y los ítems nuevos, como dice la advertencia. La afirmación no dice más que la cita. Vigencia: el parágrafo del art. 40 de la Ley 80 se comprobó vigente en el Gestor Normativo (curl con --cacert, HTTP 200); el Decreto 0997 de 2026 no toca una norma legal. Nota menor: el apartado se llama «Razones de la respuesta», no «de respuesta», pero el numeral y el inicio del párrafo bastan para hallarlo."
+    }
+  ]
+}

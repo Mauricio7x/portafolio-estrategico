@@ -1,0 +1,52 @@
+{
+  "id": "CE-F-5040",
+  "tipo": "documento_tipo",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Documentos Tipo de licitación de obra pública de infraestructura de transporte, versión 4 · Anexo 5 Minuta del Contrato (A5_MinutaContrato_TLPV4.docx)",
+  "anio": 2024,
+  "institucion": "Colombia Compra Eficiente (paquete descargable de los documentos tipo vigentes)",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29920/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: el Anexo 5 entero (texto extraído del .docx); además se buscó en los otros 25 archivos del paquete",
+  "localizador": "cláusula 18 (Garantías), cuadro de amparos, fila «Buen manejo y correcta inversión del anticipo»",
+  "cita": "Buen manejo y correcta inversión del anticipo Hasta la liquidación del contrato o hasta la amortización del anticipo [La Entidad debe definir el valor del amparo de acuerdo con el artículo 2.2.1.2.3.1.11. del Decreto 1082 de 2015]",
+  "afirmacion": "La minuta V4 de transporte remite el valor del amparo de buen manejo y correcta inversión del anticipo al art. 2.2.1.2.3.1.11 del Decreto 1082 de 2015.",
+  "inferencia": "Inferencia: en el Decreto 1082 (texto consolidado de Función Pública) el art. 2.2.1.2.3.1.11 regula la suficiencia de la garantía de pago anticipado y el art. 2.2.1.2.3.1.10 la del buen manejo del anticipo; la remisión está equivocada, y aparece igual en las minutas de infraestructura social V2 y de agua potable.",
+  "eje": 5,
+  "etapa": [
+    "E7"
+  ],
+  "decision": [
+    "D2"
+  ],
+  "modulo": [
+    "M-PRECIO",
+    "M-PLIEGO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A3",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29920/",
+    "vigente": true,
+    "nota": "Página oficial de la versión 4 (https://www.colombiacompra.gov.co/documentos-tipo/vigentes/?sector=712&nodo=29383, consultada el 2-oct-2026): «Versión 4 – Vigente desde el 3 de febrero de 2025 hasta la fecha», adoptada por la Resolución 465 de 2024."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": "2025-02-03",
+    "documento_tipo": "Documentos Tipo de licitación de obra pública de infraestructura de transporte, versión 4 (Resolución 465 de 2024), vigente desde el 3-feb-2025"
+  },
+  "lista_cerrada": "L5-08",
+  "problema_candidato": null,
+  "advertencia": "Remisión equivocada en el documento tipo: los dos artículos dicen lo mismo en sustancia (100 % de lo entregado), así que hoy no cambia la cifra, pero divergirán si se reforma uno solo.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje5-institucional:3",
+      "veredicto": "correcta",
+      "detalle": "Cláusula 18, cuadro de amparos: la fila del anticipo aparece literal y remite al art. 2.2.1.2.3.1.11. En Función Pública, el .10 es la «Suficiencia de la garantía de buen manejo y correcta inversión del anticipo» y el .11 la «Suficiencia de la garantía de pago anticipado», ambos al 100 %, así que la inferencia y la advertencia se sostienen. Confirmé la misma remisión en las minutas de infraestructura social V2 y de agua potable. Vigencia V4 confirmada."
+    }
+  ]
+}

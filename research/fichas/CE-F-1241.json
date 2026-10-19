@@ -1,0 +1,53 @@
+{
+  "id": "CE-F-1241",
+  "tipo": "gremio_ong",
+  "autor": "Cámara Colombiana de la Infraestructura (CCI)",
+  "titulo": "En 2025, sector Transporte tuvo la peor ejecución de la historia: menos de la mitad del presupuesto y más de $1 billón sin invertir (cuarta edición de Infraestructura a Fondo)",
+  "anio": 2026,
+  "institucion": "Cámara Colombiana de la Infraestructura, sala de prensa (2 de marzo de 2026)",
+  "url": "https://infraestructura.org.co/cuarto-informe-infra-a-fondo",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa",
+  "localizador": "apartado «¿Qué obras están en riesgo por la baja ejecución del sector Transporte?»",
+  "cita": "En 2025 el sector Transporte comprometió 98% de su presupuesto, pero ejecutó solo 46,3% […] De 62 obras por $1,08 billones, apenas se ejecutaron $230.979 millones - 17,6%, en promedio.",
+  "afirmacion": "La CCI afirma que en 2025 el sector Transporte comprometió el 98 % de su presupuesto pero ejecutó solo el 46,3 %, y que de 62 obras por $1,08 billones apenas se ejecutaron $230.979 millones, cifra que el comunicado presenta como un 17,6 % «en promedio» sin explicar cómo se calcula (ver advertencia).",
+  "inferencia": "Inferencia: la frase previa del comunicado atribuye esas 62 obras a INVÍAS; ejecución presupuestal baja con compromisos altos significa contratos firmados que avanzan y se pagan despacio, y el contratista debe prever plazos de pago y suspensiones al ofertar.",
+  "eje": 1,
+  "etapa": [
+    "E8"
+  ],
+  "decision": [
+    "D4"
+  ],
+  "modulo": [
+    "M-ENTIDAD",
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A7",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://infraestructura.org.co/cuarto-informe-infra-a-fondo",
+    "vigente": null,
+    "nota": "Análisis del gremio con datos del Portal de Transparencia Económica del Ministerio de Hacienda; no se comprobó contra la fuente oficial."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Baja ejecución presupuestal del sector Transporte en 2025: obras contratadas que avanzan y se pagan despacio.",
+  "advertencia": "Según el verificador (verificación fase 2, 2-oct-2026), el comunicado no cuadra sus propias cifras: el título y la frase vecina hablan de «más de $1 billón sin ejecutar», pero de $1,08 billones con $230.979 millones ejecutados quedan unos $0,85 billones; y 230.979 / 1.080.000 da 21,4 %, no 17,6 % (podría ser una media sin ponderar, que no se explica). El informe completo no se pudo contrastar. Ni el «más de $1 billón» del título ni el 17,6 % se usan como frecuencia.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-academico:3",
+      "veredicto": "no_sostiene",
+      "detalle": "Abrí la URL (HTTP 200, fecha «02 Mar, 26»). La cita es literal en el apartado indicado. El problema es que el mismo comunicado contradice la cifra: la frase vecina y el título dicen que INVÍAS cerró «con más de $1 billón sin ejecutar», pero de 62 obras por $1,08 billones con $230.979 millones ejecutados quedan unos $0,85 billones sin ejecutar. Además, 230.979 / 1.080.000 = 21,4 %, no 17,6 %; el «en promedio» podría ser una media sin ponderar, pero no se explica. La ficha es empírica, no trae advertencia, y su título repite «más de $1 billón sin invertir». Según el § 5.3 necesitaba advertencia y no puede usarse como frecuencia. Intenté abrir el informe completo (infraafondo.com/infraestructura-fondo-edicion-4: HTTP 200, pero el contenido no está en el HTML descargado) y no pude contrastarlo.",
+      "accion": "Se estrechó la afirmación para que el 17,6 % quede como cifra que presenta el comunicado y no como porcentaje comprobado, y las inconsistencias internas pasaron a «advertencia», atribuidas al verificador; título (es el de la fuente), cita, inferencia y problema candidato sin cambios.",
+      "antes": {
+        "afirmacion": "La CCI afirma que en 2025 el sector Transporte comprometió el 98 % de su presupuesto pero ejecutó solo el 46,3 %, y que de 62 obras por $1,08 billones apenas se ejecutaron $230.979 millones, un 17,6 % en promedio.",
+        "advertencia": null
+      }
+    }
+  ]
+}

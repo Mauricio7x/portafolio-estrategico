@@ -1,0 +1,43 @@
+{
+  "id": "CE-F-2203",
+  "tipo": "academia",
+  "autor": "Personas naturales (nombres omitidos por la regla 5 del piloto)",
+  "titulo": "La planeación en los contratos de obra pública en Colombia ¿principio, deber o requisito? Obligatoriedad y consecuencias de su inaplicación",
+  "anio": 2019,
+  "institucion": "Universidad de Medellín · Opinión Jurídica 18(37), pp. 93-115 (vía Dialnet)",
+  "url": "https://dialnet.unirioja.es/descarga/articulo/7513032.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: texto completo recorrido; se leyeron con detalle las págs. 106-113",
+  "localizador": "pág. 110 de la revista (pág. 18 del PDF), párrafo «Sin embargo, sobre este tema se registran salvamentos de voto…»",
+  "cita": "asignar a la planeación el carácter de requisito para la validez del contrato genera consecuencias negativas para el contratista a quien, por esta vía, se le asigna la responsabilidad por el desacato de la administración de su deber de planeación.",
+  "afirmacion": "Según los autores, en salvamentos de voto en el Consejo de Estado se sostuvo que tratar la planeación como requisito de validez del contrato traslada al contratista la responsabilidad por el incumplimiento del deber de planeación de la administración.",
+  "inferencia": null,
+  "eje": 2,
+  "etapa": [
+    "E0",
+    "E8"
+  ],
+  "decision": [
+    "D4"
+  ],
+  "modulo": [
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "No se reverificó contra jurisprudencia posterior; fuente académica",
+    "vigente": null,
+    "nota": "Posición minoritaria (salvamentos de voto) reseñada por los autores; no se abrieron los salvamentos."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Doctrina académica que reseña jurisprudencia; no rige desde un aviso concreto."
+  },
+  "lista_cerrada": "L2-09",
+  "problema_candidato": null
+}

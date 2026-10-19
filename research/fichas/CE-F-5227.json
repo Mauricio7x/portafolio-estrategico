@@ -1,0 +1,37 @@
+{
+  "id": "CE-F-5227",
+  "tipo": "organo_control",
+  "autor": "Contraloría General de la República, Contraloría Delegada para el Sector Defensa, Justicia y Seguridad",
+  "titulo": "Informe de auditoría: obras inconclusas, año 2007 a junio de 2011 (CGR-CDDJS No. 051)",
+  "anio": 2011,
+  "institucion": "Contraloría General de la República",
+  "url": "https://www.contraloria.gov.co/documents/20125/344141/OBRAS+INCONCLUSAS.pdf/653bb48c-3d1e-dda5-bd9a-8746296e5201?t=1626413021918&download=true",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: las 14 págs. (PDF obtenido con WebFetch; curl directo dio 403) con pdftotext -layout",
+  "localizador": "pág. 11, Hallazgo No. 6 «Caducidad contrato (D)», Fondo Rotatorio de la Policía",
+  "cita": "el contratista justifico el atraso de la obra debido al régimen de lluvias, hecho que fue desvirtuado por el interventor […] los atrasos se debieron a causas imputables al contratista […] lo que conllevo a que el FORPO declara la caducidad del contrato",
+  "afirmacion": "La Contraloría reporta un contrato de obra en que el contratista justificó el atraso en el régimen de lluvias, el interventor lo desvirtuó y atribuyó los atrasos a causas imputables al contratista, y la entidad declaró la caducidad.",
+  "inferencia": null,
+  "eje": 5,
+  "etapa": [
+    "E8"
+  ],
+  "decision": [
+    "D4"
+  ],
+  "modulo": [
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "el propio informe (auditoría fechada en diciembre de 2011)",
+    "vigente": null,
+    "nota": "Informe de auditoría fechado: registra hallazgos sobre contratos concretos de 2007-2011, no una regla general; no aplica comprobar vigencia normativa."
+  },
+  "regla": null,
+  "lista_cerrada": "L5-02",
+  "problema_candidato": "Justificar el atraso en lluvias u otra causa externa sin prueba no lo excusa: si el interventor lo desvirtúa, el contratista queda expuesto a la caducidad."
+}

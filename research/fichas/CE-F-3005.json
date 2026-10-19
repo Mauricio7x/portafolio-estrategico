@@ -1,0 +1,52 @@
+{
+  "id": "CE-F-3005",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República",
+  "titulo": "Decreto 1082 de 2015, Único Reglamentario del Sector Administrativo de Planeación Nacional (texto consolidado)",
+  "anio": 2015,
+  "institucion": "Departamento Administrativo de la Función Pública · Gestor Normativo",
+  "url": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=77653",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: art. 2.2.1.1.2.2.3 completo",
+  "localizador": "art. 2.2.1.1.2.2.3 (Comité evaluador), inciso 1",
+  "cita": "El comité evaluador debe realizar su labor de manera objetiva, ciñéndose exclusivamente a las reglas contenidas en los pliegos de condiciones. […] En el evento en el cual la Entidad Estatal no acoja la recomendación efectuada por el comité evaluador, debe justificar su decisión.",
+  "afirmacion": "El comité evaluador debe ceñirse exclusivamente a las reglas del pliego y, si la entidad no acoge su recomendación, debe justificar su decisión.",
+  "inferencia": "Inferencia: una observación al informe de evaluación que muestre que el comité aplicó una regla que no está en el pliego tiene apoyo directo en este artículo.",
+  "eje": 3,
+  "etapa": [
+    "E5",
+    "E6"
+  ],
+  "decision": [
+    "D3"
+  ],
+  "modulo": [
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A2",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=77653 (texto consolidado) y texto del Decreto 0997 de 2026 en https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/",
+    "vigente": true,
+    "nota": "Se comprobó que el Decreto 0997 de 2026 (arts. 1 a 13) no modifica este artículo; el consolidado de Función Pública aún no trae el 0997."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Norma reglamentaria compilada en el Decreto 1082 de 2015: rige desde su expedición, no desde un aviso de convocatoria."
+  },
+  "lista_cerrada": "L3-02",
+  "problema_candidato": null,
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje3-institucional:1",
+      "veredicto": "correcta",
+      "detalle": "Las dos frases citadas están literales en el primer inciso del art. 2.2.1.1.2.2.3. La afirmación no dice que el comité sea obligatorio (la norma dice «puede designar»), así que no se pasa de la cita. El Decreto 0997 no toca este artículo."
+    }
+  ]
+}

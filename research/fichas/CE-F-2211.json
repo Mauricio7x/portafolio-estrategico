@@ -1,0 +1,36 @@
+{
+  "id": "CE-F-2211",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Responsabilidad e impactos a las partes por la comisión de errores en la etapa precontractual",
+  "anio": 2022,
+  "institucion": "Universidad Externado de Colombia · Revista Digital de Derecho Administrativo núm. 27, pp. 135-156 (versión HTML de Redalyc)",
+  "url": "https://www.redalyc.org/journal/5038/503872656005/html/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: texto HTML completo con notas al pie",
+  "localizador": "apartado 4, párrafo «La Sala de Consulta y Servicio Civil del Consejo de Estado, mediante concepto 1439…»",
+  "cita": "posterior a la suscripción del contrato la administración se encontró con diseños insuficientes que necesariamente debían ser subsanados, lo que generaría, para ellos, una prórroga y adición que les superaba el monto permitido.",
+  "afirmacion": "El autor reseña un caso estudiado en el concepto 1439 de 2002 de la Sala de Consulta en el que, tras firmar el contrato, la administración halló diseños insuficientes cuya corrección exigía una prórroga y una adición que superaban el monto permitido.",
+  "inferencia": "Inferencia: el mismo párrafo dice que en un contrato a precios unitarios se trató como mayores cantidades de obra por corrección de errores de diseño y no como adición; el diseño insuficiente choca con el tope de adiciones.",
+  "eje": 2,
+  "etapa": [
+    "E8"
+  ],
+  "decision": [
+    "D4"
+  ],
+  "modulo": [
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "No se reverificó contra jurisprudencia posterior; fuente académica",
+    "vigente": null,
+    "nota": "Concepto de 2002 reseñado por el autor; no se abrió."
+  },
+  "lista_cerrada": null,
+  "problema_candidato": "Diseños insuficientes descubiertos después de firmar: la corrección exige obra adicional que puede chocar con el tope legal de adiciones."
+}

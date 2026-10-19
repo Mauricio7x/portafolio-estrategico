@@ -1,0 +1,40 @@
+{
+  "id": "CE-F-5244",
+  "tipo": "academia",
+  "autor": "Autor del artículo (persona natural, nombre omitido por la regla 5)",
+  "titulo": "Análisis de la ejecución de proyectos de obra pública en Colombia",
+  "anio": 2023,
+  "institucion": "Escuela Superior de Administración Pública (ESAP), Revista Polémica, núm. 26",
+  "url": "https://revistas.esap.edu.co/index.php/polemica/article/download/948/719",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: 32 págs. del PDF; leídos introducción, apartado 2.5 «Comparación de los proyectos» y conclusiones (págs. 31-34 de la revista)",
+  "localizador": "pág. 32 de la revista (pág. 26 del PDF), apartado 2.5, frase sobre los mayores plazos de diseño en los contratos que incluían estudios y diseños",
+  "cita": "se debieron a que los plazos planteados en el pliego de condiciones y el contrato no era posible tomar en cuenta imprevistos como la nueva normativa en el caso del proceso del Hospital de la FAC, o los procesos de revisión y aprobación por parte de las entidades de planeación",
+  "afirmacion": "El autor atribuye los mayores plazos de diseño a que con los plazos del pliego y del contrato no era posible tomar en cuenta imprevistos como una nueva normativa (hospital de la FAC) o los procesos de revisión y aprobación de las entidades de planeación.",
+  "inferencia": null,
+  "eje": 5,
+  "etapa": [
+    "E3",
+    "E8"
+  ],
+  "decision": [
+    "D2",
+    "D4"
+  ],
+  "modulo": [
+    "M-OFERTA",
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "el propio documento (fuente académica fechada)",
+    "vigente": null,
+    "nota": "Estudio de cuatro contratos de obra (SENA, FAC, SED y hospital de Mompox) en SECOP; no es normativo, no aplica comprobar vigencia."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "En contratos de diseño y construcción, el plazo de diseño del pliego no alcanza para cambios normativos ni para la revisión y aprobación de las entidades de planeación, y el contrato se prorroga."
+}

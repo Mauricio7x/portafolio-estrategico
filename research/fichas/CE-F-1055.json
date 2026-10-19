@@ -1,0 +1,53 @@
+{
+  "id": "CE-F-1055",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 2195 de 2022",
+  "anio": 2022,
+  "institucion": "Secretaría General del Senado (Leyes desde 1992, texto con notas de vigencia)",
+  "url": "http://www.secretariasenado.gov.co/senado/basedoc/ley_2195_2022.html",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: índice de artículos y arts. 2, 6, 9 y 12",
+  "localizador": "art. 12 (Principio de debida diligencia), numeral 2",
+  "cita": "Identificar el/los beneficiario(s) final(es) y la estructura de titularidad y control de la persona jurídica, estructura sin personería jurídica o similar con la que se celebre el negocio jurídico o el contrato estatal",
+  "afirmacion": "La debida diligencia de la Ley 2195 incluye identificar los beneficiarios finales y la estructura de titularidad y control de la persona jurídica con la que se celebra el contrato estatal.",
+  "inferencia": "Inferencia: el contratista persona jurídica o plural debe tener lista la información de sus beneficiarios finales para la firma.",
+  "eje": 1,
+  "etapa": [
+    "E5",
+    "E7"
+  ],
+  "decision": [
+    "D3"
+  ],
+  "modulo": [
+    "M-LISTA",
+    "M-ENTIDAD"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A1",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "http://www.secretariasenado.gov.co/senado/basedoc/ley_2195_2022.html",
+    "vigente": true,
+    "nota": "Texto de la Secretaría del Senado («Última actualización: 15 de septiembre de 2026»), leído el 2-oct-2026."
+  },
+  "lista_cerrada": "L1-06",
+  "problema_candidato": null,
+  "regla": {
+    "regimen": "Estatuto General y régimen especial (sujetos obligados)",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Norma legal en vigor antes de la fecha de corte; no fija una fecha de aviso."
+  },
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-institucional:4",
+      "veredicto": "correcta",
+      "detalle": "Abrí http://www.secretariasenado.gov.co/senado/basedoc/ley_2195_2022.html (200). En el art. 12, el numeral 2 es literal; continúa con «y tomar medidas razonables para verificar la información reportada». La afirmación no dice más que la cita. Los obligados del encabezado son los que deben implementar un sistema de riesgo de lavado de activos o reportar al RUB, y la afirmación no los generaliza."
+    }
+  ]
+}

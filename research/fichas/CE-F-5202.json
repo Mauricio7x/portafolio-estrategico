@@ -1,0 +1,38 @@
+{
+  "id": "CE-F-5202",
+  "tipo": "academia",
+  "autor": "Autora del artículo (persona natural, nombre omitido por la regla 5)",
+  "titulo": "La liquidación del contrato estatal",
+  "anio": 2009,
+  "institucion": "Universidad Externado de Colombia, Revista Digital de Derecho Administrativo, núm. 1 (vía Redalyc)",
+  "url": "https://www.redalyc.org/pdf/5038/503856222009.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: las 16 págs. con pdftotext -layout",
+  "localizador": "pág. 13 de la revista (pág. 14 del PDF de Redalyc), numeral 3 «Respecto de la procedencia de un proceso judicial o arbitral cuando el contrato está liquidado»",
+  "cita": "1. Si está liquidado bilateralmente, sólo procede el ejercicio de la acción cuando se ha dejado salvedad en el acta de liquidación bilateral. 2. Si está liquidado unilateralmente, solo procede cuando se demanda la nulidad del acto.",
+  "afirmacion": "La autora reporta que, según la Sección Tercera del Consejo de Estado, la acción contractual sobre un contrato liquidado bilateralmente solo procede si se dejó salvedad en el acta, y sobre uno liquidado unilateralmente solo cuando se demanda la nulidad del acto de liquidación.",
+  "inferencia": "Inferencia: para el contratista, la forma de la liquidación fija la estrategia del reclamo; contra una liquidación unilateral hay que pedir la nulidad del acto, no solo el pago. La autora matiza en la pág. 14 que la falta de salvedad «simplemente excluye la prosperidad de la pretensión».",
+  "eje": 5,
+  "etapa": [
+    "E9",
+    "E10"
+  ],
+  "decision": [
+    "D4"
+  ],
+  "modulo": [
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "el propio documento (fuente académica fechada)",
+    "vigente": null,
+    "nota": "Artículo de 2009, anterior al CPACA (Ley 1437 de 2011), que remplazó el art. 136 del C. C. A. que cita; la regla procesal que reporta no se reverificó contra el texto vigente para esta ficha."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Demandar el pago sin atacar el acto de liquidación unilateral, o sin salvedad en la bilateral, hace caer la demanda por forma aunque el crédito sea real."
+}

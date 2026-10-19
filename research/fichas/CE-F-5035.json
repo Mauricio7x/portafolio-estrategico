@@ -1,0 +1,53 @@
+{
+  "id": "CE-F-5035",
+  "tipo": "documento_tipo",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Documentos Tipo de licitación de obra pública de infraestructura de transporte, versión 4 · Anexo 5 Minuta del Contrato (A5_MinutaContrato_TLPV4.docx)",
+  "anio": 2024,
+  "institucion": "Colombia Compra Eficiente (paquete descargable de los documentos tipo vigentes)",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29920/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: el Anexo 5 entero (texto extraído del .docx); además se buscó en los otros 25 archivos del paquete",
+  "localizador": "cláusula 3 (Alcance del objeto), incisos segundo y cuarto",
+  "cita": "El Contratista se obliga para con la Entidad a ejecutar, a los precios cotizados en la propuesta y con sus propios medios […] las cantidades de obra que se detallan en su propuesta económica […] El Contratista y la Entidad contratante asumen de forma obligatoria los riesgos previsibles identificados",
+  "afirmacion": "En la minuta V4 de transporte el contratista se obliga a ejecutar las cantidades de su propuesta a los precios cotizados, y ambas partes asumen de forma obligatoria los riesgos previsibles identificados.",
+  "inferencia": null,
+  "eje": 5,
+  "etapa": [
+    "E3",
+    "E8"
+  ],
+  "decision": [
+    "D2",
+    "D4"
+  ],
+  "modulo": [
+    "M-PRECIO",
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A3",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29920/",
+    "vigente": true,
+    "nota": "Página oficial de la versión 4 (https://www.colombiacompra.gov.co/documentos-tipo/vigentes/?sector=712&nodo=29383, consultada el 2-oct-2026): «Versión 4 – Vigente desde el 3 de febrero de 2025 hasta la fecha», adoptada por la Resolución 465 de 2024."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": "2025-02-03",
+    "documento_tipo": "Documentos Tipo de licitación de obra pública de infraestructura de transporte, versión 4 (Resolución 465 de 2024), vigente desde el 3-feb-2025"
+  },
+  "lista_cerrada": "L5-08",
+  "problema_candidato": null,
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje5-institucional:3",
+      "veredicto": "correcta",
+      "detalle": "Cláusula 3 (Alcance del objeto): los incisos segundo y cuarto, contando la nota entre corchetes como inciso, están literales. La cita se corta en «identificados» sin marcar que sigue «y plasmados en el Pliego de Condiciones en la Matriz 3 - Riesgos, aceptados por el Contratista»: es una omisión menor que no altera la afirmación. Vigencia V4 confirmada."
+    }
+  ]
+}

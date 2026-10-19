@@ -1,0 +1,57 @@
+{
+  "id": "CE-F-1201",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Estatuto General de Contratación Estatal y Régimen Excepcional: Urgencia Manifiesta en Entidades con Régimen Excepcional de Contratación (Empresas Prestadoras de Servicios Públicos Domiciliarios)",
+  "anio": 2014,
+  "institucion": "Universidad de los Andes, Facultad de Derecho (trabajo de grado, repositorio institucional)",
+  "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/ab599128-de91-4127-8063-1d6c39933f35/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: tabla de contenido, resumen y cap. 7 (urgencia manifiesta en los regímenes exceptuados, págs. del PDF 23-25); el resto se recorrió por palabras clave",
+  "localizador": "pág. 24 del PDF, cap. 7, apartado 1 «Empresa de Acueducto y Alcantarillado de Bogotá»",
+  "cita": "las partes deberán levantar un acta donde se consignen los elementos esenciales de las obras a realizar […] El valor de las obras contratadas o sus componentes no podrá ser superior a los precios SAl de la EMPRESA, vigentes a la fecha de ejecución de las mismas",
+  "afirmacion": "El trabajo recoge, entre las reglas de urgencia del manual de contratación de 2012 de la Empresa de Acueducto y Alcantarillado de Bogotá, que en el supuesto que la regla contempla (ver advertencia) las partes deberán levantar un acta con los elementos esenciales de las obras, y que el valor de las obras no podrá superar los precios de la empresa vigentes a la fecha de ejecución.",
+  "inferencia": "Inferencia: en esa empresa de servicios públicos, el precio de una obra de urgencia ejecutada sin contrato escrito lo topa la lista de precios propia de la empresa, no el mercado; el contratista debe conocer esa lista antes de aceptar.",
+  "eje": 1,
+  "etapa": [
+    "E8",
+    "E2"
+  ],
+  "decision": [
+    "D2",
+    "D4"
+  ],
+  "modulo": [
+    "M-ENTIDAD",
+    "M-PRECIO"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/ab599128-de91-4127-8063-1d6c39933f35/content",
+    "vigente": null,
+    "nota": "Transcribe un manual de 2012 (Resolución 0730 de 2012 de la empresa); no se comprobó si ese manual sigue vigente a la fecha de corte."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "En las empresas de servicios públicos de régimen especial la urgencia se rige por su propio manual, que puede topar el precio de una obra ejecutada sin contrato escrito con la lista de precios de la empresa.",
+  "advertencia": "Según el verificador (2-oct-2026): en la fuente el acta solo se levanta «Cuando por la magnitud de la urgencia sea necesario acordar la ejecución inmediata de obras, servicios o suministros sin mediar contrato escrito»; no es regla de toda urgencia. Las reglas van en viñetas introducidas con «Entre las reglas se encuentran», sin comillas: que sean transcripción literal del manual está sin verificar.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-academico:1",
+      "veredicto": "no_sostiene",
+      "detalle": "Abrí la URL de Uniandes (200, 33 págs.). La cita aparece literal en la pág. 24 del PDF, cap. 7, apartado 1 (Acueducto de Bogotá), así que el localizador está bien. La afirmación quita la condición que trae la propia viñeta de la fuente: el acta solo se levanta «Cuando por la magnitud de la urgencia sea necesario acordar la ejecución inmediata de obras, servicios o suministros sin mediar contrato escrito». Dicha sin esa condición («las partes levantan un acta…»), la afirmación vuelve regla de toda urgencia lo que es un caso particular. Además, en la fuente las reglas van en viñetas presentadas con «Entre las reglas se encuentran», sin comillas: llamarlo «transcriben» está sin verificar.",
+      "accion": "Se cambió «Los autores transcriben» por «El trabajo recoge» y se marcó que la regla del acta tiene un supuesto propio (urgencia que obliga a ejecutar sin contrato escrito), que la cita no trae y pasó a advertencia; se estrecharon inferencia y problema_candidato a ese supuesto.",
+      "antes": {
+        "afirmacion": "Los autores transcriben, de las reglas de urgencia del manual de contratación de 2012 de la Empresa de Acueducto y Alcantarillado de Bogotá, que las partes levantan un acta con los elementos esenciales de las obras y que su valor no podrá superar los precios de la empresa vigentes a la fecha de ejecución.",
+        "inferencia": "Inferencia: en una empresa de servicios públicos de régimen especial, el precio de una obra de urgencia lo topa la lista de precios propia de la empresa, no el mercado; el contratista debe conocer esa lista antes de aceptar.",
+        "problema_candidato": "En las empresas de servicios públicos de régimen especial la urgencia se rige por su propio manual, que puede topar el precio de la obra con la lista de precios de la empresa.",
+        "advertencia": null
+      }
+    }
+  ]
+}

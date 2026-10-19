@@ -1,0 +1,51 @@
+{
+  "id": "CE-F-3029",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República",
+  "titulo": "Decreto 1082 de 2015, Único Reglamentario del Sector Administrativo de Planeación Nacional (texto consolidado)",
+  "anio": 2015,
+  "institucion": "Departamento Administrativo de la Función Pública · Gestor Normativo",
+  "url": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=77653",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: art. 2.2.1.2.4.2.9 completo",
+  "localizador": "art. 2.2.1.2.4.2.9 (Puntaje para la promoción de la industria nacional en servicios), inciso 3 (adicionado por el art. 2 del Decreto 680 de 2021)",
+  "cita": "no existan bienes colombianos relevantes […], la Entidad Estatal otorgará el puntaje […] al proponente que vincule el porcentaje mínimo establecido por la Entidad Estatal de empleados o contratistas por prestación de servicios colombianos, que no podrá ser inferior al 40%",
+  "afirmacion": "Cuando, entre otros casos, no hay bienes colombianos relevantes, el puntaje de industria nacional se da al proponente que vincule el porcentaje mínimo de personal colombiano que fije la entidad, no inferior al 40 %.",
+  "inferencia": null,
+  "eje": 3,
+  "etapa": [
+    "E3"
+  ],
+  "decision": [
+    "D3"
+  ],
+  "modulo": [
+    "M-OFERTA"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A2",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=77653 (texto consolidado) y texto del Decreto 0997 de 2026 en https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/",
+    "vigente": true,
+    "nota": "Se comprobó que el Decreto 0997 de 2026 (arts. 1 a 13) no modifica este artículo; el consolidado de Función Pública aún no trae el 0997."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Norma reglamentaria compilada en el Decreto 1082 de 2015: rige desde su expedición, no desde un aviso de convocatoria."
+  },
+  "lista_cerrada": "L3-10",
+  "problema_candidato": null,
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje3-institucional:2",
+      "veredicto": "correcta",
+      "detalle": "El art. 2.2.1.2.4.2.9, inciso 3 (adicionado por el art. 2 del Decreto 680 de 2021), trae la cita literal hasta «que no podrá ser inferior al 40%». La afirmación conserva «entre otros casos» (el otro caso es que no exista oferta nacional en el Registro de Productores). Matiz menor: la afirmación no repite que el artículo rige para Procesos de Contratación de servicios, aunque el localizador lo dice en el título. Tampoco repite la base del 40 % («del total de empleados y contratistas asociados al cumplimiento del contrato»). El 0997 de 2026 no toca este artículo."
+    }
+  ]
+}

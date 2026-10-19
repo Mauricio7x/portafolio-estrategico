@@ -1,0 +1,52 @@
+{
+  "id": "CE-F-5024",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República y Departamento Nacional de Planeación",
+  "titulo": "Decreto 1082 de 2015, Único Reglamentario del Sector Administrativo de Planeación Nacional",
+  "anio": 2015,
+  "institucion": "Departamento Administrativo de la Función Pública, Gestor Normativo (texto consolidado)",
+  "url": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=77653",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: arts. 2.2.1.1.2.4.1 a 2.2.1.1.2.4.3 y 2.2.1.2.3.1.1 a 2.2.1.2.3.2.9 del texto consolidado",
+  "localizador": "art. 2.2.1.1.2.4.2",
+  "cita": "Para determinar el valor histórico actualizado a que se refiere el artículo 4, numeral 8 de la Ley 80 de 1993, se aplicará a la suma debida por cada año de mora el incremento del índice de precios al consumidor entre el 1 de enero y el 31 de diciembre del año anterior.",
+  "afirmacion": "Para el valor histórico actualizado del art. 4, num. 8 de la Ley 80, a la suma debida por cada año de mora se le aplica el incremento del IPC del año anterior.",
+  "inferencia": null,
+  "eje": 5,
+  "etapa": [
+    "E8",
+    "E9"
+  ],
+  "decision": [
+    "D4"
+  ],
+  "modulo": [
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A2",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=77653",
+    "vigente": true,
+    "nota": "Texto consolidado de Función Pública (consultado el 2-oct-2026). Se revisó el índice de artículos que modifica el Decreto 0997 de 2026 (arts. 2.2.1.1.1.4.5, 2.2.1.1.1.5.4, 2.2.1.1.1.5.7, 2.2.1.1.1.6.1, 2.2.1.1.1.6.2, 2.2.1.1.2.1.1, 2.2.1.1.2.1.3, 2.2.1.1.2.2.2, 2.2.1.1.2.2.10, 2.2.1.2.1.2.1, 2.2.1.2.1.2.12, 2.2.1.2.1.5.1): no toca este artículo."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Norma reglamentaria compilada en el Decreto 1082 de 2015: no depende de la fecha de un aviso; no se buscó régimen de transición."
+  },
+  "lista_cerrada": "L5-06",
+  "problema_candidato": null,
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje5-institucional:2",
+      "veredicto": "correcta",
+      "detalle": "La cita está literal en el art. 2.2.1.1.2.4.2. La afirmación es equivalente; omite la regla de fracciones de año sin contradecirla. El Decreto 997/2026 (texto revisado) no lo toca."
+    }
+  ]
+}

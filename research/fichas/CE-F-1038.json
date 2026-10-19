@@ -1,0 +1,57 @@
+{
+  "id": "CE-F-1038",
+  "tipo": "concepto_cce",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Concepto C-642 de 2026 (Decreto 0287 de 2026)",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente (relatoría)",
+  "url": "https://relatoria.colombiacompra.gov.co/conceptos/c-642-de-2026/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: el extracto publicado en la relatoría (descriptores y apartes); no se descargó el archivo íntegro",
+  "localizador": "apartado «DECRETO 0287 DE 2026 ‒ Ejecución contractual ‒ Permanencia de condiciones […]», párrafo tras la cita del parágrafo 3",
+  "cita": "El término «podrá» indica que la entidad tiene discrecionalidad para declarar o no el incumplimiento, valorando la justificación del contratista, el impacto real en el objeto del contrato y la posibilidad de subsanación.",
+  "afirmacion": "CCE lee el «podrá» como discrecionalidad de la entidad para declarar o no el incumplimiento, valorando la justificación del contratista, el impacto real en el objeto del contrato y la posibilidad de subsanación.",
+  "inferencia": null,
+  "eje": 1,
+  "etapa": [
+    "E8"
+  ],
+  "decision": [
+    "D4"
+  ],
+  "modulo": [
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A5",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=273496",
+    "vigente": true,
+    "nota": "Concepto de CCE del 29/05/2026 sobre el Decreto 287, contrastado con el texto del decreto."
+  },
+  "lista_cerrada": "L1-02",
+  "problema_candidato": null,
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": "En procesos con documento tipo, solo cuando CCE incorpore las medidas (art. 2.2.1.2.4.2.7.8; Circular Externa 003 de 2026)",
+    "motivo_null": "El decreto no fija la transición por aviso; CCE (C-642 de 2026) la fija por la fecha de la resolución de apertura: desde el 20 de marzo de 2026."
+  },
+  "advertencia": "Del verificador (verificacion_fase2, 2-oct-2026): la cita no cubre que se trate del parágrafo 3 ni de la reducción del personal con discapacidad (eso sale de la cita vecina). Y la discrecionalidad tiene un límite que la cita no trae: la frase siguiente del mismo párrafo del C-642 dice «Solo queda exonerado quien demuestre fuerza mayor o caso fortuito», y el parágrafo 3 del art. 2.2.1.2.4.2.7.4 limita la justificación a «razones de fuerza mayor o caso fortuito». No cualquier justificación excusa el incumplimiento.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-institucional:3",
+      "veredicto": "no_sostiene",
+      "detalle": "La cita está literal en el C-642, apartado «Ejecución contractual ‒ Permanencia de condiciones [...]», en el párrafo que sigue a la cita del parágrafo 3. Pero la afirmación quita un matiz decisivo. La frase que viene justo después en el mismo párrafo dice: «Solo queda exonerado quien demuestre fuerza mayor o caso fortuito». Y el propio parágrafo 3 del art. 2.2.1.2.4.2.7.4 (comprobado en el Gestor Normativo) limita la justificación a «razones de fuerza mayor o caso fortuito». Presentar la discrecionalidad como «valorando la justificación del contratista», sin ese límite, sugiere que cualquier justificación puede excusar una reducción del personal con discapacidad. Además, «del parágrafo 3» y «por la reducción del personal con discapacidad» salen de la cita vecina, no de la que trae la ficha (§ 5.1: la cita debe abarcarlas).",
+      "antes": {
+        "afirmacion": "CCE lee el «podrá» del parágrafo 3 como discrecionalidad de la entidad para declarar o no el incumplimiento por la reducción del personal con discapacidad, valorando la justificación del contratista.",
+        "advertencia": null
+      },
+      "accion": "Afirmación estrechada a lo que sostiene la cita (sin «del parágrafo 3» ni «por la reducción del personal con discapacidad»; se añaden los otros dos criterios que la cita sí trae). El límite de fuerza mayor o caso fortuito y lo no cubierto van a la advertencia, atribuidos al verificador. Problema_candidato e inferencia ya eran null: sin cambio."
+    }
+  ]
+}

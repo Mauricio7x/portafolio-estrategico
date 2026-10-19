@@ -1,0 +1,38 @@
+{
+  "id": "CE-F-3233",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Análisis de requisitos habilitantes de capacidad financiera, que no garantizan la pluralidad de oferentes, en las licitaciones públicas",
+  "anio": 2019,
+  "institucion": "Universidad Nacional de Colombia, Facultad de Minas (Medellín), Maestría en Ingeniería Administrativa (tesis)",
+  "url": "https://bffrepositorio.unal.edu.co/server/api/core/bitstreams/78e582a7-d51d-40a2-a691-7fae3a3bfd75/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: resumen, capítulo 4 (resultados 2017, págs. 79-90 del PDF) y conclusiones (págs. 128-129); el resto se recorrió por palabras clave",
+  "localizador": "pág. 129 del PDF, «Conclusiones», párrafo sobre las observaciones de los proponentes",
+  "cita": "teniendo como variable en el modelo el número de observaciones totales presentando un comportamiento directamente proporcional al número de proponentes hábiles, es decir, por cada unidad que aumente el número de observaciones aumenta 0,186 la probabilidad de pluralidad de oferentes.",
+  "afirmacion": "La autora reporta que en su modelo el número de observaciones totales tiene un comportamiento directamente proporcional al número de proponentes hábiles: por cada unidad que aumente el número de observaciones, la probabilidad de pluralidad de oferentes aumenta 0,186.",
+  "inferencia": "Inferencia: observar los indicadores financieros del proyecto de pliego se asocia con procesos más abiertos; la fuente mide asociación, no que la observación cause el cambio.",
+  "eje": 3,
+  "etapa": [
+    "E1"
+  ],
+  "decision": [
+    "D1"
+  ],
+  "modulo": [
+    "M-PLIEGO"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "No aplica: dato empírico o descripción de práctica, no regla",
+    "vigente": null,
+    "nota": "Licitaciones de 2017-2018 del segmento «Terrenos, Edificios, Estructuras y Vías» de SECOP, anteriores a los documentos tipo de obra, que hoy fijan los indicadores financieros en las modalidades que cubren."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": null,
+  "advertencia": "La tesis da varias cifras de procesos sin pluralidad según el estado y el corte (80,5 %, 78 %, 90 %, 68 %): la frecuencia depende del universo y no se usa una sola."
+}

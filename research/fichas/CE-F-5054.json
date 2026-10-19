@@ -1,0 +1,52 @@
+{
+  "id": "CE-F-5054",
+  "tipo": "jurisprudencia",
+  "autor": "Consejo de Estado, Sección Tercera, Subsección A",
+  "titulo": "Sentencia del 4 de abril de 2025, radicación 76001-23-33-000-2016-00265-02 (72.101), controversias contractuales",
+  "anio": 2025,
+  "institucion": "Consejo de Estado (PDF publicado en la relatoría de Colombia Compra Eficiente, https://relatoria.colombiacompra.gov.co/providencias/76001233300020160026502-de-2025/)",
+  "url": "https://relatoria.colombiacompra.gov.co/wp-content/uploads/2025/04/43_76001233300020160026502-3.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: extracto de la relatoría (págs. 1-2 del PDF), consideraciones sobre mayores cantidades (págs. 11-13 del PDF) y parte resolutiva",
+  "localizador": "párr. 53, pág. 11 de la sentencia (pág. 13 del PDF)",
+  "cita": "la procedencia del reconocimiento dinerario por mayores cantidades de obra se supedita a que éstas hayan sido autorizadas por el ente estatal (quien, a ese efecto, puede actuar por conducto del interventor), y su materialización debe estar demostrada",
+  "afirmacion": "El Consejo de Estado exige, para pagar mayores cantidades de obra, que la entidad las haya autorizado (puede hacerlo por medio del interventor) y que su ejecución esté probada.",
+  "inferencia": "Inferencia: el mismo párrafo concluye que el acta de recibo firmada solo por el interventor, sin soportes, no basta para hacer oponible el mayor valor a la entidad.",
+  "eje": 5,
+  "etapa": [
+    "E8",
+    "E10"
+  ],
+  "decision": [
+    "D4"
+  ],
+  "modulo": [
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A4",
+  "unificacion": false,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://relatoria.colombiacompra.gov.co/wp-content/uploads/2025/04/43_76001233300020160026502-3.pdf",
+    "vigente": true,
+    "nota": "Sentencia de segunda instancia fechada el 4-abr-2025; no se buscó providencia posterior que la contradiga."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Regla de origen jurisprudencial: no depende de la fecha de un aviso."
+  },
+  "lista_cerrada": "L5-10",
+  "problema_candidato": "El contratista que ejecuta mayores cantidades sin autorización documentada ni soportes de medición pierde el reclamo, aunque el interventor le firme el acta de recibo.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje5-institucional:4",
+      "veredicto": "correcta",
+      "detalle": "La cita es literal en el párr. 53, pág. 11 de la sentencia (pág. 13 del PDF). La afirmación es fiel a la cita, incluido el paréntesis sobre el interventor. La inferencia va rotulada y la sostiene el mismo párrafo: «la suscripción por su parte del acta de recibo, sin respaldo en lo previamente acontecido, no es suficiente para hacer oponible al contratante el reconocimiento de mayores valores»."
+    }
+  ]
+}

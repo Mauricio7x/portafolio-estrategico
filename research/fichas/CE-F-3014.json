@@ -1,0 +1,60 @@
+{
+  "id": "CE-F-3014",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República",
+  "titulo": "Decreto 1082 de 2015, Único Reglamentario del Sector Administrativo de Planeación Nacional (texto consolidado)",
+  "anio": 2015,
+  "institucion": "Departamento Administrativo de la Función Pública · Gestor Normativo",
+  "url": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=77653",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: art. 2.2.1.2.6.1.4 completo",
+  "localizador": "art. 2.2.1.2.6.1.4 (Inalterabilidad de los Documentos Tipo)",
+  "cita": "Las entidades estatales contratantes no podrán incluir o modificar dentro de los Documentos del Proceso las condiciones habilitantes, los factores técnicos y económicos de escogencia y los sistemas de ponderación distintos a los señalados en los Documentos Tipo.",
+  "afirmacion": "El art. 2.2.1.2.6.1.4 prohíbe a las entidades incluir o modificar en los Documentos del Proceso habilitantes, factores técnicos y económicos de escogencia y sistemas de ponderación distintos a los de los Documentos Tipo; la cita no dice a qué procesos ni a qué documentos tipo se aplica (ver advertencia).",
+  "inferencia": "Inferencia: en los procesos a los que se aplica este artículo, un habilitante o un factor de puntaje que no esté en el documento tipo es materia de observación al proyecto de pliego.",
+  "eje": 3,
+  "etapa": [
+    "E1",
+    "E2"
+  ],
+  "decision": [
+    "D3"
+  ],
+  "modulo": [
+    "M-PLIEGO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A2",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=77653 (texto consolidado) y texto del Decreto 0997 de 2026 en https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/",
+    "vigente": true,
+    "nota": "Se comprobó que el Decreto 0997 de 2026 (arts. 1 a 13) no modifica este artículo; el consolidado de Función Pública aún no trae el 0997."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Norma reglamentaria compilada en el Decreto 1082 de 2015: rige desde su expedición, no desde un aviso de convocatoria."
+  },
+  "lista_cerrada": "L3-06",
+  "problema_candidato": "En los procesos a los que se aplica este artículo, entidades que agregan requisitos a un pliego de documento tipo (experiencia o indicadores distintos) cierran el proceso a contratantes que sí cumplen el documento tipo; el contratista debe observarlo a tiempo.",
+  "advertencia": "Según el verificador (verificacion_fase2, 2026-10-02), el artículo está en la Subsección 1 de la Sección 6, que según su art. 2.2.1.2.6.1.1 se limita a «los procesos de selección de licitación de obra pública de infraestructura de transporte»; no vale para cualquier documento tipo. El art. 2.2.1.2.6.3.4 (mínima cuantía de transporte) solo prohíbe cambiar «condiciones habilitantes y factores económicos de escogencia», y en la Subsección 2 (menor cuantía) el verificador no halló un artículo de inalterabilidad.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje3-institucional:1",
+      "veredicto": "no_sostiene",
+      "detalle": "La cita del art. 2.2.1.2.6.1.4 es literal, pero ese artículo está en la Subsección 1 de la Sección 6. Esa subsección se limita, según su art. 2.2.1.2.6.1.1, a «los procesos de selección de licitación de obra pública de infraestructura de transporte». La afirmación lo extiende a cualquier documento tipo («los documentos tipo»), y el mismo decreto lo contradice. El art. 2.2.1.2.6.3.4, de mínima cuantía de transporte, solo prohíbe cambiar «condiciones habilitantes y factores económicos de escogencia»; no menciona factores técnicos ni sistemas de ponderación. Además, en la Subsección 2 (menor cuantía) no encontré un artículo de inalterabilidad. Le falta el alcance a la afirmación. La vigencia frente al Decreto 0997 está bien.",
+      "accion": "Se estrechó la afirmación al texto citado sin extenderla a todo documento tipo; inferencia y problema_candidato se acotaron a los procesos a los que aplica el artículo; el alcance hallado por el verificador va en «advertencia»; cita sin cambios.",
+      "antes": {
+        "afirmacion": "Las entidades no pueden incluir ni modificar habilitantes, factores de escogencia ni sistemas de ponderación distintos a los de los documentos tipo.",
+        "inferencia": "Inferencia: un habilitante o un factor de puntaje que no esté en el documento tipo es materia de observación al proyecto de pliego.",
+        "problema_candidato": "Entidades que agregan requisitos a un pliego de documento tipo (experiencia o indicadores distintos) cierran el proceso a contratantes que sí cumplen el documento tipo; el contratista debe observarlo a tiempo.",
+        "advertencia": null
+      }
+    }
+  ]
+}

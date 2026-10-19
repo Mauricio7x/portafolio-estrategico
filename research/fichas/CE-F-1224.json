@@ -1,0 +1,56 @@
+{
+  "id": "CE-F-1224",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Afectación en contratación y función pública por elecciones atípicas en los entes territoriales en vigencia de la ley de garantías",
+  "anio": 2022,
+  "institucion": "Universidad Militar Nueva Granada, Facultad de Derecho, Maestría en Derecho Administrativo (trabajo de grado, repositorio institucional)",
+  "url": "https://repository.umng.edu.co/server/api/core/bitstreams/9933f72f-2711-4845-9b5d-39e2ccb48cdf/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: resumen, planteamiento del problema (págs. 4-7) y conclusiones (págs. 49-50); el marco teórico se recorrió",
+  "localizador": "pág. 49 del PDF, apartado 8 «Conclusiones»",
+  "cita": "se encuentra afectación en la contratación y por ende en la ejecución de la misma, en los entes territoriales, toda vez que no pueden disponer libremente de la designación de su gabinete.",
+  "afirmacion": "La autora concluye que se encuentra afectación en la contratación y en su ejecución en los entes territoriales, porque estos no pueden disponer libremente de la designación de su gabinete.",
+  "inferencia": "Inferencia: en un ente territorial que no puede designar libremente su gabinete, el contratista puede encontrar procesos frenados o lentos por falta de equipo directivo.",
+  "eje": 1,
+  "etapa": [
+    "E0",
+    "E8"
+  ],
+  "decision": [
+    "D1",
+    "D4"
+  ],
+  "modulo": [
+    "M-ENTIDAD"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://repository.umng.edu.co/server/api/core/bitstreams/9933f72f-2711-4845-9b5d-39e2ccb48cdf/content",
+    "vigente": null,
+    "nota": "Estudio cualitativo de 2022; caso de Yopal entre otros."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Entes territoriales que no pueden designar libremente su gabinete ven afectada la contratación y su ejecución.",
+  "advertencia": "Según el verificador (verificar:eje1-academico:2, 2026-10-02): que el estudio usa método cualitativo con entrevistas viene del Resumen, y que la afectación se da cuando las elecciones atípicas coinciden con la ley de garantías viene del párrafo siguiente de las conclusiones; ninguno de los dos datos está en la cita. Ambos son ciertos en el documento, pero necesitan su propia cita o su propia ficha.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-academico:2",
+      "veredicto": "no_sostiene",
+      "detalle": "Abrí el PDF de UMNG (200, 57 págs.). La cita está literal en la pág. 49 del PDF, '8 Conclusiones'. La afirmación dice más que la cita en dos puntos. El primero: 'con método cualitativo basado en entrevistas' viene del Resumen ('se apoya en el método cualitativo… mediante entrevistas'), no de la cita. El segundo: 'cuando las elecciones atípicas coinciden con la ley de garantías' viene del párrafo siguiente de las conclusiones. Ambos datos son ciertos en el documento, pero el §5.1 exige que la cita los abarque, con […], o que se escriba otra ficha.",
+      "accion": "Afirmación estrechada a la cita (se quitaron el método y la condición de coincidencia con la ley de garantías); inferencia y problema_candidato estrechados porque se apoyaban en esa condición; advertencia con lo que la cita no cubre.",
+      "antes": {
+        "afirmacion": "La autora concluye, con método cualitativo basado en entrevistas, que cuando las elecciones atípicas coinciden con la ley de garantías hay afectación en la contratación y en su ejecución en los entes territoriales, porque el mandatario no puede designar libremente su gabinete.",
+        "inferencia": "Inferencia: en un municipio con elecciones atípicas durante la ley de garantías, el contratista puede encontrar procesos frenados o lentos por falta de equipo directivo.",
+        "problema_candidato": "Elecciones atípicas que coinciden con la ley de garantías frenan la contratación y su ejecución en el ente territorial.",
+        "advertencia": null
+      }
+    }
+  ]
+}

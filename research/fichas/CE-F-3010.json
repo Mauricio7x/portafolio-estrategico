@@ -1,0 +1,53 @@
+{
+  "id": "CE-F-3010",
+  "tipo": "documento_tipo",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Documentos Tipo de selección abreviada de menor cuantía de obra pública de infraestructura de transporte, versión 3 · Documento Base (DocBase_MenorC_TMenCV3.docx)",
+  "anio": 2024,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29950/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: del Documento Base se leyeron las secciones 1.6, 2.3 y 2.4 y la tabla de contenido",
+  "localizador": "sección 2.3 (Manifestación de interés), párrafo sobre la condición de procedibilidad",
+  "cita": "La manifestación de interés constituye una condición de procedibilidad para participar, so pena de rechazo de la oferta; por lo tanto, solo puede presentar oferta quien manifestó interés, y debe hacerlo en la forma individual o como proponente plural, según como se haya inscrito.",
+  "afirmacion": "En la menor cuantía de obra de transporte por documento tipo solo puede ofertar quien manifestó interés, y en la misma forma (individual o plural) en que se inscribió; si no, la oferta se rechaza.",
+  "inferencia": "Inferencia: el párrafo siguiente permite reducir los integrantes del plural inscrito, pero no agregar otros ni que oferte uno solo; el socio se decide antes de manifestar interés.",
+  "eje": 3,
+  "etapa": [
+    "E4"
+  ],
+  "decision": [
+    "D1",
+    "D3"
+  ],
+  "modulo": [
+    "M-PLURAL",
+    "M-OFERTA"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A3",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.colombiacompra.gov.co/documentos-tipo/vigentes/?sector=712&nodo=29393 («Versión: 3 · Desde: 3 de febrero de 2025») y https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo",
+    "vigente": true,
+    "nota": "Por el art. 14, par. 3, del Decreto 0997 de 2026, los procesos con documento tipo siguen este texto hasta que CCE expida nuevas versiones."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": "2025-02-03",
+    "documento_tipo": "Documentos Tipo de selección abreviada de menor cuantía de obra pública de infraestructura de transporte, versión 3 (la página del nodo cita la Resolución 463 de 2024), vigente desde el 3-feb-2025",
+    "nota_desde_aviso": "Fecha de entrada en vigencia de la versión según el control de versiones de CCE; no se leyó la resolución de adopción para comprobar si se cuenta desde la publicación del aviso o del pliego."
+  },
+  "lista_cerrada": "L3-04",
+  "problema_candidato": "El contratista que manifiesta interés solo y luego decide ir en consorcio (o al revés) en una menor cuantía de transporte ve su oferta rechazada.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje3-institucional:1",
+      "veredicto": "correcta",
+      "detalle": "Bajé descarga/29950 (HTTP 200): es el zip 05DT_Transp_MenorCuantia_TMenC_V3-1.zip. Dentro, el archivo DocBase_MenorC_TMenCV3.docx trae la sección 2.3, Manifestación de interés, con el párrafo literal. La frase siguiente permite reducir integrantes si la oferta no la presenta un solo miembro, y eso no contradice la afirmación. Sobre la versión: la página de vigentes (nodo 29393) dice «Versión: 3 · Desde: 3 de febrero de 2025» y el control de versiones de CCE marca la V.3 de menor cuantía de transporte como «Versión vigente» desde el 03/02/2025, adoptada por la Resolución 463 de 2024. La nota sobre el par. 3 del art. 14 del Decreto 0997 es correcta."
+    }
+  ]
+}

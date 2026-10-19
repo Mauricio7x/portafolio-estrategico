@@ -1,0 +1,39 @@
+{
+  "id": "CE-F-6207",
+  "tipo": "academia",
+  "autor": "Cuatro personas naturales (nombres omitidos por la regla 5 del piloto)",
+  "titulo": "Análisis de la contratación estatal en proyectos de infraestructura vial: caso Valle del Cauca 2010-2015",
+  "anio": 2017,
+  "institucion": "Fundación Universitaria Católica del Norte, Revista Virtual Universidad Católica del Norte núm. 51, págs. 2-22 · Redalyc",
+  "url": "https://www.redalyc.org/pdf/1942/194252398002.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: resumen, metodología (págs. 6-8), indicadores financieros (págs. 11-13), experiencia y maquinaria (págs. 17-19) y tablas de personal",
+  "localizador": "pág. 12 (resultados, indicador de endeudamiento)",
+  "cita": "El único dato atípico encontrado corresponde al municipio de El Dovio, en donde se requería un endeudamiento menor o igual al 1 %; esto es difícilmente cumplible porque, en muchas ocasiones, las empresas constructoras se ven obligadas a adquirir créditos",
+  "afirmacion": "Los autores encontraron un pliego municipal que exigía endeudamiento menor o igual al 1 %, que califican de difícilmente cumplible porque las constructoras a menudo se ven obligadas a adquirir créditos.",
+  "inferencia": "Inferencia: un indicador financiero muy alejado del promedio del mismo tipo de pliegos (los autores reportan un promedio de endeudamiento del 48 % en esa misma página) es una señal observable de requisito restrictivo.",
+  "eje": 6,
+  "etapa": [
+    "E1",
+    "E2"
+  ],
+  "decision": [
+    "D1",
+    "D3"
+  ],
+  "modulo": [
+    "M-PLIEGO"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "No aplica: dato empírico de pliegos de 2010-2015",
+    "vigente": null,
+    "nota": "Muestra de 50 de 132 procesos viales de cuantía igual o superior a $350.000.000 en el Valle del Cauca, 2010-2015, anteriores a los documentos tipo obligatorios de obra (Ley 2022 de 2020); hoy los documentos tipo fijan esos requisitos donde aplican."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Indicador financiero inalcanzable para el sector (endeudamiento ≤ 1 % en un pliego municipal) que deja por fuera a casi cualquier constructora."
+}

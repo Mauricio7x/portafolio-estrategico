@@ -1,0 +1,41 @@
+{
+  "id": "CE-F-5256",
+  "tipo": "academia",
+  "autor": "Autora del artículo (persona natural, nombre omitido por la regla 5)",
+  "titulo": "La fiducia en el manejo de recursos de anticipos en los contratos estatales",
+  "anio": 2014,
+  "institucion": "Universidad de los Andes, Revista de Derecho Privado, núm. 52 (vía Redalyc)",
+  "url": "https://www.redalyc.org/pdf/3600/360033223012.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: 29 págs. a dos columnas; leídos el resumen, el apartado sobre el art. 91 de la Ley 1474 de 2011 (pág. 12 del PDF) y las conclusiones (págs. 25-26 del PDF); las columnas se extrajeron por separado con pdftotext -x/-W",
+  "localizador": "págs. 25-26 del PDF, III. Conclusiones (cambio de columna y de página entre «se» y «han»)",
+  "cita": "en especial la Sociedad Colombiana de Ingenieros (2012), se […] han manifestado en contra de la administración de los anticipos en fiducias […] la evidencia indica que se han aumentado significativamente los costos financieros y los tiempos de trámite administrativo",
+  "afirmacion": "La autora reporta que la Sociedad Colombiana de Ingenieros (2012) se ha manifestado en contra de la administración de los anticipos en fiducias y que, según esa posición, la evidencia indica que han aumentado significativamente los costos financieros y los tiempos de trámite administrativo.",
+  "inferencia": null,
+  "eje": 5,
+  "etapa": [
+    "E7",
+    "E8"
+  ],
+  "decision": [
+    "D2",
+    "D4"
+  ],
+  "modulo": [
+    "M-PRECIO",
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "el propio documento (fuente académica fechada)",
+    "vigente": null,
+    "nota": "Artículo de 2014 sobre el art. 91 de la Ley 1474 de 2011; no se comprobó contra el texto vigente para esta ficha."
+  },
+  "regla": null,
+  "lista_cerrada": "L5-04",
+  "problema_candidato": "La fiducia obligatoria del anticipo le suma al contratista costos financieros y tiempos de trámite para cada desembolso, que retrasan el arranque de la obra.",
+  "advertencia": "Es una posición de una organización gremial reportada por la autora, sin cifra."
+}

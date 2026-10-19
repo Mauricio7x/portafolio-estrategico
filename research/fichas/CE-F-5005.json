@@ -1,0 +1,52 @@
+{
+  "id": "CE-F-5005",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 80 de 1993, Estatuto General de Contratación de la Administración Pública",
+  "anio": 1993,
+  "institucion": "Departamento Administrativo de la Función Pública, Gestor Normativo (texto con notas de vigencia)",
+  "url": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=304",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: arts. 4, 5, 14 a 18, 27, 40 y 60 del texto del Gestor Normativo, con sus notas de modificación",
+  "localizador": "art. 14, numeral 2 (modificado por el art. 52 de la Ley 2195 de 2022), incisos primero y tercero",
+  "cita": "Pactaran las cláusulas excepcionales al derecho común de terminación, interpretación y modificación unilaterales, de sometimiento a las leyes nacionales y de caducidad en […] los contratos de obra. […] las cláusulas excepcionales se entienden pactadas aun cuando no se consignen expresamente.",
+  "afirmacion": "En los contratos de obra se pactan las cláusulas excepcionales (terminación, interpretación y modificación unilaterales, sometimiento a leyes nacionales y caducidad), y se entienden pactadas aunque el contrato no las escriba.",
+  "inferencia": null,
+  "eje": 5,
+  "etapa": [
+    "E7",
+    "E8"
+  ],
+  "decision": [
+    "D4"
+  ],
+  "modulo": [
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A1",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=304",
+    "vigente": true,
+    "nota": "Texto del Gestor Normativo de Función Pública consultado el 2-oct-2026, con las notas de modificación que trae el propio artículo."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Norma legal: rige para los contratos del Estatuto General sin depender de la fecha de un aviso; no se buscó régimen de transición para contratos anteriores."
+  },
+  "lista_cerrada": "L5-02",
+  "problema_candidato": null,
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje5-institucional:1",
+      "veredicto": "correcta",
+      "detalle": "Misma página. El art. 14, numeral 2, lleva la nota «(Numeral modificado por el Art. 52 de la Ley 2195 de 2022)». El primer inciso dice «Pactaran las cláusulas excepcionales [...] y de caducidad en los contratos que tengan por objeto [...] así como en los contratos de obra». El tercero dice «En los casos previstos en este numeral, las cláusulas excepcionales se entienden pactadas aun cuando no se consignen expresamente». La cita es literal, con las omisiones marcadas, y la afirmación coincide. La vigencia declarada, con el texto reformado por la Ley 2195 de 2022, es la correcta."
+    }
+  ]
+}

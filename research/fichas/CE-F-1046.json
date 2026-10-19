@@ -1,0 +1,59 @@
+{
+  "id": "CE-F-1046",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 2069 de 2020",
+  "anio": 2020,
+  "institucion": "Secretaría General del Senado (Leyes desde 1992, texto con notas de vigencia)",
+  "url": "http://www.secretariasenado.gov.co/senado/basedoc/ley_2069_2020.html",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: arts. 30 a 36",
+  "localizador": "art. 34 (modifica el art. 12 de la Ley 1150 de 2007), inciso 1",
+  "cita": "adopten en beneficio de las Mipyme, convocatorias limitadas a estas en las que, previo a la Resolución de apertura del proceso respectivo, se haya manifestado el interés de por lo menos dos (2) Mipyme.",
+  "afirmacion": "Una de las condiciones de las convocatorias limitadas a Mipyme es que, antes de la resolución de apertura, por lo menos dos Mipyme hayan manifestado interés.",
+  "inferencia": null,
+  "eje": 1,
+  "etapa": [
+    "E1"
+  ],
+  "decision": [
+    "D1"
+  ],
+  "modulo": [
+    "M-INGESTA",
+    "M-PLIEGO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A1",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "http://www.secretariasenado.gov.co/senado/basedoc/ley_2069_2020.html",
+    "vigente": true,
+    "nota": "Texto de la Secretaría del Senado («Última actualización: 15 de septiembre de 2026»), leído el 2-oct-2026."
+  },
+  "lista_cerrada": "L1-07",
+  "problema_candidato": "Para que un proceso de obra se limite a Mipyme, por lo menos dos Mipyme deben manifestar interés antes de la apertura; esa manifestación sola no basta para dejar por fuera a una gran empresa (ver advertencia).",
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "La fuente no fija una fecha de aviso desde la que rija."
+  },
+  "advertencia": "Según el verificador (fase 2, 2-oct-2026): el mismo inciso dice que «el Gobierno Nacional definirá las condiciones y los montos de acuerdo con los compromisos internacionales vigentes», y el art. 2.2.1.2.4.2.2 del Decreto 1082 (modificado por el Decreto 1860 de 2021) exige que concurran el valor menor a US$125.000 y las solicitudes de al menos dos Mipyme recibidas un día hábil antes de la apertura; la manifestación de interés es condición necesaria, no suficiente. No se revisó si el Decreto 0997 de 2026 toca ese reglamento.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-institucional:4",
+      "veredicto": "no_sostiene",
+      "detalle": "La cita aparece literal en el art. 34 de la Ley 2069 (Senado, 200), que es el nuevo art. 12 de la Ley 1150, inciso 1. El mismo inciso empieza diciendo que «el Gobierno Nacional definirá las condiciones y los montos de acuerdo con los compromisos internacionales vigentes». La afirmación («proceden cuando […] al menos dos Mipyme han manifestado interés») convierte una condición necesaria en suficiente y quita ese matiz. El reglamento, art. 2.2.1.2.4.2.2 del Decreto 1082 (consolidado de Función Pública en d1082.txt, modificado por el Decreto 1860 de 2021), exige que «concurran» las dos cosas: valor menor a US$125.000 y solicitudes de al menos dos Mipyme recibidas un día hábil antes de la apertura. El problema_candidato hereda el error: deja fuera a una gran empresa sin tener en cuenta el tope de cuantía. Además, el Decreto 0997 de 2026 podría tocar ese reglamento y no se revisó.",
+      "accion": "afirmación estrechada a lo que sostiene la cita (y el problema_candidato); lo que la cita no cubre va en «advertencia», atribuido al verificador",
+      "antes": {
+        "afirmacion": "Las convocatorias limitadas a Mipyme proceden cuando, antes de la resolución de apertura, al menos dos Mipyme han manifestado interés.",
+        "problema_candidato": "Una gran empresa de obra queda por fuera de un proceso limitado a Mipyme si dos Mipyme manifiestan interés a tiempo; una Mipyme que no manifiesta interés antes de la apertura pierde la limitación.",
+        "advertencia": null
+      }
+    }
+  ]
+}

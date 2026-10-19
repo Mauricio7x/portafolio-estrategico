@@ -1,0 +1,37 @@
+{
+  "id": "CE-F-5231",
+  "tipo": "academia",
+  "autor": "Autora de la tesis (persona natural, nombre omitido por la regla 5)",
+  "titulo": "Diagnóstico de la contratación de obra pública celebrada y ejecutada con recursos de regalías: Tarazá, Antioquia, vigencia 2010",
+  "anio": 2014,
+  "institucion": "Universidad Nacional de Colombia, sede Medellín, tesis de maestría",
+  "url": "https://bffrepositorio.unal.edu.co/server/api/core/bitstreams/b3f438b1-e50b-4250-925d-b84de3736ddb/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: 335 págs.; leídos la contextualización (págs. 4-7) y el capítulo 10 de conclusiones (págs. 308-312)",
+  "localizador": "págs. 310-311 del PDF, cap. 10 Conclusiones",
+  "cita": "La parálisis de trabajos por suspensiones, motivadas en la falta de estudios, genera, no solamente retraso en la satisfacción de las necesidades colectivas, sino el pago de mayor valor al contratista.",
+  "afirmacion": "La autora concluye que la parálisis de los trabajos por suspensiones motivadas en la falta de estudios genera retraso y el pago de mayor valor al contratista.",
+  "inferencia": null,
+  "eje": 5,
+  "etapa": [
+    "E8"
+  ],
+  "decision": [
+    "D4"
+  ],
+  "modulo": [
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "el propio documento (fuente académica fechada)",
+    "vigente": null,
+    "nota": "Estudio de caso de 22 expedientes de obra de 2010; las normas que cita (Decreto 2474 de 2008, Decreto 4828 de 2008, Decreto 734 de 2012) están derogadas y compiladas o remplazadas por el Decreto 1082 de 2015; lo que sostiene es el hecho medido, no la regla."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Las suspensiones de obra causadas por estudios incompletos de la entidad paralizan los trabajos y terminan en reclamos de mayor valor del contratista."
+}

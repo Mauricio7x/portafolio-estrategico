@@ -1,0 +1,60 @@
+{
+  "id": "CE-F-1057",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 996 de 2005",
+  "anio": 2005,
+  "institucion": "Secretaría General del Senado (Leyes desde 1992, texto con notas de vigencia)",
+  "url": "http://www.secretariasenado.gov.co/senado/basedoc/ley_0996_2005.html",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: arts. 32, 33 y 38; las notas de vigencia no se despliegan en el HTML descargado",
+  "localizador": "art. 33 (Restricciones a la contratación pública), inciso 1",
+  "cita": "Durante los cuatro (4) meses anteriores a la elección presidencial y hasta la realización de la elección en la segunda vuelta, si fuere el caso, queda prohibida la contratación directa por parte de todos los entes del Estado.",
+  "afirmacion": "El inciso 1 del art. 33 de la Ley de Garantías prohíbe la contratación directa por parte de los entes del Estado durante los cuatro meses anteriores a la elección presidencial y hasta la segunda vuelta; el inciso 2 fija excepciones (ver advertencia).",
+  "inferencia": "Inferencia: la elección presidencial de 2026 ya pasó a la fecha de corte; la próxima ventana del art. 33 corresponde a la elección presidencial de 2030. El calendario electoral no se abrió en este encargo.",
+  "eje": 1,
+  "etapa": [
+    "E0"
+  ],
+  "decision": [
+    "D1"
+  ],
+  "modulo": [
+    "M-INGESTA"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A1",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "http://www.secretariasenado.gov.co/senado/basedoc/ley_0996_2005.html",
+    "vigente": true,
+    "nota": "Texto de la Secretaría del Senado («Última actualización: 15 de septiembre de 2026»), leído el 2-oct-2026. Las notas de vigencia y de exequibilidad condicionada no se despliegan en el HTML descargado."
+  },
+  "lista_cerrada": "L1-09",
+  "problema_candidato": null,
+  "regla": {
+    "regimen": "Entes del Estado, salvo las excepciones del inciso 2",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "La restricción se cuenta desde la fecha de la elección presidencial, no desde un aviso."
+  },
+  "advertencia": "Según el verificador (fase 2, 2-oct-2026): el inciso 2 del art. 33 exceptúa la defensa y seguridad del Estado, el crédito público, las emergencias educativas, sanitarias y desastres, la reconstrucción de vías, puentes, carreteras e infraestructura tras atentados, desastres o fuerza mayor, y las entidades sanitarias y hospitalarias; la de reconstrucción vial toca de lleno la obra civil. En Función Pública (norma.php?i=18232) consta la exequibilidad condicionada de la C-1153 de 2005 para el Presidente o Vicepresidente candidato y la inexequibilidad de «gastos inaplazables».",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-institucional:4",
+      "veredicto": "no_sostiene",
+      "detalle": "Abrí http://www.secretariasenado.gov.co/senado/basedoc/ley_0996_2005.html (200): el inciso 1 del art. 33 es literal. El inciso 2 exceptúa la defensa y seguridad del Estado, el crédito público, las emergencias educativas, sanitarias y desastres, la reconstrucción de vías, puentes, carreteras e infraestructura tras atentados, desastres o fuerza mayor, y las entidades sanitarias y hospitalarias. La afirmación presenta la prohibición como total («de todos los entes del Estado») y omite esas excepciones; la de reconstrucción vial toca de lleno la obra civil. También lo consulté en Función Pública (https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=18232, 200, con el paquete de certificados): allí consta la exequibilidad condicionada de la C-1153 de 2005 para el Presidente o Vicepresidente candidato y la inexequibilidad de «gastos inaplazables». Las notas del Senado no se despliegan sin JavaScript.",
+      "accion": "afirmación estrechada a lo que sostiene la cita (y regla.regimen); lo que la cita no cubre va en «advertencia», atribuido al verificador",
+      "antes": {
+        "afirmacion": "La Ley de Garantías prohíbe la contratación directa de todos los entes del Estado durante los cuatro meses anteriores a la elección presidencial y hasta la segunda vuelta.",
+        "regla": {
+          "regimen": "Todos los entes del Estado"
+        },
+        "advertencia": null
+      }
+    }
+  ]
+}

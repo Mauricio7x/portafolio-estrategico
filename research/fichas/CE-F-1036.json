@@ -1,0 +1,52 @@
+{
+  "id": "CE-F-1036",
+  "tipo": "concepto_cce",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Concepto C-642 de 2026 (Decreto 0287 de 2026)",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente (relatoría)",
+  "url": "https://relatoria.colombiacompra.gov.co/conceptos/c-642-de-2026/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: el extracto publicado en la relatoría (descriptores y apartes); no se descargó el archivo íntegro",
+  "localizador": "apartado «DECRETO 0287 DE 2026 ‒ Documentos tipo ‒ Principio de inalterabilidad […]»",
+  "cita": "Mientras esa actualización no se produzca, el principio de inalterabilidad impide que las entidades los modifiquen unilateralmente para incorporar las medidas del decreto, incluida la obligación de compras públicas accesibles",
+  "afirmacion": "Para CCE, mientras no actualice los documentos tipo, la inalterabilidad impide que las entidades los modifiquen para incorporar las medidas del Decreto 287, incluida la de compras públicas accesibles.",
+  "inferencia": null,
+  "eje": 1,
+  "etapa": [
+    "E1",
+    "E2"
+  ],
+  "decision": [
+    "D3"
+  ],
+  "modulo": [
+    "M-PLIEGO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A5",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=273496",
+    "vigente": true,
+    "nota": "Concepto de CCE del 29/05/2026 sobre el Decreto 287, contrastado con el texto del decreto."
+  },
+  "lista_cerrada": "L1-02",
+  "problema_candidato": "Si una entidad incorpora por su cuenta medidas del Decreto 287 en un pliego de documento tipo, altera el documento tipo; el contratista puede observarlo.",
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": "En procesos con documento tipo, solo cuando CCE incorpore las medidas (art. 2.2.1.2.4.2.7.8; Circular Externa 003 de 2026)",
+    "motivo_null": "El decreto no fija la transición por aviso; CCE (C-642 de 2026) la fija por la fecha de la resolución de apertura: desde el 20 de marzo de 2026."
+  },
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-institucional:3",
+      "veredicto": "correcta",
+      "detalle": "C-642, apartado «Documentos tipo ‒ Principio de inalterabilidad [...]»: la cita está literal. La afirmación omite «unilateralmente» («los modifiquen» en vez de «los modifiquen unilateralmente»). No cambia el sentido, porque el sujeto son las entidades y la actualización es de CCE. Es condicional («mientras no actualice»), así que no depende de que CCE haya actualizado o no los documentos."
+    }
+  ]
+}

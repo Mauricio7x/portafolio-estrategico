@@ -1,0 +1,48 @@
+{
+  "id": "CE-F-1225",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "La inoperancia de los criterios de desempate en los pliegos tipo de licitación de obra pública de infraestructura de transporte en Colombia",
+  "anio": 2025,
+  "institucion": "Universidad La Gran Colombia, Facultad de Posgrados, Maestría en Derecho (trabajo de grado, repositorio institucional)",
+  "url": "https://repository.ugc.edu.co/server/api/core/bitstreams/2d6da215-1b16-4a4e-a361-08d081e7a046/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: resumen, descripción de la muestra (págs. 85-86), tablas 12 a 14 (págs. 91-94) y conclusiones (págs. 95-98)",
+  "localizador": "pág. 95 impresa (pág. 95 del PDF), párrafo posterior a la tabla 14 «Análisis optimización de recursos, ahorros en los procesos en los que se utiliza documentos tipo»",
+  "cita": "en la totalidad de los procesos se obtuvo un ahorro en el presupuesto inicialmente establecido para cada convocatoria pública, del cual se tiene que el menor ahorro se presentó en el proceso 21 con un 2,35 %, mientras que en el proceso 24 se obtuvo un ahorro del 8,19% en el presupuesto inicial.",
+  "afirmacion": "Los autores dicen que en la totalidad de los procesos de su muestra hubo ahorro frente al presupuesto inicial, con un mínimo del 2,35 % (proceso 21) y un máximo del 8,19 % (proceso 24).",
+  "inferencia": "Inferencia: la muestra (pág. 86) son 24 licitaciones de obra de infraestructura de transporte de entidades territoriales de Cundinamarca, 2021-2024, con documentos tipo; la tabla 14 da un total del 5,36 %. Para el contratista, en ese mercado se adjudicó entre 2 % y 8 % por debajo del presupuesto oficial.",
+  "eje": 1,
+  "etapa": [
+    "E5",
+    "E6"
+  ],
+  "decision": [
+    "D2"
+  ],
+  "modulo": [
+    "M-PRECIO",
+    "M-OFERTA"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://repository.ugc.edu.co/server/api/core/bitstreams/2d6da215-1b16-4a4e-a361-08d081e7a046/content",
+    "vigente": null,
+    "nota": "Muestra pequeña (24 procesos), un solo departamento, 2021-2024; no es representativa del país."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": null,
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-academico:2",
+      "veredicto": "correcta",
+      "detalle": "Abrí el PDF de UGC (200, 104 págs.). La cita está literal en la pág. 95 del PDF e impresa, en el párrafo que sigue a la tabla 14. Comprobé la tabla 14 (págs. 93-94 del PDF): los 24 procesos tienen ahorro positivo, el mínimo es el proceso 21 con 2,356 % y el máximo el proceso 24 con 8,198 %. Por eso el 'máximo' de la afirmación, que no está textual en la cita, lo respalda la tabla del mismo documento y no la contradice. Son dos autores, Vargas Pava y Vargas Pava."
+    }
+  ]
+}

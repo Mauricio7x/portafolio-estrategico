@@ -1,0 +1,38 @@
+{
+  "id": "CE-F-5250",
+  "tipo": "academia",
+  "autor": "Autor del trabajo de grado (persona natural, nombre omitido por la regla 5)",
+  "titulo": "Análisis de retrasos y sobrecostos del contrato de construcción de la intersección a desnivel de la avenida Laureano Gómez (AK9) por calle 94 y su conexión con la avenida Santa Bárbara (AK19) en Bogotá D.C.",
+  "anio": 2017,
+  "institucion": "Universidad de los Andes, trabajo de grado de Ingeniería Civil",
+  "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/63cec6e2-740e-48b4-8440-4bb1b360e9af/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: las 12 págs. con pdftotext (con y sin -layout por las dos columnas)",
+  "localizador": "pág. 8 del PDF, apartado de prórrogas y adiciones (prórroga No. 3, ID #9)",
+  "cita": "por 9 meses debido a la suspensión de actividades por inconvenientes con la comunidad, […] se suspendieron obras por fallas en fachadas de inmuebles vecinos que al final se concluyó no eran imputables a la obra",
+  "afirmacion": "El autor reporta que la prórroga No. 3 del contrato estudiado, por 9 meses, se debió a la suspensión de actividades por inconvenientes con la comunidad, y que se suspendieron obras por fallas en fachadas vecinas que al final se concluyó que no eran imputables a la obra.",
+  "inferencia": null,
+  "eje": 5,
+  "etapa": [
+    "E8"
+  ],
+  "decision": [
+    "D4"
+  ],
+  "modulo": [
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "el propio documento (fuente académica fechada)",
+    "vigente": null,
+    "nota": "Estudio de caso empírico de un contrato del IDU (contrato de obra 005 de 2012); no es normativo, no aplica comprobar vigencia."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Las quejas de la comunidad y los daños alegados en predios vecinos paralizan o reducen la jornada de obra durante meses, aunque al final se concluya que no eran imputables a la obra.",
+  "advertencia": "Un solo contrato urbano (Bogotá)."
+}

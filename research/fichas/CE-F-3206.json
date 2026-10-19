@@ -1,0 +1,39 @@
+{
+  "id": "CE-F-3206",
+  "tipo": "organo_control",
+  "autor": "Instituto de Estudios del Ministerio Público (IEMP), Procuraduría General de la Nación; investigador del IEMP (nombre omitido por la regla 5)",
+  "titulo": "La pluralidad es un indicador de probidad en la contratación de infraestructura",
+  "anio": 2020,
+  "institucion": "Instituto de Estudios del Ministerio Público (Procuraduría General de la Nación), síntesis del estudio SCI-IEMP (2019) con la Sociedad Colombiana de Ingenieros",
+  "url": "https://iemp.gov.co/noticias/investigaciones/la-pluralidad-es-un-indicador-de-probidad-en-la-contratacion-de-infraestructura/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: artículo web (síntesis); el informe SCI-IEMP 2019 no se abrió",
+  "localizador": "apartado «Conclusiones y recomendaciones del estudio», primer párrafo",
+  "cita": "De los 2684 contratos adjudicados en 2018 por las gobernaciones, el 80 % (2151 contratos) fueron adjudicados en procesos con baja pluralidad de oferentes.",
+  "afirmacion": "El IEMP reporta que de los 2684 contratos adjudicados en 2018 por las gobernaciones, el 80 % (2151) se adjudicó en procesos con baja pluralidad de oferentes.",
+  "inferencia": "Inferencia: en la contratación departamental de infraestructura de 2018 lo normal era competir contra pocos o ningún rival, lo que el contratista puede leer como señal de pliegos poco abiertos.",
+  "eje": 3,
+  "etapa": [
+    "E5",
+    "E6"
+  ],
+  "decision": [
+    "D1"
+  ],
+  "modulo": [
+    "M-ENTIDAD"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "No aplica: dato empírico o descripción de práctica, no regla",
+    "vigente": null,
+    "nota": "Datos de la vigencia 2018, anteriores a la obligatoriedad general de los documentos tipo de obra; el estudio mide contratación de infraestructura de entes territoriales en varias modalidades, no solo obra."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Baja pluralidad de oferentes en la contratación territorial de infraestructura (80 % de los contratos de gobernaciones en 2018).",
+  "advertencia": "Cifras tomadas de la síntesis web del IEMP; el informe fuente (SCI-IEMP 2019) no se abrió."
+}

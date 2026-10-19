@@ -1,0 +1,51 @@
+{
+  "id": "CE-F-5000",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 80 de 1993, Estatuto General de Contratación de la Administración Pública",
+  "anio": 1993,
+  "institucion": "Departamento Administrativo de la Función Pública, Gestor Normativo (texto con notas de vigencia)",
+  "url": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=304",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: arts. 4, 5, 14 a 18, 27, 40 y 60 del texto del Gestor Normativo, con sus notas de modificación",
+  "localizador": "art. 40, parágrafo, inciso segundo",
+  "cita": "Los contratos no podrán adicionarse en más del cincuenta por ciento (50%) de su valor inicial, expresado éste en salarios mínimos legales mensuales.",
+  "afirmacion": "Un contrato estatal no puede adicionarse en más del 50 % de su valor inicial, expresado en salarios mínimos legales mensuales.",
+  "inferencia": "Inferencia: el tope se mide en SMMLV del valor inicial, no en pesos; el contratista que espera recuperar sobrecostos por adición tiene un techo legal.",
+  "eje": 5,
+  "etapa": [
+    "E8"
+  ],
+  "decision": [
+    "D4"
+  ],
+  "modulo": [
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A1",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=304",
+    "vigente": true,
+    "nota": "Texto del Gestor Normativo de Función Pública consultado el 2-oct-2026, con las notas de modificación que trae el propio artículo."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Norma legal: rige para los contratos del Estatuto General sin depender de la fecha de un aviso; no se buscó régimen de transición para contratos anteriores."
+  },
+  "lista_cerrada": "L5-01",
+  "problema_candidato": null,
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje5-institucional:1",
+      "veredicto": "correcta",
+      "detalle": "Abrí https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=304 con curl --cacert bundle_normas2.pem (HTTP 200, 220497 bytes). En el art. 40, parágrafo, inciso segundo, aparece literal: «Los contratos no podrán adicionarse en más del cincuenta por ciento (50%) de su valor inicial, expresado éste en salarios mínimos legales mensuales.» La afirmación no añade nada. Los únicos incisos que se le agregaron (art. 8 del Decreto 537 de 2020, adiciones sin tope durante la emergencia del COVID-19) eran temporales y no cambian la regla. El Decreto 0997 de 2026 reforma el Decreto 1082, no esta ley."
+    }
+  ]
+}

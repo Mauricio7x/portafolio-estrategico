@@ -1,0 +1,39 @@
+{
+  "id": "CE-F-3215",
+  "tipo": "academia",
+  "autor": "Personas naturales, tres autoras (nombres omitidos por la regla 5 del piloto)",
+  "titulo": "Implementación de los pliegos tipo de infraestructura de transporte en la modalidad de licitación de obra pública desde el año 2018 al 2021",
+  "anio": 2022,
+  "institucion": "Universidad La Gran Colombia, Especialización en Contratación Estatal (trabajo de grado)",
+  "url": "https://repository.ugc.edu.co/server/api/core/bitstreams/0cfb2a74-5923-4980-ade2-1448daf025d2/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: portada, antecedentes (pág. 27) y apartado de resultados de la implementación (págs. 39-45 del PDF); el resto se recorrió por palabras clave",
+  "localizador": "pág. 27 del PDF, cita en bloque atribuida a otro autor (2018, p. 10), datos de INVIAS y la CCI",
+  "cita": "de cada 100 licitaciones a nivel municipal, 83 tenían un único proponente; y a nivel departamental, de cada 100 procesos, 53 seguían la misma suerte. Por otra parte, según el Observatorio de Contratación de la CCI, para el año 2016, el 87% de los procesos mostraron únicas ofertas a nivel municipal",
+  "afirmacion": "Las autoras recogen, citando a otro autor con datos de INVIAS y la CCI, que en 2015 de cada 100 licitaciones municipales 83 tenían un único proponente y 53 de cada 100 departamentales, y que en 2016, según el Observatorio de la CCI, el 87 % de los procesos municipales tuvo oferta única.",
+  "inferencia": "Inferencia: antes de los documentos tipo, la oferta única era la regla en la licitación territorial de obra; es el contexto que los documentos tipo buscaron corregir.",
+  "eje": 3,
+  "etapa": [
+    "E4",
+    "E5"
+  ],
+  "decision": [
+    "D1"
+  ],
+  "modulo": [
+    "M-ENTIDAD"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "No aplica: dato empírico o descripción de práctica, no regla",
+    "vigente": null,
+    "nota": "Cifras de segunda mano que las autoras toman de otros autores y de la CCI; no se abrieron las fuentes originales."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Oferta única generalizada en licitaciones territoriales antes de los documentos tipo (83 de cada 100 municipales en 2015, según la fuente citada).",
+  "advertencia": "Las cifras de único proponente son de segunda mano (las autoras citan a otros autores, a la CCI y al Observatorio) y cambian según el año y la fuente que se cite: no se usan como frecuencia sin abrir la fuente original."
+}

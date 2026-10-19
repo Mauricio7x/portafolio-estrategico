@@ -1,0 +1,62 @@
+{
+  "id": "CE-F-3026",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República",
+  "titulo": "Decreto 1082 de 2015, Único Reglamentario del Sector Administrativo de Planeación Nacional (texto consolidado)",
+  "anio": 2015,
+  "institucion": "Departamento Administrativo de la Función Pública · Gestor Normativo",
+  "url": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=77653",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: art. 2.2.1.2.4.2.4 completo",
+  "localizador": "art. 2.2.1.2.4.2.4 (Acreditación de requisitos), parágrafos 2 y 3",
+  "cita": "máximo sesenta (60) días calendario anteriores a la prevista en el cronograma […] para el inicio del plazo para solicitar la convocatoria limitada. […] En las convocatorias limitadas, […] solo deberán aceptar las ofertas de Mipyme o de proponentes plurales integrados únicamente por Mipyme.",
+  "afirmacion": "Según el parágrafo 2, los documentos que trata deben tener una fecha de máximo sesenta días calendario anteriores a la prevista en el cronograma para el inicio del plazo para solicitar la convocatoria limitada (la cita no dice cuáles documentos); en las convocatorias limitadas solo se aceptan ofertas de Mipyme o de proponentes plurales integrados únicamente por Mipyme.",
+  "inferencia": null,
+  "eje": 3,
+  "etapa": [
+    "E3",
+    "E4"
+  ],
+  "decision": [
+    "D1",
+    "D3"
+  ],
+  "modulo": [
+    "M-PLURAL",
+    "M-RUP"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A2",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=77653 (texto consolidado) y texto del Decreto 0997 de 2026 en https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/",
+    "vigente": true,
+    "nota": "Se comprobó que el Decreto 0997 de 2026 (arts. 1 a 13) no modifica este artículo; el consolidado de Función Pública aún no trae el 0997."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Norma reglamentaria compilada en el Decreto 1082 de 2015: rige desde su expedición, no desde un aviso de convocatoria."
+  },
+  "lista_cerrada": "L3-09",
+  "problema_candidato": "En una convocatoria limitada a Mipyme, un proponente plural con un solo integrante que no sea Mipyme queda por fuera.",
+  "advertencia": "Según el verificador, los sesenta días son una antigüedad máxima del documento (no un mínimo), y cuáles documentos (copia del registro mercantil, del certificado de existencia y representación legal o del RUP) está en texto del parágrafo 2 que la cita no abarca.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje3-institucional:2",
+      "veredicto": "no_sostiene",
+      "detalle": "La cita del art. 2.2.1.2.4.2.4, parágrafos 2 y 3, es literal. Pero la afirmación invierte o enturbia el sentido del parágrafo 2. La norma pide que los documentos tengan «una fecha de máximo sesenta (60) días calendario anteriores» al inicio del plazo para solicitar la limitación, o sea una antigüedad máxima de 60 días. La afirmación dice que «fija como fecha máxima de los documentos sesenta días calendario antes», y eso se lee como si el documento tuviera que ser de por lo menos 60 días antes (fecha límite más reciente). Además, la afirmación habla de «los documentos» sin decir cuáles. Eso solo lo trae la inferencia, con texto que la cita no abarca (registro mercantil, certificado de existencia o RUP).",
+      "accion": "afirmación estrechada a lo que sostiene la cita; lo que la cita no cubre va en «advertencia»; la inferencia (qué documentos) se apoyaba en texto fuera de la cita y pasa a «advertencia»; el problema_candidato se queda con lo que la cita sostiene",
+      "antes": {
+        "afirmacion": "El parágrafo 2 fija como fecha máxima de los documentos sesenta días calendario antes de la prevista en el cronograma para el inicio del plazo para solicitar la convocatoria limitada, y en las convocatorias limitadas solo se aceptan ofertas de Mipyme o de plurales integrados únicamente por Mipyme.",
+        "inferencia": "Inferencia: según el mismo parágrafo 2, la fecha máxima aplica a la copia del registro mercantil, del certificado de existencia y representación legal o del RUP que se aporte para la limitación.",
+        "problema_candidato": "En una convocatoria limitada a Mipyme, un consorcio con un solo socio que no sea Mipyme queda por fuera, y un certificado con más de sesenta días no sirve para la limitación.",
+        "advertencia": null
+      }
+    }
+  ]
+}

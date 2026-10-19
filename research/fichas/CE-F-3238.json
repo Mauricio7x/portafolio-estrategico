@@ -1,0 +1,39 @@
+{
+  "id": "CE-F-3238",
+  "tipo": "academia",
+  "autor": "Personas naturales, dos autores (nombres omitidos por la regla 5 del piloto)",
+  "titulo": "Contratación pública, corrupción y gobierno abierto en Colombia",
+  "anio": 2025,
+  "institucion": "Escuela Superior de Administración Pública (ESAP) y Universidad de Bogotá Jorge Tadeo Lozano · Revista Española de la Transparencia núm. 22, pp. 233-276 (vía Dialnet)",
+  "url": "https://dialnet.unirioja.es/descarga/articulo/10669932.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: resumen, metodología (apartado 4) y resultados (apartado 5, págs. 24-27 del PDF); el resto se recorrió por palabras clave",
+  "localizador": "pág. 26 del PDF (impresa 258), apartado 5, comentario a la Figura 5 «Histograma de grados de entrada de proveedores»",
+  "cita": "existen una probabilidad de 0.44 de obtener sólo un contrato, visto de otra forma el 44% de los contratistas logran sólo una adjudicación. En contraste, hay unos pocos oferentes que logran un número significativo de contratos, estos serían los Hubs de esa red de contratación.",
+  "afirmacion": "Los autores encontraron que el 44 % de los contratistas de su red logra solo una adjudicación, mientras unos pocos oferentes logran un número significativo de contratos (los «hubs» de la red).",
+  "inferencia": "Inferencia: el párrafo siguiente dice que esa concentración puede generar una competencia desigual; el contratista que compite con un «hub» en una entidad enfrenta a quien ya acumula experiencia y relación con ella.",
+  "eje": 3,
+  "etapa": [
+    "E5",
+    "E6"
+  ],
+  "decision": [
+    "D1"
+  ],
+  "modulo": [
+    "M-ENTIDAD"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "No aplica: dato empírico o descripción de práctica, no regla",
+    "vigente": null,
+    "nota": "Análisis de redes sobre contratos de obra pública de SECOP II entre 2012 y 2024 (corte de datos 1-dic-2024)."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Concentración de adjudicaciones de obra en pocos contratistas («apego preferencial»), con competencia desigual para el resto.",
+  "advertencia": "El texto mezcla en esta parte la red de obra pública (2012-2024) y la de todos los contratos de las doce principales ciudades (2022-2024); la ficha no asegura a cuál de las dos corresponde la Figura 5."
+}

@@ -1,0 +1,36 @@
+{
+  "id": "CE-F-2206",
+  "tipo": "academia",
+  "autor": "Personas naturales (nombres omitidos por la regla 5 del piloto)",
+  "titulo": "El principio de planeación en el contrato de obra pública",
+  "anio": 2019,
+  "institucion": "Universidad Santo Tomás · Revista IUSTA núm. 51, pp. 185-208 (vía Dialnet)",
+  "url": "https://dialnet.unirioja.es/descarga/articulo/7021763.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: resumen, introducción y apartados sobre vulneración del principio (págs. 185-201); el resto por palabras clave",
+  "localizador": "pág. 187 de la revista (pág. 3 del PDF), Introducción, párrafo «Uno de los obstáculos…»",
+  "cita": "las entidades públicas han dejado de lado este principio cuando realizan el plan anual de adquisiciones, lo que conlleva imprevistos en el desarrollo de la contratación de la obra pública debido a que se pueden presentar retrasos en la ejecución de la obra, sobrecostos",
+  "afirmacion": "Los autores sostienen que las entidades han dejado de lado el principio de planeación al hacer el plan anual de adquisiciones, lo que conlleva imprevistos y puede traer retrasos en la ejecución y sobrecostos.",
+  "inferencia": null,
+  "eje": 2,
+  "etapa": [
+    "E0"
+  ],
+  "decision": [
+    "D4"
+  ],
+  "modulo": [
+    "M-ENTIDAD"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "No se reverificó contra jurisprudencia posterior; fuente académica",
+    "vigente": null,
+    "nota": "Afirmación general de los autores, sin medición."
+  },
+  "lista_cerrada": null,
+  "problema_candidato": null
+}

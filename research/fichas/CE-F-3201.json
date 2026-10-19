@@ -1,0 +1,44 @@
+{
+  "id": "CE-F-3201",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "La garantía de seriedad de la oferta como causal de rechazo en los procesos licitatorios",
+  "anio": 2021,
+  "institucion": "Universidad Militar Nueva Granada, Facultad de Derecho, Diplomado de Contratación Estatal (ensayo, campus Cajicá)",
+  "url": "https://repository.umng.edu.co/bitstreams/a967961e-80db-45bd-9a91-0618c18bfe87/download",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: resumen (pág. 4-5), índice y conclusiones (pág. 26); el resto se recorrió por palabras clave",
+  "localizador": "págs. 4-5 del PDF, apartado 1.1 Resumen",
+  "cita": "la ausencia de la garantía de la oferta en los procesos de selección de modalidad de licitación pública, no debería ser considerada como causal de rechazo, pues constituye un requisito habilitante, mas no un factor de ponderación o de puntaje",
+  "afirmacion": "La autora concluye que la ausencia de la garantía de seriedad en licitación pública no debería ser causal de rechazo, porque es un requisito habilitante y no un factor de puntaje.",
+  "inferencia": null,
+  "eje": 3,
+  "etapa": [
+    "E4",
+    "E5"
+  ],
+  "decision": [
+    "D3"
+  ],
+  "modulo": [
+    "M-OFERTA"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "Ley 1150 de 2007, art. 5, texto vigente en la Secretaría del Senado (http://www.secretariasenado.gov.co/senado/basedoc/ley_1150_2007.html), consultado el 2-oct-2026",
+    "vigente": false,
+    "nota": "Es una propuesta de la autora contraria a la regla vigente: la Ley 1150, art. 5, par. 3, mantiene que la no entrega de la garantía no es subsanable y es causal de rechazo."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Propuesta doctrinal, no regla."
+  },
+  "lista_cerrada": null,
+  "problema_candidato": null,
+  "advertencia": "Opinión de la autora (lege ferenda), no la regla vigente."
+}

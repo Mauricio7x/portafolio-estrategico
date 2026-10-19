@@ -1,0 +1,52 @@
+{
+  "id": "CE-F-1035",
+  "tipo": "concepto_cce",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Concepto C-642 de 2026 (Decreto 0287 de 2026)",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente (relatoría)",
+  "url": "https://relatoria.colombiacompra.gov.co/conceptos/c-642-de-2026/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: el extracto publicado en la relatoría (descriptores y apartes); no se descargó el archivo íntegro",
+  "localizador": "apartado «DECRETO 0287 DE 2026 ‒ Vigencia ‒ Derogatoria […] ‒ Resolución de apertura», segundo párrafo",
+  "cita": "La aplicación del Decreto 287 de 2026 en los procesos de contratación que estén en curso depende de si estos contaban o no con resolución de apertura antes del 20 de marzo de 2026",
+  "afirmacion": "Para CCE, el Decreto 287 se aplica a un proceso en curso según si tenía o no resolución de apertura antes del 20 de marzo de 2026.",
+  "inferencia": null,
+  "eje": 1,
+  "etapa": [
+    "E1"
+  ],
+  "decision": [
+    "D1"
+  ],
+  "modulo": [
+    "M-PLIEGO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A5",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=273496",
+    "vigente": true,
+    "nota": "Concepto de CCE del 29/05/2026 sobre el Decreto 287, contrastado con el texto del decreto."
+  },
+  "lista_cerrada": "L1-02",
+  "problema_candidato": null,
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": "En procesos con documento tipo, solo cuando CCE incorpore las medidas (art. 2.2.1.2.4.2.7.8; Circular Externa 003 de 2026)",
+    "motivo_null": "El decreto no fija la transición por aviso; CCE (C-642 de 2026) la fija por la fecha de la resolución de apertura: desde el 20 de marzo de 2026."
+  },
+  "advertencia": "El ABC del mismo decreto (CE-F-1031) pone la fecha de vigencia el 19 de marzo de 2026.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-institucional:3",
+      "veredicto": "correcta",
+      "detalle": "C-642, apartado «Vigencia ‒ Derogatoria ‒ [...] ‒ Resolución de apertura», segundo párrafo: la cita está literal, y el mismo párrafo concreta las dos ramas (resolución del 19 de marzo o antes / del 20 de marzo o después). La afirmación está atribuida a CCE y es exacta. La advertencia, que contrasta con el 19 de marzo del ABC, es correcta."
+    }
+  ]
+}

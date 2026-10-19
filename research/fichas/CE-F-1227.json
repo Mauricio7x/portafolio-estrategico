@@ -1,0 +1,46 @@
+{
+  "id": "CE-F-1227",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "El impacto del Decreto 1510 del 2013 en la contratación pública y la corrupción en Colombia",
+  "anio": 2016,
+  "institucion": "Universidad Militar Nueva Granada, Facultad de Derecho (trabajo de grado, repositorio institucional)",
+  "url": "https://repository.umng.edu.co/server/api/core/bitstreams/8401d68b-2a7e-46f1-9003-1388abae0da2/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: introducción y planteamiento del problema (págs. del PDF 3-12) y el recorrido histórico de la Ley 80; el resto se recorrió por palabras clave",
+  "localizador": "pág. 11 del PDF, planteamiento del problema, cita en bloque atribuida a otro autor (2013, p. 1)",
+  "cita": "[Este] cambiante sistema normativo en la contratación pública hace que las normas reglamentarias no tengan vocación de permanencia, lo que genera no solo confusión en el operador jurídico, sino dificultades prácticas en su aplicación, al enfrentarse a la transición de",
+  "afirmacion": "El autor recoge, citando a otro autor (2013), que el cambiante sistema normativo de la contratación pública hace que las normas reglamentarias no tengan vocación de permanencia, lo que genera confusión en el operador jurídico y dificultades prácticas en su aplicación al enfrentar la transición.",
+  "inferencia": "Inferencia: el mismo trabajo recuerda que el Decreto 734 de 2012 fue sustituido por el 1510 de 2013 (luego compilado en el 1082 de 2015); el contratista vive esa transición como reglas que cambian entre un proceso y el siguiente.",
+  "eje": 1,
+  "etapa": [
+    "T"
+  ],
+  "decision": [
+    "D3"
+  ],
+  "modulo": [
+    "M-PLIEGO"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://repository.umng.edu.co/server/api/core/bitstreams/8401d68b-2a7e-46f1-9003-1388abae0da2/content",
+    "vigente": null,
+    "nota": "Texto de 2016 sobre la transición del Decreto 734 de 2012 al 1510 de 2013."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Reglamentos de contratación sin vocación de permanencia: cada transición de decreto trae confusión e interpretaciones encontradas.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-academico:2",
+      "veredicto": "correcta",
+      "detalle": "Abrí el PDF de UMNG (200, 86 págs.). La cita en bloque está literal en la pág. 11 del PDF, incluido '[Este]', atribuida a Jorge Beltrán con '(Beltrán, 2013, p. 1)'. La cita corta la frase en 'transición de'; la fuente sigue con 'un compendio normativo a otro'. La afirmación lo atribuye correctamente a otro autor y no dice más que la cita."
+    }
+  ]
+}

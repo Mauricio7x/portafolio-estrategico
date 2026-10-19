@@ -1,0 +1,59 @@
+{
+  "id": "CE-F-1026",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República; Departamento Nacional de Planeación",
+  "titulo": "Decreto 287 de 2026 (modifica los arts. 2.2.1.2.4.2.6, 2.2.1.2.4.2.7 y 2.2.1.2.4.2.8 del Decreto 1082 de 2015)",
+  "anio": 2026,
+  "institucion": "Departamento Administrativo de la Función Pública (Gestor Normativo)",
+  "url": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=273496",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: considerandos, art. 1 (arts. 2.2.1.2.4.2.6 a 2.2.1.2.4.2.8) y art. 2",
+  "localizador": "art. 1, nuevo art. 2.2.1.2.4.2.7.4, inciso 1",
+  "cita": "en los procedimientos de licitación Pública y concurso de méritos, las Entidades Estatales otorgaran un puntaje adicional máxima del dos por ciento (2%) del valor total de las puntos establecidos en las Pliegos de Condiciones",
+  "afirmacion": "En licitación pública y concurso de méritos, el puntaje adicional que otorgan las entidades por este criterio tiene un máximo del 2% del valor total de los puntos del pliego (no se otorga sin más: ver advertencia).",
+  "inferencia": null,
+  "eje": 1,
+  "etapa": [
+    "E2",
+    "E5"
+  ],
+  "decision": [
+    "D2"
+  ],
+  "modulo": [
+    "M-PLIEGO",
+    "M-OFERTA"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A2",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=273496",
+    "vigente": true,
+    "nota": "Decreto 287 de 2026 en el Gestor Normativo (expedición y entrada en vigencia: 19 de marzo de 2026, según la ficha). Su art. 2 dice que rige desde el día siguiente a su publicación; ver advertencia de CE-F-1021."
+  },
+  "lista_cerrada": "L1-02",
+  "problema_candidato": null,
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": "En procesos con documento tipo, solo cuando CCE incorpore las medidas (art. 2.2.1.2.4.2.7.8; Circular Externa 003 de 2026)",
+    "motivo_null": "El decreto no fija la transición por aviso; CCE (C-642 de 2026) la fija por la fecha de la resolución de apertura: desde el 20 de marzo de 2026."
+  },
+  "advertencia": "Según el verificador, la misma frase condiciona el puntaje: «siempre y cuando se configure alguna de las siguientes situaciones» (que el proponente acredite ser empresa o emprendimiento de personas con discapacidad, o que tenga personas con discapacidad en su planta según la tabla); esa parte no está en esta cita. Además, el mismo artículo dice más abajo que «el puntaje adicional total y único a otorgar por este criterio será del dos por ciento (2%), sin que sean acumulables»: una frase dice «máxima del 2%» y la otra «será del 2%», doble redacción que conviene verificar en el pliego.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-institucional:2",
+      "veredicto": "no_sostiene",
+      "detalle": "La cita aparece literal en el inciso 1 del art. 2.2.1.2.4.2.7.4, pero la afirmación quita el condicionante de la misma frase: «siempre y cuando se configure alguna de las siguientes situaciones» (que el proponente acredite ser empresa o emprendimiento de personas con discapacidad, o que tenga personas con discapacidad en su planta según la tabla). Tal como está escrita, la afirmación se lee como un puntaje que se otorga sin más. Además, el mismo artículo dice más abajo: «el puntaje adicional total y único a otorgar por este criterio será del dos por ciento (2%), sin que sean acumulables». Una frase dice «máxima del 2%» y la otra «será del 2%», y la ficha no lo advierte (ajuste 5.3). Se necesita una advertencia sobre esa doble redacción y una cita que llegue hasta «siempre y cuando se configure alguna de las siguientes situaciones».",
+      "accion": "afirmación estrechada a lo que sostiene la cita (y problema_candidato cuando se apoyaba en lo mismo); lo que la cita no cubre va en «advertencia», atribuido al verificador; la cita no se amplió",
+      "antes": {
+        "afirmacion": "En licitación pública y concurso de méritos las entidades otorgarán un puntaje adicional de máximo el 2% del total de puntos del pliego.",
+        "advertencia": null
+      }
+    }
+  ]
+}

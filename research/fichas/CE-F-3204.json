@@ -1,0 +1,40 @@
+{
+  "id": "CE-F-3204",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Lineamientos y estrategias para la gestión vial sostenible en vías terciarias de Colombia",
+  "anio": 2018,
+  "institucion": "Universidad de los Andes, Facultad de Ingeniería, Maestría en Ingeniería y Gerencia de la Construcción (tesis)",
+  "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/1ee7c455-44e7-4659-ba8a-c3ff62ae6c86/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: portada y el antecedente del programa de vías del INVIAS (págs. 17-19); el resto se recorrió por palabras clave",
+  "localizador": "pág. 18 de la tesis, párrafo «Dentro de los criterios de calificación…»",
+  "cita": "Dentro de los criterios de calificación es importante mencionar que el factor determinante era el valor de la propuesta; conforme a lo consultado en INVIAS, hubo varios proponentes que ganaban el grupo de vías bajando su precio hasta en el 40% con respecto a la oferta inicial.",
+  "afirmacion": "La autora relata que, en el programa de vías del INVIAS que analiza, el factor determinante de calificación era el valor de la propuesta y, según lo que consultó en el INVIAS, varios proponentes ganaron grupos de vías bajando su precio hasta el 40 % respecto de la oferta inicial.",
+  "inferencia": "Inferencia: el párrafo siguiente relata que, tras adjudicar, los contratistas mostraron diferencias con los estudios usados para el pliego y empezaron a indicar recortes en los alcances; bajar el precio para ganar sobre estudios débiles traslada el problema a la ejecución.",
+  "eje": 3,
+  "etapa": [
+    "E3",
+    "E5",
+    "E8"
+  ],
+  "decision": [
+    "D2",
+    "D4"
+  ],
+  "modulo": [
+    "M-PRECIO"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "No aplica: hecho histórico de un programa del INVIAS (licitación de 2004, según la tesis)",
+    "vigente": null,
+    "nota": "Dato de una sola fuente; no es frecuencia."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Cuando el precio decide, hay proponentes que bajan hasta un 40 % para ganar y luego, con estudios previos que no corresponden a la realidad, recortan alcances en la ejecución."
+}

@@ -1,0 +1,51 @@
+{
+  "id": "CE-F-3012",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República",
+  "titulo": "Decreto 1082 de 2015, Único Reglamentario del Sector Administrativo de Planeación Nacional (texto consolidado)",
+  "anio": 2015,
+  "institucion": "Departamento Administrativo de la Función Pública · Gestor Normativo",
+  "url": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=77653",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: art. 2.2.1.2.1.5.2 completo",
+  "localizador": "art. 2.2.1.2.1.5.2 (Mínima cuantía), numeral 5",
+  "cita": "Lo anterior sin perjuicio de la oportunidad que deberán otorgar las Entidades Estatales para subsanar las ofertas, […] para lo cual establecerán un término preclusivo en la invitación para recibir los documentos subsanables, frente a cada uno de los requerimientos.",
+  "afirmacion": "En la mínima cuantía la entidad debe dar oportunidad de subsanar y fijar en la invitación un término preclusivo para recibir los documentos subsanables de cada requerimiento.",
+  "inferencia": "Inferencia: la frase siguiente del numeral dice que, si no se fija ese término, se puede subsanar hasta antes de que termine el traslado del informe; los documentos tipo de mínima cuantía de obra sí lo fijan (un día hábil por defecto).",
+  "eje": 3,
+  "etapa": [
+    "E5"
+  ],
+  "decision": [
+    "D3"
+  ],
+  "modulo": [
+    "M-OFERTA"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A2",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=77653 (texto consolidado) y texto del Decreto 0997 de 2026 en https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/",
+    "vigente": true,
+    "nota": "Se comprobó que el Decreto 0997 de 2026 (arts. 1 a 13) no modifica este artículo; el consolidado de Función Pública aún no trae el 0997."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Norma reglamentaria compilada en el Decreto 1082 de 2015: rige desde su expedición, no desde un aviso de convocatoria."
+  },
+  "lista_cerrada": "L3-05",
+  "problema_candidato": null,
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje3-institucional:1",
+      "veredicto": "correcta",
+      "detalle": "El numeral 5 del art. 2.2.1.2.1.5.2 es literal; el «[…]» quita «en los términos del artículo 5 de la Ley 1150 de 2007». El consolidado anota que lo modificó el art. 2 del Decreto 1860 de 2021, y ese texto ya está incluido. El art. 13 del Decreto 0997 modifica el 2.2.1.2.1.5.1, no este artículo."
+    }
+  ]
+}

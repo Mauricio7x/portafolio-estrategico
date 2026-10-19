@@ -1,0 +1,39 @@
+{
+  "id": "CE-F-3202",
+  "tipo": "academia",
+  "autor": "Personas naturales, dos autores (nombres omitidos por la regla 5 del piloto)",
+  "titulo": "Los pliegos de condiciones en el contrato de obra",
+  "anio": 2021,
+  "institucion": "Universidad Santo Tomás · Revista IUSTA núm. 54 (vía Redalyc)",
+  "url": "https://www.redalyc.org/journal/5603/560368677003/560368677003.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: resumen y el apartado de deficiencias del pliego (págs. 12-15 del PDF de Redalyc); el resto se recorrió por palabras clave",
+  "localizador": "pág. 14 del PDF de Redalyc (13 impresa), cita en bloque de «Figueroa et ál.» (pp. 11-12 de esa obra)",
+  "cita": "Los requisitos son de imposible cumplimiento, por tanto se ve el direccionamiento a un solo proponente y varios oferentes para evitar el desgaste de lo que conlleva preparar una propuesta se abstienen de acceder a la contratación.",
+  "afirmacion": "Los autores recogen, citando a otros autores (Figueroa et ál.), que cuando los requisitos son de imposible cumplimiento se ve el direccionamiento a un solo proponente y varios oferentes se abstienen de participar para no desgastarse preparando una propuesta.",
+  "inferencia": "Inferencia: un pliego con requisitos de imposible cumplimiento es una señal para no presentarse o para observar el proyecto de pliego antes de gastar en la oferta.",
+  "eje": 3,
+  "etapa": [
+    "E1",
+    "E2",
+    "E3"
+  ],
+  "decision": [
+    "D1"
+  ],
+  "modulo": [
+    "M-PLIEGO"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "No aplica: descripción de una práctica, no de una regla",
+    "vigente": null,
+    "nota": "Fuente académica de 2021; el texto citado es de otros autores, no de los firmantes del artículo."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Pliegos con requisitos de imposible cumplimiento que direccionan el proceso a un solo proponente y hacen que otros desistan de ofertar."
+}

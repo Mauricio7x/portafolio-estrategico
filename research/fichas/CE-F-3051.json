@@ -1,0 +1,51 @@
+{
+  "id": "CE-F-3051",
+  "tipo": "concepto_cce",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente (Subdirección de Gestión Contractual)",
+  "titulo": "Concepto C-1335 de 2026 (radicado de salida 2_2026_09_11_009766), publicado en la relatoría",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente · Relatoría",
+  "url": "https://relatoria.colombiacompra.gov.co/wp-content/uploads/2026/09/C-1335-1.docx",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: documento del concepto (ficha de relatoría en https://relatoria.colombiacompra.gov.co/conceptos/c-1335-de-2026/)",
+  "localizador": "apartado «Respuesta», párrafos 3 y 4",
+  "cita": "la entidad debe verificar dos aspectos: i) si tales documentos es necesario para la comparación de las ofertas o inciden en la asignación de puntaje; y ii) si la información o circunstancia que acreditan existía con anterioridad al cierre del proceso de selección.",
+  "afirmacion": "CCE sostiene que, para saber si algo se subsana, la entidad verifica si el documento es necesario para comparar ofertas o incide en el puntaje, y si la circunstancia que acredita existía antes del cierre.",
+  "inferencia": null,
+  "eje": 3,
+  "etapa": [
+    "E5"
+  ],
+  "decision": [
+    "D3"
+  ],
+  "modulo": [
+    "M-OFERTA"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A5",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://relatoria.colombiacompra.gov.co/conceptos/c-1335-de-2026/ (fecha de la ficha de relatoría: 11/09/2026)",
+    "vigente": true,
+    "nota": "Concepto no vinculante (función consultiva de CCE); interpreta la Ley 1150 de 2007, art. 5, par. 1, con el texto de la Ley 1882 de 2018."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Concepto interpretativo: no rige desde un aviso."
+  },
+  "lista_cerrada": "L3-13",
+  "problema_candidato": null,
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje3-institucional:4",
+      "veredicto": "correcta",
+      "detalle": "Abrí https://relatoria.colombiacompra.gov.co/wp-content/uploads/2026/09/C-1335-1.docx (200). En el apartado «Respuesta», en el párrafo «Bajo esta perspectiva…» y sus incisos, la cita aparece literal, incluida la errata del original «si tales documentos es necesario»: «la entidad debe verificar dos aspectos: i) si tales documentos es necesario para la comparación de las ofertas o inciden en la asignación de puntaje; y ii) si la información o circunstancia que acreditan existía con anterioridad al cierre del proceso de selección.» La afirmación es fiel. La ficha de relatoría está fechada el 11/09/2026. La norma interpretada (Ley 1150, art. 5, par. 1, modificado por la Ley 1882) no la toca el Decreto 0997."
+    }
+  ]
+}

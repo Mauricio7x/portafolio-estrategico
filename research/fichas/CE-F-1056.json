@@ -1,0 +1,59 @@
+{
+  "id": "CE-F-1056",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 2022 de 2020",
+  "anio": 2020,
+  "institucion": "Secretaría General del Senado (Leyes desde 1992, texto con notas de vigencia)",
+  "url": "http://www.secretariasenado.gov.co/senado/basedoc/ley_2022_2020.html",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: arts. 1 y 2",
+  "localizador": "art. 1 (modifica el art. 4 de la Ley 1882 de 2018 y adiciona el parágrafo 7 al art. 2 de la Ley 1150 de 2007), último inciso",
+  "cita": "En todo caso, serán de uso obligatorio los documentos tipo para los pliegos de condiciones de los procesos de selección de obras públicas, interventoría para las obras públicas interventoría para consultoría de estudios y diseños para obras públicas",
+  "afirmacion": "La Ley 2022 de 2020 dispone el uso obligatorio de documentos tipo en los pliegos de los procesos de selección de obra pública y de su interventoría, para las entidades y en los términos que fija el resto del inciso (ver advertencia).",
+  "inferencia": null,
+  "eje": 1,
+  "etapa": [
+    "E1",
+    "E2"
+  ],
+  "decision": [
+    "D1",
+    "D3"
+  ],
+  "modulo": [
+    "M-PLIEGO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A1",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "http://www.secretariasenado.gov.co/senado/basedoc/ley_2022_2020.html",
+    "vigente": true,
+    "nota": "Texto de la Secretaría del Senado («Última actualización: 15 de septiembre de 2026»), leído el 2-oct-2026."
+  },
+  "lista_cerrada": "L1-08",
+  "problema_candidato": null,
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": "Según la reglamentación de cada documento tipo",
+    "motivo_null": "La ley remite a la reglamentación correspondiente; cada documento tipo fija su fecha."
+  },
+  "advertencia": "«que lleven a cabo todas las entidades sometidas al Estatuto General» está a continuación en el mismo inciso, fuera de la cita. Según el verificador (fase 2, 2-oct-2026): el inciso sigue con «consultoría en ingeniería para obras, que lleven a cabo todas las entidades sometidas al Estatuto General de Contratación de la Administración Pública, en los términos fijados mediante la reglamentación correspondiente»; la obligación no alcanza a las entidades de régimen especial y depende de la reglamentación.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-institucional:4",
+      "veredicto": "no_sostiene",
+      "detalle": "Abrí http://www.secretariasenado.gov.co/senado/basedoc/ley_2022_2020.html (200). El último inciso del art. 1, que también figura en el parágrafo 7o del art. 2 de la Ley 1150, contiene la cita literal. El inciso sigue con «consultoría en ingeniería para obras, que lleven a cabo todas las entidades sometidas al Estatuto General de Contratación de la Administración Pública, en los términos fijados mediante la reglamentación correspondiente». La afirmación hace obligatorios los documentos tipo en todo proceso de obra, sin limitarlos a las entidades del Estatuto General ni a lo que diga la reglamentación. Para Detekta es justo el matiz que separa el régimen especial. La advertencia no corrige la afirmación.",
+      "accion": "afirmación estrechada a lo que sostiene la cita; lo que la cita no cubre va en «advertencia», atribuido al verificador",
+      "antes": {
+        "afirmacion": "La Ley 2022 de 2020 hace obligatorios los documentos tipo en los pliegos de los procesos de obra pública y de su interventoría.",
+        "advertencia": "«que lleven a cabo todas las entidades sometidas al Estatuto General» está a continuación en el mismo inciso, fuera de la cita."
+      }
+    }
+  ]
+}

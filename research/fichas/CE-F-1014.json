@@ -1,0 +1,51 @@
+{
+  "id": "CE-F-1014",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República; Departamento Nacional de Planeación",
+  "titulo": "Decreto 0997 de 2026 (modifica y adiciona el Decreto 1082 de 2015)",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente (relatoría normativa)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: los 14 artículos y los considerandos en la relatoría de CCE",
+  "localizador": "art. 14 (Vigencia), parágrafo 2",
+  "cita": "La Agencia Nacional de Contratación Pública –Colombia Compra Eficiente– expedirá las documentos orientadores dirigidos a facilitar la implementación de lo previsto en el presente Decreto.",
+  "afirmacion": "El Decreto 0997 de 2026 encarga a CCE expedir documentos orientadores para su implementación.",
+  "inferencia": null,
+  "eje": 1,
+  "etapa": [
+    "T"
+  ],
+  "decision": [
+    "D1"
+  ],
+  "modulo": [
+    "M-ENTIDAD"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A2",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/",
+    "vigente": true,
+    "nota": "Art. 14: rige desde el día siguiente a la publicación en el Diario Oficial (art. 14, inciso 1). La fecha de publicación del Decreto 0997 de 2026 en el Diario Oficial no se comprobó en ninguna fuente abierta (la relatoría y la ficha de la Alcaldía de Bogotá solo dan la expedición, 04/08/2026)."
+  },
+  "lista_cerrada": "L1-01",
+  "problema_candidato": null,
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": "No aplica a procesos con documento tipo hasta que CCE expida la versión que lo incorpore (art. 14, parágrafo 3)",
+    "motivo_null": "Rige para procesos cuyo aviso, invitación o documento equivalente se publique después de la entrada en vigencia (art. 14, parágrafo 1); esa entrada es el día siguiente a la publicación en el Diario Oficial, y la fecha de esa publicación no se comprobó."
+  },
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-institucional:1",
+      "veredicto": "correcta",
+      "detalle": "La cita está literal, con el «las documentos» del original, en el art. 14, parágrafo 2 (HTML y PDF). La afirmación es fiel. No encontré ninguna norma posterior en el listado de normativa de la relatoría de CCE."
+    }
+  ]
+}

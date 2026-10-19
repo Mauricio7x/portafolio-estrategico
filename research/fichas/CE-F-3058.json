@@ -1,0 +1,52 @@
+{
+  "id": "CE-F-3058",
+  "tipo": "jurisprudencia",
+  "autor": "Consejo de Estado, Sala de lo Contencioso Administrativo, Sección Tercera, Subsección C",
+  "titulo": "Sentencia del 23 de febrero de 2026, radicación 08001-23-33-000-2018-00391-01 (67378), nulidad y restablecimiento del derecho y controversias contractuales sobre una licitación distrital de obra (rehabilitación de mercados públicos)",
+  "anio": 2026,
+  "institucion": "Consejo de Estado (PDF publicado en la relatoría de la Agencia Nacional de Contratación Pública - Colombia Compra Eficiente)",
+  "url": "https://relatoria.colombiacompra.gov.co/wp-content/uploads/2026/05/08001233300020180039101.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: ficha de relatoría (págs. 1 a 6), encabezado y síntesis (págs. 7 y 8), consideraciones sobre la ineficacia, la subsanabilidad y la utilidad dejada de percibir (págs. 45 a 54) y decisión (pág. 59) de las 60 páginas",
+  "localizador": "pág. 45 del PDF, consideraciones sobre la ineficacia de la regla del pliego",
+  "cita": "no es viable que a través de la estipulación en comento se restrinja o desconozca el criterio de subsanabilidad previsto por el legislador. En consecuencia, para la Sala se encuentra configurada la ineficacia de pleno derecho de la regla contenida en la Nota 11 del numeral 4.22 del pliego",
+  "afirmacion": "El Consejo de Estado sostuvo que la estipulación no podía restringir ni desconocer el criterio legal de subsanabilidad, y declaró configurada la ineficacia de pleno derecho de esa regla (una nota) del pliego de condiciones.",
+  "inferencia": "Inferencia: la nota declarada ineficaz impedía subsanar; en la pág. 49 dijo que debió permitirse subsanar durante la audiencia de adjudicación un requisito habilitante sobre la dedicación del personal.",
+  "eje": 3,
+  "etapa": [
+    "E5",
+    "E6"
+  ],
+  "decision": [
+    "D3"
+  ],
+  "modulo": [
+    "M-OFERTA"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A4",
+  "unificacion": false,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://relatoria.colombiacompra.gov.co/wp-content/uploads/2026/05/08001233300020180039101.pdf",
+    "vigente": true,
+    "nota": "Sentencia de segunda instancia de una subsección, no de unificación; no se buscó jurisprudencia posterior que la contradiga."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Providencia judicial; no rige desde un aviso."
+  },
+  "lista_cerrada": "L3-14",
+  "problema_candidato": "Una nota del pliego que prohíbe subsanar un habilitante es ineficaz: el contratista rechazado por ella tiene base para pedir la nulidad de la adjudicación.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje3-institucional:4",
+      "veredicto": "correcta",
+      "detalle": "Abrí https://relatoria.colombiacompra.gov.co/wp-content/uploads/2026/05/08001233300020180039101.pdf (200). En la pág. 45 del PDF (impresa como 39) aparece literal: «no es viable que a través de la estipulación en comento se restrinja o desconozca el criterio de subsanabilidad previsto por el legislador. En consecuencia, para la Sala se encuentra configurada la ineficacia de pleno derecho de la regla contenida en la Nota 11 del numeral 4.22 del pliego de condiciones…». La afirmación coincide con la cita. El encabezado (pág. 7) confirma Subsección C, 23 de febrero de 2026, nulidad y restablecimiento del derecho con controversias contractuales, licitación LP-022-2017 del Distrito de Barranquilla (mercados públicos). La pág. 49 confirma la inferencia: «debió permitírsele al Consorcio San Nicolás subsanar su ofrecimiento durante el desarrollo de la audiencia de adjudicación»."
+    }
+  ]
+}

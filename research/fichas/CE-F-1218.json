@@ -1,0 +1,47 @@
+{
+  "id": "CE-F-1218",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Afectación al principio de selección objetiva a través de la celebración de convenios o contratos interadministrativos",
+  "anio": 2020,
+  "institucion": "Revista Digital de Derecho Administrativo, núm. 24, Universidad Externado de Colombia (Redalyc), DOI 10.18601/21452946.n24.05",
+  "url": "https://www.redalyc.org/journal/5038/503865772005/html/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: versión HTML de Redalyc (sin paginación)",
+  "localizador": "apartado «A manera de conclusión: una posible solución», párrafo tras la nota 38",
+  "cita": "Una reforma imprescindible es eliminar la posibilidad de subcontratación por medio de regímenes exceptuados. Esta es la ruta de escape que se utiliza para la triangulación de los recursos del erario.",
+  "afirmacion": "El autor propone, como reforma, eliminar la posibilidad de subcontratar por medio de regímenes exceptuados, que considera la ruta de escape para la triangulación de recursos.",
+  "inferencia": null,
+  "eje": 1,
+  "etapa": [
+    "E0",
+    "T"
+  ],
+  "decision": [
+    "D1"
+  ],
+  "modulo": [
+    "M-ENTIDAD"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.redalyc.org/journal/5038/503865772005/html/",
+    "vigente": null,
+    "nota": "Propuesta del autor de 2020; no es regla vigente."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Subcontratación de obra por la vía de regímenes exceptuados en contratos interadministrativos (solución que propone el autor: prohibirla).",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-academico:2",
+      "veredicto": "correcta",
+      "detalle": "Misma fuente de Redalyc. La cita está literal en «A MANERA DE CONCLUSIÓN: UNA POSIBLE SOLUCIÓN», después de la cita de Habermas (nota 38). La afirmación la presenta como propuesta del autor y no como regla, que es lo que pide el §5.2. La vigencia la declara 'Propuesta del autor; no es regla vigente'."
+    }
+  ]
+}

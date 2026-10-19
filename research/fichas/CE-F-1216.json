@@ -1,0 +1,57 @@
+{
+  "id": "CE-F-1216",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "La Ley de Garantías como mecanismo para debilitar el ciclo político del presupuesto público",
+  "anio": 2019,
+  "institucion": "Universidad de los Andes, Facultad de Economía (trabajo de grado, repositorio institucional)",
+  "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/40c716a2-8a0f-40ca-b8df-1ce7434f4ff0/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: resumen, introducción, revisión de literatura (págs. 1-6), estrategia empírica (págs. 13-15) y conclusiones (págs. 21-22)",
+  "localizador": "pág. 21 impresa (pág. 21 del PDF), apartado 8 «Conclusiones»",
+  "cita": "Los resultados sugieren que antes de la existencia de la Ley 996, dicho ciclo sucede a partir de un aumento en el gasto de capital, gasto corriente y gasto total; y tras la implementación de la norma, los municipios sujetos a la misma, no limitan el aumento del gasto en etapas electorales.",
+  "afirmacion": "Las autoras concluyen que los resultados sugieren que, tras la implementación de la Ley 996 de 2005, los municipios sujetos a ella no limitan el aumento del gasto en etapas electorales.",
+  "inferencia": "Inferencia: el gasto municipal sigue subiendo en etapas electorales pese a la ley de garantías; para el contratista de obra municipal, el ciclo electoral puede seguir marcando el ritmo del gasto (el estudio no mide número de procesos).",
+  "eje": 1,
+  "etapa": [
+    "E0",
+    "T"
+  ],
+  "decision": [
+    "D1"
+  ],
+  "modulo": [
+    "M-LISTA",
+    "M-ENTIDAD"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/40c716a2-8a0f-40ca-b8df-1ce7434f4ff0/content",
+    "vigente": null,
+    "nota": "Estudio con datos municipales cuyo periodo la propia fuente da de dos formas (ver advertencia); el estudio mide gasto, no número de procesos de obra."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "La ley de garantías no frena el aumento del gasto municipal en etapas electorales.",
+  "advertencia": "Según el verificador (verificar:eje1-academico:2, 2026-10-02): el número de municipios (1.102) y el periodo no están en la cita; vienen del Resumen y del apartado 5. Además, el documento se contradice en el periodo: el Resumen dice «entre 2002 y 2017», y el apartado 5 «Datos» y la Tabla 2 dicen «2000 a 2017». No usar ninguno de los dos periodos sin resolver esa contradicción.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-academico:2",
+      "veredicto": "no_sostiene",
+      "detalle": "La cita está literal en la pág. 21 del PDF y la impresa, apartado 8. Pero la afirmación añade 'con datos de 1.102 municipios entre 2002 y 2017', que no está en la cita: viene del Resumen. Además, el propio documento se contradice en el periodo. El Resumen dice 'para el periodo comprendido entre 2002 y 2017'. El apartado 5 «Datos» dice 'en 1102 municipios de Colombia para el periodo de 2000 a 2017', y la Tabla 2 dice 'entre 2000 y 2017'. La ficha elige una de las dos cifras sin advertencia, lo que incumple los §5.1 y §5.3. La conclusión citada sí es fiel.",
+      "accion": "Afirmación estrechada a lo que dice la cita (se quitó «con datos de 1.102 municipios entre 2002 y 2017»); inferencia y problema_candidato estrechados (gasto, no número de procesos ni gasto de capital tras la ley); nota de vigencia sin el periodo elegido; advertencia con lo que la cita no cubre.",
+      "antes": {
+        "afirmacion": "Las autoras concluyen, con datos de 1.102 municipios entre 2002 y 2017, que los resultados sugieren que, tras la Ley 996 de 2005, los municipios sujetos a ella no limitan el aumento del gasto en etapas electorales.",
+        "inferencia": "Inferencia: el gasto municipal (incluido el de capital, que es la obra) sigue subiendo en años electorales pese a la ley de garantías; para el contratista de obra municipal, el ciclo electoral sigue marcando cuándo hay más procesos.",
+        "problema_candidato": "La ley de garantías no frena el ciclo de gasto electoral de los municipios: la oferta de obra municipal se agolpa alrededor de las elecciones.",
+        "vigencia_verificada.nota": "Datos municipales 2002-2017; el estudio mide gasto, no número de procesos de obra.",
+        "advertencia": null
+      }
+    }
+  ]
+}

@@ -1,0 +1,48 @@
+{
+  "id": "CE-F-1222",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "La fuerza de atracción de los regímenes especiales para el manejo de recursos públicos en Colombia: el uso de los poderes legislativos del Ejecutivo para la creación de excepciones al régimen general de contratación estatal",
+  "anio": 2024,
+  "institucion": "Boletín Mexicano de Derecho Comparado, vol. 57, núm. 171 (UNAM, Instituto de Investigaciones Jurídicas), SciELO México, DOI 10.22201/iij.24484873e.2024.171.19354",
+  "url": "https://www.scielo.org.mx/scielo.php?script=sci_arttext&pid=S0041-86332024000300003&lng=es&nrm=i&tlng=es",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: versión HTML (sin paginación); apartados II, IV (A a C) y V «Conclusiones»; el apartado III se recorrió",
+  "localizador": "apartado V «Conclusiones», primer párrafo",
+  "cita": "Los poderes legislativos extraordinarios y excepcionales del presidente están siendo usados en Colombia para propiciar excepciones al régimen general de contratación estatal. […] el Ejecutivo ha creado fondos cuenta o patrimonios autónomos como una técnica para otorgar una capacidad de contratación",
+  "afirmacion": "Los autores concluyen que los poderes legislativos extraordinarios del presidente se usan en Colombia para crear excepciones al régimen general de contratación, mediante fondos cuenta o patrimonios autónomos a los que se otorga capacidad de contratación.",
+  "inferencia": "Inferencia: la frase sigue diciendo que esa capacidad es «con recursos públicos, pero con las normas de derecho privado»; el contratista debe identificar en cada proceso bajo qué manual se contrata.",
+  "eje": 1,
+  "etapa": [
+    "E0",
+    "T"
+  ],
+  "decision": [
+    "D1",
+    "D3"
+  ],
+  "modulo": [
+    "M-ENTIDAD"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.scielo.org.mx/scielo.php?script=sci_arttext&pid=S0041-86332024000300003&lng=es&nrm=i&tlng=es",
+    "vigente": null,
+    "nota": "Análisis jurídico de 2024 sobre decretos ley y legislativos de 2017-2023; no se comprobó el estado de cada fondo a la fecha de corte."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Proliferación de fondos cuenta y patrimonios autónomos creados por decreto que contratan obra con derecho privado, fuera del Estatuto General.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-academico:2",
+      "veredicto": "correcta",
+      "detalle": "Abrí el HTML de scielo.org.mx (200). Los dos fragmentos están literales en el primer párrafo de 'V. Conclusiones'. La cita corta la frase en 'capacidad de contratación'; la fuente sigue con 'con recursos públicos, pero con las normas de derecho privado'. La afirmación no dice más que la cita y lo atribuye a los autores."
+    }
+  ]
+}

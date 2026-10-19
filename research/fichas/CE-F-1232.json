@@ -1,0 +1,52 @@
+{
+  "id": "CE-F-1232",
+  "tipo": "multilateral",
+  "autor": "Banco Mundial, Agencia Francesa de Desarrollo y Unión Europea (evaluación PEFA++ a solicitud del Ministerio de Hacienda y Crédito Público)",
+  "titulo": "PEFA++ Colombia 2024. Evaluación del desempeño de la gestión de las finanzas públicas de Colombia – 2024 (Informe final)",
+  "anio": 2024,
+  "institucion": "Banco Mundial (Documents & Reports, P501379)",
+  "url": "https://documents1.worldbank.org/curated/en/099051225194529508/pdf/P501379-7b00bc98-8518-440d-991b-19172e83b152.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: indicador ID-24 Adquisiciones (págs. del PDF 138-141); el resto se recorrió por palabras clave",
+  "localizador": "pág. 140 impresa (pág. 140 del PDF; el encabezado de la dimensión 24.2 está en la pág. 139), ID-24, dimensión 24.2 «Modalidades de las adquisiciones», cuadro 2.24.1 «Distribución de la Contratación Pública registrada en SECOP, 2023»",
+  "cita": "Licitación Pública 6,900,096 15.9% […] Contratación Directa 17,738,819 40.8% Régimen Especial257 9,172,578 21.1% […] se puede afirmar que el 33.4% de la contratación del Gobierno Central en el año 2023 se realizó por métodos competitivos.",
+  "afirmacion": "El cuadro 2.24.1 del PEFA++ 2024, con datos de CCE, registra para 2023 un 15,9 % del valor en licitación pública, 40,8 % en contratación directa y 21,1 % en régimen especial, y concluye que el 33,4 % de la contratación del Gobierno Central se hizo por métodos competitivos.",
+  "inferencia": "Inferencia: en valor, lo que pasa por régimen especial en el Gobierno Central supera a la licitación pública; una parte grande de la obra no sigue el Estatuto General ni los documentos tipo.",
+  "eje": 1,
+  "etapa": [
+    "E0",
+    "T"
+  ],
+  "decision": [
+    "D1"
+  ],
+  "modulo": [
+    "M-ENTIDAD",
+    "M-LISTA"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://documents1.worldbank.org/curated/en/099051225194529508/pdf/P501379-7b00bc98-8518-440d-991b-19172e83b152.pdf",
+    "vigente": null,
+    "nota": "Datos de 2023 en millones de pesos, preparados por Colombia Compra Eficiente y citados por el PEFA; Gobierno Central, no entidades territoriales."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Una parte muy grande del gasto contractual público va por régimen especial, fuera del Estatuto General y de los documentos tipo.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-academico:3",
+      "veredicto": "error_localizador",
+      "detalle": "Abrí la URL del Banco Mundial (HTTP 200, 378 págs.). La cita y el cuadro 2.24.1 son literales y la afirmación se sostiene: 15,9 %, 40,8 %, 21,1 % y la conclusión del 33,4 % del Gobierno Central. Pero en este PDF el número impreso coincide con el del archivo: la pág. 139 del PDF lleva al pie «- 139» y la 140 lleva «- 140». El cuadro 2.24.1 y la frase del 33,4 % están en la pág. 140 impresa (pág. 140 del PDF), no en la «pág. 139 impresa». El encabezado 24.2 sí está en la 139. Al cuadro le falta además la nota 257: CCE dice que las entidades de régimen especial no registran la modalidad, así que no se sabe si contrataron por competencia. No cambia la afirmación, pero matiza la inferencia.",
+      "accion": "Se corrigió el localizador a la pág. 140 impresa = pág. 140 del PDF, según el verificador; cita, afirmación e inferencia sin cambios.",
+      "antes": {
+        "localizador": "pág. 139 impresa (pág. 140 del PDF), ID-24, dimensión 24.2 «Modalidades de las adquisiciones», cuadro 2.24.1 «Distribución de la Contratación Pública registrada en SECOP, 2023»"
+      }
+    }
+  ]
+}

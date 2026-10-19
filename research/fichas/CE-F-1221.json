@@ -1,0 +1,48 @@
+{
+  "id": "CE-F-1221",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Ineficacia de la Empresa Nacional Promotora del Desarrollo Territorial -EN Territorio- ante un incumplimiento contractual",
+  "anio": 2024,
+  "institucion": "Universidad de los Andes, Facultad de Derecho (trabajo de grado de maestría, repositorio institucional)",
+  "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/53e07f36-7a0a-4189-9f22-38401e0e8362/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: resumen, introducción (págs. del PDF 2-10), contexto del régimen especial (págs. 34-35) y apartado de incumplimientos (págs. 60-63); el resto se recorrió por palabras clave",
+  "localizador": "pág. 62 impresa (pág. 62 del PDF), apartado de incumplimientos, informe ejecutivo de auditoría interna sobre la contratación derivada 2017-2019",
+  "cita": "167 contratos por valor de $822.662,5 millones con proceso de incumplimiento entre 2017 y 2019. De los contratos mencionados el 18%, es decir, 30 contratos respecto del total (167) presentaron incumplimientos que equivalen al 52% del valor de todos los contratos ($ 430.482,5 millones).",
+  "afirmacion": "El autor recoge, de un informe de auditoría interna de ENTerritorio sobre la contratación derivada 2017-2019, que de 167 contratos con proceso de incumplimiento, por $822.662,5 millones, 30 (18 %) presentaron incumplimientos que equivalen al 52 % del valor ($430.482,5 millones).",
+  "inferencia": "Inferencia: la contratación derivada de convenios interadministrativos en una entidad de régimen especial acumula incumplimientos de alto valor, que terminan en reclamaciones a aseguradoras y en pleitos.",
+  "eje": 1,
+  "etapa": [
+    "E8",
+    "E9"
+  ],
+  "decision": [
+    "D4"
+  ],
+  "modulo": [
+    "M-ENTIDAD"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/53e07f36-7a0a-4189-9f22-38401e0e8362/content",
+    "vigente": null,
+    "nota": "Dato 2017-2019 de una auditoría interna citada por el autor; no se abrió el informe original."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Contratación derivada en régimen especial con incumplimientos de alto valor (52 % del valor auditado en 2017-2019 en ENTerritorio).",
+  "advertencia": "La frase no deja claro si los 167 contratos son todos los que tuvieron proceso de incumplimiento o el universo auditado; no se usa como frecuencia de incumplimiento.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-academico:2",
+      "veredicto": "correcta",
+      "detalle": "Misma fuente. La cita es una subcadena literal de la pág. 62 del PDF (impresa 62); la frase completa empieza 'se analizó un universo de 167 contratos…'. La aritmética cuadra: 30/167 = 17,96 % y 430.482,5/822.662,5 = 52,3 %. La advertencia de la ficha recoge la ambigüedad entre el universo auditado y los contratos con proceso de incumplimiento, y la ficha no usa el dato como frecuencia. Matiz menor: son dos autores y la ficha dice 'El autor'."
+    }
+  ]
+}

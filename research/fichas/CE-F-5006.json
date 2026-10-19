@@ -1,0 +1,51 @@
+{
+  "id": "CE-F-5006",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 80 de 1993, Estatuto General de Contratación de la Administración Pública",
+  "anio": 1993,
+  "institucion": "Departamento Administrativo de la Función Pública, Gestor Normativo (texto con notas de vigencia)",
+  "url": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=304",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: arts. 4, 5, 14 a 18, 27, 40 y 60 del texto del Gestor Normativo, con sus notas de modificación",
+  "localizador": "art. 16, inciso segundo",
+  "cita": "Si las modificaciones alteran el valor del contrato en veinte por ciento (20%) o más del valor inicial, el contratista podrá renunciar a la continuación de la ejecución.",
+  "afirmacion": "Si la modificación unilateral altera el valor del contrato en 20 % o más del valor inicial, el contratista puede renunciar a seguir ejecutándolo.",
+  "inferencia": null,
+  "eje": 5,
+  "etapa": [
+    "E8"
+  ],
+  "decision": [
+    "D4"
+  ],
+  "modulo": [
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A1",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=304",
+    "vigente": true,
+    "nota": "Texto del Gestor Normativo de Función Pública consultado el 2-oct-2026, con las notas de modificación que trae el propio artículo."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Norma legal: rige para los contratos del Estatuto General sin depender de la fecha de un aviso; no se buscó régimen de transición para contratos anteriores."
+  },
+  "lista_cerrada": "L5-02",
+  "problema_candidato": null,
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje5-institucional:1",
+      "veredicto": "correcta",
+      "detalle": "Misma página. El art. 16, inciso segundo, trae la cita literal sobre la alteración del 20 % o más del valor inicial y la posibilidad de renunciar. El artículo trata la modificación unilateral, así que la afirmación es fiel. No hay nota de modificación."
+    }
+  ]
+}

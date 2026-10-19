@@ -1,0 +1,37 @@
+{
+  "id": "CE-F-9203",
+  "tipo": "academia",
+  "autor": "Tres personas naturales (nombres omitidos por la regla 5 del piloto)",
+  "titulo": "Aspectos tributarios para los contratos de obra pública en Colombia",
+  "anio": 2017,
+  "institucion": "Pontificia Universidad Javeriana, Facultad de Ciencias Jurídicas, Especialización en Derecho Tributario · monografía en el repositorio institucional",
+  "url": "https://apidspace.javeriana.edu.co/server/api/core/bitstreams/5899e088-e87d-4db3-878d-e83fcfcab2b2/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: 25 páginas, leídas en texto extraído con pdftotext",
+  "localizador": "pág. 18 del PDF (nota * a la plantilla de estampillas vigentes)",
+  "cita": "queda a potestad de cada ente departamental o municipal acoger las estampillas en sus jurisdicciones. De esta forma, se genera la obligación para los contribuyentes, no solo de pagar entre 2 a 5 estampillas (normalmente) por cada municipio, sino también de pagar las departamentales",
+  "afirmacion": "Los autores afirman que cada departamento o municipio decide qué estampillas adopta, de modo que el contribuyente paga normalmente entre 2 y 5 estampillas por municipio además de las departamentales.",
+  "inferencia": "Inferencia: la tarifa total de estampillas no se puede tomar de una tabla nacional; hay que consultar las ordenanzas y acuerdos del lugar de la obra antes de fijar el precio.",
+  "eje": 9,
+  "etapa": [
+    "E3"
+  ],
+  "decision": [
+    "D2"
+  ],
+  "modulo": [
+    "M-PRECIO"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "Monografía de 2017; no se abrieron las leyes, ordenanzas ni acuerdos vigentes de estampillas y contribuciones",
+    "vigente": null,
+    "nota": "Anterior a las reformas tributarias de 2018, 2019, 2021 y 2022; las tarifas y su suma no se reverificaron."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Las estampillas cambian por municipio y departamento (normalmente de 2 a 5 por municipio, más las departamentales): sin consultar las normas locales el contratista no sabe cuánto le descuentan."
+}

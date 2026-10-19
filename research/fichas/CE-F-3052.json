@@ -1,0 +1,59 @@
+{
+  "id": "CE-F-3052",
+  "tipo": "concepto_cce",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente (Subdirección de Gestión Contractual)",
+  "titulo": "Concepto C-1335 de 2026 (radicado de salida 2_2026_09_11_009766), publicado en la relatoría",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente · Relatoría",
+  "url": "https://relatoria.colombiacompra.gov.co/wp-content/uploads/2026/09/C-1335-1.docx",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: documento del concepto (ficha de relatoría en https://relatoria.colombiacompra.gov.co/conceptos/c-1335-de-2026/)",
+  "localizador": "apartado «Respuesta», párrafo anterior al que empieza «Finalmente, debe advertirse…»",
+  "cita": "cuando la documentación allegada con la oferta no permite verificar […] la experiencia y la información necesaria solo se incorpora mediante un documento aportado con posterioridad al cierre del proceso, no se está ante una aclaración […], sino frente a la acreditación extemporánea",
+  "afirmacion": "CCE sostiene que, si lo aportado con la oferta no permite verificar la experiencia que se evalúa y la información solo llega con un documento posterior al cierre, eso no es una aclaración sino una acreditación extemporánea.",
+  "inferencia": "Inferencia: la consulta era de un concurso de méritos de interventoría con experiencia puntuable; el criterio aplica a cualquier experiencia que dé puntaje.",
+  "eje": 3,
+  "etapa": [
+    "E3",
+    "E5"
+  ],
+  "decision": [
+    "D3"
+  ],
+  "modulo": [
+    "M-OFERTA"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A5",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://relatoria.colombiacompra.gov.co/conceptos/c-1335-de-2026/ (fecha de la ficha de relatoría: 11/09/2026)",
+    "vigente": true,
+    "nota": "Concepto no vinculante (función consultiva de CCE); interpreta la Ley 1150 de 2007, art. 5, par. 1, con el texto de la Ley 1882 de 2018."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Concepto interpretativo: no rige desde un aviso."
+  },
+  "lista_cerrada": "L3-13",
+  "problema_candidato": "La experiencia que da puntaje debe quedar completa y verificable en lo que se entrega al cierre: una certificación sin los datos que pide el pliego no se completa después.",
+  "advertencia": "Según el verificador, el texto completo se refiere a «los requisitos exigidos para la evaluación de la experiencia» y a la prohibición de subsanar lo que incide en la asignación de puntaje; no vale para la experiencia habilitante, para la que CCE admite un certificado posterior al cierre si prueba experiencia anterior (C-1302, ejemplo v).",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje3-institucional:4",
+      "veredicto": "no_sostiene",
+      "detalle": "La cita existe en C-1335-1.docx, apartado «Respuesta», pero las elipsis quitan el matiz que sostiene la regla. El texto completo es: «cuando la documentación allegada con la oferta no permite verificar el cumplimiento de los requisitos exigidos para la evaluación de la experiencia y la información necesaria solo se incorpora mediante un documento aportado con posterioridad al cierre del proceso, no se está ante una aclaración de la oferta, sino frente a la acreditación extemporánea de aspectos sustanciales, circunstancia que resulta incompatible con la prohibición de subsanar requisitos que inciden en la asignación de puntaje». La afirmación («si lo aportado con la oferta no permite verificar la experiencia…») generaliza a cualquier experiencia, también la habilitante. Para esa, CCE dice lo contrario: un certificado posterior al cierre sí subsana si prueba experiencia anterior (C-1302, ejemplo v). La restricción a la experiencia que se evalúa o da puntaje queda solo en la inferencia, no en la afirmación. El localizador también falla: «último párrafo» no lo es; después vienen dos párrafos más («Finalmente, debe advertirse…» y «En ese sentido…»).",
+      "antes": {
+        "afirmacion": "CCE sostiene que, si lo aportado con la oferta no permite verificar la experiencia y la información solo llega con un documento posterior al cierre, eso no es una aclaración sino una acreditación extemporánea.",
+        "localizador": "apartado «Respuesta», último párrafo",
+        "advertencia": null
+      },
+      "accion": "afirmación estrechada a la experiencia que se evalúa; localizador corregido con lo que dice el verificador; el límite frente a la experiencia habilitante va en «advertencia». Inferencia y problema_candidato ya se limitaban a la experiencia que da puntaje: sin cambio"
+    }
+  ]
+}

@@ -1,0 +1,52 @@
+{
+  "id": "CE-F-3017",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 80 de 1993",
+  "anio": 1993,
+  "institucion": "Secretaría General del Senado · Base documental (texto con notas de vigencia)",
+  "url": "http://www.secretariasenado.gov.co/senado/basedoc/ley_0080_1993.html",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: art. 30 completo, con sus notas de vigencia visibles",
+  "localizador": "art. 30, numeral 4 (modificado por el art. 220 del Decreto 19 de 2012), inciso 1",
+  "cita": "Dentro de los tres (3) días hábiles siguientes al inicio del plazo para Ia presentación de propuestas y a solicitud de cualquiera de las personas interesadas en el proceso se celebrará una audiencia con el objeto de precisar el contenido y alcance de los pliegos de condiciones",
+  "afirmacion": "En la licitación, a solicitud de cualquier interesado, se celebra dentro de los tres días hábiles siguientes al inicio del plazo para presentar propuestas una audiencia para precisar el contenido y alcance del pliego.",
+  "inferencia": null,
+  "eje": 3,
+  "etapa": [
+    "E2"
+  ],
+  "decision": [
+    "D3",
+    "D4"
+  ],
+  "modulo": [
+    "M-PLIEGO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A1",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "http://www.secretariasenado.gov.co/senado/basedoc/ley_0080_1993.html",
+    "vigente": true,
+    "nota": "Texto del Senado con notas: numeral 4 modificado por el art. 220 del Decreto 19 de 2012; numeral 5, inciso 2, por el art. 89 de la Ley 1474 de 2011; apartes derogados por el art. 32 de la Ley 1150 de 2007."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Norma legal: rige desde su promulgación, no desde un aviso de convocatoria."
+  },
+  "lista_cerrada": "L3-07",
+  "problema_candidato": null,
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje3-institucional:2",
+      "veredicto": "correcta",
+      "detalle": "Abrí secretariasenado.gov.co ley_0080_1993.html (200). El art. 30, numeral 4 (modificado por el art. 220 del Decreto 19 de 2012), trae literal «Dentro de los tres (3) días hábiles siguientes al inicio del plazo para Ia presentación de propuestas y a solicitud de cualquiera de las personas interesadas en el proceso se celebrará una audiencia con el objeto de precisar el contenido y alcance de los pliegos de condiciones». La afirmación es fiel. Las notas de vigencia (js/ley_0080_1993.js, insRow171-173) solo registran el Decreto 19 de 2012 y la Ley 1150."
+    }
+  ]
+}

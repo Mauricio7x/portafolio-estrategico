@@ -1,0 +1,39 @@
+{
+  "id": "CE-F-2200",
+  "tipo": "academia",
+  "autor": "Personas naturales (nombres omitidos por la regla 5 del piloto)",
+  "titulo": "La planeación en los contratos de obra pública en Colombia ¿principio, deber o requisito? Obligatoriedad y consecuencias de su inaplicación",
+  "anio": 2019,
+  "institucion": "Universidad de Medellín · Opinión Jurídica 18(37), pp. 93-115 (vía Dialnet)",
+  "url": "https://dialnet.unirioja.es/descarga/articulo/7513032.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: texto completo recorrido; se leyeron con detalle las págs. 106-113",
+  "localizador": "pág. 108 de la revista (pág. 16 del PDF), párrafo «En general, los tres casos…»",
+  "cita": "los tres casos hablan de la suscripción de contratos de obra entre una entidad del Estado y un particular que no pudieron ser ejecutados, por cuanto la entidad contratante no adquirió previamente los terrenos necesarios para llevar a cabo las obras.",
+  "afirmacion": "Los autores reseñan tres casos del Consejo de Estado (2013) de contratos de obra que no pudieron ejecutarse porque la entidad no adquirió antes los terrenos necesarios para la obra.",
+  "inferencia": null,
+  "eje": 2,
+  "etapa": [
+    "E0",
+    "E8"
+  ],
+  "decision": [
+    "D1",
+    "D4"
+  ],
+  "modulo": [
+    "M-PLIEGO",
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "No se reverificó contra jurisprudencia posterior; fuente académica",
+    "vigente": null,
+    "nota": "Los radicados que el artículo cita en el párrafo anterior son 27315, 24809 y 26637 (Sección Tercera, Subsección C, 2013); no se abrieron las sentencias."
+  },
+  "lista_cerrada": "L2-09",
+  "problema_candidato": "La entidad abre y firma una obra sin haber adquirido los predios: el contrato no se puede ejecutar y el contratista queda parado y obligado a litigar sus perjuicios."
+}

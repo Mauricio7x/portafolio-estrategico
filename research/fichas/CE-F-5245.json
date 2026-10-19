@@ -1,0 +1,40 @@
+{
+  "id": "CE-F-5245",
+  "tipo": "academia",
+  "autor": "Autor del artículo (persona natural, nombre omitido por la regla 5)",
+  "titulo": "Análisis de la ejecución de proyectos de obra pública en Colombia",
+  "anio": 2023,
+  "institucion": "Escuela Superior de Administración Pública (ESAP), Revista Polémica, núm. 26",
+  "url": "https://revistas.esap.edu.co/index.php/polemica/article/download/948/719",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: 32 págs. del PDF; leídos introducción, apartado 2.5 «Comparación de los proyectos» y conclusiones (págs. 31-34 de la revista)",
+  "localizador": "pág. 33 de la revista (pág. 27 del PDF), apartado 2.5, párrafo sobre los ítems no previstos en el diseño original («Esta situación […]»)",
+  "cita": "puede mitigarse en un contrato donde se realicen los estudios, diseños y construcción, dado que, al estar los diseños a cargo del contratista, cualquier omisión identificada en obra sería su responsabilidad, salvo escenarios de necesidades no previstas inicialmente por la entidad.",
+  "afirmacion": "El autor afirma que la aparición de ítems no previstos puede mitigarse en un contrato donde se realicen los estudios, diseños y construcción, porque, al estar los diseños a cargo del contratista, cualquier omisión identificada en obra sería su responsabilidad, salvo necesidades no previstas inicialmente por la entidad.",
+  "inferencia": "Inferencia: en un contrato de diseño y construcción, el contratista no puede cobrar como ítem no previsto lo que su propio diseño omitió; el riesgo de las omisiones de diseño pasa a su precio.",
+  "eje": 5,
+  "etapa": [
+    "E3",
+    "E8"
+  ],
+  "decision": [
+    "D2",
+    "D4"
+  ],
+  "modulo": [
+    "M-APU",
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "el propio documento (fuente académica fechada)",
+    "vigente": null,
+    "nota": "Estudio de cuatro contratos de obra (SENA, FAC, SED y hospital de Mompox) en SECOP; no es normativo, no aplica comprobar vigencia."
+  },
+  "regla": null,
+  "lista_cerrada": "L5-08",
+  "problema_candidato": "En un contrato de diseño y construcción, las omisiones del diseño hecho por el contratista son responsabilidad suya y no se le pagan como ítems no previstos."
+}

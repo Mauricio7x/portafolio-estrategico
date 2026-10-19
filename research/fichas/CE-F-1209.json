@@ -1,0 +1,46 @@
+{
+  "id": "CE-F-1209",
+  "tipo": "gremio_ong",
+  "autor": "Misión de Observación Electoral (MOE)",
+  "titulo": "Contratación directa, ¿excepción o regla en Colombia?",
+  "anio": 2021,
+  "institucion": "Misión de Observación Electoral, Observatorio de Justicia Electoral (proyecto de investigación, 16-sep-2021)",
+  "url": "https://www.moe.org.co/wp-content/uploads/2021/09/MOE_Contratacio%CC%81n-Directa-excepcio%CC%81n-o-regla-en-Colombia.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: metodología (págs. 7-10), hallazgos generales (cap. 5) y recomendaciones (cap. 6); el cap. 4 se recorrió",
+  "localizador": "pág. 23 impresa (pág. 24 del PDF), cap. 6 «Recomendaciones», recomendación 1",
+  "cita": "En cuanto a la complejidad del marco normativo, se recomienda a la Secretaría de Transparencia la elaboración de materiales pedagógicos que le permitan tanto a la ciudadanía como los entes contratistas a los eventuales competidores comprender los requisitos indispensables",
+  "afirmacion": "Como solución a la complejidad del marco normativo, la MOE recomienda a la Secretaría de Transparencia elaborar materiales pedagógicos para que la ciudadanía y los eventuales competidores comprendan los requisitos indispensables.",
+  "inferencia": null,
+  "eje": 1,
+  "etapa": [
+    "T"
+  ],
+  "decision": [
+    "D1"
+  ],
+  "modulo": [
+    "M-NINGUNO"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A7",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.moe.org.co/wp-content/uploads/2021/09/MOE_Contratacio%CC%81n-Directa-excepcio%CC%81n-o-regla-en-Colombia.pdf",
+    "vigente": null,
+    "nota": "Recomendación de 2021; no se comprobó si se implementó."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Complejidad y cambio del marco normativo (solución propuesta: materiales pedagógicos para competidores).",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-academico:1",
+      "veredicto": "correcta",
+      "detalle": "La cita aparece literal en la pág. 23 impresa (pág. 24 del PDF), cap. 6 «Recomendaciones», recomendación 1. La afirmación se la atribuye a la MOE como recomendación y no la presenta como regla. Omite «los entes contratistas» sin cambiar el sentido."
+    }
+  ]
+}

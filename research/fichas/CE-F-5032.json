@@ -1,0 +1,51 @@
+{
+  "id": "CE-F-5032",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República y Departamento Nacional de Planeación",
+  "titulo": "Decreto 1082 de 2015, Único Reglamentario del Sector Administrativo de Planeación Nacional",
+  "anio": 2015,
+  "institucion": "Departamento Administrativo de la Función Pública, Gestor Normativo (texto consolidado)",
+  "url": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=77653",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: arts. 2.2.1.1.2.4.1 a 2.2.1.1.2.4.3 y 2.2.1.2.3.1.1 a 2.2.1.2.3.2.9 del texto consolidado",
+  "localizador": "art. 2.2.1.2.3.1.19, numeral 2",
+  "cita": "Por medio del acto administrativo en el cual la Entidad Estatal impone multas, debe ordenar el pago al contratista y al garante. El acto administrativo correspondiente constituye el siniestro.",
+  "afirmacion": "El acto que impone una multa ordena el pago al contratista y al garante, y constituye el siniestro de la garantía.",
+  "inferencia": null,
+  "eje": 5,
+  "etapa": [
+    "E8"
+  ],
+  "decision": [
+    "D4"
+  ],
+  "modulo": [
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A2",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=77653",
+    "vigente": true,
+    "nota": "Texto consolidado de Función Pública (consultado el 2-oct-2026). Se revisó el índice de artículos que modifica el Decreto 0997 de 2026 (arts. 2.2.1.1.1.4.5, 2.2.1.1.1.5.4, 2.2.1.1.1.5.7, 2.2.1.1.1.6.1, 2.2.1.1.1.6.2, 2.2.1.1.2.1.1, 2.2.1.1.2.1.3, 2.2.1.1.2.2.2, 2.2.1.1.2.2.10, 2.2.1.2.1.2.1, 2.2.1.2.1.2.12, 2.2.1.2.1.5.1): no toca este artículo."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Norma reglamentaria compilada en el Decreto 1082 de 2015: no depende de la fecha de un aviso; no se buscó régimen de transición."
+  },
+  "lista_cerrada": "L5-07",
+  "problema_candidato": "Una multa ejecutoriada se cobra a la aseguradora, que luego repite contra el contratista y puede negarle o encarecerle las pólizas de las licitaciones siguientes.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje5-institucional:3",
+      "veredicto": "correcta",
+      "detalle": "Función Pública, art. 2.2.1.2.3.1.19, numeral 2: la cita aparece literal («Por medio del acto administrativo en el cual la Entidad Estatal impone multas, debe ordenar el pago al contratista y al garante. El acto administrativo correspondiente constituye el siniestro.»). La afirmación es fiel. El Decreto 0997 no toca el artículo."
+    }
+  ]
+}

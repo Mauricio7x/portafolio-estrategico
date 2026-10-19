@@ -1,0 +1,75 @@
+{
+ "orden": 17,
+ "estrato": "menor_cuantia",
+ "id_del_portafolio": "CO1.BDOS.10013699",
+ "id_del_proceso": "CO1.REQ.10287523",
+ "entidad": "MUNICIPIO DE MANIZALES",
+ "modalidad": "Selección Abreviada de Menor Cuantía",
+ "precio_base": 1012000000,
+ "informes": [
+  {
+   "id_documento": "794582230",
+   "resultado": "leído: PDF de 16 páginas con texto (informe definitivo, 13-may-2026)",
+   "intentos": "1.º 403 (desafío del WAF); 2.º 200"
+  },
+  {
+   "id_documento": "794582233",
+   "resultado": "leído: Excel de una hoja (anexo de evaluación jurídica)",
+   "intentos": "1.º 200"
+  }
+ ],
+ "informe_leido": "794582230 (completo) y 794582233 (completo)",
+ "proponentes": 6,
+ "proponentes_detalle": [
+  {
+   "proponente": "Proponente 1",
+   "tipo": "consorcio de 2 (dos personas jurídicas, 90 % y 10 %, pág. 5)",
+   "resultado": "habilitado (3.º, 99,8456672 puntos)"
+  },
+  {
+   "proponente": "Proponente 2",
+   "tipo": "persona natural",
+   "resultado": "habilitado (4.º, 99,0156994 puntos)"
+  },
+  {
+   "proponente": "Proponente 3",
+   "tipo": "consorcio (integrantes: sin dato en el informe; uno es persona natural, pág. 12)",
+   "resultado": "rechazado",
+   "causa": "garantia_seriedad",
+   "defecto": "documental",
+   "motivo": "Requerido para subsanar, no amplió el plazo de cobertura de la garantía de seriedad; causal del literal E del numeral 1.15 del pliego (pág. 14; anexo jurídico, fila 15)."
+  },
+  {
+   "proponente": "Proponente 4",
+   "tipo": "persona jurídica",
+   "resultado": "habilitado (2.º, 99,9361443 puntos)"
+  },
+  {
+   "proponente": "Proponente 5",
+   "tipo": "consorcio (integrantes: sin dato en el informe)",
+   "resultado": "habilitado (5.º, 97,8641397 puntos); su oferta fue revisada por precio artificialmente bajo y la entidad aceptó la justificación (págs. 9 y 13)"
+  },
+  {
+   "proponente": "Proponente 6",
+   "tipo": "consorcio de 2 (una persona natural y una persona jurídica, 50 % y 50 %, pág. 15)",
+   "resultado": "habilitado (1.º, 100 puntos), recomendado para adjudicar por $1.012.000.000"
+  }
+ ],
+ "habilitados": 5,
+ "rechazados_o_no_habilitados": 1,
+ "causas": [
+  {
+   "categoria": "garantia_seriedad",
+   "defecto": "documental",
+   "n": 1
+  }
+ ],
+ "subsanaciones_pedidas": null,
+ "subsanaciones_nota": "El informe dice que en el preliminar (10-abr-2026) «se solicitó a los proponentes subsanar» los anexos 1, 2 y 3, sin decir a cuántos ni qué (págs. 1 y 13): sin dato.",
+ "minutos": 1.2,
+ "minutos_nota": "Reloj de pared 04:54:15-04:55:27 (lectura y escritura), sin la descarga común del lote (04:52:32-04:54:01).",
+ "fichas": [
+  "CE-F-9550",
+  "CE-F-9551"
+ ]
+}

@@ -1,0 +1,39 @@
+{
+  "id": "CE-F-3235",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Alcances y limitaciones de los métodos de evaluación económica a acuerdos colusorios en la contratación pública: el caso colombiano",
+  "anio": 2015,
+  "institucion": "Universidad Nacional de Colombia, Facultad de Ciencias Económicas, Maestría en Ciencias Económicas (trabajo de investigación)",
+  "url": "https://bffrepositorio.unal.edu.co/server/api/core/bitstreams/7b64d4c5-22da-4bef-9791-000b56b8b639/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: resumen, capítulo 3 (base de 96 licitaciones, págs. 33-35 del PDF) y capítulo 4 (págs. 40-44); el resto se recorrió por palabras clave",
+  "localizador": "pág. 43 del PDF, capítulo 4, apartado 4.2.1 «Primera etapa»",
+  "cita": "las fórmulas de calificación económica utilizadas comúnmente en las grandes licitaciones en Colombia obligan a todo acuerdo colusorio […] de programar ofertas económicas distanciadas de tal forma, que se direccione la fórmula de calificación en un sentido beneficioso para alguna ellas",
+  "afirmacion": "El autor sostiene que las fórmulas de calificación económica usadas comúnmente en las grandes licitaciones en Colombia obligan a un acuerdo colusorio a programar ofertas económicas distanciadas para direccionar la fórmula a favor de una de ellas.",
+  "inferencia": "Inferencia: cuando el precio se califica con un promedio de las ofertas, un grupo coordinado de oferentes puede mover el punto que gana; el oferente independiente compite contra ese promedio manipulado.",
+  "eje": 3,
+  "etapa": [
+    "E4",
+    "E5"
+  ],
+  "decision": [
+    "D2"
+  ],
+  "modulo": [
+    "M-PRECIO"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "No aplica: dato empírico o descripción de práctica, no regla",
+    "vigente": null,
+    "nota": "Casos sancionados por la SIC y licitaciones de 2010-2014, anteriores a los documentos tipo de obra (que hoy fijan los métodos de evaluación del precio en las modalidades que cubren)."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Ofertas complementarias coordinadas (colusión) que mueven la fórmula de evaluación del precio basada en promedios hacia la oferta preseleccionada.",
+  "advertencia": "Se omitió con […] «que tenga intenciones reales de distorsionar un proceso,»; «alguna ellas» está así en el original."
+}

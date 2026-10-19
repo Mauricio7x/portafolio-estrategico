@@ -1,0 +1,52 @@
+{
+  "id": "CE-F-3040",
+  "tipo": "documento_tipo",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Documentos Tipo de licitación de obra pública de infraestructura de transporte, versión 4 · Documento Base (DocBase_LicObra_TLPV4.docx)",
+  "anio": 2024,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29920/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: del Documento Base se leyeron las secciones 1.6, 1.15, 1.16, 2.3 a 2.6, el encabezado del capítulo IV, 4.1 (inicio), 4.3, 4.3.2, 4.8 y 7.1",
+  "localizador": "sección 1.15 (Causales de rechazo), causal sobre el usuario de SECOP II del plural",
+  "cita": "Cuando la Entidad Estatal encuentre que la propuesta aportada por un Proponente Plural se realice con un usuario del SECOP II diferente al de la unión temporal o consorcio.",
+  "afirmacion": "En la licitación de obra de transporte por documento tipo se rechaza la propuesta de un plural presentada con un usuario de SECOP II distinto al del consorcio o unión temporal.",
+  "inferencia": null,
+  "eje": 3,
+  "etapa": [
+    "E4"
+  ],
+  "decision": [
+    "D3"
+  ],
+  "modulo": [
+    "M-PLURAL",
+    "M-OFERTA"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A3",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.colombiacompra.gov.co/documentos-tipo/vigentes/?sector=712&nodo=29383 («Versión: 4 · Desde: 3 de febrero de 2025») y https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo",
+    "vigente": true,
+    "nota": "Por el art. 14, par. 3, del Decreto 0997 de 2026, los procesos con documento tipo siguen este texto hasta que CCE expida nuevas versiones."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": "2025-02-03",
+    "documento_tipo": "Documentos Tipo de licitación de obra pública de infraestructura de transporte, versión 4 (Resolución 465 de 2024), vigente desde el 3-feb-2025",
+    "nota_desde_aviso": "Fecha de entrada en vigencia de la versión según el control de versiones de CCE; no se leyó la resolución de adopción para comprobar si se cuenta desde la publicación del aviso o del pliego."
+  },
+  "lista_cerrada": "L3-12",
+  "problema_candidato": "Un consorcio que carga la oferta desde la cuenta de SECOP II de uno de sus integrantes, y no desde la cuenta del plural, es rechazado.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje3-institucional:3",
+      "veredicto": "correcta",
+      "detalle": "Docx de descarga/29920, sección 1.15: la causal «Cuando la Entidad Estatal encuentre que la propuesta aportada por un Proponente Plural se realice con un usuario del SECOP II diferente al de la unión temporal o consorcio.» coincide literalmente, y la afirmación es fiel. La vigencia está bien."
+    }
+  ]
+}

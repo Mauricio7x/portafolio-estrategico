@@ -1,0 +1,52 @@
+{
+  "id": "CE-F-1016",
+  "tipo": "guia_cce",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "ABC Decreto 0997 de 2026 · RUP, Integridad y Transparencia",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2026/09/ABC-Decreto-0997-RUP-y-Transparencia.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: las 20 páginas",
+  "localizador": "pág. 13, pregunta 10, viñeta «Art. 8»",
+  "cita": "Art. 8. contenido de los pliegos, incluidas las cláusulas y declaración, pacto o compromiso anticorrupción, y el reflejo en los pliegos de los criterios ambientales y sociales ya definidos en los estudios previos.",
+  "afirmacion": "El ABC de CCE lee el art. 8 (de vigencia inmediata) como el que lleva a los pliegos las cláusulas y la declaración anticorrupción y los criterios ambientales y sociales ya definidos en los estudios previos.",
+  "inferencia": null,
+  "eje": 1,
+  "etapa": [
+    "E1",
+    "E2"
+  ],
+  "decision": [
+    "D3"
+  ],
+  "modulo": [
+    "M-PLIEGO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A3",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/",
+    "vigente": true,
+    "nota": "Se contrastó con el art. 14 del Decreto 0997 de 2026 en la relatoría de CCE. Un ABC no reemplaza el decreto."
+  },
+  "lista_cerrada": "L1-01",
+  "problema_candidato": "El art. 8 (pliegos con criterios ambientales y sociales) rige ya, mientras los arts. 7 y 9 (estudios previos y ponderación con esos criterios) rigen de forma escalonada: un pliego de hoy puede traer criterios de sostenibilidad sin la ponderación reglada, y el contratista debe leerlo con cuidado.",
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": "Salvo procesos con documento tipo",
+    "motivo_null": "Lectura orientadora del ABC; la fecha de publicación en el Diario Oficial no se comprobó."
+  },
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-institucional:2",
+      "veredicto": "correcta",
+      "detalle": "La cita aparece literal en la pág. 13, viñeta «Art. 8», bajo el rótulo «Vigencia desde el día siguiente a la publicación», que sostiene lo de «(de vigencia inmediata)». La afirmación se presenta como lectura del ABC. El art. 8 del Decreto 0997 (nuevo art. 2.2.1.1.2.1.3) incluye en los pliegos «las cláusulas anti-corrupción» y «La declaración, pacto o compromiso anti-corrupción», y el art. 14 lo hace entrar en vigencia al día siguiente de la publicación. No hay contradicción."
+    }
+  ]
+}

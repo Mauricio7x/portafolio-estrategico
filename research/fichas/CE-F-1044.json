@@ -1,0 +1,52 @@
+{
+  "id": "CE-F-1044",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 2069 de 2020",
+  "anio": 2020,
+  "institucion": "Secretaría General del Senado (Leyes desde 1992, texto con notas de vigencia)",
+  "url": "http://www.secretariasenado.gov.co/senado/basedoc/ley_2069_2020.html",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: arts. 30 a 36",
+  "localizador": "art. 31, inciso 1",
+  "cita": "Las Entidades Estatales de acuerdo con el análisis de Sector podrán incluir, en los Documentos del Proceso, requisitos diferenciales y puntajes adicionales, en función del tamaño empresarial para la promoción del acceso de las MIPYMES",
+  "afirmacion": "Las entidades, según el análisis del sector, pueden incluir requisitos diferenciales y puntajes adicionales por tamaño empresarial para promover el acceso de las Mipyme.",
+  "inferencia": null,
+  "eje": 1,
+  "etapa": [
+    "E1",
+    "E2"
+  ],
+  "decision": [
+    "D1"
+  ],
+  "modulo": [
+    "M-PLIEGO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A1",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "http://www.secretariasenado.gov.co/senado/basedoc/ley_2069_2020.html",
+    "vigente": true,
+    "nota": "Texto de la Secretaría del Senado («Última actualización: 15 de septiembre de 2026»), leído el 2-oct-2026."
+  },
+  "lista_cerrada": "L1-07",
+  "problema_candidato": null,
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "La fuente no fija una fecha de aviso desde la que rija."
+  },
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-institucional:3",
+      "veredicto": "correcta",
+      "detalle": "Ley 2069, art. 31, inciso 1: la cita está literal. La afirmación conserva el «podrán» («pueden») y el condicionante del análisis del sector. En el texto del Senado (actualizado al 15-sep-2026) el art. 31 no tiene nota de modificación; la Ley 2479 de 2025 modificó el art. 32, no el 31."
+    }
+  ]
+}

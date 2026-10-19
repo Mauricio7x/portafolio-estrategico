@@ -1,0 +1,53 @@
+{
+  "id": "CE-F-3049",
+  "tipo": "documento_tipo",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Control de versiones – Documentos Tipo (página web)",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: tabla de versiones de todos los sectores",
+  "localizador": "tabla, sector Infraestructura Social, fila de licitación de obra pública",
+  "cita": "Documentos Tipo para la modalidad de Licitación de Obra Pública para el sector de Infraestructura Social. V.1 30/08/2021 – 15/02/2026 Versión anterior. V.2 Desde 16/02/2026 Versión vigente.",
+  "afirmacion": "Según el control de versiones de CCE, la licitación de obra de infraestructura social tiene vigente la versión 2 desde el 16-feb-2026; la versión 1 rigió del 30-ago-2021 al 15-feb-2026.",
+  "inferencia": "Inferencia: un proceso de infraestructura social con aviso anterior al 16-feb-2026 puede seguir con la versión 1; el contratista debe mirar con qué versión se estructuró el pliego.",
+  "eje": 3,
+  "etapa": [
+    "E1",
+    "E2"
+  ],
+  "decision": [
+    "D3"
+  ],
+  "modulo": [
+    "M-PLIEGO",
+    "M-INGESTA"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A3",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo",
+    "vigente": true,
+    "nota": "Página consultada el 2-oct-2026."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": "2026-02-16",
+    "documento_tipo": "Documentos Tipo de licitación de obra pública de infraestructura social, versión 2, vigente desde el 16-feb-2026",
+    "nota_desde_aviso": "Fecha de vigencia de la tabla; no se leyó la resolución de adopción para saber si se cuenta desde el aviso."
+  },
+  "lista_cerrada": "L3-12",
+  "problema_candidato": null,
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje3-institucional:4",
+      "veredicto": "correcta",
+      "detalle": "Abrí https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo (200). Bajo el encabezado «SECTOR SOCIAL», en la fila «Documentos Tipo para la modalidad de Licitación de Obra Pública para el sector de Infraestructura Social.», figuran «V.1 30/08/2021 – 15/02/2026 Versión anterior.» y «V.2 Desde 16/02/2026 Versión vigente.», tal como dice la cita. La afirmación coincide. El localizador dice «sector Infraestructura Social» y el encabezado es «SECTOR SOCIAL», pero la fila se encuentra sin ambigüedad."
+    }
+  ]
+}

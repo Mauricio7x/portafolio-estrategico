@@ -1,0 +1,49 @@
+{
+  "id": "CE-F-1230",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Limitación a la discrecionalidad de las entidades en la estructuración de los pliegos tipo en obras de infraestructura de transporte",
+  "anio": 2023,
+  "institucion": "Universidad La Gran Colombia, Facultad de Derecho (trabajo de grado de especialización, repositorio institucional)",
+  "url": "https://repository.ugc.edu.co/server/api/core/bitstreams/bea38bae-2690-4cd4-a7fe-aaf34bc75b1e/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: comparación de dos licitaciones de INVÍAS y tabla 1 (págs. 12-15) y conclusiones (págs. 21-22)",
+  "localizador": "pág. 13 impresa (pág. 13 del PDF), análisis de la licitación LP-DO-SRN-025-2021 frente a la LP-DO-SRN-039-2019",
+  "cita": "donde el estudio de mercado se hizo con una muestra de 1000 mil empresas, donde ofertaron 69 proponentes […] Observando notoriamente como si se incrementó el número de oferentes, frente a la primera licitación.",
+  "afirmacion": "Los autores comparan dos licitaciones de obra de INVÍAS y dicen que en la segunda ofertaron 69 proponentes y que se incrementó notoriamente el número de oferentes frente a la primera licitación.",
+  "inferencia": "Inferencia: según el párrafo previo, la segunda (2021) se hizo «con ocasión a la obligatoriedad de los documentos tipo», y la página 12 indica 42 oferentes en la primera (2019); es un caso de dos procesos, no una medición.",
+  "eje": 1,
+  "etapa": [
+    "E4",
+    "E5"
+  ],
+  "decision": [
+    "D1"
+  ],
+  "modulo": [
+    "M-LISTA",
+    "M-PLIEGO"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://repository.ugc.edu.co/server/api/core/bitstreams/bea38bae-2690-4cd4-a7fe-aaf34bc75b1e/content",
+    "vigente": null,
+    "nota": "Dos procesos de INVÍAS (2019 y 2021)."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Con los documentos tipo sube el número de oferentes por licitación de obra (caso de dos procesos de INVÍAS).",
+  "advertencia": "El mismo trabajo da datos que no cuadran: para 2019 dice «42 oferentes» y también «solo 43 se postularon»; para 2021 el texto dice que no se limita el tiempo de la experiencia y la tabla 1 pone «ULTIMOS 5 AÑOS». No se usa como frecuencia.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-academico:3",
+      "veredicto": "correcta",
+      "detalle": "Abrí la URL (HTTP 200, PDF de 27 págs., autores Ladino Miranda y Orjuela Narváez, así que «Los autores» está bien). En la pág. 13 (impresa y del PDF) la cita aparece literal: «donde el estudio de mercado se hizo con una muestra de 1000 mil empresas, donde ofertaron 69 proponentes» y «Observando notoriamente como si se incrementó el número de oferentes, frente a la primera licitación.» La tabla 1 (pág. 14) confirma 42 y 69 propuestas recibidas. La advertencia es exacta: en la pág. 12 aparecen a la vez «42 oferentes» y «solo 43 se postularon», y la tabla pone «ULTIMOS 5 AÑOS» para 2021. La afirmación no dice más que la cita."
+    }
+  ]
+}

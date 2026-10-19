@@ -1,0 +1,40 @@
+{
+  "id": "CE-F-3239",
+  "tipo": "academia",
+  "autor": "Personas naturales, tres autores (nombres omitidos por la regla 5 del piloto)",
+  "titulo": "Principios de igualdad, libre concurrencia y selección objetiva en la Contratación Estatal",
+  "anio": 2020,
+  "institucion": "Universidad Libre, Especialización en Derecho Administrativo · revista Lux Praxis (Universidad Libre); año tomado de la fecha de creación del PDF (dic-2020), sin volumen visible en el texto",
+  "url": "https://revistas.unilibre.edu.co/index.php/lux_praxis/article/download/7041/6211/17215",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: resumen y apartado de casos (págs. 8-10 del PDF); el resto se recorrió por palabras clave",
+  "localizador": "pág. 9 del PDF (impresa 141), apartado de casos, «Caso: … Vs. Municipio El Guamo (Tolima)»",
+  "cita": "en la evaluación de las propuestas se asignaron puntajes idénticos en aspectos tales como flujo de suministros, subcontratos y flujo de fondos, lo que también ocurrió respecto de los ítems de capacidad técnica, experiencia, seriedad y cumplimiento, organización de la obra y equipo ofrecido.",
+  "afirmacion": "Los autores relatan un caso, resuelto por el Consejo de Estado en 1994, de una licitación municipal de obra en que la evaluación asignó puntajes idénticos a las propuestas en flujo de suministros, subcontratos, flujo de fondos, capacidad técnica, experiencia, seriedad y cumplimiento, organización de la obra y equipo ofrecido.",
+  "inferencia": "Inferencia: según el mismo apartado, el Consejo de Estado declaró la nulidad del proceso porque la calificación no atendió el contenido de las propuestas; el oferente que ve puntajes calcados en el informe tiene un motivo concreto de observación.",
+  "eje": 3,
+  "etapa": [
+    "E5",
+    "E6"
+  ],
+  "decision": [
+    "D3"
+  ],
+  "modulo": [
+    "M-OFERTA",
+    "M-ENTIDAD"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "No aplica: dato empírico o descripción de práctica, no regla",
+    "vigente": null,
+    "nota": "El caso es una sentencia del Consejo de Estado de 1994 sobre una licitación anterior a la Ley 1150 de 2007, citada por los autores; la sentencia no se abrió."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Calificación de puntaje que no atiende el contenido de las ofertas (puntajes idénticos para todos), que el oferente debe observar en el traslado del informe.",
+  "advertencia": "Caso antiguo (licitación anterior a 1994, bajo un régimen en que experiencia y capacidad se puntuaban); hoy esos factores son habilitantes. Vale como patrón de evaluación defectuosa, no como regla."
+}

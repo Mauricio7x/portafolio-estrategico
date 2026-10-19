@@ -1,0 +1,45 @@
+{
+  "id": "CE-F-3200",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "La garantía de seriedad de la oferta como causal de rechazo en los procesos licitatorios",
+  "anio": 2021,
+  "institucion": "Universidad Militar Nueva Granada, Facultad de Derecho, Diplomado de Contratación Estatal (ensayo, campus Cajicá)",
+  "url": "https://repository.umng.edu.co/bitstreams/a967961e-80db-45bd-9a91-0618c18bfe87/download",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: resumen (pág. 4-5), índice y conclusiones (pág. 26); el resto se recorrió por palabras clave",
+  "localizador": "pág. 4 del PDF, apartado 1.1 Resumen",
+  "cita": "la normatividad vigente como es la Ley 80/ 1993 y la Ley 1150/2007, cuyas disposiciones consideran la ausencia de garantía de la seriedad de la oferta como un requisito insubsanable y en el caso de la presentación errónea de la garantía, constituye una causal subsanable.",
+  "afirmacion": "La autora resume que, según la Ley 80 de 1993 y la Ley 1150 de 2007, no entregar la garantía de seriedad con la oferta es insubsanable, mientras que presentarla con errores es subsanable.",
+  "inferencia": "Inferencia: para el contratista, la póliza de seriedad es el único documento habilitante cuya ausencia al cierre no tiene segunda oportunidad; un error en ella sí se corrige si la entidad lo pide.",
+  "eje": 3,
+  "etapa": [
+    "E3",
+    "E4",
+    "E5"
+  ],
+  "decision": [
+    "D3"
+  ],
+  "modulo": [
+    "M-OFERTA",
+    "M-PLIEGO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "Ley 1150 de 2007, art. 5, texto vigente en la Secretaría del Senado (http://www.secretariasenado.gov.co/senado/basedoc/ley_1150_2007.html), consultado el 2-oct-2026",
+    "vigente": true,
+    "nota": "El parágrafo 3 del art. 5 (adicionado por la Ley 1882 de 2018, art. 5) dice: «La no entrega de la garantía de seriedad junto con la propuesta no será subsanable y será causal de rechazo de la misma». Lo de la presentación errónea subsanable es lectura de la autora; no se comprobó en la norma."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Lectura académica de la Ley 1150, art. 5, par. 3; rige desde la Ley 1882 de 2018, no desde un aviso concreto."
+  },
+  "lista_cerrada": null,
+  "problema_candidato": "No adjuntar la póliza de seriedad con la oferta produce el rechazo sin posibilidad de subsanar."
+}

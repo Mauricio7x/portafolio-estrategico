@@ -1,0 +1,51 @@
+{
+  "id": "CE-F-5043",
+  "tipo": "documento_tipo",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Documentos Tipo de licitación de obra pública de infraestructura social, versión 2 · Anexo 4 Minuta del Contrato (A4_MinutaContrato_ISocialLV2.docx)",
+  "anio": 2025,
+  "institucion": "Colombia Compra Eficiente (paquete «05 Documentos Tipo transversales de infraestructura social — Licitación Pública — Versión 2»)",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29837/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: cláusulas de garantías, multas y liquidación del Anexo 4, y búsqueda de texto en todo el anexo y en el Documento Base",
+  "localizador": "cláusula de garantías, cuadro de amparos, fila del anticipo (línea 391 del texto extraído)",
+  "cita": "Buen manejo y correcta inversión del anticipo Hasta la liquidación del contrato o hasta la amortización del anticipo [La Entidad debe definir el valor del amparo de acuerdo con el artículo 2.2.1.2.3.1.11. del Decreto 1082 de 2015]",
+  "afirmacion": "La minuta del documento tipo de infraestructura social V2 remite el valor del amparo de buen manejo y correcta inversión del anticipo al art. 2.2.1.2.3.1.11 del Decreto 1082 de 2015.",
+  "inferencia": "Inferencia: en el Decreto 1082 (texto consolidado de Función Pública) el art. 2.2.1.2.3.1.11 regula la suficiencia de la garantía de pago anticipado y el art. 2.2.1.2.3.1.10 la del buen manejo del anticipo; la remisión está equivocada.",
+  "eje": 5,
+  "etapa": [
+    "E7"
+  ],
+  "decision": [
+    "D2"
+  ],
+  "modulo": [
+    "M-PLIEGO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A3",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29837/",
+    "vigente": true,
+    "nota": "Página oficial (https://www.colombiacompra.gov.co/documentos-tipo/modalidad/01-documentos-tipo-de-licitacion-de-obra-publica-de-infraestructura-social/01-documentos-tipo-transversales, consultada el 2-oct-2026): «Versión 2 – Vigente desde el 16 de febrero de 2026 hasta la fecha», Resolución 539 de 2025."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": "2026-02-16",
+    "documento_tipo": "Documentos Tipo de licitación de obra pública de infraestructura social, versión 2 (Resolución 539 de 2025), vigente desde el 16-feb-2026"
+  },
+  "lista_cerrada": "L5-08",
+  "problema_candidato": null,
+  "advertencia": "La fila anterior (cumplimiento) remite bien al art. 2.2.1.2.3.1.12; el error está solo en la fila del anticipo.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje5-institucional:3",
+      "veredicto": "correcta",
+      "detalle": "Bajé el ZIP 29837 de CCE, que es el ítem 05 de la página de transversales de infraestructura social V2. En A4_MinutaContrato_ISocialLV2 («Versión: 2 del 21 de agosto de 2025») la fila del anticipo remite al .11, en literal; la fila de cumplimiento remite al .12, como dice la advertencia. Vigencia confirmada en la página oficial: «Versión 2 – Vigente desde el 16 de febrero de 2026 hasta la fecha», Resolución 539 de 2025."
+    }
+  ]
+}

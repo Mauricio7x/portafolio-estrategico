@@ -1,0 +1,39 @@
+{
+  "id": "CE-F-6201",
+  "tipo": "academia",
+  "autor": "Una persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Análisis de los factores que generan atraso o abandono en las obras públicas de infraestructura en Bogotá",
+  "anio": 2017,
+  "institucion": "Universidad La Gran Colombia, Facultad de Postgrados, Especialización en Gerencia · trabajo de grado en el repositorio institucional",
+  "url": "https://repository.ugc.edu.co/bitstream/handle/11396/3867/An%C3%A1lisis_abandono_obras_p%C3%BAblicas.pdf?sequence=1",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: tabla de contenido, capítulo II (págs. 34-41) y conclusión (págs. 50-53); el resto por palabras clave",
+  "localizador": "pág. 50 (Conclusión, primer párrafo)",
+  "cita": "las fuentes académicas, los medios de comunicación y las entidades públicas como la Contraloría de Bogotá atribuyen en primer lugar la corrupción, seguido de la falta de planeación, de un proyecto, como los principales factores que inciden en la inconclusión de las obras",
+  "afirmacion": "El autor concluye que las fuentes académicas, los medios y entidades como la Contraloría de Bogotá atribuyen la inconclusión de las obras en primer lugar a la corrupción y luego a la falta de planeación.",
+  "inferencia": null,
+  "eje": 6,
+  "etapa": [
+    "E0",
+    "E8"
+  ],
+  "decision": [
+    "D1",
+    "D4"
+  ],
+  "modulo": [
+    "M-ENTIDAD"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "No aplica: dato empírico citado por un trabajo académico",
+    "vigente": null,
+    "nota": "La cifra la toma el autor del informe de la Contraloría de Bogotá de 2016 (25 obras inconclusas); no se abrió ese informe en esta sesión."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Obras inconclusas atribuidas, según la triangulación del autor, primero a corrupción y luego a falta de planeación de la entidad."
+}

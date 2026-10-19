@@ -1,0 +1,40 @@
+{
+  "id": "CE-F-4200",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Los pliegos tipo y su aplicación conforme al principio de transparencia en la contratación estatal",
+  "anio": 2022,
+  "institucion": "Universidad Militar Nueva Granada, Facultad de Derecho, Diplomado de Contratación Estatal (trabajo de grado, repositorio institucional)",
+  "url": "https://repository.umng.edu.co/server/api/core/bitstreams/e64a73a6-06bb-44c0-b6de-86ff0f0dec05/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: págs. 1-3 (portada, resumen), 8-11 (pliegos sastre) y 22-27 (impacto y conclusiones) del PDF; el resto por palabras clave",
+  "localizador": "págs. 23-24 del PDF (la frase cruza el salto de página), apartado sobre el impacto de los pliegos tipo",
+  "cita": "para el 2020 se contaba con un incremento de hasta 560% del número de oferentes, es decir en promedio 42,5 oferentes por proceso",
+  "afirmacion": "La autora reporta, citando una fuente secundaria (Gutiérrez Núñez, 2020), que con los pliegos tipo el número de oferentes aumentó hasta un 560 % para 2020, con un promedio de 42,5 oferentes por proceso.",
+  "inferencia": "Inferencia: dato de segunda mano (nota de prensa de 2020 que recoge declaraciones de la Agencia), no medido por la autora; para el contratista, un proceso con documentos tipo trae del orden de decenas de competidores, así que preparar la oferta tiene una probabilidad baja de ganar y el costo de cada oferta perdida se multiplica.",
+  "eje": 4,
+  "etapa": [
+    "E1",
+    "E4"
+  ],
+  "decision": [
+    "D1"
+  ],
+  "modulo": [
+    "M-LISTA",
+    "M-ENTIDAD"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://repository.umng.edu.co/server/api/core/bitstreams/e64a73a6-06bb-44c0-b6de-86ff0f0dec05/content",
+    "vigente": null,
+    "nota": "Cifra de 2020 de segunda mano; no se comprobó contra SECOP."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Tras los documentos tipo, un proceso de obra reúne decenas de oferentes (42,5 en promedio según un dato de 2020 de segunda mano), y el contratista prepara muchas ofertas para ganar pocas.",
+  "advertencia": "El «hasta 560 %» y el «promedio de 42,5» vienen de la misma frase sin decir sobre qué universo ni contra qué base; no usar como frecuencia sin la fuente primaria."
+}

@@ -1,0 +1,39 @@
+{
+  "id": "CE-F-5235",
+  "tipo": "academia",
+  "autor": "Autor del artículo de grado (persona natural, nombre omitido por la regla 5)",
+  "titulo": "Responsabilidad contractual del Estado colombiano por retraso injustificado en contratos de obra pública",
+  "anio": 2025,
+  "institucion": "Corporación Universitaria Remington, Especialización en Responsabilidad Contractual y Extracontractual del Estado",
+  "url": "https://repositorio.uniremington.edu.co/bitstreams/21233d78-5d13-40d4-a437-01773fa8dd6d/download",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: las 19 págs. con pdftotext -layout",
+  "localizador": "pág. 14 del PDF, apartado 3, comentario de la sentencia 64518 de 2023 del Consejo de Estado (construcción de un colegio en Bogotá, según el autor)",
+  "cita": "no se logró demostrar de manera contable el mayor costo en que realmente incurrió el contratista durante la prórroga. […] el contratista no había formulado salvedades en las actas de suspensión y prórroga que firmó",
+  "afirmacion": "El autor reporta un fallo en que no se logró demostrar de manera contable el mayor costo del contratista durante la prórroga y que el contratista no había formulado salvedades en las actas de suspensión y prórroga que firmó.",
+  "inferencia": null,
+  "eje": 5,
+  "etapa": [
+    "E8",
+    "E10"
+  ],
+  "decision": [
+    "D4"
+  ],
+  "modulo": [
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "el propio documento (fuente académica fechada)",
+    "vigente": null,
+    "nota": "Trabajo de grado de 2025 que reporta sentencias del Consejo de Estado (2011, 2017, 2023, 2024); las providencias no se abrieron para esta ficha: lo que sostiene es lo que el autor reporta de ellas."
+  },
+  "regla": null,
+  "lista_cerrada": "L5-10",
+  "problema_candidato": "Firmar actas de suspensión y prórroga sin salvedades y no llevar contabilidad por rubros del tiempo adicional hace perder el reclamo por mayor permanencia aunque la entidad haya fallado en la planeación.",
+  "advertencia": "Lo que dice la sentencia lo reporta el autor; la providencia no se abrió para esta ficha."
+}

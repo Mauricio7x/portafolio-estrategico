@@ -1,0 +1,39 @@
+{
+  "id": "CE-F-5241",
+  "tipo": "academia",
+  "autor": "Autor de la tesis (persona natural, nombre omitido por la regla 5)",
+  "titulo": "Caducidad del contrato estatal",
+  "anio": 2007,
+  "institucion": "Universidad de los Andes, Facultad de Derecho, trabajo de grado",
+  "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/e67c326b-aa9a-455e-8de1-ed10611195e1/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: 84 págs.; leídos el índice y el apartado C del capítulo de efectos de la caducidad (págs. 54-55); la extracción con pdftotext mete espacios dentro de las palabras, por eso la cita se comprobó contra la imagen de la pág. 54 del PDF",
+  "localizador": "págs. 54-55 de la tesis (págs. 54-55 del PDF), apartado «C. Inhabilidad sobreviniente del contratista para licitar o contratar»",
+  "cita": "En cuanto a los consorcios, […] dado su carácter solidario, la inhabilidad recae sobre cada una de las personas naturales o jurídicas que conformen el consorcio, sin distingo del […] grado de participación en el consorcio. La inhabilidad afecta aun al consorciado cumplido",
+  "afirmacion": "El autor afirma que, por el carácter solidario del consorcio, la inhabilidad por caducidad recae sobre cada una de las personas naturales o jurídicas que lo conforman, sin distinguir su grado de participación, y que afecta aun al consorciado cumplido.",
+  "inferencia": "Inferencia: entrar en consorcio con un socio que incumple expone al integrante cumplido a la misma inhabilidad de cinco años que menciona el autor en el párrafo anterior; la regla de la Ley 80, art. 8, no se reverificó para esta ficha.",
+  "eje": 5,
+  "etapa": [
+    "E8"
+  ],
+  "decision": [
+    "D1",
+    "D4"
+  ],
+  "modulo": [
+    "M-PLURAL",
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "el propio documento (fuente académica fechada)",
+    "vigente": null,
+    "nota": "Tesis de 2007, anterior a la Ley 1150 de 2007 y a la Ley 1474 de 2011; apoya la afirmación en una sentencia del Consejo de Estado que cita en nota; no se comprobó contra el texto vigente para esta ficha."
+  },
+  "regla": null,
+  "lista_cerrada": "L5-02",
+  "problema_candidato": "La caducidad declarada por el incumplimiento de un consorciado inhabilita también a los demás integrantes del consorcio, aunque hayan cumplido su parte."
+}

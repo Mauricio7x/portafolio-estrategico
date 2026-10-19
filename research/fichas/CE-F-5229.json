@@ -1,0 +1,41 @@
+{
+  "id": "CE-F-5229",
+  "tipo": "academia",
+  "autor": "Autores del artículo (personas naturales, nombres omitidos por la regla 5)",
+  "titulo": "Análisis de los riesgos contractuales de los procesos de contratación de obras civiles en los municipios de 4a y 6a categoría del Área Metropolitana de Cúcuta en el periodo comprendido entre el año 2016 y el primer semestre del 2021",
+  "anio": 2022,
+  "institucion": "Universidad de Santander (UDES), Aibi revista de investigación, administración e ingeniería, vol. 10, núm. 3 (autores de la Universidad de Pamplona y el SENA)",
+  "url": "https://revistas.udes.edu.co/aibi/es/article/download/analisis_de_los_riesgos_contractuales_de_los_procesos_de_contrat/2756",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: las 18 págs. con pdftotext -layout",
+  "localizador": "pág. 56 de la revista (pág. 13 del PDF), resultados del municipio de Villa del Rosario, párrafo previo a la Tabla 13",
+  "cita": "Los riesgos evaluados en los 369 procesos contractuales fueron 3947, cuya clasificación quedo de la siguiente manera: 216 correctamente identificados y 3731 incorrectamente clasificados",
+  "afirmacion": "Los autores reportan que, en los 369 procesos de obra civil de Villa del Rosario (Norte de Santander) que analizaron, de 3947 riesgos de las matrices solo 216 estaban correctamente identificados y 3731 estaban incorrectamente clasificados.",
+  "inferencia": null,
+  "eje": 5,
+  "etapa": [
+    "E2",
+    "E8"
+  ],
+  "decision": [
+    "D3",
+    "D4"
+  ],
+  "modulo": [
+    "M-PLIEGO",
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "el propio documento (fuente académica fechada)",
+    "vigente": null,
+    "nota": "Estudio empírico de matrices de riesgo publicadas en SECOP I (2016-2021); no es normativo, no aplica comprobar vigencia."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Las matrices de riesgo de los pliegos de obra de municipios pequeños están mal elaboradas, y cuando ocurre un imprevisto no queda claro a quién se le asignó ni quién lo paga.",
+  "advertencia": "El total (3947 = 216 + 3731) concuerda entre el texto y la Tabla 13, pero los porcentajes por categoría del texto (p. ej., 19,15 % de errores administrativos, 32,35 % de riesgos cubiertos por pólizas) no concuerdan con las cifras de la misma Tabla 13 (920 y 1637 de 3731): esas proporciones no se usan como frecuencia. La misma discordancia aparece en la Tabla 3 de El Zulia."
+}

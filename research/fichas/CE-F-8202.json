@@ -1,0 +1,37 @@
+{
+  "id": "CE-F-8202",
+  "tipo": "academia",
+  "autor": "Dos autores de la Maestría en Gerencia de Proyectos (nombres omitidos por la regla 5 del piloto)",
+  "titulo": "Diseño de una propuesta metodológica basada en estándares de gerencia de proyectos para optimizar la estructuración de ofertas en licitaciones públicas de infraestructura de transporte en Colombia bajo el esquema de pliegos tipo de obra pública e interventoría",
+  "anio": 2026,
+  "institucion": "Institución Universitaria Politécnico Grancolombiano (repositorio Alejandría)",
+  "url": "https://alejandria.poligran.edu.co/server/api/core/bitstreams/1be8581c-8a67-4f16-b472-358298e625f6/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: resumen, planteamiento, metodología (8.6-8.7) y resultados sobre SECOP II (10.1.4) con pdftotext -layout; no se leyó el resto de los 124 páginas",
+  "localizador": "pág. 92 del PDF, § 10.1.4.2 «Principales dificultades en su manejo» (SECOP II)",
+  "cita": "Confusión con los permisos, perfiles y niveles de acceso: muchos usuarios no comprenden bien cómo asignar o modificar los roles, lo que deriva en errores administrativos como usuarios sin autorización suficiente para firmar electrónicamente.",
+  "afirmacion": "Las empresas consultadas por los autores reportan que la confusión con perfiles y roles de SECOP II deriva en errores como usuarios sin autorización suficiente para firmar electrónicamente.",
+  "inferencia": null,
+  "eje": 8,
+  "etapa": [
+    "E4"
+  ],
+  "decision": [
+    "D3"
+  ],
+  "modulo": [
+    "M-OFERTA"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "el propio documento",
+    "vigente": null,
+    "nota": "Fuente académica o de práctica: registra lo que dice su autor, no una regla; no se comprobó vigencia normativa."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "En SECOP II, el usuario que arma la oferta puede no tener el rol para firmarla y enviarla: el error aparece al cierre."
+}

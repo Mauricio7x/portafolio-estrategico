@@ -1,0 +1,48 @@
+{
+  "id": "CE-F-1240",
+  "tipo": "gremio_ong",
+  "autor": "Cámara Colombiana de la Infraestructura (CCI)",
+  "titulo": "CCI insta al MinHacienda a asignar recursos al Invías para garantizar pagos a contratistas por $600.000 millones",
+  "anio": 2026,
+  "institucion": "Cámara Colombiana de la Infraestructura, sala de prensa (26 de febrero de 2026)",
+  "url": "https://infraestructura.org.co/cci-insta-al-minhacienda-asignar-recursos-al-invias-para-garantizar-pagos-contratistas-por-600000",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa",
+  "localizador": "párrafos 1 a 3 del comunicado",
+  "cita": "A la fecha, el Gobierno nacional adeuda cerca de $600.000 millones por concepto de actas presentadas por contratistas desde el segundo semestre del año pasado. Según información del Invías, la entidad radicó el pasado 13 de febrero una solicitud de PAC por $410.000 millones",
+  "afirmacion": "La CCI afirma, en un comunicado del 26 de febrero de 2026, que el Gobierno nacional adeudaba cerca de $600.000 millones por actas presentadas por contratistas desde el segundo semestre del año anterior y que, según INVÍAS, la entidad radicó el 13 de febrero una solicitud de PAC por $410.000 millones.",
+  "inferencia": "Inferencia: el comunicado añade que la situación «como ocurrió a comienzos de 2025» se repite; para el contratista de INVÍAS, el pago de actas depende de que Hacienda asigne el Plan Anualizado de Caja, y los primeros meses del año traen retrasos que hay que financiar con capital propio.",
+  "eje": 1,
+  "etapa": [
+    "E8"
+  ],
+  "decision": [
+    "D2",
+    "D4"
+  ],
+  "modulo": [
+    "M-ENTIDAD",
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A7",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://infraestructura.org.co/cci-insta-al-minhacienda-asignar-recursos-al-invias-para-garantizar-pagos-contratistas-por-600000",
+    "vigente": null,
+    "nota": "Cifra del gremio con dato atribuido a INVÍAS; no se comprobó contra fuente oficial."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Pago de actas de obra retrasado porque Hacienda no asigna a tiempo el PAC a INVÍAS: cerca de $600.000 millones adeudados a comienzos de 2026, igual que a comienzos de 2025.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-academico:3",
+      "veredicto": "correcta",
+      "detalle": "Abrí la URL (HTTP 200, fecha «26 Feb, 26»). En el párrafo 2 la cita es literal: los $600.000 millones por actas desde el segundo semestre del año pasado y la solicitud de PAC por $410.000 millones radicada el 13 de febrero «según información del Invías». La afirmación es fiel y conserva la atribución a INVÍAS. Lo de «como ocurrió a comienzos de 2025», que recoge la inferencia, está en el párrafo 3."
+    }
+  ]
+}

@@ -1,0 +1,55 @@
+{
+  "id": "CE-F-1235",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Valor vinculante de los manuales, guías, circulares y documentos tipo de la Agencia Nacional Colombia Compra Eficiente",
+  "anio": 2021,
+  "institucion": "Universidad Pontificia Bolivariana, Escuela de Derecho y Ciencias Políticas, Medellín (trabajo de grado, repositorio institucional)",
+  "url": "https://repository.upb.edu.co/server/api/core/bitstreams/813c20ba-dbc8-41f2-8ae3-e34dd3f43da3/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa",
+  "localizador": "cap. II, párrafo final (pág. 14 del PDF)",
+  "cita": "el Consejo de Estado en su jurisprudencia establece que los documentos emitidos por la Agencia Nacional de Colombia Compra Eficiente son obligatorios para todas las entidades estatales cuando están amparados por medio de una circular. En los demás casos específicos, la Administración puede apartarse",
+  "afirmacion": "La autora sostiene que, según la jurisprudencia del Consejo de Estado, los documentos de Colombia Compra Eficiente son obligatorios para todas las entidades cuando están amparados por una circular; la cita no recoge en qué condiciones puede la Administración apartarse en los demás casos (ver advertencia).",
+  "inferencia": "Inferencia: para el contratista, una regla que solo está en un manual o guía de CCE no amparado por una circular no tiene garantizado, según esta lectura, que la entidad la siga.",
+  "eje": 1,
+  "etapa": [
+    "E1",
+    "E2"
+  ],
+  "decision": [
+    "D3"
+  ],
+  "modulo": [
+    "M-PLIEGO"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://repository.upb.edu.co/server/api/core/bitstreams/813c20ba-dbc8-41f2-8ae3-e34dd3f43da3/content",
+    "vigente": null,
+    "nota": "Interpretación de la autora en 2021; no se abrieron las providencias citadas."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Según esta lectura, las guías y manuales de CCE solo obligan a todas las entidades cuando una circular los ampara; el contratista no puede dar por sentada la regla de un manual sin ese respaldo.",
+  "advertencia": "Según el verificador (verificación fase 2, 2-oct-2026), la cita se corta a mitad de frase y la fuente sigue: «la Administración puede apartarse de las directrices suministradas por Colombia Compra Eficiente siempre y cuando estas no sean aplicables y se debe motivar la decisión». El apartamiento no es libre: exige que las directrices no sean aplicables y que la entidad motive la decisión. Esa condición no está en la cita y no debe afirmarse desde esta ficha sin ampliarla contra la fuente.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-academico:3",
+      "veredicto": "no_sostiene",
+      "detalle": "Abrí la URL (HTTP 200). En la pág. 14 del PDF, párrafo final del cap. II, el texto es literal, pero la cita se corta a mitad de frase sin «[…]». La fuente sigue así: «la Administración puede apartarse de las directrices suministradas por Colombia Compra Eficiente siempre y cuando estas no sean aplicables y se debe motivar la decisión». La afirmación dice sin condición que «en los demás casos la Administración puede apartarse». Eso quita la condición (que no sean aplicables) y el deber de motivar. Es justo el defecto de quitar un matiz del § 5.1. Que la inferencia transcriba la continuación no corrige la afirmación.",
+      "accion": "Se estrechó la afirmación a lo que dice la cita (sin dar el apartamiento por libre), se quitó de la inferencia y del problema candidato lo que solo sale de la continuación no citada, y esa continuación pasó a «advertencia», atribuida al verificador.",
+      "antes": {
+        "afirmacion": "La autora sostiene que, según la jurisprudencia del Consejo de Estado, los documentos de Colombia Compra Eficiente son obligatorios para todas las entidades cuando están amparados por una circular, y que en los demás casos la Administración puede apartarse.",
+        "inferencia": "Inferencia: la frase sigue «de las directrices suministradas por Colombia Compra Eficiente siempre y cuando estas no sean aplicables y se debe motivar la decisión»; para el contratista, una regla que solo está en un manual o guía de CCE no le garantiza que la entidad la siga: la defensa es pedir en observaciones que la entidad motive el apartamiento.",
+        "problema_candidato": "Las guías y manuales de CCE no obligan por sí solos: la entidad puede apartarse motivando, y el contratista no puede dar por sentada la regla del manual.",
+        "advertencia": null
+      }
+    }
+  ]
+}

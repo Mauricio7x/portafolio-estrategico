@@ -1,0 +1,52 @@
+{
+  "id": "CE-F-1050",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 1150 de 2007",
+  "anio": 2007,
+  "institucion": "Secretaría General del Senado (Leyes desde 1992, texto con notas de vigencia)",
+  "url": "http://www.secretariasenado.gov.co/senado/basedoc/ley_1150_2007.html",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: arts. 2, 3, 13 y 14",
+  "localizador": "art. 13 (entidades no sometidas al Estatuto General), inciso 2 (adicionado por el art. 53 de la Ley 2195 de 2022)",
+  "cita": "deberán publicar los documentos relacionados con su actividad contractual en el Sistema Electrónico para la Contratación Pública (SECOP II) o la plataforma transaccional que haga sus veces.",
+  "afirmacion": "Las entidades de régimen especial deben publicar los documentos de su actividad contractual en el SECOP II o la plataforma que haga sus veces.",
+  "inferencia": "Inferencia: los procesos de obra de entidades de régimen especial también deberían aparecer en SECOP II, con sus propias reglas de selección.",
+  "eje": 1,
+  "etapa": [
+    "T"
+  ],
+  "decision": [
+    "D1"
+  ],
+  "modulo": [
+    "M-INGESTA",
+    "M-ENTIDAD"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A1",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "http://www.secretariasenado.gov.co/senado/basedoc/ley_1150_2007.html",
+    "vigente": true,
+    "nota": "Texto de la Secretaría del Senado («Última actualización: 15 de septiembre de 2026»), leído el 2-oct-2026."
+  },
+  "lista_cerrada": "L1-12",
+  "problema_candidato": null,
+  "regla": {
+    "regimen": "Régimen especial",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Norma legal en vigor antes de la fecha de corte; no fija una fecha de aviso."
+  },
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-institucional:4",
+      "veredicto": "correcta",
+      "detalle": "Abrí http://www.secretariasenado.gov.co/senado/basedoc/ley_1150_2007.html (200). En el art. 13, el inciso 2 lleva la nota «Inciso adicionado por el artículo 53 de la Ley 2195 de 2022» y contiene la cita literal. La afirmación se ajusta a la cita. El inciso siguiente fija una transición de seis meses, ya vencida."
+    }
+  ]
+}

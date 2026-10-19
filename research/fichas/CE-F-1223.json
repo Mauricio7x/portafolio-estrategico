@@ -1,0 +1,55 @@
+{
+  "id": "CE-F-1223",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "La fuerza de atracción de los regímenes especiales para el manejo de recursos públicos en Colombia: el uso de los poderes legislativos del Ejecutivo para la creación de excepciones al régimen general de contratación estatal",
+  "anio": 2024,
+  "institucion": "Boletín Mexicano de Derecho Comparado, vol. 57, núm. 171 (UNAM, Instituto de Investigaciones Jurídicas), SciELO México, DOI 10.22201/iij.24484873e.2024.171.19354",
+  "url": "https://www.scielo.org.mx/scielo.php?script=sci_arttext&pid=S0041-86332024000300003&lng=es&nrm=i&tlng=es",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: versión HTML (sin paginación); apartados II, IV (A a C) y V «Conclusiones»; el apartado III se recorrió",
+  "localizador": "apartado IV, literal C «Decreto 1250 de 2023»",
+  "cita": "La Corte revisó la constitucionalidad de este Decreto y lo encontró contrario a la Constitución Política de Colombia, en la Sentencia C-364 de 2023. En esta decisión, el alto tribunal no se pronunció sobre el patrimonio autónomo creado en esta legislación material",
+  "afirmacion": "Los autores relatan que la Corte Constitucional, en la Sentencia C-364 de 2023, encontró contrario a la Constitución el Decreto 1250 de 2023, y que en esa decisión no se pronunció sobre el patrimonio autónomo creado en esa legislación (lo que no significa que este quedara vigente; ver advertencia).",
+  "inferencia": "Inferencia: un régimen de contratación creado por decreto de emergencia puede caer en el control constitucional; quien contrata obra con esa figura asume el riesgo de que su base legal desaparezca.",
+  "eje": 1,
+  "etapa": [
+    "E0",
+    "E8",
+    "T"
+  ],
+  "decision": [
+    "D1",
+    "D4"
+  ],
+  "modulo": [
+    "M-ENTIDAD"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.scielo.org.mx/scielo.php?script=sci_arttext&pid=S0041-86332024000300003&lng=es&nrm=i&tlng=es",
+    "vigente": null,
+    "nota": "Hecho de 2023 relatado por los autores; la sentencia C-364 de 2023 no se abrió para esta ficha."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Regímenes especiales creados por decreto de emergencia que la Corte declara inexequibles: inestabilidad de la base legal del contratante.",
+  "advertencia": "Según el verificador (verificar:eje1-academico:2, 2026-10-02): el mismo párrafo de la fuente explica que la Corte no se pronunció sobre el patrimonio autónomo «porque el decreto también creaba el Instituto de la Gestión Aguas de la Guajira […] y esta norma la declaró inexequible (artículo 13)», y que «la creación del patrimonio autónomo que esta entidad iba administrar se declaró inconstitucional por consecuencia». Leída sola, la cita podría sugerir que el patrimonio autónomo quedó en pie; los autores dicen lo contrario.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-academico:2",
+      "veredicto": "no_sostiene",
+      "detalle": "La cita está literal en el apartado IV, literal 'C. Decreto 1250 de 2023'. Pero la afirmación le quita un matiz decisivo del mismo párrafo. Dice que la Corte 'no se pronunció sobre el patrimonio autónomo', y omite que, según los autores, eso fue 'porque el decreto también creaba el Instituto de la Gestión Aguas de la Guajira […] y esta norma la declaró inexequible (artículo 13)'. Omite también que 'la creación del patrimonio autónomo que esta entidad iba administrar se declaró inconstitucional por consecuencia'. Leída sola, la afirmación sugiere que el patrimonio autónomo quedó en pie, cuando los autores dicen lo contrario.",
+      "accion": "Afirmación estrechada para no sugerir que el patrimonio autónomo quedó en pie; advertencia con el matiz del mismo párrafo que la cita no cubre.",
+      "antes": {
+        "afirmacion": "Los autores relatan que la Corte Constitucional, en la Sentencia C-364 de 2023, encontró contrario a la Constitución el Decreto 1250 de 2023 y no se pronunció sobre el patrimonio autónomo que ese decreto creaba.",
+        "advertencia": null
+      }
+    }
+  ]
+}

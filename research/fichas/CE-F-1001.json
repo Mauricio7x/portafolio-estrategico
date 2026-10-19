@@ -1,0 +1,51 @@
+{
+  "id": "CE-F-1001",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República; Departamento Nacional de Planeación",
+  "titulo": "Decreto 0997 de 2026 (modifica y adiciona el Decreto 1082 de 2015)",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente (relatoría normativa)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: los 14 artículos y los considerandos en la relatoría de CCE",
+  "localizador": "art. 4 (adiciona la definición «Ciclo de Vida» al art. 2.2.1.1.1.3.1 del Decreto 1082 de 2015), inciso 1",
+  "cita": "Las Entidades Estatales deberán considerar los impactos ambientales, sociales y económicos asociados a un bien, obra o servicio, durante todas las fases consecutivas o interrelacionadas de su Ciclo de Vida, desde la extracción y adquisición de materias primas hasta su disposición final.",
+  "afirmacion": "La nueva definición de Ciclo de Vida obliga a las Entidades Estatales a considerar los impactos ambientales, sociales y económicos de una obra en todas sus fases, desde la extracción de materias primas hasta su disposición final.",
+  "inferencia": null,
+  "eje": 1,
+  "etapa": [
+    "E0"
+  ],
+  "decision": [
+    "D2"
+  ],
+  "modulo": [
+    "M-ENTIDAD"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A2",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/",
+    "vigente": null,
+    "nota": "Art. 4: rige de forma progresiva, a los 6, 9, 12 o 15 meses de la publicación en el Diario Oficial según la entidad (art. 14, numerales 1 a 4). Con expedición el 04/08/2026, a la fecha de corte ningún plazo de 6 meses ha corrido. La fecha de publicación del Decreto 0997 de 2026 en el Diario Oficial no se comprobó en ninguna fuente abierta (la relatoría y la ficha de la Alcaldía de Bogotá solo dan la expedición, 04/08/2026)."
+  },
+  "lista_cerrada": "L1-01",
+  "problema_candidato": null,
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": "No aplica a procesos con documento tipo hasta que CCE expida la versión que lo incorpore (art. 14, parágrafo 3)",
+    "motivo_null": "Rige para procesos cuyo aviso, invitación o documento equivalente se publique después de la entrada en vigencia (art. 14, parágrafo 1); esa entrada es escalonada por tipo de entidad (6 a 15 meses desde la publicación en el Diario Oficial), y la fecha de esa publicación no se comprobó."
+  },
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-institucional:1",
+      "veredicto": "correcta",
+      "detalle": "La cita está literal en el art. 4, en el primer párrafo de la definición «Ciclo de Vida» (HTML y PDF). La afirmación reduce «bien, obra o servicio» a «obra», lo que es fiel al texto. El art. 4 es de entrada progresiva, así que vigente=null está bien."
+    }
+  ]
+}

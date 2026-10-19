@@ -1,0 +1,54 @@
+{
+  "id": "CE-F-1210",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Documentos tipo: ¿Herramienta para mejorar la competencia en los procesos de contratación estatal?",
+  "anio": 2022,
+  "institucion": "Universidad de los Andes, Facultad de Economía, CEDE (Documento CEDE 2022-32, serie Estudiantes PEG, tesis de maestría en Economía; no evaluado por pares)",
+  "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/d99425d6-4b23-425a-9c13-bd1bc4902ea2/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: resumen, datos (págs. 15-22) y resultados y conclusiones (págs. 33-36 impresas); la estimación se recorrió",
+  "localizador": "pág. 35 impresa (pág. 37 del PDF), apartado 5 «Discusión y conclusiones»",
+  "cita": "se encontró que la implementación de los documentos tipo en los procesos de contratación estatal genera un aumento en promedio de 13 oferentes al cierre. Es decir, se ha generado un incremento de 366% oferentes al cierre en los procesos que implementaron o reconocieron los documento tipo",
+  "afirmacion": "La autora concluye que la implementación de los documentos tipo en los procesos de contratación estatal genera un aumento de oferentes al cierre, que expresa como un incremento del 366 % en los procesos que implementaron o reconocieron los documentos tipo; la cifra absoluta del efecto no es la misma en todo el documento (ver advertencia).",
+  "inferencia": "Inferencia: para el contratista, más oferentes por proceso significa, en promedio, menos probabilidad de ganar cada uno.",
+  "eje": 1,
+  "etapa": [
+    "E4",
+    "E5"
+  ],
+  "decision": [
+    "D1"
+  ],
+  "modulo": [
+    "M-LISTA",
+    "M-PLIEGO"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/d99425d6-4b23-425a-9c13-bd1bc4902ea2/content",
+    "vigente": null,
+    "nota": "Base del Observatorio Oficial de Contratación Estatal (CCE) de 4.267 procesos convocados en 2019-2022; mide el periodo de transición a los documentos tipo de infraestructura de transporte."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Con los documentos tipo de transporte el número de oferentes por proceso de obra sube mucho: más competencia y menor probabilidad de adjudicación para cada contratista.",
+  "advertencia": "La ficha no elige cifra. El documento da tres: «13 oferentes» (pág. 35 impresa, conclusiones, la de la cita), «alrededor 11 oferentes» (pág. 34 impresa) y, según el verificador (2-oct-2026), un efecto promedio de 11,22 oferentes, de 3 a 14 proponentes, en la tabla 18 (pág. 28 impresa), de donde sale el 366 % (11 sobre 3); con 13 el aumento no sería del 366 %. También cambia el grupo de comparación: «no se implementaron o reconocieron» (pág. 34) frente a «no se implementaron en su totalidad» (pág. 35). El método (emparejamiento por puntaje de propensión sobre procesos de obra de infraestructura de transporte) no está en la cita. No se usa como frecuencia.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-academico:1",
+      "veredicto": "no_sostiene",
+      "detalle": "Abrí la URL de Uniandes (200; pdfinfo da 42 págs.). La cita aparece literal en la pág. 35 impresa (pág. 37 del PDF), así que el localizador está bien. Pero la afirmación da como efecto «13 oferentes más», y el propio documento lo contradice. La estimación (pág. 28 impresa, tabla 18) da un efecto promedio de 11,22 oferentes, de 3 a 14 proponentes, y de ahí sale el 366 % (11 sobre 3). Con 13 oferentes el aumento no sería del 366 %. La propia regla 3 del § 5 del instructivo dice que la ficha no elige una de las cifras en conflicto, y la afirmación elige la de 13 aunque la advertencia lo marca. Además, la advertencia está incompleta: no menciona la tabla 18 ni el grupo de comparación, que también cambia. En la pág. 34 impresa es «no se implementaron o reconocieron» y en la pág. 35, «no se implementaron en su totalidad».",
+      "accion": "Se quitó de la afirmación la cifra de 13 oferentes (en conflicto dentro del documento) y el método, que la cita no trae; la advertencia se completó con la tabla 18 y el cambio del grupo de comparación.",
+      "antes": {
+        "afirmacion": "La autora concluye, con emparejamiento por puntaje de propensión sobre procesos de obra de infraestructura de transporte, que implementar los documentos tipo genera en promedio 13 oferentes más al cierre, un incremento del 366 %.",
+        "advertencia": "El mismo documento da dos cifras del efecto: «alrededor 11 oferentes» (pág. 34 impresa, cierre de resultados) y «13 oferentes» (pág. 35, conclusiones), ambas con el mismo 366 %. No se usa como frecuencia."
+      }
+    }
+  ]
+}

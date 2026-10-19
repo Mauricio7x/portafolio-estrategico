@@ -1,0 +1,55 @@
+{
+  "id": "CE-F-1042",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 2069 de 2020",
+  "anio": 2020,
+  "institucion": "Secretaría General del Senado (Leyes desde 1992, texto con notas de vigencia)",
+  "url": "http://www.secretariasenado.gov.co/senado/basedoc/ley_2069_2020.html",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: arts. 30 a 36",
+  "localizador": "art. 35, numeral 3",
+  "cita": "Si la oferta es presentada por un proponente plural, el integrante del oferente que acredite que el diez por ciento (10%) de su nómina está en condición de discapacidad […] debe tener una participación de por lo menos el veinticinco por ciento 125%)",
+  "afirmacion": "Para el desempate por nómina con discapacidad, en un plural el integrante que acredite el 10% de su nómina con discapacidad debe tener al menos el 25% de participación.",
+  "inferencia": null,
+  "eje": 1,
+  "etapa": [
+    "E5",
+    "E6"
+  ],
+  "decision": [
+    "D1",
+    "D2"
+  ],
+  "modulo": [
+    "M-PLURAL",
+    "M-OFERTA"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A1",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "http://www.secretariasenado.gov.co/senado/basedoc/ley_2069_2020.html",
+    "vigente": true,
+    "nota": "Texto de la Secretaría del Senado («Última actualización: 15 de septiembre de 2026»), leído el 2-oct-2026."
+  },
+  "lista_cerrada": "L1-07",
+  "problema_candidato": null,
+  "regla": {
+    "regimen": "Estatuto General y régimen especial (recursos públicos)",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Ley de 2020; no se verificó la fecha de aviso desde la que rige."
+  },
+  "advertencia": "La cita conserva la errata «125%)» del texto del Senado; el número en letras es veinticinco por ciento. El numeral sigue: y aportar mínimo el 25% de la experiencia acreditada.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-institucional:3",
+      "veredicto": "correcta",
+      "detalle": "Abierta la Ley 2069 en la Secretaría del Senado (HTTP 200; «Última actualización: 15 de septiembre de 2026»). En el art. 35, num. 3, la cita está literal con «[…]» y la errata «125%)». La afirmación es exacta. El requisito adicional (aportar al menos el 25% de la experiencia) queda declarado en la advertencia y la afirmación no lo niega. El numeral 3 no tiene nota de modificación en el texto consolidado: las notas de la Ley 2479 de 2025 tocan los numerales 12 y 13."
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "id": "CE-F-5051",
+  "tipo": "concepto_cce",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Concepto C-915 de 2026 (15 de julio de 2026), sobre precios unitarios, mayores cantidades e ítems no previstos",
+  "anio": 2026,
+  "institucion": "Relatoría de Colombia Compra Eficiente (ficha https://relatoria.colombiacompra.gov.co/conceptos/c-915-de-2026/ y documento adjunto .docx)",
+  "url": "https://relatoria.colombiacompra.gov.co/wp-content/uploads/2026/07/C-915.docx",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: el concepto entero (texto extraído del .docx adjunto) y la ficha de la relatoría",
+  "localizador": "apartado «Razones de la respuesta», numeral ii, procedimiento sugerido para nuevos precios",
+  "cita": "Para la elaboración del Análisis de Precios Unitarios (APU), el contratista debe presentar el desglose de los costos directos —materiales, mano de obra, herramienta menor, transporte, equipos, entre otros— con su respectivo soporte técnico, así como los costos indirectos",
+  "afirmacion": "En el procedimiento que CCE sugiere para fijar precios de ítems no previstos, el contratista presenta el APU con el desglose de costos directos e indirectos y su soporte técnico.",
+  "inferencia": null,
+  "eje": 5,
+  "etapa": [
+    "E8"
+  ],
+  "decision": [
+    "D2"
+  ],
+  "modulo": [
+    "M-APU"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A5",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://relatoria.colombiacompra.gov.co/wp-content/uploads/2026/07/C-915.docx",
+    "vigente": true,
+    "nota": "Concepto fechado el 15-jul-2026; interpreta el parágrafo del art. 40 de la Ley 80, cuyo texto vigente se comprobó en el Gestor Normativo el 2-oct-2026."
+  },
+  "regla": null,
+  "lista_cerrada": "L5-11",
+  "problema_candidato": null,
+  "advertencia": "CCE aclara en el mismo concepto que ese procedimiento «no constituye norma jurídica de carácter obligatorio» y que prevalece el que pacten las partes.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje5-institucional:4",
+      "veredicto": "correcta",
+      "detalle": "La cita es literal en el C-915, «Razones de la respuesta», numeral ii, dentro de los pasos del procedimiento. El párrafo sigue con «aplicando la metodología establecida en el contrato o en los manuales de contratación». La afirmación lo presenta como el procedimiento que CCE sugiere, y la advertencia recoge el texto del mismo numeral: «no constituye norma jurídica de carácter obligatorio» y prevalece lo que pacten las partes. Matiz menor: en la fuente el «soporte técnico» va con los costos directos, y la afirmación lo deja ambiguo, sin que eso cambie el sentido."
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "id": "CE-F-3211",
+  "tipo": "academia",
+  "autor": "Personas naturales, cuatro autores (nombres omitidos por la regla 5 del piloto)",
+  "titulo": "Causales para la terminación anormal del proceso después de convocada la licitación pública en el Valle del Cauca (2013-2016)",
+  "anio": 2019,
+  "institucion": "Pontificia Universidad Javeriana (Cali) · revista Vialuris núm. 26, Fundación Universitaria Los Libertadores (vía Redalyc)",
+  "url": "https://www.redalyc.org/journal/2739/273963938005/html/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: versión HTML de Redalyc (texto; las tablas se leyeron solo en lo que el HTML reproduce)",
+  "localizador": "apartado «Hallazgos», enumeración tras «Luego de la mencionada revisión se encontró que:»",
+  "cita": "Cinco proyectos no podían ser adjudicados a los proponentes porque no cumplían con el registro único de proponentes",
+  "afirmacion": "Los autores encontraron que, entre los procesos de licitación del Valle del Cauca terminados anormalmente (2013-2016), cinco proyectos no pudieron adjudicarse porque los proponentes no cumplían con el RUP.",
+  "inferencia": "Inferencia: el RUP fue la causa jurídica más repetida en esa muestra; el contratista debe tener el RUP en firme y coherente con lo exigido antes del cierre.",
+  "eje": 3,
+  "etapa": [
+    "E3",
+    "E5"
+  ],
+  "decision": [
+    "D3"
+  ],
+  "modulo": [
+    "M-RUP",
+    "M-OFERTA"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "No aplica: dato empírico o descripción de práctica, no regla",
+    "vigente": null,
+    "nota": "Procesos de 2013-2016 en SECOP I, bajo el Decreto 1510 de 2013 y antes de la Ley 1882 de 2018 y de los documentos tipo de obra; describe hechos, no la regla vigente."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Ofertas que no se pueden adjudicar porque el proponente no cumple el RUP, lo que deja el proceso sin adjudicar.",
+  "advertencia": "Muestra pequeña y regional (25 procesos del Valle del Cauca); los porcentajes por modalidad del texto mezclan el Sector G y el Sector F y no coinciden entre párrafos (8,5 %/7,6 %/5,3 % frente a 8,9 %/8,7 %/7,5 %/7,2 %): no se usan como frecuencia."
+}

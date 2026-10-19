@@ -1,0 +1,39 @@
+{
+  "id": "CE-F-3230",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Análisis de requisitos habilitantes de capacidad financiera, que no garantizan la pluralidad de oferentes, en las licitaciones públicas",
+  "anio": 2019,
+  "institucion": "Universidad Nacional de Colombia, Facultad de Minas (Medellín), Maestría en Ingeniería Administrativa (tesis)",
+  "url": "https://bffrepositorio.unal.edu.co/server/api/core/bitstreams/78e582a7-d51d-40a2-a691-7fae3a3bfd75/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: resumen, capítulo 4 (resultados 2017, págs. 79-90 del PDF) y conclusiones (págs. 128-129); el resto se recorrió por palabras clave",
+  "localizador": "pág. 79 del PDF, capítulo 4 «Resultados 2017», primer párrafo",
+  "cita": "En general el 80,5 % de los procesos analizados fueron licitados sin pluralidad de oferentes, mientras que el 7,2% de los procesos tuvieron más de 10 participantes",
+  "afirmacion": "La autora encontró que el 80,5 % de las licitaciones de 2017 que analizó (segmento de terrenos, edificios, estructuras y vías de SECOP) se licitaron sin pluralidad de oferentes y que el 7,2 % tuvo más de 10 participantes.",
+  "inferencia": null,
+  "eje": 3,
+  "etapa": [
+    "E4",
+    "E5"
+  ],
+  "decision": [
+    "D1"
+  ],
+  "modulo": [
+    "M-ENTIDAD"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "No aplica: dato empírico o descripción de práctica, no regla",
+    "vigente": null,
+    "nota": "Licitaciones de 2017-2018 del segmento «Terrenos, Edificios, Estructuras y Vías» de SECOP, anteriores a los documentos tipo de obra, que hoy fijan los indicadores financieros en las modalidades que cubren."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Licitaciones de obra sin pluralidad de oferentes (80,5 % en la muestra de 2017).",
+  "advertencia": "La tesis da varias cifras de procesos sin pluralidad según el estado y el corte (80,5 %, 78 %, 90 %, 68 %): la frecuencia depende del universo y no se usa una sola."
+}

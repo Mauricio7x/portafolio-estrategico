@@ -1,0 +1,52 @@
+{
+  "id": "CE-F-3044",
+  "tipo": "documento_tipo",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Documentos Tipo de selección abreviada de menor cuantía de obra pública de infraestructura de transporte, versión 3 · Documento Base (DocBase_MenorC_TMenCV3.docx)",
+  "anio": 2024,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29950/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: del Documento Base se leyeron las secciones 1.6, 2.3 y 2.4 y la tabla de contenido",
+  "localizador": "sección 1.6 (Reglas de subsanabilidad, explicaciones y aclaraciones), párrafo 2",
+  "cita": "Los proponentes deberán allegar las aclaraciones o documentos requeridos […] a más tardar hasta el término de traslado del informe de evaluación, es decir, dentro de los tres (3) días hábiles siguientes contados a partir del día hábil siguiente a la expedición del informe de evaluación.",
+  "afirmacion": "En la menor cuantía de obra de transporte por documento tipo, lo solicitado se entrega a más tardar en el traslado del informe de evaluación: tres días hábiles desde el día hábil siguiente a su expedición.",
+  "inferencia": null,
+  "eje": 3,
+  "etapa": [
+    "E5"
+  ],
+  "decision": [
+    "D3"
+  ],
+  "modulo": [
+    "M-OFERTA",
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A3",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.colombiacompra.gov.co/documentos-tipo/vigentes/?sector=712&nodo=29393 («Versión: 3 · Desde: 3 de febrero de 2025») y https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo",
+    "vigente": true,
+    "nota": "Por el art. 14, par. 3, del Decreto 0997 de 2026, los procesos con documento tipo siguen este texto hasta que CCE expida nuevas versiones."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": "2025-02-03",
+    "documento_tipo": "Documentos Tipo de selección abreviada de menor cuantía de obra pública de infraestructura de transporte, versión 3 (la página del nodo cita la Resolución 463 de 2024), vigente desde el 3-feb-2025",
+    "nota_desde_aviso": "Fecha de entrada en vigencia de la versión según el control de versiones de CCE; no se leyó la resolución de adopción para comprobar si se cuenta desde la publicación del aviso o del pliego."
+  },
+  "lista_cerrada": "L3-12",
+  "problema_candidato": "El plazo para subsanar cambia con la modalidad (cinco días hábiles en licitación, tres en menor cuantía, uno en mínima): quien aplica el plazo de la licitación a una menor cuantía llega tarde.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje3-institucional:3",
+      "veredicto": "correcta",
+      "detalle": "Abrí https://www.colombiacompra.gov.co/documentos-tipo/descarga/29950/ (HTTP 200, 05DT_Transp_MenorCuantia_TMenC_V3-1.zip → ' DocBase_MenorC_TMenCV3.docx'). La sección 1.6, párrafo 2, coincide literalmente: «…a más tardar hasta el término de traslado del informe de evaluación, es decir, dentro de los tres (3) días hábiles siguientes contados a partir del día hábil siguiente a la expedición del informe de evaluación.» Lo omitido con […] es «en el momento en el que fueron solicitados, durante la etapa de evaluación, y». En el control de versiones figura la V.3 «Desde 03/02/2025 – Versión vigente», y el art. 14, par. 3, del Decreto 0997 la mantiene."
+    }
+  ]
+}

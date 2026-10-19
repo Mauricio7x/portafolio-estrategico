@@ -1,0 +1,40 @@
+{
+  "id": "CE-F-5239",
+  "tipo": "academia",
+  "autor": "Autor del artículo (persona natural, nombre omitido por la regla 5)",
+  "titulo": "El establecimiento y la modificación de tributos como eventos susceptibles de alterar el equilibrio económico del contrato estatal",
+  "anio": 2018,
+  "institucion": "Universidad Externado de Colombia, Revista Digital de Derecho Administrativo, núm. 19 (vía Redalyc)",
+  "url": "https://www.redalyc.org/journal/5038/503857546011/html/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: texto HTML de Redalyc",
+  "localizador": "apartado 2 (jurisprudencia del Consejo de Estado), párrafo que comenta el antecedente del hecho del príncipe",
+  "cita": "El antecedente jurisprudencial que se comenta fue el primero y, hasta ahora, el único en aplicar la teoría del hecho del príncipe a una situación problemática de desequilibrio económico ocasionada por gravámenes fiscales.",
+  "afirmacion": "El autor afirma que el antecedente jurisprudencial que comenta fue el primero y, hasta la fecha del artículo, el único en aplicar la teoría del hecho del príncipe a un desequilibrio económico ocasionado por gravámenes fiscales.",
+  "inferencia": null,
+  "eje": 5,
+  "etapa": [
+    "E8",
+    "E10"
+  ],
+  "decision": [
+    "D4",
+    "D2"
+  ],
+  "modulo": [
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "el propio documento (fuente académica fechada)",
+    "vigente": null,
+    "nota": "Artículo de 2018; reporta jurisprudencia del Consejo de Estado sobre el «impuesto de guerra» (Decreto 2009 de 1992, Ley 104) y menciona la contribución especial de la Ley 1738; no se comprobó contra el texto vigente para esta ficha."
+  },
+  "regla": null,
+  "lista_cerrada": "L5-10",
+  "problema_candidato": "Un tributo nuevo o una reforma tributaria que encarece la obra casi nunca se le restablece al contratista por la vía del desequilibrio económico.",
+  "advertencia": "«El único» es la apreciación del autor sobre la jurisprudencia que revisó (artículo de 2018)."
+}

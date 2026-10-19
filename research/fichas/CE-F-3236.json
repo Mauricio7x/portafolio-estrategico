@@ -1,0 +1,39 @@
+{
+  "id": "CE-F-3236",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Alcances y limitaciones de los métodos de evaluación económica a acuerdos colusorios en la contratación pública: el caso colombiano",
+  "anio": 2015,
+  "institucion": "Universidad Nacional de Colombia, Facultad de Ciencias Económicas, Maestría en Ciencias Económicas (trabajo de investigación)",
+  "url": "https://bffrepositorio.unal.edu.co/server/api/core/bitstreams/7b64d4c5-22da-4bef-9791-000b56b8b639/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: resumen, capítulo 3 (base de 96 licitaciones, págs. 33-35 del PDF) y capítulo 4 (págs. 40-44); el resto se recorrió por palabras clave",
+  "localizador": "pág. 34 del PDF, capítulo 3, descripción de la base de 96 licitaciones de mayor cuantía remitida por CCE",
+  "cita": "sumando al valor de la adjudicación todas las adiciones posteriores a la firma del contrato, antes de culminar la obra, se obtiene que los recursos públicos realmente desembolsados para estas licitaciones fueron del orden de $19.959.108.247.430, es decir un 78.3% más de lo presupuestado",
+  "afirmacion": "El autor calcula que, en las 96 licitaciones de mayor cuantía desde 2010 que le remitió CCE, el valor final de los contratos con sus adiciones fue del orden de $19.959.108.247.430, un 78,3 % más de lo presupuestado oficialmente.",
+  "inferencia": "Inferencia: las adiciones posteriores elevan mucho el valor final; combinado con lo que otras fuentes dicen sobre ofertas por debajo de lo cumplible, es una señal de que el precio de adjudicación no siempre es el precio real.",
+  "eje": 3,
+  "etapa": [
+    "E8"
+  ],
+  "decision": [
+    "D2",
+    "D4"
+  ],
+  "modulo": [
+    "M-PRECIO"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "No aplica: dato empírico o descripción de práctica, no regla",
+    "vigente": null,
+    "nota": "Casos sancionados por la SIC y licitaciones de 2010-2014, anteriores a los documentos tipo de obra (que hoy fijan los métodos de evaluación del precio en las modalidades que cubren)."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": null,
+  "advertencia": "Dato agregado de 96 licitaciones de varios sectores (no solo obra); la frase original termina «de lo presupuestado oficialmente»."
+}

@@ -1,0 +1,38 @@
+{
+  "id": "CE-F-5258",
+  "tipo": "academia",
+  "autor": "Autores del artículo (personas naturales, nombres omitidos por la regla 5)",
+  "titulo": "Las adiciones y prórrogas como mecanismo excepcional frente a los principios de planeación y anualidad presupuestal",
+  "anio": 2019,
+  "institucion": "Escuela Superior de Administración Pública (ESAP), revista Administración & Desarrollo, vol. 49, núm. 2 (vía Dialnet)",
+  "url": "https://dialnet.unirioja.es/descarga/articulo/8121595.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: 17 págs.; leídos el resumen, el método y las tablas 4 a 7 de resultados (págs. 62-64 de la revista)",
+  "localizador": "pág. 62 de la revista (pág. 10 del PDF), texto que sigue a la Tabla 4 «Comparativo contratos prorrogados vigencias 2017 y 2018»",
+  "cita": "en relación con los contratos efectivamente celebrados se evidenció que en la vigencia 2017 el 91 % de éstos fueron prorrogados, mientras que en la vigencia 2018 la prórroga fue de un 67 % de los mismos",
+  "afirmacion": "Los autores reportan que, de los contratos celebrados por licitación pública por el Departamento del Tolima, el 91 % fue prorrogado en la vigencia 2017 y el 67 % en la de 2018.",
+  "inferencia": null,
+  "eje": 5,
+  "etapa": [
+    "E8"
+  ],
+  "decision": [
+    "D4"
+  ],
+  "modulo": [
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "el propio documento (fuente académica fechada)",
+    "vigente": null,
+    "nota": "Estudio empírico de contratos de licitación pública del Departamento del Tolima en SECOP I (2017-2018); no es normativo."
+  },
+  "regla": null,
+  "lista_cerrada": "L5-01",
+  "problema_candidato": "En una gobernación, casi todos los contratos licitados se prorrogan: el plazo del pliego no es el plazo real de la obra.",
+  "advertencia": "Un departamento y dos vigencias; las tablas 5 y 6 dan 10 de 11 contratos prorrogados en 2017 y 12 de 18 en 2018 (base pequeña). El artículo no separa obra de otros objetos licitados."
+}

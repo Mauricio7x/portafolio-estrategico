@@ -1,0 +1,39 @@
+{
+  "id": "CE-F-3210",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "La subsanabilidad como etapa en los procesos de selección y la necesidad de reforma",
+  "anio": 2023,
+  "institucion": "Pontificia Universidad Javeriana, Facultad de Derecho, Maestría en Derecho Administrativo (trabajo de grado)",
+  "url": "https://apidspace.javeriana.edu.co/server/api/core/bitstreams/45da1ffd-5bc5-4547-9402-8bf2aba27a99/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: resumen, contenido y capítulos 3 y 4 (págs. 50-60 del PDF); el resto se recorrió por palabras clave",
+  "localizador": "pág. 58 del PDF, capítulo 4 «Propuesta de modificación a la subsanabilidad como etapa»",
+  "cita": "la Entidad Estatal entraría a aplicar la regla de la subsanabilidad en un segundo momento, que transcurre entre el vencimiento del término de traslado del informe de evaluación y hasta un plazo adicional mínimo de tres (3) días hábiles",
+  "afirmacion": "El autor propone que la subsanabilidad tenga un segundo momento, entre el vencimiento del traslado del informe de evaluación y un plazo adicional mínimo de tres días hábiles.",
+  "inferencia": null,
+  "eje": 3,
+  "etapa": [
+    "E5",
+    "E6"
+  ],
+  "decision": [
+    "D3"
+  ],
+  "modulo": [
+    "M-OFERTA"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "No aplica: propuesta de reforma",
+    "vigente": false,
+    "nota": "No es norma; el autor la plantea como modificación."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": null,
+  "advertencia": "Propuesta del autor (reforma sugerida), no la regla vigente."
+}

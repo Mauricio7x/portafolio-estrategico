@@ -1,0 +1,52 @@
+{
+  "id": "CE-F-1058",
+  "tipo": "circular_cce",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Circular Externa 006 de 2025 (art. 33 y parágrafo del art. 38 de la Ley 996 de 2005)",
+  "anio": 2025,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2025/09/006-de-2025-Circular-Externa-L996-ajustado-comentarios-BM-BID-Rev-ARSC-V3.d-1.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: págs. 1-6 de 11",
+  "localizador": "pág. 3, numeral 1, literal ii) «Ámbito material de aplicación», último párrafo",
+  "cita": "no se prohíbe la contratación que adelanten las entidades sometidas al Estatuto General de Contratación de la Administración Pública mediante las demás modalidades de selección previstas en la Ley 1150 de 2007, es decir, mediante la licitación pública, el concurso de méritos, la selección abreviada",
+  "afirmacion": "Según la Circular 006 de 2025, la Ley de Garantías no prohíbe contratar por licitación pública, concurso de méritos o selección abreviada.",
+  "inferencia": null,
+  "eje": 1,
+  "etapa": [
+    "E0"
+  ],
+  "decision": [
+    "D1"
+  ],
+  "modulo": [
+    "M-INGESTA"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A3",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "http://www.secretariasenado.gov.co/senado/basedoc/ley_0996_2005.html",
+    "vigente": true,
+    "nota": "Circular del 25 de septiembre de 2025, contrastada con el art. 33 de la Ley 996 de 2005 en el Senado."
+  },
+  "lista_cerrada": "L1-09",
+  "problema_candidato": null,
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Lectura orientadora de CCE; la restricción depende de la fecha de la elección."
+  },
+  "advertencia": "La mención de la mínima cuantía está en la pág. 4, fuera de la cita.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-institucional:4",
+      "veredicto": "correcta",
+      "detalle": "Abrí https://www.colombiacompra.gov.co/wp-content/uploads/2025/09/006-de-2025-Circular-Externa-L996-ajustado-comentarios-BM-BID-Rev-ARSC-V3.d-1.pdf (200; 11 págs.; fecha 25-sep-2025). La cita aparece literal en la pág. 3, numeral 1, literal ii), en el último párrafo de esa página. Ese párrafo sigue en la pág. 4 («o la contratación de mínima cuantía») y el literal ii) continúa allí, así que «último párrafo» vale como último de la pág. 3 y no como último del literal. La afirmación la atribuye a la Circular y no amplía la cita. La vigencia se contrastó contra la ley y no contra un listado de circulares de CCE; no encontré, y no busqué, una circular posterior que la sustituya."
+    }
+  ]
+}

@@ -1,0 +1,57 @@
+{
+  "id": "CE-F-5025",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República y Departamento Nacional de Planeación",
+  "titulo": "Decreto 1082 de 2015, Único Reglamentario del Sector Administrativo de Planeación Nacional",
+  "anio": 2015,
+  "institucion": "Departamento Administrativo de la Función Pública, Gestor Normativo (texto consolidado)",
+  "url": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=77653",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: arts. 2.2.1.1.2.4.1 a 2.2.1.1.2.4.3 y 2.2.1.2.3.1.1 a 2.2.1.2.3.2.9 del texto consolidado",
+  "localizador": "art. 2.2.1.1.2.4.3",
+  "cita": "Vencidos los términos de las garantías de calidad, estabilidad y mantenimiento, o las condiciones de disposición final o recuperación ambiental de las obras o bienes, la Entidad Estatal debe dejar constancia del cierre del expediente del Proceso de Contratación.",
+  "afirmacion": "Vencidos los términos de las garantías de calidad, estabilidad y mantenimiento, o las condiciones de disposición final o recuperación ambiental, la entidad debe dejar constancia del cierre del expediente del proceso.",
+  "inferencia": null,
+  "eje": 5,
+  "etapa": [
+    "E10"
+  ],
+  "decision": [
+    "D4"
+  ],
+  "modulo": [
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A2",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=77653",
+    "vigente": true,
+    "nota": "Texto consolidado de Función Pública (consultado el 2-oct-2026). Se revisó el índice de artículos que modifica el Decreto 0997 de 2026 (arts. 2.2.1.1.1.4.5, 2.2.1.1.1.5.4, 2.2.1.1.1.5.7, 2.2.1.1.1.6.1, 2.2.1.1.1.6.2, 2.2.1.1.2.1.1, 2.2.1.1.2.1.3, 2.2.1.1.2.2.2, 2.2.1.1.2.2.10, 2.2.1.2.1.2.1, 2.2.1.2.1.2.12, 2.2.1.2.1.5.1): no toca este artículo."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Norma reglamentaria compilada en el Decreto 1082 de 2015: no depende de la fecha de un aviso; no se buscó régimen de transición."
+  },
+  "lista_cerrada": "L5-06",
+  "problema_candidato": null,
+  "advertencia": "Según el verificador: la norma impone un deber que se dispara al vencer esos términos; no dice que el expediente «solo» se cierre entonces.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje5-institucional:2",
+      "veredicto": "no_sostiene",
+      "detalle": "La cita está literal en el art. 2.2.1.1.2.4.3. La afirmación agrega una exclusividad que la fuente no tiene: «El expediente del proceso solo se cierra cuando vencen…». La norma impone un deber que se dispara al vencer («Vencidos los términos… la Entidad Estatal debe dejar constancia del cierre»), no una condición exclusiva con «solo». El Decreto 997/2026 no lo toca.",
+      "accion": "afirmación estrechada: se quita la exclusividad («solo») que la cita no trae; el matiz va en «advertencia»",
+      "antes": {
+        "afirmacion": "El expediente del proceso solo se cierra cuando vencen las garantías de calidad, estabilidad y mantenimiento o las condiciones de disposición final o recuperación ambiental.",
+        "advertencia": null
+      }
+    }
+  ]
+}

@@ -1,0 +1,53 @@
+{
+  "id": "CE-F-5037",
+  "tipo": "documento_tipo",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Documentos Tipo de licitación de obra pública de infraestructura de transporte, versión 4 · Anexo 5 Minuta del Contrato (A5_MinutaContrato_TLPV4.docx)",
+  "anio": 2024,
+  "institucion": "Colombia Compra Eficiente (paquete descargable de los documentos tipo vigentes)",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29920/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: el Anexo 5 entero (texto extraído del .docx); además se buscó en los otros 25 archivos del paquete",
+  "localizador": "cláusula 15 (Multas), causal de atraso del cronograma (opción entre corchetes)",
+  "cita": "Por atraso o incumplimiento del cronograma de obra se causará una multa equivalente al [0,5%] del valor del contrato, por cada día calendario de atraso.",
+  "afirmacion": "La minuta V4 propone como causal opcional una multa por atraso del cronograma de obra, con un valor sugerido entre corchetes del 0,5 % del valor del contrato por día de atraso.",
+  "inferencia": null,
+  "eje": 5,
+  "etapa": [
+    "E2",
+    "E8"
+  ],
+  "decision": [
+    "D4"
+  ],
+  "modulo": [
+    "M-SEGUIMIENTO",
+    "M-PLIEGO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A3",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29920/",
+    "vigente": true,
+    "nota": "Página oficial de la versión 4 (https://www.colombiacompra.gov.co/documentos-tipo/vigentes/?sector=712&nodo=29383, consultada el 2-oct-2026): «Versión 4 – Vigente desde el 3 de febrero de 2025 hasta la fecha», adoptada por la Resolución 465 de 2024."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": "2025-02-03",
+    "documento_tipo": "Documentos Tipo de licitación de obra pública de infraestructura de transporte, versión 4 (Resolución 465 de 2024), vigente desde el 3-feb-2025"
+  },
+  "lista_cerrada": "L5-08",
+  "problema_candidato": "Si la entidad adopta el valor sugerido, diez días de atraso suman una multa del 5 % del contrato, el tope por causal de la misma minuta.",
+  "advertencia": "Es una opción: la entidad puede seleccionar, combinar o construir sus causales y fijar el monto; el 0,5 % es una cifra entre corchetes, no una regla.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje5-institucional:3",
+      "veredicto": "correcta",
+      "detalle": "Cláusula 15 (Multas): la causal de atraso del cronograma con «[0,5%]» aparece literal. La afirmación conserva el carácter opcional y el valor entre corchetes, y la advertencia también lo recoge. Vigencia V4 confirmada."
+    }
+  ]
+}

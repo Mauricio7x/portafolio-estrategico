@@ -1,0 +1,53 @@
+{
+  "id": "CE-F-5007",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 80 de 1993, Estatuto General de Contratación de la Administración Pública",
+  "anio": 1993,
+  "institucion": "Departamento Administrativo de la Función Pública, Gestor Normativo (texto con notas de vigencia)",
+  "url": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=304",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: arts. 4, 5, 14 a 18, 27, 40 y 60 del texto del Gestor Normativo, con sus notas de modificación",
+  "localizador": "art. 18, incisos primero y tercero",
+  "cita": "lo dará por terminado y ordenará su liquidación en el estado en que se encuentre. […] Si se declara la caducidad no habrá lugar a indemnización para el contratista, quien se hará acreedor a las sanciones e inhabilidades previstas en esta ley.",
+  "afirmacion": "Con la caducidad la entidad termina el contrato y ordena liquidarlo en el estado en que esté; el contratista no recibe indemnización y queda sujeto a las sanciones e inhabilidades de la Ley 80.",
+  "inferencia": null,
+  "eje": 5,
+  "etapa": [
+    "E8"
+  ],
+  "decision": [
+    "D4",
+    "D1"
+  ],
+  "modulo": [
+    "M-SEGUIMIENTO",
+    "M-RUP"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A1",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=304",
+    "vigente": true,
+    "nota": "Texto del Gestor Normativo de Función Pública consultado el 2-oct-2026, con las notas de modificación que trae el propio artículo."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Norma legal: rige para los contratos del Estatuto General sin depender de la fecha de un aviso; no se buscó régimen de transición para contratos anteriores."
+  },
+  "lista_cerrada": "L5-02",
+  "problema_candidato": "Una caducidad declarada no solo termina el contrato sin indemnización: arrastra inhabilidades que sacan al contratista de las licitaciones siguientes.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje5-institucional:1",
+      "veredicto": "correcta",
+      "detalle": "Misma página. El art. 18, inciso primero, trae «lo dará por terminado y ordenará su liquidación en el estado en que se encuentre» y el inciso tercero, «Si se declara la caducidad no habrá lugar a indemnización para el contratista, quien se hará acreedor a las sanciones e inhabilidades previstas en esta ley.» Las dos citas son literales y la afirmación no añade nada. No hay nota de modificación."
+    }
+  ]
+}

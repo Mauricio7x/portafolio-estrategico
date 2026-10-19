@@ -1,0 +1,56 @@
+{
+  "id": "CE-F-1200",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Algunos problemas «públicos» de la contratación estatal en Colombia como componentes del enfoque de ciclo para la formulación de una política pública",
+  "anio": 2018,
+  "institucion": "Revista Prolegómenos - Derechos y Valores (Universidad Militar Nueva Granada), vol. XXI, núm. 41, pp. 79-98; artículo de reflexión (Fundación Universitaria Autónoma de las Américas), DOI 10.18359/prole.3331",
+  "url": "https://dialnet.unirioja.es/descarga/articulo/6314666.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: resumen (pág. 79) y apartado de la exclusión normativa de entidades y conclusiones (págs. 94-96); el resto se recorrió por palabras clave",
+  "localizador": "pág. 95 impresa (pág. 17 del PDF), apartado sobre la exclusión normativa de entidades estatales de la Ley 80 de 1993",
+  "cita": "destaca la dispersión normativa en cuanto a contratación estatal (2002), calificando a la ley/1993 no como la regla general de la contratación sino como la excepción. Debido a que diversas normas legales han creado regímenes excepcionales",
+  "afirmacion": "El autor recoge que un informe de 2002 (el CPAR, según la frase previa) destacó la dispersión normativa de la contratación estatal y calificó a la Ley 80 de 1993 no como la regla general de la contratación sino como la excepción.",
+  "inferencia": "Inferencia: si la Ley 80 de 1993 es la excepción y no la regla, el contratista de obra no puede dar por sentado que el Estatuto General rige el proceso; tiene que comprobar qué régimen aplica la entidad que contrata.",
+  "eje": 1,
+  "etapa": [
+    "T",
+    "E1"
+  ],
+  "decision": [
+    "D1",
+    "D3"
+  ],
+  "modulo": [
+    "M-ENTIDAD"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://dialnet.unirioja.es/descarga/articulo/6314666.pdf",
+    "vigente": null,
+    "nota": "Artículo de 2018 que cita un diagnóstico de 2002 (CPAR); describe el problema estructural, no el estado normativo a la fecha de corte."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Dispersión normativa: un diagnóstico de 2002 (CPAR) calificó a la Ley 80 de 1993 como la excepción y no la regla general de la contratación estatal.",
+  "advertencia": "Según el verificador (2-oct-2026): la frase de la cita que empieza «Debido a que diversas normas legales han creado regímenes excepcionales» queda cortada; es una oración nueva del autor del artículo (sigue «y desarrollos reglamentarios de la misma ley 80/1993, adoptan definiciones sectoriales que desarticulan la vocación unificadora del Estatuto General») y explica la fragmentación sectorial, no el motivo del CPAR. No se atribuye al CPAR ninguna causa.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-academico:1",
+      "veredicto": "no_sostiene",
+      "detalle": "Abrí la URL de Dialnet (200, PDF de 20 págs.). La cita aparece literal en la pág. 95 impresa (pág. 17 del PDF), así que el localizador está bien. Falla la afirmación. La cita corta a mitad de frase la oración «Debido a que diversas normas legales han creado regímenes excepcionales y desarrollos reglamentarios de la misma ley 80/1993, adoptan definiciones sectoriales que desarticulan la vocación unificadora del Estatuto General». Es una oración nueva y la escribe el autor del artículo. Dice que los regímenes excepcionales producen la fragmentación por sectores. No da la razón por la que el CPAR calificó a la Ley 80 de excepción. La afirmación toma esa oración cortada como el motivo que da el informe CPAR de 2002 («porque diversas normas legales crearon…»). Así pone en boca del CPAR algo que el texto no le atribuye.",
+      "accion": "Se quitó de la afirmación el motivo («porque diversas normas legales crearon regímenes excepcionales») que no es del CPAR sino del autor; se estrechó el problema_candidato y la inferencia, y lo no cubierto pasó a advertencia.",
+      "antes": {
+        "afirmacion": "El autor recoge que un informe de 2002 (el CPAR, según la frase previa) destacó la dispersión normativa de la contratación estatal y calificó a la Ley 80 de 1993 no como la regla general sino como la excepción, porque diversas normas legales crearon regímenes excepcionales.",
+        "inferencia": "Inferencia: para el contratista de obra, la regla que le aplica depende de quién contrata; ante una entidad de régimen excepcional no puede dar por sentado el Estatuto General.",
+        "problema_candidato": "Dispersión normativa: la Ley 80 de 1993 no rige para muchas entidades de régimen excepcional, de modo que el contratista enfrenta reglas distintas según la entidad que contrata.",
+        "advertencia": null
+      }
+    }
+  ]
+}

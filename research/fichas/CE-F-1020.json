@@ -1,0 +1,45 @@
+{
+  "id": "CE-F-1020",
+  "tipo": "guia_cce",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "ABC Decreto 0997 de 2026 · RUP, Integridad y Transparencia",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2026/09/ABC-Decreto-0997-RUP-y-Transparencia.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: las 20 páginas",
+  "localizador": "pág. 19, «Nota»",
+  "cita": "No sustituye el texto oficial del Decreto, las leyes aplicables ni los Documentos del Proceso.",
+  "afirmacion": "El propio ABC advierte que no sustituye el texto oficial del decreto, las leyes ni los Documentos del Proceso.",
+  "inferencia": "El mismo apartado remite a un ABC complementario «Compra Pública Sostenible del Decreto 0997 de 2026», que no se abrió en este encargo.",
+  "eje": 1,
+  "etapa": [
+    "T"
+  ],
+  "decision": [
+    "D3"
+  ],
+  "modulo": [
+    "M-NINGUNO"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A3",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/",
+    "vigente": true,
+    "nota": "Se contrastó con el art. 14 del Decreto 0997 de 2026 en la relatoría de CCE. Un ABC no reemplaza el decreto."
+  },
+  "lista_cerrada": "L1-01",
+  "problema_candidato": null,
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-institucional:2",
+      "veredicto": "correcta",
+      "detalle": "La cita aparece literal en la pág. 19, recuadro «Nota». El mismo recuadro remite al ABC complementario «Compra Pública Sostenible del Decreto 0997 de 2026», como dice el campo inferencia; ese texto es un hecho literal, no una inferencia, pero es exacto."
+    }
+  ]
+}

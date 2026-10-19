@@ -1,0 +1,41 @@
+{
+  "id": "CE-F-2204",
+  "tipo": "academia",
+  "autor": "Personas naturales (nombres omitidos por la regla 5 del piloto)",
+  "titulo": "El principio de planeación en el contrato de obra pública",
+  "anio": 2019,
+  "institucion": "Universidad Santo Tomás · Revista IUSTA núm. 51, pp. 185-208 (vía Dialnet)",
+  "url": "https://dialnet.unirioja.es/descarga/articulo/7021763.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: resumen, introducción y apartados sobre vulneración del principio (págs. 185-201); el resto por palabras clave",
+  "localizador": "pág. 199 de la revista (pág. 15 del PDF), párrafo «Asimismo, frente a los sobrecostos en el contrato…»",
+  "cita": "frente a los sobrecostos en el contrato, es necesario que la entidad en los pliegos de condiciones suprima al máximo el margen de error, como en los casos en que se evidencien yerros en los precios que se establecieron en la licitación. El contratista puede asumir dos posturas:",
+  "afirmacion": "Los autores señalan que, ante yerros en los precios fijados en la licitación, el contratista puede asumir dos posturas (que a continuación toman de una sentencia de 2009: suscribir con precios de mercado renegociando los unitarios, o desistir).",
+  "inferencia": null,
+  "eje": 2,
+  "etapa": [
+    "E2",
+    "E3",
+    "E7"
+  ],
+  "decision": [
+    "D1",
+    "D2"
+  ],
+  "modulo": [
+    "M-APU",
+    "M-PRECIO"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "No se reverificó contra jurisprudencia posterior; fuente académica",
+    "vigente": null,
+    "nota": "Las dos posturas vienen de la sentencia 16653 de 2009 del Consejo de Estado, citada por los autores; no se abrió."
+  },
+  "lista_cerrada": null,
+  "problema_candidato": "El presupuesto oficial trae errores en los precios unitarios: el contratista que firma sin pedir la revisión del precio asume ese error.",
+  "advertencia": "La cita termina en «dos posturas:»; el contenido de las posturas está en la cita en bloque que sigue en la misma página (sentencia de 2009)."
+}

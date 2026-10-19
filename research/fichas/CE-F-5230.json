@@ -1,0 +1,39 @@
+{
+  "id": "CE-F-5230",
+  "tipo": "academia",
+  "autor": "Autores del artículo (personas naturales, nombres omitidos por la regla 5)",
+  "titulo": "Análisis de los riesgos contractuales de los procesos de contratación de obras civiles en los municipios de 4a y 6a categoría del Área Metropolitana de Cúcuta en el periodo comprendido entre el año 2016 y el primer semestre del 2021",
+  "anio": 2022,
+  "institucion": "Universidad de Santander (UDES), Aibi revista de investigación, administración e ingeniería, vol. 10, núm. 3 (autores de la Universidad de Pamplona y el SENA)",
+  "url": "https://revistas.udes.edu.co/aibi/es/article/download/analisis_de_los_riesgos_contractuales_de_los_procesos_de_contrat/2756",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: las 18 págs. con pdftotext -layout",
+  "localizador": "pág. 60 de la revista (pág. 17 del PDF), VI Conclusiones, primer párrafo",
+  "cita": "los funcionarios encargados del diligenciamiento de las matrices de riesgos contractuales no tienen la idoneidad para desarrollar esta labor. Existe desconocimiento sobre el concepto de Riesgo Previsible",
+  "afirmacion": "Los autores concluyen que los funcionarios encargados de diligenciar las matrices de riesgos contractuales no tienen la idoneidad para esa labor y que existe desconocimiento sobre el concepto de riesgo previsible.",
+  "inferencia": "Inferencia: para el contratista, una matriz de riesgos genérica del pliego es una señal para pedir aclaración antes de ofertar; lo que la matriz le asigne mal puede después oponérsele en una reclamación por desequilibrio.",
+  "eje": 5,
+  "etapa": [
+    "E1",
+    "E2"
+  ],
+  "decision": [
+    "D1",
+    "D4"
+  ],
+  "modulo": [
+    "M-PLIEGO"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "el propio documento (fuente académica fechada)",
+    "vigente": null,
+    "nota": "Estudio empírico de matrices de riesgo publicadas en SECOP I (2016-2021); no es normativo, no aplica comprobar vigencia."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": null
+}

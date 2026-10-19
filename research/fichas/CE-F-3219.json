@@ -1,0 +1,39 @@
+{
+  "id": "CE-F-3219",
+  "tipo": "academia",
+  "autor": "Personas naturales, cuatro autores (nombres omitidos por la regla 5 del piloto)",
+  "titulo": "Revisión del cumplimiento de requisitos habilitantes en procesos de selección mínima cuantía",
+  "anio": 2017,
+  "institucion": "Pontificia Universidad Javeriana Cali, Semillero Gestión de Obras · revista Lámpsakos núm. 18 (Universidad Católica Luis Amigó), vía Dialnet",
+  "url": "https://dialnet.unirioja.es/descarga/articulo/6551470.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: 8 páginas",
+  "localizador": "pág. 6 del PDF, apartado 4.2 «Capacidad Financiera», párrafo tras la Tabla 5",
+  "cita": "Los autores de este estudio consideran que por parte de la autoridad estatal debería siempre hacerse entrega de anticipo porque para la empresa privada es económicamente no rentable financiar las obras estatales […] puede conllevar a que los proyectos no se concluyan",
+  "afirmacion": "Los autores consideran que la entidad debería siempre entregar anticipo, porque para la empresa privada no es rentable financiar las obras estatales y eso puede llevar a que los proyectos no se concluyan.",
+  "inferencia": null,
+  "eje": 3,
+  "etapa": [
+    "E8"
+  ],
+  "decision": [
+    "D2",
+    "D4"
+  ],
+  "modulo": [
+    "M-PRECIO"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "No aplica: dato empírico o descripción de práctica, no regla",
+    "vigente": null,
+    "nota": "Muestra de 22 procesos de mínima cuantía del Valle del Cauca (2013-2015) en SECOP I; anterior a la Ley 1882 de 2018 y al Decreto 0997 de 2026; describe la práctica de esos procesos, no la regla vigente."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": null,
+  "advertencia": "Opinión y propuesta de los autores; no es la regla."
+}

@@ -1,0 +1,51 @@
+{
+  "id": "CE-F-3008",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República",
+  "titulo": "Decreto 1082 de 2015, Único Reglamentario del Sector Administrativo de Planeación Nacional (texto consolidado)",
+  "anio": 2015,
+  "institucion": "Departamento Administrativo de la Función Pública · Gestor Normativo",
+  "url": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=77653",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: art. 2.2.1.2.1.1.2 completo",
+  "localizador": "art. 2.2.1.2.1.1.2 (Audiencias en la licitación), inciso 1",
+  "cita": "son obligatorias las audiencias de: a) asignación de Riesgos, y b) adjudicación. Si a solicitud de un interesado es necesario adelantar una audiencia para precisar el contenido y alcance de los pliegos de condiciones, este tema se tratará en la audiencia de asignación de Riesgos.",
+  "afirmacion": "En la licitación son obligatorias las audiencias de asignación de riesgos y de adjudicación; si a solicitud de un interesado hace falta una audiencia para precisar el pliego, el tema se trata en la de asignación de riesgos.",
+  "inferencia": null,
+  "eje": 3,
+  "etapa": [
+    "E2"
+  ],
+  "decision": [
+    "D4"
+  ],
+  "modulo": [
+    "M-PLIEGO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A2",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=77653 (texto consolidado) y texto del Decreto 0997 de 2026 en https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/",
+    "vigente": true,
+    "nota": "Se comprobó que el Decreto 0997 de 2026 (arts. 1 a 13) no modifica este artículo; el consolidado de Función Pública aún no trae el 0997."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Norma reglamentaria compilada en el Decreto 1082 de 2015: rige desde su expedición, no desde un aviso de convocatoria."
+  },
+  "lista_cerrada": "L3-03",
+  "problema_candidato": null,
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje3-institucional:1",
+      "veredicto": "correcta",
+      "detalle": "El primer inciso del art. 2.2.1.2.1.1.2 está literal. La afirmación es fiel y el Decreto 0997 no toca este artículo."
+    }
+  ]
+}

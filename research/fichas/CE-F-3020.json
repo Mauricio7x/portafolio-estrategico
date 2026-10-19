@@ -1,0 +1,57 @@
+{
+  "id": "CE-F-3020",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 80 de 1993",
+  "anio": 1993,
+  "institucion": "Secretaría General del Senado · Base documental (texto con notas de vigencia)",
+  "url": "http://www.secretariasenado.gov.co/senado/basedoc/ley_0080_1993.html",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: art. 30 completo, con sus notas de vigencia visibles",
+  "localizador": "art. 30, numeral 9, incisos 1 a 3",
+  "cita": "Los plazos para efectuar la adjudicación y para la firma del contrato se señalarán en los pliegos […] podrá prorrogar dichos plazos antes de su vencimiento y por un término total no mayor a la mitad del inicialmente fijado […]. Dentro del mismo término de adjudicación, podrá declararse desierta",
+  "afirmacion": "Los plazos de adjudicación y de firma del contrato se señalan en el pliego; la cita fija que su prórroga se hace antes del vencimiento y por un término total no mayor a la mitad del inicial, y que dentro del mismo término de adjudicación puede declararse desierta.",
+  "inferencia": null,
+  "eje": 3,
+  "etapa": [
+    "E6"
+  ],
+  "decision": [
+    "D1"
+  ],
+  "modulo": [
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A1",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "http://www.secretariasenado.gov.co/senado/basedoc/ley_0080_1993.html",
+    "vigente": true,
+    "nota": "Texto del Senado con notas: numeral 4 modificado por el art. 220 del Decreto 19 de 2012; numeral 5, inciso 2, por el art. 89 de la Ley 1474 de 2011; apartes derogados por el art. 32 de la Ley 1150 de 2007."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Norma legal: rige desde su promulgación, no desde un aviso de convocatoria."
+  },
+  "lista_cerrada": "L3-07",
+  "problema_candidato": null,
+  "advertencia": "Según el verificador, el […] de la cita corta la condición de la prórroga («siempre que las necesidades de la administración así lo exijan») y que la facultad es del «jefe o representante de la entidad»; la prórroga no es libre, pero eso no está en esta cita.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje3-institucional:2",
+      "veredicto": "no_sostiene",
+      "detalle": "La cita es literal (en el art. 30, numeral 9, las expresiones tachadas «o términos de referencia» y «o concurso» están derogadas, sin efecto). Pero el […] después de «la mitad del inicialmente fijado» corta la condición de la prórroga: «siempre que las necesidades de la administración así lo exijan». También queda fuera que la facultad es del «jefe o representante de la entidad». La afirmación presenta la prórroga como posible sin esa condición, y así quita un matiz de la fuente (§5.1).",
+      "accion": "afirmación estrechada a lo que sostiene la cita; lo que la cita no cubre va en «advertencia»",
+      "antes": {
+        "afirmacion": "Los plazos de adjudicación y de firma del contrato se fijan en el pliego, pueden prorrogarse antes de vencer hasta por la mitad del inicial, y la licitación puede declararse desierta dentro del mismo término de adjudicación.",
+        "advertencia": null
+      }
+    }
+  ]
+}

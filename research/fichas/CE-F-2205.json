@@ -1,0 +1,37 @@
+{
+  "id": "CE-F-2205",
+  "tipo": "academia",
+  "autor": "Personas naturales (nombres omitidos por la regla 5 del piloto)",
+  "titulo": "El principio de planeación en el contrato de obra pública",
+  "anio": 2019,
+  "institucion": "Universidad Santo Tomás · Revista IUSTA núm. 51, pp. 185-208 (vía Dialnet)",
+  "url": "https://dialnet.unirioja.es/descarga/articulo/7021763.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: resumen, introducción y apartados sobre vulneración del principio (págs. 185-201); el resto por palabras clave",
+  "localizador": "pág. 200 de la revista (pág. 16 del PDF), párrafo «…implementación de acciones…»",
+  "cita": "se debe realizar un plan de contingencia en caso de entrega tardía de predios, o cuando exista disputa sobre estos, con el fin de que no ocurran retrasos en la ejecución de la obra que afecten el interés general.",
+  "afirmacion": "Los autores proponen que la entidad haga un plan de contingencia para la entrega tardía de predios o la disputa sobre ellos, para que no se retrase la ejecución de la obra.",
+  "inferencia": null,
+  "eje": 2,
+  "etapa": [
+    "E0",
+    "E8"
+  ],
+  "decision": [
+    "D4"
+  ],
+  "modulo": [
+    "M-PLIEGO"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "No se reverificó contra jurisprudencia posterior; fuente académica",
+    "vigente": null,
+    "nota": "Propuesta de los autores, no regla."
+  },
+  "lista_cerrada": null,
+  "problema_candidato": "La entrega tardía o en disputa de los predios retrasa la obra."
+}

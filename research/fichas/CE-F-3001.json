@@ -1,0 +1,51 @@
+{
+  "id": "CE-F-3001",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República",
+  "titulo": "Decreto 1082 de 2015, Único Reglamentario del Sector Administrativo de Planeación Nacional (texto consolidado)",
+  "anio": 2015,
+  "institucion": "Departamento Administrativo de la Función Pública · Gestor Normativo",
+  "url": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=77653",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: art. 2.2.1.1.2.1.2 completo",
+  "localizador": "art. 2.2.1.1.2.1.2 (Aviso de convocatoria), inciso final",
+  "cita": "En los Procesos de Contratación adelantados bajo las modalidades de selección de mínima cuantía y contratación directa, no es necesaria la expedición y publicación del aviso de convocatoria en el SECOP.",
+  "afirmacion": "En mínima cuantía y contratación directa no es necesario expedir ni publicar aviso de convocatoria en el SECOP.",
+  "inferencia": "Inferencia: un monitor de oportunidades que espere el aviso no verá los procesos de mínima cuantía; hay que vigilar directamente la invitación.",
+  "eje": 3,
+  "etapa": [
+    "E1"
+  ],
+  "decision": [
+    "D1"
+  ],
+  "modulo": [
+    "M-INGESTA"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A2",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=77653 (texto consolidado) y texto del Decreto 0997 de 2026 en https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/",
+    "vigente": true,
+    "nota": "Se comprobó que el Decreto 0997 de 2026 (arts. 1 a 13) no modifica este artículo; el consolidado de Función Pública aún no trae el 0997."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Norma reglamentaria compilada en el Decreto 1082 de 2015: rige desde su expedición, no desde un aviso de convocatoria."
+  },
+  "lista_cerrada": "L3-01",
+  "problema_candidato": "El contratista que solo sigue avisos de convocatoria no se entera de los procesos de mínima cuantía de obra, que se publican sin aviso y con plazos de un día hábil.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje3-institucional:1",
+      "veredicto": "correcta",
+      "detalle": "El inciso final del art. 2.2.1.1.2.1.2 dice literalmente «no es necesaria la expedición y publicación del aviso de convocatoria en el SECOP» en mínima cuantía y contratación directa. La afirmación es fiel y el Decreto 0997 no toca este artículo."
+    }
+  ]
+}

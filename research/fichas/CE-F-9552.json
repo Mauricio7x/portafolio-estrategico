@@ -1,0 +1,40 @@
+{
+  "id": "CE-F-9552",
+  "tipo": "documento_proceso",
+  "autor": "Institución Educativa Técnico Superior Industrial (Barrancabermeja): comité evaluador (nombres omitidos por la regla 5)",
+  "titulo": "Informe de evaluación · Mínima cuantía SAMC-004-2026, invitación pública 020-2026 (SECOP II CO1.BDOS.10349492)",
+  "anio": 2026,
+  "institucion": "Institución Educativa Técnico Superior Industrial, publicado en SECOP II (dmgg-8hin, documento 813169454)",
+  "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=813169454&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: las 6 páginas del PDF con pdftotext (PDF escaneado con capa de texto OCR de mala calidad; las tablas de requisitos se leen a trozos)",
+  "localizador": "pág. 1 del PDF, «ANTECEDENTES»",
+  "cita": "al cierre del plazo, ocurrido el 19 de junio de 2026 a las 5:30 PM SECOP ll; se presentó una (01) propuesta la cual se analizará y se verificará el cumplimiento de los requisitos habilitantes y técnicos de no cumplir se declarará desierto.",
+  "afirmacion": "En este proceso de mínima cuantía de obra se presentó una sola propuesta al cierre, y la entidad advirtió que si no cumplía declararía desierto el proceso.",
+  "inferencia": "Inferencia, con las págs. 5 y 6 del mismo informe: el único proponente (persona natural) fue declarado hábil y recomendado para adjudicar por $47.967.400 sobre un presupuesto de $48.832.699 (98,2 %); con oferta única no hubo competencia de precio.",
+  "eje": 3,
+  "etapa": [
+    "E4",
+    "E5"
+  ],
+  "decision": [
+    "D1",
+    "D2"
+  ],
+  "modulo": [
+    "M-OFERTA",
+    "M-ENTIDAD"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A7",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "el propio informe (documento de un proceso de SECOP II, fechado el 22-jun-2026)",
+    "vigente": null,
+    "nota": "Documento de un proceso: registra un hecho fechado de lo que hizo una entidad, no una regla general; no aplica comprobar vigencia normativa."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": null
+}

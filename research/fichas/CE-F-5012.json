@@ -1,0 +1,51 @@
+{
+  "id": "CE-F-5012",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 1150 de 2007",
+  "anio": 2007,
+  "institucion": "Secretaría General del Senado de la República, base de leyes (texto con notas de vigencia)",
+  "url": "http://www.secretariasenado.gov.co/senado/basedoc/ley_1150_2007.html",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: arts. 11 y 17 del texto de la Secretaría del Senado",
+  "localizador": "art. 11, inciso cuarto",
+  "cita": "Los contratistas tendrán derecho a efectuar salvedades a la liquidación por mutuo acuerdo, y en este evento la liquidación unilateral solo procederá en relación con los aspectos que no hayan sido objeto de acuerdo.",
+  "afirmacion": "El contratista puede dejar salvedades en la liquidación de mutuo acuerdo, y en ese caso la entidad solo puede liquidar unilateralmente lo que no fue objeto de acuerdo.",
+  "inferencia": null,
+  "eje": 5,
+  "etapa": [
+    "E9"
+  ],
+  "decision": [
+    "D4"
+  ],
+  "modulo": [
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A1",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "http://www.secretariasenado.gov.co/senado/basedoc/ley_1150_2007.html",
+    "vigente": true,
+    "nota": "Texto de la Secretaría del Senado consultado el 2-oct-2026; el artículo no trae nota de modificación en esa página."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Norma legal: rige para los contratos del Estatuto General sin depender de la fecha de un aviso; no se buscó régimen de transición para contratos anteriores."
+  },
+  "lista_cerrada": "L5-05",
+  "problema_candidato": null,
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje5-institucional:1",
+      "veredicto": "correcta",
+      "detalle": "Misma página del Senado. El art. 11, inciso cuarto, trae literal: «Los contratistas tendrán derecho a efectuar salvedades a la liquidación por mutuo acuerdo, y en este evento la liquidación unilateral solo procederá en relación con los aspectos que no hayan sido objeto de acuerdo.» La afirmación es fiel y el artículo no trae nota de modificación."
+    }
+  ]
+}

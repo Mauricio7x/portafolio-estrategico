@@ -1,0 +1,41 @@
+{
+  "id": "CE-F-3224",
+  "tipo": "multilateral",
+  "autor": "Organización para la Cooperación y el Desarrollo Económicos (OCDE)",
+  "titulo": "Towards Efficient Public Procurement in Colombia: Making the Difference (OECD Public Governance Reviews)",
+  "anio": 2016,
+  "institucion": "OCDE, OECD Publishing, París (doi 10.1787/9789264252103-en)",
+  "url": "https://www.oecd.org/content/dam/oecd/en/publications/reports/2016/04/towards-efficient-public-procurement-in-colombia_g1g649e2/9789264252103-en.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: capítulos 3 (criterios de evaluación, pág. 81-83), 4 (rendición de cuentas, pág. 90-92) y 5 (fuerza laboral de compras, pág. 103-113) por palabras clave; el resto no se leyó",
+  "localizador": "pág. 92 del PDF (impresa 90), capítulo 4, párrafo «Responses during the OECD fact finding…»",
+  "cita": "authorities may be reluctant to consider and accept suppliers’ feedback, thus turning the stage of observations into a formality. Observations are more likely to be accepted in large-scale projects, which are more heavily scrutinised.",
+  "afirmacion": "La OCDE reporta, a partir de su levantamiento de hechos, que las entidades pueden ser reacias a considerar y aceptar las observaciones de los proveedores, lo que vuelve una formalidad la etapa de observaciones, y que estas tienen más probabilidad de ser aceptadas en proyectos grandes, más vigilados.",
+  "inferencia": "Inferencia: en procesos pequeños una observación al pliego o al informe tiene menos probabilidad de cambiar algo; el contratista no debe contar con ella como única defensa.",
+  "eje": 3,
+  "etapa": [
+    "E1",
+    "E2",
+    "E5"
+  ],
+  "decision": [
+    "D1",
+    "D3"
+  ],
+  "modulo": [
+    "M-PLIEGO",
+    "M-ENTIDAD"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "No aplica: dato empírico o descripción de práctica, no regla",
+    "vigente": null,
+    "nota": "Informe de 2016, basado en el levantamiento de hechos de la OCDE; anterior a la Ley 1882 de 2018 y a los documentos tipo de obra. Las afirmaciones son del informe, no se midieron con datos en estos pasajes."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Observaciones al pliego y al informe de evaluación que la entidad no acoge, sobre todo en procesos pequeños: la etapa queda como formalidad."
+}

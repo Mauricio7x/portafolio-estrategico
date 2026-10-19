@@ -1,0 +1,52 @@
+{
+  "id": "CE-F-5031",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República y Departamento Nacional de Planeación",
+  "titulo": "Decreto 1082 de 2015, Único Reglamentario del Sector Administrativo de Planeación Nacional",
+  "anio": 2015,
+  "institucion": "Departamento Administrativo de la Función Pública, Gestor Normativo (texto consolidado)",
+  "url": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=77653",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: arts. 2.2.1.1.2.4.1 a 2.2.1.1.2.4.3 y 2.2.1.2.3.1.1 a 2.2.1.2.3.2.9 del texto consolidado",
+  "localizador": "art. 2.2.1.2.3.1.18, inciso segundo",
+  "cita": "Cuando el contrato es modificado para incrementar su valor o prorrogar su plazo, la Entidad Estatal debe exigir al contratista ampliar el valor de la garantía otorgada o ampliar su vigencia, según el caso.",
+  "afirmacion": "Si el contrato se adiciona en valor o se prorroga en plazo, la entidad debe exigir al contratista ampliar el valor o la vigencia de la garantía.",
+  "inferencia": "Inferencia: cada adición o prórroga trae un costo de prima adicional para el contratista, que conviene negociar dentro del mismo otrosí.",
+  "eje": 5,
+  "etapa": [
+    "E8"
+  ],
+  "decision": [
+    "D2",
+    "D4"
+  ],
+  "modulo": [
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A2",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=77653",
+    "vigente": true,
+    "nota": "Texto consolidado de Función Pública (consultado el 2-oct-2026). Se revisó el índice de artículos que modifica el Decreto 0997 de 2026 (arts. 2.2.1.1.1.4.5, 2.2.1.1.1.5.4, 2.2.1.1.1.5.7, 2.2.1.1.1.6.1, 2.2.1.1.1.6.2, 2.2.1.1.2.1.1, 2.2.1.1.2.1.3, 2.2.1.1.2.2.2, 2.2.1.1.2.2.10, 2.2.1.2.1.2.1, 2.2.1.2.1.2.12, 2.2.1.2.1.5.1): no toca este artículo."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Norma reglamentaria compilada en el Decreto 1082 de 2015: no depende de la fecha de un aviso; no se buscó régimen de transición."
+  },
+  "lista_cerrada": "L5-07",
+  "problema_candidato": null,
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje5-institucional:3",
+      "veredicto": "correcta",
+      "detalle": "Función Pública, art. 2.2.1.2.3.1.18, inciso segundo: la cita aparece literal. La afirmación es fiel y la inferencia está rotulada. El Decreto 0997 de 2026 (revisado completo) no modifica la subsección 3 de garantías."
+    }
+  ]
+}

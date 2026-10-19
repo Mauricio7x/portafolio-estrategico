@@ -1,0 +1,38 @@
+{
+  "id": "CE-F-5204",
+  "tipo": "academia",
+  "autor": "Autor del artículo (persona natural, nombre omitido por la regla 5)",
+  "titulo": "El contrato de obra, razones de las órdenes de cambio o reclamaciones de los contratistas",
+  "anio": 2003,
+  "institucion": "Pontificia Universidad Javeriana, revista Vniversitas",
+  "url": "https://revistas.javeriana.edu.co/index.php/vnijuri/article/download/14849/11989/52548",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: las 16 págs. con pdftotext -layout",
+  "localizador": "pág. 294 de la revista (pág. 14 del PDF), apartado VI, comentario de un laudo arbitral",
+  "cita": "todas exigen, como supuesto condicionante, y fundamental, que los hechos que le sirven de causa acaecidos durante la ejecución del contrato, y que permiten un reconocimiento dinerario a favor del contratista deben ser de aquellos razonablemente imprevisibles",
+  "afirmacion": "El autor reporta que, según el tribunal arbitral que comenta (caso de presencia excesiva de rocas en una plataforma de perforación), cualquier teoría que se invoque exige que los hechos que permiten un reconocimiento de dinero al contratista sean razonablemente imprevisibles.",
+  "inferencia": "Inferencia: una condición del terreno que un estudio razonable habría revelado no da derecho a reconocimiento; al contratista le conviene dejar constancia, antes de ofertar, de lo que los estudios entregados no permitían prever.",
+  "eje": 5,
+  "etapa": [
+    "E8"
+  ],
+  "decision": [
+    "D4",
+    "D2"
+  ],
+  "modulo": [
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "el propio documento (fuente académica fechada)",
+    "vigente": null,
+    "nota": "Fuente académica fechada; recoge doctrina y jurisprudencia de su época. No se comprobó contra el texto normativo vigente para esta ficha: sostiene la posición del autor y lo que reporta. Artículo de 2003, anterior a la Ley 1150 de 2007."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Condiciones del terreno no previstas (roca, suelos) encarecen la obra y el contratista solo recupera el mayor costo si prueba que eran razonablemente imprevisibles."
+}

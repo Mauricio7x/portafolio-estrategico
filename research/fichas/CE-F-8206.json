@@ -1,0 +1,40 @@
+{
+  "id": "CE-F-8206",
+  "tipo": "academia",
+  "autor": "Autor adscrito a la Universidad EAFIT (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Documentos tipo obligatorios: ¿supresión de la potestad discrecional para la confección del pliego de condiciones?",
+  "anio": 2020,
+  "institucion": "Revista Digital de Derecho Administrativo, núm. 24, Universidad Externado de Colombia (vía Redalyc)",
+  "url": "https://www.redalyc.org/journal/5038/503865772006/html/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: texto HTML de Redalyc, incluidas notas",
+  "localizador": "§ 4 «Documentos tipo obligatorios y reducción de la discrecionalidad administrativa para la confección del pliego», tercer párrafo",
+  "cita": "las entidades estatales cuentan con discrecionalidad para: […] e) definir qué experiencia solicitar como requisito habilitante o criterio de evaluación, respetando las directrices del pliego tipo; f) señalar, según su justificación de necesidad en los estudios previos, si es conducente la visita",
+  "afirmacion": "El autor sostiene que, aun con documentos tipo obligatorios de obra, la entidad conserva discrecionalidad para definir qué experiencia pide (habilitante o de evaluación) dentro de las directrices del pliego tipo y para decidir si exige visita al sitio.",
+  "inferencia": "Inferencia: que el proceso use el documento tipo no basta para saber si el contratista califica; la experiencia exigida y la visita se leen en cada pliego. El texto es de 2020 y los documentos tipo han tenido versiones posteriores no comprobadas aquí.",
+  "eje": 8,
+  "etapa": [
+    "E1",
+    "E2"
+  ],
+  "decision": [
+    "D1",
+    "D3"
+  ],
+  "modulo": [
+    "M-PLIEGO",
+    "M-CAPACIDAD"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "el propio artículo (2020)",
+    "vigente": null,
+    "nota": "Opinión doctrinal sobre los documentos tipo vigentes en 2020; no se comprobó contra la versión vigente de los documentos tipo."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Aun con pliego tipo, la experiencia exigida y la visita obligatoria cambian de un proceso a otro: el contratista que no las lee en cada pliego se presenta sin calificar."
+}

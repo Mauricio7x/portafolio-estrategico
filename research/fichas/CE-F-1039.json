@@ -1,0 +1,51 @@
+{
+  "id": "CE-F-1039",
+  "tipo": "concepto_cce",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Concepto C-642 de 2026 (Decreto 0287 de 2026)",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente (relatoría)",
+  "url": "https://relatoria.colombiacompra.gov.co/conceptos/c-642-de-2026/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: el extracto publicado en la relatoría (descriptores y apartes); no se descargó el archivo íntegro",
+  "localizador": "apartado «DECRETO 0287 DE 2026 ‒ Puntaje adicional del 2% ‒ Compatibilidad […]»",
+  "cita": "el criterio de desempate beneficia exclusivamente a los empleadores de PcD, no a los emprendimientos y empresas de PcD, dicha norma exige que al menos el 10% de la nómina esté en condición de discapacidad y opera únicamente cuando hay empate",
+  "afirmacion": "CCE distingue el puntaje del 2% del desempate de la Ley 2069: el desempate solo beneficia a empleadores con al menos el 10% de la nómina con discapacidad y solo opera cuando hay empate.",
+  "inferencia": null,
+  "eje": 1,
+  "etapa": [
+    "E5"
+  ],
+  "decision": [
+    "D2"
+  ],
+  "modulo": [
+    "M-OFERTA"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A5",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=273496",
+    "vigente": true,
+    "nota": "Concepto de CCE del 29/05/2026 sobre el Decreto 287, contrastado con el texto del decreto."
+  },
+  "lista_cerrada": "L1-07",
+  "problema_candidato": null,
+  "regla": {
+    "regimen": "Estatuto General y régimen especial",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Lectura de CCE; el desempate rige desde la Ley 2069 de 2020."
+  },
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-institucional:3",
+      "veredicto": "correcta",
+      "detalle": "C-642, apartado «Puntaje adicional del 2% ‒ Compatibilidad ‒ [...] ‒ Criterio de desempate ‒ Ley 2069 de 2020»: la cita está literal (es la parte final de la frase). La norma que se distingue, el art. 35, num. 3, de la Ley 2069, la nombra la misma frase y el título del apartado. La afirmación no añade contenido. Concuerda con el art. 35, num. 3 (texto del Senado): «por lo menos el diez por ciento (10%) de su nómina»."
+    }
+  ]
+}

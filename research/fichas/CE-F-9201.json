@@ -1,0 +1,39 @@
+{
+  "id": "CE-F-9201",
+  "tipo": "academia",
+  "autor": "Tres personas naturales (nombres omitidos por la regla 5 del piloto)",
+  "titulo": "Aspectos tributarios para los contratos de obra pública en Colombia",
+  "anio": 2017,
+  "institucion": "Pontificia Universidad Javeriana, Facultad de Ciencias Jurídicas, Especialización en Derecho Tributario · monografía en el repositorio institucional",
+  "url": "https://apidspace.javeriana.edu.co/server/api/core/bitstreams/5899e088-e87d-4db3-878d-e83fcfcab2b2/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: 25 páginas, leídas en texto extraído con pdftotext",
+  "localizador": "pág. 22 del PDF (ejercicio práctico de una obra en Barranquilla, filas «Total costos por impuestos de obra» y «Utilidad neta del constructor»; espacios de la tabla colapsados)",
+  "cita": "Total costos por impuestos de obra 17.96% 8,965,135,817 8,968,660,807 […] Utilidad neta del constructor 4% 3%",
+  "afirmacion": "En el ejercicio de los autores para un contrato de $50.000 millones en Barranquilla, los impuestos de obra suman el 17,96 % y la utilidad neta del constructor queda en 4 % o 3 % según el orden de la entidad.",
+  "inferencia": "Inferencia: es un ejercicio con supuestos de los autores (costo directo del 60 %, gastos administrativos del 5 %), no una medición; muestra que los tributos de la obra pesan varias veces la utilidad neta.",
+  "advertencia": "Cifra de un ejercicio hipotético de los autores, no medida sobre contratos reales; no se usa como frecuencia ni como tarifa vigente.",
+  "eje": 9,
+  "etapa": [
+    "E3"
+  ],
+  "decision": [
+    "D2"
+  ],
+  "modulo": [
+    "M-PRECIO",
+    "M-APU"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "Monografía de 2017; no se abrieron las leyes, ordenanzas ni acuerdos vigentes de estampillas y contribuciones",
+    "vigente": null,
+    "nota": "Anterior a las reformas tributarias de 2018, 2019, 2021 y 2022; las tarifas y su suma no se reverificaron."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "La carga de impuestos y estampillas de la obra (17,96 % en el ejercicio de los autores) es varias veces la utilidad neta (3-4 %): un error pequeño en ese rubro borra el margen."
+}

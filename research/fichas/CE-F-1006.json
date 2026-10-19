@@ -1,0 +1,53 @@
+{
+  "id": "CE-F-1006",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República; Departamento Nacional de Planeación",
+  "titulo": "Decreto 0997 de 2026 (modifica y adiciona el Decreto 1082 de 2015)",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente (relatoría normativa)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: los 14 artículos y los considerandos en la relatoría de CCE",
+  "localizador": "art. 8 (sustituye el art. 2.2.1.1.2.1.3 del Decreto 1082 de 2015), parágrafo, inciso 1",
+  "cita": "En la redacción de las cláusulas anticorrupción y de las declaraciones, pactos o compromisos anticorrupción, las Entidades Estatales deberán tener en cuenta las políticas Antilavado de Activos y Contra la Financiación del Terrorismo, Antisoborno y Antifraude que hayan adoptado",
+  "afirmacion": "Al redactar las cláusulas y declaraciones anticorrupción, cada entidad debe tener en cuenta sus propias políticas antilavado y contra la financiación del terrorismo, antisoborno y antifraude.",
+  "inferencia": "Inferencia: como el texto depende de las políticas de cada entidad, la declaración anticorrupción no será igual de una entidad a otra y no conviene reutilizar un formato.",
+  "eje": 1,
+  "etapa": [
+    "E2",
+    "E3"
+  ],
+  "decision": [
+    "D3",
+    "D4"
+  ],
+  "modulo": [
+    "M-PLIEGO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A2",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/",
+    "vigente": true,
+    "nota": "Art. 8: rige desde el día siguiente a la publicación en el Diario Oficial (art. 14, inciso 1). La fecha de publicación del Decreto 0997 de 2026 en el Diario Oficial no se comprobó en ninguna fuente abierta (la relatoría y la ficha de la Alcaldía de Bogotá solo dan la expedición, 04/08/2026)."
+  },
+  "lista_cerrada": "L1-01",
+  "problema_candidato": null,
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": "No aplica a procesos con documento tipo hasta que CCE expida la versión que lo incorpore (art. 14, parágrafo 3)",
+    "motivo_null": "Rige para procesos cuyo aviso, invitación o documento equivalente se publique después de la entrada en vigencia (art. 14, parágrafo 1); esa entrada es el día siguiente a la publicación en el Diario Oficial, y la fecha de esa publicación no se comprobó."
+  },
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-institucional:1",
+      "veredicto": "correcta",
+      "detalle": "La cita está literal en el parágrafo del art. 8, inciso 1 (HTML y PDF). La afirmación es fiel: «que hayan adoptado» equivale a «sus propias políticas». La inferencia sobre no reutilizar un formato va marcada. vigente=true lleva la misma salvedad del Diario Oficial que CE-F-1004."
+    }
+  ]
+}

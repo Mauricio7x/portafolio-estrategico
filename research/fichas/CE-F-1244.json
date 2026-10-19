@@ -1,0 +1,47 @@
+{
+  "id": "CE-F-1244",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "La inestabilidad de la regla de subsanabilidad en la contratación pública",
+  "anio": 2018,
+  "institucion": "Universidad Militar Nueva Granada, Facultad de Derecho (trabajo de grado, repositorio institucional)",
+  "url": "https://repository.umng.edu.co/server/api/core/bitstreams/7ec20868-1347-409a-a982-892af73e9ed9/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: planteamiento (págs. del PDF 3-8), apartado de modificaciones de la Ley 1882 de 2018 (págs. 17-20 y 31-33) y conclusiones",
+  "localizador": "pág. 32 del PDF, apartado sobre el plazo preclusivo para subsanar introducido por la Ley 1882 de 2018",
+  "cita": "Con la ley 1882 del 15 de enero 2018, se fijó un plazo preclusivo para subsanar propuestas hasta el término de traslado del informe de evaluación […] En la práctica los proponentes se han volcado a presentar propuestas incompletas, por ejemplo, garantía de seriedad, facultades para contratar",
+  "afirmacion": "El autor afirma que la Ley 1882 de 2018 fijó un plazo preclusivo para subsanar hasta el traslado del informe de evaluación, y que en la práctica los proponentes se han volcado a presentar propuestas incompletas, por ejemplo en la garantía de seriedad o las facultades para contratar.",
+  "inferencia": "Inferencia: la frase continúa explicando que esa costumbre venía de la Ley 1150 de 2007, que permitía subsanar hasta la adjudicación; el cambio de regla convierte un hábito tolerado en causa de rechazo para quien no subsana a tiempo. La regla vigente (art. 5 de la Ley 1150, parágrafos de la Ley 1882) no se comprobó aquí en su texto oficial.",
+  "eje": 1,
+  "etapa": [
+    "E4",
+    "E5"
+  ],
+  "decision": [
+    "D3"
+  ],
+  "modulo": [
+    "M-OFERTA"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://repository.umng.edu.co/server/api/core/bitstreams/7ec20868-1347-409a-a982-892af73e9ed9/content",
+    "vigente": null,
+    "nota": "Trabajo de 2018, poco después de la Ley 1882; describe la transición de la regla de subsanabilidad."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Cambio de la regla de subsanabilidad (de «hasta la adjudicación» a «hasta el traslado del informe de evaluación»): ofertas incompletas por costumbre que pasan a ser rechazadas.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-academico:3",
+      "veredicto": "correcta",
+      "detalle": "Abrí la URL (HTTP 200, González Hernández, UMNG, noviembre de 2018). En la pág. 32 del PDF la cita es literal: el plazo preclusivo de la Ley 1882 hasta el traslado del informe de evaluación y «En la práctica los proponentes se han volcado a presentar propuestas incompletas, por ejemplo, garantía de seriedad, facultades para contratar». La afirmación se atribuye al autor. Al poner las dos frases juntas podría sugerir que esa práctica la causó la Ley 1882, cuando el autor la atribuye a la Ley 1150 («debido a que la ley 1150 de 2007 permite subsanar … hasta la adjudicación»). La afirmación no afirma esa causa y la inferencia la aclara, así que no cuenta como defecto. La vigencia de la regla actual queda declarada como no comprobada."
+    }
+  ]
+}

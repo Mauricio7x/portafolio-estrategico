@@ -1,0 +1,42 @@
+{
+  "id": "CE-F-6205",
+  "tipo": "academia",
+  "autor": "Una persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Tratamiento de la colusión en la contratación pública: una visión del caso colombiano",
+  "anio": 2014,
+  "institucion": "Universidad del Norte, Revista de Derecho núm. 42, págs. 233-263 · Redalyc",
+  "url": "https://www.redalyc.org/pdf/851/85132008010.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: introducción, régimen sancionatorio (págs. 239-241), análisis de la delación (págs. 254-255) y conclusiones (págs. 255-257); el modelo económico por palabras clave",
+  "localizador": "pág. 255 (análisis del parágrafo del art. 27 de la Ley 1474 de 2011)",
+  "cita": "si yo hago parte del acuerdo y delato, me puedo exonerar (si se cumplen los presupuestos del artículo 14 de la Ley 1340 de 2009) de la sanción administrativa, pero no de la penal",
+  "afirmacion": "El autor sostiene que, tras la Ley 1474 de 2011, quien hace parte del acuerdo colusorio y delata puede exonerarse de la sanción administrativa de la SIC, si cumple el art. 14 de la Ley 1340 de 2009, pero no de la penal.",
+  "inferencia": "Inferencia del autor (pág. 256): la tipificación penal desincentiva la delación ante la SIC.",
+  "eje": 6,
+  "etapa": [
+    "T"
+  ],
+  "decision": [
+    "D4"
+  ],
+  "modulo": [
+    "M-NINGUNO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "No se abrió en esta sesión el texto vigente de la Ley 1474 de 2011, art. 27, ni de la Ley 1340 de 2009, art. 14",
+    "vigente": null,
+    "nota": "Lectura del autor en 2014; sin reverificar contra el texto vigente."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Regla penal y de competencia, no ligada a un aviso ni a un documento tipo"
+  },
+  "lista_cerrada": "L6-01",
+  "problema_candidato": null
+}

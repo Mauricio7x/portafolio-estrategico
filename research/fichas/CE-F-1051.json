@@ -1,0 +1,57 @@
+{
+  "id": "CE-F-1051",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 1150 de 2007",
+  "anio": 2007,
+  "institucion": "Secretaría General del Senado (Leyes desde 1992, texto con notas de vigencia)",
+  "url": "http://www.secretariasenado.gov.co/senado/basedoc/ley_1150_2007.html",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: arts. 2, 3, 13 y 14",
+  "localizador": "art. 14 (modificado por el art. 93 de la Ley 1474 de 2011), inciso 1",
+  "cita": "Las Empresas Industriales y Comerciales del Estado, las Sociedades de Economía Mixta […] estarán sometidas al Estatuto General de Contratación de la Administración Pública, con excepción de aquellas que desarrollen actividades comerciales en competencia con el sector privado y/o público",
+  "afirmacion": "Según el art. 14, las empresas industriales y comerciales del Estado y las sociedades de economía mixta allí previstas están sometidas al Estatuto General, con excepción, entre otras, de las que desarrollan actividades comerciales en competencia con el sector privado y/o público.",
+  "inferencia": null,
+  "eje": 1,
+  "etapa": [
+    "T"
+  ],
+  "decision": [
+    "D1"
+  ],
+  "modulo": [
+    "M-ENTIDAD"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A1",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "http://www.secretariasenado.gov.co/senado/basedoc/ley_1150_2007.html",
+    "vigente": true,
+    "nota": "Texto de la Secretaría del Senado («Última actualización: 15 de septiembre de 2026»), leído el 2-oct-2026."
+  },
+  "lista_cerrada": "L1-12",
+  "problema_candidato": null,
+  "regla": {
+    "regimen": "Estatuto General o régimen especial según la actividad",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Norma legal en vigor antes de la fecha de corte; no fija una fecha de aviso."
+  },
+  "advertencia": "Lo omitido con […] incluye el umbral de participación estatal superior al 50%; la excepción sigue con «nacional o internacional o en mercados regulados», fuera de la cita. Según el verificador (fase 2, 2-oct-2026): la excepción completa dice «en competencia con el sector privado y/o público, nacional o internacional o en mercados regulados», así que también quedan fuera del Estatuto General las que actúan en mercados regulados; el mismo inciso exceptúa además los contratos de ciencia y tecnología (Ley 29 de 1990).",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-institucional:4",
+      "veredicto": "no_sostiene",
+      "detalle": "La cita aparece literal, con «[…]», en el art. 14 de la Ley 1150 (Senado), modificado por el art. 93 de la Ley 1474. El texto completo de la excepción dice «en competencia con el sector privado y/o público, nacional o internacional o en mercados regulados». La afirmación da como única salvedad la competencia; deja fuera a las que actúan «en mercados regulados» y, con eso, extiende el Estatuto General a más entidades de las que la norma somete. La advertencia lo reconoce, pero la afirmación sigue diciendo más que la fuente. El mismo inciso exceptúa además los contratos de ciencia y tecnología (Ley 29 de 1990).",
+      "accion": "afirmación estrechada a lo que sostiene la cita; lo que la cita no cubre va en «advertencia», atribuido al verificador",
+      "antes": {
+        "afirmacion": "Las empresas industriales y comerciales del Estado y las sociedades de economía mixta del art. 14 se rigen por el Estatuto General, salvo las que desarrollan actividades comerciales en competencia con el sector privado o público.",
+        "advertencia": "Lo omitido con […] incluye el umbral de participación estatal superior al 50%; la excepción sigue con «nacional o internacional o en mercados regulados», fuera de la cita."
+      }
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "id": "CE-F-3223",
+  "tipo": "multilateral",
+  "autor": "Organización para la Cooperación y el Desarrollo Económicos (OCDE)",
+  "titulo": "Towards Efficient Public Procurement in Colombia: Making the Difference (OECD Public Governance Reviews)",
+  "anio": 2016,
+  "institucion": "OCDE, OECD Publishing, París (doi 10.1787/9789264252103-en)",
+  "url": "https://www.oecd.org/content/dam/oecd/en/publications/reports/2016/04/towards-efficient-public-procurement-in-colombia_g1g649e2/9789264252103-en.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: capítulos 3 (criterios de evaluación, pág. 81-83), 4 (rendición de cuentas, pág. 90-92) y 5 (fuerza laboral de compras, pág. 103-113) por palabras clave; el resto no se leyó",
+  "localizador": "pág. 92 del PDF (impresa 90), capítulo 4 «Accountable public procurement in Colombia», párrafo sobre audiencias y observaciones",
+  "cita": "Bidders can submit observations […] on mistakes or omissions that other bids may have. Bids can be reviewed by other bidders and their defects can be challenged, so some bidders employ legal counsel to look for irregularities in other bids.",
+  "afirmacion": "La OCDE describe que los oferentes pueden presentar observaciones sobre los errores u omisiones de las otras ofertas, que las ofertas pueden ser revisadas y sus defectos impugnados por los competidores, y que algunos oferentes contratan abogados para buscar irregularidades en las ofertas de los demás.",
+  "inferencia": "Inferencia: la oferta propia va a ser revisada por los competidores buscando defectos; lo que la entidad no detecte lo puede señalar un rival en el traslado del informe.",
+  "eje": 3,
+  "etapa": [
+    "E5",
+    "E6"
+  ],
+  "decision": [
+    "D3"
+  ],
+  "modulo": [
+    "M-OFERTA"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "No aplica: dato empírico o descripción de práctica, no regla",
+    "vigente": null,
+    "nota": "Informe de 2016, basado en el levantamiento de hechos de la OCDE; anterior a la Ley 1882 de 2018 y a los documentos tipo de obra. Las afirmaciones son del informe, no se midieron con datos en estos pasajes."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Competidores que revisan la oferta ajena (incluso con abogados) para hacerla rechazar por defectos en el traslado del informe de evaluación."
+}

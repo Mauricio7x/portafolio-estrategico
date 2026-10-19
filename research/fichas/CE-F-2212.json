@@ -1,0 +1,43 @@
+{
+  "id": "CE-F-2212",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Responsabilidad e impactos a las partes por la comisión de errores en la etapa precontractual",
+  "anio": 2022,
+  "institucion": "Universidad Externado de Colombia · Revista Digital de Derecho Administrativo núm. 27, pp. 135-156 (versión HTML de Redalyc)",
+  "url": "https://www.redalyc.org/journal/5038/503872656005/html/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: texto HTML completo con notas al pie",
+  "localizador": "apartado 5, párrafo «Por su parte, el contratista, en calidad de colaborador…»",
+  "cita": "el contratista […] notará el impacto de la declaratoria de nulidad absoluta […] al dejar de percibir la utilidad que había proyectado para su ejecución, y en el evento de haberse suscrito un contrato de obra, como impacto adicional, responderá por la devolución del anticipo debidamente indexado",
+  "afirmacion": "El autor sostiene que, con la nulidad absoluta del contrato, el contratista deja de percibir la utilidad proyectada y, si es un contrato de obra, responde además por la devolución del anticipo indexado según lo ordene el juez.",
+  "inferencia": null,
+  "eje": 2,
+  "etapa": [
+    "E8",
+    "E10"
+  ],
+  "decision": [
+    "D4"
+  ],
+  "modulo": [
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "No se reverificó contra jurisprudencia posterior; fuente académica",
+    "vigente": null,
+    "nota": "Lectura del autor."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Doctrina académica que reseña jurisprudencia; no rige desde un aviso concreto."
+  },
+  "lista_cerrada": "L2-09",
+  "problema_candidato": "Si el juez anula el contrato por falta de planeación, el contratista pierde la utilidad proyectada y devuelve el anticipo indexado."
+}

@@ -1,0 +1,39 @@
+{
+  "id": "CE-F-5215",
+  "tipo": "academia",
+  "autor": "Autor del trabajo de grado (persona natural, nombre omitido por la regla 5)",
+  "titulo": "Análisis de retrasos y sobrecostos del contrato de construcción de la intersección a desnivel de la avenida Laureano Gómez (AK9) por calle 94 y su conexión con la avenida Santa Bárbara (AK19) en Bogotá D.C.",
+  "anio": 2017,
+  "institucion": "Universidad de los Andes, trabajo de grado de Ingeniería Civil",
+  "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/63cec6e2-740e-48b4-8440-4bb1b360e9af/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: las 12 págs. con pdftotext (con y sin -layout por las dos columnas)",
+  "localizador": "pág. 7 del PDF, apartado de prórrogas y adiciones (adición No. 1, ID #2)",
+  "cita": "debido a ajustes de precios unitarios según la cláusula 6 del contrato de obra. En otras palabras, esta adición se considera como sobrecosto porque el mes base de ajuste no corresponde a aquel en el cual debió ejecutarse esa obra (6 meses atrás).",
+  "afirmacion": "El autor reporta que una adición del contrato se debió a ajustes de precios unitarios según la cláusula 6 del contrato y la considera sobrecosto porque el mes base del ajuste no correspondía al mes en que debió ejecutarse la obra (6 meses atrás).",
+  "inferencia": null,
+  "eje": 5,
+  "etapa": [
+    "E8"
+  ],
+  "decision": [
+    "D4",
+    "D2"
+  ],
+  "modulo": [
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "el propio documento (fuente académica fechada)",
+    "vigente": null,
+    "nota": "Estudio de caso empírico de un contrato del IDU (contrato de obra 005 de 2012); no es normativo, no aplica comprobar vigencia."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Cuando la obra se ejecuta tarde, la fórmula de reajuste de precios unitarios del contrato genera mayores valores que requieren adición presupuestal y discusión sobre quién causó el atraso.",
+  "advertencia": "La cifra de esa adición ($2.833.924.472, fila 2 de la Tabla 4) no está en la cita."
+}

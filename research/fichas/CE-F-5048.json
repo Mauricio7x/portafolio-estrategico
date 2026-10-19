@@ -1,0 +1,58 @@
+{
+  "id": "CE-F-5048",
+  "tipo": "concepto_cce",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Concepto C-915 de 2026 (15 de julio de 2026), sobre precios unitarios, mayores cantidades e ítems no previstos",
+  "anio": 2026,
+  "institucion": "Relatoría de Colombia Compra Eficiente (ficha https://relatoria.colombiacompra.gov.co/conceptos/c-915-de-2026/ y documento adjunto .docx)",
+  "url": "https://relatoria.colombiacompra.gov.co/wp-content/uploads/2026/07/C-915.docx",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: el concepto entero (texto extraído del .docx adjunto) y la ficha de la relatoría",
+  "localizador": "apartado «Razones de la respuesta», numeral i, párrafo «En consideración, se concluye…»",
+  "cita": "el reconocimiento de mayores cantidades de obra, previamente autorizadas y recibidas por la entidad contratante, realmente no se está adicionando el contrato, sino procediendo, conforme a lo previsto en el mismo. En consecuencia, […] no les aplica el límite cuantitativo establecido en el artículo 40",
+  "afirmacion": "CCE sostiene en el C-915 que, en los contratos de obra a precios unitarios, el reconocimiento de mayores cantidades de obra autorizadas y recibidas no es una adición sino la aplicación de lo pactado, y que no les aplica el tope del art. 40 de la Ley 80.",
+  "inferencia": null,
+  "eje": 5,
+  "etapa": [
+    "E8"
+  ],
+  "decision": [
+    "D4"
+  ],
+  "modulo": [
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A5",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://relatoria.colombiacompra.gov.co/wp-content/uploads/2026/07/C-915.docx",
+    "vigente": true,
+    "nota": "Concepto fechado el 15-jul-2026; interpreta el parágrafo del art. 40 de la Ley 80, cuyo texto vigente se comprobó en el Gestor Normativo el 2-oct-2026."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Concepto de CCE: interpreta normas legales, no fija una fecha de aplicación."
+  },
+  "lista_cerrada": "L5-11",
+  "problema_candidato": "Dos conceptos de CCE se contradicen sobre si, en contratos de obra a precios unitarios, las mayores cantidades cuentan para el tope del 50 %: el contratista no sabe si la entidad le reconocerá cantidades por encima de ese límite.",
+  "advertencia": "El párrafo empieza «En consideración, se concluye que, en los contratos de obra suscritos a precios unitarios…»: la regla es para ese sistema de pago. Contradice el concepto C-1733 de 2025 de la misma Agencia (todo incremento del valor inicial cuenta para el tope). El C-915 cita el concepto C-563 con dos fechas distintas (21-oct-2026 y 27-oct-2024), y la primera es posterior al propio C-915. Según el verificador (2-oct-2026): la frase citada empieza con «Por tal razón», que remite a la anterior («en los contratos de obra suscritos a precios unitarios […] no implica […] un cambio de objeto o en su valor»); la cita no trae ese límite, de modo que la regla vale solo para contratos de obra a precios unitarios y no como regla general.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje5-institucional:4",
+      "veredicto": "no_sostiene",
+      "detalle": "Abrí el C-915 (.docx, HTTP 200). La cita es literal en «Razones de la respuesta», numeral i, párrafo «En consideración, se concluye…» (también aparece en el resumen inicial). Lo omitido con […] es «las cantidades de obra que resulten de las mediciones de los ítems de obra pertinentes no requiere contrato adicional y, por tanto,». El problema: la frase citada empieza con «Por tal razón», que remite a la anterior: «en los contratos de obra suscritos a precios unitarios […] no implica […] un cambio de objeto o en su valor». La afirmación quita ese límite, que es para contratos a precios unitarios, y la regla queda como general. Eso va contra § 5.1 (no quitar un matiz; la cita abarca lo que la afirmación necesita). El límite solo aparece en la advertencia. Corrección: agregar «en contratos de obra a precios unitarios» a la afirmación y a la cita. Comprobé la advertencia sobre el C-563: el concepto lo cita como «21 de octubre de 2026» (numeral i) y como «27 de octubre de 2024» (numeral iii).",
+      "antes": {
+        "afirmacion": "CCE sostiene en el C-915 que el reconocimiento de mayores cantidades de obra autorizadas y recibidas no es una adición sino la aplicación de lo pactado, y que no les aplica el tope del art. 40 de la Ley 80.",
+        "problema_candidato": "Dos conceptos de CCE se contradicen sobre si las mayores cantidades cuentan para el tope del 50 %: el contratista no sabe si la entidad le reconocerá cantidades por encima de ese límite.",
+        "advertencia": "El párrafo empieza «En consideración, se concluye que, en los contratos de obra suscritos a precios unitarios…»: la regla es para ese sistema de pago. Contradice el concepto C-1733 de 2025 de la misma Agencia (todo incremento del valor inicial cuenta para el tope). El C-915 cita el concepto C-563 con dos fechas distintas (21-oct-2026 y 27-oct-2024), y la primera es posterior al propio C-915."
+      },
+      "accion": "afirmación y problema_candidato estrechados a contratos de obra a precios unitarios; la cita no se amplía y el límite que la cita no trae va en «advertencia», atribuido al verificador"
+    }
+  ]
+}

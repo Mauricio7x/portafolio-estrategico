@@ -1,0 +1,40 @@
+{
+  "id": "CE-F-5240",
+  "tipo": "academia",
+  "autor": "Autor del artículo (persona natural, nombre omitido por la regla 5)",
+  "titulo": "El establecimiento y la modificación de tributos como eventos susceptibles de alterar el equilibrio económico del contrato estatal",
+  "anio": 2018,
+  "institucion": "Universidad Externado de Colombia, Revista Digital de Derecho Administrativo, núm. 19 (vía Redalyc)",
+  "url": "https://www.redalyc.org/journal/5038/503857546011/html/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: texto HTML de Redalyc",
+  "localizador": "apartado 3, párrafo introductorio a «3.1. La distribución de riesgos»",
+  "cita": "para que las imposiciones tributarias sean eventos de desequilibrio económico, deben pasar un juicio bastante estricto, a lo que se aúna una serie de mecanismos contractuales y legislativos cuyo propósito es prever y evitar que sobrevengan circunstancias capaces de alterar la ecuación financiera",
+  "afirmacion": "El autor afirma que, para que las imposiciones tributarias sean eventos de desequilibrio económico, deben pasar un juicio bastante estricto, y que a ello se suman mecanismos contractuales y legislativos para prever y evitar que alteren la ecuación financiera.",
+  "inferencia": "Inferencia: el contratista debe presupuestar en su oferta los tributos vigentes y anunciados (contribuciones, estampillas) porque la matriz de riesgos y la propia norma tributaria suelen cerrarle la vía del reclamo posterior.",
+  "eje": 5,
+  "etapa": [
+    "E3",
+    "E8"
+  ],
+  "decision": [
+    "D2",
+    "D4"
+  ],
+  "modulo": [
+    "M-PRECIO",
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "el propio documento (fuente académica fechada)",
+    "vigente": null,
+    "nota": "Artículo de 2018; reporta jurisprudencia del Consejo de Estado sobre el «impuesto de guerra» (Decreto 2009 de 1992, Ley 104) y menciona la contribución especial de la Ley 1738; no se comprobó contra el texto vigente para esta ficha."
+  },
+  "regla": null,
+  "lista_cerrada": "L5-02",
+  "problema_candidato": null
+}

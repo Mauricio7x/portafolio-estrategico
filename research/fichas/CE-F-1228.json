@@ -1,0 +1,49 @@
+{
+  "id": "CE-F-1228",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Pliegos tipo y autonomía territorial, frente a la contratación estatal del sector público en obras de infraestructura",
+  "anio": 2020,
+  "institucion": "Universidad La Gran Colombia, Facultad de Derecho, Especialización en Contratación Estatal (trabajo de grado, repositorio institucional)",
+  "url": "https://repository.ugc.edu.co/server/api/core/bitstreams/f02d4c5c-7f26-49a4-9132-49beba36b1fa/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: resumen, planteamiento (págs. 5-15) y conclusiones (págs. 37-39)",
+  "localizador": "pág. 38 impresa (pág. 38 del PDF), «Conclusiones»",
+  "cita": "La implementación de estos documentos generó en diferentes entidades del estado una postura de resistencia a su aplicación, al punto de buscar en la jurisprudencia colombiana un recurso […] basaron su posición en una afectación a la autonomía territorial",
+  "afirmacion": "Los autores afirman que la implementación de los pliegos tipo generó en diferentes entidades una postura de resistencia a su aplicación, que basaron en una supuesta afectación a la autonomía territorial.",
+  "inferencia": "Inferencia: en la página siguiente los autores indican que la demanda sobre autonomía territorial estaba en curso ante la Corte Constitucional en 2020; durante la transición el contratista enfrentó entidades que resistían el documento tipo con un litigio pendiente.",
+  "eje": 1,
+  "etapa": [
+    "E1",
+    "T"
+  ],
+  "decision": [
+    "D3",
+    "D1"
+  ],
+  "modulo": [
+    "M-PLIEGO",
+    "M-ENTIDAD"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://repository.ugc.edu.co/server/api/core/bitstreams/f02d4c5c-7f26-49a4-9132-49beba36b1fa/content",
+    "vigente": null,
+    "nota": "Texto de febrero de 2020; el resultado del control constitucional no se comprobó para esta ficha."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Resistencia de entidades territoriales a aplicar los documentos tipo en la transición, alegando autonomía territorial.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-academico:2",
+      "veredicto": "correcta",
+      "detalle": "Abrí el PDF de UGC (200, 42 págs.). Los dos fragmentos están literales en la pág. 38 del PDF e impresa, en las conclusiones. La afirmación lo atribuye a los autores (Sierra Castro y Obando Currea). Describe la postura como 'supuesta afectación', cuando la fuente dice 'una afectación': es una posición alegada por las entidades, y el propio texto la presenta como argumento buscado. No añade un hecho nuevo."
+    }
+  ]
+}

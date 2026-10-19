@@ -1,0 +1,39 @@
+{
+  "id": "CE-F-5237",
+  "tipo": "manual_entidad",
+  "autor": "Instituto para la Economía Social (IPES), Bogotá D. C., Subdirección de Diseño y Análisis Estratégico",
+  "titulo": "Procedimiento PR-105 «Aprobación ítems no previstos», versión 01",
+  "anio": 2017,
+  "institucion": "Instituto para la Economía Social (IPES), Bogotá D. C.",
+  "url": "https://ipes.gov.co/images/informes/SDE/Mapa_de_Procesos/proceso_de_Recursos_Fisicos/2020/PR_105_APROBACION_DE_ITEMS_NO_PREVISTOS.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: las 5 págs. con pdftotext (con y sin -layout)",
+  "localizador": "pág. 3, num. 6.1, tabla explicativa, actividad 4 «Cotizar actividad NP»",
+  "cita": "El contratista debe solicitar cotización de la actividad NP de acuerdo con las condiciones establecidas y conseguir al menos 3 cotizaciones comparables, en cuanto a tiempos de entrega y condiciones comerciales.",
+  "afirmacion": "En el procedimiento del IPES, el contratista debe conseguir al menos tres cotizaciones comparables de la actividad no prevista, en cuanto a tiempos de entrega y condiciones comerciales.",
+  "inferencia": null,
+  "eje": 5,
+  "etapa": [
+    "E8"
+  ],
+  "decision": [
+    "D2",
+    "D4"
+  ],
+  "modulo": [
+    "M-APU",
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A7",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "el propio procedimiento (versión 01 del 27-dic-2017)",
+    "vigente": null,
+    "nota": "Procedimiento interno de una entidad distrital; muestra cómo una entidad tramita los ítems no previstos, no una regla general. No se comprobó si sigue vigente en el IPES."
+  },
+  "regla": null,
+  "lista_cerrada": "L5-08",
+  "problema_candidato": null
+}

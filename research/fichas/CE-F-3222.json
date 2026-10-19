@@ -1,0 +1,39 @@
+{
+  "id": "CE-F-3222",
+  "tipo": "gremio_ong",
+  "autor": "Open Contracting Partnership",
+  "titulo": "Open for business: Colombia’s data-driven procurement reforms increase competition",
+  "anio": 2020,
+  "institucion": "Open Contracting Partnership (organización internacional sin ánimo de lucro), análisis propio de datos de SECOP II en formato OCDS y cifras de CCE",
+  "url": "https://www.open-contracting.org/2020/07/16/open-for-business-colombias-data-driven-procurement-reforms-increase-competition/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: artículo web del 16-jul-2020 (en inglés)",
+  "localizador": "párrafo con las cifras de SECOP II por modalidad (licitación pública y licitación de obra pública)",
+  "cita": "For tenders using the “open tender” […] or “open tender for public works” […] procurement method, the increase was 21% (8.1 bidders per tender on average in 2019, up from 6.7 the previous year)",
+  "afirmacion": "Open Contracting Partnership reporta que en las licitaciones públicas y licitaciones de obra pública registradas en SECOP II el promedio de oferentes por proceso subió un 21 %, de 6,7 en 2018 a 8,1 en 2019.",
+  "inferencia": null,
+  "eje": 3,
+  "etapa": [
+    "E4",
+    "E5"
+  ],
+  "decision": [
+    "D1"
+  ],
+  "modulo": [
+    "M-ENTIDAD"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A7",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "No aplica: dato empírico o descripción de práctica, no regla",
+    "vigente": null,
+    "nota": "Datos de SECOP II de 2018-2019; cubren solo las entidades que usaban SECOP II (alrededor de la mitad de los procedimientos en 2020, según el mismo texto)."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": null,
+  "advertencia": "El promedio de oferentes que da esta fuente (8,1 en 2019) no coincide con el «de seis a 32» que otras autoras atribuyen al portal Colombia Ágil (CE-F-3217): universos y fuentes distintos; no se usa como frecuencia única."
+}

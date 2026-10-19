@@ -1,0 +1,49 @@
+{
+  "id": "CE-F-1226",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "La inoperancia de los criterios de desempate en los pliegos tipo de licitación de obra pública de infraestructura de transporte en Colombia",
+  "anio": 2025,
+  "institucion": "Universidad La Gran Colombia, Facultad de Posgrados, Maestría en Derecho (trabajo de grado, repositorio institucional)",
+  "url": "https://repository.ugc.edu.co/server/api/core/bitstreams/2d6da215-1b16-4a4e-a361-08d081e7a046/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: resumen, descripción de la muestra (págs. 85-86), tablas 12 a 14 (págs. 91-94) y conclusiones (págs. 95-98)",
+  "localizador": "pág. 95 impresa (pág. 95 del PDF), conclusión del análisis de empates",
+  "cita": "no permite aplicar los criterios de desempate que trata el Artículo 35 de la Ley 2069 de 2020, puesto que […] el diseño del factor de ponderación de oferta económica conforme a los métodos a aplicar […] conlleva a que solo un proponente obtenga el mayor de los puntos en este factor.",
+  "afirmacion": "Los autores concluyen que la estructura de ponderación de los pliegos tipo de licitación de infraestructura de transporte no permite aplicar los criterios de desempate del art. 35 de la Ley 2069 de 2020, porque los métodos de ponderación de la oferta económica llevan a que solo un proponente obtenga el mayor puntaje en ese factor.",
+  "inferencia": "Inferencia: la tabla 13 «Análisis empate en ofertas» (pág. 93 del PDF) registra 24 procesos con empate antes de abrir el sobre 2 y 0 después de la calificación económica; para el contratista, acreditar un criterio de desempate (mipyme, mujer, discapacidad) no le dio ventaja en esa muestra.",
+  "eje": 1,
+  "etapa": [
+    "E3",
+    "E5"
+  ],
+  "decision": [
+    "D1",
+    "D2"
+  ],
+  "modulo": [
+    "M-OFERTA",
+    "M-PLIEGO"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://repository.ugc.edu.co/server/api/core/bitstreams/2d6da215-1b16-4a4e-a361-08d081e7a046/content",
+    "vigente": null,
+    "nota": "Muestra de 24 procesos de Cundinamarca 2021-2024; no se comprobó contra la versión vigente del documento tipo."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Los criterios de desempate de la Ley 2069 de 2020 casi no operan en los pliegos tipo de transporte: el método de ponderación económica rompe el empate antes.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-academico:2",
+      "veredicto": "correcta",
+      "detalle": "Misma fuente. Los tres fragmentos están literales en la pág. 95, en el párrafo que empieza 'Como resultado del análisis realizado, se puede concluir…'. La afirmación es fiel y se atribuye a los autores. Es coherente con la tabla 12 (pág. 91), donde los 24 procesos marcan 'NO' en 'Se aplicó criterios de desempate', y con la pág. 92. La vigencia declara null y que no se comprobó contra la versión vigente del documento tipo; no se presenta como regla vigente."
+    }
+  ]
+}

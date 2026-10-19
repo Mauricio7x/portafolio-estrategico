@@ -1,0 +1,39 @@
+{
+  "id": "CE-F-3225",
+  "tipo": "multilateral",
+  "autor": "Organización para la Cooperación y el Desarrollo Económicos (OCDE)",
+  "titulo": "Towards Efficient Public Procurement in Colombia: Making the Difference (OECD Public Governance Reviews)",
+  "anio": 2016,
+  "institucion": "OCDE, OECD Publishing, París (doi 10.1787/9789264252103-en)",
+  "url": "https://www.oecd.org/content/dam/oecd/en/publications/reports/2016/04/towards-efficient-public-procurement-in-colombia_g1g649e2/9789264252103-en.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: capítulos 3 (criterios de evaluación, pág. 81-83), 4 (rendición de cuentas, pág. 90-92) y 5 (fuerza laboral de compras, pág. 103-113) por palabras clave; el resto no se leyó",
+  "localizador": "pág. 113 del PDF, notas del capítulo 4, nota 15",
+  "cita": "It was mentioned in the fact finding that exclusion for legal formalities is more marked in smaller procurements where smaller, less qualified authorities are involved, as procurement officials are less confident to make decisions on technicalities.",
+  "afirmacion": "La OCDE recoge que en su levantamiento de hechos se mencionó que la exclusión de ofertas por formalidades legales es más marcada en las compras pequeñas, con entidades más pequeñas y menos calificadas, porque los funcionarios tienen menos confianza para decidir sobre tecnicismos.",
+  "inferencia": null,
+  "eje": 3,
+  "etapa": [
+    "E5"
+  ],
+  "decision": [
+    "D3"
+  ],
+  "modulo": [
+    "M-OFERTA",
+    "M-ENTIDAD"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "No aplica: dato empírico o descripción de práctica, no regla",
+    "vigente": null,
+    "nota": "Informe de 2016, basado en el levantamiento de hechos de la OCDE; anterior a la Ley 1882 de 2018 y a los documentos tipo de obra. Las afirmaciones son del informe, no se midieron con datos en estos pasajes."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Ofertas excluidas por formalidades, más en procesos pequeños de entidades pequeñas con funcionarios poco seguros al decidir.",
+  "advertencia": "Es una mención recogida en entrevistas (fact finding), no una medición."
+}

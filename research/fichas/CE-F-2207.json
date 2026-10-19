@@ -1,0 +1,43 @@
+{
+  "id": "CE-F-2207",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Las fallas de planeación y su incidencia en el contrato estatal de obra",
+  "anio": 2014,
+  "institucion": "Universidad Externado de Colombia · Revista Digital de Derecho Administrativo núm. 11, pp. 177-207 (vía Redalyc)",
+  "url": "https://www.redalyc.org/pdf/5038/503856212008.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: introducción, apartado 6 (jurisprudencia), apartado 7 (ejemplos) y conclusiones (págs. 177-181 y 197-201)",
+  "localizador": "pág. 198 de la revista (pág. 23 del PDF), apartado 6, párrafo sobre la sentencia de 24 de abril de 2013",
+  "cita": "cuando se afecta el principio de planeación, el Consejo de Estado […] veinticuatro (24) de abril de dos mil trece (2013). […] analizó un caso en el que declaró la nulidad absoluta del contrato y condenó al contratista a la devolución del anticipo debidamente actualizado.",
+  "afirmacion": "La autora reseña que el Consejo de Estado, en la sentencia de abril de 2013 (radicación terminada en 27315, de Santander), declaró la nulidad absoluta del contrato y condenó al contratista a devolver el anticipo actualizado.",
+  "inferencia": null,
+  "eje": 2,
+  "etapa": [
+    "E8",
+    "E10"
+  ],
+  "decision": [
+    "D4"
+  ],
+  "modulo": [
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "No se reverificó contra jurisprudencia posterior; fuente académica",
+    "vigente": null,
+    "nota": "Coincide con lo que relata CE-F-2201 sobre el mismo radicado; la sentencia no se abrió."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Doctrina académica que reseña jurisprudencia; no rige desde un aviso concreto."
+  },
+  "lista_cerrada": "L2-09",
+  "problema_candidato": "Si la obra se cae por falta de planeación de la entidad y el juez anula el contrato, el contratista puede ser condenado a devolver el anticipo actualizado."
+}

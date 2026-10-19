@@ -1,0 +1,40 @@
+{
+  "id": "CE-F-8208",
+  "tipo": "multilateral",
+  "autor": "Tres autores, consultores del Banco Interamericano de Desarrollo (nombres omitidos por la regla 5 del piloto)",
+  "titulo": "Índice de riesgo de corrupción en el sistema de compra pública colombiano a partir de una metodología desarrollada por el Instituto Mexicano para la Competitividad",
+  "anio": 2019,
+  "institucion": "Banco Interamericano de Desarrollo (copia alojada por Espacio Público, Chile)",
+  "url": "https://espaciopublico.cl/wp-content/uploads/2021/05/FEDESARROLLO_CPBD.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: resumen, dimensión de falta de competencia (págs. 33-36) y de falta de transparencia (pág. 47) con pdftotext -layout",
+  "localizador": "pág. 47 del PDF, dimensión «falta de transparencia»",
+  "cita": "La profundidad del estudio de mercado, la decisión sobre los requisitos de experiencia y situación financiera exigidos a los proponentes, los análisis de precios para establecer el valor estimado del contrato, entre otros aspectos no son temas objeto de registro.",
+  "afirmacion": "Los autores señalan que sus indicadores de transparencia no miden la profundidad del estudio de mercado, la decisión sobre los requisitos de experiencia y financieros ni los análisis de precios con que se fija el valor estimado del contrato, porque no son temas objeto de registro.",
+  "inferencia": "Inferencia: el índice de riesgo no dice nada sobre si el presupuesto oficial está bien calculado; ese juicio lo tiene que hacer el contratista leyendo el estudio previo y los análisis de precios del proceso.",
+  "eje": 8,
+  "etapa": [
+    "E0",
+    "E1"
+  ],
+  "decision": [
+    "D1",
+    "D2"
+  ],
+  "modulo": [
+    "M-ENTIDAD",
+    "M-PRECIO"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "el propio documento",
+    "vigente": null,
+    "nota": "Fuente académica o de práctica: registra lo que dice su autor, no una regla; no se comprobó vigencia normativa."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Lo que más pesa para el contratista (cómo se fijó el presupuesto y por qué se pide esa experiencia) no queda registrado de forma medible: hay que leerlo en cada proceso."
+}

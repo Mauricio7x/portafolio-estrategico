@@ -1,0 +1,52 @@
+{
+  "id": "CE-F-5049",
+  "tipo": "concepto_cce",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Concepto C-915 de 2026 (15 de julio de 2026), sobre precios unitarios, mayores cantidades e ítems no previstos",
+  "anio": 2026,
+  "institucion": "Relatoría de Colombia Compra Eficiente (ficha https://relatoria.colombiacompra.gov.co/conceptos/c-915-de-2026/ y documento adjunto .docx)",
+  "url": "https://relatoria.colombiacompra.gov.co/wp-content/uploads/2026/07/C-915.docx",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: el concepto entero (texto extraído del .docx adjunto) y la ficha de la relatoría",
+  "localizador": "apartado «Respuesta», primer párrafo",
+  "cita": "la incorporación de ítems no previstos a un contrato estatal pactado bajo el sistema de precios unitarios exige, en todos los casos, la suscripción de un contrato modificatorio",
+  "afirmacion": "Según CCE, incorporar ítems no previstos en un contrato a precios unitarios exige siempre firmar un contrato modificatorio.",
+  "inferencia": null,
+  "eje": 5,
+  "etapa": [
+    "E8"
+  ],
+  "decision": [
+    "D4"
+  ],
+  "modulo": [
+    "M-SEGUIMIENTO",
+    "M-APU"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A5",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://relatoria.colombiacompra.gov.co/wp-content/uploads/2026/07/C-915.docx",
+    "vigente": true,
+    "nota": "Concepto fechado el 15-jul-2026; interpreta el parágrafo del art. 40 de la Ley 80, cuyo texto vigente se comprobó en el Gestor Normativo el 2-oct-2026."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Concepto de CCE: interpreta normas legales, no fija una fecha de aplicación."
+  },
+  "lista_cerrada": "L5-11",
+  "problema_candidato": "El contratista que ejecuta un ítem no previsto sin modificatorio firmado arriesga no cobrarlo.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje5-institucional:4",
+      "veredicto": "correcta",
+      "detalle": "La cita es literal en el C-915, apartado «Respuesta», primer párrafo. Sigue «por cuanto implica una variación del alcance […] y la fijación de nuevos precios unitarios», que no cambia el sentido. La afirmación es fiel a la cita, incluido «en todos los casos». Ninguna reforma toca el tema (Ley 80 y jurisprudencia)."
+    }
+  ]
+}

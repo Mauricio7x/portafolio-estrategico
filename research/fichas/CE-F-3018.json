@@ -1,0 +1,52 @@
+{
+  "id": "CE-F-3018",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 80 de 1993",
+  "anio": 1993,
+  "institucion": "Secretaría General del Senado · Base documental (texto con notas de vigencia)",
+  "url": "http://www.secretariasenado.gov.co/senado/basedoc/ley_0080_1993.html",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: art. 30 completo, con sus notas de vigencia visibles",
+  "localizador": "art. 30, numeral 5, inciso 2 (modificado por el art. 89 de la Ley 1474 de 2011)",
+  "cita": "En todo caso no podrán expedirse adendas dentro de los tres (3) días anteriores en que se tiene previsto el cierre del proceso de selección, ni siquiera para extender el término del mismo. La publicación de estas adendas sólo se podrá realizar en días hábiles y horarios laborales.",
+  "afirmacion": "En la licitación no pueden expedirse adendas dentro de los tres días anteriores al cierre, ni siquiera para ampliar el plazo, y las adendas solo se publican en días hábiles y horarios laborales.",
+  "inferencia": null,
+  "eje": 3,
+  "etapa": [
+    "E2",
+    "E4"
+  ],
+  "decision": [
+    "D3"
+  ],
+  "modulo": [
+    "M-ADENDAS"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A1",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "http://www.secretariasenado.gov.co/senado/basedoc/ley_0080_1993.html",
+    "vigente": true,
+    "nota": "Texto del Senado con notas: numeral 4 modificado por el art. 220 del Decreto 19 de 2012; numeral 5, inciso 2, por el art. 89 de la Ley 1474 de 2011; apartes derogados por el art. 32 de la Ley 1150 de 2007."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Norma legal: rige desde su promulgación, no desde un aviso de convocatoria."
+  },
+  "lista_cerrada": "L3-07",
+  "problema_candidato": "Una adenda publicada dentro de los tres días anteriores al cierre de una licitación es contraria a la ley; el contratista debe revisar la fecha de cada adenda frente al cierre.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje3-institucional:2",
+      "veredicto": "correcta",
+      "detalle": "El art. 30, numeral 5, inciso 2 (modificado por el art. 89 de la Ley 1474 de 2011, nota insRow174) trae la cita literal: «En todo caso no podrán expedirse adendas dentro de los tres (3) días anteriores [...] horarios laborales.» La afirmación es fiel. No encontré reforma posterior que toque el tema."
+    }
+  ]
+}

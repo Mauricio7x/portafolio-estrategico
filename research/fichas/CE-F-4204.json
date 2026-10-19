@@ -1,0 +1,39 @@
+{
+  "id": "CE-F-4204",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Incidencia de los cambios jurídicos y procedimentales en materia de contratación estatal sobre el crecimiento de las micro y pequeñas empresas enfocadas en la ejecución de consultoría, interventoría y construcción de obras civiles, en los últimos 15 años",
+  "anio": 2019,
+  "institucion": "Universidad Militar Nueva Granada, Facultad de Estudios a Distancia, Especialización en Alta Gerencia (trabajo de grado, repositorio institucional)",
+  "url": "https://repository.umng.edu.co/server/api/core/bitstreams/380346db-9341-4349-a5fa-de39fd76d3d1/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: portada y págs. 20-25 del PDF (acceso a la contratación, ventajas y desventajas de las Mipymes); el resto por palabras clave",
+  "localizador": "págs. 23-24 del PDF (la frase cruza el salto de página), apartado «Ventajas y desventajas que tienen las Mipymes, para contratar con el estado»",
+  "cita": "se tenga en cuenta el oferente que haya incluido Mipymes en su conformación consorcial o en su composición accionaria. Aspecto que […] se ve claramente […] deteriorado si se evalúa que muchas de las grandes empresas han constituido sus propias Mipymes, para acceder a estos factores de desempate",
+  "afirmacion": "El autor sostiene que el criterio de desempate que favorece al oferente con Mipymes en su consorcio o en su composición accionaria pierde valor para las Mipymes porque muchas grandes empresas han constituido sus propias Mipymes para acceder a esos factores de desempate.",
+  "inferencia": "Inferencia: el contratista pequeño que cuenta con el desempate por Mipyme como ventaja compite contra grandes empresas que tienen la misma ventaja por una filial; el autor no mide cuántas lo hacen. Vigencia: los criterios de desempate cambiaron con la Ley 2069 de 2020, posterior al trabajo.",
+  "eje": 4,
+  "etapa": [
+    "E3",
+    "E5"
+  ],
+  "decision": [
+    "D1"
+  ],
+  "modulo": [
+    "M-PLURAL",
+    "M-OFERTA"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://repository.umng.edu.co/server/api/core/bitstreams/380346db-9341-4349-a5fa-de39fd76d3d1/content",
+    "vigente": null,
+    "nota": "Trabajo de 2019, anterior a la Ley 2069 de 2020 (art. 35, factores de desempate); no se reverificó contra el texto vigente."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "El desempate por tener Mipymes en el plural o en el capital pierde efecto para el contratista pequeño porque grandes empresas crean sus propias Mipymes para obtenerlo."
+}

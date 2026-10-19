@@ -1,0 +1,51 @@
+{
+  "id": "CE-F-3053",
+  "tipo": "concepto_cce",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente (Subdirección de Gestión Contractual)",
+  "titulo": "Concepto C-1304 de 2026 (radicado de salida 2_2026_09_16_009953), publicado en la relatoría",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente · Relatoría",
+  "url": "https://relatoria.colombiacompra.gov.co/wp-content/uploads/2026/09/C-1304.docx",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: documento del concepto (ficha de relatoría en https://relatoria.colombiacompra.gov.co/conceptos/c-1304-de-2026/)",
+  "localizador": "apartado «2. Respuesta», párrafo 4",
+  "cita": "Lo que prohíbe la norma es que se subsanen requisitos que no estaban cumplidos al momento de presentar la oferta, o en palabras de la ley, que se acrediten hechos que ocurrieron después del cierre del proceso.",
+  "afirmacion": "CCE sostiene que la norma prohíbe subsanar requisitos que no estaban cumplidos al presentar la oferta, es decir, acreditar hechos ocurridos después del cierre.",
+  "inferencia": "Inferencia: el mismo apartado distingue la prueba del hecho y el hecho mismo; un certificado expedido después del cierre puede servir si prueba algo que ya existía antes.",
+  "eje": 3,
+  "etapa": [
+    "E5"
+  ],
+  "decision": [
+    "D3"
+  ],
+  "modulo": [
+    "M-OFERTA"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A5",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://relatoria.colombiacompra.gov.co/conceptos/c-1304-de-2026/ (fecha de la ficha de relatoría: 16/09/2026)",
+    "vigente": true,
+    "nota": "Concepto no vinculante (función consultiva de CCE); interpreta la Ley 1150 de 2007, art. 5, par. 1, con el texto de la Ley 1882 de 2018."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Concepto interpretativo: no rige desde un aviso."
+  },
+  "lista_cerrada": "L3-13",
+  "problema_candidato": null,
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje3-institucional:4",
+      "veredicto": "correcta",
+      "detalle": "Abrí https://relatoria.colombiacompra.gov.co/wp-content/uploads/2026/09/C-1304.docx (200). En «2. Respuesta», párrafo 4 (empieza «En síntesis…»), aparece literal: «Lo que prohíbe la norma es que se subsanen requisitos que no estaban cumplidos al momento de presentar la oferta, o en palabras de la ley, que se acrediten hechos que ocurrieron después del cierre del proceso.» La afirmación coincide con la cita. La ficha de relatoría está fechada el 16/09/2026. El Decreto 0997 no modifica el art. 2.2.1.2.1.5.2 que el concepto también cita (solo toca el 2.2.1.2.1.5.1)."
+    }
+  ]
+}

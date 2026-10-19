@@ -1,0 +1,56 @@
+{
+  "id": "CE-F-1245",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Control judicial de actos contractuales de empresas de servicios públicos domiciliarios oficiales: un conflicto entre jurisdicción competente y régimen jurídico",
+  "anio": 2021,
+  "institucion": "Universidad Militar Nueva Granada, Maestría en Derecho Administrativo (trabajo de grado, repositorio institucional)",
+  "url": "https://repository.umng.edu.co/server/api/core/bitstreams/1778933d-3b30-4d30-aa25-836ee936ef6b/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: tabla de contenido y «Conclusiones» (págs. 42-44); el cuerpo se recorrió por palabras clave",
+  "localizador": "pág. 43 del PDF, «Conclusiones», segundo objetivo específico",
+  "cita": "en la realidad jurídica se permite a las entidades asumir facultades unilaterales respecto de los contratistas para el desarrollo de los contratos tal como lo son la declaratoria de siniestros, aplicación de cláusulas exorbitantes en los contratos, la liquidación unilateral entre otros.",
+  "afirmacion": "La autora concluye que en la realidad jurídica se permite a «las entidades» asumir facultades unilaterales respecto de los contratistas, como la declaratoria de siniestros, la aplicación de cláusulas exorbitantes o la liquidación unilateral.",
+  "inferencia": "Inferencia: la frase previa dice que por su régimen especial su comportamiento «no debería desembocar en actos administrativos», y el párrafo siguiente que la naturaleza de los actos contractuales de las ESPD oficiales «sigue sin ser definido» porque la sentencia de unificación solo definió los precontractuales; para el contratista de obra de una ESP no hay certeza sobre ante qué juez ni con qué acción discutir una sanción o una liquidación unilateral.",
+  "eje": 1,
+  "etapa": [
+    "E8",
+    "E9",
+    "E10"
+  ],
+  "decision": [
+    "D4"
+  ],
+  "modulo": [
+    "M-ENTIDAD"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://repository.umng.edu.co/server/api/core/bitstreams/1778933d-3b30-4d30-aa25-836ee936ef6b/content",
+    "vigente": null,
+    "nota": "Trabajo de 2021; no se comprobó jurisprudencia posterior que haya resuelto el punto."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Contratos con empresas de servicios públicos oficiales: según la conclusión de un trabajo académico, en la práctica las entidades asumen facultades unilaterales (siniestros, cláusulas exorbitantes, liquidación unilateral) frente al contratista; si eso procede y ante qué juez se discute está en disputa.",
+  "advertencia": "Según el verificador: (1) la cita dice «las entidades»; que se refiera a las empresas de servicios públicos domiciliarios oficiales sale de la frase anterior, que la cita no abarca. (2) El mismo trabajo, en la pág. 18 del PDF, recoge que el Consejo de Estado (rad. 05001 2331 000 2005 07646 01, 2020) indicó que las ESPD no tienen competencia expresa para expedir actos administrativos que declaren un siniestro y hagan efectiva una póliza, y que se sigue el art. 1077 del Código de Comercio; la conclusión citada no debe leerse como un hecho establecido.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-academico:4",
+      "veredicto": "no_sostiene",
+      "detalle": "Abrí la URL de la ficha: HTTP 200, application/pdf, 51 páginas. Es la tesis de maestría UMNG de diciembre de 2021; la autora es una mujer, así que «La autora» es correcto. El localizador está bien: la cita aparece en la pág. 43 del PDF, que coincide con la impresa, en las Conclusiones, dentro del párrafo del segundo objetivo específico. La cita es literal: «...pero en la realidad jurídica se permite a las entidades asumir facultades unilaterales respecto de los contratistas para el desarrollo de los contratos tal como lo son la declaratoria de siniestros, aplicación de cláusulas exorbitantes en los contratos, la liquidación unilateral entre otros.» Aun así, la afirmación dice más que la cita, por dos motivos. (1) La cita dice «las entidades», y la afirmación lo cambia por «las empresas de servicios públicos domiciliarios». Ese sujeto sale de la frase anterior («por el régimen especial al que obedecen las ESPD, su comportamiento no debería desembocar en actos administrativos, pero»), que la cita no abarca; eso incumple la regla § 5.1. Además la afirmación quita «oficiales», cuando todo el trabajo trata solo de las ESPD oficiales. (2) El mismo documento contradice uno de los ejemplos, y la ficha no lo advierte. En la pág. 18 del PDF la autora dice: «recientemente el Consejo de Estado indicó que las ESPD no tienen la competencia expresa para expedir actos administrativos que declaren un siniestro y hagan efectiva una póliza [...] (Consejo de Estado, [...] 05001 2331 000 2005 07646 01, 2020)». Concluye que «no habría lugar a la expedición de actos administrativos» y que se sigue el art. 1077 del Código de Comercio. El cuerpo de la pág. 17 tampoco dice «se permite»: dice «la Ley permite». Pese a esto, la ficha no tiene `advertencia`, y en `problema_candidato` presenta la conclusión de la autora como un hecho («la empresa puede imponer siniestros»), aunque su propio texto recoge jurisprudencia de 2020 en contra. Eso choca con la regla § 5.2. La vigencia en null, con su nota, es aceptable para un trabajo académico; no encontré una reforma del Decreto 1082 que toque este punto. Una nota menor: `estado_lectura` dice «págs. 41-44 impresas», pero las Conclusiones empiezan en la pág. 42 (así lo dice el índice y lo confirma el texto).",
+      "accion": "afirmación estrechada al sujeto de la cita («las entidades»); problema_candidato reescrito como conclusión discutida y no como hecho; lo que la cita no cubre y la jurisprudencia de 2020 recogida en el propio trabajo van en «advertencia»; estado_lectura corregido a págs. 42-44 según el verificador",
+      "antes": {
+        "afirmacion": "La autora concluye que en la realidad jurídica se permite a las empresas de servicios públicos domiciliarios asumir facultades unilaterales frente a los contratistas, como declarar siniestros, aplicar cláusulas exorbitantes o liquidar unilateralmente.",
+        "problema_candidato": "Contratos con empresas de servicios públicos oficiales: la empresa puede imponer siniestros, cláusulas exorbitantes o liquidación unilateral, y no está definido qué juez ni qué acción proceden contra esos actos.",
+        "estado_lectura": "parcial: tabla de contenido y «Conclusiones» (págs. 41-44 impresas); el cuerpo se recorrió por palabras clave",
+        "advertencia": null
+      }
+    }
+  ]
+}

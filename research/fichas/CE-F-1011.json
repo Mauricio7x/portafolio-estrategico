@@ -1,0 +1,51 @@
+{
+  "id": "CE-F-1011",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República; Departamento Nacional de Planeación",
+  "titulo": "Decreto 0997 de 2026 (modifica y adiciona el Decreto 1082 de 2015)",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente (relatoría normativa)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: los 14 artículos y los considerandos en la relatoría de CCE",
+  "localizador": "art. 11 (adiciona el art. 2.2.1.1.2.2.10 al Decreto 1082 de 2015), parágrafo",
+  "cita": "En los seis (6) meses contados a partir de expedición del presente Decreto, el Gobierno nacional […] desarrollará las acciones necesarias para garantizar la consulta accesible de las listas y expedirá los lineamientos",
+  "afirmacion": "El Gobierno nacional tiene seis meses desde la expedición del decreto para desarrollar las acciones que garanticen la consulta accesible de las listas y expedir los lineamientos.",
+  "inferencia": "Inferencia: con expedición el 04/08/2026, ese plazo vence hacia el 04/02/2027; mientras tanto la obligación de consultar ya rige sin un lineamiento único.",
+  "eje": 1,
+  "etapa": [
+    "T"
+  ],
+  "decision": [
+    "D3"
+  ],
+  "modulo": [
+    "M-LISTA"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A2",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/",
+    "vigente": true,
+    "nota": "Art. 11: rige desde el día siguiente a la publicación en el Diario Oficial (art. 14, inciso 1). La fecha de publicación del Decreto 0997 de 2026 en el Diario Oficial no se comprobó en ninguna fuente abierta (la relatoría y la ficha de la Alcaldía de Bogotá solo dan la expedición, 04/08/2026)."
+  },
+  "lista_cerrada": "L1-01",
+  "problema_candidato": null,
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": "No aplica a procesos con documento tipo hasta que CCE expida la versión que lo incorpore (art. 14, parágrafo 3)",
+    "motivo_null": "Rige para procesos cuyo aviso, invitación o documento equivalente se publique después de la entrada en vigencia (art. 14, parágrafo 1); esa entrada es el día siguiente a la publicación en el Diario Oficial, y la fecha de esa publicación no se comprobó."
+  },
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-institucional:1",
+      "veredicto": "correcta",
+      "detalle": "Las dos partes de la cita están literales en el parágrafo del art. 11. El «[…]» omite las entidades de apoyo (Secretaría de Transparencia, CCE y otras), lo que no altera el sentido. La afirmación es fiel. La inferencia está marcada y su fecha es correcta: 4 de agosto de 2026 más seis meses da 4 de febrero de 2027."
+    }
+  ]
+}

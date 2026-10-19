@@ -1,0 +1,37 @@
+{
+  "id": "CE-F-5247",
+  "tipo": "academia",
+  "autor": "Autores del artículo (personas naturales, nombres omitidos por la regla 5)",
+  "titulo": "Las cláusulas excepcionales en la contratación estatal",
+  "anio": 2017,
+  "institucion": "Institución Universitaria de Envigado, revista Nuevo Derecho, vol. 13, núm. 21 (vía Redalyc)",
+  "url": "https://www.redalyc.org/pdf/6697/669770733005.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: 36 págs.; leídos el resumen y los apartados 2.3 «La modificación unilateral» y 2.4 «La terminación unilateral» (págs. 129-132 de la revista)",
+  "localizador": "págs. 130-131 de la revista, apartado 2.3 «La modificación unilateral»",
+  "cita": "cuando las modificaciones unilateralmente introducidas por la entidad estatal alteran el valor del contrato en un 20 % o más de su valor inicial, el contratista bien podrá renunciar […] si el contratista decide continuar […] tendrá derecho al reconocimiento y pago de las compensaciones",
+  "afirmacion": "Los autores afirman que, cuando las modificaciones introducidas unilateralmente por la entidad alteran el valor del contrato en un 20 % o más del valor inicial, el contratista puede renunciar, y que si decide continuar tiene derecho al reconocimiento y pago de las compensaciones.",
+  "inferencia": "Inferencia: ante una supresión o adición unilateral de obras, el contratista tiene que decidir pronto si continúa o renuncia, y si continúa debe cuantificar y pedir la compensación; los autores parafrasean el art. 16 de la Ley 80 (no se reverificó).",
+  "eje": 5,
+  "etapa": [
+    "E8"
+  ],
+  "decision": [
+    "D4"
+  ],
+  "modulo": [
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "el propio documento (fuente académica fechada)",
+    "vigente": null,
+    "nota": "Artículo de 2017 que parafrasea el art. 16 de la Ley 80 de 1993; la regla no se comprobó contra el texto vigente para esta ficha: sostiene lo que dicen los autores."
+  },
+  "regla": null,
+  "lista_cerrada": "L5-02",
+  "problema_candidato": "La entidad puede suprimir o adicionar obras por acto unilateral; si el cambio llega al 20 % del valor, el contratista puede renunciar, y si sigue, debe reclamar su compensación."
+}

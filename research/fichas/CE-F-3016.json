@@ -1,0 +1,61 @@
+{
+  "id": "CE-F-3016",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República",
+  "titulo": "Decreto 1082 de 2015, Único Reglamentario del Sector Administrativo de Planeación Nacional (texto consolidado)",
+  "anio": 2015,
+  "institucion": "Departamento Administrativo de la Función Pública · Gestor Normativo",
+  "url": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=77653",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: art. 2.2.1.2.6.1.6 completo",
+  "localizador": "art. 2.2.1.2.6.1.6 (Declaratoria desierta del proceso de licitación)",
+  "cita": "Cuando se declare desierto un proceso de contratación que aplicó los Documentos Tipo de licitación pública, para el nuevo proceso de contratación la entidad estatal debe utilizar los Documentos Tipo para selección abreviada de menor cuantía de obra pública de infraestructura de transporte",
+  "afirmacion": "Si se declara desierto un proceso de contratación que aplicó los Documentos Tipo de licitación pública, para el nuevo proceso la entidad debe utilizar los Documentos Tipo de selección abreviada de menor cuantía de obra pública de infraestructura de transporte.",
+  "inferencia": "Inferencia: el artículo agrega que al nuevo proceso se le aplica la Matriz 1 – Experiencia de la licitación.",
+  "eje": 3,
+  "etapa": [
+    "E6",
+    "E1"
+  ],
+  "decision": [
+    "D1"
+  ],
+  "modulo": [
+    "M-LISTA",
+    "M-INGESTA"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A2",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=77653 (texto consolidado) y texto del Decreto 0997 de 2026 en https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/",
+    "vigente": true,
+    "nota": "Se comprobó que el Decreto 0997 de 2026 (arts. 1 a 13) no modifica este artículo; el consolidado de Función Pública aún no trae el 0997."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Norma reglamentaria compilada en el Decreto 1082 de 2015: rige desde su expedición, no desde un aviso de convocatoria."
+  },
+  "lista_cerrada": "L3-06",
+  "problema_candidato": "El contratista interesado en una licitación con documento tipo que se declaró desierta debe vigilar el nuevo proceso de selección abreviada de menor cuantía que la reemplaza.",
+  "advertencia": "Según el verificador, la misma frase del artículo sigue «adaptando las condiciones y requisitos a lo establecido en el artículo 2 de la Ley 1150 de 2007 y al artículo 2.2.1.2.1.2.22», y ese art. 2.2.1.2.1.2.22 ordena «prescindir de: a) recibir manifestaciones de interés, y b) realizar el sorteo de oferentes», con apertura dentro de los 4 meses siguientes; nada de eso está en esta cita, y no hay soporte para «plazos más cortos».",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje3-institucional:2",
+      "veredicto": "no_sostiene",
+      "detalle": "La cita del art. 2.2.1.2.6.1.6 es literal. Pero la afirmación quita el matiz que sigue en la misma frase: «adaptando las condiciones y requisitos a lo establecido en el artículo 2 de la Ley 1150 de 2007 y al artículo 2.2.1.2.1.2.22». Además, la inferencia contradice la norma a la que remite el artículo. Dice que la licitación desierta «reaparece como menor cuantía, con manifestación de interés», y el art. 2.2.1.2.1.2.22 (mismo consolidado) ordena «prescindir de: a) recibir manifestaciones de interés, y b) realizar el sorteo de oferentes», con apertura dentro de los 4 meses siguientes. Lo de «plazos más cortos» no tiene soporte en la fuente. La vigencia está bien: el 0997 no toca estos artículos.",
+      "accion": "afirmación estrechada a lo que sostiene la cita; lo que la cita no cubre va en «advertencia»; inferencia y problema_candidato sin la manifestación de interés ni los plazos más cortos, que contradicen o no tienen soporte en la fuente",
+      "antes": {
+        "afirmacion": "Si se declara desierta una licitación de obra de transporte con documento tipo, el nuevo proceso debe usar los documentos tipo de menor cuantía de transporte.",
+        "inferencia": "Inferencia: el artículo agrega que al nuevo proceso se le aplica la Matriz 1 – Experiencia de la licitación; una licitación desierta reaparece como menor cuantía, con manifestación de interés y plazos más cortos.",
+        "problema_candidato": "El contratista que perdió una licitación de transporte declarada desierta debe vigilar la menor cuantía que la reemplaza, con manifestación de interés de tres días hábiles.",
+        "advertencia": null
+      }
+    }
+  ]
+}

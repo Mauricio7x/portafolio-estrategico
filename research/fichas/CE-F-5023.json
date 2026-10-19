@@ -1,0 +1,60 @@
+{
+  "id": "CE-F-5023",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República y Departamento Nacional de Planeación",
+  "titulo": "Decreto 1082 de 2015, Único Reglamentario del Sector Administrativo de Planeación Nacional",
+  "anio": 2015,
+  "institucion": "Departamento Administrativo de la Función Pública, Gestor Normativo (texto consolidado)",
+  "url": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=77653",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: arts. 2.2.1.1.2.4.1 a 2.2.1.1.2.4.3 y 2.2.1.2.3.1.1 a 2.2.1.2.3.2.9 del texto consolidado",
+  "localizador": "art. 2.2.1.1.2.4.1, incisos primero y cuarto",
+  "cita": "el contratista debe suscribir un contrato de fiducia mercantil para crear un patrimonio autónomo […] la sociedad fiduciaria debe pagar a los proveedores, con base en las instrucciones que reciba del contratista, las cuales deben haber sido autorizadas por el Supervisor o el Interventor",
+  "afirmacion": "En los casos en que procede, el contratista debe suscribir un contrato de fiducia mercantil para crear un patrimonio autónomo, y la fiduciaria paga a los proveedores con instrucciones del contratista autorizadas por el supervisor o el interventor.",
+  "inferencia": "Inferencia: cuando aplica esta fiducia, el contratista no dispone libremente del anticipo; cada pago a proveedores depende de la autorización del supervisor o del interventor.",
+  "eje": 5,
+  "etapa": [
+    "E7",
+    "E8"
+  ],
+  "decision": [
+    "D2",
+    "D4"
+  ],
+  "modulo": [
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A2",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=77653",
+    "vigente": true,
+    "nota": "Texto consolidado de Función Pública (consultado el 2-oct-2026). Se revisó el índice de artículos que modifica el Decreto 0997 de 2026 (arts. 2.2.1.1.1.4.5, 2.2.1.1.1.5.4, 2.2.1.1.1.5.7, 2.2.1.1.1.6.1, 2.2.1.1.1.6.2, 2.2.1.1.2.1.1, 2.2.1.1.2.1.3, 2.2.1.1.2.2.2, 2.2.1.1.2.2.10, 2.2.1.2.1.2.1, 2.2.1.2.1.2.12, 2.2.1.2.1.5.1): no toca este artículo."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Norma reglamentaria compilada en el Decreto 1082 de 2015: no depende de la fecha de un aviso; no se buscó régimen de transición."
+  },
+  "lista_cerrada": "L5-06",
+  "problema_candidato": null,
+  "advertencia": "Según el verificador: el inciso primero empieza con «En los casos previstos en la ley,», que la cita omite sin «[…]»; la obligación no es incondicional, sino que se limita a los casos del art. 91 de la Ley 1474 de 2011. El plan de inversión del anticipo está en la frase vecina, fuera de la cita. La nota de vigencia omite que el Decreto 997 de 2026 también adiciona el art. 2.2.1.1.1.3.1 (art. 4), que no toca este artículo.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje5-institucional:2",
+      "veredicto": "no_sostiene",
+      "detalle": "Abierta la URL de Función Pública (norma.php?i=77653, 200, con --cacert). La cita está literal en el art. 2.2.1.1.2.4.1, incisos 1 y 4. Pero la cita empieza después de «En los casos previstos en la ley,», sin «[…]», y la afirmación presenta la obligación de fiducia mercantil como incondicional. Quita la condición que la limita a los casos del art. 91 de la Ley 1474. La inferencia usa «plan de inversión», que está en la frase vecina («siempre y cuando tales pagos correspondan a los rubros previstos en el plan de utilización o de inversión del anticipo»), fuera de la cita. Vigencia: comprobé el texto del Decreto 997/2026 (SISJUR Bogotá, Norma1.jsp?i=193951) y no toca el artículo. Ojo: la nota de la ficha omite que el 997 también adiciona el 2.2.1.1.1.3.1 (art. 4).",
+      "accion": "afirmación e inferencia estrechadas a lo que sostiene la cita (sin la condición omitida ni el plan de inversión); lo no cubierto va en «advertencia»",
+      "antes": {
+        "afirmacion": "El contratista debe suscribir un contrato de fiducia mercantil para crear un patrimonio autónomo, y la fiduciaria paga a los proveedores con instrucciones del contratista autorizadas por el supervisor o el interventor.",
+        "inferencia": "Inferencia: el contratista no dispone libremente del anticipo; cada pago a proveedores depende de la autorización del interventor y del plan de inversión.",
+        "advertencia": null
+      }
+    }
+  ]
+}

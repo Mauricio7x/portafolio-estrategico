@@ -1,0 +1,58 @@
+{
+  "id": "CE-F-1028",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República; Departamento Nacional de Planeación",
+  "titulo": "Decreto 287 de 2026 (modifica los arts. 2.2.1.2.4.2.6, 2.2.1.2.4.2.7 y 2.2.1.2.4.2.8 del Decreto 1082 de 2015)",
+  "anio": 2026,
+  "institucion": "Departamento Administrativo de la Función Pública (Gestor Normativo)",
+  "url": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=273496",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: considerandos, art. 1 (arts. 2.2.1.2.4.2.6 a 2.2.1.2.4.2.8) y art. 2",
+  "localizador": "art. 1, nuevo art. 2.2.1.2.4.2.7.4, parágrafo 3",
+  "cita": "el contratista deberá presentar, con cada solicitud de pago, la documentación con la que acredite la permanencia de las condiciones mediante las cuales se obtuvo el incentivo",
+  "afirmacion": "Como regla, quien obtuvo el puntaje adicional debe presentar con cada solicitud de pago la documentación que acredite que se mantienen las condiciones por las que lo obtuvo; la misma oración admite una salida (ver advertencia).",
+  "inferencia": "El mismo parágrafo dice que el incumplimiento injustificado podrá constituir causal de incumplimiento contractual (fuera de la cita).",
+  "eje": 1,
+  "etapa": [
+    "E8"
+  ],
+  "decision": [
+    "D4"
+  ],
+  "modulo": [
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A2",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=273496",
+    "vigente": true,
+    "nota": "Decreto 287 de 2026 en el Gestor Normativo (expedición y entrada en vigencia: 19 de marzo de 2026, según la ficha). Su art. 2 dice que rige desde el día siguiente a su publicación; ver advertencia de CE-F-1021."
+  },
+  "lista_cerrada": "L1-02",
+  "problema_candidato": "El puntaje del 2% se convierte en una obligación durante toda la obra: un retiro de personal con discapacidad que no se justifique por fuerza mayor o caso fortuito puede llevar a un incumplimiento contractual.",
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": "En procesos con documento tipo, solo cuando CCE incorpore las medidas (art. 2.2.1.2.4.2.7.8; Circular Externa 003 de 2026)",
+    "motivo_null": "El decreto no fija la transición por aviso; CCE (C-642 de 2026) la fija por la fecha de la resolución de apertura: desde el 20 de marzo de 2026."
+  },
+  "advertencia": "Según el verificador, la oración sigue después de la cita: «o, en caso contrario, informar y sustentar las razones de fuerza mayor o caso fortuito que hayan impedido su cumplimiento». El deber de acreditar no es absoluto; esa alternativa no está en esta cita.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-institucional:2",
+      "veredicto": "no_sostiene",
+      "detalle": "La cita aparece literal en el parágrafo 3 del art. 2.2.1.2.4.2.7.4, pero corta la frase antes de la alternativa: «o, en caso contrario, informar y sustentar las razones de fuerza mayor o caso fortuito que hayan impedido su cumplimiento». La afirmación presenta como absoluto el deber de acreditar con cada pago que se mantienen las condiciones y quita ese matiz de la misma oración (ajuste 5.1). El campo inferencia menciona la consecuencia del incumplimiento, pero no la salida por fuerza mayor o caso fortuito. La cita debe abarcar la oración completa y la afirmación debe recoger la alternativa.",
+      "accion": "afirmación estrechada a lo que sostiene la cita (y problema_candidato cuando se apoyaba en lo mismo); lo que la cita no cubre va en «advertencia», atribuido al verificador; la cita no se amplió",
+      "antes": {
+        "afirmacion": "Quien obtuvo el puntaje adicional debe acreditar con cada solicitud de pago que mantiene las condiciones por las que lo obtuvo.",
+        "advertencia": null,
+        "problema_candidato": "El puntaje del 2% se convierte en una obligación durante toda la obra: un retiro de personal con discapacidad no justificado puede llevar a un incumplimiento contractual."
+      }
+    }
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "id": "CE-F-1217",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Afectación al principio de selección objetiva a través de la celebración de convenios o contratos interadministrativos",
+  "anio": 2020,
+  "institucion": "Revista Digital de Derecho Administrativo, núm. 24, Universidad Externado de Colombia (Redalyc), DOI 10.18601/21452946.n24.05",
+  "url": "https://www.redalyc.org/journal/5038/503865772005/html/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: versión HTML de Redalyc (sin paginación)",
+  "localizador": "apartado 2 «Manifestación de la problemática. La subcontratación o contratación derivada de contratos y convenios interadministrativos», cita de la Sala Disciplinaria de la Procuraduría General de la Nación (párrafo tras la nota 33)",
+  "cita": "a través de ellos se evadieron los procesos de selección y se terminó convirtiendo en una tercerización de la contratación, porque las empresas estatales contratadas para ejecutar las obras y elaborar los diseños y estudios terminaron subcontratando la totalidad de las obligaciones pactadas",
+  "afirmacion": "El autor transcribe una decisión de la Sala Disciplinaria de la Procuraduría según la cual, en los convenios interadministrativos cuestionados, se evadieron los procesos de selección porque las empresas estatales contratadas para ejecutar las obras y elaborar los diseños subcontrataron la totalidad de las obligaciones.",
+  "inferencia": "Inferencia: para el contratista privado, la obra que llega por un convenio o contrato interadministrativo se adjudica luego como contrato derivado con las reglas del ejecutor, que pueden no ser las del Estatuto General ni las del documento tipo.",
+  "eje": 1,
+  "etapa": [
+    "E0",
+    "E1"
+  ],
+  "decision": [
+    "D1",
+    "D4"
+  ],
+  "modulo": [
+    "M-ENTIDAD",
+    "M-LISTA"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.redalyc.org/journal/5038/503865772005/html/",
+    "vigente": null,
+    "nota": "La decisión disciplinaria transcrita no trae fecha en el pasaje leído; el art. 2, num. 4, lit. c, de la Ley 1150 (modificado por la Ley 1474 de 2011) no se comprobó en su texto vigente para esta ficha."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Obra canalizada por convenios o contratos interadministrativos con ejecutores que la subcontratan entera: el proceso que ve el contratista es un contrato derivado, fuera de la licitación pública.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-academico:2",
+      "veredicto": "correcta",
+      "detalle": "Abrí el HTML de Redalyc (200). La cita está literal en el apartado 2 «MANIFESTACIÓN DE LA PROBLEMÁTICA…», dentro de la transcripción de la Sala Disciplinaria que sigue a la nota 33 y cierra con la nota 34. La afirmación se lo atribuye a la Procuraduría transcrita por el autor. 'Convenios interadministrativos cuestionados' sale del mismo pasaje transcrito, que es el referente de 'a través de ellos'. La afirmación omite 'y estudios', sin cambiar el sentido."
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "id": "CE-F-6208",
+  "tipo": "academia",
+  "autor": "Cuatro personas naturales (nombres omitidos por la regla 5 del piloto)",
+  "titulo": "Análisis de la contratación estatal en proyectos de infraestructura vial: caso Valle del Cauca 2010-2015",
+  "anio": 2017,
+  "institucion": "Fundación Universitaria Católica del Norte, Revista Virtual Universidad Católica del Norte núm. 51, págs. 2-22 · Redalyc",
+  "url": "https://www.redalyc.org/pdf/1942/194252398002.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: resumen, metodología (págs. 6-8), indicadores financieros (págs. 11-13), experiencia y maquinaria (págs. 17-19) y tablas de personal",
+  "localizador": "pág. 18 (resultados, requisitos de experiencia)",
+  "cita": "1 contrato ejecutado en los últimos 5 años con valor mayor o igual a 300 % presupuesto oficial […] 1 contrato en los últimos 2 años con valor mayor o igual a 400 % presupuesto oficial",
+  "afirmacion": "Entre las exigencias de experiencia encontradas por los autores en pliegos viales del Valle del Cauca hay un contrato de los últimos 5 años por al menos el 300 % del presupuesto oficial y uno de los últimos 2 años por al menos el 400 %.",
+  "inferencia": "Inferencia: una experiencia exigida varias veces mayor que el presupuesto oficial y en una ventana corta reduce el universo de proponentes posibles; es una señal medible en el pliego (múltiplo del presupuesto y años de la ventana).",
+  "eje": 6,
+  "etapa": [
+    "E1",
+    "E2"
+  ],
+  "decision": [
+    "D1",
+    "D3"
+  ],
+  "modulo": [
+    "M-PLIEGO",
+    "M-RUP"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "No aplica: dato empírico de pliegos de 2010-2015",
+    "vigente": null,
+    "nota": "Muestra de 50 de 132 procesos viales de cuantía igual o superior a $350.000.000 en el Valle del Cauca, 2010-2015, anteriores a los documentos tipo obligatorios de obra (Ley 2022 de 2020); hoy los documentos tipo fijan esos requisitos donde aplican."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Experiencia desproporcionada (un contrato de hasta el 400 % del presupuesto oficial en los últimos 2 años) que restringe la pluralidad de proponentes."
+}

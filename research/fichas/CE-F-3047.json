@@ -1,0 +1,60 @@
+{
+  "id": "CE-F-3047",
+  "tipo": "documento_tipo",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Documentos Tipo de licitación de obra pública de infraestructura social, versión 2 · Documento Base transversal (DocBase_LicitacionObra_ISocialLV2.docx)",
+  "anio": 2025,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29837/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: del Documento Base se leyeron la sección 1.6, el cuadro de puntajes del capítulo IV y la tabla de contenido",
+  "localizador": "capítulo IV (Criterios de evaluación, asignación de puntaje y criterios de desempate), cuadro general de puntajes",
+  "cita": "Oferta económica 48,50 Factor de calidad 30 Apoyo a la industria nacional 20 Vinculación de personas con discapacidad 1 Emprendimientos y empresas de mujeres 0,25 Mipyme 0,25 Total 100",
+  "afirmacion": "El cuadro general de puntajes del Documento Base de la licitación de obra de infraestructura social por documento tipo (versión 2) fija estos puntajes máximos: oferta económica 48,50; factor de calidad 30; apoyo a la industria nacional 20; vinculación de personas con discapacidad 1; emprendimientos y empresas de mujeres 0,25; Mipyme 0,25; total 100.",
+  "inferencia": null,
+  "eje": 3,
+  "etapa": [
+    "E3",
+    "E5"
+  ],
+  "decision": [
+    "D2",
+    "D3"
+  ],
+  "modulo": [
+    "M-OFERTA",
+    "M-PRECIO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A3",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.colombiacompra.gov.co/documentos-tipo/modalidad/01-documentos-tipo-de-licitacion-de-obra-publica-de-infraestructura-social/01-documentos-tipo-transversales y https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo («V.2 · Desde 16/02/2026 · Versión vigente»)",
+    "vigente": true,
+    "nota": "Por el art. 14, par. 3, del Decreto 0997 de 2026, los procesos con documento tipo siguen este texto hasta que CCE expida nuevas versiones."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": "2026-02-16",
+    "documento_tipo": "Documentos Tipo de licitación de obra pública de infraestructura social, versión 2 (la página del nodo cita la Resolución 539 de 2025), vigente desde el 16-feb-2026",
+    "nota_desde_aviso": "Fecha de entrada en vigencia de la versión según el control de versiones de CCE; no se leyó la resolución de adopción para comprobar si se cuenta desde la publicación del aviso o del pliego."
+  },
+  "lista_cerrada": "L3-12",
+  "problema_candidato": null,
+  "advertencia": "Según el verificador, el mismo documento pone junto al cuadro excepciones que la cita no recoge: en San Andrés la oferta económica vale 43,50 (OCCRE 5); en las convocatorias limitadas a Mipyme el puntaje Mipyme pasa a la oferta económica, que vale entonces 48,75 (43,75 en San Andrés); y se restan 2 puntos por multas del último año. El 48,50 no es el peso de la oferta económica en toda licitación de infraestructura social V2.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje3-institucional:4",
+      "veredicto": "no_sostiene",
+      "detalle": "El cuadro aparece literal en el capítulo IV del DocBase (descarga/29837): «Concepto / Puntaje máximo / Oferta económica 48,50 / Factor de calidad 30 / Apoyo a la industria nacional 20 / Vinculación de personas con discapacidad 1 / Emprendimientos y empresas de mujeres 0,25 / Mipyme 0,25 / Total 100». Pero la afirmación («el puntaje es: …») le quita dos matices que el mismo documento pone pegados al cuadro. (a) Son puntajes MÁXIMOS. (b) Es solo el cuadro general: en San Andrés la oferta económica vale 43,50 (OCCRE 5), y «En las convocatorias limitadas a Mipyme el puntaje por este concepto se trasladará al puntaje de oferta económica», que entonces vale 48,75 (43,75 en San Andrés). Además se restan 2 puntos por multas del último año. Para una cifra que entra al módulo de precio, presentar 48,50 como el peso de la oferta económica en toda licitación de infraestructura social V2 dice más que la fuente. Vigencia correcta (V.2 desde 16/02/2026).",
+      "antes": {
+        "afirmacion": "En la licitación de obra de infraestructura social por documento tipo (versión 2) el puntaje es: oferta económica 48,50; factor de calidad 30; apoyo a la industria nacional 20; vinculación de personas con discapacidad 1; emprendimientos y empresas de mujeres 0,25; Mipyme 0,25; total 100.",
+        "advertencia": null
+      },
+      "accion": "afirmación estrechada al cuadro general y a puntajes máximos; las excepciones (San Andrés, convocatoria limitada a Mipyme, resta por multas) van en «advertencia»"
+    }
+  ]
+}

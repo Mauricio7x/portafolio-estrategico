@@ -1,0 +1,55 @@
+{
+  "id": "CE-F-1023",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República; Departamento Nacional de Planeación",
+  "titulo": "Decreto 287 de 2026 (modifica los arts. 2.2.1.2.4.2.6, 2.2.1.2.4.2.7 y 2.2.1.2.4.2.8 del Decreto 1082 de 2015)",
+  "anio": 2026,
+  "institucion": "Departamento Administrativo de la Función Pública (Gestor Normativo)",
+  "url": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=273496",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: considerandos, art. 1 (arts. 2.2.1.2.4.2.6 a 2.2.1.2.4.2.8) y art. 2",
+  "localizador": "art. 1, nuevo art. 2.2.1.2.4.2.7.1, inciso 1",
+  "cita": "deberán incorporar en los contratos que celebren criterios que garanticen la accesibilidad de las personas con discapacidad a los bienes, obras y servicios a contratar. Estos criterios deberán ser determinados en los estudios y documentos previos",
+  "afirmacion": "Las entidades deben incorporar en sus contratos criterios de accesibilidad para personas con discapacidad a las obras que contraten, definidos en los estudios previos.",
+  "inferencia": "Inferencia: en obra, un criterio de accesibilidad es una especificación técnica que entra al presupuesto y a los APU.",
+  "eje": 1,
+  "etapa": [
+    "E0",
+    "E8"
+  ],
+  "decision": [
+    "D2",
+    "D4"
+  ],
+  "modulo": [
+    "M-PLIEGO",
+    "M-APU"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A2",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=273496",
+    "vigente": true,
+    "nota": "Decreto 287 de 2026 en el Gestor Normativo (expedición y entrada en vigencia: 19 de marzo de 2026, según la ficha). Su art. 2 dice que rige desde el día siguiente a su publicación; ver advertencia de CE-F-1021."
+  },
+  "lista_cerrada": "L1-02",
+  "problema_candidato": null,
+  "regla": {
+    "regimen": "Estatuto General y régimen especial (procesos competitivos)",
+    "desde_aviso": null,
+    "documento_tipo": "En procesos con documento tipo, solo cuando CCE incorpore las medidas (art. 2.2.1.2.4.2.7.8; Circular Externa 003 de 2026)",
+    "motivo_null": "El decreto no fija la transición por aviso; CCE (C-642 de 2026) la fija por la fecha de la resolución de apertura: desde el 20 de marzo de 2026."
+  },
+  "advertencia": "El inciso empieza «Las Entidades Estatales, independientemente de su régimen de contratación»; esa parte quedó fuera de la cita por longitud.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-institucional:2",
+      "veredicto": "correcta",
+      "detalle": "La cita aparece literal en el inciso 1 del art. 2.2.1.2.4.2.7.1. La afirmación limita «bienes, obras y servicios» a las obras, lo que no dice más que la norma. La inferencia está marcada como tal. Observación menor: en la regla, el régimen dice «(procesos competitivos)», pero el inciso rige para todas las entidades «independientemente de su régimen de contratación», además de los patrimonios autónomos y los particulares que ejecuten recursos públicos, y para todos los contratos, no solo los competitivos."
+    }
+  ]
+}

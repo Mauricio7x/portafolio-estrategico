@@ -1,0 +1,53 @@
+{
+  "id": "CE-F-3050",
+  "tipo": "documento_tipo",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Documentos tipo vigentes · nodo de mínima cuantía de obra pública de infraestructura de transporte (página web)",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/vigentes/?sector=712&nodo=29401",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: encabezado, descripción y lista de documentos del nodo",
+  "localizador": "encabezado del nodo («Versión» y «Desde») y descripción general",
+  "cita": "Versión: 2 Desde: 3 de febrero de 2026 […] Versión 2, con modificaciones de la Resolución 464 del 10 de septiembre de 2023 – Vigente desde el 3 de febrero de 2025 hasta la fecha.",
+  "afirmacion": "La página del nodo de mínima cuantía de obra de transporte da en su encabezado «Desde: 3 de febrero de 2026» y en su descripción «Vigente desde el 3 de febrero de 2025», y fecha la Resolución 464 en 2023.",
+  "inferencia": "Inferencia: la misma página nombra la Resolución 464 «de 2024» en la lista de documentos y el control de versiones da «Desde 03/02/2025»; la fecha exacta de vigencia y de la resolución no queda establecida por esta fuente.",
+  "eje": 3,
+  "etapa": [
+    "E1",
+    "E2"
+  ],
+  "decision": [
+    "D3"
+  ],
+  "modulo": [
+    "M-PLIEGO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A3",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.colombiacompra.gov.co/documentos-tipo/vigentes/?sector=712&nodo=29401 y https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo",
+    "vigente": true,
+    "nota": "Datos contradictorios dentro de la misma página; el control de versiones dice «V.2 con modificaciones · Desde 03/02/2025 · Modificaciones mediante Resolución 464 del 10 de septiembre de 2023»."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": "Documentos Tipo de mínima cuantía de obra pública de infraestructura de transporte, versión 2 con modificaciones (Resolución 464)",
+    "motivo_null": "La página da dos fechas de vigencia contradictorias; no se leyó el texto de la Resolución 464 para resolverlo."
+  },
+  "lista_cerrada": "L3-12",
+  "problema_candidato": "Las propias páginas oficiales de CCE dan fechas distintas para la vigencia de la versión de mínima cuantía de transporte; el contratista no puede saber por ellas con certeza qué versión aplica a un proceso de comienzos de 2025.",
+  "advertencia": "La misma página da dos fechas de vigencia distintas (3-feb-2026 y 3-feb-2025) y tres fechas para la Resolución 464 (10-sep-2023, 2024 y 10-sep-2024). No se elige ninguna; la ficha no sirve para fijar desde cuándo rige.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje3-institucional:4",
+      "veredicto": "correcta",
+      "detalle": "Abrí https://www.colombiacompra.gov.co/documentos-tipo/vigentes/?sector=712&nodo=29401 (200). El encabezado dice «Versión: 2 / Desde: 3 de febrero de 2026». La descripción dice «Versión 2, con modificaciones de la Resolución 464 del 10 de septiembre de 2023 – Vigente desde el 3 de febrero de 2025 hasta la fecha.». La cita es literal. La lista de documentos nombra la «Resolución 464 de 2024» (ítems 02 y 03) y la «Resolución 464 del 10 de septiembre de 2024» (ítem 07). El control de versiones dice «V.2 con modificaciones · Desde 03/02/2025 · Modificaciones mediante Resolución 464 del 10 de septiembre de 2023». La afirmación se limita a reportar lo que dice la página, y la advertencia recoge bien la contradicción sin elegir ninguna fecha."
+    }
+  ]
+}

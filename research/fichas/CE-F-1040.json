@@ -1,0 +1,53 @@
+{
+  "id": "CE-F-1040",
+  "tipo": "circular_cce",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Circular Externa 003 de 2026 (Decreto 287 de 2026, sistema integral de preferencias)",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2026/05/CIRCULAR-EXTERNA-003-DE-2026-DISCAPACIDAD.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: págs. 1-3 y 17-18 de 25",
+  "localizador": "pág. 17, apartado iv) «Aplicación de las medidas a los consorcios y uniones temporales», segundo párrafo",
+  "cita": "ahora el Decreto 287 de 2026 respecto de los empleadores de PcD no exige un mínimo de experiencia sino una participación mayoritaria en el proponente plural, y a ese miembro será al que se le revise su planta de personal",
+  "afirmacion": "Según la Circular 003 de 2026, para el puntaje de empleadores de personas con discapacidad en un plural ya no se exige un mínimo de experiencia sino una participación mayoritaria, y se revisa la planta de ese miembro.",
+  "inferencia": null,
+  "eje": 1,
+  "etapa": [
+    "E3"
+  ],
+  "decision": [
+    "D1",
+    "D2"
+  ],
+  "modulo": [
+    "M-PLURAL"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A3",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=273496",
+    "vigente": true,
+    "nota": "Circular del 12 de mayo de 2026 sobre el Decreto 287, contrastada con el texto del decreto."
+  },
+  "lista_cerrada": "L1-10",
+  "problema_candidato": null,
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": "En procesos con documento tipo, solo cuando CCE incorpore las medidas (art. 2.2.1.2.4.2.7.8; Circular Externa 003 de 2026)",
+    "motivo_null": "El decreto no fija la transición por aviso; CCE (C-642 de 2026) la fija por la fecha de la resolución de apertura: desde el 20 de marzo de 2026."
+  },
+  "advertencia": "La circular dice «participación mayoritaria»; el decreto dice «integrante con mayor participación porcentual» (CE-F-1027), que no exige más del 50%. En un plural de tres integrantes al 40/30/30 las dos lecturas difieren.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-institucional:3",
+      "veredicto": "correcta",
+      "detalle": "Abierto el PDF de la Circular 003 de 2026 (HTTP 200; 25 págs.; 12-may-2026). En la pág. 17, apartado iv) «Aplicación de las medidas a los consorcios y uniones temporales», segundo párrafo, la cita está literal. La afirmación está atribuida a la circular y es exacta. La advertencia sobre «participación mayoritaria» frente a «integrante con mayor participación porcentual» es real: se comprobó en el texto del decreto."
+    }
+  ]
+}

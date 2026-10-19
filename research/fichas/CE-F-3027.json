@@ -1,0 +1,59 @@
+{
+  "id": "CE-F-3027",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República",
+  "titulo": "Decreto 1082 de 2015, Único Reglamentario del Sector Administrativo de Planeación Nacional (texto consolidado)",
+  "anio": 2015,
+  "institucion": "Departamento Administrativo de la Función Pública · Gestor Normativo",
+  "url": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=77653",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: art. 2.2.1.2.4.2.17 completo",
+  "localizador": "art. 2.2.1.2.4.2.17 (Factores de desempate y acreditación), inciso 1 y numeral 1",
+  "cita": "En caso de empate en el puntaje total de dos o más ofertas […] el contratante deberá utilizar las siguientes reglas de forma sucesiva y excluyente para seleccionar al oferente favorecido […] 1. Preferir la oferta de bienes o servicios nacionales frente a la oferta de bienes o servicios extranjeros.",
+  "afirmacion": "En caso de empate en el puntaje total, el contratante aplica las reglas de desempate en forma sucesiva y excluyente; la primera que trae la cita es preferir la oferta de bienes o servicios nacionales frente a la extranjera.",
+  "inferencia": null,
+  "eje": 3,
+  "etapa": [
+    "E5",
+    "E6"
+  ],
+  "decision": [
+    "D3"
+  ],
+  "modulo": [
+    "M-OFERTA"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A2",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=77653 (texto consolidado) y texto del Decreto 0997 de 2026 en https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/",
+    "vigente": true,
+    "nota": "Se comprobó que el Decreto 0997 de 2026 (arts. 1 a 13) no modifica este artículo; el consolidado de Función Pública aún no trae el 0997."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Norma reglamentaria compilada en el Decreto 1082 de 2015: rige desde su expedición, no desde un aviso de convocatoria."
+  },
+  "lista_cerrada": "L3-09",
+  "problema_candidato": null,
+  "advertencia": "Según el verificador, el […] de la cita corta la reserva del artículo: «respetando en todo caso las obligaciones contenidas en los Acuerdos Comerciales vigentes, especialmente en materia de trato nacional», desarrollada en los parágrafos 1 y 2; la preferencia por lo nacional no se aplica sin ella. La afirmación anterior de que los factores se acreditan con la oferta y no son subsanables según el documento tipo no sale del artículo y el documento tipo no se abrió: sin verificar.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje3-institucional:2",
+      "veredicto": "no_sostiene",
+      "detalle": "La cita del art. 2.2.1.2.4.2.17 es literal, pero el […] corta exactamente el matiz que limita el numeral 1: «respetando en todo caso las obligaciones contenidas en los Acuerdos Comerciales vigentes, especialmente en materia de trato nacional». Ese matiz se desarrolla en los parágrafos 1 y 2, y el propio numeral 1 remite a las definiciones de Servicio Nacional con trato nacional. La afirmación presenta «preferir nacional frente a extranjera» sin esa reserva. Además, la inferencia («se acreditan con documentos presentados con la oferta; el documento tipo dice que no son subsanables») no sale del artículo, y el documento tipo no se citó ni se abrió.",
+      "accion": "afirmación estrechada a lo que sostiene la cita; lo que la cita no cubre va en «advertencia»; la inferencia sobre acreditación y no subsanabilidad no sale del artículo y se retira a «advertencia»",
+      "antes": {
+        "afirmacion": "En caso de empate, el contratante aplica las reglas de desempate en forma sucesiva y excluyente, y la primera es preferir la oferta de bienes o servicios nacionales frente a la extranjera.",
+        "inferencia": "Inferencia: los numerales siguientes (mujer cabeza de familia, nómina con discapacidad, entre otros) se acreditan con documentos presentados con la oferta; el documento tipo dice que no son subsanables.",
+        "advertencia": null
+      }
+    }
+  ]
+}

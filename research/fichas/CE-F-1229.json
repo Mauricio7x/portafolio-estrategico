@@ -1,0 +1,55 @@
+{
+  "id": "CE-F-1229",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Aplicación de la Ley 996 de 2005 – Ley de garantías electorales, como mecanismo de transparencia con relación a las contrataciones estatales en el marco de los procesos electorales en Colombia",
+  "anio": 2022,
+  "institucion": "Universidad La Gran Colombia, Facultad de Derecho, Especialización en Contratación Estatal (trabajo de grado, repositorio institucional)",
+  "url": "https://repository.ugc.edu.co/server/api/core/bitstreams/b4d3e06e-bad2-400a-b646-1665f5ce04e0/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: resumen, metodología y conclusiones (págs. 29-30)",
+  "localizador": "pág. 30 impresa (pág. 30 del PDF), «Conclusiones»",
+  "cita": "las practicas realizadas por estos violan el espíritu de la norma, ya sea porque meses antes de las restricciones que establece la ley, se aumenta la contratación estatal, o por el contrario dentro de la vigencia de la ley de garantías se incrementan los contratos estatales de los servicios",
+  "afirmacion": "Las autoras sostienen que las prácticas violan el espíritu de la ley de garantías, ya sea porque meses antes de las restricciones aumenta la contratación estatal, o porque dentro de la vigencia de la ley se incrementan «los contratos estatales de los servicios» (la frase de la fuente continúa; ver advertencia).",
+  "inferencia": "Inferencia: es una afirmación de las autoras sin medición propia en el pasaje leído; para el contratista de obra apunta a más contratación en los meses previos a la restricción.",
+  "eje": 1,
+  "etapa": [
+    "E0",
+    "T"
+  ],
+  "decision": [
+    "D1"
+  ],
+  "modulo": [
+    "M-LISTA",
+    "M-ENTIDAD"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://repository.ugc.edu.co/server/api/core/bitstreams/b4d3e06e-bad2-400a-b646-1665f5ce04e0/content",
+    "vigente": null,
+    "nota": "Trabajo de 2022; afirmación cualitativa."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "La contratación se agolpa antes de que empiece la restricción de la ley de garantías.",
+  "advertencia": "Según el verificador (verificar:eje1-academico:2, 2026-10-02): la cita se corta a mitad de frase; la fuente sigue «que se encuentran exentos de la prohibición de contratar de la misma ley de garantías», es decir, los contratos que aumentan durante la vigencia de la ley son los exceptuados por ella. Además, la fuente lo enmarca como inferencia «con un enfoque de realismo jurídico basado en el pensamiento de ALF ROSS».",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-academico:2",
+      "veredicto": "no_sostiene",
+      "detalle": "Abrí el PDF de UGC (200). La cita está literal en la pág. 30 del PDF e impresa, en las conclusiones, pero se corta a mitad de frase en 'los contratos estatales de los servicios'. La fuente sigue: 'que se encuentran exentos de la prohibición de contratar de la misma ley de garantías'. La afirmación lo vuelve 'ciertos servicios' y pierde así el matiz decisivo: los contratos que aumentan durante la vigencia de la ley son los exceptuados por ella. Eso incumple el §5.1, que prohíbe quitar un matiz. Además, la fuente lo enmarca como inferencia 'con un enfoque de realismo jurídico basado en el pensamiento de ALF ROSS'.",
+      "accion": "Afirmación estrechada para no convertir «los contratos estatales de los servicios» en «ciertos servicios»; inferencia estrechada (se quitó el «después» de la restricción y la continuación de la frase, que no está en la cita); advertencia con el matiz decisivo y el enfoque de la fuente.",
+      "antes": {
+        "afirmacion": "Las autoras sostienen que las prácticas violan el espíritu de la ley de garantías porque la contratación estatal aumenta meses antes de las restricciones o, durante su vigencia, se incrementan los contratos de ciertos servicios.",
+        "inferencia": "Inferencia: la frase continúa con «que se encuentran exentos de la prohibición»; es una afirmación de las autoras sin medición propia en el pasaje leído, que para el contratista de obra coincide con el patrón de agolpamiento antes y después de la restricción.",
+        "advertencia": null
+      }
+    }
+  ]
+}

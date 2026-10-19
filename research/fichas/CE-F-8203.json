@@ -1,0 +1,37 @@
+{
+  "id": "CE-F-8203",
+  "tipo": "academia",
+  "autor": "Dos autores de la Maestría en Gerencia de Proyectos (nombres omitidos por la regla 5 del piloto)",
+  "titulo": "Diseño de una propuesta metodológica basada en estándares de gerencia de proyectos para optimizar la estructuración de ofertas en licitaciones públicas de infraestructura de transporte en Colombia bajo el esquema de pliegos tipo de obra pública e interventoría",
+  "anio": 2026,
+  "institucion": "Institución Universitaria Politécnico Grancolombiano (repositorio Alejandría)",
+  "url": "https://alejandria.poligran.edu.co/server/api/core/bitstreams/1be8581c-8a67-4f16-b472-358298e625f6/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: resumen, planteamiento, metodología (8.6-8.7) y resultados sobre SECOP II (10.1.4) con pdftotext -layout; no se leyó el resto de los 124 páginas",
+  "localizador": "pág. 92 del PDF, § 10.1.4.2, y pág. 93, § 10.1.4.3 «Comentarios cualitativos seleccionados»",
+  "cita": "Imposibilidad de corregir errores tras el envío: el sistema no permite subsanar errores menores (como omisión de un documento o error de forma), lo que puede acarrear la descalificación inmediata de una propuesta.",
+  "afirmacion": "Las empresas consultadas por los autores reportan que, una vez enviada la oferta en SECOP II, el sistema no les permite corregir errores menores como la omisión de un documento, lo que puede acarrear la descalificación.",
+  "inferencia": "Inferencia, sin verificar en esta ficha: lo que reportan es la percepción de los usuarios; si la plataforma permite retirar y volver a presentar antes del cierre, el problema real es descubrir el error después del cierre. En la pág. 93 una microempresa dice: «Subimos un archivo equivocado y no pudimos reemplazarlo».",
+  "eje": 8,
+  "etapa": [
+    "E4"
+  ],
+  "decision": [
+    "D3"
+  ],
+  "modulo": [
+    "M-OFERTA"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "el propio documento",
+    "vigente": null,
+    "nota": "Fuente académica o de práctica: registra lo que dice su autor, no una regla; no se comprobó vigencia normativa."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Un archivo equivocado o faltante cargado en SECOP II se descubre tarde y deja la oferta por fuera."
+}

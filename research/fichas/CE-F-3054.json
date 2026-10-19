@@ -1,0 +1,61 @@
+{
+  "id": "CE-F-3054",
+  "tipo": "concepto_cce",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente (Subdirección de Gestión Contractual)",
+  "titulo": "Concepto C-1302 de 2026 (radicado de salida 2_2026_09_24_010299), publicado en la relatoría",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente · Relatoría",
+  "url": "https://relatoria.colombiacompra.gov.co/wp-content/uploads/2026/10/C-1302.docx",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: documento del concepto (ficha de relatoría en https://relatoria.colombiacompra.gov.co/conceptos/c-1302-de-2026/)",
+  "localizador": "apartado «Respuesta», numeral ii), párrafo 3",
+  "cita": "no es posible que después de publicado el informe de evaluación definitivo, se publique una adenda para modificar el cronograma y volver a la etapa de presentación de observaciones, puesto que es una etapa que ya se agotó",
+  "afirmacion": "CCE sostiene que, publicado el informe de evaluación definitivo, no puede expedirse una adenda que modifique el cronograma para volver a la etapa de observaciones, porque esa etapa ya se agotó.",
+  "inferencia": "Inferencia: el mismo párrafo admite adendas de cronograma después del cierre y antes de la adjudicación, solo para los plazos de las etapas siguientes (art. 2.2.1.1.2.2.1, inciso 2).",
+  "eje": 3,
+  "etapa": [
+    "E5",
+    "E6"
+  ],
+  "decision": [
+    "D3"
+  ],
+  "modulo": [
+    "M-ADENDAS"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A5",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://relatoria.colombiacompra.gov.co/conceptos/c-1302-de-2026/ (fecha de la ficha de relatoría: 24/09/2026)",
+    "vigente": false,
+    "nota": "Según el verificador, la nota anterior declaraba la vigencia sobre la norma equivocada: el numeral ii) del concepto interpreta el art. 2.2.1.1.2.2.1 del Decreto 1082 de 2015 (adendas), no la Ley 1150, art. 5, par. 1. El verificador comprobó en la relatoría que el Decreto 0997 de 2026 no modifica el 2.2.1.1.2.2.1 (sí el 2.2.1.1.2.1.3 y los 2.2.1.1.2.2.2 y 2.2.1.1.2.2.10), así que el criterio se mantiene; vigente=false marca la vigencia como mal declarada. Concepto no vinculante (función consultiva de CCE)."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Concepto interpretativo: no rige desde un aviso."
+  },
+  "lista_cerrada": "L3-13",
+  "problema_candidato": null,
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje3-institucional:4",
+      "veredicto": "vigencia_mal",
+      "detalle": "La cita y la afirmación están bien. En C-1302.docx (https://relatoria.colombiacompra.gov.co/wp-content/uploads/2026/10/C-1302.docx, 200), apartado «Respuesta», numeral ii), párrafo 3, aparece literal: «no es posible que después de publicado el informe de evaluación definitivo, se publique una adenda para modificar el cronograma y volver a la etapa de presentación de observaciones, puesto que es una etapa que ya se agotó». El fallo está en la nota de vigencia: dice que el concepto «interpreta la Ley 1150 de 2007, art. 5, par. 1», cuando el numeral ii) interpreta el art. 2.2.1.1.2.2.1 del Decreto 1082 (adendas), justo el decreto que el 0997 de 2026 modifica en parte. La vigencia se declaró sobre la norma equivocada. Lo comprobé yo en la relatoría: el 0997 no modifica el 2.2.1.1.2.2.1 (sí el 2.2.1.1.2.1.3, contenido del pliego, y los 2.2.1.1.2.2.2 y 2.2.1.1.2.2.10), así que la conclusión «vigente» se mantiene. Hay que corregir la nota.",
+      "antes": {
+        "vigencia_verificada": {
+          "fecha": "2026-10-02",
+          "fuente": "https://relatoria.colombiacompra.gov.co/conceptos/c-1302-de-2026/ (fecha de la ficha de relatoría: 24/09/2026)",
+          "vigente": true,
+          "nota": "Concepto no vinculante (función consultiva de CCE); interpreta la Ley 1150 de 2007, art. 5, par. 1, con el texto de la Ley 1882 de 2018."
+        }
+      },
+      "accion": "vigencia_verificada.vigente=false y nota reemplazada por la del verificador (la norma interpretada es el art. 2.2.1.1.2.2.1 del Decreto 1082)"
+    }
+  ]
+}

@@ -1,0 +1,57 @@
+{
+  "id": "CE-F-5047",
+  "tipo": "concepto_cce",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Concepto C-1733 de 2025 (30 de diciembre de 2025), sobre planeación, modificación y adición de contratos de obra",
+  "anio": 2025,
+  "institucion": "Relatoría de Colombia Compra Eficiente (ficha https://relatoria.colombiacompra.gov.co/conceptos/c-1733-de-2026/ y documento adjunto .docx)",
+  "url": "https://relatoria.colombiacompra.gov.co/wp-content/uploads/2026/01/C-1733.docx",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: el concepto entero (texto extraído del .docx adjunto) y la ficha de la relatoría",
+  "localizador": "apartado de respuesta, numeral v), párrafo «En este sentido, el Consejo de Estado ha resaltado…»",
+  "cita": "los contratistas no pueden hacer reclamaciones después de finalizado el contrato que se encuentren sustentadas en una planeación deficiente de la entidad si han guardado silencio al momento de celebrar contratos modificatorios o adicionales",
+  "afirmacion": "CCE afirma en el C-1733 que, según el Consejo de Estado, el contratista que guardó silencio al firmar modificatorios o adicionales no puede reclamar después del contrato por la planeación deficiente de la entidad.",
+  "inferencia": null,
+  "eje": 5,
+  "etapa": [
+    "E8",
+    "E9"
+  ],
+  "decision": [
+    "D4"
+  ],
+  "modulo": [
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A5",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://relatoria.colombiacompra.gov.co/wp-content/uploads/2026/01/C-1733.docx",
+    "vigente": false,
+    "nota": "Según el verificador (2-oct-2026): el criterio que el concepto relata (el contratista que guardó silencio al firmar modificatorios o adicionales no puede reclamar después) quedó superado por la sentencia de unificación de la Sección Tercera del Consejo de Estado del 27-jul-2023 (exp. 39121), numeral 44 (PDF pág. 38): el juez «deberá estudiar las pretensiones, aunque […] haya guardado silencio al suscribir tales acuerdos». La sentencia de 2026 del exp. 68756 la aplica como vigente (PDF pág. 79). El concepto C-1733 (30-dic-2025) se apoya solo en sentencias de 1992 a 2021."
+  },
+  "regla": null,
+  "lista_cerrada": "L5-11",
+  "problema_candidato": "Una entidad que siga el concepto C-1733 puede negar reclamos porque el contratista no dejó salvedades en los otrosíes, aunque la unificación de 2023 dice que el juez debe estudiarlos igual.",
+  "advertencia": "Recoge el criterio que la Sección Tercera del Consejo de Estado replanteó en la sentencia de unificación del 27-jul-2023 (exp. 39121), según la cual la falta de salvedades en modificatorios no impide estudiar las pretensiones; el concepto no cita esa unificación.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje5-institucional:4",
+      "veredicto": "vigencia_mal",
+      "detalle": "La cita es literal en el C-1733, «Razones de la respuesta», numeral v), párrafo «En este sentido, el Consejo de Estado ha resaltado…». La nota 41 apoya el párrafo solo en sentencias de 1992 a 2021. La atribución a CCE es correcta. Lo que falla es el bloque de vigencia: marca vigente:true y su nota habla del parágrafo del art. 40, que no es el tema de esta ficha. No dice que el criterio que relata quedó superado por la sentencia de unificación de la Sección Tercera del 27-jul-2023 (exp. 39121). Abrí esa sentencia (PDF pág. 38, numeral 44): el juez «deberá estudiar las pretensiones, aunque […] haya guardado silencio al suscribir tales acuerdos», justo el supuesto de esta ficha. La sentencia de 2026 del exp. 68756 la aplica como vigente (PDF pág. 79). La advertencia sí lo dice, pero un filtro por vigente:true daría por regla actual una que la unificación desmiente. Corrección: anotarlo en vigencia_verificada.",
+      "antes": {
+        "vigencia_verificada": {
+          "fecha": "2026-10-02",
+          "fuente": "https://relatoria.colombiacompra.gov.co/wp-content/uploads/2026/01/C-1733.docx",
+          "vigente": true,
+          "nota": "Concepto fechado el 30-dic-2025; interpreta el parágrafo del art. 40 de la Ley 80, cuyo texto vigente se comprobó en el Gestor Normativo el 2-oct-2026."
+        }
+      },
+      "accion": "vigencia_verificada.vigente pasa a false y su nota recoge la unificación de 2023 que supera el criterio, según el verificador"
+    }
+  ]
+}

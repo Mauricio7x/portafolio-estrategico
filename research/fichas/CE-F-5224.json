@@ -1,0 +1,37 @@
+{
+  "id": "CE-F-5224",
+  "tipo": "academia",
+  "autor": "Autores del artículo (personas naturales, nombres omitidos por la regla 5)",
+  "titulo": "¿Para qué sirve la interventoría de las obras públicas en Colombia?",
+  "anio": 2011,
+  "institucion": "Universidad Externado de Colombia, Revista de Economía Institucional, vol. 13, núm. 24 (autores de la Pontificia Universidad Javeriana; vía Redalyc)",
+  "url": "https://www.redalyc.org/pdf/419/41921223016.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: las 17 págs. con pdftotext -layout",
+  "localizador": "pág. 422 de la revista (pág. 11 del PDF de Redalyc), casos de fallas en la actuación del interventor",
+  "cita": "Si el contrato de interventoría no se prolonga cuando se amplía el plazo de entrega de la obra, el interventor reduce su actividad de supervisión para ajustar sus honorarios fijos a ese plazo, es decir, la interventoría se deteriora.",
+  "afirmacion": "Los autores afirman que si el contrato de interventoría no se prolonga cuando se amplía el plazo de la obra, el interventor reduce su supervisión para ajustar sus honorarios fijos a ese plazo, y la interventoría se deteriora.",
+  "inferencia": null,
+  "eje": 5,
+  "etapa": [
+    "E8"
+  ],
+  "decision": [
+    "D4"
+  ],
+  "modulo": [
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "el propio documento (fuente académica fechada)",
+    "vigente": null,
+    "nota": "Estudio de casos de 2011 (Auditorías Visibles del Programa Presidencial); describe prácticas, no reglas; no aplica comprobar vigencia normativa."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Cuando la obra se prorroga y la interventoría no, el contratista queda con una interventoría reducida o ausente que demora aprobaciones, recibos y actas."
+}

@@ -1,0 +1,38 @@
+{
+  "id": "CE-F-3209",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "La subsanabilidad como etapa en los procesos de selección y la necesidad de reforma",
+  "anio": 2023,
+  "institucion": "Pontificia Universidad Javeriana, Facultad de Derecho, Maestría en Derecho Administrativo (trabajo de grado)",
+  "url": "https://apidspace.javeriana.edu.co/server/api/core/bitstreams/45da1ffd-5bc5-4547-9402-8bf2aba27a99/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: resumen, contenido y capítulos 3 y 4 (págs. 50-60 del PDF); el resto se recorrió por palabras clave",
+  "localizador": "pág. 55 del PDF, capítulo 3 «Análisis normativo de la subsanabilidad como etapa», párrafo «Así pues, la crítica de esta figura…»",
+  "cita": "una vez vencido el término de traslado para subsanar y/o observaciones, los proponentes no gozan de un plazo posterior o adicional para subsanar los requisitos encontrados por los demás oferentes en el proceso de observaciones",
+  "afirmacion": "El autor critica que, vencido el término de traslado para subsanar u observar, los proponentes no tienen un plazo posterior o adicional para subsanar los requisitos que encontraron los demás oferentes en sus observaciones.",
+  "inferencia": "Inferencia: una falla que señala un competidor en el último momento del traslado puede dejar al oferente sin oportunidad de corregirla; conviene revisar la propia oferta con el mismo rigor con que la revisaría un rival antes del cierre.",
+  "eje": 3,
+  "etapa": [
+    "E5",
+    "E6"
+  ],
+  "decision": [
+    "D3"
+  ],
+  "modulo": [
+    "M-OFERTA"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "Ley 1150 de 2007, art. 5, par. 1 (modificado por la Ley 1882 de 2018, art. 5), en http://www.secretariasenado.gov.co/senado/basedoc/ley_1150_2007.html, citado por el autor; no reabierto en esta ficha",
+    "vigente": null,
+    "nota": "Crítica doctrinal de 2023 sobre la regla de subsanar hasta el término de traslado del informe de evaluación; no se comprobó en esta ficha si el Decreto 0997 de 2026 tocó el tema."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Requisitos señalados por los competidores al vencer el traslado del informe que el oferente ya no puede subsanar porque no hay plazo adicional."
+}

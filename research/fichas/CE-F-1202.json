@@ -1,0 +1,48 @@
+{
+  "id": "CE-F-1202",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Reforma al sistema de contratación estatal colombiano; regímenes especiales, esquemas predominantes a redefinir para la adecuada ejecución de los recursos públicos",
+  "anio": 2022,
+  "institucion": "Universidad Carlos III de Madrid (tesis doctoral en Derecho, repositorio e-Archivo)",
+  "url": "https://e-archivo.uc3m.es/rest/api/core/bitstreams/8611881d-3aa0-4fc0-bdcd-890895b823c8/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: portada, cap. 1 (dificultades de la contratación, págs. del PDF 39-60) y el caso del Fondo Adaptación (págs. del PDF 108-109); el resto se recorrió por palabras clave",
+  "localizador": "pág. 109 del PDF, caso del Fondo Adaptación, cita del Informe de Rendición de Cuentas 2019",
+  "cita": "“1. Cambio permanente de la normatividad contractual aplicable, lo que genera: • Inseguridad jurídica interna y externa. • Riesgo de incumplimiento de normatividad aplicable. • Necesidad de estar elaborando nuevos manuales, procesos, procedimientos, modelos y formatos contractuales",
+  "afirmacion": "El autor transcribe del Informe de Rendición de Cuentas 2019 del Fondo Adaptación que el cambio permanente de la normatividad contractual aplicable genera inseguridad jurídica interna y externa, riesgo de incumplimiento de la normativa y la necesidad de elaborar nuevos manuales, procesos y formatos.",
+  "inferencia": "Inferencia: la «inseguridad jurídica externa» recae sobre los proponentes y contratistas del Fondo, que ven cambiar las reglas de selección según el año.",
+  "eje": 1,
+  "etapa": [
+    "T",
+    "E1"
+  ],
+  "decision": [
+    "D1",
+    "D4"
+  ],
+  "modulo": [
+    "M-ENTIDAD"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://e-archivo.uc3m.es/rest/api/core/bitstreams/8611881d-3aa0-4fc0-bdcd-890895b823c8/content",
+    "vigente": null,
+    "nota": "Hecho de 2019-2020 sobre el Fondo Adaptación; su régimen a la fecha de corte no se comprobó."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Cambio de régimen de una misma entidad (Fondo Adaptación, derecho privado y Estatuto General alternándose por leyes sucesivas): reglas de selección que cambian de un año a otro e inseguridad jurídica para quien se presenta.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-academico:1",
+      "veredicto": "correcta",
+      "detalle": "Abrí la URL de e-Archivo UC3M (200, 402 págs.). La cita aparece literal en la pág. 109 del PDF (97 impresa), entre comillas, citando el Informe de Rendición de Cuentas 2019 del Fondo Adaptación (nota 97, pág. 102). La afirmación se la atribuye a ese informe y no dice más que la cita. Solo resume «manuales, procesos, procedimientos, modelos y formatos», sin cambiar el sentido."
+    }
+  ]
+}

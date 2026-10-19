@@ -1,0 +1,52 @@
+{
+  "id": "CE-F-1233",
+  "tipo": "multilateral",
+  "autor": "Banco Mundial, Agencia Francesa de Desarrollo y Unión Europea (evaluación PEFA++ a solicitud del Ministerio de Hacienda y Crédito Público)",
+  "titulo": "PEFA++ Colombia 2024. Evaluación del desempeño de la gestión de las finanzas públicas de Colombia – 2024 (Informe final)",
+  "anio": 2024,
+  "institucion": "Banco Mundial (Documents & Reports, P501379)",
+  "url": "https://documents1.worldbank.org/curated/en/099051225194529508/pdf/P501379-7b00bc98-8518-440d-991b-19172e83b152.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: indicador ID-24 Adquisiciones (págs. del PDF 138-141); el resto se recorrió por palabras clave",
+  "localizador": "pág. 141 impresa (pág. 141 del PDF), ID-24, dimensión 24.4 «Gestión de las reclamaciones en materia de adquisiciones»",
+  "cita": "no existe un organismo especializado independiente de las entidades contratantes, que se ocupe en general de las reclamaciones sobre el proceso o las adjudicaciones de la contratación pública. Por consiguiente, todas las apelaciones o equivalentes deben elevarse ante la justicia",
+  "afirmacion": "El PEFA++ 2024 afirma que no existe un organismo independiente de las entidades contratantes que atienda en general las reclamaciones sobre el proceso o la adjudicación, por lo que todas las apelaciones deben elevarse ante la justicia.",
+  "inferencia": "Inferencia: el mismo apartado añade que las apelaciones no detienen el proceso y que los fallos suelen llegar después de liquidado el contrato; para el proponente que pierde por un error de la entidad, la observación dentro del proceso es casi la única defensa oportuna. La tesis doctoral de la UC3M fichada en CE-F-1202 describe el mismo vacío en su apartado 1.2.1.1.4 (pág. 39 del PDF).",
+  "eje": 1,
+  "etapa": [
+    "E5",
+    "E6"
+  ],
+  "decision": [
+    "D3"
+  ],
+  "modulo": [
+    "M-OFERTA",
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://documents1.worldbank.org/curated/en/099051225194529508/pdf/P501379-7b00bc98-8518-440d-991b-19172e83b152.pdf",
+    "vigente": null,
+    "nota": "Diagnóstico de 2024; no se comprobó si el Decreto 0997 de 2026 u otra norma creó una instancia de reclamación."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "No hay instancia independiente y rápida de reclamación en la contratación pública: el proponente afectado solo tiene la observación ante la misma entidad o un juicio que llega tarde.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-academico:3",
+      "veredicto": "error_localizador",
+      "detalle": "Mismo PDF (HTTP 200). La cita es literal en el apartado 24.4. Está en la pág. 141 impresa (el pie dice «- 141») = pág. 141 del PDF, no en la «pág. 140 impresa»: el desfase entre página impresa y página del PDF que da el localizador no existe. En cuanto al contenido, la fuente dice «dentro del Poder Ejecutivo no existe un organismo especializado independiente…» y «deben elevarse ante la justicia ordinaria administrada por el Poder Judicial». La afirmación quita el matiz «dentro del Poder Ejecutivo»: es menor, porque enseguida remite a la justicia, pero también por eso no es «correcta». La inferencia (las apelaciones no detienen el proceso; los fallos llegan después de liquidado el contrato) sí está en el mismo apartado. La vigencia frente al Decreto 0997 de 2026 queda declarada como no comprobada.",
+      "accion": "Se corrigió el localizador a la pág. 141 impresa = pág. 141 del PDF, según el verificador; cita, afirmación e inferencia sin cambios.",
+      "antes": {
+        "localizador": "pág. 140 impresa (pág. 141 del PDF), ID-24, dimensión 24.4 «Gestión de las reclamaciones en materia de adquisiciones»"
+      }
+    }
+  ]
+}

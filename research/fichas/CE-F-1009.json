@@ -1,0 +1,60 @@
+{
+  "id": "CE-F-1009",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República; Departamento Nacional de Planeación",
+  "titulo": "Decreto 0997 de 2026 (modifica y adiciona el Decreto 1082 de 2015)",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente (relatoría normativa)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: los 14 artículos y los considerandos en la relatoría de CCE",
+  "localizador": "art. 11 (adiciona el art. 2.2.1.1.2.2.10 al Decreto 1082 de 2015), inciso 1",
+  "cita": "En cumplimiento del deber de verificar si se configura la inhabilidad establecida en el literal (j) del numeral 1 del artículo 8 de la Ley 80 de 1993, las Entidades Estatales consultarán las listas internacionales […] de inhabilitación o sanción de los organismos multilaterales",
+  "afirmacion": "Para verificar la inhabilidad del literal j) del numeral 1 del art. 8 de la Ley 80 de 1993, el art. 11 manda a las entidades consultar listas internacionales de inhabilitación o sanción de organismos multilaterales; la cita no recoge qué listas ni con qué alcance.",
+  "inferencia": null,
+  "eje": 1,
+  "etapa": [
+    "E5"
+  ],
+  "decision": [
+    "D1",
+    "D3"
+  ],
+  "modulo": [
+    "M-LISTA",
+    "M-ENTIDAD"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A2",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/",
+    "vigente": true,
+    "nota": "Art. 11: rige desde el día siguiente a la publicación en el Diario Oficial (art. 14, inciso 1). La fecha de publicación del Decreto 0997 de 2026 en el Diario Oficial no se comprobó en ninguna fuente abierta (la relatoría y la ficha de la Alcaldía de Bogotá solo dan la expedición, 04/08/2026)."
+  },
+  "lista_cerrada": "L1-01",
+  "problema_candidato": "Un proponente (o integrante de un plural) que figure en una lista de inhabilitación de un banco multilateral que resulte aplicable puede ser revisado por inhabilidad en la evaluación, aunque su RUP esté limpio.",
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": "No aplica a procesos con documento tipo hasta que CCE expida la versión que lo incorpore (art. 14, parágrafo 3)",
+    "motivo_null": "Rige para procesos cuyo aviso, invitación o documento equivalente se publique después de la entrada en vigencia (art. 14, parágrafo 1); esa entrada es el día siguiente a la publicación en el Diario Oficial, y la fecha de esa publicación no se comprobó."
+  },
+  "advertencia": "Según el verificador, la misma frase sigue después de «organismos multilaterales» y restringe el deber: «de los cuales Colombia es miembro, en cuanto resulten aplicables para la verificación de la comisión de prácticas prohibidas reconocidas por los instrumentos internacionales anticorrupción de los que el Estado colombiano es parte». Ese límite no está en esta cita; afirmarlo exige otra ficha.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-institucional:1",
+      "veredicto": "no_sostiene",
+      "detalle": "La cita es literal: el «[…]» omite «vinculantes, restrictivas,». La diferencia que da el PDF («literal U)» en vez de «(j)») es un error del reconocimiento de texto. Pero la cita se corta en «organismos multilaterales» y la afirmación deja fuera los límites que siguen en la misma frase: «de los cuales Colombia es miembro, en cuanto resulten aplicables para la verificación de la comisión de prácticas prohibidas reconocidas por los instrumentos internacionales anticorrupción de los que el Estado colombiano es parte». Así presenta como incondicional un deber que el texto restringe a ciertas listas y a lo que resulte aplicable.",
+      "accion": "Estreché la afirmación para no presentar el deber como incondicional (la cita no da el alcance de las listas), condicioné el problema_candidato a una lista que resulte aplicable y pasé a advertencia el límite que el verificador encontró en el resto de la frase.",
+      "antes": {
+        "afirmacion": "Para verificar la inhabilidad del literal j) del numeral 1 del art. 8 de la Ley 80 de 1993, las entidades consultarán las listas internacionales de inhabilitación o sanción de los organismos multilaterales.",
+        "problema_candidato": "Un proponente (o integrante de un plural) que figure en una lista de inhabilitación de un banco multilateral puede ser revisado por inhabilidad en la evaluación, aunque su RUP esté limpio.",
+        "advertencia": null
+      }
+    }
+  ]
+}

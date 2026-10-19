@@ -1,0 +1,39 @@
+{
+  "id": "CE-F-5211",
+  "tipo": "academia",
+  "autor": "Autores del artículo (personas naturales, nombres omitidos por la regla 5)",
+  "titulo": "Las sujeciones materiales imprevistas en la contratación estatal: un estudio desde el principio del equilibrio económico del contrato en Colombia",
+  "anio": 2023,
+  "institucion": "Universidad Santo Tomás, Revista IUSTA, núm. 59 (vía Redalyc)",
+  "url": "https://www.redalyc.org/journal/5603/560381733002/560381733002.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: texto completo extraído (29 págs. del PDF); leídos con detalle el resumen, la introducción y las conclusiones (págs. 33-35 de la revista)",
+  "localizador": "pág. 34 de la revista (pág. 24 del PDF), Conclusiones",
+  "cita": "Al verificarse la ocurrencia del hecho imprevisible, acaecido sin responsabilidad de las partes, se ha construído un procedimiento de indemnización, basado en la compensación del afectado, en una estimación de los sobrecostos llevados hasta el punto de no pérdida.",
+  "afirmacion": "Los autores concluyen que, bajo la teoría de la imprevisión, verificado el hecho imprevisible sin responsabilidad de las partes, la indemnización se ha construido como una compensación del afectado que estima los sobrecostos hasta el punto de no pérdida.",
+  "inferencia": "Inferencia: por imprevisión el contratista recupera, en el mejor caso, lo que le evita perder, no la utilidad que esperaba; el AIU de una oferta no está protegido por esta vía.",
+  "eje": 5,
+  "etapa": [
+    "E8",
+    "E10"
+  ],
+  "decision": [
+    "D4",
+    "D2"
+  ],
+  "modulo": [
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "el propio documento (fuente académica fechada)",
+    "vigente": null,
+    "nota": "Fuente académica de 2023; describe la línea jurisprudencial del Consejo de Estado según los autores. No se comprobó contra las providencias para esta ficha."
+  },
+  "regla": null,
+  "lista_cerrada": "L5-02",
+  "problema_candidato": "Cuando un hecho imprevisible encarece la obra, el reconocimiento por imprevisión llega solo hasta el punto de no pérdida: el contratista no recupera su utilidad."
+}

@@ -1,0 +1,60 @@
+{
+  "id": "CE-F-3019",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 80 de 1993",
+  "anio": 1993,
+  "institucion": "Secretaría General del Senado · Base documental (texto con notas de vigencia)",
+  "url": "http://www.secretariasenado.gov.co/senado/basedoc/ley_0080_1993.html",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: art. 30 completo, con sus notas de vigencia visibles",
+  "localizador": "art. 30, numeral 8",
+  "cita": "Los informes de evaluación de las propuestas permanecerán en la secretaría de la entidad por un término de cinco (5) días hábiles para que los oferentes presenten las observaciones […]. En ejercicio de esta facultad, los oferentes no podrán completar, adicionar, modificar o mejorar sus propuestas.",
+  "afirmacion": "En la licitación los informes de evaluación quedan cinco días hábiles para observaciones, y al observar los oferentes no pueden completar, adicionar, modificar ni mejorar sus propuestas.",
+  "inferencia": null,
+  "eje": 3,
+  "etapa": [
+    "E5"
+  ],
+  "decision": [
+    "D3"
+  ],
+  "modulo": [
+    "M-OFERTA"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A1",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "http://www.secretariasenado.gov.co/senado/basedoc/ley_0080_1993.html",
+    "vigente": false,
+    "nota": "Verificador (verificar:eje3-institucional:2, 2026-10-02): La cita del art. 30, numeral 8, es literal y el numeral no tiene notas de modificación. Pero la vigencia declarada («vigente», con notas que solo citan el Decreto 19 de 2012, la Ley 1474 y la Ley 1150, art. 32) pasa por alto el art. 1 de la Ley 1882 de 2018, que añadió al MISMO art. 30 los parágrafos 2 y 3. Para la licitación de obra pública, el parágrafo 3 dice que el informe «permanecerá publicado en el Secop durante cinco (5) días hábiles, término hasta el cual los proponentes podrán hacer las observaciones que consideren y entregar los documentos y la información solicitada por la entidad estatal». Va en concordancia con el art. 5, parágrafo 1, de la Ley 1150 (subsanar hasta el traslado del informe). Para obra, la afirmación general «En la licitación [...] no pueden completar, adicionar» queda matizada por esa reforma, y la ficha no lo dice."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Norma legal: rige desde su promulgación, no desde un aviso de convocatoria."
+  },
+  "lista_cerrada": "L3-07",
+  "problema_candidato": null,
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje3-institucional:2",
+      "veredicto": "vigencia_mal",
+      "detalle": "La cita del art. 30, numeral 8, es literal y el numeral no tiene notas de modificación. Pero la vigencia declarada («vigente», con notas que solo citan el Decreto 19 de 2012, la Ley 1474 y la Ley 1150, art. 32) pasa por alto el art. 1 de la Ley 1882 de 2018, que añadió al MISMO art. 30 los parágrafos 2 y 3. Para la licitación de obra pública, el parágrafo 3 dice que el informe «permanecerá publicado en el Secop durante cinco (5) días hábiles, término hasta el cual los proponentes podrán hacer las observaciones que consideren y entregar los documentos y la información solicitada por la entidad estatal». Va en concordancia con el art. 5, parágrafo 1, de la Ley 1150 (subsanar hasta el traslado del informe). Para obra, la afirmación general «En la licitación [...] no pueden completar, adicionar» queda matizada por esa reforma, y la ficha no lo dice.",
+      "accion": "vigencia_verificada.vigente pasa a false con la nota del verificador",
+      "antes": {
+        "vigencia_verificada": {
+          "fecha": "2026-10-02",
+          "fuente": "http://www.secretariasenado.gov.co/senado/basedoc/ley_0080_1993.html",
+          "vigente": true,
+          "nota": "Texto del Senado con notas: numeral 4 modificado por el art. 220 del Decreto 19 de 2012; numeral 5, inciso 2, por el art. 89 de la Ley 1474 de 2011; apartes derogados por el art. 32 de la Ley 1150 de 2007."
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "id": "CE-F-5214",
+  "tipo": "academia",
+  "autor": "Autor del trabajo de grado (persona natural, nombre omitido por la regla 5)",
+  "titulo": "Análisis de retrasos y sobrecostos del contrato de construcción de la intersección a desnivel de la avenida Laureano Gómez (AK9) por calle 94 y su conexión con la avenida Santa Bárbara (AK19) en Bogotá D.C.",
+  "anio": 2017,
+  "institucion": "Universidad de los Andes, trabajo de grado de Ingeniería Civil",
+  "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/63cec6e2-740e-48b4-8440-4bb1b360e9af/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: las 12 págs. con pdftotext (con y sin -layout por las dos columnas)",
+  "localizador": "pág. 7 del PDF, Tabla 4 «Resumen de prorrogas y costos adicionales», fila Total",
+  "cita": "Total 40 200% 81.547.278.308 95,64%",
+  "afirmacion": "Según la fila Total de la Tabla 4 del trabajo, el contrato sumó 40 meses de prórrogas (200 % del plazo inicial) y $81.547.278.308 de costos adicionales (95,64 % del valor inicial).",
+  "inferencia": "Inferencia: el valor final de un contrato de obra puede casi doblar el inicial cuando las mayores cantidades se tramitan por actas y no como adiciones; el contratista financia la obra mientras cada acta se aprueba.",
+  "eje": 5,
+  "etapa": [
+    "E8"
+  ],
+  "decision": [
+    "D4"
+  ],
+  "modulo": [
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "el propio documento (fuente académica fechada)",
+    "vigente": null,
+    "nota": "Estudio de caso empírico de un contrato del IDU (contrato de obra 005 de 2012); no es normativo, no aplica comprobar vigencia."
+  },
+  "regla": null,
+  "lista_cerrada": "L5-01",
+  "problema_candidato": "Las prórrogas y los mayores valores se encadenan (40 meses y casi el doble del valor) y el contratista sostiene la obra mientras se tramita cada modificación.",
+  "advertencia": "La fila Total de la tabla suma adiciones, ajustes y actas de mayores cantidades; la tabla no separa cuánto de ese 95,64 % se tramitó como adición sujeta al tope legal. Un solo contrato."
+}

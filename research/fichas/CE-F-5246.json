@@ -1,0 +1,39 @@
+{
+  "id": "CE-F-5246",
+  "tipo": "academia",
+  "autor": "Autor del ensayo de grado (persona natural, nombre omitido por la regla 5)",
+  "titulo": "Improcedencia de sanciones en la contratación estatal por desconocimiento en el procedimiento especial sancionatorio",
+  "anio": 2015,
+  "institucion": "Universidad Militar Nueva Granada, Facultad de Posgrados en Derecho, Especialización en Derecho Administrativo",
+  "url": "https://repository.umng.edu.co/server/api/core/bitstreams/ba53eabf-805c-4caf-9bb2-f2f8ed81b5d3/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: 40 págs.; leídos el caso de cobro coactivo y las conclusiones (págs. 31-35)",
+  "localizador": "pág. 33 del ensayo (pág. 32 del PDF), caso de cobro coactivo contra una aseguradora",
+  "cita": "al proferir el mandamiento de pago no se tuvo en cuenta tal situación y frente al cobro de intereses se ordenó que los mismos fuesen tasados conforme a lo dispuesto en los artículos 634, 635 y 867 numeral primero del Estatuto Tributario y no como lo establece el artículo 4 de la Ley 80 de (1993)",
+  "afirmacion": "El autor reporta un caso en que, al librar el mandamiento de pago por una obligación derivada de un contrato estatal, la entidad ordenó tasar los intereses según los artículos 634, 635 y 867-1 del Estatuto Tributario y no según el artículo 4 de la Ley 80 de 1993.",
+  "inferencia": "Inferencia: en el cobro coactivo de multas, cláusula penal o anticipo no amortizado contra el contratista o su aseguradora, conviene revisar la tasa de interés del mandamiento de pago; el autor sostiene que la aplicable es la del art. 4, num. 8, de la Ley 80.",
+  "eje": 5,
+  "etapa": [
+    "E9",
+    "E10"
+  ],
+  "decision": [
+    "D4"
+  ],
+  "modulo": [
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "el propio documento (fuente académica fechada)",
+    "vigente": null,
+    "nota": "Ensayo de 2015; cita el Decreto 679 de 1994 «compilado en el Decreto 1510 de 2013», hoy compilado en el Decreto 1082 de 2015; la regla no se reverificó para esta ficha: sostiene lo que el autor reporta del caso."
+  },
+  "regla": null,
+  "lista_cerrada": "L5-04",
+  "problema_candidato": "La entidad que cobra por jurisdicción coactiva una obligación del contrato (multa, cláusula penal) puede liquidar intereses con tasas tributarias más altas que las de la Ley 80.",
+  "advertencia": "Es la posición de defensa de una aseguradora que el ensayo reproduce; no consta cómo se resolvió."
+}

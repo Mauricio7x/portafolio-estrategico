@@ -1,0 +1,60 @@
+{
+  "id": "CE-F-5028",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República y Departamento Nacional de Planeación",
+  "titulo": "Decreto 1082 de 2015, Único Reglamentario del Sector Administrativo de Planeación Nacional",
+  "anio": 2015,
+  "institucion": "Departamento Administrativo de la Función Pública, Gestor Normativo (texto consolidado)",
+  "url": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=77653",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: arts. 2.2.1.1.2.4.1 a 2.2.1.1.2.4.3 y 2.2.1.2.3.1.1 a 2.2.1.2.3.2.9 del texto consolidado",
+  "localizador": "art. 2.2.1.2.3.1.12, inciso primero",
+  "cita": "La garantía de cumplimiento del contrato debe tener una vigencia mínima hasta la liquidación del contrato. El valor de esta garantía debe ser de por lo menos el diez por ciento (10%) del valor del contrato",
+  "afirmacion": "La garantía de cumplimiento debe estar vigente al menos hasta la liquidación; su valor, en la regla general que trae la cita, es de por lo menos el 10 % del valor del contrato.",
+  "inferencia": "Inferencia: si la liquidación se demora, la garantía de cumplimiento debe seguir vigente hasta que ocurra, lo que puede obligar a prorrogarla.",
+  "eje": 5,
+  "etapa": [
+    "E7",
+    "E9"
+  ],
+  "decision": [
+    "D2"
+  ],
+  "modulo": [
+    "M-PRECIO",
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A2",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=77653",
+    "vigente": true,
+    "nota": "Texto consolidado de Función Pública (consultado el 2-oct-2026). Se revisó el índice de artículos que modifica el Decreto 0997 de 2026 (arts. 2.2.1.1.1.4.5, 2.2.1.1.1.5.4, 2.2.1.1.1.5.7, 2.2.1.1.1.6.1, 2.2.1.1.1.6.2, 2.2.1.1.2.1.1, 2.2.1.1.2.1.3, 2.2.1.1.2.2.2, 2.2.1.1.2.2.10, 2.2.1.2.1.2.1, 2.2.1.2.1.2.12, 2.2.1.2.1.5.1): no toca este artículo."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Norma reglamentaria compilada en el Decreto 1082 de 2015: no depende de la fecha de un aviso; no se buscó régimen de transición."
+  },
+  "lista_cerrada": "L5-07",
+  "problema_candidato": null,
+  "advertencia": "Según el verificador: la cita corta la oración, que sigue «a menos que el valor del contrato sea superior a un millón (1.000.000) de SMMLV, caso en el cual…» (2,5 %, 1 % o 0,5 %); el 10 % no es un mínimo para todos los contratos. Quién paga la prima de la prórroga no está en la fuente.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje5-institucional:2",
+      "veredicto": "no_sostiene",
+      "detalle": "La cita está literal en el art. 2.2.1.2.3.1.12, pero corta la frase a mitad. El texto sigue en la misma oración: «a menos que el valor del contrato sea superior a un millón (1.000.000) de SMMLV, caso en el cual…» (2,5 %, 1 %, 0,5 %). La afirmación da el 10 % como mínimo incondicional y quita un matiz de la misma oración; la advertencia lo reconoce, pero no corrige la afirmación (§5.1). La inferencia sobre la prórroga y la prima no está en la fuente (va rotulada como inferencia). El Decreto 997/2026 no lo toca.",
+      "accion": "afirmación estrechada (el 10 % no es un mínimo incondicional) e inferencia recortada a lo que se apoya en la cita; lo no cubierto va en «advertencia»",
+      "antes": {
+        "afirmacion": "La garantía de cumplimiento debe estar vigente al menos hasta la liquidación y valer como mínimo el 10 % del valor del contrato.",
+        "inferencia": "Inferencia: si la liquidación se demora, la póliza de cumplimiento debe prorrogarse y su prima sigue a cargo del contratista.",
+        "advertencia": "La regla para contratos de más de 1.000.000 SMMLV (2,5 %, 1 % o 0,5 %) está en los numerales 1 a 3 del mismo artículo y no en la cita."
+      }
+    }
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "id": "CE-F-4203",
+  "tipo": "academia",
+  "autor": "Personas naturales (tres autores; nombres omitidos por la regla 5 del piloto)",
+  "titulo": "Análisis del desempeño empresarial del sector de la construcción de edificaciones para la contratación estatal en Boyacá-Colombia",
+  "anio": 2022,
+  "institucion": "Revista EIA, Universidad EIA, vol. 19, núm. 38 (autores de la Universidad Pedagógica y Tecnológica de Colombia), doi 10.24050/reia.v19i38.1561; descargado de Dialnet",
+  "url": "https://dialnet.unirioja.es/descarga/articulo/8552384.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: págs. 1-2 (resumen), 14-17 (evaluación de capacidades, tabla 4, conclusiones) del PDF; el resto por palabras clave",
+  "localizador": "pág. 16 del PDF, apartado 3.4.2, comentario a la tabla 4 (valores indeterminados)",
+  "cita": "Lo anterior se ha establecido en múltiples adendas aclaratorias de licitaciones públicas, que matemáticamente la división de cualquier número superior a cero entre cero tiende al infinito (∞) y al existir activos corrientes, el proponente cumple con el indicador",
+  "afirmacion": "Los autores reportan que múltiples adendas aclaratorias de licitaciones públicas han establecido que, cuando el divisor del indicador es cero (sin pasivo corriente o sin gastos de intereses) y hay activos corrientes, el indicador tiende a infinito y el proponente cumple.",
+  "inferencia": "Inferencia: el contratista sin pasivo corriente o sin gastos de intereses ve en su RUP un indicador «indeterminado»; si el pliego o una adenda no dice cómo se trata, corre el riesgo de que se lea como no cumplido. Los autores no citan las adendas concretas.",
+  "eje": 4,
+  "etapa": [
+    "E2",
+    "E5"
+  ],
+  "decision": [
+    "D3"
+  ],
+  "modulo": [
+    "M-RUP",
+    "M-ADENDAS"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://dialnet.unirioja.es/descarga/articulo/8552384.pdf",
+    "vigente": null,
+    "nota": "Práctica reportada en adendas no identificadas; no se comprobó contra el texto vigente de los documentos tipo ni del Manual CCE-EICP-MA-04."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Indicadores financieros indeterminados (pasivo corriente o gastos de intereses en cero): si el pliego no dice cómo se tratan, el proponente depende de que una adenda aclare que cumple."
+}

@@ -1,0 +1,52 @@
+{
+  "id": "CE-F-1043",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 2069 de 2020",
+  "anio": 2020,
+  "institucion": "Secretaría General del Senado (Leyes desde 1992, texto con notas de vigencia)",
+  "url": "http://www.secretariasenado.gov.co/senado/basedoc/ley_2069_2020.html",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: arts. 30 a 36",
+  "localizador": "art. 35, inciso 1",
+  "cita": "el contratante deberá utilizar las siguientes reglas de forma sucesiva y excluyente para seleccionar al oferente favorecido",
+  "afirmacion": "En caso de empate, el contratante debe aplicar los factores de desempate del art. 35 en forma sucesiva y excluyente.",
+  "inferencia": null,
+  "eje": 1,
+  "etapa": [
+    "E5",
+    "E6"
+  ],
+  "decision": [
+    "D2"
+  ],
+  "modulo": [
+    "M-OFERTA"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A1",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "http://www.secretariasenado.gov.co/senado/basedoc/ley_2069_2020.html",
+    "vigente": true,
+    "nota": "Texto de la Secretaría del Senado («Última actualización: 15 de septiembre de 2026»), leído el 2-oct-2026."
+  },
+  "lista_cerrada": "L1-07",
+  "problema_candidato": null,
+  "regla": {
+    "regimen": "Estatuto General y régimen especial (recursos públicos)",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Ley de 2020; no se verificó la fecha de aviso desde la que rige."
+  },
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-institucional:3",
+      "veredicto": "correcta",
+      "detalle": "Ley 2069, art. 35, inciso 1: la cita está literal. La afirmación («en caso de empate [...] en forma sucesiva y excluyente») sale de la misma frase, que empieza «En caso de empate en el puntaje total de dos o más ofertas». En el texto del Senado el inciso no tiene nota de modificación."
+    }
+  ]
+}

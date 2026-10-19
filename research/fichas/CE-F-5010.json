@@ -1,0 +1,57 @@
+{
+  "id": "CE-F-5010",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 1150 de 2007",
+  "anio": 2007,
+  "institucion": "Secretaría General del Senado de la República, base de leyes (texto con notas de vigencia)",
+  "url": "http://www.secretariasenado.gov.co/senado/basedoc/ley_1150_2007.html",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: arts. 11 y 17 del texto de la Secretaría del Senado",
+  "localizador": "art. 11, inciso primero",
+  "cita": "se hará de mutuo acuerdo dentro del término fijado en los pliegos de condiciones o sus equivalentes, o dentro del que acuerden las partes […] De no existir tal término, la liquidación se realizará dentro de los cuatro (4) meses siguientes a la expiración del término previsto para la ejecución",
+  "afirmacion": "Según el tramo citado, si no existe término fijado en los pliegos o acordado por las partes, la liquidación de mutuo acuerdo se realiza dentro de los cuatro meses siguientes a la expiración del término previsto para la ejecución; el tramo no recoge los demás puntos de partida que fija la norma.",
+  "inferencia": null,
+  "eje": 5,
+  "etapa": [
+    "E9"
+  ],
+  "decision": [
+    "D4"
+  ],
+  "modulo": [
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A1",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "http://www.secretariasenado.gov.co/senado/basedoc/ley_1150_2007.html",
+    "vigente": true,
+    "nota": "Texto de la Secretaría del Senado consultado el 2-oct-2026; el artículo no trae nota de modificación en esa página."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Norma legal: rige para los contratos del Estatuto General sin depender de la fecha de un aviso; no se buscó régimen de transición para contratos anteriores."
+  },
+  "lista_cerrada": "L5-05",
+  "problema_candidato": null,
+  "advertencia": "Según el verificador (verificación fase 2, 2-oct-2026): la cita se corta a mitad de frase; la fuente sigue «del contrato o a la expedición del acto administrativo que ordene la terminación, o a la fecha del acuerdo que la disponga». En un contrato terminado anticipadamente los cuatro meses se cuentan desde el acto o el acuerdo de terminación, no desde el vencimiento del plazo de ejecución.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje5-institucional:1",
+      "veredicto": "no_sostiene",
+      "detalle": "Abrí http://www.secretariasenado.gov.co/senado/basedoc/ley_1150_2007.html (HTTP 200). La cita del art. 11, inciso primero, es literal pero se corta a mitad de frase. La fuente sigue: «dentro de los cuatro (4) meses siguientes a la expiración del término previsto para la ejecución del contrato o a la expedición del acto administrativo que ordene la terminación, o a la fecha del acuerdo que la disponga». La afirmación cuenta los cuatro meses solo desde el vencimiento del plazo de ejecución y se calla los otros dos puntos de partida: el acto de terminación y el acuerdo de terminación anticipada. Con eso se pierde un matiz de la regla: en un contrato terminado antes de tiempo, quien se fíe de la ficha contaría el plazo mal. La vigencia está bien: el art. 11 no trae nota de modificación en esa página.",
+      "accion": "Afirmación estrechada a lo que sostiene el tramo citado (cuatro meses desde la expiración del término de ejecución) y advertencia nueva, atribuida al verificador, con los otros dos puntos de partida (acto y acuerdo de terminación). Cita sin cambios.",
+      "antes": {
+        "afirmacion": "Si no existe el término fijado en los pliegos o acordado por las partes, la liquidación de mutuo acuerdo se realiza dentro de los cuatro meses siguientes al vencimiento del plazo previsto para la ejecución.",
+        "advertencia": null
+      }
+    }
+  ]
+}

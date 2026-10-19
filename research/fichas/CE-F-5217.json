@@ -1,0 +1,39 @@
+{
+  "id": "CE-F-5217",
+  "tipo": "academia",
+  "autor": "Autor de la tesis (persona natural, nombre omitido por la regla 5)",
+  "titulo": "Análisis estadístico de adiciones en tiempo y costo de contratos de licitación de obra pública en Antioquia, Valle del Cauca y Cundinamarca en el periodo 2018-2021",
+  "anio": 2021,
+  "institucion": "Universidad de los Andes, tesis de Maestría en Ingeniería Civil",
+  "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/bb4b8752-6c38-4905-96ba-0ab4b07f438d/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: texto completo extraído (39 págs.); leídos con detalle método, tablas 4 a 7, análisis y conclusiones (págs. 10-28 del PDF)",
+  "localizador": "pág. 18 del PDF, Tabla 4 «Cantidad procesos», y pág. 24, análisis de la Tabla 5",
+  "cita": "Total Procesos 104 33 PM 74 32 […] la línea base de modificación de procesos en Colombia es alta. Se encuentra una tasa de modificación del 71%",
+  "afirmacion": "En la Tabla 4 de la tesis, 74 de 104 procesos del periodo prepandemia y 32 de 33 del periodo de pandemia fueron modificados; el autor llama línea base alta a esa tasa de modificación del 71 %.",
+  "inferencia": null,
+  "eje": 5,
+  "etapa": [
+    "E8"
+  ],
+  "decision": [
+    "D4",
+    "D1"
+  ],
+  "modulo": [
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "el propio documento (fuente académica fechada)",
+    "vigente": null,
+    "nota": "Estudio empírico sobre procesos de SECOP I; no es normativo, no aplica comprobar vigencia."
+  },
+  "regla": null,
+  "lista_cerrada": "L5-01",
+  "problema_candidato": "La mayoría de los contratos de obra licitados se modifican durante la ejecución (plazo, valor o ambos): el contratista debe ofertar contando con que el contrato cambiará.",
+  "advertencia": "«PM» es el rótulo de la tesis para procesos modificados (en valor, plazo o ambos). La muestra son los procesos que la búsqueda de SECOP I devolvió con el filtro de la tesis, no un sorteo; tres departamentos. La muestra son licitaciones de obra pública en estado liquidado en Antioquia, Valle del Cauca y Cundinamarca (pág. 10 del PDF)."
+}

@@ -1,0 +1,37 @@
+{
+ "orden": 18,
+ "estrato": "minima_cuantia",
+ "id_del_portafolio": "CO1.BDOS.10349492",
+ "id_del_proceso": "CO1.REQ.10530937",
+ "entidad": "INSTITUCION EDUCATIVA TECNICO SUPERIOR INDUSTRIAL",
+ "modalidad": "Mínima cuantía",
+ "precio_base": 48832699,
+ "informes": [
+  {
+   "id_documento": "813169454",
+   "resultado": "leído: PDF de 6 páginas, escaneado con capa OCR (texto legible a trozos)",
+   "intentos": "1.º 200"
+  }
+ ],
+ "informe_leido": "813169454 (completo)",
+ "proponentes": 1,
+ "proponentes_detalle": [
+  {
+   "proponente": "Proponente 1",
+   "tipo": "persona natural (propietario de establecimiento de comercio)",
+   "oferta": 47967400,
+   "oferta_pct_presupuesto": 98.23,
+   "resultado": "habilitado; recomendado para adjudicar (págs. 5-6)"
+  }
+ ],
+ "habilitados": 1,
+ "rechazados_o_no_habilitados": 0,
+ "causas": [],
+ "subsanaciones_pedidas": null,
+ "subsanaciones_nota": "El informe no menciona requerimientos de subsanación: sin dato.",
+ "minutos": 0.5,
+ "minutos_nota": "Reloj de pared 04:55:27-04:55:55 (lectura y escritura).",
+ "fichas": [
+  "CE-F-9552"
+ ]
+}

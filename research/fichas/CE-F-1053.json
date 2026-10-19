@@ -1,0 +1,61 @@
+{
+  "id": "CE-F-1053",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 1474 de 2011",
+  "anio": 2011,
+  "institucion": "Secretaría General del Senado (Leyes desde 1992, texto con notas de vigencia)",
+  "url": "http://www.secretariasenado.gov.co/senado/basedoc/ley_1474_2011_pr001.html",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: arts. 82 a 92 (segunda página del texto en el Senado)",
+  "localizador": "art. 91 (Anticipos), inciso 1",
+  "cita": "En los contratos de obra, concesión, salud, o los que se realicen por licitación pública, el contratista deberá constituir una fiducia o un patrimonio autónomo irrevocable para el manejo de los recursos que reciba a título de anticipo",
+  "afirmacion": "El art. 91 prevé que en los contratos de obra el contratista constituya una fiducia o un patrimonio autónomo irrevocable para el manejo del anticipo; la regla no es absoluta (ver advertencia).",
+  "inferencia": null,
+  "eje": 1,
+  "etapa": [
+    "E7",
+    "E8"
+  ],
+  "decision": [
+    "D2",
+    "D4"
+  ],
+  "modulo": [
+    "M-PRECIO",
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A1",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "http://www.secretariasenado.gov.co/senado/basedoc/ley_1474_2011_pr001.html",
+    "vigente": true,
+    "nota": "Texto de la Secretaría del Senado («Última actualización: 15 de septiembre de 2026»), leído el 2-oct-2026."
+  },
+  "lista_cerrada": "L1-05",
+  "problema_candidato": "La comisión de la fiducia del anticipo la paga el contratista (art. 91, inciso 2): es un costo que debe entrar en la oferta de una obra con anticipo que no sea de menor o mínima cuantía.",
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Norma legal en vigor antes de la fecha de corte; no fija una fecha de aviso."
+  },
+  "advertencia": "La excepción («salvo que el contrato sea de menor o mínima cuantía») está al final del mismo inciso, fuera de la cita; el inciso 2 dice que la comisión fiduciaria la paga el contratista. Según el verificador (fase 2, 2-oct-2026): el mismo inciso 1 termina con «salvo que el contrato sea de menor o mínima cuantía»; en esos contratos no rige la obligación de la fiducia y su costo no debe cargarse a la oferta.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-institucional:4",
+      "veredicto": "no_sostiene",
+      "detalle": "Abrí http://www.secretariasenado.gov.co/senado/basedoc/ley_1474_2011_pr001.html (200). La cita aparece literal en el art. 91, inciso 1, pero ese mismo inciso termina con «salvo que el contrato sea de menor o mínima cuantía». La afirmación presenta la obligación de constituir la fiducia como absoluta para todo contrato de obra y quita esa excepción. Así haría cargar el costo de la fiducia en ofertas de obra de menor o mínima cuantía. La advertencia no corrige la afirmación.",
+      "accion": "afirmación estrechada a lo que sostiene la cita (y el problema_candidato); lo que la cita no cubre va en «advertencia», atribuido al verificador",
+      "antes": {
+        "afirmacion": "En los contratos de obra el contratista debe constituir una fiducia o patrimonio autónomo irrevocable para manejar el anticipo.",
+        "problema_candidato": "La comisión de la fiducia del anticipo la paga el contratista (art. 91, inciso 2): es un costo que debe entrar en la oferta de una obra con anticipo.",
+        "advertencia": "La excepción («salvo que el contrato sea de menor o mínima cuantía») está al final del mismo inciso, fuera de la cita; el inciso 2 dice que la comisión fiduciaria la paga el contratista."
+      }
+    }
+  ]
+}

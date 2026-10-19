@@ -1,0 +1,52 @@
+{
+  "id": "CE-F-3023",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 1150 de 2007",
+  "anio": 2007,
+  "institucion": "Secretaría General del Senado · Base documental (texto con notas de vigencia)",
+  "url": "http://www.secretariasenado.gov.co/senado/basedoc/ley_1150_2007.html",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: art. 5 completo (numerales y parágrafos 1 a 5)",
+  "localizador": "art. 5, parágrafo 1 (modificado por el art. 5 de la Ley 1882 de 2018), último inciso",
+  "cita": "Durante el término otorgado para subsanar las ofertas, los proponentes no podrán acreditar circunstancias ocurridas con posterioridad al cierre del proceso.",
+  "afirmacion": "Al subsanar, los proponentes no pueden acreditar circunstancias ocurridas después del cierre del proceso.",
+  "inferencia": null,
+  "eje": 3,
+  "etapa": [
+    "E5"
+  ],
+  "decision": [
+    "D3"
+  ],
+  "modulo": [
+    "M-OFERTA",
+    "M-RUP"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A1",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "http://www.secretariasenado.gov.co/senado/basedoc/ley_1150_2007.html",
+    "vigente": true,
+    "nota": "Parágrafo 1 modificado y parágrafos 3 a 5 adicionados por el art. 5 de la Ley 1882 de 2018, según las notas del texto del Senado."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Norma legal: rige desde su promulgación, no desde un aviso de convocatoria."
+  },
+  "lista_cerrada": "L3-08",
+  "problema_candidato": "Lo que se subsana es la prueba de un requisito que ya se cumplía al cierre: un contrato terminado, una renovación o un certificado obtenido después del cierre no salva la oferta.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje3-institucional:2",
+      "veredicto": "correcta",
+      "detalle": "El último inciso del art. 5, parágrafo 1, de la Ley 1150 (texto del Senado, modificado por el art. 5 de la Ley 1882 de 2018) es la cita literal: «Durante el término otorgado para subsanar las ofertas, los proponentes no podrán acreditar circunstancias ocurridas con posterioridad al cierre del proceso.» La afirmación es fiel y la vigencia está bien."
+    }
+  ]
+}

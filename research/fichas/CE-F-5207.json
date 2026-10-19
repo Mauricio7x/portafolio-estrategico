@@ -1,0 +1,40 @@
+{
+  "id": "CE-F-5207",
+  "tipo": "academia",
+  "autor": "Autores del artículo (personas naturales, nombres omitidos por la regla 5)",
+  "titulo": "Identificación de factores que generan diferencias de tiempo y costos en proyectos de construcción en Colombia",
+  "anio": 2018,
+  "institucion": "Universidad EAFIT, revista Ingeniería y Ciencia, vol. 14, núm. 27 (autores de la Pontificia Universidad Javeriana; vía Redalyc)",
+  "url": "https://www.redalyc.org/journal/835/83556831006/html/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: texto HTML de Redalyc (resumen, método, resultados y conclusiones; las figuras y tablas no se leyeron como imagen)",
+  "localizador": "apartado 3 (resultados), párrafo sobre el sector público o privado",
+  "cita": "En proyectos públicos, la competencia en procesos licitatorios genera que las propuestas no sean debidamente elaboradas, dejando pasar detalles importantes en el cronograma de actividades",
+  "afirmacion": "Los autores afirman que en proyectos públicos la competencia en los procesos licitatorios hace que las propuestas no se elaboren debidamente y dejen pasar detalles importantes del cronograma de actividades.",
+  "inferencia": null,
+  "eje": 5,
+  "etapa": [
+    "E3",
+    "E8"
+  ],
+  "decision": [
+    "D2",
+    "D4"
+  ],
+  "modulo": [
+    "M-OFERTA",
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "el propio documento (fuente académica fechada)",
+    "vigente": null,
+    "nota": "Estudio empírico por encuesta; no es normativo, no aplica comprobar vigencia."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "La presión competitiva de la licitación lleva a ofertas con cronogramas mal elaborados que después se incumplen en la ejecución (atrasos y multas)."
+}

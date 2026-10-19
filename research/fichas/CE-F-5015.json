@@ -1,0 +1,51 @@
+{
+  "id": "CE-F-5015",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 1474 de 2011 (Estatuto Anticorrupción)",
+  "anio": 2011,
+  "institucion": "Secretaría General del Senado de la República, base de leyes (texto con notas de vigencia)",
+  "url": "http://www.secretariasenado.gov.co/senado/basedoc/ley_1474_2011_pr001.html",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: arts. 86 a 91 del texto de la Secretaría del Senado (página 2 de la ley)",
+  "localizador": "art. 86, literal c",
+  "cita": "la entidad procederá a decidir sobre la imposición o no de la multa, sanción o declaratoria de incumplimiento. Contra la decisión así proferida sólo procede el recurso de reposición que se interpondrá, sustentará y decidirá en la misma audiencia.",
+  "afirmacion": "La entidad decide en la audiencia si impone la multa, sanción o declaratoria de incumplimiento, y contra esa decisión solo procede reposición, que se interpone, sustenta y decide en la misma audiencia.",
+  "inferencia": null,
+  "eje": 5,
+  "etapa": [
+    "E8"
+  ],
+  "decision": [
+    "D4"
+  ],
+  "modulo": [
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A1",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "http://www.secretariasenado.gov.co/senado/basedoc/ley_1474_2011_pr001.html",
+    "vigente": true,
+    "nota": "Texto de la Secretaría del Senado consultado el 2-oct-2026, con las notas de modificación que trae el artículo."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Norma legal: rige para los contratos del Estatuto General sin depender de la fecha de un aviso; no se buscó régimen de transición para contratos anteriores."
+  },
+  "lista_cerrada": "L5-04",
+  "problema_candidato": "El único recurso contra la multa se sustenta en la misma audiencia: el contratista que llega sin pruebas ni argumentos preparados pierde la oportunidad en sede administrativa.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje5-institucional:2",
+      "veredicto": "correcta",
+      "detalle": "Abierta la URL de la ficha (Senado, ley_1474_2011_pr001.html, 200). La cita está literal en el art. 86, literal c. La afirmación no va más allá: «la misma audiencia» respalda que la decisión se toma en la audiencia. Las notas ocultas del artículo (js/ley_1474_2011_pr001.js) traen solo la C-499-15 (exequible) y el texto que añadió el D.L. 537/2020, que es temporal (emergencia sanitaria). Ninguna modificación toca el literal c."
+    }
+  ]
+}

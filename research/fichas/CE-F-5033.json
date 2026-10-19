@@ -1,0 +1,53 @@
+{
+  "id": "CE-F-5033",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República y Departamento Nacional de Planeación",
+  "titulo": "Decreto 0997 de 2026 (4 de agosto), por el cual se modifica y adiciona el Decreto 1082 de 2015",
+  "anio": 2026,
+  "institucion": "Departamento Nacional de Planeación (PDF publicado por Presidencia de la República)",
+  "url": "https://dapre.presidencia.gov.co/normativa/normativa/DECRETO%20No.%200997%20DEL%204%20DE%20AGOSTO%20DE%202026.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: art. 3 (hojas 9 y 10) y art. 14 (hojas 18 y 19) del PDF escaneado, con su capa de texto",
+  "localizador": "art. 3 (sustituye el art. 2.2.1.1.1.5.7 del Decreto 1082 de 2015), inciso primero, hojas 9 y 10 de 19",
+  "cita": "El registro de las sanciones e inhabilidades debe permanecer en el certificado del RUP por el término de la sanción o de la inhabilidad. La información relativa a multas debe permanecer en el certificado del RUP por un año, contado a partir de la publicación de la misma.",
+  "afirmacion": "Las sanciones e inhabilidades permanecen en el certificado del RUP por su término, y las multas por un año contado desde su publicación.",
+  "inferencia": "Inferencia: una multa queda visible para todas las entidades durante un año en el RUP del contratista, aunque la inhabilidad del art. 90 de la Ley 1474 se cuenta aparte.",
+  "eje": 5,
+  "etapa": [
+    "E8",
+    "E10"
+  ],
+  "decision": [
+    "D1",
+    "D3"
+  ],
+  "modulo": [
+    "M-RUP"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A2",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://dapre.presidencia.gov.co/normativa/normativa/DECRETO%20No.%200997%20DEL%204%20DE%20AGOSTO%20DE%202026.pdf",
+    "vigente": true,
+    "nota": "Texto del propio decreto; el consolidado del Decreto 1082 en Función Pública no lo incorpora."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "El art. 14 del Decreto 0997 hace regir el art. 3 desde el día siguiente a su publicación en el Diario Oficial; el número y la fecha de esa edición no se comprobaron."
+  },
+  "lista_cerrada": "L5-04",
+  "problema_candidato": null,
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje5-institucional:3",
+      "veredicto": "correcta",
+      "detalle": "Bajé el PDF de dapre.presidencia.gov.co (200, 19 páginas). Su art. 3 sustituye el art. 2.2.1.1.1.5.7 y la cita aparece literal en su inciso primero. Imprecisión menor del localizador: el inciso primero está entero en la hoja 9 (la hoja 10 solo trae el parágrafo). Por el art. 14, el art. 3 rige desde el día siguiente a su publicación, así que la vigencia es correcta. La afirmación es fiel y la inferencia está rotulada."
+    }
+  ]
+}

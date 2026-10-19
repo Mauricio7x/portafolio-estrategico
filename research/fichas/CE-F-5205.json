@@ -1,0 +1,38 @@
+{
+  "id": "CE-F-5205",
+  "tipo": "academia",
+  "autor": "Autor del artículo (persona natural, nombre omitido por la regla 5)",
+  "titulo": "El contrato de obra, razones de las órdenes de cambio o reclamaciones de los contratistas",
+  "anio": 2003,
+  "institucion": "Pontificia Universidad Javeriana, revista Vniversitas",
+  "url": "https://revistas.javeriana.edu.co/index.php/vnijuri/article/download/14849/11989/52548",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: las 16 págs. con pdftotext -layout",
+  "localizador": "pág. 296 de la revista (pág. 16 del PDF), VIII Conclusiones, num. 2",
+  "cita": "se presentan dificultades materiales imprevistas consistentes en mayor cantidad de obra de la prevista en al momento de la suscripción del contrato. Aun cuando existe una aproximación de la cantidad de obra, la ingeniería en la mayoría de los casos queda corta en su apreciación",
+  "afirmacion": "El autor concluye que en la ejecución de los contratos de obra se presentan mayores cantidades de obra que las previstas al firmar, porque la ingeniería, en la mayoría de los casos, se queda corta en su apreciación de cantidades.",
+  "inferencia": null,
+  "eje": 5,
+  "etapa": [
+    "E8"
+  ],
+  "decision": [
+    "D4"
+  ],
+  "modulo": [
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "el propio documento (fuente académica fechada)",
+    "vigente": null,
+    "nota": "Fuente académica fechada; recoge doctrina y jurisprudencia de su época. No se comprobó contra el texto normativo vigente para esta ficha: sostiene la posición del autor y lo que reporta. Artículo de 2003, anterior a la Ley 1150 de 2007."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Las cantidades del presupuesto oficial se quedan cortas frente a lo que exige la obra real, y el mayor volumen de obra genera conflicto sobre quién lo paga.",
+  "advertencia": "«En la mayoría de los casos» es la apreciación del autor, sin medición: no sirve como frecuencia."
+}

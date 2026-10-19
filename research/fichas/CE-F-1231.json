@@ -1,0 +1,49 @@
+{
+  "id": "CE-F-1231",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Eventos generadores de daños antijurídicos para el contratista en la etapa precontractual del Estado en Colombia",
+  "anio": 2019,
+  "institucion": "Universidad Militar Nueva Granada, Facultad de Derecho (trabajo de grado del diplomado en Contratación Estatal, repositorio institucional)",
+  "url": "https://repository.umng.edu.co/server/api/core/bitstreams/6517c63e-b982-4902-974e-4204ed0e14fd/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: resumen y apartado «Daños al contratista reconocidos por el Consejo de Estado en la etapa precontractual» y conclusiones (págs. 22-24)",
+  "localizador": "pág. 22 impresa (pág. 22 del PDF), apartado «Daños al contratista reconocidos por el consejo de Estado en la etapa precontractual»",
+  "cita": "el valor por el cual debe ser indemnizado el oferente corresponde al daño emergente en donde se incluyen los gastos en los que incurrió el mismo para la preparación y presentación de la oferta. […] debía ser indemnizado con la suma de la utilidad esperada si se hubiese adjudicado el contrato",
+  "afirmacion": "La autora recoge, de providencias del Consejo de Estado, que en un evento de daño precontractual la indemnización del oferente es el daño emergente, con los gastos de preparación y presentación de la oferta, y en otro la utilidad esperada si se le hubiese adjudicado el contrato.",
+  "inferencia": "Inferencia: es la vía de reparación del contratista cuando un cambio de reglas o un error de la entidad lo saca del proceso; conservar los soportes del costo de preparar la oferta y del AIU esperado es lo que permite reclamar.",
+  "eje": 1,
+  "etapa": [
+    "E5",
+    "E6",
+    "E10"
+  ],
+  "decision": [
+    "D3",
+    "D4"
+  ],
+  "modulo": [
+    "M-OFERTA"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://repository.umng.edu.co/server/api/core/bitstreams/6517c63e-b982-4902-974e-4204ed0e14fd/content",
+    "vigente": null,
+    "nota": "Recoge providencias del Consejo de Estado de 2001 a 2014 citadas por la autora; no se abrieron las sentencias para esta ficha."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Cuando la entidad saca injustamente al oferente, la reparación documentada es: gastos de preparación de la oferta, o la utilidad esperada si debió adjudicársele.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-academico:3",
+      "veredicto": "correcta",
+      "detalle": "Abrí la URL (HTTP 200). En la pág. 22 (impresa = PDF), apartado «Daños al contratista reconocidos por el consejo de Estado en la etapa precontractual», están literales las dos frases: el evento I (daño emergente: gastos de preparación y presentación de la oferta, Consejo de Estado 2007) y el evento III (utilidad esperada «si se hubiese adjudicado el contrato», providencia de 2011 citada como 2001). La afirmación atribuye bien a la autora y presenta los dos eventos como distintos. La nota de vigencia (providencias de 2001 a 2014 no abiertas) coincide con lo que cita el texto."
+    }
+  ]
+}

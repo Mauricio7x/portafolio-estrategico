@@ -1,0 +1,37 @@
+{
+  "id": "CE-F-6200",
+  "tipo": "academia",
+  "autor": "Una persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Análisis de los factores que generan atraso o abandono en las obras públicas de infraestructura en Bogotá",
+  "anio": 2017,
+  "institucion": "Universidad La Gran Colombia, Facultad de Postgrados, Especialización en Gerencia · trabajo de grado en el repositorio institucional",
+  "url": "https://repository.ugc.edu.co/bitstream/handle/11396/3867/An%C3%A1lisis_abandono_obras_p%C3%BAblicas.pdf?sequence=1",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: tabla de contenido, capítulo II (págs. 34-41) y conclusión (págs. 50-53); el resto por palabras clave",
+  "localizador": "pág. 40 (capítulo II, «Obras inconclusas de entidades del distrito», párrafo bajo la figura 4)",
+  "cita": "del total del valor de los contratos de las 12 entidades es de $970.861,2 millones de los cuales se han girado $836.284 que corresponden al 86,14 % aproximadamente. (Contraloría de Bogota.2016).",
+  "afirmacion": "El autor, citando a la Contraloría de Bogotá (2016), afirma que de $970.861,2 millones contratados por 12 entidades en las obras inconclusas se habían girado $836.284 (millones), cerca del 86,14 %.",
+  "inferencia": "Inferencia: en obras paralizadas la mayor parte del valor ya está girado, de modo que el saldo por ejecutar es pequeño frente a lo que queda por hacer; quien entre a terminar una obra inconclusa hereda un presupuesto casi agotado.",
+  "eje": 6,
+  "etapa": [
+    "E8"
+  ],
+  "decision": [
+    "D4"
+  ],
+  "modulo": [
+    "M-ENTIDAD"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "No aplica: dato empírico citado por un trabajo académico",
+    "vigente": null,
+    "nota": "La cifra la toma el autor del informe de la Contraloría de Bogotá de 2016 (25 obras inconclusas); no se abrió ese informe en esta sesión."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Obras públicas inconclusas con la mayor parte del valor ya girado: en las 25 obras de Bogotá reportadas por la Contraloría distrital (2016) se había girado cerca del 86 % del valor contratado."
+}

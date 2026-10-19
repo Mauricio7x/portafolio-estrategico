@@ -1,0 +1,38 @@
+{
+  "id": "CE-F-5228",
+  "tipo": "organo_control",
+  "autor": "Contraloría General de la República, Contraloría Delegada para el Sector Defensa, Justicia y Seguridad",
+  "titulo": "Informe de auditoría: obras inconclusas, año 2007 a junio de 2011 (CGR-CDDJS No. 051)",
+  "anio": 2011,
+  "institucion": "Contraloría General de la República",
+  "url": "https://www.contraloria.gov.co/documents/20125/344141/OBRAS+INCONCLUSAS.pdf/653bb48c-3d1e-dda5-bd9a-8746296e5201?t=1626413021918&download=true",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: las 14 págs. (PDF obtenido con WebFetch; curl directo dio 403) con pdftotext -layout",
+  "localizador": "pág. 13, Hallazgo No. 10 «Liquidación contrato (F)», Instituto Nacional de Medicina Legal y Ciencias Forenses",
+  "cita": "se debe al contratista […] ($70.8 millones) moneda corriente, se considera pertinente ordenar que esta suma, […] se consigne en la cuenta de depósitos judiciales del Banco Agrario de Colombia a órdenes del Juez competente",
+  "afirmacion": "La Contraloría transcribe la resolución de liquidación unilateral de un contrato de obra, en la que la entidad reconoció que debía al contratista $70,8 millones y ordenó consignar esa suma en la cuenta de depósitos judiciales del Banco Agrario a órdenes del juez competente.",
+  "inferencia": null,
+  "eje": 5,
+  "etapa": [
+    "E9"
+  ],
+  "decision": [
+    "D4"
+  ],
+  "modulo": [
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "el propio informe (auditoría fechada en diciembre de 2011)",
+    "vigente": null,
+    "nota": "Informe de auditoría fechado: registra hallazgos sobre contratos concretos de 2007-2011, no una regla general; no aplica comprobar vigencia normativa."
+  },
+  "regla": null,
+  "lista_cerrada": "L5-05",
+  "problema_candidato": "En la liquidación unilateral, el saldo a favor del contratista puede ir a depósito judicial en vez de pagársele, y además se le descuentan los incumplimientos.",
+  "advertencia": "En el mismo hallazgo la entidad ordena al contratista pagar $22,7 millones por dos archivadores no entregados; esa cifra no está en la cita."
+}

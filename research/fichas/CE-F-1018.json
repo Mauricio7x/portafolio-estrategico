@@ -1,0 +1,52 @@
+{
+  "id": "CE-F-1018",
+  "tipo": "guia_cce",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "ABC Decreto 0997 de 2026 · RUP, Integridad y Transparencia",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2026/09/ABC-Decreto-0997-RUP-y-Transparencia.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: las 20 páginas",
+  "localizador": "pág. 15, pregunta 12 «¿Qué ocurre con los procesos regidos por Documentos Tipo?», recuadro «Excepción Importante»",
+  "cita": "En estos procesos, el hito de cambio es la actualización del Documento Tipo.",
+  "afirmacion": "Según el ABC de CCE, en los procesos con documento tipo el Decreto 0997 empieza a aplicarse cuando CCE actualiza el documento tipo.",
+  "inferencia": null,
+  "eje": 1,
+  "etapa": [
+    "E1"
+  ],
+  "decision": [
+    "D1",
+    "D3"
+  ],
+  "modulo": [
+    "M-PLIEGO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A3",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/",
+    "vigente": true,
+    "nota": "Se contrastó con el art. 14 del Decreto 0997 de 2026 en la relatoría de CCE. Un ABC no reemplaza el decreto."
+  },
+  "lista_cerrada": "L1-01",
+  "problema_candidato": "La mayoría de las licitaciones de obra usan documento tipo: el contratista debe saber qué versión del documento tipo trae el proceso para saber si le exigen la declaración anticorrupción del Decreto 0997.",
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": "Documentos tipo vigentes de obra: rigen sin el Decreto 0997 hasta su actualización por CCE",
+    "motivo_null": "El hito es la resolución de CCE que actualice cada documento tipo; a la fecha de corte no se verificó que exista."
+  },
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-institucional:2",
+      "veredicto": "correcta",
+      "detalle": "La cita aparece literal en la pág. 15, pregunta 12, recuadro «Excepción Importante». La afirmación coincide con el mismo recuadro: «continúan aplicando esos instrumentos y las normas vigentes anteriores […] hasta que Colombia Compra Eficiente expida las modificaciones o nuevas versiones». También coincide con el parágrafo 3 del art. 14 del Decreto 0997 en la relatoría de CCE."
+    }
+  ]
+}

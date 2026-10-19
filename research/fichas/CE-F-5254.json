@@ -1,0 +1,39 @@
+{
+  "id": "CE-F-5254",
+  "tipo": "academia",
+  "autor": "Autor del artículo (persona natural, nombre omitido por la regla 5)",
+  "titulo": "El enriquecimiento sin causa y la acción in rem verso en materia de responsabilidad estatal por realización de obras, prestación de servicios y suministro de bienes sin contrato estatal",
+  "anio": 2013,
+  "institucion": "Universidad de la Costa (CUC), revista Jurídicas CUC, vol. 9, núm. 1",
+  "url": "https://revistascientificas.cuc.edu.co/juridicascuc/article/download/444/pdf_30/1429",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: 39 págs.; leídos el resumen y los apartados que transcriben la sentencia de unificación del 19-nov-2012 (págs. 156-168 de la revista)",
+  "localizador": "pág. 156 de la revista (pág. 14 del PDF), transcripción de la sentencia de unificación del Consejo de Estado del 19 de noviembre de 2012 (exp. 24897)",
+  "cita": "[P]or regla general, el enriquecimiento sin causa, y en consecuencia la actio de in rem verso, […] no pueden ser invocados para reclamar el pago de obras, entrega de bienes o servicios ejecutados sin la previa celebración de un contrato estatal que los justifique",
+  "afirmacion": "El autor transcribe la sentencia de unificación del Consejo de Estado del 19-nov-2012, según la cual, por regla general, el enriquecimiento sin causa y la actio de in rem verso no pueden invocarse para reclamar el pago de obras ejecutadas sin la previa celebración de un contrato estatal que las justifique.",
+  "inferencia": "Inferencia: la obra ejecutada por orden verbal de la entidad o del interventor, antes de firmar la adición o el contrato, en principio no se paga; el autor recoge tres excepciones (constreñimiento por la entidad, urgencia para proteger la salud, urgencia manifiesta no declarada) que solo dan derecho al monto del enriquecimiento.",
+  "eje": 5,
+  "etapa": [
+    "E8",
+    "E10"
+  ],
+  "decision": [
+    "D4"
+  ],
+  "modulo": [
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "el propio documento (fuente académica fechada)",
+    "vigente": null,
+    "nota": "Artículo de 2013 que transcribe la sentencia de unificación del Consejo de Estado del 19-nov-2012 (exp. 24897); no se comprobó si la línea jurisprudencial cambió después para esta ficha."
+  },
+  "regla": null,
+  "lista_cerrada": "L5-10",
+  "problema_candidato": "Ejecutar obra adicional sin contrato o adición firmada (por orden verbal o por urgencia) deja al contratista, por regla general, sin forma de cobrarla.",
+  "advertencia": "Lo que dice la sentencia lo transcribe el autor; la providencia no se abrió para esta ficha."
+}

@@ -1,0 +1,46 @@
+{
+  "id": "CE-F-1208",
+  "tipo": "gremio_ong",
+  "autor": "Misión de Observación Electoral (MOE)",
+  "titulo": "Contratación directa, ¿excepción o regla en Colombia?",
+  "anio": 2021,
+  "institucion": "Misión de Observación Electoral, Observatorio de Justicia Electoral (proyecto de investigación, 16-sep-2021)",
+  "url": "https://www.moe.org.co/wp-content/uploads/2021/09/MOE_Contratacio%CC%81n-Directa-excepcio%CC%81n-o-regla-en-Colombia.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: metodología (págs. 7-10), hallazgos generales (cap. 5) y recomendaciones (cap. 6); el cap. 4 se recorrió",
+  "localizador": "págs. 16-17 impresas (págs. 17-18 del PDF), apartado 5.1 «Complejidad del marco normativo»",
+  "cita": "Es notorio cómo las reglas se van modificando constantemente, además de ir generando reglamentaciones con cada vez más excepciones. […] Se desincentiva la participación de nuevos competidores, por la dificultad de conocer las reglas aplicables a los distintos procesos de contratación estatal.",
+  "afirmacion": "La MOE afirma que las reglas de contratación se modifican constantemente y con cada vez más excepciones, y que uno de los efectos es desincentivar la participación de nuevos competidores por la dificultad de conocer las reglas aplicables.",
+  "inferencia": null,
+  "eje": 1,
+  "etapa": [
+    "T"
+  ],
+  "decision": [
+    "D1"
+  ],
+  "modulo": [
+    "M-NINGUNO"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A7",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.moe.org.co/wp-content/uploads/2021/09/MOE_Contratacio%CC%81n-Directa-excepcio%CC%81n-o-regla-en-Colombia.pdf",
+    "vigente": null,
+    "nota": "Hallazgo cualitativo de 2021 sobre contratación directa 2019-2021."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Cambios constantes y excepciones crecientes en las reglas: barrera de entrada para el contratista nuevo, que no sabe qué regla aplica a cada proceso.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-academico:1",
+      "veredicto": "correcta",
+      "detalle": "Abrí la URL de la MOE (200, 26 págs.). Las dos frases aparecen literales: la primera en la pág. 16 impresa (pág. 17 del PDF) y la viñeta del desincentivo a nuevos competidores en la pág. 17 impresa (pág. 18 del PDF), apartado 5.1 «Complejidad del marco normativo». La afirmación se las atribuye a la MOE y la presenta como «uno de los efectos», que es como la fuente la trae."
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "id": "CE-F-4202",
+  "tipo": "academia",
+  "autor": "Personas naturales (tres autores; nombres omitidos por la regla 5 del piloto)",
+  "titulo": "Análisis del desempeño empresarial del sector de la construcción de edificaciones para la contratación estatal en Boyacá-Colombia",
+  "anio": 2022,
+  "institucion": "Revista EIA, Universidad EIA, vol. 19, núm. 38 (autores de la Universidad Pedagógica y Tecnológica de Colombia), doi 10.24050/reia.v19i38.1561; descargado de Dialnet",
+  "url": "https://dialnet.unirioja.es/descarga/articulo/8552384.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: págs. 1-2 (resumen), 14-17 (evaluación de capacidades, tabla 4, conclusiones) del PDF; el resto por palabras clave",
+  "localizador": "pág. 16 del PDF, apartado 3.4.2, comentario a la tabla 4",
+  "cita": "al menos un 95,83% de empresas para la construcción de edificaciones no tienen las capacidades para generar utilidades operacionales por cada peso invertido en el patrimonio o en activos",
+  "afirmacion": "Los autores concluyen que al menos el 95,83 % de las empresas de construcción de edificaciones estudiadas no tienen la capacidad de generar utilidades operacionales por cada peso invertido en el patrimonio o en los activos, al comparar sus estados financieros con los indicadores exigidos en una muestra de licitaciones públicas.",
+  "inferencia": "Inferencia: para el contratista pequeño, la barrera no es solo la liquidez o el endeudamiento: los indicadores de capacidad organizacional (rentabilidad del patrimonio y del activo) lo dejan sin habilitar aunque cumpla los financieros, y como se evalúan en conjunto basta fallar uno.",
+  "eje": 4,
+  "etapa": [
+    "E3",
+    "E5"
+  ],
+  "decision": [
+    "D1",
+    "D3"
+  ],
+  "modulo": [
+    "M-RUP",
+    "M-PLIEGO"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://dialnet.unirioja.es/descarga/articulo/8552384.pdf",
+    "vigente": null,
+    "nota": "Muestra de empresas y licitaciones de Boyacá con datos hasta 2019; no se comprobó contra los indicadores de los documentos tipo vigentes."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Los indicadores de capacidad organizacional (rentabilidad del patrimonio y del activo) dejan sin habilitar a casi todas las constructoras pequeñas de una región (más del 90 % en la muestra de Boyacá), aunque cumplan liquidez y endeudamiento.",
+  "advertencia": "El resumen (pág. 1) dice que el 95,83 % «no tienen las condiciones para participar en contratación pública»; la tabla 4 (pág. 16) da ese 95,83 % solo para la rentabilidad sobre activos y 90,63 % para la rentabilidad sobre el patrimonio. La cifra no se usa como frecuencia de «no puede participar»."
+}

@@ -1,0 +1,48 @@
+{
+  "id": "CE-F-1238",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "¿Son los convenios administrativos un mecanismo que reemplaza las licitaciones públicas?",
+  "anio": 2014,
+  "institucion": "Universidad Militar Nueva Granada, Especialización en Finanzas y Administración Pública (ensayo de grado, repositorio institucional)",
+  "url": "https://repository.umng.edu.co/server/api/core/bitstreams/b1e39a47-c987-4125-90b0-b938340980b3/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: introducción y planteamiento (págs. del PDF 3-8) y conclusiones (págs. 18-20)",
+  "localizador": "págs. 19-20 del PDF, «Conclusiones»",
+  "cita": "esta herramienta ha permitido camuflar la corrupción en el momento de ejecutar recursos públicos, basados o apoyados en la autonomía universitaria, ya que al avalar este concepto realizan sus procesos de acuerdo a sus políticas o parámetros, lo cual no permite la pluralidad de oferentes",
+  "afirmacion": "La autora sostiene que los convenios interadministrativos, apoyados en la autonomía universitaria, han permitido que los procesos se hagan según las políticas o parámetros propios del ejecutor, lo cual no permite la pluralidad de oferentes.",
+  "inferencia": "Inferencia: cuando una universidad pública es la ejecutora de un convenio de obra, la selección del constructor sigue su régimen propio, no el Estatuto General; el contratista debe buscar esos procesos en la universidad y leer su manual.",
+  "eje": 1,
+  "etapa": [
+    "E0",
+    "E1"
+  ],
+  "decision": [
+    "D1"
+  ],
+  "modulo": [
+    "M-ENTIDAD",
+    "M-LISTA"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://repository.umng.edu.co/server/api/core/bitstreams/b1e39a47-c987-4125-90b0-b938340980b3/content",
+    "vigente": null,
+    "nota": "Ensayo de 2014, anterior a la Ley 1882 de 2018 y a la Ley 2022 de 2020; el régimen vigente de los convenios con universidades no se comprobó."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Obra que llega a universidades públicas por convenios interadministrativos y se contrata con su régimen propio, sin pluralidad.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-academico:3",
+      "veredicto": "correcta",
+      "detalle": "Abrí la URL (HTTP 200, Marín Pérez, UMNG). En las págs. 19-20 del PDF, «Conclusiones», la cita es literal: «esta herramienta ha permitido camuflar la corrupción … basados o apoyados en la autonomía universitaria, ya que al avalar este concepto realizan sus procesos de acuerdo a sus políticas o parámetros, lo cual no permite la pluralidad de oferentes». La afirmación se atribuye a la autora y conserva el sentido, aunque omite «camuflar la corrupción», que la haría más fuerte, no más débil. Un dato de la ficha no cuadra: la portada dice 2013 y el PDF se creó el 5-dic-2013, mientras la ficha pone anio 2014 y su nota habla de «Ensayo de 2014». Conviene corregir el año, pero no toca la afirmación."
+    }
+  ]
+}

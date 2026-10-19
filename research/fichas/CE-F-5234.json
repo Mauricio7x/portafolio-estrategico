@@ -1,0 +1,38 @@
+{
+  "id": "CE-F-5234",
+  "tipo": "academia",
+  "autor": "Autor del artículo de grado (persona natural, nombre omitido por la regla 5)",
+  "titulo": "Responsabilidad contractual del Estado colombiano por retraso injustificado en contratos de obra pública",
+  "anio": 2025,
+  "institucion": "Corporación Universitaria Remington, Especialización en Responsabilidad Contractual y Extracontractual del Estado",
+  "url": "https://repositorio.uniremington.edu.co/bitstreams/21233d78-5d13-40d4-a437-01773fa8dd6d/download",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: las 19 págs. con pdftotext -layout",
+  "localizador": "págs. 13-14 del PDF, apartado 3 «Ruptura del equilibrio económico: mayor permanencia en obra y perjuicios»",
+  "cita": "para que prosperen los daños por mayor permanencia en obra se requiere demostrar: (i) que efectivamente hubo una extensión del tiempo de ejecución más allá del plazo contractual original; (ii) que las causas de esa extensión le son ajenas al contratista e imputables a la entidad demandada",
+  "afirmacion": "El autor sostiene que para que prosperen los daños por mayor permanencia en obra hay que demostrar, entre otros requisitos, que hubo una extensión del plazo más allá del original y que sus causas son ajenas al contratista e imputables a la entidad.",
+  "inferencia": "Inferencia: el autor enumera además (iii) los sobrecostos concretos en personal, equipos y administración y (iv) su necesidad y razonabilidad; la cita solo trae los dos primeros.",
+  "eje": 5,
+  "etapa": [
+    "E8",
+    "E10"
+  ],
+  "decision": [
+    "D4"
+  ],
+  "modulo": [
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "el propio documento (fuente académica fechada)",
+    "vigente": null,
+    "nota": "Trabajo de grado de 2025 que reporta sentencias del Consejo de Estado (2011, 2017, 2023, 2024); las providencias no se abrieron para esta ficha: lo que sostiene es lo que el autor reporta de ellas."
+  },
+  "regla": null,
+  "lista_cerrada": "L5-10",
+  "problema_candidato": "El reclamo por mayor permanencia en obra exige probar la extensión del plazo y que la causa es de la entidad; sin esa prueba no prospera."
+}

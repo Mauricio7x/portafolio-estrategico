@@ -1,0 +1,38 @@
+{
+  "id": "CE-F-5212",
+  "tipo": "academia",
+  "autor": "Autores del artículo (personas naturales, nombres omitidos por la regla 5)",
+  "titulo": "Las sujeciones materiales imprevistas en la contratación estatal: un estudio desde el principio del equilibrio económico del contrato en Colombia",
+  "anio": 2023,
+  "institucion": "Universidad Santo Tomás, Revista IUSTA, núm. 59 (vía Redalyc)",
+  "url": "https://www.redalyc.org/journal/5603/560381733002/560381733002.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: texto completo extraído (29 págs. del PDF); leídos con detalle el resumen, la introducción y las conclusiones (págs. 33-35 de la revista)",
+  "localizador": "pág. 34 de la revista (pág. 24 del PDF), Conclusiones",
+  "cita": "La jurisprudencia nacional en cabeza del Consejo de Estado ha optado por articular las dos teorías: de la imprevisión y de las sujeciones materiales imprevistas en un único modelo jurídico, como es la teoría de la imprevisión.",
+  "afirmacion": "Los autores afirman que el Consejo de Estado ha optado por articular la teoría de la imprevisión y la de las sujeciones materiales imprevistas en un único modelo, el de la imprevisión.",
+  "inferencia": "Inferencia: los fenómenos geológicos o hidráulicos imprevistos en una obra terminarían reconocidos con el mismo tope de compensación de la imprevisión; los autores proponen separarlos, lo que no es la regla.",
+  "eje": 5,
+  "etapa": [
+    "E8",
+    "E10"
+  ],
+  "decision": [
+    "D4"
+  ],
+  "modulo": [
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "el propio documento (fuente académica fechada)",
+    "vigente": null,
+    "nota": "Fuente académica de 2023; describe la línea jurisprudencial del Consejo de Estado según los autores. No se comprobó contra las providencias para esta ficha."
+  },
+  "regla": null,
+  "lista_cerrada": "L5-10",
+  "problema_candidato": "Las condiciones geológicas, hidráulicas o meteorológicas imprevistas de la obra se tratan como imprevisión y su reconocimiento queda limitado."
+}

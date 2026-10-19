@@ -1,0 +1,52 @@
+{
+  "id": "CE-F-5002",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 80 de 1993, Estatuto General de Contratación de la Administración Pública",
+  "anio": 1993,
+  "institucion": "Departamento Administrativo de la Función Pública, Gestor Normativo (texto con notas de vigencia)",
+  "url": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=304",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: arts. 4, 5, 14 a 18, 27, 40 y 60 del texto del Gestor Normativo, con sus notas de modificación",
+  "localizador": "art. 4, numeral 8, inciso segundo",
+  "cita": "Sin perjuicio de la actualización o revisión de precios, en caso de no haberse pactado intereses moratorios, se aplicará la tasa equivalente al doble del interés legal civil sobre el valor histórico actualizado.",
+  "afirmacion": "Si el contrato no pactó intereses moratorios, se aplica el doble del interés legal civil sobre el valor histórico actualizado.",
+  "inferencia": null,
+  "eje": 5,
+  "etapa": [
+    "E8",
+    "E9"
+  ],
+  "decision": [
+    "D4"
+  ],
+  "modulo": [
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A1",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=304",
+    "vigente": true,
+    "nota": "Texto del Gestor Normativo de Función Pública consultado el 2-oct-2026, con las notas de modificación que trae el propio artículo."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Norma legal: rige para los contratos del Estatuto General sin depender de la fecha de un aviso; no se buscó régimen de transición para contratos anteriores."
+  },
+  "lista_cerrada": "L5-02",
+  "problema_candidato": "La entidad que paga tarde un acta de obra debe intereses; si el contrato no los pactó, el contratista tiene la tasa supletiva del doble del interés legal civil para reclamarlos.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje5-institucional:1",
+      "veredicto": "correcta",
+      "detalle": "Misma página. El art. 4, numeral 8, segundo párrafo, dice literal: «Sin perjuicio de la actualización o revisión de precios, en caso de no haberse pactado intereses moratorios, se aplicará la tasa equivalente al doble del interés legal civil sobre el valor histórico actualizado.» El localizador y la afirmación cuadran. La única nota es que el Decreto 679 de 1994 lo reglamentó; no hay modificación."
+    }
+  ]
+}

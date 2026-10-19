@@ -1,0 +1,46 @@
+{
+  "id": "CE-F-1220",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Ineficacia de la Empresa Nacional Promotora del Desarrollo Territorial -EN Territorio- ante un incumplimiento contractual",
+  "anio": 2024,
+  "institucion": "Universidad de los Andes, Facultad de Derecho (trabajo de grado de maestría, repositorio institucional)",
+  "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/53e07f36-7a0a-4189-9f22-38401e0e8362/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: resumen, introducción (págs. del PDF 2-10), contexto del régimen especial (págs. 34-35) y apartado de incumplimientos (págs. 60-63); el resto se recorrió por palabras clave",
+  "localizador": "pág. 8 del PDF, introducción",
+  "cita": "dicha posibilidad no está incluida en el proceso de gestión contractual de su manual de contratación, es decir que, en el evento de un incumplimiento contractual, […] deben acudir al juez del contrato para que este decida sobre la declaración de incumplimiento",
+  "afirmacion": "El autor afirma que la posibilidad de usar facultades unilaterales no está incluida en el manual de contratación de ENTerritorio, de modo que, ante un incumplimiento, debe acudir al juez del contrato para que decida sobre la declaración de incumplimiento.",
+  "inferencia": "Inferencia: frente a una entidad de régimen especial, el contratista no enfrenta la multa o caducidad por acto administrativo propia del Estatuto General sino un pleito; pero el mismo trabajo propone cambiar el manual para pactar cláusulas de efecto unilateral (ANS), lo que de adoptarse cambiaría ese riesgo.",
+  "eje": 1,
+  "etapa": [
+    "E8"
+  ],
+  "decision": [
+    "D4"
+  ],
+  "modulo": [
+    "M-ENTIDAD"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/53e07f36-7a0a-4189-9f22-38401e0e8362/content",
+    "vigente": null,
+    "nota": "Describe el manual de ENTerritorio hasta 2023-2024; no se comprobó la versión vigente del manual a la fecha de corte."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "En una entidad de régimen especial (ENTerritorio) las reglas de incumplimiento las fija su manual, no el Estatuto General; el contratista debe leer el manual para saber si lo sancionan por acto propio o por juez.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-academico:2",
+      "veredicto": "correcta",
+      "detalle": "Abrí el PDF de Uniandes (200, 121 págs.). Los dos fragmentos están literales en la pág. 8 del PDF, en la introducción. El contexto confirma que la 'posibilidad' son las facultades excepcionales unilaterales. Lo omitido con […] es 'para hacer efectivas cláusulas contractuales que impliquen una sanción al contratista por su incumplimiento'; la afirmación conserva el núcleo (el juez decide sobre la declaración de incumplimiento). Hay dos observaciones menores que no cambian el veredicto. La primera es que el trabajo tiene dos autores (Ortega Fadul y Rojas Combariza) y la ficha dice 'El autor'. La segunda es que la frase de la fuente cierra con '(Moreno, 2013, p. 99)', es decir, se apoya en otro autor."
+    }
+  ]
+}

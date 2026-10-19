@@ -1,0 +1,40 @@
+{
+  "id": "CE-F-3213",
+  "tipo": "academia",
+  "autor": "Personas naturales, cuatro autores (nombres omitidos por la regla 5 del piloto)",
+  "titulo": "Causales para la terminación anormal del proceso después de convocada la licitación pública en el Valle del Cauca (2013-2016)",
+  "anio": 2019,
+  "institucion": "Pontificia Universidad Javeriana (Cali) · revista Vialuris núm. 26, Fundación Universitaria Los Libertadores (vía Redalyc)",
+  "url": "https://www.redalyc.org/journal/2739/273963938005/html/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: versión HTML de Redalyc (texto; las tablas se leyeron solo en lo que el HTML reproduce)",
+  "localizador": "apartado «Hallazgos», caso del proceso MP-SEM-LP-019-2015 (municipio de Palmira)",
+  "cita": "el proponente era un consorcio conformado por tres personas jurídicas, y una de ellas, con el 45% de la representación, no contaba con la capacidad jurídica para la constitución del consorcio o unión temporal, lo cual llevó al rechazo por el no cumplimiento de este requisito",
+  "afirmacion": "Los autores relatan un proceso de obra de Palmira (MP-SEM-LP-019-2015) en el que el proponente, un consorcio de tres personas jurídicas, fue rechazado porque una integrante con el 45 % de participación no tenía capacidad jurídica para constituir el consorcio o la unión temporal.",
+  "inferencia": "Inferencia: la capacidad jurídica de cada integrante del plural (objeto social y facultades del representante) se revisa antes de firmar el documento de conformación; una sola integrante sin capacidad arrastra a todo el consorcio.",
+  "eje": 3,
+  "etapa": [
+    "E3",
+    "E5"
+  ],
+  "decision": [
+    "D1",
+    "D3"
+  ],
+  "modulo": [
+    "M-PLURAL"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "No aplica: dato empírico o descripción de práctica, no regla",
+    "vigente": null,
+    "nota": "Procesos de 2013-2016 en SECOP I, bajo el Decreto 1510 de 2013 y antes de la Ley 1882 de 2018 y de los documentos tipo de obra; describe hechos, no la regla vigente."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Rechazo de un consorcio porque una de sus integrantes no tenía capacidad jurídica para asociarse.",
+  "advertencia": "Muestra pequeña y regional (25 procesos del Valle del Cauca); los porcentajes por modalidad del texto mezclan el Sector G y el Sector F y no coinciden entre párrafos (8,5 %/7,6 %/5,3 % frente a 8,9 %/8,7 %/7,5 %/7,2 %): no se usan como frecuencia."
+}

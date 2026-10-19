@@ -1,0 +1,39 @@
+{
+  "id": "CE-F-3237",
+  "tipo": "gremio_ong",
+  "autor": "Sociedad Colombiana de Ingenieros (SCI)",
+  "titulo": "NECESIDAD DE PLIEGOS TIPO: análisis de la contratación regional 2016",
+  "anio": 2017,
+  "institucion": "Sociedad Colombiana de Ingenieros, página de presentación del Informe de Contratación Pública Regional (publicada el 17-nov-2017)",
+  "url": "https://sci.org.co/necesidad-de-pliegos-tipo-analisis-de-la-contratacion-regional-2016-2/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: página web de presentación; el informe en PDF enlazado no se abrió",
+  "localizador": "tercer párrafo de la página («El informe ha venido mostrando desde el 2013…»)",
+  "cita": "es alarmante que en el año 2016 el 74% de los procesos de contratación en los municipios de Colombia es decir 9.185 procesos contaran con solo un proponente (1) y tan solo el 7% (915 procesos) tuvieron una participación superior a 3 oferentes",
+  "afirmacion": "La SCI reporta que en 2016 el 74 % de los procesos de contratación de los municipios de Colombia (9.185 procesos) tuvo un solo proponente y solo el 7 % (915 procesos) tuvo más de 3 oferentes.",
+  "inferencia": "Inferencia: el mismo párrafo atribuye esa falta de pluralidad a pliegos que limitan la participación; antes de los documentos tipo, el contratista municipal típico competía solo o no competía.",
+  "eje": 3,
+  "etapa": [
+    "E4",
+    "E5"
+  ],
+  "decision": [
+    "D1"
+  ],
+  "modulo": [
+    "M-ENTIDAD"
+  ],
+  "naturaleza": "empirica",
+  "nivel_autoridad": "A7",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "No aplica: dato empírico o descripción de práctica, no regla",
+    "vigente": null,
+    "nota": "Datos de 2016 de procesos municipales en varias modalidades (licitación pública, selección abreviada de menor cuantía, concurso de méritos), anteriores a los documentos tipo de obra."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Proponente único en la mayoría de los procesos municipales (74 % en 2016 según la SCI), asociado a pliegos que limitan la participación.",
+  "advertencia": "La cifra cubre todas las modalidades estudiadas en municipios, no solo obra; difiere de otras fuentes sobre el mismo fenómeno (p. ej. 87 % de oferta única municipal en 2016 atribuido al Observatorio de la CCI en CE-F-3215): no se suman ni se usa una sola como frecuencia."
+}

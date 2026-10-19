@@ -1,0 +1,51 @@
+{
+  "id": "CE-F-3048",
+  "tipo": "documento_tipo",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Documentos Tipo de mínima cuantía de obra pública de infraestructura social, versión 1 · Invitación transversal (Invitacion_MinC_ISocialMinCV1.docx)",
+  "anio": 2025,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29582/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: de la Invitación se leyeron la sección 1.6 y la tabla de contenido",
+  "localizador": "sección 1.6 (Reglas de subsanabilidad, explicaciones y aclaraciones), párrafo 2",
+  "cita": "Si no es así solicitará al Proponente, mínimo por el término de un (1) día hábil, que aclare, explique o aporte los documentos e información subsanable; en caso de que la Entidad no fije un plazo específico, se entenderá que es de un (1) día hábil.",
+  "afirmacion": "En la mínima cuantía de obra de infraestructura social por documento tipo, la entidad pide subsanar por un término mínimo de un día hábil y, si no fija plazo, se entiende de un día hábil.",
+  "inferencia": null,
+  "eje": 3,
+  "etapa": [
+    "E5"
+  ],
+  "decision": [
+    "D3"
+  ],
+  "modulo": [
+    "M-OFERTA"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A3",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.colombiacompra.gov.co/documentos-tipo/modalidad/03-documentos-tipo-de-minima-cuantia-de-obra-publica-de-infraestructura-social/01-documentos-tipo-transversales y https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo («V.1 · Desde 16/02/2026 · Versión vigente»)",
+    "vigente": true,
+    "nota": "Por el art. 14, par. 3, del Decreto 0997 de 2026, los procesos con documento tipo siguen este texto hasta que CCE expida nuevas versiones."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": "2026-02-16",
+    "documento_tipo": "Documentos Tipo de mínima cuantía de obra pública de infraestructura social, versión 1 (la página del nodo cita la Resolución 541 de 2025), vigente desde el 16-feb-2026",
+    "nota_desde_aviso": "Fecha de entrada en vigencia de la versión según el control de versiones de CCE; no se leyó la resolución de adopción para comprobar si se cuenta desde la publicación del aviso o del pliego."
+  },
+  "lista_cerrada": "L3-12",
+  "problema_candidato": null,
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje3-institucional:4",
+      "veredicto": "correcta",
+      "detalle": "Abrí descarga/29582 (200, zip; es el ítem «Documentos tipo transversales de infraestructura social – Mínima cuantía» del nodo 03). La cita aparece literal en Invitacion_MinC_ISocialMinCV1.docx, sección 1.6, párrafo 2: «Si no es así solicitará al Proponente, mínimo por el término de un (1) día hábil, que aclare, explique o aporte los documentos e información subsanable; en caso de que la Entidad no fije un plazo específico, se entenderá que es de un (1) día hábil.» La afirmación coincide con la cita. Vigencia: control de versiones «V.1 Desde 16/02/2026 Versión vigente»; el nodo dice «Versión 1 – Vigente desde el 16 de febrero de 2026» y cita la Resolución 541 de 2025."
+    }
+  ]
+}

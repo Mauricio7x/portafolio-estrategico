@@ -1,0 +1,61 @@
+{
+  "id": "CE-F-1243",
+  "tipo": "circular_otra",
+  "autor": "Procuraduría General de la Nación",
+  "titulo": "Circular No. 10 de 2025. Restricciones de la Ley 996 de 2005 para los procesos electorales de Congreso y Presidente y Vicepresidente de la República, periodo constitucional 2026-2030",
+  "anio": 2025,
+  "institucion": "Procuraduría General de la Nación (8 de noviembre de 2025)",
+  "url": "https://www.procuraduria.gov.co/Documents/2025/Noviembre%202025/PRS.%20CIRCULAR%20LEY%20DE%20GARANTI%CC%81AS%20-%20PARA%20FIRMA%20DEL%20PGN%206-11-2025(1).pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa (el PDF trae errores de compresión en una página final; el texto de las restricciones se extrajo completo)",
+  "localizador": "págs. 3-4, literal A, restricciones del art. 38 de la Ley 996 de 2005",
+  "cita": "Celebrar convenios interadministrativos para la ejecución de recursos públicos, a excepción de aquellos a suscribir entre la Nación y las entidades territoriales destinados a ejecutar programas y proyectos correspondientes al Presupuesto General de la Nación.",
+  "afirmacion": "La circular de la Procuraduría recoge, en su literal A, la restricción de celebrar convenios interadministrativos para ejecutar recursos públicos, salvo los que suscriban la Nación y las entidades territoriales para ejecutar programas y proyectos del Presupuesto General de la Nación; la cita no dice a quién obliga ni en qué periodo (ver advertencia).",
+  "inferencia": "Inferencia: la misma página dice que estas restricciones aplicaron del 8 de noviembre de 2025 al 31 de mayo de 2026, y hasta el 21 de junio de 2026 si había segunda vuelta; la obra territorial que se canaliza por convenios se frena desde noviembre, meses antes que la contratación directa (31 de enero). La circular orienta; la regla es el art. 38 de la Ley 996 de 2005, no comprobada aquí en su texto vigente.",
+  "eje": 1,
+  "etapa": [
+    "E0",
+    "T"
+  ],
+  "decision": [
+    "D1"
+  ],
+  "modulo": [
+    "M-LISTA",
+    "M-ENTIDAD"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.procuraduria.gov.co/Documents/2025/Noviembre%202025/PRS.%20CIRCULAR%20LEY%20DE%20GARANTI%CC%81AS%20-%20PARA%20FIRMA%20DEL%20PGN%206-11-2025(1).pdf",
+    "vigente": false,
+    "nota": "El periodo de restricción que describe terminó el 21 de junio de 2026 (hubo segunda vuelta, según el informe de Transparencia por Colombia, CE-F-1205); la regla de la Ley 996 sigue vigente para elecciones futuras, sin verificar contra su texto."
+  },
+  "regla": {
+    "regimen": "Gobernadores, alcaldes, secretarios, gerentes y directores de entidades descentralizadas del orden municipal, departamental y distrital, según el literal A de la circular (Ley 996 de 2005, art. 38); no es una restricción para toda entidad del Estado",
+    "desde_aviso": null,
+    "motivo_null": "La restricción no depende del aviso del proceso sino del calendario electoral.",
+    "documento_tipo": null
+  },
+  "lista_cerrada": "L1-09",
+  "problema_candidato": "Para gobernaciones, alcaldías y sus entidades descentralizadas, la ley de garantías frena los convenios interadministrativos desde cuatro meses antes de la primera elección (8 de noviembre de 2025), antes que la contratación directa.",
+  "advertencia": "Según el verificador (verificación fase 2, 2-oct-2026), el literal A de la pág. 4 dirige la restricción «A los gobernadores, alcaldes, secretarios, gerentes y directores de entidades descentralizadas del orden municipal, departamental y distrital: durante los cuatro (4) meses anteriores a las elecciones … no podrán: … Celebrar convenios interadministrativos…». No es una prohibición general para toda entidad. El destinatario y el periodo no están en la cita.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-academico:3",
+      "veredicto": "no_sostiene",
+      "detalle": "Abrí la URL de la Procuraduría (HTTP 200, 7 págs.). La cita es literal en la pág. 4, literal A. Pero la afirmación quita el destinatario y el periodo de la restricción. El literal A dice: «A los gobernadores, alcaldes, secretarios, gerentes y directores de entidades descentralizadas del orden municipal, departamental y distrital: durante los cuatro (4) meses anteriores a las elecciones … no podrán: … Celebrar convenios interadministrativos…». La afirmación dice solo que la circular «incluye entre las restricciones» la de celebrar convenios, sin decir a quién obliga, y así se puede leer como una prohibición general para toda entidad. Es quitar un matiz (§ 5.1). La vigencia (false, el periodo terminó el 21-jun-2026) y el rango del 8-nov-2025 al 31-may-2026 de la inferencia sí cuadran con la pág. 4.",
+      "accion": "Se estrechó la afirmación a lo que dice la cita (sin destinatario), se corrigió el régimen de la regla y el problema candidato, que la extendían a todas las entidades, y el destinatario y el periodo del literal A pasaron a «advertencia», atribuidos al verificador.",
+      "antes": {
+        "afirmacion": "La circular de la Procuraduría incluye entre las restricciones la de celebrar convenios interadministrativos para ejecutar recursos públicos, salvo los que suscriban la Nación y las entidades territoriales para ejecutar programas y proyectos del Presupuesto General de la Nación.",
+        "regla.regimen": "Todas las entidades del Estado (Ley 996 de 2005, art. 38)",
+        "problema_candidato": "La ley de garantías frena los convenios interadministrativos desde cuatro meses antes de la primera elección (8 de noviembre de 2025), antes que la contratación directa.",
+        "advertencia": null
+      }
+    }
+  ]
+}

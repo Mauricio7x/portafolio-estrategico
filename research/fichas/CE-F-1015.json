@@ -1,0 +1,52 @@
+{
+  "id": "CE-F-1015",
+  "tipo": "guia_cce",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "ABC Decreto 0997 de 2026 · RUP, Integridad y Transparencia",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2026/09/ABC-Decreto-0997-RUP-y-Transparencia.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: las 20 páginas",
+  "localizador": "pág. 13, pregunta 10 «¿Cuándo entran en vigencia las reglas de RUP e integridad?», párrafo 1",
+  "cita": "las reglas de caución del RUP, reporte de multas y sanciones, cláusulas anticorrupción y listas restrictivas internacionales son de aplicación inmediata.",
+  "afirmacion": "Según el ABC de CCE, las reglas de caución del RUP, reporte de multas y sanciones, cláusulas anticorrupción y listas internacionales son de aplicación inmediata.",
+  "inferencia": null,
+  "eje": 1,
+  "etapa": [
+    "T"
+  ],
+  "decision": [
+    "D3"
+  ],
+  "modulo": [
+    "M-PLIEGO",
+    "M-RUP"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A3",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/",
+    "vigente": true,
+    "nota": "Se contrastó con el art. 14 del Decreto 0997 de 2026 en la relatoría de CCE. Un ABC no reemplaza el decreto."
+  },
+  "lista_cerrada": "L1-01",
+  "problema_candidato": null,
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": "Salvo procesos con documento tipo (ABC, pág. 15)",
+    "motivo_null": "El ABC dice «inmediata» sin fecha; el decreto la ata al día siguiente de la publicación en el Diario Oficial, fecha no comprobada."
+  },
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-institucional:2",
+      "veredicto": "correcta",
+      "detalle": "Abrí el PDF del ABC con curl (200, 20 páginas). La cita aparece literal en la pág. 13, pregunta 10, párrafo 1. La afirmación cambia «listas restrictivas internacionales» por «listas internacionales», un recorte menor que no cambia el sentido. Vigencia: en la relatoría de CCE, el art. 14 del Decreto 0997 de 2026 dice «Los artículos 2, 3, 8 y 11 entrarán en vigencia a partir del día siguiente a su publicación en el Diario Oficial». El parágrafo 3 sostiene la salvedad de los documentos tipo que se anota en la regla."
+    }
+  ]
+}

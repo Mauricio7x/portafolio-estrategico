@@ -1,0 +1,47 @@
+{
+  "id": "CE-F-5050",
+  "tipo": "concepto_cce",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Concepto C-915 de 2026 (15 de julio de 2026), sobre precios unitarios, mayores cantidades e ítems no previstos",
+  "anio": 2026,
+  "institucion": "Relatoría de Colombia Compra Eficiente (ficha https://relatoria.colombiacompra.gov.co/conceptos/c-915-de-2026/ y documento adjunto .docx)",
+  "url": "https://relatoria.colombiacompra.gov.co/wp-content/uploads/2026/07/C-915.docx",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: el concepto entero (texto extraído del .docx adjunto) y la ficha de la relatoría",
+  "localizador": "apartado «Respuesta», segundo párrafo",
+  "cita": "dicha modificación puede financiarse con el valor liberado por la disminución de cantidades de ítems inicialmente pactados, siempre que el valor total del contrato permanezca inalterado.",
+  "afirmacion": "Según CCE, el modificatorio que incorpora ítems no previstos puede financiarse con lo liberado al disminuir cantidades de los ítems iniciales, si el valor total del contrato no cambia.",
+  "inferencia": null,
+  "eje": 5,
+  "etapa": [
+    "E8"
+  ],
+  "decision": [
+    "D4"
+  ],
+  "modulo": [
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A5",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://relatoria.colombiacompra.gov.co/wp-content/uploads/2026/07/C-915.docx",
+    "vigente": true,
+    "nota": "Concepto fechado el 15-jul-2026; interpreta el parágrafo del art. 40 de la Ley 80, cuyo texto vigente se comprobó en el Gestor Normativo el 2-oct-2026."
+  },
+  "regla": null,
+  "lista_cerrada": "L5-11",
+  "problema_candidato": null,
+  "advertencia": "El mismo concepto advierte que la operación «comporta un riesgo operativo y presupuestal» si luego se necesitan mayores cantidades de los ítems reducidos.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje5-institucional:4",
+      "veredicto": "correcta",
+      "detalle": "La cita es literal en el C-915, «Respuesta», segundo párrafo («Ahora bien, dicha modificación puede financiarse…»). La afirmación es fiel a la cita. Comprobé la advertencia: en el cuarto párrafo de la Respuesta el concepto dice que la operación «comporta un riesgo operativo y presupuestal» y «debe ser excepcional». La afirmación no omite la condición del valor total inalterado."
+    }
+  ]
+}

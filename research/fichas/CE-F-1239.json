@@ -1,0 +1,47 @@
+{
+  "id": "CE-F-1239",
+  "tipo": "gremio_ong",
+  "autor": "Cámara Colombiana de la Infraestructura (CCI)",
+  "titulo": "Gobierno incumple sus propias reglas y pone en riesgo $1 billón en proyectos estratégicos",
+  "anio": 2026,
+  "institucion": "Cámara Colombiana de la Infraestructura, sala de prensa (19 de enero de 2026)",
+  "url": "https://infraestructura.org.co/gobierno-incumple-sus-propias-reglas-y-pone-en-riesgo-1-billon-en-proyectos-estrategicos",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa",
+  "localizador": "apartado «Reducción unilateral y transgresión de reglas fijadas por el propio Gobierno»",
+  "cita": "Recordó que un decreto expedido el 29 de diciembre del año pasado estableció que las vigencias futuras solo podían modificarse si existía acuerdo entre las partes. Sin embargo, dos días después, el propio Gobierno redujo de manera unilateral los recursos",
+  "afirmacion": "La CCI afirma, en un comunicado del 19 de enero de 2026, que un decreto del 29 de diciembre «del año pasado» estableció que las vigencias futuras solo podían modificarse con acuerdo entre las partes y que, dos días después, el Gobierno redujo los recursos de manera unilateral.",
+  "inferencia": "Inferencia: el comunicado lo refiere a dos proyectos (vía Mulaló-Loboguerrero, cerca de $340.000 millones, y Canal del Dique, cerca de $636.000 millones); para el contratista, la financiación con vigencias futuras puede recortarse por decisión del Gobierno aunque una norma reciente lo prohíba sin acuerdo.",
+  "eje": 1,
+  "etapa": [
+    "E8"
+  ],
+  "decision": [
+    "D4"
+  ],
+  "modulo": [
+    "M-ENTIDAD",
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A7",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://infraestructura.org.co/gobierno-incumple-sus-propias-reglas-y-pone-en-riesgo-1-billon-en-proyectos-estrategicos",
+    "vigente": null,
+    "nota": "Posición del gremio; el decreto citado y la reducción no se comprobaron en su texto oficial."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "Reducción unilateral de vigencias futuras de proyectos en ejecución, aun contra una norma recién expedida: riesgo de pago y de continuidad.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-academico:3",
+      "veredicto": "correcta",
+      "detalle": "Abrí la URL (HTTP 200, fecha «19 Jan, 26»). En el apartado «Reducción unilateral y transgresión de reglas fijadas por el propio Gobierno» la cita es literal: «Recordó que un decreto expedido el 29 de diciembre del año pasado estableció que las vigencias futuras solo podían modificarse si existía acuerdo entre las partes. Sin embargo, dos días después, el propio Gobierno redujo de manera unilateral los recursos». La afirmación se atribuye a la CCI y no la excede. Las cifras de la inferencia ($340.000 y $636.000 millones) están en el primer párrafo."
+    }
+  ]
+}

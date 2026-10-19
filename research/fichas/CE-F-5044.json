@@ -1,0 +1,61 @@
+{
+  "id": "CE-F-5044",
+  "tipo": "documento_tipo",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Documentos Tipo de licitación de obra pública de agua potable y saneamiento básico · Anexo 5 Minuta del Contrato (A5_MinutaContrato_APSBLV1.docx)",
+  "anio": 2020,
+  "institucion": "Colombia Compra Eficiente (paquete descargable de los documentos tipo vigentes)",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29511/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: cláusula de garantías del Anexo 5 y búsqueda de texto en todo el anexo",
+  "localizador": "cláusula 18 (Garantías), cuadro de amparos, fila del anticipo (línea 320 del texto extraído)",
+  "cita": "Buen manejo y correcta inversión del anticipo Hasta la liquidación del contrato o hasta la amortización del anticipo [La Entidad debe definir el valor del amparo de acuerdo con el artículo 2.2.1.2.3.1.11. del Decreto 1082 de 2015]",
+  "afirmacion": "La minuta del documento tipo de agua potable y saneamiento básico también remite el valor del amparo de buen manejo y correcta inversión del anticipo al art. 2.2.1.2.3.1.11 del Decreto 1082 de 2015.",
+  "inferencia": "Inferencia: en el Decreto 1082 (texto consolidado de Función Pública) el art. 2.2.1.2.3.1.11 regula la suficiencia de la garantía de pago anticipado y el art. 2.2.1.2.3.1.10 la del buen manejo del anticipo; la remisión está equivocada.",
+  "eje": 5,
+  "etapa": [
+    "E7"
+  ],
+  "decision": [
+    "D2"
+  ],
+  "modulo": [
+    "M-PLIEGO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A3",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29511/",
+    "vigente": false,
+    "nota": "Según el verificador (2-oct-2026): la minuta citada es la versión obsoleta; su encabezado dice «Código CCE-EICP-IDI-16 [...] Versión No. 1» y los metadatos la fechan el 30-nov-2020. El Listado maestro de CCE (descarga 29514, Res. 275 de 2022) declara la versión 1 «Obsoleto» (vigente del 11/12/2020 al 01/11/2021) y la versión 2 «Obsoleto», y da como «Vigente» la versión 3 (emisión 24/06/2022, vigente desde el 29/08/2022, Resolución 275 de 2022), aunque CCE sirva ese paquete como ítem 04 «Versión vigente a partir del 29 de agosto de 2022». No se comprobó si la versión 3 conserva la misma remisión al .11."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": "Documentos Tipo de licitación de obra pública de agua potable y saneamiento básico (Resolución 248 de 2020, con las modificaciones de la Resolución 275 de 2022), vigente hasta el 28-feb-2027",
+    "motivo_null": "La página oficial da la fecha final (28-feb-2027) pero no la de inicio de la versión con modificaciones de 2022; no se abrió la Resolución 275 de 2022."
+  },
+  "lista_cerrada": "L5-08",
+  "problema_candidato": null,
+  "advertencia": "Los archivos del paquete descargado tienen fecha de noviembre de 2020; no se comprobó si incorporan las modificaciones de la Resolución 275 de 2022.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje5-institucional:3",
+      "veredicto": "vigencia_mal",
+      "detalle": "La cita aparece literal en A5_MinutaContrato_APSBLV1, fila del anticipo de la cláusula 18 (en mi extracción, línea 319). Pero esa minuta es la versión obsoleta: su encabezado dice «Código CCE-EICP-IDI-16 [...] Versión No. 1» y los metadatos la fechan el 30-nov-2020. El Listado maestro de CCE (descarga 29514, Res. 275 de 2022) declara la versión 1 «Obsoleto» (vigente del 11/12/2020 al 01/11/2021) y la versión 2 «Obsoleto», y da como «Vigente» la versión 3 (emisión 24/06/2022, vigente desde el 29/08/2022, Resolución 275 de 2022). La ficha cita entonces una versión sustituida, aunque CCE sirva ese paquete como ítem 04 «Versión vigente a partir del 29 de agosto de 2022». Su propia advertencia reconoce que no se comprobó. No pude comprobar si la versión 3 conserva la misma remisión al .11.",
+      "accion": "vigencia_verificada.vigente pasa a false con la nota del verificador: la minuta citada es la versión 1, declarada obsoleta.",
+      "antes": {
+        "vigencia_verificada": {
+          "fecha": "2026-10-02",
+          "fuente": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29511/",
+          "vigente": true,
+          "nota": "Página oficial (https://www.colombiacompra.gov.co/documentos-tipo/vigentes/?sector=717&nodo=30121): «VIGENTE HASTA EL 28-02-2027», Resolución 248 de 2020 con las modificaciones de la Resolución 275 de 2022."
+        }
+      }
+    }
+  ]
+}

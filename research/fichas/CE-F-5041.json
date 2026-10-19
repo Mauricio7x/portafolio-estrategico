@@ -1,0 +1,56 @@
+{
+  "id": "CE-F-5041",
+  "tipo": "documento_tipo",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Documentos Tipo de licitación de obra pública de infraestructura de transporte, versión 4 · Anexo 5 Minuta del Contrato (A5_MinutaContrato_TLPV4.docx)",
+  "anio": 2024,
+  "institucion": "Colombia Compra Eficiente (paquete descargable de los documentos tipo vigentes)",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29920/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa: el Anexo 5 entero (texto extraído del .docx); además se buscó en los otros 25 archivos del paquete",
+  "localizador": "cláusula 22 (Liquidación), tercer párrafo",
+  "cita": "si el Contratista deja salvedades en la liquidación bilateral, la Entidad podrá liquidar unilateralmente, caso en el cual, esta solo procederá en relación con los aspectos que no hayan sido objeto de acuerdo",
+  "afirmacion": "La opción de cláusula de liquidación de la minuta V4 prevé que, si el contratista deja salvedades en la liquidación bilateral, la entidad puede liquidar unilateralmente en relación con los aspectos que no hayan sido objeto de acuerdo, con una condición adicional que la cita no transcribe.",
+  "inferencia": null,
+  "eje": 5,
+  "etapa": [
+    "E9"
+  ],
+  "decision": [
+    "D4"
+  ],
+  "modulo": [
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A3",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29920/",
+    "vigente": true,
+    "nota": "Página oficial de la versión 4 (https://www.colombiacompra.gov.co/documentos-tipo/vigentes/?sector=712&nodo=29383, consultada el 2-oct-2026): «Versión 4 – Vigente desde el 3 de febrero de 2025 hasta la fecha», adoptada por la Resolución 465 de 2024."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": "2025-02-03",
+    "documento_tipo": "Documentos Tipo de licitación de obra pública de infraestructura de transporte, versión 4 (Resolución 465 de 2024), vigente desde el 3-feb-2025"
+  },
+  "lista_cerrada": "L5-08",
+  "problema_candidato": null,
+  "advertencia": "El término para liquidar lo fija cada entidad («[la Entidad debe indicar el término]»): la minuta no trae un plazo propio. Según el verificador (2-oct-2026), la frase citada sigue sin marca de omisión: «, siempre que la liquidación unilateral pueda contener decisiones nuevas frente a la liquidación acordada o que no hayan sido respondidas por la Entidad con anterioridad a la liquidación»; y toda la cláusula es opcional («[la Entidad podrá usar esta opción de cláusula de liquidación o crearla...]»).",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje5-institucional:3",
+      "veredicto": "no_sostiene",
+      "detalle": "Cláusula 22: la cita es literal hasta «aspectos que no hayan sido objeto de acuerdo», pero la frase sigue sin marca de omisión: «, siempre que la liquidación unilateral pueda contener decisiones nuevas frente a la liquidación acordada o que no hayan sido respondidas por la Entidad con anterioridad a la liquidación». La afirmación quita esa condición y además no dice que toda la cláusula es opcional («[la Entidad podrá usar esta opción de cláusula de liquidación o crearla...]»). Matiz quitado (§5.1). Localizador aceptable, aunque es el cuarto párrafo si se cuenta la nota entre corchetes, criterio que la ficha CE-F-5035 sí usa.",
+      "accion": "Afirmación estrechada: se presenta como opción de cláusula y sin afirmar el alcance completo de la liquidación unilateral; la condición omitida y el carácter opcional van a la advertencia, atribuidos al verificador.",
+      "antes": {
+        "afirmacion": "La minuta V4 prevé que, si el contratista deja salvedades en la liquidación bilateral, la entidad puede liquidar unilateralmente solo lo que no fue objeto de acuerdo.",
+        "advertencia": "El término para liquidar lo fija cada entidad («[la Entidad debe indicar el término]»): la minuta no trae un plazo propio."
+      }
+    }
+  ]
+}

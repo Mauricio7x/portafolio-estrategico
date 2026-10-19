@@ -1,0 +1,41 @@
+{
+  "id": "CE-F-5238",
+  "tipo": "academia",
+  "autor": "Autor de la tesis (persona natural, nombre omitido por la regla 5)",
+  "titulo": "Las multas y la cláusula penal pecuniaria en la contratación estatal. Naturaleza jurídica, pacto, validez, imposición por vía administrativa y control judicial",
+  "anio": 2014,
+  "institucion": "Universidad Nacional de Colombia, Facultad de Derecho, Maestría en Derecho",
+  "url": "https://bffrepositorio.unal.edu.co/server/api/core/bitstreams/7ddbefb6-b9eb-4c2d-9d78-4f8e3d109c29/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: 108 págs.; leídos la introducción y el capítulo 4 de conclusiones (págs. 87-91 de la tesis)",
+  "localizador": "pág. 88 de la tesis (pág. 96 del PDF), cap. 4 «Conclusiones y recomendaciones»",
+  "cita": "la administración tiene la potestad de determinar desde la etapa precontractual el contenido de los pliegos de condiciones […] y por ésta vía define los términos y cláusulas del contrato, reduciéndose el margen de negociación del particular a simples observaciones en relación con los pliegos",
+  "afirmacion": "El autor sostiene que la entidad, al fijar desde la etapa precontractual el contenido de los pliegos, define los términos y cláusulas del contrato, y que el margen de negociación del particular se reduce a simples observaciones a los pliegos.",
+  "inferencia": "Inferencia: la única oportunidad del contratista para discutir el monto de las multas y de la cláusula penal es la etapa de observaciones al proyecto de pliego; después de adjudicado, solo le queda el debido proceso de su imposición.",
+  "eje": 5,
+  "etapa": [
+    "E1",
+    "E8"
+  ],
+  "decision": [
+    "D1",
+    "D4"
+  ],
+  "modulo": [
+    "M-PLIEGO",
+    "M-SEGUIMIENTO"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "el propio documento (fuente académica fechada)",
+    "vigente": null,
+    "nota": "Tesis de 2014 que analiza el art. 17 de la Ley 1150 de 2007 y el art. 86 de la Ley 1474 de 2011; sostiene la posición del autor (crítica a la imposición unilateral), no la regla vigente, que el propio autor reconoce respaldada por la jurisprudencia."
+  },
+  "regla": null,
+  "lista_cerrada": "L5-03",
+  "problema_candidato": "Las multas y la cláusula penal llegan fijadas en el pliego por la entidad; el contratista que no las observa a tiempo las acepta tal como vienen y luego se le imponen unilateralmente.",
+  "advertencia": "La tesis critica la imposición unilateral de multas y cláusula penal como contraria a la legalidad; es la posición del autor, no la regla que aplica la jurisprudencia."
+}

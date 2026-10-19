@@ -1,0 +1,52 @@
+{
+  "id": "CE-F-5042",
+  "tipo": "documento_tipo",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Documentos Tipo de licitación de obra pública de infraestructura de transporte, versión 4 · Documento Base (DocBase_LicObra_TLPV4.docx)",
+  "anio": 2024,
+  "institucion": "Colombia Compra Eficiente (paquete descargable de los documentos tipo vigentes)",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29920/",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: secciones 4.1 (oferta económica), 8.2 (análisis de precios unitarios) y 8.3 (anticipo) del Documento Base",
+  "localizador": "sección 8.2 (Análisis de precios unitarios), segundo párrafo",
+  "cita": "Cualquier error u omisión del contratista en los costos directos o indirectos considerados en su análisis de precios unitarios para los ítems de obra, es de exclusiva responsabilidad del contratista y por lo tanto no podrá reclamar a la entidad reconocimiento alguno adicional",
+  "afirmacion": "En el documento tipo V4 de transporte, los errores u omisiones del contratista en sus APU son de su exclusiva responsabilidad y no dan lugar a reconocimiento adicional.",
+  "inferencia": null,
+  "eje": 5,
+  "etapa": [
+    "E3",
+    "E8"
+  ],
+  "decision": [
+    "D2"
+  ],
+  "modulo": [
+    "M-APU",
+    "M-PRECIO"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A3",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29920/",
+    "vigente": true,
+    "nota": "Página oficial de la versión 4 (https://www.colombiacompra.gov.co/documentos-tipo/vigentes/?sector=712&nodo=29383, consultada el 2-oct-2026): «Versión 4 – Vigente desde el 3 de febrero de 2025 hasta la fecha», adoptada por la Resolución 465 de 2024."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": "2025-02-03",
+    "documento_tipo": "Documentos Tipo de licitación de obra pública de infraestructura de transporte, versión 4 (Resolución 465 de 2024), vigente desde el 3-feb-2025"
+  },
+  "lista_cerrada": "L5-08",
+  "problema_candidato": "Un APU mal armado en la oferta (rendimientos, transporte, equipo) no se corrige en la ejecución: el contratista asume la pérdida y no puede reclamarla como desequilibrio.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje5-institucional:3",
+      "veredicto": "correcta",
+      "detalle": "DocBase_LicObra_TLPV4, sección 8.2, segundo párrafo: la cita aparece literal y la frase sigue «...adicional al valor de los precios unitarios consignados en el formulario de su propuesta», lo que no altera la afirmación. El documento está marcado «(VERSIÓN 4)», código CCE-EICP-GI-01, versión 8. Vigencia V4 confirmada."
+    }
+  ]
+}

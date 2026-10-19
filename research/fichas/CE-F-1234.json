@@ -1,0 +1,47 @@
+{
+  "id": "CE-F-1234",
+  "tipo": "academia",
+  "autor": "Persona natural (nombre omitido por la regla 5 del piloto)",
+  "titulo": "Valor vinculante de los manuales, guías, circulares y documentos tipo de la Agencia Nacional Colombia Compra Eficiente",
+  "anio": 2021,
+  "institucion": "Universidad Pontificia Bolivariana, Escuela de Derecho y Ciencias Políticas, Medellín (trabajo de grado, repositorio institucional)",
+  "url": "https://repository.upb.edu.co/server/api/core/bitstreams/813c20ba-dbc8-41f2-8ae3-e34dd3f43da3/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "completa",
+  "localizador": "cap. III «Según la Doctrina y la Jurisprudencia ¿qué se ha dicho del valor vinculante…?», párrafo sobre la sentencia del 11 de abril de 2019 (pág. 16 del PDF)",
+  "cita": "Según Sentencia del 11 de abril de 2019 el Consejo de Estado declaro nulidad parcial del artículo 159 del Decreto 1510 de 2013, […] por tal motivo no se le establece a Colombia Compra Eficiente una facultad reglamentaria para expedir documentos tipos",
+  "afirmacion": "La autora relata que, en sentencia del 11 de abril de 2019, el Consejo de Estado declaró la nulidad parcial del art. 159 del Decreto 1510 de 2013, de modo que no se reconoce a Colombia Compra Eficiente una facultad reglamentaria para expedir documentos tipo.",
+  "inferencia": "Inferencia: el mismo párrafo explica que, después, la obligatoriedad de los documentos tipo de obra de transporte vino del art. 4 de la Ley 1882 de 2018 y del Decreto 342 de 2019; la base jurídica de los documentos tipo cambió en pocos años (reglamento anulado, luego ley), lo que alimentó la inseguridad durante la transición.",
+  "eje": 1,
+  "etapa": [
+    "T",
+    "E1"
+  ],
+  "decision": [
+    "D3"
+  ],
+  "modulo": [
+    "M-PLIEGO"
+  ],
+  "naturaleza": "practica",
+  "nivel_autoridad": "A6",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://repository.upb.edu.co/server/api/core/bitstreams/813c20ba-dbc8-41f2-8ae3-e34dd3f43da3/content",
+    "vigente": null,
+    "nota": "Relato de 2021 de una sentencia de 2019 que no se abrió para esta ficha; la vigencia actual de la obligatoriedad descansa en la Ley 2022 de 2020, no comprobada aquí."
+  },
+  "regla": null,
+  "lista_cerrada": null,
+  "problema_candidato": "La base jurídica de los documentos tipo cambió en pocos años (facultad reglamentaria anulada en 2019, obligatoriedad por ley después): inseguridad sobre qué documento obliga.",
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje1-academico:3",
+      "veredicto": "correcta",
+      "detalle": "Abrí la URL (HTTP 200, PDF de 20 págs., autora González Beltrán, UPB 2021). En la pág. 16 del PDF, cap. III, la cita aparece literal: «Según Sentencia del 11 de abril de 2019 el Consejo de Estado declaro nulidad parcial del artículo 159 del Decreto 1510 de 2013, […] por tal motivo no se le establece a Colombia Compra Eficiente una facultad reglamentaria para expedir documentos tipos». La afirmación se atribuye a la autora y no la excede. Reparo en la inferencia, no en la afirmación: dice que el párrafo explica que «después» la obligatoriedad vino de la Ley 1882 de 2018. El párrafo no dice «después», y la Ley 1882 (enero de 2018) es anterior a la sentencia de abril de 2019, así que la secuencia «reglamento anulado, luego ley» está mal ordenada."
+    }
+  ]
+}

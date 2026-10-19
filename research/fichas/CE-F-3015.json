@@ -1,0 +1,54 @@
+{
+  "id": "CE-F-3015",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República",
+  "titulo": "Decreto 1082 de 2015, Único Reglamentario del Sector Administrativo de Planeación Nacional (texto consolidado)",
+  "anio": 2015,
+  "institucion": "Departamento Administrativo de la Función Pública · Gestor Normativo",
+  "url": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=77653",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial: art. 2.2.1.2.6.1.5 completo",
+  "localizador": "art. 2.2.1.2.6.1.5 (Bienes o servicios adicionales a la obra pública), numeral 3",
+  "cita": "requiere incluir experiencia adicional para evaluar la idoneidad respecto de los bienes o servicios ajenos a la obra pública, deberá seguir los siguientes parámetros: […] 3. Abstenerse de pedir experiencia exclusiva con entidades estatales, experiencia previa en un territorio específico",
+  "afirmacion": "Si la entidad, de manera excepcional, exige experiencia adicional por bienes o servicios ajenos a la obra pública de transporte, no puede pedirla exclusiva con entidades estatales ni previa en un territorio específico.",
+  "inferencia": null,
+  "eje": 3,
+  "etapa": [
+    "E1",
+    "E2"
+  ],
+  "decision": [
+    "D1",
+    "D3"
+  ],
+  "modulo": [
+    "M-PLIEGO",
+    "M-RUP"
+  ],
+  "naturaleza": "normativa",
+  "nivel_autoridad": "A2",
+  "unificacion": null,
+  "vigencia_verificada": {
+    "fecha": "2026-10-02",
+    "fuente": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=77653 (texto consolidado) y texto del Decreto 0997 de 2026 en https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/",
+    "vigente": true,
+    "nota": "Se comprobó que el Decreto 0997 de 2026 (arts. 1 a 13) no modifica este artículo; el consolidado de Función Pública aún no trae el 0997."
+  },
+  "regla": {
+    "regimen": "Estatuto General",
+    "desde_aviso": null,
+    "documento_tipo": null,
+    "motivo_null": "Norma reglamentaria compilada en el Decreto 1082 de 2015: rige desde su expedición, no desde un aviso de convocatoria."
+  },
+  "lista_cerrada": "L3-06",
+  "problema_candidato": null,
+  "revisiones": [
+    {
+      "fecha": "2026-10-02",
+      "tipo": "verificacion_fase2",
+      "agente": "verificar:eje3-institucional:2",
+      "veredicto": "correcta",
+      "detalle": "Abrí Función Pública norma.php?i=77653 (200, curl --cacert bundle_normas2.pem). El art. 2.2.1.2.6.1.5, numeral 3, dice: «Abstenerse de pedir experiencia exclusiva con entidades estatales, experiencia previa en un territorio específico, limitada en el tiempo o que incluya volúmenes...». La cita es literal, el […] está bien puesto y la afirmación no dice más que la cita. El Decreto 0997 de 2026 (relatoría de CCE, arts. 1 a 14) solo toca los arts. 2.2.1.1.1.4.5, 1.5.4, 1.5.7, 1.3.1, 1.6.1, 1.6.2, 2.1.1, 2.1.3, 2.2.2, 2.2.10, 2.2.1.2.1.2.1, 1.2.12 y 1.5.1, no la subsección 2.2.1.2.6.1, así que la vigencia es correcta."
+    }
+  ]
+}
