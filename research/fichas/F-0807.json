@@ -1,0 +1,31 @@
+{
+  "eje": 6,
+  "fecha_consulta": "2026-10-19",
+  "leida_por": "lector fase2 eje6-academica",
+  "estado_lectura": "parcial",
+  "autoridad": "A6",
+  "tipo": "academia",
+  "id": "F-0807",
+  "autor": "Calderón Ortega, C. G.",
+  "titulo": "Análisis de la ejecución de proyectos de obra pública en Colombia",
+  "anio": 2023,
+  "anio_origen": "portada",
+  "institucion": "Escuela Superior de Administración Pública (Revista Polémica, n.º 26, julio-diciembre de 2023)",
+  "url": "https://revistas.esap.edu.co/index.php/polemica/article/download/948/719",
+  "url_final": "https://revistas.esap.edu.co/index.php/polemica/article/download/948/719",
+  "partes_leidas": [
+    "sección 2.5 (comparación de los proyectos)",
+    "conclusiones"
+  ],
+  "localizador": "sección 2.5, tabla 2, p. 25 del PDF (la numeración impresa de la revista difiere)",
+  "pagina_pdf": 25,
+  "cita_textual": "Se identificó un aumento similar en el presupuesto de los tres primeros procesos, del 24 %, 26 % y 23 % respectivamente.",
+  "afirmacion": "En cuatro contratos de edificaciones públicas analizados por el autor (2023) todos sufrieron modificaciones de alcance con adiciones: el presupuesto aumentó 24 %, 26 %, 23 % y 8 % y el plazo 58 %, 86 %, 33 % y 7 %.",
+  "etapa": "E4",
+  "decision": "D4",
+  "modulo": "M-INT",
+  "vigencia_verificada": "[sin verificar] — estudio de cuatro casos de contratos de entidades distintas; no es norma.",
+  "tipo_contrato": "obra",
+  "cifra_comprobada": "no recalculable: la tabla 2 solo trae porcentajes finales; el artículo no publica valores iniciales y finales en el fragmento leído.",
+  "notas": "Cuatro casos escogidos por el autor (SENA, FAC, SED y el hospital de Mompox, según la tabla). Los dos contratos que más variaron el plazo incluían estudios y diseños (p. 26 del PDF)."
+}

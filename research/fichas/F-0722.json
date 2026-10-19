@@ -1,0 +1,28 @@
+{
+  "id": "F-0722",
+  "tipo": "control",
+  "autor": "Contraloría General de la República",
+  "titulo": "Comunicado de prensa No. 186 (5-dic-2022): pagos que superan el avance físico en proyectos de OCAD PAZ",
+  "anio": 2022,
+  "institucion": "Contraloría General de la República",
+  "url": "https://www.contraloria.gov.co/w/por-riesgos-en-su-ejecuci%C3%B3n-la-contralor%C3%ADa-general-alerta-sobre-115-proyectos-financiados-con-recursos-ocad-paz-por-1-4-billones",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "proyectos 3, 5 y 8 de Caquetá"
+  ],
+  "localizador": "comunicado, proyecto 8 de Caquetá (puente vehicular)",
+  "cita_textual": "el avance financiero es del 46,64%, con pagos por $987.879.556 y no se ha dado inicio a la ejecución de la obra (0% avance físico)",
+  "afirmacion": "La Contraloría alertó en diciembre de 2022 sobre un puente con pagos por 987.879.556 pesos (avance financiero 46,64 %) sin avance físico; en otro caso, la ejecución financiera (88,84 %) superaba la física (77,28 %) y 'superado el anticipo' los giros no estaban cubiertos por garantía.",
+  "etapa": "E4",
+  "decision": "D4",
+  "modulo": "M-PRECIO",
+  "autoridad": "A7",
+  "tipo_contrato": "obra",
+  "vigencia_verificada": "[sin verificar] — alerta de la Contraloría sobre proyectos concretos; no es norma",
+  "anio_origen": "cuerpo",
+  "cifra_comprobada": "cuadra con matiz: 987.879.556 / 2.117.876.607 (valor del proyecto) = 46,64 %; sobre el valor del contrato de obra (1.975.759.113) sería 50,0 %. El 'avance financiero' del comunicado se mide contra el valor del proyecto, no del contrato.",
+  "notas": "Otro caso del mismo comunicado: avance físico 3,78 % y financiero 38,57 % con un pago de 5.147.486.651 que 'corresponde al anticipo' (5.147.486.651 / 13.346.803.925 = 38,57 %). La Contraloría dice que el avance físico debería ser mayor que el financiero. Para el contratista: el anticipo y los giros por encima del avance físico son el primer objeto de alerta de un control fiscal; conviene la garantía del buen manejo del anticipo al día.",
+  "eje": 6,
+  "leida_por": "lector fase2 eje6-institucional",
+  "fecha_consulta": "2026-10-19"
+}

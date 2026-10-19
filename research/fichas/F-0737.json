@@ -1,0 +1,28 @@
+{
+  "id": "F-0737",
+  "tipo": "control",
+  "autor": "Contraloría General de la República",
+  "titulo": "Preguntas frecuentes SIRECI: rendición de información de obras inconclusas (Oficina de Planeación)",
+  "anio": 2021,
+  "institucion": "Contraloría General de la República",
+  "url": "https://www.contraloria.gov.co/documents/342935/388248/PREG+FRECUENTES+SIRECI+-+OBRAS+INCONCLUSAS.pdf/2ef8d391-3739-96f2-a904-198d4df05dca?t=1627675820099&download=true",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "pp. 1-5 del PDF de 8 páginas"
+  ],
+  "localizador": "p. 5 del PDF (8 páginas), pregunta sobre períodos y plazos",
+  "pagina_pdf": 5,
+  "cita_textual": "las rendiciones se deben realizar de forma mensual, la cual se rendirá entre el sexto y décimo dia habil del mes siguiente al periodo mensual.",
+  "afirmacion": "La Contraloría explica a las entidades que, tras la primera rendición (antes del 17-oct-2020), la información de obras inconclusas se reporta cada mes en el SIRECI entre el sexto y décimo día hábil del mes siguiente, según la Resolución Reglamentaria Orgánica 042 de 2020, art. 53.",
+  "etapa": "E5",
+  "decision": "D4",
+  "modulo": "M-NUEVO",
+  "autoridad": "A7",
+  "tipo_contrato": "obra",
+  "vigencia_verificada": "[sin verificar] — guía de la Contraloría de 2021 (fecha tomada del parámetro de la URL, 1627675820099); la resolución citada no se abrió ni se cotejó su vigencia",
+  "anio_origen": "inferido",
+  "notas": "El año 2021 se infiere del parámetro t=1627675820099 de la URL (ms desde 1970, julio de 2021); el PDF no trae fecha visible en el texto leído. Reafirma la definición de la Ley 2020 (art. 2 literal a): obra inconclusa es la que, un año después de vencido el término de liquidación, no concluyó o no presta el servicio; si la causa no es imputable al contratista, un comité técnico de la entidad decide. Implicación: quien tiene contratos sin liquidar por años acumula riesgo de quedar en el registro cuando la entidad reporte.",
+  "eje": 6,
+  "leida_por": "lector fase2 eje6-institucional",
+  "fecha_consulta": "2026-10-19"
+}

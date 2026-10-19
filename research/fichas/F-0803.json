@@ -1,0 +1,30 @@
+{
+  "eje": 6,
+  "fecha_consulta": "2026-10-19",
+  "leida_por": "lector fase2 eje6-academica",
+  "estado_lectura": "parcial",
+  "autoridad": "A6",
+  "tipo": "academia",
+  "id": "F-0803",
+  "autor": "Rojas León, D. F.; Sierra Delgado, D. L.",
+  "titulo": "Análisis de los factores determinantes en los retrasos de proyectos de obra pública terminadas en los últimos cinco años en Bucaramanga",
+  "anio": 2026,
+  "anio_origen": "portada",
+  "institucion": "Corporación Universitaria Minuto de Dios, Especialización en Gerencia de Proyectos (trabajo de grado, mayo de 2026)",
+  "url": "https://repository.uniminuto.edu.co/server/api/core/bitstreams/a7b613ff-4802-4aaa-be3a-6f1f6c6e74d5/content",
+  "partes_leidas": [
+    "pp. 21-22 (antecedentes)",
+    "pp. 45-48 (tabla 2 y resultados)",
+    "p. 51 (entrevistas)"
+  ],
+  "localizador": "cap. de resultados, factores económicos (entrevistas), p. 51 del PDF",
+  "pagina_pdf": 51,
+  "cita_textual": "El retraso en los pagos por parte de la administración genera dificultades para los contratistas, quienes dependen de estos recursos para la adquisición de materiales, el pago de personal y la continuidad de las actividades.",
+  "afirmacion": "En entrevistas a actores de obras públicas de Bucaramanga (2026) el retraso de los pagos de la administración se señala como factor económico que afecta la compra de materiales, la nómina y la continuidad de la obra.",
+  "etapa": "E4",
+  "decision": "D4",
+  "modulo": "M-PRECIO",
+  "vigencia_verificada": "[sin verificar] — evidencia cualitativa de un trabajo de grado, no es una norma.",
+  "tipo_contrato": "obra",
+  "notas": "Evidencia cualitativa (entrevistas), sin cifra de días de mora. En antecedentes (p. 22) los autores citan que la Procuraduría intervino en 2025 «para destrabar recursos de megaobras viales nacionales que estaban paralizadas por morosidad en pagos» (segunda mano, no verificado). Para plata: Detekta no puede deducir de esta fuente un plazo de mora; ver fuentes institucionales del eje."
+}

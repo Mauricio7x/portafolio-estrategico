@@ -1,0 +1,28 @@
+{
+  "id": "F-0736",
+  "tipo": "control",
+  "autor": "Procuraduría General de la Nación",
+  "titulo": "Boletín 1402 de 2024 (11-dic-2024): directores y exfuncionarios del INVIAS a responder por presuntas irregularidades en el proyecto «Caminos Comunitarios para La Paz Total»",
+  "anio": 2024,
+  "institucion": "Procuraduría General de la Nación",
+  "url": "https://www.procuraduria.gov.co/Pages/directores-invias-responder-presuntas-irregularidades-ejecucion-proyecto-caminos-comunitario-paz.aspx",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "encabezado y primeros párrafos del boletín"
+  ],
+  "localizador": "boletín, párrafo 4",
+  "cita_textual": "el INVIAS suscribió un total de 1035 convenios solidarios con igual número de organizaciones de acción comunal-OAC- distribuidos en 521 municipios y 29 departamentos del país",
+  "afirmacion": "La Procuraduría (11-dic-2024) anunció, tras vigilancia preventiva, investigaciones disciplinarias por 1.035 convenios solidarios del INVIAS con organizaciones comunales (233.853 millones, vigencia 2023) por desembolsos sin soportes, prórrogas injustificadas, falta de planeación y deficiente interventoría; y dijo que gran parte de los convenios de 2023 no se publicaron en SECOP II.",
+  "etapa": "E4",
+  "decision": "D1",
+  "modulo": "M-ING",
+  "autoridad": "A7",
+  "tipo_contrato": "obra",
+  "vigencia_verificada": "[sin verificar] — boletín que anuncia investigaciones; no se consultó el desenlace",
+  "anio_origen": "cuerpo",
+  "cifra_comprobada": "derivada: 233.853 millones / 1.035 convenios = 226 millones por convenio en promedio; el boletín no da el desglose y el promedio no es dato de la fuente.",
+  "notas": "Pertenece a la clase de obra que no pasa por concurso abierto (convenios con organizaciones comunales sobre red terciaria) y que, según el boletín, no estuvo publicada en SECOP II: no se ve en los datos abiertos. Implicación para M-ING: la obra pública que no sale en el listado de procesos existe. Se omiten los nombres de los funcionarios que cita el boletín.",
+  "eje": 6,
+  "leida_por": "lector fase2 eje6-institucional",
+  "fecha_consulta": "2026-10-19"
+}

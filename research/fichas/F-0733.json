@@ -1,0 +1,29 @@
+{
+  "id": "F-0733",
+  "tipo": "internacional",
+  "autor": "OCDE",
+  "titulo": "Enhancing the Public Procurement Suppliers Registry in Colombia (OCDE, octubre de 2022)",
+  "anio": 2022,
+  "institucion": "Organización para la Cooperación y el Desarrollo Económicos",
+  "url": "https://www.oecd.org/content/dam/oecd/en/publications/reports/2022/10/enhancing-the-public-procurement-suppliers-registry-in-colombia_d67741e5/36348f43-en.pdf",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "capítulo 2 (pp. 16-21 aprox.: barreras de acceso, tiempos, perspectiva de competencia)"
+  ],
+  "localizador": "p. 18 del PDF (41 páginas), texto bajo «The average time for being enlisted in the registry»",
+  "pagina_pdf": 18,
+  "cita_textual": "In Colombia, however, Chambers of Commerce legally have up to 15 days to deliver the registry, as they need to check and validate documents and therefore registration is not automatic.",
+  "afirmacion": "La OCDE (2022) señala que el RUP puede funcionar como barrera de entrada a la contratación pública y que en Colombia las cámaras de comercio tienen por ley hasta 15 días para entregar el registro (ampliado a 20 por el art. 5 del Decreto 491 de 2020 hasta el 22-may-2022), frente a 8 horas hábiles en Corea o inmediato en Chile y Ecuador.",
+  "etapa": "E0",
+  "decision": "D1",
+  "modulo": "M-RUP",
+  "autoridad": "A6",
+  "tipo_contrato": "todos",
+  "vigencia_verificada": "[sin verificar] — informe de 2022 anterior al Decreto 0997 de 2026 y a otras reformas del RUP; el plazo de 15 días no se cotejó contra el texto vigente de la Ley 1150 de 2007 art. 6",
+  "anio_origen": "metadatos",
+  "cifra_comprobada": "cuadra con la tabla 2.3 del propio informe (Colombia 15 días; Corea 8 horas hábiles; México 2 días; Chile inmediato; Eslovaquia 15 días; Ecuador inmediato). La derogatoria del art. 6 del Decreto 491/2020 por la Ley 2207 de 2022 se cita del informe, no se verificó.",
+  "notas": "El informe analiza el RUP como barrera de competencia y recomienda cotejarlo con los plazos mínimos de ofertas. Para el eje 6 sirve como evidencia de que un RUP lento o exigente puede limitar la pluralidad de oferentes; no mide el efecto en procesos de un solo proponente. El capítulo 2 describe las reglas de competencia (caja de herramientas de la OCDE) sin dato de Colombia sobre número de oferentes. El informe se pidió como insumo del Plan Nacional de Desarrollo 2022-2026.",
+  "eje": 6,
+  "leida_por": "lector fase2 eje6-institucional",
+  "fecha_consulta": "2026-10-19"
+}

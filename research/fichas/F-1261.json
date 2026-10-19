@@ -1,0 +1,28 @@
+{
+  "tipo": "dato",
+  "anio": 2026,
+  "anio_origen": "cuerpo",
+  "fecha_consulta": "2026-10-19",
+  "eje": "muestra",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-INT",
+  "autoridad": "A7",
+  "vigencia_verificada": "[sin verificar] — dato de un proceso, no es afirmación normativa",
+  "leida_por": "agente muestra fase2 lote 3",
+  "id": "F-1261",
+  "autor": "Comité evaluador del Municipio de Puerto Rico (Caquetá)",
+  "titulo": "Informe de evaluación definitivo SAMC-2026-011 (proceso CO1.REQ.10796061)",
+  "institucion": "Municipio de Puerto Rico (Caquetá)",
+  "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=849731864&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "pp. 1-3, 5, 10, 12-13 y 18 (encabezado, proponentes, verificación, resumen)"
+  ],
+  "localizador": "p. 2 (acta de cierre)",
+  "pagina_pdf": 2,
+  "cita_textual": "Según se puede ver en el acta del cierre se recibió la siguiente propuesta:",
+  "afirmacion": "En el proceso SAMC-2026-011 (obra) se recibió una sola propuesta, que el informe declara hábil en todos los requisitos habilitantes (resumen en p. 18).",
+  "tipo_contrato": "obra",
+  "notas": "Conteo: 1 proponente, 1 habilitado, 0 rechazados. Detalle sin nombres en fase2/CO1.REQ.10796061.json. Texto nativo (Word)."
+}

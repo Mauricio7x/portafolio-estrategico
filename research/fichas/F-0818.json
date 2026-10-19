@@ -1,0 +1,34 @@
+{
+  "eje": 6,
+  "fecha_consulta": "2026-10-19",
+  "leida_por": "lector fase2 eje6-academica",
+  "estado_lectura": "parcial",
+  "autoridad": "A1",
+  "tipo": "ley",
+  "id": "F-0818",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 1474 de 2011 (Estatuto Anticorrupción), texto con notas de vigencia (art. 90, inhabilidad por incumplimiento reiterado)",
+  "anio": 2011,
+  "anio_origen": "cuerpo",
+  "institucion": "Secretaría Jurídica Distrital de Bogotá D.C., Régimen Legal de Bogotá",
+  "url": "https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=43292",
+  "partes_leidas": [
+    "arts. 27 y 90 con sus notas de vigencia"
+  ],
+  "localizador": "art. 90 (modificado por el art. 43 de la Ley 1955 de 2019), literales a) y b) e inciso siguiente",
+  "cita_textual": "a) Haber sido objeto de imposición de cinco (5) o más multas durante la ejecución de uno o varios contratos, con una o varias entidades estatales, durante los últimos tres (3) años; b) Haber sido objeto de declaratorias de incumplimiento contractual en por lo menos dos (2) contratos",
+  "afirmacion": "Queda inhabilitado por tres años el contratista con cinco o más multas en los últimos tres años, con dos declaratorias de incumplimiento en los últimos tres años, o con dos multas y un incumplimiento en una misma vigencia fiscal; el término corre desde la publicación del acto que ordena inscribir la última multa o incumplimiento en el RUP, y se extiende a los socios de sociedades de personas.",
+  "etapa": "E5",
+  "decision": "D1",
+  "modulo": "M-RUP",
+  "tipo_contrato": "todos",
+  "vigencia_verificada": {
+    "fecha": "2026-10-19",
+    "fuente": "Régimen legal de Bogotá D.C. (Secretaría Jurídica Distrital), Ley 1474 de 2011 con notas de modificación, https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=43292. El consolidado muestra el art. 90 modificado por el art. 43 de la Ley 1955 de 2019 y la nota de inhibición de la sentencia C-081 de 2014; no se verificaron normas posteriores."
+  },
+  "reformas_cotejadas": [
+    "Ley 1955 de 2019 art. 43 — modifica el art. 90 (ventana de «los últimos tres (3) años» en lugar de «una misma vigencia fiscal» para los literales a y b); consta como texto vigente en el consolidado, la ley no se abrió aparte.",
+    "Ley 2195 de 2022 — un resultado de búsqueda de un despacho de abogados la menciona como modificatoria del art. 90, pero el consolidado de Bogotá no la registra para este artículo: punto sin resolver; reverificar contra el texto oficial."
+  ],
+  "notas": "Texto vigente según el consolidado: la inhabilidad «se hará explícita en el Registro Único de Proponentes». Cuenta para el socio: el parágrafo la extiende a socios de sociedades de personas. También en este consolidado, el art. 27 de la Ley 1474 de 2011 (que adiciona el art. 410A al Código Penal) figura sin notas de modificación (ver F-0799)."
+}

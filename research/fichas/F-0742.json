@@ -1,0 +1,27 @@
+{
+  "id": "F-0742",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 2195 de 2022, artículos 19 y 21 (modifican los arts. 2 y 5 de la Ley 1778 de 2016): sanciones a personas jurídicas por soborno transnacional, multa e inhabilidad hasta 20 años",
+  "anio": 2022,
+  "institucion": "Congreso de la República (texto servido por la Relatoría de Colombia Compra Eficiente)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/ley-2195-de-2022",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "arts. 19 a 22 y art. 51"
+  ],
+  "localizador": "art. 21, numerales 1 y 2",
+  "cita_textual": "Inhabilidad para contratar con el Estado colombiano por un término de hasta veinte (20) años.",
+  "afirmacion": "La Superintendencia de Sociedades puede sancionar a la persona jurídica que dé, ofrezca o prometa dinero u otro beneficio a un servidor público extranjero en un negocio o transacción internacional (art. 2 de la Ley 1778 modificado por el art. 19 de la Ley 2195) con multa de hasta 200.000 salarios mínimos más el mayor valor entre el beneficio obtenido o pretendido, inhabilidad para contratar con el Estado hasta 20 años desde la ejecutoria, publicación y prohibición de incentivos por 10 años; la matriz responde si la subordinada actuó con su consentimiento o tolerancia.",
+  "etapa": "E5",
+  "decision": "D3",
+  "modulo": "M-CONS",
+  "autoridad": "A1",
+  "tipo_contrato": "todos",
+  "vigencia_verificada": "[sin verificar] — se leyó el texto de la ley en la relatoría sin notas de vigencia; no se cotejaron reformas posteriores ni la Ley 1778 de 2016",
+  "reformas_cotejadas": [],
+  "notas": "Alcance: solo el soborno de servidor público extranjero en una transacción internacional (art. 19 de la Ley 2195 de 2022, que modifica el art. 2 de la Ley 1778); no cubre la corrupción con servidores nacionales, cuya vía es la inhabilidad del literal j) del numeral 1 del art. 8 de la Ley 80 (Ley 1474 art. 1, texto de la relatoría: 20 años). El acto sancionatorio se inscribe en el registro mercantil y debe reflejarse en el certificado de existencia y representación (parágrafo del art. 21). El parágrafo 3 del art. 19 dice que no aplica cuando la conducta la realizó un asociado que no detente el control. Interés para M-CONS: la inhabilidad cae sobre la persona jurídica sancionada y puede afectar a un consorcio donde participe; poca probabilidad en contratación de obra local.",
+  "eje": 6,
+  "leida_por": "lector fase2 eje6-institucional",
+  "fecha_consulta": "2026-10-19"
+}

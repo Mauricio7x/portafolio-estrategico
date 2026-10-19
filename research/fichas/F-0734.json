@@ -1,0 +1,27 @@
+{
+  "id": "F-0734",
+  "tipo": "internacional",
+  "autor": "Daheshpour K., Herbert S. (K4D Helpdesk, Institute of Development Studies)",
+  "titulo": "Infrastructure Project Failures in Colombia (K4D Helpdesk Report, 9-ago-2018)",
+  "anio": 2018,
+  "institucion": "Institute of Development Studies (K4D, financiado por el gobierno del Reino Unido)",
+  "url": "https://k4d.ids.ac.uk/?p=1087",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen publicado en la página del informe (no se descargó el PDF completo)"
+  ],
+  "localizador": "resumen del informe, párrafo único tras el título",
+  "cita_textual": "Poor civil engineering is associated with inadequate initial design and design changes, an insufficient initial budget, lack of supervision, unexpected events, a lack of professional experience and competence",
+  "afirmacion": "Una revisión rápida de literatura (2018) atribuye los fallos de obras de infraestructura en Colombia a mala práctica de ingeniería (diseño inicial inadecuado y cambios de diseño, presupuesto inicial insuficiente, falta de supervisión), corrupción, desastres naturales, sabotaje y politización de los grandes proyectos.",
+  "etapa": "E1",
+  "decision": "D4",
+  "modulo": "M-INT",
+  "autoridad": "A6",
+  "tipo_contrato": "obra",
+  "vigencia_verificada": "[sin verificar] — resumen de una revisión de 2018; es evidencia de un problema, no norma",
+  "anio_origen": "cuerpo",
+  "notas": "Es un resumen de literatura secundaria: la lista de causas de ingeniería la toma de un estudio de Forcada y otros de 2017 que no se abrió. Incluye una frase útil: 'In some cases, policies of social inclusion have resulted in the employment of local inexperienced contractors and workers'. El informe concluye que la corrupción es la razón principal de la ineficacia de los controles de compra pública, afirmación que viene de la literatura citada y no se verificó. Complementa con causas de nivel 'planeación' lo que los informes de la Contraloría dicen para casos concretos.",
+  "eje": 6,
+  "leida_por": "lector fase2 eje6-institucional",
+  "fecha_consulta": "2026-10-19"
+}

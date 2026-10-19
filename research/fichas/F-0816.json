@@ -1,0 +1,33 @@
+{
+  "eje": 6,
+  "fecha_consulta": "2026-10-19",
+  "leida_por": "lector fase2 eje6-academica",
+  "estado_lectura": "parcial",
+  "autoridad": "A1",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 80 de 1993 (Estatuto General de Contratación de la Administración Pública), texto con notas de vigencia (art. 8, numeral 1, literal l)",
+  "anio": 1993,
+  "anio_origen": "cuerpo",
+  "institucion": "Secretaría Jurídica Distrital de Bogotá D.C., Régimen Legal de Bogotá",
+  "url": "https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=304",
+  "partes_leidas": [
+    "arts. 7, 8 y 9 con sus notas de vigencia"
+  ],
+  "id": "F-0816",
+  "localizador": "art. 8, numeral 1, literal l) (adicionado por el parágrafo 2 del art. 84 de la Ley 1474 de 2011)",
+  "cita_textual": "El interventor que incumpla el deber de entregar información a la entidad contratante relacionada con el incumplimiento del contrato, con hechos o circunstancias que puedan constituir actos de corrupción tipificados como conductas punibles",
+  "afirmacion": "El interventor que no informe a la entidad sobre incumplimientos del contrato o hechos que puedan constituir actos de corrupción queda inhabilitado por cinco años desde la ejecutoria del acto administrativo que lo declare, previa actuación administrativa.",
+  "etapa": "E4",
+  "decision": "D4",
+  "modulo": "M-CONS",
+  "tipo_contrato": "interventoria",
+  "vigencia_verificada": {
+    "fecha": "2026-10-19",
+    "fuente": "Régimen legal de Bogotá D.C. (Secretaría Jurídica Distrital), Ley 80 de 1993 con notas de modificación y de control de constitucionalidad, https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=304. El literal l) consta como adicionado por la Ley 1474 de 2011, sin notas posteriores en el consolidado."
+  },
+  "reformas_cotejadas": [
+    "Ley 1474 de 2011 art. 84 parágrafo 2 — adiciona el literal l) (consta en el consolidado; no se abrió aparte)."
+  ],
+  "notas": "Específico para interventoría: el deber de informar a la entidad es un riesgo de inhabilidad propio de este tipo de contrato."
+}

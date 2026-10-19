@@ -1,0 +1,34 @@
+{
+  "eje": 6,
+  "fecha_consulta": "2026-10-19",
+  "leida_por": "lector fase2 eje6-academica",
+  "estado_lectura": "parcial",
+  "autoridad": "A1",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 80 de 1993 (Estatuto General de Contratación de la Administración Pública), texto con notas de vigencia (art. 8, numeral 1, literal j)",
+  "anio": 1993,
+  "anio_origen": "cuerpo",
+  "institucion": "Secretaría Jurídica Distrital de Bogotá D.C., Régimen Legal de Bogotá",
+  "url": "https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=304",
+  "partes_leidas": [
+    "arts. 7, 8 y 9 con sus notas de vigencia"
+  ],
+  "id": "F-0813",
+  "localizador": "art. 8, numeral 1, literal j) (texto modificado por el art. 2 de la Ley 2014 de 2019)",
+  "cita_textual": "declaradas responsables judicialmente por la comisión de delitos contra la Administración pública […] la inhabilidad se extenderá a las sociedades de las que hagan parte dichas personas en calidad de administradores, representantes legales […] o de socios controlantes",
+  "afirmacion": "Según el texto con notas de vigencia (Ley 2014 de 2019, art. 2) la inhabilidad por condena judicial por delitos contra la Administración pública u otros de la Ley 1474 de 2011 se extiende a las sociedades de las que esas personas sean administradores, representantes, directivos o socios controlantes (y a matrices y subordinadas), de forma permanente; la Corte declaró inexequible, en la sentencia C-437 de 2023, la excepción de las sociedades anónimas abiertas.",
+  "etapa": "E0",
+  "decision": "D1",
+  "modulo": "M-CONS",
+  "tipo_contrato": "todos",
+  "vigencia_verificada": {
+    "fecha": "2026-10-19",
+    "fuente": "Régimen legal de Bogotá D.C. (Secretaría Jurídica Distrital), Ley 80 de 1993 con notas de modificación y de control de constitucionalidad, https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=304. El consolidado registra las modificaciones de la Ley 1150 de 2007 art. 18, Ley 1474 de 2011 art. 1, Ley 1778 de 2016 art. 31 y Ley 2014 de 2019 art. 2, y la inexequibilidad parcial por la sentencia C-437 de 2023; no se verificaron normas posteriores a la última nota."
+  },
+  "reformas_cotejadas": [
+    "Ley 2014 de 2019 art. 2 — modifica el literal j); consta en el consolidado de Bogotá como texto vigente (la ley no se abrió aparte).",
+    "Sentencia C-437 de 2023 — declara inexequible la expresión «con excepción de las sociedades anónimas abiertas» del inciso 3 del literal j) (según la nota del consolidado; la sentencia no se abrió)."
+  ],
+  "notas": "Dato de socio: para el contratista que arma consorcio o sociedad, la condena penal de un administrador, representante o socio controlante de una sociedad puede inhabilitarla; el mismo literal agrega la suspensión de la personería jurídica y el principio de oportunidad por delitos contra la Administración pública o el patrimonio del Estado. La inhabilidad opera de forma preventiva aunque esté pendiente la impugnación de la sentencia."
+}

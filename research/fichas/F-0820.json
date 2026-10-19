@@ -1,0 +1,30 @@
+{
+  "eje": 6,
+  "fecha_consulta": "2026-10-19",
+  "leida_por": "lector fase2 eje6-academica",
+  "estado_lectura": "parcial",
+  "autoridad": "A6",
+  "tipo": "academia",
+  "id": "F-0820",
+  "autor": "Acero Chacón, A. R.",
+  "titulo": "Principio de selección objetiva y único oferente en la contratación estatal",
+  "anio": 2016,
+  "anio_origen": "portada",
+  "institucion": "Universidad Militar Nueva Granada, Facultad de Derecho, Especialización en Derecho Administrativo",
+  "url": "https://repository.umng.edu.co/bitstreams/2fa49344-3be4-4e9e-87c4-2abd9407b504/download",
+  "url_final": "https://repository.umng.edu.co/server/api/core/bitstreams/2fa49344-3be4-4e9e-87c4-2abd9407b504/content",
+  "partes_leidas": [
+    "resumen",
+    "conclusiones (pp. 15-16)"
+  ],
+  "localizador": "conclusiones, p. 16 del PDF",
+  "pagina_pdf": 16,
+  "cita_textual": "si la propuesta presentada, aunque sea la única no cumple con los requerimientos y necesidades de la entidad esta tiene la posibilidad de rechazar la propuesta y declarar desierta una licitación por falta de proponentes",
+  "afirmacion": "El autor (2016) sostiene que la pluralidad de oferentes no es condición de la selección objetiva en la licitación: con una sola propuesta, si cumple, la entidad puede adjudicar; si no cumple los requerimientos, puede rechazarla y declarar desierta la licitación.",
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-TARJ",
+  "vigencia_verificada": "[sin verificar] — tesis de 2016 que razona con el Decreto 2474 de 2008 y el art. 5 de la Ley 1437 de 2011; es anterior a la reglamentación vigente (Decreto 1082 de 2015) y no se cotejó la norma actual de adjudicación con una sola oferta (anterior a la reforma; reverificar).",
+  "tipo_contrato": "todos",
+  "notas": "Trabajo de especialización, sin datos propios; útil solo como pista de que la oferta única no obliga a declarar desierta la licitación. La norma vigente debe tomarse del texto del Decreto 1082 de 2015 y de la Ley 1150 de 2007 con sus reformas, no de esta tesis."
+}

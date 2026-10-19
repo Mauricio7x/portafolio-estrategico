@@ -1,0 +1,29 @@
+{
+  "eje": 6,
+  "fecha_consulta": "2026-10-19",
+  "leida_por": "lector fase2 eje6-academica",
+  "estado_lectura": "parcial",
+  "autoridad": "A6",
+  "tipo": "academia",
+  "id": "F-0809",
+  "autor": "Calderón Ortega, C. G.",
+  "titulo": "Análisis de la ejecución de proyectos de obra pública en Colombia",
+  "anio": 2023,
+  "anio_origen": "portada",
+  "institucion": "Escuela Superior de Administración Pública (Revista Polémica, n.º 26, julio-diciembre de 2023)",
+  "url": "https://revistas.esap.edu.co/index.php/polemica/article/download/948/719",
+  "partes_leidas": [
+    "sección 2.5 (comparación de los proyectos)",
+    "conclusiones"
+  ],
+  "localizador": "conclusiones, p. 28 del PDF",
+  "pagina_pdf": 28,
+  "cita_textual": "los procesos con mayor participación y pluralidad tuvieron un desarrollo menos satisfactorio en su ejecución debido a las prórrogas y adiciones (y el valor de las mismas) que requirieron para la finalización de sus obras.",
+  "afirmacion": "En cuatro casos, el autor (2023) halló que los procesos con más oferentes tuvieron peor ejecución (más prórrogas y adiciones) y que el proceso calificado de «arbitrario» por los participantes fue el de mejor desempeño: no hay vínculo directo entre la competencia en la selección y el desarrollo del contrato.",
+  "etapa": "E4",
+  "decision": "D4",
+  "modulo": "M-TARJ",
+  "vigencia_verificada": "[sin verificar] — conclusión de cuatro casos; no es norma.",
+  "tipo_contrato": "obra",
+  "notas": "Cuatro casos no permiten inferir: se registra como contraejemplo a la idea de que más oferentes mejora la ejecución. No usar para la tarjeta sin más evidencia."
+}

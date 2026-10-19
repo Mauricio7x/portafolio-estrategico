@@ -1,0 +1,30 @@
+{
+  "eje": 6,
+  "fecha_consulta": "2026-10-19",
+  "leida_por": "lector fase2 eje6-academica",
+  "estado_lectura": "parcial",
+  "autoridad": "A6",
+  "tipo": "academia",
+  "id": "F-0811",
+  "autor": "Nieto Camacho, J.",
+  "titulo": "Análisis de los factores que generan atraso o abandono en las obras públicas de infraestructura en Bogotá",
+  "anio": 2017,
+  "anio_origen": "portada",
+  "institucion": "Universidad La Gran Colombia, Facultad de Postgrados, Especialización en Gerencia",
+  "url": "https://repository.ugc.edu.co/bitstream/handle/11396/3867/An%C3%A1lisis_abandono_obras_p%C3%BAblicas.pdf?sequence=1",
+  "url_final": "https://repository.ugc.edu.co/server/api/core/bitstreams/4919c9e0-18e7-4174-9b26-86923997b936/content",
+  "partes_leidas": [
+    "pp. 6, 45-47 (informe de la Contraloría de Bogotá sobre 25 obras)"
+  ],
+  "localizador": "cap. de resultados, informe de la Contraloría de Bogotá 2016 sobre 25 obras inconclusas, p. 46 del PDF",
+  "pagina_pdf": 46,
+  "cita_textual": "Adicionalmente, el informe establece que del total del valor de los contratos de las 12 entidades es de $970.861,2 millones de los cuales se han girado $836.284 que corresponden al 86,14 % aproximadamente.",
+  "afirmacion": "Según la tesis (2017), que cita un informe de la Contraloría de Bogotá de 2016 sobre 25 obras inconclusas de 12 entidades distritales, se había girado el 86,14 % del valor contratado ($836.284 de $970.861,2 millones) y varias obras seguían inconclusas con avances de 0 % a 100 %.",
+  "etapa": "E5",
+  "decision": "D4",
+  "modulo": "M-INT",
+  "vigencia_verificada": "[sin verificar] — cifras de 2016 tomadas de un informe de la Contraloría de Bogotá citado por una tesis (segunda mano); el informe no se abrió.",
+  "tipo_contrato": "obra",
+  "cifra_comprobada": "cuadra: 836.284 / 970.861,2 = 86,14 %; y 836.284 millones frente a los $16,6 billones del presupuesto de Bogotá 2016 que cita la tesis da 5,04 %, coherente con el «5 %» que ella escribe (p. 47).",
+  "notas": "Muestra: solo las 25 obras que la Contraloría de Bogotá incluyó en su pronunciamiento de 2016; caso de una ciudad, con 79 % del valor en un solo acueducto distrital (p. 45). La tesis atribuye el abandono a mal manejo financiero y administrativo, falta de licencias y permisos y fallas técnicas (p. 46). Antecedente del registro de la Ley 2020 de 2020 (F-0812)."
+}

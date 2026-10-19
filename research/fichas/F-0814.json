@@ -1,0 +1,34 @@
+{
+  "eje": 6,
+  "fecha_consulta": "2026-10-19",
+  "leida_por": "lector fase2 eje6-academica",
+  "estado_lectura": "parcial",
+  "autoridad": "A1",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 80 de 1993 (Estatuto General de Contratación de la Administración Pública), texto con notas de vigencia (art. 9)",
+  "anio": 1993,
+  "anio_origen": "cuerpo",
+  "institucion": "Secretaría Jurídica Distrital de Bogotá D.C., Régimen Legal de Bogotá",
+  "url": "https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=304",
+  "partes_leidas": [
+    "arts. 7, 8 y 9 con sus notas de vigencia"
+  ],
+  "id": "F-0814",
+  "localizador": "art. 9 (De las inhabilidades e incompatibilidades sobrevinientes), inciso 3 y parágrafo 1 (texto modificado por el art. 6 de la Ley 2014 de 2019)",
+  "cita_textual": "Si la inhabilidad o incompatibilidad sobreviene en uno de los miembros de un consorcio o unión temporal, este cederá su participación a un tercero previa autorización escrita de la entidad contratante. En ningún caso podrá haber cesión del contrato entre quienes integran el consorcio",
+  "afirmacion": "Si una inhabilidad sobreviene en un miembro de un consorcio o unión temporal, ese miembro cede su participación a un tercero con autorización escrita de la entidad (no a un integrante); y cuando es la inhabilidad por corrupción del literal j) o hay sanción administrativa por actos de corrupción, la entidad ordena la cesión unilateral sin indemnización al contratista inhábil (parágrafo 1).",
+  "etapa": "E4",
+  "decision": "D1",
+  "modulo": "M-CONS",
+  "tipo_contrato": "todos",
+  "vigencia_verificada": {
+    "fecha": "2026-10-19",
+    "fuente": "Régimen legal de Bogotá D.C. (Secretaría Jurídica Distrital), Ley 80 de 1993 con notas de modificación y de control de constitucionalidad, https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=304. El consolidado registra el art. 9 modificado por el art. 6 de la Ley 2014 de 2019, el art. 9A adicionado por el art. 8 de la misma ley y la inexequibilidad del parágrafo 2 por la sentencia C-037 de 2021."
+  },
+  "reformas_cotejadas": [
+    "Ley 2014 de 2019 art. 6 — modifica el art. 9 (texto vigente según el consolidado; la ley no se abrió aparte).",
+    "Sentencia C-037 de 2021 — declara inexequible el parágrafo 2 (reglamentación en seis meses) según la nota del consolidado; no se abrió."
+  ],
+  "notas": "Riesgo del socio: el integrante inhábil sale y la entidad autoriza al sustituto; el contratista debe tener plan para reemplazar una participación (experiencia, capacidad) a mitad del contrato. El art. 9A ordena a la entidad compulsar copias a las autoridades fiscales, disciplinarias y penales tras la cesión por corrupción."
+}

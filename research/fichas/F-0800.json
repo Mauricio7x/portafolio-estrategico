@@ -1,0 +1,33 @@
+{
+  "eje": 6,
+  "fecha_consulta": "2026-10-19",
+  "leida_por": "lector fase2 eje6-academica",
+  "estado_lectura": "parcial",
+  "autoridad": "A4",
+  "tipo": "juris",
+  "autor": "Corte Constitucional (Sala Plena)",
+  "titulo": "Sentencia C-080 de 2025 (expediente D-15954): constitucionalidad del artículo 410A del Código Penal",
+  "anio": 2025,
+  "anio_origen": "cuerpo",
+  "institucion": "Corte Constitucional de Colombia",
+  "url": "https://www.corteconstitucional.gov.co/relatoria/2025/c-080-25.htm",
+  "unificacion": false,
+  "partes_leidas": [
+    "reseña inicial",
+    "sección 4.1.2 (elementos del tipo penal)",
+    "fundamentos 104-106 (norma de remisión)"
+  ],
+  "vigencia_verificada": "[sin verificar] — es la propia sentencia (6-mar-2025); no se abrió el Código Penal consolidado ni normas posteriores a esa fecha.",
+  "id": "F-0800",
+  "localizador": "Reseña inicial de la sentencia («Examen de la Corte») y fundamentos 104-106",
+  "cita_textual": "el tipo penal debe integrarse, exclusivamente, con el artículo 47.9 del Decreto 2153 de 1992, el cual prohíbe los acuerdos restrictivos de la competencia en procesos de contratación pública, también denominados acuerdos colusorios.",
+  "afirmacion": "La Corte Constitucional declaró exequible el art. 410A del Código Penal por el cargo de tipicidad (6-mar-2025) y precisó que es un tipo penal en blanco que se integra exclusivamente con el art. 47.9 del Decreto 2153 de 1992 (prohibición de acuerdos colusorios en contratación pública).",
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-CONS",
+  "tipo_contrato": "todos",
+  "reformas_cotejadas": [
+    "La sentencia advierte que el Decreto 2153 de 1992 fue modificado por leyes (por ejemplo la Ley 1340 de 2009) y que, si el legislador modifica el art. 47.9, la adecuación típica se hace con la norma vigente al momento de la conducta (fundamento 105)."
+  ],
+  "notas": "La decisión se limita al cargo de tipicidad estricta; según el trámite que relata la sentencia, otros cargos de la demanda fueron inadmitidos o rechazados antes. Se marca unificacion=false porque no se leyó como sentencia de unificación."
+}

@@ -1,0 +1,29 @@
+{
+  "eje": 6,
+  "fecha_consulta": "2026-10-19",
+  "leida_por": "lector fase2 eje6-academica",
+  "estado_lectura": "parcial",
+  "autoridad": "A6",
+  "tipo": "academia",
+  "id": "F-0808",
+  "autor": "Calderón Ortega, C. G.",
+  "titulo": "Análisis de la ejecución de proyectos de obra pública en Colombia",
+  "anio": 2023,
+  "anio_origen": "portada",
+  "institucion": "Escuela Superior de Administración Pública (Revista Polémica, n.º 26, julio-diciembre de 2023)",
+  "url": "https://revistas.esap.edu.co/index.php/polemica/article/download/948/719",
+  "partes_leidas": [
+    "sección 2.5 (comparación de los proyectos)",
+    "conclusiones"
+  ],
+  "localizador": "conclusiones, p. 29 del PDF",
+  "pagina_pdf": 29,
+  "cita_textual": "Se identificó que los plazos otorgados por las entidades para la ejecución de contratos suelen ser superados por el tiempo de ejecución real. Puede deberse a que los plazos de las entidades se encuentran alineados con objetivos de la administración o compromisos políticos",
+  "afirmacion": "El autor (2023) concluye, con cuatro casos, que el plazo real de ejecución suele superar el pactado y lo atribuye a que las entidades fijan plazos alineados con objetivos de la administración o compromisos políticos, sin considerar imprevistos.",
+  "etapa": "E1",
+  "decision": "D4",
+  "modulo": "M-PRECIO",
+  "vigencia_verificada": "[sin verificar] — conclusión de un estudio de cuatro casos; no es norma.",
+  "tipo_contrato": "obra",
+  "notas": "Relevante para D4: un plazo de pliego puede ser optimista de origen; la prórroga posterior no siempre indica falla del contratista. Hipótesis del autor, no probada con muestra."
+}

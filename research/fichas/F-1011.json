@@ -1,0 +1,33 @@
+{
+  "tipo": "academia",
+  "autor": "Serrano Guzmán, M. F.; Carmona Escobar, J. A.; Potes Patiño, J. H.; Pérez Ruiz, D. D.",
+  "titulo": "Causales para la terminación anormal del proceso después de convocada la licitación pública en el Valle del Cauca (2013-2016)",
+  "anio": 2019,
+  "institucion": "Revista Via Iuris n.º 26 (Universidad Católica Luis Amigó/Dialnet; descarga Dialnet)",
+  "url": "https://dialnet.unirioja.es/descarga/articulo/7384264.pdf",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "introducción",
+    "hallazgos (págs. 92-93 impresas)",
+    "tablas 1 a 4",
+    "conclusiones"
+  ],
+  "localizador": "hallazgos, p. 8 del PDF (impresa 92); tablas 1 y 2, p. 9 (impresa 93)",
+  "pagina_pdf": 8,
+  "cita_textual": "Cinco proyectos no podían ser adjudicados a los proponentes porque no cumplían con el registro único de proponentes (rup) […] Tres proyectos no pudieron ser otorgados por falta de garantía de seriedad en la oferta",
+  "afirmacion": "En 8 licitaciones de obra del Valle del Cauca (2013-2016, SECOP I) terminadas antes de adjudicar tras el informe de evaluación, el estudio atribuye el fracaso a requisitos jurídicos del oferente: falta de RUP (5), de garantía de seriedad (3), de certificado de existencia y representación de Cámara de Comercio, de carta de conformación del consorcio y de autorización de Cámara para conformarlo.",
+  "cifra_comprobada": "Parcial: la Tabla 1 (p. 9) cuadra con el texto en RUP (5 procesos) y autorización de Cámara (1); la Tabla 2 da garantía 3 (cuadra), pero carta de conformación 2 procesos y certificado de existencia 3, mientras el texto dice 1 y 2. No cuadra del todo: se repite solo la lista de causas, no los conteos de carta y certificado.",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-DICT",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — trabajo académico sobre procesos de 2013 a 2016 (SECOP I, Decreto 1510 de 2013, anterior a la Ley 1882 de 2018 y al RUP reformado); lo que afirma sobre la norma es lo que él dice; anterior a la reforma; reverificar",
+  "tipo_contrato": "obra",
+  "anio_origen": "portada",
+  "notas": "Muestra de 8 procesos de un sector y una región; la causa viene del informe de evaluación publicado en SECOP I según los autores; no se abrieron los procesos.",
+  "id": "F-1011",
+  "eje": 8,
+  "fecha_consulta": "2026-10-19",
+  "leida_por": "lector fase2 eje8-academica"
+}

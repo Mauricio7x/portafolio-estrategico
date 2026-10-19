@@ -1,0 +1,34 @@
+{
+  "id": "F-0726",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 1955 de 2019, artículo 43, parágrafo: la inhabilidad por incumplimiento reiterado se extiende a los socios",
+  "anio": 2019,
+  "institucion": "Congreso de la República (texto servido por la Relatoría de Colombia Compra Eficiente)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/ley-1955-de-2019/",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "art. 43"
+  ],
+  "localizador": "art. 43, parágrafo",
+  "cita_textual": "La inhabilidad a que se refiere el presente artículo se extenderá a los socios de sociedades de personas a las cuales se haya declarado esta inhabilidad",
+  "afirmacion": "La inhabilidad por incumplimiento reiterado alcanza a los socios de las sociedades de personas inhabilitadas y a las sociedades de personas de las que esos socios formen parte con posterioridad a la declaratoria: un socio sancionado contamina a un consorcio o sociedad nueva.",
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-CONS",
+  "autoridad": "A1",
+  "tipo_contrato": "todos",
+  "vigencia_verificada": {
+    "fecha": "2026-10-19",
+    "fuente": "https://relatoria.colombiacompra.gov.co/normativa/ley-1474-de-2011/ (texto con nota 'Artículo MODIFICADO por el Art. 43 de la Ley 1955 de 2019')"
+  },
+  "reformas_cotejadas": [
+    "Ley 2195 de 2022 art. 51 — adiciona literal d; el parágrafo queda igual (texto abierto)",
+    "Ley 2294 de 2023 art. 372 — el art. 43 de la Ley 1955 no figura entre los derogados (texto abierto)",
+    "Decreto 0997 de 2026 — no modifica el art. 90 (texto abierto)"
+  ],
+  "notas": "El texto del parágrafo dice 'de sociedades de personas': no se verificó si alcanza a sociedades por acciones o a integrantes de consorcios y uniones temporales; la lectura del texto no lo dice. Pendiente de verificar en doctrina. Sin sentencias consultadas. Efecto práctico para D1: antes de aliarse, revisar si algún socio está inhabilitado.",
+  "eje": 6,
+  "leida_por": "lector fase2 eje6-institucional",
+  "fecha_consulta": "2026-10-19"
+}

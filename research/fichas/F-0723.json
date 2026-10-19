@@ -1,0 +1,28 @@
+{
+  "id": "F-0723",
+  "tipo": "control",
+  "autor": "Contraloría General de la República",
+  "titulo": "Comunicado de prensa No. 186 (5-dic-2022): proceso dirigido solo a aliados estratégicos de un fondo mixto con régimen especial",
+  "anio": 2022,
+  "institucion": "Contraloría General de la República",
+  "url": "https://www.contraloria.gov.co/w/por-riesgos-en-su-ejecuci%C3%B3n-la-contralor%C3%ADa-general-alerta-sobre-115-proyectos-financiados-con-recursos-ocad-paz-por-1-4-billones",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "proyecto 3 de Caquetá"
+  ],
+  "localizador": "comunicado, proyecto 3 de Caquetá (vía terciaria en concreto rígido)",
+  "cita_textual": "el proceso de selección se dirigió solamente a empresas previamente inscritas como aliados estratégicos del fondo mixto, lo cual limita la libre concurrencia al proceso y restringe la pluralidad de oferentes",
+  "afirmacion": "La Contraloría observó en 2022 que un ejecutor de obra con regalías, bajo régimen privado de contratación, invitó solo a empresas previamente inscritas como 'aliados estratégicos', lo que limita la libre concurrencia aunque la norma lo permita, y que a más de un año de la aprobación el avance físico era 3,78 %.",
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-ING",
+  "autoridad": "A7",
+  "tipo_contrato": "obra",
+  "vigencia_verificada": "[sin verificar] — hallazgo de alerta de la Contraloría",
+  "anio_origen": "cuerpo",
+  "cifra_comprobada": "cuadra: la Contraloría reporta avance físico 3,78 % y financiero 38,57 %; el pago de 5.147.486.651 es el anticipo (38,57 % de 13.346.803.925).",
+  "notas": "Implicación para el contratista: un proceso de obra pública puede no estar en el régimen general (ejecutor con régimen especial, fondo mixto, convenio) y entonces no aparece en los procesos de SECOP II por modalidad de licitación; hay que saber que existe invitación cerrada. Señal en datos abiertos: contratos de obra de entidades con régimen especial, que no tienen proceso competitivo publicado (no medido).",
+  "eje": 6,
+  "leida_por": "lector fase2 eje6-institucional",
+  "fecha_consulta": "2026-10-19"
+}

@@ -1,0 +1,113 @@
+{
+  "id_del_proceso": "CO1.REQ.10877179",
+  "id_del_portafolio": "CO1.BDOS.10601280",
+  "entidad": "INSTITUCIÓN EDUCATIVA ESCUELA NORMAL SUPERIOR DE COROZAL",
+  "tipo_de_contrato": "Obra",
+  "modalidad_de_contratacion": "Selección Abreviada de Menor Cuantía",
+  "estado_del_procedimiento": "Seleccionado",
+  "precio_base": 164473133,
+  "fecha_consulta": "2026-10-19",
+  "leido_por": "agente muestra fase2 lote 3",
+  "informes": [
+    {
+      "id_documento": "853318320",
+      "nombre_archivo": "n. informe de evaluación final.pdf",
+      "paginas": 6,
+      "texto_pdf": "nativo",
+      "md5": "8ed313a5e4cdcde2d1e8425843a7d0b7",
+      "tipo": "final (único)",
+      "estado_lectura": "completa",
+      "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=853318320&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+      "http": 200
+    }
+  ],
+  "conteos": {
+    "proponentes": 1,
+    "habilitados": 1,
+    "no_habilitados": 0,
+    "rechazados": 0,
+    "nota": "Una oferta, presentada por una persona natural (no se guarda el dato). Habilitada en jurídica, experiencia, financiera, organizacional y residual. Puntaje 99,75; el factor de emprendimiento de mujeres (0,25) no se acredita."
+  },
+  "causas": [],
+  "subsanaciones": {
+    "pedidas": 0,
+    "documentadas_en_informe": true,
+    "detalle": [],
+    "nota": "Todos los ítems de la tabla figuran CUMPLE; el traslado no recibió observaciones (p. 6)."
+  },
+  "adendas": {
+    "n": 0,
+    "archivos_en_indice": 0,
+    "filas_indice": 46,
+    "metodo": "dmgg-8hin proceso=CO1.BDOS.10601280: ningún archivo con «ADENDA» en el nombre."
+  },
+  "documentos_tipo": {
+    "usa": true,
+    "cual": "Documento Base o Documento Tipo CCE-EICP-GI-02 Menor Cuantia (documento del índice; no se bajó el pliego de este proceso)",
+    "version_declarada": null,
+    "fuente": {
+      "id_documento": "842811718",
+      "nombre_archivo": "E.Documento Base o Documento Tipo CCE-EICP-GI-02 Menor Cuantia.pdf",
+      "paginas": 102,
+      "lectura": "búsqueda de «versión»"
+    },
+    "nota": "Sin versión declarada en el texto."
+  },
+  "p6dx_8zbt": {
+    "consulta": "https://www.datos.gov.co/resource/p6dx-8zbt.json?id_del_proceso=CO1.REQ.10877179",
+    "filas": 1,
+    "campos": {
+      "precio_base": {
+        "valor": "164473133",
+        "estado": "lleno",
+        "nota": "coincide con el presupuesto del informe"
+      },
+      "duracion": {
+        "valor": "2",
+        "estado": "lleno",
+        "nota": "coincide con «DOS (2) MESES» del informe"
+      },
+      "unidad_de_duracion": {
+        "valor": "Mes(es)",
+        "estado": "lleno"
+      },
+      "fecha_de_recepcion_de": {
+        "valor": "2026-08-27",
+        "estado": "lleno",
+        "nota": "coincide con el cierre del informe"
+      },
+      "codigo_principal_de_categoria": {
+        "valor": "UNSPECIFIED",
+        "estado": "dudoso"
+      },
+      "categorias_adicionales": {
+        "valor": "No definido",
+        "estado": "dudoso"
+      },
+      "tipo_de_contrato": {
+        "valor": "Obra",
+        "estado": "lleno"
+      },
+      "modalidad_de_contratacion": {
+        "valor": "Selección Abreviada de Menor Cuantía",
+        "estado": "lleno"
+      },
+      "descripci_n_del_procedimiento": {
+        "valor": "(texto presente)",
+        "estado": "lleno"
+      },
+      "respuestas_al_procedimiento": {
+        "valor": "1",
+        "estado": "lleno",
+        "nota": "coincide con la única propuesta"
+      }
+    }
+  },
+  "incidencias": [
+    "Las tablas de jurídica y experiencia traen la leyenda «NO CUMPLE / SUBSANAR» como encabezado de columna, sin marcas: no se toma como requerimiento.",
+    "p6dx: codigo_principal_de_categoria UNSPECIFIED y categorias_adicionales «No definido» (dudosos)."
+  ],
+  "tiempo_aprox_min": 1,
+  "tiempo_nota": "Estimación de la sesión; no se cronometró por proceso.",
+  "privacidad": "No se guarda el nombre ni la cédula de la persona natural que aparece en el informe."
+}

@@ -1,0 +1,28 @@
+{
+  "eje": 6,
+  "fecha_consulta": "2026-10-19",
+  "leida_por": "lector fase2 eje6-academica",
+  "estado_lectura": "completa",
+  "autoridad": "A1",
+  "tipo": "ley",
+  "id": "F-0812",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 2020 de 2020, por medio de la cual se crea el Registro Nacional de Obras Civiles Inconclusas de las entidades estatales",
+  "anio": 2020,
+  "anio_origen": "cuerpo",
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente (relatoría, normativa)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/ley-2020-de-2020/",
+  "partes_leidas": [
+    "texto completo, arts. 1 a 16"
+  ],
+  "localizador": "art. 6 (Actuaciones), inciso 2; art. 2 literal a) para la definición",
+  "cita_textual": "Durante los procesos de selección objetiva para contratistas de obra o interventores, se tendrán en cuenta las anotaciones vigentes en el Registro Nacional de Obras Civiles Inconclusas al momento de evaluar los factores de ponderación de calidad",
+  "afirmacion": "La Ley 2020 de 2020 (17-jul-2020) ordena que en los procesos de selección de contratistas de obra o interventores se tengan en cuenta las anotaciones vigentes del Registro Nacional de Obras Civiles Inconclusas al evaluar los factores de ponderación de calidad, y que las entidades las consulten y analicen sin importar la cuantía.",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-INT",
+  "vigencia_verificada": "[sin verificar] — se leyó el texto de la relatoría de Colombia Compra (sin notas de modificación) y no se abrió ninguna norma posterior; la ley remite al literal a) del art. 5 de la Ley 1150 de 2007 «o la norma que la modifique».",
+  "tipo_contrato": "obra",
+  "reformas_cotejadas": [],
+  "notas": "Art. 2 a): obra inconclusa es la que «un (1) año después de vencido el término de liquidación contractual» no haya concluido de manera satisfactoria; si la causa no es imputable al contratista, un comité técnico de la entidad decide si es inconclusa. Art. 4 c) y o): el registro incorpora la identificación de contratistas, consultores e interventores y los actos de incumplimiento o caducidad. Art. 6 inciso 3: las controversias por los reportes las resuelve la propia entidad reportante. La página de la relatoría muestra un enlace a un concepto de diciembre de 2025 sobre el artículo 1, no abierto. Las cifras de obras inconclusas y la guía de la Contraloría quedan para las fichas institucionales."
+}

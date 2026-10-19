@@ -1,0 +1,28 @@
+{
+  "tipo": "dato",
+  "anio": 2026,
+  "anio_origen": "cuerpo",
+  "fecha_consulta": "2026-10-19",
+  "eje": "muestra",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-INT",
+  "autoridad": "A7",
+  "vigencia_verificada": "[sin verificar] — dato de un proceso, no es afirmación normativa",
+  "leida_por": "agente muestra fase2 lote 3",
+  "id": "F-1270",
+  "autor": "Comité de Estructuración y Evaluación Contractual del Distrito de Medellín",
+  "titulo": "Informe de evaluación con traslado, concurso de méritos abierto de interventoría (proceso CO1.REQ.10244553)",
+  "institucion": "Distrito Especial de Ciencia, Tecnología e Innovación de Medellín",
+  "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=797479433&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "pp. 1-2, 10-11, 32, 48, 82-85; resto por búsqueda; anexos no incluidos en el PDF"
+  ],
+  "localizador": "p. 32 (rechazos); pp. 10-11 (tabla jurídica); p. 84 (traslado)",
+  "pagina_pdf": 32,
+  "cita_textual": "RECHAZADO (Causal del literal H Numeral 1.15)",
+  "afirmacion": "De 73 proponentes, dos quedan rechazados por causales del numeral 1.15 (literales H y A); 50 cumplen jurídica y experiencia en el informe de traslado y 21 tienen NO CUMPLE en alguna de esas tablas, pendientes de subsanación.",
+  "tipo_contrato": "interventoria",
+  "notas": "Informe de traslado del 29-abr-2026; no hay definitivo en el índice. El motivo de los NO CUMPLE está en anexos que no vienen en el PDF. Cifras provisionales."
+}

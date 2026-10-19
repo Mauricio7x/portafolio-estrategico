@@ -1,0 +1,124 @@
+{
+  "id_del_proceso": "CO1.REQ.11027623",
+  "id_del_portafolio": "CO1.BDOS.10746477",
+  "entidad": "INSTITUTO MUNICIPAL DE CULTURA, RECREACION Y DEPORTE DE ZIPAQUIRA",
+  "tipo_de_contrato": "Obra",
+  "modalidad_de_contratacion": "Selección Abreviada de Menor Cuantía",
+  "estado_del_procedimiento": "Seleccionado",
+  "precio_base": 260000000,
+  "fecha_consulta": "2026-10-19",
+  "leido_por": "agente muestra fase2 lote 3",
+  "informes": [
+    {
+      "id_documento": "863563367",
+      "nombre_archivo": "INFORME DE EVALUACIÓN JURIDICA DEFINITIVO.pdf",
+      "paginas": 3,
+      "texto_pdf": "nativo",
+      "md5": "09f9aebf03ec2ec15a163c624c769ce2",
+      "tipo": "jurídico definitivo (el mismo archivo figura como 863563373)",
+      "estado_lectura": "completa",
+      "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=863563367&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+      "http": 200
+    },
+    {
+      "id_documento": "863563369",
+      "nombre_archivo": "INFORME DE EVALUACION TECNICO PISTA DE CICLOMONTAÑISMO FINAL.pdf",
+      "paginas": 9,
+      "texto_pdf": "nativo",
+      "md5": "64f6d99185a5c5f40d0ad7c7771497f8",
+      "tipo": "técnico final (el mismo archivo figura como 863563374)",
+      "estado_lectura": "parcial: pp. 1-2, 6 y 8-9 (encabezado, requisitos, resumen, puntajes y conclusión); pp. 3-5 por búsqueda",
+      "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=863563369&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+      "http": 200
+    }
+  ],
+  "conteos": {
+    "proponentes": 1,
+    "habilitados": 1,
+    "no_habilitados": 0,
+    "rechazados": 0,
+    "nota": "Una oferta. Jurídica: CUMPLE. Técnica: todos los ítems CUMPLE; puntaje 100."
+  },
+  "causas": [],
+  "subsanaciones": {
+    "pedidas": 0,
+    "documentadas_en_informe": true,
+    "detalle": [],
+    "nota": "Ambos informes marcan CUMPLE en todos los ítems; no hay requerimientos de subsanación."
+  },
+  "adendas": {
+    "n": 0,
+    "archivos_en_indice": 0,
+    "filas_indice": 80,
+    "metodo": "dmgg-8hin proceso=CO1.BDOS.10746477: ningún archivo con «ADENDA» en el nombre."
+  },
+  "documentos_tipo": {
+    "usa": true,
+    "cual": "Documento Base Tipo DEFINITIVO CCE-EICP-GI-02 Menor Cuantia (documento del índice; no se bajó el pliego de este proceso)",
+    "version_declarada": null,
+    "fuente": {
+      "id_documento": "856279835",
+      "nombre_archivo": "Documento Base Tipo DEFINITIVO CCE-EICP-GI-02 Menor Cuantia (nombre truncado en el índice)",
+      "paginas": 100,
+      "lectura": "búsqueda de «versión» y de la resolución que adopta los documentos tipo"
+    },
+    "nota": "Sin versión declarada en el texto."
+  },
+  "p6dx_8zbt": {
+    "consulta": "https://www.datos.gov.co/resource/p6dx-8zbt.json?id_del_proceso=CO1.REQ.11027623",
+    "filas": 1,
+    "campos": {
+      "precio_base": {
+        "valor": "260000000",
+        "estado": "lleno",
+        "nota": "coincide con el presupuesto oficial del pliego ($260.000.000,00)"
+      },
+      "duracion": {
+        "valor": "4",
+        "estado": "lleno"
+      },
+      "unidad_de_duracion": {
+        "valor": "Mes(es)",
+        "estado": "lleno"
+      },
+      "fecha_de_recepcion_de": {
+        "valor": "2026-09-17",
+        "estado": "dudoso",
+        "nota": "el informe fija el cierre el 16-sep-2026 a las 3:00 p.m.; contradice el informe"
+      },
+      "codigo_principal_de_categoria": {
+        "valor": "UNSPECIFIED",
+        "estado": "dudoso"
+      },
+      "categorias_adicionales": {
+        "valor": "No definido",
+        "estado": "dudoso"
+      },
+      "tipo_de_contrato": {
+        "valor": "Obra",
+        "estado": "lleno"
+      },
+      "modalidad_de_contratacion": {
+        "valor": "Selección Abreviada de Menor Cuantía",
+        "estado": "lleno"
+      },
+      "descripci_n_del_procedimiento": {
+        "valor": "(texto presente)",
+        "estado": "lleno"
+      },
+      "respuestas_al_procedimiento": {
+        "valor": "1",
+        "estado": "lleno",
+        "nota": "coincide con la única propuesta"
+      }
+    }
+  },
+  "incidencias": [
+    "Precio: la oferta del informe jurídico es $310.921.130,66 (p. 1), frente a un presupuesto oficial de $260.000.000,00 (pliego, p. 36) y un precio_base de p6dx de 260.000.000. La oferta supera el presupuesto en cerca de 19,6 %. El informe no lo menciona y recomienda adjudicar. Sin verificar la causa: no se leyeron acta de cierre ni oferta.",
+    "p6dx: fecha_de_recepcion_de 2026-09-17 contradice el cierre del 16-sep-2026 del informe (dudoso).",
+    "p6dx: codigo_principal_de_categoria UNSPECIFIED y categorias_adicionales «No definido» (dudosos)."
+  ],
+  "tiempo_aprox_min": 1,
+  "tiempo_nota": "Estimación de la sesión; no se cronometró por proceso.",
+  "privacidad": "Sin nombres de proponente, representante, evaluador ni persona natural."
+}

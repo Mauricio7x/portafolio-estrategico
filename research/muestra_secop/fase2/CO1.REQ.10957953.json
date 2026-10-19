@@ -1,0 +1,112 @@
+{
+  "id_del_proceso": "CO1.REQ.10957953",
+  "id_del_portafolio": "CO1.BDOS.10598605",
+  "entidad": "INSTITUCION EDUCATIVA JORGE VILLAMIL ORTEGA",
+  "tipo_de_contrato": "Obra",
+  "modalidad_de_contratacion": "Selección Abreviada de Menor Cuantía",
+  "estado_del_procedimiento": "Seleccionado",
+  "precio_base": 309000000,
+  "fecha_consulta": "2026-10-19",
+  "leido_por": "agente muestra fase2 lote 3",
+  "informes": [
+    {
+      "id_documento": "858567037",
+      "nombre_archivo": "Informe final de Evaluacion.pdf",
+      "paginas": 9,
+      "texto_pdf": "nativo",
+      "md5": "e0c0eb4f1447bb1cf5b4508aef6951cb",
+      "tipo": "PDF con el informe parcial (14-sep-2026) y el informe final (15-sep-2026)",
+      "estado_lectura": "parcial: texto de pp. 2-6 y resumen final; la portada y la tabla inicial de requisitos no se revisaron línea a línea",
+      "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=858567037&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+      "http": 200
+    }
+  ],
+  "conteos": {
+    "proponentes": 2,
+    "habilitados": 2,
+    "no_habilitados": 0,
+    "rechazados": 0,
+    "nota": "Ambas propuestas HABILITADAS en requisitos (p. 3). Orden definitivo: primer lugar 99,7464 puntos; segundo 49,75. Un proponente tiene 0 puntos en calidad, apoyo nacional y emprendimiento; no son causales de no habilitación."
+  },
+  "causas": [],
+  "subsanaciones": {
+    "pedidas": null,
+    "documentadas_en_informe": false,
+    "detalle": [],
+    "nota": "El informe no menciona requerimientos ni subsanaciones; solo dice que el parcial no recibió observaciones (p. 2)."
+  },
+  "adendas": {
+    "n": 0,
+    "archivos_en_indice": 0,
+    "filas_indice": 47,
+    "metodo": "dmgg-8hin proceso=CO1.BDOS.10598605: ningún archivo con «ADENDA» en el nombre."
+  },
+  "documentos_tipo": {
+    "usa": true,
+    "cual": "Documentos Tipo de menor cuantía de obra pública; el pliego declara que son inalterables",
+    "version_declarada": null,
+    "fuente": {
+      "id_documento": "844605676",
+      "nombre_archivo": "Pliego Definitivo de Condiciones Jorge Villamil Ortega.pdf",
+      "paginas": 204,
+      "lectura": "búsqueda de «documento tipo» (10 pasajes) y «versión»"
+    },
+    "nota": "Sin versión declarada en el texto."
+  },
+  "p6dx_8zbt": {
+    "consulta": "https://www.datos.gov.co/resource/p6dx-8zbt.json?id_del_proceso=CO1.REQ.10957953",
+    "filas": 1,
+    "campos": {
+      "precio_base": {
+        "valor": "309000000",
+        "estado": "lleno",
+        "nota": "coincide con el presupuesto del informe"
+      },
+      "duracion": {
+        "valor": "4",
+        "estado": "lleno"
+      },
+      "unidad_de_duracion": {
+        "valor": "Mes(es)",
+        "estado": "lleno"
+      },
+      "fecha_de_recepcion_de": {
+        "valor": "2026-09-04",
+        "estado": "lleno",
+        "nota": "no contrastada con el informe"
+      },
+      "codigo_principal_de_categoria": {
+        "valor": "UNSPECIFIED",
+        "estado": "dudoso"
+      },
+      "categorias_adicionales": {
+        "valor": "No definido",
+        "estado": "dudoso"
+      },
+      "tipo_de_contrato": {
+        "valor": "Obra",
+        "estado": "lleno"
+      },
+      "modalidad_de_contratacion": {
+        "valor": "Selección Abreviada de Menor Cuantía",
+        "estado": "lleno"
+      },
+      "descripci_n_del_procedimiento": {
+        "valor": "(texto presente)",
+        "estado": "lleno"
+      },
+      "respuestas_al_procedimiento": {
+        "valor": "2",
+        "estado": "lleno",
+        "nota": "coincide con las dos propuestas del informe"
+      }
+    }
+  },
+  "incidencias": [
+    "El PDF contiene el informe parcial (14-sep-2026) y el final (15-sep-2026) con el mismo número de proceso: el final reemplaza al parcial.",
+    "p6dx: codigo UNSPECIFIED y categorias «No definido» (dudosos)."
+  ],
+  "tiempo_aprox_min": 1,
+  "tiempo_nota": "Estimación de la sesión; no se cronometró por proceso.",
+  "privacidad": "Sin nombres de proponente, representante ni evaluador (el informe identifica a evaluadores; no se guardan)."
+}

@@ -1,0 +1,33 @@
+{
+  "eje": 6,
+  "fecha_consulta": "2026-10-19",
+  "leida_por": "lector fase2 eje6-academica",
+  "estado_lectura": "parcial",
+  "autoridad": "A1",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 80 de 1993 (Estatuto General de Contratación de la Administración Pública), texto con notas de vigencia (art. 8, numeral 1, literales c e i)",
+  "anio": 1993,
+  "anio_origen": "cuerpo",
+  "institucion": "Secretaría Jurídica Distrital de Bogotá D.C., Régimen Legal de Bogotá",
+  "url": "https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=304",
+  "partes_leidas": [
+    "arts. 7, 8 y 9 con sus notas de vigencia"
+  ],
+  "id": "F-0815",
+  "localizador": "art. 8, numeral 1, literales c), i) y el inciso siguiente sobre el término de cinco años",
+  "cita_textual": "c) Quienes dieron lugar a la declaratoria de caducidad […] i) Los socios de sociedades de personas a las cuales se haya declarado la caducidad […] se extenderán por un término de cinco (5) años contados a partir de la fecha de ejecutoria del acto que declaró la caducidad",
+  "afirmacion": "Son inhábiles para licitar y contratar quienes dieron lugar a la declaratoria de caducidad y los socios de sociedades de personas a las que se declaró caducidad, por cinco años desde la ejecutoria del acto que la declaró.",
+  "etapa": "E5",
+  "decision": "D1",
+  "modulo": "M-CONS",
+  "tipo_contrato": "todos",
+  "vigencia_verificada": {
+    "fecha": "2026-10-19",
+    "fuente": "Régimen legal de Bogotá D.C. (Secretaría Jurídica Distrital), Ley 80 de 1993 con notas de modificación y de control de constitucionalidad, https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=304. Los literales c) e i) y el inciso de los cinco años aparecen sin nota de modificación en el consolidado."
+  },
+  "reformas_cotejadas": [
+    "Sin nota de modificación para los literales c) e i) en el consolidado de Bogotá; no se abrió ninguna norma modificatoria."
+  ],
+  "notas": "Consecuencia en plata: la caducidad saca al contratista y a sus socios (en sociedades de personas) del mercado por cinco años. La inhabilidad por multas e incumplimientos repetidos es otra regla (Ley 1474 de 2011, art. 90; ver F-0818)."
+}

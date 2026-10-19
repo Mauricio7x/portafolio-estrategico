@@ -1,0 +1,28 @@
+{
+  "id": "F-0721",
+  "tipo": "control",
+  "autor": "Contraloría General de la República",
+  "titulo": "Comunicado de prensa No. 186 (5-dic-2022): alerta sobre 115 proyectos de OCAD PAZ por 1,4 billones, interventoría de 24 % del contrato de estudios",
+  "anio": 2022,
+  "institucion": "Contraloría General de la República",
+  "url": "https://www.contraloria.gov.co/w/por-riesgos-en-su-ejecuci%C3%B3n-la-contralor%C3%ADa-general-alerta-sobre-115-proyectos-financiados-con-recursos-ocad-paz-por-1-4-billones",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "encabezado y los ocho proyectos de Caquetá (hasta el proyecto 8)"
+  ],
+  "localizador": "comunicado, proyecto 6 de Caquetá (estudios de gestión del riesgo)",
+  "cita_textual": "el contrato de interventoría, en cuantía de $1.738.084.431, corresponde al 24% del valor del contrato de elaboración de estudios en cuantía de $7.295.890.509",
+  "afirmacion": "La Contraloría alertó en diciembre de 2022 que en un proyecto de estudios con regalías el contrato de interventoría (1.738.084.431 pesos) equivalía al 24 % del contrato de estudios (7.295.890.509) y lo calificó como 'deficiente planeación' que debía auditarse.",
+  "etapa": "E1",
+  "decision": "D2",
+  "modulo": "M-PRECIO",
+  "autoridad": "A7",
+  "tipo_contrato": "interventoria",
+  "vigencia_verificada": "[sin verificar] — hallazgo de alerta de la Contraloría, no es una norma; la Contraloría dice que el 24 % excede 'el máximo del porcentaje en los procesos de contratación pública' sin citar la norma",
+  "anio_origen": "cuerpo",
+  "cifra_comprobada": "cuadra: 1.738.084.431 / 7.295.890.509 = 23,8 % (el comunicado redondea a 24 %). La Contraloría no cita qué norma fija el 'máximo'; esa referencia no se verificó y no se repite como límite legal.",
+  "notas": "Mismo comunicado: 115 de 165 proyectos de OCAD PAZ (1,4 de 1,8 billones) con alertas; priorizados para vigilancia en 2023. Para quien oferta una interventoría: un contrato de interventoría que pesa casi un cuarto del contrato vigilado es una señal que la Contraloría revisa. Se omiten nombres de ejecutores y contratistas.",
+  "eje": 6,
+  "leida_por": "lector fase2 eje6-institucional",
+  "fecha_consulta": "2026-10-19"
+}

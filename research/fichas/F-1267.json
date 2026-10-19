@@ -1,0 +1,28 @@
+{
+  "tipo": "dato",
+  "anio": 2026,
+  "anio_origen": "cuerpo",
+  "fecha_consulta": "2026-10-19",
+  "eje": "muestra",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-INT",
+  "autoridad": "A7",
+  "vigencia_verificada": "[sin verificar] — dato de un proceso, no es afirmación normativa",
+  "leida_por": "agente muestra fase2 lote 3",
+  "id": "F-1267",
+  "autor": "Comité evaluador del Municipio de Zarzal (Valle del Cauca)",
+  "titulo": "Informe final de verificación de requisitos habilitantes y evaluación de ofertas tras subsanación, MZ-SA023 de 2026 (proceso CO1.REQ.10715584)",
+  "institucion": "Municipio de Zarzal (Valle del Cauca)",
+  "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=836424144&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+  "estado_lectura": "completa",
+  "partes_leidas": [
+    "pp. 1-4 (texto completo)"
+  ],
+  "localizador": "p. 1 (numeral segundo del preliminar); p. 3 (resultado final)",
+  "pagina_pdf": 1,
+  "cita_textual": "Conforme a los requerimientos consignados en el numeral Segundo del informe preliminar, el Comité efectuó la siguiente verificación:",
+  "afirmacion": "Una oferta. El preliminar la condicionó a nueve requerimientos; el informe final da por atendidos ocho y declara la oferta hábil en primer orden. El noveno (bienes nacionales) no se acreditó y solo quita puntaje.",
+  "tipo_contrato": "obra",
+  "notas": "Duración de p6dx = 0 días frente a 90 días calendario del informe (dudoso). El preliminar no se bajó."
+}

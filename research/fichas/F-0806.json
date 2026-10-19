@@ -1,0 +1,29 @@
+{
+  "eje": 6,
+  "fecha_consulta": "2026-10-19",
+  "leida_por": "lector fase2 eje6-academica",
+  "estado_lectura": "parcial",
+  "autoridad": "A6",
+  "tipo": "academia",
+  "id": "F-0806",
+  "autor": "Angarita Ospina, J. D.; Moica Mancilla, D. R.; Sereno Caicedo, S. L.; Ramon Mahecha, E.",
+  "titulo": "Las adiciones y prórrogas como mecanismo excepcional frente a los principios de planeación y anualidad presupuestal",
+  "anio": 2019,
+  "anio_origen": "cuerpo",
+  "institucion": "Revista Administración & Desarrollo, vol. 49, n.º 2 (julio-diciembre 2019)",
+  "url": "https://dialnet.unirioja.es/descarga/articulo/8121595.pdf",
+  "partes_leidas": [
+    "tablas 1 a 7 y conclusiones (pp. 8-13 del PDF)"
+  ],
+  "localizador": "sección de resultados, tabla 4, p. 10 del PDF",
+  "pagina_pdf": 10,
+  "cita_textual": "en la vigencia 2017 el 91 % de éstos fueron prorrogados, mientras que en la vigencia 2018 la prórroga fue de un 67 % de los mismos",
+  "afirmacion": "Con datos de SECOP I, la Gobernación del Tolima prorrogó el 91 % de los contratos celebrados por licitación pública en 2017 y el 67 % en 2018; los autores concluyen que adicionar y prorrogar es práctica habitual y que SECOP no registra las razones.",
+  "etapa": "E4",
+  "decision": "D4",
+  "modulo": "M-INT",
+  "vigencia_verificada": "[sin verificar] — hallazgo empírico de 2017-2018 de una sola entidad territorial; no es norma.",
+  "tipo_contrato": "todos",
+  "cifra_comprobada": "2017 cuadra: 10 contratos prorrogados (tabla 5: 4+4+1+1) de 11 celebrados = 90,9 %. 2018 no cuadra: la tabla 5 suma 12 prorrogados y el texto da 20 contratos celebrados (12/20 = 60 %, no 67 %). Los autores no explican la diferencia.",
+  "notas": "Muestra pequeña (11 y 20 contratos) de una gobernación; incluye contratos de obra y de otros objetos (el mismo estudio dice que predominan obra y prestación de servicios). Un hallazgo adicional (p. 13): los documentos de adición o prórroga cargados en SECOP I no señalan las razones que los motivaron."
+}

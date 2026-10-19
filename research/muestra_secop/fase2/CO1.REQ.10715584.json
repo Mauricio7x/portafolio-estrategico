@@ -1,0 +1,197 @@
+{
+  "id_del_proceso": "CO1.REQ.10715584",
+  "id_del_portafolio": "CO1.BDOS.10437275",
+  "entidad": "MUNICIPIO DE ZARZAL",
+  "tipo_de_contrato": "Obra",
+  "modalidad_de_contratacion": "Selección Abreviada de Menor Cuantía",
+  "estado_del_procedimiento": "Seleccionado",
+  "precio_base": 487025411,
+  "fecha_consulta": "2026-10-19",
+  "leido_por": "agente muestra fase2 lote 3",
+  "informes": [
+    {
+      "id_documento": "836424144",
+      "nombre_archivo": "Informe_Final_Evaluacion_MZ_SA023_2026.pdf",
+      "paginas": 4,
+      "texto_pdf": "nativo",
+      "md5": "80cd5c5c5e8b895493a6430a649e3d47",
+      "tipo": "final tras subsanación (único en el índice; el preliminar del 27-jul-2026 no se bajó)",
+      "estado_lectura": "completa (texto de las 4 páginas; el preliminar solo se conoce por su resumen en este informe)",
+      "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=836424144&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+      "http": 200
+    }
+  ],
+  "conteos": {
+    "proponentes": 1,
+    "habilitados": 1,
+    "no_habilitados": 0,
+    "rechazados": 0,
+    "nota": "Una oferta, hábil tras subsanación y aclaraciones; primer orden de elegibilidad con 792,5 puntos de 1.000. El incentivo a la industria nacional (200 pts) queda en 0 por falta de precisión; el informe dice que no afecta la habilitación."
+  },
+  "causas": [
+    {
+      "categoria": "juridica",
+      "detalle": "Antecedentes disciplinarios de la persona jurídica y de su representante legal: no constaban en el preliminar; aportados en la subsanación.",
+      "n": 1,
+      "subsanada": true,
+      "informe": "836424144",
+      "pagina_pdf": 1
+    },
+    {
+      "categoria": "juridica",
+      "detalle": "Antecedentes fiscales (SIBOR) de la persona jurídica: aportados en la subsanación.",
+      "n": 1,
+      "subsanada": true,
+      "informe": "836424144",
+      "pagina_pdf": 1
+    },
+    {
+      "categoria": "tecnica",
+      "detalle": "Título y tarjeta profesional del residente de obra: aportados en la subsanación.",
+      "n": 1,
+      "subsanada": true,
+      "informe": "836424144",
+      "pagina_pdf": 1
+    },
+    {
+      "categoria": "tecnica",
+      "detalle": "Dedicación del 50 % del residente de obra durante todo el plazo: ratificada en la subsanación.",
+      "n": 1,
+      "subsanada": true,
+      "informe": "836424144",
+      "pagina_pdf": 1
+    },
+    {
+      "categoria": "financiera",
+      "detalle": "Corrección del Anexo 9, ingresos operacionales 2024-2025 y soportes de costos para la capacidad residual: atendidos.",
+      "n": 1,
+      "subsanada": true,
+      "informe": "836424144",
+      "pagina_pdf": 1
+    },
+    {
+      "categoria": "financiera",
+      "detalle": "Flujo de inversión mensual ajustado al valor total de la oferta: atendido.",
+      "n": 1,
+      "subsanada": true,
+      "informe": "836424144",
+      "pagina_pdf": 1
+    },
+    {
+      "categoria": "tecnica",
+      "detalle": "Aclaración del programa de obra (rótulos, plazo y hitos únicos): atendida.",
+      "n": 1,
+      "subsanada": true,
+      "informe": "836424144",
+      "pagina_pdf": 1
+    },
+    {
+      "categoria": "tecnica",
+      "detalle": "Precisión del promedio mensual de empleos directos: atendida (factor puntuable).",
+      "n": 1,
+      "subsanada": true,
+      "informe": "836424144",
+      "pagina_pdf": 1
+    },
+    {
+      "categoria": "otra",
+      "detalle": "Relación de bienes y servicios nacionales, cantidades y origen (factor puntuable): no aportada; el informe dice que no afecta la habilitación, pero califica con 0 puntos.",
+      "n": 1,
+      "subsanada": false,
+      "informe": "836424144",
+      "pagina_pdf": 2
+    }
+  ],
+  "subsanaciones": {
+    "pedidas": 9,
+    "documentadas_en_informe": true,
+    "detalle": [
+      "Antecedentes disciplinarios (persona jurídica y representante)",
+      "Antecedentes fiscales de la persona jurídica",
+      "Título y tarjeta del residente de obra",
+      "Dedicación del residente (50 %)",
+      "Anexo 9 y soportes de costos",
+      "Flujo de inversión mensual",
+      "Aclaración del programa de obra",
+      "Precisión del promedio de empleos",
+      "Relación de bienes y servicios nacionales (no acreditada)"
+    ],
+    "nota": "Tabla de requerimientos del numeral segundo del preliminar (pp. 1-2). Ocho quedaron atendidos; el noveno no se acreditó y solo quita puntaje."
+  },
+  "adendas": {
+    "n": 0,
+    "archivos_en_indice": 0,
+    "filas_indice": 35,
+    "metodo": "dmgg-8hin proceso=CO1.BDOS.10437275: ningún archivo con «ADENDA» en el nombre."
+  },
+  "documentos_tipo": {
+    "usa": false,
+    "cual": "Ninguno: el pliego no menciona documentos tipo (0 coincidencias)",
+    "version_declarada": null,
+    "fuente": {
+      "id_documento": "829261721",
+      "nombre_archivo": "08. Pliego de Condiciones.pdf",
+      "paginas": 50,
+      "lectura": "búsqueda de «documento tipo» (0)"
+    },
+    "nota": "Sin versión que declarar."
+  },
+  "p6dx_8zbt": {
+    "consulta": "https://www.datos.gov.co/resource/p6dx-8zbt.json?id_del_proceso=CO1.REQ.10715584",
+    "filas": 1,
+    "campos": {
+      "precio_base": {
+        "valor": "487025411",
+        "estado": "lleno",
+        "nota": "coincide con el presupuesto oficial del informe"
+      },
+      "duracion": {
+        "valor": "0",
+        "estado": "dudoso",
+        "nota": "el informe fija un plazo de 90 días calendario; p6dx dice 0"
+      },
+      "unidad_de_duracion": {
+        "valor": "día(s)",
+        "estado": "lleno"
+      },
+      "fecha_de_recepcion_de": {
+        "valor": "2026-07-24",
+        "estado": "lleno",
+        "nota": "coincide con el cierre del informe"
+      },
+      "codigo_principal_de_categoria": {
+        "valor": "UNSPECIFIED",
+        "estado": "dudoso"
+      },
+      "categorias_adicionales": {
+        "valor": "No definido",
+        "estado": "dudoso"
+      },
+      "tipo_de_contrato": {
+        "valor": "Obra",
+        "estado": "lleno"
+      },
+      "modalidad_de_contratacion": {
+        "valor": "Selección Abreviada de Menor Cuantía",
+        "estado": "lleno"
+      },
+      "descripci_n_del_procedimiento": {
+        "valor": "(texto presente)",
+        "estado": "lleno"
+      },
+      "respuestas_al_procedimiento": {
+        "valor": "1",
+        "estado": "lleno",
+        "nota": "coincide con la única propuesta"
+      }
+    }
+  },
+  "incidencias": [
+    "p6dx: duracion 0 días frente a 90 días calendario del informe (dudoso); codigo UNSPECIFIED y categorias «No definido» (dudosos).",
+    "El informe final no incluye los anexos de subsanación: los documentos aportados no se verificaron, solo lo que el informe dice de ellos.",
+    "Las causas se toman del resumen del propio informe final; el preliminar (no bajado) pudo tener puntajes distintos."
+  ],
+  "tiempo_aprox_min": 1,
+  "tiempo_nota": "Estimación de la sesión; no se cronometró por proceso.",
+  "privacidad": "Sin nombres de proponente, representante, evaluador ni persona natural; el informe identifica a un proponente persona natural y su cédula, no se guardan."
+}

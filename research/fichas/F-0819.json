@@ -1,0 +1,29 @@
+{
+  "eje": 6,
+  "fecha_consulta": "2026-10-19",
+  "leida_por": "lector fase2 eje6-academica",
+  "estado_lectura": "parcial",
+  "autoridad": "A6",
+  "tipo": "academia",
+  "id": "F-0819",
+  "autor": "Scheller D'Angelo, A.; Silva Maestre, S.",
+  "titulo": "La corrupción en la contratación pública: operatividad, tipificación, percepción, costos y beneficios",
+  "anio": 2017,
+  "anio_origen": "portada",
+  "institucion": "Fundación Universitaria Los Libertadores (Revista VIA IURIS, núm. 23)",
+  "url": "https://www.redalyc.org/pdf/2739/273957284004.pdf",
+  "partes_leidas": [
+    "pp. 13-21 (operación de la corrupción y tipificación)"
+  ],
+  "localizador": "nota al pie 8 (caso «carrusel de la contratación de la Alcaldía de Bogotá»), p. 14 del PDF",
+  "pagina_pdf": 14,
+  "cita_textual": "contratistas del 70 % de las obras que se adjudicaron durante el periodo de administración del exalcalde",
+  "afirmacion": "Las autoras (2017) reportan, en una nota al pie sobre el caso «carrusel de la contratación de la Alcaldía de Bogotá» (2008-2010), que un grupo contratista condenado penalmente habría sido adjudicatario del 70 % de las obras adjudicadas durante esa administración.",
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-INT",
+  "vigencia_verificada": "[sin verificar] — hecho histórico de un caso penal de 2010-2016 citado en una nota al pie; no es norma.",
+  "tipo_contrato": "obra",
+  "cifra_comprobada": "no recalculable: el 70 % aparece en una nota al pie sin fuente ni denominador; la sentencia y el informe no se abrieron. No se repite como hecho.",
+  "notas": "Caso extremo de concentración del ganador asociado a cohecho; sirve de contexto histórico (no como medición actual). Para no ligar nombres a un proceso, la cita omite los nombres propios que aparecen en la nota. Detekta solo puede medir concentración con datos abiertos recientes; ver F-0781 (red de proveedores en SECOP II)."
+}

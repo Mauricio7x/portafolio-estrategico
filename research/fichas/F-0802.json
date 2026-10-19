@@ -1,0 +1,31 @@
+{
+  "eje": 6,
+  "fecha_consulta": "2026-10-19",
+  "leida_por": "lector fase2 eje6-academica",
+  "estado_lectura": "parcial",
+  "autoridad": "A6",
+  "tipo": "academia",
+  "id": "F-0802",
+  "autor": "Rojas León, D. F.; Sierra Delgado, D. L.",
+  "titulo": "Análisis de los factores determinantes en los retrasos de proyectos de obra pública terminadas en los últimos cinco años en Bucaramanga",
+  "anio": 2026,
+  "anio_origen": "portada",
+  "institucion": "Corporación Universitaria Minuto de Dios, Especialización en Gerencia de Proyectos (trabajo de grado, mayo de 2026)",
+  "url": "https://repository.uniminuto.edu.co/server/api/core/bitstreams/a7b613ff-4802-4aaa-be3a-6f1f6c6e74d5/content",
+  "partes_leidas": [
+    "pp. 21-22 (antecedentes)",
+    "pp. 45-48 (tabla 2 y resultados)",
+    "p. 51 (entrevistas)"
+  ],
+  "localizador": "cap. de resultados, tabla 2 y texto, p. 46 del PDF",
+  "pagina_pdf": 46,
+  "cita_textual": "El caso más representativo corresponde al proyecto Centro Caminable, el cual presentó un sobrecosto del 170% respecto al valor inicial del contrato. Le sigue el Intercambiador Mesón de los Búcaros con un incremento del 63%",
+  "afirmacion": "En diez obras públicas del municipio de Bucaramanga estudiadas con contratos de SECOP II (trabajo de grado, 2026) el presupuesto final superó al inicial entre 0 % y 170 %, con el mayor atraso (34 meses) en el Intercambiador Mesón de los Búcaros.",
+  "etapa": "E4",
+  "decision": "D4",
+  "modulo": "M-INT",
+  "vigencia_verificada": "[sin verificar] — hallazgo empírico de un trabajo de grado, no es una norma.",
+  "tipo_contrato": "obra",
+  "cifra_comprobada": "recalculada con la tabla 2 del propio trabajo: sobrecostos 63,0 %, 29,9 %, 169,9 %, 0 %, 5,8 %, 5,8 %, 8,5 %, 49,8 %, 34,3 %, 0 % (cuadran con los porcentajes de la tabla) y retrasos 34, 1, 1,5, 0, 0,5, 2, 10, 4, 12, 3 meses (cuadran con plazo final menos inicial). NO cuadra «el 30 % de la muestra presentó incrementos superiores al 50 %» (p. 47): con los valores exactos solo dos de diez (63 % y 170 %) superan el 50 %; el 49,8 % no lo supera (20 %, no 30 %). Costo total: 127.695 M iniciales frente a 177.167 M finales (+38,7 %, cálculo propio con la tabla).",
+  "notas": "Muestra de diez casos escogidos por el autor entre obras terminadas (no es una muestra aleatoria). Los autores atribuyen 70 % a factores técnicos y 30 % a planeación contractual (p. 48), con diseños deficientes en 8 contratos y cambios de alcance en 7."
+}

@@ -1,0 +1,112 @@
+{
+  "id_del_proceso": "CO1.REQ.10796061",
+  "id_del_portafolio": "CO1.BDOS.10511593",
+  "entidad": "MUNICIPIO DE PUERTO RICO - CAQUETA",
+  "tipo_de_contrato": "Obra",
+  "modalidad_de_contratacion": "Selección Abreviada de Menor Cuantía",
+  "estado_del_procedimiento": "Seleccionado",
+  "precio_base": 67888601,
+  "fecha_consulta": "2026-10-19",
+  "leido_por": "agente muestra fase2 lote 3",
+  "informes": [
+    {
+      "id_documento": "849731864",
+      "nombre_archivo": "Informe de evaluacion definitivo SAMC-2026-011.pdf",
+      "paginas": 30,
+      "texto_pdf": "nativo",
+      "md5": "1e5d439e4defefa0d4034f93de5da15c",
+      "tipo": "definitivo (único)",
+      "estado_lectura": "parcial: pp. 1-3, 5, 10, 12-13 y 18 (encabezado, proponentes, verificación, resumen); resto por búsqueda de términos",
+      "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=849731864&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+      "http": 200
+    }
+  ],
+  "conteos": {
+    "proponentes": 1,
+    "habilitados": 1,
+    "no_habilitados": 0,
+    "rechazados": 0,
+    "nota": "Una sola propuesta de persona jurídica. El Formato 12 (emprendimiento y mujeres) figura NO CUMPLE, pero es un criterio de 0,25 puntos, no causal de no habilitación."
+  },
+  "causas": [],
+  "subsanaciones": {
+    "pedidas": null,
+    "documentadas_en_informe": false,
+    "detalle": [],
+    "nota": "El encabezado (p. 1) dice que se evaluaron «documentos aportados como subsanación», pero el informe no dice cuántos requerimientos hubo ni cuáles."
+  },
+  "adendas": {
+    "n": 0,
+    "archivos_en_indice": 0,
+    "filas_indice": 70,
+    "metodo": "dmgg-8hin proceso=CO1.BDOS.10511593: ningún archivo con «ADENDA» en el nombre."
+  },
+  "documentos_tipo": {
+    "usa": true,
+    "cual": "Documento Base o Documento Tipo CCE-EICP-GI-02 Menor Cuantia (declarado aplicable en el pliego definitivo, pp. 1-2)",
+    "version_declarada": null,
+    "fuente": {
+      "id_documento": "836624264",
+      "nombre_archivo": "Pliegos definitivos.pdf",
+      "paginas": 82,
+      "lectura": "pp. 1-2 y búsqueda de «versión»"
+    },
+    "nota": "El pliego no declara versión del documento tipo. Remite a «la resolución que adopta los documentos tipo» sin número; la Resolución 540 de 2025 aparece solo para bienes o servicios adicionales."
+  },
+  "p6dx_8zbt": {
+    "consulta": "https://www.datos.gov.co/resource/p6dx-8zbt.json?id_del_proceso=CO1.REQ.10796061",
+    "filas": 1,
+    "campos": {
+      "precio_base": {
+        "valor": "67888601",
+        "estado": "lleno",
+        "nota": "coincide con el valor de la oferta del informe; el informe no declara el presupuesto oficial en cifra, así que no se contrasta"
+      },
+      "duracion": {
+        "valor": "2",
+        "estado": "lleno"
+      },
+      "unidad_de_duracion": {
+        "valor": "Mes(es)",
+        "estado": "lleno"
+      },
+      "fecha_de_recepcion_de": {
+        "valor": "2026-08-06",
+        "estado": "lleno",
+        "nota": "coincide con el cierre del informe (06-ago-2026)"
+      },
+      "codigo_principal_de_categoria": {
+        "valor": "UNSPECIFIED",
+        "estado": "dudoso"
+      },
+      "categorias_adicionales": {
+        "valor": "No definido",
+        "estado": "dudoso"
+      },
+      "tipo_de_contrato": {
+        "valor": "Obra",
+        "estado": "lleno"
+      },
+      "modalidad_de_contratacion": {
+        "valor": "Selección Abreviada de Menor Cuantía",
+        "estado": "lleno"
+      },
+      "descripci_n_del_procedimiento": {
+        "valor": "(texto presente)",
+        "estado": "lleno"
+      },
+      "respuestas_al_procedimiento": {
+        "valor": "1",
+        "estado": "lleno",
+        "nota": "coincide con una propuesta recibida"
+      }
+    }
+  },
+  "incidencias": [
+    "La conclusión (p. 13) cita «SAMC-2026-009» y el resto del informe «SAMC-2026-011»: error de numeración del informe, sin efecto en las cifras.",
+    "p6dx: codigo_principal_de_categoria UNSPECIFIED y categorias_adicionales «No definido» (dudosos)."
+  ],
+  "tiempo_aprox_min": 1,
+  "tiempo_nota": "Estimación de la sesión; no se cronometró por proceso.",
+  "privacidad": "Sin nombres de proponente, representante, evaluador ni persona natural."
+}

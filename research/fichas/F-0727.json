@@ -1,0 +1,29 @@
+{
+  "id": "F-0727",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República",
+  "titulo": "Decreto 0997 de 2026, artículo 3 (modifica el art. 2.2.1.1.1.5.7 del Decreto 1082 de 2015): multas, sanciones e inhabilidades en el certificado del RUP",
+  "anio": 2026,
+  "institucion": "Departamento Nacional de Planeación (texto servido por la Relatoría de Colombia Compra Eficiente)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "considerandos (extracto)",
+    "art. 3",
+    "artículo de vigencia"
+  ],
+  "localizador": "art. 3 (artículo 2.2.1.1.1.5.7 modificado), inciso primero",
+  "cita_textual": "El registro de las sanciones e inhabilidades debe permanecer en el certificado del RUP por el término de la sanción o de la inhabilidad. La información relativa a multas debe permanecer en el certificado del RUP por un año, contado a partir de la publicación de la misma.",
+  "afirmacion": "Las entidades deben enviar cada mes a las cámaras de comercio los actos en firme que imponen multas, sanciones e inhabilidades; las sanciones e inhabilidades quedan en el certificado del RUP por su término y las multas por un año desde su publicación; el artículo 3 rige desde el día siguiente a su publicación en el Diario Oficial.",
+  "etapa": "E0",
+  "decision": "D3",
+  "modulo": "M-RUP",
+  "autoridad": "A2",
+  "tipo_contrato": "todos",
+  "vigencia_verificada": "[sin verificar] — decreto de 2026 recién expedido; no se verificó la fecha de publicación en el Diario Oficial ni reformas posteriores",
+  "reformas_cotejadas": [],
+  "notas": "El parágrafo del mismo artículo ordena a la entidad reportar las inhabilidades de los numerales 3 y 6 del art. 58 de la Ley 80 (sentencia ejecutoriada que declara responsabilidad civil por la actuación contractual), con permanencia en el RUP de diez años desde la ejecutoria. El decreto exige interoperabilidad de las cámaras de comercio con SECOP. El artículo de vigencia dice que los arts. 2, 3, 8 y 11 rigen al día siguiente de la publicación y los demás de forma escalonada (6 a 15 meses según el tipo de entidad). Por tanto el efecto sobre el certificado del RUP depende de que cada entidad reporte; antes del decreto el art. 2.2.1.1.1.5.7 ya existía. Señal para datos abiertos: no medible hasta que el RUP lo publique. Fecha de publicación en el Diario Oficial no encontrada en la relatoría.",
+  "eje": 6,
+  "leida_por": "lector fase2 eje6-institucional",
+  "fecha_consulta": "2026-10-19"
+}

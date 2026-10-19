@@ -1,0 +1,29 @@
+{
+  "eje": 6,
+  "fecha_consulta": "2026-10-19",
+  "leida_por": "lector fase2 eje6-academica",
+  "estado_lectura": "parcial",
+  "autoridad": "A6",
+  "tipo": "academia",
+  "id": "F-0810",
+  "autor": "Henao Cortes, A.; Mosquera, S. J.; Orozco, M. C.",
+  "titulo": "Concurso de méritos con lista corta en el Valle del Cauca: diferenciales y similitudes en la categorización municipal",
+  "anio": 2019,
+  "anio_origen": "metadatos",
+  "institucion": "Pontificia Universidad Javeriana, Cali (ACOFI Papers)",
+  "url": "https://acofipapers.org/index.php/eiei/article/download/193/186/370",
+  "partes_leidas": [
+    "procesos A-G (siete concursos de méritos revisados en SECOP)",
+    "conclusiones"
+  ],
+  "localizador": "sección 6, Conclusiones, p. 8 del PDF",
+  "pagina_pdf": 8,
+  "cita_textual": "Este tipo de contratación presenta cierta holgura en la elección del proponente, teniendo en cuenta que el rango de ciertas categorías para brindar el puntaje indicado es muy amplio, de manera que puede presentar ciertos sesgos a la hora de la calificación.",
+  "afirmacion": "Tras revisar siete concursos de méritos con lista corta de municipios del Valle del Cauca en SECOP, los autores concluyen (2019) que los rangos de puntaje de los criterios son muy amplios y pueden introducir sesgos en la calificación de las propuestas.",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-DICT",
+  "vigencia_verificada": "[sin verificar] — anterior a los documentos tipo de consultoría e interventoría; reverificar el esquema vigente de puntajes.",
+  "tipo_contrato": "consultoria",
+  "notas": "Artículo de estudiantes con siete casos, sin medición del sesgo (conclusión cualitativa). El año sale de los metadatos del PDF (julio de 2019). Entre los siete hay una interventoría de mejoramiento de vía (Zarzal-Roldanillo) pactada a 6 meses que terminó en 1 año y 7 meses por suspensiones (p. 6-7 del PDF), y un concurso de consultoría no vial declarado desierto porque ninguna propuesta alcanzó 700 puntos con 420 en la metodología (p. 6)."
+}

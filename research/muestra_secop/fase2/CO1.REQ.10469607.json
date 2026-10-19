@@ -1,0 +1,159 @@
+{
+  "id_del_proceso": "CO1.REQ.10469607",
+  "id_del_portafolio": "CO1.BDOS.10257380",
+  "entidad": "MUNICIPIO DE PEQUE (ANTIOQUIA)",
+  "tipo_de_contrato": "Obra",
+  "modalidad_de_contratacion": "Licitación pública Obra Publica",
+  "estado_del_procedimiento": "Seleccionado",
+  "precio_base": 1495000000,
+  "fecha_consulta": "2026-10-19",
+  "leido_por": "agente muestra fase2 lote 3",
+  "informes": [
+    {
+      "id_documento": "814768050",
+      "nombre_archivo": "INFORME DE EVALUACION REQUISITOS Y SOBRES ECONOMICOS FINAL 0052026 (1) (1).pdf",
+      "paginas": 10,
+      "texto_pdf": "nativo",
+      "md5": "5b83b0d8932eedc0c1ff96a22f510fdc",
+      "tipo": "único (requisitos, traslado y evaluación económica en el mismo PDF)",
+      "estado_lectura": "completa (texto de las 10 páginas; pp. 2, 3 y 6 revisadas en imagen para las marcas de la tabla)",
+      "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=814768050&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+      "http": 200
+    }
+  ],
+  "conteos": {
+    "proponentes": 3,
+    "habilitados": 3,
+    "no_habilitados": 0,
+    "rechazados": 1,
+    "nota": "Los tres quedan habilitados en requisitos (p. 6). Uno (A.I.U. de 48 % frente al 42 % exigido) queda rechazado en la evaluación económica (p. 7): figura en habilitados y en rechazados porque el rechazo es posterior."
+  },
+  "causas": [
+    {
+      "categoria": "juridica",
+      "detalle": "Paz y salvo de aportes al Sistema de Seguridad Social no aportado; pedido en la nota de subsanación.",
+      "n": 1,
+      "subsanada": true,
+      "informe": "814768050",
+      "pagina_pdf": 3
+    },
+    {
+      "categoria": "juridica",
+      "detalle": "Certificado de antecedentes disciplinarios con fecha de expedición superior a 30 días; pedido en la nota de subsanación.",
+      "n": 1,
+      "subsanada": true,
+      "informe": "814768050",
+      "pagina_pdf": 3
+    },
+    {
+      "categoria": "juridica",
+      "detalle": "Certificado de responsabilidad fiscal no aportado en la propuesta; pedido en la nota de subsanación.",
+      "n": 1,
+      "subsanada": true,
+      "informe": "814768050",
+      "pagina_pdf": 3
+    },
+    {
+      "categoria": "juridica",
+      "detalle": "Abono a la propuesta, conforme al pliego; pedido en la nota de subsanación.",
+      "n": 1,
+      "subsanada": true,
+      "informe": "814768050",
+      "pagina_pdf": 4
+    },
+    {
+      "categoria": "economica",
+      "detalle": "A.I.U. ofertado de 48 % frente al 42 % exigido por la entidad; propuesta rechazada y excluida del orden de elegibilidad.",
+      "n": 1,
+      "subsanada": false,
+      "informe": "814768050",
+      "pagina_pdf": 7
+    }
+  ],
+  "subsanaciones": {
+    "pedidas": 4,
+    "documentadas_en_informe": true,
+    "detalle": [
+      "Paz y salvo de seguridad social (1 proponente)",
+      "Certificado de antecedentes disciplinarios (1 proponente)",
+      "Certificado de responsabilidad fiscal (1 proponente)",
+      "Abono a la propuesta (1 proponente)"
+    ],
+    "nota": "Nota de subsanación en pp. 3-4; el informe dice que las tres empresas las aportaron (p. 6). Los nombres no se guardan."
+  },
+  "adendas": {
+    "n": 1,
+    "archivos_en_indice": 1,
+    "filas_indice": 86,
+    "metodo": "dmgg-8hin proceso=CO1.BDOS.10257380: un archivo con «ADENDA» en el nombre (ADENDA1.pdf). No se bajó."
+  },
+  "documentos_tipo": {
+    "usa": true,
+    "cual": "Documentos Tipo de licitación de obra pública. El pliego limita su aplicación a la infraestructura de agua potable y saneamiento básico de la Matriz 1; el objeto de este proceso es mejoramiento de vivienda: alcance no resuelto.",
+    "version_declarada": null,
+    "fuente": {
+      "id_documento": "804174688",
+      "nombre_archivo": "9 PLIEGO DEFINITIVOS FINAL.pdf",
+      "paginas": 89,
+      "lectura": "pp. 1-2 y búsqueda de «versión» (0 resultados)"
+    },
+    "nota": "Cita la Resolución 248 de 2020 solo para su artículo 4 (agua potable y saneamiento). No declara versión del documento tipo."
+  },
+  "p6dx_8zbt": {
+    "consulta": "https://www.datos.gov.co/resource/p6dx-8zbt.json?id_del_proceso=CO1.REQ.10469607",
+    "filas": 1,
+    "campos": {
+      "precio_base": {
+        "valor": "1495000000",
+        "estado": "lleno"
+      },
+      "duracion": {
+        "valor": "6",
+        "estado": "lleno"
+      },
+      "unidad_de_duracion": {
+        "valor": "Mes(es)",
+        "estado": "lleno"
+      },
+      "fecha_de_recepcion_de": {
+        "valor": "2026-06-10",
+        "estado": "lleno",
+        "nota": "coincide con el cierre del informe (10-jun-2026)"
+      },
+      "codigo_principal_de_categoria": {
+        "valor": "V1.30111500",
+        "estado": "lleno"
+      },
+      "categorias_adicionales": {
+        "valor": "No definido",
+        "estado": "dudoso"
+      },
+      "tipo_de_contrato": {
+        "valor": "Obra",
+        "estado": "lleno"
+      },
+      "modalidad_de_contratacion": {
+        "valor": "Licitación pública Obra Publica",
+        "estado": "lleno"
+      },
+      "descripci_n_del_procedimiento": {
+        "valor": "(texto presente)",
+        "estado": "lleno"
+      },
+      "respuestas_al_procedimiento": {
+        "valor": "3",
+        "estado": "lleno",
+        "nota": "coincide con las tres propuestas del informe"
+      }
+    }
+  },
+  "incidencias": [
+    "Contradicción interna sin resolver: la tabla de capacidad financiera (p. 3) marca NO CUMPLE en endeudamiento para una de las tres empresas; el cálculo de esa misma empresa (p. 5) da 0,166 frente a un máximo de 0,70, y el informe la declara admisible sin mencionarlo.",
+    "El informe de traslado (p. 6) menciona observaciones de un proponente sobre otro sin transcribirlas; el resultado de esas observaciones no consta.",
+    "El PDF es el único informe del índice: no aparece informe definitivo ni acto de adjudicación.",
+    "p6dx: categorias_adicionales «No definido» (dudoso)."
+  ],
+  "tiempo_aprox_min": 2,
+  "tiempo_nota": "Estimación de la sesión; no se cronometró por proceso.",
+  "privacidad": "Sin nombres de proponente, representante, evaluador ni persona natural."
+}

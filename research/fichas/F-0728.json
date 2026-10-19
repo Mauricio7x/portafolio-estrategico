@@ -1,0 +1,27 @@
+{
+  "id": "F-0728",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 1474 de 2011 (Estatuto Anticorrupción), artículo 2, nuevo literal k) del numeral 1 del artículo 8 de la Ley 80: inhabilidad de quienes financian campañas",
+  "anio": 2011,
+  "institucion": "Congreso de la República (texto servido por la Relatoría de Colombia Compra Eficiente)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/ley-1474-de-2011/",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "arts. 1, 2, 89 a 91"
+  ],
+  "localizador": "art. 2",
+  "cita_textual": "con aportes superiores al dos por ciento (2.0%) de las sumas máximas a invertir por los candidatos en las campañas electorales en cada circunscripción electoral, quienes no podrán celebrar contratos con las entidades públicas",
+  "afirmacion": "Quien haya financiado campañas a Presidencia, gobernaciones, alcaldías o Congreso con aportes superiores al 2 % del tope de gastos no puede contratar con entidades del nivel para el cual fue elegido el candidato durante todo el periodo; alcanza a parientes hasta segundo grado de consanguinidad o afinidad y a sociedades cuyo representante, miembro de junta o socio controlante haya financiado; excluye prestación de servicios profesionales.",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-CONS",
+  "autoridad": "A1",
+  "tipo_contrato": "todos",
+  "vigencia_verificada": "[sin verificar] — la relatoría anota 'Modificado por el art. 33, de la Ley 1778 de 2016' y el texto mostrado parece ser el modificado, pero no se abrió la Ley 1778 de 2016 ni sentencias de constitucionalidad",
+  "reformas_cotejadas": [],
+  "notas": "Dato complementario de Transparencia por Colombia (informe de 2019): cerca de la tercera parte de los financiadores de campañas territoriales de 2015 y legislativas de 2018 celebró contratos estatales después de aportar (ver ficha de ese informe). Sirve para M-CONS: antes de formar consorcio, el socio controlante o su familia no deben haber financiado la campaña del nivel de la entidad contratante.",
+  "eje": 6,
+  "leida_por": "lector fase2 eje6-institucional",
+  "fecha_consulta": "2026-10-19"
+}

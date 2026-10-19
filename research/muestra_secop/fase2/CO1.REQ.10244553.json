@@ -1,0 +1,147 @@
+{
+  "id_del_proceso": "CO1.REQ.10244553",
+  "id_del_portafolio": "CO1.BDOS.10032221",
+  "entidad": "DISTRITO ESPECIAL DE CIENCIA TECNOLOGIA E INNOVACION DE MEDELLIN",
+  "tipo_de_contrato": "Interventoría",
+  "modalidad_de_contratacion": "Concurso de méritos abierto",
+  "estado_del_procedimiento": "Seleccionado",
+  "precio_base": 681268287,
+  "fecha_consulta": "2026-10-19",
+  "leido_por": "agente muestra fase2 lote 3",
+  "informes": [
+    {
+      "id_documento": "797479433",
+      "nombre_archivo": "Informe de evaluación.pdf",
+      "paginas": 85,
+      "texto_pdf": "nativo",
+      "md5": "e24d29302ede8e26f092bd084551acd9",
+      "tipo": "informe de evaluación con traslado (29-abr-2026); no hay definitivo en el índice",
+      "estado_lectura": "parcial: pp. 1-2 (encabezado y presupuesto), 10-11 (tabla jurídica), 32 (rechazos), 48, 82-85 (puntajes y cierre); resto por búsqueda; anexos no incluidos en el PDF",
+      "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=797479433&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+      "http": 200
+    }
+  ],
+  "conteos": {
+    "proponentes": 73,
+    "habilitados": 50,
+    "no_habilitados": 21,
+    "rechazados": 2,
+    "nota": "Conteo derivado de las tablas del propio informe, no de un resultado definitivo: 71 filas con CUMPLE/NO CUMPLE en jurídica y 69 en experiencia (2 rechazados sin marcas). 50 CUMPLE en ambas; 21 con NO CUMPLE en al menos una (15 en jurídica, 8 en experiencia, 2 en ambas); 2 rechazados. El informe es de traslado: los NO CUMPLE están sujetos a subsanación."
+  },
+  "causas": [
+    {
+      "categoria": "juridica",
+      "detalle": "Marcados NO CUMPLE en la tabla de capacidad jurídica (3.1). El motivo está en el «Anexo Evaluación Jurídica», que no viene en el PDF. Sujetos a subsanación según el informe.",
+      "n": 15,
+      "subsanada": null,
+      "informe": "797479433",
+      "pagina_pdf": 10
+    },
+    {
+      "categoria": "experiencia",
+      "detalle": "Marcados NO CUMPLE en la tabla de experiencia (3.2.1). El motivo está en el «Anexo Evaluación Técnica», que no viene en el PDF.",
+      "n": 8,
+      "subsanada": null,
+      "informe": "797479433",
+      "pagina_pdf": 11
+    },
+    {
+      "categoria": "otra",
+      "detalle": "Rechazado por causal literal H del numeral 1.15 del pliego (el texto de la causal no se transcribe en el informe).",
+      "n": 1,
+      "subsanada": false,
+      "informe": "797479433",
+      "pagina_pdf": 32
+    },
+    {
+      "categoria": "otra",
+      "detalle": "Rechazado por causal literal A del numeral 1.15 del pliego (el texto de la causal no se transcribe en el informe).",
+      "n": 1,
+      "subsanada": false,
+      "informe": "797479433",
+      "pagina_pdf": 32
+    }
+  ],
+  "subsanaciones": {
+    "pedidas": null,
+    "documentadas_en_informe": false,
+    "detalle": [],
+    "nota": "El informe abre un traslado para observaciones y subsanaciones (hasta el 5-may-2026, p. 84) sin listar cuántos requerimientos hubo por proponente."
+  },
+  "adendas": {
+    "n": 0,
+    "archivos_en_indice": 0,
+    "filas_indice": 49,
+    "metodo": "dmgg-8hin proceso=CO1.BDOS.10032221: ningún archivo con «ADENDA» en el nombre."
+  },
+  "documentos_tipo": {
+    "usa": true,
+    "cual": "Documentos Tipo de interventoría de obra pública; el pliego excluye las interventorías de ciertas actividades",
+    "version_declarada": null,
+    "fuente": {
+      "id_documento": "761956158",
+      "nombre_archivo": "14.Documento base pliego.pdf",
+      "paginas": 91,
+      "lectura": "búsqueda de «documento tipo» (13 pasajes) y «versión»"
+    },
+    "nota": "Remite a «la resolución que adopta los Documentos Tipo de interventoría» sin número. No declara versión."
+  },
+  "p6dx_8zbt": {
+    "consulta": "https://www.datos.gov.co/resource/p6dx-8zbt.json?id_del_proceso=CO1.REQ.10244553",
+    "filas": 1,
+    "campos": {
+      "precio_base": {
+        "valor": "681268287",
+        "estado": "lleno",
+        "nota": "coincide con el presupuesto oficial del informe (IVA incluido)"
+      },
+      "duracion": {
+        "valor": "165",
+        "estado": "lleno"
+      },
+      "unidad_de_duracion": {
+        "valor": "día(s)",
+        "estado": "lleno"
+      },
+      "fecha_de_recepcion_de": {
+        "valor": "2026-03-18",
+        "estado": "lleno",
+        "nota": "coincide con el cierre del informe (18-mar-2026)"
+      },
+      "codigo_principal_de_categoria": {
+        "valor": "V1.80111614",
+        "estado": "lleno"
+      },
+      "categorias_adicionales": {
+        "valor": "No definido",
+        "estado": "dudoso"
+      },
+      "tipo_de_contrato": {
+        "valor": "Interventoría",
+        "estado": "lleno"
+      },
+      "modalidad_de_contratacion": {
+        "valor": "Concurso de méritos abierto",
+        "estado": "lleno"
+      },
+      "descripci_n_del_procedimiento": {
+        "valor": "(texto presente)",
+        "estado": "lleno"
+      },
+      "respuestas_al_procedimiento": {
+        "valor": "73",
+        "estado": "lleno",
+        "nota": "coincide con los 73 proponentes del informe"
+      }
+    }
+  },
+  "incidencias": [
+    "El PDF es el informe de traslado del 29-abr-2026: no hay informe definitivo ni acto de adjudicación en el índice.",
+    "Los motivos de los 23 NO CUMPLE (15 jurídica y 8 experiencia, con dos coincidencias) están en anexos que no vienen en el PDF; por eso el número de no habilitados es provisional.",
+    "Los literales H y A del numeral 1.15 no se transcriben: la categoría de los dos rechazos es «otra».",
+    "p6dx: categorias_adicionales «No definido» (dudoso)."
+  ],
+  "tiempo_aprox_min": 2,
+  "tiempo_nota": "Estimación de la sesión; no se cronometró por proceso.",
+  "privacidad": "Sin nombres de proponente, representante, evaluador ni persona natural (el informe identifica a los evaluadores; no se guardan)."
+}

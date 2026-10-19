@@ -1,0 +1,28 @@
+{
+  "tipo": "dato",
+  "anio": 2026,
+  "anio_origen": "cuerpo",
+  "fecha_consulta": "2026-10-19",
+  "eje": "muestra",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-INT",
+  "autoridad": "A7",
+  "vigencia_verificada": "[sin verificar] — dato de un proceso, no es afirmación normativa",
+  "leida_por": "agente muestra fase2 lote 3",
+  "id": "F-1268",
+  "autor": "Comité evaluador de la Secretaría de Desarrollo Territorial y Participación Ciudadana de Santiago de Cali",
+  "titulo": "Informe final de evaluación, selección abreviada de menor cuantía SAMC 475 de 2026 (proceso CO1.REQ.10269664)",
+  "institucion": "Santiago de Cali, Distrito Especial - Secretaría de Desarrollo Territorial y Participación Ciudadana",
+  "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=772846634&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "pp. 1-2, 5-9, 13-17, 25-26 del final; preliminar por búsqueda"
+  ],
+  "localizador": "p. 26 (causales de rechazo); p. 25 (orden de elegibilidad)",
+  "pagina_pdf": 26,
+  "cita_textual": "Las ofertas rechazadas lo fueron por causales objetivas y no subsanables.",
+  "afirmacion": "Cinco ofertas: cuatro rechazadas por causales objetivas no subsanables (conflicto de interés y requisitos técnicos; precio subestimado; unidades de medida alteradas en la oferta económica) y una habilitada, recomendada para adjudicar con 100 puntos.",
+  "tipo_contrato": "obra",
+  "notas": "p6dx trae seis filas idénticas y duracion 0. Dos adendas duplicadas en el índice (ADENDA No. 1). Sin nombres de los proponentes ni de los evaluadores."
+}

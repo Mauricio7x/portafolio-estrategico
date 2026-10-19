@@ -1,0 +1,174 @@
+{
+  "id_del_proceso": "CO1.REQ.10076052",
+  "id_del_portafolio": "CO1.BDOS.9278578",
+  "entidad": "INSTITUTO DE CAMINOS Y CONSTRUCCIONES DE CUNDINAMARCA - ICCU",
+  "tipo_de_contrato": "Obra",
+  "modalidad_de_contratacion": "Licitación pública Obra Publica",
+  "estado_del_procedimiento": "Seleccionado",
+  "precio_base": 28279661614,
+  "fecha_consulta": "2026-10-19",
+  "leido_por": "agente muestra fase2 lote 3",
+  "informes": [
+    {
+      "id_documento": "760951956",
+      "nombre_archivo": "Segundo Informe - Evaluacion Juridica - ICCU-LP-082-2025.pdf",
+      "paginas": 20,
+      "texto_pdf": "nativo",
+      "md5": "da01213e8fe7b046503efa67e3ea5a67",
+      "tipo": "jurídico (segundo informe)",
+      "estado_lectura": "parcial: pp. 1, 3-5, 8-9, 14-18 (resumen, requisitos, causales de garantía y rechazos)",
+      "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=760951956&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+      "http": 200
+    },
+    {
+      "id_documento": "760951946",
+      "nombre_archivo": "Segundo Informe - Evaluación Financiera - ICCU-LP-082-2025.pdf",
+      "paginas": 10,
+      "texto_pdf": "nativo",
+      "md5": "f4bf447df183518cbd948064a3f15faf",
+      "tipo": "financiero (segundo informe)",
+      "estado_lectura": "parcial: p. 1 (resumen) y bloques de cada proponente por búsqueda de CUMPLE y subsan",
+      "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=760951946&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+      "http": 200
+    },
+    {
+      "id_documento": "760951951",
+      "nombre_archivo": "Segundo Informe - Evaluación Tecnica - ICCU-LP-082-2025.pdf",
+      "paginas": 36,
+      "texto_pdf": "nativo",
+      "md5": "61e3a116a69e30660f65d0ec4f1112b7",
+      "tipo": "técnico (segundo informe)",
+      "estado_lectura": "parcial: p. 1 (resumen de puntajes), pp. 29-32 (experiencia de un proponente) y búsqueda de términos",
+      "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=760951951&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+      "http": 200
+    }
+  ],
+  "conteos": {
+    "proponentes": 9,
+    "habilitados": 7,
+    "no_habilitados": 0,
+    "rechazados": 2,
+    "nota": "Rechazados en el informe jurídico (dos proponentes; el cuadro de la p. 1 da RECHAZADO 2 y NO CUMPLE 0). El técnico marca NO CUMPLE a uno de los rechazados (experiencia) y el financiero marca CUMPLE a los nueve. Habilitados: los siete que pasan jurídica, financiera y técnica."
+  },
+  "causas": [
+    {
+      "categoria": "juridica",
+      "detalle": "Garantía de seriedad no aportada: el documento era una póliza en blanco. El pliego la declara causal de rechazo no subsanable (literal J del numeral 1.15 y parágrafo 3).",
+      "n": 1,
+      "subsanada": false,
+      "informe": "760951956",
+      "pagina_pdf": 15
+    },
+    {
+      "categoria": "juridica",
+      "detalle": "REDAM del representante legal y de los integrantes no aportado; la entidad lo marca subsanable, pero el informe no registra subsanación y el proponente queda rechazado por la garantía.",
+      "n": 1,
+      "subsanada": false,
+      "informe": "760951956",
+      "pagina_pdf": 15
+    },
+    {
+      "categoria": "juridica",
+      "detalle": "Garantía de seriedad que no reúne las condiciones de ejecución inmediata exigidas; REDAM no aportado por los integrantes. Rechazado en el informe jurídico.",
+      "n": 1,
+      "subsanada": false,
+      "informe": "760951956",
+      "pagina_pdf": 17
+    },
+    {
+      "categoria": "experiencia",
+      "detalle": "Experiencia específica (numeral 3.5, literal D, numeral 3.5.2): ningún contrato aportado ejecutó el 25 % del presupuesto oficial; el informe marca NO CUMPLE en la experiencia.",
+      "n": 1,
+      "subsanada": false,
+      "informe": "760951951",
+      "pagina_pdf": 29
+    }
+  ],
+  "subsanaciones": {
+    "pedidas": 5,
+    "documentadas_en_informe": true,
+    "detalle": [
+      "Jurídico: sello de subsanación junto al ítem de garantía de seriedad (p. 5)",
+      "Jurídico: sello de subsanación en el ítem de carta de presentación y profesional que avala la propuesta (p. 8)",
+      "Jurídico: sello de subsanación en el ítem de pago de seguridad social (p. 9)",
+      "Jurídico: sello de subsanación en el ítem de REDAM (p. 9)",
+      "Financiero: subsanación de capacidad residual con estados financieros de un integrante (p. 5)"
+    ],
+    "nota": "Conteo de sellos de «subsanación» en el texto. El informe no lista el oficio de requerimiento; puede haber requerimientos sin sello."
+  },
+  "adendas": {
+    "n": 4,
+    "archivos_en_indice": 4,
+    "filas_indice": 119,
+    "metodo": "dmgg-8hin proceso=CO1.BDOS.9278578: 4 archivos con «adenda» en el nombre (ADENDA No. 3 y tres anexos de la adenda 3). No aparecen adendas 1 y 2 en el índice; no se bajaron."
+  },
+  "documentos_tipo": {
+    "usa": true,
+    "cual": "Documentos tipo de infraestructura social, mencionados en una línea para los requisitos jurídicos",
+    "version_declarada": null,
+    "fuente": {
+      "id_documento": "746167806",
+      "nombre_archivo": "Pliego de Condiciones Definitivo - ICCU-LP-082-2025.pdf",
+      "paginas": 85,
+      "lectura": "búsqueda de «documento tipo» y «versión»"
+    },
+    "nota": "Sin versión declarada en el texto."
+  },
+  "p6dx_8zbt": {
+    "consulta": "https://www.datos.gov.co/resource/p6dx-8zbt.json?id_del_proceso=CO1.REQ.10076052",
+    "filas": 1,
+    "campos": {
+      "precio_base": {
+        "valor": "28279661614",
+        "estado": "lleno",
+        "nota": "coincide con el presupuesto del informe"
+      },
+      "duracion": {
+        "valor": "10",
+        "estado": "lleno"
+      },
+      "unidad_de_duracion": {
+        "valor": "Mes(es)",
+        "estado": "lleno"
+      },
+      "fecha_de_recepcion_de": {
+        "valor": "2026-02-17",
+        "estado": "lleno"
+      },
+      "codigo_principal_de_categoria": {
+        "valor": "V1.72121400",
+        "estado": "lleno"
+      },
+      "categorias_adicionales": {
+        "valor": "No definido",
+        "estado": "dudoso"
+      },
+      "tipo_de_contrato": {
+        "valor": "Obra",
+        "estado": "lleno"
+      },
+      "modalidad_de_contratacion": {
+        "valor": "Licitación pública Obra Publica",
+        "estado": "lleno"
+      },
+      "descripci_n_del_procedimiento": {
+        "valor": "(texto presente)",
+        "estado": "lleno"
+      },
+      "respuestas_al_procedimiento": {
+        "valor": "9",
+        "estado": "lleno",
+        "nota": "coincide con los nueve proponentes del informe"
+      }
+    }
+  },
+  "incidencias": [
+    "Sello de subsanación en la p. 5 junto al ítem de garantía de seriedad, mientras el propio informe declara no subsanable la garantía no entregada (p. 15). Sin verificar a qué proponente corresponde el sello.",
+    "Los informes no son coherentes entre sí: el jurídico rechaza a dos proponentes que el financiero marca CUMPLE; el técnico asigna 40,25 puntos a uno de los rechazados. Para los rechazos se usa el informe jurídico.",
+    "Adendas 1 y 2 no están en el índice; no se bajó ningún anexo de adenda.",
+    "p6dx: categorias_adicionales «No definido» (dudoso)."
+  ],
+  "tiempo_aprox_min": 3,
+  "tiempo_nota": "Estimación de la sesión; no se cronometró por proceso.",
+  "privacidad": "Sin nombres de consorcios, integrantes, representantes ni evaluadores; solo conteos, causas y hechos."
+}

@@ -1,0 +1,37 @@
+{
+  "eje": 6,
+  "fecha_consulta": "2026-10-19",
+  "leida_por": "lector fase2 eje6-academica",
+  "estado_lectura": "parcial",
+  "autoridad": "A4",
+  "tipo": "juris",
+  "autor": "Corte Constitucional (Sala Plena)",
+  "titulo": "Sentencia C-080 de 2025 (expediente D-15954): constitucionalidad del artículo 410A del Código Penal",
+  "anio": 2025,
+  "anio_origen": "cuerpo",
+  "institucion": "Corte Constitucional de Colombia",
+  "url": "https://www.corteconstitucional.gov.co/relatoria/2025/c-080-25.htm",
+  "unificacion": false,
+  "partes_leidas": [
+    "reseña inicial",
+    "sección 4.1.2 (elementos del tipo penal)",
+    "fundamentos 104-106 (norma de remisión)"
+  ],
+  "vigencia_verificada": {
+    "fecha": "2026-10-19",
+    "fuente": "La sentencia C-080 de 2025 (6-mar-2025) transcribe el art. 410A en los mismos términos que el art. 27 de la Ley 1474 de 2011, que en el consolidado de Bogotá (https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=43292) figura sin notas de modificación; no se abrió el Código Penal consolidado ni normas posteriores a mar-2025."
+  },
+  "id": "F-0799",
+  "localizador": "§ 4.1.2, párr. 81 (transcripción del artículo 410A adicionado por el art. 27 de la Ley 1474 de 2011)",
+  "cita_textual": "se concertare con otro con el fin de alterar ilícitamente el procedimiento contractual, incurrirá en prisión de seis (6) a doce (12) años y multa de doscientos (200) a mil (1.000) salarios mínimos legales mensuales vigentes e inhabilidad para contratar con entidades estatales por ocho (8) años",
+  "afirmacion": "Texto del art. 410A del Código Penal (adicionado por el art. 27 de la Ley 1474 de 2011) tal como lo transcribe la Corte el 6-mar-2025: concertarse en una licitación pública, subasta pública, selección abreviada o concurso para alterar ilícitamente el procedimiento contractual se castiga con prisión de 6 a 12 años, multa de 200 a 1.000 SMLMV e inhabilidad de 8 años para contratar con entidades estatales.",
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-CONS",
+  "tipo_contrato": "todos",
+  "reformas_cotejadas": [
+    "La propia sentencia C-080 de 2025 transcribe el artículo sin modificaciones posteriores a la Ley 1474 de 2011 (no menciona reformas). No se abrió ninguna ley posterior a mar-2025.",
+    "Ley 1474 de 2011 art. 27 (régimen legal de Bogotá, consolidado con notas): figura con el mismo texto del art. 410A y sin nota de modificación; no se abrió norma posterior (ver F-0818)."
+  ],
+  "notas": "Dato práctico para el contratista: el tipo penal tiene sujeto activo indeterminado y plurisubjetivo («el que […] con otro»), es decir, aplica a cualquier proponente o socio, no solo a funcionarios. El parágrafo del delator (reducción de un tercio de la pena, 40 % de la multa e inhabilidad de 5 años) también consta en la transcripción."
+}

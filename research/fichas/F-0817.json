@@ -1,0 +1,34 @@
+{
+  "eje": 6,
+  "fecha_consulta": "2026-10-19",
+  "leida_por": "lector fase2 eje6-academica",
+  "estado_lectura": "parcial",
+  "autoridad": "A1",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 80 de 1993 (Estatuto General de Contratación de la Administración Pública), texto con notas de vigencia (art. 7, consorcio y unión temporal)",
+  "anio": 1993,
+  "anio_origen": "cuerpo",
+  "institucion": "Secretaría Jurídica Distrital de Bogotá D.C., Régimen Legal de Bogotá",
+  "url": "https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=304",
+  "partes_leidas": [
+    "arts. 7, 8 y 9 con sus notas de vigencia"
+  ],
+  "id": "F-0817",
+  "localizador": "art. 7 (modificado por el art. 3 de la Ley 2160 de 2021), numerales 6 y 7",
+  "cita_textual": "Unión Temporal: Cuando dos o más personas en forma conjunta presentan una misma propuesta para la adjudicación, celebración y ejecución de un contrato, respondiendo solidariamente por el cumplimiento total de la propuesta y del objeto contratado, pero las sanciones por el incumplimiento",
+  "afirmacion": "En el consorcio las actuaciones, hechos y omisiones afectan a todos los miembros; en la unión temporal las sanciones por incumplimiento se imponen según la participación de cada miembro en la ejecución (texto del art. 7 modificado por la Ley 2160 de 2021).",
+  "etapa": "E4",
+  "decision": "D1",
+  "modulo": "M-CONS",
+  "tipo_contrato": "todos",
+  "vigencia_verificada": {
+    "fecha": "2026-10-19",
+    "fuente": "Régimen legal de Bogotá D.C. (Secretaría Jurídica Distrital), Ley 80 de 1993 con notas de modificación y de control de constitucionalidad, https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=304. El consolidado registra el art. 7 modificado por el art. 3 de la Ley 2160 de 2021 (y el numeral 8 por la Ley 2294 de 2023)."
+  },
+  "reformas_cotejadas": [
+    "Ley 2160 de 2021 art. 3 — modifica el art. 7 (consta en el consolidado; no se abrió aparte).",
+    "Ley 2294 de 2023 art. 354 — modifica el numeral 8 y adiciona el 9 (no tocan consorcio ni unión temporal)."
+  ],
+  "notas": "Parágrafo 1: la participación declarada en la unión temporal no puede modificarse sin consentimiento previo de la entidad. Parágrafo 3: los miembros de consorcios o uniones temporales no podrán contratar cuando hayan sido sancionados penalmente. Fuente secundaria que lo explica: blog de la Revista Derecho del Estado (2023), no ficha propia."
+}

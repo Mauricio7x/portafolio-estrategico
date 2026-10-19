@@ -1,0 +1,27 @@
+{
+  "eje": 6,
+  "fecha_consulta": "2026-10-19",
+  "leida_por": "lector fase2 eje6-academica",
+  "estado_lectura": "completa",
+  "autoridad": "A6",
+  "tipo": "academia",
+  "id": "F-0801",
+  "autor": "Galvis Quintero, D.",
+  "titulo": "¿Puede una sanción de la SIC convertirse en una inhabilidad para contratar con el Estado?",
+  "anio": 2026,
+  "anio_origen": "cuerpo",
+  "institucion": "Universidad Externado de Colombia, Departamento de Derecho de la Empresa y los Mercados (blog Empresa y Mercados, 27-ago-2026)",
+  "url": "https://empresa-mercados-blog.uexternado.edu.co/2026/08/27/puede-una-sancion-de-la-sic-convertirse-en-una-inhabilidad-para-contratar-con-el-estado/",
+  "partes_leidas": [
+    "entrada completa del blog"
+  ],
+  "localizador": "entrada del blog, párrafos 6 a 8 (sentencia del Consejo de Estado del 15-jul-2026, exp. 11001-03-26-000-2025-00042-00)",
+  "cita_textual": "Concluye el Consejo de Estado que un precepto como el juzgado, impone una verdadera penalización al proponente, sea singular o plural, que haya sido sancionado por colusión.",
+  "afirmacion": "Según la autora (agosto de 2026), el Consejo de Estado (Sección Tercera, Subsección B, sentencia del 15-jul-2026) anuló una regla de unos estudios previos de la licitación USPEC-LP-002-2025 que restaba 10 % del puntaje a proponentes sancionados por la SIC por colusión en los cinco años anteriores, por crear una sanción sin ley y violar el debido proceso y la presunción de inocencia.",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-DICT",
+  "vigencia_verificada": "[sin verificar] — la sentencia no se abrió; solo se leyó el comentario del blog. Requiere cotejo con el texto de la providencia.",
+  "tipo_contrato": "todos",
+  "notas": "Pista hacia la fuente primaria (juris), no sustituye la sentencia. Sirve a Detekta para una regla de dictamen: una cláusula del pliego que penaliza o excluye por sanciones de la SIC puede ser demandable; el contratista no debe dar por hecho el rechazo, pero tampoco ignorar la cláusula sin asesoría. La autora aclara que el razonamiento se extiende a entidades de régimen privado."
+}

@@ -1,0 +1,33 @@
+{
+  "tipo": "academia",
+  "autor": "Ríos Parra, I. H.; Diosa, J. S.; Pérez Ruiz, D. D.; Serrano Guzmán, M. F.",
+  "titulo": "Revisión del cumplimiento de requisitos habilitantes en procesos de selección mínima cuantía",
+  "anio": 2017,
+  "institucion": "Pontificia Universidad Javeriana Cali, revista Lámpsakos n.º 18 (Dialnet)",
+  "url": "https://dialnet.unirioja.es/descarga/articulo/6551470.pdf",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "introducción",
+    "características de la mínima cuantía",
+    "metodología",
+    "resultados 4.1 capacidad jurídica"
+  ],
+  "localizador": "4.1 Capacidad Jurídica, p. 5 del PDF (impresa 39)",
+  "pagina_pdf": 5,
+  "cita_textual": "los proponentes jurídicos certifican su capacidad jurídica con el certificado de existencia y representación legal emitido por la Cámara de Comercio, y el Certificado de Inhabilidades e Incompatibilidades emitido por la Procuraduría General de la Nación",
+  "afirmacion": "Según el Manual de Mínima Cuantía que citan los autores (versión de 2017, Decreto 1510 de 2013), la persona jurídica acredita su capacidad con el certificado de Cámara de Comercio y el de inhabilidades de la Procuraduría; en 33 procesos de obra y afines del Valle del Cauca terminados anormalmente (2010-2015) algunas entidades no lo exigieron y pidieron solo verificar por cuenta propia.",
+  "cifra_comprobada": "Cuadra en lo comprobado: Tabla 2 del artículo suma 4+3+5+1+20 = 33 procesos, igual al universo del texto; la muestra de 22 se calcula con la fórmula (N=33, 90 %, 10 %) y las cifras de la Tabla 3 no se sumaron.",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-DICT",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — trabajo académico de 2017 sobre el Decreto 1510 de 2013 (derogado por el Decreto 1082 de 2015 y reformas); la mínima cuantía fue reformada después; anterior a la reforma; reverificar",
+  "tipo_contrato": "obra",
+  "anio_origen": "portada",
+  "notas": "El hallazgo central del artículo es sobre la laxitud de la entidad, no del proponente; se usa solo como evidencia de qué documentos de capacidad jurídica pide la entidad en mínima cuantía de obra.",
+  "id": "F-1013",
+  "eje": 8,
+  "fecha_consulta": "2026-10-19",
+  "leida_por": "lector fase2 eje8-academica"
+}

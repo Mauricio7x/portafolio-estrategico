@@ -1,0 +1,28 @@
+{
+  "tipo": "dato",
+  "anio": 2026,
+  "anio_origen": "cuerpo",
+  "fecha_consulta": "2026-10-19",
+  "eje": "muestra",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-INT",
+  "autoridad": "A7",
+  "vigencia_verificada": "[sin verificar] — dato de un proceso, no es afirmación normativa",
+  "leida_por": "agente muestra fase2 lote 3",
+  "id": "F-1265",
+  "autor": "Comité evaluador del Instituto Municipal de Cultura, Recreación y Deporte de Zipaquirá",
+  "titulo": "Informe final de verificación técnica y evaluación, selección abreviada SAMC 003-2026 (proceso CO1.REQ.11027623)",
+  "institucion": "Instituto Municipal de Cultura, Recreación y Deporte de Zipaquirá (IMCRDZ)",
+  "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=863563369&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "pp. 1-2, 6, 8-9 del técnico; jurídico completo (3 pp.) por separado"
+  ],
+  "localizador": "p. 9 (conclusión)",
+  "pagina_pdf": 9,
+  "cita_textual": "El comité evaluador recomiendo la adjudicación del contrato de obra derivado del proceso de SELECCIÓN ABREVIADA DE MENOR CUANTIA No. SAMC – 003 de 2026",
+  "afirmacion": "Una oferta, habilitada jurídica y técnicamente sin requerimientos (p. 3, p. 6-8) y recomendada para adjudicar con 100 puntos; el valor de la oferta (310.921.130,66, jurídico p. 1) supera el presupuesto oficial de 260.000.000 del pliego (p. 36), sin mención en el informe.",
+  "tipo_contrato": "obra",
+  "notas": "Contradicción de precio sin resolver: ver incidencias del JSON. p6dx fecha de recepción 17-sep-2026 frente al cierre del 16-sep-2026 del informe."
+}

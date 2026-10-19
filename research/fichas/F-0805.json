@@ -1,0 +1,30 @@
+{
+  "eje": 6,
+  "fecha_consulta": "2026-10-19",
+  "leida_por": "lector fase2 eje6-academica",
+  "estado_lectura": "parcial",
+  "autoridad": "A6",
+  "tipo": "academia",
+  "id": "F-0805",
+  "autor": "Rojas López, M. D.; Valencia, S. M.; Jiménez Gómez, L. M.",
+  "titulo": "Análisis de indicadores financieros en los procesos de licitación en Colombia",
+  "anio": 2021,
+  "anio_origen": "portada",
+  "institucion": "Universidad de Medellín (Revista Ingenierías Universidad de Medellín, 20(39), pp. 213-229); investigación de la Universidad Nacional de Colombia, Sede Medellín",
+  "url": "http://www.scielo.org.co/pdf/rium/v20n39/1692-3324-rium-20-39-213.pdf",
+  "partes_leidas": [
+    "resumen",
+    "pp. 217-225 (SECOP 2017, muestra y resultados de liquidez y endeudamiento)"
+  ],
+  "localizador": "resultados, b. Análisis del índice de endeudamiento, tabla 5, p. 12 del PDF (impresa 224)",
+  "pagina_pdf": 12,
+  "cita_textual": "el 18,14% de los procesos de licitación públicos analizados para el periodo 2017 cumplen con exigir un índice de endeudamiento dentro de los límites establecidos por la CCI.",
+  "afirmacion": "En la misma muestra de 452 licitaciones de 2017, solo el 18,14 % exigía un índice de endeudamiento entre 0,70 y 0,77, el rango del promedio de 0,7079 que el estudio de la CCI atribuye al 80 % de las constructoras; la gran mayoría pedía un endeudamiento máximo menor.",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-K",
+  "vigencia_verificada": "[sin verificar] — datos de licitaciones de 2017; anterior a la reforma de los requisitos habilitantes; reverificar.",
+  "tipo_contrato": "obra",
+  "cifra_comprobada": "cuadra: 82 de 452 = 18,14 % (fila 0,700-0,770 de la tabla 5); la misma tabla da 79,87 % acumulado hasta 0,690, es decir, ese porcentaje de procesos exigía un endeudamiento menor que el promedio del sector. ADEMÁS el texto del artículo (p. 12) dice que el promedio de la CCI es «79.79 % (0.7079)»: las dos cifras no coinciden (79,79 % sería 0,7979), de modo que el valor de referencia del sector es ambiguo en la propia fuente; el rango 0,70-0,77 es la lectura del artículo, no un dato verificado de la CCI.",
+  "notas": "Un endeudamiento máximo exigido menor que el del sector deja fuera a constructoras que sí cumplen el promedio. Mismo universo y salvedades que F-0804."
+}

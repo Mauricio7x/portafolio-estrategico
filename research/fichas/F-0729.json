@@ -1,0 +1,30 @@
+{
+  "id": "F-0729",
+  "tipo": "gremio",
+  "autor": "Corporación Transparencia por Colombia",
+  "titulo": "Informe Elecciones & Contratos 2018-2019: patrones en el financiamiento de campañas y la contratación estatal",
+  "anio": 2019,
+  "institucion": "Corporación Transparencia por Colombia",
+  "url": "https://transparenciacolombia.org.co/Documentos/2019/EleccionesYContratos/EleccionesYContratos-2019.pdf",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "pp. 13, 20-21 y anexo 4 (p. 80)",
+    "marco normativo"
+  ],
+  "localizador": "p. 21 del PDF (85 páginas), numeral 2.1.2",
+  "pagina_pdf": 21,
+  "cita_textual": "Aproximadamente la tercera parte de los financiadores privados (33 por ciento) celebraron contratos en el periodo analizado",
+  "afirmacion": "Transparencia por Colombia cruzó (Cuentas Claras con SECOP I y II) los aportantes a campañas de 2015 y 2018 con los contratos estatales posteriores y halló que cerca de un tercio de los financiadores privados contrató con el Estado; el informe aclara que esto no prueba que la financiación lleve a contratos.",
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-INT",
+  "autoridad": "A7",
+  "tipo_contrato": "todos",
+  "vigencia_verificada": "[sin verificar] — informe de diciembre de 2019 con datos de 2015-2018; las normas que cita no se reverificaron",
+  "anio_origen": "portada",
+  "cifra_comprobada": "no recalculable: el informe da porcentajes sin el total de aportantes en el texto leído; el mismo informe aclara en el anexo 4 que 'no hay una relación directa' entre el monto de los aportes y el de los contratos y que 'Si bien esto no significa que necesariamente la financiación a las campañas políticas lleve directamente a la obtención de contratos públicos'. No se repite como prueba de captura.",
+  "notas": "En la misma página 21: 53 % de las personas jurídicas que aportaron a gobernadores elegidos, 46 % a alcaldes elegidos y 41 % a asambleas y concejos celebraron contratos después. Cubre todos los contratos (no solo obra) y mayoritariamente contratación directa. La limitación metodológica: el cruce usa el nivel territorial del aporte y no distingue adiciones ni modalidad. Útil como contexto de 'concentración del ganador' pero no como señal individual.",
+  "eje": 6,
+  "leida_por": "lector fase2 eje6-institucional",
+  "fecha_consulta": "2026-10-19"
+}

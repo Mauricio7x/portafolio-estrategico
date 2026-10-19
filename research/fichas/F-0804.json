@@ -1,0 +1,30 @@
+{
+  "eje": 6,
+  "fecha_consulta": "2026-10-19",
+  "leida_por": "lector fase2 eje6-academica",
+  "estado_lectura": "parcial",
+  "autoridad": "A6",
+  "tipo": "academia",
+  "id": "F-0804",
+  "autor": "Rojas López, M. D.; Valencia, S. M.; Jiménez Gómez, L. M.",
+  "titulo": "Análisis de indicadores financieros en los procesos de licitación en Colombia",
+  "anio": 2021,
+  "anio_origen": "portada",
+  "institucion": "Universidad de Medellín (Revista Ingenierías Universidad de Medellín, 20(39), pp. 213-229); investigación de la Universidad Nacional de Colombia, Sede Medellín",
+  "url": "http://www.scielo.org.co/pdf/rium/v20n39/1692-3324-rium-20-39-213.pdf",
+  "partes_leidas": [
+    "resumen",
+    "pp. 217-225 (SECOP 2017, muestra y resultados de liquidez y endeudamiento)"
+  ],
+  "localizador": "resultados, a. Análisis de índice de liquidez, tablas 3-4, p. 10 del PDF (impresa 222)",
+  "pagina_pdf": 10,
+  "cita_textual": "únicamente el 9.51 % de los procesos de licitación públicos analizados para el periodo 2017 cumplen con exigir un índice de liquidez que cumpla con el promedio establecido por la CCI",
+  "afirmacion": "En una muestra de 452 licitaciones públicas de 2017 del segmento «terrenos, edificios, estructuras y vías» (SECOP) solo el 9,51 % exigía un índice de liquidez en el rango de 1,10 a 1,30, cercano al promedio de 1,31 que el estudio de la CCI atribuye al 80 % de las constructoras.",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-K",
+  "vigencia_verificada": "[sin verificar] — datos de licitaciones de 2017; el índice de liquidez y los márgenes actuales de los pliegos se rigen por normas y documentos tipo posteriores (anterior a la reforma; reverificar).",
+  "tipo_contrato": "obra",
+  "cifra_comprobada": "cuadra el 9,51 % como la fila 1,10-1,30 de la tabla 4 (43 de 452 = 9,51 %), pero la frase lo presenta como «cumplen con exigir un índice acorde con el promedio»: con la misma tabla, los procesos que exigían 1,30 o menos suman 68 de 452 (15,04 % acumulado); el 85 % restante exigía más de 1,30. La muestra (29 + 135 + 242 + 46) suma 452 y cuadra con la tabla 3.",
+  "notas": "Universo: 872 licitaciones públicas del segmento en SECOP (2017) por $2,38 billones; muestra estadística de 452. Los autores concluyen que exigir un índice de liquidez elevado y no acorde con el sector restringe la participación y abre espacio a la corrupción (p. 11). Señal de pliego sastre en el requisito financiero, sin fórmula normativa."
+}

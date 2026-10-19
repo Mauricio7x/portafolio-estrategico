@@ -25,11 +25,12 @@
   "modulo": "M-CONS",
   "vigencia_verificada": {
     "fecha": "2026-10-19",
-    "fuente": "Texto del art. 410A reproducido sin cambios por la Corte Constitucional, sentencia C-080 de 2025 (6-mar-2025), https://www.corteconstitucional.gov.co/relatoria/2025/c-080-25.htm (ver F-0799); no se abrió el Código Penal consolidado ni normas posteriores a mar-2025."
+    "fuente": "Texto del art. 410A reproducido sin cambios por la Corte Constitucional, sentencia C-080 de 2025 (6-mar-2025), https://www.corteconstitucional.gov.co/relatoria/2025/c-080-25.htm (F-0799), y art. 27 de la Ley 1474 de 2011 sin notas de modificación en https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=43292; no se abrió el Código Penal consolidado ni normas posteriores a mar-2025."
   },
   "tipo_contrato": "todos",
   "reformas_cotejadas": [
-    "Sentencia C-080 de 2025 (Corte Constitucional): transcribe el art. 410A en los mismos términos del art. 27 de la Ley 1474 de 2011, sin modificaciones, y lo declara exequible por el cargo de tipicidad (F-0799 y F-0800)."
+    "Sentencia C-080 de 2025 (Corte Constitucional): transcribe el art. 410A en los mismos términos del art. 27 de la Ley 1474 de 2011, sin modificaciones, y lo declara exequible por el cargo de tipicidad (F-0799 y F-0800).",
+    "Ley 1474 de 2011 art. 27 (régimen legal de Bogotá, consolidado con notas): figura con el mismo texto del art. 410A y sin nota de modificación; no se abrió norma posterior (ver F-0818)."
   ],
   "cifra_comprobada": "cuadra el texto transcrito (6-12 años; 200-1.000 SMLMV; 8 años). NO cuadra una cuenta del artículo: dice que con la rebaja de un tercio del parágrafo «el quantum punitivo correría ahora de 2 a 4 años», pero un tercio menos de 6-12 años es 4 a 8 años (2 a 4 años es la rebaja). La reducción del 40 % de la multa (120 a 600 SMLMV) sí cuadra.",
   "notas": "El texto del tipo penal se verifica mejor en F-0799 (Corte Constitucional). Esta ficha aporta la lectura del autor: el parágrafo del delator da rebaja de un tercio de la pena, 40 % de la multa e inhabilidad de 5 años en lugar de 8 años."

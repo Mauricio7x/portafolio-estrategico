@@ -1,0 +1,34 @@
+{
+  "id": "F-0725",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 1955 de 2019, artículo 43 (modifica el artículo 90 de la Ley 1474 de 2011): inhabilidad por incumplimiento reiterado",
+  "anio": 2019,
+  "institucion": "Congreso de la República (texto servido por la Relatoría de Colombia Compra Eficiente)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/ley-1955-de-2019/",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "art. 43"
+  ],
+  "localizador": "art. 43, literales a) a c)",
+  "cita_textual": "Haber sido objeto de imposición de cinco (5) o más multas durante la ejecución de uno o varios contratos, con una o varias entidades estatales, durante los últimos tres (3) años",
+  "afirmacion": "Queda inhabilitado el contratista con cinco o más multas en los últimos tres años, o con declaratorias de incumplimiento en al menos dos contratos en tres años, o con dos multas y un incumplimiento en una misma vigencia fiscal; la inhabilidad dura tres años desde la publicación del acto que impone la última multa o incumplimiento y se hace explícita en el RUP.",
+  "etapa": "E5",
+  "decision": "D3",
+  "modulo": "M-RUP",
+  "autoridad": "A1",
+  "tipo_contrato": "todos",
+  "vigencia_verificada": {
+    "fecha": "2026-10-19",
+    "fuente": "https://relatoria.colombiacompra.gov.co/normativa/ley-1474-de-2011/ (texto de la Ley 1474 con nota 'Artículo MODIFICADO por el Art. 43 de la Ley 1955 de 2019')"
+  },
+  "reformas_cotejadas": [
+    "Ley 2195 de 2022 art. 51 — adiciona literal d (Programa de Alimentación Escolar, 10 años); no cambia los literales a) a c) ni el parágrafo (texto abierto en la relatoría)",
+    "Ley 2294 de 2023 art. 372 — lista de artículos derogados de la Ley 1955 abierta; el art. 43 no figura (texto abierto en la relatoría)",
+    "Decreto 0997 de 2026 art. 3 — reglamenta el reporte de multas e inhabilidades al RUP (art. 2.2.1.1.1.5.7); no modifica el art. 90 (texto abierto en la relatoría)"
+  ],
+  "notas": "No se buscaron sentencias de constitucionalidad posteriores sobre el art. 43; la relatoría enlaza los conceptos C-709 de 2020 y C-1090 de 2025 sobre estos literales, que no se abrieron. El texto de los literales a) a c) y del plazo es el de la Ley 1955 art. 43 y coincide con el de la Ley 1474 art. 90 en la relatoría. Esta ficha pesa para el contratista porque la inhabilidad cae sobre quien es objeto de multas, no sobre la entidad.",
+  "eje": 6,
+  "leida_por": "lector fase2 eje6-institucional",
+  "fecha_consulta": "2026-10-19"
+}

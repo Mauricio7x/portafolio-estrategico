@@ -1,0 +1,175 @@
+{
+  "id_del_proceso": "CO1.REQ.10269664",
+  "id_del_portafolio": "CO1.BDOS.10000357",
+  "entidad": "SANTIAGO DE CALI DISTRITO ESPECIAL - SECRETARIA DE DESARROLLO TERRITORIAL Y PARTICIPACION CIUDADANA",
+  "tipo_de_contrato": "Obra",
+  "modalidad_de_contratacion": "Selección Abreviada de Menor Cuantía",
+  "estado_del_procedimiento": "Seleccionado",
+  "precio_base": 1437475677,
+  "fecha_consulta": "2026-10-19",
+  "leido_por": "agente muestra fase2 lote 3",
+  "informes": [
+    {
+      "id_documento": "772846626",
+      "nombre_archivo": "INFORME DE EVALUACION PRELIMINAR SEDES 0475-2026 FIRMADO.pdf",
+      "paginas": 42,
+      "texto_pdf": "nativo",
+      "md5": "80d391710b195553a7237f27396c7449",
+      "tipo": "preliminar",
+      "estado_lectura": "parcial: búsqueda de requerimientos, rechazos y resultados (pp. 31-34 y 42)",
+      "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=772846626&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+      "http": 200
+    },
+    {
+      "id_documento": "772846634",
+      "nombre_archivo": "INFORME DE EVALUACION FINAL SEDES 0475-2026 FIRMADO.pdf",
+      "paginas": 26,
+      "texto_pdf": "nativo",
+      "md5": "6f120846e6d2afe3a3d94c4e233601c0",
+      "tipo": "final",
+      "estado_lectura": "parcial: pp. 1-2, 5-9, 13-17, 25-26 leídas; resto por búsqueda",
+      "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=772846634&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+      "http": 200
+    }
+  ],
+  "conteos": {
+    "proponentes": 5,
+    "habilitados": 1,
+    "no_habilitados": 0,
+    "rechazados": 4,
+    "nota": "Cinco ofertas (p. 2). Cuatro rechazadas por causales objetivas no subsanables (p. 26). Una habilitada y recomendada para adjudicar (p. 25)."
+  },
+  "causas": [
+    {
+      "categoria": "juridica",
+      "detalle": "Conflicto de interés no gestionado, declarado causal objetiva de rechazo por comprometer la capacidad jurídica (numeral 1.15 del pliego).",
+      "n": 1,
+      "subsanada": false,
+      "informe": "772846634",
+      "pagina_pdf": 5
+    },
+    {
+      "categoria": "tecnica",
+      "detalle": "Requisitos técnicos mínimos no cumplidos y no subsanados: perfil de director de diseños y disposición de residuos (literal d del numeral 1.15).",
+      "n": 1,
+      "subsanada": false,
+      "informe": "772846634",
+      "pagina_pdf": 6
+    },
+    {
+      "categoria": "economica",
+      "detalle": "Oferta con subestimación del valor (costos requeridos no incorporados): incumplimiento sustancial no subsanable (artículo 5 de la Ley 1150 de 2007).",
+      "n": 1,
+      "subsanada": false,
+      "informe": "772846634",
+      "pagina_pdf": 8
+    },
+    {
+      "categoria": "otra",
+      "detalle": "Rechazo de la oferta económica confirmado tras observación; el cuadro de requisitos marca NO CUMPLE y cita el literal d del numeral 1.15 (documentos de obra y diseños no presentados).",
+      "n": 1,
+      "subsanada": false,
+      "informe": "772846634",
+      "pagina_pdf": 8
+    },
+    {
+      "categoria": "economica",
+      "detalle": "Modificó las unidades de medida del formulario de oferta económica (literal M del numeral 1.15).",
+      "n": 1,
+      "subsanada": false,
+      "informe": "772846634",
+      "pagina_pdf": 13
+    }
+  ],
+  "subsanaciones": {
+    "pedidas": 6,
+    "documentadas_en_informe": true,
+    "detalle": [
+      "Ganador: carta de presentación y copia de tarjeta profesional/COPNIA (p. 14)",
+      "Ganador: facultades de representantes legales (p. 15)",
+      "Ganador: Registro de Deudores Alimentarios Morosos (p. 16)",
+      "Ganador: RUP con expedición superior a 30 días (p. 17)",
+      "Preliminar: unión temporal, aclaración de requisito habilitante (p. 31)",
+      "Preliminar: segundo proponente, aclaración de requisito habilitante (p. 32)"
+    ],
+    "nota": "Los cuatro primeros son sellos «Subsano» del informe final. Los dos últimos vienen del preliminar. Conteo mínimo documentado."
+  },
+  "adendas": {
+    "n": 2,
+    "archivos_en_indice": 2,
+    "filas_indice": 239,
+    "metodo": "dmgg-8hin proceso=CO1.BDOS.10000357: dos archivos «ADENDA No. 1.pdf» (duplicado en el índice; una sola adenda)."
+  },
+  "documentos_tipo": {
+    "usa": false,
+    "cual": "Ninguno: el pliego definitivo no menciona documentos tipo (0 coincidencias)",
+    "version_declarada": null,
+    "fuente": {
+      "id_documento": "763337020",
+      "nombre_archivo": "PLIEGO DE CONDICONES DEFINITVO ROCESO SAMC 475 DE 2026 VERSION 1-13022026.pdf",
+      "paginas": 101,
+      "lectura": "búsqueda de «documento tipo» (0)"
+    },
+    "nota": "Sin versión que declarar."
+  },
+  "p6dx_8zbt": {
+    "consulta": "https://www.datos.gov.co/resource/p6dx-8zbt.json?id_del_proceso=CO1.REQ.10269664",
+    "filas": 6,
+    "campos": {
+      "precio_base": {
+        "valor": "1437475677",
+        "estado": "lleno",
+        "nota": "coincide con el presupuesto oficial del informe"
+      },
+      "duracion": {
+        "valor": "0",
+        "estado": "dudoso",
+        "nota": "cero días; el informe no fija un plazo en cifra que permita contrastarlo"
+      },
+      "unidad_de_duracion": {
+        "valor": "día(s)",
+        "estado": "lleno"
+      },
+      "fecha_de_recepcion_de": {
+        "valor": "2026-03-17",
+        "estado": "lleno",
+        "nota": "coincide con el cierre del informe (17-mar-2026)"
+      },
+      "codigo_principal_de_categoria": {
+        "valor": "UNSPECIFIED",
+        "estado": "dudoso"
+      },
+      "categorias_adicionales": {
+        "valor": "No definido",
+        "estado": "dudoso"
+      },
+      "tipo_de_contrato": {
+        "valor": "Obra",
+        "estado": "lleno"
+      },
+      "modalidad_de_contratacion": {
+        "valor": "Selección Abreviada de Menor Cuantía",
+        "estado": "lleno"
+      },
+      "descripci_n_del_procedimiento": {
+        "valor": "(texto presente)",
+        "estado": "lleno"
+      },
+      "respuestas_al_procedimiento": {
+        "valor": "5",
+        "estado": "lleno",
+        "nota": "coincide con las cinco ofertas del informe"
+      }
+    },
+    "nota": "seis filas idénticas; se usó la primera"
+  },
+  "incidencias": [
+    "p6dx trae seis filas idénticas para el mismo proceso (duplicado del dataset); se toma una.",
+    "p6dx: duracion 0 y codigo UNSPECIFIED (dudosos). categorias_adicionales «No definido».",
+    "El informe final no tabula puntajes por unión temporal; la causa de esa unión se toma de las pp. 5-6 y de las pp. 31-32 del preliminar.",
+    "El índice trae dos adendas duplicadas («ADENDA No. 1»); no se bajaron."
+  ],
+  "tiempo_aprox_min": 2,
+  "tiempo_nota": "Estimación de la sesión; no se cronometró por proceso.",
+  "privacidad": "Sin nombres de proponentes, representantes ni evaluadores (el informe nombra a tres profesionales designados; no se guardan)."
+}
