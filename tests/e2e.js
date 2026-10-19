@@ -4636,7 +4636,75 @@ async function main() {
     // lo que no se leyó no se publica
     assert.strictEqual(XL.verificarFormulario(null).publicable, false);
     assert.strictEqual(XL.verificarFormulario({ filas: [], cuadre: null }).publicable, false);
-    console.log("· unidad Formulario 1 en Excel: «VALOR TOTAL» cuadra, y la puerta de publicar rechaza el AIU por fila, la cantidad mal leída, el total que no cuadra, la hoja sin precio y menos del 90 % de filas comprobables");
+    /* …y el módulo del servidor, con un .xlsx de verdad: los de Excel comprimen sus partes con DEFLATE, el
+       escritor de la app usa STORE, así que se recomprime. El 19-oct-2026 se midió con 325 archivos reales. */
+    const zlibF = require("zlib"), FE = require("../lib/formulario_excel.js");
+    const zipDeflate = (entradas) => {
+      const partes = [], central = []; let off = 0;
+      for (const e of entradas) {
+        const datos = Buffer.from(e.datos), comp = zlibF.deflateRawSync(datos), nombre = Buffer.from(e.nombre), crc = zlibF.crc32(datos);
+        const lh = Buffer.alloc(30); lh.writeUInt32LE(0x04034b50, 0); lh.writeUInt16LE(20, 4); lh.writeUInt16LE(8, 8); lh.writeUInt32LE(crc, 14); lh.writeUInt32LE(comp.length, 18); lh.writeUInt32LE(datos.length, 22); lh.writeUInt16LE(nombre.length, 26);
+        partes.push(lh, nombre, comp);
+        const ch = Buffer.alloc(46); ch.writeUInt32LE(0x02014b50, 0); ch.writeUInt16LE(20, 4); ch.writeUInt16LE(20, 6); ch.writeUInt16LE(8, 10); ch.writeUInt32LE(crc, 16); ch.writeUInt32LE(comp.length, 20); ch.writeUInt32LE(datos.length, 24); ch.writeUInt16LE(nombre.length, 28); ch.writeUInt32LE(off, 42);
+        central.push(ch, nombre); off += 30 + nombre.length + comp.length;
+      }
+      const cd = Buffer.concat(central), eocd = Buffer.alloc(22);
+      eocd.writeUInt32LE(0x06054b50, 0); eocd.writeUInt16LE(entradas.length, 8); eocd.writeUInt16LE(entradas.length, 10); eocd.writeUInt32LE(cd.length, 12); eocd.writeUInt32LE(off, 16);
+      return Buffer.concat([...partes, cd, eocd]);
+    };
+    const recomprimir = async (u8) => { const z = XL.leerZip(u8); const es = []; for (const e of z.entradas) es.push({ nombre: e.nombre, datos: await z.extraer(e.nombre) }); return zipDeflate(es); };
+    const XW = require("../public/xlsx.js");
+    const libroBuf = (hojas) => Buffer.from(XW.construirLibro(hojas));
+    const hojaF1 = (total) => [{ nombre: "PRESUPUESTO OFICIAL", filas: [[null, null, "FORMULARIO 1"], [null, null, "Nº", "ÍTEM", null, null, "DESCRIPCIÓN", "UND.", "CANTIDAD", "VALOR UNITARIO", "VALOR TOTAL"],
+      [null, null, "1.1", null, null, null, "Localización y replanteo", "m2", 100, 1000, 100000], [null, null, "1.2", null, null, null, "Excavación manual", "m3", 10, 20000, 200000], [null, null, null, null, null, null, "VALOR TOTAL", null, null, null, total]] }];
+    const guardado = await FE.leerFormularioExcel(libroBuf(hojaF1(300000)));
+    assert.strictEqual(guardado.ok, true); assert.strictEqual(guardado.publicable, true);
+    assert.deepStrictEqual(guardado.filas.map((f) => [f.fila_excel, f.descripcion, f.unidad, f.cantidad, f.precio_archivo, f.total_archivo]),
+      [[3, "Localización y replanteo", "m2", 100, 1000, 100000], [4, "Excavación manual", "m3", 10, 20000, 200000]], "cada ítem con la fila de la hoja de donde salió");
+    assert.deepStrictEqual([guardado.hoja, guardado.total, guardado.fila_total, guardado.filas_n, guardado.filas_verificadas], ["PRESUPUESTO OFICIAL", 300000, 5, 2, 2]);
+    const conDeflate = await FE.leerFormularioExcel(await recomprimir(new Uint8Array(libroBuf(hojaF1(300000)))));
+    assert.deepStrictEqual(conDeflate, guardado, "el mismo libro con las partes en DEFLATE (como los que sube Excel) se lee igual");
+    const noCuadraSrv = await FE.leerFormularioExcel(libroBuf(hojaF1(310000)));
+    assert.strictEqual(noCuadraSrv.ok, true); assert.strictEqual(noCuadraSrv.publicable, false); assert.strictEqual(noCuadraSrv.filas, undefined, "lo que no cuadra NO entrega ningún ítem");
+    assert.match(noCuadraSrv.motivo, /no suman el total que declara/);
+    assert.deepStrictEqual(Object.keys(noCuadraSrv).filter((k) => /desc|items|filas$/.test(k)).sort(), [], "ni siquiera las descripciones viajan");
+    assert.strictEqual((await FE.leerFormularioExcel(Buffer.from("<html>sesión</html>"))).ok, false, "lo que no es un ZIP no es un libro");
+    const sinLibro = await FE.leerFormularioExcel(zipDeflate([{ nombre: "word/document.xml", datos: Buffer.from("<x/>") }]));
+    assert.strictEqual(sinLibro.ok, false); assert.match(sinLibro.motivo, /no se pudo abrir el libro/, "un ZIP que no es un .xlsx (un Word renombrado) se dice, no se lanza");
+    const bomba = await FE.leerFormularioExcel(zipDeflate([{ nombre: "xl/workbook.xml", datos: Buffer.alloc(FE.MAX_PARTE + 1024, 0x20) }]));
+    assert.strictEqual(bomba.ok, false, `una «bomba zip» se corta al descomprimir: ${JSON.stringify(bomba).slice(0, 160)}`);
+    const grande = [[null, null, "Nº", "ÍTEM", null, null, "DESCRIPCIÓN", "UND.", "CANTIDAD", "VALOR UNITARIO", "VALOR TOTAL"]];
+    for (let i = 1; i <= FE.MAX_FILAS + 1; i++) grande.push([null, null, String(i), null, null, null, `Ítem ${i}`, "un", 1, 1, 1]);
+    grande.push([null, null, null, null, null, null, "VALOR TOTAL", null, null, null, FE.MAX_FILAS + 1]);
+    const demasiados = await FE.leerFormularioExcel(libroBuf([{ nombre: "P", filas: grande }]));
+    assert.strictEqual(demasiados.ok, true); assert.strictEqual(demasiados.publicable, false); assert.match(demasiados.motivo, /más de los 1500/, "más ítems que el tope no se guardan solos");
+    /* el bucle del navegador (public/app.js, leerDocumentos): el bloque del Excel se EJECUTA con `api` simulada, no se lee su texto */
+    {
+      const appF = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+      const ini = appF.indexOf('if (/^(xlsx|xlsm)$/.test(String(a.extension || "").toLowerCase())) {');
+      const fin = appF.indexOf("let texto, recortadoEnOrigen = false", ini);
+      assert.ok(ini > 0 && fin > ini, "el bucle de lectura de documentos trae el bloque del Formulario 1 en Excel");
+      const bloque = appF.slice(ini, fin);
+      const correrBloque = (extension, respuestaDescargar) => {
+        const llamadas = [], ilegibles = [];
+        const api = async (ruta, o) => { llamadas.push({ ruta, cuerpo: o && o.body }); return /op=descargar/.test(ruta) ? respuestaDescargar : { ok: true }; };
+        const marcarIlegible = async (motivo, definitivo) => { ilegibles.push({ motivo, definitivo }); };
+        const f = new Function("api", "marcarIlegible", "a", "id", `let leidos = 0, fallidos = 0, seguido = false; return (async () => { for (const _ of [0]) { ${bloque}\n seguido = true; } return { leidos, fallidos, seguido }; })();`);
+        return f(api, marcarIlegible, { extension, url: "https://community.secop.gov.co/x", id_documento: "4" }, "CO1.REQ.1").then((r) => ({ ...r, llamadas, ilegibles }));
+      };
+      const lecturaOk = { ok: true, publicable: true, hoja: "P", total: 300000, filas: [{ fila_excel: 3 }] };
+      const r1 = await correrBloque("xlsx", { ok: true, formato: "xlsx", lectura: lecturaOk });
+      assert.deepStrictEqual([r1.leidos, r1.fallidos, r1.seguido, r1.ilegibles.length], [1, 0, false, 0], "un Formulario leído cuenta como leído y el bucle NO sigue por la vía del PDF");
+      assert.deepStrictEqual(r1.llamadas.map((l) => l.ruta), ["/api/pliego?op=descargar", "/api/pliego?op=documentos"]);
+      assert.deepStrictEqual(r1.llamadas[0].cuerpo, { url: "https://community.secop.gov.co/x", formato: "xlsx" });
+      assert.deepStrictEqual(r1.llamadas[1].cuerpo, { id_proceso: "CO1.REQ.1", id_documento: "4", formulario_excel: lecturaOk }, "lo que el servidor leyó se devuelve tal cual: el servidor lo vuelve a comprobar");
+      const r2 = await correrBloque("xlsm", { ok: true, formato: "xlsx", lectura: { ok: false, motivo: "no se pudo abrir el libro" } });
+      assert.deepStrictEqual([r2.leidos, r2.fallidos, r2.seguido, r2.ilegibles.length, r2.ilegibles[0].definitivo], [0, 1, false, 1, true], "un archivo que no es un libro se marca ilegible PARA SIEMPRE (no se reintenta en cada visita)");
+      assert.strictEqual(r2.llamadas.length, 1, "y no se manda nada a guardar");
+      const r3 = await correrBloque("pdf", null);
+      assert.deepStrictEqual([r3.leidos, r3.fallidos, r3.seguido, r3.llamadas.length], [0, 0, true, 0], "un PDF no entra al bloque: sigue por su vía de siempre");
+    }
+    console.log("· unidad Formulario 1 en Excel: «VALOR TOTAL» cuadra, y la puerta de publicar rechaza el AIU por fila, la cantidad mal leída, el total que no cuadra, la hoja sin precio y menos del 90 % de filas comprobables; el módulo del servidor lee un .xlsx con DEFLATE con la fila de cada ítem, no entrega ítems si no cuadra y corta la bomba zip");
   }
 
   /* unidad: convenios — «aunar esfuerzos» y compañía NO son licitaciones */
@@ -14671,7 +14739,7 @@ async function main() {
           const enorme = await pedir({ desde: 0 });
           assert.ok(enorme.status === 413 && /21,0 MB/.test(enorme.cuerpo.error) && /hasta 20 MB/.test(enorme.cuerpo.error) && /SECOP II/.test(enorme.cuerpo.error), `más de 20 MB: 413 con qué hacer: «${enorme.cuerpo.error}»`);
           assert.strictEqual((await pedir({ desde: -5 })).status, 400, "«desde» negativo es un 400");
-          assert.strictEqual((await pedir({ formato: "xlsx" })).status, 400, "un formato que no se lee es un 400, no un intento");
+          assert.strictEqual((await pedir({ formato: "pptx" })).status, 400, "un formato que no se lee es un 400, no un intento");
           // el Word, en texto
           remoto = docx;
           const w = await pedir({ formato: "docx" });
@@ -14679,6 +14747,27 @@ async function main() {
           remoto = Buffer.from("<html>inicie sesión</html>");
           const noW = await pedir({ formato: "docx" });
           assert.ok(noW.status === 415 && noW.cuerpo.texto === undefined && !/inicie/.test(JSON.stringify(noW.cuerpo)), "lo que no es un Word no devuelve texto ni bytes");
+          /* el Formulario 1 en Excel (19-oct-2026): el servidor lo lee con el lector de Precios y SOLO entrega ítems
+             si cuadran con su total y fila a fila; lo demás vuelve con su motivo y sin una sola cifra */
+          const libroF1 = (total) => Buffer.from(require("../public/xlsx.js").construirLibro([{ nombre: "PRESUPUESTO OFICIAL", filas: [
+            [null, null, "FORMULARIO 1"], [null, null, "Nº", "ÍTEM", null, null, "DESCRIPCIÓN", "UND.", "CANTIDAD", "VALOR UNITARIO", "VALOR TOTAL"],
+            [null, null, "1.1", null, null, null, "Localización y replanteo", "m2", 100, 1000, 100000], [null, null, "1.2", null, null, null, "Excavación manual", "m3", 10, 20000, 200000],
+            [null, null, null, null, null, null, "VALOR TOTAL", null, null, null, total]] }]));
+          remoto = libroF1(300000);
+          const x1 = await pedir({ formato: "xlsx" });
+          assert.ok(x1.status === 200 && x1.cuerpo.formato === "xlsx" && x1.cuerpo.lectura.publicable === true && x1.cuerpo.lectura.filas.length === 2 && x1.cuerpo.lectura.total === 300000
+            && x1.cuerpo.lectura.filas[0].fila_excel === 3 && x1.cuerpo.lectura.fila_total === 5 && x1.cuerpo.lectura.hoja === "PRESUPUESTO OFICIAL", `el Formulario 1 que cuadra vuelve con sus ítems y su cita: ${JSON.stringify(x1.cuerpo).slice(0, 300)}`);
+          remoto = libroF1(310000);
+          const x2 = await pedir({ formato: "xlsx" });
+          assert.ok(x2.status === 200 && x2.cuerpo.lectura.publicable === false && x2.cuerpo.lectura.filas === undefined && /no suman el total/.test(x2.cuerpo.lectura.motivo) && !/Excavación|Localización/.test(JSON.stringify(x2.cuerpo)),
+            `un Formulario que NO cuadra vuelve con su motivo y sin ningún ítem: ${JSON.stringify(x2.cuerpo).slice(0, 300)}`);
+          remoto = Buffer.from("<html>inicie sesión</html>");
+          const x3 = await pedir({ formato: "xlsx" });
+          assert.ok(x3.status === 415 && x3.cuerpo.lectura === undefined && !/inicie/.test(JSON.stringify(x3.cuerpo)), "lo que no es un libro de Excel no devuelve lectura ni bytes");
+          remoto = docx;   // un Word es un ZIP: la firma pasa, el libro no existe → 422 con su motivo
+          const x4 = await pedir({ formato: "xlsx" });
+          assert.ok(x4.status === 200 && x4.cuerpo.lectura.ok === false && /no se pudo abrir el libro/.test(x4.cuerpo.lectura.motivo) && x4.cuerpo.lectura.filas === undefined,
+            `un Word pedido como Excel NO es un error de la petición: es el resultado de leerlo (lectura.ok:false con su motivo), para que el navegador lo marque ilegible para siempre: ${x4.status} ${JSON.stringify(x4.cuerpo).slice(0, 200)}`);
           // …y el modo de siempre (la pantalla de Precios) sigue con su tope de 3 MB
           remoto = Buffer.alloc(TOPE_PDF_BASE64 + 1024); remoto.write("%PDF-1.7", 0, "latin1");
           const viejo = await pedir({});
@@ -23082,7 +23171,7 @@ async function main() {
           const texto = "\f1\nPLIEGO\nExperiencia general: 2.500 SMMLV\nExperiencia específica: 1.000 SMMLV\nÍndice de liquidez mayor o igual a 1,5\nNivel de endeudamiento menor o igual a 60%\nCapital de trabajo: mayor o igual a $650.000.000\nPatrimonio: mayor o igual a $9.000.000.000\n\f2\nNo se entregará anticipo al contratista.";
           const h = D.hechosDeTexto(texto, { tipo: "pliego" });
           assert.ok(h.requisitos_numericos.experiencia_general && h.requisitos_numericos.experiencia_general.valor === 2500 && h.requisitos_numericos.experiencia_especifica && h.requisitos_numericos.experiencia_especifica.valor === 1000, "lib/diff separa la experiencia general de la específica");
-          assert.ok(h.version.startsWith("19|"), "los hechos guardados con las reglas viejas se rehacen: la versión del módulo subió");
+          assert.ok(h.version.startsWith("20|"), "los hechos guardados con las reglas viejas se rehacen: la versión del módulo subió");
           const docs = { indice: { archivos: [{ id_documento: "d1", nombre: "pliego.pdf", tipo: "pliego", de_la_entidad: true, legible: true }], plan: ["d1"], consultado_el: "2026-09-04" }, leidos: { d1: { nombre: "pliego.pdf", tipo: "pliego", tipo_legible: "Pliego", hechos: h, paginas: 2 } }, ilegibles: {} };
           const con = G.guiaDe({ fila: base, perfil: "helder", ctx: { ahoraMs: ahoraG, documentos: docs } });
           const ex = Object.fromEntries(con.exigencias.map((x) => [x.clave, x]));
@@ -23533,10 +23622,10 @@ async function main() {
         ];
         const planD = Docs.planDeLectura(filasIdx, { cierre: "2026-05-01" });
         const arch = (id) => planD.archivos.find((a) => a.id_documento === id);
-        assert.deepStrictEqual(planD.plan, ["2", "9"], `se leen el pliego definitivo y la adenda (una sola vez), en ese orden: ${planD.plan}`);
+        assert.deepStrictEqual(planD.plan, ["2", "9", "4"], `se leen el pliego definitivo y la adenda (una sola vez), en ese orden: ${planD.plan}`);
         assert.strictEqual(arch("3"), undefined, "el archivo subido dos veces se queda con el último id");
         assert.ok(/no se lee solo/.test(arch("1").motivo_omision) && arch("1").tipo === "pliego_borrador", "con pliego definitivo el borrador no se lee");
-        assert.strictEqual(arch("4").motivo_omision, "hoja de cálculo"); assert.strictEqual(arch("4").de_la_entidad, true);
+        assert.strictEqual(arch("4").motivo_omision, null, "el Formulario 1 en Excel (presupuesto .xlsx) entra al plan"); assert.strictEqual(arch("4").legible, true); assert.strictEqual(arch("4").de_la_entidad, true);
         assert.strictEqual(arch("5").de_la_entidad, false, "el RUP lo sube un proponente con su oferta: no es una regla del proceso");
         assert.strictEqual(arch("6").de_la_entidad, false, "un documento sin tipo subido DESPUÉS del cierre es una oferta");
         assert.ok(/no se lee solo/.test(arch("7").motivo_omision), "una resolución no se lee sola");
@@ -23553,8 +23642,8 @@ async function main() {
           assert.strictEqual(grandes.archivos.find((a) => a.id_documento === "23").motivo_omision, "documento de Word antiguo (.doc)");
         }
         assert.strictEqual(arch("10").url, null, "una dirección fuera de community.secop.gov.co se descarta");
-        assert.deepStrictEqual(planD.resumen, { publicados: 10, distintos: 9, de_la_entidad: 7, de_proponentes: 2, en_plan: 2, no_legibles: 1, adendas: 1 });
-        assert.deepStrictEqual(Docs.planDeLectura(filasIdx.filter((f) => f.id_documento !== "2"), { cierre: "2026-05-01" }).plan, ["1", "9"], "sin pliego definitivo, el borrador ES el pliego que hay y va primero");
+        assert.deepStrictEqual(planD.resumen, { publicados: 10, distintos: 9, de_la_entidad: 7, de_proponentes: 2, en_plan: 3, no_legibles: 0, adendas: 1 });
+        assert.deepStrictEqual(Docs.planDeLectura(filasIdx.filter((f) => f.id_documento !== "2"), { cierre: "2026-05-01" }).plan, ["1", "9", "4"], "sin pliego definitivo, el borrador ES el pliego que hay y va primero");
         assert.deepStrictEqual(Docs.planDeLectura([], {}).plan, []);
         // (2) los hechos de un texto salen de los lectores que ya existen, con página; la negación del anticipo se lee
         for (const t of ["no se entregara anticipo", "no habra lugar a anticipo", "no se contempla el pago de anticipo", "no se otorgara anticipo alguno", "no se ha previsto anticipo"]) assert.ok(NIEGA_ANT.test(t), `niega el anticipo: «${t}»`);
@@ -23595,7 +23684,7 @@ async function main() {
         // (3) lo que dicen los documentos: la adenda MÁS RECIENTE manda sobre el pliego; sin cifra del perfil «revisar», nunca «no cumple»
         const hA1 = Docs.hechosDeTexto("\f1\nADENDA 1. Se modifica el índice de liquidez: mayor o igual a 2,0", { tipo: "adenda" });
         const hA2 = Docs.hechosDeTexto("\f1\nADENDA 2. Se modifica el índice de liquidez: mayor o igual a 1,7", { tipo: "adenda" });
-        const docsFalsos = { indice: { archivos: planD.archivos, plan: planD.plan, resumen: planD.resumen, consultado_el: "2026-09-03T10:00:00Z" }, ilegibles: {}, leidos: {
+        const docsFalsos = { indice: { archivos: planD.archivos, plan: planD.plan, resumen: planD.resumen, consultado_el: "2026-09-03T10:00:00Z" }, ilegibles: {}, formularios: { "4": { nombre: "PRESUPUESTO OFICIAL.xlsx", tipo: "presupuesto", tipo_legible: "Presupuesto oficial o cantidades", publicable: true, motivo: null, hoja: "H", filas_n: 2, total: 300000, fila_total: 5 } }, leidos: {
           "2": { nombre: "PLIEGO.pdf", tipo: "pliego", tipo_legible: "Pliego de condiciones", fecha_carga: "2026-04-15", paginas: 3, leido_el: "2026-09-03T10:00:00Z", hechos: hP },
           "9": { nombre: "ADENDA 1.pdf", tipo: "adenda", tipo_legible: "Adenda", fecha_carga: "2026-04-20", paginas: 1, leido_el: "2026-09-03T10:02:00Z", hechos: hA1 },
           "11": { nombre: "ADENDA 2.pdf", tipo: "adenda", tipo_legible: "Adenda", fecha_carga: "2026-04-25", paginas: 1, leido_el: "2026-09-03T10:01:00Z", hechos: hA2 },
@@ -23608,6 +23697,13 @@ async function main() {
         assert.ok(dicenD.hechos.find((x) => x.clave === "anticipo").anticipo === "no" && dicenD.hechos.every((x) => x.documento), "cada hecho lleva su documento");
         assert.deepStrictEqual(Docs.loQueDicen(null).hechos, []);
         assert.strictEqual(Docs.resumenLectura(docsFalsos).estado, "leido"); assert.strictEqual(Docs.resumenLectura(null).estado, "sin_indice");
+        assert.strictEqual(Docs.resumenLectura({ ...docsFalsos, formularios: {} }).estado, "por_leer", "el Formulario 1 en Excel entra al plan: sin leerlo, sigue pendiente (MUTACIÓN: sin esto el navegador no lo pediría)");
+        assert.deepStrictEqual(Docs.resumenLectura({ ...docsFalsos, formularios: {} }).pendientes.map((a) => a.id_documento), ["4"]);
+        // solo el tipo «presupuesto» y solo .xlsx/.xlsm: el resto de las hojas de cálculo sigue sin leerse
+        const cl = (nombre, ext) => Docs.clasificarArchivo({ id_documento: "1", nombre_archivo: nombre, extensi_n: ext, tamanno_archivo: "1000", url_descarga_documento: "https://community.secop.gov.co/x" });
+        assert.deepStrictEqual([cl("PRESUPUESTO OFICIAL.xlsx", "xlsx").legible, cl("FORMULARIO 1 PRESUPUESTO.xlsm", "xlsm").legible], [true, true]);
+        assert.deepStrictEqual([cl("CRONOGRAMA.xlsx", "xlsx").legible, cl("MATRIZ DE RIESGOS.xlsx", "xlsx").legible, cl("PRESUPUESTO OFICIAL.xls", "xls").legible, cl("PRESUPUESTO OFICIAL.csv", "csv").legible], [false, false, false, false], "solo el presupuesto en .xlsx/.xlsm; ni otras hojas, ni el .xls antiguo, ni un CSV");
+        assert.strictEqual(cl("CRONOGRAMA.xlsx", "xlsx").motivo_ilegible, "hoja de cálculo", "lo demás se sigue explicando como antes");
         // (4) la guía: el pliego que NIEGA el anticipo gana al objeto que lo insinúa; los hechos entran con su cita
         const ahoraD = Date.parse("2026-09-03T15:00:00Z");
         const baseD = { id_del_proceso: "D1", nombre_del_procedimiento: "CONSTRUCCION DE PLACA HUELLA, ANTICIPO DEL 30 %", entidad: "ALCALDIA DE PURIFICACION", departamento_entidad: "Tolima", modalidad_de_contratacion: "Licitación pública", precio_base: "850000000", duracion: "6", unidad_de_duracion: "Meses", codigo_principal_de_categoria: "V1.72141000", fecha_de_publicacion_del: "2026-09-01T10:00:00.000", fecha_de_recepcion_de: "2026-09-20T15:00:00.000", tipo_de_contrato: "Obra" };
@@ -23771,7 +23867,7 @@ async function main() {
         assert.ok(pvD.estado === "revisar" && /visita es obligatoria/.test(pvD.detalle) && /pág\. 3/.test(pvD.detalle), `la visita leída pasa de «pendiente» a «revisar» con su cita: ${pvD.detalle}`);
         assert.ok(/causales de rechazo están en .*pág\. 3/.test(conDocs.requisitos.find((r) => r.clave === "carpeta").detalle));
         assert.ok(conDocs.lo_que_dicen.length >= 5 && conDocs.resumen.hechos_de_documentos === conDocs.lo_que_dicen.length && conDocs.resumen.documentos_leidos === 3);
-        assert.ok(conDocs.documentos.estado === "leido" && /3 documentos leídos/.test(conDocs.documentos.frase) && /1 no legible/.test(conDocs.documentos.frase) && conDocs.documentos.de_proponentes === 2, conDocs.documentos.frase);
+        assert.ok(conDocs.documentos.estado === "leido" && /4 documentos leídos/.test(conDocs.documentos.frase) && !/no legible/.test(conDocs.documentos.frase) && conDocs.documentos.de_proponentes === 2, `3 textos más el Formulario 1 en Excel que pasó la puerta, y ya no hay «no legible» (el presupuesto en Excel se lee): ${conDocs.documentos.frase}`);
         assert.ok(conDocs.documentos.adendas.length === 1 && conDocs.documentos.adendas[0].leida === true);
         const textoD = JSON.stringify([conDocs, sinDocs, dicenD]);
         for (const [re, nombre] of [[/UNSPSC/, "UNSPSC"], [/\bSMMLV\b/, "SMMLV"], [/habilitante/i, "habilitante"], [/subsanable/i, "subsanable"], [/capacidad residual/i, "capacidad residual"], [/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u, "emoji"], [/\b(?:present[áa]|ten[ée]s|pod[ée]s|hac[ée]lo|confirmalo|verific[áa]\b|vos)\b/, "voseo"]]) {
@@ -23813,7 +23909,7 @@ async function main() {
           const i1 = await invocar(routerPliegoD, `/api/pliego?op=documentos&${qD}`, CAB_TOKEN);
           assert.strictEqual(i1.status, 200);
           assert.strictEqual(i1.cuerpo.estado, "por_leer");
-          assert.deepStrictEqual(i1.cuerpo.pendientes.map((a) => a.id_documento), ["2", "9"], "los pendientes son el plan: lo que el navegador tiene que bajar y leer");
+          assert.deepStrictEqual(i1.cuerpo.pendientes.map((a) => a.id_documento), ["2", "9", "4"], "los pendientes son el plan: lo que el navegador tiene que bajar y leer");
           assert.ok(i1.cuerpo.pendientes.every((a) => /^https:\/\/community\.secop\.gov\.co\//.test(a.url)), "cada pendiente trae su dirección de descarga");
           assert.strictEqual(i1.cuerpo.indice.id_del_portafolio, "CO1.BDOS.999"); assert.strictEqual(i1.cuerpo.indice.cierre_usado, String(filaD.fecha_cierre).slice(0, 10), "el cierre para separar ofertas es el PUBLICADO del corpus");
           /* COMPATIBILIDAD DEL CORPUS VIEJO, PROBADA (M-DGF-05, 6-sep-2026): este registro
@@ -23866,7 +23962,37 @@ async function main() {
           const p1 = await invocarPost(routerPliegoD, "/api/pliego?op=documentos", { id_proceso: idD, id_documento: "2", texto: textoPliegoD, perfil: "helder" }, CAB_TOKEN);
           assert.strictEqual(p1.status, 200, JSON.stringify(p1.cuerpo));
           assert.ok(p1.cuerpo.version_pliego != null && p1.cuerpo.leidos["2"].hechos.anticipo.estado === "no" && p1.cuerpo.paginas === 3, `el pliego queda leído y registrado como versión: ${JSON.stringify({ v: p1.cuerpo.version_pliego, h: p1.cuerpo.hechos_n })}`);
-          assert.deepStrictEqual(p1.cuerpo.pendientes.map((a) => a.id_documento), ["9"]);
+          assert.deepStrictEqual(p1.cuerpo.pendientes.map((a) => a.id_documento), ["9", "4"]);
+          /* el Formulario 1 en Excel (19-oct-2026): el documento «4» (PRESUPUESTO OFICIAL.xlsx) del índice. Se guarda APARTE de los textos
+             (`formularios`), el servidor vuelve a pasarlo por la puerta y no se fía de `publicable`, y un resultado que no pasa borra los ítems del anterior */
+          {
+            const itF = (fila, c, p, tt) => ({ fila_excel: fila, descripcion: `Ítem ${fila}`, unidad: "m2", cantidad: c, precio_archivo: p, total_archivo: tt });
+            const buenoF = { ok: true, publicable: true, hoja: "PRESUPUESTO OFICIAL", total: 300000, fila_total: 6, filas_n: 2, filas: [itF(3, 100, 1000, 100000), itF(4, 10, 20000, 200000)] };
+            const { leerJSONComprimido: leerF1 } = require("../lib/almacen.js");
+            const rF = require("../lib/redis.js").crearRedis({});
+            assert.strictEqual((await invocarPost(routerPliegoD, "/api/pliego?op=documentos", { id_proceso: idD, id_documento: "4", formulario_excel: "no soy un objeto" }, CAB_TOKEN)).status, 400, "un «formulario_excel» que no es el resultado de op=descargar es un 400");
+            assert.strictEqual((await invocarPost(routerPliegoD, "/api/pliego?op=documentos", { id_proceso: idD, id_documento: "4", formulario_excel: { ok: true, publicable: true, filas: [] } }, CAB_TOKEN)).status, 400, "«publicable» sin ítems es un 400");
+            const f1 = await invocarPost(routerPliegoD, "/api/pliego?op=documentos", { id_proceso: idD, id_documento: "4", formulario_excel: buenoF }, CAB_TOKEN);
+            assert.ok(f1.status === 200 && f1.cuerpo.formularios["4"].publicable === true && f1.cuerpo.formularios["4"].total === 300000 && f1.cuerpo.formularios["4"].filas_verificadas === 2 && f1.cuerpo.formularios["4"].tipo === "presupuesto", JSON.stringify(f1.cuerpo.formularios));
+            assert.ok(!f1.cuerpo.leidos["4"], "el Formulario NO se mezcla con los textos leídos: nadie que lea `leidos` lo encuentra sin texto");
+            assert.deepStrictEqual(f1.cuerpo.pendientes.map((a) => a.id_documento), ["9"], "leer el Formulario no cambia lo pendiente");
+            assert.strictEqual(f1.cuerpo.leidos["2"].hechos.anticipo.estado, "no", "y no toca lo ya leído");
+            const guardadoF = await leerF1(rF, Docs.claveF1(idD, "4"));
+            assert.ok(guardadoF && guardadoF.filas.length === 2 && guardadoF.filas[0].fila_excel === 3 && guardadoF.total === 300000, `los ítems quedan guardados con su fila: ${JSON.stringify(guardadoF).slice(0, 200)}`);
+            // un cliente que miente: dice «publicable» con una cantidad rota → el servidor lo rechaza y BORRA lo anterior
+            const mentira = await invocarPost(routerPliegoD, "/api/pliego?op=documentos", { id_proceso: idD, id_documento: "4", formulario_excel: { ...buenoF, filas: [itF(3, 1000, 1000, 100000), itF(4, 10, 20000, 200000)] } }, CAB_TOKEN);
+            assert.ok(mentira.status === 200 && mentira.cuerpo.formularios["4"].publicable === false && /al volver a comprobarlo en el servidor/.test(mentira.cuerpo.formularios["4"].motivo), JSON.stringify(mentira.cuerpo.formularios["4"]));
+            assert.strictEqual(await leerF1(rF, Docs.claveF1(idD, "4")), null, "un resultado que no pasa la puerta borra los ítems de la lectura anterior");
+            // el total que no cuadra con lo que llegó también se rechaza aunque diga «publicable»
+            assert.strictEqual((await invocarPost(routerPliegoD, "/api/pliego?op=documentos", { id_proceso: idD, id_documento: "4", formulario_excel: { ...buenoF, total: 999 } }, CAB_TOKEN)).cuerpo.formularios["4"].publicable, false);
+            // lo que el servidor leyó y NO se pudo dar por bueno llega con su motivo y sin ítems
+            const sinF = await invocarPost(routerPliegoD, "/api/pliego?op=documentos", { id_proceso: idD, id_documento: "4", formulario_excel: { ok: true, publicable: false, motivo: "los ítems leídos no suman el total que declara el archivo", hoja: "P", total: 5, filas_n: 3 } }, CAB_TOKEN);
+            assert.ok(sinF.status === 200 && sinF.cuerpo.formularios["4"].publicable === false && sinF.cuerpo.formularios["4"].filas_n === 3 && sinF.cuerpo.formularios["4"].filas === undefined);
+            // el documento «77» no está en el índice: no se guarda nada
+            assert.strictEqual((await invocarPost(routerPliegoD, "/api/pliego?op=documentos", { id_proceso: idD, id_documento: "77", formulario_excel: buenoF }, CAB_TOKEN)).status, 404);
+            // y un Formulario que sí pasa queda al final, para lo que sigue
+            await invocarPost(routerPliegoD, "/api/pliego?op=documentos", { id_proceso: idD, id_documento: "4", formulario_excel: buenoF }, CAB_TOKEN);
+          }
           const dg = await invocar(routerPliegoD, `/api/pliego?op=diff&${qD}&perfil=helder`, CAB_TOKEN);
           assert.ok(dg.status === 200 && /documentos:PLIEGO DE CONDICIONES/.test(JSON.stringify(dg.cuerpo)), "el vigía de adendas ve la versión que llegó por los documentos, con su origen");
           // ilegible NO definitivo (la descarga falló): se reintenta al volver a buscar; el escaneado (definitivo) no
@@ -24043,9 +24169,10 @@ async function main() {
               } finally { await Alm.escribirJSON(redis, "seguimiento:helder", gOrig); }
             } finally { Object.assign(Lst, { cargarIndice: orig.i, cargarIndiceBaja: orig.b, cargarConocimiento: orig.c }); }
           }
-          assert.ok(gD && gD.documentos && gD.documentos.estado === "leido" && gD.documentos.leidos.length === 1 && gD.documentos.ilegibles.length === 1, `la guía dice qué se leyó y qué no se pudo: ${JSON.stringify(gD && (gD.error || (gD.documentos && gD.documentos.frase) || Object.keys(gD)))}`);
+          assert.ok(gD && gD.documentos && gD.documentos.estado === "leido" && gD.documentos.leidos.length === 2 && gD.documentos.ilegibles.length === 1, `la guía dice qué se leyó (el pliego y el Formulario 1 en Excel que pasó la puerta) y qué no se pudo: ${JSON.stringify(gD && (gD.error || (gD.documentos && gD.documentos.frase) || Object.keys(gD)))}`);
           assert.ok(/no hay anticipo/.test(gD.obra.pago.anticipo_legible) && gD.lo_que_dicen.some((h) => h.clave === "anticipo" && h.anticipo === "no"), "lo que dice el pliego llega a la pantalla de Mis procesos");
-          assert.ok(gD.documentos.no_legibles.some((x) => /PRESUPUESTO OFICIAL/.test(x.nombre) && x.motivo === "hoja de cálculo" && x.url), "lo no legible se lista con su motivo y su enlace, no se inventa");
+          assert.ok(!gD.documentos.no_legibles.some((x) => /PRESUPUESTO OFICIAL/.test(x.nombre)), "el Formulario 1 en Excel ya no es «no legible»");
+          assert.ok(gD.documentos.leidos.some((x) => /PRESUPUESTO OFICIAL/.test(x.nombre) && /Formulario 1 en Excel: 2 ítems por un total de \$300\.000/.test(x.motivo) && /hoja «PRESUPUESTO OFICIAL»/.test(x.motivo) && x.url), `el Formulario que pasó la puerta sale como leído, con lo que se comprobó y su enlace: ${JSON.stringify(gD.documentos.leidos.filter((x) => /PRESUPUESTO/.test(x.nombre)))}`);
           // un proceso que datos.gov.co no publica: resultado con motivo, jamás error; y la red caída tampoco tumba nada
           const i5 = await invocar(routerPliegoD, "/api/pliego?op=documentos&id_proceso=CO1.REQ.SINPORTAFOLIO", CAB_TOKEN);
           assert.ok(i5.status === 200 && i5.cuerpo.ok === true && i5.cuerpo.estado === "sin_archivos" && /no publica/.test(i5.cuerpo.motivo), JSON.stringify(i5.cuerpo).slice(0, 300));

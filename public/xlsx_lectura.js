@@ -497,6 +497,7 @@
       const aiuSub = subcontratado && aiuSubCrudo != null && aiuSubCrudo >= 0 ? aiuSubCrudo : null;
 
       filas.push({
+        fila_excel: i + 1,                              // la cita: la rejilla es densa, así que índice + 1 es el número de fila de la hoja
         codigo: codigo || null,
         capitulo: [capMayor, capMenor].filter(Boolean).join(" · ") || null,
         descripcion: desc,
@@ -540,6 +541,7 @@
     }
     const base = { suma_items: sumadas ? suma : null, filas_sumadas: sumadas, filas_sin_valor: sinValor,
       total_declarado: totalDeclarado ? totalDeclarado.valor : null, etiqueta_total: totalDeclarado ? totalDeclarado.etiqueta : null,
+      fila_total: totalDeclarado && Number.isInteger(totalDeclarado.fila) ? totalDeclarado.fila + 1 : null,
       tolerancia_rel: TOL_CUADRE_REL };
     if (!totalDeclarado) return { ...base, estado: "sin_referencia", desviacion: null, desviacion_pct: null };
     if (sinValor > 0 || !sumadas) return { ...base, estado: "no_comparable", desviacion: null, desviacion_pct: null };
@@ -633,7 +635,7 @@
   }
 
   return {
-    leerLibro, leerZip, parsearCsv, detectarFilasApu, elegirHoja, clasificarRotuloTotal, verificarFormulario,
+    leerLibro, leerZip, parsearCsv, detectarFilasApu, elegirHoja, clasificarRotuloTotal, verificarFormulario, cuadreDeControl,
     numeroLocal, indiceColumna, desescaparXml,
   };
 });

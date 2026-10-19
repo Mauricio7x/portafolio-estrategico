@@ -22,7 +22,7 @@
   pliego.js                   Router del dominio PLIEGO (Fase 0 · consolidación a 6 funciones)
   procesos.js                 Router del dominio PROCESOS (Fase 0 · consolidación a 6 funciones)
 
-· lib/ — 97 módulos:
+· lib/ — 98 módulos:
   accesibilidad.js            Accesibilidad operativa de la zona de la obra
   adendas.js                  Vigía de adendas · lo que el DATASET dice que cambió (Fase 5)
   almacen.js                  Esquema de claves Redis + compresión de chunks
@@ -69,6 +69,7 @@
   filtros_lista.js            Aplicación en el SERVIDOR de los siete filtros del
   formato_entidad.js          LLENAR EL FORMATO QUE PUBLICÓ LA ENTIDAD (27-sep-2026)
   formulario1.js              Guardián del Formulario 1 (Fase 4 del plan v3)
+  formulario_excel.js         EL FORMULARIO 1 DE UN .xlsx, LEÍDO SOLO Y CON PUERTA (19-oct-2026)
   ganancia.js                 ¿CUÁNTA PLATA DEJA ESTE CONTRATO?
   garantia_seriedad.js        EL PORCENTAJE DE LA GARANTÍA DE SERIEDAD QUE FIJA EL PLIEGO (28-sep-2026)
   glosario.js                 la marca y el glosario viven en public/glosario.js (UMD) y
@@ -215,8 +216,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 369 secciones (27 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 19598  El tablero de pendientes mentía: la revisión del 18-oct, uno por uno contra el código (18-o…
+· MEMORIA · docs/MEMORIA.md — 370 secciones (27 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 19606  Las tres lecturas del pliego del 18-oct: la versión que rige, el ejemplo entre corchetes y …
   L 19614  La carga en Precios no entra al vigía si el nombre dice que es otra cosa (18-oct-2026)
   L 19655  La Fase C se cierra: no se construye la descarga de pliegos de más de 20 MB (18-oct-2026)
@@ -226,6 +226,7 @@
   L 19759  La carga completa ya no para con una actualización a medias, y el tiempo agotado de Upstash…
   L 19777  La obra que copia el «aunar esfuerzos» del convenio que la financia no es un convenio (19-o…
   L 19799  El Formulario 1 en Excel: «VALOR TOTAL» es el total, y solo se da por leído lo que pasa la …
+  L 19818  El Formulario 1 en Excel se lee solo en el servidor, y solo se publica lo que pasa la puert…
 
 · DOCUMENTOS docs/ — 71 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)
