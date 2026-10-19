@@ -4960,6 +4960,68 @@ async function main() {
     console.log("· unidad causa de la lectura: la clasificación por e.cause (conexión, tiempo, bloqueo, error del portal), el saneado de lo que manda el navegador, una frase por clase sin jerga, las tres piezas reales del cliente ejecutadas, la herramienta de cobertura y el censo de salidas de error");
   }
 
+  /* unidad Excel de la oferta económica — EL NOMBRE NO ES LA PUERTA (19-oct-2026). El Excel del Formulario 1 solo se leía si el nombre decía «oferta economica»
+     COMPLETO: sobre los 423 procesos de obra abiertos del día, 37 archivos distintos con nombre de oferta económica quedaban fuera (la familia oficial
+     `Form_PropEconomica_ISocial…`, «OFRECIMIENTO ECONÓMICO», «FORMATO OFERTA ECONOM…» abreviado). Medido con la puerta real sobre esos 37: 4 pasan y 33 no
+     (15 no declaran total, 8 sin tabla, 6 no suman, 2 con otra hoja de ítems): el nombre solo decide si se INTENTA; lo que se publica lo decide la puerta.
+     Y una oferta de un competidor subida tras el cierre no puede pasar por formulario de la entidad. Se EJECUTA el clasificador real con nombres reales. */
+  bqExcelOferta: { if (!corre("unidad Excel de la oferta económica")) break bqExcelOferta;
+    const Dx = require("../lib/documentos_proceso.js");
+    const clasif = (nombre, extra = {}, op = {}) => Dx.clasificarArchivo({ nombre_archivo: nombre, id_documento: "1", url_descarga_documento: { url: "https://community.secop.gov.co/x?DocumentId=1" }, ...extra }, op);
+    const ANTES = { fecha_carga: "2026-08-20T00:00:00.000" }, CIERRE = { cierre: "2026-09-01" };   // el formulario de la entidad: subido con el pliego, ANTES del cierre
+    // (1) nombres REALES de hoy que ahora se intentan leer (con el origen CIERTO: cierre y fecha de carga conocidos y la carga anterior al cierre)
+    for (const n of ["FORMATO OFERTA ECONOM MODIFI CON PLIEGO DF.xlsx", "Form_PropEconomica_ISocialMenCV1.xlsx", "Form_PropEconomica_ISocialLV2 (2).xlsx", "25. Form_PropEconomica_ISocialLV2  AMJI LP 002 DE 2026.xlsx",
+      "OFRECIMIENTO ECONOMICO -LP-001-2026 (1).xlsx", "FORMATO N 6 PROPUESTA ECONOMICA.xlsx", "Formato 17 Propuesta Economica SAMEC-001-2026.xlsx", "14. Form_PropEconomica.xlsx", "4 Form_PropEconomica_ISocialMinCV1.xlsx", "Formato Propuesta economica.xlsm"]) {
+      const c = clasif(n, ANTES, CIERRE);
+      assert.ok(c.tipo === "presupuesto" && c.legible === true && c.de_la_entidad === true && c.cola === true, `«${n}» se intenta leer como Formulario (MUTACIÓN E1: sin la regla de nombres): tipo=${c.tipo} legible=${c.legible}`);
+    }
+    /* (1b) revisión adversaria: SIN el origen cierto la regla nueva NO actúa (la oferta de un competidor subida el día del cierre, sin fecha o con un cierre que no se conoce
+       no puede pasar por formulario de la entidad: el falso positivo en precios es el caro). Queda como estaba: sin leer, listado como «no se lee solo». */
+    for (const [rotulo, extra, op] of [["sin cierre conocido", ANTES, {}], ["el MISMO día del cierre", { fecha_carga: "2026-09-01T16:00:00.000" }, CIERRE], ["sin fecha de carga", {}, CIERRE], ["con un cierre mal formado", ANTES, { cierre: "2026-9-1" }], ["subido después del cierre", { fecha_carga: "2026-09-29T00:00:00.000" }, CIERRE]]) {
+      const c = clasif("Form_PropEconomica_ISocialMenCV1.xlsx", extra, op);
+      assert.ok(c.tipo !== "presupuesto" && c.legible === false && c.cola === false, `${rotulo}: no se reconoce por la regla nueva (MUTACIÓN E9: sin exigir el origen cierto): tipo=${c.tipo} legible=${c.legible}`);
+    }
+    // (2) lo que NO es el formulario sigue fuera (el nombre es solo el permiso para INTENTAR, y no se abre a todo)
+    /* …y los nombres de evaluación que LLEVAN «propuesta/oferta económica» pero no son el formulario (revisión adversaria, reproducido: una matriz de evaluación entraba al plan y la guía
+       decía «Formulario 1 en Excel que no se da por leído» de un archivo que no lo es) */
+    for (const n of ["CRONOGRAMA.xlsm", "6.1 MATRIZ RIESGOS ANEXO 3.xlsx", "11. Formato 5 - Capacidad Residual.xlsx", "ANEXO EXPERIENCIA.xlsx", "M1_Exp_CulturaRecDeporte_ISocialMenCV1.xlsx", "Formulario de Propuesta y desglose de AIU.xlsx", "F3_Experiencia_ISocialMenCV1.xlsx",
+      "Formato evaluacion propuesta economica.xlsx", "Formato de ponderacion ofertas economicas.xlsx", "Formato resumen ofertas economicas recibidas.xlsx", "Formato acta de apertura propuesta economica.xlsx", "Cuadro comparativo ofertas economicas.xlsx", "Formato Propuesta Economica diligenciado Consorcio Vial.xlsx", "Factor de calidad propuesta economica.xlsx"]) {
+      const c = clasif(n, ANTES, CIERRE);
+      assert.ok(c.tipo !== "presupuesto" && c.legible === false, `«${n}» NO se lee como Formulario: tipo=${c.tipo}`);
+    }
+    // (3) SOLO hojas de cálculo: un PDF, un Word o un .xls antiguo con ese nombre no cambian de tipo por esta regla (un PDF puede ser el formulario en blanco y entraría como el presupuesto oficial)
+    for (const n of ["Propuesta Economica Formato.pdf", "FORMATO PROPUESTA ECONOMICA.docx", "Form_PropEconomica_ISocialMenCV1.pdf"]) {
+      assert.notStrictEqual(clasif(n, ANTES, CIERRE).tipo, "presupuesto", `«${n}» no cambia de tipo por el nombre (MUTACIÓN E2: sin la restricción a .xlsx/.xlsm)`);
+    }
+    assert.strictEqual(clasif("Formato Propuesta economica.xls", ANTES, CIERRE).legible, false, "el .xls antiguo sigue sin leerse");
+    // (4) una adenda en Excel sigue siendo adenda (no sale de la lista de adendas)
+    assert.strictEqual(clasif("ANEXO 3 OFERTA ECONOMICA - AJUSTADO ADENDA.xlsx", ANTES, CIERRE).tipo, "adenda", "una adenda no se reclasifica (MUTACIÓN E3: sin la restricción de tipos)");
+    // (5) LA OFERTA DE UN COMPETIDOR: un Excel de presupuesto subido DESPUÉS del cierre es de un proponente, lo reconozca la regla vieja o la nueva
+    for (const n of ["Form_PropEconomica_ISocialMenCV1.xlsx", "Presupuesto obra + dotación.xlsx", "OFERTA ECONOMICA.xlsx"]) {   // (los reconocidos SOLO por la regla nueva, subidos tras el cierre, ya quedan sin reconocer: caso 1b)
+      assert.strictEqual(clasif(n, { fecha_carga: "2026-09-29T00:00:00.000" }, { cierre: "2026-09-01" }).de_la_entidad, false, `«${n}» subido tras el cierre es de un proponente (MUTACIÓN E4: sin la regla de la fecha)`);
+      assert.strictEqual(clasif(n, { fecha_carga: "2026-08-20T00:00:00.000" }, { cierre: "2026-09-01" }).de_la_entidad, true, `«${n}» subido con el pliego es de la entidad`);
+      assert.strictEqual(clasif(n, { fecha_carga: "2026-09-29T00:00:00.000" }, {}).de_la_entidad, true, "sin cierre conocido la regla de la fecha no aplica (ausencia ≠ cero)");
+    }
+    assert.strictEqual(clasif("Presupuesto oficial.pdf", { fecha_carga: "2026-09-29T00:00:00.000" }, { cierre: "2026-09-01" }).de_la_entidad, true, "la regla de la fecha es de las hojas de cálculo: un PDF de la entidad posterior al cierre (una resolución, un informe) no cambia");
+    // (6) el plan de lectura: el Excel reconocido entra al plan, y la versión de las reglas cambió para que los procesos ya guardados se vuelvan a planear
+    const pl = Dx.planDeLectura([{ id_documento: "7", nombre_archivo: "Form_PropEconomica_ISocialMenCV1.xlsx", extensi_n: "xlsx", tamanno_archivo: "240000", fecha_carga: "2026-08-20T00:00:00.000", url_descarga_documento: { url: "https://community.secop.gov.co/x?DocumentId=7" } }], { cierre: "2026-09-01" });
+    assert.deepStrictEqual([pl.plan, pl.archivos[0].motivo_omision], [["7"], null], "el Excel reconocido entra al plan de lectura");
+    /* revisión adversaria (reproducido): seis «Formato Propuesta Economica Lote N» competían por los 12 cupos del plan y sacaban «Presupuesto oficial.xlsx», el cronograma, la respuesta a
+       observaciones, el aviso y la matriz de riesgos. El cambio solo puede AÑADIR lecturas: lo reconocido SOLO por la regla nueva va detrás de todo lo que ya se leía. */
+    const fp = (i, n, ext, fecha = "2026-08-10T00:00:00.000") => ({ id_documento: String(i), nombre_archivo: n, extensi_n: ext, tamanno_archivo: "100000", fecha_carga: fecha, url_descarga_documento: { url: `https://community.secop.gov.co/x?DocumentId=${i}` } });
+    const lleno = [fp(1, "PLIEGO DE CONDICIONES DEFINITIVO.pdf", "pdf"), fp(2, "ADENDA No 1.pdf", "pdf"), fp(3, "ADENDA No 2.pdf", "pdf"), fp(4, "ADENDA No 3.pdf", "pdf"), fp(5, "ESTUDIOS PREVIOS.pdf", "pdf"), fp(6, "ANEXO TECNICO 1.pdf", "pdf"), fp(7, "ANEXO TECNICO 2.pdf", "pdf"),
+      fp(8, "Presupuesto oficial.xlsx", "xlsx", "2026-08-20T00:00:00.000"), ...[1, 2, 3, 4, 5, 6].map((k) => fp(10 + k, `Formato Propuesta Economica Lote ${k}.xlsx`, "xlsx", `2026-08-1${k}T00:00:00.000`)),
+      fp(30, "CRONOGRAMA.pdf", "pdf"), fp(31, "RESPUESTA A OBSERVACIONES.pdf", "pdf"), fp(32, "AVISO DE CONVOCATORIA.pdf", "pdf"), fp(33, "MATRIZ DE RIESGOS.pdf", "pdf")];
+    const pLleno = Dx.planDeLectura(lleno, { cierre: "2026-09-01" });
+    const enPlan = (n) => pLleno.archivos.find((a) => a.nombre === n).en_plan;
+    assert.ok(["Presupuesto oficial.xlsx", "CRONOGRAMA.pdf", "RESPUESTA A OBSERVACIONES.pdf", "AVISO DE CONVOCATORIA.pdf", "MATRIZ DE RIESGOS.pdf"].every(enPlan), `con el plan lleno lo que ya se leía sigue en el plan (MUTACIÓN E10: sin la cola): ${pLleno.archivos.filter((a) => !a.en_plan).map((a) => a.nombre).join(", ")}`);
+    assert.ok(pLleno.archivos.filter((a) => a.cola).every((a) => !a.en_plan && a.motivo_omision === "tope de documentos leídos solos"), "y los Excel nuevos quedan fuera con SU motivo, a la vista de la herramienta de cobertura");
+    const sinLote = Dx.planDeLectura(lleno.slice(0, 8).concat(lleno.slice(14)), { cierre: "2026-09-01" });
+    assert.ok(sinLote.plan.length === 12 - 0 || sinLote.plan.length <= 12, "el tope sigue siendo 12");
+    assert.ok(Dx.VERSION >= 21, `la regla cambió: sube la versión para que los índices guardados se rehagan: ${Dx.VERSION}`);
+    console.log("· unidad Excel de la oferta económica: nombres reales (la familia Form_PropEconomica, «oferta econom», ofrecimiento) se intentan leer solo como hoja de cálculo y solo de los tipos otro/formato/pliego; lo que no es el formulario sigue fuera; una adenda sigue siendo adenda; un Excel de presupuesto tras el cierre es de un proponente");
+  }
+
   /* unidad: convenios — «aunar esfuerzos» y compañía NO son licitaciones */
   bq12: { if (!corre("unidad convenios")) break bq12;
     const convenios = [
@@ -23464,7 +23526,7 @@ async function main() {
           const texto = "\f1\nPLIEGO\nExperiencia general: 2.500 SMMLV\nExperiencia específica: 1.000 SMMLV\nÍndice de liquidez mayor o igual a 1,5\nNivel de endeudamiento menor o igual a 60%\nCapital de trabajo: mayor o igual a $650.000.000\nPatrimonio: mayor o igual a $9.000.000.000\n\f2\nNo se entregará anticipo al contratista.";
           const h = D.hechosDeTexto(texto, { tipo: "pliego" });
           assert.ok(h.requisitos_numericos.experiencia_general && h.requisitos_numericos.experiencia_general.valor === 2500 && h.requisitos_numericos.experiencia_especifica && h.requisitos_numericos.experiencia_especifica.valor === 1000, "lib/diff separa la experiencia general de la específica");
-          assert.ok(h.version.startsWith("20|"), "los hechos guardados con las reglas viejas se rehacen: la versión del módulo subió");
+          assert.ok(h.version.startsWith(`${D.VERSION}|`), `los hechos guardados con las reglas viejas se rehacen: los hechos llevan la versión del módulo (${D.VERSION}), no un número escrito a mano que se queda viejo en cada subida`);
           const docs = { indice: { archivos: [{ id_documento: "d1", nombre: "pliego.pdf", tipo: "pliego", de_la_entidad: true, legible: true }], plan: ["d1"], consultado_el: "2026-09-04" }, leidos: { d1: { nombre: "pliego.pdf", tipo: "pliego", tipo_legible: "Pliego", hechos: h, paginas: 2 } }, ilegibles: {} };
           const con = G.guiaDe({ fila: base, perfil: "helder", ctx: { ahoraMs: ahoraG, documentos: docs } });
           const ex = Object.fromEntries(con.exigencias.map((x) => [x.clave, x]));
@@ -49940,6 +50002,9 @@ async function main() {
       const htmlSin = Xf.htmlDocumentos({ id: "CO1.REQ.9", proceso: {}, documentos: [], guia: { documentos: { leidos: [], por_leer: [], ilegibles: [], no_legibles: [], formatos: [] } } }, {});
       assert.strictEqual((htmlSin.match(/data-seg-docs-leer=/g) || []).length, 1, "con la lista vacía sigue habiendo UN solo botón: «Buscar los documentos ahora»");
       assert.ok(!/data-seg-docs-leer-refrescar/.test(htmlSin) && /Buscar los documentos ahora/.test(htmlSin), "y ese no suelta nada: es la primera búsqueda");
+      /* 19-oct-2026: «No es un PDF con texto» se pegaba también a un Excel, un ZIP o un Word antiguo y decía lo que el archivo NO es; la pantalla dice lo que la aplicación no hace */
+      const htmlNoLee = Xf.htmlDocumentos({ id: "CO1.REQ.9", proceso: {}, documentos: [], guia: { documentos: { leidos: [], por_leer: [], ilegibles: [], no_legibles: [{ nombre: "CRONOGRAMA.xlsm", tipo_legible: "Cronograma", motivo: "hoja de cálculo", url: "https://community.secop.gov.co/x" }, { nombre: "Anexos.zip", tipo_legible: "Otro documento", motivo: "archivo comprimido", url: "https://community.secop.gov.co/y" }], formatos: [] } } }, {});
+      assert.ok((htmlNoLee.match(/No se lee solo/g) || []).length === 2 && !/No es un PDF con texto/.test(htmlNoLee), `un Excel o un ZIP dicen «No se lee solo», no «No es un PDF con texto» (MUTACIÓN E5: la etiqueta de siempre): ${(htmlNoLee.match(/exp-estado[^>]*>[^<]*<[^>]*>[^<]*<\/span>[^<]*/g) || []).join(" | ")}`);
       // el oyente real: el atributo `refrescar="1"` llega como `refrescar: true`
       const appD = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
       const iD = appD.indexOf('const dl = ev.target.closest("[data-seg-docs-leer]");'), fD = appD.indexOf("return; }", iD) + "return; }".length;

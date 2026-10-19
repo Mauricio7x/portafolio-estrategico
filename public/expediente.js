@@ -242,7 +242,7 @@
     leido: { clase: "exp-estado-ok", texto: "Leído" },
     por_leer: { clase: "exp-estado-nd", texto: "Por leer" },
     ilegible: { clase: "exp-estado-falta", texto: "No se pudo leer" },
-    no_legible: { clase: "exp-estado-nd", texto: "No es un PDF con texto" },
+    no_legible: { clase: "exp-estado-nd", texto: "No se lee solo" },   // 19-oct-2026: «No es un PDF con texto» se pegaba también a un Excel, un ZIP o un Word antiguo, y decía lo que el archivo NO es en vez de lo que la aplicación no hace
     formato: { clase: "exp-estado-nd", texto: "Formato para llenar" },
   };
 
