@@ -1,0 +1,143 @@
+{
+  "id_del_proceso": "CO1.REQ.10395718",
+  "id_del_portafolio": "CO1.BDOS.10163297",
+  "entidad": "DEPARTAMENTO DE CUNDINAMARCA- SECRETARIA DE SALUD",
+  "departamento": "Distrito Capital de Bogotá",
+  "tipo_de_contrato": "Obra",
+  "modalidad_de_contratacion": "Licitación pública Obra Publica",
+  "estado_del_procedimiento": "Seleccionado",
+  "precio_base": "3559441405",
+  "fecha_de_publicacion": "2026-04-29T00:00:00.000",
+  "respuestas_al_procedimiento_muestra": "53",
+  "fecha_consulta": "2026-10-19",
+  "leido_por": "agente muestra fase2 lote 4",
+  "muestra_posicion": 37,
+  "informes": [
+    {
+      "id_documento": "833946616",
+      "nombre_archivo": "INFORME DEFINITIVO DE EVALUACION HABILITANTES.pdf",
+      "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=833946616&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+      "paginas": 494,
+      "escaneado": false,
+      "md5": "087f1115be6c5c705106e8e8849ec39a",
+      "estado_lectura": "parcial",
+      "partes_leidas": [
+        "p. 1-2 (relación de oferentes)",
+        "p. 388-391 y 411-413 (resultados por concepto)",
+        "p. 452-453 (indicadores financieros)",
+        "p. 490-494 (consolidado jurídico, técnico, financiero y K residual)"
+      ],
+      "nota": "Informe de 494 páginas con texto nativo. Solo se leyeron las secciones de resultados. Los conteos del consolidado se tomaron de la posición de cada celda con las coordenadas de la capa de texto (pdftotext -bbox)."
+    }
+  ],
+  "conteos": {
+    "proponentes": 53,
+    "habilitados": 39,
+    "no_habilitados": 14,
+    "rechazados": 14,
+    "nota": "Consolidado definitivo (p. 490-494): 53 oferentes numerados; 14 con resultado final RECHAZADO (4, 7, 15, 21, 23, 29, 30, 32, 34, 42, 43, 44, 46, 48) y 39 HABILITADO. Las listas de resultados por concepto (p. 411-413, 452-453 y 490) son subconjunto de estos 14."
+  },
+  "causas": [
+    {
+      "categoria": "juridica",
+      "detalle": "Capacidad jurídica NO HABILITADO en 8 de los 14 rechazados.",
+      "n": 8,
+      "subsanada": null
+    },
+    {
+      "categoria": "tecnica",
+      "detalle": "Capacidad técnica NO HABILITADO en 8 de los 14 rechazados.",
+      "n": 8,
+      "subsanada": null
+    },
+    {
+      "categoria": "financiera",
+      "detalle": "Capacidad financiera NO HABILITADO en 6 de los 14 rechazados.",
+      "n": 6,
+      "subsanada": null
+    },
+    {
+      "categoria": "financiera",
+      "detalle": "Capacidad residual (K) NO HABILITADO en 6 de los 14 rechazados.",
+      "n": 6,
+      "subsanada": null
+    },
+    {
+      "categoria": "economica",
+      "detalle": "Causal T (presentar la oferta económica en el sobre que no corresponde), citada para 3 oferentes (p. 490).",
+      "n": 3,
+      "subsanada": false
+    }
+  ],
+  "subsanaciones": {
+    "pedidas": null,
+    "tipo_conteo": null,
+    "documentadas_en_informe": true,
+    "nota": "El informe documenta numerosos requerimientos «SUBSANAR» y su resultado («no subsana»). No da un total de requerimientos, así que no se cuenta."
+  },
+  "adendas": {
+    "n": 8,
+    "documentos_en_indice": 103,
+    "metodo": "Ocho archivos con ADENDA en el nombre: Adenda Nº 1, Adenda Nº 2 y seis anexos de la adenda 2. Adendas numeradas: 2."
+  },
+  "documentos_tipo": {
+    "usa": true,
+    "cual": "Documento Base CCE-EICP-GI-14, Infraestructura Social (pliego definitivo en el índice)",
+    "version_declarada": "Versión 2 del 21 de agosto de 2025",
+    "fuente": "Documento base definitivo (786247124), abierto p. 1",
+    "nota": "Versión tomada de la portada del documento tipo."
+  },
+  "p6dx_8zbt": {
+    "consulta": "https://www.datos.gov.co/resource/p6dx-8zbt.json?id_del_proceso=CO1.REQ.10395718",
+    "filas": 1,
+    "campos": {
+      "precio_base": {
+        "valor": "3559441405",
+        "estado": "lleno"
+      },
+      "duracion": {
+        "valor": "8",
+        "estado": "lleno"
+      },
+      "unidad_de_duracion": {
+        "valor": "Mes(es)",
+        "estado": "lleno"
+      },
+      "fecha_de_recepcion_de": {
+        "valor": "2026-05-20T00:00:00.000",
+        "estado": "lleno"
+      },
+      "codigo_principal_de_categoria": {
+        "valor": "V1.95122001",
+        "estado": "lleno"
+      },
+      "categorias_adicionales": {
+        "valor": "No definido",
+        "estado": "dudoso"
+      },
+      "tipo_de_contrato": {
+        "valor": "Obra",
+        "estado": "lleno"
+      },
+      "modalidad_de_contratacion": {
+        "valor": "Licitación pública Obra Publica",
+        "estado": "lleno"
+      },
+      "descripci_n_del_procedimiento": {
+        "valor": "REPOSICIÓN DEL CENTRO DE SALUD DE LA INSPECCIÓN DE CAPELLANÍA, ADSCRITO A LA EMPRESA SOCIA",
+        "estado": "lleno"
+      },
+      "respuestas_al_procedimiento": {
+        "valor": "53",
+        "estado": "lleno"
+      }
+    }
+  },
+  "incidencias": [
+    "El consolidado es una tabla de 4 columnas con texto envuelto; sin coordenadas la asignación de filas daba 14 o 13 rechazos según la lectura. Se usó la posición vertical de cada celda (verificada contra p. 411-413, 452-453 y 490).",
+    "p6dx da 53 respuestas, igual al número de oferentes del informe.",
+    "Adendas: el conteo son archivos, no adendas; hay dos adendas numeradas."
+  ],
+  "tiempo_aprox_min": 35,
+  "privacidad": "Sin nombres de proponentes, representantes, evaluadores ni personas naturales. Solo conteos, número de proceso, entidad y hechos."
+}

@@ -1,0 +1,122 @@
+{
+  "id_del_proceso": "CO1.REQ.10324001",
+  "id_del_portafolio": "CO1.BDOS.10082177",
+  "entidad": "ALCALDIA MUNICIPAL DE ARATOCA",
+  "departamento": "Santander",
+  "tipo_de_contrato": "Obra",
+  "modalidad_de_contratacion": "Licitación pública Obra Publica",
+  "estado_del_procedimiento": "Seleccionado",
+  "precio_base": "511697735",
+  "fecha_de_publicacion": "2026-04-06T00:00:00.000",
+  "respuestas_al_procedimiento_muestra": "3",
+  "fecha_consulta": "2026-10-19",
+  "leido_por": "agente muestra fase2 lote 4",
+  "muestra_posicion": 32,
+  "informes": [
+    {
+      "id_documento": "788097815",
+      "nombre_archivo": "INFORME FINAL DE EVALUACION LP 001 2026.pdf",
+      "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=788097815&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+      "paginas": 18,
+      "escaneado": false,
+      "md5": "dbe1d28ebc958fd05f797c446ad0ccb0",
+      "estado_lectura": "parcial",
+      "partes_leidas": [
+        "p. 1-3 (propuestas y verificación MIPYME)",
+        "p. 5 (etapa II)",
+        "p. 9-10 (oferente 2)",
+        "p. 17-18 (resumen y observaciones)"
+      ],
+      "nota": "La tabla de requisitos de cada oferente se leyó en las páginas indicadas; el resto (criterios de puntaje) no se leyó en detalle."
+    }
+  ],
+  "conteos": {
+    "proponentes": 3,
+    "habilitados": 1,
+    "no_habilitados": 1,
+    "rechazados": 1,
+    "nota": "Tres oferentes (p. 1-2). Uno rechazado de plano por no acreditar domicilio MIPYME en Aratoca (p. 3); uno NO HABILITADO (p. 18); uno HABILITADO tras subsanaciones (p. 18)."
+  },
+  "causas": [
+    {
+      "categoria": "juridica",
+      "detalle": "Limitación territorial: el oferente tiene domicilio principal fuera de Aratoca y no acredita la condición de MIPYME domiciliada en el municipio; rechazada de plano antes de la evaluación.",
+      "n": 1,
+      "subsanada": false
+    },
+    {
+      "categoria": "financiera",
+      "detalle": "Capacidad residual: no allegó el Formato 5A-1 (contratos para acreditar la capacidad residual) y no subsanó el requisito; capacidad residual NO CUMPLE.",
+      "n": 1,
+      "subsanada": false
+    }
+  ],
+  "subsanaciones": {
+    "pedidas": null,
+    "tipo_conteo": null,
+    "documentadas_en_informe": true,
+    "nota": "El informe documenta subsanaciones de dos oferentes (una no subsanada, p. 9; el otro «hubo subsanaciones», p. 18) sin dar el número de requerimientos."
+  },
+  "adendas": {
+    "n": 0,
+    "documentos_en_indice": 169
+  },
+  "documentos_tipo": {
+    "usa": true,
+    "cual": "Documento Base de Licitación de Infraestructura de Transporte (CCE-EICP-GI-01), pliego definitivo en el índice",
+    "version_declarada": "Versión 4 del documento tipo; código CCE-EICP-GI-01, versión 8 (portada, p. 1)",
+    "fuente": "Pliego definitivo (773654061), abierto p. 1",
+    "nota": "El informe no declara la versión del documento tipo; la versión sale del propio pliego."
+  },
+  "p6dx_8zbt": {
+    "consulta": "https://www.datos.gov.co/resource/p6dx-8zbt.json?id_del_proceso=CO1.REQ.10324001",
+    "filas": 1,
+    "campos": {
+      "precio_base": {
+        "valor": "511697735",
+        "estado": "lleno"
+      },
+      "duracion": {
+        "valor": "3",
+        "estado": "lleno"
+      },
+      "unidad_de_duracion": {
+        "valor": "Mes(es)",
+        "estado": "lleno"
+      },
+      "fecha_de_recepcion_de": {
+        "valor": "2026-04-21T00:00:00.000",
+        "estado": "lleno"
+      },
+      "codigo_principal_de_categoria": {
+        "valor": "V1.72141100",
+        "estado": "lleno"
+      },
+      "categorias_adicionales": {
+        "valor": "No definido",
+        "estado": "dudoso"
+      },
+      "tipo_de_contrato": {
+        "valor": "Obra",
+        "estado": "lleno"
+      },
+      "modalidad_de_contratacion": {
+        "valor": "Licitación pública Obra Publica",
+        "estado": "lleno"
+      },
+      "descripci_n_del_procedimiento": {
+        "valor": "MEJORAMIENTO DE VÍAS TERCIARIAS MEDIANTE LA CONSTRUCCIÓN DE PLACA HUELLAS EN EL SECTOR EL ",
+        "estado": "lleno"
+      },
+      "respuestas_al_procedimiento": {
+        "valor": "3",
+        "estado": "lleno"
+      }
+    }
+  },
+  "incidencias": [
+    "La rechazada de plano (p. 3) se cuenta como rechazo; la NO HABILITADA (p. 18) como no habilitada. Los conteos no se suman entre sí."
+  ],
+  "tiempo_aprox_min": 9,
+  "privacidad": "Sin nombres de proponentes, representantes, evaluadores ni personas naturales. Solo conteos, número de proceso, entidad y hechos."
+}

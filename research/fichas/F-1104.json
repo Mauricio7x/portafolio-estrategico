@@ -1,0 +1,34 @@
+{
+  "id": "F-1104",
+  "tipo": "doc_tipo",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Invitación (documento base) de mínima cuantía de obra pública de infraestructura social, versión 1 (Resolución 541 de 2025)",
+  "anio": 2025,
+  "institucion": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29582/",
+  "fecha_consulta": "2026-10-19",
+  "estado_lectura": "parcial",
+  "localizador": "Invitación mínima cuantía infraestructura social V1, numerales de verificación económica (3.x) y 5.1.1 AIU / 5.1.2 correcciones aritméticas (índice del .docx: p. impresas 70-71)",
+  "cita_textual": "«La Entidad revisará las ofertas económicas y verificará que la de menor precio cumpla con las condiciones de la invitación. Si cumple, aceptará la oferta de menor precio»",
+  "afirmacion": "En la mínima cuantía de obra de infraestructura social (V1, aplicable desde el 16-feb-2026) gana la oferta de menor precio que cumple; si no cumple se pasa a la del segundo mejor precio; el empate se resuelve con el art. 35 de la Ley 2069 de 2020; la oferta económica no puede mejorarse en la subsanación y se mantienen AIU en porcentaje y corrección aritmética limitada.",
+  "eje": 9,
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-PRECIO",
+  "autoridad": "A3",
+  "vigencia_verificada": {
+    "fecha": "2026-10-19",
+    "fuente": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo (mínima cuantía de infraestructura social: V.1 vigente desde 16/02/2026)"
+  },
+  "leida_por": "lector fase2 eje9-institucional",
+  "tipo_contrato": "obra",
+  "anio_origen": "inferido",
+  "url_final": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29582",
+  "reformas_cotejadas": [
+    "Control de versiones de Documentos Tipo (abierto el 2026-10-19): V.1 vigente desde 16/02/2026",
+    "Resolución 541 de 2025: nombrada en la página del documento tipo (modalidad 03, mínima cuantía de infraestructura social); el PDF no se abrió",
+    "Decreto 1860 de 2021 art. 2 (abierto, ficha F-1094)",
+    "Decreto 0997 de 2026, art. 14 par. 3: los procesos con documentos tipo siguen con ellos hasta nuevas versiones"
+  ],
+  "notas": "Fuente: archivo .docx dentro del ZIP «05DT_Transversales_ISocialMinCV1.zip» (descarga/29582, GET del 2026-10-19). Literales: «si la oferta de menor precio no cumple con las condiciones señaladas en la invitación, la Entidad debe verificar el cumplimento de los requisitos de la invitación de la oferta con el segundo mejor precio, y así sucesivamente, sin perjuicio de lo señalado en el numeral 1.6»; «En caso de empate, la Entidad aplicará los criterios de desempate dispuestos en el artículo 35 de la Ley 2069 de 2020»; «los Proponentes no podrán completar, adicionar, modificar o mejorar la oferta económica, la cual solo puede ser objeto de aclaraciones y explicaciones». Causal: «Que el valor total de la oferta o el obtenido de la corrección aritmética exceda el Presupuesto Oficial estimado»."
+}

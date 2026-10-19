@@ -1,0 +1,33 @@
+{
+  "id": "F-1103",
+  "tipo": "doc_tipo",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Invitación (documento base) de mínima cuantía de obra pública de infraestructura de transporte, versión 2 con modificaciones (Resolución 464)",
+  "anio": 2024,
+  "institucion": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/30021/",
+  "fecha_consulta": "2026-10-19",
+  "estado_lectura": "parcial",
+  "localizador": "Invitación mínima cuantía transporte V2, numerales 3.x «Informe de evaluación» y 5.1 (5.1.1 AIU, 5.1.2 correcciones aritméticas; índice del .docx: p. impresas 53-54)",
+  "cita_textual": "«los Proponentes no podrán completar, adicionar, modificar o mejorar la oferta económica, la cual solo puede ser objeto de aclaraciones y explicaciones.»",
+  "afirmacion": "En la mínima cuantía de obra de transporte (V2 con modificaciones) gana la oferta de menor precio que cumpla; la oferta económica solo admite aclaraciones, no se puede mejorar; se conservan el AIU en porcentaje (suma no mayor a la del Formulario 1), la corrección aritmética limitada a operaciones y ajuste al peso, la causal de precio unitario en cero o superado en ítems nombrados y la de precio artificialmente bajo.",
+  "eje": 9,
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-PRECIO",
+  "autoridad": "A3",
+  "vigencia_verificada": {
+    "fecha": "2026-10-19",
+    "fuente": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo (mínima cuantía de transporte: «V.2 con modificaciones, desde 03/02/2025, Resolución 464»)"
+  },
+  "leida_por": "lector fase2 eje9-institucional",
+  "tipo_contrato": "obra",
+  "anio_origen": "inferido",
+  "url_final": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/30021",
+  "reformas_cotejadas": [
+    "Control de versiones de Documentos Tipo (abierto el 2026-10-19): V.2 con modificaciones vigente desde 03/02/2025; la página dice «Resolución 464 del 10 de septiembre de 2023» y la del documento tipo «Resolución 464 de 2024»: el año no se resolvió; el PDF de la resolución no se abrió",
+    "Decreto 1860 de 2021 art. 2 (abierto, ficha F-1094): el procedimiento de mínima cuantía del decreto es el mismo que reproduce la invitación",
+    "Decreto 0997 de 2026, art. 14 par. 3: los procesos con documentos tipo siguen con ellos hasta nuevas versiones"
+  ],
+  "notas": "Fuente: archivo .docx dentro del ZIP «05DT_Transp_MinimaCuantia_TMinC_V2-1.zip» (descarga/30021, GET del 2026-10-19); el índice del propio .docx ubica el capítulo V en la p. impresa 52. Causal literal: «Que el valor total de la oferta o el obtenido de la corrección aritmética exceda el Presupuesto Oficial estimado del Proceso de Contratación»; «[Esta causal SOLO debe incluirse cuando la oferta económica y la forma de pago se estructure por precios unitarios] No ofrecer el valor de un precio unitario u ofrecerlo en cero (0) pesos»; «La Entidad Estatal aceptará la oferta de menor precio, siempre que cumpla con las condiciones establecidas en la invitación»; 5.1.2: «La Entidad a partir del valor total corregido de las propuestas determinará cuál es el menor precio ofertado». Complementa el decreto (F-1094): el documento tipo añade el AIU y el precio artificialmente bajo, que el decreto de mínima cuantía no menciona."
+}

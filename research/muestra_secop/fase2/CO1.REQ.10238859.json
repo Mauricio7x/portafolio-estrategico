@@ -1,0 +1,167 @@
+{
+  "id_del_proceso": "CO1.REQ.10238859",
+  "id_del_portafolio": "CO1.BDOS.9968594",
+  "entidad": "MUNICIPIO DE MANIZALES",
+  "departamento": "Caldas",
+  "tipo_de_contrato": "Obra",
+  "modalidad_de_contratacion": "Licitación pública Obra Publica",
+  "estado_del_procedimiento": "Seleccionado",
+  "precio_base": "1457000000",
+  "fecha_de_publicacion": "2026-03-05T00:00:00.000",
+  "respuestas_al_procedimiento_muestra": "161",
+  "fecha_consulta": "2026-10-19",
+  "leido_por": "agente muestra fase2 lote 4",
+  "muestra_posicion": 36,
+  "informes": [
+    {
+      "id_documento": "798090648",
+      "nombre_archivo": "INFORME DE EVALUACION DEFINITIVO LP-008-2026.pdf",
+      "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=798090648&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+      "paginas": 20,
+      "escaneado": false,
+      "md5": "c7a6d8cdcaf1174af83db8b510e940ef",
+      "estado_lectura": "parcial",
+      "partes_leidas": [
+        "p. 1-2 (introducción y observaciones)",
+        "p. 7-9 (capacidad residual en observaciones)",
+        "p. 10-12 (tabla resumen de 161 filas)",
+        "p. 16-17 (sección VI, rechazados)"
+      ],
+      "nota": "La tabla resumen (161 filas) se extrajo con un analizador y se cuadró: 161 filas, cada una con seis resultados; las columnas se contaron por posición. Las observaciones de los proponentes no se leyeron en detalle."
+    },
+    {
+      "id_documento": "798090602",
+      "nombre_archivo": "INFORME DE EVALUACION PRELIMINAR LP-008-2026.pdf",
+      "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=798090602&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+      "paginas": 11,
+      "escaneado": false,
+      "md5": "224abc980462965204a47da6f3292d6b",
+      "estado_lectura": "parcial",
+      "partes_leidas": [
+        "tabla resumen (p. 2-11), solo 56 de 161 filas con resultado legible"
+      ],
+      "nota": "Solo para contexto de subsanaciones. No se usa como fuente de cifras."
+    }
+  ],
+  "conteos": {
+    "proponentes": 161,
+    "habilitados": 131,
+    "no_habilitados": 30,
+    "rechazados": 30,
+    "nota": "Tabla final del informe definitivo (p. 10-12): 131 HABILITADO y 30 RECHAZADO. El informe no separa «no habilitado» de «rechazado»: los 30 quedan INHABILITADOS (sección VI, p. 16); por eso los dos campos tienen el mismo valor."
+  },
+  "causas": [
+    {
+      "categoria": "juridica",
+      "detalle": "Capacidad jurídica en RECHAZADO en 20 proponentes (conteo de la tabla resumen).",
+      "n": 20,
+      "subsanada": null
+    },
+    {
+      "categoria": "tecnica",
+      "detalle": "Capacidad técnica en RECHAZADO en 13 proponentes.",
+      "n": 13,
+      "subsanada": null
+    },
+    {
+      "categoria": "financiera",
+      "detalle": "Capacidad financiera en RECHAZADO en 9 proponentes.",
+      "n": 9,
+      "subsanada": null
+    },
+    {
+      "categoria": "organizacional",
+      "detalle": "Capacidad organizacional en RECHAZADO en 9 proponentes.",
+      "n": 9,
+      "subsanada": null
+    },
+    {
+      "categoria": "financiera",
+      "detalle": "Capacidad residual de contratación (K) en RECHAZADO en 23 proponentes.",
+      "n": 23,
+      "subsanada": null
+    },
+    {
+      "categoria": "economica",
+      "detalle": "Causal U (no presentar oferta económica o entregarla en el sobre que no corresponda), citada en la sección VI para 6 proponentes.",
+      "n": 6,
+      "subsanada": false
+    },
+    {
+      "categoria": "otra",
+      "detalle": "Causal E (requerimiento de subsanación no atendido), citada en la sección VI para 6 proponentes.",
+      "n": 6,
+      "subsanada": false
+    }
+  ],
+  "subsanaciones": {
+    "pedidas": null,
+    "tipo_conteo": null,
+    "documentadas_en_informe": true,
+    "nota": "El informe documenta el proceso de subsanación (p. 10: los proponentes «realizaron la subsanación») sin dar un número. No se cuenta por ausencia."
+  },
+  "adendas": {
+    "n": 2,
+    "documentos_en_indice": 136,
+    "metodo": "Dos archivos con ADENDA en el nombre (Adenda 1 y Adenda No3); la numeración sugiere una adenda 2 que no aparece en el índice."
+  },
+  "documentos_tipo": {
+    "usa": true,
+    "cual": "Documento tipo de Licitación de Infraestructura de Transporte (CCE-EICP-GI-01), pliego definitivo en el índice",
+    "version_declarada": "Versión 4 del documento tipo; código CCE-EICP-GI-01, versión 8 (portada, p. 1)",
+    "fuente": "Pliego definitivo (761165368), abierto p. 1",
+    "nota": "Versión tomada del propio pliego."
+  },
+  "p6dx_8zbt": {
+    "consulta": "https://www.datos.gov.co/resource/p6dx-8zbt.json?id_del_proceso=CO1.REQ.10238859",
+    "filas": 1,
+    "campos": {
+      "precio_base": {
+        "valor": "1457000000",
+        "estado": "lleno"
+      },
+      "duracion": {
+        "valor": "105",
+        "estado": "lleno"
+      },
+      "unidad_de_duracion": {
+        "valor": "día(s)",
+        "estado": "lleno"
+      },
+      "fecha_de_recepcion_de": {
+        "valor": "2026-03-26T00:00:00.000",
+        "estado": "lleno"
+      },
+      "codigo_principal_de_categoria": {
+        "valor": "V1.72141000",
+        "estado": "lleno"
+      },
+      "categorias_adicionales": {
+        "valor": "No definido",
+        "estado": "dudoso"
+      },
+      "tipo_de_contrato": {
+        "valor": "Obra",
+        "estado": "lleno"
+      },
+      "modalidad_de_contratacion": {
+        "valor": "Licitación pública Obra Publica",
+        "estado": "lleno"
+      },
+      "descripci_n_del_procedimiento": {
+        "valor": "MANTENIMIENTO Y REHABILITACIÓN DE LA INFRAESTRUCTURA VIAL URBANA, MEDIANTE LA REPARACIÓN Y",
+        "estado": "lleno"
+      },
+      "respuestas_al_procedimiento": {
+        "valor": "161",
+        "estado": "lleno"
+      }
+    }
+  },
+  "incidencias": [
+    "Causas de rechazo: solo 6 de 30 traen causal escrita en el texto extraído; las demás filas no tienen la causal legible en la sección VI, por eso las categorías se cuentan por columna de la tabla.",
+    "La tabla preliminar no se pudo reconciliar por completo (56 de 161 filas legibles); no se usa para cifras. Causas de rechazo: 12 de 30 traen la causal escrita en la sección VI (6 causal U y 6 causal E); el resto solo tiene el conteo por columna."
+  ],
+  "tiempo_aprox_min": 25,
+  "privacidad": "Sin nombres de proponentes, representantes, evaluadores ni personas naturales. Solo conteos, número de proceso, entidad y hechos."
+}

@@ -1,0 +1,29 @@
+{
+  "id": "F-1111",
+  "tipo": "juris",
+  "autor": "Consejo de Estado, Sección Tercera (Consejera ponente: Correa Palacio, R. S.)",
+  "titulo": "Sentencia del 14 de octubre de 2011, Rad. 05001-23-26-000-1997-01032-01 (20811): contenido del AIU en la oferta",
+  "anio": 2011,
+  "institucion": "Consejo de Estado (publicada en la Relatoría de la ANCP-CCE)",
+  "url": "https://relatoria.colombiacompra.gov.co/wp-content/uploads/2024/04/1655399300519-05001-23-26-000-1997-01032-01_20811.doc",
+  "fecha_consulta": "2026-10-19",
+  "estado_lectura": "parcial",
+  "localizador": "Síntesis «CONTRATO ESTATAL – Imprevistos – Porcentaje» y considerandos sobre el AIU (documento Word 97-2003 de 41 páginas; el texto se rescató con strings, sin numeración de páginas fiable)",
+  "cita_textual": "«no existe ninguna reglamentación que establezca porcentajes mínimos o máximos para determinar el A.I.U., cada empresa o comerciante de acuerdo con su infraestructura, experiencia, las condiciones del mercado, la naturaleza del contrato a celebrar, entre otros factores»",
+  "afirmacion": "El Consejo de Estado (14-oct-2011) define el AIU de la oferta como administración (costos indirectos de operar el contrato), imprevistos (álea normal del contrato) y utilidad (beneficio que pretende el contratista) y dice que ninguna norma fija porcentajes mínimos ni máximos: cada oferente define su estructura de costos; el AIU ofertado sirve al juez para calcular la utilidad esperada cuando hay perjuicios por hecho de la administración.",
+  "eje": 9,
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-PRECIO",
+  "autoridad": "A4",
+  "vigencia_verificada": "[sin verificar] — sentencia de 2011 sobre un proceso de los años noventa; no se buscó si sigue siendo la referencia citada por la jurisprudencia posterior (el concepto C-1407 de 2026 repite la misma noción)",
+  "leida_por": "lector fase2 eje9-institucional",
+  "tipo_contrato": "obra",
+  "anio_origen": "cuerpo",
+  "partes_leidas": [
+    "síntesis de descriptores (inicio del documento)",
+    "considerandos sobre el AIU"
+  ],
+  "unificacion": false,
+  "notas": "El archivo .doc no abre con soffice (error «source file could not be loaded»): se rescató el texto con «strings -e S» y conversión cp1252, sin estructura de párrafos ni notas al pie, por eso estado «parcial». Es la sentencia que el piloto no pudo abrir. Definición literal: «la utilidad es el beneficio económico que pretende percibir el contratista por la ejecución del contrato y por costos de administración se han tenido como tales los que constituyen costos indirectos para la operación del contrato […]; el porcentaje para imprevistos […] está destinado a cubrir los gastos con los que no se contaba y que se presenten durante la ejecución del contrato». La sentencia es anterior a los documentos tipo, que sí ponen un techo (el AIU del Formulario 1) pero no un piso (F-1071). Las partes del caso no se nombran."
+}

@@ -1,0 +1,32 @@
+{
+  "id": "F-1105",
+  "tipo": "cce_guia",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Guía para la correcta implementación de los Documentos Tipo del sector infraestructura de transporte (CCE-EICP-MA-04, versión 2, 07/11/2024)",
+  "anio": 2024,
+  "institucion": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2025/11/Guia-para-la-correcta-implementacion-de-los-DT-de-Transporte-Comentarios.pdf",
+  "fecha_consulta": "2026-10-19",
+  "estado_lectura": "parcial",
+  "localizador": "PDF p. 26 (impresa «pág. 25-26»), paso 5, numeral 1.15 «Causales de rechazo»",
+  "cita_textual": "«es fundamental en lo que respecta al numeral “1.15 CAUSALES DE RECHAZO”, que la Entidad, en ninguna circunstancia altere los textos de cada una de las causales, o las elimine, salvo las excepciones allí indicadas»",
+  "afirmacion": "La guía de implementación 2025 de CCE para los documentos tipo de transporte dice que la entidad no puede alterar ni eliminar las causales de rechazo salvo las que el documento base permite, como «No ofrecer el valor de un precio unitario u ofrecerlo en cero», que la entidad puede quitar según la forma de pago.",
+  "eje": 9,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-DICT",
+  "autoridad": "A3",
+  "vigencia_verificada": {
+    "fecha": "2026-10-19",
+    "fuente": "la propia guía (encabezado «Código: CCE-EICP-MA-04 V: V2 Fecha: 07/11/2024»; PDF publicado en noviembre de 2025 con el nombre «…-Comentarios»); no se buscó una versión posterior"
+  },
+  "leida_por": "lector fase2 eje9-institucional",
+  "tipo_contrato": "obra",
+  "anio_origen": "cuerpo",
+  "partes_leidas": [
+    "pp. 25-26 (paso 5, diligenciamiento del documento base)",
+    "búsqueda de «unitario», «AIU», «TRM», «aritm» en las 69 páginas"
+  ],
+  "pagina_pdf": 26,
+  "notas": "Texto extraído con pdftotext (69 páginas, creado el 2025-11-20). Cierre literal: «las Entidades deben limitarse a mantener la integralidad de cada una de ellas salvo en aquellos casos en donde se permita su eliminación o la modificación del texto por otra opción». La causal de tope por unitario no se menciona expresamente en la guía; su opcionalidad sale del documento base (ficha F-1070)."
+}

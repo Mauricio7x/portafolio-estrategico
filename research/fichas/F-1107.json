@@ -1,0 +1,33 @@
+{
+  "id": "F-1107",
+  "tipo": "doc_tipo",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Documento Base de licitación de obra pública de infraestructura social, versión 2 (Documentos Tipo transversales, Resolución 539 de 2025)",
+  "anio": 2025,
+  "institucion": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29837/",
+  "fecha_consulta": "2026-10-19",
+  "estado_lectura": "parcial",
+  "localizador": "Documento Base social v2, numeral 2.3 «Elaboración y presentación de la oferta», Nota 5 (el índice del .docx pone 2.3 en la p. impresa 26; la nota 5 está dentro del numeral, sin página propia)",
+  "cita_textual": "«En casos donde en la plataforma SECOP II cuente con la misma cantidad de ítems que los de Formulario 1 de Oferta Económica, prevalecerá el SECOP II sobre el Formulario 1 de Oferta Económica»",
+  "afirmacion": "En la licitación de obra de infraestructura social v2 la entidad debe definir desde el prepliego cuál prevalece entre el Formulario 1 y el cuestionario de SECOP II: con igual número de ítems prevalece SECOP II; si SECOP II solo tiene una pregunta de precio prevalece el Formulario 1; si se adjudica por el valor del presupuesto oficial pero se evalúa por ítems, el valor total va en SECOP II y la evaluación sobre el Formulario 1; una discrepancia que incumpla la oferta económica activa la causal de rechazo que corresponda.",
+  "eje": 9,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-F1",
+  "autoridad": "A3",
+  "vigencia_verificada": {
+    "fecha": "2026-10-19",
+    "fuente": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo (licitación de obra de infraestructura social: V.2 «Versión vigente» desde 16/02/2026) y Resolución 539 de 2025, art. 23 (PDF escaneado leído con OCR)"
+  },
+  "leida_por": "lector fase2 eje9-institucional",
+  "tipo_contrato": "obra",
+  "anio_origen": "inferido",
+  "url_final": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29837",
+  "reformas_cotejadas": [
+    "Resolución 539 de 2025, art. 23 (abierta, PDF escaneado sin capa de texto, leído con OCR): rige desde su publicación y aplica a licitaciones de obra de infraestructura social con aviso de convocatoria desde el 16 de febrero de 2026",
+    "Control de versiones de Documentos Tipo (página abierta el 2026-10-19): V.2 vigente desde 16/02/2026, V.1 vigente hasta 15/02/2026",
+    "Decreto 0997 de 2026, art. 14 par. 3 (abierto en la Relatoría): los procesos regidos por documentos tipo siguen con ellos hasta que Colombia Compra expida nuevas versiones; no modifica el documento base"
+  ],
+  "notas": "Fuente: archivo .docx dentro del ZIP «05DT_Transversales_ISocialLV2.zip» (descarga/29837, obtenida por GET el 2026-10-19); sin paginación fija, el localizador usa el numeral y la página impresa que declara el índice del propio documento. Las otras dos opciones literales: «En casos donde en la plataforma SECOP II solo se indique una pregunta precio, prevalecerá el Formulario 1 de Oferta Económica Sobre el SECOP II»; «En los casos que la entidad adjudique el proceso por el valor del presupuesto oficial, pero la evaluación la realice sobre el valor de los ítems relacionados en el Formulario 1 de Oferta Económica, deberá establecer en este acápite claramente, que el proponente deberá indicar en el cuestionario de la plataforma SECOP II el valor total del presupuesto, pero su evaluación económica se realizara sobre los valores que relacione en el Formulario 1». Cierre: «En caso de discrepancias […] cuando según las reglas anteriores, la entidad verificada las prevalencias determine que no se cumple con las condiciones de la oferta económica deberá aplicar la causal de rechazo que corresponda». Remite a «la Guía que se encuentre vigente sobre el uso del SECOP II modalidades – licitación Pública de Obra» (no abierta). Para el contratista: hay que leer la Nota 5 del pliego, porque cambia por proceso."
+}

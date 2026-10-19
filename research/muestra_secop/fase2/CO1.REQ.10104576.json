@@ -1,0 +1,114 @@
+{
+  "id_del_proceso": "CO1.REQ.10104576",
+  "id_del_portafolio": "CO1.BDOS.9300061",
+  "entidad": "ALCALDIA DE HONDA",
+  "departamento": "Tolima",
+  "tipo_de_contrato": "Obra",
+  "modalidad_de_contratacion": "Licitación pública Obra Publica",
+  "estado_del_procedimiento": "Seleccionado",
+  "precio_base": "1226993153",
+  "fecha_de_publicacion": "2026-02-02T00:00:00.000",
+  "respuestas_al_procedimiento_muestra": "27",
+  "fecha_consulta": "2026-10-19",
+  "leido_por": "agente muestra fase2 lote 4",
+  "muestra_posicion": 35,
+  "informes": [
+    {
+      "id_documento": "790391065",
+      "nombre_archivo": "INFORME EVALUACION SOBRE 2 - ECONOMICO HONDA.pdf",
+      "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=790391065&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+      "paginas": 11,
+      "escaneado": false,
+      "md5": "84ce6ab6acb711d7c2db92b74fbd991b",
+      "estado_lectura": "completa",
+      "partes_leidas": [
+        "p. 1-11 completas"
+      ],
+      "nota": "Informe de evaluación de ofertas económicas (7 de mayo de 2026). No es el informe de requisitos habilitantes."
+    }
+  ],
+  "conteos": {
+    "proponentes": null,
+    "habilitados": 10,
+    "no_habilitados": null,
+    "rechazados": 3,
+    "nota": "«PROPONENTES HABILITADOS: 10» (p. 2), después de la corrección aritmética. El informe no da el total de proponentes que se presentaron ni cuántos no quedaron habilitados en la fase anterior."
+  },
+  "causas": [
+    {
+      "categoria": "economica",
+      "detalle": "Precio artificialmente bajo: requerido por el comité y sin respuesta; rechazada por causales D y V del numeral 1.15 del pliego.",
+      "n": 3,
+      "subsanada": false
+    }
+  ],
+  "subsanaciones": {
+    "pedidas": null,
+    "tipo_conteo": null,
+    "documentadas_en_informe": false,
+    "nota": "El informe documenta cuatro requerimientos sobre precio artificialmente bajo (no son subsanaciones de requisitos); no se cuentan como subsanaciones."
+  },
+  "adendas": {
+    "n": 0,
+    "documentos_en_indice": 55
+  },
+  "documentos_tipo": {
+    "usa": null,
+    "cual": null,
+    "version_declarada": null,
+    "fuente": null,
+    "nota": "Sin verificar: el pliego definitivo LP 03 está en el índice pero es un PDF escaneado; no se leyó."
+  },
+  "p6dx_8zbt": {
+    "consulta": "https://www.datos.gov.co/resource/p6dx-8zbt.json?id_del_proceso=CO1.REQ.10104576",
+    "filas": 1,
+    "campos": {
+      "precio_base": {
+        "valor": "1226993153",
+        "estado": "lleno"
+      },
+      "duracion": {
+        "valor": "120",
+        "estado": "lleno"
+      },
+      "unidad_de_duracion": {
+        "valor": "día(s)",
+        "estado": "lleno"
+      },
+      "fecha_de_recepcion_de": {
+        "valor": "2026-02-12T00:00:00.000",
+        "estado": "lleno"
+      },
+      "codigo_principal_de_categoria": {
+        "valor": "V1.72101500",
+        "estado": "lleno"
+      },
+      "categorias_adicionales": {
+        "valor": "No definido",
+        "estado": "dudoso"
+      },
+      "tipo_de_contrato": {
+        "valor": "Obra",
+        "estado": "lleno"
+      },
+      "modalidad_de_contratacion": {
+        "valor": "Licitación pública Obra Publica",
+        "estado": "lleno"
+      },
+      "descripci_n_del_procedimiento": {
+        "valor": "CONTRATO DE OBRA CIVIL PARA LA MODERNIZACIÓN DE LA INFRAESTRUCTURA Y RENOVACIÓN DEL URBANI",
+        "estado": "lleno"
+      },
+      "respuestas_al_procedimiento": {
+        "valor": "27",
+        "estado": "lleno"
+      }
+    }
+  },
+  "incidencias": [
+    "El pliego definitivo LP 03 (747258422, 76 p.) no tiene capa de texto; no se leyó. Su versión de documento tipo queda sin verificar.",
+    "En el informe, el comité habla de la «LPO-003-2025» y el índice la llama LP 03; se toma el mismo proceso por el id del proceso."
+  ],
+  "tiempo_aprox_min": 8,
+  "privacidad": "Sin nombres de proponentes, representantes, evaluadores ni personas naturales. Solo conteos, número de proceso, entidad y hechos."
+}

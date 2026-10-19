@@ -1,0 +1,30 @@
+{
+  "id": "F-1276",
+  "tipo": "dato",
+  "autor": "Comité evaluador de Municipio de manizales (informe de evaluación)",
+  "titulo": "Informe de evaluación · proceso CO1.REQ.10238859 · MUNICIPIO DE MANIZALES",
+  "anio": 2026,
+  "institucion": "MUNICIPIO DE MANIZALES",
+  "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=798090648&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+  "fecha_consulta": "2026-10-19",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "p. 1-2, 7-9, 10-12, 16-17"
+  ],
+  "localizador": "p. 1",
+  "cita_textual": "término dentro del cual se presentaron ciento sesenta y un (161) propuestas",
+  "afirmacion": "En la licitación LP-008-2026 de Manizales se presentaron 161 propuestas; la tabla definitiva deja 131 HABILITADO y 30 RECHAZADO, que el informe llama INHABILITADOS (p. 16).",
+  "eje": "muestra",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-INT",
+  "autoridad": "A7",
+  "vigencia_verificada": "[sin verificar] — dato de hecho de un informe de evaluación, no una afirmación normativa",
+  "leida_por": "agente muestra fase2 lote 4",
+  "tipo_contrato": "obra",
+  "pagina_pdf": 1,
+  "anio_origen": "portada",
+  "notas": "Proceso CO1.REQ.10238859 de la muestra SECOP II (fase 2, lote 4). Tabla de 161 filas extraída con analizador y cuadrada (cada fila con seis resultados). Preliminar solo para contexto. Sin nombres de personas ni de proponentes.",
+  "problemas": [],
+  "propuestas": []
+}

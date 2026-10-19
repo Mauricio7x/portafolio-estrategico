@@ -1,0 +1,140 @@
+{
+  "id_del_proceso": "CO1.REQ.10357652",
+  "id_del_portafolio": "CO1.BDOS.10139575",
+  "entidad": "INSTITUTO DE TRANSITO DEL ATLANTICO",
+  "departamento": "Atlántico",
+  "tipo_de_contrato": "Obra",
+  "modalidad_de_contratacion": "Licitación pública Obra Publica",
+  "estado_del_procedimiento": "Seleccionado",
+  "precio_base": "794357634",
+  "fecha_de_publicacion": "2026-04-16T00:00:00.000",
+  "respuestas_al_procedimiento_muestra": "23",
+  "fecha_consulta": "2026-10-19",
+  "leido_por": "agente muestra fase2 lote 4",
+  "muestra_posicion": 34,
+  "informes": [
+    {
+      "id_documento": "808403800",
+      "nombre_archivo": "30. INFORME DE EVALUACION SOBRE 2 LP 02-2026.pdf",
+      "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=808403800&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+      "paginas": 7,
+      "escaneado": false,
+      "md5": "d7acfc24cf5eb497adc8fd79c2b80f01",
+      "estado_lectura": "completa",
+      "partes_leidas": [
+        "p. 1-7 completas"
+      ],
+      "nota": "Informe final de evaluación (9 de junio de 2026), con resumen de aspectos habilitantes, calificación económica y recomendación."
+    }
+  ],
+  "conteos": {
+    "proponentes": 23,
+    "habilitados": 17,
+    "no_habilitados": 6,
+    "rechazados": 4,
+    "nota": "23 propuestas (p. 1). Tabla de aspectos habilitantes (p. 3): 17 HABILITADO y 6 NO HABILITADO. Rechazos posteriores: 3 por precio artificialmente bajo sin justificación aceptada (económico 0; p. 4) y 1 por garantía de seriedad no entregada (p. 5, que la tabla de p. 3 también marca NO HABILITADO). Eligibles para el puntaje: 14."
+  },
+  "causas": [
+    {
+      "categoria": "financiera",
+      "detalle": "Capacidad financiera NO CUMPLE en cinco proponentes (uno de ellos persona natural).",
+      "n": 5,
+      "subsanada": null
+    },
+    {
+      "categoria": "juridica",
+      "detalle": "Capacidad jurídica NO CUMPLE en tres proponentes (incluye el de garantía de seriedad).",
+      "n": 3,
+      "subsanada": null
+    },
+    {
+      "categoria": "tecnica",
+      "detalle": "Capacidad técnica NO CUMPLE en dos proponentes.",
+      "n": 2,
+      "subsanada": null
+    },
+    {
+      "categoria": "juridica",
+      "detalle": "Rechazo por no entregar la garantía de seriedad de la oferta con la propuesta (causal 1.15 i; no subsanable según numeral 7.1).",
+      "n": 1,
+      "subsanada": false
+    },
+    {
+      "categoria": "economica",
+      "detalle": "Precio artificialmente bajo: justificaciones rechazadas o no presentadas; sin puntaje económico.",
+      "n": 3,
+      "subsanada": false
+    }
+  ],
+  "subsanaciones": {
+    "pedidas": null,
+    "tipo_conteo": null,
+    "documentadas_en_informe": true,
+    "nota": "El informe menciona subsanaciones y observaciones durante el traslado sin dar un número."
+  },
+  "adendas": {
+    "n": 0,
+    "documentos_en_indice": 52
+  },
+  "documentos_tipo": {
+    "usa": true,
+    "cual": "Documento Base CCE-EICP-GI-14, Infraestructura Social",
+    "version_declarada": "Versión 2 del 21 de agosto de 2025",
+    "fuente": "Documento base definitivo (779292579), abierto p. 1",
+    "nota": "Documento tipo de Colombia Compra abierto en el índice; la versión sale de su portada."
+  },
+  "p6dx_8zbt": {
+    "consulta": "https://www.datos.gov.co/resource/p6dx-8zbt.json?id_del_proceso=CO1.REQ.10357652",
+    "filas": 1,
+    "campos": {
+      "precio_base": {
+        "valor": "794357634",
+        "estado": "lleno"
+      },
+      "duracion": {
+        "valor": "5",
+        "estado": "lleno"
+      },
+      "unidad_de_duracion": {
+        "valor": "día(s)",
+        "estado": "lleno"
+      },
+      "fecha_de_recepcion_de": {
+        "valor": "2026-05-04T00:00:00.000",
+        "estado": "lleno"
+      },
+      "codigo_principal_de_categoria": {
+        "valor": "V1.72103300",
+        "estado": "lleno"
+      },
+      "categorias_adicionales": {
+        "valor": "No definido",
+        "estado": "dudoso"
+      },
+      "tipo_de_contrato": {
+        "valor": "Obra",
+        "estado": "lleno"
+      },
+      "modalidad_de_contratacion": {
+        "valor": "Licitación pública Obra Publica",
+        "estado": "lleno"
+      },
+      "descripci_n_del_procedimiento": {
+        "valor": "ADECUACIONES LOCATIVAS EN EL PARQUE DIDACTICO Y SEDE DE SABANAGRANDE DEL INSTITUTO DE TRAN",
+        "estado": "lleno"
+      },
+      "respuestas_al_procedimiento": {
+        "valor": "23",
+        "estado": "lleno"
+      }
+    }
+  },
+  "incidencias": [
+    "La tabla de p. 3 marca al consorcio de la garantía como NO HABILITADO, pero el texto de p. 5 dice que la entidad lo había considerado habilitado por error y lo rechaza después. Se cuenta una sola vez en no habilitados.",
+    "En la tabla de puntajes (p. 7) el proponente 6 aparece con 51,5 de aspectos no económicos y sin puntaje económico; el número del total está mal alineado en el PDF.",
+    "El informe está firmado por tres integrantes del comité; ningún nombre de persona se guarda aquí.",
+    "Modalidad: p6dx dice «Licitación pública Obra Publica» y el informe dice «Selección abreviada de menor cuantía» (SAMC-002-2026). Dato dudoso en p6dx."
+  ],
+  "tiempo_aprox_min": 12,
+  "privacidad": "Sin nombres de proponentes, representantes, evaluadores ni personas naturales. Solo conteos, número de proceso, entidad y hechos."
+}

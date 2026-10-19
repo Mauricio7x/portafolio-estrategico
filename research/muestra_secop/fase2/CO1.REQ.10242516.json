@@ -1,0 +1,136 @@
+{
+  "id_del_proceso": "CO1.REQ.10242516",
+  "id_del_portafolio": "CO1.BDOS.9967079",
+  "entidad": "MUNICIPIO DE MANIZALES",
+  "departamento": "Caldas",
+  "tipo_de_contrato": "Obra",
+  "modalidad_de_contratacion": "Licitación pública Obra Publica",
+  "estado_del_procedimiento": "Seleccionado",
+  "precio_base": "1763500000",
+  "fecha_de_publicacion": "2026-03-06T00:00:00.000",
+  "respuestas_al_procedimiento_muestra": "121",
+  "fecha_consulta": "2026-10-19",
+  "leido_por": "agente muestra fase2 lote 4",
+  "muestra_posicion": 38,
+  "informes": [
+    {
+      "id_documento": "794759920",
+      "nombre_archivo": "INFORME DE EVALUACIÓN DEFINITIVO LP011.pdf",
+      "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=794759920&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+      "paginas": 14,
+      "escaneado": false,
+      "md5": "6c9886ad82c20aad9ae0fb72930a07a4",
+      "estado_lectura": "parcial",
+      "partes_leidas": [
+        "p. 1 (conteos)",
+        "p. 4-6 y 9-10 (tabla resumen)",
+        "p. 11-12 (propuestas objeto de rechazo)"
+      ],
+      "nota": "Informe definitivo; la tabla de resultados se leyó por filas y se cuadró con la sección V (12 rechazos)."
+    },
+    {
+      "id_documento": "794759914",
+      "nombre_archivo": "INFORME DE EVALUACIÓN PRELIMINAR LP-011-2026.pdf",
+      "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=794759914&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+      "paginas": 11,
+      "escaneado": false,
+      "md5": "7efd87f8026103d8e3d9fdc585bae6f8",
+      "estado_lectura": "parcial",
+      "partes_leidas": [
+        "búsqueda de «RECHAZ» y «NO HABIL» en el texto"
+      ],
+      "nota": "Solo para contexto."
+    }
+  ],
+  "conteos": {
+    "proponentes": 121,
+    "habilitados": 109,
+    "no_habilitados": 12,
+    "rechazados": 12,
+    "nota": "121 propuestas (p. 1). Tabla definitiva: 12 NO HABILITADO (filas 8, 9, 10, 28, 48, 53, 67, 69, 82, 91, 113 y 118), 109 HABILITADO. La sección V (p. 11-12) lista los mismos 12 como propuestas objeto de rechazo."
+  },
+  "causas": [
+    {
+      "categoria": "otra",
+      "detalle": "Causal E: requerimiento de subsanación o aclaración no atendido, citada para 11 proponentes (sección V, p. 11-12).",
+      "n": 11,
+      "subsanada": false
+    },
+    {
+      "categoria": "otra",
+      "detalle": "Causal BB: propuesta de proponente plural presentada desde un usuario de SECOP II distinto al de la unión temporal o consorcio.",
+      "n": 1,
+      "subsanada": false
+    }
+  ],
+  "subsanaciones": {
+    "pedidas": null,
+    "tipo_conteo": null,
+    "documentadas_en_informe": true,
+    "nota": "El informe menciona observaciones y subsanaciones presentadas el 21 y 23 de abril de 2026 sin dar número de requerimientos."
+  },
+  "adendas": {
+    "n": 1,
+    "documentos_en_indice": 95,
+    "nota": "Un archivo con ADENDA: «Adenda 1 LP-011-2026.pdf»."
+  },
+  "documentos_tipo": {
+    "usa": true,
+    "cual": "Documento tipo de Licitación de Infraestructura de Transporte (CCE-EICP-GI-01), pliego definitivo en el índice",
+    "version_declarada": "Código CCE-EICP-GI-01, versión 8; documento tipo de infraestructura de transporte (portada, p. 1)",
+    "fuente": "Pliego definitivo (761768409), abierto p. 1",
+    "nota": "El número de versión del documento tipo (versión 4) aparece en el encabezado del pliego en el mismo patrón que LP-008; no se verificó por separado en este pliego."
+  },
+  "p6dx_8zbt": {
+    "consulta": "https://www.datos.gov.co/resource/p6dx-8zbt.json?id_del_proceso=CO1.REQ.10242516",
+    "filas": 1,
+    "campos": {
+      "precio_base": {
+        "valor": "1763500000",
+        "estado": "lleno"
+      },
+      "duracion": {
+        "valor": "0",
+        "estado": "dudoso"
+      },
+      "unidad_de_duracion": {
+        "valor": "día(s)",
+        "estado": "lleno"
+      },
+      "fecha_de_recepcion_de": {
+        "valor": "2026-03-24T00:00:00.000",
+        "estado": "lleno"
+      },
+      "codigo_principal_de_categoria": {
+        "valor": "V1.72141000",
+        "estado": "lleno"
+      },
+      "categorias_adicionales": {
+        "valor": "No definido",
+        "estado": "dudoso"
+      },
+      "tipo_de_contrato": {
+        "valor": "Obra",
+        "estado": "lleno"
+      },
+      "modalidad_de_contratacion": {
+        "valor": "Licitación pública Obra Publica",
+        "estado": "lleno"
+      },
+      "descripci_n_del_procedimiento": {
+        "valor": "MANTENIMIENTO Y REHABILITACIÓN DE LA INFRAESTRUCTURA VIAL URBANA, MEDIANTE LA REPARACIÓN Y",
+        "estado": "lleno"
+      },
+      "respuestas_al_procedimiento": {
+        "valor": "121",
+        "estado": "lleno"
+      }
+    }
+  },
+  "incidencias": [
+    "p6dx: duración 0 (dudosa) y categorías adicionales «No definido».",
+    "Dos archivos del índice (el 794759920 y el 794759914) con el mismo nombre de informe en distinto formato; se usa el definitivo."
+  ],
+  "tiempo_aprox_min": 15,
+  "privacidad": "Sin nombres de proponentes, representantes, evaluadores ni personas naturales. Solo conteos, número de proceso, entidad y hechos."
+}

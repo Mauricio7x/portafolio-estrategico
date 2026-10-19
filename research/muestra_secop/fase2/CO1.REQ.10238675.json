@@ -1,0 +1,123 @@
+{
+  "id_del_proceso": "CO1.REQ.10238675",
+  "id_del_portafolio": "CO1.BDOS.10044060",
+  "entidad": "INSTITUTO DE TURISMO DEL META",
+  "departamento": "Meta",
+  "tipo_de_contrato": "Interventoría",
+  "modalidad_de_contratacion": "Concurso de méritos abierto",
+  "estado_del_procedimiento": "Seleccionado",
+  "precio_base": "160029272",
+  "fecha_de_publicacion": "2026-03-05T00:00:00.000",
+  "respuestas_al_procedimiento_muestra": "5",
+  "fecha_consulta": "2026-10-19",
+  "leido_por": "agente muestra fase2 lote 4",
+  "muestra_posicion": 30,
+  "informes": [
+    {
+      "id_documento": "768934663",
+      "nombre_archivo": "1. INFORME DE EVALUACIÓN JURIDICA DEFINITIVA CM-ITM-001-2026.pdf",
+      "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=768934663&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+      "paginas": 21,
+      "escaneado": false,
+      "md5": "203c6eda694ddea737699ef580dbf45c",
+      "estado_lectura": "parcial",
+      "partes_leidas": [
+        "p. 1-3 (encabezado, proponentes)",
+        "p. 11 (rechazo)",
+        "p. 14-16 (subsanaciones)",
+        "p. 20-21 (resumen final)"
+      ],
+      "nota": "Solo la evaluación jurídica está en el índice; no hay informe técnico ni financiero de este proceso en la muestra."
+    }
+  ],
+  "conteos": {
+    "proponentes": 5,
+    "habilitados": 4,
+    "no_habilitados": 1,
+    "rechazados": 1,
+    "nota": "Cifras de la evaluación jurídica (única evaluación en el índice): cinco oferentes plurales, cuatro «CUMPLE con los requisitos jurídicos habilitantes» y uno RECHAZADO (p. 21). La habilitación técnica y financiera no está en la muestra, así que la habilitación final queda sin verificar."
+  },
+  "causas": [
+    {
+      "categoria": "juridica",
+      "detalle": "Propuesta de un proponente plural rechazada por causal W: propuesta presentada desde un usuario de SECOP II distinto al de la unión temporal o consorcio.",
+      "n": 1,
+      "subsanada": false
+    },
+    {
+      "categoria": "juridica",
+      "detalle": "Un integrante del mismo proponente plural no acreditaba la limitación territorial a MIPYME del departamento del Meta (domicilio en otro departamento), causal del documento base.",
+      "n": 1,
+      "subsanada": false
+    }
+  ],
+  "subsanaciones": {
+    "pedidas": 7,
+    "tipo_conteo": "ítems marcados como subsanados en el informe (no oficios)",
+    "documentadas_en_informe": true,
+    "nota": "Siete ítems aparecen como «CUMPLE-SUBSANO» o «SUBSANADO» (p. 3, 6 dos veces, 12, 14, 16 y 20). El informe no transcribe el oficio de requerimiento; el número es de ítems, no de requerimientos."
+  },
+  "adendas": {
+    "n": 0,
+    "documentos_en_indice": 211
+  },
+  "documentos_tipo": {
+    "usa": true,
+    "cual": "Documento Base o Pliego Tipo de Interventoría de Infraestructura Social (en el índice, en formato .docx)",
+    "version_declarada": null,
+    "fuente": "Índice dmgg-8hin (nombre de archivo); el .docx no se abrió",
+    "nota": "El informe cita el «documento baso del proceso CM-ITM-001-2026» (p. 11). Versión no verificada."
+  },
+  "p6dx_8zbt": {
+    "consulta": "https://www.datos.gov.co/resource/p6dx-8zbt.json?id_del_proceso=CO1.REQ.10238675",
+    "filas": 1,
+    "campos": {
+      "precio_base": {
+        "valor": "160029272",
+        "estado": "lleno"
+      },
+      "duracion": {
+        "valor": "4",
+        "estado": "lleno"
+      },
+      "unidad_de_duracion": {
+        "valor": "Mes(es)",
+        "estado": "lleno"
+      },
+      "fecha_de_recepcion_de": {
+        "valor": "2026-03-10T00:00:00.000",
+        "estado": "lleno"
+      },
+      "codigo_principal_de_categoria": {
+        "valor": "V1.81101500",
+        "estado": "lleno"
+      },
+      "categorias_adicionales": {
+        "valor": "No definido",
+        "estado": "dudoso"
+      },
+      "tipo_de_contrato": {
+        "valor": "Interventoría",
+        "estado": "lleno"
+      },
+      "modalidad_de_contratacion": {
+        "valor": "Concurso de méritos abierto",
+        "estado": "lleno"
+      },
+      "descripci_n_del_procedimiento": {
+        "valor": "INTERVENTORIA, TECNICA, JURIDICA, ADMINISTRATIVA, FINANCIERA, CONTABLE Y AMBIENTAL PARA LA",
+        "estado": "lleno"
+      },
+      "respuestas_al_procedimiento": {
+        "valor": "5",
+        "estado": "lleno"
+      }
+    }
+  },
+  "incidencias": [
+    "El informe se lee solo en su parte jurídica; la habilitación técnica y financiera de este proceso no está en el índice de documentos.",
+    "Los conteos de rechazo se cruzan con la tabla resumen de la p. 21."
+  ],
+  "tiempo_aprox_min": 7,
+  "privacidad": "Sin nombres de proponentes, representantes, evaluadores ni personas naturales. Solo conteos, número de proceso, entidad y hechos."
+}

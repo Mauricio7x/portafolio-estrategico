@@ -1,0 +1,27 @@
+{
+  "id": "F-1089",
+  "tipo": "cce_concepto",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Concepto C-008 de 2026 de la Agencia Nacional de Contratación Pública – Colombia Compra Eficiente (13-feb-2026)",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "url": "https://relatoria.colombiacompra.gov.co/conceptos/c-008-de-2026/",
+  "fecha_consulta": "2026-10-19",
+  "estado_lectura": "parcial",
+  "localizador": "Página de la Relatoría del concepto C-008 de 2026, sección «Sistema de factor multiplicador – Noción – Costos directos – Imputables al contrato»",
+  "cita_textual": "«el factor multiplicador es una metodología permite imputar al contrato los costos directos asociados a prestaciones laborales y sociales del personal vinculado con carácter exclusivo al proyecto, la utilidad del ingeniero y los costos de administración asociados al personal»",
+  "afirmacion": "Para Colombia Compra el factor multiplicador de la interventoría imputa al contrato las prestaciones del personal, la utilidad y la administración asociada al personal multiplicando sus salarios por un factor; y, si se usa para determinar costos, el contratista debe demostrar el gasto de cada componente y los valores facturados deben corresponder a costos reales soportados (concepto C-008 de 2026, 13-feb-2026).",
+  "eje": 9,
+  "etapa": "E4",
+  "decision": "D2",
+  "modulo": "M-PRECIO",
+  "autoridad": "A5",
+  "vigencia_verificada": "[sin verificar] — concepto no vinculante fechado el 13-feb-2026; no se buscó si un concepto posterior lo reemplaza ni si la norma citada fue reformada después",
+  "leida_por": "lector fase2 eje9-institucional",
+  "tipo_contrato": "interventoria",
+  "anio_origen": "portada",
+  "partes_leidas": [
+    "extracto publicado en la página de la Relatoría (descriptores y párrafos de la sección «Sistema de factor multiplicador»)"
+  ],
+  "notas": "Texto leído en la página de la Relatoría (https://relatoria.colombiacompra.gov.co/conceptos/c-008-de-2026/), que publica el extracto; el adjunto .docx (wp-content/uploads/2026/02/C-008-3.docx) no se descargó. Cierre literal de la sección «Factor multiplicador – Costos – Determinación»: «Si el factor multiplicador se usa para determinar costos, el contratista debe demostrar el gasto de cada componente. Si ciertos costos no se generan […] el contrato debería modificarse para reducir el % correspondiente. […] En conclusión, los valores facturados deben corresponder a costos reales soportados.» Contrasta con los precios unitarios de obra, donde el APU «no es un mecanismo de reembolso» (C-1205, ficha F-1097): el riesgo de ofertar un factor alto en interventoría es que la entidad puede exigir soportes de costos reales. El concepto C-502 de 2026 (11-may-2026) repite el mismo texto. Explica la parte (6) del eje para interventoría: el documento tipo usa factor multiplicador y no AIU (ficha F-1092)."
+}

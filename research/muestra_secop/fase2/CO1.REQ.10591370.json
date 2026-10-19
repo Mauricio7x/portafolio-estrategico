@@ -1,0 +1,105 @@
+{
+  "id_del_proceso": "CO1.REQ.10591370",
+  "id_del_portafolio": "CO1.BDOS.10327181",
+  "entidad": "Región Metropolitana",
+  "departamento": "Distrito Capital de Bogotá",
+  "tipo_de_contrato": "Consultoría",
+  "modalidad_de_contratacion": "Concurso de méritos abierto",
+  "estado_del_procedimiento": "Seleccionado",
+  "precio_base": "1300000000",
+  "fecha_de_publicacion": "2026-07-03T00:00:00.000",
+  "respuestas_al_procedimiento_muestra": "4",
+  "fecha_consulta": "2026-10-19",
+  "leido_por": "agente muestra fase2 lote 4",
+  "muestra_posicion": 31,
+  "informes": [
+    {
+      "id_documento": "838241355",
+      "nombre_archivo": "Informe Final de Evaluación RHCFO_RM-CMA-002-2026_.pdf",
+      "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=838241355&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+      "paginas": null,
+      "escaneado": null,
+      "md5": "2554d022c3772a0513261dcce9a51d7c (cuerpo HTML del WAF, 9.313 bytes; no es un PDF)",
+      "estado_lectura": "no_abierta",
+      "partes_leidas": [],
+      "nota": "Dos intentos con curl, agente de navegador, separados por 10 s: HTTP 403 «Azure WAF» en ambos. No se reintentó después."
+    }
+  ],
+  "conteos": {
+    "proponentes": null,
+    "habilitados": null,
+    "no_habilitados": null,
+    "rechazados": null,
+    "nota": "Informe no abierto: conteos sin dato, no cero."
+  },
+  "causas": [],
+  "subsanaciones": {
+    "pedidas": null,
+    "tipo_conteo": null,
+    "documentadas_en_informe": null,
+    "nota": "Informe no abierto."
+  },
+  "adendas": {
+    "n": 1,
+    "documentos_en_indice": 87,
+    "nota": "Un archivo con ADENDA: «66. Adenda 1 RM-CM-002-2026.pdf»."
+  },
+  "documentos_tipo": {
+    "usa": false,
+    "cual": null,
+    "version_declarada": null,
+    "fuente": "Pliego SC Definitivo RM-CMA-002-2026 (89 p., texto nativo, abierto)",
+    "nota": "La búsqueda de «documento tipo» en todo el pliego da cero coincidencias; no se afirma que no use documentos tipo fuera de ese pliego."
+  },
+  "p6dx_8zbt": {
+    "consulta": "https://www.datos.gov.co/resource/p6dx-8zbt.json?id_del_proceso=CO1.REQ.10591370",
+    "filas": 1,
+    "campos": {
+      "precio_base": {
+        "valor": "1300000000",
+        "estado": "lleno"
+      },
+      "duracion": {
+        "valor": "9",
+        "estado": "lleno"
+      },
+      "unidad_de_duracion": {
+        "valor": "Mes(es)",
+        "estado": "lleno"
+      },
+      "fecha_de_recepcion_de": {
+        "valor": "2026-07-24T00:00:00.000",
+        "estado": "lleno"
+      },
+      "codigo_principal_de_categoria": {
+        "valor": "V1.80101604",
+        "estado": "lleno"
+      },
+      "categorias_adicionales": {
+        "valor": "No definido",
+        "estado": "dudoso"
+      },
+      "tipo_de_contrato": {
+        "valor": "Consultoría",
+        "estado": "lleno"
+      },
+      "modalidad_de_contratacion": {
+        "valor": "Concurso de méritos abierto",
+        "estado": "lleno"
+      },
+      "descripci_n_del_procedimiento": {
+        "valor": "Profundizar en el análisis de los aspectos técnicos, financieros y de gobernanza para la i",
+        "estado": "lleno"
+      },
+      "respuestas_al_procedimiento": {
+        "valor": "4",
+        "estado": "lleno"
+      }
+    }
+  },
+  "incidencias": [
+    "El informe de evaluación (838241355) devolvió 403 del WAF de SECOP II en los dos intentos; sin lectura no hay conteos."
+  ],
+  "tiempo_aprox_min": 8,
+  "privacidad": "Sin nombres de proponentes, representantes, evaluadores ni personas naturales. Solo conteos, número de proceso, entidad y hechos."
+}

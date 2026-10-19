@@ -1,0 +1,30 @@
+{
+  "id": "F-1110",
+  "tipo": "juris",
+  "autor": "Consejo de Estado, Sección Tercera, Subsección A",
+  "titulo": "Sentencia del 21 de febrero de 2025, Rad. 66001-23-33-000-2012-00032-03 (66479): precios unitarios, mayores cantidades de obra y desequilibrio",
+  "anio": 2025,
+  "institucion": "Consejo de Estado (publicada en la Relatoría de la ANCP-CCE)",
+  "url": "https://relatoria.colombiacompra.gov.co/wp-content/uploads/2025/04/66001233300020120003203.pdf",
+  "fecha_consulta": "2026-10-19",
+  "estado_lectura": "parcial",
+  "localizador": "PDF p. 4, síntesis «Sistema de pago por precios unitarios o unidades de obra – Ocurrencia de riesgos» (repetida en el cuerpo, p. 37); consideraciones nums. 95-96 (PDF p. 35)",
+  "cita_textual": "«El pacto de un sistema de pago por precios unitarios o unidades de obra, no cercena la posibilidad de ocurrencia de riesgos diferentes a la variación de volúmenes de obra que impactan los costos definidos en los APU’s»",
+  "afirmacion": "El Consejo de Estado (21-feb-2025) dice que pactar precios unitarios no excluye otros riesgos distintos de la variación de volúmenes que impactan los costos de los APU (precio de materiales, transporte, personal), cuya gestión depende de la fórmula de reajuste pactada; y que el contratista que pactó libremente adiciones y nuevas cantidades no puede después alegar desequilibrio por ellas.",
+  "eje": 9,
+  "etapa": "E4",
+  "decision": "D2",
+  "modulo": "M-APU",
+  "autoridad": "A4",
+  "vigencia_verificada": "[sin verificar] — sentencia de segunda instancia; no se buscó si fue revisada ni si es citada como línea vigente después de 2025",
+  "leida_por": "lector fase2 eje9-institucional",
+  "tipo_contrato": "obra",
+  "anio_origen": "cuerpo",
+  "partes_leidas": [
+    "síntesis de la providencia (pp. 2-4)",
+    "numerales 94 a 96 de las consideraciones"
+  ],
+  "unificacion": false,
+  "notas": "PDF de 58 páginas descargado de la Relatoría (GET del 2026-10-19). El APU es «el único factor constante de la ecuación de ese sistema»; en el caso la fórmula de reajuste del contrato (índice de costos de construcción pesada) no recogió el alza de insumos y el Consejo la consideró insuficiente, pero rechazó el reclamo por el riesgo asumido por el contratista. Mayores cantidades, síntesis: «Si hubiera aumentado el pie de fuerza logístico, de maquinaria, personal y equipos en comparación con los que inicialmente previó […] podía haber satisfecho las nuevas cantidades de obra sin presentar los retrasos en que incurrió». Es de ejecución (eje 5); aquí importa porque fija qué cubre el precio unitario ofertado. Las partes del caso no se nombran.",
+  "pagina_pdf": 4
+}
