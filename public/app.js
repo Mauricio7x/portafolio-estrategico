@@ -582,9 +582,9 @@
        tomar de la barra (6-sep-2026, V-B2a-01): la barra cambia por código en
        más sitios que el evento `change` (guardar o borrar un consorcio, el
        arranque por URL) y un camino olvidado guardaba el borrador bajo «helder»
-       con la barra en el consorcio. La primera apertura lo hace `arrancar()`,
+       con la barra en el consorcio. La primera apertura lo hace `arrancarPrecios()`,
        que además precarga el perfil de la tarjeta. */
-    if (destino === "apu" && !arrancadas.apu) { arrancadas.apu = true; arrancar(); }
+    if (destino === "apu" && !arrancadas.apu) { arrancadas.apu = true; arrancarPrecios(); }
     else if (destino === "apu") sincronizarPerfilBorrador();
     if (destino === "apu" && !arrancadas.pliego && typeof window.__pliegoArrancar === "function") {
       arrancadas.pliego = true;
@@ -9662,7 +9662,7 @@
     } catch { /* sin dato: el pliegue se queda como estaba */ }
   }
 
-  async function arrancar() {
+  async function arrancarPrecios() {   // NO `arrancar`: así se llama el arranque de la app (más abajo) y la segunda declaración pisaba a esta (17-oct-2026, b73c38e)
     /* el selector del borrador nace vacío en el HTML: se llena desde la barra
        ANTES de leer la URL de la tarjeta, que puede traer el perfil */
     sincronizarPerfilBorrador();
@@ -9698,7 +9698,7 @@
     contarBorradores();
   }
   /* «Reintentar» de Precios: repite la carga del catálogo, que es de lo que
-     cuelga toda la pestaña. Se registra aquí (no dentro de `arrancar`) para
+     cuelga toda la pestaña. Se registra aquí (no dentro de `arrancarPrecios`) para
      que exista aunque la primera carga sea la que falló. */
   if ($("accion-reintentar")) {
     $("accion-reintentar").addEventListener("click", async () => {

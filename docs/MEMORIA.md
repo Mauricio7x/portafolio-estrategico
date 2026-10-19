@@ -19788,3 +19788,19 @@ En una línea: la investigación de contratación estatal de obra queda en `docs
 3. **La verificación de normas no alcanza todas las cifras.** Se abrieron las normas, plazos, porcentajes y sentencias de los problemas de gravedad media o alta. Las demás quedaron sin verificar.
 
 > PENDIENTE · el dueño decide si el conteo de uso se mantiene por perfil (como se decidió el 27-sep-2026) o pasa a ser anónimo, sin perfil ni nombre. El 19-oct-2026 se propuso un conteo anónimo sin usuario ni NIT y se aprobó el punto de la ruta con esa descripción; lo que existe hoy no es anónimo.
+
+### El arranque de Precios estaba pisado por el de la app, y una función repetida en el mismo ámbito no avisa (19-oct-2026)
+
+En una línea: el 17-oct-2026 (`b73c38e`, entrado a `main` con el #245) el arranque de la app se llamó `arrancar`, igual que el de la pestaña Precios, ya declarado en el mismo IIFE; JavaScript no avisa: la segunda declaración pisa a la primera, así que abrir Precios ejecutaba el arranque de la APP y Precios no cargaba su catálogo ni llenaba su desplegable de departamentos; el de Precios se llama ahora `arrancarPrecios` y una prueba barre todos los `public/*.js` buscando declaraciones repetidas.
+
+**Qué pasó.** Lo vio un subagente probando un botón nuevo en Chromium (0 peticiones a `op=catalogo`, 0 opciones en `#departamento`, `op=sesion` pedido dos veces) y se reprodujo aparte: acorn confirma las dos declaraciones en el mismo ámbito, `f1e0d75^1` (el `main` justo antes del #245) tiene UNA y `f1e0d75` DOS. Ninguna prueba lo vio: la que vigilaba el orden «catálogo antes de la segunda precarga» y la que exigía que cada pestaña se inicializara al activarse buscaban el texto `async function arrancar()` y `arrancadas.apu … arrancar()` y los encontraban —el primero— aunque el segundo mandara.
+
+**Medido en producción el 19-oct-2026 (solo lectura, GET del `app.js` estático de `detekta-app.vercel.app` con el pase de automatización de Vercel).** El `app.js` servido tiene las dos declaraciones en el mismo ámbito (la pestaña Precios llama a `arrancar()`) y es byte a byte el de `main` en `4c8431a` (md5 `2d9b1b7c92df3fe26bba99bd261bb14c`, que es también el `etag`). Entre el merge del #245 (17-oct-2026 23:43, hora -05:00) y esta corrección pasaron unas 40 horas con Precios sin arrancar. La hora exacta del despliegue no se consultó: el `last-modified` de Vercel es la hora de la petición.
+
+**Qué dejaba de hacer Precios** (Chromium, copia con el defecto frente al árbol arreglado, API simulada): sin `op=catalogo`, `#departamento` con 0 opciones y sin `op=parametros` ni el listado de borradores (`contarBorradores`); con el arreglo salen todos. Por lectura del código, el registro del botón «Calcular rentabilidad», el de la justificación y el aviso de cambio de perfil viven SOLO en esa función. **Inferencia, sin ejecutar:** la pestaña quedaba sin catálogo ni departamento y con botones sin respuesta, no con cifras equivocadas; qué habría mostrado un cálculo hecho sin catálogo no se probó, y qué vio el usuario en ese tiempo solo lo sabe él.
+
+**Qué se decidió.**
+- **Se renombra la de Precios, no la de la app**: la de la app arranca la página (`arrancar()` al final del IIFE) y la de Precios solo se llama desde `activarPestana`; tocar la de Precios es un cambio de pocas líneas.
+- **Una invariante se defiende con un censo.** La prueba barre TODOS los `public/*.js` (sin comentarios) y cuenta las declaraciones `function nombre(` con sangría de 0 a 2 espacios —el ámbito compartido del IIFE o del archivo—; una declaración más anidada vive en su propia función y puede repetirse. Las excepciones se declaran en la propia prueba con su motivo (hoy ninguna). Mutación: devolver el nombre repetido la hace fallar con «`arrancar` en las líneas …».
+- **Las pruebas por nombre se actualizaron** (`arrancarPrecios`) y la del orden del catálogo ahora exige que la función exista con su propio nombre.
+
