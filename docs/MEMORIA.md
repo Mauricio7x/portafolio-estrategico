@@ -19771,3 +19771,28 @@ En una línea: la tarea «Carga completa (un botón)» medía el avance solo con
 **Lo que encontró la revisión adversaria** (un agente que no escribió el cambio, con reproducción, y nada grave): (a) el flujo seguía parando cuando una carga completa daba paso a un delta (ya pasaba antes del cambio); (b) una IPv6 y un NIT de 8 cifras pasaban por la clave legible, con las claves reales del cupo de altas; (c) la pantalla habría culpado a SECOP II de un tiempo agotado en una clave `secop:…`. Los tres están arreglados (puntos de arriba). Quedan como observación, sin cambiar: un cuerpo cortado por la red sigue saliendo «respuesta no JSON ()», y el texto `Redis: …` de 17 handlers enseña la clave interna en pantalla.
 
 **Verificado.** En el bloque «unidad tiempo de espera», el cliente real con una conexión que no responde (SET, GET con correo, huella, IPv6, IPv4 y NIT, SCAN, MGET, cuerpo colgado y un fallo de red, que no cambia). La tarea de GitHub se ejecuta con bash, con un curl simulado, el jq real y un `sleep` que no espera: un delta que avanza en 12 tramos termina en verde, uno quieto para a los 11 llamados, la carga completa se sigue midiendo por mes, una carga completa que da paso a un delta termina en verde y una que vuelve a enero sigue parando. `causaDeActualizacion` se ejecutó en Node y en Chromium con la página cargada desde `public/`, sin errores de página. 9 mutaciones, y las 9 mueren: la expresión vieja del flujo, el flujo sin cambio de serie, la clave sin tapar, la IPv6 sin tapar, el NIT de 8 cifras, el tiempo agotado sin comando, el cuerpo colgado leído como vacío, el error sin su nombre y la pantalla que culpa a SECOP.
+
+### Registro del 19-oct-2026: hechos nuevos y pendientes de la revisión del proyecto (solo texto)
+
+En una línea: se anotan en un solo sitio los hechos que trajo la revisión del 19-oct-2026 y su estado (verificado aquí, reportado por otra sesión o sin verificar), sin cambiar código; el art. 90 y la Resolución 240 quedan con su evidencia y esperan visto bueno.
+
+**Qué se verificó en esta sesión (con la herramienta indicada).**
+- `lib/socio.js:116` y `:212-235` cuentan las multas por vigencia fiscal (año de la firmeza). Verificado en el código.
+- Reproducción del comportamiento: con cinco multas firmes en 2019, 2019, 2020, 2020 y 2021 (dentro de tres años respecto de enero de 2022), `agregarMultas` marca `verificar_incumplimientos` y no `posible_inhabilidad`, porque el máximo por año es 2. Reproducido con la función real.
+- Los conceptos de la Agencia Nacional de Contratación Pública que aparecen en la búsqueda dicen que el artículo 43 de la Ley 1955 de 2019 cambió el intervalo del artículo 90 de la Ley 1474 de 2011 a «los últimos tres años». **Sin verificar:** el texto de la Ley 1955 y el del artículo 90 vigente no se leyeron; los resultados de búsqueda no los traían. Queda abierto además un concepto de 2026 sobre si dos incumplimientos sobre un mismo contrato activan el literal b).
+- Resolución 240 de 2020: el artículo 8 de la Resolución 465 de 2024 (versión 4 de los documentos tipo de licitación de obra de transporte) dice «deroga la Resolución 240 de 2020 y sus modificaciones posteriores». Verificado en el PDF oficial de Colombia Compra Eficiente. `lib/dictamen.js:308` todavía la cita; el artículo 3 de la 465 no se comparó todavía.
+- `lib/apu/rentabilidad.js:89`: el costo fijo de preparar la oferta es de $5.000.000 por defecto. Verificado; la cifra la fija el dueño.
+
+**Qué se reporta de otra sesión (sin verificar aquí).**
+- El plan Max 20x trae US$ 200 al mes en créditos de API, que cubren la API y el Agent SDK y no Claude Code interactivo. [sin verificar]
+- Desde el 18-sep-2026 hay 668 procesos competitivos de obra en SECOP I frente a 972 en SECOP II, según datos.gov.co `f789-7hwg` y `p6dx-8zbt`. [sin verificar]
+- El Decreto 0997 de 2026 no está en el árbol. [sin verificar]
+- La reducción del 2 % de puntos por multas (Ley 2195 de 2022, art. 58) no aparece en `lib/`. [sin verificar]
+- `lib/perfiles.js` publica liquidez y patrimonio de perfiles fijos en un repositorio público. Verificado que el código contiene esos campos; la decisión de retirarlos es del dueño.
+- Las dos llaves de producción están como variables visibles del entorno. [reportado]
+- `tests/estado.js` corta los pendientes de varias líneas: el de `MEMORIA` 18800 pierde una decisión de precio. [reportado]
+- Ocho marcadores «> PENDIENTE» del tablero están desactualizados: dos ya no aplican y seis están resueltos en parte. El conteo de marcadores no cuadra entre el grep (36) y `estado.js` (34); no está explicado.
+
+**Lo que no se hizo.** No se cambió código ni la norma en `lib/`. El cambio del art. 90 y el de la Resolución 240 deciden dinero: van con plan, prueba por mutación y visto bueno del dueño, según CLAUDE.md.
+
+**Por qué así.** Una cifra de inhabilidad mal calculada puede dejar pasar a un proponente inhabilitado o marcar a uno que no lo está. Por eso el registro separa lo leído de lo recibido de terceros, y no adopta la regla del concepto como vigente hasta leer el texto de la ley.

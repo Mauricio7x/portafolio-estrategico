@@ -2,7 +2,7 @@
      Es una FOTO para leer en GitHub; la fuente de verdad es ejecutar la herramienta. -->
 
 ```
-== MAPA DE DETEKTA · generado del árbol el 2026-10-18 ==
+== MAPA DE DETEKTA · generado del árbol el 2026-10-19 ==
 (no editar a mano: sale de `node tests/mapa.js --escribir`. Para ir a un sitio concreto,
  `node tests/mapa.js <término>` da la ruta, la línea y el sed exacto — más barato que leer esto)
 
@@ -215,8 +215,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 367 secciones (27 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 19552  La llave del servidor no se copia de Vercel: se anota al ponerla (18-oct-2026)
+· MEMORIA · docs/MEMORIA.md — 368 secciones (27 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 19565  Los pliegos de más de 20 MB que se midieron son escaneos: bajarlos por partes no da texto (…
   L 19597  El tablero de pendientes mentía: la revisión del 18-oct, uno por uno contra el código (18-o…
   L 19605  Las tres lecturas del pliego del 18-oct: la versión que rige, el ejemplo entre corchetes y …
@@ -226,6 +225,7 @@
   L 19701  La fórmula en prosa no afirma el anticipo: «presupuesto oficial menos el anticipo…» es menc…
   L 19730  El clasificador lee los nombres con separadores y los nuevos de Colombia Compra («DocBase_……
   L 19758  La carga completa ya no para con una actualización a medias, y el tiempo agotado de Upstash…
+  L 19775  Registro del 19-oct-2026: hechos nuevos y pendientes de la revisión del proyecto (solo text…
 
 · DOCUMENTOS docs/ — 71 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)
