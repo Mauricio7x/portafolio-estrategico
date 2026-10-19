@@ -324,8 +324,14 @@
     const tope = topes.documentos || 30;
     let folio = 0;
     const tipos = tiposSuyos(p);
+    /* VOLVER A BUSCAR LOS DOCUMENTOS (19-oct-2026). El único botón que quedaba era el de «Buscar los documentos ahora» con la lista VACÍA: el
+       de «Volver a buscar documentos (adendas nuevas)» vivía en la guía de la tarjeta (`htmlGuia`), que ninguna pantalla llama desde el 7-sep, y un
+       proceso cerrado no se lee solo, así que no había cómo pedirle a la aplicación una adenda nueva ni reintentar un escaneo que quedó sin leer. Es el
+       MISMO botón y el MISMO oyente (`data-seg-docs-leer` con `refrescar`): suelta los «no se pudo leer» no definitivos y vuelve a pedir el índice; el
+       avance sale en la línea `data-exp-docs-avance` de esta pestaña. */
     const docsEnt = deEntidad.length
-      ? `<div class="exp-docs">${deEntidad.map((f) => htmlFilaDoc(f, ++folio)).join("")}</div>`
+      ? `<div class="exp-docs">${deEntidad.map((f) => htmlFilaDoc(f, ++folio)).join("")}</div>
+        <p class="exp-seccion-nota">Si la entidad subió algo nuevo, o un documento escaneado quedó sin leer: <button type="button" class="exp-doc-enlace" data-seg-docs-leer="${esc(p.id)}" data-seg-docs-leer-refrescar="1">Volver a buscar los documentos</button></p>`
       : `<div class="exp-vacio"><p class="exp-vacio-titulo">Todavía no se han encontrado los documentos de la entidad</p>
           <p class="exp-vacio-texto">La aplicación los busca en SECOP II y los lee sola. Si el proceso es anterior a 2025 o la entidad no los publicó ahí, cargue el pliego usted mismo y todo lo demás funciona igual.</p>
           <button type="button" class="exp-boton exp-boton-suave" data-seg-docs-leer="${esc(p.id)}">Buscar los documentos ahora</button></div>`;

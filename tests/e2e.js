@@ -49705,6 +49705,29 @@ async function main() {
       const c5 = await correrClic({ respuesta: respF, mapea: false });
       assert.ok(c5.H.modales === 0 && /No se llevó nada/.test(c5.aviso.textContent) && c5.aviso.classes.has("text-red-700"), "si se canceló el acceso, no se dice que quedó en Precios");
     }
+    /* ── 4d · VOLVER A BUSCAR LOS DOCUMENTOS, DESDE EL EXPEDIENTE (19-oct-2026) ─────────────────────────────────────────────
+       El botón de la guía de la tarjeta no lo llamaba ninguna pantalla desde el 7-sep: con documentos en la lista no había cómo pedir una adenda nueva ni
+       reintentar un escaneo, y un proceso cerrado no se lee solo. El botón vive ahora en la pestaña «Documentos» y se EJECUTA el oyente real de app.js. */
+    {
+      const pConDocs = { id: "CO1.REQ.9", proceso: {}, documentos: [], guia: { documentos: { leidos: [{ id_documento: "1", nombre: "PLIEGO.pdf", tipo_legible: "Pliego" }], por_leer: [], ilegibles: [{ id_documento: "9", nombre: "ESTUDIO PREVIO.pdf", tipo_legible: "Estudio previo", motivo: "es un escaneo" }], no_legibles: [], formatos: [] } } };
+      const htmlCon = Xf.htmlDocumentos(pConDocs, {});
+      assert.ok(/<button[^>]*data-seg-docs-leer="CO1\.REQ\.9"[^>]*data-seg-docs-leer-refrescar="1"[^>]*>Volver a buscar los documentos</.test(htmlCon), "con documentos en la lista, el botón de volver a buscar sale en la pestaña");
+      assert.strictEqual((htmlCon.match(/data-seg-docs-leer=/g) || []).length, 1, "y es uno solo");
+      const htmlSin = Xf.htmlDocumentos({ id: "CO1.REQ.9", proceso: {}, documentos: [], guia: { documentos: { leidos: [], por_leer: [], ilegibles: [], no_legibles: [], formatos: [] } } }, {});
+      assert.strictEqual((htmlSin.match(/data-seg-docs-leer=/g) || []).length, 1, "con la lista vacía sigue habiendo UN solo botón: «Buscar los documentos ahora»");
+      assert.ok(!/data-seg-docs-leer-refrescar/.test(htmlSin) && /Buscar los documentos ahora/.test(htmlSin), "y ese no suelta nada: es la primera búsqueda");
+      // el oyente real: el atributo `refrescar="1"` llega como `refrescar: true`
+      const appD = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+      const iD = appD.indexOf('const dl = ev.target.closest("[data-seg-docs-leer]");'), fD = appD.indexOf("return; }", iD) + "return; }".length;
+      assert.ok(iD > 0 && fD > iD, "app.js trae el oyente de data-seg-docs-leer");
+      const correrD = (attrs) => { const llamadas = []; const boton = { disabled: false, getAttribute: (k) => attrs[k] ?? null };
+        const r = new Function("ev", "encolarLecturaDocumentos", `${appD.slice(iD, fD)}\n return "no_atendido";`)({ target: { closest: (s) => (s === "[data-seg-docs-leer]" ? boton : null) } }, (...a) => llamadas.push(a));
+        return { r, llamadas, boton }; };
+      const d1 = correrD({ "data-seg-docs-leer": "CO1.REQ.9", "data-seg-docs-leer-refrescar": "1" });
+      assert.deepStrictEqual([d1.llamadas, d1.boton.disabled], [[["CO1.REQ.9", { manual: true, refrescar: true }]], true], "pulsar el botón del expediente pide la lectura MANUAL y con refresco, y deshabilita el botón mientras tanto");
+      const d2 = correrD({ "data-seg-docs-leer": "CO1.REQ.9", "data-seg-docs-leer-refrescar": "0" });
+      assert.deepStrictEqual(d2.llamadas, [["CO1.REQ.9", { manual: true, refrescar: false }]], "sin el atributo en «1», no refresca");
+    }
     /* ── 5 · LA PANTALLA ─────────────────────────────────────────────────── */
     {
       const fila = (x) => Xf.htmlFilaDoc(x, 1);
