@@ -19772,6 +19772,54 @@ En una línea: la tarea «Carga completa (un botón)» medía el avance solo con
 
 **Verificado.** En el bloque «unidad tiempo de espera», el cliente real con una conexión que no responde (SET, GET con correo, huella, IPv6, IPv4 y NIT, SCAN, MGET, cuerpo colgado y un fallo de red, que no cambia). La tarea de GitHub se ejecuta con bash, con un curl simulado, el jq real y un `sleep` que no espera: un delta que avanza en 12 tramos termina en verde, uno quieto para a los 11 llamados, la carga completa se sigue midiendo por mes, una carga completa que da paso a un delta termina en verde y una que vuelve a enero sigue parando. `causaDeActualizacion` se ejecutó en Node y en Chromium con la página cargada desde `public/`, sin errores de página. 9 mutaciones, y las 9 mueren: la expresión vieja del flujo, el flujo sin cambio de serie, la clave sin tapar, la IPv6 sin tapar, el NIT de 8 cifras, el tiempo agotado sin comando, el cuerpo colgado leído como vacío, el error sin su nombre y la pantalla que culpa a SECOP.
 
+### Registro del 19-oct-2026: hechos nuevos y pendientes de la revisión del proyecto (solo texto)
+> SUPERADA el 19-oct-2026 por «La regla del art. 90 se cuenta en 3 años, no por vigencia fiscal» — el cambio de la regla y de la cita se hizo el mismo día, con la suite 4/4.
+
+En una línea: se anotan en un solo sitio los hechos que trajo la revisión del 19-oct-2026 y su estado (verificado aquí, reportado por otra sesión o sin verificar), sin cambiar código; el art. 90 y la Resolución 240 quedan con su evidencia y esperan visto bueno.
+
+**Qué se verificó en esta sesión (con la herramienta indicada).**
+- `lib/socio.js:116` y `:212-235` cuentan las multas por vigencia fiscal (año de la firmeza). Verificado en el código.
+- Reproducción del comportamiento: con cinco multas firmes en 2019, 2019, 2020, 2020 y 2021 (dentro de tres años respecto de enero de 2022), `agregarMultas` marca `verificar_incumplimientos` y no `posible_inhabilidad`, porque el máximo por año es 2. Reproducido con la función real.
+- Los conceptos de la Agencia Nacional de Contratación Pública que aparecen en la búsqueda dicen que el artículo 43 de la Ley 1955 de 2019 cambió el intervalo del artículo 90 de la Ley 1474 de 2011 a «los últimos tres años». **Sin verificar:** el texto de la Ley 1955 y el del artículo 90 vigente no se leyeron; los resultados de búsqueda no los traían. Queda abierto además un concepto de 2026 sobre si dos incumplimientos sobre un mismo contrato activan el literal b).
+- Resolución 240 de 2020: el artículo 8 de la Resolución 465 de 2024 (versión 4 de los documentos tipo de licitación de obra de transporte) dice «deroga la Resolución 240 de 2020 y sus modificaciones posteriores». Verificado en el PDF oficial de Colombia Compra Eficiente. `lib/dictamen.js:308` todavía la cita; el artículo 3 de la 465 no se comparó todavía.
+- `lib/apu/rentabilidad.js:89`: el costo fijo de preparar la oferta es de $5.000.000 por defecto. Verificado; la cifra la fija el dueño.
+
+**Qué se reporta de otra sesión (sin verificar aquí).**
+- El plan Max 20x trae US$ 200 al mes en créditos de API, que cubren la API y el Agent SDK y no Claude Code interactivo. [sin verificar]
+- Desde el 18-sep-2026 hay 668 procesos competitivos de obra en SECOP I frente a 972 en SECOP II, según datos.gov.co `f789-7hwg` y `p6dx-8zbt`. [sin verificar]
+- El Decreto 0997 de 2026 no está en el árbol. [sin verificar]
+- La reducción del 2 % de puntos por multas (Ley 2195 de 2022, art. 58) no aparece en `lib/`. [sin verificar]
+- `lib/perfiles.js` publica liquidez y patrimonio de perfiles fijos en un repositorio público. Verificado que el código contiene esos campos; la decisión de retirarlos es del dueño.
+- Las dos llaves de producción están como variables visibles del entorno. [reportado]
+- `tests/estado.js` corta los pendientes de varias líneas: el de `MEMORIA` 18800 pierde una decisión de precio. [reportado]
+- Ocho marcadores «> PENDIENTE» del tablero están desactualizados: dos ya no aplican y seis están resueltos en parte. El conteo de marcadores no cuadra entre el grep (36) y `estado.js` (34); no está explicado.
+
+**Lo que no se hizo.** No se cambió código ni la norma en `lib/`. El cambio del art. 90 y el de la Resolución 240 deciden dinero: van con plan, prueba por mutación y visto bueno del dueño, según CLAUDE.md.
+
+**Por qué así.** Una cifra de inhabilidad mal calculada puede dejar pasar a un proponente inhabilitado o marcar a uno que no lo está. Por eso el registro separa lo leído de lo recibido de terceros, y no adopta la regla del concepto como vigente hasta leer el texto de la ley.
+
+### La regla del art. 90 se cuenta en 3 años, no por vigencia fiscal; la Resolución 240 se cita como derogada (19-oct-2026)
+
+En una línea: la inhabilidad del art. 90 de la Ley 1474 marca «posible inhabilidad vigente» con cinco multas en los últimos tres años, en cualquier año fiscal (literal a, según el texto de la Ley 1955/2019 art. 43 en la compilación del Invima), y la cita de los documentos tipo de transporte pasa de la Resolución 240 de 2020 a la 465 de 2024, art. 3 (verificado en el PDF oficial).
+
+**Qué se decidió.**
+- `lib/socio.js`: `agregarMultas` cuenta las multas firmes dentro de los últimos tres años desde la consulta (`multas_ultimos_3_anios`). Cinco o más dan `posible_inhabilidad` vigente; cinco o más fuera de la ventana siguen dando `posible_inhabilidad` con `podria_estar_vigente: false` (el semáforo las pone en ámbar «histórica»). El literal c (dos multas y un incumplimiento en una misma vigencia) queda como «verificar», porque la app no ve los incumplimientos.
+- `NORMA.inhabilidad_reiterada` recoge los tres literales tal como los da la compilación del Invima, y dice que falta confrontarla con el Diario Oficial.
+- `lib/dictamen.js`: la cita «Resolución 240 de 2020 art. 3 (mod. 275 de 2022)» pasa a «Resolución 465 de 2024 art. 3 (versión 4 de los documentos tipo de licitación de obra de transporte; deroga la Resolución 240 de 2020)». El artículo 8 de la 465 dice «deroga la Resolución 240 de 2020 y sus modificaciones posteriores», y su artículo 3 es el de inalterabilidad de los documentos tipo.
+
+**Por qué así.**
+- Con el código anterior, cinco multas de 2019 a 2021 (dentro de tres años respecto de enero de 2022) daban solo «verificar»; ahora dan «posible inhabilidad vigente». Es el defecto que reprodujo la sesión, con la función real.
+- La ventana se cuenta desde la fecha de consulta. Esto es una inferencia: el texto no dice desde cuándo se cuentan los tres años, y se deja escrito aquí para que no se tome como dato de la ley.
+- Las multas sin fecha no entran en la ventana, pero sí en el total: no se cuentan como recientes sin saberlo.
+
+**Lo que no entra en este cambio.**
+- Los literales a) y b) no se ven en la app por separado: la app ve multas, no declaratorias de incumplimiento (el dataset 4n4q-k399 no las distingue). La señal sigue siendo para verificar en el RUP.
+- La reducción del 2 % de puntos por multas (Ley 2195 de 2022) y el literal d) del art. 43 (programas de alimentación escolar) no están implementados.
+- Un concepto de 2026 consulta si dos incumplimientos sobre un mismo contrato activan el literal b); la respuesta no se leyó.
+- El texto del artículo 43 no se leyó en el Diario Oficial: la página del Senado devolvió 503 y la de Función Pública también.
+
+**Verificación.** `node tests/e2e.js` 4/4 sobre el código de estos cambios (`CODIGO=0`). La prueba nueva compara con el reloj fijo al 15-ene-2022; con el código anterior el mismo caso daba `verificar_incumplimientos`, así que la prueba falla contra el árbol anterior. Después de este registro se volvió a correr la suite (1/1, porque el registro es solo texto).
+
 ### La base de contratación estatal queda en docs/, sin cobertura medida, y el contador de uso ya existía (19-oct-2026)
 
 En una línea: la investigación de contratación estatal de obra queda en `docs/CONTRATACION_ESTATAL.md` con su índice de fuentes y la habilidad `/contratacion`; se retira una norma completa y una cifra, se corrigen cuatro cifras, y dos vacíos que el crítico señaló ya estaban en el código. La cobertura de Detekta no se mide con esta base, y el contador de uso que se iba a construir ya existe (`lib/uso`, desde el 27-sep-2026, por perfil).
