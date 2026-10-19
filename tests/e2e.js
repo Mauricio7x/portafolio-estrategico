@@ -40966,6 +40966,23 @@ async function main() {
             const i = html.indexOf(`id="${id}"`);
             assert.ok(i > iAv && i < finAv, `#${id} debe vivir plegado en filtros avanzados`);
           }
+          /* LA LISTA ABRE CON TODO (19-oct-2026, decisión del dueño): la casilla «Solo las que cumplen» nace APAGADA y, apagada, el navegador
+             pide `solo_viables=false` (el servidor sigue con `true` por defecto). Se ejecuta `parametros()` de app.js con un DOM simulado. */
+          {
+            const tagViables = /<input id="f-solo-viables"[^>]*>/.exec(html);
+            assert.ok(tagViables, "la casilla f-solo-viables existe");
+            assert.ok(!/\bchecked\b/.test(tagViables[0]), `la casilla nace apagada: ${tagViables[0]}`);
+            const appP = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+            const iP = appP.indexOf("  function parametros() {"), fP = appP.indexOf("    return p;\n  }", iP);
+            assert.ok(iP > 0 && fP > iP, "app.js trae parametros()");
+            const cuerpoP = appP.slice(iP, fP + "    return p;\n  }".length);
+            const correrP = (marcada) => new Function("$", "pagina", "FL", "estadoFiltros", "estructuraGuardada", `${cuerpoP}\n return parametros();`)(
+              (id) => ({ value: id === "f-perfil" ? "helder" : id === "f-ordenar" ? "atractividad" : id === "f-orden" ? "desc" : "", checked: id === "f-solo-viables" ? marcada : false }),
+              1, { escribirEstado: () => {} }, {}, () => null);
+            assert.strictEqual(correrP(false).get("solo_viables"), "false", "apagada, el navegador pide TODO (solo_viables=false)");
+            assert.strictEqual(correrP(true).get("solo_viables"), null, "encendida, no manda nada: el servidor oculta los que no pasan (su defecto)");
+            assert.strictEqual(correrP(false).get("perfil"), "helder", "y el resto de los parámetros sigue igual");
+          }
           for (const id of ["f-ordenar", "f-ver-paa", "btn-buscar"]) {
             assert.ok(html.indexOf(`id="${id}"`) < iAv,
               `#${id} es de la vista principal: ordenar y las obras planeadas son las decisiones del día a día`);

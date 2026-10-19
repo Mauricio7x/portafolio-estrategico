@@ -19900,3 +19900,20 @@ En una línea: un subagente que no escribió el código lo atacó con 325 Excel 
 
 **Sin verificar.** Pliegos PDF reales con «VALOR TOTAL» (no hay corpus de PDF en el contenedor: se probó con el sintético del revisor); la memoria real de Vercel (se midió con un heap limitado de 256 MB, no allí).
 
+### La lista abre con TODOS los procesos de obra abiertos, y los que no alcanzan van atenuados y al final (19-oct-2026)
+
+En una línea: la casilla «Solo las que cumplen los requisitos» de la pestaña Licitaciones nace APAGADA (`public/index.html`) y, apagada, el navegador pide `solo_viables=false`; el servidor conserva `solo_viables=true` como defecto, así que el pulso, el conteo de «cuántas puede presentarse» y todo cliente que no mande el parámetro cuentan igual que antes.
+
+> PENDIENTE · el texto de la casilla promete más de lo que mide: dice «cumplen los requisitos» y las puertas solo miran registro (P1), capacidad (P2) y caja (P3); la experiencia y los indicadores financieros salen del pliego y solo se saben tras leerlo (el bloque «¿Puede presentarse?» de Mis procesos sí los exige). El dueño eligió mostrar todo sin cambiar el texto; falta decidir la redacción, que tiene que seguir sin jerga.
+
+**Decisión del dueño (19-oct-2026).** Entre dejarla como estaba, mostrar todo, o mostrar todo y corregir el texto, eligió mostrar todo, atenuado y al final. Va con el principio del módulo: en oportunidades el falso caro es el NEGATIVO (ante la duda se muestra), y esconder lo que no alcanza era decidir por el usuario qué no ver. Encenderla vuelve a ocultar; nunca se mezclan los que no alcanzan con los que sí.
+
+**Lo medido para decidirlo (solo lectura, 19-oct-2026, filas de datos.gov.co `p6dx-8zbt` bajadas esa mañana y la cascada y las puertas REALES de Detekta; el diagnóstico de producción exige credencial y no se leyó, así que es una aproximación local sin el histórico de competencia ni la fusión de obras gemelas).**
+- **Cobertura de la ingesta.** De 20.341 filas de 2026 con `tipo_de_contrato = Obra`, entran las 612 abiertas y competitivas; lo que cae es cierre vencido (12.049), modalidad no competitiva (7.576: régimen especial y contratación directa), estado no abierto (100) y lista negra de objeto (4). De 20.670 filas de otros tipos entran 489 más (por UNSPSC o por el texto del objeto); de las que caen, solo 4 traen términos de obra civil y ninguna es una obra que se esté perdiendo (dos convenios con el Decreto 092 de 2017 y dos que no son obra: un inventario de puentes y un manejo silvicultural). Los textos «mantenimiento» que caen son de vehículos y equipos. Límite: solo publicaciones de 2026; una obra publicada antes y todavía abierta no está en esta muestra.
+- **Qué quedaba oculto por defecto**, de 1.101 procesos abiertos que entran: 90 para Helder, 91 para Génesis, 55 para Prodiac, 142 para PICS y 73 para el consorcio (entre el 5 % y el 13 %). Los motivos son RUP (registro) y K (capacidad); la caja casi no cierra.
+- **Los que pasan llevan todos «sin dato» en UNA sola cosa: el anticipo**, que SECOP II no publica (`p3_caja.sin_dato_de = "anticipo"`). Es el diseño de la regla de faltantes, no un defecto: P3 pasa, dice la cifra que habría que financiar sin anticipo y pide confirmarlo en el pliego. P1 y P2 salen sin «sin dato».
+
+**Verificado.** En `tests/e2e.js` (secuencia `iteraciones`): la casilla nace sin `checked` y se EJECUTA `parametros()` de `public/app.js` con un DOM simulado (apagada pide `solo_viables=false`, encendida no manda nada, el resto de los parámetros no cambia). 3 mutaciones (la casilla vuelve a nacer marcada, el navegador no pide el parámetro, lo pide siempre) y las 3 mueren. Chromium real con la API simulada: la casilla abre desmarcada, la consulta a la lista lleva `solo_viables=false`, la tarjeta que no alcanza sale atenuada con «No viable» y no hay errores de página.
+
+**Sin verificar.** El efecto sobre el número real de tarjetas que verá el dueño (la lista de producción fusiona obras gemelas y aplica el histórico de competencia); cómo se ve en el teléfono con 55 a 142 tarjetas más al final.
+

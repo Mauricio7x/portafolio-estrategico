@@ -1266,9 +1266,10 @@
     }
     p.set("ordenar_por", $("f-ordenar").value);
     p.set("orden", $("f-orden").value);
-    // encendido por defecto: la lista es para decidir, y un proceso que no se
-    // puede tomar estorba más de lo que informa. Apagarlo los devuelve
-    // atenuados y con el motivo, nunca mezclados con los viables.
+    /* APAGADO POR DEFECTO (19-oct-2026, decisión del dueño): la lista enseña TODOS los procesos de obra abiertos, y los que su registro,
+       su capacidad o su caja no alcanzan van ATENUADOS y al final, con su motivo (medido el 19-oct con las puertas reales sobre 1.101
+       procesos: entre 55 y 142 según el perfil). Esconderlos era decidir por él qué no ver. Encenderlo vuelve a ocultarlos; nunca se mezclan
+       con los que sí pasan. El servidor conserva `solo_viables=true` como defecto: los demás clientes y el pulso cuentan igual que antes. */
     if (!$("f-solo-viables").checked) p.set("solo_viables", "false");
     // apagado por defecto: sin código del RUP y sin vocabulario claro de obra,
     // el proceso es ruido (software, equipos, servicios de salud…). Encenderlo
