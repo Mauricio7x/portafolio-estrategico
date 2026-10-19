@@ -18633,7 +18633,7 @@ En una línea: el 1-oct-2026 `main` amaneció en rojo sin que nadie tocara nada 
 - **El peso de la ganancia.** El servidor multiplica el costo directo EXACTO y redondea una vez (correcto: «una cifra redondeada para mostrar no puede decidir»); la prueba multiplicaba el costo directo YA REDONDEADO que viaja. Medido: 188.567.786 × 1,20 = 226.281.343,2 frente a 226.281.344 servido. La aserción admite exactamente ese error de redondeo (medio peso × (1 + A + I) + medio peso); no hay que volver a `strictEqual` sin publicar el costo exacto.
 - **Cómo se buscaron los hermanos.** Con un precargador que adelanta `Date` (solo en /tmp, no en el repositorio) la suite se corrió con el reloj a +7, +14, +21, +30 y +40 días: verde hasta +30; a +40 cae «hace falta un proceso del listado con cierre, presupuesto y sin id_del_portafolio» (los datos simulados se agotan). Queda como pendiente con fecha.
 
-> PENDIENTE · antes del 31-oct-2026: la prueba «hace falta un proceso del listado con cierre, presupuesto y sin id_del_portafolio» (unidad de iteraciones) cae con el reloj adelantado entre +30 y +40 días; reproducir con un precargador que adelante `Date` y corregir donde se agotan los datos simulados, antes de que tumbe `main`.
+> RESUELTO el 19-oct-2026 por «La fila de prueba se busca en todas las páginas del listado, y enero espera (16-oct-2026)» · Medido con la suite completa y el reloj adelantado +35 y +40 días (precargador de `Date` y un `date` de prueba fuera del repositorio, que cubre también los procesos hijos: la carga completa calcula el mes con `date`): 4/4 en los dos casos. Antes, a +40, caía por datos simulados que se agotaban; hoy la fila se busca en todas las páginas.
 
 ### La cerradura del commit y los dos subagentes del proyecto (2-oct-2026)
 
