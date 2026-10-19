@@ -215,8 +215,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 369 secciones (28 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 19597  El tablero de pendientes mentía: la revisión del 18-oct, uno por uno contra el código (18-o…
+· MEMORIA · docs/MEMORIA.md — 370 secciones (28 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 19605  Las tres lecturas del pliego del 18-oct: la versión que rige, el ejemplo entre corchetes y …
   L 19613  La carga en Precios no entra al vigía si el nombre dice que es otra cosa (18-oct-2026)
   L 19654  La Fase C se cierra: no se construye la descarga de pliegos de más de 20 MB (18-oct-2026)
@@ -226,8 +225,9 @@
   L 19758  La carga completa ya no para con una actualización a medias, y el tiempo agotado de Upstash…
   L 19775  Registro del 19-oct-2026: hechos nuevos y pendientes de la revisión del proyecto (solo text…  (superada)
   L 19801  La regla del art. 90 se cuenta en 3 años, no por vigencia fiscal; la Resolución 240 se cita…
+  L 19823  La base de contratación estatal queda en docs/, sin cobertura medida, y el contador de uso …
 
-· DOCUMENTOS docs/ — 71 (y 3 en docs/archivo/, superados: `--archivo` los lista):
+· DOCUMENTOS docs/ — 73 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)
   APU_DIAGNOSTICO.md                      Diagnóstico del módulo APU frente a la especificación «APU profesional»
   APU_FUENTES.md                          Fuentes de precio del APU · qué se intentó, qué respondió y qué falta
@@ -243,6 +243,8 @@
   COMPLEMENTO_ANALISTA_LICITACIONES.md    Complemento crítico al Manual del Analista de Licitaciones
   CONFIGURACION_TOKENS.md                 Tokens y variables de entorno · guía desde cero
   CONSULTORIA_2026-09-04_RESUMEN.md       Consultoría integral sobre Detekta · resumen para el dueño (antes → mejora)
+  CONTRATACION_ESTATAL_FUENTES.md         Contratación estatal de obra en Colombia · índice de fuentes
+  CONTRATACION_ESTATAL.md                 Contratación estatal de obra en Colombia · base de conocimiento
   datos.md                                Inventario de fuentes de datos y auditorías de la Fase 0
   DICTAMEN_DESDE_CLAUDE_CODE.md           Dictamen del pliego con la suscripción de Claude Code (sin clave de API) · 3-sep-202
   DIFERENCIAS_APU.md                      Diferencias declaradas · APU generado vs archivos de referencia (ago 2026)

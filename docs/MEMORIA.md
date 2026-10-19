@@ -19819,3 +19819,20 @@ En una línea: la inhabilidad del art. 90 de la Ley 1474 marca «posible inhabil
 - El texto del artículo 43 no se leyó en el Diario Oficial: la página del Senado devolvió 503 y la de Función Pública también.
 
 **Verificación.** `node tests/e2e.js` 4/4 sobre el código de estos cambios (`CODIGO=0`). La prueba nueva compara con el reloj fijo al 15-ene-2022; con el código anterior el mismo caso daba `verificar_incumplimientos`, así que la prueba falla contra el árbol anterior. Después de este registro se volvió a correr la suite (1/1, porque el registro es solo texto).
+
+### La base de contratación estatal queda en docs/, sin cobertura medida, y el contador de uso ya existía (19-oct-2026)
+
+En una línea: la investigación de contratación estatal de obra queda en `docs/CONTRATACION_ESTATAL.md` con su índice de fuentes y la habilidad `/contratacion`; se retira una norma completa y una cifra, se corrigen cuatro cifras, y dos vacíos que el crítico señaló ya estaban en el código. La cobertura de Detekta no se mide con esta base, y el contador de uso que se iba a construir ya existe (`lib/uso`, desde el 27-sep-2026, por perfil).
+
+**Qué se decidió y por qué.**
+- **La cobertura no se publica.** Los agentes clasificaron cada problema como cubierto, a medias o no cubierto leyendo documentos, no el código. Esa clasificación no dice qué hace Detekta, así que se omite del documento. Medir la cobertura es un trabajo aparte.
+- **Se retiran las afirmaciones que no son regla legal.** DET-25 sale completo: la TVEC obligatoria para compras que no excedan el 10 % de la menor cuantía ya no está en el texto vigente del numeral 5 del art. 2 de la Ley 1150, y los indicadores financieros los fija cada pliego. El Decreto 777 de 1992 (5 % para honorarios) se retira porque el decreto está derogado.
+- **Lo que el crítico marcó como vacío y ya estaba en el código** no se propone de nuevo: la contribución del 5 % de obra pública (`lib/apu/calculo.js`) y la inhabilidad por incumplimiento reiterado para socios (`lib/socio.js`).
+- **Las cifras sin verificar siguen como están,** con su marca. No se reescriben ni se presentan como confirmadas.
+
+**Lo que no hay que re-aprender.**
+1. **Antes de decir «no existe», buscar con el término del código.** La ruta de mercado se escribió sin contar con `lib/uso`, y la búsqueda de hoy dijo «no hay contador» sin encontrarlo. `node tests/mapa.js uso` lo devuelve.
+2. **El contador de uso cuenta por perfil, no por persona.** Su llave es `uso:{perfil}:{YYYY-MM}`, y la sección «Medir el uso» lo dice: la llave no distingue al dueño de un visitante que use el mismo perfil.
+3. **La verificación de normas no alcanza todas las cifras.** Se abrieron las normas, plazos, porcentajes y sentencias de los problemas de gravedad media o alta. Las demás quedaron sin verificar.
+
+> PENDIENTE · el dueño decide si el conteo de uso se mantiene por perfil (como se decidió el 27-sep-2026) o pasa a ser anónimo, sin perfil ni nombre. El 19-oct-2026 se propuso un conteo anónimo sin usuario ni NIT y se aprobó el punto de la ruta con esa descripción; lo que existe hoy no es anónimo.
