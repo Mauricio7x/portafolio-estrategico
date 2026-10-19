@@ -226,6 +226,8 @@
       tipo: x.tipo_legible || null, fecha: x.fecha_carga || x.leido_el || null,
       paginas: x.paginas != null ? x.paginas : null, formato: formatoDe(x.nombre), peso: pesoLegible(x.tamano),
       estado, observacion: x.motivo || null, url: x.url || null,
+      /* el Formulario 1 en Excel que pasó la comprobación se puede llevar a Precios (19-oct-2026) */
+      formulario_de: x.formulario_excel === true && x.id_documento ? p.id : null,
     });
     return [
       ...(d.leidos || []).map((x) => fila(x, "leido")),
@@ -257,8 +259,9 @@
       <span class="exp-doc-nombre">${esc(f.nombre)}</span>
       <span class="exp-doc-meta">${esc(meta || "Sin más datos publicados")}</span>
       <span class="exp-doc-mandos"><span class="exp-estado ${e.clase}"><span class="exp-punto" aria-hidden="true">&#9679;</span>${esc(e.texto)}</span>${llenable
-        ? `<button type="button" class="exp-boton" data-seg-llenar="${esc(f.url)}" data-seg-llenar-nombre="${esc(f.nombre)}" data-seg-llenar-n="${miles(folio)}">Llenar con sus datos</button>` : ""}</span>
-    </div>${llenable ? `<p class="exp-seccion-nota hidden" data-seg-llenar-estado="${miles(folio)}" role="status"></p>` : ""}`;
+        ? `<button type="button" class="exp-boton" data-seg-llenar="${esc(f.url)}" data-seg-llenar-nombre="${esc(f.nombre)}" data-seg-llenar-n="${miles(folio)}">Llenar con sus datos</button>` : ""}${f.formulario_de
+        ? `<button type="button" class="exp-boton" data-seg-f1="${esc(f.formulario_de)}" data-seg-f1-doc="${esc(f.id)}" data-seg-f1-n="${miles(folio)}">Cotizar en Precios</button>` : ""}</span>
+    </div>${llenable || f.formulario_de ? `<p class="exp-seccion-nota hidden" data-seg-${f.formulario_de ? "f1" : "llenar"}-estado="${miles(folio)}" role="status"></p>` : ""}`;
   }
 
   /* Los documentos SUYOS. Cada uno lleva su estado y, si el usuario la anotó,
@@ -321,8 +324,14 @@
     const tope = topes.documentos || 30;
     let folio = 0;
     const tipos = tiposSuyos(p);
+    /* VOLVER A BUSCAR LOS DOCUMENTOS (19-oct-2026). El único botón que quedaba era el de «Buscar los documentos ahora» con la lista VACÍA: el
+       de «Volver a buscar documentos (adendas nuevas)» vivía en la guía de la tarjeta (`htmlGuia`), que ninguna pantalla llama desde el 7-sep, y un
+       proceso cerrado no se lee solo, así que no había cómo pedirle a la aplicación una adenda nueva ni reintentar un escaneo que quedó sin leer. Es el
+       MISMO botón y el MISMO oyente (`data-seg-docs-leer` con `refrescar`): suelta los «no se pudo leer» no definitivos y vuelve a pedir el índice; el
+       avance sale en la línea `data-exp-docs-avance` de esta pestaña. */
     const docsEnt = deEntidad.length
-      ? `<div class="exp-docs">${deEntidad.map((f) => htmlFilaDoc(f, ++folio)).join("")}</div>`
+      ? `<div class="exp-docs">${deEntidad.map((f) => htmlFilaDoc(f, ++folio)).join("")}</div>
+        <p class="exp-seccion-nota">Si la entidad subió algo nuevo, o un documento escaneado quedó sin leer: <button type="button" class="exp-doc-enlace" data-seg-docs-leer="${esc(p.id)}" data-seg-docs-leer-refrescar="1">Volver a buscar los documentos</button></p>`
       : `<div class="exp-vacio"><p class="exp-vacio-titulo">Todavía no se han encontrado los documentos de la entidad</p>
           <p class="exp-vacio-texto">La aplicación los busca en SECOP II y los lee sola. Si el proceso es anterior a 2025 o la entidad no los publicó ahí, cargue el pliego usted mismo y todo lo demás funciona igual.</p>
           <button type="button" class="exp-boton exp-boton-suave" data-seg-docs-leer="${esc(p.id)}">Buscar los documentos ahora</button></div>`;

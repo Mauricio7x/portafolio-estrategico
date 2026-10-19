@@ -529,6 +529,7 @@
      «Mis procesos» es #tab-seguimiento (#/mis-procesos). */
   const ALIAS_PESTANA = { empresa: "admin", "mi-empresa": "admin", precios: "apu", "mis-procesos": "seguimiento", procesos: "seguimiento" };
   const arrancadas = { apu: false, admin: false, pliego: false, seguimiento: false };
+  let arranqueApu = null;   // la promesa del primer arranque de Precios: lo que necesita su catálogo cargado (el desplegable de departamentos) la espera
   function activarPestana(nombre, { empujarHash = true } = {}) {
     const pedido = ALIAS_PESTANA[nombre] || nombre;
     const destino = PESTANAS.includes(pedido) ? pedido : "admin";
@@ -584,7 +585,7 @@
        arranque por URL) y un camino olvidado guardaba el borrador bajo «helder»
        con la barra en el consorcio. La primera apertura lo hace `arrancarPrecios()`,
        que además precarga el perfil de la tarjeta. */
-    if (destino === "apu" && !arrancadas.apu) { arrancadas.apu = true; arrancarPrecios(); }
+    if (destino === "apu" && !arrancadas.apu) { arrancadas.apu = true; arranqueApu = arrancarPrecios(); }
     else if (destino === "apu") sincronizarPerfilBorrador();
     if (destino === "apu" && !arrancadas.pliego && typeof window.__pliegoArrancar === "function") {
       arrancadas.pliego = true;
@@ -1265,9 +1266,10 @@
     }
     p.set("ordenar_por", $("f-ordenar").value);
     p.set("orden", $("f-orden").value);
-    // encendido por defecto: la lista es para decidir, y un proceso que no se
-    // puede tomar estorba más de lo que informa. Apagarlo los devuelve
-    // atenuados y con el motivo, nunca mezclados con los viables.
+    /* APAGADO POR DEFECTO (19-oct-2026, decisión del dueño): la lista enseña TODOS los procesos de obra abiertos, y los que su registro,
+       su capacidad o su caja no alcanzan van ATENUADOS y al final, con su motivo (medido el 19-oct con las puertas reales sobre 1.101
+       procesos: entre 55 y 142 según el perfil). Esconderlos era decidir por él qué no ver. Encenderlo vuelve a ocultarlos; nunca se mezclan
+       con los que sí pasan. El servidor conserva `solo_viables=true` como defecto: los demás clientes y el pulso cuentan igual que antes. */
     if (!$("f-solo-viables").checked) p.set("solo_viables", "false");
     // apagado por defecto: sin código del RUP y sin vocabulario claro de obra,
     // el proceso es ruido (software, equipos, servicios de salud…). Encenderlo
@@ -5612,6 +5614,15 @@
         /* `saturado`: el OCR no atendió; el servidor guarda cuándo reintentarlo solo */
         const marcarIlegible = (motivo, definitivo, saturado) => api("/api/pliego?op=documentos", { method: "POST", body: { id_proceso: id, id_documento: a.id_documento, ilegible: true, definitivo: definitivo === true, saturado: saturado === true, motivo: String(motivo).slice(0, 200) } });
         try {
+          /* el Formulario 1 en Excel (19-oct-2026) lo lee el servidor y SOLO entrega ítems si cuadran con su total y fila a fila:
+             el navegador no interpreta el libro, lo pide y devuelve el resultado, que el servidor vuelve a comprobar */
+          if (/^(xlsx|xlsm)$/.test(String(a.extension || "").toLowerCase())) {
+            const x = await api("/api/pliego?op=descargar", { method: "POST", body: { url: a.url, formato: "xlsx" } });
+            if (!x.lectura || x.lectura.ok !== true) { await marcarIlegible(`no es un libro de Excel que se pueda leer: ${(x.lectura && x.lectura.motivo) || "sin más datos"}`, true); fallidos++; continue; }
+            await api("/api/pliego?op=documentos", { method: "POST", body: { id_proceso: id, id_documento: a.id_documento, formulario_excel: x.lectura } });
+            leidos++;
+            continue;
+          }
           let texto, recortadoEnOrigen = false, paginasTotal = null, origen = null;
           if (String(a.extension || "").toLowerCase() === "docx") {
             /* el Word lo lee el servidor (lib/docx.js) y devuelve el texto, sin páginas */
@@ -6343,6 +6354,35 @@
           decirL(`${r.base64 ? "Descargado. " : ""}${X.frasesLlenado(r).join(" ")}`, !r.base64);
         } catch (e) { decirL(`No se pudo llenar: ${fraseDeFallo(e)}`, true); }
         llenar.disabled = false;
+        return;
+      }
+      /* EL FORMULARIO 1 LEÍDO, A PRECIOS (19-oct-2026): el servidor guardó los ítems que pasaron la comprobación
+         (cuadran con su total y fila a fila); aquí se llevan a la MISMA vista previa que el pliego leído
+         (`filasDesdePliego` → `mapearParaPrevisualizar`), con el proceso ya puesto. El precio del formulario NO viaja:
+         es el de la entidad, y lo ponen los bancos. Nada entra a la tabla sin que el usuario acepte la vista previa. */
+      const f1 = ev.target.closest("[data-seg-f1]");
+      if (f1) {
+        const idProc = f1.getAttribute("data-seg-f1"), idDoc = f1.getAttribute("data-seg-f1-doc"), n = f1.getAttribute("data-seg-f1-n");
+        const aviso = secSeg.querySelector(`[data-seg-f1-estado="${CSS.escape(n)}"]`);
+        const decirF = (t, error) => { if (!aviso) return; aviso.classList.remove("hidden"); aviso.classList.toggle("text-red-700", !!error); aviso.textContent = t; };
+        f1.disabled = true;
+        decirF("Trayendo los ítems del Formulario 1 leído…");
+        try {
+          const r = await api(`/api/pliego?op=documentos&id_proceso=${encodeURIComponent(idProc)}&formulario=${encodeURIComponent(idDoc)}`);
+          const items = r && Array.isArray(r.filas) ? r.filas : [];
+          if (!items.length) throw new Error("el servidor no devolvió ítems del Formulario 1");
+          const p = ((ultimoSeguimiento && ultimoSeguimiento.procesos) || []).find((x) => x.id === idProc) || {};
+          const g = segExpDatos && segExpDatos.proceso && segExpDatos.proceso.id === idProc ? segExpDatos.proceso.guia : null;
+          abrirEditorConProceso(qApuDelExpediente(p.proceso || {}, idProc, g));
+          const apertura = aperturasEditor;
+          if (arranqueApu) await arranqueApu.catch(() => {});   // sin el catálogo cargado no hay departamento, y el precio de la vista previa depende de él
+          if (apertura !== aperturasEditor) { decirF("Se abrió otro proceso o borrador en Precios mientras se traían los ítems: pulse «Cotizar en Precios» otra vez.", true); f1.disabled = false; return; }
+          const filasF1 = filasDesdePliego(items.map((i) => ({ numeral: i.codigo, descripcion: i.descripcion, unidad: i.unidad, cantidad: i.cantidad })));
+          const aviso1 = `${filasF1.length} ítem(s) del Formulario 1 de la entidad${r.hoja ? ` (hoja «${r.hoja}»)` : ""}, leídos y comprobados contra su total${r.total != null ? ` de ${pesos(r.total)}` : ""}. El precio de la entidad no se lleva: lo ponen los bancos.`;
+          if (await mapearParaPrevisualizar(filasF1, { avisos: [aviso1], origen: r.nombre ? `el Formulario 1 «${r.nombre}»` : "el Formulario 1 leído" })) { abrirModalImportar(); decirF("Los ítems están en Precios: revise la vista previa y acepte los que quiera llevar."); }
+          else decirF("No se llevó nada: se canceló el acceso.", true);
+        } catch (e) { decirF(`No se pudo traer el Formulario 1: ${fraseDeFallo(e)}`, true); }
+        f1.disabled = false;
         return;
       }
       const det = ev.target.closest("[data-seg-detalle]");
