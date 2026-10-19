@@ -4595,9 +4595,12 @@ async function main() {
       it("1.1", "Localización y replanteo", "m2", 100, 1000, 100000), it("1.2", "Excavación manual", "m3", 10, 20000, 200000), it("1.3", "Concreto", "m3", 5, 40000, 200000)];
     const sub = ["", "", "", "", "", "", "SUBTOTAL OBRAS (INCLUYE IVA)"];
 
-    // la regla compartida con el lector de PDF: «VALOR TOTAL» es el total; «VALOR UNITARIO» y un capítulo no
-    assert.strictEqual(XL.clasificarRotuloTotal("VALOR TOTAL"), "total_documento");
-    assert.strictEqual(XL.clasificarRotuloTotal("Valor total", { vistoAiu: true }), "precio_con_aiu");
+    /* la regla compartida con el lector de PDF NO reconoce «VALOR TOTAL» (19-oct-2026, revisión adversaria): allí es el subtotal de cada capítulo
+       y tratarlo como total del documento dejaba los capítulos «sin_datos» y daba un «no cuadra» falso. El Excel lo reconoce en su propia detección. */
+    assert.strictEqual(XL.clasificarRotuloTotal("TOTAL"), "total_documento");
+    assert.strictEqual(XL.clasificarRotuloTotal("VALOR TOTAL"), null, "«VALOR TOTAL» no lo reclasifica la regla del PDF");
+    assert.strictEqual(XL.clasificarRotuloTotal("Valor total", { vistoAiu: true }), null);
+    assert.strictEqual(XL.clasificarRotuloTotal("Total", { vistoAiu: true }), "precio_con_aiu");
     assert.strictEqual(XL.clasificarRotuloTotal("VALOR UNITARIO"), null);
     assert.strictEqual(XL.clasificarRotuloTotal("VALOR TOTAL CAPITULO 1"), null);
 
@@ -4678,6 +4681,117 @@ async function main() {
     grande.push([null, null, null, null, null, null, "VALOR TOTAL", null, null, null, FE.MAX_FILAS + 1]);
     const demasiados = await FE.leerFormularioExcel(libroBuf([{ nombre: "P", filas: grande }]));
     assert.strictEqual(demasiados.ok, true); assert.strictEqual(demasiados.publicable, false); assert.match(demasiados.motivo, /más de los 1500/, "más ítems que el tope no se guardan solos");
+    /* ── LO QUE ENCONTRÓ LA REVISIÓN ADVERSARIA (19-oct-2026) ───────────────────────────────────────────────── */
+    // D · el lector de PDF da lo mismo que antes de «VALOR TOTAL»: capítulos que cierran con «VALOR TOTAL» siguen «cuadra»
+    {
+      const { parsearPliego } = require("../lib/apu_pliego.js");
+      const T = "\t", fl = (...c) => c.join(T);
+      const cabP = fl("ITEM", "DESCRIPCION", "UNIDAD", "CANTIDAD", "VALOR UNITARIO", "VALOR TOTAL"), vt = (n) => fl("VALOR TOTAL", "", "", "", "", n);
+      const caps = [cabP, fl("1", "PRELIMINARES"), fl("1.1", "Excavacion manual", "M3", "10", "1.000", "10.000"), vt("10.000"), fl("2", "CIMENTACION"), fl("2.1", "Relleno", "M3", "20", "2.000", "40.000"), vt("40.000")];
+      const rP = parsearPliego(caps.join("\n"), {});
+      assert.deepStrictEqual((rP.capitulos || []).map((c) => c.subtotal_declarado), [10000, 40000], "el «VALOR TOTAL» de cada capítulo es su subtotal");
+      assert.deepStrictEqual((rP.validacion.capitulos || []).map((c) => c.estado), ["cuadra", "cuadra"]);
+      assert.notStrictEqual(rP.validacion.cuadre_interno.estado, "no_cuadra", "y no fabrica un «no cuadra» del documento con el total de un capítulo");
+    }
+    // G · la tolerancia para publicar es 0,01 %, no el 0,5 % del aviso: un ítem omitido (0,15 %) ya no pasa
+    {
+      const diezF = []; for (let i = 1; i <= 10; i++) diezF.push(it(`1.${i}`, `Ítem ${i}`, "un", 1, 10000, 10000));
+      const conOmitido = XL.detectarFilasApu([cab, ...diezF, total(100150)]);   // el archivo declara 100.150 y los ítems leídos suman 100.000: 0,15 %
+      assert.strictEqual(conOmitido.cuadre.estado, "cuadra", "para el aviso sigue «cuadra» (0,5 %)");
+      const vOm = XL.verificarFormulario(conOmitido);
+      assert.strictEqual(vOm.publicable, false); assert.match(vOm.motivo, /difiere del total del archivo en 0,1498 %.*puede faltar un ítem/);
+      assert.strictEqual(XL.verificarFormulario(XL.detectarFilasApu([cab, ...diezF, total(100005)])).publicable, true, "0,005 % (el ruido de redondeo medido llega a 0,001 %) sí pasa");
+      assert.strictEqual(XL.verificarFormulario(XL.detectarFilasApu([cab, ...diezF, total(100050)])).publicable, false, "0,05 % ya no: diez veces el ruido medido");
+    }
+    // la comprobación de fila: una fila con 2 % de diferencia entre cantidad × precio y su total no pasa (el 1 % es por fila, relativo a su total)
+    {
+      const nueve = []; for (let i = 1; i <= 9; i++) nueve.push(it(`1.${i}`, `Ítem ${i}`, "un", 1, 10000, 10000));
+      const filaMal = XL.verificarFormulario(XL.detectarFilasApu([cab, ...nueve, it("1.10", "Ítem 10", "un", 1, 10000, 10200), total(100200)]));
+      assert.strictEqual(filaMal.publicable, false); assert.match(filaMal.motivo, /1 de 10 filas no cumplen/);
+      assert.strictEqual(XL.verificarFormulario(XL.detectarFilasApu([cab, ...nueve, it("1.10", "Ítem 10", "un", 1, 10000, 10050), total(100050)])).publicable, true, "0,5 % en una fila sí");
+    }
+    // F · lo que no es un presupuesto: negativos, total no positivo y cifras fabricadas
+    {
+      const lect = (filas, tot, desv = 0) => ({ filas, cuadre: { estado: "cuadra", total_declarado: tot, desviacion_pct: desv } });
+      const f = (c, p, t) => ({ descripcion: "x", unidad: "un", cantidad: c, precio_archivo: p, total_archivo: t });
+      assert.strictEqual(XL.verificarFormulario(lect([f(-2, -3, 6)], 6)).publicable, false, "(−2) × (−3) = 6 «cuadra» y no es un presupuesto");
+      assert.strictEqual(XL.verificarFormulario(lect([f(2, 3, 6)], 0)).publicable, false, "total declarado 0");
+      assert.strictEqual(XL.verificarFormulario(lect([f(2, 3, 6)], -6)).publicable, false, "total declarado negativo");
+      assert.strictEqual(XL.verificarFormulario(lect([f(1e300, 1e5, 1e305)], 1e305)).publicable, false, "una cantidad de 1e300 es fabricada");
+      assert.strictEqual(XL.verificarFormulario(lect([f(2, 3, 6)], 6)).publicable, true, "y la misma fila bien sí pasa");
+    }
+    // A · ¿la hoja elegida es TODO el presupuesto? Varios libros con las hojas que halló el revisor
+    {
+      const hoja = (nombre, n, { rotulo = "VALOR TOTAL", precio = (i) => 1000 * i, desc = (i) => `Actividad de obra número ${i} del frente` } = {}) => {
+        const filasH = [cab]; let suma = 0;
+        for (let i = 1; i <= n; i++) { const p = precio(i); suma += p; filasH.push(it(`1.${i}`, desc(i), "un", 1, p, p)); }
+        filasH.push(total(suma, rotulo));
+        return { nombre, filas: filasH };
+      };
+      const lee = (hojas) => FE.leerFormularioExcel(libroBuf(hojas));
+      const principalSinRotulo = hoja("PRESUPUESTO", 10, { rotulo: "VALOR TOTAL PRESUPUESTO DE OBRA" });
+      const pma = await lee([principalSinRotulo, hoja("PMA", 4, { desc: (i) => `Manejo ambiental ${i} del plan` })]);
+      assert.ok(pma.ok && pma.publicable === false && /otra hoja con ítems/.test(pma.motivo), `el plan de manejo ambiental no se publica como si fuera el presupuesto: ${JSON.stringify(pma).slice(0, 200)}`);
+      const copia = await lee([hoja("PRESUPUESTO OFICIAL (Entidad)", 5), hoja("PROPUESTA ECONOMICA (Proponente)", 5, { desc: (i) => `Actividad de obra número ${i} del frente`.slice(0, 26) })]);
+      assert.ok(copia.ok && copia.publicable === true, `la plantilla del proponente (mismos ítems, descripción truncada, mismo precio) no objeta: ${JSON.stringify(copia).slice(0, 200)}`);
+      assert.strictEqual(copia.hoja, "PRESUPUESTO OFICIAL (Entidad)");
+      const otrosPrecios = await lee([hoja("PRESUPUESTO", 5), hoja("OTRA VERSION", 5, { precio: (i) => 2000 * i })]);
+      assert.ok(otrosPrecios.publicable === false && /otra hoja con ítems/.test(otrosPrecios.motivo), "la misma lista con otros precios es ambigua: no se sabe cuál es la de la entidad");
+      const soloProponente = await lee([hoja("PROPUESTA ECONOMICA", 5)]);
+      assert.ok(soloProponente.publicable === false && /parece del proponente/.test(soloProponente.motivo), "una hoja del proponente no se publica como presupuesto de la entidad");
+      const tres = await lee([hoja("Entidad A", 4, { desc: (i) => `Frente A ítem ${i} de obra civil` }), hoja("Entidad B", 6, { desc: (i) => `Frente B ítem ${i} de obra civil` }), hoja("Entidad C", 5, { desc: (i) => `Frente C ítem ${i} de obra civil` })]);
+      assert.ok(tres.publicable === false && /otra hoja con ítems/.test(tres.motivo), "tres frentes en tres hojas: ninguna es el presupuesto completo");
+      const conDetalle = await lee([hoja("PRESUPUESTO", 6), hoja("1,1", 2, { desc: (i) => `Análisis ${i}` })]);
+      assert.ok(conDetalle.publicable === true, `una hoja de menos de 3 ítems (el análisis de una fila) no objeta: ${JSON.stringify(conDetalle).slice(0, 160)}`);
+      assert.deepStrictEqual(Object.keys(pma).filter((k) => k === "filas"), [], "lo ambiguo no entrega ítems");
+    }
+    // B · topes de lectura: una celda lejana no infla la rejilla, el libro entero tiene presupuesto de celdas y el total descomprimido también
+    {
+      const infl = async (u8) => new Uint8Array(zlibF.inflateRawSync(Buffer.from(u8)));
+      const libroXml = (hojaXml, extra = []) => zipDeflate([{ nombre: "xl/workbook.xml", datos: Buffer.from('<workbook xmlns:r="x"><sheets><sheet name="P" sheetId="1" r:id="rId1"/></sheets></workbook>') },
+        { nombre: "xl/_rels/workbook.xml.rels", datos: Buffer.from('<Relationships><Relationship Id="rId1" Target="worksheets/sheet1.xml"/></Relationships>') }, { nombre: "xl/worksheets/sheet1.xml", datos: Buffer.from(hojaXml) }, ...extra]);
+      const A1 = '<row r="1"><c r="A1" t="inlineStr"><is><t>x</t></is></c></row>';
+      const conValor = await XL.leerLibro(new Uint8Array(libroXml(`<worksheet><sheetData>${A1}<row r="100000"><c r="XFD100000"><v>5</v></c></row></sheetData></worksheet>`)), { inflar: infl });
+      assert.strictEqual(conValor.hojas[0].excede, true, "una celda CON valor fuera de los topes marca la hoja");
+      assert.ok(conValor.hojas[0].filas.every((r) => r.length <= 1024), "y no infla la rejilla a 16.384 columnas");
+      const vacia = await XL.leerLibro(new Uint8Array(libroXml(`<worksheet><sheetData>${A1}<row r="100000"><c r="XFD100000" s="3"/></row></sheetData></worksheet>`)), { inflar: infl });
+      assert.strictEqual(vacia.hojas[0].excede, false); assert.ok(vacia.hojas[0].filas.length <= 1 && vacia.hojas[0].filas.every((r) => r.length === 1), "una celda vacía (solo estilo) no ensancha ni alarga la rejilla");
+      await assert.rejects(XL.leerLibro(new Uint8Array(libroXml(`<worksheet><sheetData>${A1}</sheetData></worksheet>`)), { inflar: infl, maxCeldas: 0 }), /demasiado grande para leerlo aquí/, "el presupuesto de celdas del libro corta con un error que dice qué hacer");
+      // una hoja que excede los topes impide publicar el libro (no se puede comprobar que el presupuesto esté completo)
+      assert.match(XL.ambiguedadDelLibro({ hoja: { nombre: "P" }, resultado: { filas: [] }, candidatas: [{ hoja: { nombre: "Z", excede: true }, resultado: { filas: [] } }] }), /fuera de los límites de lectura/);
+      // el total descomprimido de TODO el libro tiene tope: tres partes de 60 MB (cada una bajo el tope por parte) no caben
+      const parte = Buffer.alloc(60 * 1024 * 1024, 0x20);
+      const bombaTotal = zipDeflate([{ nombre: "xl/workbook.xml", datos: Buffer.from('<workbook xmlns:r="x"><sheets><sheet name="A" r:id="r1"/><sheet name="B" r:id="r2"/><sheet name="C" r:id="r3"/></sheets></workbook>') },
+        { nombre: "xl/_rels/workbook.xml.rels", datos: Buffer.from('<Relationships><Relationship Id="r1" Target="worksheets/a.xml"/><Relationship Id="r2" Target="worksheets/b.xml"/><Relationship Id="r3" Target="worksheets/c.xml"/></Relationships>') },
+        { nombre: "xl/worksheets/a.xml", datos: parte }, { nombre: "xl/worksheets/b.xml", datos: parte }, { nombre: "xl/worksheets/c.xml", datos: parte }]);
+      const rb = await FE.leerFormularioExcel(bombaTotal);
+      assert.ok(rb.ok === false && /pasa de 160 MB/.test(rb.motivo), `el libro que descomprime más de 160 MB en total se corta: ${JSON.stringify(rb).slice(0, 160)}`);
+    }
+    // F · el servidor tipa lo que llega del cliente: un objeto con toString propio no lanza, «300000» como cadena no es un total
+    {
+      const Dp = require("../lib/documentos_proceso.js");
+      const fi = (n, c, p, t) => ({ fila_excel: n, descripcion: `Ítem ${n}`, unidad: "m2", cantidad: c, precio_archivo: p, total_archivo: t });
+      const baseX = { ok: true, publicable: true, hoja: "P", total: 300000, fila_total: 6, filas_n: 2, filas: [fi(3, 100, 1000, 100000), fi(4, 10, 20000, 200000)] };
+      assert.strictEqual(Dp.formularioDeExcel(baseX).resumen.publicable, true, "la referencia buena sigue pasando");
+      assert.doesNotThrow(() => Dp.formularioDeExcel({ ...baseX, hoja: { toString: 1 } }), "una hoja que es un objeto con toString propio no lanza (sería un 500)");
+      assert.strictEqual(Dp.formularioDeExcel({ ...baseX, hoja: { toString: 1 } }).resumen.hoja, null);
+      assert.doesNotThrow(() => Dp.formularioDeExcel({ ...baseX, filas: [fi(3, 100, 1000, 100000), { ...fi(4, 10, 20000, 200000), descripcion: { toString: 1 } }] }));
+      assert.strictEqual(Dp.formularioDeExcel({ ...baseX, total: "300000" }).resumen.publicable, false, "un total como cadena no es un total");
+      assert.strictEqual(Dp.formularioDeExcel({ ...baseX, hoja: "x".repeat(5e6) }).resumen.hoja.length, 80, "el nombre de la hoja se recorta");
+      assert.strictEqual(Dp.formularioDeExcel({ ...baseX, filas: [fi(3, 1e300, 1e5, 1e305)], total: 1e305 }).resumen.publicable, false);
+      assert.strictEqual(Dp.formularioDeExcel({ ...baseX, filas: Array.from({ length: FE.MAX_FILAS + 1 }, (_, i) => fi(i + 3, 1, 10, 10)), total: 10 * (FE.MAX_FILAS + 1) }).ok, false, "más ítems que el tope: 400");
+      assert.deepStrictEqual(FE.itemDe({ cantidad: "5", precio_archivo: "7", total_archivo: "35", descripcion: { toString: 1 }, unidad: 3 }), { fila_excel: null, codigo: null, capitulo: null, descripcion: null, unidad: "3", cantidad: null, precio_archivo: null, total_archivo: null }, "ítem: las cifras como cadena no son cifras y nada que no sea texto o número se convierte");
+      const largo = FE.itemDe({ fila_excel: 3, descripcion: "d".repeat(5000), capitulo: "c".repeat(5000), codigo: "k".repeat(500), extra: "no debe pasar" });
+      assert.deepStrictEqual([largo.descripcion.length, largo.capitulo.length, largo.codigo.length, "extra" in largo], [300, 300, 40, false], "el ítem guardado solo lleva sus campos y recortados");
+      // sin firma ZIP no se abre nada
+      assert.strictEqual((await FE.leerFormularioExcel(Buffer.from("PK nada, pero tampoco una firma de ZIP"))).ok, false);
+      // vigencia por versión: un Formulario leído con reglas de otra versión vuelve a estar pendiente
+      const planX = Dp.planDeLectura([{ id_documento: "4", nombre_archivo: "PRESUPUESTO OFICIAL.xlsx", extensi_n: "xlsx", fecha_carga: "2026-09-01T00:00:00.000", url_descarga_documento: { url: "https://community.secop.gov.co/x?DocumentId=4" } }], { cierre: null });
+      const dx = (version) => ({ indice: { archivos: planX.archivos, plan: planX.plan }, leidos: {}, ilegibles: {}, formularios: { "4": { publicable: true, ...(version === undefined ? {} : { version }) } } });
+      assert.strictEqual(Dp.resumenLectura(dx(Dp.VERSION)).pendientes.length, 0, "leído con las reglas de esta versión: no está pendiente");
+      assert.strictEqual(Dp.resumenLectura(dx(Dp.VERSION - 1)).pendientes.length, 1, "leído con otra versión: se vuelve a leer");
+      assert.strictEqual(Dp.resumenLectura(dx(undefined)).pendientes.length, 1, "sin versión: tampoco vale");
+    }
     /* el bucle del navegador (public/app.js, leerDocumentos): el bloque del Excel se EJECUTA con `api` simulada, no se lee su texto */
     {
       const appF = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
@@ -23684,7 +23798,7 @@ async function main() {
         // (3) lo que dicen los documentos: la adenda MÁS RECIENTE manda sobre el pliego; sin cifra del perfil «revisar», nunca «no cumple»
         const hA1 = Docs.hechosDeTexto("\f1\nADENDA 1. Se modifica el índice de liquidez: mayor o igual a 2,0", { tipo: "adenda" });
         const hA2 = Docs.hechosDeTexto("\f1\nADENDA 2. Se modifica el índice de liquidez: mayor o igual a 1,7", { tipo: "adenda" });
-        const docsFalsos = { indice: { archivos: planD.archivos, plan: planD.plan, resumen: planD.resumen, consultado_el: "2026-09-03T10:00:00Z" }, ilegibles: {}, formularios: { "4": { nombre: "PRESUPUESTO OFICIAL.xlsx", tipo: "presupuesto", tipo_legible: "Presupuesto oficial o cantidades", publicable: true, motivo: null, hoja: "H", filas_n: 2, total: 300000, fila_total: 5 } }, leidos: {
+        const docsFalsos = { indice: { archivos: planD.archivos, plan: planD.plan, resumen: planD.resumen, consultado_el: "2026-09-03T10:00:00Z" }, ilegibles: {}, formularios: { "4": { nombre: "PRESUPUESTO OFICIAL.xlsx", tipo: "presupuesto", tipo_legible: "Presupuesto oficial o cantidades", publicable: true, motivo: null, hoja: "H", filas_n: 2, total: 300000, fila_total: 5, version: Docs.VERSION } }, leidos: {
           "2": { nombre: "PLIEGO.pdf", tipo: "pliego", tipo_legible: "Pliego de condiciones", fecha_carga: "2026-04-15", paginas: 3, leido_el: "2026-09-03T10:00:00Z", hechos: hP },
           "9": { nombre: "ADENDA 1.pdf", tipo: "adenda", tipo_legible: "Adenda", fecha_carga: "2026-04-20", paginas: 1, leido_el: "2026-09-03T10:02:00Z", hechos: hA1 },
           "11": { nombre: "ADENDA 2.pdf", tipo: "adenda", tipo_legible: "Adenda", fecha_carga: "2026-04-25", paginas: 1, leido_el: "2026-09-03T10:01:00Z", hechos: hA2 },
@@ -23968,7 +24082,7 @@ async function main() {
           {
             const itF = (fila, c, p, tt) => ({ fila_excel: fila, descripcion: `Ítem ${fila}`, unidad: "m2", cantidad: c, precio_archivo: p, total_archivo: tt });
             const buenoF = { ok: true, publicable: true, hoja: "PRESUPUESTO OFICIAL", total: 300000, fila_total: 6, filas_n: 2, filas: [itF(3, 100, 1000, 100000), itF(4, 10, 20000, 200000)] };
-            const { leerJSONComprimido: leerF1 } = require("../lib/almacen.js");
+            const { leerJSONComprimido: leerF1, escribirJSONComprimido: escribirJSONF1 } = require("../lib/almacen.js");
             const rF = require("../lib/redis.js").crearRedis({});
             assert.strictEqual((await invocarPost(routerPliegoD, "/api/pliego?op=documentos", { id_proceso: idD, id_documento: "4", formulario_excel: "no soy un objeto" }, CAB_TOKEN)).status, 400, "un «formulario_excel» que no es el resultado de op=descargar es un 400");
             assert.strictEqual((await invocarPost(routerPliegoD, "/api/pliego?op=documentos", { id_proceso: idD, id_documento: "4", formulario_excel: { ok: true, publicable: true, filas: [] } }, CAB_TOKEN)).status, 400, "«publicable» sin ítems es un 400");
@@ -23976,6 +24090,13 @@ async function main() {
             assert.ok(f1.status === 200 && f1.cuerpo.formularios["4"].publicable === true && f1.cuerpo.formularios["4"].total === 300000 && f1.cuerpo.formularios["4"].filas_verificadas === 2 && f1.cuerpo.formularios["4"].tipo === "presupuesto", JSON.stringify(f1.cuerpo.formularios));
             assert.ok(!f1.cuerpo.leidos["4"], "el Formulario NO se mezcla con los textos leídos: nadie que lea `leidos` lo encuentra sin texto");
             assert.deepStrictEqual(f1.cuerpo.pendientes.map((a) => a.id_documento), ["9"], "leer el Formulario no cambia lo pendiente");
+            /* llevarlo a Precios: GET ?formulario= devuelve lo guardado, con su fila, sin consultar el índice */
+            const gF = await invocar(routerPliegoD, `/api/pliego?op=documentos&${qD}&formulario=4`, CAB_TOKEN);
+            assert.ok(gF.status === 200 && gF.cuerpo.ok === true && gF.cuerpo.id_documento === "4" && gF.cuerpo.total === 300000 && gF.cuerpo.hoja === "PRESUPUESTO OFICIAL" && gF.cuerpo.filas.length === 2 && gF.cuerpo.filas[0].fila_excel === 3 && gF.cuerpo.filas[1].cantidad === 10, `GET ?formulario= devuelve los ítems guardados con su fila: ${JSON.stringify(gF.cuerpo).slice(0, 240)}`);
+            assert.strictEqual((await invocar(routerPliegoD, `/api/pliego?op=documentos&${qD}&formulario=4`)).status, 401, "sin token no hay ítems");
+            assert.strictEqual((await invocar(routerPliegoD, `/api/pliego?op=documentos&${qD}&formulario=abc`, CAB_TOKEN)).status, 400, "un id_documento que no es un número es un 400");
+            assert.strictEqual((await invocar(routerPliegoD, `/api/pliego?op=documentos&${qD}&formulario=`, CAB_TOKEN)).status, 400, "«formulario» vacío tampoco es «sin formulario»: no cae al índice");
+            assert.strictEqual((await invocar(routerPliegoD, `/api/pliego?op=documentos&${qD}&formulario=2`, CAB_TOKEN)).status, 404, "un documento que no es un Formulario leído no devuelve ítems");
             assert.strictEqual(f1.cuerpo.leidos["2"].hechos.anticipo.estado, "no", "y no toca lo ya leído");
             const guardadoF = await leerF1(rF, Docs.claveF1(idD, "4"));
             assert.ok(guardadoF && guardadoF.filas.length === 2 && guardadoF.filas[0].fila_excel === 3 && guardadoF.total === 300000, `los ítems quedan guardados con su fila: ${JSON.stringify(guardadoF).slice(0, 200)}`);
@@ -23983,15 +24104,53 @@ async function main() {
             const mentira = await invocarPost(routerPliegoD, "/api/pliego?op=documentos", { id_proceso: idD, id_documento: "4", formulario_excel: { ...buenoF, filas: [itF(3, 1000, 1000, 100000), itF(4, 10, 20000, 200000)] } }, CAB_TOKEN);
             assert.ok(mentira.status === 200 && mentira.cuerpo.formularios["4"].publicable === false && /al volver a comprobarlo en el servidor/.test(mentira.cuerpo.formularios["4"].motivo), JSON.stringify(mentira.cuerpo.formularios["4"]));
             assert.strictEqual(await leerF1(rF, Docs.claveF1(idD, "4")), null, "un resultado que no pasa la puerta borra los ítems de la lectura anterior");
+            assert.strictEqual((await invocar(routerPliegoD, `/api/pliego?op=documentos&${qD}&formulario=4`, CAB_TOKEN)).status, 404, "y Precios ya no puede traerlos");
             // el total que no cuadra con lo que llegó también se rechaza aunque diga «publicable»
             assert.strictEqual((await invocarPost(routerPliegoD, "/api/pliego?op=documentos", { id_proceso: idD, id_documento: "4", formulario_excel: { ...buenoF, total: 999 } }, CAB_TOKEN)).cuerpo.formularios["4"].publicable, false);
             // lo que el servidor leyó y NO se pudo dar por bueno llega con su motivo y sin ítems
             const sinF = await invocarPost(routerPliegoD, "/api/pliego?op=documentos", { id_proceso: idD, id_documento: "4", formulario_excel: { ok: true, publicable: false, motivo: "los ítems leídos no suman el total que declara el archivo", hoja: "P", total: 5, filas_n: 3 } }, CAB_TOKEN);
             assert.ok(sinF.status === 200 && sinF.cuerpo.formularios["4"].publicable === false && sinF.cuerpo.formularios["4"].filas_n === 3 && sinF.cuerpo.formularios["4"].filas === undefined);
+            {
+              // el resumen es lo que decide: con la llave aún puesta en Redis pero el resumen «no publicable», no hay ítems
+              await escribirJSONF1(rF, Docs.claveF1(idD, "4"), { nombre: "x", hoja: "P", total: 5, filas: [itF(3, 1, 1, 1)] }, { ttl: 60 });
+              const huerfana = await invocar(routerPliegoD, `/api/pliego?op=documentos&${qD}&formulario=4`, CAB_TOKEN);
+              assert.strictEqual(huerfana.status, 404, `ítems huérfanos en Redis con un resumen que no pasó la puerta NO se sirven: ${JSON.stringify(huerfana.cuerpo).slice(0, 160)}`);
+            }
             // el documento «77» no está en el índice: no se guarda nada
             assert.strictEqual((await invocarPost(routerPliegoD, "/api/pliego?op=documentos", { id_proceso: idD, id_documento: "77", formulario_excel: buenoF }, CAB_TOKEN)).status, 404);
+            // un documento que ahora NO se pudo leer deja de ser un Formulario leído y sus ítems dejan de servirse
+            await invocarPost(routerPliegoD, "/api/pliego?op=documentos", { id_proceso: idD, id_documento: "4", formulario_excel: buenoF }, CAB_TOKEN);
+            assert.strictEqual((await invocar(routerPliegoD, `/api/pliego?op=documentos&${qD}&formulario=4`, CAB_TOKEN)).status, 200);
+            const ilF = await invocarPost(routerPliegoD, "/api/pliego?op=documentos", { id_proceso: idD, id_documento: "4", ilegible: true, motivo: "no se pudo leer: el proxy cortó" }, CAB_TOKEN);
+            assert.ok(ilF.status === 200 && ilF.cuerpo.formularios["4"] === undefined && ilF.cuerpo.ilegibles["4"], `«ilegible» limpia el Formulario: ${JSON.stringify(ilF.cuerpo.formularios)}`);
+            assert.strictEqual(await leerF1(rF, Docs.claveF1(idD, "4")), null, "y borra sus ítems");
+            assert.strictEqual((await invocar(routerPliegoD, `/api/pliego?op=documentos&${qD}&formulario=4`, CAB_TOKEN)).status, 404);
+            // y al revés: guardar un Formulario que sí pasa suelta el «ilegible» anterior del mismo documento
+            const reF = await invocarPost(routerPliegoD, "/api/pliego?op=documentos", { id_proceso: idD, id_documento: "4", formulario_excel: buenoF }, CAB_TOKEN);
+            assert.ok(reF.cuerpo.formularios["4"].publicable === true && reF.cuerpo.ilegibles["4"] === undefined, "el Formulario leído suelta el ilegible anterior");
+            // un resumen vigente cuyo archivo YA NO está en el índice no se sirve (la entidad lo reemplazó con un id nuevo)
+            {
+              const docsG = await leerF1(rF, Docs.claveDocs(idD));
+              docsG.formularios["99"] = { ...docsG.formularios["4"], nombre: "REEMPLAZADO.xlsx" };
+              await escribirJSONF1(rF, Docs.claveDocs(idD), docsG, { ttl: 600 });
+              await escribirJSONF1(rF, Docs.claveF1(idD, "99"), { nombre: "REEMPLAZADO.xlsx", hoja: "P", total: 1, filas: [itF(3, 1, 1, 1)] }, { ttl: 600 });
+              assert.strictEqual((await invocar(routerPliegoD, `/api/pliego?op=documentos&${qD}&formulario=99`, CAB_TOKEN)).status, 404, "un id que no está en el índice no sirve ítems");
+              delete docsG.formularios["99"];
+              await escribirJSONF1(rF, Docs.claveDocs(idD), docsG, { ttl: 600 });
+            }
+            // un resumen guardado con otra versión de las reglas tampoco se sirve
+            {
+              const docsV = await leerF1(rF, Docs.claveDocs(idD));
+              const guardadaV = docsV.formularios["4"].version;
+              docsV.formularios["4"].version = guardadaV - 1;
+              await escribirJSONF1(rF, Docs.claveDocs(idD), docsV, { ttl: 600 });
+              assert.strictEqual((await invocar(routerPliegoD, `/api/pliego?op=documentos&${qD}&formulario=4`, CAB_TOKEN)).status, 404, "leído con otra versión de las reglas: no se sirve");
+              docsV.formularios["4"].version = guardadaV;
+              await escribirJSONF1(rF, Docs.claveDocs(idD), docsV, { ttl: 600 });
+            }
             // y un Formulario que sí pasa queda al final, para lo que sigue
             await invocarPost(routerPliegoD, "/api/pliego?op=documentos", { id_proceso: idD, id_documento: "4", formulario_excel: buenoF }, CAB_TOKEN);
+            assert.strictEqual((await invocar(routerPliegoD, `/api/pliego?op=documentos&${qD}&formulario=4`, CAB_TOKEN)).cuerpo.filas.length, 2, "con la lectura que sí pasa, Precios vuelve a poder traerlos");
           }
           const dg = await invocar(routerPliegoD, `/api/pliego?op=diff&${qD}&perfil=helder`, CAB_TOKEN);
           assert.ok(dg.status === 200 && /documentos:PLIEGO DE CONDICIONES/.test(JSON.stringify(dg.cuerpo)), "el vigía de adendas ve la versión que llegó por los documentos, con su origen");
@@ -30843,8 +31002,33 @@ async function main() {
           const unoSinCom = sinComentarios(unoJs);
           assert.strictEqual((unoSinCom.match(/\/api\/apu\?op=importar/g) || []).length, 1,
             "hay UN solo sitio que llama al endpoint de importación: las tres vías pasan por él");
-          assert.strictEqual((unoSinCom.match(/mapearParaPrevisualizar\(/g) || []).length, 4,
-            "la función compartida (1 declaración) y sus TRES llamadas: archivo detectado, columnas a mano y los ítems del pliego");
+          assert.strictEqual((unoSinCom.match(/mapearParaPrevisualizar\(/g) || []).length, 5,
+            "la función compartida (1 declaración) y sus CUATRO llamadas: archivo detectado, columnas a mano, los ítems del pliego y el Formulario 1 leído de un proceso (19-oct-2026)");
+          /* UNA FUNCIÓN DECLARADA DOS VECES EN EL MISMO ÁMBITO NO FALLA: LA SEGUNDA PISA A LA PRIMERA, EN SILENCIO (19-oct-2026).
+             El 17-oct-2026 (b73c38e) el arranque de la app se llamó `arrancar`, igual que el de Precios, ya declarado en el mismo
+             IIFE: la llamada de la pestaña Precios ejecutaba el arranque de la app, y Precios no cargaba su catálogo ni su
+             desplegable de departamentos (medido en Chromium: 0 peticiones a op=catalogo). Ninguna prueba lo vio: JavaScript no lo
+             avisa. CENSO, no lista: se barren TODOS los public/*.js y se cuentan las declaraciones `function nombre(` al nivel del
+             IIFE o del archivo (sangría de 0 a 2 espacios), donde el ámbito es compartido; las excepciones se DECLARAN aquí con su motivo
+             (hoy ninguna). Una declaración más anidada vive en su propia función y puede repetirse. */
+          {
+            const dir = path.join(__dirname, "..", "public");
+            const repetidas = [];
+            for (const f of fs.readdirSync(dir).filter((x) => x.endsWith(".js"))) {
+              const vistas = new Map();
+              sinComentarios(fs.readFileSync(path.join(dir, f), "utf8")).split("\n").forEach((l, i) => {
+                const m = /^( {0,2})(?:async\s+)?function\s+([A-Za-z_$][\w$]*)\s*\(/.exec(l);
+                if (!m) return;
+                const k = `${m[1].length}:${m[2]}`;
+                if (!vistas.has(k)) vistas.set(k, []);
+                vistas.get(k).push(i + 1);
+              });
+              for (const [k, lineas] of vistas) if (lineas.length > 1) repetidas.push(`${f}: «${k.split(":")[1]}» en las líneas ${lineas.join(", ")}`);
+            }
+            const EXCEPCIONES_FUNCION_REPETIDA = [];   // [{archivo, nombre, motivo}] — declarar aquí, con su porqué
+            const sinDeclarar = repetidas.filter((r) => !EXCEPCIONES_FUNCION_REPETIDA.some((e) => r.startsWith(`${e.archivo}: «${e.nombre}»`)));
+            assert.deepStrictEqual(sinDeclarar, [], `una función declarada dos veces en el mismo ámbito: la segunda pisa a la primera sin avisar: ${sinDeclarar.join(" | ")}`);
+          }
         }
 
         /* NINGUNA CREDENCIAL VIVE EN EL NAVEGADOR (17-oct-2026, decisión del dueño). Hasta hoy
@@ -30953,7 +31137,8 @@ async function main() {
            la opción del desplegable que hay que seleccionar, y la precarga se
            perdería en silencio. */
         {
-          const i = limpio.indexOf("async function arrancar()");
+          const i = limpio.indexOf("async function arrancarPrecios()");
+          assert.ok(i > 0, "el arranque de Precios existe con su propio nombre: `arrancar` es el de la app, y con el mismo nombre la segunda declaración pisaba a la primera (19-oct-2026)");
           const cuerpoArranque = limpio.slice(i, i + 1600);
           /* desde el 30-sep-2026 la segunda precarga pasa por `precargarTrasCatalogo`, que no pisa un
              borrador abierto mientras cargaba el catálogo y, si no lo hay, llama a la misma precarga */
@@ -32595,17 +32780,17 @@ async function main() {
           }
           /* y la primera carga de Precios DICE que está cargando: hasta hoy la
              pestaña se quedaba callada, igual que si ya hubiera terminado */
-          /* La PRIMERA carga es la de `arrancar()`, y es esa la que hay que
+          /* La PRIMERA carga es la de `arrancarPrecios()`, y es esa la que hay que
              vigilar: un regex sobre TODO el fuente lo satisfacía la copia del
              oyente de #accion-reintentar, así que el anuncio podía irse de
              `arrancar()` con la suite en verde (corregido el 5-sep-2026). Se
              recorta la función y se mira dentro. */
           {
-            const iArr = js.indexOf("  async function arrancar() {");
-            assert.ok(iArr > 0, "app.js sin `arrancar()`: es la primera carga de Precios");
+            const iArr = js.indexOf("  async function arrancarPrecios() {");
+            assert.ok(iArr > 0, "app.js sin `arrancarPrecios()`: es la primera carga de Precios");
             const cuerpoArr = js.slice(iArr, js.indexOf("\n  }", iArr) + 4);
             assert.ok(/msgApu\("Cargando su catálogo de precios…"\);\s*\n\s*await cargarCatalogo\(\);/.test(cuerpoArr),
-              "la PRIMERA carga del catálogo se anuncia en #accion-mensaje justo antes de esperarla, dentro de arrancar()");
+              "la PRIMERA carga del catálogo se anuncia en #accion-mensaje justo antes de esperarla, dentro de arrancarPrecios()");
             assert.ok(/msgApu\(""\);/.test(cuerpoArr), "…y el anuncio se retira cuando termina");
             const iRe = js.indexOf('$("accion-reintentar").addEventListener("click"');
             assert.ok(iRe > 0 && /msgApu\("Cargando su catálogo de precios…"\)/.test(js.slice(iRe, iRe + 400)),
@@ -41195,7 +41380,7 @@ async function main() {
         // módulo la PRIMERA vez que se abre su pestaña
         assert.ok(/classList\.toggle\("hidden", p !== destino\)/.test(jsSin),
           "activarPestana debe ocultar los paneles inactivos y mostrar el activo");
-        assert.ok(/arrancadas\.apu[\s\S]{0,80}arrancar\(\)/.test(jsSin)
+        assert.ok(/arrancadas\.apu[\s\S]{0,80}arrancarPrecios\(\)/.test(jsSin)
           && /arrancadas\.admin[\s\S]{0,80}arrancarPaneles\(\)/.test(jsSin),
           "cada pestaña debe inicializar su módulo al activarse, no solo al cargar la página");
         assert.ok(/addEventListener\("hashchange"/.test(jsSin), "la pestaña debe seguir el hash (#/apu recargable)");
@@ -49417,6 +49602,83 @@ async function main() {
       assert.deepStrictEqual(sinCierre.formatos.map((x) => x.id_documento), ["3"], "sin cierre conocido manda la clasificación: la carta queda fuera antes que arriesgar la de un proponente");
       const filas = Xf.documentosEntidad({ guia: { documentos: bloque } });
       assert.ok(filas.some((f) => f.estado === "formato" && /data-seg-llenar=/.test(Xf.htmlFilaDoc(f, 1)) && /Formato para llenar/.test(Xf.htmlFilaDoc(f, 1))), "en el expediente salen como «Formato para llenar», con su botón");
+    }
+    /* ── 4c · EL FORMULARIO 1 LEÍDO SE LLEVA A PRECIOS (19-oct-2026) ─────────
+       El botón solo sale en el Formulario que pasó la puerta; el clic EJECUTA el bloque real de public/app.js con
+       `api` simulada. El precio de la entidad no viaja: lo ponen los bancos (la misma regla del cable del pliego). */
+    {
+      const G = require("../lib/guia_proceso.js");
+      const archF = (id, nombre) => ({ id_documento: id, nombre, url: `https://community.secop.gov.co/x?DocumentId=${id}`, de_la_entidad: true, legible: true });
+      const vigF = require("../lib/documentos_proceso.js").VERSION;
+      const docsF = { indice: { archivos: [archF("5", "PRESUPUESTO OFICIAL.xlsx"), archF("6", "OTRO.xlsx"), archF("8", "VIEJO.xlsx")], plan: [], cierre_usado: null }, leidos: {}, ilegibles: {},
+        formularios: { "5": { nombre: "PRESUPUESTO OFICIAL.xlsx", tipo: "presupuesto", tipo_legible: "Presupuesto oficial", publicable: true, hoja: "P", total: 300000, fila_total: 6, filas_n: 2, version: vigF },
+          "6": { nombre: "OTRO.xlsx", tipo: "presupuesto", tipo_legible: "Presupuesto oficial", publicable: false, motivo: "no cuadra", hoja: "P", filas_n: 3, version: vigF },
+          "7": { nombre: "REEMPLAZADO.xlsx", tipo: "presupuesto", tipo_legible: "Presupuesto oficial", publicable: true, hoja: "P", total: 450000, filas_n: 2, version: vigF },   // ya no está en el índice: la entidad lo reemplazó
+          "8": { nombre: "VIEJO.xlsx", tipo: "presupuesto", tipo_legible: "Presupuesto oficial", publicable: true, hoja: "P", total: 300000, filas_n: 2, version: vigF - 1 } } };   // leído con reglas de otra versión
+      const bF = G.bloqueDocumentos(docsF, { pendientes: [] }, { documentos: [] }, null);
+      const fL = bF.leidos.find((x) => x.id_documento === "5");
+      assert.ok(fL && fL.formulario_excel === true, `la guía marca el Formulario leído: ${JSON.stringify(bF.leidos)}`);
+      assert.ok(!bF.leidos.some((x) => x.id_documento === "6") && bF.ilegibles.some((x) => x.id_documento === "6" && !x.formulario_excel && x.reintenta === false), "el que no pasó la puerta NO lleva la marca ni se reintenta solo");
+      assert.ok(![...bF.leidos, ...bF.ilegibles].some((x) => x.id_documento === "7"), "un Formulario de un archivo que ya no está en el índice no se lista (la entidad lo reemplazó)");
+      assert.ok(![...bF.leidos, ...bF.ilegibles].some((x) => x.id_documento === "8"), "ni uno leído con reglas de otra versión: está por leer otra vez");
+      const filasF = Xf.documentosEntidad({ id: "CO1.REQ.9", guia: { documentos: bF } });
+      const leidoF = filasF.find((f) => f.id === "5"), noF = filasF.find((f) => f.id === "6");
+      assert.strictEqual(leidoF.formulario_de, "CO1.REQ.9");
+      assert.ok(/data-seg-f1="CO1\.REQ\.9" data-seg-f1-doc="5" data-seg-f1-n="1">Cotizar en Precios</.test(Xf.htmlFilaDoc(leidoF, 1)) && /data-seg-f1-estado="1"/.test(Xf.htmlFilaDoc(leidoF, 1)), "el Formulario leído lleva su botón y su renglón de aviso");
+      assert.ok(!/data-seg-f1/.test(Xf.htmlFilaDoc(noF, 2)), "el que no pasó la puerta no ofrece llevar nada a Precios");
+      assert.ok(!/data-seg-f1/.test(Xf.htmlFilaDoc({ origen: "entidad", id: "1", nombre: "PLIEGO.pdf", formato: "PDF", estado: "leido" }, 3)), "un PDF leído tampoco");
+      // el clic: el bloque real de app.js
+      const appC = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+      const iniC = appC.indexOf('const f1 = ev.target.closest("[data-seg-f1]");');
+      const finC = appC.indexOf('const det = ev.target.closest("[data-seg-detalle]");', iniC);
+      const iniFn = appC.indexOf("function filasDesdePliego(items) {"), finFn = appC.indexOf('$("pl-btn-usar").addEventListener', iniFn);
+      assert.ok(iniC > 0 && finC > iniC && iniFn > 0 && finFn > iniFn, "el clic del Formulario 1 y la función que arma las filas existen en app.js");
+      const bloqueC = appC.slice(iniC, finC), filasDesdePliegoSrc = appC.slice(iniFn, finFn);
+      const correrClic = async ({ respuesta, error = null, mapea = true, carrera = false }) => {
+        const H = { llamadasApi: [], abiertos: [], mapeos: [], modales: 0, orden: [], bump: null };
+        const aviso = { textContent: "", classes: new Set(["hidden"]), classList: { remove(c) { aviso.classes.delete(c); }, toggle(c, v) { v ? aviso.classes.add(c) : aviso.classes.delete(c); } } };
+        const boton = { disabled: false, getAttribute: (k) => ({ "data-seg-f1": "CO1.REQ.9", "data-seg-f1-doc": "5", "data-seg-f1-n": "1" }[k]) };
+        const fn = new Function("H", "aviso", "boton", `
+          let aperturasEditor = 0;
+          const CSS = { escape: (x) => x };
+          const pesos = (n) => "$" + n;
+          const fraseDeFallo = (e) => String((e && e.message) || e);
+          const secSeg = { querySelector: () => aviso };
+          const ultimoSeguimiento = { procesos: [{ id: "CO1.REQ.9", proceso: { nombre: "Obra X" } }] };
+          const segExpDatos = { proceso: { id: "CO1.REQ.9", guia: null } };
+          const qApuDelExpediente = (pr, id) => "id_proceso=" + id;
+          const abrirEditorConProceso = (q) => { aperturasEditor++; H.abiertos.push(String(q)); H.orden.push("abrir"); };
+          const arranqueApu = new Promise((r) => setTimeout(() => { H.orden.push("arranque"); if (H.carrera) aperturasEditor++; r(); }, 5));
+          const api = async (ruta) => { H.llamadasApi.push(ruta); if (H.error) throw new Error(H.error); return H.respuesta; };
+          ${filasDesdePliegoSrc}
+          const mapearParaPrevisualizar = async (filas, meta) => { H.mapeos.push({ filas, meta }); H.orden.push("mapear"); return H.mapea; };
+          const abrirModalImportar = () => { H.modales++; };
+          const ev = { target: { closest: (sel) => (sel === "[data-seg-f1]" ? boton : null) } };
+          return (async () => { ${bloqueC}\n return "sin_manejar"; })();`);
+        Object.assign(H, { respuesta, error, mapea, carrera });
+        const salida = await fn(H, aviso, boton);
+        return { H, aviso, boton, salida };
+      };
+      const respF = { ok: true, nombre: "PRESUPUESTO OFICIAL.xlsx", hoja: "P", total: 300000, filas: [
+        { fila_excel: 3, codigo: "1.1", capitulo: "PRELIMINARES", descripcion: "Localización", unidad: "m2", cantidad: 100, precio_archivo: 1000, total_archivo: 100000 },
+        { fila_excel: 4, codigo: null, capitulo: null, descripcion: "Concreto", unidad: "m3", cantidad: 10, precio_archivo: 20000, total_archivo: 200000 }] };
+      const c1 = await correrClic({ respuesta: respF });
+      assert.strictEqual(c1.salida, undefined, "el clic se atiende y termina (return), no sigue a los demás botones");
+      assert.deepStrictEqual(c1.H.llamadasApi, ["/api/pliego?op=documentos&id_proceso=CO1.REQ.9&formulario=5"], "pide los ítems guardados de ESE documento de ESE proceso");
+      assert.deepStrictEqual(c1.H.orden, ["abrir", "arranque", "mapear"], "abre Precios con el proceso, ESPERA a que arranque (catálogo y departamento) y solo entonces arma la vista previa");
+      assert.deepStrictEqual(c1.H.mapeos[0].filas, [{ codigo: "1.1", descripcion: "Localización", unidad: "m2", cantidad: 100 }, { codigo: null, descripcion: "Concreto", unidad: "m3", cantidad: 10 }], "viajan código, descripción, unidad y cantidad; el precio y el total de la entidad NO");
+      assert.ok(c1.H.mapeos[0].filas.every((f) => !("precio_archivo" in f) && !("total_archivo" in f) && !("precio" in f)), "ninguna fila lleva precio");
+      assert.ok(/2 ítem\(s\) del Formulario 1 de la entidad \(hoja «P»\), leídos y comprobados contra su total de \$300000\. El precio de la entidad no se lleva: lo ponen los bancos\./.test(c1.H.mapeos[0].meta.avisos[0]), c1.H.mapeos[0].meta.avisos[0]);
+      assert.strictEqual(c1.H.mapeos[0].meta.origen, "el Formulario 1 «PRESUPUESTO OFICIAL.xlsx»");
+      assert.deepStrictEqual([c1.H.modales, c1.boton.disabled, c1.aviso.classes.has("hidden"), c1.aviso.classes.has("text-red-700")], [1, false, false, false], "abre la vista previa, deja el botón libre y dice qué hacer");
+      const c2 = await correrClic({ respuesta: null, error: "el servidor respondió 404" });
+      assert.ok(c2.H.mapeos.length === 0 && c2.H.modales === 0 && c2.H.abiertos.length === 0 && /No se pudo traer el Formulario 1: el servidor respondió 404/.test(c2.aviso.textContent) && c2.aviso.classes.has("text-red-700") && c2.boton.disabled === false, "si el servidor no los tiene, se dice y no se abre nada ni se toca Precios");
+      const c3 = await correrClic({ respuesta: { ok: true, filas: [] } });
+      assert.ok(c3.H.mapeos.length === 0 && c3.H.abiertos.length === 0 && /No se pudo traer el Formulario 1/.test(c3.aviso.textContent), "sin ítems no se abre Precios con nada");
+      const c4 = await correrClic({ respuesta: respF, carrera: true });
+      assert.ok(c4.H.mapeos.length === 0 && c4.H.modales === 0 && /Se abrió otro proceso o borrador en Precios/.test(c4.aviso.textContent) && c4.boton.disabled === false, "si mientras tanto se abrió otro proceso o borrador, los ítems NO se meten en él");
+      const c5 = await correrClic({ respuesta: respF, mapea: false });
+      assert.ok(c5.H.modales === 0 && /No se llevó nada/.test(c5.aviso.textContent) && c5.aviso.classes.has("text-red-700"), "si se canceló el acceso, no se dice que quedó en Precios");
     }
     /* ── 5 · LA PANTALLA ─────────────────────────────────────────────────── */
     {

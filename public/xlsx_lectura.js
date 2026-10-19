@@ -157,14 +157,23 @@
     return lista;
   }
 
-  function parsearHoja(xml, compartidas) {
+  /* TOPES DE LECTURA (19-oct-2026, revisión adversaria; medido en 301 libros reales de SECOP II). Un libro viene de fuera y la rejilla es DENSA
+     (toda fila con tantas celdas como la más ancha): una sola celda en la columna XFD (16.384) o en la fila 1.000.000 la inflaba a cientos de
+     millones de celdas y reventaba la memoria (el archivo de 1 KB con una celda en XFD100000 tumbaba el proceso en 2 s; tres libros reales
+     —0294 a 0296— tenían una celda de estilo en XFD y daban 112 millones). Lo real llega a 1,4 millones de celdas, 175 columnas y 10.378 filas:
+     los topes dejan un margen de 5 a 6 veces. Una celda VACÍA (solo estilo) no ensancha la rejilla; una celda CON valor fuera de los topes se
+     descarta y la hoja queda marcada `excede` (quien publica solo la trata como no comprobable); el presupuesto de celdas del libro entero
+     corta con un error que dice qué hacer. */
+  const MAX_COLUMNAS = 1024, MAX_FILA_NUM = 200000, MAX_CELDAS_LIBRO = 8000000;
+  function parsearHoja(xml, compartidas, presupuesto) {
     const filas = [];
-    let maxCol = 0;
+    let maxCol = 0, excede = false;
     for (const mFila of xml.matchAll(/<row\b[^>]*?(?:\/>|>([\s\S]*?)<\/row>)/g)) {
       const numFila = (() => {
         const r = /r="(\d+)"/.exec(mFila[0]);
         return r ? parseInt(r[1], 10) : filas.length + 1;
       })();
+      if (numFila > MAX_FILA_NUM) { if (/<v[\s>]|<is[\s>]/.test(mFila[0])) excede = true; continue; }
       const celdas = [];
       for (const mCelda of (mFila[1] || "").matchAll(/<c\b([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/g)) {
         const attrs = mCelda[1] || "";
@@ -188,10 +197,16 @@
             }
           }
         }
+        if (valor === null) continue;   // celda vacía (solo estilo): no ensancha la rejilla
+        if (col >= MAX_COLUMNAS) { excede = true; continue; }
         celdas[col] = valor;
         if (col + 1 > maxCol) maxCol = col + 1;
       }
       if (celdas.length) filas[numFila - 1] = celdas;
+    }
+    if (presupuesto) {
+      presupuesto.celdas -= filas.length * maxCol;
+      if (presupuesto.celdas < 0) throw new Error(`El libro es demasiado grande para leerlo aquí (más de ${MAX_CELDAS_LIBRO.toLocaleString("es-CO")} celdas): exporte la hoja que necesita a CSV o recórtela.`);
     }
     // rejilla densa: toda fila existe (vacía si el XML la saltó) y con null en los huecos
     const salida = [];
@@ -201,6 +216,7 @@
       for (let c = 0; c < f.length; c++) densa[c] = f[c] === undefined ? null : f[c];
       salida.push(densa);
     }
+    salida.excede = excede;   // propiedad de la rejilla: leerLibro la pasa a la hoja
     return salida;
   }
 
@@ -232,6 +248,7 @@
     const compartidas = parsearSharedStrings(await texto("xl/sharedStrings.xml"));
 
     const hojas = [];
+    const presupuesto = { celdas: Number.isFinite(opciones.maxCeldas) ? opciones.maxCeldas : MAX_CELDAS_LIBRO };
     let indice = 0;
     for (const m of workbook.matchAll(/<sheet\b([^>]*?)\/>/g)) {
       indice++;
@@ -240,7 +257,8 @@
       let destino = rid && relPorId[rid] ? relPorId[rid] : `worksheets/sheet${indice}.xml`;
       destino = destino.replace(/^\//, "").replace(/^xl\//, "");
       const xmlHoja = await texto(`xl/${destino}`);
-      hojas.push({ nombre, filas: xmlHoja ? parsearHoja(xmlHoja, compartidas) : [] });
+      const rejilla = xmlHoja ? parsearHoja(xmlHoja, compartidas, presupuesto) : [];
+      hojas.push({ nombre, filas: rejilla, excede: rejilla.excede === true });
     }
     if (!hojas.length) throw new Error("El libro no declara ninguna hoja.");
     return { hojas };
@@ -369,7 +387,10 @@
     if (/^(A ?I ?U|ADMINISTRACION|IMPREVISTOS|UTILIDAD|IVA)\b/.test(d)) return "aiu";
     if (/^(TOTAL |SUBTOTAL )?COSTOS? DIRECTOS?\b/.test(d)) return "costo_directo";
     if (/^SUBTOTAL\b/.test(d)) return "subtotal_capitulo";
-    if (/^(VALOR )?TOTAL(\s+GENERAL|\s+PRESUPUESTO)?$/.test(d)) {
+    /* SIN «VALOR TOTAL» A PROPÓSITO (19-oct-2026). Esta función la comparte el lector de PDF (lib/apu_pliego) y allí un «VALOR TOTAL» al final de cada
+       capítulo es el subtotal de ESE capítulo: reconocerlo como total del documento hacía que los capítulos quedaran «sin_datos» y que un pliego con
+       solo esos totales diera un «no cuadra» falso. El Excel reconoce «VALOR TOTAL» en su propia detección (`RE_TOTAL_SECO`, más abajo), no aquí. */
+    if (/^TOTAL(\s+GENERAL|\s+PRESUPUESTO)?$/.test(d)) {
       return opciones && opciones.vistoAiu ? "precio_con_aiu" : "total_documento";
     }
     if (/^TOTAL\b/.test(d)) return "subtotal_capitulo";
@@ -583,15 +604,17 @@
       (r.cuadre && r.cuadre.total_declarado != null && r.cuadre.estado !== "no_cuadra") ? 1 : 0,
       r.filas.length,
     ];
+    const candidatas = [];   // TODAS las hojas con su lectura: quien publica solo (ambiguedadDelLibro) necesita saber qué más trae el libro
     for (const h of libro.hojas || []) {
       const r = detectarFilasApu(h.filas);
+      candidatas.push({ hoja: h, resultado: r });
       if (!mejor) { mejor = { hoja: h, resultado: r }; continue; }
       const a = puntaje(r), b = puntaje(mejor.resultado);
       if (a[0] > b[0] || (a[0] === b[0] && (a[1] > b[1] || (a[1] === b[1] && a[2] > b[2])))) {
         mejor = { hoja: h, resultado: r };
       }
     }
-    return mejor;
+    return mejor ? { ...mejor, candidatas } : mejor;
   }
 
   /* ══════════ ¿SE PUEDE DAR POR LEÍDO ESTE FORMULARIO? · LA PUERTA DE PUBLICAR ══════════
@@ -608,6 +631,15 @@
      devuelve «publicable» con un motivo vacío para un caso dudoso: lo que no se pudo comprobar se dice. */
   const TOL_FILA_REL = 0.01;
   const MIN_FILAS_VERIFICABLES = 0.9;
+  /* LA TOLERANCIA PARA PUBLICAR NO ES LA DEL AVISO (19-oct-2026). `cuadreDeControl` dice «cuadra» hasta el 0,5 % (la del PDF) porque
+     es un aviso al usuario; publicar SIN que nadie lo mire exige más. Medido en los 67 Excel que cuadran: el ruido de redondeo llega a
+     0,001 %, y el que dejaba un ítem fuera (archivo 0144: «CERTIFICACIÓN RETIE» y «RETILAP», leídos como título de capítulo) estaba en
+     0,15 %. 0,01 % deja 10 veces de holgura sobre el redondeo y cierra ese caso. Lo que se escapa por debajo (un ítem de menos del 0,01 %
+     del total) sigue sin verse: se dice en la memoria, no se esconde. */
+  const TOL_PUBLICAR_PCT = 0.01;
+  /* TOPE DE CORDURA (no es una norma): ninguna cifra de un presupuesto de obra pasa de un billón de billones de pesos mil veces; 1e15 deja
+     un margen enorme sobre lo real y descarta lo fabricado («cantidad 1e300», que multiplicada por un precio «cuadra» con su total). */
+  const CIFRA_MAX = 1e15;
   function verificarFormulario(lectura) {
     const filas = lectura && Array.isArray(lectura.filas) ? lectura.filas : [];
     const cuadre = lectura && lectura.cuadre ? lectura.cuadre : null;
@@ -621,21 +653,58 @@
       };
       return no(porque[cuadre.estado] || "el cuadre de control no se pudo hacer");
     }
+    if (!(cuadre.total_declarado > 0 && cuadre.total_declarado <= CIFRA_MAX)) return no("el total que declara el archivo no es una cifra positiva y razonable");
     let verificadas = 0, malas = 0;
     for (const f of filas) {
+      /* una cantidad, un precio o un total NEGATIVO no es un presupuesto: (−2) × (−3) = 6 «cuadraría» y no lo es */
+      if ((f.cantidad != null && (f.cantidad < 0 || f.cantidad > CIFRA_MAX)) || (f.precio_archivo != null && (f.precio_archivo < 0 || f.precio_archivo > CIFRA_MAX)) || (f.total_archivo != null && (f.total_archivo < 0 || f.total_archivo > CIFRA_MAX))) { verificadas++; malas++; continue; }
       if (f.cantidad == null || f.precio_archivo == null || f.total_archivo == null || !(f.total_archivo > 0)) continue;
       verificadas++;
       if (Math.abs(f.cantidad * f.precio_archivo - f.total_archivo) / f.total_archivo > TOL_FILA_REL) malas++;
     }
     const base = { filas: filas.length, filas_verificadas: verificadas, total: cuadre.total_declarado };
+    if (!(cuadre.desviacion_pct != null && cuadre.desviacion_pct <= TOL_PUBLICAR_PCT)) return { ...base, publicable: false, motivo: `la suma de los ítems difiere del total del archivo en ${cuadre.desviacion_pct != null ? String(Number(cuadre.desviacion_pct.toFixed(4))).replace(".", ",") : "?"} %, más de lo que explica el redondeo (${String(TOL_PUBLICAR_PCT).replace(".", ",")} %): puede faltar un ítem` };
     if (!verificadas) return { ...base, publicable: false, motivo: "ninguna fila trae cantidad, precio y total para comprobar cantidad × precio" };
     if (verificadas < filas.length * MIN_FILAS_VERIFICABLES) return { ...base, publicable: false, motivo: `solo ${verificadas} de ${filas.length} filas traen cantidad, precio y total para comprobarlas` };
     if (malas) return { ...base, publicable: false, motivo: `${malas} de ${verificadas} filas no cumplen cantidad × precio = total (puede ser un total por fila con AIU): revíselo en el archivo` };
     return { ...base, publicable: true, motivo: null };
   }
 
+  /* ══════════ ¿LA HOJA ELEGIDA ES TODO EL PRESUPUESTO? · LO QUE REVISÓ EL REVISOR ADVERSARIO (19-oct-2026) ══════════
+     `elegirHoja` puntúa «cuadra» por delante de todo: una hoja pequeña con su propio total le gana a la hoja principal cuando el total
+     de esta se llama «VALOR TOTAL PRESUPUESTO DE OBRA» y no lo reconoce. Medido en 325 Excel: el 0034 (hospital, 2.374 M) publicaba el plan
+     de manejo ambiental (48 ítems, 5 %) y el 0100 (cinco entidades en cinco hojas) publicaba la de Cachipay. Para dar un Formulario por
+     leído SIN que nadie lo mire, el libro no puede tener OTRA hoja con ítems que no sea una copia de la elegida:
+       · una hoja con menos de 3 ítems no objeta (los análisis de un solo ítem, «1,1», «1,2»…: son el detalle de una fila);
+       · una hoja con los MISMOS ítems en el mismo orden (y, donde ambas traen precio, el mismo precio) es una copia —la plantilla
+         «PROPUESTA ECONOMICA» que el proponente llena— y no objeta;
+       · lo demás objeta: otro frente, otro lote, un anexo con ítems distintos, o la misma lista con otros precios.
+     Y la hoja elegida no puede llamarse como una del proponente: si el libro trae primero la «PROPUESTA ECONOMICA» llena, publicaría la
+     oferta de un tercero como si fuera el presupuesto de la entidad. Devuelve null si no hay objeción, o el motivo en palabras. */
+  const MIN_ITEMS_OTRA_HOJA = 3;
+  const RE_HOJA_DEL_PROPONENTE = /\b(PROPUESTA|PROPONENTE|OFERENTE|OFERTA|OFERTADO)\b/;
+  function ambiguedadDelLibro(elegida) {
+    if (!elegida || !elegida.hoja || !elegida.resultado) return "el libro no tiene una hoja de ítems";
+    const nombre = String(elegida.hoja.nombre || "");
+    if (RE_HOJA_DEL_PROPONENTE.test(normCab(nombre))) return `la hoja con los ítems («${nombre}») parece del proponente y no de la entidad`;
+    const excedidas = (elegida.candidatas || []).filter((c) => c.hoja && c.hoja.excede);
+    if (excedidas.length) return `una hoja del libro («${excedidas[0].hoja.nombre}») trae celdas fuera de los límites de lectura: no se puede comprobar que el presupuesto esté completo`;
+    const mias = elegida.resultado.filas || [];
+    /* la plantilla del proponente TRUNCA las descripciones largas («…de oxidació»): una es prefijo de la otra y vale como la misma */
+    const mismaDescripcion = (f, g) => { const a = normCab(f.descripcion), b = normCab(g.descripcion); return a === b || (Math.min(a.length, b.length) >= 20 && (a.startsWith(b) || b.startsWith(a))); };
+    const mismoPrecio = (a, b) => a.precio_archivo == null || b.precio_archivo == null || Math.abs(a.precio_archivo - b.precio_archivo) <= 0.01 * Math.max(Math.abs(a.precio_archivo), Math.abs(b.precio_archivo));
+    for (const c of elegida.candidatas || []) {
+      if (c.hoja === elegida.hoja) continue;
+      const otras = (c.resultado && c.resultado.filas) || [];
+      if (otras.length < MIN_ITEMS_OTRA_HOJA) continue;
+      const copia = otras.length === mias.length && otras.every((f, i) => mismaDescripcion(f, mias[i]) && mismoPrecio(f, mias[i]));
+      if (!copia) return `el libro trae otra hoja con ítems («${c.hoja.nombre}», ${otras.length}) que no es copia de la elegida («${nombre}», ${mias.length}): no se sabe cuál es el presupuesto completo`;
+    }
+    return null;
+  }
+
   return {
-    leerLibro, leerZip, parsearCsv, detectarFilasApu, elegirHoja, clasificarRotuloTotal, verificarFormulario, cuadreDeControl,
+    leerLibro, leerZip, parsearCsv, detectarFilasApu, elegirHoja, clasificarRotuloTotal, verificarFormulario, cuadreDeControl, ambiguedadDelLibro,
     numeroLocal, indiceColumna, desescaparXml,
   };
 });

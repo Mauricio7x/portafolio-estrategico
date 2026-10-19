@@ -529,6 +529,7 @@
      «Mis procesos» es #tab-seguimiento (#/mis-procesos). */
   const ALIAS_PESTANA = { empresa: "admin", "mi-empresa": "admin", precios: "apu", "mis-procesos": "seguimiento", procesos: "seguimiento" };
   const arrancadas = { apu: false, admin: false, pliego: false, seguimiento: false };
+  let arranqueApu = null;   // la promesa del primer arranque de Precios: lo que necesita su catálogo cargado (el desplegable de departamentos) la espera
   function activarPestana(nombre, { empujarHash = true } = {}) {
     const pedido = ALIAS_PESTANA[nombre] || nombre;
     const destino = PESTANAS.includes(pedido) ? pedido : "admin";
@@ -582,9 +583,9 @@
        tomar de la barra (6-sep-2026, V-B2a-01): la barra cambia por código en
        más sitios que el evento `change` (guardar o borrar un consorcio, el
        arranque por URL) y un camino olvidado guardaba el borrador bajo «helder»
-       con la barra en el consorcio. La primera apertura lo hace `arrancar()`,
+       con la barra en el consorcio. La primera apertura lo hace `arrancarPrecios()`,
        que además precarga el perfil de la tarjeta. */
-    if (destino === "apu" && !arrancadas.apu) { arrancadas.apu = true; arrancar(); }
+    if (destino === "apu" && !arrancadas.apu) { arrancadas.apu = true; arranqueApu = arrancarPrecios(); }
     else if (destino === "apu") sincronizarPerfilBorrador();
     if (destino === "apu" && !arrancadas.pliego && typeof window.__pliegoArrancar === "function") {
       arrancadas.pliego = true;
@@ -6354,6 +6355,35 @@
         llenar.disabled = false;
         return;
       }
+      /* EL FORMULARIO 1 LEÍDO, A PRECIOS (19-oct-2026): el servidor guardó los ítems que pasaron la comprobación
+         (cuadran con su total y fila a fila); aquí se llevan a la MISMA vista previa que el pliego leído
+         (`filasDesdePliego` → `mapearParaPrevisualizar`), con el proceso ya puesto. El precio del formulario NO viaja:
+         es el de la entidad, y lo ponen los bancos. Nada entra a la tabla sin que el usuario acepte la vista previa. */
+      const f1 = ev.target.closest("[data-seg-f1]");
+      if (f1) {
+        const idProc = f1.getAttribute("data-seg-f1"), idDoc = f1.getAttribute("data-seg-f1-doc"), n = f1.getAttribute("data-seg-f1-n");
+        const aviso = secSeg.querySelector(`[data-seg-f1-estado="${CSS.escape(n)}"]`);
+        const decirF = (t, error) => { if (!aviso) return; aviso.classList.remove("hidden"); aviso.classList.toggle("text-red-700", !!error); aviso.textContent = t; };
+        f1.disabled = true;
+        decirF("Trayendo los ítems del Formulario 1 leído…");
+        try {
+          const r = await api(`/api/pliego?op=documentos&id_proceso=${encodeURIComponent(idProc)}&formulario=${encodeURIComponent(idDoc)}`);
+          const items = r && Array.isArray(r.filas) ? r.filas : [];
+          if (!items.length) throw new Error("el servidor no devolvió ítems del Formulario 1");
+          const p = ((ultimoSeguimiento && ultimoSeguimiento.procesos) || []).find((x) => x.id === idProc) || {};
+          const g = segExpDatos && segExpDatos.proceso && segExpDatos.proceso.id === idProc ? segExpDatos.proceso.guia : null;
+          abrirEditorConProceso(qApuDelExpediente(p.proceso || {}, idProc, g));
+          const apertura = aperturasEditor;
+          if (arranqueApu) await arranqueApu.catch(() => {});   // sin el catálogo cargado no hay departamento, y el precio de la vista previa depende de él
+          if (apertura !== aperturasEditor) { decirF("Se abrió otro proceso o borrador en Precios mientras se traían los ítems: pulse «Cotizar en Precios» otra vez.", true); f1.disabled = false; return; }
+          const filasF1 = filasDesdePliego(items.map((i) => ({ numeral: i.codigo, descripcion: i.descripcion, unidad: i.unidad, cantidad: i.cantidad })));
+          const aviso1 = `${filasF1.length} ítem(s) del Formulario 1 de la entidad${r.hoja ? ` (hoja «${r.hoja}»)` : ""}, leídos y comprobados contra su total${r.total != null ? ` de ${pesos(r.total)}` : ""}. El precio de la entidad no se lleva: lo ponen los bancos.`;
+          if (await mapearParaPrevisualizar(filasF1, { avisos: [aviso1], origen: r.nombre ? `el Formulario 1 «${r.nombre}»` : "el Formulario 1 leído" })) { abrirModalImportar(); decirF("Los ítems están en Precios: revise la vista previa y acepte los que quiera llevar."); }
+          else decirF("No se llevó nada: se canceló el acceso.", true);
+        } catch (e) { decirF(`No se pudo traer el Formulario 1: ${fraseDeFallo(e)}`, true); }
+        f1.disabled = false;
+        return;
+      }
       const det = ev.target.closest("[data-seg-detalle]");
       if (det) {
         const id = det.getAttribute("data-seg-detalle");
@@ -9671,7 +9701,7 @@
     } catch { /* sin dato: el pliegue se queda como estaba */ }
   }
 
-  async function arrancar() {
+  async function arrancarPrecios() {   // NO `arrancar`: así se llama el arranque de la app (más abajo) y la segunda declaración pisaba a esta (17-oct-2026, b73c38e)
     /* el selector del borrador nace vacío en el HTML: se llena desde la barra
        ANTES de leer la URL de la tarjeta, que puede traer el perfil */
     sincronizarPerfilBorrador();
@@ -9707,7 +9737,7 @@
     contarBorradores();
   }
   /* «Reintentar» de Precios: repite la carga del catálogo, que es de lo que
-     cuelga toda la pestaña. Se registra aquí (no dentro de `arrancar`) para
+     cuelga toda la pestaña. Se registra aquí (no dentro de `arrancarPrecios`) para
      que exista aunque la primera carga sea la que falló. */
   if ($("accion-reintentar")) {
     $("accion-reintentar").addEventListener("click", async () => {

@@ -226,6 +226,8 @@
       tipo: x.tipo_legible || null, fecha: x.fecha_carga || x.leido_el || null,
       paginas: x.paginas != null ? x.paginas : null, formato: formatoDe(x.nombre), peso: pesoLegible(x.tamano),
       estado, observacion: x.motivo || null, url: x.url || null,
+      /* el Formulario 1 en Excel que pasó la comprobación se puede llevar a Precios (19-oct-2026) */
+      formulario_de: x.formulario_excel === true && x.id_documento ? p.id : null,
     });
     return [
       ...(d.leidos || []).map((x) => fila(x, "leido")),
@@ -257,8 +259,9 @@
       <span class="exp-doc-nombre">${esc(f.nombre)}</span>
       <span class="exp-doc-meta">${esc(meta || "Sin más datos publicados")}</span>
       <span class="exp-doc-mandos"><span class="exp-estado ${e.clase}"><span class="exp-punto" aria-hidden="true">&#9679;</span>${esc(e.texto)}</span>${llenable
-        ? `<button type="button" class="exp-boton" data-seg-llenar="${esc(f.url)}" data-seg-llenar-nombre="${esc(f.nombre)}" data-seg-llenar-n="${miles(folio)}">Llenar con sus datos</button>` : ""}</span>
-    </div>${llenable ? `<p class="exp-seccion-nota hidden" data-seg-llenar-estado="${miles(folio)}" role="status"></p>` : ""}`;
+        ? `<button type="button" class="exp-boton" data-seg-llenar="${esc(f.url)}" data-seg-llenar-nombre="${esc(f.nombre)}" data-seg-llenar-n="${miles(folio)}">Llenar con sus datos</button>` : ""}${f.formulario_de
+        ? `<button type="button" class="exp-boton" data-seg-f1="${esc(f.formulario_de)}" data-seg-f1-doc="${esc(f.id)}" data-seg-f1-n="${miles(folio)}">Cotizar en Precios</button>` : ""}</span>
+    </div>${llenable || f.formulario_de ? `<p class="exp-seccion-nota hidden" data-seg-${f.formulario_de ? "f1" : "llenar"}-estado="${miles(folio)}" role="status"></p>` : ""}`;
   }
 
   /* Los documentos SUYOS. Cada uno lleva su estado y, si el usuario la anotó,
