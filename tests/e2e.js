@@ -4608,6 +4608,48 @@ async function main() {
       assert.strictEqual(filtros.es_convenio(l), false,
         `«${l.nombre_del_procedimiento}» NO es un convenio: mencionarlo no lo convierte en uno`);
     }
+    /* 19-oct-2026: la obra que COPIA el «aunar esfuerzos» del convenio que la financia no es un convenio.
+       Textos reales de p6dx-8zbt (Tocancipá, CO1.REQ.11166802; San Vicente de Chucurí, CO1.REQ.10244962,
+       su descripción reconstruida). Las tres condiciones van juntas: «aunar» solo adentro de la descripción,
+       tipo «Obra» declarado por SECOP y modalidad que no es régimen especial. */
+    const aunarAdentro = {
+      nombre_del_procedimiento: "MEJORAMIENTO DE VIAS MEDIANTE LA EJECUCION DE PLACA HUELLAS DE CONFORMIDAD CON LOS CONVENIOS No ICCU 1022 DE 2025 Y No. ICCU-1547-2025 PARA EL MEJORAMIENTO DE LA VÍA EN LA VEREDA CANAVITA.",
+      descripci_n_del_procedimiento: "MEJORAMIENTO DE VIAS MEDIANTE LA EJECUCION DE PLACA HUELLAS DE CONFORMIDAD CON LOS CONVENIOS No ICCU 1022 DE 2025  AUNAR ESFUERZOS TECNICOS, ADMINISTRATIVOS Y FINANCIEROS PARA EL MEJORAMIENTO DE LA VÍA QUE COMUNICA LA VEREDA CANAVITA CON LA VEREDA LA ESMERALDA",
+      modalidad_de_contratacion: "Selección Abreviada de Menor Cuantía", tipo_de_contrato: "Obra",
+    };
+    const obraDelConvenio = {
+      nombre_del_procedimiento: "CONTRATO DE OBRA PÚBLICA PARA LA EJECUCIÓN DEL CONVENIO INTERADMINISTRATIVO No. 500-2025",
+      descripci_n_del_procedimiento: "CONTRATO DE OBRA PÚBLICA PARA LA EJECUCIÓN DEL CONVENIO INTERADMINISTRATIVO No. 500-2025 CUYO OBJETO CORRESPONDE A AUNAR ESFUERZOS PARA EL MEJORAMIENTO DE LA MALLA VIAL TERCIARIA MEDIANTE EL MANTENIMIENTO Y ADECUACIÓN DEL PUENTE",
+      modalidad_de_contratacion: "Selección Abreviada de Menor Cuantía", tipo_de_contrato: "Obra",
+    };
+    for (const l of [aunarAdentro, obraDelConvenio]) {
+      assert.strictEqual(filtros.es_convenio(l), false, `«${l.nombre_del_procedimiento.slice(0, 40)}…» es una obra que cita un convenio: no es uno`);
+      assert.strictEqual(filtros.admisibleParaIngesta(l), true, `«${l.nombre_del_procedimiento.slice(0, 40)}…» debía guardarse como obra`);
+    }
+    const siguenSiendoConvenio = [
+      [{ ...aunarAdentro, modalidad_de_contratacion: "Contratación régimen especial (con ofertas)" }, "régimen especial: ahí se publican los convenios verdaderos (TIERRASUA queda fuera por decisión del dueño)"],
+      [{ ...aunarAdentro, modalidad_de_contratacion: "Contratación régimen especial" }, "régimen especial sin «(con ofertas)»"],
+      [{ ...aunarAdentro, modalidad_de_contratacion: undefined, tipo_de_proceso: "Contratación régimen especial (con ofertas)" }, "régimen especial leído de `tipo_de_proceso`, el campo de respaldo que también lee modalidad_competitiva"],
+      [{ ...aunarAdentro, modalidad_de_contratacion: "Invitación Privada" }, "modalidad no competitiva que no es directa ni régimen especial"],
+      [{ ...aunarAdentro, modalidad_de_contratacion: "Contratos y convenios con más de dos partes" }, "modalidad no competitiva que no es directa ni régimen especial (convenios de varias partes)"],
+      [{ ...aunarAdentro, nombre_del_procedimiento: "CONVENIO INTERADMINISTRATIVO 500 DE 2025 PARA EL MEJORAMIENTO DE LA MALLA VIAL" }, "otra fórmula de convenio («convenio interadministrativo») encabezando el nombre, con «aunar» adentro de la descripción"],
+      [{ ...aunarAdentro, nombre_del_procedimiento: "OBRA VIAL PARA AUNAR ESFUERZOS EN LA VEREDA" }, "«aunar» en medio del nombre y en la descripción, con tipo «Obra»"],
+      [{ ...aunarAdentro, descripci_n_del_procedimiento: "CONVENIO INTERADMINISTRATIVO 5 CUYO OBJETO ES AUNAR ESFUERZOS PARA LA VÍA" }, "descripción que arranca con «convenio interadministrativo» y trae «aunar» adentro"],
+      [{ ...aunarAdentro, modalidad_de_contratacion: "Contratación Directa (con ofertas)" }, "contratación directa «(con ofertas)»: no es una modalidad de selección (VIJES, CO1.REQ.10772989)"],
+      [{ ...aunarAdentro, modalidad_de_contratacion: "Contratación directa" }, "contratación directa"],
+      [{ ...aunarAdentro, modalidad_de_contratacion: undefined }, "modalidad desconocida: la cascada ya la deja fuera"],
+      [{ ...aunarAdentro, tipo_de_contrato: "Decreto 092 de 2017" }, "tipo «Decreto 092»: es un convenio con una ESAL"],
+      [{ ...aunarAdentro, tipo_de_contrato: "Suministros" }, "tipo «Suministros»"],
+      [{ ...aunarAdentro, tipo_de_contrato: undefined }, "sin tipo de contrato declarado"],
+      [{ ...aunarAdentro, nombre_del_procedimiento: "AUNAR ESFUERZOS TÉCNICOS; ADMINISTRATIVOS Y FINANCIEROS PARA LA IMPLEMENTACION DEPORTIVA", modalidad_de_contratacion: "Mínima cuantía" }, "«aunar» en el nombre, aunque SECOP lo marque «Obra» (San José, Caldas)"],
+      [{ ...aunarAdentro, nombre_del_procedimiento: "Mejoramiento de vías", descripci_n_del_procedimiento: "AUNAR ESFUERZOS PARA EL MEJORAMIENTO DE VÍAS DEL MUNICIPIO" }, "«aunar» encabezando la descripción, aunque SECOP lo marque «Obra»"],
+    ];
+    for (const [l, motivo] of siguenSiendoConvenio) {
+      assert.strictEqual(filtros.es_convenio(l), true, `debía seguir siendo convenio: ${motivo}`);
+      assert.strictEqual(filtros.admisibleParaIngesta(l), false, `no debía guardarse: ${motivo}`);
+    }
+    // la excepción cambia lo que se guarda: el sello de la regla de ingesta lo sabe (la portada corta su serie)
+    assert.notStrictEqual(filtros.selloReglaIngesta(), "bc538adf9021", "el sello de la regla de ingesta no cambió con la excepción del convenio: la portada mezclaría días contados con reglas distintas (el sello del árbol anterior era bc538adf9021)");
     // el convenio muere en evaluarObjeto, con motivo propio y ANTES que todo
     const ev = filtros.evaluarObjeto({
       nombre_del_procedimiento: "AUNAR ESFUERZOS TÉCNICOS; ADMINISTRATIVOS Y FINANCIEROS",
