@@ -15,15 +15,27 @@
 # una carga a medias («continuar_full») o hace lo que toque si ya terminó.
 #
 # Cómo se usa: pestaña «Actions» → «Carga completa (un botón)» → «Run workflow» →
-# botón verde «Run workflow». Tarda lo que tarde la carga (puede pasar de una
-# hora); la página del flujo enseña el avance de cada tramo.
+# botón verde «Run workflow». En la app de GitHub del celular (en español, visto el
+# 17-oct-2026): repositorio → «Acciones» → «Carga completa (un botón)» → «Ejecutar
+# flujo de trabajo». Tarda lo que tarde la carga (puede pasar de una hora); la
+# página del flujo enseña el avance de cada tramo.
+#
+# El histórico continúa el rango que haya guardado (lo lee de `?estado=true`): el
+# botón no impone uno, porque pedir otro rango empezaba la extracción desde cero.
 #
 # Los secretos (Settings → Secrets and variables → Actions → Repository secrets):
 #   · CRON_SECRET     → el mismo de «Actualización de la tarde»; ya está creado.
 #   · HISTORICO_TOKEN → la llave de la extracción del histórico (la misma que va
 #                       en «&token=…» de su URL). Si no está, la carga completa se
 #                       hace igual y el paso del histórico dice cómo crearla.
-# Ninguno de los dos se escribe en este archivo: el repositorio es público.
+#   · VERCEL_AUTOMATION_BYPASS_SECRET → el pase del muro de Vercel (ver abajo).
+# Ninguno se escribe en este archivo: el repositorio es público.
+#
+# El pase del muro (17-oct-2026): VERCEL_AUTOMATION_BYPASS_SECRET, el mismo de Vercel → «Settings» →
+# «Deployment Protection» → «Protection Bypass for Automation». Con el muro de Vercel en todo el
+# sitio, sin él la llamada recibe 302 (o 401 si pide JSON) con «Protected by Vercel Authentication» y el
+# flujo lo dice; sin
+# el secreto curl no manda la cabecera, así que sin muro todo sigue igual.
 name: Carga completa (un botón)
 
 on:
@@ -38,12 +50,17 @@ jobs:
       - name: Llamar a la aplicación hasta terminar
         env:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
         run: |
-          URL="https://portafolio-estrategico.vercel.app/api/sync?modo=auto&chain=0"
-          fallos=0; tramo=0; quietos=0; maximo=-1
+          URL="https://detekta-app.vercel.app/api/sync?modo=auto&chain=0"
+          fallos=0; tramo=0; quietos=0; maximo=-1; serie_previa=""
           for vuelta in $(seq 1 600); do
             CODIGO=$(curl -sS --max-time 300 -o respuesta.json -w '%{http_code}' \
-              -H "Authorization: Bearer ${CRON_SECRET}" "$URL" || echo "000")
+              -H "Authorization: Bearer ${CRON_SECRET}" -H "x-vercel-protection-bypass: ${VERCEL_AUTOMATION_BYPASS_SECRET}" "$URL" || echo "000")
+            if [ "$CODIGO" = "302" ] || grep -qs "Protected by Vercel Authentication" respuesta.json; then
+              echo "El muro de Vercel no dejó pasar la llamada (respondió $CODIGO, «Protected by Vercel Authentication»): falta el secreto VERCEL_AUTOMATION_BYPASS_SECRET en GitHub (Settings → Secrets and variables → Actions) o no es el mismo pase que el de Vercel (Settings → Deployment Protection → Protection Bypass for Automation)."
+              exit 1
+            fi
             if [ "$CODIGO" = "401" ]; then
               echo "La aplicación no reconoció la credencial. Cree el secreto CRON_SECRET en GitHub (Settings → Secrets and variables → Actions → New repository secret) con el MISMO valor que la variable CRON_SECRET de Vercel."
               exit 1
@@ -51,7 +68,7 @@ jobs:
             if [ "$CODIGO" != "200" ]; then
               fallos=$((fallos + 1))
               echo "Tramo $tramo: la aplicación respondió $CODIGO (fallo $fallos de 5 seguidos). Se reintenta en 30 s."
-              if [ "$fallos" -ge 5 ]; then echo "Cinco fallos seguidos: se detiene. Mire https://portafolio-estrategico.vercel.app/api/procesos?op=salud"; exit 1; fi
+              if [ "$fallos" -ge 5 ]; then echo "Cinco fallos seguidos: se detiene. Mire https://detekta-app.vercel.app/api/procesos?op=salud"; exit 1; fi
               sleep 30
               continue
             fi
@@ -63,18 +80,25 @@ jobs:
               continue
             fi
             tramo=$((tramo + 1))
-            echo "Tramo $tramo: $(jq -c '{done, alDia, progreso, token: .app_token_rechazado}' respuesta.json)"
+            echo "Tramo $tramo: $(jq -c '{done, alDia, progreso, ciclo_leidas: .delta.ciclo_leidas, token: .app_token_rechazado}' respuesta.json)"
             if [ "$(jq -r '.done' respuesta.json)" = "true" ]; then
               echo "La carga completa terminó."
               exit 0
             fi
             # ¿avanza? (mes, filas leídas) tiene que SUPERAR lo máximo alcanzado: si se queda o
             # RETROCEDE (una carga que vuelve a empezar, como pasó el 26-sep-2026 con modo=full),
-            # cuenta como tramo quieto; diez seguidos = algo va mal, se detiene y lo dice
-            ahora=$(jq -r 'if (.progreso.mesIdx != null and .progreso.leidasMes != null) then (.progreso.mesIdx * 1000000000 + .progreso.leidasMes) else -1 end' respuesta.json)
+            # cuenta como tramo quieto; diez seguidos = algo va mal, se detiene y lo dice.
+            # Una actualización a medias (delta) no trae `progreso`: su avance son las filas que
+            # lleva el ciclo (`delta.ciclo_leidas`). Sin eso, con un delta abierto el flujo paraba
+            # en rojo a los 10 tramos aunque avanzara (18-oct-2026). Las dos medidas son escalas
+            # distintas: si la serie cambia (el latido cerró la carga completa y sigue un delta, o
+            # al revés), el máximo vuelve a empezar (revisión adversaria del 18-oct, reproducido).
+            serie=$(jq -r 'if (.progreso.mesIdx != null and .progreso.leidasMes != null) then "full" elif (.delta.ciclo_leidas != null) then "delta" else "nada" end' respuesta.json)
+            if [ "$serie" != "$serie_previa" ]; then maximo=-1; serie_previa=$serie; fi
+            ahora=$(jq -r 'if (.progreso.mesIdx != null and .progreso.leidasMes != null) then (.progreso.mesIdx * 1000000000 + .progreso.leidasMes) elif (.delta.ciclo_leidas != null) then .delta.ciclo_leidas else -1 end' respuesta.json)
             if [ "$ahora" -gt "$maximo" ]; then maximo=$ahora; quietos=0; else quietos=$((quietos + 1)); fi
             if [ "$quietos" -ge 10 ]; then
-              echo "Diez tramos seguidos sin avanzar (o volviendo atrás): se detiene. Mire https://portafolio-estrategico.vercel.app/api/procesos?op=salud"
+              echo "Diez tramos seguidos sin avanzar (o volviendo atrás): se detiene. Mire https://detekta-app.vercel.app/api/procesos?op=salud"
               exit 1
             fi
             if [ "$tramo" -ge 200 ]; then break; fi
@@ -93,25 +117,67 @@ jobs:
       - name: Llamar a la extracción hasta terminar
         env:
           HISTORICO_TOKEN: ${{ secrets.HISTORICO_TOKEN }}
+          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
         run: |
           if [ -z "$HISTORICO_TOKEN" ]; then
             echo "Falta el secreto HISTORICO_TOKEN. Créelo en GitHub (Settings → Secrets and variables → Actions → New repository secret) con la MISMA llave que usa en «&token=…» para la extracción del histórico, y vuelva a lanzar este flujo."
             exit 1
           fi
-          # con &hasta: sin él el rango por omisión es otro y la extracción empezaría de cero
-          URL="https://portafolio-estrategico.vercel.app/api/sync/historico?desde=2024-01&hasta=2026-09&chain=0"
+          # EL RANGO LO DICE LO GUARDADO, NO ESTE ARCHIVO (17-oct-2026): con un rango fijo, la
+          # extracción guardada con otro rango volvía a empezar desde el primer mes. Primero se
+          # lee el estado (solo lee) y se continúa ese rango; si no hay ninguno, de 2024-01 al
+          # mes en curso de Colombia, como el refresco mensual. Sin estado no se pide nada a ciegas.
+          CODIGO=$(curl -sS --max-time 120 -o estado.json -w '%{http_code}' \
+            -H "x-historico-token: ${HISTORICO_TOKEN}" -H "x-vercel-protection-bypass: ${VERCEL_AUTOMATION_BYPASS_SECRET}" "https://detekta-app.vercel.app/api/sync/historico?estado=true" || echo "000")
+          if [ "$CODIGO" = "302" ] || grep -qs "Protected by Vercel Authentication" estado.json; then
+            echo "El muro de Vercel no dejó pasar la llamada (respondió $CODIGO, «Protected by Vercel Authentication»): falta el secreto VERCEL_AUTOMATION_BYPASS_SECRET en GitHub (Settings → Secrets and variables → Actions) o no es el mismo pase que el de Vercel (Settings → Deployment Protection → Protection Bypass for Automation)."
+            exit 1
+          fi
+          if [ "$CODIGO" = "401" ]; then
+            echo "La aplicación no reconoció la llave del histórico: el secreto HISTORICO_TOKEN de GitHub no es la misma llave que usa en «&token=…»."
+            exit 1
+          fi
+          if [ "$CODIGO" != "200" ]; then
+            echo "No se pudo leer el estado del histórico (la aplicación respondió $CODIGO): no se pide ningún rango a ciegas. Mire https://detekta-app.vercel.app/api/procesos?op=salud y vuelva a lanzar este flujo."
+            exit 1
+          fi
+          # el muro de Vercel puede responder 200 con una página: sin datos legibles no se adivina el rango
+          if ! jq -e . estado.json > /dev/null 2>&1; then
+            echo "El estado del histórico no llegó como datos (¿respondió una página del muro de Vercel?): no se pide ningún rango a ciegas. Vuelva a lanzar este flujo más tarde."
+            exit 1
+          fi
+          DESDE=$(jq -r '.estado.extraccion.desde // empty' estado.json)
+          HASTA=$(jq -r '.estado.extraccion.hasta // empty' estado.json)
+          if [ -n "$DESDE" ] && [ -n "$HASTA" ]; then
+            echo "Se continúa la extracción guardada, de $DESDE a $HASTA."
+          else
+            # el mes de Colombia (UTC-5 todo el año) con la cuenta de decidirRefrescoHistorico, sin depender de la base de zonas horarias
+            DESDE="2024-01"
+            HASTA=$(date -u -d '-5 hours' +%Y-%m)
+            echo "No hay extracción guardada: se empieza una de $DESDE a $HASTA."
+          fi
+          URL="https://detekta-app.vercel.app/api/sync/historico?desde=${DESDE}&hasta=${HASTA}&chain=0"
           fallos=0
           for tramo in $(seq 1 300); do
             CODIGO=$(curl -sS --max-time 300 -o respuesta.json -w '%{http_code}' \
-              -H "x-historico-token: ${HISTORICO_TOKEN}" "$URL" || echo "000")
+              -H "x-historico-token: ${HISTORICO_TOKEN}" -H "x-vercel-protection-bypass: ${VERCEL_AUTOMATION_BYPASS_SECRET}" "$URL" || echo "000")
+            if [ "$CODIGO" = "302" ] || grep -qs "Protected by Vercel Authentication" respuesta.json; then
+              echo "El muro de Vercel no dejó pasar la llamada (respondió $CODIGO, «Protected by Vercel Authentication»): falta el secreto VERCEL_AUTOMATION_BYPASS_SECRET en GitHub (Settings → Secrets and variables → Actions) o no es el mismo pase que el de Vercel (Settings → Deployment Protection → Protection Bypass for Automation)."
+              exit 1
+            fi
             if [ "$CODIGO" = "401" ]; then
               echo "La aplicación no reconoció la llave del histórico: el secreto HISTORICO_TOKEN de GitHub no es la misma llave que usa en «&token=…»."
+              exit 1
+            fi
+            # otro rango guardado entre la lectura y la llamada: reintentar no lo arregla
+            if [ "$CODIGO" = "409" ]; then
+              echo "$(jq -r '.error' respuesta.json) $(jq -r '.que_hacer' respuesta.json)"
               exit 1
             fi
             if [ "$CODIGO" != "200" ]; then
               fallos=$((fallos + 1))
               echo "Tramo $tramo: la aplicación respondió $CODIGO (fallo $fallos de 5 seguidos). Se reintenta en 30 s."
-              if [ "$fallos" -ge 5 ]; then echo "Cinco fallos seguidos: se detiene. Mire https://portafolio-estrategico.vercel.app/api/procesos?op=salud"; exit 1; fi
+              if [ "$fallos" -ge 5 ]; then echo "Cinco fallos seguidos: se detiene. Mire https://detekta-app.vercel.app/api/procesos?op=salud"; exit 1; fi
               sleep 30
               continue
             fi

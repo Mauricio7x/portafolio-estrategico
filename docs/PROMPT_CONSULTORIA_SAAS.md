@@ -63,7 +63,7 @@ ejecutado. Un argumento sin ancla en el repositorio es una opinión, y aquí las
 | Compatibilidad | 18 `rewrites` + 3 `redirects` en `vercel.json`, más un cron diario a `/api/sync` |
 | `maxDuration` | 300 s en `api/procesos.js`; 60 s en los otros cinco |
 | Autorización | **Un único token compartido** (`HISTORICO_TOKEN`), 12 puntos de llamada, `lib/auth.js`. Header `x-historico-token` o `?token=`; el header gana |
-| Secreto | **No hay secreto.** `const TOKEN = "MiExtraccion2025"` está integrado en `public/app.js`, `public/onboarding.js` y `public/pliego.js`, a la vista de cualquiera. La protección real es Vercel Password Protection + un gate de clave en el cliente |
+| Secreto | **No hay secreto.** `const TOKEN = "[llave retirada el 17-oct-2026]"` está integrado en `public/app.js`, `public/onboarding.js` y `public/pliego.js`, a la vista de cualquiera. La protección real es Vercel Password Protection + un gate de clave en el cliente |
 | Cuentas de usuario | **No existen.** Ni registro, ni sesión, ni contraseña por usuario, ni recuperación |
 | Pagos / facturación | **No existe nada.** Cero código de pasarela, suscripción o facturación |
 | Ramas | **Una sola: `main`.** Decisión del dueño (21-ago-2026, reafirmada al encargar esta consultoría): todo se trabaja, se commitea y se fusiona en `main`. No hay ramas de trabajo, ni PR de larga vida, ni gitflow |

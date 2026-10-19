@@ -1482,8 +1482,37 @@ function invocar(handler, urlStr, headers = {}, opciones = {}) {
     Promise.resolve(handler(req, res)).catch(reject);
   });
 }
+/* La fila que una prueba necesita se busca en TODAS las páginas del listado (16-oct-2026).
+   Las seis búsquedas que miraban solo la primera página (100 filas) caían con el calendario:
+   el generador añade 9 filas EXTRA sin cierre por cada mes transcurrido del año, y desde
+   noviembre (99 EXTRA más las urgentes de manifestación) los procesos con cierre quedaban en la
+   página 2. Recorre en el mismo orden que sirve el listado, así que dos búsquedas con el mismo
+   predicado siguen eligiendo la misma fila. */
+async function filaDelListado(handler, urlStr, headers, predicado) {
+  for (let pagina = 1; pagina <= 50; pagina++) {
+    const r = await invocar(handler, `${urlStr}&pagina=${pagina}`, headers);
+    const filas = (r.cuerpo && r.cuerpo.resultados) || [];
+    const fila = filas.find(predicado);
+    if (fila) return fila;
+    if (!filas.length || pagina * (r.cuerpo.por_pagina || filas.length) >= (r.cuerpo.total || 0)) return undefined;
+  }
+  return undefined;
+}
 const invocarPost = (handler, urlStr, body, headers = {}) =>
   invocar(handler, urlStr, { "content-type": "application/json", ...headers }, { metodo: "POST", body });
+
+/* EL SUMIDERO DE «app.local» (18-oct-2026, lib/autollamada). `invocar` llama a los handlers con
+   `host: app.local`, una dirección que no existe; en producción la llamada del servidor a sí
+   mismo va a la dirección del despliegue, que responde. Desde que esa llamada anota cómo le fue
+   y op=salud lo dice, la suite necesita ese mismo mundo: lo que va a «https://app.local/» recibe
+   un 200 con «{}», como la aplicación que acepta la tanda, SIN ejecutar nada (antes la llamada
+   fallaba en silencio y tampoco ejecutaba nada). Los fallos —el muro, la credencial, la red,
+   la tanda que tarda— los ejercita el bloque «autollamada del servidor» con servidores propios. */
+const fetchDeVerdad = globalThis.fetch;
+const SUMIDERO_APP_LOCAL = /^https:\/\/app\.local\//;
+globalThis.fetch = (u, o) => (SUMIDERO_APP_LOCAL.test(String(u && u.url ? u.url : u))
+  ? Promise.resolve(new Response("{}", { status: 200, headers: { "content-type": "application/json" } }))
+  : fetchDeVerdad(u, o));
 
 const escuchar = (server) => new Promise((r) => server.listen(0, "127.0.0.1", () => r(server.address().port)));
 
@@ -1840,6 +1869,37 @@ async function main() {
       (e) => { assert.ok(!/PLAZO/.test(e.message), "redis.get con un servidor que acepta y no responde seguía pendiente: falta el tiempo de espera"); return /abort|timeout/i.test(e.message); },
       "redis.get tiene que lanzar por tiempo de espera");
     assert.ok(Date.now() - t < 1000, "…y en menos de un segundo");
+    /* ¿QUÉ COMANDO PASÓ DE 10 s? (18-oct-2026): el tiempo agotado dice el verbo, la clave legible y el
+       tamaño, conserva al principio el texto de siempre y no lleva ningún valor, correo ni huella */
+    {
+      const rT = crearRedisT({ url: "http://x", token: "t", fetchImpl: colgado, timeoutMs: 50 });
+      const eSet = await rT.set("licitaciones:activo:2026-03:chunk:7", "valor-secreto-" + "x".repeat(3000)).catch((e) => e);
+      assert.ok(/^The operation was aborted due to timeout \(Upstash: SET licitaciones:activo:2026-03:chunk:7, 3 KB, \d+ ms\)$/.test(eSet.message), eSet.message);
+      assert.strictEqual(eSet.name, "TimeoutError", "el error conserva su nombre");
+      assert.ok(!eSet.message.includes("valor-secreto"), "el error no lleva el valor");
+      const eCorreo = await rT.get("intentos:correo:duenio@ejemplo.co:2905").catch((e) => e);
+      assert.ok(/GET intentos:correo:…:2905/.test(eCorreo.message) && !/duenio|ejemplo/.test(eCorreo.message), `el correo de la clave no sale: ${eCorreo.message}`);
+      const eHuella = await rT.get("sesion:9f86d081884c7d659a2feaa0c55ad015").catch((e) => e);
+      assert.ok(/GET sesion:…/.test(eHuella.message) && !/9f86d0/.test(eHuella.message), eHuella.message);
+      // las claves reales del cupo de altas y de los intentos de entrada llevan la IP; un NIT o una cédula, más de 5 cifras
+      const eIp6 = await rT.get("cuota:alta:2800:484:cafe:1234:5678:beef:dead:face:497874").catch((e) => e);
+      assert.ok(/GET cuota:alta:…/.test(eIp6.message) && !/2800|cafe|beef|face/.test(eIp6.message), `la IPv6 de la clave no sale: ${eIp6.message}`);
+      const eIp4 = await rT.get("intentos:entrar-ip:10.0.9.2").catch((e) => e);
+      assert.ok(!/10\.0\.9\.2/.test(eIp4.message), `la IPv4 de la clave no sale: ${eIp4.message}`);
+      const eNit = await rT.get("perfil:nit:79123456").catch((e) => e);
+      assert.ok(/GET perfil:nit:…/.test(eNit.message) && !/79123456/.test(eNit.message), `el NIT de la clave no sale: ${eNit.message}`);
+      const eScan = await rT.scan("licitaciones:activo:*").catch((e) => e);
+      assert.ok(/\(Upstash: SCAN de licitaciones:activo:\*, /.test(eScan.message), eScan.message);
+      const eMget = await rT.mget(["sync:meta", "sync:progreso"]).catch((e) => e);
+      assert.ok(/\(Upstash: MGET de 2 claves \(la primera, sync:meta\), /.test(eMget.message), eMget.message);
+      // el tiempo agotado leyendo la respuesta tampoco es «respuesta vacía»
+      const cuerpoColgado = async (u, o) => ({ ok: true, status: 200, text: () => new Promise((_, rej) => o.signal.addEventListener("abort", () => rej(o.signal.reason))) });
+      const eCuerpo = await crearRedisT({ url: "http://x", token: "t", fetchImpl: cuerpoColgado, timeoutMs: 50 }).get("sync:meta").catch((e) => e);
+      assert.ok(/aborted due to timeout \(Upstash: GET sync:meta, /.test(eCuerpo.message), eCuerpo.message);
+      // un fallo que no es tiempo agotado sigue igual
+      const eRed = await crearRedisT({ url: "http://x", token: "t", fetchImpl: async () => { throw new Error("fetch failed"); } }).get("k").catch((e) => e);
+      assert.strictEqual(eRed.message, "fetch failed");
+    }
     t = Date.now();
     await assert.rejects(() => conPlazo(crearClienteT({ appToken: "", fetchImpl: colgado, dormir: async () => {}, timeoutMs: 50 }).pedir({ "$limit": "1" }, "colgado"), 2000),
       (e) => { assert.ok(!/PLAZO/.test(e.message), "socrata.pedir con un servidor que acepta y no responde seguía pendiente: falta el tiempo de espera"); return /agotados 5 intentos/.test(e.message); },
@@ -3632,6 +3692,12 @@ async function main() {
     assert.strictEqual(Cm.horaEnLinea("Manifestación de interés 14/09/2026"), null, "sin hora, null: la ausencia no se rellena");
     // los demás hitos NO cambian de criterio
     assert.strictEqual(Cm.extraerHitos("Cierre: presentación de ofertas 25/09/2026 al 30/09/2026").hitos[0].fecha, "2026-09-25", "el resto de hitos sigue tomando la primera fecha");
+    /* UN EJEMPLO ENTRE CORCHETES NO ES UN HITO (18-oct-2026): el de la plantilla entraba como
+       adjudicación de 2020 y tapaba la fecha real. Contra el árbol anterior, sale 2020-02-10. */
+    const conEjemplo = Cm.extraerHitos("[Por ejemplo, si la audiencia de adjudicación se realiza el 10 de febrero de 2020, el plazo empieza a contar desde el día siguiente.] La audiencia de adjudicación se realizará el 25 de noviembre de 2026.").hitos;
+    assert.deepStrictEqual(conEjemplo.map((h) => [h.id, h.fecha]), [["adjudicacion", "2026-11-25"]], `el ejemplo no entra y la fecha real sí: ${JSON.stringify(conEjemplo)}`);
+    assert.strictEqual(Cm.extraerHitos("[Fecha de cierre: 30 de noviembre de 2026] Cierre del proceso").hitos[0].fecha, "2026-11-30", "un corchete que no es ejemplo se sigue leyendo");
+    assert.strictEqual(Cm.extraerHitos("[Ejemplo: cierre el 5 de marzo de 2019]").hitos.length, 0, "«Ejemplo:» entre corchetes tampoco es un hito");
 
     /* (5) «VENCIDA» ES UNA CONSTATACIÓN, NUNCA UNA DEDUCCIÓN — y la HORA decide
        el día del vencimiento cuando el pliego la publica. */
@@ -3923,6 +3989,564 @@ async function main() {
     console.log(`· unidad modalidades: ${casos.length} clasificaciones correctas (lista blanca)`);
   }
 
+  /* unidad: base nacional de obra — limpieza de ofertas (scripts/base_obra, solo mide) */
+  bqBaseObra: { if (!corre("unidad base de obra")) break bqBaseObra;
+    const lb = require("../scripts/base_obra/limpieza");
+    // «sin dato» ≠ cero: la ausencia se descarta ANTES de convertir
+    for (const v of [null, undefined, "", "  ", "No Definido", "abc", "1.2.3"]) assert.strictEqual(lb.numeroONull(v), null, `numeroONull(${JSON.stringify(v)}) debía ser null`);
+    assert.strictEqual(lb.numeroONull("0"), 0, "un 0 publicado es un dato, no una ausencia");
+    assert.strictEqual(lb.clasificarModalidad("Seleccion Abreviada Menor Cuantia Sin Manifestacion Interes"), "menor_cuantia");
+    assert.strictEqual(lb.clasificarModalidad("Licitación pública Obra Publica"), "licitacion");
+    assert.strictEqual(lb.clasificarModalidad("Mínima cuantía"), "minima", "mínima va SEPARADA");
+    assert.strictEqual(lb.clasificarModalidad("Contratación directa"), "otra");
+    assert.strictEqual(lb.clasificarModalidad(undefined), "otra", "desconocida es inerte");
+    const of = (nom, cod, v) => ({ nombre_proveedor: nom, c_digo_proveedor: cod, nit_del_proveedor: "000000000", valor_de_la_oferta: v });
+    const r = lb.limpiarOfertas([of("A", "1", "950"), of("A", "1", "950"), of("Confidencial", "", "0"), of("B", "2", "0"),
+      of("C", "3", ""), of("D", "4", "1001"), of("E", "5", "499"), of("F", "6", "900"), of("G", "7", "920")], "1000");
+    assert.deepStrictEqual(r.excluidas, { repetidas: 0, confidencial: 1, cero: 1, no_numerico: 1, sin_proveedor: 0, duplicada: 1, duplicada_entre_datasets: 0, sobre_base: 1, bajo_50: 1, rescatada_bajo_50: 0, sin_precio_base: 0 });
+    assert.strictEqual(lb.limpiarOfertas([of("A", "1", "900"), of("A", "1", "9000")], "1000").lote_sospechoso, false, "un valor fuera de rango no vuelve lote al proceso");
+    const misma = lb.limpiarOfertas([{ nombre_proveedor: "X", c_digo_proveedor: "77", nit_del_proveedor: "900111", valor_de_la_oferta: "900" },
+      { nombre_proveedor: "X", c_digo_proveedor: "", nit_del_proveedor: "900111", valor_de_la_oferta: "900" }], "1000");
+    assert.strictEqual(misma.validas.length, 1, "la misma empresa con y sin código es UN oferente");
+    // medido en wi7w (17-oct-2026): la misma empresa con dos códigos de SECOP, NIT «0000000» y el mismo valor
+    const dorf = lb.limpiarOfertas([{ nombre_proveedor: "DORF", c_digo_proveedor: "722966108", nit_del_proveedor: "0000000", valor_de_la_oferta: "900", n: "798" },
+      { nombre_proveedor: "Dorf", c_digo_proveedor: "728473109", nit_del_proveedor: "0000000", valor_de_la_oferta: "900", n: "798" }], "1000");
+    assert.strictEqual(dorf.validas.length, 1, "dos cuentas de SECOP de la misma empresa son UN oferente");
+    assert.strictEqual(dorf.excluidas.repetidas, 1594, "las filas que la consulta agrupada juntó se cuentan como réplicas, no como ofertas");
+    const puente = lb.limpiarOfertas([{ nombre_proveedor: "OBRAS SAS", nit_del_proveedor: "900111222", valor_de_la_oferta: "900" },
+      { nombre_proveedor: "No Definido", nit_del_proveedor: "900.111.222", valor_de_la_oferta: "900" }], "1000");
+    assert.strictEqual(puente.validas.length, 1, "el NIT une la fila con nombre y la que no lo trae");
+    const porNombre = lb.limpiarOfertas([{ nombre_proveedor: "CONSORCIO VIAS 1", nit_del_proveedor: "901222333", valor_de_la_oferta: "900" },
+      { nombre_proveedor: "Consorcio Vías 1", nit_del_proveedor: "No Definido", valor_de_la_oferta: "900" }], "1000");
+    assert.strictEqual(porNombre.validas.length, 1, "el nombre une la fila con NIT y la que trae «No Definido»");
+    assert.strictEqual(lb.nitValido("0000000"), null); assert.strictEqual(lb.nitValido("CONSORCIO SED COLEGIOS 18"), null);
+    assert.strictEqual(lb.lotePorPrecioBase([{ precio_base: "100" }, { precio_base: "100" }, { precio_base: "" }]), false, "filas repetidas con el mismo precio son fases, no lotes");
+    assert.strictEqual(lb.lotePorPrecioBase([{ precio_base: "100" }, { precio_base: "250" }]), true, "dos precios base en un portafolio = lotes");
+    assert.deepStrictEqual(r.validas.map((o) => o.valor), [950, 900, 920]);
+    assert.strictEqual(r.lote_sospechoso, false);
+    assert.strictEqual(lb.limpiarOfertas([of("A", "1", "900"), of("A", "1", "800")], "1000").lote_sospechoso, true, "un proveedor con dos valores es lote");
+    const sinBase = lb.limpiarOfertas([of("A", "1", "900")], null);
+    assert.strictEqual(sinBase.validas.length, 0); assert.strictEqual(sinBase.excluidas.sin_precio_base, 1, "sin precio base nada se juzga en %");
+    const st = lb.estadisticas([1, 2, 3, 4]);
+    assert.strictEqual(st.mediana, 2.5, "mediana con número PAR = promedio de los dos centrales");
+    assert.ok(Math.abs(st.sigma_pob - Math.sqrt(1.25)) < 1e-12 && Math.abs(st.sigma_muestral - Math.sqrt(5 / 3)) < 1e-12, "las dos σ");
+    assert.strictEqual(lb.estadisticas([7]).sigma_muestral, null, "con 1 oferta no hay σ muestral");
+    assert.strictEqual(lb.competencia(3), "real"); assert.strictEqual(lb.competencia(2), "baja"); assert.strictEqual(lb.competencia(0), null);
+    const fila = lb.elegirFila([{ adjudicado: "No", id_del_proceso: "Z" }, { adjudicado: "Si", valor_total_adjudicacion: "", id_del_proceso: "A" },
+      { adjudicado: "Si", valor_total_adjudicacion: "10", fecha_adjudicacion: "2025-01-01", id_del_proceso: "B" }]);
+    assert.strictEqual(lb.elegirFila([{ adjudicado: "Si", id_del_proceso: "CO1.REQ.999" }, { adjudicado: "Si", id_del_proceso: "CO1.REQ.1000" }]).id_del_proceso,
+      "CO1.REQ.1000", "el desempate compara el número, no el texto");
+    assert.strictEqual(fila.id_del_proceso, "B", "regla de fila: adjudicada, con valor, más reciente");
+    // el almacén con tope propio (el dueño: que nunca se pasen los topes gratis de R2); Cloudflare no corta el gasto
+    const alm = require("../scripts/base_obra/almacen");
+    const MBb = alm.MB, base = { opsMes: { a: 0, b: 0 }, opsNecesarias: { a: 3, b: 0 }, topeBytes: 4000 * MBb };
+    assert.strictEqual(alm.decidirSubida({ ...base, usadoBytes: null, nuevosBytes: 1 }).ok, false, "lo ocupado sin medir NO es vacío");
+    assert.strictEqual(alm.decidirSubida({ ...base, usadoBytes: 0, nuevosBytes: 1, opsMes: null }).ok, false, "el registro del mes sin leer no es cero");
+    assert.strictEqual(alm.decidirSubida({ ...base, usadoBytes: 3900 * MBb, nuevosBytes: 100 * MBb }).ok, true, "justo en el tope se sube");
+    assert.strictEqual(alm.decidirSubida({ ...base, usadoBytes: 3900 * MBb, nuevosBytes: 100 * MBb + 1 }).ok, false, "un byte sobre el tope no se sube");
+    assert.strictEqual(alm.decidirSubida({ ...base, usadoBytes: 3900 * MBb, nuevosBytes: 150 * MBb, reemplazaBytes: 60 * MBb }).ok, true, "lo que se sobrescribe no se cuenta dos veces");
+    for (const malo of [{ nuevosBytes: undefined }, { nuevosBytes: 1, reemplazaBytes: NaN }, { nuevosBytes: 1, reemplazaBytes: 5 }, { nuevosBytes: 1, opsNecesarias: { a: NaN, b: 0 } }, { nuevosBytes: 1, opsMes: { a: -1e9, b: 0 } }])
+      assert.strictEqual(alm.decidirSubida({ ...base, usadoBytes: 0, ...malo }).ok, false, `entrada ilegible debía negar: ${JSON.stringify(malo)}`);
+    assert.strictEqual(alm.decidirSubida({ ...base, usadoBytes: 0, nuevosBytes: 1, topeBytes: (alm.TOPE_BASE_MB_MAX + 1) * MBb }).ok, false, "la base no puede quedarse con la parte de la copia nocturna");
+    assert.strictEqual(alm.decidirSubida({ ...base, usadoBytes: 0, nuevosBytes: 1, topeBytes: NaN }).ok, false, "un BASE_TOPE_MB ilegible no sube");
+    assert.strictEqual(alm.decidirSubida({ ...base, usadoBytes: 0, nuevosBytes: 1, opsMes: { a: alm.TOPES_OPS_MES.a - 2, b: 0 } }).ok, false, "operaciones clase A sobre el tope del mes");
+    assert.strictEqual(alm.TOPE_CUENTA_MB, 9000, "el dueño fijó el tope de la cuenta en 9.000 MB (17-oct-2026): 10 % de margen bajo los 10 GB gratis");
+    assert.strictEqual(alm.TOPE_BASE_MB_MAX + alm.COPIA_TOPE_MB, alm.TOPE_CUENTA_MB, "base + copia = tope de la cuenta");
+    assert.ok(alm.TOPE_CUENTA_MB * MBb < 10e9, "el tope de la cuenta queda bajo los 10 GB gratis en la lectura menor (10^9)");
+    assert.strictEqual(alm.topeBaseBytes({}), alm.TOPE_BASE_MB_MAX * MBb);
+    for (const v of ["mucho", "0x1000", "0b11", "1e4", "-5"]) assert.ok(Number.isNaN(alm.topeBaseBytes({ BASE_TOPE_MB: v })), `BASE_TOPE_MB «${v}» debía ser ilegible`);
+    assert.ok(alm.TOPES_OPS_MES.a <= alm.GRATIS_OPS_MES.a / 10 && alm.TOPES_OPS_MES.b <= alm.GRATIS_OPS_MES.b / 10, "la base gasta como mucho el 10 % de las operaciones gratis");
+    assert.strictEqual(alm.decodXml("R&amp;amp;D &lt;x&gt; &#65;"), "R&amp;D <x> A", "el XML se decodifica en UNA pasada");
+    // ida y vuelta contra un almacén S3 falso con ETag y PUT condicional (R2 lo evalúa atómicamente)
+    {
+      const http = require("http"), osB = require("os"), fsB = require("fs"), pathB = require("path");
+      const guardado = new Map(); let etagN = 0; const ops = { A: 0, B: 0 }; const putsDatos = [];
+      let modo = {};
+      const srv = http.createServer((req, res) => {
+        const u = new URL(req.url, "http://x"); const partes = u.pathname.split("/").filter(Boolean); const clave = decodeURIComponent(partes.slice(1).join("/"));
+        if (!/AWS4-HMAC-SHA256 Credential=LLAVE\//.test(req.headers.authorization || "")) { res.writeHead(403); return res.end("<Error>sin firma</Error>"); }
+        if (req.method === "GET" && u.searchParams.get("list-type") === "2") {
+          ops.A++;
+          const responder = () => {
+            if (modo.html) { res.writeHead(200, { "content-type": "text/html" }); return res.end("<html>muro</html>"); }
+            if (modo.bucle) { res.writeHead(200); return res.end("<ListBucketResult><IsTruncated>true</IsTruncated><NextContinuationToken>T</NextContinuationToken></ListBucketResult>"); }
+            res.writeHead(200, { "content-type": "application/xml" });
+            res.end(`<ListBucketResult><IsTruncated>false</IsTruncated>${[...guardado].map(([k, v]) => `<Contents><Key>${k.replace(/&/g, "&amp;").replace(/</g, "&lt;")}</Key><LastModified>${v.fecha}</LastModified><Size>${v.buf.length}</Size></Contents>`).join("")}</ListBucketResult>`);
+          };
+          return modo.retrasoLista ? setTimeout(responder, modo.retrasoLista) : responder();
+        }
+        if (req.method === "GET") { ops.B++; const v = guardado.get(clave); if (!v) { res.writeHead(404); return res.end(); } res.writeHead(200, { etag: v.etag }); return res.end(v.buf); }
+        if (req.method === "PUT") {
+          ops.A++; const tr = []; req.on("data", (ch) => tr.push(ch)); req.on("end", () => {
+            const v = guardado.get(clave);
+            if (req.headers["if-none-match"] === "*" && v) { res.writeHead(412); return res.end(); }
+            if (req.headers["if-match"] && (modo.rechazaIfMatch || !v || v.etag !== req.headers["if-match"])) { res.writeHead(412); return res.end(); }
+            if (!clave.startsWith("_cuota/")) { putsDatos.push({ clave, clase: req.headers["x-amz-storage-class"] }); if (modo.fallaDatos) { res.writeHead(500); return res.end(); } }
+            const etag = `"e${++etagN}"`; guardado.set(clave, { buf: Buffer.concat(tr), etag, fecha: new Date().toISOString() }); res.writeHead(200, { etag }); res.end();
+          }); return;
+        }
+        res.writeHead(405); res.end();
+      });
+      await new Promise((ok) => srv.listen(0, "127.0.0.1", ok));
+      const envB = { OBJETOS_ENDPOINT: `http://127.0.0.1:${srv.address().port}`, OBJETOS_BUCKET: "detekta-base", OBJETOS_ACCESS_KEY_ID: "LLAVE", OBJETOS_SECRET_ACCESS_KEY: "SECRETO", BASE_TOPE_MB: "0.01" };
+      const dirB = fsB.mkdtempSync(pathB.join(osB.tmpdir(), "base-obra-"));
+      const regMes = () => JSON.parse(guardado.get(alm.CLAVE_REGISTRO(new Date().toISOString().slice(0, 7))).buf.toString());
+      try {
+        fsB.writeFileSync(pathB.join(dirB, "resumen.json"), "x".repeat(600));
+        const r1 = await alm.subir(dirB, "corte/2026-10-17", envB);
+        assert.deepStrictEqual(r1.subidos, ["corte/2026-10-17/resumen.json"]);
+        assert.ok(putsDatos.every((x) => x.clase === "STANDARD"), "cada PUT de datos va en la clase STANDARD (la única con gratis)");
+        assert.ok(regMes().a >= ops.A && regMes().b >= ops.B, `el registro cuenta TODO lo gastado (registro ${JSON.stringify(regMes())}, servidor ${JSON.stringify(ops)})`);
+        // un tope que se pasaría: frena con CERO datos escritos y anota el rechazo
+        const datosAntes = putsDatos.length;
+        fsB.writeFileSync(pathB.join(dirB, "grande.json"), "y".repeat(6000));
+        await assert.rejects(alm.subir(dirB, "corte/2026-11-17", envB), /NO SE SUBIÓ: la subida dejaría/);
+        assert.strictEqual(putsDatos.length, datosAntes, "frenada = NI UN byte de datos escrito");
+        assert.ok(regMes().a >= ops.A && regMes().b >= ops.B, "el rechazo también queda anotado");
+        fsB.rmSync(pathB.join(dirB, "grande.json"));
+        // el muro del edge (200 con HTML) y un token repetido no son «vacío»
+        modo = { html: true }; await assert.rejects(alm.subir(dirB, "corte/x", envB), /listado ilegible/); 
+        modo = { bucle: true }; await assert.rejects(alm.subir(dirB, "corte/x", envB), /token repetido/);
+        modo = {};
+        // un registro negativo o borrado con objetos de este mes no se toma como cero
+        const kReg = alm.CLAVE_REGISTRO(new Date().toISOString().slice(0, 7));
+        const regBueno = guardado.get(kReg);
+        const opsAntesIlegible = { ...ops };   // un registro ilegible o borrado no se puede sumar: margen declarado
+        guardado.set(kReg, { ...regBueno, buf: Buffer.from('{"a":-5000000,"b":1}') });
+        await assert.rejects(alm.subir(dirB, "corte/x", envB), /negativas/);
+        guardado.delete(kReg);
+        await assert.rejects(alm.subir(dirB, "corte/x", envB), /falta el registro del mes pero hay/);
+        guardado.set(kReg, regBueno);
+        const sinAnotar = { A: ops.A - opsAntesIlegible.A, B: ops.B - opsAntesIlegible.B };
+        assert.ok(sinAnotar.A <= 2 && sinAnotar.B <= 2, `el margen sin anotar de dos corridas fallidas es de pocas operaciones (${JSON.stringify(sinAnotar)})`);
+        // dos corridas a la vez: el PUT condicional deja pasar UNA y la otra aborta
+        modo = { retrasoLista: 80 };
+        const dos = await Promise.allSettled([alm.subir(dirB, "corte/a", envB), alm.subir(dirB, "corte/b", envB)]);
+        assert.deepStrictEqual(dos.map((x) => x.status).sort(), ["fulfilled", "rejected"], "dos corridas simultáneas: una sola pasa");
+        assert.match(String(dos.find((x) => x.status === "rejected").reason.message), /otra corrida movió el registro/);
+        modo = {};
+        // R2 real (corrida 39069539949, 17-oct-2026) devolvió 412 al If-Match con el registro SIN cambios:
+        // se relee, la ETag es la misma, y se escribe sin condición (el flujo corre de a uno), sin perder la cuenta
+        modo = { rechazaIfMatch: true };
+        const avisos = []; const logAntes = process.stderr.write.bind(process.stderr);
+        process.stderr.write = (m) => { avisos.push(String(m)); return true; };
+        let rR2;
+        try { rR2 = await alm.subir(dirB, "corte/r2", envB); } finally { process.stderr.write = logAntes; }
+        modo = {};
+        assert.deepStrictEqual(rR2.subidos, ["corte/r2/resumen.json"], "con el If-Match rechazado y el registro sin cambios, la subida pasa");
+        assert.ok(avisos.some((m) => /412 al If-Match con el registro sin cambios/.test(m)), "y deja el aviso con las ETag para diagnosticar");
+        assert.ok(regMes().condicional_rechazado === true && regMes().a >= ops.A - sinAnotar.A, `la escritura sin condición no deja la cuenta corta (registro ${JSON.stringify(regMes())}, servidor ${JSON.stringify(ops)})`);
+        // un fallo a mitad: la reserva ya contaba las operaciones (la cuenta queda DE MÁS, lado seguro)
+        modo = { fallaDatos: true }; await assert.rejects(alm.subir(dirB, "corte/c", envB), /la reserva ya cuenta/); modo = {};
+        assert.ok(regMes().a >= ops.A - sinAnotar.A && regMes().b >= ops.B - sinAnotar.B,
+          `fuera del margen declarado, el registro cuenta TODO: abortos, carrera perdida y fallo a mitad (registro ${JSON.stringify(regMes())}, servidor ${JSON.stringify(ops)}, sin anotar ${JSON.stringify(sinAnotar)})`);
+      } finally { srv.close(); fsB.rmSync(dirB, { recursive: true, force: true }); }
+    }
+    // el flujo que sube a R2: sin pull_request (los secretos no salen), una corrida a la vez, mide antes de bajar
+    {
+      const ymlB = require("fs").readFileSync(require("path").join(__dirname, "..", ".github", "workflows", "base_obra.yml"), "utf8")
+        .split("\n").filter((l) => !/^\s*#/.test(l)).join("\n");
+      assert.ok(!/pull_request/.test(ymlB), "el flujo de la base no corre en pull request: expondría los secretos del almacén");
+      assert.ok(/concurrency:\s*\n\s*group:\s*r2-base-obra\s*\n\s*cancel-in-progress:\s*false/.test(ymlB), "el flujo de la base corre de a uno (concurrency r2-base-obra, sin cancelar la que va)");
+      const iMedir = ymlB.indexOf("almacen.js medir"), iInv = ymlB.indexOf("inventario.js"), iSubir = ymlB.indexOf("almacen.js subir");
+      assert.ok(iMedir > 0 && iInv > iMedir && iSubir > iInv, "orden: medir el almacén → inventario → subir con tope");
+      for (const v of ["OBJETOS_ENDPOINT", "OBJETOS_BUCKET", "OBJETOS_ACCESS_KEY_ID", "OBJETOS_SECRET_ACCESS_KEY"]) assert.ok(ymlB.includes(`secrets.${v}`), `el flujo lee ${v} de los secretos`);
+      assert.ok(!/vercel|upstash|\/api\//i.test(ymlB), "el flujo de la base no toca producción");
+    }
+    // Fase 1: una fila por proceso y sus señales (para revisar, nunca acusan)
+    {
+      const FI = require("../scripts/base_obra/fila");
+      const fase = (o) => ({ id_del_portafolio: "CO1.BDOS.1", modalidad_de_contratacion: "Selección Abreviada de Menor Cuantía", precio_base: "1000",
+        codigo_entidad: "E1", entidad: "ALCALDÍA X", departamento_entidad: "Tolima", ciudad_entidad: "No Definido", numero_de_lotes: "0", ...o });
+      const filas = [fase({ id_del_proceso: "CO1.REQ.9", adjudicado: "Si", fecha_de_publicacion_del: "2026-09-02T00:00:00.000", fecha_de_recepcion_de: "2026-09-07T00:00:00.000",
+          valor_total_adjudicacion: "940", nombre_del_proveedor: "OBRAS SAS", nit_del_proveedor_adjudicado: "900111222", respuestas_al_procedimiento: "3", proveedores_invitados: "10" }),
+        fase({ id_del_proceso: "CO1.REQ.8", adjudicado: "No", fecha_de_publicacion_del: "2026-08-04T00:00:00.000", proveedores_invitados: "0" })];
+      const of = (nom, nit, v) => ({ nombre_proveedor: nom, nit_del_proveedor: nit, valor_de_la_oferta: v });
+      const x = FI.filaDeProceso({ portafolio: "CO1.BDOS.1", filas, ofertas: [of("OBRAS SAS", "900111222", "940"), of("B", "800", "950"), of("C", "No Definido", "960")], lugar: { direcci_n_de_ejecuci_n_del_contrato: "Calle 1\nIbagué\nTolima\nCOLOMBIA" } });
+      assert.strictEqual(x.id_proceso, "CO1.REQ.9", "la fila es la de la fase adjudicada");
+      { // RESCATE BAJO EL 50 % (18-oct-2026): igual a lo adjudicado, contratos SUMADOS ≤ 1,5 veces eso y otra válida en rango
+        const ofR = [of("OBRAS SAS", "900111222", "400"), of("B", "800", "900"), of("C", "700", "950")];
+        const filasR = [fase({ id_del_proceso: "CO1.REQ.9", adjudicado: "Si", valor_total_adjudicacion: "400", nombre_del_proveedor: "OBRAS SAS", nit_del_proveedor_adjudicado: "900111222", respuestas_al_procedimiento: "3" })];
+        const conR = (vc, ofs = ofR) => FI.filaDeProceso({ portafolio: "CO1.BDOS.1", filas: filasR, ofertas: ofs, valoresContrato: vc });
+        const real = conR([400]);   // contrato = lo adjudicado (8 de las 12 de mínima)
+        assert.strictEqual(real.excluidas.rescatada_bajo_50, 1); assert.strictEqual(real.excluidas.bajo_50, 0); assert.strictEqual(real.n_validas, 3);
+        assert.ok(real.oferta_ganadora && real.oferta_ganadora.pct === 0.4 && !real.inconsistencia, "la ganadora rescatada se identifica con su precio real");
+        assert.strictEqual(conR([600]).excluidas.rescatada_bajo_50, 1, "contrato 1,5 veces lo adjudicado (las 4 de mínima con adición): se rescata");
+        assert.strictEqual(conR([601]).excluidas.rescatada_bajo_50, 1, "a un peso del tope, todavía se rescata");
+        assert.strictEqual(conR([300, 300]).excluidas.rescatada_bajo_50, 1, "dos contratos cuya SUMA cabe en el tope: se rescata");
+        // Tibirita CO1.BDOS.8989826: dos LOTES, cada contrato cabe y la suma vale 2 veces lo adjudicado → no
+        for (const vc of [[400, 400], [400, 450], [602], [999], [400, 700]]) assert.strictEqual(conR(vc).excluidas.rescatada_bajo_50, 0, `contratos ${JSON.stringify(vc)} suman más de 1,5 veces lo adjudicado: no se rescata`);
+        // Cúcuta CO1.BDOS.7050304 (contrato al precio base o más) y «sin dato» (sin contratos, ilegible o en cero) → no
+        for (const vc of [[1000], [2348], [400, 1000], [], null, ["No Definido"], [0], ["No Definido", 400], [null, 400], [0, 400]]) {
+          const no = conR(vc);
+          assert.strictEqual(no.excluidas.rescatada_bajo_50, 0, `contratos ${JSON.stringify(vc)}: no se rescata`); assert.strictEqual(no.excluidas.bajo_50, 1);
+          assert.strictEqual(no.oferta_ganadora, null, `contratos ${JSON.stringify(vc)}: sin la oferta, no hay ganadora inventada`);
+        }
+        // sin otra válida en rango (SENA CO1.BDOS.7102769: las dos ofertas al 27,7 %), lo sospechoso es el precio base → no
+        const solas = conR([400], [of("OBRAS SAS", "900111222", "400"), of("B", "800", "390")]);
+        assert.strictEqual(solas.excluidas.rescatada_bajo_50, 0); assert.strictEqual(solas.excluidas.bajo_50, 2); assert.strictEqual(solas.n_validas, 0); assert.strictEqual(solas.excluido, "cero_ofertas_validas");
+        const L2 = require("../scripts/base_obra/limpieza");
+        // a un peso sí (redondeo), a dos no, por encima o por debajo de lo adjudicado
+        assert.strictEqual(L2.limpiarOfertas(ofR, "1000", { valor_adjudicado: 401, valores_contrato: [401] }).excluidas.rescatada_bajo_50, 1);
+        for (const adj of [402, 398]) assert.strictEqual(L2.limpiarOfertas(ofR, "1000", { valor_adjudicado: adj, valores_contrato: [adj] }).excluidas.rescatada_bajo_50, 0, `oferta 400, adjudicado ${adj}: no`);
+        // el tope a escala real: adjudicado $26.000.000 → la suma puede llegar a $39.000.001, no a $39.000.002
+        const ofG = [of("OBRAS SAS", "900111222", "26000000"), of("B", "800", "90000000")];
+        assert.strictEqual(L2.limpiarOfertas(ofG, "100000000", { valor_adjudicado: 26000000, valores_contrato: [39000001] }).excluidas.rescatada_bajo_50, 1);
+        assert.strictEqual(L2.limpiarOfertas(ofG, "100000000", { valor_adjudicado: 26000000, valores_contrato: [39000002] }).excluidas.rescatada_bajo_50, 0);
+        // el rescate es SOLO bajo el 50 %: una oferta sobre el precio base sigue fuera aunque coincida con lo adjudicado y su contrato
+        const sobre = L2.limpiarOfertas([of("OBRAS SAS", "900111222", "400000"), of("B", "800", "900")], "1000", { valor_adjudicado: 400000, valores_contrato: [400000] });
+        assert.strictEqual(sobre.excluidas.sobre_base, 1); assert.ok(!sobre.validas.some((o) => o.valor === 400000));
+        // base.js junta TODOS los contratos del proceso (se EJECUTA la función), con el ilegible como null
+        const BJ = require("../scripts/base_obra/base");
+        const jc = BJ.juntarContratos([{ proceso_de_compra: "CO1.BDOS.8989826", valor_del_contrato: "100000000" }, { proceso_de_compra: "CO1.BDOS.8989826", valor_del_contrato: "99755678" },
+          { proceso_de_compra: "CO1.BDOS.2", valor_del_contrato: "No Definido" }, { valor_del_contrato: "5" }]);
+        assert.deepStrictEqual(jc.get("CO1.BDOS.8989826"), [100000000, 99755678]); assert.deepStrictEqual(jc.get("CO1.BDOS.2"), [null]); assert.strictEqual(jc.size, 2);
+      }
+      assert.strictEqual(x.plazo_dias, null, "sin fila de «observaciones» en p6dx el plazo es null, no el de la fase de ofertas");
+      assert.strictEqual(x.plazo_oferta_dias, 5, "el plazo de la fase de ofertas se guarda aparte");
+      const conObs = FI.filaDeProceso({ portafolio: "CO1.BDOS.1", filas: [filas[0], fase({ fase: "Presentación de observaciones", adjudicado: "No", fecha_de_publicacion_del: "2026-08-04T00:00:00.000" })], ofertas: [] });
+      assert.strictEqual(conObs.plazo_dias, 34, "licitación y menor cuantía: desde el prepliego (observaciones) hasta el cierre");
+      const minimaP = FI.filaDeProceso({ portafolio: "P", filas: [fase({ modalidad_de_contratacion: "Mínima cuantía", adjudicado: "Si", fecha_de_publicacion_del: "2026-09-01T00:00:00.000", fecha_de_recepcion_de: "2026-09-03T00:00:00.000" })], ofertas: [] });
+      assert.strictEqual(minimaP.plazo_dias, 2, "mínima: una sola fase, de su publicación al cierre");
+      assert.strictEqual(x.ciudad_entidad, null, "«No Definido» es sin dato, no una ciudad");
+      assert.strictEqual(x.municipio_ejecucion, "Ibagué"); assert.strictEqual(x.ubicacion_fuente, "direccion_del_contrato");
+      assert.strictEqual(x.pct_adjudicado, 0.94); assert.strictEqual(x.n_validas, 3); assert.strictEqual(x.competencia, "real");
+      assert.deepStrictEqual(x.oferta_ganadora, { valor: 940, pct: 0.94, proveedor: "n:900111222" }, "la oferta del ganador se halla por NIT y guarda quién es");
+      assert.strictEqual(x.interesados, 10, "interesados = el máximo de invitados entre las fases");
+      assert.ok(!x.ofertas_validas.some((o) => "fila" in o), "la base no guarda la fila cruda de la oferta");
+      const nadie = FI.filaDeProceso({ portafolio: "CO1.BDOS.1", filas: [fase({ adjudicado: "Si", proveedores_invitados: "" })], ofertas: [of("A", "900111222", "900")] });
+      assert.strictEqual(nadie.interesados, null, "sin invitados publicados no hay «0 interesados»");
+      assert.strictEqual(nadie.competencia, "baja"); assert.strictEqual(nadie.plazo_dias, null, "sin fechas no hay plazo");
+      const lotes = FI.filaDeProceso({ portafolio: "CO1.BDOS.1", filas: [fase({ adjudicado: "Si", numero_de_lotes: "3" })], ofertas: [of("A", "900111222", "900")] });
+      assert.strictEqual(lotes.excluido, "lote_numero_de_lotes"); assert.strictEqual(lotes.competencia, null, "un excluido no recibe etiqueta de competencia");
+      const noAdj = FI.filaDeProceso({ portafolio: "CO1.BDOS.1", filas: [fase({ adjudicado: "No" })], ofertas: [] });
+      assert.strictEqual(noAdj.excluido, "no_adjudicado");
+      // señales: umbral de plazo MEDIDO (percentil 10) y ganador repetido por código de entidad
+      assert.strictEqual(FI.percentil([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], 0.1), 2);
+      assert.strictEqual(FI.percentil([null, undefined], 0.1), null, "sin datos no hay percentil");
+      const mk = (i, o) => ({ portafolio: "P" + i, adjudicado: true, modalidad: "menor_cuantia", codigo_entidad: "E1", ganador_id: "n:1", plazo_dias: 10 + i, n_validas: 1, pct_adjudicado: 0.995, interesados: 10, competencia: "baja", ...o });
+      const conj = [mk(1), mk(2), mk(3), mk(4, { ganador_id: "n:2", n_validas: 3, competencia: "real", pct_adjudicado: 0.9 }), mk(5, { codigo_entidad: "E2" }), mk(6, { competencia: null, excluido: "lote_p6dx", ganador_id: "n:9" })];
+      FI.senales(conj);
+      assert.strictEqual(conj[0].senales.ganador_repetido, true, "3 victorias del mismo ganador en la misma entidad");
+      assert.strictEqual(conj[4].senales.ganador_repetido, false, "otra entidad no suma");
+      assert.strictEqual(conj[0].senales.adjudicado_99_con_una, true); assert.strictEqual(conj[3].senales.una_oferta, false);
+      assert.strictEqual(conj[0].senales.plazo_corto, true, "plazo bajo el percentil 10 de su modalidad");
+      assert.strictEqual(conj[3].senales.plazo_corto, false, "plazo sobre el percentil 10 no es corto");
+      assert.strictEqual(conj[0].senales.ganador_repetido, true, "EXACTAMENTE 3 victorias ya alcanzan N = 3");
+      assert.strictEqual(conj[5].senales, undefined, "un excluido no recibe señales");
+      assert.strictEqual(FI.senales([mk(1, { modalidad: "licitacion", interesados: null })]) && true, true);
+      // arreglos de la revisión adversaria (17-oct-2026), cada uno con su caso medido
+      for (const n of ["900000000", "9000000000", "111111111", "2222222222", "11111111", "123456789"]) assert.strictEqual(lb.nitValido(n), null, `NIT de relleno «${n}» no identifica`);
+      assert.strictEqual(lb.nitValido("900111222"), "900111222");
+      const amb = lb.limpiarOfertas([{ nombre_proveedor: "CONSORCIO DIKH", nit_del_proveedor: "2222222222", valor_de_la_oferta: "900" },
+        { nombre_proveedor: "CONSORCIO INGENIERIA MEM", nit_del_proveedor: "2222222222", valor_de_la_oferta: "910" }], "1000");
+      assert.strictEqual(amb.lote_sospechoso, false, "un NIT de relleno no junta dos consorcios en un lote falso");
+      const amb2 = lb.limpiarOfertas([{ nombre_proveedor: "UT A", nit_del_proveedor: "901555666", valor_de_la_oferta: "900" },
+        { nombre_proveedor: "UT B", nit_del_proveedor: "901555666", valor_de_la_oferta: "910" }], "1000");
+      assert.strictEqual(amb2.validas.length, 2, "un NIT con dos nombres distintos en el mismo proceso no identifica: cuentan por nombre");
+      assert.strictEqual(amb2.lote_sospechoso, false, "…y por eso no inventa un lote");
+      assert.strictEqual(amb2.proveedores, 2, "dos oferentes, no uno");
+      assert.strictEqual(lb.nombreComparable("ESTRUCTURAS, ARQUITECTURA S.A.S."), lb.nombreComparable("Estructuras; Arquitectura SAS"), "puntuación y S.A.S. no separan al mismo oferente");
+      assert.deepStrictEqual(FI.lugarDeDireccion("CALLE 4 CARRERA 3 ESQUINA\nTolima\nCOLOMBIA"), { municipio: null, departamento: "Tolima" }, "con 3 líneas no hay municipio, solo departamento");
+      const sobre = FI.filaDeProceso({ portafolio: "P", filas: [fase({ adjudicado: "Si", valor_total_adjudicacion: "1000000" })], ofertas: [of("A", "900111222", "900")] });
+      assert.strictEqual(sobre.pct_adjudicado, null); assert.strictEqual(sobre.inconsistencia, "valor_adjudicado_sobre_precio_base", "adjudicar sobre el precio base es inconsistencia, no 100.000 %");
+      const contra = FI.filaDeProceso({ portafolio: "P", filas: [fase({ adjudicado: "Si", valor_total_adjudicacion: "1000", nombre_del_proveedor: "A", nit_del_proveedor_adjudicado: "900111222" })], ofertas: [of("A", "900111222", "530")] });
+      assert.strictEqual(contra.inconsistencia, "valor_adjudicado_distinto_de_la_oferta_ganadora");
+      FI.senales([contra]); assert.strictEqual(contra.senales.adjudicado_99_con_una, null, "un valor adjudicado que contradice la oferta del ganador no decide la señal");
+      const conf = [mk(1, { respuestas_publicadas: 3 }), mk(2, { pct_adjudicado: null }), mk(3, { interesados: 2, respuestas_publicadas: 4, n_validas: 1, interesados_contradictorio: true })];
+      FI.senales(conf);
+      assert.strictEqual(conf[0].senales.una_oferta, null, "1 válida de 3 presentadas no es oferente único");
+      assert.strictEqual(conf[1].senales.adjudicado_99_con_una, null, "sin % adjudicado la señal es «sin dato», no «no»");
+      assert.strictEqual(conf[2].senales.interes_sin_ofertas, null, "interesados menos que respuestas: el campo se contradice");
+      const reEnt = [0, 1, 2].map((i) => mk(10 + i, { ganador_id: "n:900000001", ganador_nit: "900000001", ganador: ["UT A", "UT B", "UT C"][i] }));
+      FI.senales(reEnt); assert.strictEqual(reEnt[0].senales.ganador_repetido, false, "un NIT que gana con 3 nombres distintos en la entidad no es «el mismo ganador»");
+      const tzAntes = process.env.TZ; process.env.TZ = "America/New_York";
+      try { assert.strictEqual(FI.filaDeProceso({ portafolio: "P", filas: [fase({ adjudicado: "Si", fecha_de_publicacion_del: "2026-03-01T00:00:00.000", fecha_de_recepcion_de: "2026-03-15T00:00:00.000" })], ofertas: [] }).plazo_oferta_dias, 14, "el cambio de horario no mueve el plazo"); }
+      finally { if (tzAntes === undefined) delete process.env.TZ; else process.env.TZ = tzAntes; }
+    }
+    // Fase 2: piso por proceso, distribuciones con respaldo, umbral de la alerta por modalidad
+    {
+      const CI = require("../scripts/base_obra/cifras");
+      const ofs = (pcts) => pcts.map((p, i) => ({ proveedor: "n:" + i, nombre: "X" + i, valor: p * 1000, pct: p }));
+      assert.strictEqual(CI.pisoDeProceso({ ofertas_validas: ofs([0.9, 0.95]) }), null, "con menos de 3 válidas no hay piso");
+      const pz = CI.pisoDeProceso({ ofertas_validas: ofs([0.90, 0.92, 0.94, 0.96]), oferta_ganadora: { pct: 0.89 } });
+      assert.ok(Math.abs(pz.mediana - 0.93) < 1e-12 && pz.piso_muestral < pz.piso_pob, "mediana par y la σ muestral deja el piso más abajo");
+      assert.strictEqual(pz.ganador_bajo_piso_muestral, true);
+      assert.strictEqual(CI.pisoDeProceso({ ofertas_validas: ofs([0.9, 0.92, 0.94]) }).ganador_bajo_piso_pob, null, "sin oferta ganadora emparejada: sin dato, no «no»");
+      const ic1 = CI.intervaloMediana([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 500), ic2 = CI.intervaloMediana([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 500);
+      assert.deepStrictEqual(ic1, ic2, "el remuestreo con semilla fija da el mismo intervalo");
+      assert.ok(ic1[0] <= 5.5 && ic1[1] >= 5.5);
+      const filasT = [1, 2, 3, 4, 5, 6].map((v) => ({ modalidad: "menor_cuantia", precio_base: v * 100 }));
+      const cortesT = CI.cortesTerciles(filasT);
+      assert.deepStrictEqual([CI.tercil(cortesT, filasT[0]), CI.tercil(cortesT, filasT[3]), CI.tercil(cortesT, filasT[5])], ["pequeño", "mediano", "grande"]);
+      // un grupo con menos de 30 se apoya en el departamento; si tampoco alcanza, en el país
+      const mkG = (d, n, v) => Array.from({ length: n }, () => ({ modalidad: "menor_cuantia", departamento_ejecucion: d, precio_base: 100, m: v }));
+      const pg = CI.porGrupo([...mkG("Tolima", 5, 0.9), ...mkG("Huila", 40, 0.95)], (x) => x.m, { menor_cuantia: [100, 100] });
+      assert.strictEqual(pg.grupos["menor_cuantia|Tolima|pequeño"].se_apoya_en, "pais", "5 en el grupo y 5 en el departamento: se apoya en el país");
+      assert.strictEqual(pg.grupos["menor_cuantia|Huila|pequeño"].se_apoya_en, "grupo");
+      assert.strictEqual(pg.grupos["menor_cuantia|Tolima|pequeño"].n_grupo, 5, "dice cuántos tenía su grupo");
+      assert.strictEqual(CI.deptoClave("Distrito Capital de Bogotá"), CI.deptoClave("Bogotá D.C."), "Bogotá es una sola");
+      assert.strictEqual(CI.esPersonaNatural("JUAN PÉREZ GÓMEZ"), true); assert.strictEqual(CI.esPersonaNatural("CONSORCIO VÍAS 2026"), false); assert.strictEqual(CI.esPersonaNatural("OBRAS S.A.S."), false);
+      const ua = CI.umbralAlerta([{ oferta_ganadora: { pct: 0.75 }, competencia: "real", modalidad: "minima" }, { oferta_ganadora: { pct: 0.95 }, competencia: "real", modalidad: "licitacion" }]);
+      assert.strictEqual(ua.minima.find((f) => f.corte_pct === 80).todas.de_cada_100, 100, "mínima se mide aparte");
+      assert.strictEqual(ua.licitacion.find((f) => f.corte_pct === 80).todas.de_cada_100, 0, "la ganadora de licitación al 95 % no recibe la alerta del 80 %");
+    }
+    // Fase 2: los 4 métodos del pliego (SAMC-SI-020-2026, pp. 53–56) contra los casos reales del dueño
+    {
+      const ME = require("../scripts/base_obra/metodos");
+      const CI2 = require("../scripts/base_obra/cifras");
+      for (const [t, m] of [[3209.00, "mediana"], [3209.24, "mediana"], [3209.25, "geometrica"], [3209.49, "geometrica"], [3209.50, "aritmetica_baja"], [3349.63, "aritmetica_baja"], [3209.74, "aritmetica_baja"], [3209.75, "menor_valor"], [3213.97, "menor_valor"], [3678.15, "mediana"]])
+        assert.strictEqual(ME.metodoPorTrm(t), m, `TRM ${t} → ${m} (centavos, rango inclusive)`);
+      assert.strictEqual(ME.metodoPorTrm(null), null, "sin TRM no hay método");
+      const ganaCon = (v, m) => ME.primeros(v, m).map((i) => v[i]);
+      const E = [883381572, 912336926, 921837099, 924697981, 925922346, 926361567, 928080331, 929694066, 932960319];
+      assert.deepStrictEqual(ganaCon(E, "menor_valor"), [883381572], "E (menor valor): gana la de $883.381.572, la que adjudicaron");
+      const C = [979021151, 984249295, 992002622, 1003514996];
+      assert.deepStrictEqual(ganaCon(C, "mediana"), [984249295], "C (mediana, número PAR): el máximo va a la inmediatamente por debajo de la mediana — la que puntuó la evaluación");
+      assert.notDeepStrictEqual(ganaCon(C, "mediana"), [1003514996], "…y no la que adjudicó la resolución (la anomalía de C)");
+      assert.deepStrictEqual(ganaCon([10, 20, 30], "mediana"), [20], "mediana con número impar: el valor central");
+      const pz = ME.puntajes([100, 300], "menor_valor");
+      assert.deepStrictEqual(pz, [1, 0.3333333], "menor valor: Vmin/Vi al séptimo decimal");
+      assert.deepStrictEqual(ME.puntajes([100, 1000], "geometrica").map((x) => x >= 0), [true, true], "un puntaje negativo vale cero");
+      const xb = ME.puntajes([90, 100, 110], "aritmetica_baja"); // X̄B = (90 + 100)/2 = 95
+      assert.ok(xb[0] === Math.round((1 - 5 / 95) * 1e7) / 1e7 && xb[1] === Math.round((1 - 5 / 95) * 1e7) / 1e7, "media aritmética baja: las dos ramas a 5 de X̄B empatan");
+      assert.strictEqual(ME.primeros([100, 0], "menor_valor"), null, "un valor no positivo no se puntúa");
+      // simulador y fecha de la TRM
+      assert.deepStrictEqual(CI2.simularProceso([0.95, 0.96, 0.97], 0.90).menor_valor, "gana");
+      assert.strictEqual(CI2.simularProceso([0.95], 0.95).menor_valor, "empata", "el mismo precio empata: lo decide un criterio que los datos no traen");
+      assert.strictEqual(CI2.fechaTrmEstimada("2026-10-08T00:00:00.000"), "2026-10-06", "A: adjudicación jueves → TRM del martes");
+      assert.strictEqual(CI2.fechaTrmEstimada("2026-06-03T00:00:00.000"), "2026-06-01", "C: TRM del lunes 1-jun");
+      assert.strictEqual(CI2.fechaTrmEstimada("2026-10-05T00:00:00.000"), "2026-10-01", "un lunes salta el fin de semana");
+      const serie = [{ desde: "2026-05-30", hasta: "2026-06-01", valor: 3678.15 }];
+      assert.strictEqual(CI2.trmVigente(serie, "2026-06-01"), 3678.15, "la TRM rige hasta su vigencia «hasta»");
+      assert.strictEqual(CI2.trmVigente(serie, "2026-06-02"), null, "fuera de la serie: sin dato, no cero");
+      // arreglos de la revisión adversaria de la Fase 2 (17-oct-2026)
+      const sp = CI2.simularProceso([0.95, 0.96, 0.97], 0.80);
+      assert.strictEqual(sp.menor_valor, "gana"); assert.strictEqual(sp.bajo_piso, true, "al 80 % gana por menor valor pero queda bajo el piso: la entidad le pedirá justificar");
+      assert.strictEqual(CI2.simularProceso([0.95, 0.96, 0.97], 0.955).bajo_piso, false);
+      const ofs2 = (pcts) => pcts.map((q, i) => ({ proveedor: "n:" + i, pct: q }));
+      assert.strictEqual(CI2.sinPrecio({ ofertas_validas: ofs2([1, 1, 1]) }), true, "todas al mismo valor: sin competencia de precio, fuera del piso");
+      assert.strictEqual(CI2.sinPrecio({ ofertas_validas: ofs2([0.95, 1]) }), false);
+      assert.deepStrictEqual(ME.puntajes([100, 300], "menor_valor", 49.5), [49.5, 16.5], "el séptimo decimal va sobre el puntaje real (49,5 en menor cuantía)");
+      assert.strictEqual(ME.PUNTAJE_MAXIMO.menor_cuantia, 49.5); assert.strictEqual(ME.PUNTAJE_MAXIMO.licitacion, 48.5);
+      const hab = new Set(["2026-06-01", "2026-06-02", "2026-06-04"]);   // el 3-jun festivo en esta serie de prueba
+      assert.strictEqual(CI2.fechaTrmEstimada("2026-06-05T00:00:00.000", -2, hab), "2026-06-02", "con los días hábiles de la serie, el festivo no cuenta");
+      assert.strictEqual(CI2.fechaTrmEstimada("2026-06-02T00:00:00.000", 1, hab), "2026-06-04", "licitación: el día hábil SIGUIENTE a la audiencia");
+      const proc = () => ({ codigo_entidad: "E", entidad: "X", departamento_entidad: "Tolima", competencia: "real", n_validas: 3, oferta_ganadora: { pct: 0.9, proveedor: "n:1" },
+        ofertas_validas: [{ proveedor: "n:1", nombre: "A SAS", pct: 0.9 }, { proveedor: "n:2", nombre: "B SAS", pct: 0.9 }, { proveedor: "n:3", nombre: "C SAS", pct: 0.95 }] });
+      const comp = CI2.competencia(Array.from({ length: 10 }, proc));
+      assert.strictEqual(comp.entidades[0].oferentes_distintos, 3);
+      const rB = comp.rivales_frecuentes.find((r) => r.nombre === "B SAS"), rA = comp.rivales_frecuentes.find((r) => r.nombre === "A SAS");
+      assert.strictEqual(rA.ganadas_con_oferta_emparejada, 10); assert.strictEqual(rB.ganadas_con_oferta_emparejada, 0, "ofrecer el mismo valor del ganador no es ganar: se cuenta por identidad");
+      assert.strictEqual(CI2.esPersonaNatural("JUAN PEREZ INGENIERIA"), true, "«ingeniería» no es una forma jurídica: el nombre no sale");
+    }
+    // Fase 3: muestra de validación (semilla fija, proporcional por modalidad) y cruce con el contrato
+    {
+      const MU = require("../scripts/base_obra/muestra");
+      const pob = [...Array.from({ length: 60 }, (_, i) => ({ portafolio: "M" + String(i).padStart(3, "0"), modalidad: "menor_cuantia" })),
+        ...Array.from({ length: 30 }, (_, i) => ({ portafolio: "N" + String(i).padStart(3, "0"), modalidad: "minima" })),
+        ...Array.from({ length: 10 }, (_, i) => ({ portafolio: "L" + String(i).padStart(3, "0"), modalidad: "licitacion" }))];
+      const m1 = MU.seleccionar(pob, 30, 20261017), m2 = MU.seleccionar(pob.slice().reverse(), 30, 20261017);
+      assert.deepStrictEqual(m1.map((x) => x.portafolio).sort(), m2.map((x) => x.portafolio).sort(), "la misma semilla da la misma muestra, aunque la base venga en otro orden");
+      assert.strictEqual(new Set(m1.map((x) => x.portafolio)).size, 30, "sin repetidos");
+      const cuenta = (mm, mod) => mm.filter((x) => x.modalidad === mod).length;
+      assert.deepStrictEqual([cuenta(m1, "menor_cuantia"), cuenta(m1, "minima"), cuenta(m1, "licitacion")], [18, 9, 3], "proporcional al tamaño de cada modalidad");
+      assert.notDeepStrictEqual(MU.seleccionar(pob, 30, 1).map((x) => x.portafolio), m1.map((x) => x.portafolio), "otra semilla, otra muestra");
+      const pob2 = [...Array.from({ length: 50 }, (_, i) => ({ portafolio: "A" + i, modalidad: "menor_cuantia" })), ...Array.from({ length: 26 }, (_, i) => ({ portafolio: "B" + i, modalidad: "minima" })),
+        ...Array.from({ length: 24 }, (_, i) => ({ portafolio: "C" + i, modalidad: "licitacion" }))];
+      const m3 = MU.seleccionar(pob2, 10, 7);
+      assert.deepStrictEqual([cuenta(m3, "menor_cuantia"), cuenta(m3, "minima"), cuenta(m3, "licitacion")], [5, 3, 2], "el sobrante va por mayor resto (50/26/24 con n = 10 → 5/3/2)");
+      const caida = MU.filaDeMuestra({ portafolio: "P", modalidad: "minima", competencia: "baja", n_validas: 1 }, [], { status: 503, error: "caída" });
+      assert.strictEqual(caida.contratos_en_jbjy, null, "jbjy caído: contratos «sin medir», no 0"); assert.strictEqual(caida.contrato, "sin_medir");
+      assert.strictEqual(MU.filaDeMuestra({ portafolio: "P", modalidad: "minima", competencia: "baja", n_validas: 1 }, [], null).contratos_en_jbjy, 0, "jbjy respondió y no hay contrato: 0 es un dato");
+      const cmp = MU.compararConContrato({ ganador_nit: "900111222", ganador: "OBRAS SAS", valor_adjudicado: 1000 }, { documento_proveedor: "900111222", proveedor_adjudicado: "OBRAS S.A.S.", valor_del_contrato: "1500" });
+      assert.strictEqual(cmp.mismo_ganador, true); assert.strictEqual(cmp.valor_igual_adjudicado, false); assert.strictEqual(cmp.diferencia_valor_pct, 50);
+      assert.deepStrictEqual(MU.compararConContrato({}, null), { contrato: false }, "sin contrato en jbjy: se dice, no se inventa");
+      assert.strictEqual(MU.compararConContrato({ ganador_nit: null, ganador: "Obras; S.A.S.", valor_adjudicado: null }, { documento_proveedor: "No Definido", proveedor_adjudicado: "OBRAS SAS", valor_del_contrato: "" }).valor_igual_adjudicado, null, "valor sin dato: null, no «distinto»");
+    }
+    { // vigía del corte de la alerta (vigilar_corte.js): solo mide y avisa; «sin_medir» ≠ 0
+      const VG = require("../scripts/base_obra/vigilar_corte");
+      const T = { licitacion: { baja_pct: 12, nombre: "licitaciones", ganadoras: 1750, bajo_el_corte: 17, datos_al: "17-oct-2026" },
+        minima: { baja_pct: 30, nombre: "mínimas cuantías", ganadoras: 3708, bajo_el_corte: 258, datos_al: "17-oct-2026" } };
+      // las filas vecinas (87,5 y 88,5, la rejilla real va de 0,5 en 0,5) llevan otros conteos: solo vale la del corte
+      const ua = (lic, min) => ({ umbral_alerta: { licitacion: lic ? [{ corte_pct: 80, todas: { ganadoras: 1, bajo_el_corte: 1 } }, { corte_pct: 87.5, todas: { ganadoras: 1750, bajo_el_corte: 3 } },
+        { corte_pct: 88, todas: lic }, { corte_pct: 88.5, todas: { ganadoras: 1750, bajo_el_corte: 90 } }] : undefined,
+        minima: min ? [{ corte_pct: 70, todas: min }] : undefined } });
+      const igual = VG.vigilarCorte(ua({ ganadoras: 1750, bajo_el_corte: 17 }, { ganadoras: 3708, bajo_el_corte: 258 }), T);
+      assert.deepStrictEqual(igual.map((f) => f.estado), ["igual", "igual"], "los datos de la tabla contra sí mismos: igual");
+      assert.ok(igual.every((f) => f.aviso === null));
+      // la fila que se compara es la del corte de la TABLA (88), no otra
+      assert.strictEqual(igual[0].ahora.bajo_el_corte, 17);
+      // +1,1 de cada 100 en licitación → avisa; +0,9 → no (umbral 1)
+      const mas11 = VG.vigilarCorte(ua({ ganadoras: 1750, bajo_el_corte: 17 + 20 }, { ganadoras: 3708, bajo_el_corte: 258 }), T)[0];
+      assert.strictEqual(mas11.estado, "movido"); assert.ok(/ya no dice lo mismo.*17 de 1\.750.*37 de 1\.750/.test(mas11.aviso), mas11.aviso);
+      assert.strictEqual(VG.vigilarCorte(ua({ ganadoras: 1750, bajo_el_corte: 17 + 15 }, { ganadoras: 3708, bajo_el_corte: 258 }), T)[0].estado, "igual", "+0,86 de cada 100: dentro");
+      // +18 → +1,03 de cada 100 SIN redondear (redondeado serían 2,0 − 1,0 = 1, que no pasaría): avisa
+      assert.strictEqual(VG.vigilarCorte(ua({ ganadoras: 1750, bajo_el_corte: 17 + 18 }, null), T)[0].estado, "movido", "decide la tasa sin redondear");
+      // conteos que no son conteos: sin medir, jamás «igual» ni «movido»
+      for (const malo of [{ ganadoras: 1750, bajo_el_corte: null }, { ganadoras: true, bajo_el_corte: 17 }, { ganadoras: 1750, bajo_el_corte: -5 }, { ganadoras: 10, bajo_el_corte: 11 }, { ganadoras: "1750", bajo_el_corte: 17 }, { ganadoras: 1750.5, bajo_el_corte: 17 }])
+        assert.strictEqual(VG.vigilarCorte(ua(malo, null), T)[0].estado, "sin_medir", `conteo inválido ${JSON.stringify(malo)} → sin medir`);
+      // sin redondear decide: 1750 → 2101 ganadoras es +20,06 % (avisa); 2100 es +20,0 % (no)
+      assert.strictEqual(VG.vigilarCorte(ua({ ganadoras: 2101, bajo_el_corte: 20 }, null), T)[0].estado, "movido");
+      assert.strictEqual(VG.vigilarCorte(ua({ ganadoras: 2100, bajo_el_corte: 20 }, null), T)[0].estado, "igual");
+      // la modalidad que la corrida no trae, o con 0 ganadoras, queda sin medir (jamás «0 de cada 100»)
+      const sinMin = VG.vigilarCorte(ua({ ganadoras: 1750, bajo_el_corte: 17 }, null), T)[1];
+      assert.strictEqual(sinMin.estado, "sin_medir"); assert.strictEqual(sinMin.ahora, null);
+      assert.strictEqual(VG.vigilarCorte(ua(null, { ganadoras: 0, bajo_el_corte: 0 }), T)[1].estado, "sin_medir");
+      assert.ok(VG.vigilarCorte(null, T).every((f) => f.estado === "sin_medir"), "sin cifras.json: todo sin medir");
+      // lo que no se midió no «no cambió»: el resumen avisa y no dice «Sin cambios»
+      const resSin = VG.resumenMarkdown(VG.vigilarCorte(ua({ ganadoras: 1750, bajo_el_corte: 17 }, null), T));
+      assert.ok(/AVISO:\*\* 1 modalidad quedó sin medir \(minima\)/.test(resSin) && !/Sin cambios/.test(resSin), resSin);
+      assert.ok(/Sin cambios que obliguen a revisar la tabla/.test(VG.resumenMarkdown(igual)), "todo medido e igual: sin cambios");
+      assert.ok(/sin medir/.test(VG.resumenMarkdown(VG.vigilarCorte(null, T))) && /2,2 de cada 100/.test(VG.resumenMarkdown(VG.vigilarCorte(null, { m: { baja_pct: 12, nombre: "x", ganadoras: 5387, bajo_el_corte: 116, datos_al: "d" } }))));
+      // la tabla REAL tiene lo que el vigía necesita, y main escribe vigilancia.json sin fallar ni con cifras.json ausente
+      const PTv = require("../lib/apu/piso_techo.js");
+      for (const [k, t] of Object.entries(PTv.TEMERARIO_POR_MODALIDAD)) assert.ok(t.ganadoras > 0 && Number.isInteger(t.bajo_el_corte) && /^\d{1,2}-[a-z]{3}-\d{4}$/.test(t.datos_al) && t.nombre, `fila ${k} de la tabla incompleta para el vigía`);
+      const osV = require("os"), fsV = require("fs"), pathV = require("path"), cpV = require("child_process");
+      const dV = fsV.mkdtempSync(pathV.join(osV.tmpdir(), "vigia-")), resumenV = pathV.join(dV, "resumen.md");
+      const salidaV = cpV.spawnSync(process.execPath, [pathV.join(__dirname, "..", "scripts", "base_obra", "vigilar_corte.js"), dV], { env: { ...process.env, GITHUB_STEP_SUMMARY: resumenV }, encoding: "utf8" });
+      assert.strictEqual(salidaV.status, 0, salidaV.stderr);
+      const vj = JSON.parse(fsV.readFileSync(pathV.join(dV, "vigilancia.json"), "utf8"));
+      assert.ok(vj.error_cifras && vj.filas.length === Object.keys(PTv.TEMERARIO_POR_MODALIDAD).length && vj.filas.every((f) => f.estado === "sin_medir"));
+      assert.ok(/Corte de la alerta de precio bajo/.test(fsV.readFileSync(resumenV, "utf8")));
+      assert.ok(/^::warning title=Corte de la alerta::No se pudo leer cifras\.json/m.test(salidaV.stdout), "sin cifras.json la corrida lleva su anotación en GitHub");
+      // con la tabla movida: anotación de GitHub, con el «%» escapado (%25) y en una sola línea
+      fsV.writeFileSync(pathV.join(dV, "cifras.json"), JSON.stringify({ umbral_alerta: { licitacion: [{ corte_pct: 88, todas: { ganadoras: 1750, bajo_el_corte: 60 } }],
+        menor_cuantia: [{ corte_pct: 88, todas: { ganadoras: 5387, bajo_el_corte: 116 } }], minima: [{ corte_pct: 70, todas: { ganadoras: 3720, bajo_el_corte: 270 } }] } }));
+      const movV = cpV.spawnSync(process.execPath, [pathV.join(__dirname, "..", "scripts", "base_obra", "vigilar_corte.js"), dV], { env: { ...process.env, GITHUB_STEP_SUMMARY: "" }, encoding: "utf8" });
+      const anot = movV.stdout.split("\n").filter((l) => l.startsWith("::warning"));
+      assert.strictEqual(movV.status, 0); assert.strictEqual(anot.length, 1, movV.stdout);
+      assert.ok(/::warning title=Corte de la alerta::El corte de licitaciones \(88 %25\) ya no dice lo mismo/.test(anot[0]) && !/ %\)/.test(anot[0]), anot[0]);
+      fsV.rmSync(dV, { recursive: true, force: true });
+      // el flujo: corre el día 3 de cada mes, vigila antes de comprimir y cada corte lleva el número de corrida
+      const yV = fsV.readFileSync(pathV.join(__dirname, "..", ".github", "workflows", "base_obra.yml"), "utf8");
+      assert.ok(/schedule:\s*\n\s*- cron: '23 9 3 \* \*'/.test(yV), "corrida mensual");
+      assert.ok(/- name: Vigilar el corte de la alerta[^\n]*\n(?:\s*#[^\n]*\n)*\s*continue-on-error: true\n\s*run: node scripts\/base_obra\/vigilar_corte\.js/.test(yV), "un fallo del vigía no frena la subida");
+      const pasoV = yV.indexOf("run: node scripts/base_obra/vigilar_corte.js");
+      assert.ok(pasoV > yV.indexOf("node scripts/base_obra/cifras.js \"$RUNNER_TEMP/base\"") && pasoV < yV.indexOf("- name: Comprimir") && pasoV > 0, "el vigía va después de las cifras y antes de comprimir");
+      assert.ok(/corte\/\$\(date -u \+%Y-%m-%d\)-\$\{\{ github\.run_id \}\}/.test(yV), "dos corridas el mismo día no se pisan");
+    }
+    console.log("· unidad base de obra: «sin dato» ≠ 0, mapeo de modalidades, exclusiones contadas por motivo, lote, las dos σ, la regla de fila y el almacén que frena antes de pasar su tope (ida y vuelta contra un S3 falso)");
+  }
+
+  /* unidad: el corte de la alerta de precio artificialmente bajo, por modalidad (18-oct-2026).
+     EJECUTA las funciones reales (umbralTemerario, validarFormulario1, pisoTecho, guiaDe): con
+     el corte único del 80 % de antes este bloque falla. Los cortes salen de la base nacional de
+     obra (MEMORIA § «La alerta de precio bajo se corta por modalidad…»). */
+  bqUmbralModalidad: { if (!corre("unidad alerta de precio bajo por modalidad")) break bqUmbralModalidad;
+    const PT = require("../lib/apu/piso_techo.js");
+    const F1u = require("../lib/formulario1.js");
+    const LIC = "Licitación pública Obra Publica", SAMC = "Seleccion Abreviada de Menor Cuantia",
+      SAMC_SM = "Seleccion Abreviada Menor Cuantia Sin Manifestacion Interes", MIN = "Mínima cuantía";
+    // (1) la tabla, con los textos de modalidad tal como los publica SECOP II
+    const cortes = [[LIC, 88, true], [SAMC, 88, true], [SAMC_SM, 88, true], [MIN, 70, true], ["Subasta", 80, false],
+      ["Concurso de méritos abiertos", 80, false], ["Contratación régimen especial", 80, false], [null, 80, false], ["", 80, false], ["xyz", 80, false]];
+    for (const [m, corte, medido] of cortes) {
+      const u = PT.umbralTemerario(m);
+      assert.strictEqual(u.corte_pct, corte, `corte de «${m}»: ${u.corte_pct} (esperado ${corte})`);
+      assert.strictEqual(u.baja_pct, 100 - corte); assert.strictEqual(u.medido, medido, `«${m}» medido=${u.medido}`);
+      assert.ok(medido ? new RegExp(`adjudicadas en SECOP II desde 2024 \\(datos al 17-oct-2026\\), [\\d.]+ de [\\d.]+ ofertas ganadoras con datos comparables tuvieron más del ${100 - corte} % de descuento\\.$`).test(u.fuente) && u.fuente.startsWith({ licitacion: "En licitaciones ", menor_cuantia: "En menores cuantías ", minima: "En mínimas cuantías " }[u.clave])
+        : (m ? /Sin medición para esta modalidad/ : /No se conoce la modalidad del proceso/).test(u.fuente), `«${m}»: la fuente va al lado de la cifra («${u.fuente}»)`);
+      assert.ok(!/\d ?%/.test(u.fuente) || medido, `«${m}»: sin medición la fuente no repite la cifra («${u.fuente}»)`);
+    }
+    // cada fila medida cita SU conteo (el de cifras.json, umbral_alerta, campo «todas»)
+    assert.ok(/17 de 1\.750/.test(PT.umbralTemerario(LIC).fuente) && /116 de 5\.387/.test(PT.umbralTemerario(SAMC).fuente) && /270 de 3\.720/.test(PT.umbralTemerario(MIN).fuente));
+    // la frase sale de los DATOS de la tabla, no de un texto escrito aparte
+    assert.ok(/2\.000 ofertas ganadoras/.test(PT.fraseCorte({ ...PT.TEMERARIO_POR_MODALIDAD.licitacion, ganadoras: 2000 })), "cambiar el conteo cambia la frase");
+    // las claves de la tabla son claves que de verdad emite el clasificador (si no, la fila sería inerte)
+    const emitidas = new Set([LIC, SAMC, MIN].map((m) => require("../lib/guia_proceso.js").modalidadEnLlano(m).clave));
+    for (const k of Object.keys(PT.TEMERARIO_POR_MODALIDAD)) assert.ok(emitidas.has(k), `clave «${k}» de la tabla que el clasificador no emite`);
+    assert.strictEqual(PT.TEMERARIO_PCT, 20, "sin medición sigue la referencia de siempre");
+    // (2) validación 5 del Formulario 1 (el total frente al presupuesto)
+    const tem = (total, modalidad, extra = {}) => F1u.validarFormulario1({ oferta: { items: [{ numeral: "1", descripcion: "Excavación", unidad: "m3", cantidad: 100, precio_unitario: total / 100, total }], total },
+      presupuesto_oficial: 100000000, modalidad, ...extra }).veredictos.find((v) => v.id === "temeraria");
+    for (const m of [LIC, SAMC, SAMC_SM]) {
+      assert.strictEqual(tem(85000000, m).nivel, "alerta", `«${m}» al 85 %: salta (corte 88 %)`);
+      assert.strictEqual(tem(87900000, m).nivel, "alerta", `«${m}» al 87,9 %: salta`);
+      assert.notStrictEqual(tem(88000000, m).nivel, "alerta", `«${m}» justo en el 88 %: no salta (más del 12 % de descuento)`);
+      assert.strictEqual(tem(85000000, m).umbral_pct, 12);
+    }
+    assert.notStrictEqual(tem(85000000, null).nivel, "alerta", "sin modalidad, al 85 % no salta: sigue el 80 %");
+    assert.strictEqual(tem(79000000, null).nivel, "alerta", "sin modalidad, al 79 % salta");
+    assert.strictEqual(tem(79000000, "Subasta").nivel, "alerta", "subasta (sin medición) al 79 %: salta");
+    assert.notStrictEqual(tem(79000000, MIN).nivel, "alerta", "mínima al 79 %: ya no salta (corte 70 %)");
+    assert.strictEqual(tem(69000000, MIN).nivel, "alerta", "mínima al 69 %: salta");
+    // convive con el aviso del límite medido de la entidad (main, 17-oct-2026): entre el corte y el
+    // máximo medido no hay alerta, hay ámbar «para justificar» con su fuente
+    const amb = tem(90000000, SAMC);
+    assert.strictEqual(amb.nivel, "informativo"); assert.strictEqual(amb.marca, "justificar"); assert.ok(/116 de 5\.387/.test(amb.umbral_fuente || ""), "el ámbar también lleva la fuente del corte");
+    assert.strictEqual(tem(95000000, SAMC).nivel, "ok", "sobre el máximo medido y sin llegar al corte: ok");
+    assert.ok(/270 de 3\.720/.test(tem(69000000, MIN).umbral_fuente || ""), "la alerta de mínima lleva su fuente medida");
+    // lo que declara quien llama sigue mandando, y entonces no se le pega una fuente que no es la suya
+    const decl = tem(85000000, LIC, { umbral_temerario_pct: 20 });
+    assert.notStrictEqual(decl.nivel, "alerta", "umbral_temerario_pct declarado gana al de la modalidad"); assert.strictEqual(decl.umbral_fuente, null);
+    // (3) validación 8 (por ítem): sigue en el 20 %, NO en el corte de la modalidad
+    const form = { items: [{ numeral: "1", descripcion: "Excavación", unidad: "m3", cantidad: 100, precio_unitario: 10000 }] };
+    const uni = (pu) => F1u.validarFormulario1({ oferta: { items: [{ numeral: "1", descripcion: "Excavación", unidad: "m3", cantidad: 100, precio_unitario: pu, total: pu * 100 }], total: pu * 100 },
+      formulario: form, presupuesto_oficial: 1000000, modalidad: LIC }).veredictos;
+    const v85 = uni(8500);
+    assert.strictEqual(v85.find((v) => v.id === "temeraria").nivel, "alerta", "el total al 85 % en licitación salta…");
+    assert.strictEqual(v85.find((v) => v.id === "unitarios").nivel, "ok", "…pero un ítem 15 % por debajo NO: por ítem sigue el 20 %");
+    assert.ok(/más de 20 % por debajo/.test(v85.find((v) => v.id === "unitarios").mensaje));
+    const v75 = uni(7500).find((v) => v.id === "unitarios");
+    assert.strictEqual(v75.nivel, "alerta"); assert.strictEqual(v75.umbral_pct, 20);
+    // el umbral declarado por quien llama también manda por ítem
+    const uniDecl = F1u.validarFormulario1({ oferta: { items: [{ numeral: "1", descripcion: "Excavación", unidad: "m3", cantidad: 100, precio_unitario: 8500, total: 850000 }], total: 850000 },
+      formulario: form, presupuesto_oficial: 1000000, modalidad: LIC, umbral_temerario_pct: 10 }).veredictos.find((v) => v.id === "unitarios");
+    assert.strictEqual(uniDecl.nivel, "alerta", "con umbral_temerario_pct 10 declarado, un ítem 15 % por debajo avisa"); assert.strictEqual(uniDecl.umbral_pct, 10);
+    // (4) panel Piso/Techo: la cifra del umbral y sus textos siguen la modalidad
+    const aiuP = { administracion_pct: 10, imprevistos_pct: 5, utilidad_pct: 5 };
+    const pt = (modalidad, extra = {}) => PT.pisoTecho({ presupuesto_oficial: 500e6, costo_directo: 300e6, aiu: aiuP, modalidad, iva_utilidad: { variante: "sin_iva" }, ...extra });
+    assert.strictEqual(pt(LIC).cifras.umbral_temerario, Math.round(500e6 * 0.88), "licitación: umbral en el 88 %");
+    assert.strictEqual(pt(MIN).cifras.umbral_temerario, Math.round(500e6 * 0.70), "mínima: umbral en el 70 %");
+    assert.strictEqual(pt(null).cifras.umbral_temerario, Math.round(500e6 * 0.80), "sin modalidad: 80 %");
+    assert.strictEqual(pt(LIC, { temerario_pct: 20 }).cifras.umbral_temerario, Math.round(500e6 * 0.80), "temerario_pct declarado gana");
+    assert.ok(/Referencia: 88 %.*17 de 1\.750/.test(pt(LIC).fuentes.umbral_temerario), pt(LIC).fuentes.umbral_temerario);
+    assert.ok(pt(LIC).supuestos.some((s) => /\(88 % del presupuesto oficial, medido para esta modalidad\)/.test(s)), "el supuesto dice el corte medido");
+    assert.ok(pt(null).supuestos.some((s) => /\(80 % del presupuesto oficial\)/.test(s)), "sin modalidad, el supuesto de siempre");
+    // con el corte DECLARADO no se le pega la fuente medida ni el «medido»
+    const ptDecl = pt(LIC, { temerario_pct: 20 });
+    assert.ok(/Corte declarado por quien llama/.test(ptDecl.fuentes.umbral_temerario) && !/ganadoras/.test(ptDecl.fuentes.umbral_temerario), ptDecl.fuentes.umbral_temerario);
+    assert.ok(!ptDecl.supuestos.some((s) => /medido para esta modalidad/.test(s)), "corte declarado: el supuesto no dice «medido»");
+    assert.ok(/Referencia: 80 %.*No se conoce la modalidad del proceso/.test(pt(null).fuentes.umbral_temerario) && (pt(null).fuentes.umbral_temerario.match(/80 %/g) || []).length === 1, pt(null).fuentes.umbral_temerario);
+    // la pantalla «Revisar antes de subir» pinta la fuente debajo de la alerta, escapada
+    const appUM = require("fs").readFileSync(require("path").join(__dirname, "..", "public", "app.js"), "utf8");
+    assert.ok(/v\.id === "temeraria" && v\.umbral_fuente \? `<span[^`]*data-umbral-fuente>\$\{esc\(v\.umbral_fuente\)\}<\/span>`/.test(appUM), "public/app.js pinta umbral_fuente con esc() bajo la alerta");
+    // (5) el consejo de la guía (mínima y subasta comparten consejo, no corte)
+    const G = require("../lib/guia_proceso.js");
+    const consejo = (m) => (G.guiaDe({ fila: { id_del_proceso: "CO1.UM", nombre_del_procedimiento: "MEJORAMIENTO DE VIA", modalidad_de_contratacion: m, precio_base: "90000000", departamento_entidad: "Tolima", entidad: "ALCALDIA" }, perfil: "helder" }).consejos || []).find((c) => c.clave === "precio_minima");
+    assert.ok(/por debajo del 70 % del presupuesto/.test(consejo(MIN).detalle), consejo(MIN).detalle);
+    assert.ok(/por debajo del 80 % del presupuesto/.test(consejo("Subasta").detalle), consejo("Subasta").detalle);
+    // (6) CENSO: ningún «80 %» del umbral escrito a mano en lib/ ni public/. Las excepciones se
+    //     DECLARAN por línea (archivo + texto exacto), no por archivo: un archivo eximido entero
+    //     dejaba volver el 80 % al texto visible de la alerta sin que nada fallara.
+    const EXC_80 = [
+      ["lib/apu/piso_techo.js", "const TEMERARIO_PCT = 20;       // «por debajo del 80 % del presupuesto»"],   // la referencia por defecto
+      ["lib/apu/piso_techo.js", "− una desviación: 93,3 % y 93,4 % del presupuesto) y a 80 % la alerta casi nunca saltaba"],   // la medición, en comentario
+    ];
+    const usadas = new Set();
+    const fsU = require("fs"), pathU = require("path");
+    const barrer = (dir) => fsU.readdirSync(dir, { withFileTypes: true }).flatMap((e) => e.isDirectory() ? barrer(pathU.join(dir, e.name)) : /\.(js|html)$/.test(e.name) ? [pathU.join(dir, e.name)] : []);
+    const raiz = pathU.join(__dirname, "..");
+    let barridos = 0;
+    for (const f of [...barrer(pathU.join(raiz, "lib")), ...barrer(pathU.join(raiz, "public"))]) {
+      const rel = pathU.relative(raiz, f).split(pathU.sep).join("/");
+      barridos++;
+      for (const [i, linea] of fsU.readFileSync(f, "utf8").split("\n").entries()) {
+        if (!(/(?<![\d,.])80 ?%|(?<![\d,.\-–])0[,.]80?(?!\d| ?%)|ochenta por ciento/i.test(linea) && /presupuesto|artificialmente|temerari/i.test(linea))) continue;
+        const exc = EXC_80.find(([a, t]) => a === rel && linea.includes(t));
+        if (exc) { usadas.add(exc); continue; }
+        assert.fail(`${rel}:${i + 1} escribe a mano el 80 % del umbral: ${linea.trim().slice(0, 140)}`);
+      }
+    }
+    assert.ok(barridos > 50, `el censo barrió ${barridos} archivos`);
+    for (const e of EXC_80) assert.ok(usadas.has(e), `excepción declarada que ya no casa con nada (bórrela): ${e.join(" · ")}`);
+    // la expresión del censo no confunde un 10,8 % con el umbral
+    assert.ok(!/(?<![\d,.\-–])0[,.]80?(?!\d| ?%)/.test("el presupuesto sube 10,8 %"));
+    assert.ok(!/(?<![\d,.\-–])0[,.]80?(?!\d| ?%)/.test("(0,5-0,8 % del presupuesto)") && /(?<![\d,.\-–])0[,.]80?(?!\d| ?%)/.test("presupuesto × 0,80"), "el factor 0,80 sí casa; un rango de porcentajes no");
+    console.log(`· unidad alerta de precio bajo por modalidad: 88 % en licitación y menor cuantía, 70 % en mínima, 80 % sin medición; por ítem sigue el 20 %; censo de ${barridos} archivos sin el 80 % a mano`);
+  }
+
   /* unidad: capa anti-suministro sobre segmentos de bienes. Cada caso se
      evalúa contra un perfil cuyo RUP SÍ contiene la clase — así el rechazo
      solo puede venir de la capa (se verifica anti_suministro como causa). */
@@ -4168,6 +4792,27 @@ async function main() {
       assert.strictEqual(obraSinCodigo.ok, true, "la obra sin código no puede perderse: su pertinencia es verde");
       assert.strictEqual(obraSinCodigo.tier, "texto");
       assert.strictEqual(obraSinCodigo.pertinencia.nivel, "verde");
+      /* «SIN CÓDIGO» SOLO CUANDO NO HAY CÓDIGO (18-oct-2026): un muro con 72141200 frente a un
+         registro con otras clases de la familia 7214 entra por el objeto, y la tarjeta decía
+         «Sin código UNSPSC específico». Contra el árbol anterior, las aserciones del código caen. */
+      const perfilFamilia = { unspsc: ["72141000", "72141100", "72154100", "81101500"] };
+      const muro = filtros.evaluarObjeto({
+        nombre_del_procedimiento: "Construcción de muro de contención en gaviones sector 95",
+        descripci_n_del_procedimiento: "Obra de estabilización de talud",
+        codigo_principal_de_categoria: "V1.72141200" }, perfilFamilia, { vocabulario: voc });
+      assert.strictEqual(muro.ok, true, "el muro sigue entrando por el objeto: solo cambia el texto");
+      assert.strictEqual(muro.tier, "texto");
+      assert.ok(/72141200/.test(muro.unspsc.mensaje) && /no está en su registro/.test(muro.unspsc.mensaje),
+        `el mensaje nombra el código que trae y dice que no está en el registro: ${muro.unspsc.mensaje}`);
+      assert.ok(!/[Ss]in código/.test(muro.unspsc.mensaje), `un proceso con código no puede decir «sin código»: ${muro.unspsc.mensaje}`);
+      // el gemelo: sin vocabulario que case, la ruta del verbo de obra tampoco dice «sin código»
+      const porVerbo = textoUnspsc.evaluarTexto("construccion de una cosa", {
+        vocabulario: null, familiasPerfil: new Set(), hayVerboObra: true, segmentoAfin: false,
+        codigosProceso: [{ codigo: "72141200", nivel: 6 }] });
+      assert.ok(/72141200/.test(porVerbo.mensaje) && !/[Ss]in código/.test(porVerbo.mensaje), porVerbo.mensaje);
+      // y sin códigos (o con el segmento suelto) los mensajes de siempre siguen igual
+      assert.ok(/Objeto de obra sin código UNSPSC/.test(textoUnspsc.evaluarTexto("x", { hayVerboObra: true, codigosProceso: [] }).mensaje));
+      assert.ok(/solo declara el segmento/.test(textoUnspsc.evaluarTexto("x", { hayVerboObra: true, segmentoAfin: true, codigosProceso: [{ codigo: "72000000", nivel: 2 }] }).mensaje));
     }
 
     // el veredicto es GRADUADO, nunca booleano: tipo de trabajo detectado
@@ -6613,6 +7258,443 @@ async function main() {
     console.log("· unidad adjudicación fuera de calendario: 3 años imposibles (2202, 9999, 1970) descartados y auditables · 2027-06-30 se respeta · las dos guardas hermanas conviven");
   }
 
+  /* unidad: LA SESIÓN DEL DUEÑO (17-oct-2026, decisión del dueño). Un ÚNICO usuario con correo
+     y contraseña; la sesión en una cookie HttpOnly de 30 días; la llave del servidor ya no vive
+     en el navegador (la leía cualquiera y abría todas las API). Todo con el HANDLER REAL, por el
+     router, contra el Upstash falso:
+       (1) alta: solo sin cuenta, solo con la llave, con defensa de origen, y atómica (dos altas a
+           la vez crean UNA); después, 409 para siempre;
+       (2) entrar: bien/mal, «correo inexistente» y «contraseña mala» idénticos; la cookie con sus
+           banderas; el almacén guarda el HASH del token, no el token;
+       (3) la sesión abre lo protegido y lo opcional; sin nada, 401; caducada, cerrada o
+           inventada, 401; la llave válida desde un servidor sigue valiendo, desde el código de
+           una página NO; la llave presente e inválida es 401 aunque haya sesión;
+       (4) escrituras con cookie exigen el mismo origen (CSRF);
+       (5) el límite de intentos por correo y por conexión, y Redis caído no deja entrar;
+       (6) salir invalida EN EL SERVIDOR;
+       (7) la cuota de altas públicas: exime la sesión, ya no la llave;
+       (8) las rutas públicas siguen abiertas sin nada;
+       (9) censo: ningún llamador del guardián lo usa sin `await`. */
+  bqSesionDueno: { if (!corre("unidad sesión del dueño")) break bqSesionDueno;
+    const Sesion = require("../lib/sesion.js");
+    const Auth = require("../lib/auth.js");
+    const Ctas = require("../lib/cuentas.js");
+    const rAdmin = require("../api/admin.js");
+    const rPerfil = require("../api/perfil.js");
+    const rProcesos = require("../api/procesos.js");
+    const LLAVE = process.env.HISTORICO_TOKEN;
+    const { tuteoEn: tuteoEnS } = require("../lib/lenguaje_pantalla.js");
+    const ORIGEN = { origin: "https://app.local", "content-type": "application/json" };
+    const post = (url, body, cab = {}) => invocar(rAdmin, url, { ...ORIGEN, ...cab }, { metodo: "POST", body });
+    const limpiarCuentas = async () => {
+      const claves = [...await redis.scan("cuenta:*"), ...await redis.scan("sesion:*"), ...await redis.scan("intentos:*"), ...await redis.scan("cuota:alta:*")];
+      if (claves.length) await redis.del(...claves);
+    };
+    const cookieDe = (r) => { const c = r.cabeceras["set-cookie"] || ""; return c.split(";")[0]; };
+    const CORREO = "Dueno@Empresa.CO", CLAVE = "una frase larga que recuerdo";
+    await limpiarCuentas();
+    try {
+      // ── (1) EL ALTA ──────────────────────────────────────────────────────────
+      let r = await invocar(rAdmin, "/api/admin?op=sesion");
+      assert.deepStrictEqual([r.status, r.cuerpo.sesion, r.cuerpo.hay_cuenta], [200, false, false], `sin cuenta: ${JSON.stringify(r.cuerpo)}`);
+      r = await post("/api/admin?op=entrar", { correo: CORREO, contrasena: CLAVE });
+      assert.strictEqual(r.status, 401, "sin cuenta nadie entra");
+      r = await invocar(rAdmin, "/api/admin?op=crear-cuenta", { "content-type": "application/json" }, { metodo: "POST", body: { llave: LLAVE, correo: CORREO, contrasena: CLAVE } });
+      assert.strictEqual(r.status, 403, "el alta sin Origin (otro sitio) se rechaza");
+      r = await post("/api/admin?op=crear-cuenta", { llave: LLAVE, correo: CORREO, contrasena: CLAVE }, { origin: "https://atacante.example" });
+      assert.strictEqual(r.status, 403, "el alta desde un origen ajeno se rechaza");
+      r = await post("/api/admin?op=crear-cuenta", { llave: `${LLAVE}x`, correo: CORREO, contrasena: CLAVE });
+      assert.strictEqual(r.status, 401, `sin la llave del servidor no hay alta: ${JSON.stringify(r.cuerpo)}`);
+      assert.ok(!r.cabeceras["set-cookie"], "un alta rechazada no abre sesión");
+      /* LA LLAVE NO SE COPIA DE VERCEL (18-oct-2026): una variable «Secret» no se vuelve a ver después
+         de guardarla. El mensaje decía «Cópiela entera desde Vercel» y el dueño se quedó en ese paso.
+         Se mira el mensaje que REALMENTE responde el alta, y el de la llave retirada, y la guía. */
+      {
+        const COPIAR_DE_VERCEL = /c[oó]pie(la)?\b[^.]{0,90}vercel|el ojo para verla/i;
+        assert.strictEqual(r.cuerpo.error, Sesion.MSG_LLAVE_NO_COINCIDE, `la llave que no coincide responde su mensaje: ${r.cuerpo.error}`);
+        for (const [cual, msg] of [["no coincide", r.cuerpo.error], ["retirada", Sesion.MSG_LLAVE_RETIRADA]]) {
+          assert.ok(!COPIAR_DE_VERCEL.test(msg) && /no muestra las variables secretas/.test(msg) && /an[oó]t/.test(msg),
+            `el mensaje de la llave ${cual} no manda a copiarla de Vercel (no se vuelve a ver) y dice que se anota: ${msg}`);
+        }
+        const guia = fs.readFileSync(path.join(__dirname, "..", "docs", "CONFIGURACION_TOKENS.md"), "utf8");
+        const alta = guia.slice(guia.indexOf("### 0.1 · La puesta en marcha"), guia.indexOf("### 0.2"));
+        assert.ok(alta.length > 0 && !COPIAR_DE_VERCEL.test(alta) && /No se puede copiar de Vercel/.test(alta) && /anótela/.test(alta),
+          "la guía §0.1 no manda a copiar la llave de Vercel: dice que se anota al ponerla");
+      }
+      r = await post("/api/admin?op=crear-cuenta", { correo: CORREO, contrasena: CLAVE });
+      assert.strictEqual(r.status, 401, "el alta sin llave tampoco");
+      r = await post("/api/admin?op=crear-cuenta", { llave: LLAVE, correo: CORREO, contrasena: "corta" });
+      assert.strictEqual(r.status, 400, "una contraseña corta se rechaza con el motivo");
+      assert.strictEqual(await Sesion.hayCuenta(redis), false, "nada de lo anterior creó una cuenta");
+      /* LA CARRERA: dos altas legítimas a la vez crean UNA cuenta (SET NX de la marca) */
+      const [a1, a2] = await Promise.all([
+        post("/api/admin?op=crear-cuenta", { llave: LLAVE, correo: CORREO, contrasena: CLAVE }),
+        post("/api/admin?op=crear-cuenta", { llave: LLAVE, correo: "otra@empresa.co", contrasena: "otra frase larga cualquiera" }),
+      ]);
+      assert.deepStrictEqual([a1.status, a2.status].sort(), [201, 409], `dos altas a la vez: ${a1.status} y ${a2.status}`);
+      const ganadora = a1.status === 201 ? a1 : a2;
+      const correoDueno = a1.status === 201 ? CORREO : "otra@empresa.co";
+      const claveDueno = a1.status === 201 ? CLAVE : "otra frase larga cualquiera";
+      const fichas = (await redis.scan("cuenta:cta_*"));
+      assert.strictEqual(fichas.length, 1, `queda UNA cuenta, no ${fichas.length}`);
+      const porCorreo = await redis.scan("cuenta:correo:*");
+      assert.strictEqual(porCorreo.length, 1, "y un solo índice por correo (la perdedora retiró lo suyo)");
+      // después: 409 para siempre, con la llave buena y con otro correo
+      r = await post("/api/admin?op=crear-cuenta", { llave: LLAVE, correo: "tercera@empresa.co", contrasena: "una tercera frase larga" });
+      assert.strictEqual(r.status, 409, "creada la cuenta, el alta queda cerrada (409)");
+      assert.strictEqual((await redis.scan("cuenta:cta_*")).length, 1, "no hay segunda cuenta");
+      // la cookie del alta, con todas sus banderas
+      const setAlta = ganadora.cabeceras["set-cookie"] || "";
+      for (const b of ["HttpOnly", "Secure", "SameSite=Strict", "Path=/", `Max-Age=${30 * 24 * 3600}`]) assert.ok(setAlta.includes(b), `la cookie de sesión sin «${b}»: ${setAlta.replace(/=[a-f0-9]{64}/, "=…")}`);
+      assert.ok(/^__Host-detekta_sesion=[a-f0-9]{64};/.test(setAlta), "cookie con prefijo __Host- y token de 32 bytes");
+      assert.ok(!/Domain=/i.test(setAlta), "sin Domain: la cookie no sale del host");
+      const tokenAlta = cookieDe(ganadora).split("=")[1];
+      assert.ok(!JSON.stringify(ganadora.cuerpo).includes(tokenAlta), "el token NO viaja en el cuerpo: el JavaScript de la página no lo ve");
+      const fichaCuenta = JSON.parse(await redis.get(fichas[0]));
+      assert.ok(!JSON.stringify(fichaCuenta).includes(claveDueno) && /^scrypt\$/.test(fichaCuenta.contrasena), "la contraseña se guarda derivada con scrypt, nunca en claro");
+      assert.strictEqual(fichaCuenta.correo, correoDueno.toLowerCase(), "el correo se normaliza");
+
+      /* (1b) LA LLAVE QUE ESTUVO PUBLICADA NO CREA LA CUENTA (revisión adversaria, 17-oct-2026). Vivió
+         escrita en public/*.js y está en la historia pública de git: si el despliegue llega antes de
+         rotarla, quien la leyó crearía la única cuenta. La suite no lleva el valor —solo su huella—;
+         para ejecutar la negativa se añade un momento a la lista la huella de la llave de PRUEBA. */
+      assert.ok(Sesion.LLAVES_RETIRADAS_SHA256 instanceof Set
+        && Sesion.LLAVES_RETIRADAS_SHA256.has("75de4f9a31b94674ecb617552bbcf5c394ef5838156abee01348d780cecaa2eb"),
+        "la huella de la llave que estuvo en public/*.js hasta el 17-oct-2026 tiene que estar en la lista de retiradas");
+      {
+        const huellaPrueba = crypto.createHash("sha256").update(LLAVE).digest("hex");
+        const sinCuenta = async () => { const ks = [...await redis.scan("cuenta:*")]; if (ks.length) await redis.del(...ks); };
+        const fichasAntes = await redis.scan("cuenta:*");
+        const respaldoFichas = await Promise.all(fichasAntes.map(async (k) => [k, await redis.get(k)]));
+        await sinCuenta();
+        Sesion.LLAVES_RETIRADAS_SHA256.add(huellaPrueba);
+        try {
+          assert.ok(Sesion.esLlaveRetirada(LLAVE + "\n") && Sesion.esLlaveRetirada(" " + LLAVE + " "),
+            "la llave retirada con un espacio o un salto de línea al final (pegada así en Vercel) sigue siendo la retirada");
+          const r = await post("/api/admin?op=crear-cuenta", { llave: LLAVE, correo: "intruso@x.co", contrasena: "contrasena-del-intruso" }, { "x-real-ip": "10.0.9.1" });
+          assert.strictEqual(r.status, 503, `con la llave retirada en el entorno, el alta se niega: ${r.status}`);
+          assert.strictEqual(r.cuerpo.motivo, "llave_retirada");
+          assert.ok(/cámbiela en Vercel/.test(r.cuerpo.error) && /vuelva a desplegar/.test(r.cuerpo.error) && tuteoEnS(r.cuerpo.error) === null, `dice qué hacer, de usted: ${r.cuerpo.error}`);
+          assert.ok(!r.cabeceras["set-cookie"] && !(await Sesion.hayCuenta(redis)), "y no crea nada ni abre sesión");
+        } finally {
+          Sesion.LLAVES_RETIRADAS_SHA256.delete(huellaPrueba);
+          await sinCuenta();
+          for (const [k, v] of respaldoFichas) if (v != null) await redis.set(k, v);
+        }
+        /* (1c) DOS ALTAS A LA VEZ CON EL MISMO CORREO (revisión adversaria): la perdedora borraba el
+           índice del correo de la ganadora y el dueño no entraba NUNCA con su contraseña correcta.
+           Se ejecuta en una cuenta aparte y se devuelve la de la prueba tal como estaba. */
+        await sinCuenta();
+        try {
+          const cuerpoR = { llave: LLAVE, correo: "mismo@empresa.co", contrasena: "una frase larga de la carrera" };
+          /* la carrera necesita que los comandos de las tres se INTERCALEN: el Upstash falso responde
+             tan rápido que cada alta termina antes de que empiece la siguiente, así que aquí se le
+             presta a cada comando la latencia de un Redis real (5 ms), como en la reproducción del
+             revisor. Contra b73c38e, «entrar» responde 401 con la contraseña correcta. */
+          const lento = new Proxy(redis, { get: (t, k) => (typeof t[k] === "function"
+            ? async (...args) => { await new Promise((r) => setTimeout(r, 5)); return t[k](...args); } : t[k]) });
+          const reqR = { headers: { ...ORIGEN, host: "app.local", "x-real-ip": "10.0.9.2" }, method: "POST" };
+          const rs = await Promise.all([0, 1, 2].map(() => Sesion.crearCuentaDelDueno(lento, reqR, cuerpoR)));
+          assert.deepStrictEqual(rs.map((x) => x.status).sort(), [201, 409, 409], `tres altas a la vez con el mismo correo: ${rs.map((x) => x.status)}`);
+          const e = await post("/api/admin?op=entrar", { correo: "mismo@empresa.co", contrasena: "una frase larga de la carrera" }, { "x-real-ip": "10.0.9.3" });
+          assert.strictEqual(e.status, 200, `tras la carrera, el dueño entra con su contraseña: ${JSON.stringify(e.cuerpo)}`);
+          assert.strictEqual((await redis.scan("cuenta:cta_*")).length, 1, "y queda una sola ficha");
+        } finally {
+          await sinCuenta();
+          for (const [k, v] of respaldoFichas) if (v != null) await redis.set(k, v);
+          const ses = await redis.scan("sesion:*"); // las de la carrera no son de la cuenta de la prueba: no valen, pero no se dejan
+          for (const k of ses) { const v = JSON.parse(await redis.get(k) || "{}"); if (v.cuenta && v.cuenta !== (await redis.get(Sesion.CLAVE_DUENO))) await redis.del(k); }
+        }
+      }
+
+      // ── (2) ENTRAR ───────────────────────────────────────────────────────────
+      await redis.del(...await redis.scan("intentos:*"));
+      const mala = await post("/api/admin?op=entrar", { correo: correoDueno, contrasena: "no es la contraseña" }, { "x-real-ip": "10.0.0.2" });
+      const inexistente = await post("/api/admin?op=entrar", { correo: "nadie@ninguna.co", contrasena: claveDueno }, { "x-real-ip": "10.0.0.2" });
+      assert.strictEqual(mala.status, 401);
+      assert.strictEqual(inexistente.status, 401);
+      assert.deepStrictEqual(mala.cuerpo, inexistente.cuerpo, "correo inexistente y contraseña mala responden EXACTAMENTE lo mismo");
+      assert.ok(!mala.cabeceras["set-cookie"], "entrar mal no abre sesión");
+      const bien = await post("/api/admin?op=entrar", { correo: `  ${correoDueno.toUpperCase()} `, contrasena: claveDueno }, { "x-real-ip": "10.0.0.2" });
+      assert.strictEqual(bien.status, 200, `entrar bien: ${JSON.stringify(bien.cuerpo)}`);
+      const cookie = cookieDe(bien);
+      const tok = cookie.split("=")[1];
+      assert.ok(Ctas.esTokenSesion(tok), "el token de sesión es opaco y de 64 hexadecimales");
+      assert.strictEqual(await redis.get(`sesion:${tok}`), null, "el almacén NO guarda el token en claro (un volcado no entrega sesiones)");
+      const claveS = Sesion.claveSesion(tok);
+      assert.ok(await redis.get(claveS), "guarda el registro bajo el hash del token");
+      const ttlS = Number(await redis.ttl(claveS));
+      assert.ok(ttlS > 29 * 24 * 3600 && ttlS <= 30 * 24 * 3600, `la sesión caduca en el almacén a los 30 días: ${ttlS} s`);
+      r = await invocar(rAdmin, "/api/admin?op=sesion", { cookie });
+      assert.deepStrictEqual([r.cuerpo.sesion, r.cuerpo.hay_cuenta], [true, true], "op=sesion reconoce la sesión");
+
+      // ── (3) LA SESIÓN ABRE LO PROTEGIDO ──────────────────────────────────────
+      const PROT = "/api/admin?op=rup";
+      assert.strictEqual((await invocar(rAdmin, PROT)).status, 401, "sin nada, 401");
+      assert.strictEqual((await invocar(rAdmin, PROT, { cookie })).status, 200, "con la sesión, 200");
+      assert.strictEqual((await invocar(rAdmin, PROT, { "x-historico-token": LLAVE })).status, 200, "la llave desde un SERVIDOR sigue valiendo (flujos de GitHub, rutinas)");
+      assert.strictEqual((await invocar(rAdmin, `${PROT}&token=${LLAVE}`, { "sec-fetch-mode": "navigate", "sec-fetch-site": "none" })).status, 200, "la llave pegada en la barra de Chrome sigue valiendo");
+      const desdePagina = await invocar(rAdmin, PROT, { "x-historico-token": LLAVE, "sec-fetch-mode": "cors", "sec-fetch-site": "same-origin" });
+      assert.strictEqual(desdePagina.status, 401, "la llave pedida desde el CÓDIGO de una página se rechaza: no puede volver al navegador");
+      /* …pero el fetch de NODE no es una página: manda `sec-fetch-mode: cors` sin Sec-Fetch-Site (medido
+         con Node 22), y así se llama la aplicación a sí misma con la llave (sync → histórico, el latido) */
+      assert.strictEqual((await invocar(rAdmin, PROT, { "x-historico-token": LLAVE, "sec-fetch-mode": "cors" })).status, 200,
+        "la auto-llamada del servidor (fetch de Node: sec-fetch-mode sin sec-fetch-site) sigue valiendo");
+      assert.strictEqual((await invocar(rAdmin, PROT, { "x-historico-token": LLAVE, "sec-fetch-mode": "no-cors", "sec-fetch-site": "cross-site" })).status, 401,
+        "ni desde la página de otro sitio");
+      assert.strictEqual((await invocar(rAdmin, PROT, { "x-historico-token": "llave-mala" })).status, 401, "llave inválida, 401");
+      assert.strictEqual((await invocar(rAdmin, PROT, { cookie, "x-historico-token": "llave-mala" })).status, 401, "llave PRESENTE e inválida = 401 aunque haya sesión");
+      assert.strictEqual((await invocar(rAdmin, PROT, { cookie: `${Sesion.COOKIE_SESION}=${"ab".repeat(32)}` })).status, 401, "una sesión inventada, 401");
+      assert.strictEqual((await invocar(rAdmin, PROT, { cookie: `${Sesion.COOKIE_SESION}=basura` })).status, 401, "una cookie mal formada, 401");
+      // lo de token OPCIONAL: público sin nada, con cifras con la sesión, 401 con una sesión que no vale
+      const rApu = require("../api/apu.js");
+      const OPC = "/api/apu?accion=parametros";
+      const pub = await invocar(rApu, OPC);
+      const conSes = await invocar(rApu, OPC, { cookie });
+      const mal = await invocar(rApu, OPC, { cookie: `${Sesion.COOKIE_SESION}=${"cd".repeat(32)}` });
+      assert.strictEqual(pub.status, 200, `la lectura pública sigue abierta sin nada: ${JSON.stringify(pub.cuerpo).slice(0, 160)}`);
+      assert.strictEqual(conSes.status, 200, "con la sesión del dueño, también");
+      assert.strictEqual(mal.status, 401, "una sesión presente e inválida es 401, jamás la vista pública en silencio");
+      const malLista = await invocar(rProcesos, "/api/procesos?op=listar&perfil=helder", { cookie: `${Sesion.COOKIE_SESION}=${"cd".repeat(32)}` });
+      assert.strictEqual(malLista.status, 401, "lo mismo en la lista: credencial presente e inválida = 401");
+      // CADUCADA: el registro dice que se abrió hace 31 días (aunque el almacén aún lo tuviera)
+      const reg = JSON.parse(await redis.get(claveS));
+      await redis.set(claveS, JSON.stringify({ ...reg, creada: new Date(Date.now() - 31 * 24 * 3600e3).toISOString() }), { ex: 3600 });
+      assert.strictEqual((await invocar(rAdmin, PROT, { cookie })).status, 401, "una sesión caducada, 401");
+      r = await invocar(rAdmin, "/api/admin?op=sesion", { cookie });
+      assert.ok(r.cuerpo.sesion === false && /Max-Age=0/.test(r.cabeceras["set-cookie"] || ""), "op=sesion dice que no hay sesión y retira la cookie vencida");
+      await redis.set(claveS, JSON.stringify(reg), { ex: 3600 });
+      assert.strictEqual((await invocar(rAdmin, PROT, { cookie })).status, 200, "(control) el mismo registro sin caducar abre");
+      // la sincronización protegida acepta la sesión (el botón «Actualizar» del dueño)
+      process.env.CRON_SECRET = "secreto-cron-sesion";
+      try {
+        assert.strictEqual((await Auth.autorizarSincronizacion({ headers: { cookie } }, {})).via, "sesion", "con CRON_SECRET, la sesión del dueño dispara la sincronización");
+        assert.strictEqual((await Auth.autorizarSincronizacion({ headers: {} }, {})).status, 401, "…y sin nada, no");
+      } finally { delete process.env.CRON_SECRET; }
+
+      // ── (4) CSRF: una escritura con cookie exige el mismo origen ──────────────
+      const ESCR = "/api/admin?op=importar";
+      const sinOrigen = await invocar(rAdmin, ESCR, { cookie, "content-type": "application/json" }, { metodo: "POST", body: {} });
+      assert.strictEqual(sinOrigen.status, 403, `una escritura con cookie y sin Origin: ${sinOrigen.status}`);
+      const ajeno = await invocar(rAdmin, ESCR, { cookie, "content-type": "application/json", origin: "https://atacante.example" }, { metodo: "POST", body: {} });
+      assert.strictEqual(ajeno.status, 403, "una escritura desde otro sitio, 403");
+      const cruzado = await invocar(rAdmin, PROT, { cookie, "sec-fetch-site": "cross-site" });
+      assert.strictEqual(cruzado.status, 403, "una lectura que el navegador declara de otro sitio, 403");
+      const propio = await invocar(rAdmin, ESCR, { cookie, ...ORIGEN }, { metodo: "POST", body: {} });
+      assert.ok(![401, 403].includes(propio.status), `la misma escritura desde la página pasa la guarda: ${propio.status}`);
+      const propioSf = await invocar(rAdmin, ESCR, { cookie, "content-type": "application/json", "sec-fetch-site": "same-origin" }, { metodo: "POST", body: {} });
+      assert.ok(![401, 403].includes(propioSf.status), "sin Origin pero con Sec-Fetch-Site: same-origin, también");
+
+      // ── (5) EL LÍMITE DE INTENTOS ────────────────────────────────────────────
+      /* Las ventanas de intentos son FIJAS (15 min). Con el reloj de verdad, un bloque que cruza el
+         borde de una ventana empieza a contar de cero a mitad del bucle y el tope no salta (pasó el
+         17-oct-2026: «pasado el tope por CONEXIÓN» dio 200). Se fija el reloj a mitad de la ventana
+         en curso mientras corre la sección y se devuelve al final. */
+      const relojDeIntentos = Date.now;
+      const ventanaMs = Sesion.VENTANA_INTENTOS_SEG * 1000;
+      const mitadDeVentana = Math.floor(relojDeIntentos() / ventanaMs) * ventanaMs + ventanaMs / 2;
+      Date.now = () => mitadDeVentana;
+      try {
+      await redis.del(...await redis.scan("intentos:*"));
+      /* (5a) UN TERCERO NO DEJA FUERA AL DUEÑO (revisión adversaria, 17-oct-2026): cinco fallos con
+         su correo desde cinco conexiones ajenas no le cierran la suya. Contra b73c38e, 429. */
+      for (let i = 0; i < Sesion.MAX_INTENTOS_POR_CUENTA; i++) {
+        const x = await post("/api/admin?op=entrar", { correo: correoDueno, contrasena: `mala ${i} de prueba` }, { "x-real-ip": `10.1.0.${i}` });
+        assert.strictEqual(x.status, 401, `intento ajeno ${i + 1}: 401`);
+      }
+      const noBloqueado = await post("/api/admin?op=entrar", { correo: correoDueno, contrasena: claveDueno }, { "x-real-ip": "10.1.9.9" });
+      assert.strictEqual(noBloqueado.status, 200, `cinco fallos ajenos desde otras conexiones no pueden dejar fuera al dueño desde la suya: ${noBloqueado.status}`);
+      // (5b) el tope que frena a quien prueba: correo + conexión
+      await redis.del(...await redis.scan("intentos:*"));
+      for (let i = 0; i < Sesion.MAX_INTENTOS_POR_CUENTA; i++) {
+        const x = await post("/api/admin?op=entrar", { correo: correoDueno, contrasena: `mala ${i} de prueba` }, { "x-real-ip": "10.1.1.1" });
+        assert.strictEqual(x.status, 401, `intento ${i + 1} desde la misma conexión: 401`);
+      }
+      const bloqueado = await post("/api/admin?op=entrar", { correo: correoDueno, contrasena: claveDueno }, { "x-real-ip": "10.1.1.1" });
+      assert.strictEqual(bloqueado.status, 429, `pasado el tope de correo + conexión, ni la contraseña buena entra desde ella: ${bloqueado.status}`);
+      assert.ok(/Vuelva a intentarlo en \d+ minutos?/.test(bloqueado.cuerpo.que_hacer) && !bloqueado.cabeceras["set-cookie"], "el 429 dice cuánto esperar y no abre sesión");
+      const nadie429 = await post("/api/admin?op=entrar", { correo: "nadie@ninguna.co", contrasena: "x" }, { "x-real-ip": "10.1.1.1" });
+      assert.strictEqual(nadie429.status, 401, "otro correo desde esa conexión no queda bloqueado");
+      // (5c) y un tope ALTO solo por correo, desde todas las conexiones
+      await redis.del(...await redis.scan("intentos:*"));
+      for (let i = 0; i < Sesion.MAX_INTENTOS_POR_CORREO; i++) {
+        const x = await post("/api/admin?op=entrar", { correo: correoDueno, contrasena: "mala de prueba" }, { "x-real-ip": `10.8.${Math.floor(i / 200)}.${i % 200}` });
+        assert.strictEqual(x.status, 401, `intento ${i + 1} con el mismo correo: 401`);
+      }
+      assert.ok(Sesion.MAX_INTENTOS_POR_CORREO >= 10 * Sesion.MAX_INTENTOS_POR_CUENTA, "el tope solo por correo es alto: no puede convertirse en un botón para dejar fuera al dueño");
+      assert.strictEqual((await post("/api/admin?op=entrar", { correo: correoDueno, contrasena: claveDueno }, { "x-real-ip": "10.8.9.9" })).status, 429,
+        `pasados ${Sesion.MAX_INTENTOS_POR_CORREO} intentos con ese correo desde todas partes, se pausa`);
+      /* (5d) LA CONEXIÓN DONDE EL DUEÑO YA ENTRÓ NO SE CIERRA POR ESE TOPE (18-oct-2026): el dueño
+         entra bien desde la suya, un tercero agota los 50 del correo desde diez conexiones, y el
+         dueño sigue entrando desde la suya; desde una conexión nueva, el tope sí lo frena. Contra el
+         árbol anterior, la entrada desde la conexión conocida da 429. */
+      await redis.del(...await redis.scan("intentos:*"));
+      assert.strictEqual((await post("/api/admin?op=entrar", { correo: correoDueno, contrasena: claveDueno }, { "x-real-ip": "10.9.0.1" })).status, 200,
+        "el dueño entra bien desde su conexión y la deja marcada");
+      // la entrada buena del dueño ya contó uno: con estos, el correo llega justo al tope
+      for (let i = 0; i < Sesion.MAX_INTENTOS_POR_CORREO - 1; i++) {
+        const x = await post("/api/admin?op=entrar", { correo: correoDueno, contrasena: "mala de prueba" }, { "x-real-ip": `10.7.${Math.floor(i / 5)}.${i % 5}` });
+        assert.strictEqual(x.status, 401, `intento ajeno ${i + 1}: 401`);
+      }
+      assert.strictEqual((await post("/api/admin?op=entrar", { correo: correoDueno, contrasena: claveDueno }, { "x-real-ip": "10.9.0.1" })).status, 200,
+        "con el tope del correo agotado por terceros, el dueño entra desde la conexión donde ya entró");
+      assert.strictEqual((await post("/api/admin?op=entrar", { correo: correoDueno, contrasena: claveDueno }, { "x-real-ip": "10.9.0.2" })).status, 429,
+        "desde una conexión nueva el tope del correo sigue valiendo");
+      const marcas = await redis.scan("intentos:conocida:*");
+      assert.ok(marcas.length >= 1 && await redis.ttl(marcas[0]) > 0, "la marca de conexión conocida existe y caduca");
+      await redis.del(...await redis.scan("intentos:*"));
+      for (let i = 0; i < Sesion.MAX_INTENTOS_POR_IP; i++) {
+        const x = await post("/api/admin?op=entrar", { correo: `prueba${i}@ninguna.co`, contrasena: "mala de prueba" }, { "x-real-ip": "10.2.0.1" });
+        assert.strictEqual(x.status, 401, `intento ${i + 1} desde la misma conexión: 401`);
+      }
+      const porIp = await post("/api/admin?op=entrar", { correo: correoDueno, contrasena: claveDueno }, { "x-real-ip": "10.2.0.1" });
+      assert.strictEqual(porIp.status, 429, "pasado el tope por CONEXIÓN, nada entra desde ella");
+      const otraIp = await post("/api/admin?op=entrar", { correo: correoDueno, contrasena: claveDueno }, { "x-real-ip": "10.2.0.2" });
+      assert.strictEqual(otraIp.status, 200, "desde otra conexión el dueño entra");
+      // la llave del alta también tiene tope por conexión
+      await redis.del(...await redis.scan("intentos:*"));
+      const altaCerrada = await post("/api/admin?op=crear-cuenta", { llave: "x", correo: "a@b.co", contrasena: "una frase larga" }, { "x-real-ip": "10.3.0.1" });
+      assert.strictEqual(altaCerrada.status, 409, "con la cuenta creada, el alta ni siquiera mira la llave");
+      // Redis caído durante el conteo: NO se deja entrar
+      upstash.romper((cmd) => (String(cmd[0]).toUpperCase() === "INCR" ? "ERR caído a propósito" : null));
+      try {
+        const caido = await post("/api/admin?op=entrar", { correo: correoDueno, contrasena: claveDueno }, { "x-real-ip": "10.4.0.1" });
+        assert.strictEqual(caido.status, 503, `sin poder contar los intentos no se deja entrar: ${caido.status}`);
+        assert.ok(!caido.cabeceras["set-cookie"]);
+      } finally { upstash.romper(null); }
+      } finally { Date.now = relojDeIntentos; }
+
+      /* (5d) SIN ORÁCULO DE EXISTENCIA (revisión adversaria): un intento fallido con el correo del
+         dueño y otro con un correo que no existe cuestan los MISMOS comandos de Redis (antes 6 y 4:
+         el índice del correo solo se leía si casaba). Contadores en el mismo estado en los dos. */
+      {
+        const cuesta = async (correo, ip) => {
+          await redis.del(...await redis.scan("intentos:*"));
+          const antes = upstash.peticiones();
+          const x = await post("/api/admin?op=entrar", { correo, contrasena: "contrasena-equivocada" }, { "x-real-ip": ip });
+          return [x.status, upstash.peticiones() - antes];
+        };
+        const [sD, cD] = await cuesta(correoDueno, "10.9.0.1");
+        const [sN, cN] = await cuesta("nadie@ninguna.co", "10.9.0.2");
+        assert.deepStrictEqual([sD, sN], [401, 401]);
+        assert.strictEqual(cD, cN, `el número de comandos distingue si el correo existe: ${cD} con el del dueño, ${cN} con uno inexistente`);
+      }
+      /* (5e) «SIN DATO» NO ES CERO: un INCR que no devuelve un entero no es un intento libre */
+      {
+        const memoria = new Map();
+        const redisRaro = { _cmd: async () => null, expire: async () => 1, get: async (k) => memoria.get(k) ?? null, set: async () => "OK", mget: async (ks) => ks.map(() => null), del: async () => 1 };
+        const estados = new Set();
+        for (let i = 0; i < 8; i++) estados.add((await Sesion.entrar(redisRaro, { headers: { "x-real-ip": "1.2.3.4" } }, { correo: correoDueno, contrasena: `probando-${i}` })).status);
+        assert.deepStrictEqual([...estados], [503], `con el contador ilegible no se puede probar contraseñas sin límite: ${[...estados]}`);
+      }
+      /* (5f) EL TRAMO DEL LATIDO NO REENVÍA LAS CABECERAS DEL NAVEGADOR (revisión adversaria): con la
+         sesión y desde la página, el latido mandaba sec-fetch-site, la cookie y el Origin junto a la
+         llave, y op=historico la rechazaba «desde una página» */
+      {
+        const { cabecerasDelTramo } = require("../lib/handlers/procesos/latido.js");
+        const h = cabecerasDelTramo({ headers: { host: "app.local", cookie, origin: "https://app.local", "sec-fetch-site": "same-origin", "sec-fetch-mode": "cors" } });
+        assert.ok(!h.cookie && !h.origin && !h["sec-fetch-site"] && !h["sec-fetch-mode"] && h.host === "app.local", `el tramo lleva solo lo del servidor: ${Object.keys(h).join(", ")}`);
+        assert.strictEqual(h["x-historico-token"], LLAVE, "y la llave del servidor");
+        assert.strictEqual((await Auth.autorizarToken({ method: "GET", headers: h }, {})).via, "llave", "con esas cabeceras op=historico acepta la llave");
+      }
+
+      // ── (6) SALIR ────────────────────────────────────────────────────────────
+      await redis.del(...await redis.scan("intentos:*"));
+      const otra = await post("/api/admin?op=entrar", { correo: correoDueno, contrasena: claveDueno }, { "x-real-ip": "10.5.0.1" });
+      const cookie2 = cookieDe(otra);
+      assert.strictEqual((await invocar(rAdmin, PROT, { cookie: cookie2 })).status, 200);
+      const salirSinOrigen = await invocar(rAdmin, "/api/admin?op=salir", { cookie: cookie2 }, { metodo: "POST" });
+      assert.strictEqual(salirSinOrigen.status, 403, "otro sitio no puede sacar al dueño de su sesión");
+      const salir = await invocar(rAdmin, "/api/admin?op=salir", { cookie: cookie2, ...ORIGEN }, { metodo: "POST" });
+      assert.strictEqual(salir.status, 200);
+      assert.ok(/Max-Age=0/.test(salir.cabeceras["set-cookie"] || ""), "salir retira la cookie del navegador");
+      assert.strictEqual((await invocar(rAdmin, PROT, { cookie: cookie2 })).status, 401, "y la INVALIDA en el servidor: la cookie copiada ya no abre nada");
+      assert.strictEqual((await invocar(rAdmin, PROT, { cookie })).status, 200, "salir de una sesión no cierra las demás del mismo dueño");
+
+      // ── (7) LA CUOTA DE ALTAS PÚBLICAS: exime la sesión, ya no la llave ──────
+      const PD = require("../lib/perfil_dinamico.js");
+      const ipCuota = "10.6.0.1";
+      const ahoraQ = Date.now();
+      const vent = Math.floor(ahoraQ / 1000 / PD.CUOTA_VENTANA_SEG);
+      await redis.set(PD.CLAVE_CUOTA(ipCuota, vent), String(PD.configuracionDeCuota().tope + 5), { ex: 3600 });
+      const conLlave = await PD.guardaDeAltaPublica(redis, { headers: { "x-real-ip": ipCuota, "x-historico-token": LLAVE } }, {}, ahoraQ);
+      assert.strictEqual(conLlave.permitido, false, "la llave del servidor ya NO exime de la cuota de altas (vivió en el navegador)");
+      const conSesionQ = await PD.guardaDeAltaPublica(redis, { headers: { "x-real-ip": ipCuota, cookie } }, {}, ahoraQ);
+      assert.ok(conSesionQ.permitido === true && conSesionQ.exento === "sesión del dueño", `la sesión del dueño sí exime: ${JSON.stringify(conSesionQ)}`);
+      const sesionFalsa = await PD.guardaDeAltaPublica(redis, { headers: { "x-real-ip": ipCuota, cookie: `${Sesion.COOKIE_SESION}=${"ef".repeat(32)}` } }, {}, ahoraQ);
+      assert.strictEqual(sesionFalsa.permitido, false, "una cookie inventada no exime");
+
+      // ── (8) LAS RUTAS PÚBLICAS SIGUEN ABIERTAS SIN NADA ──────────────────────
+      for (const [nombre, h, url] of [
+        ["salud", rProcesos, "/api/procesos?op=salud"],
+        ["la lista pública", rProcesos, "/api/procesos?op=listar&perfil=helder"],
+        ["el pulso público", rPerfil, "/api/perfil?op=pulso&perfil=helder"],
+        ["las actividades de la entrada", rPerfil, "/api/perfil?op=entrada"],
+        ["el interruptor del modo cuenta", rPerfil, "/api/perfil?op=cuenta"],
+        ["¿hay sesión?", rAdmin, "/api/admin?op=sesion"],
+      ]) {
+        const x = await invocar(h, url);
+        assert.ok(![401, 403].includes(x.status), `${nombre} tiene que seguir sin pedir credencial: ${x.status}`);
+      }
+      const altaRup = await invocar(rAdmin, "/api/admin?op=rup&origen=pdf", { "content-type": "application/json", "x-real-ip": "10.7.0.1" }, { metodo: "POST", body: {} });
+      assert.ok(![401, 403].includes(altaRup.status), `el alta pública del RUP sigue sin credencial: ${altaRup.status}`);
+      const altaManual = await invocar(rPerfil, "/api/perfil?op=entrada", { "content-type": "application/json", "x-real-ip": "10.7.0.2" }, { metodo: "POST", body: {} });
+      assert.ok(![401, 403].includes(altaManual.status), `el alta pública por tres datos sigue sin credencial: ${altaManual.status}`);
+
+      /* ── (8b) CENSO: LA LLAVE RETIRADA NO VIVE EN NINGÚN ARCHIVO DEL REPOSITORIO (revisión
+         adversaria, 17-oct-2026). Seguía en ocho documentos (la memoria, las consultorías, los
+         planes, el README archivado). Se barren TODOS los archivos de texto del árbol —docs/
+         entero con docs/archivo, README, CLAUDE.md, .claude/, public/, lib/, api/, tests/, la
+         configuración— y cada palabra de 8 o más caracteres se compara por su HUELLA con la lista
+         de retiradas: el valor no puede ir en la suite. Contra b73c38e cae por los ocho. */
+      {
+        const raizC = path.join(__dirname, "..");
+        const textos = [];
+        const andarC = (d) => {
+          for (const e of fs.readdirSync(d, { withFileTypes: true })) {
+            if (e.name === ".git" || e.name === "node_modules") continue;
+            const q = path.join(d, e.name);
+            if (e.isDirectory()) andarC(q);
+            else if (/\.(md|json|js|html|css|yml|yaml|txt|csv)$/i.test(e.name)) textos.push(q);
+          }
+        };
+        andarC(raizC);
+        assert.ok(textos.some((q) => q.endsWith(path.join("docs", "MEMORIA.md"))) && textos.some((q) => q.includes(`${path.sep}archivo${path.sep}`)) && textos.length > 100,
+          `el censo de la llave retirada se quedó corto (${textos.length} archivos)`);
+        const conLlave = [];
+        for (const q of textos) {
+          const vistas = new Set(fs.readFileSync(q, "utf8").match(/[A-Za-z0-9_-]{8,}/g) || []);
+          for (const w of vistas) if (Sesion.esLlaveRetirada(w)) { conLlave.push(path.relative(raizC, q)); break; }
+        }
+        assert.deepStrictEqual(conLlave, [], `la llave que estuvo publicada sigue escrita en: ${conLlave.join(", ")} (sustitúyala por «[llave retirada el 17-oct-2026]»)`);
+      }
+
+      // ── (9) CENSO: todo llamador del guardián lo ESPERA ──────────────────────
+      const sinAwait = [];
+      const recorrer = (dir) => {
+        for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+          const p = path.join(dir, e.name);
+          if (e.isDirectory()) recorrer(p);
+          else if (e.name.endsWith(".js") && !p.endsWith(path.join("lib", "auth.js"))) {
+            sinComentarios(fs.readFileSync(p, "utf8")).split("\n").forEach((l, i) => {
+              if (/\b(autorizarToken|autorizarSincronizacion)\(/.test(l) && !/await\s*\(?\s*(hayGuardaDeSincronizacion\(\)\s*\?\s*)?(autorizarToken|autorizarSincronizacion)\(/.test(l)) sinAwait.push(`${path.relative(path.join(__dirname, ".."), p)}:${i + 1}`);
+            });
+          }
+        }
+      };
+      recorrer(path.join(__dirname, "..", "lib"));
+      recorrer(path.join(__dirname, "..", "api"));
+      assert.deepStrictEqual(sinAwait, [], `el guardián es asíncrono: estos llamadores no lo esperan (fallarían cerrados, pero mal): ${sinAwait.join(" · ")}`);
+      console.log(`· unidad sesión del dueño: alta solo sin cuenta y con la llave (dos a la vez → ${[a1.status, a2.status].sort().join("/")}), 409 después · `
+        + `entrar bien/mal idénticos · cookie __Host- HttpOnly Secure SameSite=Strict 30 días, hash en el almacén · sesión 200, nada 401, caducada/cerrada/inventada 401 · `
+        + `llave de servidor 200, desde página 401 · CSRF 403 · tope ${Sesion.MAX_INTENTOS_POR_CUENTA} por correo y ${Sesion.MAX_INTENTOS_POR_IP} por conexión, Redis caído 503 · `
+        + `cuota de altas: exime la sesión, no la llave · rutas públicas abiertas · llamadores del guardián con await`);
+    } finally {
+      upstash.romper(null);
+      await limpiarCuentas();
+    }
+  }
+
   /* unidad: EL MODO CUENTA, CONSTRUIDO Y APAGADO (11-sep-2026).
      Lo que esta cerradura defiende es sobre todo que el modo APAGADO no cambie
      nada: el dueño pidió la infraestructura, no el cambio de producto. Y que
@@ -7553,6 +8635,26 @@ async function main() {
       "72", "10", "15", "Servicios de apoyo para la construcción", "72", "10", "29", "Servicios de mantenimiento y reparación de instalaciones", "81", "10", "15", "-", "Ingeniería Civil y Arquitectura", "72 14 11 20", "Pavimentación",
       "Las personas naturales o jurídicas extranjeras sin domicilio");
     assert.deepStrictEqual([cols[0].codigos, cols[0].completa], [["721015", "721029", "811015", "721411"], true], `tabla en columnas (CO1.REQ.8568178, 10335184): ${JSON.stringify(cols)}`);
+    /* LA FILA PARTIDA (Fase 0 del 17-oct-2026, texto de pdf.js con su lineasDePagina): el nombre en dos
+       líneas deja el segmento arriba con el nombre y «familia clase» abajo; la fila se perdía y la lista
+       salía CORTA y «completa» (faltaba 721411 en CO1.REQ.11036237, 10650320, 10512619 y 10955924) */
+    const intro = ["Los contratos aportados para efectos de acreditación de la experiencia requerida deben estar", "clasificados en alguno de los siguientes códigos:", "Segmentos\tFamilia\tClase\tNombre"];
+    const extranjeros = "Las personas naturales o jurídicas extranjeras sin domicilio o sucursal en Colombia deberán indicar";
+    const partida = leer("\f36", ...intro, "72\t14\t10\tServicio de construcción de autopistas y carreteras", "72\tServicio de construcción y revestimiento y pavimentación de", "14\t11", "infraestructura", extranjeros);
+    assert.deepStrictEqual([partida[0].codigos, partida[0].completa], [["721410", "721411"], true], `fila partida (CO1.REQ.11036237): ${JSON.stringify(partida)}`);
+    // la clase de la fila partida no se pega al segmento de la fila siguiente («11 INFRAESTRUCTURA. 72 14 15» no es 117214)
+    const partidaYMas = leer("\f34", ...intro, "72\t14\t10\tSERVICIOS DE CONSTRUCCION DE AUTOPISTAS Y CARRETERAS.", "72\tSERVICIOS DE CONSTRUCCIÓN Y REVESTIMIENTO Y PAVIMENTACION DE", "14\t11", "INFRAESTRUCTURA.",
+      "72\t14\t15\tSERVICIOS DE PREPARACION DE TIERRAS", "72\t15\t27\tSERVICIOS DE INSTALACION Y REPARACION DE CONCRETO", extranjeros);
+    assert.deepStrictEqual([partidaYMas[0].codigos, partidaYMas[0].completa], [["721410", "721411", "721415", "721527"], true], `fila partida entre filas enteras (CO1.REQ.10512619): ${JSON.stringify(partidaYMas)}`);
+    // el reconstruido es un código «corto»: solo dentro de una tabla abierta, no 200 caracteres después de la frase
+    const lejos = leer("\f36", "Los contratos aportados para efectos de acreditación de la experiencia requerida deben estar clasificados en alguno de los siguientes códigos:", "texto de relleno sin cifras ".repeat(9), "30 Apoyo a la industria nacional 20 42", "72141000 Servicios de construcción de autopistas", extranjeros);
+    assert.deepStrictEqual([lejos[0].codigos, lejos[0].completa], [["721410"], true], `la fila partida lejos de la frase no abre la tabla: ${JSON.stringify(lejos)}`);
+    // una tabla de solo segmento y familia no fabrica clases («72 14 Servicios … 72 10» no es 147210)
+    const familias = leer("\f36", ...intro, "72\t14\tServicios de construcción pesada", "72\t10\tServicios de mantenimiento", "72\t15\tServicios especializados", extranjeros);
+    assert.ok(!familias.some((l) => l.codigos.some((c) => c.length === 6 && !/^72(?:14|10|15)/.test(c))), `solo segmento y familia: ningún código inventado: ${JSON.stringify(familias)}`);
+    // la errata «14 111» en la fila partida no se reconstruye, y la tabla deja de darse por completa (no estrecha)
+    const partidaErrata = leer("\f39", ...intro, "72\t14\t10\tServicios de construcción de autopistas y carreteras", "72\tServicios de construcción y revestimiento y pavimentación de", "14\t111", "infraestructura", extranjeros);
+    assert.deepStrictEqual([partidaErrata[0].codigos, partidaErrata[0].completa], [["721410"], false], `errata en la fila partida (CO1.REQ.10650320): ${JSON.stringify(partidaErrata)}`);
     const comas = leer("\f49", "Los contratos para acreditar la experiencia específica deberán encontrarse inscritos en el RUP, podrán estar incluidos en cualquiera de los siguientes códigos: 72101500, 72101500, 72151900 y 811015.");
     assert.deepStrictEqual(comas[0].codigos, ["721015", "721519", "811015"], `lista con comas (CO1.REQ.9013511): ${JSON.stringify(comas)}`);
     assert.deepStrictEqual(leer("\f3", "La experiencia se acreditará con contratos clasificados en alguno de los siguientes códigos:", "Valor $72.101.500 y $ 72,101,500"), [], "una cifra con separadores de miles no es un código");
@@ -8004,6 +9106,424 @@ async function main() {
      navegador, pdf.js) encontró tres «hay anticipo» falsos, un capital de trabajo estimado 3,3
      veces el publicado, y cifras de la Matriz 2 que no se leían por estar en otra línea que su
      nombre. Cada caso va con el texto real, recortado. */
+  /* EL PRESUPUESTO DEL PLIEGO FRENTE A SECOP II (Fase 2, 17-oct-2026): texto real de pdf.js (lineasDePagina) de la
+     tabla 1.1, con las columnas entrelazadas. Solo AVISA; la cifra que usan las cuentas no cambia. */
+  bqPresupuestoPliego: { if (!corre("unidad presupuesto del pliego")) break bqPresupuestoPliego;
+    const PP = require("../lib/presupuesto_pliego.js");
+    const Dp = require("../lib/documentos_proceso.js");
+    const titulo = "1.1.\tOBJETO, PRESUPUESTO OFICIAL, PLAZO Y UBICACIÓN";
+    const indice = "1.1.\tOBJETO, PRESUPUESTO OFICIAL, PLAZO Y UBICACIÓN\t6";
+    const def = ["\f2", indice, "\f6", titulo, "contratación se identifican en la siguiente tabla:", "MIL", "VÍA DE ACCESO AL\tEl lugar de ejecución", "OCHOCIENTOS", "DIEZ PESOS",
+      "M/CTE ( $", "DEL DISTRITO ESPECIAL\tOeste y Calle 3A barrio", "1.581.425.810)", "DE SANTIAGO DE CALI,\tAltos de Santa Elena,", "Dos meses (02) y\tincluido AIU del", "1.2.\tDOCUMENTOS DEL PROCESO"].join("\n");
+    const bor = ["\f6", titulo, "($1.744.426.146),", "QUE COMPRENDEN LA\tTres (03) meses\tcomuna 18 de la zona", "1.2.\tDOCUMENTOS DEL PROCESO"].join("\n");
+    // la cifra partida por las columnas (Santa Elena definitivo) y no la del índice
+    assert.deepStrictEqual([PP.leerPresupuestoDelPliego(def).presupuesto.valor, PP.leerPresupuestoDelPliego(def).presupuesto.pagina], [1581425810, 6], JSON.stringify(PP.leerPresupuestoDelPliego(def)));
+    assert.strictEqual(PP.leerPresupuestoDelPliego(bor).presupuesto.valor, 1744426146);
+    // formato inglés sin «$» (Caldas, CO1.REQ.10710451) y centavos (Turbaco, CO1.REQ.10650320)
+    assert.strictEqual(PP.leerPresupuestoDelPliego(["\f6", titulo, "QUEBRADA LA HONDA EN\tMunicipio de Filadelfia -", "2 Meses\t993,687,600.00", "1.2.\tDOCUMENTOS"].join("\n")).presupuesto.valor, 993687600);
+    assert.strictEqual(PP.leerPresupuestoDelPliego(["\f7", titulo, "8B Y CALLE 2G,\t($511.587.015,10) M/CTE", "1.2.\tDOCUMENTOS"].join("\n")).presupuesto.valor, 511587015.1);
+    // dos cifras distintas: no se escoge; sin la sección (solo el índice): null
+    const dos = PP.leerPresupuestoDelPliego(["\f6", titulo, "($1.744.426.146)", "($1.581.425.810)", "1.2.\tDOCUMENTOS"].join("\n"));
+    assert.deepStrictEqual([dos.presupuesto.valor, dos.presupuesto.leidas.length], [null, 2], JSON.stringify(dos));
+    assert.strictEqual(PP.leerPresupuestoDelPliego(["\f2", indice, "1.2.\tDOCUMENTOS DEL PROCESO\t6"].join("\n")), null, "la línea del índice no es la sección");
+    /* ronda 5 de detekta-lector (17-oct-2026, licitación pública): los centavos con punto (Mariquita CO1.REQ.11169004),
+       el título «…PLAZO, UBICACIÓN Y ESPECIFICACIONES» (Paicol CO1.REQ.11151463) y el título SIN número, que acaba en
+       «DOCUMENTOS DEL PROCESO» sin número (Sucre CO1.REQ.11092753: sin ese fin, la sección llegaba al valor del CDP) */
+    assert.strictEqual(PP.leerPresupuestoDelPliego(["\f5", titulo, "TOLIMA\tCENTAVOS", "($685.335.300.87)", "M/CTE", "1.2.\tDOCUMENTOS DEL PROCESO"].join("\n")).presupuesto.valor, 685335300.87, "los centavos con punto (MUTACIÓN: sin el punto, «sin cifra legible»)");
+    assert.strictEqual(PP.leerPresupuestoDelPliego(["\f6", "1.1.\tOBJETO, PRESUPUESTO OFICIAL, PLAZO, UBICACIÓN Y ESPECIFICACIONES", "Y CONDICIONES TÉCNICAS.", "Públicas o en su defecto por\tY DOS PESOS\tHuila", "quien se designe por parte del ($1.313.400.392,00) M/CTE.", "1.2\tDOCUMENTOS DEL PROCESO"].join("\n")).presupuesto.valor, 1313400392, "«PLAZO, UBICACIÓN Y ESPECIFICACIONES» es el mismo título");
+    assert.strictEqual(PP.leerPresupuestoDelPliego(["\f2", "1.1.\tOBJETO, PRESUPUESTO OFICIAL, PLAZO, UBICACIÓN Y", "ESPECIFICACIONES Y CONDICIONES TÉCNICAS......................14", "1.2\tDOCUMENTOS DEL PROCESO........15"].join("\n")), null, "la línea partida del índice no es la sección");
+    const sucre = ["\f2", "OBJETO, PRESUPUESTO OFICIAL, PLAZO Y UBICACIÓN .................................................. 5", "\f5", "1. CAPÍTULO I INFORMACIÓN GENERAL", "OBJETO, PRESUPUESTO OFICIAL, PLAZO Y UBICACIÓN", "El objeto, Presupuesto Oficial, plazo y ubicación del proyecto objeto del Proceso de Contratación se", "DE SUCRE\tCENTAVOS M/CTE", "($1.258.962.674,74)", "DOCUMENTOS DEL PROCESO", "Los Documentos del Proceso son los señalados tanto en el capítulo IX.", "CLASIFICADOR DE BIENES Y SERVICIOS DE NACIONES UNIDAS (UNSPSC)", "Disponibilidad Presupuestal\tDisponibilidad Presupuestal\tDisponibilidad Presupuestal", "647\t3 de junio de 2026\t$1.366.136.574,00"].join("\n");
+    assert.deepStrictEqual([PP.leerPresupuestoDelPliego(sucre).presupuesto.valor, PP.leerPresupuestoDelPliego(sucre).presupuesto.pagina], [1258962674.74, 5], `el título sin número, y la sección acaba en «DOCUMENTOS DEL PROCESO» (MUTACIÓN: sin ese fin, dos cifras con la del CDP): ${JSON.stringify(PP.leerPresupuestoDelPliego(sucre))}`);
+    assert.strictEqual(PP.leerPresupuestoDelPliego(["\f2", "OBJETO, PRESUPUESTO OFICIAL, PLAZO Y UBICACIÓN .................................................. 5", "DOCUMENTOS DEL PROCESO ........ 5"].join("\n")), null, "la línea del índice sin número no es la sección");
+    // cada título que cierra la sección sin número, solo, deja fuera el valor del CDP que viene después
+    for (const fin of ["DOCUMENTOS DEL PROCESO", "COMUNICACIONES Y OBSERVACIONES AL PROCESO", "CLASIFICADOR DE BIENES Y SERVICIOS DE NACIONES UNIDAS (UNSPSC)", "RECURSOS QUE RESPALDAN LA CONTRATACIÓN"]) {
+      const r = PP.leerPresupuestoDelPliego(["\f5", "OBJETO, PRESUPUESTO OFICIAL, PLAZO Y UBICACIÓN", "DE SUCRE\tCENTAVOS M/CTE", "($1.258.962.674,74)", fin, "647\t3 de junio de 2026\t$1.366.136.574,00"].join("\n"));
+      assert.strictEqual(r.presupuesto.valor, 1258962674.74, `«${fin}» cierra la sección (MUTACIÓN: sin ese fin, dos cifras con la del CDP): ${JSON.stringify(r)}`);
+    }
+    // la cifra partida por las columnas en dos líneas (Samacá CO1.REQ.11184065, «$1.773´266.41 / 9.00).») no se adivina
+    assert.strictEqual(PP.leerPresupuestoDelPliego(["\f6", "1.1.OBJETO, PRESUPUESTO OFICIAL, PLAZO Y UBICACIÓN", "MESES ($1.773´266.41", "MÁS.\t9.00).\t15 ACUEDUCTO RANCHERIA - VDA QUITE", "1.2.\tDOCUMENTOS DEL PROCESO"].join("\n")).presupuesto.valor, null, "la cifra partida entre columnas queda sin dato");
+    // el aviso: definitivo distinto de SECOP → riesgo y PRIMERO; solo borrador → «confírmelo»; igual (centavos) → nada
+    const doc = (texto, tipo) => ({ nombre: `${tipo}.pdf`, tipo, hechos: Dp.hechosDeTexto(texto, { tipo }) });
+    const dicen = (leidos, cop) => Dp.loQueDicen({ indice: { archivos: [], plan: [] }, ilegibles: {}, leidos }, { presupuestoCOP: cop }).hechos;
+    const h1 = dicen({ a: doc(def, "pliego"), b: doc(bor, "pliego_borrador"), c: doc("\f9\nEn el presente proceso de contratación la entidad no entregará anticipo al contratista.\n", "estudio_previo") }, 1744426146);
+    assert.ok(h1.length >= 2 && h1.some((h) => h.clave === "anticipo"), "hay otro aviso antes del presupuesto para que el orden se note");
+    assert.deepStrictEqual([h1[0].clave, h1[0].estado, h1[0].presupuesto_pliego, h1[0].pagina], ["presupuesto_pliego", "riesgo", 1581425810, 6], JSON.stringify(h1[0]));
+    assert.ok(/\$1\.581\.425\.810 y SECOP II publica \$1\.744\.426\.146, una diferencia de \$163\.000\.336 \(−9,3 %\)/.test(h1[0].texto) && /Confirme con la entidad cuál cifra rige/.test(h1[0].texto), h1[0].texto);
+    const h2 = dicen({ b: doc(bor, "pliego_borrador") }, 1581425810).find((h) => h.clave === "presupuesto_pliego");
+    assert.ok(h2 && h2.estado === "revisar" && /borrador/.test(h2.texto) && /pliego definitivo/.test(h2.texto), JSON.stringify(h2));
+    assert.ok(!dicen({ a: doc(["\f7", titulo, "8B Y CALLE 2G,\t($511.587.015,10) M/CTE", "1.2.\tDOCUMENTOS"].join("\n"), "pliego") }, 511587015).some((h) => h.clave === "presupuesto_pliego"), "SECOP II corta los centavos: $0,10 no es diferencia");
+    /* la revisión adversaria (17-oct-2026), cada caso con su cerradura */
+    const sec = (...l) => ["\f6", titulo, ...l, "1.2.\tDOCUMENTOS DEL PROCESO"].join("\n");
+    const cuantos = (leidos, cop) => dicen(leidos, cop).filter((h) => h.clave === "presupuesto_pliego");
+    // H1: la adenda más reciente con cifra gana al pliego (SECOP II ya publica la de la adenda: no hay aviso)
+    assert.strictEqual(cuantos({ a: { ...doc(def, "pliego"), fecha_carga: "2026-09-01" }, b: { ...doc(sec("queda en ($1.500.000.000)"), "adenda"), fecha_carga: "2026-09-10" } }, 1500000000).length, 0, "la adenda reciente gana al pliego");
+    // …y una adenda sin cifra no deja ORDENAR la del pliego: «revisar»
+    const conAdenda = cuantos({ a: { ...doc(def, "pliego"), fecha_carga: "2026-09-01" }, b: { ...doc("\f1\nSe modifica el cronograma del proceso.\n", "adenda"), fecha_carga: "2026-09-10" } }, 1744426146);
+    assert.ok(conAdenda.length === 1 && conAdenda[0].estado === "revisar" && /adenda/.test(conAdenda[0].texto), JSON.stringify(conAdenda));
+    // H2: con un definitivo LEÍDO (aunque no rinda cifra) el borrador no habla
+    assert.strictEqual(cuantos({ a: doc(sec("sin cifra legible en esta tabla"), "pliego"), b: doc(bor, "pliego_borrador") }, 1581425810).length, 0, "el borrador no habla si hay definitivo leído");
+    // H3: por lotes no se avisa (dos lotes iguales dejaban una sola cifra: «−50 %» falso)
+    assert.strictEqual(cuantos({ a: doc(sec("Lote 1\t$ 500.000.000", "Lote 2\t$ 500.000.000"), "pliego") }, 1000000000).length, 0, "por lotes no hay aviso");
+    // H4: «1.1.OBJETO» sin espacio (Manizales, CO1.REQ.10287523)
+    assert.strictEqual(PP.leerPresupuestoDelPliego(["\f6", "1.1.OBJETO, PRESUPUESTO OFICIAL, PLAZO Y UBICACIÓN", "Mantenimiento\t$1.012.000.000", "1.2.DOCUMENTOS DEL PROCESO"].join("\n")).presupuesto.valor, 1012000000);
+    // H5: una diferencia de más del 50 % es más probablemente una lectura equivocada: «revisar», nunca «riesgo»
+    const absurda = cuantos({ a: doc(sec("salario de ($ 1.423.500)"), "pliego") }, 1581425810);
+    assert.ok(absurda.length === 1 && absurda[0].estado === "revisar" && /lectura equivocada/.test(absurda[0].texto), JSON.stringify(absurda));
+    // N2: la adenda de cronograma, más reciente, no tapa a la anterior que cambió el presupuesto (SECOP II ya la publica)
+    assert.strictEqual(cuantos({ a: { ...doc(def, "pliego"), fecha_carga: "2026-09-01" }, b: { ...doc(sec("queda en ($1.500.000.000)"), "adenda"), fecha_carga: "2026-09-10" }, c: { ...doc("\f1\nSe modifica el cronograma del proceso.\n", "adenda"), fecha_carga: "2026-09-20" } }, 1500000000).length, 0, "la adenda de cronograma no tapa a la que trae la cifra");
+    // N5: un «Documento base» que es borrador por su nombre no cuenta como definitivo
+    const docBor = { ...doc(bor, "documento_base"), nombre: "DOCUMENTO BASE PROYECTO DE PLIEGO.pdf" };
+    const n5 = cuantos({ a: docBor }, 1581425810);
+    assert.ok(n5.length === 1 && n5[0].estado === "revisar" && /borrador/.test(n5[0].texto), JSON.stringify(n5));
+    // N8: el pliego por DEBAJO de SECOP II, aunque sea poco, no es un simple dato (una oferta al techo se rechazaría)
+    assert.strictEqual(cuantos({ a: doc(sec("($1.580.000.000)"), "pliego") }, 1581425810)[0].estado, "riesgo");
+    // H6: $2 de diferencia es un dato, no un riesgo, y se dice en pesos
+    const dos2 = cuantos({ a: doc(sec("($1.581.425.812)"), "pliego") }, 1581425810);
+    assert.ok(dos2.length === 1 && dos2[0].estado === "dato" && /diferencia de \$2\./.test(dos2[0].texto), JSON.stringify(dos2));
+    /* EL TECHO DE LA OFERTA PARA PRECIOS (17-oct-2026): la más baja entre SECOP II y el pliego definitivo; solo BAJA */
+    const tope = (leidos, cop) => Dp.loQueDicen({ indice: { archivos: [], plan: [] }, ilegibles: {}, leidos }, { presupuestoCOP: cop }).tope_oferta;
+    // revisión adversaria (17-oct-2026): una cifra mal escrita no se lee mil veces menor, y sin título de cierre no hay sección
+    for (const mal of ["($1.581.425.810,0)", "$1.581.425.810.0 M/CTE"]) assert.strictEqual(PP.leerPresupuestoDelPliego(sec(mal)).presupuesto.valor, null, `«${mal}» no es «1.581.425,81» (MUTACIÓN: con el lookahead viejo, mil veces menos)`);
+    const adendaSinCierre = ["\f1", "ADENDA No. 2", "Se modifican los siguientes numerales:", "OBJETO, PRESUPUESTO OFICIAL, PLAZO Y UBICACIÓN", "en el sentido de aclarar la ubicación de la obra.", "Capital de trabajo: CT ≥ $ 400.000.000,00"].join("\n");
+    assert.strictEqual(PP.leerPresupuestoDelPliego(adendaSinCierre), null, "sin título de cierre no hay sección (MUTACIÓN: se leía el capital de trabajo como presupuesto)");
+    assert.strictEqual(tope({ a: { ...doc(def, "pliego"), fecha_carga: "2026-09-01" }, b: { ...doc(adendaSinCierre, "adenda"), fecha_carga: "2026-09-10" } }, 1581425810).valor, 1581425810, "una adenda que solo nombra el numeral no baja el techo");
+    assert.deepStrictEqual([tope({ a: doc(def, "pliego"), b: doc(bor, "pliego_borrador") }, 1744426146).valor, tope({ a: doc(def, "pliego") }, 1744426146).fuente, tope({ a: doc(def, "pliego") }, 1744426146).pagina], [1581425810, "pliego", 6], "Santa Elena: el techo es el del pliego definitivo");
+    assert.strictEqual(tope({ a: doc(bor, "pliego") }, 1581425810).fuente, "secop", "el pliego MAYOR que SECOP II no sube el techo");
+    assert.strictEqual(tope({ b: doc(bor, "pliego_borrador") }, 1900000000).fuente, "secop", "un borrador nunca fija el techo, aunque diga menos que SECOP II");
+    assert.strictEqual(tope({ a: doc(sec("salario de ($ 1.423.500)"), "pliego") }, 1581425810).fuente, "secop", "una lectura dudosa nunca fija el techo");
+    assert.strictEqual(tope({ a: doc(sec("Lote 1\t$ 500.000.000", "Lote 2\t$ 500.000.000"), "pliego") }, 1000000000).fuente, "secop", "por lotes el techo no sale del pliego");
+    assert.strictEqual(tope({ a: { ...doc(def, "pliego"), fecha_carga: "2026-09-01" }, b: { ...doc("\f1\nSe modifica el cronograma del proceso.\n", "adenda"), fecha_carga: "2026-09-10" } }, 1744426146).fuente, "secop", "con una adenda posterior sin la tabla, el techo no sale del pliego");
+    assert.deepStrictEqual(tope({ a: doc(["\f7", titulo, "8B Y CALLE 2G,\t($511.587.015,10) M/CTE", "1.2.\tDOCUMENTOS"].join("\n"), "pliego") }, 511587015), { valor: 511587015, fuente: "secop", secop: 511587015, pagina: null, documento: null }, "los centavos que SECOP II corta no mueven el techo");
+    const { normalizarConfig: nc5 } = require("../lib/apu/calculo.js");
+    assert.deepStrictEqual([nc5({ cuantia_fuente: "pliego" }).cuantia_fuente, nc5({ cuantia_fuente: "<b>x</b>" }).cuantia_fuente, nc5({}).cuantia_fuente], ["pliego", null, null], "la fuente del techo: «pliego» o nada");
+    assert.strictEqual(tope({ a: doc(sec("($1.744.426.145,50)"), "pliego") }, 1744426146).fuente, "pliego", "el pliego por debajo, aunque sea por centavos, fija el techo (SECOP II los corta hacia abajo, no hacia arriba)");
+    assert.strictEqual(tope({ a: doc(def, "pliego") }, null), null, "sin cifra de SECOP II no se fija techo: no hay contra qué contrastar la lectura");
+    /* UNA VERSIÓN MÁS NUEVA DEL PLIEGO SIN LA TABLA NO DEJA QUE LA CIFRA DE LA VIEJA FIJE EL TECHO (18-oct-2026,
+       visto bueno del dueño). Contra el árbol anterior, el techo quedaba en la cifra del pliego viejo. */
+    {
+      const viejo = { ...doc(def, "pliego"), nombre: "Pliego de condiciones definitivo.pdf", fecha_carga: "2026-09-01" };
+      const nuevoSinTabla = { ...doc("\f1\nSe ajustan los requisitos habilitantes del proceso.\n", "pliego"), nombre: "Pliego de condiciones definitivo modificado.pdf", fecha_carga: "2026-09-20" };
+      const t1 = tope({ a: viejo, b: nuevoSinTabla }, 1744426146);
+      assert.strictEqual(t1.fuente, "secop", `una versión más nueva sin la tabla no deja que la cifra del pliego viejo fije el techo: ${JSON.stringify(t1)}`);
+      const aviso = dicen({ a: viejo, b: nuevoSinTabla }, 1744426146).find((h) => h.clave === "presupuesto_pliego");
+      assert.ok(aviso && aviso.estado === "revisar" && /versión más nueva del pliego/.test(aviso.texto), `y el aviso lo dice y manda a confirmar: ${aviso && aviso.estado} · ${aviso && aviso.texto}`);
+      // el mismo día no se sabe cuál rige: del lado prudente
+      assert.strictEqual(tope({ a: viejo, b: { ...nuevoSinTabla, fecha_carga: "2026-09-01" } }, 1744426146).fuente, "secop", "dos versiones del mismo día, una sin tabla: el techo no sale del pliego");
+      // el orden por tipo NO cambia: un documento base más nuevo con más cifra no le gana al pliego (revisión adversaria: subía el techo)
+      const baseNuevo = { ...doc(sec("($1.650.000.000,00)"), "documento_base"), nombre: "Documento base definitivo.pdf", fecha_carga: "2026-09-20" };
+      assert.strictEqual(tope({ a: viejo, b: baseNuevo }, 1744426146).valor, 1581425810, "pliego viejo y documento base nuevo: manda el pliego, como antes");
+      // un pliego más viejo sin tabla no tapa al nuevo que sí la trae
+      assert.strictEqual(tope({ a: { ...viejo, fecha_carga: "2026-09-20" }, b: { ...nuevoSinTabla, fecha_carga: "2026-09-01" } }, 1744426146).valor, 1581425810, "la versión vieja sin tabla no cuenta contra la nueva con cifra");
+      assert.strictEqual(tope({ a: viejo }, 1744426146).valor, 1581425810, "con una sola versión, todo sigue igual");
+      // QUÉ documento da la cifra no cambia (segunda revisión adversaria): unas «observaciones» con cifra menor siguen fijándola, como antes
+      const obs = { ...doc(sec("($1.500.000.000,00)"), "pliego"), nombre: "Observaciones al pliego de condiciones definitivo.pdf", fecha_carga: "2026-09-20" };
+      assert.strictEqual(tope({ a: viejo, b: obs }, 1744426146).valor, 1500000000, "unas «observaciones» más nuevas con cifra menor la siguen fijando, como antes: este arreglo no sube el techo por esa vía");
+    }
+    const Gp = require("../lib/guia_proceso.js");
+    const filaSE = { id_del_proceso: "CO1.SE", nombre_del_procedimiento: "MEJORAMIENTO VIA SANTA ELENA", entidad: "DISTRITO DE CALI", departamento_entidad: "Valle del Cauca", modalidad_de_contratacion: "Selección Abreviada de Menor Cuantía", precio_base: "1744426146", duracion: "2", unidad_de_duracion: "Meses", codigo_principal_de_categoria: "V1.72141000", fecha_de_publicacion_del: "2026-09-01T10:00:00.000", fecha_de_recepcion_de: "2026-09-20T15:00:00.000", tipo_de_contrato: "Obra" };
+    const gSE = Gp.guiaDe({ fila: filaSE, perfil: "helder", ctx: { ahoraMs: Date.parse("2026-09-03T15:00:00Z"), documentos: { indice: { archivos: [], plan: [] }, ilegibles: {}, leidos: { a: doc(def, "pliego") } } } });
+    assert.ok(gSE.tope_oferta && gSE.tope_oferta.valor === 1581425810 && gSE.tope_oferta.fuente === "pliego", `la guía entrega el techo del pliego: ${JSON.stringify(gSE.tope_oferta)}`);
+    const docsSE = { indice: { archivos: [], plan: [] }, ilegibles: {}, leidos: { a: doc(def, "pliego") } };
+    assert.deepStrictEqual(Gp.topeOfertaDe({ fila: filaSE, documentos: docsSE }), gSE.tope_oferta, "topeOfertaDe (la consulta liviana de la tarjeta) da el MISMO techo que la guía");
+    const filaSE2 = { ...filaSE, cuantia_cop: 1700000000 };
+    assert.deepStrictEqual(Gp.topeOfertaDe({ fila: filaSE2, documentos: docsSE }), Gp.guiaDe({ fila: filaSE2, perfil: "helder", ctx: { ahoraMs: Date.parse("2026-09-03T15:00:00Z"), documentos: docsSE } }).tope_oferta, "la misma cifra de SECOP II que la guía, también cuando la fila trae cuantía y precio base distintos (MUTACIÓN: otro presupuesto)");
+    assert.deepStrictEqual(Gp.topeOfertaDe({ fila: null, foto: { presupuesto_cop: 1744426146 }, documentos: docsSE }), Gp.guiaDe({ fila: null, foto: { presupuesto_cop: 1744426146 }, perfil: "helder", ctx: { documentos: docsSE } }).tope_oferta, "sin fila viva, la misma foto para los dos");
+    // G.5 nombra contra qué compara, y un valor desconocido de la fuente es inerte
+    const V5 = require("../lib/apu/validaciones.js");
+    const g5 = V5.validarPresupuesto({ items: [], resumen: { precio_final: 1700000000 }, configuracion: { cuantia_fuente: "pliego" }, cuantia_cop: 1581425810 }).hallazgos.find((h) => h.codigo === "excede_la_cuantia" || h.id === "excede_la_cuantia" || /supera el presupuesto/.test(h.titulo || ""));
+    assert.ok(g5 && /por encima del presupuesto del pliego definitivo \(\$/.test(JSON.stringify(g5)), JSON.stringify(g5));
+    const g5b = V5.validarPresupuesto({ items: [], resumen: { precio_final: 1700000000 }, configuracion: { cuantia_fuente: "otra" }, cuantia_cop: 1581425810 }).hallazgos.find((h) => /supera el presupuesto/.test(h.titulo || ""));
+    assert.ok(g5b && /cuantía del proceso/.test(JSON.stringify(g5b)) && !/pliego definitivo/.test(JSON.stringify(g5b)), JSON.stringify(g5b));
+    // un documento que no es pliego no se lee para esto
+    assert.strictEqual(Dp.hechosDeTexto(def, { tipo: "estudio_previo" }).presupuesto_pliego, null);
+  }
+  bqTextoDelPliego: { if (!corre("unidad el texto del pliego")) break bqTextoDelPliego;
+    /* QUÉ TEXTO LEEN EL DICTAMEN, EL CRONOGRAMA Y LOS DESCUENTOS (18-oct-2026). Hasta hoy, la última versión del vigía:
+       el documento base (el pliego tipo) no entra al vigía y el dictamen decía «no hay texto» con el pliego leído (85 de
+       228 licitaciones de obra), y un anexo con «pliego» en el nombre leído después del pliego quedaba de último (7 de
+       228). Con el handler REAL de documentos sobre el Redis simulado y la `textoGuardado` real. */
+    const DocsT = require("../lib/documentos_proceso.js"), Dv = require("../lib/diff.js");
+    const { escribirJSONComprimido: escribirC } = require("../lib/almacen.js");
+    const { textoGuardado } = require("../lib/handlers/pliego/cronograma.js");
+    const routerT = require("../api/pliego.js");
+    const relleno = "Segunda página del documento del proceso, con texto suficiente para que la lectura cuente como texto.";
+    const txt = (s) => `\f1\n${s}\n\f2\n${relleno}\n`;
+    const PLIEGO = txt("PLIEGO DE CONDICIONES DEFINITIVO. La entidad no entregará al contratista anticipo y/o pago anticipado.");
+    const BASE = txt("DOCUMENTO BASE DEL PROCESO. 1.1. OBJETO, PRESUPUESTO OFICIAL, PLAZO Y UBICACIÓN del documento base.");
+    const OBS = txt("OBSERVACIONES AL PLIEGO DEFINITIVO. Pregunta 1: ¿se puede ampliar el plazo? Respuesta de la entidad: no.");
+    const arch = (id, nombre, tipo, fecha) => ({ id_documento: id, nombre, tipo, tipo_legible: DocsT.TIPOS[tipo].legible, fecha_carga: fecha, de_la_entidad: true, legible: true, url: "https://community.secop.gov.co/x" });
+    const sembrar = (id, archivos) => escribirC(redis, DocsT.claveDocs(id), { version: DocsT.VERSION, id_proceso: id, indice: { version: DocsT.VERSION, consultado_el: new Date().toISOString(), archivos, plan: archivos.map((a) => a.id_documento) }, leidos: {}, ilegibles: {} });
+    const leer = async (id, idDoc, texto) => { const r = await invocarPost(routerT, "/api/pliego?op=documentos", { id_proceso: id, id_documento: idDoc, texto }, CAB_TOKEN); assert.strictEqual(r.status, 200, JSON.stringify(r.cuerpo).slice(0, 300)); return r.cuerpo; };
+    // (1) el documento base leído es el texto del dictamen, aunque no entre al vigía
+    const idB = "CO1.REQ.TXT001";
+    await sembrar(idB, [arch("1", "DOCUMENTO BASE.pdf", "documento_base", "2026-09-10")]);
+    const rB = await leer(idB, "1", BASE);
+    assert.strictEqual(rB.version_pliego, null, "el documento base sigue fuera del vigía (decisión del 27-sep-2026)");
+    const tB = await textoGuardado(redis, idB);
+    assert.ok(/DOCUMENTO BASE DEL PROCESO/.test(tB.texto) && tB.version === null && /^doc:1:[0-9a-f]{12}$/.test(tB.texto_id) && tB.documento && tB.documento.nombre === "DOCUMENTO BASE.pdf",
+      `el dictamen lee el documento base leído (MUTACIÓN: solo el vigía, texto vacío): ${JSON.stringify({ ...tB, texto: tB.texto.slice(0, 40) })}`);
+    const dB = await invocar(routerT, `/api/pliego?op=dictamen&id_proceso=${idB}&perfil=helder`, CAB_TOKEN);
+    assert.ok(dB.status === 200 && dB.cuerpo.hay_texto === true && dB.cuerpo.documento_texto && dB.cuerpo.documento_texto.nombre === "DOCUMENTO BASE.pdf",
+      `y la consulta del dictamen ya no dice «no hay texto»: ${JSON.stringify(dB.cuerpo).slice(0, 300)}`);
+    // (2) el pliego y DESPUÉS unas observaciones con «pliego» en el nombre: el vigía no las registra y el texto es el pliego
+    const idO = "CO1.REQ.TXT002";
+    await sembrar(idO, [arch("1", "PLIEGO DEFINITIVO.pdf", "pliego", "2026-03-19"), arch("2", "OBSERVACIONES PLIEGO DEF LP-004-2026.pdf", "pliego", "2026-03-24")]);
+    const rP = await leer(idO, "1", PLIEGO), rO = await leer(idO, "2", OBS);
+    assert.ok(rP.version_pliego === 1 && rO.version_pliego === null && (await Dv.leerIndice(redis, idO)).versiones.length === 1,
+      `las observaciones no entran al vigía como versión del pliego (MUTACIÓN: sin \`esVersionDelPliego\` en el registro, versión 2): ${JSON.stringify([rP.version_pliego, rO.version_pliego])}`);
+    const tO = await textoGuardado(redis, idO);
+    assert.ok(/PLIEGO DE CONDICIONES DEFINITIVO/.test(tO.texto) && tO.version === 1 && tO.texto_id === 1 && tO.documento.nombre === "PLIEGO DEFINITIVO.pdf",
+      `el texto es el pliego, leído de su versión del vigía (el mismo sello de caché de antes; MUTACIÓN: sin excluir por nombre, las observaciones; leyendo siempre el guardado, versión nula): ${JSON.stringify({ ...tO, texto: tO.texto.slice(0, 40) })}`);
+    // (3) datos de antes: el vigía ya tiene las observaciones de última versión y no hay documentos leídos
+    const idV = "CO1.REQ.TXT003";
+    await Dv.registrarVersion(redis, { idProceso: idV, texto: PLIEGO, origen: "documentos:PLIEGO DEFINITIVO.pdf", ahora: Date.parse("2026-03-20T10:00:00Z") });
+    await Dv.registrarVersion(redis, { idProceso: idV, texto: OBS, origen: "documentos:OBSERVACIONES PLIEGO DEF LP-004-2026", ahora: Date.parse("2026-03-25T10:00:00Z") });
+    const tV = await textoGuardado(redis, idV);
+    assert.ok(tV.version === 1 && /PLIEGO DE CONDICIONES DEFINITIVO/.test(tV.texto), `sin documentos leídos, la última versión del vigía que sea del pliego, nunca un anexo de la lectura automática (MUTACIÓN: la última a secas, las observaciones): v${tV.version}`);
+    // (4) lo cargado A MANO después de la lectura automática gana; antes, no
+    const idM = "CO1.REQ.TXT004";
+    await sembrar(idM, [arch("1", "DOCUMENTO BASE.pdf", "documento_base", "2026-09-10")]);
+    await Dv.registrarVersion(redis, { idProceso: idM, texto: PLIEGO, origen: "lector", ahora: Date.parse("2026-01-01T00:00:00Z") });
+    await leer(idM, "1", BASE);
+    assert.ok(/DOCUMENTO BASE DEL PROCESO/.test((await textoGuardado(redis, idM)).texto), "lo cargado a mano ANTES de la lectura automática no tapa el documento leído (MUTACIÓN: lo manual siempre)");
+    await Dv.registrarVersion(redis, { idProceso: idM, texto: PLIEGO.replace("DEFINITIVO", "DEFINITIVO 2"), origen: "lector", ahora: Date.now() + 60000 });
+    const tM = await textoGuardado(redis, idM);
+    assert.ok(/DEFINITIVO 2/.test(tM.texto) && tM.version === 2 && tM.origen === "lector", `lo cargado a mano DESPUÉS gana: es como entra un pliego de más de 20 MB (MUTACIÓN: lo manual nunca): ${JSON.stringify({ ...tM, texto: tM.texto.slice(0, 40) })}`);
+    /* (4b) lo manual cede solo ante un documento PUBLICADO en SECOP II después de cargarlo, no ante uno más viejo leído
+       después (revisión adversaria, CO1.REQ.10168183: el documento base del 29-ene tapaba el del 12-feb cargado a mano) */
+    const idM2 = "CO1.REQ.TXT010";
+    await Dv.registrarVersion(redis, { idProceso: idM2, texto: PLIEGO.replace("DEFINITIVO", "DEL 12 DE FEBRERO"), origen: "lector", ahora: Date.parse("2026-02-15T12:00:00Z") });
+    await sembrar(idM2, [arch("1", "CCE-EICP-GI-01 Documento base V4.pdf", "documento_base", "2026-01-29"), arch("2", "DOCUMENTO BASE .pdf", "documento_base", "2026-03-02")]);
+    await leer(idM2, "1", BASE);
+    assert.ok(/DEL 12 DE FEBRERO/.test((await textoGuardado(redis, idM2)).texto), "un documento publicado ANTES de la carga manual y leído después no la tapa (MUTACIÓN: comparando la hora de lectura, el documento base viejo)");
+    await leer(idM2, "2", BASE.replace("del documento base", "del documento base de marzo"));
+    assert.ok(/documento base de marzo/.test((await textoGuardado(redis, idM2)).texto), "uno publicado DESPUÉS de la carga manual sí manda");
+    await redis.del(DocsT.claveDoc(idM2, "2"));
+    assert.ok(/DEL 12 DE FEBRERO/.test((await textoGuardado(redis, idM2)).texto), "si el más nuevo perdió su texto, lo manual vuelve a ganar al más viejo (MUTACIÓN: comparar con el primero aunque no tenga texto, el documento base viejo)");
+    // (4c) un definitivo MÁS NUEVO sin leer (más de 20 MB) se dice: el dictamen es de una versión anterior
+    const idN = "CO1.REQ.TXT011";
+    await sembrar(idN, [arch("1", "CCE-EICP-GI-01 Documento base V4.pdf", "documento_base", "2026-01-29"), { ...arch("2", "DOCUMENTO BASE .pdf", "documento_base", "2026-02-12"), motivo_omision: "pesa más de 20 MB: la aplicación no lo lee sola; ábralo en SECOP II" }, arch("3", "Proyecto de pliego.pdf", "pliego_borrador", "2026-03-01")]);
+    await leer(idN, "1", BASE);
+    const tN = await textoGuardado(redis, idN);
+    assert.ok(tN.mas_nuevo_sin_leer && tN.mas_nuevo_sin_leer.nombre === "DOCUMENTO BASE .pdf" && tN.mas_nuevo_sin_leer.fecha_carga === "2026-02-12" && /20 MB/.test(tN.mas_nuevo_sin_leer.motivo),
+      `el definitivo más nuevo sin leer se dice, con su motivo; un borrador más nuevo no cuenta (MUTACIÓN: sin el aviso): ${JSON.stringify(tN.mas_nuevo_sin_leer)}`);
+    const dN = await invocar(routerT, `/api/pliego?op=dictamen&id_proceso=${idN}&perfil=helder`, CAB_TOKEN);
+    assert.ok(dN.cuerpo.mas_nuevo_sin_leer && dN.cuerpo.mas_nuevo_sin_leer.nombre === "DOCUMENTO BASE .pdf", `y llega a la consulta del dictamen (MUTACIÓN: sin pasarlo): ${JSON.stringify(dN.cuerpo.mas_nuevo_sin_leer)}`);
+    assert.strictEqual((await textoGuardado(redis, idB)).mas_nuevo_sin_leer, null, "sin uno más nuevo, nada que decir");
+    /* (4d) el hermano: el texto cargado A MANO también avisa de lo publicado después del día de la carga (el pliego de 30 MB
+       cargado a mano y la adenda de 25 MB que vino después), y no del archivo pesado que él mismo reemplaza */
+    const idN2 = "CO1.REQ.TXT013";
+    await Dv.registrarVersion(redis, { idProceso: idN2, texto: PLIEGO.replace("DEFINITIVO", "DEL 12 DE FEBRERO"), origen: "lector", ahora: Date.parse("2026-02-15T12:00:00Z") });
+    const pesado = "pesa más de 20 MB: la aplicación no lo lee sola; ábralo en SECOP II";
+    await sembrar(idN2, [{ ...arch("1", "DOCUMENTO BASE .pdf", "documento_base", "2026-02-12"), motivo_omision: pesado }, { ...arch("2", "PLIEGO DE CONDICIONES ADENDA 1 INCORPORADA.pdf", "pliego", "2026-03-02"), motivo_omision: pesado }, arch("3", "CCE-EICP-GI-01 Documento base V4.pdf", "documento_base", "2026-01-29")]);
+    const tN2 = await textoGuardado(redis, idN2);
+    assert.ok(/DEL 12 DE FEBRERO/.test(tN2.texto) && tN2.mas_nuevo_sin_leer && tN2.mas_nuevo_sin_leer.nombre === "PLIEGO DE CONDICIONES ADENDA 1 INCORPORADA.pdf",
+      `sin documentos leídos, lo cargado a mano avisa del publicado después, no del que reemplaza (MUTACIÓN: la versión del vigía sin aviso): ${JSON.stringify(tN2.mas_nuevo_sin_leer)}`);
+    await leer(idN2, "3", BASE);
+    const tN3 = await textoGuardado(redis, idN2);
+    assert.ok(/DEL 12 DE FEBRERO/.test(tN3.texto) && tN3.mas_nuevo_sin_leer && tN3.mas_nuevo_sin_leer.fecha_carga === "2026-03-02",
+      `y con un documento más viejo leído, igual (MUTACIÓN: la carga manual sin aviso): ${JSON.stringify(tN3.mas_nuevo_sin_leer)}`);
+    // …y cuando el elegido es un pliego que entró al vigía (su texto sale de ahí)
+    const idN4 = "CO1.REQ.TXT014";
+    await sembrar(idN4, [arch("1", "PLIEGO DEFINITIVO.pdf", "pliego", "2026-03-19"), { ...arch("2", "PLIEGO DEFINITIVO MODIFICADO.pdf", "pliego", "2026-03-30"), motivo_omision: pesado }]);
+    await leer(idN4, "1", PLIEGO);
+    const tN4 = await textoGuardado(redis, idN4);
+    assert.ok(tN4.version === 1 && tN4.mas_nuevo_sin_leer && tN4.mas_nuevo_sin_leer.nombre === "PLIEGO DEFINITIVO MODIFICADO.pdf",
+      `el pliego leído del vigía también avisa del más nuevo sin leer (MUTACIÓN: sin aviso en ese camino): ${JSON.stringify({ version: tN4.version, aviso: tN4.mas_nuevo_sin_leer })}`);
+    /* (4e) lo cargado en Precios NO dice qué archivo es (2.ª revisión adversaria): el Formulario 1 soltado ANTES de que la
+       lectura automática lea el pliego no le gana; frente a un pliego del vigía manda el orden del vigía, como en main */
+    const idF = "CO1.REQ.TXT015";
+    const FORM = txt("FORMULARIO 1 - FORMULARIO DE PRESUPUESTO OFICIAL. ITEM 1.1 Localización y replanteo m2 1200 4.500 5.400.000.");
+    await sembrar(idF, [arch("1", "PLIEGO DE CONDICIONES DEFINITIVO LP-001-2026.pdf", "pliego", "2026-09-10")]);
+    await Dv.registrarVersion(redis, { idProceso: idF, texto: FORM, origen: "lector", ahora: Date.parse("2026-09-15T15:00:00Z") });
+    await leer(idF, "1", PLIEGO);
+    const tF = await textoGuardado(redis, idF);
+    assert.ok(tF.version === 2 && /PLIEGO DE CONDICIONES DEFINITIVO/.test(tF.texto),
+      `el Formulario 1 cargado en Precios antes de la lectura automática no tapa el pliego (MUTACIÓN: la fecha de publicación también contra los pliegos del vigía, el Formulario): ${JSON.stringify({ version: tF.version, origen: tF.origen })}`);
+    await Dv.registrarVersion(redis, { idProceso: idF, texto: PLIEGO.replace("DEFINITIVO", "CON ADENDA 1"), origen: "lector", ahora: Date.now() + 60000 });
+    assert.ok(/CON ADENDA 1/.test((await textoGuardado(redis, idF)).texto), "lo cargado en Precios DESPUÉS del pliego del vigía gana, como en main (MUTACIÓN: el pliego del vigía siempre)");
+    // …ni por medio de un documento base publicado después del pliego y antes de la carga (el hermano: main da el pliego)
+    const idF2 = "CO1.REQ.TXT020";
+    await sembrar(idF2, [arch("1", "PLIEGO DE CONDICIONES DEFINITIVO.pdf", "pliego", "2026-09-01"), arch("2", "DOCUMENTO BASE.pdf", "documento_base", "2026-09-05")]);
+    await Dv.registrarVersion(redis, { idProceso: idF2, texto: FORM, origen: "lector", ahora: Date.parse("2026-09-15T15:00:00Z") });
+    await leer(idF2, "1", PLIEGO); await leer(idF2, "2", BASE);
+    const tF2 = await textoGuardado(redis, idF2);
+    assert.ok(!/FORMULARIO 1/.test(tF2.texto) && /DOCUMENTO BASE DEL PROCESO/.test(tF2.texto),
+      `lo manual que un pliego del vigía registrado después reemplazó no compite con el documento base (MUTACIÓN: sin «reemplazada», el Formulario): ${JSON.stringify({ version: tF2.version, origen: tF2.origen })}`);
+    /* (4f) el día de la carga es el de Colombia: a las 20:30 del 15-sep el ISO ya dice 16 */
+    const cargaNoche = Date.parse("2026-09-16T01:30:00Z");
+    const idZ = "CO1.REQ.TXT016";
+    await Dv.registrarVersion(redis, { idProceso: idZ, texto: PLIEGO.replace("DEFINITIVO", "DEL 15 DE SEPTIEMBRE"), origen: "lector", ahora: cargaNoche });
+    await sembrar(idZ, [{ ...arch("1", "PLIEGO DE CONDICIONES AJUSTADO.pdf", "pliego", "2026-09-16"), motivo_omision: pesado }]);
+    const tZ = await textoGuardado(redis, idZ);
+    assert.ok(/DEL 15 DE SEPTIEMBRE/.test(tZ.texto) && tZ.mas_nuevo_sin_leer && tZ.mas_nuevo_sin_leer.nombre === "PLIEGO DE CONDICIONES AJUSTADO.pdf",
+      `lo publicado el día siguiente a una carga nocturna se avisa (MUTACIÓN: el día del ISO en UTC, sin aviso): ${JSON.stringify(tZ.mas_nuevo_sin_leer)}`);
+    const idZ2 = "CO1.REQ.TXT017";
+    await Dv.registrarVersion(redis, { idProceso: idZ2, texto: PLIEGO.replace("DEFINITIVO", "DEL 15 DE SEPTIEMBRE"), origen: "lector", ahora: cargaNoche });
+    await sembrar(idZ2, [arch("1", "DOCUMENTO BASE.pdf", "documento_base", "2026-09-16")]);
+    await leer(idZ2, "1", BASE);
+    assert.ok(/DOCUMENTO BASE DEL PROCESO/.test((await textoGuardado(redis, idZ2)).texto), "el documento base publicado el día siguiente a una carga nocturna la tapa (MUTACIÓN: el día del ISO en UTC, lo manual)");
+    // a igual día no se sabe cuál es más nuevo: lo manual, como en main (que nunca leía el documento base)
+    const idZ3 = "CO1.REQ.TXT019";
+    await Dv.registrarVersion(redis, { idProceso: idZ3, texto: PLIEGO.replace("DEFINITIVO", "DEL 15 DE SEPTIEMBRE"), origen: "lector", ahora: Date.parse("2026-09-15T15:00:00Z") });
+    await sembrar(idZ3, [arch("1", "DOCUMENTO BASE.pdf", "documento_base", "2026-09-15")]);
+    await leer(idZ3, "1", BASE);
+    assert.ok(/DEL 15 DE SEPTIEMBRE/.test((await textoGuardado(redis, idZ3)).texto), "un documento base publicado el MISMO día de la carga manual no la tapa (MUTACIÓN: «>=», el documento base)");
+    /* (4g) uno más nuevo que está en el plan y todavía no se leyó es «pendiente», no «no se pudo leer» */
+    const idP = "CO1.REQ.TXT018";
+    await sembrar(idP, [arch("1", "CCE-EICP-GI-01 Documento base V4.pdf", "documento_base", "2026-01-29"), arch("2", "DOCUMENTO BASE DEFINITIVO.pdf", "documento_base", "2026-02-12")]);
+    await leer(idP, "1", BASE);
+    const tP = await textoGuardado(redis, idP);
+    assert.ok(tP.mas_nuevo_sin_leer && tP.mas_nuevo_sin_leer.pendiente === true && tP.mas_nuevo_sin_leer.motivo === null && tN.mas_nuevo_sin_leer.pendiente === false,
+      `el más nuevo por leer se dice pendiente; el de más de 20 MB, no (MUTACIÓN: sin \`pendiente\`): ${JSON.stringify([tP.mas_nuevo_sin_leer, tN.mas_nuevo_sin_leer])}`);
+    // (5) el orden: el definitivo antes que el borrador, el más reciente, y a igual fecha el pliego antes que el documento base
+    const ordenDe = (leidos) => DocsT.candidatosAlTextoDelPliego({ leidos }).map((x) => x.id_documento);
+    assert.deepStrictEqual(ordenDe({ 1: { nombre: "PLIEGO DEFINITIVO.pdf", tipo: "pliego", fecha_carga: "2026-04-01" }, 2: { nombre: "PROYECTO DE PLIEGO.pdf", tipo: "pliego_borrador", fecha_carga: "2026-05-01" } }), ["1", "2"], "el definitivo antes que un borrador más nuevo (MUTACIÓN: sin la clave del borrador, el borrador)");
+    assert.deepStrictEqual(ordenDe({ 1: { nombre: "Documento base borrador.pdf", tipo: "documento_base", fecha_carga: "2026-05-01" }, 2: { nombre: "DOCUMENTO BASE DEFINITIVO.pdf", tipo: "documento_base", fecha_carga: "2026-04-01" } }), ["2", "1"], "un documento base con «borrador» en el nombre también es borrador");
+    assert.deepStrictEqual(ordenDe({ 1: { nombre: "PLIEGO DEFINITIVO.pdf", tipo: "pliego", fecha_carga: "2026-01-29" }, 2: { nombre: "DOCUMENTO BASE .pdf", tipo: "documento_base", fecha_carga: "2026-02-12" } }), ["2", "1"], "el más reciente en SECOP II (MUTACIÓN: sin la fecha, el pliego por tipo)");
+    assert.deepStrictEqual(ordenDe({ 1: { nombre: "DOCUMENTO BASE.pdf", tipo: "documento_base", fecha_carga: "2026-02-12" }, 2: { nombre: "PLIEGO DEFINITIVO.pdf", tipo: "pliego", fecha_carga: "2026-02-12" } }), ["2", "1"], "a igual fecha, el pliego antes que el documento base (MUTACIÓN: sin la prioridad, el base)");
+    assert.deepStrictEqual(ordenDe({ 1: { nombre: "DOCUMENTO BASE.pdf", tipo: "documento_base", fecha_carga: "2026-02-12", hechos: { plantilla_en_blanco: true } }, 2: { nombre: "6.1_ANEXO_PLIEGO LP-003-2026.pdf", tipo: "pliego", fecha_carga: "2026-04-05" }, 3: { nombre: "Estudios previos.pdf", tipo: "estudio_previo", fecha_carga: "2026-04-05" } }), [], "ni la plantilla en blanco ni un anexo ni otro tipo de documento (MUTACIÓN: sin la plantilla, el documento base en blanco)");
+    for (const [n, si] of [["PLIEGO DE CONDICIONES DEFINITIVO.pdf", true], ["DOCUMENTO COMPLEMENTARIO AL PLIEGO DE CONDICIONES.pdf", true], ["ANEXOS PLIEGO DE CONDICIONES.docx", false], ["OFICIO PREGUNTAS Y RESPUESTAS LP-SI-002-2026 PLIEGO DEF.pdf", false], ["Anexo 3 - Glosario - Proyecto de Pliego.pdf", false], ["FORMATOS DEL PLIEGO.docx", false], ["MATRICES PLIEGO TIPO.zip", false], ["Apendice B - Transversal Cusiana - Proyecto de pliego.pdf", false],
+      // la palabra DESPUÉS del nombre del pliego no lo vuelve anexo (revisión adversaria; «después de obsv.» es real, CO1.REQ.10197236)
+      ["Pliego definitivo ajustado con observaciones LP-001-2026.pdf", true], ["PLIEGO DE CONDICIONES DEFINITIVO CON ANEXOS.pdf", true], ["PLIEGO DEFINITIVO Y FORMATOS.pdf", true], ["Pliego definitivo despues de obsv.pdf", true]]) {
+      assert.strictEqual(DocsT.esVersionDelPliego({ tipo: "pliego", nombre: n }), si, `«${n}» ${si ? "es" : "no es"} una versión del pliego (nombres de los índices reales; MUTACIÓN: mirando todo el nombre, el ajustado queda fuera)`);
+    }
+    assert.strictEqual(DocsT.esVersionDelPliego({ tipo: "documento_base", nombre: "Documento base definitivo con formularios.pdf" }), true, "ni «con formularios» detrás de «documento base»");
+    // el pliego ajustado CON OBSERVACIONES, posterior, es el texto (antes de arreglar la regla, se leía la versión anterior)
+    const idAj = "CO1.REQ.TXT009";
+    await sembrar(idAj, [arch("1", "6. Pliego definitivo LP-001-2026.pdf", "pliego", "2026-06-16"), arch("2", "Pliego definitivo ajustado con observaciones LP-001-2026.pdf", "pliego", "2026-07-08")]);
+    await leer(idAj, "1", PLIEGO);
+    const rAj = await leer(idAj, "2", PLIEGO.replace("DEFINITIVO.", "DEFINITIVO AJUSTADO."));
+    const tAj = await textoGuardado(redis, idAj);
+    assert.ok(rAj.version_pliego === 2 && /AJUSTADO/.test(tAj.texto) && tAj.version === 2, `el ajustado entra al vigía y es el texto: v${rAj.version_pliego}, ${tAj.texto.slice(0, 60)}`);
+    // (6) el documento leído que caducó en Redis cede al siguiente; el texto tiene el tope del vigía
+    const idX = "CO1.REQ.TXT006";
+    await sembrar(idX, [arch("1", "PLIEGO DEFINITIVO.pdf", "pliego", "2026-01-10"), arch("2", "DOCUMENTO BASE.pdf", "documento_base", "2026-02-12")]);
+    const largo = `\f1\nDOCUMENTO BASE LARGO.\n${"x".repeat(Dv.MAX_TEXTO + 5000)}\n`;
+    await leer(idX, "1", PLIEGO); await leer(idX, "2", largo);
+    const tX = await textoGuardado(redis, idX);
+    assert.ok(tX.texto.length === Dv.MAX_TEXTO && tX.recortado === true && tX.documento.nombre === "DOCUMENTO BASE.pdf", `el documento base más nuevo, con el tope de 400 KB del vigía y dicho (MUTACIÓN: sin el tope, ${tX.texto.length}): ${tX.recortado}`);
+    // dos documentos base (ninguno en el vigía): sin el texto guardado del más nuevo, el siguiente
+    const idX2 = "CO1.REQ.TXT008";
+    await sembrar(idX2, [arch("1", "DOCUMENTO BASE.pdf", "documento_base", "2026-01-10"), arch("2", "DOCUMENTO BASE MODIFICADO.pdf", "documento_base", "2026-02-12")]);
+    await leer(idX2, "1", BASE); await leer(idX2, "2", BASE.replace("del documento base", "del documento base modificado"));
+    await redis.del(DocsT.claveDoc(idX2, "2"));
+    const tX2 = await textoGuardado(redis, idX2);
+    assert.ok(/DOCUMENTO BASE DEL PROCESO/.test(tX2.texto) && !/modificado/.test(tX2.texto) && tX2.documento.nombre === "DOCUMENTO BASE.pdf", `sin el texto guardado del más nuevo, el siguiente (MUTACIÓN: parar en el primero, sin texto): ${JSON.stringify({ ...tX2, texto: tX2.texto.slice(0, 40) })}`);
+    // (7) dos documentos base distintos son dos textos distintos para el pedido de lectura
+    const idI = "CO1.REQ.TXT007";
+    await sembrar(idI, [arch("1", "DOCUMENTO BASE.pdf", "documento_base", "2026-09-10"), arch("2", "DOCUMENTO BASE MODIFICADO.pdf", "documento_base", "2026-09-20")]);
+    await leer(idI, "1", BASE); const id1 = (await textoGuardado(redis, idI)).texto_id;
+    await leer(idI, "2", BASE.replace("del documento base", "del documento base modificado")); const id2 = (await textoGuardado(redis, idI)).texto_id;
+    assert.ok(id1 && id2 && id1 !== id2, `cada documento base tiene su identidad: ${id1} / ${id2}`);
+    // …y el pedido de lectura a la sesión se reconoce por esa identidad: el de otro documento base no es el de este
+    const Dct = require("../lib/dictamen.js");
+    await redis.set(Dct.clavePedido(idI, "helder"), JSON.stringify({ el: new Date().toISOString(), version_texto: id1, ok: true }));
+    const conPedidoViejo = await invocar(routerT, `/api/pliego?op=dictamen&id_proceso=${idI}&perfil=helder`, CAB_TOKEN);
+    assert.strictEqual(conPedidoViejo.cuerpo.pedido_sesion, null, `un pedido del documento base anterior no es el del nuevo (MUTACIÓN: comparando la versión, nula en los dos): ${JSON.stringify(conPedidoViejo.cuerpo.pedido_sesion)}`);
+    await redis.set(Dct.clavePedido(idI, "helder"), JSON.stringify({ el: new Date().toISOString(), version_texto: id2, ok: true }));
+    const conPedido = await invocar(routerT, `/api/pliego?op=dictamen&id_proceso=${idI}&perfil=helder`, CAB_TOKEN);
+    assert.ok(conPedido.cuerpo.pedido_sesion && conPedido.cuerpo.pedido_sesion.version_texto === id2, "el pedido del documento vigente sí se reconoce");
+    // …y al PEDIR la lectura: el pedido de un documento base no bloquea pedir la del siguiente (revisión adversaria)
+    {
+      const idS = "CO1.REQ.TXT012";
+      await sembrar(idS, [arch("1", "DOCUMENTO BASE.pdf", "documento_base", "2026-09-10"), arch("2", "DOCUMENTO BASE MODIFICADO.pdf", "documento_base", "2026-09-20")]);
+      await leer(idS, "1", BASE);
+      const envU = process.env.RUTINA_DICTAMEN_URL, envT = process.env.RUTINA_DICTAMEN_TOKEN, fetchAntes = global.fetch; const disparos = [];
+      global.fetch = async (u, o) => { if (/claude_code\/routines/.test(String(u))) { disparos.push(String(u)); return { ok: true, status: 200, json: async () => ({ claude_code_session_id: "session_T", claude_code_session_url: "https://claude.ai/code/session_T" }) }; } return fetchAntes(u, o); };
+      try {
+        process.env.RUTINA_DICTAMEN_URL = "https://api.anthropic.com/v1/claude_code/routines/trig_T/fire"; process.env.RUTINA_DICTAMEN_TOKEN = "sk-ant-oat01-T";
+        const pedirS = () => invocarPost(routerT, "/api/pliego?op=dictamen", { id_proceso: idS, perfil: "helder", pedir_sesion: true, refrescar: true }, CAB_TOKEN);
+        const s1 = await pedirS();
+        assert.ok(s1.status === 200 && disparos.length === 1, `la primera lectura se pide: ${JSON.stringify(s1.cuerpo).slice(0, 200)}`);
+        const s1b = await pedirS();
+        assert.ok(s1b.cuerpo.repetida === true && disparos.length === 1, `el mismo texto pedido otra vez es «ya pedida», sin otra sesión (MUTACIÓN: la marca o su comparación por \`version\`, que no casan con la identidad): ${JSON.stringify(s1b.cuerpo).slice(0, 200)}`);
+        await leer(idS, "2", BASE.replace("del documento base", "del documento base modificado"));
+        const s2 = await pedirS();
+        assert.ok(s2.cuerpo.repetida !== true && disparos.length === 2, `el documento base nuevo es otro texto: se pide otra lectura (MUTACIÓN: el candado por \`version\`, nula en los dos, «ya pedida»): ${JSON.stringify(s2.cuerpo).slice(0, 200)}`);
+      } finally {
+        global.fetch = fetchAntes;
+        if (envU === undefined) delete process.env.RUTINA_DICTAMEN_URL; else process.env.RUTINA_DICTAMEN_URL = envU;
+        if (envT === undefined) delete process.env.RUTINA_DICTAMEN_TOKEN; else process.env.RUTINA_DICTAMEN_TOKEN = envT;
+      }
+    }
+    console.log("· unidad el texto del pliego: el documento base leído llega al dictamen, los anexos con «pliego» en el nombre no entran al vigía ni dan el texto, lo cargado a mano después gana, el definitivo más reciente manda, y el tope de 400 KB");
+  }
+  bqCargaEnPrecios: { if (!corre("unidad la carga en Precios")) break bqCargaEnPrecios;
+    /* LO QUE SE CARGA EN PRECIOS SOLO ENTRA AL VIGÍA SI ES EL PLIEGO (18-oct-2026). La pantalla pide también el
+       Formulario 1 de cantidades, y todo archivo leído con un proceso abierto entraba como «versión del pliego»:
+       el dictamen, el cronograma y los descuentos lo leían. Con el router REAL (op=diff y op=documentos) sobre
+       el Redis simulado y la `textoGuardado` real. */
+    const DocsP = require("../lib/documentos_proceso.js"), DvP = require("../lib/diff.js");
+    const { escribirJSONComprimido: escribirP } = require("../lib/almacen.js");
+    const { textoGuardado: textoP } = require("../lib/handlers/pliego/cronograma.js");
+    const routerP = require("../api/pliego.js");
+    const rellenoP = "Segunda página del documento del proceso, con texto suficiente para que la lectura cuente como texto.";
+    const txtP = (s) => `\f1\n${s}\n\f2\n${rellenoP}\n`;
+    const PLIEGO_P = txtP("PLIEGO DE CONDICIONES DEFINITIVO LP-001-2026. Patrimonio líquido mayor o igual a $ 950.000.000.");
+    const FORM_P = txtP("FORMULARIO 1 - FORMULARIO DE PRESUPUESTO OFICIAL. ITEM 1.1 Localización y replanteo m2 1200 4.500 5.400.000.");
+    const cargar = (id, nombre, texto) => invocarPost(routerP, "/api/pliego?op=diff", nombre === undefined ? { id_proceso: id, texto, perfil: "helder" } : { id_proceso: id, texto, perfil: "helder", nombre_archivo: nombre }, CAB_TOKEN);
+    const versionesDe = async (id) => ((await DvP.leerIndice(redis, id)).versiones || []);
+    // (1) lo que el nombre dice que es OTRA cosa no se guarda, y se dice por qué y qué lee el dictamen (aquí, nada todavía)
+    const casos = [
+      ["FORMULARIO 1 PRESUPUESTO OFICIAL.pdf", "formulario", /formulario de cantidades/],
+      ["Formulario 1 - Presupuesto Oficial - Pliego Definitivo.pdf", "formulario", /formulario de cantidades/],
+      ["ADENDA No. 1.pdf", "adenda", /es una adenda.*empiece por «pliego» o «documento base»/],
+      ["ADENDA No. 1 AL PLIEGO DE CONDICIONES.pdf", "adenda", /es una adenda/],
+      ["PROPUESTA ECONOMICA Bl 2 IUPB.(PLIEGOS DEFINITIVOS ADENDA 2) .pdf", "adenda", /es una adenda/],
+      ["CANTIDADES PLIEGO DEFINITIVO ADENDA 2.pdf", "adenda", /es una adenda/],
+      ["ANEXOS PLIEGO DE CONDICIONES.pdf", "acompana_al_pliego", /anexo, un formato o unas observaciones/],
+      ["OBSERVACIONES PLIEGO DEF LP-004-2026.pdf", "acompana_al_pliego", /anexo, un formato o unas observaciones/],
+      ["RESPUESTA OBSERVACIONES PROYECTO PLIEGO DE CONDICIONES.pdf", "otro_documento", /«respuesta a observaciones»/],
+      ["ESTUDIOS PREVIOS.pdf", "otro_documento", /«estudios previos»/],
+    ];
+    let k = 0;
+    for (const [nombre, motivo, frase] of casos) {
+      const id = `CO1.REQ.PRE${String(++k).padStart(3, "0")}`;
+      const r = await cargar(id, nombre, FORM_P);
+      assert.ok(r.status === 200 && r.cuerpo.ok === false && r.cuerpo.no_es_el_pliego === true && r.cuerpo.motivo === motivo && frase.test(r.cuerpo.error || "") && /Todavía no hay pliego guardado de este proceso/.test(r.cuerpo.error),
+        `«${nombre}» no es el pliego (${motivo}), se dice por qué y que todavía no hay pliego guardado (MUTACIÓN: guardar sin mirar el nombre; «siguen leyendo el pliego» sin pliego): ${r.status} ${JSON.stringify(r.cuerpo).slice(0, 400)}`);
+      assert.strictEqual((await versionesDe(id)).length, 0, `«${nombre}» no entra al vigía`);
+    }
+    /* (2) el pliego, el borrador y el documento base se guardan, con el nombre en el origen; también un nombre que NO dice
+       qué es (como antes: el clasificador no reconoce «DocBase_…» y en procesos abiertos era el único camino del pliego al
+       dictamen, 2.ª revisión adversaria), un navegador con el código de antes que no manda nombre, y el pliego con la adenda
+       incorporada */
+    for (const [nombre, origen] of [
+      ["PLIEGO DE CONDICIONES DEFINITIVO LP-001-2026 DEL MUNICIPIO.pdf"], ["PROYECTO DE PLIEGO DE CONDICIONES.pdf"], ["19. DOCUMENTO BASE.pdf"], ["Pliego definitivo ajustado con observaciones.pdf"],
+      ["DocBase_LicitacionObra_ISocialLV2.pdf"], ["Documento_base_Licitacion_Obra_Publica Definitivo.pdf"], ["DOCUMENTO%20BASE.pdf"], ["scan001.pdf"],
+      ["Index?DocumentId=837410065&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier="],
+      ["8. Documento Base - Pliego de Condiciones Definitivo Adenda 1 - LIC 004 MT 2026.pdf"], ["Documento Base Villa María III MODIFICADO CON ADENDA No. 1.pdf"],
+      ["PROYECTO DE PLIEGO, ANEXOS, FORMATOS, MATRICES Y FORMULARIO 1.pdf"], ["Documento_Base_Villa_Maria_MODIFICADO_CON_ADENDA_1.pdf"],
+      ["", "lector"], [undefined, "lector"],
+    ]) {
+      const id = `CO1.REQ.PRE${String(++k).padStart(3, "0")}`;
+      const r = await cargar(id, nombre, PLIEGO_P);
+      const v = await versionesDe(id);
+      const esperado = origen || `lector:${nombre}`.slice(0, 40);
+      assert.ok(r.status === 200 && r.cuerpo.ok === true && r.cuerpo.version === 1 && v.length === 1 && v[0].origen === esperado && v[0].origen.length <= 40,
+        `«${nombre}» se guarda, con el nombre en el origen (MUTACIÓN: el nombre mudo o el pliego con adenda rechazados; anexo excluido por el nombre entero; origen sin nombre): ${JSON.stringify({ r: r.cuerpo.ok, motivo: r.cuerpo.motivo, v })}`.slice(0, 400));
+    }
+    // (3) el caso que quedó pendiente en la Fase A: el Formulario cargado DESPUÉS de que la lectura automática leyó el pliego
+    const idF = `CO1.REQ.PRE${String(++k).padStart(3, "0")}`;
+    const archP = { id_documento: "1", nombre: "PLIEGO DE CONDICIONES DEFINITIVO LP-001-2026.pdf", tipo: "pliego", tipo_legible: DocsP.TIPOS.pliego.legible, fecha_carga: "2026-09-10", de_la_entidad: true, legible: true, url: "https://community.secop.gov.co/x" };
+    await escribirP(redis, DocsP.claveDocs(idF), { version: DocsP.VERSION, id_proceso: idF, indice: { version: DocsP.VERSION, consultado_el: new Date().toISOString(), archivos: [archP], plan: ["1"] }, leidos: {}, ilegibles: {} });
+    const rAuto = await invocarPost(routerP, "/api/pliego?op=documentos", { id_proceso: idF, id_documento: "1", texto: PLIEGO_P }, CAB_TOKEN);
+    assert.ok(rAuto.status === 200 && rAuto.cuerpo.version_pliego === 1, `premisa: la lectura automática guardó el pliego: ${JSON.stringify(rAuto.cuerpo).slice(0, 200)}`);
+    const rForm = await cargar(idF, "FORMULARIO 1 PRESUPUESTO OFICIAL.pdf", FORM_P);
+    const tF = await textoP(redis, idF);
+    assert.ok(/siguen con «PLIEGO DE CONDICIONES DEFINITIVO LP-001-2026\.pdf»/.test(rForm.cuerpo.error || ""), `y la frase dice qué está leyendo el dictamen (MUTACIÓN: sin mirar textoGuardado): ${rForm.cuerpo.error}`);
+    assert.ok(rForm.cuerpo.no_es_el_pliego === true && (await versionesDe(idF)).length === 1 && /PLIEGO DE CONDICIONES DEFINITIVO/.test(tF.texto) && tF.version === 1,
+      `el Formulario cargado DESPUÉS del pliego ya no pasa a ser el texto del dictamen (MUTACIÓN: guardarlo, la versión 2 es el formulario): ${JSON.stringify({ version: tF.version, origen: tF.origen })}`);
+    const dF = await invocar(routerP, `/api/pliego?op=dictamen&id_proceso=${idF}&perfil=helder`, CAB_TOKEN);
+    assert.ok(dF.status === 200 && dF.cuerpo.version_texto === 1, `y la consulta del dictamen sigue sobre el pliego: ${JSON.stringify(dF.cuerpo).slice(0, 200)}`);
+    // (4) un nombre larguísimo no rompe el origen ni la frase
+    const idL = `CO1.REQ.PRE${String(++k).padStart(3, "0")}`;
+    const largo = "PLIEGO DE CONDICIONES " + "X".repeat(400) + ".pdf";
+    const rL = await cargar(idL, largo, PLIEGO_P);
+    assert.ok(rL.cuerpo.ok === true && (await versionesDe(idL))[0].origen.length === 40, `un nombre larguísimo se guarda con el origen cortado a 40: ${JSON.stringify(await versionesDe(idL))}`.slice(0, 300));
+    console.log("· unidad la carga en Precios: el Formulario 1, una adenda suelta, un anexo u otro documento no entran al vigía y se dice por qué y qué lee el dictamen; el pliego, el borrador, el documento base, el pliego con la adenda incorporada y un nombre que no dice qué es sí, con su nombre; el Formulario cargado después del pliego ya no lo tapa");
+  }
   bqNueveProcesos: { if (!corre("unidad los nueve procesos del dueño")) break bqNueveProcesos;
     const Dp = require("../lib/documentos_proceso.js");
     const Df = require("../lib/diff.js");
@@ -8024,13 +9544,104 @@ async function main() {
     // (4) la negación partida en dos líneas y la casilla marcada (los dos escaneos, CO1.REQ.11033801 y CO1.REQ.11042743)
     assert.strictEqual(ant("\f35\nANTICIPO: Para el presente proceso la Secretaría de Infraestructura y obras públicas no considera prudente gestionar\nanticipo, toda vez que el proyecto en su ejecución se puede adelantar sin la necesidad de algún recurso\n", "estudio_previo").estado, "no", "«no considera prudente gestionar / anticipo» niega, partida en dos líneas");
     assert.strictEqual(ant("\f62\nANTICIPO (19 | si NO_X_ Porcentaje % - —\n", "estudio_previo").estado, "no", "la casilla «SI ___ NO _X_» niega");
+    /* Turbaco, CO1.REQ.10650320 (Fase 0 del 17-oct-2026, texto de pdf.js): el título del 8.3 seguido de «N/A» niega, y el
+       amparo de la tabla de garantías «Devolución del pago anticipado N/A N/A» no afirma nada (decía «hay anticipo») */
+    const turbaco = ant("\f83\nBuen\tmanejo\ty\tcorrecta\tN/A\tN/A\ninversión del anticipo\nDevolución del pago anticipado\tN/A\tN/A\nAmparos,\n\f87\nconstituyen su propuesta económica autónoma.\n8.3.\tANTICIPO Y/O PAGO ANTICIPADO\nN/A\nCAPITULO IX LISTA DE ANEXOS, FORMATOS, MATRICES Y FORMULARIOS\n");
+    assert.deepStrictEqual([turbaco.estado, turbaco.pagina], ["no", 87], `«8.3 ANTICIPO … / N/A» niega: ${JSON.stringify(turbaco)}`);
+    assert.notStrictEqual(ant("\f83\nDevolución del pago anticipado\tN/A\tN/A\nPago de salarios, prestaciones\tPlazo del contrato y\tCinco por ciento (5 %)\n").estado, "si", "el amparo «Devolución del pago anticipado» de la tabla de garantías no es «hay anticipo»");
+    // el título y la negación en UNA línea: «anticipado:» también niega, y el «N/A» solo con dos puntos (17-oct-2026)
+    assert.strictEqual(ant("\f87\nconstituyen su propuesta económica autónoma.\n8.3. ANTICIPO Y/O PAGO ANTICIPADO: No aplica\nCAPITULO IX LISTA DE ANEXOS\n").estado, "no", "«…PAGO ANTICIPADO: No aplica» en una línea niega");
+    assert.strictEqual(ant("\f87\n8.3. ANTICIPO Y/O PAGO ANTICIPADO: N/A\n").estado, "no", "«…PAGO ANTICIPADO: N/A» en una línea niega");
+    /* ronda 5 de detekta-lector (17-oct-2026, texto de pdf.js): el corchete de la plantilla sin borrar (Garagoa,
+       CO1.REQ.11091702) y la frase modelo que REMITE al numeral 8.3 (Paicol, CO1.REQ.11151463) decían «hay anticipo» */
+    const garagoa = ant("\f59\n8.3.ANTICIPO Y/O PAGO ANTICIPADO\nEn el presente proceso de contratación la entidad no entregará al contratista [anticipo y/o pago\nanticipado]\nCAPITULO IX LISTA DE ANEXOS, FORMATOS, MATRICES Y FORMULARIOS\n");
+    assert.deepStrictEqual([garagoa.estado, garagoa.pagina], ["no", 59], `«no entregará al contratista [anticipo…» niega (MUTACIÓN: sin el corchete, «sí»): ${JSON.stringify(garagoa)}`);
+    const modeloPaicol = "\f17\nProponente haya demostrado lo contrario, y procederá a rechazar la oferta.\nNo se configura este supuesto cuando la Entidad establece en el numeral 8.3 que no va a entregar anticipo\ny/o pago anticipado y el Proponente no renuncia a ellos. Tampoco cuando a pesar de que las personas\n";
+    assert.strictEqual(ant(modeloPaicol).estado, "sin_dato", "la frase modelo que remite al numeral 8.3 ni afirma ni niega (MUTACIÓN: sin la exclusión, «sí»)");
+    assert.strictEqual(ant("\f17\nNo se configura este supuesto cuando la Entidad establece en el numeral 8.3 que no va a entregar\nanticipo y/o pago anticipado y el Proponente no renuncia a ellos.\n").estado, "sin_dato", "la frase modelo partida antes de «anticipo» tampoco decide");
+    assert.strictEqual(ant("\f17\nNo se configura este supuesto cuando la Entidad establece en el numeral 8.3 que no va a\nentregar anticipo y/o pago anticipado y el Proponente no\nrenuncia a ellos.\n").estado, "sin_dato", "la frase modelo partida en tres líneas no afirma (MUTACIÓN: sin `excluyeUnida`, «sí»)");
+    assert.strictEqual(ant(modeloPaicol + "\f61\n8.3. ANTICIPO\nLa entidad entregará al contratista un anticipo del treinta por ciento (30 %) del valor del contrato.\n").estado, "si", "la frase modelo no tapa un anticipo pactado en su numeral");
+    assert.strictEqual(ant(modeloPaicol + "\f61\n8.3. ANTICIPO Y/O PAGO ANTICIPADO\nEn el presente proceso de contratación la entidad no entregará al contratista anticipo y/o pago\nanticipado.\n").estado, "no", "la frase modelo no tapa la cláusula que niega");
+    /* LA FÓRMULA EN PROSA NO AFIRMA EL ANTICIPO (18-oct-2026): la capacidad residual de CO1.REQ.10725252, que no tiene
+       anticipo (paga 50/40/10 % por avance), decía «sí»; y el numerador del capital de trabajo que el OCR deja solo en su
+       línea, con raya, también */
+    const crResidual = "El cálculo de la Capacidad Residual de Contratación del presente Proceso de selección equivale al presupuesto oficial menos el anticipo o pago anticipado cuando haya lugar, ya que el plazo estimado del contrato es menor a (5) meses.";
+    assert.strictEqual(ant(`\f43\n${crResidual}\n`).estado, "mencion", "la definición de la capacidad residual es mención, no «sí» (MUTACIÓN: sin la regla de la fórmula en prosa, «sí»)");
+    assert.strictEqual(ant("\f43\nEl cálculo de la Capacidad Residual de Contratación del presente Proceso de selección equivale al presupuesto\noficial menos el anticipo o pago anticipado cuando haya lugar, ya que el plazo estimado del contrato es menor\na (5) meses.\n").estado, "mencion", "…también partida como la deja el OCR");
+    for (const f of ["POE — Anticipo y/o Pago anticipado", "POE - Anticipo o pago anticipado", "PO − Anticipo y/o pago anticipado", "Presupuesto Oficial Estimado menos el valor del anticipo"]) {
+      assert.strictEqual(ant(`\f40\nEl cálculo del capital de trabajo demandado se hará así:\n${f}\nPlazo estimado de ejecución del contrato (en meses)\n`).estado, "mencion", `«${f}» es una fórmula, no «sí» (MUTACIÓN: solo el signo menos, «sí» con la raya)`);
+    }
+    const crConClausula = ant(`\f43\n${crResidual}\n\f79\n8.3 ANTICIPO Y/O PAGO ANTICIPADO\nEn el presente proceso de contratación la entidad entregará al contratista a título de anticipo un valor equivalente al 50 % del valor básico del contrato.\n`);
+    assert.deepStrictEqual([crConClausula.estado, crConClausula.pagina], ["si", 79], `con la cláusula que lo pacta, «sí» y se cita la cláusula, no la fórmula: ${JSON.stringify(crConClausula)}`);
+    assert.strictEqual(ant(`\f43\n${crResidual}\n\f79\nEn el presente proceso de contratación la entidad no entregará al contratista anticipo y/o pago anticipado.\n`).estado, "no", "con la cláusula que lo niega, «no»");
+    assert.strictEqual(ant("\f70\nEl contratista recibirá en cada acta el valor ejecutado menos el anticipo correspondiente a ese periodo de obra.\n").estado, "si", "«…ejecutado menos el anticipo correspondiente» no es la fórmula del presupuesto oficial: sigue siendo frase (MUTACIÓN: «menos el anticipo» sin «oficial/POE/PO» delante, «mención»)");
+    // revisión adversaria (18-oct-2026): la línea que niega con la fórmula NO pierde contra una mención anterior…
+    const v4 = ant(`\f9\nLa garantía de buen manejo del anticipo se exigirá solo cuando haya lugar a su entrega por parte de la entidad.\n\f43\nLa capacidad residual equivale al presupuesto oficial menos el anticipo o pago anticipado; en este proceso no se entregará anticipo al contratista.\n`);
+    assert.deepStrictEqual([v4.estado, v4.pagina], ["no", 43], `la fórmula que también niega sigue negando (MUTACIÓN: el tope antes de la negación, «sí» por la mención de la pág. 9): ${JSON.stringify(v4)}`);
+    // …y la prosa que habla de un anticipo que EXISTE (amortizado, entregado) o que trae su porcentaje sigue diciendo «sí»
+    for (const f of ["Pagos parciales hasta completar el 90 % del presupuesto oficial menos el anticipo amortizado, contra actas mensuales.".replace("90 %", "noventa por ciento"),
+      "El saldo, es decir el presupuesto oficial menos el anticipo entregado, se pagará mediante actas parciales de obra.",
+      "Anticipo del 30 %; el saldo, presupuesto oficial menos el anticipo, se pagará en actas parciales de obra ejecutada.",
+      "Valor PO - Anticipo: la entidad entregará al contratista el 30 % del valor del contrato como anticipo."]) {
+      assert.strictEqual(ant(`\f80\n${f}\n`).estado, "si", `«${f}» habla de un anticipo que existe: «sí» (MUTACIÓN: sin la mirada adelante de «amortizado/entregado» o sin la guarda del porcentaje, «mención»)`);
+    }
+    assert.strictEqual(ant("\f70\nEl valor a pagar en cada acta será el valor de la obra ejecutada menos el anticipo amortizado en ese periodo.\n").estado, "si", "«menos el anticipo» de un acta habla de un anticipo que existe: sigue siendo frase (MUTACIÓN: «menos el anticipo» sin «oficial/POE» delante, «mención»)");
+    /* la negación de una PARTE NUMERADA no niega el anticipo (Gobernación del Amazonas, CO1.REQ.11022945, ronda 6 de
+       detekta-lector, 17-oct-2026, texto real de pdf.js): «no reconocerá anticipo alguno para la ejecución del componente 1»
+       ganaba al 30 % del componente dos, y la cita del «sí» era la fila de la tabla de garantías */
+    const amazonas = "\f78\nBuen manejo y correcta\tHasta la\ninversión del anticipo\tliquidación del\t100%\ncontrato o hasta la\namortización del\nanticipo\n\f82\n8.2.ANTICIPO Y/O PAGO ANTICIPADO\nLa Entidad no reconocerá anticipo alguno para la ejecución del componente 1 ELABORACION DE\nESTUDIOS Y DISEÑOS.\nEl valor total del componente se cancelará mediante actas parciales contra la entrega efectiva de\n\f84\nETAPA 2\nLa GOBERNACIÓN DE AMAZONAS, cancelará el valor que resulte ofertado por la etapa 2. Dicho\nvalor se cancelará al contratista así: Dará en calidad de anticipo un 30% del valor del componente\ndos una vez legalizado el mismo y, 1.) Pagos parciales de obras en cuantía hasta el noventa por\n";
+    const aAm = ant(amazonas);
+    assert.deepStrictEqual([aAm.estado, aAm.pagina], ["si", 84], `la negación del componente 1 no tapa el anticipo del componente 2, y se cita la cláusula (MUTACIÓN: sin \`niegaAnticipo\`, «no»; sin excluir la fila de garantías, pág. 78): ${JSON.stringify(aAm)}`);
+    const soloParcial = ant("\f82\nLa Entidad no reconocerá anticipo alguno para la ejecución del componente 1 ELABORACION DE\nESTUDIOS Y DISEÑOS.\n");
+    assert.strictEqual(soloParcial.estado, "mencion", `la negación de una parte, sola, es «confírmelo», ni «sí» ni «no» (MUTACIÓN: sin el tope de peso, «sí»; con la regex en lib/documentos_proceso, «no»): ${JSON.stringify(soloParcial)}`);
+    // la frase partida por pdf.js en cualquier punto: la parte en la línea de abajo, o la negación en la de arriba
+    for (const partida of ["\f82\nLa Entidad no reconocerá anticipo alguno para la ejecución del\ncomponente 1 ELABORACION DE ESTUDIOS Y DISEÑOS.\n", "\f82\nLa Entidad no reconocerá anticipo alguno para la\nejecución del componente 1 ELABORACION DE ESTUDIOS Y DISEÑOS.\n", "\f82\nPara este proceso la Entidad no reconocerá\nanticipo alguno para la ejecución del componente 1 ELABORACION DE\n"]) {
+      assert.strictEqual(ant(partida).estado, "mencion", `la negación parcial partida en dos líneas tampoco niega ni afirma (MUTACIÓN: sin mirar la línea vecina, «no» o «sí»): ${JSON.stringify(partida)}`);
+    }
+    // solo la parte NUMERADA es parcial: «la etapa de ejecución», «el lote único», «las actividades del contrato» son el contrato entero
+    for (const total of ["no se entregará anticipo para la ejecución de las actividades del contrato.", "no se entregará anticipo para las fases de ejecución de la obra.", "No habrá anticipo para el lote único de este proceso.", "no se entregará anticipo para los ítems del presupuesto oficial.", "no se entregará anticipo para la etapa de ejecución del contrato.", "En el presente proceso no se entregará anticipo para la ejecución del contrato de obra."]) {
+      assert.strictEqual(ant(`\f9\n${total}\n`).estado, "no", `«${total}» niega (MUTACIÓN: con la parte sin número, «mención»)`);
+    }
+    assert.strictEqual(ant("\f9\nNo se entregará anticipo para el lote 1, y en el presente proceso la entidad no entregará anticipo al contratista.\n").estado, "no", "una negación parcial y otra total en la misma línea: niega");
+    // la parte numerada de OTRA frase o una enumeración no vuelven parcial la negación total (segunda revisión adversaria, 17-oct-2026)
+    const amort = "\f70\nEl valor del anticipo, cuando lo hubiere, será amortizado en cada una de las actas parciales de obra.\n";
+    for (const total of ["En el presente proceso no se entregará anticipo, ni para la etapa 1 ni para la etapa 2 del contrato.", "La entidad no otorgará anticipo, por lo que el contratista usará recursos propios para la etapa 1.", "La entidad no entregará anticipo al contratista para la ejecución de la etapa 1 y la etapa 2.", "No se entregará anticipo para el lote 1 de 1.", "No se entregará anticipo para la etapa 2026.", "No se entregará anticipo para los lotes 1, 2 y 3."]) {
+      assert.strictEqual(ant(`\f60\n${total}\n${amort}`).estado, "no", `«${total}» niega, aunque el pliego nombre el anticipo en otra página (MUTACIÓN: con la ventana de 60 caracteres, «sí»)`);
+    }
+    for (const [linea, abajo] of [["Anticipo y/o pago anticipado: No aplica", "Plazo de ejecución para la etapa 1: dos (2) meses."], ["La obra se ejecutará sin anticipo", "Para la etapa 1 se pagará contra actas parciales."]]) {
+      assert.strictEqual(ant(`\f5\n${linea}\n${abajo}\n${amort}`).estado, "no", `la línea de abajo no vuelve parcial una frase que ya cerró: «${linea}» / «${abajo}» (MUTACIÓN: pegando siempre la siguiente, «sí»)`);
+    }
+    assert.strictEqual(ant("\f40\nInversión del anticipo: la entidad entregará un anticipo del treinta por ciento (30 %) del valor del contrato.\n").estado, "si", "la exclusión de la fila de garantías no tapa una frase que pacta el anticipo (MUTACIÓN: sin la guarda de verbos, «sin dato»)");
+    assert.strictEqual(ant(amazonas + "\f90\nEn el presente proceso de contratación la entidad no entregará al contratista anticipo y/o pago anticipado en ninguna etapa.\n").estado, "no", "una negación total en otra página sigue negando");
+    const NgP = require("../lib/negocio.js");
+    assert.deepStrictEqual([NgP.anticipoPct({}, "La Entidad no reconocerá anticipo alguno para la ejecución del componente 1; entregará un anticipo del 30% del componente dos."), NgP.anticipoDeclarado({}, "La Entidad no reconocerá anticipo alguno para la ejecución del componente 1; entregará un anticipo del 30% del componente dos.")], [0, false], "lib/negocio: con una negación parcial el anticipo queda SIN DATO: ni «sin anticipo» ni un porcentaje");
+    assert.strictEqual(NgP.anticipoDeclarado({}, "La Entidad no reconocerá anticipo alguno para la etapa 1 de estudios y diseños."), false, "lib/negocio: la negación parcial sola no declara «sin anticipo» (MUTACIÓN: con la regex sola, true)");
+    assert.strictEqual(NgP.anticipoDeclarado({}, "No se entregará anticipo para la etapa de ejecución del contrato."), true, "lib/negocio: la etapa sin número es el contrato entero: niega");
+    for (const frase of ["No se entregará anticipo para el componente uno, con pagos parciales del 90% y acta final del 10%.", "Sin anticipo para la etapa segunda: el contratista financia el 100% de la ejecución.", "No se entregará anticipo para la etapa 1. Garantía de buen manejo del anticipo: 100% del valor."]) {
+      assert.strictEqual(NgP.anticipoPct({}, frase), 0, `lib/negocio: con una negación parcial no se lee ningún porcentaje (MUTACIÓN: sin \`hayNegacionParcial\`, 90 o 100): «${frase}»`);
+      assert.strictEqual(NgP.anticipoDeclarado({}, frase), false, `lib/negocio: ni lo declara: «${frase}»`);
+    }
+    // las variantes de la frase modelo y el condicional con «va a» no niegan un anticipo pactado (revisión adversaria, 17-oct-2026)
+    const pactado = "\f61\n8.3. ANTICIPO\nLa entidad entregará al contratista un anticipo del treinta por ciento (30 %) del valor del contrato.\n";
+    for (const v of ["No se configura este supuesto cuando la Entidad establece en el numeral 8.3 del Documento Base que no va a entregar anticipo\ny/o pago anticipado y el Proponente no renuncia a ellos.", "No se configura este supuesto cuando la Entidad establece en la sección 8. 3, que no va a entregar anticipo y/o pago anticipado.", "No se configura este supuesto cuando la Entidad establece en el numeral 8.3 del Pliego\nque no va a entregar anticipo y/o pago anticipado y el Proponente\nno renuncia a ellos.", "Si la Entidad no va a entregar anticipo, el valor del anticipo en la fórmula del capital de trabajo será cero.", "La Entidad no reconocerá pagos distintos a los siguientes (anticipo y actas parciales de obra)."]) {
+      assert.strictEqual(ant(`\f17\n${v}\n${pactado}`).estado, "si", `no tapa el anticipo pactado (MUTACIÓN: con «va a» o «(» en la negación, «no»): «${v}»`);
+      assert.strictEqual(require("../lib/negocio.js").anticipoPct({}, `${v} El anticipo será del 30 % del valor del contrato.`), 30, `lib/negocio no pone el anticipo en 0: «${v}»`);
+    }
+    assert.strictEqual(ant("\f74\nBuen manejo del anticipo\tN/A\tN/A\n\f78\nLa entidad entregará al contratista un anticipo del 30 %.\n").estado, "si", "una celda «N/A» de la tabla de garantías (sin dos puntos) no niega el anticipo pactado");
+    // …pero «pago anticipado» SUELTO no niega el anticipo: son figuras distintas (revisión adversaria, 17-oct-2026)
+    assert.strictEqual(ant("\f20\nVALOR DEL ANTICIPO: Treinta por ciento (30 %) del valor del contrato, previa aprobación del plan.\nPAGO ANTICIPADO: No aplica para el presente proceso de contratación.\n").estado, "si", "«PAGO ANTICIPADO: No aplica» junto a un anticipo del 30 % no niega el anticipo");
+    assert.strictEqual(ant("\f20\nForma de pago. Pago anticipado: no aplica; el anticipo será del 30 % del valor del contrato.\n").estado, "si", "«Pago anticipado: no aplica; el anticipo será del 30 %» no niega el anticipo");
+    assert.strictEqual(require("../lib/negocio.js").anticipoPct({}, "Forma de pago: anticipo del 30 %; pago anticipado: no aplica; actas parciales."), 30, "lib/negocio: «pago anticipado: no aplica» no borra el anticipo del 30 % de la fila de SECOP");
+    // …y ese «N/A» suelto es DÉBIL: no tapa una frase que pacta el anticipo, antes o después (revisión adversaria, 17-oct-2026)
+    assert.strictEqual(ant("\f5\nVALOR DEL ANTICIPO: Se entregará al contratista un anticipo del 30 % del valor del contrato.\nPAGO ANTICIPADO (SI APLICA):\nN/A\n").estado, "si", "el «N/A» del pago anticipado no niega el anticipo pactado antes");
+    assert.strictEqual(ant("\f50\nGARANTÍA DE BUEN MANEJO DEL ANTICIPO\nN/A\n\f51\nLa entidad entregará al contratista un anticipo del treinta por ciento (30%).\n").estado, "si", "una celda «N/A» bajo el título de una garantía no niega el anticipo pactado después");
     assert.strictEqual(ant("\f62\nANTICIPO SI _X_ NO ___ Porcentaje 30 % del valor del contrato\n", "estudio_previo").estado, "si", "la casilla marcada en «SI» afirma");
     assert.strictEqual(ant("\f8\n-Informe de manejo e inversión del anticipo con los respectivos soportes.\n", "estudio_previo").estado, "sin_dato", "una obligación de formato (el informe del anticipo) no dice que lo haya");
     // la línea anterior solo se pega si no cierra frase
     assert.strictEqual(ant("\f3\nNo se pagará el ajuste.\nEl anticipo será del treinta por ciento del valor del contrato y se girará a la fiducia.\n").estado, "si", "«No se pagará el ajuste.» no niega el anticipo de la línea siguiente (MUTACIÓN: sin la guarda del punto)");
     // la gemela de lib/negocio reconoce las tres formas nuevas
     const Ng = require("../lib/negocio.js");
-    for (const t of ["La Entidad considera que no es procedente establecer un anticipo", "no considera prudente gestionar anticipo, toda vez", "ANTICIPO (19 | SÍ NO_X_ Porcentaje"]) assert.strictEqual(Ng.anticipoDeclarado({}, t), true, `lib/negocio lee la negación como la de los documentos: «${t}»`);
+    for (const t of ["La Entidad considera que no es procedente establecer un anticipo", "no considera prudente gestionar anticipo, toda vez", "ANTICIPO (19 | SÍ NO_X_ Porcentaje", "8.3. ANTICIPO Y/O PAGO ANTICIPADO: No aplica", "la entidad no entregará al contratista [anticipo]"]) assert.strictEqual(Ng.anticipoDeclarado({}, t), true, `lib/negocio lee la negación como la de los documentos: «${t}»`);
     // (5) el anticipo entre documentos: una mención no tapa al que decide, y dos que se contradicen se dicen
     const doc = (tipo, a) => ({ nombre: `${tipo}.pdf`, tipo, hechos: { ...Dp.hechosDeTexto("", { tipo }), anticipo: a } });
     const antDe = (leidos) => Dp.loQueDicen({ indice: { archivos: [], plan: [] }, leidos, ilegibles: {} }).hechos.find((x) => x.clave === "anticipo");
@@ -8043,6 +9654,25 @@ async function main() {
     // (6) el DOCUMENTO BASE del pliego tipo se lee, y la plantilla en blanco no dice nada
     const cl = (nombre) => Dp.clasificarArchivo({ id_documento: "1", nombre, extension: "pdf", url: "https://community.secop.gov.co/x?DocumentId=1", entidad: true }).tipo;
     assert.deepStrictEqual(["DOCUMENTO BASE ALOJAMIENTO DE CADETES.pdf", "Documento Base o Documento Tipo CCE-EICP-GI-02 Menor Cuantía.docx", "DOCUMENTO BASE.pdf"].map(cl), ["documento_base", "documento_base", "documento_base"], "el documento base tiene su tipo (MUTACIÓN: «Otro documento», fuera del plan)");
+    /* (6b) LOS NOMBRES CON SEPARADORES Y LOS NUEVOS DE COLOMBIA COMPRA (18-oct-2026): «DocBase_…», «Documento_base_…»,
+       «DOCUMENTO%20BASE», «Documentos Base» y las erratas salían «otro» y la lectura automática no leía ese documento base
+       (7 de 232 procesos de la muestra, 5 de 33 abiertos). Nombres REALES de dmgg-8hin */
+    const nombresBase = ["DocBase_LicitacionObra_ISocialLV2.pdf", "3.DocBase_LicitacionObra_ISocialLV2.pdf", "DocBase_LicObra_APSBLV1.pdf", "Documento_base_Licitacion_Obra_Publica Definitivo.pdf",
+      "06_Documento Base CCE-EICP-GI-14 LICITACIÓN.pdf", "DOCUMENTO BASE_0001_compressed (2).pdf", "1L-003-2026 - Documentos Base Definitivo.pdf", "DOCUEMENTO BASE DEFINITIVO.pdf", "DOCUEMNTO BASE.pdf",
+      "1L-003-2026 - Docuemento Base.pdf", "DOCUMENTO%20BASE.pdf", "Documento-Base-Definitivo.pdf"];
+    for (const n of nombresBase) {
+      const a = Dp.clasificarArchivo({ id_documento: "1", nombre_archivo: n, url: "https://community.secop.gov.co/x?DocumentId=1" });
+      assert.ok(a.tipo === "documento_base" && Dp.esVersionDelPliego(a) && a.de_la_entidad === true, `«${n}» es el documento base (MUTACIÓN: sin plegar «_», «%20», «-» o sin «docbase»/erratas, «otro»): ${JSON.stringify({ tipo: a.tipo, version: Dp.esVersionDelPliego(a) })}`);
+    }
+    // …y el mismo plegado no cambia lo que ya se leía bien, ni vuelve documento base lo que no lo es
+    for (const [n, tipo] of [["1.Estudio_previo_mejoramientos_LP_CVV_005_2026_FINAL.pdf", "estudio_previo"], ["03_AVISO_CONVOCATORIA LP-003-2026.pdf", "aviso"], ["ADENDA_001_LP_CVV_005_2026.pdf", "adenda"],
+      ["FORMULARIO 1 PRESUPUESTO OFICIAL.pdf", "presupuesto"], ["PLIEGO DE CONDICIONES DEFINITIVO LP-001-2026.pdf", "pliego"], ["Base de datos de proveedores.pdf", "otro"], ["Anexo_2.pdf", "formato"]]) {
+      assert.strictEqual(Dp.clasificarArchivo({ nombre_archivo: n }).tipo, tipo, `«${n}» es ${tipo}`);
+    }
+    // el borrador con separadores sigue siendo borrador, y lo de un proponente con «_» se reconoce como suyo
+    assert.ok(Dp.esBorradorDoc({ ...Dp.clasificarArchivo({ nombre_archivo: "DocBase_Proyecto_LP_01.pdf" }) }), "«DocBase_Proyecto_…» es borrador (MUTACIÓN: esBorradorDoc con otro plegado, «_proyecto_» no casa `proyecto\\b`)");
+    assert.ok(Dp.esVersionDelPliego(Dp.clasificarArchivo({ nombre_archivo: "Documento_Base_Definitivo_con_Formatos.pdf" })), "«Documento_Base_…_con_Formatos» es el pliego: la palabra de anexo va DESPUÉS del nombre (MUTACIÓN: esVersionDelPliego con otro plegado)");
+    assert.strictEqual(Dp.clasificarArchivo({ nombre_archivo: "16_GARANTIA DE SERIEDAD DE LA OFERTA.pdf" }).de_la_entidad, false, "la garantía de seriedad de un proponente con «16_» delante no es de la entidad");
     const planDB = Dp.planDeLectura([{ id_documento: "7", nombre: "DOCUMENTO BASE CAMPO DE PARADA.pdf", extension: "pdf", url: "https://community.secop.gov.co/x?DocumentId=7", bytes: 1000000 }]);
     assert.ok(planDB.plan.includes("7"), `y se lee solo: ${JSON.stringify(planDB.archivos && planDB.archivos[0])}`);
     const marcas = ["[Nombre de la Entidad]", "[Incluir el objeto del Contrato]", "[Incluir plazo]", "[Incluir Presupuesto Oficial]", "[Incluir el número del lote]", "[Incluir objeto del proyecto, lote o segmento]", "[Incluir plazo]", "[Seleccionar la modalidad]"];
@@ -8130,6 +9760,15 @@ async function main() {
     // del documento base se lee la versión más nueva, y «documento tipo» en medio del nombre no lo es
     const planB = Dp.planDeLectura([{ id_documento: "1", nombre: "DOCUMENTO BASE BORRADOR.pdf", extension: "pdf", url: "https://community.secop.gov.co/x?DocumentId=1", fecha_carga: "2026-09-01" }, { id_documento: "2", nombre: "DOCUMENTO BASE DEFINITIVO.pdf", extension: "pdf", url: "https://community.secop.gov.co/x?DocumentId=2", fecha_carga: "2026-09-10" }]);
     assert.deepStrictEqual(planB.plan, ["2"], "una sola versión del documento base, la más nueva (MUTACIÓN: las dos, y el tope sacaba el presupuesto)");
+    /* LAS VERSIONES DEL PLIEGO QUE SE LEEN SON LAS MÁS NUEVAS (18-oct-2026): con cuatro, el tope dejaba fuera la
+       última —la que rige— con «ya se leen las últimas versiones». Contra el árbol anterior el plan es 1, 2, 3. */
+    {
+      const v = (n, fecha) => ({ id_documento: `P${n}`, nombre: `Pliego de condiciones definitivo v${n}.pdf`, extension: "pdf", url: `https://community.secop.gov.co/x?DocumentId=P${n}`, bytes: 1000 + n, fecha_carga: fecha });
+      const plan4 = Dp.planDeLectura([v(1, "2026-09-01"), v(2, "2026-09-05"), v(3, "2026-09-10"), v(4, "2026-09-20")]);
+      assert.deepStrictEqual(plan4.plan, ["P2", "P3", "P4"], `se leen las ${Dp.MAX_PLIEGOS_PLAN} más nuevas: ${JSON.stringify(plan4.plan)}`);
+      const fuera = plan4.archivos.find((a) => a.id_documento === "P1");
+      assert.ok(fuera && !fuera.en_plan && /más vieja/.test(fuera.motivo_omision), `la que queda fuera es la más vieja y lo dice: ${fuera && fuera.motivo_omision}`);
+    }
     assert.notStrictEqual(cl("Analisis del sector segun documento tipo.pdf"), "documento_base", "«documento tipo» en medio del nombre no es el documento base");
     // «¿Puede presentarse?» mira las rentabilidades (public/expediente.js)
     {
@@ -9300,7 +10939,8 @@ async function main() {
         const htmlEntidadPorAnio = () => "", htmlProrrogaEntidad = () => "", htmlPlazoAdjudicacion = () => "", htmlDesiertos = () => "";
         const bloqueProponentes = () => "", bloqueEjecucion = () => "", tabla = () => "";
         const cargando = (m) => "<p>" + esc(m) + "</p>";
-        const leerToken = () => "t", msg401 = () => "401", fraseDeFallo = ({ status }) => "La consulta falló (código " + status + ").";
+        const conSesion = (o) => ({ ...(o || {}), credentials: "same-origin" });
+        const msg401 = () => "401", fraseDeFallo = ({ status }) => "La consulta falló (código " + status + ").";
         const leerJson = async (r) => r.cuerpo;
         const pedidas = [];
         const fetch = async (url) => { pedidas.push(url); const x = await respuestas(url); if (x instanceof Error) throw x; return x; };
@@ -10928,7 +12568,7 @@ async function main() {
       assert.ok(iCop > iSisC && iSisC > 0, "«Copia de sus datos» vive dentro de «Sistema»");
       for (const id of ["btn-copia-descargar", "copia-archivo", "copia-reemplazar", "btn-copia-restaurar", "copia-mensaje", "copia-descarga-mensaje"]) assert.ok(htmlCopia.includes(`id="${id}"`), `falta #${id}`);
       assert.ok(/accept="\.detekta"/.test(htmlCopia), "el selector de archivo solo ofrece la extensión de la copia");
-      assert.ok(/fetch\("\/api\/admin\?op=exportar",\s*\{\s*headers:\s*\{\s*"x-historico-token"/.test(appCopia) && !/op=exportar[^`"']*token=/.test(appCopia), "la descarga va con la cabecera del token y un Blob, jamás con el token en la URL");
+      assert.ok(/fetch\("\/api\/admin\?op=exportar",\s*conSesion\(\)\)/.test(appCopia) && !/op=exportar[^`"']*token=/.test(appCopia), "la descarga va con la sesión del dueño y un Blob, jamás con una llave en la URL");
       assert.ok(/"\/api\/admin\?op=importar"/.test(appCopia) && /sobrescribir: \$\("copia-reemplazar"\)\.checked/.test(appCopia), "la sobrescritura la decide la casilla, explícita");
       assert.ok(/x-copia-elementos/.test(appCopia) && /descargó vacía/.test(appCopia), "una copia vacía se avisa (no es un éxito mudo)");
 
@@ -11322,7 +12962,18 @@ async function main() {
     const dh = LT.decidirLatido({ meta: fresco, progresoHist: { tipo: "historico", terminado: false, desde: "2025-01", hasta: "2025-03" }, ahora: noche });
     assert.deepStrictEqual([dh.accion, dh.desde, dh.hasta], ["historico", "2025-01", "2025-03"]);
     const viejo = { last_sync: new Date(mediodia - LT.INTERVALO_MS - 60e3).toISOString() };
-    assert.strictEqual(LT.decidirLatido({ meta: viejo, ahora: mediodia }).accion, "sync", "en horario, pasados 30 min, toca actualizar");
+    assert.strictEqual(LT.decidirLatido({ meta: viejo, ahora: mediodia }).accion, "sync", "en horario, si el dato pasa de INTERVALO_MS (no llegó un cron), toca actualizar");
+    /* LA PAUSA DEL 30-SEP (16-oct-2026): el latido pedía una actualización cada 30 min (hasta 32 al día) y
+       Vercel Hobby pausó el proyecto por CPU activa. Ahora es red de seguridad: con el dato de 2 h o de 12 h
+       (entre los dos crons del dueño) no hace nada; el umbral supera el hueco mayor entre crons. */
+    assert.strictEqual(LT.decidirLatido({ meta: { last_sync: new Date(mediodia - 2 * 3600e3).toISOString() }, ahora: mediodia }).accion, "nada", "con el dato de 2 h el latido no actualiza: ya no hay actualización cada 30 min");
+    assert.strictEqual(LT.decidirLatido({ meta: { last_sync: new Date(mediodia - 12 * 3600e3).toISOString() }, ahora: mediodia }).accion, "nada", "con el dato de 12 h (entre los dos crons) el latido no actualiza");
+    assert.ok(LT.INTERVALO_MS > (12 * 60 + 10) * 60e3, "el latido actúa solo pasado el hueco mayor entre los crons de 7:50 y 20:00");
+    {
+      const SF = require("../lib/handlers/procesos/sync.js");
+      assert.ok(SF.FRESCO_MS < (11 * 60 + 50 - 59) * 60e3, "FRESCO_MS es menor que el hueco más corto entre los dos crons con el desfase del plan gratuito: si no, el cron encontraría el dato fresco y no actualizaría");
+      assert.ok(SF.FRESCO_MS >= 3600e3, "FRESCO_MS no vuelve a minutos: cada visita a la lista dispararía un delta (la causa de la pausa del 30-sep)");
+    }
     assert.strictEqual(LT.decidirLatido({ meta: { last_sync: new Date(noche - 5 * 3600e3).toISOString() }, ahora: noche }).accion, "nada", "de noche no hay actualización programada");
     assert.strictEqual(LT.decidirLatido({ meta: {}, ahora: noche }).accion, "sync", "sin fecha legible es «no sé», y ante «no sé» se sincroniza");
     const falloReciente = { ...viejo, ultimo_error: { ts: new Date(mediodia - 5 * 60e3).toISOString() } };
@@ -11514,7 +13165,16 @@ async function main() {
       await escribirJSONL(redis, CL.meta, {});
       const corte = await invocar(rProcL, "/api/procesos?op=sync&modo=full&presupuesto=1&chain=0", BEARER);
       assert.ok(corte.status < 400, JSON.stringify(corte.cuerpo).slice(0, 300));
-      const cursorFull = await leerJSONL(redis, CL.progreso);
+      let cursorFull = await leerJSONL(redis, CL.progreso);
+      /* ENERO (16-oct-2026): el año tiene un solo mes y la carga completa cabe entera en el primer
+         tramo, así que no queda nada «a medias» que el latido pueda continuar. Solo en ese caso se
+         reabre el cursor REAL que dejó la carga —el mismo, vuelto al inicio de su único mes—, y lo
+         que sigue (el latido continúa la carga, con la llave por la URL) se ejecuta igual. Con dos
+         meses o más, nada cambia: la carga se corta de verdad. */
+      if (cursorFull && cursorFull.tipo === "full" && require("../lib/socrata.js").mesesDelAno().length === 1) {
+        cursorFull = { ...cursorFull, mesIdx: 0, cursor: {}, terminado: false };
+        await escribirJSONL(redis, CL.progreso, cursorFull);
+      }
       assert.ok(cursorFull && cursorFull.tipo === "full" && !cursorFull.terminado, `la carga completa tiene que quedar a medias para la prueba: ${JSON.stringify(cursorFull).slice(0, 200)}`);
       const s = await invocar(rProcL, `/api/procesos?op=latido&token=${encodeURIComponent(process.env.HISTORICO_TOKEN)}`);
       assert.strictEqual(s.cuerpo.accion, "sync", JSON.stringify(s.cuerpo).slice(0, 200));
@@ -11525,11 +13185,343 @@ async function main() {
       const vjL = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "vercel.json"), "utf8"));
       assert.ok(vjL.rewrites.some((r) => r.source === "/api/latido" && r.destination === "/api/procesos?op=latido"));
       const ymlL = fs.readFileSync(path.join(__dirname, "..", ".github", "workflows", "latido.yml"), "utf8");
-      assert.ok(/cron: '\*\/10 \* \* \* \*'/.test(ymlL) && /\/api\/latido/.test(ymlL) && /Bearer \$\{CRON_SECRET\}/.test(ymlL));
+      assert.ok(/\/api\/latido/.test(ymlL) && /Bearer \$\{CRON_SECRET\}/.test(ymlL));
+      /* EL RELOJ NO VUELVE A CADA 10 MIN (16-oct-2026): Vercel Hobby pausó el proyecto el 30-sep por CPU
+         activa y cada latido despierta una función. Minuto fijo y un paso de horas: como mucho 12 al día. */
+      const cronL = (/cron: '([^']+)'/.exec(ymlL) || [, ""])[1];
+      const pasoL = /^\d{1,2} (\*|\*\/\d{1,2}) \* \* \*$/.exec(cronL);
+      assert.ok(pasoL, `el latido de GitHub va con minuto fijo, como mucho una vez por hora (hoy «${cronL}»): cada llamada despierta una función y gasta CPU del plan`);
+      /* LO A MEDIAS Y LO FALLIDO NO ESTÁN «AL DÍA» (16-oct-2026, revisión adversaria): con FRESCO_MS
+         de 6 h un ciclo de delta cortado o un fallo posterior quedaban varados. */
+      {
+        const SFx = require("../lib/handlers/procesos/sync.js");
+        const ahoraX = Date.now();
+        const baseX = { last_full: new Date(ahoraX - 86400e3).toISOString(), ano: new Date(ahoraX - 5 * 3600e3).getUTCFullYear(), last_sync: new Date(ahoraX - 3600e3).toISOString() };
+        assert.strictEqual(SFx.decidirAuto({ meta: baseX, ahora: ahoraX }), "al_dia", "control: dato de 1 h sin nada pendiente está al día");
+        assert.strictEqual(SFx.decidirAuto({ meta: { ...baseX, delta_ciclo: { desde: "x" } }, ahora: ahoraX }), "delta", "un ciclo de delta a medias se continúa aunque el dato tenga menos de FRESCO_MS");
+        assert.strictEqual(SFx.decidirAuto({ meta: { ...baseX, ultimo_error: { ts: new Date(ahoraX - 600e3).toISOString() } }, ahora: ahoraX }), "delta", "un fallo posterior a la última actualización no está al día");
+        assert.strictEqual(SFx.decidirAuto({ meta: { ...baseX, ultimo_error: { ts: new Date(ahoraX - 7200e3).toISOString() } }, ahora: ahoraX }), "al_dia", "un fallo ANTERIOR a la última actualización ya se resolvió");
+        const LTx = require("../lib/latido.js");
+        const metaFallo = { last_sync: new Date(ahoraX - 3600e3).toISOString(), ultimo_error: { ts: new Date(ahoraX - 45 * 60e3).toISOString() } };
+        assert.strictEqual(LTx.decidirLatido({ meta: metaFallo, ahora: ahoraX }).accion, "sync", "un fallo de hace más de 30 min sin actualización posterior lo reintenta el latido");
+        assert.strictEqual(LTx.decidirLatido({ meta: { ...metaFallo, ultimo_error: { ts: new Date(ahoraX - 10 * 60e3).toISOString() } }, ahora: ahoraX }).accion, "nada", "pero no antes de 30 min");
+      }
       console.log(`· latido que retoma lo cortado: decisión pura en ${10} casos (candado, fallo reciente, full, delta, histórico, horario, «no sé»), 1 comando en reposo, histórico continuado con su rango sin reiniciar el cursor, carga completa retomada`);
     } finally {
       if (antesCron === undefined) delete process.env.CRON_SECRET; else process.env.CRON_SECRET = antesCron;
       for (let i = 0; i < guardadas.length; i++) { if (antes[i] == null) await redis.del(guardadas[i]); else await redis.set(guardadas[i], antes[i]); }
+    }
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     UNIDAD · LA LLAMADA DEL SERVIDOR A SÍ MISMO (18-oct-2026, lib/autollamada)
+     ──────────────────────────────────────────────────────────────────────────
+     Medido ese día con el muro de Vercel puesto: tras una tanda con `done:false` y tras un
+     fallo con `reintento:true` no arrancó ninguna tanda más, y nada lo decía. Se EJECUTA la
+     pieza real contra servidores locales —el muro (302 hacia sso-api), la tanda que trabaja
+     (no responde en el plazo), la aplicación que no reconoce la credencial, un puerto
+     cerrado—, con y sin el contexto de Vercel (`waitUntil`); el handler REAL del sync se
+     reintenta contra el muro; la salud lo dice; y el latido repite el tramo con sus topes.
+     ══════════════════════════════════════════════════════════════════════════ */
+  bq57b: { if (!corre("autollamada del servidor")) break bq57b;
+    const AL = require("../lib/autollamada.js");
+    const LTa = require("../lib/latido.js");
+    const { CLAVES: CLa, escribirJSON: escribirJSONa } = require("../lib/almacen.js");
+    const rProcA = require("../api/procesos.js");
+    const leerReg = async () => JSON.parse((await redis.get(CLa.autoLlamada)) || "null");
+    const SIM_CTX = Symbol.for("@vercel/request-context");
+    const ctxPrevio = globalThis[SIM_CTX];
+    const pasePrevio = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
+    const cronPrevio = process.env.CRON_SECRET;
+    const ponerEnv = (k, v) => { if (v === undefined) delete process.env[k]; else process.env[k] = v; };
+    const servidores = [];
+    const servidor = async (fn) => {
+      const s = http.createServer(fn); servidores.push(s);
+      return { s, cab: { host: `127.0.0.1:${await escuchar(s)}`, "x-forwarded-proto": "http" } };
+    };
+    const guardadasA = [CLa.meta, CLa.lock, CLa.lockHistorico, CLa.progreso, CLa.progresoHistorico, CLa.derivadosHechos, CLa.metaHistorico, CLa.autoLlamada, CLa.latidoUltimo, CLa.avisoSalud, "sync:fallos_seguidos"];
+    const antesA = await redis.mget(guardadasA);
+    try {
+      // 1 · cómo le fue y qué dice la salud: puras
+      assert.strictEqual(AL.clasificarAutoLlamada({ status: 302, ubicacion: "https://vercel.com/sso-api?url=x&nonce=y" }), "muro");
+      assert.strictEqual(AL.clasificarAutoLlamada({ status: 401, texto: "<title>Protected by Vercel Authentication</title>" }), "muro", "el muro también se reconoce por su texto");
+      assert.strictEqual(AL.clasificarAutoLlamada({ status: 401, texto: JSON.stringify({ ok: false, error: "No autorizado" }) }), "credencial");
+      assert.strictEqual(AL.clasificarAutoLlamada({ status: 200, texto: "{}" }), "siguio");
+      assert.strictEqual(AL.clasificarAutoLlamada({ sinRespuesta: true }), "siguio", "sin respuesta en el plazo, la tanda siguiente está trabajando");
+      assert.strictEqual(AL.clasificarAutoLlamada({ error: "fetch failed" }), "fallo_de_red");
+      assert.strictEqual(AL.clasificarAutoLlamada({ status: 302, ubicacion: "https://otro.example/entrar" }), "otro_codigo", "una redirección que no es la del muro no se da por muro");
+      assert.strictEqual(AL.clasificarAutoLlamada({ status: 503, texto: "caido" }), "otro_codigo");
+      const ahoraA = Date.now();
+      const haceA = (s) => new Date(ahoraA - s * 1e3).toISOString();
+      assert.strictEqual(AL.motivoDeAutoLlamada(null, ahoraA), null);
+      assert.strictEqual(AL.motivoDeAutoLlamada({ resultado: "siguio", ts: haceA(5) }, ahoraA), null);
+      assert.strictEqual(AL.queHacerAutoLlamada({ resultado: "siguio" }), null);
+      assert.strictEqual(AL.motivoDeAutoLlamada({ resultado: "enviada", ts: haceA(5) }, ahoraA), null, "una llamada recién enviada todavía no tiene noticia: no es un fallo");
+      assert.ok(/no siguió viva/.test(AL.motivoDeAutoLlamada({ resultado: "enviada", ts: haceA(120) }, ahoraA) || ""), "un «enviada» de más de un minuto es la función que no siguió viva para ver la respuesta");
+      assert.strictEqual(AL.motivoDeAutoLlamada({ resultado: "enviada", ts: "ilegible" }, ahoraA), null, "«no sé» no pone la salud en rojo");
+      for (const reg of [{ resultado: "muro", pase_en_el_servidor: false }, { resultado: "muro", pase_en_el_servidor: true }, { resultado: "credencial" },
+        { resultado: "fallo_de_red", detalle: "getaddrinfo; ENOTFOUND" }, { resultado: "otro_codigo", status: 503 }, { resultado: "enviada", ts: haceA(120) }]) {
+        const m = AL.motivoDeAutoLlamada({ ts: haceA(1), ...reg }, ahoraA);
+        assert.ok(m && /la actualización no pudo seguir sola/.test(m), `cada fallo es un motivo: ${JSON.stringify(reg)} → ${m}`);
+        assert.ok(!m.includes("; "), `el motivo no lleva «; » (el aviso por correo parte los motivos por ahí): ${m}`);
+        assert.ok(AL.queHacerAutoLlamada(reg), `cada fallo dice qué hacer: ${reg.resultado}`);
+      }
+
+      // 2 · el muro: 302 hacia sso-api, sin seguirlo; «enviada» ya está anotada cuando la llamada llega
+      ponerEnv("VERCEL_AUTOMATION_BYPASS_SECRET", undefined);
+      delete globalThis[SIM_CTX];
+      const llegadasM = [];
+      const muro = await servidor(async (rq, rs) => {
+        llegadasM.push({ url: rq.url, headers: rq.headers, anotado: await redis.get(CLa.autoLlamada) });
+        rs.writeHead(302, { Location: "https://vercel.com/sso-api?url=https%3A%2F%2Fdetekta-app.vercel.app%2F&nonce=abc" }); rs.end();
+      });
+      await redis.del(CLa.autoLlamada);
+      const rM = await AL.autoLlamar({ headers: muro.cab }, "/api/procesos?op=sync&modo=auto", { origen: "cadena" });
+      assert.strictEqual(rM.con_waitUntil, false, "sin el contexto de Vercel no hay waitUntil");
+      assert.strictEqual(llegadasM.length, 1, "la llamada sale UNA vez y no sigue la redirección del muro");
+      assert.strictEqual(llegadasM[0].url, "/api/procesos?op=sync&modo=auto");
+      assert.strictEqual((JSON.parse(llegadasM[0].anotado || "{}")).resultado, "enviada", "«enviada» se anota ANTES de la llamada: si la función se congela ahí, el rastro queda");
+      const regM = await leerReg();
+      assert.deepStrictEqual(Object.keys(regM).sort(), ["con_waitUntil", "destino", "ms", "origen", "pase_en_el_servidor", "resultado", "status", "ts"], "la anotación publica esto y nada más");
+      assert.deepStrictEqual([regM.resultado, regM.status, regM.pase_en_el_servidor, regM.origen, regM.destino], ["muro", 302, false, "cadena", "sync"], JSON.stringify(regM));
+      const ttlM = await redis.ttl(CLa.autoLlamada);
+      assert.ok(ttlM > 0 && ttlM <= AL.TTL_SEG, `la anotación caduca sola (TTL ${ttlM} s)`);
+      const c0A = upstash.peticiones();
+      const sM = await invocar(rProcA, "/api/procesos?op=salud");
+      assert.ok(upstash.peticiones() - c0A <= 2, `op=salud sigue en ≤ 2 comandos con la anotación en su MGET (${upstash.peticiones() - c0A})`);
+      assert.strictEqual(sM.cuerpo.ok, false, "con la cadena rechazada por el muro la salud suena");
+      assert.ok(/no pudo seguir sola.*porque el servidor no tiene el pase/.test(sM.cuerpo.motivo || ""), sM.cuerpo.motivo);
+      assert.deepStrictEqual(Object.keys(sM.cuerpo.autollamada).sort(), ["con_waitUntil", "destino", "falla", "ms", "origen", "pase_en_el_servidor", "que_hacer", "resultado", "status", "ts"], "la salud publica la anotación, si falla y qué hacer");
+      assert.strictEqual(sM.cuerpo.autollamada.falla, true);
+      assert.ok(/Enable access to System Environment Variables/.test(sM.cuerpo.autollamada.que_hacer || ""), sM.cuerpo.autollamada.que_hacer);
+      // con el pase en el servidor: la cabecera viaja, su valor no se anota y el motivo cambia
+      ponerEnv("VERCEL_AUTOMATION_BYPASS_SECRET", "pase-de-la-prueba-autollamada");
+      await AL.autoLlamar({ headers: muro.cab }, "/api/procesos?op=historico&desde=2025-01&hasta=2025-02", { origen: "cadena", extra: { "x-historico-token": "llave-de-la-prueba-autollamada" } });
+      assert.strictEqual(llegadasM[1].headers["x-vercel-protection-bypass"], "pase-de-la-prueba-autollamada", "el pase del muro viaja en la llamada");
+      assert.strictEqual(llegadasM[1].headers["x-historico-token"], "llave-de-la-prueba-autollamada", "lo propio de cada disparo se suma a las cabeceras");
+      const crudoP = await redis.get(CLa.autoLlamada);
+      assert.ok(!crudoP.includes("pase-de-la-prueba-autollamada") && !crudoP.includes("llave-de-la-prueba-autollamada"), "la anotación no lleva el valor de ningún secreto");
+      assert.deepStrictEqual([JSON.parse(crudoP).pase_en_el_servidor, JSON.parse(crudoP).destino], [true, "historico"]);
+      assert.ok(/aunque el servidor tiene un pase/.test((await invocar(rProcA, "/api/procesos?op=salud")).cuerpo.motivo || ""));
+
+      // 3 · la tanda que trabaja: sin respuesta en el plazo es «siguió», y la salud no suena por ella
+      let soltarT = null;
+      const trabaja = await servidor((rq, rs) => { soltarT = () => { rs.writeHead(200); rs.end("{}"); }; });
+      const tT = Date.now();
+      await AL.autoLlamar({ headers: trabaja.cab }, "/api/procesos?op=sync&modo=auto", { origen: "cadena", esperaMs: 150 });
+      assert.ok(Date.now() - tT < 3000, "sin waitUntil se espera el plazo, no la tanda entera");
+      const regT = await leerReg();
+      assert.deepStrictEqual([regT.resultado, regT.status], ["siguio", null], JSON.stringify(regT));
+      const sT = await invocar(rProcA, "/api/procesos?op=salud");
+      assert.strictEqual(sT.cuerpo.autollamada.falla, false);
+      assert.ok(!/no pudo seguir sola/.test(sT.cuerpo.motivo || ""), sT.cuerpo.motivo);
+      if (soltarT) soltarT();
+
+      // 4 · la aplicación que no reconoce la credencial, y un puerto cerrado
+      const app401 = await servidor((rq, rs) => { rs.writeHead(401, { "Content-Type": "application/json" }); rs.end(JSON.stringify({ ok: false, error: "No autorizado" })); });
+      await AL.autoLlamar({ headers: app401.cab }, "/api/procesos?op=sync&modo=auto", { origen: "reintento" });
+      assert.strictEqual((await leerReg()).resultado, "credencial");
+      const cerradoA = http.createServer(); const pCerradoA = await escuchar(cerradoA); await new Promise((r) => cerradoA.close(r));
+      await AL.autoLlamar({ headers: { host: `127.0.0.1:${pCerradoA}`, "x-forwarded-proto": "http" } }, "/api/procesos?op=sync&modo=auto", { origen: "listado" });
+      const regC = await leerReg();
+      assert.strictEqual(regC.resultado, "fallo_de_red"); assert.ok(regC.detalle, "el fallo de red dice qué pasó");
+      assert.ok(/no salió/.test((await invocar(rProcA, "/api/procesos?op=salud")).cuerpo.motivo || ""));
+      // sin dirección no hay llamada ni anotación
+      await redis.del(CLa.autoLlamada);
+      assert.strictEqual((await AL.autoLlamar({ headers: {} }, "/api/procesos?op=sync&modo=auto")).enviada, false);
+      assert.strictEqual(await redis.get(CLa.autoLlamada), null);
+
+      // 5 · con el contexto de Vercel: el trabajo va a waitUntil y la respuesta no lo espera
+      const entregados = [];
+      globalThis[SIM_CTX] = { get: () => ({ waitUntil: (p) => { entregados.push(p); } }) };
+      let soltarW = null;
+      const lento = await servidor((rq, rs) => { soltarW = () => { rs.writeHead(200); rs.end("{}"); }; });
+      const tW = Date.now();
+      const rW = await AL.autoLlamar({ headers: lento.cab }, "/api/procesos?op=sync&modo=auto", { origen: "cadena", esperaMs: 2000 });
+      assert.ok(Date.now() - tW < 1500, `con waitUntil la función responde sin esperar el plazo (${Date.now() - tW} ms)`);
+      assert.strictEqual(rW.con_waitUntil, true);
+      assert.strictEqual(entregados.length, 1); assert.strictEqual(entregados[0], rW.trabajo, "lo que se entrega a waitUntil es el trabajo de la llamada");
+      assert.strictEqual((await leerReg()).resultado, "enviada", "mientras el trabajo sigue, la anotación dice «enviada»");
+      await entregados[0];
+      assert.deepStrictEqual([(await leerReg()).resultado, (await leerReg()).con_waitUntil], ["siguio", true]);
+      if (soltarW) soltarW();
+      // un contexto sin waitUntil es «sin contexto», sin reventar
+      globalThis[SIM_CTX] = { get: () => undefined };
+      assert.strictEqual(AL.contextoDeVercel(), null);
+      delete globalThis[SIM_CTX];
+
+      // 6 · el handler REAL del sync: un fallo con reintento se llama a sí mismo y, contra el muro, la salud lo dice
+      ponerEnv("VERCEL_AUTOMATION_BYPASS_SECRET", undefined);
+      ponerEnv("CRON_SECRET", undefined);   // sync abierto: aquí se prueba la llamada, no la guarda
+      await redis.del("sync:fallos_seguidos", CLa.lock, CLa.autoLlamada);
+      const baseSocA = process.env.SECOP_BASE_URL;
+      const cerradoS = http.createServer(); const pCerradoS = await escuchar(cerradoS); await new Promise((r) => cerradoS.close(r));
+      const nAntesS = llegadasM.length;
+      let rFalloA;
+      try {
+        process.env.SECOP_BASE_URL = `http://127.0.0.1:${pCerradoS}/resource/p6dx-8zbt.json`;
+        rFalloA = await invocar(rProcA, "/api/procesos?op=sync&modo=delta", muro.cab);
+      } finally { process.env.SECOP_BASE_URL = baseSocA; }
+      assert.strictEqual(rFalloA.status, 502, JSON.stringify(rFalloA.cuerpo).slice(0, 300));
+      assert.strictEqual(rFalloA.cuerpo.reintento, true, JSON.stringify(rFalloA.cuerpo).slice(0, 300));
+      assert.strictEqual(llegadasM.length, nAntesS + 1, "el reintento salió hacia la dirección por la que llegó la tanda");
+      assert.strictEqual(llegadasM[nAntesS].url, "/api/procesos?op=sync&modo=auto");
+      const regS = await leerReg();
+      assert.deepStrictEqual([regS.resultado, regS.origen, regS.destino], ["muro", "reintento", "sync"], JSON.stringify(regS));
+
+      /* 6 bis · LA CADENA CONTRA SU PROPIO CANDADO (revisión adversaria del 18-oct, con reproducción): si
+         el DEL del candado falla, la tanda siguiente chocaba con él («ya hay una sincronización
+         corriendo») y la anotación decía «siguió». Ahora se intenta soltar otra vez; si sigue puesto,
+         no se encadena y la respuesta lo dice. La carga completa de 1 ms se rinde tras la primera página
+         guardada (con cualquier número de meses: la iteración lo usa igual) y encadena. */
+      const ahoraC = Date.now();
+      const metaDelta = { last_full: new Date(ahoraC - 86400e3).toISOString(), last_sync: new Date(ahoraC - 3600e3).toISOString(), ano: new Date(ahoraC).getUTCFullYear() };
+      const borrarDel = (veces) => { let n = 0; upstash.romper((c) => (String(c[0]).toUpperCase() === "DEL" && c[1] === CLa.lock && n++ < veces ? "The operation was aborted due to timeout" : null)); };
+      await redis.del(CLa.lock, CLa.autoLlamada);
+      const nAntesC = llegadasM.length;
+      let rCand;
+      borrarDel(99);
+      try { rCand = await invocar(rProcA, "/api/procesos?op=sync&modo=full&presupuesto=1", muro.cab); }
+      finally { upstash.romper(null); }
+      assert.strictEqual(rCand.cuerpo.done, false, `montaje: la carga de 1 ms queda a medias: ${JSON.stringify(rCand.cuerpo).slice(0, 200)}`);
+      assert.ok(/candado no se pudo soltar/.test(rCand.cuerpo.sin_cadena || ""), `con el candado sin soltar no se encadena y se dice: ${JSON.stringify(rCand.cuerpo).slice(0, 300)}`);
+      assert.strictEqual(llegadasM.length, nAntesC, "con el candado sin soltar no sale ninguna llamada");
+      await redis.del(CLa.lock);
+      borrarDel(1);
+      try { rCand = await invocar(rProcA, "/api/procesos?op=sync&modo=full&presupuesto=1", muro.cab); }
+      finally { upstash.romper(null); }
+      assert.strictEqual(rCand.cuerpo.done, false);
+      assert.strictEqual(rCand.cuerpo.sin_cadena, undefined, "el segundo intento suelta el candado y la cadena sigue");
+      assert.strictEqual(llegadasM.length, nAntesC + 1, "y la llamada sale");
+      assert.strictEqual(await redis.get(CLa.lock), null, "el candado quedó libre antes de la llamada");
+      // el hermano del histórico: el mismo candado sin soltar, la misma guarda (su candado dura 600 s)
+      {
+        const rutaH = "/api/procesos?op=historico&desde=2025-01&hasta=2025-02&presupuesto=1";
+        const cabH = { ...muro.cab, "x-historico-token": process.env.HISTORICO_TOKEN };
+        const borrarDelH = (veces) => { let n = 0; upstash.romper((c) => (String(c[0]).toUpperCase() === "DEL" && c[1] === CLa.lockHistorico && n++ < veces ? "The operation was aborted due to timeout" : null)); };
+        await redis.del(CLa.lockHistorico, CLa.progresoHistorico, CLa.derivadosHechos);
+        const nH = llegadasM.length;
+        let rH;
+        borrarDelH(99);
+        try { rH = await invocar(rProcA, rutaH, cabH); } finally { upstash.romper(null); }
+        assert.strictEqual(rH.cuerpo.done, false, `montaje: la extracción de 1 ms queda a medias: ${JSON.stringify(rH.cuerpo).slice(0, 200)}`);
+        assert.ok(/candado no se pudo soltar/.test(rH.cuerpo.sin_cadena || ""), `histórico: con el candado sin soltar no se encadena y se dice: ${JSON.stringify(rH.cuerpo).slice(0, 300)}`);
+        assert.strictEqual(llegadasM.length, nH, "histórico: con el candado sin soltar no sale ninguna llamada");
+        await redis.del(CLa.lockHistorico, CLa.progresoHistorico, CLa.derivadosHechos);   // la segunda vuelve a empezar y vuelve a cortarse
+        borrarDelH(1);
+        try { rH = await invocar(rProcA, rutaH, cabH); } finally { upstash.romper(null); }
+        assert.strictEqual(rH.cuerpo.done, false);
+        assert.strictEqual(rH.cuerpo.sin_cadena, undefined, "histórico: el segundo intento suelta el candado y la cadena sigue");
+        assert.strictEqual(llegadasM.length, nH + 1, "histórico: y la llamada sale");
+        assert.ok(/op=historico&desde=2025-01&hasta=2025-02/.test(llegadasM[nH].url), llegadasM[nH].url);
+        await redis.del(CLa.lockHistorico, CLa.progresoHistorico, CLa.derivadosHechos);
+      }
+      // la tanda siguiente que encuentra otro candado no es «siguió»: lo dice, sin poner la salud en rojo
+      assert.strictEqual(AL.clasificarAutoLlamada({ status: 200, texto: JSON.stringify({ ok: true, enCurso: true, msg: "ya hay una sincronización corriendo" }) }), "candado_ocupado");
+      assert.strictEqual(AL.motivoDeAutoLlamada({ resultado: "candado_ocupado", ts: new Date().toISOString() }), null);
+
+      /* 6 ter · LO PASAJERO NO TIENE LA SALUD EN ROJO UN DÍA (revisión adversaria del 18-oct): un 504 de
+         hace 3 h no cuenta; el muro de hace 3 h, sí (configuración); un 504 de hace 10 min cuenta
+         con el ciclo abierto y no cuenta si el ciclo se cerró después */
+      const hace3h = new Date(Date.now() - 3 * 3600e3).toISOString(), hace10 = new Date(Date.now() - 10 * 60e3).toISOString();
+      const saludCon = async (reg, meta) => {
+        await redis.set(CLa.autoLlamada, JSON.stringify(reg), { ex: 600 });
+        if (meta) await escribirJSONa(redis, CLa.meta, meta);
+        return (await invocar(rProcA, "/api/procesos?op=salud")).cuerpo;
+      };
+      const base6 = { origen: "cadena", destino: "sync", pase_en_el_servidor: true, con_waitUntil: true, ms: 10, status: 504 };
+      let s6 = await saludCon({ ...base6, ts: hace3h, resultado: "otro_codigo" });
+      assert.ok(!/no pudo seguir sola/.test(s6.motivo || "") && s6.autollamada.falla === false, `un 504 de hace 3 h ya no cuenta: ${s6.motivo}`);
+      s6 = await saludCon({ ...base6, ts: hace3h, resultado: "muro", status: 302 });
+      assert.ok(/no pudo seguir sola/.test(s6.motivo || ""), "el muro de hace 3 h sigue contando: es configuración");
+      s6 = await saludCon({ ...base6, ts: hace10, resultado: "otro_codigo" }, { ...metaDelta, delta_ciclo: { desdeUTC: "x" }, ultimo_delta: { ts: new Date().toISOString() } });
+      assert.ok(/respondió 504/.test(s6.motivo || ""), `con el ciclo abierto, el 504 de hace 10 min cuenta: ${s6.motivo}`);
+      s6 = await saludCon({ ...base6, ts: hace10, resultado: "otro_codigo" }, { ...metaDelta, ultimo_delta: { ts: new Date().toISOString() } });
+      assert.ok(!/no pudo seguir sola/.test(s6.motivo || ""), `con el ciclo cerrado después, ya no cuenta: ${s6.motivo}`);
+      s6 = await saludCon({ ...base6, ts: hace10, resultado: "otro_codigo" }, { ...metaDelta, ultimo_delta: { ts: new Date(Date.now() - 20 * 60e3).toISOString() } });
+      assert.ok(/respondió 504/.test(s6.motivo || ""), "una tanda ANTERIOR al fallo no lo cierra");
+      await redis.del(CLa.autoLlamada);
+
+      // 7 · el latido repite el tramo EN ESTE PROCESO, con sus topes: la regla, pura
+      const b7 = { tandas: 1, transcurridoMs: 60e3, status: 200 };
+      const aMedias = (leidas) => ({ ok: true, done: false, delta: { ciclo_leidas: leidas } });
+      const paso = (o) => { const r = LTa.otraTandaDelLatido(o); return [r.seguir, r.motivo]; };
+      assert.deepStrictEqual(paso({ ...b7, cuerpo: aMedias(10) }), [true, null]);
+      assert.deepStrictEqual(paso({ ...b7, tandas: 3, cuerpo: aMedias(10) }), [false, "ya van 3 tandas en este latido"]);
+      assert.deepStrictEqual(paso({ ...b7, tandas: 2, cuerpo: aMedias(10) }), [true, null]);
+      assert.deepStrictEqual(paso({ ...b7, transcurridoMs: 170e3, cuerpo: aMedias(10) }), [false, "no queda tiempo para otra tanda en este latido"]);
+      assert.deepStrictEqual(paso({ ...b7, transcurridoMs: 169e3, cuerpo: aMedias(10) }), [true, null]);
+      assert.deepStrictEqual(paso({ ...b7, transcurridoMs: 150e3, tandaMasLargaMs: 110e3, cuerpo: aMedias(10) }), [false, "no queda tiempo para otra tanda en este latido"],
+        "una tanda de 110 s con un 30 % de holgura ya no cabe antes de los 280 s");
+      assert.deepStrictEqual(paso({ ...b7, transcurridoMs: 120e3, tandaMasLargaMs: 60e3, cuerpo: aMedias(10) }), [true, null], "con tandas de 60 s, la tercera cabe");
+      assert.deepStrictEqual(paso({ ...b7, status: 502, cuerpo: aMedias(10) }), [false, "el tramo respondió con error"]);
+      assert.deepStrictEqual(paso({ ...b7, cuerpo: { ok: true, enCurso: true } }), [false, "otra tanda tiene el candado"]);
+      assert.deepStrictEqual(paso({ ...b7, cuerpo: { ok: true, done: true } }), [false, "terminó"]);
+      assert.deepStrictEqual(paso({ ...b7, cuerpo: { ok: true } }), [false, "el tramo no dijo si terminó"]);
+      assert.deepStrictEqual(paso({ ...b7, cuerpo: { ok: false, done: false } }), [false, "el tramo no respondió bien"]);
+      const huellaD = LTa.huellaDeAvance(aMedias(10));
+      assert.deepStrictEqual(paso({ ...b7, cuerpo: aMedias(10), huellaPrevia: huellaD }), [false, "la tanda no avanzó"]);
+      assert.deepStrictEqual(paso({ ...b7, cuerpo: aMedias(11), huellaPrevia: huellaD }), [true, null]);
+      assert.deepStrictEqual(paso({ ...b7, cuerpo: { ok: true, done: false }, huellaPrevia: null }), [true, null], "sin nada que diga cuánto avanzó, no se da por quieto: lo acotan los dos topes");
+      const full = (leidasMes) => ({ ok: true, done: false, progreso: { mes: "2026-03", mesIdx: 2, leidasMes } });
+      assert.deepStrictEqual(paso({ ...b7, cuerpo: full(100), huellaPrevia: LTa.huellaDeAvance(full(100)) }), [false, "la tanda no avanzó"], "la carga completa que no avanza también para");
+      const hist = (leidasMes) => ({ ok: true, done: false, extraccion: { done: false, progreso: { mes: "2025-01", mesIdx: 0, leidasMes } } });
+      assert.deepStrictEqual(paso({ ...b7, cuerpo: hist(5), huellaPrevia: LTa.huellaDeAvance(hist(5)) }), [false, "la tanda no avanzó"], "y la extracción del histórico");
+      assert.deepStrictEqual(paso({ ...b7, cuerpo: hist(6), huellaPrevia: LTa.huellaDeAvance(hist(5)) }), [true, null]);
+      /* los derivados del histórico, con la FORMA que devuelven sus constructores ({ done, pendientes }: lib/indice_competencia,
+         lib/indice_baja, lib/equivalencias, lib/texto_unspsc): la revisión adversaria del 18-oct encontró la guarda muerta aquí */
+      const deriv = (pendientes) => ({ ok: true, done: false, extraccion: { done: true, yaEstaba: true }, indice: { done: true, yaEstaba: true }, baja: { done: false, pendientes, analizados: 10 } });
+      assert.deepStrictEqual(paso({ ...b7, cuerpo: deriv(4), huellaPrevia: LTa.huellaDeAvance(deriv(4)) }), [false, "la tanda no avanzó"], "un derivado que no baja sus pendientes detiene el latido");
+      assert.deepStrictEqual(paso({ ...b7, cuerpo: deriv(3), huellaPrevia: LTa.huellaDeAvance(deriv(4)) }), [true, null]);
+
+      // 8 · el handler REAL del latido, con el tramo sustituido en la caché de módulos (el latido lo pide al llamar)
+      process.env.CRON_SECRET = "cron-autollamada";
+      const BEARER_A = { authorization: "Bearer cron-autollamada" };
+      await redis.del(CLa.lock, CLa.lockHistorico, CLa.progreso, CLa.progresoHistorico);
+      await escribirJSONa(redis, CLa.meta, { last_sync: new Date().toISOString(), last_full: new Date().toISOString(), delta_ciclo: { desdeUTC: "2026-10-18T00:00:00.000Z" } });
+      const rutaSyncA = require.resolve("../lib/handlers/procesos/sync.js");
+      const syncRealA = require.cache[rutaSyncA].exports;
+      const guion = (respuestas) => {
+        const vistas = [];
+        require.cache[rutaSyncA].exports = (rq, rs) => {
+          vistas.push(rq.query);
+          const c = respuestas[Math.min(vistas.length, respuestas.length) - 1];
+          return rs.status(c.status || 200).json(c.cuerpo);
+        };
+        return vistas;
+      };
+      const latirA = () => invocar(rProcA, "/api/procesos?op=latido", BEARER_A);
+      try {
+        let vistas = guion([{ cuerpo: aMedias(10) }, { cuerpo: aMedias(20) }, { cuerpo: { ok: true, done: true, delta: { ciclo_leidas: 25 } } }]);
+        let l = await latirA();
+        assert.strictEqual(l.cuerpo.accion, "sync", JSON.stringify(l.cuerpo).slice(0, 300));
+        assert.strictEqual(vistas.length, 3, "a medias, a medias y terminado: tres tandas en el mismo latido");
+        assert.ok(vistas.every((v) => v.chain === "0" && v.modo === "auto"), `cada tanda es op=sync&modo=auto con chain=0: ${JSON.stringify(vistas)}`);
+        assert.deepStrictEqual(l.cuerpo.tandas.map((t) => t.done), [false, false, true]);
+        assert.deepStrictEqual([l.status, l.cuerpo.hecho, l.cuerpo.por_que_paro], [200, true, "terminó"]);
+        vistas = guion([{ cuerpo: aMedias(10) }, { cuerpo: aMedias(20) }, { cuerpo: aMedias(30) }, { cuerpo: aMedias(40) }]);
+        l = await latirA();
+        assert.strictEqual(vistas.length, 3, "siempre a medias y avanzando: para en el tope");
+        assert.strictEqual(l.cuerpo.por_que_paro, "ya van 3 tandas en este latido");
+        vistas = guion([{ cuerpo: aMedias(10) }, { cuerpo: aMedias(10) }, { cuerpo: aMedias(10) }]);
+        l = await latirA();
+        assert.strictEqual(vistas.length, 2, "una tanda que no avanzó detiene el latido: un ciclo atascado no gasta tres veces la CPU");
+        assert.strictEqual(l.cuerpo.por_que_paro, "la tanda no avanzó");
+        vistas = guion([{ cuerpo: aMedias(10) }, { status: 502, cuerpo: { ok: false, error: "corte simulado" } }, { cuerpo: aMedias(30) }]);
+        l = await latirA();
+        assert.strictEqual(vistas.length, 2, "un tramo que falla detiene el latido");
+        assert.deepStrictEqual([l.status, l.cuerpo.hecho, l.cuerpo.respuesta.status], [502, false, 502], "y el latido no se da por hecho");
+        vistas = guion([{ cuerpo: { ok: true, enCurso: true, msg: "ya hay una sincronización corriendo" } }, { cuerpo: aMedias(30) }]);
+        l = await latirA();
+        assert.strictEqual(vistas.length, 1, "si otra tanda tiene el candado, el latido no insiste");
+        assert.strictEqual(l.cuerpo.por_que_paro, "otra tanda tiene el candado");
+      } finally { require.cache[rutaSyncA].exports = syncRealA; }
+      console.log("· autollamada del servidor: el muro (302 a sso-api) se reconoce sin seguirlo y «enviada» queda antes de la llamada; sin pase, con pase, credencial, red y tanda que trabaja; waitUntil recibe el trabajo; el reintento real del sync anota «muro»; la salud lo dice en ≤ 2 comandos; el latido repite el tramo hasta 3 tandas y para si falla, si otro tiene el candado o si no avanza");
+    } finally {
+      if (ctxPrevio === undefined) delete globalThis[SIM_CTX]; else globalThis[SIM_CTX] = ctxPrevio;
+      ponerEnv("VERCEL_AUTOMATION_BYPASS_SECRET", pasePrevio); ponerEnv("CRON_SECRET", cronPrevio);
+      for (const s of servidores) { if (s.closeAllConnections) s.closeAllConnections(); s.close(); }
+      for (let i = 0; i < guardadasA.length; i++) { if (antesA[i] == null) await redis.del(guardadasA[i]); else await redis.set(guardadasA[i], antesA[i]); }
     }
   }
 
@@ -13366,7 +15358,7 @@ async function main() {
       const cuerpoD = appL.slice(appL.indexOf("async function filasParaExcel("), fD);
       assert.ok(/ListaLibro\.libroDeLista\(/.test(cuerpoD) && /XLSXApu\.descargar\(XLSXApu\.construirLibro\(/.test(cuerpoD), "las hojas las arma lista_libro y los bytes xlsx.js: no hay un segundo escritor");
       assert.ok(/Nada que descargar/.test(cuerpoD) && /Preparando el archivo/.test(cuerpoD) && /Descargado «/.test(cuerpoD) && /No se pudo preparar el archivo/.test(cuerpoD), "ninguna pulsación sin respuesta: vacío, preparando, descargado y fallo");
-      assert.ok(/"x-historico-token": token/.test(cuerpoD) && !/token=/.test(cuerpoD), "el token va por cabecera, jamás en la URL");
+      assert.ok(/conSesion\(\)/.test(cuerpoD) && !/token=/.test(cuerpoD) && !/x-historico-token/.test(cuerpoD), "la lista se pide con la sesión del dueño, jamás con una llave (ni en cabecera ni en la URL)");
       assert.ok(/por_pagina", String\(EXCEL_POR_PAGINA\)/.test(cuerpoD) && /EXCEL_POR_PAGINA = 100/.test(appL) && /const cuerpo = await leerJson\(r\)/.test(cuerpoD), "las páginas restantes se piden con el tope de la paginación y el parseo va aparte del fetch");
       console.log(`  · lista en Excel: ${hojas[0].filas.length - 1} filas · ${cab.length} columnas · cuantía cruda ${celda(2, iCuantia)} · vacío donde no hay dato`);
     })();
@@ -14906,7 +16898,7 @@ async function main() {
     {
       const tokenGuardado9 = process.env.HISTORICO_TOKEN;
       delete process.env.HISTORICO_TOKEN;
-      const permiso9 = require("../lib/auth.js").autorizarToken({ headers: { "x-historico-token": "MiExtraccion2025" } }, {});
+      const permiso9 = await require("../lib/auth.js").autorizarToken({ headers: { "x-historico-token": "una-llave-cualquiera" } }, {});
       process.env.HISTORICO_TOKEN = tokenGuardado9;
       assert.strictEqual(permiso9.status, 503, "lib/auth ya no responde 503 sin la llave del despliegue: la premisa cambió");
 
@@ -14931,6 +16923,13 @@ async function main() {
       assert.strictEqual(c4.error, "Sincronizando por primera vez.", "el 503 de sincronización no se toca: la pantalla espera");
       const c5 = await leer9(200, { ok: true, error: undefined, resultados: [] });
       assert.strictEqual(c5.ok, true, "un 200 no se redacta");
+      /* EL 503 DE LA LLAVE RETIRADA SE LEE EN LA PANTALLA DE ALTA, Y QUIEN LA LEE ES EL QUE
+         ADMINISTRA (navegador real, 18-oct-2026): envuelto en «no hay nada que pueda hacer desde
+         aquí: avise a quien lo administra» contradecía su propia instrucción de rotar la llave. */
+      const SesionA9 = require("../lib/sesion.js");
+      const cRetirada9 = await leer9(503, { ok: false, motivo: "llave_retirada", error: SesionA9.MSG_LLAVE_RETIRADA });
+      assert.strictEqual(cRetirada9.error, SesionA9.MSG_LLAVE_RETIRADA,
+        `el 503 de la llave retirada le habla al dueño que la tiene que cambiar; no se envuelve en «avise a quien lo administra»:\n${cRetirada9.error}`);
       /* EL HERMANO VIVO: el tablero añadía «puede iniciar una carga» a TODO 503, y
          con el sitio mal configurado esa acción no puede funcionar. */
       assert.strictEqual(c1.sitio_mal_configurado, true, "el cuerpo redactado marca que es configuración del sitio");
@@ -15669,7 +17668,7 @@ async function main() {
         nodos.set(id, el);
         return el;
       };
-      for (const id of ["frase-portada", "onboarding", "gate", "gate-clave", "gate-form",
+      for (const id of ["frase-portada", "onboarding", "gate", "gate-correo", "gate-contrasena", "gate-form",
         "btn-subir-rup", "rup-archivo", "btn-manual", "manual-form", "btn-manual-enviar",
         "completar-form", "btn-completar-enviar", "btn-ir-gate", "btn-exp-cargar", "exp-archivo",
         "exp-mensaje", "rup-mensaje", "rup-avisos", "rup-progreso", "rup-barra", "rup-progreso-msg",
@@ -15785,10 +17784,11 @@ async function main() {
      Con `method="dialog"` (12-sep-2026) ese envío ya no destruye la clave escrita,
      pero sigue sin HACER NADA: la regla dura «ninguna pulsación sin respuesta
      visible», rota en la puerta de la aplicación.
-     AQUÍ EL FALSO CARO ES EL POSITIVO: reproducir un envío que nadie hizo quema uno
-     de los tres intentos de MAX_INTENTOS_CLAVE. Por eso la duda no se resuelve
-     actuando, y por eso un envío con el campo VACÍO —que no puede acertar y sí puede
-     quemar un intento— tampoco se reproduce. Queda vivo y DECLARADO el caso de
+     AQUÍ EL FALSO CARO ES EL POSITIVO: reproducir un envío que nadie hizo gasta uno
+     de los intentos que el SERVIDOR cuenta por correo y por conexión (op=entrar,
+     17-oct-2026; antes eran los tres de la clave del navegador). Por eso la duda no
+     se resuelve actuando, y por eso un envío con un campo VACÍO —que no puede entrar
+     y sí puede gastar un intento— tampoco se reproduce. Queda vivo y DECLARADO el caso de
      quien pulsa Intro dentro del campo: no hay rastro que lo separe de «solo
      escribí», y no se cierra inventando una regla.
      Se EJECUTA la función real recortada de public/app.js —el mismo idioma que el
@@ -15828,9 +17828,10 @@ async function main() {
         return el;
       };
       const gate = crear("gate"), form = crear("gate-form", "FORM");
-      const campo = crear("gate-clave", "INPUT"), boton = crear("__entrar", "BUTTON"), cuerpo = crear("__body", "BODY");
-      boton.type = "submit"; boton.__padre = form; form.__padre = gate; campo.__padre = form;
-      dom = { document: { activeElement: cuerpo, getElementById: (id) => nodos.get(id) || null }, gate, form, campo, boton, cuerpo };
+      const correo = crear("gate-correo", "INPUT"), campo = crear("gate-contrasena", "INPUT");
+      const boton = crear("__entrar", "BUTTON"), cuerpo = crear("__body", "BODY");
+      boton.type = "submit"; boton.__padre = form; form.__padre = gate; campo.__padre = form; correo.__padre = form;
+      dom = { document: { activeElement: cuerpo, getElementById: (id) => nodos.get(id) || null }, gate, form, correo, campo, boton, cuerpo };
       return dom;
     };
     /* la función real, con el MISMO `$` que usa app.js */
@@ -15838,11 +17839,13 @@ async function main() {
       const $B8 = (id) => dom.document.getElementById(id);
       return new Function("document", "$", `${CODIGO_B8}\n  return ${NOMBRE_B8};`)(dom.document, $B8)();
     };
-    /* el escenario base: el gate ABIERTO (onboarding.js le quitó `hidden`), la
-       clave escrita y el foco en «Entrar» sin `:focus-visible` — o sea, PULSADO */
+    /* el escenario base: el gate ABIERTO (onboarding.js le quitó `hidden`), el
+       correo y la contraseña escritos y el foco en «Entrar» sin `:focus-visible`
+       — o sea, PULSADO */
     const pulsadoB8 = () => {
       const dom = nuevoDomB8();
-      dom.campo.value = "231105";
+      dom.correo.value = "dueno@empresa.co";
+      dom.campo.value = "una frase larga de prueba";
       dom.document.activeElement = dom.boton;
       dom.boton.__focusVisible = false;
       return dom;
@@ -15857,9 +17860,10 @@ async function main() {
     // 2 · los seis rastros que NO son un envío: censo, y ninguno actúa
     const sinEnvioB8 = [
       ["quien solo TABULÓ hasta «Entrar» no ha enviado nada (:focus-visible verdadero)", (d) => { d.boton.__focusVisible = true; }],
-      ["sin gesto alguno: el foco sigue en el campo de la clave", (d) => { d.document.activeElement = d.campo; }],
+      ["sin gesto alguno: el foco sigue en el campo de la contraseña", (d) => { d.document.activeElement = d.campo; }],
       ["quien pulsó y se marchó a otro sitio: el foco acabó en BODY", (d) => { d.document.activeElement = d.cuerpo; }],
-      ["con el campo VACÍO: un envío en blanco no puede acertar y sí quema uno de los tres intentos", (d) => { d.campo.value = ""; }],
+      ["con la contraseña VACÍA: un envío en blanco no puede entrar y sí gasta un intento del servidor", (d) => { d.campo.value = ""; }],
+      ["con el correo VACÍO: tampoco puede entrar", (d) => { d.correo.value = ""; }],
       ["con el gate CERRADO (la aplicación ya abierta, o la portada a la vista)", (d) => { d.gate.classList.add("hidden"); }],
       ["si el navegador no conoce `:focus-visible`, la duda se resuelve SIN actuar", (d) => { d.boton.__matchesLanza = true; }],
       ["un botón con el foco que no es el `submit` de #gate-form", (d) => { d.boton.__padre = null; }],
@@ -15868,13 +17872,17 @@ async function main() {
       const dom = pulsadoB8();
       preparar(dom);
       assert.strictEqual(correrB8(dom), null, `se reprodujo un envío que nadie hizo — ${rotulo}`);
-      assert.strictEqual(dom.boton.__clicks, 0, `se gastó uno de los tres intentos de la clave — ${rotulo}`);
+      assert.strictEqual(dom.boton.__clicks, 0, `se gastó un intento de entrar que nadie pidió — ${rotulo}`);
     }
     // 3 · la reproducción corre DESPUÉS de atar el `submit` y AL FINAL del IIFE
     {
       const iAtado = FUENTE_APP_B8.indexOf('$("gate-form").addEventListener("submit"');
       assert.ok(iAtado > 0, "app.js ya no ata el `submit` de #gate-form");
-      const iLlamada = FUENTE_APP_B8.lastIndexOf(`${NOMBRE_B8}();`);
+      /* el arranque es asíncrono desde el 17-oct-2026 (espera a op=sesion): la reproducción
+         va en su `.then`, que es lo que la deja DESPUÉS de decidir si el gate sigue a la vista */
+      const iLlamada = FUENTE_APP_B8.lastIndexOf(`${NOMBRE_B8}()`);
+      assert.ok(/arrancar\(\)\s*\.then\(\(\) => reproducirEnvioDeClaveAntesDeCargar\(\)\)/.test(FUENTE_APP_B8),
+        "la reproducción tiene que correr cuando el arranque TERMINÓ (en su .then), no antes");
       assert.ok(iLlamada > 0, `app.js define ${NOMBRE_B8} pero no la LLAMA: una función que nadie invoca no cierra ninguna ventana`);
       assert.ok(iLlamada > iAtado, "la reproducción corre ANTES de atar el `submit`: el envío se perdería igual");
       assert.ok(FUENTE_APP_B8.slice(iLlamada).trim().split("\n").length <= 8,
@@ -15893,7 +17901,7 @@ async function main() {
 
     console.log(`· unidad pantalla · el envío de la clave antes de cargar: ${NOMBRE_B8} EJECUTADA `
       + `· el envío pulsado dentro de la ventana de 2.214 ms (4G/CPU x4) y 8.984 ms (3G/CPU x6) se reproduce con el manejador REAL `
-      + `· los ${sinEnvioB8.length} rastros que no son un envío dejan 0 clicks: ni un intento de tres quemado `
+      + `· los ${sinEnvioB8.length} rastros que no son un envío dejan 0 clicks: ni un intento del servidor gastado `
       + `· la llamada va al final del IIFE y detrás del addEventListener del submit · 0 promesas en el marcado del gate`);
   }
 
@@ -15935,6 +17943,10 @@ async function main() {
       // candados cortos de Mis procesos y consorcios (6-sep-2026): se liberan solos, pero un
       // bloque abortado a mitad no puede dejar a la iteración siguiente esperando 5 s
       ...(await redis.scan("lock:seguimiento:*")), ...(await redis.scan("lock:consorcios")),
+      /* la anotación de la última llamada del servidor a sí mismo (18-oct-2026, lib/autollamada)
+         vive 26 h: en la suite esas llamadas van a «app.local», que no existe, y sin borrarla la
+         salud de la prueba siguiente diría «la actualización no pudo seguir sola» */
+      ...(await redis.scan("sync:autollamada")),
     ];
     if (claves.length) await redis.del(...claves);
     for (const patron of ["licitaciones:*", "indice:*", "sync:historico:*", "equivalencias:*",
@@ -16160,8 +18172,12 @@ async function main() {
        full que termina bien tiene que borrarlo (M-INF-04) — se comprueba tras b. */
     await redis.set(CLAVES.meta, JSON.stringify({ ultimo_error: { ts: "2026-09-05T08:31:00.000Z", modo: "auto", texto: "fallo anterior de prueba" } }));
 
-    /* b. carga completa con presupuesto corto (reanudable) + fallos inyectados */
-    let r = await invocar(sync, "/api/sync?modo=full&presupuesto=150&chain=0");
+    /* b. carga completa con presupuesto corto (reanudable) + fallos inyectados.
+       ENERO (17-oct-2026): con un solo mes el año trae 3 páginas, y en una máquina rápida cabían
+       enteras en 150 ms: la prueba dependía del calendario y del reloj del corredor. La PRIMERA
+       invocación va con presupuesto mínimo, que se rinde tras la primera página guardada, y así el
+       corte es seguro con cualquier número de meses; las continuaciones siguen con 150. */
+    let r = await invocar(sync, "/api/sync?modo=full&presupuesto=1&chain=0");
     assert.strictEqual(r.status, 200);
     assert.strictEqual(r.cuerpo.ok, true, `sync full falló: ${JSON.stringify(r.cuerpo)}`);
     let invocaciones = 1;
@@ -16670,6 +18686,461 @@ async function main() {
         const aMano = await invocar(historico, "/api/sync/historico?reconstruir_indice=true&chain=0", TOKEN);
         assert.ok(aMano.cuerpo.indice && !aMano.cuerpo.indice.yaEstaba,
           `una reconstrucción pedida a mano se hace, memoria o no: ${JSON.stringify(aMano.cuerpo.indice).slice(0, 160)}`);
+      }
+
+      /* OTRO RANGO NO REEMPLAZA LO GUARDADO SI NADIE LO PIDE (17-oct-2026). En producción, una
+         llamada sin fechas (el rango por omisión) volvió a bajar desde el primer mes una extracción
+         completa de otro rango, y nadie sabe quién la hizo. Se EJECUTA el handler real con el cursor
+         terminado del paso anterior y con uno a medias: pedir otro rango sin `reiniciar` responde 409,
+         no toca el cursor ni el corpus, no pide nada a SECOP y no se vuelve a llamar sola; el estado
+         dice el rango exacto; y reconstruir índices sin fechas no es una extracción y no se frena. */
+      {
+        const otroRango = `desde=${ANOS_HIST[0]}-01&hasta=${ANOS_HIST[0]}-06`;
+        const crudoAntes = await redis.get(CLAVES.progresoHistorico);
+        const metaAntes = await redis.get(CLAVES.metaHistorico);
+        const cursorAntes = JSON.parse(crudoAntes);
+        assert.ok(cursorAntes && cursorAntes.terminado === true && cursorAntes.desde && cursorAntes.hasta,
+          `la prueba necesita la extracción terminada del paso anterior: ${String(crudoAntes).slice(0, 160)}`);
+        const chunksAntes = (await redis.scan(CLAVES.patronChunksHist)).length;
+        const fetchReal = global.fetch, reLlamadas = [];
+        global.fetch = (u, ...resto) => {
+          if (String(u).includes("op=historico")) { reLlamadas.push(String(u)); return Promise.resolve(new Response("{}")); }
+          return fetchReal(u, ...resto);
+        };
+        try {
+          const peticionesAntes = socrata.peticiones();
+          // sin chain=0 a propósito: un 409 tampoco puede volver a llamarse solo
+          const t = await invocar(historico, `/api/sync/historico?${otroRango}`, TOKEN);
+          assert.strictEqual(t.status, 409, `otro rango sobre una extracción terminada no puede empezar otra: ${JSON.stringify(t.cuerpo).slice(0, 240)}`);
+          assert.strictEqual(await redis.get(CLAVES.progresoHistorico), crudoAntes, "el cursor guardado no se toca");
+          assert.strictEqual(await redis.get(CLAVES.metaHistorico), metaAntes, "la última extracción completa no se toca");
+          assert.strictEqual((await redis.scan(CLAVES.patronChunksHist)).length, chunksAntes, "el corpus histórico no se toca");
+          assert.strictEqual(socrata.peticiones(), peticionesAntes, "un 409 no le pide nada a SECOP");
+          assert.deepStrictEqual(reLlamadas, [], "un 409 no se vuelve a llamar solo");
+          assert.deepStrictEqual([t.cuerpo.guardada.desde, t.cuerpo.guardada.hasta, t.cuerpo.guardada.terminada], [cursorAntes.desde, cursorAntes.hasta, true],
+            `el 409 dice qué hay guardado: ${JSON.stringify(t.cuerpo.guardada)}`);
+          assert.strictEqual(t.cuerpo.como_reemplazar, `?${otroRango}&reiniciar=1`, "el 409 dice cómo reemplazarla a propósito");
+          assert.ok(!("como_continuar" in t.cuerpo), "una extracción terminada no tiene nada que continuar");
+          assert.ok(t.cuerpo.que_hacer.includes(`?${otroRango}&reiniciar=1`), `el qué hacer nombra la URL exacta: ${t.cuerpo.que_hacer}`);
+
+          // solo cambia `desde`: también es otro rango (la cerradura compara los dos extremos)
+          const soloDesde = await invocar(historico, `/api/sync/historico?desde=${ANOS_HIST[0]}-02&hasta=${cursorAntes.hasta}&chain=0`, TOKEN);
+          assert.strictEqual(soloDesde.status, 409, `otro «desde» con el mismo «hasta» tampoco empieza otra: ${JSON.stringify(soloDesde.cuerpo).slice(0, 200)}`);
+          assert.strictEqual(await redis.get(CLAVES.progresoHistorico), crudoAntes, "el cursor guardado sigue sin tocarse");
+
+          // un avance guardado que no se puede leer es «no sé»: tampoco se empieza otra encima
+          const ilegible = '{"tipo":"historico","terminado":fal';
+          await redis.set(CLAVES.progresoHistorico, ilegible);
+          const il = await invocar(historico, `/api/sync/historico?${rango}&chain=0`, TOKEN);
+          assert.strictEqual(il.status, 409, `con el avance ilegible no se empieza otra sin reiniciar: ${JSON.stringify(il.cuerpo).slice(0, 200)}`);
+          assert.strictEqual(await redis.get(CLAVES.progresoHistorico), ilegible, "el avance ilegible no se pisa");
+          assert.strictEqual(socrata.peticiones(), peticionesAntes, "con el avance ilegible no se pide nada a SECOP");
+          const eIl = await invocar(historico, "/api/sync/historico?estado=true", TOKEN);
+          assert.strictEqual(eIl.cuerpo.estado.extraccion && eIl.cuerpo.estado.extraccion.ilegible, true,
+            `el estado dice «ilegible», no «no hay ninguna»: ${JSON.stringify(eIl.cuerpo.estado.extraccion)}`);
+          assert.ok(!eIl.cuerpo.estado.siguiente_paso.includes("No hay ninguna"), `el estado no confunde ilegible con ausente: ${eIl.cuerpo.estado.siguiente_paso}`);
+          await redis.set(CLAVES.progresoHistorico, crudoAntes);
+
+          // terminada la bajada pero con los índices a medias: el estado manda a terminarlos con el mismo rango, no a reiniciar
+          const hechosAntes = await redis.get(CLAVES.derivadosHechos);
+          try {
+            await redis.set(CLAVES.derivadosHechos, JSON.stringify({}));
+            const eD = await invocar(historico, "/api/sync/historico?estado=true", TOKEN);
+            assert.ok(eD.cuerpo.estado.siguiente_paso.includes(`?desde=${cursorAntes.desde}&hasta=${cursorAntes.hasta})`) && !eD.cuerpo.estado.siguiente_paso.includes("reiniciar"),
+              `con los índices a medias el estado manda a terminarlos con el mismo rango: ${eD.cuerpo.estado.siguiente_paso}`);
+          } finally {
+            if (hechosAntes == null) await redis.del(CLAVES.derivadosHechos); else await redis.set(CLAVES.derivadosHechos, hechosAntes);
+          }
+
+          // a medias y con otro rango; la llamada va SIN fechas, como la del 17-oct
+          const aMedias = { ...cursorAntes, hasta: `${ANOS_HIST[1]}-06`, meses: (cursorAntes.meses || []).slice(0, 18), mesIdx: 3, terminado: false };
+          await redis.set(CLAVES.progresoHistorico, JSON.stringify(aMedias));
+          const m = await invocar(historico, "/api/sync/historico", TOKEN);
+          assert.strictEqual(m.status, 409, `sin fechas (rango por omisión) sobre una extracción a medias de otro rango: ${JSON.stringify(m.cuerpo).slice(0, 240)}`);
+          assert.strictEqual(await redis.get(CLAVES.progresoHistorico), JSON.stringify(aMedias), "el cursor a medias no se toca");
+          assert.strictEqual(m.cuerpo.como_continuar, `?desde=${aMedias.desde}&hasta=${aMedias.hasta}`, "el 409 dice cómo continuarla");
+          assert.strictEqual(m.cuerpo.guardada.avance, "3/18 meses", `el 409 dice cuánto lleva: ${JSON.stringify(m.cuerpo.guardada)}`);
+          assert.deepStrictEqual(reLlamadas, [], "tampoco se vuelve a llamar sola");
+
+          const e = await invocar(historico, "/api/sync/historico?estado=true", TOKEN);
+          assert.deepStrictEqual([e.cuerpo.estado.extraccion.desde, e.cuerpo.estado.extraccion.hasta], [aMedias.desde, aMedias.hasta],
+            "el estado da el rango por separado: el botón de GitHub continúa con él");
+          assert.ok(e.cuerpo.estado.siguiente_paso.includes(`?desde=${aMedias.desde}&hasta=${aMedias.hasta}`),
+            `el estado manda a continuar con el rango exacto, no con una URL sin fechas: ${e.cuerpo.estado.siguiente_paso}`);
+
+          const rv = await invocar(historico, "/api/sync/historico?reconstruir_vocabulario=true&chain=0", TOKEN);
+          assert.strictEqual(rv.status, 200, `reconstruir sin fechas no es una extracción y no se frena: ${JSON.stringify(rv.cuerpo).slice(0, 200)}`);
+          assert.strictEqual(rv.cuerpo.extraccion, null, "reconstruir no extrae nada");
+          assert.strictEqual(await redis.get(CLAVES.progresoHistorico), JSON.stringify(aMedias), "reconstruir no toca el cursor");
+        } finally {
+          global.fetch = fetchReal;
+          await redis.set(CLAVES.progresoHistorico, crudoAntes);
+        }
+        const eT = await invocar(historico, "/api/sync/historico?estado=true", TOKEN);
+        assert.ok(eT.cuerpo.estado.siguiente_paso.includes("está terminada") && eT.cuerpo.estado.siguiente_paso.includes("reiniciar=1"),
+          `con la extracción terminada, el estado no manda a «llamar sin parámetros»: ${eT.cuerpo.estado.siguiente_paso}`);
+      }
+
+      /* EL BOTÓN DE GITHUB CONTINÚA EL RANGO GUARDADO (17-oct-2026). Se EJECUTA con bash el paso
+         del histórico de .github/workflows/carga_completa.yml (como lo corre GitHub: `bash -e`),
+         con un `curl` simulado y el `jq` real: pedía 2024-01…2026-09 fijo y, con otro rango
+         guardado, la extracción empezaba desde el primer mes. Sin bash o sin jq esta prueba sale
+         en rojo: no se salta. */
+      {
+        const { spawnSync } = require("child_process");
+        const os = require("os");
+        const yml = fs.readFileSync(path.join(__dirname, "..", ".github", "workflows", "carga_completa.yml"), "utf8").split("\n");
+        const iJob = yml.findIndex((l) => /^ {2}historico:\s*$/.test(l));
+        const iRun = yml.findIndex((l, i) => i > iJob && /^\s+run: \|\s*$/.test(l));
+        assert.ok(iJob > 0 && iRun > iJob, "carga_completa.yml no tiene el paso «run» del trabajo historico");
+        const sangria = yml[iRun].match(/^\s*/)[0].length;
+        const cuerpo = [];
+        for (let i = iRun + 1; i < yml.length; i++) {
+          if (yml[i].trim() && yml[i].match(/^\s*/)[0].length <= sangria) break;
+          cuerpo.push(yml[i]);
+        }
+        const margen = Math.min(...cuerpo.filter((l) => l.trim()).map((l) => l.match(/^\s*/)[0].length));
+        const dir = fs.mkdtempSync(path.join(os.tmpdir(), "boton-historico-"));
+        try {
+          fs.writeFileSync(path.join(dir, "paso.sh"), cuerpo.map((l) => l.slice(margen)).join("\n"));
+          fs.writeFileSync(path.join(dir, "curl"), [
+            "#!/usr/bin/env bash",
+            'out=""; url=""',
+            'while [ $# -gt 0 ]; do case "$1" in -o) out="$2"; shift 2;; -w|-H|--max-time) shift 2;; -*) shift;; *) url="$1"; shift;; esac; done',
+            'echo "$url" >> "$LLAMADAS"',
+            'case "$url" in *estado=true*) printf "%s" "$CUERPO_ESTADO" > "$out"; printf "%s" "$CODIGO_ESTADO";; *) printf "%s" "$CUERPO_TRAMO" > "$out"; printf "%s" "$CODIGO_TRAMO";; esac',
+          ].join("\n"), { mode: 0o755 });
+          const correr = (caso) => {
+            const llamadas = path.join(dir, `llamadas-${Math.random().toString(36).slice(2)}.txt`);
+            const r = spawnSync("bash", ["-e", path.join(dir, "paso.sh")], {
+              cwd: dir, encoding: "utf8", timeout: 20000,
+              env: { ...process.env, PATH: `${dir}:${process.env.PATH}`, HISTORICO_TOKEN: "llave-de-prueba", LLAMADAS: llamadas, ...caso },
+            });
+            assert.ok(!r.error, `no se pudo ejecutar el paso (faltan bash o jq, o se quedó esperando más de 20 s, como un reintento con sleep): ${r.error && r.error.message}`);
+            return { codigo: r.status, salida: `${r.stdout}${r.stderr}`, urls: fs.existsSync(llamadas) ? fs.readFileSync(llamadas, "utf8").trim().split("\n") : [] };
+          };
+          const estadoCon = (extraccion) => JSON.stringify({ ok: true, estado: { extraccion } });
+
+          // un «desde» guardado distinto del de siempre: si el paso fijara el suyo, aquí se vería
+          const guardada = correr({ CODIGO_ESTADO: "200", CUERPO_ESTADO: estadoCon({ desde: "2023-07", hasta: "2025-12", terminada: false }), CODIGO_TRAMO: "200", CUERPO_TRAMO: '{"done":true}' });
+          assert.strictEqual(guardada.codigo, 0, `el paso termina en verde: ${guardada.salida.slice(-300)}`);
+          assert.ok(/estado=true/.test(guardada.urls[0]), `lo primero es leer el estado: ${guardada.urls.join(" | ")}`);
+          assert.ok(guardada.urls[1] && guardada.urls[1].includes("desde=2023-07&hasta=2025-12&chain=0"),
+            `el botón continúa el rango guardado, no uno fijo: ${guardada.urls.join(" | ")}`);
+
+          const llaveMala = correr({ CODIGO_ESTADO: "401", CUERPO_ESTADO: "{}", CODIGO_TRAMO: "200", CUERPO_TRAMO: '{"done":true}' });
+          assert.strictEqual(llaveMala.codigo, 1, "con la llave equivocada el paso falla");
+          assert.ok(llaveMala.salida.includes("HISTORICO_TOKEN") && llaveMala.urls.length === 1,
+            `con la llave equivocada dice que es la llave y no pide nada más: ${llaveMala.salida.slice(-300)}`);
+
+          const pagina = correr({ CODIGO_ESTADO: "200", CUERPO_ESTADO: "<!doctype html><html><body>Muro</body></html>", CODIGO_TRAMO: "200", CUERPO_TRAMO: '{"done":true}' });
+          assert.strictEqual(pagina.codigo, 1, "un estado que llega como página detiene el paso");
+          assert.ok(pagina.salida.includes("no llegó como datos") && pagina.urls.length === 1,
+            `un estado ilegible no se convierte en «no hay nada guardado»: ${pagina.salida.slice(-300)} · ${pagina.urls.join(" | ")}`);
+
+          const mesColombia = new Date(Date.now() - 5 * 3600e3).toISOString().slice(0, 7);
+          const vacio = correr({ CODIGO_ESTADO: "200", CUERPO_ESTADO: estadoCon(null), CODIGO_TRAMO: "200", CUERPO_TRAMO: '{"done":true}' });
+          assert.ok(vacio.urls[1] && vacio.urls[1].includes(`desde=2024-01&hasta=${mesColombia}&chain=0`),
+            `sin nada guardado empieza de 2024-01 al mes en curso de Colombia: ${vacio.urls.join(" | ")}`);
+
+          const sinEstado = correr({ CODIGO_ESTADO: "503", CUERPO_ESTADO: "{}", CODIGO_TRAMO: "200", CUERPO_TRAMO: '{"done":true}' });
+          assert.strictEqual(sinEstado.codigo, 1, "sin estado el paso falla");
+          assert.strictEqual(sinEstado.urls.length, 1, `sin estado no se pide ningún rango a ciegas: ${sinEstado.urls.join(" | ")}`);
+
+          const choque = correr({
+            CODIGO_ESTADO: "200", CUERPO_ESTADO: estadoCon({ desde: "2024-01", hasta: "2025-12" }), CODIGO_TRAMO: "409",
+            CUERPO_TRAMO: JSON.stringify({ ok: false, error: "Ya hay otra extracción guardada.", que_hacer: "Pida el mismo rango." }),
+          });
+          assert.strictEqual(choque.codigo, 1, "un 409 detiene el paso");
+          assert.strictEqual(choque.urls.length, 2, `un 409 no se reintenta: ${choque.urls.join(" | ")}`);
+          assert.ok(choque.salida.includes("Pida el mismo rango."), `un 409 dice qué hacer: ${choque.salida.slice(-300)}`);
+        } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+      }
+
+      /* LA CARGA COMPLETA NO PARA CON UNA ACTUALIZACIÓN A MEDIAS (18-oct-2026). Se EJECUTA con bash el paso
+         del trabajo carga_completa de .github/workflows/carga_completa.yml, con un `curl` simulado que
+         responde una lista de tramos, el `jq` real y un `sleep` que no espera. El avance se medía solo por
+         `progreso.mesIdx`, que un delta no trae: con una actualización abierta el flujo paraba en rojo a los
+         10 tramos aunque avanzara (reproducido con su jq sobre la respuesta de la corrida 87 del sync). */
+      {
+        const { spawnSync } = require("child_process");
+        const os = require("os");
+        const yml = fs.readFileSync(path.join(__dirname, "..", ".github", "workflows", "carga_completa.yml"), "utf8").split("\n");
+        const iJob = yml.findIndex((l) => /^ {2}carga_completa:\s*$/.test(l));
+        const iRun = yml.findIndex((l, i) => i > iJob && /^\s+run: \|\s*$/.test(l));
+        assert.ok(iJob > 0 && iRun > iJob, "carga_completa.yml no tiene el paso «run» del trabajo carga_completa");
+        const sangria = yml[iRun].match(/^\s*/)[0].length;
+        const cuerpo = [];
+        for (let i = iRun + 1; i < yml.length; i++) {
+          if (yml[i].trim() && yml[i].match(/^\s*/)[0].length <= sangria) break;
+          cuerpo.push(yml[i]);
+        }
+        const margen = Math.min(...cuerpo.filter((l) => l.trim()).map((l) => l.match(/^\s*/)[0].length));
+        const dir = fs.mkdtempSync(path.join(os.tmpdir(), "carga-completa-"));
+        try {
+          fs.writeFileSync(path.join(dir, "paso.sh"), cuerpo.map((l) => l.slice(margen)).join("\n"));
+          fs.writeFileSync(path.join(dir, "curl"), [
+            "#!/usr/bin/env bash",
+            'out=""',
+            'while [ $# -gt 0 ]; do case "$1" in -o) out="$2"; shift 2;; -w|-H|--max-time) shift 2;; *) shift;; esac; done',
+            'n=$(cat "$CONTADOR" 2>/dev/null || echo 0); n=$((n + 1)); echo "$n" > "$CONTADOR"',
+            'linea=$(sed -n "${n}p" "$RESPUESTAS"); [ -n "$linea" ] || linea=$(tail -n 1 "$RESPUESTAS")',
+            'printf "%s" "$linea" > "$out"; printf "200"',
+          ].join("\n"), { mode: 0o755 });
+          fs.writeFileSync(path.join(dir, "sleep"), "#!/usr/bin/env bash\nexit 0\n", { mode: 0o755 });   // el paso duerme 3 s entre tramos
+          const correr = (respuestas) => {
+            const id = Math.random().toString(36).slice(2);
+            const archivo = path.join(dir, `respuestas-${id}.txt`), contador = path.join(dir, `contador-${id}.txt`);
+            fs.writeFileSync(archivo, respuestas.join("\n") + "\n");
+            const r = spawnSync("bash", ["-e", path.join(dir, "paso.sh")], {
+              cwd: dir, encoding: "utf8", timeout: 20000,
+              env: { ...process.env, PATH: `${dir}:${process.env.PATH}`, CRON_SECRET: "cron-de-prueba", VERCEL_AUTOMATION_BYPASS_SECRET: "pase-de-prueba", RESPUESTAS: archivo, CONTADOR: contador },
+            });
+            assert.ok(!r.error, `no se pudo ejecutar el paso (faltan bash, jq o sed, o se quedó esperando): ${r.error && r.error.message}`);
+            return { codigo: r.status, salida: `${r.stdout}${r.stderr}`, llamadas: fs.existsSync(contador) ? Number(fs.readFileSync(contador, "utf8").trim()) : 0 };
+          };
+          const delta = (leidas, done = false) => JSON.stringify({ ok: true, modo: "auto", done, delta: { ciclo_leidas: leidas, ciclo_invocaciones: 1 } });
+          const avanza = correr([...Array.from({ length: 11 }, (_, i) => delta(25000 * (i + 1))), delta(300000, true)]);
+          assert.strictEqual(avanza.codigo, 0, `una actualización que avanza en 12 tramos termina en verde, sin parar a los 10: ${avanza.salida.slice(-400)}`);
+          assert.strictEqual(avanza.llamadas, 12);
+          assert.ok(/La carga completa terminó/.test(avanza.salida) && /"ciclo_leidas":275000/.test(avanza.salida), `el registro dice cuántas filas lleva el ciclo: ${avanza.salida.slice(-400)}`);
+          const quieto = correr(Array.from({ length: 20 }, () => delta(25000)));
+          assert.strictEqual(quieto.codigo, 1, "una actualización que no avanza sigue parando en rojo");
+          assert.ok(/Diez tramos seguidos sin avanzar/.test(quieto.salida), quieto.salida.slice(-300));
+          assert.strictEqual(quieto.llamadas, 11, "la primera fija el máximo y las diez siguientes son quietas");
+          const full = (mesIdx, leidasMes, done = false) => JSON.stringify({ ok: true, done, progreso: { mes: `2026-0${mesIdx + 1}`, mesIdx, leidasMes } });
+          const completa = correr([full(0, 5000), full(0, 10000), full(1, 0), full(1, 5000, true)]);
+          assert.strictEqual(completa.codigo, 0, `la carga completa se sigue midiendo por mes y filas: ${completa.salida.slice(-300)}`);
+          assert.strictEqual(completa.llamadas, 4);
+          /* el latido cierra la carga completa mientras el flujo espera y sigue un delta (revisión adversaria del
+             18-oct, reproducido): las dos medidas son escalas distintas, y al cambiar de serie el máximo vuelve a empezar */
+          const cierraFull = correr([full(2, 5000), full(3, 10000), ...Array.from({ length: 11 }, (_, i) => delta(25000 * (i + 1))), delta(300000, true)]);
+          assert.strictEqual(cierraFull.codigo, 0, `una carga completa que da paso a un delta que avanza termina en verde: ${cierraFull.salida.slice(-300)}`);
+          assert.strictEqual(cierraFull.llamadas, 14);
+          // y una carga completa que vuelve a empezar (la de modo=full del 26-sep) sigue parando en rojo
+          const vuelve = correr([full(3, 10000), ...Array.from({ length: 15 }, () => full(0, 5000))]);
+          assert.strictEqual(vuelve.codigo, 1, "la carga completa que vuelve a enero sigue parando");
+          assert.ok(/Diez tramos seguidos sin avanzar/.test(vuelve.salida), vuelve.salida.slice(-300));
+        } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+      }
+
+      /* EL PASE DEL MURO EN TODO LO QUE LLAMA A PRODUCCIÓN (17-oct-2026). Con el muro de Vercel en todo
+         el sitio («Vercel Authentication» en «All Deployments»), una llamada sin el pase recibe 302
+         «Protected by Vercel Authentication» (medido en una versión de prueba). CENSO, no lista: se
+         EJECUTA con `bash -e` cada paso `run` de .github/workflows que nombra el dominio de producción,
+         con un `curl` simulado que anota las cabeceras, y cada llamada al dominio tiene que llevar
+         `x-vercel-protection-bypass` con el secreto del paso; con un 302 el paso falla y nombra el
+         secreto que falta. Las rutinas de Claude son instrucciones, no código: cada `curl` a la
+         aplicación de cada .claude/skills/<habilidad>/SKILL.md y de docs/RUTINAS.md tiene que llevar
+         la cabecera.
+         Excepción declarada (18-oct-2026): LA SONDA DEL MURO. Un `curl` marcado «SONDA DEL MURO: sin el
+         pase, a propósito» llama a la portada SIN el pase para saber si el muro sigue puesto (con el
+         pase respondería 200 siempre y la alarma sonaría en falso). La marca no es un salvoconducto:
+         la sonda tiene una forma fija —un solo curl, a la portada, sin cabeceras ni secretos— y se
+         EJECUTA: 200 falla con el aviso; 302, 401 y 403 pasan; sin respuesta no se da por apagado. */
+      {
+        const { spawnSync } = require("child_process");
+        const os = require("os");
+        const dominio = require("../lib/glosario.js").MARCA.dominio;
+        const MARCA_SONDA = "SONDA DEL MURO: sin el pase, a propósito";
+        const PORTADA = `"https://${dominio}/"`;
+        const dirWf = path.join(__dirname, "..", ".github", "workflows");
+        const pasos = [];
+        for (const f of fs.readdirSync(dirWf).filter((n) => /\.ya?ml$/.test(n)).sort()) {
+          const lineas = fs.readFileSync(path.join(dirWf, f), "utf8").split("\n");
+          for (let i = 0; i < lineas.length; i++) {
+            const run = /^(\s+)(?:- )?run:\s*(.*)$/.exec(lineas[i]);
+            if (!run) continue;
+            const sangria = lineas[i].match(/^\s*/)[0].length;
+            let guion;
+            if (/^[|>][-+]?\s*$/.test(run[2])) {
+              const cuerpo = [];
+              for (let j = i + 1; j < lineas.length && !(lineas[j].trim() && lineas[j].match(/^\s*/)[0].length <= sangria); j++) cuerpo.push(lineas[j]);
+              const margen = Math.min(...cuerpo.filter((l) => l.trim()).map((l) => l.match(/^\s*/)[0].length));
+              guion = cuerpo.map((l) => l.slice(margen)).join("\n");
+            } else guion = run[2];
+            // el `env:` del mismo paso: desde el `- name:` (o `- uses:`) que lo abre hasta el `run:`
+            let k = i; while (k > 0 && !/^\s+- (name|uses):/.test(lineas[k])) k--;
+            const entorno = lineas.slice(k, i).join("\n");
+            if (!guion.includes(dominio) && !entorno.includes(dominio)) continue;
+            pasos.push({ donde: `${f}:${i + 1}`, entorno, guion });
+          }
+        }
+        const sondas = pasos.filter((p) => p.guion.includes(MARCA_SONDA));
+        pasos.splice(0, pasos.length, ...pasos.filter((p) => !p.guion.includes(MARCA_SONDA)));
+        assert.ok(pasos.length >= 4, `el censo tiene que encontrar los pasos que llaman a ${dominio}: halló ${pasos.map((p) => p.donde).join(", ")}`);
+        /* El curl de la sonda es ESTRICTO: cualquier bandera fuera de las permitidas (-q primero, -s, -S,
+           --max-time, -o, -w) queda anotada como violación. Un `-L`, un `-b` con una cookie o un `-K`
+           con otra configuración cambian lo que mide la sonda y un curl simulado tolerante no lo vería
+           (revisión adversaria del 18-oct-2026: `-L` contra producción daba 200 = falsa alarma). */
+        const correrSonda = (guion, { codigo, destino = "", cuerpo = "", salidaCurl = 0 }) => {
+          const d = fs.mkdtempSync(path.join(os.tmpdir(), "sonda-del-muro-"));
+          try {
+            fs.writeFileSync(path.join(d, "curl"), [
+              "#!/usr/bin/env bash",
+              'out=""; fmt=""; url=""; n=0',
+              '[ "${1:-}" = "-q" ] || echo "falta -q como primera bandera: curl leería un .curlrc del corredor" >> "$VIOLACION"',
+              "while [ $# -gt 0 ]; do",
+              '  case "$1" in',
+              '    -q) [ "$n" -eq 0 ] || echo "-q no va primero" >> "$VIOLACION"; shift;;',
+              "    -s|-S|-sS|-Ss) shift;;",
+              "    --max-time) shift 2;;",
+              '    -o) out="$2"; shift 2;;',
+              '    -w) fmt="$2"; shift 2;;',
+              '    -*) echo "bandera no permitida: $1" >> "$VIOLACION"; shift;;',
+              '    *) [ -z "$url" ] || echo "dos direcciones: $url y $1" >> "$VIOLACION"; url="$1"; shift;;',
+              "  esac",
+              "  n=$((n + 1))",
+              "done",
+              'echo "$url" >> "$LLAMADAS"',
+              '[ -n "$out" ] && printf "%s" "$CUERPO_FALSO" > "$out"',
+              'r="${fmt//%\\{http_code\\}/$CODIGO_FALSO}"; r="${r//%\\{redirect_url\\}/$DESTINO_FALSO}"',
+              "printf '%b' \"$r\"",
+              'exit "$SALIDA_FALSA"',
+            ].join("\n"), { mode: 0o755 });
+            fs.writeFileSync(path.join(d, "sonda.sh"), guion);
+            const llamadas = path.join(d, "llamadas.txt"), violacion = path.join(d, "violacion.txt");
+            const r = spawnSync("bash", ["-e", path.join(d, "sonda.sh")], {
+              cwd: d, encoding: "utf8", timeout: 20000,
+              // el pase está en el entorno a propósito: la sonda tiene que NO usarlo
+              env: { ...process.env, PATH: `${d}:${process.env.PATH}`, LLAMADAS: llamadas, VIOLACION: violacion,
+                CODIGO_FALSO: codigo, DESTINO_FALSO: destino, CUERPO_FALSO: cuerpo, SALIDA_FALSA: String(salidaCurl),
+                VERCEL_AUTOMATION_BYPASS_SECRET: "pase-de-prueba", CRON_SECRET: "cron-de-prueba" },
+            });
+            assert.ok(!r.error, `no se pudo ejecutar la sonda: ${r.error && r.error.message}`);
+            const leer = (f) => (fs.existsSync(f) ? fs.readFileSync(f, "utf8").trim() : "");
+            return { codigo: r.status, salida: `${r.stdout}${r.stderr}`, violacion: leer(violacion), llamadas: leer(llamadas).split("\n").filter(Boolean) };
+          } finally { fs.rmSync(d, { recursive: true, force: true }); }
+        };
+        const dir = fs.mkdtempSync(path.join(os.tmpdir(), "pase-del-muro-"));
+        try {
+          fs.writeFileSync(path.join(dir, "curl"), [
+            "#!/usr/bin/env bash",
+            'out=""; url=""; cab=""',
+            'while [ $# -gt 0 ]; do case "$1" in -o) out="$2"; shift 2;; -H|--header) cab="$cab[$2]"; shift 2;; -w|--max-time) shift 2;; -*) shift;; *) url="$1"; shift;; esac; done',
+            'echo "$url $cab" >> "$LLAMADAS"',
+            'if [ "$CODIGO_FALSO" = "000" ]; then printf 000; exit 28; fi',
+            'if [ "$CODIGO_FALSO" = "403" ]; then printf 403; exit 0; fi',
+            'if [ "$CODIGO_FALSO" = "302" ]; then printf "Protected by Vercel Authentication" > "$out"; printf 302; exit 0; fi',
+            'if [ "$CODIGO_FALSO" = "401" ]; then printf "%s" \'{"error":{"code":"401","message":"Protected deployment"},"message":"Protected by Vercel Authentication"}\' > "$out"; printf 401; exit 0; fi',
+            'case "$url" in *estado=true*) printf "%s" \'{"ok":true,"estado":{"extraccion":null}}\' > "$out";; *) printf "%s" \'{"ok":true,"done":true}\' > "$out";; esac',
+            "printf 200",
+          ].join("\n"), { mode: 0o755 });
+          for (const paso of pasos) {
+            assert.ok(/VERCEL_AUTOMATION_BYPASS_SECRET: \$\{\{ secrets\.VERCEL_AUTOMATION_BYPASS_SECRET \}\}/.test(paso.entorno),
+              `${paso.donde} llama a producción sin VERCEL_AUTOMATION_BYPASS_SECRET en su env: con el muro, cada llamada recibiría 302`);
+            fs.writeFileSync(path.join(dir, "paso.sh"), paso.guion);
+            const correr = (codigo) => {
+              const llamadas = path.join(dir, `llamadas-${Math.random().toString(36).slice(2)}.txt`);
+              const r = spawnSync("bash", ["-e", path.join(dir, "paso.sh")], {
+                cwd: dir, encoding: "utf8", timeout: 20000,
+                env: { ...process.env, PATH: `${dir}:${process.env.PATH}`, LLAMADAS: llamadas, CODIGO_FALSO: codigo,
+                  CRON_SECRET: "cron-de-prueba", HISTORICO_TOKEN: "llave-de-prueba", VERCEL_AUTOMATION_BYPASS_SECRET: "pase-de-prueba" },
+              });
+              assert.ok(!r.error, `${paso.donde}: no se pudo ejecutar el paso (faltan bash o jq, o se quedó esperando más de 20 s): ${r.error && r.error.message}`);
+              return { codigo: r.status, salida: `${r.stdout}${r.stderr}`, llamadas: fs.existsSync(llamadas) ? fs.readFileSync(llamadas, "utf8").trim().split("\n") : [] };
+            };
+            const bien = correr("200");
+            const alDominio = bien.llamadas.filter((l) => l.includes(dominio));
+            assert.ok(alDominio.length > 0, `${paso.donde}: el paso no llamó a ${dominio} (salida: ${bien.salida.slice(-200)})`);
+            for (const l of alDominio) {
+              assert.ok(l.includes("[x-vercel-protection-bypass: pase-de-prueba]"), `${paso.donde}: una llamada a producción va sin el pase del muro: ${l}`);
+            }
+            for (const codigo of ["302", "401"]) {
+              const muro = correr(codigo);
+              assert.strictEqual(muro.codigo, 1, `${paso.donde}: el muro (${codigo}) tiene que detener el paso`);
+              assert.ok(muro.salida.includes("VERCEL_AUTOMATION_BYPASS_SECRET") && muro.llamadas.length === 1,
+                `${paso.donde}: ante el muro (${codigo}) dice qué secreto falta, no lo confunde con la llave y no insiste: ${muro.salida.slice(-300)} · ${muro.llamadas.length} llamadas`);
+            }
+          }
+
+          // la sonda del muro: una sola, en el latido, con su forma fija, y ejecutada
+          assert.strictEqual(sondas.length, 1, `tiene que haber UNA sonda del muro en los flujos de GitHub (el latido): halló ${sondas.map((p) => p.donde).join(", ") || "ninguna"}`);
+          const sonda = sondas[0];
+          assert.ok(sonda.donde.startsWith("latido.yml:"), `la sonda del muro va en el latido, el flujo que más veces corre: está en ${sonda.donde}`);
+          assert.ok(!/secrets\./.test(sonda.entorno), `${sonda.donde}: la sonda del muro no lleva secretos (con el pase respondería 200 siempre)`);
+          assert.ok(/^\s+if: always\(\)\s*$/m.test(sonda.entorno), `${sonda.donde}: la sonda del muro corre aunque el paso anterior falle (if: always())`);
+          assert.strictEqual((sonda.guion.match(/\bcurl\b/g) || []).length, 1, `${sonda.donde}: la sonda hace UNA llamada`);
+          assert.ok(!/VERCEL_AUTOMATION_BYPASS_SECRET|x-vercel-protection-bypass/.test(sonda.guion), `${sonda.donde}: la sonda no nombra el pase`);
+          fs.writeFileSync(path.join(dir, "sonda.sh"), sonda.guion);
+          const ESCENARIOS = [
+            // [código, destino de la redirección, cuerpo, salida de curl] → [salida del paso, lo que dice]
+            [["200", "", "<!doctype html><title>Detekta</title>", 0], [1, "::error title=Muro de Vercel apagado::EL MURO DE VERCEL ESTÁ APAGADO"]],
+            [["302", "https://vercel.com/sso-api?url=https%3A%2F%2Fx%2F&nonce=1a2b", "Protected by Vercel Authentication", 0], [0, "está puesto"]],
+            [["302", "https://vercel.com/sso-api?url=x", "", 0], [0, "está puesto"]],
+            [["401", "", '{"message":"Protected by Vercel Authentication"}', 0], [0, "está puesto"]],
+            [["200", "", "Protected by Vercel Authentication", 0], [0, "está puesto"]],
+            [["302", "https://otro-dominio.example/", "", 0], [0, "::warning title=Muro de Vercel sin medir::"]],
+            [["403", "", "Forbidden", 0], [0, "::warning title=Muro de Vercel sin medir::"]],
+            [["401", "", "", 0], [0, "::warning title=Muro de Vercel sin medir::"]],
+            [["307", "https://vercel.com/sso-api?url=x", "", 0], [0, "::warning title=Muro de Vercel sin medir::"]],
+            [["429", "", "", 0], [0, "::warning title=Muro de Vercel sin medir::"]],
+            [["503", "", "", 0], [0, "::warning title=Muro de Vercel sin medir::"]],
+            [["000", "", "", 28], [0, "::warning title=Muro de Vercel sin medir::"]],
+          ];
+          for (const [[codigo, destino, cuerpo, salidaCurl], [salida, esperado]] of ESCENARIOS) {
+            const r = correrSonda(sonda.guion, { codigo, destino, cuerpo, salidaCurl });
+            const caso = `${sonda.donde}: con ${codigo}${destino ? ` → ${destino.slice(0, 40)}` : ""}${cuerpo ? ` y «${cuerpo.slice(0, 30)}»` : ""}`;
+            assert.strictEqual(r.violacion, "", `${caso}: la sonda usa una bandera de curl fuera de las permitidas (-q primero, -s, -S, --max-time, -o, -w): ${r.violacion}`);
+            assert.strictEqual(r.codigo, salida, `${caso} la sonda tiene que ${salida ? "FALLAR (muro apagado)" : "pasar"}: ${r.salida.slice(-300)}`);
+            assert.ok(r.salida.includes(esperado), `${caso} la sonda dice «${esperado}»: ${r.salida.slice(-300)}`);
+            if (salida) assert.ok(r.salida.includes("All Deployments") && r.salida.includes("Deployment Protection"),
+              `${caso}: el aviso del muro apagado dice dónde se vuelve a poner: ${r.salida.slice(-300)}`);
+            assert.deepStrictEqual(r.llamadas, [`https://${dominio}/`], `${caso}: la sonda hace UNA llamada, exactamente a la portada: ${r.llamadas.join(" | ")}`);
+          }
+        } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+
+        // las rutinas: cada `curl` a la aplicación (con sus líneas de continuación) lleva el pase
+        const instrucciones = [path.join(__dirname, "..", "docs", "RUTINAS.md"),
+          ...fs.readdirSync(path.join(__dirname, "..", ".claude", "skills")).map((s) => path.join(__dirname, "..", ".claude", "skills", s, "SKILL.md")).filter((f) => fs.existsSync(f))];
+        let curlsALaApp = 0;
+        const sondasRutinas = [];
+        // un curl con una URL explícita a OTRO host no va a la aplicación; cualquier otro (el dominio, $BASE, $APP…) sí
+        const aOtroHost = (o) => [...o.matchAll(/https?:\/\/([^/\s"'$]+)/g)].some((m) => m[1] !== dominio) && !o.includes(dominio);
+        for (const f of instrucciones) {
+          const texto = fs.readFileSync(f, "utf8");
+          const ordenes = texto.replace(/\\\n\s*/g, " ").split("\n").filter((l) => /(^|[\s$(|;&])curl\s+-/.test(l) && !aOtroHost(l));
+          for (const o of ordenes) {
+            if (o.includes(MARCA_SONDA)) {
+              const donde = path.relative(path.join(__dirname, ".."), f);
+              sondasRutinas.push(donde);
+              assert.ok(!/VERCEL_AUTOMATION_BYPASS_SECRET|x-vercel-protection-bypass/.test(o) && (o.match(/\bcurl\b/g) || []).length === 1,
+                `${donde}: la marca de la sonda solo vale en UN curl, sin el pase: ${o.trim().slice(0, 160)}`);
+              // se ejecuta la línea tal cual, con el curl estricto: el muro puesto y el muro apagado
+              const puesto = correrSonda(o, { codigo: "302", destino: "https://vercel.com/sso-api?url=x", cuerpo: "Protected by Vercel Authentication" });
+              assert.ok(puesto.violacion === "" && puesto.llamadas.length === 1 && puesto.llamadas[0] === `https://${dominio}/`,
+                `${donde}: la marca de la sonda solo vale en UN curl a la portada ${PORTADA}, con las banderas permitidas (-q primero, -s, --max-time, -o, -w): ${puesto.violacion || puesto.llamadas.join(" | ")} · ${o.trim().slice(0, 160)}`);
+              assert.ok(/^302 https:\/\/vercel\.com\/sso-api/.test(puesto.salida.trim()),
+                `${donde}: la sonda del vigilante enseña el código y el destino de la redirección: ${puesto.salida.slice(0, 120)}`);
+              continue;
+            }
+            curlsALaApp++;
+            assert.ok(o.includes('-H "x-vercel-protection-bypass: $VERCEL_AUTOMATION_BYPASS_SECRET"'),
+              `${path.relative(path.join(__dirname, ".."), f)}: un curl a la aplicación va sin el pase del muro: ${o.trim().slice(0, 160)}`);
+          }
+          if (f.endsWith("RUTINAS.md")) {
+            /* Excepción declarada, por título de sección: la rutina de madrugada sirve public/ en un
+               servidor LOCAL y sus «/api/» son los 404 esperados de ese servidor, no producción. */
+            const SIN_PRODUCCION = new Set(["1 · La suite y el navegador de madrugada"]);
+            for (const seccion of texto.split(/^## /m).slice(1)) {
+              const titulo = seccion.split("\n")[0].trim();
+              if ([...SIN_PRODUCCION].some((s) => titulo.startsWith(s))) continue;
+              for (const bloque of seccion.split("```").filter((_, i) => i % 2 === 1)) {
+                if (/\/api\//.test(bloque)) assert.ok(bloque.includes("x-vercel-protection-bypass"),
+                  `la rutina «${titulo}» de RUTINAS.md llama a la aplicación (/api/) sin la instrucción del pase del muro`);
+              }
+            }
+          }
+        }
+        assert.ok(curlsALaApp >= 7, `el censo de las rutinas tiene que ver sus llamadas a la aplicación: vio ${curlsALaApp}`);
+        assert.deepStrictEqual(sondasRutinas, ["docs/RUTINAS.md"], `la sonda del muro va UNA vez, en el vigilante de la mañana: está en ${sondasRutinas.join(", ") || "ningún sitio"}`);
+        {
+          const vigilante = fs.readFileSync(instrucciones[0], "utf8").split(/^## /m).find((s) => s.startsWith("2 · El vigilante de la mañana"));
+          assert.ok(vigilante && vigilante.includes(MARCA_SONDA) && vigilante.includes("EL MURO DE VERCEL ESTÁ APAGADO")
+            && vigilante.includes("https://vercel.com/sso-api") && vigilante.includes("Protected by Vercel Authentication")
+            && vigilante.includes("Muro: no medido"),
+            "el vigilante de la mañana prueba el muro sin el pase, lo reconoce en positivo (la redirección a sso-api o su texto), si está apagado lo dice primero y lo demás lo da por «no medido»");
+        }
       }
 
       /* el histórico guardó todo el rango CON datos de adjudicación */
@@ -19963,7 +22434,7 @@ async function main() {
         assert.strictEqual((await invocar(routerPerfilSeg, "/api/perfil?op=seguimiento&perfil=helder")).status, 401, "el seguimiento exige token");
         // un proceso ABIERTO del corpus activo (el listado lo sirve): se guarda con la foto de la tarjeta
         const li = await invocar(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=200", CAB_TOKEN);
-        const fila = li.cuerpo.resultados.find((f) => f.fecha_cierre);
+        const fila = await filaDelListado(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=200", CAB_TOKEN, (f) => f.fecha_cierre);
         assert.ok(fila, `hace falta un proceso del listado CON fecha de cierre (${li.cuerpo.resultados.length} servidos)`);
         assert.ok(fila && fila.id_del_proceso, "hace falta un proceso del listado para guardarlo");
         const g1 = await seg("", { metodo: "POST", body: { perfil: "helder", id: fila.id_del_proceso, estado: "interesa", foto: fila } });
@@ -20366,7 +22837,7 @@ async function main() {
            creían el mismo—: aquí se pide ya la fila sin llave. */
         const llavesG = new Map((await require("../lib/handlers/procesos/listar.js").cargarCorpus(redis, await require("../lib/almacen.js").leerJSON(redis, CLAVES.meta)))
           .map((r) => [r.id_del_proceso, String(r.id_del_portafolio || "").trim()]));
-        const fila = li.cuerpo.resultados.find((f) => f.fecha_cierre && f.precio_base && !llavesG.get(f.id_del_proceso));
+        const fila = await filaDelListado(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=200", CAB_TOKEN, (f) => f.fecha_cierre && f.precio_base && !llavesG.get(f.id_del_proceso));
         assert.ok(fila, "hace falta un proceso del listado con cierre, presupuesto y sin id_del_portafolio (el bloque de documentos usa el mismo)");
         // (1) la guía viaja en la respuesta del GUARDADO (automático) y en el listado
         await seg(`&perfil=helder&id=${encodeURIComponent(fila.id_del_proceso)}`, { metodo: "DELETE" }); // el bloque anterior lo dejó guardado
@@ -20510,7 +22981,7 @@ async function main() {
           const texto = "\f1\nPLIEGO\nExperiencia general: 2.500 SMMLV\nExperiencia específica: 1.000 SMMLV\nÍndice de liquidez mayor o igual a 1,5\nNivel de endeudamiento menor o igual a 60%\nCapital de trabajo: mayor o igual a $650.000.000\nPatrimonio: mayor o igual a $9.000.000.000\n\f2\nNo se entregará anticipo al contratista.";
           const h = D.hechosDeTexto(texto, { tipo: "pliego" });
           assert.ok(h.requisitos_numericos.experiencia_general && h.requisitos_numericos.experiencia_general.valor === 2500 && h.requisitos_numericos.experiencia_especifica && h.requisitos_numericos.experiencia_especifica.valor === 1000, "lib/diff separa la experiencia general de la específica");
-          assert.ok(h.version.startsWith("15|"), "los hechos guardados con las reglas viejas se rehacen: la versión del módulo subió");
+          assert.ok(h.version.startsWith("19|"), "los hechos guardados con las reglas viejas se rehacen: la versión del módulo subió");
           const docs = { indice: { archivos: [{ id_documento: "d1", nombre: "pliego.pdf", tipo: "pliego", de_la_entidad: true, legible: true }], plan: ["d1"], consultado_el: "2026-09-04" }, leidos: { d1: { nombre: "pliego.pdf", tipo: "pliego", tipo_legible: "Pliego", hechos: h, paginas: 2 } }, ilegibles: {} };
           const con = G.guiaDe({ fila: base, perfil: "helder", ctx: { ahoraMs: ahoraG, documentos: docs } });
           const ex = Object.fromEntries(con.exigencias.map((x) => [x.clave, x]));
@@ -21218,7 +23689,7 @@ async function main() {
         const conLlaveD = (f) => Boolean(llavesD.get(f && f.id_del_proceso));
         assert.ok([...llavesD.values()].some(Boolean) && [...llavesD.values()].some((v) => !v),
           "el fixture tiene que traer los DOS estados del corpus el día del despliegue: registros con la llave y registros de antes de la full");
-        const filaD = liD.cuerpo.resultados.find((f) => f.fecha_cierre && f.precio_base && !conLlaveD(f));
+        const filaD = await filaDelListado(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=200", CAB_TOKEN, (f) => f.fecha_cierre && f.precio_base && !conLlaveD(f));
         assert.ok(filaD, "el fixture tiene que ofrecer una fila SIN id_del_portafolio (el corpus anterior a la full)");
         const idD = filaD.id_del_proceso, qD = `id_proceso=${encodeURIComponent(idD)}`;
         const fetchOriginalD = global.fetch;
@@ -21438,6 +23909,39 @@ async function main() {
           const sg = await segD(`&perfil=helder&expediente=${encodeURIComponent(idD)}`);
           assert.strictEqual(sg.status, 200, JSON.stringify(sg.cuerpo).slice(0, 200));
           const gD = (sg.cuerpo.proceso || {}).guia;
+          /* `solo=tope` (17-oct-2026): el MISMO techo que la guía, sin cargar los índices de la guía (en producción la guía
+             tardó 13,1 s la primera vez en una instancia; el botón de la tarjeta espera 5 s) */
+          {
+            const Lst = require("../lib/handlers/procesos/listar.js");
+            const orig = { i: Lst.cargarIndice, b: Lst.cargarIndiceBaja, c: Lst.cargarConocimiento };
+            let cargas = 0;
+            Lst.cargarIndice = async (...a) => { cargas++; return orig.i(...a); };
+            Lst.cargarIndiceBaja = async (...a) => { cargas++; return orig.b(...a); };
+            Lst.cargarConocimiento = async (...a) => { cargas++; return orig.c(...a); };
+            try {
+              const st = await segD(`&perfil=helder&expediente=${encodeURIComponent(idD)}&solo=tope`);
+              assert.ok(st.status === 200 && st.cuerpo.id === idD && !st.cuerpo.proceso, `solo=tope responde el techo y nada más: ${JSON.stringify(st.cuerpo).slice(0, 200)}`);
+              assert.deepStrictEqual(st.cuerpo.tope_oferta, gD.tope_oferta, "solo=tope da el MISMO techo que la guía del expediente");
+              assert.strictEqual(cargas, 0, `solo=tope no carga los índices de la guía (MUTACIÓN: con la guía entera, ${cargas})`);
+              const sgOtra = await segD(`&perfil=helder&expediente=${encodeURIComponent(idD)}&solo=otra_cosa`);
+              assert.ok(sgOtra.status === 200 && sgOtra.cuerpo.proceso && sgOtra.cuerpo.proceso.guia && cargas > 0, "un valor desconocido de `solo` es inerte: el expediente completo");
+              assert.strictEqual((await segD(`&perfil=helder&expediente=CO1.REQ.0&solo=tope`)).status, 404, "solo=tope de un proceso no guardado: 404, como el expediente");
+              assert.ok(st.cuerpo.documentos_leidos >= 1 && Number.isFinite(st.cuerpo.medicion.ms), `solo=tope dice cuántos documentos hay leídos y cuánto tardó: ${JSON.stringify([st.cuerpo.documentos_leidos, st.cuerpo.medicion])}`);
+              for (const raro of ["constructor", "toString", "hasOwnProperty"]) assert.strictEqual((await segD(`&perfil=helder&expediente=${raro}&solo=tope`)).status, 404, `«${raro}» no es un proceso guardado (MUTACIÓN: con \`!g.procesos[id]\`, 200)`);
+              /* la fila VIVA manda sobre la foto guardada, como en la guía: con la foto de otro presupuesto, el techo sigue
+                 siendo el de la fila viva (revisión adversaria: con `fila: null` en el handler, esta prueba seguía en verde) */
+              const Alm = require("../lib/almacen.js");
+              const gOrig = await Alm.leerJSON(redis, "seguimiento:helder");
+              const gFoto = JSON.parse(JSON.stringify(gOrig));
+              gFoto.procesos[idD].foto = { ...(gFoto.procesos[idD].foto || {}), presupuesto_cop: 123456789 };
+              await Alm.escribirJSON(redis, "seguimiento:helder", gFoto);
+              try {
+                const stF = await segD(`&perfil=helder&expediente=${encodeURIComponent(idD)}&solo=tope`);
+                const gF = (await segD(`&perfil=helder&expediente=${encodeURIComponent(idD)}`)).cuerpo.proceso.guia;
+                assert.ok(stF.cuerpo.tope_oferta && stF.cuerpo.tope_oferta.secop !== 123456789 && stF.cuerpo.tope_oferta.secop === gF.tope_oferta.secop, `la fila viva manda, en solo=tope y en la guía (MUTACIÓN: la foto, 123.456.789): ${JSON.stringify([stF.cuerpo.tope_oferta, gF.tope_oferta])}`);
+              } finally { await Alm.escribirJSON(redis, "seguimiento:helder", gOrig); }
+            } finally { Object.assign(Lst, { cargarIndice: orig.i, cargarIndiceBaja: orig.b, cargarConocimiento: orig.c }); }
+          }
           assert.ok(gD && gD.documentos && gD.documentos.estado === "leido" && gD.documentos.leidos.length === 1 && gD.documentos.ilegibles.length === 1, `la guía dice qué se leyó y qué no se pudo: ${JSON.stringify(gD && (gD.error || (gD.documentos && gD.documentos.frase) || Object.keys(gD)))}`);
           assert.ok(/no hay anticipo/.test(gD.obra.pago.anticipo_legible) && gD.lo_que_dicen.some((h) => h.clave === "anticipo" && h.anticipo === "no"), "lo que dice el pliego llega a la pantalla de Mis procesos");
           assert.ok(gD.documentos.no_legibles.some((x) => /PRESUPUESTO OFICIAL/.test(x.nombre) && x.motivo === "hoja de cálculo" && x.url), "lo no legible se lista con su motivo y su enlace, no se inventa");
@@ -21814,7 +24318,7 @@ async function main() {
         assert.ok(/Avisar que le interesa/.test(icsM.cuerpo) && /CALCULADA/.test(icsM.cuerpo), "el .ics trae el aviso de interés y dice que la fecha es calculada, no publicada");
         // cambio de cronograma: el proceso del listado, guardado antes con foto vieja → el corpus vivo difiere en el cierre
         const yaGuardados = new Set(l2.procesos.map((p) => p.id));
-        const filaV = liT.resultados.find((f) => f.fecha_cierre && !yaGuardados.has(f.id_del_proceso));
+        const filaV = await filaDelListado(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=200&tipo=todos", CAB_TOKEN, (f) => f.fecha_cierre && !yaGuardados.has(f.id_del_proceso));
         const cierreViejo = `${H.sumarDias(String(filaV.fecha_cierre).slice(0, 10), -5)}T10:00:00`;
         const gC = await seg2("", { metodo: "POST", body: { perfil: "helder", id: filaV.id_del_proceso, estado: "interesa", foto: { ...filaV, fecha_cierre: cierreViejo } } });
         assert.strictEqual(gC.status, 200);
@@ -21945,7 +24449,7 @@ async function main() {
           const listaAntes = Number(((await rU_.hgetall(U_.claveUso("helder", U_.mesDe(Date.now())))) || {}).lista || 0);
           const liAv = (await invocar(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=200&tipo=todos", CAB_TOKEN)).cuerpo;
           assert.strictEqual(Number(((await rU_.hgetall(U_.claveUso("helder", U_.mesDe(Date.now())))) || {}).lista || 0), listaAntes + 1, "consultar la lista cuenta una (lib/uso)");
-          const filaAv = liAv.resultados.find((f) => f.fecha_cierre);
+          const filaAv = await filaDelListado(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=200&tipo=todos", CAB_TOKEN, (f) => f.fecha_cierre);
           const gAv2 = await segAv("", { metodo: "POST", body: { perfil: PERFIL_AV, id: filaAv.id_del_proceso, estado: "interesa", foto: { ...filaAv, fecha_cierre: `${Hav.sumarDias(String(filaAv.fecha_cierre).slice(0, 10), -5)}T10:00:00` } } });
           assert.strictEqual(gAv2.status, 200);
 
@@ -22733,9 +25237,11 @@ async function main() {
          `respaldo` (27-sep-2026, lib/respaldo) publica si la copia nocturna fuera de Upstash
          está configurada (QUÉ variable falta, nunca su valor), de cuándo es la última copia
          completa, cuántos meses hay copiados y el texto del último fallo: su forma se cierra
-         aquí abajo. */
+         aquí abajo. `autollamada` (18-oct-2026, lib/autollamada) publica cómo le fue a la
+         última llamada del servidor a sí mismo: si el pase EXISTE (nunca su valor), el código
+         y el resultado; su forma se cierra en el bloque «autollamada del servidor». */
       assert.deepStrictEqual(Object.keys(rSalud.cuerpo).sort(),
-        ["aviso_por_correo", "candado_segundos", "edad_horas", "edad_maxima_horas", "escritura", "historico_hace_dias", "indice_baja", "indice_competencia", "latido", "lectura_indice_baja", "lectura_indice_competencia", "limite_de_registros_por_conexion", "medicion_listado", "motivo", "ok", "respaldo", "sincronizacion_protegida", "sincronizando", "ultima_sincronizacion", "ultimo_error"]);
+        ["autollamada", "aviso_por_correo", "candado_segundos", "edad_horas", "edad_maxima_horas", "escritura", "historico_hace_dias", "indice_baja", "indice_competencia", "latido", "lectura_indice_baja", "lectura_indice_competencia", "limite_de_registros_por_conexion", "medicion_listado", "motivo", "ok", "respaldo", "sincronizacion_protegida", "sincronizando", "ultima_sincronizacion", "ultimo_error"]);
       assert.deepStrictEqual(Object.keys(rSalud.cuerpo.respaldo).sort(),
         ["configurado", "falta", "hace_horas", "meses_en_copia", "meses_solo_en_copia", "nunca_corrio", "ultima_completa", "ultimo_error", "vieja"],
         "la copia nocturna publica su estado y qué falta, nada más");
@@ -22841,13 +25347,23 @@ async function main() {
       const Auth = require("../lib/auth.js");
       const { CLAVES: CLG } = require("../lib/almacen.js");
       const ponerG = (k, v) => { if (v === undefined) delete process.env[k]; else process.env[k] = v; };
+      /* HERMÉTICA (18-oct-2026): «sin secretos» quiere decir sin secretos AUNQUE el entorno de quien
+         corre la suite los tenga. Un contenedor con VERCEL_AUTOMATION_BYPASS_SECRET hacía fallar este
+         bloque sin defecto en el código; se guardan, se quitan y se devuelven al final. */
+      const previosG = { CRON_SECRET: process.env.CRON_SECRET, VERCEL_AUTOMATION_BYPASS_SECRET: process.env.VERCEL_AUTOMATION_BYPASS_SECRET };
+      for (const k of Object.keys(previosG)) ponerG(k, undefined);
       const rProcesosG = require("../api/procesos.js");
       const SECRETO = "secreto-cron-de-prueba";
       const URL_AUTO = "/api/procesos?op=sync&modo=auto&chain=0";
       // sin la variable: abierta, sin cabeceras de auto-llamada, y salud lo dice
       assert.strictEqual(Auth.hayGuardaDeSincronizacion(), false);
-      assert.deepStrictEqual(Auth.autorizarSincronizacion({ headers: {} }, {}), { ok: true, via: "abierta" });
-      assert.strictEqual(Auth.cabecerasDeAutoLlamada(), undefined, "sin secretos la auto-llamada no manda cabeceras, como hasta hoy");
+      assert.deepStrictEqual(await Auth.autorizarSincronizacion({ headers: {} }, {}), { ok: true, via: "abierta" });
+      // el entorno de Claude Code del dueño trae el pase del muro de verdad: se aparta para medir «sin secretos»
+      const paseDelEntorno = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
+      delete process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
+      try {
+        assert.strictEqual(Auth.cabecerasDeAutoLlamada(), undefined, "sin secretos la auto-llamada no manda cabeceras, como hasta hoy");
+      } finally { ponerG("VERCEL_AUTOMATION_BYPASS_SECRET", paseDelEntorno); }
       assert.strictEqual((await invocar(rProcesosG, "/api/procesos?op=salud")).cuerpo.sincronizacion_protegida, false);
       ponerG("CRON_SECRET", SECRETO);
       let capturadas = [];
@@ -22911,15 +25427,39 @@ async function main() {
       // sin la variable vuelve a ser abierta: la misma llamada responde 200 (el cron actual no manda cabecera)
       const abierta = await invocar(rProcesosG, URL_AUTO);
       assert.strictEqual(abierta.status, 200, `sin CRON_SECRET el sync sigue público: ${JSON.stringify(abierta.cuerpo)}`);
-      /* CENSO: toda auto-llamada de lib/ a un endpoint del dominio procesos (op=sync, op=historico)
-         va con `cabecerasDeAutoLlamada`, no con una copia de las cabeceras */
-      for (const h of ["sync.js", "listar.js", "historico.js"]) {
-        const src = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "lib", "handlers", "procesos", h), "utf8"));
-        const disparos = src.match(/fetch\(`\$\{proto\}:\/\/\$\{host\}\/api\/procesos\?op=[^`]*`[^\n]*/g) || [];
-        assert.ok(disparos.length >= 1, `${h}: no se encontró ninguna auto-llamada`);
-        assert.ok(!/x-vercel-protection-bypass/.test(src), `${h} construye a mano la cabecera del muro: debe llamar a cabecerasDeAutoLlamada`);
-        assert.strictEqual((src.match(/cabecerasDeAutoLlamada\(/g) || []).length, disparos.length, `${h}: cada auto-llamada (${disparos.length}) pide sus cabeceras a lib/auth`);
+      /* CENSO DE LAS LLAMADAS DEL SERVIDOR A SÍ MISMO (18-oct-2026, lib/autollamada). Antes miraba
+         una LISTA de tres archivos; ahora se barren TODOS los .js de lib/ y api/: ninguno arma a mano
+         un `fetch` a su propia dirección (`${host}`) ni a `/api/procesos`, y ninguno escribe a mano la
+         cabecera del muro. Excepciones, declaradas: lib/autollamada.js, que es quien hace la llamada
+         (con `cabecerasDeAutoLlamada`), y lib/auth.js, que define la cabecera. Y los tres que se
+         llaman a sí mismos lo hacen por `autoLlamar` (si uno dejara de hacerlo, su cadena moriría). */
+      {
+        const raizC = path.join(__dirname, "..");
+        const listarJs = (dir) => fs.readdirSync(dir, { withFileTypes: true })
+          .flatMap((e) => (e.isDirectory() ? listarJs(path.join(dir, e.name)) : e.name.endsWith(".js") ? [path.join(dir, e.name)] : []));
+        const EXCEPCIONES_C = { "lib/autollamada.js": "es la que hace la llamada", "lib/auth.js": "define la cabecera del muro (cabecerasDeAutoLlamada)" };
+        const fuentesC = [...listarJs(path.join(raizC, "lib")), ...listarJs(path.join(raizC, "api"))];
+        assert.ok(fuentesC.length > 50, `el barrido tiene que ver el árbol entero (vio ${fuentesC.length} archivos)`);
+        for (const f of fuentesC) {
+          const rel = path.relative(raizC, f).split(path.sep).join("/");
+          if (EXCEPCIONES_C[rel]) continue;
+          const src = sinComentarios(fs.readFileSync(f, "utf8"));
+          assert.ok(!/fetch\(\s*`[^`]*\$\{host\}/.test(src), `${rel} arma a mano una llamada a su propia dirección: debe usar lib/autollamada.autoLlamar`);
+          assert.ok(!/fetch\(\s*`[^`]*\/api\/procesos/.test(src), `${rel} llama a mano a /api/procesos: debe usar lib/autollamada.autoLlamar`);
+          assert.ok(!/x-vercel-protection-bypass/.test(src), `${rel} construye a mano la cabecera del muro: debe llamar a cabecerasDeAutoLlamada`);
+          /* y las cabeceras de la llamada a sí mismo solo las pide quien llama (revisión adversaria del
+             18-oct: una llamada armada a mano hacia `/api/sync` con otro nombre de variable pasaba el
+             barrido). Excepción declarada: el latido, que las usa para el tramo EN SU PROCESO. */
+          if (rel !== "lib/handlers/procesos/latido.js") {
+            assert.ok(!/cabecerasDeAutoLlamada\(/.test(src), `${rel} pide las cabeceras de la llamada a sí mismo: esa llamada va por lib/autollamada.autoLlamar`);
+          }
+        }
+        for (const [h, n] of [["sync.js", 2], ["historico.js", 1], ["listar.js", 1]]) {
+          const src = sinComentarios(fs.readFileSync(path.join(raizC, "lib", "handlers", "procesos", h), "utf8"));
+          assert.strictEqual((src.match(/autoLlamar\(/g) || []).length, n, `${h}: sus ${n} llamadas a sí mismo van por lib/autollamada.autoLlamar`);
+        }
       }
+      for (const [k, v] of Object.entries(previosG)) ponerG(k, v);   // el entorno de quien corre, como estaba
       console.log(`· guarda de la sincronización: sin CRON_SECRET abierta (como el cron actual); con ella 401 sin tocar el candado, pasan Bearer/header/?token=, y la auto-llamada real llegó con «${capturadas[0].headers.authorization.replace(SECRETO, "…")}»`);
     }
 
@@ -24266,8 +26806,16 @@ async function main() {
         const esMuro = (l) => /muro de contención/i.test(l.nombre_del_procedimiento || "");
         assert.ok((await todasLasOportunidades("perfil=genesis")).some((l) => esMuro(l) && l.rup.tier === "clase"),
           "Génesis tiene 72141200 y debía ver por CLASE los muros de contención del corpus");
-        assert.ok(!op.cuerpo.resultados.some((l) => esMuro(l)),
-          "72141200 NO está en el RUP subido (72141000, 72141100, 72154100, 81101500) y no debía servirse");
+        /* ENERO (17-oct-2026): esta negación miraba solo la primera página y pasaba porque los muros
+           quedaban más abajo; en enero el año trae menos filas, suben a ella y la prueba caía. Medido con
+           el reloj real: en TODAS las páginas el perfil subido ve 80 muros, todos por el objeto («muro,
+           gaviones, contención» → familia 7214, que sí tiene) y ninguno por código. Lo que la prueba
+           cierra es lo segundo: 72141200 no casa con este RUP. Se barren todas las páginas y se exige
+           que ningún muro llegue por código; la ruta del texto (que no esconde obras) no es el defecto. */
+        const murosSubido = (await todasLasOportunidades(`perfil=${id}`)).filter(esMuro);
+        assert.ok(!murosSubido.some((l) => l.rup.tier !== "texto"),
+          "72141200 NO está en el RUP subido (72141000, 72141100, 72154100, 81101500) y no debía casar por código: " +
+          JSON.stringify(murosSubido.filter((l) => l.rup.tier !== "texto").map((l) => [l.id_del_proceso, l.rup.tier]).slice(0, 3)));
         for (const l of op.cuerpo.resultados) {
           assert.strictEqual(l.rup.k_cop, null, "sin token, la K del perfil dinámico también viaja redactada");
         }
@@ -25152,10 +27700,23 @@ async function main() {
           assert.strictEqual(rSin.status, 200, "sin dirección legible la cuota no puede bloquear a nadie");
         }
 
-        // LA LLAVE DEL DUEÑO EXIME; una llave que no vale no exime, pero el 429 lo dice
-        for (let i = 0; i < 4; i++) {
-          const rD = await invocarPost(rPerfilQ, "/api/perfil?op=entrada", TRES_DATOS, { ...cabIp("203.0.113.43"), "x-historico-token": "token-historico-de-prueba" });
-          assert.strictEqual(rD.status, 200, "con la llave del dueño no hay límite por conexión");
+        /* LA SESIÓN DEL DUEÑO EXIME (17-oct-2026); LA LLAVE DEL SERVIDOR YA NO —vivió escrita en el
+           navegador y eximirla regalaba la puerta a quien la copiara—. Una credencial que no vale
+           no exime, pero el 429 lo dice. */
+        {
+          const SesQ = require("../lib/sesion.js");
+          const idQ = `cta_${"a1".repeat(10)}`;
+          await redis.set(SesQ.CLAVE_DUENO, idQ);
+          const tokQ = await SesQ.abrirSesion(redis, idQ);
+          try {
+            for (let i = 0; i < 4; i++) {
+              const rD = await invocarPost(rPerfilQ, "/api/perfil?op=entrada", TRES_DATOS, { ...cabIp("203.0.113.43"), cookie: `${SesQ.COOKIE_SESION}=${tokQ}` });
+              assert.strictEqual(rD.status, 200, "con la sesión del dueño no hay límite por conexión");
+            }
+            const conLlaveBuena = [];
+            for (let i = 0; i < 3; i++) conLlaveBuena.push(await invocarPost(rPerfilQ, "/api/perfil?op=entrada", TRES_DATOS, { ...cabIp("203.0.113.47"), "x-historico-token": "token-historico-de-prueba" }));
+            assert.ok(conLlaveBuena.some((r) => r.status === 429), `la llave del servidor ya no exime de la cuota: ${JSON.stringify(conLlaveBuena.map((r) => r.status))}`);
+          } finally { await redis.del(SesQ.CLAVE_DUENO, SesQ.claveSesion(tokQ)); }
         }
         {
           const conLlaveMala = [];
@@ -27368,6 +29929,56 @@ async function main() {
                 assert.strictEqual(await redis.get(CL_I.apuIaDisparo("helder", idIa)), "1", "el disparo que arrancó conserva el candado");
                 await redis.del(CL_I.apuIaDisparo("helder", idIa), CL_I.apuIaSolicitud("helder", idIa));
               }
+              /* ═══ EL TOPE DE DESPERTARES SIN SEÑAL (17-oct-2026) ═══
+                 Pasados los 15 min de «repetida», cada «Buscar» despertaba otra corrida del día aunque
+                 las anteriores no hubieran dado ninguna señal, y la solicitud nueva pisaba la cuenta:
+                 con la rutina dañada, «Vuelva a pulsar Buscar» gastaba intentos sin arreglar nada.
+                 Contra el árbol anterior: la tercera solicitud muda se volvía a disparar. */
+              {
+                const { escribirJSONComprimido: escribirT, CLAVES: CL_T } = require("../lib/almacen.js");
+                const claveT = CL_T.apuIaSolicitud("helder", idIa);
+                const muda = (n, minutos, extra = {}) => { const el = new Date(Date.now() - minutos * 60000).toISOString(); return { id: idIa, perfil: "helder", nombre: "IA prueba", estado: "en_cola", solicitado_el: el, respondida_el: null, progreso: null, despertada: { ok: true, el, status: 200, sesion_url: null }, ...(n == null ? {} : { despertadas_sin_senal: n }), ...extra }; };
+                respuestaRutina = () => ({ ok: true, status: 200, json: async () => ({ claude_code_session_id: "session_T", claude_code_session_url: "https://claude.ai/code/session_T" }) });
+                assert.ok(Number.isInteger(IA.RUTINA_TOPE_SIN_SENAL) && IA.RUTINA_TOPE_SIN_SENAL >= 2, `el tope existe y deja al menos un reintento: ${IA.RUTINA_TOPE_SIN_SENAL}`);
+                const tope = IA.RUTINA_TOPE_SIN_SENAL;
+                // (1) despertada `tope` veces sin señal y muda hace 40 min: «Buscar» NO despierta otra, lo dice, y deja la solicitud como estaba
+                await escribirT(redis, claveT, muda(tope, 40)); await soltarCandado();
+                const gT = await invocar(apu, `/api/apu/ia?id=${idIa}&perfil=helder`, CAB_TOKEN, { metodo: "GET" });
+                assert.ok(gT.cuerpo.estado === "sin_atender" && gT.cuerpo.tope_sin_senal === tope && gT.cuerpo.solicitud.despertadas_sin_senal === tope, `la pantalla recibe el tope y la cuenta: ${JSON.stringify({ e: gT.cuerpo.estado, t: gT.cuerpo.tope_sin_senal })}`);
+                const antesT = llamadas.length;
+                const sTope = await invocarPost(apu, "/api/apu/ia", { perfil: "helder", id: idIa, solicitar: true }, CAB_TOKEN);
+                assert.ok(sTope.status === 200 && sTope.cuerpo.tope_alcanzado === true && llamadas.length === antesT, `con ${tope} despertares sin señal no se gasta otro: ${llamadas.length - antesT} disparos, ${JSON.stringify(sTope.cuerpo).slice(0, 160)}`);
+                assert.ok(new RegExp(`${tope} veces`).test(sTope.cuerpo.nota) && /chat/.test(sTope.cuerpo.nota) && /no la arregla/.test(sTope.cuerpo.nota), `y lo dice con qué hacer: ${sTope.cuerpo.nota}`);
+                assert.strictEqual(await redis.get(CL_T.apuIaDisparo("helder", idIa)), null, "el tope no toma el candado del disparo");
+                // (2) una menos que el tope: se despierta, y la cuenta SUBE en vez de volver a 1
+                await escribirT(redis, claveT, muda(tope - 1, 40)); await soltarCandado();
+                const sUna = await invocarPost(apu, "/api/apu/ia", { perfil: "helder", id: idIa, solicitar: true }, CAB_TOKEN);
+                assert.ok(sUna.cuerpo.tope_alcanzado !== true && llamadas.length === antesT + 1 && sUna.cuerpo.solicitud.despertadas_sin_senal === tope, `la última permitida se dispara y deja la cuenta en ${tope}: ${sUna.cuerpo.solicitud.despertadas_sin_senal}`);
+                // (3) una solicitud de antes de este cambio (sin el campo) y despertada cuenta UNA, no cero
+                await escribirT(redis, claveT, muda(null, 40)); await soltarCandado();
+                const sVieja = await invocarPost(apu, "/api/apu/ia", { perfil: "helder", id: idIa, solicitar: true }, CAB_TOKEN);
+                assert.strictEqual(sVieja.cuerpo.solicitud.despertadas_sin_senal, 2, "la despertada vieja cuenta 1 y esta suma la segunda");
+                // (4) una sesión que dio señal (aunque luego enmudeciera) pone la cuenta en cero: la rutina funciona
+                await escribirT(redis, claveT, muda(tope, 180, { estado: "buscando", progreso: { hecho: 1, total: 3, pct: 33, mensaje: null, actualizado_el: new Date(Date.now() - 180 * 60000).toISOString() } })); await soltarCandado();
+                const sSenal = await invocarPost(apu, "/api/apu/ia", { perfil: "helder", id: idIa, solicitar: true }, CAB_TOKEN);
+                assert.ok(sSenal.cuerpo.tope_alcanzado !== true && sSenal.cuerpo.solicitud.despertadas_sin_senal === 1, `con señal la cuenta empieza de nuevo: ${sSenal.cuerpo.solicitud.despertadas_sin_senal}`);
+                // (5) pasada la ventana desde la última solicitud se puede volver a intentar
+                await escribirT(redis, claveT, muda(tope, IA.RUTINA_TOPE_VENTANA_H * 60 + 30)); await soltarCandado();
+                const sDia = await invocarPost(apu, "/api/apu/ia", { perfil: "helder", id: idIa, solicitar: true }, CAB_TOKEN);
+                assert.ok(sDia.cuerpo.tope_alcanzado !== true && sDia.cuerpo.solicitud.despertadas_sin_senal === 1, `pasadas ${IA.RUTINA_TOPE_VENTANA_H} h se intenta otra vez: ${sDia.cuerpo.solicitud.despertadas_sin_senal}`);
+                // (6) un disparo que no arrancó no gastó: no suma, y la cuenta que traía se conserva
+                respuestaRutina = () => ({ ok: false, status: 500, json: async () => ({}) });
+                await escribirT(redis, claveT, muda(tope - 1, 40)); await soltarCandado();
+                const sFallo = await invocarPost(apu, "/api/apu/ia", { perfil: "helder", id: idIa, solicitar: true }, CAB_TOKEN);
+                assert.ok(sFallo.cuerpo.despertada.ok === false && sFallo.cuerpo.solicitud.despertadas_sin_senal === tope - 1, `el disparo fallido no cuenta como intento gastado: ${sFallo.cuerpo.solicitud.despertadas_sin_senal}`);
+                // (7) sin rutina configurada no hay tope: no hay nada que gastar
+                delete process.env.RUTINA_PRECIOS_TOKEN;
+                await escribirT(redis, claveT, muda(tope, 40)); await soltarCandado();
+                const sSin = await invocarPost(apu, "/api/apu/ia", { perfil: "helder", id: idIa, solicitar: true }, CAB_TOKEN);
+                assert.ok(sSin.cuerpo.tope_alcanzado !== true && sSin.cuerpo.despertada === null, "sin rutina la solicitud se registra como siempre");
+                process.env.RUTINA_PRECIOS_TOKEN = "sk-ant-oat01-PRUEBA-secreta";
+                await redis.del(CL_T.apuIaDisparo("helder", idIa), claveT);
+              }
               // (j) el ENCARGO para un chat: el prompt del dueño con el contexto, los ítems sin los títulos, el esquema, y solo JSON
               const enc = await invocar(apu, `/api/apu/ia?encargo=1&id=${idIa}&perfil=helder`, CAB_TOKEN, { metodo: "GET" });
               assert.strictEqual(enc.status, 200);
@@ -27964,7 +30575,8 @@ async function main() {
            frontend»). */
         assert.ok(!unoHtml.includes("cdn.tailwindcss.com"),
           "el CDN de Tailwind no puede volver: sin él la app se veía rota y la consola no decía nada");
-        assert.ok(unoJs.includes('"231105"'), "app.js sin la clave del gate");
+        assert.ok(/\/api\/admin\?op=entrar/.test(unoJs) && unoHtml.includes('id="gate-correo"') && unoHtml.includes('id="gate-contrasena"'),
+          "el gate entra con correo y contraseña contra el servidor (op=entrar), no con una clave comprobada en el navegador");
 
         /* ═══ SIN LISTA DESPLEGABLE DE ÍTEMS (ago 2026) ═══════════════════════
            El <select id="item-nuevo"> con los 174 ítems del catálogo era
@@ -28007,46 +30619,62 @@ async function main() {
             "la función compartida (1 declaración) y sus TRES llamadas: archivo detectado, columnas a mano y los ítems del pliego");
         }
 
-        /* EL TOKEN VA INTEGRADO (decisión del dueño, ago 2026): no existe
-           ningún formulario ni modal que lo pida — Vercel Password Protection
-           es la capa de seguridad real y el token solo guarda las escrituras
-           de Redis y las cifras del perfil. */
-        /* ROTARLO NO PUEDE DEJAR LA APLICACIÓN A MEDIAS (6-sep-2026, M-INF-13): el literal vive
-           en TRES archivos de public/ y la suite fijaba el valor en dos (app.js y pliego.js):
-           onboarding.js podía quedarse con otro token sin que nada se pusiera en rojo, y una
-           rotación hecha según el README dejaba la suite en rojo por el literal. CENSO de todos
-           los public/*.js: cada `const TOKEN = "…"` presente, no trivial e idéntico a los demás,
-           y los dos documentos que le dicen al dueño qué pegar en Vercel llevan el mismo valor.
-           El valor sale del censo (TOKEN_INTEGRADO), no de la suite: rotar es cambiar los tres
-           archivos y los dos documentos (docs/CONFIGURACION_TOKENS.md §10). */
-        const tokensIntegrados = fs.readdirSync(path.join(__dirname, "..", "public")).filter((f) => f.endsWith(".js")).sort()
-          .map((f) => ({ archivo: f, m: /const TOKEN = "([^"]*)"/.exec(fs.readFileSync(path.join(__dirname, "..", "public", f), "utf8")) }))
-          .filter((x) => x.m).map((x) => ({ archivo: x.archivo, token: x.m[1] }));
-        assert.deepStrictEqual(tokensIntegrados.map((x) => x.archivo), ["app.js", "onboarding.js", "pliego.js"],
-          "los archivos de public/ con token integrado son exactamente esos tres (uno nuevo se declara aquí y en la guía de rotación)");
-        const TOKEN_INTEGRADO = tokensIntegrados[0].token;
-        assert.ok(TOKEN_INTEGRADO.length >= 8, "el token integrado no puede estar vacío ni ser trivial");
-        for (const x of tokensIntegrados) {
-          assert.strictEqual(x.token, TOKEN_INTEGRADO, `public/${x.archivo} lleva otro token integrado que app.js: una rotación a medias sirve la aplicación a medias`);
+        /* NINGUNA CREDENCIAL VIVE EN EL NAVEGADOR (17-oct-2026, decisión del dueño). Hasta hoy
+           esta cerradura EXIGÍA lo contrario: el literal de la llave del servidor en tres archivos
+           de public/ («token integrado», ago 2026), idéntico en los tres y en dos documentos. Esa
+           llave la leía cualquiera y abría todas las API protegidas; el dueño entra ahora con
+           correo y contraseña y la sesión viaja en una cookie HttpOnly (lib/sesion).
+           CENSO, NO LISTA: se barren TODOS los public/*.js (readdirSync, también el que alguien
+           añada mañana) y los atributos de index.html, sin comentarios, y se exige:
+             · ninguna cabecera `x-historico-token`, ningún `token=` en una URL, ningún
+               `HISTORICO_TOKEN` ni `const TOKEN` en el código;
+             · ninguna cadena con forma de credencial (8 o más caracteres seguidos con minúscula,
+               mayúscula y dígito: la forma de la llave vieja) salvo las EXCEPCIONES declaradas,
+               cada una con su motivo;
+             · y que app.js, pliego.js y onboarding.js declaren `credentials: "same-origin"`.
+           Contra el árbol anterior cae por las tres primeras vías a la vez (los tres literales y
+           sus cabeceras). La otra mitad —que el servidor RECHACE la llave cuando la pide el código
+           de una página— la ejecuta el bloque «sesión del dueño» con el handler real. */
+        {
+          const FORMA_CREDENCIAL = /(?<![\w.\/-])(?=[A-Za-z0-9_-]{8,}(?![\w.\/-]))(?=[A-Za-z0-9_-]*[a-z])(?=[A-Za-z0-9_-]*[A-Z])(?=[A-Za-z0-9_-]*\d)[A-Za-z0-9_-]+/g;
+          const EXCEPCIONES_CREDENCIAL = {
+            moneda2Negrita: "nombre de un estilo de celda del libro de Excel (public/apu_libro.js), no una credencial",
+            "12h10M10": "trozo de la ruta de un icono SVG en index.html, no una credencial",
+          };
+          const dirPublic = path.join(__dirname, "..", "public");
+          const censados = fs.readdirSync(dirPublic).filter((f) => f.endsWith(".js")).sort();
+          assert.ok(censados.length >= 15 && censados.includes("app.js") && censados.includes("pliego.js") && censados.includes("onboarding.js"),
+            `el censo de public/*.js no encontró los módulos de siempre: ${censados.join(", ")}`);
+          const hallazgos = [];
+          for (const f of censados) {
+            const src = sinComentarios(fs.readFileSync(path.join(dirPublic, f), "utf8"));
+            if (/x-historico-token/i.test(src)) hallazgos.push(`${f}: manda la cabecera x-historico-token (la llave del servidor)`);
+            if (/[?&]token=/.test(src)) hallazgos.push(`${f}: pone «token=» en una URL`);
+            if (/\bHISTORICO_TOKEN\b/.test(src.replace(/(["'`])(?:\\.|(?!\1)[^\\\n])*\1/g, ""))) hallazgos.push(`${f}: nombra HISTORICO_TOKEN en el código`);
+            if (/const\s+TOKEN\s*=/.test(src)) hallazgos.push(`${f}: vuelve a declarar «const TOKEN»`);
+            for (const m of src.matchAll(/(["'`])((?:\\.|(?!\1)[^\\\n])*)\1/g)) {
+              for (const c of m[2].matchAll(FORMA_CREDENCIAL)) if (!EXCEPCIONES_CREDENCIAL[c[0]]) hallazgos.push(`${f}: cadena con forma de credencial «${c[0].slice(0, 3)}…» (${c[0].length} caracteres)`);
+            }
+          }
+          const htmlSinCom = unoHtml.replace(/<!--[\s\S]*?-->/g, "").replace(/\/\*[\s\S]*?\*\//g, "");
+          for (const m of htmlSinCom.matchAll(/="([^"]*)"/g)) {
+            for (const c of m[1].matchAll(FORMA_CREDENCIAL)) if (!EXCEPCIONES_CREDENCIAL[c[0]]) hallazgos.push(`index.html: atributo con forma de credencial «${c[0].slice(0, 3)}…»`);
+          }
+          assert.deepStrictEqual(hallazgos, [], `una credencial volvió al navegador (lo lee cualquiera que abra el código fuente):\n${hallazgos.join("\n")}`);
+          for (const f of ["app.js", "pliego.js", "onboarding.js"]) {
+            assert.ok(/credentials: "same-origin"/.test(sinComentarios(fs.readFileSync(path.join(dirPublic, f), "utf8"))),
+              `public/${f}: las llamadas al servidor tienen que declarar credentials: "same-origin" (la sesión viaja en la cookie)`);
+          }
+          /* la clave del sitio comprobada en el navegador tampoco vuelve: la reemplaza op=entrar */
+          assert.ok(!/const CLAVE = |MAX_INTENTOS_CLAVE|detecta-acceso/.test(sinComentarios(unoJs)),
+            "app.js vuelve a comprobar una clave en el navegador o a decidir la sesión con una marca de sessionStorage");
+          // y los documentos que el dueño lee no le dan ningún valor de llave para pegar
+          for (const doc of ["README.md", "docs/CONFIGURACION_TOKENS.md"]) {
+            const texto = fs.readFileSync(path.join(__dirname, "..", doc), "utf8");
+            const valores = [...texto.matchAll(/[?&]token=([A-Za-z0-9_-]+)/g)].map((m) => m[1]).filter((v) => !/^[A-Z_]+$/.test(v) && v !== "SU_LLAVE");
+            assert.deepStrictEqual(valores, [], `${doc} trae un valor de llave en una URL: ${valores.join(", ")}`);
+          }
         }
-        /* CENSO, no presencia (remate B3b-H2, 6-sep-2026): `includes(TOKEN_INTEGRADO)` daba verde con un
-           documento rotado A MEDIAS (una URL con el valor viejo y las demás con el vigente: medido, la
-           suite pasaba y el dueño pegaría esa URL y recibiría 401). Ahora TODAS las menciones cuentan:
-           cada `token=<valor>` de URL, y cada palabra con forma de token (≥ 8 caracteres con minúscula,
-           mayúscula y dígito) en una línea que hable de token o que sea el valor a solas. §10 exige
-           «todas las menciones del valor viejo»: esto es lo que lo comprueba. */
-        const FORMA_TOKEN = /(?<![\w.\/-])(?=[A-Za-z0-9_-]{8,}(?![\w.\/-]))(?=[A-Za-z0-9_-]*[a-z])(?=[A-Za-z0-9_-]*[A-Z])(?=[A-Za-z0-9_-]*\d)[A-Za-z0-9_-]+/g;
-        for (const doc of ["README.md", "docs/CONFIGURACION_TOKENS.md"]) {
-          const menciones = [];
-          fs.readFileSync(path.join(__dirname, "..", doc), "utf8").split("\n").forEach((l, i) => {
-            for (const m of l.matchAll(/[?&]token=([A-Za-z0-9_-]+)/g)) menciones.push({ linea: i + 1, valor: m[1] });
-            if (/token/i.test(l) || /^\s*[A-Za-z0-9_-]{8,}\s*$/.test(l)) for (const m of l.matchAll(FORMA_TOKEN)) menciones.push({ linea: i + 1, valor: m[0] });
-          });
-          assert.ok(menciones.length >= 2, `${doc} tiene que mencionar el token integrado (el dueño lo pega desde ahí)`);
-          const viejas = [...new Map(menciones.filter((m) => m.valor !== TOKEN_INTEGRADO).map((m) => [`${m.linea}:${m.valor}`, m])).values()];
-          assert.deepStrictEqual(viejas, [], `${doc} rotado a medias: menciones con otro valor que el integrado (${TOKEN_INTEGRADO}): ${JSON.stringify(viejas)}`);
-        }
-        assert.ok(unoJs.includes(`const TOKEN = "${TOKEN_INTEGRADO}"`), "app.js sin el token integrado");
         assert.ok(!unoHtml.includes('id="modal-token"') && !unoHtml.includes('id="form-token"'),
           "el formulario del token no puede reaparecer en la página");
 
@@ -28067,7 +30695,7 @@ async function main() {
         // el token va por CABECERA, jamás en la URL (logs de acceso e historial)
         assert.ok(!/\/api\/apu\?op=[a-z]+[^`"']*token=/.test(unoJs),
           "el token de /api/apu no puede viajar en la URL");
-        assert.ok(unoJs.includes('"x-historico-token"'), "app.js debe mandar el token por cabecera");
+        assert.ok(/const fetch = \(url, opciones\) => window\.fetch\(url, conSesion\(opciones\)\);/.test(unoJs), "todo fetch de app.js viaja con la sesión (credentials: same-origin)");
 
         /* NINGÚN `|| 0` SOBRE UNA CIFRA DEL SERVIDOR: convierte «no sé» en
            «cero» y lo hace creíble. */
@@ -30756,7 +33384,7 @@ async function main() {
       assert.strictEqual(opciones[0], '<option value="atractividad"', "«Más atractivas» debe ser la opción por defecto");
       const js = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
       new Function(js); // valida sintaxis sin ejecutar
-      assert.ok(js.includes('"231105"'), "app.js sin la clave de acceso");
+      assert.ok(!js.includes('"231105"'), "la clave del sitio comprobada en el navegador no puede volver: entra el servidor (op=entrar)");
 
       /* ---- «OFERTAS DEL PROCESO» NO PUEDE VOLVER (ago 2026) ----
          `nivel_competencia` sale de columnas EX-POST (`respuestas_al_procedimiento`
@@ -30796,8 +33424,11 @@ async function main() {
           "buscar() volvió a abrir el formulario del token: la lista pública no puede pedir credencial");
         assert.ok(!/if\s*\(!token\)/.test(cuerpo),
           "buscar() volvió a exigir token antes de consultar");
-        assert.ok(/olvidarToken\(\)/.test(cuerpo) && /return buscar\(\)/.test(cuerpo),
-          "un 401 por token caducado debe olvidarlo y reintentar sin él, no bloquear");
+        /* desde el 17-oct-2026 un 401 de la lista solo puede ser una SESIÓN que ya no vale (el
+           visitante no manda credencial): se dice en la lista y msg401 abre la pantalla de entrar,
+           sin bucle (no se reintenta solo) */
+        assert.ok(/if \(r\.status === 401\) \{\s*mostrar\("estado-error", msg401\(cuerpo\)\);\s*return terminarBusqueda\("error", peticion\);/.test(cuerpo),
+          "un 401 de la lista tiene que decirse y abrir la pantalla de entrar, sin reintentar en bucle");
       }
       // `pedirTokenParaBuscar` era el atajo que bloqueaba la lista: no vuelve
       assert.ok(!js.includes("pedirTokenParaBuscar"),
@@ -30853,16 +33484,16 @@ async function main() {
         assert.ok(/×0,\d+/.test(pintadoPrecio) && !/×\d+\.\d/.test(pintadoPrecio),
           `con el factor presente, el tooltip tiene que pintarlo, con coma decimal: «${pintadoPrecio}»`);
       }
-      /* …y el detalle de competencia usa el TOKEN INTEGRADO (ago 2026): el
-         endpoint sigue exigiendo credencial en el servidor, pero el usuario ya
-         no ve ningún formulario — `pedirToken` murió con la página única. */
+      /* …y el detalle de competencia viaja con la SESIÓN del dueño (17-oct-2026; antes,
+         el token integrado): el endpoint sigue exigiendo credencial en el servidor y
+         ningún formulario pide un token — `pedirToken` murió con la página única. */
       assert.ok(!/function pedirToken\(/.test(js),
         "pedirToken volvió: el token va integrado y ningún formulario debe pedirlo");
       {
         const i = js.indexOf("async function cargarDetalle");
         const cuerpo = js.slice(i, js.indexOf("\n  }", i));
-        assert.ok(i > 0 && /leerToken\(\)/.test(cuerpo),
-          "cargarDetalle debe mandar el token integrado: /api/competencia-detalle no se relajó");
+        assert.ok(i > 0 && /conSesion\(\)/.test(cuerpo) && !/x-historico-token/.test(cuerpo),
+          "cargarDetalle viaja con la sesión (conSesion), no con una llave: /api/competencia-detalle no se relajó");
       }
 
       /* LAS PÁGINAS RETIRADAS NO PUEDEN VOLVER: la app es UNA página y un
@@ -31031,11 +33662,12 @@ async function main() {
         assert.ok(iAuto > iEstado,
           "el gancho de arranque del lector se expone antes de declarar su estado: morirá en la zona muerta temporal");
       }
-      // el token va integrado también aquí (el VALOR lo fija el censo de public/*.js, M-INF-13):
-      // ni formulario ni sessionStorage
-      assert.ok(/const TOKEN = "[^"]+"/.test(apuJs), "pliego.js sin el token integrado");
+      // la credencial es la sesión del dueño también aquí (17-oct-2026; el censo de public/*.js
+      // prohíbe cualquier llave): ni formulario ni sessionStorage, y todo fetch con la cookie
+      assert.ok(!/const TOKEN = /.test(apuJs) && /const fetch = async \(url, opciones\) => \{\s*const r = await window\.fetch\(url, conSesion\(opciones\)\);/.test(apuJs),
+        "pliego.js: sin llave escrita, y TODO fetch pasa por el que lleva la sesión y avisa del 401");
       assert.ok(!/sessionStorage\.(?:get|set|remove)Item/.test(sinComentarios(apuJs)),
-        "pliego.js ya no guarda nada en sessionStorage: el token va integrado y el gate es de app.js");
+        "pliego.js ya no guarda nada en sessionStorage: la sesión es una cookie y el gate es de app.js");
 
       for (const [archivo, fuente] of [["app.js", js], ["pliego.js", apuJs]]) {
         // `Number(x) || 0` sí es legítimo: normaliza un valor YA leído. Lo que
@@ -31104,7 +33736,7 @@ async function main() {
       }
       assert.ok(/id="modal-competencia"[^>]*\bhidden\b/.test(html), "el modal debe arrancar oculto");
       for (const debe of ["banda-competencia", "cargarDetalle", "abrirModal", "cerrarModal",
-        "/api/competencia-detalle", "x-historico-token", "sessionStorage", "MOTIVO_EXCLUSION"]) {
+        "/api/competencia-detalle", "conSesion(", "sessionStorage", "MOTIVO_EXCLUSION"]) {
         assert.ok(js.includes(debe), `app.js sin ${debe} (el badge no abre el detalle)`);
       }
       /* «Quién gana aquí» (ago 2026): el modal pinta el agregado de
@@ -31134,9 +33766,9 @@ async function main() {
       assert.ok(!/CLAVE_TOKEN/.test(js), "la clave de sesión del token murió con el formulario");
       assert.ok(!js.includes("Guardar y ver detalle") && !/Pegue el token/.test(js),
         "reapareció el formulario del token: el usuario nunca debe teclearlo");
-      assert.ok(/HISTORICO_TOKEN no coincide/.test(js),
-        "un 401 debe explicarse como lo que es: el token integrado no coincide con el del despliegue");
-      assert.ok(/try \{ return sessionStorage\.getItem/.test(js) || /try \{ sesionConClave = sessionStorage\.getItem/.test(js),
+      assert.ok(/const MSG_401 = "Su sesión terminó/.test(js),
+        "un 401 debe explicarse como lo que es desde el 17-oct-2026: la sesión del dueño terminó (y se abre la pantalla de entrar)");
+      assert.ok(/try \{ return sessionStorage\.getItem/.test(js),
         "leer sessionStorage debe ir protegido: si lanza, el arranque moriría en silencio");
       // mostrar/ocultar el modal no puede depender del orden del CSS generado
       assert.ok(/style\.display = "flex"/.test(js) && /style\.display = "none"/.test(js),
@@ -31147,7 +33779,7 @@ async function main() {
          pestaña `buscar()` reventaba en la zona muerta temporal de
          `timerReintento` — la app se quedaba sin resultados en silencio. */
       {
-        const iAuto = js.indexOf('sessionStorage.getItem("detecta-acceso") === "1"');
+        const iAuto = js.indexOf("sesionDueno = await preguntarSesion();");
         const iEstado = js.indexOf("let pagina = 1, reintentosSync = 0, timerReintento = null;");
         assert.ok(iAuto > 0 && iEstado > 0, "no se encontraron el arranque automático y el estado de la vista");
         assert.ok(iAuto > iEstado,
@@ -31234,12 +33866,12 @@ async function main() {
       // el archivo del RUP en JSON solo acepta JSON
       assert.ok(/id="rup-json-archivo"[^>]*accept="\.json/.test(admHtml), "el input del RUP en JSON debe aceptar solo .json");
 
-      for (const debe of ["/api/resumen", "/api/admin/rup", "cache_bust", "X-Cache", "x-historico-token",
+      for (const debe of ["/api/resumen", "/api/admin/rup", "cache_bust", "X-Cache", "conSesion(",
         "FileReader", "readAsText", "revokeObjectURL", "visibilityState", "dashboard_perfil"]) {
         assert.ok(admJs.includes(debe), `app.js sin ${debe} (el panel o la carga de RUP no están cableados)`);
       }
       // el refresco automático es el mismo TTL de la caché del endpoint
-      assert.ok(/REFRESCO_MS = 300000/.test(admJs), "el refresco automático debe ser de 5 minutos");
+      assert.ok(/REFRESCO_MS = 1800000;/.test(admJs), "el refresco automático del tablero es cada 30 min (16-oct-2026): cada 5 min recalculaba el corpus entero con la pestaña abierta y gastaba la CPU del plan");
       // …y NO se dispara con la pestaña oculta
       assert.ok(/document\.visibilityState === "visible"\) cargarDashboard\(\)/.test(admJs),
         "el refresco automático no puede correr con la pestaña oculta");
@@ -31477,7 +34109,7 @@ async function main() {
       }
       assert.ok(/Cargar catálogo APU/.test(admHtml), "el botón debe decir «Cargar catálogo APU»");
       for (const debe of ["/api/apu/catalogo", "/api/admin/apu/cargar-catalogo", "cargarCatalogoApu",
-        "cargarEstadoApu", "x-historico-token"]) {
+        "cargarEstadoApu", "conSesion("]) {
         assert.ok(admJs.includes(debe), `app.js sin ${debe} (el catálogo APU no está cableado)`);
       }
       // doble clic: mismo blindaje que el RUP y la experiencia
@@ -31644,7 +34276,7 @@ async function main() {
       const { MARCA } = Glosario;
       assert.strictEqual(MARCA.nombre, "Detekta");
       assert.ok(MARCA.nombreLargo.startsWith(MARCA.nombre + " —"), "el nombre largo empieza por el nombre");
-      assert.strictEqual(MARCA.dominio, "portafolio-estrategico.vercel.app", "la URL de producción NO cambia con la marca");
+      assert.strictEqual(MARCA.dominio, "detekta-app.vercel.app", "la URL de producción es la de la cuenta nueva (16-oct-2026): cambia solo con docs/marca.md §4");
       assert.ok(Object.isFrozen(MARCA), "MARCA es de solo lectura: nadie la reescribe en caliente");
       assert.strictEqual(Glosario.titulo(), `${MARCA.nombre} · ${MARCA.lema}`);
       assert.ok(Glosario.descripcion().startsWith(MARCA.nombreLargo));
@@ -31734,7 +34366,9 @@ async function main() {
 
       /* ---- (5) lo que NO cambia con la marca ---- */
       const appM = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
-      assert.ok(/sessionStorage\.setItem\("detecta-acceso"/.test(appM), "la clave de sesión del gate NO se renombra: cerraría la sesión de todos");
+      /* la marca «detecta-acceso» de sessionStorage murió el 17-oct-2026: la sesión del dueño es una
+         cookie HttpOnly con nombre fijo (lib/sesion.COOKIE_SESION), que tampoco se renombra */
+      assert.strictEqual(require("../lib/sesion.js").COOKIE_SESION, "__Host-detekta_sesion", "el nombre de la cookie de sesión NO se renombra: cerraría la sesión del dueño");
       assert.ok(/CLAVE_PERFIL_RUP = "detecta_perfil_rup"/.test(appM), "la clave del perfil guardado NO se renombra: borraría el perfil de todos");
       const descargar = fs.readFileSync(path.join(__dirname, "..", "lib", "apu_descargar.js"), "utf8");
       assert.ok(/require\("\.\/glosario\.js"\)/.test(descargar) && /\$\{MARCA\.nombre\}\/1\.0/.test(descargar),
@@ -32381,6 +35015,8 @@ async function main() {
           ["Network access", "campo del entorno de la rutina en claude.ai (interfaz ajena)"],
           ["Full", "valor del campo Network access en claude.ai (interfaz ajena)"],
           ["Save changes", "botón del entorno de la rutina en claude.ai (interfaz ajena)"],
+          ["Protected by Vercel Authentication", "texto con el que responde el muro de Vercel (interfaz ajena), medido con curl el 17-oct-2026 en una versión de prueba; no es un texto de la pantalla"],
+          ["Protected deployment", "mensaje del 401 del muro de Vercel a una petición JSON (interfaz ajena), medido el 17-oct-2026; no es un texto de la pantalla"],
         ]);
         for (const rel of textosDelDueno) {
           const texto = leerD(rel);
@@ -33631,7 +36267,8 @@ async function main() {
          ningún enlace, y al tercer intento `bloquear()` la sustituía por
          «Acceso denegado / Este sitio es privado.» sin decir qué hacer. Solo
          recargar devolvía las otras dos puertas. El bloqueo en sí y
-         MAX_INTENTOS_CLAVE no se tocan: son la seguridad. */
+         MAX_INTENTOS_CLAVE no se tocan: son la seguridad. (Desde el 17-oct-2026 los
+         intentos los cuenta el servidor; la vuelta sigue igual.) */
       {
         const gateHtml = htmlL.slice(iGate, iTabAdmin);
         assert.ok(/id="gate-volver"/.test(gateHtml),
@@ -33652,31 +36289,27 @@ async function main() {
           "la vuelta del gate BLOQUEADO tiene que recargar: sin #gate-form, volver a la portada deja al usuario sin "
           + "ningún sitio donde escribir la clave que el propio mensaje le pide");
 
+        /* EL BLOQUEO DEL NAVEGADOR MURIÓ (17-oct-2026). `bloquear()` y MAX_INTENTOS_CLAVE
+           contaban tres intentos EN LA PESTAÑA —bastaba recargar para tener otros tres, y la
+           clave estaba en el fuente—. Ahora los cuenta el SERVIDOR (lib/sesion: por correo y
+           por conexión) y responde 429 con QUÉ hacer y CUÁNTO esperar; el gate pinta las dos
+           cosas. Se ejecuta el pintado real de app.js contra esa respuesta. */
         const appGate = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
-        const iBloq = appGate.indexOf("function bloquear(");
-        assert.ok(iBloq > 0, "app.js sin bloquear()");
-        const cajaGate = { html: "" };
-        Object.defineProperty(cajaGate, "innerHTML", { get: () => cajaGate.html, set: (v) => { cajaGate.html = String(v); } });
-        new Function("$", `${appGate.slice(iBloq, appGate.indexOf("\n  }", iBloq) + 4)}; return bloquear;`)(() => cajaGate)();
-        /* LA INSTRUCCIÓN DEL BLOQUEO TIENE QUE SER POSIBLE (11-sep-2026). Decía
-           «suba su RUP o escriba tres datos» y esas dos puertas dejaron de
-           ofrecerse: mandar a alguien a pulsar algo que no está en pantalla es
-           peor que no decir nada. MUTACIÓN: esta cerradura cae contra el texto
-           anterior. */
-        /* Esta promesa solo es CIERTA desde el 12-sep-2026, y por eso las dos
-           aserciones van juntas: hasta entonces `bloquear()` destruía el campo y
-           la vuelta llevaba a una portada desde la que ya no se podía escribir
-           nada. Lo que la hace verdad es la recarga del oyente de #gate-volver,
-           exigida cinco líneas más arriba. Si alguien quita aquella, esta frase
-           vuelve a ser mentira: no se toque una sin la otra. */
-        assert.ok(/escriba de nuevo la clave/.test(cajaGate.innerHTML),
-          `el bloqueo tiene que decir QUÉ hacer, y que se pueda hacer: ${cajaGate.innerHTML}`);
-        assert.ok(!/suba su RUP|escriba tres datos/.test(cajaGate.innerHTML),
-          "el bloqueo no puede mandar a dos puertas que la landing ya no enseña");
-        assert.ok(/administra el sitio/.test(cajaGate.innerHTML),
-          "…y decir a quién pedirle la clave si no la tiene");
-        assert.ok(/id="gate-volver"/.test(cajaGate.innerHTML),
-          "y dejar el mismo enlace de vuelta al inicio");
+        assert.ok(!/function bloquear\(|MAX_INTENTOS_CLAVE/.test(sinComentarios(appGate)),
+          "el bloqueo contado en el navegador no puede volver: lo cuenta el servidor");
+        const iEnv = appGate.indexOf("  async function enviarGate(");
+        assert.ok(iEnv > 0, "app.js sin enviarGate");
+        const fuenteEnv = appGate.slice(iEnv, appGate.indexOf("\n  }\n", iEnv) + 4);
+        const errG = { textContent: "", classList: { toggle() {}, add() {}, remove() {} } };
+        const enviarGate = new Function("$", "fetch", "conSesion", "leerJson", "mensajeDeFallo", "fraseDeFallo", "errorGate", "prepararGate", "abrirApp",
+          `let sesionDueno = false, hayCuenta = null, entradaPorVencimiento = false; ${fuenteEnv}; return enviarGate;`)(
+          () => null,
+          async () => ({ ok: false, status: 429 }),
+          (o) => o, async () => ({ ok: false, error: "Demasiados intentos seguidos.", que_hacer: "Vuelva a intentarlo en 12 minutos." }),
+          (e) => String(e), () => "falló", (t) => { errG.textContent = t; }, () => {}, () => { throw new Error("no debía abrir la aplicación"); });
+        await enviarGate("/api/admin?op=entrar", { correo: "a@b.co", contrasena: "x" }, null);
+        assert.ok(/Demasiados intentos/.test(errG.textContent) && /12 minutos/.test(errG.textContent),
+          `el gate tiene que decir el motivo del servidor y CUÁNTO esperar: «${errG.textContent}»`);
       }
       const inicio = landing.slice(landing.indexOf('id="entrada-inicio"'), landing.indexOf('<!-- progreso de la extracción -->'));
       /* LAS TRES PUERTAS SIGUEN EN EL ÁRBOL; SOLO UNA SE ENSEÑA (11-sep-2026).
@@ -34762,6 +37395,9 @@ async function main() {
           assert.strictEqual(Gl.causaDeActualizacion("x", { motivo: "base_llena" }).reintentar, false, "el motivo que publica el servidor también vale");
           assert.ok(/^SECOP II no respondió/.test(Gl.causaDeActualizacion("datos.gov.co no respondió o limitó las consultas; vuelva a intentarlo en unos minutos", null).frase), "SECOP caído sigue diciéndose SECOP");
           assert.ok(/no pudo leer o guardar/.test(Gl.causaDeActualizacion("Redis: The operation was aborted due to timeout", null).frase), "un fallo de la base que no es «llena» no se achaca a SECOP");
+          // desde el 18-oct el error de la base dice su clave, y hay claves que se llaman «secop:…»
+          assert.ok(/no pudo leer o guardar/.test(Gl.causaDeActualizacion("The operation was aborted due to timeout (Upstash: GET secop:contratos_en_ejecucion, 0 KB, 10003 ms)", null).frase),
+            "el tiempo agotado de la base en una clave «secop:…» no se achaca a SECOP II");
           assert.ok(/^el servidor no respondió/.test(Gl.causaDeActualizacion("La consulta tardó más de lo que el servidor permite y se cortó (código 504).", null).frase), "lo que no se reconoce no se achaca a nadie");
           for (const t of [LLENA_TXT, "datos.gov.co no respondió", "Redis: caído", "otra cosa"]) {
             const f = Gl.causaDeActualizacion(t, null).frase;
@@ -35191,6 +37827,54 @@ async function main() {
       assert.strictEqual(nivelDe(r5, "temeraria"), "alerta"); assert.strictEqual(r5.semaforo, "precaucion"); assert.strictEqual(r5.genera_justificacion, true);
       assert.ok(/33,3 % por debajo/.test(r5.veredictos.find((v) => v.id === "temeraria").mensaje) && /2\.2\.1\.1\.2\.2\.4/.test(r5.veredictos.find((v) => v.id === "temeraria").fundamento));
       assert.strictEqual(nivelDe(limpio, "temeraria"), "ok");
+      /* 5b · el límite que calculó la entidad, MEDIDO (17-oct-2026). Tabla ÚNICA en
+         lib/apu/piso_techo; el 80 % no cambia. Entre el 80 % y el máximo medido
+         (92,78 %, sin redondear) el estado pasa de «ok» a «informativo»; la alerta
+         y el panel llevan la frase con el rango y «solo N casos». Contra el árbol
+         anterior FALLAN (no existían ni la tabla, ni el estado, ni la frase). */
+      {
+        const PT = require("../lib/apu/piso_techo.js");
+        const lim = PT.limiteEntidadMedido();
+        assert.strictEqual(lim.n, 3); assert.strictEqual(lim.min_pct, 91.61); assert.strictEqual(lim.max_pct, 92.78);
+        assert.strictEqual(lim.frase, "En 3 procesos de menor cuantía ya cerrados, el límite que calculó la entidad quedó entre el 91,6 % y el 92,8 % del presupuesto (solo 3 casos). Si su oferta queda por debajo de ese rango, tenga lista la justificación de precios desde el APU.");
+        assert.strictEqual(lim.fuentes.length, 3);
+        const total5 = 20000000; // el total de ofertaOk
+        const conPres = (pres) => F1.validarFormulario1({ oferta: ofertaOk, formulario: form, presupuesto_oficial: pres, tope_aiu_pct: 30 }).veredictos.find((v) => v.id === "temeraria");
+        const en90 = conPres(total5 / 0.90);
+        assert.strictEqual(en90.nivel, "informativo", "al 90 % del presupuesto queda bajo el rango medido");
+        assert.ok(en90.mensaje.includes(lim.frase) && en90.umbral_pct === 20);
+        assert.strictEqual(conPres(total5 / 0.9279).nivel, "ok", "92,79 % está sobre el máximo SIN redondear (92,78): el 92,8 mostrado no decide");
+        assert.strictEqual(conPres(total5 / 0.95).nivel, "ok");
+        assert.ok(r5.veredictos.find((v) => v.id === "temeraria").mensaje.includes(lim.frase), "la alerta también muestra el hecho medido");
+        const tabla2 = { ...PT.LIMITE_ENTIDAD_MEDIDO, casos: [...PT.LIMITE_ENTIDAD_MEDIDO.casos, { limite_pct: 90 }, { limite_pct: 93 }] };
+        assert.ok(!/solo \d+ casos/.test(PT.limiteEntidadMedido(tabla2).frase), "con 5 casos deja de decir «solo N casos»");
+        const pt = PT.pisoTecho({ presupuesto_oficial: 100000000, costo_directo: 60000000, aiu: { administracion_pct: 10, imprevistos_pct: 3, utilidad_pct: 5 } });
+        assert.strictEqual(pt.limite_entidad_medido && pt.limite_entidad_medido.frase, lim.frase, "el panel Piso / Techo lee la misma tabla");
+        /* 5c · ese aviso va en ÁMBAR y se cuenta APARTE (18-oct-2026, decisión del
+           dueño): marca «justificar» sobre el nivel informativo, sin tocar el
+           semáforo ni el color/conteo de los demás informativos. Se EJECUTA el
+           trozo real del render de app.js (la lista y la línea de conteos). */
+        const r90 = F1.validarFormulario1({ oferta: ofertaOk, formulario: form, presupuesto_oficial: total5 / 0.90, tope_aiu_pct: 30 });
+        assert.strictEqual(en90.marca, "justificar");
+        assert.strictEqual(r90.para_justificar, 1, "el aviso del rango se cuenta aparte");
+        assert.strictEqual(r90.informativos, r90.veredictos.filter((x) => x.nivel === "informativo" && x.id !== "temeraria").length, "y NO como «para arreglar sin riesgo»");
+        assert.notStrictEqual(r90.semaforo, "revisar", "no es motivo de rechazo");
+        assert.strictEqual(r90.semaforo, F1.validarFormulario1({ oferta: ofertaOk, formulario: form, presupuesto_oficial: total5 / 0.95, tope_aiu_pct: 30 }).semaforo, "el semáforo no cambia por el aviso");
+        const appJs = require("fs").readFileSync(require("path").join(__dirname, "..", "public", "app.js"), "utf8");
+        const iUl = appJs.indexOf('<ul class="mt-3 space-y-2 text-sm">${vs.map(');
+        const iFin = appJs.indexOf("</p>`;", iUl);
+        assert.ok(iUl > 0 && iFin > iUl, "app.js sin el render de la revisión");
+        const render = new Function("r", "vs", "esc", "return `" + appJs.slice(iUl, iFin + 4) + "`;");
+        const escR = (x) => String(x == null ? "" : x);
+        const html = render({ ...r90, guardado: false }, r90.veredictos, escR);
+        const liTem = html.split("<li").find((t) => t.includes(lim.frase));
+        assert.ok(liTem && /bg-amber-50/.test(liTem) && !/bg-blue-50/.test(liTem), "el aviso del rango se pinta en ámbar, no en azul");
+        assert.ok(html.includes("Tenga lista la justificación (1)"), "la etiqueta propia en el conteo");
+        const r6b = F1.validarFormulario1({ oferta: { ...ofertaOk, items: [{ ...ofertaOk.items[0], total: 5500000 }, ofertaOk.items[1], ofertaOk.items[2]], total: 20500000 }, formulario: form, presupuesto_oficial: 21000000, tope_aiu_pct: 30 });
+        const html6 = render({ ...r6b, guardado: false }, r6b.veredictos, escR);
+        assert.ok(/bg-blue-50/.test(html6.split("<li").find((t) => /Ley 1882/.test(t)) || ""), "los demás informativos siguen en azul");
+        assert.ok(!html6.includes("Tenga lista la justificación"), "sin el aviso no aparece la etiqueta");
+      }
       // 6 · error aritmético → informativo (no rechaza)
       const r6 = F1.validarFormulario1({ oferta: { ...ofertaOk, items: [{ ...ofertaOk.items[0], total: 5500000 }, ofertaOk.items[1], ofertaOk.items[2]], total: 20500000 }, formulario: form, presupuesto_oficial: 21000000, tope_aiu_pct: 30 });
       assert.strictEqual(nivelDe(r6, "aritmetico"), "informativo"); assert.ok(r6.semaforo !== "revisar" || r6.rechazos > 0);
@@ -35579,19 +38263,19 @@ async function main() {
       const dp = D.diffParrafos(t1, t2);
       assert.ok(dp.modificados.some((m) => /650\.000\.000/.test(m.antes) && /800\.000\.000/.test(m.despues)), "el diff por párrafos empareja el párrafo modificado");
       // por el router: registrar, no-cambio, cambio, GET, retención, 401
-      assert.strictEqual((await invocarPost(routerPliego, "/api/pliego?op=diff", { id_proceso: "CO1.DIFF.1", texto: t1 })).status, 401);
-      const d1 = await invocarPost(routerPliego, "/api/pliego?op=diff", { id_proceso: "CO1.DIFF.1", texto: t1, perfil: "helder" }, CAB_TOKEN);
+      assert.strictEqual((await invocarPost(routerPliego, "/api/pliego?op=diff", { id_proceso: "CO1.DIFF.1", nombre_archivo: "PLIEGO DE CONDICIONES.pdf", texto: t1 })).status, 401);
+      const d1 = await invocarPost(routerPliego, "/api/pliego?op=diff", { id_proceso: "CO1.DIFF.1", nombre_archivo: "PLIEGO DE CONDICIONES.pdf", texto: t1, perfil: "helder" }, CAB_TOKEN);
       assert.strictEqual(d1.status, 200); assert.strictEqual(d1.cuerpo.version, 1); assert.strictEqual(d1.cuerpo.cambio, false);
-      const d1b = await invocarPost(routerPliego, "/api/pliego?op=diff", { id_proceso: "CO1.DIFF.1", texto: t1 + "\n", perfil: "helder" }, CAB_TOKEN);
+      const d1b = await invocarPost(routerPliego, "/api/pliego?op=diff", { id_proceso: "CO1.DIFF.1", nombre_archivo: "PLIEGO DE CONDICIONES.pdf", texto: t1 + "\n", perfil: "helder" }, CAB_TOKEN);
       assert.strictEqual(d1b.cuerpo.version, 1); assert.strictEqual(d1b.cuerpo.cambio, false, "el mismo texto no crea versión");
-      const d2 = await invocarPost(routerPliego, "/api/pliego?op=diff", { id_proceso: "CO1.DIFF.1", texto: t2, perfil: "helder" }, CAB_TOKEN);
+      const d2 = await invocarPost(routerPliego, "/api/pliego?op=diff", { id_proceso: "CO1.DIFF.1", nombre_archivo: "PLIEGO DE CONDICIONES.pdf", texto: t2, perfil: "helder" }, CAB_TOKEN);
       assert.strictEqual(d2.cuerpo.version, 2); assert.strictEqual(d2.cuerpo.cambio, true);
       assert.strictEqual(d2.cuerpo.diff.habilitantes.cambios[0].mensaje, cambiosH[0].mensaje, "tras un cambio los habilitantes se reevalúan automáticamente");
       assert.ok(/cambió las reglas/.test(d2.cuerpo.mensaje));
       assert.ok(await redis.get(D.claveVersion("CO1.DIFF.1", 2)) && await redis.get(D.claveDiff("CO1.DIFF.1", 2)), "pliego:{proceso}:v:2 y :diff:2 escritos");
       const g2 = await invocar(routerPliego, "/api/pliego?op=diff&id_proceso=CO1.DIFF.1&perfil=genesis", CAB_TOKEN);
       assert.strictEqual(g2.cuerpo.versiones.length, 2); assert.ok(/Usted no cumple\.$/.test(g2.cuerpo.diff.habilitantes.cambios[0].mensaje), "el GET reevalúa contra el perfil que pregunta");
-      for (let i = 3; i <= D.MAX_VERSIONES + 2; i++) await invocarPost(routerPliego, "/api/pliego?op=diff", { id_proceso: "CO1.DIFF.1", texto: t2 + `\nversión ${i}` }, CAB_TOKEN);
+      for (let i = 3; i <= D.MAX_VERSIONES + 2; i++) await invocarPost(routerPliego, "/api/pliego?op=diff", { id_proceso: "CO1.DIFF.1", nombre_archivo: "PLIEGO DE CONDICIONES.pdf", texto: t2 + `\nversión ${i}` }, CAB_TOKEN);
       const idx = await D.leerIndice(redis, "CO1.DIFF.1");
       assert.strictEqual(idx.versiones.length, D.MAX_VERSIONES, "retención: como mucho MAX_VERSIONES");
       assert.strictEqual(await redis.get(D.claveVersion("CO1.DIFF.1", 1)), null, "la versión 1 se purgó");
@@ -35609,7 +38293,7 @@ async function main() {
       assert.strictEqual(rics.status, 200); assert.ok(/text\/calendar/.test(rics.cabeceras["content-type"]));
       assert.ok(/BEGIN:VCALENDAR/.test(rics.cuerpo) && /TRIGGER:-P7D/.test(rics.cuerpo) && /TRIGGER:-P3D/.test(rics.cuerpo) && /TRIGGER:-P1D/.test(rics.cuerpo) && /DTSTART;VALUE=DATE:20260825/.test(rics.cuerpo), "el .ics lleva los tres avisos como alarmas");
       // con un proceso del corpus, el hito de cierre sale del dataset aunque no haya texto
-      const idCorpus = rl.cuerpo.resultados.find((f) => f.fecha_cierre).id_del_proceso;
+      const idCorpus = (await filaDelListado(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=100&incluir_cerradas=1&solo_viables=false", CAB_TOKEN, (f) => f.fecha_cierre)).id_del_proceso;
       const rd = await invocar(routerPliego, `/api/pliego?op=cronograma&id_proceso=${encodeURIComponent(idCorpus)}`);
       assert.ok(rd.cuerpo.hitos.some((h) => h.id === "cierre" && h.origen === "dataset"), "el cierre del dataset entra al cronograma");
       /* ---- (3-bis) EL PELDAÑO 1 DE LA MANIFESTACIÓN, EXTREMO A EXTREMO ----
@@ -35917,11 +38601,11 @@ async function main() {
       assert.strictEqual(cmp[0].pagina, 2, "el cambio cita la página de la versión nueva");
       assert.ok(/pág\. \$\{x\.pagina\}/.test(plSin), "el vigía del lector pinta la página junto al cambio");
       // por el router: la versión guardada conserva los marcadores (para citar al reevaluar) y el hash es el de siempre
-      const dv1 = await invocarPost(routerPl, "/api/pliego?op=diff", { id_proceso: "CO1.PAG.1", texto: tSin, perfil: "helder" }, CAB_TOKEN);
-      const dv2 = await invocarPost(routerPl, "/api/pliego?op=diff", { id_proceso: "CO1.PAG.1", texto: tCon, perfil: "helder" }, CAB_TOKEN);
+      const dv1 = await invocarPost(routerPl, "/api/pliego?op=diff", { id_proceso: "CO1.PAG.1", nombre_archivo: "PLIEGO DE CONDICIONES.pdf", texto: tSin, perfil: "helder" }, CAB_TOKEN);
+      const dv2 = await invocarPost(routerPl, "/api/pliego?op=diff", { id_proceso: "CO1.PAG.1", nombre_archivo: "PLIEGO DE CONDICIONES.pdf", texto: tCon, perfil: "helder" }, CAB_TOKEN);
       assert.strictEqual(dv1.cuerpo.version, 1); assert.strictEqual(dv2.cuerpo.version, 1); assert.strictEqual(dv2.cuerpo.cambio, false, "guardar sin marcadores y volver a abrir CON marcadores no es una adenda");
       assert.strictEqual(dv2.cuerpo.hash, dv1.cuerpo.hash);
-      const dv3 = await invocarPost(routerPl, "/api/pliego?op=diff", { id_proceso: "CO1.PAG.1", texto: tCon2, perfil: "helder" }, CAB_TOKEN);
+      const dv3 = await invocarPost(routerPl, "/api/pliego?op=diff", { id_proceso: "CO1.PAG.1", nombre_archivo: "PLIEGO DE CONDICIONES.pdf", texto: tCon2, perfil: "helder" }, CAB_TOKEN);
       assert.strictEqual(dv3.cuerpo.version, 2); assert.strictEqual(dv3.cuerpo.diff.habilitantes.cambios[0].pagina, 2);
       const guardada = await D2.leerVersion(redis, "CO1.PAG.1", 2);
       assert.strictEqual(P.contarMarcadores(guardada.texto_normalizado), 4, "el texto guardado conserva los marcadores para poder citar la página al reevaluar");
@@ -38991,7 +41675,7 @@ async function main() {
           const cuerpo = jsSin.slice(i, jsSin.indexOf("\n  }", i));
           assert.ok(/olvidarPerfilRup\(\)/.test(cuerpo) && /classList\.remove\("hidden"\)/.test(cuerpo),
             "al eliminar un perfil dinámico hay que olvidarlo y volver a la LANDING");
-          assert.ok(/x-historico-token/.test(cuerpo), "el DELETE viaja con el token integrado, por cabecera");
+          assert.ok(!/x-historico-token/.test(cuerpo), "el DELETE viaja con la sesión del dueño (la cookie): ninguna llave en el navegador");
           assert.ok(/\$\("btn-eliminar-confirmar"\)/.test(jsSin) && /btn\.disabled = true/.test(cuerpo),
             "«Eliminar definitivamente» debe deshabilitarse durante el envío (un doble clic borraría dos veces)");
         }
@@ -39376,8 +42060,8 @@ async function main() {
           const exRef = (n) => { const i = appRef.indexOf(`function ${n}(`); assert.ok(i > 0, `app.js sin ${n}`); return appRef.slice(i, appRef.indexOf("\n  }", i) + 4); };
           const frase = new Function(`${exRef("fraseRefresco")}; return fraseRefresco;`)();
           const t0 = Date.parse("2026-09-05T10:00:00Z");
-          assert.strictEqual(frase(false, t0, t0 + 4 * 60000), "Actualizado hace 4 min · se actualiza solo cada 5 min");
-          assert.strictEqual(frase(false, t0, t0 + 30000), "Actualizado hace un momento · se actualiza solo cada 5 min",
+          assert.strictEqual(frase(false, t0, t0 + 4 * 60000), "Actualizado hace 4 min · se actualiza solo cada 30 min");
+          assert.strictEqual(frase(false, t0, t0 + 30000), "Actualizado hace un momento · se actualiza solo cada 30 min",
             "medio minuto NO se redondea a «hace 0 min»");
           assert.ok(/detenida/.test(frase(true, t0, t0 + 60000)), `con el refresco parado, la línea lo dice: ${frase(true, t0, t0 + 60000)}`);
           assert.ok(!/\d+:\d\d/.test(frase(false, t0, t0 + 60000)), "se acabó la cuenta atrás mm:ss que reescribía la pantalla cada segundo");
@@ -39470,6 +42154,13 @@ async function main() {
           for (const m of fuentes.matchAll(/\/api\/procesos\?op=(sync|historico&reconstruir_indice|baja&reconstruir)/g)) escrituras.add(`procesos?op=${m[1]}`);
           if (/"\/api\/apu\?op=parametros",\s*\{\s*method: "POST"/.test(fuentes)) escrituras.add("apu?op=parametros (POST)");
           const CONTROLES = {
+            /* LA ENTRADA DEL DUEÑO (17-oct-2026) no escribe configuración compartida: abre o cierra
+               SU sesión. Vive en el gate, que por diseño ve cualquiera (es la puerta), y «Salir» solo
+               se enseña con sesión; el servidor decide en cada una (lib/sesion). */
+            "admin?op=sesion": [{ id: "gate", excepcion: "solo PREGUNTA si hay sesión y si existe la cuenta: lo pide el arranque de cualquier visita" }],
+            "admin?op=entrar": [{ id: "gate-form", excepcion: "la puerta de entrada: la ve cualquiera y el servidor comprueba correo, contraseña e intentos" }],
+            "admin?op=crear-cuenta": [{ id: "alta-form", excepcion: "solo mientras no exista ninguna cuenta y con la llave del servidor; después 409 para siempre" }],
+            "admin?op=salir": [{ id: "btn-salir", excepcion: "cierra la sesión de quien la tiene; el botón solo se enseña con sesión (pintarSalir)" }],
             "admin?op=rup": ["btn-rup-cargar", "btn-rup-descargar", "rup-actual",
               { id: "btn-eliminar-rup", excepcion: "borra el perfil ACTIVO de la barra, que para el visitante es el suyo (rup_…); va con confirmación" },
               { id: "rup-archivo", excepcion: "la subida del RUP en PDF es el alta pública del onboarding (sin token, por diseño)" }],
@@ -39507,7 +42198,10 @@ async function main() {
         }
 
         /* (c) el arranque real, ejecutado: visitante · dueño con clave · #/inicio · consorcio por URL */
-        const arrancarAppEnNode = async ({ search = "", hash = "", sesion = {} } = {}) => {
+        /* `dueno`: lo que responde op=sesion (17-oct-2026). La vista del dueño la decide el
+           SERVIDOR —la cookie es HttpOnly—, así que el doble contesta esa sola ruta y todo lo
+           demás sigue siendo «arnés sin API» */
+        const arrancarAppEnNode = async ({ search = "", hash = "", sesion = {}, dueno = false } = {}) => {
           const vm = require("vm");
           const porId = new Map();
           const reId = /<(\w+)([^>]*?)\sid="([^"]+)"([^>]*)>/g; let m;
@@ -39592,7 +42286,14 @@ async function main() {
             console, URL, URLSearchParams, TextEncoder, TextDecoder, AbortController, Intl, structuredClone, queueMicrotask,
             atob: (s) => Buffer.from(s, "base64").toString("binary"), btoa: (s) => Buffer.from(s, "binary").toString("base64"), crypto: require("crypto").webcrypto,
             setTimeout: () => 1, setInterval: () => 1, clearTimeout() {}, clearInterval() {}, requestAnimationFrame: () => 1, cancelAnimationFrame() {},
-            fetch: (url, opts) => { fetches.push({ url: String(url), opts: opts || null }); return Promise.resolve(respuesta()); },
+            fetch: (url, opts) => {
+              fetches.push({ url: String(url), opts: opts || null });
+              if (/\/api\/admin\?op=sesion(&|$)/.test(String(url))) {
+                const c = JSON.stringify({ ok: true, sesion: !!dueno, hay_cuenta: true });
+                return Promise.resolve({ ok: true, status: 200, headers: { get: () => "application/json" }, json: async () => JSON.parse(c), text: async () => c, arrayBuffer: async () => new ArrayBuffer(0) });
+              }
+              return Promise.resolve(respuesta());
+            },
             location: { search, hash, href: `http://localhost/${search}${hash}`, pathname: "/", origin: "http://localhost", host: "localhost", protocol: "http:", replace() {}, assign() {}, reload() {} },
             // `historial` registra las URL que el arranque escribe (B4a-H2: «#/inicio» se consume)
             history: { replaceState: (st, t, url) => { historial.push(String(url)); }, pushState: (st, t, url) => { historial.push(String(url)); }, back() {}, state: null },
@@ -39629,7 +42330,7 @@ async function main() {
         /* el dueño con clave arranca PRIMERO: es la referencia contra la que se compara lo
            «de todos» (un módulo puede ocultar lo suyo por falta de datos —el calendario sin
            cierres—, y eso no es la vista de visitante: tiene que pasar igual con y sin clave) */
-        const dueno = await arrancarAppEnNode({ search: "?perfil=rup_a1b2c3d4e5f6", sesion: { "detecta-acceso": "1" } });
+        const dueno = await arrancarAppEnNode({ search: "?perfil=rup_a1b2c3d4e5f6", dueno: true });
         const visitante = await arrancarAppEnNode({ search: "?perfil=rup_a1b2c3d4e5f6" });
         for (const id of ids("soloDueno")) assert.strictEqual(visitante.el(id).hidden, true, `visitante: #${id} (${CENSO.soloDueno[id]}) tiene que quedar oculto con hidden`);
         for (const id of ids("soloVisitante")) assert.strictEqual(visitante.el(id).hidden, false, `visitante: #${id} tiene que verse`);
@@ -39676,6 +42377,24 @@ async function main() {
           assert.ok(dueno.urls().some((u) => re.test(u)), `con clave se pide ${re}: el arranque del dueño no cambió`);
         }
         assert.ok(!dueno.el("btn-marca").classList.contains("marca-informativa") && /Pulse aquí|Actualizar/.test(dueno.el("sello-sync").innerHTML), "con clave la marca sigue siendo el botón de actualizar");
+        /* LA SESIÓN VIAJA EN CADA LLAMADA DEL DUEÑO (17-oct-2026), ejecutado y no por regex: todas
+           las peticiones del arranque a lo protegido llevan `credentials: "same-origin"` (la cookie
+           HttpOnly), ninguna lleva la cabecera de la llave, y la vista del dueño la decidió
+           op=sesion —el visitante pidió lo mismo y no la obtuvo— */
+        {
+          const protegidas = dueno.fetches.filter((f) => /op=(sesion|resumen|rup|experiencia|consorcio|seguimiento|listar|pulso)(&|$)/.test(f.url));
+          assert.ok(protegidas.length >= 6, `el arranque del dueño pidió muy poco: ${protegidas.map((f) => f.url).join(" · ")}`);
+          for (const f of protegidas) {
+            assert.strictEqual(f.opts && f.opts.credentials, "same-origin", `${f.url} sin credentials: "same-origin"`);
+            assert.ok(!JSON.stringify((f.opts && f.opts.headers) || {}).includes("x-historico-token"), `${f.url} manda la llave del servidor desde el navegador`);
+          }
+          const iSes = dueno.urls().indexOf("/api/admin?op=sesion");
+          const iPrimeraApp = dueno.urls().findIndex((u) => /op=(resumen|rup|experiencia|consorcio|seguimiento|listar|pulso)(&|$)/.test(u));
+          assert.ok(iSes >= 0 && iSes < iPrimeraApp && visitante.urls().includes("/api/admin?op=sesion"),
+            `el arranque pregunta al servidor si hay sesión ANTES de pedir nada de la aplicación: ${dueno.urls().slice(0, 4).join(" · ")}`);
+          assert.strictEqual(dueno.el("btn-salir").hidden, false, "con sesión se ofrece «Salir»");
+          assert.strictEqual(visitante.el("btn-salir").hidden, true, "sin sesión no hay «Salir»");
+        }
         /* LA BARRA DEL DUEÑO OFRECE UN SOLO PERFIL PROPIO (11-sep-2026). Traía
            cuatro opciones: helder, genesis, el consorcio fijo «juntos» y el RUP de
            la URL. Hoy trae dos —el dueño y ese RUP— y no es una poda cosmética:
@@ -39715,7 +42434,7 @@ async function main() {
            doble registra lo que el arranque escribe con history.replaceState. */
         assert.ok(inicio.historial.some((u) => u === "/?perfil=rup_a1b2c3d4e5f6"),
           `el arranque con #/inicio tiene que reescribir la URL sin el hash (pathname + search): ${JSON.stringify(inicio.historial)}`);
-        const recargaConSesion = await arrancarAppEnNode({ search: "?perfil=rup_a1b2c3d4e5f6", hash: "#/inicio", sesion: { "detecta-acceso": "1" } });
+        const recargaConSesion = await arrancarAppEnNode({ search: "?perfil=rup_a1b2c3d4e5f6", hash: "#/inicio", dueno: true });
         assert.ok(recargaConSesion.historial.some((u) => u === "/?perfil=rup_a1b2c3d4e5f6"),
           "también con la sesión puesta se consume: la recarga siguiente ya decide por sesión y abre la aplicación (el arranque del dueño, arriba)");
 
@@ -39740,7 +42459,7 @@ async function main() {
            deja de pintar `data-fl-quitar`, o le cambia el nombre, `closest` devuelve
            null, el manejador no hace nada y la aserción cae. */
         {
-          const app = await arrancarAppEnNode({ search: "?perfil=rup_a1b2c3d4e5f6&dep=73&q=placa", hash: "#/licitaciones", sesion: { "detecta-acceso": "1" } });
+          const app = await arrancarAppEnNode({ search: "?perfil=rup_a1b2c3d4e5f6&dep=73&q=placa", hash: "#/licitaciones", dueno: true });
           const listar = () => app.urls().filter((u) => u.includes("op=listar"));
           const ultima = () => listar()[listar().length - 1] || "";
           const fichas = app.el("fl-fichas"), caja = app.el("fl-q");
@@ -40368,9 +43087,9 @@ async function main() {
         assert.ok(/fetch\(`\/api\/inteligencia\?\$\{qs\}`/.test(js),
           "el frontend tiene que llamar a la canónica: si el rewrite fallara, el PAA debe seguir vivo");
         assert.ok(!/\/api\/paa\?|fetch\(["'`]\/api\/paa/.test(js), "el frontend no puede depender del alias");
-        // el token va por CABECERA, jamás en la URL (regla del token integrado)
-        assert.ok(/vista: "paa"[\s\S]{0,600}x-historico-token/.test(js),
-          "el token del PAA tiene que viajar por cabecera");
+        // la credencial es la sesión (la cookie), jamás un token en la URL (17-oct-2026)
+        assert.ok(/fetch\(`\/api\/inteligencia\?\$\{qs\}`, conSesion\(\)\)/.test(js),
+          "el PAA tiene que pedirse con la sesión del dueño (conSesion)");
         assert.ok(!/vista=paa[^`'"]*token=/.test(js), "el token no puede viajar en la URL");
         /* Ni un `|| 0` sobre la cuantía estimada: convertiría «el PAA no publicó
            el valor» en «$0», que es la confusión que este proyecto ya pagó tres
@@ -40484,7 +43203,9 @@ async function main() {
         await redis.set(CLAVES.meta, JSON.stringify({ ...metaFull, last_full: new Date(AHORA).toISOString(), last_sync: new Date(AHORA).toISOString() }));
         // SECOP actualiza el proceso (adenda) → el delta lo vuelve a leer
         consultas.length = 0;
-        AHORA += 10 * 60e3;
+        /* la segunda visita llega pasado FRESCO_MS (16-oct-2026: ya no son 5 min sino 6 h): antes
+           bastaban 10 min para que el modo auto hiciera un delta, y es el delta lo que se prueba aquí */
+        AHORA += sync.FRESCO_MS + 10 * 60e3;
         socrata.setDataset([...datasetAntes, { ...pDic, ":id": "row-cambio-ano-2", ":updated_at": `${ANO_SIG}-01-05T15:05:00.000Z` }]);
         const r2 = await invocar(sync, "/api/sync?modo=auto&chain=0");
         assert.strictEqual(r2.cuerpo.ok, true, `el delta de enero falló: ${JSON.stringify(r2.cuerpo).slice(0, 200)}`);
@@ -41313,8 +44034,8 @@ async function main() {
         const iApi = appFallo.indexOf("  async function api(ruta, opciones = {}) {"), fApi = appFallo.indexOf("\n  }", iApi) + 4;
         assert.ok(iApi > 0, "app.js sin api()");
         const respuestaDe = (status, cuerpo) => async () => ({ ok: status < 400, status, headers: { get: () => "application/json" }, json: async () => cuerpo, text: async () => JSON.stringify(cuerpo) });
-        const armarApi = (fetchFalso) => new Function("fetch", "leerToken", "fraseDeFallo", "leerJson", "msg401", "errorDelServidor",
-          `${appFallo.slice(iApi, fApi)}; return api;`)(fetchFalso, () => "t", Gf.fraseDeFallo, leerJsonFn, () => "401", Gf.errorDelServidor);
+        const armarApi = (fetchFalso) => new Function("fetch", "conSesion", "fraseDeFallo", "leerJson", "msg401", "errorDelServidor",
+          `${appFallo.slice(iApi, fApi)}; return api;`)(fetchFalso, (o) => ({ ...(o || {}), credentials: "same-origin" }), Gf.fraseDeFallo, leerJsonFn, () => "401", Gf.errorDelServidor);
         const mensajeDe = async (fn) => { try { await fn("/api/x", { method: "POST", body: {} }); return null; } catch (e) { return e.message; } };
         const c409 = { ok: false, error: "No se pudo guardar el proceso porque otra acción estaba en curso sobre los mismos datos.", que_hacer: "Espere unos segundos y vuelva a intentarlo." };
         assert.strictEqual(await mensajeDe(armarApi(respuestaDe(409, c409))), `${c409.error} ${c409.que_hacer}`, "el 409 llega a la pantalla CON su «qué hacer»");
@@ -42246,7 +44967,7 @@ async function main() {
            interés de este mismo commit solo llega al corpus ya guardado si el
            sello viejo no veta. Desplegar no puede exigir reconstruir.
            La prueba fija ahora el hecho nuevo, no el remiendo viejo. */
-        const sellado = { ...cerrado, id_del_proceso: "SELLADO-1", proceso_abierto: false, estado_del_procedimiento: "Publicado", fecha_cierre: "2027-01-01T00:00:00.000" };
+        const sellado = { ...cerrado, id_del_proceso: "SELLADO-1", proceso_abierto: false, estado_del_procedimiento: "Publicado", fecha_cierre: new Date(Date.now() + 60 * 864e5).toISOString().slice(0, 10) + "T00:00:00.000" };   // relativa al reloj (16-oct-2026): la fija del 1-ene-2027 lo cerraba desde esa fecha
         const rs = R.rastrear("SELLADO-1", { filas: [sellado], evaluar: evaluarReal });
         assert.strictEqual(rs.resultados[0].donde, "servido",
           `un sello viejo con el estado vigente abierto ya no esconde el proceso: se sirve — ${rs.resultados[0].explicacion}`);
@@ -43514,6 +46235,16 @@ async function main() {
         }
         assert.ok(!/<script/.test(html), "todo string del modelo pasa por esc()");
         assert.ok(!/pág\. null|undefined|\bK\b|anticipo_o_pago_anticipado/.test(html), "sin «pág. null», «undefined», «K» ni valores crudos del enum");
+        // el texto del documento base no tiene número de versión: se dice el archivo (18-oct-2026)
+        const delBase = pintarDictamen({ ...fixture, version_texto: null, documento_texto: { tipo: "Documento base del pliego tipo", nombre: "DOCUMENTO <b>BASE</b>.pdf", id_documento: "1" } }, { MARCA, esc: escF });
+        assert.ok(delBase.includes("Sobre «DOCUMENTO &lt;b&gt;BASE&lt;/b&gt;.pdf», documento base del pliego tipo (5 páginas)") && !/versión null|versión undefined|<b>BASE/.test(delBase) && delBase.includes("· 5 páginas del pliego, «DOCUMENTO &lt;b&gt;BASE&lt;/b&gt;.pdf»"),
+          `sin versión, el archivo de donde salió el texto, escapado (MUTACIÓN: «versión null»): ${delBase.match(/Sobre[^.]*\./) || ""}`);
+        const conNuevo = pintarDictamen({ ...fixture, version_texto: null, documento_texto: { tipo: "Documento base del pliego tipo", nombre: "CCE-EICP-GI-01 Documento base V4.pdf" }, mas_nuevo_sin_leer: { nombre: "DOCUMENTO BASE .pdf", fecha_carga: "2026-02-12", motivo: "pesa más de 20 MB: la aplicación no lo lee sola; ábralo en SECOP II" } }, { MARCA, esc: escF });
+        assert.ok(/Ojo: SECOP II publicó después «DOCUMENTO BASE \.pdf» \(12\/02\/2026\) y la aplicación no lo pudo leer \(pesa más de 20 MB[^<]*\)\. Este dictamen es sobre una versión anterior: revise ese documento en SECOP II antes de decidir\. Si el PDF trae texto \(no es un escaneo\), cárguelo en Precios con este proceso abierto/.test(conNuevo) && !/Ojo: SECOP II publicó después/.test(delBase),
+          `el aviso de la versión más nueva sin leer, solo cuando la hay (MUTACIÓN: sin pintarlo): ${(conNuevo.match(/Ojo:[^<]*/) || [""])[0]}`);
+        const conPendiente = pintarDictamen({ ...fixture, version_texto: null, documento_texto: { tipo: "Documento base del pliego tipo", nombre: "CCE-EICP-GI-01 Documento base V4.pdf" }, mas_nuevo_sin_leer: { nombre: "DOCUMENTO BASE DEFINITIVO.pdf", fecha_carga: "2026-02-12", motivo: null, pendiente: true } }, { MARCA, esc: escF });
+        assert.ok(/Ojo: SECOP II publicó después «DOCUMENTO BASE DEFINITIVO\.pdf» \(12\/02\/2026\) y la aplicación todavía no lo ha leído\. Este dictamen es sobre una versión anterior/.test(conPendiente) && !/no lo pudo leer|cárguelo en Precios/.test(conPendiente),
+          `uno por leer no se da por ilegible ni se manda a cargar a mano (MUTACIÓN: sin la rama de pendiente): ${(conPendiente.match(/Ojo:[^<]*/) || [""])[0]}`);
         /* la lectura completa (26-sep-2026): el botón solo con la rutina configurada; con un
            pedido en marcha, «Ver si ya está lista» y la hora; un dictamen de sesión se vuelve a
            pedir a la sesión, nunca a las reglas (que no se verían mientras haya uno de sesión) */
@@ -43738,6 +46469,38 @@ async function main() {
           respuestaFire = () => ({ ok: true, status: 200, json: async () => ({}) });
           const sV = await pedir();
           assert.ok(sV.cuerpo.repetida !== true && disparos.length === antesV + 1 && sV.cuerpo.pedido_sesion.version_texto === sV.cuerpo.version_texto, `una versión nueva del pliego se puede pedir aunque la marca de la anterior siga viva: ${JSON.stringify(sV.cuerpo.pedido_sesion)}`);
+          /* ═══ EL TOPE DE LECTURAS SIN RESPUESTA (17-oct-2026, el hermano del de Precios) ═══
+             Vencida la marca de media hora, cada clic despertaba otra corrida del día aunque las
+             anteriores no hubieran escrito ningún dictamen. Contra el árbol anterior: con tres
+             pedidos sin respuesta se volvía a despertar la rutina. */
+          {
+            const claveSR = Dc.claveLecturasSinRespuesta(ID_RG, "genesis");
+            assert.ok(Number.isInteger(Dc.LECTURAS_TOPE_SIN_RESPUESTA) && Dc.LECTURAS_TOPE_SIN_RESPUESTA >= 2, "el tope existe y deja al menos un reintento");
+            const topeD = Dc.LECTURAS_TOPE_SIN_RESPUESTA;
+            // la cuenta subió con los disparos que arrancaron o pudieron arrancar (s4 indeterminado y sV), no con el que falló (s3)
+            assert.strictEqual(await redis.get(claveSR), "2", "s4 (indeterminado) y sV (arrancó) cuentan; s3 (falló seguro) no, y el dictamen de ps3 la había borrado");
+            // (1) con la cuenta en el tope y la marca ya vencida: no se despierta otra, se dice, y no queda marca
+            await redis.set(claveSR, String(topeD)); await redis.del(Dc.clavePedido(ID_RG, "genesis"));
+            const antesT = disparos.length;
+            const sT = await pedir({ refrescar: true });
+            assert.ok(sT.status === 200 && sT.cuerpo.tope_alcanzado === true && disparos.length === antesT, `con ${topeD} lecturas sin respuesta no se gasta otra: ${disparos.length - antesT} disparos`);
+            assert.ok(new RegExp(`${topeD} veces`).test(sT.cuerpo.error) && /«\/dictamen»/.test(sT.cuerpo.que_hacer) && /no lo arregla/.test(sT.cuerpo.que_hacer), `y dice qué hacer: ${sT.cuerpo.error} ${sT.cuerpo.que_hacer}`);
+            pasaCercas(sT.cuerpo.error, "lectura tope"); pasaCercas(sT.cuerpo.que_hacer, "lectura tope · qué hacer");
+            assert.strictEqual(await redis.get(Dc.clavePedido(ID_RG, "genesis")), null, "el tope no deja una marca de un disparo que no hubo");
+            // (2) una por debajo del tope: se despierta y la cuenta llega al tope
+            await redis.set(claveSR, String(topeD - 1));
+            const sU = await pedir({ refrescar: true });
+            assert.ok(sU.cuerpo.tope_alcanzado !== true && disparos.length === antesT + 1 && (await redis.get(claveSR)) === String(topeD), "la última permitida se despierta y suma");
+            // (3) el dictamen de la sesión llega: la cuenta se borra y se puede volver a pedir
+            const psT = await invocarPost(routerPliego, URL_DC, { id_proceso: ID_RG, perfil: "genesis", motor: "sesion", dictamen: crudoG }, CAB_TOKEN);
+            assert.strictEqual(psT.status, 200);
+            assert.strictEqual(await redis.get(claveSR), null, "el dictamen que llega borra la cuenta: la rutina funciona");
+            // (4) una cuenta ilegible no frena: se pide, que es el lado seguro
+            await redis.set(claveSR, "basura"); await redis.del(Dc.clavePedido(ID_RG, "genesis"));
+            const sB = await pedir({ refrescar: true });
+            assert.ok(sB.cuerpo.tope_alcanzado !== true && disparos.length === antesT + 2, "una cuenta ilegible no impide pedir");
+            await redis.del(claveSR, Dc.clavePedido(ID_RG, "genesis"));
+          }
           assert.ok(!/\.\.$/.test(Dc.mensaje("LECTURA_YA_PEDIDA", { hora: "10:31" })), "sin punto doble");
           const antesS5 = disparos.length;
           const s5 = await invocarPost(routerPliego, URL_DC, { id_proceso: ID_RG, perfil: "genesis", pedir_sesion: "si" }, CAB_TOKEN);
@@ -43746,7 +46509,7 @@ async function main() {
           global.fetch = fetchAntes;
           if (envU === undefined) delete process.env.RUTINA_DICTAMEN_URL; else process.env.RUTINA_DICTAMEN_URL = envU;
           if (envT === undefined) delete process.env.RUTINA_DICTAMEN_TOKEN; else process.env.RUTINA_DICTAMEN_TOKEN = envT;
-          await redis.del(Dc.clavePedido(ID_RG, "genesis"));
+          await redis.del(Dc.clavePedido(ID_RG, "genesis"), Dc.claveLecturasSinRespuesta(ID_RG, "genesis"));
         }
       }
       // (4) la skill de Claude Code y el documento
@@ -43757,7 +46520,8 @@ async function main() {
       const appR = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
       const pliegoR = fs.readFileSync(path.join(__dirname, "..", "public", "pliego.js"), "utf8");
       assert.ok(/addEventListener\("toggle"/.test(appR) && /consultarDictamenGuardado\(det\.getAttribute\("data-seg-guia"\)\)/.test(appR), "al abrir la guía se consulta el dictamen solo");
-      assert.ok(/data-seg-abrir-lector=/.test(appR) && /abrirEditorConProceso\(qApu\(\{ nombre_del_procedimiento: pr\.nombre/.test(appR), "«Cargar el pliego» abre Precios con la MISMA cadena que la tarjeta");
+      assert.ok(/const apuBtn = e\.target\.closest\("\.btn-apu"\);\s*if \(apuBtn\) \{\s*abrirPreciosDesdeTarjeta\(apuBtn\);/.test(appR), "la tarjeta de Licitaciones abre Precios por abrirPreciosDesdeTarjeta, que trae el techo del pliego de un proceso guardado (17-oct-2026)");
+      assert.ok(/data-seg-abrir-lector=/.test(appR) && /abrirEditorConProceso\(qApuDelExpediente\(pr, id, g\)\)/.test(appR) && /function qApuDelExpediente\(pr, id, g\) \{\s*return qApu\(\{ nombre_del_procedimiento: pr\.nombre/.test(appR), "«Cargar el pliego» abre Precios con la MISMA cadena que la tarjeta (qApu), más el techo de su guía (17-oct-2026)");
       assert.ok(/r\.origen_legible/.test(pliegoR), "la pantalla enseña de qué motor viene el dictamen");
       global.fetch = fetchOrig;
       await limpiar();
@@ -44064,16 +46828,21 @@ async function main() {
       assert.ok(conIlegible.versiones === 4 && conIlegible.inicial === "2026-10-20T00:00:00.000", `una historia ilegible no suma nada, ni siquiera sus cierres: ${JSON.stringify(conIlegible)}`);
       const planas = await A.leerChunksDedup(redis, await redis.scan(CL.patronChunksMes("2026-09")));
       assert.ok(planas.every((f) => !("_historia" in f) && !("_traza" in f)), "sin señales tampoco sale la historia (MUTACIÓN: quitarla solo con señales)");
+      /* Cierres RELATIVOS al reloj (16-oct-2026): con los fijos (20, 27 y 30-oct, 5-nov) la compactación,
+         que con razón solo guarda lo abierto, descartaba P1 desde el 31-oct y el bloque caía con el
+         calendario. Se mantienen sus distancias: 20 → 27 → 30 y el delta al 5, ahora a +30, +37, +40, +46 días. */
+      const cRel = (dias) => new Date(Date.now() + dias * 864e5).toISOString().slice(0, 10) + "T00:00:00.000";
+      const c20 = cRel(30), c27 = cRel(37), c30 = cRel(40), c36 = cRel(46);
       /* (2) LA COMPACTACIÓN DEL MES: tres versiones repartidas, el cierre movido 20 → 27 → 30 oct y el
          precio cambiado; las señales son las mismas antes y después, y compactar dos veces no cambia nada */
       await limpiar();
       const fc = (k, u, cierre, precio) => ({ _k: k, ":updated_at": u, fecha_de_publicacion_del: "2026-09-02T00:00:00.000", fecha_cierre: cierre,
         estado_del_procedimiento: "Publicado", fase: "Presentación de oferta", adjudicado: "No", precio_base: precio, nombre_del_procedimiento: `OBRA ${k}`, modalidad_de_contratacion: "Licitación pública" });
-      const vP = [fc("P1", "2026-09-03T00:00:00", "2026-10-20T00:00:00.000", 100), fc("P1", "2026-09-10T00:00:00", "2026-10-27T00:00:00.000", 120), fc("P1", "2026-09-15T00:00:00", "2026-10-30T00:00:00.000", 120)];
-      for (let i = 0; i < 27; i++) await redis.set(CL.chunk("2026-09", i), A.comprimir(i < 3 ? [vP[i]] : [fc(`R${i}`, "2026-09-01T00:00:00", "2026-10-30T00:00:00.000", 1)]));
+      const vP = [fc("P1", "2026-09-03T00:00:00", c20, 100), fc("P1", "2026-09-10T00:00:00", c27, 120), fc("P1", "2026-09-15T00:00:00", c30, 120)];
+      for (let i = 0; i < 27; i++) await redis.set(CL.chunk("2026-09", i), A.comprimir(i < 3 ? [vP[i]] : [fc(`R${i}`, "2026-09-01T00:00:00", c30, 1)]));
       await A.escribirJSON(redis, CL.manifest("2026-09"), { base: 0, sig: 27, count: 27 });
       const antesC = await senal("2026-09", "P1");
-      assert.deepStrictEqual(antesC, { versiones: 3, prorrogado: true, inicial: "2026-10-20T00:00:00.000", cambios: "fecha_cierre,precio_base", historia: false }, "montaje");
+      assert.deepStrictEqual(antesC, { versiones: 3, prorrogado: true, inicial: c20, cambios: "fecha_cierre,precio_base", historia: false }, "montaje");
       await sync.compactarMes(redis, "2026-09");
       assert.ok((await redis.scan(CL.patronChunksMes("2026-09"))).length < 27, "montaje: el mes se compactó");
       assert.deepStrictEqual(await senal("2026-09", "P1"), antesC, "la compactación del mes conserva prórroga, versiones, cierre inicial y adendas (MUTACIÓN: sin historia)");
@@ -44082,13 +46851,13 @@ async function main() {
       assert.strictEqual((await senal("2026-09", "R5")).versiones, 1, "un proceso de una sola versión sigue con una");
       // una versión nueva del delta, después: se suma a la historia
       const man = await A.leerJSON(redis, CL.manifest("2026-09"));
-      await redis.set(CL.chunk("2026-09", man.sig), A.comprimir([fc("P1", "2026-09-20T00:00:00", "2026-11-05T00:00:00.000", 120)]));
+      await redis.set(CL.chunk("2026-09", man.sig), A.comprimir([fc("P1", "2026-09-20T00:00:00", c36, 120)]));
       const trasDelta = await senal("2026-09", "P1");
-      assert.ok(trasDelta.versiones === 4 && trasDelta.prorrogado === true && trasDelta.inicial === "2026-10-20T00:00:00.000", `lo que el delta ve después se suma: ${JSON.stringify(trasDelta)}`);
+      assert.ok(trasDelta.versiones === 4 && trasDelta.prorrogado === true && trasDelta.inicial === c20, `lo que el delta ve después se suma: ${JSON.stringify(trasDelta)}`);
       // el delta vuelve a escribir esa MISMA versión (mismo sello) y el mes se compacta dos veces: sigue en 4 (revisión: H2)
       const man2 = await A.leerJSON(redis, CL.manifest("2026-09"));
       await A.escribirJSON(redis, CL.manifest("2026-09"), { ...man2, sig: man2.sig + 1 });
-      await redis.set(CL.chunk("2026-09", man2.sig + 1), A.comprimir([fc("P1", "2026-09-20T00:00:00", "2026-11-05T00:00:00.000", 120)]));
+      await redis.set(CL.chunk("2026-09", man2.sig + 1), A.comprimir([fc("P1", "2026-09-20T00:00:00", c36, 120)]));
       await A.escribirJSON(redis, CL.manifest("2026-09"), { ...man2, sig: man2.sig + 2 });
       await sync.compactarMes(redis, "2026-09");
       await sync.compactarMes(redis, "2026-09");
@@ -45207,7 +47976,7 @@ async function main() {
           `.cas-buscar tiene que maquetar la fila entera, no solo heredar el fondo: ${regla}`);
       }
 
-      /* el módulo nuevo no puede llevar el token integrado ni pedir nada por su cuenta */
+      /* el módulo nuevo no puede llevar ninguna llave ni pedir nada por su cuenta */
       const casSrc = fs.readFileSync(path.join(__dirname, "..", "public", "casillero.js"), "utf8");
       assert.ok(!/const TOKEN\s*=/.test(casSrc), "casillero.js no lleva el token: no habla con el servidor");
       assert.ok(!/\bfetch\s*\(/.test(casSrc), "casillero.js es capa de pintado: quien pide al servidor es app.js");
@@ -46833,9 +49602,10 @@ async function main() {
       assert.strictEqual(s39c.cuerpo.historico_hace_dias, null);
       // op=salud es PÚBLICA y su forma está cerrada: este arreglo no le añade ni le quita campos
       // (los dos del índice de competencia llegaron el 23-sep-2026, `respaldo` el 27-sep-2026, con su propia cerradura, y
-      // `escritura` el 30-sep-2026: null salvo con «&escritura=1», bloque «unidad base de datos llena»)
+      // `escritura` el 30-sep-2026: null salvo con «&escritura=1», bloque «unidad base de datos llena»;
+      // `autollamada` el 18-oct-2026, bloque «autollamada del servidor»)
       assert.deepStrictEqual(Object.keys(s39c.cuerpo).sort(),
-        ["aviso_por_correo", "candado_segundos", "edad_horas", "edad_maxima_horas", "escritura", "historico_hace_dias",
+        ["autollamada", "aviso_por_correo", "candado_segundos", "edad_horas", "edad_maxima_horas", "escritura", "historico_hace_dias",
           "indice_baja", "indice_competencia", "latido", "lectura_indice_baja", "lectura_indice_competencia",
           "limite_de_registros_por_conexion", "medicion_listado", "motivo", "ok", "respaldo", "sincronizacion_protegida",
           "sincronizando", "ultima_sincronizacion", "ultimo_error"]);
@@ -46863,6 +49633,27 @@ async function main() {
         "tras «al día» no se puede reconstruir el índice de baja: no hubo NADA que hacer");
       medido39.alDia = alDia39.comandos;
       assert.ok(alDia39.comandos <= 30, `«al día» gastó ${alDia39.comandos} comandos de Redis: el índice de baja volvió a correr`);
+
+      /* LA PULSACIÓN NO ESPERA A FRESCO_MS (16-oct-2026). Con el dato de hace 10 min, el modo auto de
+         los crons y de la lista no relee SECOP (FRESCO_MS ya no es de 5 min); quien pulsa «Actualizar
+         datos» manda `forzar=1` y sí actualiza. Sin esto, el botón respondería «al día» y no traería
+         lo publicado en esas horas. Y el navegador la manda: la cerradura mira el bucle de app.js. */
+      await corpusAlDia39(new Date(Date.now() - 10 * 60e3).toISOString());
+      const sinForzar39 = await invocarSync39("/api/procesos?op=sync&modo=auto&chain=0&presupuesto=20000");
+      assert.strictEqual(sinForzar39.cuerpo.alDia, true, `con el dato de 10 min el modo auto sin pulsación no relee SECOP: ${JSON.stringify(sinForzar39.cuerpo).slice(0, 200)}`);
+      await corpusAlDia39(new Date(Date.now() - 10 * 60e3).toISOString());
+      const forzado39 = await invocarSync39("/api/procesos?op=sync&modo=auto&chain=0&presupuesto=20000&forzar=1");
+      assert.strictEqual(forzado39.status, 200, JSON.stringify(forzado39.cuerpo).slice(0, 200));
+      assert.notStrictEqual(forzado39.cuerpo.alDia, true, `con forzar=1 la pulsación actualiza aunque el dato sea de hace 10 min: ${JSON.stringify(forzado39.cuerpo).slice(0, 200)}`);
+      assert.ok(forzado39.cuerpo.delta, `con forzar=1 corre un delta: ${JSON.stringify(forzado39.cuerpo).slice(0, 200)}`);
+      {
+        const appF39 = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+        const i = appF39.indexOf("async function llamarConReintentos(");
+        const cuerpoF = appF39.slice(i, appF39.indexOf("\n  }\n", i));
+        assert.ok(i > 0 && /op=sync&modo=\$\{modo\}[^`]*&forzar=1/.test(cuerpoF), "el bucle de «Actualizar datos» manda forzar=1: sin él la pulsación respondería «al día» con el dato de menos de 6 h");
+        const fueraDelBucle = appF39.slice(0, i) + appF39.slice(i + cuerpoF.length);
+        assert.ok(!/op=sync[^"`']*forzar=1/.test(fueraDelBucle), "solo la pulsación fuerza: el refresco de la lista y la primera visita siguen respetando FRESCO_MS");
+      }
 
       await corpusAlDia39(new Date(Date.now() - 3600e3).toISOString());
       const delta39 = await invocarSync39("/api/procesos?op=sync&modo=delta&chain=0&presupuesto=20000");
@@ -46906,7 +49697,8 @@ async function main() {
         "un `last_sync` ILEGIBLE es «no sé», no «al día»: si no, el corpus se congela sin que nadie lo vea");
       assert.strictEqual(sync.decidirAuto({ meta: { ...base39, last_sync: null }, progreso: null, ahora: t39 }), "delta", "`null` es ausencia, no una fecha");
       assert.strictEqual(sync.decidirAuto({ meta: { ...base39, last_sync: new Date(t39 - 1000).toISOString() }, progreso: null, ahora: t39 }), "al_dia");
-      assert.strictEqual(sync.decidirAuto({ meta: { ...base39, last_sync: new Date(t39 - 10 * 60e3).toISOString() }, progreso: null, ahora: t39 }), "delta");
+      assert.strictEqual(sync.decidirAuto({ meta: { ...base39, last_sync: new Date(t39 - sync.FRESCO_MS - 10 * 60e3).toISOString() }, progreso: null, ahora: t39 }), "delta");
+      assert.strictEqual(sync.decidirAuto({ meta: { ...base39, last_sync: new Date(t39 - 10 * 60e3).toISOString() }, progreso: null, ahora: t39 }), "al_dia", "con el dato de 10 min el modo auto no relee SECOP (16-oct-2026: la causa de la pausa por CPU)");
       /* EL CENSO DE LA FECHA ILEGIBLE, no solo el caso reproducido: si la guarda valía para
          `last_sync`, hay que mirar a su gemela `last_full` — y las dos a la vez. */
       assert.strictEqual(sync.decidirAuto({ meta: { ano: 2026, last_full: "ayer", last_sync: new Date(t39 - 1000).toISOString() }, progreso: null, ahora: t39 }), "full",
@@ -48573,6 +51365,31 @@ async function main() {
       const b6 = await invocar(indiceBajaApi, "/api/procesos?op=baja&reconstruir=true", CAB_TOKEN);
       romperR2 = null;
       okR2(b6.status === 502 && !JSON.stringify(b6.cuerpo).includes(tokR2), `el 502 de la reconstrucción tampoco lleva el token: ${b6.status} ${JSON.stringify(b6.cuerpo).slice(0, 200)}`);
+      /* NINGUNA RESPUESTA DE ERROR LLEVA UNA LLAVE (18-oct-2026): el tachado vive en los routers
+         (lib/error_interno.conLlavesTachadas), no en cada handler. La portada devolvía
+         `Redis: ${e.message}` crudo; por el router real ya sale tachada. Contra el árbol anterior,
+         el token aparece en el cuerpo. */
+      romperR2 = () => `ERR todo roto (auth ${tokR2})`;
+      const portadaErrR2 = await invocar(require("../api/procesos.js"), "/api/procesos?op=portada");
+      romperR2 = null;
+      okR2(portadaErrR2.status >= 400 && !JSON.stringify(portadaErrR2.cuerpo).includes(tokR2), `el error de la portada, por el router, no lleva el token: ${portadaErrR2.status} ${JSON.stringify(portadaErrR2.cuerpo).slice(0, 200)}`);
+      okR2(/clave tachada/.test(JSON.stringify(portadaErrR2.cuerpo)), `y dice que lo tachó: ${JSON.stringify(portadaErrR2.cuerpo).slice(0, 200)}`);
+      // los seis routers pasan por el mismo tachado (censo de api/, no lista)
+      const routersR2 = fs.readdirSync(path.join(__dirname, "..", "api")).filter((f) => f.endsWith(".js"));
+      for (const f of routersR2) {
+        okR2(/conLlavesTachadas\(res\)/.test(fs.readFileSync(path.join(__dirname, "..", "api", f), "utf8")), `api/${f} despacha con conLlavesTachadas(res)`);
+      }
+      // una respuesta correcta (2xx) no se toca: el tachado es solo para errores
+      {
+        const { conLlavesTachadas } = require("../lib/error_interno.js");
+        let visto = null;
+        const resOk = conLlavesTachadas({ status(n) { this.s = n; return this; }, json(o) { visto = o; } });
+        resOk.status(200).json({ dato: `x ${tokR2} y` });
+        okR2(visto && visto.dato === `x ${tokR2} y`, "un 200 sale tal cual");
+        const resMal = conLlavesTachadas({ status(n) { this.s = n; return this; }, json(o) { visto = o; } });
+        resMal.status(500).json({ error: "a", detalle: [{ m: `b ${tokR2}` }] });
+        okR2(!JSON.stringify(visto).includes(tokR2) && /clave tachada/.test(visto.detalle[0].m), "un 500 se tacha también en lo anidado");
+      }
 
       /* ── (4) LA FRASE DE LA BAJA NO LEÍDA ──────────────────────────────────── */
       const mR2 = IBR2.SIN_LECTURA_BAJA.mensaje;
@@ -50838,13 +53655,13 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
         body: nodo(null), documentElement: nodo(null), readyState: "complete", visibilityState: "visible" };
       ctx.window = ctx; ctx.self = ctx; ctx.globalThis = ctx;
       vm.createContext(ctx);
-      const exponer = ["ofertaParaRevision", "filasDesdePliego", "reiniciarEditorParaProceso", "precargarDesdeURL", "revisarOferta", "pintarTabla", "pintarIa", "precargarTrasCatalogo", "totalVisibleDeFila", "abrirEditorConProceso"];
+      const exponer = ["abrirPreciosDesdeTarjeta", "guardados", "qApuDelExpediente", "techoDesdeGuia", "restituirContextoProceso", "leerConfig", "qApu", "ofertaParaRevision", "filasDesdePliego", "reiniciarEditorParaProceso", "precargarDesdeURL", "revisarOferta", "pintarTabla", "pintarIa", "precargarTrasCatalogo", "totalVisibleDeFila", "abrirEditorConProceso"];
       for (const f of orden) {
         let src = fs.readFileSync(pub(f), "utf8");
         if (f === "app.js") {
           const i = src.lastIndexOf("})();"); assert.ok(i > 0, "app.js sin el cierre de su IIFE");
           src = `${src.slice(0, i)}window.__cerraduraRO = { ${exponer.map((n) => `${n}: typeof ${n} === "undefined" ? undefined : ${n}`).join(", ")},
-            leer: () => ({ filas, ultimoCalculo, modalidad: modalidadProceso }),
+            leer: () => ({ filas, ultimoCalculo, modalidad: modalidadProceso, cdp: cuantiaDelPliego }),
             fijar: (o) => { if ("filas" in o) filas = o.filas; if ("ultimoCalculo" in o) ultimoCalculo = o.ultimoCalculo; if ("importacion" in o) importacion = o.importacion; if ("modalidad" in o) modalidadProceso = o.modalidad; } };\n${src.slice(i)}`;
         }
         if (f === "pliego.js") {
@@ -50971,6 +53788,15 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
       F.fijar({ filas: [{ descripcion: "Excavación", unidad: "m3", cantidad: null }] });
       F.pintarIa({ estado: "listo", solicitud: {}, propuesta: { resumen: {}, items: [{ fila: 0, descripcion: "Excavación", unidad: "m3", costo_directo_unitario: 1000 }] } });
       okRO(!/m3 · 0\b/.test(textoRO(porId.get("ia-propuesta").innerHTML)), `(c) la propuesta de precios no pinta la cantidad sin dato como 0: «${textoRO(porId.get("ia-propuesta").innerHTML).slice(0, 120)}»`);
+      /* c6b · EL TOPE DE DESPERTARES SIN SEÑAL en la pantalla (17-oct-2026): agotado, ya no se le
+         pide al usuario «Vuelva a pulsar Buscar» (gastaba otro intento del día sin arreglar nada) */
+      F.pintarIa({ estado: "sin_atender", edad_min: 45, tope_sin_senal: 3, solicitud: { despertadas_sin_senal: 3, despertada: { ok: true } } });
+      const msgTope = String(porId.get("ia-estado").textContent || "");
+      okRO(/3 veces/.test(msgTope) && /no la arregla/.test(msgTope) && /chat/.test(msgTope) && !/Vuelva a pulsar Buscar/.test(msgTope), `(c) agotados los despertares, la pantalla dice el hecho y lleva al chat: «${msgTope.slice(0, 160)}»`);
+      F.pintarIa({ estado: "en_cola", tope_alcanzado: true, tope_sin_senal: 3, solicitud: { despertadas_sin_senal: 3, despertada: { ok: true } } });
+      okRO(/3 veces/.test(String(porId.get("ia-estado").textContent || "")), "(c) el «Buscar» que el servidor ya no despertó también lo dice");
+      F.pintarIa({ estado: "sin_atender", edad_min: 45, tope_sin_senal: 3, solicitud: { despertadas_sin_senal: 2, despertada: { ok: true } } });
+      okRO(/Vuelva a pulsar Buscar/.test(String(porId.get("ia-estado").textContent || "")), "(c) por debajo del tope, volver a pulsar sigue siendo la indicación");
       // c7 · CENSO de public/*.js: ningún valor por defecto convierte una cantidad que falta en 0
       const censoC = [];
       for (const f of fs.readdirSync(path.join(__dirname, "..", "public")).filter((x) => x.endsWith(".js"))) {
@@ -51179,6 +54005,35 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
         okRO(gi.status === 200 && pr.cuantia === 40000000 && pr.plazo_meses === null && pr.unspsc === "72141000" && pr.tipo === "obra" && pr.entidad_nit === "800113389-7", `(i) el servidor guarda y devuelve el contexto del proceso (plazo 0 = sin dato): ${JSON.stringify([gi.status, pr.cuantia, pr.plazo_meses, pr.unspsc, pr.tipo, pr.entidad_nit])}`);
       }
 
+      /* (j) LA FUENTE DEL CORTE SE PINTA BAJO LA ALERTA (18-oct-2026): se EJECUTA revisarOferta con
+             la respuesta real de validarFormulario1; una regex sobre el código fuente no cazaba una
+             condición que nunca se cumple (revisión adversaria). */
+      {
+        const fetchJ = ctx.fetch;
+        let respuestaJ = null;
+        ctx.fetch = (url, cfg) => {
+          if (/op=formulario1/.test(url)) return Promise.resolve(respuestaRO(200, respuestaJ ? respuestaJ(JSON.parse(cfg.body)) : { ok: true, ...F1.validarFormulario1(JSON.parse(cfg.body)) }));
+          return fetchJ(url, cfg);
+        };
+        ctx.__pliegoUltimo = null; porId.get("rev-tope-aiu").value = ""; porId.get("id-proceso").value = "CO1.J"; porId.get("cuantia").value = "100000000";
+        F.fijar({ filas: filasA.map((x) => ({ ...x })), ultimoCalculo: calculoDeRO(filasA.length), modalidad: "Mínima cuantía" });
+        await disparar("btn-revisar-oferta", "click", {}); await asentarRO();
+        const sinComentariosJ = (h) => h.replace(/<!--[\s\S]*?-->/g, "");   // lo que se VE, no lo que queda comentado
+        const hj = sinComentariosJ(porId.get("revision-oferta").innerHTML);
+        okRO(/Su precio puede parecer artificialmente bajo/.test(hj) && /data-umbral-fuente>En mínimas cuantías de obra adjudicadas en SECOP II desde 2024 \(datos al 17-oct-2026\), 270 de 3\.720 ofertas ganadoras con datos comparables tuvieron más del 30 % de descuento\.</.test(hj),
+          `(j) la alerta de mínima pinta debajo su fuente medida: ${(hj.match(/data-umbral-fuente>[^<]*/) || ["(no está)"])[0]}`);
+        // con el corte DECLARADO (umbral_fuente null) no se pinta una fuente que no es la suya
+        respuestaJ = (cuerpo) => { const r = F1.validarFormulario1({ ...cuerpo, umbral_temerario_pct: 20 }); return { ok: true, ...r }; };
+        await disparar("btn-revisar-oferta", "click", {}); await asentarRO();
+        okRO(!/data-umbral-fuente/.test(porId.get("revision-oferta").innerHTML), "(j) sin umbral_fuente no hay línea de fuente");
+        // y lo que llega del servidor se ESCAPA
+        respuestaJ = (cuerpo) => { const r = F1.validarFormulario1(cuerpo); return { ok: true, ...r, veredictos: r.veredictos.map((v) => (v.id === "temeraria" ? { ...v, umbral_fuente: "<img src=x onerror=alert(1)>" } : v)) }; };
+        await disparar("btn-revisar-oferta", "click", {}); await asentarRO();
+        const hj3 = sinComentariosJ(porId.get("revision-oferta").innerHTML);
+        okRO(/data-umbral-fuente>&lt;img src=x onerror=alert\(1\)&gt;</.test(hj3) && !/<img src=x/.test(hj3), "(j) la fuente se pinta escapada");
+        ctx.fetch = fetchJ;
+      }
+
       /* (f) UNA LECTURA DEL PLIEGO QUE LLEGA TARDE NO SE PINTA EN OTRO PROCESO (revisión
              adversaria, 28-sep-2026). Leer tarda; mientras tanto se abre otro proceso
              (app.js llama a `limpiar` y cambia el id). Sin sello, la respuesta vieja se
@@ -51298,6 +54153,31 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
         okRO(/descart|no se us/i.test(mensajePL()), `(f) y el OCR (${momento}) lo dice: «${mensajePL()}»`);
       }
       ctx.fetch = fetchF; ctx.setTimeout = setTimeoutRO; cambiarEn = null;
+      /* (g) LO QUE NO ES EL PLIEGO NO SE GUARDA COMO VERSIÓN (18-oct-2026): el nombre del archivo viaja al
+         vigía; si el servidor responde que no es el pliego (el Formulario 1, una adenda…) se dice por qué, no
+         como un fallo, y el dictamen sigue con el del pliego ya guardado */
+      {
+        const desdeG = diferidos.length;
+        const soltarG = async (patron, c) => { const d = diferidos.slice(desdeG).find((x) => patron.test(x.url) && !x.hecho); okRO(!!d, `(g) premisa: hubo una petición ${patron}`); if (d) { d.hecho = true; d.resolver(c); } await asentarRO(); };
+        porId.get("id-proceso").value = "CO1.A"; ctx.__pliegoUltimo = null;
+        porId.get("pliego-archivo").files = [{ name: "FORMULARIO 1 PRESUPUESTO OFICIAL.txt", type: "text/plain", text: async () => textoArchivo }]; porId.get("pliego-url").value = "";
+        porId.get("pl-vigia").innerHTML = ""; porId.get("pl-dictamen").innerHTML = "";
+        disparar("btn-extraer", "click", {}); await asentarRO();
+        await soltarG(/op=extraer-texto/, ITEMS_F);
+        const diffG = diferidos.slice(desdeG).find((x) => /op=diff/.test(x.url));
+        okRO(diffG && diffG.cuerpo && diffG.cuerpo.nombre_archivo === "FORMULARIO 1 PRESUPUESTO OFICIAL.txt", `(g) el nombre del archivo viaja al vigía (MUTACIÓN: sin el nombre): ${JSON.stringify(diffG && diffG.cuerpo)}`.slice(0, 300));
+        await soltarG(/op=diff/, { ok: false, id_proceso: "CO1.A", guardada: false, no_es_el_pliego: true, motivo: "formulario", error: "Por su nombre («<b>F1</b>»), este archivo es el formulario de cantidades (presupuesto oficial), no el pliego: sirve para el precio, pero no se guarda como versión del pliego" });
+        const cronoG = diferidos.slice(desdeG).find((x) => /op=cronograma/.test(x.url));
+        okRO(cronoG && cronoG.cuerpo && cronoG.cuerpo.id_proceso === "CO1.A" && cronoG.cuerpo.texto === undefined, `(g) el cronograma se pide del pliego guardado, sin el texto del archivo rechazado (MUTACIÓN: con el texto, la lista y el .ics dirían fechas distintas): ${JSON.stringify(cronoG && cronoG.cuerpo).slice(0, 160)}`);
+        await soltarG(/op=cronograma/, { ok: true, hitos: [] });
+        const vigiaG = porId.get("pl-vigia").innerHTML;
+        okRO(/es el formulario de cantidades/.test(textoRO(vigiaG)) && !/No se pudo guardar/.test(textoRO(vigiaG)) && !/<b>F1/.test(vigiaG),
+          `(g) se dice que no es el pliego, no como un fallo, y el nombre va escapado (MUTACIÓN: pintarlo como fallo): «${textoRO(vigiaG).slice(0, 220)}»`);
+        const dicG = diferidos.slice(desdeG).find((x) => /op=dictamen/.test(x.url) && !x.hecho);
+        okRO(!!dicG, "(g) y el dictamen del pliego guardado se pide igual (MUTACIÓN: tratarlo como un fallo del vigía, «Primero hay que guardar el texto del pliego»)");
+        if (dicG) { dicG.hecho = true; dicG.resolver({ ok: true, id_proceso: "CO1.A", hay_texto: true, hay_dictamen: false, en_curso: false }); await asentarRO(); }
+        okRO(!/Primero hay que guardar el texto del pliego/.test(textoRO(porId.get("pl-dictamen").innerHTML)), `(g) sin «Primero hay que guardar el texto del pliego»: «${textoRO(porId.get("pl-dictamen").innerHTML).slice(0, 160)}»`);
+      }
       /* hermano (segunda revisión, 28-sep-2026): un PDF que termina de abrirse DESPUÉS de abrir otro
          proceso quedaba como documento vivo, y «Reintentar con OCR» lo leía como pliego del nuevo */
       {
@@ -51340,6 +54220,94 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
         await Promise.race([vig, asentarRO()]); await asentarRO();
         await disparar("btn-limpiar", "click", {}); await asentarRO();
         okRO(postMis && !postMis.cfg.signal.aborted, "(f) «Limpiar» en el lector no cancela el dictamen que se pidió desde Mis procesos");
+      }
+      /* (g) EL TECHO DEL PLIEGO EN PRECIOS (17-oct-2026), con la pantalla real: la guía → qApu → precarga → leerConfig */
+      {
+        const { F: T, porId: P2, disparar: dis2 } = cargarFrontRO();
+        await asentarRO();
+        const guiaSE = { tope_oferta: { valor: 1581425810, fuente: "pliego", secop: 1744426146, pagina: 6 } };
+        const args = T.techoDesdeGuia(guiaSE);
+        okRO(args.cuantia_cop === 1581425810 && args.cuantia_fuente === "pliego" && /pág\. 6/.test(args.cuantia_nota) && /1\.744\.426\.146/.test(args.cuantia_nota), `(g) la guía con techo del pliego lo pasa a Precios: ${JSON.stringify(args)}`);
+        okRO(Object.keys(T.techoDesdeGuia({ tope_oferta: { valor: 1744426146, fuente: "secop", secop: 1744426146 } })).length === 0 && Object.keys(T.techoDesdeGuia(null)).length === 0, "(g) sin techo del pliego no cambia nada");
+        okRO(Object.keys(T.techoDesdeGuia({ tope_oferta: { valor: 1581425810, fuente: "pliego", secop: null } })).length === 0, "(g) sin cifra de SECOP II no hay nota «SECOP II publica $ 0»");
+        T.abrirEditorConProceso(T.qApuDelExpediente({ nombre: "Santa Elena", presupuesto_cop: 1744426146 }, "CO1.SE", guiaSE));
+        T.precargarDesdeURL();
+        okRO(P2.get("cuantia").value === "1581425810" && /pliego definitivo/.test(P2.get("cuantia-nota").textContent) && !P2.get("cuantia-nota").clases.has("hidden"), `(g) Precios arranca con el techo del pliego y su nota: «${P2.get("cuantia").value}» «${P2.get("cuantia-nota").textContent}»`);
+        okRO(T.leerConfig().cuantia_fuente === "pliego" && T.leerConfig().cuantia_cop === 1581425810, `(g) el cálculo lleva la fuente mientras la cifra no cambie: ${JSON.stringify({ f: T.leerConfig().cuantia_fuente, c: T.leerConfig().cuantia_cop })}`);
+        // el usuario cambia la cifra: la nota se calla y la fuente ya no viaja
+        P2.get("cuantia").value = "1600000000"; await dis2("cuantia", "input", {});
+        okRO(T.leerConfig().cuantia_fuente === null && P2.get("cuantia-nota").clases.has("hidden"), "(g) cambiar la cifra a mano calla la nota y la fuente");
+        // otro proceso desde su borrador, con la MISMA cifra: no hereda nada del anterior
+        T.abrirEditorConProceso(T.qApu({ id_del_proceso: "CO1.SE", cuantia_cop: 1744426146, ...args })); T.precargarDesdeURL();
+        T.restituirContextoProceso({ id_proceso: "CO1.OTRO", cuantia: 1581425810 });
+        okRO(T.leerConfig().cuantia_fuente === null && P2.get("cuantia-nota").clases.has("hidden") && T.leer().cdp === null, "(g) el borrador de otro proceso no hereda el techo ni la nota del pliego anterior");
+      }
+      /* (h) EL TECHO DESDE LA TARJETA DE LICITACIONES (17-oct-2026): «Calcular mi precio» de un proceso GUARDADO pide su
+         guía (GET ?expediente=, solo lee) y arranca con el techo del pliego; sin guardar, como siempre; con la consulta
+         caída o vencida, con SECOP II y lo dice; y una respuesta tardía no pisa lo que se abrió después (revisión adversaria) */
+      {
+        const { F: T, ctx: C3, porId: P3 } = cargarFrontRO();
+        await asentarRO();
+        const guiaSE = { tope_oferta: { valor: 1581425810, fuente: "pliego", secop: 1744426146, pagina: 6 } };
+        const boton = (l) => ({ innerHTML: "Calcular mi precio", textContent: "Calcular mi precio", disabled: false, getAttribute: (k) => (k === "data-apu-q" ? T.qApu(l) : null) });
+        const filaSE = { id_del_proceso: "CO1.SE", nombre_del_procedimiento: "MEJORAMIENTO VIA SANTA ELENA", cuantia_cop: 1744426146 };
+        const filaB = { id_del_proceso: "CO1.B", nombre_del_procedimiento: "OTRA OBRA", cuantia_cop: 900000000 };
+        const urls = [];
+        let responder = () => Promise.resolve(respuestaRO(200, { ok: true, id: "CO1.SE", tope_oferta: guiaSE.tope_oferta }));
+        C3.fetch = (url) => { if (/op=seguimiento/.test(String(url))) { urls.push(String(url)); return responder(); } return new Promise(() => {}); };
+        const abrir = async (l) => { const b = boton(l); const pr = T.abrirPreciosDesdeTarjeta(b); const durante = [b.textContent, b.disabled]; await pr; T.precargarDesdeURL(); return { b, durante }; };
+        const nota = () => (P3.get("cuantia-nota").clases.has("hidden") ? "" : P3.get("cuantia-nota").textContent);
+        // sin guardar: no consulta nada y arranca con la cifra de SECOP II, sin nota
+        let r = await abrir(filaSE);
+        okRO(urls.length === 0 && P3.get("cuantia").value === "1744426146" && nota() === "", `(h) sin guardar, la tarjeta abre como siempre: ${JSON.stringify({ urls, c: P3.get("cuantia").value })}`);
+        // guardado y con techo del pliego: lo consulta, lo dice mientras tanto y arranca con el techo y su nota
+        T.guardados.set("CO1.SE", "interesa");
+        r = await abrir(filaSE);
+        okRO(urls.length === 1 && /expediente=CO1\.SE/.test(urls[0]) && /[?&]solo=tope(&|$)/.test(urls[0]), `(h) guardado: pide SOLO el techo del expediente, sin la guía entera (MUTACIÓN: sin \`solo=tope\`, la guía con sus índices): ${JSON.stringify(urls)}`);
+        okRO(r.durante[0] === "Consultando el pliego…" && r.durante[1] === true && r.b.disabled === false && r.b.innerHTML === "Calcular mi precio", `(h) la pulsación responde y el botón vuelve: ${JSON.stringify(r.durante)}`);
+        okRO(P3.get("cuantia").value === "1581425810" && /pliego definitivo/.test(nota()) && T.leerConfig().cuantia_fuente === "pliego", `(h) guardado con techo: Precios arranca con el del pliego (MUTACIÓN: sin la consulta, $1.744.426.146): «${P3.get("cuantia").value}»`);
+        // sin techo, o la guía de otro proceso, o de OTRA cifra de SECOP II que la de la tarjeta: la cifra de la tarjeta, sin nota
+        for (const [que, resp, fila] of [["sin techo", () => respuestaRO(200, { ok: true, id: "CO1.SE", tope_oferta: { valor: 1744426146, fuente: "secop", secop: 1744426146 } }), filaSE], ["el techo de otro proceso", () => respuestaRO(200, { ok: true, id: "CO1.OTRO", tope_oferta: guiaSE.tope_oferta }), filaSE], ["el techo con otra cifra de SECOP II", () => respuestaRO(200, { ok: true, id: "CO1.SE", tope_oferta: guiaSE.tope_oferta }), { ...filaSE, cuantia_cop: 1700000000 }], ["sin presupuesto en SECOP II", () => respuestaRO(200, { ok: true, id: "CO1.SE", tope_oferta: null }), filaSE]]) {
+          responder = () => Promise.resolve(resp());
+          r = await abrir(fila);
+          okRO(P3.get("cuantia").value === String(fila.cuantia_cop) && T.leerConfig().cuantia_fuente === null && r.b.disabled === false, `(h) ${que}: arranca con la cifra de la tarjeta (MUTACIÓN: sin comparar la cifra de SECOP II, el techo): «${P3.get("cuantia").value}»`);
+        }
+        // el pliego no se ha leído (documentos_leidos 0): SECOP II, y la nota lo dice (revisión adversaria, 17-oct-2026)
+        responder = () => Promise.resolve(respuestaRO(200, { ok: true, id: "CO1.SE", tope_oferta: { valor: 1744426146, fuente: "secop", secop: 1744426146 }, documentos_leidos: 0 }));
+        r = await abrir(filaSE);
+        okRO(P3.get("cuantia").value === "1744426146" && /aún no se ha leído/.test(nota()), `(h) sin pliego leído, la nota lo dice (MUTACIÓN: sin \`sinPliego\`, silencio): «${nota()}»`);
+        // la consulta cae: SECOP II, y la nota DICE que no se pudo consultar
+        responder = () => Promise.resolve(respuestaRO(500, { ok: false, error: "fallo" }));
+        r = await abrir(filaSE);
+        okRO(P3.get("cuantia").value === "1744426146" && /No se pudo consultar el pliego/.test(nota()) && T.leerConfig().cuantia_fuente === null, `(h) la consulta caída se dice (MUTACIÓN: sin el aviso, silencio): «${nota()}»`);
+        // la consulta no responde: pasado el plazo abre con SECOP II y lo dice
+        responder = () => new Promise(() => {});
+        const relojOriginal = C3.setTimeout; C3.setTimeout = (fn) => { fn(); return 1; };
+        try { r = await abrir(filaSE); } finally { C3.setTimeout = relojOriginal; }
+        okRO(P3.get("cuantia").value === "1744426146" && /No se pudo consultar el pliego/.test(nota()) && r.b.disabled === false, `(h) la consulta vencida abre con SECOP II y lo dice: «${nota()}»`);
+        // una respuesta tardía no pisa lo que se abrió después, ni abre con otro perfil
+        let soltar = null;
+        responder = () => new Promise((ok) => { soltar = () => ok(respuestaRO(200, { ok: true, id: "CO1.SE", tope_oferta: guiaSE.tope_oferta })); });
+        const bA = boton(filaSE); const prA = T.abrirPreciosDesdeTarjeta(bA);
+        T.abrirEditorConProceso(T.qApu(filaB)); T.precargarDesdeURL();
+        soltar(); await prA; T.precargarDesdeURL();
+        okRO(P3.get("cuantia").value === "900000000" && bA.disabled === false && bA.innerHTML === "Calcular mi precio", `(h) la respuesta tardía de A no pisa a B, abierto después (MUTACIÓN: sin \`aperturasEditor\`, A): «${P3.get("cuantia").value}»`);
+        const prA2 = T.abrirPreciosDesdeTarjeta(boton(filaSE));
+        P3.get("f-perfil").value = "otro";
+        soltar(); await prA2; T.precargarDesdeURL();
+        okRO(P3.get("cuantia").value === "900000000", `(h) con el perfil cambiado mientras esperaba, no abre (MUTACIÓN: sin mirar el perfil, A): «${P3.get("cuantia").value}»`);
+        P3.get("f-perfil").value = "prueba";
+        // dos tarjetas guardadas seguidas: la PRIMERA responde antes y aun así queda abierta la ÚLTIMA pulsada
+        const filaC = { id_del_proceso: "CO1.C", nombre_del_procedimiento: "TERCERA OBRA", cuantia_cop: 2000000000 };
+        T.guardados.set("CO1.C", "interesa");
+        const pendientes = new Map();
+        responder = () => new Promise((ok) => { const u = urls[urls.length - 1]; const idq = /expediente=([^&]+)/.exec(u)[1];
+          pendientes.set(idq, () => ok(respuestaRO(200, { ok: true, id: idq, tope_oferta: idq === "CO1.C" ? { valor: 1900000000, fuente: "pliego", secop: 2000000000, pagina: 4 } : guiaSE.tope_oferta }))); });
+        const prSE = T.abrirPreciosDesdeTarjeta(boton(filaSE));
+        const prC = T.abrirPreciosDesdeTarjeta(boton(filaC));
+        pendientes.get("CO1.SE")(); await prSE; T.precargarDesdeURL();
+        pendientes.get("CO1.C")(); await prC; T.precargarDesdeURL();
+        okRO(P3.get("cuantia").value === "1900000000", `(h) de dos pulsaciones manda la última aunque la primera responda antes (MUTACIÓN: sin \`turnoTarjeta\`, la primera abre y la última no): «${P3.get("cuantia").value}»`);
       }
     } finally {
       if (tzRO === undefined) delete process.env.TZ; else process.env.TZ = tzRO;
@@ -51827,13 +54795,22 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
          `git clone --depth 1` —lo que hace actions/checkout sin fetch-depth— el commit
          frontera se diffea contra el árbol vacío y estado.js daba «+8964 líneas» del
          archivo entero (6-sep-2026, B6b-H1). Se EJECUTA estado.js dentro de un clon
-         superficial real del árbol, con el estado.js de ESTA copia de trabajo. */
+         superficial real del árbol, con el estado.js de ESTA copia de trabajo.
+         El commit frontera se fabrica con fecha de HOY (16-oct-2026): clonar el HEAD
+         tal cual dejaba la prueba atada al reloj. Con el repositorio 15 días sin
+         commits, la frontera caía FUERA de la ventana, estado.js decía «sin cambios»
+         (cierto) y la prueba se ponía roja; peor, en ese caso no ejercía la guarda
+         que vigila. Un commit vacío sobre el clon y un segundo clon --depth 1 dejan
+         la frontera dentro de la ventana siempre. */
       {
         const os = require("os");
-        let tmp = null;
+        let tmp = null, base = null;
         try {
+          base = fs.mkdtempSync(path.join(os.tmpdir(), "detekta-base-"));
           tmp = fs.mkdtempSync(path.join(os.tmpdir(), "detekta-superficial-"));
-          execFileSync("git", ["clone", "--quiet", "--depth", "1", "file://" + raizM, tmp], { stdio: ["ignore", "ignore", "ignore"] });
+          execFileSync("git", ["clone", "--quiet", "--depth", "1", "file://" + raizM, base], { stdio: ["ignore", "ignore", "ignore"] });
+          execFileSync("git", ["-C", base, "-c", "user.name=suite", "-c", "user.email=suite@local", "-c", "commit.gpgsign=false", "commit", "--quiet", "--allow-empty", "--no-verify", "-m", "frontera de hoy"], { stdio: ["ignore", "ignore", "ignore"] });
+          execFileSync("git", ["clone", "--quiet", "--depth", "1", "file://" + base, tmp], { stdio: ["ignore", "ignore", "ignore"] });
           fs.copyFileSync(path.join(__dirname, "estado.js"), path.join(tmp, "tests", "estado.js"));
           const salidaSuperficial = execFileSync(process.execPath, [path.join(tmp, "tests", "estado.js")], { encoding: "utf8" });
           const linea = (salidaSuperficial.split("\n").find((l) => l.includes("ritmo de 7 días")) || "").trim();
@@ -51845,6 +54822,7 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
           console.log("  · (el clon superficial de la comprobación del ritmo no se pudo hacer: " + String(e.message).slice(0, 60) + ")");
         } finally {
           if (tmp) fs.rmSync(tmp, { recursive: true, force: true });
+          if (base) fs.rmSync(base, { recursive: true, force: true });
         }
       }
       // (f) «En una línea:» desde la sección que abrió la convención

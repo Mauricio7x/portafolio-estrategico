@@ -33,6 +33,13 @@ const OPS = {
   /* que la base no se vuelva a llenar (30-sep-2026, lib/compactar): libera lo rehacible si
      está llena y compacta el histórico; lo dispara el cron de la madrugada (/api/compactar) */
   compactar: () => require("../lib/handlers/admin/compactar.js"),
+  /* LA ENTRADA DEL DUEÑO (17-oct-2026, lib/sesion): correo y contraseña, cookie
+     HttpOnly de 30 días. `sesion` (GET) dice si hay sesión y si la cuenta existe;
+     `crear-cuenta` solo vale mientras no exista ninguna y con la llave del servidor */
+  sesion: () => (req, res) => require("../lib/handlers/admin/sesion.js")(req, res, { op: "sesion" }),
+  entrar: () => (req, res) => require("../lib/handlers/admin/sesion.js")(req, res, { op: "entrar" }),
+  salir: () => (req, res) => require("../lib/handlers/admin/sesion.js")(req, res, { op: "salir" }),
+  "crear-cuenta": () => (req, res) => require("../lib/handlers/admin/sesion.js")(req, res, { op: "crear-cuenta" }),
 };
 
 function opDe(req) {
@@ -66,7 +73,7 @@ module.exports = async function handler(req, res) {
      rechazada que la plataforma convierte en un 500 sin cuerpo (6-sep-2026).
      Una sola copia del texto en lib/error_interno; el router sigue sin lógica. */
   try {
-    return await h()(req, res);
+    return await h()(req, require("../lib/error_interno.js").conLlavesTachadas(res));
   } catch (e) {
     return require("../lib/error_interno.js").responderErrorInterno(res, "admin", e);
   }

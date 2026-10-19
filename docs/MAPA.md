@@ -2,12 +2,12 @@
      Es una FOTO para leer en GitHub; la fuente de verdad es ejecutar la herramienta. -->
 
 ```
-== MAPA DE DETEKTA · generado del árbol el 2026-10-02 ==
+== MAPA DE DETEKTA · generado del árbol el 2026-10-19 ==
 (no editar a mano: sale de `node tests/mapa.js --escribir`. Para ir a un sitio concreto,
  `node tests/mapa.js <término>` da la ruta, la línea y el sed exacto — más barato que leer esto)
 
-· SUPERFICIE HTTP — 38 op declaradas en los mapas de los routers:
-  /api/admin?op=  rup · experiencia · cobertura · cargar-catalogo · exportar · importar · uso · respaldo · espacio · compactar
+· SUPERFICIE HTTP — 42 op declaradas en los mapas de los routers:
+  /api/admin?op=  rup · experiencia · cobertura · cargar-catalogo · exportar · importar · uso · respaldo · espacio · compactar · sesion · entrar · salir · crear-cuenta
   /api/perfil?op=  resumen · diagnostico · entrada · pulso · consorcio · consorcio-simular · seguimiento · cuenta · avisos · empresa-datos
   /api/pliego?op=  extraer-texto · parsear · descargar · formulario1 · diff · cronograma · deducciones · dictamen · documentos
   /api/procesos?op=  sync · historico · listar · baja · entidades · portada · manifestacion · latido · salud
@@ -22,7 +22,7 @@
   pliego.js                   Router del dominio PLIEGO (Fase 0 · consolidación a 6 funciones)
   procesos.js                 Router del dominio PROCESOS (Fase 0 · consolidación a 6 funciones)
 
-· lib/ — 94 módulos:
+· lib/ — 97 módulos:
   accesibilidad.js            Accesibilidad operativa de la zona de la obra
   adendas.js                  Vigía de adendas · lo que el DATASET dice que cambió (Fase 5)
   almacen.js                  Esquema de claves Redis + compresión de chunks
@@ -33,6 +33,7 @@
   apu_ocr.js                  OCR de páginas escaneadas vía OCR.space (respaldo, no vía principal)
   apu_pliego.js               Extraer ítem + unidad + cantidad de la tabla de un pliego
   auth.js                     Un solo guardián para los endpoints protegidos
+  autollamada.js              El servidor llamándose a sí mismo: que la llamada salga y que se sepa cómo le fue (18-oct-2026)
   aviso_salud.js              El correo cuando la salud se pone en rojo, y cuando vuelve (30-sep-2026)
   baja_maxima.js              hasta dónde puede bajar el dueño en CADA proceso (A4)
   capacidad.js                K de contratación (capacidad residual) — FÓRMULA ÚNICA
@@ -50,7 +51,7 @@
   correo.js                   Transporte de correo por REST — sin SDK, sin dependencias
   costos.js                   el motor de costo real vive en public/costos.js (UMD) y aquí
   cronograma.js               Cronograma del proceso con avisos T-7 / T-3 / T-1 (Fase 5)
-  cuentas.js                  La infraestructura de las cuentas de usuario. CONSTRUIDA Y SIN
+  cuentas.js                  La infraestructura de las cuentas de usuario (la parte PURA)
   cuerpo.js                   Leer el cuerpo JSON de una petición, una sola vez
   deducciones.js              Qué le van a descontar de cada pago, leído del PLIEGO
   dictamen.js                 Dictamen del pliego (proyecto «Don Héctor», 2-sep-2026) — PURO
@@ -94,6 +95,7 @@
   perfiles.js                 FUENTE ÚNICA DE VERDAD del perfil del dueño y de sus socias
   portada.js                  El pulso del mercado y la manifestación de interés (Fase 9 · Detekta v4)
   presupuesto.js              El reloj de una tanda REANUDABLE (7-sep-2026)
+  presupuesto_pliego.js       El presupuesto que DICE el pliego (17-oct-2026, Fase 2)
   probabilidad.js             P(ganar) estimada con lo que YA hay en Redis
   probabilidad_desglose.js    POR QUÉ ese 23 %, paso por paso
   proponentes.js              Quiénes se PRESENTAN a los procesos de una entidad
@@ -110,6 +112,7 @@
   rutina.js                   despertar una rutina de Claude Code por HTTP (26-sep-2026)
   seguimiento.js              MIS PROCESOS: guardar, seguir y estudiar a la competencia (ago 2026)
   semantica.js                Clasificación semántica del objeto contractual
+  sesion.js                   La sesión del DUEÑO: una cuenta, una cookie, un límite de intentos
   socio.js                    Verifique a su socio antes de firmar (due diligence de 20 minutos)
   socio_por_proceso.js        ¿Con cuál de mis socios conviene ESTE proceso?
   socrata.js                  Acceso al dataset p6dx-8zbt de SECOP II (API Socrata / SoQL)
@@ -140,7 +143,7 @@
   tipologias.js               Las 22 tipologías de obra y el mapa departamento→región
   validaciones.js             Las cinco puertas de control del presupuesto
 
-· lib/handlers/admin/ — 10 módulos:
+· lib/handlers/admin/ — 11 módulos:
   cargar_catalogo.js          Puebla Redis con el catálogo de precios APU
   cobertura.js                Qué códigos UNSPSC le faltan al RUP
   compactar.js                /api/admin?op=compactar · QUE LA BASE DE DATOS NO SE VUELVA A LLENAR (30-sep-2026)
@@ -150,6 +153,7 @@
   importar.js                 (sin cabecera)
   respaldo.js                 (sin cabecera)
   rup.js                      Cargar, consultar y eliminar el RUP del dueño (archivo JSON)
+  sesion.js                   (sin cabecera)
   uso.js                      /api/admin?op=uso · CUÁNTO SE USA DETEKTA, POR PERFIL (27-sep-2026)
 
 · lib/handlers/apu/ — 1 módulos:
@@ -211,17 +215,17 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 318 secciones (16 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 18512  El correo cuando la salud se pone en rojo, con el reloj y el correo que ya había (30-sep-20…
-  L 18522  La carga completa y el histórico tampoco piden lo que la cascada tira (30-sep-2026)
-  L 18537  El tipo de contrato de obra sin códigos entra, en ámbar (30-sep-2026)
-  L 18557  El corpus del año se recomprime en su sitio: no se junta como el histórico (30-sep-2026)
-  L 18574  Consorcios de tres o más socios: no hay ninguno con reparto supuesto, y si llega a haberlo …
-  L 18582  La historia de un proceso sobrevive a quien reescribe su mes (1-oct-2026)
-  L 18593  «Parque automotor» también es lo que se guarda bajo techo: el garaje y los hangares entran …
-  L 18606  «Combustible» suelto también mataba obra: las redes de gas y los surtidores entran (1-oct-2…
-  L 18620  Tres pruebas con fecha fija tumbaron main al cambiar de mes, y la cuarta espera (1-oct-2026)
-  L 18630  La cerradura del commit y los dos subagentes del proyecto (2-oct-2026)
+· MEMORIA · docs/MEMORIA.md — 368 secciones (27 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
+  L 19567  La llave del servidor no se copia de Vercel: se anota al ponerla (18-oct-2026)
+  L 19580  Los pliegos de más de 20 MB que se midieron son escaneos: bajarlos por partes no da texto (…
+  L 19612  El tablero de pendientes mentía: la revisión del 18-oct, uno por uno contra el código (18-o…
+  L 19620  Las tres lecturas del pliego del 18-oct: la versión que rige, el ejemplo entre corchetes y …
+  L 19628  La carga en Precios no entra al vigía si el nombre dice que es otra cosa (18-oct-2026)
+  L 19669  La Fase C se cierra: no se construye la descarga de pliegos de más de 20 MB (18-oct-2026)
+  L 19681  La cadena que no seguía con el muro: la llamada del servidor a sí mismo va con waitUntil y …  (superada)
+  L 19716  La fórmula en prosa no afirma el anticipo: «presupuesto oficial menos el anticipo…» es menc…
+  L 19745  El clasificador lee los nombres con separadores y los nuevos de Colombia Compra («DocBase_……
+  L 19773  La carga completa ya no para con una actualización a medias, y el tiempo agotado de Upstash…
 
 · DOCUMENTOS docs/ — 71 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)

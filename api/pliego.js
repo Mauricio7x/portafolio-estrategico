@@ -52,7 +52,7 @@ module.exports = async function handler(req, res) {
      rechazada que la plataforma convierte en un 500 sin cuerpo (6-sep-2026).
      Una sola copia del texto en lib/error_interno; el router sigue sin lógica. */
   try {
-    return await h()(req, res);
+    return await h()(req, require("../lib/error_interno.js").conLlavesTachadas(res));
   } catch (e) {
     return require("../lib/error_interno.js").responderErrorInterno(res, "pliego", e);
   }

@@ -8,3 +8,5 @@ entrada/*
 
 # salida de la suite y de sus corridas parciales (receta de CLAUDE.md: `> salida.txt 2>&1`)
 salida.txt
+# capturas del navegador de Claude (playwright-mcp), nunca al repositorio
+.playwright-mcp/

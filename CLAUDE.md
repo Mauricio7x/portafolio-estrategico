@@ -43,7 +43,7 @@ borra: el mapa solo lo resuelve con `--archivo`, y un `grep` ancho por `docs/` l
 Después, y solo si el encargo lo toca: **`docs/PROMPT_INICIAL.md`** (rol, ciclo,
 verificación, orquestación, formato de cierre) al empezar una sesión de trabajo · **`README.md`**
 por grep dirigido, no entero · **dominio** (`docs/GUIA_ANALISTA_LICITACIONES.md` +
-`docs/COMPLEMENTO_ANALISTA_LICITACIONES.md`, que corrige dos errores del manual: van juntos;
+`docs/COMPLEMENTO_ANALISTA_LICITACIONES.md`, que corrige errores del manual: van juntos;
 precios en `docs/APU_Y_RENTABILIDAD.md`) solo si toca reglas de negocio, y solo las secciones
 pertinentes.
 

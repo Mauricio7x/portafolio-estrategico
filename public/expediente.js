@@ -149,6 +149,15 @@
     ];
   }
 
+  /* EL PRESUPUESTO DEL PLIEGO FRENTE AL DE SECOP II (Fase 2, 17-oct-2026): debajo de la cifra que publica SECOP II,
+     a la vista, porque es lo que cambia la oferta (la guía lo trae primero en lo_que_dicen, pero plegado). Solo
+     «Riesgo» o «Confírmelo»: un dato informativo no ocupa la cabecera. */
+  function htmlAvisoPresupuesto(p) {
+    const h = ((p.guia && p.guia.lo_que_dicen) || []).find((x) => x && x.clave === "presupuesto_pliego" && (x.estado === "riesgo" || x.estado === "revisar"));
+    if (!h) return "";
+    return `<p class="exp-aviso-presupuesto" role="note"><strong>${esc(h.titulo)}.</strong> ${esc(h.texto)}${h.pagina != null ? ` <span class="exp-aviso-fuente">${esc(h.documento || "Pliego")}, pág. ${esc(h.pagina)}.</span>` : ""}</p>`;
+  }
+
   function htmlCabecera(p, { estados = {}, seccion = "resumen", conteos = {}, carpetas = [] } = {}) {
     const pr = p.proceso || {};
     const etapa = estados[p.estado] || p.estado_etiqueta || "";
@@ -161,7 +170,8 @@
         Mis procesos
       </button>
       <h2 class="exp-nombre ${claseDeCaja(pr.nombre || p.id)}">${esc(pr.nombre || p.id)}</h2>
-      <p class="exp-entidad">${esc(pr.entidad || "Entidad no publicada")}${pr.departamento ? ` &middot; ${esc(pr.departamento)}` : ""} &middot; ${esc(p.id)}</p>
+      <p class="exp-entidad">${esc(pr.entidad || "Entidad no publicada")}${pr.departamento ? ` &middot; ${esc(pr.departamento)}` : ""} &middot; <span class="exp-id">${esc(p.id)}</span>
+        <button type="button" class="exp-doc-enlace" data-exp-copiar-id="${esc(p.id)}" aria-live="polite">Copiar número</button></p>
       <div class="exp-acciones">
         ${opciones.length ? `<label class="cas-carpeta-sel"><span class="cas-carpeta-rotulo">Etapa</span>
           <select class="control-select cas-carpeta-select" data-seg-estado="${esc(p.id)}" aria-label="Etapa de este proceso en su seguimiento">
@@ -182,6 +192,7 @@
         ${cifras.map((c) => `<div class="exp-cifra${c.urgente ? " exp-cifra-urgente" : ""}"${c.titulo ? ` title="${esc(c.titulo)}"` : ""}>
           <dd class="exp-cifra-valor num">${cifraPartible(c.valor)}</dd><dt class="exp-cifra-rotulo">${esc(c.rotulo)}</dt></div>`).join("")}
       </dl>
+      ${htmlAvisoPresupuesto(p)}
       <nav class="exp-secciones" aria-label="Secciones del expediente">
         ${SECCIONES.map((s) => `<button type="button" class="exp-seccion-btn" data-exp-seccion="${esc(s.id)}"${seccion === s.id ? ' aria-current="page"' : ""}>${esc(s.etiqueta)}${conteos[s.id] ? `<span class="exp-seccion-n">${miles(conteos[s.id])}</span>` : ""}</button>`).join("")}
       </nav>

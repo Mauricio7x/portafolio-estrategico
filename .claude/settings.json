@@ -30,6 +30,34 @@
       "Bash(git branch:*)"
     ]
   },
+  "$comentario_complementos": [
+    "16-oct-2026, decisión del dueño: complementos oficiales de Anthropic (claude-plugins-official)",
+    "para revisar seguridad (claude-security), revisar cambios (code-review) y supervisar el gasto",
+    "de una sesión (session-report); y el navegador real de .mcp.json (playwright), fijado a una",
+    "versión y sin perfil guardado. Solo corren dentro de las sesiones de Claude: no tocan Vercel."
+  ],
+  "extraKnownMarketplaces": {
+    "claude-plugins-official": {
+      "source": {
+        "source": "github",
+        "repo": "anthropics/claude-plugins-official"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "claude-security@claude-plugins-official": true,
+    "code-review@claude-plugins-official": true,
+    "session-report@claude-plugins-official": true
+  },
+  "$comentario_secop": [
+    "17-oct-2026, decisión del dueño: servidor «secop» de .mcp.json (juandavidsernav/secop-mcp-server 0.5.0,",
+    "MIT, código leído y comparado con el paquete de PyPI). Solo LEE datos.gov.co, sin clave. Sus herramientas",
+    "siguen pidiendo confirmación porque llaman a la red. No creer su «$0» ni su «total»: docs/MEMORIA.md."
+  ],
+  "enabledMcpjsonServers": [
+    "playwright",
+    "secop"
+  ],
   "hooks": {
     "PreToolUse": [
       {

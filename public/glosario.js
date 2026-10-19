@@ -33,9 +33,10 @@
     nombre: "Detekta",
     nombreLargo: "Detekta — inteligencia de licitaciones",
     lema: "Licitaciones de obra en Colombia",
-    // Cambiar SOLO cuando se compre un dominio propio (docs/marca.md §4). La
-    // aplicación no necesita ningún otro cambio de código.
-    dominio: "portafolio-estrategico.vercel.app",
+    // Cambia con el dominio de producción (docs/marca.md §4): el 16-oct-2026 pasó de
+    // portafolio-estrategico.vercel.app (cuenta pausada por Vercel) a la cuenta nueva.
+    // Lo leen el enlace del correo, la suite y los flujos de GitHub (que lo copian).
+    dominio: "detekta-app.vercel.app",
   });
 
   /* Título de la pestaña y descripción: los mismos literales que index.html
@@ -329,6 +330,9 @@
     if ((cuerpo && cuerpo.motivo === "base_llena") || /capacity quota exceeded|base de datos[^.]*llena/i.test(t)) {
       return { reintentar: false, frase: "la base de datos de la aplicación está llena y no guarda nada nuevo; quien la administra tiene que ampliarla o liberar espacio" };
     }
+    /* el error de la base dice su comando y su clave desde el 18-oct-2026 («(Upstash: GET secop:…»):
+       esa marca va ANTES de la regla de SECOP, o una clave con «secop» culparía a SECOP II */
+    if (/\(Upstash: /.test(t)) return { reintentar: true, frase: "el servidor no pudo leer o guardar los datos; vuelva a intentarlo en unos minutos" };
     if (/datos\.gov\.co|SECOP/i.test(t)) return { reintentar: true, frase: "SECOP II no respondió; vuelva a intentarlo en unos minutos" };
     if (/Redis|Upstash/i.test(t)) return { reintentar: true, frase: "el servidor no pudo leer o guardar los datos; vuelva a intentarlo en unos minutos" };
     return { reintentar: true, frase: "el servidor no respondió; vuelva a intentarlo en unos minutos" };

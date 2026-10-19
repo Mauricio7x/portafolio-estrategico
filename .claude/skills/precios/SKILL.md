@@ -25,15 +25,16 @@ solicitud de «en_cola» y hace de candado: dos sesiones sobre la misma solicitu
 1. **Ver la cola.**
 
    ```bash
-   TOKEN=$(grep -o 'const TOKEN = "[^"]*"' public/app.js | head -1 | cut -d'"' -f2)
-   BASE=https://portafolio-estrategico.vercel.app
-   curl -s -H "x-historico-token: $TOKEN" "$BASE/api/apu?op=ia&pendientes=1" -o /tmp/cola.json
+   TOKEN="${HISTORICO_TOKEN:?Falta HISTORICO_TOKEN en el entorno de Claude Code: el dueño la añade en el entorno de la sesión o de la rutina (Edit → variables de entorno)}"
+   BASE=https://detekta-app.vercel.app
+   curl -s -H "x-historico-token: $TOKEN" -H "x-vercel-protection-bypass: $VERCEL_AUTOMATION_BYPASS_SECRET" "$BASE/api/apu?op=ia&pendientes=1" -o /tmp/cola.json
+   grep -qs "Protected by Vercel Authentication" /tmp/cola.json && echo "EL MURO DE VERCEL RESPONDIÓ: falta el pase"
    node -e 'const c=require("/tmp/cola.json"); for (const s of c.solicitudes) console.log(s.estado, s.perfil, s.id, s.filas, "filas ·", s.nombre, "·", s.ciudad||"", s.departamento||"", "·", s.solicitado_el, s.progreso?`· ${s.progreso.pct} % el ${s.progreso.actualizado_el}`:"")'
    ```
 
    Si esta primera llamada responde 403 del proxy de egreso, la red del entorno no alcanza la
-   aplicación: diga exactamente «La red del entorno no alcanza portafolio-estrategico.vercel.app: abra
-   claude.ai/code/routines → esta rutina → el entorno → Network access: Full» y termine, sin rodearlo.
+   aplicación: diga exactamente «La red del entorno no alcanza detekta-app.vercel.app: abra
+   claude.ai/code/routines → esta rutina → el entorno → Network access: Full» y termine, sin rodearlo. Si aparece `EL MURO DE VERCEL RESPONDIÓ`, o node dice `Unexpected token 'P', "Protected "…`, o un envío responde 401 con «Protected deployment» (el muro de Vercel), diga exactamente «El muro de Vercel no deja pasar a esta sesión: falta VERCEL_AUTOMATION_BYPASS_SECRET en las variables de entorno de su entorno (claude.ai/code, menú del entorno en la barra del título, Edit)» y termine: sin ese pase ninguna llamada llega a la aplicación.
    Si se pasó un `id_borrador`, atienda solo ese. Si la cola está vacía, dígalo y termine. Dos solicitudes
    con las mismas filas son el mismo presupuesto pedido dos veces: haga el trabajo una vez y envíelo a las dos.
 
@@ -42,7 +43,7 @@ solicitud de «en_cola» y hace de candado: dos sesiones sobre la misma solicitu
    precio que ya traía el archivo, `es_titulo`, `necesita_precio`):
 
    ```bash
-   curl -s -H "x-historico-token: $TOKEN" "$BASE/api/apu?op=ia&expediente=1&perfil=<PERFIL>&id=<ID>" -o /tmp/expediente.json
+   curl -s -H "x-historico-token: $TOKEN" -H "x-vercel-protection-bypass: $VERCEL_AUTOMATION_BYPASS_SECRET" "$BASE/api/apu?op=ia&expediente=1&perfil=<PERFIL>&id=<ID>" -o /tmp/expediente.json
    node -e 'const e=require("/tmp/expediente.json"); if(!e.ok){console.log("ERROR",e.error);process.exit(1)} console.log(e.instrucciones); console.log(JSON.stringify(e.esquema,null,1)); console.log(JSON.stringify(e.entrada.contexto)); console.log("filas",JSON.stringify(e.entrada.resumen)); for (const f of e.entrada.filas) console.log(f.fila, f.es_titulo?"TÍTULO":f.necesita_precio?"APU":"tiene", "|", f.descripcion, "|", f.unidad, "| cant", f.cantidad, "|", f.precio_del_archivo!=null?`archivo ${f.precio_del_archivo}`:(f.precio_actual!=null?`${f.precio_actual} ${f.fuente_actual}`:""))'
    ```
 
@@ -52,7 +53,7 @@ solicitud de «en_cola» y hace de candado: dos sesiones sobre la misma solicitu
 
    ```bash
    node -e 'process.stdout.write(JSON.stringify({perfil:"<PERFIL>",id:"<ID>",motor:"sesion",progreso:{hecho:<N>,total:<TOTAL>,mensaje:"<ítem en curso>"}}))' > /tmp/prog.json
-   curl -s -X POST -H "x-historico-token: $TOKEN" -H "Content-Type: application/json" --data-binary @/tmp/prog.json "$BASE/api/apu?op=ia" -o /dev/null
+   curl -s -X POST -H "x-historico-token: $TOKEN" -H "x-vercel-protection-bypass: $VERCEL_AUTOMATION_BYPASS_SECRET" -H "Content-Type: application/json" --data-binary @/tmp/prog.json "$BASE/api/apu?op=ia" -o /dev/null
    ```
 
    `total` = filas que no son título. Mande el primero con `hecho: 0` antes de buscar nada, y luego uno cada
@@ -79,7 +80,7 @@ solicitud de «en_cola» y hace de candado: dos sesiones sobre la misma solicitu
 
    ```bash
    node -e 'const p=require("/tmp/propuesta.json"); process.stdout.write(JSON.stringify({perfil:"<PERFIL>",id:"<ID>",motor:"sesion",propuesta:p}))' > /tmp/cuerpo.json
-   curl -s -X POST -H "x-historico-token: $TOKEN" -H "Content-Type: application/json" --data-binary @/tmp/cuerpo.json "$BASE/api/apu?op=ia" -o /tmp/respuesta.json
+   curl -s -X POST -H "x-historico-token: $TOKEN" -H "x-vercel-protection-bypass: $VERCEL_AUTOMATION_BYPASS_SECRET" -H "Content-Type: application/json" --data-binary @/tmp/cuerpo.json "$BASE/api/apu?op=ia" -o /tmp/respuesta.json
    node -e 'const r=require("/tmp/respuesta.json"); console.log(r.ok?`GUARDADA · ${r.resumen.con_precio} con APU · ${r.resumen.sin_precio} sin precio · ${r.apartados.length} apartados · costo directo ${r.resumen.costo_directo_total}`:`ERROR ${r.error||""} ${JSON.stringify(r.detalle||"")}`); for (const a of (r.apartados||[])) console.log("  apartado fila", a.fila, "·", a.motivo)'
    ```
 

@@ -31,8 +31,8 @@ la URL:
 | **Mis procesos** | `#/mis-procesos` | Seguimiento de los procesos elegidos: cambios del pliego, cronograma, deducciones y el dictamen del pliego |
 | **Precios** | `#/precios` | El editor de APU (análisis de precios unitarios) con el lector de pliegos, el catálogo de precios, la rentabilidad y el panel piso / techo |
 
-Quien entra con su propio RUP y sin clave ve una **vista de visitante** con lo suyo; el dueño entra
-con la clave del sitio. El lenguaje de la pantalla es de **usted**, sin jerga interna ni pictogramas;
+Quien entra con su propio RUP y sin cuenta ve una **vista de visitante** con lo suyo; el dueño entra
+con su correo y su contraseña. El lenguaje de la pantalla es de **usted**, sin jerga interna ni pictogramas;
 la marca sale de un solo sitio (`MARCA.nombre` en `public/glosario.js`; inventario en
 `docs/marca.md`).
 
@@ -63,14 +63,15 @@ y la búsqueda de precios atendidos desde una sesión de Claude Code, sin clave 
   `docs/CONFIGURACION_TOKENS.md`; la lista completa de nombres que el código lee la vigila la
   suite contra esa guía. Tras el primer despliegue hacen falta dos disparos —la sincronización
   completa y la extracción histórica—, descritos allí mismo (Parte G).
-- **La llave de la aplicación** (`HISTORICO_TOKEN`) protege todo lo que escribe en Redis y las
-  cifras del perfil, no la lectura pública. Va integrada en la página, así que su valor en Vercel
-  tiene que ser **exactamente `MiExtraccion2025`**, el token integrado; con otro valor la
-  aplicación queda a medias (401 en cada escritura). Rotarla son seis sitios en un orden concreto
-  (`docs/CONFIGURACION_TOKENS.md`, § 10) y la suite comprueba que los archivos de `public/` que
-  integran el token y los documentos que le dicen al dueño qué pegar lleven el mismo valor
-  (`MiExtraccion2025` hoy). Token presente e inválido responde 401, jamás degradación silenciosa
-  (`lib/auth.js`).
+- **La entrada del dueño** (17-oct-2026): una sola cuenta, la suya, con correo y contraseña; la
+  sesión vive en una cookie `HttpOnly; Secure; SameSite=Strict` de 30 días que el JavaScript de la
+  página no ve, y salir la invalida en el servidor (`lib/sesion.js`, `/api/admin?op=entrar|salir|sesion|crear-cuenta`).
+  La página **no lleva ninguna llave**: la suite censa todos los `public/*.js` y falla si vuelve una.
+  `HISTORICO_TOKEN` es ahora una contraseña de verdad que solo vive en Vercel (y en GitHub y en el
+  entorno de Claude Code si se usan): crea la cuenta UNA vez y la usan los flujos y las rutinas;
+  desde el código de una página se rechaza. Credencial presente e inválida responde 401, jamás
+  degradación silenciosa (`lib/auth.js`). Cómo crear la cuenta y rotar la llave:
+  `docs/CONFIGURACION_TOKENS.md` (§0 y §10).
 - **Una sola rama, `main`.** Español en interfaz, comentarios, documentación y commits. Cada
   decisión nueva se añade al final de `docs/MEMORIA.md` en el mismo commit del trabajo.
 
@@ -117,7 +118,7 @@ con esa medición (toda `op` real está aquí; nada de aquí es inventado):
 - `/api/perfil?op=` resumen · diagnostico · entrada · pulso · consorcio · consorcio-simular · seguimiento · avisos · cuenta · empresa-datos
   (`cuenta` es la puerta del modo con usuarios: construida y APAGADA — responde que lo está y cómo encenderla)
 - `/api/pliego?op=` extraer-texto · parsear · descargar · formulario1 · diff · cronograma · deducciones · dictamen · documentos
-- `/api/admin?op=` rup · experiencia · cobertura · cargar-catalogo · exportar · importar · uso · respaldo · espacio · compactar
+- `/api/admin?op=` rup · experiencia · cobertura · cargar-catalogo · exportar · importar · uso · respaldo · espacio · compactar · sesion · entrar · salir · crear-cuenta
 - `/api/apu?accion=` catalogo · inferir · calcular · cotizar · rentabilidad · guardar · cargar · listar · importar · extraer-texto · descargar · parametros · ia
 - `/api/inteligencia?vista=` adjudicatario · competidor · entidad · paa · probabilidad · socio
 
@@ -134,7 +135,7 @@ rewrites (son compatibilidad para direcciones guardadas):
 | Dirección clásica | Va a |
 | --- | --- |
 | `/api/sync` · `/api/sync/historico` | `/api/procesos?op=sync` · `?op=historico` |
-| `/api/latido` | `/api/procesos?op=latido` (retoma lo que quedó a medias; lo llama `.github/workflows/latido.yml` cada 10 min) |
+| `/api/latido` | `/api/procesos?op=latido` (retoma lo que quedó a medias; lo llama `.github/workflows/latido.yml` cada hora) |
 | `/api/oportunidades` · `/api/indice-baja` | `/api/procesos?op=listar` · `?op=baja` |
 | `/api/resumen` · `/api/diagnostico` | `/api/perfil?op=resumen` · `?op=diagnostico` |
 | `/api/avisos` | `/api/perfil?op=avisos` (el aviso diario por correo; lo llama el cron) |
@@ -198,7 +199,7 @@ elegido: se muestra el hecho que hay detrás, no el modelo que lo produjo.
 5. `docs/PROMPT_INICIAL.md` al empezar una sesión de trabajo (rol, ciclo, verificación,
    orquestación, formato de cierre).
 6. Dominio, solo si el encargo toca reglas de negocio: `docs/GUIA_ANALISTA_LICITACIONES.md` junto
-   con `docs/COMPLEMENTO_ANALISTA_LICITACIONES.md` (corrige dos errores del manual; van juntos) y
+   con `docs/COMPLEMENTO_ANALISTA_LICITACIONES.md` (corrige errores del manual; van juntos) y
    `docs/APU_Y_RENTABILIDAD.md` para precios.
 
 Los documentos de análisis fechados (auditorías, investigaciones, consultorías) abren con «Foto del

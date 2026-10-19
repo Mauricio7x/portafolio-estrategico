@@ -2658,13 +2658,14 @@ Decisiones que no hay que re-aprender:
   documentos del INVIAS prohíben el uso comercial sin autorización — está en `_meta` y en `meta()`.
 
 ### Página única y token integrado (ago 2026)
+> SUPERADA el 17-oct-2026 por «La entrada del dueño: correo y contraseña, y ninguna llave en el navegador (17-oct-2026)» — solo el token integrado y la clave del sitio: la llave salió del navegador y el dueño entra con correo y contraseña; la página única, sus ids y el arranque al final del IIFE siguen vigentes.
 
 Encargo del dueño: «una sola página, cero fricción». Se retiraron `admin.html`, `apu.html`,
 `pliego.html`, `admin.js` y `apu.js`; queda `index.html` (tres pestañas: 🏠 `#/licitaciones` ·
 📊 `#/apu` · ⚙️ `#/admin`, tema oscuro `#0f172a`, barra inferior en móvil) y `public/app.js` como
 único módulo principal, ENSAMBLADO de los tres anteriores. Decisiones que no hay que re-aprender:
 
-- **El TOKEN va INTEGRADO en el frontend** (`const TOKEN = "MiExtraccion2025"`, en app.js, pliego.js
+- **El TOKEN va INTEGRADO en el frontend** (`const TOKEN = "[llave retirada el 17-oct-2026]"`, en app.js, pliego.js
   y onboarding.js) y el usuario NO ve ningún formulario, prompt ni error de token. Es decisión
   explícita del dueño y hay que contarla exacta: **ese literal no es un secreto** — cualquiera que
   lea el fuente lo ve — y la capa de seguridad REAL es Vercel Password Protection (más el gate de
@@ -4026,6 +4027,8 @@ landing nueva en `index.html` + `onboarding.js`. Decisiones que no hay que re-ap
 
 ### Fase 3 · Panel Piso / Techo (ago 2026)
 
+> SUPERADA el 18-oct-2026 por «La alerta de precio bajo se corta por modalidad con lo medido en SECOP II (18-oct-2026)» — solo el 80 % único del umbral de precio artificialmente bajo: ahora depende de la modalidad; sigue siendo REFERENCIA declarada, no norma, y lo demás del panel sigue vigente.
+
 `lib/apu/piso_techo.js` (capa PURA), bloque `piso_techo` en `POST /api/apu?op=rentabilidad`,
 sección `#seccion-piso-techo` (primera entre los resultados de *Precios*), campo «Utilidad mínima
 aceptable» en Ajustes y `public/justificacion.js` (UMD). Decisiones que no hay que re-aprender:
@@ -5146,7 +5149,7 @@ remotas y todo el trabajo va desde ahora directo a `main`. Decisiones que no hay
   `docs/CONFIGURACION_TOKENS.md`, la guía de variables de entorno para el dueño sin terminal. Se
   rescató, y con ella la corrección del paso 1 del `README.md` que la propia guía dejaba pendiente
   («una cadena larga y aleatoria» era la trampa número uno: con el token integrado en el frontend, el
-  valor de `HISTORICO_TOKEN` tiene que ser EXACTAMENTE `MiExtraccion2025` o la app se sirve a medias
+  valor de `HISTORICO_TOKEN` tiene que ser EXACTAMENTE `[llave retirada el 17-oct-2026]` o la app se sirve a medias
   **sin error visible**). Las dos fuentes dicen ya lo mismo y la guía lo declara.
 - **LO QUE LAS DEMÁS RAMAS «AÑADÍAN» ERAN ARCHIVOS RETIRADOS A PROPÓSITO**, y devolverlos habría sido
   una regresión disfrazada de rescate: los `api/*.js` sueltos (plegados en los 6 routers), los cinco
@@ -8087,7 +8090,7 @@ confirma el cron en `op=salud` (`ultima_sincronizacion` de esa mañana) el día 
 larga (la sesión se la genera), entorno Production → «Save» → «Deployments» → «Redeploy». Al día
 siguiente pegar en Chrome `/api/procesos?op=salud` y comprobar la hora de la última sincronización.
 Y desde ese momento, las URL pegadas en Chrome `/api/sync?modo=full` y `/api/sync?modo=auto` llevan
-`&token=MiExtraccion2025` (CONFIGURACION_TOKENS.md §3.6 y §8).
+`&token=[llave retirada el 17-oct-2026]` (CONFIGURACION_TOKENS.md §3.6 y §8).
 
 ### Lote «B4a-vista-de-visitante» de la consultoría del 4-sep · M-SEG-02 (6-sep-2026)
 
@@ -8834,7 +8837,7 @@ plano y no se abre otra convención), con la cabecera «> Archivado el 6-sep-202
 M-DOC-04 exigirá cuando se haga; el índice de M-DOC-10 no existe, así que el README remite a la lista
 de documentos que imprime `node tests/mapa.js`. Los requisitos que la suite ya imponía al README
 siguen en pie y el breve los cumple: Node 22, dos rutas «Mi empresa → …» que la página pinta, registro
-de usted, dos menciones del token integrado (`MiExtraccion2025`) y ninguna cifra del cupo de
+de usted, dos menciones del token integrado (`[llave retirada el 17-oct-2026]`) y ninguna cifra del cupo de
 datos.gov.co. El tope es **32 KiB**: lo largo va a `docs/`. (2) **Las citas no se pudren** (M-DOC-08):
 cualquier documento del árbol se cita por TÍTULO de sección (`X.md § «título»`), nunca por número de
 línea, en PROMPT_INICIAL § 10 y con cerradura por censo. Las 57 citas por línea que había en siete
@@ -10895,6 +10898,8 @@ borrado de plantillas viejo, el censo vuelve a señalar en falso; sin el `esc(` 
 suite cae nombrando el enlace.
 
 ### Dónde cae su precio: UNA escala en Piso/Techo · M-DGF-01 (con M-IE-15) (6-sep-2026)
+
+> SUPERADA el 18-oct-2026 por «La alerta de precio bajo se corta por modalidad con lo medido en SECOP II (18-oct-2026)» — solo el motivo «no es una cifra medida» para no dibujar el umbral en la escala: en licitación, menor cuantía y mínima ahora es una referencia medida. No dibujarlo sigue vigente hasta que el dueño decida otra cosa.
 
 En una línea: el panel donde se fija el precio dibuja una sola recta con lo que le cuesta, su
 precio mínimo, el precio al que suele ganarse, el presupuesto oficial y SU precio marcado —más la
@@ -16187,19 +16192,15 @@ real de Upstash desde Vercel; cuánto tarda en producción la reconstrucción de
 
 ### Proponente plural: la norma dice sumar los balances, no promediar los índices, y el reparto lo ata la experiencia (25-sep-2026)
 
-En una línea: la investigación con internet que el dueño pidió ANTES de tocar el cálculo del consorcio desmiente las dos
-premisas del combinador: todos los Documentos Tipo vigentes de obra calculan los indicadores del plural sumando los
-componentes de los socios SIN participación (el reparto no mueve la liquidez) y ninguno fija un «30 % o 40 %» a quien
-aporta la experiencia —lo que ata el reparto es la regla de EXPERIENCIA 50/5/10 y el factor E de la K—; 241 pliegos
-reales, los cuatro RUP leídos al centavo y el diagnóstico de la sincronización quedan en `docs/PROPONENTE_PLURAL.md`, y
-el cálculo NO se cambió todavía, por orden del dueño.
+En una línea: la investigación con internet que el dueño pidió ANTES de tocar el cálculo del consorcio desmiente las dos premisas del combinador: todos los Documentos Tipo vigentes de obra calculan los indicadores del plural sumando los componentes de los socios SIN participación (el reparto no mueve la liquidez) y ninguno fija un «30 % o 40 %» a quien aporta la experiencia —lo que ata el reparto es la regla de EXPERIENCIA 50/5/10 y el factor E de la K—; 241 pliegos reales, los cuatro RUP leídos al centavo y el diagnóstico de la sincronización quedan en `docs/PROPONENTE_PLURAL.md`, y el cálculo NO se cambió todavía, por orden del dueño.
 
 > RESUELTO el 25-sep-2026 por «El consorcio se calcula como el Documento Tipo, la capacidad como la Guía, y PICS entra como socia (25-sep-2026)» · partes (1), (2) y (3); la (4) y la (5) siguen como PENDIENTE en esa sección · el dueño decide, con `docs/PROPONENTE_PLURAL.md` a la vista, cómo se cambia el cálculo: (1) `derivarPlural` pasa a la suma de componentes del Documento Tipo, y cuando el pliego declare otra fórmula (opción 4, índices ponderados) se usa la del pliego; un método no leído se calcula con el del Documento Tipo y se dice «verificar en el pliego»; (2) los componentes certificados entran en `lib/perfiles.js` con su página y su firmeza; (3) `lib/capacidad.js` se alinea con la Guía (E con el total del segmento 72 y el % del socio, escalas de las Tablas 4 y 5, K negativa que resta, piso de CO); (4) el recomendador de reparto por proceso y por socia llama a `lib/consorcio.simular` y dice la frontera («a 60/40 cumple; a 61/39 deja de cumplir X») con la cita del pliego; (5) la pantalla de perfiles: «Su empresa: Helder», «Socios posibles: Génesis y PRODIAC» y los consorcios calculados con la misma regla, sin el tope fijo de 11.000 SMMLV.
 > RESUELTO el 26-sep-2026 por «El pliego dice el reparto: la cláusula de participación y la fórmula del plural (26-sep-2026)» · en `lib/participacion.js` (no en `lib/diff.js`), con el banco literal de los 21 en tests/e2e.js · el lector de pliegos (`lib/diff.js` REQUISITOS y la guía) aprende la cláusula de participación en sus tres formas principales (mínimo de quien aporta experiencia, mínimo de cada integrante, «el de mayor experiencia tiene la mayoría») y en sus variantes (el integrante con sucursal en la ciudad, quien asume las responsabilidades, el de mayor participación que debe acreditar la experiencia), también en los estudios previos, y dice «no la encontré» cuando no está; la tabla de los 21 pliegos con cláusula y el dudoso (cita y página) de `docs/PROPONENTE_PLURAL.md` es su banco de pruebas mínimo (los textos completos de los 241 pliegos quedaron en la máquina de la sesión, que es temporal, y no en el árbol).
 > RESUELTO el 25-sep-2026 por «El consorcio se calcula como el Documento Tipo, la capacidad como la Guía, y PICS entra como socia (25-sep-2026)» · el dueño dijo «sí» · el dueño decide si PICS (la sociedad del cuarto certificado de la carpeta «RUP´S», leído entero el 25-sep-2026) entra como tercera socia posible; hasta entonces sus cifras no van al árbol, que es público, y viven en el archivo que se le entregó al dueño.
 > RESUELTO el 25-sep-2026 por «El consorcio se calcula como el Documento Tipo, la capacidad como la Guía, y PICS entra como socia (25-sep-2026)» · corrida #43 en verde a las 22:07 UTC · el dueño crea en GitHub el secreto de la corrida de la tarde: `https://github.com/Mauricio7x/portafolio-estrategico/settings/secrets/actions` → botón «New repository secret» → Name `CRON_SECRET` → Secret: el MISMO valor que tiene `CRON_SECRET` en Vercel (proyecto portafolio-estrategico › Settings › Environment Variables) → «Add secret»; se comprueba en la pestaña «Actions» cuando la corrida «sync.yml» de la tarde salga en verde.
-> RESUELTO el 26-sep-2026 por «La carga completa se pide con modo=auto: modo=full la empieza de cero en cada llamada (26-sep-2026)» · la extracción terminó los 33 meses a las 09:13 UTC (ejecución 1 del flujo, «done: true») y `op=salud` da `historico_hace_dias: 0` · el dueño relanza la extracción del histórico pegando UNA vez `https://portafolio-estrategico.vercel.app/api/sync/historico?desde=2024-01&hasta=2026-09&token=MiExtraccion2025` (con `&hasta`: sin él el rango por omisión es otro y la extracción REINICIA desde el mes 0; nunca `&reset=true`) y la sigue con `https://portafolio-estrategico.vercel.app/api/sync/historico?estado=true&token=MiExtraccion2025` hasta `terminada: true`; entonces `historico_hace_dias` deja de ser null.
-> PENDIENTE · deudas medidas en esta sesión y sin arreglar: `lib/rup_pdf.js` (utilidad/pérdida operacional, primer corte sin firmeza, `MAX_LINEAS` que corta a PRODIAC, patrimonio redondeado); `op=salud` no avisa de una extracción histórica abierta y parada; el delta de la sincronización no detecta el re-sellado masivo de SECOP y relee el año entero; la auto-llamada de `sync.js` y `historico.js` sale sin esperar antes de responder.
+> RESUELTO el 26-sep-2026 por «La carga completa se pide con modo=auto: modo=full la empieza de cero en cada llamada (26-sep-2026)» · la extracción terminó los 33 meses a las 09:13 UTC (ejecución 1 del flujo, «done: true») y `op=salud` da `historico_hace_dias: 0` · el dueño relanza la extracción del histórico pegando UNA vez `https://portafolio-estrategico.vercel.app/api/sync/historico?desde=2024-01&hasta=2026-09&token=[llave retirada el 17-oct-2026]` (con `&hasta`: sin él el rango por omisión es otro y la extracción REINICIA desde el mes 0; nunca `&reset=true`) y la sigue con `https://portafolio-estrategico.vercel.app/api/sync/historico?estado=true&token=[llave retirada el 17-oct-2026]` hasta `terminada: true`; entonces `historico_hace_dias` deja de ser null.
+> PENDIENTE · deudas medidas en esta sesión y sin arreglar: `lib/rup_pdf.js` (utilidad/pérdida operacional, primer corte sin firmeza, `MAX_LINEAS` que corta a PRODIAC, patrimonio redondeado); `op=salud` no avisa de una extracción histórica abierta y parada; el delta de la sincronización no detecta el re-sellado masivo de SECOP y relee el año entero.
+> RESUELTO el 18-oct-2026 por «La cadena que no seguía con el muro: la llamada del servidor a sí mismo va con waitUntil y dice cómo le fue, y el latido hace hasta 3 tandas (18-oct-2026)» · La parte de la auto-llamada de `sync.js` y `historico.js` que salía sin esperar antes de responder: las cuatro llamadas del servidor a sí mismo (con la del listado) van por `lib/autollamada.autoLlamar`, dentro de `waitUntil` o esperando 10 s como mucho, y op=salud dice cómo le fue a la última.
 > PENDIENTE · antes de ofertar con un consorcio: certificados RUP nuevos de los tres (los de la carpeta ya pasaron sus 60 días), el de Helder con el corte 2025 en firme; y de Génesis, confirmar que los socios cuya experiencia inscribió siguen siéndolo, en qué renovación entró el bloque N.º 89-103, si el «0.5%» del N.º 82 es real y si el N.º 5 y el N.º 90 son el mismo contrato.
 
 **El encargo, en corto.** El dueño opera con HELDER (su empresa) y arma consorcio con GÉNESIS o PRODIAC según el proceso;
@@ -16579,7 +16580,7 @@ commit que solo cambia `.md` corre la suite entera una vuelta (1/1); y el encarg
 claude.ai es un puntero al repositorio, no una copia —medido de paso que la cuenta no tiene ninguna
 rutina programada—.
 > RESUELTO el 26-sep-2026 por «Qué va a la memoria, una vuelta de suite para los textos y los encargos de rutina como punteros (26-sep-2026)» · el encargo de la rutina de Precios en claude.ai es ya el puntero de `docs/PRECIOS_DESDE_CLAUDE_CODE.md` § «La rutina», puesto tras la fusión del pull request 170 (sin verificar desde la sesión: si la rutina tiene el repositorio adjunto)
-> PENDIENTE · el dueño crea en la web (claude.ai/code/routines, con el repositorio adjunto) las tres rutinas de `docs/RUTINAS.md`, cada una con su encargo de una línea
+> RESUELTO el 18-oct-2026 por «El tablero de pendientes mentía: la revisión del 18-oct, uno por uno contra el código (18-oct-2026)» · medido con la lista de tareas programadas: las tres existen desde el 26-sep (suite de madrugada y vigilante de la mañana activas, calendario del mes en pausa). Era: el dueño crea en la web (claude.ai/code/routines, con el repositorio adjunto) las tres rutinas de `docs/RUTINAS.md`, cada una con su encargo de una línea
 
 **La memoria.** Crecía unos 15 KiB por día (`estado.js`, ritmo de 7 días) porque «toda decisión
 nueva» se leía como «todo cambio»: un ajuste de pocas líneas arrastraba sección, índice y mapa. El
@@ -17838,7 +17839,8 @@ la competencia en esa modalidad, y encontró —reproducido— que Detekta afirm
 `docs/INVESTIGACION_LICITANTE.md` y se cruza con `docs/INVESTIGACION_MERCADO_LICITADOR.md`.
 
 > RESUELTO el 27-sep-2026 por «Las cinco cosas falsas: qué pide la ley en cada proceso, el capital de trabajo del pliego y los contratos del consorcio (27-sep-2026)» · (1) la menor cuantía sin manifestación ya no dice «sin ese aviso no puede presentarse»; (2) el registro de proponente no se exige en mínima cuantía ni en contratación directa; (3) la capacidad de contratación solo se exige en obra; (4) el capital de trabajo del pliego se avisa en la tarjeta y se calcula exacto en Mis procesos; (6) los contratos en ejecución, también los de sus consorcios, salen de SECOP II y la capacidad los resta.
-> PENDIENTE · decisiones del dueño que salen de `docs/INVESTIGACION_LICITANTE.md § «6. Hoja de ruta unificada»`, cada una con plan, prueba por mutación y revisión adversaria antes de tocar código: (5) los indicadores del consorcio se juzgan sumando aunque el pliego pondere; (7) el revisor de la oferta (formulario1) da «lista» con errores reproducidos; (8) Precios dice «se sortea en la audiencia» en mínima cuantía, y la regla de la TRM descrita es la vieja.
+> RESUELTO el 18-oct-2026 por ««Cómo se gana con el precio» por modalidad: sin sorteo en mínima cuantía ni en concurso de méritos (27/28-sep-2026, N13')» · el (5), en «Los indicadores del consorcio se juzgan con la fórmula del pliego, y el 50/50 supuesto no niega (27/28-sep-2026, N21)»; los dos en el commit 9152f8f. Eran (5) los indicadores del consorcio y (8) el sorteo en mínima cuantía y la TRM vieja; comprobado el 18-oct ejecutando `comoSeGanaElPrecio`: mínima cuantía dice «gana la oferta de menor precio… no hay sorteo» y licitación, «los centavos de la TRM de la fecha que fija el pliego».
+> RESUELTO el 18-oct-2026 por «El revisor de la oferta deja de decir «lista» con errores: identificador, IVA, cantidad sin dato, otro proceso y lectura tardía (27/28-sep-2026, N11-A)» · (commit 1830e61) comprobado el 18-oct: el bloque «unidad revisor de la oferta» pasa, y `validarFormulario1` con un pliego numerado por `codigo` ya no dice «faltan todos los ítems». Era: (7) el revisor de la oferta (formulario1) daba «lista» con errores reproducidos.
 > RESUELTO el 30-sep-2026 por «El tipo de contrato de obra sin códigos entra, en ámbar (30-sep-2026)» · medido: 5 de 26 abiertas de mínima cuantía, una de ellas obra de verdad; en el año, 287 de 11.520 competitivos de tipo «Obra». Ahora entran y el perfil los enseña en ámbar.
 
 **Lo que no hay que re-aprender:**
@@ -18104,6 +18106,10 @@ En una línea: `/api/respaldo` (cron diario 07:15 UTC → `op=respaldo` de `api/
 **Verificado.** Bloque «copia nocturna fuera de Upstash» de la suite, que ejecuta router, biblioteca y salud sobre el Upstash falso; suite completa 4/4; mutación en una copia aparte del árbol: catorce mutaciones reales y las catorce mueren (incremental, huella de la prueba, orden de cabeceras, aplazamiento, tachado, candado propio, op plegada, salud vieja, «completa», 503 sin variables, re-barrido del mes, mes perdido, error sin cuerpo en la salud, forzar).
 
 ### El latido: un reloj de fuera que retoma lo que quedó a medias, sin decidir nada nuevo (27-sep-2026)
+
+> SUPERADA el 18-oct-2026 por «La cadena que no seguía con el muro: la llamada del servidor a sí mismo va con waitUntil y dice cómo le fue, y el latido hace hasta 3 tandas (18-oct-2026)» — solo «lanza UN tramo»: ahora repite el tramo en el mismo proceso hasta 3 tandas, sin arrancar una pasados 170 s, y para si el tramo falla, si otro tiene el candado, si terminó o si no avanzó.
+
+> SUPERADA el 17-oct-2026 por «Pedir otro rango ya no vuelve a empezar el histórico: el servidor responde 409 y el botón continúa el rango guardado (17-oct-2026)» — solo la frase «`extraerHistorico` reinicia el cursor si el rango pedido es otro»: ahora responde 409 si no viene `reiniciar`. Continuar con el rango exacto del cursor sigue siendo la regla.
 
 En una línea: `op=latido` (`/api/latido`) lee en un MGET la meta, los dos cursores y los dos candados y, si una carga completa, una actualización o la extracción del histórico quedó a medias —o la lista tiene más de 30 min en horario de 6:00 a 22:00 de Colombia—, lanza UN tramo del handler de siempre (`op=sync&modo=auto` u `op=historico` con el rango de su cursor, `chain=0`); lo llama `.github/workflows/latido.yml` cada 10 min porque en Hobby un cron de Vercel más que diario tumba el despliegue.
 
@@ -18619,6 +18625,8 @@ En una línea: la palabra «combustible» de la lista negra de ingesta descartab
 
 ### Tres pruebas con fecha fija tumbaron main al cambiar de mes, y la cuarta espera (1-oct-2026)
 
+> SUPERADA el 16-oct-2026 por «Las pruebas con fecha: la compactación caía el 31-oct y la lista se queda sin procesos con cierre en noviembre (16-oct-2026)» — solo su PENDIENTE: la fecha medida es del 1 al 5-nov, y la causa no es una fecha fija.
+
 En una línea: el 1-oct-2026 `main` amaneció en rojo sin que nadie tocara nada —dos casos de prueba con cierre fijo el 30-sep pasaron a «cerrado» y una tercera aserción de la ganancia, que reconstruía el costo desde una cifra ya redondeada, cayó por 1 peso cuando el reloj cambió el primer proceso del listado simulado—; las tres se corrigieron donde estaba el fallo y queda una cuarta que caerá entre el 31-oct y el 10-nov.
 
 - **Las fechas fijas.** «sin pedirlo, un anticipo declarado bajo ya no esconde nada» y «y las 112 con Publicado entran» probaban el anticipo y el estado, pero con `fecha_cierre: "2026-09-30…"` caían por la fecha. El cierre se calcula ahora a 30 días del reloj real; el resto del bloque sigue con sus fechas fijas porque lo prueba con un «hoy» fijo.
@@ -18640,3 +18648,1141 @@ En una línea: la regla «la suite corre antes de commitear» pasó de texto a h
 - **Revisada por el propio revisor adversario (2-oct-2026), y lo que encontró.** La primera versión tenía cinco defectos, todos reproducidos: (1) un `grep` o `echo` que solo MENCIONABA «git commit» entre comillas corría la suite y la bloqueaba; (2) `bash -c "git commit …"`, `sh -lc` y `eval` NO se detectaban (falso permitido); (3) `git commit archivo.js -m x` con nada en staged pasaba sin correr nada, porque git commitea las rutas del comando y no lo que haya en staged; (4) un renombre `.js` → `.md` se veía como «solo .md» y corría 1 vuelta (`--name-only` esconde el origen del renombre; ahora `--no-renames`); (5) las rutas con tilde (git las escapa en octal) no se reconocían como `.md` (ahora `-z`). Ahora `git` solo cuenta si ARRANCA una orden, y con rutas en el comando o con nada en staged que no sea enmendar un mensaje o un commit vacío, se asume cambio completo (4/4).
 - **La cerradura de la cerradura.** `.claude/hooks/guarda-commit.test.js` ejecuta el hook REAL sobre repositorios de juguete con una suite falsa (60 casos: detección, modo, sello, suite roja). Con `GUARDA_HOOK=<ruta>` se prueba contra una versión anterior: contra la primera versión falla en 13 casos, que es lo que la hace una prueba y no un adorno. No es parte del 4/4 de `tests/e2e.js`: se corre a mano cuando se toca el hook.
 - **Límite medido.** Un archivo suelto en el árbol cambia la huella y obliga a repetir el 4/4: por eso `salida.txt` (la receta de CLAUDE.md) está en `.gitignore` y el revisor escribe fuera del árbol. El hook también rige a los subagentes (uno de los revisores tuvo que armar la frase «commit» por concatenación para no dispararlo).
+> RESUELTO el 16-oct-2026 por «La fila de prueba se busca en todas las páginas del listado, y enero espera (16-oct-2026)» · medido de nuevo el 17-oct con el reloj adelantado a +15, +16, +20, +30, +45 y +70 días (31-oct a 26-dic): verde. Era: la prueba «hace falta un proceso del listado con cierre, presupuesto y sin id_del_portafolio» (unidad de iteraciones) cae con el reloj adelantado entre +30 y +40 días; reproducir con un precargador que adelante `Date` y corregir donde se agotan los datos simulados, antes de que tumbe `main`.
+
+### Vercel pausó Detekta por CPU: cuenta nueva y menos llamadas automáticas (16-oct-2026)
+
+En una línea: el 30-sep Vercel Hobby pausó el proyecto por «Fluid Active CPU» y la pausa no se levanta sola; el dueño eligió (16-oct) una cuenta nueva de Vercel con `detekta-app.vercel.app`, y lo automático deja de despertar funciones que nadie necesita: `FRESCO_MS` de 5 min a 6 h, latido a 13 h y cada hora, tablero cada 30 min, Precios cada 60 s; «Actualizar datos» manda `forzar=1` para no esperar.
+
+> PENDIENTE · cuando la cuenta nueva lleve una semana desplegada: leer su «Usage» (CPU activa de 30 días) y, con esa cifra y la medición local de CPU por operación, decidir con el dueño las dos vueltas nocturnas de compactar, el cron de `/api/respaldo` (responde 503 mientras R2 no exista) y las tareas mensuales (carga de higiene y refresco del histórico); ninguna se toca sin su visto bueno.
+
+- **Lo medido el 16-oct.** `portafolio-estrategico.vercel.app` responde «402 DEPLOYMENT_DISABLED».
+  - La captura de «Usage» del dueño dice «Paused Sep 30 · Fluid Active CPU» y 1h 43m de 4h en los últimos 30 días. Las demás cifras estaban lejos de su tope: solo se agotó la CPU.
+  - Lo que más gasta, medido en local el 16-oct con datos reales de SECOP y Upstash simulado: SECOP vuelve a sellar TODAS sus filas de golpe (las 9.327.848 con el mismo `:updated_at` el 15-oct; hay re-sellados registrados también el 24 y el 26-sep), y durante las 48 h siguientes (`SOLAPE_DELTA_MS`) cada delta relee el año competitivo entero, unas 123.669 filas: de 70 a 87 s de CPU por ciclo. Con el latido de 30 min eran hasta 32 al día, de 4,6 a 5,8 veces el tope diario (unos 480 s). [Inferencia] Ese fue el disparador, más que el `op=compactar` del 30-sep, que se había supuesto.
+  - Con esta dieta quedan 2 a 4 ciclos al día: de 139 a 347 s, del 29 al 72 % del tope, solo en actualizaciones. El margen es corto; la salida de fondo (no reprocesar lo que SECOP solo re-selló) se planea aparte, con visto bueno del dueño.
+- **Por qué cuenta nueva y no Pro.** Es decisión del dueño: uso propio, en desarrollo y sin gasto.
+  - Riesgo aceptado y dicho una vez: el uso justo de Vercel prohíbe «Circumventing or otherwise misusing Vercel's limits», y la cuenta nueva también puede pausarse o bloquearse.
+  - Si pasa, la salida es Pro o `tests/servidor_local.js`, no una tercera cuenta.
+- **La base se queda donde está.** Upstash es una integración del Marketplace del equipo VIEJO, y la cuenta nueva la usa con su URL y su token REST.
+  - «Uninstall Integration» la borra. Por eso el proyecto viejo y su integración no se borran, y la cuenta vieja conserva acceso por correo.
+  - Los términos de Upstash permiten borrar un recurso gratis que pase una semana sin peticiones; su FAQ habla de archivar tras 30 días. Se exporta antes de cualquier movimiento y no se deja sin peticiones.
+- **El dominio no viaja entre cuentas.** `detekta.vercel.app` es de otro, y `detekta-app.vercel.app` respondía 404 DEPLOYMENT_NOT_FOUND el 16-oct.
+  - Se cambió en `MARCA.dominio`, en los tres flujos de GitHub que llaman a producción, en las habilidades de dictamen y precios y en los documentos que lo citan.
+  - La lista de sitios está en `docs/marca.md` §4.
+- **`FRESCO_MS` a 6 h, con dos topes.** Cada visita a la lista con el dato de más de 5 min disparaba un delta que relee 48 h de SECOP.
+  - Techo: menos que el hueco más corto entre los dos crons con su desfase. Los crons llaman en modo auto, así que si el dato pareciera fresco no actualizarían.
+  - Suelo: 1 h.
+  - La suite fija los dos topes.
+- **La pulsación no espera.** Con 6 h, «Actualizar datos» no habría hecho nada.
+  - `llamarConReintentos` manda `forzar=1` y el servidor convierte un «al día» en delta; el resto de la decisión no cambia.
+  - La lista al abrirse NO lo manda, y una cerradura lo vigila: si lo mandara, volvería el gasto.
+- **El latido es red de seguridad, no horario.** `INTERVALO_MS` pasa de 30 min a 13 h, más que el hueco mayor entre crons (12 h 10 min), así que actúa solo cuando un cron no llegó.
+  - `latido.yml` va cada hora, en el minuto 17, y no cada 10 min. Cada 3 h ahorraba poco (un latido en reposo gasta unos 66 ms de CPU en frío, medido en local) y retrasaba horas el correo de la salud en rojo, que pide dos latidos separados 20 min.
+  - Retomar una carga cortada funciona igual; solo puede tardar más.
+- **El navegador.** El tablero se refresca cada 30 min. Antes iba cada 5, y cada vuelta encontraba vencida la caché de `/api/resumen`.
+  - Precios consulta cada 60 s (antes 20 s). El tope sigue en 600 porque el contador es el mismo de la cola: con 200, una solicitud que esperó en cola perdía el seguimiento.
+- **Lo a medias y lo fallido no están «al día».** Con 6 h, la revisión adversaria reprodujo dos defectos: un ciclo de delta cortado quedaba varado hasta 6 h, y un fallo quedaba pegado con la pantalla diciendo «se reintenta».
+  - `decidirAuto` devuelve «delta» si hay `delta_ciclo` o si el último fallo es posterior a `last_sync`.
+  - El latido reintenta un fallo de más de 30 min sin actualización posterior.
+  - `forzar=1` tiene un suelo de 5 min: dos pulsaciones seguidas no hacen dos deltas de 48 h.
+- **Lo que NO se tocó, a propósito.** Los crons de `vercel.json` y las tareas mensuales mueven datos que deciden. Quedan en el pendiente de arriba.
+- **La prueba del ritmo de la memoria dependía del reloj.** Clonaba el HEAD con `--depth 1`.
+  - Con el repositorio 15 días sin commits, la frontera caía fuera de la ventana. `estado.js` decía «sin cambios», que era cierto, y la suite se ponía roja sin ejercer la guarda.
+  - Ahora fabrica un commit de hoy y clona sobre él. Sin la guarda, la prueba falla con «+18628 líneas» (medido).
+- **Verificado por mutación.** 10 de 10 cerraduras nuevas caen contra el árbol anterior:
+  - `FRESCO_MS` de 5 min;
+  - latido de 30 min;
+  - sin `forzar` en el servidor;
+  - sin `forzar` en el cliente;
+  - `forzar` en la lista;
+  - `latido.yml` cada 10 min;
+  - la guarda del ritmo;
+  - `delta_ciclo` en `decidirAuto`;
+  - el fallo posterior en `decidirAuto`;
+  - el reintento del fallo en el latido.
+
+### Las pruebas con fecha: la compactación caía el 31-oct y la lista se queda sin procesos con cierre en noviembre (16-oct-2026)
+
+> SUPERADA el 16-oct-2026 por «La fila de prueba se busca en todas las páginas del listado, y enero espera (16-oct-2026)» — solo su PENDIENTE: la causa quedó medida y corregida.
+
+En una línea: medido con el reloj adelantado, la suite caía el 31-oct por una quinta prueba con cierres fijos (la de la historia de un proceso al compactar el mes), que ya usa cierres relativos; la cuarta, la de «hace falta un proceso del listado…», cae entre el 1 y el 5-nov y sigue abierta, porque su causa es otra: no es una fecha fija.
+
+- **Cómo se midió.** Un precargador que adelanta `Date` (solo en el espacio de la sesión, no en el repositorio) y la suite entera, una vuelta, a +0, +15, +20, +25, +30, +35 y +40 días desde el 16-oct. Verde hasta +15 (31-oct); rojo desde +20 (5-nov).
+- **La compactación.** `compactarMes` solo guarda lo abierto (`estado_abierto`), y es correcto. La prueba montaba P1 con cierres el 20, 27 y 30-oct y el delta al 5-nov: desde el 31-oct P1 desaparecía y la aserción recibía `null`. Ahora usa +30, +37, +40 y +46 días del reloj, con las mismas distancias. Probado verde a +0, +30, +60 y +120 días. No se tocó el código del producto.
+- **La que sigue abierta.** En noviembre, la primera página de `/api/oportunidades` (100 filas, orden por atractividad) trae 4 filas con cierre, frente a 10 a +10 días; las filas del mes nuevo suben al tope. [Inferencia] El orden y el generador de datos simulados se cruzan con el cambio de mes; falta confirmarlo. El mismo supuesto, «la primera página trae una fila con cierre», está en seis sitios de `tests/e2e.js` (los `.find((f) => f.fecha_cierre…)`): un arreglo que solo cubra el primero deja hermanos vivos.
+
+> RESUELTO el 16-oct-2026 por «La fila de prueba se busca en todas las páginas del listado, y enero espera (16-oct-2026)» · medido de nuevo el 17-oct con el reloj adelantado a +15, +16, +20, +30, +45 y +70 días (31-oct a 26-dic): verde. Era: la prueba «hace falta un proceso del listado con cierre, presupuesto y sin id_del_portafolio» cae desde el 1 al 5-nov (medido el 16-oct con el reloj adelantado). Hallar por qué la primera página del listado simulado se queda sin filas con cierre al cambiar de mes y corregir los seis `.find` que dependen de ella, no solo el primero.
+
+### La fila de prueba se busca en todas las páginas del listado, y enero espera (16-oct-2026)
+
+> SUPERADA el 17-oct-2026 por «Enero de 2027: las pruebas caen en cadena cuando el año tiene pocos meses (17-oct-2026)» — solo su PENDIENTE: hay más de una prueba detrás.
+
+En una línea: la prueba que caía del 1 al 5-nov no era una fecha fija sino la primera página del listado simulado, que el calendario va llenando; las seis búsquedas que la miraban sola ahora recorren todas las páginas (`filaDelListado` en `tests/e2e.js`), y queda otra prueba que caerá el 1-ene-2027.
+
+- **La causa, medida.** `extrasDelMes` añade 9 filas EXTRA sin cierre por cada mes transcurrido del año, y el orden por atractividad las pone arriba. En octubre la primera página (100 filas, el tope de `por_pagina`) llevaba 90 EXTRA y 10 procesos con cierre sin llave; en noviembre, 99 EXTRA y 8 de manifestación urgente con llave, y ningún proceso con cierre sin llave. No es un defecto del producto.
+- **Por qué recorrer páginas y no tocar el generador.** Quitar filas EXTRA mueve los conteos de muchas otras aserciones. Recorrer las páginas en el orden servido conserva lo que el comentario del 15-sep exige: las dos búsquedas con el mismo predicado (guía y documentos) siguen eligiendo la misma fila.
+- **Los seis gemelos.** Se cambiaron todos, no solo el que caía: con 12 meses (diciembre) habría 108 EXTRA y también caerían los que solo piden «una fila con cierre».
+- **Medido** con el reloj adelantado: verde a +0, +20 (5-nov), +45 (30-nov), +60, +70 y +76 (31-dic) días desde el 16-oct. La versión anterior de la prueba caía a +20.
+
+> RESUELTO el 17-oct-2026 por «Enero de 2027: las pruebas caen en cadena cuando el año tiene pocos meses (17-oct-2026)» · esa prueba ya pasa en enero; lo que queda de 2027 sigue abierto allí. Era: la prueba «la carga completa tiene que quedar a medias para la prueba» cae con el reloj en enero (medido a +80 días desde el 16-oct, con el árbol de main y con este cambio por igual; verde a +76): en enero el año tiene un solo mes y la carga completa termina de una vez. Reproducir con el precargador que adelanta `Date` y corregir donde el montaje supone varios meses.
+
+### Enero de 2027: las pruebas caen en cadena cuando el año tiene pocos meses (17-oct-2026)
+
+En una línea: con el reloj adelantado a 2027 la suite cae en cadena —se detiene en la primera falla y cada arreglo destapa la siguiente—; se corrigieron dos y quedan al menos dos que caen de enero a mayo; en agosto de 2027 (+300 días) ya pasa entera.
+
+- **Corregidas.** (1) «la carga completa tiene que quedar a medias para la prueba»: en enero el año tiene un solo mes y la carga entera cabe en el primer tramo; solo en ese caso se reabre el cursor real que dejó la carga, vuelto al inicio de su único mes, y el latido lo continúa igual. (2) «un sello viejo con el estado vigente abierto ya no esconde el proceso»: el proceso de prueba cerraba el 1-ene-2027 fijo; ahora cierra a 60 días del reloj.
+- **Medido** con el precargador que adelanta `Date`, desde el 16-oct: a +80 días cae «el presupuesto corto debía forzar varias invocaciones (reanudable)»; a +110 y +200, «72141200 NO está en el RUP subido … y no debía servirse»; a +300, verde. Como la suite se detiene en la primera falla, no se sabe cuántas más hay detrás de cada una.
+- [Inferencia] El patrón común es el mismo de noviembre: los datos simulados dependen de cuántos meses lleva el año (`MESES`, `mesesDelAno`), y con 1 a 5 meses no alcanzan para lo que la prueba monta. Lo confirmaría ver, en cada falla, cuántas filas simuladas hay del año corriente.
+
+> RESUELTO el 17-oct-2026 por «Las pruebas de 2027: un corte que dependía de la velocidad de la máquina y una negación que miraba una sola página (17-oct-2026)» · Era: antes del 1-ene-2027: con el reloj adelantado a +80, +110 y +200 días desde el 16-oct caen «el presupuesto corto debía forzar varias invocaciones (reanudable)» y «72141200 NO está en el RUP subido … y no debía servirse», y puede haber más detrás. Repetir el barrido con el precargador (+77 a +260 días) hasta que todos los meses de enero a julio de 2027 pasen.
+
+### La entrada del dueño: correo y contraseña, y ninguna llave en el navegador (17-oct-2026)
+
+En una línea: la llave del servidor (`HISTORICO_TOKEN`) vivía escrita en tres `public/*.js` y abría todas las API a quien leyera el fuente; por decisión del dueño (17-oct-2026) hay UNA cuenta —la suya— con correo y contraseña, la sesión es una cookie HttpOnly de 30 días que el servidor abre, comprueba y cierra, y la suite exige ahora que NINGUNA credencial vuelva al navegador (antes exigía el literal).
+
+- **Por qué una cookie HttpOnly y no un token en el navegador.** Lo que el JavaScript de la página puede leer, lo puede leer quien abra el fuente o quien consiga ejecutar código en la página. La cookie `__Host-detekta_sesion` (`HttpOnly; Secure; SameSite=Strict; Path=/`, sin `Domain`) la manda el navegador solo y la página no la ve (`document.cookie` vacío, medido en Chromium). En Redis se guarda bajo el HASH del token: un volcado no entrega sesiones usables. Salir la BORRA en el servidor: una cookie copiada deja de valer en ese instante.
+- **Una sola cuenta y atómica.** La marca `cuenta:dueno` se escribe con `SET NX` y va la ÚLTIMA: dos altas a la vez crean una (la perdedora retira lo suyo). Una cuenta o sesión cuyo id no coincide con la marca no vale. Creada la cuenta, `op=crear-cuenta` responde 409 para siempre. El alta exige la llave del servidor escrita a mano: es lo único que el dueño tiene y un desconocido no (una vez rotada, §10 de la guía).
+- **La llave sigue valiendo, pero no desde una página.** Los flujos de GitHub, las rutinas y las skills (`/dictamen`, `/precios`) corren sin navegador y la usan; las skills la leen ahora de la variable de entorno `HISTORICO_TOKEN` del entorno de Claude Code (antes la sacaban con `grep` de `public/app.js`). Desde el CÓDIGO de una página se rechaza con 401. **Trampa medida:** el `fetch` de Node manda `sec-fetch-mode: cors` (Node 22) y la aplicación se llama a sí misma con él y con la llave (sync → histórico, el latido); la primera versión miraba solo el modo y rompía esa cadena. Se mira `Sec-Fetch-Site`, que los navegadores mandan siempre y Node no.
+- **El guardián es asíncrono.** `autorizarToken` y `autorizarSincronizacion` comprueban la sesión en Redis, así que todos sus llamadores de lib/ (más de treinta) llevan `await`. Un `await` olvidado falla cerrado (una promesa no tiene `.ok`), y aun así hay censo en la suite. La llave PRESENTE manda sobre la cookie: llave presente e inválida es 401 aunque haya sesión.
+- **Defensa contra envíos desde otro sitio, además de SameSite.** Con cookie, toda escritura exige `Origin` igual al host (o `Sec-Fetch-Site: same-origin`) y toda petición que el navegador declare de otro sitio se rechaza (403). Los tres POST de la entrada (entrar, salir, crear) también: otro sitio no puede ni meter al navegador del dueño en otra cuenta ni sacarlo de la suya.
+- **El límite de intentos lo cuenta el servidor.** 5 por correo escrito (exista o no la cuenta) y 20 por conexión cada 15 minutos, en Redis con caducidad, contados ANTES de comprobar la contraseña. «Correo inexistente» y «contraseña mala» responden idéntico, con una derivación scrypt ficticia para que tampoco el tiempo los distinga. Si Redis no responde, NO se entra (503): aquí el falso caro es abrir, al revés que en la cuota de altas públicas. El bloqueo de tres intentos que vivía en la pestaña se fue: bastaba recargar.
+- **La cuota de altas públicas ya no la exime la llave**, solo la sesión del dueño: la llave vivió en el navegador y eximirla era regalarle la puerta a quien la copiara.
+- **La página pregunta al servidor.** El arranque espera `op=sesion` (siempre 200: un 401 ahí sería un error de consola en cada visita) antes de decidir la vista; ninguna marca de `sessionStorage` abre lo del dueño. Todo `fetch` de `app.js` y `pliego.js` pasa por uno que declara `credentials: "same-origin"`; un 401 abre el gate ENCIMA de la aplicación (`msg401` en app.js; `pliego.js` y `onboarding.js` lo avisan con el evento `detekta:sesion-vencida`), y al entrar se devuelve la pantalla tal cual.
+- **Lo que no se hizo, a propósito.** No hay recuperación por correo: con una sola cuenta, olvidar la contraseña se arregla borrando `cuenta:dueno` en la consola de Upstash y creándola otra vez con la llave (la guía lo dice). Vercel Password Protection no se tocó: quitarla es F3-11 del plan, aparte. No se rotó nada: eso lo hace el dueño en Vercel, y hasta que lo haga la llave vieja sigue en la historia de git.
+- **Medido.** Bloque «unidad sesión del dueño» con el handler real; diez mutaciones (aceptar la cookie sin validar, segunda alta, la marca sin NX, quitar el límite, aceptar la llave desde una página, quitar el CSRF, salir sin borrar, la llave eximiendo de la cuota, respuesta distinta para correo inexistente, sesión caducada aceptada) y las diez caen. Chromium a 390 px: crear la cuenta, ver la lista (20 tarjetas), recargar sin volver a entrar, salir (la cookie copiada responde 401), entrar mal y bien, y la sesión cerrada por detrás abre el gate al pulsar «Buscar»; 0 errores de JavaScript.
+
+> RESUELTO el 18-oct-2026 por «El tablero de pendientes mentía: la revisión del 18-oct, uno por uno contra el código (18-oct-2026)» · hecho por el dueño el 18-oct. Era: en este orden (docs/CONFIGURACION_TOKENS.md § 0.1): desplegar (el alta se niega sola mientras la llave vieja siga en Vercel), cambiar `HISTORICO_TOKEN` en Vercel por una cadena nueva y volver a desplegar, crear su cuenta con la llave nueva, y copiar el mismo valor al secreto `HISTORICO_TOKEN` de GitHub (flujo de la carga completa) y al entorno de Claude Code (rutinas y skills).
+
+**Revisión adversaria del mismo día (lo que se corrigió y por qué no se deshace):**
+
+- **La llave publicada no crea la cuenta: se compara su HUELLA.** El repositorio es público y la llave vieja está en su historia: con el orden «desplegar → crear → rotar», quien la leyera creaba la única cuenta antes que el dueño (reproducido: 201 del desconocido, 409 del dueño, y su sesión sobrevivía a la rotación). `lib/sesion.LLAVES_RETIRADAS_SHA256` lleva solo el SHA-256 —jamás el valor— y con esa llave en el entorno el alta responde 503 diciendo qué hacer; así el orden de despliegue deja de importar. El literal se retiró de los ocho documentos que aún lo tenían («[llave retirada el 17-oct-2026]») y la suite barre TODO el árbol por huella: un valor no puede ir en una prueba, su huella sí.
+- **Entrar va por la marca, no por el índice del correo.** Dos altas a la vez con el MISMO correo dejaban sin índice al dueño (la perdedora borraba el de la ganadora: su contraseña correcta respondía 401 para siempre y la pantalla de alta ya estaba cerrada). Con una sola cuenta, `cuenta:dueno` dice cuál es y el correo se compara con el hash de la ficha; el índice se escribe solo tras ganar el NX. De paso, el intento fallido cuesta los mismos comandos de Redis exista o no el correo (antes 6 y 4: un oráculo).
+- **El tope de 5 es por correo Y conexión**, con 20 por conexión y 50 solo por correo: con 5 solo por correo, un tercero dejaba fuera al dueño desde cualquier sitio con cinco intentos.
+- **Un INCR que no devuelve un entero es 503**, no un intento libre («sin dato» ≠ cero).
+- **El tramo del latido lleva solo lo del servidor** (`cabecerasDelTramo`: host, protocolo, `cabecerasDeAutoLlamada` y la llave): reenviar las del navegador mandaba `sec-fetch-site` junto a la llave y op=historico la rechazaba.
+- **[Sin verificar] El límite por conexión depende de que Vercel fije `x-real-ip` / `x-forwarded-for`** y no deje pasar los que manda el cliente (`perfil_dinamico.ipDePeticion`). Fuera de Vercel cualquiera los inventa (reproducido: 30 intentos con IP distinta, ningún 429); por eso el tope de 50 solo por correo no depende de la IP: frena a quien prueba un correo concreto aunque invente conexiones.
+
+### La fila partida de la tabla de códigos de la experiencia (17-oct-2026)
+
+En una línea: cuando el nombre de un código ocupa dos líneas en la tabla «Segmento | Familia | Clase | Nombre», pdf.js
+deja el segmento arriba con el nombre y «familia clase» abajo («72 Servicio de construcción y revestimiento y pavimentación
+de 14 11 infraestructura»); el lector la saltaba y la lista quedaba CORTA dándose por completa. Ahora se reconstruye.
+
+**Cómo se halló.** La Fase 0 del proyecto detekta-lector (repositorio aparte, 17-oct-2026) pasó el texto de 9 pliegos
+reales (pdf.js 3.11.174 de `public/vendor` + la `lineasDePagina` de `public/pliego.js`) por `hechosDeTexto` y lo comparó
+con una verdad armada por subagentes con cita: en 4 de 9 (CO1.REQ.11036237, 10650320, 10512619, 10955924) faltaba
+721411 y la lectura decía `completa: true`. Una lista corta y «completa» ESTRECHA la experiencia: un contrato con solo
+721411 dejaba de contar y el reparto o la casilla podían decir que la empresa no llega cuando sí llega.
+
+**Lo que no hay que deshacer.** (a) La reconstrucción exige segmento + texto SIN cifras (hasta 160 caracteres) + dos
+parejas de dos cifras; una errata («14 111», Turbaco) NO se reconstruye y vuelve la tabla incompleta (`ERRATA_FILA_RE`):
+se enseña, no estrecha. (b) Una reconstrucción que PISA un código ya leído se descarta: es la única guarda contra
+«15 Servicios de apoyo 72 10 29» → 157210, y la cierra la prueba de la tabla en columnas (quitarla la tumba). (c) El
+reconstruido cuenta como código «corto» (seis cifras), con la misma regla de solo dentro de una tabla ya abierta. Y el
+segmento no puede ir tras otras dos cifras: una tabla de solo segmento y familia («72 14 Servicios … 72 10») fabricaba
+147210 (revisión adversaria, 17-oct-2026; las dos guardas tienen su cerradura). Límite conocido: una fecha «14 11 2026»
+en un membrete a mitad de tabla puede reconstruirse como 721411 y tapar la guarda de tabla completa; solo ENSANCHA
+(no esconde contratos) y no apareció en 291 textos reales.
+(d) VERSION de `lib/documentos_proceso` 15 → 16: los hechos guardados con la lectura vieja se rehacen.
+Medido después: 3 de los 4 (Pasto ×2, Norte de Santander) dan la lista de la verdad; Turbaco queda incompleta (no estrecha), como debe.
+### El anticipo «N/A» bajo su título y el amparo «Devolución del pago anticipado» (17-oct-2026)
+
+En una línea: en el pliego de Turbaco (CO1.REQ.10650320) el numeral «8.3. ANTICIPO Y/O PAGO ANTICIPADO» dice solo «N/A»
+en la línea siguiente, y la tabla de garantías trae el amparo «Devolución del pago anticipado N/A N/A»; la guía decía
+«hay anticipo» (ganaba el amparo, una línea larga de peso 2). Ahora el título + «N/A» niega y el amparo no afirma.
+
+**Por qué importa.** El anticipo entra en el capital de trabajo exigido: CTd = (POE − anticipo) × 33 %. Un «sí» falso
+lo baja y puede dar «cumple» donde no cumple. Lo halló la Fase 0 de detekta-lector (17-oct-2026): 9 pliegos reales,
+texto de pdf.js con la `lineasDePagina` del navegador, contra una verdad con cita.
+
+**Lo que no hay que deshacer.** (a) «Devolución del pago anticipado» se excluye como ya se excluían «buen manejo y
+correcta inversión» y «amortización» del anticipo: nombrar un amparo no es pactar un anticipo, y su «N/A» tampoco se usa
+para negar (es indirecto). (b) El «N/A» solo niega como línea SOLA justo debajo de un TÍTULO de anticipo (peso ≤ 1,
+misma página), por la rama que ya existía para «la Entidad no entregará al contratista.». Y es una negación DÉBIL
+(peso 0,5 + 1 = 1,5): gana a una mención (≤ 1) pero pierde ante cualquier frase que afirme (2), antes o después; sin
+eso, «PAGO ANTICIPADO (SI APLICA): / N/A» o una celda «N/A» bajo «GARANTÍA DE BUEN MANEJO DEL ANTICIPO» tapaban un anticipo
+del 30 % pactado en otra línea (revisión adversaria, 17-oct-2026), y un «no» falso SUBE el capital de trabajo exigido.
+Límites conocidos, previos a este cambio: «8.3. ANTICIPO Y/O PAGO ANTICIPADO: No aplica» en UNA línea sigue dando «sí»
+(SIN_ANTICIPO_RE pide «anticipo:» y la línea dice «anticipado:»), y la exclusión de un amparo descarta la línea entera. (c) REGLAS_VERSION .5 → .6:
+cambia la clave de caché del dictamen por reglas y la versión de los hechos (se rehacen). (d) `lib/negocio.SIN_ANTICIPO_RE`
+no cambia: lee «anticipo: n/a» seguido, y el título dice «anticipado», así que tampoco ve este caso; queda anotado.
+Medido después: 9 de 9 pliegos con el anticipo de la verdad (Pasto A «sí», los otros ocho «no»).
+
+### Lo que mostraron 5 procesos de menor cuantía ya adjudicados (17-oct-2026)
+
+En una línea: en el Documento Tipo de menor cuantía V3 los métodos de ponderación y la regla de la TRM no son los que describe el manual, el piso de precio bajo se calculó en torno al 92 % y no al 80 % de referencia del panel, y en los cinco procesos los rechazos fueron por papeles, no por precio.
+
+> PENDIENTE · [Sin verificar] que la tabla de métodos del manual sea la del Documento
+> Tipo de licitación pública. Y decidir con el dueño si el 80 % de referencia se calibra con el
+> histórico (más de 3 casos) o se muestra junto con «en procesos ya cerrados el piso cayó en torno
+> al 92 %». Tres hallazgos de la muestra, revisados a fondo el mismo día, no son de la app: en
+> Floridablanca la evaluación puntuó con $984.249.295 y la resolución adjudicó $1.003.514.996, sin
+> explicación en los documentos (con esa cifra el ganador habría sido otro); en Caldas 020 el «valor
+> mínimo» ($910.338.610,15, mediana − desviación muestral de las 8 hábiles) es un cálculo de la hoja
+> de la entidad que el pliego no fija, y el ganador ($883.381.572) quedó debajo sin que conste una
+> solicitud de justificación; en Turbaco el capital de trabajo aplicado ($118.176.600,49) es la
+> fórmula del pliego × 0,70, como si hubiera un anticipo del 30 % que el proceso no tiene.
+
+**De dónde sale.** La muestra de `detekta-lector` (Pasto SA-2026-9, Caldas SAMC-SI-027-2026,
+Floridablanca FLO-INFRA-SA-MC-001-2026, Turbaco SAMC-006-2026 y Caldas SAMC-SI-020-2026): pliegos,
+evaluaciones, actas, resoluciones de adjudicación y contratos bajados de SECOP II por el dueño, leídos
+con cita verificada por `verificar_citas.py`. Las adjudicaciones coinciden con `p6dx-8zbt` en los
+cinco. Son 5 procesos: es evidencia, no una estadística.
+
+**Qué se decidió.**
+- La descripción de los métodos se corrige en `docs/COMPLEMENTO_ANALISTA_LICITACIONES.md` § V-18, no
+  en la guía: el complemento es el que corrige al manual y van juntos. En la tabla de cada pliego se
+  sortea por los CENTAVOS de la TRM del segundo día hábil tras el traslado del informe, entre
+  mediana con valor absoluto, media geométrica, media aritmética baja y menor valor. El modelo de la
+  app (`lib/apu/rentabilidad.js`: 25 % «menor valor» + 75 % métodos centrales) sigue valiendo, porque
+  el menor valor sigue saliendo en 1 de 4 rangos. No se toca código.
+- **El 80 % de `lib/apu/piso_techo.js` (`TEMERARIO_PCT = 20`) NO se cambia.** El piso real se calculó
+  después de abrir, con la mediana de las ofertas menos su desviación: 92,78 % (Pasto), 92,33 %
+  (Caldas 027) y 91,61 % (Caldas 020). Que el 80 % se quede corto en estos tres no basta para fijar
+  otra cifra con tres casos, y es una cifra que decide precio: va al dueño como plan, no se toca sola.
+- **Lo que tumbó ofertas fueron papeles.** Pasto: 2 rechazos por la capacidad residual (estado de
+  resultados sin dictamen, certificados de contador vencidos). Caldas 027: un Formato 5 de otro
+  proceso. Turbaco: no ser Mipyme del municipio cuando el pliego lo limitó (3 de 4). Ninguna causal de
+  precio actuó en los cinco. En Pasto, la oferta más barata perdió 20 puntos por quitar una frase del
+  Formato 14, y con ellos habría ganado.
+- **Adjudicado frente a presupuesto:** 93,80 %, 92,80 %, 99,95 %, 99,84 % y 88,90 %.
+
+### El anticipo «…PAGO ANTICIPADO: No aplica» en una sola línea (17-oct-2026)
+
+En una línea: «8.3. ANTICIPO Y/O PAGO ANTICIPADO: No aplica» (y «…: N/A») en UNA línea decía «hay anticipo»: la negación
+pedía «anticipo:» y el título termina en «anticipado:». Ahora `SIN_ANTICIPO_RE` acepta el título COMPUESTO
+(«anticipo y/o | o | y pago anticipado») seguido de 0 / cero / no aplica, y «N/A» solo tras DOS PUNTOS.
+
+**Lo que no hay que deshacer.** (a) El «N/A» sin dos puntos no niega: «Buen manejo del anticipo⇥N/A» es la celda de la
+tabla de garantías y negaría con peso fuerte, tapando un anticipo pactado (el mismo riesgo que la sección «El anticipo
+«N/A» bajo su título…» resolvió con la negación débil); lo cierra una prueba. (b) NUNCA «pago anticipado» SUELTO: anticipo y
+pago anticipado son figuras distintas, y la primera versión de este cambio («anticip(o|ado)») leía «Pago anticipado:
+no aplica» al lado de «Anticipo: 30 %» como «no hay anticipo» (peso 3, gana a cualquier frase): en `lib/negocio` ponía
+anticipo_pct 0 y la puerta de capital de trabajo cerraba, y con «solo viables» el proceso DESAPARECÍA de la lista
+(revisión adversaria, reproducido). Lo cierran tres pruebas. (b2) La gemela `lib/negocio.SIN_ANTICIPO_RE` acepta el
+mismo título compuesto (la prueba de paridad incluye la frase nueva); allí el «n/a» sigue valiendo con espacio porque
+lee la descripción de SECOP, sin tablas. (c) REGLAS_VERSION .6 → .7: los hechos y los dictámenes por reglas se rehacen.
+Era el límite que dejó anotado la revisión adversaria de la sección anterior; en los 9 pliegos de la Fase 0 no cambia nada.
+Límites conocidos (segunda revisión adversaria, no vistos en los 9 pliegos): «Anticipo y/o pago anticipado: 0 si la
+entidad no lo pacta…» con dos puntos niega aunque otra página pacte el 30 %; y en `lib/negocio` una descripción de SECOP
+con el texto de la garantía «…anticipo y/o pago anticipado: N/A» pondría el anticipo en 0.
+
+### El presupuesto del pliego frente al de SECOP II: un aviso, no un reemplazo (17-oct-2026)
+
+En una línea: `lib/presupuesto_pliego` lee la cifra en pesos de la tabla 1.1 del pliego (definitivo, adenda, documento
+base o borrador) y `documentos_proceso.loQueDicen` AVISA, primero en «Ojo con lo que dice el pliego», si difiere de la de
+SECOP II en más de $1; las cuentas (K, capital de trabajo, experiencia) siguen con la de SECOP II.
+
+**Por qué.** Santa Elena (Cali): SECOP II mostraba el valor del borrador ($1.744.426.146) y el pliego definitivo decía
+$1.581.425.810 (−9,3 %); la oferta se armó sobre la base equivocada. Medido el 17-oct-2026 en 9 pliegos reales: SECOP II
+coincide con el pliego al peso en los 9 (corta los centavos), así que el aviso es para la excepción, no la regla.
+
+**Lo que no hay que deshacer.** (a) Decisión del dueño (17-oct-2026): avisar, NO reemplazar en silencio la cifra que decide;
+reemplazarla sería otro paso con su visto bueno. (b) Tres formas reales de la cifra, cada una con su cerradura: «$ x.xxx»,
+la que cierra paréntesis con el «( $» en otra línea por las columnas entrelazadas (Santa Elena definitivo) y el formato inglés
+con centavos con o sin «$» (Caldas, «993,687,600.00»). Dos cifras distintas en la sección: null, no se escoge. (c) Solo la
+sección que está SOLA en su línea; la del índice («…UBICACIÓN⇥6») no. (d) Diferencia de hasta $1 no avisa: SECOP II corta los
+centavos. Solo borrador: «Confírmelo» y esperar el definitivo; el definitivo distinto: «Riesgo». (e) El PLAZO no se lee aquí:
+en CO1.REQ.10955924 la única cifra pegada a su unidad era la vigencia («seis (6) meses más») y el plazo real (75 días) quedaba
+partido entre columnas; leerlo exige las coordenadas de pdf.js. Y en Turbaco SECOP II publica «0 meses» (el pliego dice 4):
+la guía lo da por «sin dato», pero `lib/capacidad.plazoMesesDe` pone 12 por defecto (inocuo para menor cuantía, no dicho).
+(f) VERSION de documentos_proceso 16 → 17.
+(g) Revisión adversaria (mismo día), cada caso con su cerradura: la ADENDA más reciente con cifra gana al pliego (como la
+garantía y los requisitos) y una adenda sin cifra baja el aviso a «revisar» sin ordenar cuál cifra usar; con un pliego
+definitivo o documento base LEÍDO el borrador no habla; por LOTES no se avisa (dos lotes iguales dejaban «−50 %» falso);
+más del 50 % de diferencia es «revisar» con «puede ser una lectura equivocada»; menos de 0,1 % es «dato»; el texto dice la
+diferencia en pesos y no ordena: «confirme con la entidad cuál cifra rige». (h) El aviso «riesgo» o «revisar» va en la
+CABECERA del expediente, bajo la cifra del presupuesto (`public/expediente.js htmlAvisoPresupuesto`): en la guía quedaba
+plegado en «Todo lo demás», a dos clics. Visto en Chromium (escritorio y 390 px). Segunda revisión: gana la adenda más reciente QUE TRAE la cifra (una de cronograma, posterior, no la tapa; antes
+rebajaba un «Riesgo» verdadero); un «Documento base» cuyo NOMBRE dice proyecto/borrador es borrador (la misma RE_BORRADOR de
+clasificarArchivo); y «dato» solo si el pliego dice MÁS que SECOP II: si dice menos, una oferta al techo de SECOP II se pasa
+del presupuesto oficial. (i) Límite conocido: el techo de la
+validación de Precios sigue siendo el presupuesto de SECOP II; el aviso no llega a esa pestaña.
+Medido después: 11 de 11 cifras correctas en los 9 pliegos y las dos versiones de Santa Elena (Manizales escribe
+«1.1.OBJETO» sin espacio y ahora se lee).
+
+### El techo de la oferta en Precios: la cifra más baja entre SECOP II y el pliego definitivo (17-oct-2026)
+
+> SUPERADA el 17-oct-2026 por «El techo del pliego también desde la tarjeta de Licitaciones, para un proceso guardado (17-oct-2026)» — solo en el punto (e): la tarjeta ya arranca Precios con el techo del pliego cuando el proceso está guardado y su pliego se leyó; sin guardar, sigue con SECOP II.
+
+En una línea: al abrir Precios desde un proceso guardado («Cargue el pliego en Precios»), el campo «Presupuesto oficial
+(COP)» arranca con `guia.tope_oferta` (`lib/documentos_proceso.topeOferta`): la del pliego definitivo si es MENOR que la de
+SECOP II, con una nota que dice de dónde sale; y el hallazgo G.5 dice «por encima del presupuesto del pliego definitivo».
+
+**Por qué.** Santa Elena: con el techo de SECOP II ($1.744.426.146, el del borrador) Precios aceptaba una oferta por encima
+del presupuesto real ($1.581.425.810). Visto bueno del dueño el 17-oct-2026.
+
+**Lo que no hay que deshacer.** (a) El techo solo BAJA: si el pliego dice más o lo mismo (o difiere en centavos), queda el de
+SECOP II. (b) La elección del documento es UNA (`elegirPresupuestoPliego`), la misma del aviso de la cabecera: adenda más
+reciente con cifra, borrador callado con definitivo leído, sin lotes. (c) No fijan el techo: un borrador (aunque diga menos),
+una adenda posterior sin la tabla, una lectura dudosa (más del 50 % de diferencia), los lotes; ahí el techo es el de SECOP II
+y el aviso sigue en la cabecera. (d) `cuantia_fuente` viaja solo mientras el usuario no cambie la cifra; cualquier otro valor
+es inerte (`normalizarConfig`). (e) La tarjeta de Licitaciones («Calcular mi precio») sigue abriendo Precios con SECOP II aunque el
+pliego de ese proceso ya se haya leído (la lista no trae la guía): llevar ahí el techo es una decisión pendiente del dueño. La K,
+el capital de trabajo y la experiencia no cambian. (f) Revisión adversaria del mismo día, cada caso con su cerradura (la de la
+PANTALLA con el arnés `cargarFrontRO` del bloque «revisor de la oferta», que ejecuta el public/app.js real): sin cifra de SECOP II
+no se fija techo (no hay contra qué contrastar la lectura, y la nota decía «SECOP II publica $ 0»); `cuantiaDelPliego` es
+{id, valor} y solo viaja para ESE proceso; abrir el borrador de otro proceso la borra con su nota; cambiar la cifra a mano calla
+la nota; el pliego por debajo fija el techo aunque sea por centavos (SECOP II los corta hacia abajo). Límites conocidos: con dos
+documentos definitivos de cifra distinta manda la prioridad, no la más baja; el techo sale de la guía con que se abrió el
+expediente (una lectura posterior no lo refresca hasta reabrirlo). Visto en Chromium.
+
+### Herramientas de terceros para las sesiones de Claude: lo que entró, lo que no y por qué (17-oct-2026)
+
+En una línea: el dueño pidió una búsqueda de repositorios públicos que ayudaran a Detekta y a Claude, y aprobó instalar los
+que valieran la pena; leído el código, de cinco candidatos entró UNO (el servidor `secop` de `.mcp.json`) y además
+gitleaks en GitHub; los otros cuatro se descartaron por motivos que no se ven en la ficha del repositorio, solo en su código.
+
+**Lo que entró, y cómo no hay que tocarlo.** (a) `secop` en `.mcp.json`: juandavidsernav/secop-mcp-server 0.5.0 (MIT).
+Solo hace GET a `www.datos.gov.co`, no escribe archivos ni ejecuta comandos, y no pide clave. El paquete de PyPI se
+comparó archivo por archivo con el commit 0709a45 de su repositorio: idéntico. Va con TODO fijado (`==0.5.0`, `mcp==1.26.0`,
+`httpx==0.28.1`, las de su propio `uv.lock`, y `--exclude-newer 2026-10-01` para que ninguna dependencia de segunda mano
+cambie por debajo): quitar las versiones fijadas deja que el código que corre deje de ser el que se leyó. Sus herramientas
+NO van en `permissions.allow`: llaman a la red y esa lista es solo para lectura local. Tampoco va con la clave de Socrata
+de Detekta: una sesión de Claude no lleva secretos de producción. (b) `.github/workflows/gitleaks.yml`: el PROGRAMA
+gitleaks 8.30.1 (MIT) con su SHA-256 comprobado, no la acción `gitleaks/gitleaks-action`, que desde su v2.0.0 dejó la MIT
+por una licencia propia. Siempre con `--redact`: los registros de un repositorio público son públicos. En MODO AVISO
+(termina en verde con aviso amarillo); volverlo bloqueante lo decide el dueño. La única excepción, en `.gitleaksignore`
+con su motivo, es el vector de prueba que AWS publica para Signature V4 (examplebucket, 24-may-2013) en `tests/e2e.js`.
+Medido el 17-oct: 583 commits de la historia completa, 0 avisos con la excepción, 1 sin ella; y una clave falsa con forma
+de token de GitHub SÍ avisa (la cerca muerde).
+
+**Dos defectos del servidor `secop` que Claude NO debe creer.** (1) Un contrato sin `valor_pagado` sale como «Pagado: $0»
+(`format_summary`, `row.get("valor_pagado", "0")`; reproducido el 17-oct ejecutando solo esa función): es el «sin dato»
+convertido en cero que prohíbe la primera regla dura. Lo mismo en `contar_personas_contratadas` (`r.get(..., 0)`).
+(2) «Mostrando N de N resultados» cuenta solo las filas que trajo esa consulta (tope por petición), no el total de SECOP:
+no sirve como conteo. Para una cifra que decide, se consulta datos.gov.co con `$select=count(*)`. Sin clave, su README
+habla de unas 60 peticiones por hora (cifra suya, sin verificar).
+
+**Lo que se descartó leyendo el código, y no hay que volver a proponer sin leer esto.** (c) amgallego8/SECOP-MCP: no
+corre tal como está publicado (importa `_shared.config`, `_shared.http_client`, que no están en el repositorio) y los
+busca tres carpetas por encima de la suya con `sys.path.insert`, es decir, ejecutaría lo que haya ahí; además se presenta
+como un navegador Mac para bajar PDF. (d) obra/superpowers: sus habilidades útiles DUPLICAN reglas que ya viven aquí
+(«verification-before-completion» es «Nada se da por hecho sin comprobarlo»; «systematic-debugging» es `engineering:debug`),
+y una regla con dos copias diverge a la primera corrección. (e) danielmiessler/Fabric: instrucciones genéricas; la de
+contratos ordena «Do not output warnings or notes», lo contrario de marcar lo no verificado, y `/dictamen` ya revisa
+pliegos verificando cada cita. (f) yamadashy/repomix: empaca el repositorio entero en un archivo, justo lo que
+CLAUDE.md prohíbe («se BUSCA, no se lee»: leerlo todo quemaba 250-400k tokens por arranque).
+
+### El anticipo con el corchete de la plantilla y la frase modelo que remite al 8.3 (17-oct-2026)
+
+En una línea: en la ronda 5 de detekta-lector (10 pliegos nuevos, texto de pdf.js) el anticipo dio dos «sí» falsos:
+Garagoa (CO1.REQ.11091702) dice «la entidad no entregará al contratista [anticipo y/o pago anticipado]», con el corchete
+de la plantilla sin borrar, y Paicol (CO1.REQ.11151463) solo trae la frase modelo «No se configura este supuesto cuando
+la Entidad establece en el numeral 8.3 que no va a entregar anticipo…». Ahora Garagoa da «no» y Paicol «sin dato».
+
+**Lo que no hay que deshacer.** (a) `SIN_ANTICIPO_RE` (y su gemela de `lib/negocio`) acepta SOLO un `[` pegado a
+«anticipo». El paréntesis y las comillas abrían «no» falsos que tapaban un anticipo pactado («La Entidad no reconocerá
+pagos distintos a los siguientes (anticipo y actas parciales…)»), y ningún pliego real los necesitaba. (b) «no VA A
+entregar» NO es negación, a propósito: solo se ha visto en la frase modelo; con él, un condicional («Si la Entidad no va
+a entregar anticipo, el valor… será cero») o cualquier variante de la frase modelo que la exclusión no cubriera negaba con
+peso de frase (3) y le ganaba a «la entidad entregará un anticipo del 30 %» (revisión adversaria, reproducido; en
+`lib/negocio` ponía el anticipo en 0). Sin «va a», una variante no cubierta solo puede decir «sí» cuando no hay otra
+cláusula, que es lo que ya pasaba. (c) La frase modelo NO decide: remite a lo que diga el 8.3. Se excluye en la línea
+(`excluye`: «establec… que no va a entregar», «no se configura este supuesto», «y el Proponente no renuncia a ellos») y
+partida con la línea anterior (`excluyeUnida`); el tramo «establec…» cruza «8.3» pero no un punto de fin de frase.
+Paicol queda en «sin dato» (confírmelo): uno de los dos subagentes de la verdad dijo «no» y el otro null, y su numeral 8.3
+es de formularios. (d) REGLAS_VERSION .7 → .8: los hechos y los dictámenes por reglas se rehacen.
+Medido: en los 21 textos de pdf.js que hay (Fase 0, Santa Elena y ronda 5) solo cambian esos dos; la frase modelo aparece
+también en Samacá y Garagoa, sin efecto porque su 8.3 decide. Límites conocidos: la exclusión descarta la línea ENTERA, así
+que si pdf.js pega la cola de la frase modelo con el 8.3 en una sola línea, ese 8.3 no se lee; y «la Entidad no va a
+entregar anticipo», si fuera la única mención del pliego, saldría «sí» (no visto en ningún pliego real).
+
+### El presupuesto del pliego en licitación pública: título sin número, «…Y ESPECIFICACIONES» y centavos con punto (17-oct-2026)
+
+En una línea: en la ronda 5 de detekta-lector el lector de la tabla 1.1 (`lib/presupuesto_pliego`) leyó 3 de 10 pliegos
+de licitación pública, sin ningún falso; los 7 vacíos eran de forma, no de contenido. Ahora lee el título sin el número
+«1.1», la variante «…PLAZO, UBICACIÓN Y ESPECIFICACIONES…», corta la sección en «DOCUMENTOS DEL PROCESO» sin número y
+acepta los centavos con punto. Medido a ciegas en 10 pliegos nuevos (ronda 6): 9 de 9 con sección 1.1, 0 falsos (main: 5).
+
+**Lo que no hay que deshacer.** (a) El título sin número es el del documento tipo con numeración AUTOMÁTICA de Word: el
+«1.1» no queda en la capa de texto (Sucre, La Jagua, Arauca, Oporapa y cuatro de la ronda 6). La línea del índice no
+casa porque termina en puntos de guía y número de página; el título debe estar SOLO en su línea. (b) Sin el «1.2» no hay
+fin numerado, y la sección de 4.000 caracteres alcanzaba el valor del certificado de disponibilidad presupuestal (Sucre:
+$1.366.136.574 contra $1.258.962.674,74 del presupuesto): por eso el fin acepta los títulos que siguen en el documento
+tipo, cada uno con su prueba. Dos cifras distintas siguen dando null; nunca se escoge. (c) «$685.335.300.87»: tras miles
+con punto, un grupo final de DOS cifras solo puede ser de centavos. (d) Lo que sigue sin leerse, a propósito: la cifra
+partida entre columnas en dos líneas (Samacá, «$1.773´266.41» / «9.00).») y el pliego propio sin sección 1.1 (ESAP,
+numeral 2.6): callar es lo correcto, porque una cifra falsa menor que SECOP II bajaría el techo de Precios. (e) Lo que tumbó la revisión adversaria (cada uno con su cerradura): «$1.581.425.810,0» retrocedía y leía «1.581.425,81»,
+mil veces menos (el lookahead ahora prohíbe un dígito o «,d»/«.d» detrás); y SIN título de cierre ya no hay sección: una
+adenda que solo nombra el numeral en su línea y trae más abajo «CT ≥ $ 400.000.000» bajaba el techo a esa cifra (el hueco
+existía con el «1.1» delante; el título sin número lo ampliaba). Medido: los 30 textos reales con la sección encuentran su
+cierre, así que la regla no calla ninguno. (f) VERSION 17 → 18.
+En los 20 procesos de las rondas 5 y 6 la cifra del pliego coincide con la de SECOP II: ni aviso ni techo distinto. El
+valor del cambio es cazar el próximo Santa Elena en una licitación pública, no mover cifras de hoy.
+
+### Precios deja de despertar la rutina cuando ya se despertó 3 veces sin dar señal (17-oct-2026)
+
+En una línea: pasados los 15 min de «repetida», cada «Buscar» despertaba otra corrida del día aunque las anteriores no
+hubieran mandado ningún progreso, y la solicitud nueva pisaba la cuenta; con la rutina dañada (entorno, clave, cuota) la
+pantalla decía «Vuelva a pulsar Buscar» y cada pulsación gastaba un intento sin arreglar nada. Ahora la solicitud guarda
+`despertadas_sin_senal` y a partir de `RUTINA_TOPE_SIN_SENAL` (3) ya no se despierta otra: la respuesta trae
+`tope_alcanzado` y la pantalla dice el hecho y abre el chat.
+
+**Cómo se halló.** El estudio de repositorios del 17-oct (Bull: «contar cuántas veces se quedó muda una tarea y darla por
+fallida») lo propuso como hipótesis; se verificó leyendo `lib/handlers/apu/editor.js` (la solicitud nueva no heredaba nada
+de la anterior) y `public/app.js` (la pantalla pedía volver a pulsar). La premisa del estudio, «Buscar puede repetirse sin
+fin», era FALSA en su forma fuerte: la pantalla nunca vuelve a pedir sola (los sondeos solo leen, con tope de 240 y 600);
+solo el usuario repetía.
+
+**Lo que no hay que deshacer.** (a) Cuenta solo un despertar que arrancó o pudo arrancar (`ok` o `indeterminada`): uno que
+falló no gastó corrida y no suma, pero conserva la cuenta que traía. (b) Cualquier señal de una sesión —«buscando» o
+«listo»— la pone en cero, aunque después enmudezca: la rutina funciona, el fallo es otro. (c) Una solicitud de antes de
+este cambio, sin el campo y despertada, cuenta 1, no 0 («sin dato» no es cero). (d) Pasadas `RUTINA_TOPE_VENTANA_H` (24)
+horas desde la ÚLTIMA solicitud, o con una fecha ilegible, se vuelve a intentar: es el lado seguro, como ya lo era para la
+vida de una sesión. (e) Sin rutina configurada no hay tope: no hay nada que gastar. (f) El tope se evalúa ANTES del
+candado del disparo, para no tomarlo sin disparar. (g) El mensaje no promete cuándo se arregla: dice el hecho y lleva al
+chat, que funciona sin ninguna variable.
+Medido: la prueba falla contra el manejador anterior («con 3 despertares sin señal no se gasta otro: 1 disparos») y la de
+la pantalla contra el `app.js` anterior; en Chromium real (Playwright, API interceptada) el texto y el color salen con 3 y
+el mensaje de siempre con 2. **Límite conocido:** entre los 15 y los 30 min tras el tercer despertar, un «Buscar» rechazado
+muestra el tope y el siguiente sondeo vuelve a decir «la búsqueda arrancó» hasta que la solicitud pasa a «sin_atender».
+**Hermano vivo, sin tocar:** el dictamen (`lib/handlers/pliego/dictamen.js`, `pedir_sesion`) tiene el mismo hueco: su marca
+dura 30 min y después cada clic vuelve a despertar su rutina, sin cuenta; queda para un encargo propio.
+
+### El dictamen también deja de despertar la rutina tras 3 lecturas pedidas sin respuesta (17-oct-2026)
+
+En una línea: el hermano vivo que dejó anotado «Precios deja de despertar la rutina cuando ya se despertó 3 veces sin dar
+señal»: vencida la marca de media hora de `dictamen:pedido:*`, cada clic en «Leer el pliego completo» despertaba otra
+corrida del día aunque las anteriores no hubieran escrito ningún dictamen. Ahora `dictamen:lecturas_sin_respuesta:*` cuenta
+los pedidos seguidos sin dictamen y a partir de `LECTURAS_TOPE_SIN_RESPUESTA` (3) ya no se despierta otra: la respuesta
+trae `tope_alcanzado` y el mensaje `LECTURA_TOPE` con su qué hacer, que la caja ya pinta debajo del botón.
+
+**Por qué una clave aparte y no un campo en la marca.** La marca del pedido vence a los 30 min (es también el candado) y la
+sesión del dictamen no manda avances: la única señal es el dictamen guardado. La cuenta tiene que sobrevivir a la marca, así
+que vive en su propia clave con 24 h desde el último pedido.
+
+**Lo que no hay que deshacer.** (a) Cuenta solo un disparo que arrancó o pudo arrancar (indeterminado); uno que falló seguro
+borra la marca, no gastó y no suma. (b) Guardar el dictamen de la sesión borra la cuenta junto con la marca: la rutina
+funciona. (c) Sin la clave no hubo pedidos sin respuesta: ese 0 es un hecho, no un «sin dato», porque la clave nace con el
+primer pedido; una cuenta ilegible NO frena (se pide, el lado seguro). (d) El tope se mira DESPUÉS de tomar la marca (para
+que un segundo clic dentro de la media hora siga diciendo «ya pedida») y, si frena, suelta esa marca: no corresponde a
+ningún disparo. (e) «Volver a leer» (refrescar) también cuenta: también gasta una corrida.
+Medido: con la condición del tope apagada la suite falla con «con 3 lecturas sin respuesta no se gasta otra: 1 disparos»,
+y sin el borrado al guardar el dictamen falla la cuenta. La pantalla no cambió: `public/pliego.js` (`pedirLecturaCompleta`)
+ya escribe `error` y `que_hacer` en `#dictamen-estado`; leído, no ejecutado en navegador.
+
+### El anticipo negado para UNA parte numerada del contrato no es «no hay anticipo» (17-oct-2026)
+
+En una línea: en la ronda 6 de detekta-lector, la Gobernación del Amazonas (CO1.REQ.11022945, llave en mano) decía «no hay
+anticipo» porque «La Entidad no reconocerá anticipo alguno para la ejecución del componente 1…» pesaba más que «Dará en
+calidad de anticipo un 30% del valor del componente dos» del mismo numeral; un «no» falso deja el capital de trabajo en
+«no llega». Ahora la negación de una parte NUMERADA pesa como mención y Amazonas dice «sí», citando la cláusula (pág. 84).
+
+**Lo que no hay que deshacer (dos revisiones adversarias, cada punto con su cerradura).** (a) Solo es parcial la parte
+NUMERADA y SINGULAR justo después de la negación: «para (la ejecución del) componente 1 / etapa 2 / lote uno / fase II».
+Entre la negación y la parte solo cabe «alguno», «al contratista» o «y/o pago anticipado». La primera versión aceptaba
+cualquier «para … etapa/actividades/ítems» a 60 caracteres: once negaciones reales pasaban a mención y dos a un «sí»
+falso; la segunda aún saltaba a la parte de otra frase («no otorgará anticipo, por lo que … para la etapa 1»), a «ni para
+la etapa 1 ni para la etapa 2», a «lote 1 de 1», a «etapa 2026» y a «lotes 1, 2 y 3»: todo eso sigue negando. (b) La línea
+de abajo solo se mira si la frase queda ABIERTA (termina en conector o en el nombre de la parte, o la de abajo sigue en
+minúscula), y solo puede volver PARCIAL una negación de esta línea, nunca crearla: sin eso «…: No aplica» / «Plazo para
+la etapa 1» pasaba a mención y las citas «8.3 … / NO APLICA» perdían su segunda línea. (c) `hechosDeTexto` y el dictamen
+respetan el `niega` que decide `detectar`; releer la cita sola daba «no» con la parte en la línea siguiente. (d) En
+`lib/negocio`, con una negación parcial NO se lee porcentaje: «… para el componente uno, con pagos parciales del 90 %» o la
+garantía «del 100 %» de al lado se tomaban como anticipo, y un anticipo falso baja la carga de la K y abre la puerta de
+caja. Queda «sin dato». (e) Se excluye la fila partida de la tabla de garantías «(correcta) inversión del anticipo⇥
+liquidación…⇥100%», salvo que la línea pacte o niegue: era la cita del «sí» en Amazonas, Samacá y Sucre. (f) REGLAS_VERSION .9.
+Medido en los 31 textos de pdf.js (Fase 0, Santa Elena, rondas 5 y 6): solo cambia el estado de Amazonas; tres citas pasan
+de la tabla de garantías a la cláusula (Pasto sigue citando otra fila de la garantía). Límites conocidos (previos, del
+lado caro, medidos por la revisión): la parte ANTES de la negación («Para la etapa 1 no se entregará anticipo»), «la primera
+etapa», «en el componente 1» sin «para» y la frase partida en tres líneas siguen diciendo «no»; las filas ya enriquecidas
+en Redis conservan `anticipo_declarado` hasta que se re-enriquecen.
+
+### El techo del pliego también desde la tarjeta de Licitaciones, para un proceso guardado (17-oct-2026)
+
+En una línea: «Calcular mi precio» (y la cifra pulsable de la baja) en la tarjeta de Licitaciones arrancaba Precios siempre
+con la cifra de SECOP II; ahora, si el proceso está GUARDADO, pide su guía con la consulta del expediente (GET, solo lee) y
+arranca con el techo del pliego definitivo cuando es menor, con la misma `techoDesdeGuia` y la misma nota del expediente.
+Visto bueno del dueño el 17-oct-2026.
+
+**Lo que no hay que deshacer (revisión adversaria, cada punto con su cerradura en el bloque (h) de «unidad revisor de la
+oferta», que ejecuta el public/app.js real).** (a) Solo se consulta un proceso guardado (`guardados`): sin guardar no hay
+guía que leer y la tarjeta abre como siempre, sin llamada. (b) La pulsación siempre responde: «Consultando el pliego…» y,
+si la consulta cae o pasan 5 s, Precios abre con SECOP II y la nota de la cifra lo DICE («No se pudo consultar el pliego a
+tiempo…»): abrir callado no distinguía «el pliego no dice menos» de «no se pudo saber». (c) Una respuesta tardía NO abre si
+mientras tanto se pulsó otra tarjeta (`turnoTarjeta`), se abrió otro proceso o un borrador en Precios (`aperturasEditor`,
+que suben `abrirEditorConProceso` y `restituirContextoProceso`) o cambió el perfil: antes de esto la respuesta de A
+reemplazaba a B, abierto después, y borraba lo empezado. (d) El techo solo vale si la guía habla de la MISMA cifra de SECOP
+II que la tarjeta (`tope_oferta.secop` = `cuantia`) y del mismo proceso (`proceso.id`). (e) Los botones de la misma tarjeta
+esperan juntos (desactivados). Límites: cada pulsación sobre un guardado calcula un expediente completo en el servidor (sin
+caché; solo por pulsación del usuario, no medido en CPU); la cerradura de que el clic llega a `abrirPreciosDesdeTarjeta`
+es por expresión regular, porque el arnés no despacha los clics de `#lista`. Visto en Chromium (escritorio y 390 px): con
+techo, sin guardar y con la consulta caída.
+
+### Las pruebas de 2027: un corte que dependía de la velocidad de la máquina y una negación que miraba una sola página (17-oct-2026)
+
+En una línea: las dos pruebas que caían de enero a mayo de 2027 no eran defectos del producto; una dependía de que 3 páginas no cupieran en 150 ms y la otra de que los muros quedaran fuera de la primera página. Con ambas corregidas, la suite pasa con el reloj adelantado de +80 a +260 días (4-ene a 4-jul-2027).
+
+- **«el presupuesto corto debía forzar varias invocaciones».** En enero el año simulado trae 120 filas, 3 páginas de 50, y en una máquina rápida cabían en los 150 ms del presupuesto. La primera invocación va ahora con `presupuesto=1`, que se rinde tras la primera página guardada; así hay corte con cualquier número de meses y cualquier velocidad. Las continuaciones siguen con 150. La gemela del histórico no se tocó, porque usa años completos fijos.
+- **«72141200 NO está en el RUP subido…».** Medido con el reloj real: el perfil subido (72141000, 72141100, 72154100, 81101500) ve 80 muros de contención (72141200) en todas las páginas, todos por el objeto: «muro, gaviones, contención» sugiere la familia 7214, que el RUP tiene. Ninguno entra por código. La prueba solo miraba la primera página y pasaba porque los muros quedaban más abajo. Ahora barre todas las páginas y exige que ningún muro case por código. **No se cambió el producto.** Servir por el objeto es la regla de oportunidades: lo caro es el falso negativo. Quien quiera esconder esos muros cambia una regla que decide qué procesos se ven, y eso necesita el visto bueno del dueño.
+- **Cómo se midió.** Un precargador de `Date` fuera del repositorio y la suite entera, una vuelta, en +0, +80, +110, +140, +170, +200, +230 y +260 días: verde en todas.
+
+### Pedir otro rango ya no vuelve a empezar el histórico: el servidor responde 409 y el botón continúa el rango guardado (17-oct-2026)
+
+En una línea: el 17-oct a las 13:50 UTC una llamada sin fechas (el rango por omisión, 2024-01…2025-12) volvió a bajar desde enero de 2024 una extracción del histórico que la del 26-sep (2024-01…2026-09, 301.779 filas) ya había dejado completa, porque `extraerHistorico` creaba un cursor nuevo siempre que el rango pedido era otro; ahora reemplazar lo guardado exige `reiniciar`, el servidor responde 409 con qué hay y cómo seguir, el estado da el rango exacto y el botón «Carga completa» continúa ese rango en vez de imponer el suyo.
+
+> RESUELTO el 17-oct-2026 por «El muro de Vercel vuelve, gratis: «Vercel Authentication» en todo el sitio y el pase para lo automático (17-oct-2026)» · el dueño eligió el muro gratis de Vercel en todo el sitio y, después, exigir el secreto para lo destructivo. Lo que decía: `docs/CONFIGURACION_TOKENS.md` §9 dice que la llave puede ser pública porque «la puerta es el muro de Vercel» (Password Protection). Pero el 17-oct, desde una sesión de Claude, `curl` con solo la cabecera de la llave a `https://detekta-app.vercel.app/api/sync/historico?estado=true` respondió 200, sin muro (cuenta nueva del 16-oct). Mientras tanto, cualquiera con la llave puede pedir `&reiniciar=1` o `/api/sync?modo=full`, que siguen empezando de cero. Opciones: volver a poner el muro, o exigir `CRON_SECRET` para reiniciar y para `modo=full` (el botón de GitHub ya lo tiene).
+
+**Lo medido.** `?estado=true` en producción a las 21:05 UTC: extracción `2024-01…2025-12`, `15/24 meses`, `iniciada` 13:50:48Z; última completa `2024-01…2026-09` del 26-sep. Lo vio el latido lanzado a mano desde la app del celular («la extracción del histórico quedó a medias»).
+- **Nadie sabe quién la lanzó.** El dueño dice que no fue él. Ningún llamador del código pide un rango nuevo sin `reiniciar`: el latido y la cadena continúan el del cursor, el refresco mensual pediría hasta el mes en curso y no tocaba hasta el 26-oct, y la pantalla y la compactación solo reconstruyen. Las dos sesiones de Claude abiertas no tuvieron actividad entre las 13:00 y las 14:30 UTC (leídos sus registros), y las rutinas de ese día corrieron a otras horas. El plan gratuito de Vercel guarda una hora de registros.
+- **[Inferencia]** Alguien con la llave, que es pública por decisión, llamó una URL sin fechas o la de la guía (`docs/CONFIGURACION_TOKENS.md` §8, con ese mismo rango). La propia respuesta del estado mandaba a eso: «Llame sin parámetros de diagnóstico» y «vuelva a llamar esta URL sin ?estado».
+
+**Lo que cambió.**
+- `extraerHistorico`: con un cursor legible de tipo `historico` y otro rango, sin `reiniciar`, devuelve `otroRango` sin tocar nada. El handler responde 409 con `error`, `que_hacer`, `guardada`, `pedida`, `como_continuar` (solo a medias) y `como_reemplazar`, y NO se re-invoca: con `done: false` la cadena se volvería a llamar con el mismo rango.
+- `?estado=true` da `extraccion.desde` y `extraccion.hasta` por separado, y `siguiente_paso` nombra el rango exacto: continuar, «terminó de bajar pero los índices quedaron a medias» (la regla `DERIVADOS` del latido, llamada y no copiada), «está terminada», «ilegible» o, sin cursor, que se pida un rango.
+- `carga_completa.yml` (trabajo `historico`): lee el estado y continúa su rango; sin cursor, de 2024-01 al mes en curso de Colombia, como el refresco mensual; sin estado (no 200) se detiene sin pedir nada; un 409 se detiene sin reintentar.
+- `docs/CONFIGURACION_TOKENS.md` §8: los dos disparos van con el botón de GitHub; ya no da las URL con `modo=full` y `hasta=2025-12`. Los documentos fechados no se reescribieron: usan la dirección vieja, que hoy responde 404.
+
+**Lo que no hay que deshacer.**
+- (a) **La cerradura vive en `extraerHistorico`, no en cada llamador**: así vale para la URL pegada, el robot, el botón, la cadena y las pruebas que la ejecutan directo. Una lista de llamadores con guarda propia deja huecos.
+- (b) **Reconstruir índices sin fechas sigue funcionando**: `soloDerivados` no llama a `extraerHistorico`.
+- (c) **El refresco mensual manda `reiniciar`.** Si alguien se lo quita, el refresco responde 409 y deja de refrescar en silencio.
+- (d) **Un avance guardado que no se puede leer es «no sé»**: 409 sin `reiniciar`, y el estado dice `ilegible` en vez de «no hay ninguna» (antes `leerJSON` lo volvía `null` y la llamada lo pisaba). Un cursor legible sin `desde`/`hasta` sigue reiniciándose como antes: no hay rango que proteger, y el estado lo dice.
+- (e) **El botón no pide un rango a ciegas**: sin estado, con 401 (lo dice como llave equivocada) o con una página en vez de datos, se detiene. Inventar el rango por omisión es justo el defecto; por eso no hay `|| true` en la lectura con `jq`.
+- (f) **El mes en curso del botón se calcula como `decidirRefrescoHistorico`** (`date -u -d '-5 hours'`): con `TZ=America/Bogota`, sin la base de zonas horarias caía mudo a UTC.
+
+**Lo que tumbó la revisión adversaria** (un agente que no escribió el cambio, con reproducción): (1) con la bajada terminada y los índices a medias, el estado decía «no hace falta llamar» y ofrecía `reiniciar=1` (horas de bajada) mientras el latido sí los retomaba; (2) las pruebas dejaban vivos dos mutantes: la cerradura comparando solo `hasta` y el botón con `DESDE=2024-01` fijo, porque los casos solo cambiaban `hasta` y el `desde` guardado era el de siempre; (3) con la llave equivocada, el botón decía «no se pudo leer el estado» sin nombrar la llave; (4) un estado que llega como página hacía caer `jq` con un error críptico; (5) el avance ilegible, de (d); (6) §8 prometía que el botón recarga el año, y con `modo=auto` lo pone al día: recargar desde enero es el botón de la pantalla «Carga completa (reinicia desde enero)». Señalado y no cambiado: `lib/handlers/admin/cobertura.js` y `lib/columnas_historicas.js` aún sugieren `desde=2024-01&hasta=2025-12`. Solo salen sin corpus, y con cursor guardado ahora responden 409.
+
+**La extracción de hoy se deja terminar.** El latido la sigue con su mismo rango y la cerradura no la toca. El índice de competencia, el de baja y las equivalencias leen todos los meses guardados con SCAN (`patronChunksHist`), no el rango del cursor, así que 2026 sigue contando. Pararla exigiría `reset`, que borra también `metaHistorico` y con él el refresco mensual (`decidirRefrescoHistorico` sin `metaHist` no dispara).
+
+**Verificado.** Dos bloques de `tests/e2e.js` tras «LO QUE LA CADENA YA CONSTRUYÓ».
+- El primero EJECUTA el handler real con el cursor terminado de la iteración, con uno a medias, con uno ilegible y con los índices a medias: 409, cursor, meta y corpus intactos, cero peticiones a SECOP, sin re-llamada, el estado de cada caso y la reconstrucción sin fechas.
+- El segundo EJECUTA con `bash -e` el paso del flujo, con un `curl` simulado y el `jq` real: rango guardado, sin cursor, sin estado, llave equivocada, página en vez de datos y 409.
+- Quince mutaciones, las quince mueren:
+  - la cerradura quitada, o mirando solo `hasta`;
+  - el 409 quitado del handler («200 !== 409»);
+  - la guarda del ilegible quitada;
+  - el estado sin `desde`/`hasta`, sin «ilegible» o sin los índices a medias;
+  - los dos `siguiente_paso` viejos;
+  - el botón con el rango fijo de antes, o con `DESDE=2024-01`;
+  - el botón que sigue sin estado, que no nombra la llave o que no comprueba que el estado es JSON;
+  - el botón que reintenta el 409: se cuelga en los `sleep 30` y la prueba lo corta a los 20 s.
+- La prueba del flujo pide `bash` y `jq` en quien corre la suite (los dos están en el corredor de GitHub): sin ellos sale en rojo, no se salta.
+
+### El límite que calculó la entidad, medido en 3 procesos cerrados, va debajo del aviso de precio bajo (17-oct-2026)
+
+> SUPERADA el 18-oct-2026 por «La alerta de precio bajo se corta por modalidad con lo medido en SECOP II (18-oct-2026)» — solo «el 80 % se queda»: el dueño aprobó el 18-oct el corte por modalidad (88 % en licitación y menor cuantía, 70 % en mínima, 80 % sin medición). El aviso del rango medido, su tabla, el ámbar y su conteo aparte siguen vigentes; desde entonces el ámbar sale cuando la oferta queda bajo el máximo medido sin llegar al corte DE SU MODALIDAD.
+
+En una línea: el Formulario 1 (verificación 5) y el panel Piso / Techo muestran el HECHO medido —en 3 procesos de menor cuantía cerrados el límite de la entidad quedó entre el 91,6 % y el 92,8 % del presupuesto, «solo 3 casos»— desde UNA tabla (`LIMITE_ENTIDAD_MEDIDO` en `lib/apu/piso_techo.js`); el 80 % de referencia NO cambió.
+
+- **Las cifras viven en una sola tabla con su fuente por fila** (Pasto SA-2026-9 92,78 %, subsanación final pág. 6; Caldas SAMC-SI-027-2026 92,33 % y SAMC-SI-020-2026 91,61 %, Apertura sobre No. 2, hoja Evaluación). `limiteEntidadMedido()` deriva rango, N y frase; el Formulario 1 y `pisoTecho` (campo `limite_entidad_medido`) la LLAMAN. Agregar un caso es agregar una fila; con 5 o más la frase deja de decir «solo N casos» (`MIN_CASOS_LIMITE_ENTIDAD`).
+- **No es un umbral nuevo, es un aviso**: decisión del dueño, el 80 % se queda. Única consecuencia en estado: si la oferta queda por debajo del máximo medido y la baja no pasa del 20 %, la verificación 5 pasa de «ok» a «informativo» (el nivel que ya existía; no se inventó uno). Se compara contra 92,78 SIN redondear: el 92,8 de la frase es solo para mostrar (la prueba fija 92,79 % → «ok»).
+- **Ámbar y conteo aparte con una MARCA, no con un nivel nuevo (18-oct-2026, decisión del dueño)**: el resumen contaba los «informativo» como «para arreglar sin riesgo» y los pintaba en azul, que para este aviso es falso. La verificación lleva `marca: "justificar"` sobre el nivel «informativo»: el resultado la cuenta en `para_justificar` (fuera de `informativos`) y el render de `app.js` la pinta en ámbar y la rotula «Tenga lista la justificación (N)». No se creó un nivel: `NIVELES`, el semáforo y el `orden` del render siguen igual, así que el aviso no vuelve la oferta «no lista» (no es motivo de rechazo) y los demás informativos conservan color y conteo. Censo de consumidores de los veredictos del Formulario 1: `lib/formulario1.js`, `lib/handlers/pliego/formulario1.js` (no lee niveles) y el render de la revisión en `public/app.js`; no hay más. Tres casos de dos entidades tampoco son una ley: el texto dice «algunas entidades».
+- **Verificado (5c)**: el bloque ejecuta `validarFormulario1` y el trozo real del render de `app.js`; con `lib/formulario1.js` o `public/app.js` de 9c24a68 falla («'justificar'» ≠ undefined; «el aviso del rango se pinta en ámbar, no en azul»).
+- **Verificado**: bloque «5b» en `tests/e2e.js` junto a la verificación 5, ejecutando `validarFormulario1` y `pisoTecho` reales; con `lib/formulario1.js` del árbol anterior falla («al 90 % del presupuesto queda bajo el rango medido», 'ok' ≠ 'informativo'). Navegador real a 390 px con `pintarPisoTecho` de `public/app.js` sobre la salida real del módulo: la línea se ve bajo la frase del precio actual, sin desborde.
+
+### El techo de la tarjeta, sin la guía entera: `solo=tope` (17-oct-2026)
+
+En una línea: medido en producción, la primera consulta del expediente en una instancia tardó 13,1 s (luego 0,24 a 0,87 s):
+la guía carga los índices de competencia, baja y conocimiento, y el botón «Calcular mi precio» de la tarjeta espera 5 s,
+así que el primer clic del día abría con SECOP II y el aviso de «no se pudo consultar». El techo no usa esos índices: ahora
+la tarjeta pide `op=seguimiento&expediente=<id>&solo=tope`, que lee solo la fila viva y los documentos de ESE proceso.
+
+**Lo que no hay que deshacer.** (a) `lib/guia_proceso.topeOfertaDe` usa la MISMA fila (`filaDeLaGuia`), el MISMO
+presupuesto (`presupuestoDeFila`) y la MISMA `topeOferta` (vía `loQueDicen`) que la guía: una prueba compara los dos, también
+con la foto guardada de otro presupuesto (la fila viva manda) y con cuantía y precio base distintos. (b) `solo` con otro
+valor es inerte: el expediente completo. (c) La respuesta dice `documentos_leidos`: con 0, la tarjeta abre con SECOP II y la
+nota dice «el pliego de este proceso aún no se ha leído» (revisión adversaria: antes abría callada, y si el pliego dice
+menos la oferta se pasa). (d) El expediente comprueba que el id sea PROPIO de los guardados (`hasOwnProperty`): «constructor»
+o «toString» pasaban `ID_RE` y respondían 200. (e) `medicion.ms` viaja en la respuesta para medir el frío en producción.
+Medido en local: 0 escrituras y 5 lecturas de Redis (el expediente completo, 11). Sin medir en producción: `filaViva` sigue
+leyendo el corpus (`cargarCorpus`), que en frío también tarda; la lista de Mis procesos lo deja caliente en la misma función.
+Consumo estimado en el peor caso medido: ≤ 18 % del tope diario de CPU de Vercel con 30 clics al día (cotas de tiempo de reloj).
+
+### El plazo del pliego por la columna de su tabla 1.1: medido, NO fusionado (18-oct-2026)
+
+En una línea: el plazo leído de la columna «Plazo» de la tabla 1.1 (para cuando SECOP II publica la duración en «0 días» o
+vacía, 625 de 3.087 filas de licitación de obra de 2026) dio 0 falsos en los 39 pliegos reales medidos, pero cinco
+revisiones adversarias encontraron, cada una, caminos nuevos y plausibles a un plazo FALSO que entraría al capital de
+trabajo; no se fusionó y la forma de usarlo es decisión del dueño.
+
+> PENDIENTE · decidir con el dueño cómo usar el plazo del pliego: (a) solo como aviso, sin entrar a ningún cálculo (como el presupuesto de la tabla 1.1); (b) que el dueño lo confirme en pantalla con la página y el texto de la celda a la vista, y solo entonces calcule; (c) no usarlo. El código está en la rama `plazo-pliego` (21479fb): lector por coordenadas, puerta, pruebas y mutaciones; no se fusiona tal cual
+
+> RESUELTO el 18-oct-2026 por «Las tres lecturas del pliego del 18-oct: la versión que rige, el ejemplo entre corchetes y el techo con una versión sin tabla (18-oct-2026)» · Era: `planDeLectura` ordena los pliegos del más viejo al más nuevo y lee los 3 primeros (`MAX_PLIEGOS_PLAN`): con 4 versiones, la más nueva no se lee y el índice dice «ya se leen las últimas versiones del pliego» (reproducido el 18-oct-2026: plan ['1','2','3'] con la v4 fuera). Afecta al presupuesto, al anticipo y a los requisitos: decide dinero, necesita plan y visto bueno
+
+> RESUELTO el 18-oct-2026 por «Las tres lecturas del pliego del 18-oct: la versión que rige, el ejemplo entre corchetes y el techo con una versión sin tabla (18-oct-2026)» · Era: `topeOferta` toma el presupuesto de un pliego definitivo viejo aunque haya uno modificado, igual o más reciente, sin la tabla (reproducido el 18-oct-2026: techo $900.000.000 del viejo con el modificado sin tabla). El hueco hermano del plazo se cerró en la rama `plazo-pliego` (`otroPliegoQueNoConfirma`); en el techo espera el visto bueno del dueño
+
+**Lo medido.** Ronda 7 a ciegas (detekta-lector, medicion_ronda7_2026-10-17): 6 correctos, 4 vacíos, 0 falsos en 10
+pliegos nuevos; con la Fase 0, 0 falsos en 39. En 34 índices reales de dmgg-8hin, con adendas el plazo quedaría «por
+confirmar» en 8 (una adenda sin la tabla no deja usar el del pliego, la regla del presupuesto).
+
+**Por qué no entró (lo que no hay que re-aprender).** La celda se reconstruye por coordenadas y pdf.js la entrega con
+palabras de las celdas vecinas, renglones partidos entre páginas y palabras cortadas en la tilde (40 cortes así en las 36
+tablas: «M»+«ÁS», «VIGEN CIA», «AÑ O»). Cada ronda de reglas cerró lo que vio y la siguiente revisión abrió otro camino: la
+prosa de debajo de la tabla, la vigencia («… meses más», «plazo total»), dos etapas con la misma cifra, un tramo que se
+llevaba una línea de la celda (los huecos reales entre celdas son de 6,8 a 7,2 puntos), el corte en el encabezado de la
+página siguiente, «1.2 KILÓMETROS» tomado por título, y al final una PUERTA (solo una columna limpia da meses) que aun así
+dejaba pasar «UN AÑ O Y DOS (2) MESES» (2 meses donde son 14) o una duración de otra cosa junto a la fecha tope. Un plazo
+falso de menos de 12 meses donde el real pasa de 12 cambia la fórmula del capital de trabajo, y en pantalla saldría «(según el
+pliego)»: no se acepta sin que el dueño decida cómo usarlo.
+
+### La negación del anticipo con la parte ANTES («Para la etapa 1 no se entregará anticipo») NO se cubre (18-oct-2026)
+
+En una línea: el hermano que dejó anotado «El anticipo negado para UNA parte numerada del contrato…» (la parte antes de
+la negación, «la primera etapa», «en el componente 1») se programó, pasó la suite 4/4 y 19 mutaciones, y aun así NO entró:
+dos revisiones adversarias lo tumbaron y no mueve ningún pliego real.
+
+**Lo medido.** En 137 textos reales (los 40 pliegos de Fase 0 y las rondas 5 a 7, sus versiones de pdftotext, documentos
+de Santa Elena y del paso 2) el arreglo no cambia ni un estado, ni una cita, ni el dictamen, ni `lib/negocio`: la forma
+«antes» no aparece. Con frases plausibles, en cambio, abría «sí» falsos donde main decía «no» (reproducidos):
+«Para la etapa 1 no se entregará anticipo… / Para la etapa 2 tampoco se entregará anticipo…» («tampoco se entregará»
+pasaba por frase que pacta), «Teniendo en cuenta que los pagos se realizarán por actas … en la etapa 1, no se entregará
+anticipo» junto al tope legal «el anticipo no podrá exceder del cincuenta por ciento (50%)», la fila de garantías «100% del
+anticipo…» y el condicional «Si la Entidad entregara anticipo…» (plegado, el subjuntivo es igual al futuro). También pasaba a
+«mención» negaciones totales como «De acuerdo con el análisis del sector realizado en la fase 1, la Entidad no entregará
+anticipo». La primera versión, además, volvía «sí» negaciones totales al pegar la línea de arriba.
+
+**Lo que no hay que deshacer.** Una parte numerada ANTES de la negación casi siempre es contexto («realizado en la fase 1»,
+«para la etapa 1, … no se entregará»), no el alcance: leerla como alcance cambia «no» por «sí» del lado que también cuesta
+(cuenta con plata que no llega). Si un pliego REAL trae la forma, se mide con él antes de tocar nada; sin caso real no se
+vuelve a intentar. Quedan anotados, sin tocar, dos fallos que main ya tenía con frases sintéticas: con una negación parcial
+en el documento, «El contratista no tendrá derecho a anticipo por ningún otro concepto…» da «sí», y «…para el lote No. 1 ni
+para el lote No. 2» da mención en vez de «no».
+
+### El muro de Vercel vuelve, gratis: «Vercel Authentication» en todo el sitio y el pase para lo automático (17-oct-2026)
+
+En una línea: la decisión de dejar la llave a la vista («Página única y token integrado», ago 2026) se apoyaba en «Vercel Password Protection», que no existe en el plan Hobby, y con la cuenta nueva del 16-oct la producción quedó abierta; el dueño eligió el 17-oct el muro gratis de Vercel en todo el sitio («All Deployments»), y todo lo que llama a producción sin navegador manda el pase `x-vercel-protection-bypass` con `VERCEL_AUTOMATION_BYPASS_SECRET`.
+
+> RESUELTO el 17-oct-2026 por «El muro de Vercel quedó puesto: las tareas de Vercel lo pasan, y cómo se mide (17-oct-2026)» · el «Run» de `/api/latido` en Settings → Cron Jobs respondió 200 con el muro puesto: las tareas de Vercel lo pasan y no hay que moverlas a GitHub. El «Cómo» que decía este marcador no servía: `latido.ultimo` solo se reescribe cada 30 minutos o más; se midió en «View Logs».
+
+> RESUELTO el 18-oct-2026 por «La entrada del dueño: correo y contraseña, y ninguna llave en el navegador (17-oct-2026)» · el dueño decidió NO hacer la opción B. Su motivo era que la llave estaba escrita en la pantalla: quien pasara el muro podía reiniciar o borrar el histórico. Con esa sección la llave salió del navegador: lo destructivo lo piden solo la sesión del dueño y la llave del servidor, que vive en Vercel, GitHub y el entorno de Claude. Exigir además `CRON_SECRET` no frenaría a nadie más y le quitaría al dueño tres botones de la pantalla («Carga completa (reinicia desde enero)», «3 · Sincronización Full» y «Hacer los tres pasos»). Vale una vez rotada la llave vieja, que sigue en la historia pública del repositorio; esa rotación es el PENDIENTE de esa sección. La parte 1 (vigilar el muro) sí se hizo: «La sonda del muro: el latido y el vigilante prueban la portada sin el pase (18-oct-2026)».
+
+**Lo medido.**
+- **Producción y versiones de prueba, el 17-oct.** `https://detekta-app.vercel.app/` respondía 200 sin nada. Una versión de prueba respondía 302 a `vercel.com/sso-api`: la cuenta nueva traía «Standard Protection», que deja abierta la producción.
+- **Lo que responde el muro.** En una versión de prueba, la API respondía 302 con el cuerpo «Protected by Vercel Authentication…», también con un pase falso. Una petición que pide JSON (`Accept` o un POST con `Content-Type: application/json`) recibía en cambio 401, con «Protected deployment» y «Protected by Vercel Authentication» en el cuerpo (lo midió la revisión adversaria).
+- **El gate de entrada no protege nada.** La clave la compara la pantalla (`public/app.js`) y su valor está en el código.
+- **Cabecera vacía.** Con curl 8.5.0, `-H "x-vercel-protection-bypass: "` con el valor vacío no manda la cabecera. Con valor, la manda.
+
+**Lo verificado en la documentación de Vercel** (consultada el 17-oct; las páginas dicen actualizadas en septiembre de 2026):
+- En Hobby: «Password Protection» no está disponible; en Pro cuesta $20 al mes por proyecto. Vienen incluidos «Vercel Authentication», el alcance «All Deployments», «Protection Bypass for Automation» y los enlaces para compartir (uno por cuenta).
+- «Team collaboration features» no existe en Hobby. En cambio, «Access requests» admite un usuario externo por cuenta: por ahí podría entrar una segunda persona.
+- `VERCEL_AUTOMATION_BYPASS_SECRET` es una variable de sistema que Vercel pone en cada despliegue nuevo.
+- Las tareas programadas de Vercel no siguen redirecciones, y una respuesta 302 no aparece en sus registros.
+
+**Lo que cambió.**
+- Las tres tareas de GitHub que llaman a producción (`sync.yml`, `latido.yml`, `carga_completa.yml`, cinco llamadas) leen el secreto del repositorio y mandan la cabecera. Con 302 se detienen con un mensaje que nombra el secreto y dónde se crea, y no reintentan.
+- Las rutinas de Claude llevan la cabecera en cada `curl`: `/precios` (4), `/dictamen` (2), el vigilante y la del primero de mes de `docs/RUTINAS.md`. Las dos habilidades revisan el muro tras su primera llamada (`grep` de «Protected by Vercel Authentication»), porque sin eso la sesión solo ve el error de `node` al leer un JSON que no es JSON.
+- `docs/CONFIGURACION_TOKENS.md`: §3.5 es el pase, con los tres sitios donde va; §9, el muro. También `PROMPT_INICIAL.md`, `SEGURIDAD_Y_CUENTAS.md`, `RIESGOS.md` (R-2 se cumplió sin que nadie lo propusiera), `marca.md` y las guías de las dos rutinas de servicio.
+- Las llamadas que la aplicación se hace a sí misma ya mandaban el pase (`cabecerasDeAutoLlamada`, `lib/auth.js`). No se tocaron.
+
+**Lo que no hay que deshacer.**
+- (a) **La cabecera va siempre, con el valor del secreto.** Sin el secreto curl no la manda, así que sin muro todo sigue igual. No se condiciona con un `if`, que sería un sitio más donde equivocarse.
+- (b) **El muro se reconoce por su texto, no solo por el 302.** Con una petición JSON el muro responde 401, el mismo código que la llave equivocada. Por eso cada tarea mira el 302 o «Protected by Vercel Authentication» en la respuesta ANTES del 401: confundir el muro con la llave mandaría a cambiar el secreto equivocado. La aplicación nunca responde 302 ni escribe esa frase.
+- (c) **La cerradura es un censo por el dominio** (`MARCA.dominio`), no una lista. La suite EJECUTA con `bash -e` cada paso `run` (de bloque o de una línea) que lo nombra en su guion o en su `env:`, con un `curl` simulado que anota las cabeceras. En las rutinas, cada `curl` sin un host ajeno explícito debe llevar el pase, y cada bloque de `RUTINAS.md` que nombra `/api/` debe dar la instrucción. La revisión adversaria encontró los huecos del primer censo (`run:` de una línea, `|-`, la URL en `env:`, otro nombre de variable): quedaron cerrados con su prueba.
+- (d) **Excepción declarada** en el censo de literales: «Protected by Vercel Authentication» es el texto del muro, no de la pantalla.
+- (e) **Excepciones declaradas del barrido de «Password Protection».**
+  - Los comentarios de `public/app.js` (líneas 14 y 105) no se tocaron, para no abrir `public/` por un comentario.
+  - Tampoco se tocaron los informes fechados ni los planes que esperan al dueño (`PLAN_DE_ACCION`, `PLAN_SAAS`, `CHECKLIST_PRODUCCION`, `APU_INFORME_COMPLETO`, `AUDITORIA_INTEGRAL`, `INFRAESTRUCTURA_2026-09-27`, `PROMPT_CONSULTORIA_SAAS`). Allí «Password Protection» se lee como «el muro».
+
+**Lo que sigue abierto.** La llave sigue en el código; detrás del muro deja de importar, salvo que el muro se quite (opción B). Y la puesta en marcha es del dueño, en este orden:
+1. Crear el pase en Vercel.
+2. Guardarlo en GitHub y en el entorno de Claude.
+3. Volver a desplegar.
+4. Cambiar a «All Deployments».
+5. Iniciar sesión en Vercel en Chrome y en el iPhone.
+
+**Verificado.** Bloque «EL PASE DEL MURO EN TODO LO QUE LLAMA A PRODUCCIÓN» de `tests/e2e.js`: ejecuta los cuatro pasos que nombran el dominio con 200 y con 302, y hace el censo de los `curl` de las rutinas. Siete mutaciones, las siete mueren:
+- `latido.yml` sin la cabecera;
+- `sync.yml` sin el secreto en `env`;
+- `sync.yml` sin el aviso del 302 («ante el muro dice qué secreto falta»);
+- la lectura del estado del histórico sin el pase;
+- un `curl` de `/precios` sin el pase;
+- el de `RUTINAS.md` sin el pase;
+- el envío de `/dictamen` sin el pase.
+- Tras la revisión adversaria, seis más, las seis mueren:
+  - un paso nuevo de una línea, `run: |-` o con la URL en `env:`, sin el pase;
+  - un `curl` nuevo con `$APP` en `/dictamen`, sin el pase;
+  - `latido.yml` sin reconocer el 401 del muro («no lo confunde con la llave»);
+  - la rutina del primero de mes sin la instrucción del pase.
+
+## Dos capas: el muro de Vercel delante y la sesión del dueño detrás (18-oct-2026)
+
+En una línea: al mezclar el login del dueño (sin llave en `public/`) con el pase del muro (#261), se quedan las dos capas y ninguna sustituye a la otra.
+
+- **Capa 1, el muro**: «Vercel Authentication» en «All Deployments». Flujos, rutinas, skills y las
+  auto-llamadas (`cabecerasDeAutoLlamada`, también desde `cabecerasDelTramo` del latido) mandan
+  `x-vercel-protection-bypass` con `VERCEL_AUTOMATION_BYPASS_SECRET`.
+- **Capa 2, la sesión**: el dueño entra con correo y contraseña; las máquinas, con `HISTORICO_TOKEN`
+  leída de su entorno (`${HISTORICO_TOKEN:?…}`), nunca con un `grep` de `public/app.js`, que ya no
+  la tiene. El texto de main «el token integrado no es secreto» quedó desmentido y se reescribió.
+- Tentación a no seguir: «con la sesión ya no hace falta el muro» (o al revés). Quitar el muro deja
+  la pantalla de entrada expuesta a fuerza bruta y a cualquier defecto de `lib/sesion.js`; quitar la
+  sesión vuelve a una llave que cualquiera con acceso a Vercel lee.
+
+### El muro de Vercel quedó puesto: las tareas de Vercel lo pasan, y cómo se mide (17-oct-2026)
+
+En una línea: el dueño encendió «All Deployments» la noche del 17-oct y esa misma noche quedó medido que sin el pase la producción responde 302, que el latido de GitHub y el «Run» de una tarea de Vercel responden 200, y que el dueño entra desde Chrome y desde el iPhone; las tareas de Vercel NO hay que moverlas a GitHub.
+
+**Lo medido** (horas UTC del 18-oct; en Colombia, noche del 17-oct, de 22:26 a 22:58).
+- **Antes y después.** A las 03:26:52 y 03:27:19, `/` y `op=salud` respondían 200. A las 03:40:19 los dos responden 302 a `vercel.com/sso-api`, con el cuerpo «Protected by Vercel Authentication».
+- **GitHub pasa.** Latido lanzado a mano a las 03:40:28 (corrida 39094446919, con el pase): `HTTP 200` y `{"ok":true,"accion":"historico","motivo":"la extracción del histórico quedó a medias","hecho":true}`. En los registros de Vercel aparece con 200 y el dominio `detekta-app` como host.
+- **Las tareas de Vercel pasan.** A las 03:45:14 el dueño pulsó «Run» en la fila de `/api/latido` (Settings → Cron Jobs): 200, con host `detekta-fshk0ola…`, la dirección propia del despliegue y no el dominio. Lo muestra su captura de «View Logs».
+- **El pase está dentro del despliegue** [inferencia por la documentación]. La casilla «Enable access to System Environment Variables» (página Environment Variables del PROYECTO, al final) está marcada, según la captura del dueño. El despliegue de producción (`094a5c2`, la fusión del PR #261) se construyó después de crear el pase. Según Vercel, `VERCEL_AUTOMATION_BYPASS_SECRET` está en la compilación y en la ejecución «si el secreto se generó».
+- **El dueño entra.** En Chrome y en el iPhone, tras iniciar sesión en Vercel con el método de su cuenta. Con una cuenta de Google no unida, Vercel respondió «Social Account is not yet connected to any Vercel user. Sign up?», y también salió «Unauthorized to access the given account.». «Sign up?» crearía otra cuenta vacía, sin acceso a Detekta.
+
+**Lo que no hay que re-aprender.**
+- (a) **`op=salud` → `latido.ultimo` no sirve para medir una tarea.** Se reescribe solo si pasaron 30 minutos o más (`lib/handlers/procesos/latido.js`), y el latido de GitHub también lo escribe. Se mide en «View Logs» de la tarea: una llamada que el muro redirige no queda anotada; una que pasa sale con su código.
+- (b) **El registro de un latido no prueba la cadena de tandas.** El latido corre UNA tanda con `chain: "0"`, así que no ver llamadas a `/api/procesos` después es lo esperado. Esa noche se le dio al dueño ese criterio por error, y se corrigió en el mensaje siguiente.
+- (c) **Las pantallas reales no son las que suponía la guía.**
+  - La ventana «Add Bypass» de Vercel tiene dos cuadros. El primero es el VALOR del pase: si se escribe, debe tener 32 caracteres («Secret must be 32 characters, provided value is 16»). El segundo es la nota.
+  - En Claude (en español), «Editar entorno de nube» tiene dos secciones. «Secretos de red» («Agregar secreto»: tipo Bearer, sitios permitidos, encabezados personalizados) y «Variables de entorno» (formato .env). El pase va en «Variables de entorno», que es lo que leen las rutinas.
+  - Esa sección avisa que no se agreguen secretos, porque cualquiera que use el entorno los ve. Se aceptó porque solo lo usa el dueño. «Secretos de red» lo escondería de la sesión, pero no está probado con las rutinas.
+- (d) **Las variables de Vercel de esta cuenta son compartidas, del equipo** (pestaña «Shared»: `CRON_SECRET`, `HISTORICO_TOKEN`, Upstash, OCR, la rutina del dictamen). La página del proyecto no tiene variables propias. La casilla de las variables del sistema está en la página del PROYECTO, no en la del equipo.
+
+**Lo que sigue abierto.**
+- Las tareas PROGRAMADAS se dan por iguales al «Run» [inferencia]. Lo confirma la primera que corra con el muro: la copia a las 07:15, la compactación a las 08:40 y a las 10:40, los avisos a las 11:00 y la actualización a las 12:50 UTC.
+- La cadena de tandas no ha corrido todavía con el muro. Su primera prueba real es la actualización de las 7:50 a. m. del 18-oct. Si se corta, el síntoma es un latido que dice «quedó a medias» una y otra vez.
+- No consta si Vercel genera el pase solo cuando el primer cuadro de «Add Bypass» se deja vacío.
+- La opción B sigue PENDIENTE, en la sección anterior.
+
+### El dictamen, el cronograma y los descuentos leen el documento que ES el pliego, no la última versión del vigía (18-oct-2026)
+
+En una línea: `textoGuardado` (lib/handlers/pliego/cronograma.js), el único que da el texto al dictamen, al cronograma, a
+los descuentos y a la habilidad `/dictamen`, devolvía la ÚLTIMA versión del vigía de adendas; en 85 de 228 licitaciones de
+obra de 2026 eso era nada (el documento base no entra al vigía) y en 7 un anexo; ahora manda el documento leído que es el
+pliego, con una sola regla (`Docs.esVersionDelPliego`, `Docs.candidatosAlTextoDelPliego`) que también decide qué entra al
+vigía.
+
+> RESUELTO el 18-oct-2026 por «La carga en Precios no entra al vigía si el nombre dice que es otra cosa (18-oct-2026)» · lo que se había dicho: la carga en Precios no dice qué archivo es: todo PDF soltado ahí con un proceso abierto entra al vigía como versión del pliego (`vigilarPliego` → `op=diff`, origen «lector»), también el Formulario 1 de cantidades que la propia pantalla pide. Es de main: un Formulario cargado DESPUÉS de la lectura automática pasa a ser el texto del dictamen, del cronograma y de los descuentos, y frente a un documento base gana salvo que el base sea más nuevo. La salida que propuso la 2.ª revisión: mandar el nombre del archivo en el origen («lector:<nombre>»), clasificarlo con `clasificarArchivo`/`esVersionDelPliego`, y no registrar en el vigía lo que no sea el pliego. Toca `public/` y el vigía: va con plan y visto bueno.
+
+> PENDIENTE · aclarar qué significa la hora `T19:00:00.000` que traen TODAS las `fecha_carga` de dmgg-8hin (¿el día es el escrito o el siguiente?): sin verificar. Decide los «publicado después» de lo manual y del aviso.
+
+> RESUELTO el 18-oct-2026 por «Las tres lecturas del pliego del 18-oct: la versión que rige, el ejemplo entre corchetes y el techo con una versión sin tabla (18-oct-2026)» · Era: el cronograma toma como hito un párrafo de EJEMPLO del pliego tipo («[Por ejemplo, si la audiencia de adjudicación se realiza el 10 de febrero de 2020…]», pliego LP-008-2026 del departamento de Sucre, ronda 5) y `guardarFechaCronograma` guarda una fecha ya pasada sin mirarla (reproducido el 18-oct-2026 con `extraerHitos` y la función real: «adjudicacion=2020-02-10», `guardada: true`). En el calendario no se ve: `adjudicacionDeFila` la descarta por desfasada (anterior al cierre). En la lista de hitos del cronograma, sin verificar. Es de main, no de este cambio, pero el documento base que ahora llega al cronograma puede traer el mismo ejemplo: medido en 2 pliegos distintos entre 180 textos de pliego guardados en la sesión (el de Sucre con 2020, en tres extracciones; otro de la ronda 7 con un informe de evaluación de 2022), sin ningún documento base completo en la muestra.
+> RESUELTO el 18-oct-2026 por «Las tres lecturas del pliego del 18-oct: la versión que rige, el ejemplo entre corchetes y el techo con una versión sin tabla (18-oct-2026)» · decisión del dueño: NO se hace. Una fecha pasada del pliego es un hecho publicado (la manifestación que ya venció); rechazarla devolvería la ventana CALCULADA y podría mostrar abierto un proceso cerrado. El daño real —el ejemplo de 2020— se cortó en la fuente (`sinEjemplos` en lib/cronograma.js), y `adjudicacionDeFila` ya descarta una adjudicación anterior al cierre. Era: `guardarFechaCronograma` guarda una fecha ya pasada sin mirarla.
+
+**Lo medido** (índices reales de dmgg-8hin: 200 licitaciones de obra de 2026 al azar entre 1.178, más 34 de las rondas;
+corte 18-oct-2026; el plan de lectura de main con todos sus documentos leídos). Antes: 85 procesos tenían el documento base
+leído y el dictamen respondía «Todavía no hay texto guardado de este pliego» (reproducido con la función real); en 7 el
+último texto del vigía era un anexo («OBSERVACIONES PLIEGO DEF…» leídas DESPUÉS del «PLIEGO DEFINITIVO», «OFICIO PREGUNTAS
+Y RESPUESTAS…», «Anexo de condiciones»). Ahora: 85 ganan texto, 112 siguen con el mismo documento, 6 pasan del anexo al
+pliego o al documento base, y 2 pierden el texto porque su único «pliego» era un anexo (CO1.REQ.10312266, el definitivo venía
+en .zip; CO1.REQ.10439791): ahí el dictamen dice que no hay texto en vez de opinar sobre un anexo. De paso: el tope de 3
+versiones del pliego del plan (el pendiente de `planDeLectura`) no lo alcanza ninguno de los 228.
+
+**Lo que no hay que deshacer.** (a) El documento base SIGUE fuera del vigía (la decisión del 27-sep-2026: dos documentos
+distintos alternándose como «versiones» darían cambios falsos); el dictamen lo lee de su texto guardado, no del vigía.
+(b) Un pliego que entró al vigía se lee de su versión del vigía (`version_pliego`): el mismo texto y el mismo sello de caché
+que antes, para no invalidar los dictámenes ya pagados. (c) El texto del documento base lleva el tope de 400 KB del vigía
+(`D.MAX_TEXTO`), con `recortado`: el dictamen lo manda entero al modelo y la habilidad lo lee entero. (d) Lo que el dueño
+carga A MANO (origen del vigía distinto de «documentos:…»; es como se lee un pliego de más de 20 MB) NO DICE QUÉ ARCHIVO ES:
+Precios manda al vigía igual el pliego que el Formulario 1 de cantidades. Por eso, frente a los pliegos que entraron al
+vigía manda el orden del vigía, como en main: si uno se registró DESPUÉS de la carga manual, ella ya no compite con nada (un
+Formulario 1 soltado ANTES de la lectura automática no tapa el pliego, ni directamente ni por medio de un documento base más
+nuevo que el pliego); si todos se registraron antes, gana ella; frente al documento base (que main nunca leía: ahí daba siempre lo manual), lo manual cede solo ante uno
+publicado en SECOP II DESPUÉS del día de Colombia de la carga (a igual día, lo manual, como en main). La comparación es por
+candidato, dentro del recorrido: si el más nuevo perdió su texto, lo manual vuelve a ganarle al siguiente. (e) El orden: el definitivo antes que el borrador (con
+«borrador» en el nombre de un documento base también), el más reciente en SECOP II, a igual fecha el pliego antes que el
+documento base, y la plantilla en blanco no cuenta. (f) Un anexo, formato, apéndice, minuta, observaciones, respuesta,
+oficio, glosario o matriz con «pliego» en el nombre no es versión del pliego: ni entra al vigía ni da el texto; sin
+documentos leídos, el respaldo del vigía también salta los que entraron así antes de hoy. La palabra cuenta solo ANTES del
+nombre del pliego («OBSERVACIONES PLIEGO DEF…», «ANEXOS PLIEGO DE CONDICIONES»): «Pliego definitivo ajustado con
+observaciones», «PLIEGO DE CONDICIONES DEFINITIVO CON ANEXOS» o «Documento base definitivo con formularios» SON el pliego, y
+excluirlos por el nombre entero dejaba leer la versión anterior. (g) La identidad del texto para el
+pedido de lectura a la sesión es `texto_id` (el número de versión, o «doc:<id>:<sello>»): con el documento base, dos textos
+distintos tendrían la misma versión nula. (h) La pantalla dice de qué archivo salió el texto cuando no hay número de versión.
+(i) No se pudo comprobar en producción: desde el 18-oct responde 302 hacia el inicio de sesión de Vercel y esta sesión no
+tiene el pase; se reprodujo con las funciones reales sobre el Redis simulado. (j) Si en el índice hay un pliego o documento
+base DEFINITIVO publicado después del texto elegido y sin leer (más de 20 MB, comprimido, escaneo), `textoGuardado` lo
+devuelve en `mas_nuevo_sin_leer` —también cuando el texto es una carga manual o una versión del vigía sin documento detrás,
+contra el día de Colombia en que se guardó— y la pantalla del dictamen lo dice en ámbar bajo «Sobre…», con su motivo y qué
+hacer: el dictamen no opina sobre una versión vieja en silencio. Un borrador más nuevo no cuenta, y uno que está en el plan
+de lectura y todavía no se intentó sale `pendiente` («todavía no lo ha leído»), no «no lo pudo leer». (k) La revisión adversaria (18-oct)
+tumbó la primera versión con tres casos en que leía un pliego viejo donde main leía el vigente (la exclusión por el nombre
+entero, lo manual contra la hora de lectura —CO1.REQ.10168183, documento base del 29-ene sobre el del 12-feb cargado a
+mano—, y la comparación contra el primer candidato aunque no tuviera texto) y un candado del pedido sin prueba; los cuatro
+tienen su cerradura, y las 14 mutaciones de estos arreglos mueren (incluidas las dos mitades del candado del pedido por
+`version`, que solo caían juntas hasta que la prueba pidió dos veces el mismo texto). (l) La SEGUNDA revisión adversaria
+tumbó el arreglo de lo manual: comparar la fecha de publicación también contra los pliegos del vigía hacía que un Formulario
+1 soltado en Precios antes de la lectura automática le ganara al pliego (reproducido con los handlers reales: main «No
+conviene presentarse» y descuentos 4,5 %; el arreglo, «Falta información para opinar» y descuentos sin dato), y el día de la
+carga en UTC contaba un día tarde las cargas de después de las 19:00. Al releer el arreglo apareció el hermano (el Formulario
+ganándole al pliego por medio de un documento base más nuevo que el pliego, reproducido: main da el pliego). Con la regla de
+(d) los casos vuelven a dar lo de main, la simulación de los 232 índices reales da las mismas cifras (85/112/6/2) y mueren 22
+de las 23 mutaciones del conjunto; la que vive es equivalente (que un pliego registrado ANTES de la carga manual le gane por
+fecha exige que se publicara después de leerse: no pasa con datos reales).
+
+### La sonda del muro: el latido y el vigilante prueban la portada sin el pase (18-oct-2026)
+
+En una línea: el 16-oct la producción quedó abierta un día sin que nadie lo viera; ahora el latido de GitHub llama a la portada SIN el pase, a propósito, reconoce el muro en positivo (302 hacia `https://vercel.com/sso-api` o el texto «Protected by Vercel Authentication») y falla en rojo si recibe un 200 sin ese texto, y el vigilante de la mañana hace la misma prueba y, si el muro está apagado, lo dice en su primera línea.
+
+**Qué se decidió.**
+- **Un paso aparte del latido**, «¿El muro de Vercel sigue puesto?», con `if: always()` y sin ningún secreto.
+  - El muro se reconoce en positivo: un 302 hacia `https://vercel.com/sso-api`, o el texto «Protected by Vercel Authentication» en la respuesta.
+  - Un 200 sin ese texto es el muro apagado: `::error` y la corrida falla.
+  - Todo lo demás (403, 429, 5xx, otra redirección, sin respuesta) es «sin dato»: `::warning`, y la corrida no falla.
+- **El vigilante de la mañana** (`docs/RUTINAS.md` §2, PASO 0 ter) hace la misma llamada después de comprobar que el pase funciona. Si el muro está apagado, lo dice en la primera línea; si no lo puede medir, escribe «Muro: no medido».
+- **Va sin el pase, a propósito.** Con el pase, la portada responde 200 siempre y la alarma sonaría en falso.
+
+**Por qué en GitHub y no en la aplicación.** El correo de la salud en rojo no está configurado. Medido el 18-oct: `aviso_por_correo.configurado: false`, y faltan `CORREO_API_KEY`, `CORREO_REMITENTE` y `CORREO_DESTINO`. Una salud en rojo no le llegaría a nadie.
+
+**Pero una corrida roja tampoco avisa sola.**
+- Según la ayuda de GitHub, los avisos de un flujo programado le llegan al usuario que lo creó. La opción de Actions en «Notification settings» empieza en «Don't notify». Fuentes: «Notifications for workflow runs» y «Managing GitHub Actions notifications».
+- El dueño tiene que elegir ahí «Email» y «Only notify for failed workflows». Sin eso, la sonda solo se ve si alguien abre la pestaña Actions.
+- El reloj de GitHub es irregular. La revisión midió 8 disparos en 25 horas, con huecos de 2 h 28 min a 5 h 40 min: la sonda detecta un muro apagado en horas, no en minutos.
+
+**Lo que no hay que deshacer** (casi todo salió de la revisión adversaria del 18-oct):
+- (a) **No contar el 403 ni cualquier 302 como muro.**
+  - Un 403 puede ser una regla Deny del cortafuegos de Vercel, que se evalúa ANTES de la protección (documentación de Vercel, «Firewall concepts»). Con el muro apagado, una regla así haría que la sonda diera «puesto».
+  - Lo mismo pasa con un 302 hacia cualquier otra parte.
+  - La primera versión de la sonda contaba 403 como muro. La revisión lo reprodujo y se corrigió antes de fusionar.
+- (b) **`curl -q` va primero.** Sin él, curl lee un `.curlrc`. La revisión reprodujo que un `.curlrc` con `location` convierte el 302 en 200, es decir, en una falsa alarma.
+- (c) **Una sola excepción en el censo del pase, con forma fija.** Es la marca «SONDA DEL MURO: sin el pase, a propósito». La suite exige UNA sonda en los flujos, en el latido, y UNA en las rutinas, en el vigilante.
+  - Las dos se EJECUTAN con un curl simulado ESTRICTO, que anota como violación:
+    - cualquier bandera fuera de `-q` primero, `-s`/`-S`, `--max-time`, `-o` y `-w`;
+    - dos direcciones;
+    - una dirección distinta de la portada exacta.
+  - El primer curl simulado era tolerante: `-L`, `-b` y `-K` pasaban en verde. Y `-L` contra producción da 200, otra falsa alarma.
+  - La sonda del latido se corre en 12 escenarios: 200; 302 a sso-api con y sin texto; 401 con texto; 200 con texto; 302 a otro sitio; 403; 401 sin texto; 307; 429; 503; y sin respuesta. Corre con el pase en el entorno, para comprobar que no lo usa.
+- (d) **El curl simulado del censo general entiende `--header`** igual que `-H`. Antes, una cabecera mandada con `--header` no se veía.
+- (e) **`|| true` y `${CODIGO:-000}`** evitan que un corte de red tumbe el paso con `bash -e`: un corte no es un muro apagado.
+
+**Lo medido.**
+- Con el muro puesto, el paso real y las dos líneas del vigilante, corridos contra producción el 18-oct, respondieron `302 https://vercel.com/sso-api?url=…` y el texto del muro: «El muro de Vercel está puesto.».
+- El dueño confirmó que, con el primer cuadro de «Add Bypass» vacío, Vercel creó el pase solo.
+
+### Base nacional de licitaciones de obra: un script que solo mide, fuera de la app (17-oct-2026)
+
+> SUPERADA el 17-oct-2026 por «Base nacional de obra: las ofertas se piden agrupadas, las filas repetidas de p6dx son fases y el proveedor se identifica por unión» — solo la clave de proveedor («NIT primero») y la idea de que varias filas en p6dx son el problema; el resto sigue vigente.
+
+En una línea: `scripts/base_obra/` (inventario + capa pura `limpieza.js`) lee p6dx, wi7w/b28v, jbjy y 9sue para medir el piso real y la competencia; no lo llama la aplicación, escribe fuera del repositorio y sus reglas de limpieza son decisiones que no hay que deshacer.
+
+- **Encargo del dueño, solo medición**: no toca producción, la alerta del 80 % ni pantallas. Lo que llegue a Detekta es otro encargo con su plan.
+- **Keyset por `:id`, no `$offset`**, aunque el encargo dijera `$offset`: lo manda «Decisiones que no hay que re-aprender». Transporte: `lib/socrata.crearCliente({ baseUrl })`, no un segundo cliente.
+- **Clave de proveedor = NIT primero, código de SECOP después, nombre al final**: la misma empresa trae código en una fila y no en otra, y con el código primero contaba dos oferentes (σ falsa). Revisión adversaria, reproducida.
+- **Lote = un proveedor con ≥2 valores DENTRO del rango admisible** (≤ precio base y ≥ 50 %): un error de digitación fuera de rango ya se excluye y no puede apartar el proceso entero.
+- **Duplicado entre wi7w y b28v se cuenta aparte** (`duplicada_entre_datasets`): no es un problema de calidad del proceso.
+- **Fila elegida en p6dx**: adjudicada → con valor adjudicado > 0 → fecha de adjudicación → publicación → número final de `id_del_proceso` (comparado como número; como texto «999» ganaba a «1000»). `:updated_at` no interviene: p6dx re-sella en masa.
+- **Un lote de consulta que falla deja sus procesos «sin_medir_ofertas»**, nunca «sin ofertas»; el departamento se compara por igualdad exacta normalizada con alias solo para Bogotá (un `includes` casaba Santander con Norte de Santander, y el vacío con todo), y el vacío cuenta como «sin dato».
+
+### Base nacional de obra: las ofertas se piden agrupadas, las filas repetidas de p6dx son fases y el proveedor se identifica por unión (17-oct-2026)
+
+En una línea: wi7w repite cada oferta cientos de veces (un proceso por lotes trae 305.634 filas que son 381 combinaciones proveedor-valor), así que se pide agrupado en el servidor; en p6dx las filas repetidas de un portafolio son FASES salvo que traigan precios base distintos (lotes), y el oferente es la unión de NIT válido y nombre.
+
+- **Consulta agrupada** `$group` por (proceso, NIT, código, nombre, valor) con `count(*)`, 40 ids por consulta (~1,5 s; con 80, 15 s, medido). Con `*` y filas sueltas la corrida llegó a 6,7 GB de memoria y se quedó 13 min en el primer lote. Un lote que falla se parte en mitades hasta 1 id; el que aun así falla queda «sin medir».
+- **Filas repetidas en p6dx**: de 17.054 portafolios, 11.119 tienen más de una fila; en B las 3 filas cambian `fase` e `id_del_proceso` con el mismo precio base. Solo 367 traen precios base distintos: esos son lotes y se apartan (`lote_p6dx`). El gigante (CO1.BDOS.7690096, licitación de colegios) tiene 325 filas.
+- **Identidad del oferente**: `nit_del_proveedor` trae «0000000», «No Definido», «Confidencial» o el nombre del consorcio, y una empresa aparece con dos códigos de SECOP y el mismo valor (DORF). Se unen dentro del proceso el NIT válido (≥ 6 dígitos, no todo ceros) y el nombre normalizado; el código solo cuenta si no hay ninguno. Dos empresas distintas con nombre idéntico se fundirían: riesgo aceptado y declarado.
+
+### El almacén R2 de la base nacional frena ANTES de pasar el gratis, porque Cloudflare no frena (17-oct-2026)
+
+En una línea: `scripts/base_obra/almacen.js` mide lo ocupado y lo gastado en el mes antes de cada subida y niega si se pasaría de la parte de la base (4.000 MB de un tope de cuenta de 9.000 MB) o del 10 % de las operaciones gratis; reserva con PUT condicional antes de gastar, y «no se pudo medir» jamás es «vacío».
+
+- **Por qué existe**: el dueño eligió R2 (ya tenía tarjeta registrada) y pidió que nunca se pasaran los topes gratis. Verificado el 17-oct-2026: las alertas de presupuesto de Cloudflare solo avisan, no cortan, y llegan con un día de retraso; la tarjeta no se puede quitar con R2 activo (y R2 obliga a esperar 30 días tras cancelar). La cerradura tiene que ser de este lado.
+- **Topes verificados** (developers.cloudflare.com/r2/pricing, actualizada el 1-oct-2026): 10 GB-mes Standard (promedio del PICO diario), 1 M clase A (PutObject, ListObjects…) y 10 M clase B (GetObject, HeadObject) al mes; borrar gratis; exceso redondeado hacia arriba; Infrequent Access sin gratis. Sin dato oficial: si el GB es 10^9 o 2^30 (se toma 10^9) y si el gratis es por cuenta (se asume que sí). El tope de la cuenta es 9.000 MB (90 % de 10.000 MB) por decisión del dueño el 17-oct-2026, que eligió el margen del 10 % frente al 1 % de su ejemplo inicial (9.900): Cloudflare redondea cualquier exceso hacia arriba y mide con sus propias cuentas. Reparto declarado: 4.000 MB la base / 5.000 MB la copia nocturna (`COPIA_TOPE_MB`); un corte mensual pesa del orden de decenas de MB.
+- **Revisión adversaria (subagente que no lo escribió), con reproducción, y lo que cambió**: un listado 200 con HTML o `<Error>` se leía como vacío (ahora se exige `<ListBucketResult>`); dos corridas a la vez pasaban juntas del tope (ahora el registro `_cuota/AAAA-MM.json` se escribe con `If-Match`/`If-None-Match`, que R2 implementa y evalúa atómicamente según su página de compatibilidad S3, y la perdedora aborta con 412); operaciones de medir, rechazos y abortos no se anotaban (ahora se anotan; la reserva va antes de gastar y un fallo a mitad deja la cuenta de más); token repetido = bucle infinito de clase A (corte y máximo de 200 páginas); registro negativo o borrado leído como cero (negativo niega; borrado con objetos de este mes niega); PUT sin clase (ahora `x-amz-storage-class: STANDARD`); XML decodificado en dos pasadas; tamaño leído antes que el contenido.
+- **Lo que ningún código de este lado cubre** (dicho al dueño): otros escritores de la cuenta (llave filtrada, panel, la copia nocturna, que necesitará su propia cerradura de 5.000 MB), un almacén público (cada visita gasta clase B), el ciclo de facturación de Cloudflare frente al mes UTC, y el gasto de una corrida que aborta con el registro ilegible o borrado (pocas operaciones, frente al 90 % de operaciones que la base no usa). Todo flujo de GitHub que llame al script lleva `concurrency` con un grupo propio.
+
+### Base nacional de obra, Fase 1: una fila por proceso y cinco señales que solo invitan a revisar (17-oct-2026)
+
+En una línea: `scripts/base_obra/fila.js` (puro) y `base.js` arman una fila por portafolio de p6dx con ofertas válidas, ganador, % adjudicado, competencia («real» 3+, «baja» 1–2), motivo de exclusión y cinco señales (una oferta, ≥ 99 % con una, plazo corto, mismo ganador ≥ 3 en la entidad, interés sin ofertas), con umbrales medidos o declarados y la proporción real marcada publicada.
+
+- **Qué no hay que deshacer (revisión adversaria con reproducción, 17-oct-2026):**
+  - El **plazo** tiene UNA definición para cada proceso y para su umbral: licitación y menor cuantía desde la fila «Presentación de observaciones» hasta el cierre (sin esa fila, null), mínima desde su única fase. Mezclar la primera publicación con la de la fase de ofertas marcaba 43 de 51 licitaciones de una sola fila por construcción; medir solo la fase de ofertas daba un P10 de 1 día en menor cuantía. Días por fecha UTC (con `Date.parse` local un cambio de horario daba 13,96).
+  - **NIT de relleno** («900000000» con 9 consorcios en la Aerocivil, «2222222222», «11111111») no identifica; un NIT con 2+ nombres en el mismo proceso, o en la misma entidad para el ganador, tampoco: se usa el nombre. Nombres comparados sin puntuación y con «S.A.S.» = «SAS».
+  - **Valor adjudicado sobre el precio base** (45, dos eran ×1000) o que difiere > 1 % de la oferta emparejada del ganador (563) es `inconsistencia`: el % no se usa y la señal «≥ 99 % con una» queda null.
+  - **«Una oferta» con más respuestas publicadas que válidas es null**, no oferente único. La dirección de jbjy con 3 líneas no trae municipio (era una calle).
+  - `proveedores_que_manifestaron` vale 0 en el 100 % de los adjudicados: no sirve. `proveedores_invitados` tiene techo en 10 (2.145 procesos) y se lee «10 o más»; si es menor que las respuestas publicadas, la señal es null.
+- **Declarado y del dueño si lo quiere cambiar:** N = 3 victorias (sensibilidad en el resumen), toda adjudicación cuenta como victoria aunque el proceso salga del piso (lotes), y el 10 de interesados como umbral.
+- **Comprobado contra SECOP:** las ofertas válidas igualan a `respuestas_al_procedimiento` en el 86 % (licitación), 93 % (menor) y 91 % (mínima) de los usables, y nunca las superan; en 2.452 de los procesos de menor cuantía con una sola válida, p6dx también publica 1 respuesta.
+
+### R2 rechazó el If-Match con el registro sin cambios, y la mínima cuantía no se mide con la vara de las demás (17-oct-2026)
+
+En una línea: la primera corrida real del flujo «Base de obra» bajó todo y la cerradura frenó la subida con «otra corrida movió el registro» sin que hubiera otra (R2 devolvió 412 al If-Match); ahora se relee y, con la ETag igual, se escribe sin condición porque el flujo corre de a uno; y la Fase 2 parte el umbral de la alerta por modalidad porque mínima (adjudicada por menor precio) lo inflaba.
+
+- **El 412 de R2** (corrida 39069539949): el freno fue del lado seguro —nada se subió ni se gastó de más— pero por un motivo falso. La documentación de R2 dice que el PUT condicional está implementado y no explica el rechazo; no se pudo reproducir aquí (las claves solo viven en GitHub). La escritura sin condición solo ocurre si la relectura trae la MISMA ETag; si cambió, se aborta como carrera real. El aviso deja en el registro de GitHub la ETag enviada y la leída para diagnosticarlo. La lectura extra de un 412 se cuenta en el gasto (antes faltaba una operación clase B por carrera perdida).
+- **Umbral de la alerta por modalidad** (`cifras.js`): con todo junto, el 80 % «alertaba» a 7 de cada 100 ganadoras; por modalidad, 0,3 en licitación (6 de 1.858), 0,7 en menor cuantía (41 de 5.554) y 20,5 en mínima (785 de 3.824). Mezclarlas escondía que la alerta del 80 % casi nunca toca a una ganadora de licitación o menor cuantía y sí a una de cada cinco de mínima.
+- **Tamaño por terciles medidos por modalidad** (decisión del dueño, 17-oct-2026); un grupo con menos de 30 se apoya en el departamento y luego en el país, y la salida dice cuál y cuántos tenía; el respaldo se calcula una vez (antes el remuestreo del país se repetía por grupo y tardaba más de 2 minutos; ahora 25 s).
+- **Fórmulas** (pliego definitivo SAMC-SI-020-2026, CCE-EICP-GI-02, pp. 53–56, y Documento Tipo de licitación V4, CCE-EICP-GI-01 numeral 4.1.4): centavos de la TRM, con la tabla 0,00–0,24 mediana · 0,25–0,49 geométrica · 0,50–0,74 aritmética baja · 0,75–0,99 menor valor; ninguno de los dos trae fórmula de precio artificialmente bajo (remiten al art. 2.2.1.1.2.2.4 del Decreto 1082 y a la guía de CCE). La guía del repositorio (`GUIA_ANALISTA_LICITACIONES.md:597`, «primer decimal», otros métodos) no coincide con estos documentos.
+
+### Fase 2: el piso se reproduce, el ganador no — los datos abiertos no dicen quién quedó hábil (17-oct-2026)
+
+En una línea: `metodos.js` copia las 4 fórmulas del pliego (verificadas) y `cifras.js` mide piso, simulador, acierto, competencia y umbral; la revisión adversaria (modelo más capaz, con reproducción) mostró que tomar las ofertas PUBLICADAS como si fueran las hábiles invalida «habría ganado» y la prueba de la TRM, así que el simulador se publica en dos curvas y el acierto se rotula como lo que es.
+
+- **No comunicar** (lo dijo la revisión y queda aquí para que nadie lo «arregle» en el sentido equivocado): «de cada 100 habría ganado X» sin el piso; «la TRM no mejora el acierto» (lo correcto: con datos abiertos no se sabe qué método usó cada proceso ni quién quedó hábil); el error < 0,5 pts del piso como regla general (vale para A, B y E; quitar UNA oferta lo mueve más de 0,5 pts en un tercio a la mitad de los procesos); el piso mezclado de 2024–2026 sin decir que baja cada año.
+- **Simulador**: la curva sin piso premiaba ofertar más bajo; con la oferta bajo mediana − σ muestral tratada como rechazada, el máximo de «primero en el precio sin quedar bajo el piso» cae hacia el 95 % en menor cuantía y el 95–96 % en licitación. La verdad está entre las dos curvas: quedar bajo el piso no es rechazo automático (el ganador de E lo estaba). El precio pesa 49,5 de 100 (pliego p. 50): el simulador mide el puntaje del precio suponiendo lo demás igual.
+- **Acierto**: el ganador real queda primero con ALGÚN método en ~57 % de menor cuantía y ~39 % de licitación con competencia real; el de la TRM estimada no se distingue de una TRM al azar. Con 2 ofertas los 4 métodos eligen la más baja. Licitación usa su propia regla de TRM (día hábil siguiente a la audiencia, Documento Tipo V4 4.1.4) [inferencia sin caso validado]; los días hábiles salen de la serie 32sa-8pi3 (con festivos).
+- **Sin competencia de precio** (todas las válidas al mismo valor, casi siempre el 100 %): fuera del piso y del simulador, contadas (67 licitaciones, 254 de menor cuantía). **Séptimo decimal** sobre el puntaje real (49,5 / 48,5), no el normalizado. **«Ganadas»** de un rival = es el ganador por identidad (la igualdad de valor sumaba 5.167 de más). **Persona natural**: solo se muestra el nombre con forma jurídica explícita.
+- **Mínima**: la oferta más baja ganó en 898 de 2.495 (36 %) aunque la norma acepta la de menor precio que cumpla [inferencia: en cerca de 2 de cada 3 la más baja no cumplió]; es un hecho a revisar en la muestra a mano de la Fase 3, no un error del cruce probado.
+
+### Fase 3: la validación posible sin SECOP es coherencia interna, y se hace por censo, no por muestra (17-oct-2026)
+
+En una línea: la página pública de SECOP no es revisable desde la sesión (403 sin agente de navegador; 302 a reCAPTCHA con él, 17-oct-2026, no se sortea), así que la validación cruza p6dx, wi7w y jbjy —el MISMO SECOP II— y eso mide coherencia interna, no verdad; la muestra de 30 queda como apoyo y la cifra que cuenta es el censo de `base.js`.
+
+- **Censo** (`resumen_base.json`, 11.626 usables): el contratista de jbjy es el ganador de p6dx en 11.460 de 11.504 con contrato (44 no, a revisar; 122 sin contrato); valor del contrato igual al adjudicado en 7.694, mayor en 3.635, menor en 175; válidas = respuestas publicadas en 10.579 y nunca más. Con 30 solo se podía afirmar «error probablemente < 10 %» (revisión adversaria: 59 sin errores para < 5 %).
+- **Retirado**: la señal «ganó la oferta más cara» que se propuso al ver C y D. Contando empates inflaba (795 de 3.438); sin procesos de valor único ni inconsistencias, la más cara gana sola en 431 de 3.012 frente a 494 que daría el azar. Con el precio a 49,5 de 100 y las hábiles desconocidas, no separa nada. C y D siguen siendo raros (ninguna de las 5 señales los marca), pero la base no tiene con qué distinguirlos.
+- **Mínima**: la más baja publicada ganó en 898 de 2.495; la causa («no cumplió requisitos») NO está medida (con 2 ofertas ganó la más alta en 60 %; hay hipótesis no descartadas: ofertas registradas que no se presentaron, IVA, parciales).
+- **Adiciones**: los 9 contratos de la muestra con valor mayor tienen modificación registrada en cb9c-h8sn (reproducción de la revisión adversaria; ese dataset no trae montos).
+- **Pendiente declarado** (regla de nombres): en `base.jsonl.gz` los campos `pct` son FRACCIÓN (0–1) y en `cifras.json` los `_pct` son PORCENTAJE; la muestra ya usa `fraccion_adjudicada`. Renombrar la base toca todo `cifras.js` y sus pruebas: queda para cuando la base alimente a Detekta. `ganadas_con_oferta_emparejada` es un piso, no el total de victorias.
+
+### La alerta de precio bajo se corta por modalidad con lo medido en SECOP II (18-oct-2026)
+
+En una línea: la alerta «Su precio puede parecer artificialmente bajo» (Formulario 1, validación 5) y el umbral del panel Piso/Techo ya no cortan en un 80 % único: 88 % en licitación y menor cuantía, 70 % en mínima y 80 % donde no hay medición; la revisión por ítem (validación 8) sigue en el 20 %. El N y la fecha de corte van en las fuentes del panel y en `umbral_fuente` de la respuesta del Formulario 1; la pantalla del Formulario 1 todavía no pinta ese campo. Decidido por el dueño el 18-oct-2026 sobre el plan aprobado.
+
+- **De dónde salen** (`cifras.json` de la base nacional, corrida local del 17-oct-2026, `umbral_alerta`; ganadoras de 2024 al corte, sin inconsistencias): con 80 % la alerta le habría saltado a 2 de 1.750 ganadoras de licitación, 27 de 5.387 de menor cuantía y 734 de 3.708 de mínima. Con 88 %: 17, 116 y 1.349. Con 70 % en mínima: 258. El piso medido (mediana − σ) está en 93,3 % y 93,4 %: a 80 % la alerta llegaba cuando ya nadie gana ahí.
+- **No es una norma y no se escribe como tal**: el Decreto 1082 (art. 2.2.1.1.2.2.4) no fija porcentaje y el pliego tipo (SAMC-SI-020-2026, pp. 50–56) no trae fórmula. El corte es dónde caen las ganadoras de verdad. La entidad decide con la media − σ de SU proceso, que no se conoce antes del cierre.
+- **Por qué 88 % y no la mediana − σ medida (93 %)**: a 92 % ya le saltaría a 6 de cada 100 ganadoras de licitación y a 7 de menor cuantía. En precios cuesta más la alerta falsa (regla dura): 88 % deja 1 y 2 de cada 100.
+- **Por qué mínima baja a 70 % y no se quita**: gana el menor precio que cumpla, y a 80 % la alerta tocaba a 1 de cada 5 ganadoras (ruido). A 70 % toca a 7 de cada 100 y sigue recordando la justificación. Un precio entre 70 y 80 % en mínima ya no avisa: es el costo aceptado.
+- **Sin medición, 80 %** (subasta, concurso, régimen especial, modalidad desconocida): no hay dato para moverlo. **Por ítem, 20 %**: la base mide TOTALES; un ítem suelto se aleja del unitario oficial mucho más que el total, y bajar a 12 % por ítem sería un umbral sin dato. Por eso la validación 8 tiene su propia variable (`bajaMaxItemPct`) y no comparte la de la 5.
+- **Una sola tabla**: `TEMERARIO_POR_MODALIDAD` en `lib/apu/piso_techo.js`; la modalidad la clasifica `guia_proceso.modalidadEnLlano` (la regla que ya existía, llamada en diferido). El consejo de la guía para mínima y subasta (comparten consejo, no corte) y el texto de `como_leerlo` del editor leen de ahí: el censo del bloque «unidad alerta de precio bajo por modalidad» barre `lib/` y `public/` y falla si alguien vuelve a escribir el 80 % a mano junto a «presupuesto».
+- **Las cifras de la sección del 17-oct** («R2 rechazó el If-Match…»: 6 de 1.858, 41 de 5.554, 785 de 3.824) son de una corrida anterior de `cifras.js`; la tabla usa la última.
+- **Revisión adversaria** (subagente, 18-oct-2026): 2.592 combinaciones del panel y 216 del Formulario 1 contra el árbol anterior; solo cambian el umbral y su frase, y sin modalidad nada. Lo que cazó y se arregló: el censo eximía archivos enteros (el 80 % podía volver al texto visible de la alerta) y ahora exime por línea declarada; cuatro mutaciones sobrevivían (umbral declarado por ítem, fuente y «medido» con corte declarado, el conteo de menor cuantía); el texto sin modalidad repetía el 80 % y decía «esta modalidad».
+- **Cuándo revisarlo**: cuando la base nacional se vuelva a correr. Si las cifras se mueven, cambia la tabla y su `fuente`, no el código que la usa.
+
+
+### La fuente del corte se ve en la pantalla y la base se vuelve a medir cada mes, con un vigía que avisa y no corrige (18-oct-2026)
+
+En una línea: «Revisar antes de subir» pinta, bajo la alerta de precio bajo, cuántas ganadoras de esa modalidad tuvieron más descuento (la frase sale de los DATOS de `TEMERARIO_POR_MODALIDAD`, no de un texto aparte); el flujo «Base de obra» corre el día 3 de cada mes y `vigilar_corte.js` avisa si la tabla ya no dice lo mismo, sin tocarla.
+
+- **La frase se arma con los conteos** (`ganadoras`, `bajo_el_corte`, `datos_al` en cada fila; `fraseCorte`): un texto escrito aparte y los números del vigía habrían sido dos copias que divergen a la primera corrida. Dice «N de M ofertas ganadoras con datos comparables tuvieron más del X % de descuento»: el hecho medido, sin «probabilidad». «Con datos comparables» porque los conteos no son TODAS las ganadoras: solo procesos con ofertas publicadas, sin lotes, con la ganadora identificada y sin inconsistencias, y `limpiarOfertas` descarta las ofertas bajo el 50 % del precio base (revisión adversaria; sin esas palabras la frase prometía más de lo que mide). `cifras.js` cuenta `pct < corte`, que es exactamente «más del X % de descuento», el mismo criterio estricto de la alerta.
+- **Sin modalidad la frase no repite el 80 %** y dice «No se conoce la modalidad del proceso» (no «el proceso no publica»): en la pantalla de revisión la modalidad puede faltar porque no se abrió un proceso, no porque SECOP no la publique.
+- **Navegador real** (18-oct-2026): `tests/servidor_local.js` con los routers reales, un Redis simulado en memoria fuera del repositorio y el catálogo cargado por la ruta de administración; Chromium recorre «Precios» → ítem → «Calcular» → «Revisar antes de subir». La línea sale en licitación (12 %), mínima (30 %), «ok» a 7,6 % y sin modalidad (20 %, frase neutra); a 390 px el documento mide 380 (sin desborde); cero errores de JavaScript. Los 503 de `op=cuenta` y 502 de `op=sync` de esa corrida son del entorno (cuentas apagadas, sin salida a datos.gov.co).
+- **El vigía avisa y NO corrige**: mover el corte decide dinero, y eso pide el visto bueno del dueño. Compara con las tasas sin redondear (una cifra redondeada para mostrar no decide); avisa si «de cada 100» se mueve más de 1 o el número de ganadoras más de un 20 % (la base acumula desde 2024, así que el número crece cada mes: el aviso por N es a propósito, para que la fuente citada no envejezca). Una modalidad que la corrida no trae, o con conteos que no son enteros entre 0 y el total, queda «sin_medir», jamás «0 de 0» ni «igual»; y entonces el resumen AVISA que no se pudo comparar: la primera versión cerraba con «Sin cambios» aunque no hubiera medido nada (revisión adversaria), que es «sin dato = cero» escrito en texto. Las anotaciones de GitHub escapan el «%» (`%25`). El paso lleva `continue-on-error`: un fallo del vigía no puede costar la subida de la base.
+- **Cuándo empieza a correr**: GitHub solo corre los `schedule` desde la rama principal, así que la corrida mensual arranca cuando el flujo llegue a main. En un repositorio público se apaga sola tras 60 días sin actividad (docs.github.com, «Events that trigger workflows», leído el 18-oct-2026). Los minutos de Actions son gratis en repositorios públicos con equipos estándar (docs.github.com, facturación de Actions, misma fecha); el repositorio es público (medido).
+- **Cada corte lleva la fecha y el número de la corrida** (`corte/AAAA-MM-DD-<run_id>`): la corrida 2 terminó pasada la medianoche UTC y subió como `corte/2026-10-18`; otra corrida ese día la habría pisado.
+- **La prueba de la pantalla EJECUTA `revisarOferta`** en el arnés del revisor de la oferta (caso «(j)»), con la respuesta real de `validarFormulario1`, y mira el HTML sin comentarios: la primera versión buscaba la línea con una regex sobre `public/app.js`, y una condición que nunca se cumple, o la línea comentada, pasaban (revisión adversaria). De 13 mutaciones, todas caen.
+- **El pull request de esta rama se abre SIN fusión automática** por orden expresa del dueño en este encargo, aunque el apartado «Rama» de PROMPT_INICIAL pide activarla: el mensaje del dueño manda.
+
+### Las ganadoras que la base no cuenta: en licitación no mueven el corte; en mínima la regla del 50 % esconde ganadoras reales (18-oct-2026)
+
+En una línea: revisadas a mano las ganadoras bajo el corte que `umbralAlerta` deja fuera sin ser lotes (4 en licitación, 27 en mínima), la tasa de la alerta pasa como mucho de 0,97 a 1,08 de cada 100 en licitación y de 6,96 a 7,63 en mínima (7,36 lo creíble): los cortes de 88 % y 70 % se sostienen, pero en mínima la limpieza descarta como error ofertas ganadoras reales por debajo del 50 % del presupuesto.
+
+- **Licitación** (cruce con jbjy-vk9h en vivo, HTTP 200): Cúcuta CO1.BDOS.7050304 (adjudicado 6 %, contrato $2.348.000.000: 19 oferentes escribieron ~6 % y 21 el presupuesto completo, otra medida [inferencia]) e ICCU CO1.BDOS.7054668 (dos ganadores que ofertaron el 100 %, dos contratos) NO son precios bajos. Concepción CO1.BDOS.9324024 (ofertó 99,0 %, contrato = adjudicado 83,05 %) e INVIAS CO1.BDOS.10314747 (86,74 %, adjudicado el 14-oct, sus ofertas aún no estaban en wi7w) pueden ser reales: 19 de 1.752 en el peor caso.
+- **Mínima**: en 15 de los 27 lo adjudicado ES una oferta publicada, siempre por debajo del 50 % del presupuesto, y `limpiarOfertas` la descartó por `bajo_50` (la base la toma por error de digitación). En 8 el contrato firmado vale exactamente lo adjudicado; en 4 vale 1,49–1,50 veces (una adición del 50 % sobre lo adjudicado [inferencia]); en 3 el contrato vale el presupuesto o más (otra medida, como Cúcuta [inferencia]); uno (CO1.BDOS.8550252) ofertó 5 % frente a cinco al 100 %. De los otros 12, en 7 lo adjudicado queda por debajo de TODAS las ofertas: no es un precio ofertado y no se puede usar.
+- **No se tocó la limpieza**: el `bajo_50` sigue sirviendo en licitación y menor cuantía, donde una oferta bajo la mitad es casi siempre otra medida. Relajarlo solo en mínima mueve la cifra de la tabla y es decisión del dueño.
+
+> RESUELTO el 18-oct-2026 por «El rescate bajo el 50 %: la oferta ganadora que coincide con lo adjudicado y con su contrato cuenta, en todas las modalidades (18-oct-2026)» · el dueño eligió aplicarlo en TODAS las modalidades, con la guarda del contrato. Texto original: decidir si en mínima cuantía `limpiarOfertas` deja de descartar las ofertas bajo el 50 % del presupuesto cuando lo adjudicado coincide con esa oferta (15 casos medidos el 18-oct-2026; la tasa de la alerta del 70 % subiría de 6,96 a cerca de 7,36 de cada 100). Si se decide, cambian `limpieza.js`, la fila `minima` de `TEMERARIO_POR_MODALIDAD` y sus pruebas; el vigía mensual lo avisará solo.
+
+### El rescate bajo el 50 %: la oferta ganadora que coincide con lo adjudicado y con su contrato cuenta, en todas las modalidades (18-oct-2026)
+
+En una línea: `limpiarOfertas` ya no descarta una oferta bajo el 50 % del precio base si es igual, al peso, a lo adjudicado, si los contratos firmados en jbjy SUMADOS valen a lo más 1,5 veces eso y si en el proceso hay otra oferta válida; sin contrato legible no rescata. Con los datos del 17-oct entran 12 ganadoras de mínima y ninguna de menor cuantía ni de licitación: la fila de mínima pasa a 270 de 3.720; los cortes no cambian.
+
+- **Por qué la guarda es el contrato y no solo «igual a lo adjudicado»**: revisado a mano, Cúcuta CO1.BDOS.7050304 y tres de mínima coinciden con lo adjudicado y eran otra medida (contrato al precio base o más). Medido: en las 12 reales el contrato vale entre 1,0 y 1,5 veces lo adjudicado (8 iguales, 4 entre 1,49 y 1,50); en los de otra medida, de 2,99 a 1.499,8 veces (menor cuantía CO1.BDOS.7958348: $139.800 ofertados, $139.800.564 firmados; CO1.BDOS.8921419: $336.800 y $505 millones). Con la oferta bajo el 50 %, el tope deja la suma bajo el 75 % del precio base: no hace falta exigir «bajo el precio base».
+- **La SUMA y no cada contrato (revisión adversaria)**: Tibirita CO1.BDOS.8989826, que en la sesión se tomó por precio real, son DOS LOTES de un mismo precio base («LOTE 1» $100.000.000 y «LOTE 2» $99.755.678 en jbjy; p6dx con `numero_de_lotes` 0 y la adjudicación con dos valores): cada contrato cabía en el tope, la suma vale 2 veces lo adjudicado. Con «cada contrato» la versión anterior la contaba y la fila de menor cuantía subía a 118 de 5.389.
+- **Otra válida en rango**: SENA CO1.BDOS.7102769 tiene dos ofertas, las dos al 27,7 % del precio base; si nadie ofertó entre el 50 y el 100 %, lo sospechoso es el precio base [inferencia], no el precio. Sin otra válida, la rescatada vuelve a `bajo_50`.
+- **«Sin dato» no rescata**: `base.js` junta TODOS los contratos del proceso con `juntarContratos` (antes guardaba solo la primera fila de jbjy) y un valor ilegible entra como null; un contrato ilegible o en cero hace que no se rescate. El rescate se cuenta aparte (`rescatada_bajo_50`) y no suma a `bajo_50`.
+- **Un rescate dudoso, dicho**: mínima CO1.BDOS.8550252 ofertó el 5 % del precio base frente a cinco ofertas al 100 %, y su contrato vale eso mismo. La regla lo cuenta porque el contrato lo confirma; la duda es si el precio base de p6dx es el de la obra. Pesa 0,03 de cada 100.
+- **Lo que se movió y lo que no** (corrida local del 18-oct con los datos del 17-oct; jbjy sin fallos): umbral de la alerta a 88 % en licitación 17 de 1.750 y en menor cuantía 116 de 5.387 (iguales), a 70 % en mínima 270 de 3.720 (antes 258 de 3.708). El piso del país (mediana − σ) no cambió: 93,3 % en licitación y 93,43 % en menor cuantía, con el mismo N. El vigía, corrido sobre esa corrida, da «igual» en las tres filas.
+- **No resuelto, a propósito**: si dos proveedores ofertan exactamente lo adjudicado se rescatarían los dos (en procesos sin lotes no ocurre en los datos). Exigir que la oferta sea del ganador pide pasar su identidad a la limpieza; queda para cuando ocurra.
+
+### La llave del servidor no se copia de Vercel: se anota al ponerla (18-oct-2026)
+
+En una línea: la guía §0.1 bis y el mensaje de «la llave no coincide» mandaban a «copiar `HISTORICO_TOKEN` de Vercel con el ojo», y una variable de tipo «Secret» (la del candado, como quedó en la cuenta del 16-oct) no se puede ver ni copiar después de guardarla; el dueño se quedó en ese paso. Ahora la guía y los dos mensajes del alta dicen que la llave se ANOTA al ponerla, y que si no se tiene, se pone una nueva y se vuelve a desplegar.
+
+- **La fuente.** Documentación de Vercel, «Config and Secret environment variables», leída el 18-oct-2026: «Secret values are write-only after saving» y «For Secret variables, the current value is hidden. Provide a new value to rotate the secret».
+- **Dónde está la variable en esta cuenta.** Medido por captura del dueño el 17-oct: las variables son compartidas del equipo (pestaña «Shared» de «Environment Variables», con «All Projects» arriba), con candado. La página del proyecto no tiene variables propias. La guía §0.1, paso 2, da esa ruta.
+- **La cerradura.** El bloque «unidad sesión del dueño» comprueba tres cosas:
+  - el mensaje que REALMENTE responde un alta con la llave equivocada es `MSG_LLAVE_NO_COINCIDE`;
+  - ni ese mensaje ni `MSG_LLAVE_RETIRADA` mandan a copiarla de Vercel, y los dos dicen que Vercel no muestra las variables secretas y que se anota;
+  - la guía §0.1 no lo hace.
+  Tres mutaciones (el mensaje viejo, la guía vieja, el aviso sin la frase) ponen el bloque en rojo.
+- **Lo que no se tocó.** El mensaje de «falta `HISTORICO_TOKEN`» sigue nombrando «Settings → Environment Variables»: es la ruta de una variable del proyecto, y en esta cuenta la variable es compartida. No manda a copiar nada, así que se dejó como está.
+
+### Los pliegos de más de 20 MB que se midieron son escaneos: bajarlos por partes no da texto (18-oct-2026)
+
+En una línea: los 4 pliegos y documentos base de más de 20 MB que se pudieron medir (de los 15 de 228 procesos de la
+medición del plan con el definitivo por encima del tope) son escaneos sin una sola letra de texto, 0 caracteres en 456
+páginas; construir la descarga por partes de la Fase C sería pagar unas 15 peticiones y ~400 MB de bajada por un PDF de
+45 MB (estimado del plan, sin medir) para no leer nada: el camino es el OCR, y en estos cuatro el OCR deja un anticipo «sí» falso que también da main con texto nativo.
+
+> RESUELTO el 18-oct-2026 por «La Fase C se cierra: no se construye la descarga de pliegos de más de 20 MB (18-oct-2026)» · lo que se había dicho: decidir con el dueño si la Fase C se cierra (no construir la descarga de más de 20 MB, porque los 4 medidos son escaneos) o se cambia por OCR de esos escaneos; el OCR de la app es OCR.space, una petición por página (134-142 por pliego), y su tarifa no se ha podido verificar.
+
+> RESUELTO el 18-oct-2026 por «La fórmula en prosa no afirma el anticipo: «presupuesto oficial menos el anticipo…» es mención (18-oct-2026)» · lo que se había dicho: el detector del anticipo (`dictamen_reglas`) da «sí» con la frase de la capacidad residual «presupuesto oficial menos el anticipo o pago anticipado cuando haya lugar», también en una sola línea de texto nativo (reproducido el 18-oct-2026 con `hechosDeTexto` de main). CO1.REQ.10725252 no tiene anticipo (forma de pago 50 % / 40 % / 10 % por avance, pág. 9) y la lectura dice «sí» citando la pág. 43. En 41 textos nativos de pliego de la sesión, ninguno de los 10 «sí» cita una fórmula. El anticipo entra al capital de trabajo: va con plan y visto bueno.
+
+**Cómo se midió.** SECOP II respondió 403 a la descarga desde la sesión (Microsoft-Azure-Application-Gateway, 18-oct
+05:08 UTC). El dueño bajó los 4 PDF en su navegador y los subió a una carpeta de Drive compartida «con el vínculo»; desde
+la sesión se bajaron por `drive.usercontent.google.com` con el mismo número de bytes que publica dmgg-8hin. Esa vía sirve
+para las próximas mediciones con archivos que SECOP II no entrega aquí. Texto: el pdf.js de `public/vendor` con
+`lineasDePagina` de `public/pliego.js`, y pdftotext de control. OCR: tesseract 5 local en español a 300 ppp, que NO es el
+OCR.space de la app; sirve de indicio de lo que da un OCR, no de medida del de la app.
+
+| Proceso | Archivo | MB | Páginas | Hecho por | Texto | OCR: presupuesto 1.1 | OCR: anticipo (verdad en la imagen) |
+|---|---|---|---|---|---|---|---|
+| CO1.REQ.10168183 | DOCUMENTO BASE .pdf | 23,3 | 80 | Epson Scan 2 | 0 | $7.513.410.338,51, pág. 5 (bien) | «sí» citando la fórmula de la pág. 40; la verdad: 50 %, pág. 79 |
+| CO1.REQ.11187692 | DOCUMENTO BASE DEFINITIVO.pdf | 39,6 | 100 | HP Scan | 0 | sin dato: la tabla sale revuelta | «sí» citando la fórmula de la pág. 53; la verdad: 40 %, pág. 99 |
+| CO1.REQ.10725252 | PLIEGO DE CONDICIONES DEFINITIVO.pdf | 43,1 | 134 | Smart Touch | 0 | sin dato (pliego propio, sin 1.1) | «sí» FALSO, pág. 43; no hay anticipo |
+| CO1.REQ.11035775 | PLIEGO … LP-CARDIQUE-010-2026_0001_.pdf | 48,1 | 142 | HP Scan | 0 | sin dato (pliego propio) | sin dato; no hay anticipo (80 % / 20 %) |
+
+- El OCR no sacó ningún hito del cronograma en los cuatro: las tablas salen con las columnas revueltas.
+- Ninguna cifra inventada: donde la tabla no se leyó, el presupuesto queda sin dato, como debe.
+- Tiempo del OCR local: de 4,5 a 15,8 s por página con 4 a la vez en 4 núcleos (un tesseract con varios hilos por cada
+  proceso se atascó: con `OMP_THREAD_LIMIT=1` baja a 3,4 s por página a solas).
+- Lo que esto NO dice: cuántos de los otros 11 son escaneos. El tamaño lo sugiere, porque un pliego de 130 páginas con texto pesa
+  pocos MB y estos traen una imagen por página, pero no se midió [inferencia].
+
+### El tablero de pendientes mentía: la revisión del 18-oct, uno por uno contra el código (18-oct-2026)
+
+En una línea: de 42 marcadores «> PENDIENTE» revisados el 18-oct contra el árbol, 6 ya estaban resueltos —uno de ellos agrupaba tres asuntos, y varios llevaban tres semanas hechos— y seguían contando como abiertos porque la sesión que los arregló marcó su sección como SUPERADA o abrió una nueva, pero no editó el marcador; `estado.js` solo lee los marcadores.
+
+- **Qué se cerró.** Los de las pruebas con fecha del 31-oct, 1-nov y enero (cerrados por la mañana y medidos con un precargador que adelanta `Date`); el sorteo en mínima cuantía y el consorcio (commit 9152f8f, 27-sep); el revisor de la oferta (commit 1830e61, 28-sep); las tres rutinas de `docs/RUTINAS.md` (existen desde el 26-sep, medido con la lista de tareas programadas), y el cambio de `HISTORICO_TOKEN` (hecho por el dueño el 18-oct: la llave vieja da 401 en producción, la nueva entra, la cuenta del dueño existe, y la variable está en GitHub y en el entorno «Detekta con internet» con 40 caracteres).
+- **Cómo se revisó el resto.** Cuatro agentes de solo lectura, cada uno con unas 10 líneas, con la regla de no marcar RESUELTO sin evidencia; la mayoría ejecutó la función real con `node -e`, y donde solo hubo lectura se dijo. Los 36 que quedan siguen abiertos, a medias, o dependen de una acción o decisión del dueño (R2, correo, OCR, Vercel Pro, el 80 %).
+- **La regla que hay que no volver a romper.** Quien arregla lo que pide un marcador edita ESE marcador a «> RESUELTO el … por «título» · …» en el mismo commit. Marcar la sección como SUPERADA no basta: el tablero del dueño lee el marcador, no el título.
+
+### Las tres lecturas del pliego del 18-oct: la versión que rige, el ejemplo entre corchetes y el techo con una versión sin tabla (18-oct-2026)
+
+En una línea: el plan de lectura elige las tres versiones MÁS NUEVAS del pliego; un tramo entre corchetes que empieza por «Por ejemplo» o «Ejemplo:» no es un hito; y una versión del pliego del mismo tipo, del mismo día o posterior, sin la tabla del presupuesto, manda el techo de Precios a SECOP II con el aviso «revisar» (visto bueno del dueño), sin cambiar qué documento da la cifra.
+
+- **Qué no hay que deshacer en el techo.** `elegirPresupuestoPliego` NO reordena `leidos`: loQueDicen ya los trae por tipo (`PRIORIDAD_FUENTE`) y, dentro del tipo, del más nuevo al más viejo. Una primera versión del arreglo ordenaba solo por fecha y la revisión adversaria midió dos subidas del techo: un documento base más nuevo le ganaba al pliego, y elegir la cifra solo entre versiones del pliego ignoraba unas «Observaciones» con cifra menor ($850 M frente a $900 M). Por eso el documento que da la cifra se elige igual que antes y lo nuevo es una comprobación que solo puede llevar el techo a SECOP II.
+- **El mismo día cuenta como posterior.** `fecha_carga` es solo el día; con dos versiones del mismo día no se sabe cuál rige, y en Precios lo caro es el falso positivo. Se compara el día de carga, nunca `leido_el` (la hora de lectura gana a cualquier día de SECOP).
+- **Lo medido.** Pruebas por mutación en «unidad presupuesto del pliego», «unidad los nueve procesos del dueño» y «unidad manifestación calibrada»; dos rondas de revisión adversaria sobre el techo, la última sin subidas fuera del caso aprobado.
+
+### La carga en Precios no entra al vigía si el nombre dice que es otra cosa (18-oct-2026)
+
+En una línea: Precios mandaba al vigía de adendas TODO archivo leído con un proceso abierto —también el Formulario 1 de
+cantidades que la propia pantalla pide— como «versión del pliego», y el dictamen, el cronograma y los descuentos lo leían;
+ahora el navegador manda el NOMBRE del archivo y `op=diff` no guarda lo que la regla de la lectura automática
+(`Docs.clasificarArchivo` + `Docs.esVersionDelPliego`) reconoce como OTRA cosa: el formulario o presupuesto, una adenda
+suelta, un anexo, unas observaciones o sus respuestas, unos estudios previos.
+
+> RESUELTO el 18-oct-2026 por «El clasificador lee los nombres con separadores y los nuevos de Colombia Compra («DocBase_…») (18-oct-2026)» · lo que se había dicho: el clasificador de nombres (`RE_TIPO`, lib/documentos_proceso) no reconoce los nombres nuevos de Colombia Compra ni las variantes con separadores: «DocBase_LicitacionObra_ISocialLV2.pdf», «Documento_base_…», «06_Documento Base…», «DOCUMENTO%20BASE», «Documentos Base», ni erratas como «DOCUEMENTO BASE». Quedan como «otro», orden 30, y la lectura automática NO los lee: 7 de 232 procesos de la muestra, 5 de 33 abiertos, y van en aumento (6 de 91 con cierre de sep a nov de 2026, 0 de 141 antes; 2.ª revisión adversaria, 18-oct). Arreglarlo cambia qué lee la app sola en esos procesos (presupuesto, anticipo, requisitos, dictamen): va con plan, medición y visto bueno.
+
+**Lo que no hay que deshacer.** (a) Decide el nombre, con la regla de la lectura automática. Medido en 18.166 archivos reales
+de dmgg-8hin: los 40 nombres que juntan «presupuesto» y «pliego» son el Formulario 1, y los que la regla da por otro documento
+(respuestas a observaciones, estudios previos, anexos técnicos, avisos, matrices) no son el pliego. (b) Un nombre que NO dice
+qué es se GUARDA, como antes. El dueño había aceptado no guardarlo («ante la duda no se dictamina sobre un texto desconocido»),
+pero la 2.ª revisión adversaria reprodujo la regresión: los 11 nombres así de la muestra son documentos base reales («DocBase_…»,
+ver el pendiente), y en 4 de 33 procesos abiertos cargarlo en Precios era el ÚNICO camino del pliego al dictamen
+(CO1.REQ.11144592 se quedaba en «Puede presentarse» sobre el proyecto de pliego; CO1.REQ.11213139, sin texto). También se
+guarda lo que llega sin nombre: un navegador con el código de antes sigue funcionando como antes. (c) Una adenda SUELTA no se
+guarda (el dictamen leería solo la adenda; decisión del dueño), pero el pliego con la adenda incorporada sí: con el nombre del
+pliego DELANTE de «adenda» («Documento Base … MODIFICADO CON ADENDA No. 1», 3 en la muestra), salvo que antes diga
+«propuesta», «oferta», «presupuesto», «cantidades» o «formulario». La misma regla salva el pliego con todo junto: «PROYECTO DE
+PLIEGO, ANEXOS, FORMATOS, MATRICES Y FORMULARIO 1» (CO1.REQ.10367183) es el único de los 402 nombres de tipo presupuesto de la
+muestra con el nombre del pliego delante, y ningún formulario real cambia. (d) La respuesta es 200 con `ok:false, no_es_el_pliego:true` y la frase en `error`: no es un fallo, y un
+navegador con el código de antes dice «No se pudo guardar la versión del pliego: <motivo>», que es la verdad. La frase dice lo
+que el dictamen está leyendo DE VERDAD (`textoGuardado`: «siguen con «nombre»» o «la versión N del pliego») o que todavía no
+hay pliego guardado y qué cargar; el navegador de ahora no le pasa el motivo al dictamen como fallo del vigía. (e) Con un
+archivo rechazado, el cronograma se pide SIN su texto: el del pliego guardado, el mismo del .ics y de Mis procesos (con el texto
+de una adenda, la lista decía una fecha de cierre y el .ics otra). Las fechas que cambie una adenda se confirman en SECOP II.
+(f) El origen de lo cargado a mano lleva el nombre («lector:<nombre>», 40 caracteres); sin nombre, «lector». `textoGuardado`
+lo trata igual: no empieza por «documentos:». Lo ya guardado no se toca. (g) El aviso de la versión más nueva sin leer (Fase A)
+mandaba a «cargar ese PDF en Precios y volver a pedir el dictamen», pero la lectura por OCR de Precios NO pasa por el vigía y
+los 4 pliegos de más de 20 MB medidos son escaneos: el consejo no hacía nada. Ahora dice que se revise el documento en SECOP
+II antes de decidir, y que cargarlo en Precios sirve si el PDF trae texto.
+
+**Cómo se probó.** Bloque «unidad la carga en Precios» con los handlers reales: 9 nombres que no se guardan, cada uno con su
+frase; 13 que sí, entre ellos los «DocBase_», el enlace pegado, sin nombre y los pliegos con adenda; el Formulario cargado
+DESPUÉS de la lectura automática, que ya no tapa el pliego y cuya frase nombra lo que se lee; y un nombre larguísimo. El (g) del
+lector con el `pliego.js` real comprueba que el nombre viaja, que el motivo se pinta escapado y no como fallo, que el
+cronograma va sin el texto y que el dictamen se pide igual. Navegador real a 390 y 1280 px con la sesión del dueño: Formulario,
+adenda, «DocBase_» y pliego en ese orden; consola limpia.
+
+### La Fase C se cierra: no se construye la descarga de pliegos de más de 20 MB (18-oct-2026)
+
+En una línea: el dueño cerró la Fase C del plan del texto del pliego (18-oct-2026): los 4 pliegos de más de 20 MB que se
+midieron son escaneos sin texto, así que bajarlos por partes desde la app (unas 15 peticiones y ~400 MB por un PDF de 45 MB,
+estimado del plan) no daría nada que leer; esos procesos siguen con el aviso de que el documento no se lee solo y se revisa en
+SECOP II.
+
+**Lo que no hay que deshacer.** No construir la descarga por partes de documentos de más de 20 MB sin medir antes que traen
+texto: la medición de la sección «Los pliegos de más de 20 MB que se midieron son escaneos…» dio 0 caracteres en 456 páginas.
+El OCR de esos escaneos por la app (OCR.space, una petición por página) es otra decisión, no tomada; y la lectura por OCR de
+Precios no llega al dictamen (sección «La carga en Precios no entra al vigía…», punto g).
+
+### La cadena que no seguía con el muro: la llamada del servidor a sí mismo va con waitUntil y dice cómo le fue, y el latido hace hasta 3 tandas (18-oct-2026)
+
+> SUPERADA el 18-oct-2026 por «La carga completa ya no para con una actualización a medias, y el tiempo agotado de Upstash dice qué comando fue (18-oct-2026)» — solo el punto abierto de «Carga completa (un botón)»: ahora mide también el avance de un delta (`delta.ciclo_leidas`).
+
+En una línea: medido el 18-oct con el muro de Vercel puesto, ni la cadena de la sincronización ni su reintento arrancaron una tanda más (el ciclo de la mañana llevaba 3 tandas en casi 3 horas); ahora las cuatro llamadas del servidor a sí mismo pasan por `lib/autollamada.autoLlamar` —dentro de `waitUntil` cuando Vercel da el contexto, sin seguir redirecciones, con su resultado anotado en `sync:autollamada` y publicado por op=salud en `autollamada`—, y el latido repite el tramo en el mismo proceso hasta 3 tandas.
+
+**Lo medido** (UTC del 18-oct; lecturas de op=salud desde una sesión hija y dos actualizaciones lanzadas desde GitHub con el visto bueno del dueño).
+- 15:26:17 a 15:26:29, corrida 86 de «Actualización de la mañana y de la noche (respaldo)»: 502 «The operation was aborted due to timeout» a los 11,6 s, `reintento: true`. A las 15:29:27, op=salud: `ultimo_error.ts` 15:26:28, sin candado. En 3 minutos el reintento no dejó ni un fallo nuevo ni un éxito.
+- 15:29:32 a 15:30:30, corrida 87: 200, `done: false`, `ciclo_invocaciones: 3`, `ciclo_leidas: 120000`. De 15:30:45 a 15:37:31, 27 lecturas de op=salud cada 15 s: el candado no volvió a tomarse.
+- El latido de GitHub de las 14:02 sí avanzó una tanda, porque llama al handler en el mismo proceso: «la actualización quedó a medias», `hecho: true`, 62 s.
+- No se pudo saber si el muro rechazaba la llamada o si Vercel congelaba la función: una llamada que el muro rechaza no queda en los registros de Vercel (sección del 17-oct). Por eso la pieza nueva anota qué pasó. Lo de que «se pierde» venía de antes del muro (cabecera de `lib/latido.js`, y de `.github/workflows/carga_completa.yml` del 26-sep).
+- El comando de Upstash de más de 10 s también salió el 17-oct a las 15:56 (corrida 84, antes del muro). Es otro problema y no se toca aquí.
+
+**Qué no hay que deshacer, y por qué.**
+1. **`waitUntil` sin dependencias, por el símbolo.** Es lo mismo que hace `@vercel/functions` 3.10.1, leído en el paquete descargado el 18-oct: `get-context.js` toma `globalThis[Symbol.for("@vercel/request-context")]?.get?.()` y `wait-until.js` llama a su `waitUntil`. Sin package.json no se instala nada.
+2. **Sin ese contexto se espera aquí: 10 s y las dos anotaciones, de 3 s como mucho cada una.** Así la llamada sale antes de responder también fuera de Vercel. Además, en la suite la anotación ya no cae tarde encima de otra prueba: la primera versión la dejaba suelta y puso en rojo «con el sello puesto la salud vuelve a ok» con una anotación que llegó después de `limpiarRedis`.
+3. **«enviada» se anota ANTES de enviar, y esa escritura se espera.** Si la función se congela al responder, el rastro queda. Un «enviada» de más de 1 minuto es un motivo de la salud: la anotación del resultado llega a los 10 s como mucho.
+4. **10 s sin respuesta cuenta como «siguió».** Una tanda dura 45 s o más. Esperar la respuesta entera mantendría viva cada función una tanda más: memoria y CPU del plan gratuito (la pausa del 30-sep). No está medido que Vercel deje terminar la tanda llamada cuando la que llama se apaga [sin verificar]; antes del cambio la llamada ya quedaba suelta del mismo modo.
+5. **`redirect: "manual"`, y el muro reconocido en positivo**: 302 hacia `https://vercel.com/sso-api` o el texto «Protected by Vercel Authentication», lo medido el 17-oct, igual que la sonda del muro. Si se sigue la redirección, la llamada termina en vercel.com con un 200 y se anota un «siguió» falso; la mutación lo mostró.
+6. **La anotación vive en su propia clave, con 26 h de caducidad, nunca en `meta`.** Fuera del candado pisaría el cursor del delta, la misma regla que el refresco del histórico. Va en el MGET de op=salud, así que la cerradura de 2 comandos o menos se conserva. Dice si el pase EXISTE, nunca su valor, y lo escribe con su propio cliente de Redis, de modo que `comandosRedis` de cada handler no cambia.
+7. **El latido para cuando el tramo falla, cuando otro tiene el candado, cuando termina, cuando no avanzó, a las 3 tandas, pasados 170 s o si la tanda más larga vista, con un 30 % de holgura, ya no cabe antes de los 280 s.** El reloj arranca al entrar al handler, no antes del tramo. Un ciclo atascado gastaría el triple de CPU en cada latido; la guarda de avance (`huellaDeAvance`) lo impide, y en los derivados del histórico mira `{ done, pendientes }`, que es lo que devuelven sus constructores (no traen `progreso`). 170 s porque la función tiene 300 y una tanda midió de 57 a 62 s. La tarea de GitHub espera 320 s (`--max-time`), así que cabe.
+8. **El sumidero de `app.local` en la suite.** `invocar` usa ese host, que no existe; en producción la dirección del despliegue responde. Lo que va a `https://app.local/` recibe un 200 con «{}» y no ejecuta nada. Los fallos se prueban con servidores locales propios, y `limpiarRedis` borra la anotación.
+9. **El censo barre todo `lib/` y `api/`, no una lista.** Ningún archivo arma a mano un `fetch` a su propia dirección o a `/api/procesos`, ni escribe la cabecera del muro, ni pide `cabecerasDeAutoLlamada`. Las excepciones son `lib/autollamada.js`, `lib/auth.js` y el latido (para su tramo en el mismo proceso), y están declaradas.
+10. **La cadena no sale con el candado sin soltar**, en el sync y en el histórico, igual que el reintento: si el DEL falló, se intenta otra vez y, si sigue puesto, la respuesta dice `sin_cadena` y no se encadena. Antes la tanda siguiente chocaba con él y esperaba su caducidad (300 s y 600 s). La tanda siguiente que encuentra OTRO candado se anota `candado_ocupado`: es información, no un fallo.
+11. **Lo pasajero no tiene la salud en rojo un día.** Un código raro, un fallo de red o un «enviada» sin noticia cuentan 2 h como mucho, y nada si el mismo trabajo se cerró después: sin ciclo de delta abierto y con la última tanda de delta posterior, o el histórico sellado después. `last_sync` no sirve para eso, porque es el INICIO del ciclo. El muro y la credencial son configuración y cuentan las 26 h.
+
+**Lo que queda abierto.**
+- La primera actualización de varias tandas que corra con este cambio desplegado dirá la causa en op=salud → `autollamada` (`con_waitUntil`, `pase_en_el_servidor`, `resultado`). Si dice «muro» sin pase, el arreglo es del dueño en Vercel: la casilla «Enable access to System Environment Variables» y volver a desplegar. Si dice «siguió» y el ciclo termina solo, la causa era la congelación.
+- No está medido que el entorno de Vercel ponga ese contexto en funciones Node sin Next.js [sin verificar]. `con_waitUntil` lo dirá.
+- La tarea «Carga completa (un botón)» mide el avance con `progreso.mesIdx`, que un delta no trae. Con un ciclo de delta abierto se detiene en rojo a los 10 tramos («Diez tramos seguidos sin avanzar»). Reproducido con su misma expresión de jq sobre la respuesta de la corrida 87; el flujo entero no se ejecutó.
+
+**Lo que encontró la revisión adversaria** (un agente que no escribió el cambio, con una reproducción por hallazgo, y nada grave): (a) la cadena chocaba con el candado que su propia tanda no soltó y la anotación decía «siguió»; (b) la guarda de avance no miraba nada en los derivados del histórico; (c) un fallo pasajero tenía la salud en rojo 26 h aunque la actualización ya hubiera terminado; (d) sin `waitUntil` la espera pasaba de 10 s por las dos escrituras a Redis; (e) una llamada armada a mano hacia `/api/sync` desde otro archivo pasaba el censo. Los cinco están arreglados (puntos 2, 7, 9, 10 y 11), y de paso se arreglaron el reloj del latido y la cota de su tanda más larga. La revisión reprodujo además la causa (b) en el árbol anterior: la llamada suelta no llegó cuando el proceso terminó justo después de responder. Sin prueba propia: el tope de 3 s de cada anotación, porque el Upstash de la suite no sabe demorar un solo comando.
+
+**Verificado.** Bloque nuevo «autollamada del servidor»: ejecuta la pieza real contra servidores locales (muro, tanda que trabaja, credencial, puerto cerrado), `waitUntil` con un contexto falso, el reintento y la cadena reales del sync contra el muro y contra su propio candado sin soltar, la misma guarda en el histórico, la salud con lo pasajero y lo configurado, y el latido real con el tramo sustituido. También el censo de la guarda de la sincronización, ahora un barrido. 27 mutaciones en una copia del árbol, y las 27 mueren: redirección seguida, sin `waitUntil`, sin «enviada» previa, muro solo por texto, «enviada» nunca vieja, sin caducidad, sin esperar fuera de Vercel, salud muda, salud sin la clave, sync, histórico y listado con `fetch` suelto, latido de una tanda, cuatro tandas, sin guarda de avance, sin tope de reloj, latido que insiste con el candado puesto, motivo con «; », cadena del sync y del histórico sin la guarda del candado, huella de derivados muerta, salud que ignora el cierre, lo pasajero que nunca caduca, el muro que caduca a las 2 h, candado ocupado contado como «siguió», una llamada armada a mano en `compactar.js` y la cota de la tanda más larga.
+
+### La fórmula en prosa no afirma el anticipo: «presupuesto oficial menos el anticipo…» es mención (18-oct-2026)
+
+En una línea: la definición de la capacidad residual («…equivale al presupuesto oficial menos el anticipo o pago anticipado
+cuando haya lugar…») y el numerador del capital de trabajo que el OCR deja solo en su línea («POE — Anticipo y/o Pago
+anticipado», con raya) pesaban como frase y decían «hay anticipo»; ahora pesan como fórmula (1), es decir mención, y no le
+ganan a la cláusula que pacta o niega (`FORMULA_ANTICIPO_RE` en `lib/dictamen_reglas.detectar`). REGLAS_VERSION .9 → .10.
+
+**Lo medido.** Contra la verdad doble de las rondas 5 y 6 (20 pliegos de licitación con texto de pdf.js) y los 4 escaneos de
+la Fase C leídos con OCR local (verdad vista en la imagen de la página): cambia UNO de 24, CO1.REQ.10725252, de «sí» falso a
+«mención» (no tiene anticipo: paga 50/40/10 % por avance, pág. 9). Los 20 de texto nativo quedan igual.
+
+**Lo que no hay que deshacer.** (a) Solo con «oficial», «POE» o «PO» delante: «el valor del acta menos el anticipo amortizado»
+habla de un anticipo que existe y sigue siendo frase (prueba). (b) Las rayas cuentan como menos (U+2010 a U+2015 y U+2212,
+además del guion): el OCR y algunos PDF ponen raya en la fórmula. (c) Es un tope de peso, no una exclusión: un pliego cuya
+única mención es la fórmula queda en «mención» («confírmelo»), no en «sin dato». (d) Lo que tumbó la revisión adversaria, cada
+uno con su cerradura: el tope va DESPUÉS de saber si la línea niega (antes del +1 de la negación, «…oficial menos el anticipo;
+no se entregará anticipo» perdía contra una mención anterior y salía «sí»); no se aplica si tras «anticipo» viene «amortizado»,
+«entregado», «girado», «desembolsado», «pagado» u «otorgado», ni si la línea trae un porcentaje («Valor PO − Anticipo: se
+entregará el 30 %» pacta). Medido de nuevo por la revisión en 50 textos únicos con marcadores y 82 de pdftotext: solo cambia
+CO1.REQ.10725252.
+
+**Límites conocidos, sin tocar.** En los dos escaneos con anticipo el «sí» sigue siendo correcto, pero ahora cita una fila de
+la tabla de garantías que el OCR partió («(6) meses más calidad de anticipo»), no la cláusula del 8.3: la exclusión de esa
+fila está hecha para el texto de pdf.js. Un escaneo de documento base SIN anticipo podría dar «sí» por esa fila: no se ha
+visto (los 2 escaneos sin anticipo dan «mención» y «sin dato»). Tampoco se tocan los condicionales sueltos («el valor del
+anticipo, cuando lo hubiere, será amortizado…»), que siguen pesando como frase. Y si el pacto solo está en un rótulo corto
+(«a) Anticipo: 30 %», que pesa como título) junto a la prosa de la capacidad residual, sale «mención» donde main decía «sí»
+citando la fórmula, es decir acertando por suerte: 0 casos en los textos reales.
+
+### El clasificador lee los nombres con separadores y los nuevos de Colombia Compra («DocBase_…») (18-oct-2026)
+
+En una línea: «DocBase_LicitacionObra_ISocialLV2.pdf», «Documento_base_…», «06_Documento Base…», «DOCUMENTO%20BASE»,
+«Documentos Base» y las erratas «DOCUEMENTO/DOCUEMNTO BASE» salían «otro» —el `\b` y el `\s+` de RE_TIPO no pasan por «_»,
+«%20» ni «-»— y la lectura automática no leía ese documento base; ahora `Docs.nombrePlegado` los pliega antes de clasificar, y
+es el MISMO plegado del clasificador, del borrador (`esBorradorDoc`), de `esVersionDelPliego` y de la carga en Precios.
+
+> PENDIENTE · decisión del dueño sobre el techo con documentos de DISTINTO tipo: `elegirPresupuestoPliego.versionSinCifra` solo compara versiones del MISMO tipo (decisión con visto bueno del 18-oct). Ahora que se leen los «DocBase_…», en 3 procesos más (24 → 27 en la muestra: CO1.REQ.10583154, 11116078 y 11184065) se lee un documento base de la etapa de proyecto junto a un pliego definitivo más nuevo; si el definitivo no trae la tabla 1.1 legible, el techo de Precios sale de la cifra del documento base (con el aviso «riesgo» si difiere de SECOP II) en vez de la de SECOP II (reproducido con textos sintéticos, 2.ª revisión adversaria). Va hacia ABAJO, el lado seguro en precios, pero es una cifra vieja. Pedirle al dueño si una versión más nueva de OTRO tipo sin la tabla también manda el techo a SECOP II.
+
+> PENDIENTE · los otros nombres nuevos de Colombia Compra siguen sin reconocerse: «M2_IndFinOrg_ISocialLV2» (la Matriz 2 de indicadores, que se lee sola; CO1.REQ.11159769 y 11191342), «A1_Tecnico_…», «M3_Riesgos_…», «Form_PropEconomica_…». Reconocerlos cambia el plan de lectura: medir antes en los 232 índices.
+
+**Lo medido** (9.827 nombres distintos de 232 procesos reales de dmgg-8hin). Cambian 77 nombres, revisados a mano: 48 de tipo, todos a
+lo correcto (15 a documento base, y todos lo son; 11 a formato, anexos y pólizas; 10 a aviso; 7 a estudio previo; 3 a adenda,
+uno de ellos un .zip de formatos; 2 a anexo técnico, los APU), y 29 que pasan de «de la entidad» a «de un proponente»: 28 lo son
+(«16_GARANTIA DE SERIEDAD…», «09_RUT», «…_CONSORCIO…») y 1 no (CO1.REQ.10858204, «1010-F-GCT-158-V1_AUTORIZACION_CONSULTA_
+INHABILIDADES…docx», un formato en blanco de la entidad; es «otro», no entra al plan, y solo cambia la cuenta de «archivos de
+otros proponentes»; 2.ª revisión adversaria). El plan de lectura cambia en 21 procesos. En la simulación con todo el plan leído, el
+texto del dictamen GANA en 6 procesos que no tenían ninguno, cambia en 1 del proyecto de pliego al documento base definitivo
+(CO1.REQ.11144592, abierto) y no se pierde en ninguno.
+
+**Lo que no hay que deshacer.** (a) Un solo plegado para el nombre (`nombrePlegado`): «_» y «%20» son espacio, «-» y «.»
+entre dos letras también; «docbase» y «doc base» son «documento base», el plural «documentos base» también, y cuatro erratas
+vistas en SECOP II («docuemento», «docuemnto», «documneto», «documetno» y «documeto»). (b) VERSION 18 → 19: los índices se
+vuelven a planear en la próxima consulta (no a las 12 h) y los hechos se rehacen. (c) Por el tope de 12 documentos del plan
+salen documentos de los últimos de la prioridad de fuentes: en CO1.REQ.9763731 dos de presupuesto ceden el sitio a dos de
+análisis de precios unitarios (ahora anexo técnico, como ya pasaba con esos nombres escritos con espacios); la matriz de riesgos
+sale en CO1.REQ.10651650, 10518763, 11116078 y 9960307, y un aviso en .docx en CO1.REQ.10266309. Lo ya leído no se borra.
+
+### La carga completa ya no para con una actualización a medias, y el tiempo agotado de Upstash dice qué comando fue (18-oct-2026)
+
+En una línea: la tarea «Carga completa (un botón)» medía el avance solo con `progreso.mesIdx`, que un delta no trae, y con una actualización abierta paraba en rojo a los 10 tramos aunque avanzara; ahora mide también `delta.ciclo_leidas`. Y `lib/redis.js` convierte un tiempo agotado en «The operation was aborted due to timeout (Upstash: SET licitaciones:activo:2026-03:chunk:7, 812 KB, 10003 ms)»: el texto de siempre al principio, y después el verbo, la clave legible y el tamaño, sin ningún valor.
+
+**Por qué así.**
+- **Por qué no se buscó el comando en los registros.** El 17 y el 18-oct la sincronización cayó por un comando de Upstash de más de 10 s (corridas 84 y 86 de la actualización de respaldo), pero el error no decía cuál, y los registros de Vercel no lo guardan. La salida es que la próxima vez lo diga el propio error, que op=salud ya publica en `ultimo_error`.
+- **El texto original va al principio.** Quien reconoce el error por su texto lo sigue reconociendo. El nombre (`TimeoutError`) se conserva y el original queda en `cause`.
+- **De la clave solo quedan los tramos que son palabras, números de hasta 5 cifras, fechas o `*`.** Todo lo demás se cambia por «…», y también un tramo de hasta 4 cifras hexadecimales que tenga al lado otro igual, porque así se parte una IPv6. Las claves de los intentos de entrada llevan el correo o la IP (`intentos:correo:<correo>:<ventana>`, `intentos:entrar-ip:<ip>`), la del cupo de altas lleva la IP, otras llevan una huella o un NIT, y el error de Redis viaja en respuestas `Redis: …` y en op=salud.
+- **La pantalla reconoce primero la marca «(Upstash: ».** `causaDeActualizacion` (public/glosario.js) probaba `/SECOP/i` antes que la base de datos, y hay claves `secop:…`: un tiempo agotado en una de ellas se habría achacado a SECOP II.
+- **El flujo mide por serie.** La carga completa (`mesIdx·10⁹ + leidasMes`) y el delta (`ciclo_leidas`) son escalas distintas. Si el latido cierra la carga completa mientras el flujo espera y sigue un delta, el máximo de la carga completa dejaba al delta «sin avanzar» diez veces. Al cambiar de serie, el máximo vuelve a empezar.
+- **El tiempo agotado leyendo la respuesta también se dice.** Antes salía «Upstash: respuesta no JSON ()», que parecía otra cosa.
+- **Solo se envuelve el tiempo agotado.** Los demás errores, entre ellos el de «max request size» con el que `hgetallPorPartes` reduce el paso, siguen con el mismo texto.
+
+**Lo que encontró la revisión adversaria** (un agente que no escribió el cambio, con reproducción, y nada grave): (a) el flujo seguía parando cuando una carga completa daba paso a un delta (ya pasaba antes del cambio); (b) una IPv6 y un NIT de 8 cifras pasaban por la clave legible, con las claves reales del cupo de altas; (c) la pantalla habría culpado a SECOP II de un tiempo agotado en una clave `secop:…`. Los tres están arreglados (puntos de arriba). Quedan como observación, sin cambiar: un cuerpo cortado por la red sigue saliendo «respuesta no JSON ()», y el texto `Redis: …` de 17 handlers enseña la clave interna en pantalla.
+
+**Verificado.** En el bloque «unidad tiempo de espera», el cliente real con una conexión que no responde (SET, GET con correo, huella, IPv6, IPv4 y NIT, SCAN, MGET, cuerpo colgado y un fallo de red, que no cambia). La tarea de GitHub se ejecuta con bash, con un curl simulado, el jq real y un `sleep` que no espera: un delta que avanza en 12 tramos termina en verde, uno quieto para a los 11 llamados, la carga completa se sigue midiendo por mes, una carga completa que da paso a un delta termina en verde y una que vuelve a enero sigue parando. `causaDeActualizacion` se ejecutó en Node y en Chromium con la página cargada desde `public/`, sin errores de página. 9 mutaciones, y las 9 mueren: la expresión vieja del flujo, el flujo sin cambio de serie, la clave sin tapar, la IPv6 sin tapar, el NIT de 8 cifras, el tiempo agotado sin comando, el cuerpo colgado leído como vacío, el error sin su nombre y la pantalla que culpa a SECOP.

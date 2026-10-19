@@ -57,7 +57,7 @@ Se crea **en la web**, que es donde existe el selector de repositorios:
 ## Lo que falta del entorno
 
 - **La red.** El entorno «Default» solo alcanza GitHub, Anthropic y los registros de paquetes.
-  `portafolio-estrategico.vercel.app`, `datos.gov.co`, `community.secop.gov.co` y las tiendas de
+  `detekta-app.vercel.app`, `datos.gov.co`, `community.secop.gov.co` y las tiendas de
   precios responden **403 del proxy de egreso** (medido el 12 y el 13-sep-2026). Con la red así, ni
   la skill `/precios` ni la `/dictamen` pueden ejecutarse: las dos empiezan pidiéndole el expediente
   al servidor. Se abre en claude.ai/code → el entorno → **Red: Custom** → dominios permitidos,
@@ -149,16 +149,36 @@ que el dueño deba saber antes de empezar el día? Si no lo hay, dilo en una lí
 
 PASO 0 · ¿TIENES EL REPOSITORIO?
 test -f CLAUDE.md && pwd || find / -maxdepth 4 -name CLAUDE.md -not -path "*/node_modules/*" 2>/dev/null | head -3
-Si no aparece ninguno no puedes hacer nada: la llave de la aplicación sale de public/app.js, que está
-en el repositorio. Termina diciendo que la rutina no tiene repositorio adjunto y dónde se añade.
+Si no aparece ninguno no puedes hacer nada: termina diciendo que la rutina no tiene repositorio
+adjunto y dónde se añade.
 
 PASO 0 bis · ¿SE ABRE LA PUERTA?
-curl -s -o /dev/null -w "%{http_code}\n" --max-time 20 "https://portafolio-estrategico.vercel.app/api/procesos?op=salud"
+curl -s -o /dev/null -w "%{http_code}\n" --max-time 20 -H "x-vercel-protection-bypass: $VERCEL_AUTOMATION_BYPASS_SECRET" "https://detekta-app.vercel.app/api/procesos?op=salud"
 Si responde 000 o 403 del proxy de egreso, para y di solo: «La red del entorno sigue cerrada: abra
-claude.ai/code → el entorno → Red: Custom y permita portafolio-estrategico.vercel.app.»
+claude.ai/code → el entorno → Red: Custom y permita detekta-app.vercel.app.»
+Si responde 302 (o 401 con «Protected deployment») es el muro de Vercel: para y di solo: «El muro de Vercel no deja pasar a esta rutina:
+falta VERCEL_AUTOMATION_BYPASS_SECRET en las variables de entorno de su entorno.»
 
-LA LLAVE sale del repositorio, como hacen las skills. No la imprimas nunca:
-TOKEN=$(grep -o 'const TOKEN = "[^"]*"' public/app.js | head -1 | cut -d'"' -f2)
+PASO 0 ter · ¿SIGUE PUESTO EL MURO? Esta llamada va SIN el pase, a propósito: con el pase siempre
+respondería 200 y no probaría nada.
+curl -q -s -o /tmp/portada.txt -w "%{http_code} %{redirect_url}\n" --max-time 20 "https://detekta-app.vercel.app/"  # SONDA DEL MURO: sin el pase, a propósito
+grep -c "Protected by Vercel Authentication" /tmp/portada.txt
+- Si responde 302 seguido de una dirección que empieza por https://vercel.com/sso-api, o si el grep
+  cuenta 1 o más, el muro está puesto: no lo menciones.
+- Si responde 200 y el grep cuenta 0, la PRIMERA línea de tu informe es:
+  «EL MURO DE VERCEL ESTÁ APAGADO: cualquiera con la dirección puede entrar a Detekta. Vuelva a
+  ponerlo: Vercel → el proyecto → «Settings» → «Deployment Protection» → «Vercel Authentication» →
+  «All Deployments» → «Save».» Y sigue con lo demás.
+- Cualquier otra respuesta (403, 429, 5xx, otra dirección, sin respuesta): di en una línea
+  «Muro: no medido (respondió X)» y sigue. Sin dato no es «apagado».
+
+LA LLAVE sale de la variable de entorno HISTORICO_TOKEN del entorno de esta rutina, como en las
+skills (desde el 17-oct-2026 ya no está escrita en el repositorio). No la imprimas nunca. Si falta,
+di solo: «Falta HISTORICO_TOKEN en el entorno de la rutina: el dueño la añade en claude.ai/code →
+el entorno → Edit → variables de entorno, con el mismo valor que tiene en Vercel.»
+TOKEN="${HISTORICO_TOKEN:?Falta HISTORICO_TOKEN en el entorno de Claude Code: el dueño la añade en el entorno de la sesión o de la rutina (Edit → variables de entorno)}"
+Y EL PASE DEL MURO va en CADA llamada a la aplicación, también sin imprimirlo:
+-H "x-vercel-protection-bypass: $VERCEL_AUTOMATION_BYPASS_SECRET"
 
 QUÉ MIRAR · todo es LECTURA: ni un POST, ninguna sincronización
 1. GET /api/procesos?op=salud — ok, motivo, edad_horas (umbral 30), ultimo_error,
@@ -200,6 +220,14 @@ PASO 0 · ¿TIENES EL REPOSITORIO?
 test -f CLAUDE.md && pwd || find / -maxdepth 4 -name CLAUDE.md -not -path "*/node_modules/*" 2>/dev/null | head -3
 Si no aparece ninguno no puedes hacer nada —todo lo tuyo se lee de ficheros del repositorio—.
 Termina diciendo que la rutina no tiene repositorio adjunto y dónde se añade.
+
+CUANDO LLAMES A LA APLICACIÓN (/api/paa, /api/admin/cobertura-rup), cada llamada lleva la llave y
+el pase del muro, sin imprimirlos:
+TOKEN="${HISTORICO_TOKEN:?Falta HISTORICO_TOKEN en el entorno de Claude Code: el dueño la añade en el entorno de la sesión o de la rutina (Edit → variables de entorno)}"
+-H "x-historico-token: $TOKEN" -H "x-vercel-protection-bypass: $VERCEL_AUTOMATION_BYPASS_SECRET"
+Si responde 302, o 401 con «Protected deployment», es el muro de Vercel, no la fuente: di solo «El muro
+de Vercel no deja pasar a esta rutina: falta VERCEL_AUTOMATION_BYPASS_SECRET en las variables de
+entorno de su entorno» y sigue con lo que no dependa de la aplicación.
 
 MIRA QUÉ MES ES Y HAZ SOLO LO QUE TOCA. Si no toca nada, dilo en una línea y termina.
 
