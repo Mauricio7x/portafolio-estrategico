@@ -369,7 +369,7 @@
     if (/^(A ?I ?U|ADMINISTRACION|IMPREVISTOS|UTILIDAD|IVA)\b/.test(d)) return "aiu";
     if (/^(TOTAL |SUBTOTAL )?COSTOS? DIRECTOS?\b/.test(d)) return "costo_directo";
     if (/^SUBTOTAL\b/.test(d)) return "subtotal_capitulo";
-    if (/^TOTAL(\s+GENERAL|\s+PRESUPUESTO)?$/.test(d)) {
+    if (/^(VALOR )?TOTAL(\s+GENERAL|\s+PRESUPUESTO)?$/.test(d)) {
       return opciones && opciones.vistoAiu ? "precio_con_aiu" : "total_documento";
     }
     if (/^TOTAL\b/.test(d)) return "subtotal_capitulo";
@@ -420,9 +420,14 @@
        · «SUBTOTAL» es de capítulo y NO es el total del archivo;
        · el valor sale de la columna VR TOTAL si existe; si no, de la última
          celda numérica de la fila. Sin valor legible → no hay referencia. */
+    /* «VALOR TOTAL» ES EL TOTAL (19-oct-2026). El Formulario 1 del documento tipo de Colombia Compra lo
+       rotula así («VALOR TOTAL» en la columna de descripción y la cifra varias columnas a la derecha), y
+       sin este rótulo el cuadre salía «sin_referencia» en 201 de 325 Excel reales de procesos abiertos: se
+       leían los ítems y no había con qué contrastarlos. Sigue valiendo todo lo de arriba: después de una
+       fila de AIU/IVA es el precio con AIU y no sirve de ancla. */
     let totalDeclarado = null, vistoAiu = false;
     const RE_COSTO_DIRECTO = /^(TOTAL\s+|SUBTOTAL\s+)?COSTOS?\s+DIRECTOS?\b/;
-    const RE_TOTAL_SECO = /^TOTAL(\s+GENERAL|\s+PRESUPUESTO)?$/;
+    const RE_TOTAL_SECO = /^(VALOR\s+)?TOTAL(\s+GENERAL|\s+PRESUPUESTO)?$/;
     const RE_AIU_FILA = /^(A\s?I\s?U|ADMINISTRACION|IMPREVISTOS|UTILIDAD|IVA)\b/;
     const valorTotalDeFila = (f) => {
       if (cab.total >= 0) { const v = numeroDeCelda(f[cab.total]); if (v != null && v > 0) return v; }
@@ -452,7 +457,7 @@
          un NÚMERO fuera de las columnas de código/descripción; el título, solo
          texto. El rótulo puede venir en la columna de descripción o en la de
          código («SUBTOTAL CAPITULO 1 | | | | | 100.000»). */
-      const RE_TOTALES = /^(COSTOS?\s|TOTAL\b|SUBTOTAL\b|ADMINISTRACION\b|IMPREVISTOS\b|UTILIDAD\b|IVA\b|A\s?I\s?U\b|PRECIO\s+FINAL\b)/;
+      const RE_TOTALES = /^(COSTOS?\s|VALOR\s+TOTAL\b|TOTAL\b|SUBTOTAL\b|ADMINISTRACION\b|IMPREVISTOS\b|UTILIDAD\b|IVA\b|A\s?I\s?U\b|PRECIO\s+FINAL\b)/;
       const rotulo = desc || codigo;
       const tieneNumero = f.some((c, j) => j !== cab.codigo && j !== cab.descripcion && (numeroDeCelda(c) || 0) > 0);
       const esFilaTotal = !!rotulo && !unidad && RE_TOTALES.test(normCab(rotulo)) && (tieneNumero || cantidad != null);
@@ -587,8 +592,48 @@
     return mejor;
   }
 
+  /* ══════════ ¿SE PUEDE DAR POR LEÍDO ESTE FORMULARIO? · LA PUERTA DE PUBLICAR ══════════
+     (19-oct-2026, medido en 325 Excel reales de procesos abiertos: con «VALOR TOTAL» reconocido cuadran
+     67, y de ellos 59 cumplen además la comprobación de fila). El cuadre de control suma la columna de
+     TOTAL de cada fila contra el total que declara el archivo: prueba que no falta ni sobra una fila, pero
+     NO que la cantidad leída sea la que paga la entidad. Para publicar un Formulario leído SOLO por la
+     aplicación (sin que nadie lo mire) se exige además que en cada fila con cantidad, precio y total se
+     cumpla cantidad × precio = total (1 %): una cantidad mal leída rompe esa igualdad y el cuadre no lo ve.
+     Los 7 archivos que cuadran pero no pasan la fila son formularios cuyo total por fila lleva el AIU
+     (el mismo 23,1 % o 25,7 % en todas): no son un error de lectura, pero no se pueden dar por buenos sin
+     que alguien los mire, así que salen «sin verificar» y el usuario los carga en Precios, como hoy.
+     Es una función pura: la llama el servidor sobre lo que leyó él y la prueba sobre cuadrículas. Nunca
+     devuelve «publicable» con un motivo vacío para un caso dudoso: lo que no se pudo comprobar se dice. */
+  const TOL_FILA_REL = 0.01;
+  const MIN_FILAS_VERIFICABLES = 0.9;
+  function verificarFormulario(lectura) {
+    const filas = lectura && Array.isArray(lectura.filas) ? lectura.filas : [];
+    const cuadre = lectura && lectura.cuadre ? lectura.cuadre : null;
+    const no = (motivo) => ({ publicable: false, motivo, filas: filas.length, filas_verificadas: 0, total: cuadre ? cuadre.total_declarado : null });
+    if (!filas.length || !cuadre) return no("no se leyó ninguna tabla de ítems");
+    if (cuadre.estado !== "cuadra") {
+      const porque = {
+        sin_referencia: "el archivo no declara un total con el que contrastar la lectura",
+        no_comparable: "hay ítems sin valor total legible: la suma no se puede comparar",
+        no_cuadra: "los ítems leídos no suman el total que declara el archivo",
+      };
+      return no(porque[cuadre.estado] || "el cuadre de control no se pudo hacer");
+    }
+    let verificadas = 0, malas = 0;
+    for (const f of filas) {
+      if (f.cantidad == null || f.precio_archivo == null || f.total_archivo == null || !(f.total_archivo > 0)) continue;
+      verificadas++;
+      if (Math.abs(f.cantidad * f.precio_archivo - f.total_archivo) / f.total_archivo > TOL_FILA_REL) malas++;
+    }
+    const base = { filas: filas.length, filas_verificadas: verificadas, total: cuadre.total_declarado };
+    if (!verificadas) return { ...base, publicable: false, motivo: "ninguna fila trae cantidad, precio y total para comprobar cantidad × precio" };
+    if (verificadas < filas.length * MIN_FILAS_VERIFICABLES) return { ...base, publicable: false, motivo: `solo ${verificadas} de ${filas.length} filas traen cantidad, precio y total para comprobarlas` };
+    if (malas) return { ...base, publicable: false, motivo: `${malas} de ${verificadas} filas no cumplen cantidad × precio = total (puede ser un total por fila con AIU): revíselo en el archivo` };
+    return { ...base, publicable: true, motivo: null };
+  }
+
   return {
-    leerLibro, leerZip, parsearCsv, detectarFilasApu, elegirHoja, clasificarRotuloTotal,
+    leerLibro, leerZip, parsearCsv, detectarFilasApu, elegirHoja, clasificarRotuloTotal, verificarFormulario,
     numeroLocal, indiceColumna, desescaparXml,
   };
 });

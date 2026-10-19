@@ -4580,6 +4580,65 @@ async function main() {
     console.log(`· unidad anti-suministro: ${casos.length} casos correctos (segmentos de bienes, causa verificada)`);
   }
 
+  /* unidad: Formulario 1 en Excel — «VALOR TOTAL» es el total y la puerta de publicar (19-oct-2026).
+     Medido en 325 Excel reales de procesos abiertos con el lector del árbol: antes cuadraban 13 y 201
+     salían «sin referencia» porque el Formulario 1 del documento tipo rotula su total «VALOR TOTAL»;
+     después cuadran 67 (0 regresiones) y 59 pasan la comprobación fila a fila. Las cuadrículas imitan
+     su forma (cifra varias columnas a la derecha del rótulo, «SUBTOTAL OBRAS» sin cifra, el AIU como
+     nota); se ejecuta el lector real, no se lee su fuente. */
+  bq12f1: { if (!corre("unidad Formulario 1 en Excel")) break bq12f1;
+    const XL = require("../public/xlsx_lectura.js");
+    const cab = ["", "", "Nº", "ÍTEM DE PAGO", "ESPECIFICACIONES", "", "DESCRIPCIÓN", "UND.", "CANTIDAD", "VALOR UNITARIO", "VALOR TOTAL"];
+    const it = (n, d, u, c, p, t) => ["", "", n, "", "", "", d, u, c, p, t];
+    const total = (v, rotulo = "VALOR TOTAL") => ["", "", "", "", "", "", rotulo, "", "", "", v];
+    const cuerpo = [["", "", "FORMULARIO 1"], ["", "", "PRESUPUESTO OFICIAL"], cab,
+      it("1.1", "Localización y replanteo", "m2", 100, 1000, 100000), it("1.2", "Excavación manual", "m3", 10, 20000, 200000), it("1.3", "Concreto", "m3", 5, 40000, 200000)];
+    const sub = ["", "", "", "", "", "", "SUBTOTAL OBRAS (INCLUYE IVA)"];
+
+    // la regla compartida con el lector de PDF: «VALOR TOTAL» es el total; «VALOR UNITARIO» y un capítulo no
+    assert.strictEqual(XL.clasificarRotuloTotal("VALOR TOTAL"), "total_documento");
+    assert.strictEqual(XL.clasificarRotuloTotal("Valor total", { vistoAiu: true }), "precio_con_aiu");
+    assert.strictEqual(XL.clasificarRotuloTotal("VALOR UNITARIO"), null);
+    assert.strictEqual(XL.clasificarRotuloTotal("VALOR TOTAL CAPITULO 1"), null);
+
+    // el formato del documento tipo: cuadra, no se cuenta como ítem y se puede publicar
+    const ok = XL.detectarFilasApu([...cuerpo, sub, total(500000)]);
+    assert.strictEqual(ok.filas.length, 3, "ni el subtotal ni «VALOR TOTAL» son ítems");
+    assert.deepStrictEqual([ok.cuadre.estado, ok.cuadre.total_declarado, ok.cuadre.suma_items], ["cuadra", 500000, 500000]);
+    assert.deepStrictEqual(XL.verificarFormulario(ok), { filas: 3, filas_verificadas: 3, total: 500000, publicable: true, motivo: null });
+
+    // después de una fila de AIU, «VALOR TOTAL» es el precio con AIU: no es la suma de ítems y no se contrasta
+    const conAiu = XL.detectarFilasApu([...cuerpo, ["", "", "", "", "", "", "ADMINISTRACIÓN", "", "A=", 0.24], total(500000)]);
+    assert.strictEqual(conAiu.cuadre.estado, "sin_referencia");
+    assert.strictEqual(XL.verificarFormulario(conAiu).publicable, false);
+
+    // un total que no cuadra no se publica y dice por qué
+    const noCuadra = XL.verificarFormulario(XL.detectarFilasApu([...cuerpo, total(510000)]));
+    assert.strictEqual(noCuadra.publicable, false); assert.match(noCuadra.motivo, /no suman el total que declara/);
+
+    // cuadra, pero el total por fila lleva el AIU (123,1 % del cantidad × precio): no es un error de lectura, pero no se da por bueno solo
+    const aiuPorFila = XL.verificarFormulario(XL.detectarFilasApu([cab, it("1.1", "Localización", "m2", 100, 1000, 123100), it("1.2", "Excavación", "m3", 10, 20000, 246200), total(369300)]));
+    assert.strictEqual(aiuPorFila.publicable, false); assert.match(aiuPorFila.motivo, /2 de 2 filas no cumplen cantidad × precio = total/);
+
+    // una cantidad mal leída con el total de la fila intacto cuadra y SOLO la comprobación de fila la caza
+    const cantidadMal = XL.verificarFormulario(XL.detectarFilasApu([...cuerpo.slice(0, 3), it("1.1", "Localización y replanteo", "m2", 1000, 1000, 100000), cuerpo[4], cuerpo[5], total(500000)]));
+    assert.strictEqual(cantidadMal.publicable, false); assert.match(cantidadMal.motivo, /1 de 3 filas no cumplen/);
+
+    // sin precio en la hoja no hay cantidad × precio que comprobar: no se publica
+    const sinPrecio = XL.verificarFormulario(XL.detectarFilasApu([["Nº", "DESCRIPCIÓN", "UND.", "CANTIDAD", "VALOR TOTAL"], ["1.1", "Localización", "m2", 100, 100000], ["1.2", "Excavación", "m3", 10, 200000], ["", "VALOR TOTAL", "", "", 300000]]));
+    assert.strictEqual(sinPrecio.publicable, false); assert.match(sinPrecio.motivo, /ninguna fila trae cantidad, precio y total/);
+
+    // con menos del 90 % de las filas comprobables tampoco: 8 de 10
+    const diez = []; for (let i = 1; i <= 10; i++) diez.push(it(`1.${i}`, `Ítem ${i}`, "un", 1, i <= 8 ? 1000 : null, 1000));
+    const pocas = XL.verificarFormulario(XL.detectarFilasApu([cab, ...diez, total(10000)]));
+    assert.strictEqual(pocas.publicable, false); assert.match(pocas.motivo, /solo 8 de 10 filas/);
+
+    // lo que no se leyó no se publica
+    assert.strictEqual(XL.verificarFormulario(null).publicable, false);
+    assert.strictEqual(XL.verificarFormulario({ filas: [], cuadre: null }).publicable, false);
+    console.log("· unidad Formulario 1 en Excel: «VALOR TOTAL» cuadra, y la puerta de publicar rechaza el AIU por fila, la cantidad mal leída, el total que no cuadra, la hoja sin precio y menos del 90 % de filas comprobables");
+  }
+
   /* unidad: convenios — «aunar esfuerzos» y compañía NO son licitaciones */
   bq12: { if (!corre("unidad convenios")) break bq12;
     const convenios = [
