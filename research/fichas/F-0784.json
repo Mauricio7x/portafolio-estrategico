@@ -1,0 +1,30 @@
+{
+  "id": "F-0784",
+  "fecha_consulta": "2026-10-02",
+  "eje": 6,
+  "leida_por": "lector fase2 eje6-academica",
+  "autoridad": "A6",
+  "tipo": "academia",
+  "autor": "(trabajo de grado de pregrado, dirigido por Rincón Salcedo, J. G.)",
+  "titulo": "Eficiencia y eficacia de los pliegos tipo en la contratación estatal colombiana",
+  "anio": 2019,
+  "institucion": "Pontificia Universidad Javeriana, Facultad de Ciencias Jurídicas",
+  "url": "https://apidspace.javeriana.edu.co/server/api/core/bitstreams/c0a64247-7701-47ae-b1db-827bab086e89/content",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "introducción",
+    "sección 2.d",
+    "sección 5.b"
+  ],
+  "tipo_contrato": "obra",
+  "anio_origen": "portada",
+  "localizador": "sección 2.d, «La corrupción en los objetos contractuales cobijados por los Pliegos Tipo»",
+  "cita_textual": "Pliegos Sastre”, que son aquellos diseñados para que un único oferente logre la adjudicación del contrato.",
+  "afirmacion": "La tesis (2019) define «pliego sastre» como el pliego diseñado para que un único oferente logre la adjudicación y explica que el Decreto 342 de 2019 eligió la obra de infraestructura de transporte como primer objeto de documento tipo por ser el rubro de mayor ejecución en SECOP.",
+  "etapa": "E1",
+  "decision": "D1",
+  "modulo": "M-DICT",
+  "notas": "Texto anterior a las versiones 2 a 4 del documento tipo; no se afirma norma vigente. La razón de la elección proviene de una entrevista a una funcionaria de la entidad transcrita por la autora (anexo 1), no de la memoria justificativa, que según la autora no la da.",
+  "vigencia_verificada": "[sin verificar] — afirmación sobre el Decreto 342 de 2019 tomada del trabajo de grado; no se abrió el decreto ni sus reformas",
+  "pagina_pdf": 34
+}

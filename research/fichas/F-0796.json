@@ -1,0 +1,28 @@
+{
+  "eje": 6,
+  "fecha_consulta": "2026-10-19",
+  "leida_por": "lector fase2 eje6-academica",
+  "estado_lectura": "parcial",
+  "autoridad": "A6",
+  "tipo": "academia",
+  "id": "F-0796",
+  "autor": "Scheller D'Angelo, A.; Silva Maestre, S.",
+  "titulo": "La corrupción en la contratación pública: operatividad, tipificación, percepción, costos y beneficios",
+  "anio": 2017,
+  "anio_origen": "portada",
+  "institucion": "Fundación Universitaria Los Libertadores (Revista VIA IURIS, núm. 23)",
+  "url": "https://www.redalyc.org/pdf/2739/273957284004.pdf",
+  "partes_leidas": [
+    "pp. 13-21 (operación de la corrupción y tipificación)"
+  ],
+  "localizador": "sección «Durante las etapas de contratación…», p. 15 del PDF (impresa 13-14)",
+  "pagina_pdf": 15,
+  "cita_textual": "pueden presentarse actos de corrupción, debido a la amplia potestad que tiene el funcionario a cargo en: la elaboración de los documentos y estudios previos, los análisis de mercado y del sector; y los pliegos de condiciones",
+  "afirmacion": "Según las autoras (2017) la manipulación y el direccionamiento de un proceso se concentran en la fase precontractual: estudios previos, análisis de mercado y del sector y pliego (factores de selección y ponderación).",
+  "etapa": "E1",
+  "decision": "D1",
+  "modulo": "M-DICT",
+  "vigencia_verificada": "[sin verificar] — afirmación doctrinal de 2017, no normativa.",
+  "tipo_contrato": "todos",
+  "notas": "Artículo de reflexión jurídica sin datos propios; sirve para ubicar en qué documentos buscar señales de direccionamiento. Las autoras hablan también de «subasta inversa» y «concurso de méritos» al describir el art. 410A (ver F-0798 y F-0799: el texto legal dice «subasta pública» y «concurso»)."
+}

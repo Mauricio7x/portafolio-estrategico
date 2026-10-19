@@ -1,0 +1,31 @@
+{
+  "id": "F-0706",
+  "tipo": "juris",
+  "autor": "Corte Constitucional (Sala Plena)",
+  "titulo": "Sentencia C-080 de 2025 (6-mar-2025), exequibilidad del artículo 410A del Código Penal, expediente D-15954",
+  "anio": 2025,
+  "institucion": "Corte Constitucional",
+  "url": "https://www.ambitojuridico.com/sites/default/files/2025-06/Sent-C-080-25.pdf",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "síntesis y decisión",
+    "transcripción del art. 410A (p. 3)",
+    "resuelve (p. 50)"
+  ],
+  "localizador": "transcripción del art. 410A en p. 3; resuelve en p. 50 de 62",
+  "pagina_pdf": 3,
+  "cita_textual": "Declarar EXEQUIBLE el artículo 410A de la Ley 599 de 2000, “por la cual se expide el Código Penal”, adicionado por el artículo 27 de la Ley 1474 de 2011",
+  "afirmacion": "El delito de acuerdos restrictivos de la competencia (art. 410A del Código Penal, adicionado por el art. 27 de la Ley 1474 de 2011) castiga con prisión de 6 a 12 años y multa a quien se concierte con otro para alterar ilícitamente un proceso de licitación pública, subasta, selección abreviada o concurso; la Corte lo declaró exequible el 6-mar-2025 solo frente al cargo de tipicidad estricta, integrándolo con el art. 47.9 del Decreto 2153 de 1992.",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-CONS",
+  "autoridad": "A4",
+  "tipo_contrato": "todos",
+  "vigencia_verificada": "[sin verificar] — se leyó la sentencia (copia de Ámbito Jurídico), no el texto consolidado del Código Penal ni reformas posteriores al art. 410A",
+  "unificacion": false,
+  "cifra_comprobada": "cuadra: el texto transcrito dice 'prisión de seis (6) a doce (12) años y multa de doscientos (200) a mil (1.000) salarios mínimos'",
+  "notas": "Cosa juzgada constitucional limitada al cargo estudiado (legalidad estricta). La sentencia no es de 'unificación' en el sentido de la tabla. La inclusión de consorcios o uniones temporales como vehículo de concertación no se trató aquí. Pendiente verificar el texto vigente del 410A en la Ley 599 con notas de vigencia.",
+  "eje": 6,
+  "leida_por": "lector fase2 eje6-institucional",
+  "fecha_consulta": "2026-10-19"
+}

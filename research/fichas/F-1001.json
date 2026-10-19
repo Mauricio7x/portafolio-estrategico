@@ -1,0 +1,30 @@
+{
+  "id": "F-1001",
+  "tipo": "academia",
+  "autor": "Parrado Rodríguez, A. M.",
+  "titulo": "La garantía de seriedad de la oferta como causal de rechazo en los procesos licitatorios",
+  "anio": 2021,
+  "institucion": "Universidad Militar Nueva Granada (ensayo, Diplomado de Contratación Estatal)",
+  "url": "https://repository.umng.edu.co/server/api/core/bitstreams/a967961e-80db-45bd-9a91-0618c18bfe87/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "localizador": "Resumen, p. 4 del PDF",
+  "cita_textual": "disposiciones consideran la ausencia de garantía de la seriedad de la oferta como un requisito insubsanable y en el caso de la presentación errónea de la garantía, constituye una causal subsanable.",
+  "afirmacion": "Según este ensayo (2021), en licitación pública la falta de garantía de seriedad con la oferta es insubsanable (rechazo) y la garantía presentada con defectos sí se puede subsanar; el autor sostiene que debería ser subsanable también la ausencia.",
+  "eje": 8,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-DICT",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — trabajo académico: lo que afirma sobre la norma es lo que él dice; la norma no se reverificó en esta ficha",
+  "leida_por": "lector fase2 eje8-academica",
+  "tipo_contrato": "todos",
+  "partes_leidas": [
+    "resumen",
+    "introducción",
+    "págs. 1-9 de 31"
+  ],
+  "pagina_pdf": 4,
+  "anio_origen": "portada",
+  "notas": "Es lo que el autor afirma sobre Ley 80 y Ley 1150 (A6); el texto de la norma vigente se cita desde su fuente en otras fichas. Anterior a reformas posteriores de 2021: reverificar."
+}

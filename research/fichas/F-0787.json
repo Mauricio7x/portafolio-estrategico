@@ -1,0 +1,32 @@
+{
+  "id": "F-0787",
+  "tipo": "academia",
+  "autor": "Vargas Villamizar, A. J.",
+  "titulo": "Análisis de los procesos de contratación pública en los principales municipios y departamentos de Colombia durante la vigencia fiscal 2016",
+  "anio": 2018,
+  "anio_origen": "portada",
+  "institucion": "Universidad Santo Tomás (documento de trabajo, MPRA Paper No. 100498)",
+  "url": "https://mpra.ub.uni-muenchen.de/100498/1/MPRA_paper_100498.pdf",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "introducción",
+    "resultados de participación de oferentes (figuras 1-2)",
+    "ahorro y sobrecostos (figuras 8-10)"
+  ],
+  "localizador": "sección «a. Participación de los oferentes», párrafo sobre Bucaramanga y Cartagena (p. 7 del PDF)",
+  "pagina_pdf": 7,
+  "cita_textual": "en el caso de Bucaramanga el 62 % de las licitaciones fueron adjudicadas en procesos de un solo oferente, a diferencia del caso de Cartagena que, a pesar de su promedio relativamente bajo, solo el 27 % fueron adjudicados a un solo oferente",
+  "afirmacion": "Con datos de SECOP I de la vigencia 2016 (252 licitaciones públicas seguidas, 142 de municipios de categoría especial), el autor halla que en Bucaramanga el 62 % de las licitaciones se adjudicó con un solo oferente y en Cartagena el 27 %, con promedio de unos dos proponentes por licitación en ambas (todas las licitaciones, no solo obra).",
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-INT",
+  "autoridad": "A6",
+  "tipo_contrato": "todos",
+  "cifra_comprobada": "No recalculable: la fuente no publica la tabla de procesos por entidad, solo los porcentajes y los promedios de las figuras. Cubre todas las licitaciones públicas de 2016, no solo obra.",
+  "notas": "Dato de 2016 con SECOP I. El mismo texto cita (p. 3 del PDF) un escalafón según el cual «el 87 % de los contratos» de municipios y «71 %» de departamentos se adjudicaron con un único oferente; el párrafo no deja claro de qué fuente sale ni qué universo mide, por lo que no se repite como hecho.",
+  "vigencia_verificada": "[sin verificar] — fuente académica sobre hechos de 2016, anterior a documentos tipo obligatorios y a la reforma de 2026; no afirma texto normativo vigente",
+  "fecha_consulta": "2026-10-19",
+  "eje": 6,
+  "leida_por": "lector fase2 eje6-academica"
+}

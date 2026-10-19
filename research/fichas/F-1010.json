@@ -1,0 +1,29 @@
+{
+  "id": "F-1010",
+  "tipo": "academia",
+  "autor": "López Rodríguez, A. C.",
+  "titulo": "Aplicabilidad modulada del régimen jurídico de la subsanabilidad de las ofertas",
+  "anio": 2019,
+  "institucion": "Universidad Externado de Colombia, Revista digital de Derecho Administrativo n.º 21",
+  "url": "https://dialnet.unirioja.es/descarga/articulo/6733367.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "localizador": "Introducción, p. 3 del PDF",
+  "cita_textual": "se vislumbra, por ejemplo, que sin un mayor análisis, la Administración puede permitir el saneamiento de un requisito habilitante por ser de aquellos que no otorgan puntaje cuando en realidad este resulta ser sustancial",
+  "afirmacion": "La autora advierte que aplicar la regla de subsanabilidad de forma literal puede permitir sanear un requisito sustancial por no dar puntaje, o negar la subsanación de uno que sí es formal: la frontera es incierta para el proponente.",
+  "eje": 8,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-DICT",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — trabajo académico: lo que afirma sobre la norma es lo que él dice; la norma no se reverificó en esta ficha",
+  "leida_por": "lector fase2 eje8-academica",
+  "tipo_contrato": "todos",
+  "partes_leidas": [
+    "resumen",
+    "introducción",
+    "apartados sobre la Ley 1882 y límites a la subsanabilidad (págs. 3, 9-12, 35, 40 de 48)"
+  ],
+  "pagina_pdf": 3,
+  "anio_origen": "portada"
+}

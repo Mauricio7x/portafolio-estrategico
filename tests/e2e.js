@@ -22843,6 +22843,11 @@ async function main() {
       const ponerG = (k, v) => { if (v === undefined) delete process.env[k]; else process.env[k] = v; };
       const rProcesosG = require("../api/procesos.js");
       const SECRETO = "secreto-cron-de-prueba";
+      /* EL ENTORNO DEL CONTENEDOR (19-oct-2026): VERCEL_AUTOMATION_BYPASS_SECRET puede estar puesta y entonces
+         la auto-llamada manda una cabecera de muro que esta prueba no espera. Como en GitHub, la prueba parte
+         sin esa variable y la devuelve tal como estaba al terminar, pase lo que pase. */
+      const BYPASS_ANTES = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
+      ponerG("VERCEL_AUTOMATION_BYPASS_SECRET", undefined);
       const URL_AUTO = "/api/procesos?op=sync&modo=auto&chain=0";
       // sin la variable: abierta, sin cabeceras de auto-llamada, y salud lo dice
       assert.strictEqual(Auth.hayGuardaDeSincronizacion(), false);
@@ -22907,7 +22912,7 @@ async function main() {
         assert.deepStrictEqual(Auth.cabecerasDeAutoLlamada({ "x-historico-token": "t" }),
           { authorization: `Bearer ${SECRETO}`, "x-vercel-protection-bypass": "pase", "x-historico-token": "t" });
         ponerG("VERCEL_AUTOMATION_BYPASS_SECRET", undefined);
-      } finally { ponerG("CRON_SECRET", undefined); }
+      } finally { ponerG("CRON_SECRET", undefined); ponerG("VERCEL_AUTOMATION_BYPASS_SECRET", BYPASS_ANTES); }
       // sin la variable vuelve a ser abierta: la misma llamada responde 200 (el cron actual no manda cabecera)
       const abierta = await invocar(rProcesosG, URL_AUTO);
       assert.strictEqual(abierta.status, 200, `sin CRON_SECRET el sync sigue público: ${JSON.stringify(abierta.cuerpo)}`);
@@ -51864,7 +51869,10 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
           fs.copyFileSync(path.join(__dirname, "estado.js"), path.join(tmp, "tests", "estado.js"));
           const salidaSuperficial = execFileSync(process.execPath, [path.join(tmp, "tests", "estado.js")], { encoding: "utf8" });
           const linea = (salidaSuperficial.split("\n").find((l) => l.includes("ritmo de 7 días")) || "").trim();
-          if (!/ritmo de 7 días: no medible/.test(linea) || /\+\d+ líneas/.test(linea)) {
+          /* «sin cambios» es verdad cuando el clon solo tiene commits anteriores a la ventana (el único commit
+             del clon puede ser el más reciente y ser viejo): un clon superficial nunca puede saber más. Lo que
+             se prohíbe es contar el archivo entero («+N líneas»). */
+          if (!/ritmo de 7 días: (no medible|sin cambios)/.test(linea) || /\+\d+ líneas/.test(linea)) {
             hallazgosMem.push(`en un clon superficial estado.js dice «${linea}»: sin historial que cubra la ventana la cifra se declara no medible, no se inventa contando el archivo entero`);
           }
         } catch (e) {

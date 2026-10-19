@@ -1,0 +1,30 @@
+{
+  "eje": 6,
+  "fecha_consulta": "2026-10-19",
+  "leida_por": "lector fase2 eje6-academica",
+  "estado_lectura": "parcial",
+  "autoridad": "A6",
+  "tipo": "academia",
+  "autor": "Matallana Camacho, E.",
+  "titulo": "El principio de proporcionalidad en la contratación estatal: el interés general, la libre competencia económica y el principio de proporcionalidad como categorías jurídicas vinculantes a la Administración Pública en su competencia discrecional para seleccionar al contratista cuando se trata de la licitación pública (tesis doctoral)",
+  "anio": 2019,
+  "anio_origen": "portada",
+  "institucion": "Universidad Externado de Colombia, Facultad de Derecho, Doctorado en Derecho",
+  "url": "https://matallanaabogadosconsultores.com/wp-content/uploads/2020/04/TESIS-EL-PRINCIPIO-DE-PROPORCIONALIDAD-EN-LOS-CONTRATOS-ESTATALES-VF-21072019.pdf",
+  "partes_leidas": [
+    "pp. 14-15",
+    "pp. 436-440 (análisis de casos y conclusiones)"
+  ],
+  "id": "F-0793",
+  "localizador": "cap. de análisis de casos, conclusiones del trabajo de campo, p. 440",
+  "pagina_pdf": 440,
+  "cita_textual": "sólo el 10% superó el test de proporcionalidad con base en las reglas de prevalencia condicionada del modelo estándar de pliegos de condiciones que confeccionamos para este trabajo de campo",
+  "afirmacion": "El autor afirma (2019) que, aplicando un modelo estándar de pliego propio como patrón, solo el 10 % de las 250 licitaciones de obra analizadas superó su test de proporcionalidad de las reglas de participación.",
+  "etapa": "E1",
+  "decision": "D3",
+  "modulo": "M-DICT",
+  "vigencia_verificada": "[sin verificar] — dato empírico de una tesis de 2019 sobre licitaciones de 2012-2016; no es una norma, no aplica vigencia normativa.",
+  "tipo_contrato": "obra",
+  "cifra_comprobada": "no cuadra: el autor concluye a renglón seguido «significa que el 80% de las licitaciones públicas […] no está cumpliendo», pero si solo el 10 % pasó el test, no pasó el 90 %. El patrón de comparación es un modelo propio del autor, no una norma. No se repite como hecho.",
+  "notas": "Por el modelo propio del autor y la inconsistencia 10 %/80 % la cifra se deja solo como indicio. La tesis sostiene que los pliegos siguen siendo un instrumento de direccionamiento (misma página)."
+}

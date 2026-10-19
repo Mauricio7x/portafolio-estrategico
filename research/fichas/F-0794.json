@@ -1,0 +1,29 @@
+{
+  "eje": 6,
+  "fecha_consulta": "2026-10-19",
+  "leida_por": "lector fase2 eje6-academica",
+  "estado_lectura": "parcial",
+  "autoridad": "A6",
+  "tipo": "academia",
+  "autor": "Matallana Camacho, E.",
+  "titulo": "El principio de proporcionalidad en la contratación estatal: el interés general, la libre competencia económica y el principio de proporcionalidad como categorías jurídicas vinculantes a la Administración Pública en su competencia discrecional para seleccionar al contratista cuando se trata de la licitación pública (tesis doctoral)",
+  "anio": 2019,
+  "anio_origen": "portada",
+  "institucion": "Universidad Externado de Colombia, Facultad de Derecho, Doctorado en Derecho",
+  "url": "https://matallanaabogadosconsultores.com/wp-content/uploads/2020/04/TESIS-EL-PRINCIPIO-DE-PROPORCIONALIDAD-EN-LOS-CONTRATOS-ESTATALES-VF-21072019.pdf",
+  "partes_leidas": [
+    "pp. 14-15",
+    "pp. 436-440 (análisis de casos y conclusiones)"
+  ],
+  "id": "F-0794",
+  "localizador": "cap. de análisis de casos, ejemplo 10) licitación pública LP-MPO-003-2014 (Pinillos, Bolívar), p. 439",
+  "pagina_pdf": 439,
+  "cita_textual": "Se presentó un licitante y no se otorgó descuento a la entidad. […] Solo se admitía experiencia con el sector público y ejecutada en los últimos cinco años […] la sumatoria de los mismos debía ser igual a tres veces el presupuesto oficial",
+  "afirmacion": "Caso documentado en la tesis (2019): una licitación de vía de 2014 con un solo licitante y sin descuento exigía, entre otras barreras, experiencia solo con el sector público de los últimos cinco años, sumatoria igual a tres veces el presupuesto oficial y quince años de ejercicio profesional o de existencia de la persona jurídica.",
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-DICT",
+  "vigencia_verificada": "[sin verificar] — dato empírico de una tesis de 2019 sobre licitaciones de 2012-2016; no es una norma, no aplica vigencia normativa.",
+  "tipo_contrato": "obra",
+  "notas": "Señales de pliego sastre que el autor enumera en un mismo proceso: antigüedad (15 años), solo sector público, ventana de 5 años, facturación de 3 veces el presupuesto oficial, tope de 4 contratos y cantidades de obra específicas. El proceso es de 2014 (SECOP I); los requisitos habilitantes hoy se rigen por normas posteriores (documentos tipo): la lista es evidencia de patrón, no regla vigente. Dato de proceso: número de proceso y entidad (sin personas)."
+}

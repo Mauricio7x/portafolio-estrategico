@@ -1,0 +1,28 @@
+{
+  "id": "F-0712",
+  "tipo": "control",
+  "autor": "Superintendencia de Industria y Comercio",
+  "titulo": "Comunicado de la SIC del 3-oct-2024: sanciones de septiembre, caso de concursos de méritos de interventoría del INVIAS",
+  "anio": 2024,
+  "institucion": "Superintendencia de Industria y Comercio",
+  "url": "https://sedeelectronica.sic.gov.co/noticias/en-el-mes-de-septiembre-la-superintendente-impuso-dos-sanciones-y-confirmo-una-sancion-por-violaciones-al-regimen-de-libre-competencia",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "numeral 2 del comunicado (caso INVIAS)"
+  ],
+  "localizador": "comunicado, numeral 2 (procesos del INVIAS)",
+  "cita_textual": "Dichos procesos tenían por objeto contratar las interventorías técnicas, administrativas, financieras, legales y ambientales de proyectos viabilizados en el Acuerdo No. 11 de 2018 del OCAD PAZ",
+  "afirmacion": "La SIC sancionó (comunicado de 3-oct-2024) a cuatro empresas y cuatro personas naturales por simular competencia con ofertas coordinadas en concursos de méritos de interventoría del INVIAS de 2019 financiados con regalías (OCAD PAZ): multa de 577.561.873 pesos a las cuatro personas jurídicas y de 945.216.729 pesos a las cuatro naturales.",
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-CONS",
+  "autoridad": "A7",
+  "tipo_contrato": "interventoria",
+  "vigencia_verificada": "[sin verificar] — comunicado de prensa; no se verificó si hubo recursos ni la resolución",
+  "anio_origen": "cuerpo",
+  "cifra_comprobada": "no cuadra dentro de la propia fuente: el encabezado del caso dice que se sancionó la conducta en '3 procesos de selección' y el cuerpo que afectó 'hasta en 31 procesos de selección contractual'; no se sabe cuál es el alcance sancionado. Los montos de multa se copian tal cual, sin sumar.",
+  "notas": "Indicios que la SIC enumera como prueba (se omiten nombres de personas y empresas): misma infraestructura operacional, mismo personal, un líder reconocido, intercambio de información sensible, ofertas elaboradas conjuntamente, similitud de documentos entre consorcios y una oferta de un tercero con valores encaminados a favorecer a los demás. Señal medible en datos abiertos: varios consorcios del mismo concurso con representante legal suplente o integrantes comunes (requiere cruzar integrantes de uniones temporales).",
+  "eje": 6,
+  "leida_por": "lector fase2 eje6-institucional",
+  "fecha_consulta": "2026-10-19"
+}

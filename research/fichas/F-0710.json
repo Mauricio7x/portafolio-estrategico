@@ -1,0 +1,28 @@
+{
+  "id": "F-0710",
+  "tipo": "control",
+  "autor": "Superintendencia de Industria y Comercio",
+  "titulo": "Relatoría de la Resolución 30415 del 30-may-2021, caso ASE: factores que aumentan el riesgo de colusión",
+  "anio": 2021,
+  "institucion": "Superintendencia de Industria y Comercio",
+  "url": "https://sedeelectronica.sic.gov.co/sites/default/files/estados/032022/RELATOR%C3%8DA%20RESOLUCI%C3%93N%20%2030415%20DEL%2030-05-21%20-%20ASE.pdf",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "pp. 1-3"
+  ],
+  "localizador": "p. 3 del PDF, lista de factores",
+  "pagina_pdf": 3,
+  "cita_textual": "Fijación de barreras innecesarias a la entrada por medio de requisitos excesivos.",
+  "afirmacion": "Entre los factores que según la SIC aumentan el riesgo de colusión en un proceso de selección están los requisitos excesivos que funcionan como barreras de entrada, la estabilidad en los formatos de evaluación, la facilitación de contacto entre proponentes y las fórmulas de evaluación fáciles de manipular o muy sensibles a ofertas irracionales.",
+  "etapa": "E1",
+  "decision": "D1",
+  "modulo": "M-DICT",
+  "autoridad": "A7",
+  "tipo_contrato": "todos",
+  "vigencia_verificada": "[sin verificar] — doctrina de la SIC en una relatoría de 2021, no norma",
+  "anio_origen": "portada",
+  "notas": "Sirve de puente entre 'pliego sastre' (requisitos excesivos) y colusión: la misma lista trata como factor de riesgo el exceso de requisitos y las fórmulas de adjudicación sensibles a ofertas irracionales o a la media aritmética (p. 2: 'las medias que se utilizan para la adjudicación –media aritmética, geométrica, etc.– se muevan a favor de una oferta').",
+  "eje": 6,
+  "leida_por": "lector fase2 eje6-institucional",
+  "fecha_consulta": "2026-10-19"
+}

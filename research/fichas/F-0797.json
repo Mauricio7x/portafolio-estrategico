@@ -1,0 +1,36 @@
+{
+  "eje": 6,
+  "fecha_consulta": "2026-10-19",
+  "leida_por": "lector fase2 eje6-academica",
+  "estado_lectura": "parcial",
+  "autoridad": "A6",
+  "tipo": "academia",
+  "id": "F-0797",
+  "autor": "Pardo Pardo, D. L.",
+  "titulo": "Una aproximación al tipo penal de los acuerdos restrictivos de la competencia",
+  "anio": 2018,
+  "anio_origen": "portada",
+  "institucion": "Universidad Externado de Colombia (Revista Derecho Penal y Criminología, vol. 39, n.º 106, pp. 103-144)",
+  "url": "https://dialnet.unirioja.es/descarga/articulo/7486077.pdf",
+  "partes_leidas": [
+    "pp. 115-116 (texto del art. 410A)",
+    "pp. 129-130 (delator o clemente)"
+  ],
+  "localizador": "sección sobre el art. 410-A y su parágrafo, p. 15 del PDF (impresa 116)",
+  "pagina_pdf": 15,
+  "cita_textual": "El que en un proceso de licitación pública, subasta pública, selección abreviada o concurso se concertare con otro con el fin de alterar ilícitamente el procedimiento contractual, incurrirá en prisión de seis (6) a doce (12) años",
+  "afirmacion": "El artículo 410-A del Código Penal (adicionado por el art. 27 de la Ley 1474 de 2011), según lo transcribe el autor en 2018, castiga la concertación para alterar ilícitamente licitación pública, subasta pública, selección abreviada o concurso con prisión de 6 a 12 años, multa de 200 a 1.000 SMLMV e inhabilidad de 8 años para contratar con el Estado.",
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-CONS",
+  "vigencia_verificada": {
+    "fecha": "2026-10-19",
+    "fuente": "Texto del art. 410A reproducido sin cambios por la Corte Constitucional, sentencia C-080 de 2025 (6-mar-2025), https://www.corteconstitucional.gov.co/relatoria/2025/c-080-25.htm (ver F-0799); no se abrió el Código Penal consolidado ni normas posteriores a mar-2025."
+  },
+  "tipo_contrato": "todos",
+  "reformas_cotejadas": [
+    "Sentencia C-080 de 2025 (Corte Constitucional): transcribe el art. 410A en los mismos términos del art. 27 de la Ley 1474 de 2011, sin modificaciones, y lo declara exequible por el cargo de tipicidad (F-0799 y F-0800)."
+  ],
+  "cifra_comprobada": "cuadra el texto transcrito (6-12 años; 200-1.000 SMLMV; 8 años). NO cuadra una cuenta del artículo: dice que con la rebaja de un tercio del parágrafo «el quantum punitivo correría ahora de 2 a 4 años», pero un tercio menos de 6-12 años es 4 a 8 años (2 a 4 años es la rebaja). La reducción del 40 % de la multa (120 a 600 SMLMV) sí cuadra.",
+  "notas": "El texto del tipo penal se verifica mejor en F-0799 (Corte Constitucional). Esta ficha aporta la lectura del autor: el parágrafo del delator da rebaja de un tercio de la pena, 40 % de la multa e inhabilidad de 5 años en lugar de 8 años."
+}

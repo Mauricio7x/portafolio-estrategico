@@ -1,0 +1,30 @@
+{
+  "id": "F-0785",
+  "fecha_consulta": "2026-10-02",
+  "eje": 6,
+  "leida_por": "lector fase2 eje6-academica",
+  "autoridad": "A6",
+  "tipo": "academia",
+  "autor": "(trabajo de grado de pregrado, dirigido por Rincón Salcedo, J. G.)",
+  "titulo": "Eficiencia y eficacia de los pliegos tipo en la contratación estatal colombiana",
+  "anio": 2019,
+  "institucion": "Pontificia Universidad Javeriana, Facultad de Ciencias Jurídicas",
+  "url": "https://apidspace.javeriana.edu.co/server/api/core/bitstreams/c0a64247-7701-47ae-b1db-827bab086e89/content",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "introducción",
+    "sección 2.d",
+    "sección 5.b"
+  ],
+  "tipo_contrato": "obra",
+  "anio_origen": "portada",
+  "localizador": "introducción (párrafo sobre la Ley 1882 de 2018)",
+  "cita_textual": "no resulta claro de la redacción de la norma que fue reglamentada mediante el decreto 342 de 2019, cómo va a producirse este efecto.",
+  "afirmacion": "La autora (2019) duda de que la obligatoriedad de los pliegos tipo (Ley 1882 de 2018, Decreto 342 de 2019) elimine por sí sola los «pliegos sastre» y condiciona su eficacia a la capacitación de las entidades y a la voluntad ética de quienes los aplican.",
+  "etapa": "E1",
+  "decision": "D3",
+  "modulo": "M-DICT",
+  "notas": "Opinión de una tesis de pregrado de 2019; no hay medición del efecto. Para el efecto medido, falta fuente abierta.",
+  "vigencia_verificada": "[sin verificar] — no se abrieron las normas citadas",
+  "pagina_pdf": 13
+}

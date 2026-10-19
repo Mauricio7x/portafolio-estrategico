@@ -1,0 +1,28 @@
+{
+  "id": "F-0709",
+  "tipo": "control",
+  "autor": "Superintendencia de Industria y Comercio",
+  "titulo": "Relatoría de la Resolución 30415 del 30-may-2021, caso ASE (colusión en procesos de contratación pública)",
+  "anio": 2021,
+  "institucion": "Superintendencia de Industria y Comercio",
+  "url": "https://sedeelectronica.sic.gov.co/sites/default/files/estados/032022/RELATOR%C3%8DA%20RESOLUCI%C3%93N%20%2030415%20DEL%2030-05-21%20-%20ASE.pdf",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "pp. 1-3 (doctrina sobre señales de advertencia y factores de riesgo)"
+  ],
+  "localizador": "pp. 2-3 del PDF, lista de señales de advertencia",
+  "pagina_pdf": 2,
+  "cita_textual": "El adjudicatario es el mismo a lo largo del tiempo o en varios procesos.",
+  "afirmacion": "La SIC enumera como señales de advertencia de colusión en contratación pública, entre otras: adjudicatario repetido, potenciales proponentes con capacidad que no se presentan, retiro sistemático de proponentes, proponentes que se presentan siempre y nunca ganan, y proponentes que dejan de presentarse en consorcios que solían conformar.",
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-INT",
+  "autoridad": "A7",
+  "tipo_contrato": "todos",
+  "vigencia_verificada": "[sin verificar] — relatoría de una resolución sancionatoria de 2021 (doctrina de la SIC, no norma); el caso no es de obra",
+  "anio_origen": "portada",
+  "notas": "La relatoría dice que la lista es 'en línea con lo expresado por la OCDE'; no se contrastó con el texto de la OCDE (el sitio de la OCDE respondió 403). La relatoría cita también la Resolución 81391 de 2017 (caso Cementos). Mismo texto, p. 2: 'Entrega de varias propuestas por parte de una misma persona', 'Datos, certificaciones y personal idéntico entre distintos proponentes' y 'Documentos presentados con números consecutivos'. Señales de esta lista medibles en datos abiertos de SECOP II: adjudicatario repetido por entidad, proponentes que nunca ganan, cambios de composición de consorcios. Las demás exigen leer las ofertas.",
+  "eje": 6,
+  "leida_por": "lector fase2 eje6-institucional",
+  "fecha_consulta": "2026-10-19"
+}

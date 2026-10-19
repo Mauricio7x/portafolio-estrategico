@@ -1,0 +1,30 @@
+{
+  "eje": 6,
+  "fecha_consulta": "2026-10-19",
+  "leida_por": "lector fase2 eje6-academica",
+  "estado_lectura": "parcial",
+  "autoridad": "A6",
+  "tipo": "academia",
+  "autor": "Matallana Camacho, E.",
+  "titulo": "El principio de proporcionalidad en la contratación estatal: el interés general, la libre competencia económica y el principio de proporcionalidad como categorías jurídicas vinculantes a la Administración Pública en su competencia discrecional para seleccionar al contratista cuando se trata de la licitación pública (tesis doctoral)",
+  "anio": 2019,
+  "anio_origen": "portada",
+  "institucion": "Universidad Externado de Colombia, Facultad de Derecho, Doctorado en Derecho",
+  "url": "https://matallanaabogadosconsultores.com/wp-content/uploads/2020/04/TESIS-EL-PRINCIPIO-DE-PROPORCIONALIDAD-EN-LOS-CONTRATOS-ESTATALES-VF-21072019.pdf",
+  "partes_leidas": [
+    "pp. 14-15",
+    "pp. 436-440 (análisis de casos y conclusiones)"
+  ],
+  "id": "F-0792",
+  "localizador": "cap. de análisis de casos, conclusiones del trabajo de campo, p. 440",
+  "pagina_pdf": 440,
+  "cita_textual": "el 84% de las licitaciones consultadas indicaron que la entidad estatal no obtuvo un beneficio económico que superara el 0,5% de descuento",
+  "afirmacion": "En su muestra de 250 licitaciones de obra (2012-2015) el autor reporta que en el 84 % el descuento del adjudicatario frente al presupuesto oficial no superó el 0,5 %.",
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-PRECIO",
+  "vigencia_verificada": "[sin verificar] — dato empírico de una tesis de 2019 sobre licitaciones de 2012-2016; no es una norma, no aplica vigencia normativa.",
+  "tipo_contrato": "obra",
+  "cifra_comprobada": "no recalculable: la tesis no publica el conteo por proceso (84 % de 250 = 210); el 84 % es una proporción reportada, sin tabla.",
+  "notas": "Relevante para D2: con pocos oferentes el descuento medio fue mínimo; con muchos (ver F-0796) fue mayor. Las dos cifras son de procesos distintos y no establecen causalidad."
+}

@@ -1,0 +1,30 @@
+{
+  "id": "F-1009",
+  "tipo": "academia",
+  "autor": "López Rodríguez, A. C.",
+  "titulo": "Aplicabilidad modulada del régimen jurídico de la subsanabilidad de las ofertas",
+  "anio": 2019,
+  "institucion": "Universidad Externado de Colombia, Revista digital de Derecho Administrativo n.º 21",
+  "url": "https://dialnet.unirioja.es/descarga/articulo/6733367.pdf",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "localizador": "Apartado sobre límites a la subsanabilidad, p. 35 del PDF",
+  "cita_textual": "la capacidad jurídica debe tenerse al momento de presentar la propuesta y no puede ser subsanada ulteriormente",
+  "afirmacion": "La autora resume que, para el Consejo de Estado, la capacidad jurídica debe tenerse al presentar la propuesta y no se puede subsanar después (no se puede adquirir hasta la adjudicación).",
+  "eje": 8,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-DICT",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — trabajo académico: lo que afirma sobre la norma es lo que él dice; la norma no se reverificó en esta ficha",
+  "leida_por": "lector fase2 eje8-academica",
+  "tipo_contrato": "todos",
+  "partes_leidas": [
+    "resumen",
+    "introducción",
+    "apartados sobre la Ley 1882 y límites a la subsanabilidad (págs. 3, 9-12, 35, 40 de 48)"
+  ],
+  "pagina_pdf": 35,
+  "anio_origen": "portada",
+  "notas": "Es la lectura que la autora hace de la jurisprudencia (A6); las sentencias no se abrieron aquí. Tema vecino: la documentación que acredita sí se subsana, lo que no se subsana es no tener el requisito al cierre."
+}

@@ -1,0 +1,29 @@
+{
+  "id": "F-0974",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje8-institucional",
+  "eje": 8,
+  "tipo": "doc_tipo",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Documentos tipo de licitación de obra pública de infraestructura de transporte, versión 3 (documento base y formatos)",
+  "anio": 2021,
+  "institucion": "Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2026/04/01DTipo_InfraestructuraTransporteLicitacionPublicaV3_01112021.zip",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "Documento base: numerales de visita, carta de presentación, oferta económica y análisis de precios unitarios",
+    "Formato 1",
+    "Formato 6"
+  ],
+  "anio_origen": "cuerpo",
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-APU",
+  "autoridad": "A3",
+  "tipo_contrato": "obra",
+  "vigencia_verificada": "[sin verificar] — es la versión 3 (vigencia desde 28-06-2021 según el nombre de la carpeta); el encargo del eje 9 menciona una versión 4 del documento base: reverificar contra la vigente",
+  "notas": "Error típico: descubrir un APU de referencia mal calculado después de cerrar el plazo de observaciones.",
+  "cita_textual": "El desglose de los Análisis de Precios Unitarios publicados por la entidad es únicamente de referencia, constituye una guía para la preparación de la oferta.",
+  "localizador": "Documento base v3, sección «Oferta económica», párrafo sobre precios unitarios",
+  "afirmacion": "Los APU que publica la entidad son solo de referencia; las dudas sobre ellos hay que plantearlas en el plazo de observaciones al proyecto de pliego, no después (v3, 2021)."
+}

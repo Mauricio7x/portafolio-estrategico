@@ -1,0 +1,32 @@
+{
+  "id": "F-0788",
+  "tipo": "academia",
+  "autor": "Vargas Villamizar, A. J.",
+  "titulo": "Análisis de los procesos de contratación pública en los principales municipios y departamentos de Colombia durante la vigencia fiscal 2016",
+  "anio": 2018,
+  "anio_origen": "portada",
+  "institucion": "Universidad Santo Tomás (documento de trabajo, MPRA Paper No. 100498)",
+  "url": "https://mpra.ub.uni-muenchen.de/100498/1/MPRA_paper_100498.pdf",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "introducción",
+    "resultados de participación de oferentes (figuras 1-2)",
+    "ahorro y sobrecostos (figuras 8-10)"
+  ],
+  "localizador": "sección «d. Sobrecostos», antes de la Figura 8 (p. 10 del PDF)",
+  "pagina_pdf": 10,
+  "cita_textual": "si bien el comportamiento de ahorro no es estrictamente creciente en la medida que aumenta el número de oferentes, si se observa una tendencia positiva en la medida que existen más oferentes dentro del proceso de asignación contractual",
+  "afirmacion": "En licitaciones públicas municipales de 2016 (SECOP I) la diferencia entre el presupuesto oficial y el precio de adjudicación tiende a crecer con el número de oferentes, aunque no de forma estrictamente creciente: con más competencia el contrato se adjudica más abajo del presupuesto.",
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-PRECIO",
+  "autoridad": "A6",
+  "tipo_contrato": "todos",
+  "cifra_comprobada": "No recalculable: las barras de la Figura 8 (promedios de 1,7 a 18,4 proponentes; descuento de 0 a 14 %) son gráficas sin tabla de datos; el autor las describe como tendencia, no como regla. No se repite ninguna cifra puntual.",
+  "notas": "Evidencia de que el descuento frente al presupuesto oficial depende de cuántos oferentes concurren; sirve de contexto para D2, no como fórmula. Universo: todas las licitaciones, no solo obra.",
+  "vigencia_verificada": "[sin verificar] — fuente académica sobre hechos de 2016; no afirma texto normativo vigente",
+  "fecha_consulta": "2026-10-19",
+  "eje": 6,
+  "leida_por": "lector fase2 eje6-academica"
+}

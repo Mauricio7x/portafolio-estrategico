@@ -1,0 +1,29 @@
+{
+  "id": "F-0786",
+  "fecha_consulta": "2026-10-02",
+  "eje": 6,
+  "leida_por": "lector fase2 eje6-academica",
+  "autoridad": "A6",
+  "tipo": "academia",
+  "autor": "Pulgarín Caro, H. N.",
+  "titulo": "Responsabilidad contractual del Estado colombiano por retraso injustificado en contratos de obra pública",
+  "anio": 2025,
+  "institucion": "Corporación Universitaria Remington (repositorio)",
+  "url": "https://repositorio.uniremington.edu.co/bitstreams/21233d78-5d13-40d4-a437-01773fa8dd6d/download",
+  "url_final": "https://repositorio.uniremington.edu.co/server/api/core/bitstreams/21233d78-5d13-40d4-a437-01773fa8dd6d/content",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "introducción"
+  ],
+  "localizador": "resumen",
+  "cita_textual": "la Administración incurre en un incumplimiento generador de responsabilidad, debiendo indemnizar al contratista por los sobrecostos de la mayor permanencia en obra y la utilidad dejada de percibir, siempre que tales daños estén debidamente probados",
+  "afirmacion": "Un artículo de 2025 concluye que cuando la entidad aplaza sin causa legal ni contractual la ejecución de una obra, incumple y debe indemnizar la mayor permanencia en obra y la utilidad dejada de percibir, si el contratista prueba el daño.",
+  "etapa": "E4",
+  "decision": "D4",
+  "modulo": "M-PRECIO",
+  "tipo_contrato": "obra",
+  "notas": "Lectura del autor sobre normas y jurisprudencia que no se abrieron aquí; el contratista debe probar el daño, lo que exige llevar registro propio de la mayor permanencia. Pagos tardíos propiamente dichos no se miden en este artículo.",
+  "vigencia_verificada": "[sin verificar] — resumen del autor sobre normas y jurisprudencia no abiertas",
+  "pagina_pdf": 2
+}

@@ -146,3 +146,27 @@ dueño; entre PC decide la sesión y lo anota aquí; lo que no se abrió no exis
 - 30. Decisión propia: se reanuda por olas de 4 lectores (dos flujos a la vez) en vez de 12 a la vez, para
   no volver a tocar el límite; los lectores no sobrescriben lo que ya hay en su rango y continúan desde
   el primer id libre; los de rango lleno solo escriben notas y evalúan la cobertura.
+
+### 2026-10-19 · segundo corte (límite semanal) y reanudación
+
+- 31. El 2-oct a las 14:12 UTC los lectores de los ejes 6, 7 (institucional), 8 y 9 y los lotes 3 y 4 de la
+  muestra cayeron con «You've hit your weekly limit · resets Oct 4, 1am (UTC)». Quedaron en disco: eje 6
+  académico 26 fichas, eje 8 institucional 37, eje 8 académico 10; sin notas. Los ejes 1 a 5 y 7
+  académico tienen notas y rango completo; la muestra lleva 20 de 40.
+- 32. El dueño pidió reintentar (19-oct, 01:34 UTC). Se reanuda en dos olas: primero eje 6 (ambos), eje 7
+  institucional y eje 8 institucional con el lote 3; después eje 8 académico, eje 9 (ambos) y el lote 4.
+
+### 2026-10-19 · análisis pedido por el dueño
+
+- 33. Análisis en `research/ANALISIS_2026-10-19.md`. Medido: 827 fichas, 80 verificadas; Detekta no tiene
+  el Decreto 287 de 2026 ni el 0997 en código; la versión del documento tipo solo está en el dictamen; los
+  pendientes N13' y N11-A los confirma la base y siguen sin implementar.
+- 34. Suite en el contenedor: rojo por dos causas ajenas a la base (variable de entorno y cerradura M-DOC-06
+  dependiente del reloj). No se commitea en rojo. Un volcado de la primera falla dejó una cabecera de
+  bypass en un archivo de scratchpad: se recomienda rotarla en Vercel como precaución.
+- 35. Cambio accidental en docs/MAPA.md al regenerar el mapa: revertido con git checkout.
+- 36. Opción A del dueño (19-oct-2026): dos cerraduras de la suite corregidas. (a) La prueba de la guarda de
+  sincronización parte sin VERCEL_AUTOMATION_BYPASS_SECRET y la devuelve al terminar: el contenedor del
+  encargo la trae puesta; GitHub no. (b) La prueba del ritmo de 7 días acepta «sin cambios» en un clon
+  superficial cuyo único commit es anterior a la ventana; sigue prohibido contar el archivo entero. Suite:
+  4/4, código 0, con la variable puesta en el contenedor.

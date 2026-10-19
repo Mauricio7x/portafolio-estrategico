@@ -1,0 +1,29 @@
+{
+  "id": "F-0714",
+  "tipo": "internacional",
+  "autor": "Banco Mundial / Open Contracting Partnership (caso de estudio sobre Colombia)",
+  "titulo": "Open Contracting Reforms in Colombia (caso de estudio, enero de 2021)",
+  "anio": 2021,
+  "institucion": "Banco Mundial",
+  "url": "https://thedocs.worldbank.org/en/doc/406451611783796514-0090022021/original/OpenContractingReformsinColombia.pdf",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "pp. 1-4 (resumen, hallazgos de la Sociedad Colombiana de Ingenieros, resultados iniciales)"
+  ],
+  "localizador": "p. 3 del PDF (10 páginas), párrafo «In 2017, the SCI made their findings public»",
+  "pagina_pdf": 3,
+  "cita_textual": "there was only one bidder on 56 percent of all regional government contracts awarded that year. This came out to more than 2,500 contracts worth over USD280 million.",
+  "afirmacion": "Según el caso de estudio, la Sociedad Colombiana de Ingenieros halló y publicó en 2017 que en el 56 % de los contratos de los gobiernos regionales de ese año hubo un solo oferente (más de 2.500 contratos por más de USD 280 millones) y que en el nivel municipal el 94 % de 21.500 contratos tuvo tres oferentes o menos.",
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-INT",
+  "autoridad": "A6",
+  "tipo_contrato": "todos",
+  "vigencia_verificada": "[sin verificar] — dato de 2017 citado de un tercero (la Sociedad Colombiana de Ingenieros); el estudio original no se abrió",
+  "anio_origen": "cuerpo",
+  "cifra_comprobada": "no recalculable: el caso no da el total de contratos regionales ni la base; 'más de 2.500 contratos' con 56 % implicaría unos 4.500 contratos regionales, número que el texto no confirma. El informe no separa obra de otros objetos.",
+  "notas": "El mismo texto (p. 3) dice que 'the majority of tenders for public transportation projects had only one bidder' y que los hallazgos 'are supported by similar findings from studies conducted by the Colombian Chamber of Infrastructure'. Contexto: SECOP I no guardaba el número de oferentes como campo. La cifra es de 2017, anterior a los documentos tipo de obra (abril de 2019) y no vale para hoy; se mide hoy con SECOP II.",
+  "eje": 6,
+  "leida_por": "lector fase2 eje6-institucional",
+  "fecha_consulta": "2026-10-19"
+}

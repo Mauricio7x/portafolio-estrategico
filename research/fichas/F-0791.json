@@ -1,0 +1,30 @@
+{
+  "eje": 6,
+  "fecha_consulta": "2026-10-19",
+  "leida_por": "lector fase2 eje6-academica",
+  "estado_lectura": "parcial",
+  "autoridad": "A6",
+  "tipo": "academia",
+  "autor": "Matallana Camacho, E.",
+  "titulo": "El principio de proporcionalidad en la contratación estatal: el interés general, la libre competencia económica y el principio de proporcionalidad como categorías jurídicas vinculantes a la Administración Pública en su competencia discrecional para seleccionar al contratista cuando se trata de la licitación pública (tesis doctoral)",
+  "anio": 2019,
+  "anio_origen": "portada",
+  "institucion": "Universidad Externado de Colombia, Facultad de Derecho, Doctorado en Derecho",
+  "url": "https://matallanaabogadosconsultores.com/wp-content/uploads/2020/04/TESIS-EL-PRINCIPIO-DE-PROPORCIONALIDAD-EN-LOS-CONTRATOS-ESTATALES-VF-21072019.pdf",
+  "partes_leidas": [
+    "pp. 14-15",
+    "pp. 436-440 (análisis de casos y conclusiones)"
+  ],
+  "id": "F-0791",
+  "localizador": "cap. de análisis de casos, conclusiones del trabajo de campo, p. 440",
+  "pagina_pdf": 440,
+  "cita_textual": "El 85% de las licitaciones públicas indican que tuvieron entre uno y máximo dos proponentes, cifra que se acerca al 96% a nivel municipal, y al 76% a nivel departamental.",
+  "afirmacion": "En el análisis propio del autor de 250 licitaciones públicas de obra con presupuesto superior a $1.000 millones (14-oct-2012 a 31-dic-2015), el 85 % tuvo uno o dos proponentes (96 % en municipios y 76 % en departamentos, según la tesis).",
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-TARJ",
+  "vigencia_verificada": "[sin verificar] — dato empírico de una tesis de 2019 sobre licitaciones de 2012-2016; no es una norma, no aplica vigencia normativa.",
+  "tipo_contrato": "obra",
+  "cifra_comprobada": "no cuadra por completo: 85 % de 250 es 212,5 (no es entero) y la tesis no da el conteo ni el reparto municipal/departamental que permitiría reproducir el 96 % y el 76 %; no se repite como hecho, solo como magnitud reportada por el autor.",
+  "notas": "Muestra de 250 procesos de SECOP I (contratos.gov.co). Metodología de selección de la muestra no verificada en esta lectura."
+}

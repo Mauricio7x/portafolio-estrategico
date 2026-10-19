@@ -1,0 +1,27 @@
+{
+  "eje": 6,
+  "fecha_consulta": "2026-10-19",
+  "leida_por": "lector fase2 eje6-academica",
+  "estado_lectura": "completa",
+  "autoridad": "A6",
+  "tipo": "academia",
+  "id": "F-0798",
+  "autor": "Galvis Quintero, D.",
+  "titulo": "¿Puede una sanción de la SIC convertirse en una inhabilidad para contratar con el Estado?",
+  "anio": 2026,
+  "anio_origen": "cuerpo",
+  "institucion": "Universidad Externado de Colombia, Departamento de Derecho de la Empresa y los Mercados (blog Empresa y Mercados, 27-ago-2026)",
+  "url": "https://empresa-mercados-blog.uexternado.edu.co/2026/08/27/puede-una-sancion-de-la-sic-convertirse-en-una-inhabilidad-para-contratar-con-el-estado/",
+  "partes_leidas": [
+    "entrada completa del blog"
+  ],
+  "localizador": "entrada del blog, párrafos 3 y 5",
+  "cita_textual": "la sanción administrativa impuesta por la SIC no genera la inhabilidad de 8 años prevista en el artículo 410A del Código Penal.",
+  "afirmacion": "Según la autora (agosto de 2026) la multa que impone la SIC por colusión en contratación (hasta 100.000 SMMLV a personas jurídicas y hasta 2.000 a personas naturales, según la autora) no genera por sí sola inhabilidad para contratar: esa consecuencia (8 años) solo la prevé el art. 410A para quien es condenado penalmente.",
+  "etapa": "E5",
+  "decision": "D1",
+  "modulo": "M-CONS",
+  "vigencia_verificada": "[sin verificar] — entrada de blog universitario de 2026; el texto del art. 410A se cotejó en F-0799/F-0800, pero las multas de la Ley 1340 de 2009 (arts. 25 y 26) que cita la autora no se abrieron.",
+  "tipo_contrato": "todos",
+  "notas": "Blog de un departamento universitario firmado por una docente: A6, pista hacia la fuente primaria. Útil para el contratista que es socio de un consorcio: una sanción de la SIC al socio no inhabilita por sí sola al consorcio, pero ver F-0801 sobre cláusulas del pliego."
+}

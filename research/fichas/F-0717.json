@@ -1,0 +1,29 @@
+{
+  "id": "F-0717",
+  "tipo": "control",
+  "autor": "Procuraduría General de la Nación",
+  "titulo": "Informe de Gestión al Congreso de la República 2020-2021, principales procesos disciplinarios (pliego con cláusulas restrictivas y un único proponente)",
+  "anio": 2021,
+  "institucion": "Procuraduría General de la Nación",
+  "url": "https://www.procuraduria.gov.co/Documents/Agosto%20de%202023/27_Informe%20Gestion_Congreso%202020-2021.pdf",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "p. 40 del PDF (sección 3.3/3.4 de procesos disciplinarios destacados)"
+  ],
+  "localizador": "p. 40 del PDF (136 páginas), viñeta sobre la Gobernación de Santander",
+  "pagina_pdf": 40,
+  "cita_textual": "se incluyeron cláusulas restrictivas y discriminatorias que limitaron la libre concurrencia de oferentes, lo cual conllevó a que solo se presentara un único proponente, al que se le adjudicó el contrato",
+  "afirmacion": "Entre los casos destacados de 2020-2021, la Procuraduría sancionó con suspensión de 12 meses (convertida en salarios) a un secretario general departamental por participar en la etapa precontractual de una licitación de vigilancia privada (contrato de 849.605.341 pesos) con cláusulas restrictivas que dejaron un único proponente.",
+  "etapa": "E1",
+  "decision": "D3",
+  "modulo": "M-DICT",
+  "autoridad": "A7",
+  "tipo_contrato": "todos",
+  "vigencia_verificada": "[sin verificar] — informe de gestión; la sanción fue modificada en segunda instancia según el mismo texto",
+  "anio_origen": "portada",
+  "cifra_comprobada": "cuadra con el texto: el valor del contrato se transcribe de la viñeta (49.605.341); no hay cálculo derivado.",
+  "notas": "El objeto es vigilancia privada, no obra: se usa solo como precedente de que 'único proponente tras cláusulas restrictivas' tiene sanción disciplinaria para el funcionario. En el mismo texto, el gobernador fue absuelto y la sanción del secretario general se redujo de destitución con inhabilidad general de 10 años a suspensión por 12 meses. El PDF está en dos columnas: la cita se extrajo con pdftotext sin -layout. Se omiten cargos y nombres.",
+  "eje": 6,
+  "leida_por": "lector fase2 eje6-institucional",
+  "fecha_consulta": "2026-10-19"
+}

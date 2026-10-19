@@ -1,0 +1,30 @@
+{
+  "id": "F-1007",
+  "tipo": "academia",
+  "autor": "Daza Gallo, L. E.",
+  "titulo": "Precarización de las condiciones para la participación de microempresas y pequeñas empresas de ingeniería civil en el sector público colombiano",
+  "anio": 2016,
+  "institucion": "Universidad Militar Nueva Granada (Maestría en Gestión de Organizaciones)",
+  "url": "https://repository.umng.edu.co/server/api/core/bitstreams/e712a377-5737-4711-930c-269ee38b48d6/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "localizador": "Cap. 1, p. 16 del PDF",
+  "cita_textual": "la expansión de las Mipyme depende críticamente de la posibilidad de acreditar la experiencia obtenida a través de subcontratación y de poder sumar experiencias en consorcios y uniones temporales",
+  "afirmacion": "Esta tesis (2016) recoge un estudio de ANIF (2013) según el cual la expansión de las micro y pequeñas empresas depende de poder acreditar experiencia por subcontratación y sumarla en consorcios y uniones temporales.",
+  "eje": 8,
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-CONS",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — trabajo académico: lo que afirma sobre la norma es lo que él dice; la norma no se reverificó en esta ficha",
+  "leida_por": "lector fase2 eje8-academica",
+  "tipo_contrato": "obra",
+  "partes_leidas": [
+    "portada",
+    "marco normativo y capítulos 3.2 (búsqueda dirigida por palabras clave: consorcio, rechazo)",
+    "págs. 16, 37, 78 de 149"
+  ],
+  "pagina_pdf": 16,
+  "anio_origen": "portada",
+  "notas": "Es lo que la tesis dice que concluye ANIF (2013): segunda mano; anterior a los documentos tipo y a la reforma de experiencia en consorcios. Reverificar contra el pliego tipo vigente."
+}

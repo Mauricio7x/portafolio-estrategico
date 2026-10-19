@@ -1,0 +1,29 @@
+{
+  "id": "F-1004",
+  "tipo": "academia",
+  "autor": "Pérez Olaya, B. A.",
+  "titulo": "Formulación de una metodología para la optimización de los procesos en la presentación de ofertas de licitación según lineamientos PMI",
+  "anio": 2015,
+  "institucion": "Universidad Militar Nueva Granada (Especialización en Gerencia Integral de Proyectos)",
+  "url": "https://repository.umng.edu.co/server/api/core/bitstreams/9f9f9808-5847-459d-b316-a2c9a50051fb/content",
+  "fecha_consulta": "2026-10-02",
+  "estado_lectura": "parcial",
+  "localizador": "1.2.2, p. 7 del PDF",
+  "cita_textual": "las barreras más comunes son la falta de reconocimiento de los documentos no subsanables, no cumplir con el cronograma que estipula la entidad, el desacierto en los entregables, no lograr alcanzar el puntaje mínimo",
+  "afirmacion": "La autora lista como barreras comunes al presentar una propuesta: no reconocer los documentos no subsanables, incumplir el cronograma de la entidad, errar en los entregables y no alcanzar el puntaje mínimo (2015).",
+  "eje": 8,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-VIGIA",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — trabajo académico: lo que afirma sobre la norma es lo que él dice; la norma no se reverificó en esta ficha",
+  "leida_por": "lector fase2 eje8-academica",
+  "tipo_contrato": "todos",
+  "partes_leidas": [
+    "resumen",
+    "introducción",
+    "1.1 a 1.4.1 (regulación, problemática, EDT, definición de actividades)"
+  ],
+  "pagina_pdf": 7,
+  "anio_origen": "portada"
+}

@@ -1,0 +1,26 @@
+{
+  "id": "F-0703",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 2020 de 2020 (Registro Nacional de Obras Civiles Inconclusas), definición de obra inconclusa",
+  "anio": 2020,
+  "institucion": "Congreso de la República (texto servido por la Relatoría de Colombia Compra Eficiente)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/ley-2020-de-2020",
+  "estado_lectura": "completa",
+  "localizador": "art. 2 literal a); art. 4 literales c) y o)",
+  "cita_textual": "que un (1) año después de vencido el término de liquidación contractual, no haya concluido de manera satisfactoria para el interés general o el definido por la entidad estatal contratante, o no esté prestando el servicio para el cual fue contratada",
+  "afirmacion": "Una obra es 'inconclusa' si un año después de vencido el término de liquidación contractual no ha concluido satisfactoriamente o no presta el servicio; si la causa no es imputable al contratista, un comité técnico de la entidad decide si lo es (texto de 17-jul-2020).",
+  "etapa": "E5",
+  "decision": "D4",
+  "modulo": "M-NUEVO",
+  "autoridad": "A1",
+  "tipo_contrato": "obra",
+  "vigencia_verificada": "[sin verificar] — texto original sin notas de vigencia; ver F-0702 para la búsqueda de reformas.",
+  "reformas_cotejadas": [
+    "Búsqueda en relatoría normativa 'obras inconclusas' (19-oct-2026): no se encontró norma modificatoria"
+  ],
+  "notas": "El inciso siguiente del literal a) dice: 'Cuando la obra civil no haya concluido de manera satisfactoria por causas que no sean imputables al contratista, un comité técnico, designado por el representante legal de la entidad contratante, definirá si efectivamente corresponde a una obra civil inconclusa.' El art. 4 c) y o) obligan a registrar la identificación de contratistas, consultores e interventores y los actos que declaren incumplimiento o caducidad.",
+  "eje": 6,
+  "leida_por": "lector fase2 eje6-institucional",
+  "fecha_consulta": "2026-10-19"
+}

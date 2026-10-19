@@ -1,0 +1,29 @@
+{
+  "id": "F-0715",
+  "tipo": "internacional",
+  "autor": "Banco Mundial / Open Contracting Partnership (caso de estudio sobre Colombia)",
+  "titulo": "Open Contracting Reforms in Colombia (caso de estudio, enero de 2021): INVIAS y licitaciones de un solo oferente",
+  "anio": 2021,
+  "institucion": "Banco Mundial",
+  "url": "https://thedocs.worldbank.org/en/doc/406451611783796514-0090022021/original/OpenContractingReformsinColombia.pdf",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "pp. 4-5 (resultados iniciales)"
+  ],
+  "localizador": "p. 4 del PDF, sección «Reflections», viñeta sobre INVIAS",
+  "pagina_pdf": 4,
+  "cita_textual": "INVIAS, the public roads agency, has seen a decrease in single bid tenders from 30 percent to 22 percent on its approximately 900 tenders yearly since the introduction of SECOP II.",
+  "afirmacion": "El caso de estudio de enero de 2021 reporta que en el INVIAS los procesos de un solo oferente bajaron de 30 % a 22 % (unos 900 procesos al año) tras SECOP II, y que los de un oferente cuestan 7 % más que los de dos o más (estimación citada, no calculada por los autores en el texto).",
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-INT",
+  "autoridad": "A6",
+  "tipo_contrato": "obra",
+  "vigencia_verificada": "[sin verificar] — cifras de 2018-2020 reportadas por terceros en un caso de estudio",
+  "anio_origen": "cuerpo",
+  "cifra_comprobada": "no recalculable: no se da el periodo exacto de la medición de 30 % y 22 % ni el número de procesos por año con un solo oferente (22 % de unos 900 serían unos 200). Mismo texto: la mediana de oferentes subió de cinco a nueve y el uso de licitación para obra pública de 6 % a 9 % (2018 a 2019).",
+  "notas": "La frase sobre el costo dice textualmente: 'Single-bid contracts are estimated to be seven percent more expensive than contracts with two or more bidders' (p. 4); la fuente de ese 7 % está en notas del documento y no se siguió. Sirve de punto de comparación para medir con los datos abiertos de SECOP II la proporción de procesos de un solo oferente por entidad, hoy.",
+  "eje": 6,
+  "leida_por": "lector fase2 eje6-institucional",
+  "fecha_consulta": "2026-10-19"
+}

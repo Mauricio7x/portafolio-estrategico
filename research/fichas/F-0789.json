@@ -1,0 +1,30 @@
+{
+  "eje": 6,
+  "fecha_consulta": "2026-10-19",
+  "leida_por": "lector fase2 eje6-academica",
+  "estado_lectura": "parcial",
+  "autoridad": "A6",
+  "tipo": "academia",
+  "autor": "Matallana Camacho, E.",
+  "titulo": "El principio de proporcionalidad en la contratación estatal: el interés general, la libre competencia económica y el principio de proporcionalidad como categorías jurídicas vinculantes a la Administración Pública en su competencia discrecional para seleccionar al contratista cuando se trata de la licitación pública (tesis doctoral)",
+  "anio": 2019,
+  "anio_origen": "portada",
+  "institucion": "Universidad Externado de Colombia, Facultad de Derecho, Doctorado en Derecho",
+  "url": "https://matallanaabogadosconsultores.com/wp-content/uploads/2020/04/TESIS-EL-PRINCIPIO-DE-PROPORCIONALIDAD-EN-LOS-CONTRATOS-ESTATALES-VF-21072019.pdf",
+  "partes_leidas": [
+    "pp. 14-15",
+    "pp. 436-440 (análisis de casos y conclusiones)"
+  ],
+  "id": "F-0789",
+  "localizador": "cap. de introducción, p. 15 (pdf = impresa)",
+  "pagina_pdf": 15,
+  "cita_textual": "sostiene que el 65% de los procesos licitatorios abiertos en los municipios del país durante 2014 terminó favoreciendo una única oferta. Señala que en Bogotá el 58% de la contratación de los alcaldes locales terminó con una sola propuesta.",
+  "afirmacion": "La tesis (2019) recoge, citando un estudio del Observatorio de Contratación de la Cámara Colombiana de la Infraestructura, que el 65 % de los procesos licitatorios abiertos por municipios en 2014 terminó con una única oferta y que en Bogotá el 58 % de la contratación de alcaldías locales terminó con una sola propuesta.",
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-TARJ",
+  "vigencia_verificada": "[sin verificar] — dato empírico de una tesis de 2019 sobre licitaciones de 2012-2016; no es una norma, no aplica vigencia normativa.",
+  "tipo_contrato": "todos",
+  "cifra_comprobada": "no recalculable: la tesis cita la cifra sin denominador ni definición de universo; el estudio primario de la CCI no se abrió.",
+  "notas": "Cifra de segunda mano (la tesis cita a la CCI). Sirve como pista de magnitud histórica (2014) del fenómeno de oferta única en municipios; no como cifra actual. Contrastar con datos abiertos de SECOP II antes de usarla."
+}

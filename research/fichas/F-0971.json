@@ -1,0 +1,29 @@
+{
+  "id": "F-0971",
+  "fecha_consulta": "2026-10-02",
+  "leida_por": "lector fase2 eje8-institucional",
+  "eje": 8,
+  "tipo": "doc_tipo",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Documentos tipo de licitación de obra pública de infraestructura de transporte, versión 3 (documento base y formatos)",
+  "anio": 2021,
+  "institucion": "Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2026/04/01DTipo_InfraestructuraTransporteLicitacionPublicaV3_01112021.zip",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "Documento base: numerales de visita, carta de presentación, oferta económica y análisis de precios unitarios",
+    "Formato 1",
+    "Formato 6"
+  ],
+  "anio_origen": "cuerpo",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-F1",
+  "autoridad": "A3",
+  "tipo_contrato": "obra",
+  "vigencia_verificada": "[sin verificar] — es la versión 3 (vigencia desde 28-06-2021 según el nombre de la carpeta); el encargo del eje 9 menciona una versión 4 del documento base: reverificar contra la vigente",
+  "notas": "Error típico: carta firmada por un administrador no ingeniero sin el aval. Archivo .docx dentro de un .zip; sin páginas, el localizador es el numeral. El texto se extrajo del XML del .docx.",
+  "cita_textual": "si el representante legal o apoderado del proponente individual persona jurídica o el representante legal o apoderado de la estructura plural, no posee título de una de las profesiones catalogadas como ejercicio de la ingeniería, la oferta debe ser avalada por un ingeniero",
+  "localizador": "Documento base v3, sección «Carta de presentación de la oferta», párrafo 3",
+  "afirmacion": "Si quien firma la oferta no es ingeniero, la oferta de obra debe llevar el aval de un ingeniero con tarjeta profesional y certificado de vigencia del Copnia (o del consejo de transportes y vías), vigentes a la fecha de cierre; el aval hace parte del Formato 1 (v3, 2021)."
+}

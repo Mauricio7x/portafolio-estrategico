@@ -1,0 +1,26 @@
+{
+  "id": "F-0702",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 2020 de 2020, por medio de la cual se crea el Registro Nacional de Obras Civiles Inconclusas de las entidades estatales",
+  "anio": 2020,
+  "institucion": "Congreso de la República (texto servido por la Relatoría de Colombia Compra Eficiente)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/ley-2020-de-2020",
+  "estado_lectura": "completa",
+  "localizador": "art. 6 (Actuaciones)",
+  "cita_textual": "Durante los procesos de selección objetiva para contratistas de obra o interventores, se tendrán en cuenta las anotaciones vigentes en el Registro Nacional de Obras Civiles Inconclusas al momento de evaluar los factores de ponderación de calidad",
+  "afirmacion": "En los procesos de contratación de obra pública, sin importar la cuantía, la entidad debe consultar las anotaciones vigentes de cada persona en el Registro Nacional de Obras Civiles Inconclusas y tenerlas en cuenta en los factores de ponderación de calidad (texto de 17-jul-2020).",
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-NUEVO",
+  "autoridad": "A1",
+  "tipo_contrato": "todos",
+  "vigencia_verificada": "[sin verificar] — la Relatoría sirve el texto original sin notas de vigencia; en la búsqueda de la relatoría (wp-json normativa) no apareció norma que lo modifique, pero no se abrió un texto consolidado. El art. 6 remite al literal a) del art. 5 de la Ley 1150 de 2007 'o la norma que la modifique' y esa remisión no se cotejó.",
+  "reformas_cotejadas": [
+    "Búsqueda en relatoría normativa 'obras inconclusas' (19-oct-2026): solo devuelve la Ley 2020 de 2020; no se encontró norma modificatoria, sin abrir texto consolidado"
+  ],
+  "notas": "Dos fuentes cruzadas: la anotación en el registro afecta al contratista y al interventor (art. 6 dice 'contratistas de obra o interventores'). El art. 4 literal c) hace que el registro identifique a contratistas, consultores e interventores que intervinieron, y el literal o) incorpora los actos que declaran incumplimiento o caducidad. La página de la relatoría enlaza el concepto C-1642 de 2025, que se abrió y trata de documentos tipo de interventoría de agua potable, no de este registro.",
+  "eje": 6,
+  "leida_por": "lector fase2 eje6-institucional",
+  "fecha_consulta": "2026-10-19"
+}

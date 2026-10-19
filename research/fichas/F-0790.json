@@ -1,0 +1,30 @@
+{
+  "eje": 6,
+  "fecha_consulta": "2026-10-19",
+  "leida_por": "lector fase2 eje6-academica",
+  "estado_lectura": "parcial",
+  "autoridad": "A6",
+  "tipo": "academia",
+  "autor": "Matallana Camacho, E.",
+  "titulo": "El principio de proporcionalidad en la contratación estatal: el interés general, la libre competencia económica y el principio de proporcionalidad como categorías jurídicas vinculantes a la Administración Pública en su competencia discrecional para seleccionar al contratista cuando se trata de la licitación pública (tesis doctoral)",
+  "anio": 2019,
+  "anio_origen": "portada",
+  "institucion": "Universidad Externado de Colombia, Facultad de Derecho, Doctorado en Derecho",
+  "url": "https://matallanaabogadosconsultores.com/wp-content/uploads/2020/04/TESIS-EL-PRINCIPIO-DE-PROPORCIONALIDAD-EN-LOS-CONTRATOS-ESTATALES-VF-21072019.pdf",
+  "partes_leidas": [
+    "pp. 14-15",
+    "pp. 436-440 (análisis de casos y conclusiones)"
+  ],
+  "id": "F-0790",
+  "localizador": "cap. de introducción, p. 14 (pdf = impresa)",
+  "pagina_pdf": 14,
+  "cita_textual": "de 1.122 municipios de Colombia, sólo cinco muestran que sus licitaciones públicas reciben más de diez oferentes. […] de las 1.106 licitaciones abiertas en 2014 por los municipios, en promedio se presentaron tres o menos ofertas.",
+  "afirmacion": "Según una nota de prensa de 2015 que la tesis (2019) recoge, de 1.122 municipios solo cinco recibían más de diez oferentes por licitación, y en las 1.106 licitaciones municipales abiertas en 2014 se presentaron en promedio tres o menos ofertas.",
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-TARJ",
+  "vigencia_verificada": "[sin verificar] — dato empírico de una tesis de 2019 sobre licitaciones de 2012-2016; no es una norma, no aplica vigencia normativa.",
+  "tipo_contrato": "todos",
+  "cifra_comprobada": "no recalculable: cifra de prensa citada por la tesis (diario El País, 18-abr-2015, según la tesis); sin base de datos.",
+  "notas": "Fuente de tercera mano (prensa citada en tesis). Pista, no evidencia."
+}
