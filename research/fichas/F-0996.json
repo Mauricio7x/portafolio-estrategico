@@ -1,0 +1,35 @@
+{
+  "id": "F-0996",
+  "tipo": "doc_tipo",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Documento base — Consultoría de estudios de ingeniería de infraestructura social (concurso de méritos abierto): causales de rechazo sobre el RUP",
+  "anio": 2025,
+  "anio_origen": "fecha de carga en la API de medios (2025-12-30) y cuerpo: cita la Resolución 952 de 2025",
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2025/12/Documento-base-consultoria-de-estudios-de-ingenieria-de-Infraestructura-Social.docx",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "introducción",
+    "1.6",
+    "1.15",
+    "1.18",
+    "2.1 a 2.7"
+  ],
+  "localizador": "numeral 1.15 «Causales de rechazo» (numeración tomada del índice del documento)",
+  "cita_textual": "Que la inscripción en el Registro Único de Proponentes (RUP) que realice el Proponente por primera vez o cuando han cesado los efectos y debe volver a inscribirse, no esté en firme en la fecha prevista para el cierre del Proceso de Contratación.",
+  "afirmacion": "Para consultoría en concurso de méritos con documento tipo, la oferta se rechaza si la inscripción nueva (o la reinscripción) en el RUP no está en firme a la fecha de cierre.",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-RUP",
+  "autoridad": "A3",
+  "tipo_contrato": "consultoria",
+  "vigencia_verificada": "[sin verificar] — documento tipo cargado el 2025-12-30 (API de medios de Colombia Compra); no se abrió la resolución que lo adopta (el propio documento cita la Resolución 952 de 2025) ni se confirmó que sea la versión vigente: la API lista una «versión para comentarios» de consultoría subida el 2026-09-22 que no se abrió",
+  "reformas_cotejadas": [
+    "Decreto 0997 de 2026 art. 14 parágrafo 3 — los procesos con Documentos Tipo siguen con el documento vigente hasta que Colombia Compra lo actualice (ver F-0985)",
+    "Decreto 399 de 2021 art. 2 — concurso de méritos: informe de 3 días hábiles, coincide con la sección 2.6 del documento (ver F-0987)"
+  ],
+  "notas": "Causal contigua en el mismo numeral: «Que el Proponente no acredite la presentación de la información para renovar el Registro Único de Proponentes (RUP), a más tardar el quinto día hábil del mes de abril de cada año, o en la fecha que establezca la ley o el reglamento» (coincide con Decreto 1082 art. 2.2.1.1.1.5.1, F-0986). Para quien parte de cero: la fecha límite para tener el RUP en firme es el CIERRE, no la adjudicación; la inscripción la hace la cámara de comercio (Ley 1150 art. 6, leída en F-0978) y la firmeza se mide en el certificado, no en los datos abiertos del proceso. La tabla de contenido numera 1.15 pero el texto extraído del .docx no trae los números: la ubicación se hizo por el índice.",
+  "eje": 8,
+  "leida_por": "lector fase2 eje8-institucional",
+  "fecha_consulta": "2026-10-19"
+}

@@ -1,0 +1,32 @@
+{
+  "tipo": "academia",
+  "autor": "Monroy Maldonado, E. L.",
+  "titulo": "Formulación de una metodología para la presentación de licitaciones mediante los lineamientos del PMI",
+  "anio": 2015,
+  "institucion": "Universidad Militar Nueva Granada (trabajo de grado, Especialización en Gerencia Integral de Proyectos)",
+  "url": "https://repository.umng.edu.co/server/api/core/bitstreams/f042a76f-0b0e-4116-9c2a-0a98f46e32d9/content",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "1.3 gestión del tiempo",
+    "2 resultados",
+    "anexos B y D (lista de actividades y duraciones)"
+  ],
+  "anio_origen": "portada",
+  "tipo_contrato": "todos",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-NUEVO",
+  "autoridad": "A6",
+  "localizador": "Anexo D, duración y holgura total, p. 28 del PDF",
+  "pagina_pdf": 28,
+  "cita_textual": "0 PRESENTACIÓN LICITACIÓN 112 horas",
+  "afirmacion": "El modelo de programación de la tesis (2015) estima en 112 horas el esfuerzo total de presentar una licitación para una firma de consultoría de construcción.",
+  "cifra_comprobada": "No recalculable: el texto leído da el total de 112 horas pero la extracción de la tabla de duraciones no permite sumar las tareas una a una; no se repite el desglose.",
+  "vigencia_verificada": "[sin verificar] — estimación de un ejemplo de 2015 para una firma de consultoría, no una medición; reverificar",
+  "notas": "Es una duración planificada del autor, no observada en procesos reales.",
+  "id": "F-1039",
+  "eje": 8,
+  "fecha_consulta": "2026-10-19",
+  "leida_por": "lector fase2 eje8-academica"
+}

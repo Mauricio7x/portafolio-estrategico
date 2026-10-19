@@ -1,0 +1,30 @@
+{
+  "tipo": "academia",
+  "autor": "Maestre Orduña, S. C.",
+  "titulo": "Apoyo en la implementación del sistema de calidad en gerencia de proyectos con énfasis en formulación y presentación de procesos licitatorios",
+  "anio": 2018,
+  "institucion": "Universidad Pontificia Bolivariana, Bucaramanga (trabajo de grado, práctica empresarial, Ingeniería Civil)",
+  "url": "https://repository.upb.edu.co/server/api/core/bitstreams/6ca6e8c8-c9fe-4062-8d5f-9b2a236c7389/content",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "indicadores de cumplimiento y conclusiones (págs. 55-66)",
+    "informes de procesos presentados en el anexo (casos citados)"
+  ],
+  "anio_origen": "portada",
+  "tipo_contrato": "obra",
+  "localizador": "informe del proceso FDLE-LP-230-2018 (anexo), p. 81 del PDF",
+  "pagina_pdf": 81,
+  "cita_textual": "Para la fecha del cierre del proceso no se contaba con la garantía de seriedad de la oferta, ya que la aseguradora no se comprometió a expedirla. Razón suficiente para no presentar la oferta a la entidad contratante, ya que este no es un documento subsanable",
+  "afirmacion": "En una licitación de obra de 2018 la firma no presentó oferta porque la aseguradora no expidió la garantía de seriedad antes del cierre; el autor recomienda asegurar con la aseguradora la expedición antes de armar la oferta, porque no en todos los casos ocurre (p. 62), y en otro caso (p. 168) la póliza no se aprobó por el riesgo del lugar de la obra.",
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-DICT",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — práctica de 2018; lo que dice de la norma es lo que él dice; reverificar",
+  "notas": "Dos casos del mismo trabajo (p. 81 y p. 168) más la recomendación de la p. 62; el texto no da el valor de la póliza.",
+  "id": "F-1033",
+  "eje": 8,
+  "fecha_consulta": "2026-10-19",
+  "leida_por": "lector fase2 eje8-academica"
+}

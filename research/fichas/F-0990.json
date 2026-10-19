@@ -1,0 +1,27 @@
+{
+  "id": "F-0990",
+  "tipo": "cce_concepto",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Concepto C-1238 de 2026 — garantía de seriedad de la oferta: quién es el tomador de la póliza",
+  "anio": 2026,
+  "anio_origen": "detalle del documento en la relatoría: fecha 15/09/2026",
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente (relatoría)",
+  "url": "https://relatoria.colombiacompra.gov.co/conceptos/c-1238-de-2026/",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "extracto publicado en la relatoría (secciones sobre garantías y seriedad de la oferta)"
+  ],
+  "localizador": "extracto «SERIEDAD DE LA OFERTA – Contrato de seguros – Apoderado»",
+  "cita_textual": "quien debe fungir como tomador de la póliza debe ser el proponente, independientemente de que la oferta sea presentada a través de un apoderado",
+  "afirmacion": "El tomador de la póliza de seriedad debe ser el proponente, aunque la oferta la firme un apoderado; el apoderado actúa en nombre del proponente y no asume las obligaciones de la oferta.",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-DICT",
+  "autoridad": "A5",
+  "tipo_contrato": "todos",
+  "vigencia_verificada": "[sin verificar] — concepto de Colombia Compra, no vinculante, del 15-sep-2026; no se buscó concepto posterior que lo modifique",
+  "notas": "La fuente es el extracto que publica la relatoría, no el oficio completo. Mismo extracto: la póliza es una de tres formas de garantía a elección del oferente (contrato de seguro, fiducia mercantil de garantía, garantía bancaria o carta de crédito stand by) y su suficiencia y vigencia están en los arts. 2.2.1.2.3.1.9 a 2.2.1.2.3.1.16 del Decreto 1082. Error típico que previene: póliza con el nombre del apoderado o del representante como tomador.",
+  "eje": 8,
+  "leida_por": "lector fase2 eje8-institucional",
+  "fecha_consulta": "2026-10-19"
+}

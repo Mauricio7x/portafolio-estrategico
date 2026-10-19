@@ -1,0 +1,30 @@
+{
+  "tipo": "academia",
+  "autor": "Maestre Orduña, S. C.",
+  "titulo": "Apoyo en la implementación del sistema de calidad en gerencia de proyectos con énfasis en formulación y presentación de procesos licitatorios",
+  "anio": 2018,
+  "institucion": "Universidad Pontificia Bolivariana, Bucaramanga (trabajo de grado, práctica empresarial, Ingeniería Civil)",
+  "url": "https://repository.upb.edu.co/server/api/core/bitstreams/6ca6e8c8-c9fe-4062-8d5f-9b2a236c7389/content",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "indicadores de cumplimiento y conclusiones (págs. 55-66)",
+    "informes de procesos presentados en el anexo (casos citados)"
+  ],
+  "anio_origen": "portada",
+  "tipo_contrato": "obra",
+  "localizador": "informe del proceso LP-012-2018 (anexo), p. 103 del PDF (impresa 37 del anexo)",
+  "pagina_pdf": 103,
+  "cita_textual": "no se corroboraron todos los mensajes de la entidad si no los documentos del proceso, sin caer en cuenta que en un mensaje publico presentaban el valor propuesto del PMT y del PAGA, montos que por no ser verificados se superaron y fueron causal de rechazo para la oferta",
+  "afirmacion": "En una licitación de 2018 con documentos en SECOP II y oferta económica radicada en el sitio indicado por el pliego, la firma no leyó un mensaje público de la entidad con los valores de dos rubros (PMT y PAGA), los superó y fue rechazada (según el autor).",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-VIGIA",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — caso de 2018; reverificar",
+  "notas": "El texto no explica qué son PMT y PAGA más allá de rubros con tope de la oferta económica. Un caso. Muestra el riesgo de revisar solo los documentos y no los mensajes del proceso.",
+  "id": "F-1035",
+  "eje": 8,
+  "fecha_consulta": "2026-10-19",
+  "leida_por": "lector fase2 eje8-academica"
+}

@@ -1,0 +1,31 @@
+{
+  "tipo": "academia",
+  "autor": "Maestre Orduña, S. C.",
+  "titulo": "Apoyo en la implementación del sistema de calidad en gerencia de proyectos con énfasis en formulación y presentación de procesos licitatorios",
+  "anio": 2018,
+  "institucion": "Universidad Pontificia Bolivariana, Bucaramanga (trabajo de grado, práctica empresarial, Ingeniería Civil)",
+  "url": "https://repository.upb.edu.co/server/api/core/bitstreams/6ca6e8c8-c9fe-4062-8d5f-9b2a236c7389/content",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "indicadores de cumplimiento y conclusiones (págs. 55-66)",
+    "informes de procesos presentados en el anexo (casos citados)"
+  ],
+  "anio_origen": "portada",
+  "tipo_contrato": "obra",
+  "localizador": "Indicadores de cumplimiento, pp. 56-57 del PDF",
+  "pagina_pdf": 56,
+  "cita_textual": "De Setenta y dos (72) licitaciones presentadas, quedamos hábiles en cincuenta y uno (51), lo que nos indica un 70.8% de cumplimiento […] La empresa quedo No habilitada / rechazada en trece (13) de estos contratos, otorgando un indicador de rechazo del 18.05%",
+  "afirmacion": "Una firma de ingeniería de Bucaramanga que presentó 72 propuestas (la mayoría licitaciones de obra, 2018) quedó hábil en 51 (70,8 %), rechazada o no habilitada en 13 (18,05 %) y ganó 8 (11,11 %); el autor fija como meta 0 % de rechazo.",
+  "cifra_comprobada": "Cuadra en parte: 51/72 = 70,83 %; 8/72 = 11,11 %; 13/72 = 18,06 % (el texto da 18,05 %). No cuadra el texto en un punto: el párrafo que sigue al indicador de rechazo dice que «se obtuvo un indicador del 11,11 %», que es el de adjudicación. Se repite 13 de 72 como dato del autor, no como tasa de la población.",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-DICT",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — práctica de 2018 bajo el Decreto 1082 de 2015 antes de los documentos tipo obligatorios y de la Ley 1882 de 2018 en sus efectos; lo que dice de la norma es lo que él dice; anterior a la reforma; reverificar",
+  "notas": "Muestra de una sola firma, sin garantía de ser representativa. El texto no desglosa las 13 por causa.",
+  "id": "F-1031",
+  "eje": 8,
+  "fecha_consulta": "2026-10-19",
+  "leida_por": "lector fase2 eje8-academica"
+}

@@ -1,0 +1,27 @@
+{
+  "id": "F-0994",
+  "tipo": "doc_tipo",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Anexo 4 — Pacto de Transparencia (Documentos Tipo de infraestructura social, cargado 2025-12-30)",
+  "anio": 2025,
+  "anio_origen": "fecha de carga en la API de medios de Colombia Compra (2025-12-30); el documento no trae fecha",
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2025/12/Anexo-4-Pacto-de-Transparencia-Infraestructura-Social.docx",
+  "estado_lectura": "completa",
+  "localizador": "encabezado del Anexo 4 (párrafo inicial)",
+  "cita_textual": "Este documento hace parte integral de los Documentos del Proceso y con la firma de la carta de presentación de la propuesta el Proponente se compromete a:",
+  "afirmacion": "En los Documentos Tipo de infraestructura social el compromiso anticorrupción es el Pacto de Transparencia (Anexo 4): no se firma aparte, queda aceptado con la firma de la carta de presentación de la oferta.",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-F1",
+  "autoridad": "A3",
+  "tipo_contrato": "todos",
+  "vigencia_verificada": "[sin verificar] — el documento tipo puede ser reemplazado cuando Colombia Compra lo actualice por el Decreto 0997 de 2026 (F-0985); no se abrió la resolución que lo adopta",
+  "reformas_cotejadas": [
+    "Decreto 0997 de 2026 art. 14 parágrafo 3 — los procesos con Documentos Tipo siguen con este instrumento hasta nueva versión (F-0985)"
+  ],
+  "notas": "Compromisos que más afectan a quien parte de cero (mismo anexo): enviar por escrito todas las preguntas y no hacerlo de forma oral, salvo en audiencias («Enviar por escrito a la Entidad todas las preguntas o inquietudes que surjan durante el Proceso de Contratación y no hacerlo de manera oral por ningún medio, salvo que se realicen dentro de las audiencias públicas»); no hacer acuerdos que distribuyan adjudicaciones ni fijen términos de las propuestas; presentar las observaciones solo en los plazos del pliego; no ofrecer trabajo a funcionarios o sus familiares desde la adjudicación y hasta dos años después de firmado el contrato. El Formato 1 (carta de presentación) del mismo juego, versión de interventoría social, incluye bajo juramento: «Conozco el Anexo 4 denominado “Pacto de Transparencia” relacionado en el Pliego de Condiciones y me comprometo a darle estricto cumplimiento» y «Al momento de la presentación de la oferta ni mis representados ni yo nos encontramos incursos en alguna de las causales de rechazo señaladas en la sección 1.15 del Documento Base» (Formato-1-Carta-de-presentacion-de-la-oferta-Infraestructura-Social.docx, abierto completo). El anexo está en el juego de «infraestructura social»; se asume igual para obra, interventoría y consultoría de ese juego, sin haber abierto el documento base de obra social.",
+  "eje": 8,
+  "leida_por": "lector fase2 eje8-institucional",
+  "fecha_consulta": "2026-10-19"
+}

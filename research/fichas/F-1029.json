@@ -1,0 +1,32 @@
+{
+  "tipo": "academia",
+  "autor": "Calderón Jiménez, M. C.",
+  "titulo": "Auxiliar de ingeniería en la búsqueda, preparación y presentación de procesos de contratación estatal",
+  "anio": 2021,
+  "institucion": "Universidad Pontificia Bolivariana (trabajo de grado, práctica empresarial, Ingeniería Civil)",
+  "url": "https://repository.upb.edu.co/server/api/core/bitstreams/c9c1bba2-a1af-4c7a-baef-6c46c07c3167/content",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "6.2 a 6.6 (búsqueda, manifestación de interés, lista de chequeo, preparación, entrega, subsanación, adjudicación)",
+    "7 aporte al conocimiento",
+    "8 conclusiones"
+  ],
+  "anio_origen": "portada",
+  "tipo_contrato": "obra",
+  "localizador": "6.6.1.4 Verificación del puntaje, p. 54 del PDF",
+  "pagina_pdf": 54,
+  "cita_textual": "con una oferta del 94.71% del Presupuesto oficial. Conforme con el resultado obtenido, en el orden de elegibilidad emitido por la entidad, la empresa quedo en la posición N4, con un puntaje del 99,1879100 y con una oferta del 94.8% con respecto al presupuesto oficial",
+  "afirmacion": "En una licitación de obra de 2021 con 23 ofertas el ganador ofertó 94,71 % del presupuesto oficial (puntaje 99,2559) y la firma del informe quedó cuarta con 94,8 % (99,1879): la diferencia de precio fue de 0,09 puntos porcentuales del presupuesto.",
+  "cifra_comprobada": "Cuadra en la resta: 94,8 - 94,71 = 0,09 puntos porcentuales; 99,2558957 - 99,1879100 = 0,0680. No recalculable: el método (menor valor con TRM, según el autor) no permite reproducir el puntaje con los datos del texto.",
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-PRECIO",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — caso de 2021 bajo documentos tipo versión 3 y el método de ponderación de esa época; la Resolución 161 de 2021 cambió métodos según otro trabajo; reverificar",
+  "notas": "El propio autor concluye que ganar es en buena parte «factor de suerte» según el método de evaluación y recomienda simular con estadística de procesos similares; es opinión del autor, no medición. Las 23 ofertas recibidas constan en el apartado 6.6.1, p. 51 del PDF.",
+  "id": "F-1029",
+  "eje": 8,
+  "fecha_consulta": "2026-10-19",
+  "leida_por": "lector fase2 eje8-academica"
+}

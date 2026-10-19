@@ -1,0 +1,30 @@
+{
+  "id": "F-0989",
+  "tipo": "cce_guia",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Guía para la Exigencia y Constitución de Garantías en los Procesos de Contratación (2026)",
+  "anio": 2026,
+  "anio_origen": "portada («2026») y metadatos del PDF (creación 26-ago-2026)",
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2024/08/Guia-Para-La-Exigencia-Y-Constitucion-De-Garantias-En-Los-Procesos-De-Contratacion-OrigFirmado-1.pdf",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "pp. 1-2",
+    "pp. 37-41 (sección 7.1 Garantía de seriedad de la oferta)"
+  ],
+  "localizador": "sección 7.1.2 «Suficiencia y Vigencia», p. 40 (impresa 40)",
+  "pagina_pdf": 40,
+  "cita_textual": "si durante el proceso de selección se presentan modificaciones al cronograma, como por ejemplo la ampliación del plazo para la presentación de ofertas, la garantía de seriedad de la oferta debe actualizarse para reflejar esos cambios.",
+  "afirmacion": "Si la entidad prorroga el cierre o cambia el cronograma, el oferente debe actualizar la póliza de seriedad para que cubra el nuevo plazo (guía de 2026).",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-DICT",
+  "autoridad": "A3",
+  "tipo_contrato": "todos",
+  "vigencia_verificada": "[sin verificar] — guía de 2026 sin texto consolidado de la norma; la norma que describe (Decreto 1082, art. 2.2.1.2.3.1.6 y 2.2.1.2.3.1.9) se leyó en F-0982",
+  "cifra_comprobada": "cuadra: la misma página dice que el valor no puede ser inferior al 10 % del monto de la oferta, igual al decreto (F-0982)",
+  "notas": "Misma guía, p. 38 (tabla 3): «La no entrega de la garantía de seriedad junto con la propuesta no es subsanable y es causal de rechazo de esta.» (coincide con la Ley 1150 art. 5 par. 3, F-0978). P. 40 también dice que la entidad puede exigir más del 10 % «previo análisis de la particularidad del proceso». La guía de SECOP II de 2020 trata el caso de la adenda a la garantía hecha por la entidad (F-0943); lo que cambia aquí es que la guía de 2026 pone la carga de actualizar la póliza tras un cambio de cronograma en el oferente. Datos abiertos: las adendas de ampliación de plazo existen como documentos de los procesos; saber si el oferente actualizó la póliza no es detectable.",
+  "eje": 8,
+  "leida_por": "lector fase2 eje8-institucional",
+  "fecha_consulta": "2026-10-19"
+}

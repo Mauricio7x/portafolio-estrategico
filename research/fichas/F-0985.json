@@ -1,0 +1,33 @@
+{
+  "id": "F-0985",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República",
+  "titulo": "Decreto 0997 de 2026, art. 14 parágrafos 1 y 3: procesos con Documentos Tipo siguen con las reglas anteriores",
+  "anio": 2026,
+  "anio_origen": "cuerpo (Decreto 0997 de 2026)",
+  "institucion": "Departamento Nacional de Planeación (relatoría de Colombia Compra)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "art. 14"
+  ],
+  "localizador": "art. 14, parágrafo 3 (y parágrafo 1)",
+  "cita_textual": "Los Procesos de Contratación que se rijan por los Documento Tipo continuarán aplicando estos instrumentos y las normas vigentes anteriores a la expedición de este Decreto.",
+  "afirmacion": "Los procesos de obra, interventoría y consultoría que usan Documentos Tipo no cambian por el Decreto 0997 de 2026 hasta que Colombia Compra expida las nuevas versiones; el compromiso anticorrupción que hoy se firma en ellos sigue siendo el de la versión vigente.",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-DICT",
+  "autoridad": "A2",
+  "tipo_contrato": "todos",
+  "vigencia_verificada": {
+    "fecha": "2026-10-19",
+    "fuente": "https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/"
+  },
+  "reformas_cotejadas": [
+    "Sin norma posterior abierta; ABC del Decreto 0997 (Colombia Compra, 2026), p. 15, lo confirma pero es guía"
+  ],
+  "notas": "Texto literal del parágrafo 3 incluye la errata «Documento Tipo». Continúa: «…hasta que la Agencia … expida las modificaciones o nuevas versiones a las que haya lugar … En este supuesto no son aplicables las reglas de gradualidad». El parágrafo 1 dice que el decreto aplica a procesos cuyo aviso se publique después de entrar en vigencia las reglas. Para Detekta: el pliego tipo sigue mandando; hay que mirar el pliego del proceso concreto, no el decreto. Consulta a la API de medios de Colombia Compra el 19-oct-2026: hay una «versión para comentarios» de consultoría subida el 2026-09-22 (no abierta).",
+  "eje": 8,
+  "leida_por": "lector fase2 eje8-institucional",
+  "fecha_consulta": "2026-10-19"
+}

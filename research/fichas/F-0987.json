@@ -1,0 +1,37 @@
+{
+  "id": "F-0987",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República",
+  "titulo": "Decreto 399 de 2021, art. 2 (reemplaza el art. 2.2.1.2.1.3.2 del Decreto 1082): procedimiento del concurso de méritos",
+  "anio": 2021,
+  "anio_origen": "cuerpo (Decreto 399 de 2021, 13-abr-2021 según la relatoría)",
+  "institucion": "Departamento Nacional de Planeación (relatoría de Colombia Compra)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/decreto-399-de-2021/",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "considerandos",
+    "art. 2",
+    "art. 7"
+  ],
+  "localizador": "art. 2 (nuevo texto del art. 2.2.1.2.1.3.2), numeral 2; considerandos sobre la suspensión provisional",
+  "cita_textual": "La Entidad Estatal debe publicar durante tres (3) días hábiles el informe de evaluación, el cual debe contener la evaluación de las ofertas frente a todos los requisitos exigidos en el pliego de condiciones, incluyendo los requisitos habilitantes y los de asignación de puntaje.",
+  "afirmacion": "En el concurso de méritos (consultoría e interventoría) el informe de evaluación se publica 3 días hábiles, incluye habilitantes y puntaje, y la entidad adjudica al oferente que cumpla todo y obtenga el mayor puntaje; el texto nuevo ya no incluye la revisión y negociación de la oferta económica con el primer lugar que traía el texto anterior.",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-VIGIA",
+  "autoridad": "A2",
+  "tipo_contrato": "consultoria",
+  "vigencia_verificada": {
+    "fecha": "2026-10-19",
+    "fuente": "https://relatoria.colombiacompra.gov.co/normativa/decreto-399-de-2021/ (el propio decreto) + búsqueda del artículo en los decretos posteriores abiertos"
+  },
+  "reformas_cotejadas": [
+    "Decreto 579 de 2021 — modifica el art. 4 del Decreto 399 (parágrafos transitorios del RUP), no el art. 2",
+    "Decreto 0997 de 2026, 287 de 2026, 1860 de 2021, 142 de 2023 y 680 de 2021 — no mencionan el número 2.2.1.2.1.3.2 (cotejo por búsqueda)"
+  ],
+  "cifra_comprobada": "cuadra: 3 días hábiles coincide con el Documento Base de consultoría de infraestructura social, numeral 2.6 (cita en las notas de esta ficha)",
+  "notas": "TRAMPA DE LA RELATORÍA: la página «Decreto 1082 de 2015» de la relatoría todavía transcribe el texto ANTERIOR de este artículo (informe de 3 días solo con calificación técnica y orden de elegibilidad, y revisión de la oferta económica con el primer lugar, negociación del alcance y valor, segundo lugar y declaratoria de desierto). Los considerandos del Decreto 399 dicen que el Consejo de Estado suspendió provisionalmente los numerales 3, 4 y 5 (auto del 20-feb-2019, exp. 61.463) y el 6 (auto del 25-jul-2018, exp. 56.165) de ese artículo y por eso se reemplazó. Nuevo numeral 3 (misma página): «Una vez resueltas las observaciones al informe de evaluación, la entidad adjudicará el contrato mediante acto administrativo al oferente que haya cumplido todos los requisitos exigidos en el pliego de condiciones y haya obtenido el mayor puntaje». El Documento Base de consultoría social (F-0996 a F-0998) deja la audiencia de adjudicación como facultativa. Documento base de consultoría social, numeral 2.6 (Informe de evaluación): «El informe de evaluación permanecerá publicado en el SECOP y a disposición de los interesados durante los tres (3) días hábiles siguientes a su publicación, término hasta el cual los Proponentes podrán hacer las observaciones que consideren procedentes y entregar los documentos y la información solicitada…».",
+  "eje": 8,
+  "leida_por": "lector fase2 eje8-institucional",
+  "fecha_consulta": "2026-10-19"
+}

@@ -1,0 +1,30 @@
+{
+  "tipo": "academia",
+  "autor": "González Hernández, J. C.",
+  "titulo": "La inestabilidad de la regla de subsanabilidad en la contratación pública",
+  "anio": 2018,
+  "institucion": "Universidad Militar Nueva Granada (tesis, Maestría en Derecho Administrativo)",
+  "url": "https://repository.umng.edu.co/server/api/core/bitstreams/7ec20868-1347-409a-a982-892af73e9ed9/content",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "apartado sobre la Ley 1882 de 2018 y el término para subsanar",
+    "aplicación de la regla bajo la Ley 1150 y la Ley 1882 (págs. 18-29 del PDF)"
+  ],
+  "localizador": "aplicación de la regla bajo la Ley 1882, pp. 27-28 del PDF (la cita cruza el salto de página)",
+  "pagina_pdf": 27,
+  "cita_textual": "en este evento se allega un acta de la junta de socios posterior a la fecha de cierre o recepción de propuestas, […] con la nueva normatividad, esto es, ley 1882 de 2018 se debe rechazar la oferta",
+  "afirmacion": "El autor (2018) ilustra que, tras la Ley 1882, si la entidad pide aclarar las facultades del representante legal y el proponente allega un acta de junta de socios posterior al cierre, esa circunstancia nueva no se acepta y la oferta se rechaza.",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-DICT",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — tesis de 2018; interpreta el art. 5 de la Ley 1882 de 2018; no se contrastó con el texto consolidado ni con jurisprudencia posterior; reverificar",
+  "tipo_contrato": "todos",
+  "anio_origen": "portada",
+  "notas": "Es un ejemplo hipotético del autor, no un caso real; el propio autor lo plantea como dilema que sigue abierto en la práctica.",
+  "id": "F-1022",
+  "eje": 8,
+  "fecha_consulta": "2026-10-19",
+  "leida_por": "lector fase2 eje8-academica"
+}

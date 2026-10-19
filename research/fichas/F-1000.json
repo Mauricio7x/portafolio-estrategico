@@ -1,0 +1,29 @@
+{
+  "id": "F-1000",
+  "tipo": "cce_guia",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Guía de procedimiento de configuración de la cuenta de proveedor del SECOP II (CCE-SEC-GI-05, versión 2, 29-may-2024): incumplimientos visibles",
+  "anio": 2024,
+  "anio_origen": "portada y pie de página («29 de mayo de 2024»)",
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2024/10/cce-sec-gi-05_guia_de_procedimiento_de_configuracion_de_la_cuenta_de_proveedor_-_secop_ii_29-05-2024.pdf",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "índice y pp. 4-12",
+    "pp. 16-20 (ojeadas)"
+  ],
+  "localizador": "sección «Incumplimientos», p. 11 (impresa «Página 11 de 22»)",
+  "pagina_pdf": 11,
+  "cita_textual": "en la opción de “Incumplimientos” el usuario puede ver los incumplimientos (multas, sanciones o inhabilidades) que registren las Entidades en los contratos que se les adjudicó al Proveedor, esta información es visible para las Entidades Estatales.",
+  "afirmacion": "Las multas, sanciones e inhabilidades que una entidad registra sobre un contratista quedan en su cuenta de SECOP II, visibles para las demás entidades y desde el detalle del contrato en la vista pública.",
+  "etapa": "E0",
+  "decision": "D1",
+  "modulo": "M-INT",
+  "autoridad": "A3",
+  "tipo_contrato": "todos",
+  "vigencia_verificada": "[sin verificar] — guía de mayo de 2024; el Decreto 0997 de 2026 (arts. sobre reporte de multas y sanciones al RUP) es posterior y no se leyó completo",
+  "notas": "Siguiente frase de la guía: «También puede ser consultada desde el detalle de los contratos en la vista pública.» Implicación para quien parte de cero: no tener historia es neutro; una multa registrada se ve en la vista pública y en la cuenta, así que la competencia y la entidad pueden verla. El ABC del Decreto 0997 (p. 5-6, ojeado, sin ficha) dice que el decreto fortalece el flujo de multas, sanciones e inhabilidades hacia el RUP. Señal en datos abiertos: existe en SECOP II la vista pública del detalle del contrato; qué conjunto de datos abiertos publica los incumplimientos no se verificó en esta lectura.",
+  "eje": 8,
+  "leida_por": "lector fase2 eje8-institucional",
+  "fecha_consulta": "2026-10-19"
+}

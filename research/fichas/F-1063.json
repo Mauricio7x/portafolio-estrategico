@@ -1,0 +1,33 @@
+{
+  "id": "F-1063",
+  "tipo": "doc_tipo",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Documento Base de licitación de obra pública de infraestructura de transporte, versión 4 (Documentos Tipo adoptados por la Resolución 465 de 2024)",
+  "anio": 2024,
+  "institucion": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29920/",
+  "fecha_consulta": "2026-10-19",
+  "estado_lectura": "parcial",
+  "localizador": "Documento Base v4, numeral 4.1.4, regla sobre qué TRM se toma (p. impresa 58 según el índice del .docx)",
+  "cita_textual": "«Si este pronunciamiento, se realiza hasta las 3:00 pm, la entidad tomará la TRM que rija para el día hábil siguiente. En caso contrario, cuando el pronunciamiento se dé después de las 3:00 pm, la entidad tomará la TRM que rija para el segundo día hábil siguiente.»",
+  "afirmacion": "La TRM para escoger el método no es la del día de la audiencia: si la entidad se pronuncia sobre ofertas rechazadas y válidas hasta las 3:00 p. m., se toma la TRM del día hábil siguiente; si es después de las 3:00 p. m., la del segundo día hábil siguiente; el método definido sigue rigiendo aunque se suspenda la audiencia.",
+  "eje": 9,
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-PRECIO",
+  "autoridad": "A3",
+  "vigencia_verificada": {
+    "fecha": "2026-10-19",
+    "fuente": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo (V.4 «Versión vigente» desde 03/02/2025) y Resolución 465 de 2024, art. 8 (PDF abierto)"
+  },
+  "leida_por": "lector fase2 eje9-institucional",
+  "tipo_contrato": "obra",
+  "anio_origen": "inferido",
+  "url_final": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29920",
+  "reformas_cotejadas": [
+    "Resolución 465 de 2024, art. 8 (abierta, PDF p. 5-6): adopta la versión 4, deroga la Resolución 240 de 2020 y aplica a procesos con aviso de convocatoria desde el 3 de febrero de 2025",
+    "Control de versiones de Documentos Tipo (página abierta el 2026-10-19): la versión 4 figura como vigente; no lista modificaciones posteriores de la licitación de obra de transporte",
+    "Decreto 0997 de 2026, art. 14 par. 3 (abierto en la Relatoría): los procesos regidos por documentos tipo siguen con ellos hasta que Colombia Compra expida nuevas versiones; no modifica el documento base"
+  ],
+  "notas": "Fuente: archivo .docx dentro del ZIP «05DT_Transp_TLP_V4.zip» (descarga/29920, obtenida por GET el 2026-10-19); el .docx no tiene paginación fija, el localizador usa el numeral y la página impresa que declara el índice del propio documento. El mismo numeral dice que el día de la audiencia la entidad responde observaciones al informe, abre los sobres económicos, determina correcciones aritméticas y pide justificación de precios artificialmente bajos antes de definir el método; y que al fijar el cronograma verifique que el día hábil siguiente a la apertura de ofertas económicas no sea festivo en Estados Unidos. Esto actualiza la guía de la v3 (ficha F-054: TRM del día en que se abre el segundo sobre), anterior a la v4."
+}

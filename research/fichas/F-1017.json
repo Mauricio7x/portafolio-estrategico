@@ -1,0 +1,32 @@
+{
+  "tipo": "academia",
+  "autor": "Nieto Taborda, C. D.",
+  "titulo": "Análisis variación precios unitarios INVIAS en contratos de obra pública",
+  "anio": 2021,
+  "institucion": "Universidad de los Andes (trabajo de grado, Ingeniería Civil y Ambiental)",
+  "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/224930fa-a55b-4e1b-be7d-4ac662d50ddc/content",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "introducción",
+    "4. análisis de los proyectos seleccionados",
+    "5. conclusiones"
+  ],
+  "localizador": "4. Análisis de los proyectos, pp. 9-10 del PDF (la cita cruza el salto de página)",
+  "pagina_pdf": 9,
+  "cita_textual": "la entidad tuvo que realizar correcciones en 16.20% del total de APUs contratados, y que estos corresponden […] a 7 de los 16 procesos adjudicados, estos ajustes se realizaron por observaciones de los proponentes",
+  "afirmacion": "En licitaciones de obra del INVIAS adjudicadas en 2016-2017 la entidad corrigió el 16,20 % de los APU contratados, en 7 de 16 procesos, por observaciones de los proponentes que señalaban errores aritméticos de la entidad en el presupuesto preliminar, compensando a veces con otro ítem para no variar el total (según el autor).",
+  "cifra_comprobada": "No recalculable: el texto leído da el 16,20 %, los 7 de 16 procesos y los 5 de 11 procesos de 2021 (5,32 %), pero no el número de APU, así que el porcentaje no se pudo recomponer; no se repite como hecho firme. 7 de 16 es 43,8 % de los procesos.",
+  "etapa": "E1",
+  "decision": "D2",
+  "modulo": "M-APU",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — trabajo académico de 2021 sobre procesos de 2016, 2017 y 2021; lo que afirma sobre la norma (pliegos tipo, Decreto 342 de 2019) es lo que él dice; no se verificó norma alguna",
+  "tipo_contrato": "obra",
+  "anio_origen": "portada",
+  "notas": "El mismo trabajo ya lo leyó otro lector del eje 7 para otra afirmación; esta ficha cubre la evidencia de que observar el presupuesto preliminar produce correcciones. El texto dice que no halló acta final de cantidades y supone que el precio pagado es el adjudicado.",
+  "id": "F-1017",
+  "eje": 8,
+  "fecha_consulta": "2026-10-19",
+  "leida_por": "lector fase2 eje8-academica"
+}

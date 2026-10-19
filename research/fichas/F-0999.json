@@ -1,0 +1,28 @@
+{
+  "id": "F-0999",
+  "tipo": "juris",
+  "autor": "Consejo de Estado, Sección Tercera, Subsección C (ponente: A. Polidura Castillo)",
+  "titulo": "Sentencia del 1-jun-2026 (radicado 25000-23-36-000-2019-00381-02, interno 69.292): efectividad de la garantía de seriedad por no suscribir el contrato (Invías)",
+  "anio": 2026,
+  "anio_origen": "detalle del documento en la relatoría: fecha 01/06/2026",
+  "institucion": "Consejo de Estado (relatoría de Colombia Compra)",
+  "url": "https://relatoria.colombiacompra.gov.co/providencias/25000233600020190038102-de-2026/",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "extracto publicado en la relatoría (secciones sobre garantía de seriedad, efectividad y debido proceso)"
+  ],
+  "localizador": "extracto «EFECTIVIDAD DE LA GARANTÍA – Connotación sancionatoria – Debido proceso»",
+  "cita_textual": "el incumplimiento injustificado de la obligación de suscribir el contrato estatal también comporta para el oferente adjudicatario una inhabilidad para participar en procesos de selección y para suscribir contratos por el término de 5 años",
+  "afirmacion": "No firmar el contrato adjudicado sin justa causa cuesta la póliza de seriedad (sanción) y una inhabilidad de 5 años para licitar y contratar con el Estado; la entidad debe adelantar un procedimiento previo con debido proceso, que no es el del art. 86 de la Ley 1474.",
+  "etapa": "E3",
+  "decision": "D4",
+  "modulo": "M-DICT",
+  "autoridad": "A4",
+  "tipo_contrato": "todos",
+  "unificacion": false,
+  "vigencia_verificada": "[sin verificar] — sentencia de apelación del 1-jun-2026; no se consultó si tiene recursos posteriores ni la sentencia completa",
+  "notas": "Segundo hilo del extracto: la póliza cubre cuatro eventos (art. 2.2.1.2.3.1.6 del Decreto 1082: no ampliar la vigencia cuando se prorroga el plazo de adjudicación o firma por menos de tres meses, retirar la oferta vencido el plazo de presentación, no firmar el contrato sin justa causa, no otorgar la garantía de cumplimiento) y su efectividad exige acto administrativo motivado (art. 2.2.1.2.3.1.19). El inicio del plazo de la inhabilidad, según el extracto, es «el vencimiento del plazo dispuesto para el efecto». Consecuencia en plata: la póliza de seriedad (10 % de la oferta, ver F-0982) y 5 años sin poder ofertar. La fuente nombra a un particular como demandante: no se recoge. Es el único caso de jurisprudencia abierto para este eje; no es sentencia de unificación.",
+  "eje": 8,
+  "leida_por": "lector fase2 eje8-institucional",
+  "fecha_consulta": "2026-10-19"
+}

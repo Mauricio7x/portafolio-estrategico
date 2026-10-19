@@ -1,0 +1,34 @@
+{
+  "id": "F-1066",
+  "tipo": "doc_tipo",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Documento Base de licitación de obra pública de infraestructura de transporte, versión 4 (Documentos Tipo adoptados por la Resolución 465 de 2024)",
+  "anio": 2024,
+  "institucion": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29920/",
+  "fecha_consulta": "2026-10-19",
+  "estado_lectura": "parcial",
+  "localizador": "Documento Base v4, numeral 4.1.4, métodos «Media geométrica» y «Media aritmética baja» (p. impresa 60-61 según el índice del .docx)",
+  "cita_textual": "«se otorgará el máximo puntaje al valor de la propuesta que se encuentre más cerca (por exceso o por defecto) al valor de la media geométrica calculada para el factor correspondiente.»",
+  "afirmacion": "Media geométrica: el máximo puntaje es para la oferta válida más cercana (por exceso o por defecto) a la media geométrica de las ofertas habilitadas, con Puntaje = Puntaje máximo x [1 - |MG - Vi|/MG]; media aritmética baja: promedio entre la oferta válida más baja y el promedio simple de las válidas, XB = (Vmin + X)/2, con valor absoluto para las ofertas por encima de XB.",
+  "eje": 9,
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-PRECIO",
+  "autoridad": "A3",
+  "vigencia_verificada": {
+    "fecha": "2026-10-19",
+    "fuente": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo (V.4 «Versión vigente» desde 03/02/2025) y Resolución 465 de 2024, art. 8 (PDF abierto)"
+  },
+  "leida_por": "lector fase2 eje9-institucional",
+  "tipo_contrato": "obra",
+  "anio_origen": "inferido",
+  "url_final": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29920",
+  "reformas_cotejadas": [
+    "Resolución 465 de 2024, art. 8 (abierta, PDF p. 5-6): adopta la versión 4, deroga la Resolución 240 de 2020 y aplica a procesos con aviso de convocatoria desde el 3 de febrero de 2025",
+    "Control de versiones de Documentos Tipo (página abierta el 2026-10-19): la versión 4 figura como vigente; no lista modificaciones posteriores de la licitación de obra de transporte",
+    "Decreto 0997 de 2026, art. 14 par. 3 (abierto en la Relatoría): los procesos regidos por documentos tipo siguen con ellos hasta que Colombia Compra expida nuevas versiones; no modifica el documento base"
+  ],
+  "cifra_comprobada": "cuadra: fórmulas linealizadas del .docx «MG=raiz[n](V_{1}*V_{2}*...*V_{n})», «Puntaje=Puntaje máximo*(1-((|MG-V_{i}|)/(MG)))», «[X_{B}]=((V_{min}+[X]))/(2)». Cálculo del lector: con ofertas 90, 100 y 110, XB = (90 + 100)/2 = 95.",
+  "notas": "Fuente: archivo .docx dentro del ZIP «05DT_Transp_TLP_V4.zip» (descarga/29920, obtenida por GET el 2026-10-19); el .docx no tiene paginación fija, el localizador usa el numeral y la página impresa que declara el índice del propio documento. En la media aritmética baja el puntaje de las ofertas menores o iguales a XB es Puntaje máximo x [1 - (XB - Vi)/XB] y para las mayores se toma el valor absoluto de la diferencia (texto: «Para efectos de ponderar propuestas cuyo valor sea mayor a [XB], se tomará el valor absoluto de la diferencia entre la media aritmética baja y el valor total corregido de cada una de las propuestas»)."
+}

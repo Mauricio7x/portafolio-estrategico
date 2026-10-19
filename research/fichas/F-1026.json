@@ -1,0 +1,31 @@
+{
+  "tipo": "academia",
+  "autor": "Calderón Jiménez, M. C.",
+  "titulo": "Auxiliar de ingeniería en la búsqueda, preparación y presentación de procesos de contratación estatal",
+  "anio": 2021,
+  "institucion": "Universidad Pontificia Bolivariana (trabajo de grado, práctica empresarial, Ingeniería Civil)",
+  "url": "https://repository.upb.edu.co/server/api/core/bitstreams/c9c1bba2-a1af-4c7a-baef-6c46c07c3167/content",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "6.2 a 6.6 (búsqueda, manifestación de interés, lista de chequeo, preparación, entrega, subsanación, adjudicación)",
+    "7 aporte al conocimiento",
+    "8 conclusiones"
+  ],
+  "anio_origen": "portada",
+  "tipo_contrato": "obra",
+  "localizador": "6.5.1.4 Observaciones al proyecto de pliego, p. 43 del PDF",
+  "pagina_pdf": 43,
+  "cita_textual": "aclarar si se debían entregar los análisis de precios unitarios con la propuesta y al presupuesto del proceso, el cual contaba con un error de cálculo",
+  "afirmacion": "En una licitación de obra de 2020 con documentos tipo, la firma observó el proyecto de pliego sobre si los APU se entregaban con la oferta y sobre un error de cálculo del presupuesto; la entidad respondió que los APU no se entregan con la propuesta y corrigió el Formulario 1 por adenda.",
+  "etapa": "E1",
+  "decision": "D2",
+  "modulo": "M-APU",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — caso de 2020 bajo documentos tipo versión 2; lo que dice de la norma es lo que él dice; reverificar contra el documento tipo vigente",
+  "notas": "Caso único, de una alcaldía; el autor dice que la entidad aceptó la observación del presupuesto y la rechazó (en el sentido de no pedir APU) en lo demás.",
+  "id": "F-1026",
+  "eje": 8,
+  "fecha_consulta": "2026-10-19",
+  "leida_por": "lector fase2 eje8-academica"
+}

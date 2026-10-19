@@ -1,0 +1,31 @@
+{
+  "tipo": "academia",
+  "autor": "Calderón Jiménez, M. C.",
+  "titulo": "Auxiliar de ingeniería en la búsqueda, preparación y presentación de procesos de contratación estatal",
+  "anio": 2021,
+  "institucion": "Universidad Pontificia Bolivariana (trabajo de grado, práctica empresarial, Ingeniería Civil)",
+  "url": "https://repository.upb.edu.co/server/api/core/bitstreams/c9c1bba2-a1af-4c7a-baef-6c46c07c3167/content",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "6.2 a 6.6 (búsqueda, manifestación de interés, lista de chequeo, preparación, entrega, subsanación, adjudicación)",
+    "7 aporte al conocimiento",
+    "8 conclusiones"
+  ],
+  "anio_origen": "portada",
+  "tipo_contrato": "todos",
+  "localizador": "6.2.6 Manifestación de interés y sorteo, p. 30 del PDF",
+  "pagina_pdf": 30,
+  "cita_textual": "este se debe realizar no mayor a tres días de la fecha de apertura del proceso […] generalmente si se recibieron más de 10 cartas de manifestación de interés",
+  "afirmacion": "Según este informe de práctica (2021), en la selección abreviada la manifestación de interés se presenta en un formato con NIT, representante y contacto en los tres días posteriores a la apertura, y la entidad sortea entre los interesados generalmente cuando llegan más de 10; quien queda fuera del sorteo no puede ofertar.",
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-VIGIA",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — descripción de una práctica de 2021; el plazo y el umbral de 10 son los que el autor reporta de sus procesos, no se contrastaron con el Decreto 1082 de 2015 ni con el pliego; reverificar",
+  "notas": "El texto remite a una Tabla 7 de procesos descartados por sorteo cuyo contenido es imagen y no se leyó.",
+  "id": "F-1025",
+  "eje": 8,
+  "fecha_consulta": "2026-10-19",
+  "leida_por": "lector fase2 eje8-academica"
+}

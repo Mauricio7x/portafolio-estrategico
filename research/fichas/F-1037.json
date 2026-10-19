@@ -1,0 +1,30 @@
+{
+  "tipo": "academia",
+  "autor": "Maestre Orduña, S. C.",
+  "titulo": "Apoyo en la implementación del sistema de calidad en gerencia de proyectos con énfasis en formulación y presentación de procesos licitatorios",
+  "anio": 2018,
+  "institucion": "Universidad Pontificia Bolivariana, Bucaramanga (trabajo de grado, práctica empresarial, Ingeniería Civil)",
+  "url": "https://repository.upb.edu.co/server/api/core/bitstreams/6ca6e8c8-c9fe-4062-8d5f-9b2a236c7389/content",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "indicadores de cumplimiento y conclusiones (págs. 55-66)",
+    "informes de procesos presentados en el anexo (casos citados)"
+  ],
+  "anio_origen": "portada",
+  "tipo_contrato": "obra",
+  "localizador": "informe del proceso (anexo), p. 124 del PDF",
+  "pagina_pdf": 124,
+  "cita_textual": "el 16 de Julio a las 08:40 pm se publicó en la plataforma del SECOP I el acto de declaratoria de desierta o de terminación anormal, motivo por el cual no se envió ni radico la oferta ya elaborada",
+  "afirmacion": "El autor cuenta dos casos de 2018 de oferta ya armada que no se presentó: una revocatoria del acto de apertura publicada a las 17:01 del día hábil anterior al cierre (p. 80) y una declaratoria de desierta o terminación anormal publicada dos días antes del cierre (p. 124); y recomienda vigilar el estado del proceso para no perder el trabajo.",
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-VIGIA",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — casos de 2018; reverificar",
+  "notas": "Un caso de revocatoria (p. 80) y uno de terminación anormal (p. 124); el texto no mide cuántas horas de armado se perdieron.",
+  "id": "F-1037",
+  "eje": 8,
+  "fecha_consulta": "2026-10-19",
+  "leida_por": "lector fase2 eje8-academica"
+}

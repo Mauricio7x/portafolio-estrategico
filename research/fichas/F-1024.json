@@ -1,0 +1,31 @@
+{
+  "tipo": "academia",
+  "autor": "Calderón Jiménez, M. C.",
+  "titulo": "Auxiliar de ingeniería en la búsqueda, preparación y presentación de procesos de contratación estatal",
+  "anio": 2021,
+  "institucion": "Universidad Pontificia Bolivariana (trabajo de grado, práctica empresarial, Ingeniería Civil)",
+  "url": "https://repository.upb.edu.co/server/api/core/bitstreams/c9c1bba2-a1af-4c7a-baef-6c46c07c3167/content",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "6.2 a 6.6 (búsqueda, manifestación de interés, lista de chequeo, preparación, entrega, subsanación, adjudicación)",
+    "7 aporte al conocimiento",
+    "8 conclusiones"
+  ],
+  "anio_origen": "portada",
+  "tipo_contrato": "obra",
+  "localizador": "6.3 Preparación de la propuesta, pp. 32-33 del PDF",
+  "pagina_pdf": 32,
+  "cita_textual": "Carta de presentación de la propuesta […] Acta de conformación de consorcio o unión temporal […] Compromiso anticorrupción",
+  "afirmacion": "Un informe de práctica en una firma de obra (2021) lista como documentos de capacidad jurídica de la oferta: carta de presentación, documentos del representante, existencia y representación, RUT, RUP, acta de conformación del consorcio o unión temporal, seguridad social y parafiscales, compromiso anticorrupción, inhabilidades, multas y antecedentes; y arma una lista de chequeo para que no falten documentos.",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-F1",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — informe de práctica de 2021; lo que dice de la norma es lo que él dice; los documentos exigidos los fija cada pliego y cada documento tipo; reverificar contra el pliego tipo vigente",
+  "notas": "Es la lista de una firma de obra pequeña, no un estándar; varía por entidad y por documento tipo. El autor no cuantifica fallos por documento faltante.",
+  "id": "F-1024",
+  "eje": 8,
+  "fecha_consulta": "2026-10-19",
+  "leida_por": "lector fase2 eje8-academica"
+}

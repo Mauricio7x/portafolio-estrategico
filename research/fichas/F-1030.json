@@ -1,0 +1,32 @@
+{
+  "tipo": "academia",
+  "autor": "Calderón Jiménez, M. C.",
+  "titulo": "Auxiliar de ingeniería en la búsqueda, preparación y presentación de procesos de contratación estatal",
+  "anio": 2021,
+  "institucion": "Universidad Pontificia Bolivariana (trabajo de grado, práctica empresarial, Ingeniería Civil)",
+  "url": "https://repository.upb.edu.co/server/api/core/bitstreams/c9c1bba2-a1af-4c7a-baef-6c46c07c3167/content",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "6.2 a 6.6 (búsqueda, manifestación de interés, lista de chequeo, preparación, entrega, subsanación, adjudicación)",
+    "7 aporte al conocimiento",
+    "8 conclusiones"
+  ],
+  "anio_origen": "portada",
+  "tipo_contrato": "obra",
+  "localizador": "6.5.2.3 Elaboración y 6.6.2, pp. 49 y 56 del PDF",
+  "pagina_pdf": 49,
+  "cita_textual": "esta fue del 76,30% del presupuesto oficial, valor tomado de análisis estadísticos realizados a procesos de ese mismo tipo y en la misma zona",
+  "afirmacion": "En una mínima cuantía de obra de 2020/2021 con 8 oferentes la firma ofertó 76,30 % del presupuesto oficial, tomado de estadística de procesos similares en la misma zona, fue la oferta más baja y cumplió habilitantes, y se le adjudicó; el autor advierte que en mínima cuantía solo gana el menor valor y que hay que tener personal y equipos cerca para que quede utilidad.",
+  "cifra_comprobada": "No recalculable: el 76,30 % y los 8 oferentes son datos del texto; no se da el presupuesto oficial ni la oferta del segundo, así que no se puede comprobar el descuento.",
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-PRECIO",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — caso de 2020/2021; la mínima cuantía fue reformada después; reverificar",
+  "notas": "Un solo proceso; no es evidencia de rentabilidad: el texto no dice la utilidad.",
+  "id": "F-1030",
+  "eje": 8,
+  "fecha_consulta": "2026-10-19",
+  "leida_por": "lector fase2 eje8-academica"
+}

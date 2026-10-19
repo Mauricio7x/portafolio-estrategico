@@ -1,0 +1,30 @@
+{
+  "tipo": "academia",
+  "autor": "Osorio Martínez, D. J.; Barrios Moriones, J. M.",
+  "titulo": "Procesos licitatorios en Colombia",
+  "anio": 2011,
+  "institucion": "Universidad Militar Nueva Granada (Especialización en Finanzas y Administración Pública)",
+  "url": "https://repository.unimilitar.edu.co/bitstream/handle/10654/3598/OsorioMartinezDiegoJavier2011.pdf?sequence=2",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "contenido",
+    "7.22 verificación de condiciones jurídicas habilitantes (tabla 1)"
+  ],
+  "localizador": "7.22, Tabla 1, p. 40 del PDF (el archivo numera aparte)",
+  "pagina_pdf": 40,
+  "cita_textual": "El proponente asistió a la visita obligatoria en la fecha y hora prevista el pliego de condiciones. […] Allega acta de conformación del consorcio o de la unión temporal, suscrita por cada uno de sus integrantes.",
+  "afirmacion": "Una lista de verificación jurídica de una entidad distrital, recogida por la tesis (2011), revisa de la oferta: carta firmada, entrega en fecha y hora, valor frente al presupuesto, visita obligatoria, certificado de existencia con antelación, facultades del representante, acta de conformación del consorcio firmada por todos y garantía de seriedad con tomador, asegurado y cuantía correctos.",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-DICT",
+  "autoridad": "A6",
+  "url_final": "https://repository.umng.edu.co/server/api/core/bitstreams/d2ee6912-68a8-41b8-8f6a-f388e63b6cda/content",
+  "vigencia_verificada": "[sin verificar] — tesis de 2011 sobre el régimen anterior al Decreto 1082 de 2015 (menciona el SICE, hoy desaparecido, y aportes de la Ley 789 de 2002); anterior a la reforma; reverificar",
+  "tipo_contrato": "todos",
+  "anio_origen": "portada",
+  "notas": "La URL redirigió al bitstream de url_final, que sirvió el archivo. La lista es el formato de una entidad (servicios generales), no un estándar: sirve como evidencia de qué ítems revisan las entidades, no como norma.",
+  "id": "F-1015",
+  "eje": 8,
+  "fecha_consulta": "2026-10-19",
+  "leida_por": "lector fase2 eje8-academica"
+}

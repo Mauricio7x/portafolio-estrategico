@@ -1,0 +1,31 @@
+{
+  "tipo": "academia",
+  "autor": "Calderón Jiménez, M. C.",
+  "titulo": "Auxiliar de ingeniería en la búsqueda, preparación y presentación de procesos de contratación estatal",
+  "anio": 2021,
+  "institucion": "Universidad Pontificia Bolivariana (trabajo de grado, práctica empresarial, Ingeniería Civil)",
+  "url": "https://repository.upb.edu.co/server/api/core/bitstreams/c9c1bba2-a1af-4c7a-baef-6c46c07c3167/content",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "6.2 a 6.6 (búsqueda, manifestación de interés, lista de chequeo, preparación, entrega, subsanación, adjudicación)",
+    "7 aporte al conocimiento",
+    "8 conclusiones"
+  ],
+  "anio_origen": "portada",
+  "tipo_contrato": "todos",
+  "localizador": "6.5.2.4 Entrega de la propuesta por SECOP II, p. 49 del PDF",
+  "pagina_pdf": 49,
+  "cita_textual": "fue necesario realizar una suscripción previa al proceso para que la plataforma pueda reconocer y dar apertura a la fase de creación de la oferta. La practicante ingreso al portal un día antes para evitar inconvenientes",
+  "afirmacion": "El informe (2021) describe para ofertar por SECOP II: suscribirse antes al proceso, entrar un día antes del cierre, crear la oferta, cargar los documentos de habilitantes y de puntaje, y en la pestaña de cuestionario verificar los documentos y poner el valor de la oferta económica antes de enviar.",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-F1",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — descripción de uso de la plataforma en 2021; la interfaz de SECOP II ha cambiado; reverificar contra el manual de proveedores vigente",
+  "notas": "Una mínima cuantía de obra de 2020/2021; no mide errores de carga ni tiempos.",
+  "id": "F-1027",
+  "eje": 8,
+  "fecha_consulta": "2026-10-19",
+  "leida_por": "lector fase2 eje8-academica"
+}

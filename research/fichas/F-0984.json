@@ -1,0 +1,35 @@
+{
+  "id": "F-0984",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República",
+  "titulo": "Decreto 0997 de 2026, art. 8 (modifica el art. 2.2.1.1.2.1.3 del Decreto 1082): declaración, pacto o compromiso anticorrupción con la oferta",
+  "anio": 2026,
+  "anio_origen": "cuerpo (Decreto 0997 de 2026, fechado 4-ago-2026 al pie de la página de la relatoría)",
+  "institucion": "Departamento Nacional de Planeación (relatoría de Colombia Compra)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "considerandos",
+    "arts. 8 a 14"
+  ],
+  "localizador": "art. 8, numeral 12 del art. 2.2.1.1.2.1.3 modificado; art. 14 sobre vigencia",
+  "cita_textual": "Los pliegos de condiciones deben contener por lo menos la siguiente información: […] La declaración, pacto o compromiso anti-corrupción que deberán presentar los proponentes con la oferta.",
+  "afirmacion": "Desde el decreto 0997 de 2026 el pliego debe pedir a los proponentes, con la oferta, una declaración, pacto o compromiso anticorrupción.",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-F1",
+  "autoridad": "A2",
+  "tipo_contrato": "todos",
+  "vigencia_verificada": {
+    "fecha": "2026-10-19",
+    "fuente": "https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/ (texto del propio decreto; art. 14 fija la vigencia)"
+  },
+  "reformas_cotejadas": [
+    "Decreto 0997 de 2026 art. 14 — los arts. 2, 3, 8 y 11 rigen desde el día siguiente a su publicación en el Diario Oficial (fecha de publicación [sin verificar]); el parágrafo 3 exceptúa a los procesos con Documentos Tipo (ver F-0985)",
+    "ABC del Decreto 0997 (Colombia Compra, 2026) p. 10 repite la regla; es guía, no sustituye el decreto"
+  ],
+  "notas": "Las obras públicas se rigen por Documentos Tipo, así que el efecto práctico para quien oferta obra depende de cuándo Colombia Compra actualice el pliego tipo (F-0985). La relatoría muestra dos fechas para el decreto (cabecera 13/08/2026, pie 04/08/2026); no se reconcilió con el Diario Oficial.",
+  "eje": 8,
+  "leida_por": "lector fase2 eje8-institucional",
+  "fecha_consulta": "2026-10-19"
+}

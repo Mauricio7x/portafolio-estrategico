@@ -1,0 +1,29 @@
+{
+  "id": "F-0992",
+  "tipo": "cce_guia",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Guía de procedimiento de configuración de la cuenta de proveedor del SECOP II (CCE-SEC-GI-05, versión 2, 29-may-2024): áreas de interés",
+  "anio": 2024,
+  "anio_origen": "portada y pie de página («29 de mayo de 2024»)",
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2024/10/cce-sec-gi-05_guia_de_procedimiento_de_configuracion_de_la_cuenta_de_proveedor_-_secop_ii_29-05-2024.pdf",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "índice y pp. 4-12",
+    "p. 16-20 (ojeadas)"
+  ],
+  "localizador": "sección «Áreas de interés», p. 11 (impresa «Página 11 de 22»)",
+  "pagina_pdf": 11,
+  "cita_textual": "la configuración de las áreas de interés le permite al Proveedor conocer las oportunidades de negocio en tiempo real conforme la Entidad Estatal haga público el Proceso de Contratación.",
+  "afirmacion": "El proveedor puede configurar en SECOP II áreas de interés por código UNSPSC para ver oportunidades de negocio a medida que las entidades publican procesos.",
+  "etapa": "E0",
+  "decision": "D1",
+  "modulo": "M-ING",
+  "autoridad": "A3",
+  "tipo_contrato": "todos",
+  "vigencia_verificada": "[sin verificar] — guía de mayo de 2024; no se comparó con la plataforma actual",
+  "notas": "P. 12 de la misma guía: «Puede seleccionar varios códigos que se encuentren en el tercer y cuarto nivel de clasificación.» Es decir, el aviso de SECOP II depende del nivel UNSPSC que el proveedor registre; quien parte de cero y no configura las áreas no recibe aviso (no detectable en datos abiertos). Hallazgo para el contratista: la plataforma oficial pide códigos de nivel 3 o 4.",
+  "eje": 8,
+  "leida_por": "lector fase2 eje8-institucional",
+  "fecha_consulta": "2026-10-19"
+}

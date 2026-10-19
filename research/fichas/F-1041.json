@@ -1,0 +1,31 @@
+{
+  "tipo": "academia",
+  "autor": "Chamorro Solórzano, G. E.; Pérez Ruiz, D. D.; Serrano Guzmán, M. F.",
+  "titulo": "Rol del interventor en la gestión de proyectos de infraestructura pública: estudio de caso del Valle del Cauca, Colombia",
+  "anio": 2022,
+  "institucion": "CIENCIA ergo-sum vol. 29 n.º 1, Universidad Autónoma del Estado de México (Redalyc)",
+  "url": "https://www.redalyc.org/journal/104/10469617002/html/",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "introducción y método",
+    "hallazgos sobre requisitos habilitantes de interventoría",
+    "discusión"
+  ],
+  "localizador": "sección de resultados sobre requisitos financieros de los términos de referencia (versión HTML, sin paginación)",
+  "cita_textual": "los requerimientos de IL ≥ 30%, NE ≤ 5, ROE ≥ 22.50% y ROA ≥ 19% tan sólo son cumplidos de forma simultánea por el 6% de las empresas colombianas",
+  "afirmacion": "En los 64 concursos de méritos de interventoría del Valle del Cauca (SECOP I, hasta 2016) los autores (2022) hallan indicadores financieros que no se relacionan con el monto: uno de unos 62 SMMLV pedía liquidez, endeudamiento, ROE y ROA que cumple solo el 6 % de las empresas, y otro de unos 120 SMMLV, el 51 %.",
+  "cifra_comprobada": "No recalculable: los porcentajes salen del cuadro 5 (imagen) con datos de la CCI de 2016 y de otro trabajo; no se pudo contrastar con la base original. Se repite como dato de los autores.",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-K",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — trabajo académico de 2022 sobre contratos hasta 2016 y términos de 2017 y 2019; anterior a la reforma de indicadores y a los documentos tipo de interventoría; reverificar",
+  "tipo_contrato": "interventoria",
+  "anio_origen": "portada",
+  "notas": "Versión HTML de Redalyc, sin número de página; la cita viene del texto descargado. Se menciona un solo término de 2019 y uno de 2017 como ejemplos; no se guardan los números de proceso.",
+  "id": "F-1041",
+  "eje": 8,
+  "fecha_consulta": "2026-10-19",
+  "leida_por": "lector fase2 eje8-academica"
+}

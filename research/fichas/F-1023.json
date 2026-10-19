@@ -1,0 +1,30 @@
+{
+  "tipo": "academia",
+  "autor": "González Hernández, J. C.",
+  "titulo": "La inestabilidad de la regla de subsanabilidad en la contratación pública",
+  "anio": 2018,
+  "institucion": "Universidad Militar Nueva Granada (tesis, Maestría en Derecho Administrativo)",
+  "url": "https://repository.umng.edu.co/server/api/core/bitstreams/7ec20868-1347-409a-a982-892af73e9ed9/content",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "apartado sobre la Ley 1882 de 2018 y el término para subsanar",
+    "aplicación de la regla bajo la Ley 1150 y la Ley 1882 (págs. 18-29 del PDF)"
+  ],
+  "localizador": "caso del proceso CM-MEN-07-2015 (SECOP I), p. 28 del PDF",
+  "pagina_pdf": 28,
+  "cita_textual": "la entidad en el pliego de condiciones señaló como requisito habilitante que el Registro Único de Proponentes –RUP debía estar vigente y en firme al momento de presentar la propuesta […] estos últimos en la evaluación de la propuesta fueron inhabilitados",
+  "afirmacion": "El autor cita un concurso de menor cuantía de 2015 (CM-MEN-07-2015, SECOP I) donde el pliego exigió el RUP vigente y en firme al cierre; los proponentes sin RUP en firme a esa fecha quedaron inhabilitados aunque la regla general permitía subsanar hasta la adjudicación.",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-RUP",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — caso de 2015 bajo el régimen anterior a la Ley 1882 y al Decreto 0997 de 2026 sobre el RUP; anterior a la reforma; reverificar",
+  "tipo_contrato": "todos",
+  "anio_origen": "portada",
+  "notas": "Un solo proceso, citado por el autor con su enlace a SECOP I; no se abrió el proceso. No se guardan nombres de proponentes.",
+  "id": "F-1023",
+  "eje": 8,
+  "fecha_consulta": "2026-10-19",
+  "leida_por": "lector fase2 eje8-academica"
+}

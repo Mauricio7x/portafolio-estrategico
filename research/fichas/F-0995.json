@@ -1,0 +1,35 @@
+{
+  "id": "F-0995",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 80 de 1993, art. 30 numeral 8: el informe de evaluación de la licitación queda cinco días hábiles para observaciones",
+  "anio": 1993,
+  "anio_origen": "cuerpo (Ley 80 de 1993)",
+  "institucion": "Agencia Nacional de Contratación Pública (relatoría)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/ley-80-de-1993/",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "art. 30 numerales 1 a 12"
+  ],
+  "localizador": "art. 30, numeral 8 (con numerales 7 y 12 en la misma página)",
+  "cita_textual": "Los informes de evaluación de las propuestas permanecerán en la secretaría de la entidad por un término de cinco (5) días hábiles para que los oferentes presenten las observaciones que estimen pertinentes.",
+  "afirmacion": "En la licitación el informe de evaluación queda cinco días hábiles a disposición de los oferentes para observaciones, y con esa facultad no pueden completar, adicionar, modificar ni mejorar su propuesta.",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-VIGIA",
+  "autoridad": "A1",
+  "tipo_contrato": "todos",
+  "vigencia_verificada": {
+    "fecha": "2026-10-19",
+    "fuente": "https://relatoria.colombiacompra.gov.co/normativa/ley-80-de-1993/ (la relatoría marca modificaciones en los numerales 3, 4 y 5 y no marca el 8)"
+  },
+  "reformas_cotejadas": [
+    "Ley 1150 de 2007 art. 5 par. 1 (por Ley 1882 de 2018 art. 5) — fija la subsanación hasta el traslado del informe (F-0979); no cambia los cinco días de la licitación",
+    "Decreto Ley 019 de 2012 (arts. 220 y 224, que la relatoría anota en los numerales 4 y 3) y Ley 1474 de 2011 (art. 89, numeral 5) — no tocan el numeral 8"
+  ],
+  "cifra_comprobada": "cuadra: 5 días hábiles coincide con el concepto C-1388 de 2026 para el documento tipo de infraestructura social v2 (F-0993)",
+  "notas": "Siguiente oración del numeral 8: «En ejercicio de esta facultad, los oferentes no podrán completar, adicionar, modificar o mejorar sus propuestas.» Numeral 7: el pliego fija el plazo para que la entidad pida «aclaraciones y explicaciones». Numeral 12: si el adjudicatario no firma el contrato en el término, «quedará a favor de la entidad contratante, en calidad de sanción, el valor del depósito o garantía constituidos para responder por la seriedad de la propuesta» (ver F-0999). Texto de la relatoría; el plazo cambia según modalidad y documento tipo (3 días en concurso de méritos, F-0987).",
+  "eje": 8,
+  "leida_por": "lector fase2 eje8-institucional",
+  "fecha_consulta": "2026-10-19"
+}

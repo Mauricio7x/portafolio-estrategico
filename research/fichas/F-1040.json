@@ -1,0 +1,30 @@
+{
+  "tipo": "academia",
+  "autor": "Jiménez Gómez, D.; Restrepo González, E.",
+  "titulo": "Concurrencia de concurso de méritos y mínima cuantía: conflicto y violación de principios",
+  "anio": 2020,
+  "institucion": "Universidad Pontificia Bolivariana, Medellín (trabajo de grado, Derecho)",
+  "url": "https://repository.upb.edu.co/server/api/core/bitstreams/50450999-dec5-4046-bc78-27085fec69b6/content",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "marco sobre concurso de méritos y mínima cuantía",
+    "4.1 análisis de la Sentencia C-004 de 2017 (págs. 26-29 impresas)"
+  ],
+  "localizador": "análisis de la Sentencia C-004/17, p. 27 del PDF",
+  "pagina_pdf": 27,
+  "cita_textual": "con la Sentencia C-004/17, la Corte da entender que cuando se pretenda seleccionar o escoger el contratista para que desarrolle un objeto de interventoría y para ello deba surtirse la mínima cuantía, deberán considerarse los criterios de experiencia y capacidad como habilitantes",
+  "afirmacion": "Según estos autores (2020), tras la Sentencia C-004 de 2017 una interventoría que se contrate por mínima cuantía exige experiencia y capacidad como habilitantes y se escoge por menor precio, y ven allí una contradicción con el art. 5 de la Ley 1150 (en concurso de méritos la experiencia puntúa y el precio no puede ser factor).",
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-EXP",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — es la lectura de los autores de la Sentencia C-004 de 2017 y del art. 5 de la Ley 1150 según la Ley 1882 de 2018; no se abrió la sentencia ni se cotejaron reformas posteriores (por ejemplo sobre mínima cuantía y concurso de méritos); reverificar",
+  "tipo_contrato": "interventoria",
+  "anio_origen": "portada",
+  "notas": "Es una crítica doctrinal: la tesis misma dice que la Corte se declaró inhibida de fondo sobre la concurrencia. La sentencia se lee en el eje institucional.",
+  "id": "F-1040",
+  "eje": 8,
+  "fecha_consulta": "2026-10-19",
+  "leida_por": "lector fase2 eje8-academica"
+}

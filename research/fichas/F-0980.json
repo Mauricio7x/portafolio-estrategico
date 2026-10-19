@@ -1,0 +1,33 @@
+{
+  "id": "F-0980",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 1150 de 2007, art. 9: adjudicación de la licitación en audiencia pública",
+  "anio": 2007,
+  "anio_origen": "cuerpo (Ley 1150 de 2007)",
+  "institucion": "Agencia Nacional de Contratación Pública (relatoría)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/ley-1150-de-2007/",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "art. 9"
+  ],
+  "localizador": "art. 9, incisos 1 y 2",
+  "cita_textual": "en general en los procesos de licitación pública, la adjudicación se hará de forma obligatoria en audiencia pública, mediante resolución motivada, que se entenderá notificada al proponente favorecido en dicha audiencia.",
+  "afirmacion": "En licitación pública la adjudicación es obligatoriamente en audiencia pública y el acto se notifica al favorecido en esa audiencia; en la misma audiencia los interesados pueden pronunciarse sobre la respuesta a las observaciones al informe de evaluación.",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-VIGIA",
+  "autoridad": "A1",
+  "tipo_contrato": "todos",
+  "vigencia_verificada": {
+    "fecha": "2026-10-19",
+    "fuente": "https://relatoria.colombiacompra.gov.co/normativa/ley-1150-de-2007/ (la relatoría no marca modificación del artículo 9)"
+  },
+  "reformas_cotejadas": [
+    "Ley 1882 de 2018, Ley 2022 de 2020, Ley 2069 de 2020, Ley 2294 de 2023, Ley 2195 de 2022 (páginas de la relatoría) — la búsqueda por texto no halla modificación del artículo 9 de la Ley 1150 (cotejo por búsqueda)"
+  ],
+  "notas": "Segundo inciso (misma página): «Durante la misma audiencia, y previamente a la adopción de la decisión definitiva de adjudicación, los interesados podrán pronunciarse sobre la respuesta dada por la entidad contratante a las observaciones presentadas respecto de los informes de evaluación.» Solo licitación: en concurso de méritos el documento tipo de consultoría deja la audiencia como opcional (ver F-0987 notas).",
+  "eje": 8,
+  "leida_por": "lector fase2 eje8-institucional",
+  "fecha_consulta": "2026-10-19"
+}

@@ -1,0 +1,38 @@
+{
+  "id": "F-0978",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 1150 de 2007, art. 5 parágrafo 3 (adicionado por la Ley 1882 de 2018, art. 5): garantía de seriedad no entregada con la propuesta",
+  "anio": 2018,
+  "anio_origen": "cuerpo: el parágrafo 3 lo adiciona el art. 5 de la Ley 1882 de 2018",
+  "institucion": "Agencia Nacional de Contratación Pública (relatoría)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/ley-1150-de-2007/",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "art. 5 (parágrafos 1 a 5)",
+    "art. 6",
+    "art. 7",
+    "art. 9"
+  ],
+  "localizador": "art. 5, parágrafo 3 (texto de la relatoría); idéntico en Ley 1882 de 2018, art. 5",
+  "cita_textual": "PARÁGRAFO 3. La no entrega de la garantía de seriedad junto con la propuesta no será subsanable y será causal de rechazo de la misma.",
+  "afirmacion": "Cuando el pliego exige garantía de seriedad, no entregarla junto con la propuesta no se puede subsanar después y la oferta se rechaza (vigente según la relatoría al 19-oct-2026).",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-DICT",
+  "autoridad": "A1",
+  "tipo_contrato": "todos",
+  "vigencia_verificada": {
+    "fecha": "2026-10-19",
+    "fuente": "https://relatoria.colombiacompra.gov.co/normativa/ley-1150-de-2007/ (texto con notas de modificación de la relatoría) contrastado con https://relatoria.colombiacompra.gov.co/normativa/ley-1882-de-2018/ art. 5"
+  },
+  "reformas_cotejadas": [
+    "Ley 1882 de 2018 art. 5 — es la norma que redacta el parágrafo 1 y adiciona los parágrafos 3, 4 y 5; el texto de la relatoría de la Ley 1150 coincide con el de la Ley 1882",
+    "Ley 2022 de 2020, Ley 2069 de 2020, Ley 2294 de 2023, Ley 2195 de 2022 (páginas de la relatoría abiertas) — la búsqueda por texto no halla ninguna modificación del artículo 5 de la Ley 1150 (cotejo por búsqueda, no lectura completa)",
+    "Decreto 0997 de 2026 y Decreto 287 de 2026 — no mencionan el artículo 5 de la Ley 1150 como modificado"
+  ],
+  "notas": "Excepciones a la exigencia misma de la garantía (no a esta regla): la Guía de garantías 2026 de Colombia Compra (p. 38) dice que no es obligatoria en contratación directa y mínima cuantía. Cuántos oferentes se rechazan por esta causa: no detectable en datos abiertos sin leer los informes de evaluación.",
+  "eje": 8,
+  "leida_por": "lector fase2 eje8-institucional",
+  "fecha_consulta": "2026-10-19"
+}

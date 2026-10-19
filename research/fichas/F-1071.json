@@ -1,0 +1,34 @@
+{
+  "id": "F-1071",
+  "tipo": "doc_tipo",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Documento Base de licitación de obra pública de infraestructura de transporte, versión 4 (Documentos Tipo adoptados por la Resolución 465 de 2024)",
+  "anio": 2024,
+  "institucion": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29920/",
+  "fecha_consulta": "2026-10-19",
+  "estado_lectura": "parcial",
+  "localizador": "Documento Base v4, numeral 4.1.1 «A.I.U.» (p. impresa 57 según el índice del .docx)",
+  "cita_textual": "«El porcentaje del A.I.U. que presenten los Proponentes no debe ser superior al porcentaje total del A.I.U establecido en el Formulario 1– Formulario de Presupuesto Oficial. En consecuencia, el Proponente puede configurar libremente el porcentaje individual de la A, de la I y de la U»",
+  "afirmacion": "En la licitación de obra de transporte v4 por precios unitarios el AIU se ofrece en porcentaje, con A, I y U libres siempre que su suma no supere el AIU total del Formulario 1; si se expresa en porcentaje y en pesos prevalece el porcentaje; la entidad no puede exigir el desglose de la Administración con la oferta, solo al adjudicatario.",
+  "eje": 9,
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-PRECIO",
+  "autoridad": "A3",
+  "vigencia_verificada": {
+    "fecha": "2026-10-19",
+    "fuente": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo (V.4 «Versión vigente» desde 03/02/2025) y Resolución 465 de 2024, art. 8 (PDF abierto)"
+  },
+  "leida_por": "lector fase2 eje9-institucional",
+  "tipo_contrato": "obra",
+  "anio_origen": "inferido",
+  "url_final": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29920",
+  "reformas_cotejadas": [
+    "Resolución 465 de 2024, art. 8 (abierta, PDF p. 5-6): adopta la versión 4, deroga la Resolución 240 de 2020 y aplica a procesos con aviso de convocatoria desde el 3 de febrero de 2025",
+    "Control de versiones de Documentos Tipo (página abierta el 2026-10-19): la versión 4 figura como vigente; no lista modificaciones posteriores de la licitación de obra de transporte",
+    "Decreto 0997 de 2026, art. 14 par. 3 (abierto en la Relatoría): los procesos regidos por documentos tipo siguen con ellos hasta que Colombia Compra expida nuevas versiones; no modifica el documento base"
+  ],
+  "notas": "Fuente: archivo .docx dentro del ZIP «05DT_Transp_TLP_V4.zip» (descarga/29920, obtenida por GET el 2026-10-19); el .docx no tiene paginación fija, el localizador usa el numeral y la página impresa que declara el índice del propio documento. Texto vecino: «[La entidad no podrá exigir al proponente el desglose del AIU o componentes internos de la administración (A) en la propuesta económica, sino solo la discriminación de su valor en porcentaje (%). Para el proponente que resulte adjudicatario se podrá solicitar el desglose del A.I.U. ofertado.]»; «Cuando el proponente exprese el AIU en porcentaje (%) y en pesos, prevalece el valor expresado en porcentaje (%)». Causales relacionadas: «Ofrecer como AIU un porcentaje cuya sumatoria sea superior al establecido por la Entidad en el Formulario 1» y «No discriminar en la oferta económica el porcentaje de AIU»; «En ningún caso la entidad rechazará la oferta por no presentar el desglose del AIU». Rehace la ficha F-054, que citaba la guía de la v3.",
+  "rehace_a": "F-054"
+}

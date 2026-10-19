@@ -1,0 +1,31 @@
+{
+  "tipo": "academia",
+  "autor": "Maestre Orduña, S. C.",
+  "titulo": "Apoyo en la implementación del sistema de calidad en gerencia de proyectos con énfasis en formulación y presentación de procesos licitatorios",
+  "anio": 2018,
+  "institucion": "Universidad Pontificia Bolivariana, Bucaramanga (trabajo de grado, práctica empresarial, Ingeniería Civil)",
+  "url": "https://repository.upb.edu.co/server/api/core/bitstreams/6ca6e8c8-c9fe-4062-8d5f-9b2a236c7389/content",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "indicadores de cumplimiento y conclusiones (págs. 55-66)",
+    "informes de procesos presentados en el anexo (casos citados)"
+  ],
+  "anio_origen": "portada",
+  "tipo_contrato": "obra",
+  "localizador": "Conclusiones del autor, p. 66 del PDF",
+  "pagina_pdf": 66,
+  "cita_textual": "La mayoría de razones por las cuales han quedado ofertas rechazadas han sido por la falta de documentación, por la no entrega a tiempo de la oferta en la ventanilla única de la entidad",
+  "afirmacion": "El autor (2018) atribuye la mayoría de los rechazos de su firma a documentación faltante y a entregas fuera de hora en la ventanilla de la entidad (propuestas físicas), y cuenta que al dedicar una persona solo a licitar las propuestas presentadas pasaron de 70 en 2017 a 147 en lo corrido de 2018.",
+  "cifra_comprobada": "No recalculable: 70 y 147 propuestas son datos del autor sin tabla que los respalde en el texto leído.",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-DICT",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — práctica de 2018; reverificar",
+  "notas": "Causa narrada por el propio autor, sin desglose por proceso en el texto leído.",
+  "id": "F-1032",
+  "eje": 8,
+  "fecha_consulta": "2026-10-19",
+  "leida_por": "lector fase2 eje8-academica"
+}

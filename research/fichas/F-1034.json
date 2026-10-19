@@ -1,0 +1,30 @@
+{
+  "tipo": "academia",
+  "autor": "Maestre Orduña, S. C.",
+  "titulo": "Apoyo en la implementación del sistema de calidad en gerencia de proyectos con énfasis en formulación y presentación de procesos licitatorios",
+  "anio": 2018,
+  "institucion": "Universidad Pontificia Bolivariana, Bucaramanga (trabajo de grado, práctica empresarial, Ingeniería Civil)",
+  "url": "https://repository.upb.edu.co/server/api/core/bitstreams/6ca6e8c8-c9fe-4062-8d5f-9b2a236c7389/content",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "indicadores de cumplimiento y conclusiones (págs. 55-66)",
+    "informes de procesos presentados en el anexo (casos citados)"
+  ],
+  "anio_origen": "portada",
+  "tipo_contrato": "obra",
+  "localizador": "informe del proceso LP-04-2018 (anexo), pp. 85-86 del PDF",
+  "pagina_pdf": 85,
+  "cita_textual": "La oferta técnica requirió subsanar copia de los contratos de obra con los que se estaba acreditando la experiencia, los cuales no poseía la empresa y no se los expidieron […] dentro del tiempo establecido para subsanar la oferta, razón que descalifico al proponente y fue rechazado",
+  "afirmacion": "En una licitación de 2018 la entidad pidió subsanar copia de los contratos con los que se acreditaba la experiencia; la firma no los tenía ni se los expidieron dentro del plazo para subsanar, y la oferta fue rechazada.",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-EXP",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — caso de 2018 (SECOP I) bajo la regla de subsanación de entonces; la Ley 1882 de 2018 cambió el plazo; reverificar",
+  "notas": "La cita cruza el salto de página (pp. 85-86). Un caso; la firma no tenía el soporte al presentar.",
+  "id": "F-1034",
+  "eje": 8,
+  "fecha_consulta": "2026-10-19",
+  "leida_por": "lector fase2 eje8-academica"
+}

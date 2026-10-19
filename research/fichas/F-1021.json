@@ -1,0 +1,30 @@
+{
+  "tipo": "academia",
+  "autor": "González Hernández, J. C.",
+  "titulo": "La inestabilidad de la regla de subsanabilidad en la contratación pública",
+  "anio": 2018,
+  "institucion": "Universidad Militar Nueva Granada (tesis, Maestría en Derecho Administrativo)",
+  "url": "https://repository.umng.edu.co/server/api/core/bitstreams/7ec20868-1347-409a-a982-892af73e9ed9/content",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "apartado sobre la Ley 1882 de 2018 y el término para subsanar",
+    "aplicación de la regla bajo la Ley 1150 y la Ley 1882 (págs. 18-29 del PDF)"
+  ],
+  "localizador": "apartado sobre la Ley 1882 de 2018, p. 18 del PDF",
+  "pagina_pdf": 18,
+  "cita_textual": "la causal de rechazo es la no presentación de la garantía de la seriedad de la oferta, pues si se presenta, pero esta no cubre, por ejemplo, la vigencia o los valores a amparar, se deberá solicitar que se subsane y no procederá el rechazo",
+  "afirmacion": "El autor (tesis de noviembre de 2018) lee la Ley 1882 de 2018 así: no presentar la garantía de seriedad con la propuesta es rechazo; presentarla con errores de vigencia, valor o nombre se subsana en el plazo legal y solo se rechaza si no se corrige.",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-DICT",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — tesis de 2018 que interpreta el art. 5 de la Ley 1882 de 2018; no se abrió la Ley 1150 art. 5 par. 1 y 3 ni sus reformas; reverificar contra texto consolidado",
+  "tipo_contrato": "todos",
+  "anio_origen": "portada",
+  "notas": "Coincide con F-1001 y F-1002 en la regla (otra tesis); aquí se añade el error de valor, vigencia o nombre como subsanable, según el autor.",
+  "id": "F-1021",
+  "eje": 8,
+  "fecha_consulta": "2026-10-19",
+  "leida_por": "lector fase2 eje8-academica"
+}

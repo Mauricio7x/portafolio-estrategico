@@ -1,0 +1,35 @@
+{
+  "id": "F-0986",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República",
+  "titulo": "Decreto 1082 de 2015, art. 2.2.1.1.1.5.1: renovar el RUP a más tardar el quinto día hábil de abril",
+  "anio": 2015,
+  "anio_origen": "cuerpo (Decreto 1082 de 2015)",
+  "institucion": "Departamento Nacional de Planeación (relatoría de Colombia Compra)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/decreto-1082-de-2015/",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "art. 2.2.1.1.1.5.1"
+  ],
+  "localizador": "art. 2.2.1.1.1.5.1, inciso 2",
+  "cita_textual": "La persona inscrita en el RUP debe presentar la información para renovar su registro a más tardar el quinto día hábil del mes de abril de cada año. De lo contrario cesan los efectos del RUP.",
+  "afirmacion": "Quien no presenta la renovación del RUP a más tardar el quinto día hábil de abril pierde los efectos del registro; es un paso previo que se pierde de un año a otro si no se hace.",
+  "etapa": "E0",
+  "decision": "D3",
+  "modulo": "M-RUP",
+  "autoridad": "A2",
+  "tipo_contrato": "todos",
+  "vigencia_verificada": {
+    "fecha": "2026-10-19",
+    "fuente": "https://relatoria.colombiacompra.gov.co/normativa/decreto-1082-de-2015/ (NO consolidado) + reformas cotejadas por número de artículo"
+  },
+  "reformas_cotejadas": [
+    "Decreto 0997 de 2026 — su índice modifica 2.2.1.1.1.5.7, 2.2.1.1.1.6.1 y 2.2.1.1.1.6.2, no este artículo",
+    "Decreto 399 de 2021 y Decreto 579 de 2021 — tocan los arts. 2.2.1.1.1.5.2, 2.2.1.1.1.5.6 y 2.2.1.1.1.6.2, no este artículo",
+    "Decreto 287 de 2026, 1860 de 2021, 399 de 2021, 579 de 2021, 680 de 2021, 310 de 2021, 142 de 2023, 594 de 2020, 442 de 2022, 957 de 2019, 392 de 2018 y 342 de 2019 (páginas de la relatoría abiertas) — ninguna menciona este número de artículo (cotejo por búsqueda del número, no lectura completa de cada decreto)"
+  ],
+  "notas": "El mismo plazo aparece como causal de rechazo en el Documento Base de consultoría de infraestructura social (F-0996). El eje 4 (RUP) lo desarrolla; aquí solo importa como paso del camino de quien parte de cero: la inscripción nueva debe estar EN FIRME al cierre. Cita con texto de la relatoría.",
+  "eje": 8,
+  "leida_por": "lector fase2 eje8-institucional",
+  "fecha_consulta": "2026-10-19"
+}

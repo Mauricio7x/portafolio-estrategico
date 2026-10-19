@@ -1,0 +1,31 @@
+{
+  "tipo": "academia",
+  "autor": "Calderón Jiménez, M. C.",
+  "titulo": "Auxiliar de ingeniería en la búsqueda, preparación y presentación de procesos de contratación estatal",
+  "anio": 2021,
+  "institucion": "Universidad Pontificia Bolivariana (trabajo de grado, práctica empresarial, Ingeniería Civil)",
+  "url": "https://repository.upb.edu.co/server/api/core/bitstreams/c9c1bba2-a1af-4c7a-baef-6c46c07c3167/content",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "6.2 a 6.6 (búsqueda, manifestación de interés, lista de chequeo, preparación, entrega, subsanación, adjudicación)",
+    "7 aporte al conocimiento",
+    "8 conclusiones"
+  ],
+  "anio_origen": "portada",
+  "tipo_contrato": "obra",
+  "localizador": "6.6.1.1 y 6.6.1.2, pp. 52-53 del PDF",
+  "pagina_pdf": 53,
+  "cita_textual": "se revisaron los criterios de asignación de puntaje y se dio el puntaje de acuerdo a lo presentado. […] no se presentó el anexo 4 pacto de transparencia con la propuesta firmado",
+  "afirmacion": "En una licitación de obra de 2021 el informe preliminar declaró no hábil a la firma por no aportar el anexo de pacto de transparencia, aunque el pliego decía que firmar la carta de presentación bastaba; la firma subsanó dentro del plazo (hasta el 1 de marzo de 2021) y quedó hábil en el informe final.",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-VIGIA",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — caso de 2021 en SECOP I; la subsanación se rige por la Ley 1150 art. 5 par. 1 reformada por la Ley 1882 de 2018, que no se abrió aquí; reverificar",
+  "notas": "El texto no indica quién tuvo razón de fondo; narra que la entidad aceptó la subsanación. Un solo caso.",
+  "id": "F-1028",
+  "eje": 8,
+  "fecha_consulta": "2026-10-19",
+  "leida_por": "lector fase2 eje8-academica"
+}

@@ -1,0 +1,30 @@
+{
+  "tipo": "academia",
+  "autor": "Maestre Orduña, S. C.",
+  "titulo": "Apoyo en la implementación del sistema de calidad en gerencia de proyectos con énfasis en formulación y presentación de procesos licitatorios",
+  "anio": 2018,
+  "institucion": "Universidad Pontificia Bolivariana, Bucaramanga (trabajo de grado, práctica empresarial, Ingeniería Civil)",
+  "url": "https://repository.upb.edu.co/server/api/core/bitstreams/6ca6e8c8-c9fe-4062-8d5f-9b2a236c7389/content",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "indicadores de cumplimiento y conclusiones (págs. 55-66)",
+    "informes de procesos presentados en el anexo (casos citados)"
+  ],
+  "anio_origen": "portada",
+  "tipo_contrato": "obra",
+  "localizador": "informe del proceso FDLCB-LP-003-2018 (anexo), p. 209 del PDF (impresa 143 del anexo)",
+  "pagina_pdf": 209,
+  "cita_textual": "se incurre en causal de rechazo debido a la modificacion del valor correspondiente a la multiplicacion del costo directo por el porcentaje final con 5 decimales de AIU, por lo cual el consorcio quedo RECHAZADO",
+  "afirmacion": "En una licitación de 2018 al abrir el sobre 2 la entidad rechazó una oferta porque cambió el valor que resulta de multiplicar el costo directo por el porcentaje final del AIU con 5 decimales; la lista de lecciones del autor añade revisar que el AIU esté dentro de los rangos y preguntar a la entidad si se presenta desglosado (p. 56).",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-F1",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — caso de 2018 bajo ese pliego; reverificar contra el documento tipo vigente",
+  "notas": "Un caso; el texto no dice cuánto cambió el valor ni la diferencia en pesos.",
+  "id": "F-1036",
+  "eje": 8,
+  "fecha_consulta": "2026-10-19",
+  "leida_por": "lector fase2 eje8-academica"
+}

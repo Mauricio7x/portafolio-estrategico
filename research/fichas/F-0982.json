@@ -1,0 +1,35 @@
+{
+  "id": "F-0982",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República",
+  "titulo": "Decreto 1082 de 2015, art. 2.2.1.2.3.1.9: vigencia y valor de la garantía de seriedad de la oferta",
+  "anio": 2015,
+  "anio_origen": "cuerpo (Decreto 1082 de 2015; parágrafo agregado por el Decreto 1860 de 2021)",
+  "institucion": "Departamento Nacional de Planeación (relatoría de Colombia Compra)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/decreto-1082-de-2015/",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "arts. 2.2.1.2.3.1.4 a 2.2.1.2.3.1.12"
+  ],
+  "localizador": "art. 2.2.1.2.3.1.9, inciso 1; incisos 3 y 4 para concurso de méritos y valores altos",
+  "cita_textual": "La garantía de seriedad de la oferta debe estar vigente desde la presentación de la oferta y hasta la aprobación de la garantía de cumplimiento del contrato y su valor debe ser de por lo menos el diez por ciento (10%) del valor de la oferta.",
+  "afirmacion": "La póliza de seriedad debe cubrir desde que se presenta la oferta hasta que la entidad aprueba la garantía de cumplimiento, y valer al menos el 10 % del valor de la oferta (en subasta inversa y concurso de méritos, el 10 % del presupuesto oficial estimado).",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-DICT",
+  "autoridad": "A2",
+  "tipo_contrato": "todos",
+  "vigencia_verificada": {
+    "fecha": "2026-10-19",
+    "fuente": "https://relatoria.colombiacompra.gov.co/normativa/decreto-1082-de-2015/ (NO consolidado) + Guía de garantías 2026 de Colombia Compra pp. 40-41 que repite el contenido, + reformas cotejadas"
+  },
+  "reformas_cotejadas": [
+    "Decreto 1860 de 2021 art. 4 — adiciona un parágrafo (valor diferencial para emprendimientos, mujeres y Mipyme en Acuerdos Marco); no cambia los incisos citados",
+    "Decreto 287 de 2026 (modifica arts. 2.2.1.2.4.2.6 a 2.2.1.2.4.2.8, valores diferenciales por discapacidad) y Decreto 0997 de 2026 — no modifican este artículo (cotejo por número)"
+  ],
+  "cifra_comprobada": "cuadra: 10 % (inciso 1), 10 % del presupuesto oficial en subasta y concurso de méritos (inciso 3) y escalones 2,5 % / 1 % / 0,5 % para ofertas de más de 1, 5 y 10 millones de SMMLV coinciden con la Guía de garantías 2026 pp. 40-41",
+  "notas": "Incisos 3 a 7 del artículo (misma página): subasta inversa y concurso de méritos = 10 % del presupuesto oficial estimado; si la oferta o el presupuesto supera 1.000.000 de SMMLV la entidad puede aceptar 2,5 %, 1 % o 0,5 % según el tramo. Cita con ligaduras tipográficas normalizadas. Para obra, el valor sale de la OFERTA propia: una oferta mayor eleva la prima, y la entidad puede pedir más del 10 % si lo justifica (Guía 2026 p. 40).",
+  "eje": 8,
+  "leida_por": "lector fase2 eje8-institucional",
+  "fecha_consulta": "2026-10-19"
+}

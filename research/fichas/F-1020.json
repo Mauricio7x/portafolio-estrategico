@@ -1,0 +1,29 @@
+{
+  "tipo": "academia",
+  "autor": "Díaz Díez, C. A.",
+  "titulo": "Documentos tipo obligatorios: ¿supresión de la potestad discrecional para la confección del pliego de condiciones?",
+  "anio": 2020,
+  "institucion": "Revista digital de Derecho Administrativo n.º 24, Universidad Externado de Colombia (Dialnet)",
+  "url": "https://dialnet.unirioja.es/descarga/articulo/7471556.pdf",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "apartado sobre los pliegos tipo de obra de transporte, versiones 1 y 2 y selección abreviada de menor cuantía (págs. 146-148 impresas)"
+  ],
+  "localizador": "apartado sobre la versión 2 de los pliegos tipo de obra, p. 21 del PDF (impresa 147)",
+  "pagina_pdf": 21,
+  "cita_textual": "se elimina la causal de rechazo de la oferta por la diferencia mayor o igual al 1% por exceso o por defecto respecto del presupuesto oficial o los precios unitarios establecidos por la entidad pública",
+  "afirmacion": "Según este artículo (2020), la versión 2 de los pliegos tipo de licitación de obra de infraestructura de transporte (Resolución 0045 de 2020) eliminó la causal de rechazo por diferir 1 % o más del presupuesto oficial o de los precios unitarios, y aclaró las reglas de subsanabilidad, de diligenciamiento del formulario de la propuesta económica y de la visita al sitio.",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-F1",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — trabajo académico de 2020 sobre la versión 2 de los documentos tipo; los documentos tipo han tenido versiones posteriores y el artículo no se contrastó con el documento tipo vigente; anterior a la reforma; reverificar contra el pliego tipo vigente",
+  "tipo_contrato": "obra",
+  "anio_origen": "portada",
+  "notas": "Es una reseña del autor de los cambios de la versión 2; la regla se cita desde el documento tipo en otro eje, no desde esta ficha.",
+  "id": "F-1020",
+  "eje": 8,
+  "fecha_consulta": "2026-10-19",
+  "leida_por": "lector fase2 eje8-academica"
+}

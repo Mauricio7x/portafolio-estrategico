@@ -1,0 +1,29 @@
+{
+  "id": "F-0991",
+  "tipo": "cce_guia",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Guía para la Contratación de Obra Pública (2026, versión 3 de julio): lo subsanable es la prueba, no la condición",
+  "anio": 2026,
+  "anio_origen": "portada («2026») y nombre del archivo («JulioVs3»)",
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2026/08/Guia-para-la-Contratacion-de-Obra-Publica-2026-JulioVs3-OriginalFirmado.pdf",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "índice (pp. 3-5)",
+    "pp. 51-53 (requisitos habilitantes, ponderables y subsanación)"
+  ],
+  "localizador": "sección 4.2.4, requisitos habilitantes y subsanación, p. 51 (impresa 51)",
+  "pagina_pdf": 51,
+  "cita_textual": "lo que resulta susceptible de subsanación es el medio de prueba, no la condición exigida para el cumplimiento del requisito, la cual debe ser adquirida previo al cierre.",
+  "afirmacion": "Según la guía de obra pública de 2026, en obra se puede subsanar el documento que prueba un habilitante, pero la condición (la experiencia, la capacidad, el registro) tiene que existir antes del cierre.",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-VIGIA",
+  "autoridad": "A3",
+  "tipo_contrato": "obra",
+  "vigencia_verificada": "[sin verificar] — guía de Colombia Compra; la ley que interpreta (Ley 1150 art. 5 par. 1 por Ley 1882 art. 5) se leyó en F-0979",
+  "notas": "P. 52 de la misma guía: los criterios ponderables (oferta económica, calidad, sostenibilidad, industria nacional, etc.) «no son susceptibles de subsanación» porque la ley solo permite subsanar lo que no afecta el puntaje. Pp. 52-53: distingue subsanar (ausencia de requisitos, Ley 1150 art. 5 par. 1) de aclarar o explicar (Ley 80 art. 30 num. 7: la entidad puede pedir aclaraciones «sin que por ello puedan adicionarlas o modificarlas») y reproduce, según la propia guía, la sentencia del Consejo de Estado del 12-nov-2014, rad. 27986 (lo que la guía dice de la sentencia es su lectura, nivel A3; la sentencia no se abrió). P. 53: con Documentos Tipo las entidades no tienen autonomía sobre habilitantes ni ponderación. Error típico: entregar el soporte tarde creyendo que se «subsana» una condición que se cumplió después del cierre.",
+  "eje": 8,
+  "leida_por": "lector fase2 eje8-institucional",
+  "fecha_consulta": "2026-10-19"
+}

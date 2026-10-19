@@ -1,0 +1,31 @@
+{
+  "tipo": "academia",
+  "autor": "Osorio Ruiz, C. K.",
+  "titulo": "Del proceso de selección abreviada en las licitaciones declaradas desiertas",
+  "anio": 2021,
+  "institucion": "Universidad Militar Nueva Granada (trabajo de grado, Derecho)",
+  "url": "https://repository.unimilitar.edu.co/bitstreams/ba606fe0-3f6b-4317-8ab4-8d2bf64e7442/download",
+  "url_final": "https://repository.umng.edu.co/server/api/core/bitstreams/ba606fe0-3f6b-4317-8ab4-8d2bf64e7442/content",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "capítulo sobre selección abreviada de menor cuantía tras licitación desierta",
+    "conclusiones"
+  ],
+  "localizador": "capítulo sobre menor cuantía tras licitación desierta, p. 8 del PDF",
+  "pagina_pdf": 8,
+  "cita_textual": "La Entidad Estatal que haya declarado desierta una licitación puede adelantar el Proceso de Contratación correspondiente aplicando las normas del proceso de selección abreviada de menor cuantía, […] debe prescindir de: a) recibir manifestaciones de interés, y b) realizar el sorteo de oferentes.",
+  "afirmacion": "La tesis (2021) transcribe el art. 2.2.1.2.1.2.22 del Decreto 1082 de 2015: tras una licitación desierta la entidad puede abrir una selección abreviada de menor cuantía sin recibir manifestaciones de interés ni sorteo, dentro de los cuatro meses siguientes; para el oferente significa que no hay etapa de manifestación en ese proceso.",
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-VIGIA",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — la tesis cita el artículo del Decreto 1082 de 2015 según su versión de 2021; no se abrió el decreto ni sus modificatorios en esta ficha; reverificar contra texto consolidado",
+  "tipo_contrato": "todos",
+  "anio_origen": "portada",
+  "notas": "La URL pedida (repository.unimilitar.edu.co) redirigió a url_final. La cita del artículo es la que transcribe la autora; la norma se citará desde su texto en otra ficha.",
+  "id": "F-1016",
+  "eje": 8,
+  "fecha_consulta": "2026-10-19",
+  "leida_por": "lector fase2 eje8-academica"
+}

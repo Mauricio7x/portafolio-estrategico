@@ -1,0 +1,28 @@
+{
+  "id": "F-0993",
+  "tipo": "cce_concepto",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente",
+  "titulo": "Concepto C-1388 de 2026 — subsanabilidad en los Documentos Tipo de infraestructura social (versión 2)",
+  "anio": 2026,
+  "anio_origen": "detalle del documento en la relatoría: fecha 15/10/2026",
+  "institucion": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente (relatoría)",
+  "url": "https://relatoria.colombiacompra.gov.co/conceptos/c-1388-de-2026/",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "extracto publicado en la relatoría (secciones sobre subsanabilidad)"
+  ],
+  "localizador": "extracto «SUBSANABILIDAD – Oportunidad – Documentos tipo de infraestructura social – Deber de aportar los documentos faltantes»",
+  "cita_textual": "las entidades contratantes deben publicar en SECOP, durante cinco (5) días hábiles, el informe de evaluación relacionado con los requisitos habilitantes y documentos a los que se les asigne puntaje, diferentes a la oferta económica.",
+  "afirmacion": "En los Documentos Tipo de licitación de obra de infraestructura social (versión 2) el informe de evaluación de habilitantes y puntaje (sin la oferta económica) se publica 5 días hábiles; en ese plazo se observa y se entregan los documentos pedidos por la sección 1.6 del documento base.",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-VIGIA",
+  "autoridad": "A5",
+  "tipo_contrato": "obra",
+  "vigencia_verificada": "[sin verificar] — concepto no vinculante del 15-oct-2026 sobre los Documentos Tipo de infraestructura social v2; no se abrió el documento base de obra v2 (la API de medios no lo devolvió), de modo que el plazo de 5 días se toma del concepto",
+  "cifra_comprobada": "cuadra: 5 días hábiles coincide con Ley 80 art. 30 num. 8 (F-0995); el pliego tipo de interventoría social y el de consultoría social fijan 3 días hábiles (F-0962, numeral 2.6 del documento de consultoría), diferencia por documento tipo, no error",
+  "notas": "Mismo extracto: «no es la prueba –usualmente un documento– lo que debe ser anterior al cierre del proceso, sino el hecho que ella acredita. Es decir, ante la solicitud de la Administración de subsanar determinado requisito, el documento podría estar fechado con posterioridad…» (un certificado expedido tras el cierre vale si el hecho es anterior). Regla general repetida: se subsana la falta de entrega y los defectos de los habilitantes; no se subsana lo que da puntaje, lo ocurrido después del cierre ni la garantía de seriedad no aportada. Después del plazo de observaciones y a más tardar el día antes de la audiencia, la entidad publica el informe final si cambió. Los conceptos C-1301 y C-1302 de 2026 repiten la regla general (extractos ojeados, sin ficha propia).",
+  "eje": 8,
+  "leida_por": "lector fase2 eje8-institucional",
+  "fecha_consulta": "2026-10-19"
+}

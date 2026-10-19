@@ -1,0 +1,34 @@
+{
+  "id": "F-0983",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República",
+  "titulo": "Decreto 1082 de 2015, art. 2.2.1.2.3.1.4: garantía del oferente plural",
+  "anio": 2015,
+  "anio_origen": "cuerpo (Decreto 1082 de 2015)",
+  "institucion": "Departamento Nacional de Planeación (relatoría de Colombia Compra)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/decreto-1082-de-2015/",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "arts. 2.2.1.2.3.1.4 a 2.2.1.2.3.1.12"
+  ],
+  "localizador": "art. 2.2.1.2.3.1.4",
+  "cita_textual": "Cuando la oferta es presentada por un proponente plural, como unión temporal, consorcio o promesa de sociedad futura, la garantía debe ser otorgada por todos sus integrantes.",
+  "afirmacion": "En un consorcio, unión temporal o promesa de sociedad futura, la póliza de seriedad debe ser otorgada por todos los integrantes, no solo por el líder.",
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-CONS",
+  "autoridad": "A2",
+  "tipo_contrato": "todos",
+  "vigencia_verificada": {
+    "fecha": "2026-10-19",
+    "fuente": "https://relatoria.colombiacompra.gov.co/normativa/decreto-1082-de-2015/ (NO consolidado) + reformas cotejadas por número de artículo"
+  },
+  "reformas_cotejadas": [
+    "Decreto 0997 de 2026 (relatoría) — no modifica este artículo (cotejo por número de artículo)",
+    "Decreto 287 de 2026, 1860 de 2021, 399 de 2021, 579 de 2021, 680 de 2021, 310 de 2021, 142 de 2023, 594 de 2020, 442 de 2022, 957 de 2019, 392 de 2018 y 342 de 2019 (páginas de la relatoría abiertas) — ninguna menciona este número de artículo (cotejo por búsqueda del número, no lectura completa de cada decreto)"
+  ],
+  "notas": "Error típico que esta norma previene: póliza con un solo integrante como tomador. Que el tomador sea el proponente y no un apoderado está en el concepto C-1238 de 2026 (ver F-0990). Las fichas F-0958 a F-0960 (guía de proponentes plurales de SECOP II) no recogen este punto.",
+  "eje": 8,
+  "leida_por": "lector fase2 eje8-institucional",
+  "fecha_consulta": "2026-10-19"
+}

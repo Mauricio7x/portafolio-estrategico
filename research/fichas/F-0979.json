@@ -1,0 +1,35 @@
+{
+  "id": "F-0979",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 1150 de 2007, art. 5 parágrafo 1 (modificado por la Ley 1882 de 2018, art. 5): subsanar hasta el traslado del informe de evaluación",
+  "anio": 2018,
+  "anio_origen": "cuerpo: el parágrafo 1 vigente lo redacta el art. 5 de la Ley 1882 de 2018",
+  "institucion": "Agencia Nacional de Contratación Pública (relatoría)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/ley-1150-de-2007/",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "art. 5 (parágrafos 1 a 5)"
+  ],
+  "localizador": "art. 5, parágrafo 1 (texto de la relatoría); idéntico en Ley 1882 de 2018, art. 5",
+  "cita_textual": "todos aquellos requisitos de la propuesta que no afecten la asignación de puntaje, deberán ser solicitados por las entidades estatales y deberán ser entregados por los proponentes hasta el término de traslado del informe de evaluación que corresponda a cada modalidad de selección",
+  "afirmacion": "Lo que no da puntaje se pide y se entrega hasta el traslado del informe de evaluación de cada modalidad (con las excepciones de mínima cuantía y subasta); quien no lo entrega en ese plazo es rechazado.",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-VIGIA",
+  "autoridad": "A1",
+  "tipo_contrato": "todos",
+  "vigencia_verificada": {
+    "fecha": "2026-10-19",
+    "fuente": "https://relatoria.colombiacompra.gov.co/normativa/ley-1150-de-2007/ (texto con notas de modificación de la relatoría) contrastado con https://relatoria.colombiacompra.gov.co/normativa/ley-1882-de-2018/ art. 5"
+  },
+  "reformas_cotejadas": [
+    "Ley 1882 de 2018 art. 5 — es la norma que redacta el parágrafo 1 y adiciona los parágrafos 3, 4 y 5; el texto de la relatoría de la Ley 1150 coincide con el de la Ley 1882",
+    "Ley 2022 de 2020, Ley 2069 de 2020, Ley 2294 de 2023, Ley 2195 de 2022 (páginas de la relatoría abiertas) — la búsqueda por texto no halla ninguna modificación del artículo 5 de la Ley 1150 (cotejo por búsqueda, no lectura completa)",
+    "Decreto 0997 de 2026 y Decreto 287 de 2026 — no mencionan el artículo 5 de la Ley 1150 como modificado"
+  ],
+  "notas": "Texto completo del parágrafo (misma página): «Serán rechazadas las ofertas de aquellos proponentes que no suministren la información y la documentación solicitada por la entidad estatal hasta el plazo anteriormente señalado. Durante el término otorgado para subsanar las ofertas, los proponentes no podrán acreditar circunstancias ocurridas con posterioridad al cierre del proceso.» El término de traslado difiere por modalidad: 5 días hábiles en licitación (Ley 80 art. 30 num. 8, ver F-0995), 3 días hábiles en concurso de méritos (Decreto 399 de 2021, ver F-0987).",
+  "eje": 8,
+  "leida_por": "lector fase2 eje8-institucional",
+  "fecha_consulta": "2026-10-19"
+}

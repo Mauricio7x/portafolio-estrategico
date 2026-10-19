@@ -1,0 +1,34 @@
+{
+  "id": "F-0988",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República",
+  "titulo": "Decreto 1082 de 2015, art. 2.2.1.1.2.2.4: oferta con valor artificialmente bajo",
+  "anio": 2015,
+  "anio_origen": "cuerpo (Decreto 1082 de 2015)",
+  "institucion": "Departamento Nacional de Planeación (relatoría de Colombia Compra)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/decreto-1082-de-2015/",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "art. 2.2.1.1.2.2.4"
+  ],
+  "localizador": "art. 2.2.1.1.2.2.4, inciso 1",
+  "cita_textual": "el valor de una oferta parece artificialmente bajo, la Entidad Estatal debe requerir al oferente para que explique las razones que sustentan el valor ofrecido.",
+  "afirmacion": "Si el precio de una oferta parece artificialmente bajo, la entidad debe pedirle al oferente que explique el valor; con la explicación, el evaluador recomienda rechazar o seguir evaluando. Si el bajo precio responde a circunstancias objetivas del oferente que no ponen en riesgo el contrato, se continúa el análisis.",
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-PRECIO",
+  "autoridad": "A2",
+  "tipo_contrato": "todos",
+  "vigencia_verificada": {
+    "fecha": "2026-10-19",
+    "fuente": "https://relatoria.colombiacompra.gov.co/normativa/decreto-1082-de-2015/ (NO consolidado) + reformas cotejadas por número de artículo"
+  },
+  "reformas_cotejadas": [
+    "Decreto 0997 de 2026 (relatoría) — no modifica este artículo (cotejo por número de artículo)",
+    "Decreto 287 de 2026, 1860 de 2021, 399 de 2021, 579 de 2021, 680 de 2021, 310 de 2021, 142 de 2023, 594 de 2020, 442 de 2022, 957 de 2019, 392 de 2018 y 342 de 2019 (páginas de la relatoría abiertas) — ninguna menciona este número de artículo (cotejo por búsqueda del número, no lectura completa de cada decreto)"
+  ],
+  "notas": "Cita con ligaduras tipográficas normalizadas. El Documento Base de consultoría de infraestructura social lo repite como causal de rechazo (sección 5.2 del pliego, ver F-0997). La explicación del precio es una carga que cae sobre quien ofertó: sin análisis de precios sustentado (APU), no hay con qué responder. El eje 9 (oferta económica) lo trata con más profundidad.",
+  "eje": 8,
+  "leida_por": "lector fase2 eje8-institucional",
+  "fecha_consulta": "2026-10-19"
+}
