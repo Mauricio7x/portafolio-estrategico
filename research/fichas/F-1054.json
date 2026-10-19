@@ -1,0 +1,28 @@
+{
+  "tipo": "gremio",
+  "autor": "Cámara Colombiana de la Infraestructura",
+  "titulo": "Discurso Sesión Instalación",
+  "anio": 2025,
+  "anio_origen": "portada",
+  "institucion": "Cámara Colombiana de la Infraestructura (CCI)",
+  "url": "https://infraestructura.org.co/discurso-sesion-instalacion",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "secciones sobre pliegos tipo, pymes de ingeniería y contratos interadministrativos"
+  ],
+  "tipo_contrato": "todos",
+  "autoridad": "A7",
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-PRECIO",
+  "localizador": "sección «Advertencia sobre problemáticas de las pymes» (página web, publicada el 26-nov-2025)",
+  "cita_textual": "ausencia de anticipos, presupuestos mal estructurados, y modalidades de pago que hacen inviable la ejecución de los proyectos. Es necesario revisar los factores multiplicadores, los costos indirectos, y los esquemas de financiación",
+  "afirmacion": "El presidente del gremio (discurso publicado el 26-nov-2025) afirma que las pymes de ingeniería, más del 90 % del sector, enfrentan ausencia de anticipos, presupuestos mal estructurados y formas de pago que hacen inviable ejecutar, y pide revisar los factores multiplicadores y los costos indirectos.",
+  "cifra_comprobada": "No recalculable: el «más del 90 %» es una afirmación del gremio sin fuente en el texto.",
+  "vigencia_verificada": "[sin verificar] — posición de un gremio en un discurso de 2025; no es norma ni medición; reverificar",
+  "notas": "Posición de parte (gremio); sirve como señal de qué reclaman los contratistas, no como hecho. El nombre de la persona que da el discurso no se guarda.",
+  "id": "F-1054",
+  "eje": 8,
+  "fecha_consulta": "2026-10-19",
+  "leida_por": "lector fase2 eje8-academica"
+}

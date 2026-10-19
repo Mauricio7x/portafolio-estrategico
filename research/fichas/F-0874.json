@@ -1,0 +1,28 @@
+{
+  "id": "F-0874",
+  "leida_por": "lector fase2 eje7-institucional",
+  "eje": 7,
+  "tipo": "gremio",
+  "autor": "Cámara de Comercio de Medellín para Antioquia, Centro de Estudios de la Gestión y la Contratación Pública",
+  "titulo": "Informe 1: caracterización de la contratación del conglomerado público de Medellín, comparativo 2017-2022",
+  "anio": 2022,
+  "anio_origen": "portada",
+  "institucion": "Cámara de Comercio de Medellín para Antioquia",
+  "url": "https://www.camaramedellin.com.co/Portals/0/Documentos/Informe_1_hasta_2022.pdf",
+  "fecha_consulta": "2026-10-19",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "pp. 1-4 (introducción y sección 2 sobre SECOP I y SECOP II)"
+  ],
+  "pagina_pdf": 3,
+  "localizador": "p. 3, sección «1. Introducción» (advertencia) y sección «2. Sobre SECOP I y SECOP II»",
+  "cita_textual": "la calidad de la información consignada en Secop I y Secop II es responsabilidad de los usuarios encargados de la propiedad, administración y/o reporte de la información tanto en las plataformas como en el depósito en www.datos.gov.co.",
+  "afirmacion": "Un análisis cívico de los datos de SECOP (2022) advierte que las inconsistencias o la ausencia de datos son responsabilidad de quien los reporta, y que la calidad de los reportes es en algunos casos baja y la navegación difícil, lo que dificulta el análisis.",
+  "etapa": "E0",
+  "decision": "D1",
+  "modulo": "M-ING",
+  "autoridad": "A7",
+  "vigencia_verificada": "[sin verificar] — informe de 2022; no es una norma",
+  "tipo_contrato": "todos",
+  "notas": "Segunda cita de la misma página: «que, en algunos casos, la calidad de los reportes sea baja; que la navegación e interacción con el contenido se dificulte». Es un informe de una cámara de comercio sobre una región; evidencia del problema, no una medición del dato nacional."
+}

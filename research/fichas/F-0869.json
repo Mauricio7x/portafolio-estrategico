@@ -1,0 +1,30 @@
+{
+  "id": "F-0869",
+  "leida_por": "lector fase2 eje7-institucional",
+  "eje": 7,
+  "tipo": "internacional",
+  "autor": "Zuleta, M. M.; Caro, C. A.",
+  "institucion": "Banco Interamericano de Desarrollo (BID), con Fedesarrollo; alojado en el sitio del IMCO",
+  "fecha_consulta": "2026-10-19",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "pp. 1-11 (resumen, introducción, calidad del registro)",
+    "p. 33 (errores de registro del ICBF)",
+    "pp. 65-70 (obra pública para vías)"
+  ],
+  "autoridad": "A6",
+  "anio": 2020,
+  "anio_origen": "portada",
+  "url": "https://imco.org.mx/wp-content/uploads/2020/05/Zuleta_Caro_Alertas-Compra-Pública_Fedesarrollo.pdf",
+  "vigencia_verificada": "[sin verificar] — estudio de abril de 2020 con datos de 2014 a abril de 2019; anterior a cambios posteriores de la plataforma y del estatuto; no se cotejaron las normas que el estudio cita",
+  "tipo_contrato": "todos",
+  "titulo": "Mirada a las alertas de riesgo de corrupción del sistema de compra pública colombiano (cálculo con la metodología del IMCO): calidad del registro",
+  "pagina_pdf": 11,
+  "localizador": "p. 11 (impresa 11), cierre de la introducción",
+  "cita_textual": "Es necesario insistir en la importancia de la calidad del registro, como forma concreta de materializar el principio de transparencia.",
+  "afirmacion": "El estudio (abril de 2020) sostiene que la calidad y oportunidad del registro en SECOP deben ser objeto de auditoría de control interno y vigilancia de la Procuraduría, porque, según su lectura de la Ley 1150 de 2007 art. 3 literal b, SECOP es el único punto de ingreso de información del sistema de compra pública.",
+  "etapa": "E0",
+  "decision": "D1",
+  "modulo": "M-ING",
+  "notas": "Lo que el estudio dice de la Ley 1150 es lo que ÉL afirma (A6); el texto de la ley no se abrió en este lector. Es una recomendación de política, no un hecho sobre el estado actual del dato."
+}

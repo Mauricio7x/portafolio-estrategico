@@ -1,0 +1,35 @@
+{
+  "id": "F-1086",
+  "tipo": "doc_tipo",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Documento Base de concurso de méritos para interventoría de obra pública de infraestructura de transporte, versión 3 (Resolución 725 de 2024)",
+  "anio": 2024,
+  "institucion": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29953/",
+  "fecha_consulta": "2026-10-19",
+  "estado_lectura": "parcial",
+  "localizador": "Documento Base interventoría transporte v3, numerales de adjudicación (capítulo II, «Adjudicación del contrato» y «Orden de elegibilidad»)",
+  "cita_textual": "«adjudicará el proceso al Proponente ubicado en el primer lugar del orden de elegibilidad y cuya oferta económica esté acorde con el Presupuesto Oficial del Proceso de Contratación.»",
+  "afirmacion": "En el concurso de méritos de interventoría de transporte v3 se adjudica al primero del orden de elegibilidad (por puntaje de experiencia y equipo, no de precio) cuya oferta económica esté acorde con el presupuesto oficial; el cuadro de puntaje da 67,5 a experiencia y 10 al equipo, y 0 a la oferta económica.",
+  "eje": 9,
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-PRECIO",
+  "autoridad": "A3",
+  "vigencia_verificada": {
+    "fecha": "2026-10-19",
+    "fuente": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo (interventoría de transporte V.3 «Versión vigente» desde 03/02/2025)"
+  },
+  "leida_por": "lector fase2 eje9-institucional",
+  "tipo_contrato": "interventoria",
+  "anio_origen": "inferido",
+  "url_final": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29953",
+  "reformas_cotejadas": [
+    "Control de versiones de Documentos Tipo (abierto el 2026-10-19): V.3 vigente desde 03/02/2025",
+    "Resolución 725 de 2024: nombrada en la página del documento tipo (descarga/29411) como la que adopta la versión 3 y deroga la Resolución 326 de 2022; el PDF de la resolución no se abrió",
+    "Decreto 399 de 2021: el propio documento base remite al art. 2.2.1.1.2.1.1 «modificado por el artículo 1 del Decreto 399 de 2021»",
+    "Decreto 0997 de 2026, art. 14 par. 3: los procesos con documentos tipo siguen con ellos hasta nuevas versiones; no modifica el documento base"
+  ],
+  "cifra_comprobada": "cuadra: 67,50 + 10 + 1 + 20 + 1 + 0,25 + 0,25 = 100,00 (cuadro general) y 67,75 + 10 + 1 + 20 + 1 + 0,25 = 100,00 (cuadro sin Mipyme); ninguno de los cuadros asigna puntos a la oferta económica.",
+  "notas": "Fuente: archivo .docx dentro del ZIP «05DT_Interventoria_TInt_V3-1.zip» (descarga/29953, GET del 2026-10-19); sin paginación fija, el localizador usa los capítulos y numerales del documento. Cuadro literal: «Concepto Puntaje máximo Experiencia del Proponente 67,50 Equipo de trabajo (Personal Clave Evaluable) 10 Factor de sostenibilidad 1 Apoyo a la industria nacional 20 Vinculación de personas con discapacidad 1 Emprendimientos y empresas de mujeres 0,25 Mipyme 0,25 Total 100». En licitación de obra el precio vale ~48,5 de 100 (ficha F-1078): en méritos vale 0. Esto confirma, con el documento tipo vigente, lo que el piloto dedujo del decreto original (F-048)."
+}

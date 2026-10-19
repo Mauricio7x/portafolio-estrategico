@@ -1,0 +1,29 @@
+{
+  "tipo": "academia",
+  "autor": "Bedoya Ávila, M. P.; Unigarro Dorado, I. F.",
+  "titulo": "Incentivos a mipymes en los procesos de contratación estatal",
+  "anio": 2019,
+  "anio_origen": "inferido",
+  "institucion": "Universidad de los Andes (trabajo de grado, Maestría en Derecho Público para la Gestión Administrativa)",
+  "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/fa0f149e-4b48-4ed4-b05a-a9d9afe04cf6/content",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "costos de participación en los procesos de contratación (págs. 39-42)"
+  ],
+  "tipo_contrato": "todos",
+  "etapa": "E0",
+  "decision": "D1",
+  "autoridad": "A6",
+  "modulo": "M-DICT",
+  "localizador": "Costos de participación, garantía de seriedad, p. 41 del PDF",
+  "pagina_pdf": 41,
+  "cita_textual": "La regla general es de al menos el 10% del valor de la oferta.",
+  "afirmacion": "La tesis (hacia 2019) resume, citando el art. 2.2.1.2.3.1.9 del Decreto 1082 de 2015, que la garantía de seriedad es de al menos el 10 % del valor de la oferta (10 % del presupuesto en subasta inversa y concurso de méritos), con porcentajes menores para ofertas muy grandes, y que el precio de la póliza depende de las características del tomador, según Fasecolda.",
+  "vigencia_verificada": "[sin verificar] — resumen de una tesis sobre el Decreto 1082 de 2015; no se abrió el artículo ni sus reformas (por ejemplo el Decreto 0997 de 2026 solo si toca garantías); no usar los porcentajes sin leer el decreto; reverificar",
+  "notas": "La tabla mezcla filas de forma poco legible tras la extracción; solo se repite la regla general citada. El costo de la prima depende del tomador y no se da cifra.",
+  "id": "F-1052",
+  "eje": 8,
+  "fecha_consulta": "2026-10-19",
+  "leida_por": "lector fase2 eje8-academica"
+}

@@ -1,0 +1,27 @@
+{
+  "id": "F-1080",
+  "tipo": "cce_guia",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Control de versiones – Documentos Tipo (página de vigencias de cada versión)",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo",
+  "fecha_consulta": "2026-10-19",
+  "estado_lectura": "completa",
+  "localizador": "Tabla «Sector infraestructura de transporte», filas de licitación de obra, concurso de méritos de interventoría y de consultoría; «Sector social», filas de licitación, interventoría y consultoría",
+  "cita_textual": "«V.3 | 01/01/2021 – 02/02/2025 | Versión anterior. | V.4 | Desde 03/02/2025 | Versión vigente.»",
+  "afirmacion": "Según la página de control de versiones (consulta 2026-10-19): licitación de obra de transporte V.4 vigente desde el 03/02/2025; concurso de méritos de interventoría de transporte V.3 y de consultoría de transporte V.2, ambos desde el 03/02/2025; en infraestructura social, licitación de obra V.2, interventoría V.2 y consultoría V.1 desde el 16/02/2026; mínima cuantía de transporte V.2 con modificaciones desde el 03/02/2025.",
+  "eje": 9,
+  "etapa": "E0",
+  "decision": "D3",
+  "modulo": "M-DICT",
+  "autoridad": "A3",
+  "vigencia_verificada": {
+    "fecha": "2026-10-19",
+    "fuente": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo (la propia página; modificada el 2026-08-31 según la API de WordPress)"
+  },
+  "leida_por": "lector fase2 eje9-institucional",
+  "tipo_contrato": "todos",
+  "anio_origen": "metadatos",
+  "notas": "La página se arma con JavaScript/WordPress: se leyó el contenido por la API (wp-json/wp/v2/pages?slug=control-de-versiones-documentos-tipo, GET) y se decodificó el bloque HTML. Hallazgo menor: la fila de mínima cuantía de transporte dice «Modificaciones mediante Resolución 464 del 10 de septiembre de 2023» mientras la página del documento tipo (descarga/29402) titula la Resolución 464 de 2024 y la fecha del informe dice «10 de septiembre de 2024»; el año correcto no se resolvió aquí. Social: licitación V.1 30/08/2021 – 15/02/2026; interventoría V.1 15/04/2024 – 15/02/2026. Aplica el criterio «aviso de convocatoria publicado desde la fecha de vigencia»."
+}

@@ -8,7 +8,7 @@
   "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29920/",
   "fecha_consulta": "2026-10-19",
   "estado_lectura": "parcial",
-  "localizador": "Documento Base v4, numeral 4.1.4, métodos «Media geométrica» y «Media aritmética baja» (p. impresa 60-61 según el índice del .docx)",
+  "localizador": "Documento Base v4, numeral 4.1.4 «Determinación del método para la ponderación de la propuesta económica» (pp. impresas 58-62 según el índice del .docx; el .docx no permite precisar la página de cada método), métodos «Media geométrica» y «Media aritmética baja»",
   "cita_textual": "«se otorgará el máximo puntaje al valor de la propuesta que se encuentre más cerca (por exceso o por defecto) al valor de la media geométrica calculada para el factor correspondiente.»",
   "afirmacion": "Media geométrica: el máximo puntaje es para la oferta válida más cercana (por exceso o por defecto) a la media geométrica de las ofertas habilitadas, con Puntaje = Puntaje máximo x [1 - |MG - Vi|/MG]; media aritmética baja: promedio entre la oferta válida más baja y el promedio simple de las válidas, XB = (Vmin + X)/2, con valor absoluto para las ofertas por encima de XB.",
   "eje": 9,

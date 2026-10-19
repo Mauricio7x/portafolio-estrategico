@@ -1,0 +1,29 @@
+{
+  "id": "F-0875",
+  "leida_por": "lector fase2 eje7-institucional",
+  "eje": 7,
+  "tipo": "cce_guia",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente (ANCP-CCE)",
+  "titulo": "Protocolo de Indisponibilidad SECOP II (CCE-SEC-GI-14, versión 01 del 25 de enero de 2022)",
+  "anio": 2022,
+  "anio_origen": "portada",
+  "institucion": "ANCP-CCE",
+  "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2024/09/cce-sec-gi-14_protocolo_de_indisponibilidad_secop_ii_25-11-2022_0.pdf",
+  "fecha_consulta": "2026-10-19",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "pp. 1-5 (portada, definiciones)",
+    "pp. 12-14 (presentación de ofertas)"
+  ],
+  "autoridad": "A3",
+  "vigencia_verificada": "[sin verificar] — versión 01 del 25-ene-2022; la página de CCE que la enlaza (https://www.colombiacompra.gov.co/base-conocimiento/protocolo-de-indisponibilidad-secop-ii, abierta) figura actualizada el 3-dic-2025, pero no se comparó con una versión posterior; es un protocolo de la Agencia, no una norma",
+  "tipo_contrato": "todos",
+  "notas": "Alternativa del mismo apartado: la entidad puede ampliar el cronograma una vez restablecida la plataforma, y entonces el proveedor debe verificar el cronograma y ofertar por la plataforma. La falla debe estar confirmada por los canales oficiales de CCE y haberse presentado dentro de las cuatro horas previas al cierre. Este camino exige la confirmación oficial de la falla (certificado de indisponibilidad).",
+  "pagina_pdf": 12,
+  "localizador": "p. 12, apartado 6.6 «Presentación de ofertas», a. Falla general",
+  "cita_textual": "El Proveedor deberá enviar un correo electrónico a la Entidad Estatal previo a la fecha y hora establecida en el cronograma para la presentación de ofertas […] No será aceptada la oferta del Proveedor que haya enviado correo electrónico a la Entidad Estatal después de la fecha y hora de cierre,",
+  "afirmacion": "Si SECOP II falla en el cierre y la entidad decide mantener el plazo, el proveedor debe avisar por correo a la entidad ANTES de la hora de cierre; el correo enviado después no vale, y la entidad espera 16 horas por la oferta por correo (protocolo versión 01 de 2022).",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-VIGIA"
+}

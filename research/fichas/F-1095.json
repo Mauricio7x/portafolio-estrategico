@@ -1,0 +1,28 @@
+{
+  "id": "F-1095",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República (Departamento Nacional de Planeación)",
+  "titulo": "Decreto 0997 de 2026 (4 de agosto), artículos 7, 13 y 14: estudios previos, mínima cuantía y vigencia progresiva",
+  "anio": 2026,
+  "institucion": "Relatoría de la Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/",
+  "fecha_consulta": "2026-10-19",
+  "estado_lectura": "parcial",
+  "localizador": "Decreto 0997 de 2026, art. 7 (nuevo art. 2.2.1.1.2.1.1, numerales 5 a 7) y art. 14 (vigencia, parágrafo 3)",
+  "cita_textual": "«Los Procesos de Contratación que se rijan por los Documento Tipo continuarán aplicando estos instrumentos y las normas vigentes anteriores a la expedición de este Decreto.»",
+  "afirmacion": "El Decreto 0997 de 2026 agrega al estudio previo el análisis de impactos económicos, sociales y ambientales del ciclo de vida y de alternativas de sostenibilidad, y criterios ambientales y sociales en la selección, sin cambiar la regla del valor estimado por precios unitarios; rige de forma progresiva y no se aplica a los procesos regidos por documentos tipo hasta que Colombia Compra expida nuevas versiones.",
+  "eje": 9,
+  "etapa": "E1",
+  "decision": "D2",
+  "modulo": "M-DOC",
+  "autoridad": "A2",
+  "vigencia_verificada": "[sin verificar] — el decreto lleva fecha 4-ago-2026 pero no se halló su fecha de publicación en el Diario Oficial, de la que depende cuándo rige cada artículo (6, 9, 12 o 15 meses según la entidad)",
+  "leida_por": "lector fase2 eje9-institucional",
+  "tipo_contrato": "todos",
+  "anio_origen": "cuerpo",
+  "partes_leidas": [
+    "arts. 7, 13 y 14",
+    "índice de artículos"
+  ],
+  "notas": "Alcance de la ficha limitado al eje 9; el decreto completo es del eje 1. Art. 7, numeral 4 (valor estimado) idéntico al del Decreto 399. Nuevos numerales, literales: «El análisis de los impactos económicos, sociales y ambientales, directos e indirectos, asociados a cada etapa del Ciclo de Vida del bien, obra o servicio a contratar, entre otros»; «El análisis e identificación de las alternativas que promuevan la sostenibilidad social, ambiental y económica […]. Este análisis incluirá una evaluación de la capacidad del mercado para cumplir con los criterios y/o obligaciones de sostenibilidad». Art. 14: los artículos 2, 3, 8 y 11 rigen desde el día siguiente a la publicación; 1, 4, 5, 6, 7, 9, 10, 12 y 13 de forma progresiva: 6 meses (rama ejecutiva nacional y entes asimilados), 9 meses (departamentos de categoría especial y primera, municipios de categoría especial, primera y segunda), 12 meses (departamentos 2 y 3, municipios 3 y 4) y 15 meses (departamentos 4 y municipios 5 y 6 y demás). Art. 13: el art. 2.2.1.2.1.5.1 (estudios previos de mínima cuantía) añade un parágrafo de criterios ambientales y sociales. Como los documentos tipo de obra siguen vigentes, el cambio no toca todavía la oferta económica de licitación de obra v4 ni los méritos de interventoría v3."
+}

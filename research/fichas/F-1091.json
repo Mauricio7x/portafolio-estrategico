@@ -1,0 +1,39 @@
+{
+  "id": "F-1091",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República (Departamento Nacional de Planeación)",
+  "titulo": "Decreto 399 de 2021, artículo 1 (sustituye el artículo 2.2.1.1.2.1.1 del Decreto 1082 de 2015, estudios y documentos previos)",
+  "anio": 2021,
+  "institucion": "Relatoría de la Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/decreto-399-de-2021/",
+  "fecha_consulta": "2026-10-19",
+  "estado_lectura": "parcial",
+  "localizador": "Decreto 399 de 2021, art. 1, numeral 4 del art. 2.2.1.1.2.1.1 (texto sustituido)",
+  "cita_textual": "«Cuando el valor del contrato esté determinado por precios unitarios, la Entidad Estatal debe incluir la forma como los calculó y soportar sus cálculos presupuestales en la estimación de aquellos. Si el contrato es de concesión, la Entidad Estatal no debe publicar el modelo financiero»",
+  "afirmacion": "Desde el Decreto 399 de 2021 el art. 2.2.1.1.2.1.1 obliga a incluir en los estudios previos la forma de cálculo del valor estimado cuando hay precios unitarios y ya no contiene la frase que prohibía publicar las variables del valor estimado en el concurso de méritos: solo el modelo financiero de una concesión se reserva; la consultoría y la interventoría sí pueden auditar la base del presupuesto.",
+  "eje": 9,
+  "etapa": "E1",
+  "decision": "D2",
+  "modulo": "M-APU",
+  "autoridad": "A2",
+  "vigencia_verificada": {
+    "fecha": "2026-10-19",
+    "fuente": "https://relatoria.colombiacompra.gov.co/normativa/decreto-399-de-2021/ y https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/ (texto de las dos normas que tocan el artículo)"
+  },
+  "leida_por": "lector fase2 eje9-institucional",
+  "tipo_contrato": "todos",
+  "anio_origen": "cuerpo",
+  "partes_leidas": [
+    "considerandos",
+    "art. 1",
+    "art. 2"
+  ],
+  "reformas_cotejadas": [
+    "Decreto 0997 de 2026, art. 7 (abierto): sustituye de nuevo el art. 2.2.1.1.2.1.1 añadiendo análisis de impactos y sostenibilidad; el numeral 4 (valor estimado) queda igual; entra de forma progresiva (6, 9, 12 o 15 meses según la entidad) desde su publicación en el Diario Oficial, cuya fecha no se halló, y no aplica a procesos con documentos tipo (art. 14 par. 3)",
+    "Decreto 142 de 2023 (abierto): modifica otros artículos del Decreto 1082 (2.2.1.1.1.3.1, 2.2.1.1.2.2.2, 2.2.1.2.1.5.1, etc.), no el 2.2.1.1.2.1.1",
+    "Decreto 1860 de 2021 (abierto): no toca el 2.2.1.1.2.1.1",
+    "El texto de la Relatoría para el Decreto 399 sí transcribe el artículo reformado (no es la página «Decreto 1082 de 2015»)"
+  ],
+  "rehace_a": "F-046",
+  "notas": "Rehace F-046 (decisión D13): la ficha del piloto citaba el texto original de 2015 transcrito en la página «Decreto 1082 de 2015» de la Relatoría y la verificación adversaria la dio por no sostenida. Considerando del Decreto 399 (literal): «Que en consideración a la importancia de conocer los valores y criterios utilizados por las entidades estatales que sirvan de soporte para definir el valor estimado del contrato en la modalidad de selección de concurso de méritos, y ante la inexistencia de una reserva legal de esta in[formación]…». El inciso final del art. 1 conserva «El presente artículo no es aplicable a la contratación por mínima cuantía». El concepto C-413 de 2026 lo aplica: «el artículo 1 del Decreto 399 de 2021 eliminó la posibilidad de […] no […] publicar las variables utilizadas para calcular el valor estimado del contrato» (ficha F-1090). El Decreto 0997 de 2026, art. 7, trae el nuevo texto con los mismos numerales y añade dos de sostenibilidad (ficha F-1095)."
+}

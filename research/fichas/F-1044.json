@@ -1,0 +1,32 @@
+{
+  "tipo": "academia",
+  "autor": "Arias Rojas, C. P.",
+  "titulo": "Propuesta para el cálculo del factor multiplicador para contratos de consultoría de obras civiles",
+  "anio": 2015,
+  "institucion": "Universidad de los Andes (tesis de maestría en Ingeniería Civil)",
+  "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/be71d510-26ed-4d07-8369-43853ca85e7e/content",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "tabla de contenido",
+    "marco sobre el factor multiplicador",
+    "diagnóstico por entrevistas (págs. 75-79)",
+    "conclusiones (págs. 138-139)"
+  ],
+  "anio_origen": "portada",
+  "tipo_contrato": "consultoria",
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-PRECIO",
+  "autoridad": "A6",
+  "localizador": "Conclusiones, p. 138 del PDF",
+  "pagina_pdf": 138,
+  "cita_textual": "el personal encargado de realizar las licitaciones desconoce los costos indirectos de la compañía y los porcentajes que estiman para cada factor no corresponden a un estudio detallado si no que asignan de manera arbitraria",
+  "afirmacion": "En una firma consultora mediana estudiada (2014-2015) quien arma la oferta de consultoría desconoce los costos indirectos y fija a ojo el porcentaje de cada rubro del factor multiplicador, lo que según la autora puede afectar la rentabilidad; 7 de 10 entrevistados dijeron fijarlos al azar y 3 ajustarlos al rango de la entidad.",
+  "cifra_comprobada": "Cuadra: la gráfica 3 (p. 77) da 7, 0 y 3 de 10 entrevistados (70 %, 0 %, 30 %) y 7 + 0 + 3 = 10.",
+  "vigencia_verificada": "[sin verificar] — tesis de 2015 sobre una firma; no se verificó norma alguna; reverificar",
+  "notas": "Una sola firma y 10 entrevistados: es un caso, no una tasa del sector.",
+  "id": "F-1044",
+  "eje": 8,
+  "fecha_consulta": "2026-10-19",
+  "leida_por": "lector fase2 eje8-academica"
+}

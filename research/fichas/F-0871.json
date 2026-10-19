@@ -1,0 +1,30 @@
+{
+  "id": "F-0871",
+  "leida_por": "lector fase2 eje7-institucional",
+  "eje": 7,
+  "tipo": "internacional",
+  "autor": "Zuleta, M. M.; Caro, C. A.",
+  "institucion": "Banco Interamericano de Desarrollo (BID), con Fedesarrollo; alojado en el sitio del IMCO",
+  "fecha_consulta": "2026-10-19",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "pp. 1-11 (resumen, introducción, calidad del registro)",
+    "p. 33 (errores de registro del ICBF)",
+    "pp. 65-70 (obra pública para vías)"
+  ],
+  "autoridad": "A6",
+  "anio": 2020,
+  "anio_origen": "portada",
+  "url": "https://imco.org.mx/wp-content/uploads/2020/05/Zuleta_Caro_Alertas-Compra-Pública_Fedesarrollo.pdf",
+  "vigencia_verificada": "[sin verificar] — estudio de abril de 2020 con datos de 2014 a abril de 2019; anterior a cambios posteriores de la plataforma y del estatuto; no se cotejaron las normas que el estudio cita",
+  "tipo_contrato": "obra",
+  "titulo": "Mirada a las alertas de riesgo de corrupción (BID/Fedesarrollo): concurso de méritos registrado en procesos de vías",
+  "pagina_pdf": 70,
+  "localizador": "p. 70 (impresa 70), sección 3.1 Vías terciarias, cierre del apartado (e) mínima cuantía",
+  "cita_textual": "El concurso de méritos abierto no es procedente para contratar vías, por lo cual suponemos un error de registro en tales procesos de compra.",
+  "afirmacion": "En la muestra de vías terciarias menores de $10.000 millones (2014 a abril de 2019) los autores hallaron procesos de obra de vías registrados como concurso de méritos abierto, modalidad que consideran improcedente para obra, y los toman como error de registro.",
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-ING",
+  "notas": "La improcedencia del concurso de méritos para obra es una apreciación del estudio; no se cotejó con el Estatuto. El estudio reconoce en el mismo apartado que muchos municipios compran insumos y contratan servicios por separado, de modo que el objeto «vías» no siempre es un contrato de obra."
+}

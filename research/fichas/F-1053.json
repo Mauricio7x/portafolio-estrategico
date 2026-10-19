@@ -1,0 +1,30 @@
+{
+  "tipo": "academia",
+  "autor": "Maestre Orduña, S. C.",
+  "titulo": "Apoyo en la implementación del sistema de calidad en gerencia de proyectos con énfasis en formulación y presentación de procesos licitatorios",
+  "anio": 2018,
+  "institucion": "Universidad Pontificia Bolivariana, Bucaramanga (trabajo de grado, práctica empresarial, Ingeniería Civil)",
+  "url": "https://repository.upb.edu.co/server/api/core/bitstreams/6ca6e8c8-c9fe-4062-8d5f-9b2a236c7389/content",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "indicadores de cumplimiento y conclusiones (págs. 55-66)",
+    "informes de procesos presentados en el anexo (casos citados)"
+  ],
+  "localizador": "lista de oportunidades de mejora, p. 56 del PDF (repetida en la p. 75)",
+  "pagina_pdf": 56,
+  "cita_textual": "Ojo revisar al detalle al identificacion de cada uno de los sobres. […] Revisar siempre antes de presntar porcentaje de AIU que este dentro de los rangos. […] Revisar muy bien los requerimientos de subsanacion que se realice de la manera correcta. […] Revisar valor de la poliza.",
+  "afirmacion": "La lista de oportunidades de mejora que la firma (2018) saca de sus propias ofertas incluye: identificar bien los sobres, revisar el AIU frente a los rangos y preguntar si se desglosa, atender bien los requerimientos de subsanación, revisar valor y amparos de la póliza y organizar la información financiera por año, diferenciando RUP y renta.",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-F1",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — lista interna de una firma en 2018; no es norma; reverificar contra el pliego de cada proceso",
+  "tipo_contrato": "obra",
+  "anio_origen": "portada",
+  "notas": "La cita conserva los errores de digitación del original («al identificacion», «presntar»). La lista corresponde a procesos de un acueducto metropolitano; no se cuenta cuántas veces falló cada punto.",
+  "id": "F-1053",
+  "eje": 8,
+  "fecha_consulta": "2026-10-19",
+  "leida_por": "lector fase2 eje8-academica"
+}

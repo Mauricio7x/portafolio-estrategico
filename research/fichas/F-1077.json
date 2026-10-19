@@ -1,0 +1,33 @@
+{
+  "id": "F-1077",
+  "tipo": "doc_tipo",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Documento Base de licitación de obra pública de infraestructura social, versión 2 (Documentos Tipo transversales, Resolución 539 de 2025)",
+  "anio": 2025,
+  "institucion": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29837/",
+  "fecha_consulta": "2026-10-19",
+  "estado_lectura": "parcial",
+  "localizador": "Documento Base social v2, numeral 8.2 «Análisis de precios unitarios» (índice del .docx: 8.2 en la p. impresa 137) y Formulario 1, hoja del APU, notas 1 y 2",
+  "cita_textual": "«Cualquier error u omisión del contratista en los costos directos o indirectos considerados en su análisis de precios unitarios para los ítems de obra, es de exclusiva responsabilidad del contratista y por lo tanto no podrá reclamar a la Entidad reconocimiento alguno adicional»",
+  "afirmacion": "Para el APU del contratista la infraestructura social v2 repite la regla de transporte v4 (los errores del APU son del contratista, sin reclamación adicional) y el Formulario 1 dice que el interventor aprueba el APU de ítems no previstos exigiendo los costos de insumos y tarifas de la propuesta inicial cuando estén contemplados.",
+  "eje": 9,
+  "etapa": "E4",
+  "decision": "D4",
+  "modulo": "M-APU",
+  "autoridad": "A3",
+  "vigencia_verificada": {
+    "fecha": "2026-10-19",
+    "fuente": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo (licitación de obra de infraestructura social: V.2 «Versión vigente» desde 16/02/2026) y Resolución 539 de 2025, art. 23 (PDF escaneado leído con OCR)"
+  },
+  "leida_por": "lector fase2 eje9-institucional",
+  "tipo_contrato": "obra",
+  "anio_origen": "inferido",
+  "url_final": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29837",
+  "reformas_cotejadas": [
+    "Resolución 539 de 2025, art. 23 (abierta, PDF escaneado sin capa de texto, leído con OCR): rige desde su publicación y aplica a licitaciones de obra de infraestructura social con aviso de convocatoria desde el 16 de febrero de 2026",
+    "Control de versiones de Documentos Tipo (página abierta el 2026-10-19): V.2 vigente desde 16/02/2026, V.1 vigente hasta 15/02/2026",
+    "Decreto 0997 de 2026, art. 14 par. 3 (abierto en la Relatoría): los procesos regidos por documentos tipo siguen con ellos hasta que Colombia Compra expida nuevas versiones; no modifica el documento base"
+  ],
+  "notas": "Fuente: archivo .docx dentro del ZIP «05DT_Transversales_ISocialLV2.zip» (descarga/29837, obtenida por GET el 2026-10-19); sin paginación fija, el localizador usa el numeral y la página impresa que declara el índice del propio documento. Nota 2 del Formulario 1 (xlsx «Form_PropEconomica_ISocialLV2.xlsx», hoja del APU), literal: «Nota 2: Cuando se trate de análisis de Precios Unitarios de ítems no previstos, el Interventor aprueba el desglose y Precio Unitario de cada ítem no previsto, exigiendo la aplicación de los costos correspondientes a insumos y tarifas de la propuesta económica inicial cuando estén contemplados, cumpliendo con las especificaciones de construcción vigente para el proyecto.» La Nota 1 dice que el interventor aprueba el desglose de los ítems de la propuesta «manteniendo el mismo Precio Unitario de cada ítem». Responde en parte al tema (3): el documento tipo da la regla de precio de ítems no previstos (insumos y tarifas de la oferta inicial), pero no un porcentaje de AIU ni un procedimiento de acuerdo de precios nuevos. La misma nota está en el Formulario 1 de transporte v4 (xlsx «Form_PresupOficial_TLPV4.xlsx»)."
+}

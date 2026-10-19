@@ -1,0 +1,27 @@
+{
+  "tipo": "gremio",
+  "autor": "Cámara Colombiana de la Infraestructura",
+  "titulo": "Discurso Sesión Instalación",
+  "anio": 2025,
+  "anio_origen": "portada",
+  "institucion": "Cámara Colombiana de la Infraestructura (CCI)",
+  "url": "https://infraestructura.org.co/discurso-sesion-instalacion",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "secciones sobre pliegos tipo, pymes de ingeniería y contratos interadministrativos"
+  ],
+  "tipo_contrato": "todos",
+  "autoridad": "A7",
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-INT",
+  "localizador": "sección «Advertencia sobre problemáticas de las pymes», segundo párrafo (página web, 26-nov-2025)",
+  "cita_textual": "poner fin al abuso de los contratos interadministrativos, que distorsionan la competencia, evaden los pliegos tipo y terminan en procesos con un solo oferente",
+  "afirmacion": "El gremio (2025) denuncia que los contratos interadministrativos se usan para evadir los pliegos tipo y terminan en procesos con un solo oferente, lo que cierra la competencia al contratista privado.",
+  "vigencia_verificada": "[sin verificar] — posición de un gremio en 2025; no se contrastó con datos ni con la norma sobre contratación directa; reverificar",
+  "notas": "Posición de parte; el discurso no da cifras de cuántos casos.",
+  "id": "F-1055",
+  "eje": 8,
+  "fecha_consulta": "2026-10-19",
+  "leida_por": "lector fase2 eje8-academica"
+}

@@ -1,0 +1,33 @@
+{
+  "id": "F-1082",
+  "tipo": "doc_tipo",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Resolución 539 de 2025: adopta la versión 2 de los Documentos Tipo de licitación de obra pública de infraestructura social",
+  "anio": 2025,
+  "institucion": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29545/",
+  "fecha_consulta": "2026-10-19",
+  "estado_lectura": "completa",
+  "localizador": "Resolución 539 de 2025, art. 23 «Vigencia» (PDF escaneado de 14 páginas, sin capa de texto; leído con OCR, p. 13)",
+  "cita_textual": "«Artículo 23. Vigencia. La presente resolución rige a partir de su publicación y aplicará a los procedimientos de selección de licitación de obra pública de infraestructura social […] cuyo aviso de convocatoria sea publicado a partir del 16 de febrero de 2026.»",
+  "afirmacion": "La versión 2 de los documentos tipo de licitación de obra de infraestructura social (educación, salud, cultura-recreación-deporte, institucional y vivienda) aplica a avisos de convocatoria publicados desde el 16 de febrero de 2026.",
+  "eje": 9,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-DICT",
+  "autoridad": "A3",
+  "vigencia_verificada": {
+    "fecha": "2026-10-19",
+    "fuente": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo (licitación de obra social V.2 «Versión vigente» desde 16/02/2026)"
+  },
+  "leida_por": "lector fase2 eje9-institucional",
+  "tipo_contrato": "obra",
+  "anio_origen": "portada",
+  "url_final": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29545",
+  "reformas_cotejadas": [
+    "Control de versiones de Documentos Tipo (abierto el 2026-10-19): V.2 vigente desde 16/02/2026",
+    "Decreto 0997 de 2026, art. 14 par. 3: los procesos con documentos tipo siguen con ellos hasta nuevas versiones de Colombia Compra"
+  ],
+  "pagina_pdf": 13,
+  "notas": "PDF descargado de descarga/29545 («02Res539_2025_ISocialLV2.pdf»); no tiene capa de texto, se leyó con pdftoppm + tesseract (spa); la cita es la salida del OCR (revisada contra la imagen de la p. 13). El art. 1 adopta la versión 2 y el considerando de la p. 5 dice que los destinatarios acordaron que «la implementación de estos documentos tipo empezará el 16 de febrero de 2026»."
+}

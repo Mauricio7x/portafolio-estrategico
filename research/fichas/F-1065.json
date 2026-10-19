@@ -8,7 +8,7 @@
   "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29920/",
   "fecha_consulta": "2026-10-19",
   "estado_lectura": "parcial",
-  "localizador": "Documento Base v4, numeral 4.1.4, método «Mediana con valor absoluto» (p. impresa 59-60 según el índice del .docx)",
+  "localizador": "Documento Base v4, numeral 4.1.4 «Determinación del método para la ponderación de la propuesta económica» (pp. impresas 58-62 según el índice del .docx; el .docx no permite precisar la página de cada método), método «Mediana con valor absoluto»",
   "cita_textual": "«Si el número de valores de las propuestas hábiles es par, se asignará el máximo puntaje a la propuesta que se encuentre inmediatamente por debajo de la mediana.»",
   "afirmacion": "Mediana con valor absoluto: con número impar de ofertas válidas el máximo puntaje es para la que coincide con la mediana; con número par, para la inmediatamente por debajo de la mediana; las demás reciben Puntaje = [1 - |(Me - Vi)/Me|] x Puntaje máximo, sobre el valor total corregido.",
   "eje": 9,

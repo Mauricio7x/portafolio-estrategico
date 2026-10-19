@@ -1,0 +1,34 @@
+{
+  "id": "F-1073",
+  "tipo": "doc_tipo",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Documento Base de licitación de obra pública de infraestructura social, versión 2 (Documentos Tipo transversales, Resolución 539 de 2025)",
+  "anio": 2025,
+  "institucion": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29837/",
+  "fecha_consulta": "2026-10-19",
+  "estado_lectura": "parcial",
+  "localizador": "Documento Base social v2, numeral 4.1.4 «Determinación del método para la ponderación de la propuesta económica» (pp. impresas 86-91 según el índice del .docx)",
+  "cita_textual": "«Para determinar el método de ponderación, la Entidad tomará los centavos de la Tasa de Cambio Representativa del Mercado (TRM), certificada por la Superintendencia Financiera de Colombia»",
+  "afirmacion": "En la licitación de obra de infraestructura social con documentos tipo versión 2 (avisos desde el 16-feb-2026) los métodos y rangos de TRM son los mismos de transporte v4: 0,00-0,24 mediana con valor absoluto, 0,25-0,49 media geométrica, 0,50-0,74 media aritmética baja, 0,75-0,99 menor valor; con TRM de las 3:00 p. m. del día hábil siguiente o del segundo día hábil siguiente.",
+  "eje": 9,
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-PRECIO",
+  "autoridad": "A3",
+  "vigencia_verificada": {
+    "fecha": "2026-10-19",
+    "fuente": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo (licitación de obra de infraestructura social: V.2 «Versión vigente» desde 16/02/2026) y Resolución 539 de 2025, art. 23 (PDF escaneado leído con OCR)"
+  },
+  "leida_por": "lector fase2 eje9-institucional",
+  "tipo_contrato": "obra",
+  "anio_origen": "inferido",
+  "url_final": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29837",
+  "reformas_cotejadas": [
+    "Resolución 539 de 2025, art. 23 (abierta, PDF escaneado sin capa de texto, leído con OCR): rige desde su publicación y aplica a licitaciones de obra de infraestructura social con aviso de convocatoria desde el 16 de febrero de 2026",
+    "Control de versiones de Documentos Tipo (página abierta el 2026-10-19): V.2 vigente desde 16/02/2026, V.1 vigente hasta 15/02/2026",
+    "Decreto 0997 de 2026, art. 14 par. 3 (abierto en la Relatoría): los procesos regidos por documentos tipo siguen con ellos hasta que Colombia Compra expida nuevas versiones; no modifica el documento base"
+  ],
+  "cifra_comprobada": "cuadra: los cuatro rangos cubren 0.00-0.99 sin huecos ni traslape (25 centésimos cada uno).",
+  "notas": "Fuente: archivo .docx dentro del ZIP «05DT_Transversales_ISocialLV2.zip» (descarga/29837, obtenida por GET el 2026-10-19); sin paginación fija, el localizador usa el numeral y la página impresa que declara el índice del propio documento. Cuadro literal: «Rango (inclusive) Número Método De 0.00 a 0.24 1 Mediana con valor absoluto De 0.25 a 0.49 2 Media geométrica De 0.50 a 0.74 3 Media aritmética baja De 0.75 a 0.99 4 Menor valor». Regla de hora: «Si este pronunciamiento, se realiza hasta las 3:00 pm, la Entidad tomará la TRM que rija para el día hábil siguiente. En caso contrario […] la TRM que rija para el segundo día hábil siguiente.» Con una sola oferta habilitada la entidad puede prescindir de la TRM y del método. Responde al encargo (1): el documento base de infraestructura social v2 se abrió y su método de oferta económica es idéntico al de transporte v4."
+}

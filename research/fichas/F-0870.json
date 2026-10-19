@@ -1,0 +1,31 @@
+{
+  "id": "F-0870",
+  "leida_por": "lector fase2 eje7-institucional",
+  "eje": 7,
+  "tipo": "internacional",
+  "autor": "Zuleta, M. M.; Caro, C. A.",
+  "institucion": "Banco Interamericano de Desarrollo (BID), con Fedesarrollo; alojado en el sitio del IMCO",
+  "fecha_consulta": "2026-10-19",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "pp. 1-11 (resumen, introducción, calidad del registro)",
+    "p. 33 (errores de registro del ICBF)",
+    "pp. 65-70 (obra pública para vías)"
+  ],
+  "autoridad": "A6",
+  "anio": 2020,
+  "anio_origen": "portada",
+  "url": "https://imco.org.mx/wp-content/uploads/2020/05/Zuleta_Caro_Alertas-Compra-Pública_Fedesarrollo.pdf",
+  "vigencia_verificada": "[sin verificar] — estudio de abril de 2020 con datos de 2014 a abril de 2019; anterior a cambios posteriores de la plataforma y del estatuto; no se cotejaron las normas que el estudio cita",
+  "tipo_contrato": "todos",
+  "titulo": "Mirada a las alertas de riesgo de corrupción (BID/Fedesarrollo): errores de registro de contratos interadministrativos del ICBF",
+  "pagina_pdf": 33,
+  "localizador": "p. 33 (impresa 33), sección 2.1 Contratación directa, contratos interadministrativos",
+  "cita_textual": "Los errores de registro del ICBF en los contratos interadministrativos son significativos: las fundaciones, las asociaciones de padres de familia, las cajas de compensación familiar y las personas naturales no son entidades estatales […] (877 contratos por valor de $ 464.119.964.665).",
+  "afirmacion": "Con datos de SECOP de 2014 a abril de 2019 el estudio documenta errores de registro de modalidad: 877 contratos del ICBF por $464.119.964.665 registrados como interadministrativos con contratistas que no son entidades estatales.",
+  "etapa": "E0",
+  "decision": "D1",
+  "modulo": "M-ING",
+  "notas": "Es un caso fuera de obra; se conserva como evidencia de que la modalidad registrada puede no ser la real. La cifra la reporta el estudio y no se recalculó (no trae los registros).",
+  "cifra_comprobada": "no recalculable con los datos de la fuente: el estudio da el total y no el detalle por contrato"
+}

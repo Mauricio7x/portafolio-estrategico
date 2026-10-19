@@ -1,0 +1,30 @@
+{
+  "tipo": "academia",
+  "autor": "Mendoza Pinzón, J. A.",
+  "titulo": "Análisis y evaluación de presupuestos de costos en contratos de interventoría de obra pública en el municipio de Socorro, Santander",
+  "anio": 2021,
+  "institucion": "Universidad Pontificia Bolivariana, Bucaramanga (monografía, Especialización en Gerencia e Interventoría de Obras Civiles)",
+  "url": "https://repository.upb.edu.co/server/api/core/bitstreams/474bb957-4277-413a-acc9-f5381465dc6c/content",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "3.2.3 factor multiplicador",
+    "7 conclusiones y 8 recomendaciones"
+  ],
+  "tipo_contrato": "interventoria",
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-PRECIO",
+  "autoridad": "A6",
+  "anio_origen": "portada",
+  "localizador": "3.2.3 Factor multiplicador, p. 30 del PDF",
+  "pagina_pdf": 30,
+  "cita_textual": "el factor multiplicador actualmente no tiene un sustento legal que lo avale o lo prohíba y es facultad de cada entidad la conveniencia de su uso",
+  "afirmacion": "La monografía (2021) afirma que el factor multiplicador, antes regulado por un decreto derogado en 1995, hoy no tiene sustento legal que lo avale ni lo prohíba, que cada entidad decide si lo usa y su porcentaje en planeación y que debe revisar el factor que presenten los proponentes y aprobar sus justificaciones.",
+  "vigencia_verificada": "[sin verificar] — la autora cita los Decretos 1522 de 1983 y 2326 de 1995; no se abrieron esos textos ni normas posteriores; no usar como regla; reverificar",
+  "notas": "Es una afirmación jurídica del autor de una monografía de ingeniería; la norma debe leerse en su texto antes de aplicar.",
+  "id": "F-1058",
+  "eje": 8,
+  "fecha_consulta": "2026-10-19",
+  "leida_por": "lector fase2 eje8-academica"
+}

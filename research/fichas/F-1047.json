@@ -1,0 +1,30 @@
+{
+  "tipo": "academia",
+  "autor": "Bejarano Pérez, D. A.",
+  "titulo": "«Pliego tipo» como proceso de calidad para la contratación en obras de infraestructura estatal",
+  "anio": 2021,
+  "institucion": "Universidad Militar Nueva Granada (trabajo de grado, Ingeniería Civil)",
+  "url": "https://repository.umng.edu.co/server/api/core/bitstreams/b391e5a2-9c14-4245-82d2-2da0d7e3868d/content",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "apartado sobre participación de oferentes con datos del Observatorio de contratación"
+  ],
+  "localizador": "análisis de la muestra de 2018, p. 14 del PDF",
+  "pagina_pdf": 14,
+  "cita_textual": "en la contratación de las entidades de orden subnacional el 70% en los departamentos y el 81% en los municipios fueron adjudicadas a únicos oferentes",
+  "afirmacion": "Según esta tesis (2021), que cita un Observatorio de contratación sobre 1.026 contratos de 2018, el 70 % de los de departamentos y el 81 % de los de municipios se adjudicaron a un único oferente, y en el orden nacional con pliego tipo más de 20 oferentes concurrieron en el 61 % de los procesos.",
+  "cifra_comprobada": "Cuadra en la composición: 280 nacionales + 746 subnacionales = 1.026; 27,3 % y 72,7 % recalculan. No se pudo recalcular 70 %, 81 % y 61 % (vienen de imágenes del observatorio, de segunda mano).",
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-INT",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — dato de 2018 y 2019 de segunda mano, anterior a las reformas posteriores; reverificar contra los datos abiertos de SECOP II",
+  "tipo_contrato": "obra",
+  "anio_origen": "portada",
+  "notas": "La tesis no identifica el observatorio más que por su nombre y año. La cifra del 61 % es sobre procesos de pliego tipo del orden nacional; no se generaliza.",
+  "id": "F-1047",
+  "eje": 8,
+  "fecha_consulta": "2026-10-19",
+  "leida_por": "lector fase2 eje8-academica"
+}

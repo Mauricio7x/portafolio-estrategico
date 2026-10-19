@@ -1,0 +1,29 @@
+{
+  "id": "F-0877",
+  "leida_por": "lector fase2 eje7-institucional",
+  "eje": 7,
+  "tipo": "cce_guia",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente (ANCP-CCE)",
+  "titulo": "Protocolo de Indisponibilidad SECOP II (CCE-SEC-GI-14, versión 01 del 25 de enero de 2022)",
+  "anio": 2022,
+  "anio_origen": "portada",
+  "institucion": "ANCP-CCE",
+  "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2024/09/cce-sec-gi-14_protocolo_de_indisponibilidad_secop_ii_25-11-2022_0.pdf",
+  "fecha_consulta": "2026-10-19",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "pp. 1-5 (portada, definiciones)",
+    "pp. 12-14 (presentación de ofertas)"
+  ],
+  "autoridad": "A3",
+  "vigencia_verificada": "[sin verificar] — versión 01 del 25-ene-2022; la página de CCE que la enlaza (https://www.colombiacompra.gov.co/base-conocimiento/protocolo-de-indisponibilidad-secop-ii, abierta) figura actualizada el 3-dic-2025, pero no se comparó con una versión posterior; es un protocolo de la Agencia, no una norma",
+  "tipo_contrato": "obra",
+  "notas": "También dice que, si el proveedor envió su oferta por la plataforma y además por correo, la entidad toma como oferta la primera que presentó, sin importar la vía; y que si quiere modificar la oferta ya cargada y no puede por la falla, debe enviar por correo una oferta que indique que sustituye en su totalidad la anterior. La entidad carga también las ofertas incompletas porque la aceptación o el rechazo es posterior.",
+  "pagina_pdf": 13,
+  "localizador": "p. 13, apartado 6.6 «Presentación de ofertas», licitación pública de obra con sobre económico cerrado (continúa en p. 14)",
+  "cita_textual": "En el caso de Procesos de Contratación en la modalidad de Licitación Pública de Obra, en los cuales la oferta se presenta con sobre económico cerrado y que la apertura de este se realiza en la audiencia de adjudicación, la Entidad Estatal no deberá dar apertura al mismo,",
+  "afirmacion": "En la licitación pública de obra con sobre económico cerrado, si la oferta entra por correo o en físico por una falla, la entidad no abre el sobre económico: lo carga como «oferta externa», y el sobre económico se recibe por correo con documento bajo contraseña o en físico según decida la entidad (protocolo versión 01 de 2022).",
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-F1"
+}

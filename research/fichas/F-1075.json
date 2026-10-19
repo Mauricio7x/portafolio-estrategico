@@ -1,0 +1,33 @@
+{
+  "id": "F-1075",
+  "tipo": "doc_tipo",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Documento Base de licitación de obra pública de infraestructura social, versión 2 (Documentos Tipo transversales, Resolución 539 de 2025)",
+  "anio": 2025,
+  "institucion": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29837/",
+  "fecha_consulta": "2026-10-19",
+  "estado_lectura": "parcial",
+  "localizador": "Documento Base social v2, numeral 1.15 «Causales de rechazo» (el índice del .docx pone 1.15 en la p. impresa 16)",
+  "cita_textual": "«No ofrecer el valor de un precio unitario u ofrecerlo en cero (0) pesos.»",
+  "afirmacion": "En la licitación de obra de infraestructura social v2 por precios unitarios son causales de rechazo económicas: superar el presupuesto oficial, no ofrecer un precio unitario u ofrecerlo en cero, y —solo para los ítems que la entidad nombre en el pliego— superar el valor unitario oficial; el valor unitario del Formulario 1 incluye el AIU.",
+  "eje": 9,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-PRECIO",
+  "autoridad": "A3",
+  "vigencia_verificada": {
+    "fecha": "2026-10-19",
+    "fuente": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo (licitación de obra de infraestructura social: V.2 «Versión vigente» desde 16/02/2026) y Resolución 539 de 2025, art. 23 (PDF escaneado leído con OCR)"
+  },
+  "leida_por": "lector fase2 eje9-institucional",
+  "tipo_contrato": "obra",
+  "anio_origen": "inferido",
+  "url_final": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29837",
+  "reformas_cotejadas": [
+    "Resolución 539 de 2025, art. 23 (abierta, PDF escaneado sin capa de texto, leído con OCR): rige desde su publicación y aplica a licitaciones de obra de infraestructura social con aviso de convocatoria desde el 16 de febrero de 2026",
+    "Control de versiones de Documentos Tipo (página abierta el 2026-10-19): V.2 vigente desde 16/02/2026, V.1 vigente hasta 15/02/2026",
+    "Decreto 0997 de 2026, art. 14 par. 3 (abierto en la Relatoría): los procesos regidos por documentos tipo siguen con ellos hasta que Colombia Compra expida nuevas versiones; no modifica el documento base"
+  ],
+  "notas": "Fuente: archivo .docx dentro del ZIP «05DT_Transversales_ISocialLV2.zip» (descarga/29837, obtenida por GET el 2026-10-19); sin paginación fija, el localizador usa el numeral y la página impresa que declara el índice del propio documento. Literales: «[Incluir solo cuando la forma de pago sea por precios unitarios] Superar el valor unitario de alguno o algunos de los siguientes ítems ofrecidos con respecto al valor establecido para cada ítem del Presupuesto Oficial: [La Entidad debe incluir esta causal cuando la forma de pago sea por precios unitarios y cuando considere necesario establecer ítems del presupuesto oficial cuyo valor no pueda ser excedido por el proponente […]]»; «Que el valor total de la oferta o aquel revisado en la audiencia efectiva de adjudicación exceda el Presupuesto Oficial estimado para el Proceso de Contratación». El tope por precio unitario, por tanto, no es general sino por ítems elegidos por la entidad, igual que en transporte v4 (ficha F-1070)."
+}

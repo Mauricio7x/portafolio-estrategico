@@ -1,0 +1,27 @@
+{
+  "tipo": "gremio",
+  "autor": "Cámara Colombiana de la Infraestructura",
+  "titulo": "Discurso Sesión Instalación",
+  "anio": 2025,
+  "anio_origen": "portada",
+  "institucion": "Cámara Colombiana de la Infraestructura (CCI)",
+  "url": "https://infraestructura.org.co/discurso-sesion-instalacion",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "secciones sobre pliegos tipo, pymes de ingeniería y contratos interadministrativos"
+  ],
+  "tipo_contrato": "todos",
+  "autoridad": "A7",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-DICT",
+  "localizador": "sección «Entrada en vigor de la nueva versión del pliego tipo» (página web, 26-nov-2025)",
+  "cita_textual": "logramos modificaciones sustanciales en los requisitos habilitantes y en los factores técnico-económicos. A comienzos de este año, dichos ajustes entraron en vigor.",
+  "afirmacion": "El gremio (26-nov-2025) afirma que, con Colombia Compra Eficiente, se modificaron de forma sustancial los requisitos habilitantes y los factores técnico-económicos de una nueva versión del pliego tipo, en vigor desde comienzos de 2025; no dice cuáles ni de qué documento tipo.",
+  "vigencia_verificada": "[sin verificar] — afirmación de un gremio; no se abrió el documento tipo ni su resolución; hay que leer el documento tipo vigente y su fecha antes de confiar en cualquier trabajo anterior a 2025",
+  "notas": "Sirve de alerta: lo que dicen los trabajos académicos de 2015 a 2022 sobre pliegos tipo puede estar superado por la versión de 2025.",
+  "id": "F-1056",
+  "eje": 8,
+  "fecha_consulta": "2026-10-19",
+  "leida_por": "lector fase2 eje8-academica"
+}

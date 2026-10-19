@@ -1,0 +1,33 @@
+{
+  "id": "F-1081",
+  "tipo": "doc_tipo",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Resolución 465 de 2024: adopta la versión 4 de los Documentos Tipo de licitación de obra pública de infraestructura de transporte y deroga la Resolución 240 de 2020",
+  "anio": 2024,
+  "institucion": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29385/",
+  "fecha_consulta": "2026-10-19",
+  "estado_lectura": "completa",
+  "localizador": "Resolución 465 de 2024, art. 8 «Vigencia y derogatorias» (PDF de 6 páginas, texto en pp. 5-6)",
+  "cita_textual": "«rige a partir de su publicación, deroga la Resolución 240 de 2020 y sus modificaciones posteriores, y aplica a los procesos de selección de […] licitación de obra pública de infraestructura de transporte, cuyo aviso de convocatoria se publique a partir del 3 de febrero de 2025.»",
+  "afirmacion": "La versión 4 de los documentos tipo de licitación de obra de transporte aplica a los procesos cuyo aviso de convocatoria se publique desde el 3 de febrero de 2025 y deroga la Resolución 240 de 2020 (versión 3).",
+  "eje": 9,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-DICT",
+  "autoridad": "A3",
+  "vigencia_verificada": {
+    "fecha": "2026-10-19",
+    "fuente": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo (V.4 «Versión vigente»)"
+  },
+  "leida_por": "lector fase2 eje9-institucional",
+  "tipo_contrato": "obra",
+  "anio_origen": "portada",
+  "url_final": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29385",
+  "reformas_cotejadas": [
+    "Control de versiones de Documentos Tipo (abierto el 2026-10-19): la versión 4 figura vigente desde 03/02/2025 y no lista resoluciones modificatorias de la licitación de obra de transporte",
+    "Decreto 0997 de 2026, art. 14 par. 3: los procesos con documentos tipo siguen con ellos hasta nuevas versiones de Colombia Compra"
+  ],
+  "pagina_pdf": 5,
+  "notas": "PDF descargado de descarga/29385 (archivo «02Res465_24_TLPV4.pdf», 6 páginas, con capa de texto); el art. 3 (p. 4) declara la inalterabilidad de los documentos tipo y el art. 7 regula el proceso desierto. Resuelve el número de resolución pedido en el encargo: la v4 es la Resolución 465 de 2024 (el piloto ya la había abierto sin ficha propia)."
+}

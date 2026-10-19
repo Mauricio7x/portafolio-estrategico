@@ -1,0 +1,31 @@
+{
+  "tipo": "academia",
+  "autor": "Mendoza Pinzón, J. A.",
+  "titulo": "Análisis y evaluación de presupuestos de costos en contratos de interventoría de obra pública en el municipio de Socorro, Santander",
+  "anio": 2021,
+  "institucion": "Universidad Pontificia Bolivariana, Bucaramanga (monografía, Especialización en Gerencia e Interventoría de Obras Civiles)",
+  "url": "https://repository.upb.edu.co/server/api/core/bitstreams/474bb957-4277-413a-acc9-f5381465dc6c/content",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "3.2.3 factor multiplicador",
+    "7 conclusiones y 8 recomendaciones"
+  ],
+  "tipo_contrato": "interventoria",
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-PRECIO",
+  "autoridad": "A6",
+  "anio_origen": "portada",
+  "localizador": "7. Conclusiones, p. 77 del PDF (impresa 77)",
+  "pagina_pdf": 77,
+  "cita_textual": "cerca del 93% de los contratos suscritos en el municipio de Socorro basan el cálculo de sus presupuestos en el método de costos directos con factor multiplicador y el 63% de estos tienen un tope máximo de de 2,4 sobre los costos del personal",
+  "afirmacion": "En contratos de interventoría de un municipio de Santander (monografía de 2021) cerca del 93 % presupuesta por costos directos con factor multiplicador y el 63 % de ellos fija un tope de 2,4 sobre el costo del personal; los honorarios no tienen regulación específica y el rubro «edición de informes» no tiene metodología clara.",
+  "cifra_comprobada": "No recalculable: el texto da 93 % y 63 % sin número de contratos en la conclusión leída; no se verificaron contra la base de la monografía. El tope de 2,4 es el que la entidad fija, no una cifra recomendada.",
+  "vigencia_verificada": "[sin verificar] — monografía de 2021 sobre un municipio; no se verificó norma alguna; reverificar",
+  "notas": "Un solo municipio; sirve para saber que en interventoría el techo del factor lo fija la entidad y el oferente no puede ofertar por encima.",
+  "id": "F-1057",
+  "eje": 8,
+  "fecha_consulta": "2026-10-19",
+  "leida_por": "lector fase2 eje8-academica"
+}

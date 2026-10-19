@@ -1,0 +1,33 @@
+{
+  "id": "F-1088",
+  "tipo": "doc_tipo",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Documento Base de concurso de méritos para consultoría de estudios de ingeniería de infraestructura de transporte, versión 2 (Resolución 726 de 2024)",
+  "anio": 2024,
+  "institucion": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29824/",
+  "fecha_consulta": "2026-10-19",
+  "estado_lectura": "parcial",
+  "localizador": "Documento Base consultoría transporte v2, capítulo V «Oferta económica» (5.1 correcciones aritméticas; 5.2 precio artificialmente bajo) y numeral de adjudicación",
+  "cita_textual": "«adjudicará el proceso al Proponente ubicado en el primer lugar del orden de elegibilidad y cuya oferta económica esté acorde con el Presupuesto Oficial del Proceso de Contratación.»",
+  "afirmacion": "En el concurso de méritos de consultoría de estudios de ingeniería de transporte v2 la oferta económica no puntúa: se adjudica al primero del orden de elegibilidad con oferta acorde al presupuesto oficial; la corrección aritmética se limita a operaciones y ajuste al peso, exceder el presupuesto o el factor multiplicador mal aplicado solo rechazan si no se subsanan, y el precio artificialmente bajo sigue el art. 2.2.1.1.2.2.4.",
+  "eje": 9,
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-PRECIO",
+  "autoridad": "A3",
+  "vigencia_verificada": {
+    "fecha": "2026-10-19",
+    "fuente": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo (consultoría de transporte V.2 «Versión vigente» desde 03/02/2025)"
+  },
+  "leida_por": "lector fase2 eje9-institucional",
+  "tipo_contrato": "consultoria",
+  "anio_origen": "inferido",
+  "url_final": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29824",
+  "reformas_cotejadas": [
+    "Control de versiones de Documentos Tipo (abierto el 2026-10-19): V.2 vigente desde 03/02/2025",
+    "Resolución 726 de 2024: nombrada en la página del documento tipo (descarga/29816) como la que adopta la versión 2 y deroga la Resolución 193 de 2021; el PDF de la resolución no se abrió",
+    "Decreto 0997 de 2026, art. 14 par. 3: los procesos con documentos tipo siguen con ellos hasta nuevas versiones; no modifica el documento base"
+  ],
+  "notas": "Fuente: archivo .docx dentro del ZIP «05DT_TransporteConsultoria_TConV2.zip» (descarga/29824, GET del 2026-10-19). Literales: «Que el valor total de la oferta exceda el Presupuesto Oficial estimado […] y no se subsane ese defecto»; «[Incluir cuando la Entidad exija la discriminación del valor de la oferta económica incorporando el factor multiplicador] No haber realizado la operación matemática con el Factor Multiplicador al enunciar el valor final de la oferta económica […]»; «La Entidad solo efectuará correcciones aritméticas originadas por: […] El ajuste al peso ya sea por exceso o por defecto de los precios unitarios […] y del valor del IVA». La estructura de la hoja de oferta económica es la misma de interventoría (factor multiplicador, IVA 19 %)."
+}

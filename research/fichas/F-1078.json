@@ -1,0 +1,34 @@
+{
+  "id": "F-1078",
+  "tipo": "doc_tipo",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Documento Base de licitación de obra pública de infraestructura de transporte, versión 4 (Documentos Tipo adoptados por la Resolución 465 de 2024)",
+  "anio": 2024,
+  "institucion": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29920/",
+  "fecha_consulta": "2026-10-19",
+  "estado_lectura": "parcial",
+  "localizador": "Documento Base v4, numeral 4 «Factores de evaluación y puntaje», cuadro de puntaje máximo (el índice del .docx pone 4.1 en la p. impresa 56)",
+  "cita_textual": "«Concepto Puntaje máximo Oferta económica 48,5 Factor de calidad 30 Apoyo a la industria nacional 20 Vinculación de personas con discapacidad 1 Emprendimientos y empresas de mujeres 0,25 Mipyme 0,25 Total 100»",
+  "afirmacion": "En la licitación de obra de transporte v4 la oferta económica vale hasta 48,5 puntos de 100 (48,75 cuando no se otorga el puntaje de Mipyme; 43,5 y 43,75 en San Andrés con OCCRE de 5 puntos); calidad 30, industria nacional 20, discapacidad 1, mujeres 0,25.",
+  "eje": 9,
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-TARJ",
+  "autoridad": "A3",
+  "vigencia_verificada": {
+    "fecha": "2026-10-19",
+    "fuente": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo (V.4 «Versión vigente» desde 03/02/2025) y Resolución 465 de 2024, art. 8 (PDF abierto)"
+  },
+  "leida_por": "lector fase2 eje9-institucional",
+  "tipo_contrato": "obra",
+  "anio_origen": "inferido",
+  "url_final": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29920",
+  "reformas_cotejadas": [
+    "Resolución 465 de 2024, art. 8 (abierta, PDF p. 5-6): adopta la versión 4, deroga la Resolución 240 de 2020 y aplica a procesos con aviso de convocatoria desde el 3 de febrero de 2025",
+    "Control de versiones de Documentos Tipo (página abierta el 2026-10-19): la versión 4 figura como vigente; no lista modificaciones posteriores de la licitación de obra de transporte",
+    "Decreto 0997 de 2026, art. 14 par. 3 (abierto en la Relatoría): los procesos regidos por documentos tipo siguen con ellos hasta que Colombia Compra expida nuevas versiones; no modifica el documento base"
+  ],
+  "cifra_comprobada": "cuadra: 48,5 + 30 + 20 + 1 + 0,25 + 0,25 = 100,0; segunda tabla 48,75 + 30 + 20 + 1 + 0,25 = 100,00; San Andrés 43,5 + 30 + 20 + 1 + 5 + 0,25 + 0,25 = 100,0.",
+  "notas": "Fuente: archivo .docx dentro del ZIP «05DT_Transp_TLP_V4.zip» (descarga/29920, obtenida por GET el 2026-10-19); el .docx no tiene paginación fija, el localizador usa el numeral y la página impresa que declara el índice del propio documento. Descuento: «Las Entidades deberán reducir durante la evaluación de las ofertas dos (2) puntos a los Proponentes que se les haya impuesto una o más multas o cláusulas penales durante el último año […] sin importar la cuantía». El peso de la oferta económica frente a calidad e industria nacional importa para decidir cuánto vale bajar el precio: cada método (F-1061 a F-1067) reparte esos ~48 puntos."
+}

@@ -1,0 +1,34 @@
+{
+  "id": "F-1076",
+  "tipo": "doc_tipo",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Documento Base de licitación de obra pública de infraestructura social, versión 2 (Documentos Tipo transversales, Resolución 539 de 2025)",
+  "anio": 2025,
+  "institucion": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29837/",
+  "fecha_consulta": "2026-10-19",
+  "estado_lectura": "parcial",
+  "localizador": "Documento Base social v2, numeral 4 «Factores de evaluación», cuadro de puntaje (índice del .docx: 4.1 en la p. impresa 83)",
+  "cita_textual": "«Oferta económica 48,50 Factor de calidad 30 Apoyo a la industria nacional 20 Vinculación de personas con discapacidad 1 Emprendimientos y empresas de mujeres 0,25 Mipyme 0,25 Total 100»",
+  "afirmacion": "En la licitación de obra de infraestructura social v2 la oferta económica vale hasta 48,50 puntos de 100 (calidad 30, industria nacional 20, discapacidad 1, mujeres 0,25, Mipyme 0,25); en convocatorias limitadas a Mipyme el puntaje de Mipyme pasa a la oferta económica; en San Andrés la oferta económica vale 43,50 con OCCRE.",
+  "eje": 9,
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-TARJ",
+  "autoridad": "A3",
+  "vigencia_verificada": {
+    "fecha": "2026-10-19",
+    "fuente": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo (licitación de obra de infraestructura social: V.2 «Versión vigente» desde 16/02/2026) y Resolución 539 de 2025, art. 23 (PDF escaneado leído con OCR)"
+  },
+  "leida_por": "lector fase2 eje9-institucional",
+  "tipo_contrato": "obra",
+  "anio_origen": "inferido",
+  "url_final": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29837",
+  "reformas_cotejadas": [
+    "Resolución 539 de 2025, art. 23 (abierta, PDF escaneado sin capa de texto, leído con OCR): rige desde su publicación y aplica a licitaciones de obra de infraestructura social con aviso de convocatoria desde el 16 de febrero de 2026",
+    "Control de versiones de Documentos Tipo (página abierta el 2026-10-19): V.2 vigente desde 16/02/2026, V.1 vigente hasta 15/02/2026",
+    "Decreto 0997 de 2026, art. 14 par. 3 (abierto en la Relatoría): los procesos regidos por documentos tipo siguen con ellos hasta que Colombia Compra expida nuevas versiones; no modifica el documento base"
+  ],
+  "cifra_comprobada": "cuadra: 48,50 + 30 + 20 + 1 + 0,25 + 0,25 = 100,00.",
+  "notas": "Fuente: archivo .docx dentro del ZIP «05DT_Transversales_ISocialLV2.zip» (descarga/29837, obtenida por GET el 2026-10-19); sin paginación fija, el localizador usa el numeral y la página impresa que declara el índice del propio documento. Cuadro de San Andrés, Providencia y Santa Catalina: «Oferta económica 43,50 Factor de calidad 30 Apoyo a la industria nacional 20 Vinculación de personas con discapacidad 1 Tarjeta de Circulación y Residencia “OCCRE” 5 Emprendimientos y empresas de mujeres 0,25 Mipyme 0,25 Total 100» (suma 100,00). Regla: «En las convocatorias limitadas a Mipyme el puntaje por este concepto se trasladará al puntaje de oferta económica». Descuento: «Las Entidades deberán reducir durante la evaluación de las ofertas dos puntos (2) a los Proponentes que se les haya impuesto una o más multas o cláusulas penales durante el último año» (Ley 2195 de 2022 art. 58, según el propio texto)."
+}

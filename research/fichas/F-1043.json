@@ -1,0 +1,30 @@
+{
+  "tipo": "academia",
+  "autor": "Pinzón Téllez, J. M.; Romero Céspedes, W. S.",
+  "titulo": "Los pliegos de condiciones en el contrato de obra",
+  "anio": 2021,
+  "institucion": "Revista IUSTA n.º 54, Universidad Santo Tomás (Redalyc)",
+  "url": "https://www.redalyc.org/journal/5603/560368677003/560368677003.pdf",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "subsanación de ofertas",
+    "requisitos de imposible cumplimiento"
+  ],
+  "localizador": "apartado «Requisitos de imposible cumplimiento», p. 20 del PDF; la frase sobre subsanación está en la p. 15",
+  "pagina_pdf": 20,
+  "cita_textual": "Los requisitos de imposible cumplimiento son una de las deﬁciencias que consideramos que tienen los pliegos de condiciones; de hecho, son una falencia repetitiva en los procesos de selección de los contratos de obra.",
+  "afirmacion": "Los autores (2021) sostienen, como revisión de literatura y sin medición propia, que los requisitos de imposible cumplimiento son una falencia repetitiva de los pliegos de obra y que las entidades a veces no saben qué requisitos son subsanables, lo que vuelve la subsanación un arma de doble filo para el oferente.",
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-DICT",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — revisión de 2021 que cita doctrina y la Ley 1882 de 2018; lo que dice de la norma es lo que dice; reverificar",
+  "tipo_contrato": "obra",
+  "anio_origen": "portada",
+  "notas": "Opinión de los autores apoyada en citas de otros; no cuantifica con qué frecuencia ocurre. La cita conserva la ligatura «ﬁ» del PDF.",
+  "id": "F-1043",
+  "eje": 8,
+  "fecha_consulta": "2026-10-19",
+  "leida_por": "lector fase2 eje8-academica"
+}

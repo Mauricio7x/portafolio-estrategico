@@ -1,0 +1,33 @@
+{
+  "id": "F-1072",
+  "tipo": "doc_tipo",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Documento Base de licitación de obra pública de infraestructura de transporte, versión 4 (Documentos Tipo adoptados por la Resolución 465 de 2024)",
+  "anio": 2024,
+  "institucion": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29920/",
+  "fecha_consulta": "2026-10-19",
+  "estado_lectura": "parcial",
+  "localizador": "Documento Base v4, numeral 8.2 «Análisis de precios unitarios» (índice del .docx: 8.2 en la p. impresa 88)",
+  "cita_textual": "«Cualquier error u omisión del contratista en los costos directos o indirectos considerados en su análisis de precios unitarios para los ítems de obra, es de exclusiva responsabilidad del contratista»",
+  "afirmacion": "En la licitación de obra de transporte v4 el adjudicatario entrega el APU de cada ítem del Formulario 1 tras la orden de inicio de la interventoría; los precios del APU no pueden diferir de los ofertados (si difieren se ajusta el APU) y los errores u omisiones en costos directos o indirectos del APU son del contratista, sin reclamación adicional a los precios unitarios.",
+  "eje": 9,
+  "etapa": "E3",
+  "decision": "D4",
+  "modulo": "M-APU",
+  "autoridad": "A3",
+  "vigencia_verificada": {
+    "fecha": "2026-10-19",
+    "fuente": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo (V.4 «Versión vigente» desde 03/02/2025) y Resolución 465 de 2024, art. 8 (PDF abierto)"
+  },
+  "leida_por": "lector fase2 eje9-institucional",
+  "tipo_contrato": "obra",
+  "anio_origen": "inferido",
+  "url_final": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29920",
+  "reformas_cotejadas": [
+    "Resolución 465 de 2024, art. 8 (abierta, PDF p. 5-6): adopta la versión 4, deroga la Resolución 240 de 2020 y aplica a procesos con aviso de convocatoria desde el 3 de febrero de 2025",
+    "Control de versiones de Documentos Tipo (página abierta el 2026-10-19): la versión 4 figura como vigente; no lista modificaciones posteriores de la licitación de obra de transporte",
+    "Decreto 0997 de 2026, art. 14 par. 3 (abierto en la Relatoría): los procesos regidos por documentos tipo siguen con ellos hasta que Colombia Compra expida nuevas versiones; no modifica el documento base"
+  ],
+  "notas": "Fuente: archivo .docx dentro del ZIP «05DT_Transp_TLP_V4.zip» (descarga/29920, obtenida por GET el 2026-10-19); el .docx no tiene paginación fija, el localizador usa el numeral y la página impresa que declara el índice del propio documento. Texto vecino (8.2): «Los precios unitarios resultantes de los análisis no podrán ser diferentes a los consignados en el Formulario 1 […] si se presentare alguna discrepancia, el contratista deberá ajustar el precio unitario obtenido en el análisis consignado en el formulario de la propuesta»; continúa «y por lo tanto no podrá reclamar a la entidad reconocimiento alguno adicional al valor de los precios unitarios consignados en el formulario de su propuesta. El contratista acepta que los precios unitarios por él ofertados constituyen su propuesta económica autónoma». El numeral 4.1 añade que el APU publicado por la entidad es «únicamente de referencia» y que las dudas deben plantearse en el plazo de observaciones al proyecto de pliego."
+}

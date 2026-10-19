@@ -1,0 +1,29 @@
+{
+  "tipo": "academia",
+  "autor": "Pastrana Loaiza, L. A.",
+  "titulo": "Guía básica de licitación pública (título según los metadatos del PDF: «ANEXO - GUIA BASICA DE LICITACION PUBLICA - V6»)",
+  "anio": 2015,
+  "anio_origen": "metadatos",
+  "institucion": "Universidad Militar Nueva Granada (trabajo de grado)",
+  "url": "https://repository.umng.edu.co/server/api/core/bitstreams/70763072-dac4-4e15-9551-80c5da72676c/content",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "contenido",
+    "5.2 a 5.6 requisitos habilitantes, formularios, criterios de rechazo (págs. 54-64)"
+  ],
+  "tipo_contrato": "obra",
+  "etapa": "E2",
+  "decision": "D3",
+  "autoridad": "A6",
+  "modulo": "M-DICT",
+  "localizador": "5.6 Criterios de rechazo de ofertas, tabla, pp. 62-63 del PDF",
+  "pagina_pdf": 63,
+  "cita_textual": "Cuando el presupuesto ofertado una vez verificado, corregido y ajustado al peso, sea mayor al 100% del Presupuesto Oficial […] Cuando la Oferta se presente extemporáneamente o no se presente en el lugar establecido en los Pliegos de Condiciones",
+  "afirmacion": "La guía (hacia 2015, bajo el Decreto 1510 de 2013 según el texto) lista como causales de rechazo en licitación: incapacidad jurídica, oferta por encima del 100 % del presupuesto oficial corregido, falta de capacidad residual, RUP no en firme antes de la adjudicación, varias propuestas del mismo oferente o de socios cruzados, oferta extemporánea o en lugar distinto, no subsanar o subsanar mal, condiciones económicas artificiales, falsedad y contador sancionado.",
+  "vigencia_verificada": "[sin verificar] — guía anterior a la Ley 1882 de 2018, a los documentos tipo y al Decreto 0997 de 2026 (RUP); lo que dice de la norma es lo que él dice; anterior a la reforma; reverificar",
+  "notas": "El año sale de los metadatos del PDF (creación enero de 2015) y de las normas que cita (Decreto 1510 de 2013); la portada no lo declara. Las causales son las de un pliego modelo que la autora llama «creación propia»; no son la lista vigente. El título sale de los metadatos del PDF; la portada solo trae el nombre de la autora y la guía es el anexo de un trabajo de grado de la UMNG sobre empresas de construcción y negocios con el Estado.",
+  "id": "F-1048",
+  "eje": 8,
+  "fecha_consulta": "2026-10-19",
+  "leida_por": "lector fase2 eje8-academica"
+}

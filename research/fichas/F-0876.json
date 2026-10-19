@@ -1,0 +1,29 @@
+{
+  "id": "F-0876",
+  "leida_por": "lector fase2 eje7-institucional",
+  "eje": 7,
+  "tipo": "cce_guia",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente (ANCP-CCE)",
+  "titulo": "Protocolo de Indisponibilidad SECOP II (CCE-SEC-GI-14, versión 01 del 25 de enero de 2022)",
+  "anio": 2022,
+  "anio_origen": "portada",
+  "institucion": "ANCP-CCE",
+  "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2024/09/cce-sec-gi-14_protocolo_de_indisponibilidad_secop_ii_25-11-2022_0.pdf",
+  "fecha_consulta": "2026-10-19",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "pp. 1-5 (portada, definiciones)",
+    "pp. 12-14 (presentación de ofertas)"
+  ],
+  "autoridad": "A3",
+  "vigencia_verificada": "[sin verificar] — versión 01 del 25-ene-2022; la página de CCE que la enlaza (https://www.colombiacompra.gov.co/base-conocimiento/protocolo-de-indisponibilidad-secop-ii, abierta) figura actualizada el 3-dic-2025, pero no se comparó con una versión posterior; es un protocolo de la Agencia, no una norma",
+  "tipo_contrato": "todos",
+  "notas": "El texto previo dice que la respuesta al caso de soporte constituye el certificado de falla particular. La entidad decide si amplía el plazo o recibe por correo y debe informar su decisión con un mensaje público en SECOP II.",
+  "pagina_pdf": 14,
+  "localizador": "p. 14, apartado 6.6 «Presentación de ofertas», b. Falla particular",
+  "cita_textual": "Este correo deberá ser enviado a la Entidad Estatal antes del plazo de presentación de ofertas establecido en el cronograma del proceso, de lo contrario esta oferta no será tenida en cuenta por la Entidad Estatal.",
+  "afirmacion": "Ante una falla particular (que solo afecta al proveedor) hay que reportarla de inmediato por el formulario de soporte para obtener un número de caso, que es el certificado, y avisar por correo a la entidad antes del plazo de ofertas; si no, la oferta no se tiene en cuenta (protocolo versión 01 de 2022).",
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-VIGIA"
+}

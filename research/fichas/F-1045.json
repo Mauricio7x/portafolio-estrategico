@@ -1,0 +1,32 @@
+{
+  "tipo": "academia",
+  "autor": "Arias Rojas, C. P.",
+  "titulo": "Propuesta para el cálculo del factor multiplicador para contratos de consultoría de obras civiles",
+  "anio": 2015,
+  "institucion": "Universidad de los Andes (tesis de maestría en Ingeniería Civil)",
+  "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/be71d510-26ed-4d07-8369-43853ca85e7e/content",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "tabla de contenido",
+    "marco sobre el factor multiplicador",
+    "diagnóstico por entrevistas (págs. 75-79)",
+    "conclusiones (págs. 138-139)"
+  ],
+  "anio_origen": "portada",
+  "tipo_contrato": "consultoria",
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-PRECIO",
+  "autoridad": "A6",
+  "localizador": "3.2 Referentes al factor multiplicador, p. 33 del PDF",
+  "pagina_pdf": 33,
+  "cita_textual": "Mientras en los años 70 y 80 los factores multiplicadores variaban entre 2,6 y 3,0 hoy los factores que utilizan las entidades públicas en sus presupuestos varían entre 1.9 y 2,2",
+  "afirmacion": "La tesis (2015) recoge, sin identificar su fuente en el fragmento leído, que el factor multiplicador de los presupuestos públicos de consultoría bajó de 2,6 a 3,0 en los años 70 y 80 a 1,9 a 2,2, y que muchas veces los presupuestos oficiales corresponden al monto disponible y no a un análisis de costos (p. 33).",
+  "cifra_comprobada": "No recalculable: la tesis cita el dato sin fuente identificada en el fragmento leído; se repite como afirmación de la autora, no como hecho medido.",
+  "vigencia_verificada": "[sin verificar] — dato de 2015 sin fuente identificada; reverificar con datos actuales",
+  "notas": "Contexto de por qué el precio de la oferta de consultoría se mueve en un rango estrecho; el dato exacto no debe usarse como cifra de decisión.",
+  "id": "F-1045",
+  "eje": 8,
+  "fecha_consulta": "2026-10-19",
+  "leida_por": "lector fase2 eje8-academica"
+}

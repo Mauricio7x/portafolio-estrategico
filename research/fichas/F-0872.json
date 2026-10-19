@@ -1,0 +1,28 @@
+{
+  "id": "F-0872",
+  "leida_por": "lector fase2 eje7-institucional",
+  "eje": 7,
+  "tipo": "internacional",
+  "autor": "Banco Mundial (Enhancing Government Effectiveness and Transparency: The Fight Against Corruption, estudio de caso 6)",
+  "institucion": "Banco Mundial",
+  "url": "https://thedocs.worldbank.org/en/doc/406451611783796514-0090022021/original/OpenContractingReformsinColombia.pdf",
+  "fecha_consulta": "2026-10-19",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "pp. 1-3 (resumen del caso, SECOP I y II, hallazgos de la Sociedad Colombiana de Ingenieros)"
+  ],
+  "autoridad": "A6",
+  "anio": 2021,
+  "anio_origen": "metadatos",
+  "pagina_pdf": 3,
+  "tipo_contrato": "todos",
+  "vigencia_verificada": "[sin verificar] — caso de estudio de 2021 (fecha de creación del PDF: 22-ene-2021); describe SECOP II en esa fecha",
+  "titulo": "Open Contracting Reforms in Colombia (Banco Mundial): SECOP II publica en formato OCDS con número de oferentes",
+  "localizador": "p. 3, columna derecha, párrafo sobre la plataforma de contratación electrónica",
+  "cita_textual": "The platform publishes data in the open, standardized, and reusable Open Contracting Data Standard (OCDS) format. It stores PDFs in real time and now includes many more data fields, including the numbers of bidders.",
+  "afirmacion": "Según el Banco Mundial (caso de 2021), SECOP II publica en formato abierto OCDS, guarda los PDF en tiempo real y, a diferencia de SECOP I, incluye el número de oferentes como campo de datos.",
+  "etapa": "E0",
+  "decision": "D1",
+  "modulo": "M-INT",
+  "notas": "Respalda que el número de proponentes sea un campo y no solo un PDF a leer. La afirmación posterior del caso («Publishing to the OCDS ensures that all data is subject to the same quality control») queda contradicha en la práctica por los conteos de datos del eje (precio_base 0, «No Definido»): ver las fichas dato de este eje; el caso la formula como intención, no como medida."
+}

@@ -1,0 +1,39 @@
+{
+  "id": "F-1093",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República (Departamento Nacional de Planeación)",
+  "titulo": "Decreto 399 de 2021, artículo 2 (sustituye el artículo 2.2.1.2.1.3.2 del Decreto 1082 de 2015, procedimiento del concurso de méritos)",
+  "anio": 2021,
+  "institucion": "Relatoría de la Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/decreto-399-de-2021/",
+  "fecha_consulta": "2026-10-19",
+  "estado_lectura": "parcial",
+  "localizador": "Decreto 399 de 2021, art. 2, numerales 1 a 3 del art. 2.2.1.2.1.3.2 (texto sustituido)",
+  "cita_textual": "«Una vez resueltas las observaciones al informe de evaluación, la entidad adjudicará el contrato mediante acto administrativo al oferente que haya cumplido todos los requisitos exigidos en el pliego de condiciones y haya obtenido el mayor puntaje».",
+  "afirmacion": "Desde abril de 2021 el procedimiento del concurso de méritos (consultoría e interventoría) tiene tres reglas: criterios de calificación (experiencia del interesado y del equipo; formación académica del equipo), informe de evaluación publicado tres días hábiles con habilitantes y puntaje, y adjudicación al oferente habilitado de mayor puntaje; ya no existen la revisión del rango del valor estimado, la negociación con el primero ni el paso al segundo.",
+  "eje": 9,
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-PRECIO",
+  "autoridad": "A2",
+  "vigencia_verificada": {
+    "fecha": "2026-10-19",
+    "fuente": "https://relatoria.colombiacompra.gov.co/normativa/decreto-399-de-2021/ y https://relatoria.colombiacompra.gov.co/normativa/decreto-0997-de-2026/ (texto de las dos normas que tocan el artículo)"
+  },
+  "leida_por": "lector fase2 eje9-institucional",
+  "tipo_contrato": "consultoria",
+  "anio_origen": "cuerpo",
+  "partes_leidas": [
+    "considerandos",
+    "art. 1",
+    "art. 2"
+  ],
+  "reformas_cotejadas": [
+    "Decreto 0997 de 2026 (abierto; sus arts. 1 a 13 modifican 2.2.1.2.4.2.x en el Decreto 0287 y 2.2.1.1.1.x, 2.2.1.1.2.1.x, 2.2.1.1.2.2.2, 2.2.1.2.1.2.1, 2.2.1.2.1.2.12 y 2.2.1.2.1.5.1): no toca el 2.2.1.2.1.3.2",
+    "Decreto 142 de 2023 (abierto): modifica 2.2.1.2.1.2.7 a 2.2.1.2.1.2.10, 2.2.1.2.1.2.26 y 2.2.1.2.1.5.x; no el 2.2.1.2.1.3.2",
+    "Decreto 1860 de 2021 y Decreto 287 de 2026 (abiertos): no tocan el 2.2.1.2.1.3.2",
+    "Considerandos del Decreto 399: los numerales 3, 4 y 5 del texto original fueron suspendidos por auto del Consejo de Estado del 20-feb-2019 (exp. 61.463) y el 6 por auto del 25-jul-2018 (exp. 56.165); el decreto sustituyó el artículo"
+  ],
+  "rehace_a": "F-048",
+  "notas": "Rehace F-048 (decisión D13): el piloto citaba los numerales 3 a 6 del texto original, suspendidos por el Consejo de Estado y sustituidos. Aplica también a la interventoría (contrato de consultoría, Ley 80 art. 32 num. 2; el esquema solo admite un valor de tipo_contrato). Numeral 1 literal: «La Entidad Estatal en los pliegos de condiciones debe indicar la forma como calificará, entre otros, los siguientes criterios: a) la experiencia del interesado y del equipo de trabajo y b) la formación académica del equipo de trabajo»; numeral 2: «La Entidad Estatal debe publicar durante tres (3) días hábiles el informe de evaluación, el cual debe contener la evaluación de las ofertas frente a todos los requisitos exigidos en el pliego de condiciones, incluyendo los requisitos habilitantes y los de asignación de puntaje.» El precio no es criterio del decreto; los documentos tipo de méritos exigen que la oferta esté «acorde con el Presupuesto Oficial» (fichas F-1086 y F-1088)."
+}

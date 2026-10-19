@@ -1,0 +1,29 @@
+{
+  "tipo": "academia",
+  "autor": "Pastrana Loaiza, L. A.",
+  "titulo": "Guía básica de licitación pública (título según los metadatos del PDF: «ANEXO - GUIA BASICA DE LICITACION PUBLICA - V6»)",
+  "anio": 2015,
+  "anio_origen": "metadatos",
+  "institucion": "Universidad Militar Nueva Granada (trabajo de grado)",
+  "url": "https://repository.umng.edu.co/server/api/core/bitstreams/70763072-dac4-4e15-9551-80c5da72676c/content",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "contenido",
+    "5.2 a 5.6 requisitos habilitantes, formularios, criterios de rechazo (págs. 54-64)"
+  ],
+  "tipo_contrato": "obra",
+  "etapa": "E2",
+  "decision": "D3",
+  "autoridad": "A6",
+  "modulo": "M-F1",
+  "localizador": "5.3 Formularios y formatos, p. 58 del PDF",
+  "pagina_pdf": 58,
+  "cita_textual": "Se debe tener especial cuidado con los formularios que se solicitan para la asignación de puntaje, como los que comprometen al oferente a mencionar maquinaria que pondrá al servicio del proyecto en caso de resultar adjudicatario del proceso",
+  "afirmacion": "La guía (hacia 2015) dice que los formularios del pliego son documentos sugeridos y su falta al cierre no causa rechazo si no afecta puntaje, pero los de asignación de puntaje (como el de maquinaria) no se pueden subsanar; recomienda entregar todos con la oferta para no depender de la subsanación.",
+  "vigencia_verificada": "[sin verificar] — guía de 2015 que habla de pedir requisitos «hasta la adjudicación», regla que la Ley 1882 de 2018 cambió por el traslado del informe de evaluación; anterior a la reforma; reverificar",
+  "notas": "La parte «hasta el momento mismo de la adjudicación» está desactualizada y no se repite como regla; se conserva solo la distinción entre formularios con puntaje y sin puntaje. El título sale de los metadatos del PDF; la portada solo trae el nombre de la autora y la guía es el anexo de un trabajo de grado de la UMNG sobre empresas de construcción y negocios con el Estado.",
+  "id": "F-1049",
+  "eje": 8,
+  "fecha_consulta": "2026-10-19",
+  "leida_por": "lector fase2 eje8-academica"
+}

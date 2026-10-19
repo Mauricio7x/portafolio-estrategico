@@ -1,0 +1,30 @@
+{
+  "tipo": "academia",
+  "autor": "Jaramillo Díaz, A. J.",
+  "titulo": "Los acuerdos de colaboración empresarial en Colombia. Reflexiones prácticas para su implementación",
+  "anio": 2019,
+  "institucion": "Revist@ e-Mercatoria vol. 18 n.º 1, Universidad Externado de Colombia (Dialnet)",
+  "url": "https://dialnet.unirioja.es/descarga/articulo/9786242.pdf",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "elementos esenciales del acuerdo de colaboración",
+    "cláusulas mínimas: tipo de asociación y porcentajes de participación"
+  ],
+  "localizador": "elementos esenciales (porcentaje y extensión), p. 10 del PDF",
+  "pagina_pdf": 10,
+  "cita_textual": "regular no solamente el porcentaje de participación, sino adicionalmente, la extensión de la participación, es decir, el alcance, las actividades o las labores a que expresamente se comprometen cada una de ellas, pues ante la ausencia de las mismas, se presumirá siempre la existencia de un consorcio",
+  "afirmacion": "La autora (2019) explica que en el documento de un consorcio o unión temporal para un contrato estatal hay que fijar el tipo de asociación, el porcentaje y la extensión de la participación (alcance y actividades de cada integrante); si falta, se presume consorcio, con responsabilidad solidaria por todo el incumplimiento.",
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-CONS",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — artículo de 2019; lo que dice del art. 7 de la Ley 80 de 1993 es lo que él dice; no se abrió la ley ni sus reformas; reverificar",
+  "tipo_contrato": "todos",
+  "anio_origen": "portada",
+  "notas": "Doctrina sobre redacción del acuerdo; no mide errores reales de proponentes. Complementa a F-1018 (contenido del documento de constitución) con la presunción de consorcio cuando falta el alcance de cada integrante.",
+  "id": "F-1050",
+  "eje": 8,
+  "fecha_consulta": "2026-10-19",
+  "leida_por": "lector fase2 eje8-academica"
+}

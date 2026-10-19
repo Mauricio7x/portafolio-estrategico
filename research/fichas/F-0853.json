@@ -20,5 +20,5 @@
   "decision": "D1",
   "modulo": "M-ING",
   "vigencia_verificada": "[sin verificar] — página de la base de conocimiento de CCE actualizada el 29-may-2025; no se cotejó contra una versión posterior de la plataforma ni se trata de una norma",
-  "notas": "Texto adicional de la página: «Indicar si la conexión depende de otros mecanismos, por ejemplo: VPN, configuración de proxy o si es una conexión de proveedor fuera de Colombia.» Es el límite oficial del WAF: un servidor en la nube puede recibir 403 y la salida es un trámite formal, no un reintento. En este lector, los 403 del WAF solo se reprodujeron con descargas en paralelo según las instrucciones comunes; aquí no se pidió SECOP II (comunidad) salvo lo ya dicho."
+  "notas": "Texto adicional de la página: «Indicar si la conexión depende de otros mecanismos, por ejemplo: VPN, configuración de proxy o si es una conexión de proveedor fuera de Colombia.» Es el límite oficial del WAF: un acceso desde fuera de Colombia o por proxy puede recibir 403 y la salida es un trámite formal, no un reintento (inferencia de esta lectura: un servidor en la nube caería en ese caso; no se comprobó). Este lector no pidió ninguna página de community.secop.gov.co, de modo que no reprodujo el 403."
 }

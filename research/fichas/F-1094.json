@@ -1,0 +1,38 @@
+{
+  "id": "F-1094",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República (Departamento Nacional de Planeación)",
+  "titulo": "Decreto 1860 de 2021, artículo 2 (sustituye la Subsección 5, mínima cuantía, del Decreto 1082 de 2015: arts. 2.2.1.2.1.5.1 a 2.2.1.2.1.5.5)",
+  "anio": 2021,
+  "institucion": "Relatoría de la Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/decreto-1860-de-2021/",
+  "fecha_consulta": "2026-10-19",
+  "estado_lectura": "parcial",
+  "localizador": "Decreto 1860 de 2021, art. 2, art. 2.2.1.2.1.5.2 numerales 5 a 7",
+  "cita_textual": "«La Entidad Estatal debe revisar las ofertas económicas y verificar que la de menor precio cumple con las condiciones de la invitación. Si esta no cumple, la Entidad Estatal debe verificar el cumplimento de los requisitos de la invitación de la oferta con el segundo mejor precio, y así sucesivamente.»",
+  "afirmacion": "En mínima cuantía (hasta el 10 % de la menor cuantía de la entidad, cualquiera sea el objeto) gana la oferta de menor precio que cumpla la invitación, con oportunidad de subsanar; el informe de evaluación se publica mínimo un día hábil; el empate se resuelve con el art. 35 de la Ley 2069 de 2020; la oferta y su aceptación son el contrato; no hay ponderación, método aleatorio ni AIU exigido por el decreto (texto del Decreto 1860 de 2021, vigente al 2026-10-19).",
+  "eje": 9,
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-PRECIO",
+  "autoridad": "A2",
+  "vigencia_verificada": {
+    "fecha": "2026-10-19",
+    "fuente": "https://relatoria.colombiacompra.gov.co/normativa/decreto-1860-de-2021/ cotejado con las páginas de los Decretos 142 de 2023, 0997 de 2026 y 287 de 2026"
+  },
+  "leida_por": "lector fase2 eje9-institucional",
+  "tipo_contrato": "todos",
+  "anio_origen": "cuerpo",
+  "partes_leidas": [
+    "art. 1",
+    "art. 2 (arts. 2.2.1.2.1.5.1 a 2.2.1.2.1.5.5)"
+  ],
+  "reformas_cotejadas": [
+    "Decreto 142 de 2023 (abierto): art. 5 modifica el 2.2.1.2.1.5.1 (estudios previos), art. 12 modifica el 2.2.1.2.1.5.4 y art. 13 adiciona el 2.2.1.2.1.5.6; no toca el 2.2.1.2.1.5.2",
+    "Decreto 0997 de 2026, art. 13 (abierto): vuelve a modificar solo el 2.2.1.2.1.5.1 (parágrafo sobre criterios ambientales y sociales); no toca el 2.2.1.2.1.5.2",
+    "Decreto 287 de 2026 (abierto): modifica 2.2.1.2.4.2.x (personas con discapacidad); no toca el 2.2.1.2.1.5.2",
+    "Los desempates del numeral 7 remiten al art. 35 de la Ley 2069 de 2020 y al art. 2.2.1.2.4.2.17 (no abiertos aquí)"
+  ],
+  "rehace_a": "F-049",
+  "notas": "Rehace F-049 (decisión D13): el piloto citaba el texto original de 2015. Literal del numeral 6: «La Entidad Estatal debe aceptar la oferta de menor precio, siempre que cumpla con las condiciones establecidas en la invitación a participar en procesos de mínima cuantía. En la aceptación de la oferta, la Entidad Estatal debe informar al contratista el nombre del supervisor o interventor del contrato.» Numeral 7: «En caso de empate, la Entidad Estatal aplicará los criterios de que trata el artículo 35 de la Ley 2069 de 2020». Subsanación (numeral 5): la entidad fija un término preclusivo en la invitación; «En caso de que no se establezca este término, los proponentes podrán subsanar sus ofertas hasta antes de que finalice el traslado del informe de evaluación». La invitación se publica «por un término no inferior a un (1) día hábil» y hay un término adicional de «mínimo un (1) día hábil» para ofertas tras el aviso sobre limitación a Mipyme. Los documentos tipo de mínima cuantía de obra de transporte (V.2 con modificaciones, Res. 464) y de infraestructura social (V.1) no se abrieron: sin verificar si alteran estos pasos."
+}

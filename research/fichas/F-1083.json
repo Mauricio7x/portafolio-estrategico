@@ -1,0 +1,36 @@
+{
+  "id": "F-1083",
+  "tipo": "ley",
+  "autor": "Congreso de la República (texto consolidado del Estatuto Tributario, Decreto 624 de 1989)",
+  "titulo": "Estatuto Tributario, artículo 462-1 «Base gravable especial» (modificado por la Ley 1607 de 2012, art. 46)",
+  "anio": 2012,
+  "institucion": "Secretaría Jurídica Distrital de Bogotá (Régimen Legal de Bogotá D.C.)",
+  "url": "https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=6533",
+  "fecha_consulta": "2026-10-19",
+  "estado_lectura": "parcial",
+  "localizador": "Estatuto Tributario, art. 462-1, inciso 1 (página consolidada, texto tras el art. 462)",
+  "cita_textual": "«Para los servicios integrales de aseo y cafetería, de vigilancia, […] la tarifa será del 16%* en la parte correspondiente al AIU (Administración, Imprevistos y Utilidad), que no podrá ser inferior al diez por ciento (10%) del valor del contrato.»",
+  "afirmacion": "El artículo 462-1 del Estatuto Tributario (texto de la Ley 1607 de 2012, con reformas de 2016 y 2022) establece la base gravable especial sobre el AIU solo para servicios de aseo y cafetería, vigilancia, temporales y cooperativas/sindicatos de trabajo asociado; no habla de contratos de obra, interventoría ni consultoría, así que la premisa de que ese artículo fija el IVA sobre la utilidad en obra es falsa.",
+  "eje": 9,
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-PRECIO",
+  "autoridad": "A1",
+  "vigencia_verificada": {
+    "fecha": "2026-10-19",
+    "fuente": "https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=6533 (texto consolidado con notas de vigencia: Ley 1607 de 2012 art. 46, Ley 1819 de 2016 art. 182, Ley 2277 de 2022 art. 75)"
+  },
+  "leida_por": "lector fase2 eje9-institucional",
+  "tipo_contrato": "todos",
+  "anio_origen": "cuerpo",
+  "partes_leidas": [
+    "art. 462-1 con sus notas de vigencia"
+  ],
+  "reformas_cotejadas": [
+    "Ley 1607 de 2012, art. 46 (modifica el artículo; texto vigente reproducido por la página consolidada)",
+    "Ley 1819 de 2016, art. 182 (modifica el parágrafo; reproducido en la página)",
+    "Ley 2277 de 2022, art. 75 (adiciona el parágrafo 2; reproducido en la página)",
+    "No se abrieron los textos de esas tres leyes: se confió en las notas de vigencia de la página consolidada de Bogotá; la tarifa «16%*» lleva asterisco en la fuente y no se verificó su equivalencia actual"
+  ],
+  "notas": "Premisa del encargo corregida: el IVA sobre la utilidad en contratos de construcción no está en el art. 462-1 sino en el art. 1.3.1.7.9 del Decreto 1625 de 2016 (ficha F-1084). La DIAN misma describe el 462-1 como «base gravable especial - AIU» para IVA en aseo, vigilancia y temporales (Concepto 10208 de 2026, num. 6), mientras que el Oficio 4761 de 2019 lo llama «base especial de retención» sobre el AIU «sin que se mencione contratos de construcción»; el texto de la ley manda sobre ambas descripciones. El parágrafo (Ley 1819 de 2016, art. 182) extiende esta base especial a la retención en la fuente de renta y de ICA; en 2026 la DIAN ha cambiado de criterio sobre ese parágrafo (ver Concepto 10208 de 2026), asunto fuera del eje. Hubo un texto original del artículo (impuesto al cine) ya derogado."
+}

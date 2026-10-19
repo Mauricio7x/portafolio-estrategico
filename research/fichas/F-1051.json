@@ -1,0 +1,30 @@
+{
+  "tipo": "academia",
+  "autor": "Bedoya Ávila, M. P.; Unigarro Dorado, I. F.",
+  "titulo": "Incentivos a mipymes en los procesos de contratación estatal",
+  "anio": 2019,
+  "anio_origen": "inferido",
+  "institucion": "Universidad de los Andes (trabajo de grado, Maestría en Derecho Público para la Gestión Administrativa)",
+  "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/fa0f149e-4b48-4ed4-b05a-a9d9afe04cf6/content",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "costos de participación en los procesos de contratación (págs. 39-42)"
+  ],
+  "tipo_contrato": "todos",
+  "etapa": "E0",
+  "decision": "D1",
+  "autoridad": "A6",
+  "modulo": "M-RUP",
+  "localizador": "Costos de participación, tabla de tarifas, p. 40 del PDF",
+  "pagina_pdf": 40,
+  "cita_textual": "Inscripción por cada proponente en el RUP cuesta el monto del 66, 85 % de un SMMLV $ 522.000",
+  "afirmacion": "La tesis reporta, con fuente la Cámara de Comercio de Bogotá, que en 2018 inscribir o renovar el RUP costaba 66,85 % de un SMMLV ($522.000), actualizarlo 33,74 % ($279.000), un certificado 6,01 % ($47.000) y una copia 0,35 % ($2.700), y los trata como costos de transacción no reembolsables que desaniman a las mipymes.",
+  "cifra_comprobada": "No cuadra del todo: con el SMMLV implícito de cada fila (valor dividido por porcentaje) la inscripción da 780.853, el certificado 782.030 y la copia 771.429, pero la actualización da 826.912; la fila de actualización ($279.000 frente a 33,74 %) es inconsistente y no se repite. Los $522.000 y $47.000 cuadran entre sí.",
+  "vigencia_verificada": "[sin verificar] — tarifas de 2018 de una cámara de comercio; el RUP fue reformado por el Decreto 0997 de 2026 y las tarifas cambian cada año; anterior a la reforma; reverificar",
+  "notas": "El año 2018 es el de las tarifas citadas; el año del trabajo (2019) se infiere de ellas, la portada leída no lo declara.",
+  "id": "F-1051",
+  "eje": 8,
+  "fecha_consulta": "2026-10-19",
+  "leida_por": "lector fase2 eje8-academica"
+}

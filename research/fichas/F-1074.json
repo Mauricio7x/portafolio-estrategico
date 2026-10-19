@@ -1,0 +1,33 @@
+{
+  "id": "F-1074",
+  "tipo": "doc_tipo",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Documento Base de licitación de obra pública de infraestructura social, versión 2 (Documentos Tipo transversales, Resolución 539 de 2025)",
+  "anio": 2025,
+  "institucion": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29837/",
+  "fecha_consulta": "2026-10-19",
+  "estado_lectura": "parcial",
+  "localizador": "Documento Base social v2, numeral 4.1.1 «A.I.U.» (índice del .docx: 4.1.1 en la p. impresa 84)",
+  "cita_textual": "«El porcentaje del A.I.U. que presenten los Proponentes no debe ser superior al porcentaje total del A.I.U establecido en el Formulario 1– Formulario de Presupuesto Oficial.»",
+  "afirmacion": "En la licitación de obra de infraestructura social v2 por precios unitarios el AIU se ofrece en porcentaje, con A, I y U libres mientras su suma no supere el AIU total del Formulario 1; solo el adjudicatario presenta el desglose de la Administración.",
+  "eje": 9,
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-PRECIO",
+  "autoridad": "A3",
+  "vigencia_verificada": {
+    "fecha": "2026-10-19",
+    "fuente": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo (licitación de obra de infraestructura social: V.2 «Versión vigente» desde 16/02/2026) y Resolución 539 de 2025, art. 23 (PDF escaneado leído con OCR)"
+  },
+  "leida_por": "lector fase2 eje9-institucional",
+  "tipo_contrato": "obra",
+  "anio_origen": "inferido",
+  "url_final": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29837",
+  "reformas_cotejadas": [
+    "Resolución 539 de 2025, art. 23 (abierta, PDF escaneado sin capa de texto, leído con OCR): rige desde su publicación y aplica a licitaciones de obra de infraestructura social con aviso de convocatoria desde el 16 de febrero de 2026",
+    "Control de versiones de Documentos Tipo (página abierta el 2026-10-19): V.2 vigente desde 16/02/2026, V.1 vigente hasta 15/02/2026",
+    "Decreto 0997 de 2026, art. 14 par. 3 (abierto en la Relatoría): los procesos regidos por documentos tipo siguen con ellos hasta que Colombia Compra expida nuevas versiones; no modifica el documento base"
+  ],
+  "notas": "Fuente: archivo .docx dentro del ZIP «05DT_Transversales_ISocialLV2.zip» (descarga/29837, obtenida por GET el 2026-10-19); sin paginación fija, el localizador usa el numeral y la página impresa que declara el índice del propio documento. Texto vecino: «En consecuencia, el Proponente puede configurar libremente el porcentaje individual de la “A”, de la “I” y de la “U”, siempre que la sumatoria de ellos no exceda el porcentaje total definido por la Entidad en el Formulario 1»; «Los componentes internos de la administración (A) deberán ser presentados por el adjudicatario […] en la oportunidad establecida en el numeral 8.1». Causal: «Ofrecer como AIU un porcentaje cuya sumatoria sea superior al establecido por la entidad en el Formulario 1». Corrección aritmética (4.1.2, p. impresa 85): idéntica a la de transporte v4 (solo operaciones aritméticas y ajuste al peso)."
+}

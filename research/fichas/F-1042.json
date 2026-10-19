@@ -1,0 +1,30 @@
+{
+  "tipo": "academia",
+  "autor": "Osorio Gutiérrez, M.",
+  "titulo": "Registro único de proponentes para dummies",
+  "anio": 2018,
+  "institucion": "Advocatus vol. 15 n.º 30, Universidad Libre Seccional Barranquilla (Dialnet); autora de la Cámara de Comercio de Barranquilla",
+  "url": "https://dialnet.unirioja.es/descarga/articulo/7021703.pdf",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen",
+    "trámite de inscripción, renovación y actualización",
+    "documentos por tipo de persona"
+  ],
+  "localizador": "apartado de inscripción, renovación y actualización, PDF p. 5",
+  "pagina_pdf": 5,
+  "cita_textual": "La persona inscrita en el RUP debe presentar la información para renovar su registro a más tardar el quinto día hábil del mes de abril de cada año. De lo contrario cesan los efectos del RUP.",
+  "afirmacion": "La autora (2018), de una cámara de comercio, resume que el RUP se renueva a más tardar el quinto día hábil de abril de cada año y, si no, cesan sus efectos; la solicitud va bajo juramento de veracidad y la experiencia y la capacidad jurídica se pueden actualizar en cualquier momento.",
+  "etapa": "E0",
+  "decision": "D3",
+  "modulo": "M-RUP",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — artículo de 2018 que cita el Decreto 1082 de 2015; el RUP fue reformado por el Decreto 0997 de 2026; anterior a la reforma; reverificar contra el texto vigente",
+  "tipo_contrato": "todos",
+  "anio_origen": "portada",
+  "notas": "Es una guía divulgativa de 2018; no mide errores de los proponentes. La fecha de renovación y los efectos deben verificarse en el decreto vigente y en el Decreto 0997 de 2026.",
+  "id": "F-1042",
+  "eje": 8,
+  "fecha_consulta": "2026-10-19",
+  "leida_por": "lector fase2 eje8-academica"
+}

@@ -1,0 +1,29 @@
+{
+  "id": "F-0878",
+  "leida_por": "lector fase2 eje7-institucional",
+  "eje": 7,
+  "tipo": "cce_guia",
+  "autor": "Agencia Nacional de Contratación Pública - Colombia Compra Eficiente (ANCP-CCE)",
+  "titulo": "Protocolo de Indisponibilidad SECOP II (CCE-SEC-GI-14, versión 01 del 25 de enero de 2022)",
+  "anio": 2022,
+  "anio_origen": "portada",
+  "institucion": "ANCP-CCE",
+  "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2024/09/cce-sec-gi-14_protocolo_de_indisponibilidad_secop_ii_25-11-2022_0.pdf",
+  "fecha_consulta": "2026-10-19",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "pp. 1-5 (portada, definiciones)",
+    "pp. 12-14 (presentación de ofertas)"
+  ],
+  "autoridad": "A3",
+  "vigencia_verificada": "[sin verificar] — versión 01 del 25-ene-2022; la página de CCE que la enlaza (https://www.colombiacompra.gov.co/base-conocimiento/protocolo-de-indisponibilidad-secop-ii, abierta) figura actualizada el 3-dic-2025, pero no se comparó con una versión posterior; es un protocolo de la Agencia, no una norma",
+  "tipo_contrato": "todos",
+  "notas": "Sin ese certificado no se puede acoger al protocolo. Quien dependa de la hora de cierre debe guardar la evidencia de la falla (número de caso, pantallazos) de inmediato. La definición de falla particular figura en la misma página: la falla de usuarios aislados certificada por la mesa de servicio mediante correo.",
+  "pagina_pdf": 5,
+  "localizador": "p. 5, tabla de definiciones: «Falla General»",
+  "cita_textual": "la ANCP- CCE expedirá y publicará un certificado con la fecha y hora de inicio y lo actualizará con la fecha y hora […] de fin una vez se supere la Falla en un máximo de cuatro [4] horas siguientes",
+  "afirmacion": "Una falla general de SECOP II (interrupción que afecta a más de un usuario) se prueba con un certificado de indisponibilidad que CCE publica con fecha y hora de inicio y actualiza con la hora de fin; una falla particular se certifica con el correo de la mesa de servicio que responde el caso radicado (protocolo versión 01 de 2022).",
+  "etapa": "E0",
+  "decision": "D3",
+  "modulo": "M-VIGIA"
+}
