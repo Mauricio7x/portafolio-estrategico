@@ -19887,7 +19887,9 @@ En una línea: un subagente que no escribió el código lo atacó con 325 Excel 
 
 En una línea: la casilla «Solo las que cumplen los requisitos» de la pestaña Licitaciones nace APAGADA (`public/index.html`) y, apagada, el navegador pide `solo_viables=false`; el servidor conserva `solo_viables=true` como defecto, así que el pulso, el conteo de «cuántas puede presentarse» y todo cliente que no mande el parámetro cuentan igual que antes.
 
-> PENDIENTE · el texto de la casilla promete más de lo que mide: dice «cumplen los requisitos» y las puertas solo miran registro (P1), capacidad (P2) y caja (P3); la experiencia y los indicadores financieros salen del pliego y solo se saben tras leerlo (el bloque «¿Puede presentarse?» de Mis procesos sí los exige). El dueño eligió mostrar todo sin cambiar el texto; falta decidir la redacción, que tiene que seguir sin jerga.
+> RESUELTO el 19-oct-2026 por «La lista abre con TODOS los procesos de obra abiertos, y los que no alcanzan van atenuados y al final (19-oct-2026)» · el texto de la casilla prometía más de lo que miden las puertas; ahora dice «Ocultar las que su registro, su capacidad o su caja no alcanzan».
+
+**El texto de la casilla (19-oct-2026, a pedido del dueño).** Decía «Solo las que cumplen los requisitos» y las puertas solo miran registro (P1), capacidad (P2) y caja (P3): la experiencia y los indicadores financieros salen del pliego y solo se saben tras leerlo (el bloque «¿Puede presentarse?» de Mis procesos sí los exige). Como además nace apagada, el texto pasó a describir lo que OCULTA al encenderla: «Ocultar las que su registro, su capacidad o su caja no alcanzan».
 
 **Decisión del dueño (19-oct-2026).** Entre dejarla como estaba, mostrar todo, o mostrar todo y corregir el texto, eligió mostrar todo, atenuado y al final. Va con el principio del módulo: en oportunidades el falso caro es el NEGATIVO (ante la duda se muestra), y esconder lo que no alcanza era decidir por el usuario qué no ver. Encenderla vuelve a ocultar; nunca se mezclan los que no alcanzan con los que sí.
 

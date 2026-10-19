@@ -40973,6 +40973,13 @@ async function main() {
             const tagViables = /<input id="f-solo-viables"[^>]*>/.exec(html);
             assert.ok(tagViables, "la casilla f-solo-viables existe");
             assert.ok(!/\bchecked\b/.test(tagViables[0]), `la casilla nace apagada: ${tagViables[0]}`);
+            /* EL TEXTO DICE LO QUE MIDEN LAS PUERTAS (19-oct-2026): registro, capacidad y caja. «Solo las que cumplen los requisitos» prometía
+               más: la experiencia y los indicadores financieros salen del pliego y solo se saben tras leerlo. Y como la casilla nace apagada,
+               el texto es de lo que OCULTA cuando se enciende. */
+            const iTag = html.indexOf(tagViables[0]);
+            const textoViables = html.slice(iTag + tagViables[0].length, html.indexOf("</label>", iTag)).replace(/\s+/g, " ").trim();
+            assert.strictEqual(textoViables, "Ocultar las que su registro, su capacidad o su caja no alcanzan", `el texto de la casilla: «${textoViables}»`);
+            assert.ok(!/cumplen/i.test(textoViables), "el texto no promete que cumplen «los requisitos»");
             const appP = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
             const iP = appP.indexOf("  function parametros() {"), fP = appP.indexOf("    return p;\n  }", iP);
             assert.ok(iP > 0 && fP > iP, "app.js trae parametros()");
