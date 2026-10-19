@@ -4529,7 +4529,11 @@
     }
     if (!r.ok) {
       // el «qué hacer» del servidor viaja con el error, como en pliego.js (6-sep-2026, V-B2a-02)
-      throw new Error(errorDelServidor(cuerpo) || `El servidor respondió ${r.status}.`);
+      const falla = new Error(errorDelServidor(cuerpo) || `El servidor respondió ${r.status}.`);
+      /* el CUERPO viaja con el error (19-oct-2026): la causa estructurada de una descarga fallida (`cuerpo.causa`) se
+         perdía en el texto. Solo `cuerpo`: un `status` aquí cambiaría la redacción de `fraseDeFallo` (401/403 → el muro). */
+      falla.cuerpo = cuerpo;
+      throw falla;
     }
     return cuerpo;
   }
@@ -5575,16 +5579,37 @@
      cuatro peticiones (`desde`), que aquí se unen. Tope de vueltas: un servidor
      que no avanza no puede dejar la pestaña pidiendo para siempre. */
   const MAX_TROZOS = 8;
+  /* LA CAUSA DE UN FALLO DE LECTURA (19-oct-2026): lo que el servidor clasificó (`cuerpo.causa`, lib/causa_descarga) más lo que
+     solo el navegador sabe (qué parte de la descarga falló). Sin causa del servidor: «lector_no_cargo» si pdf.js no cargó, «plataforma» si
+     la respuesta no era JSON y «desconocida» en lo demás: jamás se inventa una clase de SECOP II. El servidor la vuelve a sanear: este objeto no se cree. */
+  function causaDeFallo(e) {
+    const c = e && e.cuerpo && typeof e.cuerpo.causa === "object" && e.cuerpo.causa ? e.cuerpo.causa : null;
+    const deParte = { parte: e && e.parte != null ? e.parte : null, bytes_total: e && e.bytes_total != null ? e.bytes_total : null };
+    if (c) return { ...c, etapa: "descarga", ...deParte };
+    /* `recurso: "lector-pdf"` lo ponen pliego.js y onboarding.js SOLO cuando la librería pdf.js no carga (red o CDN bloqueados): no dice nada del archivo */
+    if (e && e.recurso === "lector-pdf") return { clase: "lector_no_cargo", etapa: "lectura" };
+    /* la respuesta no era JSON (el corte de la plataforma, el muro del edge): el fallo es de la consulta al servidor de Detekta, no de SECOP II */
+    if (e && e.cuerpo && e.cuerpo.sinJson === true) return { clase: "plataforma", etapa: "descarga", http: typeof e.cuerpo.status === "number" ? e.cuerpo.status : null, ...deParte };
+    return { clase: "desconocida", etapa: "descarga" };
+  }
   async function bajarPorTrozos(url, alAvanzar) {
     const partes = [];
     let desde = 0;
+    let pesoVisto = null;   // el peso del archivo, en cuanto una respuesta lo dice
     for (let k = 0; k < MAX_TROZOS; k++) {
-      const d = await api("/api/pliego?op=descargar", { method: "POST", body: { url, desde } });
+      let d;
+      try { d = await api("/api/pliego?op=descargar", { method: "POST", body: { url, desde } }); } catch (e) {
+        /* qué parte falló y cuánto pesa el archivo (19-oct-2026): con N partes cada una repite la descarga desde el
+           principio, y sin esto no se puede decir si los fallos se concentran en los archivos grandes */
+        if (e && typeof e === "object") { e.parte = k + 1; e.bytes_total = pesoVisto; }
+        throw e;
+      }
+      if (d && d.total) pesoVisto = d.total;
       const b = bytesDeBase64(d.base64);
       partes.push(b);
       desde += b.length;
       if (d.completo) break;
-      if (!b.length || k === MAX_TROZOS - 1) throw new Error("el documento no terminó de llegar");
+      if (!b.length || k === MAX_TROZOS - 1) { const e = new Error("el documento no terminó de llegar"); e.cuerpo = { causa: { clase: "corte_a_mitad" } }; e.parte = k + 1; e.bytes_total = pesoVisto; throw e; }
       if (alAvanzar) alAvanzar(desde, d.total);
     }
     const datos = new Uint8Array(desde);
@@ -5612,7 +5637,7 @@
         avanzar(`Leyendo ${i + 1} de ${pend.length}: ${a.tipo_legible || "documento"} (${a.nombre || ""})…`, i, pend.length);
         /* `definitivo` solo para el escaneo sin texto: una descarga que falla hoy se reintenta al «volver a buscar» */
         /* `saturado`: el OCR no atendió; el servidor guarda cuándo reintentarlo solo */
-        const marcarIlegible = (motivo, definitivo, saturado) => api("/api/pliego?op=documentos", { method: "POST", body: { id_proceso: id, id_documento: a.id_documento, ilegible: true, definitivo: definitivo === true, saturado: saturado === true, motivo: String(motivo).slice(0, 200) } });
+        const marcarIlegible = (motivo, definitivo, saturado, causa) => api("/api/pliego?op=documentos", { method: "POST", body: { id_proceso: id, id_documento: a.id_documento, ilegible: true, definitivo: definitivo === true, saturado: saturado === true, motivo: String(motivo).slice(0, 200), ...(causa ? { causa } : {}) } });
         try {
           /* el Formulario 1 en Excel (19-oct-2026) lo lee el servidor y SOLO entrega ítems si cuadran con su total y fila a fila:
              el navegador no interpreta el libro, lo pide y devuelve el resultado, que el servidor vuelve a comprobar */
@@ -5661,7 +5686,7 @@
           leidos++;
         } catch (e) {
           fallidos++;
-          try { await marcarIlegible(`no se pudo leer: ${fraseDeFallo(e)}`, false); } catch { /* se reintenta la próxima vez */ }
+          try { await marcarIlegible(`no se pudo leer: ${fraseDeFallo(e)}`, false, false, causaDeFallo(e)); } catch { /* se reintenta la próxima vez */ }
         }
       }
       docsProgreso.delete(id);

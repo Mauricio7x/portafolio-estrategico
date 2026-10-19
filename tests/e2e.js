@@ -4821,6 +4821,145 @@ async function main() {
     console.log("· unidad Formulario 1 en Excel: «VALOR TOTAL» cuadra, y la puerta de publicar rechaza el AIU por fila, la cantidad mal leída, el total que no cuadra, la hoja sin precio y menos del 90 % de filas comprobables; el módulo del servidor lee un .xlsx con DEFLATE con la fila de cada ítem, no entrega ítems si no cuadra y corta la bomba zip");
   }
 
+  /* unidad causa de la lectura — LA CAUSA REAL DE UN FALLO (19-oct-2026). Dos documentos de un mismo proceso fallaron dos veces seguidas con
+     «No se pudo descargar: fetch failed.» y nadie pudo decir por qué: el servidor tiraba `e.cause` y el navegador guardaba solo un texto.
+     Aquí se EJECUTA la clasificación (lib/causa_descarga), el saneado de lo que manda el navegador, y las tres funciones reales del cliente
+     (api, bajarPorTrozos y la línea que marca el ilegible), extraídas de public/app.js y corridas con respuestas simuladas. */
+  bqCausa: { if (!corre("unidad causa de la lectura")) break bqCausa;
+    const Causa = require("../lib/causa_descarga.js");
+    const falloRed = (msg, cause, nombre) => { const e = new TypeError(msg); if (cause) e.cause = cause; if (nombre) e.name = nombre; return e; };
+    const conCodigo = (code) => falloRed("fetch failed", Object.assign(new Error("connect " + code + " 190.1.2.3:443"), { code }));
+    // (1) lo que le pasa a la descarga se clasifica por lo que dice `e.cause`, no por el «fetch failed» de siempre
+    assert.deepStrictEqual(Causa.causaDeRed(conCodigo("ECONNRESET"), 1234), { clase: "conexion", codigo: "ECONNRESET", http: null, ms: 1234 }, "un reinicio de la conexión: clase conexión, con su código y lo que tardó");
+    for (const [codigo, clase] of [["UND_ERR_CONNECT_TIMEOUT", "tiempo"], ["UND_ERR_HEADERS_TIMEOUT", "tiempo"], ["UND_ERR_BODY_TIMEOUT", "tiempo"], ["ETIMEDOUT", "tiempo"], ["ECONNREFUSED", "conexion"], ["ENOTFOUND", "dns"], ["EAI_AGAIN", "dns"], ["ERR_SSL_PROTOCOL_ERROR", "conexion"], ["UND_ERR_SOCKET", "conexion"]]) {
+      assert.strictEqual(Causa.causaDeRed(conCodigo(codigo)).clase, clase, `${codigo} es «${clase}» (MUTACIÓN: todo «conexion», o todo «tiempo»)`);
+      assert.strictEqual(Causa.causaDeRed(conCodigo(codigo)).codigo, codigo);
+    }
+    assert.strictEqual(Causa.causaDeRed(falloRed("x", null, "TimeoutError")).clase, "tiempo", "el tiempo agotado de AbortSignal.timeout es «tiempo»");
+    assert.strictEqual(Causa.causaDeRed(falloRed("x", null, "AbortError")).clase, "tiempo");
+    assert.strictEqual(Causa.causaDeRed(new TypeError("fetch failed")).codigo, null, "«fetch failed» a secas no trae código: no se inventa ni se muestra «TypeError» como si fuera uno");
+    /* revisión adversaria (19-oct-2026, reproducido): `AbortSignal.timeout` lanza un DOMException cuyo `code` es el NÚMERO 23; salía «(código técnico: 23)», un dato del DOM que no es de la red */
+    const dom = new DOMException("The operation was aborted due to timeout", "TimeoutError");
+    assert.deepStrictEqual([typeof dom.code, Causa.causaDeRed(dom).clase, Causa.causaDeRed(dom).codigo], ["number", "tiempo", null], "el DOMException del tiempo agotado es «tiempo» y NO inventa un «código 23» ni repite su nombre (MUTACIÓN: `codigoLimpio` acepta números)");
+    assert.strictEqual(Causa.causaDeRed(Object.assign(new Error("x"), { code: 23 })).codigo, null, "un `code` numérico nunca es un código técnico");
+    const hostil = Causa.causaDeRed(falloRed("x", { code: "connect ETIMEDOUT 190.1.2.3:443", name: "Error: dirección 10.0.0.1" }));
+    assert.ok(hostil.codigo === null && !/190|10\.0\.0/.test(JSON.stringify(hostil)), `una dirección o un mensaje dentro de «code» NO se guarda: ${JSON.stringify(hostil)}`);
+    for (const x of [null, undefined, 42, "texto", {}, [], () => 1]) assert.doesNotThrow(() => Causa.causaDeRed(x), "un error que no es un Error no tumba la respuesta");
+    for (const [st, clase] of [[401, "bloqueo_portal"], [403, "bloqueo_portal"], [429, "bloqueo_portal"], [404, "error_portal"], [500, "error_portal"], [503, "error_portal"]]) {
+      assert.deepStrictEqual(Causa.causaDeEstado(st, 80), { clase, codigo: null, http: st, ms: 80 }, `la respuesta ${st} es «${clase}»`);
+    }
+    assert.strictEqual(Causa.causaDeEstado("abc").http, null, "un estado que no es un número no se guarda");
+    // (2) el servidor NO se fía de la causa que manda el navegador: lista blanca, tipos y rangos
+    assert.deepStrictEqual(Causa.saneada({ clase: "conexion", etapa: "descarga", codigo: "ECONNRESET", http: null, ms: 900, parte: 3, bytes_total: 16196636 }),
+      { clase: "conexion", etapa: "descarga", codigo: "ECONNRESET", http: null, ms: 900, parte: 3, bytes_total: 16196636 }, "una causa buena pasa tal cual");
+    const sucia = Causa.saneada({ clase: "<script>alert(1)</script>", etapa: "x", codigo: "a b<c>", http: "403x", ms: -5, parte: 1e9, bytes_total: 2 ** 40, extra: "no debe pasar", __proto__: { z: 1 } });
+    assert.deepStrictEqual(sucia, { clase: "desconocida", etapa: "descarga", codigo: null, http: null, ms: null, parte: null, bytes_total: null }, `lo hostil se reduce a «desconocida» y nulos: ${JSON.stringify(sucia)}`);
+    assert.strictEqual("extra" in sucia, false, "un campo que no está en la lista blanca no pasa");
+    for (const x of [null, undefined, "x", 5, [], true]) assert.strictEqual(Causa.saneada(x), null, "lo que no es un objeto no es una causa");
+    assert.strictEqual(Causa.saneada({ clase: "lector_no_cargo" }).etapa, "lectura", "que pdf.js no cargue es de la etapa de lectura");
+    assert.strictEqual(Causa.saneada({ clase: "lector" }).clase, "desconocida", "la clase «lector» ya no existe: afirmaba que el archivo no se podía interpretar cuando lo que fallaba era la carga de pdf.js");
+    assert.strictEqual(Causa.saneada({ clase: "conexion", http: true }).http, null, "un booleano no es un estado HTTP");
+    // revisión adversaria: ni una IP ni un host pasan por «código», y «sin dato» (cadena en blanco, arreglo) no se vuelve 0
+    for (const raro of ["10.0.0.5", "secop-internal.corp.local", "1234", "a.b", "-x", "ECONN RESET", "x".repeat(41)]) assert.strictEqual(Causa.saneada({ clase: "conexion", codigo: raro }).codigo, null, `«${raro}» no es un código técnico`);
+    assert.strictEqual(Causa.saneada({ clase: "conexion", codigo: "UND_ERR_SOCKET" }).codigo, "UND_ERR_SOCKET");
+    const vacios = Causa.saneada({ clase: "conexion", ms: " ", bytes_total: [], parte: "", http: "403", cifra: 1 });
+    assert.deepStrictEqual([vacios.ms, vacios.bytes_total, vacios.parte, vacios.http], [null, null, null, null], `«sin dato» no es cero y una cadena no es un número (MUTACIÓN: \`entero\` con Number()): ${JSON.stringify(vacios)}`);
+    const conProto = Causa.saneada(JSON.parse('{"__proto__": {"clase": "conexion"}, "clase": "<x>", "constructor": {"clase": "tiempo"}}'));
+    assert.strictEqual(conProto.clase, "desconocida", "una clave __proto__ o constructor propia (de un JSON) no se cuela");
+    // (3) lo que lee el dueño: una frase por clase (un CENSO, no una lista), sin jerga y sin prometer lo que no se sabe
+    for (const clase of Causa.CLASES) {
+      const f = Causa.frase({ clase });
+      assert.ok(typeof f === "string" && f.length > 20 && /^[A-ZÁÉÍÓÚÑ]/.test(f) && f.endsWith("."), `la clase «${clase}» tiene su frase: ${f}`);
+      assert.ok(!/temporal|reintente|vuelva a intentar|fetch|undici|TypeError/i.test(f), `la frase de «${clase}» no promete ni usa jerga: ${f}`);
+    }
+    for (const clase of Causa.CLASES.filter((k) => !["bloqueo_portal", "error_portal", "vacio"].includes(k))) {
+      assert.ok(!/SECOP II (cortó|tardó|entregó|rechazó|respondió)/.test(Causa.frase({ clase })), `la clase «${clase}» no culpa a SECOP II de lo que no sabe (solo cuando SECOP II RESPONDIÓ: 401/403/429, un error HTTP, un archivo vacío): ${Causa.frase({ clase })}`);
+    }
+    assert.ok(!/respuesta 200/.test(Causa.frase({ clase: "no_es_documento", http: 200 })), "un 200 con una página no es «respuesta 200» de ninguna falla");
+    assert.ok(/respuesta 504/.test(Causa.frase({ clase: "plataforma", http: 504 })), "un error HTTP sí se dice");
+    assert.deepStrictEqual(Causa.DEL_SERVIDOR.filter((k) => !Causa.CLASES.includes(k)), [], "las clases del servidor existen");
+    assert.ok(!Causa.DEL_SERVIDOR.some((k) => ["desconocida", "plataforma", "lector_no_cargo"].includes(k)), "«desconocida», «plataforma» y «lector_no_cargo» NO reemplazan el motivo que el ilegible ya traía");
+    assert.strictEqual(Causa.frase(null), null); assert.strictEqual(Causa.frase("x"), null);
+    assert.ok(/parte 3 de 6/.test(Causa.frase({ clase: "conexion", parte: 3, bytes_total: 16196636 })), "16,2 MB a 3 MB por parte son 6 partes: la frase dice cuál falló");
+    assert.ok(!/parte/.test(Causa.frase({ clase: "conexion", parte: 1, bytes_total: 2 * 1024 * 1024 })), "un archivo de una sola parte no habla de partes");
+    assert.ok(!/parte/.test(Causa.frase({ clase: "conexion", parte: 1, bytes_total: null })), "sin el peso no se inventa el total de partes");
+    const sr = (...clases) => ({ n: clases.length, ultimas: clases.map((clase) => ({ clase })) });
+    assert.ok(/ya van 2 intentos seguidos que fallan igual/.test(Causa.frase({ clase: "conexion" }, sr("conexion", "conexion"))) && /ya van 3 /.test(Causa.frase({ clase: "conexion" }, sr("tiempo", "conexion", "conexion", "conexion"))), "la RACHA de la misma clase se dice, contada desde el último fallo");
+    for (const [rotulo, serie] of [["uno solo", sr("conexion")], ["una clase distinta antes", sr("conexion", "tiempo", "conexion")], ["un fallo sin causa antes (escaneo, OCR, definitivo)", sr("desconocida", "conexion")], ["sin serie", null]]) {
+      assert.ok(!/intentos/.test(Causa.frase({ clase: "conexion" }, serie)), `${rotulo}: NO hay racha (MUTACIÓN: contar el total \`n\` mezcla fallos de distinto tipo)`);
+    }
+    assert.strictEqual(Causa.rachaDe(sr("desconocida", "desconocida").ultimas, "desconocida"), 0, "«desconocida» no hace racha: no se sabe si son iguales (MUTACIÓN D10)");
+    assert.strictEqual(Causa.rachaDe(sr("tiempo", "conexion", "conexion").ultimas, "conexion"), 2, "la racha cuenta desde el último fallo y se corta en la primera clase distinta");
+    assert.strictEqual(Causa.rachaDe("no es un arreglo", "conexion"), 0, "una serie malformada no tumba la guía");
+    assert.ok(/\(respuesta 403\)/.test(Causa.frase({ clase: "bloqueo_portal", http: 403 })) && /\(código técnico: ECONNRESET\)/.test(Causa.frase({ clase: "conexion", codigo: "ECONNRESET" })));
+
+    // (4) el cliente: las tres piezas reales de public/app.js, extraídas y EJECUTADAS (no leídas por regex)
+    const appC = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+    const funcion = (firma) => { const i = appC.indexOf(firma); assert.ok(i > 0, `app.js trae «${firma}»`); const j = appC.indexOf("\n  }\n", i); assert.ok(j > i); return appC.slice(i, j + 4); };
+    const causaDeFallo = new Function(funcion("  function causaDeFallo(e) {") + "\nreturn causaDeFallo;")();
+    assert.deepStrictEqual(causaDeFallo(Object.assign(new Error("x"), { cuerpo: { causa: { clase: "conexion", codigo: "ECONNRESET", http: null, ms: 7 } }, parte: 3, bytes_total: 16196636 })),
+      { clase: "conexion", codigo: "ECONNRESET", http: null, ms: 7, etapa: "descarga", parte: 3, bytes_total: 16196636 }, "la causa del servidor viaja con la parte que falló y el peso del archivo");
+    assert.deepStrictEqual(causaDeFallo(Object.assign(new Error("x"), { recurso: "lector-pdf" })), { clase: "lector_no_cargo", etapa: "lectura" }, "pdf.js que no carga es «lector_no_cargo»: no dice nada del archivo (antes salía «el archivo no se pudo interpretar») ni es una clase de SECOP II");
+    assert.deepStrictEqual(causaDeFallo(Object.assign(new Error("x"), { cuerpo: { ok: false, sinJson: true, status: 504 }, parte: 2, bytes_total: 5 })), { clase: "plataforma", etapa: "descarga", http: 504, parte: 2, bytes_total: 5 }, "una respuesta que no es JSON (el corte de la plataforma) es «plataforma», jamás culpa de SECOP II");
+    assert.deepStrictEqual(causaDeFallo(new Error("algo")), { clase: "desconocida", etapa: "descarga" }, "sin causa del servidor no se inventa una");
+    assert.doesNotThrow(() => causaDeFallo(null)); assert.strictEqual(causaDeFallo(undefined).clase, "desconocida");
+
+    const bajarPorTrozos = new Function("api", "bytesDeBase64", "MAX_TROZOS", funcion("  async function bajarPorTrozos(url, alAvanzar) {") + "\nreturn bajarPorTrozos;");
+    const TRES = 3 * 1024 * 1024, b64 = (n) => Buffer.alloc(n, 1).toString("base64"), deB64 = (s) => Buffer.from(s, "base64");
+    const fallaEn = (k, cuerpo) => { let n = 0; return async () => { n++; if (n === k) throw Object.assign(new Error("No se pudo descargar: fetch failed (código ECONNRESET)."), { cuerpo }); return { ok: true, base64: b64(TRES), completo: false, total: 7.5 * 1024 * 1024 }; }; };
+    const e3 = await bajarPorTrozos(fallaEn(3, { causa: { clase: "conexion", codigo: "ECONNRESET" } }), deB64, 8)("https://community.secop.gov.co/x").then(() => null, (e) => e);
+    assert.ok(e3 && e3.parte === 3 && e3.bytes_total === 7.5 * 1024 * 1024 && e3.cuerpo.causa.codigo === "ECONNRESET", `el error trae la parte que falló, el peso y la causa del servidor: parte=${e3 && e3.parte} peso=${e3 && e3.bytes_total}`);
+    const e1 = await bajarPorTrozos(fallaEn(1, { causa: { clase: "tiempo" } }), deB64, 8)("https://community.secop.gov.co/x").then(() => null, (e) => e);
+    assert.ok(e1 && e1.parte === 1 && e1.bytes_total === null, "si falla la primera parte todavía no se sabe cuánto pesa: null, jamás 0");
+    const eVacio = await bajarPorTrozos(async () => ({ ok: true, base64: "", completo: false }), deB64, 8)("https://community.secop.gov.co/x").then(() => null, (e) => e);
+    assert.ok(eVacio && eVacio.cuerpo.causa.clase === "corte_a_mitad" && /no terminó de llegar/.test(eVacio.message), "«no terminó de llegar» también trae su causa");
+    let q = 0;
+    const entero = await bajarPorTrozos(async () => { q++; return { ok: true, base64: b64(100), completo: q === 2, total: 200 }; }, deB64, 8)("https://community.secop.gov.co/x");
+    assert.strictEqual(entero.length, 200, "lo que ya funcionaba sigue funcionando: dos partes, un archivo entero");
+
+    const api = new Function("conSesion", "fetch", "leerJson", "errorDelServidor", "msg401", "fraseDeFallo", funcion("  async function api(ruta, opciones = {}) {") + "\nreturn api;");
+    const cuerpoMalo = { ok: false, error: "No se pudo descargar: fetch failed (código ECONNRESET).", causa: { clase: "conexion", codigo: "ECONNRESET", http: null, ms: 9 } };
+    const apiSim = (status, cuerpo) => api((c) => c, async () => ({ status, ok: status < 400 }), async () => cuerpo, (c) => c && c.error, () => "sesión", () => "frase");
+    const eApi = await apiSim(502, cuerpoMalo)("/api/pliego?op=descargar", { method: "POST", body: {} }).then(() => null, (e) => e);
+    assert.ok(eApi && eApi.cuerpo === cuerpoMalo && /fetch failed/.test(eApi.message), "api() devuelve el CUERPO con el error: la causa estructurada ya no se pierde en el texto (MUTACIÓN: sin `falla.cuerpo`)");
+    assert.strictEqual("status" in eApi, false, "y NO añade `status` al error: cambiaría la redacción de fraseDeFallo (401/403 → «el muro»)");
+    assert.deepStrictEqual(await apiSim(200, { ok: true, x: 1 })("/api/x"), { ok: true, x: 1 }, "una respuesta buena sigue pasando tal cual");
+
+    // la línea que marca el ilegible lleva la causa: se extrae y se ejecuta
+    const iL = appC.indexOf("try { await marcarIlegible(`no se pudo leer: ${fraseDeFallo(e)}`");
+    assert.ok(iL > 0, "el catch de leerDocumentos marca el ilegible con el motivo de siempre");
+    const lineaL = appC.slice(iL, appC.indexOf("\n", iL));
+    const marcados = [];
+    await new Function("marcarIlegible", "fraseDeFallo", "causaDeFallo", "e", `return (async () => { ${lineaL} })();`)(async (...a) => { marcados.push(a); }, () => "frase de fallo", causaDeFallo, Object.assign(new Error("x"), { cuerpo: { causa: { clase: "tiempo" } }, parte: 2, bytes_total: 5 }));
+    assert.deepStrictEqual([marcados[0][0], marcados[0][1], marcados[0][2], marcados[0][3].clase, marcados[0][3].parte], ["no se pudo leer: frase de fallo", false, false, "tiempo", 2],
+      "el fallo se guarda con su motivo de siempre, NO definitivo, y con su causa (MUTACIÓN: sin el cuarto argumento, la causa no llega al servidor)");
+
+    // (5) la herramienta de cobertura: la decisión es la de planDeLectura, y el censo agrupa por motivo
+    const Cob = require("./cobertura.js");
+    const filasCob = [
+      { id_documento: "1", nombre_archivo: "PLIEGO DE CONDICIONES DEFINITIVO.pdf", extensi_n: "pdf", tamanno_archivo: "900000", fecha_carga: "2026-04-15T00:00:00.000", url_descarga_documento: { url: "https://community.secop.gov.co/x?DocumentId=1" } },
+      { id_documento: "2", nombre_archivo: "CRONOGRAMA.xlsx", extensi_n: "xlsx", tamanno_archivo: "40000", fecha_carga: "2026-04-15T00:00:00.000", url_descarga_documento: { url: "https://community.secop.gov.co/x?DocumentId=2" } },
+      { id_documento: "3", nombre_archivo: "Anexos.zip", extensi_n: "zip", tamanno_archivo: "2000000", fecha_carga: "2026-04-15T00:00:00.000", url_descarga_documento: { url: "https://community.secop.gov.co/x?DocumentId=3" } },
+    ];
+    const tabla = Cob.tablaDeProceso(filasCob);
+    assert.ok(/en el plan de lectura: 1/.test(tabla[0]) && tabla.some((l) => /PLIEGO DE CONDICIONES DEFINITIVO\.pdf.*SE LEE/.test(l)) && tabla.some((l) => /CRONOGRAMA\.xlsx.*FUERA · hoja de cálculo/.test(l)) && tabla.some((l) => /Anexos\.zip.*FUERA · archivo comprimido/.test(l)), `la tabla dice qué se lee y qué no, y por qué:\n${tabla.join("\n")}`);
+    const cen = Cob.censo({ A: filasCob });
+    assert.deepStrictEqual([cen.procesos, cen.entidad, cen.enPlan, cen.fuera, cen.sinPresupuesto], [1, 3, 1, 2, 1], "el censo cuenta lo de la entidad, lo que entra al plan y lo que queda fuera");
+    assert.deepStrictEqual(cen.porMotivo.map(([k]) => k).sort(), ["archivo comprimido", "hoja de cálculo"]);
+    assert.strictEqual(Cob.motivoAgrupable("pesa más de 20 MB: no"), "pesa más de N MB: no");
+    assert.ok(/Uso: node tests\/cobertura\.js/.test(require("child_process").execFileSync(process.execPath, [path.join(__dirname, "cobertura.js"), "--ayuda"]).toString()), "la herramienta se explica sola y no toca la red al pedir ayuda");
+
+    // (6) CENSO de las salidas de error de la descarga: toda salida de fallo REMOTO trae su causa; las excepciones se declaran con su motivo
+    const fuenteDesc = fs.readFileSync(path.join(__dirname, "..", "lib", "apu_descargar.js"), "utf8");
+    const parteRemota = fuenteDesc.slice(fuenteDesc.indexOf("let r = null;"));
+    const salidasDesc = parteRemota.match(/res\.status\((?:502|413|415)\)\.json\((?:.|\n)*?\}\);\n/g) || [];
+    const SIN_CAUSA_DECLARADAS = [/sin destino de redirección/, /Demasiadas redirecciones/, /no es una URL válida/,   // fallos de la redirección: son de la dirección, no de SECOP II
+      /no cabe en la respuesta/];   // el Word YA LLENO que no cabe bajo el corte de la plataforma: es del documento que armó la aplicación, no de la descarga
+    assert.ok(salidasDesc.length >= 9, `el censo encontró las salidas de fallo remoto de la descarga: ${salidasDesc.length}`);
+    for (const s of salidasDesc) assert.ok(/causa\b/.test(s) || SIN_CAUSA_DECLARADAS.some((re) => re.test(s)), `una salida de fallo de la descarga sin causa ni excepción declarada: ${s.slice(0, 160)}`);
+    console.log("· unidad causa de la lectura: la clasificación por e.cause (conexión, tiempo, bloqueo, error del portal), el saneado de lo que manda el navegador, una frase por clase sin jerga, las tres piezas reales del cliente ejecutadas, la herramienta de cobertura y el censo de salidas de error");
+  }
+
   /* unidad: convenios — «aunar esfuerzos» y compañía NO son licitaciones */
   bq12: { if (!corre("unidad convenios")) break bq12;
     const convenios = [
@@ -14841,6 +14980,44 @@ async function main() {
           const corte = await pedir({ desde: 0 });
           assert.ok(corte.status === 502 && /se cortó a mitad/.test(corte.cuerpo.error), `descarga cortada: ${corte.status} ${JSON.stringify(corte.cuerpo)}`);
           cortarEn = null;
+          assert.strictEqual(corte.cuerpo.causa.clase, "tiempo", `el corte por tiempo agotado trae su causa: ${JSON.stringify(corte.cuerpo.causa)}`);
+          /* LA CAUSA REAL (19-oct-2026): cada fallo remoto de la descarga trae su clase, su código y lo que tardó, sin dirección ni servidor.
+             Antes salía solo «No se pudo descargar: fetch failed.» y el código de `e.cause` se tiraba. */
+          {
+            const fetchBloque = globalThis.fetch, remotoBloque = remoto;
+            const conCodigo = (code) => Object.assign(new TypeError("fetch failed"), { cause: Object.assign(new Error("connect " + code + " 190.1.2.3:443"), { code }) });
+            const fallaCon = (e) => { globalThis.fetch = async () => { throw e; }; };
+            const estadoHttp = (st) => { globalThis.fetch = async () => ({ ok: false, status: st, headers: { get: () => null } }); };
+            try {
+              fallaCon(conCodigo("ECONNRESET"));
+              const c1 = await pedir({ desde: 0 });
+              assert.ok(c1.status === 502 && c1.cuerpo.causa.clase === "conexion" && c1.cuerpo.causa.codigo === "ECONNRESET" && c1.cuerpo.causa.http === null && c1.cuerpo.error === "No se pudo descargar: fetch failed (código ECONNRESET).",
+                `un reinicio de la conexión sale con su código real (MUTACIÓN: sin la causa, otra vez «fetch failed» a secas): ${JSON.stringify(c1.cuerpo)}`);
+              assert.ok(!/190\.1\.2\.3|community\.secop/.test(JSON.stringify(c1.cuerpo)), "ni la dirección ni el servidor viajan en la respuesta");
+              fallaCon(conCodigo("UND_ERR_CONNECT_TIMEOUT"));
+              assert.strictEqual((await pedir({ desde: 0 })).cuerpo.causa.clase, "tiempo", "un tiempo de conexión agotado es «tiempo», no «conexion»");
+              fallaCon(new TypeError("fetch failed"));
+              const c3 = await pedir({ desde: 0 });
+              assert.ok(c3.cuerpo.causa.clase === "conexion" && c3.cuerpo.causa.codigo === null && c3.cuerpo.error === "No se pudo descargar: fetch failed.", `sin código no se inventa uno: ${JSON.stringify(c3.cuerpo)}`);
+              fallaCon(conCodigo("ENOTFOUND"));
+              assert.strictEqual((await pedir({ desde: 0 })).cuerpo.causa.clase, "dns", "un DNS que no resuelve es «dns»: es del servidor de Detekta, no de SECOP II");
+              fallaCon(new DOMException("The operation was aborted due to timeout", "TimeoutError"));
+              const ct = await pedir({ desde: 0 });
+              assert.ok(ct.cuerpo.causa.clase === "tiempo" && ct.cuerpo.causa.codigo === null && ct.cuerpo.error === "No se pudo descargar: The operation was aborted due to timeout.", `el tiempo agotado REAL (DOMException con code 23) no inventa un «código 23»: ${JSON.stringify(ct.cuerpo)}`);
+              for (const [st, clase] of [[403, "bloqueo_portal"], [429, "bloqueo_portal"], [404, "error_portal"], [503, "error_portal"]]) {
+                estadoHttp(st);
+                const rr = await pedir({ desde: 0 });
+                assert.ok(rr.status === 502 && rr.cuerpo.status_remoto === st && rr.cuerpo.causa.clase === clase && rr.cuerpo.causa.http === st, `la respuesta ${st} de SECOP II es «${clase}»: ${JSON.stringify(rr.cuerpo.causa)}`);
+              }
+              globalThis.fetch = async () => ({ ok: true, status: 200, headers: { get: (k) => (k === "content-type" ? "application/pdf" : null) }, body: { getReader: () => ({ read: async () => { throw new Error("terminated"); }, cancel: async () => {} }) } });
+              const cm = await pedir({ desde: 0 });
+              assert.ok(cm.status === 502 && cm.cuerpo.causa.clase === "corte_a_mitad", `una lectura que se corta sin ser por tiempo es «corte_a_mitad»: ${JSON.stringify(cm.cuerpo.causa)}`);
+              globalThis.fetch = fetchBloque;
+              remoto = Buffer.alloc(0);
+              const vac = await pedir({ desde: 0 });
+              assert.ok(vac.status === 502 && vac.cuerpo.causa.clase === "vacio", `un archivo de cero bytes es «vacio»: ${vac.status} ${JSON.stringify(vac.cuerpo)}`);
+            } finally { globalThis.fetch = fetchBloque; remoto = remotoBloque; }
+          }
           declarar = false;
           const sinPeso = await unir();
           assert.ok(sinPeso.datos.equals(remoto) && sinPeso.vueltas === 3, "sin Content-Length, el último trozo se sabe porque el archivo se acabó");
@@ -14849,9 +15026,11 @@ async function main() {
           remoto = Buffer.from("<html>" + "x".repeat(4 * 1024 * 1024) + "</html>");
           const html = await pedir({ desde: TOPE_PDF_BASE64 });
           assert.ok(html.status === 415 && html.cuerpo.base64 === undefined && !/xxxx/.test(JSON.stringify(html.cuerpo)), `un trozo de algo que no es PDF no devuelve ni un byte: ${html.status}`);
+          assert.strictEqual(html.cuerpo.causa.clase, "no_es_documento", "una página en vez del PDF trae su causa");
           remoto = Buffer.alloc(TOPE_DOCUMENTO + 1024 * 1024); remoto.write("%PDF-1.7", 0, "latin1");
           const enorme = await pedir({ desde: 0 });
           assert.ok(enorme.status === 413 && /21,0 MB/.test(enorme.cuerpo.error) && /hasta 20 MB/.test(enorme.cuerpo.error) && /SECOP II/.test(enorme.cuerpo.error), `más de 20 MB: 413 con qué hacer: «${enorme.cuerpo.error}»`);
+          assert.strictEqual(enorme.cuerpo.causa.clase, "peso", "el archivo demasiado pesado trae su causa");
           assert.strictEqual((await pedir({ desde: -5 })).status, 400, "«desde» negativo es un 400");
           assert.strictEqual((await pedir({ formato: "pptx" })).status, 400, "un formato que no se lee es un 400, no un intento");
           // el Word, en texto
@@ -24159,6 +24338,51 @@ async function main() {
           assert.ok(p2.status === 200 && p2.cuerpo.estado === "leido" && p2.cuerpo.ilegibles["9"].definitivo === false);
           const i3 = await invocar(routerPliegoD, `/api/pliego?op=documentos&${qD}&refrescar=1`, CAB_TOKEN);
           assert.deepStrictEqual(i3.cuerpo.pendientes.map((a) => a.id_documento), ["9"], "al volver a buscar, el que falló por la red vuelve a intentarse");
+          /* LA CAUSA REAL (19-oct-2026): el navegador manda la causa del fallo; el servidor NO la cree (lista blanca), lleva la SERIE de fallos del
+             documento aparte de los ilegibles —«volver a buscar» suelta los ilegibles y sin la serie dos fallos seguidos no se distinguen de uno— y la
+             guía la dice en castellano. Un documento leído empieza su serie de cero. */
+          {
+            const { crearRedis } = require("../lib/redis.js");
+            const H = require("../lib/handlers/pliego/documentos.js");
+            const rC = crearRedis({});
+            const POST_C = (extra) => invocarPost(routerPliegoD, "/api/pliego?op=documentos", { id_proceso: idD, id_documento: "9", ilegible: true, motivo: "no se pudo leer: x", ...extra }, CAB_TOKEN);
+            const causaBuena = { clase: "conexion", etapa: "descarga", codigo: "ECONNRESET", http: null, ms: 1200, parte: 3, bytes_total: 16196636 };
+            assert.strictEqual((await H.leerDocs(rC, idD)).fallos["4"], undefined, "el Formulario que sí se leyó borró su serie de fallos (MUTACIÓN: sin el delete, la serie sobrevive a la lectura)");
+            const okC = await POST_C({ causa: causaBuena });
+            assert.deepStrictEqual(okC.cuerpo.ilegibles["9"].causa, causaBuena, "la causa buena se guarda con el ilegible");
+            const dC = await H.leerDocs(rC, idD);
+            assert.strictEqual(dC.fallos["9"].n, 2, "el segundo fallo del mismo documento (el primero no traía causa)");
+            assert.deepStrictEqual(dC.fallos["9"].ultimas.map((u) => u.clase), ["desconocida", "conexion"], "la serie guarda la clase de cada fallo; sin causa, «desconocida»");
+            const gC = (await segD(`&perfil=helder&expediente=${encodeURIComponent(idD)}`)).cuerpo.proceso.guia;
+            const ilG = gC.documentos.ilegibles.find((x) => x.id_documento === "9");
+            assert.ok(ilG && /No se completó la conexión con SECOP II/.test(ilG.motivo) && /ECONNRESET/.test(ilG.motivo) && /parte 3 de 6/.test(ilG.motivo) && !/intentos/.test(ilG.motivo) && ilG.fallos === 2 && ilG.causa.codigo === "ECONNRESET",
+              `la guía dice la causa en castellano y qué parte falló; con el fallo anterior SIN causa no hay racha de «intentos seguidos» (el total n=2 mezcla fallos de distinto tipo): ${JSON.stringify(ilG)}`);
+            await POST_C({ causa: causaBuena });
+            const ilG2 = (await segD(`&perfil=helder&expediente=${encodeURIComponent(idD)}`)).cuerpo.proceso.guia.documentos.ilegibles.find((x) => x.id_documento === "9");
+            assert.ok(/ya van 2 intentos seguidos que fallan igual/.test(ilG2.motivo) && ilG2.fallos === 3, `dos fallos seguidos de la misma clase sí hacen racha: ${ilG2.motivo}`);
+            await invocar(routerPliegoD, `/api/pliego?op=documentos&${qD}&refrescar=1`, CAB_TOKEN);
+            const dC2 = await H.leerDocs(rC, idD);
+            assert.ok(!dC2.ilegibles["9"] && dC2.fallos["9"].n === 3, "«volver a buscar» suelta el ilegible pero NO la serie de fallos (MUTACIÓN: la serie dentro del ilegible se perdería aquí)");
+            const hostilC = (await POST_C({ causa: { clase: "<img src=x onerror=alert(1)>", codigo: "190.1.2.3:443 conexión", http: 99999, parte: -1, extra: "no pasa" } })).cuerpo.ilegibles["9"].causa;
+            assert.deepStrictEqual(hostilC, { clase: "desconocida", etapa: "descarga", codigo: null, http: null, ms: null, parte: null, bytes_total: null }, `una causa hostil se reduce a la lista blanca: ${JSON.stringify(hostilC)}`);
+            for (let k = 0; k < 5; k++) await POST_C({ causa: causaBuena });
+            const dC3 = await H.leerDocs(rC, idD);
+            assert.ok(dC3.fallos["9"].n === 9 && dC3.fallos["9"].ultimas.length === 5, `la serie cuenta todos los fallos y guarda solo los últimos cinco: n=${dC3.fallos["9"].n}, guardados=${dC3.fallos["9"].ultimas.length}`);
+            /* revisión adversaria (19-oct-2026, reproducido): con causa «desconocida» la guía PISABA el motivo que el ilegible ya traía
+               («…(código 504). Vuelva a intentarlo.», «su red puede estar bloqueando el sitio…») con «la causa no quedó registrada».
+               Las clases que no saben más que ese texto lo CONSERVAN. */
+            for (const clase of ["desconocida", "plataforma", "lector_no_cargo"]) {
+              await POST_C({ motivo: `no se pudo leer: texto concreto de ${clase}`, causa: { clase } });
+              const ilK = (await segD(`&perfil=helder&expediente=${encodeURIComponent(idD)}`)).cuerpo.proceso.guia.documentos.ilegibles.find((x) => x.id_documento === "9");
+              assert.strictEqual(ilK.motivo, `no se pudo leer: texto concreto de ${clase}`, `la clase «${clase}» conserva el motivo de siempre (MUTACIÓN: la frase de la causa lo pisa): ${ilK.motivo}`);
+            }
+            assert.strictEqual((await POST_C({})).cuerpo.ilegibles["9"].causa, undefined, "un navegador viejo que no manda causa sigue funcionando: sin causa, el texto de siempre");
+            // leído por TEXTO (la vía de los PDF y los Word): la serie de fallos empieza de cero (MUTACIÓN C06: sin el delete en esa vía, la serie sobrevive a la lectura)
+            const leidoC = await invocarPost(routerPliegoD, "/api/pliego?op=documentos", { id_proceso: idD, id_documento: "9", texto: "Adenda sin cambios sustanciales: se mantiene lo publicado en el pliego de condiciones, sin variaciones de plazo ni de valor." }, CAB_TOKEN);
+            assert.strictEqual(leidoC.status, 200, JSON.stringify(leidoC.cuerpo).slice(0, 200));
+            const dC4 = await H.leerDocs(rC, idD);
+            assert.ok(!dC4.ilegibles["9"] && dC4.fallos["9"] === undefined, `un documento leído por texto sale de los ilegibles y empieza su serie de cero: ${JSON.stringify(dC4.fallos["9"])}`);
+          }
           await invocarPost(routerPliegoD, "/api/pliego?op=documentos", { id_proceso: idD, id_documento: "9", ilegible: true, definitivo: true, motivo: "sin capa de texto: parece un escaneo" }, CAB_TOKEN);
           const i4 = await invocar(routerPliegoD, `/api/pliego?op=documentos&${qD}&refrescar=1`, CAB_TOKEN);
           assert.ok(i4.cuerpo.estado === "leido" && i4.cuerpo.ilegibles["9"].definitivo === true && i4.cuerpo.leidos["2"], "el escaneado no se reintenta y el pliego leído no se pierde al refrescar");
