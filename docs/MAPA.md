@@ -215,8 +215,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 370 secciones (28 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 19605  Las tres lecturas del pliego del 18-oct: la versión que rige, el ejemplo entre corchetes y …
+· MEMORIA · docs/MEMORIA.md — 371 secciones (28 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 19613  La carga en Precios no entra al vigía si el nombre dice que es otra cosa (18-oct-2026)
   L 19654  La Fase C se cierra: no se construye la descarga de pliegos de más de 20 MB (18-oct-2026)
   L 19666  La cadena que no seguía con el muro: la llamada del servidor a sí mismo va con waitUntil y …  (superada)
@@ -226,6 +225,7 @@
   L 19775  Registro del 19-oct-2026: hechos nuevos y pendientes de la revisión del proyecto (solo text…  (superada)
   L 19801  La regla del art. 90 se cuenta en 3 años, no por vigencia fiscal; la Resolución 240 se cita…
   L 19823  La base de contratación estatal queda en docs/, sin cobertura medida, y el contador de uso …
+  L 19840  El arranque de Precios estaba pisado por el de la app, y una función repetida en el mismo á…
 
 · DOCUMENTOS docs/ — 73 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)

@@ -30630,6 +30630,32 @@ async function main() {
             "hay UN solo sitio que llama al endpoint de importación: las tres vías pasan por él");
           assert.strictEqual((unoSinCom.match(/mapearParaPrevisualizar\(/g) || []).length, 4,
             "la función compartida (1 declaración) y sus TRES llamadas: archivo detectado, columnas a mano y los ítems del pliego");
+          /* UNA FUNCIÓN DECLARADA DOS VECES EN EL MISMO ÁMBITO NO FALLA: LA SEGUNDA PISA A LA PRIMERA, EN SILENCIO (19-oct-2026).
+             El 17-oct-2026 (b73c38e) el arranque de la app se llamó `arrancar`, igual que el de Precios, ya declarado en el mismo
+             IIFE: la llamada de la pestaña Precios ejecutaba el arranque de la app, y Precios no cargaba su catálogo ni su
+             desplegable de departamentos (medido en Chromium: 0 peticiones a op=catalogo; y en producción, el app.js servido
+             por detekta-app.vercel.app trae las dos declaraciones). Ninguna prueba lo vio: JavaScript no lo avisa. CENSO, no
+             lista: se barren TODOS los public/*.js y se cuentan las declaraciones `function nombre(` al nivel del IIFE o del
+             archivo (sangría de 0 a 2 espacios), donde el ámbito es compartido; las excepciones se DECLARAN aquí con su motivo
+             (hoy ninguna). Una declaración más anidada vive en su propia función y puede repetirse. */
+          {
+            const dir = path.join(__dirname, "..", "public");
+            const repetidas = [];
+            for (const f of fs.readdirSync(dir).filter((x) => x.endsWith(".js"))) {
+              const vistas = new Map();
+              sinComentarios(fs.readFileSync(path.join(dir, f), "utf8")).split("\n").forEach((l, i) => {
+                const m = /^( {0,2})(?:async\s+)?function\s+([A-Za-z_$][\w$]*)\s*\(/.exec(l);
+                if (!m) return;
+                const k = `${m[1].length}:${m[2]}`;
+                if (!vistas.has(k)) vistas.set(k, []);
+                vistas.get(k).push(i + 1);
+              });
+              for (const [k, lineas] of vistas) if (lineas.length > 1) repetidas.push(`${f}: «${k.split(":")[1]}» en las líneas ${lineas.join(", ")}`);
+            }
+            const EXCEPCIONES_FUNCION_REPETIDA = [];   // [{archivo, nombre, motivo}] — declarar aquí, con su porqué
+            const sinDeclarar = repetidas.filter((r) => !EXCEPCIONES_FUNCION_REPETIDA.some((e) => r.startsWith(`${e.archivo}: «${e.nombre}»`)));
+            assert.deepStrictEqual(sinDeclarar, [], `una función declarada dos veces en el mismo ámbito: la segunda pisa a la primera sin avisar: ${sinDeclarar.join(" | ")}`);
+          }
         }
 
         /* NINGUNA CREDENCIAL VIVE EN EL NAVEGADOR (17-oct-2026, decisión del dueño). Hasta hoy
@@ -30738,7 +30764,8 @@ async function main() {
            la opción del desplegable que hay que seleccionar, y la precarga se
            perdería en silencio. */
         {
-          const i = limpio.indexOf("async function arrancar()");
+          const i = limpio.indexOf("async function arrancarPrecios()");
+          assert.ok(i > 0, "el arranque de Precios existe con su propio nombre: `arrancar` es el de la app, y con el mismo nombre la segunda declaración pisaba a la primera (19-oct-2026)");
           const cuerpoArranque = limpio.slice(i, i + 1600);
           /* desde el 30-sep-2026 la segunda precarga pasa por `precargarTrasCatalogo`, que no pisa un
              borrador abierto mientras cargaba el catálogo y, si no lo hay, llama a la misma precarga */
@@ -32380,17 +32407,17 @@ async function main() {
           }
           /* y la primera carga de Precios DICE que está cargando: hasta hoy la
              pestaña se quedaba callada, igual que si ya hubiera terminado */
-          /* La PRIMERA carga es la de `arrancar()`, y es esa la que hay que
+          /* La PRIMERA carga es la de `arrancarPrecios()`, y es esa la que hay que
              vigilar: un regex sobre TODO el fuente lo satisfacía la copia del
              oyente de #accion-reintentar, así que el anuncio podía irse de
              `arrancar()` con la suite en verde (corregido el 5-sep-2026). Se
              recorta la función y se mira dentro. */
           {
-            const iArr = js.indexOf("  async function arrancar() {");
-            assert.ok(iArr > 0, "app.js sin `arrancar()`: es la primera carga de Precios");
+            const iArr = js.indexOf("  async function arrancarPrecios() {");
+            assert.ok(iArr > 0, "app.js sin `arrancarPrecios()`: es la primera carga de Precios");
             const cuerpoArr = js.slice(iArr, js.indexOf("\n  }", iArr) + 4);
             assert.ok(/msgApu\("Cargando su catálogo de precios…"\);\s*\n\s*await cargarCatalogo\(\);/.test(cuerpoArr),
-              "la PRIMERA carga del catálogo se anuncia en #accion-mensaje justo antes de esperarla, dentro de arrancar()");
+              "la PRIMERA carga del catálogo se anuncia en #accion-mensaje justo antes de esperarla, dentro de arrancarPrecios()");
             assert.ok(/msgApu\(""\);/.test(cuerpoArr), "…y el anuncio se retira cuando termina");
             const iRe = js.indexOf('$("accion-reintentar").addEventListener("click"');
             assert.ok(iRe > 0 && /msgApu\("Cargando su catálogo de precios…"\)/.test(js.slice(iRe, iRe + 400)),
@@ -40980,7 +41007,7 @@ async function main() {
         // módulo la PRIMERA vez que se abre su pestaña
         assert.ok(/classList\.toggle\("hidden", p !== destino\)/.test(jsSin),
           "activarPestana debe ocultar los paneles inactivos y mostrar el activo");
-        assert.ok(/arrancadas\.apu[\s\S]{0,80}arrancar\(\)/.test(jsSin)
+        assert.ok(/arrancadas\.apu[\s\S]{0,80}arrancarPrecios\(\)/.test(jsSin)
           && /arrancadas\.admin[\s\S]{0,80}arrancarPaneles\(\)/.test(jsSin),
           "cada pestaña debe inicializar su módulo al activarse, no solo al cargar la página");
         assert.ok(/addEventListener\("hashchange"/.test(jsSin), "la pestaña debe seguir el hash (#/apu recargable)");
