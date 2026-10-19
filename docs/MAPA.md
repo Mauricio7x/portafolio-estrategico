@@ -22,7 +22,7 @@
   pliego.js                   Router del dominio PLIEGO (Fase 0 · consolidación a 6 funciones)
   procesos.js                 Router del dominio PROCESOS (Fase 0 · consolidación a 6 funciones)
 
-· lib/ — 98 módulos:
+· lib/ — 99 módulos:
   accesibilidad.js            Accesibilidad operativa de la zona de la obra
   adendas.js                  Vigía de adendas · lo que el DATASET dice que cambió (Fase 5)
   almacen.js                  Esquema de claves Redis + compresión de chunks
@@ -38,6 +38,7 @@
   baja_maxima.js              hasta dónde puede bajar el dueño en CADA proceso (A4)
   capacidad.js                K de contratación (capacidad residual) — FÓRMULA ÚNICA
   capital_trabajo.js          EL CAPITAL DE TRABAJO QUE EXIGE EL PLIEGO (27-sep-2026, N31)
+  causa_descarga.js           LA CAUSA REAL DE UN FALLO DE LECTURA (19-oct-2026) — capa PURA, sin red ni Redis.
   censo_ingesta.js            Por qué NO entró un proceso al corpus
   cobertura_rup.js            ¿Qué códigos UNSPSC le FALTAN al RUP?
   codigos_experiencia.js      Los CÓDIGOS con que el pliego pide la experiencia
@@ -216,8 +217,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 377 secciones (29 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 19777  La obra que copia el «aunar esfuerzos» del convenio que la financia no es un convenio (19-o…
+· MEMORIA · docs/MEMORIA.md — 378 secciones (29 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 19799  El Formulario 1 en Excel: «VALOR TOTAL» es el total, y solo se da por leído lo que pasa la …  (superada)
   L 19820  El Formulario 1 en Excel se lee solo en el servidor, y solo se publica lo que pasa la puert…  (superada)
   L 19844  El Formulario 1 leído se lleva a Precios con «Cotizar en Precios» (19-oct-2026)
@@ -227,6 +227,7 @@
   L 19922  El arranque de Precios estaba pisado por el de la app, y una función repetida en el mismo á…
   L 19937  Lo verificado en producción el 19-oct-2026: el OCR ya está configurado; el respaldo en R2 y…
   L 19957  Volver a buscar los documentos ya se puede pedir desde el expediente, y la aplicación no te…
+  L 19976  La causa real de un fallo de lectura se registra, se sanea y se dice, y una herramienta mid…
 
 · DOCUMENTOS docs/ — 73 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)
