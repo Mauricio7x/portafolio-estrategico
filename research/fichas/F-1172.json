@@ -1,0 +1,30 @@
+{
+  "id": "F-1172",
+  "tipo": "academia",
+  "autor": "Ulloa Avendaño, F.",
+  "titulo": "Homogenización de criterios para contratación de mínima cuantía (proyecto de grado, Maestría en Ingeniería Civil)",
+  "anio": 2017,
+  "institucion": "Universidad de los Andes, Departamento de Ingeniería Civil y Ambiental",
+  "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/f4b8b0f2-23c3-4884-bd43-563790112c89/content",
+  "fecha_consulta": "2026-10-19",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen y contextualización (pp. 3-10 del PDF)",
+    "conclusiones (p. 19)",
+    "recomendaciones (pp. 49-50)"
+  ],
+  "localizador": "recomendaciones de pautas para la invitación de mínima cuantía, p. 49 del PDF",
+  "cita_textual": "El valor total de la oferta económica presentada por los proponentes no puede ser inferior al 80% del valor del presupuesto oficial. Lo anterior, para evitar precios artificialmente bajos que dañaría el proceso de licitación.",
+  "afirmacion": "El autor (2017) recomienda que en mínima cuantía de obra la entidad no admita ofertas por debajo del 80% del presupuesto oficial, para evitar precios artificialmente bajos; es una propuesta suya, no una regla de ley ni de documento tipo.",
+  "eje": 9,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-PRECIO",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — propuesta académica de 2017, anterior a los documentos tipo de mínima cuantía de transporte y de infraestructura social; no consta en la ley ni en el decreto (ver ficha del Decreto 1860 de 2021)",
+  "leida_por": "lector fase2 eje9-academica",
+  "tipo_contrato": "obra",
+  "pagina_pdf": 49,
+  "anio_origen": "portada",
+  "notas": "NO es un piso legal: el art. 2.2.1.2.1.5.2 del Decreto 1082 manda aceptar la menor oferta que cumpla la invitación, y el concepto de oferta artificialmente baja del art. 2.2.1.1.2.2.4 no tiene umbral. La guía de Colombia Compra usa 20% por debajo del costo estimado solo como disparador de aclaración. Los 80% del autor son una recomendación de pliego."
+}

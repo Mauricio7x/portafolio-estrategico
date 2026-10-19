@@ -1,0 +1,27 @@
+{
+  "id": "F-1155",
+  "tipo": "cce_concepto",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Concepto C-1411 de 2026 (relatoría ANCP-CCE; fecha que muestra la relatoría: 01/10/2026)",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "url": "https://relatoria.colombiacompra.gov.co/conceptos/c-1411-de-2026/",
+  "fecha_consulta": "2026-10-19",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "extracto de la relatoría (descriptores y párrafos de la parte considerativa); la página no muestra la consulta ni la firma"
+  ],
+  "localizador": "descriptor «Reajuste y revisión de precios – Límite de adiciones – Cambio de vigencia – Alcance», último párrafo",
+  "cita_textual": "los reajustes de precios derivados del cambio de vigencia no consumen el límite de adición del artículo 40 de la Ley 80 de 1993, siempre que correspondan a la aplicación del mecanismo de ajuste previsto para las prestaciones originalmente pactadas",
+  "afirmacion": "Según Colombia Compra, el reajuste de precios pactado por cambio de vigencia no cuenta dentro del tope del 50% de adición del art. 40 de la Ley 80; sí cuentan las mayores cantidades de obra y los ítems nuevos.",
+  "eje": 9,
+  "etapa": "E4",
+  "decision": "D4",
+  "modulo": "M-PRECIO",
+  "autoridad": "A5",
+  "vigencia_verificada": "[sin verificar] — concepto de Colombia Compra de oct-2026 (no vinculante); el art. 40 de la Ley 80 se cita por el propio concepto y no se abrió texto consolidado aparte",
+  "leida_por": "lector fase2 eje9-academica",
+  "tipo_contrato": "obra",
+  "anio_origen": "cuerpo",
+  "notas": "Del mismo extracto: el límite es del 50% del valor inicial «expresado éste en salarios mínimos legales mensuales» (se divide el valor inicial por el SMMLV de la firma y luego por 2). Útil para el contratista: el techo de adición se cuenta en salarios mínimos y el reajuste pactado no lo consume. No habla del precio de los ítems no previstos.  Texto de la ley: F-1180."
+}

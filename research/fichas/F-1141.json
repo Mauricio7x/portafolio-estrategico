@@ -1,0 +1,36 @@
+{
+  "id": "F-1141",
+  "tipo": "doc_tipo",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Documento Base (pliego tipo) de licitación de obra pública de infraestructura social, versión 2 (Resolución 539 de 2025), documentos transversales",
+  "anio": 2025,
+  "institucion": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29837/",
+  "fecha_consulta": "2026-10-19",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "numerales 4.1 a 4.1.4 (oferta económica), cuadros de puntaje y causales de rechazo del archivo DocBase_LicitacionObra_ISocialLV2.docx dentro del zip descarga/29837"
+  ],
+  "localizador": "capítulo 1, causales de rechazo",
+  "cita_textual": "[Incluir solo cuando la forma de pago sea por precios unitarios] Superar el valor unitario de alguno o algunos de los siguientes ítems ofrecidos con respecto al valor establecido para cada ítem del Presupuesto Oficial:",
+  "afirmacion": "La causal opcional de superar el valor unitario de ítems nombrados frente al presupuesto oficial también está en el documento tipo de obra social v2.",
+  "eje": 9,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-PRECIO",
+  "autoridad": "A3",
+  "vigencia_verificada": {
+    "fecha": "2026-10-19",
+    "fuente": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo (infraestructura social, licitación V.2 «Versión vigente» desde 16/02/2026) y página del nodo https://www.colombiacompra.gov.co/documentos-tipo/vigentes/?sector=719&nodo=29539"
+  },
+  "leida_por": "lector fase2 eje9-academica",
+  "tipo_contrato": "obra",
+  "url_final": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29837",
+  "anio_origen": "inferido",
+  "notas": "Misma nota que en transporte: el valor unitario oficial incluye el AIU. La causal de AIU superior al de la entidad también está.",
+  "reformas_cotejadas": [
+    "Control de versiones de Colombia Compra (abierta 19-oct-2026): licitación de obra de infraestructura social V.2 «Versión vigente» desde 16/02/2026, sin modificaciones listadas",
+    "Resolución 539 de 2025 (adopta la v2): PDF escaneado sin capa de texto, no leída; la versión y la fecha salen de la página de Colombia Compra",
+    "Un lector posterior debe abrir la resolución para confirmar la fecha de entrada en vigencia"
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "id": "F-1116",
+  "tipo": "doc_tipo",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Resolución 726 de 2024: adopta la versión 2 de los Documentos Tipo de concurso de méritos para consultoría de estudios de ingeniería de infraestructura de transporte y deroga la Resolución 193 de 2021",
+  "anio": 2024,
+  "institucion": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29818/",
+  "fecha_consulta": "2026-10-19",
+  "estado_lectura": "completa",
+  "localizador": "Resolución 726 de 2024, art. 7 «Vigencia y derogatorias» (PDF escaneado de 6 páginas, sin capa de texto; leído con OCR, p. 6)",
+  "cita_textual": "«rige a partir de su publicación, deroga la Resolución 193 de 2021 […] y aplica a los procesos de selección de concurso de méritos para contratar la consultoría de estudios de ingeniería de infraestructura de transporte, cuyo aviso de convocatoria se publique a partir del 3 de febrero de 2025.»",
+  "afirmacion": "La versión 2 de los documentos tipo de concurso de méritos para consultoría de estudios de ingeniería de transporte (Resolución 726 de 2024) aplica a procesos con aviso de convocatoria publicado desde el 3 de febrero de 2025 y deroga la Resolución 193 de 2021.",
+  "eje": 9,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-DICT",
+  "autoridad": "A3",
+  "vigencia_verificada": {
+    "fecha": "2026-10-19",
+    "fuente": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo (concurso de méritos de consultoría V.2 de transporte, «Versión vigente» desde 03/02/2025)"
+  },
+  "leida_por": "lector fase2 eje9-institucional",
+  "tipo_contrato": "consultoria",
+  "anio_origen": "portada",
+  "url_final": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29818",
+  "reformas_cotejadas": [
+    "Control de versiones de Documentos Tipo (abierto el 2026-10-19): versión vigente desde 03/02/2025",
+    "Decreto 0997 de 2026, art. 14 par. 3: los procesos con documentos tipo siguen con ellos hasta nuevas versiones"
+  ],
+  "pagina_pdf": 6,
+  "notas": "PDF de descarga/29818 sin capa de texto: se leyó con pdftoppm + tesseract (spa); la cita es la salida del OCR. Da la resolución que el documento base Consultoría de transporte cita en la ficha F-1088."
+}

@@ -1,0 +1,31 @@
+{
+  "id": "F-1139",
+  "tipo": "doc_tipo",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Control de versiones – Documentos Tipo (página de Colombia Compra)",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo",
+  "fecha_consulta": "2026-10-19",
+  "estado_lectura": "completa",
+  "localizador": "tabla «Sector social», primera fila",
+  "cita_textual": "Documentos Tipo para la modalidad de Licitación de Obra Pública para el sector de Infraestructura Social. V.1 30/08/2021 – 15/02/2026 Versión anterior. V.2 Desde 16/02/2026 Versión vigente.",
+  "afirmacion": "Para obra de infraestructura social rige la v2 de los documentos tipo de licitación desde el 16-feb-2026 (la v1 rigió del 30-ago-2021 al 15-feb-2026).",
+  "eje": 9,
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-DOC",
+  "autoridad": "A3",
+  "vigencia_verificada": {
+    "fecha": "2026-10-19",
+    "fuente": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo (infraestructura social, licitación V.2 «Versión vigente» desde 16/02/2026) y página del nodo https://www.colombiacompra.gov.co/documentos-tipo/vigentes/?sector=719&nodo=29539"
+  },
+  "leida_por": "lector fase2 eje9-academica",
+  "tipo_contrato": "obra",
+  "anio_origen": "cuerpo",
+  "reformas_cotejadas": [
+    "Control de versiones de Colombia Compra (abierta 19-oct-2026): licitación de obra de infraestructura social V.2 «Versión vigente» desde 16/02/2026, sin modificaciones listadas",
+    "Resolución 539 de 2025 (adopta la v2): PDF escaneado sin capa de texto, no leída; la versión y la fecha salen de la página de Colombia Compra",
+    "Un lector posterior debe abrir la resolución para confirmar la fecha de entrada en vigencia"
+  ]
+}

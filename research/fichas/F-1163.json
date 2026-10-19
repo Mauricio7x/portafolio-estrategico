@@ -1,0 +1,28 @@
+{
+  "id": "F-1163",
+  "tipo": "cce_guia",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Guía para el manejo de ofertas artificialmente bajas en procesos de contratación (CCE-EICP-GI-27, versión 01, 16-12-2024)",
+  "anio": 2024,
+  "institucion": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2025/04/guia_para_el_manejo_de_ofertas_artifialmente_bajas.pdf",
+  "fecha_consulta": "2026-10-19",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "sección 2.1 (comparación absoluta y relativa), pp. 9-11 del PDF"
+  ],
+  "localizador": "sección 2.1.2 «Comparación relativa», p. 10 del PDF; continúa en p. 11",
+  "cita_textual": "se sugiere utilizarla cuando la Entidad recibe cinco (5) o más ofertas.",
+  "afirmacion": "Con 5 o más ofertas la guía sugiere la comparación relativa: mediana de las ofertas (o de cada ítem), desviación estándar y un «valor mínimo aceptable»; las ofertas por debajo se estudian como posibles artificialmente bajas, sin aplicación mecánica.",
+  "eje": 9,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-PRECIO",
+  "autoridad": "A3",
+  "vigencia_verificada": "[sin verificar] — versión 01 del 16-12-2024 de la guía; no se buscó una versión posterior",
+  "leida_por": "lector fase2 eje9-academica",
+  "tipo_contrato": "todos",
+  "pagina_pdf": 10,
+  "anio_origen": "portada",
+  "notas": "La fórmula del valor mínimo aceptable es una imagen del PDF y no salió en el texto extraído: no se transcribe. La guía advierte (p. 11): «no se debe realizar una aplicación mecánica de las mismas y de sus resultados» y que la entidad puede fijar un valor mínimo distinto. Si la entidad usa un umbral propio, debe explicar la metodología en la resolución de adjudicación (o antes de aceptar la oferta en mínima cuantía)."
+}

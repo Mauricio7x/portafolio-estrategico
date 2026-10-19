@@ -1,0 +1,30 @@
+{
+  "id": "F-1175",
+  "tipo": "academia",
+  "autor": "Mendoza Vargas, O. G.",
+  "titulo": "Incidencia de los estudios técnicos en el alcance, tiempo y costo de los contratos de obra pública en el Departamento de Arauca, vigencias 2015 y 2016 (trabajo de grado, Maestría en Construcción)",
+  "anio": 2022,
+  "institucion": "Universidad Nacional de Colombia, Sede Medellín, Facultad de Arquitectura",
+  "url": "https://bffrepositorio.unal.edu.co/server/api/core/bitstreams/e0d04668-8a13-46bb-a3ea-a62e660681cf/content",
+  "fecha_consulta": "2026-10-19",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen (p. 9 del PDF)",
+    "resultados, pp. 89-94 del PDF"
+  ],
+  "localizador": "5. Resultados, p. 93 del PDF",
+  "cita_textual": "en los 54 contratos que presentaron algún tipo de variación en el alcance, se encontró que 48 (88,89%) de ellos contaban con estudios técnicos bajo esta condición y los 6 (11.11%) restantes ocurrieron con proyectos formulados con estudios técnicos productos de contratos de consultoría",
+  "afirmacion": "De 73 contratos de obra del Departamento de Arauca (2015-2016), 54 tuvieron variación de alcance; en 48 los estudios eran donados, cedidos o de origen desconocido y en 6 venían de un contrato de consultoría.",
+  "eje": 9,
+  "etapa": "E1",
+  "decision": "D4",
+  "modulo": "M-PRECIO",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — afirmación académica (A6): se registra lo que dice el autor, no la norma; no se abrió ningún texto oficial para esta afirmación; datos de 73 contratos de un departamento",
+  "leida_por": "lector fase2 eje9-academica",
+  "tipo_contrato": "obra",
+  "pagina_pdf": 93,
+  "anio_origen": "portada",
+  "notas": "Consecuencia para quien oferta: en entidades que usan estudios donados o cedidos, el presupuesto oficial y las cantidades tienen más probabilidad de moverse en ejecución (ítems no previstos y mayores cantidades).",
+  "cifra_comprobada": "cuadra: 48/54 = 88,89% y 6/54 = 11,11%. Ojo con la lectura del resumen: 65,75% (= 48/73) es la parte del TOTAL de 73 contratos, no la tasa dentro de los 63 contratos con estudios donados (48/63 = 76,2%) frente a 6/10 = 60% en los 10 con consultoría. El resumen presenta como 'cifras superiores' proporciones de grupos de tamaño muy distinto."
+}

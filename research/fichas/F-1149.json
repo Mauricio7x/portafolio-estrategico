@@ -1,0 +1,32 @@
+{
+  "id": "F-1149",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República",
+  "titulo": "Decreto 399 de 2021 (modifica los artículos 2.2.1.1.2.1.1., 2.2.1.2.1.3.2. y 2.2.1.2.3.1.14. del Decreto 1082 de 2015)",
+  "anio": 2021,
+  "institucion": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente (relatoría)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/decreto-399-de-2021/",
+  "fecha_consulta": "2026-10-19",
+  "estado_lectura": "completa",
+  "localizador": "art. 2 (que sustituye el art. 2.2.1.2.1.3.2 del Decreto 1082), numeral 1",
+  "cita_textual": "La Entidad Estatal en los pliegos de condiciones debe indicar la forma como calificará, entre otros, los siguientes criterios: a) la experiencia del interesado y del equipo de trabajo y b) la formación académica del equipo de trabajo.",
+  "afirmacion": "Desde el Decreto 399 de 2021 el procedimiento del concurso de méritos en el Decreto 1082 solo exige indicar cómo se califican experiencia y formación del equipo, publicar el informe 3 días hábiles y adjudicar al mayor puntaje; ya no dice nada sobre revisar o negociar la oferta económica del primero.",
+  "eje": 9,
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-PRECIO",
+  "autoridad": "A2",
+  "vigencia_verificada": {
+    "fecha": "2026-10-19",
+    "fuente": "https://relatoria.colombiacompra.gov.co/normativa/decreto-399-de-2021/ (texto del decreto modificatorio, leído completo)"
+  },
+  "leida_por": "lector fase2 eje9-academica",
+  "tipo_contrato": "consultoria",
+  "anio_origen": "portada",
+  "notas": "El texto anterior (todavía visible en la relatoría del Decreto 1082) tenía numerales para revisar la oferta económica, negociar alcance y valor con el primero y luego con el segundo y declarar desierto si no había acuerdo; el Decreto 399 explica que el Consejo de Estado suspendió los numerales 3, 4 y 5 (Auto del 20-feb-2019, Exp. 61.463) y el 6 (Auto del 25-jul-2018, Exp. 56.165). Vigente: «adjudicará el contrato […] al oferente que haya cumplido todos los requisitos exigidos en el pliego de condiciones y haya obtenido el mayor puntaje». Los documentos tipo de interventoría y consultoría de transporte dicen además que se adjudica al primero «cuya oferta económica esté acorde con el Presupuesto Oficial». Responde el punto (5) del encargo: oferta económica en concurso de méritos con el texto vigente.",
+  "reformas_cotejadas": [
+    "Decreto 399 de 2021 art. 7: rige desde su publicación; aplica a procesos con aviso posterior (parágrafo)",
+    "Decretos 579 y 680 de 2021, 1860 de 2021, 0997 de 2026 y 287 de 2026 (abiertos): ninguno modifica el art. 2.2.1.2.1.3.2 (el 579 solo lo menciona en su motivación)",
+    "La relatoría de Colombia Compra transcribe todavía el texto ANTERIOR a 2021 en su página del Decreto 1082"
+  ]
+}

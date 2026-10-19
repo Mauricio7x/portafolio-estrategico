@@ -1,0 +1,36 @@
+{
+  "id": "F-1142",
+  "tipo": "doc_tipo",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Documento Base (pliego tipo) del concurso de méritos de interventoría de obra pública de infraestructura de transporte, versión 3 (Resolución 725 de 2024)",
+  "anio": 2024,
+  "institucion": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29953/",
+  "fecha_consulta": "2026-10-19",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "capítulo IV (puntajes y método aleatorio sobre experiencia), capítulo V (oferta económica), causales de rechazo del capítulo 1 del archivo DocBase_Interventoria_TIntV3.docx dentro del zip descarga/29953"
+  ],
+  "localizador": "capítulo IV, primer cuadro de puntajes",
+  "cita_textual": "Experiencia del Proponente 67,50 Equipo de trabajo (Personal Clave Evaluable) 10 Factor de sostenibilidad 1 Apoyo a la industria nacional 20 Vinculación de personas con discapacidad 1 Emprendimientos y empresas de mujeres 0,25",
+  "afirmacion": "En el concurso de méritos de interventoría de transporte v3 el precio no puntúa: los 100 puntos se reparten en experiencia del proponente (67,50), equipo de trabajo (10), sostenibilidad y factores de apoyo.",
+  "eje": 9,
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-TARJ",
+  "autoridad": "A3",
+  "vigencia_verificada": {
+    "fecha": "2026-10-19",
+    "fuente": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo (interventoría de transporte V.3 «Versión vigente» desde 03/02/2025)"
+  },
+  "leida_por": "lector fase2 eje9-academica",
+  "tipo_contrato": "interventoria",
+  "url_final": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29953",
+  "anio_origen": "inferido",
+  "notas": "En el capítulo IV el método aleatorio por la TRM (mediana, media aritmética alta, media aritmética baja…) se aplica al PROMEDIO DE SMMLV DE LOS CONTRATOS aportados, no al precio: la media aritmética alta sí sigue viva en el documento tipo de interventoría. Consecuencia para un simulador: el método por TRM de interventoría puntúa experiencia, no valor.",
+  "cifra_comprobada": "cuadra en lo leído: 67,50+10+1+20+1+0,25 = 99,75; el cuadro sigue con Mipyme 0,25 hasta 100",
+  "reformas_cotejadas": [
+    "Control de versiones de Colombia Compra (abierta 19-oct-2026): V.3 vigente desde 03/02/2025 sin modificaciones listadas",
+    "Resolución 725 de 2024 (adopta la v3): PDF escaneado sin capa de texto, no leída"
+  ]
+}

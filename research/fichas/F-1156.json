@@ -1,0 +1,27 @@
+{
+  "id": "F-1156",
+  "tipo": "cce_concepto",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Concepto C-1120 de 2026 (relatoría ANCP-CCE; fecha que muestra la relatoría: 31/08/2026)",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "url": "https://relatoria.colombiacompra.gov.co/conceptos/c-1120-de-2026/",
+  "fecha_consulta": "2026-10-19",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "extracto de la relatoría (descriptores y párrafos de la parte considerativa); la página no muestra la consulta ni la firma"
+  ],
+  "localizador": "descriptor «Riesgos previsibles – Asignación», primer párrafo",
+  "cita_textual": "la variación de las cantidades de obra es un riesgo inherente a esa modalidad —alea normal del contrato—, de modo que sus efectos, favorables o desfavorables, corresponden al riesgo negocial del contratista",
+  "afirmacion": "Colombia Compra recoge que en un contrato de obra a precios unitarios la variación de cantidades es álea normal y su efecto, a favor o en contra, es riesgo del contratista, salvo que la magnitud desborde lo razonablemente previsible.",
+  "eje": 9,
+  "etapa": "E4",
+  "decision": "D4",
+  "modulo": "M-PRECIO",
+  "autoridad": "A5",
+  "vigencia_verificada": "[sin verificar] — concepto de Colombia Compra de ago-2026 (no vinculante) que cita la sentencia del Consejo de Estado del 21-feb-2025, Exp. 66479, sin que se haya abierto la sentencia",
+  "leida_por": "lector fase2 eje9-academica",
+  "tipo_contrato": "obra",
+  "anio_origen": "cuerpo",
+  "notas": "El mismo extracto: en contratos con estudios, diseños y obra, lo usual es pactar precio global; los precios unitarios son para obra sin diseños a cargo del contratista; y un presupuesto oficial nuevo que sale de los diseños puede ser adición sujeta al límite del art. 40. Cuando la variación se puede gestionar con fórmulas de reajuste pactadas, ese mecanismo opera antes que el reequilibrio.  Ver también F-1155 (C-1411, reajuste y tope de adición) y F-1180 (art. 40 de la Ley 80)."
+}

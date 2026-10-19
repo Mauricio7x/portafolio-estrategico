@@ -1,0 +1,34 @@
+{
+  "id": "F-1147",
+  "tipo": "doc_tipo",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Documento Base o Pliego Tipo de Interventoría de Infraestructura Social (concurso de méritos), archivo publicado en dic-2025; la página de vigentes lo asocia a la versión 2 vigente desde 16/02/2026 (asociación sin verificar archivo por archivo)",
+  "anio": 2025,
+  "institucion": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/wp-content/uploads/2025/12/Documento-Base-o-Pliego-Tipo-de-Interventoria-Infraestructura-Social.docx",
+  "fecha_consulta": "2026-10-19",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "capítulo V (oferta económica) y causales de rechazo"
+  ],
+  "localizador": "capítulo 1, causales de rechazo",
+  "cita_textual": "[Incluir cuando la Entidad exija la discriminación del valor de la oferta económica incluyendo el factor multiplicador] No haber realizado la operación matemática con el factor multiplicador al enunciar el valor final de la oferta económica",
+  "afirmacion": "El documento base de interventoría de infraestructura social (publicado dic-2025) mantiene la causal del factor multiplicador y la de precio artificialmente bajo (sección 5.2).",
+  "eje": 9,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-F1",
+  "autoridad": "A3",
+  "vigencia_verificada": {
+    "fecha": "2026-10-19",
+    "fuente": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo (interventoría social V.2 «Versión vigente» desde 16/02/2026)"
+  },
+  "leida_por": "lector fase2 eje9-academica",
+  "tipo_contrato": "interventoria",
+  "anio_origen": "metadatos",
+  "notas": "El archivo es el docx publicado el 30-dic-2025 en la carpeta de uploads de Colombia Compra; su contenido coincide en estructura con el de transporte. No se comparó palabra por palabra con la versión que entró en vigor el 16-feb-2026.",
+  "reformas_cotejadas": [
+    "Control de versiones de Colombia Compra (abierta 19-oct-2026): interventoría social V.2 vigente desde 16/02/2026",
+    "Resolución 953 de 2025 vista solo como nombre de archivo en el zip de memoria; su PDF no se leyó"
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "id": "F-1121",
+  "tipo": "doc_tipo",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Documento Base (pliego tipo) de licitación de obra pública de infraestructura de transporte, versión 4 (adoptada por la Resolución 465 de 2024)",
+  "anio": 2024,
+  "institucion": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga-zip/29383/",
+  "fecha_consulta": "2026-10-19",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "numerales 2.5, 4.1 a 4.1.4 (oferta económica), puntajes del capítulo 4, causales de rechazo del capítulo 1, 1.13 y 8.2 del archivo DocBase_LicObra_TLPV4.docx dentro del zip 5.-Documentos-Tipo…zip"
+  ],
+  "localizador": "numeral 4.1.4 «Determinación del método para la ponderación de la propuesta económica», cuadro de rangos",
+  "cita_textual": "De 0.00 a 0.24 1 Mediana con valor absoluto De 0.25 a 0.49 2 Media geométrica De 0.50 a 0.74 3 Media aritmética baja De 0.75 a 0.99 4 Menor valor",
+  "afirmacion": "En la licitación de obra de transporte v4 (aviso desde 3-feb-2025) el método de puntaje económico es uno de cuatro (mediana con valor absoluto, media geométrica, media aritmética baja, menor valor), según el rango de los centavos de la TRM; la media aritmética alta ya no figura.",
+  "eje": 9,
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-PRECIO",
+  "autoridad": "A3",
+  "vigencia_verificada": {
+    "fecha": "2026-10-19",
+    "fuente": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo (v4 'Versión vigente' desde 03/02/2025) y https://www.colombiacompra.gov.co/documentos-tipo/vigentes/?sector=712&nodo=29383"
+  },
+  "leida_por": "lector fase2 eje9-academica",
+  "tipo_contrato": "obra",
+  "url_final": "https://www.colombiacompra.gov.co/documentos-tipo/descarga-zip/29383",
+  "anio_origen": "inferido",
+  "notas": "Responde la lista literal de métodos pedida por el encargo. El documento tipo advierte que si solo hay una oferta habilitada la entidad puede prescindir de la TRM y del método.",
+  "reformas_cotejadas": [
+    "Resolución 465 de 2024 art. 8: rige para procesos con aviso de convocatoria desde el 3-feb-2025 y deroga la Res. 240 de 2020 y sus modificaciones (leída completa)",
+    "Control de versiones de Colombia Compra (abierta 19-oct-2026): para licitación de transporte lista V.4 «Versión vigente» sin resoluciones modificatorias posteriores",
+    "No se encontró ni abrió resolución posterior que modifique la v4; verificar en la página de vigentes antes de usar"
+  ]
+}

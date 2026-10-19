@@ -1,0 +1,33 @@
+{
+  "id": "F-1112",
+  "tipo": "doc_tipo",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Anexo 5 – Minuta del contrato de obra, documentos tipo de licitación de obra pública de infraestructura de transporte, versión 4",
+  "anio": 2024,
+  "institucion": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29920/",
+  "fecha_consulta": "2026-10-19",
+  "estado_lectura": "parcial",
+  "localizador": "Anexo 5 – Minuta del contrato, cláusula 8 «Forma de pago», opción 1 y opción 2 con anticipo",
+  "cita_textual": "«La Entidad cancelará al Contratista el valor del contrato en pagos parciales mensuales por avance de obra, de acuerdo con las cantidades ejecutadas y aprobadas por la interventoría hasta el 95% del valor del contrato. El 5% restante del valor del contrato se pagará contra liquidación del contrato.»",
+  "afirmacion": "La minuta tipo de obra de transporte v4 ofrece dos formas de pago: mensual por avance hasta el 95 % del valor y el 5 % restante contra liquidación, o con anticipo y amortización, siempre por cantidades realmente ejecutadas y recibidas por la interventoría «de conformidad con los precios unitarios y el valor del AIU pactado», con un último pago no inferior al 5 % a la terminación recibida.",
+  "eje": 9,
+  "etapa": "E3",
+  "decision": "D4",
+  "modulo": "M-PRECIO",
+  "autoridad": "A3",
+  "vigencia_verificada": {
+    "fecha": "2026-10-19",
+    "fuente": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo (V.4 «Versión vigente» desde 03/02/2025) y Resolución 465 de 2024, art. 8 (PDF abierto)"
+  },
+  "leida_por": "lector fase2 eje9-institucional",
+  "tipo_contrato": "obra",
+  "anio_origen": "inferido",
+  "url_final": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29920",
+  "reformas_cotejadas": [
+    "Resolución 465 de 2024, art. 8 (abierta, PDF p. 5-6): adopta la versión 4, deroga la Resolución 240 de 2020 y aplica a procesos con aviso de convocatoria desde el 3 de febrero de 2025",
+    "Control de versiones de Documentos Tipo (página abierta el 2026-10-19): la versión 4 figura como vigente; no lista modificaciones posteriores de la licitación de obra de transporte",
+    "Decreto 0997 de 2026, art. 14 par. 3 (abierto en la Relatoría): los procesos regidos por documentos tipo siguen con ellos hasta que Colombia Compra expida nuevas versiones; no modifica el documento base"
+  ],
+  "notas": "Fuente: A5_MinutaContrato_TLPV4.docx dentro del ZIP «05DT_Transp_TLP_V4.zip» (descarga/29920). La opción 2 (literal): «La entidad efectuará al Contratista pagos mensuales en pesos colombianos, de acuerdo con las cantidades de obra realmente ejecutadas, revisadas, aceptadas y recibidas a satisfacción por la interventoría en el mes inmediatamente anterior […] de conformidad con los precios unitarios y el valor del AIU pactado. Parágrafo 1. La entidad realizará al Contratista el último pago, cuyo valor no podrá ser inferior al cinco por ciento (5%) del valor total del contrato». La cláusula 5 exige expresar el valor también en SMLMV del año de suscripción. Consecuencia en caja: 5 % del contrato queda retenido hasta la liquidación (opción 1). La minuta no regula ítems no previstos ni reajuste: lo único tipo para el precio de ítems nuevos es la nota 2 del APU del Formulario 1 (F-1079)."
+}

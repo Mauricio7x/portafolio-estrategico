@@ -1,0 +1,32 @@
+{
+  "id": "F-1167",
+  "tipo": "academia",
+  "autor": "Zorro Hernández, L. D.",
+  "titulo": "Análisis técnico y financiero del impacto de ítems no previstos (APUs NPs) en la ampliación de la Av. Boyacá – UF3, Lagos de Torca (proyecto de grado, Maestría en Ingeniería Civil)",
+  "anio": 2025,
+  "institucion": "Universidad de los Andes, Facultad de Ingeniería Civil y Ambiental",
+  "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/90216c16-bb07-47c8-a48a-b5de5f68964c/content",
+  "fecha_consulta": "2026-10-19",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen y problema (pp. 5-9)",
+    "p. 13-14 (identificación y control de NPs)",
+    "p. 17 (distribución por capítulo)",
+    "p. 31 (conclusiones)"
+  ],
+  "localizador": "pp. 13-14 del PDF (final de la p. 13: informe de incumplimiento por la no entrega oportuna de los APU de los ítems adicionales)",
+  "cita_textual": "situación que dio lugar a la consideración una multa por valor de $911.040.000.",
+  "afirmacion": "En ese contrato la interventoría reportó que varios ítems no previstos generaron controversias, hasta un informe de incumplimiento por no entregar a tiempo los APU de los ítems adicionales, con una multa considerada de $911.040.000.",
+  "eje": 9,
+  "etapa": "E4",
+  "decision": "D4",
+  "modulo": "M-APU",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — afirmación académica (A6): se registra lo que dice el autor, no la norma; no se abrió ningún texto oficial para esta afirmación; caso único de un contrato, no una tasa",
+  "leida_por": "lector fase2 eje9-academica",
+  "tipo_contrato": "obra",
+  "pagina_pdf": 14,
+  "anio_origen": "portada",
+  "notas": "Dato de un solo contrato; la tesis no dice si la multa se impuso, solo que se consideró. El riesgo que ilustra: entregar tarde el APU de un ítem no previsto puede costar una multa, además del retraso de pago del ítem. Por separado, la p. 17 da la distribución de los NP por capítulo: 72,43% redes húmedas y 21,50% redes secas.",
+  "cifra_comprobada": "cuadra: los porcentajes de la tabla por capítulo (3,74+0+1,87+0+0,47+72,43+21,50) suman 100,01% por redondeo"
+}

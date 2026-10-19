@@ -1,0 +1,27 @@
+{
+  "id": "F-1154",
+  "tipo": "cce_concepto",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Concepto C-1245 de 2026 (relatoría ANCP-CCE; fecha que muestra la relatoría: 17/09/2026)",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "url": "https://relatoria.colombiacompra.gov.co/conceptos/c-1245-de-2026/",
+  "fecha_consulta": "2026-10-19",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "extracto de la relatoría (descriptores y párrafos de la parte considerativa); la página no muestra la consulta ni la firma"
+  ],
+  "localizador": "descriptor «Adición – Presupuestos – Estudio de Mercado», último párrafo del extracto",
+  "cita_textual": "cuando la adición comprenda prestaciones cuyos precios no fueron establecidos inicialmente en el contrato, resulta pertinente que la entidad adelante un análisis de las condiciones del mercado […] los precios que razonablemente deberían reconocerse por dichas prestaciones.",
+  "afirmacion": "Para ítems nuevos que no tenían precio en el contrato, Colombia Compra dice que a la entidad le conviene fijar el precio con un análisis de mercado con criterios objetivos y verificables; para los ya pactados parte de los precios acordados.",
+  "eje": 9,
+  "etapa": "E4",
+  "decision": "D2",
+  "modulo": "M-APU",
+  "autoridad": "A5",
+  "vigencia_verificada": "[sin verificar] — concepto de Colombia Compra de sep-2026 (no vinculante); la norma que cita es el parágrafo del art. 40 de la Ley 80, que los extractos transcriben sin texto consolidado abierto aparte",
+  "leida_por": "lector fase2 eje9-academica",
+  "tipo_contrato": "obra",
+  "anio_origen": "cuerpo",
+  "notas": "El extracto añade que, para prestaciones con precio pactado, «la entidad deberá partir de las condiciones económicas inicialmente acordadas […] sin perjuicio de considerar los riesgos que hayan sido asignados a las partes». Es un `resulta pertinente`, no una obligación ni una fórmula: el concepto NO fija cómo se arma el precio de un ítem no previsto. C-1241 (31-ago-2026) trae el mismo extracto con una diferencia de mayúscula en un descriptor y no se hace ficha aparte. Responde el punto (3) del encargo.  Cláusula contractual de ejemplo para ítems no previstos: F-1166."
+}

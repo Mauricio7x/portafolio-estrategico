@@ -1,0 +1,35 @@
+{
+  "id": "F-1118",
+  "tipo": "ley",
+  "autor": "Congreso de la República (texto consolidado del Estatuto Tributario, Decreto 624 de 1989)",
+  "titulo": "Estatuto Tributario, artículo 468 «Tarifa general del impuesto sobre las ventas» (Ley 1819 de 2016, art. 184)",
+  "anio": 2016,
+  "institucion": "Secretaría Jurídica Distrital de Bogotá (Régimen Legal de Bogotá D.C.)",
+  "url": "https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=6533",
+  "fecha_consulta": "2026-10-19",
+  "estado_lectura": "parcial",
+  "localizador": "Estatuto Tributario, art. 468, inciso 1",
+  "cita_textual": "«La tarifa general del impuesto sobre las ventas es del diecinueve por ciento (19%) salvo las excepciones contempladas en este título.»",
+  "afirmacion": "La tarifa general del IVA es del 19 % (texto de la Ley 1819 de 2016 que muestra la página consolidada al 2026-10-19); es la tarifa que el Formulario 1 de interventoría trae precargada («IVA = 19% * (E)»); la tarifa «16 %*» que aún lleva el art. 462-1 viene del texto de la Ley 1607 de 2012, anterior a ese cambio (inferencia del lector, no afirmada por la fuente).",
+  "eje": 9,
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-PRECIO",
+  "autoridad": "A1",
+  "vigencia_verificada": {
+    "fecha": "2026-10-19",
+    "fuente": "https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=6533 (texto consolidado con notas de vigencia: Ley 1819 de 2016 art. 184; parágrafo 1 derogado por la Ley 2010 de 2019 art. 160)"
+  },
+  "leida_por": "lector fase2 eje9-institucional",
+  "tipo_contrato": "todos",
+  "anio_origen": "cuerpo",
+  "partes_leidas": [
+    "art. 468 con sus notas de vigencia"
+  ],
+  "reformas_cotejadas": [
+    "Ley 1819 de 2016, art. 184 (texto vigente reproducido por la página consolidada)",
+    "Ley 2010 de 2019, art. 160 (deroga el parágrafo 1; reproducido en la página); la Ley 1943 de 2018 fue declarada inexequible (Sentencia C-481 de 2019, según la nota de la página)",
+    "No se abrieron los textos de esas leyes: se confió en las notas de vigencia de la página consolidada; no se verificó si hubo reforma después de 2022"
+  ],
+  "notas": "El Formulario 1 de interventoría de transporte v3 (F-1092) escribe «IVA = 19% * (E) = (F)». Para obra, el IVA no recae sobre todo el contrato sino sobre la utilidad del constructor (art. 1.3.1.7.9 del Decreto 1625 de 2016, F-1084), salvo mantenimiento (F-1113). La nota de la propia página sobre el art. 462-1 deja la tarifa «16%*» con asterisco: no se verificó cómo se aplica hoy a aseo y vigilancia, fuera del alcance de obra, interventoría y consultoría."
+}

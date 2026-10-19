@@ -1,0 +1,35 @@
+{
+  "id": "F-1143",
+  "tipo": "doc_tipo",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Documento Base (pliego tipo) del concurso de méritos de interventoría de obra pública de infraestructura de transporte, versión 3 (Resolución 725 de 2024)",
+  "anio": 2024,
+  "institucion": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29953/",
+  "fecha_consulta": "2026-10-19",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "capítulo IV (puntajes y método aleatorio sobre experiencia), capítulo V (oferta económica), causales de rechazo del capítulo 1 del archivo DocBase_Interventoria_TIntV3.docx dentro del zip descarga/29953"
+  ],
+  "localizador": "capítulo V «Oferta económica», párrafo inicial y subtítulo «Correcciones aritméticas»",
+  "cita_textual": "La oferta económica será el valor total indicado en la propuesta económica o el obtenido de la corrección aritmética.",
+  "afirmacion": "En interventoría (v3) la oferta económica es el valor total de la propuesta o el corregido aritméticamente; la entidad solo corrige errores de operación y el ajuste al peso, y luego «valorará la oferta económica según la normativa vigente aplicable».",
+  "eje": 9,
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-F1",
+  "autoridad": "A3",
+  "vigencia_verificada": {
+    "fecha": "2026-10-19",
+    "fuente": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo (interventoría de transporte V.3 «Versión vigente» desde 03/02/2025)"
+  },
+  "leida_por": "lector fase2 eje9-academica",
+  "tipo_contrato": "interventoria",
+  "url_final": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29953",
+  "anio_origen": "inferido",
+  "notas": "El capítulo no asigna puntaje al valor. La entidad adjudica al primero en el orden de elegibilidad «cuya oferta económica esté acorde con el Presupuesto Oficial» (numeral de adjudicación).",
+  "reformas_cotejadas": [
+    "Control de versiones de Colombia Compra (abierta 19-oct-2026): V.3 vigente desde 03/02/2025 sin modificaciones listadas",
+    "Resolución 725 de 2024 (adopta la v3): PDF escaneado sin capa de texto, no leída"
+  ]
+}

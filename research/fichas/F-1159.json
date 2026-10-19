@@ -1,0 +1,32 @@
+{
+  "id": "F-1159",
+  "tipo": "doc_tipo",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Resolución 161 de 2021 (17 de junio), por la cual se modifican los documentos tipo adoptados por la Agencia Nacional de Contratación Pública – Colombia Compra Eficiente (texto del Diario Oficial 51.709 en el Gestor Normativo de la CRA)",
+  "anio": 2021,
+  "institucion": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente (texto publicado en el Gestor Normativo de la Comisión de Regulación de Agua Potable y Saneamiento Básico)",
+  "url": "https://normas.cra.gov.co/Gestor/docs/resolucion_ancp_0161_2021.htm",
+  "fecha_consulta": "2026-10-19",
+  "estado_lectura": "completa",
+  "localizador": "considerandos, penúltimo bloque antes de la parte resolutiva; art. 27",
+  "cita_textual": "estimó pertinente modificar el “Anexo 2 - Cronograma” de los documentos tipo de interventoría de obra pública de infraestructura de transporte, porque impropiamente señalaba una nota descontextualizada para escoger el método de ponderación para la evaluación de la experiencia del proponente",
+  "afirmacion": "La Resolución 161 de 2021 ajustó, para interventoría de transporte, la nota del cronograma sobre el método de ponderación de la EXPERIENCIA del proponente y fijó la TRM del segundo día hábil; su texto no menciona la media aritmética alta ni cambia los métodos de la propuesta económica de obra.",
+  "eje": 9,
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-PRECIO",
+  "autoridad": "A3",
+  "vigencia_verificada": {
+    "fecha": "2026-10-19",
+    "fuente": "https://normas.cra.gov.co/Gestor/docs/resolucion_ancp_0161_2021.htm (texto con anotación «Pérdida de fuerza ejecutoria por derogatorias a las normas que modifica»)"
+  },
+  "leida_por": "lector fase2 eje9-academica",
+  "tipo_contrato": "interventoria",
+  "anio_origen": "portada",
+  "notas": "El texto es de la Resolución firmada el 17-jun-2021 (Diario Oficial 51.709). Sirve para desmentir la atribución del artículo de Nieto (2021). Es del Gestor Normativo de la CRA, no de Colombia Compra; el encabezado del Diario Oficial lo identifica como resolución de la Agencia.",
+  "reformas_cotejadas": [
+    "Resolución 465 de 2024 art. 8: deroga la Res. 240 de 2020 y sus modificaciones (transporte, licitación de obra)",
+    "Control de versiones de Colombia Compra (abierta 19-oct-2026): interventoría de transporte V.3 vigente desde 03/02/2025, que reemplaza las versiones anteriores",
+    "Rige desde el 28-jun-2021 para avisos publicados desde esa fecha (art. 29); hoy es solo histórica"
+  ]
+}

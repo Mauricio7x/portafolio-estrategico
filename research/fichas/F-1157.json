@@ -1,0 +1,30 @@
+{
+  "id": "F-1157",
+  "tipo": "academia",
+  "autor": "Orozco Rodríguez, I. S.",
+  "titulo": "Alcances y limitaciones de los métodos de evaluación económica a acuerdos colusorios en la contratación pública: el caso colombiano (tesis, Maestría en Ciencias Económicas)",
+  "anio": 2015,
+  "institucion": "Universidad Nacional de Colombia, Facultad de Ciencias Económicas, Escuela de Economía",
+  "url": "https://bffrepositorio.unal.edu.co/server/api/core/bitstreams/7b64d4c5-22da-4bef-9791-000b56b8b639/content",
+  "fecha_consulta": "2026-10-19",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "p. 34 del PDF (sección 3, descripción de la base de datos)"
+  ],
+  "localizador": "sección 3, p. 34 del PDF",
+  "cita_textual": "Como valor nominal, los presupuestos oficiales de estos 96 procesos de selección contractual pública suman un total de $ 10.689.054.988.882 pesos. […] realmente desembolsados para estas licitaciones fueron del orden de $19.959.108.247.430, es decir un 78.3% más de lo presupuestado oficialmente.",
+  "afirmacion": "La tesis (2015) dice que en 96 licitaciones de mayor cuantía el valor final con adiciones fue $19.959.108.247.430 sobre presupuestos oficiales de $10.689.054.988.882 y lo llama «78.3% más»; con esas mismas cifras la diferencia es 86,7%, no 78,3%.",
+  "eje": 9,
+  "etapa": "E4",
+  "decision": "D4",
+  "modulo": "M-INT",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — afirmación académica (A6) de 2015 sobre una muestra de licitaciones de mayor cuantía; no es norma. No se abrió ningún texto oficial",
+  "leida_por": "lector fase2 eje9-academica",
+  "tipo_contrato": "todos",
+  "pagina_pdf": 34,
+  "anio_origen": "portada",
+  "notas": "Rehace la ficha F-067 (decisión D13): mismo texto de la fuente con la cifra recalculada. La muestra mezcla objetos y niveles de gobierno (55 entidades) y la tesis no separa obra. El valor final suma «al valor de la adjudicación todas las adiciones posteriores a la firma del contrato». Dato de 2010-2014, no actual.",
+  "cifra_comprobada": "no cuadra: 19.959.108.247.430 / 10.689.054.988.882 = 1,8672, es decir +86,7% (no +78,3%). Un +78,3% exigiría un presupuesto base de unos $11,19 billones. La cifra de la fuente (78,3%) no se repite como hecho; se usa 86,7% con la salvedad de que depende de las dos sumas del autor, no verificadas contra SECOP.",
+  "rehace_a": "F-067"
+}

@@ -1,0 +1,36 @@
+{
+  "id": "F-1146",
+  "tipo": "doc_tipo",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Documento Base (pliego tipo) del concurso de méritos de consultoría de estudios de ingeniería de infraestructura de transporte, versión 2 (Resolución 726 de 2024)",
+  "anio": 2024,
+  "institucion": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29824/",
+  "fecha_consulta": "2026-10-19",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "capítulo V (oferta económica y precio artificialmente bajo) y causales de rechazo del archivo DocBase_Consultoria_TConV2.docx dentro del zip descarga/29824"
+  ],
+  "localizador": "capítulo 1, causales de rechazo; capítulo V «Precio artificialmente bajo»",
+  "cita_textual": "Cuando se determine que el valor total de la oferta es artificialmente bajo, de acuerdo con lo establecido en la sección 5.2. del Pliego de Condiciones.",
+  "afirmacion": "El concurso de méritos de consultoría de estudios de ingeniería de transporte (v2) trae la misma causal de precio artificialmente bajo y el mismo capítulo V: oferta = valor de la propuesta o el corregido; los puntos se reparten en experiencia (67,50) y equipo (10), sin precio.",
+  "eje": 9,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-PRECIO",
+  "autoridad": "A3",
+  "vigencia_verificada": {
+    "fecha": "2026-10-19",
+    "fuente": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo (consultoría de transporte V.2 «Versión vigente» desde 03/02/2025)"
+  },
+  "leida_por": "lector fase2 eje9-academica",
+  "tipo_contrato": "consultoria",
+  "url_final": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29824",
+  "anio_origen": "inferido",
+  "notas": "La causal de omitir el factor multiplicador al enunciar el valor final también aparece, condicionada a que la entidad exija discriminarlo.",
+  "cifra_comprobada": "cuadra en lo leído: 67,50+10+1+20+1+0,25+0,25 = 100",
+  "reformas_cotejadas": [
+    "Control de versiones de Colombia Compra (abierta 19-oct-2026): V.2 vigente desde 03/02/2025 sin modificaciones listadas",
+    "Resolución 726 de 2024 (adopta la v2): PDF escaneado sin capa de texto, no leída"
+  ]
+}

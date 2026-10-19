@@ -1,0 +1,33 @@
+{
+  "id": "F-1137",
+  "tipo": "doc_tipo",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Resolución 465 de 2024, por la cual se adopta la versión 4 de los Documentos Tipo de licitación de obra pública de infraestructura de transporte y se deroga la Resolución 240 de 2020",
+  "anio": 2024,
+  "institucion": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga-zip/29383/",
+  "fecha_consulta": "2026-10-19",
+  "estado_lectura": "completa",
+  "localizador": "art. 3 (p. 4 del PDF)",
+  "cita_textual": "Artículo 3. Inalterabilidad de los documentos tipo. De conformidad con el artículo 1 de la Ley 2022 de 2020, los documentos tipo son obligatorios en la actividad contractual de las entidades estatales",
+  "afirmacion": "Los documentos tipo, incluidos sus métodos de puntaje económico, son obligatorios y las entidades solo pueden modificarlos en lo que el propio documento permita.",
+  "eje": 9,
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-DOC",
+  "autoridad": "A3",
+  "vigencia_verificada": {
+    "fecha": "2026-10-19",
+    "fuente": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo (v4 'Versión vigente' desde 03/02/2025)"
+  },
+  "leida_por": "lector fase2 eje9-academica",
+  "tipo_contrato": "obra",
+  "pagina_pdf": 4,
+  "url_final": "https://www.colombiacompra.gov.co/documentos-tipo/descarga-zip/29383",
+  "anio_origen": "portada",
+  "notas": "Resolución firmada el 10-sep-2024 según el sello del PDF (OCR parcial); número y fecha tal como los trae la portada. Complementa la obligatoriedad que el lector debe suponer al simular puntajes.",
+  "reformas_cotejadas": [
+    "Control de versiones de Colombia Compra (abierta 19-oct-2026): v4 vigente sin modificaciones",
+    "Ley 2022 de 2020 art. 1: citada por la resolución, no abierta aparte"
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "id": "F-1177",
+  "tipo": "academia",
+  "autor": "Contreras Briceño, C. A.",
+  "titulo": "Mecanismos de subasta en la contratación de obras públicas en Colombia (trabajo de grado, Facultad de Economía)",
+  "anio": 2017,
+  "institucion": "Universidad de los Andes, Facultad de Economía",
+  "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/7a0729b3-c757-4623-9821-ce0eff324293/content",
+  "fecha_consulta": "2026-10-19",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen e introducción (pp. 2-5 del PDF)",
+    "conclusiones (pp. 38-39)"
+  ],
+  "localizador": "8. Conclusiones, p. 39 del PDF",
+  "cita_textual": "El descuento de la oferta ganadora respecto del presupuesto oficial se redujo de manera considerable con la nueva metodología, lo que claramente encarece los proyectos",
+  "afirmacion": "En el Invías (2008-2013) el cambio de 2011 de la subasta inversa al método con componente aleatorio por la TRM redujo mucho el descuento de la oferta ganadora frente al presupuesto oficial, sin reducir las adiciones en valor ni en plazo.",
+  "eje": 9,
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-PRECIO",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — afirmación académica (A6): se registra lo que dice el autor, no la norma; no se abrió ningún texto oficial para esta afirmación; el método del Invías de 2011 es anterior a los documentos tipo",
+  "leida_por": "lector fase2 eje9-academica",
+  "tipo_contrato": "obra",
+  "pagina_pdf": 39,
+  "anio_origen": "portada",
+  "notas": "Responde la parte académica de los métodos de evaluación económica: la fuente compara solo dos esquemas del Invías y su recomendación es volver a la subasta inversa con detección de ofertas anormalmente bajas. Los documentos tipo actuales (v4) siguen usando el método aleatorio por TRM, no la subasta inversa. La tesis no da una cifra puntual de descuento en el resumen."
+}

@@ -1,0 +1,29 @@
+{
+  "id": "F-1164",
+  "tipo": "academia",
+  "autor": "Arias Rojas, C. P.",
+  "titulo": "Propuesta para el cálculo del factor multiplicador para contratos de consultoría de obras civiles (proyecto de grado, Maestría en Ingeniería Civil)",
+  "anio": 2015,
+  "institucion": "Universidad de los Andes, Departamento de Ingeniería Civil y Ambiental",
+  "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/be71d510-26ed-4d07-8369-43853ca85e7e/content",
+  "fecha_consulta": "2026-10-19",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen (pp. 19-20 del PDF)",
+    "p. 40 del PDF (antecedentes sobre valores usuales del factor)"
+  ],
+  "localizador": "Resumen, p. 19 del PDF",
+  "cita_textual": "El factor multiplicador es una forma de remuneración del contrato a fin de imputar al mismo, los costos directos por sueldos y prestaciones sociales del personal vinculado con carácter exclusivo al proyecto, los costos indirectos y la utilidad del consultor.",
+  "afirmacion": "En consultoría (y por extensión interventoría) el precio no se arma con AIU sino con un factor multiplicador sobre sueldos y prestaciones del personal exclusivo, que cubre costos indirectos y utilidad.",
+  "eje": 9,
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-PRECIO",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — afirmación académica (A6): se registra lo que dice el autor, no la norma; no se abrió ningún texto oficial para esta afirmación",
+  "leida_por": "lector fase2 eje9-academica",
+  "tipo_contrato": "consultoria",
+  "pagina_pdf": 19,
+  "anio_origen": "metadatos",
+  "notas": "La tesis (2015) lista los sistemas de remuneración de consultoría usados en Colombia: honorario, factor multiplicador, tarifas por categorías más reembolsos, porcentaje sobre el costo de la obra, suma fija total o periódica. Propone un cálculo con estructura: salario básico, prestaciones, costos indirectos, honorarios, costos de perfeccionamiento e imprevistos. Responde parcialmente el punto (6): AIU en consultoría e interventoría = no hay AIU, hay factor multiplicador (los documentos tipo de interventoría y consultoría traen la causal por no aplicar el factor)."
+}

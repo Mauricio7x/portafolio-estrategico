@@ -1,0 +1,30 @@
+{
+  "id": "F-1161",
+  "tipo": "academia",
+  "autor": "Matallana Camacho, E.",
+  "titulo": "Criterio para determinar el concepto de propuesta artificialmente baja (Revista Digital de Derecho Administrativo, núm. 1, 2009, pp. 1-6)",
+  "anio": 2009,
+  "institucion": "Universidad Externado de Colombia (Revista Digital de Derecho Administrativo), distribuido por Redalyc",
+  "url": "https://www.redalyc.org/pdf/5038/503856222007.pdf",
+  "fecha_consulta": "2026-10-19",
+  "estado_lectura": "completa",
+  "localizador": "4. Conclusiones, numeral 4.1",
+  "cita_textual": "aquella oferta económica que se encuentra por debajo del promedio de precios de mercado, pero que ha superado el punto de no pérdida (numeral 1 del artículo 5.º de la Ley 80 de 1993), en donde el oferente, si se le llega a adjudicar el contrato, vería lesionado su patrimonio.",
+  "afirmacion": "El autor propone (2009) definir la propuesta artificialmente baja como la que está bajo el promedio de mercado y también bajo el punto de no pérdida del oferente; el texto vigente del Decreto 1082 (art. 2.2.1.1.2.2.4) no trae ese criterio ni umbral alguno.",
+  "eje": 9,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-PRECIO",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — afirmación académica (A6) anterior a la reforma: razona sobre el art. 13 del Decreto 2474 de 2008, que el Decreto 1082 de 2015 reemplazó por el art. 2.2.1.1.2.2.4; contrastada con el texto del art. 2.2.1.1.2.2.4 en la relatoría (ficha del Decreto 1082) pero la contrastación no hace vigente al autor",
+  "leida_por": "lector fase2 eje9-academica",
+  "tipo_contrato": "todos",
+  "pagina_pdf": 6,
+  "anio_origen": "portada",
+  "notas": "Rehace la ficha F-076 (decisión D13). Lo vigente (ficha del art. 2.2.1.1.2.2.4): la entidad pide explicaciones y el comité recomienda rechazar o continuar; la norma no define umbral; el documento tipo v4 de obra lo convierte en causal de rechazo. El autor, además, sostiene que tras la derogatoria del art. 3 de la Ley 80 por la Ley 1150 el 'piso' bajó en el equivalente al margen de utilidad (esa lectura es suya y no se contrastó con el texto de la Ley 1150). Riesgo que señala: adjudicatario por debajo del punto de no pérdida que luego alega desequilibrio.  Texto vigente del art. 2.2.1.1.2.2.4: F-1148; numeral 4.1.3 del documento base v4: F-1127.",
+  "reformas_cotejadas": [
+    "Decreto 1082 de 2015 art. 2.2.1.1.2.2.4 (relatoría; ver ficha del artículo): trae el mismo mecanismo (pedir explicación, comité recomienda rechazar o continuar) que el art. 13 del Decreto 2474 de 2008 sobre el que razona el autor",
+    "Decreto 2474 de 2008 (relatoría, abierto): su encabezado dice «Derogado por el art. 9.2, Decreto Nacional 734 de 2012»; la cadena de derogatorias posterior hasta el Decreto 1082 de 2015 no se abrió en esta sesión"
+  ],
+  "rehace_a": "F-076"
+}

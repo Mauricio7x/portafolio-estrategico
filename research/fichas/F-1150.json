@@ -1,0 +1,35 @@
+{
+  "id": "F-1150",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República",
+  "titulo": "Decreto 1860 de 2021 (modifica y adiciona el Decreto 1082 de 2015; reglamenta la Ley 2069 de 2020)",
+  "anio": 2021,
+  "institucion": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente (relatoría)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/decreto-1860-de-2021/",
+  "fecha_consulta": "2026-10-19",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "artículo 2.2.1.2.1.5.2 (procedimiento de mínima cuantía)"
+  ],
+  "localizador": "art. 2.2.1.2.1.5.2 (texto dado por el Decreto 1860 de 2021), numeral de aceptación de la oferta",
+  "cita_textual": "La Entidad Estatal debe aceptar la oferta de menor precio, siempre que cumpla con las condiciones establecidas en la invitación a participar en procesos de mínima cuantía.",
+  "afirmacion": "En mínima cuantía la entidad revisa primero la oferta de menor precio y la acepta si cumple la invitación; si no, pasa a la del segundo mejor precio, y así sucesivamente; el empate se resuelve con el art. 35 de la Ley 2069 de 2020 y la oferta aceptada es el contrato.",
+  "eje": 9,
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-PRECIO",
+  "autoridad": "A2",
+  "vigencia_verificada": {
+    "fecha": "2026-10-19",
+    "fuente": "https://relatoria.colombiacompra.gov.co/normativa/decreto-1860-de-2021/ (texto del decreto modificatorio) y cotejo de reformas posteriores"
+  },
+  "leida_por": "lector fase2 eje9-academica",
+  "tipo_contrato": "todos",
+  "anio_origen": "portada",
+  "notas": "Antes de aceptar la menor oferta la entidad debe dar oportunidad de subsanar (art. 5 Ley 1150): si la invitación no fija un término preclusivo, se puede subsanar hasta antes de que termine el traslado del informe de evaluación. El decreto no trae regla de precio artificialmente bajo propia para mínima cuantía; el art. 2.2.1.1.2.2.4 es general.",
+  "reformas_cotejadas": [
+    "Decreto 0997 de 2026 (abierto): modifica el art. 2.2.1.2.1.5.1 (estudios previos de mínima cuantía) y no el 2.2.1.2.1.5.2",
+    "Decretos 287 de 2026, 579 y 680 de 2021 (abiertos): no mencionan 2.2.1.2.1.5.2",
+    "Decreto 399 de 2021 (abierto): no lo menciona"
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "id": "F-1166",
+  "tipo": "academia",
+  "autor": "Zorro Hernández, L. D.",
+  "titulo": "Análisis técnico y financiero del impacto de ítems no previstos (APUs NPs) en la ampliación de la Av. Boyacá – UF3, Lagos de Torca (proyecto de grado, Maestría en Ingeniería Civil)",
+  "anio": 2025,
+  "institucion": "Universidad de los Andes, Facultad de Ingeniería Civil y Ambiental",
+  "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/90216c16-bb07-47c8-a48a-b5de5f68964c/content",
+  "fecha_consulta": "2026-10-19",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen y problema (pp. 5-9)",
+    "p. 13-14 (identificación y control de NPs)",
+    "p. 17 (distribución por capítulo)",
+    "p. 31 (conclusiones)"
+  ],
+  "localizador": "p. 13 del PDF, cláusula del contrato (Fideicomiso Lagos de Torca, 2024) transcrita por el autor",
+  "cita_textual": "EL CONTRATISTA deberá elaborar el referido análisis de precios de ítems no previstos con base en los mismos parámetros que fueron tenidos en cuenta para la elaboración de los ítems previstos, a saber: (i) valor del AIU, que corresponderá al mismo porcentaje aplicado al ofertado y adjudicado",
+  "afirmacion": "Un contrato de obra de la ampliación de la Av. Boyacá UF3 fija que el APU de un ítem no previsto se arma con el mismo AIU ofertado y adjudicado, los insumos y los rendimientos, y se presenta a la interventoría dentro de 3 días hábiles de identificado el ítem.",
+  "eje": 9,
+  "etapa": "E4",
+  "decision": "D2",
+  "modulo": "M-APU",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — afirmación académica (A6): se registra lo que dice el autor, no la norma; no se abrió ningún texto oficial para esta afirmación; la cláusula es de un contrato concreto de un fideicomiso, no una regla general",
+  "leida_por": "lector fase2 eje9-academica",
+  "tipo_contrato": "obra",
+  "pagina_pdf": 13,
+  "anio_origen": "portada",
+  "notas": "Cláusula contractual, no ley: responde parcialmente el punto (3) del encargo (precio de ítems no previstos) mostrando la práctica de pactar el método en el contrato. El mismo contrato exige análisis técnico y financiero antes de ejecutar cada NP. Contrasta con el concepto C-1245 de Colombia Compra, que solo habla de análisis de mercado para ítems sin precio pactado."
+}

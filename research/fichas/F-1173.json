@@ -1,0 +1,30 @@
+{
+  "id": "F-1173",
+  "tipo": "academia",
+  "autor": "Ulloa Avendaño, F.",
+  "titulo": "Homogenización de criterios para contratación de mínima cuantía (proyecto de grado, Maestría en Ingeniería Civil)",
+  "anio": 2017,
+  "institucion": "Universidad de los Andes, Departamento de Ingeniería Civil y Ambiental",
+  "url": "https://repositorio.uniandes.edu.co/server/api/core/bitstreams/f4b8b0f2-23c3-4884-bd43-563790112c89/content",
+  "fecha_consulta": "2026-10-19",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen y contextualización (pp. 3-10 del PDF)",
+    "conclusiones (p. 19)",
+    "recomendaciones (pp. 49-50)"
+  ],
+  "localizador": "4.1 Modalidades de contratación, concurso de méritos abierto, p. 6 del PDF",
+  "cita_textual": "Esta modalidad de contratación no tiene en cuenta la oferta económica para la otorgación de puntaje, pero el presupuesto no puede exceder el presupuesto oficial.",
+  "afirmacion": "El autor (2017) describe que en el concurso de méritos abierto (consultoría, estudios, diseños e interventorías) la oferta económica no puntúa, pero su valor no puede exceder el presupuesto oficial.",
+  "eje": 9,
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-PRECIO",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — afirmación académica de 2017 anterior al Decreto 399 de 2021; coincide con los documentos tipo de interventoría y consultoría de transporte vigentes (sin puntaje de precio; adjudicación al primero «cuya oferta económica esté acorde con el Presupuesto Oficial»), que sí se leyeron",
+  "leida_por": "lector fase2 eje9-academica",
+  "tipo_contrato": "consultoria",
+  "pagina_pdf": 6,
+  "anio_origen": "portada",
+  "notas": "Ratifica por la vía académica lo que se ve en los documentos tipo: en concurso de méritos el precio no puntúa. El artículo vigente del decreto (2.2.1.2.1.3.2, texto del Decreto 399/2021) no dice nada sobre la oferta económica."
+}

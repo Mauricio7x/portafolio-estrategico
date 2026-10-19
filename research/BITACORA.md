@@ -170,3 +170,8 @@ dueño; entre PC decide la sesión y lo anota aquí; lo que no se abrió no exis
   encargo la trae puesta; GitHub no. (b) La prueba del ritmo de 7 días acepta «sin cambios» en un clon
   superficial cuyo único commit es anterior a la ventana; sigue prohibido contar el archivo entero. Suite:
   4/4, código 0, con la variable puesta en el contenedor.
+
+### 2026-10-19 · cierre de lecturas de la Fase 2 (19:12 UTC)
+
+- 37. Todas las lecturas de la Fase 2 cerraron: ejes 1 a 9 con sus dos lentes (salvo los que
+  se indican en el PC2), muestra de 40 procesos. Cifras y problemas en `research/PC2.md`.

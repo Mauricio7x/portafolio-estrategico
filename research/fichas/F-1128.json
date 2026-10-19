@@ -1,0 +1,36 @@
+{
+  "id": "F-1128",
+  "tipo": "doc_tipo",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Documento Base (pliego tipo) de licitación de obra pública de infraestructura de transporte, versión 4 (adoptada por la Resolución 465 de 2024)",
+  "anio": 2024,
+  "institucion": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga-zip/29383/",
+  "fecha_consulta": "2026-10-19",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "numerales 2.5, 4.1 a 4.1.4 (oferta económica), puntajes del capítulo 4, causales de rechazo del capítulo 1, 1.13 y 8.2 del archivo DocBase_LicObra_TLPV4.docx dentro del zip 5.-Documentos-Tipo…zip"
+  ],
+  "localizador": "capítulo 1, causales de rechazo (causal para precios unitarios, con la nota que sigue)",
+  "cita_textual": "Superar el valor unitario de alguno o algunos de los siguientes ítems ofrecidos con respecto al valor establecido para cada ítem del presupuesto oficial:",
+  "afirmacion": "En procesos a precios unitarios la entidad puede incluir como causal de rechazo superar el valor unitario de ítems que ella identifique frente al del presupuesto oficial; ese valor unitario oficial ya incluye el AIU.",
+  "eje": 9,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-PRECIO",
+  "autoridad": "A3",
+  "vigencia_verificada": {
+    "fecha": "2026-10-19",
+    "fuente": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo (v4 'Versión vigente' desde 03/02/2025) y https://www.colombiacompra.gov.co/documentos-tipo/vigentes/?sector=712&nodo=29383"
+  },
+  "leida_por": "lector fase2 eje9-academica",
+  "tipo_contrato": "obra",
+  "url_final": "https://www.colombiacompra.gov.co/documentos-tipo/descarga-zip/29383",
+  "anio_origen": "inferido",
+  "notas": "Responde el punto «topes por precio unitario frente al oficial»: es opcional (la entidad la incluye «cuando considere necesario») y solo para los ítems que nombre. La nota del documento tipo: «el valor unitario establecido en el Formulario 1 – Formulario de Presupuesto Oficial incluye el valor de AIU».  Criterio de aclaración de la guía de Colombia Compra para ofertas bajas: F-1162; propuesta académica de piso: F-1172.",
+  "reformas_cotejadas": [
+    "Resolución 465 de 2024 art. 8: rige para procesos con aviso de convocatoria desde el 3-feb-2025 y deroga la Res. 240 de 2020 y sus modificaciones (leída completa)",
+    "Control de versiones de Colombia Compra (abierta 19-oct-2026): para licitación de transporte lista V.4 «Versión vigente» sin resoluciones modificatorias posteriores",
+    "No se encontró ni abrió resolución posterior que modifique la v4; verificar en la página de vigentes antes de usar"
+  ]
+}

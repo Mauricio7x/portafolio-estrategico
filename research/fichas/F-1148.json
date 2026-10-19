@@ -1,0 +1,38 @@
+{
+  "id": "F-1148",
+  "tipo": "decreto",
+  "autor": "Presidencia de la República",
+  "titulo": "Decreto 1082 de 2015, art. 2.2.1.1.2.2.4 (relatoría de Colombia Compra; transcripción no consolidada)",
+  "anio": 2015,
+  "institucion": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente (relatoría)",
+  "url": "https://relatoria.colombiacompra.gov.co/normativa/decreto-1082-de-2015/",
+  "fecha_consulta": "2026-10-19",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "artículo 2.2.1.1.2.2.4"
+  ],
+  "localizador": "art. 2.2.1.1.2.2.4, inciso primero",
+  "cita_textual": "el valor de una oferta parece artificialmente bajo, la Entidad Estatal debe requerir al oferente para que explique las razones que sustentan el valor ofrecido.",
+  "afirmacion": "Si el valor de una oferta parece artificialmente bajo, la entidad debe pedir al oferente que explique las razones del valor; el comité recomienda rechazar o continuar el análisis, y si el valor responde a circunstancias objetivas que no ponen en riesgo el contrato, la oferta sigue en evaluación.",
+  "eje": 9,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-PRECIO",
+  "autoridad": "A2",
+  "vigencia_verificada": {
+    "fecha": "2026-10-19",
+    "fuente": "https://relatoria.colombiacompra.gov.co/normativa/decreto-1082-de-2015/ (transcripción de la relatoría, no consolidada) más cotejo de las reformas listadas"
+  },
+  "leida_por": "lector fase2 eje9-academica",
+  "tipo_contrato": "todos",
+  "anio_origen": "portada",
+  "notas": "Texto en la relatoría: «Analizadas las explicaciones, el comité evaluador […] debe recomendar rechazar la oferta o continuar con el análisis» y «Cuando el valor de la oferta […] responde a circunstancias objetivas del oferente y de su oferta que no ponen en riesgo el cumplimiento del contrato […] la Entidad Estatal debe continuar con su análisis». La norma no fija un umbral numérico: la entidad define el criterio. El rechazo es una recomendación del comité, no un automatismo del decreto; los documentos tipo de obra (4.1.3) sí lo vuelven causal de rechazo.  Documento tipo v4 numeral 4.1.3: F-1127. Guía de Colombia Compra: F-1162 y F-1163. Autor académico (2009) que razona sobre la norma anterior: F-1161.",
+  "reformas_cotejadas": [
+    "Decreto 399 de 2021 (abierto completo): no menciona 2.2.1.1.2.2.4",
+    "Decreto 1860 de 2021 (abierto): no lo menciona",
+    "Decreto 0997 de 2026 (abierto): no lo menciona; modifica otros artículos del Decreto 1082",
+    "Decreto 287 de 2026 (abierto): modifica 2.2.1.2.4.2.6 a 2.2.1.2.4.2.8, no este artículo",
+    "Decretos 579 y 680 de 2021 (abiertos): no lo mencionan",
+    "No es una revisión exhaustiva de todas las reformas al Decreto 1082; los documentos tipo vigentes (v4 de transporte, 2024-2025) remiten a este mismo artículo, lo que indica que sigue en uso"
+  ]
+}

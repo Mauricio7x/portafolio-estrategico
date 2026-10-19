@@ -1,0 +1,34 @@
+{
+  "id": "F-1145",
+  "tipo": "doc_tipo",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Documento Base (pliego tipo) del concurso de méritos de interventoría de obra pública de infraestructura de transporte, versión 3 (Resolución 725 de 2024)",
+  "anio": 2024,
+  "institucion": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29953/",
+  "fecha_consulta": "2026-10-19",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "capítulo IV (puntajes y método aleatorio sobre experiencia), capítulo V (oferta económica), causales de rechazo del capítulo 1 del archivo DocBase_Interventoria_TIntV3.docx dentro del zip descarga/29953"
+  ],
+  "localizador": "capítulo 1, causales de rechazo; capítulo V «Precio artificialmente bajo»",
+  "cita_textual": "Cuando se determine que el valor total de la oferta es artificialmente bajo de acuerdo con lo establecido en la sección 5.2 del Pliego de Condiciones.",
+  "afirmacion": "También en el concurso de méritos de interventoría un valor total artificialmente bajo, tras el procedimiento del art. 2.2.1.1.2.2.4 del Decreto 1082, es causal de rechazo.",
+  "eje": 9,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-PRECIO",
+  "autoridad": "A3",
+  "vigencia_verificada": {
+    "fecha": "2026-10-19",
+    "fuente": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo (interventoría de transporte V.3 «Versión vigente» desde 03/02/2025)"
+  },
+  "leida_por": "lector fase2 eje9-academica",
+  "tipo_contrato": "interventoria",
+  "url_final": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29953",
+  "anio_origen": "inferido",
+  "reformas_cotejadas": [
+    "Control de versiones de Colombia Compra (abierta 19-oct-2026): V.3 vigente desde 03/02/2025 sin modificaciones listadas",
+    "Resolución 725 de 2024 (adopta la v3): PDF escaneado sin capa de texto, no leída"
+  ]
+}

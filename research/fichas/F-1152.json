@@ -1,0 +1,27 @@
+{
+  "id": "F-1152",
+  "tipo": "cce_concepto",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Concepto C-1327 de 2026 (relatoría ANCP-CCE; fecha que muestra la relatoría: 01/10/2026)",
+  "anio": 2026,
+  "institucion": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "url": "https://relatoria.colombiacompra.gov.co/conceptos/c-1327-de-2026/",
+  "fecha_consulta": "2026-10-19",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "extracto de la relatoría (descriptores y párrafos de la parte considerativa); la página no muestra la consulta ni la firma"
+  ],
+  "localizador": "descriptor «Registro presupuestal – Ausencia de Registro Presupuestal», segundo párrafo",
+  "cita_textual": "debe estar expedido antes de que la entidad celebre el acto modificatorio y dé inicio o permita la ejecución de las obligaciones adicionales derivadas de él.",
+  "afirmacion": "Para Colombia Compra el registro presupuestal de una adición debe existir antes de firmar el acto modificatorio y de ejecutar lo adicional; su ausencia no afecta la validez de la adición pero compromete la legalidad de la entidad (hechos cumplidos).",
+  "eje": 9,
+  "etapa": "E4",
+  "decision": "D4",
+  "modulo": "M-DICT",
+  "autoridad": "A5",
+  "vigencia_verificada": "[sin verificar] — concepto de Colombia Compra de oct-2026 (no vinculante)",
+  "leida_por": "lector fase2 eje9-academica",
+  "tipo_contrato": "obra",
+  "anio_origen": "cuerpo",
+  "notas": "Leído por estar en la lista del encargo; no habla del precio de ítems no previstos. Interés para el contratista: ejecutar adiciones sin registro presupuestal previo puede dejar el pago en disputa fiscal aunque el negocio sea válido."
+}

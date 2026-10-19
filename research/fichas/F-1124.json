@@ -1,0 +1,36 @@
+{
+  "id": "F-1124",
+  "tipo": "doc_tipo",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Documento Base (pliego tipo) de licitación de obra pública de infraestructura de transporte, versión 4 (adoptada por la Resolución 465 de 2024)",
+  "anio": 2024,
+  "institucion": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga-zip/29383/",
+  "fecha_consulta": "2026-10-19",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "numerales 2.5, 4.1 a 4.1.4 (oferta económica), puntajes del capítulo 4, causales de rechazo del capítulo 1, 1.13 y 8.2 del archivo DocBase_LicObra_TLPV4.docx dentro del zip 5.-Documentos-Tipo…zip"
+  ],
+  "localizador": "numeral 4.1.4, después del cuadro de rangos",
+  "cita_textual": "En todos los casos se tendrá en cuenta hasta el séptimo (7°) decimal del valor obtenido como puntaje y las fórmulas se aplicarán con las propuestas que no han sido rechazadas y se encuentran válidas.",
+  "afirmacion": "El puntaje económico se calcula con hasta siete decimales y solo con las propuestas no rechazadas y válidas.",
+  "eje": 9,
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-PRECIO",
+  "autoridad": "A3",
+  "vigencia_verificada": {
+    "fecha": "2026-10-19",
+    "fuente": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo (v4 'Versión vigente' desde 03/02/2025) y https://www.colombiacompra.gov.co/documentos-tipo/vigentes/?sector=712&nodo=29383"
+  },
+  "leida_por": "lector fase2 eje9-academica",
+  "tipo_contrato": "obra",
+  "url_final": "https://www.colombiacompra.gov.co/documentos-tipo/descarga-zip/29383",
+  "anio_origen": "inferido",
+  "notas": "En el mismo numeral: «Las propuestas que al aplicar las fórmulas obtengan puntajes negativos obtienen cero (0) puntos en la oferta económica.»",
+  "reformas_cotejadas": [
+    "Resolución 465 de 2024 art. 8: rige para procesos con aviso de convocatoria desde el 3-feb-2025 y deroga la Res. 240 de 2020 y sus modificaciones (leída completa)",
+    "Control de versiones de Colombia Compra (abierta 19-oct-2026): para licitación de transporte lista V.4 «Versión vigente» sin resoluciones modificatorias posteriores",
+    "No se encontró ni abrió resolución posterior que modifique la v4; verificar en la página de vigentes antes de usar"
+  ]
+}

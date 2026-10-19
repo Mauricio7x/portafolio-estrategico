@@ -1,0 +1,30 @@
+{
+  "id": "F-1176",
+  "tipo": "academia",
+  "autor": "Mendoza Vargas, O. G.",
+  "titulo": "Incidencia de los estudios técnicos en el alcance, tiempo y costo de los contratos de obra pública en el Departamento de Arauca, vigencias 2015 y 2016 (trabajo de grado, Maestría en Construcción)",
+  "anio": 2022,
+  "institucion": "Universidad Nacional de Colombia, Sede Medellín, Facultad de Arquitectura",
+  "url": "https://bffrepositorio.unal.edu.co/server/api/core/bitstreams/e0d04668-8a13-46bb-a3ea-a62e660681cf/content",
+  "fecha_consulta": "2026-10-19",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "resumen (p. 9 del PDF)",
+    "resultados, pp. 89-94 del PDF"
+  ],
+  "localizador": "5. Resultados, p. 94 del PDF (tabla 5-2)",
+  "cita_textual": "el 5.48% de los proyectos presentaron sobrecostos debido a que sus estudios técnicos tienen un origen desconocido o fueron donados o cedidos a la Gobernación de Arauca, mientras que en el 1.37% de los proyectos se dio este efecto luego de la participación de un contrato de consultoría.",
+  "afirmacion": "En los 73 contratos hubo 5 con sobrecostos: 4 (5,48% del total) con estudios donados o de origen desconocido y 1 (1,37%) con estudios de consultoría.",
+  "eje": 9,
+  "etapa": "E4",
+  "decision": "D4",
+  "modulo": "M-PRECIO",
+  "autoridad": "A6",
+  "vigencia_verificada": "[sin verificar] — afirmación académica (A6): se registra lo que dice el autor, no la norma; no se abrió ningún texto oficial para esta afirmación; 5 casos en 73 contratos de un departamento",
+  "leida_por": "lector fase2 eje9-academica",
+  "tipo_contrato": "obra",
+  "pagina_pdf": 94,
+  "anio_origen": "portada",
+  "notas": "La tabla 5-2 de la tesis también da el efecto en tiempo: 10 contratos con estudios donados y 4 con consultoría presentaron retraso (13,70% y 5,48% de 73).",
+  "cifra_comprobada": "cuadra como fracciones de 73 (4/73 = 5,48%; 1/73 = 1,37%). No cuadra como comparación entre orígenes: 4/63 = 6,3% con estudios donados frente a 1/10 = 10% con consultoría; con un caso por lado, no hay base para decir que unos estudios producen más sobrecostos que otros."
+}

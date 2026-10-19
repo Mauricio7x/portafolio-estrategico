@@ -1,0 +1,36 @@
+{
+  "id": "F-1151",
+  "tipo": "ley",
+  "autor": "Gobierno nacional (Decreto 624 de 1989, Estatuto Tributario, con las leyes que lo reforman)",
+  "titulo": "Estatuto Tributario, art. 462-1 (base gravable especial), compilación con notas de vigencia",
+  "anio": 1989,
+  "institucion": "Alcaldía Mayor de Bogotá – Régimen Legal",
+  "url": "https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=6533",
+  "fecha_consulta": "2026-10-19",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "artículo 462-1 y sus parágrafos"
+  ],
+  "localizador": "ET art. 462-1 (modificado por el art. 46 de la Ley 1607 de 2012), inciso primero",
+  "cita_textual": "Para los servicios integrales de aseo y cafetería, de vigilancia […] la tarifa será del 16%* en la parte correspondiente al AIU (Administración, Imprevistos y Utilidad), que no podrá ser inferior al diez por ciento (10%) del valor del contrato.",
+  "afirmacion": "El art. 462-1 del Estatuto Tributario fija la base especial de IVA sobre el AIU solo para aseo y cafetería integral, vigilancia, servicios temporales y cooperativas de trabajo asociado; no menciona contratos de construcción ni de obra civil.",
+  "eje": 9,
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-PRECIO",
+  "autoridad": "A1",
+  "vigencia_verificada": {
+    "fecha": "2026-10-19",
+    "fuente": "https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=6533 (Estatuto Tributario compilado con notas de vigencia)"
+  },
+  "leida_por": "lector fase2 eje9-academica",
+  "tipo_contrato": "obra",
+  "anio_origen": "portada",
+  "notas": "PREMISA DEL ENCARGO CORREGIDA: el encargo ubicaba aquí el IVA sobre la utilidad en obra; el artículo no regula obra. La regla de obra es otra (ver F-1153, ficha del Concepto DIAN 4761 de 2019, que cita el art. 3 del Decreto 1372 de 1992). El texto compilado conserva «16%*» con asterisco; la tarifa general del IVA es hoy 19% (la propia DIAN lo dice en su concepto de 2019), por lo que ese 16% no debe usarse como cifra.",
+  "reformas_cotejadas": [
+    "Ley 1607 de 2012 art. 46 (texto vigente del inciso)",
+    "Ley 1819 de 2016 art. 182 (modifica el parágrafo)",
+    "Ley 2277 de 2022 art. 75 (adiciona el parágrafo 2, transporte de valores)",
+    "Compilación de Bogotá; no se contrastó con una segunda compilación ni con leyes posteriores a 2022"
+  ]
+}

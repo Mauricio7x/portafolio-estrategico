@@ -1,0 +1,32 @@
+{
+  "id": "F-1138",
+  "tipo": "doc_tipo",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Resolución 465 de 2024, por la cual se adopta la versión 4 de los Documentos Tipo de licitación de obra pública de infraestructura de transporte y se deroga la Resolución 240 de 2020",
+  "anio": 2024,
+  "institucion": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga-zip/29383/",
+  "fecha_consulta": "2026-10-19",
+  "estado_lectura": "completa",
+  "localizador": "art. 8 «Vigencia y derogatorias» (p. 6 del PDF)",
+  "cita_textual": "licitación de obra pública de infraestructura de transporte, cuyo aviso de convocatoria se publique a partir del 3 de febrero de 2025.",
+  "afirmacion": "La versión 4 de los documentos tipo de licitación de obra de transporte aplica a los procesos cuyo aviso de convocatoria se publique desde el 3-feb-2025 y deroga la Resolución 240 de 2020 y sus modificaciones; los procesos anteriores siguen con la v3.",
+  "eje": 9,
+  "etapa": "E2",
+  "decision": "D1",
+  "modulo": "M-DOC",
+  "autoridad": "A3",
+  "vigencia_verificada": {
+    "fecha": "2026-10-19",
+    "fuente": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo (v4 'Versión vigente' desde 03/02/2025)"
+  },
+  "leida_por": "lector fase2 eje9-academica",
+  "tipo_contrato": "obra",
+  "pagina_pdf": 6,
+  "url_final": "https://www.colombiacompra.gov.co/documentos-tipo/descarga-zip/29383",
+  "anio_origen": "portada",
+  "notas": "El PDF tiene la columna de derogatorias partida por el sello; el art. 8 completo es: «La presente resolución rige a partir de su publicación, deroga la Resolución 240 de 2020 y sus modificaciones posteriores, y aplica a los procesos de selección de licitación de obra pública de infraestructura de transporte, cuyo aviso de convocatoria se publique a partir del 3 de febrero de 2025.»",
+  "reformas_cotejadas": [
+    "Control de versiones de Colombia Compra (abierta 19-oct-2026): V.3 01/01/2021–02/02/2025 «anterior»; V.4 desde 03/02/2025 «vigente»"
+  ]
+}

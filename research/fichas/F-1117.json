@@ -1,0 +1,34 @@
+{
+  "id": "F-1117",
+  "tipo": "doc_tipo",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Documento Base de concurso de méritos para consultoría de estudios de ingeniería de obra pública de infraestructura social (Documentos Tipo transversales, Resolución 952 de 2025)",
+  "anio": 2025,
+  "institucion": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29624/",
+  "fecha_consulta": "2026-10-19",
+  "estado_lectura": "parcial",
+  "localizador": "Documento Base consultoría social, capítulo V «Oferta económica» (5.1 correcciones aritméticas, índice del .docx: p. impresa 83), causales de rechazo y numeral de adjudicación",
+  "cita_textual": "«adjudicará el proceso al Proponente ubicado en el primer lugar del orden de elegibilidad y cuya oferta económica esté acorde con el presupuesto del Proceso de Contratación.»",
+  "afirmacion": "En el concurso de méritos de consultoría de estudios de ingeniería de infraestructura social el precio tampoco puntúa (experiencia del proponente 67,50, equipo 10, sostenibilidad 1, industria nacional 20, discapacidad 1, mujeres 0,25, Mipyme 0,25): se adjudica al primero del orden de elegibilidad con oferta acorde al presupuesto; exceder el presupuesto o no aplicar el factor multiplicador rechaza solo si no se subsana.",
+  "eje": 9,
+  "etapa": "E2",
+  "decision": "D2",
+  "modulo": "M-PRECIO",
+  "autoridad": "A3",
+  "vigencia_verificada": {
+    "fecha": "2026-10-19",
+    "fuente": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo (consultoría de infraestructura social: V.1 «Versión vigente» desde 16/02/2026)"
+  },
+  "leida_por": "lector fase2 eje9-institucional",
+  "tipo_contrato": "consultoria",
+  "anio_origen": "inferido",
+  "url_final": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29624",
+  "reformas_cotejadas": [
+    "Control de versiones de Documentos Tipo (abierto el 2026-10-19): consultoría social V.1 vigente desde 16/02/2026",
+    "Resolución 952 de 2025: nombrada en la página del documento tipo (descarga/29617 y siguientes) como la que adopta estos documentos; el PDF no se abrió",
+    "Decreto 0997 de 2026, art. 14 par. 3: los procesos con documentos tipo siguen con ellos hasta nuevas versiones"
+  ],
+  "cifra_comprobada": "cuadra: 67,50 + 10 + 1 + 20 + 1 + 0,25 + 0,25 = 100,00.",
+  "notas": "Fuente: archivo .docx dentro del ZIP «05DT_Transversales_ISocialConV2.zip» (descarga/29624, GET del 2026-10-19). El nombre del archivo dice «ConV2» mientras la página de control de versiones dice V.1 para esta modalidad: la etiqueta de versión no se resolvió. Literal de causales: «Que el valor total de la oferta exceda el Presupuesto Oficial estimado para el Proceso de Contratación [o para el lote o segmento frente al que presentó oferta] y no se subsane ese defecto» y «[Incluir cuando la Entidad exija la discriminación del valor de la oferta económica incorporando el factor multiplicador] No haber realizado la operación matemática con el Factor Multiplicador […]». La TRM «segundo día hábil después de finalizado el periodo de traslado del informe de evaluación» elige el método de la experiencia, igual que en transporte (F-1087). Cuadro: «Experiencia del Proponente 67,50 Equipo de trabajo (Personal Clave Evaluable) 10 Factor de sostenibilidad 1 Apoyo a la industria nacional 20 Vinculación de personas con discapacidad 1 Emprendimientos y empresas de mujeres 0,25 Mipyme 0,25 Total 100»."
+}

@@ -1,0 +1,35 @@
+{
+  "id": "F-1180",
+  "tipo": "ley",
+  "autor": "Congreso de la República",
+  "titulo": "Ley 80 de 1993, art. 40, parágrafo (compilación con notas de vigencia)",
+  "anio": 1993,
+  "institucion": "Alcaldía Mayor de Bogotá – Régimen Legal",
+  "url": "https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=304",
+  "fecha_consulta": "2026-10-19",
+  "estado_lectura": "parcial",
+  "partes_leidas": [
+    "artículo 40 y sus notas"
+  ],
+  "localizador": "art. 40, parágrafo",
+  "cita_textual": "Los contratos no podrán adicionarse en más del cincuenta por ciento (50%) de su valor inicial, expresado éste en salarios mínimos legales mensuales.",
+  "afirmacion": "La ley limita las adiciones a 50% del valor inicial del contrato expresado en salarios mínimos; el mismo parágrafo limita el pago anticipado y los anticipos a 50% del valor del contrato.",
+  "eje": 9,
+  "etapa": "E4",
+  "decision": "D4",
+  "modulo": "M-PRECIO",
+  "autoridad": "A1",
+  "vigencia_verificada": {
+    "fecha": "2026-10-19",
+    "fuente": "https://www.alcaldiabogota.gov.co/sisjur/normas/Norma1.jsp?i=304 (Ley 80 compilada con notas de vigencia)"
+  },
+  "leida_por": "lector fase2 eje9-academica",
+  "tipo_contrato": "todos",
+  "anio_origen": "portada",
+  "notas": "Primera frase del parágrafo: «En los contratos que celebren las entidades estatales se podrá pactar el pago anticipado y la entregada de anticipos, pero su monto no podrá exceder del cincuenta por ciento (50%) del valor del respectivo contrato.» Los conceptos C-1245 y C-1411 de 2026 de Colombia Compra aplican el tope a mayores cantidades de obra e ítems nuevos y excluyen el reajuste pactado; para calcularlo, valor inicial / SMMLV de la firma / 2.",
+  "reformas_cotejadas": [
+    "Decreto Legislativo 537 de 2020 art. 8: adición transitoria sin límite de valor solo para contratos relacionados con la gestión de la emergencia sanitaria COVID-19 y mientras durara la emergencia (nota de la compilación; su fecha de terminación no se verificó aquí)",
+    "Ley 1474 de 2011 art. 85: remisión que trae la compilación; no se abrió",
+    "Compilación de Bogotá: no se contrastó con una segunda compilación"
+  ]
+}

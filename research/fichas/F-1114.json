@@ -1,0 +1,38 @@
+{
+  "id": "F-1114",
+  "tipo": "doc_tipo",
+  "autor": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "titulo": "Resolución 464 de 2024: actualiza los Documentos Tipo de mínima cuantía de obra pública de infraestructura de transporte",
+  "anio": 2024,
+  "institucion": "Agencia Nacional de Contratación Pública – Colombia Compra Eficiente",
+  "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29403/",
+  "fecha_consulta": "2026-10-19",
+  "estado_lectura": "parcial",
+  "localizador": "Resolución 464 de 2024, art. 22 «Vigencia y derogatorias» (PDF de 18 páginas, p. 18)",
+  "cita_textual": "«La presente resolución rige a partir de su publicación y aplica a los procesos de contratación de obra pública de infraestructura de transporte adelantados bajo la modalidad de mínima cuantía, cuya invitación se publique a partir del 3 de febrero de 2025.»",
+  "afirmacion": "La Resolución 464 de 2024 (y no de 2023, como dice la página de control de versiones) actualiza los documentos tipo de mínima cuantía de obra de transporte y aplica a invitaciones publicadas desde el 3 de febrero de 2025.",
+  "eje": 9,
+  "etapa": "E2",
+  "decision": "D3",
+  "modulo": "M-DICT",
+  "autoridad": "A3",
+  "vigencia_verificada": {
+    "fecha": "2026-10-19",
+    "fuente": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo (mínima cuantía de transporte: V.2 con modificaciones vigente desde 03/02/2025)"
+  },
+  "leida_por": "lector fase2 eje9-institucional",
+  "tipo_contrato": "obra",
+  "anio_origen": "portada",
+  "url_final": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29403",
+  "partes_leidas": [
+    "encabezado",
+    "art. 22 (vigencia)",
+    "búsqueda de «oferta económica» y causales"
+  ],
+  "reformas_cotejadas": [
+    "Control de versiones de Documentos Tipo (abierto el 2026-10-19): V.2 con modificaciones desde 03/02/2025",
+    "Decreto 0997 de 2026, art. 14 par. 3: los procesos con documentos tipo siguen con ellos hasta nuevas versiones"
+  ],
+  "pagina_pdf": 18,
+  "notas": "PDF con capa de texto, descargado de descarga/29403 («02Res464_2024_TMinCV2.pdf»). Resuelve la discrepancia anotada en la ficha F-1080: el encabezado dice «DE 2024» y el texto de vigencia fija el 3-feb-2025; la fila de la página de control de versiones que dice «10 de septiembre de 2023» es un error de la página. La resolución reproduce las causales de rechazo, incluidas «No discriminar en la oferta económica el porcentaje de AIU» y «Ofrecer como AIU un porcentaje cuya sumatoria sea superior al establecido por la Entidad» (texto de OCR del propio PDF, no citado)."
+}
