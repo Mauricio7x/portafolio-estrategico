@@ -28,6 +28,7 @@ con `node tests/estado.js`, y las coordenadas las da `node tests/mapa.js <térmi
 | `docs/INVESTIGACION_PLATAFORMAS_LICITACIONES.md` | informe fechado | — | `tests` | Investigación · Las cinco mejores plataformas de licitación pública del mundo |
 | `docs/PROPONENTE_PLURAL.md` | informe fechado | — | `lib` · `tests` | Proponente plural: la norma vigente, 241 pliegos reales y las cifras de los RUP |
 | `docs/RAMAS_RETIRADAS.md` | informe fechado | — | `tests` | Ramas superadas al unificar en `main` (21-ago-2026) |
+| `docs/CONTRATACION_ESTATAL.md` | informe fechado (19-oct-2026) | — | `.claude` | Contratación estatal de obra en Colombia · base de conocimiento |
 | `docs/ARQUITECTURA_MULTITENANT.md` | pendiente del dueño | — | — | Anexo C · Arquitectura multi-inquilino, escalabilidad y datos |
 | `docs/CHECKLIST_PRODUCCION.md` | pendiente del dueño | — | — | Anexo F · Lista de verificación previa a producción |
 | `docs/EMPEZAR_AQUI.md` | pendiente del dueño | — | `README.md` | EMPEZAR AQUÍ · Guía de cero para convertir Detekta en un negocio |
@@ -97,6 +98,7 @@ con `node tests/estado.js`, y las coordenadas las da `node tests/mapa.js <térmi
 | `docs/reforma_datos/V-D49-D56-verificacion.md` | informe fechado | — | — | Verificación adversaria · D-49 … D-56 · 14-sep-2026 |
 | `docs/reforma_datos/V-D57-D64-verificacion.md` | informe fechado | — | — | Verificación adversaria de D-57 … D-64 (13/14-sep-2026) |
 | `docs/reforma_datos/V-D65-D72-verificacion.md` | informe fechado | — | — | Verificación adversaria · D-65 a D-72 (13/14-sep-2026) |
+| `docs/CONTRATACION_ESTATAL_FUENTES.md` | informe fechado (19-oct-2026) | — | `.claude` | Contratación estatal de obra en Colombia · índice de fuentes |
 | `docs/PROMPT_CONSULTORIA_SAAS.md` | pendiente del dueño | — | — | PROMPT MAESTRO · CONSEJO CONSULTOR DE DETEKTA |
 | `CLAUDE.md` | referencia | — | `.claude` · `CLAUDE.md` · `README.md` · `lib` · `public` · `tests` | CLAUDE.md · Detekta |
 | `docs/COMPLEMENTO_ANALISTA_LICITACIONES.md` | referencia | — | `CLAUDE.md` · `README.md` · `lib` | Complemento crítico al Manual del Analista de Licitaciones |

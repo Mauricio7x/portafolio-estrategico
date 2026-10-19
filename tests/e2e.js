@@ -31007,9 +31007,10 @@ async function main() {
           /* UNA FUNCIÓN DECLARADA DOS VECES EN EL MISMO ÁMBITO NO FALLA: LA SEGUNDA PISA A LA PRIMERA, EN SILENCIO (19-oct-2026).
              El 17-oct-2026 (b73c38e) el arranque de la app se llamó `arrancar`, igual que el de Precios, ya declarado en el mismo
              IIFE: la llamada de la pestaña Precios ejecutaba el arranque de la app, y Precios no cargaba su catálogo ni su
-             desplegable de departamentos (medido en Chromium: 0 peticiones a op=catalogo). Ninguna prueba lo vio: JavaScript no lo
-             avisa. CENSO, no lista: se barren TODOS los public/*.js y se cuentan las declaraciones `function nombre(` al nivel del
-             IIFE o del archivo (sangría de 0 a 2 espacios), donde el ámbito es compartido; las excepciones se DECLARAN aquí con su motivo
+             desplegable de departamentos (medido en Chromium: 0 peticiones a op=catalogo; y en producción, el app.js servido
+             por detekta-app.vercel.app trae las dos declaraciones). Ninguna prueba lo vio: JavaScript no lo avisa. CENSO, no
+             lista: se barren TODOS los public/*.js y se cuentan las declaraciones `function nombre(` al nivel del IIFE o del
+             archivo (sangría de 0 a 2 espacios), donde el ámbito es compartido; las excepciones se DECLARAN aquí con su motivo
              (hoy ninguna). Una declaración más anidada vive en su propia función y puede repetirse. */
           {
             const dir = path.join(__dirname, "..", "public");

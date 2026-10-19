@@ -19861,23 +19861,6 @@ En una línea: la fila del Formulario 1 en Excel que pasó la puerta trae, en el
 **Sin verificar.** Todo contra un servidor simulado: el `importar` real con precios de bancos, un proceso real de punta a punta, y un teléfono físico (a 390 px la vista previa solo deja ver las columnas Ítem, Descripción y Unidad: es el diseño del modal, no del botón).
 
 
-### El arranque de Precios estaba pisado por el de la app, y una función repetida en el mismo ámbito no avisa (19-oct-2026)
-
-En una línea: el 17-oct-2026 (`b73c38e`) el arranque de la app se llamó `arrancar`, igual que el de la pestaña Precios, ya declarado en el mismo IIFE; JavaScript no avisa: la segunda declaración pisa a la primera, así que abrir Precios ejecutaba el arranque de la APP y Precios no cargaba su catálogo ni llenaba su desplegable de departamentos; el de Precios se llama ahora `arrancarPrecios` y una prueba barre todos los `public/*.js` buscando declaraciones repetidas.
-
-**Qué pasó.** Lo vio un subagente probando el botón «Cotizar en Precios» en Chromium (0 peticiones a `op=catalogo`, 0 opciones en `#departamento`, `op=sesion` pedido dos veces), y se reprodujo aparte: acorn confirma las dos declaraciones en el mismo ámbito (líneas 27–12727), `git show b73c38e^:public/app.js` tiene UNA y `b73c38e` DOS, y ese commit ya estaba en `origin/main`. Ninguna prueba lo vio: la que vigilaba el orden «catálogo antes de la segunda precarga» y la que exigía que cada pestaña se inicializara al activarse buscaban el texto `async function arrancar()` y `arrancadas.apu … arrancar()` y los encontraban —el primero— aunque el segundo mandara. Con el renombre, el departamento enviado a `op=importar` pasa de `""` a «Antioquia» en Chromium.
-
-**Qué se decidió.**
-- **Se renombra la de Precios, no la de la app**: la de la app es la que arranca la página (`arrancar()` al final del IIFE) y la de Precios solo se llama desde `activarPestana`; tocar la de Precios es un cambio de dos líneas.
-- **Una invariante se defiende con un censo.** La prueba barre TODOS los `public/*.js` (sin comentarios) y cuenta las declaraciones `function nombre(` con sangría de 0 a 2 espacios —el ámbito compartido del IIFE o del archivo—; una declaración más anidada vive en su propia función y puede repetirse. Las excepciones se declaran en la propia prueba con su motivo (hoy ninguna). Mutación: devolver el nombre repetido la hace fallar con «`arrancar` en las líneas …».
-- **Las pruebas por nombre se actualizaron** (`arrancarPrecios`) y la del orden del catálogo ahora exige que la función exista con su propio nombre.
-
-**Medido en producción el 19-oct-2026 (solo lectura, GET del `app.js` estático de `detekta-app.vercel.app` con el pase de automatización de Vercel; `portafolio-estrategico.vercel.app` responde «DEPLOYMENT_NOT_FOUND» y no es la de hoy).** El `app.js` que sirve producción tiene las dos declaraciones de `arrancar` en el mismo ámbito (acorn: líneas 27–12688, la pestaña Precios llama a `arrancar()`) y es byte a byte el de `main` en `4c8431a` (md5 `2d9b1b7c92df3fe26bba99bd261bb14c`, que es también el `etag`). El defecto entró a `main` con el merge del #245 (`f1e0d75`, 17-oct-2026 23:43 hora -05:00): `f1e0d75^1` tiene UNA declaración y `f1e0d75` DOS. Producción llevaba entonces unas 40 horas con Precios sin arrancar. `last-modified` de Vercel es la hora de la petición, no la de un despliegue: la hora exacta del despliegue no se consultó.
-
-**Qué dejaba de hacer Precios** (Chromium, copia de la rama con el defecto frente al árbol arreglado, API simulada): con el defecto no se pide `op=catalogo`, `#departamento` queda con 0 opciones y faltan `op=parametros` y el listado de borradores (`contarBorradores`); con el arreglo salen todos. Por lectura del código, el registro del botón «Calcular rentabilidad» (`btn-rentabilidad`), el de la justificación y el aviso de cambio de perfil viven SOLO en esa función. **Inferencia, sin ejecutar:** el defecto deja la pestaña sin catálogo ni departamento y sus botones sin respuesta, no cifras equivocadas; qué habría mostrado un cálculo hecho sin catálogo cargado no se probó, y qué vio el usuario en ese tiempo solo lo sabe él.
-
-**Sigue pendiente.** El arreglo está en la rama `claude/fervent-einstein-cx2ohx`, no en `main`: producción no lo tiene hasta que llegue por pull request.
-
 ### La revisión adversaria del Formulario 1 en Excel: la hoja equivocada, la tolerancia, la caducidad y los topes (19-oct-2026)
 
 En una línea: un subagente que no escribió el código lo atacó con 325 Excel reales y con libros fabricados, y halló una hoja equivocada publicada como presupuesto (el plan de manejo ambiental de un hospital, 5 % del total), una tolerancia que dejaba pasar un ítem omitido, Formularios que no caducaban, un cambio mío que alteraba el lector de PDF y libros que reventaban la memoria; todo se corrigió o se declaró, y de 59 publicables quedan 52.
@@ -19917,3 +19900,34 @@ En una línea: la casilla «Solo las que cumplen los requisitos» de la pestaña
 
 **Sin verificar.** El efecto sobre el número real de tarjetas que verá el dueño (la lista de producción fusiona obras gemelas y aplica el histórico de competencia); cómo se ve en el teléfono con 55 a 142 tarjetas más al final.
 
+### La base de contratación estatal queda en docs/, sin cobertura medida, y el contador de uso ya existía (19-oct-2026)
+
+En una línea: la investigación de contratación estatal de obra queda en `docs/CONTRATACION_ESTATAL.md` con su índice de fuentes y la habilidad `/contratacion`; se retira una norma completa y una cifra, se corrigen cuatro cifras, y dos vacíos que el crítico señaló ya estaban en el código. La cobertura de Detekta no se mide con esta base, y el contador de uso que se iba a construir ya existe (`lib/uso`, desde el 27-sep-2026, por perfil).
+
+**Qué se decidió y por qué.**
+- **La cobertura no se publica.** Los agentes clasificaron cada problema como cubierto, a medias o no cubierto leyendo documentos, no el código. Esa clasificación no dice qué hace Detekta, así que se omite del documento. Medir la cobertura es un trabajo aparte.
+- **Se retiran las afirmaciones que no son regla legal.** DET-25 sale completo: la TVEC obligatoria para compras que no excedan el 10 % de la menor cuantía ya no está en el texto vigente del numeral 5 del art. 2 de la Ley 1150, y los indicadores financieros los fija cada pliego. El Decreto 777 de 1992 (5 % para honorarios) se retira porque el decreto está derogado.
+- **Lo que el crítico marcó como vacío y ya estaba en el código** no se propone de nuevo: la contribución del 5 % de obra pública (`lib/apu/calculo.js`) y la inhabilidad por incumplimiento reiterado para socios (`lib/socio.js`).
+- **Las cifras sin verificar siguen como están,** con su marca. No se reescriben ni se presentan como confirmadas.
+
+**Lo que no hay que re-aprender.**
+1. **Antes de decir «no existe», buscar con el término del código.** La ruta de mercado se escribió sin contar con `lib/uso`, y la búsqueda de hoy dijo «no hay contador» sin encontrarlo. `node tests/mapa.js uso` lo devuelve.
+2. **El contador de uso cuenta por perfil, no por persona.** Su llave es `uso:{perfil}:{YYYY-MM}`, y la sección «Medir el uso» lo dice: la llave no distingue al dueño de un visitante que use el mismo perfil.
+3. **La verificación de normas no alcanza todas las cifras.** Se abrieron las normas, plazos, porcentajes y sentencias de los problemas de gravedad media o alta. Las demás quedaron sin verificar.
+
+> PENDIENTE · el dueño decide si el conteo de uso se mantiene por perfil (como se decidió el 27-sep-2026) o pasa a ser anónimo, sin perfil ni nombre. El 19-oct-2026 se propuso un conteo anónimo sin usuario ni NIT y se aprobó el punto de la ruta con esa descripción; lo que existe hoy no es anónimo.
+
+### El arranque de Precios estaba pisado por el de la app, y una función repetida en el mismo ámbito no avisa (19-oct-2026)
+
+En una línea: el 17-oct-2026 (`b73c38e`, entrado a `main` con el #245) el arranque de la app se llamó `arrancar`, igual que el de la pestaña Precios, ya declarado en el mismo IIFE; JavaScript no avisa: la segunda declaración pisa a la primera, así que abrir Precios ejecutaba el arranque de la APP y Precios no cargaba su catálogo ni llenaba su desplegable de departamentos; el de Precios se llama ahora `arrancarPrecios` y una prueba barre todos los `public/*.js` buscando declaraciones repetidas.
+
+**Qué pasó.** Lo vio un subagente probando un botón nuevo en Chromium (0 peticiones a `op=catalogo`, 0 opciones en `#departamento`, `op=sesion` pedido dos veces) y se reprodujo aparte: acorn confirma las dos declaraciones en el mismo ámbito, `f1e0d75^1` (el `main` justo antes del #245) tiene UNA y `f1e0d75` DOS. Ninguna prueba lo vio: la que vigilaba el orden «catálogo antes de la segunda precarga» y la que exigía que cada pestaña se inicializara al activarse buscaban el texto `async function arrancar()` y `arrancadas.apu … arrancar()` y los encontraban —el primero— aunque el segundo mandara.
+
+**Medido en producción el 19-oct-2026 (solo lectura, GET del `app.js` estático de `detekta-app.vercel.app` con el pase de automatización de Vercel).** El `app.js` servido tiene las dos declaraciones en el mismo ámbito (la pestaña Precios llama a `arrancar()`) y es byte a byte el de `main` en `4c8431a` (md5 `2d9b1b7c92df3fe26bba99bd261bb14c`, que es también el `etag`). Entre el merge del #245 (17-oct-2026 23:43, hora -05:00) y esta corrección pasaron unas 40 horas con Precios sin arrancar. La hora exacta del despliegue no se consultó: el `last-modified` de Vercel es la hora de la petición.
+
+**Qué dejaba de hacer Precios** (Chromium, copia con el defecto frente al árbol arreglado, API simulada): sin `op=catalogo`, `#departamento` con 0 opciones y sin `op=parametros` ni el listado de borradores (`contarBorradores`); con el arreglo salen todos. Por lectura del código, el registro del botón «Calcular rentabilidad», el de la justificación y el aviso de cambio de perfil viven SOLO en esa función. **Inferencia, sin ejecutar:** la pestaña quedaba sin catálogo ni departamento y con botones sin respuesta, no con cifras equivocadas; qué habría mostrado un cálculo hecho sin catálogo no se probó, y qué vio el usuario en ese tiempo solo lo sabe él.
+
+**Qué se decidió.**
+- **Se renombra la de Precios, no la de la app**: la de la app arranca la página (`arrancar()` al final del IIFE) y la de Precios solo se llama desde `activarPestana`; tocar la de Precios es un cambio de pocas líneas.
+- **Una invariante se defiende con un censo.** La prueba barre TODOS los `public/*.js` (sin comentarios) y cuenta las declaraciones `function nombre(` con sangría de 0 a 2 espacios —el ámbito compartido del IIFE o del archivo—; una declaración más anidada vive en su propia función y puede repetirse. Las excepciones se declaran en la propia prueba con su motivo (hoy ninguna). Mutación: devolver el nombre repetido la hace fallar con «`arrancar` en las líneas …».
+- **Las pruebas por nombre se actualizaron** (`arrancarPrecios`) y la del orden del catálogo ahora exige que la función exista con su propio nombre.
