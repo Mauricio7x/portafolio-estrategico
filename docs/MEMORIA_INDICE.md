@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 1941533 bytes · 368 secciones · 27 con marcador de superación.
+Derivado del árbol: 1944875 bytes · 369 secciones · 28 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -378,4 +378,5 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | La fórmula en prosa no afirma el anticipo: «presupuesto oficial menos el anticipo…» es mención (18-oct-2026) | 18-oct-2026 | 19701-19729 | 2936 |  |
 | El clasificador lee los nombres con separadores y los nuevos de Colombia Compra («DocBase_…») (18-oct-2026) | 18-oct-2026 | 19730-19757 | 3687 |  |
 | La carga completa ya no para con una actualización a medias, y el tiempo agotado de Upstash dice qué comando fue (18-oct-2026) | 18-oct-2026 | 19758-19774 | 4214 |  |
-| Registro del 19-oct-2026: hechos nuevos y pendientes de la revisión del proyecto (solo texto) | 19-oct-2026 | 19775-19798 | 3485 |  |
+| Registro del 19-oct-2026: hechos nuevos y pendientes de la revisión del proyecto (solo texto) | 19-oct-2026 | 19775-19800 | 3666 | «La regla del art. 90 se cuenta en 3 años, no por vigencia fiscal; la Resolución 240 se cita como derogada (19-oct-2026)» |
+| La regla del art. 90 se cuenta en 3 años, no por vigencia fiscal; la Resolución 240 se cita como derogada (19-oct-2026) | 19-oct-2026 | 19801-19821 | 3161 |  |

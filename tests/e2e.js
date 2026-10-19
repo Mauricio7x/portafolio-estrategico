@@ -22293,6 +22293,19 @@ async function main() {
         // dos multas en una vigencia: «verificar incumplimientos» (2 multas + 1 incumplimiento inhabilita)
         const dos = agregarMultas([1, 2].map((i) => ({ valor_sancion: "1", fecha_de_firmeza: `${ANO}-0${i}-01T00:00:00.000` })));
         assert.strictEqual(dos.inhabilidad_reiterada.senal, "verificar_incumplimientos");
+        /* Ley 1955/2019 art. 43, literal a): 5 multas en los últimos 3 años, sin importar el año fiscal.
+           Con el reloj fijo (15-ene-2022) las cinco caen dentro de la ventana y la regla tiene que decir
+           «posible inhabilidad vigente». El código anterior, que contaba por vigencia, decía solo «verificar». */
+        const AHORA_FIJO = Date.parse("2022-01-15T12:00:00Z");
+        const repartidas = agregarMultas(["2019-03-01", "2019-06-01", "2020-03-01", "2020-09-01", "2021-02-01"].map((d) => ({ documento_contratista: "1", valor_sancion: "1", fecha_de_firmeza: `${d}T00:00:00.000` })), AHORA_FIJO);
+        assert.strictEqual(repartidas.inhabilidad_reiterada.senal, "posible_inhabilidad", "5 en 3 años, en años distintos, tiene que marcar");
+        assert.strictEqual(repartidas.inhabilidad_reiterada.multas_ultimos_3_anios, 5);
+        assert.strictEqual(repartidas.inhabilidad_reiterada.podria_estar_vigente, true);
+        /* Cuatro dentro de la ventana y una de hace más de tres años: NO llega a cinco, así que no es posible
+           inhabilidad vigente. La antigua tampoco cuenta; sin ella el caso queda en «verificar». */
+        const cuatroYUnaVieja = agregarMultas(["2018-03-01", "2019-06-01", "2020-03-01", "2020-09-01", "2021-02-01"].map((d) => ({ documento_contratista: "1", valor_sancion: "1", fecha_de_firmeza: `${d}T00:00:00.000` })), AHORA_FIJO);
+        assert.strictEqual(cuatroYUnaVieja.inhabilidad_reiterada.multas_ultimos_3_anios, 4, "la de 2018 cae fuera de la ventana");
+        assert.notStrictEqual(cuatroYUnaVieja.inhabilidad_reiterada.podria_estar_vigente, true, "cuatro en ventana no inhabilitan");
         // sin multas, sin SIRI, sin contratos: «sin hallazgos», jamás «limpio»
         const sinNada = semaforo({ siri: { ok: true, n: 0 }, multas: { ok: true, multas: 0, inhabilidad_reiterada: {} }, contratos: { ok: true, contratos: 0 } });
         assert.strictEqual(sinNada.nivel, "sin_hallazgos");
