@@ -20080,3 +20080,24 @@ En una línea: el dueño pulsó «Volver a buscar los documentos» y vio «Los d
 En Chromium real (dos procesos, uno lento que ocupa la fila y el del dueño pedido a mano): «Esperando turno: ahora se lee «Pavimentación de la calle 5 del barrio Centro» (CO1.REQ.22222222)…», luego «bajando el archivo: 3,0 MB de 5,3 MB» con barra al 57 %, «preparando la página n de 6», «reconociendo el texto de las páginas 1 a 5 de 6» con barra en 0 % y «la página 6 de 6 (5 ya reconocidas)» al 83 %; al terminar la línea queda vacía; los `tiempos` llegan en el POST; 0 errores de página. 19 mutaciones, las 19 mueren.
 
 **Sin verificar.** El contador de `espera_ms` con esperas reales del servicio saturado (la prueba no simula las esperas largas); cuánto tarda de verdad cada etapa en producción; que las tres hipótesis de arriba sean las causas.
+
+### Las tandas de OCR se arman por PESO, no por 5 páginas fijas: el estudio previo del dueño falló con «código 413» (20-oct-2026)
+
+En una línea: el dueño recargó el expediente de CO1.REQ.11033801 y «ESTUDIO PREVIO.pdf» (escaneo de 78 páginas) salió «No se pudo leer: el reconocimiento de texto no respondió: … (código 413)»; el 413 es «cuerpo demasiado grande» y se midió con el PDF real que el navegador arma tandas fijas de 5 páginas de 1,75 a 4,05 MB (la primera pasa el tope de 4 MB de la aplicación y otras quedan a menos de 0,6 MB de los 4,5 MB de Vercel), así que ahora la tanda cierra al llegar a 5 páginas o a 3,5 MB de cuerpo, lo que ocurra antes.
+
+> PENDIENTE · confirmar en el dispositivo del dueño que 413 era el peso de la tanda (20-oct-2026): lo MEDIDO es con el rasterizado de Chromium de ESTE entorno; el navegador del celular (Safari en iOS, con otro codificador de JPEG y otro límite de lienzo) puede producir páginas más pesadas. El mensaje que vio —«El servidor no respondió como se esperaba (código 413)»— es el de una respuesta que NO es JSON (la plataforma rechaza antes de llegar a la función), compatible con pasar los 4,5 MB; el rechazo de la aplicación (4 MB) habría dicho «Body demasiado grande (máximo 4 MB)». Cuando el dueño relea el documento con el código nuevo, si vuelve a fallar con 413 el peso NO era la causa.
+> PENDIENTE · el texto de un 413 en la lectura por OCR sigue diciendo «Si acaba de iniciar sesión, vuelva a intentar» (es la frase genérica de una respuesta que no es JSON): para un 413 es engañosa. No se tocó porque con el peso acotado no debería aparecer; si aparece, decir que el cuerpo pesó de más.
+
+**Lo MEDIDO (20-oct-2026, con `mosquera_estudio_previo.pdf` real, 16,2 MB y 78 páginas, en Chromium y con el servicio de OCR simulado).**
+- Antes: 16 peticiones de 1,75 a 4,05 MB (tanda 1 = 4,05 MB; tandas 4, 5 y 15 sobre 3,8 MB). Ninguna pasaba de 4,5 MB, UNA pasaba de 4 MB.
+- Después: 17 peticiones de 2,56 a 3,49 MB. Ninguna sobre 3,5 MB.
+- El tope por página (`TOPE_BYTES_PAGINA`, ~1 MB) no acotaba la tanda: 5 páginas de 1 MB son ~6,7 MB de cuerpo en base64. La medición del 19-oct («ninguna página pasa el tope») miraba la página, no la petición.
+
+**Qué se decidió.**
+- **`rasterizarTanda` (public/pliego.js)** arma una tanda hasta `MAX_PAGINAS_OCR` páginas o `MAX_BYTES_TANDA` (3,5 MB: margen de 0,5 MB bajo el tope de la aplicación y de 1 MB bajo el de la plataforma). La página ya rasterizada que no cupo viaja como `sobrante` y abre la siguiente (no se rasteriza dos veces); una página que sola pasa el tope viaja sola y decide el servidor. Es UNA función para las dos rutas que armaban tandas —la lectura de documentos (`__pliegoOcrPdf`) y el panel «Reintentar con OCR»—, porque el arreglo que solo cubre la ruta que falló deja hermanos vivos (la prueba cuenta que las dos la llaman y que ninguna volvió a las tandas fijas).
+- Cuesta ~6 % más peticiones a la función (17 vs 16 en este documento); las llamadas a OCR.space son por página y no cambian.
+- No se reintenta una tanda 413 por mitades: con el margen no debería ocurrir, y si ocurre el ilegible lo dice con su causa.
+
+**Verificado.** `tests/e2e.js`, bloque «unidad avance de la lectura»: la `rasterizarTanda` real con pesos (12 páginas de ~1 MB → tandas de 3; livianas → de 5; la página que no cupo abre la siguiente; una nula no corta la tanda; una página sola sobre el tope viaja sola; 53 páginas de pesos variados sin perder, repetir ni desordenar ninguna), la función real del OCR (4 peticiones de 3 páginas, ninguna sobre 4 MB, las 12 páginas leídas) y el censo de las dos rutas. 6 mutaciones, las 6 mueren. Con el PDF real en Chromium, ver «Lo MEDIDO».
+
+**Sin verificar.** Que el 413 del dueño fuera esto (ver el PENDIENTE); el comportamiento con el codificador de JPEG del celular.

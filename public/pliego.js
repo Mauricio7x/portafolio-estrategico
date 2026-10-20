@@ -81,6 +81,11 @@
 
   const MAX_PAGINAS_OCR = 5;              // el servidor topa igual: ver lib/apu_ocr
   const TOPE_BYTES_PAGINA = 1000 * 1024;  // margen bajo el ~1 MB del plan gratuito
+  /* EL PESO DE UNA TANDA (20-oct-2026). Cada página cabe en ~1 MB, pero cinco juntas no: el cuerpo de la petición lleva el base64 (×1,37) y el servidor lo topa en 4 MB
+     (lib/apu_extraer) y la plataforma de Vercel en 4,5 MB (lib/cuerpo). Medido con el estudio previo real de CO1.REQ.11033801 (78 páginas): las tandas fijas de 5 páginas
+     salían de 1,75 a 4,05 MB, y la primera ya pasaba el tope de la aplicación; en el dueño el documento falló con «código 413». Una tanda se arma por PESO (con el
+     margen de 3,5 MB) y como mucho MAX_PAGINAS_OCR páginas. */
+  const MAX_BYTES_TANDA = 3.5 * 1024 * 1024;
   const MIN_TEXTO_UTIL = 40;              // suelo absoluto: por debajo no hay tabla que buscar
   /* Un PDF escaneado devuelve `items: []` por página. Pero un escaneo con
      cabecera vectorial devuelve unos pocos caracteres por página y pasaría el
@@ -1347,28 +1352,28 @@
          cada tanda por separado partiría la tabla y ni los capítulos ni la suma
          del documento cuadrarían. Mismo patrón que /admin.html con la full. */
       const total = doc.numPages;
-      const tandas = Math.ceil(total / MAX_PAGINAS_OCR);
       const nolegibles = [];
       const fallos = [];
       const trozos = [];
 
-      for (let tanda = 0; tanda < tandas; tanda++) {
-        const desde = tanda * MAX_PAGINAS_OCR + 1;
-        const hasta = Math.min(desde + MAX_PAGINAS_OCR - 1, total);
-        const paginas = [];
-        const numerosReales = [];   // el nº de página REAL de cada imagen enviada
-        for (let n = desde; n <= hasta; n++) {
+      /* las tandas se arman por PESO además de por páginas (ver MAX_BYTES_TANDA): ya no se sabe de antemano cuántas serán */
+      let siguiente = 1, sobrante = null, tanda = 0;
+      while (siguiente <= total || sobrante) {
+        const tt = await rasterizarTanda(doc, siguiente, total, { sobrante, alPreparar: async (n) => {
           chip(`Rasterizando página ${n} de ${total}…`, { girando: true });
           progreso(n - 1, total, `Preparando página ${n} de ${total} para OCR…`);
           await new Promise((r) => setTimeout(r, 0));
-          if (!lecturaVigente(sello)) { progreso(null); return descartarLectura(); }
-          const img = await rasterizarPagina(doc, n);
-          if (img) { paginas.push(img); numerosReales.push(n); }
-          else nolegibles.push(n);
-        }
+          return lecturaVigente(sello);
+        } });
+        if (tt.abortada) { progreso(null); return descartarLectura(); }
+        siguiente = tt.siguiente; sobrante = tt.sobrante;
+        nolegibles.push(...tt.sinRaster);
+        const paginas = tt.imagenes, numerosReales = tt.numeros;   // numerosReales: el nº de página REAL de cada imagen enviada
         if (!paginas.length) continue;
+        tanda++;
+        const desde = numerosReales[0], hasta = numerosReales[numerosReales.length - 1];
 
-        chip(`Reconociendo páginas ${desde}-${hasta} de ${total} (tanda ${tanda + 1}/${tandas})…`, { girando: true });
+        chip(`Reconociendo páginas ${desde}-${hasta} de ${total} (tanda ${tanda})…`, { girando: true });
         progreso(hasta, total, `Reconociendo páginas ${desde}-${hasta} de ${total}…`);
         const rt = await pedir("/api/pliego?op=extraer-texto", {
           texto_extraido: "", imagenes_base64: paginas, solo_reconocer: true,
@@ -1537,6 +1542,27 @@
       await esperar(esperas[k]);
     }
   }
+  /* Rasteriza las páginas de UNA tanda, desde `primera`, hasta MAX_PAGINAS_OCR páginas o MAX_BYTES_TANDA de cuerpo, lo que ocurra antes. Una página que ya está rasterizada y
+     no cupo en la tanda anterior viaja como `sobrante` y abre la siguiente (no se rasteriza dos veces ni se pierde). Devuelve las imágenes con su número REAL de página,
+     las que no se pudieron rasterizar y desde dónde sigue la lectura. `alPreparar(n)` se llama antes de cada página; si devuelve false la tanda se aborta. */
+  const pesoDeImagen = (img) => String((img && img.base64) || "").length + 64;
+  async function rasterizarTanda(doc, primera, total, { sobrante = null, alPreparar = null } = {}) {
+    const imagenes = [], numeros = [], sinRaster = [];
+    let bytes = 0, siguiente = primera, resto = null;
+    if (sobrante) { imagenes.push(sobrante.img); numeros.push(sobrante.n); bytes += pesoDeImagen(sobrante.img); }
+    while (siguiente <= total && imagenes.length < MAX_PAGINAS_OCR) {
+      const n = siguiente;
+      if (alPreparar && (await alPreparar(n)) === false) return { abortada: true };
+      const img = await rasterizarPagina(doc, n);
+      siguiente++;
+      if (!img) { sinRaster.push(n); continue; }
+      const peso = pesoDeImagen(img);
+      if (imagenes.length && bytes + peso > MAX_BYTES_TANDA) { resto = { img, n }; break; }
+      imagenes.push(img); numeros.push(n); bytes += peso;
+    }
+    return { imagenes, numeros, sinRaster, siguiente, sobrante: resto, bytes };
+  }
+
   window.__pliegoOcrPdf = async (datos, avisar = () => {}) => {
     const pdfjs = await cargarPdfJs();
     const doc = await pdfjs.getDocument({ data: datos, isEvalSupported: false }).promise;
@@ -1547,18 +1573,17 @@
          saturado. Sin esto «diez minutos» no dice dónde se van; se devuelven con el resultado y el servidor los guarda. `hecho` que se avisa = páginas ya reconocidas. */
       const ahoraMs = () => (typeof performance !== "undefined" && performance.now ? performance.now() : Date.now());
       let prepararMs = 0, reconocerMs = 0, esperaMs = 0;
-      for (let desde = 1; desde <= total; desde += MAX_PAGINAS_OCR) {
-        const hasta = Math.min(desde + MAX_PAGINAS_OCR - 1, total);
-        const imagenes = [], numeros = [];
+      let siguiente = 1, sobrante = null;
+      while (siguiente <= total || sobrante) {
+        const primera = sobrante ? sobrante.n : siguiente;
         const iniPrep = ahoraMs();
-        for (let n = desde; n <= hasta; n++) {
-          avisar(desde - 1, total, { etapa: "preparando", desde: n, hasta: n });
-          await new Promise((r) => setTimeout(r, 0));
-          const img = await rasterizarPagina(doc, n);
-          if (img) { imagenes.push(img); numeros.push(n); } else fallos.push(n);
-        }
+        const tt = await rasterizarTanda(doc, siguiente, total, { sobrante, alPreparar: async (n) => { avisar(primera - 1, total, { etapa: "preparando", desde: n, hasta: n }); await new Promise((r) => setTimeout(r, 0)); } });
+        siguiente = tt.siguiente; sobrante = tt.sobrante;
+        fallos.push(...tt.sinRaster);
         prepararMs += ahoraMs() - iniPrep;
+        const { imagenes, numeros } = tt;
         if (!imagenes.length) continue;
+        const desde = numeros[0], hasta = numeros[numeros.length - 1];
         avisar(desde - 1, total, { etapa: "reconociendo", desde, hasta });
         const iniOcr = ahoraMs(); let esperaTanda = 0;
         const { rt, saturado } = await tandaOcrConEsperas(
