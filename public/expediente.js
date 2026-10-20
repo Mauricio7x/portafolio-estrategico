@@ -213,6 +213,66 @@
   }
   const formatoDe = (nombre) => { const m = /\.([a-z0-9]{1,5})$/i.exec(String(nombre || "")); return m ? m[1].toUpperCase() : null; };
 
+  /* EL AVANCE DE LA LECTURA, TAL COMO ES (20-oct-2026). El dueño veía «Los documentos de la entidad están en espera de leerse…» durante minutos sin saber si la
+     aplicación trabajaba, esperaba su turno o se había trabado, y la barra contaba documentos, no lo que de verdad avanza. Ahora cada etapa dice qué hace y la barra
+     mide ESA etapa con lo que se conoce: megabytes traídos de los que pesa el archivo, o páginas ya reconocidas de las que tiene. Sin total conocido no hay barra
+     (jamás un porcentaje inventado), y no se estima ninguna hora de llegada: lo que no se midió no se promete. Función pura: lo que pinta es lo que se prueba. */
+  const MB = 1048576;
+  const mbTxt = (b) => `${(Number(b) / MB).toFixed(1).replace(".", ",")} MB`;
+  const entero = (n) => (Number.isInteger(n) && n >= 0 ? n : null);
+  function duracionLegible(ms) {
+    const n = Number(ms);
+    if (!Number.isFinite(n) || n < 0) return null;
+    const s = Math.round(n / 1000);
+    if (s < 1) return "menos de 1 s";
+    if (s < 60) return `${s} s`;
+    return s % 60 ? `${Math.floor(s / 60)} min ${s % 60} s` : `${Math.floor(s / 60)} min`;
+  }
+  /* `a` = { etapa, i, de, tipo, nombre, hecho, total, desde, hasta, espera_s } */
+  function textoAvance(a) {
+    if (!a || typeof a !== "object") return "";
+    if (a.etapa === "buscando") return "Buscando los documentos del proceso en SECOP II…";
+    if (a.etapa === "actualizando") return "Actualizando la guía del proceso con lo leído…";
+    const cab = [a.de ? `Documento ${a.i} de ${a.de}` : null, a.tipo || null, a.nombre || null].filter(Boolean).join(" · ");
+    const paginas = entero(a.total) ? `de ${a.total}` : "";
+    const rango = entero(a.desde) && entero(a.hasta) ? (a.desde === a.hasta ? `la página ${a.desde}` : `las páginas ${a.desde} a ${a.hasta}`) : "";
+    let que;
+    if (a.etapa === "bajando") que = `bajando el archivo${entero(a.hecho) != null && entero(a.total) ? `: ${mbTxt(a.hecho)} de ${mbTxt(a.total)}` : "…"}`;
+    else if (a.etapa === "leyendo_pdf") que = "leyendo el texto del archivo…";
+    else if (a.etapa === "preparando") que = `es un escaneo: preparando ${rango || "las páginas"} ${paginas}${entero(a.hecho) ? ` (${a.hecho} ya reconocidas)` : ""}…`;
+    else if (a.etapa === "reconociendo") que = `es un escaneo: reconociendo el texto de ${rango || "las páginas"} ${paginas}${entero(a.hecho) ? ` (${a.hecho} ya reconocidas)` : ""}…`;
+    else if (a.etapa === "espera_ocr") que = `es un escaneo y el servicio de reconocimiento de texto no está atendiendo: se vuelve a intentar en ${entero(a.espera_s) != null ? a.espera_s : "unos"} segundos…`;
+    else if (a.etapa === "guardando") que = "guardando lo leído…";
+    else que = "leyendo…";
+    return `${cab ? `${cab} · ` : ""}${que}`.replace(/\s+/g, " ").replace(/\s+([.…:])/g, "$1");
+  }
+  /* de 0 a 1, o null si no hay total conocido; una cifra fuera de rango se recorta, no se confía */
+  function fraccionAvance(a) {
+    if (!a || !["bajando", "preparando", "reconociendo", "espera_ocr"].includes(a.etapa)) return null;
+    const h = entero(a.hecho), t = entero(a.total);
+    return h != null && t ? Math.min(1, h / t) : null;
+  }
+  /* `turno` = { ahora: «el proceso que se está leyendo», delante: cuántos hay antes en la fila }, o null */
+  function htmlAvance(a, turno = null) {
+    if (a && a.error) return `<p class="exp-seccion-nota text-red-700">${esc(a.texto)}</p>`;
+    if (a) {
+      const f = fraccionAvance(a);
+      return `<p class="exp-seccion-nota">${esc(a.texto || textoAvance(a))}</p>${f != null ? `<div class="mt-1.5 h-1 w-full overflow-hidden rounded bg-gray-100" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(100 * f)}"><div class="h-1 rounded" style="width:${Math.round(100 * f)}%; background: var(--accent);"></div></div>` : ""}`;
+    }
+    if (!turno) return "";
+    if (turno.ahora) return `<p class="exp-seccion-nota">Esperando turno: ahora se lee ${esc(turno.ahora)}${entero(turno.delante) ? `; antes de este hay ${turno.delante} más en la fila` : ""}. Los documentos de este proceso se leen cuando termine.</p>`;
+    return `<p class="exp-seccion-nota">Los documentos de este proceso están por empezar a leerse…</p>`;
+  }
+  /* cuánto tardó una lectura y en qué, tal como la guardó el servidor (`tiempos`): lo que se midió, sin sumar lo que no se midió */
+  function frasesTiempo(t) {
+    if (!t || typeof t !== "object") return null;
+    const partes = [["descarga_ms", "descarga"], ["preparar_ms", "preparar las páginas"], ["reconocer_ms", "reconocimiento de texto"], ["espera_ms", "espera del servicio"]]
+      .map(([k, n]) => (entero(t[k]) && t[k] >= 1000 ? `${n} ${duracionLegible(t[k])}` : null)).filter(Boolean);
+    const total = entero(t.total_ms) ? duracionLegible(t.total_ms) : null;
+    if (!total) return null;
+    return `tardó ${total}${partes.length ? ` (${partes.join(", ")})` : ""}`;
+  }
+
   /* Los documentos DE LA ENTIDAD, tal como los sirve la guía (`guia.documentos`
      de lib/documentos_proceso): lo leído, lo que está por leer y lo que no se
      pudo leer, con su motivo. No se reordena por nombre: manda el orden del
@@ -229,6 +289,7 @@
          salió de un OCR, donde `paginas` (las del texto guardado) y `paginas_total` (las del archivo) significan eso; en un PDF con texto una página en blanco no cuenta */
       paginas_total: x.origen === "ocr" && x.paginas_total != null ? x.paginas_total : null,
       paginas_sin_texto: Number.isInteger(x.paginas_sin_texto) && x.paginas_sin_texto > 0 ? x.paginas_sin_texto : 0,
+      tiempo: estado === "leido" ? frasesTiempo(x.tiempos) : null,
       /* «a medias» lo decide el SERVIDOR (`a_medias`, lib/documentos_proceso.escaneoAMedias): una sola definición, no una copia aquí que divergiría */
       estado: estado === "leido" && x.a_medias === true ? "parcial" : estado,
       observacion: x.motivo || (x.relectura_fallida ? `Se intentó volver a leer y no se pudo: ${x.relectura_fallida}` : null), url: x.url || null,
@@ -255,7 +316,7 @@
 
   function htmlFilaDoc(f, folio) {
     const meta = [f.tipo, f.formato, f.paginas != null ? (f.estado === "parcial" ? `${miles(f.paginas)} de ${miles(f.paginas_total)} páginas leídas` : f.paginas_sin_texto > 0 && f.paginas_total != null ? `${miles(f.paginas)} de ${miles(f.paginas_total)} páginas con texto (${miles(f.paginas_sin_texto)} sin texto reconocido)` : `${miles(f.paginas)} ${f.paginas === 1 ? "página" : "páginas"}`) : null, f.peso,
-      f.fecha ? String(f.fecha).slice(0, 10) : null, f.observacion].filter(Boolean).join(" · ");
+      f.fecha ? String(f.fecha).slice(0, 10) : null, f.tiempo, f.observacion].filter(Boolean).join(" · ");
     const e = ESTADO_ENTIDAD[f.estado] || ESTADO_ENTIDAD.por_leer;
     /* un documento de Word de la entidad se puede LLENAR con los datos de la
        empresa (27-sep-2026, lib/formato_entidad): la carta de presentación y
@@ -990,7 +1051,7 @@
   return {
     htmlPuedePresentarse, opcionesPresentarse, veredictoPresentarse, casillasPresentarse, rojosDe,
     SECCIONES, seccionValida, cifrasDe, htmlCabecera, htmlPie, htmlConQuien, urlSegura, enlaceSecop, htmlOferta, htmlOfertasTodos, frasesLlenado, nombreLleno,
-    documentosEntidad, tiposSuyos, pesoLegible, formatoDe, htmlFilaDoc, htmlFilaDocSuyo, htmlDocumentos,
+    documentosEntidad, tiposSuyos, pesoLegible, formatoDe, textoAvance, fraccionAvance, htmlAvance, duracionLegible, frasesTiempo, htmlFilaDoc, htmlFilaDocSuyo, htmlDocumentos,
     lineaDeTiempo, htmlFechas, htmlDatosClave, htmlSiguientePaso,
   };
 });
