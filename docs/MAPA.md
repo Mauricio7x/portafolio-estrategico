@@ -6,10 +6,10 @@
 (no editar a mano: sale de `node tests/mapa.js --escribir`. Para ir a un sitio concreto,
  `node tests/mapa.js <término>` da la ruta, la línea y el sed exacto — más barato que leer esto)
 
-· SUPERFICIE HTTP — 42 op declaradas en los mapas de los routers:
+· SUPERFICIE HTTP — 43 op declaradas en los mapas de los routers:
   /api/admin?op=  rup · experiencia · cobertura · cargar-catalogo · exportar · importar · uso · respaldo · espacio · compactar · sesion · entrar · salir · crear-cuenta
   /api/perfil?op=  resumen · diagnostico · entrada · pulso · consorcio · consorcio-simular · seguimiento · cuenta · avisos · empresa-datos
-  /api/pliego?op=  extraer-texto · parsear · descargar · formulario1 · diff · cronograma · deducciones · dictamen · documentos
+  /api/pliego?op=  extraer-texto · parsear · descargar · formulario1 · diff · cronograma · deducciones · dictamen · documentos · auditoria
   /api/procesos?op=  sync · historico · listar · baja · entidades · portada · manifestacion · latido · salud
   (api/apu.js e api/inteligencia.js despachan por accion/vista desde su handler:
    `node tests/estado.js` los enumera midiendo)
@@ -22,7 +22,7 @@
   pliego.js                   Router del dominio PLIEGO (Fase 0 · consolidación a 6 funciones)
   procesos.js                 Router del dominio PROCESOS (Fase 0 · consolidación a 6 funciones)
 
-· lib/ — 99 módulos:
+· lib/ — 100 módulos:
   accesibilidad.js            Accesibilidad operativa de la zona de la obra
   adendas.js                  Vigía de adendas · lo que el DATASET dice que cambió (Fase 5)
   almacen.js                  Esquema de claves Redis + compresión de chunks
@@ -32,6 +32,7 @@
   apu_mapeo.js                De la descripción del pliego al ítem del catálogo APU
   apu_ocr.js                  OCR de páginas escaneadas vía OCR.space (respaldo, no vía principal)
   apu_pliego.js               Extraer ítem + unidad + cantidad de la tabla de un pliego
+  auditoria_lectura.js        ¿LO QUE DETEKTA DICE HABER LEÍDO SE PUEDE LEER DE VERDAD? (20-oct-2026)
   auth.js                     Un solo guardián para los endpoints protegidos
   autollamada.js              El servidor llamándose a sí mismo: que la llamada salga y que se sepa cómo le fue (18-oct-2026)
   aviso_salud.js              El correo cuando la salud se pone en rojo, y cuando vuelve (30-sep-2026)
@@ -175,7 +176,8 @@
   resumen.js                  El dashboard: ¿qué SON los procesos que hoy se ven?
   seguimiento.js              /api/perfil?op=seguimiento (ago 2026)
 
-· lib/handlers/pliego/ — 6 módulos:
+· lib/handlers/pliego/ — 7 módulos:
+  auditoria.js                /api/pliego?op=auditoria · ¿LO QUE DETEKTA DICE HABER LEÍDO SE PUEDE LEER DE VERDAD? (20-oct-202
   cronograma.js               /api/pliego?op=cronograma (Fase 5)
   deducciones.js              /api/pliego?op=deducciones · Qué le van a descontar, leído del pliego
   dictamen.js                 /api/pliego?op=dictamen (proyecto «Don Héctor», 2-sep-2026)
@@ -217,8 +219,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 382 secciones (29 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 19886  La lista abre con TODOS los procesos de obra abiertos, y los que no alcanzan van atenuados …
+· MEMORIA · docs/MEMORIA.md — 383 secciones (29 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 19905  La base de contratación estatal queda en docs/, sin cobertura medida, y el contador de uso …
   L 19922  El arranque de Precios estaba pisado por el de la app, y una función repetida en el mismo á…
   L 19937  Lo verificado en producción el 19-oct-2026: el OCR ya está configurado; el respaldo en R2 y…
@@ -228,6 +229,7 @@
   L 20028  Un escaneo leído a medias se guardaba como «Leído»: el OCR de los documentos ignoraba las p…
   L 20055  El avance de la lectura dice lo que la aplicación hace de verdad, y lo que el usuario pide …
   L 20084  Las tandas de OCR se arman por PESO, no por 5 páginas fijas: el estudio previo del dueño fa…
+  L 20105  La auditoría de lo leído: mide si hay INDICIOS de una lectura mala, jamás dice «correcto» (…
 
 · DOCUMENTOS docs/ — 73 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)

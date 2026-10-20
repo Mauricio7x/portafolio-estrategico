@@ -19,6 +19,7 @@ const OPS = {
   deducciones: () => require("../lib/handlers/pliego/deducciones.js"), // qué le descuentan de cada pago, leído de la cláusula del pliego
   dictamen: () => require("../lib/handlers/pliego/dictamen.js"),       // el pliego guardado, leído por un modelo, con citas verificadas por página
   documentos: () => require("../lib/handlers/pliego/documentos.js"),   // los documentos del proceso (índice de datos.gov.co), leídos solos al guardar en Mis procesos
+  auditoria: () => require("../lib/handlers/pliego/auditoria.js"),     // si lo leído se puede leer de verdad: solo lectura, indicios por documento y página (no dice «correcto»)
 };
 
 function opDe(req) {
