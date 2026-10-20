@@ -10103,6 +10103,118 @@ async function main() {
     // un documento que no es pliego no se lee para esto
     assert.strictEqual(Dp.hechosDeTexto(def, { tipo: "estudio_previo" }).presupuesto_pliego, null);
   }
+  /* unidad auditoría de la lectura — ¿LO QUE LA APLICACIÓN DICE HABER LEÍDO SE PUEDE LEER DE VERDAD? (20-oct-2026). Frente 1a del encargo «leer bien y rápido»: una auditoría de SOLO LECTURA de lo
+     guardado. Decisión del dueño: una página en blanco en un documento de una oferta es una ALERTA, no algo normal. Aquí se ejecutan las funciones reales (la pura y el handler contra el Redis
+     simulado, con el texto guardado por el POST real de `op=documentos`), y se prueba que NO escribe, NO devuelve texto y NO dice «correcto». */
+  bqAuditoria: { if (!corre("unidad auditoría de la lectura")) break bqAuditoria;
+    const Au = require("../lib/auditoria_lectura.js"), DocsA = require("../lib/documentos_proceso.js"), Da = require("../lib/diff.js");
+    const { escribirJSONComprimido: escribirCA } = require("../lib/almacen.js");
+    const routerA = require("../api/pliego.js");
+    const A = (t, o = {}) => Au.auditarDocumento({ texto: t, tipo: "presupuesto", origen: "texto", ...o });
+    const codigos = (r) => r.motivos.filter((m) => m.nivel === "revisar").map((m) => m.codigo);
+    const hashA = (t) => Da.hashDe(Da.normalizarTexto(t));
+    const BUENO = "\f1\nÍTEM\tDESCRIPCIÓN\tUNIDAD\tCANTIDAD\tVALOR TOTAL\n1.1\tExcavación manual en material común\tm3\t120,5\t5.430.000\n1.2\tRelleno compactado con material seleccionado\tm3\t80\t3.200.000\n\f2\nTotal costo directo 8.630.000 más administración, imprevistos y utilidad del contratista según el pliego de condiciones.";
+    // (1) un documento sano no levanta nada, y dice que NO es «correcto»
+    const ok = A(BUENO, { paginas_total: 2, hash: hashA(BUENO) });
+    assert.strictEqual(ok.veredicto, "sin_indicios", JSON.stringify(ok.motivos));
+    assert.strictEqual(ok.integridad, "coincide");
+    assert.ok(ok.paginas_con_texto === 2 && ok.n_paginas_sin_texto === 0 && ok.anclas.filas_de_partida === 2 && ok.anclas.faltan.length === 0, JSON.stringify(ok));
+    assert.ok(!/correct|verificad/i.test(JSON.stringify(ok)), "la salida de la auditoría no se llama «correcta» ni «verificada»");
+    // (2) DECISIÓN DEL DUEÑO: una página en blanco es alerta (MUTACIÓN A1: tratarla como normal)
+    const enBlanco = BUENO + "\n\f3\n\f4\nTexto de la cuarta página del documento con suficiente contenido para contar como página leída.";
+    const rb = A(enBlanco, { paginas_total: 4 });
+    assert.strictEqual(rb.veredicto, "revisar");
+    assert.deepStrictEqual(rb.paginas_sin_texto, [3], "la página 3 trae marcador y nada más");
+    assert.ok(codigos(rb).includes("paginas_sin_texto") && /1 de 4 páginas sin texto \(pág\. 3\)/.test(rb.motivos.find((m) => m.codigo === "paginas_sin_texto").texto), JSON.stringify(rb.motivos));
+    // …y una página que NO tiene marcador (el OCR no la devolvió) también es una página sin texto cuando se sabe el total (MUTACIÓN A2: mirar solo los marcadores)
+    const falta = A(BUENO, { paginas_total: 5 });
+    assert.deepStrictEqual(falta.paginas_sin_texto, [3, 4, 5], "con 5 páginas declaradas y 2 con marcador, faltan la 3, la 4 y la 5");
+    assert.strictEqual(falta.paginas_con_texto, 2);
+    // sin el total ni marcadores no se inventa nada: «sin dato», no 0 (MUTACIÓN A3: `|| 0`)
+    const sinMarcas = A("Texto corrido de un documento sin ningún marcador de página, con ítem, descripción, unidad, cantidad y valor.", { tipo: "otro" });
+    assert.strictEqual(sinMarcas.paginas_con_texto, null, "sin marcadores y sin total, las páginas con texto son «no sé», no 0");
+    assert.strictEqual(sinMarcas.caracteres_por_pagina, null);
+    assert.ok(sinMarcas.motivos.some((m) => m.codigo === "sin_marcadores" && m.nivel === "nota"));
+    assert.strictEqual(sinMarcas.anclas, null, "un tipo sin anclas definidas no tiene anclas (null), no «0 halladas»");
+    // (3) ruido: pocas letras, codificación rota, palabras deshechas
+    const numeros = "\f1\n" + "1234567 89012 3456 7890 ".repeat(30) + "\n\f2\n" + "9876543 21098 7654 3210 ".repeat(30);
+    assert.ok(codigos(A(numeros, { paginas_total: 2, tipo: "otro" })).includes("pocas_letras"), "una lectura de puros números es sospechosa (MUTACIÓN A4: umbral de letras en 0)");
+    const roto = "\f1\n" + "Contrato de obra civil para el mejoramiento vial ��� ".repeat(20);
+    assert.ok(codigos(A(roto, { paginas_total: 1, tipo: "otro" })).includes("caracteres_rotos"));
+    const deshecho = "\f1\n" + "l i t r a ñ ".repeat(40) + "texto normal del documento ".repeat(5);
+    assert.ok(codigos(A(deshecho, { paginas_total: 1, tipo: "otro" })).includes("palabras_deshechas"));
+    // (4) las palabras que el tipo trae: ninguna = alerta, alguna que falta = nota
+    const sinAnclas = A("\f1\nLorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.", { paginas_total: 1 });
+    assert.ok(codigos(sinAnclas).includes("anclas_ausentes") && codigos(sinAnclas).includes("presupuesto_sin_filas"), JSON.stringify(sinAnclas.motivos));
+    const sinValor = A(BUENO.replace(/VALOR TOTAL/g, "XX").replace(/Total costo directo/g, "Suma").replace(/5\.430\.000|3\.200\.000|8\.630\.000/g, "7"), { paginas_total: 2 });
+    assert.ok(!codigos(sinValor).includes("anclas_ausentes") && sinValor.motivos.some((m) => m.codigo === "anclas_incompletas" && m.nivel === "nota" && /valor/.test(m.texto)), JSON.stringify(sinValor.motivos));
+    // (5) la huella: si el texto guardado cambió, o se recortó, se dice (MUTACIÓN A5: dar siempre «coincide»)
+    assert.strictEqual(A(BUENO + " x", { paginas_total: 2, hash: hashA(BUENO) }).integridad, "no_coincide");
+    assert.ok(codigos(A(BUENO + " x", { paginas_total: 2, hash: hashA(BUENO) })).includes("integridad"));
+    const rec = A(BUENO, { paginas_total: 2, hash: "otra", recortado: true });
+    assert.ok(rec.integridad === "no_aplica_recortado" && rec.motivos.some((m) => m.codigo === "recortado" && m.nivel === "nota") && !codigos(rec).includes("integridad"));
+    assert.ok(codigos(A("", { paginas_total: 1 })).includes("sin_texto"));
+    // (6) el detalle por página solo se pide, y NUNCA sale el texto
+    assert.strictEqual(A(BUENO, { paginas_total: 2 }).paginas, undefined);
+    const det = Au.auditarDocumento({ texto: BUENO, tipo: "presupuesto", paginas_total: 2 }, { detalle: true });
+    assert.deepStrictEqual(det.paginas.map((p) => [p.n, p.con_texto]), [[1, true], [2, true]]);
+    const PALABRAS_DEL_TEXTO = ["DESCRIPCIÓN", "Excavación", "compactado", "seleccionado", "administración", "imprevistos", "contratista"];   // del principio, del medio y del final: una fuga de cualquier tramo se ve
+    assert.ok(!PALABRAS_DEL_TEXTO.some((w) => JSON.stringify(det).includes(w)), "la auditoría no devuelve ni una palabra del texto guardado (MUTACIÓN A6: una muestra del texto en el detalle)");
+    assert.strictEqual(Au.comoRango([2, 3, 4, 5, 9]), "2-5, 9");
+
+    // (7) el handler REAL, sobre lo que guarda el POST real de op=documentos
+    const arch = (id, nombre, tipo) => ({ id_documento: id, nombre, tipo, tipo_legible: DocsA.TIPOS[tipo].legible, fecha_carga: "2026-10-01", de_la_entidad: true, legible: true, url: "https://community.secop.gov.co/x" });
+    const sembrarA = (id, archivos) => escribirCA(redis, DocsA.claveDocs(id), { version: DocsA.VERSION, id_proceso: id, indice: { version: DocsA.VERSION, consultado_el: new Date().toISOString(), archivos, plan: archivos.map((a) => a.id_documento) }, leidos: {}, ilegibles: {}, formularios: {} });
+    const postA = async (id, idDoc, cuerpo) => { const r = await invocarPost(routerA, "/api/pliego?op=documentos", { id_proceso: id, id_documento: idDoc, ...cuerpo }, CAB_TOKEN); assert.strictEqual(r.status, 200, JSON.stringify(r.cuerpo).slice(0, 300)); return r.cuerpo; };
+    const idA = "CO1.REQ.AUD001", idB = "CO1.REQ.AUD002";
+    await sembrarA(idA, [arch("1", "PRESUPUESTO OFICIAL.pdf", "presupuesto"), arch("2", "ESTUDIO PREVIO.pdf", "estudio_previo"), arch("3", "ANEXO.pdf", "anexo_tecnico")]);
+    await sembrarA(idB, [arch("1", "PRESUPUESTO.pdf", "presupuesto")]);
+    await postA(idA, "1", { texto: BUENO, paginas_total: 2 });
+    await postA(idA, "2", { texto: enBlanco.replace("Excavación", "Excavacion"), paginas_total: 4, origen: "ocr" });
+    await postA(idA, "3", { texto: BUENO, paginas_total: 2 });
+    await postA(idB, "1", { texto: BUENO, paginas_total: 2 });
+    // un documento que figura como leído pero cuyo texto ya caducó
+    await redis.del(DocsA.claveDoc(idA, "3"));
+    const comandos = [];
+    upstash.romper((c) => { comandos.push(String(c[0]).toUpperCase()); return null; });
+    let uno;
+    try { uno = await invocar(routerA, `/api/pliego?op=auditoria&id_proceso=${idA}`, CAB_TOKEN); } finally { upstash.romper(null); }
+    assert.strictEqual(uno.status, 200, JSON.stringify(uno.cuerpo).slice(0, 300));
+    assert.ok(!comandos.some((c) => /^(SET|DEL|HSET|EXPIRE|RENAME|INCR|HINCRBY|SETEX|APPEND|MSET)$/.test(c)), `la auditoría no escribe: ${[...new Set(comandos)].join(",")}`);
+    const docA = (n) => uno.cuerpo.procesos[0].documentos.find((d) => d.id_documento === n);
+    assert.strictEqual(docA("1").veredicto, "sin_indicios", JSON.stringify(docA("1")));
+    assert.strictEqual(docA("1").integridad, "coincide", "el texto que guardó el POST real tiene la misma huella que el que se leyó (MUTACIÓN A5b: otra normalización)");
+    assert.strictEqual(docA("2").veredicto, "revisar");
+    assert.strictEqual(docA("2").origen, "ocr");
+    assert.deepStrictEqual(docA("2").paginas_sin_texto, [3]);
+    assert.ok(docA("2").paginas && docA("2").paginas.length === 4, "con un proceso a la vez se da la cuenta página por página");
+    assert.strictEqual(docA("3").veredicto, "revisar");
+    assert.strictEqual(docA("3").motivos[0].codigo, "texto_ausente", "figura leído y su texto ya no está: se dice, no se da por bueno");
+    assert.strictEqual(uno.cuerpo.resumen.documentos, 3);
+    assert.strictEqual(uno.cuerpo.resumen.para_revisar, 2);
+    assert.strictEqual(uno.cuerpo.resumen.sin_indicios, 1);
+    assert.ok(uno.cuerpo.para_revisar.length === 2 && uno.cuerpo.para_revisar.every((l) => l.startsWith(idA)), JSON.stringify(uno.cuerpo.para_revisar));
+    assert.ok(!PALABRAS_DEL_TEXTO.some((w) => JSON.stringify(uno.cuerpo).includes(w)), "el texto guardado no sale en la respuesta, ni su principio (MUTACIÓN H6)");
+    assert.ok(uno.cuerpo.umbrales.min_letras_pagina === Au.UMBRALES.min_letras_pagina && /NO que el documento esté bien leído/.test(uno.cuerpo.como_leerlo), "los umbrales y la salvedad viajan con la respuesta");
+    // el recorrido de TODOS los procesos guardados, de a poco y sin perder ninguno
+    const dos = await invocar(routerA, "/api/pliego?op=auditoria&limite=1", CAB_TOKEN);
+    assert.ok(dos.cuerpo.alcance.procesos_con_registro >= 2 && dos.cuerpo.alcance.procesos_en_esta_respuesta === 1 && dos.cuerpo.alcance.completo === false && dos.cuerpo.alcance.siguiente === 1, JSON.stringify(dos.cuerpo.alcance));
+    assert.ok(dos.cuerpo.procesos[0].documentos.every((d) => d.paginas === undefined), "recorriendo varios procesos no se manda la cuenta página por página");
+    const vistos = new Set();
+    for (let desde = 0, vueltas = 0; desde != null && vueltas < 50; vueltas++) {
+      const r = await invocar(routerA, `/api/pliego?op=auditoria&limite=1&desde=${desde}`, CAB_TOKEN);
+      for (const p of r.cuerpo.procesos) vistos.add(p.id_proceso);
+      desde = r.cuerpo.alcance.siguiente;
+    }
+    assert.ok(vistos.has(idA) && vistos.has(idB) && vistos.size === dos.cuerpo.alcance.procesos_con_registro, `el recorrido de a uno ve todos: ${[...vistos].join(",")}`);
+    // un proceso sin registro se dice, y la llave y el método se exigen
+    const nada = await invocar(routerA, "/api/pliego?op=auditoria&id_proceso=CO1.REQ.NOEXISTE", CAB_TOKEN);
+    assert.ok(nada.status === 200 && nada.cuerpo.procesos[0].estado === "sin_registro" && nada.cuerpo.resumen.documentos === 0, JSON.stringify(nada.cuerpo.procesos));
+    assert.strictEqual((await invocar(routerA, `/api/pliego?op=auditoria&id_proceso=${idA}`)).status, 401);
+    assert.strictEqual((await invocar(routerA, `/api/pliego?op=auditoria&id_proceso=${idA}`, CAB_TOKEN, { metodo: "POST", body: {} })).status, 405);
+    assert.strictEqual((await invocar(routerA, "/api/pliego?op=auditoria&id_proceso=../x%20y", CAB_TOKEN)).status, 400);
+    console.log("· unidad auditoría de la lectura: páginas en blanco o faltantes, ruido, anclas por tipo y huella del texto con la función real; el op lee sin escribir, no devuelve texto y no dice «correcto»");
+  }
   bqTextoDelPliego: { if (!corre("unidad el texto del pliego")) break bqTextoDelPliego;
     /* QUÉ TEXTO LEEN EL DICTAMEN, EL CRONOGRAMA Y LOS DESCUENTOS (18-oct-2026). Hasta hoy, la última versión del vigía:
        el documento base (el pliego tipo) no entra al vigía y el dictamen decía «no hay texto» con el pliego leído (85 de
