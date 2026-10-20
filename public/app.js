@@ -5553,9 +5553,25 @@
     const av = secSeg && secSeg.querySelector(`[data-exp-docs-avance="${CSS.escape(id)}"]`);
     if (av) av.innerHTML = htmlAvanceDocs(id);
   }
+  /* QUÉ HAY DELANTE EN LA FILA (20-oct-2026): «en espera de leerse…» no decía si la aplicación trabajaba o esperaba turno. Se lee UN proceso a la vez: quien espera
+     dice cuál se lee ahora y cuántos hay antes. */
+  function rotuloProceso(id) {
+    const p = procesoGuardado(id);
+    const objeto = p && p.objeto ? String(p.objeto).replace(/\s+/g, " ").trim() : "";
+    return objeto ? `«${objeto.length > 60 ? `${objeto.slice(0, 57)}…` : objeto}» (${id})` : id;
+  }
+  function turnoDe(id) {
+    /* el que se lee AHORA no está esperando: lo que dice es su avance (`docsProgreso`); sin avance aún dicho (o ya terminado), no se afirma nada. Antes decía «en espera de
+       leerse…» también al TERMINAR, y como nadie repintaba después, el mensaje se quedaba pegado (medido en navegador real, 20-oct-2026) */
+    if (docsEnCurso === id) return null;
+    const pos = docsCola.findIndex((x) => x.id === id);
+    return pos < 0 ? null : { ahora: docsEnCurso ? rotuloProceso(docsEnCurso) : null, delante: pos };
+  }
   function htmlAvanceDocs(id) {
     const prog = docsProgreso.get(id);
-    if (!prog) return docsEnCurso === id || docsCola.some((x) => x.id === id) ? `<p class="exp-seccion-nota">Los documentos de la entidad están en espera de leerse…</p>` : "";
+    const X = raizExpediente();
+    if (X && X.htmlAvance) return X.htmlAvance(prog || null, prog ? null : turnoDe(id));
+    if (!prog) return "";
     return `<p class="exp-seccion-nota${prog.error ? " text-red-700" : ""}">${esc(prog.texto)}</p>${!prog.error && prog.total ? `<div class="mt-1.5 h-1 w-full overflow-hidden rounded bg-gray-100"><div class="h-1 rounded" style="width:${Math.round(100 * prog.hecho / prog.total)}%; background: var(--accent);"></div></div>` : ""}`;
   }
   function encolarLecturaDocumentos(id, { manual = false, refrescar = false } = {}) {
@@ -5563,15 +5579,22 @@
     if (!manual && docsIntentados.has(id)) return;
     docsIntentados.add(id);
     docsProgreso.delete(id);
-    docsCola.push({ id, refrescar });
-    pintarProgresoDocs(id);
+    /* LO QUE EL USUARIO PIDE VA ANTES DE LO QUE SE PUSO SOLO (20-oct-2026): «Volver a buscar» quedaba detrás de todos los procesos abiertos de la lista, que
+       se encolan solos al abrir Mis procesos. No interrumpe al que ya se está leyendo, y entre pedidos del usuario se respeta el orden en que los pidió. */
+    if (manual) {
+      let pos = 0;
+      for (let k = 0; k < docsCola.length; k++) if (docsCola[k].manual) pos = k + 1;
+      docsCola.splice(pos, 0, { id, refrescar, manual: true });
+    } else docsCola.push({ id, refrescar, manual: false });
+    for (const x of docsCola) pintarProgresoDocs(x.id);
     bombearLecturaDocumentos();
   }
   function bombearLecturaDocumentos() {
     if (docsEnCurso || !docsCola.length) return;
     const { id, refrescar } = docsCola.shift();
     docsEnCurso = id;
-    leerDocumentos(id, { refrescar }).catch(() => {}).finally(() => { docsEnCurso = null; bombearLecturaDocumentos(); });
+    for (const x of docsCola) pintarProgresoDocs(x.id);   // quienes esperan dicen ahora cuál se lee y cuántos quedan antes
+    leerDocumentos(id, { refrescar }).catch(() => {}).finally(() => { docsEnCurso = null; pintarProgresoDocs(id); bombearLecturaDocumentos(); });   // repintar al terminar: el último mensaje no puede quedar pegado
   }
   function bytesDeBase64(b64) { const bin = atob(String(b64 || "")); const datos = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) datos[i] = bin.charCodeAt(i); return datos; }
   /* EL PDF POR TROZOS (27-sep-2026): una respuesta del servidor no pasa de 3 MB y
@@ -5619,14 +5642,17 @@
   }
   const mbDe = (bytes) => `${(bytes / 1048576).toFixed(1).replace(".", ",")} MB`;
   async function leerDocumentos(id, { refrescar = false } = {}) {
-    const avanzar = (texto, hecho, total) => { docsProgreso.set(id, { texto, hecho, total }); pintarProgresoDocs(id); };
+    /* el avance dice la ETAPA y lo que de verdad se sabe (expediente.js textoAvance/fraccionAvance): megabytes traídos, páginas ya reconocidas */
+    const XA = raizExpediente();
+    const avanzar = (p) => { const prog = { ...p }; prog.texto = XA && XA.textoAvance ? XA.textoAvance(prog) : ""; docsProgreso.set(id, prog); pintarProgresoDocs(id); };
+    const ahoraMs = () => (typeof performance !== "undefined" && performance.now ? performance.now() : Date.now());
     const perfil = $("f-perfil").value;
     let leidos = 0, fallidos = 0, buscado = false, rehechos = 0, indiceDeCache = false;
     /* el OCR no atendió ni tras esperar: los escaneos que siguen en esta vuelta se dejan
        para más tarde sin volver a esperar dos minutos cada uno */
     let ocrNoAtiende = false;
     try {
-      avanzar("Buscando los documentos del proceso en SECOP II…", 0, 0);
+      avanzar({ etapa: "buscando" });
       const r = await api(`/api/pliego?op=documentos&id_proceso=${encodeURIComponent(id)}${refrescar ? "&refrescar=1" : ""}`);
       buscado = true;
       rehechos = Number(r.hechos_rehechos) || 0;
@@ -5634,7 +5660,9 @@
       const pend = Array.isArray(r.pendientes) ? r.pendientes : [];
       for (let i = 0; i < pend.length; i++) {
         const a = pend[i];
-        avanzar(`Leyendo ${i + 1} de ${pend.length}: ${a.tipo_legible || "documento"} (${a.nombre || ""})…`, i, pend.length);
+        const cab = { i: i + 1, de: pend.length, tipo: a.tipo_legible || "documento", nombre: a.nombre || "" };
+        const iniDoc = ahoraMs();
+        avanzar({ ...cab, etapa: "bajando" });
         /* `definitivo` solo para el escaneo sin texto: una descarga que falla hoy se reintenta al «volver a buscar» */
         /* `saturado`: el OCR no atendió; el servidor guarda cuándo reintentarlo solo */
         const marcarIlegible = (motivo, definitivo, saturado, causa) => api("/api/pliego?op=documentos", { method: "POST", body: { id_proceso: id, id_documento: a.id_documento, ilegible: true, definitivo: definitivo === true, saturado: saturado === true, motivo: String(motivo).slice(0, 200), ...(causa ? { causa } : {}) } });
@@ -5649,6 +5677,7 @@
             continue;
           }
           let texto, recortadoEnOrigen = false, paginasTotal = null, origen = null, sinTexto = 0;
+          const tiempos = {};   // dónde se fue el tiempo de ESTE documento: lo guarda el servidor (20-oct-2026)
           if (String(a.extension || "").toLowerCase() === "docx") {
             /* el Word lo lee el servidor (lib/docx.js) y devuelve el texto, sin páginas */
             const d = await api("/api/pliego?op=descargar", { method: "POST", body: { url: a.url, formato: "docx" } });
@@ -5656,18 +5685,21 @@
             recortadoEnOrigen = d.recortado === true;
             if (texto.trim().length < 50) { await marcarIlegible("el documento de Word no trae texto", true); fallidos++; continue; }
           } else {
-            const datos = await bajarPorTrozos(a.url, (llevado, total) => avanzar(`Leyendo ${i + 1} de ${pend.length}: ${a.tipo_legible || "documento"} (${a.nombre || ""}), trayendo ${mbDe(llevado)}${total ? ` de ${mbDe(total)}` : ""}…`, i, pend.length));
+            let partes = 1;
+            const datos = await bajarPorTrozos(a.url, (llevado, total) => { partes++; avanzar({ ...cab, etapa: "bajando", hecho: llevado, total: total || null }); });
+            tiempos.descarga_ms = Math.round(ahoraMs() - iniDoc); tiempos.partes = Math.min(64, partes);
+            avanzar({ ...cab, etapa: "leyendo_pdf" });
             if (typeof window.__pliegoLeerPdf !== "function") throw new Error("el lector de pliegos no cargó en esta página");
             /* una COPIA: pdf.js se queda con el ArrayBuffer que recibe (lo «transfiere» a su
                worker) y el OCR de abajo ya no podría abrirlo (medido en navegador real) */
+            const iniLector = ahoraMs();
             const lect = await window.__pliegoLeerPdf(datos.slice());
+            tiempos.lector_ms = Math.round(ahoraMs() - iniLector);
             if (lect.escaneado) {
               /* un escaneo se lee con OCR (27-sep-2026). Sin la clave en el despliegue queda
                  NO definitivo: «Volver a buscar documentos» lo reintenta cuando se active */
               const ocr = ocrNoAtiende ? { saturado: true } : typeof window.__pliegoOcrPdf === "function"
-                ? await window.__pliegoOcrPdf(datos, (hecho, total, extra) => avanzar(extra && extra.espera_s
-                  ? `Leyendo ${i + 1} de ${pend.length}: ${a.tipo_legible || "documento"} (${a.nombre || ""}) es un escaneo y el servicio de reconocimiento de texto no está atendiendo: se vuelve a intentar en ${extra.espera_s} segundos…`
-                  : `Leyendo ${i + 1} de ${pend.length}: ${a.tipo_legible || "documento"} (${a.nombre || ""}) es un escaneo, reconociendo el texto de la página ${hecho + 1} de ${total}…`, i, pend.length))
+                ? await window.__pliegoOcrPdf(datos, (hecho, total, extra) => avanzar({ ...cab, etapa: (extra && extra.etapa) || "reconociendo", hecho, total, desde: extra && extra.desde, hasta: extra && extra.hasta, espera_s: extra && extra.espera_s }))
                 : null;
               if (!ocr || ocr.sin_clave) { await marcarIlegible("es un escaneo: se leerá cuando se active el reconocimiento de texto (OCR) en la aplicación", false); fallidos++; continue; }
               if (ocr.saturado) { ocrNoAtiende = true; await marcarIlegible("es un escaneo y el servicio de reconocimiento de texto (OCR) no está atendiendo", false, true); fallidos++; continue; }
@@ -5696,6 +5728,7 @@
               if (ocr.texto.trim().length < 50) { await marcarIlegible("es un escaneo y el reconocimiento de texto no sacó nada legible", true); fallidos++; continue; }
               texto = ocr.texto; paginasTotal = ocr.paginas; origen = "ocr";
               sinTexto = Array.isArray(ocr.sin_texto) ? ocr.sin_texto.length : 0;   // las páginas que el servicio procesó y no traían texto: se guardan con su número y se muestran
+              if (ocr.tiempos && typeof ocr.tiempos === "object") Object.assign(tiempos, ocr.tiempos);
             } else {
               texto = lect.texto;
               paginasTotal = lect.paginas;
@@ -5705,7 +5738,9 @@
              20 MB puede traer más texto del que cabe en la petición), y se dice que se cortó */
           const tope = Number(r.max_caracteres) > 0 ? Number(r.max_caracteres) : null;
           if (tope && texto.length > tope) { texto = texto.slice(0, tope); recortadoEnOrigen = true; }
-          await api("/api/pliego?op=documentos", { method: "POST", body: { id_proceso: id, id_documento: a.id_documento, texto, perfil, recortado_en_origen: recortadoEnOrigen, paginas_total: paginasTotal, origen, ...(sinTexto ? { paginas_sin_texto: sinTexto } : {}) } });
+          avanzar({ ...cab, etapa: "guardando" });
+          tiempos.total_ms = Math.round(ahoraMs() - iniDoc);
+          await api("/api/pliego?op=documentos", { method: "POST", body: { id_proceso: id, id_documento: a.id_documento, texto, perfil, recortado_en_origen: recortadoEnOrigen, paginas_total: paginasTotal, origen, ...(sinTexto ? { paginas_sin_texto: sinTexto } : {}), tiempos } });
           leidos++;
         } catch (e) {
           fallidos++;
@@ -5725,7 +5760,9 @@
     if (buscado && !leidos && !fallidos && !rehechos && indiceDeCache) pintarProgresoDocs(id);
     else if (buscado) {
       seguimientoCargadoPara = null;
-      await cargarSeguimiento({ forzar: true });
+      /* rehacer la guía con lo leído tarda: se dice, en vez de dejar el avance vacío o con el último mensaje */
+      avanzar({ etapa: "actualizando" });
+      try { await cargarSeguimiento({ forzar: true }); } finally { docsProgreso.delete(id); pintarProgresoDocs(id); }
       const det = secSeg && secSeg.querySelector(`details[data-seg-guia="${CSS.escape(id)}"]`);
       if (det && det.open && (leidos || fallidos)) consultarDictamenGuardado(id);
     } else pintarProgresoDocs(id);

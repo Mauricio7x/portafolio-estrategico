@@ -5229,6 +5229,19 @@ async function main() {
       const noOcr = await lanzar({ texto: texto6, origen: "texto", paginas_total: 6, paginas_sin_texto: 1 });
       assert.strictEqual((await H.leerDocs(rS, idS)).leidos["12"].paginas_sin_texto, undefined, "ni en un documento que no salió de un OCR");
       assert.ok(hostil.status === 200 && noOcr.status === 200);
+      // LOS TIEMPOS de la lectura (20-oct-2026): el servidor guarda solo enteros dentro de rango, y se ven en el expediente
+      const conT = await lanzar({ texto: texto6, origen: "ocr", paginas_total: 6, tiempos: { descarga_ms: 65000, partes: 6, reconocer_ms: 187000, total_ms: 252000, preparar_ms: -5, espera_ms: "9", lector_ms: 1e12, malo: 1 } });
+      const trasT = await H.leerDocs(rS, idS);
+      assert.deepStrictEqual(trasT.leidos["12"].tiempos, { descarga_ms: 65000, reconocer_ms: 187000, total_ms: 252000, partes: 6 }, `el servidor guarda los tiempos válidos y descarta lo hostil (negativo, texto, fuera de rango, clave ajena) (MUTACIÓN A1): ${JSON.stringify(trasT.leidos["12"].tiempos)}`);
+      const sinT = await lanzar({ texto: texto6, origen: "ocr", paginas_total: 6, tiempos: "x" });
+      assert.strictEqual((await H.leerDocs(rS, idS)).leidos["12"].tiempos, undefined, "sin tiempos válidos no se guarda nada (ausencia ≠ cero)");
+      assert.ok(conT.status === 200 && sinT.status === 200);
+      await lanzar({ texto: texto6, origen: "ocr", paginas_total: 6, paginas_sin_texto: 1, tiempos: { descarga_ms: 65000, partes: 6, reconocer_ms: 187000, total_ms: 252000, preparar_ms: 400 } });   // 5 con texto + 1 sin texto de 6: leído entero (no «a medias»)
+      const tT = await H.leerDocs(rS, idS), bT = Gp.bloqueDocumentos(tT, Dp.resumenLectura(tT), Dp.loQueDicen(tT, {}), null);
+      const XT = require("../public/expediente.js"), filaT = XT.documentosEntidad({ id: idS, guia: { documentos: bT } }).find((f) => f.estado === "leido");
+      assert.ok(filaT, `el documento leído entero aparece como «leído» en el expediente: ${JSON.stringify(bT.leidos)}`);
+      assert.strictEqual(filaT && filaT.tiempo, "tardó 4 min 12 s (descarga 1 min 5 s, reconocimiento de texto 3 min 7 s)", `el expediente dice cuánto tardó y en qué (MUTACIÓN A2): ${JSON.stringify(filaT && filaT.tiempo)}`);
+      assert.ok(/tardó 4 min 12 s/.test(XT.htmlFilaDoc(filaT, 1)), "y la fila del documento lo pinta");
     }
 
     // …y la pantalla del expediente
@@ -5240,6 +5253,113 @@ async function main() {
     assert.ok(/39 de 40 páginas con texto \(1 sin texto reconocido\)/.test(htmlM), "un escaneo con una página sin texto lo dice, y no está «a medias»");
     assert.ok(/20 páginas/.test(htmlM) && !/20 de 21/.test(htmlM), "un PDF con texto no cambia: una página en blanco no es «a medias»");
     console.log("· unidad escaneo a medias: la función real del OCR cuenta por marcadores (tanda recortada, cortes 401/403, fallos dentro de una tanda con texto) y aparte las páginas sin texto; un escaneo a medias NO se guarda como leído; una relectura pedida con «Volver a buscar» conserva el texto si falla; las páginas sin texto se guardan y se muestran");
+  }
+
+  /* unidad avance de la lectura — EL AVANCE DICE LO QUE PASA (20-oct-2026). El dueño veía «Los documentos de la entidad están en espera de leerse…» durante minutos: no se
+     sabía si la aplicación trabajaba, esperaba su turno o se había trabado, y «Volver a buscar» quedaba detrás de todos los procesos abiertos. Ahora cada etapa se dice con
+     lo que se conoce (documento x de y, páginas ya reconocidas, megabytes traídos), la barra mide ESA etapa y el proceso que espera dice qué hay delante. Aquí se ejecuta el código
+     real: los pintores de expediente.js, la función real del OCR (eventos y tiempos) y la fila real de app.js. */
+  bqAvance: { if (!corre("unidad avance de la lectura")) break bqAvance;
+    const X = require("../public/expediente.js");
+    const plSrc = fs.readFileSync(path.join(__dirname, "..", "public", "pliego.js"), "utf8");
+    const appSrc = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+    const llaves = (src, ini) => { let prof = 0; for (let k = src.indexOf("{", ini); k < src.length; k++) { if (src[k] === "{") prof++; else if (src[k] === "}" && --prof === 0) return k; } return -1; };
+    // (1) los pintores: cada etapa dice qué hace; la barra solo con total conocido
+    const c = { i: 2, de: 5, tipo: "Estudio previo", nombre: "ESTUDIO PREVIO.pdf" };
+    assert.strictEqual(X.textoAvance({ etapa: "buscando" }), "Buscando los documentos del proceso en SECOP II…");
+    assert.strictEqual(X.textoAvance({ ...c, etapa: "bajando", hecho: 3145728, total: 16986931 }), "Documento 2 de 5 · Estudio previo · ESTUDIO PREVIO.pdf · bajando el archivo: 3,0 MB de 16,2 MB");
+    assert.ok(/bajando el archivo…$/.test(X.textoAvance({ ...c, etapa: "bajando" })), "sin el peso conocido no se inventa «0 de 0 MB»");
+    assert.strictEqual(X.textoAvance({ ...c, etapa: "reconociendo", hecho: 10, total: 78, desde: 11, hasta: 15 }), "Documento 2 de 5 · Estudio previo · ESTUDIO PREVIO.pdf · es un escaneo: reconociendo el texto de las páginas 11 a 15 de 78 (10 ya reconocidas)…", "«página x de y, de documento x»: lo que el dueño pidió ver (MUTACIÓN V1)");
+    assert.ok(/preparando la página 13 de 78/.test(X.textoAvance({ ...c, etapa: "preparando", hecho: 10, total: 78, desde: 13, hasta: 13 })));
+    assert.ok(/no está atendiendo: se vuelve a intentar en 30 segundos/.test(X.textoAvance({ ...c, etapa: "espera_ocr", espera_s: 30 })));
+    assert.ok(/guardando lo leído/.test(X.textoAvance({ ...c, etapa: "guardando" })));
+    assert.strictEqual(X.textoAvance({ ...c, etapa: "actualizando" }), "Actualizando la guía del proceso con lo leído…", "rehacer la guía con lo leído tarda: se dice");
+    assert.ok(!/undefined|NaN|null/.test(X.textoAvance({ ...c, etapa: "reconociendo", hecho: "x", total: -3, desde: "a", hasta: null })), "una cifra hostil no se pinta tal cual");
+    assert.strictEqual(X.fraccionAvance({ etapa: "bajando", hecho: 3145728, total: 12582912 }), 0.25);
+    assert.strictEqual(X.fraccionAvance({ etapa: "reconociendo", hecho: 10, total: 80 }), 0.125, "la barra mide páginas ya reconocidas de las que tiene (MUTACIÓN V2)");
+    assert.strictEqual(X.fraccionAvance({ etapa: "reconociendo", hecho: 99, total: 80 }), 1, "una cifra de más se recorta");
+    for (const raro of [{ etapa: "bajando" }, { etapa: "bajando", hecho: 5, total: 0 }, { etapa: "reconociendo", hecho: -1, total: 10 }, { etapa: "reconociendo", hecho: 2.5, total: 10 }, { etapa: "buscando", hecho: 1, total: 2 }, { etapa: "guardando", hecho: 1, total: 2 }, null])
+      assert.strictEqual(X.fraccionAvance(raro), null, `sin total conocido, o en una etapa sin medida, NO hay barra: jamás un porcentaje inventado: ${JSON.stringify(raro)}`);
+    const conBarra = X.htmlAvance({ ...c, etapa: "reconociendo", hecho: 10, total: 80, desde: 11, hasta: 15 });
+    assert.ok(/role="progressbar"/.test(conBarra) && /width:13%/.test(conBarra) && /aria-valuenow="13"/.test(conBarra), `la barra real con su porcentaje: ${conBarra}`);
+    assert.ok(!/progressbar/.test(X.htmlAvance({ ...c, etapa: "leyendo_pdf" })), "una etapa sin medida no pinta barra");
+    assert.ok(/text-red-700/.test(X.htmlAvance({ error: true, texto: "No se pudo" })), "un error sale en rojo, como antes");
+    assert.strictEqual(X.htmlAvance(null, null), "", "sin lectura ni fila no se pinta nada");
+    const esperando = X.htmlAvance(null, { ahora: "«Mantenimiento de vías» (CO1.REQ.1)", delante: 2 });
+    assert.ok(/Esperando turno: ahora se lee «Mantenimiento de vías» \(CO1\.REQ\.1\); antes de este hay 2 más en la fila/.test(esperando) && !/en espera de leerse/.test(esperando), `quien espera dice qué se lee ahora y cuántos hay antes: ${esperando}`);
+    assert.ok(!/antes de este hay/.test(X.htmlAvance(null, { ahora: "otro", delante: 0 })), "sin nadie antes no se dice «hay 0 más»");
+    assert.ok(/por empezar/.test(X.htmlAvance(null, { ahora: null, delante: 0 })));
+    assert.strictEqual(X.duracionLegible(252000), "4 min 12 s"); assert.strictEqual(X.duracionLegible(60000), "1 min"); assert.strictEqual(X.duracionLegible(400), "menos de 1 s"); assert.strictEqual(X.duracionLegible(-1), null); assert.strictEqual(X.duracionLegible("x"), null);
+    assert.strictEqual(X.frasesTiempo({ descarga_ms: 5000 }), null, "sin el total no se dice cuánto tardó");
+    assert.strictEqual(X.frasesTiempo({ total_ms: 252000, preparar_ms: 400 }), "tardó 4 min 12 s", "una etapa de menos de 1 s no se lista");
+
+    // (2) la función REAL del OCR: avisa cada etapa con las páginas ya reconocidas y mide dónde se va el tiempo
+    const mMarc = plSrc.match(/const marcadorPagina = (\(n\) => [^;]+);/), mReb = plSrc.match(/const renumerarMarcadores = (\(texto, numeros\) => \{[\s\S]*?\n  \});/);
+    const renumerarMarcadores = new Function(`const marcadorPagina = ${mMarc[1]}; const renumerarMarcadores = ${mReb[1]}; return renumerarMarcadores;`)();
+    const iH = plSrc.indexOf("const paginasDeTanda = "), paginasDeTanda = new Function(`${plSrc.slice(iH, llaves(plSrc, plSrc.indexOf("=> {", iH)) + 2)}\nreturn paginasDeTanda;`)();
+    const iT = plSrc.indexOf("async function tandaOcrConEsperas("), tandaOcrConEsperas = new Function(`return (${plSrc.slice(iT, llaves(plSrc, iT) + 1)})`)();
+    const iO = plSrc.indexOf("window.__pliegoOcrPdf = async"), fuenteOcr = plSrc.slice(iO, plSrc.indexOf("\n  };\n", iO) + 6);
+    const dormir = (ms) => new Promise((r) => setTimeout(r, ms));
+    const ocrMedido = async (total, msPagina, msTanda) => {
+      const win = { Glosario: { errorDelServidor: (cu) => (cu && cu.error) || "", fraseDeFallo: () => "frase" } };
+      new Function("window", "cargarPdfJs", "rasterizarPagina", "pedir", "MAX_PAGINAS_OCR", "renumerarMarcadores", "tandaOcrConEsperas", "paginasDeTanda", "MSG_401", fuenteOcr)(win,
+        async () => ({ getDocument: () => ({ promise: Promise.resolve({ numPages: total, destroy: async () => {} }) }) }),
+        async () => { await dormir(msPagina); return { base64: "x", mime: "image/jpeg" }; },
+        async (_r, cuerpo) => { await dormir(msTanda); const n = (cuerpo.imagenes_base64 || []).length; return { estado: 200, cuerpo: { ok: true, texto_ocr: Array.from({ length: n }, (_, k) => `\f${k + 1}\nTexto de la página ${k + 1} del presupuesto oficial con ítems y cantidades`).join("\n"), ocr: { fallos: [], saturado: false } } }; },
+        5, renumerarMarcadores, tandaOcrConEsperas, paginasDeTanda, "sesión");
+      const eventos = [];
+      const r = await win.__pliegoOcrPdf(new Uint8Array(4), (hecho, tot, extra) => eventos.push({ hecho, total: tot, ...(extra || {}) }));
+      return { r, eventos };
+    };
+    const { r: rM, eventos: ev } = await ocrMedido(7, 12, 60);   // 7 páginas = una tanda de 5 y una de 2
+    assert.deepStrictEqual(ev.filter((e) => e.etapa === "preparando").map((e) => [e.hecho, e.desde]), [[0, 1], [0, 2], [0, 3], [0, 4], [0, 5], [5, 6], [5, 7]], `cada página que se prepara avisa cuántas ya van reconocidas (las de las tandas anteriores): ${JSON.stringify(ev)}`);
+    assert.deepStrictEqual(ev.filter((e) => e.etapa === "reconociendo").map((e) => [e.hecho, e.desde, e.hasta, e.total]), [[0, 1, 5, 7], [5, 6, 7, 7]], "cada tanda avisa qué páginas reconoce, de cuántas (MUTACIÓN V3)");
+    const tM = rM.tiempos;
+    assert.ok(tM && ["preparar_ms", "reconocer_ms", "espera_ms"].every((k) => Number.isInteger(tM[k]) && tM[k] >= 0), `el resultado trae los tiempos como enteros: ${JSON.stringify(tM)}`);
+    assert.ok(tM.preparar_ms >= 7 * 12 * 0.7 && tM.preparar_ms < 7 * 12 + 400, `preparar mide el rasterizado (7 × 12 ms): ${tM.preparar_ms}`);
+    assert.ok(tM.reconocer_ms >= 2 * 60 * 0.7 && tM.reconocer_ms < 2 * 60 + 400 && tM.espera_ms === 0, `reconocer mide las 2 peticiones (2 × 60 ms) y sin saturación no hay espera (MUTACIÓN V4): ${JSON.stringify(tM)}`);
+
+    // (3) la fila REAL de app.js: lo que el usuario pide va antes de lo que se puso solo, sin interrumpir al que ya se lee
+    const iC = appSrc.indexOf("const docsCola = [];"), fC = appSrc.indexOf("function bytesDeBase64");
+    assert.ok(iC > 0 && fC > iC, "app.js trae la fila de lectura");
+    const lanzados = [], resolver = new Map(), pintados = [];
+    const filaReal = new Function("pintarProgresoDocsFuera", "leerDocumentos", "procesoGuardado", "raizExpediente", "secSeg", "ultimoSeguimiento", "CSS", "esc",
+      `${appSrc.slice(iC, fC).replace("function pintarProgresoDocs(id) {", "function pintarProgresoDocs(id) { pintarProgresoDocsFuera(id);")}\nreturn { docsCola, docsProgreso, encolarLecturaDocumentos, htmlAvanceDocs, turnoDe, enCurso: () => docsEnCurso };`)(
+      (id) => pintados.push(id), (id) => { lanzados.push(id); return new Promise((r) => resolver.set(id, r)); },
+      (id) => ({ id, objeto: id === "A" ? "Mantenimiento de la vía a la vereda El Hato" : "" }), () => X, null, { procesos: [] }, { escape: (x) => x }, (x) => x);
+    filaReal.encolarLecturaDocumentos("A");
+    assert.deepStrictEqual([filaReal.enCurso(), lanzados], ["A", ["A"]], "el primero empieza de inmediato");
+    filaReal.encolarLecturaDocumentos("B"); filaReal.encolarLecturaDocumentos("C");
+    filaReal.encolarLecturaDocumentos("D", { manual: true });
+    assert.deepStrictEqual(filaReal.docsCola.map((x) => x.id), ["D", "B", "C"], `lo que el usuario pide va antes de lo que se puso solo (MUTACIÓN V5: al final de la fila): ${JSON.stringify(filaReal.docsCola)}`);
+    filaReal.encolarLecturaDocumentos("E", { manual: true });
+    assert.deepStrictEqual(filaReal.docsCola.map((x) => x.id), ["D", "E", "B", "C"], "entre pedidos del usuario se respeta el orden en que los pidió");
+    filaReal.encolarLecturaDocumentos("F");
+    filaReal.encolarLecturaDocumentos("D", { manual: true }); filaReal.encolarLecturaDocumentos("A", { manual: true });
+    assert.deepStrictEqual(filaReal.docsCola.map((x) => x.id), ["D", "E", "B", "C", "F"], "un proceso ya en la fila o en curso no se repite");
+    assert.strictEqual(filaReal.enCurso(), "A", "el que ya se lee no se interrumpe");
+    const hB = filaReal.htmlAvanceDocs("B");
+    assert.ok(/ahora se lee «Mantenimiento de la vía a la vereda El Hato» \(A\)/.test(hB) && /antes de este hay 2 más en la fila/.test(hB), `el que espera dice qué se lee y cuántos hay antes: ${hB}`);
+    assert.ok(/ahora se lee/.test(filaReal.htmlAvanceDocs("D")) && !/antes de este hay/.test(filaReal.htmlAvanceDocs("D")), "el primero de la fila no dice «hay 0 más»");
+    assert.strictEqual(filaReal.htmlAvanceDocs("Z"), "", "un proceso que no está ni en curso ni en la fila no pinta nada");
+    pintados.length = 0; resolver.get("A")();
+    await dormir(5);
+    assert.deepStrictEqual([filaReal.enCurso(), lanzados.slice(-1)[0]], ["D", "D"], "al terminar uno empieza el siguiente de la fila");
+    assert.ok(["E", "B", "C", "F"].every((id) => pintados.includes(id)), "y quienes siguen esperando se repintan con lo que hay delante ahora (MUTACIÓN V6)");
+    assert.strictEqual(filaReal.htmlAvanceDocs("D"), "", "el que se lee ahora y aún no dijo su avance NO está esperando turno: no se afirma nada (MUTACIÓN V12: «por empezar» pegado al terminar, medido en navegador real)");
+    filaReal.docsProgreso.set("D", { etapa: "bajando", hecho: 1048576, total: 4194304, i: 1, de: 3, tipo: "Pliego", nombre: "PLIEGO.pdf", texto: X.textoAvance({ etapa: "bajando", hecho: 1048576, total: 4194304, i: 1, de: 3, tipo: "Pliego", nombre: "PLIEGO.pdf" }) });
+    assert.ok(/bajando el archivo: 1,0 MB de 4,0 MB/.test(filaReal.htmlAvanceDocs("D")) && /width:25%/.test(filaReal.htmlAvanceDocs("D")), "con avance real, la fila pinta ese avance y su barra");
+    // al TERMINAR la lectura se repinta: el último mensaje no se queda pegado (el defecto que el dueño vio como «en espera de leerse…» durante minutos)
+    filaReal.docsProgreso.delete("D"); pintados.length = 0; resolver.get("D")();
+    await dormir(5);
+    assert.ok(pintados.includes("D") && filaReal.enCurso() === "E" && filaReal.htmlAvanceDocs("D") === "", `al terminar un proceso se repinta SU caja, ya sin mensaje (MUTACIÓN V11): ${JSON.stringify(pintados)} · ${filaReal.htmlAvanceDocs("D")}`);
+
+    // (4) los hilos de leerDocumentos: cada etapa avisa y los tiempos viajan con el texto guardado
+    const iL = appSrc.indexOf("async function leerDocumentos(");
+    const cuerpoL = appSrc.slice(iL, appSrc.indexOf("function pintarDetalleCompetencia", iL));   // hasta la función que le sigue: el primer «{» de la firma es el de un parámetro
+    assert.ok(/etapa: "bajando"/.test(cuerpoL) && /etapa: "leyendo_pdf"/.test(cuerpoL) && /etapa: "guardando"/.test(cuerpoL) && /etapa: "actualizando"/.test(cuerpoL) && /tiempos\.total_ms = /.test(cuerpoL) && /,\s*tiempos \} \}\);/.test(cuerpoL),
+      "leerDocumentos avisa bajando, leyendo y guardando, y manda los tiempos con el texto (MUTACIÓN V7)");
+    console.log("· unidad avance de la lectura: cada etapa dice qué hace (documento x de y, páginas ya reconocidas, megabytes traídos), la barra mide lo que se conoce y nada más, el que espera dice qué hay delante, lo que el usuario pide pasa antes de lo automático y el servidor guarda los tiempos de cada etapa");
   }
 
   /* unidad: convenios — «aunar esfuerzos» y compañía NO son licitaciones */

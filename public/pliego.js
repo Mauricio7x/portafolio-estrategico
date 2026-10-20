@@ -1543,20 +1543,29 @@
     try {
       const total = doc.numPages, trozos = [], fallos = [], sinTexto = [];
       let seguidasSinNada = 0;
+      /* LOS TIEMPOS POR ETAPA (20-oct-2026): preparar las páginas (rasterizar), reconocerlas (la petición al servicio, SIN sus esperas) y esperar al servicio
+         saturado. Sin esto «diez minutos» no dice dónde se van; se devuelven con el resultado y el servidor los guarda. `hecho` que se avisa = páginas ya reconocidas. */
+      const ahoraMs = () => (typeof performance !== "undefined" && performance.now ? performance.now() : Date.now());
+      let prepararMs = 0, reconocerMs = 0, esperaMs = 0;
       for (let desde = 1; desde <= total; desde += MAX_PAGINAS_OCR) {
         const hasta = Math.min(desde + MAX_PAGINAS_OCR - 1, total);
         const imagenes = [], numeros = [];
+        const iniPrep = ahoraMs();
         for (let n = desde; n <= hasta; n++) {
-          avisar(n - 1, total);
+          avisar(desde - 1, total, { etapa: "preparando", desde: n, hasta: n });
           await new Promise((r) => setTimeout(r, 0));
           const img = await rasterizarPagina(doc, n);
           if (img) { imagenes.push(img); numeros.push(n); } else fallos.push(n);
         }
+        prepararMs += ahoraMs() - iniPrep;
         if (!imagenes.length) continue;
+        avisar(desde - 1, total, { etapa: "reconociendo", desde, hasta });
+        const iniOcr = ahoraMs(); let esperaTanda = 0;
         const { rt, saturado } = await tandaOcrConEsperas(
           () => pedir("/api/pliego?op=extraer-texto", { texto_extraido: "", imagenes_base64: imagenes, solo_reconocer: true }),
-          (ms) => avisar(desde - 1, total, { espera_s: Math.round(ms / 1000) }),
+          (ms) => { esperaTanda += ms; avisar(desde - 1, total, { etapa: "espera_ocr", espera_s: Math.round(ms / 1000) }); },
           (ms) => new Promise((r) => setTimeout(r, ms)));
+        esperaMs += esperaTanda; reconocerMs += Math.max(0, ahoraMs() - iniOcr - esperaTanda);
         if (rt.cuerpo && rt.cuerpo.ocr_configurado === false) return { sin_clave: true, nota: rt.cuerpo.error || "" };
         if (rt.red) throw new Error(rt.red);
         if (rt.estado === 401) throw new Error(MSG_401);
@@ -1582,7 +1591,8 @@
          NO puede dar por leído un escaneo a medias. */
       const sinLeer = [...new Set(fallos)].sort((a, b) => a - b);
       const vacias = [...new Set(sinTexto)].filter((n) => !sinLeer.includes(n)).sort((a, b) => a - b);
-      return { texto: trozos.join("\n"), paginas: total, fallos: sinLeer, sin_texto: vacias, paginas_leidas: Math.max(0, total - sinLeer.length - vacias.length) };
+      return { texto: trozos.join("\n"), paginas: total, fallos: sinLeer, sin_texto: vacias, paginas_leidas: Math.max(0, total - sinLeer.length - vacias.length),
+        tiempos: { preparar_ms: Math.round(prepararMs), reconocer_ms: Math.round(reconocerMs), espera_ms: Math.round(esperaMs) } };
     } finally { try { await doc.destroy(); } catch { /* ya liberado */ } }
   };
 })();
