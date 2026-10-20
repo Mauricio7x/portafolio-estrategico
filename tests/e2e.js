@@ -5058,11 +5058,16 @@ async function main() {
     const tandaOcrConEsperas = new Function(`return (${plSrc.slice(iT, llaves(plSrc, iT) + 1)})`)();
     const iO = plSrc.indexOf("window.__pliegoOcrPdf = async");
     const fuenteOcr = plSrc.slice(iO, plSrc.indexOf("\n  };\n", iO) + 6);
+    // la tanda REAL (por peso y por páginas), extraída de pliego.js con su tope real
+    const iRT = plSrc.indexOf("const pesoDeImagen = "), fRT = plSrc.indexOf("\n  window.__pliegoOcrPdf = async", iRT);
+    const MAX_BYTES_TANDA_REAL = new Function(`return ${plSrc.match(/const MAX_BYTES_TANDA = ([^;]+);/)[1]};`)();
+    const tandaReal = (rasterizarPagina) => new Function("rasterizarPagina", "MAX_PAGINAS_OCR", "MAX_BYTES_TANDA", `${plSrc.slice(iRT, fRT)}\nreturn rasterizarTanda;`)(rasterizarPagina, 5, MAX_BYTES_TANDA_REAL);
     const ocrReal = (total, { sinRaster = [], porTanda }) => {
       const win = { Glosario: { errorDelServidor: (c) => (c && c.error) || "", fraseDeFallo: () => "frase" } };
-      new Function("window", "cargarPdfJs", "rasterizarPagina", "pedir", "MAX_PAGINAS_OCR", "renumerarMarcadores", "tandaOcrConEsperas", "paginasDeTanda", "MSG_401", fuenteOcr)(win,
+      const rasterizarPagina = async (_doc, n) => (sinRaster.includes(n) ? null : { base64: "x", mime: "image/jpeg" });
+      new Function("window", "cargarPdfJs", "rasterizarPagina", "rasterizarTanda", "pedir", "MAX_PAGINAS_OCR", "renumerarMarcadores", "tandaOcrConEsperas", "paginasDeTanda", "MSG_401", fuenteOcr)(win,
         async () => ({ getDocument: () => ({ promise: Promise.resolve({ numPages: total, destroy: async () => {} }) }) }),
-        async (_doc, n) => (sinRaster.includes(n) ? null : { base64: "x", mime: "image/jpeg" }),
+        rasterizarPagina, tandaReal(rasterizarPagina),
         async (_ruta, cuerpo) => ({ estado: 200, cuerpo: porTanda((cuerpo.imagenes_base64 || []).length) }),
         5, renumerarMarcadores, tandaOcrConEsperas, paginasDeTanda, "sesión");
       return win.__pliegoOcrPdf(new Uint8Array(4), () => {});
@@ -5300,16 +5305,21 @@ async function main() {
     const iT = plSrc.indexOf("async function tandaOcrConEsperas("), tandaOcrConEsperas = new Function(`return (${plSrc.slice(iT, llaves(plSrc, iT) + 1)})`)();
     const iO = plSrc.indexOf("window.__pliegoOcrPdf = async"), fuenteOcr = plSrc.slice(iO, plSrc.indexOf("\n  };\n", iO) + 6);
     const dormir = (ms) => new Promise((r) => setTimeout(r, ms));
-    const ocrMedido = async (total, msPagina, msTanda) => {
+    const iRT = plSrc.indexOf("const pesoDeImagen = "), fRT = plSrc.indexOf("\n  window.__pliegoOcrPdf = async", iRT);
+    const MAX_BYTES_TANDA_REAL = new Function(`return ${plSrc.match(/const MAX_BYTES_TANDA = ([^;]+);/)[1]};`)();
+    const tandaReal = (rasterizarPagina) => new Function("rasterizarPagina", "MAX_PAGINAS_OCR", "MAX_BYTES_TANDA", `${plSrc.slice(iRT, fRT)}\nreturn rasterizarTanda;`)(rasterizarPagina, 5, MAX_BYTES_TANDA_REAL);
+    const ocrMedido = async (total, msPagina, msTanda, { base64Len = 1 } = {}) => {
       const win = { Glosario: { errorDelServidor: (cu) => (cu && cu.error) || "", fraseDeFallo: () => "frase" } };
-      new Function("window", "cargarPdfJs", "rasterizarPagina", "pedir", "MAX_PAGINAS_OCR", "renumerarMarcadores", "tandaOcrConEsperas", "paginasDeTanda", "MSG_401", fuenteOcr)(win,
+      const cuerpos = [];
+      const rasterizarPagina = async () => { await dormir(msPagina); return { base64: "x".repeat(base64Len), mime: "image/jpeg" }; };
+      new Function("window", "cargarPdfJs", "rasterizarPagina", "rasterizarTanda", "pedir", "MAX_PAGINAS_OCR", "renumerarMarcadores", "tandaOcrConEsperas", "paginasDeTanda", "MSG_401", fuenteOcr)(win,
         async () => ({ getDocument: () => ({ promise: Promise.resolve({ numPages: total, destroy: async () => {} }) }) }),
-        async () => { await dormir(msPagina); return { base64: "x", mime: "image/jpeg" }; },
-        async (_r, cuerpo) => { await dormir(msTanda); const n = (cuerpo.imagenes_base64 || []).length; return { estado: 200, cuerpo: { ok: true, texto_ocr: Array.from({ length: n }, (_, k) => `\f${k + 1}\nTexto de la página ${k + 1} del presupuesto oficial con ítems y cantidades`).join("\n"), ocr: { fallos: [], saturado: false } } }; },
+        rasterizarPagina, tandaReal(rasterizarPagina),
+        async (_r, cuerpo) => { await dormir(msTanda); const n = (cuerpo.imagenes_base64 || []).length; cuerpos.push({ n, bytes: JSON.stringify(cuerpo).length }); return { estado: 200, cuerpo: { ok: true, texto_ocr: Array.from({ length: n }, (_, k) => `\f${k + 1}\nTexto de la página ${k + 1} del presupuesto oficial con ítems y cantidades`).join("\n"), ocr: { fallos: [], saturado: false } } }; },
         5, renumerarMarcadores, tandaOcrConEsperas, paginasDeTanda, "sesión");
       const eventos = [];
       const r = await win.__pliegoOcrPdf(new Uint8Array(4), (hecho, tot, extra) => eventos.push({ hecho, total: tot, ...(extra || {}) }));
-      return { r, eventos };
+      return { r, eventos, cuerpos };
     };
     const { r: rM, eventos: ev } = await ocrMedido(7, 12, 60);   // 7 páginas = una tanda de 5 y una de 2
     assert.deepStrictEqual(ev.filter((e) => e.etapa === "preparando").map((e) => [e.hecho, e.desde]), [[0, 1], [0, 2], [0, 3], [0, 4], [0, 5], [5, 6], [5, 7]], `cada página que se prepara avisa cuántas ya van reconocidas (las de las tandas anteriores): ${JSON.stringify(ev)}`);
@@ -5318,6 +5328,38 @@ async function main() {
     assert.ok(tM && ["preparar_ms", "reconocer_ms", "espera_ms"].every((k) => Number.isInteger(tM[k]) && tM[k] >= 0), `el resultado trae los tiempos como enteros: ${JSON.stringify(tM)}`);
     assert.ok(tM.preparar_ms >= 7 * 12 * 0.7 && tM.preparar_ms < 7 * 12 + 400, `preparar mide el rasterizado (7 × 12 ms): ${tM.preparar_ms}`);
     assert.ok(tM.reconocer_ms >= 2 * 60 * 0.7 && tM.reconocer_ms < 2 * 60 + 400 && tM.espera_ms === 0, `reconocer mide las 2 peticiones (2 × 60 ms) y sin saturación no hay espera (MUTACIÓN V4): ${JSON.stringify(tM)}`);
+
+    // (2b) LA TANDA SE ARMA POR PESO (20-oct-2026): con el estudio previo real de CO1.REQ.11033801 las tandas fijas de 5 páginas salían de 1,75 a 4,05 MB (la primera pasaba el tope de 4 MB
+    // de la aplicación) y el documento del dueño falló con «código 413»; la tanda ahora cierra al llegar a 5 páginas o a MAX_BYTES_TANDA, lo que ocurra antes
+    const tandasDe = async (pesos, { nulas = [] } = {}) => {   // pesos[n-1] = largo del base64 de la página n
+      const salida = []; let siguiente = 1, sobrante = null; const total = pesos.length, sinRaster = [];
+      const tanda = tandaReal(async (_doc, n) => (nulas.includes(n) ? null : { base64: "x".repeat(pesos[n - 1]), mime: "image/jpeg" }));
+      while (siguiente <= total || sobrante) {
+        const tt = await tanda(null, siguiente, total, { sobrante });
+        siguiente = tt.siguiente; sobrante = tt.sobrante; sinRaster.push(...tt.sinRaster);
+        if (tt.imagenes.length) salida.push({ numeros: tt.numeros, bytes: tt.bytes });
+      }
+      return { tandas: salida, sinRaster };
+    };
+    assert.strictEqual(MAX_BYTES_TANDA_REAL, 3.5 * 1024 * 1024, "el tope de una tanda deja margen bajo los 4 MB de la aplicación y los 4,5 MB de la plataforma");
+    const pesadas = await tandasDe(Array(12).fill(1000000));
+    assert.deepStrictEqual(pesadas.tandas.map((t) => t.numeros), [[1, 2, 3], [4, 5, 6], [7, 8, 9], [10, 11, 12]], `12 páginas de ~1 MB de base64: tandas de 3, no de 5 (MUTACIÓN P1: sin mirar el peso; P3: tope de 5 MB): ${JSON.stringify(pesadas.tandas.map((t) => t.numeros))}`);
+    assert.deepStrictEqual((await tandasDe(Array(12).fill(100))).tandas.map((t) => t.numeros), [[1, 2, 3, 4, 5], [6, 7, 8, 9, 10], [11, 12]], "con páginas livianas siguen siendo tandas de 5, como antes");
+    assert.deepStrictEqual((await tandasDe([1500000, 1500000, 1000000, 1000000])).tandas.map((t) => t.numeros), [[1, 2], [3, 4]], "la página que no cupo en la tanda abre la siguiente: no se pierde ni se rasteriza dos veces (MUTACIÓN P2)");
+    const conNula = await tandasDe([100, 100, 100, 100], { nulas: [2] });
+    assert.deepStrictEqual([conNula.tandas.map((t) => t.numeros), conNula.sinRaster], [[[1, 3, 4]], [2]], "una página que no se pudo rasterizar se cuenta aparte y no corta la tanda");
+    assert.deepStrictEqual((await tandasDe([4000000, 100, 4000000])).tandas.map((t) => t.numeros), [[1], [2], [3]], "una página que sola pasa el tope viaja sola (el servidor decide), sin dejar una tanda vacía ni repetirla");
+    // ninguna página se pierde, se repite ni cambia de orden, con pesos que varían (una serie fija, sin azar)
+    const mezcla = Array.from({ length: 53 }, (_, i) => 150000 + ((i * 7919) % 11) * 110000), todas = await tandasDe(mezcla, { nulas: [7, 30] });
+    assert.deepStrictEqual([...todas.tandas.flatMap((t) => t.numeros), ...todas.sinRaster].sort((a, b) => a - b), Array.from({ length: 53 }, (_, i) => i + 1), "cada página queda en exactamente una tanda o en las no rasterizadas");
+    assert.deepStrictEqual(todas.tandas.flatMap((t) => t.numeros), todas.tandas.flatMap((t) => t.numeros).slice().sort((a, b) => a - b), "y en orden");
+    assert.ok(todas.tandas.every((t) => t.numeros.length <= 5 && (t.numeros.length === 1 || t.bytes <= MAX_BYTES_TANDA_REAL)), `ninguna tanda pasa de 5 páginas ni del tope de peso: ${JSON.stringify(todas.tandas.map((t) => [t.numeros.length, t.bytes]))}`);
+    const { r: rP, cuerpos: cP } = await ocrMedido(12, 1, 1, { base64Len: 1000000 });
+    assert.ok(cP.length === 4 && cP.every((c) => c.n === 3 && c.bytes < 4 * 1024 * 1024), `la función real del OCR manda 4 peticiones de 3 páginas y NINGUNA pasa de 4 MB: ${JSON.stringify(cP)}`);
+    assert.deepStrictEqual([rP.paginas, rP.fallos, rP.paginas_leidas], [12, [], 12], "y las 12 páginas se leen");
+    // las DOS rutas que arman tandas (la lectura de documentos y el panel «Reintentar con OCR») usan la misma función: ninguna queda con tandas fijas de N páginas (censo de hermanos)
+    assert.strictEqual((plSrc.match(/await rasterizarTanda\(doc, siguiente, total, \{ sobrante,/g) || []).length, 2, "el documento y el panel arman la tanda con rasterizarTanda");
+    assert.ok(!/desde \+= MAX_PAGINAS_OCR/.test(plSrc) && !/tandas = Math\.ceil\(total \/ MAX_PAGINAS_OCR\)/.test(plSrc), "ninguna ruta vuelve a las tandas fijas por conteo (MUTACIÓN P4)");
 
     // (3) la fila REAL de app.js: lo que el usuario pide va antes de lo que se puso solo, sin interrumpir al que ya se lee
     const iC = appSrc.indexOf("const docsCola = [];"), fC = appSrc.indexOf("function bytesDeBase64");
@@ -39621,8 +39663,10 @@ async function main() {
       assert.ok(/trozos\.push\(marcadorPagina\(n\)\);/.test(plSin), "textoDelPdf debe emitir el marcador de CADA página");
       assert.ok(/renumerarMarcadores\(rt\.cuerpo\.texto_ocr, numerosReales\)/.test(plSin),
         "el OCR por tandas renumera con la LISTA de páginas realmente enviadas, no sumando a `desde`");
-      assert.ok(/numerosReales\.push\(n\)/.test(plSin),
-        "el bucle tiene que registrar el número real de cada imagen que sí se envía");
+      /* la garantía vive ahora en `rasterizarTanda` (20-oct-2026: las tandas se arman por peso, y las dos rutas comparten la función): ella registra el número REAL de cada imagen que
+         sí se envía —también el de la página que sobró de la tanda anterior— y el panel renumera con ESA lista; su comportamiento lo ejecuta «unidad avance de la lectura» */
+      assert.ok(/numeros\.push\(n\)/.test(plSin) && /numeros\.push\(sobrante\.n\)/.test(plSin) && /const paginas = tt\.imagenes, numerosReales = tt\.numeros;/.test(plSin),
+        "la tanda tiene que registrar el número real de cada imagen que sí se envía, y el panel renumerar con esa lista");
       assert.ok(!/desde \+ \(f\.pagina - 1\)/.test(plSin),
         "el índice del fallo también se traduce por la lista: sumar a `desde` ignora las páginas descartadas");
       // (4) el parseo: la fila sabe su página; el reparto sigue sumando; sin marcadores → null
