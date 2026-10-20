@@ -20101,3 +20101,34 @@ En una línea: el dueño recargó el expediente de CO1.REQ.11033801 y «ESTUDIO 
 **Verificado.** `tests/e2e.js`, bloque «unidad avance de la lectura»: la `rasterizarTanda` real con pesos (12 páginas de ~1 MB → tandas de 3; livianas → de 5; la página que no cupo abre la siguiente; una nula no corta la tanda; una página sola sobre el tope viaja sola; 53 páginas de pesos variados sin perder, repetir ni desordenar ninguna), la función real del OCR (4 peticiones de 3 páginas, ninguna sobre 4 MB, las 12 páginas leídas) y el censo de las dos rutas. 6 mutaciones, las 6 mueren. Con el PDF real en Chromium, ver «Lo MEDIDO».
 
 **Sin verificar.** Que el 413 del dueño fuera esto (ver el PENDIENTE); el comportamiento con el codificador de JPEG del celular.
+
+### Gasto cero: lo gratuito se proyecta antes de proponer, y los topes viven en una tabla (20-oct-2026)
+
+En una línea: el dueño decidió (20-oct-2026) que Detekta no paga software —ni Vercel Pro, ni Upstash por uso, ni R2 para la copia nocturna, ni correo de avisos— y que la sesión, antes de proponer o ejecutar algo, dice si puede generar un cobro y cuánto añade a la cuota gratuita ya medida: lo necesario que cabe bajo el 90 % del límite se hace, y solo lo que lo pasaría se frena y se decide con él.
+
+> PENDIENTE · nombrar la métrica de Vercel de los 3,46 GB de 10 GB (20-oct-2026): el dueño pega la captura de «Usage» de la cuenta nueva; con ella se completa la tabla y se lee la CPU activa de 30 días, que ya esperaba la semana de despliegue de la cuenta nueva (sección «El 30-sep Vercel Hobby pausó el proyecto…»).
+> PENDIENTE · marca por fila, medir antes de construir (20-oct-2026): el dueño pidió comprobar si NO releer lo que SECOP solo re-sella puede esconder un cambio real (cronograma, estado, valor). Lo hecho el 28-sep compara el contenido de lo que llega y solo evita ESCRIBIR; lo que falta es evitar LEER (unas 123.669 filas por ciclo tras un re-sellado, de 70 a 87 s de CPU). Hay que medir (a) cuántas de esas filas cambiaron de contenido de verdad entre dos lecturas y (b) si algún campo de SECOP II distingue un cambio real de un re-sellado; no se verificó que exista. Sin (a) y (b) no se construye: en oportunidades el falso negativo, un proceso que cambió y no se ve, es el lado caro.
+> PENDIENTE · precisión del anticipo 0 % (20-oct-2026): hoy `anticipo_pct = 0` se trata como «sin dato». Medir en una muestra de pliegos si un 0 declarado es «sin anticipo» real; un 100 % no se certifica con datos, se mide la precisión de la muestra y se publica. Si el cambio toca el índice de baja reabre el tope de 10 MB por respuesta de Upstash.
+> PENDIENTE · filtro de valor desconocido con aviso en pantalla (20-oct-2026): aprobado por el dueño. Sigue siendo inerte (ni 400 ni lista vacía) pero dice «este filtro no se aplicó»; toca `public/`, así que pide navegador real y 4/4.
+> PENDIENTE · decidir con el dueño si se retira de `vercel.json` el cron diario de `/api/respaldo` (07:15 UTC), que responde 503 mientras R2 no exista: ahorra una invocación al día, pero puede chocar con la cerradura de la suite sobre los crones (sin verificar).
+
+**Qué no hay que deshacer, y por qué.**
+1. **La regla proyecta, no prohíbe.** «Nada que toque la cuota» frenaría lo necesario, y el dueño no puede saber si una función suma hasta el tope junto con todas las demás que también la gastan: lo sabe quien proyecta. La sesión estima lo que el cambio añade sobre la línea base medida y frena solo si la suma pasa del 90 % del límite, el mismo margen del 10 % que el dueño fijó para R2 el 17-oct-2026. Si el límite o la línea base no están medidos se dice «sin medir»; no se suponen.
+2. **Dos clases de proveedor, dos riesgos.** Quien cobra a una tarjeta sin poder cortar no se usa sin una cerradura propia de este lado (R2: las alertas de Cloudflare solo avisan y llegan con un día de retraso, verificado el 17-oct; la cerradura es `scripts/base_obra/almacen.js`). Quien pausa no cobra pero apaga producción (Vercel Hobby pausó el proyecto el 30-sep por «Fluid Active CPU» y la pausa no se levantó sola): ahí el costo es la caída, y se proyecta igual.
+3. **Vercel Pro queda fuera.** El 16-oct la salida ante una nueva pausa era «Pro o `tests/servidor_local.js`»; desde hoy es solo la segunda.
+4. **Lo que no se construye ni se configura:** la copia nocturna a R2 (`/api/respaldo` responde 503 mientras falten las cuatro `OBJETOS_*`), el correo de avisos (`aviso_por_correo.configurado:false` el 19-oct), el modelo de IA para clientes (hasta la etapa comercial) y cualquier plan de pago por uso en Upstash. El código ya escrito no se borró. Riesgo aceptado por el dueño: sin copia fuera de Upstash, las señales de prórroga anotadas desde el 16-ago no se pueden volver a bajar de SECOP (`docs/INFRAESTRUCTURA_2026-09-27.md` § 2).
+
+**Tabla de topes** (solo lo que la memoria ya midió o leyó, con su fecha; lo demás va como «sin medir»).
+
+| Proveedor | Límite gratuito | Qué pasa al pasarlo | Última medida | Fuente |
+|---|---|---|---|---|
+| Vercel Hobby (cuenta nueva `detekta-app`) | Fluid Active CPU: 4 h por 30 días (unos 480 s al día) | Pausa el proyecto y no se levanta sola (30-sep); la política escrita no se leyó hoy | Con la dieta del 16-oct, 2 a 4 ciclos de actualización al día = 29 a 72 % del tope diario, solo en actualizaciones; la cuenta nueva sin leer | esta memoria, 16-oct |
+| Vercel, métrica sin identificar | 10 GB | sin verificar | 3,46 GB (dato del dueño, 20-oct) | falta el nombre de la métrica |
+| Cloudflare R2 | 10 GB-mes (pico diario), 1 M de clase A y 10 M de clase B al mes | Cobra a la tarjeta; Cloudflare no corta | Tope propio de la cuenta 9.000 MB (4.000 la base, 5.000 la copia); sin configurar para la copia el 19-oct | developers.cloudflare.com/r2/pricing, 17-oct |
+| Upstash (integración del equipo viejo) | sin medir | Los términos permiten borrar un recurso gratis sin peticiones durante una semana | sin medir | esta memoria, 16-oct |
+| OCR.space | 500 por día por IP [inferencia] | La aplicación trata el 429 como «saturado» y reintenta | 146 peticiones por dos escaneos de estudio previo | esta memoria, 19-oct |
+
+
+**Verificado.** Solo lectura del árbol y de esta memoria; no se tocó código.
+
+**Sin verificar.** La política escrita de Vercel Hobby sobre qué pasa al pasar cada límite; la métrica de los 3,46 GB; el consumo real de la cuenta nueva.
