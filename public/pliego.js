@@ -353,6 +353,31 @@
      fuera de la lista se deja tal cual: inventarle un número sería el defecto
      que esto corrige. (La misma definición vive en lib/paginas.js y hay prueba
      que EJECUTA las dos sobre la misma batería.) */
+  /* LAS PÁGINAS QUE EL OCR NO LEYÓ (20-oct-2026). El servidor sigue adelante si una página de la tanda falla («39 páginas leídas valen más que un error
+     global») y lo DICE en `ocr.fallos` (índice DENTRO de la tanda); el flujo de Precios lo leía y el de los documentos del proceso NO: un escaneo de
+     6 páginas con 5 sin leer se guardaba «Leído · 1 página» (CO1.REQ.11033801, «PRESUPUESTO OFICIAL.pdf», 20-oct-2026).
+     La cuenta es por MARCADORES, no solo por lo que el servidor diga (revisión adversaria, reproducido): una página sin marcador en el texto que volvió está
+     sin leer aunque nadie la haya listado —una tanda que el servidor recortó por `max_paginas`, o el corte por 401/403 que deja las siguientes sin intentar—.
+     Y las que el servicio PROCESÓ y no traían texto (`sin_texto`: en blanco, un plano, una portada) se cuentan APARTE: no son una falla y no impiden guardar,
+     pero se muestran («3 de 40 páginas sin texto reconocido»). Los índices de `fallos` son DENTRO de la tanda y se traducen a la página REAL con la lista de
+     `numeros` —la misma de `renumerarMarcadores`—, sin sumar a `desde` (que ignora las páginas descartadas). */
+  const paginasDeTanda = (cuerpo, numeros, texto) => {
+    const lista = cuerpo && cuerpo.ocr && Array.isArray(cuerpo.ocr.fallos) ? cuerpo.ocr.fallos : [];
+    const reales = Array.isArray(numeros) ? numeros : [];
+    const sinTexto = new Set(), fallo = new Set();
+    for (const f of lista) {
+      const i = Number(f && f.pagina) - 1;
+      /* un índice que no cae en la lista sigue siendo una página sin leer: se cuenta contra la tanda, jamás se descarta en silencio */
+      const real = Number.isInteger(i) && reales[i] != null ? reales[i] : reales[Math.min(Math.max(Number.isInteger(i) ? i : 0, 0), reales.length - 1)];
+      if (real == null) continue;
+      if (f && f.sin_texto === true) sinTexto.add(real); else fallo.add(real);
+    }
+    const presentes = new Set();
+    /* solo el marcador que ocupa SU línea: un `\f4` metido DENTRO del texto de otra página (un OCR raro, un texto hostil) no cuenta como la página 4 */
+    for (const m of String(texto || "").matchAll(/^[ \t]*\f(\d+)[ \t]*$/gm)) presentes.add(Number(m[1]));
+    for (const n of reales) if (!presentes.has(n) && !sinTexto.has(n)) fallo.add(n);
+    return { sinLeer: [...fallo], sinTexto: [...sinTexto].filter((n) => !fallo.has(n)) };
+  };
   const renumerarMarcadores = (texto, numeros) => {
     const nums = Array.isArray(numeros) ? numeros : [];
     if (!nums.length) return String(texto || "");
@@ -1516,7 +1541,7 @@
     const pdfjs = await cargarPdfJs();
     const doc = await pdfjs.getDocument({ data: datos, isEvalSupported: false }).promise;
     try {
-      const total = doc.numPages, trozos = [], fallos = [];
+      const total = doc.numPages, trozos = [], fallos = [], sinTexto = [];
       let seguidasSinNada = 0;
       for (let desde = 1; desde <= total; desde += MAX_PAGINAS_OCR) {
         const hasta = Math.min(desde + MAX_PAGINAS_OCR - 1, total);
@@ -1540,14 +1565,24 @@
         if (saturado) return { saturado: true, nota: (rt.cuerpo && window.Glosario.errorDelServidor(rt.cuerpo)) || "" };
         const texto = rt.cuerpo && rt.cuerpo.ok && rt.cuerpo.texto_ocr ? renumerarMarcadores(rt.cuerpo.texto_ocr, numeros) : "";
         if (!texto.trim()) {
-          fallos.push(...numeros);
-          if (++seguidasSinNada >= 2) throw new Error(`el reconocimiento de texto no respondió: ${(rt.cuerpo && window.Glosario.errorDelServidor(rt.cuerpo)) || window.Glosario.fraseDeFallo({ status: rt.estado })}`);
+          /* una tanda SIN texto: las que el servicio dice «sin texto» se cuentan aparte; el corte de «dos tandas seguidas sin nada» es de las que FALLARON */
+          const t0 = paginasDeTanda(rt.cuerpo, numeros, "");
+          fallos.push(...t0.sinLeer); sinTexto.push(...t0.sinTexto);
+          if (t0.sinLeer.length && ++seguidasSinNada >= 2) throw new Error(`el reconocimiento de texto no respondió: ${(rt.cuerpo && window.Glosario.errorDelServidor(rt.cuerpo)) || window.Glosario.fraseDeFallo({ status: rt.estado })}`);
           continue;
         }
         seguidasSinNada = 0;
         trozos.push(texto);
+        /* y las páginas de ESTA tanda que no volvieron con texto (aunque otras sí): se cuentan, no se pierden en silencio */
+        const t1 = paginasDeTanda(rt.cuerpo, numeros, texto);
+        fallos.push(...t1.sinLeer); sinTexto.push(...t1.sinTexto);
       }
-      return { texto: trozos.join("\n"), paginas: total, fallos };
+      /* `fallos` = números de página REALES, sin repetir y en orden: las que no se rasterizaron, las que el servicio no devolvió y las que falló dentro de una
+         tanda que sí trajo texto. `sin_texto` = las que el servicio procesó y no traían texto. `paginas_leidas` es lo que quedó de verdad (con texto): quien llama
+         NO puede dar por leído un escaneo a medias. */
+      const sinLeer = [...new Set(fallos)].sort((a, b) => a - b);
+      const vacias = [...new Set(sinTexto)].filter((n) => !sinLeer.includes(n)).sort((a, b) => a - b);
+      return { texto: trozos.join("\n"), paginas: total, fallos: sinLeer, sin_texto: vacias, paginas_leidas: Math.max(0, total - sinLeer.length - vacias.length) };
     } finally { try { await doc.destroy(); } catch { /* ya liberado */ } }
   };
 })();

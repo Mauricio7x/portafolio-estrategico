@@ -5648,7 +5648,7 @@
             leidos++;
             continue;
           }
-          let texto, recortadoEnOrigen = false, paginasTotal = null, origen = null;
+          let texto, recortadoEnOrigen = false, paginasTotal = null, origen = null, sinTexto = 0;
           if (String(a.extension || "").toLowerCase() === "docx") {
             /* el Word lo lee el servidor (lib/docx.js) y devuelve el texto, sin páginas */
             const d = await api("/api/pliego?op=descargar", { method: "POST", body: { url: a.url, formato: "docx" } });
@@ -5671,8 +5671,31 @@
                 : null;
               if (!ocr || ocr.sin_clave) { await marcarIlegible("es un escaneo: se leerá cuando se active el reconocimiento de texto (OCR) en la aplicación", false); fallidos++; continue; }
               if (ocr.saturado) { ocrNoAtiende = true; await marcarIlegible("es un escaneo y el servicio de reconocimiento de texto (OCR) no está atendiendo", false, true); fallidos++; continue; }
+              /* UN ESCANEO A MEDIAS NO SE DA POR LEÍDO (20-oct-2026): si el servicio no reconoció alguna página, el texto que llegó es el de las otras, y
+                 guardarlo como «Leído» deja que un presupuesto de 6 páginas diga «1 página» y que sus hechos salgan de una sola. Como el saturado de arriba: no se guarda
+                 (se puede volver a buscar; no es definitivo porque la causa suele ser del servicio). */
+              if (Array.isArray(ocr.fallos) && ocr.fallos.length) {
+                const total = Number(ocr.paginas) > 0 ? Number(ocr.paginas) : null, leidas = Number.isInteger(ocr.paginas_leidas) ? ocr.paginas_leidas : null;
+                await marcarIlegible(`es un escaneo y el reconocimiento de texto solo pudo leer ${leidas != null ? `${leidas} de ${total}` : "una parte de las"} páginas: no se da por leído, porque un escaneo a medias se leería como completo`, false, false,
+                  { clase: "ocr_parcial", etapa: "lectura", pag_leidas: leidas, pag_total: total });
+                fallidos++; continue;
+              }
+              /* …y ANTES de «no sacó nada legible» (revisión adversaria, reproducido): un escaneo donde fallaron TODAS las páginas por un error del servicio (E101, tiempo
+                 agotado) devolvía poco texto y quedaba ilegible DEFINITIVO, o sea que «Volver a buscar» no lo reintentaba jamás: una falla del servicio guardada como si
+                 fuera del documento. «Definitivo» es solo lo que el servicio PROCESÓ y no pudo leer. */
+              /* MÁS DE LA MITAD SIN TEXTO RECONOCIDO tampoco se da por leído (revisión adversaria, reproducido: 5 de 6 páginas «sin texto» se guardaban «Leído · 1 de 6 páginas con
+                 texto», que es el síntoma de producción otra vez). Es definitivo —repetirlo da lo mismo— y el umbral (la mitad) es una decisión que queda anotada para el dueño. */
+              {
+                const total = Number(ocr.paginas) > 0 ? Number(ocr.paginas) : null, conTexto = Number.isInteger(ocr.paginas_leidas) ? ocr.paginas_leidas : null;
+                if (total != null && conTexto != null && conTexto > 0 && conTexto * 2 < total) {
+                  await marcarIlegible(`es un escaneo y el reconocimiento de texto solo encontró texto en ${conTexto} de ${total} páginas: no se da por leído`, true, false,
+                    { clase: "ocr_parcial", etapa: "lectura", pag_leidas: conTexto, pag_total: total });
+                  fallidos++; continue;
+                }
+              }
               if (ocr.texto.trim().length < 50) { await marcarIlegible("es un escaneo y el reconocimiento de texto no sacó nada legible", true); fallidos++; continue; }
               texto = ocr.texto; paginasTotal = ocr.paginas; origen = "ocr";
+              sinTexto = Array.isArray(ocr.sin_texto) ? ocr.sin_texto.length : 0;   // las páginas que el servicio procesó y no traían texto: se guardan con su número y se muestran
             } else {
               texto = lect.texto;
               paginasTotal = lect.paginas;
@@ -5682,7 +5705,7 @@
              20 MB puede traer más texto del que cabe en la petición), y se dice que se cortó */
           const tope = Number(r.max_caracteres) > 0 ? Number(r.max_caracteres) : null;
           if (tope && texto.length > tope) { texto = texto.slice(0, tope); recortadoEnOrigen = true; }
-          await api("/api/pliego?op=documentos", { method: "POST", body: { id_proceso: id, id_documento: a.id_documento, texto, perfil, recortado_en_origen: recortadoEnOrigen, paginas_total: paginasTotal, origen } });
+          await api("/api/pliego?op=documentos", { method: "POST", body: { id_proceso: id, id_documento: a.id_documento, texto, perfil, recortado_en_origen: recortadoEnOrigen, paginas_total: paginasTotal, origen, ...(sinTexto ? { paginas_sin_texto: sinTexto } : {}) } });
           leidos++;
         } catch (e) {
           fallidos++;

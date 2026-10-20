@@ -2,7 +2,7 @@
      Es una FOTO para leer en GitHub; la fuente de verdad es ejecutar la herramienta. -->
 
 ```
-== MAPA DE DETEKTA · generado del árbol el 2026-10-19 ==
+== MAPA DE DETEKTA · generado del árbol el 2026-10-20 ==
 (no editar a mano: sale de `node tests/mapa.js --escribir`. Para ir a un sitio concreto,
  `node tests/mapa.js <término>` da la ruta, la línea y el sed exacto — más barato que leer esto)
 
@@ -217,8 +217,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 379 secciones (29 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 19820  El Formulario 1 en Excel se lee solo en el servidor, y solo se publica lo que pasa la puert…  (superada)
+· MEMORIA · docs/MEMORIA.md — 380 secciones (29 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 19844  El Formulario 1 leído se lleva a Precios con «Cotizar en Precios» (19-oct-2026)
   L 19864  La revisión adversaria del Formulario 1 en Excel: la hoja equivocada, la tolerancia, la cad…
   L 19886  La lista abre con TODOS los procesos de obra abiertos, y los que no alcanzan van atenuados …
@@ -228,6 +227,7 @@
   L 19957  Volver a buscar los documentos ya se puede pedir desde el expediente, y la aplicación no te…
   L 19976  La causa real de un fallo de lectura se registra, se sanea y se dice, y una herramienta mid…
   L 20004  El Excel de la oferta económica se reconoce por más nombres y solo se publica lo que pasa l…
+  L 20028  Un escaneo leído a medias se guardaba como «Leído»: el OCR de los documentos ignoraba las p…
 
 · DOCUMENTOS docs/ — 73 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)
