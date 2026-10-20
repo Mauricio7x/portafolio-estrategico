@@ -5022,6 +5022,226 @@ async function main() {
     console.log("· unidad Excel de la oferta económica: nombres reales (la familia Form_PropEconomica, «oferta econom», ofrecimiento) se intentan leer solo como hoja de cálculo y solo de los tipos otro/formato/pliego; lo que no es el formulario sigue fuera; una adenda sigue siendo adenda; un Excel de presupuesto tras el cierre es de un proponente");
   }
 
+  /* unidad escaneo a medias — UN ESCANEO LEÍDO A MEDIAS NO SE DA POR LEÍDO (20-oct-2026). Producción: «PRESUPUESTO OFICIAL.pdf» de CO1.REQ.11033801 es un escaneo de 6 páginas
+     (6 imágenes, 0 fuentes, sin capa de texto) y salía «Leído · 1 página». El servidor de OCR sigue adelante si una página falla y lo dice en `ocr.fallos`; el flujo de Precios
+     lo leía y el de los documentos del proceso NO, así que páginas sin reconocer se guardaban como lectura completa. La revisión adversaria encontró lo que la primera versión
+     rompía: una página SIN TEXTO (en blanco, un plano) no es una falla; una tanda recortada o un corte 401/403 dejan páginas sin leer que nadie lista; un escaneo largo cortado por
+     el tope de caracteres no es «a medias»; y una relectura fallida no puede borrar el texto que ya estaba guardado. Se EJECUTAN las piezas reales de pliego.js y app.js. */
+  bqOcrParcial: { if (!corre("unidad escaneo a medias")) break bqOcrParcial;
+    const Causa = require("../lib/causa_descarga.js"), Dp = require("../lib/documentos_proceso.js"), Gp = require("../lib/guia_proceso.js");
+    const plSrc = fs.readFileSync(path.join(__dirname, "..", "public", "pliego.js"), "utf8");
+    const appSrc = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+    const llaves = (src, ini) => { let prof = 0; for (let k = src.indexOf("{", ini); k < src.length; k++) { if (src[k] === "{") prof++; else if (src[k] === "}" && --prof === 0) return k; } return -1; };
+    // (1) el helper: contabilidad por MARCADORES, y «sin texto» aparte
+    const iH = plSrc.indexOf("const paginasDeTanda = ");
+    assert.ok(iH > 0, "pliego.js cuenta las páginas de cada tanda");
+    const paginasDeTanda = new Function(`${plSrc.slice(iH, llaves(plSrc, plSrc.indexOf("=> {", iH)) + 2)}\nreturn paginasDeTanda;`)();
+    const T = (cuerpo, numeros, texto = "") => paginasDeTanda(cuerpo, numeros, texto);
+    assert.deepStrictEqual(T({ ocr: { fallos: [{ pagina: 3, error: "E101" }] } }, [1, 2, 4, 5], "\f1\nA\n\f2\nB\n\f5\nE").sinLeer, [4], "el índice 3 DE LA TANDA es la página real 4 cuando la 3 no se rasterizó (jamás desde + índice)");
+    assert.deepStrictEqual(T({ ocr: { fallos: [{ pagina: 1 }, { pagina: 2 }] } }, [7, 8, 9], "\f9\nx").sinLeer, [7, 8]);
+    assert.deepStrictEqual(T({ ocr: { fallos: [{ pagina: 9 }] } }, [1, 2], "\f1\nA\n\f2\nB").sinLeer, [2], "un índice fuera de la tanda sigue siendo una página sin leer: se cuenta, no se descarta");
+    for (const raro of [null, undefined, {}, { ocr: {} }, { ocr: { fallos: "x" } }, { ocr: { fallos: [null, {}, { pagina: "a" }] } }]) assert.doesNotThrow(() => T(raro, [1, 2], "\f1\nA\n\f2\nB"), "una respuesta sin forma no tumba la lectura");
+    assert.deepStrictEqual(T({ ocr: { fallos: [] } }, [1, 2], "\f1\nA\n\f2\nB"), { sinLeer: [], sinTexto: [] }, "sin fallos y con todos los marcadores no hay páginas sin leer");
+    assert.deepStrictEqual(T({ ocr: { fallos: [{ pagina: 1 }] } }, [], "\f1\nA"), { sinLeer: [], sinTexto: [] }, "sin lista de páginas no se inventa una");
+    // «sin texto» es APARTE: una página en blanco no impide guardar (MUTACIÓN O14: contarla como falla vuelve ilegible un escaneo por una página en blanco)
+    assert.deepStrictEqual(T({ ocr: { fallos: [{ pagina: 3, error: "no encontró texto", sin_texto: true }, { pagina: 4, error: "E101" }] } }, [1, 2, 3, 4], "\f1\nA\n\f2\nB"), { sinLeer: [4], sinTexto: [3] }, "la página 3 (sin texto) y la 4 (falló) se cuentan por separado");
+    // la tanda RECORTADA por el servidor y el corte por 401/403: las páginas que nadie listó, sin marcador en el texto, son páginas sin leer (MUTACIÓN O15: solo fiarse de ocr.fallos)
+    assert.deepStrictEqual(T({ ocr: { fallos: [], truncado: true } }, [1, 2, 3, 4, 5], "\f1\nA\n\f2\nB\n\f3\nC").sinLeer, [4, 5], "el servidor recortó la tanda a 3 páginas: la 4 y la 5 están sin leer aunque `fallos` venga vacío");
+    assert.deepStrictEqual(T({ ocr: { fallos: [{ pagina: 3, status: 403 }] } }, [1, 2, 3, 4, 5], "\f1\nA\n\f2\nB").sinLeer, [3, 4, 5], "un 403 en la 3 deja la 4 y la 5 sin intentar: 3 sin leer, no «4 de 5»");
+    assert.deepStrictEqual(T({ ocr: { fallos: [{ pagina: 1, error: "x" }] } }, [1, 2], "\f1\nA\n\f2\nB").sinLeer, [1], "si el servidor lista una página como fallida aunque vuelva con marcador, cuenta como fallida");
+    assert.deepStrictEqual(T({ ocr: { fallos: [{ pagina: 3, status: 403 }] } }, [1, 2, 3, 4, 5], "\f1\nA\n\f2\nB texto \f4 dentro \f5 de la línea\n").sinLeer, [3, 4, 5], "un `\\f4` metido DENTRO de la línea de otra página no cuenta como la página 4 (MUTACIÓN O31: regex sin anclar)");
+
+    // (2) la función REAL __pliegoOcrPdf, con pdf.js, el rasterizado y el servicio de OCR simulados
+    const mMarc = plSrc.match(/const marcadorPagina = (\(n\) => [^;]+);/), mReb = plSrc.match(/const renumerarMarcadores = (\(texto, numeros\) => \{[\s\S]*?\n  \});/);
+    const renumerarMarcadores = new Function(`const marcadorPagina = ${mMarc[1]}; const renumerarMarcadores = ${mReb[1]}; return renumerarMarcadores;`)();
+    const iT = plSrc.indexOf("async function tandaOcrConEsperas(");
+    const tandaOcrConEsperas = new Function(`return (${plSrc.slice(iT, llaves(plSrc, iT) + 1)})`)();
+    const iO = plSrc.indexOf("window.__pliegoOcrPdf = async");
+    const fuenteOcr = plSrc.slice(iO, plSrc.indexOf("\n  };\n", iO) + 6);
+    const ocrReal = (total, { sinRaster = [], porTanda }) => {
+      const win = { Glosario: { errorDelServidor: (c) => (c && c.error) || "", fraseDeFallo: () => "frase" } };
+      new Function("window", "cargarPdfJs", "rasterizarPagina", "pedir", "MAX_PAGINAS_OCR", "renumerarMarcadores", "tandaOcrConEsperas", "paginasDeTanda", "MSG_401", fuenteOcr)(win,
+        async () => ({ getDocument: () => ({ promise: Promise.resolve({ numPages: total, destroy: async () => {} }) }) }),
+        async (_doc, n) => (sinRaster.includes(n) ? null : { base64: "x", mime: "image/jpeg" }),
+        async (_ruta, cuerpo) => ({ estado: 200, cuerpo: porTanda((cuerpo.imagenes_base64 || []).length) }),
+        5, renumerarMarcadores, tandaOcrConEsperas, paginasDeTanda, "sesión");
+      return win.__pliegoOcrPdf(new Uint8Array(4), () => {});
+    };
+    const marca = (n, malas = []) => Array.from({ length: n }, (_, i) => (malas.includes(i + 1) ? null : `\f${i + 1}\nTexto de la página ${i + 1} del presupuesto oficial con ítems y cantidades`)).filter(Boolean).join("\n");
+    const limpia = await ocrReal(6, { porTanda: (n) => ({ ok: true, texto_ocr: marca(n), ocr: { fallos: [], saturado: false } }) });
+    assert.deepStrictEqual([limpia.paginas, limpia.fallos, limpia.sin_texto, limpia.paginas_leidas], [6, [], [], 6], "un escaneo que se reconoce entero: 6 de 6");
+    const aMedias = await ocrReal(6, { porTanda: (n) => (n === 5 ? { ok: true, texto_ocr: marca(5, [2, 4]), ocr: { fallos: [{ pagina: 2, error: "E101" }, { pagina: 4, error: "E101" }], saturado: false } } : { ok: true, texto_ocr: marca(n), ocr: { fallos: [], saturado: false } }) });
+    assert.deepStrictEqual([aMedias.fallos, aMedias.paginas_leidas], [[2, 4], 4], `dos páginas que el servidor no pudo procesar dentro de una tanda con texto: 4 de 6, y cuáles (MUTACIÓN O1): ${JSON.stringify([aMedias.fallos, aMedias.paginas_leidas])}`);
+    let tandaN = 0;   // la página en blanco es la 2.ª de la PRIMERA tanda (la 17 del documento sería la 2.ª de la cuarta; aquí basta con una)
+    const enBlanco = await ocrReal(40, { porTanda: (n) => (tandaN++ === 0 ? { ok: true, texto_ocr: marca(5, [2]), ocr: { fallos: [{ pagina: 2, error: "no encontró texto", sin_texto: true }], saturado: false } } : { ok: true, texto_ocr: marca(n), ocr: { fallos: [], saturado: false } }) });
+    assert.deepStrictEqual([enBlanco.fallos, enBlanco.sin_texto, enBlanco.paginas_leidas], [[], [2], 39], "un escaneo de 40 páginas con UNA en blanco: sin fallas, 1 sin texto, 39 con texto (no «ilegible para siempre»)");
+    const todoVacio = await ocrReal(3, { porTanda: (n) => ({ ok: false, error: "Ninguna página se pudo leer.", ocr: { fallos: Array.from({ length: n }, (_, i) => ({ pagina: i + 1, error: "no encontró texto", sin_texto: true })), saturado: false } }) });
+    assert.deepStrictEqual([todoVacio.fallos, todoVacio.sin_texto, todoVacio.paginas_leidas], [[], [1, 2, 3], 0], "un escaneo sin ningún texto reconocible: 3 sin texto y ninguna falla (quien llama lo trata como «no sacó nada legible», definitivo)");
+    const variasVacias = await ocrReal(10, { porTanda: (n) => ({ ok: false, error: "Ninguna página se pudo leer.", ocr: { fallos: Array.from({ length: n }, (_, i) => ({ pagina: i + 1, error: "no encontró texto", sin_texto: true })), saturado: false } }) }).then((r) => r, (e) => ({ error: String(e) }));
+    assert.deepStrictEqual([variasVacias.error, variasVacias.sin_texto && variasVacias.sin_texto.length, variasVacias.fallos], [undefined, 10, []], `dos tandas SEGUIDAS sin texto reconocible no son «el servicio no respondió»: el corte es de las que FALLARON, no de las páginas en blanco (MUTACIÓN O23): ${JSON.stringify(variasVacias).slice(0, 160)}`);
+    const mezcla = await ocrReal(6, { sinRaster: [6], porTanda: (n) => ({ ok: true, texto_ocr: marca(n, n === 5 ? [1] : []), ocr: { fallos: n === 5 ? [{ pagina: 1, error: "x" }] : [], saturado: false } }) });
+    assert.deepStrictEqual([mezcla.fallos, mezcla.paginas_leidas], [[1, 6], 4], "las que no se rasterizaron y las que el servicio no devolvió se suman SIN repetir y en orden");
+    const desorden = await ocrReal(5, { sinRaster: [2], porTanda: (n) => ({ ok: true, texto_ocr: marca(n, [1]), ocr: { fallos: [{ pagina: 1, error: "x" }, { pagina: 1, error: "x" }], saturado: false } }) });
+    assert.deepStrictEqual([desorden.fallos, desorden.paginas_leidas], [[1, 2], 3], `las páginas sin leer salen ordenadas y sin repetirse (MUTACIÓN O8): ${JSON.stringify(desorden.fallos)}`);
+    const recortada = await ocrReal(5, { porTanda: (n) => ({ ok: true, texto_ocr: marca(3), ocr: { fallos: [], truncado: true, saturado: false } }) });
+    assert.deepStrictEqual([recortada.fallos, recortada.paginas_leidas], [[4, 5], 3], "una tanda recortada por el servidor deja las últimas sin leer aunque `fallos` venga vacío");
+    const sat = await ocrReal(3, { porTanda: () => ({ ok: true, texto_ocr: marca(1), ocr: { fallos: [{ pagina: 2, saturado: true }], saturado: true } }) }).then((r) => r, (e) => ({ error: String(e) }));
+    assert.ok(sat.saturado === true, `la saturación sigue su camino de siempre (esperar y dejar para después), no el de lo parcial: ${JSON.stringify(sat)}`);
+
+    // (3) leerDocumentos: el bloque REAL que decide qué se guarda tras el OCR
+    const iB = appSrc.indexOf("if (Array.isArray(ocr.fallos) && ocr.fallos.length) {"), marcaFin = 'sinTexto = Array.isArray(ocr.sin_texto) ? ocr.sin_texto.length : 0;', fB = appSrc.indexOf(marcaFin, iB);
+    assert.ok(iB > 0 && fB > iB, "leerDocumentos decide qué se guarda de un escaneo");
+    const bloque = appSrc.slice(iB, fB + marcaFin.length);
+    const correrBloque = async (ocr) => {
+      const marcas = []; let fallidos = 0;
+      const f = new Function("ocr", "marcarIlegible", "contar", "devolver", `return (async () => { let texto, paginasTotal, origen, sinTexto = 0; for (const _ of [0]) { ${bloque.replace(/fallidos\+\+/g, "contar()")}\n devolver({ texto, paginasTotal, origen, sinTexto }); } })();`);
+      let guardado = null;
+      await f(ocr, async (...a) => { marcas.push(a); }, () => { fallidos++; }, (g) => { guardado = g; });
+      return { marcas, fallidos, guardado };
+    };
+    const largo = "Presupuesto oficial: ítem, unidad, cantidad y valor. ".repeat(4);
+    const parcial = await correrBloque({ texto: largo, paginas: 6, fallos: [2, 3, 4, 5, 6], sin_texto: [], paginas_leidas: 1 });
+    assert.ok(parcial.guardado === null && parcial.fallidos === 1 && parcial.marcas.length === 1, `un escaneo a medias NO se guarda como leído (MUTACIÓN O2: sin la guarda): ${JSON.stringify(parcial.guardado)}`);
+    assert.deepStrictEqual([parcial.marcas[0][1], parcial.marcas[0][2], parcial.marcas[0][3].clase, parcial.marcas[0][3].pag_leidas, parcial.marcas[0][3].pag_total], [false, false, "ocr_parcial", 1, 6], "queda NO definitivo (se puede volver a buscar) y con cuántas páginas se leyeron de cuántas");
+    assert.ok(/solo pudo leer 1 de 6 páginas/.test(parcial.marcas[0][0]), parcial.marcas[0][0]);
+    /* revisión adversaria 2.ª ronda: un escaneo donde fallaron TODAS las páginas por el servicio daba poco texto y quedaba ilegible DEFINITIVO (nunca se reintentaba) */
+    const todasFallaron = await correrBloque({ texto: "0ch", paginas: 4, fallos: [1, 2, 3, 4], sin_texto: [], paginas_leidas: 0 });
+    assert.deepStrictEqual([todasFallaron.guardado, todasFallaron.marcas.length, todasFallaron.marcas[0][1], todasFallaron.marcas[0][3].clase], [null, 1, false, "ocr_parcial"], `si FALLARON todas las páginas por el servicio, queda NO definitivo y se reintenta (MUTACIÓN O25: «sin nada legible» definitivo primero): ${JSON.stringify(todasFallaron.marcas)}`);
+    const mayoriaVacia = await correrBloque({ texto: largo, paginas: 6, fallos: [], sin_texto: [2, 3, 4, 5, 6], paginas_leidas: 1 });
+    assert.ok(mayoriaVacia.guardado === null && mayoriaVacia.marcas[0][1] === true && mayoriaVacia.marcas[0][3].clase === "ocr_parcial" && mayoriaVacia.marcas[0][3].pag_leidas === 1 && /solo encontró texto en 1 de 6 páginas/.test(mayoriaVacia.marcas[0][0]),
+      `más de la mitad de las páginas sin texto NO se da por leído (era «Leído · 1 de 6 con texto», el síntoma de producción otra vez) (MUTACIÓN O26): ${JSON.stringify(mayoriaVacia.guardado)}`);
+    const mitad = await correrBloque({ texto: largo, paginas: 6, fallos: [], sin_texto: [2, 4, 6], paginas_leidas: 3 });
+    assert.ok(mitad.guardado && mitad.guardado.sinTexto === 3, "exactamente la mitad con texto SÍ se guarda (un escaneo a doble cara tiene la mitad en blanco): el umbral es «más de la mitad»");
+    const entero = await correrBloque({ texto: largo, paginas: 6, fallos: [], sin_texto: [], paginas_leidas: 6 });
+    assert.ok(entero.guardado && entero.guardado.origen === "ocr" && entero.guardado.paginasTotal === 6 && entero.guardado.sinTexto === 0 && entero.marcas.length === 0, "un escaneo completo se guarda como siempre");
+    const conBlanco = await correrBloque({ texto: largo, paginas: 40, fallos: [], sin_texto: [17], paginas_leidas: 39 });
+    assert.ok(conBlanco.guardado && conBlanco.guardado.sinTexto === 1 && conBlanco.marcas.length === 0, "un escaneo con una página sin texto SE GUARDA y lleva cuántas páginas no traían texto (MUTACIÓN O14)");
+    const sinCampo = await correrBloque({ texto: largo, paginas: 6 });
+    assert.ok(sinCampo.guardado && sinCampo.guardado.origen === "ocr" && sinCampo.guardado.sinTexto === 0, "una respuesta sin `fallos` (el contrato anterior) sigue guardándose");
+    const nada = await correrBloque({ texto: "x", paginas: 6, fallos: [], sin_texto: [1, 2, 3, 4, 5, 6], paginas_leidas: 0 });
+    assert.ok(nada.marcas[0][1] === true && nada.guardado === null, "sin nada legible sigue siendo definitivo, como antes (ese caso va primero)");
+
+    // (4) la causa: la clase, sus campos saneados y su frase
+    assert.deepStrictEqual(Causa.saneada({ clase: "ocr_parcial", pag_leidas: 1, pag_total: 6 }), { clase: "ocr_parcial", etapa: "lectura", codigo: null, http: null, ms: null, parte: null, bytes_total: null, pag_leidas: 1, pag_total: 6 }, "la causa de un escaneo a medias lleva cuántas páginas se leyeron de cuántas");
+    assert.strictEqual("pag_leidas" in Causa.saneada({ clase: "ocr_parcial", pag_leidas: 6, pag_total: 6 }), false, "6 de 6 no es «a medias»: el campo no viaja (MUTACIÓN O11)");
+    assert.strictEqual("pag_leidas" in Causa.saneada({ clase: "ocr_parcial", pag_leidas: "1", pag_total: "6" }), false, "una cadena no es un número de páginas");
+    assert.ok(/solo pudo leer 1 de 6 páginas/.test(Causa.frase({ clase: "ocr_parcial", pag_leidas: 1, pag_total: 6 })), Causa.frase({ clase: "ocr_parcial", pag_leidas: 1, pag_total: 6 }));
+    assert.ok(Causa.CLASES.includes("ocr_parcial") && !Causa.DEL_SERVIDOR.includes("ocr_parcial"), "la clase existe y conserva el motivo que el navegador ya escribió");
+
+    // (5) lo YA guardado: la definición de «a medias»
+    const am = (x) => Dp.escaneoAMedias({ origen: "ocr", ...x });
+    assert.strictEqual(am({ paginas: 1, paginas_total: 6 }), true, "1 página de 6 en un escaneo es a medias");
+    assert.strictEqual(am({ paginas: 6, paginas_total: 6 }), false);
+    assert.strictEqual(am({ paginas: 39, paginas_total: 40, paginas_sin_texto: 1 }), false, "39 con texto + 1 sin texto de 40 NO es a medias: la página en blanco se muestra, no se vuelve a leer (MUTACIÓN O16)");
+    assert.strictEqual(am({ paginas: 38, paginas_total: 40, paginas_sin_texto: 1 }), true, "pero 38 + 1 de 40 sí falta una");
+    assert.strictEqual(am({ paginas: 618, paginas_total: 700, recortado: true }), false, "un escaneo COMPLETO cortado por el tope de caracteres no es «a medias»: se habría vuelto a leer con 700 páginas de OCR en cada visita (MUTACIÓN O17)");
+    assert.strictEqual(Dp.escaneoAMedias({ origen: "texto", paginas: 5, paginas_total: 6 }), false, "un PDF CON TEXTO con una página en blanco no es «a medias»: la regla es solo de lo que salió de un OCR");
+    assert.strictEqual(am({ paginas: null, paginas_total: null }), false, "sin los dos números no se inventa nada (ausencia ≠ cero)");
+
+    // …no se vuelve a leer solo: solo cuando el usuario pulsa «Volver a buscar» (relecturas), y entonces SIN perder el texto
+    const filaIdx = [{ id_documento: "12", nombre_archivo: "PRESUPUESTO OFICIAL.pdf", extensi_n: "pdf", tamanno_archivo: "5507550", fecha_carga: "2026-09-13T00:00:00.000", url_descarga_documento: { url: "https://community.secop.gov.co/x?DocumentId=12" } }];
+    const planM = Dp.planDeLectura(filaIdx, { cierre: "2026-10-14" });
+    const guardado = (extra) => ({ id_documento: "12", nombre: "PRESUPUESTO OFICIAL.pdf", tipo: "presupuesto", tipo_legible: "Presupuesto oficial o cantidades", leido_el: "2026-10-20T10:00:00Z", hechos: { version: Dp.hechosVersion() }, ...extra });
+    const docsDe = (leido, relecturas) => ({ indice: { archivos: planM.archivos, plan: planM.plan, consultado_el: "2026-10-20" }, leidos: { "12": leido }, ilegibles: {}, formularios: {}, ...(relecturas ? { relecturas } : {}) });
+    const pend = (docs) => Dp.resumenLectura(docs).pendientes.map((a) => a.id_documento);
+    const aM = guardado({ origen: "ocr", paginas: 1, paginas_total: 6 });
+    assert.deepStrictEqual(pend(docsDe(aM)), [], "un escaneo guardado a medias NO se vuelve a leer solo en cada visita: cada relectura son N páginas de OCR (MUTACIÓN O3)");
+    assert.deepStrictEqual(pend(docsDe(aM, { "12": "2026-10-20T11:00:00Z" })), ["12"], "y se vuelve a leer cuando el usuario lo pidió");
+    const dM = docsDe(aM);
+    const bM = Gp.bloqueDocumentos(dM, Dp.resumenLectura(dM), Dp.loQueDicen(dM, {}), null);
+    assert.deepStrictEqual([bM.leidos.length, bM.por_leer.length, bM.leidos[0].a_medias], [1, 0, true], "mientras no se relea sigue en la lista como leído, MARCADO «a medias» por el servidor");
+    assert.ok(/un escaneo está leído a medias/.test(bM.frase), `y la frase no lo cuenta como leído a secas (MUTACIÓN O18): ${bM.frase}`);
+    // dos escaneos a medias: el plural, y la frase también en el estado «por leer»
+    {
+      const f2 = (id, nombre) => ({ id_documento: id, nombre_archivo: nombre, extensi_n: "pdf", tamanno_archivo: "5507550", fecha_carga: "2026-09-13T00:00:00.000", url_descarga_documento: { url: `https://community.secop.gov.co/x?DocumentId=${id}` } });
+      const idx2 = [f2("12", "PRESUPUESTO OFICIAL.pdf"), f2("13", "ESTUDIOS PREVIOS.pdf")], plan2 = Dp.planDeLectura(idx2, { cierre: "2026-10-14" });
+      const leidoA = (id, nombre, tipo) => ({ id_documento: id, nombre, tipo, tipo_legible: "x", leido_el: "2026-10-20T10:00:00Z", hechos: { version: Dp.hechosVersion() }, origen: "ocr", paginas: 1, paginas_total: 6 });
+      const d2 = { indice: { archivos: plan2.archivos, plan: plan2.plan, consultado_el: "2026-10-20" }, leidos: { "12": leidoA("12", "PRESUPUESTO OFICIAL.pdf", "presupuesto"), "13": leidoA("13", "ESTUDIOS PREVIOS.pdf", "estudio_previo") }, ilegibles: {}, formularios: {} };
+      const b2 = Gp.bloqueDocumentos(d2, Dp.resumenLectura(d2), Dp.loQueDicen(d2, {}), null);
+      assert.ok(/2 escaneos están leídos a medias: ábralos en SECOP II/.test(b2.frase), `el plural concuerda (MUTACIÓN O32: «ábralo»): ${b2.frase}`);
+      const idx3 = [...idx2, f2("14", "ANEXO TECNICO.pdf")], plan3 = Dp.planDeLectura(idx3, { cierre: "2026-10-14" });
+      const d3 = { ...d2, indice: { archivos: plan3.archivos, plan: plan3.plan, consultado_el: "2026-10-20" } };
+      const b3 = Gp.bloqueDocumentos(d3, Dp.resumenLectura(d3), Dp.loQueDicen(d3, {}), null);
+      assert.ok(b3.estado === "por_leer" && /2 escaneos están leídos a medias/.test(b3.frase), `también en el estado «por leer», donde decía «2 documentos leídos y 1 por leer» sin avisar: ${b3.estado} · ${b3.frase}`);
+      const idx4 = [f2("12", "PRESUPUESTO OFICIAL.pdf"), f2("14", "ANEXO TECNICO.pdf")], plan4 = Dp.planDeLectura(idx4, { cierre: "2026-10-14" });
+      const d4 = { indice: { archivos: plan4.archivos, plan: plan4.plan, consultado_el: "2026-10-20" }, leidos: { "12": leidoA("12", "PRESUPUESTO OFICIAL.pdf", "presupuesto") }, ilegibles: {}, formularios: {} };
+      const b4 = Gp.bloqueDocumentos(d4, Dp.resumenLectura(d4), Dp.loQueDicen(d4, {}), null);
+      assert.ok(b4.estado === "por_leer" && /1 documento leído y 1 por leer.*; un escaneo está leído a medias\./.test(b4.frase), `el singular también en el estado «por leer» (MUTACIÓN O18a): ${b4.estado} · ${b4.frase}`);
+    }
+    const dR = docsDe(aM, { "12": "2026-10-20T11:00:00Z" });
+    const bR = Gp.bloqueDocumentos(dR, Dp.resumenLectura(dR), Dp.loQueDicen(dR, {}), null);
+    assert.deepStrictEqual([bR.leidos.length, bR.por_leer.length], [0, 1], "pedida la relectura, sale UNA vez, como «por leer» (no también como leído)");
+    assert.ok(/se leyó a medias \(1 de 6 páginas del escaneo\)/.test(bR.por_leer[0].motivo), bR.por_leer[0].motivo);
+
+    // el servidor REAL: refrescar marca la relectura SIN borrar el texto; una relectura fallida lo CONSERVA; una exitosa lo reemplaza
+    {
+      const { crearRedis } = require("../lib/redis.js");
+      const H = require("../lib/handlers/pliego/documentos.js");
+      const rS = crearRedis({}), idS = "CO1.REQ.77700001";
+      const dS = H.vacio ? H.vacio(idS) : { version: Dp.VERSION, id_proceso: idS, indice: null, leidos: {}, ilegibles: {}, formularios: {}, fallos: {}, relecturas: {} };
+      dS.indice = { version: Dp.VERSION, consultado_el: "2026-10-20", archivos: planM.archivos, plan: planM.plan };
+      dS.leidos["12"] = guardado({ origen: "ocr", paginas: 1, paginas_total: 6, caracteres: 200 });
+      await H.escribirDocs(rS, idS, dS);
+      const lanzar = (cuerpo) => invocarPost(require("../api/pliego.js"), "/api/pliego?op=documentos", { id_proceso: idS, id_documento: "12", ...cuerpo }, CAB_TOKEN);
+      // relectura FALLIDA: el texto de antes se conserva, con el motivo
+      const guardada = await H.leerDocs(rS, idS);
+      guardada.relecturas = { "12": "2026-10-20T11:00:00Z" }; await H.escribirDocs(rS, idS, guardada);
+      const fallida = await lanzar({ ilegible: true, motivo: "es un escaneo y el reconocimiento de texto solo pudo leer 3 de 6 páginas", causa: { clase: "ocr_parcial", pag_leidas: 3, pag_total: 6 } });
+      const trasFallo = await H.leerDocs(rS, idS);
+      assert.ok(!/no se da por leído|se leería como completo/.test(trasFallo.leidos["12"].relectura_fallida.motivo), `el motivo de la relectura fallida se dice para la lista, sin la frase de «no se da por leído» que contradice «Leído a medias» (MUTACIÓN O28): ${trasFallo.leidos["12"].relectura_fallida.motivo}`);
+      assert.ok(fallida.status === 200 && trasFallo.leidos["12"] && trasFallo.leidos["12"].paginas === 1 && !trasFallo.ilegibles["12"] && !(trasFallo.relecturas && trasFallo.relecturas["12"]) && /solo pudo leer 3 de 6/.test(trasFallo.leidos["12"].relectura_fallida.motivo),
+        `una relectura FALLIDA no borra el texto ya guardado (MUTACIÓN O19: el dictamen se quedaba sin pliego): ${JSON.stringify(trasFallo.leidos["12"] && trasFallo.leidos["12"].relectura_fallida)} ilegible=${!!trasFallo.ilegibles["12"]}`);
+      assert.deepStrictEqual(Dp.resumenLectura(trasFallo).pendientes.map((a) => a.id_documento), [], "y no queda pendiente: sin bucle");
+      const dF = Dp.loQueDicen(trasFallo, {}).documentos[0];
+      assert.ok(dF.a_medias === true && /solo pudo leer 3 de 6/.test(dF.relectura_fallida), "la guía lo trae con el motivo de la relectura fallida");
+      // relectura que falla por SATURACIÓN del OCR: el texto se conserva y la relectura SIGUE pendiente (se reintenta en la próxima pasada), en vez de perderse (MUTACIÓN O27)
+      trasFallo.relecturas = { "12": "2026-10-20T11:30:00Z" }; await H.escribirDocs(rS, idS, trasFallo);
+      await lanzar({ ilegible: true, saturado: true, motivo: "es un escaneo y el servicio de reconocimiento de texto (OCR) no está atendiendo" });
+      const trasSat = await H.leerDocs(rS, idS);
+      assert.ok(trasSat.leidos["12"].paginas === 1 && trasSat.relecturas && trasSat.relecturas["12"] && /no estaba atendiendo/.test(trasSat.leidos["12"].relectura_fallida.motivo) && !trasSat.ilegibles["12"],
+        `una relectura saturada conserva el texto y sigue pendiente: ${JSON.stringify(trasSat.relecturas)}`);
+      // relectura EXITOSA con una página en blanco: reemplaza, se guarda con las páginas sin texto y limpia la marca
+      trasFallo.relecturas = { "12": "2026-10-20T12:00:00Z" }; await H.escribirDocs(rS, idS, trasFallo);
+      const texto6 = Array.from({ length: 5 }, (_, i) => `\f${i + 1}\nÍtem ${i + 1} del presupuesto oficial: cantidad, unidad y valor unitario de la obra.`).join("\n");
+      const buena = await lanzar({ texto: texto6, origen: "ocr", paginas_total: 6, paginas_sin_texto: 1 });
+      const trasBuena = await H.leerDocs(rS, idS);
+      assert.ok(buena.status === 200 && trasBuena.leidos["12"].paginas === 5 && trasBuena.leidos["12"].paginas_total === 6 && trasBuena.leidos["12"].paginas_sin_texto === 1 && !trasBuena.leidos["12"].relectura_fallida && !(trasBuena.relecturas && trasBuena.relecturas["12"]) && Dp.escaneoAMedias(trasBuena.leidos["12"]) === false,
+        `una relectura buena con una página sin texto: 5 con texto + 1 sin texto de 6, ya no es «a medias»: ${JSON.stringify(trasBuena.leidos["12"])}`);
+      // «Volver a buscar» (refrescar=1) marca la relectura de lo guardado a medias, SIN borrar su texto, y la marca queda guardada aunque falle la consulta del índice
+      {
+        const parcialS = await H.leerDocs(rS, idS);
+        parcialS.leidos["12"] = guardado({ origen: "ocr", paginas: 1, paginas_total: 6, caracteres: 200 }); parcialS.leidos["99"] = guardado({ id_documento: "99", origen: "ocr", paginas: 6, paginas_total: 6 }); parcialS.relecturas = { "500": "2026-10-01T00:00:00Z" };   // incluye una marca de un documento que ya no está entre los leídos
+        await H.escribirDocs(rS, idS, parcialS);
+        /* solo se corta la consulta a los datos abiertos: el Redis simulado de la suite también viaja por `fetch` */
+        const fetchAntes = globalThis.fetch; globalThis.fetch = (u, o) => (/datos\.gov\.co/.test(String(u && u.url ? u.url : u)) ? Promise.reject(new Error("sin red")) : fetchAntes(u, o));
+        let refr; try { refr = await invocar(require("../api/pliego.js"), `/api/pliego?op=documentos&id_proceso=${idS}&refrescar=1`, CAB_TOKEN); } finally { globalThis.fetch = fetchAntes; }
+        const tras = await H.leerDocs(rS, idS);
+        assert.ok(!(tras.relecturas && tras.relecturas["500"]), "una marca de relectura de un documento que ya no está entre los leídos se poda (MUTACIÓN O29): si no, volvería a dispararse una relectura con OCR que nadie pidió");
+        assert.ok(tras.relecturas && tras.relecturas["12"] && !tras.relecturas["99"] && tras.leidos["12"] && tras.leidos["12"].paginas === 1,
+          `«volver a buscar» marca SOLO el escaneo a medias, lo guarda aunque el índice no se pueda consultar y NO borra su texto (MUTACIÓN O21): ${JSON.stringify(tras.relecturas)} status=${refr && refr.status}`);
+        // (que salga entre los pendientes depende del plan del índice: lo cubre la prueba pura de resumenLectura de arriba)
+        // (el GET reemplazó el índice por el que SECOP II simulado devolvió, vacío para este proceso inventado: se restaura el del caso)
+        delete tras.leidos["99"]; tras.relecturas = {}; tras.indice = { version: Dp.VERSION, consultado_el: "2026-10-20", archivos: planM.archivos, plan: planM.plan }; await H.escribirDocs(rS, idS, tras);
+      }
+      // un cliente hostil no mete páginas sin texto que no caben
+      const hostil = await lanzar({ texto: texto6, origen: "ocr", paginas_total: 6, paginas_sin_texto: 99 });
+      assert.strictEqual((await H.leerDocs(rS, idS)).leidos["12"].paginas_sin_texto, undefined, "«paginas_sin_texto» mayor que el documento no se guarda");
+      const noOcr = await lanzar({ texto: texto6, origen: "texto", paginas_total: 6, paginas_sin_texto: 1 });
+      assert.strictEqual((await H.leerDocs(rS, idS)).leidos["12"].paginas_sin_texto, undefined, "ni en un documento que no salió de un OCR");
+      assert.ok(hostil.status === 200 && noOcr.status === 200);
+    }
+
+    // …y la pantalla del expediente
+    const X = require("../public/expediente.js");
+    const guiaItem = (extra) => ({ id_documento: "12", nombre: "PRESUPUESTO OFICIAL.pdf", tipo_legible: "Presupuesto oficial o cantidades", origen: "ocr", ...extra });
+    const htmlM = X.htmlDocumentos({ id: "CO1.REQ.9", proceso: {}, documentos: [], guia: { documentos: { leidos: [guiaItem({ paginas: 1, paginas_total: 6, a_medias: true, relectura_fallida: "solo pudo leer 3 de 6" }), guiaItem({ id_documento: "13", nombre: "PLIEGO.pdf", paginas: 39, paginas_total: 40, paginas_sin_texto: 1, a_medias: false }), guiaItem({ id_documento: "14", nombre: "ANEXO.pdf", origen: "texto", paginas: 20, paginas_total: 21, a_medias: false })], por_leer: [], ilegibles: [], no_legibles: [], formatos: [] } } }, {});
+    assert.ok(/1 de 6 páginas leídas/.test(htmlM) && /Leído a medias/.test(htmlM), "un escaneo guardado a medias se ve como tal (MUTACIÓN O4: «1 página»)");
+    assert.ok(/Se intentó volver a leer y no se pudo: solo pudo leer 3 de 6/.test(htmlM), "y dice que se intentó releer y por qué no se pudo");
+    assert.ok(/39 de 40 páginas con texto \(1 sin texto reconocido\)/.test(htmlM), "un escaneo con una página sin texto lo dice, y no está «a medias»");
+    assert.ok(/20 páginas/.test(htmlM) && !/20 de 21/.test(htmlM), "un PDF con texto no cambia: una página en blanco no es «a medias»");
+    console.log("· unidad escaneo a medias: la función real del OCR cuenta por marcadores (tanda recortada, cortes 401/403, fallos dentro de una tanda con texto) y aparte las páginas sin texto; un escaneo a medias NO se guarda como leído; una relectura pedida con «Volver a buscar» conserva el texto si falla; las páginas sin texto se guardan y se muestran");
+  }
+
   /* unidad: convenios — «aunar esfuerzos» y compañía NO son licitaciones */
   bq12: { if (!corre("unidad convenios")) break bq12;
     const convenios = [
@@ -14691,6 +14911,20 @@ async function main() {
         assert.ok(/ocrPaginas\(imagenes, \{ cortarSiSatura: true \}\)/.test(fs.readFileSync(path.join(__dirname, "..", "lib", "apu_extraer.js"), "utf8")) && !/cortarSiSatura/.test(fs.readFileSync(path.join(__dirname, "..", "lib", "handlers", "perfil", "entrada.js"), "utf8")), "el lector de documentos pide el corte; el RUP no");
         assert.ok(ocrMod.esSaturacion({ ok: false, status: 429 }) && ocrMod.esSaturacion({ ok: false, status: 504 }) && !ocrMod.esSaturacion({ ok: false, status: 503, sin_clave: true }) && !ocrMod.esSaturacion({ ok: false, status: 422 }) && !ocrMod.esSaturacion({ ok: false, status: 401 }),
           "saturado es 429/5xx o la red; la falta de clave (también 503), una página sin texto o una clave rechazada no lo son");
+
+        /* (d4) UNA PÁGINA SIN TEXTO NO ES UNA FALLA (20-oct-2026, revisión adversaria): una página en blanco, un plano o una portada responden 422 «procesó la página pero no
+           encontró texto»; el navegador no distinguía eso de «no pudo procesar» y un escaneo de 40 páginas con una en blanco quedaba ilegible para siempre. */
+        const secuencia = (...r) => { let k = 0; global.fetch = async () => { const x = r[Math.min(k++, r.length - 1)]; return { ok: true, status: 200, headers: { get: () => null }, text: async () => JSON.stringify(x), json: async () => x }; }; };
+        secuencia({ OCRExitCode: 1, IsErroredOnProcessing: false, ParsedResults: [{ ParsedText: "Capítulo 1: preliminares y cantidades de obra" }] },
+          { OCRExitCode: 1, IsErroredOnProcessing: false, ParsedResults: [{ ParsedText: "   " }] },
+          { OCRExitCode: 3, IsErroredOnProcessing: true, ErrorMessage: ["Timed out waiting for results"] });
+        const mezcla = await ocrMod.ocrPaginas([{ base64: "QUJD" }, { base64: "QUJD" }, { base64: "QUJD" }]);
+        assert.deepStrictEqual(mezcla.fallos.map((f) => [f.pagina, f.sin_texto === true]), [[2, true], [3, false]],
+          `la página en blanco sale marcada «sin_texto» y la que falló de verdad NO (MUTACIÓN O13: sin la marca): ${JSON.stringify(mezcla.fallos)}`);
+        assert.ok(mezcla.ok === true && mezcla.paginas_leidas === 1, "y el texto de la que sí se leyó sigue llegando");
+        secuencia({ OCRExitCode: 1, IsErroredOnProcessing: false, ParsedResults: [{ ParsedText: "Línea uno\f4\nLínea dos\f" }] });
+        const conSalto = await ocrMod.ocrPagina({ base64: "QUJD" });
+        assert.ok(conSalto.ok && !/\f/.test(conSalto.texto) && /Línea uno/.test(conSalto.texto), `el texto reconocido no trae saltos de página propios: los marcadores de página los pone esta capa (MUTACIÓN O30): ${JSON.stringify(conSalto.texto)}`);
 
         // (e) la página que no cabe se rechaza ANTES de gastar la petición
         global.fetch = async () => { throw new Error("no debía llamarse"); };

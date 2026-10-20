@@ -225,7 +225,13 @@
       nombre: x.nombre || x.tipo_legible || "Documento del proceso",
       tipo: x.tipo_legible || null, fecha: x.fecha_carga || x.leido_el || null,
       paginas: x.paginas != null ? x.paginas : null, formato: formatoDe(x.nombre), peso: pesoLegible(x.tamano),
-      estado, observacion: x.motivo || null, url: x.url || null,
+      /* UN ESCANEO LEÍDO A MEDIAS SE VE (20-oct-2026): lo guardado antes de esta corrección puede traer el texto de 1 página de 6 como «Leído». Solo en lo que
+         salió de un OCR, donde `paginas` (las del texto guardado) y `paginas_total` (las del archivo) significan eso; en un PDF con texto una página en blanco no cuenta */
+      paginas_total: x.origen === "ocr" && x.paginas_total != null ? x.paginas_total : null,
+      paginas_sin_texto: Number.isInteger(x.paginas_sin_texto) && x.paginas_sin_texto > 0 ? x.paginas_sin_texto : 0,
+      /* «a medias» lo decide el SERVIDOR (`a_medias`, lib/documentos_proceso.escaneoAMedias): una sola definición, no una copia aquí que divergiría */
+      estado: estado === "leido" && x.a_medias === true ? "parcial" : estado,
+      observacion: x.motivo || (x.relectura_fallida ? `Se intentó volver a leer y no se pudo: ${x.relectura_fallida}` : null), url: x.url || null,
       /* el Formulario 1 en Excel que pasó la comprobación se puede llevar a Precios (19-oct-2026) */
       formulario_de: x.formulario_excel === true && x.id_documento ? p.id : null,
     });
@@ -240,6 +246,7 @@
 
   const ESTADO_ENTIDAD = {
     leido: { clase: "exp-estado-ok", texto: "Leído" },
+    parcial: { clase: "exp-estado-falta", texto: "Leído a medias" },
     por_leer: { clase: "exp-estado-nd", texto: "Por leer" },
     ilegible: { clase: "exp-estado-falta", texto: "No se pudo leer" },
     no_legible: { clase: "exp-estado-nd", texto: "No se lee solo" },   // 19-oct-2026: «No es un PDF con texto» se pegaba también a un Excel, un ZIP o un Word antiguo, y decía lo que el archivo NO es en vez de lo que la aplicación no hace
@@ -247,7 +254,7 @@
   };
 
   function htmlFilaDoc(f, folio) {
-    const meta = [f.tipo, f.formato, f.paginas != null ? `${miles(f.paginas)} ${f.paginas === 1 ? "página" : "páginas"}` : null, f.peso,
+    const meta = [f.tipo, f.formato, f.paginas != null ? (f.estado === "parcial" ? `${miles(f.paginas)} de ${miles(f.paginas_total)} páginas leídas` : f.paginas_sin_texto > 0 && f.paginas_total != null ? `${miles(f.paginas)} de ${miles(f.paginas_total)} páginas con texto (${miles(f.paginas_sin_texto)} sin texto reconocido)` : `${miles(f.paginas)} ${f.paginas === 1 ? "página" : "páginas"}`) : null, f.peso,
       f.fecha ? String(f.fecha).slice(0, 10) : null, f.observacion].filter(Boolean).join(" · ");
     const e = ESTADO_ENTIDAD[f.estado] || ESTADO_ENTIDAD.por_leer;
     /* un documento de Word de la entidad se puede LLENAR con los datos de la
