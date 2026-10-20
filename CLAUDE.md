@@ -166,8 +166,9 @@ gana y lo que cuesta; si el encargo ya dijo cuál, no se pregunta.
   donde solo había un «no sé». Se anota la frase literal del bloqueo. Y no es una propiedad del
   entorno: depende de si el dueño lo pidió, así que lo que se bloqueó sin que él lo pidiera se
   vuelve a intentar cuando lo pide, en vez de darlo por imposible.
-- **Gasto cero, y lo gratuito se PROYECTA antes de proponer.** El dueño no paga software (decisión
-  del 20-oct-2026): ni Vercel Pro ni pago por uso. Antes de proponer o ejecutar algo, la sesión dice
+- **Gasto cero, y lo gratuito se PROYECTA antes de proponer.** Mientras Detekta no genere ingresos el dueño
+  no paga software (decisión del 20-oct-2026; con ingresos se invertirá en el que haga falta): ni
+  Vercel Pro ni pago por uso. Antes de proponer o ejecutar algo, la sesión dice
   si puede generar un cobro —un proveedor que cobra a una tarjeta sin poder cortar no se usa sin una
   cerradura propia de este lado— y, si solo gasta cuota gratuita, estima cuánto añade a la línea base
   medida (la tabla de «Gasto cero: lo gratuito se proyecta antes de proponer, y los topes viven en
