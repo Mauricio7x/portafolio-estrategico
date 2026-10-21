@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 2043367 bytes · 386 secciones · 30 con marcador de superación.
+Derivado del árbol: 2047207 bytes · 387 secciones · 30 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -395,5 +395,6 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | Las tandas de OCR se arman por PESO, no por 5 páginas fijas: el estudio previo del dueño falló con «código 413» (20-oct-2026) | 20-oct-2026 | 20084-20104 | 3916 |  |
 | Gasto cero: lo gratuito se proyecta antes de proponer, y los topes viven en una tabla (20-oct-2026) | 20-oct-2026 | 20105-20135 | 6354 |  |
 | Alternativas gratuitas investigadas (20-oct-2026): el tope que muerde es el de Vercel, y lo que más rinde es sacarle trabajo, no cambiar de proveedor | 20-oct-2026 | 20136-20171 | 7127 | «Medidas del 20-oct-2026: Upstash va por 6 de 10 GB de ancho de banda y Vercel por 500 MB de 10 GB» |
-| Medidas del 20-oct-2026: Upstash va por 6 de 10 GB de ancho de banda y Vercel por 500 MB de 10 GB | 20-oct-2026 | 20172-20192 | 3600 |  |
-| Lo medido el 20-oct-2026 por la tarde: los 3,46 GB son «Functions Storage» y Upstash gasta de 1 a 1,5 GB de ancho de banda al día | 20-oct-2026 | 20193-20211 | 4610 |  |
+| Medidas del 20-oct-2026: Upstash va por 6 de 10 GB de ancho de banda y Vercel por 500 MB de 10 GB | 20-oct-2026 | 20172-20192 | 3040 |  |
+| Lo medido el 20-oct-2026 por la tarde: los 3,46 GB son «Functions Storage» y Upstash gasta de 1 a 1,5 GB de ancho de banda al día | 20-oct-2026 | 20193-20212 | 4090 |  |
+| La cuenta de Upstash no tiene tarjeta, el panel «Insights» enseña datos de muestra, y el plan para no pasar los 10 GB de ancho de banda va en fases | — | 20213-20235 | 4920 |  |
