@@ -10355,6 +10355,79 @@ async function main() {
     assert.strictEqual((await invocar(routerA, "/api/pliego?op=auditoria&id_proceso=../x%20y", CAB_TOKEN)).status, 400);
     console.log("· unidad auditoría de la lectura: páginas en blanco, faltantes o de muy poco texto (calibrado con las cuentas reales del primer proceso), ruido, anclas por tipo y huella con la función real; un presupuesto no se juzga por su proporción de letras; los tiempos medidos salen con la frase de la pantalla; el op lee sin escribir, no devuelve texto y no dice «correcto»");
   }
+  /* unidad consejo de asesores — EL CONSEJO DE SIETE ASESORES ENTRA AL PROYECTO (21-oct-2026), adaptado de github.com/nateherkai/roast-room (MIT). Lo que se trajo son archivos de instrucciones, no
+     código de la aplicación, así que lo que se vigila es lo que haría daño si se corrompe: que cada asesor sea de SOLO LECTURA, que cada cerebro esté completo, que lo dejado fuera (la sala web, las
+     sesiones en el repositorio) no vuelva, que los textos de usted no tuteen, que se diga lo que el consejo NO sabe (lo colombiano) y que el verificador de citas EJECUTADO rechace una cita inventada. */
+  bqConsejo: { if (!corre("unidad consejo de asesores")) break bqConsejo;
+    const { spawnSync } = require("child_process");
+    const { tuteoEn, RE_EMOJI_UI } = require("../lib/lenguaje_pantalla.js");
+    const raizC = path.join(__dirname, "..");
+    const leerC = (rel) => fs.readFileSync(path.join(raizC, rel), "utf8");
+    const skillC = ".claude/skills/roast-room";
+    const asientosC = { bezos: "jeff-bezos", graham: "paul-graham", hormozi: "alex-hormozi", garyvee: "gary-vaynerchuk", martell: "dan-martell", wickman: "gino-wickman", buffett: "warren-buffett" };
+    const archivosCerebro = ["_hot.md", "books.md", "frameworks.md", "positions.md", "principles.md", "sources.md", "stories.md", "voice.md"];
+    // (1) exactamente los siete asientos, cada uno de SOLO LECTURA y con su cerebro completo (MUTACIONES C1: una herramienta que escribe; C2: un cerebro sin un archivo; C8: sin las reglas del proyecto)
+    assert.deepStrictEqual(fs.readdirSync(path.join(raizC, ".claude/agents")).filter((f) => f.startsWith("council-")).sort(), Object.keys(asientosC).map((a) => `council-${a}.md`).sort(), "los siete asientos y ninguno más");
+    for (const [a, carpeta] of Object.entries(asientosC)) {
+      const ag = leerC(`.claude/agents/council-${a}.md`);
+      const fm = /^---\n([\s\S]*?)\n---/.exec(ag);
+      assert.ok(fm, `council-${a}: sin cabecera`);
+      const campos = Object.fromEntries(fm[1].split("\n").map((l) => { const i = l.indexOf(":"); return [l.slice(0, i).trim(), l.slice(i + 1).trim()]; }));
+      assert.strictEqual(campos.name, `council-${a}`);
+      assert.strictEqual(campos.tools, "Read, Grep, Glob", `council-${a}: un asesor solo lee; no escribe, no ejecuta`);
+      assert.ok(Number(campos.maxTurns) > 0 && Number(campos.maxTurns) <= 12, `council-${a}: tope de turnos`);
+      assert.ok(ag.includes(`${skillC}/brains/${carpeta}/`), `council-${a}: apunta a su cerebro`);
+      assert.ok(/Responda siempre en español/.test(ag) && /Jamás invente una cifra, una norma ni una cita/.test(ag), `council-${a}: lleva las reglas del proyecto (español y nada colombiano de memoria)`);
+      for (const f of archivosCerebro) assert.ok(fs.existsSync(path.join(raizC, skillC, "brains", carpeta, f)), `cerebro ${carpeta}: falta ${f}`);
+      assert.ok(/^## The (8|eight) rules/m.test(leerC(`${skillC}/brains/${carpeta}/_hot.md`)), `cerebro ${carpeta}: su hoja caliente trae las ocho reglas`);
+    }
+    // (2) la habilidad y sus referencias: las que cita existen; lo dejado fuera no vuelve (MUTACIÓN C3: la sala web de vuelta)
+    const habilidad = leerC(`${skillC}/SKILL.md`);
+    assert.strictEqual(/^name: (.+)$/m.exec(habilidad)[1], "roast-room");
+    for (const ref of ["seats", "round-prompts", "scoring", "report-template"]) {
+      assert.ok(habilidad.includes(`references/${ref}.md`) && fs.existsSync(path.join(raizC, skillC, "references", `${ref}.md`)), `referencia ${ref}`);
+    }
+    assert.ok(!fs.existsSync(path.join(raizC, skillC, "references", "live-room.md")), "la sala web no se trajo");
+    for (const sobra of ["localhost:4730", "npm start", "live-room", "council.json", "cruxes.json", "verdict.json", "Download PDF"]) {
+      for (const f of ["SKILL.md", "references/seats.md", "references/scoring.md", "references/round-prompts.md", "references/report-template.md"]) assert.ok(!leerC(`${skillC}/${f}`).includes(sobra), `${f} nombra «${sobra}», que es de la sala web que no se trajo`);
+    }
+    for (const fuera of ["app", "sessions", "package.json"]) assert.ok(!fs.existsSync(path.join(raizC, fuera)), `«${fuera}» no entra al repositorio`);
+    // (3) lo que dice la habilidad sobre sus límites y sobre dónde guarda (MUTACIÓN C4: se borra el límite colombiano; C4b: guardar las rondas en el repositorio)
+    assert.ok(/No conocen la contratación pública colombiana/.test(habilidad) && /habilidad `contratacion`/.test(habilidad), "dice que no conoce la contratación colombiana y a quién acudir");
+    assert.ok(/No se crea dentro del repositorio/.test(habilidad) && /cada subida cuesta un despliegue/.test(habilidad), "las rondas no se guardan en el repositorio (cada subida cuesta un despliegue)");
+    assert.ok(/--rapido/.test(habilidad) && /21 corridas/.test(habilidad), "dice el costo y el modo rápido");
+    // las cuatro bandas del veredicto con sus cortes (MUTACIÓN C14: una banda con otro nombre) y las dos etiquetas que las reemplazan
+    const puntaje = leerC(`${skillC}/references/scoring.md`);
+    for (const fila of ["| 7,5 a 10 | ADELANTE |", "| 6,0 a 7,4 | ADELANTE CON CONDICIONES |", "| 4,5 a 5,9 | REHACER |", "| menos de 4,5 | NO HACERLO |"]) assert.ok(puntaje.includes(fila), `banda: ${fila}`);
+    assert.ok(/\*\*ESPERAR\*\*/.test(puntaje) && /Tope por ruina/.test(puntaje) && /Tope por puerta de un solo sentido/.test(puntaje) && /Revisión de unanimidad/.test(puntaje), "la etiqueta ESPERAR y los tres topes");
+    assert.ok(leerC("docs/MEMORIA.md").includes("### El consejo de siete asesores entra al proyecto: sin la sala web, sin guardar nada en el repositorio y con lo que no sabe dicho (21-oct-2026)"), "la memoria cita esa sección con su título exacto");
+    // (4) español de usted y sin emojis en lo que lee el dueño (MUTACIÓN C7: un «quieres» de tuteo)
+    for (const f of ["SKILL.md", "references/seats.md", "references/scoring.md", "references/report-template.md"]) {
+      const t = leerC(`${skillC}/${f}`);
+      assert.strictEqual(tuteoEn(t), null, `${f}: tuteo («${tuteoEn(t)}»): el registro es de usted`);
+      /* los pronombres de segunda persona, que sí son decidibles: la MISMA cerca del censo de `.claude/skills/` (M-DOC-11, más arriba; la expresión es local de ese bloque y aquí se repite: si cambia allí, cambia aquí) */
+      assert.strictEqual(t.match(/(?<![\wáéíóúñ])(tú|ti|contigo|tus?|te)(?![\wáéíóúñ])/g), null, `${f}: pronombre de tuteo`);
+      assert.ok(!RE_EMOJI_UI.test(t), `${f}: sin emojis`);
+    }
+    // (5) el verificador de citas, EJECUTADO: acepta lo que está en un cerebro y rechaza lo inventado (MUTACIÓN C5: un verificador que siempre dice que sí)
+    const hot = leerC(`${skillC}/brains/jeff-bezos/_hot.md`);
+    const citaReal = /"([^"\n]{40,200})" \(S\d{3}\)/.exec(hot);
+    assert.ok(citaReal, "el cerebro de Bezos trae al menos una cita con su identificador");
+    const sesionC = fs.mkdtempSync(path.join(require("os").tmpdir(), "consejo-"));
+    try {
+      fs.writeFileSync(path.join(sesionC, "brief.md"), "# resumen\nDecisión de prueba.\n");
+      fs.writeFileSync(path.join(sesionC, "round-1.md"), `## Bezos\n"${citaReal[1]}" (S063)\n`);
+      const bien = spawnSync("python3", [path.join(raizC, skillC, "scripts/check_quotes.py"), sesionC], { encoding: "utf8" });
+      assert.ok(bien.status === 0 && /unverified: 0/.test(bien.stdout), `una cita del cerebro se acepta: ${bien.stdout}${bien.stderr}`);
+      fs.writeFileSync(path.join(sesionC, "round-2.md"), `## Bezos\n"Esta frase la inventó el modelo y no está en ningún cerebro de los siete" (S063)\n"This sentence was invented by the model and is in no brain at all" (S063)\n`);
+      const mal = spawnSync("python3", [path.join(raizC, skillC, "scripts/check_quotes.py"), sesionC], { encoding: "utf8" });
+      assert.ok(mal.status === 1 && /brain quotes verified: 1;/.test(mal.stdout) && /unverified: 2/.test(mal.stdout) && /invented by the model/.test(mal.stdout), `las dos citas inventadas (una traducida y otra no) se rechazan con código 1 y la del cerebro sigue aceptada: ${mal.status} ${mal.stdout}`);
+    } finally { fs.rmSync(sesionC, { recursive: true, force: true }); }
+    // (6) la licencia y el origen quedan junto a lo copiado (MUTACIÓN C6)
+    const lic = leerC(`${skillC}/LICENCIA-roast-room.txt`);
+    assert.ok(/MIT License/.test(lic) && /AI Automation Society/.test(lic) && /github\.com\/nateherkai\/roast-room/.test(lic) && /f5e7b631a172ecc8ef5488760654ad37f24204b0/.test(lic), "aviso de licencia MIT, autor y commit de origen");
+    console.log("· unidad consejo de asesores: siete asientos de solo lectura con su cerebro completo, la sala web y las sesiones en el repositorio no vuelven, lo colombiano se declara fuera de su alcance, el texto es de usted y el verificador de citas ejecutado rechaza una cita inventada");
+  }
   bqTextoDelPliego: { if (!corre("unidad el texto del pliego")) break bqTextoDelPliego;
     /* QUÉ TEXTO LEEN EL DICTAMEN, EL CRONOGRAMA Y LOS DESCUENTOS (18-oct-2026). Hasta hoy, la última versión del vigía:
        el documento base (el pliego tipo) no entra al vigía y el dictamen decía «no hay texto» con el pliego leído (85 de
