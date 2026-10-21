@@ -175,9 +175,39 @@ por UNSPSC solo tiene base para el segmento 72 (más 76 y 83 en agua potable), y
 adjudicada desde 2024 no trae código: se mantiene `tipo_de_contrato='Obra'` como delimitador y el segmento como
 variable, no como filtro.
 
-## 3. Calidad de las ofertas (Fase 1, paso 4)
+## 3. Calidad de las ofertas y cascada de exclusiones (Fase 1 paso 4 y Fase 2; corrida del inventario desde 2019, 21-oct-2026 04:17–05:14 UTC)
 
-[en construcción: corrida del inventario desde 2019 en curso]
+Corrida de `scripts/base_obra/inventario.js` con `desde=2019-01-01` sobre `tipo_de_contrato='Obra'`: **93.424 filas** de
+p6dx (corte 04:19 UTC) que son **36.741 portafolios** distintos (24.470 con más de una fila: fases; 1.026 con precios base
+distintos: lotes). Ofertas cruzadas: 585.235 grupos proveedor × valor en `wi7w` (2024 →) y 489.216 en `b28v` (≤ 2023);
+0 lotes de consulta fallidos (cada id quedó medido). Lugar de ejecución de jbjy para 24.784 de los 25.086 usables.
+
+### 3.1 Cascada de exclusiones (portafolios, 2019 → 20-oct-2026)
+
+| Modalidad | Total | No adjudicado | Sin precio base | Lotes (p6dx) | Adjudicado sin ofertas en datos abiertos | Lote por ofertas | Cero ofertas válidas | **Usables** |
+|---|---|---|---|---|---|---|---|---|
+| Licitación pública | 9.158 | 2.138 (cancelados 1.218, en evaluación 296, publicados/abiertos 365, seleccionados sin adjudicar 239) | 5 | 561 | 150 | 547 | 226 | **5.531** (3.762 con 3+ ofertas · 1.769 con 1–2) |
+| Menor cuantía | 16.660 | 3.811 (cancelados 2.107, en evaluación 383, publicados/abiertos 851, seleccionados sin adjudicar 432) | 1 | 311 | 429 | 47 | 669 | **11.392** (5.380 con 3+ ofertas · 6.012 con 1–2) |
+| Mínima cuantía | 10.923 | 1.979 (cancelados 1.322, en evaluación 99, publicados/abiertos 331, seleccionados sin adjudicar 225) | 5 | 3 | 310 | 46 | 417 | **8.163** (4.473 con 3+ ofertas · 3.690 con 1–2) |
+
+### 3.2 Calidad de las filas de ofertas (sobre los adjudicados candidatos a usables)
+
+| Comprobación del prompt | Resultado medido |
+|---|---|
+| Filas repetidas (misma oferta publicada muchas veces) | 15.765.447 filas crudas de más, reducidas en el servidor con `$group` a 1.074.451 grupos proveedor × valor |
+| Duplicados (mismo proveedor, mismo valor, otra fila) | 836.635 grupos en 11.418 procesos; entre `wi7w` y `b28v`: 0 (los dos conjuntos no se solapan: 0 procesos en ambos) |
+| Valores cero | 0 entre los no confidenciales; las filas «Confidencial» (3.259, valor 0 por construcción) se cuentan aparte y nunca como oferta |
+| Valores negativos o no numéricos | 12 no numéricos; negativos: 0 en el censo de todo `wi7w` (tramo «negativo» ausente en la agregación por valor) |
+| Moneda distinta de COP | 0 (100 % COP en `wi7w` y en `b28v`) |
+| Marcadores (1, 999999999…) y otra medida | **11.765 ofertas bajo el 50 % del precio base** (precios unitarios, miles, errores) y **6.665 por encima del precio base**, en 4.165 procesos: quedan fuera del cálculo de posición; ninguna rescatada en el inventario (`rescatada_bajo_50` = 0 porque el inventario no trae los contratos; el rescate lo aplica `base.js`) |
+| Un proveedor con 2+ valores en rango (lote por ofertas) | 640 procesos apartados |
+| Ofertas sin proceso en p6dx | no medido: la consulta va de p6dx hacia las ofertas por lista de ids, así que las ofertas huérfanas no se ven [sin medir] |
+| Procesos adjudicados sin ofertas publicadas | 889 (ver cascada) |
+
+Lo que falló en esta corrida: los conteos anuales de `b28v` para 2017 a 2023 y el conteo de `9sue` agotaron los 5
+intentos («The operation was aborted due to timeout»); son conteos informativos y las cifras de la sección 2.1 salieron
+de consultas directas que sí respondieron. La cascada por AÑO y la calidad por año salen de
+`tools/analisis/analisis.py` sobre `base.jsonl.gz` (sección 4).
 
 ## 4. Checkpoint C1 · decisiones que se piden
 

@@ -38,3 +38,13 @@ no se pudo hacer va con el error literal. Nada de aquí lo lee la aplicación.
   proveedor × proceso; por NIT 32 de 35 encontrados con departamento; por `c_digo_proveedor`, 54 de 328.
 - **Rama de trabajo** `claude/investigacion-formula-adjudicacion` creada por el gancho de cierre del dueño
   (pide que no queden archivos sin versionar); el índice y el mapa se regeneraron con `node tests/mapa.js --escribir`.
+- **Orden del dueño (21-oct-2026, tras C1)**: seguir con las fases 2 a 7 con 2024–2026 como ventana principal, usar
+  2022–2023 (y lo que haya desde 2019) solo para medir si las cifras cambian y si hay tendencia por año; no pasar
+  ningún límite gratuito; guardar en Drive o R2 solo lo imprescindible. Esta sesión NO tiene credenciales de R2
+  (no existen variables `OBJETOS_*`): nada se escribe allí. Umbrales de éxito: no fijó otros, rigen los sugeridos
+  (`PREREGISTRO.md`).
+- **Inventario desde 2019 terminado** (04:17 → 05:14 UTC): 93.424 filas de p6dx, 36.741 portafolios, 25.086 usables
+  (licitación 5.531 · menor cuantía 11.392 · mínima 8.163). Fallos: conteos anuales de `b28v` 2017–2023 y `9sue`
+  («agotados 5 intentos (The operation was aborted due to timeout)»), informativos.
+- **Guiones** `tools/analisis/{analisis,hipotesis,modelo,domicilios}.py` probados sobre una base sintética de 600
+  procesos antes de abrir la real (el modelo pasó de 117 s a 6 s al precalcular la tabla de inserción por proceso).
