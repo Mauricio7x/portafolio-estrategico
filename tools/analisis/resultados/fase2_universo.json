@@ -1,0 +1,285 @@
+{
+ "generado": "2026-10-21T05:17:59.198022+00:00",
+ "sha256_base": "351e745e030af53e2278b91dd6cb4a6414d4c8e73b533f280137f6fdba97865b",
+ "semilla": 20261021,
+ "replicas": 2000,
+ "filas_base": 36741,
+ "cascada": {
+  "licitacion|sin_fecha": {
+   "total": 2156,
+   "no_adjudicado": 2138,
+   "usable": 13,
+   "lote_por_ofertas": 3,
+   "sin_ofertas_en_datos_abiertos": 1,
+   "lote_p6dx": 1,
+   "usables_con_ganador": 13,
+   "usables_sin_inconsistencia": 13
+  },
+  "licitacion|2019": {
+   "total": 465,
+   "usable": 280,
+   "lote_numero_de_lotes": 80,
+   "lote_p6dx": 50,
+   "lote_por_ofertas": 46,
+   "cero_ofertas_validas": 8,
+   "sin_precio_base": 1,
+   "usables_con_ganador": 268,
+   "usables_sin_inconsistencia": 250
+  },
+  "licitacion|2020": {
+   "total": 349,
+   "usable": 209,
+   "lote_por_ofertas": 57,
+   "lote_numero_de_lotes": 41,
+   "lote_p6dx": 40,
+   "cero_ofertas_validas": 2,
+   "usables_con_ganador": 200,
+   "usables_sin_inconsistencia": 185
+  },
+  "licitacion|2021": {
+   "total": 874,
+   "usable": 659,
+   "lote_p6dx": 97,
+   "lote_numero_de_lotes": 54,
+   "lote_por_ofertas": 45,
+   "cero_ofertas_validas": 19,
+   "usables_con_ganador": 621,
+   "usables_sin_inconsistencia": 599
+  },
+  "licitacion|2022": {
+   "total": 1299,
+   "usable": 927,
+   "sin_ofertas_en_datos_abiertos": 130,
+   "lote_p6dx": 102,
+   "lote_numero_de_lotes": 57,
+   "lote_por_ofertas": 42,
+   "cero_ofertas_validas": 41,
+   "usables_con_ganador": 855,
+   "usables_sin_inconsistencia": 885
+  },
+  "licitacion|2023": {
+   "total": 1307,
+   "usable": 1071,
+   "lote_p6dx": 89,
+   "lote_numero_de_lotes": 56,
+   "lote_por_ofertas": 47,
+   "cero_ofertas_validas": 31,
+   "sin_ofertas_en_datos_abiertos": 12,
+   "sin_precio_base": 1,
+   "usables_con_ganador": 985,
+   "usables_sin_inconsistencia": 1019
+  },
+  "licitacion|2024": {
+   "total": 753,
+   "usable": 557,
+   "lote_por_ofertas": 80,
+   "lote_numero_de_lotes": 53,
+   "lote_p6dx": 52,
+   "cero_ofertas_validas": 10,
+   "sin_precio_base": 1,
+   "usables_con_ganador": 528,
+   "usables_sin_inconsistencia": 525
+  },
+  "licitacion|2025": {
+   "total": 1170,
+   "usable": 849,
+   "lote_por_ofertas": 122,
+   "lote_numero_de_lotes": 85,
+   "lote_p6dx": 82,
+   "cero_ofertas_validas": 31,
+   "sin_precio_base": 1,
+   "usables_con_ganador": 796,
+   "usables_sin_inconsistencia": 781
+  },
+  "licitacion|2026": {
+   "total": 785,
+   "usable": 606,
+   "lote_por_ofertas": 64,
+   "lote_p6dx": 48,
+   "lote_numero_de_lotes": 46,
+   "cero_ofertas_validas": 19,
+   "sin_precio_base": 1,
+   "sin_ofertas_en_datos_abiertos": 1,
+   "usables_con_ganador": 580,
+   "usables_sin_inconsistencia": 591
+  },
+  "menor_cuantia|sin_fecha": {
+   "total": 3855,
+   "no_adjudicado": 3811,
+   "usable": 39,
+   "sin_ofertas_en_datos_abiertos": 3,
+   "cero_ofertas_validas": 2,
+   "usables_con_ganador": 38,
+   "usables_sin_inconsistencia": 38
+  },
+  "menor_cuantia|2019": {
+   "total": 742,
+   "usable": 646,
+   "cero_ofertas_validas": 41,
+   "lote_numero_de_lotes": 21,
+   "lote_p6dx": 21,
+   "lote_por_ofertas": 12,
+   "sin_precio_base": 1,
+   "usables_con_ganador": 613,
+   "usables_sin_inconsistencia": 540
+  },
+  "menor_cuantia|2020": {
+   "total": 687,
+   "usable": 579,
+   "cero_ofertas_validas": 38,
+   "lote_numero_de_lotes": 35,
+   "lote_p6dx": 21,
+   "lote_por_ofertas": 14,
+   "usables_con_ganador": 562,
+   "usables_sin_inconsistencia": 514
+  },
+  "menor_cuantia|2021": {
+   "total": 1253,
+   "usable": 1152,
+   "cero_ofertas_validas": 38,
+   "lote_p6dx": 36,
+   "lote_numero_de_lotes": 26,
+   "lote_por_ofertas": 1,
+   "usables_con_ganador": 1116,
+   "usables_sin_inconsistencia": 1090
+  },
+  "menor_cuantia|2022": {
+   "total": 1653,
+   "usable": 1122,
+   "sin_ofertas_en_datos_abiertos": 400,
+   "cero_ofertas_validas": 62,
+   "lote_p6dx": 45,
+   "lote_numero_de_lotes": 23,
+   "lote_por_ofertas": 1,
+   "usables_con_ganador": 1078,
+   "usables_sin_inconsistencia": 1074
+  },
+  "menor_cuantia|2023": {
+   "total": 2143,
+   "usable": 1925,
+   "cero_ofertas_validas": 110,
+   "lote_p6dx": 56,
+   "lote_numero_de_lotes": 33,
+   "sin_ofertas_en_datos_abiertos": 18,
+   "lote_por_ofertas": 1,
+   "usables_con_ganador": 1855,
+   "usables_sin_inconsistencia": 1837
+  },
+  "menor_cuantia|2024": {
+   "total": 1813,
+   "usable": 1658,
+   "cero_ofertas_validas": 84,
+   "lote_p6dx": 46,
+   "lote_numero_de_lotes": 24,
+   "lote_por_ofertas": 1,
+   "usables_con_ganador": 1598,
+   "usables_sin_inconsistencia": 1591
+  },
+  "menor_cuantia|2025": {
+   "total": 2743,
+   "usable": 2478,
+   "cero_ofertas_validas": 182,
+   "lote_p6dx": 50,
+   "lote_numero_de_lotes": 26,
+   "lote_por_ofertas": 7,
+   "usables_con_ganador": 2419,
+   "usables_sin_inconsistencia": 2404
+  },
+  "menor_cuantia|2026": {
+   "total": 1771,
+   "usable": 1610,
+   "cero_ofertas_validas": 95,
+   "lote_p6dx": 36,
+   "lote_numero_de_lotes": 18,
+   "lote_por_ofertas": 7,
+   "sin_ofertas_en_datos_abiertos": 5,
+   "usables_con_ganador": 1571,
+   "usables_sin_inconsistencia": 1578
+  },
+  "minima|sin_fecha": {
+   "total": 2022,
+   "no_adjudicado": 1979,
+   "usable": 39,
+   "sin_ofertas_en_datos_abiertos": 2,
+   "cero_ofertas_validas": 1,
+   "lote_numero_de_lotes": 1,
+   "usables_con_ganador": 37,
+   "usables_sin_inconsistencia": 37
+  },
+  "minima|2019": {
+   "total": 742,
+   "usable": 677,
+   "cero_ofertas_validas": 38,
+   "lote_por_ofertas": 24,
+   "lote_numero_de_lotes": 3,
+   "usables_con_ganador": 646,
+   "usables_sin_inconsistencia": 612
+  },
+  "minima|2020": {
+   "total": 620,
+   "usable": 569,
+   "cero_ofertas_validas": 22,
+   "lote_por_ofertas": 22,
+   "lote_numero_de_lotes": 6,
+   "sin_precio_base": 1,
+   "usables_con_ganador": 547,
+   "usables_sin_inconsistencia": 523
+  },
+  "minima|2021": {
+   "total": 889,
+   "usable": 860,
+   "cero_ofertas_validas": 26,
+   "lote_numero_de_lotes": 1,
+   "lote_p6dx": 1,
+   "sin_precio_base": 1,
+   "usables_con_ganador": 831,
+   "usables_sin_inconsistencia": 813
+  },
+  "minima|2022": {
+   "total": 1055,
+   "usable": 735,
+   "sin_ofertas_en_datos_abiertos": 279,
+   "cero_ofertas_validas": 40,
+   "lote_numero_de_lotes": 1,
+   "usables_con_ganador": 708,
+   "usables_sin_inconsistencia": 684
+  },
+  "minima|2023": {
+   "total": 1412,
+   "usable": 1300,
+   "cero_ofertas_validas": 72,
+   "sin_ofertas_en_datos_abiertos": 26,
+   "lote_numero_de_lotes": 10,
+   "lote_p6dx": 2,
+   "sin_precio_base": 2,
+   "usables_con_ganador": 1239,
+   "usables_sin_inconsistencia": 1234
+  },
+  "minima|2024": {
+   "total": 1382,
+   "usable": 1309,
+   "cero_ofertas_validas": 67,
+   "lote_numero_de_lotes": 6,
+   "usables_con_ganador": 1279,
+   "usables_sin_inconsistencia": 1267
+  },
+  "minima|2025": {
+   "total": 1765,
+   "usable": 1678,
+   "cero_ofertas_validas": 85,
+   "lote_numero_de_lotes": 2,
+   "usables_con_ganador": 1636,
+   "usables_sin_inconsistencia": 1626
+  },
+  "minima|2026": {
+   "total": 1036,
+   "usable": 965,
+   "cero_ofertas_validas": 64,
+   "lote_numero_de_lotes": 3,
+   "sin_ofertas_en_datos_abiertos": 3,
+   "sin_precio_base": 1,
+   "usables_con_ganador": 928,
+   "usables_sin_inconsistencia": 941
+  }
+ }
+}

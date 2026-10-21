@@ -1,0 +1,39 @@
+{
+ "cobertura_ofertas_con_domicilio": {
+  "con": 41362,
+  "total": 112554,
+  "fraccion": 0.36748582902429056
+ },
+ "procesos_con_locales_y_foraneos": 1779,
+ "razon_de_momios_local": 1.7025481024248488,
+ "gano_local_de_cada_100": 55.31197301854974,
+ "esperado_si_azar_de_cada_100": 44.232842115089994,
+ "ic95_razon_de_momios": [
+  1.537897231671065,
+  1.8886092572233397
+ ],
+ "por_modalidad": {
+  "licitacion": {
+   "procesos": 423,
+   "gano_local_de_cada_100": 58.62884160756501,
+   "azar": 45.23062479170677,
+   "razon_de_momios": 1.9326967842854084
+  },
+  "menor_cuantia": {
+   "procesos": 1356,
+   "gano_local_de_cada_100": 54.27728613569322,
+   "azar": 43.92158689959671,
+   "razon_de_momios": 1.6388523514170146
+  }
+ },
+ "por_ventana": {
+  "2024-2026": {
+   "procesos": 816,
+   "razon_de_momios": 1.7804449479998987
+  },
+  "2019-2023": {
+   "procesos": 958,
+   "razon_de_momios": 1.6479243470475788
+  }
+ }
+}

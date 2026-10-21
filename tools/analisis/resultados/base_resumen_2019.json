@@ -1,0 +1,357 @@
+{
+ "corte_procesos": "2026-10-21T04:19:34.261Z",
+ "corte_ofertas": "2026-10-21T04:43:34.177Z",
+ "generado": "2026-10-21T05:16:36.252Z",
+ "procesos": 36741,
+ "umbral_plazo_corto_dias": {
+  "licitacion": 26,
+  "menor_cuantia": 14,
+  "minima": 2
+ },
+ "n_ganador_repetido": 3,
+ "interes": {
+  "minimo": 10,
+  "ofertas_max": 2
+ },
+ "jbjy_fallos": [],
+ "por_modalidad": {
+  "licitacion": {
+   "total": 9158,
+   "excluidos": {
+    "lote_numero_de_lotes": 472,
+    "no_adjudicado": 2138,
+    "lote_p6dx": 561,
+    "lote_por_ofertas": 506,
+    "cero_ofertas_validas": 161,
+    "sin_ofertas_en_datos_abiertos": 144,
+    "sin_precio_base": 5
+   },
+   "real": 3458,
+   "baja": 1713,
+   "senales": {
+    "real": {
+     "una_oferta": {
+      "si": 0,
+      "no": 3458,
+      "sin_dato": 0
+     },
+     "adjudicado_99_con_una": {
+      "si": 0,
+      "no": 3458,
+      "sin_dato": 0
+     },
+     "plazo_corto": {
+      "si": 203,
+      "no": 2936,
+      "sin_dato": 319
+     },
+     "ganador_repetido": {
+      "si": 154,
+      "no": 3304,
+      "sin_dato": 0
+     },
+     "interes_sin_ofertas": {
+      "si": 0,
+      "no": 0,
+      "sin_dato": 3458
+     }
+    },
+    "baja": {
+     "una_oferta": {
+      "si": 1135,
+      "no": 518,
+      "sin_dato": 60
+     },
+     "adjudicado_99_con_una": {
+      "si": 923,
+      "no": 713,
+      "sin_dato": 77
+     },
+     "plazo_corto": {
+      "si": 209,
+      "no": 1371,
+      "sin_dato": 133
+     },
+     "ganador_repetido": {
+      "si": 185,
+      "no": 1528,
+      "sin_dato": 0
+     },
+     "interes_sin_ofertas": {
+      "si": 0,
+      "no": 0,
+      "sin_dato": 1713
+     }
+    }
+   },
+   "ganador_identificado": 5171,
+   "oferta_ganadora_hallada": 4846,
+   "ubicacion_desde_direccion": 5063,
+   "usables": 5171
+  },
+  "menor_cuantia": {
+   "total": 16660,
+   "excluidos": {
+    "cero_ofertas_validas": 652,
+    "no_adjudicado": 3811,
+    "lote_numero_de_lotes": 206,
+    "lote_p6dx": 311,
+    "sin_ofertas_en_datos_abiertos": 426,
+    "lote_por_ofertas": 44,
+    "sin_precio_base": 1
+   },
+   "real": 5258,
+   "baja": 5951,
+   "senales": {
+    "real": {
+     "una_oferta": {
+      "si": 0,
+      "no": 5258,
+      "sin_dato": 0
+     },
+     "adjudicado_99_con_una": {
+      "si": 0,
+      "no": 5258,
+      "sin_dato": 0
+     },
+     "plazo_corto": {
+      "si": 74,
+      "no": 4796,
+      "sin_dato": 388
+     },
+     "ganador_repetido": {
+      "si": 1005,
+      "no": 4253,
+      "sin_dato": 0
+     },
+     "interes_sin_ofertas": {
+      "si": 0,
+      "no": 5181,
+      "sin_dato": 77
+     }
+    },
+    "baja": {
+     "una_oferta": {
+      "si": 4061,
+      "no": 1672,
+      "sin_dato": 218
+     },
+     "adjudicado_99_con_una": {
+      "si": 3285,
+      "no": 2396,
+      "sin_dato": 270
+     },
+     "plazo_corto": {
+      "si": 489,
+      "no": 5002,
+      "sin_dato": 460
+     },
+     "ganador_repetido": {
+      "si": 1834,
+      "no": 4116,
+      "sin_dato": 1
+     },
+     "interes_sin_ofertas": {
+      "si": 3973,
+      "no": 1835,
+      "sin_dato": 143
+     }
+    }
+   },
+   "ganador_identificado": 11208,
+   "oferta_ganadora_hallada": 10850,
+   "ubicacion_desde_direccion": 11024,
+   "usables": 11209
+  },
+  "minima": {
+   "total": 10923,
+   "excluidos": {
+    "no_adjudicado": 1979,
+    "cero_ofertas_validas": 415,
+    "sin_ofertas_en_datos_abiertos": 310,
+    "lote_numero_de_lotes": 33,
+    "lote_por_ofertas": 46,
+    "lote_p6dx": 3,
+    "sin_precio_base": 5
+   },
+   "real": 4454,
+   "baja": 3678,
+   "senales": {
+    "real": {
+     "una_oferta": {
+      "si": 0,
+      "no": 4454,
+      "sin_dato": 0
+     },
+     "adjudicado_99_con_una": {
+      "si": 0,
+      "no": 4454,
+      "sin_dato": 0
+     },
+     "plazo_corto": {
+      "si": 156,
+      "no": 4298,
+      "sin_dato": 0
+     },
+     "ganador_repetido": {
+      "si": 1095,
+      "no": 3359,
+      "sin_dato": 0
+     },
+     "interes_sin_ofertas": {
+      "si": 0,
+      "no": 0,
+      "sin_dato": 4454
+     }
+    },
+    "baja": {
+     "una_oferta": {
+      "si": 2186,
+      "no": 1304,
+      "sin_dato": 188
+     },
+     "adjudicado_99_con_una": {
+      "si": 1420,
+      "no": 2030,
+      "sin_dato": 228
+     },
+     "plazo_corto": {
+      "si": 232,
+      "no": 3446,
+      "sin_dato": 0
+     },
+     "ganador_repetido": {
+      "si": 1584,
+      "no": 2094,
+      "sin_dato": 0
+     },
+     "interes_sin_ofertas": {
+      "si": 0,
+      "no": 0,
+      "sin_dato": 3678
+     }
+    }
+   },
+   "ganador_identificado": 8132,
+   "oferta_ganadora_hallada": 7851,
+   "ubicacion_desde_direccion": 7978,
+   "usables": 8132
+  }
+ },
+ "sensibilidad_ganador_repetido": {
+  "2": 3133,
+  "3": 1336,
+  "4": 733,
+  "5": 467
+ },
+ "parejas_entidad_ganador": 21626,
+ "proporcion_marcada": {
+  "licitacion": {
+   "una_oferta": {
+    "marcados": 1135,
+    "con_dato": 5111,
+    "pct": 22.2
+   },
+   "adjudicado_99_con_una": {
+    "marcados": 923,
+    "con_dato": 5094,
+    "pct": 18.1
+   },
+   "plazo_corto": {
+    "marcados": 412,
+    "con_dato": 4719,
+    "pct": 8.7
+   },
+   "ganador_repetido": {
+    "marcados": 339,
+    "con_dato": 5171,
+    "pct": 6.6
+   },
+   "interes_sin_ofertas": {
+    "marcados": 0,
+    "con_dato": 0,
+    "pct": null
+   }
+  },
+  "menor_cuantia": {
+   "una_oferta": {
+    "marcados": 4061,
+    "con_dato": 10991,
+    "pct": 36.9
+   },
+   "adjudicado_99_con_una": {
+    "marcados": 3285,
+    "con_dato": 10939,
+    "pct": 30
+   },
+   "plazo_corto": {
+    "marcados": 563,
+    "con_dato": 10361,
+    "pct": 5.4
+   },
+   "ganador_repetido": {
+    "marcados": 2839,
+    "con_dato": 11208,
+    "pct": 25.3
+   },
+   "interes_sin_ofertas": {
+    "marcados": 3973,
+    "con_dato": 10989,
+    "pct": 36.2
+   }
+  },
+  "minima": {
+   "una_oferta": {
+    "marcados": 2186,
+    "con_dato": 7944,
+    "pct": 27.5
+   },
+   "adjudicado_99_con_una": {
+    "marcados": 1420,
+    "con_dato": 7904,
+    "pct": 18
+   },
+   "plazo_corto": {
+    "marcados": 388,
+    "con_dato": 8132,
+    "pct": 4.8
+   },
+   "ganador_repetido": {
+    "marcados": 2679,
+    "con_dato": 8132,
+    "pct": 32.9
+   },
+   "interes_sin_ofertas": {
+    "marcados": 0,
+    "con_dato": 0,
+    "pct": null
+   }
+  }
+ },
+ "censo_contrato": {
+  "procesos": 24512,
+  "sin_contrato": 290,
+  "sin_medir": 0,
+  "ganador": {
+   "si": 24147,
+   "no": 75,
+   "sin_dato": 0
+  },
+  "valor": {
+   "igual": 15003,
+   "mayor": 8779,
+   "menor": 440,
+   "sin_dato": 0
+  }
+ },
+ "validas_frente_a_respuestas": {
+  "iguales": 21788,
+  "menos_validas": 2700,
+  "mas_validas": 24,
+  "sin_dato": 0
+ },
+ "inconsistencias": {
+  "valor_adjudicado_distinto_de_la_oferta_ganadora": 1689,
+  "valor_adjudicado_sobre_precio_base": 114
+ }
+}

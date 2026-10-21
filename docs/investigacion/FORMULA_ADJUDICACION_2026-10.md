@@ -225,6 +225,277 @@ de consultas directas que sí respondieron. La cascada por AÑO y la calidad por
 
 Inconsistencias apartadas entre los usables (no entran en ninguna cifra de posición): adjudicado distinto en más del 1 % de la oferta publicada del ganador: licitación 311, menor cuantía 528, mínima 378; adjudicado por encima del precio base: 12, 15 y 17. SHA-256 de `base.jsonl.gz`: `351e745e030af53e2278b91dd6cb4a6414d4c8e73b533f280137f6fdba97865b`.
 
-## 4. Checkpoint C1 · decisiones que se piden
+## 4. Checkpoint C1 y la decisión del dueño
 
-[en construcción]
+El material de C1 (secciones 1 a 3) se entregó el 21-oct-2026. El dueño respondió el mismo día: seguir con las
+fases 2 a 7 usando 2024–2026 como ventana principal, usar 2022–2023 (y lo que haya desde 2019) solo para medir si
+las cifras cambian y si hay tendencia por año, no pasar ningún límite gratuito, y guardar fuera del repositorio solo
+lo imprescindible. No fijó umbrales de éxito distintos de los sugeridos en el prompt: rigen los de
+`tools/analisis/PREREGISTRO.md` (mejora ≥ 3 puntos de cada 100 frente a la línea base con IC 95 % por entidad que
+excluya 0; calibración con pendiente entre 0,8 y 1,2; sin cambio de signo entre años). D2 (sectores): se mantuvo
+`tipo_de_contrato='Obra'` sin filtrar por UNSPSC (sección 2.2). D5 (margen mínimo y tope de riesgo): el backtest
+no usa el costo del dueño, así que el margen se reporta como nivel de precio (porcentaje del presupuesto), y el
+riesgo como «de cada 100 ofertas, cuántas quedan bajo mediana − σ».
+
+## 5. Hipótesis pre-registradas: qué sobrevivió (Fase 3; `tools/analisis/resultados/fase3_hipotesis.json`)
+
+Universo: licitación pública y menor cuantía, usables, sin inconsistencia, por año de adjudicación. Ventana
+principal 2024–2026 (7.470 procesos: 1.897 licitaciones, 5.573 menores cuantías; 3.834 mínimas aparte). Intervalos:
+remuestreo por bloques de entidad, 2.000 réplicas, semilla 20261021. Corrección por pruebas múltiples
+(Benjamini–Hochberg al 5 % sobre las 13 pruebas con p): todas las p ajustadas quedan por debajo de 0,03 salvo H6
+(0,32, donde NO rechazar es lo esperado) y la Ley de Garantías (0,23). Como los p salen de 2.000 réplicas, su suelo
+es 1/2.001: «< 0,001» significa eso, no cero. **Que una prueba sea significativa no la vuelve útil: lo que
+decide es el tamaño del efecto frente al umbral declarado.**
+
+| # | Hipótesis | Resultado 2024–2026 | ¿Supera su umbral? | Con 2022–2026 · 2019–2026 |
+|---|---|---|---|---|
+| H1 | r_adj estable por entidad | Con solo comparables ANTERIORES (≥ 5), la mediana de la entidad explica fuera de muestra el 45 % de la varianza de r_adj en licitación (IC 23–59 %) y el 55 % en menor cuantía (IC 29–67 %); error absoluto medio 1,76 puntos (entidad) frente a 2,95 (país) y 2,47 (departamento). Rango intercuartil dentro de la entidad 1,1 puntos frente a 5,5 global. | Sí (R² ≥ 0,10; IQR ≤ 70 %). **Pero** la variación de r_adj está dominada por cuántos ofertan (H2): parte del «efecto entidad» es que la misma entidad recibe siempre pocas ofertas. [Sujeto a la auditoría: F1] | R² cae a 0,26 / 0,40 (2022–2026) y 0,21 / 0,21 (2019–2026): la historia vieja estorba más de lo que ayuda |
+| H2 | Más oferentes, más baja | Mediana de la baja del ganador por número de ofertas 1 · 2 · 3–4 · 5–9 · 10+: licitación 0 · 0,1 · 1,0 · 3,2 · 5,5 puntos; menor cuantía 0 · 0,2 · 2,0 · 4,7 · 6,8; mínima 0 · 1,2 · 10,2 · 18,0 · 23,4. Pendiente sobre log(n): 1,44 (IC 1,25–1,63) y 2,08 (IC 1,67–2,27). | Sí, con holgura | Igual forma; con 10+ la baja es 4,6–4,9 puntos en las ventanas largas |
+| H3 | Acumulación de ofertas | Las ofertas se apiñan alrededor de la mediana del proceso: en licitación (procesos con 4+ ofertas) **el 46 % de las ofertas queda a menos de medio punto de la mediana de las OTRAS ofertas** (12.049 de 26.373; 4,6 veces lo que hay en las celdas vecinas); en menor cuantía, el 35 % (3,4 veces). **El 14 % de las ofertas es un porcentaje entero exacto del presupuesto** (95,0 %, 97,0 %…) y el 13,6 % de las de licitación es exactamente el 100 %. Hay un VACÍO justo un punto por debajo de la mediana (−35 % frente a los vecinos): pocas ofertas se sitúan apenas debajo del grupo. Alrededor del 80 % y del 88 % del presupuesto no hay acumulación (las celdas están por debajo de sus vecinas). | Sí (exceso ≥ 25 %) | Igual en todas las ventanas (456–477 % en licitación) |
+| H4 | Posición del ganador | **La oferta más baja no gana más que una al azar**: en licitación gana el 33,6 % de las veces (IC 30–37 %) cuando por azar sería el 35,7 %; en menor cuantía 60,8 % frente a 61,2 %. Con 3–4 ofertas en licitación, la más baja gana el 16 % frente al 30 % que le tocaría al azar; con 10+, el 10 % frente al 5 %. La posición típica del ganador es el centro: mediana de su z = 0,08 (licitación) y 0,06 (menor cuantía); solo el 14 % de los ganadores queda a más de una desviación por debajo de la media. En mínima cuantía la más baja gana el 59 % (azar: 53 %), no el 100 % que manda la norma: la más baja publicada no es siempre la que cumple. | La hipótesis era «el ganador no suele ser el más bajo»: confirmada. | Igual: 37,8 % vs 38,0 % (2022–2026), 38,7 % vs 37,4 % (2019–2026) |
+| H5 | Dígitos (control) | Benford se rechaza (chi² 363, 8 g. l.) como es normal en precios anclados a un presupuesto; el 25 % de las ofertas trae centavos y el 5,8 % es múltiplo exacto de un millón. No hay marcadores masivos. | Solo control | Igual |
+| H6 | Centavos de la TRM parejos | 663 días hábiles 2024–2026: 174 · 153 · 181 · 155 en los cuatro rangos; chi² 3,49 (3 g. l.), p 0,32: no se rechaza el reparto parejo. | Sí (el método es un sorteo justo; P(m) = ¼) | 1.135 días: p 0,42; 1.850 días: p 0,72 |
+| H7 | La ubicación mejora la predicción | Añadir departamento y municipio a entidad + modalidad + tamaño mejora el error absoluto medio de r_adj fuera de muestra en 0,10 puntos (licitación, IC 0,06–0,13) y 0,14 (menor cuantía, IC 0,12–0,17) en validación cruzada; 0,10 y 0,23 en validación temporal (2026). Dejando un departamento fuera, el error no cambia (2,80 frente a 2,80). | **No** (umbral 0,5 puntos): significativo pero irrelevante | 0,07 / 0,11 y 0,07 / 0,10 |
+| H8 | Ventaja local | En 1.779 procesos (2019–2026) con oferentes del departamento de la obra y de fuera a la vez, **ganó un local en 55 de cada 100 cuando por azar serían 44**; razón de momios 1,70 (IC 1,54–1,89), igual en 2019–2023 (1,65) y 2024–2026 (1,78). Cobertura: el domicilio se conoce para el 37 % de las ofertas (solo las que traen NIT válido y figuran en Proveedores Registrados). | Sí (≥ 1,3 y cobertura ≥ 30 %) [sujeto a la auditoría: F7] | Estable |
+| H9 | Tamaño y versión del documento tipo | Los procesos grandes (tercil superior del precio base) se adjudican con 3,0 puntos más de baja que los pequeños en licitación (IC 1,2–4,2) y 1,0 en menor cuantía (IC 0,2–3,1); el tamaño mediano trae más ofertas (6 y 8 frente a 4). Versión 4 de transporte (avisos desde el 3-feb-2025): sin cambio medible en licitación (+0,8 puntos, IC −0,5 a 2,1). Versión 2 de infraestructura social (desde el 16-feb-2026): −3,2 puntos en licitación (IC −4,2 a −0,7), **pero coincide con que 2026 es el año de más competencia y no se puede separar de la tendencia del año** (sección 7). | Parcial (tamaño sí en licitación; versión no atribuible) | Tamaño: 1,3–1,8 puntos |
+| H10 | Calendario | Diciembre: +0,3 puntos de r_adj (IC 0,1–1,0), menos baja y 1 oferta mediana; abajo del umbral de 2 puntos. Ley de Garantías 2026 (cierres entre el 31-ene y el 21-jun-2026: 998 procesos) frente a la misma época de 2025 (716): diferencia de r_adj 0,27 puntos (IC −0,2 a 1,1) y 0 ofertas de diferencia. | **No** | Diciembre 0,8–1,0 puntos |
+| H11 | Reincidencia (control) | El ganador ya había ganado 2 o más veces antes en la misma entidad en el 1,4 % de las licitaciones y el 9,1 % de las menores cuantías. | Control: no entra al optimizador | 1,3–1,4 % y 10 % |
+
+Lo que esto dice en lenguaje llano: **la baja que gana depende sobre todo de cuántos se presentan, no de dónde está la
+obra**; las ofertas se juntan en un pelotón estrecho alrededor de la mediana del proceso y el ganador es casi
+siempre uno del pelotón, no el más barato; y ser de la región ayuda más que cualquier variable de precio que
+pudimos medir.
+
+## 6. Modelo del ganador, líneas base y optimizador (Fases 4 a 7; `fase5_7_modelo*.json`)
+
+### 6.1 Reconstrucción del ganador con las 4 fórmulas (ya medida por la base del 17-oct, replicada aquí sobre 2019–2026)
+
+Con TODAS las ofertas publicadas como si fueran hábiles, algún método pone primero al ganador real en el 40,6 %
+de las licitaciones con competencia real (608 de 1.498 con dato de TRM) y en el 57,7 % de las menores cuantías
+(1.213 de 2.104); el método que señala la TRM estimada reproduce al ganador en el 11,7 % y el 19,6 %, igual que
+cualquier método fijo (12–13 % y 16–24 %). El logit condicional del ganador (posición, distancia a la mediana, z,
+rango, «es la más baja»; entrenado con 6.579 procesos ≤ 2024, probado en 1.740 de 2025 con 2+ ofertas) apenas
+mejora la verosimilitud de elegir al azar (−1,664 frente a −1,667 por proceso) y acierta al ganador el 32 % de las
+veces frente al 27 % del azar; «la más baja» acierta el 19,7 %. **Lo que decide quién gana (la habilitación y los
+otros 51,5 puntos del puntaje) no está en los datos abiertos.**
+
+### 6.2 El backtest honesto (validación 2025; prueba 2026 sin tocar)
+
+Para cada proceso adjudicado en 2025, cada regla elige un precio con lo que había ANTES de su fecha de adjudicación;
+ese precio se inserta entre las ofertas reales del proceso y «gana» si queda primero con cada una de las 4
+fórmulas (empate: 1/k), promediando los cuatro métodos (sorteo parejo, H6). Dos escenarios, porque la habilitación
+no se ve: (a) todas las publicadas eran hábiles; (b) una oferta que queda por debajo de «mediana − σ» de las ofertas
+(incluida ella) se trata como rechazada. La verdad está entre los dos. Reglas:
+B0 (el mínimo admisible: 88 % del presupuesto, el corte de la alerta) · B1 (mediana de r_adj de los comparables
+anteriores de la entidad, ≥ 5; si no, departamento; si no, país) · **B2 (Detekta hoy: réplica de la cascada del
+índice de baja —entidad+familia → entidad → departamento+familia, mediana de la baja en puntos enteros, mínimo
+5—)** · B2_exacta (lo mismo sin redondear) · constantes 95 %, 96,5 % y 98 % · P25 de la entidad · Piso_comparables
+(mediana del «mediana − σ» de los comparables anteriores + 0,5 puntos) · F_opt (el precio de una rejilla 80–100 %
+que más veces habría ganado al insertarse en los comparables anteriores) · F_opt_piso (lo mismo contando como
+rechazada la oferta bajo el piso).
+
+**validacion_2025 · todos los procesos (3.077)**
+
+| Regla | Precio medio (% del presupuesto) | Gana (de cada 100) · todas las ofertas publicadas como hábiles | IC 95 % | Gana si quedar bajo mediana − σ es rechazo | IC 95 % | Queda bajo ese piso (de cada 100) |
+|---|---|---|---|---|---|---|
+| B0 | 88,0 | 63,2 | 58,6–66,9 | 44,8 | 40,1–49,2 | 51,4 |
+| B1 | 98,4 | 39,4 | 35,8–42,6 | 36,2 | 32,7–39,3 | 7,3 |
+| B2 | 98,4 | 23,5 | 21,7–25,4 | 21,0 | 19,3–22,9 | 6,0 |
+| B2_exacta | 98,3 | 38,5 | 35,4–41,5 | 35,3 | 32,3–38,3 | 7,4 |
+| C95 | 95,0 | 57,9 | 52,6–62,4 | 49,8 | 45,0–54,1 | 19,8 |
+| C96.5 | 96,5 | 55,6 | 50,3–60,1 | 49,0 | 44,0–53,5 | 14,9 |
+| C98 | 98,0 | 51,7 | 46,6–56,2 | 46,6 | 41,8–50,9 | 10,7 |
+| F_opt | 81,2 | 65,3 | 61,2–68,7 | 44,1 | 39,3–48,4 | 54,2 |
+| F_opt_piso | 96,6 | 55,1 | 50,2–59,3 | 49,2 | 44,5–53,3 | 13,6 |
+| F_opt_piso_alerta | 96,6 | 55,1 | 50,2–59,3 | 49,2 | 44,6–53,3 | 13,5 |
+| P25_entidad | 97,0 | 50,8 | 46,7–54,3 | 45,2 | 41,3–48,8 | 13,8 |
+| Piso_comparables | 95,4 | 57,8 | 53,0–61,9 | 50,5 | 45,9–54,6 | 17,4 |
+
+**validacion_2025 · solo procesos con 3 o más ofertas publicadas**
+
+| Regla | Precio medio (% del presupuesto) | Gana (de cada 100) · todas las ofertas publicadas como hábiles | IC 95 % | Gana si quedar bajo mediana − σ es rechazo | IC 95 % | Queda bajo ese piso (de cada 100) |
+|---|---|---|---|---|---|---|
+| B0 | 88,0 | 29,9 | 27,0–32,3 | 1,9 | 1,4–2,5 | 92,8 |
+| B1 | 97,4 | 9,1 | 7,3–10,8 | 5,7 | 4,6–6,9 | 8,9 |
+| B2 | 97,1 | 9,6 | 8,1–11,2 | 6,6 | 5,4–8,0 | 8,4 |
+| B2_exacta | 97,1 | 9,9 | 8,4–11,6 | 6,6 | 5,5–7,9 | 9,0 |
+| C95 | 95,0 | 19,2 | 15,5–22,5 | 10,5 | 8,4–12,6 | 26,2 |
+| C96.5 | 96,5 | 15,5 | 12,3–18,6 | 9,1 | 7,1–11,2 | 17,5 |
+| C98 | 98,0 | 10,7 | 8,2–13,2 | 6,3 | 4,7–8,1 | 10,5 |
+| F_opt | 80,9 | 34,8 | 32,0–36,9 | 0,8 | 0,4–1,3 | 97,2 |
+| F_opt_piso | 96,1 | 16,0 | 13,3–18,6 | 10,0 | 8,5–11,8 | 16,2 |
+| F_opt_piso_alerta | 96,1 | 16,0 | 13,3–18,6 | 10,1 | 8,6–11,8 | 15,9 |
+| P25_entidad | 95,6 | 16,3 | 14,3–18,4 | 10,2 | 8,9–11,5 | 18,8 |
+| Piso_comparables | 95,1 | 19,8 | 17,1–22,5 | 12,1 | 10,7–13,8 | 22,1 |
+
+**validacion_2025 · 3+ ofertas, con el piso como rechazo: cada regla frente a la constante 96,5 %** (diferencia por proceso, puntos de cada 100, IC 95 % por remuestreo de entidades)
+
+| Comparación | Diferencia | IC 95 % | Procesos emparejados |
+|---|---|---|---|
+| B0 − C96.5 | -7.2 | -9.3 a -5.3 | 1.231 |
+| B1 − C96.5 | -3.4 | -5.1 a -1.8 | 1.231 |
+| B2 − C96.5 | -2.4 | -4.8 a -0.4 | 1.231 |
+| B2_exacta − C96.5 | -2.5 | -4.7 a -0.7 | 1.231 |
+| C95 − C96.5 | 1.4 | 0.1 a 2.8 | 1.231 |
+| C98 − C96.5 | -2.7 | -4.1 a -1.6 | 1.231 |
+| F_opt − C96.5 | -8.3 | -10.4 a -6.4 | 1.231 |
+| F_opt_piso − C96.5 | 1.0 | -0.3 a 2.0 | 1.231 |
+| F_opt_piso_alerta − C96.5 | 1.0 | -0.3 a 2.1 | 1.231 |
+| P25_entidad − C96.5 | 1.1 | -0.6 a 2.5 | 1.231 |
+| Piso_comparables − C96.5 | 3.1 | 1.5 a 4.3 | 1.231 |
+
+**validacion_2025 · 3+ ofertas, con el piso como rechazo: cada regla frente a B2 (Detekta hoy)** (diferencia por proceso, puntos de cada 100, IC 95 % por remuestreo de entidades)
+
+| Comparación | Diferencia | IC 95 % | Procesos emparejados |
+|---|---|---|---|
+| B0 − B2 | -4.7 | -6.3 a -3.3 | 1.231 |
+| B1 − B2 | -1.0 | -2.1 a 0.3 | 1.231 |
+| B2_exacta − B2 | -0.1 | -0.7 a 0.6 | 1.231 |
+| C95 − B2 | 3.9 | 2.0 a 5.9 | 1.231 |
+| C96.5 − B2 | 2.4 | 0.4 a 4.8 | 1.231 |
+| C98 − B2 | -0.3 | -2.3 a 2.0 | 1.231 |
+| F_opt − B2 | -5.9 | -7.2 a -4.5 | 1.231 |
+| F_opt_piso − B2 | 3.4 | 1.9 a 5.2 | 1.231 |
+| F_opt_piso_alerta − B2 | 3.4 | 1.9 a 5.2 | 1.231 |
+| P25_entidad − B2 | 3.5 | 2.2 a 5.0 | 1.231 |
+| Piso_comparables − B2 | 5.5 | 4.0 a 7.3 | 1.231 |
+
+
+**Lo que dicen las tablas de 2025**
+
+1. En los 3.077 procesos, el 43 % tuvo una sola oferta publicada: ahí gana cualquier precio por debajo de ella,
+   y por eso TODAS las reglas «ganan» mucho en el total. La comparación que importa es la de **3 o más ofertas**
+   (1.231 procesos).
+2. Con 3+ ofertas y el piso como rechazo, **Detekta hoy (B2) habría quedado primera en 6,6 de cada 100**; una
+   constante del 96,5 % en 9,1; una del 95 % en 10,5; y la mejor regla con comparables (Piso_comparables, que
+   oferta en promedio al 95,1 %) en 12,1. Frente a la constante 96,5 %, Piso_comparables gana 3,1 puntos más (IC
+   1,5–4,3) y F_opt_piso 1,0 (IC −0,3 a 2,0); frente a B2, 5,5 (IC 4,0–7,3) y 3,4 (IC 1,9–5,2).
+3. **La diferencia grande no es por entidad ni por región: es el NIVEL de precio.** B2 y B1 ofertan al 97–98 %
+   (y B2 exactamente al 100 % en el 49 % de los procesos, porque la mediana de baja de la entidad en puntos enteros
+   es 0); las ofertas ganadoras de licitación con competencia están en el 95,4 % mediano (p25 93,7 %, p75 98,9 %)
+   y el pelotón de ofertas, en el 95,0–95,4 %. Ofertar al 98–100 % es quedarse por encima del pelotón.
+4. Ofertar muy bajo tampoco sirve: B0 (88 %) y F_opt sin piso (81 %) ganarían si todo valiera, pero el 93–97 %
+   de sus ofertas queda bajo «mediana − σ», y con ese criterio como rechazo ganan 1–2 de cada 100.
+5. Con 10 o más ofertas nadie pasa de 4 de cada 100 con ninguna regla: ahí el precio no decide.
+6. **La probabilidad que calcula el optimizador con comparables NO está calibrada** (Brier 0,296 frente a 0,211
+   de una constante; pendiente de calibración 1,39): no puede mostrarse como «probabilidad de ganar».
+
+**Escenario histórico (el que pedía el prompt): validación 2024 con historia solo hasta 2023 (ofertas de `b28v`)**
+
+**validacion_2024 · todos los procesos (2.028)**
+
+| Regla | Precio medio (% del presupuesto) | Gana (de cada 100) · todas las ofertas publicadas como hábiles | IC 95 % | Gana si quedar bajo mediana − σ es rechazo | IC 95 % | Queda bajo ese piso (de cada 100) |
+|---|---|---|---|---|---|---|
+| B0 | 88,0 | 57,3 | 51,3–63,2 | 37,0 | 30,8–43,9 | 59,8 |
+| B1 | 98,0 | 33,6 | 29,0–38,2 | 30,0 | 25,7–34,4 | 8,5 |
+| B2 | 97,9 | 21,8 | 19,5–24,5 | 18,8 | 16,8–21,3 | 7,5 |
+| B2_exacta | 97,9 | 33,2 | 29,0–37,7 | 29,6 | 25,8–33,8 | 8,7 |
+| C95 | 95,0 | 49,4 | 42,2–56,7 | 40,9 | 34,9–47,4 | 23,4 |
+| C96.5 | 96,5 | 46,7 | 38,9–54,3 | 40,6 | 33,7–47,6 | 14,8 |
+| C98 | 98,0 | 41,5 | 34,4–48,8 | 36,7 | 30,3–43,7 | 10,6 |
+| F_opt | 81,0 | 59,7 | 54,3–65,0 | 36,5 | 30,1–43,6 | 61,5 |
+| F_opt_piso | 96,6 | 45,9 | 39,1–52,7 | 40,2 | 34,3–46,7 | 13,8 |
+| F_opt_piso_alerta | 96,6 | 45,8 | 39,1–52,6 | 40,2 | 34,3–46,7 | 13,7 |
+| P25_entidad | 96,5 | 44,6 | 39,7–49,9 | 38,2 | 33,0–43,9 | 19,8 |
+| Piso_comparables | 95,5 | 49,2 | 42,9–55,8 | 42,0 | 36,3–48,2 | 19,3 |
+
+**validacion_2024 · solo procesos con 3 o más ofertas publicadas**
+
+| Regla | Precio medio (% del presupuesto) | Gana (de cada 100) · todas las ofertas publicadas como hábiles | IC 95 % | Gana si quedar bajo mediana − σ es rechazo | IC 95 % | Queda bajo ese piso (de cada 100) |
+|---|---|---|---|---|---|---|
+| B0 | 88,0 | 30,7 | 28,0–33,3 | 1,9 | 1,3–2,7 | 93,7 |
+| B1 | 97,1 | 10,3 | 8,6–12,3 | 6,1 | 4,8–7,5 | 10,8 |
+| B2 | 96,9 | 11,2 | 9,8–12,9 | 7,4 | 6,2–8,6 | 10,5 |
+| B2_exacta | 96,9 | 11,7 | 10,0–13,7 | 7,3 | 6,0–8,6 | 11,8 |
+| C95 | 95,0 | 18,7 | 15,1–22,4 | 8,9 | 7,4–10,7 | 31,5 |
+| C96.5 | 96,5 | 15,3 | 11,6–19,8 | 8,8 | 6,7–11,4 | 18,3 |
+| C98 | 98,0 | 10,6 | 7,8–14,3 | 5,7 | 4,1–7,9 | 11,8 |
+| F_opt | 80,7 | 35,1 | 32,7–37,3 | 1,3 | 0,8–2,0 | 96,3 |
+| F_opt_piso | 96,2 | 16,0 | 13,0–19,3 | 9,7 | 8,1–11,7 | 17,5 |
+| F_opt_piso_alerta | 96,2 | 15,9 | 13,0–19,2 | 9,7 | 8,1–11,7 | 17,3 |
+| P25_entidad | 95,4 | 18,2 | 16,5–20,1 | 10,2 | 9,0–11,7 | 28,9 |
+| Piso_comparables | 95,3 | 19,0 | 16,9–21,6 | 10,9 | 9,7–12,2 | 25,3 |
+
+**validacion_2024 · 3+ ofertas, con el piso como rechazo: cada regla frente a la constante 96,5 %** (diferencia por proceso, puntos de cada 100, IC 95 % por remuestreo de entidades)
+
+| Comparación | Diferencia | IC 95 % | Procesos emparejados |
+|---|---|---|---|
+| B0 − C96.5 | -6.8 | -9.4 a -4.5 | 1.072 |
+| B1 − C96.5 | -2.7 | -5.1 a -0.9 | 1.072 |
+| B2 − C96.5 | -1.3 | -3.9 a 0.7 | 1.072 |
+| B2_exacta − C96.5 | -1.5 | -4.0 a 0.4 | 1.072 |
+| C95 − C96.5 | 0.1 | -2.2 a 1.9 | 1.072 |
+| C98 − C96.5 | -3.1 | -4.4 a -1.9 | 1.072 |
+| F_opt − C96.5 | -7.5 | -9.9 a -5.6 | 1.072 |
+| F_opt_piso − C96.5 | 0.9 | -0.6 a 2.1 | 1.072 |
+| F_opt_piso_alerta − C96.5 | 0.9 | -0.6 a 2.1 | 1.072 |
+| P25_entidad − C96.5 | 1.4 | -0.6 a 3.0 | 1.072 |
+| Piso_comparables − C96.5 | 2.1 | -0.1 a 3.9 | 1.072 |
+
+**validacion_2024 · 3+ ofertas, con el piso como rechazo: cada regla frente a B2 (Detekta hoy)** (diferencia por proceso, puntos de cada 100, IC 95 % por remuestreo de entidades)
+
+| Comparación | Diferencia | IC 95 % | Procesos emparejados |
+|---|---|---|---|
+| B0 − B2 | -5.5 | -7.0 a -4.1 | 1.072 |
+| B1 − B2 | -1.4 | -2.2 a -0.4 | 1.072 |
+| B2_exacta − B2 | -0.2 | -0.7 a 0.5 | 1.072 |
+| C95 − B2 | 1.5 | -0.0 a 3.2 | 1.072 |
+| C96.5 − B2 | 1.3 | -0.7 a 3.9 | 1.072 |
+| C98 − B2 | -1.8 | -3.6 a 0.5 | 1.072 |
+| F_opt − B2 | -6.2 | -7.4 a -4.7 | 1.072 |
+| F_opt_piso − B2 | 2.2 | 0.8 a 4.2 | 1.072 |
+| F_opt_piso_alerta − B2 | 2.2 | 0.8 a 4.2 | 1.072 |
+| P25_entidad − B2 | 2.7 | 1.5 a 4.2 | 1.072 |
+| Piso_comparables − B2 | 3.4 | 2.2 a 4.8 | 1.072 |
+
+
+Mismo orden y mismas distancias: con 3+ ofertas y piso, B2 7,4 · C96,5 8,8 · C95 8,9 · F_opt_piso 9,7 · P25 10,2 ·
+Piso_comparables 10,9. Aquí Piso_comparables supera a la constante por 2,1 puntos con un IC que roza el cero
+(−0,1 a 3,9): **el criterio de «≥ 3 puntos sobre la mejor constante» se cumple en 2025 y no en 2024**. Y con
+comparables solo desde 2024 (sin 2019–2023) los resultados de 2025 cambian menos de 1,5 puntos en todas las
+reglas: la historia vieja no añade ni quita.
+
+## 7. ¿Cambian las cifras con 2022–2023, y hay tendencia por año? (`tendencia_por_anio` en `fase3_hipotesis.json`)
+
+| Año | Licitación: procesos · mediana r_adj (IC) · P10 · ofertas medianas · piso mediano | Menor cuantía: procesos · mediana r_adj · ofertas · piso | Mínima: procesos · mediana r_adj · ofertas |
+|---|---|---|---|
+| 2019 | 250 · 98,5 % (98,2–99,2) · 95,2 · 11,5 · 97,1 % | 540 · 98,3 % · 4 · 96,7 % | 612 · 82,0 % · 4 |
+| 2020 | 185 · 98,4 % (97,7–99,0) · 92,3 · 13 · 96,5 % | 514 · 98,0 % · 5 · 95,4 % | 523 · 80,4 % · 5 |
+| 2021 | 599 · 99,3 % (98,7–99,6) · 94,2 · 4 · 94,9 % | 1.090 · 98,1 % · 3 · 95,7 % | 813 · 85,0 % · 4 |
+| 2022 | 885 · 97,9 % (97,0–98,7) · 93,6 · 5 · 94,5 % | 1.074 · 98,5 % · 2 · 95,1 % | 684 · 87,0 % · 4 |
+| 2023 | 1.019 · 97,0 % (96,0–98,0) · 93,9 · 6 · 94,6 % | 1.837 · 99,0 % · 2 · 94,7 % | 1.234 · 93,1 % · 2 |
+| 2024 | 525 · 97,6 % (96,2–99,1) · 93,4 · 7 · 94,1 % | 1.591 · 99,2 % · 2 · 93,9 % | 1.267 · 91,5 % · 3 |
+| 2025 | 781 · 98,9 % (98,1–99,5) · 93,4 · 4 · 93,6 % | 2.404 · 99,8 % · 2 · 93,4 % | 1.626 · 97,4 % · 2 |
+| 2026 (a oct) | 591 · 96,1 % (94,8–98,1) · 92,3 · 8 · 92,6 % | 1.578 · 99,9 % · 2 · 93,0 % | 941 · 99,2 % · 2 |
+
+Lectura, con la cautela de que 2019–2020 son años de pandemia con 11–13 ofertas medianas y de que 2026 está
+incompleto:
+- **La mediana de r_adj no tiene tendencia útil** (pendiente −0,24 puntos por año en licitación, +0,29 en menor
+  cuantía): sube y baja con la mezcla de procesos de un solo oferente.
+- **El piso (mediana − σ de las ofertas) de licitación sí baja de forma sostenida**: 97,1 % → 94,5 % (2022) → 93,6 %
+  (2025) → 92,6 % (2026): medio punto por año en los últimos cuatro. La misma deriva se ve en el P10 de r_adj.
+  Es la cifra con más pinta de «predecible», y es a la baja: el pelotón se aprieta y desciende.
+- **Mínima cuantía cambió de régimen**: la mediana de r_adj pasó del 80–87 % (2019–2022) al 97–99 % (2025–2026),
+  al tiempo que las ofertas medianas bajaron de 4–5 a 2. Mezclar 2019–2023 con 2024–2026 en mínima describe un
+  mercado que ya no existe.
+- **Sumar 2022–2023 a la ventana principal mueve las medianas de licitación y menor cuantía menos de 1 punto**
+  (97,6–98,9 % frente a 97,0–99,0 %) y el piso 0,5–1 punto hacia arriba; H1 pierde la mitad de su poder
+  explicativo con la ventana larga. Para una referencia de precio hoy, el año más reciente manda.
+
+## 8. Límites que el informe declara (sección 7 del prompt)
+
+1. **La habilitación y los rechazos no se ven**: «todas las publicadas eran hábiles» es un supuesto; por eso cada
+   cifra del backtest va con y sin el piso como rechazo, y la verdad está entre las dos.
+2. **El contrafactual supone que los demás no reaccionan** y que insertar una oferta no cambia las otras. Y la
+   oferta ganadora real sigue dentro del conjunto cuando se inserta la hipotética.
+3. **Solo se ven procesos adjudicados con ofertas publicadas**: los desiertos, cancelados (1.946 desde 2024) y los
+   adjudicados sin ofertas publicadas (880 en 2019–2026) quedan fuera; si los cancelados son los de ofertas más
+   agresivas, el piso real es más bajo que el medido.
+4. **Los datos los digitan las entidades**: 1.261 inconsistencias apartadas, 18.430 ofertas bajo el 50 % o sobre
+   el presupuesto fuera del cálculo, NIT de relleno, y `respuestas_al_procedimiento` incluye respuestas de la
+   propia entidad.
+5. **Un patrón que todos adopten desaparece**: si el mercado ofertara al 95 % en bloque, la mediana y el piso
+   bajarían con él.
+6. **El método de ponderación de cada proceso no consta**; H6 solo prueba que el sorteo es parejo.
+7. **Ninguna cifra de aquí es una probabilidad individual**: la calibración lo descarta (6.2, punto 6).
+

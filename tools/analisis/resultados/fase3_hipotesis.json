@@ -1,0 +1,4883 @@
+{
+ "semilla": 20261021,
+ "replicas": 2000,
+ "ventanas": {
+  "2024-2026": {
+   "procesos_usables_licitacion_menor": 7470,
+   "procesos_usables_minima": 3834,
+   "por_modalidad": {
+    "licitacion": 1897,
+    "menor_cuantia": 5573
+   },
+   "H1": {
+    "licitacion": {
+     "procesos_evaluables": 620,
+     "r2_fuera_de_muestra_entidad": {
+      "valor": 0.4449035808914341,
+      "ic95": [
+       0.22547987241609357,
+       0.5881532891317267
+      ],
+      "p_cero": 0.0004997501249375312
+     },
+     "r2_fuera_de_muestra_departamento": {
+      "valor": 0.22404492481726135,
+      "ic95": [
+       0.03949387230998486,
+       0.35690289281157833
+      ],
+      "p_cero": 0.0014997501249375312
+     },
+     "mae_pts_entidad": {
+      "valor": 1.7572060726446543,
+      "ic95": [
+       1.386423253157547,
+       2.1153726788143112
+      ],
+      "p_cero": 0.0004997501249375312
+     },
+     "mae_pts_departamento": {
+      "valor": 2.4728988662395643,
+      "ic95": [
+       1.9979935308474486,
+       2.937744985581831
+      ],
+      "p_cero": 0.0004997501249375312
+     },
+     "mae_pts_global": {
+      "valor": 2.954783143136842,
+      "ic95": [
+       2.423842904157139,
+       3.47894539423639
+      ],
+      "p_cero": 0.0004997501249375312
+     },
+     "iqr_global_pts": 5.475655903589116,
+     "iqr_mediano_dentro_de_entidad_pts": 1.0869321430083234,
+     "entidades_con_5_o_mas": 101
+    },
+    "menor_cuantia": {
+     "procesos_evaluables": 2543,
+     "r2_fuera_de_muestra_entidad": {
+      "valor": 0.5497149041736014,
+      "ic95": [
+       0.2894663021663964,
+       0.6659714763286781
+      ],
+      "p_cero": 0.0004997501249375312
+     },
+     "r2_fuera_de_muestra_departamento": {
+      "valor": 0.44526433959626377,
+      "ic95": [
+       0.16751770573540728,
+       0.5680671021459002
+      ],
+      "p_cero": 0.0004997501249375312
+     },
+     "mae_pts_entidad": {
+      "valor": 1.461586459524631,
+      "ic95": [
+       1.0084077313392528,
+       1.8904687869028909
+      ],
+      "p_cero": 0.0004997501249375312
+     },
+     "mae_pts_departamento": {
+      "valor": 1.7579316001279952,
+      "ic95": [
+       1.1765443444084218,
+       2.328600673220206
+      ],
+      "p_cero": 0.0004997501249375312
+     },
+     "mae_pts_global": {
+      "valor": 2.655174390645588,
+      "ic95": [
+       1.59461807295986,
+       3.8295124923256
+      ],
+      "p_cero": 0.0004997501249375312
+     },
+     "iqr_global_pts": 3.8496153309151238,
+     "iqr_mediano_dentro_de_entidad_pts": 0.4314137386463246,
+     "entidades_con_5_o_mas": 346
+    }
+   },
+   "H2": {
+    "licitacion": {
+     "pendiente_baja_sobre_log_n": {
+      "valor": 1.4368200240139228,
+      "ic95": [
+       1.2470404263431034,
+       1.6251332614394272
+      ],
+      "p_cero": 0.0004997501249375312
+     },
+     "mediana_baja_por_tramo": {
+      "1": {
+       "n_procesos": 418,
+       "mediana_pts": 0.027444190427239334
+      },
+      "10+": {
+       "n_procesos": 764,
+       "mediana_pts": 5.530338751463382
+      },
+      "2": {
+       "n_procesos": 222,
+       "mediana_pts": 0.07571002220204126
+      },
+      "3-4": {
+       "n_procesos": 218,
+       "mediana_pts": 0.9976248431632306
+      },
+      "5-9": {
+       "n_procesos": 275,
+       "mediana_pts": 3.1695479788704572
+      }
+     },
+     "diferencia_mediana_10mas_menos_1": {
+      "valor": 5.502894561036142,
+      "ic95": [
+       5.2272462642775475,
+       5.704080848969862
+      ],
+      "p_cero": 0.0004997501249375312
+     }
+    },
+    "menor_cuantia": {
+     "pendiente_baja_sobre_log_n": {
+      "valor": 2.0810660651013304,
+      "ic95": [
+       1.6708121378247887,
+       2.272556779325692
+      ],
+      "p_cero": 0.0004997501249375312
+     },
+     "mediana_baja_por_tramo": {
+      "1": {
+       "n_procesos": 2554,
+       "mediana_pts": 0.01948744636479094
+      },
+      "10+": {
+       "n_procesos": 427,
+       "mediana_pts": 6.82156992307692
+      },
+      "2": {
+       "n_procesos": 884,
+       "mediana_pts": 0.178712553553384
+      },
+      "3-4": {
+       "n_procesos": 836,
+       "mediana_pts": 1.9709282228643432
+      },
+      "5-9": {
+       "n_procesos": 872,
+       "mediana_pts": 4.7450788159068615
+      }
+     },
+     "diferencia_mediana_10mas_menos_1": {
+      "valor": 6.802082476712129,
+      "ic95": [
+       3.7188818628514997,
+       7.74132856051318
+      ],
+      "p_cero": 0.0004997501249375312
+     }
+    },
+    "minima": {
+     "pendiente_baja_sobre_log_n": {
+      "valor": 7.7962767923324785,
+      "ic95": [
+       7.102504230632743,
+       8.367199387145057
+      ],
+      "p_cero": 0.0004997501249375312
+     },
+     "mediana_baja_por_tramo": {
+      "1": {
+       "n_procesos": 1369,
+       "mediana_pts": 0.024004962035095723
+      },
+      "10+": {
+       "n_procesos": 484,
+       "mediana_pts": 23.350619599338494
+      },
+      "2": {
+       "n_procesos": 625,
+       "mediana_pts": 1.1794618386569145
+      },
+      "3-4": {
+       "n_procesos": 673,
+       "mediana_pts": 10.206403211777626
+      },
+      "5-9": {
+       "n_procesos": 683,
+       "mediana_pts": 18.000000000000004
+      }
+     },
+     "diferencia_mediana_10mas_menos_1": {
+      "valor": 23.326614637303397,
+      "ic95": [
+       21.62702649316205,
+       25.284317727569075
+      ],
+      "p_cero": 0.0004997501249375312
+     }
+    }
+   },
+   "H3": {
+    "licitacion": {
+     "ofertas": 26742,
+     "exceso_en_la_mediana": {
+      "en_la_celda": 13058,
+      "esperado_por_vecinos": 2041.0,
+      "exceso_pct": 539.7844194022538
+     },
+     "exceso_en_80": {
+      "en_la_celda": 10,
+      "esperado_por_vecinos": 8.0,
+      "exceso_pct": 25.0
+     },
+     "exceso_en_88": {
+      "en_la_celda": 125,
+      "esperado_por_vecinos": 137.5,
+      "exceso_pct": -9.090909090909092
+     },
+     "exceso_en_90": {
+      "en_la_celda": 381,
+      "esperado_por_vecinos": 404.0,
+      "exceso_pct": -5.693069306930693
+     },
+     "exceso_en_95": {
+      "en_la_celda": 6140,
+      "esperado_por_vecinos": 2901.0,
+      "exceso_pct": 111.65115477421578
+     },
+     "exceso_en_100": {
+      "en_la_celda": 4152,
+      "esperado_por_vecinos": 369.0,
+      "exceso_pct": 1025.2032520325204
+     },
+     "exceso_justo_sobre_el_piso": {
+      "en_la_celda": 4284,
+      "esperado_por_vecinos": 4243.0,
+      "exceso_pct": 0.9662974310629272
+     },
+     "histograma_distancia_a_la_mediana_pts": {
+      "bordes": [
+       -10.0,
+       -9.5,
+       -9.0,
+       -8.5,
+       -8.0,
+       -7.5,
+       -7.0,
+       -6.5,
+       -6.0,
+       -5.5,
+       -5.0,
+       -4.5,
+       -4.0,
+       -3.5,
+       -3.0,
+       -2.5,
+       -2.0,
+       -1.5,
+       -1.0,
+       -0.5,
+       0.0,
+       0.5,
+       1.0,
+       1.5,
+       2.0,
+       2.5,
+       3.0,
+       3.5,
+       4.0,
+       4.5,
+       5.0,
+       5.5,
+       6.0,
+       6.5,
+       7.0,
+       7.5,
+       8.0,
+       8.5,
+       9.0,
+       9.5,
+       10.0
+      ],
+      "conteos": [
+       116,
+       18,
+       20,
+       13,
+       37,
+       54,
+       69,
+       109,
+       157,
+       155,
+       207,
+       212,
+       263,
+       336,
+       461,
+       579,
+       810,
+       1323,
+       2220,
+       4523,
+       8535,
+       2393,
+       1195,
+       754,
+       563,
+       389,
+       273,
+       188,
+       199,
+       232,
+       190,
+       92,
+       49,
+       7,
+       0,
+       0,
+       0,
+       1,
+       0,
+       0
+      ]
+     },
+     "fraccion_de_ofertas_al_100_pct": 0.13619026250841373
+    },
+    "menor_cuantia": {
+     "ofertas": 20596,
+     "exceso_en_la_mediana": {
+      "en_la_celda": 8613,
+      "esperado_por_vecinos": 1835.5,
+      "exceso_pct": 369.2454372105693
+     },
+     "exceso_en_80": {
+      "en_la_celda": 87,
+      "esperado_por_vecinos": 43.0,
+      "exceso_pct": 102.32558139534883
+     },
+     "exceso_en_88": {
+      "en_la_celda": 185,
+      "esperado_por_vecinos": 214.5,
+      "exceso_pct": -13.752913752913752
+     },
+     "exceso_en_90": {
+      "en_la_celda": 681,
+      "esperado_por_vecinos": 976.0,
+      "exceso_pct": -30.225409836065573
+     },
+     "exceso_en_95": {
+      "en_la_celda": 3045,
+      "esperado_por_vecinos": 1825.5,
+      "exceso_pct": 66.80361544782251
+     },
+     "exceso_en_100": {
+      "en_la_celda": 2604,
+      "esperado_por_vecinos": 429.0,
+      "exceso_pct": 506.993006993007
+     },
+     "exceso_justo_sobre_el_piso": {
+      "en_la_celda": 2763,
+      "esperado_por_vecinos": 2315.0,
+      "exceso_pct": 19.352051835853132
+     },
+     "histograma_distancia_a_la_mediana_pts": {
+      "bordes": [
+       -10.0,
+       -9.5,
+       -9.0,
+       -8.5,
+       -8.0,
+       -7.5,
+       -7.0,
+       -6.5,
+       -6.0,
+       -5.5,
+       -5.0,
+       -4.5,
+       -4.0,
+       -3.5,
+       -3.0,
+       -2.5,
+       -2.0,
+       -1.5,
+       -1.0,
+       -0.5,
+       0.0,
+       0.5,
+       1.0,
+       1.5,
+       2.0,
+       2.5,
+       3.0,
+       3.5,
+       4.0,
+       4.5,
+       5.0,
+       5.5,
+       6.0,
+       6.5,
+       7.0,
+       7.5,
+       8.0,
+       8.5,
+       9.0,
+       9.5,
+       10.0
+      ],
+      "conteos": [
+       388,
+       35,
+       45,
+       49,
+       66,
+       54,
+       54,
+       93,
+       116,
+       123,
+       162,
+       179,
+       183,
+       289,
+       362,
+       563,
+       692,
+       1045,
+       1727,
+       2702,
+       5911,
+       1859,
+       1161,
+       773,
+       531,
+       424,
+       263,
+       166,
+       161,
+       130,
+       81,
+       62,
+       35,
+       34,
+       17,
+       14,
+       7,
+       7,
+       7,
+       26
+      ]
+     },
+     "fraccion_de_ofertas_al_100_pct": 0.09778597785977859
+    }
+   },
+   "H4": {
+    "licitacion": {
+     "procesos": 1793,
+     "ganador_es_la_mas_baja": {
+      "valor": 0.33575013943112103,
+      "ic95": [
+       0.30425520015231566,
+       0.3674459345738215
+      ],
+      "p_cero": 0.0004997501249375312
+     },
+     "esperado_si_fuera_al_azar": 0.3566770096616167,
+     "por_tramo": {
+      "1": {
+       "procesos": 397,
+       "gana_la_mas_baja": 1.0,
+       "al_azar": 1.0,
+       "mediana_z": null,
+       "mediana_distancia_a_mediana_pts": null,
+       "rango_mediano": 1.0
+      },
+      "10+": {
+       "procesos": 716,
+       "gana_la_mas_baja": 0.10335195530726257,
+       "al_azar": 0.046265148850903555,
+       "mediana_z": -0.0291451050150911,
+       "mediana_distancia_a_mediana_pts": -0.06716256796044365,
+       "rango_mediano": 8.0
+      },
+      "2": {
+       "procesos": 214,
+       "gana_la_mas_baja": 0.3364485981308411,
+       "al_azar": 0.5,
+       "mediana_z": null,
+       "mediana_distancia_a_mediana_pts": null,
+       "rango_mediano": 2.0
+      },
+      "3-4": {
+       "procesos": 209,
+       "gana_la_mas_baja": 0.15789473684210525,
+       "al_azar": 0.2974481658692185,
+       "mediana_z": 0.5665352830726789,
+       "mediana_distancia_a_mediana_pts": 0.0291248645664099,
+       "rango_mediano": 3.0
+      },
+      "5-9": {
+       "procesos": 257,
+       "gana_la_mas_baja": 0.10116731517509728,
+       "al_azar": 0.15653449447223766,
+       "mediana_z": 0.3112762872135262,
+       "mediana_distancia_a_mediana_pts": 0.0,
+       "rango_mediano": 4.0
+      }
+     },
+     "z_del_ganador": {
+      "n": 1149,
+      "p10": -1.3339095831229346,
+      "p25": -0.4781132637423166,
+      "p50": 0.0836278794096116,
+      "p75": 0.5857103489012936,
+      "p90": 1.1107602881100715,
+      "fraccion_bajo_menos_1": 0.1392515230635335
+     }
+    },
+    "menor_cuantia": {
+     "procesos": 5420,
+     "ganador_es_la_mas_baja": {
+      "valor": 0.6075645756457565,
+      "ic95": [
+       0.5406002967523066,
+       0.661871837199579
+      ],
+      "p_cero": 0.0004997501249375312
+     },
+     "esperado_si_fuera_al_azar": 0.6120008557634667,
+     "por_tramo": {
+      "1": {
+       "procesos": 2485,
+       "gana_la_mas_baja": 1.0,
+       "al_azar": 1.0,
+       "mediana_z": null,
+       "mediana_distancia_a_mediana_pts": null,
+       "rango_mediano": 1.0
+      },
+      "10+": {
+       "procesos": 417,
+       "gana_la_mas_baja": 0.11031175059952038,
+       "al_azar": 0.05053242012079203,
+       "mediana_z": -0.04960983591098135,
+       "mediana_distancia_a_mediana_pts": -0.2364052080178758,
+       "rango_mediano": 7.0
+      },
+      "2": {
+       "procesos": 858,
+       "gana_la_mas_baja": 0.40326340326340326,
+       "al_azar": 0.5,
+       "mediana_z": null,
+       "mediana_distancia_a_mediana_pts": null,
+       "rango_mediano": 2.0
+      },
+      "3-4": {
+       "procesos": 809,
+       "gana_la_mas_baja": 0.3016069221260816,
+       "al_azar": 0.30170992995467655,
+       "mediana_z": 0.3089651309275697,
+       "mediana_distancia_a_mediana_pts": 0.0,
+       "rango_mediano": 2.0
+      },
+      "5-9": {
+       "procesos": 851,
+       "gana_la_mas_baja": 0.20211515863689777,
+       "al_azar": 0.16203206311901966,
+       "mediana_z": -0.0371843653099969,
+       "mediana_distancia_a_mediana_pts": 0.0,
+       "rango_mediano": 3.0
+      }
+     },
+     "z_del_ganador": {
+      "n": 1917,
+      "p10": -1.1495336371965565,
+      "p25": -0.6260012856693712,
+      "p50": 0.0561930684174404,
+      "p75": 0.5098612487663705,
+      "p90": 0.9045606496856629,
+      "fraccion_bajo_menos_1": 0.14136671883150756
+     }
+    },
+    "minima": {
+     "procesos": 3727,
+     "ganador_es_la_mas_baja": {
+      "valor": 0.5878722833378052,
+      "ic95": [
+       0.5572271473026009,
+       0.6168504092850954
+      ],
+      "p_cero": 0.0004997501249375312
+     },
+     "esperado_si_fuera_al_azar": 0.5264947456448298,
+     "por_tramo": {
+      "1": {
+       "procesos": 1323,
+       "gana_la_mas_baja": 1.0,
+       "al_azar": 1.0,
+       "mediana_z": null,
+       "mediana_distancia_a_mediana_pts": null,
+       "rango_mediano": 1.0
+      },
+      "10+": {
+       "procesos": 470,
+       "gana_la_mas_baja": 0.274468085106383,
+       "al_azar": 0.07087530469948236,
+       "mediana_z": -0.9574607863197728,
+       "mediana_distancia_a_mediana_pts": -7.3063603203651954,
+       "rango_mediano": 3.0
+      },
+      "2": {
+       "procesos": 599,
+       "gana_la_mas_baja": 0.39232053422370616,
+       "al_azar": 0.5,
+       "mediana_z": null,
+       "mediana_distancia_a_mediana_pts": null,
+       "rango_mediano": 2.0
+      },
+      "3-4": {
+       "procesos": 664,
+       "gana_la_mas_baja": 0.39156626506024095,
+       "al_azar": 0.30032630522088355,
+       "mediana_z": -0.0305960502993048,
+       "mediana_distancia_a_mediana_pts": 0.0,
+       "rango_mediano": 2.0
+      },
+      "5-9": {
+       "procesos": 671,
+       "gana_la_mas_baja": 0.36363636363636365,
+       "al_azar": 0.15949010006387054,
+       "mediana_z": -0.5311144514189599,
+       "mediana_distancia_a_mediana_pts": -2.6624609630071627,
+       "rango_mediano": 2.0
+      }
+     },
+     "z_del_ganador": {
+      "n": 1738,
+      "p10": -1.4937800717792618,
+      "p25": -1.1219990877278683,
+      "p50": -0.5699875387406642,
+      "p75": 0.4683591008877509,
+      "p90": 0.9925194056210687,
+      "fraccion_bajo_menos_1": 0.3193325661680092
+     }
+    }
+   },
+   "H5": {
+    "ofertas": 52522,
+    "primer_digito_observado": [
+     16211,
+     9229,
+     7012,
+     5459,
+     3964,
+     3409,
+     2304,
+     2252,
+     2682
+    ],
+    "primer_digito_benford": [
+     15810.69743226362,
+     9248.66510812249,
+     6562.032324141129,
+     5089.907703209139,
+     4158.757404913351,
+     3516.1792849790677,
+     3045.8530391620625,
+     2686.6327839813603,
+     2403.2749192277797
+    ],
+    "chi2": 363.509837261837,
+    "gl": 8,
+    "p": 1.1812366196686257e-73,
+    "fraccion_multiplo_de_1_millon": 0.05841361715090819,
+    "fraccion_multiplo_de_1000": 0.08449792467918206,
+    "fraccion_con_centavos": 0.25610220479037354
+   },
+   "H6": {
+    "dias": 663,
+    "mediana_geometrica_aritmetica_menor": [
+     174,
+     153,
+     181,
+     155
+    ],
+    "chi2": 3.4917043740573153,
+    "gl": 3,
+    "p": 0.32183963055441567
+   },
+   "H7": {
+    "licitacion": {
+     "cv_5_pliegues": {
+      "mae_pts_base": 2.2605235209862977,
+      "mae_pts_con_geografia": 2.1660183779965942,
+      "mejora_pts": {
+       "valor": 0.09450514298970351,
+       "ic95": [
+        0.059258481701827355,
+        0.1322015834057583
+       ],
+       "p_cero": 0.0004997501249375312
+      }
+     },
+     "temporal_ultimo_anio": {
+      "anio_prueba": 2026,
+      "mae_pts_base": 2.566831026604835,
+      "mae_pts_con_geografia": 2.469757459655504,
+      "mejora_pts": {
+       "valor": 0.09707356694933107,
+       "ic95": [
+        0.04260295091843007,
+        0.15973442687357514
+       ],
+       "p_cero": 0.0014997501249375312
+      }
+     },
+     "dejar_un_departamento_fuera": [
+      {
+       "departamento": "Boyacá",
+       "procesos": 106,
+       "mae_pts_base": 2.894002900532163,
+       "mae_pts_geo": 2.8847638379008713
+      },
+      {
+       "departamento": "Distrito Capital de Bogotá",
+       "procesos": 398,
+       "mae_pts_base": 2.885313096273737,
+       "mae_pts_geo": 2.885313096273737
+      },
+      {
+       "departamento": "Cesar",
+       "procesos": 69,
+       "mae_pts_base": 2.6306947364091804,
+       "mae_pts_geo": 2.6306947364091804
+      },
+      {
+       "departamento": "Arauca",
+       "procesos": 80,
+       "mae_pts_base": 2.896272598095737,
+       "mae_pts_geo": 2.896272598095737
+      },
+      {
+       "departamento": "Valle del Cauca",
+       "procesos": 111,
+       "mae_pts_base": 2.211546500692889,
+       "mae_pts_geo": 2.211546500692889
+      },
+      {
+       "departamento": "Norte de Santander",
+       "procesos": 76,
+       "mae_pts_base": 3.6107690120515015,
+       "mae_pts_geo": 3.6107690120515015
+      },
+      {
+       "departamento": "Bolívar",
+       "procesos": 96,
+       "mae_pts_base": 2.2505986829369498,
+       "mae_pts_geo": 2.2505986829369498
+      },
+      {
+       "departamento": "Cundinamarca",
+       "procesos": 156,
+       "mae_pts_base": 2.9109845250942774,
+       "mae_pts_geo": 2.9109845250942774
+      },
+      {
+       "departamento": "Córdoba",
+       "procesos": 53,
+       "mae_pts_base": 2.4059620429406383,
+       "mae_pts_geo": 2.4059620429406383
+      },
+      {
+       "departamento": "Tolima",
+       "procesos": 93,
+       "mae_pts_base": 2.8238570815516213,
+       "mae_pts_geo": 2.8238570815516213
+      },
+      {
+       "departamento": "Meta",
+       "procesos": 53,
+       "mae_pts_base": 2.311571774529023,
+       "mae_pts_geo": 2.3125165188260066
+      },
+      {
+       "departamento": "Santander",
+       "procesos": 73,
+       "mae_pts_base": 2.2581645742421115,
+       "mae_pts_geo": 2.2581645742421115
+      },
+      {
+       "departamento": "Atlántico",
+       "procesos": 44,
+       "mae_pts_base": 2.659227067671067,
+       "mae_pts_geo": 2.659227067671067
+      },
+      {
+       "departamento": "Antioquia",
+       "procesos": 114,
+       "mae_pts_base": 3.3761184999107097,
+       "mae_pts_geo": 3.3761184999107097
+      },
+      {
+       "departamento": "Huila",
+       "procesos": 36,
+       "mae_pts_base": 2.9002630264793066,
+       "mae_pts_geo": 2.9002630264793066
+      },
+      {
+       "departamento": "Sucre",
+       "procesos": 31,
+       "mae_pts_base": 2.5481621604578084,
+       "mae_pts_geo": 2.5481621604578084
+      },
+      {
+       "departamento": "Casanare",
+       "procesos": 49,
+       "mae_pts_base": 2.6946207174366252,
+       "mae_pts_geo": 2.6946207174366252
+      },
+      {
+       "departamento": "Caldas",
+       "procesos": 67,
+       "mae_pts_base": 4.249853899819821,
+       "mae_pts_geo": 4.249853899819821
+      },
+      {
+       "departamento": "Putumayo",
+       "procesos": 37,
+       "mae_pts_base": 2.759051620098717,
+       "mae_pts_geo": 2.759051620098717
+      }
+     ]
+    },
+    "menor_cuantia": {
+     "cv_5_pliegues": {
+      "mae_pts_base": 1.9348185350395322,
+      "mae_pts_con_geografia": 1.7908544129356208,
+      "mejora_pts": {
+       "valor": 0.14396412210391138,
+       "ic95": [
+        0.11679143749418072,
+        0.17125427543052912
+       ],
+       "p_cero": 0.0004997501249375312
+      }
+     },
+     "temporal_ultimo_anio": {
+      "anio_prueba": 2026,
+      "mae_pts_base": 2.106228788588872,
+      "mae_pts_con_geografia": 1.8791867302637926,
+      "mejora_pts": {
+       "valor": 0.22704205832507945,
+       "ic95": [
+        0.1844953753445251,
+        0.2708367844882254
+       ],
+       "p_cero": 0.0004997501249375312
+      }
+     },
+     "dejar_un_departamento_fuera": [
+      {
+       "departamento": "Santander",
+       "procesos": 253,
+       "mae_pts_base": 2.232136201408965,
+       "mae_pts_geo": 2.2250649416078927
+      },
+      {
+       "departamento": "Valle del Cauca",
+       "procesos": 413,
+       "mae_pts_base": 2.3367532391182135,
+       "mae_pts_geo": 2.3355077069547336
+      },
+      {
+       "departamento": "Boyacá",
+       "procesos": 547,
+       "mae_pts_base": 2.171205078185443,
+       "mae_pts_geo": 2.1779411098370884
+      },
+      {
+       "departamento": "Distrito Capital de Bogotá",
+       "procesos": 456,
+       "mae_pts_base": 2.618802393002543,
+       "mae_pts_geo": 2.618802393002543
+      },
+      {
+       "departamento": "Magdalena",
+       "procesos": 67,
+       "mae_pts_base": 1.8694210403907685,
+       "mae_pts_geo": 1.8694210403907685
+      },
+      {
+       "departamento": "La Guajira",
+       "procesos": 93,
+       "mae_pts_base": 2.537085507931869,
+       "mae_pts_geo": 2.537085507931869
+      },
+      {
+       "departamento": "Cundinamarca",
+       "procesos": 695,
+       "mae_pts_base": 2.3696011467187956,
+       "mae_pts_geo": 2.3621700241272103
+      },
+      {
+       "departamento": "Cesar",
+       "procesos": 111,
+       "mae_pts_base": 2.2286920644784187,
+       "mae_pts_geo": 2.1913201761090906
+      },
+      {
+       "departamento": "Caldas",
+       "procesos": 388,
+       "mae_pts_base": 3.1497833504868407,
+       "mae_pts_geo": 3.147336936540124
+      },
+      {
+       "departamento": "Meta",
+       "procesos": 141,
+       "mae_pts_base": 2.4085494553619364,
+       "mae_pts_geo": 2.4018867585901904
+      },
+      {
+       "departamento": "Norte de Santander",
+       "procesos": 310,
+       "mae_pts_base": 2.9212365027850447,
+       "mae_pts_geo": 2.9212365027850447
+      },
+      {
+       "departamento": "Nariño",
+       "procesos": 100,
+       "mae_pts_base": 2.4117223581016614,
+       "mae_pts_geo": 2.4117223581016614
+      },
+      {
+       "departamento": "Sucre",
+       "procesos": 82,
+       "mae_pts_base": 2.379305422622256,
+       "mae_pts_geo": 2.379305422622256
+      },
+      {
+       "departamento": "Huila",
+       "procesos": 143,
+       "mae_pts_base": 2.3788011846142707,
+       "mae_pts_geo": 2.374837305035217
+      },
+      {
+       "departamento": "Tolima",
+       "procesos": 188,
+       "mae_pts_base": 2.061580042275903,
+       "mae_pts_geo": 2.061580042275903
+      },
+      {
+       "departamento": "Caquetá",
+       "procesos": 153,
+       "mae_pts_base": 2.1655358076143996,
+       "mae_pts_geo": 2.1655358076143996
+      },
+      {
+       "departamento": "Amazonas",
+       "procesos": 45,
+       "mae_pts_base": 2.4650536485166623,
+       "mae_pts_geo": 2.4650536485166623
+      },
+      {
+       "departamento": "Cauca",
+       "procesos": 85,
+       "mae_pts_base": 1.7676169835489424,
+       "mae_pts_geo": 1.7615804439432479
+      },
+      {
+       "departamento": "Arauca",
+       "procesos": 90,
+       "mae_pts_base": 2.061970072565603,
+       "mae_pts_geo": 2.061970072565603
+      },
+      {
+       "departamento": "Putumayo",
+       "procesos": 94,
+       "mae_pts_base": 2.0253859098878704,
+       "mae_pts_geo": 2.0253859098878704
+      },
+      {
+       "departamento": "Bolívar",
+       "procesos": 202,
+       "mae_pts_base": 2.029224927587501,
+       "mae_pts_geo": 2.029224927587501
+      },
+      {
+       "departamento": "Chocó",
+       "procesos": 36,
+       "mae_pts_base": 3.707751062263339,
+       "mae_pts_geo": 3.707751062263339
+      },
+      {
+       "departamento": "Atlántico",
+       "procesos": 124,
+       "mae_pts_base": 2.0559100341470167,
+       "mae_pts_geo": 2.0558160433816
+      },
+      {
+       "departamento": "Risaralda",
+       "procesos": 75,
+       "mae_pts_base": 4.435037956021702,
+       "mae_pts_geo": 4.43270480559612
+      },
+      {
+       "departamento": "Córdoba",
+       "procesos": 109,
+       "mae_pts_base": 2.912020395182964,
+       "mae_pts_geo": 2.905540434033615
+      },
+      {
+       "departamento": "Antioquia",
+       "procesos": 298,
+       "mae_pts_base": 2.7179004245973983,
+       "mae_pts_geo": 2.7207002073309114
+      },
+      {
+       "departamento": "Quindío",
+       "procesos": 91,
+       "mae_pts_base": 3.756248462414412,
+       "mae_pts_geo": 3.756248462414412
+      },
+      {
+       "departamento": "Casanare",
+       "procesos": 142,
+       "mae_pts_base": 2.1514192065569944,
+       "mae_pts_geo": 2.131282458226538
+      }
+     ]
+    }
+   },
+   "H9": {
+    "por_tamano": {
+     "licitacion|grande": {
+      "procesos": 632,
+      "mediana_r_adj": 0.9654390952214429,
+      "mediana_n": 6.0,
+      "corte_cop": [
+       4462324289.0,
+       705703156316.0
+      ]
+     },
+     "licitacion|mediano": {
+      "procesos": 632,
+      "mediana_r_adj": 0.9786525254990441,
+      "mediana_n": 8.0,
+      "corte_cop": [
+       1495202287.0,
+       4456089792.0
+      ]
+     },
+     "licitacion|pequeño": {
+      "procesos": 633,
+      "mediana_r_adj": 0.9949992003142978,
+      "mediana_n": 4.0,
+      "corte_cop": [
+       76994149.0,
+       1495183528.0
+      ]
+     },
+     "menor_cuantia|grande": {
+      "procesos": 1858,
+      "mediana_r_adj": 0.9890807298532858,
+      "mediana_n": 3.0,
+      "corte_cop": [
+       393724441.0,
+       168157751234.0
+      ]
+     },
+     "menor_cuantia|mediano": {
+      "procesos": 1857,
+      "mediana_r_adj": 0.9987070233441367,
+      "mediana_n": 2.0,
+      "corte_cop": [
+       199990673.0,
+       393482529.0
+      ]
+     },
+     "menor_cuantia|pequeño": {
+      "procesos": 1858,
+      "mediana_r_adj": 0.9988899697922367,
+      "mediana_n": 1.0,
+      "corte_cop": [
+       38800000.0,
+       199982455.0
+      ]
+     },
+     "minima|grande": {
+      "procesos": 1278,
+      "mediana_r_adj": 0.8801800114916705,
+      "mediana_n": 5.0,
+      "corte_cop": [
+       49023000.0,
+       317332454.0
+      ]
+     },
+     "minima|mediano": {
+      "procesos": 1278,
+      "mediana_r_adj": 0.9956091283562851,
+      "mediana_n": 2.0,
+      "corte_cop": [
+       35927854.0,
+       49022756.0
+      ]
+     },
+     "minima|pequeño": {
+      "procesos": 1278,
+      "mediana_r_adj": 0.9509590854476153,
+      "mediana_n": 2.0,
+      "corte_cop": [
+       343395.0,
+       35920763.0
+      ]
+     }
+    },
+    "diferencia_grande_menos_pequeno_pts": {
+     "licitacion": {
+      "valor": -2.9560105092854894,
+      "ic95": [
+       -4.151398842403209,
+       -1.213307229439983
+      ],
+      "p_cero": 0.0004997501249375312
+     },
+     "menor_cuantia": {
+      "valor": -0.9809239938950887,
+      "ic95": [
+       -3.094487480212769,
+       -0.15221231747910607
+      ],
+      "p_cero": 0.023499750124937532
+     },
+     "minima": {
+      "valor": -7.077907395594485,
+      "ic95": [
+       -10.90710830000678,
+       -2.872224330883162
+      ],
+      "p_cero": 0.0004997501249375312
+     }
+    },
+    "aviso_despues_de_transporte_v4_3feb2025": {
+     "licitacion": {
+      "antes": 610,
+      "despues": 1109,
+      "diferencia_mediana_r_adj_pts": {
+       "valor": 0.7765321133988756,
+       "ic95": [
+        -0.499879495080173,
+        2.09717016157669
+       ],
+       "p_cero": 0.22949975012493753
+      }
+     },
+     "menor_cuantia": {
+      "antes": 1609,
+      "despues": 3403,
+      "diferencia_mediana_r_adj_pts": {
+       "valor": 0.5844524602608536,
+       "ic95": [
+        0.115865795037918,
+        1.9155778635174372
+       ],
+       "p_cero": 0.005499750124937531
+      }
+     },
+     "minima": {
+      "antes": 1278,
+      "despues": 2556,
+      "diferencia_mediana_r_adj_pts": {
+       "valor": 6.505978475409591,
+       "ic95": [
+        3.037830095015191,
+        9.062881440836453
+       ],
+       "p_cero": 0.0004997501249375312
+      }
+     }
+    },
+    "aviso_despues_de_social_v2_16feb2026": {
+     "licitacion": {
+      "antes": 1424,
+      "despues": 295,
+      "diferencia_mediana_r_adj_pts": {
+       "valor": -3.221854334411811,
+       "ic95": [
+        -4.182948517577942,
+        -0.6944306854014004
+       ],
+       "p_cero": 0.0004997501249375312
+      }
+     },
+     "menor_cuantia": {
+      "antes": 3777,
+      "despues": 1235,
+      "diferencia_mediana_r_adj_pts": {
+       "valor": 0.20222112820318383,
+       "ic95": [
+        0.07441156160892665,
+        0.6916840437577185
+       ],
+       "p_cero": 0.004499750124937531
+      }
+     },
+     "minima": {
+      "antes": 2942,
+      "despues": 892,
+      "diferencia_mediana_r_adj_pts": {
+       "valor": 3.916704495981538,
+       "ic95": [
+        0.5630959052686838,
+        5.928349567922927
+       ],
+       "p_cero": 0.006499750124937531
+      }
+     }
+    }
+   },
+   "H10": {
+    "por_mes_de_cierre": {
+     "1": {
+      "procesos": 124,
+      "mediana_r_adj": 0.9958817105335205,
+      "mediana_n": 2.0
+     },
+     "2": {
+      "procesos": 216,
+      "mediana_r_adj": 0.9979659418787208,
+      "mediana_n": 3.0
+     },
+     "3": {
+      "procesos": 354,
+      "mediana_r_adj": 0.9980265460408762,
+      "mediana_n": 2.0
+     },
+     "4": {
+      "procesos": 387,
+      "mediana_r_adj": 0.99070504,
+      "mediana_n": 4.0
+     },
+     "5": {
+      "procesos": 700,
+      "mediana_r_adj": 0.9939871780179538,
+      "mediana_n": 3.0
+     },
+     "6": {
+      "procesos": 710,
+      "mediana_r_adj": 0.9918912147580898,
+      "mediana_n": 3.0
+     },
+     "7": {
+      "procesos": 896,
+      "mediana_r_adj": 0.9892700262083753,
+      "mediana_n": 3.0
+     },
+     "8": {
+      "procesos": 814,
+      "mediana_r_adj": 0.9890152336673506,
+      "mediana_n": 2.0
+     },
+     "9": {
+      "procesos": 901,
+      "mediana_r_adj": 0.99755619282532,
+      "mediana_n": 2.0
+     },
+     "10": {
+      "procesos": 876,
+      "mediana_r_adj": 0.9969999804732588,
+      "mediana_n": 2.0
+     },
+     "11": {
+      "procesos": 809,
+      "mediana_r_adj": 0.9984815339126096,
+      "mediana_n": 1.0
+     },
+     "12": {
+      "procesos": 683,
+      "mediana_r_adj": 0.9989907026872888,
+      "mediana_n": 1.0
+     }
+    },
+    "diciembre_menos_resto_pts": {
+     "valor": 0.34333737794995933,
+     "ic95": [
+      0.0975818262226219,
+      0.9612504080876163
+     ],
+     "p_cero": 0.00949975012493753
+    },
+    "ley_de_garantias_2026_vs_misma_epoca_2025": {
+     "procesos_en_ventana": 998,
+     "procesos_2025": 716,
+     "diferencia_mediana_r_adj_pts": {
+      "valor": 0.2745102788064169,
+      "ic95": [
+       -0.23318035900173031,
+       1.0691031797831447
+      ],
+      "p_cero": 0.21449975012493752
+     },
+     "diferencia_mediana_n": {
+      "valor": 0.0,
+      "ic95": [
+       -1.0,
+       1.0
+      ],
+      "p_cero": 0.5614997501249376
+     }
+    }
+   },
+   "H11": {
+    "licitacion": {
+     "procesos": 1897,
+     "fraccion_ganador_ya_habia_ganado_2_o_mas_en_la_entidad": 0.013705851344227728,
+     "nota": "solo señal de control: el denominador son los procesos usables de la ventana; no distingue mérito de captura"
+    },
+    "menor_cuantia": {
+     "procesos": 5573,
+     "fraccion_ganador_ya_habia_ganado_2_o_mas_en_la_entidad": 0.09097434057060828,
+     "nota": "solo señal de control: el denominador son los procesos usables de la ventana; no distingue mérito de captura"
+    }
+   },
+   "tendencia_por_anio": {
+    "licitacion": {
+     "por_anio": {
+      "2024": {
+       "procesos": 525,
+       "mediana_r_adj_pct": 97.64970398800716,
+       "ic95_mediana": [
+        96.16687204360058,
+        99.06518195351912
+       ],
+       "p10_r_adj_pct": 93.41225040307039,
+       "p90_r_adj_pct": 100.0,
+       "mediana_n": 7.0,
+       "mediana_piso_pct": 94.08687152037189,
+       "procesos_con_piso": 353
+      },
+      "2025": {
+       "procesos": 781,
+       "mediana_r_adj_pct": 98.92920334508439,
+       "ic95_mediana": [
+        98.0999999972363,
+        99.48467235263158
+       ],
+       "p10_r_adj_pct": 93.4226350354548,
+       "p90_r_adj_pct": 100.0,
+       "mediana_n": 4.0,
+       "mediana_piso_pct": 93.55440404897352,
+       "procesos_con_piso": 460
+      },
+      "2026": {
+       "procesos": 591,
+       "mediana_r_adj_pct": 96.11943835122648,
+       "ic95_mediana": [
+        94.77988728537977,
+        98.05216837760238
+       ],
+       "p10_r_adj_pct": 92.3098163809916,
+       "p90_r_adj_pct": 100.0,
+       "mediana_n": 8.0,
+       "mediana_piso_pct": 92.64504434483686,
+       "procesos_con_piso": 402
+      }
+     },
+     "pendiente_mediana_r_adj_pts_por_anio": -0.7651328183903416
+    },
+    "menor_cuantia": {
+     "por_anio": {
+      "2024": {
+       "procesos": 1591,
+       "mediana_r_adj_pct": 99.20000116308458,
+       "ic95_mediana": [
+        97.7434918467015,
+        99.75670857956341
+       ],
+       "p10_r_adj_pct": 93.3221378846154,
+       "p90_r_adj_pct": 100.0,
+       "mediana_n": 2.0,
+       "mediana_piso_pct": 93.85340758204455,
+       "procesos_con_piso": 682
+      },
+      "2025": {
+       "procesos": 2404,
+       "mediana_r_adj_pct": 99.79663854910932,
+       "ic95_mediana": [
+        99.51111842818324,
+        99.89688140598663
+       ],
+       "p10_r_adj_pct": 93.02512948508196,
+       "p90_r_adj_pct": 100.0,
+       "mediana_n": 2.0,
+       "mediana_piso_pct": 93.4407396823359,
+       "procesos_con_piso": 755
+      },
+      "2026": {
+       "procesos": 1578,
+       "mediana_r_adj_pct": 99.90925261514099,
+       "ic95_mediana": [
+        99.80791149039632,
+        99.95914952367741
+       ],
+       "p10_r_adj_pct": 93.27293097078505,
+       "p90_r_adj_pct": 100.0,
+       "mediana_n": 2.0,
+       "mediana_piso_pct": 92.9581724354108,
+       "procesos_con_piso": 512
+      }
+     },
+     "pendiente_mediana_r_adj_pts_por_anio": 0.3546257260282033
+    },
+    "minima": {
+     "por_anio": {
+      "2024": {
+       "procesos": 1267,
+       "mediana_r_adj_pct": 91.53952843273233,
+       "ic95_mediana": [
+        88.11239285714285,
+        95.03160831873694
+       ],
+       "p10_r_adj_pct": 71.0718590018932,
+       "p90_r_adj_pct": 100.0,
+       "mediana_n": 3.0,
+       "mediana_piso_pct": 77.91807971629488,
+       "procesos_con_piso": 675
+      },
+      "2025": {
+       "procesos": 1626,
+       "mediana_r_adj_pct": 97.38290182675927,
+       "ic95_mediana": [
+        95.0,
+        98.62088245532232
+       ],
+       "p10_r_adj_pct": 75.20675663614209,
+       "p90_r_adj_pct": 100.0,
+       "mediana_n": 2.0,
+       "mediana_piso_pct": 77.98385956922108,
+       "procesos_con_piso": 700
+      },
+      "2026": {
+       "procesos": 941,
+       "mediana_r_adj_pct": 99.17270338130054,
+       "ic95_mediana": [
+        95.69686734693876,
+        99.7943573589999
+       ],
+       "p10_r_adj_pct": 72.62847909644383,
+       "p90_r_adj_pct": 100.0,
+       "mediana_n": 2.0,
+       "mediana_piso_pct": 77.00336839530647,
+       "procesos_con_piso": 393
+      }
+     },
+     "pendiente_mediana_r_adj_pts_por_anio": 3.8165874742841055
+    }
+   }
+  },
+  "2022-2026": {
+   "procesos_usables_licitacion_menor": 12285,
+   "procesos_usables_minima": 5752,
+   "por_modalidad": {
+    "licitacion": 3801,
+    "menor_cuantia": 8484
+   },
+   "H1": {
+    "licitacion": {
+     "procesos_evaluables": 1823,
+     "r2_fuera_de_muestra_entidad": {
+      "valor": 0.2557086998238737,
+      "ic95": [
+       0.13487798155341887,
+       0.4154685075999099
+      ],
+      "p_cero": 0.0004997501249375312
+     },
+     "r2_fuera_de_muestra_departamento": {
+      "valor": 0.05664049056983156,
+      "ic95": [
+       -0.012338826059232076,
+       0.16822505649890462
+      ],
+      "p_cero": 0.18449975012493752
+     },
+     "mae_pts_entidad": {
+      "valor": 1.773785212398046,
+      "ic95": [
+       1.5555599505444313,
+       1.9967625037062506
+      ],
+      "p_cero": 0.0004997501249375312
+     },
+     "mae_pts_departamento": {
+      "valor": 2.4314970663185,
+      "ic95": [
+       2.1145692358893533,
+       2.762890457264559
+      ],
+      "p_cero": 0.0004997501249375312
+     },
+     "mae_pts_global": {
+      "valor": 2.816482309584996,
+      "ic95": [
+       2.565137248724292,
+       3.075634061344261
+      ],
+      "p_cero": 0.0004997501249375312
+     },
+     "iqr_global_pts": 4.958933285004763,
+     "iqr_mediano_dentro_de_entidad_pts": 1.698460093502574,
+     "entidades_con_5_o_mas": 217
+    },
+    "menor_cuantia": {
+     "procesos_evaluables": 4613,
+     "r2_fuera_de_muestra_entidad": {
+      "valor": 0.3946430817249359,
+      "ic95": [
+       0.18944442909351034,
+       0.5170501047863103
+      ],
+      "p_cero": 0.0004997501249375312
+     },
+     "r2_fuera_de_muestra_departamento": {
+      "valor": 0.291191099055056,
+      "ic95": [
+       0.10413502593088157,
+       0.39420903442059807
+      ],
+      "p_cero": 0.0004997501249375312
+     },
+     "mae_pts_entidad": {
+      "valor": 1.6020623058196384,
+      "ic95": [
+       1.2173714037938717,
+       1.9832862672660725
+      ],
+      "p_cero": 0.0004997501249375312
+     },
+     "mae_pts_departamento": {
+      "valor": 1.8572047017972695,
+      "ic95": [
+       1.3915631774521955,
+       2.362611050631496
+      ],
+      "p_cero": 0.0004997501249375312
+     },
+     "mae_pts_global": {
+      "valor": 2.5194255345435868,
+      "ic95": [
+       1.8268569741816423,
+       3.3148156731562857
+      ],
+      "p_cero": 0.0004997501249375312
+     },
+     "iqr_global_pts": 3.9303426156588883,
+     "iqr_mediano_dentro_de_entidad_pts": 0.8347633285421763,
+     "entidades_con_5_o_mas": 481
+    }
+   },
+   "H2": {
+    "licitacion": {
+     "pendiente_baja_sobre_log_n": {
+      "valor": 1.2948566981989023,
+      "ic95": [
+       1.1637156302644878,
+       1.428406988630092
+      ],
+      "p_cero": 0.0004997501249375312
+     },
+     "mediana_baja_por_tramo": {
+      "1": {
+       "n_procesos": 923,
+       "mediana_pts": 0.052005796890242095
+      },
+      "10+": {
+       "n_procesos": 1492,
+       "mediana_pts": 4.903261479842707
+      },
+      "2": {
+       "n_procesos": 409,
+       "mediana_pts": 0.21546150498662486
+      },
+      "3-4": {
+       "n_procesos": 410,
+       "mediana_pts": 1.3343359794759868
+      },
+      "5-9": {
+       "n_procesos": 567,
+       "mediana_pts": 3.51056762825096
+      }
+     },
+     "diferencia_mediana_10mas_menos_1": {
+      "valor": 4.851255682952465,
+      "ic95": [
+       4.687574141488864,
+       5.096981484504796
+      ],
+      "p_cero": 0.0004997501249375312
+     }
+    },
+    "menor_cuantia": {
+     "pendiente_baja_sobre_log_n": {
+      "valor": 1.913460090164448,
+      "ic95": [
+       1.6257036384391332,
+       2.061967164603959
+      ],
+      "p_cero": 0.0004997501249375312
+     },
+     "mediana_baja_por_tramo": {
+      "1": {
+       "n_procesos": 3691,
+       "mediana_pts": 0.029999847571604565
+      },
+      "10+": {
+       "n_procesos": 654,
+       "mediana_pts": 5.872679108417339
+      },
+      "2": {
+       "n_procesos": 1334,
+       "mediana_pts": 0.37940981490898196
+      },
+      "3-4": {
+       "n_procesos": 1364,
+       "mediana_pts": 2.220065348087097
+      },
+      "5-9": {
+       "n_procesos": 1441,
+       "mediana_pts": 4.2225168262096435
+      }
+     },
+     "diferencia_mediana_10mas_menos_1": {
+      "valor": 5.842679260845735,
+      "ic95": [
+       3.6993627153401345,
+       7.126377979033855
+      ],
+      "p_cero": 0.0004997501249375312
+     }
+    },
+    "minima": {
+     "pendiente_baja_sobre_log_n": {
+      "valor": 7.6543653476894296,
+      "ic95": [
+       6.796974586919774,
+       8.351129380131002
+      ],
+      "p_cero": 0.0004997501249375312
+     },
+     "mediana_baja_por_tramo": {
+      "1": {
+       "n_procesos": 1943,
+       "mediana_pts": 0.05913877551020352
+      },
+      "10+": {
+       "n_procesos": 727,
+       "mediana_pts": 24.235981898115266
+      },
+      "2": {
+       "n_procesos": 953,
+       "mediana_pts": 2.3156262438602027
+      },
+      "3-4": {
+       "n_procesos": 1049,
+       "mediana_pts": 10.336516508344552
+      },
+      "5-9": {
+       "n_procesos": 1080,
+       "mediana_pts": 17.721497669763345
+      }
+     },
+     "diferencia_mediana_10mas_menos_1": {
+      "valor": 24.176843122605064,
+      "ic95": [
+       22.33903894259286,
+       25.983362985011407
+      ],
+      "p_cero": 0.0004997501249375312
+     }
+    }
+   },
+   "H3": {
+    "licitacion": {
+     "ofertas": 47791,
+     "exceso_en_la_mediana": {
+      "en_la_celda": 23747,
+      "esperado_por_vecinos": 3599.5,
+      "exceso_pct": 559.7305181275177
+     },
+     "exceso_en_80": {
+      "en_la_celda": 14,
+      "esperado_por_vecinos": 11.0,
+      "exceso_pct": 27.272727272727273
+     },
+     "exceso_en_88": {
+      "en_la_celda": 182,
+      "esperado_por_vecinos": 203.5,
+      "exceso_pct": -10.565110565110565
+     },
+     "exceso_en_90": {
+      "en_la_celda": 517,
+      "esperado_por_vecinos": 578.5,
+      "exceso_pct": -10.630942091616248
+     },
+     "exceso_en_95": {
+      "en_la_celda": 10337,
+      "esperado_por_vecinos": 5498.0,
+      "exceso_pct": 88.01382320843943
+     },
+     "exceso_en_100": {
+      "en_la_celda": 6708,
+      "esperado_por_vecinos": 872.0,
+      "exceso_pct": 669.2660550458716
+     },
+     "exceso_justo_sobre_el_piso": {
+      "en_la_celda": 7963,
+      "esperado_por_vecinos": 7666.5,
+      "exceso_pct": 3.867475379899563
+     },
+     "histograma_distancia_a_la_mediana_pts": {
+      "bordes": [
+       -10.0,
+       -9.5,
+       -9.0,
+       -8.5,
+       -8.0,
+       -7.5,
+       -7.0,
+       -6.5,
+       -6.0,
+       -5.5,
+       -5.0,
+       -4.5,
+       -4.0,
+       -3.5,
+       -3.0,
+       -2.5,
+       -2.0,
+       -1.5,
+       -1.0,
+       -0.5,
+       0.0,
+       0.5,
+       1.0,
+       1.5,
+       2.0,
+       2.5,
+       3.0,
+       3.5,
+       4.0,
+       4.5,
+       5.0,
+       5.5,
+       6.0,
+       6.5,
+       7.0,
+       7.5,
+       8.0,
+       8.5,
+       9.0,
+       9.5,
+       10.0
+      ],
+      "conteos": [
+       192,
+       22,
+       32,
+       36,
+       68,
+       76,
+       108,
+       152,
+       244,
+       262,
+       346,
+       392,
+       479,
+       601,
+       841,
+       979,
+       1370,
+       2227,
+       4091,
+       8742,
+       15005,
+       4135,
+       2228,
+       1374,
+       1026,
+       677,
+       450,
+       465,
+       466,
+       316,
+       217,
+       101,
+       53,
+       9,
+       3,
+       1,
+       0,
+       1,
+       1,
+       3
+      ]
+     },
+     "fraccion_de_ofertas_al_100_pct": 0.12247075809252789
+    },
+    "menor_cuantia": {
+     "ofertas": 31247,
+     "exceso_en_la_mediana": {
+      "en_la_celda": 13455,
+      "esperado_por_vecinos": 2718.0,
+      "exceso_pct": 395.0331125827815
+     },
+     "exceso_en_80": {
+      "en_la_celda": 132,
+      "esperado_por_vecinos": 58.0,
+      "exceso_pct": 127.58620689655173
+     },
+     "exceso_en_88": {
+      "en_la_celda": 247,
+      "esperado_por_vecinos": 282.5,
+      "exceso_pct": -12.56637168141593
+     },
+     "exceso_en_90": {
+      "en_la_celda": 866,
+      "esperado_por_vecinos": 1091.0,
+      "exceso_pct": -20.623281393217233
+     },
+     "exceso_en_95": {
+      "en_la_celda": 4466,
+      "esperado_por_vecinos": 2973.0,
+      "exceso_pct": 50.21863437605113
+     },
+     "exceso_en_100": {
+      "en_la_celda": 4134,
+      "esperado_por_vecinos": 840.0,
+      "exceso_pct": 392.14285714285717
+     },
+     "exceso_justo_sobre_el_piso": {
+      "en_la_celda": 4689,
+      "esperado_por_vecinos": 3517.5,
+      "exceso_pct": 33.304904051172706
+     },
+     "histograma_distancia_a_la_mediana_pts": {
+      "bordes": [
+       -10.0,
+       -9.5,
+       -9.0,
+       -8.5,
+       -8.0,
+       -7.5,
+       -7.0,
+       -6.5,
+       -6.0,
+       -5.5,
+       -5.0,
+       -4.5,
+       -4.0,
+       -3.5,
+       -3.0,
+       -2.5,
+       -2.0,
+       -1.5,
+       -1.0,
+       -0.5,
+       0.0,
+       0.5,
+       1.0,
+       1.5,
+       2.0,
+       2.5,
+       3.0,
+       3.5,
+       4.0,
+       4.5,
+       5.0,
+       5.5,
+       6.0,
+       6.5,
+       7.0,
+       7.5,
+       8.0,
+       8.5,
+       9.0,
+       9.5,
+       10.0
+      ],
+      "conteos": [
+       588,
+       53,
+       65,
+       75,
+       97,
+       77,
+       94,
+       138,
+       180,
+       190,
+       236,
+       275,
+       301,
+       422,
+       571,
+       801,
+       1041,
+       1517,
+       2606,
+       4198,
+       9257,
+       2803,
+       1697,
+       1181,
+       791,
+       587,
+       359,
+       265,
+       235,
+       165,
+       109,
+       75,
+       46,
+       38,
+       20,
+       18,
+       15,
+       10,
+       8,
+       43
+      ]
+     },
+     "fraccion_de_ofertas_al_100_pct": 0.10093769001824175
+    }
+   },
+   "H4": {
+    "licitacion": {
+     "procesos": 3543,
+     "ganador_es_la_mas_baja": {
+      "valor": 0.3782105560259667,
+      "ic95": [
+       0.35135808000661567,
+       0.4082802300726303
+      ],
+      "p_cero": 0.0004997501249375312
+     },
+     "esperado_si_fuera_al_azar": 0.37958781613017967,
+     "por_tramo": {
+      "1": {
+       "procesos": 887,
+       "gana_la_mas_baja": 1.0,
+       "al_azar": 1.0,
+       "mediana_z": null,
+       "mediana_distancia_a_mediana_pts": null,
+       "rango_mediano": 1.0
+      },
+      "10+": {
+       "procesos": 1358,
+       "gana_la_mas_baja": 0.11855670103092783,
+       "al_azar": 0.04842809045282834,
+       "mediana_z": -0.0938849468014544,
+       "mediana_distancia_a_mediana_pts": -0.14702921085139595,
+       "rango_mediano": 7.0
+      },
+      "2": {
+       "procesos": 395,
+       "gana_la_mas_baja": 0.3594936708860759,
+       "al_azar": 0.5,
+       "mediana_z": null,
+       "mediana_distancia_a_mediana_pts": null,
+       "rango_mediano": 2.0
+      },
+      "3-4": {
+       "procesos": 386,
+       "gana_la_mas_baja": 0.22020725388601037,
+       "al_azar": 0.2979274611398964,
+       "mediana_z": 0.4610359258912601,
+       "mediana_distancia_a_mediana_pts": 0.0,
+       "rango_mediano": 2.0
+      },
+      "5-9": {
+       "procesos": 517,
+       "gana_la_mas_baja": 0.12572533849129594,
+       "al_azar": 0.15399281569494336,
+       "mediana_z": 0.16253839678785775,
+       "mediana_distancia_a_mediana_pts": 0.0,
+       "rango_mediano": 4.0
+      }
+     },
+     "z_del_ganador": {
+      "n": 2187,
+      "p10": -1.3846792748880445,
+      "p25": -0.6166357830644887,
+      "p50": -0.0106744811213593,
+      "p75": 0.4729215219601576,
+      "p90": 0.989174469555449,
+      "fraccion_bajo_menos_1": 0.16186556927297668
+     }
+    },
+    "menor_cuantia": {
+     "procesos": 8219,
+     "ganador_es_la_mas_baja": {
+      "valor": 0.5959362452853145,
+      "ic95": [
+       0.5340153352936371,
+       0.6486346706536587
+      ],
+      "p_cero": 0.0004997501249375312
+     },
+     "esperado_si_fuera_al_azar": 0.5941731078331874,
+     "por_tramo": {
+      "1": {
+       "procesos": 3586,
+       "gana_la_mas_baja": 1.0,
+       "al_azar": 1.0,
+       "mediana_z": null,
+       "mediana_distancia_a_mediana_pts": null,
+       "rango_mediano": 1.0
+      },
+      "10+": {
+       "procesos": 634,
+       "gana_la_mas_baja": 0.11356466876971609,
+       "al_azar": 0.05327356458617435,
+       "mediana_z": -0.046711282950893857,
+       "mediana_distancia_a_mediana_pts": -0.24379368037656385,
+       "rango_mediano": 6.0
+      },
+      "2": {
+       "procesos": 1290,
+       "gana_la_mas_baja": 0.4317829457364341,
+       "al_azar": 0.5,
+       "mediana_z": null,
+       "mediana_distancia_a_mediana_pts": null,
+       "rango_mediano": 2.0
+      },
+      "3-4": {
+       "procesos": 1311,
+       "gana_la_mas_baja": 0.30282227307398935,
+       "al_azar": 0.299580472921434,
+       "mediana_z": 0.2710667618303273,
+       "mediana_distancia_a_mediana_pts": 0.0,
+       "rango_mediano": 2.0
+      },
+      "5-9": {
+       "procesos": 1398,
+       "gana_la_mas_baja": 0.20457796852646637,
+       "al_azar": 0.16164759179780638,
+       "mediana_z": -0.0564536040385424,
+       "mediana_distancia_a_mediana_pts": 0.0,
+       "rango_mediano": 3.0
+      }
+     },
+     "z_del_ganador": {
+      "n": 3114,
+      "p10": -1.1540958897584914,
+      "p25": -0.6535108089642861,
+      "p50": 0.03466937866151585,
+      "p75": 0.5013951301359933,
+      "p90": 0.8976126594733417,
+      "fraccion_bajo_menos_1": 0.14836223506743737
+     }
+    },
+    "minima": {
+     "procesos": 5561,
+     "ganador_es_la_mas_baja": {
+      "valor": 0.5887430318288077,
+      "ic95": [
+       0.563649368917212,
+       0.615358165724573
+      ],
+      "p_cero": 0.0004997501249375312
+     },
+     "esperado_si_fuera_al_azar": 0.5106674456735966,
+     "por_tramo": {
+      "1": {
+       "procesos": 1857,
+       "gana_la_mas_baja": 1.0,
+       "al_azar": 1.0,
+       "mediana_z": null,
+       "mediana_distancia_a_mediana_pts": null,
+       "rango_mediano": 1.0
+      },
+      "10+": {
+       "procesos": 706,
+       "gana_la_mas_baja": 0.3073654390934844,
+       "al_azar": 0.07118609019346252,
+       "mediana_z": -1.03193080118573,
+       "mediana_distancia_a_mediana_pts": -8.18052782373253,
+       "rango_mediano": 2.5
+      },
+      "2": {
+       "procesos": 913,
+       "gana_la_mas_baja": 0.4194961664841183,
+       "al_azar": 0.5,
+       "mediana_z": null,
+       "mediana_distancia_a_mediana_pts": null,
+       "rango_mediano": 2.0
+      },
+      "3-4": {
+       "procesos": 1026,
+       "gana_la_mas_baja": 0.40350877192982454,
+       "al_azar": 0.2991390513320338,
+       "mediana_z": -0.0942859095962122,
+       "mediana_distancia_a_mediana_pts": 0.0,
+       "rango_mediano": 2.0
+      },
+      "5-9": {
+       "procesos": 1059,
+       "gana_la_mas_baja": 0.380547686496695,
+       "al_azar": 0.15972390844912093,
+       "mediana_z": -0.6097119743251667,
+       "mediana_distancia_a_mediana_pts": -3.0382223162737643,
+       "rango_mediano": 2.0
+      }
+     },
+     "z_del_ganador": {
+      "n": 2700,
+      "p10": -1.5458123147779401,
+      "p25": -1.1481398132416052,
+      "p50": -0.6268043566337254,
+      "p75": 0.39821288389993204,
+      "p90": 0.9720418963950358,
+      "fraccion_bajo_menos_1": 0.3388888888888889
+     }
+    }
+   },
+   "H5": {
+    "ofertas": 87138,
+    "primer_digito_observado": [
+     25592,
+     15606,
+     11850,
+     9332,
+     6948,
+     5439,
+     3915,
+     4166,
+     4290
+    ],
+    "primer_digito_benford": [
+     26231.151762167992,
+     15344.240131593951,
+     10886.911630574039,
+     8444.54471349602,
+     6899.695418097931,
+     5833.609354832375,
+     5053.302275741667,
+     4457.328501019911,
+     3987.2162124761107
+    ],
+    "chi2": 523.9794545808438,
+    "gl": 8,
+    "p": 5.02332308179109e-108,
+    "fraccion_multiplo_de_1_millon": 0.048360072528632746,
+    "fraccion_multiplo_de_1000": 0.07437627671050517,
+    "fraccion_con_centavos": 0.253069843237164
+   },
+   "H6": {
+    "dias": 1135,
+    "mediana_geometrica_aritmetica_menor": [
+     283,
+     267,
+     306,
+     279
+    ],
+    "chi2": 2.814977973568282,
+    "gl": 3,
+    "p": 0.421040207479086
+   },
+   "H7": {
+    "licitacion": {
+     "cv_5_pliegues": {
+      "mae_pts_base": 2.0936325916247487,
+      "mae_pts_con_geografia": 2.01908509698207,
+      "mejora_pts": {
+       "valor": 0.07454749464267876,
+       "ic95": [
+        0.051662880405707434,
+        0.09978968801267941
+       ],
+       "p_cero": 0.0004997501249375312
+      }
+     },
+     "temporal_ultimo_anio": {
+      "anio_prueba": 2026,
+      "mae_pts_base": 2.5467842918529637,
+      "mae_pts_con_geografia": 2.472960506614862,
+      "mejora_pts": {
+       "valor": 0.07382378523810108,
+       "ic95": [
+        0.02760542021634792,
+        0.12401711202367459
+       ],
+       "p_cero": 0.002499750124937531
+      }
+     },
+     "dejar_un_departamento_fuera": [
+      {
+       "departamento": "Distrito Capital de Bogotá",
+       "procesos": 777,
+       "mae_pts_base": 2.651391047732381,
+       "mae_pts_geo": 2.651391047732381
+      },
+      {
+       "departamento": "Cesar",
+       "procesos": 123,
+       "mae_pts_base": 2.4008323660901585,
+       "mae_pts_geo": 2.4008323660901585
+      },
+      {
+       "departamento": "Santander",
+       "procesos": 170,
+       "mae_pts_base": 2.215245586139218,
+       "mae_pts_geo": 2.215245586139218
+      },
+      {
+       "departamento": "Boyacá",
+       "procesos": 178,
+       "mae_pts_base": 2.7665567256400023,
+       "mae_pts_geo": 2.7610745065705937
+      },
+      {
+       "departamento": "Norte de Santander",
+       "procesos": 159,
+       "mae_pts_base": 3.1198361469455285,
+       "mae_pts_geo": 3.1198361469455285
+      },
+      {
+       "departamento": "Arauca",
+       "procesos": 112,
+       "mae_pts_base": 2.7111429686750617,
+       "mae_pts_geo": 2.7111429686750617
+      },
+      {
+       "departamento": "Caldas",
+       "procesos": 104,
+       "mae_pts_base": 3.8201659785921076,
+       "mae_pts_geo": 3.8201659785921076
+      },
+      {
+       "departamento": "Valle del Cauca",
+       "procesos": 255,
+       "mae_pts_base": 2.1493877756806703,
+       "mae_pts_geo": 2.1493877756806703
+      },
+      {
+       "departamento": "Huila",
+       "procesos": 139,
+       "mae_pts_base": 2.3850231585530848,
+       "mae_pts_geo": 2.3850231585530848
+      },
+      {
+       "departamento": "Caquetá",
+       "procesos": 36,
+       "mae_pts_base": 2.2630392922230795,
+       "mae_pts_geo": 2.4493374953820872
+      },
+      {
+       "departamento": "Bolívar",
+       "procesos": 149,
+       "mae_pts_base": 2.424025022173631,
+       "mae_pts_geo": 2.424025022173631
+      },
+      {
+       "departamento": "Meta",
+       "procesos": 138,
+       "mae_pts_base": 2.363426825522239,
+       "mae_pts_geo": 2.363798179385816
+      },
+      {
+       "departamento": "Cundinamarca",
+       "procesos": 310,
+       "mae_pts_base": 2.6593749130875866,
+       "mae_pts_geo": 2.637095619072501
+      },
+      {
+       "departamento": "Córdoba",
+       "procesos": 99,
+       "mae_pts_base": 2.5471609619387947,
+       "mae_pts_geo": 2.5471609619387947
+      },
+      {
+       "departamento": "Tolima",
+       "procesos": 169,
+       "mae_pts_base": 2.6328281855576416,
+       "mae_pts_geo": 2.6328281855576416
+      },
+      {
+       "departamento": "Antioquia",
+       "procesos": 294,
+       "mae_pts_base": 2.918274389901958,
+       "mae_pts_geo": 2.918274389901958
+      },
+      {
+       "departamento": "Sucre",
+       "procesos": 46,
+       "mae_pts_base": 2.6378172749979707,
+       "mae_pts_geo": 2.6378172749979707
+      },
+      {
+       "departamento": "Risaralda",
+       "procesos": 48,
+       "mae_pts_base": 2.2724685105836158,
+       "mae_pts_geo": 2.2724685105836158
+      },
+      {
+       "departamento": "Atlántico",
+       "procesos": 82,
+       "mae_pts_base": 3.757225622865943,
+       "mae_pts_geo": 3.757225622865943
+      },
+      {
+       "departamento": "Nariño",
+       "procesos": 37,
+       "mae_pts_base": 2.3208894828046525,
+       "mae_pts_geo": 2.3208894828046525
+      },
+      {
+       "departamento": "Casanare",
+       "procesos": 84,
+       "mae_pts_base": 2.4861229027871103,
+       "mae_pts_geo": 2.4861229027871103
+      },
+      {
+       "departamento": "Putumayo",
+       "procesos": 65,
+       "mae_pts_base": 2.64290717654245,
+       "mae_pts_geo": 2.64290717654245
+      },
+      {
+       "departamento": "Quindío",
+       "procesos": 43,
+       "mae_pts_base": 2.2068859161230403,
+       "mae_pts_geo": 2.2068859161230403
+      },
+      {
+       "departamento": "Magdalena",
+       "procesos": 39,
+       "mae_pts_base": 2.4204909703525823,
+       "mae_pts_geo": 2.4204909703525823
+      },
+      {
+       "departamento": "La Guajira",
+       "procesos": 63,
+       "mae_pts_base": 2.7338156260716744,
+       "mae_pts_geo": 2.7338156260716744
+      }
+     ]
+    },
+    "menor_cuantia": {
+     "cv_5_pliegues": {
+      "mae_pts_base": 2.016508209344436,
+      "mae_pts_con_geografia": 1.910057316948547,
+      "mejora_pts": {
+       "valor": 0.10645089239588885,
+       "ic95": [
+        0.08047319402879162,
+        0.13169449909314287
+       ],
+       "p_cero": 0.0004997501249375312
+      }
+     },
+     "temporal_ultimo_anio": {
+      "anio_prueba": 2026,
+      "mae_pts_base": 2.0815847108232006,
+      "mae_pts_con_geografia": 1.872757393308288,
+      "mejora_pts": {
+       "valor": 0.20882731751491238,
+       "ic95": [
+        0.1603969843018822,
+        0.25138726995702726
+       ],
+       "p_cero": 0.0004997501249375312
+      }
+     },
+     "dejar_un_departamento_fuera": [
+      {
+       "departamento": "Santander",
+       "procesos": 367,
+       "mae_pts_base": 2.2693176832393753,
+       "mae_pts_geo": 2.2687798746285646
+      },
+      {
+       "departamento": "Valle del Cauca",
+       "procesos": 811,
+       "mae_pts_base": 2.1831980642320157,
+       "mae_pts_geo": 2.1820793076556813
+      },
+      {
+       "departamento": "Chocó",
+       "procesos": 87,
+       "mae_pts_base": 2.9837510239398397,
+       "mae_pts_geo": 2.9837510239398397
+      },
+      {
+       "departamento": "Risaralda",
+       "procesos": 142,
+       "mae_pts_base": 3.8248213186162285,
+       "mae_pts_geo": 3.823229435292782
+      },
+      {
+       "departamento": "Cauca",
+       "procesos": 125,
+       "mae_pts_base": 1.9381652950332549,
+       "mae_pts_geo": 1.9363570895862647
+      },
+      {
+       "departamento": "Boyacá",
+       "procesos": 707,
+       "mae_pts_base": 2.33891034732006,
+       "mae_pts_geo": 2.337290958342592
+      },
+      {
+       "departamento": "Distrito Capital de Bogotá",
+       "procesos": 793,
+       "mae_pts_base": 2.487922204260458,
+       "mae_pts_geo": 2.487922204260458
+      },
+      {
+       "departamento": "Magdalena",
+       "procesos": 89,
+       "mae_pts_base": 1.8093600604497686,
+       "mae_pts_geo": 1.8093600604497686
+      },
+      {
+       "departamento": "Cundinamarca",
+       "procesos": 953,
+       "mae_pts_base": 2.480927215494329,
+       "mae_pts_geo": 2.4831761686085354
+      },
+      {
+       "departamento": "Norte de Santander",
+       "procesos": 474,
+       "mae_pts_base": 3.3248967918124954,
+       "mae_pts_geo": 3.3248967918124954
+      },
+      {
+       "departamento": "Meta",
+       "procesos": 239,
+       "mae_pts_base": 2.7788676034215225,
+       "mae_pts_geo": 2.770521704964636
+      },
+      {
+       "departamento": "Atlántico",
+       "procesos": 213,
+       "mae_pts_base": 3.559837862448677,
+       "mae_pts_geo": 3.5597716079233908
+      },
+      {
+       "departamento": "La Guajira",
+       "procesos": 120,
+       "mae_pts_base": 2.448844911944414,
+       "mae_pts_geo": 2.448844911944414
+      },
+      {
+       "departamento": "Caldas",
+       "procesos": 528,
+       "mae_pts_base": 3.059584356987762,
+       "mae_pts_geo": 3.057381080801684
+      },
+      {
+       "departamento": "Nariño",
+       "procesos": 155,
+       "mae_pts_base": 2.064813493223841,
+       "mae_pts_geo": 2.064813493223841
+      },
+      {
+       "departamento": "Córdoba",
+       "procesos": 181,
+       "mae_pts_base": 2.684386465264951,
+       "mae_pts_geo": 2.680945752618259
+      },
+      {
+       "departamento": "Cesar",
+       "procesos": 149,
+       "mae_pts_base": 2.2619046964532905,
+       "mae_pts_geo": 2.229678811898769
+      },
+      {
+       "departamento": "Putumayo",
+       "procesos": 130,
+       "mae_pts_base": 2.165631869485153,
+       "mae_pts_geo": 2.165631869485153
+      },
+      {
+       "departamento": "Huila",
+       "procesos": 230,
+       "mae_pts_base": 2.110314172675629,
+       "mae_pts_geo": 2.10740012014592
+      },
+      {
+       "departamento": "Antioquia",
+       "procesos": 580,
+       "mae_pts_base": 2.4115311678571127,
+       "mae_pts_geo": 2.4183027811643574
+      },
+      {
+       "departamento": "Bolívar",
+       "procesos": 258,
+       "mae_pts_base": 2.345612132367675,
+       "mae_pts_geo": 2.345612132367675
+      },
+      {
+       "departamento": "Sucre",
+       "procesos": 121,
+       "mae_pts_base": 2.2988354685225656,
+       "mae_pts_geo": 2.2988354685225656
+      },
+      {
+       "departamento": "Tolima",
+       "procesos": 269,
+       "mae_pts_base": 2.151885697761766,
+       "mae_pts_geo": 2.151885697761766
+      },
+      {
+       "departamento": "Caquetá",
+       "procesos": 202,
+       "mae_pts_base": 2.3483055804400377,
+       "mae_pts_geo": 2.27191843165947
+      },
+      {
+       "departamento": "Amazonas",
+       "procesos": 51,
+       "mae_pts_base": 2.458897300427278,
+       "mae_pts_geo": 2.458897300427278
+      },
+      {
+       "departamento": "Arauca",
+       "procesos": 121,
+       "mae_pts_base": 2.475431806002649,
+       "mae_pts_geo": 2.475431806002649
+      },
+      {
+       "departamento": "San Andrés; Providencia y Santa Catalina",
+       "procesos": 31,
+       "mae_pts_base": 1.9031162875371443,
+       "mae_pts_geo": 2.001024834909567
+      },
+      {
+       "departamento": "Quindío",
+       "procesos": 157,
+       "mae_pts_base": 3.000739732827185,
+       "mae_pts_geo": 3.000739732827185
+      },
+      {
+       "departamento": "Casanare",
+       "procesos": 174,
+       "mae_pts_base": 2.2460675213973667,
+       "mae_pts_geo": 2.1831595886662893
+      }
+     ]
+    }
+   },
+   "H9": {
+    "por_tamano": {
+     "licitacion|grande": {
+      "procesos": 1267,
+      "mediana_r_adj": 0.9693264582967094,
+      "mediana_n": 6.0,
+      "corte_cop": [
+       4152926007.0,
+       705703156316.0
+      ]
+     },
+     "licitacion|mediano": {
+      "procesos": 1267,
+      "mediana_r_adj": 0.9748427127534784,
+      "mediana_n": 7.0,
+      "corte_cop": [
+       1373758030.0,
+       4147458297.0
+      ]
+     },
+     "licitacion|pequeño": {
+      "procesos": 1267,
+      "mediana_r_adj": 0.9870590450938246,
+      "mediana_n": 4.0,
+      "corte_cop": [
+       75738272.0,
+       1372078263.0
+      ]
+     },
+     "menor_cuantia|grande": {
+      "procesos": 2828,
+      "mediana_r_adj": 0.9864339025005785,
+      "mediana_n": 3.0,
+      "corte_cop": [
+       390502520.0,
+       252000000000.0
+      ]
+     },
+     "menor_cuantia|mediano": {
+      "procesos": 2828,
+      "mediana_r_adj": 0.9968413699679105,
+      "mediana_n": 2.0,
+      "corte_cop": [
+       199193650.0,
+       390419337.0
+      ]
+     },
+     "menor_cuantia|pequeño": {
+      "procesos": 2828,
+      "mediana_r_adj": 0.9978399966666667,
+      "mediana_n": 1.0,
+      "corte_cop": [
+       29880000.0,
+       199064311.0
+      ]
+     },
+     "minima|grande": {
+      "procesos": 1917,
+      "mediana_r_adj": 0.8799994083761482,
+      "mediana_n": 5.0,
+      "corte_cop": [
+       50178605.0,
+       317332454.0
+      ]
+     },
+     "minima|mediano": {
+      "procesos": 1917,
+      "mediana_r_adj": 0.99,
+      "mediana_n": 2.0,
+      "corte_cop": [
+       32461269.0,
+       50150578.0
+      ]
+     },
+     "minima|pequeño": {
+      "procesos": 1918,
+      "mediana_r_adj": 0.9456558426874252,
+      "mediana_n": 2.0,
+      "corte_cop": [
+       343395.0,
+       32457936.0
+      ]
+     }
+    },
+    "diferencia_grande_menos_pequeno_pts": {
+     "licitacion": {
+      "valor": -1.7732586797115202,
+      "ic95": [
+       -2.9635208386154384,
+       -0.268555394295734
+      ],
+      "p_cero": 0.002499750124937531
+     },
+     "menor_cuantia": {
+      "valor": -1.1406094166088177,
+      "ic95": [
+       -2.5741880863811812,
+       -0.3112384018005455
+      ],
+      "p_cero": 0.0014997501249375312
+     },
+     "minima": {
+      "valor": -6.5656434311276985,
+      "ic95": [
+       -10.1411857272068,
+       -2.004630548114004
+      ],
+      "p_cero": 0.0004997501249375312
+     }
+    },
+    "aviso_despues_de_transporte_v4_3feb2025": {
+     "licitacion": {
+      "antes": 2360,
+      "despues": 1109,
+      "diferencia_mediana_r_adj_pts": {
+       "valor": 0.8021854020560104,
+       "ic95": [
+        -0.18798124456491067,
+        1.7606812559124232
+       ],
+       "p_cero": 0.09949975012493753
+      }
+     },
+     "menor_cuantia": {
+      "antes": 4429,
+      "despues": 3403,
+      "diferencia_mediana_r_adj_pts": {
+       "valor": 0.8501121836985814,
+       "ic95": [
+        0.4513084663260114,
+        1.7000606793484272
+       ],
+       "p_cero": 0.0004997501249375312
+      }
+     },
+     "minima": {
+      "antes": 3196,
+      "despues": 2556,
+      "diferencia_mediana_r_adj_pts": {
+       "valor": 7.236461392188898,
+       "ic95": [
+        4.402141302338405,
+        8.829314471921405
+       ],
+       "p_cero": 0.0004997501249375312
+      }
+     }
+    },
+    "aviso_despues_de_social_v2_16feb2026": {
+     "licitacion": {
+      "antes": 3174,
+      "despues": 295,
+      "diferencia_mediana_r_adj_pts": {
+       "valor": -2.7231329372840896,
+       "ic95": [
+        -3.6410192274893274,
+        -0.1631271105975993
+       ],
+       "p_cero": 0.0004997501249375312
+      }
+     },
+     "menor_cuantia": {
+      "antes": 6597,
+      "despues": 1235,
+      "diferencia_mediana_r_adj_pts": {
+       "valor": 0.530135851531599,
+       "ic95": [
+        0.23660083338714055,
+        1.1545827998936287
+       ],
+       "p_cero": 0.0004997501249375312
+      }
+     },
+     "minima": {
+      "antes": 4860,
+      "despues": 892,
+      "diferencia_mediana_r_adj_pts": {
+       "valor": 5.581858391845884,
+       "ic95": [
+        2.5631877587710044,
+        8.206746320697444
+       ],
+       "p_cero": 0.0004997501249375312
+      }
+     }
+    }
+   },
+   "H10": {
+    "por_mes_de_cierre": {
+     "1": {
+      "procesos": 230,
+      "mediana_r_adj": 0.9921159888585459,
+      "mediana_n": 2.0
+     },
+     "2": {
+      "procesos": 322,
+      "mediana_r_adj": 0.9923142534418192,
+      "mediana_n": 3.0
+     },
+     "3": {
+      "procesos": 627,
+      "mediana_r_adj": 0.9949873863223356,
+      "mediana_n": 3.0
+     },
+     "4": {
+      "procesos": 752,
+      "mediana_r_adj": 0.983401227014183,
+      "mediana_n": 4.0
+     },
+     "5": {
+      "procesos": 1171,
+      "mediana_r_adj": 0.990126675193238,
+      "mediana_n": 3.0
+     },
+     "6": {
+      "procesos": 1217,
+      "mediana_r_adj": 0.9879572461525632,
+      "mediana_n": 3.0
+     },
+     "7": {
+      "procesos": 1374,
+      "mediana_r_adj": 0.9842963497848809,
+      "mediana_n": 3.0
+     },
+     "8": {
+      "procesos": 1406,
+      "mediana_r_adj": 0.9845902962132655,
+      "mediana_n": 3.0
+     },
+     "9": {
+      "procesos": 1476,
+      "mediana_r_adj": 0.9938543971646041,
+      "mediana_n": 2.0
+     },
+     "10": {
+      "procesos": 1291,
+      "mediana_r_adj": 0.9945127830839596,
+      "mediana_n": 2.0
+     },
+     "11": {
+      "procesos": 1419,
+      "mediana_r_adj": 0.9955507477956124,
+      "mediana_n": 2.0
+     },
+     "12": {
+      "procesos": 1000,
+      "mediana_r_adj": 0.9983487007768842,
+      "mediana_n": 1.0
+     }
+    },
+    "diciembre_menos_resto_pts": {
+     "valor": 0.7709786056687817,
+     "ic95": [
+      0.30797034523499467,
+      1.495435778332285
+     ],
+     "p_cero": 0.0004997501249375312
+    },
+    "ley_de_garantias_2026_vs_misma_epoca_2025": {
+     "procesos_en_ventana": 998,
+     "procesos_2025": 716,
+     "diferencia_mediana_r_adj_pts": {
+      "valor": 0.2745102788064169,
+      "ic95": [
+       -0.23318035900173031,
+       1.0691031797831447
+      ],
+      "p_cero": 0.21449975012493752
+     },
+     "diferencia_mediana_n": {
+      "valor": 0.0,
+      "ic95": [
+       -1.0,
+       1.0
+      ],
+      "p_cero": 0.5614997501249376
+     }
+    }
+   },
+   "H11": {
+    "licitacion": {
+     "procesos": 3801,
+     "fraccion_ganador_ya_habia_ganado_2_o_mas_en_la_entidad": 0.012628255722178374,
+     "nota": "solo señal de control: el denominador son los procesos usables de la ventana; no distingue mérito de captura"
+    },
+    "menor_cuantia": {
+     "procesos": 8484,
+     "fraccion_ganador_ya_habia_ganado_2_o_mas_en_la_entidad": 0.10207449316360208,
+     "nota": "solo señal de control: el denominador son los procesos usables de la ventana; no distingue mérito de captura"
+    }
+   },
+   "tendencia_por_anio": {
+    "licitacion": {
+     "por_anio": {
+      "2022": {
+       "procesos": 885,
+       "mediana_r_adj_pct": 97.93565049796857,
+       "ic95_mediana": [
+        96.99989089572519,
+        98.700004749961
+       ],
+       "p10_r_adj_pct": 93.62921177343108,
+       "p90_r_adj_pct": 99.99992795869605,
+       "mediana_n": 5.0,
+       "mediana_piso_pct": 94.45859006710839,
+       "procesos_con_piso": 495
+      },
+      "2023": {
+       "procesos": 1019,
+       "mediana_r_adj_pct": 96.9701169875172,
+       "ic95_mediana": [
+        96.0093421975604,
+        98.00153123143858
+       ],
+       "p10_r_adj_pct": 93.92909676975798,
+       "p90_r_adj_pct": 100.0,
+       "mediana_n": 6.0,
+       "mediana_piso_pct": 94.55336641828069,
+       "procesos_con_piso": 667
+      },
+      "2024": {
+       "procesos": 525,
+       "mediana_r_adj_pct": 97.64970398800716,
+       "ic95_mediana": [
+        96.16687204360058,
+        99.06518195351912
+       ],
+       "p10_r_adj_pct": 93.41225040307039,
+       "p90_r_adj_pct": 100.0,
+       "mediana_n": 7.0,
+       "mediana_piso_pct": 94.08687152037189,
+       "procesos_con_piso": 353
+      },
+      "2025": {
+       "procesos": 781,
+       "mediana_r_adj_pct": 98.92920334508439,
+       "ic95_mediana": [
+        98.0999999972363,
+        99.48467235263158
+       ],
+       "p10_r_adj_pct": 93.4226350354548,
+       "p90_r_adj_pct": 100.0,
+       "mediana_n": 4.0,
+       "mediana_piso_pct": 93.55440404897352,
+       "procesos_con_piso": 460
+      },
+      "2026": {
+       "procesos": 591,
+       "mediana_r_adj_pct": 96.11943835122648,
+       "ic95_mediana": [
+        94.77988728537977,
+        98.05216837760238
+       ],
+       "p10_r_adj_pct": 92.3098163809916,
+       "p90_r_adj_pct": 100.0,
+       "mediana_n": 8.0,
+       "mediana_piso_pct": 92.64504434483686,
+       "procesos_con_piso": 402
+      }
+     },
+     "pendiente_mediana_r_adj_pts_por_anio": -0.16733379359169903
+    },
+    "menor_cuantia": {
+     "por_anio": {
+      "2022": {
+       "procesos": 1074,
+       "mediana_r_adj_pct": 98.52058591219287,
+       "ic95_mediana": [
+        97.90044977049696,
+        99.0001819174152
+       ],
+       "p10_r_adj_pct": 94.34160676572326,
+       "p90_r_adj_pct": 100.0,
+       "mediana_n": 2.0,
+       "mediana_piso_pct": 95.13277246701793,
+       "procesos_con_piso": 496
+      },
+      "2023": {
+       "procesos": 1837,
+       "mediana_r_adj_pct": 98.99501335238884,
+       "ic95_mediana": [
+        98.2298689974764,
+        99.44079871882369
+       ],
+       "p10_r_adj_pct": 94.10748035871204,
+       "p90_r_adj_pct": 100.0,
+       "mediana_n": 2.0,
+       "mediana_piso_pct": 94.6850276967802,
+       "procesos_con_piso": 745
+      },
+      "2024": {
+       "procesos": 1591,
+       "mediana_r_adj_pct": 99.20000116308458,
+       "ic95_mediana": [
+        97.7434918467015,
+        99.75670857956341
+       ],
+       "p10_r_adj_pct": 93.3221378846154,
+       "p90_r_adj_pct": 100.0,
+       "mediana_n": 2.0,
+       "mediana_piso_pct": 93.85340758204455,
+       "procesos_con_piso": 682
+      },
+      "2025": {
+       "procesos": 2404,
+       "mediana_r_adj_pct": 99.79663854910932,
+       "ic95_mediana": [
+        99.51111842818324,
+        99.89688140598663
+       ],
+       "p10_r_adj_pct": 93.02512948508196,
+       "p90_r_adj_pct": 100.0,
+       "mediana_n": 2.0,
+       "mediana_piso_pct": 93.4407396823359,
+       "procesos_con_piso": 755
+      },
+      "2026": {
+       "procesos": 1578,
+       "mediana_r_adj_pct": 99.90925261514099,
+       "ic95_mediana": [
+        99.80791149039632,
+        99.95914952367741
+       ],
+       "p10_r_adj_pct": 93.27293097078505,
+       "p90_r_adj_pct": 100.0,
+       "mediana_n": 2.0,
+       "mediana_piso_pct": 92.9581724354108,
+       "procesos_con_piso": 512
+      }
+     },
+     "pendiente_mediana_r_adj_pts_por_anio": 0.35789586026167086
+    },
+    "minima": {
+     "por_anio": {
+      "2022": {
+       "procesos": 684,
+       "mediana_r_adj_pct": 87.03949516666667,
+       "ic95_mediana": [
+        84.97315,
+        89.9999977558707
+       ],
+       "p10_r_adj_pct": 67.73617134269307,
+       "p90_r_adj_pct": 99.99983249767288,
+       "mediana_n": 4.0,
+       "mediana_piso_pct": 80.12569678695871,
+       "procesos_con_piso": 440
+      },
+      "2023": {
+       "procesos": 1234,
+       "mediana_r_adj_pct": 93.08000636146309,
+       "ic95_mediana": [
+        89.7874758547917,
+        95.79991470163324
+       ],
+       "p10_r_adj_pct": 69.74694845617093,
+       "p90_r_adj_pct": 100.0,
+       "mediana_n": 2.0,
+       "mediana_piso_pct": 78.57859724606529,
+       "procesos_con_piso": 549
+      },
+      "2024": {
+       "procesos": 1267,
+       "mediana_r_adj_pct": 91.53952843273233,
+       "ic95_mediana": [
+        88.11239285714285,
+        95.03160831873694
+       ],
+       "p10_r_adj_pct": 71.0718590018932,
+       "p90_r_adj_pct": 100.0,
+       "mediana_n": 3.0,
+       "mediana_piso_pct": 77.91807971629488,
+       "procesos_con_piso": 675
+      },
+      "2025": {
+       "procesos": 1626,
+       "mediana_r_adj_pct": 97.38290182675927,
+       "ic95_mediana": [
+        95.0,
+        98.62088245532232
+       ],
+       "p10_r_adj_pct": 75.20675663614209,
+       "p90_r_adj_pct": 100.0,
+       "mediana_n": 2.0,
+       "mediana_piso_pct": 77.98385956922108,
+       "procesos_con_piso": 700
+      },
+      "2026": {
+       "procesos": 941,
+       "mediana_r_adj_pct": 99.17270338130054,
+       "ic95_mediana": [
+        95.69686734693876,
+        99.7943573589999
+       ],
+       "p10_r_adj_pct": 72.62847909644383,
+       "p90_r_adj_pct": 100.0,
+       "mediana_n": 2.0,
+       "mediana_piso_pct": 77.00336839530647,
+       "procesos_con_piso": 393
+      }
+     },
+     "pendiente_mediana_r_adj_pts_por_anio": 2.8569311894563914
+    }
+   }
+  },
+  "2019-2026": {
+   "procesos_usables_licitacion_menor": 15463,
+   "procesos_usables_minima": 7700,
+   "por_modalidad": {
+    "licitacion": 4835,
+    "menor_cuantia": 10628
+   },
+   "H1": {
+    "licitacion": {
+     "procesos_evaluables": 2645,
+     "r2_fuera_de_muestra_entidad": {
+      "valor": 0.21275317631280766,
+      "ic95": [
+       0.11280795747159733,
+       0.3567286703924728
+      ],
+      "p_cero": 0.0004997501249375312
+     },
+     "r2_fuera_de_muestra_departamento": {
+      "valor": 0.05921109049083306,
+      "ic95": [
+       0.0060769423833323954,
+       0.13709662488337898
+      ],
+      "p_cero": 0.04549975012493753
+     },
+     "mae_pts_entidad": {
+      "valor": 1.9279458679230068,
+      "ic95": [
+       1.7112564316566488,
+       2.1451741529398705
+      ],
+      "p_cero": 0.0004997501249375312
+     },
+     "mae_pts_departamento": {
+      "valor": 2.5193609310679492,
+      "ic95": [
+       2.1975839928028518,
+       2.841109480890931
+      ],
+      "p_cero": 0.0004997501249375312
+     },
+     "mae_pts_global": {
+      "valor": 2.809629326543147,
+      "ic95": [
+       2.507353048246573,
+       3.1331126183419595
+      ],
+      "p_cero": 0.0004997501249375312
+     },
+     "iqr_global_pts": 4.781425567295717,
+     "iqr_mediano_dentro_de_entidad_pts": 1.944630390983837,
+     "entidades_con_5_o_mas": 255
+    },
+    "menor_cuantia": {
+     "procesos_evaluables": 6346,
+     "r2_fuera_de_muestra_entidad": {
+      "valor": 0.21152778125431027,
+      "ic95": [
+       0.09116246596978457,
+       0.26426342246976336
+      ],
+      "p_cero": 0.0004997501249375312
+     },
+     "r2_fuera_de_muestra_departamento": {
+      "valor": 0.12199879796824631,
+      "ic95": [
+       0.050949493626653505,
+       0.156199044391143
+      ],
+      "p_cero": 0.0004997501249375312
+     },
+     "mae_pts_entidad": {
+      "valor": 1.853815992707733,
+      "ic95": [
+       1.4221692826951216,
+       2.3528802792964036
+      ],
+      "p_cero": 0.0004997501249375312
+     },
+     "mae_pts_departamento": {
+      "valor": 2.138469944704731,
+      "ic95": [
+       1.6007431139152093,
+       2.758428452712511
+      ],
+      "p_cero": 0.0004997501249375312
+     },
+     "mae_pts_global": {
+      "valor": 2.56795548508189,
+      "ic95": [
+       1.985832997540619,
+       3.261383409969675
+      ],
+      "p_cero": 0.0004997501249375312
+     },
+     "iqr_global_pts": 3.8525232135821486,
+     "iqr_mediano_dentro_de_entidad_pts": 1.07847699354795,
+     "entidades_con_5_o_mas": 574
+    }
+   },
+   "H2": {
+    "licitacion": {
+     "pendiente_baja_sobre_log_n": {
+      "valor": 1.1870160368613483,
+      "ic95": [
+       1.060316896577074,
+       1.3108382154608815
+      ],
+      "p_cero": 0.0004997501249375312
+     },
+     "mediana_baja_por_tramo": {
+      "1": {
+       "n_procesos": 1174,
+       "mediana_pts": 0.05604538890168764
+      },
+      "10+": {
+       "n_procesos": 1955,
+       "mediana_pts": 4.610319176862565
+      },
+      "2": {
+       "n_procesos": 498,
+       "mediana_pts": 0.27018293956683204
+      },
+      "3-4": {
+       "n_procesos": 511,
+       "mediana_pts": 1.1857536847144412
+      },
+      "5-9": {
+       "n_procesos": 697,
+       "mediana_pts": 2.876878333902122
+      }
+     },
+     "diferencia_mediana_10mas_menos_1": {
+      "valor": 4.554273787960877,
+      "ic95": [
+       4.312543394005915,
+       4.814032217296804
+      ],
+      "p_cero": 0.0004997501249375312
+     }
+    },
+    "menor_cuantia": {
+     "pendiente_baja_sobre_log_n": {
+      "valor": 1.8145263260664608,
+      "ic95": [
+       1.4520888071931781,
+       2.0203086962976893
+      ],
+      "p_cero": 0.0004997501249375312
+     },
+     "mediana_baja_por_tramo": {
+      "1": {
+       "n_procesos": 4203,
+       "mediana_pts": 0.037194691396202906
+      },
+      "10+": {
+       "n_procesos": 893,
+       "mediana_pts": 5.285911600000004
+      },
+      "2": {
+       "n_procesos": 1617,
+       "mediana_pts": 0.4890434850193359
+      },
+      "3-4": {
+       "n_procesos": 1772,
+       "mediana_pts": 2.1118966043571885
+      },
+      "5-9": {
+       "n_procesos": 2143,
+       "mediana_pts": 3.609792350134755
+      }
+     },
+     "diferencia_mediana_10mas_menos_1": {
+      "valor": 5.248716908603801,
+      "ic95": [
+       3.165152733264289,
+       6.782199169404052
+      ],
+      "p_cero": 0.0004997501249375312
+     }
+    },
+    "minima": {
+     "pendiente_baja_sobre_log_n": {
+      "valor": 8.056740718298032,
+      "ic95": [
+       7.095443256285925,
+       8.80402089721043
+      ],
+      "p_cero": 0.0004997501249375312
+     },
+     "mediana_baja_por_tramo": {
+      "1": {
+       "n_procesos": 2317,
+       "mediana_pts": 0.12250000000000316
+      },
+      "10+": {
+       "n_procesos": 1168,
+       "mediana_pts": 26.33996169057687
+      },
+      "2": {
+       "n_procesos": 1255,
+       "mediana_pts": 3.8814727243220437
+      },
+      "3-4": {
+       "n_procesos": 1400,
+       "mediana_pts": 11.692527945762382
+      },
+      "5-9": {
+       "n_procesos": 1560,
+       "mediana_pts": 19.14954818477567
+      }
+     },
+     "diferencia_mediana_10mas_menos_1": {
+      "valor": 26.21746169057687,
+      "ic95": [
+       24.53281443973044,
+       28.416313692951547
+      ],
+      "p_cero": 0.0004997501249375312
+     }
+    }
+   },
+   "H3": {
+    "licitacion": {
+     "ofertas": 65460,
+     "exceso_en_la_mediana": {
+      "en_la_celda": 32794,
+      "esperado_por_vecinos": 4977.5,
+      "exceso_pct": 558.8448016072325
+     },
+     "exceso_en_80": {
+      "en_la_celda": 32,
+      "esperado_por_vecinos": 17.0,
+      "exceso_pct": 88.23529411764706
+     },
+     "exceso_en_88": {
+      "en_la_celda": 254,
+      "esperado_por_vecinos": 264.0,
+      "exceso_pct": -3.787878787878788
+     },
+     "exceso_en_90": {
+      "en_la_celda": 637,
+      "esperado_por_vecinos": 690.0,
+      "exceso_pct": -7.681159420289855
+     },
+     "exceso_en_95": {
+      "en_la_celda": 11140,
+      "esperado_por_vecinos": 7195.0,
+      "exceso_pct": 54.82974287699791
+     },
+     "exceso_en_100": {
+      "en_la_celda": 11166,
+      "esperado_por_vecinos": 2643.0,
+      "exceso_pct": 322.4744608399546
+     },
+     "exceso_justo_sobre_el_piso": {
+      "en_la_celda": 11070,
+      "esperado_por_vecinos": 10041.0,
+      "exceso_pct": 10.247983268598745
+     },
+     "histograma_distancia_a_la_mediana_pts": {
+      "bordes": [
+       -10.0,
+       -9.5,
+       -9.0,
+       -8.5,
+       -8.0,
+       -7.5,
+       -7.0,
+       -6.5,
+       -6.0,
+       -5.5,
+       -5.0,
+       -4.5,
+       -4.0,
+       -3.5,
+       -3.0,
+       -2.5,
+       -2.0,
+       -1.5,
+       -1.0,
+       -0.5,
+       0.0,
+       0.5,
+       1.0,
+       1.5,
+       2.0,
+       2.5,
+       3.0,
+       3.5,
+       4.0,
+       4.5,
+       5.0,
+       5.5,
+       6.0,
+       6.5,
+       7.0,
+       7.5,
+       8.0,
+       8.5,
+       9.0,
+       9.5,
+       10.0
+      ],
+      "conteos": [
+       373,
+       53,
+       62,
+       75,
+       101,
+       125,
+       172,
+       206,
+       313,
+       374,
+       470,
+       533,
+       646,
+       794,
+       1139,
+       1324,
+       1906,
+       2889,
+       5393,
+       11921,
+       20873,
+       5470,
+       2984,
+       2176,
+       1375,
+       862,
+       732,
+       868,
+       497,
+       327,
+       233,
+       112,
+       55,
+       10,
+       4,
+       2,
+       0,
+       1,
+       1,
+       9
+      ]
+     },
+     "fraccion_de_ofertas_al_100_pct": 0.15108463183623588
+    },
+    "menor_cuantia": {
+     "ofertas": 43482,
+     "exceso_en_la_mediana": {
+      "en_la_celda": 18904,
+      "esperado_por_vecinos": 3671.5,
+      "exceso_pct": 414.8849244178129
+     },
+     "exceso_en_80": {
+      "en_la_celda": 178,
+      "esperado_por_vecinos": 89.5,
+      "exceso_pct": 98.88268156424581
+     },
+     "exceso_en_88": {
+      "en_la_celda": 343,
+      "esperado_por_vecinos": 399.0,
+      "exceso_pct": -14.035087719298245
+     },
+     "exceso_en_90": {
+      "en_la_celda": 1060,
+      "esperado_por_vecinos": 1242.5,
+      "exceso_pct": -14.688128772635816
+     },
+     "exceso_en_95": {
+      "en_la_celda": 5219,
+      "esperado_por_vecinos": 4012.5,
+      "exceso_pct": 30.068535825545172
+     },
+     "exceso_en_100": {
+      "en_la_celda": 6054,
+      "esperado_por_vecinos": 1912.5,
+      "exceso_pct": 216.54901960784315
+     },
+     "exceso_justo_sobre_el_piso": {
+      "en_la_celda": 6872,
+      "esperado_por_vecinos": 4671.0,
+      "exceso_pct": 47.120530935559835
+     },
+     "histograma_distancia_a_la_mediana_pts": {
+      "bordes": [
+       -10.0,
+       -9.5,
+       -9.0,
+       -8.5,
+       -8.0,
+       -7.5,
+       -7.0,
+       -6.5,
+       -6.0,
+       -5.5,
+       -5.0,
+       -4.5,
+       -4.0,
+       -3.5,
+       -3.0,
+       -2.5,
+       -2.0,
+       -1.5,
+       -1.0,
+       -0.5,
+       0.0,
+       0.5,
+       1.0,
+       1.5,
+       2.0,
+       2.5,
+       3.0,
+       3.5,
+       4.0,
+       4.5,
+       5.0,
+       5.5,
+       6.0,
+       6.5,
+       7.0,
+       7.5,
+       8.0,
+       8.5,
+       9.0,
+       9.5,
+       10.0
+      ],
+      "conteos": [
+       948,
+       77,
+       93,
+       118,
+       159,
+       125,
+       149,
+       194,
+       257,
+       269,
+       333,
+       374,
+       437,
+       591,
+       808,
+       1044,
+       1406,
+       2020,
+       3511,
+       5929,
+       12975,
+       3942,
+       2360,
+       1557,
+       1076,
+       754,
+       477,
+       368,
+       295,
+       214,
+       145,
+       98,
+       68,
+       60,
+       43,
+       37,
+       36,
+       26,
+       13,
+       96
+      ]
+     },
+     "fraccion_de_ofertas_al_100_pct": 0.10857366266501081
+    }
+   },
+   "H4": {
+    "licitacion": {
+     "procesos": 4519,
+     "ganador_es_la_mas_baja": {
+      "valor": 0.38658995352954195,
+      "ic95": [
+       0.3631447412463445,
+       0.41165220020057147
+      ],
+      "p_cero": 0.0004997501249375312
+     },
+     "esperado_si_fuera_al_azar": 0.3744285198552486,
+     "por_tramo": {
+      "1": {
+       "procesos": 1126,
+       "gana_la_mas_baja": 1.0,
+       "al_azar": 1.0,
+       "mediana_z": null,
+       "mediana_distancia_a_mediana_pts": null,
+       "rango_mediano": 1.0
+      },
+      "10+": {
+       "procesos": 1792,
+       "gana_la_mas_baja": 0.13504464285714285,
+       "al_azar": 0.04690468499530288,
+       "mediana_z": -0.0812017447605433,
+       "mediana_distancia_a_mediana_pts": -0.1464783904355171,
+       "rango_mediano": 7.0
+      },
+      "2": {
+       "procesos": 482,
+       "gana_la_mas_baja": 0.3755186721991701,
+       "al_azar": 0.5,
+       "mediana_z": null,
+       "mediana_distancia_a_mediana_pts": null,
+       "rango_mediano": 2.0
+      },
+      "3-4": {
+       "procesos": 478,
+       "gana_la_mas_baja": 0.2280334728033473,
+       "al_azar": 0.29776847977684806,
+       "mediana_z": 0.4677485518503992,
+       "mediana_distancia_a_mediana_pts": 0.0,
+       "rango_mediano": 2.0
+      },
+      "5-9": {
+       "procesos": 641,
+       "gana_la_mas_baja": 0.13884555382215288,
+       "al_azar": 0.1539094420919694,
+       "mediana_z": 0.1616675006380513,
+       "mediana_distancia_a_mediana_pts": 0.0,
+       "rango_mediano": 4.0
+      }
+     },
+     "z_del_ganador": {
+      "n": 2804,
+      "p10": -1.5139954445163601,
+      "p25": -0.6381634976636619,
+      "p50": 0.00074782532489175,
+      "p75": 0.4684187167366229,
+      "p90": 0.9750413648374961,
+      "fraccion_bajo_menos_1": 0.1733238231098431
+     }
+    },
+    "menor_cuantia": {
+     "procesos": 10279,
+     "ganador_es_la_mas_baja": {
+      "valor": 0.5646463663780523,
+      "ic95": [
+       0.511975297251676,
+       0.6085461435233553
+      ],
+      "p_cero": 0.0004997501249375312
+     },
+     "esperado_si_fuera_al_azar": 0.5577767442985269,
+     "por_tramo": {
+      "1": {
+       "procesos": 4068,
+       "gana_la_mas_baja": 1.0,
+       "al_azar": 1.0,
+       "mediana_z": null,
+       "mediana_distancia_a_mediana_pts": null,
+       "rango_mediano": 1.0
+      },
+      "10+": {
+       "procesos": 866,
+       "gana_la_mas_baja": 0.11893764434180139,
+       "al_azar": 0.05480435028056569,
+       "mediana_z": -0.0241029592598978,
+       "mediana_distancia_a_mediana_pts": -0.22178762619047832,
+       "rango_mediano": 6.0
+      },
+      "2": {
+       "procesos": 1552,
+       "gana_la_mas_baja": 0.43621134020618557,
+       "al_azar": 0.5,
+       "mediana_z": null,
+       "mediana_distancia_a_mediana_pts": null,
+       "rango_mediano": 2.0
+      },
+      "3-4": {
+       "procesos": 1710,
+       "gana_la_mas_baja": 0.2994152046783626,
+       "al_azar": 0.2976120857699805,
+       "mediana_z": 0.2360496832460626,
+       "mediana_distancia_a_mediana_pts": 0.0,
+       "rango_mediano": 2.0
+      },
+      "5-9": {
+       "procesos": 2083,
+       "gana_la_mas_baja": 0.21315410465674509,
+       "al_azar": 0.1598703411593474,
+       "mediana_z": -0.050424115538340655,
+       "mediana_distancia_a_mediana_pts": 0.0,
+       "rango_mediano": 3.0
+      }
+     },
+     "z_del_ganador": {
+      "n": 4360,
+      "p10": -1.2095043786146362,
+      "p25": -0.6761747759963804,
+      "p50": 0.039264001635095,
+      "p75": 0.5000000000000006,
+      "p90": 0.8771713040746659,
+      "fraccion_bajo_menos_1": 0.1577981651376147
+     }
+    },
+    "minima": {
+     "procesos": 7429,
+     "ganador_es_la_mas_baja": {
+      "valor": 0.585812356979405,
+      "ic95": [
+       0.5643083515618113,
+       0.6087632794092832
+      ],
+      "p_cero": 0.0004997501249375312
+     },
+     "esperado_si_fuera_al_azar": 0.4755872511281743,
+     "por_tramo": {
+      "1": {
+       "procesos": 2204,
+       "gana_la_mas_baja": 1.0,
+       "al_azar": 1.0,
+       "mediana_z": null,
+       "mediana_distancia_a_mediana_pts": null,
+       "rango_mediano": 1.0
+      },
+      "10+": {
+       "procesos": 1133,
+       "gana_la_mas_baja": 0.35481023830538394,
+       "al_azar": 0.07040024914563145,
+       "mediana_z": -1.127091450025258,
+       "mediana_distancia_a_mediana_pts": -9.833900750000002,
+       "rango_mediano": 2.0
+      },
+      "2": {
+       "procesos": 1200,
+       "gana_la_mas_baja": 0.4475,
+       "al_azar": 0.5,
+       "mediana_z": null,
+       "mediana_distancia_a_mediana_pts": null,
+       "rango_mediano": 2.0
+      },
+      "3-4": {
+       "procesos": 1363,
+       "gana_la_mas_baja": 0.43360234776228906,
+       "al_azar": 0.2985448764979212,
+       "mediana_z": -0.2894295197008676,
+       "mediana_distancia_a_mediana_pts": -0.0099088789969337,
+       "rango_mediano": 2.0
+      },
+      "5-9": {
+       "procesos": 1529,
+       "gana_la_mas_baja": 0.40418574231523874,
+       "al_azar": 0.15857262242154327,
+       "mediana_z": -0.7061810039184088,
+       "mediana_distancia_a_mediana_pts": -3.986703634141253,
+       "rango_mediano": 2.0
+      }
+     },
+     "z_del_ganador": {
+      "n": 3913,
+      "p10": -1.6113662820046093,
+      "p25": -1.199726351767176,
+      "p50": -0.7409999836146394,
+      "p75": 0.2474125166966077,
+      "p90": 0.8771449694763536,
+      "fraccion_bajo_menos_1": 0.3741374904165602
+     }
+    }
+   },
+   "H5": {
+    "ofertas": 118549,
+    "primer_digito_observado": [
+     34348,
+     20793,
+     16659,
+     12432,
+     8931,
+     7350,
+     6005,
+     6127,
+     5904
+    ],
+    "primer_digito_benford": [
+     35686.80495596931,
+     20875.442669791955,
+     14811.36228617735,
+     11488.585132092081,
+     9386.857537699874,
+     7936.474963919567,
+     6874.887322257784,
+     6064.080383614604,
+     5424.504748477478
+    ],
+    "chi2": 577.0867517721447,
+    "gl": 8,
+    "p": 1.9688348588624772e-119,
+    "fraccion_multiplo_de_1_millon": 0.04945634294679837,
+    "fraccion_multiplo_de_1000": 0.07704830913799357,
+    "fraccion_con_centavos": 0.2500738091422112
+   },
+   "H6": {
+    "dias": 1850,
+    "mediana_geometrica_aritmetica_menor": [
+     456,
+     483,
+     450,
+     461
+    ],
+    "chi2": 1.3427027027027025,
+    "gl": 3,
+    "p": 0.7190187298942936
+   },
+   "H7": {
+    "licitacion": {
+     "cv_5_pliegues": {
+      "mae_pts_base": 2.1718240868683836,
+      "mae_pts_con_geografia": 2.106344115336941,
+      "mejora_pts": {
+       "valor": 0.06547997153144247,
+       "ic95": [
+        0.043961890320785575,
+        0.09276099306175745
+       ],
+       "p_cero": 0.0004997501249375312
+      }
+     },
+     "temporal_ultimo_anio": {
+      "anio_prueba": 2026,
+      "mae_pts_base": 2.5536336982002377,
+      "mae_pts_con_geografia": 2.4844959863417153,
+      "mejora_pts": {
+       "valor": 0.06913771185852202,
+       "ic95": [
+        0.03159473113634835,
+        0.11236562366914538
+       ],
+       "p_cero": 0.0004997501249375312
+      }
+     },
+     "dejar_un_departamento_fuera": [
+      {
+       "departamento": "Distrito Capital de Bogotá",
+       "procesos": 1211,
+       "mae_pts_base": 2.535385730206133,
+       "mae_pts_geo": 2.535385730206133
+      },
+      {
+       "departamento": "Cesar",
+       "procesos": 153,
+       "mae_pts_base": 2.3658391517132555,
+       "mae_pts_geo": 2.3658391517132555
+      },
+      {
+       "departamento": "Santander",
+       "procesos": 201,
+       "mae_pts_base": 2.2411443895050054,
+       "mae_pts_geo": 2.2411443895050054
+      },
+      {
+       "departamento": "Boyacá",
+       "procesos": 211,
+       "mae_pts_base": 2.809204224318821,
+       "mae_pts_geo": 2.8049696478244295
+      },
+      {
+       "departamento": "Meta",
+       "procesos": 156,
+       "mae_pts_base": 2.3564443913208244,
+       "mae_pts_geo": 2.332369047647557
+      },
+      {
+       "departamento": "Norte de Santander",
+       "procesos": 180,
+       "mae_pts_base": 2.954748564355913,
+       "mae_pts_geo": 2.954748564355913
+      },
+      {
+       "departamento": "Arauca",
+       "procesos": 128,
+       "mae_pts_base": 2.5898391324355687,
+       "mae_pts_geo": 2.5898391324355687
+      },
+      {
+       "departamento": "Valle del Cauca",
+       "procesos": 307,
+       "mae_pts_base": 2.1382662398171375,
+       "mae_pts_geo": 2.136840780866791
+      },
+      {
+       "departamento": "Caldas",
+       "procesos": 131,
+       "mae_pts_base": 3.524219181996482,
+       "mae_pts_geo": 3.524219181996482
+      },
+      {
+       "departamento": "Huila",
+       "procesos": 153,
+       "mae_pts_base": 2.4141455588134404,
+       "mae_pts_geo": 2.4141455588134404
+      },
+      {
+       "departamento": "Caquetá",
+       "procesos": 42,
+       "mae_pts_base": 2.206396604162395,
+       "mae_pts_geo": 2.444295329830511
+      },
+      {
+       "departamento": "Bolívar",
+       "procesos": 178,
+       "mae_pts_base": 2.4797162164585314,
+       "mae_pts_geo": 2.4797162164585314
+      },
+      {
+       "departamento": "Cundinamarca",
+       "procesos": 355,
+       "mae_pts_base": 2.6470305448695655,
+       "mae_pts_geo": 2.629027986867587
+      },
+      {
+       "departamento": "Córdoba",
+       "procesos": 126,
+       "mae_pts_base": 2.59599974120234,
+       "mae_pts_geo": 2.59599974120234
+      },
+      {
+       "departamento": "Tolima",
+       "procesos": 208,
+       "mae_pts_base": 2.78275584138948,
+       "mae_pts_geo": 2.78275584138948
+      },
+      {
+       "departamento": "Antioquia",
+       "procesos": 394,
+       "mae_pts_base": 2.9221204169141735,
+       "mae_pts_geo": 2.9221204169141735
+      },
+      {
+       "departamento": "Casanare",
+       "procesos": 94,
+       "mae_pts_base": 2.4177479555249715,
+       "mae_pts_geo": 2.4177479555249715
+      },
+      {
+       "departamento": "Sucre",
+       "procesos": 50,
+       "mae_pts_base": 2.6954003269124573,
+       "mae_pts_geo": 2.6954003269124573
+      },
+      {
+       "departamento": "Risaralda",
+       "procesos": 65,
+       "mae_pts_base": 2.392132684580752,
+       "mae_pts_geo": 2.392132684580752
+      },
+      {
+       "departamento": "Atlántico",
+       "procesos": 100,
+       "mae_pts_base": 3.6406120166221663,
+       "mae_pts_geo": 3.6406120166221663
+      },
+      {
+       "departamento": "Nariño",
+       "procesos": 45,
+       "mae_pts_base": 2.4878753751976794,
+       "mae_pts_geo": 2.4878753751976794
+      },
+      {
+       "departamento": "Magdalena",
+       "procesos": 43,
+       "mae_pts_base": 2.4323052178125946,
+       "mae_pts_geo": 2.4323052178125946
+      },
+      {
+       "departamento": "Cauca",
+       "procesos": 31,
+       "mae_pts_base": 2.0152759841898895,
+       "mae_pts_geo": 1.9771370860250423
+      },
+      {
+       "departamento": "Putumayo",
+       "procesos": 83,
+       "mae_pts_base": 2.5973423630156214,
+       "mae_pts_geo": 2.5973423630156214
+      },
+      {
+       "departamento": "Quindío",
+       "procesos": 51,
+       "mae_pts_base": 2.0605734626574845,
+       "mae_pts_geo": 2.0605734626574845
+      },
+      {
+       "departamento": "La Guajira",
+       "procesos": 78,
+       "mae_pts_base": 2.6945989842725924,
+       "mae_pts_geo": 2.6945989842725924
+      }
+     ]
+    },
+    "menor_cuantia": {
+     "cv_5_pliegues": {
+      "mae_pts_base": 2.2084703768079614,
+      "mae_pts_con_geografia": 2.1084907311436734,
+      "mejora_pts": {
+       "valor": 0.09997964566428778,
+       "ic95": [
+        0.07623842624992637,
+        0.12560172690881802
+       ],
+       "p_cero": 0.0004997501249375312
+      }
+     },
+     "temporal_ultimo_anio": {
+      "anio_prueba": 2026,
+      "mae_pts_base": 2.142079196017108,
+      "mae_pts_con_geografia": 1.9129644493764673,
+      "mejora_pts": {
+       "valor": 0.22911474664064124,
+       "ic95": [
+        0.17948482263702834,
+        0.2736333249916911
+       ],
+       "p_cero": 0.0004997501249375312
+      }
+     },
+     "dejar_un_departamento_fuera": [
+      {
+       "departamento": "Santander",
+       "procesos": 448,
+       "mae_pts_base": 2.5211045682042004,
+       "mae_pts_geo": 2.5170659606515193
+      },
+      {
+       "departamento": "Caquetá",
+       "procesos": 236,
+       "mae_pts_base": 2.494469969956486,
+       "mae_pts_geo": 2.3882426175398352
+      },
+      {
+       "departamento": "Valle del Cauca",
+       "procesos": 1111,
+       "mae_pts_base": 2.2655455162088196,
+       "mae_pts_geo": 2.2645314635433635
+      },
+      {
+       "departamento": "Chocó",
+       "procesos": 109,
+       "mae_pts_base": 3.2362496265654683,
+       "mae_pts_geo": 3.2362496265654683
+      },
+      {
+       "departamento": "Risaralda",
+       "procesos": 180,
+       "mae_pts_base": 3.554786137084894,
+       "mae_pts_geo": 3.553273720101693
+      },
+      {
+       "departamento": "Cauca",
+       "procesos": 155,
+       "mae_pts_base": 1.9609197286538111,
+       "mae_pts_geo": 1.9615101418509209
+      },
+      {
+       "departamento": "Boyacá",
+       "procesos": 750,
+       "mae_pts_base": 2.544478932586057,
+       "mae_pts_geo": 2.545196957407081
+      },
+      {
+       "departamento": "Distrito Capital de Bogotá",
+       "procesos": 1246,
+       "mae_pts_base": 2.530353694719673,
+       "mae_pts_geo": 2.5321914836562596
+      },
+      {
+       "departamento": "Magdalena",
+       "procesos": 107,
+       "mae_pts_base": 2.054720549311604,
+       "mae_pts_geo": 2.054720549311604
+      },
+      {
+       "departamento": "Cundinamarca",
+       "procesos": 1055,
+       "mae_pts_base": 2.6147615200221366,
+       "mae_pts_geo": 2.615752550964533
+      },
+      {
+       "departamento": "Norte de Santander",
+       "procesos": 586,
+       "mae_pts_base": 4.044862691951359,
+       "mae_pts_geo": 4.044862691951359
+      },
+      {
+       "departamento": "Meta",
+       "procesos": 276,
+       "mae_pts_base": 2.8767100106946595,
+       "mae_pts_geo": 2.86464311495629
+      },
+      {
+       "departamento": "Atlántico",
+       "procesos": 267,
+       "mae_pts_base": 3.3747199096166858,
+       "mae_pts_geo": 3.4016849668820632
+      },
+      {
+       "departamento": "La Guajira",
+       "procesos": 131,
+       "mae_pts_base": 2.4867679706932053,
+       "mae_pts_geo": 2.4867679706932053
+      },
+      {
+       "departamento": "Córdoba",
+       "procesos": 220,
+       "mae_pts_base": 2.825485542986754,
+       "mae_pts_geo": 2.819295993520046
+      },
+      {
+       "departamento": "Caldas",
+       "procesos": 686,
+       "mae_pts_base": 3.114660413897694,
+       "mae_pts_geo": 3.112907044284689
+      },
+      {
+       "departamento": "Nariño",
+       "procesos": 198,
+       "mae_pts_base": 2.1739808893880332,
+       "mae_pts_geo": 2.1739808893880332
+      },
+      {
+       "departamento": "Cesar",
+       "procesos": 175,
+       "mae_pts_base": 2.344314251453262,
+       "mae_pts_geo": 2.280687949207042
+      },
+      {
+       "departamento": "Bolívar",
+       "procesos": 324,
+       "mae_pts_base": 2.6403744892620633,
+       "mae_pts_geo": 2.6403744892620633
+      },
+      {
+       "departamento": "Putumayo",
+       "procesos": 158,
+       "mae_pts_base": 2.3093970355615365,
+       "mae_pts_geo": 2.3093970355615365
+      },
+      {
+       "departamento": "Huila",
+       "procesos": 263,
+       "mae_pts_base": 2.124426585626414,
+       "mae_pts_geo": 2.1211267585628484
+      },
+      {
+       "departamento": "Antioquia",
+       "procesos": 779,
+       "mae_pts_base": 2.7336098280169834,
+       "mae_pts_geo": 2.7375986639233916
+      },
+      {
+       "departamento": "Sucre",
+       "procesos": 154,
+       "mae_pts_base": 2.279486434840168,
+       "mae_pts_geo": 2.279486434840168
+      },
+      {
+       "departamento": "Tolima",
+       "procesos": 338,
+       "mae_pts_base": 2.320444735674598,
+       "mae_pts_geo": 2.320444735674598
+      },
+      {
+       "departamento": "Amazonas",
+       "procesos": 57,
+       "mae_pts_base": 2.399083747927698,
+       "mae_pts_geo": 2.399083747927698
+      },
+      {
+       "departamento": "Arauca",
+       "procesos": 147,
+       "mae_pts_base": 2.7151136618749607,
+       "mae_pts_geo": 2.7151136618749607
+      },
+      {
+       "departamento": "San Andrés; Providencia y Santa Catalina",
+       "procesos": 40,
+       "mae_pts_base": 2.08865318313382,
+       "mae_pts_geo": 2.3723705575163465
+      },
+      {
+       "departamento": "Quindío",
+       "procesos": 186,
+       "mae_pts_base": 2.7730736476163327,
+       "mae_pts_geo": 2.7730736476163327
+      },
+      {
+       "departamento": "Casanare",
+       "procesos": 201,
+       "mae_pts_base": 2.9840116375155357,
+       "mae_pts_geo": 2.939335559966906
+      }
+     ]
+    }
+   },
+   "H9": {
+    "por_tamano": {
+     "licitacion|grande": {
+      "procesos": 1612,
+      "mediana_r_adj": 0.975610018233821,
+      "mediana_n": 6.0,
+      "corte_cop": [
+       4005459758.0,
+       13212285859000.0
+      ]
+     },
+     "licitacion|mediano": {
+      "procesos": 1611,
+      "mediana_r_adj": 0.979036677950053,
+      "mediana_n": 7.0,
+      "corte_cop": [
+       1307951263.0,
+       4000760843.0
+      ]
+     },
+     "licitacion|pequeño": {
+      "procesos": 1612,
+      "mediana_r_adj": 0.9887320256095953,
+      "mediana_n": 5.0,
+      "corte_cop": [
+       75738272.0,
+       1306642336.0
+      ]
+     },
+     "menor_cuantia|grande": {
+      "procesos": 3543,
+      "mediana_r_adj": 0.9849999883537108,
+      "mediana_n": 3.0,
+      "corte_cop": [
+       383564285.0,
+       252000000000.0
+      ]
+     },
+     "menor_cuantia|mediano": {
+      "procesos": 3542,
+      "mediana_r_adj": 0.9943851034093193,
+      "mediana_n": 2.0,
+      "corte_cop": [
+       196599420.0,
+       383497203.0
+      ]
+     },
+     "menor_cuantia|pequeño": {
+      "procesos": 3543,
+      "mediana_r_adj": 0.9952433066666668,
+      "mediana_n": 1.0,
+      "corte_cop": [
+       25102500.0,
+       196480901.0
+      ]
+     },
+     "minima|grande": {
+      "procesos": 2567,
+      "mediana_r_adj": 0.849898221660292,
+      "mediana_n": 5.0,
+      "corte_cop": [
+       53250000.0,
+       317332454.0
+      ]
+     },
+     "minima|mediano": {
+      "procesos": 2566,
+      "mediana_r_adj": 0.9697228314441053,
+      "mediana_n": 2.0,
+      "corte_cop": [
+       32000000.0,
+       53206644.0
+      ]
+     },
+     "minima|pequeño": {
+      "procesos": 2567,
+      "mediana_r_adj": 0.9163298787563524,
+      "mediana_n": 2.0,
+      "corte_cop": [
+       343395.0,
+       32000000.0
+      ]
+     }
+    },
+    "diferencia_grande_menos_pequeno_pts": {
+     "licitacion": {
+      "valor": -1.3122007375774292,
+      "ic95": [
+       -2.459637064812173,
+       -0.30607817098049683
+      ],
+      "p_cero": 0.010499750124937531
+     },
+     "menor_cuantia": {
+      "valor": -1.0243318312955996,
+      "ic95": [
+       -1.8848048237879997,
+       -0.3551566097107494
+      ],
+      "p_cero": 0.0004997501249375312
+     },
+     "minima": {
+      "valor": -6.643165709606036,
+      "ic95": [
+       -10.00254382418043,
+       -2.6300650933514462
+      ],
+      "p_cero": 0.0004997501249375312
+     }
+    },
+    "aviso_despues_de_transporte_v4_3feb2025": {
+     "licitacion": {
+      "antes": 3305,
+      "despues": 1109,
+      "diferencia_mediana_r_adj_pts": {
+       "valor": 0.1532662465684731,
+       "ic95": [
+        -0.8930409034622685,
+        1.0043943960830928
+       ],
+       "p_cero": 0.6984997501249375
+      }
+     },
+     "menor_cuantia": {
+      "antes": 6416,
+      "despues": 3403,
+      "diferencia_mediana_r_adj_pts": {
+       "valor": 1.3224064368316024,
+       "ic95": [
+        0.8502336409758532,
+        1.672822181869437
+       ],
+       "p_cero": 0.0004997501249375312
+      }
+     },
+     "minima": {
+      "antes": 5144,
+      "despues": 2556,
+      "diferencia_mediana_r_adj_pts": {
+       "valor": 10.242793895469514,
+       "ic95": [
+        7.646247191142242,
+        12.651841995418419
+       ],
+       "p_cero": 0.0004997501249375312
+      }
+     }
+    },
+    "aviso_despues_de_social_v2_16feb2026": {
+     "licitacion": {
+      "antes": 4119,
+      "despues": 295,
+      "diferencia_mediana_r_adj_pts": {
+       "valor": -3.124366144141044,
+       "ic95": [
+        -4.000569625807192,
+        -0.5217823742219561
+       ],
+       "p_cero": 0.0004997501249375312
+      }
+     },
+     "menor_cuantia": {
+      "antes": 8584,
+      "despues": 1235,
+      "diferencia_mediana_r_adj_pts": {
+       "valor": 0.9014988613212149,
+       "ic95": [
+        0.49845709168213626,
+        1.397652358275759
+       ],
+       "p_cero": 0.0004997501249375312
+      }
+     },
+     "minima": {
+      "antes": 6808,
+      "despues": 892,
+      "diferencia_mediana_r_adj_pts": {
+       "valor": 9.086848959620097,
+       "ic95": [
+        5.4818709211096035,
+        11.425025506823864
+       ],
+       "p_cero": 0.0004997501249375312
+      }
+     }
+    }
+   },
+   "H10": {
+    "por_mes_de_cierre": {
+     "1": {
+      "procesos": 246,
+      "mediana_r_adj": 0.9915335016150357,
+      "mediana_n": 2.0
+     },
+     "2": {
+      "procesos": 349,
+      "mediana_r_adj": 0.9917130298336408,
+      "mediana_n": 3.0
+     },
+     "3": {
+      "procesos": 708,
+      "mediana_r_adj": 0.990963673051883,
+      "mediana_n": 3.0
+     },
+     "4": {
+      "procesos": 877,
+      "mediana_r_adj": 0.9829999985796568,
+      "mediana_n": 4.0
+     },
+     "5": {
+      "procesos": 1362,
+      "mediana_r_adj": 0.987810712340814,
+      "mediana_n": 3.0
+     },
+     "6": {
+      "procesos": 1466,
+      "mediana_r_adj": 0.986527014844456,
+      "mediana_n": 4.0
+     },
+     "7": {
+      "procesos": 1658,
+      "mediana_r_adj": 0.9838010535915147,
+      "mediana_n": 3.0
+     },
+     "8": {
+      "procesos": 1795,
+      "mediana_r_adj": 0.9816996365903,
+      "mediana_n": 3.0
+     },
+     "9": {
+      "procesos": 1947,
+      "mediana_r_adj": 0.9899852418884884,
+      "mediana_n": 2.0
+     },
+     "10": {
+      "procesos": 1847,
+      "mediana_r_adj": 0.9898982458386014,
+      "mediana_n": 2.0
+     },
+     "11": {
+      "procesos": 1887,
+      "mediana_r_adj": 0.9931939348370636,
+      "mediana_n": 2.0
+     },
+     "12": {
+      "procesos": 1321,
+      "mediana_r_adj": 0.997506584519484,
+      "mediana_n": 2.0
+     }
+    },
+    "diciembre_menos_resto_pts": {
+     "valor": 0.9618070928927414,
+     "ic95": [
+      0.49952712229928004,
+      1.5174558265066542
+     ],
+     "p_cero": 0.0004997501249375312
+    },
+    "ley_de_garantias_2026_vs_misma_epoca_2025": {
+     "procesos_en_ventana": 998,
+     "procesos_2025": 716,
+     "diferencia_mediana_r_adj_pts": {
+      "valor": 0.2745102788064169,
+      "ic95": [
+       -0.23318035900173031,
+       1.0691031797831447
+      ],
+      "p_cero": 0.21449975012493752
+     },
+     "diferencia_mediana_n": {
+      "valor": 0.0,
+      "ic95": [
+       -1.0,
+       1.0
+      ],
+      "p_cero": 0.5614997501249376
+     }
+    }
+   },
+   "H11": {
+    "licitacion": {
+     "procesos": 4835,
+     "fraccion_ganador_ya_habia_ganado_2_o_mas_en_la_entidad": 0.013857290589451914,
+     "nota": "solo señal de control: el denominador son los procesos usables de la ventana; no distingue mérito de captura"
+    },
+    "menor_cuantia": {
+     "procesos": 10628,
+     "fraccion_ganador_ya_habia_ganado_2_o_mas_en_la_entidad": 0.10208882197967632,
+     "nota": "solo señal de control: el denominador son los procesos usables de la ventana; no distingue mérito de captura"
+    }
+   },
+   "tendencia_por_anio": {
+    "licitacion": {
+     "por_anio": {
+      "2019": {
+       "procesos": 250,
+       "mediana_r_adj_pct": 98.51478938935487,
+       "ic95_mediana": [
+        98.20122814437556,
+        99.20000182173762
+       ],
+       "p10_r_adj_pct": 95.19190965425588,
+       "p90_r_adj_pct": 100.0,
+       "mediana_n": 11.5,
+       "mediana_piso_pct": 97.07299032668226,
+       "procesos_con_piso": 198
+      },
+      "2020": {
+       "procesos": 185,
+       "mediana_r_adj_pct": 98.40007095486588,
+       "ic95_mediana": [
+        97.74853613126145,
+        99.00852103117181
+       ],
+       "p10_r_adj_pct": 92.34644203955388,
+       "p90_r_adj_pct": 100.0,
+       "mediana_n": 13.0,
+       "mediana_piso_pct": 96.5279583016798,
+       "procesos_con_piso": 138
+      },
+      "2021": {
+       "procesos": 599,
+       "mediana_r_adj_pct": 99.31732901932064,
+       "ic95_mediana": [
+        98.66681850314268,
+        99.62406018394437
+       ],
+       "p10_r_adj_pct": 94.15077737588862,
+       "p90_r_adj_pct": 100.0,
+       "mediana_n": 4.0,
+       "mediana_piso_pct": 94.88349376948686,
+       "procesos_con_piso": 323
+      },
+      "2022": {
+       "procesos": 885,
+       "mediana_r_adj_pct": 97.93565049796857,
+       "ic95_mediana": [
+        96.99989089572519,
+        98.700004749961
+       ],
+       "p10_r_adj_pct": 93.62921177343108,
+       "p90_r_adj_pct": 99.99992795869605,
+       "mediana_n": 5.0,
+       "mediana_piso_pct": 94.45859006710839,
+       "procesos_con_piso": 495
+      },
+      "2023": {
+       "procesos": 1019,
+       "mediana_r_adj_pct": 96.9701169875172,
+       "ic95_mediana": [
+        96.0093421975604,
+        98.00153123143858
+       ],
+       "p10_r_adj_pct": 93.92909676975798,
+       "p90_r_adj_pct": 100.0,
+       "mediana_n": 6.0,
+       "mediana_piso_pct": 94.55336641828069,
+       "procesos_con_piso": 667
+      },
+      "2024": {
+       "procesos": 525,
+       "mediana_r_adj_pct": 97.64970398800716,
+       "ic95_mediana": [
+        96.16687204360058,
+        99.06518195351912
+       ],
+       "p10_r_adj_pct": 93.41225040307039,
+       "p90_r_adj_pct": 100.0,
+       "mediana_n": 7.0,
+       "mediana_piso_pct": 94.08687152037189,
+       "procesos_con_piso": 353
+      },
+      "2025": {
+       "procesos": 781,
+       "mediana_r_adj_pct": 98.92920334508439,
+       "ic95_mediana": [
+        98.0999999972363,
+        99.48467235263158
+       ],
+       "p10_r_adj_pct": 93.4226350354548,
+       "p90_r_adj_pct": 100.0,
+       "mediana_n": 4.0,
+       "mediana_piso_pct": 93.55440404897352,
+       "procesos_con_piso": 460
+      },
+      "2026": {
+       "procesos": 591,
+       "mediana_r_adj_pct": 96.11943835122648,
+       "ic95_mediana": [
+        94.77988728537977,
+        98.05216837760238
+       ],
+       "p10_r_adj_pct": 92.3098163809916,
+       "p90_r_adj_pct": 100.0,
+       "mediana_n": 8.0,
+       "mediana_piso_pct": 92.64504434483686,
+       "procesos_con_piso": 402
+      }
+     },
+     "pendiente_mediana_r_adj_pts_por_anio": -0.23916909428807184
+    },
+    "menor_cuantia": {
+     "por_anio": {
+      "2019": {
+       "procesos": 540,
+       "mediana_r_adj_pct": 98.30159194964139,
+       "ic95_mediana": [
+        98.05995932689193,
+        98.508436
+       ],
+       "p10_r_adj_pct": 93.94882510144114,
+       "p90_r_adj_pct": 100.0,
+       "mediana_n": 4.0,
+       "mediana_piso_pct": 96.72977601695804,
+       "procesos_con_piso": 333
+      },
+      "2020": {
+       "procesos": 514,
+       "mediana_r_adj_pct": 97.97691951090555,
+       "ic95_mediana": [
+        97.52992246277078,
+        98.25076825
+       ],
+       "p10_r_adj_pct": 88.20198978795155,
+       "p90_r_adj_pct": 100.0,
+       "mediana_n": 5.0,
+       "mediana_piso_pct": 95.43353610883224,
+       "procesos_con_piso": 352
+      },
+      "2021": {
+       "procesos": 1090,
+       "mediana_r_adj_pct": 98.0716072970885,
+       "ic95_mediana": [
+        97.62760454024429,
+        98.49024232153089
+       ],
+       "p10_r_adj_pct": 93.65352661656667,
+       "p90_r_adj_pct": 100.0,
+       "mediana_n": 3.0,
+       "mediana_piso_pct": 95.6598256591268,
+       "procesos_con_piso": 588
+      },
+      "2022": {
+       "procesos": 1074,
+       "mediana_r_adj_pct": 98.52058591219287,
+       "ic95_mediana": [
+        97.90044977049696,
+        99.0001819174152
+       ],
+       "p10_r_adj_pct": 94.34160676572326,
+       "p90_r_adj_pct": 100.0,
+       "mediana_n": 2.0,
+       "mediana_piso_pct": 95.13277246701793,
+       "procesos_con_piso": 496
+      },
+      "2023": {
+       "procesos": 1837,
+       "mediana_r_adj_pct": 98.99501335238884,
+       "ic95_mediana": [
+        98.2298689974764,
+        99.44079871882369
+       ],
+       "p10_r_adj_pct": 94.10748035871204,
+       "p90_r_adj_pct": 100.0,
+       "mediana_n": 2.0,
+       "mediana_piso_pct": 94.6850276967802,
+       "procesos_con_piso": 745
+      },
+      "2024": {
+       "procesos": 1591,
+       "mediana_r_adj_pct": 99.20000116308458,
+       "ic95_mediana": [
+        97.7434918467015,
+        99.75670857956341
+       ],
+       "p10_r_adj_pct": 93.3221378846154,
+       "p90_r_adj_pct": 100.0,
+       "mediana_n": 2.0,
+       "mediana_piso_pct": 93.85340758204455,
+       "procesos_con_piso": 682
+      },
+      "2025": {
+       "procesos": 2404,
+       "mediana_r_adj_pct": 99.79663854910932,
+       "ic95_mediana": [
+        99.51111842818324,
+        99.89688140598663
+       ],
+       "p10_r_adj_pct": 93.02512948508196,
+       "p90_r_adj_pct": 100.0,
+       "mediana_n": 2.0,
+       "mediana_piso_pct": 93.4407396823359,
+       "procesos_con_piso": 755
+      },
+      "2026": {
+       "procesos": 1578,
+       "mediana_r_adj_pct": 99.90925261514099,
+       "ic95_mediana": [
+        99.80791149039632,
+        99.95914952367741
+       ],
+       "p10_r_adj_pct": 93.27293097078505,
+       "p90_r_adj_pct": 100.0,
+       "mediana_n": 2.0,
+       "mediana_piso_pct": 92.9581724354108,
+       "procesos_con_piso": 512
+      }
+     },
+     "pendiente_mediana_r_adj_pts_por_anio": 0.28823605818690723
+    },
+    "minima": {
+     "por_anio": {
+      "2019": {
+       "procesos": 612,
+       "mediana_r_adj_pct": 82.00087349548014,
+       "ic95_mediana": [
+        78.85353875908211,
+        85.01586148714308
+       ],
+       "p10_r_adj_pct": 64.78786554691041,
+       "p90_r_adj_pct": 99.89197964741945,
+       "mediana_n": 4.0,
+       "mediana_piso_pct": 73.98741408717888,
+       "procesos_con_piso": 364
+      },
+      "2020": {
+       "procesos": 523,
+       "mediana_r_adj_pct": 80.36204973478203,
+       "ic95_mediana": [
+        78.99912259351257,
+        83.72562889445146
+       ],
+       "p10_r_adj_pct": 61.683254458669026,
+       "p90_r_adj_pct": 99.87907378742241,
+       "mediana_n": 5.0,
+       "mediana_piso_pct": 75.4977735134467,
+       "procesos_con_piso": 392
+      },
+      "2021": {
+       "procesos": 813,
+       "mediana_r_adj_pct": 84.99999963235292,
+       "ic95_mediana": [
+        82.79670129592267,
+        88.24354521019052
+       ],
+       "p10_r_adj_pct": 64.88922392359802,
+       "p90_r_adj_pct": 100.0,
+       "mediana_n": 4.0,
+       "mediana_piso_pct": 77.46855892331003,
+       "procesos_con_piso": 492
+      },
+      "2022": {
+       "procesos": 684,
+       "mediana_r_adj_pct": 87.03949516666667,
+       "ic95_mediana": [
+        84.97315,
+        89.9999977558707
+       ],
+       "p10_r_adj_pct": 67.73617134269307,
+       "p90_r_adj_pct": 99.99983249767288,
+       "mediana_n": 4.0,
+       "mediana_piso_pct": 80.12569678695871,
+       "procesos_con_piso": 440
+      },
+      "2023": {
+       "procesos": 1234,
+       "mediana_r_adj_pct": 93.08000636146309,
+       "ic95_mediana": [
+        89.7874758547917,
+        95.79991470163324
+       ],
+       "p10_r_adj_pct": 69.74694845617093,
+       "p90_r_adj_pct": 100.0,
+       "mediana_n": 2.0,
+       "mediana_piso_pct": 78.57859724606529,
+       "procesos_con_piso": 549
+      },
+      "2024": {
+       "procesos": 1267,
+       "mediana_r_adj_pct": 91.53952843273233,
+       "ic95_mediana": [
+        88.11239285714285,
+        95.03160831873694
+       ],
+       "p10_r_adj_pct": 71.0718590018932,
+       "p90_r_adj_pct": 100.0,
+       "mediana_n": 3.0,
+       "mediana_piso_pct": 77.91807971629488,
+       "procesos_con_piso": 675
+      },
+      "2025": {
+       "procesos": 1626,
+       "mediana_r_adj_pct": 97.38290182675927,
+       "ic95_mediana": [
+        95.0,
+        98.62088245532232
+       ],
+       "p10_r_adj_pct": 75.20675663614209,
+       "p90_r_adj_pct": 100.0,
+       "mediana_n": 2.0,
+       "mediana_piso_pct": 77.98385956922108,
+       "procesos_con_piso": 700
+      },
+      "2026": {
+       "procesos": 941,
+       "mediana_r_adj_pct": 99.17270338130054,
+       "ic95_mediana": [
+        95.69686734693876,
+        99.7943573589999
+       ],
+       "p10_r_adj_pct": 72.62847909644383,
+       "p90_r_adj_pct": 100.0,
+       "mediana_n": 2.0,
+       "mediana_piso_pct": 77.00336839530647,
+       "procesos_con_piso": 393
+      }
+     },
+     "pendiente_mediana_r_adj_pts_por_anio": 2.749597229244805
+    }
+   }
+  }
+ },
+ "fdr_bh_2024_2026": [
+  {
+   "prueba": "H1 r2 entidad licitacion",
+   "p": 0.0004997501249375312,
+   "p_ajustada": 0.000721861291576434
+  },
+  {
+   "prueba": "H2 pendiente licitacion",
+   "p": 0.0004997501249375312,
+   "p_ajustada": 0.000721861291576434
+  },
+  {
+   "prueba": "H4 mas baja vs azar licitacion",
+   "p": null,
+   "p_ajustada": null
+  },
+  {
+   "prueba": "H7 cv geografia licitacion",
+   "p": 0.0004997501249375312,
+   "p_ajustada": 0.000721861291576434
+  },
+  {
+   "prueba": "H9 grande-pequeno licitacion",
+   "p": 0.0004997501249375312,
+   "p_ajustada": 0.000721861291576434
+  },
+  {
+   "prueba": "H1 r2 entidad menor_cuantia",
+   "p": 0.0004997501249375312,
+   "p_ajustada": 0.000721861291576434
+  },
+  {
+   "prueba": "H2 pendiente menor_cuantia",
+   "p": 0.0004997501249375312,
+   "p_ajustada": 0.000721861291576434
+  },
+  {
+   "prueba": "H4 mas baja vs azar menor_cuantia",
+   "p": null,
+   "p_ajustada": null
+  },
+  {
+   "prueba": "H7 cv geografia menor_cuantia",
+   "p": 0.0004997501249375312,
+   "p_ajustada": 0.000721861291576434
+  },
+  {
+   "prueba": "H9 grande-pequeno menor_cuantia",
+   "p": 0.023499750124937532,
+   "p_ajustada": 0.027772431965835266
+  },
+  {
+   "prueba": "H2 pendiente minima",
+   "p": 0.0004997501249375312,
+   "p_ajustada": 0.000721861291576434
+  },
+  {
+   "prueba": "H5 benford",
+   "p": 1.1812366196686257e-73,
+   "p_ajustada": 1.5356076055692135e-72
+  },
+  {
+   "prueba": "H6 trm",
+   "p": 0.32183963055441567,
+   "p_ajustada": 0.32183963055441567
+  },
+  {
+   "prueba": "H10 diciembre",
+   "p": 0.00949975012493753,
+   "p_ajustada": 0.01234967516241879
+  },
+  {
+   "prueba": "H10 garantias r_adj",
+   "p": 0.21449975012493752,
+   "p_ajustada": 0.23237472930201564
+  }
+ ]
+}

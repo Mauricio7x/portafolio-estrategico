@@ -1,0 +1,603 @@
+{
+ "desde": "2019-01-01",
+ "inicio": "2026-10-21T04:17:41.052Z",
+ "fuentes": {
+  "procesos": {
+   "dataset": "p6dx-8zbt",
+   "filas": 93424,
+   "corte": "2026-10-21T04:19:34.261Z"
+  },
+  "ofertas": {
+   "dataset": "wi7w-2nvm",
+   "filas_cruzadas": 585235,
+   "corte": "2026-10-21T04:43:34.177Z"
+  },
+  "ofertas_hist": {
+   "dataset": "b28v-edj8",
+   "filas_cruzadas": 489216,
+   "corte": "2026-10-21T04:56:12.895Z"
+  }
+ },
+ "notas": [],
+ "modalidades": {
+  "ok": true,
+  "valor": [
+   {
+    "modalidad_de_contratacion": "Selección Abreviada de Menor Cuantía",
+    "adjudicado": "No",
+    "n": "35356"
+   },
+   {
+    "modalidad_de_contratacion": "Contratación régimen especial",
+    "adjudicado": "No",
+    "n": "31610"
+   },
+   {
+    "modalidad_de_contratacion": "Licitación pública Obra Publica",
+    "adjudicado": "Si",
+    "n": "20405"
+   },
+   {
+    "modalidad_de_contratacion": "Selección Abreviada de Menor Cuantía",
+    "adjudicado": "Si",
+    "n": "14288"
+   },
+   {
+    "modalidad_de_contratacion": "Contratación directa",
+    "adjudicado": "No",
+    "n": "10590"
+   },
+   {
+    "modalidad_de_contratacion": "Licitación pública Obra Publica",
+    "adjudicado": "No",
+    "n": "10509"
+   },
+   {
+    "modalidad_de_contratacion": "Mínima cuantía",
+    "adjudicado": "Si",
+    "n": "9356"
+   },
+   {
+    "modalidad_de_contratacion": "Contratación régimen especial (con ofertas)",
+    "adjudicado": "Si",
+    "n": "2594"
+   },
+   {
+    "modalidad_de_contratacion": "Mínima cuantía",
+    "adjudicado": "No",
+    "n": "2075"
+   },
+   {
+    "modalidad_de_contratacion": "Contratación Directa (con ofertas)",
+    "adjudicado": "Si",
+    "n": "1548"
+   },
+   {
+    "modalidad_de_contratacion": "Contratación régimen especial (con ofertas)",
+    "adjudicado": "No",
+    "n": "621"
+   },
+   {
+    "modalidad_de_contratacion": "Licitación pública",
+    "adjudicado": "Si",
+    "n": "401"
+   },
+   {
+    "modalidad_de_contratacion": "Seleccion Abreviada Menor Cuantia Sin Manifestacion Interes",
+    "adjudicado": "No",
+    "n": "396"
+   },
+   {
+    "modalidad_de_contratacion": "Seleccion Abreviada Menor Cuantia Sin Manifestacion Interes",
+    "adjudicado": "Si",
+    "n": "332"
+   },
+   {
+    "modalidad_de_contratacion": "Licitación pública",
+    "adjudicado": "No",
+    "n": "306"
+   },
+   {
+    "modalidad_de_contratacion": "Contratación Directa (con ofertas)",
+    "adjudicado": "No",
+    "n": "295"
+   }
+  ],
+  "corte": "2026-10-21T04:17:42.293Z"
+ },
+ "procesos": {
+  "distintos": 36741,
+  "sin_portafolio": 0,
+  "varias_filas": {
+   "procesos": 24470,
+   "filas_extra": 56683,
+   "adjudicacion_discrepa": 19834,
+   "con_precio_base_distinto": 1026
+  }
+ },
+ "fallos_ofertas": [],
+ "calidad": {
+  "grupos_oferta": 1074451,
+  "excl": {
+   "repetidas": 15765447,
+   "confidencial": 3259,
+   "cero": 0,
+   "no_numerico": 12,
+   "sin_proveedor": 0,
+   "duplicada": 836635,
+   "duplicada_entre_datasets": 0,
+   "sobre_base": 6665,
+   "bajo_50": 11765,
+   "rescatada_bajo_50": 0,
+   "sin_precio_base": 0
+  },
+  "procesos_con_lote": 640,
+  "procesos_con_fuera_rango": 4165,
+  "procesos_con_duplicadas": 11418,
+  "procesos_con_cero_o_conf": 3259,
+  "en_ambos_datasets": 0
+ },
+ "embudo": {
+  "licitacion": {
+   "total": 9158,
+   "motivos": {
+    "cero_ofertas_validas": 226,
+    "lote_por_ofertas": 547,
+    "no_adjudicado": 2138,
+    "lote_p6dx": 561,
+    "sin_ofertas_en_datos_abiertos": 150,
+    "sin_precio_base": 5
+   },
+   "real": 3762,
+   "baja": 1769,
+   "motivos_no_adj": {
+    "Evaluación": 296,
+    "Cancelado": 1218,
+    "Publicado": 292,
+    "Seleccionado": 239,
+    "Suspendido": 10,
+    "Abierto": 73,
+    "Borrador": 10
+   }
+  },
+  "menor_cuantia": {
+   "total": 16660,
+   "motivos": {
+    "cero_ofertas_validas": 669,
+    "no_adjudicado": 3811,
+    "lote_p6dx": 311,
+    "sin_ofertas_en_datos_abiertos": 429,
+    "lote_por_ofertas": 47,
+    "sin_precio_base": 1
+   },
+   "real": 5380,
+   "baja": 6012,
+   "motivos_no_adj": {
+    "Evaluación": 383,
+    "Cancelado": 2107,
+    "Seleccionado": 432,
+    "Abierto": 490,
+    "Publicado": 361,
+    "Aprobado": 9,
+    "Borrador": 19,
+    "Suspendido": 9,
+    "En aprobación": 1
+   }
+  },
+  "minima": {
+   "total": 10923,
+   "motivos": {
+    "no_adjudicado": 1979,
+    "cero_ofertas_validas": 417,
+    "sin_ofertas_en_datos_abiertos": 310,
+    "lote_por_ofertas": 46,
+    "lote_p6dx": 3,
+    "sin_precio_base": 5
+   },
+   "real": 4473,
+   "baja": 3690,
+   "motivos_no_adj": {
+    "Cancelado": 1322,
+    "Abierto": 303,
+    "Seleccionado": 225,
+    "Evaluación": 99,
+    "Publicado": 28,
+    "Borrador": 1,
+    "Suspendido": 1
+   }
+  }
+ },
+ "por_departamento_entidad": {
+  "Distrito Capital de Bogotá": {
+   "total": 6070,
+   "adjudicados": 4995,
+   "real": 3472,
+   "baja": 691
+  },
+  "Santander": {
+   "total": 1004,
+   "adjudicados": 763,
+   "real": 300,
+   "baja": 352
+  },
+  "Caquetá": {
+   "total": 415,
+   "adjudicados": 331,
+   "real": 72,
+   "baja": 208
+  },
+  "Cesar": {
+   "total": 596,
+   "adjudicados": 357,
+   "real": 105,
+   "baja": 207
+  },
+  "Chocó": {
+   "total": 198,
+   "adjudicados": 142,
+   "real": 25,
+   "baja": 97
+  },
+  "Risaralda": {
+   "total": 384,
+   "adjudicados": 281,
+   "real": 162,
+   "baja": 77
+  },
+  "No Definido": {
+   "total": 453,
+   "adjudicados": 335,
+   "real": 129,
+   "baja": 153
+  },
+  "Valle del Cauca": {
+   "total": 2050,
+   "adjudicados": 1579,
+   "real": 556,
+   "baja": 823
+  },
+  "Cauca": {
+   "total": 395,
+   "adjudicados": 227,
+   "real": 91,
+   "baja": 101
+  },
+  "Boyacá": {
+   "total": 1536,
+   "adjudicados": 1140,
+   "real": 222,
+   "baja": 711
+  },
+  "Meta": {
+   "total": 503,
+   "adjudicados": 395,
+   "real": 123,
+   "baja": 221
+  },
+  "Quindío": {
+   "total": 355,
+   "adjudicados": 277,
+   "real": 189,
+   "baja": 51
+  },
+  "Magdalena": {
+   "total": 237,
+   "adjudicados": 177,
+   "real": 61,
+   "baja": 82
+  },
+  "Norte de Santander": {
+   "total": 795,
+   "adjudicados": 636,
+   "real": 203,
+   "baja": 361
+  },
+  "Cundinamarca": {
+   "total": 2192,
+   "adjudicados": 1575,
+   "real": 530,
+   "baja": 883
+  },
+  "Caldas": {
+   "total": 1176,
+   "adjudicados": 981,
+   "real": 599,
+   "baja": 238
+  },
+  "Arauca": {
+   "total": 467,
+   "adjudicados": 375,
+   "real": 80,
+   "baja": 192
+  },
+  "Huila": {
+   "total": 710,
+   "adjudicados": 447,
+   "real": 212,
+   "baja": 187
+  },
+  "Antioquia": {
+   "total": 1773,
+   "adjudicados": 1321,
+   "real": 583,
+   "baja": 530
+  },
+  "Atlántico": {
+   "total": 433,
+   "adjudicados": 363,
+   "real": 193,
+   "baja": 100
+  },
+  "La Guajira": {
+   "total": 289,
+   "adjudicados": 226,
+   "real": 54,
+   "baja": 153
+  },
+  "Córdoba": {
+   "total": 477,
+   "adjudicados": 388,
+   "real": 127,
+   "baja": 215
+  },
+  "Nariño": {
+   "total": 344,
+   "adjudicados": 266,
+   "real": 176,
+   "baja": 51
+  },
+  "Bolívar": {
+   "total": 818,
+   "adjudicados": 638,
+   "real": 304,
+   "baja": 241
+  },
+  "Amazonas": {
+   "total": 115,
+   "adjudicados": 75,
+   "real": 23,
+   "baja": 44
+  },
+  "San Andrés, Providencia y Santa Catalina": {
+   "total": 74,
+   "adjudicados": 58,
+   "real": 31,
+   "baja": 14
+  },
+  "Sucre": {
+   "total": 292,
+   "adjudicados": 233,
+   "real": 102,
+   "baja": 103
+  },
+  "Tolima": {
+   "total": 854,
+   "adjudicados": 644,
+   "real": 275,
+   "baja": 282
+  },
+  "Putumayo": {
+   "total": 321,
+   "adjudicados": 273,
+   "real": 46,
+   "baja": 177
+  },
+  "Casanare": {
+   "total": 423,
+   "adjudicados": 313,
+   "real": 69,
+   "baja": 217
+  },
+  "Guaviare": {
+   "total": 20,
+   "adjudicados": 14,
+   "real": 3,
+   "baja": 8
+  },
+  "Guainía": {
+   "total": 10,
+   "adjudicados": 8,
+   "real": 2,
+   "baja": 3
+  },
+  "Vichada": {
+   "total": 36,
+   "adjudicados": 34,
+   "real": 22,
+   "baja": 7
+  },
+  "Vaupés": {
+   "total": 3,
+   "adjudicados": 2,
+   "real": 1,
+   "baja": 1
+  }
+ },
+ "ubicacion": {
+  "usables": 25086,
+  "con_contrato": 24784,
+  "direccion_legible": 24623,
+  "depto_direccion_distinto_de_entidad": 2393,
+  "muni_direccion_distinto_de_entidad": 5899,
+  "depto_jbjy_distinto_de_p6dx": 15,
+  "depto_sin_dato": 648,
+  "direccion_depto_sin_dato": 636,
+  "bogota_entidad": 5814,
+  "bogota_direccion_fuera": 2172,
+  "fallos": []
+ },
+ "tamano_ofertas": {
+  "wi7w-2nvm": {
+   "2023": {
+    "ok": true,
+    "valor": 4,
+    "corte": "2026-10-21T04:57:58.760Z"
+   },
+   "2024": {
+    "ok": true,
+    "valor": 19475777,
+    "corte": "2026-10-21T04:58:55.379Z"
+   },
+   "2025": {
+    "ok": true,
+    "valor": 19202670,
+    "corte": "2026-10-21T04:59:03.821Z"
+   },
+   "2026": {
+    "ok": true,
+    "valor": 11457105,
+    "corte": "2026-10-21T04:59:09.501Z"
+   }
+  },
+  "b28v-edj8": {
+   "2015": {
+    "ok": true,
+    "valor": 4651,
+    "corte": "2026-10-21T04:59:11.586Z"
+   },
+   "2016": {
+    "ok": true,
+    "valor": 29420,
+    "corte": "2026-10-21T04:59:26.982Z"
+   },
+   "2017": {
+    "ok": false,
+    "sin_medir": true,
+    "status": null,
+    "error": "b28v-edj8 2017: agotados 5 intentos (The operation was aborted due to timeout)",
+    "corte": "2026-10-21T05:01:19.849Z"
+   },
+   "2018": {
+    "ok": false,
+    "sin_medir": true,
+    "status": null,
+    "error": "b28v-edj8 2018: agotados 5 intentos (The operation was aborted due to timeout)",
+    "corte": "2026-10-21T05:03:11.540Z"
+   },
+   "2019": {
+    "ok": false,
+    "sin_medir": true,
+    "status": null,
+    "error": "b28v-edj8 2019: agotados 5 intentos (The operation was aborted due to timeout)",
+    "corte": "2026-10-21T05:05:07.935Z"
+   },
+   "2020": {
+    "ok": false,
+    "sin_medir": true,
+    "status": null,
+    "error": "b28v-edj8 2020: agotados 5 intentos (The operation was aborted due to timeout)",
+    "corte": "2026-10-21T05:07:02.933Z"
+   },
+   "2021": {
+    "ok": false,
+    "sin_medir": true,
+    "status": null,
+    "error": "b28v-edj8 2021: agotados 5 intentos (The operation was aborted due to timeout)",
+    "corte": "2026-10-21T05:08:54.710Z"
+   },
+   "2022": {
+    "ok": false,
+    "sin_medir": true,
+    "status": null,
+    "error": "b28v-edj8 2022: agotados 5 intentos (The operation was aborted due to timeout)",
+    "corte": "2026-10-21T05:10:48.916Z"
+   },
+   "2023": {
+    "ok": false,
+    "sin_medir": true,
+    "status": null,
+    "error": "b28v-edj8 2023: agotados 5 intentos (The operation was aborted due to timeout)",
+    "corte": "2026-10-21T05:12:42.293Z"
+   }
+  }
+ },
+ "paa": {
+  "ok": true,
+  "valor": 10889754,
+  "corte": "2026-10-21T05:14:19.286Z"
+ },
+ "validacion": {
+  "A": {
+   "req": "CO1.REQ.11036237",
+   "piso_entidad_pct": 92.78,
+   "portafolio": "CO1.BDOS.10758623",
+   "filas_p6dx": 3,
+   "precio_base": 1076606477,
+   "n_validas": 8,
+   "excluidas": {
+    "repetidas": 12,
+    "confidencial": 1,
+    "cero": 0,
+    "no_numerico": 0,
+    "sin_proveedor": 0,
+    "duplicada": 3,
+    "duplicada_entre_datasets": 0,
+    "sobre_base": 0,
+    "bajo_50": 0,
+    "rescatada_bajo_50": 0,
+    "sin_precio_base": 0
+   },
+   "lote": false,
+   "mediana": 1015799122.585,
+   "sigma_pob": 16959060.937106743,
+   "sigma_muestral": 18129998.750878528,
+   "piso_pob_pct": 92.77670931640637,
+   "piso_muestral_pct": 92.66794740211482
+  },
+  "B": {
+   "req": "CO1.REQ.10970903",
+   "piso_entidad_pct": 92.33,
+   "portafolio": "CO1.BDOS.10598997",
+   "filas_p6dx": 3,
+   "precio_base": 675274065,
+   "n_validas": 6,
+   "excluidas": {
+    "repetidas": 65,
+    "confidencial": 0,
+    "cero": 0,
+    "no_numerico": 0,
+    "sin_proveedor": 0,
+    "duplicada": 7,
+    "duplicada_entre_datasets": 0,
+    "sobre_base": 0,
+    "bajo_50": 0,
+    "rescatada_bajo_50": 0,
+    "sin_precio_base": 0
+   },
+   "lote": false,
+   "mediana": 628530007.5,
+   "sigma_pob": 2887387.098817566,
+   "sigma_muestral": 3162974.092543558,
+   "piso_pob_pct": 92.65017758399804,
+   "piso_muestral_pct": 92.60936645145054
+  },
+  "E": {
+   "req": "CO1.REQ.10710451",
+   "piso_entidad_pct": 91.61,
+   "portafolio": "CO1.BDOS.10430157",
+   "filas_p6dx": 3,
+   "precio_base": 993687600,
+   "n_validas": 9,
+   "excluidas": {
+    "repetidas": 85,
+    "confidencial": 0,
+    "cero": 0,
+    "no_numerico": 0,
+    "sin_proveedor": 0,
+    "duplicada": 8,
+    "duplicada_entre_datasets": 0,
+    "sobre_base": 0,
+    "bajo_50": 0,
+    "rescatada_bajo_50": 0,
+    "sin_precio_base": 0
+   },
+   "lote": false,
+   "mediana": 925922346,
+   "sigma_pob": 14239107.796934545,
+   "sigma_muestral": 15102854.521887988,
+   "piso_pob_pct": 91.74747055342799,
+   "piso_muestral_pct": 91.66054718586727
+  }
+ },
+ "fin": "2026-10-21T05:14:19.406Z"
+}
