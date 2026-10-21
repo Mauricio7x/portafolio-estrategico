@@ -2,7 +2,7 @@
      Es una FOTO para leer en GitHub; la fuente de verdad es ejecutar la herramienta. -->
 
 ```
-== MAPA DE DETEKTA · generado del árbol el 2026-10-20 ==
+== MAPA DE DETEKTA · generado del árbol el 2026-10-21 ==
 (no editar a mano: sale de `node tests/mapa.js --escribir`. Para ir a un sitio concreto,
  `node tests/mapa.js <término>` da la ruta, la línea y el sed exacto — más barato que leer esto)
 
@@ -217,8 +217,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 385 secciones (30 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 19937  Lo verificado en producción el 19-oct-2026: el OCR ya está configurado; el respaldo en R2 y…
+· MEMORIA · docs/MEMORIA.md — 386 secciones (30 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 19957  Volver a buscar los documentos ya se puede pedir desde el expediente, y la aplicación no te…
   L 19976  La causa real de un fallo de lectura se registra, se sanea y se dice, y una herramienta mid…
   L 20004  El Excel de la oferta económica se reconoce por más nombres y solo se publica lo que pasa l…
@@ -228,6 +227,7 @@
   L 20105  Gasto cero: lo gratuito se proyecta antes de proponer, y los topes viven en una tabla (20-o…
   L 20136  Alternativas gratuitas investigadas (20-oct-2026): el tope que muerde es el de Vercel, y lo…  (superada)
   L 20172  Medidas del 20-oct-2026: Upstash va por 6 de 10 GB de ancho de banda y Vercel por 500 MB de…
+  L 20193  Lo medido el 20-oct-2026 por la tarde: los 3,46 GB son «Functions Storage» y Upstash gasta …
 
 · DOCUMENTOS docs/ — 73 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)
