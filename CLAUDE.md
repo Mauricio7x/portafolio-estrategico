@@ -102,6 +102,7 @@ de la sesión.
 - **Un cambio que decide dinero se planea primero**: el plan en pocas líneas (qué cambia, qué cifra
   se mueve, cómo se probará) y el visto bueno del dueño antes de tocar código. En una rutina, donde
   nadie contesta, se informa y no se toca.
+- **Cada subida cuesta un despliegue** (decisión del dueño, 20-oct-2026: llegar con holgura a fin de mes). Un envío a cualquier rama crea una vista previa en Vercel y una fusión a `main`, un despliegue de producción: la sesión trabaja y prueba todo en local, sube **una sola vez por entrega** que el dueño necesite ver, abre un pull request por entrega (no por fase pequeña) y lleva la documentación en el mismo envío. Si no hay nada que el dueño deba ver en producción, no sube. La evidencia está en `docs/MEMORIA.md § «Cada subida cuesta un despliegue: una entrega, un envío (21-oct-2026)»`.
 - **Las habilidades se eligen por clase de trabajo**, leyendo las que el arranque inyectó, y se usan
   todas las que sirvan: un pliego, la del dictamen; la cola de Precios, la de precios; código tocado,
   las de revisión y seguridad antes de commitear; un archivo que el dueño va a abrir, la del formato

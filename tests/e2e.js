@@ -10108,7 +10108,7 @@ async function main() {
      simulado, con el texto guardado por el POST real de `op=documentos`), y se prueba que NO escribe, NO devuelve texto y NO dice «correcto». */
   bqAuditoria: { if (!corre("unidad auditoría de la lectura")) break bqAuditoria;
     const Au = require("../lib/auditoria_lectura.js"), DocsA = require("../lib/documentos_proceso.js"), Da = require("../lib/diff.js");
-    const { escribirJSONComprimido: escribirCA } = require("../lib/almacen.js");
+    const { escribirJSONComprimido: escribirCA, leerJSONComprimido } = require("../lib/almacen.js");
     const routerA = require("../api/pliego.js");
     const A = (t, o = {}) => Au.auditarDocumento({ texto: t, tipo: "presupuesto", origen: "texto", ...o });
     const codigos = (r) => r.motivos.filter((m) => m.nivel === "revisar").map((m) => m.codigo);
@@ -10162,6 +10162,114 @@ async function main() {
     assert.ok(!PALABRAS_DEL_TEXTO.some((w) => JSON.stringify(det).includes(w)), "la auditoría no devuelve ni una palabra del texto guardado (MUTACIÓN A6: una muestra del texto en el detalle)");
     assert.strictEqual(Au.comoRango([2, 3, 4, 5, 9]), "2-5, 9");
 
+    // (8) CALIBRADO CON EL PRIMER PROCESO REAL (20-oct-2026, CO1.REQ.11033801): las letras por página que devolvió op=auditoria en producción, tal cual. Una página con menos del 10 % de la
+    // página típica (percentil 75) de SU documento trae «muy poco texto»; las de menos de 20 letras ya eran «sin texto». El 10 % separa con poco margen (la más alta marcada, 9,0 %; la más baja sin marcar, 12,0 %).
+    const paginaConLetras = (n, letras, digitos = 0) => `\f${n}\n${Array(Math.floor(letras / 7)).fill("palabra").join(" ")}${letras % 7 ? ` ${"a".repeat(letras % 7)}` : ""}${digitos ? ` ${"7".repeat(digitos)}` : ""}`;
+    const armar = (letras, paginas) => letras.map((l, i) => paginaConLetras(paginas ? paginas[i] : i + 1, l)).join("\n");
+    const REAL = {
+      salones: [821, 1154, 1479, 2011, 1216, 88, 74, 81, 61, 26, 71, 42],
+      salonesPaginas: [1, 2, 3, 4, 5, 7, 8, 9, 10, 11, 13, 14],
+      presupuestoOficial: [791, 638, 823, 962, 724, 164],
+      estudioPrevio: [4385, 4705, 1478, 1199, 838, 1775, 1757, 1314, 1635, 952, 1864, 3997, 2503, 1788, 1783, 2359, 2132, 2243, 2197, 2250, 2146, 2306, 2810, 4267, 4354, 3887, 4234, 3418, 3957, 3343, 4036, 3519, 3944, 3556, 4079, 3332, 349, 273, 282, 1334, 3241, 3135, 3439, 3111, 4187, 4257, 3395, 1732, 3310, 2076, 1847, 3137, 2965, 2758, 3105, 3761, 3357, 3653, 4138, 2775, 3780, 3402, 3608, 3419, 3183, 3949, 3462, 2491, 1714, 3316, 3375, 4777, 4751, 4726, 4090, 3939, 3194, 798],
+      anexoTecnico: [2636, 3041, 2496, 2295, 1639, 1052, 966, 899, 953, 1234, 1227, 1165, 1152, 1181, 1274, 1263, 1193, 1276, 1247, 991, 1254, 1250, 1295, 1334, 1174, 2917, 3007, 2547, 1550, 1502, 2902, 3124, 2236, 766],
+      aviso: [2370, 3372, 3360, 3529, 3392, 3157, 3523, 2741, 1144, 2551, 406],
+      documentoBase: [1838, 646, 979, 1011, 1031, 739, 952, 1564, 813, 2207, 2038, 1941, 1852, 1856, 1871, 1886, 1646, 1872, 2137, 1956, 2344, 2182, 2163, 2025, 2271, 1920, 1761, 1817, 1757, 1638, 1568, 1972, 1719, 1947, 1865, 1748, 1907, 1647, 1707, 1896, 1739, 1946, 1861, 1955, 2050, 2183, 1785, 1645, 1737, 1804, 2197, 1780, 1275, 954, 1824, 1912, 822, 1321, 1853, 1561, 1661, 1636, 2068, 1360, 1902, 1971, 1689, 1148, 1102, 1079, 875, 1622, 1957, 2290, 1924, 1560, 2022, 1409, 1325, 1722, 1208, 2237, 2182, 2068, 2200, 2290, 2211, 2287, 2257, 2215, 2268, 2051, 2067, 2119, 2050, 1789, 943, 1459, 1672, 1136, 1873, 1791, 1560, 1898, 1562, 685],
+      adenda4: [2437, 1929],
+    };
+    assert.deepStrictEqual([REAL.estudioPrevio.length, REAL.anexoTecnico.length, REAL.aviso.length, REAL.documentoBase.length, REAL.presupuestoOficial.length], [78, 34, 11, 106, 6], "las cuentas transcritas tienen las páginas que dijo la respuesta de producción");
+    const salones = A(armar(REAL.salones, REAL.salonesPaginas), { paginas_total: 20, origen: "ocr" });
+    assert.deepStrictEqual(salones.paginas_sin_texto, [6, 12, 15, 16, 17, 18, 19, 20], "las 8 páginas que ni marcador traen");
+    assert.deepStrictEqual(salones.paginas_con_poco_texto, [7, 8, 9, 10, 11, 13, 14], "las 7 con entre 26 y 88 letras, que el umbral de 20 daba por «con texto» (MUTACIÓN B1: umbral relativo en 0)");
+    assert.strictEqual(salones.letras_pagina_tipica, 1154, "la página típica es el percentil 75, no la mediana: con las páginas vacías la mediana (84) escondería el problema (MUTACIÓN B8)");
+    assert.ok(codigos(salones).includes("poco_texto") && codigos(salones).includes("paginas_sin_texto") && salones.veredicto === "revisar", JSON.stringify(salones.motivos));
+    assert.ok(/7 páginas con muy poco texto frente al resto del documento \(pág\. 7-11, 13, 14: menos de 116 letras, cuando la página típica trae 1154\)/.test(salones.motivos.find((m) => m.codigo === "poco_texto").texto), salones.motivos.find((m) => m.codigo === "poco_texto").texto);
+    const estudio = A(armar(REAL.estudioPrevio), { tipo: "estudio_previo", paginas_total: 78, origen: "ocr" });
+    assert.deepStrictEqual(estudio.paginas_con_poco_texto, [37, 38, 39], "tres páginas seguidas con 273 a 349 letras entre páginas de más de 3.000 (MUTACIÓN B2: el corte en 5 % deja pasar la 37)");
+    assert.strictEqual(estudio.n_paginas_sin_texto, 0, "una página de poco texto NO es una sin texto: no se cuenta dos veces");
+    // lo que se leyó sano NO se marca (el aviso, con su última página en el 12 %, es el que casi cae: MUTACIÓN B1b: el corte en 15 %)
+    for (const [nombre, letras, tipo] of [["aviso", REAL.aviso, "aviso"], ["anexo", REAL.anexoTecnico, "anexo_tecnico"], ["documento base", REAL.documentoBase, "documento_base"], ["adenda 4", REAL.adenda4, "adenda"], ["presupuesto oficial", REAL.presupuestoOficial, "presupuesto"]]) {
+      const r = A(armar(letras), { tipo, paginas_total: letras.length });
+      assert.strictEqual(r.n_paginas_con_poco_texto, 0, `${nombre}: ninguna página de poco texto (${JSON.stringify(r.paginas_con_poco_texto)})`);
+    }
+    // con menos de 4 páginas no hay «página típica» (MUTACIÓN B3: comparar con 1 página); y una página sin texto no es de poco texto (MUTACIÓN B12)
+    const tres = A(armar([3000, 3000, 200]), { tipo: "otro", paginas_total: 3 });
+    assert.ok(tres.n_paginas_con_poco_texto === 0 && tres.letras_pagina_tipica === null, `con 3 páginas no se compara: ${JSON.stringify([tres.paginas_con_poco_texto, tres.letras_pagina_tipica])}`);
+    const cuatro = A(armar([3000, 3000, 3000, 200]), { tipo: "otro", paginas_total: 4 });
+    assert.deepStrictEqual(cuatro.paginas_con_poco_texto, [4], "con 4 páginas sí");
+    assert.ok(/1 página con muy poco texto frente/.test(cuatro.motivos.find((m) => m.codigo === "poco_texto").texto), "el singular dice «página»");
+    assert.strictEqual(rb.n_paginas_con_poco_texto, 0, "la página en blanco (3) ya es «sin texto»: no figura también como de poco texto");
+    // el detalle por página dice cuáles
+    const detS = Au.auditarDocumento({ texto: armar(REAL.salones, REAL.salonesPaginas), tipo: "presupuesto", paginas_total: 20 }, { detalle: true });
+    assert.deepStrictEqual(detS.paginas.filter((p) => p.poco_texto).map((p) => p.n), [7, 8, 9, 10, 11, 13, 14]);
+
+    // el corte DECIDE y es exacto, no un número redondeado (revisión adversaria, reproducido: 115 de 1.154 es 9,97 % y no se marcaba) (MUTACIONES B14: redondear el corte; B15: «<=» en vez de «<»)
+    assert.deepStrictEqual(A(armar([1154, 1154, 1154, 1154, 1154, 1154, 1154, 115]), { tipo: "otro", paginas_total: 8 }).paginas_con_poco_texto, [8], "115 de 1.154 (9,97 %) se marca");
+    assert.deepStrictEqual(A(armar([1000, 1000, 1000, 100]), { tipo: "otro", paginas_total: 4 }).paginas_con_poco_texto, [], "justo el 10 % exacto no se marca");
+    assert.deepStrictEqual(A(armar([1000, 1000, 1000, 99]), { tipo: "otro", paginas_total: 4 }).paginas_con_poco_texto, [4], "y 99 de 1.000 sí");
+    // un marcador de una página que el documento no tiene no mueve la página típica ni sale en la lista (MUTACIÓN B16: usar todos los marcadores)
+    const fuera7 = A(armar([3000, 3000, 3000, 3000, 30], [1, 2, 3, 4, 7]), { tipo: "otro", paginas_total: 4 });
+    assert.deepStrictEqual(fuera7.paginas_con_poco_texto, [], "la página 7 de un documento de 4 no entra en la lista");
+    assert.ok(fuera7.motivos.some((m) => m.codigo === "marcadores_fuera_de_rango" && m.nivel === "nota"), "pero se avisa como nota");
+    const contaminada = A(armar([300, 300, 300, 300, 5000, 5000, 5000, 5000], [1, 2, 3, 4, 8, 9, 10, 11]), { tipo: "otro", paginas_total: 4 });
+    assert.ok(contaminada.letras_pagina_tipica === 300 && contaminada.n_paginas_con_poco_texto === 0, `cuatro marcadores de más no vuelven «poco» a las cuatro páginas reales: ${JSON.stringify([contaminada.letras_pagina_tipica, contaminada.paginas_con_poco_texto])}`);
+    // entradas hostiles: ninguna tumba la auditoría (revisión adversaria, reproducidas)
+    for (const tipoRaro of ["__proto__", "constructor", "toString", "hasOwnProperty"]) assert.doesNotThrow(() => A("\f1\nhola mundo del pliego", { tipo: tipoRaro, paginas_total: 1 }), `tipo «${tipoRaro}»`);
+    assert.strictEqual(A("\f1\nhola mundo del pliego", { tipo: "__proto__", paginas_total: 1 }).anclas, null, "un tipo que no es de la lista no tiene anclas (MUTACIÓN B17: ANCLAS[tipo] sin guarda)");
+    assert.strictEqual(A("\f1\nhola mundo", { tipo: "otro", paginas_total: 100001 }).paginas_total, null, "un total sobre el tope con que se guarda (100.000) no se cree (MUTACIÓN B18: sin tope)");
+    assert.strictEqual(A("\f1\nhola mundo", { tipo: "otro", paginas_total: 100000 }).paginas_total, 100000, "y el tope mismo sí");
+    assert.strictEqual(A("\f1\nhola mundo", { tipo: "otro", paginas_total: 1e9 }).paginas_total, null, "ni 1.000 millones, que armaría un arreglo de ese tamaño");
+    assert.doesNotThrow(() => A(Array.from({ length: 150000 }, (_, i) => `\f${i + 1}\nx`).join("\n"), { tipo: "otro" }), "150.000 marcadores no desbordan la pila (MUTACIÓN B19: Math.min(...))");
+    const tLinea = Date.now();
+    A("\f1\n1 a" + "1".repeat(30000) + "x", { tipo: "presupuesto", paginas_total: 1 });
+    assert.ok(Date.now() - tLinea < 500, `una línea de 30.000 dígitos no es una fila y no frena la auditoría (MUTACIÓN B20): ${Date.now() - tLinea} ms`);
+
+    // (9) las palabras de una letra: la «m» de «m3» no cuenta (MUTACIÓN B6); y un presupuesto, que es una tabla de cifras, no se juzga por su proporción de letras (excepción declarada: MUTACIONES B4 y B5)
+    const filaTabla = "Excavación m3 m2 m3 m2 123456789012345678901234567890";
+    const tabla = `\f1\n${Array(60).fill(filaTabla).join("\n")}`;
+    const comoOtro = A(tabla, { tipo: "otro", paginas_total: 1 });
+    assert.ok(codigos(comoOtro).includes("pocas_letras"), `premisa: un texto corrido con tan pocas letras SÍ es sospechoso: ${JSON.stringify(comoOtro.motivos)}`);
+    assert.ok(!codigos(comoOtro).includes("palabras_deshechas") && comoOtro.palabras_de_1_letra_pct === 0, `«m3» y «m2» no son palabras de una letra: ${comoOtro.palabras_de_1_letra_pct} %`);
+    const comoPresupuesto = A(tabla, { tipo: "presupuesto", paginas_total: 1 });
+    assert.ok(!codigos(comoPresupuesto).includes("pocas_letras") && !codigos(comoPresupuesto).includes("palabras_deshechas"), "un presupuesto con 29 % de letras no sale «ilegible»");
+    assert.ok(comoPresupuesto.pruebas_omitidas && comoPresupuesto.pruebas_omitidas.length === 1 && /presupuesto/.test(comoPresupuesto.pruebas_omitidas[0].motivo), "y dice cuál prueba no se le aplicó y por qué");
+    assert.strictEqual(comoOtro.pruebas_omitidas, null, "a un tipo que no es tabla no se le omite nada (null, no [])");
+    assert.ok(Object.keys(Au.TIPOS_TABULARES).every((t) => DocsA.TIPOS[t]), "las excepciones son tipos reales de documento");
+    // la letra pegada a un dígito cuenta lo mismo por la izquierda («3m») que por la derecha («A1») (MUTACIONES B6a y B6b: quitar una de las dos guardas)
+    for (const fila of ["Excavación 3m 12345", "Excavación A1 12345"]) {
+      const r = A(`\f1\n${Array(60).fill(fila).join("\n")}`, { tipo: "otro", paginas_total: 1 });
+      assert.strictEqual(r.palabras_de_1_letra_pct, 0, `«${fila}»: ninguna palabra de una letra (${r.palabras_de_1_letra_pct} %)`);
+    }
+    // la otra mitad de la excepción: una tabla con separadores de una letra («x», «A», «B») SÍ da palabras de una letra, y en un presupuesto no es señal de lectura deshecha (MUTACIÓN B5)
+    const tablaConLetras = `\f1\n${Array(60).fill("Excavación x 123456789012345678901234567890 A B").join("\n")}`;
+    assert.ok(codigos(A(tablaConLetras, { tipo: "otro", paginas_total: 1 })).includes("palabras_deshechas"), "premisa: en un texto corrido, tantas palabras de una letra SÍ son sospechosas");
+    assert.ok(!codigos(A(tablaConLetras, { tipo: "presupuesto", paginas_total: 1 })).includes("palabras_deshechas"), "en un presupuesto no se juzga por palabras de una letra");
+    // …pero el texto deshecho de verdad sigue marcado en un presupuesto: las otras pruebas siguen
+    assert.ok(codigos(A("\f1\nxx", { tipo: "presupuesto", paginas_total: 5 })).includes("paginas_sin_texto"), "las páginas sin texto de un presupuesto siguen siendo alerta");
+
+    // (10) el resumen de tiempos suma solo lo MEDIDO (ausencia ≠ cero)
+    const T1 = { descarga_ms: 65000, lector_ms: 300, preparar_ms: 100000, reconocer_ms: 87000, espera_ms: 0, total_ms: 252300, partes: 6 };
+    const rt = Au.resumenTiempos([
+      { proceso: "P1", nombre: "ESTUDIO PREVIO.pdf", origen: "ocr", paginas_total: 78, tiempos: T1 },
+      { proceso: "P1", nombre: "SALONES.pdf", origen: "ocr", paginas_total: 20, tiempos: { descarga_ms: 3000, total_ms: 47700 } },
+      { proceso: "P1", nombre: "BASE.pdf", origen: "texto", paginas_total: null, tiempos: { total_ms: 4000, lector_ms: 900 } },
+      { proceso: "P1", nombre: "OTRO.pdf", origen: "texto", paginas_total: 10, tiempos: { total_ms: 6000 } },
+      { proceso: "P1", nombre: "VIEJO.pdf", origen: "texto", paginas_total: 10, tiempos: null },
+      { proceso: "P1", nombre: "SIN TOTAL.pdf", origen: "ocr", paginas_total: 5, tiempos: { descarga_ms: 500 } },
+    ]);
+    assert.deepStrictEqual([rt.documentos_con_tiempos, rt.documentos_sin_tiempos], [4, 2], "los que no traen total_ms no cuentan como medidos (MUTACIÓN B9: contarlos con 0)");
+    assert.strictEqual(rt.por_origen.ocr.documentos, 2);
+    assert.strictEqual(rt.por_origen.ocr.total_ms, 252300 + 47700);
+    assert.deepStrictEqual(rt.por_origen.ocr.etapas.descarga_ms, { documentos: 2, ms: 68000 }, "cada etapa dice con cuántos documentos se sumó");
+    assert.deepStrictEqual(rt.por_origen.ocr.etapas.preparar_ms, { documentos: 1, ms: 100000 }, "una etapa que solo uno midió no se promedia con el otro (MUTACIÓN B9b)");
+    assert.strictEqual(rt.por_origen.ocr.con_paginas.paginas, 98);
+    assert.strictEqual(rt.por_origen.ocr.con_paginas.ms_por_pagina, Math.round(300000 / 98), "por página: tiempo y páginas de los MISMOS documentos");
+    assert.deepStrictEqual(rt.por_origen.texto.con_paginas, { documentos: 1, paginas: 10, total_ms: 6000, ms_por_pagina: 600 }, "el documento sin total de páginas (BASE) no entra en la cuenta por página: ni sus 4 s ni sus páginas (MUTACIÓN B11)");
+    assert.strictEqual(rt.por_origen.texto.documentos, 2, "pero sí cuenta como documento medido");
+    assert.strictEqual(Au.resumenTiempos([{ origen: "texto", paginas_total: null, tiempos: { total_ms: 4000 } }]).por_origen.texto.con_paginas.ms_por_pagina, null, "sin ningún documento con total de páginas no hay «ms por página»: null, no 0");
+    assert.deepStrictEqual(rt.mas_lentos.map((d) => d.nombre), ["ESTUDIO PREVIO.pdf", "SALONES.pdf", "OTRO.pdf", "BASE.pdf"], "de más a menos lento");
+    assert.deepStrictEqual(Au.resumenTiempos([]), { documentos_con_tiempos: 0, documentos_sin_tiempos: 0, por_origen: {}, mas_lentos: [] }, "sin nada medido no hay ceros inventados");
+    assert.doesNotThrow(() => Au.resumenTiempos(null));
+
     // (7) el handler REAL, sobre lo que guarda el POST real de op=documentos
     const arch = (id, nombre, tipo) => ({ id_documento: id, nombre, tipo, tipo_legible: DocsA.TIPOS[tipo].legible, fecha_carga: "2026-10-01", de_la_entidad: true, legible: true, url: "https://community.secop.gov.co/x" });
     const sembrarA = (id, archivos) => escribirCA(redis, DocsA.claveDocs(id), { version: DocsA.VERSION, id_proceso: id, indice: { version: DocsA.VERSION, consultado_el: new Date().toISOString(), archivos, plan: archivos.map((a) => a.id_documento) }, leidos: {}, ilegibles: {}, formularios: {} });
@@ -10170,8 +10278,9 @@ async function main() {
     await sembrarA(idA, [arch("1", "PRESUPUESTO OFICIAL.pdf", "presupuesto"), arch("2", "ESTUDIO PREVIO.pdf", "estudio_previo"), arch("3", "ANEXO.pdf", "anexo_tecnico")]);
     await sembrarA(idB, [arch("1", "PRESUPUESTO.pdf", "presupuesto")]);
     await postA(idA, "1", { texto: BUENO, paginas_total: 2 });
-    await postA(idA, "2", { texto: enBlanco.replace("Excavación", "Excavacion"), paginas_total: 4, origen: "ocr" });
-    await postA(idA, "3", { texto: BUENO, paginas_total: 2 });
+    const TIEMPOS_POST = { descarga_ms: 65000, preparar_ms: 100000, reconocer_ms: 87000, espera_ms: 0, lector_ms: 300, total_ms: 252300, partes: 6 };
+    await postA(idA, "2", { texto: enBlanco.replace("Excavación", "Excavacion"), paginas_total: 4, origen: "ocr", tiempos: TIEMPOS_POST });
+    await postA(idA, "3", { texto: BUENO, paginas_total: 2, origen: "ocr", tiempos: { total_ms: 30000 } });
     await postA(idB, "1", { texto: BUENO, paginas_total: 2 });
     // un documento que figura como leído pero cuyo texto ya caducó
     await redis.del(DocsA.claveDoc(idA, "3"));
@@ -10190,6 +10299,17 @@ async function main() {
     assert.ok(docA("2").paginas && docA("2").paginas.length === 4, "con un proceso a la vez se da la cuenta página por página");
     assert.strictEqual(docA("3").veredicto, "revisar");
     assert.strictEqual(docA("3").motivos[0].codigo, "texto_ausente", "figura leído y su texto ya no está: se dice, no se da por bueno");
+    // los tiempos que el navegador midió al leer, y la MISMA frase que dice la pantalla del expediente (MUTACIÓN H7: no copiar los tiempos; H8: una frase propia)
+    assert.deepStrictEqual(docA("2").tiempos, TIEMPOS_POST, "los tiempos guardados salen tal cual");
+    assert.strictEqual(docA("2").tiempo, "tardó 4 min 12 s (descarga 1 min 5 s, preparar las páginas 1 min 40 s, reconocimiento de texto 1 min 27 s)");
+    assert.strictEqual(docA("2").tiempo, require("../public/expediente.js").frasesTiempo(TIEMPOS_POST), "la frase de la pantalla, no una copia");
+    assert.ok(docA("1").tiempos === null && docA("1").tiempo === null, "lo leído sin medir no inventa tiempos: null, no 0");
+    // un documento cuyo texto ya caducó conserva su origen y su total de páginas, para que su tiempo se cuente donde va (revisión adversaria, reproducido) (MUTACIÓN H11: no copiarlos)
+    assert.deepStrictEqual([docA("3").origen, docA("3").paginas_total, docA("3").tiempos], ["ocr", 2, { total_ms: 30000 }], "texto_ausente lleva lo guardado al leerlo");
+    assert.deepStrictEqual([uno.cuerpo.tiempos.documentos_con_tiempos, uno.cuerpo.tiempos.documentos_sin_tiempos], [2, 1]);
+    assert.strictEqual(uno.cuerpo.tiempos.por_origen.ocr.documentos, 2);
+    assert.deepStrictEqual(uno.cuerpo.tiempos.por_origen.ocr.etapas.reconocer_ms, { documentos: 1, ms: 87000 });
+    assert.strictEqual(uno.cuerpo.tiempos.por_origen.ocr.con_paginas.ms_por_pagina, Math.round((252300 + 30000) / (4 + 2)), "por página con las páginas de los dos documentos medidos, también el de texto caducado");
     assert.strictEqual(uno.cuerpo.resumen.documentos, 3);
     assert.strictEqual(uno.cuerpo.resumen.para_revisar, 2);
     assert.strictEqual(uno.cuerpo.resumen.sin_indicios, 1);
@@ -10207,13 +10327,33 @@ async function main() {
       desde = r.cuerpo.alcance.siguiente;
     }
     assert.ok(vistos.has(idA) && vistos.has(idB) && vistos.size === dos.cuerpo.alcance.procesos_con_registro, `el recorrido de a uno ve todos: ${[...vistos].join(",")}`);
+    // un documento cuyo texto no se pudo leer de la base (sin_medir) también conserva su origen, sus páginas y sus tiempos (MUTACIÓN H12)
+    await postA(idB, "1", { texto: BUENO, paginas_total: 2, origen: "ocr", tiempos: { total_ms: 50000 } });
+    upstash.romper((c) => (String(c[0]).toUpperCase() === "GET" && c[1] === DocsA.claveDoc(idB, "1") ? "ERR caído a propósito" : null));
+    let sinMedir;
+    try { sinMedir = await invocar(routerA, `/api/pliego?op=auditoria&id_proceso=${idB}`, CAB_TOKEN); } finally { upstash.romper(null); }
+    const dsm = sinMedir.cuerpo.procesos[0].documentos[0];
+    assert.deepStrictEqual([dsm.veredicto, dsm.origen, dsm.paginas_total, dsm.tiempos], ["sin_medir", "ocr", 2, { total_ms: 50000 }], JSON.stringify(dsm));
+    assert.strictEqual(sinMedir.cuerpo.resumen.sin_medir, 1);
+    assert.strictEqual(sinMedir.cuerpo.tiempos.por_origen.ocr.documentos, 1, "su tiempo cuenta como de OCR, no de texto");
+    assert.strictEqual(sinMedir.cuerpo.tiempos.por_origen.texto, undefined);
+    // los tiempos guardados se vuelven a sanear al leerlos: basura que entró por otra vía (negativos, más de 2 horas, cadenas) no sale (MUTACIÓN H9: entregarlos tal cual)
+    const idC = "CO1.REQ.AUD003";
+    await sembrarA(idC, [arch("1", "PRESUPUESTO.pdf", "presupuesto")]);
+    await postA(idC, "1", { texto: BUENO, paginas_total: 2 });
+    const docsC = await leerJSONComprimido(redis, DocsA.claveDocs(idC));
+    docsC.leidos["1"].tiempos = { total_ms: -1, descarga_ms: 99999999, lector_ms: "x", partes: 1e9 };
+    await escribirCA(redis, DocsA.claveDocs(idC), docsC);
+    const basura = await invocar(routerA, `/api/pliego?op=auditoria&id_proceso=${idC}`, CAB_TOKEN);
+    const dbas = basura.cuerpo.procesos[0].documentos[0];
+    assert.ok(dbas.tiempos === null && dbas.tiempo === null && basura.cuerpo.tiempos.documentos_con_tiempos === 0, `tiempos basura: ${JSON.stringify(dbas.tiempos)}`);
     // un proceso sin registro se dice, y la llave y el método se exigen
     const nada = await invocar(routerA, "/api/pliego?op=auditoria&id_proceso=CO1.REQ.NOEXISTE", CAB_TOKEN);
     assert.ok(nada.status === 200 && nada.cuerpo.procesos[0].estado === "sin_registro" && nada.cuerpo.resumen.documentos === 0, JSON.stringify(nada.cuerpo.procesos));
     assert.strictEqual((await invocar(routerA, `/api/pliego?op=auditoria&id_proceso=${idA}`)).status, 401);
     assert.strictEqual((await invocar(routerA, `/api/pliego?op=auditoria&id_proceso=${idA}`, CAB_TOKEN, { metodo: "POST", body: {} })).status, 405);
     assert.strictEqual((await invocar(routerA, "/api/pliego?op=auditoria&id_proceso=../x%20y", CAB_TOKEN)).status, 400);
-    console.log("· unidad auditoría de la lectura: páginas en blanco o faltantes, ruido, anclas por tipo y huella del texto con la función real; el op lee sin escribir, no devuelve texto y no dice «correcto»");
+    console.log("· unidad auditoría de la lectura: páginas en blanco, faltantes o de muy poco texto (calibrado con las cuentas reales del primer proceso), ruido, anclas por tipo y huella con la función real; un presupuesto no se juzga por su proporción de letras; los tiempos medidos salen con la frase de la pantalla; el op lee sin escribir, no devuelve texto y no dice «correcto»");
   }
   bqTextoDelPliego: { if (!corre("unidad el texto del pliego")) break bqTextoDelPliego;
     /* QUÉ TEXTO LEEN EL DICTAMEN, EL CRONOGRAMA Y LOS DESCUENTOS (18-oct-2026). Hasta hoy, la última versión del vigía:
