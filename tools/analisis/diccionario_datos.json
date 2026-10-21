@@ -1,0 +1,2933 @@
+{
+ "p6dx-8zbt": {
+  "nombre": "SECOP II - Procesos de Contratación",
+  "columnas": [
+   {
+    "campo": "entidad",
+    "nombre": "Entidad",
+    "tipo": "text",
+    "descripcion": "Nombre de la Entidad que publica el proceso de compra pública"
+   },
+   {
+    "campo": "nit_entidad",
+    "nombre": "Nit Entidad",
+    "tipo": "text",
+    "descripcion": "NIT de la Entidad que publicó el proceso"
+   },
+   {
+    "campo": "departamento_entidad",
+    "nombre": "Departamento Entidad",
+    "tipo": "text",
+    "descripcion": "Departamento en el cual está registrada la entidad\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t"
+   },
+   {
+    "campo": "ciudad_entidad",
+    "nombre": "Ciudad Entidad",
+    "tipo": "text",
+    "descripcion": "Ciudad en la cual está registrada la entidad\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t"
+   },
+   {
+    "campo": "ordenentidad",
+    "nombre": "OrdenEntidad",
+    "tipo": "text",
+    "descripcion": "Orden de la Entidad (Nacional, Regional)\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t"
+   },
+   {
+    "campo": "codigo_pci",
+    "nombre": "Entidad Centralizada",
+    "tipo": "text",
+    "descripcion": "Identifica si la entidad es o no centralizada\t\t\t\t\t\t\t\t\t\t\t\t\t\t"
+   },
+   {
+    "campo": "id_del_proceso",
+    "nombre": "ID del Proceso",
+    "tipo": "text",
+    "descripcion": "Identificador Único del Proceso, valor generado por la plataforma\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t"
+   },
+   {
+    "campo": "referencia_del_proceso",
+    "nombre": "Referencia del Proceso",
+    "tipo": "text",
+    "descripcion": "Identificador del Proceso, valor generado por la Entidad\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t"
+   },
+   {
+    "campo": "ppi",
+    "nombre": "PCI",
+    "tipo": "text",
+    "descripcion": "Codigo de Unidad - Sub Unidad Contratación\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t"
+   },
+   {
+    "campo": "id_del_portafolio",
+    "nombre": "ID del Portafolio",
+    "tipo": "text",
+    "descripcion": "Identificador del Portafolio al cual corresponde el proceso de compra\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t"
+   },
+   {
+    "campo": "nombre_del_procedimiento",
+    "nombre": "Nombre del Procedimiento",
+    "tipo": "text",
+    "descripcion": "Nombre dado al proceso de compra por la Entidad\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t"
+   },
+   {
+    "campo": "descripci_n_del_procedimiento",
+    "nombre": "Descripción del Procedimiento",
+    "tipo": "text",
+    "descripcion": "Primera definición de las características principales del proceso\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t"
+   },
+   {
+    "campo": "fase",
+    "nombre": "Fase",
+    "tipo": "text",
+    "descripcion": "Fase en la que actualmente se encuentra el proceso"
+   },
+   {
+    "campo": "fecha_de_publicacion_del",
+    "nombre": "Fecha de Publicacion del Proceso",
+    "tipo": "calendar_date",
+    "descripcion": "Fecha de la publicación inicial del proceso de compra"
+   },
+   {
+    "campo": "fecha_de_ultima_publicaci",
+    "nombre": "Fecha de Ultima Publicación",
+    "tipo": "calendar_date",
+    "descripcion": "Fecha de la última publicación hecha para el proceso de compra"
+   },
+   {
+    "campo": "fecha_de_publicacion_fase",
+    "nombre": "Fecha de Publicacion (Fase Planeacion Precalificacion)",
+    "tipo": "calendar_date",
+    "descripcion": "Fecha de publicación, dentro del proceso, de la fase de Planeación en Precalificación"
+   },
+   {
+    "campo": "fecha_de_publicacion_fase_1",
+    "nombre": "Fecha de Publicacion (Fase Seleccion Precalificacion)",
+    "tipo": "calendar_date",
+    "descripcion": "Fecha de publicación, dentro del proceso, de la fase de Selección en Precalificación"
+   },
+   {
+    "campo": "fecha_de_publicacion",
+    "nombre": "Fecha de Publicacion (Manifestacion de Interes)",
+    "tipo": "calendar_date",
+    "descripcion": "Fecha de publicación, dentro del proceso, de la fase de Manifestación de Interés"
+   },
+   {
+    "campo": "fecha_de_publicacion_fase_2",
+    "nombre": "Fecha de Publicacion (Fase Borrador)",
+    "tipo": "calendar_date",
+    "descripcion": "Fecha de publicación, dentro del proceso, de la fase Borrador"
+   },
+   {
+    "campo": "fecha_de_publicacion_fase_3",
+    "nombre": "Fecha de Publicacion (Fase Seleccion)",
+    "tipo": "calendar_date",
+    "descripcion": "Fecha de publicación, dentro del proceso, de la fase Selección"
+   },
+   {
+    "campo": "precio_base",
+    "nombre": "Precio Base",
+    "tipo": "number",
+    "descripcion": "Precio Base, proyectado, del proceso de Compra"
+   },
+   {
+    "campo": "modalidad_de_contratacion",
+    "nombre": "Modalidad de Contratacion",
+    "tipo": "text",
+    "descripcion": "Modalidad de selección bajo la cual se desarrolla el proceso de Compra"
+   },
+   {
+    "campo": "justificaci_n_modalidad_de",
+    "nombre": "Justificación Modalidad de Contratación",
+    "tipo": "text",
+    "descripcion": "En caso de requerirse, Justificación para la modalidad de selección elegida para el proceso de compra"
+   },
+   {
+    "campo": "duracion",
+    "nombre": "Duracion",
+    "tipo": "number",
+    "descripcion": "Valor de la Duración estimada del proceso de compra pública"
+   },
+   {
+    "campo": "unidad_de_duracion",
+    "nombre": "Unidad de Duracion",
+    "tipo": "text",
+    "descripcion": "Unidad que aplica a la Duración estimada del proceso de compra pública"
+   },
+   {
+    "campo": "fecha_de_recepcion_de",
+    "nombre": "Fecha de Recepcion de Respuestas",
+    "tipo": "calendar_date",
+    "descripcion": "Fecha asignada para la recepción de respuestas por parte de los proveedores, dentro del proceso de compra"
+   },
+   {
+    "campo": "fecha_de_apertura_de_respuesta",
+    "nombre": "Fecha de Apertura de Respuesta",
+    "tipo": "calendar_date",
+    "descripcion": "Fecha Estimada para la Apertura de las respuestas "
+   },
+   {
+    "campo": "fecha_de_apertura_efectiva",
+    "nombre": "Fecha de Apertura Efectiva",
+    "tipo": "calendar_date",
+    "descripcion": "Fecha Real para la Apertura de las respuestas "
+   },
+   {
+    "campo": "ciudad_de_la_unidad_de",
+    "nombre": "Ciudad de la Unidad de Contratación",
+    "tipo": "text",
+    "descripcion": "Cuidad en la que aparece registrada la unidad de contratación de la Entidad"
+   },
+   {
+    "campo": "nombre_de_la_unidad_de",
+    "nombre": "Nombre de la Unidad de Contratación",
+    "tipo": "text",
+    "descripcion": "Nombre de la unidad de contratación de la Entidad"
+   },
+   {
+    "campo": "proveedores_invitados",
+    "nombre": "Proveedores Invitados",
+    "tipo": "number",
+    "descripcion": "Número de Proveedores invitados a participar del proceso, en total"
+   },
+   {
+    "campo": "proveedores_con_invitacion",
+    "nombre": "Proveedores con Invitacion Directa",
+    "tipo": "number",
+    "descripcion": "Proveedores con Invitación a participar hecha de forma directa"
+   },
+   {
+    "campo": "visualizaciones_del",
+    "nombre": "Visualizaciones del Procedimiento",
+    "tipo": "number",
+    "descripcion": "Número de Visualizaciones hechas a través de la herramienta, del Proceso de Compra"
+   },
+   {
+    "campo": "proveedores_que_manifestaron",
+    "nombre": "Proveedores que Manifestaron Interes",
+    "tipo": "number",
+    "descripcion": "Proveedores que Manifestaron Interés en el proceso a través de la plataforma"
+   },
+   {
+    "campo": "respuestas_al_procedimiento",
+    "nombre": "Respuestas al Procedimiento",
+    "tipo": "number",
+    "descripcion": "Respuestas hechas al procedimiento, tanto de proveedores como de la misma entidad"
+   },
+   {
+    "campo": "respuestas_externas",
+    "nombre": "Respuestas Externas",
+    "tipo": "number",
+    "descripcion": "Número de Respuestas hechas por entes externos"
+   },
+   {
+    "campo": "conteo_de_respuestas_a_ofertas",
+    "nombre": "Conteo de Respuestas a Ofertas",
+    "tipo": "number",
+    "descripcion": "Número de Respuestas hechas de forma directa en las ofertas"
+   },
+   {
+    "campo": "proveedores_unicos_con",
+    "nombre": "Proveedores Unicos con Respuestas",
+    "tipo": "number",
+    "descripcion": "Proveedores Únicos que han redactado respuestas en el proceso"
+   },
+   {
+    "campo": "numero_de_lotes",
+    "nombre": "Numero de Lotes",
+    "tipo": "number",
+    "descripcion": "Número de lotes de articulos solicitados dentro del proceso"
+   },
+   {
+    "campo": "estado_del_procedimiento",
+    "nombre": "Estado del Procedimiento",
+    "tipo": "text",
+    "descripcion": "Estado actual de desarrollo del procedimiento de compra pública"
+   },
+   {
+    "campo": "id_estado_del_procedimiento",
+    "nombre": "ID Estado del Procedimiento",
+    "tipo": "number",
+    "descripcion": "Identificador del Estado del procedimiento"
+   },
+   {
+    "campo": "adjudicado",
+    "nombre": "Adjudicado",
+    "tipo": "text",
+    "descripcion": "Determina si el proceso fue adjudicado"
+   },
+   {
+    "campo": "id_adjudicacion",
+    "nombre": "ID Adjudicacion",
+    "tipo": "text",
+    "descripcion": "Identificador de la adjudicación"
+   },
+   {
+    "campo": "codigoproveedor",
+    "nombre": "CodigoProveedor",
+    "tipo": "text",
+    "descripcion": "Código, en la plataforma, del proveedor adjudicado"
+   },
+   {
+    "campo": "departamento_proveedor",
+    "nombre": "Departamento Proveedor",
+    "tipo": "text",
+    "descripcion": "Departamento en el que está registrado el proveedor adjudicado"
+   },
+   {
+    "campo": "ciudad_proveedor",
+    "nombre": "Ciudad Proveedor",
+    "tipo": "text",
+    "descripcion": "Ciudad en la que está registrado el proveedor adjudicado"
+   },
+   {
+    "campo": "fecha_adjudicacion",
+    "nombre": "Fecha Adjudicacion",
+    "tipo": "calendar_date",
+    "descripcion": "Fecha en la que se hizo la adjudicación del proceso para el proveedor seleccionado"
+   },
+   {
+    "campo": "valor_total_adjudicacion",
+    "nombre": "Valor Total Adjudicacion",
+    "tipo": "number",
+    "descripcion": "Valor total Adjudicado"
+   },
+   {
+    "campo": "nombre_del_adjudicador",
+    "nombre": "Nombre del Adjudicador",
+    "tipo": "text",
+    "descripcion": "Nombre del Usuario que ejecutó la accion de adjudicación"
+   },
+   {
+    "campo": "nombre_del_proveedor",
+    "nombre": "Nombre del Proveedor Adjudicado",
+    "tipo": "text",
+    "descripcion": "Nombre del Proveedor Adjudicado "
+   },
+   {
+    "campo": "nit_del_proveedor_adjudicado",
+    "nombre": "NIT del Proveedor Adjudicado",
+    "tipo": "text",
+    "descripcion": "NIT del Proveedor Adjudicado"
+   },
+   {
+    "campo": "codigo_principal_de_categoria",
+    "nombre": "Codigo Principal de Categoria",
+    "tipo": "text",
+    "descripcion": "Codigo UNSPSC de la categoría principal del producto o servicio adquirido en proceso de compra"
+   },
+   {
+    "campo": "estado_de_apertura_del_proceso",
+    "nombre": "Estado de Apertura del Proceso",
+    "tipo": "text",
+    "descripcion": "Estado actual de Apertura de información del proceso"
+   },
+   {
+    "campo": "tipo_de_contrato",
+    "nombre": "Tipo de Contrato",
+    "tipo": "text",
+    "descripcion": "Tipo de Contrato definido para el proceso de compra"
+   },
+   {
+    "campo": "subtipo_de_contrato",
+    "nombre": "Subtipo de Contrato",
+    "tipo": "text",
+    "descripcion": "Subtipo de Contrato definido para el proceso de compra"
+   },
+   {
+    "campo": "categorias_adicionales",
+    "nombre": "Categorias Adicionales",
+    "tipo": "text",
+    "descripcion": "Identificador de las categorías UNSPSC adicionales, incluidas en el producto o servicio adquirido en proceso de compra"
+   },
+   {
+    "campo": "urlproceso",
+    "nombre": "URLProceso",
+    "tipo": "url",
+    "descripcion": "URL, en la plataforma, en la que se puede consultar el proceso de compra"
+   },
+   {
+    "campo": "codigo_entidad",
+    "nombre": "Codigo Entidad",
+    "tipo": "number",
+    "descripcion": "Código de la entidad en la plataforma SECOPII"
+   },
+   {
+    "campo": "estado_resumen",
+    "nombre": "Estado Resumen",
+    "tipo": "text",
+    "descripcion": "Resumen del estado del proceso de compra pública"
+   }
+  ]
+ },
+ "wi7w-2nvm": {
+  "nombre": "SECOPII - Ofertas Por Proceso",
+  "columnas": [
+   {
+    "campo": "fecha_de_registro",
+    "nombre": "Fecha de Registro",
+    "tipo": "calendar_date",
+    "descripcion": "Fecha en la que se hace el registro de la Oferta"
+   },
+   {
+    "campo": "referencia_de_la_oferta",
+    "nombre": "Referencia de la Oferta",
+    "tipo": "text",
+    "descripcion": "Identificador de la Oferta, creado por el usuario de la plataforma"
+   },
+   {
+    "campo": "identificador_de_la_oferta",
+    "nombre": "Identificador de la Oferta",
+    "tipo": "text",
+    "descripcion": "Identificador de la Oferta, creado por la plataforma"
+   },
+   {
+    "campo": "valor_de_la_oferta",
+    "nombre": "Valor de la Oferta",
+    "tipo": "number",
+    "descripcion": "Valor registrado en la oferta"
+   },
+   {
+    "campo": "entidad_compradora",
+    "nombre": "Entidad Compradora",
+    "tipo": "text",
+    "descripcion": "Nombre de la Entidad que desarrolla el proceso de compra"
+   },
+   {
+    "campo": "nit_entidad_compradora",
+    "nombre": "NIT Entidad Compradora",
+    "tipo": "number",
+    "descripcion": "NIT de la Entidad que desarrolla el proceso de compra"
+   },
+   {
+    "campo": "moneda",
+    "nombre": "Moneda",
+    "tipo": "text",
+    "descripcion": "Identificador de la moneda en la que se hace la oferta"
+   },
+   {
+    "campo": "descripcion_del_procedimiento",
+    "nombre": "Descripcion del Procedimiento",
+    "tipo": "text",
+    "descripcion": "Detalle del objeto a adquirir"
+   },
+   {
+    "campo": "referencia_del_proceso",
+    "nombre": "Referencia del Proceso",
+    "tipo": "text",
+    "descripcion": "Identificador del procedimiento, creado por el usuario"
+   },
+   {
+    "campo": "id_del_proceso_de_compra",
+    "nombre": "ID del Proceso de Compra",
+    "tipo": "text",
+    "descripcion": "Identificador del procedimiento, creado por la plataforma"
+   },
+   {
+    "campo": "modalidad",
+    "nombre": "Modalidad",
+    "tipo": "text",
+    "descripcion": "Modalidad de Selección dentro del proceso"
+   },
+   {
+    "campo": "invitacion_directa",
+    "nombre": "Invitacion Directa",
+    "tipo": "text",
+    "descripcion": "Define si la oferta corresponde a una invitación directa al proveedor"
+   },
+   {
+    "campo": "nombre_proveedor",
+    "nombre": "Nombre Proveedor",
+    "tipo": "text",
+    "descripcion": "Nombre del proveedor que hace la oferta"
+   },
+   {
+    "campo": "nit_del_proveedor",
+    "nombre": "NIT del Proveedor",
+    "tipo": "text",
+    "descripcion": "NIT del Proveedor que hace la oferta"
+   },
+   {
+    "campo": "c_digo_entidad",
+    "nombre": "Código Entidad",
+    "tipo": "text",
+    "descripcion": "Código de la entidad en la plataforma SECOPII"
+   },
+   {
+    "campo": "c_digo_proveedor",
+    "nombre": "Código Proveedor",
+    "tipo": "text",
+    "descripcion": "Código de proveedor en la plataforma SECOPII"
+   }
+  ]
+ },
+ "b28v-edj8": {
+  "nombre": "SECOPII - Ofertas Por Proceso Historico",
+  "columnas": [
+   {
+    "campo": "fecha_de_registro",
+    "nombre": "Fecha de Registro",
+    "tipo": "calendar_date",
+    "descripcion": "Fecha en la que se hace el registro de la Oferta"
+   },
+   {
+    "campo": "referencia_de_la_oferta",
+    "nombre": "Referencia de la Oferta",
+    "tipo": "text",
+    "descripcion": "Identificador de la Oferta, creado por el usuario de la plataforma"
+   },
+   {
+    "campo": "identificador_de_la_oferta",
+    "nombre": "Identificador de la Oferta",
+    "tipo": "text",
+    "descripcion": "Identificador de la Oferta, creado por la plataforma"
+   },
+   {
+    "campo": "valor_de_la_oferta",
+    "nombre": "Valor de la Oferta",
+    "tipo": "number",
+    "descripcion": "Valor registrado en la oferta"
+   },
+   {
+    "campo": "entidad_compradora",
+    "nombre": "Entidad Compradora",
+    "tipo": "text",
+    "descripcion": "Nombre de la Entidad que desarrolla el proceso de compra"
+   },
+   {
+    "campo": "nit_entidad_compradora",
+    "nombre": "NIT Entidad Compradora",
+    "tipo": "number",
+    "descripcion": "NIT de la Entidad que desarrolla el proceso de compra"
+   },
+   {
+    "campo": "moneda",
+    "nombre": "Moneda",
+    "tipo": "text",
+    "descripcion": "Identificador de la moneda en la que se hace la oferta"
+   },
+   {
+    "campo": "descripcion_del_procedimiento",
+    "nombre": "Descripcion del Procedimiento",
+    "tipo": "text",
+    "descripcion": "Detalle del objeto a adquirir"
+   },
+   {
+    "campo": "referencia_del_proceso",
+    "nombre": "Referencia del Proceso",
+    "tipo": "text",
+    "descripcion": "Identificador del procedimiento, creado por el usuario"
+   },
+   {
+    "campo": "id_del_proceso_de_compra",
+    "nombre": "ID del Proceso de Compra",
+    "tipo": "text",
+    "descripcion": "Identificador del procedimiento, creado por la plataforma"
+   },
+   {
+    "campo": "modalidad",
+    "nombre": "Modalidad",
+    "tipo": "text",
+    "descripcion": "Modalidad de Selección dentro del proceso"
+   },
+   {
+    "campo": "invitacion_directa",
+    "nombre": "Invitacion Directa",
+    "tipo": "text",
+    "descripcion": "Define si la oferta corresponde a una invitación directa al proveedor"
+   },
+   {
+    "campo": "nombre_proveedor",
+    "nombre": "Nombre Proveedor",
+    "tipo": "text",
+    "descripcion": "Nombre del proveedor que hace la oferta"
+   },
+   {
+    "campo": "nit_del_proveedor",
+    "nombre": "NIT del Proveedor",
+    "tipo": "text",
+    "descripcion": "NIT del Proveedor que hace la oferta"
+   },
+   {
+    "campo": "c_digo_entidad",
+    "nombre": "Código Entidad",
+    "tipo": "text",
+    "descripcion": "Código de la entidad en la plataforma SECOPII"
+   },
+   {
+    "campo": "c_digo_proveedor",
+    "nombre": "Código Proveedor",
+    "tipo": "text",
+    "descripcion": "Código de proveedor en la plataforma SECOPII"
+   }
+  ]
+ },
+ "jbjy-vk9h": {
+  "nombre": "SECOP II - Contratos Electrónicos",
+  "columnas": [
+   {
+    "campo": "nombre_entidad",
+    "nombre": "Nombre Entidad",
+    "tipo": "text",
+    "descripcion": "Nombre de la entidad del estado que publica el contrato"
+   },
+   {
+    "campo": "nit_entidad",
+    "nombre": "Nit Entidad",
+    "tipo": "number",
+    "descripcion": "NIT de la entidad del estado que publica el contrato"
+   },
+   {
+    "campo": "departamento",
+    "nombre": "Departamento",
+    "tipo": "text",
+    "descripcion": "Departamento en el cual se registró la entidad del estado que publica el contrato"
+   },
+   {
+    "campo": "ciudad",
+    "nombre": "Ciudad",
+    "tipo": "text",
+    "descripcion": "Ciudad en el cual se registró la entidad del estado que publica el contrato"
+   },
+   {
+    "campo": "localizaci_n",
+    "nombre": "Localización",
+    "tipo": "text",
+    "descripcion": "Ubicación completa de la entidad del estado que publica el contrato"
+   },
+   {
+    "campo": "orden",
+    "nombre": "Orden",
+    "tipo": "text",
+    "descripcion": "Orden entidad del estado que publica el contrato"
+   },
+   {
+    "campo": "sector",
+    "nombre": "Sector",
+    "tipo": "text",
+    "descripcion": "Sector entidad del estado que publica el contrato"
+   },
+   {
+    "campo": "rama",
+    "nombre": "Rama",
+    "tipo": "text",
+    "descripcion": "Rama del estado de la entidad que publica el contrato"
+   },
+   {
+    "campo": "entidad_centralizada",
+    "nombre": "Entidad Centralizada",
+    "tipo": "text",
+    "descripcion": "Define si la entidad es descentralizada o centralizada"
+   },
+   {
+    "campo": "proceso_de_compra",
+    "nombre": "Proceso de Compra",
+    "tipo": "text",
+    "descripcion": "Identificador del proceso de compra publicado"
+   },
+   {
+    "campo": "id_contrato",
+    "nombre": "ID Contrato",
+    "tipo": "text",
+    "descripcion": "Identificador del contrato firmado, generado por la plataforma"
+   },
+   {
+    "campo": "referencia_del_contrato",
+    "nombre": "Referencia del Contrato",
+    "tipo": "text",
+    "descripcion": "Identificador del contrato firmado, generado por la entidad del estado"
+   },
+   {
+    "campo": "estado_contrato",
+    "nombre": "Estado Contrato",
+    "tipo": "text",
+    "descripcion": "Estado del contrato, frente a su ejecución, firma o liquidación"
+   },
+   {
+    "campo": "codigo_de_categoria_principal",
+    "nombre": "Codigo de Categoria Principal",
+    "tipo": "text",
+    "descripcion": "Codigo UNSPSC de la categoría principal para el contrato"
+   },
+   {
+    "campo": "descripcion_del_proceso",
+    "nombre": "Descripcion del Proceso",
+    "tipo": "text",
+    "descripcion": "Descripción del objeto del proceso de compra"
+   },
+   {
+    "campo": "tipo_de_contrato",
+    "nombre": "Tipo de Contrato",
+    "tipo": "text",
+    "descripcion": "Tipo de contrato de acuerdo a su marco jurídico"
+   },
+   {
+    "campo": "modalidad_de_contratacion",
+    "nombre": "Modalidad de Contratacion",
+    "tipo": "text",
+    "descripcion": "Modalidad de contratación de acuerdo al modelo de selección"
+   },
+   {
+    "campo": "justificacion_modalidad_de",
+    "nombre": "Justificacion Modalidad de Contratacion",
+    "tipo": "text",
+    "descripcion": "Justificación de la modalidad, el escenario bajo el cual se toma la decisión de definir una u otra modalidad de contratación"
+   },
+   {
+    "campo": "fecha_de_firma",
+    "nombre": "Fecha de Firma",
+    "tipo": "calendar_date",
+    "descripcion": "Fecha de firma del contrato electronico"
+   },
+   {
+    "campo": "fecha_de_inicio_del_contrato",
+    "nombre": "Fecha de Inicio del Contrato",
+    "tipo": "calendar_date",
+    "descripcion": "Fecha de inicio de las responsabilidades contractuales"
+   },
+   {
+    "campo": "fecha_de_fin_del_contrato",
+    "nombre": "Fecha de Fin del Contrato",
+    "tipo": "calendar_date",
+    "descripcion": "Fecha de fin de las responsabilidades contractuales"
+   },
+   {
+    "campo": "condiciones_de_entrega",
+    "nombre": "Condiciones de Entrega",
+    "tipo": "text",
+    "descripcion": "Condiciones bajo las cuales se entrega el producto o servicio"
+   },
+   {
+    "campo": "tipodocproveedor",
+    "nombre": "TipoDocProveedor",
+    "tipo": "text",
+    "descripcion": "Tipo de documento del proveedor adjudicado"
+   },
+   {
+    "campo": "documento_proveedor",
+    "nombre": "Documento Proveedor",
+    "tipo": "text",
+    "descripcion": "Número de documento del proveedor adjudicado"
+   },
+   {
+    "campo": "proveedor_adjudicado",
+    "nombre": "Proveedor Adjudicado",
+    "tipo": "text",
+    "descripcion": "Nombre del proveedor adjudicado"
+   },
+   {
+    "campo": "es_grupo",
+    "nombre": "Es Grupo",
+    "tipo": "text",
+    "descripcion": "Determina el proveedor es un grupo de entidades, existe un conjunto de datos de CCE que contiene la conformación de los grupos"
+   },
+   {
+    "campo": "es_pyme",
+    "nombre": "Es Pyme",
+    "tipo": "text",
+    "descripcion": "Determina si la empresa es una Pyme"
+   },
+   {
+    "campo": "habilita_pago_adelantado",
+    "nombre": "Habilita Pago Adelantado",
+    "tipo": "text",
+    "descripcion": "Determina si el contrato tiene habilitada la opción de pago de adelantos"
+   },
+   {
+    "campo": "liquidaci_n",
+    "nombre": "Liquidación",
+    "tipo": "text",
+    "descripcion": "Determina si el contrato ha sido liquidado"
+   },
+   {
+    "campo": "obligaci_n_ambiental",
+    "nombre": "Obligación Ambiental",
+    "tipo": "text",
+    "descripcion": "Determina si el contrato tiene compromisos de cumplimiento a obligaciones ambientales"
+   },
+   {
+    "campo": "obligaciones_postconsumo",
+    "nombre": "Obligaciones Postconsumo",
+    "tipo": "text",
+    "descripcion": "Determina si el contrato tiene compromisos de cumplimiento a obligaciones posteriores a la entrega del producto o prestación del servicio"
+   },
+   {
+    "campo": "reversion",
+    "nombre": "Reversion",
+    "tipo": "text",
+    "descripcion": "Determina si el contrato ha sido reversado"
+   },
+   {
+    "campo": "origen_de_los_recursos",
+    "nombre": "Origen de los Recursos",
+    "tipo": "text",
+    "descripcion": "Origen de los Recursos, a nivel presupuestal"
+   },
+   {
+    "campo": "destino_gasto",
+    "nombre": "Destino Gasto",
+    "tipo": "text",
+    "descripcion": "Destino del gasto, a nivel presupuestal"
+   },
+   {
+    "campo": "valor_del_contrato",
+    "nombre": "Valor del Contrato",
+    "tipo": "number",
+    "descripcion": "Valor total del contrato"
+   },
+   {
+    "campo": "valor_de_pago_adelantado",
+    "nombre": "Valor de pago adelantado",
+    "tipo": "number",
+    "descripcion": "Valor del pago por adelantado"
+   },
+   {
+    "campo": "valor_facturado",
+    "nombre": "Valor Facturado",
+    "tipo": "number",
+    "descripcion": "Valor Facturado a la fecha"
+   },
+   {
+    "campo": "valor_pendiente_de_pago",
+    "nombre": "Valor Pendiente de Pago",
+    "tipo": "number",
+    "descripcion": "Valor Pendiente de Pago a la fecha"
+   },
+   {
+    "campo": "valor_pagado",
+    "nombre": "Valor Pagado",
+    "tipo": "number",
+    "descripcion": "Valor Pagado a la fecha"
+   },
+   {
+    "campo": "valor_amortizado",
+    "nombre": "Valor Amortizado",
+    "tipo": "number",
+    "descripcion": "Valor Amortizado a la fecha"
+   },
+   {
+    "campo": "valor_pendiente_de",
+    "nombre": "Valor Pendiente de Amortizacion",
+    "tipo": "number",
+    "descripcion": "Valor Pendiente de Amortizacion a la fecha"
+   },
+   {
+    "campo": "valor_pendiente_de_ejecucion",
+    "nombre": "Valor Pendiente de Ejecucion",
+    "tipo": "number",
+    "descripcion": "Valor Pendiente de Ejecucion a la fecha"
+   },
+   {
+    "campo": "saldo_cdp",
+    "nombre": "Saldo CDP",
+    "tipo": "number",
+    "descripcion": "Saldo del CDP asignado al proceso y al contrato"
+   },
+   {
+    "campo": "saldo_vigencia",
+    "nombre": "Saldo Vigencia",
+    "tipo": "number",
+    "descripcion": "Saldo actual para la vigencia del CDP asignado al proceso y al contrato"
+   },
+   {
+    "campo": "espostconflicto",
+    "nombre": "EsPostConflicto",
+    "tipo": "text",
+    "descripcion": "Determina si el proceso está asociado a algún evento de acuerdo de paz"
+   },
+   {
+    "campo": "dias_adicionados",
+    "nombre": "Dias adicionados",
+    "tipo": "number",
+    "descripcion": "Días adicionados al contrato electrónico"
+   },
+   {
+    "campo": "puntos_del_acuerdo",
+    "nombre": "Puntos del Acuerdo",
+    "tipo": "text",
+    "descripcion": "Pilares del acuerdo de paz, si el contrato es post conflicto"
+   },
+   {
+    "campo": "pilares_del_acuerdo",
+    "nombre": "Pilares del Acuerdo",
+    "tipo": "text",
+    "descripcion": "Pilares del acuerdo de paz"
+   },
+   {
+    "campo": "urlproceso",
+    "nombre": "URLProceso",
+    "tipo": "url",
+    "descripcion": "URL del proceso de compra en la plataforma SECOP II"
+   },
+   {
+    "campo": "nombre_representante_legal",
+    "nombre": "Nombre Representante Legal",
+    "tipo": "text",
+    "descripcion": "Nombre del representante legal de la entidad"
+   },
+   {
+    "campo": "nacionalidad_representante_legal",
+    "nombre": "Nacionalidad Representante Legal",
+    "tipo": "text",
+    "descripcion": "Nacionalidad del representante legal de la entidad"
+   },
+   {
+    "campo": "domicilio_representante_legal",
+    "nombre": "Domicilio Representante Legal",
+    "tipo": "text",
+    "descripcion": "Dirección de domicilio del representante legal de la entidad"
+   },
+   {
+    "campo": "tipo_de_identificaci_n_representante_legal",
+    "nombre": "Tipo de Identificación Representante Legal",
+    "tipo": "text",
+    "descripcion": "Tipo de identificación del representante legal de la entidad"
+   },
+   {
+    "campo": "identificaci_n_representante_legal",
+    "nombre": "Identificación Representante Legal",
+    "tipo": "text",
+    "descripcion": "Numero de identificación del representante legal de la entidad"
+   },
+   {
+    "campo": "g_nero_representante_legal",
+    "nombre": "Género Representante Legal",
+    "tipo": "text",
+    "descripcion": "Género sexual del representante legal de la entidad"
+   },
+   {
+    "campo": "presupuesto_general_de_la_nacion_pgn",
+    "nombre": "Presupuesto General de la Nacion – PGN",
+    "tipo": "number",
+    "descripcion": "Valor de origen de los recursos que corresponde al Presupuesto General de la Nacion – PGN"
+   },
+   {
+    "campo": "sistema_general_de_participaciones",
+    "nombre": "Sistema General de Participaciones",
+    "tipo": "number",
+    "descripcion": "Valor de origen de los recursos que corresponde al Sistema General de Participaciones"
+   },
+   {
+    "campo": "sistema_general_de_regal_as",
+    "nombre": "Sistema General de Regalías",
+    "tipo": "number",
+    "descripcion": "Valor de origen de los recursos que corresponde al Sistema General de Regalías"
+   },
+   {
+    "campo": "recursos_propios_alcald_as_gobernaciones_y_resguardos_ind_genas_",
+    "nombre": "Recursos Propios (Alcaldías y Gobernaciones)",
+    "tipo": "number",
+    "descripcion": "Indica el valor de recursos de la entidad en el contrato electronico"
+   },
+   {
+    "campo": "recursos_de_credito",
+    "nombre": "Recursos de Credito",
+    "tipo": "number",
+    "descripcion": "Valor de origen de los recursos que corresponde a Recursos de Credito"
+   },
+   {
+    "campo": "recursos_propios",
+    "nombre": "Otros Recursos (Especie, Privados, Cooperación, Propios Entidades Autónomas)",
+    "tipo": "number",
+    "descripcion": "Valor de origen de los recursos que corresponde a Recursos Propios"
+   },
+   {
+    "campo": "ultima_actualizacion",
+    "nombre": "Ultima Actualizacion",
+    "tipo": "calendar_date",
+    "descripcion": "Fecha de última actualización del contrato electronico"
+   },
+   {
+    "campo": "codigo_entidad",
+    "nombre": "Codigo Entidad",
+    "tipo": "number",
+    "descripcion": "Codigo de la entidad en la plataforma SECOPII"
+   },
+   {
+    "campo": "codigo_proveedor",
+    "nombre": "Codigo Proveedor",
+    "tipo": "text",
+    "descripcion": "Codigo del proveedor edn la plataforma SECOPII"
+   },
+   {
+    "campo": "fecha_inicio_liquidacion",
+    "nombre": "Fecha Inicio Liquidacion",
+    "tipo": "calendar_date",
+    "descripcion": "Fecha de inicio de liquidación del contrato electrónico"
+   },
+   {
+    "campo": "fecha_fin_liquidacion",
+    "nombre": "Fecha Fin Liquidacion",
+    "tipo": "calendar_date",
+    "descripcion": "Fecha de fin de liquidación del contrato electrónico"
+   },
+   {
+    "campo": "objeto_del_contrato",
+    "nombre": "Objeto del Contrato",
+    "tipo": "text",
+    "descripcion": "Objeto del contrato electrónico"
+   },
+   {
+    "campo": "duraci_n_del_contrato",
+    "nombre": "Duración del contrato",
+    "tipo": "text",
+    "descripcion": "Describe la duración del contrato en el tiempo"
+   },
+   {
+    "campo": "nombre_del_banco",
+    "nombre": "Nombre del banco",
+    "tipo": "text",
+    "descripcion": "Indica el nombre del banco en donde se consignaran los pagos del contrato"
+   },
+   {
+    "campo": "tipo_de_cuenta",
+    "nombre": "Tipo de cuenta",
+    "tipo": "text",
+    "descripcion": "Tipo de cuenta en la que se se consignaran los pago del contrato"
+   },
+   {
+    "campo": "n_mero_de_cuenta",
+    "nombre": "Número de cuenta",
+    "tipo": "text",
+    "descripcion": "Numero de cuenta en donde se haran los pagos del contrato"
+   },
+   {
+    "campo": "el_contrato_puede_ser_prorrogado",
+    "nombre": "El contrato puede ser prorrogado",
+    "tipo": "text",
+    "descripcion": "Indica si el contrato puede ser o no prorrogado"
+   },
+   {
+    "campo": "fecha_de_notificaci_n_de_prorrogaci_n",
+    "nombre": "Fecha de notificación de prorrogación",
+    "tipo": "calendar_date",
+    "descripcion": "Infica la fecha de notificación de la prorrogación del contrato"
+   },
+   {
+    "campo": "nombre_ordenador_del_gasto",
+    "nombre": "Nombre ordenador del gasto",
+    "tipo": "text",
+    "descripcion": "Describe el nombre del ordenador del gasto de la entidad compradora"
+   },
+   {
+    "campo": "tipo_de_documento_ordenador_del_gasto",
+    "nombre": "Tipo de documento Ordenador del gasto",
+    "tipo": "text",
+    "descripcion": "Indica el tipo de documento del ordenador del gasto de la entidad compradora"
+   },
+   {
+    "campo": "n_mero_de_documento_ordenador_del_gasto",
+    "nombre": "Número de documento Ordenador del gasto",
+    "tipo": "text",
+    "descripcion": "Indica el número de documento del ordenador del gasto"
+   },
+   {
+    "campo": "nombre_supervisor",
+    "nombre": "Nombre supervisor",
+    "tipo": "text",
+    "descripcion": "Describe el nombre del supervisor de la entidad compradora"
+   },
+   {
+    "campo": "tipo_de_documento_supervisor",
+    "nombre": "Tipo de documento supervisor",
+    "tipo": "text",
+    "descripcion": "Indica el tipo de documento del supervisor de la entidad compradora"
+   },
+   {
+    "campo": "n_mero_de_documento_supervisor",
+    "nombre": "Número de documento supervisor",
+    "tipo": "text",
+    "descripcion": "Indica el número de documento del supervisor"
+   },
+   {
+    "campo": "nombre_ordenador_de_pago",
+    "nombre": "Nombre Ordenador de Pago",
+    "tipo": "text",
+    "descripcion": "Describe el nombre del Ordenador de Pago de la entidad compradora"
+   },
+   {
+    "campo": "tipo_de_documento_ordenador_de_pago",
+    "nombre": "Tipo de documento Ordenador de Pago",
+    "tipo": "text",
+    "descripcion": "Indica el tipo de documento del Ordenador de Pago de la entidad compradora"
+   },
+   {
+    "campo": "n_mero_de_documento_ordenador_de_pago",
+    "nombre": "Número de documento Ordenador de Pago",
+    "tipo": "text",
+    "descripcion": "Indica el número de documento del Ordenador de Pago"
+   },
+   {
+    "campo": "documentos_tipo",
+    "nombre": "Documentos Tipo",
+    "tipo": "text",
+    "descripcion": "Indica si se utilizaron documentos tipo en el contrato"
+   },
+   {
+    "campo": "descripcion_documentos_tipo",
+    "nombre": "Descripcion Documentos Tipo",
+    "tipo": "text",
+    "descripcion": "Descripción de los documentos tipo utilizados"
+   },
+   {
+    "campo": "direcci_n_de_ejecuci_n_del_contrato",
+    "nombre": "Dirección de ejecución del contrato",
+    "tipo": "text",
+    "descripcion": "Dirección en donde se ejecuto el contrato durante su vigencia"
+   },
+   {
+    "campo": "criterios_de_sostenibilidad_ambiental",
+    "nombre": "Criterios de sostenibilidad ambiental",
+    "tipo": "text",
+    "descripcion": "Indica si se definieron Criterios de sostenibilidad ambiental"
+   },
+   {
+    "campo": "requisitos_ambientales_en_las_especificaciones_t_cnicas",
+    "nombre": "Requisitos ambientales en las especificaciones técnicas",
+    "tipo": "text",
+    "descripcion": "Indica si se definieron Requisitos ambientales en las especificaciones técnicas"
+   },
+   {
+    "campo": "criterios_ambientales_en_la_evaluaci_n_de_las_ofertas",
+    "nombre": "Criterios ambientales en la evaluación de las ofertas",
+    "tipo": "text",
+    "descripcion": "Indica si se definieron Criterios ambientales en la evaluación de las ofertas"
+   },
+   {
+    "campo": "obligaciones_contractuales_o_poscontractuales_a_nivel_ambiental",
+    "nombre": "Obligaciones contractuales o poscontractuales a nivel ambiental",
+    "tipo": "text",
+    "descripcion": "Indica si se definieron Obligaciones contractuales o poscontractuales a nivel ambiental"
+   },
+   {
+    "campo": "uso_de_etiquetado_ecol_gico",
+    "nombre": "Uso de etiquetado ecológico",
+    "tipo": "text",
+    "descripcion": "Indica si se definieron el Uso de etiquetado ecológico"
+   },
+   {
+    "campo": "obligaciones_posconsumo",
+    "nombre": "Obligaciones posconsumo",
+    "tipo": "text",
+    "descripcion": "Indica si se definieron Obligaciones posconsumo"
+   },
+   {
+    "campo": "fecha_inicio_obligaciones_posconsumo",
+    "nombre": "Fecha inicio obligaciones posconsumo",
+    "tipo": "calendar_date",
+    "descripcion": "Fecha inicio obligaciones posconsumo"
+   },
+   {
+    "campo": "fecha_fin_obligaciones_posconsumo",
+    "nombre": "Fecha fin obligaciones posconsumo",
+    "tipo": "calendar_date",
+    "descripcion": "Fecha fin obligaciones posconsumo"
+   },
+   {
+    "campo": "fecha_inicio_reversi_n",
+    "nombre": "Fecha inicio reversión",
+    "tipo": "calendar_date",
+    "descripcion": "Fecha inicio reversión"
+   },
+   {
+    "campo": "fecha_fin_reversi_n",
+    "nombre": "Fecha fin reversión",
+    "tipo": "calendar_date",
+    "descripcion": "Fecha fin reversión"
+   }
+  ]
+ },
+ "hgi6-6wh3": {
+  "nombre": "Proponentes por Proceso SECOP II",
+  "columnas": [
+   {
+    "campo": "id_procedimiento",
+    "nombre": "ID Procedimiento",
+    "tipo": "text",
+    "descripcion": null
+   },
+   {
+    "campo": "fecha_publicaci_n",
+    "nombre": "Fecha Publicación",
+    "tipo": "calendar_date",
+    "descripcion": null
+   },
+   {
+    "campo": "nombre_procedimiento",
+    "nombre": "Nombre Procedimiento",
+    "tipo": "text",
+    "descripcion": null
+   },
+   {
+    "campo": "nit_entidad",
+    "nombre": "NIT Entidad",
+    "tipo": "number",
+    "descripcion": null
+   },
+   {
+    "campo": "codigo_entidad",
+    "nombre": "Codigo Entidad",
+    "tipo": "number",
+    "descripcion": null
+   },
+   {
+    "campo": "entidad_compradora",
+    "nombre": "Entidad Compradora",
+    "tipo": "text",
+    "descripcion": null
+   },
+   {
+    "campo": "proveedor",
+    "nombre": "Proveedor",
+    "tipo": "text",
+    "descripcion": null
+   },
+   {
+    "campo": "nit_proveedor",
+    "nombre": "NIT Proveedor",
+    "tipo": "text",
+    "descripcion": null
+   },
+   {
+    "campo": "codigo_proveedor",
+    "nombre": "Codigo Proveedor",
+    "tipo": "number",
+    "descripcion": "Identificador único de la plataforma SECOP II, del Proveedor"
+   }
+  ]
+ },
+ "qmzu-gj57": {
+  "nombre": "SECOP II - Proveedores Registrados",
+  "columnas": [
+   {
+    "campo": "codigo",
+    "nombre": "Codigo",
+    "tipo": "text",
+    "descripcion": "Es el codigo del proveedor en la plataforma SECOPII"
+   },
+   {
+    "campo": "nombre",
+    "nombre": "Nombre",
+    "tipo": "text",
+    "descripcion": "Nombre del Proveedor, como se registró en SECOP II"
+   },
+   {
+    "campo": "nit",
+    "nombre": "NIT",
+    "tipo": "text",
+    "descripcion": "Numero de Identificación con el que figura el proveedor en SECOP II"
+   },
+   {
+    "campo": "es_entidad",
+    "nombre": "Es Entidad",
+    "tipo": "text",
+    "descripcion": "Indica si el proveedor tambien es una entidad compradora en SECOPII"
+   },
+   {
+    "campo": "es_grupo",
+    "nombre": "Es grupo",
+    "tipo": "text",
+    "descripcion": "Indica si la entidad pertenece a un grupo"
+   },
+   {
+    "campo": "esta_activa",
+    "nombre": "Esta Activa",
+    "tipo": "text",
+    "descripcion": "Indica si el proveedor esta activo en el SECOPII"
+   },
+   {
+    "campo": "fecha_creacion",
+    "nombre": "Fecha Creación",
+    "tipo": "calendar_date",
+    "descripcion": "Fecha en la que se hizo el primer registro del proveedor"
+   },
+   {
+    "campo": "codigo_categoria_principal",
+    "nombre": "Codigo Categoria Principal",
+    "tipo": "text",
+    "descripcion": "Codigo UNSPSC principal del proveedor"
+   },
+   {
+    "campo": "descripcion_categoria_principal",
+    "nombre": "Descripcion Categoria Principal",
+    "tipo": "text",
+    "descripcion": "Descripción UNSPSC principal del proveedor"
+   },
+   {
+    "campo": "telefono",
+    "nombre": "Telefono",
+    "tipo": "text",
+    "descripcion": "Indica el número de telefono del proveedor"
+   },
+   {
+    "campo": "fax",
+    "nombre": "Fax",
+    "tipo": "text",
+    "descripcion": "Indica el número de fax reportado por por el proveedor"
+   },
+   {
+    "campo": "correo",
+    "nombre": "Correo",
+    "tipo": "text",
+    "descripcion": "Indica la dirección de correo electronico del proveedor"
+   },
+   {
+    "campo": "direccion",
+    "nombre": "Direccion",
+    "tipo": "text",
+    "descripcion": "Dirección fisica registrada or el proveedor"
+   },
+   {
+    "campo": "pais",
+    "nombre": "Pais",
+    "tipo": "text",
+    "descripcion": "País de origen del Proveedor"
+   },
+   {
+    "campo": "departamento",
+    "nombre": "Departamento",
+    "tipo": "text",
+    "descripcion": "En caso de Ser un proveedor colombiano, indica el departamento al que corresponde la ubicación principal del Proveedor"
+   },
+   {
+    "campo": "municipio",
+    "nombre": "Municipio",
+    "tipo": "text",
+    "descripcion": "En caso de Ser un proveedor colombiano, indica el Municipio al que corresponde la ubicación principal del Proveedor"
+   },
+   {
+    "campo": "sitio_web",
+    "nombre": "Sitio web",
+    "tipo": "text",
+    "descripcion": "Indica el enlace del sitio web del proveedor"
+   },
+   {
+    "campo": "tipo_empresa",
+    "nombre": "Tipo Empresa",
+    "tipo": "text",
+    "descripcion": "Tipo de Empresa que declara el proveedor al registrarse "
+   },
+   {
+    "campo": "nombre_representante_legal",
+    "nombre": "Nombre representante legal",
+    "tipo": "text",
+    "descripcion": "Indica el nombre del representa nte legal del proveedor"
+   },
+   {
+    "campo": "tipo_doc_representante_legal",
+    "nombre": "Tipo doc representante legal",
+    "tipo": "text",
+    "descripcion": "Indica el tipo de documento del representante legal del proveedor"
+   },
+   {
+    "campo": "n_mero_doc_representante_legal",
+    "nombre": "Número doc representante legal",
+    "tipo": "text",
+    "descripcion": "Indica el número de documento del representante legal del proveedor"
+   },
+   {
+    "campo": "telefono_representante_legal",
+    "nombre": "Telefono representante legal",
+    "tipo": "text",
+    "descripcion": "Indica el número telefonico del representante legal del proveedor"
+   },
+   {
+    "campo": "correo_representante_legal",
+    "nombre": "Correo representante legal",
+    "tipo": "text",
+    "descripcion": "Indica el correo electronico del representante legal del proveedor"
+   },
+   {
+    "campo": "espyme",
+    "nombre": "EsPyme",
+    "tipo": "text",
+    "descripcion": "Determina si el proveedor se registro como pequeña empresa"
+   },
+   {
+    "campo": "ubicacion",
+    "nombre": "Ubicación",
+    "tipo": "text",
+    "descripcion": "Indica el codigo de ubicación del proveedor en la plataforma SECOPII"
+   },
+   {
+    "campo": "tama_o_entidad",
+    "nombre": "Tamaño Entidad",
+    "tipo": "text",
+    "descripcion": "Tamaño de la entidad"
+   }
+  ]
+ },
+ "cb9c-h8sn": {
+  "nombre": "SECOP II - Adiciones",
+  "columnas": [
+   {
+    "campo": "identificador",
+    "nombre": "Identificador",
+    "tipo": "text",
+    "descripcion": "Identificador único del evento de modificación"
+   },
+   {
+    "campo": "id_contrato",
+    "nombre": "ID_Contrato",
+    "tipo": "text",
+    "descripcion": "Identificador del contrato al que corresponde la modificación"
+   },
+   {
+    "campo": "tipo",
+    "nombre": "Tipo",
+    "tipo": "text",
+    "descripcion": "Tipo de modificación, de acuerdo al impacto que tiene sobre el contrato"
+   },
+   {
+    "campo": "descripcion",
+    "nombre": "Descripcion",
+    "tipo": "text",
+    "descripcion": "Descripción detallada de la justificación de la adición o modificación"
+   },
+   {
+    "campo": "fecharegistro",
+    "nombre": "FechaRegistro",
+    "tipo": "calendar_date",
+    "descripcion": "Fecha en que se hace la modificación"
+   }
+  ]
+ },
+ "9sue-ezhx": {
+  "nombre": "SECOPII - Plan Anual De Adquisiciones Detalle",
+  "columnas": [
+   {
+    "campo": "id",
+    "nombre": "Id",
+    "tipo": "text",
+    "descripcion": "Identificador único del Item del PAA, numérico"
+   },
+   {
+    "campo": "identificador_unico",
+    "nombre": "Identificador Unico",
+    "tipo": "text",
+    "descripcion": "Identificador único del Item del PAA, propio de la plataforma"
+   },
+   {
+    "campo": "descripcion",
+    "nombre": "Descripcion",
+    "tipo": "text",
+    "descripcion": "Descripción del Item a adquirir en el proceso registrado"
+   },
+   {
+    "campo": "fecha_esperada_de_inicio",
+    "nombre": "Fecha Esperada de Inicio",
+    "tipo": "text",
+    "descripcion": "Fecha Esperada de inicio de desarrollo del proceso de compra pública"
+   },
+   {
+    "campo": "fecha_esperada_de_recepcion",
+    "nombre": "Fecha Esperada de Recepcion de Ofertas",
+    "tipo": "text",
+    "descripcion": "Fecha Esperada de inicio de la fase de recepción de ofertas para el proceso"
+   },
+   {
+    "campo": "duracion_esperada",
+    "nombre": "Duracion Esperada",
+    "tipo": "number",
+    "descripcion": "Valor de la duración esperada del desarrollo del proceso de compra"
+   },
+   {
+    "campo": "unidad_de_duracion_esperada",
+    "nombre": "Unidad de Duracion Esperada",
+    "tipo": "text",
+    "descripcion": "Unidad en la que se calcula el valor de duración esperada"
+   },
+   {
+    "campo": "origen_recursos",
+    "nombre": "Origen Recursos",
+    "tipo": "text",
+    "descripcion": "Origen de los recursos para la adquisición, entre otros, pueden definirse los recursos propios, empréstitos, regalías o Sistema General de Participaciones"
+   },
+   {
+    "campo": "valor_total_esperado",
+    "nombre": "Valor Total Esperado",
+    "tipo": "number",
+    "descripcion": "Valor estimado del proceso de compra"
+   },
+   {
+    "campo": "valor_esperado_de_presupuesto",
+    "nombre": "Valor Esperado de Presupuesto Actual",
+    "tipo": "number",
+    "descripcion": "Valor Estimado del proceso, cubierto por la vigencia actual"
+   },
+   {
+    "campo": "requiere_vigencias_futuras",
+    "nombre": "Requiere vigencias futuras",
+    "tipo": "text",
+    "descripcion": "Indica si se requiere contar con vigencias futuras para la ejecución del PAA. Esta columna antes se llamaba \"Valor Esperado de Vigencias Futuras\""
+   },
+   {
+    "campo": "estado_de_solicitud_de",
+    "nombre": "Estado de Solicitud de Vigencias Futuras",
+    "tipo": "text",
+    "descripcion": "Estado, a nivel de interoperabilidad, de la solicitud de vigencias futuras"
+   },
+   {
+    "campo": "nombre_del_contacto",
+    "nombre": "Nombre del Contacto",
+    "tipo": "text",
+    "descripcion": "Nombre del Contacto responsable de la adquisición en la entidad"
+   },
+   {
+    "campo": "telefono_del_contacto",
+    "nombre": "Telefono del Contacto",
+    "tipo": "text",
+    "descripcion": "Número de teléfono del contacto responsable de la adquisición en la entidad"
+   },
+   {
+    "campo": "correo_del_contacto",
+    "nombre": "Correo del Contacto",
+    "tipo": "text",
+    "descripcion": "Correo electrónico del contacto responsable de la adquisición en la entidad"
+   },
+   {
+    "campo": "modalidad",
+    "nombre": "Modalidad",
+    "tipo": "text",
+    "descripcion": "Mecanismo de Selección utilizado en el proceso de Compra Pública"
+   },
+   {
+    "campo": "categorias_unspsc",
+    "nombre": "Categorias UNSPSC",
+    "tipo": "text",
+    "descripcion": "Codigo de identificación de Naciones Unidas para el bien o servicio que se busca conseguir con la adquisición"
+   },
+   {
+    "campo": "seleccion_abreviada_o_acuerdo",
+    "nombre": "Seleccion Abreviada o Acuerdo Marco",
+    "tipo": "checkbox",
+    "descripcion": "Determina si la adquisición se hace a través de acuerdo marco"
+   },
+   {
+    "campo": "id_plan_anual_de_adquisiciones",
+    "nombre": "Id Plan Anual de Adquisiciones",
+    "tipo": "text",
+    "descripcion": "Relación al Indentificador del Plan Anual de Adquisición registrado en el conjunto de datos de Encabezado - https://www.datos.gov.co/Gastos-Gubernamentales/SECOP-II-PAA-Encabezado/b6m4-qgqv"
+   },
+   {
+    "campo": "procesos_relacionados",
+    "nombre": "Procesos Relacionados",
+    "tipo": "text",
+    "descripcion": "Procesos relacionados con el PAA"
+   },
+   {
+    "campo": "url_proceso",
+    "nombre": "URL Proceso",
+    "tipo": "url",
+    "descripcion": "URL del proceso de compra pública"
+   },
+   {
+    "campo": "codigo_entidad",
+    "nombre": "Codigo Entidad",
+    "tipo": "text",
+    "descripcion": "Codigo de la entidad en la plataforma SECOPII"
+   },
+   {
+    "campo": "nombre_entidad",
+    "nombre": "Nombre Entidad",
+    "tipo": "text",
+    "descripcion": "Nombre de la entidad que publicó el proceso en el SECOPII"
+   },
+   {
+    "campo": "nit_entidad",
+    "nombre": "NIT Entidad",
+    "tipo": "text",
+    "descripcion": "NIT de la Entidad que publicó el PAA en el SECOPII"
+   },
+   {
+    "campo": "id_paa_encabezado",
+    "nombre": "ID PAA Encabezado",
+    "tipo": "text",
+    "descripcion": "ID del encabezado del PAA"
+   },
+   {
+    "campo": "causal_de_contratacion",
+    "nombre": "Causal de contratacion",
+    "tipo": "text",
+    "descripcion": "Se refiere al tipo de necesidad para ejecutar la contratacion"
+   },
+   {
+    "campo": "grupo_de_procedimiento",
+    "nombre": "Grupo de procedimiento",
+    "tipo": "text",
+    "descripcion": "Grupo de procedimiento al que pertenece el PAA"
+   },
+   {
+    "campo": "annio",
+    "nombre": "Annio",
+    "tipo": "number",
+    "descripcion": "Año del PAA"
+   },
+   {
+    "campo": "tipo",
+    "nombre": "Tipo",
+    "tipo": "text",
+    "descripcion": "Si es una adquisición o una necesidad."
+   },
+   {
+    "campo": "version_del_paa",
+    "nombre": "Version del PAA",
+    "tipo": "number",
+    "descripcion": "Versión del PAA"
+   },
+   {
+    "campo": "fecha_version",
+    "nombre": "Fecha version del PAA",
+    "tipo": "text",
+    "descripcion": "Fecha en que se publicó la versión del PAA"
+   },
+   {
+    "campo": "fecha_de_carga_del_paa",
+    "nombre": "Fecha de carga del PAA",
+    "tipo": "text",
+    "descripcion": "Fecha de carga del PAA"
+   }
+  ]
+ },
+ "32sa-8pi3": {
+  "nombre": "Tasa de Cambio Representativa del Mercado- TRM",
+  "columnas": [
+   {
+    "campo": "valor",
+    "nombre": "VALOR",
+    "tipo": "number",
+    "descripcion": "Valor numérico con la tasa de cambio del peso colombiano frente al dolar"
+   },
+   {
+    "campo": "unidad",
+    "nombre": "UNIDAD",
+    "tipo": "text",
+    "descripcion": "Representación de la divisa según la norma ISO 4217"
+   },
+   {
+    "campo": "vigenciadesde",
+    "nombre": "VIGENCIADESDE",
+    "tipo": "calendar_date",
+    "descripcion": "Fecha de inicio de la vigencia de la tasa representativa del mercado"
+   },
+   {
+    "campo": "vigenciahasta",
+    "nombre": "VIGENCIAHASTA",
+    "tipo": "calendar_date",
+    "descripcion": "Fecha de finalización de la vigencia de la tasa representativa del mercado"
+   }
+  ]
+ },
+ "f789-7hwg": {
+  "nombre": "SECOP I - Procesos de Compra Pública",
+  "columnas": [
+   {
+    "campo": "uid",
+    "nombre": "UID",
+    "tipo": "text",
+    "descripcion": "Identificador único de la relación entre proceso y adjudicación, campo constituido por el número de constancia y el de adjudicación, separados por un guión"
+   },
+   {
+    "campo": "anno_cargue_secop",
+    "nombre": "Anno Cargue SECOP",
+    "tipo": "number",
+    "descripcion": "Valor Numérico para identificar el año en que el proceso fue cargado en la plataformaorma"
+   },
+   {
+    "campo": "anno_firma_contrato",
+    "nombre": "Anno Firma Contrato",
+    "tipo": "text",
+    "descripcion": "Valor de texto que identifica la fecha de firma del contrato, en caso de no existir aún firma del contrato, el registro se marca como no firmado"
+   },
+   {
+    "campo": "nivel_entidad",
+    "nombre": "Nivel Entidad",
+    "tipo": "text",
+    "descripcion": " Determina el primer grado de caracterización de la entidad de acuerdo a su orden: Nacional o Territorial"
+   },
+   {
+    "campo": "orden_entidad",
+    "nombre": "Orden Entidad",
+    "tipo": "text",
+    "descripcion": "Segundo nivel de caracterización, que detalla el orden definido para la entidad "
+   },
+   {
+    "campo": "nombre_entidad",
+    "nombre": "Nombre Entidad",
+    "tipo": "text",
+    "descripcion": "Nombre de la Entidad del Estado que publicó el proceso de compra, Entidad compradora el proceso"
+   },
+   {
+    "campo": "nit_de_la_entidad",
+    "nombre": "NIT de la Entidad",
+    "tipo": "text",
+    "descripcion": "Identificador tributario de la entidad del Estado que publicó el proceso de compra, Entidad compradora"
+   },
+   {
+    "campo": "c_digo_de_la_entidad",
+    "nombre": "Código de la Entidad",
+    "tipo": "number",
+    "descripcion": " Código de la Entidad, utilizado como identificador único en la plataforma SECOP I"
+   },
+   {
+    "campo": "id_modalidad",
+    "nombre": "ID Modalidad",
+    "tipo": "number",
+    "descripcion": "Identificador de la Modalidad de selección que se determinó para el proceso de compra actual, Ej: Licitación Pública, Contratación Directa. compra"
+   },
+   {
+    "campo": "modalidad_de_contratacion",
+    "nombre": "Modalidad de Contratacion",
+    "tipo": "text",
+    "descripcion": "Modalidad de selección que se determinó para el proceso de compra actual, Ej: Licitación Pública, Contratación Directa."
+   },
+   {
+    "campo": "estado_del_proceso",
+    "nombre": "Estado del Proceso",
+    "tipo": "text",
+    "descripcion": " El Estado del proceso a la fecha de publicación"
+   },
+   {
+    "campo": "causal_de_otras_formas_de",
+    "nombre": "Causal de Otras formas de Contratacion Directa",
+    "tipo": "text",
+    "descripcion": "En caso de una contratación directa, el campo determina la causa por la cual se llega a la decisión de contratar directamente."
+   },
+   {
+    "campo": "id_regimen_de_contratacion",
+    "nombre": "ID Regimen de Contratacion",
+    "tipo": "number",
+    "descripcion": "Determina si se utilizan las Leyes 80 de 1993 y 1150 de 2007 o en su defecto un régimen especial ID del régimen bajo el cual la entidad desarrolla el proceso de compra pública"
+   },
+   {
+    "campo": "nombre_regimen_de_contratacion",
+    "nombre": "Nombre Regimen de Contratacion",
+    "tipo": "text",
+    "descripcion": "Determina si se utilizan las Leyes 80 de 1993 y 1150 de 2007 o en su defecto un régimen especial"
+   },
+   {
+    "campo": "id_objeto_a_contratar",
+    "nombre": "ID Objeto a Contratar",
+    "tipo": "number",
+    "descripcion": "ID del Objeto de la contratación, basado en el catálogo de bienes y servicios UNSPSC, consultable desde https://www.colombiacompra.gov.co/clasificador-de-bienes-y-servicios"
+   },
+   {
+    "campo": "objeto_a_contratar",
+    "nombre": "Objeto a Contratar",
+    "tipo": "text",
+    "descripcion": "Objeto de la contratación, basado en el catálogo de bienes y servicios UNSPSC, consultable desde https://www.colombiacompra.gov.co/clasificador-de-bienes-y-servicios"
+   },
+   {
+    "campo": "detalle_del_objeto_a_contratar",
+    "nombre": "Detalle del Objeto a Contratar",
+    "tipo": "text",
+    "descripcion": "Adicional al código que define el objeto del contrato, se registra un detalle de la definición del bien o servicio que se adquirirá dentro del proceso"
+   },
+   {
+    "campo": "tipo_de_contrato",
+    "nombre": "Tipo De Contrato",
+    "tipo": "text",
+    "descripcion": "Tipo de Contrato que se realizará, ejemplos: Fiducia, Obra, entre otros."
+   },
+   {
+    "campo": "municipio_de_obtencion",
+    "nombre": "Municipio de Obtencion",
+    "tipo": "text",
+    "descripcion": "Municipio en el que se desarrolla el proceso de compra pública"
+   },
+   {
+    "campo": "municipio_de_entrega",
+    "nombre": "Municipio de Entrega",
+    "tipo": "text",
+    "descripcion": " Municipio en el que se hace la entrega del bien o servicio"
+   },
+   {
+    "campo": "municipios_ejecucion",
+    "nombre": "Municipios Ejecucion",
+    "tipo": "text",
+    "descripcion": "Municipios en los que se desarrollará el objeto del proceso de compra pública"
+   },
+   {
+    "campo": "fecha_de_cargue_en_el_secop",
+    "nombre": "Fecha de Cargue en el SECOP",
+    "tipo": "calendar_date",
+    "descripcion": "Fecha en la que se hizo el registro del proceso de compra en la plataforma, entregada en formato DDMMYYYY"
+   },
+   {
+    "campo": "numero_de_constancia",
+    "nombre": "Numero de Constancia",
+    "tipo": "text",
+    "descripcion": "Identificador del proceso de compra, generado por SECOP I"
+   },
+   {
+    "campo": "numero_de_proceso",
+    "nombre": "Numero de Proceso",
+    "tipo": "text",
+    "descripcion": "Identificador del proceso, de acuerdo con la nomenclatura de la entidad"
+   },
+   {
+    "campo": "numero_de_contrato",
+    "nombre": "Numero de Contrato",
+    "tipo": "text",
+    "descripcion": "Identificador del contrato, de acuerdo con la nomenclatura de la entidad"
+   },
+   {
+    "campo": "cuantia_proceso",
+    "nombre": "Cuantia Proceso",
+    "tipo": "number",
+    "descripcion": "Valor por el cual se lanza el proceso de compra"
+   },
+   {
+    "campo": "id_grupo",
+    "nombre": "ID Grupo",
+    "tipo": "text",
+    "descripcion": " ID de la Categorización inicial del bien o servicio definido en el proceso de compra, de acuerdo con sus características principales, constituye el primer nivel de clasificación UNSPSC, consultable desde https://www.colombiacompra.gov.co/clasificador-de-bienes-y-servicios"
+   },
+   {
+    "campo": "nombre_grupo",
+    "nombre": "Nombre Grupo",
+    "tipo": "text",
+    "descripcion": " Categorización inicial del bien o servicio definido en el proceso de compra, de acuerdo con sus características principales, constituye el primer nivel de clasificación UNSPSC, consultable desde https://www.colombiacompra.gov.co/clasificador-de-bienes-y-servicios"
+   },
+   {
+    "campo": "id_familia",
+    "nombre": "ID Familia",
+    "tipo": "text",
+    "descripcion": "ID del segundo nivel de la Categorización del bien o servicio definido en el proceso de compra, de acuerdo con sus características principales, constituye el primer nivel de clasificación UNSPSC, consultable desde https://www.colombiacompra.gov.co/clasificador-de-bienes-y-servicios"
+   },
+   {
+    "campo": "nombre_familia",
+    "nombre": "Nombre Familia",
+    "tipo": "text",
+    "descripcion": " Segundo nivel de la Categorización del bien o servicio definido en el proceso de compra, de acuerdo a sus características principales, constituye el primer nivel de clasificación UNSPSC, consultable desde https://www.colombiacompra.gov.co/clasificador-de-bienes-y-servicios"
+   },
+   {
+    "campo": "id_clase",
+    "nombre": "ID Clase",
+    "tipo": "text",
+    "descripcion": "ID del tercer nivel de la Categorización del bien o servicio definido en el proceso de compra, de acuerdo a sus características principales, constituye el primer nivel de clasificación UNSPSC, consultable desde https://www.colombiacompra.gov.co/clasificador-de-bienes-y-servicios"
+   },
+   {
+    "campo": "nombre_clase",
+    "nombre": "Nombre Clase",
+    "tipo": "text",
+    "descripcion": "Tercer nivel de la Categorización del bien o servicio definido en el proceso de compra, de acuerdo a sus características principales, constituye el primer nivel de clasificación UNSPSC, consultable desde https://www.colombiacompra.gov.co/clasificador-de-bienes-y-servicios"
+   },
+   {
+    "campo": "id_adjudicacion",
+    "nombre": "ID Adjudicacion",
+    "tipo": "text",
+    "descripcion": "Identificador de la adjudicación hechas en el proceso de compra"
+   },
+   {
+    "campo": "tipo_identifi_del_contratista",
+    "nombre": "Tipo Identifi del Contratista",
+    "tipo": "text",
+    "descripcion": "Tipo de Identificación del contratista seleccionado en la adjudicación"
+   },
+   {
+    "campo": "identificacion_del_contratista",
+    "nombre": "Identificacion del Contratista",
+    "tipo": "text",
+    "descripcion": "Identificación del contratista seleccionado en la adjudicación"
+   },
+   {
+    "campo": "nom_razon_social_contratista",
+    "nombre": "Nom Razon Social Contratista",
+    "tipo": "text",
+    "descripcion": "Nombre o Razón Social del contratista seleccionado en la adjudicación"
+   },
+   {
+    "campo": "dpto_y_muni_contratista",
+    "nombre": "Dpto y Muni Contratista",
+    "tipo": "text",
+    "descripcion": "Departamento y Municipio en el cual opera el contratista seleccionado en la adjudicación"
+   },
+   {
+    "campo": "tipo_doc_representante_legal",
+    "nombre": "Tipo Doc Representante Legal",
+    "tipo": "text",
+    "descripcion": "En caso de que el adjudicado sea una persona jurídica, el tipo de identificación del representante legal de la empresa seleccionada en la adjudicación"
+   },
+   {
+    "campo": "identific_representante_legal",
+    "nombre": "Identific Representante Legal",
+    "tipo": "text",
+    "descripcion": "En caso de que el adjudicado sea una persona jurídica, registra la identificación del representante legal de la empresa seleccionada en la adjudicación"
+   },
+   {
+    "campo": "nombre_del_represen_legal",
+    "nombre": "Nombre del Represen Legal",
+    "tipo": "text",
+    "descripcion": "En caso de que el adjudicado sea una persona jurídica, registra el nombre del representante legal de la empresa seleccionada en la adjudicación"
+   },
+   {
+    "campo": "fecha_de_firma_del_contrato",
+    "nombre": "Fecha de Firma del Contrato",
+    "tipo": "calendar_date",
+    "descripcion": "Fecha en que se hace la firma del contrato correspondiente a la adjudicación del registro, entregada en formato DDMMYYYY"
+   },
+   {
+    "campo": "fecha_ini_ejec_contrato",
+    "nombre": "Fecha Ini Ejec Contrato",
+    "tipo": "calendar_date",
+    "descripcion": "Fecha en que inicia la ejecución del contrato, entregada en formato DDMMYYYY"
+   },
+   {
+    "campo": "plazo_de_ejec_del_contrato",
+    "nombre": "Plazo de Ejec del Contrato",
+    "tipo": "number",
+    "descripcion": "Valor sobre el cual se determina la duración del contrato"
+   },
+   {
+    "campo": "rango_de_ejec_del_contrato",
+    "nombre": "Rango de Ejec del Contrato",
+    "tipo": "text",
+    "descripcion": "Unidad en la que se define el plazo, pueden ser días, meses o años"
+   },
+   {
+    "campo": "tiempo_adiciones_en_dias",
+    "nombre": "Tiempo Adiciones en Dias",
+    "tipo": "number",
+    "descripcion": "Tiempo adicionado al contrato, en días"
+   },
+   {
+    "campo": "tiempo_adiciones_en_meses",
+    "nombre": "Tiempo Adiciones en Meses",
+    "tipo": "number",
+    "descripcion": "Tiempo adicionado al contrato, cuando es más de un mes"
+   },
+   {
+    "campo": "fecha_fin_ejec_contrato",
+    "nombre": "Fecha Fin Ejec Contrato",
+    "tipo": "calendar_date",
+    "descripcion": "Fecha en que finaliza la ejecución del contrato, entregada en formato DDMMYYYY"
+   },
+   {
+    "campo": "compromiso_presupuestal",
+    "nombre": "Compromiso Presupuestal",
+    "tipo": "text",
+    "descripcion": "En caso de tener registro presupuestal, el campo muestra el código correspondiente"
+   },
+   {
+    "campo": "cuantia_contrato",
+    "nombre": "Cuantia Contrato",
+    "tipo": "number",
+    "descripcion": "Valor por el cual se firma el contrato"
+   },
+   {
+    "campo": "valor_total_de_adiciones",
+    "nombre": "Valor Total de Adiciones",
+    "tipo": "number",
+    "descripcion": "Valor de la suma de las adiciones hechas al contrato"
+   },
+   {
+    "campo": "valor_contrato_con_adiciones",
+    "nombre": "Valor Contrato con Adiciones",
+    "tipo": "number",
+    "descripcion": "Valor total del contrato, incluyendo las adiciones"
+   },
+   {
+    "campo": "objeto_del_contrato_a_la",
+    "nombre": "Objeto del Contrato a la Firma",
+    "tipo": "text",
+    "descripcion": "Objeto del contrato al momento de la firma"
+   },
+   {
+    "campo": "proponentes_seleccionados",
+    "nombre": "Proponentes Seleccionados",
+    "tipo": "text",
+    "descripcion": " Listado de los proponentes seleccionados en el proceso de compra"
+   },
+   {
+    "campo": "calificacion_definitiva",
+    "nombre": "Calificacion Definitiva",
+    "tipo": "text",
+    "descripcion": "Calificación definitiva de los proponentes dentro del proceso de compra"
+   },
+   {
+    "campo": "id_sub_unidad_ejecutora",
+    "nombre": "ID Sub Unidad Ejecutora",
+    "tipo": "text",
+    "descripcion": " Identificador y nombre de la Sub Unidad de ejecucion de presupuesto asignada al proceso de compra"
+   },
+   {
+    "campo": "nombre_sub_unidad_ejecutora",
+    "nombre": "Nombre Sub Unidad Ejecutora",
+    "tipo": "text",
+    "descripcion": "Identificador y nombre de la Sub Unidad de ejecucion de presupuesto asignada al proceso de compra"
+   },
+   {
+    "campo": "ruta_proceso_en_secop_i",
+    "nombre": "Ruta Proceso en SECOP I",
+    "tipo": "url",
+    "descripcion": "Ruta del proceso de compra en SECOP, para hacer consulta de la información detallada"
+   },
+   {
+    "campo": "moneda",
+    "nombre": "Moneda",
+    "tipo": "text",
+    "descripcion": "Moneda en la cual estan registradas las cuantías del proceso de compra"
+   },
+   {
+    "campo": "es_postconflicto",
+    "nombre": "Es PostConflicto",
+    "tipo": "number",
+    "descripcion": "Marcador que indica si el proceso de compra pública está enmarcado en las acciones de postconflicto del acuerdo de paz del año 2017"
+   },
+   {
+    "campo": "marcacion_adiciones",
+    "nombre": "Marcacion Adiciones",
+    "tipo": "number",
+    "descripcion": "Marcación de si el proceso tiene adiciones registradas"
+   },
+   {
+    "campo": "posicion_rubro",
+    "nombre": "Posicion Rubro",
+    "tipo": "text",
+    "descripcion": "Posición (Identificador) del Rubro presupuestal"
+   },
+   {
+    "campo": "nombre_rubro",
+    "nombre": "Nombre Rubro",
+    "tipo": "text",
+    "descripcion": "Nombre del Rubro Presupuestal al que corresponde el proceso"
+   },
+   {
+    "campo": "valor_rubro",
+    "nombre": "Valor Rubro",
+    "tipo": "number",
+    "descripcion": "Valor del Rubro presupuestal asignado al proceso"
+   },
+   {
+    "campo": "sexo_replegal",
+    "nombre": "Sexo RepLegal",
+    "tipo": "text",
+    "descripcion": "Sexo del Representante legal de la entidad compradora"
+   },
+   {
+    "campo": "pilar_acuerdo_paz",
+    "nombre": "Pilar Acuerdo Paz",
+    "tipo": "text",
+    "descripcion": " Pilar, del acuerdo de paz del año 2016, sobre el cual se desarrolla el proceso de compra"
+   },
+   {
+    "campo": "punto_acuerdo_paz",
+    "nombre": "Punto Acuerdo Paz",
+    "tipo": "text",
+    "descripcion": " Punto del acuerdo de paz del año 2016, al que se relaciona el objeto de contratación del proceso de compra"
+   },
+   {
+    "campo": "municipio_entidad",
+    "nombre": "Municipio Entidad",
+    "tipo": "text",
+    "descripcion": " Municipio en el que se encuentra registrada la entidad estatal compradora"
+   },
+   {
+    "campo": "departamento_entidad",
+    "nombre": "Departamento Entidad",
+    "tipo": "text",
+    "descripcion": "Departamento en el que se encuentra registrada la entidad estatal compradora"
+   },
+   {
+    "campo": "ultima_actualizacion",
+    "nombre": "Ultima Actualizacion",
+    "tipo": "calendar_date",
+    "descripcion": "Para suplir requerimientos de timestamp, se registra la última fecha de modificación del proceso de compra, entregados en formato DDMMYYYY"
+   },
+   {
+    "campo": "fecha_liquidacion",
+    "nombre": "Fecha Liquidacion",
+    "tipo": "calendar_date",
+    "descripcion": "Fecha en que fue liquidado el contrato"
+   },
+   {
+    "campo": "cumpledecreto248",
+    "nombre": "Cumple Decreto 248",
+    "tipo": "text",
+    "descripcion": "Indica si el requerimiento del bien o servicio tiene caracteristicas que lo catalogan como candidato a recibir el tratamiento estipulado en el decreto 248 del año 2021, que busca impulsar el desarrollo de los pequeños agricultores"
+   },
+   {
+    "campo": "incluyebienesdecreto248",
+    "nombre": "IncluyeBienesDecreto248",
+    "tipo": "text",
+    "descripcion": "Indica si el proceso incluye articulos directamente relacionados con el decreto 248 del año 2021"
+   },
+   {
+    "campo": "cumple_sentencia_t302",
+    "nombre": "Cumple Sentencia T302",
+    "tipo": "text",
+    "descripcion": "Indica si cumple o no con la sentencia T 302"
+   },
+   {
+    "campo": "es_mipyme",
+    "nombre": "Es MiPyme",
+    "tipo": "text",
+    "descripcion": "Indica si la entidad compradora es Mipyme"
+   },
+   {
+    "campo": "tama_o_mipyme",
+    "nombre": "Tamaño Mipyme",
+    "tipo": "text",
+    "descripcion": "Indica el tamaño de la entidad compradora"
+   },
+   {
+    "campo": "codigo_bpin",
+    "nombre": "Codigo BPIN",
+    "tipo": "text",
+    "descripcion": "Codigo BPIN del Contrato"
+   },
+   {
+    "campo": "destino_gasto",
+    "nombre": "Destino gasto",
+    "tipo": "text",
+    "descripcion": "Describe el destino del gasto del contrato"
+   },
+   {
+    "campo": "pliegos_tipo",
+    "nombre": "Pliegos tipo",
+    "tipo": "text",
+    "descripcion": "Indica si el contrato tiene pliegos tipo"
+   },
+   {
+    "campo": "sector_pliegos_tipo",
+    "nombre": "Sector pliegos tipo",
+    "tipo": "text",
+    "descripcion": "Indica de que sector se utilizaron los pliegos tipo"
+   }
+  ]
+ },
+ "qddk-cgux": {
+  "nombre": "SECOP I - Procesos de Compra Pública Historico",
+  "columnas": [
+   {
+    "campo": "uid",
+    "nombre": "UID",
+    "tipo": "text",
+    "descripcion": "Identificador único de la relación entre proceso y adjudicación, campo constituido por el número de constancia y el de adjudicación, separados por un guión"
+   },
+   {
+    "campo": "anno_cargue_secop",
+    "nombre": "Anno Cargue SECOP",
+    "tipo": "number",
+    "descripcion": "Valor Numérico para identificar el año en que el proceso fue cargado en la plataformaorma"
+   },
+   {
+    "campo": "anno_firma_contrato",
+    "nombre": "Anno Firma Contrato",
+    "tipo": "text",
+    "descripcion": "Valor de texto que identifica la fecha de firma del contrato, en caso de no existir aún firma del contrato, el registro se marca como no firmado"
+   },
+   {
+    "campo": "nivel_entidad",
+    "nombre": "Nivel Entidad",
+    "tipo": "text",
+    "descripcion": " Determina el primer grado de caracterización de la entidad de acuerdo a su orden: Nacional o Territorial"
+   },
+   {
+    "campo": "orden_entidad",
+    "nombre": "Orden Entidad",
+    "tipo": "text",
+    "descripcion": "Segundo nivel de caracterización, que detalla el orden definido para la entidad "
+   },
+   {
+    "campo": "nombre_entidad",
+    "nombre": "Nombre Entidad",
+    "tipo": "text",
+    "descripcion": "Nombre de la Entidad del Estado que publicó el proceso de compra, Entidad compradora el proceso"
+   },
+   {
+    "campo": "nit_de_la_entidad",
+    "nombre": "NIT de la Entidad",
+    "tipo": "text",
+    "descripcion": "Identificador tributario de la entidad del Estado que publicó el proceso de compra, Entidad compradora"
+   },
+   {
+    "campo": "c_digo_de_la_entidad",
+    "nombre": "Código de la Entidad",
+    "tipo": "number",
+    "descripcion": " Código de la Entidad, utilizado como identificador único en la plataforma SECOP I"
+   },
+   {
+    "campo": "id_modalidad",
+    "nombre": "ID Modalidad",
+    "tipo": "number",
+    "descripcion": "Identificador de la Modalidad de selección que se determinó para el proceso de compra actual, Ej: Licitación Pública, Contratación Directa. compra"
+   },
+   {
+    "campo": "modalidad_de_contratacion",
+    "nombre": "Modalidad de Contratacion",
+    "tipo": "text",
+    "descripcion": "Modalidad de selección que se determinó para el proceso de compra actual, Ej: Licitación Pública, Contratación Directa."
+   },
+   {
+    "campo": "estado_del_proceso",
+    "nombre": "Estado del Proceso",
+    "tipo": "text",
+    "descripcion": " El Estado del proceso a la fecha de publicación"
+   },
+   {
+    "campo": "causal_de_otras_formas_de",
+    "nombre": "Causal de Otras formas de Contratacion Directa",
+    "tipo": "text",
+    "descripcion": "En caso de una contratación directa, el campo determina la causa por la cual se llega a la decisión de contratar directamente."
+   },
+   {
+    "campo": "id_regimen_de_contratacion",
+    "nombre": "ID Regimen de Contratacion",
+    "tipo": "number",
+    "descripcion": "Determina si se utilizan las Leyes 80 de 1993 y 1150 de 2007 o en su defecto un régimen especial ID del régimen bajo el cual la entidad desarrolla el proceso de compra pública"
+   },
+   {
+    "campo": "nombre_regimen_de_contratacion",
+    "nombre": "Nombre Regimen de Contratacion",
+    "tipo": "text",
+    "descripcion": "Determina si se utilizan las Leyes 80 de 1993 y 1150 de 2007 o en su defecto un régimen especial"
+   },
+   {
+    "campo": "id_objeto_a_contratar",
+    "nombre": "ID Objeto a Contratar",
+    "tipo": "number",
+    "descripcion": "ID del Objeto de la contratación, basado en el catálogo de bienes y servicios UNSPSC, consultable desde https://www.colombiacompra.gov.co/clasificador-de-bienes-y-servicios"
+   },
+   {
+    "campo": "objeto_a_contratar",
+    "nombre": "Objeto a Contratar",
+    "tipo": "text",
+    "descripcion": "Objeto de la contratación, basado en el catálogo de bienes y servicios UNSPSC, consultable desde https://www.colombiacompra.gov.co/clasificador-de-bienes-y-servicios"
+   },
+   {
+    "campo": "detalle_del_objeto_a_contratar",
+    "nombre": "Detalle del Objeto a Contratar",
+    "tipo": "text",
+    "descripcion": "Adicional al código que define el objeto del contrato, se registra un detalle de la definición del bien o servicio que se adquirirá dentro del proceso"
+   },
+   {
+    "campo": "tipo_de_contrato",
+    "nombre": "Tipo De Contrato",
+    "tipo": "text",
+    "descripcion": "Tipo de Contrato que se realizará, ejemplos: Fiducia, Obra, entre otros."
+   },
+   {
+    "campo": "municipio_de_obtencion",
+    "nombre": "Municipio de Obtencion",
+    "tipo": "text",
+    "descripcion": "Municipio en el que se desarrolla el proceso de compra pública"
+   },
+   {
+    "campo": "municipio_de_entrega",
+    "nombre": "Municipio de Entrega",
+    "tipo": "text",
+    "descripcion": " Municipio en el que se hace la entrega del bien o servicio"
+   },
+   {
+    "campo": "municipios_ejecucion",
+    "nombre": "Municipios Ejecucion",
+    "tipo": "text",
+    "descripcion": "Municipios en los que se desarrollará el objeto del proceso de compra pública"
+   },
+   {
+    "campo": "fecha_de_cargue_en_el_secop",
+    "nombre": "Fecha de Cargue en el SECOP",
+    "tipo": "calendar_date",
+    "descripcion": "Fecha en la que se hizo el registro del proceso de compra en la plataforma, entregada en formato DDMMYYYY"
+   },
+   {
+    "campo": "numero_de_constancia",
+    "nombre": "Numero de Constancia",
+    "tipo": "text",
+    "descripcion": "Identificador del proceso de compra, generado por SECOP I"
+   },
+   {
+    "campo": "numero_de_proceso",
+    "nombre": "Numero de Proceso",
+    "tipo": "text",
+    "descripcion": "Identificador del proceso, de acuerdo con la nomenclatura de la entidad"
+   },
+   {
+    "campo": "numero_de_contrato",
+    "nombre": "Numero de Contrato",
+    "tipo": "text",
+    "descripcion": "Identificador del contrato, de acuerdo con la nomenclatura de la entidad"
+   },
+   {
+    "campo": "cuantia_proceso",
+    "nombre": "Cuantia Proceso",
+    "tipo": "number",
+    "descripcion": "Valor por el cual se lanza el proceso de compra"
+   },
+   {
+    "campo": "id_grupo",
+    "nombre": "ID Grupo",
+    "tipo": "text",
+    "descripcion": " ID de la Categorización inicial del bien o servicio definido en el proceso de compra, de acuerdo con sus características principales, constituye el primer nivel de clasificación UNSPSC, consultable desde https://www.colombiacompra.gov.co/clasificador-de-bienes-y-servicios"
+   },
+   {
+    "campo": "nombre_grupo",
+    "nombre": "Nombre Grupo",
+    "tipo": "text",
+    "descripcion": " Categorización inicial del bien o servicio definido en el proceso de compra, de acuerdo con sus características principales, constituye el primer nivel de clasificación UNSPSC, consultable desde https://www.colombiacompra.gov.co/clasificador-de-bienes-y-servicios"
+   },
+   {
+    "campo": "id_familia",
+    "nombre": "ID Familia",
+    "tipo": "text",
+    "descripcion": "ID del segundo nivel de la Categorización del bien o servicio definido en el proceso de compra, de acuerdo con sus características principales, constituye el primer nivel de clasificación UNSPSC, consultable desde https://www.colombiacompra.gov.co/clasificador-de-bienes-y-servicios"
+   },
+   {
+    "campo": "nombre_familia",
+    "nombre": "Nombre Familia",
+    "tipo": "text",
+    "descripcion": " Segundo nivel de la Categorización del bien o servicio definido en el proceso de compra, de acuerdo a sus características principales, constituye el primer nivel de clasificación UNSPSC, consultable desde https://www.colombiacompra.gov.co/clasificador-de-bienes-y-servicios"
+   },
+   {
+    "campo": "id_clase",
+    "nombre": "ID Clase",
+    "tipo": "text",
+    "descripcion": "ID del tercer nivel de la Categorización del bien o servicio definido en el proceso de compra, de acuerdo a sus características principales, constituye el primer nivel de clasificación UNSPSC, consultable desde https://www.colombiacompra.gov.co/clasificador-de-bienes-y-servicios"
+   },
+   {
+    "campo": "nombre_clase",
+    "nombre": "Nombre Clase",
+    "tipo": "text",
+    "descripcion": "Tercer nivel de la Categorización del bien o servicio definido en el proceso de compra, de acuerdo a sus características principales, constituye el primer nivel de clasificación UNSPSC, consultable desde https://www.colombiacompra.gov.co/clasificador-de-bienes-y-servicios"
+   },
+   {
+    "campo": "id_adjudicacion",
+    "nombre": "ID Adjudicacion",
+    "tipo": "text",
+    "descripcion": "Identificador de la adjudicación hechas en el proceso de compra"
+   },
+   {
+    "campo": "tipo_identifi_del_contratista",
+    "nombre": "Tipo Identifi del Contratista",
+    "tipo": "text",
+    "descripcion": "Tipo de Identificación del contratista seleccionado en la adjudicación"
+   },
+   {
+    "campo": "identificacion_del_contratista",
+    "nombre": "Identificacion del Contratista",
+    "tipo": "text",
+    "descripcion": "Identificación del contratista seleccionado en la adjudicación"
+   },
+   {
+    "campo": "nom_razon_social_contratista",
+    "nombre": "Nom Razon Social Contratista",
+    "tipo": "text",
+    "descripcion": "Nombre o Razón Social del contratista seleccionado en la adjudicación"
+   },
+   {
+    "campo": "dpto_y_muni_contratista",
+    "nombre": "Dpto y Muni Contratista",
+    "tipo": "text",
+    "descripcion": "Departamento y Municipio en el cual opera el contratista seleccionado en la adjudicación"
+   },
+   {
+    "campo": "tipo_doc_representante_legal",
+    "nombre": "Tipo Doc Representante Legal",
+    "tipo": "text",
+    "descripcion": "En caso de que el adjudicado sea una persona jurídica, el tipo de identificación del representante legal de la empresa seleccionada en la adjudicación"
+   },
+   {
+    "campo": "identific_representante_legal",
+    "nombre": "Identific Representante Legal",
+    "tipo": "text",
+    "descripcion": "En caso de que el adjudicado sea una persona jurídica, registra la identificación del representante legal de la empresa seleccionada en la adjudicación"
+   },
+   {
+    "campo": "nombre_del_represen_legal",
+    "nombre": "Nombre del Represen Legal",
+    "tipo": "text",
+    "descripcion": "En caso de que el adjudicado sea una persona jurídica, registra el nombre del representante legal de la empresa seleccionada en la adjudicación"
+   },
+   {
+    "campo": "fecha_de_firma_del_contrato",
+    "nombre": "Fecha de Firma del Contrato",
+    "tipo": "calendar_date",
+    "descripcion": "Fecha en que se hace la firma del contrato correspondiente a la adjudicación del registro, entregada en formato DDMMYYYY"
+   },
+   {
+    "campo": "fecha_ini_ejec_contrato",
+    "nombre": "Fecha Ini Ejec Contrato",
+    "tipo": "calendar_date",
+    "descripcion": "Fecha en que inicia la ejecución del contrato, entregada en formato DDMMYYYY"
+   },
+   {
+    "campo": "plazo_de_ejec_del_contrato",
+    "nombre": "Plazo de Ejec del Contrato",
+    "tipo": "number",
+    "descripcion": "Valor sobre el cual se determina la duración del contrato"
+   },
+   {
+    "campo": "rango_de_ejec_del_contrato",
+    "nombre": "Rango de Ejec del Contrato",
+    "tipo": "text",
+    "descripcion": "Unidad en la que se define el plazo, pueden ser días, meses o años"
+   },
+   {
+    "campo": "tiempo_adiciones_en_dias",
+    "nombre": "Tiempo Adiciones en Dias",
+    "tipo": "number",
+    "descripcion": "Tiempo adicionado al contrato, en días"
+   },
+   {
+    "campo": "tiempo_adiciones_en_meses",
+    "nombre": "Tiempo Adiciones en Meses",
+    "tipo": "number",
+    "descripcion": "Tiempo adicionado al contrato, cuando es más de un mes"
+   },
+   {
+    "campo": "fecha_fin_ejec_contrato",
+    "nombre": "Fecha Fin Ejec Contrato",
+    "tipo": "calendar_date",
+    "descripcion": "Fecha en que finaliza la ejecución del contrato, entregada en formato DDMMYYYY"
+   },
+   {
+    "campo": "compromiso_presupuestal",
+    "nombre": "Compromiso Presupuestal",
+    "tipo": "text",
+    "descripcion": "En caso de tener registro presupuestal, el campo muestra el código correspondiente"
+   },
+   {
+    "campo": "cuantia_contrato",
+    "nombre": "Cuantia Contrato",
+    "tipo": "number",
+    "descripcion": "Valor por el cual se firma el contrato"
+   },
+   {
+    "campo": "valor_total_de_adiciones",
+    "nombre": "Valor Total de Adiciones",
+    "tipo": "number",
+    "descripcion": "Valor de la suma de las adiciones hechas al contrato"
+   },
+   {
+    "campo": "valor_contrato_con_adiciones",
+    "nombre": "Valor Contrato con Adiciones",
+    "tipo": "number",
+    "descripcion": "Valor total del contrato, incluyendo las adiciones"
+   },
+   {
+    "campo": "objeto_del_contrato_a_la",
+    "nombre": "Objeto del Contrato a la Firma",
+    "tipo": "text",
+    "descripcion": "Objeto del contrato al momento de la firma"
+   },
+   {
+    "campo": "proponentes_seleccionados",
+    "nombre": "Proponentes Seleccionados",
+    "tipo": "text",
+    "descripcion": " Listado de los proponentes seleccionados en el proceso de compra"
+   },
+   {
+    "campo": "calificacion_definitiva",
+    "nombre": "Calificacion Definitiva",
+    "tipo": "text",
+    "descripcion": "Calificación definitiva de los proponentes dentro del proceso de compra"
+   },
+   {
+    "campo": "id_sub_unidad_ejecutora",
+    "nombre": "ID Sub Unidad Ejecutora",
+    "tipo": "text",
+    "descripcion": " Identificador y nombre de la Sub Unidad de ejecucion de presupuesto asignada al proceso de compra"
+   },
+   {
+    "campo": "nombre_sub_unidad_ejecutora",
+    "nombre": "Nombre Sub Unidad Ejecutora",
+    "tipo": "text",
+    "descripcion": "Identificador y nombre de la Sub Unidad de ejecucion de presupuesto asignada al proceso de compra"
+   },
+   {
+    "campo": "ruta_proceso_en_secop_i",
+    "nombre": "Ruta Proceso en SECOP I",
+    "tipo": "url",
+    "descripcion": "Ruta del proceso de compra en SECOP, para hacer consulta de la información detallada"
+   },
+   {
+    "campo": "moneda",
+    "nombre": "Moneda",
+    "tipo": "text",
+    "descripcion": "Moneda en la cual estan registradas las cuantías del proceso de compra"
+   },
+   {
+    "campo": "es_postconflicto",
+    "nombre": "Es PostConflicto",
+    "tipo": "number",
+    "descripcion": "Marcador que indica si el proceso de compra pública está enmarcado en las acciones de postconflicto del acuerdo de paz del año 2017"
+   },
+   {
+    "campo": "marcacion_adiciones",
+    "nombre": "Marcacion Adiciones",
+    "tipo": "number",
+    "descripcion": "Marcación de si el proceso tiene adiciones registradas"
+   },
+   {
+    "campo": "posicion_rubro",
+    "nombre": "Posicion Rubro",
+    "tipo": "text",
+    "descripcion": "Posición (Identificador) del Rubro presupuestal"
+   },
+   {
+    "campo": "nombre_rubro",
+    "nombre": "Nombre Rubro",
+    "tipo": "text",
+    "descripcion": " Nombre del Rubro Presupuestal al que corresponde el proceso"
+   },
+   {
+    "campo": "valor_rubro",
+    "nombre": "Valor Rubro",
+    "tipo": "number",
+    "descripcion": "Valor del Rubro presupuestal asignado al proceso"
+   },
+   {
+    "campo": "sexo_replegal",
+    "nombre": "Sexo RepLegal",
+    "tipo": "text",
+    "descripcion": "Sexo del Representante legal de la entidad compradora"
+   },
+   {
+    "campo": "pilar_acuerdo_paz",
+    "nombre": "Pilar Acuerdo Paz",
+    "tipo": "text",
+    "descripcion": " Pilar, del acuerdo de paz del año 2016, sobre el cual se desarrolla el proceso de compra"
+   },
+   {
+    "campo": "punto_acuerdo_paz",
+    "nombre": "Punto Acuerdo Paz",
+    "tipo": "text",
+    "descripcion": " Punto del acuerdo de paz del año 2016, al que se relaciona el objeto de contratación del proceso de compra"
+   },
+   {
+    "campo": "municipio_entidad",
+    "nombre": "Municipio Entidad",
+    "tipo": "text",
+    "descripcion": "Municipio Entidad"
+   },
+   {
+    "campo": "departamento_entidad",
+    "nombre": "Departamento Entidad",
+    "tipo": "text",
+    "descripcion": "Departamento en el que se encuentra registrada la entidad estatal compradora"
+   },
+   {
+    "campo": "ultima_actualizacion",
+    "nombre": "Ultima Actualizacion",
+    "tipo": "calendar_date",
+    "descripcion": "Para suplir requerimientos de timestamp, se registra la última fecha de modificación del proceso de compra, entregados en formato DDMMYYYY"
+   },
+   {
+    "campo": "fecha_liquidacion",
+    "nombre": "Fecha Liquidacion",
+    "tipo": "calendar_date",
+    "descripcion": "Fecha en que fue liquidado el contrato"
+   },
+   {
+    "campo": "cumpledecreto248",
+    "nombre": "Cumple Decreto 248",
+    "tipo": "text",
+    "descripcion": "Indica si el requerimiento del bien o servicio tiene caracteristicas que lo catalogan como candidato a recibir el tratamiento estipulado en el decreto 248 del año 2021, que busca impulsar el desarrollo de los pequeños agricultores"
+   },
+   {
+    "campo": "incluyebienesdecreto248",
+    "nombre": "IncluyeBienesDecreto248",
+    "tipo": "text",
+    "descripcion": "Indica si el proceso incluye articulos directamente relacionados con el decreto 248 del año 2021"
+   },
+   {
+    "campo": "cumple_sentencia_t302",
+    "nombre": "Cumple Sentencia T302",
+    "tipo": "text",
+    "descripcion": "Indica si cumple o no con la sentencia T 302"
+   },
+   {
+    "campo": "es_mipyme",
+    "nombre": "Es MiPyme",
+    "tipo": "text",
+    "descripcion": "Indica si la entidad compradora es Mipyme"
+   },
+   {
+    "campo": "tama_o_mipyme",
+    "nombre": "Tamaño Mipyme",
+    "tipo": "text",
+    "descripcion": "Indica el tamaño de la entidad compradora"
+   },
+   {
+    "campo": "codigo_bpin",
+    "nombre": "Codigo BPIN",
+    "tipo": "text",
+    "descripcion": "Codigo BPIN del contrato"
+   },
+   {
+    "campo": "destino_gasto",
+    "nombre": "Destino gasto",
+    "tipo": "text",
+    "descripcion": "Describe el destino del gasto del contrato"
+   },
+   {
+    "campo": "pliegos_tipo",
+    "nombre": "Pliegos tipo",
+    "tipo": "text",
+    "descripcion": "Indica si el contrato tiene pliegos tipo"
+   },
+   {
+    "campo": "sector_pliegos_tipo",
+    "nombre": "Sector pliegos tipo",
+    "tipo": "text",
+    "descripcion": "Indica de que sector se utilizaron los pliegos tipo"
+   }
+  ]
+ },
+ "atkq-fc9r": {
+  "nombre": "SECOP II - Ofertas - 2020",
+  "columnas": [
+   {
+    "campo": "fecha_de_registro",
+    "nombre": "Fecha de Registro",
+    "tipo": "calendar_date",
+    "descripcion": "Fecha en la que se hace el registro de la Oferta"
+   },
+   {
+    "campo": "referencia_de_la_oferta",
+    "nombre": "Referencia de la Oferta",
+    "tipo": "text",
+    "descripcion": "Identificador de la Oferta, creado por el usuario de la plataforma"
+   },
+   {
+    "campo": "identificador_de_la_oferta",
+    "nombre": "Identificador de la Oferta",
+    "tipo": "text",
+    "descripcion": "Identificador de la Oferta, creado por la plataforma"
+   },
+   {
+    "campo": "valor_de_la_oferta",
+    "nombre": "Valor de la Oferta",
+    "tipo": "number",
+    "descripcion": "Valor registrado en la oferta"
+   },
+   {
+    "campo": "entidad_compradora",
+    "nombre": "Entidad Compradora",
+    "tipo": "text",
+    "descripcion": "Nombre de la Entidad que desarrolla el proceso de compra"
+   },
+   {
+    "campo": "nit_entidad_compradora",
+    "nombre": "NIT Entidad Compradora",
+    "tipo": "number",
+    "descripcion": "NIT de la Entidad que desarrolla el proceso de compra"
+   },
+   {
+    "campo": "moneda",
+    "nombre": "Moneda",
+    "tipo": "text",
+    "descripcion": "Identificador de la moneda en la que se hace la oferta"
+   },
+   {
+    "campo": "descripcion_del_procedimiento",
+    "nombre": "Descripcion del Procedimiento",
+    "tipo": "text",
+    "descripcion": "Detalle del objeto a adquirir"
+   },
+   {
+    "campo": "referencia_del_proceso",
+    "nombre": "Referencia del Proceso",
+    "tipo": "text",
+    "descripcion": "Identificador del procedimiento, creado por el usuario"
+   },
+   {
+    "campo": "id_del_proceso_de_compra",
+    "nombre": "ID del Proceso de Compra",
+    "tipo": "text",
+    "descripcion": "Identificador del procedimiento, creado por la plataforma"
+   },
+   {
+    "campo": "modalidad",
+    "nombre": "Modalidad",
+    "tipo": "text",
+    "descripcion": "Modalidad de Selección dentro del proceso"
+   },
+   {
+    "campo": "invitacion_directa",
+    "nombre": "Invitacion Directa",
+    "tipo": "text",
+    "descripcion": "Define si la oferta corresponde a una invitación directa al proveedor"
+   },
+   {
+    "campo": "nombre_proveedor",
+    "nombre": "Nombre Proveedor",
+    "tipo": "text",
+    "descripcion": "Nombre del proveedor que hace la oferta"
+   },
+   {
+    "campo": "nit_del_proveedor",
+    "nombre": "NIT del Proveedor",
+    "tipo": "text",
+    "descripcion": "NIT del Proveedor que hace la oferta"
+   }
+  ]
+ },
+ "pp6p-gvye": {
+  "nombre": "SECOP II - Ofertas - 2021",
+  "columnas": [
+   {
+    "campo": "fecha_de_registro",
+    "nombre": "Fecha de Registro",
+    "tipo": "calendar_date",
+    "descripcion": "Fecha en la que se hace el registro de la Oferta"
+   },
+   {
+    "campo": "referencia_de_la_oferta",
+    "nombre": "Referencia de la Oferta",
+    "tipo": "text",
+    "descripcion": "Identificador de la Oferta, creado por el usuario de la plataforma"
+   },
+   {
+    "campo": "identificador_de_la_oferta",
+    "nombre": "Identificador de la Oferta",
+    "tipo": "text",
+    "descripcion": "Identificador de la Oferta, creado por la plataforma"
+   },
+   {
+    "campo": "valor_de_la_oferta",
+    "nombre": "Valor de la Oferta",
+    "tipo": "number",
+    "descripcion": "Valor registrado en la oferta"
+   },
+   {
+    "campo": "entidad_compradora",
+    "nombre": "Entidad Compradora",
+    "tipo": "text",
+    "descripcion": "Nombre de la Entidad que desarrolla el proceso de compra"
+   },
+   {
+    "campo": "nit_entidad_compradora",
+    "nombre": "NIT Entidad Compradora",
+    "tipo": "number",
+    "descripcion": "NIT de la Entidad que desarrolla el proceso de compra"
+   },
+   {
+    "campo": "moneda",
+    "nombre": "Moneda",
+    "tipo": "text",
+    "descripcion": "Identificador de la moneda en la que se hace la oferta"
+   },
+   {
+    "campo": "descripcion_del_procedimiento",
+    "nombre": "Descripcion del Procedimiento",
+    "tipo": "text",
+    "descripcion": "Detalle del objeto a adquirir"
+   },
+   {
+    "campo": "referencia_del_proceso",
+    "nombre": "Referencia del Proceso",
+    "tipo": "text",
+    "descripcion": "Identificador del procedimiento, creado por el usuario"
+   },
+   {
+    "campo": "id_del_proceso_de_compra",
+    "nombre": "ID del Proceso de Compra",
+    "tipo": "text",
+    "descripcion": "Identificador del procedimiento, creado por la plataforma"
+   },
+   {
+    "campo": "modalidad",
+    "nombre": "Modalidad",
+    "tipo": "text",
+    "descripcion": "Modalidad de Selección dentro del proceso"
+   },
+   {
+    "campo": "invitacion_directa",
+    "nombre": "Invitacion Directa",
+    "tipo": "text",
+    "descripcion": "Define si la oferta corresponde a una invitación directa al proveedor"
+   },
+   {
+    "campo": "nombre_proveedor",
+    "nombre": "Nombre Proveedor",
+    "tipo": "text",
+    "descripcion": "Nombre del proveedor que hace la oferta"
+   },
+   {
+    "campo": "nit_del_proveedor",
+    "nombre": "NIT del Proveedor",
+    "tipo": "text",
+    "descripcion": "NIT del Proveedor que hace la oferta"
+   }
+  ]
+ },
+ "yk6j-79e6": {
+  "nombre": "SECOP II - Ofertas - 2022",
+  "columnas": [
+   {
+    "campo": "fecha_de_registro",
+    "nombre": "Fecha de Registro",
+    "tipo": "calendar_date",
+    "descripcion": "Fecha en la que se hace el registro de la Oferta"
+   },
+   {
+    "campo": "referencia_de_la_oferta",
+    "nombre": "Referencia de la Oferta",
+    "tipo": "text",
+    "descripcion": "Identificador de la Oferta, creado por el usuario de la plataforma"
+   },
+   {
+    "campo": "identificador_de_la_oferta",
+    "nombre": "Identificador de la Oferta",
+    "tipo": "text",
+    "descripcion": "Identificador de la Oferta, creado por la plataforma"
+   },
+   {
+    "campo": "valor_de_la_oferta",
+    "nombre": "Valor de la Oferta",
+    "tipo": "number",
+    "descripcion": "Valor registrado en la oferta"
+   },
+   {
+    "campo": "entidad_compradora",
+    "nombre": "Entidad Compradora",
+    "tipo": "text",
+    "descripcion": "Nombre de la Entidad que desarrolla el proceso de compra"
+   },
+   {
+    "campo": "nit_entidad_compradora",
+    "nombre": "NIT Entidad Compradora",
+    "tipo": "number",
+    "descripcion": "NIT de la Entidad que desarrolla el proceso de compra"
+   },
+   {
+    "campo": "moneda",
+    "nombre": "Moneda",
+    "tipo": "text",
+    "descripcion": "Identificador de la moneda en la que se hace la oferta"
+   },
+   {
+    "campo": "descripcion_del_procedimiento",
+    "nombre": "Descripcion del Procedimiento",
+    "tipo": "text",
+    "descripcion": "Detalle del objeto a adquirir"
+   },
+   {
+    "campo": "referencia_del_proceso",
+    "nombre": "Referencia del Proceso",
+    "tipo": "text",
+    "descripcion": "Identificador del procedimiento, creado por el usuario"
+   },
+   {
+    "campo": "id_del_proceso_de_compra",
+    "nombre": "ID del Proceso de Compra",
+    "tipo": "text",
+    "descripcion": "Identificador del procedimiento, creado por la plataforma"
+   },
+   {
+    "campo": "modalidad",
+    "nombre": "Modalidad",
+    "tipo": "text",
+    "descripcion": "Modalidad de Selección dentro del proceso"
+   },
+   {
+    "campo": "invitacion_directa",
+    "nombre": "Invitacion Directa",
+    "tipo": "text",
+    "descripcion": "Define si la oferta corresponde a una invitación directa al proveedor"
+   },
+   {
+    "campo": "nombre_proveedor",
+    "nombre": "Nombre Proveedor",
+    "tipo": "text",
+    "descripcion": "Nombre del proveedor que hace la oferta"
+   },
+   {
+    "campo": "nit_del_proveedor",
+    "nombre": "NIT del Proveedor",
+    "tipo": "text",
+    "descripcion": "NIT del Proveedor que hace la oferta"
+   }
+  ]
+ },
+ "vz4x-85r3": {
+  "nombre": "SECOP II - Ofertas - 2023",
+  "columnas": [
+   {
+    "campo": "fecha_de_registro",
+    "nombre": "Fecha de Registro",
+    "tipo": "calendar_date",
+    "descripcion": "Fecha en la que se hace el registro de la Oferta"
+   },
+   {
+    "campo": "referencia_de_la_oferta",
+    "nombre": "Referencia de la Oferta",
+    "tipo": "text",
+    "descripcion": "Identificador de la Oferta, creado por el usuario de la plataforma"
+   },
+   {
+    "campo": "identificador_de_la_oferta",
+    "nombre": "Identificador de la Oferta",
+    "tipo": "text",
+    "descripcion": "Identificador de la Oferta, creado por la plataforma"
+   },
+   {
+    "campo": "valor_de_la_oferta",
+    "nombre": "Valor de la Oferta",
+    "tipo": "number",
+    "descripcion": "Valor registrado en la oferta"
+   },
+   {
+    "campo": "entidad_compradora",
+    "nombre": "Entidad Compradora",
+    "tipo": "text",
+    "descripcion": "Nombre de la Entidad que desarrolla el proceso de compra"
+   },
+   {
+    "campo": "nit_entidad_compradora",
+    "nombre": "NIT Entidad Compradora",
+    "tipo": "number",
+    "descripcion": "NIT de la Entidad que desarrolla el proceso de compra"
+   },
+   {
+    "campo": "moneda",
+    "nombre": "Moneda",
+    "tipo": "text",
+    "descripcion": "Identificador de la moneda en la que se hace la oferta"
+   },
+   {
+    "campo": "descripcion_del_procedimiento",
+    "nombre": "Descripcion del Procedimiento",
+    "tipo": "text",
+    "descripcion": "Detalle del objeto a adquirir"
+   },
+   {
+    "campo": "referencia_del_proceso",
+    "nombre": "Referencia del Proceso",
+    "tipo": "text",
+    "descripcion": "Identificador del procedimiento, creado por el usuario"
+   },
+   {
+    "campo": "id_del_proceso_de_compra",
+    "nombre": "ID del Proceso de Compra",
+    "tipo": "text",
+    "descripcion": "Identificador del procedimiento, creado por la plataforma"
+   },
+   {
+    "campo": "modalidad",
+    "nombre": "Modalidad",
+    "tipo": "text",
+    "descripcion": "Modalidad de Selección dentro del proceso"
+   },
+   {
+    "campo": "invitacion_directa",
+    "nombre": "Invitacion Directa",
+    "tipo": "text",
+    "descripcion": "Define si la oferta corresponde a una invitación directa al proveedor"
+   },
+   {
+    "campo": "nombre_proveedor",
+    "nombre": "Nombre Proveedor",
+    "tipo": "text",
+    "descripcion": "Nombre del proveedor que hace la oferta"
+   },
+   {
+    "campo": "nit_del_proveedor",
+    "nombre": "NIT del Proveedor",
+    "tipo": "text",
+    "descripcion": "NIT del Proveedor que hace la oferta"
+   }
+  ]
+ }
+}

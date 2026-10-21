@@ -32,6 +32,7 @@ con `node tests/estado.js`, y las coordenadas las da `node tests/mapa.js <térmi
 | `docs/ARQUITECTURA_MULTITENANT.md` | pendiente del dueño | — | — | Anexo C · Arquitectura multi-inquilino, escalabilidad y datos |
 | `docs/CHECKLIST_PRODUCCION.md` | pendiente del dueño | — | — | Anexo F · Lista de verificación previa a producción |
 | `docs/EMPEZAR_AQUI.md` | pendiente del dueño | — | `README.md` | EMPEZAR AQUÍ · Guía de cero para convertir Detekta en un negocio |
+| `docs/investigacion/FORMULA_ADJUDICACION_2026-10.md` | pendiente del dueño | — | — | Investigación · ¿Existe una fórmula para elegir el precio que más adjudicaciones gana e… |
 | `docs/ORGANIZACION_AGENTES.md` | pendiente del dueño | — | `tests` | Detekta como organización de agentes: cómo funciona, cómo mejora y cómo se construye |
 | `docs/PLAN_DE_ACCION.md` | pendiente del dueño | — | — | PLAN DE ACCIÓN · Detekta, de herramienta interna a producto por suscripción |
 | `docs/PLAN_REFORMA_DATOS.md` | pendiente del dueño | — | `lib` | PLAN · Reforma de los datos que Detekta enseña (13-sep-2026) |

@@ -231,7 +231,7 @@
   L 20161  Cada subida cuesta un despliegue: una entrega, un envío (21-oct-2026)
   L 20170  El consejo de siete asesores entra al proyecto: sin la sala web, sin guardar nada en el rep…
 
-· DOCUMENTOS docs/ — 73 (y 3 en docs/archivo/, superados: `--archivo` los lista):
+· DOCUMENTOS docs/ — 74 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)
   APU_DIAGNOSTICO.md                      Diagnóstico del módulo APU frente a la especificación «APU profesional»
   APU_FUENTES.md                          Fuentes de precio del APU · qué se intentó, qué respondió y qué falta
@@ -259,6 +259,7 @@
   INFRAESTRUCTURA_2026-09-27.md           Infraestructura de Detekta · lo que hay, lo que se propone y cuánto tarda llegar (27
   insumos_2026_pendiente/LEEME.md         Insumos de precios 2026 · las FUENTES de los bancos del módulo APU
   INSUMOS_2026.md                         Insumos de precios 2026 · censo, contraste y qué hacer con ellos
+  investigacion/FORMULA_ADJUDICACION_2026-10.md  Investigación · ¿Existe una fórmula para elegir el precio que más adjudicaciones gan
   INVESTIGACION_COMPETENCIA_APU.md        Investigación de competencia del módulo APU · cómo operan, de dónde sacan los datos 
   INVESTIGACION_DISENO_WEB.md             Investigación · Cómo están hechas las mejores páginas web del mundo (4-sep-2026)
   INVESTIGACION_LICITANTE.md              Investigación · Qué mira primero quien licita obra, y las cinco cosas falsas que la 
