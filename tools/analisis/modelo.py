@@ -209,14 +209,19 @@ def caracteristicas_basicas(rs):
 
 if __name__ == "__main__":
     carpeta, aux, salida = sys.argv[1], sys.argv[2], sys.argv[3]; prueba = "--prueba" in sys.argv
+    # --historia-desde AAAA: los comparables solo pueden venir de ese año en adelante (escenario «¿cambia algo con 2019–2023?»)
+    historia_desde = int(sys.argv[sys.argv.index("--historia-desde") + 1]) if "--historia-desde" in sys.argv else None
+    sufijo = f"_historia{historia_desde}" if historia_desde else ""
     P = pd.read_csv(os.path.join(salida, "procesos.csv")); extra = json.load(open(os.path.join(aux, "p6dx_extra.json")))
     P["familia"] = P["portafolio"].map(lambda k: (extra.get(k, {}).get("unspsc") or "")[3:7] or None)   # «V1.72101500» → «7210» (familia = 4 dígitos)
     P.loc[P["familia"].isin(["", "UNSP"]), "familia"] = None
     O = cargar_ofertas(carpeta)
     U = P[P["excluido"].isna() & P["inconsistencia"].isna() & P["modalidad"].isin(["licitacion", "menor_cuantia"]) & P["anio"].notna() & P["r_ganador"].notna()].copy()
-    U = U.set_index("portafolio"); H = Historia(O, U.reset_index(), extra)
+    U = U.set_index("portafolio")
+    Uh = U[U["anio"] >= historia_desde] if historia_desde else U
+    H = Historia(O, Uh.reset_index(), extra)
     T = tabla_insercion(H, list(U.index), PUNTAJE_MAX); print("tabla de inserción:", len(T), "procesos", flush=True)
-    R = {"semilla": SEMILLA, "procesos_universo": int(len(U)), "por_anio": {int(a): int(n) for a, n in U["anio"].value_counts().sort_index().items()}}
+    R = {"semilla": SEMILLA, "historia_desde": historia_desde, "procesos_universo": int(len(U)), "por_anio": {int(a): int(n) for a, n in U["anio"].value_counts().sort_index().items()}}
     anio_val = 2025; anios_prueba = [2026] if prueba else []
     estrategias_sin = {
         "B0": lambda f, fecha, mx: (ALERTA[f["modalidad"]], "alerta", None),
@@ -229,7 +234,7 @@ if __name__ == "__main__":
     for etiqueta, anios in [("validacion_2025", [anio_val])] + ([("prueba_2026", anios_prueba)] if prueba else []):
         ev = U[U["anio"].isin(anios) & (U["n"] >= 1)]
         E = evaluar(H, ev, PUNTAJE_MAX, estrategias_sin, True, etiqueta)
-        E.to_csv(os.path.join(salida, f"backtest_{etiqueta}.csv"), index=False)
+        E.to_csv(os.path.join(salida, f"backtest_{etiqueta}{sufijo}.csv"), index=False)
         R[etiqueta] = {"procesos_evaluados": int(ev.shape[0]),
                        "sin_piso": {"resumen": resumen(E, "gana_sin_piso"), "diferencias_vs_B2": diferencias(E, "gana_sin_piso")},
                        "con_piso": {"resumen": resumen(E, "gana_con_piso"), "diferencias_vs_B2": diferencias(E, "gana_con_piso")},
@@ -239,5 +244,5 @@ if __name__ == "__main__":
                        "prediccion_n": pred_n(H, ev)}
         ids_tr = set(U[U["anio"] < min(anios)].index); ids_te = set(ev.index)
         R[etiqueta]["logit_condicional"] = logit_condicional(O, ids_tr, ids_te, caracteristicas_basicas)
-    json.dump(R, open(os.path.join(salida, "fase5_7_modelo.json"), "w"), ensure_ascii=False, indent=1, default=lambda o: None if (isinstance(o, float) and not np.isfinite(o)) else (float(o) if isinstance(o, np.floating) else int(o) if isinstance(o, np.integer) else str(o)))
+    json.dump(R, open(os.path.join(salida, f"fase5_7_modelo{sufijo}.json"), "w"), ensure_ascii=False, indent=1, default=lambda o: None if (isinstance(o, float) and not np.isfinite(o)) else (float(o) if isinstance(o, np.floating) else int(o) if isinstance(o, np.integer) else str(o)))
     print("listo")

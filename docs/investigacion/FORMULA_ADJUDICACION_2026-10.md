@@ -209,6 +209,22 @@ intentos («The operation was aborted due to timeout»); son conteos informativo
 de consultas directas que sí respondieron. La cascada por AÑO y la calidad por año salen de
 `tools/analisis/analisis.py` sobre `base.jsonl.gz` (sección 4).
 
+### 3.3 Usables por año de adjudicación (una fila por proceso; «con ganador» = la oferta del adjudicatario se emparejó con una publicada y lo adjudicado no la contradice)
+
+| Año | Licitación: usables / con ganador | Menor cuantía: usables / con ganador | Mínima: usables / con ganador | Fuente de las ofertas |
+|---|---|---|---|---|
+| 2019 | 280 / 238 | 646 / 508 | 677 / 583 | b28v (histórico) |
+| 2020 | 209 / 176 | 579 / 497 | 569 / 501 | b28v (histórico) |
+| 2021 | 659 / 562 | 1.152 / 1.055 | 860 / 784 | b28v (histórico) |
+| 2022 | 927 / 816 | 1.122 / 1.032 | 735 / 658 | b28v (histórico) |
+| 2023 | 1.071 / 934 | 1.925 / 1.767 | 1.300 / 1.176 | b28v (histórico) |
+| 2024 | 557 / 496 | 1.658 / 1.532 | 1.309 / 1.238 | wi7w |
+| 2025 | 849 / 732 | 2.478 / 2.345 | 1.678 / 1.585 | wi7w |
+| 2026 | 606 / 565 | 1.610 / 1.543 | 965 / 904 | wi7w |
+| sin fecha de adjudicación | 13 | 39 | 39 | — |
+
+Inconsistencias apartadas entre los usables (no entran en ninguna cifra de posición): adjudicado distinto en más del 1 % de la oferta publicada del ganador: licitación 311, menor cuantía 528, mínima 378; adjudicado por encima del precio base: 12, 15 y 17. SHA-256 de `base.jsonl.gz`: `351e745e030af53e2278b91dd6cb4a6414d4c8e73b533f280137f6fdba97865b`.
+
 ## 4. Checkpoint C1 · decisiones que se piden
 
 [en construcción]
