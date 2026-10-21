@@ -71,3 +71,19 @@ hipótesis nuevas: se replican y se comparan.
 - Principal: entrenamiento 2024 → validación 2025 → prueba 2026 (hasta el 20-oct-2026).
 - Escenario histórico (si `b28v` da cobertura usable): entrenamiento ≤ 2023 → validación 2024 → prueba 2025–2026,
   como pedía el prompt. La prueba 2026 no se mira hasta el final.
+
+## H12 · reglas añadidas el 21-oct-2026 a las 05:35 UTC, DESPUÉS de ver la validación 2025 de B0–B2 y F_opt (se declara)
+
+Lo visto: el optimizador por comparables con la regla del piso elige casi siempre entre 96 % y 97 % del precio base
+(desviación 1,7 puntos, igual en licitación y menor cuantía, igual con historia desde 2019 o desde 2024), y la
+réplica de B2 oferta exactamente el 100 % en la mitad de los procesos (mediana de baja de 0 puntos enteros). Para
+saber si la «fórmula» es algo más que una constante nacional, se añaden al backtest, con la misma métrica y antes
+de correrlas:
+- **C95, C96.5, C98**: constantes (95 %, 96,5 %, 98 % del precio base) sin mirar ningún comparable.
+- **P25_entidad**: el percentil 25 del r_adj de los comparables anteriores de la entidad (≥ 5; si no departamento; si no país).
+- **Piso_comparables**: la mediana del piso (mediana − σ de cada proceso) de los comparables anteriores, más 0,5 puntos.
+- **B2_exacta**: la misma cascada de B2 pero con la mediana exacta de la baja en vez del histograma de puntos enteros
+  (mide cuánto del resultado de B2 es el redondeo).
+Criterio: si ninguna regla con comparables supera a la mejor constante en ≥ 3 puntos (IC por entidad que excluya 0)
+en los procesos con 3 o más ofertas, la respuesta es «no hay regla por entidad ni ubicación más allá de un nivel
+nacional» (resultado B del prompt).

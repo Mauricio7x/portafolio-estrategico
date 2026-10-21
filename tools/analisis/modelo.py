@@ -80,6 +80,34 @@ def precio_B1(H, fila, fecha):
         if len(sel) >= MIN_ENTIDAD: return float(sel["r_adj"].median()), nivel
     return None, None
 
+def baja_exacta(sel):
+    v = sel["r_adj"].dropna().to_numpy(); v = v[(v >= 0.30) & (v <= 1.10)]
+    return float(np.median(100 * (1 - v))) if len(v) >= MIN_ENTIDAD else None
+
+def precio_B2_exacta(H, fila, fecha):
+    for nivel in ["entidad_familia", "entidad", "departamento_familia"]:
+        b = baja_exacta(H.comparables(fila, nivel, fecha))
+        if b is not None: return 1 - b / 100, nivel
+    b = baja_exacta(H.comparables(fila, "pais", fecha))
+    return (1 - b / 100, "pais_respaldo") if b is not None else (None, None)
+
+def precio_P25(H, fila, fecha):
+    for nivel in ["entidad", "departamento", "pais"]:
+        sel = H.comparables(fila, nivel, fecha)
+        if len(sel) >= MIN_ENTIDAD: return float(sel["r_adj"].quantile(0.25)), nivel
+    return None, None
+
+def precio_piso_comparables(H, fila, fecha, margen=0.005):
+    for nivel in ["entidad", "departamento", "pais"]:
+        sel = H.comparables(fila, nivel, fecha); sel = sel[sel["n"] >= 3]
+        if len(sel) >= MIN_ENTIDAD:
+            pisos = []
+            for pid in sel.index:
+                rs = np.array([o[2] for o in H.ofertas[pid]["ofertas"]]); sd = rs.std(ddof=1)
+                if sd > 0: pisos.append(np.median(rs) - sd)
+            if len(pisos) >= MIN_ENTIDAD: return min(1.0, float(np.median(pisos)) + margen), nivel
+    return None, None
+
 def precio_B2(H, fila, fecha):
     for nivel in ["entidad_familia", "entidad", "departamento_familia"]:
         sel = H.comparables(fila, nivel, fecha); b = baja_indice(sel)
@@ -222,16 +250,24 @@ if __name__ == "__main__":
     H = Historia(O, Uh.reset_index(), extra)
     T = tabla_insercion(H, list(U.index), PUNTAJE_MAX); print("tabla de inserción:", len(T), "procesos", flush=True)
     R = {"semilla": SEMILLA, "historia_desde": historia_desde, "procesos_universo": int(len(U)), "por_anio": {int(a): int(n) for a, n in U["anio"].value_counts().sort_index().items()}}
-    anio_val = 2025; anios_prueba = [2026] if prueba else []
+    anio_val = int(sys.argv[sys.argv.index("--anio-validacion") + 1]) if "--anio-validacion" in sys.argv else 2025
+    anios_prueba = [2026] if prueba else []
+    if anio_val != 2025: sufijo += f"_val{anio_val}"
     estrategias_sin = {
         "B0": lambda f, fecha, mx: (ALERTA[f["modalidad"]], "alerta", None),
         "B1": lambda f, fecha, mx: (*precio_B1(H, f, fecha), None),
         "B2": lambda f, fecha, mx: (*precio_B2(H, f, fecha), None),
+        "B2_exacta": lambda f, fecha, mx: (*precio_B2_exacta(H, f, fecha), None),
+        "P25_entidad": lambda f, fecha, mx: (*precio_P25(H, f, fecha), None),
+        "Piso_comparables": lambda f, fecha, mx: (*precio_piso_comparables(H, f, fecha), None),
+        "C95": lambda f, fecha, mx: (0.95, "constante", None),
+        "C96.5": lambda f, fecha, mx: (0.965, "constante", None),
+        "C98": lambda f, fecha, mx: (0.98, "constante", None),
         "F_opt": lambda f, fecha, mx: precio_Fopt(H, T, f, fecha, con_piso=False),
         "F_opt_piso": lambda f, fecha, mx: precio_Fopt(H, T, f, fecha, con_piso=True),
         "F_opt_piso_alerta": lambda f, fecha, mx: precio_Fopt(H, T, f, fecha, con_piso=True, minimo=ALERTA[f["modalidad"]]),
     }
-    for etiqueta, anios in [("validacion_2025", [anio_val])] + ([("prueba_2026", anios_prueba)] if prueba else []):
+    for etiqueta, anios in [(f"validacion_{anio_val}", [anio_val])] + ([("prueba_2026", anios_prueba)] if prueba else []):
         ev = U[U["anio"].isin(anios) & (U["n"] >= 1)]
         E = evaluar(H, ev, PUNTAJE_MAX, estrategias_sin, True, etiqueta)
         E.to_csv(os.path.join(salida, f"backtest_{etiqueta}{sufijo}.csv"), index=False)
@@ -239,7 +275,10 @@ if __name__ == "__main__":
                        "sin_piso": {"resumen": resumen(E, "gana_sin_piso"), "diferencias_vs_B2": diferencias(E, "gana_sin_piso")},
                        "con_piso": {"resumen": resumen(E, "gana_con_piso"), "diferencias_vs_B2": diferencias(E, "gana_con_piso")},
                        "por_modalidad": {m: {"sin_piso": resumen(g, "gana_sin_piso"), "con_piso": resumen(g, "gana_con_piso")} for m, g in E.groupby("modalidad")},
-                       "por_tramo_n": {t: {"sin_piso": resumen(g, "gana_sin_piso")} for t, g in E.assign(t=E["n"].map(tramo)).groupby("t")},
+                       "por_tramo_n": {t: {"sin_piso": resumen(g, "gana_sin_piso"), "con_piso": resumen(g, "gana_con_piso")} for t, g in E.assign(t=E["n"].map(tramo)).groupby("t")},
+                       "competencia_3_o_mas": {"sin_piso": {"resumen": resumen(E[E["n"] >= 3], "gana_sin_piso"), "diferencias_vs_B2": diferencias(E[E["n"] >= 3], "gana_sin_piso"), "diferencias_vs_C96.5": diferencias(E[E["n"] >= 3], "gana_sin_piso", ref="C96.5")},
+                                               "con_piso": {"resumen": resumen(E[E["n"] >= 3], "gana_con_piso"), "diferencias_vs_B2": diferencias(E[E["n"] >= 3], "gana_con_piso"), "diferencias_vs_C96.5": diferencias(E[E["n"] >= 3], "gana_con_piso", ref="C96.5")}},
+                       "diferencias_vs_C96.5": {"sin_piso": diferencias(E, "gana_sin_piso", ref="C96.5"), "con_piso": diferencias(E, "gana_con_piso", ref="C96.5")},
                        "calibracion_F_opt_piso": calibracion(E, "F_opt_piso", "gana_con_piso"), "calibracion_F_opt": calibracion(E, "F_opt", "gana_sin_piso"),
                        "prediccion_n": pred_n(H, ev)}
         ids_tr = set(U[U["anio"] < min(anios)].index); ids_te = set(ev.index)
