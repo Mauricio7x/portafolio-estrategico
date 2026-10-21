@@ -8,3 +8,6 @@ entrada/*
 
 # capturas del navegador de Claude (playwright-mcp), nunca al repositorio
 .playwright-mcp/
+
+# caché de Python de los guiones de análisis
+__pycache__/
