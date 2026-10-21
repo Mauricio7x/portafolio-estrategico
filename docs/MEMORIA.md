@@ -20256,3 +20256,19 @@ En una línea: con `op=espacio` y el «Usage» de Upstash que pegó el dueño el
 **Verificado.** La aritmética con código (31,0 MB por fallo; 0,99 y 1,49 GB al día) y la lectura del código citado; no se tocó código.
 
 **Sin verificar.** Que esta sea la causa; los bytes reales en la red; si `compactar` salta los bloques ya en brotli; qué pasa en el plan gratuito al llegar a 10 GB.
+
+### El tablero se refresca solo cada 3 h, no cada 30 min, y la prueba fija un suelo (20-oct-2026)
+
+En una línea: cada refresco automático del tablero encuentra vencida la caché de 5 minutos de `/api/resumen` y relee unos 31 MB de Upstash (corpus del año 5,2 MB, índice de competencia 4,3 MB, índice de baja 21,6 MB, medidos con `op=espacio`), y a 30 minutos eran hasta 48 al día, de 0,99 a 1,49 GB de los 10 GB mensuales del plan gratuito, lo que casa con los 1,0 a 1,5 GB diarios que midió la consola; `REFRESCO_MS` pasa a 3 h (hasta 8 al día, unos 0,25 GB) y la suite exige que nunca baje de ahí.
+
+> PENDIENTE · llevar el cambio a producción y medir su efecto (20-oct-2026): el cambio está en la rama `claude/amazing-hamilton-efgkxv`, sin pull request (el dueño no lo ha pedido), así que producción sigue refrescando cada 30 min hasta que llegue a `main`; ya con el cambio desplegado, comparar la barra diaria de ancho de banda de «Usage» de Upstash (días en UTC: cada uno cierra a las 7:00 p. m. de Colombia) con las de 1,0 a 1,5 GB. Si no baja hacia 0,3 GB al día, la causa no era esta y se vuelve a las sospechas de los ciclos de carga.
+> PENDIENTE · la caché de 300 s del servidor sigue igual (20-oct-2026): cada vez que alguien abre el tablero pasados 5 minutos del último cálculo se relee lo mismo (31 MB); los tres arreglos de servidor de la sección anterior (sello de datos con TTL mayor, resumen ya calculado, índice de baja parcial) siguen abiertos y tocan lo que el tablero muestra: plan primero.
+
+**Qué se decidió y por qué no hay que deshacerlo.**
+1. **3 h y no más, ni menos.** Los datos cambian dos veces al día (7:50 a. m. y 8:00 p. m.) y al volver a la pestaña pasado el plazo se refresca al instante (\`visibilitychange\`, sin tocar). El riesgo de 3 h es que una pestaña a la vista y sin tocar cuente hasta 3 h viejos los procesos que \`ya_cerro\` y los de «cierra esta semana», que el tablero calcula con la hora de la petición; con 30 min el desfase era menor pero el gasto lo hacía inviable.
+2. **La prueba es un SUELO, no un valor exacto** (\`tests/e2e.js\`, bloque «iteraciones»): lee \`REFRESCO_MS\` del archivo, exige 3 h o más y exige que la frase «se actualiza solo cada N h» diga lo mismo. La frase sigue escrita en \`fraseRefresco\` y no derivada de la constante, porque la suite ejecuta esa función suelta, sin acceso a \`REFRESCO_MS\`.
+3. **Mutaciones, EJECUTADAS contra la copia:** con 30 min en la constante, con la frase en «30 min» y con 2 h coherente con su frase, las tres hacen fallar la suite; sin mutar pasa.
+
+**Verificado.** El bloque «iteraciones» con las tres mutaciones (muere cada una, pasa sin mutar) y \`node --check public/app.js\`; en Chromium real, la página carga sin errores de script y sirve la constante y la frase nuevas. Los tres 503 de la consola son la API sin credenciales de Upstash en el servidor local, como documenta \`tests/servidor_local.js\`.
+
+**Sin verificar.** Que el refresco de 30 minutos sea la causa del gasto (la correlación está anotada en la sección anterior); la frase nueva a la vista en el tablero real (el humo no llegó a pintar el tablero, que pide sesión y datos); el efecto en la gráfica de Upstash.

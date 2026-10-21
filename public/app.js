@@ -10381,11 +10381,13 @@
   /* ══════════════════════════════════════════════════════════════════════════
      DASHBOARD de procesos (/api/resumen)
      ══════════════════════════════════════════════════════════════════════════ */
-  /* Cada 30 min (16-oct-2026). Era cada 5 min, el TTL de la caché de /api/resumen: con la
-     pestaña abierta, cada refresco encontraba la caché vencida y el servidor volvía a leer y
-     agregar el corpus entero; Vercel Hobby pausó el proyecto el 30-sep por CPU activa. Los
-     datos cambian dos veces al día (los crons de 7:50 y 20:00), así que 30 min no esconde nada. */
-  const REFRESCO_MS = 1800000;
+  /* Cada 3 h (20-oct-2026). Era cada 30 min desde el 16-oct y cada 5 antes, el TTL de la caché
+     de /api/resumen: con la pestaña abierta, cada refresco encontraba la caché vencida y el
+     servidor volvía a leer el corpus y los índices (unos 31 MB de Upstash por refresco, medido
+     sobre op=espacio); a 30 min eran hasta 48 al día, de 1,0 a 1,5 GB de ancho de banda, y el
+     plan gratuito de Upstash tiene 10 GB al mes. Los datos cambian dos veces al día (los crons de
+     7:50 y 20:00) y al volver a la pestaña pasado el plazo se refresca al instante. */
+  const REFRESCO_MS = 10800000;
   /* SIN COLUMNA DE COLOR, Y EL MOTIVO IMPORTA (13-sep-2026). Estas cuatro filas llevaban
      una tercera columna («bg-green-500», «bg-amber-500», «bg-blue-500», «bg-gray-400») que
      NINGUNA línea del árbol leía: el único consumidor destructura `[clave, etiqueta]` y el
@@ -10816,7 +10818,7 @@
   function fraseRefresco(pausado, desdeMs, ahoraMs) {
     const minutos = desdeMs ? Math.floor((ahoraMs - desdeMs) / 60000) : null;
     const cuando = desdeMs ? (minutos < 1 ? "Actualizado hace un momento" : `Actualizado hace ${minutos} min`) : "";
-    const modo = pausado ? "la actualización automática está detenida" : "se actualiza solo cada 30 min";
+    const modo = pausado ? "la actualización automática está detenida" : "se actualiza solo cada 3 h";
     return cuando ? `${cuando} · ${modo}` : modo.charAt(0).toUpperCase() + modo.slice(1);
   }
   function pintarCuentaAtras() {
@@ -10828,7 +10830,7 @@
     if (b) b.textContent = refrescoPausado ? "Volver a actualizar" : "Dejar de actualizar";
   }
 
-  /* Refresco automático cada 30 min SOLO con la pestaña visible: refrescar en
+  /* Refresco automático cada 3 h SOLO con la pestaña visible: refrescar en
      segundo plano gasta invocaciones de Vercel para que nadie lo mire. Si la
      pestaña estaba oculta cuando tocaba, se refresca al volver a ella. Y si la
      persona lo detuvo, no se programa NADA: ni el refresco ni el repintado. */

@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 2051706 bytes · 388 secciones · 30 con marcador de superación.
+Derivado del árbol: 2054945 bytes · 389 secciones · 30 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -398,4 +398,5 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | Medidas del 20-oct-2026: Upstash va por 6 de 10 GB de ancho de banda y Vercel por 500 MB de 10 GB | 20-oct-2026 | 20172-20192 | 3040 |  |
 | Lo medido el 20-oct-2026 por la tarde: los 3,46 GB son «Functions Storage» y Upstash gasta de 1 a 1,5 GB de ancho de banda al día | 20-oct-2026 | 20193-20212 | 4090 |  |
 | La cuenta de Upstash no tiene tarjeta, el panel «Insights» enseña datos de muestra, y el plan para no pasar los 10 GB de ancho de banda va en fases | — | 20213-20236 | 4630 |  |
-| Lo que lee tanto de Upstash: el tablero relee 31 MB cada vez que vence su caché de 5 minutos y se refresca solo cada 30 min con la pestaña a la vista | — | 20237-20258 | 4789 |  |
+| Lo que lee tanto de Upstash: el tablero relee 31 MB cada vez que vence su caché de 5 minutos y se refresca solo cada 30 min con la pestaña a la vista | — | 20237-20259 | 4790 |  |
+| El tablero se refresca solo cada 3 h, no cada 30 min, y la prueba fija un suelo (20-oct-2026) | 20-oct-2026 | 20260-20274 | 3238 |  |

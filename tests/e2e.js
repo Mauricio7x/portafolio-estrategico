@@ -34966,8 +34966,14 @@ async function main() {
         "FileReader", "readAsText", "revokeObjectURL", "visibilityState", "dashboard_perfil"]) {
         assert.ok(admJs.includes(debe), `app.js sin ${debe} (el panel o la carga de RUP no están cableados)`);
       }
-      // el refresco automático es el mismo TTL de la caché del endpoint
-      assert.ok(/REFRESCO_MS = 1800000;/.test(admJs), "el refresco automático del tablero es cada 30 min (16-oct-2026): cada 5 min recalculaba el corpus entero con la pestaña abierta y gastaba la CPU del plan");
+      /* el refresco automático del tablero tiene un SUELO de 3 h (20-oct-2026): cada refresco con la caché de
+         5 min vencida lee unos 31 MB de Upstash, y a 30 min eran hasta 48 al día (de 1,0 a 1,5 GB de los 10 GB
+         gratuitos al mes). Es una cota, no un valor exacto: se EJECUTA contra la constante del archivo y la frase
+         que ve la persona tiene que decir la misma duración. */
+      const mRefresco = admJs.match(/const REFRESCO_MS = (\d+);/);
+      assert.ok(mRefresco, "app.js sin la constante REFRESCO_MS");
+      assert.ok(Number(mRefresco[1]) >= 3 * 3600e3, `el refresco automático del tablero no puede bajar de 3 h (hoy ${Number(mRefresco[1]) / 60000} min): a 30 min gastaba de 1,0 a 1,5 GB al día del ancho de banda de Upstash`);
+      assert.ok(admJs.includes(`se actualiza solo cada ${Number(mRefresco[1]) / 3600e3} h`), "la frase que ve la persona tiene que decir la misma duración que REFRESCO_MS");
       // …y NO se dispara con la pestaña oculta
       assert.ok(/document\.visibilityState === "visible"\) cargarDashboard\(\)/.test(admJs),
         "el refresco automático no puede correr con la pestaña oculta");
@@ -43182,8 +43188,8 @@ async function main() {
           const exRef = (n) => { const i = appRef.indexOf(`function ${n}(`); assert.ok(i > 0, `app.js sin ${n}`); return appRef.slice(i, appRef.indexOf("\n  }", i) + 4); };
           const frase = new Function(`${exRef("fraseRefresco")}; return fraseRefresco;`)();
           const t0 = Date.parse("2026-09-05T10:00:00Z");
-          assert.strictEqual(frase(false, t0, t0 + 4 * 60000), "Actualizado hace 4 min · se actualiza solo cada 30 min");
-          assert.strictEqual(frase(false, t0, t0 + 30000), "Actualizado hace un momento · se actualiza solo cada 30 min",
+          assert.strictEqual(frase(false, t0, t0 + 4 * 60000), "Actualizado hace 4 min · se actualiza solo cada 3 h");
+          assert.strictEqual(frase(false, t0, t0 + 30000), "Actualizado hace un momento · se actualiza solo cada 3 h",
             "medio minuto NO se redondea a «hace 0 min»");
           assert.ok(/detenida/.test(frase(true, t0, t0 + 60000)), `con el refresco parado, la línea lo dice: ${frase(true, t0, t0 + 60000)}`);
           assert.ok(!/\d+:\d\d/.test(frase(false, t0, t0 + 60000)), "se acabó la cuenta atrás mm:ss que reescribía la pantalla cada segundo");
