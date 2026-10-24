@@ -703,3 +703,23 @@ procesos cercanos en el tiempo que entre procesos lejanos (3.259 procesos de 202
 designación de cada proceso, que el dueño podría exportar desde su sesión de SECOP II para un conjunto pequeño de entidades) y
 las fechas de sus contratos de prestación de servicios (en `jbjy-vk9h`). Con eso se mediría, por entidad, si el estilo cambia al cambiar
 las personas. Es un estudio aparte, con tratamiento de datos de personas naturales (Ley 1581, agregado por entidad, sin perfiles individuales).
+
+## 15. Aproximación con datos abiertos al equipo evaluador (24-oct-2026; `tools/analisis/equipo_evaluador.py`)
+
+Los informes de evaluación no se pueden bajar desde la sesión (SECOP II responde 403 y no se intentó eludirlo; la
+conexión autorizada de Vercel o la descarga del dueño a Drive quedan como vías, sección 14). Alternativa con lo abierto:
+1.248 contratos de prestación de servicios firmados desde 2022 en `jbjy-vk9h` cuyo objeto es evaluar ofertas, propuestas o
+procesos de selección (155 entidades; los contratistas se sustituyen por un código corto y solo se usan para detectar
+cambios de equipo, sin perfiles individuales).
+
+- **La premisa de duración se confirma**: mediana de 170 días (cuartiles 91 y 280); el 63 % dura 200 días o menos.
+- **Prueba.** Época = conjunto de contratistas de evaluación activos de la entidad en la fecha de cierre del proceso.
+  Con 1.161 procesos de licitación y menor cuantía (3+ ofertas) de 24 entidades con 4 o más de esos
+  contratos, se compara la semejanza (correlación) entre procesos de la misma época y de épocas distintas, a igual
+  distancia en días (hasta 365), frente a 60 calendarios de la entidad corridos al azar entre 90 y 270 días.
+- **Resultado: ningún efecto de época.** La diferencia (misma época menos distinta) es negativa o nula en las cuatro medidas
+  (baja del ganador con control por número de ofertas -0.09; número de ofertas -0.04; estilo
+  de elegir ganador -0.04; «gana la más baja» -0.01) y cae dentro de lo que dan los calendarios corridos
+  (valor p empírico de 0,52 a 0,90). El calendario real de cambios de equipo no explica nada más que uno falso.
+- **Qué no prueba**: que los evaluadores no importen. Solo 1.248 contratos en cuatro años, 24 entidades con 4 o más; el contrato no dice quién
+  evaluó qué proceso y los comités reales incluyen funcionarios. Con estos datos no hay evidencia de un patrón; sin los nombres reales no se puede ir más lejos.
