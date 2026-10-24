@@ -548,3 +548,26 @@ dueño (regla dura del proyecto).
   de Detekta que lo leen como número de oferentes (`lib/indice_competencia`), midiendo la diferencia antes de tocar.
 - **Auditoría adversaria**: sus veredictos entran en la sección 11 cuando termine; lo que no apruebe se retira.
 
+## 11. Verificación independiente (recalculada con código propio, sin leer los guiones de la sesión)
+
+Un segundo agente recalculó ocho comprobaciones solo desde `base.jsonl.gz`, las fórmulas de `metodos.js`, la
+serie de la TRM y los domicilios. **Seis coinciden exactamente** (conteos por año, ganador contra «la más baja»,
+backtest de 95 %, 96,5 % y 88 %, centavos de la TRM, y el ganador casa con una oferta válida en los 24.527
+procesos). Tres difieren poco y no cambian ninguna conclusión:
+
+| Comprobación | Informe | Recalculado | Causa |
+|---|---|---|---|
+| Baja mediana del ganador, licitación con 10+ ofertas | 5,5 | 5,6 (5,598 exacto) | redondeo |
+| Ventaja local, procesos | 1.779 · 55,3 % · 44,2 % | 1.774 · 55,4 % · 44,3 % | normalización de nombres de departamento y criterio de NIT válido |
+| Piso mediano por año (licitación 3+) | 97,1 · 96,5 · 94,9 · 94,5 · 94,6 · 94,1 · 93,6 · 92,6 | 97,2 · 96,6 · 95,0 · 94,6 · 94,6 · 94,2 · 93,7 · 92,6 | hasta 0,1 de diferencia por universo; la tendencia de 4,5 puntos se reproduce |
+
+Además, dos cifras del informe salen de universos distintos al estricto (con ganador emparejado y sin
+inconsistencia) y ya van rotuladas en la sección 5: 45,7 % frente a 44,9 % de ofertas cerca de la mediana, y
+14,4 % frente a 13,4 % de porcentajes enteros.
+
+## 12. Auditoría adversaria
+
+[Pendiente: la primera auditoría murió por el límite de sesión del 21-oct sin entregar; se relanzó el 24-oct-2026
+con seis ataques (backtest por fecha de cierre y por nivel constante, ventaja local con la sede de la entidad,
+entidad con 3+ ofertas, el «pelotón» frente a un simulado, la tendencia del piso por tramo de ofertas, y la
+calibración). Sus veredictos se pegan aquí tal cual; lo que no pase se corrige o se retira en las secciones 5 a 9.]
