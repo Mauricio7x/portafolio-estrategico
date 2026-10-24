@@ -9,7 +9,38 @@
 
 ## Resumen para el dueño (sin jerga)
 
-[se escribe al cerrar C1 con las decisiones del dueño]
+**Pidió:** saber si existe una regla matemática estable, por lugar, entidad u ofertas de los demás, que diga a qué
+precio ofertar para ganar más obras sin perder plata.
+
+**Respuesta: no hay una regla así.** Con los datos abiertos de SECOP II (2019 a octubre de 2026, unos 22.000
+procesos de obra) lo único estable es un nivel de precio. La ubicación casi no ayuda, la entidad ayuda menos de lo
+que parecía, y quién gana no se deja predecir por el precio: la oferta más barata gana como lo haría el azar.
+
+**Lo que sí se midió y se puede usar**
+
+1. **Cuánto baja el ganador depende de cuántos se presentan, no de dónde está la obra.** En licitación gana con
+   0 % de baja si hay una oferta, 1 % con 3 o 4, 3 % con 5 a 9 y 5,5 % con 10 o más.
+2. **El nivel de precio manda y cambia cada año.** Con 3 o más ofertas, ofertar cerca del 95 % del presupuesto
+   rinde unos 10 de cada 100 en la simulación; subir al 98 % o más rinde menos, y bajar al 88 % casi nunca sirve.
+   El mejor nivel fue 97,5 % en 2019 y 95,25 % en 2025. En licitación, el precio de las ofertas
+   (mediana menos una desviación) baja cerca de medio punto por año: de 97,1 % en 2019 a 92,6 % en 2026.
+3. **Ser de la región ayuda.** En 1.774 procesos con oferentes de la región y de fuera, ganó el local 55 de cada
+   100, no 44. El efecto es mayor en obras de alcaldías y gobernaciones fuera de Bogotá y desaparece en Bogotá.
+4. **La probabilidad honesta de ganar es casi una entre el número de ofertas.** Una fórmula matemática completa
+   (reglas del pliego más la probabilidad de quedar habilitado) queda calibrada, pero no supera ese reparto.
+
+**Qué cambia para usted:** nada en la aplicación todavía. Detekta hoy calcula el techo con la baja de todos los
+procesos de la entidad, y los de una sola oferta lo empujan hacia el 98 a 100 %. Eso es lo único que vale la pena
+revisar.
+
+**Quedó mal o sin verificar:** la ventaja del 95 % sobre el 98 % depende de suponer que una oferta muy baja se
+rechaza (ese supuesto no está en ningún pliego); no se ve quién quedó habilitado ni qué método sacó cada proceso;
+la prueba de 2026 no se ha tocado; y las cifras de este informe son las de la primera corrida con las correcciones de
+la auditoría (sección 12): quedan ocho arreglos de código y repetir la corrida.
+
+**Decisión suya (D4):** ¿cambiar el techo de Detekta para que solo use procesos con 3 o más ofertas, o mostrar al
+lado la mediana de los procesos con competencia? Mueve el precio de una oferta, así que no lo toqué: pide plan,
+pruebas y su visto bueno.
 
 ## 1. Premisas del prompt que resultaron falsas o incompletas (van primero)
 
@@ -249,22 +280,20 @@ decide es el tamaño del efecto frente al umbral declarado.**
 
 | # | Hipótesis | Resultado 2024–2026 | ¿Supera su umbral? | Con 2022–2026 · 2019–2026 |
 |---|---|---|---|---|
-| H1 | r_adj estable por entidad | Con solo comparables ANTERIORES (≥ 5), la mediana de la entidad explica fuera de muestra el 45 % de la varianza de r_adj en licitación (IC 23–59 %) y el 55 % en menor cuantía (IC 29–67 %); error absoluto medio 1,76 puntos (entidad) frente a 2,95 (país) y 2,47 (departamento). Rango intercuartil dentro de la entidad 1,1 puntos frente a 5,5 global. | Sí (R² ≥ 0,10; IQR ≤ 70 %). **Pero** la variación de r_adj está dominada por cuántos ofertan (H2): parte del «efecto entidad» es que la misma entidad recibe siempre pocas ofertas. [Sujeto a la auditoría: F1] | R² cae a 0,26 / 0,40 (2022–2026) y 0,21 / 0,21 (2019–2026): la historia vieja estorba más de lo que ayuda |
+| H1 | r_adj estable por entidad | Con solo comparables ANTERIORES (≥ 5), la mediana de la entidad explica fuera de muestra el 45 % de la varianza de r_adj en licitación (IC 23–59 %) y el 55 % en menor cuantía (IC 29–67 %); error absoluto medio 1,76 puntos (entidad) frente a 2,95 (país) y 2,47 (departamento). Rango intercuartil dentro de la entidad 1,1 puntos frente a 5,5 global. | Sí (R² ≥ 0,10; IQR ≤ 70 %). **Pero** la variación de r_adj está dominada por cuántos ofertan (H2): parte del «efecto entidad» es que la misma entidad recibe siempre pocas ofertas. **Auditado: con solo procesos de 3 o más ofertas el R² cae a 0,22 (licitación) y 0,39 (menor cuantía), con IC que cruzan 0; con 2019–2026 es 0,21. La entidad explica entre una quinta y dos quintas partes de la varianza, no la mitad: el R² alto venía de comparables con una sola oferta.** | R² cae a 0,26 / 0,40 (2022–2026) y 0,21 / 0,21 (2019–2026): la historia vieja estorba más de lo que ayuda |
 | H2 | Más oferentes, más baja | Mediana de la baja del ganador por número de ofertas 1 · 2 · 3–4 · 5–9 · 10+: licitación 0 · 0,1 · 1,0 · 3,2 · 5,5 puntos; menor cuantía 0 · 0,2 · 2,0 · 4,7 · 6,8; mínima 0 · 1,2 · 10,2 · 18,0 · 23,4. Pendiente sobre log(n): 1,44 (IC 1,25–1,63) y 2,08 (IC 1,67–2,27). | Sí, con holgura | Igual forma; con 10+ la baja es 4,6–4,9 puntos en las ventanas largas |
-| H3 | Acumulación de ofertas | Las ofertas se apiñan alrededor de la mediana del proceso: en licitación (procesos con 4+ ofertas) **el 46 % de las ofertas queda a menos de medio punto de la mediana de las OTRAS ofertas** (12.049 de 26.373 en los usables sin inconsistencia; 44,9 % si además se exige ganador emparejado; 4,6 veces lo que hay en las celdas vecinas); en menor cuantía, el 35 % (3,4 veces). **El 13–14 % de las ofertas es un porcentaje entero exacto del presupuesto** (95,0 %, 97,0 %…; 14,4 % en todos los usables, 13,4 % con ganador y sin inconsistencia) y el 13,6 % de las de licitación es exactamente el 100 %. Hay un VACÍO justo un punto por debajo de la mediana (−35 % frente a los vecinos): pocas ofertas se sitúan apenas debajo del grupo. Alrededor del 80 % y del 88 % del presupuesto no hay acumulación (las celdas están por debajo de sus vecinas). | Sí (exceso ≥ 25 %) | Igual en todas las ventanas (456–477 % en licitación) |
+| H3 | Acumulación de ofertas | **[TUMBADO por la auditoría como conducta de los oferentes: ver sección 12. Lo que sigue es lo medido, no un «pelotón» ni «porcentajes redondos»: el 12,6 % de las ofertas de licitación es exactamente el precio base y solo el 0,7 % es otro porcentaje entero.]** Las ofertas se apiñan alrededor de la mediana del proceso: en licitación (procesos con 4+ ofertas) **el 46 % de las ofertas queda a menos de medio punto de la mediana de las OTRAS ofertas** (12.049 de 26.373 en los usables sin inconsistencia; 44,9 % si además se exige ganador emparejado; 4,6 veces lo que hay en las celdas vecinas); en menor cuantía, el 35 % (3,4 veces). **El 13–14 % de las ofertas es un porcentaje entero exacto del presupuesto** (95,0 %, 97,0 %…; 14,4 % en todos los usables, 13,4 % con ganador y sin inconsistencia) y el 13,6 % de las de licitación es exactamente el 100 %. Hay un VACÍO justo un punto por debajo de la mediana (−35 % frente a los vecinos): pocas ofertas se sitúan apenas debajo del grupo. Alrededor del 80 % y del 88 % del presupuesto no hay acumulación (las celdas están por debajo de sus vecinas). | Sí (exceso ≥ 25 %) | Igual en todas las ventanas (456–477 % en licitación) |
 | H4 | Posición del ganador | **La oferta más baja no gana más que una al azar**: en licitación gana el 33,6 % de las veces (IC 30–37 %) cuando por azar sería el 35,7 %; en menor cuantía 60,8 % frente a 61,2 %. Con 3–4 ofertas en licitación, la más baja gana el 16 % frente al 30 % que le tocaría al azar; con 10+, el 10 % frente al 5 %. La posición típica del ganador es el centro: mediana de su z = 0,08 (licitación) y 0,06 (menor cuantía); solo el 14 % de los ganadores queda a más de una desviación por debajo de la media. En mínima cuantía la más baja gana el 59 % (azar: 53 %), no el 100 % que manda la norma: la más baja publicada no es siempre la que cumple. | La hipótesis era «el ganador no suele ser el más bajo»: confirmada. | Igual: 37,8 % vs 38,0 % (2022–2026), 38,7 % vs 37,4 % (2019–2026) |
 | H5 | Dígitos (control) | Benford se rechaza (chi² 363, 8 g. l.) como es normal en precios anclados a un presupuesto; el 25 % de las ofertas trae centavos y el 5,8 % es múltiplo exacto de un millón. No hay marcadores masivos. | Solo control | Igual |
 | H6 | Centavos de la TRM parejos | 663 días hábiles 2024–2026: 174 · 153 · 181 · 155 en los cuatro rangos; chi² 3,49 (3 g. l.), p 0,32: no se rechaza el reparto parejo. | Sí (el método es un sorteo justo; P(m) = ¼) | 1.135 días: p 0,42; 1.850 días: p 0,72 |
 | H7 | La ubicación mejora la predicción | Añadir departamento y municipio a entidad + modalidad + tamaño mejora el error absoluto medio de r_adj fuera de muestra en 0,10 puntos (licitación, IC 0,06–0,13) y 0,14 (menor cuantía, IC 0,12–0,17) en validación cruzada; 0,10 y 0,23 en validación temporal (2026). Dejando un departamento fuera, el error no cambia (2,80 frente a 2,80). | **No** (umbral 0,5 puntos): significativo pero irrelevante | 0,07 / 0,11 y 0,07 / 0,10 |
-| H8 | Ventaja local | En 1.779 procesos (2019–2026) con oferentes del departamento de la obra y de fuera a la vez, **ganó un local en 55 de cada 100 cuando por azar serían 44**; razón de momios 1,70 (IC 1,54–1,89), igual en 2019–2023 (1,65) y 2024–2026 (1,78). Cobertura: el domicilio se conoce para el 37 % de las ofertas (solo las que traen NIT válido y figuran en Proveedores Registrados). | Sí (≥ 1,3 y cobertura ≥ 30 %) [sujeto a la auditoría: F7] | Estable |
+| H8 | Ventaja local | En 1.779 procesos (2019–2026) con oferentes del departamento de la obra y de fuera a la vez, **ganó un local en 55 de cada 100 cuando por azar serían 44**; razón de momios 1,70 (IC 1,54–1,89), igual en 2019–2023 (1,65) y 2024–2026 (1,78). Cobertura: el domicilio se conoce para el 37 % de las ofertas (solo las que traen NIT válido y figuran en Proveedores Registrados). | Sí (≥ 1,3 y cobertura ≥ 30 %) **Auditado: con la sede de la entidad (que no depende del ganador) la razón de momios es 1,48 (IC 1,19–1,79); con la dirección del contrato, que solo se conoce del ganador, 1,71 y está algo inflada. Alrededor de 2 en entidades territoriales fuera de Bogotá; sin efecto con obra en Bogotá (1,07).** | Estable |
 | H9 | Tamaño y versión del documento tipo | Los procesos grandes (tercil superior del precio base) se adjudican con 3,0 puntos más de baja que los pequeños en licitación (IC 1,2–4,2) y 1,0 en menor cuantía (IC 0,2–3,1); el tamaño mediano trae más ofertas (6 y 8 frente a 4). Versión 4 de transporte (avisos desde el 3-feb-2025): sin cambio medible en licitación (+0,8 puntos, IC −0,5 a 2,1). Versión 2 de infraestructura social (desde el 16-feb-2026): −3,2 puntos en licitación (IC −4,2 a −0,7), **pero coincide con que 2026 es el año de más competencia y no se puede separar de la tendencia del año** (sección 7). | Parcial (tamaño sí en licitación; versión no atribuible) | Tamaño: 1,3–1,8 puntos |
 | H10 | Calendario | Diciembre: +0,3 puntos de r_adj (IC 0,1–1,0), menos baja y 1 oferta mediana; abajo del umbral de 2 puntos. Ley de Garantías 2026 (cierres entre el 31-ene y el 21-jun-2026: 998 procesos) frente a la misma época de 2025 (716): diferencia de r_adj 0,27 puntos (IC −0,2 a 1,1) y 0 ofertas de diferencia. | **No** | Diciembre 0,8–1,0 puntos |
 | H11 | Reincidencia (control) | El ganador ya había ganado 2 o más veces antes en la misma entidad en el 1,4 % de las licitaciones y el 9,1 % de las menores cuantías. | Control: no entra al optimizador | 1,3–1,4 % y 10 % |
 
 Lo que esto dice en lenguaje llano: **la baja que gana depende sobre todo de cuántos se presentan, no de dónde está la
-obra**; las ofertas se juntan en un pelotón estrecho alrededor de la mediana del proceso y el ganador es casi
-siempre uno del pelotón, no el más barato; y ser de la región ayuda más que cualquier variable de precio que
-pudimos medir.
+obra**; las ofertas de un mismo proceso están muy cerca unas de otras (desviación mediana de 1,7 puntos) y una de cada ocho está exactamente en el precio base; el ganador no es el más barato; y ser de la región ayuda, sobre todo en obras de alcaldías y gobernaciones fuera de Bogotá.
 
 ## 6. Modelo del ganador, líneas base y optimizador (Fases 4 a 7; `fase5_7_modelo*.json`)
 
@@ -377,8 +406,7 @@ rechazada la oferta bajo el piso).
 4. Ofertar muy bajo tampoco sirve: B0 (88 %) y F_opt sin piso (81 %) ganarían si todo valiera, pero el 93–97 %
    de sus ofertas queda bajo «mediana − σ», y con ese criterio como rechazo ganan 1–2 de cada 100.
 5. Con 10 o más ofertas nadie pasa de 4 de cada 100 con ninguna regla: ahí el precio no decide.
-6. **La probabilidad que calcula el optimizador con comparables NO está calibrada** (Brier 0,296 frente a 0,211
-   de una constante; pendiente de calibración 1,39): no puede mostrarse como «probabilidad de ganar».
+6. **La probabilidad que calcula el optimizador con comparables NO está calibrada.** El Brier de 0,296 que se publicó en una primera versión era un artefacto de los 1.337 procesos con una sola oferta (retirado). Con 3 o más ofertas el Brier es 0,0378 frente a 0,0334 de una constante, y el modelo sobreestima: predice 16 de cada 100 y ocurre 10. No puede mostrarse como «probabilidad de ganar».
 
 **Escenario histórico (el que pedía el prompt): validación 2024 con historia solo hasta 2023 (ofertas de `b28v`)**
 
@@ -451,7 +479,7 @@ rechazada la oferta bajo el piso).
 
 Mismo orden y mismas distancias: con 3+ ofertas y piso, B2 7,4 · C96,5 8,8 · C95 8,9 · F_opt_piso 9,7 · P25 10,2 ·
 Piso_comparables 10,9. Aquí Piso_comparables supera a la constante por 2,1 puntos con un IC que roza el cero
-(−0,1 a 3,9): **el criterio de «≥ 3 puntos sobre la mejor constante» se cumple en 2025 y no en 2024**. Y con
+(−0,1 a 3,9): **contra la MEJOR constante (no contra el 96,5 %), la ventaja es de 1,4 puntos en 2025 (IC 0,1–2,5) y de 0,8 en 2024 (IC −1,2 a 2,6): el criterio de 3 puntos no se cumple en ninguno de los dos años (corrección de la auditoría, sección 12)**. Y con
 comparables solo desde 2024 (sin 2019–2023) los resultados de 2025 cambian menos de 1,5 puntos en todas las
 reglas: la historia vieja no añade ni quita.
 
@@ -474,7 +502,7 @@ incompleto:
   cuantía): sube y baja con la mezcla de procesos de un solo oferente.
 - **El piso (mediana − σ de las ofertas) de licitación sí baja de forma sostenida**: 97,1 % → 94,5 % (2022) → 93,6 %
   (2025) → 92,6 % (2026): medio punto por año en los últimos cuatro. La misma deriva se ve en el P10 de r_adj.
-  Es la cifra con más pinta de «predecible», y es a la baja: el pelotón se aprieta y desciende.
+  Es la cifra con más pinta de «predecible», y es a la baja. **Auditado: sigue cayendo dentro de cada tramo de número de ofertas (−0,43 puntos por año, IC −0,48 a −0,38) y con efectos fijos de entidad. La columna «ofertas medianas» de la tabla cuenta también los procesos de una oferta y no es la composición de la muestra del piso (con 3 o más ofertas la mediana es 16,5 en 2019 y 15,5 en 2026); 2026 es parcial.**
 - **Mínima cuantía cambió de régimen**: la mediana de r_adj pasó del 80–87 % (2019–2022) al 97–99 % (2025–2026),
   al tiempo que las ofertas medianas bajaron de 4–5 a 2. Mezclar 2019–2023 con 2024–2026 en mínima describe un
   mercado que ya no existe.
@@ -498,8 +526,20 @@ incompleto:
    bajarían con él.
 6. **El método de ponderación de cada proceso no consta**; H6 solo prueba que el sorteo es parejo.
 7. **Ninguna cifra de aquí es una probabilidad individual**: la calibración lo descarta (6.2, punto 6).
+8. **El «piso»** (una oferta bajo «mediana − σ» cuenta como rechazada) es un supuesto propio: no está en ningún pliego. Toda la ventaja de Piso_comparables sobre la constante del 95 % depende de él (sin el piso: 19,6 frente a 19,2 de cada 100).
+9. **Empates**: con empate repartido (1/k) B2 queda en 6,6; entre 6,2 (empate = 0) y 9,1 (empate = 1, cota optimista) según el desempate, porque B2 ofrece exactamente el 100 % en el 22 % de los procesos con 3 o más ofertas.
+10. **El corte «3 o más ofertas» se conoce después del hecho**: al fijar el precio no se sabe cuántos se presentarán. La fila de TODOS los procesos (2025: Piso_comparables frente a C96.5, +1,45, IC 0,63–2,22) acompaña a la de 3+.
+11. **Selección de reglas**: las reglas de H12 se añadieron después de ver 2025 y son 12 estrategias; la fuga por fechas del corte se corrigió en la auditoría (usar la fecha de cierre cambia la ventaja en 0,2 a 0,4 puntos).
+12. **El dominio de la ventaja local** son las ofertas con NIT válido y domicilio registrado (37 %); entre los ganadores la cobertura es 43,9 % y entre los perdedores 35,2 %. Con todos los oferentes del proceso con domicilio (390 procesos) la razón de momios es 2,08.
 
 ## 9. Checkpoint C3: ¿se integra a Detekta, y qué? (resultado B con dos piezas aprovechables)
+
+> **Corregido tras la auditoría (sección 12).** El veredicto B se refuerza: contra la mejor constante, la regla con
+> comparables solo suma 1,4 puntos de cada 100 en 2025 (IC 0,1–2,5) y 0,8 en 2024 (IC −1,2 a 2,6), y el criterio
+> preregistrado pedía 3. Donde el texto de abajo dice «3,1 puntos» o «12,1 frente a 6,6», léase con esa corrección:
+> el 6,6 de Detekta hoy es 6,2–9,1 según el desempate, y lo que de verdad mueve el resultado es el NIVEL de precio
+> (95–96 % del presupuesto), que además baja cada año (mejor constante: 97,5 % en 2019 y 2020, 95,25 % en 2025).
+
 
 **Veredicto: resultado B del prompt.** No existe una regla matemática estable por ubicación del proceso ni por
 entidad que, con los datos abiertos, permita elegir el precio que maximiza las adjudicaciones más allá de lo que
@@ -520,8 +560,7 @@ cero) en 2024, con una probabilidad individual que no calibra. Lo que SÍ sale d
 2. **La alerta de precio bajo y el «piso» están bien, y el piso se mueve**: la referencia medida del 18-oct (88 %)
    sigue válida, y la cifra «mediana − σ» de licitación baja medio punto por año (sección 7): el vigía mensual
    (`vigilar_corte.js`) debería vigilar también el piso mediano, no solo el corte de la alerta.
-3. **Ventaja local (H8)**: ser del departamento de la obra se asocia a ganar 55 de cada 100 frente a 44 (razón
-   de momios 1,7, estable en el tiempo). Es un HECHO a mostrar en la tarjeta («en esta entidad los oferentes del
+3. **Ventaja local (H8)**: ser del departamento de la obra se asocia a ganar 55 de cada 100 frente a 44 (razón de momios entre 1,5 y 1,7, y alrededor de 2 en entidades territoriales fuera de Bogotá; sin efecto con obra en Bogotá). Es un HECHO a mostrar en la tarjeta («en esta entidad los oferentes del
    departamento ganan X de cada 100»), no un factor de la probabilidad, mientras no se descarte el sesgo de quién
    tiene NIT válido en el registro.
 4. **El optimizador por métodos (F_opt) no debe entrar como «probabilidad de ganar»**: su predicción es peor que
@@ -546,7 +585,8 @@ dueño (regla dura del proyecto).
 - **Guía del analista**: corregir § «Los 4 métodos de ponderación económica» (ya lo señala el COMPLEMENTO V-18).
 - **Datos**: `respuestas_al_procedimiento` incluye respuestas de la entidad (diccionario oficial): revisar los sitios
   de Detekta que lo leen como número de oferentes (`lib/indice_competencia`), midiendo la diferencia antes de tocar.
-- **Auditoría adversaria**: sus veredictos entran en la sección 11 cuando termine; lo que no apruebe se retira.
+- **Corregir el código y repetir la corrida** con los ocho defectos de la sección 12 (corte en el cierre, piso sin la propia oferta, comparación contra la mejor constante, sede de la entidad para H8, calibración solo con 3+), y reescribir las cifras con la corrida nueva.
+- **Modelo «1/n más oferente»** (sección 13): entrenar hasta 2024, probar en 2025, 2026 intacto; si no mejora el Brier de 1/n, la respuesta para Detekta es «una entre n».
 
 ## 11. Verificación independiente (recalculada con código propio, sin leer los guiones de la sesión)
 
@@ -565,12 +605,37 @@ Además, dos cifras del informe salen de universos distintos al estricto (con ga
 inconsistencia) y ya van rotuladas en la sección 5: 45,7 % frente a 44,9 % de ofertas cerca de la mediana, y
 14,4 % frente a 13,4 % de porcentajes enteros.
 
-## 12. Auditoría adversaria
+## 12. Auditoría adversaria (24-oct-2026; la primera, del 21-oct, murió por el límite de sesión sin entregar)
 
-[Pendiente: la primera auditoría murió por el límite de sesión del 21-oct sin entregar; se relanzó el 24-oct-2026
-con seis ataques (backtest por fecha de cierre y por nivel constante, ventaja local con la sede de la entidad,
-entidad con 3+ ofertas, el «pelotón» frente a un simulado, la tendencia del piso por tramo de ofertas, y la
-calibración). Sus veredictos se pegan aquí tal cual; lo que no pase se corrige o se retira en las secciones 5 a 9.]
+Un agente que no escribió el análisis reprodujo seis hallazgos con código propio (IC por bloques de entidad, 300 a
+2.000 réplicas). Su réplica coincide con el original: Piso_comparables 12,14 en 2025 y razón de momios 1,71 con
+1.774 procesos. Veredictos y lo que cambió en este informe:
+
+| Hallazgo | Veredicto | Lo que se reprodujo | Estado en el informe |
+|---|---|---|---|
+| Hay regla por comparables (+3,1 sobre la constante 96,5 %) | **CORREGIR** | Contra la mejor constante: +1,4 (IC 0,1–2,5) en 2025 y +0,8 (IC −1,2 a 2,6) en 2024; contra una constante elegida con el año anterior, +1,5 y +1,4. De los +2,9 sobre el 96,5 %, +1,4 es solo bajar la constante al 95 %. No alcanza los 3 puntos preregistrados. | Corregido en secciones 6, 8 y 9 |
+| Ventaja local (razón de momios 1,70) | **SOSTENIDO, cifra corregida** | Con la sede de la entidad: 1,48 (IC 1,19–1,79). Entes territoriales: 2,13; fuera de Bogotá: 1,94; obra en Bogotá: 1,07. Con todos los oferentes con domicilio: 2,08. Las firmas de Bogotá ganan menos (0,77): no es «empresas grandes de Bogotá». | Corregido en sección 5 y 8 |
+| La entidad explica la mitad de r_adj | **CORREGIR** | Con 3+ ofertas: R² 0,22 y 0,39, IC que cruza 0; 2019–2026: 0,21. El R² alto salía de comparables de una sola oferta (0,47 y 0,65). | Corregido en sección 5 |
+| «Pelotón» en la mediana y «porcentajes redondos» | **TUMBADO como conducta** | El «14 % de enteros» es el 12,6 % de ofertas exactamente al precio base; los otros enteros son 0,7 %. Con nivel y escala propios por proceso, colas pesadas y sin las ofertas al 100 %, el exceso cerca de la mediana es de 3 a 6 puntos y solo con 10+ ofertas. | Marcado en sección 5 |
+| El piso de licitación baja 97,1 → 92,6 | **SOSTENIDO** | Cae dentro de cada tramo de ofertas (−0,43 por año, IC −0,48 a −0,38), con efectos fijos de 239 entidades y en las 37 entidades presentes en 2019–21 y 2024–26 (−1,8 puntos). | Sección 7, con una premisa de composición retirada |
+| Calibración mala (Brier 0,296 frente a 0,211) | **CORREGIR** | Artefacto de los procesos de una oferta. Con 3+: 0,0378 frente a 0,0334; el modelo predice 16 de cada 100 y ocurre 10. | Corregido en sección 6.2 |
+
+Otros hallazgos del auditor sobre el backtest, ya declarados como límites (sección 8, puntos 8 a 12): fuga por
+fechas pequeña (los comparables cambian en 705 de 1.231 procesos si se corta en el cierre, +0,2 puntos de ventaja
+inflada); el piso incluye la propia oferta; B2 depende del desempate; el corte 3+ es posterior al hecho; con 1 oferta
+Piso_comparables suma +1,3 y con 2 ofertas −2,0; por modalidad, la ventaja sobre C95 se sostiene en licitación
+(+2,4 y +2,0) y no en menor cuantía (+0,9 y +1,4, IC que cruza 0).
+
+**Defectos de código encontrados** (el informe usa las cifras originales con las correcciones de arriba; las
+correcciones de código y la nueva corrida quedan en «Tareas pendientes»): (1) la «composición» de la tendencia cuenta
+procesos de una oferta (`hipotesis.py:287`); (2) el departamento de la obra toma primero la dirección del contrato
+(`analisis.py:96`, `h8_local.py:43`); (3) H8 exige que el ganador tenga domicilio (`h8_local.py:51`); (4) el corte de
+fechas del backtest es la adjudicación y no el cierre (`modelo.py:150`); (5) el piso incluye la oferta insertada
+(`modelo.py:42`); (6) la calibración mezcla n=1 y usa una constante dentro de muestra (`modelo.py:178`); (7) «redondo
+entero» cuenta el 100 % (`h3_extra.py:27`); (8) la comparación se hace contra C96.5 y no contra la mejor constante.
+
+**No revisado por el auditor**: la cascada B2 y F_opt (solo sus cifras), la definición de «usable», un nulo validado
+para H3 con colas calibradas, y la sección 13 (modelo estructural), que se escribió después.
 
 ## 13. ¿Se puede calcular la probabilidad de adjudicación con matemática y no con ajuste? Prueba del modelo estructural (24-oct-2026)
 
@@ -596,5 +661,5 @@ derivación matemática completa. La calibración es real pero es la del 1/n; no
 **Qué significa.** Con precios publicados, la probabilidad honesta de que una oferta gane es **aproximadamente 1
 entre el número de ofertas**; el precio mueve la probabilidad mucho menos de lo que parece, salvo para evitar
 quedar rechazada por precio artificialmente bajo. Lo que podría añadir información y SÍ está en los datos: la
-ventaja local (H8, razón de momios 1,7), y el historial de cada oferente en esa entidad (H11). Un modelo
+ventaja local (H8, razón de momios 1,5–1,7, ver sección 12), y el historial de cada oferente en esa entidad (H11). Un modelo
 probabilístico sustentable es entonces «1/n ajustado por oferente», no «precio → probabilidad».
