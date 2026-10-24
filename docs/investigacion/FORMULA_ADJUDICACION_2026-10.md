@@ -663,3 +663,43 @@ entre el número de ofertas**; el precio mueve la probabilidad mucho menos de lo
 quedar rechazada por precio artificialmente bajo. Lo que podría añadir información y SÍ está en los datos: la
 ventaja local (H8, razón de momios 1,5–1,7, ver sección 12), y el historial de cada oferente en esa entidad (H11). Un modelo
 probabilístico sustentable es entonces «1/n ajustado por oferente», no «precio → probabilidad».
+
+## 14. ¿El comité evaluador deja un patrón? Huella indirecta (24-oct-2026; `tools/analisis/evaluadores.py`)
+
+**Hipótesis del dueño.** En las entidades, el comité evaluador lo forman contratistas con contratos de 6 o 12 meses; al ser
+personas, deberían repetir un estilo mientras duran, y el estilo cambiaría cuando cambian ellos.
+**Lo que no se puede hacer con datos abiertos:** identificar a los evaluadores. Los conjuntos de contratos traen supervisor y
+ordenador del gasto, no el comité evaluador, que figura en los documentos del proceso (informe de evaluación), y SECOP II
+responde 403 desde la sesión. Por eso solo se mide una huella: si las decisiones de una misma entidad se parecen más entre
+procesos cercanos en el tiempo que entre procesos lejanos (3.259 procesos de 2024–2026 con 3+ ofertas y ganador emparejado;
+7.570 de 2019–2026; correlaciones entre pares de procesos de la misma entidad, por distancia en días entre adjudicaciones).
+
+| Qué se parece entre procesos de la misma entidad | 0–60 días | 61–180 | 181–365 | 366–730 | más de 730 |
+|---|---|---|---|---|---|
+| **Estilo de escoger al ganador** (qué tan lejos de la media queda el que gana), 2024–2026 | 0,04 | 0,03 | 0,04 | 0,02 | 0,03 |
+| «Gana la más baja», 2024–2026 | 0,06 | 0,04 | 0,05 | 0,07 | 0,05 |
+| Mismo ganador, 2024–2026 | 1,0 % | 0,7 % | 0,6 % | 0,5 % | 0,7 % |
+| **Baja del ganador**, 2024–2026, sin control | 0,24 | 0,23 | 0,22 | 0,13 | 0,10 |
+| Baja del ganador, 2024–2026, con control por número de ofertas | 0,10 | 0,08 | 0,07 | 0,03 | 0,04 |
+| Número de ofertas (log), 2024–2026 | 0,36 | 0,19 | 0,26 | 0,21 | 0,07 |
+| Baja del ganador con control por número de ofertas, 2019–2026 | 0,23 | 0,19 | 0,14 | 0,10 | 0,10 |
+
+**Lectura.**
+- **El estilo de elegir al ganador no persiste en el tiempo**: las tres medidas que reflejarían una decisión del evaluador
+  (a quién se escoge entre las ofertas, si es la más baja, si se repite el ganador) son planas y cercanas a cero, igual
+  entre procesos de la misma semana que entre procesos separados por dos años. **Con esta huella no hay evidencia de que un
+  evaluador deje un patrón que se pueda predecir.** No es lo mismo que probar que no existe: la medida es gruesa y no ve
+  a las personas.
+- **Lo que sí persiste en el tiempo es cuántos se presentan y cuánto baja el ganador**: entre procesos de la misma entidad
+  separados por 0–60 días la correlación del número de ofertas es 0,36 y baja a 0,07 después de dos años; la baja del
+  ganador pasa de 0,23 a 0,10 (2019–2026, con control por número de ofertas). Hay un componente de la entidad que dura
+  meses y se disuelve en uno o dos años. Es compatible con la idea del dueño (un equipo que cambia), pero también con
+  que procesos cercanos de una misma entidad se parecen entre sí (mismo programa, mismo tipo de obra, mismo presupuesto,
+  procesos publicados en lote). **Con estos datos no se pueden separar esas dos explicaciones.**
+- Por mes de adjudicación, enero y febrero (cuando empiezan los contratos nuevos) no se distinguen del resto en el estilo
+  de elección (diferencias de 0,02 en «gana la más baja», sobre 64 y 113 procesos).
+
+**Qué haría falta para probarlo bien**: los nombres de los integrantes de cada comité (informe de evaluación o acta de
+designación de cada proceso, que el dueño podría exportar desde su sesión de SECOP II para un conjunto pequeño de entidades) y
+las fechas de sus contratos de prestación de servicios (en `jbjy-vk9h`). Con eso se mediría, por entidad, si el estilo cambia al cambiar
+las personas. Es un estudio aparte, con tratamiento de datos de personas naturales (Ley 1581, agregado por entidad, sin perfiles individuales).
