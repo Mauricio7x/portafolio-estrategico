@@ -1,0 +1,119 @@
+{
+ "procesos": 7289,
+ "h_maxima_verosimilitud_<=2024": 0.1,
+ "verosimilitud_media_entrenamiento": {
+  "modelo": -1.8061896814869762,
+  "uniforme": -1.8418921889171902
+ },
+ "verosimilitud_media_prueba_2025": {
+  "modelo": -1.6670175664524083,
+  "uniforme": -1.6667439020391532,
+  "procesos": 1740
+ },
+ "h_por_modalidad": {
+  "licitacion": {
+   "h": 0.08,
+   "procesos": 1659,
+   "ll_prueba_2025": -2.1476347785142393,
+   "ll_uniforme_2025": -2.121870026647075
+  },
+  "menor_cuantia": {
+   "h": 0.14,
+   "procesos": 2605,
+   "ll_prueba_2025": -1.4413338730049736,
+   "ll_uniforme_2025": -1.4597300125853832
+  }
+ },
+ "h_por_tramo_n": {
+  "2": {
+   "h": 0.05,
+   "procesos_ent": 847,
+   "procesos_prueba": 509,
+   "ll_modelo_prueba": -0.7018768511698263,
+   "ll_uniforme_prueba": -0.6931471805599453
+  },
+  "3-4": {
+   "h": 0.08,
+   "procesos_ent": 979,
+   "procesos_prueba": 433,
+   "ll_modelo_prueba": -1.21352888030646,
+   "ll_uniforme_prueba": -1.2115590607623423
+  },
+  "5-9": {
+   "h": 0.16,
+   "procesos_ent": 1215,
+   "procesos_prueba": 400,
+   "ll_modelo_prueba": -1.8562260361100136,
+   "ll_uniforme_prueba": -1.864376205253328
+  },
+  "10+": {
+   "h": 0.1,
+   "procesos_ent": 1223,
+   "procesos_prueba": 398,
+   "ll_modelo_prueba": -3.1953935493880476,
+   "ll_uniforme_prueba": -3.2084595960595212
+  }
+ },
+ "prueba_2025_prob_media_asignada_al_ganador_real": {
+  "modelo": 0.2677159102248258,
+  "uniforme": 0.26837871534102287
+ },
+ "calibracion_2025_ofertas": {
+  "filas": 17126,
+  "brier": 0.07472102064908376,
+  "brier_uniforme_1_sobre_n": null,
+  "pendiente": 0.9898548697364341,
+  "deciles": [
+   {
+    "pred": 0.0011,
+    "obs": 0.0076,
+    "n": 1713
+   },
+   {
+    "pred": 0.0075,
+    "obs": 0.0082,
+    "n": 1713
+   },
+   {
+    "pred": 0.0174,
+    "obs": 0.0169,
+    "n": 1712
+   },
+   {
+    "pred": 0.0279,
+    "obs": 0.0274,
+    "n": 1713
+   },
+   {
+    "pred": 0.0383,
+    "obs": 0.0321,
+    "n": 1712
+   },
+   {
+    "pred": 0.0519,
+    "obs": 0.0555,
+    "n": 1713
+   },
+   {
+    "pred": 0.079,
+    "obs": 0.0812,
+    "n": 1712
+   },
+   {
+    "pred": 0.1325,
+    "obs": 0.1331,
+    "n": 1713
+   },
+   {
+    "pred": 0.2207,
+    "obs": 0.2249,
+    "n": 1712
+   },
+   {
+    "pred": 0.4342,
+    "obs": 0.4291,
+    "n": 1713
+   }
+  ]
+ }
+}

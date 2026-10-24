@@ -571,3 +571,30 @@ inconsistencia) y ya van rotuladas en la sección 5: 45,7 % frente a 44,9 % de o
 con seis ataques (backtest por fecha de cierre y por nivel constante, ventaja local con la sede de la entidad,
 entidad con 3+ ofertas, el «pelotón» frente a un simulado, la tendencia del piso por tramo de ofertas, y la
 calibración). Sus veredictos se pegan aquí tal cual; lo que no pase se corrige o se retira en las secciones 5 a 9.]
+
+## 13. ¿Se puede calcular la probabilidad de adjudicación con matemática y no con ajuste? Prueba del modelo estructural (24-oct-2026)
+
+**Idea.** El puntaje de cada oferta lo fija una fórmula del pliego (4 métodos sorteados parejo, H6). Lo único que
+los datos abiertos no muestran es qué ofertas quedaron habilitadas. Si cada oferta se habilita con probabilidad h,
+gana la primera habilitada en el orden de puntaje, y la probabilidad de la oferta con k ofertas por encima es
+h(1−h)^k dividida por 1−(1−h)^n, promediada sobre los 4 métodos. No tiene pesos ocultos: un solo parámetro, h.
+Código: `tools/analisis/estructural.py`; resultado: `tools/analisis/resultados/estructural.json`.
+
+**Resultado, ajustando h con adjudicaciones hasta 2024 y probando en 2025 (1.740 procesos con 2 o más ofertas):**
+
+| Medida (prueba 2025) | Modelo estructural (h = 0,10) | Azar entre las ofertas (1/n) |
+|---|---|---|
+| Verosimilitud media del ganador real, por proceso | −1,6670 | −1,6667 |
+| Error de Brier, por oferta (17.126 ofertas) | 0,0747 | 0,0743 |
+| Probabilidad media asignada al ganador real | 26,8 % | 26,8 % |
+
+El modelo queda **calibrado** (pendiente 0,99, deciles entre 0,1 % y 43 %, que casan con lo observado) **pero no
+mejor que repartir 1/n**: la h que mejor ajusta es pequeña (0,05 a 0,16 según modalidad y tramo), es decir, el
+puesto en puntaje casi no informa quién gana. Es la misma conclusión de H4 y del logit del 21-oct, ahora con una
+derivación matemática completa. La calibración es real pero es la del 1/n; no es una ventaja.
+
+**Qué significa.** Con precios publicados, la probabilidad honesta de que una oferta gane es **aproximadamente 1
+entre el número de ofertas**; el precio mueve la probabilidad mucho menos de lo que parece, salvo para evitar
+quedar rechazada por precio artificialmente bajo. Lo que podría añadir información y SÍ está en los datos: la
+ventaja local (H8, razón de momios 1,7), y el historial de cada oferente en esa entidad (H11). Un modelo
+probabilístico sustentable es entonces «1/n ajustado por oferente», no «precio → probabilidad».
