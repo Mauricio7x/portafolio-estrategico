@@ -48,3 +48,16 @@ no se pudo hacer va con el error literal. Nada de aquí lo lee la aplicación.
   («agotados 5 intentos (The operation was aborted due to timeout)»), informativos.
 - **Guiones** `tools/analisis/{analisis,hipotesis,modelo,domicilios}.py` probados sobre una base sintética de 600
   procesos antes de abrir la real (el modelo pasó de 117 s a 6 s al precalcular la tabla de inserción por proceso).
+
+## 2026-10-22 a 2026-10-25 · lo que no estaba en la bitácora
+
+- **22-oct a 24-oct**: modelos y pruebas (hipotesis.py, modelo.py, h8_local.py, h3_extra.py, estructural.py, evaluadores.py, equipo_evaluador.py). Un auditor adversarial
+  murió el 21-oct por el límite de sesión de la cuenta («You've hit your session limit · resets 8:20am (UTC)») y se relanzó el 24-oct; el verificador
+  independiente también se reanudó. Veredictos y correcciones: sección 12 del informe.
+- **24-oct**: SECOP II sigue respondiendo «403 Forbidden» (Microsoft-Azure-Application-Gateway/v2) a una descarga pública del índice abierto; Detekta en
+  producción responde «302 · Protected by Vercel Authentication». No se eludió ninguno. Alternativa abierta usada: 1.248 contratos de evaluación de jbjy (sección 15).
+  Drive: carpeta «Detekta · Investigación fórmula de adjudicación 2026-10» con la guía de reproducción y la hoja de 17 enlaces de informes de evaluación.
+- **25-oct**: ocho defectos de código corregidos y corrida repetida (corte por cierre, constantes, calibración con 3+, piso con ofertas reales,
+  sede de la entidad, redondos sin el 100 %, composición con 3+); el modelo estructural se auditó (réplica al dígito; conclusión sobredicha) y se corrigió
+  (empates exactos, rejilla desde 0,01). Resultados: secciones 5, 6.2, 9, 12 y 13. Hipótesis H1–H11 sin cambios de cifra.
+- **Pendiente**: modelo «1/n más oferente»; prueba 2026 (una sola vez, con la regla decidida); decisión D4; informes de evaluación reales para probar el comité.

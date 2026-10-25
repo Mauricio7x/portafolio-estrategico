@@ -1,7 +1,8 @@
 {
  "2024-2026|licitacion": {
   "ofertas": 27604,
-  "pct_redondo_entero": 14.436313577742355,
+  "pct_exactamente_100": 13.71178090131865,
+  "pct_otro_entero_distinto_de_100": 0.7245326764237067,
   "pct_redondo_medio_punto": 14.65005071728735,
   "esperado_si_continuo_entero_pct": 0.00019999999999999998,
   "ofertas_en_procesos_4_o_mas": 26373,
@@ -118,7 +119,8 @@
  },
  "2024-2026|menor_cuantia": {
   "ofertas": 24918,
-  "pct_redondo_entero": 13.476201942370977,
+  "pct_exactamente_100": 11.907055140862028,
+  "pct_otro_entero_distinto_de_100": 1.5691468015089494,
   "pct_redondo_medio_punto": 13.789228670037724,
   "esperado_si_continuo_entero_pct": 0.00019999999999999998,
   "ofertas_en_procesos_4_o_mas": 19042,
@@ -235,7 +237,8 @@
  },
  "2019-2026|licitacion": {
   "ofertas": 67630,
-  "pct_redondo_entero": 15.570013307703682,
+  "pct_exactamente_100": 15.019961555522697,
+  "pct_otro_entero_distinto_de_100": 0.5500517521809848,
   "pct_redondo_medio_punto": 15.815466508945734,
   "esperado_si_continuo_entero_pct": 0.00019999999999999998,
   "ofertas_en_procesos_4_o_mas": 64587,
@@ -352,7 +355,8 @@
  },
  "2019-2026|menor_cuantia": {
   "ofertas": 50919,
-  "pct_redondo_entero": 13.425244015004223,
+  "pct_exactamente_100": 12.054439403758911,
+  "pct_otro_entero_distinto_de_100": 1.3708046112453112,
   "pct_redondo_medio_punto": 13.725721243543667,
   "esperado_si_continuo_entero_pct": 0.00019999999999999998,
   "ofertas_en_procesos_4_o_mas": 40446,

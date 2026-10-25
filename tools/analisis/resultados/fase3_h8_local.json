@@ -1,39 +1,146 @@
 {
- "cobertura_ofertas_con_domicilio": {
-  "con": 41362,
-  "total": 112554,
-  "fraccion": 0.36748582902429056
+ "nota": "Referencia: departamento de la SEDE de la entidad (no depende del ganador). La dirección del contrato (jbjy) solo se conoce del adjudicatario y se reporta como sensibilidad (auditoría 24-oct, defecto 2). Casos completos = todos los oferentes del proceso con domicilio (defecto 3).",
+ "referencia_sede_entidad": {
+  "procesos": 1849,
+  "cobertura_ofertas_con_domicilio": {
+   "con": 40857,
+   "total": 111467,
+   "fraccion": 0.36653897566095794
+  },
+  "razon_de_momios": 1.4740926939099397,
+  "gano_local_de_cada_100": 53.326122228231476,
+  "esperado_si_azar_de_cada_100": 45.01215268843005,
+  "ic95": [
+   1.1838532630002034,
+   1.8277116267056008
+  ]
  },
- "procesos_con_locales_y_foraneos": 1779,
- "razon_de_momios_local": 1.7025481024248488,
- "gano_local_de_cada_100": 55.31197301854974,
- "esperado_si_azar_de_cada_100": 44.232842115089994,
- "ic95_razon_de_momios": [
-  1.537897231671065,
-  1.8886092572233397
- ],
  "por_modalidad": {
   "licitacion": {
-   "procesos": 423,
-   "gano_local_de_cada_100": 58.62884160756501,
-   "azar": 45.23062479170677,
-   "razon_de_momios": 1.9326967842854084
+   "procesos": 420,
+   "razon_de_momios": 1.8655738092686454,
+   "gano_local_de_cada_100": 58.333333333333336,
+   "esperado_si_azar_de_cada_100": 45.6081163887523,
+   "ic95": [
+    1.4935068224257777,
+    2.3338959046976284
+   ]
   },
   "menor_cuantia": {
-   "procesos": 1356,
-   "gano_local_de_cada_100": 54.27728613569322,
-   "azar": 43.92158689959671,
-   "razon_de_momios": 1.6388523514170146
+   "procesos": 1429,
+   "razon_de_momios": 1.3819021081135714,
+   "gano_local_de_cada_100": 51.85444366689993,
+   "esperado_si_azar_de_cada_100": 44.8369919087692,
+   "ic95": [
+    1.0885428584888177,
+    1.7625241681495079
+   ]
   }
  },
  "por_ventana": {
   "2024-2026": {
-   "procesos": 816,
-   "razon_de_momios": 1.7804449479998987
+   "procesos": 860,
+   "razon_de_momios": 1.5866901844248118,
+   "gano_local_de_cada_100": 53.72093023255814,
+   "esperado_si_azar_de_cada_100": 43.67983569697515,
+   "ic95": [
+    1.2579214600419284,
+    2.0611871453119486
+   ]
   },
   "2019-2023": {
-   "procesos": 958,
-   "razon_de_momios": 1.6479243470475788
+   "procesos": 986,
+   "razon_de_momios": 1.3812273707320122,
+   "gano_local_de_cada_100": 53.04259634888439,
+   "esperado_si_azar_de_cada_100": 46.209748094836236,
+   "ic95": [
+    1.1035514657963696,
+    1.726233857773319
+   ]
   }
+ },
+ "bogota": {
+  "obra_en_bogota": {
+   "procesos": 853,
+   "razon_de_momios": 1.072561710288326,
+   "gano_local_de_cada_100": 48.18288393903868,
+   "esperado_si_azar_de_cada_100": 46.69450350474133,
+   "ic95": [
+    0.8322241506727415,
+    1.501434195903593
+   ]
+  },
+  "fuera_de_bogota": {
+   "procesos": 996,
+   "razon_de_momios": 1.9338742301516276,
+   "gano_local_de_cada_100": 57.730923694779115,
+   "esperado_si_azar_de_cada_100": 43.571344208195576,
+   "ic95": [
+    1.6954520746636177,
+    2.2211543904188025
+   ]
+  }
+ },
+ "entes_territoriales": {
+  "si": {
+   "procesos": 751,
+   "razon_de_momios": 2.161845752498845,
+   "gano_local_de_cada_100": 62.982689747003995,
+   "esperado_si_azar_de_cada_100": 46.65126637661174,
+   "ic95": [
+    1.8192184820652788,
+    2.5734566206553264
+   ]
+  },
+  "no": {
+   "procesos": 1098,
+   "razon_de_momios": 1.1424713102767245,
+   "gano_local_de_cada_100": 46.72131147540984,
+   "esperado_si_azar_de_cada_100": 43.89104669587589,
+   "ic95": [
+    0.8817098930144253,
+    1.4827394329803647
+   ]
+  },
+  "si_fuera_de_bogota": {
+   "procesos": 685,
+   "razon_de_momios": 2.1674820862940267,
+   "gano_local_de_cada_100": 61.459854014598534,
+   "esperado_si_azar_de_cada_100": 44.80652848703567,
+   "ic95": [
+    1.8562604720680511,
+    2.633697492674394
+   ]
+  }
+ },
+ "casos_completos_sede": {
+  "procesos": 391,
+  "cobertura_ofertas_con_domicilio": {
+   "con": 40857,
+   "total": 111467,
+   "fraccion": 0.36653897566095794
+  },
+  "razon_de_momios": 2.088324994682977,
+  "gano_local_de_cada_100": 65.72890025575447,
+  "esperado_si_azar_de_cada_100": 49.30588309104933,
+  "ic95": [
+   1.6394910617344525,
+   2.7709912857602337
+  ]
+ },
+ "sensibilidad_direccion_del_contrato": {
+  "procesos": 1779,
+  "cobertura_ofertas_con_domicilio": {
+   "con": 41362,
+   "total": 112554,
+   "fraccion": 0.36748582902429056
+  },
+  "razon_de_momios": 1.7025481024248488,
+  "gano_local_de_cada_100": 55.31197301854974,
+  "esperado_si_azar_de_cada_100": 44.232842115089994,
+  "ic95": [
+   1.537897231671065,
+   1.8886092572233397
+  ]
  }
 }

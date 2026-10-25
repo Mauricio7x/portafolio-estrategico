@@ -1359,6 +1359,8 @@
        "p10_r_adj_pct": 93.41225040307039,
        "p90_r_adj_pct": 100.0,
        "mediana_n": 7.0,
+       "mediana_n_solo_3_o_mas": 14.0,
+       "procesos_3_o_mas": 371,
        "mediana_piso_pct": 94.08687152037189,
        "procesos_con_piso": 353
       },
@@ -1372,6 +1374,8 @@
        "p10_r_adj_pct": 93.4226350354548,
        "p90_r_adj_pct": 100.0,
        "mediana_n": 4.0,
+       "mediana_n_solo_3_o_mas": 12.0,
+       "procesos_3_o_mas": 476,
        "mediana_piso_pct": 93.55440404897352,
        "procesos_con_piso": 460
       },
@@ -1385,6 +1389,8 @@
        "p10_r_adj_pct": 92.3098163809916,
        "p90_r_adj_pct": 100.0,
        "mediana_n": 8.0,
+       "mediana_n_solo_3_o_mas": 15.0,
+       "procesos_3_o_mas": 410,
        "mediana_piso_pct": 92.64504434483686,
        "procesos_con_piso": 402
       }
@@ -1403,6 +1409,8 @@
        "p10_r_adj_pct": 93.3221378846154,
        "p90_r_adj_pct": 100.0,
        "mediana_n": 2.0,
+       "mediana_n_solo_3_o_mas": 5.0,
+       "procesos_3_o_mas": 745,
        "mediana_piso_pct": 93.85340758204455,
        "procesos_con_piso": 682
       },
@@ -1416,6 +1424,8 @@
        "p10_r_adj_pct": 93.02512948508196,
        "p90_r_adj_pct": 100.0,
        "mediana_n": 2.0,
+       "mediana_n_solo_3_o_mas": 5.0,
+       "procesos_3_o_mas": 811,
        "mediana_piso_pct": 93.4407396823359,
        "procesos_con_piso": 755
       },
@@ -1429,6 +1439,8 @@
        "p10_r_adj_pct": 93.27293097078505,
        "p90_r_adj_pct": 100.0,
        "mediana_n": 2.0,
+       "mediana_n_solo_3_o_mas": 5.0,
+       "procesos_3_o_mas": 579,
        "mediana_piso_pct": 92.9581724354108,
        "procesos_con_piso": 512
       }
@@ -1447,6 +1459,8 @@
        "p10_r_adj_pct": 71.0718590018932,
        "p90_r_adj_pct": 100.0,
        "mediana_n": 3.0,
+       "mediana_n_solo_3_o_mas": 6.0,
+       "procesos_3_o_mas": 699,
        "mediana_piso_pct": 77.91807971629488,
        "procesos_con_piso": 675
       },
@@ -1460,6 +1474,8 @@
        "p10_r_adj_pct": 75.20675663614209,
        "p90_r_adj_pct": 100.0,
        "mediana_n": 2.0,
+       "mediana_n_solo_3_o_mas": 5.0,
+       "procesos_3_o_mas": 723,
        "mediana_piso_pct": 77.98385956922108,
        "procesos_con_piso": 700
       },
@@ -1473,6 +1489,8 @@
        "p10_r_adj_pct": 72.62847909644383,
        "p90_r_adj_pct": 100.0,
        "mediana_n": 2.0,
+       "mediana_n_solo_3_o_mas": 6.0,
+       "procesos_3_o_mas": 418,
        "mediana_piso_pct": 77.00336839530647,
        "procesos_con_piso": 393
       }
@@ -2880,6 +2898,8 @@
        "p10_r_adj_pct": 93.62921177343108,
        "p90_r_adj_pct": 99.99992795869605,
        "mediana_n": 5.0,
+       "mediana_n_solo_3_o_mas": 16.0,
+       "procesos_3_o_mas": 519,
        "mediana_piso_pct": 94.45859006710839,
        "procesos_con_piso": 495
       },
@@ -2893,6 +2913,8 @@
        "p10_r_adj_pct": 93.92909676975798,
        "p90_r_adj_pct": 100.0,
        "mediana_n": 6.0,
+       "mediana_n_solo_3_o_mas": 11.0,
+       "procesos_3_o_mas": 693,
        "mediana_piso_pct": 94.55336641828069,
        "procesos_con_piso": 667
       },
@@ -2906,6 +2928,8 @@
        "p10_r_adj_pct": 93.41225040307039,
        "p90_r_adj_pct": 100.0,
        "mediana_n": 7.0,
+       "mediana_n_solo_3_o_mas": 14.0,
+       "procesos_3_o_mas": 371,
        "mediana_piso_pct": 94.08687152037189,
        "procesos_con_piso": 353
       },
@@ -2919,6 +2943,8 @@
        "p10_r_adj_pct": 93.4226350354548,
        "p90_r_adj_pct": 100.0,
        "mediana_n": 4.0,
+       "mediana_n_solo_3_o_mas": 12.0,
+       "procesos_3_o_mas": 476,
        "mediana_piso_pct": 93.55440404897352,
        "procesos_con_piso": 460
       },
@@ -2932,6 +2958,8 @@
        "p10_r_adj_pct": 92.3098163809916,
        "p90_r_adj_pct": 100.0,
        "mediana_n": 8.0,
+       "mediana_n_solo_3_o_mas": 15.0,
+       "procesos_3_o_mas": 410,
        "mediana_piso_pct": 92.64504434483686,
        "procesos_con_piso": 402
       }
@@ -2950,6 +2978,8 @@
        "p10_r_adj_pct": 94.34160676572326,
        "p90_r_adj_pct": 100.0,
        "mediana_n": 2.0,
+       "mediana_n_solo_3_o_mas": 6.0,
+       "procesos_3_o_mas": 527,
        "mediana_piso_pct": 95.13277246701793,
        "procesos_con_piso": 496
       },
@@ -2963,6 +2993,8 @@
        "p10_r_adj_pct": 94.10748035871204,
        "p90_r_adj_pct": 100.0,
        "mediana_n": 2.0,
+       "mediana_n_solo_3_o_mas": 5.0,
+       "procesos_3_o_mas": 797,
        "mediana_piso_pct": 94.6850276967802,
        "procesos_con_piso": 745
       },
@@ -2976,6 +3008,8 @@
        "p10_r_adj_pct": 93.3221378846154,
        "p90_r_adj_pct": 100.0,
        "mediana_n": 2.0,
+       "mediana_n_solo_3_o_mas": 5.0,
+       "procesos_3_o_mas": 745,
        "mediana_piso_pct": 93.85340758204455,
        "procesos_con_piso": 682
       },
@@ -2989,6 +3023,8 @@
        "p10_r_adj_pct": 93.02512948508196,
        "p90_r_adj_pct": 100.0,
        "mediana_n": 2.0,
+       "mediana_n_solo_3_o_mas": 5.0,
+       "procesos_3_o_mas": 811,
        "mediana_piso_pct": 93.4407396823359,
        "procesos_con_piso": 755
       },
@@ -3002,6 +3038,8 @@
        "p10_r_adj_pct": 93.27293097078505,
        "p90_r_adj_pct": 100.0,
        "mediana_n": 2.0,
+       "mediana_n_solo_3_o_mas": 5.0,
+       "procesos_3_o_mas": 579,
        "mediana_piso_pct": 92.9581724354108,
        "procesos_con_piso": 512
       }
@@ -3020,6 +3058,8 @@
        "p10_r_adj_pct": 67.73617134269307,
        "p90_r_adj_pct": 99.99983249767288,
        "mediana_n": 4.0,
+       "mediana_n_solo_3_o_mas": 6.0,
+       "procesos_3_o_mas": 448,
        "mediana_piso_pct": 80.12569678695871,
        "procesos_con_piso": 440
       },
@@ -3033,6 +3073,8 @@
        "p10_r_adj_pct": 69.74694845617093,
        "p90_r_adj_pct": 100.0,
        "mediana_n": 2.0,
+       "mediana_n_solo_3_o_mas": 5.0,
+       "procesos_3_o_mas": 568,
        "mediana_piso_pct": 78.57859724606529,
        "procesos_con_piso": 549
       },
@@ -3046,6 +3088,8 @@
        "p10_r_adj_pct": 71.0718590018932,
        "p90_r_adj_pct": 100.0,
        "mediana_n": 3.0,
+       "mediana_n_solo_3_o_mas": 6.0,
+       "procesos_3_o_mas": 699,
        "mediana_piso_pct": 77.91807971629488,
        "procesos_con_piso": 675
       },
@@ -3059,6 +3103,8 @@
        "p10_r_adj_pct": 75.20675663614209,
        "p90_r_adj_pct": 100.0,
        "mediana_n": 2.0,
+       "mediana_n_solo_3_o_mas": 5.0,
+       "procesos_3_o_mas": 723,
        "mediana_piso_pct": 77.98385956922108,
        "procesos_con_piso": 700
       },
@@ -3072,6 +3118,8 @@
        "p10_r_adj_pct": 72.62847909644383,
        "p90_r_adj_pct": 100.0,
        "mediana_n": 2.0,
+       "mediana_n_solo_3_o_mas": 6.0,
+       "procesos_3_o_mas": 418,
        "mediana_piso_pct": 77.00336839530647,
        "procesos_con_piso": 393
       }
@@ -4485,6 +4533,8 @@
        "p10_r_adj_pct": 95.19190965425588,
        "p90_r_adj_pct": 100.0,
        "mediana_n": 11.5,
+       "mediana_n_solo_3_o_mas": 15.5,
+       "procesos_3_o_mas": 212,
        "mediana_piso_pct": 97.07299032668226,
        "procesos_con_piso": 198
       },
@@ -4498,6 +4548,8 @@
        "p10_r_adj_pct": 92.34644203955388,
        "p90_r_adj_pct": 100.0,
        "mediana_n": 13.0,
+       "mediana_n_solo_3_o_mas": 20.0,
+       "procesos_3_o_mas": 141,
        "mediana_piso_pct": 96.5279583016798,
        "procesos_con_piso": 138
       },
@@ -4511,6 +4563,8 @@
        "p10_r_adj_pct": 94.15077737588862,
        "p90_r_adj_pct": 100.0,
        "mediana_n": 4.0,
+       "mediana_n_solo_3_o_mas": 16.0,
+       "procesos_3_o_mas": 341,
        "mediana_piso_pct": 94.88349376948686,
        "procesos_con_piso": 323
       },
@@ -4524,6 +4578,8 @@
        "p10_r_adj_pct": 93.62921177343108,
        "p90_r_adj_pct": 99.99992795869605,
        "mediana_n": 5.0,
+       "mediana_n_solo_3_o_mas": 16.0,
+       "procesos_3_o_mas": 519,
        "mediana_piso_pct": 94.45859006710839,
        "procesos_con_piso": 495
       },
@@ -4537,6 +4593,8 @@
        "p10_r_adj_pct": 93.92909676975798,
        "p90_r_adj_pct": 100.0,
        "mediana_n": 6.0,
+       "mediana_n_solo_3_o_mas": 11.0,
+       "procesos_3_o_mas": 693,
        "mediana_piso_pct": 94.55336641828069,
        "procesos_con_piso": 667
       },
@@ -4550,6 +4608,8 @@
        "p10_r_adj_pct": 93.41225040307039,
        "p90_r_adj_pct": 100.0,
        "mediana_n": 7.0,
+       "mediana_n_solo_3_o_mas": 14.0,
+       "procesos_3_o_mas": 371,
        "mediana_piso_pct": 94.08687152037189,
        "procesos_con_piso": 353
       },
@@ -4563,6 +4623,8 @@
        "p10_r_adj_pct": 93.4226350354548,
        "p90_r_adj_pct": 100.0,
        "mediana_n": 4.0,
+       "mediana_n_solo_3_o_mas": 12.0,
+       "procesos_3_o_mas": 476,
        "mediana_piso_pct": 93.55440404897352,
        "procesos_con_piso": 460
       },
@@ -4576,6 +4638,8 @@
        "p10_r_adj_pct": 92.3098163809916,
        "p90_r_adj_pct": 100.0,
        "mediana_n": 8.0,
+       "mediana_n_solo_3_o_mas": 15.0,
+       "procesos_3_o_mas": 410,
        "mediana_piso_pct": 92.64504434483686,
        "procesos_con_piso": 402
       }
@@ -4594,6 +4658,8 @@
        "p10_r_adj_pct": 93.94882510144114,
        "p90_r_adj_pct": 100.0,
        "mediana_n": 4.0,
+       "mediana_n_solo_3_o_mas": 6.0,
+       "procesos_3_o_mas": 352,
        "mediana_piso_pct": 96.72977601695804,
        "procesos_con_piso": 333
       },
@@ -4607,6 +4673,8 @@
        "p10_r_adj_pct": 88.20198978795155,
        "p90_r_adj_pct": 100.0,
        "mediana_n": 5.0,
+       "mediana_n_solo_3_o_mas": 6.0,
+       "procesos_3_o_mas": 373,
        "mediana_piso_pct": 95.43353610883224,
        "procesos_con_piso": 352
       },
@@ -4620,6 +4688,8 @@
        "p10_r_adj_pct": 93.65352661656667,
        "p90_r_adj_pct": 100.0,
        "mediana_n": 3.0,
+       "mediana_n_solo_3_o_mas": 6.0,
+       "procesos_3_o_mas": 624,
        "mediana_piso_pct": 95.6598256591268,
        "procesos_con_piso": 588
       },
@@ -4633,6 +4703,8 @@
        "p10_r_adj_pct": 94.34160676572326,
        "p90_r_adj_pct": 100.0,
        "mediana_n": 2.0,
+       "mediana_n_solo_3_o_mas": 6.0,
+       "procesos_3_o_mas": 527,
        "mediana_piso_pct": 95.13277246701793,
        "procesos_con_piso": 496
       },
@@ -4646,6 +4718,8 @@
        "p10_r_adj_pct": 94.10748035871204,
        "p90_r_adj_pct": 100.0,
        "mediana_n": 2.0,
+       "mediana_n_solo_3_o_mas": 5.0,
+       "procesos_3_o_mas": 797,
        "mediana_piso_pct": 94.6850276967802,
        "procesos_con_piso": 745
       },
@@ -4659,6 +4733,8 @@
        "p10_r_adj_pct": 93.3221378846154,
        "p90_r_adj_pct": 100.0,
        "mediana_n": 2.0,
+       "mediana_n_solo_3_o_mas": 5.0,
+       "procesos_3_o_mas": 745,
        "mediana_piso_pct": 93.85340758204455,
        "procesos_con_piso": 682
       },
@@ -4672,6 +4748,8 @@
        "p10_r_adj_pct": 93.02512948508196,
        "p90_r_adj_pct": 100.0,
        "mediana_n": 2.0,
+       "mediana_n_solo_3_o_mas": 5.0,
+       "procesos_3_o_mas": 811,
        "mediana_piso_pct": 93.4407396823359,
        "procesos_con_piso": 755
       },
@@ -4685,6 +4763,8 @@
        "p10_r_adj_pct": 93.27293097078505,
        "p90_r_adj_pct": 100.0,
        "mediana_n": 2.0,
+       "mediana_n_solo_3_o_mas": 5.0,
+       "procesos_3_o_mas": 579,
        "mediana_piso_pct": 92.9581724354108,
        "procesos_con_piso": 512
       }
@@ -4703,6 +4783,8 @@
        "p10_r_adj_pct": 64.78786554691041,
        "p90_r_adj_pct": 99.89197964741945,
        "mediana_n": 4.0,
+       "mediana_n_solo_3_o_mas": 7.0,
+       "procesos_3_o_mas": 370,
        "mediana_piso_pct": 73.98741408717888,
        "procesos_con_piso": 364
       },
@@ -4716,6 +4798,8 @@
        "p10_r_adj_pct": 61.683254458669026,
        "p90_r_adj_pct": 99.87907378742241,
        "mediana_n": 5.0,
+       "mediana_n_solo_3_o_mas": 7.0,
+       "procesos_3_o_mas": 400,
        "mediana_piso_pct": 75.4977735134467,
        "procesos_con_piso": 392
       },
@@ -4729,6 +4813,8 @@
        "p10_r_adj_pct": 64.88922392359802,
        "p90_r_adj_pct": 100.0,
        "mediana_n": 4.0,
+       "mediana_n_solo_3_o_mas": 7.0,
+       "procesos_3_o_mas": 502,
        "mediana_piso_pct": 77.46855892331003,
        "procesos_con_piso": 492
       },
@@ -4742,6 +4828,8 @@
        "p10_r_adj_pct": 67.73617134269307,
        "p90_r_adj_pct": 99.99983249767288,
        "mediana_n": 4.0,
+       "mediana_n_solo_3_o_mas": 6.0,
+       "procesos_3_o_mas": 448,
        "mediana_piso_pct": 80.12569678695871,
        "procesos_con_piso": 440
       },
@@ -4755,6 +4843,8 @@
        "p10_r_adj_pct": 69.74694845617093,
        "p90_r_adj_pct": 100.0,
        "mediana_n": 2.0,
+       "mediana_n_solo_3_o_mas": 5.0,
+       "procesos_3_o_mas": 568,
        "mediana_piso_pct": 78.57859724606529,
        "procesos_con_piso": 549
       },
@@ -4768,6 +4858,8 @@
        "p10_r_adj_pct": 71.0718590018932,
        "p90_r_adj_pct": 100.0,
        "mediana_n": 3.0,
+       "mediana_n_solo_3_o_mas": 6.0,
+       "procesos_3_o_mas": 699,
        "mediana_piso_pct": 77.91807971629488,
        "procesos_con_piso": 675
       },
@@ -4781,6 +4873,8 @@
        "p10_r_adj_pct": 75.20675663614209,
        "p90_r_adj_pct": 100.0,
        "mediana_n": 2.0,
+       "mediana_n_solo_3_o_mas": 5.0,
+       "procesos_3_o_mas": 723,
        "mediana_piso_pct": 77.98385956922108,
        "procesos_con_piso": 700
       },
@@ -4794,6 +4888,8 @@
        "p10_r_adj_pct": 72.62847909644383,
        "p90_r_adj_pct": 100.0,
        "mediana_n": 2.0,
+       "mediana_n_solo_3_o_mas": 6.0,
+       "procesos_3_o_mas": 418,
        "mediana_piso_pct": 77.00336839530647,
        "procesos_con_piso": 393
       }

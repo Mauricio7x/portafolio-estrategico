@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 2047001 bytes · 387 secciones · 29 con marcador de superación.
+Derivado del árbol: 2047205 bytes · 387 secciones · 29 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -397,4 +397,4 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | La auditoría con su primer proceso real: lo casi vacío se marca, un presupuesto no se juzga por sus letras y los tiempos salen a la vista (21-oct-2026) | 21-oct-2026 | 20130-20160 | 8240 |  |
 | Cada subida cuesta un despliegue: una entrega, un envío (21-oct-2026) | 21-oct-2026 | 20161-20169 | 1688 |  |
 | El consejo de siete asesores entra al proyecto: sin la sala web, sin guardar nada en el repositorio y con lo que no sabe dicho (21-oct-2026) | 21-oct-2026 | 20170-20196 | 6047 |  |
-| No hay una fórmula de adjudicación por lugar o entidad: lo estable es un nivel de precio, y la probabilidad honesta de ganar es casi una entre n (24-oct-2026) | 24-oct-2026 | 20197-20209 | 3627 |  |
+| No hay una fórmula de adjudicación por lugar o entidad: lo estable es un nivel de precio, y la probabilidad honesta de ganar es casi una entre n (24-oct-2026) | 24-oct-2026 | 20197-20209 | 3831 |  |
