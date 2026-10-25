@@ -30,6 +30,7 @@ que parecía, y quién gana no se deja predecir por el precio: la oferta más ba
    (reglas del pliego más la probabilidad de quedar habilitado) igualaba ese reparto en 2025 y lo superaba en 2022 a 2024; con 5 o
    más ofertas el ganador queda en la mitad mejor puesta, y con 2 ofertas la fórmula se equivoca. Hoy lo defendible es «una entre n
    corregida por el número de ofertas», no un porcentaje que dependa del precio.
+5. **También en pesos, una constante gana a la referencia de Detekta.** Con un costo supuesto de 70 % a 93 % del precio base y 3 o más ofertas, ofertar cerca del 96 % rinde más pesos esperados que el precio que hoy toma Detekta como referencia, en 2025 y en 2024 (sección 16). Ninguna regla por entidad lo supera.
 
 **Qué cambia para usted:** nada en la aplicación todavía. Detekta hoy calcula el techo con la baja de todos los
 procesos de la entidad, y los de una sola oferta lo empujan hacia el 98 a 100 %. Eso es lo único que vale la pena
@@ -484,6 +485,7 @@ dueño (regla dura del proyecto).
 - **Guía del analista**: corregir § «Los 4 métodos de ponderación económica» (ya lo señala el COMPLEMENTO V-18).
 - **Datos**: `respuestas_al_procedimiento` incluye respuestas de la entidad (diccionario oficial): revisar los sitios
   de Detekta que lo leen como número de oferentes (`lib/indice_competencia`), midiendo la diferencia antes de tocar.
+- **Costo real y optimizador real** (sección 16): cambiar el costo supuesto por el del dueño (costo directo sobre precio base en obras que licitó) y replicar `lib/apu/optimizador` con la P de `lib/probabilidad` para comparar su salida exacta con la constante.
 - **Modelo «1/n más oferente»** (sección 13): entrenar hasta 2024, probar en 2025, 2026 intacto; si no mejora el Brier de 1/n, la respuesta para Detekta es «una entre n».
 
 ## 11. Verificación independiente (recalculada con código propio, sin leer los guiones de la sesión)
@@ -628,3 +630,38 @@ cambios de equipo, sin perfiles individuales).
   (valor p empírico de 0,52 a 0,90). El calendario real de cambios de equipo no explica nada más que uno falso.
 - **Qué no prueba**: que los evaluadores no importen. Solo 1.248 contratos en cuatro años, 24 entidades con 4 o más; el contrato no dice quién
   evaluó qué proceso y los comités reales incluyen funcionarios. Con estos datos no hay evidencia de un patrón; sin los nombres reales no se puede ir más lejos.
+
+## 16. De ganar más veces a ganar más pesos (25-oct-2026; hipótesis H13 preregistrada antes de ver cifras; `tools/analisis/valor_esperado.py` y `valor_robustez.py`)
+
+**En una línea:** con un costo supuesto entre 70 % y 93 % del precio base, una constante de 96 % a 97 % del precio base rinde más pesos esperados que la referencia que hoy toma Detekta (B2), en 2025 y en 2024 y con 3 o más ofertas; ninguna regla con comparables supera a esa constante.
+
+**Qué se calculó.** Valor de una oferta b, con costo c (ambos como fracción del precio base): P(gana | b) × (b − c), con la P del backtest «con piso» (la oferta bajo mediana − σ se da por rechazada, supuesto que no está en ningún pliego). Se mide en puntos del precio base por proceso presentado: 1,0 equivale a 10 millones por cada 1.000 millones de precio base. El costo c es un SUPUESTO (rejilla de 70 % a 93 %) hasta que el dueño dé el suyo; incluye lo que descuenta el contrato. Regla «margen ≥ 0» con utilidad mínima supuesta de 2 puntos: si la estrategia propone menos, se sube a c + 2. Procesos de obra, licitación y menor cuantía, comparables anteriores al cierre; validación 2025 (1.231 procesos con 3 o más ofertas) y 2024 (1.072); 2026 sin tocar.
+
+| Costo supuesto | B2 (referencia de Detekta) | Constante 96 % (año anterior) | Diferencia (IC 95 % por entidad) |
+|---|---|---|---|
+| 2025 · 78 % | 1,16 | 1,88 | +0,72 (0,38 a 1,11) |
+| 2025 · 82 % | 0,91 | 1,46 | +0,55 (0,29 a 0,85) |
+| 2025 · 86 % | 0,66 | 1,05 | +0,39 (0,20 a 0,59) |
+| 2025 · 90 % | 0,41 | 0,63 | +0,22 (0,12 a 0,33) |
+| 2024 · 78 % | 1,28 | 1,73 | +0,45 (0,19 a 0,79) |
+| 2024 · 82 % | 1,00 | 1,28 | +0,27 (0,03 a 0,60) |
+| 2024 · 86 % | 0,73 | 0,92 | +0,20 (0,02 a 0,43) |
+| 2024 · 90 % | 0,45 | 0,57 | +0,12 (0,02 a 0,25) |
+
+**Resultado frente a los criterios de H13.**
+1. **«Cambiar la referencia de Detekta por una constante»: se cumple.** El IC excluye 0 en 2025 y 2024 con costos de 82 % y 86 %; de hecho en toda la rejilla de 70 % a 93 % (en 2024 el límite inferior queda entre 0,02 y 0,03 puntos: el resultado es estable en el signo pero justo en el tamaño).
+2. **«Desarrollar una regla con comparables»: no se cumple.** `V_comparables − V_const_ano_anterior` fue −0,17 (IC −0,46 a 0,08) en 2025 con costo 78 %, y +0,01 (−0,20 a 0,16) en 2024 con 82 %. `Piso_comparables` queda por encima de la constante en las ocho celdas (cuatro costos, dos años), de +0,01 a +0,18, pero ningún IC excluye 0: queda como dato que se muestra, no como regla.
+3. **El nivel óptimo no depende del costo.** La constante que maximiza el valor es 96 % (97 % si el costo supera 90 %) en 2025 y 96 % a 96,5 % en 2024, cerca de la que maximiza las ganadas (95 % a 96,5 %). Inferencia, sin probar: la probabilidad cae en picada por debajo de ese nivel (aparece el rechazo por precio bajo y los demás oferentes quedan por encima), así que bajar más no compensa el margen perdido; lo que lo confirmaría es repetir con otra definición del rechazo, y la variante sin piso (arriba) deja la ventaja de la constante sobre B2 en el mismo sentido. El nivel no lo fija el costo supuesto.
+
+**Robustez (`valor_robustez_val2025.json` y `_val2024.json`, costo 82 % y 86 %).**
+- Sin suponer rechazo por precio bajo, la ventaja de la constante sobre B2 se duplica (2025: +1,13; 2024: +0,65 con costo 82 %). El resultado base es el conservador.
+- Con el piso medido solo con las ofertas reales, la diferencia es casi igual a la base (+0,53 en 2025, +0,27 en 2024).
+- Por modalidad con 3 o más ofertas: licitación positiva en los dos años (2025: +0,56, IC 0,30 a 0,82; 2024: +0,36, IC 0,10 a 0,68). Menor cuantía positiva en 2025 (+0,55, IC 0,21 a 0,99) pero en 2024 el IC incluye 0 (+0,23, −0,06 a 0,67 con costo 82 %).
+- Procesos de 1 o 2 ofertas: la diferencia sube a +5 puntos, pero no se usa para decidir. La simulación inserta una oferta más en un proceso casi sin competencia y gana casi siempre, y la sección 12 ya mostró que con n pequeño la medición engaña.
+
+**Qué no dice.**
+- El costo es el mismo en todos los procesos y es un supuesto. El costo real de cada obra viene del APU, no de un porcentaje.
+- La simulación inserta la oferta y supone que los demás no reaccionan; no hay habilitación ni rechazo observados.
+- Se compara el NIVEL de precio que Detekta toma como referencia (B2), no la salida exacta de `lib/apu/optimizador` ni la P de `lib/probabilidad` (que multiplica por un factor de baja). Replicarla es un pendiente propio.
+- El «96 %» es del precio base publicado, y sale de 2024–2025. La sección 7 mostró que el nivel baja cerca de medio punto por año en licitación, por lo que debe recalcularse cada año, no fijarse.
+- Prueba 2026 sin tocar: no se ha decidido ninguna regla que probar.

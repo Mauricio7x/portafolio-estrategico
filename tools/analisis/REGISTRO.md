@@ -61,3 +61,10 @@ no se pudo hacer va con el error literal. Nada de aquí lo lee la aplicación.
   sede de la entidad, redondos sin el 100 %, composición con 3+); el modelo estructural se auditó (réplica al dígito; conclusión sobredicha) y se corrigió
   (empates exactos, rejilla desde 0,01). Resultados: secciones 5, 6.2, 9, 12 y 13. Hipótesis H1–H11 sin cambios de cifra.
 - **Pendiente**: modelo «1/n más oferente»; prueba 2026 (una sola vez, con la regla decidida); decisión D4; informes de evaluación reales para probar el comité.
+
+## 2026-10-25 · H13 (valor esperado con costo supuesto)
+
+- Preregistrada antes de correr (commit `cbbd1fe`). `valor_esperado.py` (2025: 3.057 s; 2024: 2.154 s, con 4 núcleos en paralelo) y `valor_robustez.py`. Resultados en `resultados/valor_esperado_val2025.json`, `_val2024.json` y `valor_robustez_val*.json`; los CSV de salida (5 a 8 MB) no se versionan: se regeneran con el mismo comando.
+- Criterio 1 (constante del año anterior > B2, IC sin 0, 2025 y 2024, costos 82 % y 86 %): CUMPLE. Criterio 2 (V_comparables > constante): NO cumple. Piso_comparables sobre la constante en 8 de 8 celdas, sin IC que excluya 0.
+- La constante óptima en valor (96 % a 97 %) no depende del costo en 70 %–93 %. Cifras y límites: sección 16 del informe.
+- Sin cambios en Detekta. Decisión D4 sigue en manos del dueño: ahora con el argumento en pesos y no solo en ganadas.
