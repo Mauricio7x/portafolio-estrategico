@@ -87,3 +87,20 @@ de correrlas:
 Criterio: si ninguna regla con comparables supera a la mejor constante en ≥ 3 puntos (IC por entidad que excluya 0)
 en los procesos con 3 o más ofertas, la respuesta es «no hay regla por entidad ni ubicación más allá de un nivel
 nacional» (resultado B del prompt).
+
+## H13 · valor esperado con costo supuesto, declarada el 25-oct-2026 ANTES de correr `valor_esperado.py`
+
+Lo visto antes de declararla: toda la comparación anterior cuenta «ganadas por cada 100» (resultado B en 2024 y 2025). Esa métrica
+favorece bajar el precio sin límite; la decisión del dueño es ganar PESOS con margen ≥ 0. Aún no se ha visto ninguna cifra de valor.
+- **Valor de una oferta b** (fracción del precio base) con costo c (fracción del precio base): P(gana | b) × (b − c), con la P «con piso» del backtest.
+- **c es un supuesto** hasta que el dueño dé el suyo: rejilla 70 %–93 %, tabla en 78/82/86/90 %. Utilidad mínima supuesta: 2 puntos del precio base
+  (si la estrategia propone menos, se sube a c + 2; si no cabe bajo el 100 %, no se oferta).
+- **Estrategias:** B2 (referencia de Detekta, réplica), B0 (88 %), B1, constantes 95/96,5/98, Piso_comparables, `V_const_ano_anterior` (la constante que
+  maximiza el valor en el año anterior, ≥ 3 ofertas), `V_const_oraculo` (la mejor dentro de la muestra: cota superior, no se puede usar), `V_comparables`
+  (argmax de P×(b−c) sobre los comparables anteriores: el análogo del optimizador de Detekta con P de comparables).
+- **Criterios de decisión** (procesos con 3 o más ofertas, IC por entidad, validación 2025, 2024 como segunda mirada):
+  1. «Cambiar la referencia de Detekta por una constante»: `V_const_ano_anterior − B2` con IC que excluya 0 en 2025 y 2024 para los costos 82 % y 86 %.
+  2. «Desarrollar una regla con comparables»: `V_comparables − V_const_ano_anterior` con IC que excluya 0 en 2025 y mismo signo en 2024 para 82 % y 86 %.
+  3. Lo que no cumpla queda «mostrar como dato» o «descartar»; no se afina nada tras ver el resultado.
+- **Límite declarado:** no replica `lib/probabilidad` ni `lib/apu/optimizador` (la P de Detekta con su factor de baja); compara el NIVEL de precio que Detekta toma
+  como referencia (B2), no la salida exacta del optimizador. Replicarla es un pendiente propio.
