@@ -310,180 +310,78 @@ mejora la verosimilitud de elegir al azar (−1,664 frente a −1,667 por proces
 veces frente al 27 % del azar; «la más baja» acierta el 19,7 %. **Lo que decide quién gana (la habilitación y los
 otros 51,5 puntos del puntaje) no está en los datos abiertos.**
 
-### 6.2 El backtest honesto (validación 2025; prueba 2026 sin tocar)
+### 6.2 El backtest honesto (corregido el 25-oct-2026; validación 2025 y 2024, prueba 2026 sin tocar)
 
-Para cada proceso adjudicado en 2025, cada regla elige un precio con lo que había ANTES de su fecha de adjudicación;
-ese precio se inserta entre las ofertas reales del proceso y «gana» si queda primero con cada una de las 4
-fórmulas (empate: 1/k), promediando los cuatro métodos (sorteo parejo, H6). Dos escenarios, porque la habilitación
-no se ve: (a) todas las publicadas eran hábiles; (b) una oferta que queda por debajo de «mediana − σ» de las ofertas
-(incluida ella) se trata como rechazada. La verdad está entre los dos. Reglas:
-B0 (el mínimo admisible: 88 % del presupuesto, el corte de la alerta) · B1 (mediana de r_adj de los comparables
-anteriores de la entidad, ≥ 5; si no, departamento; si no, país) · **B2 (Detekta hoy: réplica de la cascada del
-índice de baja —entidad+familia → entidad → departamento+familia, mediana de la baja en puntos enteros, mínimo
-5—)** · B2_exacta (lo mismo sin redondear) · constantes 95 %, 96,5 % y 98 % · P25 de la entidad · Piso_comparables
-(mediana del «mediana − σ» de los comparables anteriores + 0,5 puntos) · F_opt (el precio de una rejilla 80–100 %
-que más veces habría ganado al insertarse en los comparables anteriores) · F_opt_piso (lo mismo contando como
-rechazada la oferta bajo el piso).
+Para cada proceso adjudicado en el año de validación, cada regla elige un precio con lo que había **antes del CIERRE** del proceso (el precio se fija antes
+de cerrar; la primera versión cortaba en la fecha de adjudicación, que filtraba 0,2 a 0,4 puntos de ventaja); ese precio se inserta entre las ofertas
+reales y «gana» si queda primero con cada una de las 4 fórmulas (empate: 1/k), promediando los cuatro métodos (sorteo parejo, H6). Dos escenarios, porque la
+habilitación no se ve: (a) todas las publicadas eran hábiles; (b) una oferta que queda por debajo de «mediana − σ» de las ofertas (incluida ella) se trata como
+rechazada. Una tercera columna mide ese piso solo con las ofertas reales, sin la insertada. La verdad está entre los escenarios. Reglas: B0 · B1 · **B2
+(Detekta hoy: réplica de la cascada del índice de baja, mediana en puntos enteros, mínimo 5)** · B2 sin redondear · constantes 95 %, 96,5 % y 98 % ·
+**la constante elegida con el año anterior** y la mejor constante del propio año (ambas con procesos de 3 o más ofertas, la vara honesta) · percentil 25 de la
+entidad · piso de comparables · optimizador sin y con piso.
 
-**validacion_2025 · todos los procesos (3.077)**
+**Validación 2025 · procesos con 3 o más ofertas (1.231 de 3.077)** · constante del año anterior: 96,0 %, mejor del propio año: 95,0 % · corte de fechas: cierre
 
-| Regla | Precio medio (% del presupuesto) | Gana (de cada 100) · todas las ofertas publicadas como hábiles | IC 95 % | Gana si quedar bajo mediana − σ es rechazo | IC 95 % | Queda bajo ese piso (de cada 100) |
-|---|---|---|---|---|---|---|
-| B0 | 88,0 | 63,2 | 58,6–66,9 | 44,8 | 40,1–49,2 | 51,4 |
-| B1 | 98,4 | 39,4 | 35,8–42,6 | 36,2 | 32,7–39,3 | 7,3 |
-| B2 | 98,4 | 23,5 | 21,7–25,4 | 21,0 | 19,3–22,9 | 6,0 |
-| B2_exacta | 98,3 | 38,5 | 35,4–41,5 | 35,3 | 32,3–38,3 | 7,4 |
-| C95 | 95,0 | 57,9 | 52,6–62,4 | 49,8 | 45,0–54,1 | 19,8 |
-| C96.5 | 96,5 | 55,6 | 50,3–60,1 | 49,0 | 44,0–53,5 | 14,9 |
-| C98 | 98,0 | 51,7 | 46,6–56,2 | 46,6 | 41,8–50,9 | 10,7 |
-| F_opt | 81,2 | 65,3 | 61,2–68,7 | 44,1 | 39,3–48,4 | 54,2 |
-| F_opt_piso | 96,6 | 55,1 | 50,2–59,3 | 49,2 | 44,5–53,3 | 13,6 |
-| F_opt_piso_alerta | 96,6 | 55,1 | 50,2–59,3 | 49,2 | 44,6–53,3 | 13,5 |
-| P25_entidad | 97,0 | 50,8 | 46,7–54,3 | 45,2 | 41,3–48,8 | 13,8 |
-| Piso_comparables | 95,4 | 57,8 | 53,0–61,9 | 50,5 | 45,9–54,6 | 17,4 |
+| Regla | Precio medio (% del presupuesto) | Gana si todas las publicadas eran hábiles | Gana si bajo mediana − σ es rechazo | IC 95 % | Igual, con el piso medido solo con las ofertas reales |
+|---|---|---|---|---|---|
+| B0 · el mínimo admisible (88 %) | 88,0 | 29,9 | 1,9 | 1,4 a 2,5 | 3,9 |
+| B1 · mediana de la entidad | 97,4 | 9,0 | 5,6 | 4,6 a 6,7 | 6,8 |
+| **B2 · Detekta hoy** | 97,2 | 9,2 | 6,3 | 5,1 a 7,5 | 7,4 |
+| B2 sin redondear | 97,2 | 9,7 | 6,3 | 5,2 a 7,6 | 7,6 |
+| Constante 95 % | 95,0 | 19,2 | 10,5 | 8,4 a 12,6 | 11,0 |
+| Constante 96,5 % | 96,5 | 15,5 | 9,1 | 7,1 a 11,2 | 10,6 |
+| Constante 98 % | 98,0 | 10,7 | 6,3 | 4,7 a 8,1 | 8,0 |
+| **Constante elegida con el año anterior** | 96,0 | 17,6 | 10,5 | 8,2 a 12,8 | 11,5 |
+| Mejor constante del propio año | 95,0 | 19,2 | 10,5 | 8,4 a 12,6 | 11,0 |
+| Percentil 25 de la entidad | 95,7 | 16,1 | 10,0 | 8,9 a 11,4 | 11,2 |
+| Piso de comparables (+0,5) | 95,1 | 19,6 | 11,9 | 10,5 a 13,6 | 12,6 |
+| Optimizador sin piso | 80,9 | 34,7 | 0,8 | 0,4 a 1,3 | 3,1 |
+| Optimizador con piso | 96,1 | 16,0 | 10,1 | 8,6 a 11,8 | 11,2 |
 
-**validacion_2025 · solo procesos con 3 o más ofertas publicadas**
+**2025** (puntos de cada 100, procesos con 3 o más ofertas, piso como rechazo; IC 95 % por entidad)
 
-| Regla | Precio medio (% del presupuesto) | Gana (de cada 100) · todas las ofertas publicadas como hábiles | IC 95 % | Gana si quedar bajo mediana − σ es rechazo | IC 95 % | Queda bajo ese piso (de cada 100) |
-|---|---|---|---|---|---|---|
-| B0 | 88,0 | 29,9 | 27,0–32,3 | 1,9 | 1,4–2,5 | 92,8 |
-| B1 | 97,4 | 9,1 | 7,3–10,8 | 5,7 | 4,6–6,9 | 8,9 |
-| B2 | 97,1 | 9,6 | 8,1–11,2 | 6,6 | 5,4–8,0 | 8,4 |
-| B2_exacta | 97,1 | 9,9 | 8,4–11,6 | 6,6 | 5,5–7,9 | 9,0 |
-| C95 | 95,0 | 19,2 | 15,5–22,5 | 10,5 | 8,4–12,6 | 26,2 |
-| C96.5 | 96,5 | 15,5 | 12,3–18,6 | 9,1 | 7,1–11,2 | 17,5 |
-| C98 | 98,0 | 10,7 | 8,2–13,2 | 6,3 | 4,7–8,1 | 10,5 |
-| F_opt | 80,9 | 34,8 | 32,0–36,9 | 0,8 | 0,4–1,3 | 97,2 |
-| F_opt_piso | 96,1 | 16,0 | 13,3–18,6 | 10,0 | 8,5–11,8 | 16,2 |
-| F_opt_piso_alerta | 96,1 | 16,0 | 13,3–18,6 | 10,1 | 8,6–11,8 | 15,9 |
-| P25_entidad | 95,6 | 16,3 | 14,3–18,4 | 10,2 | 8,9–11,5 | 18,8 |
-| Piso_comparables | 95,1 | 19,8 | 17,1–22,5 | 12,1 | 10,7–13,8 | 22,1 |
-
-**validacion_2025 · 3+ ofertas, con el piso como rechazo: cada regla frente a la constante 96,5 %** (diferencia por proceso, puntos de cada 100, IC 95 % por remuestreo de entidades)
-
-| Comparación | Diferencia | IC 95 % | Procesos emparejados |
+| Regla | Contra la mejor constante del propio año | Contra la constante del año anterior | Contra la mejor constante, piso solo con ofertas reales |
 |---|---|---|---|
-| B0 − C96.5 | -7.2 | -9.3 a -5.3 | 1.231 |
-| B1 − C96.5 | -3.4 | -5.1 a -1.8 | 1.231 |
-| B2 − C96.5 | -2.4 | -4.8 a -0.4 | 1.231 |
-| B2_exacta − C96.5 | -2.5 | -4.7 a -0.7 | 1.231 |
-| C95 − C96.5 | 1.4 | 0.1 a 2.8 | 1.231 |
-| C98 − C96.5 | -2.7 | -4.1 a -1.6 | 1.231 |
-| F_opt − C96.5 | -8.3 | -10.4 a -6.4 | 1.231 |
-| F_opt_piso − C96.5 | 1.0 | -0.3 a 2.0 | 1.231 |
-| F_opt_piso_alerta − C96.5 | 1.0 | -0.3 a 2.1 | 1.231 |
-| P25_entidad − C96.5 | 1.1 | -0.6 a 2.5 | 1.231 |
-| Piso_comparables − C96.5 | 3.1 | 1.5 a 4.3 | 1.231 |
+| **B2 · Detekta hoy** | -4,2 (-6,3 a -2,4) | -4,2 (-6,5 a -2,1) | -3,5 (-5,7 a -1,7) |
+| Percentil 25 de la entidad | -0,5 (-2,3 a 1,1) | -0,4 (-2,3 a 1,2) | 0,2 (-1,6 a 1,8) |
+| Piso de comparables (+0,5) | 1,4 (0,0 a 2,6) | 1,5 (-0,0 a 2,9) | 1,6 (0,1 a 2,9) |
+| Optimizador con piso | -0,5 (-1,9 a 0,9) | -0,4 (-1,8 a 0,9) | 0,2 (-1,3 a 1,6) |
 
-**validacion_2025 · 3+ ofertas, con el piso como rechazo: cada regla frente a B2 (Detekta hoy)** (diferencia por proceso, puntos de cada 100, IC 95 % por remuestreo de entidades)
+**Validación 2024 con historia solo hasta 2023 · procesos con 3 o más ofertas** · constante del año anterior: 96,0 %, mejor del propio año: 96,0 % · corte de fechas: cierre
 
-| Comparación | Diferencia | IC 95 % | Procesos emparejados |
+| Regla | Precio medio (% del presupuesto) | Gana si todas las publicadas eran hábiles | Gana si bajo mediana − σ es rechazo | IC 95 % | Igual, con el piso medido solo con las ofertas reales |
+|---|---|---|---|---|---|
+| B0 · el mínimo admisible (88 %) | 88,0 | 30,7 | 1,9 | 1,3 a 2,7 | 4,8 |
+| B1 · mediana de la entidad | 97,2 | 10,4 | 6,2 | 4,8 a 7,7 | 8,3 |
+| **B2 · Detekta hoy** | 97,0 | 10,8 | 6,9 | 5,7 a 8,2 | 8,6 |
+| B2 sin redondear | 97,0 | 11,4 | 7,1 | 5,9 a 8,4 | 9,1 |
+| Constante 95 % | 95,0 | 18,7 | 8,9 | 7,4 a 10,7 | 10,7 |
+| Constante 96,5 % | 96,5 | 15,3 | 8,8 | 6,7 a 11,4 | 10,6 |
+| Constante 98 % | 98,0 | 10,6 | 5,7 | 4,1 a 7,9 | 8,5 |
+| **Constante elegida con el año anterior** | 96,0 | 17,0 | 9,6 | 7,7 a 11,8 | 11,1 |
+| Mejor constante del propio año | 96,0 | 17,0 | 9,6 | 7,7 a 11,8 | 11,1 |
+| Percentil 25 de la entidad | 95,4 | 17,9 | 10,1 | 8,9 a 11,5 | 11,7 |
+| Piso de comparables (+0,5) | 95,4 | 18,7 | 10,5 | 9,3 a 11,7 | 12,3 |
+| Optimizador sin piso | 80,7 | 35,1 | 1,3 | 0,8 a 2,0 | 4,0 |
+| Optimizador con piso | 96,2 | 15,9 | 9,7 | 8,1 a 11,5 | 11,7 |
+
+**2024** (puntos de cada 100, procesos con 3 o más ofertas, piso como rechazo; IC 95 % por entidad)
+
+| Regla | Contra la mejor constante del propio año | Contra la constante del año anterior | Contra la mejor constante, piso solo con ofertas reales |
 |---|---|---|---|
-| B0 − B2 | -4.7 | -6.3 a -3.3 | 1.231 |
-| B1 − B2 | -1.0 | -2.1 a 0.3 | 1.231 |
-| B2_exacta − B2 | -0.1 | -0.7 a 0.6 | 1.231 |
-| C95 − B2 | 3.9 | 2.0 a 5.9 | 1.231 |
-| C96.5 − B2 | 2.4 | 0.4 a 4.8 | 1.231 |
-| C98 − B2 | -0.3 | -2.3 a 2.0 | 1.231 |
-| F_opt − B2 | -5.9 | -7.2 a -4.5 | 1.231 |
-| F_opt_piso − B2 | 3.4 | 1.9 a 5.2 | 1.231 |
-| F_opt_piso_alerta − B2 | 3.4 | 1.9 a 5.2 | 1.231 |
-| P25_entidad − B2 | 3.5 | 2.2 a 5.0 | 1.231 |
-| Piso_comparables − B2 | 5.5 | 4.0 a 7.3 | 1.231 |
+| **B2 · Detekta hoy** | -2,7 (-4,7 a -1,2) | -2,7 (-4,7 a -1,2) | -2,5 (-4,4 a -1,1) |
+| Percentil 25 de la entidad | 0,5 (-1,1 a 1,9) | 0,5 (-1,1 a 1,9) | 0,6 (-0,9 a 1,8) |
+| Piso de comparables (+0,5) | 0,9 (-1,0 a 2,5) | 0,9 (-1,0 a 2,5) | 1,1 (-0,6 a 2,6) |
+| Optimizador con piso | 0,0 (-1,2 a 1,1) | 0,0 (-1,2 a 1,1) | 0,6 (-0,6 a 1,6) |
 
+**Lo que dicen las tablas (versión corregida)**
 
-**Lo que dicen las tablas de 2025**
-
-1. En los 3.077 procesos, el 43 % tuvo una sola oferta publicada: ahí gana cualquier precio por debajo de ella,
-   y por eso TODAS las reglas «ganan» mucho en el total. La comparación que importa es la de **3 o más ofertas**
-   (1.231 procesos).
-2. Con 3+ ofertas y el piso como rechazo, **Detekta hoy (B2) habría quedado primera en 6,6 de cada 100**; una
-   constante del 96,5 % en 9,1; una del 95 % en 10,5; y la mejor regla con comparables (Piso_comparables, que
-   oferta en promedio al 95,1 %) en 12,1. Frente a la constante 96,5 %, Piso_comparables gana 3,1 puntos más (IC
-   1,5–4,3) y F_opt_piso 1,0 (IC −0,3 a 2,0); frente a B2, 5,5 (IC 4,0–7,3) y 3,4 (IC 1,9–5,2).
-3. **La diferencia grande no es por entidad ni por región: es el NIVEL de precio.** B2 y B1 ofertan al 97–98 %
-   (y B2 exactamente al 100 % en el 49 % de los procesos, porque la mediana de baja de la entidad en puntos enteros
-   es 0); las ofertas ganadoras de licitación con competencia están en el 95,4 % mediano (p25 93,7 %, p75 98,9 %)
-   y el pelotón de ofertas, en el 95,0–95,4 %. Ofertar al 98–100 % es quedarse por encima del pelotón.
-4. Ofertar muy bajo tampoco sirve: B0 (88 %) y F_opt sin piso (81 %) ganarían si todo valiera, pero el 93–97 %
-   de sus ofertas queda bajo «mediana − σ», y con ese criterio como rechazo ganan 1–2 de cada 100.
-5. Con 10 o más ofertas nadie pasa de 4 de cada 100 con ninguna regla: ahí el precio no decide.
-6. **La probabilidad que calcula el optimizador con comparables NO está calibrada.** El Brier de 0,296 que se publicó en una primera versión era un artefacto de los 1.337 procesos con una sola oferta (retirado). Con 3 o más ofertas el Brier es 0,0378 frente a 0,0334 de una constante, y el modelo sobreestima: predice 16 de cada 100 y ocurre 10. No puede mostrarse como «probabilidad de ganar».
-
-**Escenario histórico (el que pedía el prompt): validación 2024 con historia solo hasta 2023 (ofertas de `b28v`)**
-
-**validacion_2024 · todos los procesos (2.028)**
-
-| Regla | Precio medio (% del presupuesto) | Gana (de cada 100) · todas las ofertas publicadas como hábiles | IC 95 % | Gana si quedar bajo mediana − σ es rechazo | IC 95 % | Queda bajo ese piso (de cada 100) |
-|---|---|---|---|---|---|---|
-| B0 | 88,0 | 57,3 | 51,3–63,2 | 37,0 | 30,8–43,9 | 59,8 |
-| B1 | 98,0 | 33,6 | 29,0–38,2 | 30,0 | 25,7–34,4 | 8,5 |
-| B2 | 97,9 | 21,8 | 19,5–24,5 | 18,8 | 16,8–21,3 | 7,5 |
-| B2_exacta | 97,9 | 33,2 | 29,0–37,7 | 29,6 | 25,8–33,8 | 8,7 |
-| C95 | 95,0 | 49,4 | 42,2–56,7 | 40,9 | 34,9–47,4 | 23,4 |
-| C96.5 | 96,5 | 46,7 | 38,9–54,3 | 40,6 | 33,7–47,6 | 14,8 |
-| C98 | 98,0 | 41,5 | 34,4–48,8 | 36,7 | 30,3–43,7 | 10,6 |
-| F_opt | 81,0 | 59,7 | 54,3–65,0 | 36,5 | 30,1–43,6 | 61,5 |
-| F_opt_piso | 96,6 | 45,9 | 39,1–52,7 | 40,2 | 34,3–46,7 | 13,8 |
-| F_opt_piso_alerta | 96,6 | 45,8 | 39,1–52,6 | 40,2 | 34,3–46,7 | 13,7 |
-| P25_entidad | 96,5 | 44,6 | 39,7–49,9 | 38,2 | 33,0–43,9 | 19,8 |
-| Piso_comparables | 95,5 | 49,2 | 42,9–55,8 | 42,0 | 36,3–48,2 | 19,3 |
-
-**validacion_2024 · solo procesos con 3 o más ofertas publicadas**
-
-| Regla | Precio medio (% del presupuesto) | Gana (de cada 100) · todas las ofertas publicadas como hábiles | IC 95 % | Gana si quedar bajo mediana − σ es rechazo | IC 95 % | Queda bajo ese piso (de cada 100) |
-|---|---|---|---|---|---|---|
-| B0 | 88,0 | 30,7 | 28,0–33,3 | 1,9 | 1,3–2,7 | 93,7 |
-| B1 | 97,1 | 10,3 | 8,6–12,3 | 6,1 | 4,8–7,5 | 10,8 |
-| B2 | 96,9 | 11,2 | 9,8–12,9 | 7,4 | 6,2–8,6 | 10,5 |
-| B2_exacta | 96,9 | 11,7 | 10,0–13,7 | 7,3 | 6,0–8,6 | 11,8 |
-| C95 | 95,0 | 18,7 | 15,1–22,4 | 8,9 | 7,4–10,7 | 31,5 |
-| C96.5 | 96,5 | 15,3 | 11,6–19,8 | 8,8 | 6,7–11,4 | 18,3 |
-| C98 | 98,0 | 10,6 | 7,8–14,3 | 5,7 | 4,1–7,9 | 11,8 |
-| F_opt | 80,7 | 35,1 | 32,7–37,3 | 1,3 | 0,8–2,0 | 96,3 |
-| F_opt_piso | 96,2 | 16,0 | 13,0–19,3 | 9,7 | 8,1–11,7 | 17,5 |
-| F_opt_piso_alerta | 96,2 | 15,9 | 13,0–19,2 | 9,7 | 8,1–11,7 | 17,3 |
-| P25_entidad | 95,4 | 18,2 | 16,5–20,1 | 10,2 | 9,0–11,7 | 28,9 |
-| Piso_comparables | 95,3 | 19,0 | 16,9–21,6 | 10,9 | 9,7–12,2 | 25,3 |
-
-**validacion_2024 · 3+ ofertas, con el piso como rechazo: cada regla frente a la constante 96,5 %** (diferencia por proceso, puntos de cada 100, IC 95 % por remuestreo de entidades)
-
-| Comparación | Diferencia | IC 95 % | Procesos emparejados |
-|---|---|---|---|
-| B0 − C96.5 | -6.8 | -9.4 a -4.5 | 1.072 |
-| B1 − C96.5 | -2.7 | -5.1 a -0.9 | 1.072 |
-| B2 − C96.5 | -1.3 | -3.9 a 0.7 | 1.072 |
-| B2_exacta − C96.5 | -1.5 | -4.0 a 0.4 | 1.072 |
-| C95 − C96.5 | 0.1 | -2.2 a 1.9 | 1.072 |
-| C98 − C96.5 | -3.1 | -4.4 a -1.9 | 1.072 |
-| F_opt − C96.5 | -7.5 | -9.9 a -5.6 | 1.072 |
-| F_opt_piso − C96.5 | 0.9 | -0.6 a 2.1 | 1.072 |
-| F_opt_piso_alerta − C96.5 | 0.9 | -0.6 a 2.1 | 1.072 |
-| P25_entidad − C96.5 | 1.4 | -0.6 a 3.0 | 1.072 |
-| Piso_comparables − C96.5 | 2.1 | -0.1 a 3.9 | 1.072 |
-
-**validacion_2024 · 3+ ofertas, con el piso como rechazo: cada regla frente a B2 (Detekta hoy)** (diferencia por proceso, puntos de cada 100, IC 95 % por remuestreo de entidades)
-
-| Comparación | Diferencia | IC 95 % | Procesos emparejados |
-|---|---|---|---|
-| B0 − B2 | -5.5 | -7.0 a -4.1 | 1.072 |
-| B1 − B2 | -1.4 | -2.2 a -0.4 | 1.072 |
-| B2_exacta − B2 | -0.2 | -0.7 a 0.5 | 1.072 |
-| C95 − B2 | 1.5 | -0.0 a 3.2 | 1.072 |
-| C96.5 − B2 | 1.3 | -0.7 a 3.9 | 1.072 |
-| C98 − B2 | -1.8 | -3.6 a 0.5 | 1.072 |
-| F_opt − B2 | -6.2 | -7.4 a -4.7 | 1.072 |
-| F_opt_piso − B2 | 2.2 | 0.8 a 4.2 | 1.072 |
-| F_opt_piso_alerta − B2 | 2.2 | 0.8 a 4.2 | 1.072 |
-| P25_entidad − B2 | 2.7 | 1.5 a 4.2 | 1.072 |
-| Piso_comparables − B2 | 3.4 | 2.2 a 4.8 | 1.072 |
-
-
-Mismo orden y mismas distancias: con 3+ ofertas y piso, B2 7,4 · C96,5 8,8 · C95 8,9 · F_opt_piso 9,7 · P25 10,2 ·
-Piso_comparables 10,9. Aquí Piso_comparables supera a la constante por 2,1 puntos con un IC que roza el cero
-(−0,1 a 3,9): **contra la MEJOR constante (no contra el 96,5 %), la ventaja es de 1,4 puntos en 2025 (IC 0,1–2,5) y de 0,8 en 2024 (IC −1,2 a 2,6): el criterio de 3 puntos no se cumple en ninguno de los dos años (corrección de la auditoría, sección 12)**. Y con
-comparables solo desde 2024 (sin 2019–2023) los resultados de 2025 cambian menos de 1,5 puntos en todas las
-reglas: la historia vieja no añade ni quita.
+1. **El hallazgo robusto es el nivel de precio, y es contra Detekta hoy.** Con 3 o más ofertas y el piso como rechazo, B2 queda primera en 6,3 de cada 100 en 2025 y 6,9 en 2024; una constante del 95–96 % queda en 10,5 y 9,6. B2 está **4,2 puntos por debajo de la mejor constante en 2025 (IC −6,3 a −2,4) y 2,7 en 2024 (IC −4,8 a −1,2)**, en licitación y en menor cuantía (−4,3 y −4,2), y la brecha con el piso medido solo con ofertas reales sigue (−3,5). Sin el piso como rechazo la brecha es de 10 puntos (9,2 frente a 19,2). B2 ofrece el 100 % en la mitad de los procesos porque su mediana de baja, calculada con todos los procesos de la entidad, la empuja el 43 % de procesos con una sola oferta.
+2. **No hay regla con comparables que gane 3 puntos a la mejor constante.** La mejor, el piso de comparables, suma 1,4 (IC 0,0 a 2,7) en 2025 y 0,9 (IC −1,0 a 2,5) en 2024; contra la constante elegida con el año anterior, 1,5 (IC −0,05 a 2,9) y 0,9 (IC −1,0 a 2,5). El optimizador por métodos y el percentil 25 no se distinguen de la constante. El criterio preregistrado (3 puntos con IC que excluya 0) **no se cumple en ningún año**; con comparables solo desde 2024 la ventaja del piso de comparables es 0,4 (IC −1,1 a 1,6).
+3. **Por modalidad.** Contra la constante del año anterior, el piso de comparables suma 2,5 puntos en licitación (IC 0,9 a 4,1) en 2025 pero no en 2024 con historia corta (−0,7, IC −2,4 a 0,9); en menor cuantía 0,9 (IC −1,4 a 2,8): ninguna ventaja estable.
+4. **Con 1 o 2 ofertas** cualquier regla razonable gana casi siempre (1 oferta) o es indiferente; el corte de 3 o más es posterior al hecho (no se sabe de antemano cuántos se presentan). En todos los procesos de 2025, el piso de comparables suma 0,8 (IC 0,0 a 1,5) sobre la constante del año anterior y B2 queda 28 puntos por debajo.
+5. **La probabilidad del optimizador sigue sin estar calibrada**, ahora con 3 o más ofertas y contra una constante fuera de muestra: predice 16,0 de cada 100 y ocurre 10,1 (pendiente 0.44; 2024: 15,6 frente a 9,7, pendiente 0.59); el Brier (0.0382) es peor que el de la constante (0.0338). No puede mostrarse como «probabilidad de ganar».
 
 ## 7. ¿Cambian las cifras con 2022–2023, y hay tendencia por año? (`tendencia_por_anio` en `fase3_hipotesis.json`)
 
