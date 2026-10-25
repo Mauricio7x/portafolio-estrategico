@@ -30,42 +30,53 @@ def ajustar(procs):
         if abs(paso) < 1e-10: break
     return b
 
-if __name__ == "__main__":
-    carpeta, aux, salida = sys.argv[1], sys.argv[2], sys.argv[3]
-    dom = json.load(open(os.path.join(aux, "domicilios.json")))["domicilios"]
-    P = pd.read_csv(os.path.join(salida, "procesos.csv")).set_index("portafolio")
-    O = cargar_ofertas(carpeta)
+def construir(P, O, dom, col_depto, completos=False, filtro=None):
     reg = []; cob_of = 0; tot_of = 0
     for x in O:
         if x["portafolio"] not in P.index: continue
         f = P.loc[x["portafolio"]]
         if f["modalidad"] not in ("licitacion", "menor_cuantia") or pd.notna(f["excluido"]) or pd.notna(f["inconsistencia"]) or not x["ganador"]: continue
-        obra = clave_depto(f["departamento"])
+        if filtro and not filtro(f): continue
+        obra = clave_depto(f[col_depto])
         if not obra: continue
-        xs, prov = [], []
+        xs, prov, sin = [], [], 0
         for p_, _, _ in x["ofertas"]:
             tot_of += 1
             d = dom.get(p_[2:], {}).get("departamento") if p_.startswith("n:") else None
-            if d is None: continue
+            if d is None: sin += 1; continue
             cob_of += 1; xs.append(1.0 if clave_depto(d) == obra else 0.0); prov.append(p_)
+        if completos and sin: continue
         if x["ganador"] not in prov or len(xs) < 2 or len(set(xs)) < 2: continue
         reg.append({"codigo_entidad": f["codigo_entidad"], "modalidad": f["modalidad"], "anio": f["anio"], "x": np.array(xs), "y": prov.index(x["ganador"]),
-                    "locales": int(sum(xs)), "n": len(xs), "gano_local": bool(xs[prov.index(x["ganador"])] == 1.0)})
-    D = pd.DataFrame(reg)
-    out = {"cobertura_ofertas_con_domicilio": {"con": cob_of, "total": tot_of, "fraccion": cob_of / tot_of if tot_of else None},
-           "procesos_con_locales_y_foraneos": int(len(D))}
-    if len(D):
-        procs = list(zip(D["x"], D["y"])); b = ajustar(procs)
-        out["razon_de_momios_local"] = math.exp(b)
-        out["gano_local_de_cada_100"] = 100 * float(D["gano_local"].mean())
-        out["esperado_si_azar_de_cada_100"] = 100 * float((D["locales"] / D["n"]).mean())
-        rng = np.random.default_rng(SEMILLA); ents = D["codigo_entidad"].fillna("(sin)").to_numpy(); u, inv = np.unique(ents, return_inverse=True)
-        idx = [np.flatnonzero(inv == i) for i in range(len(u))]; bs = []
-        for _ in range(500):
-            toma = rng.integers(0, len(u), len(u)); ii = np.concatenate([idx[t] for t in toma])
-            bs.append(math.exp(ajustar([procs[i] for i in ii])))
-        out["ic95_razon_de_momios"] = [float(np.quantile(bs, .025)), float(np.quantile(bs, .975))]
-        out["por_modalidad"] = {m: {"procesos": int(len(g)), "gano_local_de_cada_100": 100 * float(g["gano_local"].mean()), "azar": 100 * float((g["locales"] / g["n"]).mean()), "razon_de_momios": math.exp(ajustar(list(zip(g["x"], g["y"]))))} for m, g in D.groupby("modalidad")}
-        out["por_ventana"] = {k: {"procesos": int(len(g)), "razon_de_momios": math.exp(ajustar(list(zip(g["x"], g["y"]))))} for k, g in {"2024-2026": D[D["anio"] >= 2024], "2019-2023": D[D["anio"] <= 2023]}.items() if len(g) >= 30}
+                    "locales": int(sum(xs)), "n": len(xs), "gano_local": bool(xs[prov.index(x["ganador"])] == 1.0), "bogota": obra == "bogota",
+                    "territorial": bool(__import__("re").search(r"alcaldia|gobernacion|municipio|departamento de|distrito", norm(f["entidad"] or "")))})
+    return pd.DataFrame(reg), cob_of, tot_of
+
+def resumen(D, cob=None, tot=None, bs=500):
+    out = {"procesos": int(len(D))}
+    if cob is not None: out["cobertura_ofertas_con_domicilio"] = {"con": cob, "total": tot, "fraccion": cob / tot if tot else None}
+    if len(D) < 30: return out
+    procs = list(zip(D["x"], D["y"])); b = ajustar(procs)
+    out["razon_de_momios"] = math.exp(b); out["gano_local_de_cada_100"] = 100 * float(D["gano_local"].mean()); out["esperado_si_azar_de_cada_100"] = 100 * float((D["locales"] / D["n"]).mean())
+    rng = np.random.default_rng(SEMILLA); ents = D["codigo_entidad"].fillna("(sin)").to_numpy(); u, inv = np.unique(ents, return_inverse=True)
+    idx = [np.flatnonzero(inv == i) for i in range(len(u))]; vals = []
+    for _ in range(bs):
+        toma = rng.integers(0, len(u), len(u)); ii = np.concatenate([idx[t] for t in toma]); vals.append(math.exp(ajustar([procs[i] for i in ii])))
+    out["ic95"] = [float(np.quantile(vals, .025)), float(np.quantile(vals, .975))]
+    return out
+
+if __name__ == "__main__":
+    carpeta, aux, salida = sys.argv[1], sys.argv[2], sys.argv[3]
+    dom = json.load(open(os.path.join(aux, "domicilios.json")))["domicilios"]
+    P = pd.read_csv(os.path.join(salida, "procesos.csv")).set_index("portafolio"); O = cargar_ofertas(carpeta)
+    out = {"nota": "Referencia: departamento de la SEDE de la entidad (no depende del ganador). La dirección del contrato (jbjy) solo se conoce del adjudicatario y se reporta como sensibilidad (auditoría 24-oct, defecto 2). Casos completos = todos los oferentes del proceso con domicilio (defecto 3)."}
+    D, c, t = construir(P, O, dom, "departamento_entidad"); out["referencia_sede_entidad"] = resumen(D, c, t)
+    out["por_modalidad"] = {m: resumen(g) for m, g in D.groupby("modalidad")}
+    out["por_ventana"] = {"2024-2026": resumen(D[D["anio"] >= 2024]), "2019-2023": resumen(D[D["anio"] <= 2023])}
+    out["bogota"] = {"obra_en_bogota": resumen(D[D["bogota"]]), "fuera_de_bogota": resumen(D[~D["bogota"]])}
+    out["entes_territoriales"] = {"si": resumen(D[D["territorial"]]), "no": resumen(D[~D["territorial"]]), "si_fuera_de_bogota": resumen(D[D["territorial"] & ~D["bogota"]])}
+    D2, c2, t2 = construir(P, O, dom, "departamento_entidad", completos=True); out["casos_completos_sede"] = resumen(D2, c2, t2)
+    D3, c3, t3 = construir(P, O, dom, "departamento"); out["sensibilidad_direccion_del_contrato"] = resumen(D3, c3, t3)
     json.dump(out, open(os.path.join(salida, "fase3_h8_local.json"), "w"), ensure_ascii=False, indent=1)
-    print(json.dumps({k: v for k, v in out.items() if k != "por_modalidad"}, ensure_ascii=False))
+    for k, v in out.items():
+        if isinstance(v, dict) and "razon_de_momios" in v: print(k, {a: (round(b, 3) if isinstance(b, float) else b) for a, b in v.items() if a != "cobertura_ofertas_con_domicilio"})

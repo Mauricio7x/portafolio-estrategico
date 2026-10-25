@@ -16,7 +16,7 @@ if __name__ == "__main__":
     P = pd.read_csv(os.path.join(salida, "procesos.csv")).set_index("portafolio"); O = cargar_ofertas(carpeta); R = {}
     for w, (a0, a1) in {"2024-2026": (2024, 2026), "2019-2026": (2019, 2026)}.items():
         for m in ["licitacion", "menor_cuantia"]:
-            d_loo, redondo, redondo_medio, todas, r_vals = [], 0, 0, 0, []
+            d_loo, redondo, redondo_medio, exacto100, todas, r_vals = [], 0, 0, 0, 0, []
             for x in O:
                 if x["portafolio"] not in P.index: continue
                 f = P.loc[x["portafolio"]]
@@ -24,13 +24,14 @@ if __name__ == "__main__":
                 rs = np.array([o[2] for o in x["ofertas"]])
                 for i, r in enumerate(rs):
                     todas += 1; p = 100 * r; r_vals.append(p)
-                    if abs(p - round(p)) < 1e-6: redondo += 1
+                    if abs(p - 100) < 1e-6: exacto100 += 1
+                    elif abs(p - round(p)) < 1e-6: redondo += 1
                     if abs(2 * p - round(2 * p)) < 1e-6: redondo_medio += 1
                 if len(rs) >= 4:
                     for i, r in enumerate(rs):
                         otras = np.delete(rs, i); d_loo.append(100 * (r - np.median(otras)))
             # ofertas que coinciden EXACTAMENTE con otra oferta del mismo proceso (empates al peso)
-            R[f"{w}|{m}"] = {"ofertas": todas, "pct_redondo_entero": 100 * redondo / todas if todas else None, "pct_redondo_medio_punto": 100 * redondo_medio / todas if todas else None,
+            R[f"{w}|{m}"] = {"ofertas": todas, "pct_exactamente_100": 100 * exacto100 / todas if todas else None, "pct_otro_entero_distinto_de_100": 100 * redondo / todas if todas else None, "pct_redondo_medio_punto": 100 * redondo_medio / todas if todas else None,
                              "esperado_si_continuo_entero_pct": 100 * 1e-6 * 2 / 1, "ofertas_en_procesos_4_o_mas": len(d_loo),
                              "exceso_en_mediana_de_las_otras": exceso(d_loo, 0.0), "exceso_a_1_pt_bajo_mediana_otras": exceso(d_loo, -1.0), "exceso_a_1_pt_sobre": exceso(d_loo, 1.0),
                              "histograma_loo": {"bordes": list(np.arange(-10, 10.5, 0.5)), "conteos": [int(c) for c in np.histogram(np.clip(d_loo, -10, 10), bins=np.arange(-10, 10.5, 0.5))[0]]},

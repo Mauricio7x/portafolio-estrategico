@@ -284,7 +284,7 @@ def tendencia(U, O):
                     rs = np.array([o[2] for o in x["ofertas"]]); s = rs.std(ddof=1)
                     if s > 0: pisos.append(100 * (np.median(rs) - s))
             por[int(a)] = {"procesos": int(len(h)), "mediana_r_adj_pct": 100 * float(h["r_adj"].median()), "ic95_mediana": [100 * v for v in remuestreo(h, lambda t: float(t["r_adj"].median()))["ic95"] or [None, None]] if len(h) >= 10 else None,
-                           "p10_r_adj_pct": 100 * pct(h["r_adj"], .1), "p90_r_adj_pct": 100 * pct(h["r_adj"], .9), "mediana_n": float(h["n"].median()),
+                           "p10_r_adj_pct": 100 * pct(h["r_adj"], .1), "p90_r_adj_pct": 100 * pct(h["r_adj"], .9), "mediana_n": float(h["n"].median()), "mediana_n_solo_3_o_mas": float(h[h["n"] >= 3]["n"].median()) if (h["n"] >= 3).any() else None, "procesos_3_o_mas": int((h["n"] >= 3).sum()),
                            "mediana_piso_pct": float(np.median(pisos)) if pisos else None, "procesos_con_piso": len(pisos)}
         anios = sorted(por); pend = pendiente(anios, [por[a]["mediana_r_adj_pct"] for a in anios]) if len(anios) >= 3 else None
         out[m] = {"por_anio": por, "pendiente_mediana_r_adj_pts_por_anio": pend}

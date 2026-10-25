@@ -11,6 +11,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from analisis import SEMILLA, REPLICAS, MIN_ENTIDAD, pct
 from hipotesis import remuestreo, remuestreo_media, cargar_ofertas, tramo
 
+CORTE_ADJUDICACION = False   # se fija en __main__ con --corte-adjudicacion
 METODOS = ["mediana", "geometrica", "aritmetica_baja", "menor_valor"]
 PUNTAJE_MAX = {"menor_cuantia": 49.5, "licitacion": 48.5}
 REJILLA = [round(0.80 + 0.005 * i, 3) for i in range(41)]   # 80,0 % … 100,0 % del precio base
@@ -48,6 +49,13 @@ def resultado_insercion(rs, b, mx):
 def valor_esperado(rs, b, mx):
     r, bp = resultado_insercion(rs, b, mx); v = sum(r.values()) / 4
     return v, (0.0 if bp else v), bp
+
+def valor_esperado4(rs, b, mx):
+    """Como valor_esperado, más la variante «piso medido SOLO con las ofertas reales» (sin la oferta insertada): auditoría 24-oct, defecto 5."""
+    v, vp, bp = valor_esperado(rs, b, mx)
+    a = np.asarray(rs, float); s = a.std(ddof=1) if len(a) > 1 else None
+    bp_ext = bool(s is not None and s > 0 and b < np.median(a) - s)
+    return v, vp, bp, (0.0 if bp_ext else v), bp_ext
 
 # ---------- comparables ANTERIORES ----------
 class Historia:
@@ -147,13 +155,14 @@ def evaluar(H, filas_eval, mx_de, estrategias, con_piso_eval, prefijo):
     for pid, fila in filas_eval.iterrows():
         x = H.ofertas.get(pid)
         if not x or len(x["ofertas"]) < 1: continue
-        rs = [o[2] for o in x["ofertas"]]; mx = mx_de[fila["modalidad"]]; fecha = fila["fecha_adjudicacion"]
+        rs = [o[2] for o in x["ofertas"]]; mx = mx_de[fila["modalidad"]]; fecha = fila["fecha_adjudicacion"] if CORTE_ADJUDICACION else fila["fecha_cierre"]
+        if not isinstance(fecha, str): continue
         for nombre, fn in estrategias.items():
             b, nivel, extra = fn(fila, fecha, mx)
             if b is None: reg.append({"portafolio": pid, "estrategia": nombre, "b": None}); continue
-            v, vp, bp = valor_esperado(rs, b, mx)
+            v, vp, bp, vpe, bpe = valor_esperado4(rs, b, mx)
             reg.append({"portafolio": pid, "codigo_entidad": fila["codigo_entidad"], "modalidad": fila["modalidad"], "anio": fila["anio"], "n": len(rs),
-                        "estrategia": nombre, "b": b, "nivel": nivel, "gana_sin_piso": v, "gana_con_piso": vp, "bajo_piso": bp,
+                        "estrategia": nombre, "b": b, "nivel": nivel, "gana_sin_piso": v, "gana_con_piso": vp, "bajo_piso": bp, "gana_con_piso_ext": vpe, "bajo_piso_ext": bpe,
                         "pred": (extra or {}).get("tasa_esperada"), "ganador_real_r": fila["r_ganador"]})
     return pd.DataFrame(reg)
 
@@ -175,21 +184,27 @@ def diferencias(E, col, ref="B2"):
         out[f"{est} − {ref}"] = {"procesos_emparejados": int(len(D)), **remuestreo_media(D, "d")}
     return out
 
-def calibracion(E, est, col):
-    g = E[(E["estrategia"] == est) & E["pred"].notna() & E["b"].notna()]
+def calibracion(E, est, col, minimo_n=3):
+    g = E[(E["estrategia"] == est) & E["pred"].notna() & E["b"].notna() & (E["n"] >= minimo_n)]
     if len(g) < 50: return None
     p = g["pred"].clip(1e-6, 1 - 1e-6).to_numpy(); y = g[col].to_numpy()
     brier = float(np.mean((p - y) ** 2)); ll = float(-np.mean(y * np.log(p) + (1 - y) * np.log(1 - p)))
     dec = pd.qcut(pd.Series(p).rank(method="first"), 10, labels=False); tabla = pd.DataFrame({"p": p, "y": y, "d": dec}).groupby("d").agg(pred=("p", "mean"), obs=("y", "mean"), n=("y", "size"))
     pend = float(np.polyfit(tabla["pred"], tabla["obs"], 1)[0]) if tabla["pred"].std() > 0 else None
     base = float(np.mean(y)); brier_base = float(np.mean((base - y) ** 2))
-    return {"procesos": int(len(g)), "brier": brier, "brier_constante": brier_base, "log_loss": ll, "pendiente_calibracion": pend, "deciles": tabla.round(4).to_dict("records")}
+    # constante FUERA de muestra: media de las demás entidades (no la media de la propia muestra, que es un oráculo)
+    gy = g.assign(y=y); tot = gy["y"].sum(); cnt = len(gy); porent = gy.groupby("codigo_entidad")["y"].agg(["sum", "count"])
+    otras = (tot - gy["codigo_entidad"].map(porent["sum"])) / (cnt - gy["codigo_entidad"].map(porent["count"])).replace(0, np.nan)
+    brier_oos = float(np.nanmean((otras.to_numpy() - y) ** 2))
+    return {"procesos": int(len(g)), "solo_n_mayor_o_igual": minimo_n, "brier": brier, "brier_constante_en_muestra": brier_base, "brier_constante_fuera_de_muestra": brier_oos, "pred_media": float(np.mean(p)), "observado_medio": base, "log_loss": ll, "pendiente_calibracion": pend, "deciles": tabla.round(4).to_dict("records")}
 
 def pred_n(H, P_eval):
     """¿Cuántos se presentan? Predicción con la mediana de n de la entidad (anteriores, ≥5) frente a la del país; MAE."""
     reg = []
     for pid, f in P_eval.iterrows():
-        e = H.comparables(f, "entidad", f["fecha_adjudicacion"]); p = H.comparables(f, "pais", f["fecha_adjudicacion"])
+        fcorte = f["fecha_adjudicacion"] if CORTE_ADJUDICACION else f["fecha_cierre"]
+        if not isinstance(fcorte, str): continue
+        e = H.comparables(f, "entidad", fcorte); p = H.comparables(f, "pais", fcorte)
         if len(p) < MIN_ENTIDAD: continue
         reg.append({"codigo_entidad": f["codigo_entidad"], "real": f["n"], "ent": float(e["n"].median()) if len(e) >= MIN_ENTIDAD else None, "pais": float(p["n"].median())})
     D = pd.DataFrame(reg)
@@ -238,8 +253,10 @@ def caracteristicas_basicas(rs):
 if __name__ == "__main__":
     carpeta, aux, salida = sys.argv[1], sys.argv[2], sys.argv[3]; prueba = "--prueba" in sys.argv
     # --historia-desde AAAA: los comparables solo pueden venir de ese año en adelante (escenario «¿cambia algo con 2019–2023?»)
+    CORTE_ADJUDICACION = "--corte-adjudicacion" in sys.argv   # reproduce la corrida del 21-oct (corte por adjudicación); por defecto, corte por CIERRE
     historia_desde = int(sys.argv[sys.argv.index("--historia-desde") + 1]) if "--historia-desde" in sys.argv else None
     sufijo = f"_historia{historia_desde}" if historia_desde else ""
+    if CORTE_ADJUDICACION: sufijo += "_corteadj"
     P = pd.read_csv(os.path.join(salida, "procesos.csv")); extra = json.load(open(os.path.join(aux, "p6dx_extra.json")))
     P["familia"] = P["portafolio"].map(lambda k: (extra.get(k, {}).get("unspsc") or "")[3:7] or None)   # «V1.72101500» → «7210» (familia = 4 dígitos)
     P.loc[P["familia"].isin(["", "UNSP"]), "familia"] = None
@@ -268,10 +285,18 @@ if __name__ == "__main__":
         "F_opt_piso_alerta": lambda f, fecha, mx: precio_Fopt(H, T, f, fecha, con_piso=True, minimo=ALERTA[f["modalidad"]]),
     }
     for etiqueta, anios in [(f"validacion_{anio_val}", [anio_val])] + ([("prueba_2026", anios_prueba)] if prueba else []):
-        ev = U[U["anio"].isin(anios) & (U["n"] >= 1)]
-        E = evaluar(H, ev, PUNTAJE_MAX, estrategias_sin, True, etiqueta)
+        ev = U[U["anio"].isin(anios) & (U["n"] >= 1) & (U["fecha_cierre"].notna() | CORTE_ADJUDICACION)]
+        def curva_const(ids):
+            xs = [T[p][1] for p in ids if p in T]
+            return np.mean(xs, axis=0) if xs else None
+        c_dentro = curva_const(list(ev[ev["n"] >= 3].index)); c_prev = curva_const(list(U[(U["anio"] == min(anios) - 1) & (U["n"] >= 3)].index))
+        b_dentro = REJILLA[int(np.argmax(c_dentro))] if c_dentro is not None else None; b_prev = REJILLA[int(np.argmax(c_prev))] if c_prev is not None else None
+        estrategias = dict(estrategias_sin)
+        if b_dentro is not None: estrategias["C_mejor_dentro"] = (lambda f, fecha, mx, b=b_dentro: (b, "constante", None))
+        if b_prev is not None: estrategias["C_ano_anterior"] = (lambda f, fecha, mx, b=b_prev: (b, "constante", None))
+        E = evaluar(H, ev, PUNTAJE_MAX, estrategias, True, etiqueta)
         E.to_csv(os.path.join(salida, f"backtest_{etiqueta}{sufijo}.csv"), index=False)
-        R[etiqueta] = {"procesos_evaluados": int(ev.shape[0]),
+        R[etiqueta] = {"procesos_evaluados": int(ev.shape[0]), "corte_de_fecha": "adjudicacion" if CORTE_ADJUDICACION else "cierre", "constante_mejor_dentro_de_muestra": b_dentro, "constante_del_ano_anterior": b_prev,
                        "sin_piso": {"resumen": resumen(E, "gana_sin_piso"), "diferencias_vs_B2": diferencias(E, "gana_sin_piso")},
                        "con_piso": {"resumen": resumen(E, "gana_con_piso"), "diferencias_vs_B2": diferencias(E, "gana_con_piso")},
                        "por_modalidad": {m: {"sin_piso": resumen(g, "gana_sin_piso"), "con_piso": resumen(g, "gana_con_piso")} for m, g in E.groupby("modalidad")},
@@ -279,6 +304,10 @@ if __name__ == "__main__":
                        "competencia_3_o_mas": {"sin_piso": {"resumen": resumen(E[E["n"] >= 3], "gana_sin_piso"), "diferencias_vs_B2": diferencias(E[E["n"] >= 3], "gana_sin_piso"), "diferencias_vs_C96.5": diferencias(E[E["n"] >= 3], "gana_sin_piso", ref="C96.5")},
                                                "con_piso": {"resumen": resumen(E[E["n"] >= 3], "gana_con_piso"), "diferencias_vs_B2": diferencias(E[E["n"] >= 3], "gana_con_piso"), "diferencias_vs_C96.5": diferencias(E[E["n"] >= 3], "gana_con_piso", ref="C96.5")}},
                        "diferencias_vs_C96.5": {"sin_piso": diferencias(E, "gana_sin_piso", ref="C96.5"), "con_piso": diferencias(E, "gana_con_piso", ref="C96.5")},
+                       "contra_la_mejor_constante_3_o_mas": {c: {"con_piso": diferencias(E[E["n"] >= 3], "gana_con_piso", ref=c), "con_piso_ext": diferencias(E[E["n"] >= 3], "gana_con_piso_ext", ref=c), "sin_piso": diferencias(E[E["n"] >= 3], "gana_sin_piso", ref=c)} for c in ("C_mejor_dentro", "C_ano_anterior") if c in set(E["estrategia"])},
+                       "con_piso_ext_3_o_mas": {"resumen": resumen(E[E["n"] >= 3], "gana_con_piso_ext")},
+                       "por_modalidad_3_o_mas_vs_mejor_constante": {m: {c: diferencias(g, "gana_con_piso", ref=c) for c in ("C_mejor_dentro", "C_ano_anterior") if c in set(g["estrategia"])} for m, g in E[E["n"] >= 3].groupby("modalidad")},
+                       "todos_vs_C_ano_anterior": diferencias(E, "gana_con_piso", ref="C_ano_anterior") if "C_ano_anterior" in set(E["estrategia"]) else None,
                        "calibracion_F_opt_piso": calibracion(E, "F_opt_piso", "gana_con_piso"), "calibracion_F_opt": calibracion(E, "F_opt", "gana_sin_piso"),
                        "prediccion_n": pred_n(H, ev)}
         ids_tr = set(U[U["anio"] < min(anios)].index); ids_te = set(ev.index)
