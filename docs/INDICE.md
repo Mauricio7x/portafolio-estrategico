@@ -45,6 +45,7 @@ con `node tests/estado.js`, y las coordenadas las da `node tests/mapa.js <térmi
 | `docs/reforma_datos/D-sintesis.md` | propuesta fechada (síntesis de tres lentes) | — | — | D · Síntesis de la reforma de la tarjeta · una sola lista sin duplicados (13-sep-2026) |
 | `docs/CONFIGURACION_TOKENS.md` | referencia | — | `README.md` · `lib` · `tests` | Tokens y variables de entorno · guía desde cero |
 | `docs/DICTAMEN_DESDE_CLAUDE_CODE.md` | referencia | — | `README.md` · `tests` | Dictamen del pliego con la suscripción de Claude Code (sin clave de API) · 3-sep-2026 |
+| `docs/GUIA_MODELOS_Y_ESFUERZO.md` | referencia | — | — | Guía: qué modelo y qué esfuerzo usar en cada pregunta |
 | `docs/LEGAL_COLOMBIA.md` | referencia | — | — | Anexo A · Frente jurídico y regulatorio (Colombia) |
 | `docs/PRECIOS_DESDE_CLAUDE_CODE.md` | referencia | — | `README.md` · `tests` | Precios · cómo funciona «Buscar» y quién lo atiende |
 | `docs/RUTINAS.md` | referencia | — | `tests` | Rutinas programadas · qué pueden hacer, qué no, y cómo se crea una que funcione |

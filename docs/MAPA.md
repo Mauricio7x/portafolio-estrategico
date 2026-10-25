@@ -2,7 +2,7 @@
      Es una FOTO para leer en GitHub; la fuente de verdad es ejecutar la herramienta. -->
 
 ```
-== MAPA DE DETEKTA · generado del árbol el 2026-10-21 ==
+== MAPA DE DETEKTA · generado del árbol el 2026-10-25 ==
 (no editar a mano: sale de `node tests/mapa.js --escribir`. Para ir a un sitio concreto,
  `node tests/mapa.js <término>` da la ruta, la línea y el sed exacto — más barato que leer esto)
 
@@ -231,7 +231,7 @@
   L 20161  Cada subida cuesta un despliegue: una entrega, un envío (21-oct-2026)
   L 20170  El consejo de siete asesores entra al proyecto: sin la sala web, sin guardar nada en el rep…
 
-· DOCUMENTOS docs/ — 73 (y 3 en docs/archivo/, superados: `--archivo` los lista):
+· DOCUMENTOS docs/ — 74 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)
   APU_DIAGNOSTICO.md                      Diagnóstico del módulo APU frente a la especificación «APU profesional»
   APU_FUENTES.md                          Fuentes de precio del APU · qué se intentó, qué respondió y qué falta
@@ -256,6 +256,7 @@
   EMPEZAR_AQUI.md                         EMPEZAR AQUÍ · Guía de cero para convertir Detekta en un negocio
   ESTRUCTURA_ORGANIZACIONAL.md            Detekta como empresa: la estructura que su funcionamiento exige
   GUIA_ANALISTA_LICITACIONES.md           Manual del Analista de Licitaciones
+  GUIA_MODELOS_Y_ESFUERZO.md              Guía: qué modelo y qué esfuerzo usar en cada pregunta
   INFRAESTRUCTURA_2026-09-27.md           Infraestructura de Detekta · lo que hay, lo que se propone y cuánto tarda llegar (27
   insumos_2026_pendiente/LEEME.md         Insumos de precios 2026 · las FUENTES de los bancos del módulo APU
   INSUMOS_2026.md                         Insumos de precios 2026 · censo, contraste y qué hacer con ellos
