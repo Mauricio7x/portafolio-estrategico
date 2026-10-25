@@ -1,0 +1,433 @@
+{
+ "_meta": {
+  "que_es": "Casos reales de selección abreviada de menor cuantía de obra (Documento Tipo CCE V3) con sus ofertas, sus hábiles y el método que de verdad se sorteó, para la retro-prueba: qué precio propondría Detekta hoy, en qué puesto quedaría con cada método y si baja del costo.",
+  "escrito_el": "2026-10-25",
+  "fuentes": {
+   "santa_elena": "Mauricio7x/detekta-lector · caso_santa_elena/LECCIONES.md y simulador/simular.py (hechos del Primer y Segundo Informe y de la Resolución de adjudicación, leídos por el dueño); ofertas publicadas cruzadas con wi7w-2nvm (datos.gov.co, 25-oct-2026, portafolio CO1.BDOS.10584652); TRM del 24-sep-2026 = 3.264,39 (32sa-8pi3, 25-oct-2026).",
+   "A_E": "Mauricio7x/detekta-lector · muestra/fichas_A-E (fichas con cita verificada, RESUMEN_FICHAS.md, scripts/calc_A.py, scripts/calc_BCDE.py, anomalias/); ofertas publicadas cruzadas con wi7w-2nvm (25-oct-2026); fila de p6dx-8zbt (25-oct-2026).",
+   "nota": "`valor_corregido` es el que usó el comité (aritmética corregida); `valor_publicado` el de wi7w-2nvm. Los puntajes se calculan con el corregido, que es el que puntúa la entidad. `habil` sale de los informes de evaluación; los datos abiertos no lo publican."
+  }
+ },
+ "puntaje_maximo_precio": 49.5,
+ "casos": [
+  {
+   "clave": "santa_elena",
+   "titulo": "Santa Elena · Cali, Secretaría de Infraestructura · 4151.010.32.1.1255-2026",
+   "id_req": "CO1.REQ.10768540",
+   "portafolio": "CO1.BDOS.10584652",
+   "entidad": "SANTIAGO DE CALI DISTRITO ESPECIAL - SECRETARIA DE INFRAESTRUCTURA",
+   "departamento": "Valle del Cauca",
+   "ciudad": "Cali",
+   "modalidad": "Selección Abreviada de Menor Cuantía",
+   "codigo_principal_de_categoria": "V1.72141106",
+   "presupuesto_oficial": 1581425810,
+   "presupuesto_oficial_fuente": "pliego DEFINITIVO (LECCIONES.md); el precio_base de p6dx (1.744.426.146) está desactualizado: +10,3 %",
+   "precio_base_p6dx": 1744426146,
+   "trm": 3264.39,
+   "trm_fecha": "2026-09-24",
+   "metodo_real": "geometrica",
+   "ofertas": [
+    {
+     "nombre": "CONSORCIO C18",
+     "valor_publicado": 1475444680,
+     "valor_corregido": 1475444680,
+     "habil": true
+    },
+    {
+     "nombre": "CONSULCON PROYECTOS DE INGENIERIA SAS",
+     "valor_publicado": 1485289767,
+     "valor_corregido": 1485289767,
+     "habil": true
+    },
+    {
+     "nombre": "CONCRETAR 2026",
+     "valor_publicado": 1488423398,
+     "valor_corregido": 1488423398,
+     "habil": true
+    },
+    {
+     "nombre": "UT EMIMAJO INGENIERIA",
+     "valor_publicado": 1506519257,
+     "valor_corregido": 1506519257,
+     "habil": false,
+     "nota": "rechazada (LECCIONES: «una rechazada en 95,26 %»)"
+    },
+    {
+     "nombre": "WORLDTEK SAS",
+     "valor_publicado": 1511179252,
+     "valor_corregido": 1511182540,
+     "habil": true
+    },
+    {
+     "nombre": "CONSORCIO INFRAESTRUCTURA 1A",
+     "valor_publicado": 1530029471,
+     "valor_corregido": 1530029470,
+     "habil": true,
+     "nuestra": true
+    }
+   ],
+   "ganador": {
+    "nombre": "CONCRETAR 2026",
+    "valor": 1488423398
+   },
+   "resultado_real": "quedamos 5.º de 5 hábiles con 48,4397 de 49,5 puntos de precio; ganó el 94,12 % del presupuesto (LECCIONES.md)",
+   "apu_propio": {
+    "costo_directo": null,
+    "motivo": "el APU de la oferta vive en producción (Redis), que esta sesión no toca: el costo real se declara sin dato y se barren escenarios"
+   },
+   "nit_entidad": "890399011"
+  },
+  {
+   "clave": "a",
+   "titulo": "A · Alcaldía de Pasto · SA-2026-9 (mejoramiento vial Genoy, Gualmatán, Jongovito y Morasurco)",
+   "id_req": "CO1.REQ.11036237",
+   "portafolio": "CO1.BDOS.10758623",
+   "entidad": "ALCALDIA DE PASTO",
+   "departamento": "Nariño",
+   "ciudad": "Pasto",
+   "modalidad": "Selección Abreviada de Menor Cuantía",
+   "codigo_principal_de_categoria": null,
+   "presupuesto_oficial": 1076606477,
+   "presupuesto_oficial_fuente": "pliego definitivo (ficha con cita verificada)",
+   "precio_base_p6dx": 1076606477,
+   "fecha_adjudicacion_p6dx": "2026-10-08",
+   "trm": 3209.78,
+   "metodo_real": "menor_valor",
+   "puntaje_maximo_precio": 49.5,
+   "ofertas": [
+    {
+     "nombre": "PRAXIS CONSTRUCCIONES S.A.S",
+     "valor_publicado": 1003067099,
+     "valor_corregido": 1003067096.48,
+     "habil": true
+    },
+    {
+     "nombre": "GV INGENIERIA INTEGRAL SAS",
+     "valor_publicado": 1009856012.09,
+     "valor_corregido": 1009856012.09,
+     "habil": true
+    },
+    {
+     "nombre": "CONSORCIO CEMARC & AVILA",
+     "valor_publicado": 1015076601,
+     "valor_corregido": 1015076601.14,
+     "habil": true
+    },
+    {
+     "nombre": "CONSORCIO VR 2026",
+     "valor_publicado": 1015458494.32,
+     "valor_corregido": 1015458494.32,
+     "habil": true
+    },
+    {
+     "nombre": "CONSORCIO KM DEL SUR",
+     "valor_publicado": 1016139750.85,
+     "valor_corregido": 1016139750.85,
+     "habil": true
+    },
+    {
+     "nombre": "LUIS ANTONIO DULCE DELGADO",
+     "valor_publicado": 1026222370.6,
+     "valor_corregido": 1026222370.6,
+     "habil": true
+    },
+    {
+     "nombre": "JAVIER ENRIQUEZ BRAVO",
+     "valor_publicado": 1040763100,
+     "valor_corregido": 1040763100,
+     "habil": false
+    },
+    {
+     "nombre": "LUIS EDUARDO SUAREZ DAVID",
+     "valor_publicado": 1058188614.02,
+     "valor_corregido": 1058188614.02,
+     "habil": false
+    }
+   ],
+   "ganador": {
+    "nombre": "GV INGENIERIA INTEGRAL SAS",
+    "valor": 1009856012.09
+   },
+   "resultado_real": "adjudicado al 93.7999 % del presupuesto; 6 hábiles de 8 ofertas",
+   "apu_propio": {
+    "costo_directo": null,
+    "motivo": "no hubo oferta propia: no hay APU"
+   },
+   "nota": "El ganador real quedó 2.º por precio (menor valor): PRAXIS, la más barata, perdió 20 puntos de calidad por alterar el Formato 14. El puesto por precio no basta para ganar: lo demás tiene que ir completo.",
+   "nit_entidad": "891280000",
+   "codigo_principal_de_categoria_nota": "p6dx publica «UNSPECIFIED» para este proceso (25-oct-2026): sin familia, la cascada del índice no usa los niveles por familia"
+  },
+  {
+   "clave": "b",
+   "titulo": "B · Gobernación de Caldas · SAMC-SI-027-2026 (pavimentación vía Aranzazu–Salamina)",
+   "id_req": "CO1.REQ.10970903",
+   "portafolio": "CO1.BDOS.10598997",
+   "entidad": "GOBERNACION DE CALDAS",
+   "departamento": "Caldas",
+   "ciudad": "Aranzazu–Salamina (obra); entidad en Manizales",
+   "modalidad": "Selección Abreviada de Menor Cuantía",
+   "codigo_principal_de_categoria": null,
+   "presupuesto_oficial": 675274065,
+   "presupuesto_oficial_fuente": "pliego definitivo (ficha con cita verificada)",
+   "precio_base_p6dx": 675274065,
+   "fecha_adjudicacion_p6dx": "2026-10-01",
+   "trm": 3349.63,
+   "metodo_real": "aritmetica_baja",
+   "puntaje_maximo_precio": 49.5,
+   "ofertas": [
+    {
+     "nombre": "SOLINGE SAS SOLUCIONES DE INGENIERIA",
+     "valor_publicado": 626517966.6,
+     "valor_corregido": 626517966.6,
+     "habil": true
+    },
+    {
+     "nombre": "PROCIVING SAS",
+     "valor_publicado": 626650933,
+     "valor_corregido": 626650933,
+     "habil": true
+    },
+    {
+     "nombre": "CONSORCIO CUMANDAY",
+     "valor_publicado": 627183229.6,
+     "valor_corregido": 627183229.6,
+     "habil": false
+    },
+    {
+     "nombre": "Gildardo Ocampo Montes",
+     "valor_publicado": 629876785.4,
+     "valor_corregido": 629876785.4,
+     "habil": false
+    },
+    {
+     "nombre": "CONSORCIO VIAS SASFAL",
+     "valor_publicado": 632063209.8,
+     "valor_corregido": 632063209.8,
+     "habil": true
+    },
+    {
+     "nombre": "CONSORCIO RSICEM",
+     "valor_publicado": 634082367.6,
+     "valor_corregido": 634082367.6,
+     "habil": false
+    }
+   ],
+   "ganador": {
+    "nombre": "PROCIVING SAS",
+    "valor": 626650933
+   },
+   "resultado_real": "adjudicado al 92.7995 % del presupuesto; 3 hábiles de 6 ofertas",
+   "apu_propio": {
+    "costo_directo": null,
+    "motivo": "no hubo oferta propia: no hay APU"
+   },
+   "nota": null,
+   "nit_entidad": "890801052",
+   "codigo_principal_de_categoria_nota": "p6dx publica «UNSPECIFIED» para este proceso (25-oct-2026): sin familia, la cascada del índice no usa los niveles por familia"
+  },
+  {
+   "clave": "c",
+   "titulo": "C · Floridablanca · FLO-INFRA-SA-MC-001-2026 (vía Ruitoque–Tres Esquinas)",
+   "id_req": "CO1.REQ.10441750",
+   "portafolio": "CO1.BDOS.10221686",
+   "entidad": "ALCALDIA DE FLORIDABLANCA",
+   "departamento": "Santander",
+   "ciudad": "Floridablanca",
+   "modalidad": "Selección Abreviada de Menor Cuantía",
+   "codigo_principal_de_categoria": null,
+   "presupuesto_oficial": 1004015042,
+   "presupuesto_oficial_fuente": "pliego definitivo (ficha con cita verificada)",
+   "precio_base_p6dx": 1004015042,
+   "fecha_adjudicacion_p6dx": "2026-06-03",
+   "trm": 3678.15,
+   "metodo_real": "mediana",
+   "puntaje_maximo_precio": 49.5,
+   "ofertas": [
+    {
+     "nombre": "MONTAG CONSTRUCCIONES Y SERVICIOS SAS",
+     "valor_publicado": 979021151,
+     "valor_corregido": 979021151,
+     "habil": true
+    },
+    {
+     "nombre": "OCCIDENTAL DE COLOMBIA",
+     "valor_publicado": 984249295,
+     "valor_corregido": 984249295,
+     "habil": false
+    },
+    {
+     "nombre": "INGELEC SAS",
+     "valor_publicado": 992002622,
+     "valor_corregido": 992002622,
+     "habil": false
+    },
+    {
+     "nombre": "CONSORCIO JGV FLORIDA",
+     "valor_publicado": 1003514996,
+     "valor_corregido": 1003514996,
+     "habil": true
+    }
+   ],
+   "ganador": {
+    "nombre": "CONSORCIO JGV FLORIDA",
+    "valor": 1003514996
+   },
+   "resultado_real": "adjudicado al 99.9502 % del presupuesto; 2 hábiles de 4 ofertas",
+   "apu_propio": {
+    "costo_directo": null,
+    "motivo": "no hubo oferta propia: no hay APU"
+   },
+   "nota": "Anomalía documentada (detekta-lector, anomalias/c_explicacion.md): la evaluación puntuó a JGV con la oferta de otro proponente (984.249.295); con su oferta real (1.003.514.996) el primero por el pliego era MONTAG. El caso entra con los valores reales: el control del ganador NO se reproduce, y eso es un hecho de la entidad, no de la retro-prueba.",
+   "nit_entidad": "890205176",
+   "codigo_principal_de_categoria_nota": "p6dx publica «UNSPECIFIED» para este proceso (25-oct-2026): sin familia, la cascada del índice no usa los niveles por familia"
+  },
+  {
+   "clave": "d",
+   "titulo": "D · Turbaco · SAMC-006-2026 (pavimento rígido barrio Las Mercedes)",
+   "id_req": "CO1.REQ.10650320",
+   "portafolio": "CO1.BDOS.10381021",
+   "entidad": "ALCALDIA MUNICIPAL DE TURBACO BOLIVAR",
+   "departamento": "Bolívar",
+   "ciudad": "Turbaco",
+   "modalidad": "Selección Abreviada de Menor Cuantía",
+   "codigo_principal_de_categoria": null,
+   "presupuesto_oficial": 511587015.1,
+   "presupuesto_oficial_fuente": "pliego definitivo (ficha con cita verificada)",
+   "precio_base_p6dx": 511587015,
+   "fecha_adjudicacion_p6dx": "2026-07-24",
+   "trm": null,
+   "metodo_real": null,
+   "puntaje_maximo_precio": 49.75,
+   "ofertas": [
+    {
+     "nombre": "W&E INGENIERIA SAS",
+     "valor_publicado": 471178480.72,
+     "valor_corregido": 471178480.72,
+     "habil": false
+    },
+    {
+     "nombre": "CONSORCIO RRMM 2026",
+     "valor_publicado": 486289149,
+     "valor_corregido": 486289149,
+     "habil": false
+    },
+    {
+     "nombre": "INTEGRAL INGENIEROS S.A.S.",
+     "valor_publicado": 489566900.07,
+     "valor_corregido": 489566900.07,
+     "habil": false
+    },
+    {
+     "nombre": "INGENIERIA INTEGRADA FCN SAS",
+     "valor_publicado": 498940783.17,
+     "valor_corregido": 498940783.17,
+     "habil": false
+    },
+    {
+     "nombre": "INVEROBRAS CIVILES SAS",
+     "valor_publicado": 510759749.69,
+     "valor_corregido": 510759749.69,
+     "habil": true
+    }
+   ],
+   "ganador": {
+    "nombre": "INVEROBRAS CIVILES SAS",
+    "valor": 510759749.69
+   },
+   "resultado_real": "adjudicado al 99.8383 % del presupuesto; 1 hábiles de 5 ofertas",
+   "apu_propio": {
+    "costo_directo": null,
+    "motivo": "no hubo oferta propia: no hay APU"
+   },
+   "nota": "Un solo hábil: ganó la oferta más cara de las cinco porque las otras cuatro quedaron fuera por habilitación (Mipyme de Turbaco). Sin rivales hábiles no hay puesto que medir: el caso se queda como control de que el precio no decide cuando los papeles deciden.",
+   "nit_entidad": "890481149",
+   "codigo_principal_de_categoria_nota": "p6dx publica «UNSPECIFIED» para este proceso (25-oct-2026): sin familia, la cascada del índice no usa los niveles por familia"
+  },
+  {
+   "clave": "e",
+   "titulo": "E · Gobernación de Caldas · SAMC-SI-020-2026 (vía Varsovia–Puente Quebrada La Honda, Filadelfia)",
+   "id_req": "CO1.REQ.10710451",
+   "portafolio": "CO1.BDOS.10430157",
+   "entidad": "GOBERNACION DE CALDAS",
+   "departamento": "Caldas",
+   "ciudad": "Filadelfia (obra); entidad en Manizales",
+   "modalidad": "Selección Abreviada de Menor Cuantía",
+   "codigo_principal_de_categoria": null,
+   "presupuesto_oficial": 993687600,
+   "presupuesto_oficial_fuente": "pliego definitivo (ficha con cita verificada)",
+   "precio_base_p6dx": 993687600,
+   "fecha_adjudicacion_p6dx": "2026-09-03",
+   "trm": 3213.97,
+   "metodo_real": "menor_valor",
+   "puntaje_maximo_precio": 49.5,
+   "ofertas": [
+    {
+     "nombre": "GENERAL SERVICIOS S&G S.A.S",
+     "valor_publicado": 883381572,
+     "valor_corregido": 883381572,
+     "habil": true
+    },
+    {
+     "nombre": "CARLOS MARIO ARIAS MENDOZA",
+     "valor_publicado": 912336926,
+     "valor_corregido": 912336926,
+     "habil": false
+    },
+    {
+     "nombre": "SOLINGE SAS SOLUCIONES DE INGENIERIA",
+     "valor_publicado": 921837099,
+     "valor_corregido": 921837099,
+     "habil": true
+    },
+    {
+     "nombre": "CONSORCIO AERORAM",
+     "valor_publicado": 924697981,
+     "valor_corregido": 924697981,
+     "habil": true
+    },
+    {
+     "nombre": "ESDRAS MD INGENIERIA S.A.S",
+     "valor_publicado": 925922346,
+     "valor_corregido": 925922346,
+     "habil": true
+    },
+    {
+     "nombre": "CONSULTIN P&S S.A.S.",
+     "valor_publicado": 926361567,
+     "valor_corregido": 926361567,
+     "habil": true
+    },
+    {
+     "nombre": "CONSORCIO CUMANDAY",
+     "valor_publicado": 928080331,
+     "valor_corregido": 928080331,
+     "habil": true
+    },
+    {
+     "nombre": "MARIASAS",
+     "valor_publicado": 929694066,
+     "valor_corregido": 929694066,
+     "habil": true
+    },
+    {
+     "nombre": "CONSTRUCTORA INGESUR S.A.S.",
+     "valor_publicado": 932960319,
+     "valor_corregido": 932960319,
+     "habil": true
+    }
+   ],
+   "ganador": {
+    "nombre": "GENERAL SERVICIOS S&G S.A.S",
+    "valor": 883381572
+   },
+   "resultado_real": "adjudicado al 88.8993 % del presupuesto; 8 hábiles de 9 ofertas",
+   "apu_propio": {
+    "costo_directo": null,
+    "motivo": "no hubo oferta propia: no hay APU"
+   },
+   "nota": "El ganador (88,90 %) quedó bajo el «valor mínimo» que la propia entidad calculó (mediana − σ muestral, 91,61 %) y no consta solicitud de justificación. Con menor valor y aritmética baja gana; con mediana o geométrica habría quedado último.",
+   "nit_entidad": "890801052",
+   "codigo_principal_de_categoria_nota": "p6dx publica «UNSPECIFIED» para este proceso (25-oct-2026): sin familia, la cascada del índice no usa los niveles por familia"
+  }
+ ]
+}

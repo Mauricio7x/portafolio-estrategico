@@ -29,6 +29,7 @@ con `node tests/estado.js`, y las coordenadas las da `node tests/mapa.js <térmi
 | `docs/PROPONENTE_PLURAL.md` | informe fechado | — | `lib` · `tests` | Proponente plural: la norma vigente, 241 pliegos reales y las cifras de los RUP |
 | `docs/RAMAS_RETIRADAS.md` | informe fechado | — | `tests` | Ramas superadas al unificar en `main` (21-ago-2026) |
 | `docs/CONTRATACION_ESTATAL.md` | informe fechado (19-oct-2026) | — | `.claude` | Contratación estatal de obra en Colombia · base de conocimiento |
+| `docs/RETROPRUEBA_MENOR_CUANTIA.md` | informe fechado (25-oct-2026) | — | `tests` | Retro-prueba de menor cuantía: qué precio habría propuesto Detekta y en qué puesto habr… |
 | `docs/ARQUITECTURA_MULTITENANT.md` | pendiente del dueño | — | — | Anexo C · Arquitectura multi-inquilino, escalabilidad y datos |
 | `docs/CHECKLIST_PRODUCCION.md` | pendiente del dueño | — | — | Anexo F · Lista de verificación previa a producción |
 | `docs/EMPEZAR_AQUI.md` | pendiente del dueño | — | `README.md` | EMPEZAR AQUÍ · Guía de cero para convertir Detekta en un negocio |
@@ -37,6 +38,7 @@ con `node tests/estado.js`, y las coordenadas las da `node tests/mapa.js <térmi
 | `docs/PLAN_REFORMA_DATOS.md` | pendiente del dueño | — | `lib` | PLAN · Reforma de los datos que Detekta enseña (13-sep-2026) |
 | `docs/PLAN_SAAS.md` | pendiente del dueño | — | — | PLAN SaaS · De herramienta interna a producto por suscripción |
 | `docs/PRECIO_Y_UNIT_ECONOMICS.md` | pendiente del dueño | — | `tests` | Anexo B · Modelo de negocio, precio y economía unitaria |
+| `docs/PROPUESTA_ZONAS_CON_COSTOS.md` | pendiente del dueño | — | — | Propuesta: que la lista de licitaciones priorice las zonas donde Detekta tiene costos c… |
 | `docs/RIESGOS.md` | pendiente del dueño | — | — | Anexo G · Registro de riesgos |
 | `docs/SEGURIDAD_Y_CUENTAS.md` | pendiente del dueño | — | `tests` | Anexo D · Identidad, autorización, seguridad y cobro |
 | `docs/reforma_datos/D-experimentado.md` | propuesta de diseño (informe fechado) | — | — | D · La tarjeta reformada, vista por un ingeniero civil con quince años licitando obra p… |

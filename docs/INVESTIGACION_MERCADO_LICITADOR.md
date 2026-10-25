@@ -43,7 +43,7 @@ riesgo, porque dicen «adelante» o «no vaya» sin saberlo:
 | 5 | Guía del proceso: capacidad «Cumple» con cero contratos en ejecución cargados | Una lista vacía («no sé») se calcula como saldo cero | `lib/capacidad.js:106` a `:112` |
 | 6 | Guía: indicadores financieros «No cumple» sin haber leído el pliego | Compara contra una referencia fija presentada como «de los pliegos tipo» | `lib/guia_proceso.js:97` |
 | 7 | Deducciones: se pierde en silencio la segunda estampilla cuando van en la misma línea | Cada concepto se busca una sola vez por línea | `lib/deducciones.js:142` a `:145` |
-| 8 | Precios → «Lo que deja por intento»: resta $5.000.000 de preparar la oferta en toda modalidad | Valor fijo sin fuente; en mínima cuantía (proceso mediano $39,7 millones) es el 12,6 % del contrato | `lib/apu/rentabilidad.js:84` |
+| 8 | Precios → «Lo que deja por intento»: resta $5.000.000 de preparar la oferta en toda modalidad | Valor fijo sin fuente; en mínima cuantía (proceso mediano $39,7 millones) es el 12,6 % del contrato. **Resuelto el 25-oct-2026**: el costo es la prima de la póliza de seriedad sobre el valor asegurado (`lib/apu/rentabilidad.primaSeriedad`; MEMORIA § «El costo de preparar la oferta es la prima de la póliza de seriedad, con el único dato medido») | `lib/apu/rentabilidad.js` |
 
 Los demás confirmados, de menor riesgo: «No declaró desierto ninguno de sus N procesos» es un cero de
 construcción (SECOP II no publica ese estado en ninguna fila: 0 de 146.417 filas de obra, consulta del
