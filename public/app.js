@@ -7925,7 +7925,10 @@
       filas_proyectadas: true,
       /* el precio sin IVA de la OFERTA —la suma de las filas del Excel, con la baja
          aplicada a cada una—: con el IVA que suma el servidor da el TOTAL del Excel */
-      total: r ? Number(r.oferta && r.oferta.precio_sin_iva != null ? r.oferta.precio_sin_iva : r.precio_final) : null };
+      total: r ? Number(r.oferta && r.oferta.precio_sin_iva != null ? r.oferta.precio_sin_iva : r.precio_final) : null,
+      /* el TOTAL del Excel, el mismo que la pantalla le dice que escriba en SECOP II: con él el cotejo compara lo
+         pegado contra UNA cifra (no «con o sin IVA»), porque la aplicación sí sabe qué dice su anexo (25-oct-2026) */
+      total_anexo: r && r.oferta && r.oferta.total_para_secop != null && Number.isFinite(Number(r.oferta.total_para_secop)) ? Number(r.oferta.total_para_secop) : null };
   }
   async function revisarOferta() {
     const caja = $("revision-oferta");
@@ -9452,14 +9455,27 @@
     t.push(tarjetaRent("Probabilidad de ganar",
       hayP ? `${pctRent(r.p_ganar * 100)}${sup ? marcaSupuesto : ""}` : "—",
       sup && hayP ? `${sup}. ${modulacion}.` : modulacion));
-    /* lo que deja por intento es esa probabilidad por la utilidad: sin base
-       lleva la misma marca y no se pinta en VERDE (en precios el falso caro es
-       el POSITIVO: un verde sobre un supuesto se lee como «vale la pena»); el
-       rojo de una cifra que no alcanza se conserva, porque avisar no presupuesta */
+    /* lo que deja por intento es esa probabilidad por la utilidad menos el costo de preparar. Sin
+       cifra no hay color (un «—» en verde se leía «vale la pena», revisión adversaria del 25-oct-2026);
+       sin base lleva la marca y no se pinta en VERDE (en precios el falso caro es el POSITIVO: un
+       verde sobre un supuesto se lee como «vale la pena»). El costo que se resta es la prima de la
+       póliza de seriedad, lo único medido, y es una COTA INFERIOR (el tiempo y los papeles no tienen
+       dato): una cifra que no alcanza es segura y va en rojo; una positiva no lo es y queda sin
+       color mientras el costo sea cota inferior. Verde solo con un costo completo (declarado). */
     const hayVeg = r.veg != null && Number.isFinite(Number(r.veg));
+    const prepD = r.costo_preparacion_detalle || null;
+    const costoCompleto = !!(prepD && prepD.es_cota_inferior === false);
+    const notaPrima = !prepD || prepD.declarado
+      ? (prepD && prepD.declarado ? "cifra declarada" : "la prima de la póliza de seriedad")
+      : `la prima de la póliza de seriedad${prepD.garantia_pct == null ? "" : prepD.garantia_origen === "pliego"
+        ? `, que asegura el ${num(prepD.garantia_pct)} % de la cuantía oficial que fija el pliego`
+        : `, que normalmente asegura el ${num(prepD.garantia_pct)} % de la cuantía oficial; el pliego fija el suyo`}`;
     t.push(tarjetaRent(window.Glosario.traducir("veg"), `${copRent(r.veg)}${sup && hayVeg ? marcaSupuesto : ""}`,
-      `${sup && hayVeg ? "Con la probabilidad supuesta: " : ""}P(ganar) × utilidad − ${copRent(r.costo_preparacion)} de preparar la oferta`,
-      r.veg != null && r.veg <= 0 ? "mal" : sup ? null : "bien"));
+      /* sin la cuantía oficial no hay valor asegurado y se dice, en vez de pintar «—» como si fuera una cifra */
+      r.costo_preparacion == null
+        ? "Lo que deja por intento no se calcula: sin la cuantía oficial no se conoce el valor asegurado de la póliza de seriedad, que es el costo de preparar la oferta"
+        : `${sup && hayVeg ? "Con la probabilidad supuesta: " : ""}P(ganar) × utilidad − ${copRent(r.costo_preparacion)} de preparar la oferta (${notaPrima})${costoCompleto ? "" : ". El tiempo y los papeles de la oferta no tienen dato y no se restan"}`,
+      !hayVeg ? null : r.veg <= 0 ? "mal" : sup || !costoCompleto ? null : "bien"));
     t.push(tarjetaRent("Utilidad esperada", copRent(r.utilidad_esperada), "Antes de impuesto de renta",
       // `null <= 0` es true: sin la guarda, un «—» (sin dato) se pintaba en rojo
       r.utilidad_esperada != null && r.utilidad_esperada <= 0 ? "mal" : null));
@@ -9565,7 +9581,7 @@
        no la llevan: el máximo no se mueve al escalar la probabilidad */
     const conMarca = (txt) => (supuesto && txt !== "—" ? `${txt} (supuesto)` : txt);
     $("ps-veg").textContent = conMarca(copRent(op.veg));
-    $("ps-veg-nota").textContent = `${supuesto ? "Con la probabilidad supuesta: " : ""}P(ganar) × utilidad neta − costo de preparar la oferta`;
+    $("ps-veg-nota").textContent = `${supuesto ? "Con la probabilidad supuesta: " : ""}P(ganar) × utilidad neta − ${o.costo_preparacion != null ? `${copRent(o.costo_preparacion)} de preparar la oferta (${o.costo_preparacion_detalle && o.costo_preparacion_detalle.declarado ? "cifra declarada" : "la prima de la póliza de seriedad; el tiempo y los papeles no tienen dato"})` : "costo de preparar la oferta"}`;
     $("ps-prob").textContent = op.probabilidad == null ? "—" : conMarca(pctRent(op.probabilidad * 100));
     const comp = o.comparacion_con_actual;
     const notaProb = comp && comp.diferencia_veg != null

@@ -1,0 +1,8135 @@
+{
+ "generado": "2026-10-25T18:47:11.454Z",
+ "escenarios_costo": [
+  0.7,
+  0.75,
+  0.8,
+  0.85,
+  0.9
+ ],
+ "aiu_declarado": {
+  "a": 20,
+  "i": 5,
+  "u": 5
+ },
+ "plazo_meses_declarado": 6,
+ "historico": {
+  "filas": 2783,
+  "analizados": 1490,
+  "descartes": {
+   "sin_precio_base": 0,
+   "sin_adjudicado": 0,
+   "adjudicatario_no_definido": 1279,
+   "bajo_30_pct": 10,
+   "sobre_110_pct": 4
+  },
+  "entidades": 399
+ },
+ "casos": [
+  {
+   "clave": "santa_elena",
+   "titulo": "Santa Elena · Cali, Secretaría de Infraestructura · 4151.010.32.1.1255-2026",
+   "id_req": "CO1.REQ.10768540",
+   "entidad": "SANTIAGO DE CALI DISTRITO ESPECIAL - SECRETARIA DE INFRAESTRUCTURA",
+   "departamento": "Valle del Cauca",
+   "presupuesto_oficial": 1581425810,
+   "n_habiles_rivales": 4,
+   "rivales_pct": [
+    93.3,
+    93.92,
+    94.12,
+    95.56
+   ],
+   "metodo_real": "geometrica",
+   "trm": 3264.39,
+   "centro": {
+    "nivel": "alto",
+    "baja_mediana": 11,
+    "baja_promedio": 22.1,
+    "baja_p25": 8,
+    "baja_p75": 49,
+    "procesos_contados": 7,
+    "granularidad_utilizada": "entidad",
+    "modalidad_utilizada": null,
+    "mensaje": "Para tener opción hay que ofertar cerca de 11% por debajo del presupuesto oficial: es lo que descontaron los que ganaron en esta entidad, en todos los tipos de contrato (7 contratos ya adjudicados)."
+   },
+   "centro_cubetas": {
+    "licitacion publica": {
+     "procesos": 4,
+     "baja_mediana": null
+    },
+    "minima cuantia": {
+     "procesos": 1,
+     "baja_mediana": null
+    },
+    "seleccion abreviada": {
+     "procesos": 2,
+     "baja_mediana": null
+    }
+   },
+   "p_base_declarado": 0.2,
+   "control_oferta_propia": {
+    "precio": 1530029470,
+    "pct_po": 96.75,
+    "puestos": {
+     "mediana": {
+      "puesto": 5,
+      "de": 5,
+      "puntaje": 48.1163208,
+      "empate": false,
+      "gana": false
+     },
+     "geometrica": {
+      "puesto": 5,
+      "de": 5,
+      "puntaje": 48.4397132,
+      "empate": false,
+      "gana": false
+     },
+     "aritmetica_baja": {
+      "puesto": 5,
+      "de": 5,
+      "puntaje": 48.0593686,
+      "empate": false,
+      "gana": false
+     },
+     "menor_valor": {
+      "puesto": 5,
+      "de": 5,
+      "puntaje": 47.7340555,
+      "empate": false,
+      "gana": false
+     },
+     "gana_en_de_4": 0
+    }
+   },
+   "ganador_real": {
+    "nombre": "CONCRETAR 2026",
+    "valor": 1488423398,
+    "pct_po": 94.12,
+    "metodo_real": "geometrica",
+    "reproduce": true,
+    "puesto": {
+     "puesto": 1,
+     "de": 5,
+     "puntaje": 49.1854015,
+     "empate": false,
+     "gana": true
+    }
+   },
+   "apu_propio": {
+    "costo_directo": null,
+    "motivo": "el APU de la oferta vive en producción (Redis), que esta sesión no toca: el costo real se declara sin dato y se barren escenarios"
+   },
+   "nota": null,
+   "escenarios": [
+    {
+     "cd_fraccion": 0.7,
+     "costo_directo": 1106998067,
+     "precio_venta": 1439097487,
+     "aplicable": true,
+     "motivo": null,
+     "mensaje": null,
+     "descuento_pct": 1,
+     "precio": 1565611552,
+     "pct_po": 99,
+     "veg": 34937485,
+     "sin_punto_rentable": false,
+     "probabilidad_modelo": 0.181,
+     "en_el_borde": true,
+     "conservador": {
+      "descuento_pct": 1,
+      "precio": 1565611552,
+      "pct_po": 99
+     },
+     "agresivo": {
+      "descuento_pct": 1.5,
+      "precio": 1557704423,
+      "pct_po": 98.5
+     },
+     "meseta_colapsada": false,
+     "alertas": [
+      "El máximo cae en el extremo inferior del rango (1 % de baja): fuera de él podría haber más valor esperado, pero el rango es el que el histórico de esta entidad hace plausible. Ensancharlo por cuenta propia sería recomendar una baja que el mercado no respalda.",
+      "El precio óptimo está POR ENCIMA de su precio de venta (-8,79 % de «baja»): el ajuste competitivo solo puede bajar el precio, así que no hay descuento que aplicar. Le sobra margen: si quiere que el APU refleje ese precio, suba la utilidad o la administración."
+     ],
+     "piso_decision": 1494361278,
+     "piso_pct_po": 94.49,
+     "bajo_costo_con_aiu": false,
+     "costo_mas_administracion": 1328397680,
+     "bajo_costo_mas_administracion": false,
+     "bajo_piso_decision": false,
+     "fuente_costo": "escenario",
+     "puestos": {
+      "mediana": {
+       "puesto": 5,
+       "de": 5,
+       "puntaje": 46.9329793,
+       "empate": false,
+       "gana": false
+      },
+      "geometrica": {
+       "puesto": 5,
+       "de": 5,
+       "puntaje": 47.5012242,
+       "empate": false,
+       "gana": false
+      },
+      "aritmetica_baja": {
+       "puesto": 5,
+       "de": 5,
+       "puntaje": 46.9991545,
+       "empate": false,
+       "gana": false
+      },
+      "menor_valor": {
+       "puesto": 5,
+       "de": 5,
+       "puntaje": 46.6491906,
+       "empate": false,
+       "gana": false
+      },
+      "gana_en_de_4": 0
+     },
+     "con_metodo_real": {
+      "puesto": 5,
+      "de": 5,
+      "puntaje": 47.5012242,
+      "empate": false,
+      "gana": false
+     },
+     "bajo_piso_de_las_ofertas": false
+    },
+    {
+     "cd_fraccion": 0.75,
+     "costo_directo": 1186069358,
+     "precio_venta": 1541890165,
+     "aplicable": true,
+     "motivo": null,
+     "mensaje": null,
+     "descuento_pct": 1,
+     "precio": 1565611552,
+     "pct_po": 99,
+     "veg": 17977305,
+     "sin_punto_rentable": false,
+     "probabilidad_modelo": 0.181,
+     "en_el_borde": true,
+     "conservador": {
+      "descuento_pct": 1,
+      "precio": 1565611552,
+      "pct_po": 99
+     },
+     "agresivo": {
+      "descuento_pct": 1,
+      "precio": 1565611552,
+      "pct_po": 99
+     },
+     "meseta_colapsada": true,
+     "alertas": [
+      "El máximo cae en el extremo inferior del rango (1 % de baja): fuera de él podría haber más valor esperado, pero el rango es el que el histórico de esta entidad hace plausible. Ensancharlo por cuenta propia sería recomendar una baja que el mercado no respalda.",
+      "El precio óptimo está POR ENCIMA de su precio de venta (-1,54 % de «baja»): el ajuste competitivo solo puede bajar el precio, así que no hay descuento que aplicar. Le sobra margen: si quiere que el APU refleje ese precio, suba la utilidad o la administración."
+     ],
+     "piso_decision": 1601101370,
+     "piso_pct_po": 101.24,
+     "bajo_costo_con_aiu": false,
+     "costo_mas_administracion": 1423283230,
+     "bajo_costo_mas_administracion": false,
+     "bajo_piso_decision": true,
+     "fuente_costo": "escenario",
+     "puestos": {
+      "mediana": {
+       "puesto": 5,
+       "de": 5,
+       "puntaje": 46.9329793,
+       "empate": false,
+       "gana": false
+      },
+      "geometrica": {
+       "puesto": 5,
+       "de": 5,
+       "puntaje": 47.5012242,
+       "empate": false,
+       "gana": false
+      },
+      "aritmetica_baja": {
+       "puesto": 5,
+       "de": 5,
+       "puntaje": 46.9991545,
+       "empate": false,
+       "gana": false
+      },
+      "menor_valor": {
+       "puesto": 5,
+       "de": 5,
+       "puntaje": 46.6491906,
+       "empate": false,
+       "gana": false
+      },
+      "gana_en_de_4": 0
+     },
+     "con_metodo_real": {
+      "puesto": 5,
+      "de": 5,
+      "puntaje": 47.5012242,
+      "empate": false,
+      "gana": false
+     },
+     "bajo_piso_de_las_ofertas": false
+    },
+    {
+     "cd_fraccion": 0.8,
+     "costo_directo": 1265140648,
+     "precio_venta": 1644682842,
+     "aplicable": true,
+     "motivo": null,
+     "mensaje": null,
+     "descuento_pct": 1,
+     "precio": 1565611552,
+     "pct_po": 99,
+     "veg": 988591,
+     "sin_punto_rentable": false,
+     "probabilidad_modelo": 0.181,
+     "en_el_borde": true,
+     "conservador": {
+      "descuento_pct": 1,
+      "precio": 1565611552,
+      "pct_po": 99
+     },
+     "agresivo": {
+      "descuento_pct": 1,
+      "precio": 1565611552,
+      "pct_po": 99
+     },
+     "meseta_colapsada": true,
+     "alertas": [
+      "El máximo cae en el extremo inferior del rango (1 % de baja): fuera de él podría haber más valor esperado, pero el rango es el que el histórico de esta entidad hace plausible. Ensancharlo por cuenta propia sería recomendar una baja que el mercado no respalda."
+     ],
+     "piso_decision": 1707841460,
+     "piso_pct_po": 107.99,
+     "bajo_costo_con_aiu": true,
+     "costo_mas_administracion": 1518168778,
+     "bajo_costo_mas_administracion": false,
+     "bajo_piso_decision": true,
+     "fuente_costo": "escenario",
+     "puestos": {
+      "mediana": {
+       "puesto": 5,
+       "de": 5,
+       "puntaje": 46.9329793,
+       "empate": false,
+       "gana": false
+      },
+      "geometrica": {
+       "puesto": 5,
+       "de": 5,
+       "puntaje": 47.5012242,
+       "empate": false,
+       "gana": false
+      },
+      "aritmetica_baja": {
+       "puesto": 5,
+       "de": 5,
+       "puntaje": 46.9991545,
+       "empate": false,
+       "gana": false
+      },
+      "menor_valor": {
+       "puesto": 5,
+       "de": 5,
+       "puntaje": 46.6491906,
+       "empate": false,
+       "gana": false
+      },
+      "gana_en_de_4": 0
+     },
+     "con_metodo_real": {
+      "puesto": 5,
+      "de": 5,
+      "puntaje": 47.5012242,
+      "empate": false,
+      "gana": false
+     },
+     "bajo_piso_de_las_ofertas": false
+    },
+    {
+     "cd_fraccion": 0.85,
+     "costo_directo": 1344211939,
+     "precio_venta": 1747475521,
+     "aplicable": true,
+     "motivo": null,
+     "mensaje": null,
+     "descuento_pct": 1,
+     "precio": 1565611552,
+     "pct_po": 99,
+     "veg": -16322600,
+     "sin_punto_rentable": true,
+     "probabilidad_modelo": 0.181,
+     "en_el_borde": true,
+     "conservador": {
+      "descuento_pct": 1,
+      "precio": 1565611552,
+      "pct_po": 99
+     },
+     "agresivo": {
+      "descuento_pct": 1,
+      "precio": 1565611552,
+      "pct_po": 99
+     },
+     "meseta_colapsada": true,
+     "alertas": [
+      "Atención: NINGÚN precio del rango tiene valor esperado positivo: con este costo directo y este presupuesto oficial, el valor esperado de la ganancia no cubre el costo de preparar la oferta. El «óptimo» de abajo es el menos malo, no una recomendación de presentarse.",
+      "El máximo cae en el extremo inferior del rango (1 % de baja): fuera de él podría haber más valor esperado, pero el rango es el que el histórico de esta entidad hace plausible. Ensancharlo por cuenta propia sería recomendar una baja que el mercado no respalda."
+     ],
+     "piso_decision": 1814581552,
+     "piso_pct_po": 114.74,
+     "bajo_costo_con_aiu": true,
+     "costo_mas_administracion": 1613054327,
+     "bajo_costo_mas_administracion": true,
+     "bajo_piso_decision": true,
+     "fuente_costo": "escenario",
+     "puestos": {
+      "mediana": {
+       "puesto": 5,
+       "de": 5,
+       "puntaje": 46.9329793,
+       "empate": false,
+       "gana": false
+      },
+      "geometrica": {
+       "puesto": 5,
+       "de": 5,
+       "puntaje": 47.5012242,
+       "empate": false,
+       "gana": false
+      },
+      "aritmetica_baja": {
+       "puesto": 5,
+       "de": 5,
+       "puntaje": 46.9991545,
+       "empate": false,
+       "gana": false
+      },
+      "menor_valor": {
+       "puesto": 5,
+       "de": 5,
+       "puntaje": 46.6491906,
+       "empate": false,
+       "gana": false
+      },
+      "gana_en_de_4": 0
+     },
+     "con_metodo_real": {
+      "puesto": 5,
+      "de": 5,
+      "puntaje": 47.5012242,
+      "empate": false,
+      "gana": false
+     },
+     "bajo_piso_de_las_ofertas": false
+    },
+    {
+     "cd_fraccion": 0.9,
+     "costo_directo": 1423283229,
+     "precio_venta": 1850268198,
+     "aplicable": true,
+     "motivo": null,
+     "mensaje": null,
+     "descuento_pct": 1,
+     "precio": 1565611552,
+     "pct_po": 99,
+     "veg": -33894529,
+     "sin_punto_rentable": true,
+     "probabilidad_modelo": 0.181,
+     "en_el_borde": true,
+     "conservador": {
+      "descuento_pct": 1,
+      "precio": 1565611552,
+      "pct_po": 99
+     },
+     "agresivo": {
+      "descuento_pct": 1.5,
+      "precio": 1557704423,
+      "pct_po": 98.5
+     },
+     "meseta_colapsada": false,
+     "alertas": [
+      "Atención: NINGÚN precio del rango tiene valor esperado positivo: con este costo directo y este presupuesto oficial, el valor esperado de la ganancia no cubre el costo de preparar la oferta. El «óptimo» de abajo es el menos malo, no una recomendación de presentarse.",
+      "El máximo cae en el extremo inferior del rango (1 % de baja): fuera de él podría haber más valor esperado, pero el rango es el que el histórico de esta entidad hace plausible. Ensancharlo por cuenta propia sería recomendar una baja que el mercado no respalda."
+     ],
+     "piso_decision": 1921321642,
+     "piso_pct_po": 121.49,
+     "bajo_costo_con_aiu": true,
+     "costo_mas_administracion": 1707939875,
+     "bajo_costo_mas_administracion": true,
+     "bajo_piso_decision": true,
+     "fuente_costo": "escenario",
+     "puestos": {
+      "mediana": {
+       "puesto": 5,
+       "de": 5,
+       "puntaje": 46.9329793,
+       "empate": false,
+       "gana": false
+      },
+      "geometrica": {
+       "puesto": 5,
+       "de": 5,
+       "puntaje": 47.5012242,
+       "empate": false,
+       "gana": false
+      },
+      "aritmetica_baja": {
+       "puesto": 5,
+       "de": 5,
+       "puntaje": 46.9991545,
+       "empate": false,
+       "gana": false
+      },
+      "menor_valor": {
+       "puesto": 5,
+       "de": 5,
+       "puntaje": 46.6491906,
+       "empate": false,
+       "gana": false
+      },
+      "gana_en_de_4": 0
+     },
+     "con_metodo_real": {
+      "puesto": 5,
+      "de": 5,
+      "puntaje": 47.5012242,
+      "empate": false,
+      "gana": false
+     },
+     "bajo_piso_de_las_ofertas": false
+    }
+   ]
+  },
+  {
+   "clave": "a",
+   "titulo": "A · Alcaldía de Pasto · SA-2026-9 (mejoramiento vial Genoy, Gualmatán, Jongovito y Morasurco)",
+   "id_req": "CO1.REQ.11036237",
+   "entidad": "ALCALDIA DE PASTO",
+   "departamento": "Nariño",
+   "presupuesto_oficial": 1076606477,
+   "n_habiles_rivales": 6,
+   "rivales_pct": [
+    93.17,
+    93.8,
+    94.28,
+    94.32,
+    94.38,
+    95.32
+   ],
+   "metodo_real": "menor_valor",
+   "trm": 3209.78,
+   "centro": {
+    "nivel": "medio",
+    "baja_mediana": 4,
+    "baja_promedio": 3.9,
+    "baja_p25": 4,
+    "baja_p75": 5,
+    "procesos_contados": 10,
+    "granularidad_utilizada": "entidad",
+    "modalidad_utilizada": "seleccion abreviada",
+    "mensaje": "Para tener opción hay que ofertar cerca de 4% por debajo del presupuesto oficial: es lo que descontaron los que ganaron en Selección Abreviada de Menor Cuantía en esta entidad, en todos los tipos de contrato (10 contratos ya adjudicados)."
+   },
+   "centro_cubetas": {
+    "minima cuantia": {
+     "procesos": 7,
+     "baja_mediana": 22
+    },
+    "seleccion abreviada": {
+     "procesos": 10,
+     "baja_mediana": 4
+    },
+    "licitacion publica": {
+     "procesos": 1,
+     "baja_mediana": null
+    }
+   },
+   "p_base_declarado": 0.1429,
+   "control_oferta_propia": null,
+   "ganador_real": {
+    "nombre": "GV INGENIERIA INTEGRAL SAS",
+    "valor": 1009856012.09,
+    "pct_po": 93.8,
+    "metodo_real": "menor_valor",
+    "reproduce": false,
+    "puesto": {
+     "puesto": 2,
+     "de": 6,
+     "puntaje": 49.1672285,
+     "empate": false,
+     "gana": false
+    }
+   },
+   "apu_propio": {
+    "costo_directo": null,
+    "motivo": "no hubo oferta propia: no hay APU"
+   },
+   "nota": "El ganador real quedó 2.º por precio (menor valor): PRAXIS, la más barata, perdió 20 puntos de calidad por alterar el Formato 14. El puesto por precio no basta para ganar: lo demás tiene que ir completo.",
+   "escenarios": [
+    {
+     "cd_fraccion": 0.7,
+     "costo_directo": 753624534,
+     "precio_venta": 979711894,
+     "aplicable": true,
+     "motivo": null,
+     "mensaje": null,
+     "descuento_pct": 5.5,
+     "precio": 1017393121,
+     "pct_po": 94.5,
+     "veg": 21986729,
+     "sin_punto_rentable": false,
+     "probabilidad_modelo": 0.2586,
+     "en_el_borde": false,
+     "conservador": {
+      "descuento_pct": 5.5,
+      "precio": 1017393121,
+      "pct_po": 94.5
+     },
+     "agresivo": {
+      "descuento_pct": 6,
+      "precio": 1012010088,
+      "pct_po": 94
+     },
+     "meseta_colapsada": false,
+     "alertas": [
+      "El precio óptimo está POR ENCIMA de su precio de venta (-3,85 % de «baja»): el ajuste competitivo solo puede bajar el precio, así que no hay descuento que aplicar. Le sobra margen: si quiere que el APU refleje ese precio, suba la utilidad o la administración."
+     ],
+     "piso_decision": 1023276787,
+     "piso_pct_po": 95.05,
+     "bajo_costo_con_aiu": false,
+     "costo_mas_administracion": 904349441,
+     "bajo_costo_mas_administracion": false,
+     "bajo_piso_decision": true,
+     "fuente_costo": "escenario",
+     "puestos": {
+      "mediana": {
+       "puesto": 4,
+       "de": 7,
+       "puntaje": 49.4056938,
+       "empate": false,
+       "gana": false
+      },
+      "geometrica": {
+       "puesto": 4,
+       "de": 7,
+       "puntaje": 49.3697732,
+       "empate": false,
+       "gana": false
+      },
+      "aritmetica_baja": {
+       "puesto": 6,
+       "de": 7,
+       "puntaje": 49.0835929,
+       "empate": false,
+       "gana": false
+      },
+      "menor_valor": {
+       "puesto": 6,
+       "de": 7,
+       "puntaje": 48.8029851,
+       "empate": false,
+       "gana": false
+      },
+      "gana_en_de_4": 0
+     },
+     "con_metodo_real": {
+      "puesto": 6,
+      "de": 7,
+      "puntaje": 48.8029851,
+      "empate": false,
+      "gana": false
+     },
+     "bajo_piso_de_las_ofertas": false
+    },
+    {
+     "cd_fraccion": 0.75,
+     "costo_directo": 807454858,
+     "precio_venta": 1049691315,
+     "aplicable": true,
+     "motivo": null,
+     "mensaje": null,
+     "descuento_pct": 5,
+     "precio": 1022776153,
+     "pct_po": 95,
+     "veg": 5876763,
+     "sin_punto_rentable": false,
+     "probabilidad_modelo": 0.2232,
+     "en_el_borde": false,
+     "conservador": {
+      "descuento_pct": 5,
+      "precio": 1022776153,
+      "pct_po": 95
+     },
+     "agresivo": {
+      "descuento_pct": 5,
+      "precio": 1022776153,
+      "pct_po": 95
+     },
+     "meseta_colapsada": true,
+     "alertas": [],
+     "piso_decision": 1096367986,
+     "piso_pct_po": 101.84,
+     "bajo_costo_con_aiu": true,
+     "costo_mas_administracion": 968945830,
+     "bajo_costo_mas_administracion": false,
+     "bajo_piso_decision": true,
+     "fuente_costo": "escenario",
+     "puestos": {
+      "mediana": {
+       "puesto": 5,
+       "de": 7,
+       "puntaje": 49.1432901,
+       "empate": false,
+       "gana": false
+      },
+      "geometrica": {
+       "puesto": 5,
+       "de": 7,
+       "puntaje": 49.1447777,
+       "empate": false,
+       "gana": false
+      },
+      "aritmetica_baja": {
+       "puesto": 6,
+       "de": 7,
+       "puntaje": 48.8386019,
+       "empate": false,
+       "gana": false
+      },
+      "menor_valor": {
+       "puesto": 6,
+       "de": 7,
+       "puntaje": 48.5461273,
+       "empate": false,
+       "gana": false
+      },
+      "gana_en_de_4": 0
+     },
+     "con_metodo_real": {
+      "puesto": 6,
+      "de": 7,
+      "puntaje": 48.5461273,
+      "empate": false,
+      "gana": false
+     },
+     "bajo_piso_de_las_ofertas": false
+    },
+    {
+     "cd_fraccion": 0.8,
+     "costo_directo": 861285182,
+     "precio_venta": 1119670737,
+     "aplicable": true,
+     "motivo": null,
+     "mensaje": null,
+     "descuento_pct": 0,
+     "precio": 1076606477,
+     "pct_po": 100,
+     "veg": 19756,
+     "sin_punto_rentable": false,
+     "probabilidad_modelo": 0.01,
+     "en_el_borde": true,
+     "conservador": {
+      "descuento_pct": 0,
+      "precio": 1076606477,
+      "pct_po": 100
+     },
+     "agresivo": {
+      "descuento_pct": 0,
+      "precio": 1076606477,
+      "pct_po": 100
+     },
+     "meseta_colapsada": true,
+     "alertas": [
+      "El máximo cae en el extremo inferior del rango (0 % de baja): fuera de él podría haber más valor esperado, pero el rango es el que el histórico de esta entidad hace plausible. Ensancharlo por cuenta propia sería recomendar una baja que el mercado no respalda."
+     ],
+     "piso_decision": 1169459185,
+     "piso_pct_po": 108.62,
+     "bajo_costo_con_aiu": true,
+     "costo_mas_administracion": 1033542218,
+     "bajo_costo_mas_administracion": false,
+     "bajo_piso_decision": true,
+     "fuente_costo": "escenario",
+     "puestos": {
+      "mediana": {
+       "puesto": 7,
+       "de": 7,
+       "puntaje": 46.5192527,
+       "empate": false,
+       "gana": false
+      },
+      "geometrica": {
+       "puesto": 7,
+       "de": 7,
+       "puntaje": 46.9039603,
+       "empate": false,
+       "gana": false
+      },
+      "aritmetica_baja": {
+       "puesto": 7,
+       "de": 7,
+       "puntaje": 46.3989189,
+       "empate": false,
+       "gana": false
+      },
+      "menor_valor": {
+       "puesto": 7,
+       "de": 7,
+       "puntaje": 46.1188209,
+       "empate": false,
+       "gana": false
+      },
+      "gana_en_de_4": 0
+     },
+     "con_metodo_real": {
+      "puesto": 7,
+      "de": 7,
+      "puntaje": 46.1188209,
+      "empate": false,
+      "gana": false
+     },
+     "bajo_piso_de_las_ofertas": false
+    },
+    {
+     "cd_fraccion": 0.85,
+     "costo_directo": 915115505,
+     "precio_venta": 1189650157,
+     "aplicable": true,
+     "motivo": null,
+     "mensaje": null,
+     "descuento_pct": 0,
+     "precio": 1076606477,
+     "pct_po": 100,
+     "veg": -629489,
+     "sin_punto_rentable": true,
+     "probabilidad_modelo": 0.01,
+     "en_el_borde": true,
+     "conservador": {
+      "descuento_pct": 0,
+      "precio": 1076606477,
+      "pct_po": 100
+     },
+     "agresivo": {
+      "descuento_pct": 0,
+      "precio": 1076606477,
+      "pct_po": 100
+     },
+     "meseta_colapsada": true,
+     "alertas": [
+      "Atención: NINGÚN precio del rango tiene valor esperado positivo: con este costo directo y este presupuesto oficial, el valor esperado de la ganancia no cubre el costo de preparar la oferta. El «óptimo» de abajo es el menos malo, no una recomendación de presentarse.",
+      "El máximo cae en el extremo inferior del rango (0 % de baja): fuera de él podría haber más valor esperado, pero el rango es el que el histórico de esta entidad hace plausible. Ensancharlo por cuenta propia sería recomendar una baja que el mercado no respalda."
+     ],
+     "piso_decision": 1242550383,
+     "piso_pct_po": 115.41,
+     "bajo_costo_con_aiu": true,
+     "costo_mas_administracion": 1098138606,
+     "bajo_costo_mas_administracion": true,
+     "bajo_piso_decision": true,
+     "fuente_costo": "escenario",
+     "puestos": {
+      "mediana": {
+       "puesto": 7,
+       "de": 7,
+       "puntaje": 46.5192527,
+       "empate": false,
+       "gana": false
+      },
+      "geometrica": {
+       "puesto": 7,
+       "de": 7,
+       "puntaje": 46.9039603,
+       "empate": false,
+       "gana": false
+      },
+      "aritmetica_baja": {
+       "puesto": 7,
+       "de": 7,
+       "puntaje": 46.3989189,
+       "empate": false,
+       "gana": false
+      },
+      "menor_valor": {
+       "puesto": 7,
+       "de": 7,
+       "puntaje": 46.1188209,
+       "empate": false,
+       "gana": false
+      },
+      "gana_en_de_4": 0
+     },
+     "con_metodo_real": {
+      "puesto": 7,
+      "de": 7,
+      "puntaje": 46.1188209,
+      "empate": false,
+      "gana": false
+     },
+     "bajo_piso_de_las_ofertas": false
+    },
+    {
+     "cd_fraccion": 0.9,
+     "costo_directo": 968945829,
+     "precio_venta": 1259629578,
+     "aplicable": true,
+     "motivo": null,
+     "mensaje": null,
+     "descuento_pct": 0,
+     "precio": 1076606477,
+     "pct_po": 100,
+     "veg": -1288827,
+     "sin_punto_rentable": true,
+     "probabilidad_modelo": 0.01,
+     "en_el_borde": true,
+     "conservador": {
+      "descuento_pct": 0,
+      "precio": 1076606477,
+      "pct_po": 100
+     },
+     "agresivo": {
+      "descuento_pct": 0.5,
+      "precio": 1071223445,
+      "pct_po": 99.5
+     },
+     "meseta_colapsada": false,
+     "alertas": [
+      "Atención: NINGÚN precio del rango tiene valor esperado positivo: con este costo directo y este presupuesto oficial, el valor esperado de la ganancia no cubre el costo de preparar la oferta. El «óptimo» de abajo es el menos malo, no una recomendación de presentarse.",
+      "El máximo cae en el extremo inferior del rango (0 % de baja): fuera de él podría haber más valor esperado, pero el rango es el que el histórico de esta entidad hace plausible. Ensancharlo por cuenta propia sería recomendar una baja que el mercado no respalda."
+     ],
+     "piso_decision": 1315641582,
+     "piso_pct_po": 122.2,
+     "bajo_costo_con_aiu": true,
+     "costo_mas_administracion": 1162734995,
+     "bajo_costo_mas_administracion": true,
+     "bajo_piso_decision": true,
+     "fuente_costo": "escenario",
+     "puestos": {
+      "mediana": {
+       "puesto": 7,
+       "de": 7,
+       "puntaje": 46.5192527,
+       "empate": false,
+       "gana": false
+      },
+      "geometrica": {
+       "puesto": 7,
+       "de": 7,
+       "puntaje": 46.9039603,
+       "empate": false,
+       "gana": false
+      },
+      "aritmetica_baja": {
+       "puesto": 7,
+       "de": 7,
+       "puntaje": 46.3989189,
+       "empate": false,
+       "gana": false
+      },
+      "menor_valor": {
+       "puesto": 7,
+       "de": 7,
+       "puntaje": 46.1188209,
+       "empate": false,
+       "gana": false
+      },
+      "gana_en_de_4": 0
+     },
+     "con_metodo_real": {
+      "puesto": 7,
+      "de": 7,
+      "puntaje": 46.1188209,
+      "empate": false,
+      "gana": false
+     },
+     "bajo_piso_de_las_ofertas": false
+    }
+   ]
+  },
+  {
+   "clave": "b",
+   "titulo": "B · Gobernación de Caldas · SAMC-SI-027-2026 (pavimentación vía Aranzazu–Salamina)",
+   "id_req": "CO1.REQ.10970903",
+   "entidad": "GOBERNACION DE CALDAS",
+   "departamento": "Caldas",
+   "presupuesto_oficial": 675274065,
+   "n_habiles_rivales": 3,
+   "rivales_pct": [
+    92.78,
+    92.8,
+    93.6
+   ],
+   "metodo_real": "aritmetica_baja",
+   "trm": 3349.63,
+   "centro": {
+    "nivel": "alto",
+    "baja_mediana": 7,
+    "baja_promedio": 11.5,
+    "baja_p25": 2,
+    "baja_p75": 8,
+    "procesos_contados": 16,
+    "granularidad_utilizada": "entidad",
+    "modalidad_utilizada": "seleccion abreviada",
+    "mensaje": "Para tener opción hay que ofertar cerca de 7% por debajo del presupuesto oficial: es lo que descontaron los que ganaron en Seleccion Abreviada Menor Cuantia Sin Manifestacion Interes en esta entidad, en todos los tipos de contrato (16 contratos ya adjudicados)."
+   },
+   "centro_cubetas": {
+    "seleccion abreviada": {
+     "procesos": 16,
+     "baja_mediana": 7
+    },
+    "licitacion publica": {
+     "procesos": 12,
+     "baja_mediana": 6
+    },
+    "minima cuantia": {
+     "procesos": 9,
+     "baja_mediana": 21
+    }
+   },
+   "p_base_declarado": 0.25,
+   "control_oferta_propia": null,
+   "ganador_real": {
+    "nombre": "PROCIVING SAS",
+    "valor": 626650933,
+    "pct_po": 92.8,
+    "metodo_real": "aritmetica_baja",
+    "reproduce": true,
+    "puesto": {
+     "puesto": 1,
+     "de": 3,
+     "puntaje": 49.4358316,
+     "empate": false,
+     "gana": true
+    }
+   },
+   "apu_propio": {
+    "costo_directo": null,
+    "motivo": "no hubo oferta propia: no hay APU"
+   },
+   "nota": null,
+   "escenarios": [
+    {
+     "cd_fraccion": 0.7,
+     "costo_directo": 472691845,
+     "precio_venta": 614499399,
+     "aplicable": true,
+     "motivo": null,
+     "mensaje": null,
+     "descuento_pct": 5,
+     "precio": 641510362,
+     "pct_po": 95,
+     "veg": 12115960,
+     "sin_punto_rentable": false,
+     "probabilidad_modelo": 0.2144,
+     "en_el_borde": false,
+     "conservador": {
+      "descuento_pct": 4,
+      "precio": 648263102,
+      "pct_po": 96
+     },
+     "agresivo": {
+      "descuento_pct": 6,
+      "precio": 634757621,
+      "pct_po": 94
+     },
+     "meseta_colapsada": false,
+     "alertas": [
+      "El precio óptimo está POR ENCIMA de su precio de venta (-4,4 % de «baja»): el ajuste competitivo solo puede bajar el precio, así que no hay descuento que aplicar. Le sobra margen: si quiere que el APU refleje ese precio, suba la utilidad o la administración."
+     ],
+     "piso_decision": 635227409,
+     "piso_pct_po": 94.07,
+     "bajo_costo_con_aiu": false,
+     "costo_mas_administracion": 567230214,
+     "bajo_costo_mas_administracion": false,
+     "bajo_piso_decision": false,
+     "fuente_costo": "escenario",
+     "puestos": {
+      "mediana": {
+       "puesto": 4,
+       "de": 4,
+       "puntaje": 48.3262337,
+       "empate": false,
+       "gana": false
+      },
+      "geometrica": {
+       "puesto": 4,
+       "de": 4,
+       "puntaje": 48.7277848,
+       "empate": false,
+       "gana": false
+      },
+      "aritmetica_baja": {
+       "puesto": 4,
+       "de": 4,
+       "puntaje": 48.5236489,
+       "empate": false,
+       "gana": false
+      },
+      "menor_valor": {
+       "puesto": 4,
+       "de": 4,
+       "puntaje": 48.343162,
+       "empate": false,
+       "gana": false
+      },
+      "gana_en_de_4": 0
+     },
+     "con_metodo_real": {
+      "puesto": 4,
+      "de": 4,
+      "puntaje": 48.5236489,
+      "empate": false,
+      "gana": false
+     },
+     "bajo_piso_de_las_ofertas": false
+    },
+    {
+     "cd_fraccion": 0.75,
+     "costo_directo": 506455549,
+     "precio_venta": 658392214,
+     "aplicable": true,
+     "motivo": null,
+     "mensaje": null,
+     "descuento_pct": 3,
+     "precio": 655015843,
+     "pct_po": 97,
+     "veg": 4611244,
+     "sin_punto_rentable": false,
+     "probabilidad_modelo": 0.1571,
+     "en_el_borde": false,
+     "conservador": {
+      "descuento_pct": 2,
+      "precio": 661768584,
+      "pct_po": 98
+     },
+     "agresivo": {
+      "descuento_pct": 3.5,
+      "precio": 651639473,
+      "pct_po": 96.5
+     },
+     "meseta_colapsada": false,
+     "alertas": [],
+     "piso_decision": 680600796,
+     "piso_pct_po": 100.79,
+     "bajo_costo_con_aiu": true,
+     "costo_mas_administracion": 607746659,
+     "bajo_costo_mas_administracion": false,
+     "bajo_piso_decision": true,
+     "fuente_costo": "escenario",
+     "puestos": {
+      "mediana": {
+       "puesto": 4,
+       "de": 4,
+       "puntaje": 47.2594176,
+       "empate": false,
+       "gana": false
+      },
+      "geometrica": {
+       "puesto": 4,
+       "de": 4,
+       "puntaje": 47.9360837,
+       "empate": false,
+       "gana": false
+      },
+      "aritmetica_baja": {
+       "puesto": 4,
+       "de": 4,
+       "puntaje": 47.5989229,
+       "empate": false,
+       "gana": false
+      },
+      "menor_valor": {
+       "puesto": 4,
+       "de": 4,
+       "puntaje": 47.3463958,
+       "empate": false,
+       "gana": false
+      },
+      "gana_en_de_4": 0
+     },
+     "con_metodo_real": {
+      "puesto": 4,
+      "de": 4,
+      "puntaje": 47.5989229,
+      "empate": false,
+      "gana": false
+     },
+     "bajo_piso_de_las_ofertas": false
+    },
+    {
+     "cd_fraccion": 0.8,
+     "costo_directo": 540219252,
+     "precio_venta": 702285028,
+     "aplicable": true,
+     "motivo": null,
+     "mensaje": null,
+     "descuento_pct": 0,
+     "precio": 675274065,
+     "pct_po": 100,
+     "veg": 556123,
+     "sin_punto_rentable": false,
+     "probabilidad_modelo": 0.0682,
+     "en_el_borde": true,
+     "conservador": {
+      "descuento_pct": 0,
+      "precio": 675274065,
+      "pct_po": 100
+     },
+     "agresivo": {
+      "descuento_pct": 0,
+      "precio": 675274065,
+      "pct_po": 100
+     },
+     "meseta_colapsada": true,
+     "alertas": [
+      "El máximo cae en el extremo inferior del rango (0 % de baja): fuera de él podría haber más valor esperado, pero el rango es el que el histórico de esta entidad hace plausible. Ensancharlo por cuenta propia sería recomendar una baja que el mercado no respalda."
+     ],
+     "piso_decision": 725974182,
+     "piso_pct_po": 107.51,
+     "bajo_costo_con_aiu": true,
+     "costo_mas_administracion": 648263102,
+     "bajo_costo_mas_administracion": false,
+     "bajo_piso_decision": true,
+     "fuente_costo": "escenario",
+     "puestos": {
+      "mediana": {
+       "puesto": 4,
+       "de": 4,
+       "puntaje": 45.6591934,
+       "empate": false,
+       "gana": false
+      },
+      "geometrica": {
+       "puesto": 4,
+       "de": 4,
+       "puntaje": 46.7561326,
+       "empate": false,
+       "gana": false
+      },
+      "aritmetica_baja": {
+       "puesto": 4,
+       "de": 4,
+       "puntaje": 46.2210775,
+       "empate": false,
+       "gana": false
+      },
+      "menor_valor": {
+       "puesto": 4,
+       "de": 4,
+       "puntaje": 45.9260039,
+       "empate": false,
+       "gana": false
+      },
+      "gana_en_de_4": 0
+     },
+     "con_metodo_real": {
+      "puesto": 4,
+      "de": 4,
+      "puntaje": 46.2210775,
+      "empate": false,
+      "gana": false
+     },
+     "bajo_piso_de_las_ofertas": false
+    },
+    {
+     "cd_fraccion": 0.85,
+     "costo_directo": 573982955,
+     "precio_venta": 746177842,
+     "aplicable": true,
+     "motivo": null,
+     "mensaje": null,
+     "descuento_pct": 0,
+     "precio": 675274065,
+     "pct_po": 100,
+     "veg": -2221136,
+     "sin_punto_rentable": true,
+     "probabilidad_modelo": 0.0682,
+     "en_el_borde": true,
+     "conservador": {
+      "descuento_pct": 0,
+      "precio": 675274065,
+      "pct_po": 100
+     },
+     "agresivo": {
+      "descuento_pct": 0,
+      "precio": 675274065,
+      "pct_po": 100
+     },
+     "meseta_colapsada": true,
+     "alertas": [
+      "Atención: NINGÚN precio del rango tiene valor esperado positivo: con este costo directo y este presupuesto oficial, el valor esperado de la ganancia no cubre el costo de preparar la oferta. El «óptimo» de abajo es el menos malo, no una recomendación de presentarse.",
+      "El máximo cae en el extremo inferior del rango (0 % de baja): fuera de él podría haber más valor esperado, pero el rango es el que el histórico de esta entidad hace plausible. Ensancharlo por cuenta propia sería recomendar una baja que el mercado no respalda."
+     ],
+     "piso_decision": 771347568,
+     "piso_pct_po": 114.23,
+     "bajo_costo_con_aiu": true,
+     "costo_mas_administracion": 688779546,
+     "bajo_costo_mas_administracion": true,
+     "bajo_piso_decision": true,
+     "fuente_costo": "escenario",
+     "puestos": {
+      "mediana": {
+       "puesto": 4,
+       "de": 4,
+       "puntaje": 45.6591934,
+       "empate": false,
+       "gana": false
+      },
+      "geometrica": {
+       "puesto": 4,
+       "de": 4,
+       "puntaje": 46.7561326,
+       "empate": false,
+       "gana": false
+      },
+      "aritmetica_baja": {
+       "puesto": 4,
+       "de": 4,
+       "puntaje": 46.2210775,
+       "empate": false,
+       "gana": false
+      },
+      "menor_valor": {
+       "puesto": 4,
+       "de": 4,
+       "puntaje": 45.9260039,
+       "empate": false,
+       "gana": false
+      },
+      "gana_en_de_4": 0
+     },
+     "con_metodo_real": {
+      "puesto": 4,
+      "de": 4,
+      "puntaje": 46.2210775,
+      "empate": false,
+      "gana": false
+     },
+     "bajo_piso_de_las_ofertas": false
+    },
+    {
+     "cd_fraccion": 0.9,
+     "costo_directo": 607746659,
+     "precio_venta": 790070657,
+     "aplicable": true,
+     "motivo": null,
+     "mensaje": null,
+     "descuento_pct": 0,
+     "precio": 675274065,
+     "pct_po": 100,
+     "veg": -5041568,
+     "sin_punto_rentable": true,
+     "probabilidad_modelo": 0.0682,
+     "en_el_borde": true,
+     "conservador": {
+      "descuento_pct": 0,
+      "precio": 675274065,
+      "pct_po": 100
+     },
+     "agresivo": {
+      "descuento_pct": 0,
+      "precio": 675274065,
+      "pct_po": 100
+     },
+     "meseta_colapsada": true,
+     "alertas": [
+      "Atención: NINGÚN precio del rango tiene valor esperado positivo: con este costo directo y este presupuesto oficial, el valor esperado de la ganancia no cubre el costo de preparar la oferta. El «óptimo» de abajo es el menos malo, no una recomendación de presentarse.",
+      "El máximo cae en el extremo inferior del rango (0 % de baja): fuera de él podría haber más valor esperado, pero el rango es el que el histórico de esta entidad hace plausible. Ensancharlo por cuenta propia sería recomendar una baja que el mercado no respalda."
+     ],
+     "piso_decision": 816720956,
+     "piso_pct_po": 120.95,
+     "bajo_costo_con_aiu": true,
+     "costo_mas_administracion": 729295991,
+     "bajo_costo_mas_administracion": true,
+     "bajo_piso_decision": true,
+     "fuente_costo": "escenario",
+     "puestos": {
+      "mediana": {
+       "puesto": 4,
+       "de": 4,
+       "puntaje": 45.6591934,
+       "empate": false,
+       "gana": false
+      },
+      "geometrica": {
+       "puesto": 4,
+       "de": 4,
+       "puntaje": 46.7561326,
+       "empate": false,
+       "gana": false
+      },
+      "aritmetica_baja": {
+       "puesto": 4,
+       "de": 4,
+       "puntaje": 46.2210775,
+       "empate": false,
+       "gana": false
+      },
+      "menor_valor": {
+       "puesto": 4,
+       "de": 4,
+       "puntaje": 45.9260039,
+       "empate": false,
+       "gana": false
+      },
+      "gana_en_de_4": 0
+     },
+     "con_metodo_real": {
+      "puesto": 4,
+      "de": 4,
+      "puntaje": 46.2210775,
+      "empate": false,
+      "gana": false
+     },
+     "bajo_piso_de_las_ofertas": false
+    }
+   ]
+  },
+  {
+   "clave": "c",
+   "titulo": "C · Floridablanca · FLO-INFRA-SA-MC-001-2026 (vía Ruitoque–Tres Esquinas)",
+   "id_req": "CO1.REQ.10441750",
+   "entidad": "ALCALDIA DE FLORIDABLANCA",
+   "departamento": "Santander",
+   "presupuesto_oficial": 1004015042,
+   "n_habiles_rivales": 2,
+   "rivales_pct": [
+    97.51,
+    99.95
+   ],
+   "metodo_real": "mediana",
+   "trm": 3678.15,
+   "centro": {
+    "nivel": "bajo",
+    "baja_mediana": 0,
+    "baja_promedio": 1.4,
+    "baja_p25": 0,
+    "baja_p75": 2,
+    "procesos_contados": 5,
+    "granularidad_utilizada": "entidad",
+    "modalidad_utilizada": "seleccion abreviada",
+    "mensaje": "Aquí se gana sin bajar el precio: los que ganaron en Selección Abreviada de Menor Cuantía en esta entidad, en todos los tipos de contrato, ofertaron prácticamente por el presupuesto oficial (5 contratos ya adjudicados)."
+   },
+   "centro_cubetas": {
+    "licitacion publica": {
+     "procesos": 9,
+     "baja_mediana": 4
+    },
+    "seleccion abreviada": {
+     "procesos": 5,
+     "baja_mediana": 0
+    },
+    "minima cuantia": {
+     "procesos": 2,
+     "baja_mediana": null
+    }
+   },
+   "p_base_declarado": 0.3333,
+   "control_oferta_propia": null,
+   "ganador_real": {
+    "nombre": "CONSORCIO JGV FLORIDA",
+    "valor": 1003514996,
+    "pct_po": 99.95,
+    "metodo_real": "mediana",
+    "reproduce": false,
+    "puesto": {
+     "puesto": 2,
+     "de": 2,
+     "puntaje": 48.2615739,
+     "empate": false,
+     "gana": false
+    }
+   },
+   "apu_propio": {
+    "costo_directo": null,
+    "motivo": "no hubo oferta propia: no hay APU"
+   },
+   "nota": "Anomalía documentada (detekta-lector, anomalias/c_explicacion.md): la evaluación puntuó a JGV con la oferta de otro proponente (984.249.295); con su oferta real (1.003.514.996) el primero por el pliego era MONTAG. El caso entra con los valores reales: el control del ganador NO se reproduce, y eso es un hecho de la entidad, no de la retro-prueba.",
+   "escenarios": [
+    {
+     "cd_fraccion": 0.7,
+     "costo_directo": 702810529,
+     "precio_venta": 913653688,
+     "aplicable": true,
+     "motivo": null,
+     "mensaje": null,
+     "descuento_pct": 3,
+     "precio": 973894591,
+     "pct_po": 97,
+     "veg": 62561522,
+     "sin_punto_rentable": false,
+     "probabilidad_modelo": 0.6033,
+     "en_el_borde": false,
+     "conservador": {
+      "descuento_pct": 2.5,
+      "precio": 978914666,
+      "pct_po": 97.5
+     },
+     "agresivo": {
+      "descuento_pct": 3.5,
+      "precio": 968874516,
+      "pct_po": 96.5
+     },
+     "meseta_colapsada": false,
+     "alertas": [
+      "El precio óptimo está POR ENCIMA de su precio de venta (-6,59 % de «baja»): el ajuste competitivo solo puede bajar el precio, así que no hay descuento que aplicar. Le sobra margen: si quiere que el APU refleje ese precio, suba la utilidad o la administración."
+     ],
+     "piso_decision": 937898654,
+     "piso_pct_po": 93.41,
+     "bajo_costo_con_aiu": false,
+     "costo_mas_administracion": 843372635,
+     "bajo_costo_mas_administracion": false,
+     "bajo_piso_decision": false,
+     "fuente_costo": "escenario",
+     "puestos": {
+      "mediana": {
+       "puesto": 2,
+       "de": 3,
+       "puntaje": 49.2407975,
+       "empate": false,
+       "gana": false
+      },
+      "geometrica": {
+       "puesto": 2,
+       "de": 3,
+       "puntaje": 48.9224113,
+       "empate": false,
+       "gana": false
+      },
+      "aritmetica_baja": {
+       "puesto": 2,
+       "de": 3,
+       "puntaje": 49.2073935,
+       "empate": false,
+       "gana": false
+      },
+      "menor_valor": {
+       "puesto": 1,
+       "de": 3,
+       "puntaje": 49.5,
+       "empate": false,
+       "gana": true
+      },
+      "gana_en_de_4": 1
+     },
+     "con_metodo_real": {
+      "puesto": 2,
+      "de": 3,
+      "puntaje": 49.2407975,
+      "empate": false,
+      "gana": false
+     },
+     "bajo_piso_de_las_ofertas": false
+    },
+    {
+     "cd_fraccion": 0.75,
+     "costo_directo": 753011282,
+     "precio_venta": 978914667,
+     "aplicable": true,
+     "motivo": null,
+     "mensaje": null,
+     "descuento_pct": 2.5,
+     "precio": 978914666,
+     "pct_po": 97.5,
+     "veg": 28033409,
+     "sin_punto_rentable": false,
+     "probabilidad_modelo": 0.5718,
+     "en_el_borde": false,
+     "conservador": {
+      "descuento_pct": 1.5,
+      "precio": 988954816,
+      "pct_po": 98.5
+     },
+     "agresivo": {
+      "descuento_pct": 3,
+      "precio": 973894591,
+      "pct_po": 97
+     },
+     "meseta_colapsada": false,
+     "alertas": [],
+     "piso_decision": 1004891415,
+     "piso_pct_po": 100.09,
+     "bajo_costo_con_aiu": true,
+     "costo_mas_administracion": 903613538,
+     "bajo_costo_mas_administracion": false,
+     "bajo_piso_decision": true,
+     "fuente_costo": "escenario",
+     "puestos": {
+      "mediana": {
+       "puesto": 2,
+       "de": 3,
+       "puntaje": 49.494616,
+       "empate": false,
+       "gana": false
+      },
+      "geometrica": {
+       "puesto": 2,
+       "de": 3,
+       "puntaje": 49.0903854,
+       "empate": false,
+       "gana": false
+      },
+      "aritmetica_baja": {
+       "puesto": 2,
+       "de": 3,
+       "puntaje": 49.2926506,
+       "empate": false,
+       "gana": false
+      },
+      "menor_valor": {
+       "puesto": 1,
+       "de": 3,
+       "puntaje": 49.5,
+       "empate": false,
+       "gana": true
+      },
+      "gana_en_de_4": 1
+     },
+     "con_metodo_real": {
+      "puesto": 2,
+      "de": 3,
+      "puntaje": 49.494616,
+      "empate": false,
+      "gana": false
+     },
+     "bajo_piso_de_las_ofertas": false
+    },
+    {
+     "cd_fraccion": 0.8,
+     "costo_directo": 803212034,
+     "precio_venta": 1044175644,
+     "aplicable": true,
+     "motivo": null,
+     "mensaje": null,
+     "descuento_pct": 0,
+     "precio": 1004015042,
+     "pct_po": 100,
+     "veg": 4509264,
+     "sin_punto_rentable": false,
+     "probabilidad_modelo": 0.3333,
+     "en_el_borde": true,
+     "conservador": {
+      "descuento_pct": 0,
+      "precio": 1004015042,
+      "pct_po": 100
+     },
+     "agresivo": {
+      "descuento_pct": 0,
+      "precio": 1004015042,
+      "pct_po": 100
+     },
+     "meseta_colapsada": true,
+     "alertas": [
+      "El máximo cae en el extremo inferior del rango (0 % de baja): fuera de él podría haber más valor esperado, pero el rango es el que el histórico de esta entidad hace plausible. Ensancharlo por cuenta propia sería recomendar una baja que el mercado no respalda."
+     ],
+     "piso_decision": 1071884176,
+     "piso_pct_po": 106.76,
+     "bajo_costo_con_aiu": true,
+     "costo_mas_administracion": 963854441,
+     "bajo_costo_mas_administracion": false,
+     "bajo_piso_decision": true,
+     "fuente_costo": "escenario",
+     "puestos": {
+      "mediana": {
+       "puesto": 2,
+       "de": 3,
+       "puntaje": 49.4753344,
+       "empate": false,
+       "gana": false
+      },
+      "geometrica": {
+       "puesto": 2,
+       "de": 3,
+       "puntaje": 49.0740085,
+       "empate": false,
+       "gana": false
+      },
+      "aritmetica_baja": {
+       "puesto": 3,
+       "de": 3,
+       "puntaje": 48.6603872,
+       "empate": false,
+       "gana": false
+      },
+      "menor_valor": {
+       "puesto": 3,
+       "de": 3,
+       "puntaje": 48.2677499,
+       "empate": false,
+       "gana": false
+      },
+      "gana_en_de_4": 0
+     },
+     "con_metodo_real": {
+      "puesto": 2,
+      "de": 3,
+      "puntaje": 49.4753344,
+      "empate": false,
+      "gana": false
+     },
+     "bajo_piso_de_las_ofertas": false
+    },
+    {
+     "cd_fraccion": 0.85,
+     "costo_directo": 853412786,
+     "precio_venta": 1109436622,
+     "aplicable": true,
+     "motivo": null,
+     "mensaje": null,
+     "descuento_pct": 0,
+     "precio": 1004015042,
+     "pct_po": 100,
+     "veg": -15671036,
+     "sin_punto_rentable": true,
+     "probabilidad_modelo": 0.3333,
+     "en_el_borde": true,
+     "conservador": {
+      "descuento_pct": 0,
+      "precio": 1004015042,
+      "pct_po": 100
+     },
+     "agresivo": {
+      "descuento_pct": 0,
+      "precio": 1004015042,
+      "pct_po": 100
+     },
+     "meseta_colapsada": true,
+     "alertas": [
+      "Atención: NINGÚN precio del rango tiene valor esperado positivo: con este costo directo y este presupuesto oficial, el valor esperado de la ganancia no cubre el costo de preparar la oferta. El «óptimo» de abajo es el menos malo, no una recomendación de presentarse.",
+      "El máximo cae en el extremo inferior del rango (0 % de baja): fuera de él podría haber más valor esperado, pero el rango es el que el histórico de esta entidad hace plausible. Ensancharlo por cuenta propia sería recomendar una baja que el mercado no respalda."
+     ],
+     "piso_decision": 1138876937,
+     "piso_pct_po": 113.43,
+     "bajo_costo_con_aiu": true,
+     "costo_mas_administracion": 1024095343,
+     "bajo_costo_mas_administracion": true,
+     "bajo_piso_decision": true,
+     "fuente_costo": "escenario",
+     "puestos": {
+      "mediana": {
+       "puesto": 2,
+       "de": 3,
+       "puntaje": 49.4753344,
+       "empate": false,
+       "gana": false
+      },
+      "geometrica": {
+       "puesto": 2,
+       "de": 3,
+       "puntaje": 49.0740085,
+       "empate": false,
+       "gana": false
+      },
+      "aritmetica_baja": {
+       "puesto": 3,
+       "de": 3,
+       "puntaje": 48.6603872,
+       "empate": false,
+       "gana": false
+      },
+      "menor_valor": {
+       "puesto": 3,
+       "de": 3,
+       "puntaje": 48.2677499,
+       "empate": false,
+       "gana": false
+      },
+      "gana_en_de_4": 0
+     },
+     "con_metodo_real": {
+      "puesto": 2,
+      "de": 3,
+      "puntaje": 49.4753344,
+      "empate": false,
+      "gana": false
+     },
+     "bajo_piso_de_las_ofertas": false
+    },
+    {
+     "cd_fraccion": 0.9,
+     "costo_directo": 903613538,
+     "precio_venta": 1174697599,
+     "aplicable": true,
+     "motivo": null,
+     "mensaje": null,
+     "descuento_pct": 0,
+     "precio": 1004015042,
+     "pct_po": 100,
+     "veg": -36165029,
+     "sin_punto_rentable": true,
+     "probabilidad_modelo": 0.3333,
+     "en_el_borde": true,
+     "conservador": {
+      "descuento_pct": 0,
+      "precio": 1004015042,
+      "pct_po": 100
+     },
+     "agresivo": {
+      "descuento_pct": 0,
+      "precio": 1004015042,
+      "pct_po": 100
+     },
+     "meseta_colapsada": true,
+     "alertas": [
+      "Atención: NINGÚN precio del rango tiene valor esperado positivo: con este costo directo y este presupuesto oficial, el valor esperado de la ganancia no cubre el costo de preparar la oferta. El «óptimo» de abajo es el menos malo, no una recomendación de presentarse.",
+      "El máximo cae en el extremo inferior del rango (0 % de baja): fuera de él podría haber más valor esperado, pero el rango es el que el histórico de esta entidad hace plausible. Ensancharlo por cuenta propia sería recomendar una baja que el mercado no respalda."
+     ],
+     "piso_decision": 1205869698,
+     "piso_pct_po": 120.1,
+     "bajo_costo_con_aiu": true,
+     "costo_mas_administracion": 1084336246,
+     "bajo_costo_mas_administracion": true,
+     "bajo_piso_decision": true,
+     "fuente_costo": "escenario",
+     "puestos": {
+      "mediana": {
+       "puesto": 2,
+       "de": 3,
+       "puntaje": 49.4753344,
+       "empate": false,
+       "gana": false
+      },
+      "geometrica": {
+       "puesto": 2,
+       "de": 3,
+       "puntaje": 49.0740085,
+       "empate": false,
+       "gana": false
+      },
+      "aritmetica_baja": {
+       "puesto": 3,
+       "de": 3,
+       "puntaje": 48.6603872,
+       "empate": false,
+       "gana": false
+      },
+      "menor_valor": {
+       "puesto": 3,
+       "de": 3,
+       "puntaje": 48.2677499,
+       "empate": false,
+       "gana": false
+      },
+      "gana_en_de_4": 0
+     },
+     "con_metodo_real": {
+      "puesto": 2,
+      "de": 3,
+      "puntaje": 49.4753344,
+      "empate": false,
+      "gana": false
+     },
+     "bajo_piso_de_las_ofertas": false
+    }
+   ]
+  },
+  {
+   "clave": "d",
+   "titulo": "D · Turbaco · SAMC-006-2026 (pavimento rígido barrio Las Mercedes)",
+   "id_req": "CO1.REQ.10650320",
+   "entidad": "ALCALDIA MUNICIPAL DE TURBACO BOLIVAR",
+   "departamento": "Bolívar",
+   "presupuesto_oficial": 511587015.1,
+   "n_habiles_rivales": 1,
+   "rivales_pct": [
+    99.84
+   ],
+   "metodo_real": null,
+   "trm": null,
+   "centro": {
+    "nivel": "medio",
+    "baja_mediana": 3,
+    "baja_promedio": 3.1,
+    "baja_p25": 1,
+    "baja_p75": 5,
+    "procesos_contados": 7,
+    "granularidad_utilizada": "entidad",
+    "modalidad_utilizada": null,
+    "mensaje": "Para tener opción hay que ofertar cerca de 3% por debajo del presupuesto oficial: es lo que descontaron los que ganaron en esta entidad, en todos los tipos de contrato (7 contratos ya adjudicados)."
+   },
+   "centro_cubetas": {
+    "seleccion abreviada": {
+     "procesos": 3,
+     "baja_mediana": null
+    },
+    "minima cuantia": {
+     "procesos": 2,
+     "baja_mediana": null
+    },
+    "licitacion publica": {
+     "procesos": 2,
+     "baja_mediana": null
+    }
+   },
+   "p_base_declarado": 0.5,
+   "control_oferta_propia": null,
+   "ganador_real": {
+    "nombre": "INVEROBRAS CIVILES SAS",
+    "valor": 510759749.69,
+    "pct_po": 99.84,
+    "metodo_real": null,
+    "reproduce": null,
+    "puesto": null
+   },
+   "apu_propio": {
+    "costo_directo": null,
+    "motivo": "no hubo oferta propia: no hay APU"
+   },
+   "nota": "Un solo hábil: ganó la oferta más cara de las cinco porque las otras cuatro quedaron fuera por habilitación (Mipyme de Turbaco). Sin rivales hábiles no hay puesto que medir: el caso se queda como control de que el precio no decide cuando los papeles deciden.",
+   "escenarios": [
+    {
+     "cd_fraccion": 0.7,
+     "costo_directo": 358110911,
+     "precio_venta": 465544184,
+     "aplicable": true,
+     "motivo": null,
+     "mensaje": null,
+     "descuento_pct": 2.5,
+     "precio": 498797340,
+     "pct_po": 97.5,
+     "veg": 26436904,
+     "sin_punto_rentable": false,
+     "probabilidad_modelo": 0.4783,
+     "en_el_borde": false,
+     "conservador": {
+      "descuento_pct": 2,
+      "precio": 501355275,
+      "pct_po": 98
+     },
+     "agresivo": {
+      "descuento_pct": 7.5,
+      "precio": 473217989,
+      "pct_po": 92.5
+     },
+     "meseta_colapsada": false,
+     "alertas": [
+      "El precio óptimo está POR ENCIMA de su precio de venta (-7,14 % de «baja»): el ajuste competitivo solo puede bajar el precio, así que no hay descuento que aplicar. Le sobra margen: si quiere que el APU refleje ese precio, suba la utilidad o la administración."
+     ],
+     "piso_decision": 471198567,
+     "piso_pct_po": 92.11,
+     "bajo_costo_con_aiu": false,
+     "costo_mas_administracion": 429733093,
+     "bajo_costo_mas_administracion": false,
+     "bajo_piso_decision": false,
+     "fuente_costo": "escenario",
+     "puestos": {
+      "mediana": {
+       "puesto": 1,
+       "de": 2,
+       "puntaje": 49.75,
+       "empate": false,
+       "gana": true
+      },
+      "geometrica": {
+       "puesto": 1,
+       "de": 2,
+       "puntaje": 49.1639555,
+       "empate": false,
+       "gana": true
+      },
+      "aritmetica_baja": {
+       "puesto": 1,
+       "de": 2,
+       "puntaje": 49.4534953,
+       "empate": false,
+       "gana": true
+      },
+      "menor_valor": {
+       "puesto": 1,
+       "de": 2,
+       "puntaje": 49.75,
+       "empate": false,
+       "gana": true
+      },
+      "gana_en_de_4": 4
+     },
+     "con_metodo_real": null,
+     "bajo_piso_de_las_ofertas": false
+    },
+    {
+     "cd_fraccion": 0.75,
+     "costo_directo": 383690261,
+     "precio_venta": 498797339,
+     "aplicable": true,
+     "motivo": null,
+     "mensaje": null,
+     "descuento_pct": 1.5,
+     "precio": 503913210,
+     "pct_po": 98.5,
+     "veg": 12440453,
+     "sin_punto_rentable": false,
+     "probabilidad_modelo": 0.4166,
+     "en_el_borde": false,
+     "conservador": {
+      "descuento_pct": 1,
+      "precio": 506471145,
+      "pct_po": 99
+     },
+     "agresivo": {
+      "descuento_pct": 2.5,
+      "precio": 498797340,
+      "pct_po": 97.5
+     },
+     "meseta_colapsada": false,
+     "alertas": [
+      "El precio óptimo está POR ENCIMA de su precio de venta (-1,03 % de «baja»): el ajuste competitivo solo puede bajar el precio, así que no hay descuento que aplicar. Le sobra margen: si quiere que el APU refleje ese precio, suba la utilidad o la administración."
+     ],
+     "piso_decision": 504855607,
+     "piso_pct_po": 98.68,
+     "bajo_costo_con_aiu": false,
+     "costo_mas_administracion": 460428313,
+     "bajo_costo_mas_administracion": false,
+     "bajo_piso_decision": true,
+     "fuente_costo": "escenario",
+     "puestos": {
+      "mediana": {
+       "puesto": 1,
+       "de": 2,
+       "puntaje": 49.75,
+       "empate": false,
+       "gana": true
+      },
+      "geometrica": {
+       "puesto": 1,
+       "de": 2,
+       "puntaje": 49.4154351,
+       "empate": false,
+       "gana": true
+      },
+      "aritmetica_baja": {
+       "puesto": 1,
+       "de": 2,
+       "puntaje": 49.5815869,
+       "empate": false,
+       "gana": true
+      },
+      "menor_valor": {
+       "puesto": 1,
+       "de": 2,
+       "puntaje": 49.75,
+       "empate": false,
+       "gana": true
+      },
+      "gana_en_de_4": 4
+     },
+     "con_metodo_real": null,
+     "bajo_piso_de_las_ofertas": false
+    },
+    {
+     "cd_fraccion": 0.8,
+     "costo_directo": 409269612,
+     "precio_venta": 532050496,
+     "aplicable": true,
+     "motivo": null,
+     "mensaje": null,
+     "descuento_pct": 0,
+     "precio": 511587015,
+     "pct_po": 100,
+     "veg": 1935978,
+     "sin_punto_rentable": false,
+     "probabilidad_modelo": 0.2822,
+     "en_el_borde": true,
+     "conservador": {
+      "descuento_pct": 0,
+      "precio": 511587015,
+      "pct_po": 100
+     },
+     "agresivo": {
+      "descuento_pct": 0,
+      "precio": 511587015,
+      "pct_po": 100
+     },
+     "meseta_colapsada": true,
+     "alertas": [
+      "El máximo cae en el extremo inferior del rango (0 % de baja): fuera de él podría haber más valor esperado, pero el rango es el que el histórico de esta entidad hace plausible. Ensancharlo por cuenta propia sería recomendar una baja que el mercado no respalda."
+     ],
+     "piso_decision": 538512647,
+     "piso_pct_po": 105.26,
+     "bajo_costo_con_aiu": true,
+     "costo_mas_administracion": 491123534,
+     "bajo_costo_mas_administracion": false,
+     "bajo_piso_decision": true,
+     "fuente_costo": "escenario",
+     "puestos": {
+      "mediana": {
+       "puesto": 2,
+       "de": 2,
+       "puntaje": 49.6694211,
+       "empate": false,
+       "gana": false
+      },
+      "geometrica": {
+       "puesto": 2,
+       "de": 2,
+       "puntaje": 49.7097269,
+       "empate": false,
+       "gana": false
+      },
+      "aritmetica_baja": {
+       "puesto": 2,
+       "de": 2,
+       "puntaje": 49.6895903,
+       "empate": false,
+       "gana": false
+      },
+      "menor_valor": {
+       "puesto": 2,
+       "de": 2,
+       "puntaje": 49.6695514,
+       "empate": false,
+       "gana": false
+      },
+      "gana_en_de_4": 0
+     },
+     "con_metodo_real": null,
+     "bajo_piso_de_las_ofertas": false
+    },
+    {
+     "cd_fraccion": 0.85,
+     "costo_directo": 434848963,
+     "precio_venta": 565303652,
+     "aplicable": true,
+     "motivo": null,
+     "mensaje": null,
+     "descuento_pct": 0,
+     "precio": 511587015,
+     "pct_po": 100,
+     "veg": -6770221,
+     "sin_punto_rentable": true,
+     "probabilidad_modelo": 0.2822,
+     "en_el_borde": true,
+     "conservador": {
+      "descuento_pct": 0,
+      "precio": 511587015,
+      "pct_po": 100
+     },
+     "agresivo": {
+      "descuento_pct": 0,
+      "precio": 511587015,
+      "pct_po": 100
+     },
+     "meseta_colapsada": true,
+     "alertas": [
+      "Atención: NINGÚN precio del rango tiene valor esperado positivo: con este costo directo y este presupuesto oficial, el valor esperado de la ganancia no cubre el costo de preparar la oferta. El «óptimo» de abajo es el menos malo, no una recomendación de presentarse.",
+      "El máximo cae en el extremo inferior del rango (0 % de baja): fuera de él podría haber más valor esperado, pero el rango es el que el histórico de esta entidad hace plausible. Ensancharlo por cuenta propia sería recomendar una baja que el mercado no respalda."
+     ],
+     "piso_decision": 572169688,
+     "piso_pct_po": 111.84,
+     "bajo_costo_con_aiu": true,
+     "costo_mas_administracion": 521818756,
+     "bajo_costo_mas_administracion": true,
+     "bajo_piso_decision": true,
+     "fuente_costo": "escenario",
+     "puestos": {
+      "mediana": {
+       "puesto": 2,
+       "de": 2,
+       "puntaje": 49.6694211,
+       "empate": false,
+       "gana": false
+      },
+      "geometrica": {
+       "puesto": 2,
+       "de": 2,
+       "puntaje": 49.7097269,
+       "empate": false,
+       "gana": false
+      },
+      "aritmetica_baja": {
+       "puesto": 2,
+       "de": 2,
+       "puntaje": 49.6895903,
+       "empate": false,
+       "gana": false
+      },
+      "menor_valor": {
+       "puesto": 2,
+       "de": 2,
+       "puntaje": 49.6695514,
+       "empate": false,
+       "gana": false
+      },
+      "gana_en_de_4": 0
+     },
+     "con_metodo_real": null,
+     "bajo_piso_de_las_ofertas": false
+    },
+    {
+     "cd_fraccion": 0.9,
+     "costo_directo": 460428314,
+     "precio_venta": 598556808,
+     "aplicable": true,
+     "motivo": null,
+     "mensaje": null,
+     "descuento_pct": 0,
+     "precio": 511587015,
+     "pct_po": 100,
+     "veg": -15611754,
+     "sin_punto_rentable": true,
+     "probabilidad_modelo": 0.2822,
+     "en_el_borde": true,
+     "conservador": {
+      "descuento_pct": 0,
+      "precio": 511587015,
+      "pct_po": 100
+     },
+     "agresivo": {
+      "descuento_pct": 0,
+      "precio": 511587015,
+      "pct_po": 100
+     },
+     "meseta_colapsada": true,
+     "alertas": [
+      "Atención: NINGÚN precio del rango tiene valor esperado positivo: con este costo directo y este presupuesto oficial, el valor esperado de la ganancia no cubre el costo de preparar la oferta. El «óptimo» de abajo es el menos malo, no una recomendación de presentarse.",
+      "El máximo cae en el extremo inferior del rango (0 % de baja): fuera de él podría haber más valor esperado, pero el rango es el que el histórico de esta entidad hace plausible. Ensancharlo por cuenta propia sería recomendar una baja que el mercado no respalda."
+     ],
+     "piso_decision": 605826729,
+     "piso_pct_po": 118.42,
+     "bajo_costo_con_aiu": true,
+     "costo_mas_administracion": 552513977,
+     "bajo_costo_mas_administracion": true,
+     "bajo_piso_decision": true,
+     "fuente_costo": "escenario",
+     "puestos": {
+      "mediana": {
+       "puesto": 2,
+       "de": 2,
+       "puntaje": 49.6694211,
+       "empate": false,
+       "gana": false
+      },
+      "geometrica": {
+       "puesto": 2,
+       "de": 2,
+       "puntaje": 49.7097269,
+       "empate": false,
+       "gana": false
+      },
+      "aritmetica_baja": {
+       "puesto": 2,
+       "de": 2,
+       "puntaje": 49.6895903,
+       "empate": false,
+       "gana": false
+      },
+      "menor_valor": {
+       "puesto": 2,
+       "de": 2,
+       "puntaje": 49.6695514,
+       "empate": false,
+       "gana": false
+      },
+      "gana_en_de_4": 0
+     },
+     "con_metodo_real": null,
+     "bajo_piso_de_las_ofertas": false
+    }
+   ]
+  },
+  {
+   "clave": "e",
+   "titulo": "E · Gobernación de Caldas · SAMC-SI-020-2026 (vía Varsovia–Puente Quebrada La Honda, Filadelfia)",
+   "id_req": "CO1.REQ.10710451",
+   "entidad": "GOBERNACION DE CALDAS",
+   "departamento": "Caldas",
+   "presupuesto_oficial": 993687600,
+   "n_habiles_rivales": 8,
+   "rivales_pct": [
+    88.9,
+    92.77,
+    93.06,
+    93.18,
+    93.22,
+    93.4,
+    93.56,
+    93.89
+   ],
+   "metodo_real": "menor_valor",
+   "trm": 3213.97,
+   "centro": {
+    "nivel": "alto",
+    "baja_mediana": 7,
+    "baja_promedio": 11.5,
+    "baja_p25": 2,
+    "baja_p75": 8,
+    "procesos_contados": 16,
+    "granularidad_utilizada": "entidad",
+    "modalidad_utilizada": "seleccion abreviada",
+    "mensaje": "Para tener opción hay que ofertar cerca de 7% por debajo del presupuesto oficial: es lo que descontaron los que ganaron en Seleccion Abreviada Menor Cuantia Sin Manifestacion Interes en esta entidad, en todos los tipos de contrato (16 contratos ya adjudicados)."
+   },
+   "centro_cubetas": {
+    "seleccion abreviada": {
+     "procesos": 16,
+     "baja_mediana": 7
+    },
+    "licitacion publica": {
+     "procesos": 12,
+     "baja_mediana": 6
+    },
+    "minima cuantia": {
+     "procesos": 9,
+     "baja_mediana": 21
+    }
+   },
+   "p_base_declarado": 0.1111,
+   "control_oferta_propia": null,
+   "ganador_real": {
+    "nombre": "GENERAL SERVICIOS S&G S.A.S",
+    "valor": 883381572,
+    "pct_po": 88.9,
+    "metodo_real": "menor_valor",
+    "reproduce": true,
+    "puesto": {
+     "puesto": 1,
+     "de": 8,
+     "puntaje": 49.5,
+     "empate": false,
+     "gana": true
+    }
+   },
+   "apu_propio": {
+    "costo_directo": null,
+    "motivo": "no hubo oferta propia: no hay APU"
+   },
+   "nota": "El ganador (88,90 %) quedó bajo el «valor mínimo» que la propia entidad calculó (mediana − σ muestral, 91,61 %) y no consta solicitud de justificación. Con menor valor y aritmética baja gana; con mediana o geométrica habría quedado último.",
+   "escenarios": [
+    {
+     "cd_fraccion": 0.7,
+     "costo_directo": 695581320,
+     "precio_venta": 904255716,
+     "aplicable": true,
+     "motivo": null,
+     "mensaje": null,
+     "descuento_pct": 5,
+     "precio": 944003220,
+     "pct_po": 95,
+     "veg": 7858696,
+     "sin_punto_rentable": false,
+     "probabilidad_modelo": 0.0953,
+     "en_el_borde": false,
+     "conservador": {
+      "descuento_pct": 4,
+      "precio": 953940096,
+      "pct_po": 96
+     },
+     "agresivo": {
+      "descuento_pct": 6,
+      "precio": 934066344,
+      "pct_po": 94
+     },
+     "meseta_colapsada": false,
+     "alertas": [
+      "El precio óptimo está POR ENCIMA de su precio de venta (-4,4 % de «baja»): el ajuste competitivo solo puede bajar el precio, así que no hay descuento que aplicar. Le sobra margen: si quiere que el APU refleje ese precio, suba la utilidad o la administración."
+     ],
+     "piso_decision": 948072506,
+     "piso_pct_po": 95.41,
+     "bajo_costo_con_aiu": false,
+     "costo_mas_administracion": 834697584,
+     "bajo_costo_mas_administracion": false,
+     "bajo_piso_decision": true,
+     "fuente_costo": "escenario",
+     "puestos": {
+      "mediana": {
+       "puesto": 8,
+       "de": 9,
+       "puntaje": 48.5573208,
+       "empate": false,
+       "gana": false
+      },
+      "geometrica": {
+       "puesto": 8,
+       "de": 9,
+       "puntaje": 48.4267435,
+       "empate": false,
+       "gana": false
+      },
+      "aritmetica_baja": {
+       "puesto": 9,
+       "de": 9,
+       "puntaje": 47.2948545,
+       "empate": false,
+       "gana": false
+      },
+      "menor_valor": {
+       "puesto": 9,
+       "de": 9,
+       "puntaje": 46.3212274,
+       "empate": false,
+       "gana": false
+      },
+      "gana_en_de_4": 0
+     },
+     "con_metodo_real": {
+      "puesto": 9,
+      "de": 9,
+      "puntaje": 46.3212274,
+      "empate": false,
+      "gana": false
+     },
+     "bajo_piso_de_las_ofertas": false
+    },
+    {
+     "cd_fraccion": 0.75,
+     "costo_directo": 745265700,
+     "precio_venta": 968845410,
+     "aplicable": true,
+     "motivo": null,
+     "mensaje": null,
+     "descuento_pct": 3,
+     "precio": 963876972,
+     "pct_po": 97,
+     "veg": 2948598,
+     "sin_punto_rentable": false,
+     "probabilidad_modelo": 0.0698,
+     "en_el_borde": false,
+     "conservador": {
+      "descuento_pct": 2,
+      "precio": 973813848,
+      "pct_po": 98
+     },
+     "agresivo": {
+      "descuento_pct": 3.5,
+      "precio": 958908534,
+      "pct_po": 96.5
+     },
+     "meseta_colapsada": false,
+     "alertas": [],
+     "piso_decision": 1015791972,
+     "piso_pct_po": 102.22,
+     "bajo_costo_con_aiu": true,
+     "costo_mas_administracion": 894318840,
+     "bajo_costo_mas_administracion": false,
+     "bajo_piso_decision": true,
+     "fuente_costo": "escenario",
+     "puestos": {
+      "mediana": {
+       "puesto": 8,
+       "de": 9,
+       "puntaje": 47.4953696,
+       "empate": false,
+       "gana": false
+      },
+      "geometrica": {
+       "puesto": 8,
+       "de": 9,
+       "puntaje": 47.4814418,
+       "empate": false,
+       "gana": false
+      },
+      "aritmetica_baja": {
+       "puesto": 9,
+       "de": 9,
+       "puntaje": 46.2707442,
+       "empate": false,
+       "gana": false
+      },
+      "menor_valor": {
+       "puesto": 9,
+       "de": 9,
+       "puntaje": 45.3661505,
+       "empate": false,
+       "gana": false
+      },
+      "gana_en_de_4": 0
+     },
+     "con_metodo_real": {
+      "puesto": 9,
+      "de": 9,
+      "puntaje": 45.3661505,
+      "empate": false,
+      "gana": false
+     },
+     "bajo_piso_de_las_ofertas": false
+    },
+    {
+     "cd_fraccion": 0.8,
+     "costo_directo": 794950080,
+     "precio_venta": 1033435104,
+     "aplicable": true,
+     "motivo": null,
+     "mensaje": null,
+     "descuento_pct": 0,
+     "precio": 993687600,
+     "pct_po": 100,
+     "veg": 297315,
+     "sin_punto_rentable": false,
+     "probabilidad_modelo": 0.0303,
+     "en_el_borde": true,
+     "conservador": {
+      "descuento_pct": 0,
+      "precio": 993687600,
+      "pct_po": 100
+     },
+     "agresivo": {
+      "descuento_pct": 0,
+      "precio": 993687600,
+      "pct_po": 100
+     },
+     "meseta_colapsada": true,
+     "alertas": [
+      "El máximo cae en el extremo inferior del rango (0 % de baja): fuera de él podría haber más valor esperado, pero el rango es el que el histórico de esta entidad hace plausible. Ensancharlo por cuenta propia sería recomendar una baja que el mercado no respalda."
+     ],
+     "piso_decision": 1083511436,
+     "piso_pct_po": 109.04,
+     "bajo_costo_con_aiu": true,
+     "costo_mas_administracion": 953940096,
+     "bajo_costo_mas_administracion": false,
+     "bajo_piso_decision": true,
+     "fuente_costo": "escenario",
+     "puestos": {
+      "mediana": {
+       "puesto": 9,
+       "de": 9,
+       "puntaje": 45.9024429,
+       "empate": false,
+       "gana": false
+      },
+      "geometrica": {
+       "puesto": 9,
+       "de": 9,
+       "puntaje": 46.0675301,
+       "empate": false,
+       "gana": false
+      },
+      "aritmetica_baja": {
+       "puesto": 9,
+       "de": 9,
+       "puntaje": 44.7392562,
+       "empate": false,
+       "gana": false
+      },
+      "menor_valor": {
+       "puesto": 9,
+       "de": 9,
+       "puntaje": 44.005166,
+       "empate": false,
+       "gana": false
+      },
+      "gana_en_de_4": 0
+     },
+     "con_metodo_real": {
+      "puesto": 9,
+      "de": 9,
+      "puntaje": 44.005166,
+      "empate": false,
+      "gana": false
+     },
+     "bajo_piso_de_las_ofertas": false
+    },
+    {
+     "cd_fraccion": 0.85,
+     "costo_directo": 844634460,
+     "precio_venta": 1098024798,
+     "aplicable": true,
+     "motivo": null,
+     "mensaje": null,
+     "descuento_pct": 0,
+     "precio": 993687600,
+     "pct_po": 100,
+     "veg": -1518387,
+     "sin_punto_rentable": true,
+     "probabilidad_modelo": 0.0303,
+     "en_el_borde": true,
+     "conservador": {
+      "descuento_pct": 0,
+      "precio": 993687600,
+      "pct_po": 100
+     },
+     "agresivo": {
+      "descuento_pct": 0,
+      "precio": 993687600,
+      "pct_po": 100
+     },
+     "meseta_colapsada": true,
+     "alertas": [
+      "Atención: NINGÚN precio del rango tiene valor esperado positivo: con este costo directo y este presupuesto oficial, el valor esperado de la ganancia no cubre el costo de preparar la oferta. El «óptimo» de abajo es el menos malo, no una recomendación de presentarse.",
+      "El máximo cae en el extremo inferior del rango (0 % de baja): fuera de él podría haber más valor esperado, pero el rango es el que el histórico de esta entidad hace plausible. Ensancharlo por cuenta propia sería recomendar una baja que el mercado no respalda."
+     ],
+     "piso_decision": 1151230901,
+     "piso_pct_po": 115.85,
+     "bajo_costo_con_aiu": true,
+     "costo_mas_administracion": 1013561352,
+     "bajo_costo_mas_administracion": true,
+     "bajo_piso_decision": true,
+     "fuente_costo": "escenario",
+     "puestos": {
+      "mediana": {
+       "puesto": 9,
+       "de": 9,
+       "puntaje": 45.9024429,
+       "empate": false,
+       "gana": false
+      },
+      "geometrica": {
+       "puesto": 9,
+       "de": 9,
+       "puntaje": 46.0675301,
+       "empate": false,
+       "gana": false
+      },
+      "aritmetica_baja": {
+       "puesto": 9,
+       "de": 9,
+       "puntaje": 44.7392562,
+       "empate": false,
+       "gana": false
+      },
+      "menor_valor": {
+       "puesto": 9,
+       "de": 9,
+       "puntaje": 44.005166,
+       "empate": false,
+       "gana": false
+      },
+      "gana_en_de_4": 0
+     },
+     "con_metodo_real": {
+      "puesto": 9,
+      "de": 9,
+      "puntaje": 44.005166,
+      "empate": false,
+      "gana": false
+     },
+     "bajo_piso_de_las_ofertas": false
+    },
+    {
+     "cd_fraccion": 0.9,
+     "costo_directo": 894318840,
+     "precio_venta": 1162614492,
+     "aplicable": true,
+     "motivo": null,
+     "mensaje": null,
+     "descuento_pct": 0,
+     "precio": 993687600,
+     "pct_po": 100,
+     "veg": -3362314,
+     "sin_punto_rentable": true,
+     "probabilidad_modelo": 0.0303,
+     "en_el_borde": true,
+     "conservador": {
+      "descuento_pct": 0,
+      "precio": 993687600,
+      "pct_po": 100
+     },
+     "agresivo": {
+      "descuento_pct": 0,
+      "precio": 993687600,
+      "pct_po": 100
+     },
+     "meseta_colapsada": true,
+     "alertas": [
+      "Atención: NINGÚN precio del rango tiene valor esperado positivo: con este costo directo y este presupuesto oficial, el valor esperado de la ganancia no cubre el costo de preparar la oferta. El «óptimo» de abajo es el menos malo, no una recomendación de presentarse.",
+      "El máximo cae en el extremo inferior del rango (0 % de baja): fuera de él podría haber más valor esperado, pero el rango es el que el histórico de esta entidad hace plausible. Ensancharlo por cuenta propia sería recomendar una baja que el mercado no respalda."
+     ],
+     "piso_decision": 1218950365,
+     "piso_pct_po": 122.67,
+     "bajo_costo_con_aiu": true,
+     "costo_mas_administracion": 1073182608,
+     "bajo_costo_mas_administracion": true,
+     "bajo_piso_decision": true,
+     "fuente_costo": "escenario",
+     "puestos": {
+      "mediana": {
+       "puesto": 9,
+       "de": 9,
+       "puntaje": 45.9024429,
+       "empate": false,
+       "gana": false
+      },
+      "geometrica": {
+       "puesto": 9,
+       "de": 9,
+       "puntaje": 46.0675301,
+       "empate": false,
+       "gana": false
+      },
+      "aritmetica_baja": {
+       "puesto": 9,
+       "de": 9,
+       "puntaje": 44.7392562,
+       "empate": false,
+       "gana": false
+      },
+      "menor_valor": {
+       "puesto": 9,
+       "de": 9,
+       "puntaje": 44.005166,
+       "empate": false,
+       "gana": false
+      },
+      "gana_en_de_4": 0
+     },
+     "con_metodo_real": {
+      "puesto": 9,
+      "de": 9,
+      "puntaje": 44.005166,
+      "empate": false,
+      "gana": false
+     },
+     "bajo_piso_de_las_ofertas": false
+    }
+   ]
+  }
+ ],
+ "valle": {
+  "procesos": 64,
+  "sin_centro": 21,
+  "entidad_no_identificable": 36,
+  "por_escenario": [
+   {
+    "nombre": "costo 70 %",
+    "procesos": 7,
+    "gana_de_cada_100": {
+     "mediana": 0,
+     "geometrica": 0,
+     "aritmetica_baja": 0,
+     "menor_valor": 0
+    },
+    "sorteado_de_cada_100": 0,
+    "bajo_piso_de_cada_100": 0,
+    "bajo_costo_con_aiu": 0,
+    "pct_po_mediana": 100
+   },
+   {
+    "nombre": "costo 75 %",
+    "procesos": 7,
+    "gana_de_cada_100": {
+     "mediana": 0,
+     "geometrica": 0,
+     "aritmetica_baja": 0,
+     "menor_valor": 0
+    },
+    "sorteado_de_cada_100": 0,
+    "bajo_piso_de_cada_100": 0,
+    "bajo_costo_con_aiu": 0,
+    "pct_po_mediana": 100
+   },
+   {
+    "nombre": "costo 80 %",
+    "procesos": 7,
+    "gana_de_cada_100": {
+     "mediana": 0,
+     "geometrica": 0,
+     "aritmetica_baja": 0,
+     "menor_valor": 0
+    },
+    "sorteado_de_cada_100": 0,
+    "bajo_piso_de_cada_100": 0,
+    "bajo_costo_con_aiu": 7,
+    "pct_po_mediana": 100
+   },
+   {
+    "nombre": "costo 85 %",
+    "procesos": 7,
+    "gana_de_cada_100": {
+     "mediana": 0,
+     "geometrica": 0,
+     "aritmetica_baja": 0,
+     "menor_valor": 0
+    },
+    "sorteado_de_cada_100": 0,
+    "bajo_piso_de_cada_100": 0,
+    "bajo_costo_con_aiu": 7,
+    "pct_po_mediana": 100
+   },
+   {
+    "nombre": "costo 90 %",
+    "procesos": 7,
+    "gana_de_cada_100": {
+     "mediana": 0,
+     "geometrica": 0,
+     "aritmetica_baja": 0,
+     "menor_valor": 0
+    },
+    "sorteado_de_cada_100": 0,
+    "bajo_piso_de_cada_100": 0,
+    "bajo_costo_con_aiu": 7,
+    "pct_po_mediana": 100
+   }
+  ],
+  "por_control": [
+   {
+    "nombre": "control 96,75 %",
+    "procesos": 64,
+    "gana_de_cada_100": {
+     "mediana": 21.9,
+     "geometrica": 26.6,
+     "aritmetica_baja": 10.9,
+     "menor_valor": 15.6
+    },
+    "sorteado_de_cada_100": 18.8,
+    "bajo_piso_de_cada_100": 20.3,
+    "bajo_costo_con_aiu": 0,
+    "pct_po_mediana": 96.75
+   },
+   {
+    "nombre": "control 95 %",
+    "procesos": 64,
+    "gana_de_cada_100": {
+     "mediana": 15.6,
+     "geometrica": 23.4,
+     "aritmetica_baja": 34.4,
+     "menor_valor": 28.1
+    },
+    "sorteado_de_cada_100": 25.4,
+    "bajo_piso_de_cada_100": 31.3,
+    "bajo_costo_con_aiu": 0,
+    "pct_po_mediana": 95
+   },
+   {
+    "nombre": "control 93,4 %",
+    "procesos": 64,
+    "gana_de_cada_100": {
+     "mediana": 6.3,
+     "geometrica": 12.5,
+     "aritmetica_baja": 29.7,
+     "menor_valor": 46.9
+    },
+    "sorteado_de_cada_100": 23.8,
+    "bajo_piso_de_cada_100": 51.6,
+    "bajo_costo_con_aiu": 0,
+    "pct_po_mediana": 93.4
+   }
+  ],
+  "por_proceso": [
+   {
+    "id": "CO1.REQ.10280648",
+    "entidad_40": "SANTIAGO DE CALI DISTRITO ESPECIAL - SEC",
+    "entidad": null,
+    "n_ofertas": 5,
+    "ganador_pct": 92.26,
+    "centro": null,
+    "escenarios": [
+     {
+      "cd_fraccion": 0.7,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.75,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.8,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.85,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.9,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     }
+    ],
+    "controles": [
+     {
+      "pct": 96.75,
+      "gana_en_de_4": 0,
+      "bajo_piso": false
+     },
+     {
+      "pct": 95,
+      "gana_en_de_4": 0,
+      "bajo_piso": false
+     },
+     {
+      "pct": 93.4,
+      "gana_en_de_4": 1,
+      "bajo_piso": false
+     }
+    ]
+   },
+   {
+    "id": "CO1.REQ.10271720",
+    "entidad_40": "SANTIAGO DE CALI DISTRITO ESPECIAL - SEC",
+    "entidad": null,
+    "n_ofertas": 3,
+    "ganador_pct": 87.62,
+    "centro": null,
+    "escenarios": [
+     {
+      "cd_fraccion": 0.7,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.75,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.8,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.85,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.9,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     }
+    ],
+    "controles": [
+     {
+      "pct": 96.75,
+      "gana_en_de_4": 0,
+      "bajo_piso": false
+     },
+     {
+      "pct": 95,
+      "gana_en_de_4": 0,
+      "bajo_piso": false
+     },
+     {
+      "pct": 93.4,
+      "gana_en_de_4": 0,
+      "bajo_piso": false
+     }
+    ]
+   },
+   {
+    "id": "CO1.REQ.10294639",
+    "entidad_40": "MUNICIPIO DE FLORIDA",
+    "entidad": "MUNICIPIO DE FLORIDA",
+    "n_ofertas": 3,
+    "ganador_pct": 99.67,
+    "centro": {
+     "nivel": "sin_dato",
+     "baja_mediana": null,
+     "procesos": 1,
+     "granularidad": null
+    },
+    "escenarios": [
+     {
+      "cd_fraccion": 0.7,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.75,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.8,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.85,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.9,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     }
+    ],
+    "controles": [
+     {
+      "pct": 96.75,
+      "gana_en_de_4": 2,
+      "bajo_piso": true
+     },
+     {
+      "pct": 95,
+      "gana_en_de_4": 2,
+      "bajo_piso": true
+     },
+     {
+      "pct": 93.4,
+      "gana_en_de_4": 2,
+      "bajo_piso": true
+     }
+    ]
+   },
+   {
+    "id": "CO1.REQ.10399641",
+    "entidad_40": "ARMADA NACIONAL DE COLOMBIA DISPENSARIO ",
+    "entidad": "ARMADA NACIONAL DE COLOMBIA DISPENSARIO MÉDICO NIVEL I BAHÍA MÁLAGA",
+    "n_ofertas": 5,
+    "ganador_pct": 94.88,
+    "centro": {
+     "nivel": "sin_dato",
+     "baja_mediana": null,
+     "procesos": 2,
+     "granularidad": null
+    },
+    "escenarios": [
+     {
+      "cd_fraccion": 0.7,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.75,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.8,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.85,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.9,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     }
+    ],
+    "controles": [
+     {
+      "pct": 96.75,
+      "gana_en_de_4": 0,
+      "bajo_piso": false
+     },
+     {
+      "pct": 95,
+      "gana_en_de_4": 0,
+      "bajo_piso": false
+     },
+     {
+      "pct": 93.4,
+      "gana_en_de_4": 1,
+      "bajo_piso": false
+     }
+    ]
+   },
+   {
+    "id": "CO1.REQ.10453070",
+    "entidad_40": "SANTIAGO DE CALI DISTRITO ESPECIAL - SEC",
+    "entidad": null,
+    "n_ofertas": 5,
+    "ganador_pct": 95,
+    "centro": null,
+    "escenarios": [
+     {
+      "cd_fraccion": 0.7,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.75,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.8,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.85,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.9,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     }
+    ],
+    "controles": [
+     {
+      "pct": 96.75,
+      "gana_en_de_4": 0,
+      "bajo_piso": false
+     },
+     {
+      "pct": 95,
+      "gana_en_de_4": 1,
+      "bajo_piso": false
+     },
+     {
+      "pct": 93.4,
+      "gana_en_de_4": 1,
+      "bajo_piso": false
+     }
+    ]
+   },
+   {
+    "id": "CO1.REQ.10450322",
+    "entidad_40": "ALCALDIA MUNICIPIO DE JAMUNDI",
+    "entidad": "ALCALDIA MUNICIPIO DE JAMUNDI",
+    "n_ofertas": 3,
+    "ganador_pct": 99.74,
+    "centro": {
+     "nivel": "medio",
+     "baja_mediana": 3,
+     "procesos": 9,
+     "granularidad": "entidad"
+    },
+    "escenarios": [
+     {
+      "cd_fraccion": 0.7,
+      "aplicable": true,
+      "motivo": null,
+      "pct_po": 98.5,
+      "gana_en_de_4": 0,
+      "bajo_piso": false,
+      "bajo_costo_con_aiu": false
+     },
+     {
+      "cd_fraccion": 0.75,
+      "aplicable": true,
+      "motivo": null,
+      "pct_po": 99.5,
+      "gana_en_de_4": 0,
+      "bajo_piso": false,
+      "bajo_costo_con_aiu": false
+     },
+     {
+      "cd_fraccion": 0.8,
+      "aplicable": true,
+      "motivo": null,
+      "pct_po": 100,
+      "gana_en_de_4": 0,
+      "bajo_piso": false,
+      "bajo_costo_con_aiu": true
+     },
+     {
+      "cd_fraccion": 0.85,
+      "aplicable": true,
+      "motivo": null,
+      "pct_po": 100,
+      "gana_en_de_4": 0,
+      "bajo_piso": false,
+      "bajo_costo_con_aiu": true
+     },
+     {
+      "cd_fraccion": 0.9,
+      "aplicable": true,
+      "motivo": null,
+      "pct_po": 100,
+      "gana_en_de_4": 0,
+      "bajo_piso": false,
+      "bajo_costo_con_aiu": true
+     }
+    ],
+    "controles": [
+     {
+      "pct": 96.75,
+      "gana_en_de_4": 1,
+      "bajo_piso": false
+     },
+     {
+      "pct": 95,
+      "gana_en_de_4": 2,
+      "bajo_piso": false
+     },
+     {
+      "pct": 93.4,
+      "gana_en_de_4": 2,
+      "bajo_piso": false
+     }
+    ]
+   },
+   {
+    "id": "CO1.REQ.10456046",
+    "entidad_40": "SANTIAGO DE CALI DISTRITO ESPECIAL - SEC",
+    "entidad": null,
+    "n_ofertas": 4,
+    "ganador_pct": 98.9,
+    "centro": null,
+    "escenarios": [
+     {
+      "cd_fraccion": 0.7,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.75,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.8,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.85,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.9,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     }
+    ],
+    "controles": [
+     {
+      "pct": 96.75,
+      "gana_en_de_4": 2,
+      "bajo_piso": false
+     },
+     {
+      "pct": 95,
+      "gana_en_de_4": 1,
+      "bajo_piso": false
+     },
+     {
+      "pct": 93.4,
+      "gana_en_de_4": 1,
+      "bajo_piso": true
+     }
+    ]
+   },
+   {
+    "id": "CO1.REQ.10452711",
+    "entidad_40": "SANTIAGO DE CALI DISTRITO ESPECIAL - UNI",
+    "entidad": null,
+    "n_ofertas": 4,
+    "ganador_pct": 98.9,
+    "centro": null,
+    "escenarios": [
+     {
+      "cd_fraccion": 0.7,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.75,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.8,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.85,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.9,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     }
+    ],
+    "controles": [
+     {
+      "pct": 96.75,
+      "gana_en_de_4": 1,
+      "bajo_piso": false
+     },
+     {
+      "pct": 95,
+      "gana_en_de_4": 1,
+      "bajo_piso": false
+     },
+     {
+      "pct": 93.4,
+      "gana_en_de_4": 1,
+      "bajo_piso": false
+     }
+    ]
+   },
+   {
+    "id": "CO1.REQ.10451129",
+    "entidad_40": "SANTIAGO DE CALI DISTRITO ESPECIAL - SEC",
+    "entidad": null,
+    "n_ofertas": 3,
+    "ganador_pct": 96.05,
+    "centro": null,
+    "escenarios": [
+     {
+      "cd_fraccion": 0.7,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.75,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.8,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.85,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.9,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     }
+    ],
+    "controles": [
+     {
+      "pct": 96.75,
+      "gana_en_de_4": 0,
+      "bajo_piso": false
+     },
+     {
+      "pct": 95,
+      "gana_en_de_4": 0,
+      "bajo_piso": false
+     },
+     {
+      "pct": 93.4,
+      "gana_en_de_4": 0,
+      "bajo_piso": false
+     }
+    ]
+   },
+   {
+    "id": "CO1.REQ.10500611",
+    "entidad_40": "DIMAR - GRUPO INTENDENCIA REGIONAL PACIF",
+    "entidad": "DIMAR - GRUPO INTENDENCIA REGIONAL PACIFICO",
+    "n_ofertas": 10,
+    "ganador_pct": 92.44,
+    "centro": {
+     "nivel": "sin_dato",
+     "baja_mediana": null,
+     "procesos": 4,
+     "granularidad": null
+    },
+    "escenarios": [
+     {
+      "cd_fraccion": 0.7,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.75,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.8,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.85,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.9,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     }
+    ],
+    "controles": [
+     {
+      "pct": 96.75,
+      "gana_en_de_4": 0,
+      "bajo_piso": false
+     },
+     {
+      "pct": 95,
+      "gana_en_de_4": 0,
+      "bajo_piso": false
+     },
+     {
+      "pct": 93.4,
+      "gana_en_de_4": 0,
+      "bajo_piso": false
+     }
+    ]
+   },
+   {
+    "id": "CO1.REQ.10534136",
+    "entidad_40": "SANTIAGO DE CALI DISTRITO ESPECIAL - SEC",
+    "entidad": null,
+    "n_ofertas": 8,
+    "ganador_pct": 93.33,
+    "centro": null,
+    "escenarios": [
+     {
+      "cd_fraccion": 0.7,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.75,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.8,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.85,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.9,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     }
+    ],
+    "controles": [
+     {
+      "pct": 96.75,
+      "gana_en_de_4": 2,
+      "bajo_piso": false
+     },
+     {
+      "pct": 95,
+      "gana_en_de_4": 0,
+      "bajo_piso": false
+     },
+     {
+      "pct": 93.4,
+      "gana_en_de_4": 0,
+      "bajo_piso": true
+     }
+    ]
+   },
+   {
+    "id": "CO1.REQ.10577274",
+    "entidad_40": "DIMAR - GRUPO INTENDENCIA REGIONAL PACIF",
+    "entidad": "DIMAR - GRUPO INTENDENCIA REGIONAL PACIFICO",
+    "n_ofertas": 4,
+    "ganador_pct": 96,
+    "centro": {
+     "nivel": "sin_dato",
+     "baja_mediana": null,
+     "procesos": 4,
+     "granularidad": null
+    },
+    "escenarios": [
+     {
+      "cd_fraccion": 0.7,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.75,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.8,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.85,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.9,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     }
+    ],
+    "controles": [
+     {
+      "pct": 96.75,
+      "gana_en_de_4": 0,
+      "bajo_piso": false
+     },
+     {
+      "pct": 95,
+      "gana_en_de_4": 1,
+      "bajo_piso": false
+     },
+     {
+      "pct": 93.4,
+      "gana_en_de_4": 1,
+      "bajo_piso": false
+     }
+    ]
+   },
+   {
+    "id": "CO1.REQ.10697130",
+    "entidad_40": "SANTIAGO DE CALI DISTRITO ESPECIAL - UNI",
+    "entidad": null,
+    "n_ofertas": 3,
+    "ganador_pct": 99,
+    "centro": null,
+    "escenarios": [
+     {
+      "cd_fraccion": 0.7,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.75,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.8,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.85,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.9,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     }
+    ],
+    "controles": [
+     {
+      "pct": 96.75,
+      "gana_en_de_4": 2,
+      "bajo_piso": true
+     },
+     {
+      "pct": 95,
+      "gana_en_de_4": 2,
+      "bajo_piso": true
+     },
+     {
+      "pct": 93.4,
+      "gana_en_de_4": 2,
+      "bajo_piso": true
+     }
+    ]
+   },
+   {
+    "id": "CO1.REQ.11022478",
+    "entidad_40": "SANTIAGO DE CALI DISTRITO ESPECIAL - SEC",
+    "entidad": null,
+    "n_ofertas": 6,
+    "ganador_pct": 94.12,
+    "centro": null,
+    "escenarios": [
+     {
+      "cd_fraccion": 0.7,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.75,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.8,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.85,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.9,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     }
+    ],
+    "controles": [
+     {
+      "pct": 96.75,
+      "gana_en_de_4": 0,
+      "bajo_piso": false
+     },
+     {
+      "pct": 95,
+      "gana_en_de_4": 2,
+      "bajo_piso": false
+     },
+     {
+      "pct": 93.4,
+      "gana_en_de_4": 0,
+      "bajo_piso": false
+     }
+    ]
+   },
+   {
+    "id": "CO1.REQ.11072515",
+    "entidad_40": "SANTIAGO DE CALI  DISTRITO ESPECIAL - SE",
+    "entidad": null,
+    "n_ofertas": 3,
+    "ganador_pct": 97.85,
+    "centro": null,
+    "escenarios": [
+     {
+      "cd_fraccion": 0.7,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.75,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.8,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.85,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.9,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     }
+    ],
+    "controles": [
+     {
+      "pct": 96.75,
+      "gana_en_de_4": 3,
+      "bajo_piso": false
+     },
+     {
+      "pct": 95,
+      "gana_en_de_4": 3,
+      "bajo_piso": false
+     },
+     {
+      "pct": 93.4,
+      "gana_en_de_4": 1,
+      "bajo_piso": false
+     }
+    ]
+   },
+   {
+    "id": "CO1.REQ.6095566",
+    "entidad_40": "Rama Judicial  Dirección Seccional de A",
+    "entidad": null,
+    "n_ofertas": 5,
+    "ganador_pct": 96.1,
+    "centro": null,
+    "escenarios": [
+     {
+      "cd_fraccion": 0.7,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.75,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.8,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.85,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.9,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     }
+    ],
+    "controles": [
+     {
+      "pct": 96.75,
+      "gana_en_de_4": 0,
+      "bajo_piso": false
+     },
+     {
+      "pct": 95,
+      "gana_en_de_4": 1,
+      "bajo_piso": false
+     },
+     {
+      "pct": 93.4,
+      "gana_en_de_4": 1,
+      "bajo_piso": true
+     }
+    ]
+   },
+   {
+    "id": "CO1.REQ.6087175",
+    "entidad_40": "ARMADA NACIONAL DE COLOMBIA DISPENSARIO ",
+    "entidad": "ARMADA NACIONAL DE COLOMBIA DISPENSARIO MÉDICO NIVEL I BAHÍA MÁLAGA",
+    "n_ofertas": 13,
+    "ganador_pct": 96.63,
+    "centro": {
+     "nivel": "sin_dato",
+     "baja_mediana": null,
+     "procesos": 2,
+     "granularidad": null
+    },
+    "escenarios": [
+     {
+      "cd_fraccion": 0.7,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.75,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.8,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.85,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.9,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     }
+    ],
+    "controles": [
+     {
+      "pct": 96.75,
+      "gana_en_de_4": 2,
+      "bajo_piso": false
+     },
+     {
+      "pct": 95,
+      "gana_en_de_4": 1,
+      "bajo_piso": true
+     },
+     {
+      "pct": 93.4,
+      "gana_en_de_4": 1,
+      "bajo_piso": true
+     }
+    ]
+   },
+   {
+    "id": "CO1.REQ.6203899",
+    "entidad_40": "Rama Judicial  Dirección Seccional de A",
+    "entidad": null,
+    "n_ofertas": 3,
+    "ganador_pct": 98.46,
+    "centro": null,
+    "escenarios": [
+     {
+      "cd_fraccion": 0.7,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.75,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.8,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.85,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.9,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     }
+    ],
+    "controles": [
+     {
+      "pct": 96.75,
+      "gana_en_de_4": 2,
+      "bajo_piso": false
+     },
+     {
+      "pct": 95,
+      "gana_en_de_4": 1,
+      "bajo_piso": true
+     },
+     {
+      "pct": 93.4,
+      "gana_en_de_4": 2,
+      "bajo_piso": true
+     }
+    ]
+   },
+   {
+    "id": "CO1.REQ.6211402",
+    "entidad_40": "SANTIAGO DE CALI DISTRITO ESPECIAL - SEC",
+    "entidad": null,
+    "n_ofertas": 4,
+    "ganador_pct": 98,
+    "centro": null,
+    "escenarios": [
+     {
+      "cd_fraccion": 0.7,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.75,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.8,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.85,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.9,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     }
+    ],
+    "controles": [
+     {
+      "pct": 96.75,
+      "gana_en_de_4": 1,
+      "bajo_piso": true
+     },
+     {
+      "pct": 95,
+      "gana_en_de_4": 1,
+      "bajo_piso": true
+     },
+     {
+      "pct": 93.4,
+      "gana_en_de_4": 1,
+      "bajo_piso": true
+     }
+    ]
+   },
+   {
+    "id": "CO1.REQ.6235883",
+    "entidad_40": "SANTIAGO DE CALI DISTRITO ESPECIAL - SEC",
+    "entidad": null,
+    "n_ofertas": 5,
+    "ganador_pct": 99.1,
+    "centro": null,
+    "escenarios": [
+     {
+      "cd_fraccion": 0.7,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.75,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.8,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.85,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.9,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     }
+    ],
+    "controles": [
+     {
+      "pct": 96.75,
+      "gana_en_de_4": 1,
+      "bajo_piso": true
+     },
+     {
+      "pct": 95,
+      "gana_en_de_4": 2,
+      "bajo_piso": true
+     },
+     {
+      "pct": 93.4,
+      "gana_en_de_4": 2,
+      "bajo_piso": true
+     }
+    ]
+   },
+   {
+    "id": "CO1.REQ.6234776",
+    "entidad_40": "SANTIAGO DE CALI  DISTRITO ESPECIAL - SE",
+    "entidad": null,
+    "n_ofertas": 3,
+    "ganador_pct": 95.54,
+    "centro": null,
+    "escenarios": [
+     {
+      "cd_fraccion": 0.7,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.75,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.8,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.85,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.9,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     }
+    ],
+    "controles": [
+     {
+      "pct": 96.75,
+      "gana_en_de_4": 0,
+      "bajo_piso": false
+     },
+     {
+      "pct": 95,
+      "gana_en_de_4": 2,
+      "bajo_piso": false
+     },
+     {
+      "pct": 93.4,
+      "gana_en_de_4": 1,
+      "bajo_piso": true
+     }
+    ]
+   },
+   {
+    "id": "CO1.REQ.6243640",
+    "entidad_40": "SANTIAGO DE CALI DISTRITO ESPECIAL - DEP",
+    "entidad": "SANTIAGO DE CALI DISTRITO ESPECIAL - DEPARTAMENTO ADMINISTRATIVO DE TECNOLOGIAS DE LA INFORMACION Y LAS COMUNICACIONES",
+    "n_ofertas": 6,
+    "ganador_pct": 97.17,
+    "centro": {
+     "nivel": "sin_dato",
+     "baja_mediana": null,
+     "procesos": 0,
+     "granularidad": null
+    },
+    "escenarios": [
+     {
+      "cd_fraccion": 0.7,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.75,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.8,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.85,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.9,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     }
+    ],
+    "controles": [
+     {
+      "pct": 96.75,
+      "gana_en_de_4": 1,
+      "bajo_piso": false
+     },
+     {
+      "pct": 95,
+      "gana_en_de_4": 1,
+      "bajo_piso": false
+     },
+     {
+      "pct": 93.4,
+      "gana_en_de_4": 0,
+      "bajo_piso": false
+     }
+    ]
+   },
+   {
+    "id": "CO1.REQ.6255776",
+    "entidad_40": "SECRETARIA DE EDUCACION DE CALI",
+    "entidad": "SECRETARIA DE EDUCACION DE CALI",
+    "n_ofertas": 16,
+    "ganador_pct": 99.88,
+    "centro": {
+     "nivel": "sin_dato",
+     "baja_mediana": null,
+     "procesos": 4,
+     "granularidad": null
+    },
+    "escenarios": [
+     {
+      "cd_fraccion": 0.7,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.75,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.8,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.85,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.9,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     }
+    ],
+    "controles": [
+     {
+      "pct": 96.75,
+      "gana_en_de_4": 0,
+      "bajo_piso": true
+     },
+     {
+      "pct": 95,
+      "gana_en_de_4": 0,
+      "bajo_piso": true
+     },
+     {
+      "pct": 93.4,
+      "gana_en_de_4": 0,
+      "bajo_piso": true
+     }
+    ]
+   },
+   {
+    "id": "CO1.REQ.6257156",
+    "entidad_40": "SECRETARIA DE EDUCACION DE CALI",
+    "entidad": "SECRETARIA DE EDUCACION DE CALI",
+    "n_ofertas": 15,
+    "ganador_pct": 98.77,
+    "centro": {
+     "nivel": "sin_dato",
+     "baja_mediana": null,
+     "procesos": 4,
+     "granularidad": null
+    },
+    "escenarios": [
+     {
+      "cd_fraccion": 0.7,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.75,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.8,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.85,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.9,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     }
+    ],
+    "controles": [
+     {
+      "pct": 96.75,
+      "gana_en_de_4": 0,
+      "bajo_piso": true
+     },
+     {
+      "pct": 95,
+      "gana_en_de_4": 1,
+      "bajo_piso": true
+     },
+     {
+      "pct": 93.4,
+      "gana_en_de_4": 0,
+      "bajo_piso": true
+     }
+    ]
+   },
+   {
+    "id": "CO1.REQ.6344153",
+    "entidad_40": "DEPARTAMENTO ADMINISTRATIVO DE GESTION D",
+    "entidad": "DEPARTAMENTO ADMINISTRATIVO DE GESTION DEL MEDIO AMBIENTE DAGMA",
+    "n_ofertas": 5,
+    "ganador_pct": 99.31,
+    "centro": {
+     "nivel": "sin_dato",
+     "baja_mediana": null,
+     "procesos": 2,
+     "granularidad": null
+    },
+    "escenarios": [
+     {
+      "cd_fraccion": 0.7,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.75,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.8,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.85,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.9,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     }
+    ],
+    "controles": [
+     {
+      "pct": 96.75,
+      "gana_en_de_4": 1,
+      "bajo_piso": true
+     },
+     {
+      "pct": 95,
+      "gana_en_de_4": 1,
+      "bajo_piso": true
+     },
+     {
+      "pct": 93.4,
+      "gana_en_de_4": 1,
+      "bajo_piso": true
+     }
+    ]
+   },
+   {
+    "id": "CO1.REQ.6383883",
+    "entidad_40": "Rama Judicial  Dirección Seccional de A",
+    "entidad": null,
+    "n_ofertas": 10,
+    "ganador_pct": 97.4,
+    "centro": null,
+    "escenarios": [
+     {
+      "cd_fraccion": 0.7,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.75,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.8,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.85,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.9,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     }
+    ],
+    "controles": [
+     {
+      "pct": 96.75,
+      "gana_en_de_4": 2,
+      "bajo_piso": false
+     },
+     {
+      "pct": 95,
+      "gana_en_de_4": 1,
+      "bajo_piso": true
+     },
+     {
+      "pct": 93.4,
+      "gana_en_de_4": 1,
+      "bajo_piso": true
+     }
+    ]
+   },
+   {
+    "id": "CO1.REQ.6372438",
+    "entidad_40": "SENA REGIONAL VALLE Grupo de Apoyo Admin",
+    "entidad": "SENA REGIONAL VALLE Grupo de Apoyo Administrativo Mixto",
+    "n_ofertas": 6,
+    "ganador_pct": 97.35,
+    "centro": {
+     "nivel": "bajo",
+     "baja_mediana": 0,
+     "procesos": 7,
+     "granularidad": "entidad"
+    },
+    "escenarios": [
+     {
+      "cd_fraccion": 0.7,
+      "aplicable": true,
+      "motivo": null,
+      "pct_po": 100,
+      "gana_en_de_4": 0,
+      "bajo_piso": false,
+      "bajo_costo_con_aiu": false
+     },
+     {
+      "cd_fraccion": 0.75,
+      "aplicable": true,
+      "motivo": null,
+      "pct_po": 100,
+      "gana_en_de_4": 0,
+      "bajo_piso": false,
+      "bajo_costo_con_aiu": false
+     },
+     {
+      "cd_fraccion": 0.8,
+      "aplicable": true,
+      "motivo": null,
+      "pct_po": 100,
+      "gana_en_de_4": 0,
+      "bajo_piso": false,
+      "bajo_costo_con_aiu": true
+     },
+     {
+      "cd_fraccion": 0.85,
+      "aplicable": true,
+      "motivo": null,
+      "pct_po": 100,
+      "gana_en_de_4": 0,
+      "bajo_piso": false,
+      "bajo_costo_con_aiu": true
+     },
+     {
+      "cd_fraccion": 0.9,
+      "aplicable": true,
+      "motivo": null,
+      "pct_po": 100,
+      "gana_en_de_4": 0,
+      "bajo_piso": false,
+      "bajo_costo_con_aiu": true
+     }
+    ],
+    "controles": [
+     {
+      "pct": 96.75,
+      "gana_en_de_4": 0,
+      "bajo_piso": false
+     },
+     {
+      "pct": 95,
+      "gana_en_de_4": 0,
+      "bajo_piso": false
+     },
+     {
+      "pct": 93.4,
+      "gana_en_de_4": 1,
+      "bajo_piso": false
+     }
+    ]
+   },
+   {
+    "id": "CO1.REQ.6407164",
+    "entidad_40": "SENA REGIONAL VALLE Grupo de Apoyo Admin",
+    "entidad": "SENA REGIONAL VALLE Grupo de Apoyo Administrativo Mixto",
+    "n_ofertas": 4,
+    "ganador_pct": 96.84,
+    "centro": {
+     "nivel": "bajo",
+     "baja_mediana": 0,
+     "procesos": 7,
+     "granularidad": "entidad"
+    },
+    "escenarios": [
+     {
+      "cd_fraccion": 0.7,
+      "aplicable": true,
+      "motivo": null,
+      "pct_po": 100,
+      "gana_en_de_4": 0,
+      "bajo_piso": false,
+      "bajo_costo_con_aiu": false
+     },
+     {
+      "cd_fraccion": 0.75,
+      "aplicable": true,
+      "motivo": null,
+      "pct_po": 100,
+      "gana_en_de_4": 0,
+      "bajo_piso": false,
+      "bajo_costo_con_aiu": false
+     },
+     {
+      "cd_fraccion": 0.8,
+      "aplicable": true,
+      "motivo": null,
+      "pct_po": 100,
+      "gana_en_de_4": 0,
+      "bajo_piso": false,
+      "bajo_costo_con_aiu": true
+     },
+     {
+      "cd_fraccion": 0.85,
+      "aplicable": true,
+      "motivo": null,
+      "pct_po": 100,
+      "gana_en_de_4": 0,
+      "bajo_piso": false,
+      "bajo_costo_con_aiu": true
+     },
+     {
+      "cd_fraccion": 0.9,
+      "aplicable": true,
+      "motivo": null,
+      "pct_po": 100,
+      "gana_en_de_4": 0,
+      "bajo_piso": false,
+      "bajo_costo_con_aiu": true
+     }
+    ],
+    "controles": [
+     {
+      "pct": 96.75,
+      "gana_en_de_4": 2,
+      "bajo_piso": false
+     },
+     {
+      "pct": 95,
+      "gana_en_de_4": 2,
+      "bajo_piso": false
+     },
+     {
+      "pct": 93.4,
+      "gana_en_de_4": 1,
+      "bajo_piso": false
+     }
+    ]
+   },
+   {
+    "id": "CO1.REQ.6484095",
+    "entidad_40": "ESM ESCUELA MILITAR DE AVIACION",
+    "entidad": "ESM ESCUELA MILITAR DE AVIACION",
+    "n_ofertas": 4,
+    "ganador_pct": 100,
+    "centro": {
+     "nivel": "sin_dato",
+     "baja_mediana": null,
+     "procesos": 0,
+     "granularidad": null
+    },
+    "escenarios": [
+     {
+      "cd_fraccion": 0.7,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.75,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.8,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.85,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.9,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     }
+    ],
+    "controles": [
+     {
+      "pct": 96.75,
+      "gana_en_de_4": 1,
+      "bajo_piso": false
+     },
+     {
+      "pct": 95,
+      "gana_en_de_4": 2,
+      "bajo_piso": false
+     },
+     {
+      "pct": 93.4,
+      "gana_en_de_4": 2,
+      "bajo_piso": false
+     }
+    ]
+   },
+   {
+    "id": "CO1.REQ.6495481",
+    "entidad_40": "SANTIAGO DE CALI DISTRITO ESPECIAL - SEC",
+    "entidad": null,
+    "n_ofertas": 7,
+    "ganador_pct": 94,
+    "centro": null,
+    "escenarios": [
+     {
+      "cd_fraccion": 0.7,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.75,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.8,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.85,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.9,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     }
+    ],
+    "controles": [
+     {
+      "pct": 96.75,
+      "gana_en_de_4": 0,
+      "bajo_piso": false
+     },
+     {
+      "pct": 95,
+      "gana_en_de_4": 0,
+      "bajo_piso": false
+     },
+     {
+      "pct": 93.4,
+      "gana_en_de_4": 0,
+      "bajo_piso": false
+     }
+    ]
+   },
+   {
+    "id": "CO1.REQ.6499775",
+    "entidad_40": "SANTIAGO DE CALI DISTRITO ESPECIAL - SEC",
+    "entidad": null,
+    "n_ofertas": 3,
+    "ganador_pct": 89,
+    "centro": null,
+    "escenarios": [
+     {
+      "cd_fraccion": 0.7,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.75,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.8,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.85,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.9,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     }
+    ],
+    "controles": [
+     {
+      "pct": 96.75,
+      "gana_en_de_4": 0,
+      "bajo_piso": false
+     },
+     {
+      "pct": 95,
+      "gana_en_de_4": 0,
+      "bajo_piso": false
+     },
+     {
+      "pct": 93.4,
+      "gana_en_de_4": 0,
+      "bajo_piso": false
+     }
+    ]
+   },
+   {
+    "id": "CO1.REQ.6487384",
+    "entidad_40": "SANTIAGO DE CALI DISTRITO ESPECIAL - UNI",
+    "entidad": null,
+    "n_ofertas": 3,
+    "ganador_pct": 98.85,
+    "centro": null,
+    "escenarios": [
+     {
+      "cd_fraccion": 0.7,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.75,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.8,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.85,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.9,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     }
+    ],
+    "controles": [
+     {
+      "pct": 96.75,
+      "gana_en_de_4": 3,
+      "bajo_piso": false
+     },
+     {
+      "pct": 95,
+      "gana_en_de_4": 3,
+      "bajo_piso": false
+     },
+     {
+      "pct": 93.4,
+      "gana_en_de_4": 1,
+      "bajo_piso": true
+     }
+    ]
+   },
+   {
+    "id": "CO1.REQ.6773537",
+    "entidad_40": "DISPENSARIO MEDICO DE CALI",
+    "entidad": "DISPENSARIO MEDICO DE CALI",
+    "n_ofertas": 3,
+    "ganador_pct": 95.65,
+    "centro": {
+     "nivel": "sin_dato",
+     "baja_mediana": null,
+     "procesos": 2,
+     "granularidad": null
+    },
+    "escenarios": [
+     {
+      "cd_fraccion": 0.7,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.75,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.8,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.85,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.9,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     }
+    ],
+    "controles": [
+     {
+      "pct": 96.75,
+      "gana_en_de_4": 0,
+      "bajo_piso": false
+     },
+     {
+      "pct": 95,
+      "gana_en_de_4": 3,
+      "bajo_piso": false
+     },
+     {
+      "pct": 93.4,
+      "gana_en_de_4": 1,
+      "bajo_piso": false
+     }
+    ]
+   },
+   {
+    "id": "CO1.REQ.6805656",
+    "entidad_40": "ALCALDÍA MUNICIPIO DE PALMIRA",
+    "entidad": "ALCALDÍA MUNICIPIO DE PALMIRA",
+    "n_ofertas": 4,
+    "ganador_pct": 95.31,
+    "centro": {
+     "nivel": "bajo",
+     "baja_mediana": 0,
+     "procesos": 5,
+     "granularidad": "entidad"
+    },
+    "escenarios": [
+     {
+      "cd_fraccion": 0.7,
+      "aplicable": true,
+      "motivo": null,
+      "pct_po": 96.5,
+      "gana_en_de_4": 0,
+      "bajo_piso": false,
+      "bajo_costo_con_aiu": false
+     },
+     {
+      "cd_fraccion": 0.75,
+      "aplicable": true,
+      "motivo": null,
+      "pct_po": 100,
+      "gana_en_de_4": 0,
+      "bajo_piso": false,
+      "bajo_costo_con_aiu": false
+     },
+     {
+      "cd_fraccion": 0.8,
+      "aplicable": true,
+      "motivo": null,
+      "pct_po": 100,
+      "gana_en_de_4": 0,
+      "bajo_piso": false,
+      "bajo_costo_con_aiu": true
+     },
+     {
+      "cd_fraccion": 0.85,
+      "aplicable": true,
+      "motivo": null,
+      "pct_po": 100,
+      "gana_en_de_4": 0,
+      "bajo_piso": false,
+      "bajo_costo_con_aiu": true
+     },
+     {
+      "cd_fraccion": 0.9,
+      "aplicable": true,
+      "motivo": null,
+      "pct_po": 100,
+      "gana_en_de_4": 0,
+      "bajo_piso": false,
+      "bajo_costo_con_aiu": true
+     }
+    ],
+    "controles": [
+     {
+      "pct": 96.75,
+      "gana_en_de_4": 0,
+      "bajo_piso": false
+     },
+     {
+      "pct": 95,
+      "gana_en_de_4": 1,
+      "bajo_piso": false
+     },
+     {
+      "pct": 93.4,
+      "gana_en_de_4": 2,
+      "bajo_piso": true
+     }
+    ]
+   },
+   {
+    "id": "CO1.REQ.6977050",
+    "entidad_40": "DEPARTAMENTO ADMINISTRATIVO DE GESTION D",
+    "entidad": "DEPARTAMENTO ADMINISTRATIVO DE GESTION DEL MEDIO AMBIENTE DAGMA",
+    "n_ofertas": 4,
+    "ganador_pct": 98.45,
+    "centro": {
+     "nivel": "sin_dato",
+     "baja_mediana": null,
+     "procesos": 2,
+     "granularidad": null
+    },
+    "escenarios": [
+     {
+      "cd_fraccion": 0.7,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.75,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.8,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.85,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.9,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     }
+    ],
+    "controles": [
+     {
+      "pct": 96.75,
+      "gana_en_de_4": 1,
+      "bajo_piso": true
+     },
+     {
+      "pct": 95,
+      "gana_en_de_4": 1,
+      "bajo_piso": true
+     },
+     {
+      "pct": 93.4,
+      "gana_en_de_4": 1,
+      "bajo_piso": true
+     }
+    ]
+   },
+   {
+    "id": "CO1.REQ.7015401",
+    "entidad_40": "SANTIAGO DE CALI DISTRITO ESPECIAL - SEC",
+    "entidad": null,
+    "n_ofertas": 4,
+    "ganador_pct": 99.2,
+    "centro": null,
+    "escenarios": [
+     {
+      "cd_fraccion": 0.7,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.75,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.8,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.85,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.9,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     }
+    ],
+    "controles": [
+     {
+      "pct": 96.75,
+      "gana_en_de_4": 0,
+      "bajo_piso": false
+     },
+     {
+      "pct": 95,
+      "gana_en_de_4": 0,
+      "bajo_piso": false
+     },
+     {
+      "pct": 93.4,
+      "gana_en_de_4": 1,
+      "bajo_piso": false
+     }
+    ]
+   },
+   {
+    "id": "CO1.REQ.7016778",
+    "entidad_40": "INSTITUCION EDUCATIVA TECNICO INDUSTRIAL",
+    "entidad": "INSTITUCION EDUCATIVA TECNICO INDUSTRIAL ANTONIO JOSE CAMACHO",
+    "n_ofertas": 5,
+    "ganador_pct": 99.02,
+    "centro": {
+     "nivel": "sin_dato",
+     "baja_mediana": null,
+     "procesos": 0,
+     "granularidad": null
+    },
+    "escenarios": [
+     {
+      "cd_fraccion": 0.7,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.75,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.8,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.85,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.9,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     }
+    ],
+    "controles": [
+     {
+      "pct": 96.75,
+      "gana_en_de_4": 1,
+      "bajo_piso": true
+     },
+     {
+      "pct": 95,
+      "gana_en_de_4": 1,
+      "bajo_piso": true
+     },
+     {
+      "pct": 93.4,
+      "gana_en_de_4": 1,
+      "bajo_piso": true
+     }
+    ]
+   },
+   {
+    "id": "CO1.REQ.8020674",
+    "entidad_40": "INSTITUTO DEPARTAMENTAL DE BELLAS ARTES",
+    "entidad": "INSTITUTO DEPARTAMENTAL DE BELLAS ARTES",
+    "n_ofertas": 3,
+    "ganador_pct": 86.28,
+    "centro": {
+     "nivel": "sin_dato",
+     "baja_mediana": null,
+     "procesos": 1,
+     "granularidad": null
+    },
+    "escenarios": [
+     {
+      "cd_fraccion": 0.7,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.75,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.8,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.85,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.9,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     }
+    ],
+    "controles": [
+     {
+      "pct": 96.75,
+      "gana_en_de_4": 2,
+      "bajo_piso": false
+     },
+     {
+      "pct": 95,
+      "gana_en_de_4": 2,
+      "bajo_piso": false
+     },
+     {
+      "pct": 93.4,
+      "gana_en_de_4": 3,
+      "bajo_piso": false
+     }
+    ]
+   },
+   {
+    "id": "CO1.REQ.8276876",
+    "entidad_40": "ARMADA NACIONAL BASE NAVAL ARC MALAGA",
+    "entidad": "ARMADA NACIONAL BASE NAVAL ARC MALAGA",
+    "n_ofertas": 29,
+    "ganador_pct": 91.65,
+    "centro": {
+     "nivel": "sin_dato",
+     "baja_mediana": null,
+     "procesos": 2,
+     "granularidad": null
+    },
+    "escenarios": [
+     {
+      "cd_fraccion": 0.7,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.75,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.8,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.85,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.9,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     }
+    ],
+    "controles": [
+     {
+      "pct": 96.75,
+      "gana_en_de_4": 0,
+      "bajo_piso": false
+     },
+     {
+      "pct": 95,
+      "gana_en_de_4": 0,
+      "bajo_piso": false
+     },
+     {
+      "pct": 93.4,
+      "gana_en_de_4": 0,
+      "bajo_piso": true
+     }
+    ]
+   },
+   {
+    "id": "CO1.REQ.8212633",
+    "entidad_40": "ARMADA NACIONAL BASE NAVAL ARC MALAGA",
+    "entidad": "ARMADA NACIONAL BASE NAVAL ARC MALAGA",
+    "n_ofertas": 13,
+    "ganador_pct": 93.83,
+    "centro": {
+     "nivel": "sin_dato",
+     "baja_mediana": null,
+     "procesos": 2,
+     "granularidad": null
+    },
+    "escenarios": [
+     {
+      "cd_fraccion": 0.7,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.75,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.8,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.85,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.9,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     }
+    ],
+    "controles": [
+     {
+      "pct": 96.75,
+      "gana_en_de_4": 0,
+      "bajo_piso": false
+     },
+     {
+      "pct": 95,
+      "gana_en_de_4": 0,
+      "bajo_piso": false
+     },
+     {
+      "pct": 93.4,
+      "gana_en_de_4": 0,
+      "bajo_piso": true
+     }
+    ]
+   },
+   {
+    "id": "CO1.REQ.8187570",
+    "entidad_40": "ALCALDIA MUNICIPIO DE JAMUNDI",
+    "entidad": "ALCALDIA MUNICIPIO DE JAMUNDI",
+    "n_ofertas": 21,
+    "ganador_pct": 92.21,
+    "centro": {
+     "nivel": "medio",
+     "baja_mediana": 3,
+     "procesos": 9,
+     "granularidad": "entidad"
+    },
+    "escenarios": [
+     {
+      "cd_fraccion": 0.7,
+      "aplicable": true,
+      "motivo": null,
+      "pct_po": 98.5,
+      "gana_en_de_4": 0,
+      "bajo_piso": false,
+      "bajo_costo_con_aiu": false
+     },
+     {
+      "cd_fraccion": 0.75,
+      "aplicable": true,
+      "motivo": null,
+      "pct_po": 99.5,
+      "gana_en_de_4": 0,
+      "bajo_piso": false,
+      "bajo_costo_con_aiu": false
+     },
+     {
+      "cd_fraccion": 0.8,
+      "aplicable": true,
+      "motivo": null,
+      "pct_po": 100,
+      "gana_en_de_4": 0,
+      "bajo_piso": false,
+      "bajo_costo_con_aiu": true
+     },
+     {
+      "cd_fraccion": 0.85,
+      "aplicable": true,
+      "motivo": null,
+      "pct_po": 100,
+      "gana_en_de_4": 0,
+      "bajo_piso": false,
+      "bajo_costo_con_aiu": true
+     },
+     {
+      "cd_fraccion": 0.9,
+      "aplicable": true,
+      "motivo": null,
+      "pct_po": 100,
+      "gana_en_de_4": 0,
+      "bajo_piso": false,
+      "bajo_costo_con_aiu": true
+     }
+    ],
+    "controles": [
+     {
+      "pct": 96.75,
+      "gana_en_de_4": 0,
+      "bajo_piso": false
+     },
+     {
+      "pct": 95,
+      "gana_en_de_4": 0,
+      "bajo_piso": false
+     },
+     {
+      "pct": 93.4,
+      "gana_en_de_4": 0,
+      "bajo_piso": false
+     }
+    ]
+   },
+   {
+    "id": "CO1.REQ.8275795",
+    "entidad_40": "SANTIAGO DE CALI DISTRITO ESPECIAL - SEC",
+    "entidad": null,
+    "n_ofertas": 4,
+    "ganador_pct": 94.76,
+    "centro": null,
+    "escenarios": [
+     {
+      "cd_fraccion": 0.7,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.75,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.8,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.85,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.9,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     }
+    ],
+    "controles": [
+     {
+      "pct": 96.75,
+      "gana_en_de_4": 0,
+      "bajo_piso": false
+     },
+     {
+      "pct": 95,
+      "gana_en_de_4": 0,
+      "bajo_piso": false
+     },
+     {
+      "pct": 93.4,
+      "gana_en_de_4": 1,
+      "bajo_piso": false
+     }
+    ]
+   },
+   {
+    "id": "CO1.REQ.8287931",
+    "entidad_40": "ARMADA NACIONAL DE COLOMBIA DISPENSARIO ",
+    "entidad": "ARMADA NACIONAL DE COLOMBIA DISPENSARIO MÉDICO NIVEL I BAHÍA MÁLAGA",
+    "n_ofertas": 10,
+    "ganador_pct": 97.77,
+    "centro": {
+     "nivel": "sin_dato",
+     "baja_mediana": null,
+     "procesos": 2,
+     "granularidad": null
+    },
+    "escenarios": [
+     {
+      "cd_fraccion": 0.7,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.75,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.8,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.85,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.9,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     }
+    ],
+    "controles": [
+     {
+      "pct": 96.75,
+      "gana_en_de_4": 2,
+      "bajo_piso": false
+     },
+     {
+      "pct": 95,
+      "gana_en_de_4": 1,
+      "bajo_piso": true
+     },
+     {
+      "pct": 93.4,
+      "gana_en_de_4": 1,
+      "bajo_piso": true
+     }
+    ]
+   },
+   {
+    "id": "CO1.REQ.8321357",
+    "entidad_40": "ALCALDIA MUNICIPAL DE RESTREPO VALLE DEL",
+    "entidad": "ALCALDIA MUNICIPAL DE RESTREPO VALLE DEL CAUCA",
+    "n_ofertas": 5,
+    "ganador_pct": 98.61,
+    "centro": {
+     "nivel": "sin_dato",
+     "baja_mediana": null,
+     "procesos": 0,
+     "granularidad": null
+    },
+    "escenarios": [
+     {
+      "cd_fraccion": 0.7,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.75,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.8,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.85,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.9,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     }
+    ],
+    "controles": [
+     {
+      "pct": 96.75,
+      "gana_en_de_4": 0,
+      "bajo_piso": false
+     },
+     {
+      "pct": 95,
+      "gana_en_de_4": 0,
+      "bajo_piso": false
+     },
+     {
+      "pct": 93.4,
+      "gana_en_de_4": 0,
+      "bajo_piso": false
+     }
+    ]
+   },
+   {
+    "id": "CO1.REQ.8349635",
+    "entidad_40": "ESM ESCUELA MILITAR DE AVIACION",
+    "entidad": "ESM ESCUELA MILITAR DE AVIACION",
+    "n_ofertas": 5,
+    "ganador_pct": 100,
+    "centro": {
+     "nivel": "sin_dato",
+     "baja_mediana": null,
+     "procesos": 0,
+     "granularidad": null
+    },
+    "escenarios": [
+     {
+      "cd_fraccion": 0.7,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.75,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.8,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.85,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.9,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     }
+    ],
+    "controles": [
+     {
+      "pct": 96.75,
+      "gana_en_de_4": 0,
+      "bajo_piso": false
+     },
+     {
+      "pct": 95,
+      "gana_en_de_4": 1,
+      "bajo_piso": false
+     },
+     {
+      "pct": 93.4,
+      "gana_en_de_4": 1,
+      "bajo_piso": false
+     }
+    ]
+   },
+   {
+    "id": "CO1.REQ.8338678",
+    "entidad_40": "Rama Judicial  Dirección Seccional de A",
+    "entidad": null,
+    "n_ofertas": 9,
+    "ganador_pct": 97.74,
+    "centro": null,
+    "escenarios": [
+     {
+      "cd_fraccion": 0.7,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.75,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.8,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.85,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.9,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     }
+    ],
+    "controles": [
+     {
+      "pct": 96.75,
+      "gana_en_de_4": 0,
+      "bajo_piso": false
+     },
+     {
+      "pct": 95,
+      "gana_en_de_4": 1,
+      "bajo_piso": true
+     },
+     {
+      "pct": 93.4,
+      "gana_en_de_4": 1,
+      "bajo_piso": true
+     }
+    ]
+   },
+   {
+    "id": "CO1.REQ.8402009",
+    "entidad_40": "SENA REGIONAL VALLE Grupo Administrativo",
+    "entidad": null,
+    "n_ofertas": 8,
+    "ganador_pct": 97.87,
+    "centro": null,
+    "escenarios": [
+     {
+      "cd_fraccion": 0.7,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.75,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.8,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.85,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.9,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     }
+    ],
+    "controles": [
+     {
+      "pct": 96.75,
+      "gana_en_de_4": 0,
+      "bajo_piso": false
+     },
+     {
+      "pct": 95,
+      "gana_en_de_4": 1,
+      "bajo_piso": false
+     },
+     {
+      "pct": 93.4,
+      "gana_en_de_4": 1,
+      "bajo_piso": false
+     }
+    ]
+   },
+   {
+    "id": "CO1.REQ.8444738",
+    "entidad_40": "SANTIAGO DE CALI DISTRITO ESPECIAL - SEC",
+    "entidad": null,
+    "n_ofertas": 3,
+    "ganador_pct": 89.36,
+    "centro": null,
+    "escenarios": [
+     {
+      "cd_fraccion": 0.7,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.75,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.8,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.85,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.9,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     }
+    ],
+    "controles": [
+     {
+      "pct": 96.75,
+      "gana_en_de_4": 0,
+      "bajo_piso": false
+     },
+     {
+      "pct": 95,
+      "gana_en_de_4": 0,
+      "bajo_piso": false
+     },
+     {
+      "pct": 93.4,
+      "gana_en_de_4": 1,
+      "bajo_piso": false
+     }
+    ]
+   },
+   {
+    "id": "CO1.REQ.8431433",
+    "entidad_40": "Rama Judicial  Dirección Seccional de A",
+    "entidad": null,
+    "n_ofertas": 8,
+    "ganador_pct": 97.23,
+    "centro": null,
+    "escenarios": [
+     {
+      "cd_fraccion": 0.7,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.75,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.8,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.85,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.9,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     }
+    ],
+    "controles": [
+     {
+      "pct": 96.75,
+      "gana_en_de_4": 1,
+      "bajo_piso": true
+     },
+     {
+      "pct": 95,
+      "gana_en_de_4": 1,
+      "bajo_piso": true
+     },
+     {
+      "pct": 93.4,
+      "gana_en_de_4": 1,
+      "bajo_piso": true
+     }
+    ]
+   },
+   {
+    "id": "CO1.REQ.8444928",
+    "entidad_40": "SANTIAGO DE CALI DISTRITO ESPECIAL - SEC",
+    "entidad": null,
+    "n_ofertas": 5,
+    "ganador_pct": 93.39,
+    "centro": null,
+    "escenarios": [
+     {
+      "cd_fraccion": 0.7,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.75,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.8,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.85,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.9,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     }
+    ],
+    "controles": [
+     {
+      "pct": 96.75,
+      "gana_en_de_4": 0,
+      "bajo_piso": false
+     },
+     {
+      "pct": 95,
+      "gana_en_de_4": 0,
+      "bajo_piso": false
+     },
+     {
+      "pct": 93.4,
+      "gana_en_de_4": 0,
+      "bajo_piso": false
+     }
+    ]
+   },
+   {
+    "id": "CO1.REQ.8510197",
+    "entidad_40": "Rama Judicial  Dirección Seccional de A",
+    "entidad": null,
+    "n_ofertas": 6,
+    "ganador_pct": 97.13,
+    "centro": null,
+    "escenarios": [
+     {
+      "cd_fraccion": 0.7,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.75,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.8,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.85,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.9,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     }
+    ],
+    "controles": [
+     {
+      "pct": 96.75,
+      "gana_en_de_4": 0,
+      "bajo_piso": false
+     },
+     {
+      "pct": 95,
+      "gana_en_de_4": 1,
+      "bajo_piso": false
+     },
+     {
+      "pct": 93.4,
+      "gana_en_de_4": 1,
+      "bajo_piso": true
+     }
+    ]
+   },
+   {
+    "id": "CO1.REQ.8535312",
+    "entidad_40": "DISPENSARIO MEDICO DE CALI",
+    "entidad": "DISPENSARIO MEDICO DE CALI",
+    "n_ofertas": 5,
+    "ganador_pct": 99.98,
+    "centro": {
+     "nivel": "sin_dato",
+     "baja_mediana": null,
+     "procesos": 2,
+     "granularidad": null
+    },
+    "escenarios": [
+     {
+      "cd_fraccion": 0.7,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.75,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.8,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.85,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.9,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     }
+    ],
+    "controles": [
+     {
+      "pct": 96.75,
+      "gana_en_de_4": 2,
+      "bajo_piso": false
+     },
+     {
+      "pct": 95,
+      "gana_en_de_4": 1,
+      "bajo_piso": false
+     },
+     {
+      "pct": 93.4,
+      "gana_en_de_4": 0,
+      "bajo_piso": true
+     }
+    ]
+   },
+   {
+    "id": "CO1.REQ.8542719",
+    "entidad_40": "SENA REGIONAL VALLE Grupo de Apoyo Admin",
+    "entidad": "SENA REGIONAL VALLE Grupo de Apoyo Administrativo Mixto",
+    "n_ofertas": 4,
+    "ganador_pct": 87.71,
+    "centro": {
+     "nivel": "bajo",
+     "baja_mediana": 0,
+     "procesos": 7,
+     "granularidad": "entidad"
+    },
+    "escenarios": [
+     {
+      "cd_fraccion": 0.7,
+      "aplicable": true,
+      "motivo": null,
+      "pct_po": 100,
+      "gana_en_de_4": 0,
+      "bajo_piso": false,
+      "bajo_costo_con_aiu": false
+     },
+     {
+      "cd_fraccion": 0.75,
+      "aplicable": true,
+      "motivo": null,
+      "pct_po": 100,
+      "gana_en_de_4": 0,
+      "bajo_piso": false,
+      "bajo_costo_con_aiu": false
+     },
+     {
+      "cd_fraccion": 0.8,
+      "aplicable": true,
+      "motivo": null,
+      "pct_po": 100,
+      "gana_en_de_4": 0,
+      "bajo_piso": false,
+      "bajo_costo_con_aiu": true
+     },
+     {
+      "cd_fraccion": 0.85,
+      "aplicable": true,
+      "motivo": null,
+      "pct_po": 100,
+      "gana_en_de_4": 0,
+      "bajo_piso": false,
+      "bajo_costo_con_aiu": true
+     },
+     {
+      "cd_fraccion": 0.9,
+      "aplicable": true,
+      "motivo": null,
+      "pct_po": 100,
+      "gana_en_de_4": 0,
+      "bajo_piso": false,
+      "bajo_costo_con_aiu": true
+     }
+    ],
+    "controles": [
+     {
+      "pct": 96.75,
+      "gana_en_de_4": 0,
+      "bajo_piso": false
+     },
+     {
+      "pct": 95,
+      "gana_en_de_4": 2,
+      "bajo_piso": false
+     },
+     {
+      "pct": 93.4,
+      "gana_en_de_4": 2,
+      "bajo_piso": false
+     }
+    ]
+   },
+   {
+    "id": "CO1.REQ.8716941",
+    "entidad_40": "SANTIAGO DE CALI DISTRITO ESPECIAL - SEC",
+    "entidad": null,
+    "n_ofertas": 5,
+    "ganador_pct": 97.59,
+    "centro": null,
+    "escenarios": [
+     {
+      "cd_fraccion": 0.7,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.75,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.8,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.85,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.9,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     }
+    ],
+    "controles": [
+     {
+      "pct": 96.75,
+      "gana_en_de_4": 2,
+      "bajo_piso": false
+     },
+     {
+      "pct": 95,
+      "gana_en_de_4": 1,
+      "bajo_piso": false
+     },
+     {
+      "pct": 93.4,
+      "gana_en_de_4": 1,
+      "bajo_piso": true
+     }
+    ]
+   },
+   {
+    "id": "CO1.REQ.8765433",
+    "entidad_40": "SANTIAGO DE CALI DISTRITO ESPECIAL - SEC",
+    "entidad": null,
+    "n_ofertas": 6,
+    "ganador_pct": 95.18,
+    "centro": null,
+    "escenarios": [
+     {
+      "cd_fraccion": 0.7,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.75,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.8,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.85,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.9,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     }
+    ],
+    "controles": [
+     {
+      "pct": 96.75,
+      "gana_en_de_4": 0,
+      "bajo_piso": false
+     },
+     {
+      "pct": 95,
+      "gana_en_de_4": 1,
+      "bajo_piso": false
+     },
+     {
+      "pct": 93.4,
+      "gana_en_de_4": 1,
+      "bajo_piso": true
+     }
+    ]
+   },
+   {
+    "id": "CO1.REQ.8880046",
+    "entidad_40": "SANTIAGO DE CALI DISTRITO ESPECIAL - SEC",
+    "entidad": null,
+    "n_ofertas": 4,
+    "ganador_pct": 97.79,
+    "centro": null,
+    "escenarios": [
+     {
+      "cd_fraccion": 0.7,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.75,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.8,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.85,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.9,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     }
+    ],
+    "controles": [
+     {
+      "pct": 96.75,
+      "gana_en_de_4": 0,
+      "bajo_piso": false
+     },
+     {
+      "pct": 95,
+      "gana_en_de_4": 1,
+      "bajo_piso": true
+     },
+     {
+      "pct": 93.4,
+      "gana_en_de_4": 1,
+      "bajo_piso": true
+     }
+    ]
+   },
+   {
+    "id": "CO1.REQ.8840075",
+    "entidad_40": "EMAVI",
+    "entidad": "EMAVI",
+    "n_ofertas": 5,
+    "ganador_pct": 100,
+    "centro": {
+     "nivel": "sin_dato",
+     "baja_mediana": null,
+     "procesos": 4,
+     "granularidad": null
+    },
+    "escenarios": [
+     {
+      "cd_fraccion": 0.7,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.75,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.8,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.85,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.9,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     }
+    ],
+    "controles": [
+     {
+      "pct": 96.75,
+      "gana_en_de_4": 1,
+      "bajo_piso": false
+     },
+     {
+      "pct": 95,
+      "gana_en_de_4": 1,
+      "bajo_piso": false
+     },
+     {
+      "pct": 93.4,
+      "gana_en_de_4": 1,
+      "bajo_piso": true
+     }
+    ]
+   },
+   {
+    "id": "CO1.REQ.8944016",
+    "entidad_40": "SANTIAGO DE CALI DISTRITO ESPECIAL - SEC",
+    "entidad": null,
+    "n_ofertas": 3,
+    "ganador_pct": 98.78,
+    "centro": null,
+    "escenarios": [
+     {
+      "cd_fraccion": 0.7,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.75,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.8,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.85,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.9,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     }
+    ],
+    "controles": [
+     {
+      "pct": 96.75,
+      "gana_en_de_4": 2,
+      "bajo_piso": false
+     },
+     {
+      "pct": 95,
+      "gana_en_de_4": 1,
+      "bajo_piso": true
+     },
+     {
+      "pct": 93.4,
+      "gana_en_de_4": 1,
+      "bajo_piso": true
+     }
+    ]
+   },
+   {
+    "id": "CO1.REQ.9063306",
+    "entidad_40": "SANTIAGO DE CALI DISTRITO ESPECIAL - SEC",
+    "entidad": null,
+    "n_ofertas": 5,
+    "ganador_pct": 89,
+    "centro": null,
+    "escenarios": [
+     {
+      "cd_fraccion": 0.7,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.75,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.8,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.85,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.9,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     }
+    ],
+    "controles": [
+     {
+      "pct": 96.75,
+      "gana_en_de_4": 0,
+      "bajo_piso": false
+     },
+     {
+      "pct": 95,
+      "gana_en_de_4": 0,
+      "bajo_piso": false
+     },
+     {
+      "pct": 93.4,
+      "gana_en_de_4": 0,
+      "bajo_piso": false
+     }
+    ]
+   },
+   {
+    "id": "CO1.REQ.9068489",
+    "entidad_40": "SANTIAGO DE CALI DISTRITO ESPECIAL - SEC",
+    "entidad": null,
+    "n_ofertas": 5,
+    "ganador_pct": 85.57,
+    "centro": null,
+    "escenarios": [
+     {
+      "cd_fraccion": 0.7,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.75,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.8,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.85,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.9,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     }
+    ],
+    "controles": [
+     {
+      "pct": 96.75,
+      "gana_en_de_4": 0,
+      "bajo_piso": false
+     },
+     {
+      "pct": 95,
+      "gana_en_de_4": 0,
+      "bajo_piso": false
+     },
+     {
+      "pct": 93.4,
+      "gana_en_de_4": 0,
+      "bajo_piso": false
+     }
+    ]
+   },
+   {
+    "id": "CO1.REQ.9099251",
+    "entidad_40": "SANTIAGO DE CALI DISTRITO ESPECIAL - SEC",
+    "entidad": null,
+    "n_ofertas": 3,
+    "ganador_pct": 97.74,
+    "centro": null,
+    "escenarios": [
+     {
+      "cd_fraccion": 0.7,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.75,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.8,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.85,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.9,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     }
+    ],
+    "controles": [
+     {
+      "pct": 96.75,
+      "gana_en_de_4": 1,
+      "bajo_piso": true
+     },
+     {
+      "pct": 95,
+      "gana_en_de_4": 2,
+      "bajo_piso": true
+     },
+     {
+      "pct": 93.4,
+      "gana_en_de_4": 2,
+      "bajo_piso": true
+     }
+    ]
+   },
+   {
+    "id": "CO1.REQ.9987940",
+    "entidad_40": "SANTIAGO DE CALI DISTRITO ESPECIAL- UNID",
+    "entidad": null,
+    "n_ofertas": 3,
+    "ganador_pct": 98.5,
+    "centro": null,
+    "escenarios": [
+     {
+      "cd_fraccion": 0.7,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.75,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.8,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.85,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.9,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     }
+    ],
+    "controles": [
+     {
+      "pct": 96.75,
+      "gana_en_de_4": 1,
+      "bajo_piso": true
+     },
+     {
+      "pct": 95,
+      "gana_en_de_4": 2,
+      "bajo_piso": true
+     },
+     {
+      "pct": 93.4,
+      "gana_en_de_4": 2,
+      "bajo_piso": true
+     }
+    ]
+   },
+   {
+    "id": "CO1.REQ.10190094",
+    "entidad_40": "SANTIAGO DE CALI  DISTRITO ESPECIAL - SE",
+    "entidad": null,
+    "n_ofertas": 3,
+    "ganador_pct": 99.23,
+    "centro": null,
+    "escenarios": [
+     {
+      "cd_fraccion": 0.7,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.75,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.8,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.85,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     },
+     {
+      "cd_fraccion": 0.9,
+      "aplicable": false,
+      "motivo": "sin_centro_de_mercado",
+      "pct_po": null,
+      "gana_en_de_4": null,
+      "bajo_piso": null,
+      "bajo_costo_con_aiu": null
+     }
+    ],
+    "controles": [
+     {
+      "pct": 96.75,
+      "gana_en_de_4": 1,
+      "bajo_piso": true
+     },
+     {
+      "pct": 95,
+      "gana_en_de_4": 2,
+      "bajo_piso": true
+     },
+     {
+      "pct": 93.4,
+      "gana_en_de_4": 2,
+      "bajo_piso": true
+     }
+    ]
+   },
+   {
+    "id": "CO1.REQ.9683942",
+    "entidad_40": "MUNICIPIO DE BUGALAGRANDE",
+    "entidad": "MUNICIPIO DE BUGALAGRANDE",
+    "n_ofertas": 3,
+    "ganador_pct": 98.23,
+    "centro": {
+     "nivel": "bajo",
+     "baja_mediana": 0,
+     "procesos": 17,
+     "granularidad": "entidad"
+    },
+    "escenarios": [
+     {
+      "cd_fraccion": 0.7,
+      "aplicable": true,
+      "motivo": null,
+      "pct_po": 100,
+      "gana_en_de_4": 0,
+      "bajo_piso": false,
+      "bajo_costo_con_aiu": false
+     },
+     {
+      "cd_fraccion": 0.75,
+      "aplicable": true,
+      "motivo": null,
+      "pct_po": 100,
+      "gana_en_de_4": 0,
+      "bajo_piso": false,
+      "bajo_costo_con_aiu": false
+     },
+     {
+      "cd_fraccion": 0.8,
+      "aplicable": true,
+      "motivo": null,
+      "pct_po": 100,
+      "gana_en_de_4": 0,
+      "bajo_piso": false,
+      "bajo_costo_con_aiu": true
+     },
+     {
+      "cd_fraccion": 0.85,
+      "aplicable": true,
+      "motivo": null,
+      "pct_po": 100,
+      "gana_en_de_4": 0,
+      "bajo_piso": false,
+      "bajo_costo_con_aiu": true
+     },
+     {
+      "cd_fraccion": 0.9,
+      "aplicable": true,
+      "motivo": null,
+      "pct_po": 100,
+      "gana_en_de_4": 0,
+      "bajo_piso": false,
+      "bajo_costo_con_aiu": true
+     }
+    ],
+    "controles": [
+     {
+      "pct": 96.75,
+      "gana_en_de_4": 2,
+      "bajo_piso": false
+     },
+     {
+      "pct": 95,
+      "gana_en_de_4": 3,
+      "bajo_piso": false
+     },
+     {
+      "pct": 93.4,
+      "gana_en_de_4": 3,
+      "bajo_piso": false
+     }
+    ]
+   }
+  ],
+  "curva_simulador": [
+   {
+    "precio_pct": 90,
+    "procesos": 64,
+    "bajo_piso": 52,
+    "mediana": {
+     "gana": 5,
+     "empata": 0,
+     "gana_sobre_piso": 5
+    },
+    "geometrica": {
+     "gana": 6,
+     "empata": 0,
+     "gana_sobre_piso": 6
+    },
+    "aritmetica_baja": {
+     "gana": 27,
+     "empata": 0,
+     "gana_sobre_piso": 8
+    },
+    "menor_valor": {
+     "gana": 48,
+     "empata": 0,
+     "gana_sobre_piso": 2
+    },
+    "sorteado_gana_de_cada_100": 33.6,
+    "sorteado_gana_sobre_piso_de_cada_100": 8.2,
+    "bajo_piso_de_cada_100": 81.3
+   },
+   {
+    "precio_pct": 90.5,
+    "procesos": 64,
+    "bajo_piso": 49,
+    "mediana": {
+     "gana": 5,
+     "empata": 0,
+     "gana_sobre_piso": 5
+    },
+    "geometrica": {
+     "gana": 7,
+     "empata": 0,
+     "gana_sobre_piso": 6
+    },
+    "aritmetica_baja": {
+     "gana": 25,
+     "empata": 0,
+     "gana_sobre_piso": 8
+    },
+    "menor_valor": {
+     "gana": 46,
+     "empata": 0,
+     "gana_sobre_piso": 3
+    },
+    "sorteado_gana_de_cada_100": 32.4,
+    "sorteado_gana_sobre_piso_de_cada_100": 8.6,
+    "bajo_piso_de_cada_100": 76.6
+   },
+   {
+    "precio_pct": 91,
+    "procesos": 64,
+    "bajo_piso": 48,
+    "mediana": {
+     "gana": 5,
+     "empata": 0,
+     "gana_sobre_piso": 5
+    },
+    "geometrica": {
+     "gana": 7,
+     "empata": 0,
+     "gana_sobre_piso": 6
+    },
+    "aritmetica_baja": {
+     "gana": 23,
+     "empata": 0,
+     "gana_sobre_piso": 7
+    },
+    "menor_valor": {
+     "gana": 43,
+     "empata": 1,
+     "gana_sobre_piso": 2
+    },
+    "sorteado_gana_de_cada_100": 30.5,
+    "sorteado_gana_sobre_piso_de_cada_100": 7.8,
+    "bajo_piso_de_cada_100": 75
+   },
+   {
+    "precio_pct": 91.5,
+    "procesos": 64,
+    "bajo_piso": 45,
+    "mediana": {
+     "gana": 6,
+     "empata": 0,
+     "gana_sobre_piso": 6
+    },
+    "geometrica": {
+     "gana": 9,
+     "empata": 0,
+     "gana_sobre_piso": 8
+    },
+    "aritmetica_baja": {
+     "gana": 23,
+     "empata": 0,
+     "gana_sobre_piso": 8
+    },
+    "menor_valor": {
+     "gana": 41,
+     "empata": 0,
+     "gana_sobre_piso": 3
+    },
+    "sorteado_gana_de_cada_100": 30.9,
+    "sorteado_gana_sobre_piso_de_cada_100": 9.8,
+    "bajo_piso_de_cada_100": 70.3
+   },
+   {
+    "precio_pct": 92,
+    "procesos": 64,
+    "bajo_piso": 42,
+    "mediana": {
+     "gana": 6,
+     "empata": 1,
+     "gana_sobre_piso": 6
+    },
+    "geometrica": {
+     "gana": 8,
+     "empata": 1,
+     "gana_sobre_piso": 8
+    },
+    "aritmetica_baja": {
+     "gana": 21,
+     "empata": 0,
+     "gana_sobre_piso": 8
+    },
+    "menor_valor": {
+     "gana": 40,
+     "empata": 0,
+     "gana_sobre_piso": 3
+    },
+    "sorteado_gana_de_cada_100": 29.3,
+    "sorteado_gana_sobre_piso_de_cada_100": 9.8,
+    "bajo_piso_de_cada_100": 65.6
+   },
+   {
+    "precio_pct": 92.5,
+    "procesos": 64,
+    "bajo_piso": 41,
+    "mediana": {
+     "gana": 5,
+     "empata": 0,
+     "gana_sobre_piso": 5
+    },
+    "geometrica": {
+     "gana": 7,
+     "empata": 0,
+     "gana_sobre_piso": 7
+    },
+    "aritmetica_baja": {
+     "gana": 21,
+     "empata": 0,
+     "gana_sobre_piso": 9
+    },
+    "menor_valor": {
+     "gana": 39,
+     "empata": 0,
+     "gana_sobre_piso": 2
+    },
+    "sorteado_gana_de_cada_100": 28.1,
+    "sorteado_gana_sobre_piso_de_cada_100": 9,
+    "bajo_piso_de_cada_100": 64.1
+   },
+   {
+    "precio_pct": 93,
+    "procesos": 64,
+    "bajo_piso": 35,
+    "mediana": {
+     "gana": 4,
+     "empata": 0,
+     "gana_sobre_piso": 4
+    },
+    "geometrica": {
+     "gana": 6,
+     "empata": 0,
+     "gana_sobre_piso": 6
+    },
+    "aritmetica_baja": {
+     "gana": 21,
+     "empata": 0,
+     "gana_sobre_piso": 10
+    },
+    "menor_valor": {
+     "gana": 37,
+     "empata": 0,
+     "gana_sobre_piso": 7
+    },
+    "sorteado_gana_de_cada_100": 26.6,
+    "sorteado_gana_sobre_piso_de_cada_100": 10.5,
+    "bajo_piso_de_cada_100": 54.7
+   },
+   {
+    "precio_pct": 93.5,
+    "procesos": 64,
+    "bajo_piso": 32,
+    "mediana": {
+     "gana": 4,
+     "empata": 0,
+     "gana_sobre_piso": 4
+    },
+    "geometrica": {
+     "gana": 8,
+     "empata": 0,
+     "gana_sobre_piso": 8
+    },
+    "aritmetica_baja": {
+     "gana": 18,
+     "empata": 0,
+     "gana_sobre_piso": 10
+    },
+    "menor_valor": {
+     "gana": 30,
+     "empata": 0,
+     "gana_sobre_piso": 4
+    },
+    "sorteado_gana_de_cada_100": 23.4,
+    "sorteado_gana_sobre_piso_de_cada_100": 10.2,
+    "bajo_piso_de_cada_100": 50
+   },
+   {
+    "precio_pct": 94,
+    "procesos": 64,
+    "bajo_piso": 28,
+    "mediana": {
+     "gana": 9,
+     "empata": 0,
+     "gana_sobre_piso": 9
+    },
+    "geometrica": {
+     "gana": 9,
+     "empata": 0,
+     "gana_sobre_piso": 9
+    },
+    "aritmetica_baja": {
+     "gana": 20,
+     "empata": 0,
+     "gana_sobre_piso": 12
+    },
+    "menor_valor": {
+     "gana": 26,
+     "empata": 0,
+     "gana_sobre_piso": 4
+    },
+    "sorteado_gana_de_cada_100": 25,
+    "sorteado_gana_sobre_piso_de_cada_100": 13.3,
+    "bajo_piso_de_cada_100": 43.8
+   },
+   {
+    "precio_pct": 94.5,
+    "procesos": 64,
+    "bajo_piso": 24,
+    "mediana": {
+     "gana": 15,
+     "empata": 0,
+     "gana_sobre_piso": 15
+    },
+    "geometrica": {
+     "gana": 12,
+     "empata": 0,
+     "gana_sobre_piso": 12
+    },
+    "aritmetica_baja": {
+     "gana": 19,
+     "empata": 0,
+     "gana_sobre_piso": 12
+    },
+    "menor_valor": {
+     "gana": 21,
+     "empata": 0,
+     "gana_sobre_piso": 2
+    },
+    "sorteado_gana_de_cada_100": 26.2,
+    "sorteado_gana_sobre_piso_de_cada_100": 16,
+    "bajo_piso_de_cada_100": 37.5
+   },
+   {
+    "precio_pct": 95,
+    "procesos": 64,
+    "bajo_piso": 20,
+    "mediana": {
+     "gana": 10,
+     "empata": 0,
+     "gana_sobre_piso": 10
+    },
+    "geometrica": {
+     "gana": 15,
+     "empata": 0,
+     "gana_sobre_piso": 15
+    },
+    "aritmetica_baja": {
+     "gana": 22,
+     "empata": 0,
+     "gana_sobre_piso": 13
+    },
+    "menor_valor": {
+     "gana": 18,
+     "empata": 0,
+     "gana_sobre_piso": 2
+    },
+    "sorteado_gana_de_cada_100": 25.4,
+    "sorteado_gana_sobre_piso_de_cada_100": 15.6,
+    "bajo_piso_de_cada_100": 31.3
+   },
+   {
+    "precio_pct": 95.5,
+    "procesos": 64,
+    "bajo_piso": 18,
+    "mediana": {
+     "gana": 11,
+     "empata": 0,
+     "gana_sobre_piso": 11
+    },
+    "geometrica": {
+     "gana": 15,
+     "empata": 0,
+     "gana_sobre_piso": 15
+    },
+    "aritmetica_baja": {
+     "gana": 16,
+     "empata": 0,
+     "gana_sobre_piso": 9
+    },
+    "menor_valor": {
+     "gana": 14,
+     "empata": 0,
+     "gana_sobre_piso": 0
+    },
+    "sorteado_gana_de_cada_100": 21.9,
+    "sorteado_gana_sobre_piso_de_cada_100": 13.7,
+    "bajo_piso_de_cada_100": 28.1
+   },
+   {
+    "precio_pct": 96,
+    "procesos": 64,
+    "bajo_piso": 18,
+    "mediana": {
+     "gana": 10,
+     "empata": 0,
+     "gana_sobre_piso": 10
+    },
+    "geometrica": {
+     "gana": 12,
+     "empata": 0,
+     "gana_sobre_piso": 12
+    },
+    "aritmetica_baja": {
+     "gana": 16,
+     "empata": 0,
+     "gana_sobre_piso": 8
+    },
+    "menor_valor": {
+     "gana": 14,
+     "empata": 0,
+     "gana_sobre_piso": 0
+    },
+    "sorteado_gana_de_cada_100": 20.3,
+    "sorteado_gana_sobre_piso_de_cada_100": 11.7,
+    "bajo_piso_de_cada_100": 28.1
+   },
+   {
+    "precio_pct": 96.5,
+    "procesos": 64,
+    "bajo_piso": 13,
+    "mediana": {
+     "gana": 13,
+     "empata": 0,
+     "gana_sobre_piso": 13
+    },
+    "geometrica": {
+     "gana": 14,
+     "empata": 0,
+     "gana_sobre_piso": 14
+    },
+    "aritmetica_baja": {
+     "gana": 7,
+     "empata": 0,
+     "gana_sobre_piso": 3
+    },
+    "menor_valor": {
+     "gana": 13,
+     "empata": 0,
+     "gana_sobre_piso": 3
+    },
+    "sorteado_gana_de_cada_100": 18.4,
+    "sorteado_gana_sobre_piso_de_cada_100": 12.9,
+    "bajo_piso_de_cada_100": 20.3
+   },
+   {
+    "precio_pct": 97,
+    "procesos": 64,
+    "bajo_piso": 11,
+    "mediana": {
+     "gana": 12,
+     "empata": 0,
+     "gana_sobre_piso": 12
+    },
+    "geometrica": {
+     "gana": 12,
+     "empata": 0,
+     "gana_sobre_piso": 12
+    },
+    "aritmetica_baja": {
+     "gana": 8,
+     "empata": 0,
+     "gana_sobre_piso": 4
+    },
+    "menor_valor": {
+     "gana": 9,
+     "empata": 0,
+     "gana_sobre_piso": 1
+    },
+    "sorteado_gana_de_cada_100": 16,
+    "sorteado_gana_sobre_piso_de_cada_100": 11.3,
+    "bajo_piso_de_cada_100": 17.2
+   },
+   {
+    "precio_pct": 97.5,
+    "procesos": 64,
+    "bajo_piso": 7,
+    "mediana": {
+     "gana": 8,
+     "empata": 0,
+     "gana_sobre_piso": 8
+    },
+    "geometrica": {
+     "gana": 6,
+     "empata": 0,
+     "gana_sobre_piso": 6
+    },
+    "aritmetica_baja": {
+     "gana": 8,
+     "empata": 0,
+     "gana_sobre_piso": 5
+    },
+    "menor_valor": {
+     "gana": 7,
+     "empata": 0,
+     "gana_sobre_piso": 1
+    },
+    "sorteado_gana_de_cada_100": 11.3,
+    "sorteado_gana_sobre_piso_de_cada_100": 7.8,
+    "bajo_piso_de_cada_100": 10.9
+   },
+   {
+    "precio_pct": 98,
+    "procesos": 64,
+    "bajo_piso": 7,
+    "mediana": {
+     "gana": 6,
+     "empata": 0,
+     "gana_sobre_piso": 6
+    },
+    "geometrica": {
+     "gana": 7,
+     "empata": 0,
+     "gana_sobre_piso": 7
+    },
+    "aritmetica_baja": {
+     "gana": 5,
+     "empata": 0,
+     "gana_sobre_piso": 2
+    },
+    "menor_valor": {
+     "gana": 5,
+     "empata": 0,
+     "gana_sobre_piso": 0
+    },
+    "sorteado_gana_de_cada_100": 9,
+    "sorteado_gana_sobre_piso_de_cada_100": 5.9,
+    "bajo_piso_de_cada_100": 10.9
+   },
+   {
+    "precio_pct": 98.5,
+    "procesos": 64,
+    "bajo_piso": 1,
+    "mediana": {
+     "gana": 6,
+     "empata": 0,
+     "gana_sobre_piso": 6
+    },
+    "geometrica": {
+     "gana": 4,
+     "empata": 0,
+     "gana_sobre_piso": 4
+    },
+    "aritmetica_baja": {
+     "gana": 5,
+     "empata": 0,
+     "gana_sobre_piso": 4
+    },
+    "menor_valor": {
+     "gana": 2,
+     "empata": 0,
+     "gana_sobre_piso": 1
+    },
+    "sorteado_gana_de_cada_100": 6.6,
+    "sorteado_gana_sobre_piso_de_cada_100": 5.9,
+    "bajo_piso_de_cada_100": 1.6
+   },
+   {
+    "precio_pct": 99,
+    "procesos": 64,
+    "bajo_piso": 1,
+    "mediana": {
+     "gana": 5,
+     "empata": 0,
+     "gana_sobre_piso": 5
+    },
+    "geometrica": {
+     "gana": 3,
+     "empata": 0,
+     "gana_sobre_piso": 3
+    },
+    "aritmetica_baja": {
+     "gana": 3,
+     "empata": 0,
+     "gana_sobre_piso": 2
+    },
+    "menor_valor": {
+     "gana": 1,
+     "empata": 0,
+     "gana_sobre_piso": 0
+    },
+    "sorteado_gana_de_cada_100": 4.7,
+    "sorteado_gana_sobre_piso_de_cada_100": 3.9,
+    "bajo_piso_de_cada_100": 1.6
+   },
+   {
+    "precio_pct": 99.5,
+    "procesos": 64,
+    "bajo_piso": 1,
+    "mediana": {
+     "gana": 0,
+     "empata": 0,
+     "gana_sobre_piso": 0
+    },
+    "geometrica": {
+     "gana": 1,
+     "empata": 0,
+     "gana_sobre_piso": 1
+    },
+    "aritmetica_baja": {
+     "gana": 0,
+     "empata": 0,
+     "gana_sobre_piso": 0
+    },
+    "menor_valor": {
+     "gana": 1,
+     "empata": 0,
+     "gana_sobre_piso": 0
+    },
+    "sorteado_gana_de_cada_100": 0.8,
+    "sorteado_gana_sobre_piso_de_cada_100": 0.4,
+    "bajo_piso_de_cada_100": 1.6
+   },
+   {
+    "precio_pct": 100,
+    "procesos": 64,
+    "bajo_piso": 0,
+    "mediana": {
+     "gana": 0,
+     "empata": 0,
+     "gana_sobre_piso": 0
+    },
+    "geometrica": {
+     "gana": 0,
+     "empata": 0,
+     "gana_sobre_piso": 0
+    },
+    "aritmetica_baja": {
+     "gana": 0,
+     "empata": 0,
+     "gana_sobre_piso": 0
+    },
+    "menor_valor": {
+     "gana": 0,
+     "empata": 0,
+     "gana_sobre_piso": 0
+    },
+    "sorteado_gana_de_cada_100": 0,
+    "sorteado_gana_sobre_piso_de_cada_100": 0,
+    "bajo_piso_de_cada_100": 0
+   }
+  ]
+ }
+}

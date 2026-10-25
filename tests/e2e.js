@@ -2731,6 +2731,42 @@ async function main() {
      documento y las funciones de pintado de app.js en un vm (el arranque de la cerradura de arriba).
      La regla es UNA (`conBaseDeEntidad` en el servidor, `frecuenciaConBase` en el navegador) y el
      censo la ata en los cuatro estados: con base, departamento, supuesto e índice sin leer. */
+  /* app.js REAL en un vm con los <script> de index.html y nodos que se RELEEN (lo comparten el bloque
+     «sin base» y el de la prima de seriedad): lo único añadido es la línea que expone funciones al final del IIFE */
+  const cargarAppS = (exponer) => {
+    const vm = require("vm");
+    const pub = (f) => path.join(__dirname, "..", "public", f);
+    const orden = [...fs.readFileSync(pub("index.html"), "utf8").replace(/<!--[\s\S]*?-->/g, "").matchAll(/<script src="\/([a-z_]+\.js)"><\/script>/g)].map((x) => x[1]);
+    const nodo = () => new Proxy({ value: "", textContent: "", innerHTML: "", hidden: false, checked: false, disabled: false, dataset: {}, style: {}, options: [], children: [],
+      selectedOptions: [{ text: "", value: "" }], classList: { add() {}, remove() {}, toggle() {}, contains: () => false } },
+    { get: (t, k) => (k in t ? t[k] : k === Symbol.toPrimitive ? () => "" : typeof k === "symbol" || k === "then" ? undefined : () => nodo()), set: (t, k, v) => { t[k] = v; return true; } });
+    const nodos = new Map();
+    const porId = (id) => { if (!nodos.has(id)) nodos.set(id, nodo()); return nodos.get(id); };
+    const almacen = () => { const m = new Map(); return { getItem: (k) => (m.has(k) ? m.get(k) : null), setItem: (k, v) => m.set(k, String(v)), removeItem: (k) => m.delete(k), clear: () => m.clear() }; };
+    const ctx = { console, URL, URLSearchParams, Intl, TextEncoder, TextDecoder, AbortController, structuredClone, queueMicrotask,
+      setTimeout: () => 1, setInterval: () => 1, clearTimeout() {}, clearInterval() {}, requestAnimationFrame: () => 1,
+      fetch: () => new Promise(() => {}), history: { replaceState() {}, pushState() {} }, navigator: { language: "es-CO", userAgent: "node", clipboard: {} },
+      location: { search: "", hash: "", href: "http://localhost/", pathname: "/", origin: "http://localhost", replace() {}, assign() {} },
+      sessionStorage: almacen(), localStorage: almacen(), matchMedia: () => ({ matches: false, addEventListener() {}, addListener() {} }),
+      getComputedStyle: () => ({ getPropertyValue: () => "" }), addEventListener() {}, removeEventListener() {}, scrollTo() {},
+      IntersectionObserver: class { observe() {} disconnect() {} }, ResizeObserver: class { observe() {} disconnect() {} }, MutationObserver: class { observe() {} disconnect() {} },
+      Event: class {}, CustomEvent: class {}, Blob: class {}, FormData: class {}, CSS: { supports: () => false, escape: (x) => x } };
+    ctx.document = { getElementById: porId, querySelector: () => nodo(), querySelectorAll: () => [], createElement: () => nodo(), addEventListener() {},
+      body: nodo(), documentElement: nodo(), readyState: "complete", visibilityState: "visible" };
+    ctx.window = ctx; ctx.self = ctx; ctx.globalThis = ctx;
+    vm.createContext(ctx);
+    for (const f of orden) {
+      let src = fs.readFileSync(pub(f), "utf8");
+      if (f === "app.js") {
+        const i = src.lastIndexOf("})();"); assert.ok(i > 0, "app.js sin el cierre de su IIFE");
+        // cada nombre con su `typeof`: una función que falte llega como undefined y la aserción que la usa lo dice
+        src = `${src.slice(0, i)}window.__cerraduraSinBase = { ${exponer.map((n) => `${n}: typeof ${n} === "undefined" ? undefined : ${n}`).join(", ")} };\n${src.slice(i)}`;
+      }
+      vm.runInContext(src, ctx, { filename: `public/${f}` });
+    }
+    assert.ok(ctx.__cerraduraSinBase, "el arranque de app.js no llegó al final del IIFE");
+    return { app: ctx.__cerraduraSinBase, porId, Glosario: ctx.Glosario };
+  };
   bqSinBase: { if (!corre("unidad sin base no hay frecuencia")) break bqSinBase;
     const mockS = crearMockUpstash();
     const puertoS = await escuchar(mockS.server);
@@ -2791,43 +2827,6 @@ async function main() {
       await escribirJSON(rS, CLAVES.indiceMeta, metaS);
       const listarS = async () => (await invocar(oportunidades, "/api/oportunidades?perfil=juntos&por_pagina=50", CAB_TOKEN)).cuerpo;
 
-      /* app.js REAL en un vm con los <script> de index.html y nodos que se RELEEN (el arranque de la
-         cerradura «unidad índice que no se pudo leer»); lo único añadido es la línea que expone
-         funciones al final del IIFE */
-      const cargarAppS = (exponer) => {
-        const vm = require("vm");
-        const pub = (f) => path.join(__dirname, "..", "public", f);
-        const orden = [...fs.readFileSync(pub("index.html"), "utf8").replace(/<!--[\s\S]*?-->/g, "").matchAll(/<script src="\/([a-z_]+\.js)"><\/script>/g)].map((x) => x[1]);
-        const nodo = () => new Proxy({ value: "", textContent: "", innerHTML: "", hidden: false, checked: false, disabled: false, dataset: {}, style: {}, options: [], children: [],
-          selectedOptions: [{ text: "", value: "" }], classList: { add() {}, remove() {}, toggle() {}, contains: () => false } },
-        { get: (t, k) => (k in t ? t[k] : k === Symbol.toPrimitive ? () => "" : typeof k === "symbol" || k === "then" ? undefined : () => nodo()), set: (t, k, v) => { t[k] = v; return true; } });
-        const nodos = new Map();
-        const porId = (id) => { if (!nodos.has(id)) nodos.set(id, nodo()); return nodos.get(id); };
-        const almacen = () => { const m = new Map(); return { getItem: (k) => (m.has(k) ? m.get(k) : null), setItem: (k, v) => m.set(k, String(v)), removeItem: (k) => m.delete(k), clear: () => m.clear() }; };
-        const ctx = { console, URL, URLSearchParams, Intl, TextEncoder, TextDecoder, AbortController, structuredClone, queueMicrotask,
-          setTimeout: () => 1, setInterval: () => 1, clearTimeout() {}, clearInterval() {}, requestAnimationFrame: () => 1,
-          fetch: () => new Promise(() => {}), history: { replaceState() {}, pushState() {} }, navigator: { language: "es-CO", userAgent: "node", clipboard: {} },
-          location: { search: "", hash: "", href: "http://localhost/", pathname: "/", origin: "http://localhost", replace() {}, assign() {} },
-          sessionStorage: almacen(), localStorage: almacen(), matchMedia: () => ({ matches: false, addEventListener() {}, addListener() {} }),
-          getComputedStyle: () => ({ getPropertyValue: () => "" }), addEventListener() {}, removeEventListener() {}, scrollTo() {},
-          IntersectionObserver: class { observe() {} disconnect() {} }, ResizeObserver: class { observe() {} disconnect() {} }, MutationObserver: class { observe() {} disconnect() {} },
-          Event: class {}, CustomEvent: class {}, Blob: class {}, FormData: class {}, CSS: { supports: () => false, escape: (x) => x } };
-        ctx.document = { getElementById: porId, querySelector: () => nodo(), querySelectorAll: () => [], createElement: () => nodo(), addEventListener() {},
-          body: nodo(), documentElement: nodo(), readyState: "complete", visibilityState: "visible" };
-        ctx.window = ctx; ctx.self = ctx; ctx.globalThis = ctx;
-        vm.createContext(ctx);
-        for (const f of orden) {
-          let src = fs.readFileSync(pub(f), "utf8");
-          if (f === "app.js") {
-            const i = src.lastIndexOf("})();"); assert.ok(i > 0, "app.js sin el cierre de su IIFE");
-            // cada nombre con su `typeof`: una función que falte llega como undefined y la aserción que la usa lo dice
-            src = `${src.slice(0, i)}window.__cerraduraSinBase = { ${exponer.map((n) => `${n}: typeof ${n} === "undefined" ? undefined : ${n}`).join(", ")} };\n${src.slice(i)}`;
-          }
-          vm.runInContext(src, ctx, { filename: `public/${f}` });
-        }
-        assert.ok(ctx.__cerraduraSinBase, "el arranque de app.js no llegó al final del IIFE");
-        return { app: ctx.__cerraduraSinBase, porId, Glosario: ctx.Glosario };
-      };
       const { app: AS, porId: nodoS, Glosario: GS } = cargarAppS(["pintarDesglose", "frecuenciaConBase", "COMPETENCIA_ENTIDAD", "pintarRentabilidad", "pintarPrecioSugerido", "supuestoDePrecios", "bandaCompetencia"]);
       const txtS = (h) => String(h).replace(/<wbr>/g, "").replace(/<[^>]+>/g, " ").replace(/&[a-z#0-9]+;/g, " ").replace(/\s+/g, " ").trim();
       const modalS = (d) => { AS.pintarDesglose(d); return String(nodoS("modal-cuerpo").innerHTML); };
@@ -4545,6 +4544,440 @@ async function main() {
     assert.ok(!/(?<![\d,.\-–])0[,.]80?(?!\d| ?%)/.test("el presupuesto sube 10,8 %"));
     assert.ok(!/(?<![\d,.\-–])0[,.]80?(?!\d| ?%)/.test("(0,5-0,8 % del presupuesto)") && /(?<![\d,.\-–])0[,.]80?(?!\d| ?%)/.test("presupuesto × 0,80"), "el factor 0,80 sí casa; un rango de porcentajes no");
     console.log(`· unidad alerta de precio bajo por modalidad: 88 % en licitación y menor cuantía, 70 % en mínima, 80 % sin medición; por ítem sigue el 20 %; censo de ${barridos} archivos sin el 80 % a mano`);
+  }
+
+  /* unidad: el costo de preparar la oferta es la prima de la póliza de seriedad (25-oct-2026).
+     Aquí vivía un valor fijo de $5.000.000 sin fuente (en una mínima cuantía de $39,7 millones
+     era el 12,6 % del contrato); ahora depende del VALOR ASEGURADO —presupuesto oficial × % de
+     la garantía— con la tasa medida en Santa Elena ($189.771 sobre $158.142.581, Seguros
+     Mundial, póliza 100010311, dato del dueño del 25-oct-2026). Cada aserción EJECUTA las
+     funciones reales y FALLA contra el árbol anterior (la mutación es volver a la constante). */
+  bqPrima: { if (!corre("unidad costo de preparar la oferta")) break bqPrima;
+    const R = require("../lib/apu/rentabilidad.js");
+    const O = require("../lib/apu/optimizador.js");
+    const G = require("../lib/guia_proceso.js");
+    const TASA = 189771 / 158142581;
+    // (1) el dato: la prima se reproduce al peso sobre el 10 % del presupuesto definitivo de Santa Elena
+    const c = R.primaSeriedad({ presupuesto_oficial: 1581425810 });
+    assert.strictEqual(c.valor_asegurado, 158142581, "el 10 % del presupuesto definitivo de Santa Elena");
+    assert.strictEqual(c.valor, 189771, "la prima reproduce el dato de la póliza 100010311 al peso");
+    assert.strictEqual(c.garantia_pct, G.GARANTIA_SERIEDAD_PCT, "sin el % del pliego, la referencia que ya existe en lib/guia_proceso (no una segunda copia)");
+    assert.strictEqual(c.garantia_origen, "referencia");
+    assert.ok(Math.abs(c.tasa - TASA) < 1e-15 && /100010311/.test(c.fuente) && /25-oct-2026/.test(c.fuente) && /Santa Elena/.test(c.fuente), "la tasa y la fuente con fecha viajan con la cifra");
+    assert.strictEqual(c.incluye_iva, null, "no se sabe si la prima incluye IVA: null, no false");
+    assert.ok(c.es_cota_inferior === true && c.componentes_sin_dato.length >= 2, "lo que no se midió (tiempo, papeles) se declara, no se supone");
+    assert.deepStrictEqual([R.PRIMA_SERIEDAD.prima_cop, R.PRIMA_SERIEDAD.valor_asegurado_cop, R.PRIMA_SERIEDAD.presupuesto_cop], [189771, 158142581, 1581425810]);
+    // (2) con el % de la póliza que fija el pliego
+    const c15 = R.primaSeriedad({ presupuesto_oficial: 1000e6, garantia_seriedad_pct: 15 });
+    assert.strictEqual(c15.valor_asegurado, 150e6); assert.strictEqual(c15.valor, Math.round(150e6 * TASA)); assert.strictEqual(c15.garantia_origen, "pliego");
+    assert.strictEqual(R.primaSeriedad({ presupuesto_oficial: 1000e6, garantia_seriedad_pct: 0 }).garantia_origen, "referencia", "un 0 % no es una póliza: cae a la referencia");
+    // (2b) el % tiene techo: un 1000 % aseguraría diez veces el presupuesto (MUTACIÓN: entraba como «pliego» y volvía negativo el VEG)
+    assert.strictEqual(R.primaSeriedad({ presupuesto_oficial: 1000e6, garantia_seriedad_pct: 1000 }).garantia_origen, "referencia", "un 1000 % no es una garantía de seriedad: cae a la referencia");
+    assert.deepStrictEqual([1000, 100.5, 0, -5, "abc", Infinity, true].map(R.garantiaPctLeido), [null, null, null, null, null, null, null], "fuera de (0, 100] no hay % leído");
+    assert.deepStrictEqual([15, "15", 100, 0.5].map(R.garantiaPctLeido), [15, 15, 100, 0.5]);
+    // (2c) el valor asegurado sale de la MISMA cuenta que la guía (no una segunda copia): se EJECUTA, no se busca por regex
+    { const original = G.valorAseguradoSeriedad; G.valorAseguradoSeriedad = () => 777;
+      try { assert.strictEqual(R.primaSeriedad({ presupuesto_oficial: 1000e6 }).valor_asegurado, 777, "la prima llama a lib/guia_proceso.valorAseguradoSeriedad (MUTACIÓN: Math.round(po * pct / 100) escrito aparte)"); }
+      finally { G.valorAseguradoSeriedad = original; }
+      assert.strictEqual(G.valorAseguradoSeriedad(1581425810, 10), 158142581); assert.strictEqual(G.valorAseguradoSeriedad(null, 10), null); assert.strictEqual(G.valorAseguradoSeriedad(0, 10), null, "sin presupuesto, null: nunca un $0"); }
+    // (3) sin presupuesto: null con motivo, jamás 0
+    for (const po of [null, undefined, 0, -1, "", "abc"]) {
+      const s0 = R.primaSeriedad({ presupuesto_oficial: po });
+      assert.strictEqual(s0.valor, null, `sin presupuesto (${JSON.stringify(po)}) no hay valor asegurado: null`);
+      assert.ok(/valor asegurado/.test(s0.motivo), "y el motivo lo dice");
+    }
+    // (4) rentabilidad(): sin declararlo, el costo es la prima sobre el presupuesto; un 0 declarado es un dato
+    const sano = { precio_oferta: 1000e6, costo_directo: 700e6, presupuesto_oficial: 1100e6, plazo_meses: 8, aiu: { a_pct: 15, i_pct: 5, u_pct: 5 }, anticipo_pct: 30, anticipo_es_dato: true, p_base: 0.25 };
+    const r = R.rentabilidad(sano);
+    assert.strictEqual(r.costo_preparacion, R.primaSeriedad({ presupuesto_oficial: 1100e6 }).valor, "sin declararlo, el costo es la prima de seriedad sobre el presupuesto (MUTACIÓN: la constante de $5.000.000)");
+    assert.strictEqual(r.costo_preparacion, 132000, "$1.100 M × 10 % × 1,2 ‰");
+    assert.strictEqual(r.veg, Math.round(r.p_ganar * r.utilidad_esperada - 132000), "el VEG resta esa prima y no otra cosa");
+    assert.strictEqual(r.costo_preparacion_detalle.declarado, false);
+    assert.strictEqual(r.costo_preparacion_detalle.valor_asegurado, 110e6);
+    assert.strictEqual(R.rentabilidad({ ...sano, costo_preparacion: 0 }).costo_preparacion, 0, "un 0 que llega es un dato (utilidad cero de preparar), no una ausencia");
+    assert.strictEqual(R.rentabilidad({ ...sano, costo_preparacion: 3e6 }).costo_preparacion_detalle.declarado, true);
+    assert.strictEqual(R.rentabilidad({ ...sano, garantia_seriedad_pct: 15 }).costo_preparacion, Math.round(165e6 * TASA), "el % del pliego manda sobre la referencia");
+    // (4b) lo declarado que no es un costo vale como ausencia, jamás como $0 (MUTACIÓN: «abc» → $0 declarado y el VEG se calculaba con él)
+    for (const malo of ["abc", "", NaN, -2e6, {}, []]) {
+      const rm = R.rentabilidad({ ...sano, costo_preparacion: malo });
+      assert.strictEqual(rm.costo_preparacion, 132000, `costo declarado ${JSON.stringify(malo)}: no es un costo, se usa la prima (no $0 ni ${String(malo)})`);
+      assert.strictEqual(rm.costo_preparacion_detalle.declarado, false);
+    }
+    assert.strictEqual(R.rentabilidad({ ...sano, costo_preparacion: "abc" }).costo_preparacion_detalle.declarado_ignorado, "abc", "lo que llegó y se ignoró se dice");
+    assert.deepStrictEqual([0, 3e6, "3000000", -1, "abc", null].map(R.costoDeclarado), [0, 3e6, 3e6, null, null, null]);
+    { const d = R.rentabilidad({ ...sano, costo_preparacion: 3e6 }).costo_preparacion_detalle;
+      assert.ok(d.declarado === true && d.es_cota_inferior === false && d.prima_seriedad == null && d.garantia_pct == null, `un costo declarado es completo y no se disfraza de prima: ${JSON.stringify(d)}`); }
+    assert.strictEqual(r.costo_preparacion_detalle.es_cota_inferior, true, "la prima sola es una cota inferior del costo de preparar");
+    // (5) sin presupuesto oficial el VEG no se calcula: null con motivo; la bandera y el filtro duro no afirman nada
+    const sinPo = R.rentabilidad({ ...sano, presupuesto_oficial: null });
+    assert.strictEqual(sinPo.costo_preparacion, null, "sin presupuesto no hay prima: null, jamás 0 ni $5.000.000");
+    assert.strictEqual(sinPo.veg, null); assert.strictEqual(sinPo.veg_positivo, null); assert.strictEqual(sinPo.filtros_duros.veg_no_positivo, null);
+    assert.ok(sinPo.advertencias.some((a) => /póliza de seriedad/.test(a) && /no se calcula/.test(a)), `la advertencia dice por qué: ${sinPo.advertencias.join(" | ")}`);
+    assert.ok(sinPo.utilidad_esperada != null && sinPo.p_ganar != null, "lo demás sigue: solo falta el costo de preparar");
+    assert.ok(R.rentabilidad({ ...sano, presupuesto_oficial: null, costo_preparacion: 3e6 }).veg != null, "declarado, sí se calcula aunque falte el presupuesto");
+    // (6) el optimizador: la misma prima en cada punto, publicada; un costo constante no mueve el descuento óptimo y sí el nivel del VEG
+    const proceso = { presupuesto_oficial: 100e6, precio_venta: 80e6, baja: { nivel: "medio", baja_mediana: 3.5, baja_p25: 1, baja_p75: 6, procesos_contados: 20 }, p_base: 0.2, modalidad: "Licitación pública" };
+    const o = O.optimizarPrecioOferta(proceso, 50e6, {});
+    assert.ok(o.aplicable, o.mensaje);
+    assert.strictEqual(o.costo_preparacion, R.primaSeriedad({ presupuesto_oficial: 100e6 }).valor);
+    assert.strictEqual(o.costo_preparacion, 12000, "$100 M × 10 % × 1,2 ‰ (MUTACIÓN: la constante)");
+    assert.strictEqual(o.costo_preparacion_detalle.declarado, false);
+    assert.strictEqual(o.curva[0].veg, R.rentabilidad({ costo_directo: 50e6, presupuesto_oficial: 100e6, precio_oferta: o.curva[0].precio, plazo_meses: 12, p_base: 0.2, baja: proceso.baja, modalidad: proceso.modalidad, anticipo_pct: 0 }).veg, "cada punto resta la misma prima que el bloque de rentabilidad");
+    const oDecl = O.optimizarPrecioOferta(proceso, 50e6, { costo_preparacion: 5e6 });
+    assert.strictEqual(oDecl.costo_preparacion, 5e6); assert.strictEqual(oDecl.costo_preparacion_detalle.declarado, true);
+    assert.strictEqual(oDecl.descuento_optimo_pct, o.descuento_optimo_pct, "un costo constante a lo largo del barrido no mueve el descuento óptimo");
+    assert.ok(oDecl.veg_optimo < o.veg_optimo, "…pero sí baja el nivel del VEG");
+    assert.strictEqual(O.optimizarPrecioOferta(proceso, 50e6, { garantia_seriedad_pct: 20 }).costo_preparacion, Math.round(20e6 * TASA), "el optimizador también toma el % del pliego");
+    // (6b) la misma regla de lo declarado que en rentabilidad() (MUTACIÓN: «?? → ||» volvía ausencia el 0 declarado; «abc» y un negativo entraban)
+    { const o0 = O.optimizarPrecioOferta(proceso, 50e6, { costo_preparacion: 0 });
+      assert.strictEqual(o0.costo_preparacion, 0, "un 0 declarado al optimizador es un dato, no una ausencia"); assert.strictEqual(o0.costo_preparacion_detalle.declarado, true);
+      for (const malo of ["abc", -2e6, ""]) { const om = O.optimizarPrecioOferta(proceso, 50e6, { costo_preparacion: malo }); assert.strictEqual(om.costo_preparacion, 12000, `optimizador con costo declarado ${JSON.stringify(malo)}: la prima`); assert.strictEqual(om.costo_preparacion_detalle.declarado, false); }
+      assert.strictEqual(O.optimizarPrecioOferta(proceso, 50e6, { garantia_seriedad_pct: 1000 }).costo_preparacion_detalle.garantia_origen, "referencia", "el techo del % también en el optimizador");
+      assert.strictEqual(oDecl.costo_preparacion_detalle.es_cota_inferior, false); assert.strictEqual(o.costo_preparacion_detalle.es_cota_inferior, true); }
+    assert.ok(O.SUPUESTOS ? true : /póliza de seriedad/.test(JSON.stringify(o.supuestos)), "los supuestos publicados dicen de dónde sale el costo de preparar");
+    // (7) nada vuelve a escribir el valor fijo: censo de lib/, api/, public/ y scripts/ (la cifra y su nombre)
+    {
+      const raiz = path.join(__dirname, "..");
+      const vistos = [];
+      const andar = (d) => {
+        for (const e of fs.readdirSync(d, { withFileTypes: true })) {
+          const a = path.join(d, e.name);
+          if (e.isDirectory()) andar(a);
+          // todas las grafías de la cifra: 5000000, 5e6, 5_000_000 y «5.000.000» (sin cazar «125.000.000»)
+          else if (/\.js$/.test(e.name) && /C_PREPARACION_DEFECTO|(?<![\d.])5000000(?![\d.])|(?<![\w.])5e6(?!\w)|5_000_000|(?<![\d.])5\.000\.000(?![\d.])/.test(fs.readFileSync(a, "utf8"))) vistos.push(path.relative(raiz, a));
+        }
+      };
+      for (const d of ["lib", "api", "public", "scripts"]) andar(path.join(raiz, d));
+      assert.deepStrictEqual(vistos, [], `el costo fijo de $5.000.000 no puede volver a ningún archivo: ${vistos.join(", ")}`);
+    }
+    // (8) la pantalla, EJECUTADA (pintarRentabilidad real en el vm de la suite): sin cifra no hay color; la prima sola no pinta verde
+    {
+      const app = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+      /* la cerca de la tarjeta busca «supuesto» cuando hay base medida y «presupuesto» lo contiene: TODO el
+         tramo de la tarjeta del VEG (hasta su cierre) va sin esa palabra, salvo el literal declarado */
+      const tramo = app.slice(app.indexOf("const prepD = r.costo_preparacion_detalle"), app.indexOf('"bien"));', app.indexOf("const prepD = r.costo_preparacion_detalle")));
+      assert.ok(tramo.length > 200 && tramo.length < 4000, "el tramo de la tarjeta del VEG se ubica");
+      // fuera del censo: el nombre de la variable de la marca y el literal que la pantalla escribe solo sin base
+      const tramoTexto = tramo.replace(/marcaSupuesto/g, "").replace(/Con la probabilidad supuesta: /g, "");
+      assert.ok(!/supuesto/i.test(tramoTexto), `la tarjeta del VEG escribe «supuesto» (¿«presupuesto»?): ${tramoTexto.match(/.{0,40}supuesto.{0,40}/i)}`);
+      const { app: AP, porId: nodoP, Glosario: GP } = cargarAppS(["pintarRentabilidad", "pintarPrecioSugerido", "supuestoDePrecios"]);
+      const rot = GP.traducir("veg");
+      const tarjeta = (ctx) => { AP.pintarRentabilidad(ctx); return String(nodoP("rentabilidad").innerHTML).split('<div class="rounded-xl bg-gray-50 p-4">').slice(1).find((x) => x.includes(rot)) || ""; };
+      const conBase = { p_ganar_base: { fuente: "entidad" }, competencia_entidad: { promedio_oferentes: 4, total_procesos: 12, nivel: "media" }, presupuesto: { resumen: {} } };
+      const sinBase = { p_ganar_base: { fuente: "departamento" }, competencia_entidad: { nivel: "sin_dato" }, presupuesto: { resumen: {} } };
+      const pinta = (entrada, base) => tarjeta({ ...base, rentabilidad: JSON.parse(JSON.stringify(R.rentabilidad(entrada))) });
+      const texto = (h) => h.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
+      const sinCuantia = pinta({ ...sano, presupuesto_oficial: null }, conBase);
+      assert.ok(!/text-green-700/.test(sinCuantia) && /no se calcula/.test(texto(sinCuantia)) && !/supuesto/i.test(texto(sinCuantia)), `sin cuantía y con base: un «—» sin color y el porqué (MUTACIÓN: salía en VERDE): ${texto(sinCuantia)}`);
+      const sinP = pinta({ ...sano, p_base: null }, conBase);
+      assert.ok(!/text-green-700/.test(sinP), "sin probabilidad, el «—» tampoco va en verde (el hermano del mismo tono)");
+      const prima = pinta(sano, conBase);
+      assert.ok(!/text-green-700/.test(prima) && !/text-red-600/.test(prima) && /la prima de la póliza de seriedad/.test(texto(prima)) && /no tienen dato y no se restan/.test(texto(prima)) && /normalmente asegura el 10 %/.test(texto(prima)),
+        `con la prima sola (cota inferior) un VEG positivo no se pinta en VERDE y la nota dice qué falta y que el 10 % es la referencia: ${texto(prima)}`);
+      assert.ok(/que fija el pliego/.test(texto(pinta({ ...sano, garantia_seriedad_pct: 15 }, conBase))) && /15 %/.test(texto(pinta({ ...sano, garantia_seriedad_pct: 15 }, conBase))), "con el % del pliego la nota lo dice como del pliego");
+      const rojo = pinta({ ...sano, precio_oferta: 650e6 }, conBase);
+      assert.ok(/text-red-600/.test(rojo), "una cifra que no alcanza sigue en ROJO: con un costo que es cota inferior, el rojo es seguro");
+      const declarado = pinta({ ...sano, costo_preparacion: 3e6 }, conBase);
+      assert.ok(/text-green-700/.test(declarado) && /cifra declarada/.test(texto(declarado)) && !/prima de la póliza/.test(texto(declarado)), `solo un costo COMPLETO (declarado) pinta verde, y la nota no lo llama prima: ${texto(declarado)}`);
+      const marcado = pinta(sano, sinBase);
+      assert.ok(!/text-green-700/.test(marcado) && /supuest/i.test(texto(marcado)), "sin base: marca de supuesto y sin verde, como antes");
+      assert.ok(/r\.costo_preparacion == null\s*\n?\s*\? "Lo que deja por intento no se calcula/.test(app), "sin costo la tarjeta dice por qué, no pinta un $0 ni un «—»");
+      // la nota del precio sugerido nombra la prima y lo que no se resta
+      const oP = JSON.parse(JSON.stringify(o));
+      AP.pintarPrecioSugerido(oP, null, null);
+      assert.ok(/la prima de la póliza de seriedad; el tiempo y los papeles no tienen dato/.test(String(nodoP("ps-veg-nota").textContent)) && !/supuesto/i.test(String(nodoP("ps-veg-nota").textContent)), `la nota del precio sugerido: ${nodoP("ps-veg-nota").textContent}`);
+      AP.pintarPrecioSugerido(JSON.parse(JSON.stringify(oDecl)), null, null);
+      assert.ok(/cifra declarada/.test(String(nodoP("ps-veg-nota").textContent)), "declarado, la nota del precio sugerido no lo llama prima");
+    }
+    // (9) el cableado del handler (op=rentabilidad): el % del pliego llega al bloque de rentabilidad y al optimizador (MUTACIÓN: quitarlo pasaba)
+    {
+      const editorP = require("../lib/handlers/apu/editor.js");
+      const itemsP = require("../lib/apu/tipologias.js").itemsDeTipologia("VIA-PH").map((c) => ({ item_id: c, cantidad: c === "INV-PH.1" ? 300 : 60 }));
+      const pedir = async (extra) => { const r = await invocar(editorP, "/api/apu/rentabilidad", CAB_TOKEN, { metodo: "POST", body: { items: itemsP, departamento: "VALLE DEL CAUCA", config: { aiu_pct: 20, imprevistos_pct: 5, utilidad_pct: 5 }, entidad: "ENTIDAD DE PRUEBA DE LA PRIMA", unspsc: "V1.72141000", cuantia: 900000000, plazo_meses: 3, modalidad: "Licitación pública", tipo_trabajo: "obra", ...extra } }); assert.strictEqual(r.status, 200, JSON.stringify(r.cuerpo).slice(0, 300)); return r.cuerpo; };
+      const con15 = await pedir({ garantia_seriedad_pct: 15 });
+      assert.strictEqual(con15.rentabilidad.costo_preparacion_detalle.garantia_origen, "pliego", "el % del pliego llega al bloque de rentabilidad por el handler");
+      assert.strictEqual(con15.rentabilidad.costo_preparacion_detalle.valor_asegurado, 135e6); assert.strictEqual(con15.rentabilidad.costo_preparacion, Math.round(135e6 * TASA));
+      /* el optimizador solo corre con un centro de mercado de la entidad, que este mock de Redis no tiene: su
+         cableado del % se cierra en la librería (6); aquí se exige que, si corre, lo lleve, y si no, que lo diga */
+      if (con15.optimizador && con15.optimizador.aplicable) assert.strictEqual(con15.optimizador.costo_preparacion_detalle.garantia_pct, 15, "…y al optimizador");
+      else assert.strictEqual(con15.optimizador && con15.optimizador.motivo, "sin_centro_de_mercado", "sin centro de mercado el optimizador lo dice, no calla");
+      const sinPct = await pedir({});
+      assert.strictEqual(sinPct.rentabilidad.costo_preparacion_detalle.garantia_origen, "referencia", "sin el campo, la referencia del 10 %"); assert.strictEqual(sinPct.rentabilidad.costo_preparacion, 108000);
+      const mil = await pedir({ garantia_seriedad_pct: 1000 });
+      assert.strictEqual(mil.rentabilidad.costo_preparacion_detalle.garantia_origen, "referencia", "un 1000 % por el handler cae a la referencia (no asegura diez presupuestos)");
+      const sinCuantiaH = await pedir({ cuantia: null });
+      assert.ok(sinCuantiaH.rentabilidad.costo_preparacion == null && sinCuantiaH.rentabilidad.veg == null && sinCuantiaH.rentabilidad.veg_positivo == null, "sin cuantía por el handler: costo y VEG null, nada afirma");
+    }
+    console.log("· unidad costo de preparar la oferta: la prima de seriedad ($189.771 sobre $158.142.581, el 10 % de Santa Elena) sustituye al valor fijo; sin presupuesto el VEG es null con motivo; % del pliego con techo (0, 100] por librería y handler; lo declarado ilegible o negativo no es $0; el optimizador la resta en cada punto y la publica; la tarjeta ejecutada: sin cifra sin color, la prima sola (cota inferior) sin verde, rojo seguro, verde solo con costo completo; el censo no deja volver el valor fijo en ninguna grafía");
+  }
+
+  /* unidad: la retro-prueba de menor cuantía (25-oct-2026). Un script que solo MIDE: con las ofertas
+     reales de Santa Elena y de cinco procesos adjudicados, qué precio propondría Detekta hoy (el
+     optimizador con el centro del índice construido con sus propias reglas), en qué puesto quedaría con
+     cada uno de los 4 métodos del pliego y si baja del costo. Aquí se cierran: las funciones puras con
+     casos de borde, los CONTROLES con los datos reales (la oferta del dueño reproduce el 5.º de 5; el
+     ganador real queda primero con el método real donde el precio decidió), y que el informe del árbol
+     es EXACTAMENTE el que el script genera con los insumos del árbol (si alguien edita el .md a mano o
+     cambia un insumo sin regenerar, falla). */
+  bqRetro: { if (!corre("unidad retro-prueba de menor cuantía")) break bqRetro;
+    const RP = require("../scripts/base_obra/retroprueba.js");
+    const IBr = require("../lib/indice_baja.js");
+    const Mr = require("../scripts/base_obra/metodos.js");
+    // (1) el puesto de UN precio entre los hábiles: primero solo, empate y entrada inválida
+    const pe = RP.puestoEntre([100, 110, 120], 90, "menor_valor", 49.5);
+    assert.deepStrictEqual([pe.puesto, pe.de, pe.gana, pe.empate], [1, 4, true, false], "el más barato queda primero solo con menor valor");
+    const emp = RP.puestoEntre([100, 110, 120], 100, "menor_valor", 49.5);
+    assert.deepStrictEqual([emp.puesto, emp.gana, emp.empate], [1, false, true], "el mismo valor que el más barato: empate, no «gana»");
+    assert.strictEqual(RP.puestoEntre([100, 110], 0, "mediana", 49.5), null, "un precio no positivo no se puntúa");
+    assert.strictEqual(RP.puestoEntre([100, 110], 105, "metodo_inventado", 49.5), null, "un método que no existe es inerte");
+    // (2) «gana en k de 4»: contado método a método con las fórmulas del pliego, no estimado
+    const alto = RP.puestosPorMetodo([900, 920, 940], 999, 49.5);
+    assert.strictEqual(alto.gana_en_de_4, 0, "por encima de todos los rivales no gana con ningún método");
+    /* tres ofertas (número impar): la del centro es la mediana → gana con mediana y con geométrica,
+       empata en la aritmética baja (900 y 920 quedan a 10 de X̄B = 910) y pierde con menor valor */
+    const centro = RP.puestosPorMetodo([900, 940], 920, 49.5);
+    assert.deepStrictEqual([centro.mediana.gana, centro.geometrica.gana, centro.aritmetica_baja.empate, centro.menor_valor.gana], [true, true, true, false],
+      `el conteo es método a método con las fórmulas del pliego: ${JSON.stringify(Object.fromEntries(Mr.METODOS.map((m) => [m, [centro[m].puesto, centro[m].empate]])))}`);
+    assert.strictEqual(centro.gana_en_de_4, 2, "un empate no cuenta como ganar: 2 de 4, no 3");
+    assert.strictEqual(RP.puestosPorMetodo([900, 920, 940], -1, 49.5).gana_en_de_4, null, "sin puntaje en algún método, el conteo es null, no 0");
+    // (3) la propuesta: sin centro de mercado NO hay precio; con centro, el precio cabe en el presupuesto y declara si baja del costo
+    const sinCentro = RP.propuestaDetekta({ presupuesto_oficial: 1e9, modalidad: "Selección Abreviada de Menor Cuantía", entidad: "X", id_proceso: "T", baja: { nivel: "sin_dato", baja_mediana: null }, cd_fraccion: 0.8, p_base: 0.2 });
+    assert.deepStrictEqual([sinCentro.aplicable, sinCentro.motivo, sinCentro.precio, sinCentro.bajo_costo_con_aiu], [false, "sin_centro_de_mercado", null, null], "sin centro no se inventa precio ni se afirma «no baja del costo»");
+    const bajaSint = { nivel: "medio", baja_mediana: 4, baja_p25: 2, baja_p75: 6, procesos_contados: 12, granularidad_utilizada: "entidad" };
+    const conCentro = RP.propuestaDetekta({ presupuesto_oficial: 1e9, modalidad: "Selección Abreviada de Menor Cuantía", entidad: "X", id_proceso: "T", baja: bajaSint, cd_fraccion: 0.7, p_base: 0.2, oferentes: 5 });
+    assert.ok(conCentro.aplicable && conCentro.precio > 0 && conCentro.precio <= 1e9 && conCentro.descuento_pct >= 0, JSON.stringify(conCentro).slice(0, 300));
+    assert.strictEqual(conCentro.pct_po, Math.round(conCentro.precio / 1e9 * 10000) / 100, "el % del presupuesto es el del precio propuesto");
+    assert.strictEqual(conCentro.bajo_costo_con_aiu, conCentro.precio < conCentro.precio_venta, "«bajo el costo con AIU» compara con el costo directo × (1 + AIU) del escenario");
+    assert.strictEqual(conCentro.precio_venta, Math.round(Math.round(1e9 * 0.7) * 1.3), "AIU declarado 20/5/5");
+    assert.ok(conCentro.piso_decision > 0 && typeof conCentro.probabilidad_modelo === "number", "el piso que decide y la probabilidad del modelo viajan con la propuesta");
+    // (4) la entidad de los 64: por prefijo único; ambigua o ausente → null (sin centro, dicho)
+    const ents = ["ALCALDIA MUNICIPIO DE JAMUNDI", "SANTIAGO DE CALI DISTRITO ESPECIAL - SECRETARIA DE INFRAESTRUCTURA", "SANTIAGO DE CALI DISTRITO ESPECIAL - SECRETARIA DE EDUCACION"];
+    assert.strictEqual(RP.entidadCompleta("ALCALDIA MUNICIPIO DE JAMUNDI", ents), ents[0]);
+    assert.strictEqual(RP.entidadCompleta("SANTIAGO DE CALI DISTRITO ESPECIAL - SEC", ents), null, "dos secretarías con el mismo prefijo: no se adivina");
+    assert.strictEqual(RP.entidadCompleta("MUNICIPIO DE FLORIDA", ents), null);
+    assert.strictEqual(RP.entidadCompleta("SANTIAGO DE CALI  DISTRITO ESPECIAL - SECRETARIA DE INFRA", ents), ents[1], "el doble espacio del origen no impide casar");
+    // (5) los CONTROLES con los datos reales del árbol: Santa Elena 5.º de 5 con los 4 métodos; los ganadores reales donde el precio decidió
+    const carpeta = path.join(__dirname, "..", "scripts", "base_obra", "retroprueba");
+    const casos = JSON.parse(fs.readFileSync(path.join(carpeta, "casos_menor_cuantia.json"), "utf8"));
+    const porClave = Object.fromEntries(casos.casos.map((c) => [c.clave, c]));
+    const se = RP.evaluarCaso(porClave.santa_elena, null);
+    assert.deepStrictEqual(Mr.METODOS.map((m) => se.control_oferta_propia.puestos[m].puesto), [5, 5, 5, 5], "la oferta real del dueño (96,75 %) queda 5.º de 5 con los cuatro métodos, como dice LECCIONES.md");
+    assert.strictEqual(se.control_oferta_propia.puestos.geometrica.puntaje, 48.4397132, "el puntaje geométrico real: 48,4397 (LECCIONES.md) al séptimo decimal");
+    assert.strictEqual(se.ganador_real.reproduce, true, "CONCRETAR (94,12 %) queda primero con la media geométrica, el método que salió con la TRM 3.264,39");
+    assert.strictEqual(Mr.metodoPorTrm(porClave.santa_elena.trm), porClave.santa_elena.metodo_real);
+    for (const k of ["b", "e"]) assert.strictEqual(RP.evaluarCaso(porClave[k], null).ganador_real.reproduce, true, `${k}: el ganador real queda primero con el método real`);
+    assert.strictEqual(RP.evaluarCaso(porClave.a, null).ganador_real.reproduce, false, "A: el ganador real NO fue el primero por precio (PRAXIS perdió 20 puntos de calidad): es un hecho, y la retro-prueba lo dice en vez de maquillarlo");
+    assert.strictEqual(RP.evaluarCaso(porClave.c, null).ganador_real.reproduce, false, "C: con la oferta real de JGV el primero era MONTAG (anomalía de la entidad, detekta-lector)");
+    assert.strictEqual(RP.evaluarCaso(porClave.d, null).ganador_real.reproduce, null, "D: un solo hábil, sin método: null, no «reproduce»");
+    assert.strictEqual(RP.puestoEntre([511587015], 500000000, "menor_valor", 49.75).puntaje, 49.75, "el puntaje máximo que se pasa es el del pliego (D: 49,75 con la convocatoria limitada a Mipyme)");
+    for (const c of casos.casos) assert.ok(c.apu_propio && c.apu_propio.costo_directo === null && /sin dato|producción|no hay APU/.test(c.apu_propio.motivo), `${c.clave}: el costo del APU real no está y se declara`);
+    // (6) sin histórico ningún caso recibe precio (sin centro no se inventa); con el histórico del árbol, el centro sale de las reglas del índice
+    assert.ok(se.escenarios.every((e) => e.aplicable === false && e.motivo === "sin_centro_de_mercado"));
+    const hist = require("zlib").gunzipSync(fs.readFileSync(path.join(carpeta, "historico_entidades.jsonl.gz"))).toString("utf8").split("\n").filter(Boolean).map((l) => JSON.parse(l));
+    assert.ok(hist[0]._meta && /una fila por id_del_proceso/.test(hist[0]._meta.que_es), "el histórico declara cómo se deduplicó");
+    const filasH = hist.filter((r) => !r._meta);
+    assert.strictEqual(new Set(filasH.map((r) => r.id_del_proceso)).size, filasH.length, "una fila por proceso, como `_k` en la aplicación");
+    const { indice } = IBr.indiceDesdeFilas(filasH);
+    const centroSE = IBr.bajaDeMercado(indice, RP.filaDeIndice(porClave.santa_elena));
+    assert.ok(centroSE.nivel !== "sin_dato" && centroSE.procesos_contados >= 5 && centroSE.granularidad_utilizada, `el centro de Cali sale de la cascada real: ${JSON.stringify(centroSE).slice(0, 200)}`);
+    const seH = RP.evaluarCaso(porClave.santa_elena, indice);
+    assert.ok(seH.escenarios.every((e) => e.aplicable && e.puestos && e.puestos.gana_en_de_4 != null), "con centro, cada escenario trae precio y puestos");
+    const dH = RP.evaluarCaso(porClave.d, indice);
+    const dGana = dH.escenarios.find((e) => e.aplicable && e.puestos.gana_en_de_4 === 4);
+    assert.ok(dGana && dGana.puestos.menor_valor.puntaje === 49.75, `D: el caso puntúa con SU máximo (49,75), no con el 49,5 por defecto: ${JSON.stringify(dGana && dGana.puestos.menor_valor)}`);
+    assert.ok(seH.centro_cubetas && Object.values(seH.centro_cubetas).reduce((a, x) => a + x.procesos, 0) === seH.centro.procesos_contados || seH.centro.granularidad_utilizada !== "entidad", "la composición por modalidad suma el centro cuando la cascada respondió con la entidad entera");
+    // (7) el informe del árbol es el que generan los insumos del árbol: ni editado a mano ni desactualizado
+    const valle = JSON.parse(fs.readFileSync(path.join(carpeta, "valle_samc_64.json"), "utf8"));
+    assert.strictEqual(valle.procesos.length, 64, "los 64 del Valle, con su procedencia");
+    assert.ok(/95f3bcfbf295ffe50e7dae505aaecedb3825a694ce9a1686bfaeda9d1f25d30b/.test(valle._meta.fuente), "la procedencia lleva el SHA-256 del archivo de origen");
+    const R = RP.retroprueba({ casos: casos.casos, valle: valle.procesos, historico: filasH });
+    const doc = fs.readFileSync(path.join(__dirname, "..", "docs", "RETROPRUEBA_MENOR_CUANTIA.md"), "utf8");
+    const fechaDoc = /informe fechado \(([^)]+)\)/.exec(doc);
+    assert.ok(fechaDoc, "el informe lleva su ficha con fecha");
+    assert.strictEqual(doc, RP.informe(R, fechaDoc[1]) + "\n", "docs/RETROPRUEBA_MENOR_CUANTIA.md tiene que ser EXACTAMENTE lo que genera `node scripts/base_obra/retroprueba.js --escribir` con los insumos del árbol: regenérelo");
+    assert.ok(!/NaN|undefined|null %/.test(doc), "ninguna celda del informe queda sin dato disfrazado");
+    // (7b) resultado.json está bajo la misma cerradura que el informe (salvo la marca de tiempo)
+    { const guardado = JSON.parse(fs.readFileSync(path.join(carpeta, "resultado.json"), "utf8"));
+      const sinSello = (x) => JSON.stringify({ ...x, generado: null }, null, 1);
+      assert.strictEqual(sinSello(guardado), sinSello(R), "scripts/base_obra/retroprueba/resultado.json tiene que ser lo que generan los insumos del árbol: regenérelo con --escribir"); }
+    // (7c) el APU propio, si se pega, es la primera fila con su fuente (la memoria lo promete)
+    { const conApu = RP.evaluarCaso({ ...porClave.santa_elena, apu_propio: { costo_directo: 1200000000 } }, indice);
+      assert.strictEqual(conApu.escenarios.length, RP.ESCENARIOS_COSTO.length + 1); assert.strictEqual(conApu.escenarios[0].fuente_costo, "apu_propio"); assert.strictEqual(conApu.escenarios[0].costo_directo, 1200000000, "la fila usa el costo pegado");
+      assert.ok(/APU propio \(75,9 %\)/.test(RP.informe({ ...R, casos: [conApu], valle: null }, "x")), "y el informe la rotula como APU propio");
+      assert.strictEqual(seH.escenarios.length, RP.ESCENARIOS_COSTO.length, "sin APU propio, solo los escenarios");
+      assert.strictEqual(typeof seH.escenarios[0].bajo_costo_mas_administracion, "boolean", "la columna «pierde plata» (bajo costo + administración) existe"); }
+    // (7d) las dos causas de «sin centro» en los 64 se cuentan aparte
+    assert.strictEqual(R.valle.entidad_no_identificable + R.valle.sin_centro + R.valle.por_proceso.filter((p) => p.centro && p.centro.nivel !== "sin_dato").length, R.valle.procesos, "sin entidad + sin centro + con centro = los 64");
+    assert.ok(R.valle.entidad_no_identificable > 0 && R.valle.sin_centro > 0);
+    // (6b) la cascada completa de indiceDesdeFilas, cerrada: las cuatro granularidades y la respuesta por departamento·familia cuando la entidad no llega al mínimo
+    assert.deepStrictEqual(Object.keys(indice), [...IBr.GRANULARIDADES], "indiceDesdeFilas publica las mismas granularidades que la aplicación (MUTACIÓN: solo «entidad»)");
+    { const fila = (i, entidad) => ({ id_del_proceso: `SINT-${entidad}-${i}`, entidad, nit_entidad: "800000000", departamento_entidad: "Boyacá", modalidad_de_contratacion: "Selección Abreviada de Menor Cuantía", tipo_de_contrato: "Obra", codigo_principal_de_categoria: "V1.72141106", precio_base: 1000000000, valor_total_adjudicacion: 900000000, nit_del_proveedor_adjudicado: "900000001", nombre_del_proveedor_adjudicado: "SINTÉTICO SAS", fecha_de_publicacion_del_proceso: "2026-03-01T00:00:00.000", fecha_adjudicacion: "2026-04-01T00:00:00.000", adjudicado: "Si" });
+      const filasS = [fila(1, "ALCALDIA DE SINTETICA UNO"), ...[1, 2, 3, 4, 5, 6].map((i) => fila(i, `ALCALDIA DE SINTETICA ${i + 1}`))];
+      const { indice: idxS } = IBr.indiceDesdeFilas(filasS);
+      const r1 = IBr.bajaDeMercado(idxS, { entidad: "ALCALDIA DE SINTETICA UNO", nit_entidad: "800000000", departamento_entidad: "Boyacá", modalidad_de_contratacion: "Selección Abreviada de Menor Cuantía", codigo_principal_de_categoria: "V1.72141106" });
+      assert.ok(r1.nivel !== "sin_dato" && r1.granularidad_utilizada === "departamento_familia", `una entidad con 1 fila y 7 en el departamento·familia responde por el departamento (MUTACIÓN: granularidad única): ${JSON.stringify(r1).slice(0, 160)}`);
+      // dos copias de la misma fila no cuentan dos contratos: la clave de deduplicación es la del almacén (`_k` = id_del_proceso)
+      const { indice: idxD } = IBr.indiceDesdeFilas([...filasH, ...filasH]);
+      const cali = (idx) => IBr.bajaDeMercado(idx, RP.filaDeIndice(porClave.santa_elena)).procesos_contados;
+      assert.strictEqual(cali(idxD), cali(indice), "duplicar el histórico no duplica los contratos del centro (MUTACIÓN: sin deduplicar)"); }
+    // y lo que los casos juntos dicen se cuenta, no se escribe: ningún precio propuesto gana donde hubo competencia real
+    const conComp = R.casos.filter((c) => c.n_habiles_rivales >= 3);
+    assert.strictEqual(conComp.length, 4, "Santa Elena, A, B y E tienen 3 o más rivales hábiles");
+    assert.strictEqual(conComp.flatMap((c) => c.escenarios).filter((e) => e.aplicable && e.puestos.gana_en_de_4 > 0).length, 0, "con el centro de la entidad y el modelo de hoy, ningún precio propuesto queda primero con ningún método en los cuatro procesos con competencia real (es el hallazgo; si deja de ser cierto, el informe cambia y esta línea también)");
+    const c9675 = R.valle.por_control.find((a) => /96,75/.test(a.nombre));
+    assert.ok(c9675 && c9675.procesos === 64 && c9675.sorteado_de_cada_100 > 15 && c9675.sorteado_de_cada_100 < 22, `la regla con la que se ofertó Santa Elena queda primera en ~19 de cada 100 de los 64 (curva.py de detekta-lector): ${JSON.stringify(c9675)}`);
+    console.log(`· unidad retro-prueba de menor cuantía: puestos con las 4 fórmulas (primero solo, empate, inválido) · controles reales (Santa Elena 5.º de 5 · ganadores de B y E reproducidos · A y C dichos como hechos) · centro de Cali desde las reglas del índice (${centroSE.procesos_contados} contratos, ${centroSE.granularidad_utilizada}) · el informe del árbol es el que generan los insumos · 96,75 % gana en ${c9675.sorteado_de_cada_100} de cada 100 de los 64`);
+  }
+
+  /* unidad: el cotejo del Formulario 1 con ERRORES PLANTADOS (25-oct-2026). Criterio del dueño: que
+     cace 10 de 10 errores plantados (ítem cambiado, cantidad cambiada, unitario en cero, techo
+     superado, AIU mayor que el de la entidad) sin un solo «cuadra» falso. Un subagente que no
+     escribió el módulo lo atacó con 60 variantes y halló cuatro «cuadra» falsos reales, cerrados en
+     el mismo commit: el unitario explícito en $0 con el pliego sin unitarios, el unitario vacío con
+     el total escrito, las filas de SECOP II sin precio que «coincidían» y las filas proyectadas que
+     no cuadraban con el total declarado. Cada error plantado pasa por `validarFormulario1` con una
+     oferta LIMPIA que cuadra (semáforo «listo», completa) y tiene que dejar de cuadrar; los controles
+     (diferencias que NO son errores) tienen que seguir en «listo»: un falso rechazo también cuesta. */
+  bqCotejo: { if (!corre("unidad cotejo del Formulario 1 · errores plantados")) break bqCotejo;
+    const F1c = require("../lib/formulario1.js");
+    const FORMc = { base_precio: "costo_directo", aiu_total_pct: 30, variante_iva: null, items: [
+      { numeral: "1.1", descripcion_original: "LOCALIZACION Y REPLANTEO", unidad: "m2", cantidad: 1200, unitario_oficial: 2500, total_oficial: 3000000, pagina: 3 },
+      { numeral: "1.2", descripcion_original: "EXCAVACION MANUAL EN MATERIAL COMUN", unidad: "m3", cantidad: 100, unitario_oficial: 50000, total_oficial: 5000000, pagina: 3 },
+      { numeral: "2.1", descripcion_original: "SUB-BASE GRANULAR CLASE C", unidad: "m3", cantidad: 420, unitario_oficial: 95000, total_oficial: 39900000, pagina: 4 },
+      { numeral: "2.2", descripcion_original: "CONCRETO 3000 PSI PARA PLACA", unidad: "m3", cantidad: 20, unitario_oficial: 600000, total_oficial: 12000000, pagina: 4 },
+      { numeral: "2.3", descripcion_original: "ACERO DE REFUERZO 420 MPA", unidad: "kg", cantidad: 500, unitario_oficial: 6000, total_oficial: 3000000, pagina: 4 },
+    ] };
+    const AIUc = { administracion_pct: 20, imprevistos_pct: 3, utilidad_pct: 7 };   // 30 = el tope
+    const filasLimpias = () => FORMc.items.map((f) => { const pu = Math.round(f.unitario_oficial * 1.3); return { numeral: f.numeral, descripcion: f.descripcion_original, unidad: f.unidad, cantidad: f.cantidad, precio_unitario: pu, total: pu * f.cantidad }; });
+    const TOTALc = filasLimpias().reduce((a, i) => a + i.total, 0);               // 81.770.000 (sin IVA sobre la utilidad)
+    const PRESc = Math.round(TOTALc * 1.03);                                        // 84.223.100
+    const clon = (x) => JSON.parse(JSON.stringify(x));
+    const limpia = () => ({ oferta: { items: filasLimpias(), aiu: clon(AIUc), total: TOTALc, base_precio: "con_aiu" }, formulario: clon(FORMc), presupuesto_oficial: PRESc, tope_aiu_pct: 30, secop: { total: TOTALc }, modalidad: "Selección Abreviada de Menor Cuantía" });
+    /* como la manda la pantalla (public/app.js ofertaParaRevision): filas proyectadas, numeral en `codigo`, IVA explícito, SECOP = total del Excel */
+    const IVAc = Math.round(62900000 * 0.07 * 0.19);
+    const pantalla = () => { const e = limpia(); e.oferta.items = e.oferta.items.map((i) => ({ numeral: null, codigo: i.numeral, descripcion: i.descripcion, unidad: i.unidad, cantidad: i.cantidad, precio_unitario: i.precio_unitario, total: i.total })); e.oferta.filas_proyectadas = true; e.oferta.iva_sobre_utilidad = IVAc; e.secop = { total: TOTALc + IVAc }; return e; };
+    const nivel = (r, id) => { const x = r.veredictos.find((v) => v.id === id); return x ? x.nivel : null; };
+    const r0 = F1c.validarFormulario1(limpia()), rP = F1c.validarFormulario1(pantalla());
+    assert.ok(r0.semaforo === "listo" && r0.completa && r0.frase === "Su oferta está lista para presentar.", `la oferta limpia cuadra: ${r0.frase} ${JSON.stringify(r0.veredictos.map((v) => [v.id, v.nivel]))}`);
+    assert.ok(rP.semaforo === "listo" && rP.completa, `la de la pantalla también: ${rP.frase} ${JSON.stringify(rP.veredictos.map((v) => [v.id, v.nivel]))}`);
+    // ── los errores plantados: [nombre, qué veredicto lo tiene que cazar, cómo se planta] ──
+    const sinUnitariosDelPliego = (e) => { e.formulario.items.forEach((i) => { i.unitario_oficial = null; i.total_oficial = null; }); return e; };
+    const PLANTADOS = [
+      ["ítem cambiado (descripción: CLASE C → CLASE B)", "items", (e) => { e.oferta.items[2].descripcion = "SUB-BASE GRANULAR CLASE B"; return e; }],
+      ["cantidad cambiada (420 → 421)", "items", (e) => { e.oferta.items[2].cantidad = 421; e.oferta.items[2].total = e.oferta.items[2].precio_unitario * 421; e.oferta.total += e.oferta.items[2].precio_unitario; e.secop.total = e.oferta.total; return e; }],
+      ["unidad cambiada (m2 → m3)", "items", (e) => { e.oferta.items[0].unidad = "m3"; return e; }],
+      ["ítem suprimido (2.3)", "items", (e) => { e.oferta.items.pop(); e.oferta.total -= 3900000; e.secop.total = e.oferta.total; return e; }],
+      ["ítem añadido (3.1 FORMALETA)", "items", (e) => { e.oferta.items.push({ numeral: "3.1", descripcion: "FORMALETA", unidad: "m2", cantidad: 10, precio_unitario: 30000, total: 300000 }); e.oferta.total += 300000; e.secop.total = e.oferta.total; return e; }],
+      ["unitario explícito en $0 con el pliego sin unitarios (MUTACIÓN: salía «lista»)", "sin_precio", (e) => { sinUnitariosDelPliego(e); e.oferta.items[4].precio_unitario = 0; e.oferta.items[4].total = 0; e.oferta.total -= 3900000; e.secop.total = e.oferta.total; return e; }],
+      ["unitario vacío con el total escrito (MUTACIÓN: salía «lista»)", "sin_precio", (e) => { e.oferta.items[3].precio_unitario = null; return e; }],
+      ["techo superado por $1 (total y filas)", "presupuesto", (e) => { e.oferta.items[0].precio_unitario += 2; e.oferta.items[0].total = e.oferta.items[0].precio_unitario * 1200; e.oferta.total = e.oferta.items.reduce((a, i) => a + i.total, 0); e.presupuesto_oficial = e.oferta.total - 1; e.secop.total = e.oferta.total; return e; }],
+      ["AIU mayor que el de la entidad (tope + 0,01)", "aiu", (e) => { e.oferta.aiu.utilidad_pct = 7.01; return e; }],
+      ["AIU sin discriminar (imprevistos vacío)", "aiu", (e) => { e.oferta.aiu.imprevistos_pct = null; return e; }],
+      ["total en SECOP II distinto del anexo por $1", "secop", (e) => { e.secop.total = TOTALc + 1; return e; }],
+      ["dos unitarios intercambiados en SECOP II (con descripciones)", "secop", (e) => { e.secop.items = e.oferta.items.map((i) => ({ numeral: i.numeral, descripcion: i.descripcion, precio_unitario: i.precio_unitario })); const a = e.secop.items[1].precio_unitario; e.secop.items[1].precio_unitario = e.secop.items[3].precio_unitario; e.secop.items[3].precio_unitario = a; return e; }],
+      ["filas proyectadas con un total declarado $4.088.500 por debajo de lo que suman (MUTACIÓN: salía «lista»)", "filas_vs_total", (e) => { e.oferta.total -= 4088500; e.secop.total = e.oferta.total + IVAc; return e; }, { base: "pantalla" }],
+      ["cantidad explícita en 0 frente a 420 del pliego", "items", (e) => { e.oferta.items[2].cantidad = 0; e.oferta.items[2].total = 0; e.oferta.total -= 123500 * 420; e.secop.total = e.oferta.total; return e; }],
+    ];
+    const cazados = [];
+    for (const [nombre, id, plantar, opts] of PLANTADOS) {
+      const e = plantar((opts && opts.base === "pantalla") ? pantalla() : limpia());
+      const r = F1c.validarFormulario1(e);
+      const n = nivel(r, id);
+      const cazado = r.semaforo !== "listo" && (n === "alerta" || n === "rechazo");
+      assert.ok(cazado, `error plantado NO cazado («cuadra» falso): ${nombre} → semáforo ${r.semaforo}, «${r.frase}», veredicto ${id}=${n}`);
+      assert.ok(!/lista para presentar/.test(r.frase), `${nombre}: la frase no puede decir «lista»`);
+      cazados.push([nombre, id, n, r.semaforo]);
+    }
+    // los dos insubsanables del encargo cazan como RECHAZO, no como alerta
+    for (const [nombre, , n] of cazados.filter((c) => /ítem cambiado|cantidad cambiada|unitario explícito|techo superado|AIU mayor/.test(c[0]))) assert.strictEqual(n, "rechazo", `${nombre} es motivo de rechazo, no una alerta`);
+    // SECOP II sin precios NO «coincide» en los ítems (MUTACIÓN: afirmaba «coincide»)
+    { const e = limpia(); e.secop = { total: TOTALc, items: e.oferta.items.map((i) => ({ descripcion: i.descripcion })) }; const v = F1c.validarFormulario1(e).veredictos.find((x) => x.id === "secop");
+      assert.ok(v.nivel === "ok" && /llegaron sin precio y no se compararon/.test(v.mensaje) && v.comparados && v.comparados.comparados === 0 && v.comparados.de === 5, `lo que no trae precio no coincide: ${v.mensaje}`);
+      const e2 = limpia(); e2.secop = { items: e2.oferta.items.map((i) => ({ descripcion: i.descripcion })) };
+      assert.strictEqual(F1c.validarFormulario1(e2).veredictos.find((x) => x.id === "secop").nivel, "sin_referencia", "sin total ni precios no hay nada que afirmar");
+      const e3 = limpia(); e3.secop = { total: TOTALc, items: [{ numeral: "2.1", descripcion: "SUB-BASE GRANULAR CLASE C", precio_unitario: 123500 }] };
+      assert.ok(/1 de 5 precios por ítem/.test(F1c.validarFormulario1(e3).veredictos.find((x) => x.id === "secop").mensaje), "con un solo precio comparado se dice 1 de 5"); }
+    // SECOP II sin total pegado no afirma «en el total» (MUTACIÓN: lo decía; revisión adversaria del 25-oct-2026)
+    { const e = limpia(); e.secop = { items: e.oferta.items.map((i, k) => ({ numeral: i.numeral, descripcion: i.descripcion, precio_unitario: k < 4 ? i.precio_unitario : null })) };
+      const v = F1c.validarFormulario1(e).veredictos.find((x) => x.id === "secop");
+      assert.ok(v.nivel === "ok" && /4 de 5 precios/.test(v.mensaje) && /el total no se pegó y no se comparó/.test(v.mensaje) && !/en el total y/.test(v.mensaje) && !/\(el total/.test(v.mensaje), `sin total pegado no se afirma el total: ${v.mensaje}`);
+      const e5 = limpia(); e5.secop = { items: e5.oferta.items.map((i) => ({ numeral: i.numeral, descripcion: i.descripcion, precio_unitario: i.precio_unitario })) };
+      const v5 = F1c.validarFormulario1(e5).veredictos.find((x) => x.id === "secop");
+      assert.ok(/en los 5 precios por ítem; el total no se pegó/.test(v5.mensaje) && !/el total y los/.test(v5.mensaje), `con los 5 precios y sin total: ${v5.mensaje}`); }
+    // un total PEGADO que no se pudo comparar (la oferta no tiene total: una fila sin cantidad) tampoco «coincide» (MUTACIÓN: salía «(el total y los 2 precios)»; segunda revisión adversaria)
+    { const base = { items: [{ numeral: "1", descripcion: "A", unidad: "m", cantidad: 10, precio_unitario: 1000 }, { numeral: "2", descripcion: "B", unidad: "m", cantidad: null, precio_unitario: 2000 }], aiu: { administracion_pct: 20, imprevistos_pct: 3, utilidad_pct: 7 } };
+      const r = F1c.validarFormulario1({ oferta: base, presupuesto_oficial: 50000, secop: { total: 999999999, items: [{ numeral: "1", precio_unitario: 1000 }, { numeral: "2", precio_unitario: 2000 }] } });
+      const v = r.veredictos.find((x) => x.id === "secop");
+      assert.ok(r.total_revisado == null && v.nivel === "ok" && /en los 2 precios por ítem; el total pegado no se pudo comparar/.test(v.mensaje) && !/\(el total/.test(v.mensaje), `total pegado sin total de oferta: ${v.mensaje}`);
+      const r2 = F1c.validarFormulario1({ oferta: base, presupuesto_oficial: 50000, secop: { total: 999999999 } });
+      const v2 = r2.veredictos.find((x) => x.id === "secop");
+      assert.ok(v2.nivel === "sin_referencia" && /no se pudo comparar/.test(v2.mensaje), `solo un total pegado y la oferta sin total: nada que afirmar: ${v2.nivel} ${v2.mensaje}`); }
+    // la frontera de «Las filas no cuadran»: la tolerancia es Σ(0,5 × cantidad) + n (MUTACIÓN: ×10, ×1000, sin el «+ n» y callar el total MAYOR pasaban)
+    { const TOL = FORMc.items.reduce((a, f) => a + f.cantidad * 0.5, 0) + FORMc.items.length;
+      assert.strictEqual(TOL, 1125, "el fixture: 2.240 unidades × 0,5 + 5 filas");
+      const conDif = (d) => { const e = pantalla(); e.oferta.total += d; e.secop.total = e.oferta.total + IVAc; return F1c.validarFormulario1(e); };
+      assert.strictEqual(nivel(conDif(-TOL), "filas_vs_total"), null, "una diferencia igual a la tolerancia es redondeo: sin alerta");
+      assert.strictEqual(nivel(conDif(-(TOL + 2)), "filas_vs_total"), "alerta", "dos pesos más que la tolerancia: alerta");
+      assert.strictEqual(nivel(conDif(TOL + 2), "filas_vs_total"), "alerta", "también cuando el total declarado es MAYOR que las filas");
+      assert.ok(conDif(TOL + 2).veredictos.find((x) => x.id === "filas_vs_total").diferencia < 0, "y la dirección viaja con el veredicto");
+      assert.strictEqual(conDif(-(TOL + 2)).veredictos.find((x) => x.id === "filas_vs_total").tolerancia, 1125, "la tolerancia publicada es la fórmula"); }
+    // un unitario NEGATIVO no es un precio (MUTACIÓN: dejaba de ser «sin precio»)
+    { const e = limpia(); e.oferta.items[1].precio_unitario = -50000; const r = F1c.validarFormulario1(e); assert.strictEqual(nivel(r, "sin_precio"), "rechazo", "un unitario negativo es «sin precio»"); assert.ok(r.semaforo !== "listo"); }
+    // un precio como texto que no se lee no es «sin precio» a secas: se dice ilegible y qué hacer (solo por la API)
+    { const e = limpia(); e.oferta.items[1].precio_unitario = "1.500,50"; const v = F1c.validarFormulario1(e).veredictos.find((x) => x.id === "sin_precio");
+      assert.ok(v && v.nivel === "rechazo" && /«1\.500,50»/.test(v.mensaje) && /sin puntos de miles/.test(v.mensaje) && v.ilegibles[0] === "1.500,50", `precio ilegible: ${v && v.mensaje}`); }
+    // basura dentro de la entrada no tumba el router (TypeError → 500): lo que no es un ítem se ignora
+    { for (const e of [null, "x", { oferta: { items: [null, "x", ...limpia().oferta.items] } }, { ...limpia(), formulario: { items: [null] } }]) { const r = F1c.validarFormulario1(e); assert.ok(r && Array.isArray(r.veredictos) && r.semaforo, "responde con veredictos, no con una excepción"); }
+      const e = limpia(); e.secop.items = [null, { numeral: "2.1", descripcion: "SUB-BASE GRANULAR CLASE C", precio_unitario: 123500 }]; assert.ok(/1 de 5/.test(F1c.validarFormulario1(e).veredictos.find((x) => x.id === "secop").mensaje), "un null entre los ítems de SECOP II se salta"); }
+    // el anexo SIN numerales y SECOP II con numerales 1..5: el índice no hace de numeral (MUTACIÓN: «1» caía en el segundo ítem y 4 precios correctos salían «difieren»)
+    { const e = limpia(); e.oferta.items.forEach((i) => { i.numeral = null; }); e.secop.items = e.oferta.items.map((i, k) => ({ numeral: String(k + 1), descripcion: i.descripcion, precio_unitario: i.precio_unitario }));
+      const r = F1c.validarFormulario1(e); assert.strictEqual(nivel(r, "secop"), "ok", `precios correctos en orden, numerales 1..5 y el anexo sin numerales: ${r.veredictos.find((x) => x.id === "secop").mensaje}`); }
+    // EL TOTAL DEL EXCEL MANDA: con la variante del IVA desconocida, la pantalla dice «escriba 82.606.570» y el cotejo bendecía 81.770.000 (MUTACIÓN: «cualquiera de los dos»; revisión adversaria de dinero)
+    { const e = pantalla(); assert.strictEqual(e.formulario.variante_iva, null, "el fixture de pantalla no sabe la variante del IVA");
+      e.oferta.total_anexo = TOTALc + IVAc; e.secop.total = TOTALc;
+      const r = F1c.validarFormulario1(e); const v = r.veredictos.find((x) => x.id === "secop");
+      assert.ok(v.nivel === "rechazo" && /el TOTAL de su Excel/.test(v.mensaje) && r.semaforo !== "listo", `tecleó el total sin IVA cuando su Excel dice con IVA: no coincide: ${v.nivel} ${v.mensaje}`);
+      const e2 = pantalla(); e2.oferta.total_anexo = TOTALc + IVAc; e2.secop.total = TOTALc + IVAc;
+      assert.strictEqual(F1c.validarFormulario1(e2).semaforo, "listo", "con el total del Excel sigue en listo");
+      const e3 = pantalla(); delete e3.oferta.total_anexo; e3.secop.total = TOTALc;
+      assert.strictEqual(nivel(F1c.validarFormulario1(e3), "secop"), "ok", "por la API, sin el total del Excel, se siguen aceptando las dos lecturas del IVA");
+      const app = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+      assert.ok(/total_anexo: r && r\.oferta && r\.oferta\.total_para_secop != null/.test(app), "la pantalla manda el TOTAL de su Excel (total_para_secop) como total_anexo"); }
+    // una oferta CORRECTA sin numerales contra el pliego numerado casa por descripción (MUTACIÓN: «faltan 5 ítems… hay 5 que no están», falso rechazo heredado)
+    { const e = limpia(); e.oferta.items.forEach((i) => { i.numeral = null; }); const r = F1c.validarFormulario1(e);
+      assert.strictEqual(r.semaforo, "listo", `sin numerales y correcta: ${r.frase} ${JSON.stringify(r.veredictos.filter((v) => v.nivel !== "ok").map((v) => [v.id, v.nivel, v.mensaje.slice(0, 80)]))}`);
+      const eP = pantalla(); eP.oferta.items.forEach((i) => { i.codigo = null; }); assert.strictEqual(F1c.validarFormulario1(eP).semaforo, "listo", "y la fila tecleada a mano en el paso 3 (sin código) también");
+      // con una descripción repetida en el pliego, la repetida no casa por descripción (cae a «no está en el pliego») y el resto sí
+      const eD = limpia(); eD.formulario.items.push({ ...eD.formulario.items[4], numeral: "3.1" }); eD.oferta.items.forEach((i) => { i.numeral = null; });
+      assert.ok(F1c.validarFormulario1(eD).semaforo !== "listo", "una descripción duplicada en el pliego no se bendice por descripción"); }
+    // el total de SECOP II pegado con puntos de miles no se lee: se dice, no «pegue el total»
+    { const e = limpia(); e.secop = { total: "81.770.000" }; const v = F1c.validarFormulario1(e).veredictos.find((x) => x.id === "secop");
+      assert.ok(v.nivel === "sin_referencia" && /«81\.770\.000»/.test(v.mensaje) && /sin puntos de miles/.test(v.mensaje), `total ilegible: ${v.mensaje}`); }
+    // el total para SECOP II se suma en centavos y se redondea UNA vez: pantalla, Excel y cotejo dicen la misma cifra (MUTACIÓN: Math.round de la suma cruda daba …802 donde el anexo dice …803; 7 de 2.000 ofertas)
+    { const Cc = require("../lib/apu/calculo.js");
+      const partes = [118858266.22, 15415917.13, 5110905.45, 7975389.66, 1515324.04];
+      assert.strictEqual(partes.reduce((a, b) => a + b, 0) < 148875802.5, true, "la frontera: la suma en coma flotante cae por debajo del medio peso exacto");
+      assert.strictEqual(Cc.totalParaSecop(...partes), 148875803, "…802,49999997 en coma flotante es …802,50 exacto: redondea a 803");
+      assert.strictEqual(Cc.totalParaSecop(...partes), Math.round(147360478.46 + 1515324.04), "la misma cifra que el cotejo del Formulario 1 (precio a centavos + IVA)");
+      assert.strictEqual(Cc.totalParaSecop(100.004, 0.004), 100); assert.strictEqual(Cc.totalParaSecop(1, 2, 3), 6); }
+    // ── los CONTROLES: diferencias que NO son errores siguen en «listo» (un falso rechazo también cuesta) ──
+    const CONTROLES = [
+      ["mayúsculas, tildes y espacios distintos en la descripción", (e) => { e.oferta.items[1].descripcion = "Excavación   manual en material común"; return e; }],
+      ["unidades equivalentes (m2 → M², m3 → MTS3)", (e) => { e.oferta.items[0].unidad = "M²"; e.oferta.items[2].unidad = "MTS3"; return e; }],
+      ["numeral con punto final («1.1.»)", (e) => { e.oferta.items[0].numeral = "1.1."; return e; }],
+      ["AIU igual al tope con flotantes (20,1 + 2,9 + 7)", (e) => { e.oferta.aiu = { administracion_pct: 20.1, imprevistos_pct: 2.9, utilidad_pct: 7 }; return e; }],
+      ["SECOP II reordenado con sus precios correctos", (e) => { e.secop.items = e.oferta.items.slice().reverse().map((i) => ({ numeral: i.numeral, descripcion: i.descripcion, precio_unitario: i.precio_unitario })); return e; }],
+      ["cantidad escrita como texto («100»)", (e) => { e.oferta.items[1].cantidad = "100"; return e; }],
+      ["filas proyectadas con la diferencia del redondeo (300 pesos)", (e) => { e.oferta.total -= 300; e.secop.total = e.oferta.total + IVAc; return e; }, { base: "pantalla" }],
+    ];
+    for (const [nombre, mutar, opts] of CONTROLES) {
+      const r = F1c.validarFormulario1(mutar((opts && opts.base === "pantalla") ? pantalla() : limpia()));
+      assert.ok(r.semaforo === "listo" && r.completa, `falso rechazo: ${nombre} → ${r.semaforo} «${r.frase}» ${JSON.stringify(r.veredictos.filter((v) => v.nivel !== "ok").map((v) => [v.id, v.nivel]))}`);
+    }
+    // la validación 8 nombra los ítems que el pliego publica sin precio en vez de hacerlos desaparecer del conteo
+    { const e = limpia(); e.formulario.items[4].unitario_oficial = 0; e.formulario.items[4].total_oficial = 0; const v = F1c.validarFormulario1(e).veredictos.find((x) => x.id === "unitarios");
+      assert.ok(v.nivel === "ok" && v.comparados === 4 && v.sin_precio_de_referencia === 1 && /1 ítem del pliego no publica precio de referencia/.test(v.mensaje), `el excluido se nombra: ${v.mensaje}`); }
+    console.log(`· unidad cotejo del Formulario 1 · errores plantados: ${cazados.length} de ${cazados.length} cazados (${cazados.filter((c) => c[2] === "rechazo").length} como rechazo, ${cazados.filter((c) => c[2] === "alerta").length} como alerta) · ${CONTROLES.length} controles sin falso rechazo · SECOP II sin precio ya no «coincide» · el unitario a $0 y el vacío con total son «sin precio» · las filas proyectadas cuadran con el total a la tolerancia del redondeo · SECOP II sin total no afirma el total · tolerancia de las filas cerrada en su frontera (1.125) y en las dos direcciones · unitario negativo y precio ilegible son rechazo · basura en la entrada no tumba el router · el índice no hace de numeral · total para SECOP II sumado en centavos (…802,5 → 803)`);
   }
 
   /* unidad: capa anti-suministro sobre segmentos de bienes. Cada caso se

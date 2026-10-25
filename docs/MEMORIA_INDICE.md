@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 2043373 bytes · 386 secciones · 29 con marcador de superación.
+Derivado del árbol: 2067912 bytes · 390 secciones · 29 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -396,4 +396,8 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | La auditoría de lo leído: mide si hay INDICIOS de una lectura mala, jamás dice «correcto» (20-oct-2026) | 20-oct-2026 | 20105-20129 | 5723 |  |
 | La auditoría con su primer proceso real: lo casi vacío se marca, un presupuesto no se juzga por sus letras y los tiempos salen a la vista (21-oct-2026) | 21-oct-2026 | 20130-20160 | 8240 |  |
 | Cada subida cuesta un despliegue: una entrega, un envío (21-oct-2026) | 21-oct-2026 | 20161-20169 | 1688 |  |
-| El consejo de siete asesores entra al proyecto: sin la sala web, sin guardar nada en el repositorio y con lo que no sabe dicho (21-oct-2026) | 21-oct-2026 | 20170-20195 | 6046 |  |
+| El consejo de siete asesores entra al proyecto: sin la sala web, sin guardar nada en el repositorio y con lo que no sabe dicho (21-oct-2026) | 21-oct-2026 | 20170-20196 | 6047 |  |
+| La retro-prueba de menor cuantía: Detekta habría perdido Santa Elena igual que el dueño, porque el centro de la entidad no es el de la menor cuantía (25-oct-2026) | 25-oct-2026 | 20197-20214 | 8656 |  |
+| El costo de preparar la oferta es la prima de la póliza de seriedad, con el único dato medido (25-oct-2026) | 25-oct-2026 | 20215-20232 | 6407 |  |
+| El cotejo del Formulario 1 con errores plantados: cuatro «cuadra» falsos cerrados (25-oct-2026) | 25-oct-2026 | 20233-20249 | 7533 |  |
+| La propuesta de zonas con costos reales: un censo medido y tres opciones, sin fusionar (25-oct-2026) | 25-oct-2026 | 20250-20258 | 1942 |  |
