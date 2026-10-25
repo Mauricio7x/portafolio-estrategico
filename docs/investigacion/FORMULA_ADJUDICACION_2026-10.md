@@ -26,8 +26,10 @@ que parecía, y quién gana no se deja predecir por el precio: la oferta más ba
    (mediana menos una desviación) baja cerca de medio punto por año: de 97,1 % en 2019 a 92,6 % en 2026.
 3. **Ser de la región ayuda.** En 1.774 procesos con oferentes de la región y de fuera, ganó el local 55 de cada
    100, no 44. El efecto es mayor en obras de alcaldías y gobernaciones fuera de Bogotá y desaparece en Bogotá.
-4. **La probabilidad honesta de ganar es casi una entre el número de ofertas.** Una fórmula matemática completa
-   (reglas del pliego más la probabilidad de quedar habilitado) queda calibrada, pero no supera ese reparto.
+4. **La probabilidad de ganar se parece mucho a una entre el número de ofertas, con un matiz.** Una fórmula matemática completa
+   (reglas del pliego más la probabilidad de quedar habilitado) igualaba ese reparto en 2025 y lo superaba en 2022 a 2024; con 5 o
+   más ofertas el ganador queda en la mitad mejor puesta, y con 2 ofertas la fórmula se equivoca. Hoy lo defendible es «una entre n
+   corregida por el número de ofertas», no un porcentaje que dependa del precio.
 
 **Qué cambia para usted:** nada en la aplicación todavía. Detekta hoy calcula el techo con la baja de todos los
 procesos de la entidad, y los de una sola oferta lo empujan hacia el 98 a 100 %. Eso es lo único que vale la pena
@@ -637,32 +639,40 @@ entero» cuenta el 100 % (`h3_extra.py:27`); (8) la comparación se hace contra 
 **No revisado por el auditor**: la cascada B2 y F_opt (solo sus cifras), la definición de «usable», un nulo validado
 para H3 con colas calibradas, y la sección 13 (modelo estructural), que se escribió después.
 
-## 13. ¿Se puede calcular la probabilidad de adjudicación con matemática y no con ajuste? Prueba del modelo estructural (24-oct-2026)
+## 13. ¿Se puede calcular la probabilidad de adjudicación con matemática y no con ajuste? Modelo estructural, auditado (24 y 25-oct-2026)
 
-**Idea.** El puntaje de cada oferta lo fija una fórmula del pliego (4 métodos sorteados parejo, H6). Lo único que
-los datos abiertos no muestran es qué ofertas quedaron habilitadas. Si cada oferta se habilita con probabilidad h,
-gana la primera habilitada en el orden de puntaje, y la probabilidad de la oferta con k ofertas por encima es
-h(1−h)^k dividida por 1−(1−h)^n, promediada sobre los 4 métodos. No tiene pesos ocultos: un solo parámetro, h.
-Código: `tools/analisis/estructural.py`; resultado: `tools/analisis/resultados/estructural.json`.
+**Idea.** El puntaje de cada oferta lo fija una fórmula del pliego (4 métodos sorteados parejo, H6). Lo único que los datos
+abiertos no muestran es qué ofertas quedaron habilitadas. Si cada oferta se habilita con probabilidad h, gana la primera
+habilitada en orden de puntaje: la oferta con k ofertas mejores y un grupo de g empatadas con ella gana con probabilidad
+q^k (1−q^g)/g, con q = 1−h, dividida por 1−q^n, promediada sobre los 4 métodos. Un solo parámetro. Código:
+`tools/analisis/estructural.py`; resultado: `tools/analisis/resultados/estructural.json`.
 
-**Resultado, ajustando h con adjudicaciones hasta 2024 y probando en 2025 (1.740 procesos con 2 o más ofertas):**
+**Qué dijo la auditoría (agente independiente, réplica sin usar nuestros guiones): las cifras se reproducen al dígito y la
+fórmula cerrada es correcta sin empates, pero la conclusión de la primera versión («no mejor que 1/n; la probabilidad honesta es
+una entre n») estaba sobredicha.** Lo que se corrigió:
 
-| Medida (prueba 2025) | Modelo estructural (h = 0,10) | Azar entre las ofertas (1/n) |
+| Punto | Primera versión | Corregido |
 |---|---|---|
-| Verosimilitud media del ganador real, por proceso | −1,6670 | −1,6667 |
-| Error de Brier, por oferta (17.126 ofertas) | 0,0747 | 0,0743 |
-| Probabilidad media asignada al ganador real | 26,8 % | 26,8 % |
+| Empates | Aproximación que subestimaba 4 a 9 veces con grupos de 60 a 80 ofertas al 100 % | Fórmula exacta con desempate al azar; h pasa de 0,10 a 0,13 |
+| Rejilla de h | Desde 0,05: ese suelo sesgaba h hacia arriba | Desde 0,01 |
+| «No es mejor que 1/n» | Verdad solo en 2025 y no distinguible de cero | **2025: +0,0003 nats por proceso (IC −0,041 a +0,041). 2022: +0,070 (IC 0,047–0,092); 2023: +0,035 (0,017–0,051); 2024: +0,041 (−0,013 a +0,089).** El modelo SÍ superó a 1/n antes de 2025. El estudio solo detecta ventajas de unos 0,04 nats: «no distinguible» no es «igual» |
+| Por número de ofertas (2025) | No se miraba | Con 2 ofertas el modelo es peor que 1/n de forma clara (−0,025, IC −0,031 a −0,019, en los cuatro años): la habilitación no es independiente del precio; con 3 o más no se distingue |
+| Calibración | «Calibrado, pendiente 0,99» como mérito | 1/n también está calibrado (pendiente 1,000): la calibración no distingue al modelo del reparto parejo |
+| Brier por oferta | 0,0747 contra 0,0743 | 0,0749 contra 0,0743; mezcla tramos donde el modelo falla (n = 2) y acierta (n ≥ 5): reportar por tramo |
+| Posición del ganador con 5 o más ofertas | «El puesto casi no informa» | **Tumbado:** el ganador queda en la mitad mejor puesta (posición media 0,42 frente a 0,50 al azar, IC 0,38–0,46) |
+| Línea base alternativa | Solo 1/n | La tasa con que gana la oferta más baja depende del número de ofertas (2: 42,6 %; 3–4: 25,5 %; 5–9: 13,4 %; 10+: 9,2 %, frente a 50, 30, 16 y 5 de 1/n) y, usada como probabilidad, supera a 1/n en +0,019 nats (IC 0,010–0,031), cosa que el modelo estructural no logra |
+| Ganador sin oferta emparejada | Sin mirar | 5,4 % de los procesos (8,4 % en licitación, 3,5 % en menor cuantía), con ganadores algo más bajos: sesgo pequeño |
 
-El modelo queda **calibrado** (pendiente 0,99, deciles entre 0,1 % y 43 %, que casan con lo observado) **pero no
-mejor que repartir 1/n**: la h que mejor ajusta es pequeña (0,05 a 0,16 según modalidad y tramo), es decir, el
-puesto en puntaje casi no informa quién gana. Es la misma conclusión de H4 y del logit del 21-oct, ahora con una
-derivación matemática completa. La calibración es real pero es la del 1/n; no es una ventaja.
+**Qué significa, dicho con cuidado.** Con datos públicos, el precio y el puesto en puntaje informan poco sobre quién gana, pero **no nada**:
+en 2022–2024 el modelo estructural mejoraba a repartir 1/n; en 2025 (año en que entran los Documentos Tipo de transporte V3 y V4,
+con aviso desde el 3-feb-2025: causa NO probada) ya no; con 5 o más ofertas el puesto sí cuenta de forma modesta; y con 2 ofertas el modelo se
+equivoca de signo. Una probabilidad **defendible hoy** es «una entre n corregida por tramo de ofertas» (la tasa observada con la que gana la
+más baja, por tramo, es una línea base mejor que 1/n). El modelo estructural queda como hipótesis de trabajo, no como producto.
 
-**Qué significa.** Con precios publicados, la probabilidad honesta de que una oferta gane es **aproximadamente 1
-entre el número de ofertas**; el precio mueve la probabilidad mucho menos de lo que parece, salvo para evitar
-quedar rechazada por precio artificialmente bajo. Lo que podría añadir información y SÍ está en los datos: la
-ventaja local (H8, razón de momios 1,5–1,7, ver sección 12), y el historial de cada oferente en esa entidad (H11). Un modelo
-probabilístico sustentable es entonces «1/n ajustado por oferente», no «precio → probabilidad».
+**Supuestos y límites que declara esta sección:** probabilidades condicionadas a procesos con 2 o más ofertas válidas, sin lote ni inconsistencia y
+con ganador emparejado; un solo h global ajustado con 2022–2024 y probado en 2025 (2026 intacto; tramos y modalidades mirados en la misma muestra de
+prueba, sin corregir por comparaciones múltiples); mezcla de métodos fija en ¼ (con pesos ajustados la verosimilitud de prueba no mejora);
+pendientes de calibración sobre 10 medias de decil (regresión ecológica); causa del cambio de 2025 sin verificar.
 
 ## 14. ¿El comité evaluador deja un patrón? Huella indirecta (24-oct-2026; `tools/analisis/evaluadores.py`)
 
