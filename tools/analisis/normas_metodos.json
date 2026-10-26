@@ -1,0 +1,1350 @@
+{
+ "consultado_el": "2026-10-25",
+ "versiones": [
+  {
+   "sector": "infraestructura_transporte",
+   "modalidad": "licitacion",
+   "nombre": "Documentos tipo de licitación de obra pública de infraestructura de transporte – Versión 1",
+   "codigo": "sin código en el encabezado del Documento Base leído",
+   "version": "V1",
+   "acto_adopcion": "Decreto 342 de 2019 (5-mar-2019, DNP; adiciona la Sección 6 al Decreto 1082 de 2015) y Res. CCE 1798 de 2019 (citada por la Res. 045 de 2020; no abierta)",
+   "vigente_desde": "2019-04-01",
+   "vigente_hasta": "2020-03-09",
+   "obligatorio_desde": "2019-04-01 (procesos con aviso de convocatoria publicado desde esa fecha, art. 2 Decreto 342 de 2019)",
+   "metodos": [
+    "Mediana con valor absoluto",
+    "Media geométrica con Presupuesto Oficial",
+    "Media aritmética alta",
+    "Media aritmética baja",
+    "Menor valor"
+   ],
+   "seleccion_metodo": "Centavos de la TRM, «Rango (inclusive)»: 0.00–0.19 → Mediana con valor absoluto; 0.20–0.39 → Media geométrica con Presupuesto Oficial; 0.40–0.59 → Media aritmética alta; 0.60–0.79 → Media aritmética baja; 0.80–0.99 → Menor valor.",
+   "regla_fecha_trm": "TRM que rija el día de la Audiencia efectiva de Adjudicación definida en el cronograma vigente al momento del cierre, aun cuando la fecha de la audiencia se modifique después.",
+   "puntaje_max_economico": 70,
+   "formulas": {
+    "mediana_con_valor_absoluto": "Igual a la de versiones posteriores con 70 puntos: impar → máximo a la mediana; demás: [{1 − |(Me − Vi)/Me|} × 70]; par → máximo a la inmediatamente inferior a la mediana (VMe); demás: [{1 − |(VMe − Vi)/VMe|} × 70].",
+    "media_geometrica_con_presupuesto_oficial": "El presupuesto oficial (PO) se incluye nv veces según el número de propuestas válidas: 1–3 → 1 vez; 4–6 → 2; 7–9 → 3; 10–12 → 4; 13–15 → 5; y así sucesivamente. MG_PO = raíz (n+m)-ésima de (PO1 × … × POn × V1 × … × Vm), n = veces que se incluye el PO, m = propuestas válidas. Puntaje = 70 × (1 − (MG_PO − Vi)/MG_PO) para Vi ≤ MG_PO; Puntaje = 70 × (1 − 2 × |MG_PO − Vi|/MG_PO) para Vi > MG_PO.",
+    "media_aritmetica_alta": "XA = (Vmax + X̄)/2, Vmax = propuesta válida más alta, X̄ = promedio simple de las válidas. Puntaje = 70 × (1 − (XA − Vi)/XA) para Vi ≤ XA; Puntaje = 70 × (1 − 2 × |XA − Vi|/XA) para Vi > XA.",
+    "media_aritmetica_baja": "XB = (Vmin + X̄)/2. Puntaje = 70 × (1 − (XB − Vi)/XB) para Vi ≤ XB; 70 × (1 − |XB − Vi|/XB) para Vi > XB.",
+    "menor_valor": "Puntaje = 70 × Vmin / Vi."
+   },
+   "negativos": "Las propuestas que al aplicar las fórmulas obtengan puntajes negativos obtienen cero (0) puntos; se toma hasta el séptimo (7°) decimal; las fórmulas se aplican solo con las propuestas no rechazadas y válidas.",
+   "desempate": "Desempate (art. 2.2.1.1.2.2.9 Decreto 1082 citado por el documento): 1) mayor puntaje en el factor económico; 2) calidad; 3) industria nacional; 4) discapacidad; luego preferencias (servicios nacionales, Mipyme, etc.) y, al final, sorteo por balotas (no reproducible).",
+   "una_oferta": "No se encontró en el numeral 4.1.4 de este documento una regla para oferta única (búsqueda de «solo exista una», «una oferta habilitada», «prescindir»).",
+   "fuentes": [
+    {
+     "url": "https://www.colombiacompra.gov.co/documentos-tipo/modalidad/documentos-tipo-para-la-modalidad-de-licitacion-incluyendo-esquema-de-llave-en-mano-de-obra-publica-para-el-sector-de-infraestructura-de-transporte/01-documentos-tipo-de-licitacion-de-obra-publica-de-infraestructura-de-transporte-2",
+     "documento": "Página CCE «Documentos tipo de licitación … – Versión 01» (desde 1-abr-2019 hasta 10-mar-2020)",
+     "ubicacion": "encabezado de la versión",
+     "tipo": "oficial"
+    },
+    {
+     "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29961/",
+     "documento": "ZIP V1 > 04DT_Licitacion_TLV1_NV.zip > «Documento Base o Pliegos Tipo.docx»",
+     "ubicacion": "Capítulo IV, numerales 4.1.2 y 4.1.4 (tabla de puntajes, métodos, rangos y fórmulas)",
+     "tipo": "oficial"
+    },
+    {
+     "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29961/",
+     "documento": "ZIP V1 > 02Dec342_2019_TLV1_NV.pdf (Decreto 342 de 2019)",
+     "ubicacion": "art. 2 Vigencia; art. 2.2.1.2.6.1.3 num. 6 (métodos aleatorios) y 2.2.1.2.6.1.4 (inalterabilidad)",
+     "tipo": "oficial"
+    },
+    {
+     "url": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo",
+     "documento": "Control de versiones – Documentos Tipo (página CCE)",
+     "ubicacion": "tabla por sector y modalidad",
+     "tipo": "oficial"
+    }
+   ],
+   "estado": "verificado",
+   "notas": "Fuera del rango 2020-2026 solo en parte: rige los procesos con aviso publicado antes del 10-mar-2020 aunque se adjudiquen en 2020 (parágrafo del art. 3 de la Res. 045 de 2020). El documento V1 no trae código ni «Versión No.» legible en el encabezado. V1 trae como causal de rechazo (literal L) «una diferencia mayor o igual al uno por ciento (1%), por exceso o defecto, con respecto al valor registrado en el Formulario 1 … luego de realizar la corrección aritmética»; no se revisó en otras versiones."
+  },
+  {
+   "sector": "infraestructura_transporte",
+   "modalidad": "licitacion",
+   "nombre": "Documentos tipo de licitación de obra pública de infraestructura de transporte – Versión 2",
+   "codigo": "CCE-EICP-GI-01 (encabezado: Versión 3 del formato)",
+   "version": "V2",
+   "acto_adopcion": "Res. CCE 045 de 2020 (14-feb-2020), aclarada por la Res. 047 de 2020 (no abierta); modificada por Res. 080 de 2020 (suspende visita a la obra) y Res. 116 de 2020 (modifica num. 4.2.4-4.2.6 y aclara el literal B «Media geométrica» del 4.1.4); Res. 142 de 2020 (1-sep-2020, PDF escaneado, contenido no leído)",
+   "vigente_desde": "2020-03-10",
+   "vigente_hasta": "2020-12-31",
+   "obligatorio_desde": "2020-03-10 (art. 3 Res. 045 de 2020; los procesos con aviso publicado antes siguen con V1)",
+   "metodos": [
+    "Mediana con valor absoluto",
+    "Media geométrica",
+    "Media aritmética baja",
+    "Menor valor"
+   ],
+   "seleccion_metodo": "Centavos de la TRM certificada por la Superintendencia Financiera, «Rango (inclusive)»: 0.00–0.24 → 1 Mediana con valor absoluto; 0.25–0.49 → 2 Media geométrica; 0.50–0.74 → 3 Media aritmética baja; 0.75–0.99 → 4 Menor valor. Por lotes: el primer lote con el método de la TRM y los siguientes con el método siguiente en orden ascendente, reiniciando al agotarse.",
+   "regla_fecha_trm": "Depende de la plataforma. SECOP I: abiertos los sobres económicos en la audiencia, TRM que rija el día hábil siguiente al de la apertura efectiva del segundo sobre (publicada esa tarde). SECOP II: TRM que rija ese mismo día de la apertura (publicada la tarde anterior). En ambos casos la apertura y la definición del método se agotan el mismo día; si se suspende, rige la del día de la apertura efectiva (regla de cada plataforma).",
+   "puntaje_max_economico": 70,
+   "formulas": {
+    "mediana_con_valor_absoluto": "Me = mediana de los valores totales corregidos de las propuestas hábiles (ordenadas de forma descendente; impar: valor central; par: promedio de los dos centrales). I) Si el número de propuestas hábiles es impar, el máximo puntaje es para la propuesta que está en el valor de la mediana; las demás: Puntaje = [{1 − |(Me − Vi)/Me|} × 70]. II) Si es par, el máximo puntaje es para la propuesta inmediatamente por debajo de la mediana (VMe); las demás: Puntaje = [{1 − |(VMe − Vi)/VMe|} × 70].",
+    "media_geometrica": "MG = raíz n-ésima de (V1 × V2 × … × Vn), con n = cantidad de propuestas habilitadas (sin presupuesto oficial). Máximo puntaje a la propuesta más cercana (por exceso o por defecto) a MG; las demás: Puntaje = 70 × (1 − |MG − Vi|/MG).",
+    "media_aritmetica_baja": "XB = (Vmin + X̄)/2, con Vmin = valor total corregido de la propuesta válida más baja y X̄ = promedio aritmético simple de las propuestas válidas. Puntaje = 70 × (1 − (XB − Vi)/XB) para Vi ≤ XB; Puntaje = 70 × (1 − |XB − Vi|/XB) para Vi > XB.",
+    "menor_valor": "Vmin = mínimo de los valores totales corregidos válidos. Puntaje = 70 × Vmin / Vi."
+   },
+   "negativos": "Las propuestas que al aplicar las fórmulas obtengan puntajes negativos obtienen cero (0) puntos; se toma hasta el séptimo (7°) decimal; las fórmulas se aplican solo con las propuestas no rechazadas y válidas. En la media geométrica añade: «Nota: Cuando el resultado de la formula anterior sea un número negativo, se asignará 0,0 puntos».",
+   "desempate": "Desempate (art. 2.2.1.1.2.2.9 Decreto 1082 citado por el documento): 1) mayor puntaje en el factor económico; 2) calidad; 3) industria nacional; 4) discapacidad; luego preferencias (servicios nacionales, Mipyme, etc.) y, al final, sorteo por balotas (no reproducible).",
+   "una_oferta": "No se encontró en el numeral 4.1.4 de este documento una regla para oferta única (búsqueda de «solo exista una», «una oferta habilitada», «prescindir»).",
+   "fuentes": [
+    {
+     "url": "https://www.colombiacompra.gov.co/documentos-tipo/modalidad/documentos-tipo-para-la-modalidad-de-licitacion-incluyendo-esquema-de-llave-en-mano-de-obra-publica-para-el-sector-de-infraestructura-de-transporte/01-documentos-tipo-de-licitacion-de-obra-publica-de-infraestructura-de-transporte-3",
+     "documento": "Página CCE «… – Versión 2» (10-mar-2020 a 31-dic-2020)",
+     "ubicacion": "encabezado de la versión",
+     "tipo": "oficial"
+    },
+    {
+     "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29960/",
+     "documento": "ZIP V2 > 07DT_Licitacion_TLV2_NV.zip > «Documento Base o Pliegos Tipo CCE-EICP-GI-01 Licitacion.docx»",
+     "ubicacion": "Capítulo IV y num. 4.1.4 (pág. 47 según el índice del documento)",
+     "tipo": "oficial"
+    },
+    {
+     "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29960/",
+     "documento": "ZIP V2 > 03Res045_2020_TLV2_NV.pdf (Res. 045 de 2020)",
+     "ubicacion": "art. 3 y parágrafo (rige desde 10-mar-2020; Dada 14-feb-2020)",
+     "tipo": "oficial"
+    },
+    {
+     "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29960/",
+     "documento": "ZIP V2 > 04Res116_2020_TLV2_NV.pdf (Res. 116 de 2020)",
+     "ubicacion": "considerando sobre «tres menores valores» y art. 3 (texto de la fórmula en hoja 9 sin capa de texto)",
+     "tipo": "oficial"
+    },
+    {
+     "url": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo",
+     "documento": "Control de versiones – Documentos Tipo (página CCE)",
+     "ubicacion": "tabla por sector y modalidad",
+     "tipo": "oficial"
+    }
+   ],
+   "estado": "parcial",
+   "notas": "Según la Res. 116 de 2020, el literal B original decía que la media geométrica se calcula con «los tres menores valores», pero «para la evaluación se incluye todas las ofertas hábiles»; el Documento Base del repositorio ya dice «valor de las propuestas hábiles». Sin verificar: la fecha de la Res. 116 y si un pliego publicado antes de ella usó la redacción de tres menores valores."
+  },
+  {
+   "sector": "infraestructura_transporte",
+   "modalidad": "licitacion",
+   "nombre": "Documentos tipo de licitación de obra pública de infraestructura de transporte – V3 (Res. 240 de 2020, sin Res. 161)",
+   "codigo": "CCE-EICP-GI-01",
+   "version": "V3 (Res. 240 de 2020, sin Res. 161)",
+   "acto_adopcion": "Res. CCE 240 de 2020 (27-nov-2020), deroga la Res. 045 de 2020",
+   "vigente_desde": "2021-01-01",
+   "vigente_hasta": "2021-06-27",
+   "obligatorio_desde": "2021-01-01 (avisos de convocatoria desde esa fecha, art. 6 Res. 240 de 2020)",
+   "metodos": [
+    "Mediana con valor absoluto",
+    "Media geométrica",
+    "Media aritmética baja",
+    "Menor valor"
+   ],
+   "seleccion_metodo": "Centavos de la TRM certificada por la Superintendencia Financiera, «Rango (inclusive)»: 0.00–0.24 → 1 Mediana con valor absoluto; 0.25–0.49 → 2 Media geométrica; 0.50–0.74 → 3 Media aritmética baja; 0.75–0.99 → 4 Menor valor. Por lotes: el primer lote con el método de la TRM y los siguientes con el método siguiente en orden ascendente, reiniciando al agotarse.",
+   "regla_fecha_trm": "TRM que rija el día hábil siguiente al día en que efectivamente se abre el sobre 2 (la que la Superfinanciera publica en la tarde del día de apertura). La apertura de los sobres económicos y la definición del método deben iniciarse y agotarse el mismo día antes de las 3:00 p. m.; si se suspende la audiencia, rige la TRM del día hábil siguiente a la apertura efectiva; definido el método, sigue rigiendo aunque se suspenda la audiencia.",
+   "puntaje_max_economico": 60,
+   "formulas": {
+    "mediana_con_valor_absoluto": "Me = mediana de los valores totales corregidos de las propuestas hábiles (ordenadas de forma descendente; impar: valor central; par: promedio de los dos centrales). I) Si el número de propuestas hábiles es impar, el máximo puntaje es para la propuesta que está en el valor de la mediana; las demás: Puntaje = [{1 − |(Me − Vi)/Me|} × 60]. II) Si es par, el máximo puntaje es para la propuesta inmediatamente por debajo de la mediana (VMe); las demás: Puntaje = [{1 − |(VMe − Vi)/VMe|} × 60].",
+    "media_geometrica": "MG = raíz n-ésima de (V1 × V2 × … × Vn), con n = cantidad de propuestas habilitadas (sin presupuesto oficial). Máximo puntaje a la propuesta más cercana (por exceso o por defecto) a MG; las demás: Puntaje = 60 × (1 − |MG − Vi|/MG).",
+    "media_aritmetica_baja": "XB = (Vmin + X̄)/2, con Vmin = valor total corregido de la propuesta válida más baja y X̄ = promedio aritmético simple de las propuestas válidas. Puntaje = 60 × (1 − (XB − Vi)/XB) para Vi ≤ XB; Puntaje = 60 × (1 − |XB − Vi|/XB) para Vi > XB.",
+    "menor_valor": "Vmin = mínimo de los valores totales corregidos válidos. Puntaje = 60 × Vmin / Vi."
+   },
+   "negativos": "Las propuestas que al aplicar las fórmulas obtengan puntajes negativos obtienen cero (0) puntos; se toma hasta el séptimo (7°) decimal; las fórmulas se aplican solo con las propuestas no rechazadas y válidas.",
+   "desempate": "Desempate (art. 2.2.1.1.2.2.9 Decreto 1082 citado por el documento): 1) mayor puntaje en el factor económico; 2) calidad; 3) industria nacional; 4) discapacidad; luego preferencias (servicios nacionales, Mipyme, etc.) y, al final, sorteo por balotas (no reproducible).",
+   "una_oferta": "No se encontró en el numeral 4.1.4 de este documento una regla para oferta única (búsqueda de «solo exista una», «una oferta habilitada», «prescindir»).",
+   "fuentes": [
+    {
+     "url": "https://www.colombiacompra.gov.co/documentos-tipo/modalidad/documentos-tipo-para-la-modalidad-de-licitacion-incluyendo-esquema-de-llave-en-mano-de-obra-publica-para-el-sector-de-infraestructura-de-transporte/01-documentos-tipo-de-licitacion-de-obra-publica-de-infraestructura-de-transporte-4",
+     "documento": "Página CCE «… – Versión 3» (1-ene-2021 a 2-feb-2025) con sus cuatro subversiones",
+     "ubicacion": "lista de descargas con fechas",
+     "tipo": "oficial"
+    },
+    {
+     "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29768/",
+     "documento": "ZIP Sin modificaciones Res. 161 > 04DT_Licitacion_TLV3_NV.zip > Documento Base CCE-EICP-GI-01 (Versión No. 4)",
+     "ubicacion": "Capítulo IV, num. 4.1.4 (pág. 45 del índice)",
+     "tipo": "oficial"
+    },
+    {
+     "url": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo",
+     "documento": "Control de versiones – Documentos Tipo (página CCE)",
+     "ubicacion": "tabla por sector y modalidad",
+     "tipo": "oficial"
+    },
+    {
+     "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29768/",
+     "documento": "ZIP > 02Res240_2020_TLV3_NV.pdf (Res. 240 de 2020)",
+     "ubicacion": "art. 6 y parágrafos 1 y 2",
+     "tipo": "oficial"
+    }
+   ],
+   "estado": "verificado",
+   "notas": "Parágrafo 1 del art. 6 de la Res. 240: las entidades podían aplicar V3 a avisos publicados después de la publicación de la resolución (27-nov-2020) y antes del 1-ene-2021, indicándolo en el aviso; los procesos iniciados con V2 siguen con V2.  Las fechas de cada subversión salen de los rótulos de la página CCE; el criterio exacto (aviso o publicación) de las Res. 161 y 304 no se leyó en la resolución."
+  },
+  {
+   "sector": "infraestructura_transporte",
+   "modalidad": "licitacion",
+   "nombre": "Documentos tipo de licitación de obra pública de infraestructura de transporte – V3 con Res. 161 de 2021",
+   "codigo": "CCE-EICP-GI-01",
+   "version": "V3 con Res. 161 de 2021",
+   "acto_adopcion": "Res. CCE 161 de 2021 (17-jun-2021, fecha según el concepto C-209 de 2022; resolución no abierta)",
+   "vigente_desde": "2021-06-28",
+   "vigente_hasta": "2021-11-01",
+   "obligatorio_desde": "fecha de la subversión (aviso de convocatoria)",
+   "metodos": [
+    "Mediana con valor absoluto",
+    "Media geométrica",
+    "Media aritmética baja",
+    "Menor valor"
+   ],
+   "seleccion_metodo": "Centavos de la TRM certificada por la Superintendencia Financiera, «Rango (inclusive)»: 0.00–0.24 → 1 Mediana con valor absoluto; 0.25–0.49 → 2 Media geométrica; 0.50–0.74 → 3 Media aritmética baja; 0.75–0.99 → 4 Menor valor. Por lotes: el primer lote con el método de la TRM y los siguientes con el método siguiente en orden ascendente, reiniciando al agotarse.",
+   "regla_fecha_trm": "TRM que rija el día hábil siguiente al día en que efectivamente se abre el sobre 2 (la que la Superfinanciera publica en la tarde del día de apertura). La apertura de los sobres económicos y la definición del método deben iniciarse y agotarse el mismo día antes de las 3:00 p. m.; si se suspende la audiencia, rige la TRM del día hábil siguiente a la apertura efectiva; definido el método, sigue rigiendo aunque se suspenda la audiencia.",
+   "puntaje_max_economico": 60,
+   "formulas": {
+    "mediana_con_valor_absoluto": "Me = mediana de los valores totales corregidos de las propuestas hábiles (ordenadas de forma descendente; impar: valor central; par: promedio de los dos centrales). I) Si el número de propuestas hábiles es impar, el máximo puntaje es para la propuesta que está en el valor de la mediana; las demás: Puntaje = [{1 − |(Me − Vi)/Me|} × 60]. II) Si es par, el máximo puntaje es para la propuesta inmediatamente por debajo de la mediana (VMe); las demás: Puntaje = [{1 − |(VMe − Vi)/VMe|} × 60].",
+    "media_geometrica": "MG = raíz n-ésima de (V1 × V2 × … × Vn), con n = cantidad de propuestas habilitadas (sin presupuesto oficial). Máximo puntaje a la propuesta más cercana (por exceso o por defecto) a MG; las demás: Puntaje = 60 × (1 − |MG − Vi|/MG).",
+    "media_aritmetica_baja": "XB = (Vmin + X̄)/2, con Vmin = valor total corregido de la propuesta válida más baja y X̄ = promedio aritmético simple de las propuestas válidas. Puntaje = 60 × (1 − (XB − Vi)/XB) para Vi ≤ XB; Puntaje = 60 × (1 − |XB − Vi|/XB) para Vi > XB.",
+    "menor_valor": "Vmin = mínimo de los valores totales corregidos válidos. Puntaje = 60 × Vmin / Vi."
+   },
+   "negativos": "Las propuestas que al aplicar las fórmulas obtengan puntajes negativos obtienen cero (0) puntos; se toma hasta el séptimo (7°) decimal; las fórmulas se aplican solo con las propuestas no rechazadas y válidas.",
+   "desempate": "Desempate por los factores sucesivos y excluyentes que trae el documento (servicios/bienes nacionales, mujer cabeza de familia, discapacidad, etc.); si persiste: orden alfabético de los empatados numerados desde 1, se toma la parte entera de la TRM que rigió el día del cierre, se divide entre el número de empatados y gana el número igual al residuo (residuo 0 = mayor número asignado).",
+   "una_oferta": "No se encontró en el numeral 4.1.4 de este documento una regla para oferta única (búsqueda de «solo exista una», «una oferta habilitada», «prescindir»).",
+   "fuentes": [
+    {
+     "url": "https://www.colombiacompra.gov.co/documentos-tipo/modalidad/documentos-tipo-para-la-modalidad-de-licitacion-incluyendo-esquema-de-llave-en-mano-de-obra-publica-para-el-sector-de-infraestructura-de-transporte/01-documentos-tipo-de-licitacion-de-obra-publica-de-infraestructura-de-transporte-4",
+     "documento": "Página CCE «… – Versión 3» (1-ene-2021 a 2-feb-2025) con sus cuatro subversiones",
+     "ubicacion": "lista de descargas con fechas",
+     "tipo": "oficial"
+    },
+    {
+     "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29766/",
+     "documento": "ZIP Mod. Res. 161 > 01DT_28062021_TLV3_NV.zip > Documento Base CCE-EICP-GI-01",
+     "ubicacion": "Capítulo IV, num. 4.1.4 (pág. 46 del índice)",
+     "tipo": "oficial"
+    },
+    {
+     "url": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo",
+     "documento": "Control de versiones – Documentos Tipo (página CCE)",
+     "ubicacion": "tabla por sector y modalidad",
+     "tipo": "oficial"
+    }
+   ],
+   "estado": "verificado",
+   "notas": "Desde esta subversión el desempate sigue la Ley 2069 de 2020 con el residuo de la TRM. Las fechas de cada subversión salen de los rótulos de la página CCE; el criterio exacto (aviso o publicación) de las Res. 161 y 304 no se leyó en la resolución."
+  },
+  {
+   "sector": "infraestructura_transporte",
+   "modalidad": "licitacion",
+   "nombre": "Documentos tipo de licitación de obra pública de infraestructura de transporte – V3 con Res. 304 de 2021",
+   "codigo": "CCE-EICP-GI-01",
+   "version": "V3 con Res. 304 de 2021",
+   "acto_adopcion": "Res. CCE 304 de 2021 (13-oct-2021; avisos desde 2-nov-2021, según C-209 de 2022; resolución no abierta)",
+   "vigente_desde": "2021-11-02",
+   "vigente_hasta": "2022-08-28",
+   "obligatorio_desde": "fecha de la subversión (aviso de convocatoria)",
+   "metodos": [
+    "Mediana con valor absoluto",
+    "Media geométrica",
+    "Media aritmética baja",
+    "Menor valor"
+   ],
+   "seleccion_metodo": "Centavos de la TRM certificada por la Superintendencia Financiera, «Rango (inclusive)»: 0.00–0.24 → 1 Mediana con valor absoluto; 0.25–0.49 → 2 Media geométrica; 0.50–0.74 → 3 Media aritmética baja; 0.75–0.99 → 4 Menor valor. Por lotes: el primer lote con el método de la TRM y los siguientes con el método siguiente en orden ascendente, reiniciando al agotarse.",
+   "regla_fecha_trm": "TRM que rija el día hábil siguiente al día en que efectivamente se abre el sobre 2 (la que la Superfinanciera publica en la tarde del día de apertura). La apertura de los sobres económicos y la definición del método deben iniciarse y agotarse el mismo día antes de las 3:00 p. m.; si se suspende la audiencia, rige la TRM del día hábil siguiente a la apertura efectiva; definido el método, sigue rigiendo aunque se suspenda la audiencia.",
+   "puntaje_max_economico": 60,
+   "formulas": {
+    "mediana_con_valor_absoluto": "Me = mediana de los valores totales corregidos de las propuestas hábiles (ordenadas de forma descendente; impar: valor central; par: promedio de los dos centrales). I) Si el número de propuestas hábiles es impar, el máximo puntaje es para la propuesta que está en el valor de la mediana; las demás: Puntaje = [{1 − |(Me − Vi)/Me|} × 60]. II) Si es par, el máximo puntaje es para la propuesta inmediatamente por debajo de la mediana (VMe); las demás: Puntaje = [{1 − |(VMe − Vi)/VMe|} × 60].",
+    "media_geometrica": "MG = raíz n-ésima de (V1 × V2 × … × Vn), con n = cantidad de propuestas habilitadas (sin presupuesto oficial). Máximo puntaje a la propuesta más cercana (por exceso o por defecto) a MG; las demás: Puntaje = 60 × (1 − |MG − Vi|/MG).",
+    "media_aritmetica_baja": "XB = (Vmin + X̄)/2, con Vmin = valor total corregido de la propuesta válida más baja y X̄ = promedio aritmético simple de las propuestas válidas. Puntaje = 60 × (1 − (XB − Vi)/XB) para Vi ≤ XB; Puntaje = 60 × (1 − |XB − Vi|/XB) para Vi > XB.",
+    "menor_valor": "Vmin = mínimo de los valores totales corregidos válidos. Puntaje = 60 × Vmin / Vi."
+   },
+   "negativos": "Las propuestas que al aplicar las fórmulas obtengan puntajes negativos obtienen cero (0) puntos; se toma hasta el séptimo (7°) decimal; las fórmulas se aplican solo con las propuestas no rechazadas y válidas.",
+   "desempate": "Desempate por los factores sucesivos y excluyentes que trae el documento (servicios/bienes nacionales, mujer cabeza de familia, discapacidad, etc.); si persiste: orden alfabético de los empatados numerados desde 1, se toma la parte entera de la TRM que rigió el día del cierre, se divide entre el número de empatados y gana el número igual al residuo (residuo 0 = mayor número asignado).",
+   "una_oferta": "No se encontró en el numeral 4.1.4 de este documento una regla para oferta única (búsqueda de «solo exista una», «una oferta habilitada», «prescindir»).",
+   "fuentes": [
+    {
+     "url": "https://www.colombiacompra.gov.co/documentos-tipo/modalidad/documentos-tipo-para-la-modalidad-de-licitacion-incluyendo-esquema-de-llave-en-mano-de-obra-publica-para-el-sector-de-infraestructura-de-transporte/01-documentos-tipo-de-licitacion-de-obra-publica-de-infraestructura-de-transporte-4",
+     "documento": "Página CCE «… – Versión 3» (1-ene-2021 a 2-feb-2025) con sus cuatro subversiones",
+     "ubicacion": "lista de descargas con fechas",
+     "tipo": "oficial"
+    },
+    {
+     "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29767/",
+     "documento": "ZIP Mod. Res. 304 > 01DT_02112021_TLV3_NV.zip > Documento Base CCE-EICP-GI-01",
+     "ubicacion": "Capítulo IV, num. 4.1.4 (pág. 47 del índice)",
+     "tipo": "oficial"
+    },
+    {
+     "url": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo",
+     "documento": "Control de versiones – Documentos Tipo (página CCE)",
+     "ubicacion": "tabla por sector y modalidad",
+     "tipo": "oficial"
+    }
+   ],
+   "estado": "verificado",
+   "notas": " Las fechas de cada subversión salen de los rótulos de la página CCE; el criterio exacto (aviso o publicación) de las Res. 161 y 304 no se leyó en la resolución."
+  },
+  {
+   "sector": "infraestructura_transporte",
+   "modalidad": "licitacion",
+   "nombre": "Documentos tipo de licitación de obra pública de infraestructura de transporte – V3 con Res. 275 de 2022",
+   "codigo": "CCE-EICP-GI-01",
+   "version": "V3 con Res. 275 de 2022",
+   "acto_adopcion": "Res. CCE 275 de 2022 (acto no abierto; PDF «Res240_2020_Res275_2022_TLV3.pdf» leído = Res. 240 con sus modificaciones)",
+   "vigente_desde": "2022-08-29",
+   "vigente_hasta": "2025-02-02",
+   "obligatorio_desde": "fecha de la subversión (aviso de convocatoria)",
+   "metodos": [
+    "Mediana con valor absoluto",
+    "Media geométrica",
+    "Media aritmética baja",
+    "Menor valor"
+   ],
+   "seleccion_metodo": "Centavos de la TRM certificada por la Superintendencia Financiera, «Rango (inclusive)»: 0.00–0.24 → 1 Mediana con valor absoluto; 0.25–0.49 → 2 Media geométrica; 0.50–0.74 → 3 Media aritmética baja; 0.75–0.99 → 4 Menor valor. Por lotes: el primer lote con el método de la TRM y los siguientes con el método siguiente en orden ascendente, reiniciando al agotarse.",
+   "regla_fecha_trm": "TRM que rija el día hábil siguiente al día en que efectivamente se abre el sobre 2 (la que la Superfinanciera publica en la tarde del día de apertura). La apertura de los sobres económicos y la definición del método deben iniciarse y agotarse el mismo día antes de las 3:00 p. m.; si se suspende la audiencia, rige la TRM del día hábil siguiente a la apertura efectiva; definido el método, sigue rigiendo aunque se suspenda la audiencia.",
+   "puntaje_max_economico": 59.5,
+   "formulas": {
+    "mediana_con_valor_absoluto": "Me = mediana de los valores totales corregidos de las propuestas hábiles (ordenadas de forma descendente; impar: valor central; par: promedio de los dos centrales). I) Si el número de propuestas hábiles es impar, el máximo puntaje es para la propuesta que está en el valor de la mediana; las demás: Puntaje = [{1 − |(Me − Vi)/Me|} × Puntaje máximo (59,5)]. II) Si es par, el máximo puntaje es para la propuesta inmediatamente por debajo de la mediana (VMe); las demás: Puntaje = [{1 − |(VMe − Vi)/VMe|} × Puntaje máximo (59,5)].",
+    "media_geometrica": "MG = raíz n-ésima de (V1 × V2 × … × Vn), con n = cantidad de propuestas habilitadas (sin presupuesto oficial). Máximo puntaje a la propuesta más cercana (por exceso o por defecto) a MG; las demás: Puntaje = Puntaje máximo (59,5) × (1 − |MG − Vi|/MG).",
+    "media_aritmetica_baja": "XB = (Vmin + X̄)/2, con Vmin = valor total corregido de la propuesta válida más baja y X̄ = promedio aritmético simple de las propuestas válidas. Puntaje = Puntaje máximo (59,5) × (1 − (XB − Vi)/XB) para Vi ≤ XB; Puntaje = Puntaje máximo (59,5) × (1 − |XB − Vi|/XB) para Vi > XB.",
+    "menor_valor": "Vmin = mínimo de los valores totales corregidos válidos. Puntaje = Puntaje máximo (59,5) × Vmin / Vi."
+   },
+   "negativos": "Las propuestas que al aplicar las fórmulas obtengan puntajes negativos obtienen cero (0) puntos; se toma hasta el séptimo (7°) decimal; las fórmulas se aplican solo con las propuestas no rechazadas y válidas.",
+   "desempate": "Desempate por los factores sucesivos y excluyentes que trae el documento (servicios/bienes nacionales, mujer cabeza de familia, discapacidad, etc.); si persiste: orden alfabético de los empatados numerados desde 1, se toma la parte entera de la TRM que rigió el día del cierre, se divide entre el número de empatados y gana el número igual al residuo (residuo 0 = mayor número asignado).",
+   "una_oferta": "No se encontró en el numeral 4.1.4 de este documento una regla para oferta única (búsqueda de «solo exista una», «una oferta habilitada», «prescindir»).",
+   "fuentes": [
+    {
+     "url": "https://www.colombiacompra.gov.co/documentos-tipo/modalidad/documentos-tipo-para-la-modalidad-de-licitacion-incluyendo-esquema-de-llave-en-mano-de-obra-publica-para-el-sector-de-infraestructura-de-transporte/01-documentos-tipo-de-licitacion-de-obra-publica-de-infraestructura-de-transporte-4",
+     "documento": "Página CCE «… – Versión 3» (1-ene-2021 a 2-feb-2025) con sus cuatro subversiones",
+     "ubicacion": "lista de descargas con fechas",
+     "tipo": "oficial"
+    },
+    {
+     "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29765/",
+     "documento": "ZIP Mod. Res 275 > DT_Licitacion_TLV3.zip > Documento Base CCE-EICP-GI-01 (Versión No. 7)",
+     "ubicacion": "Capítulo IV, num. 4.1.4 (pág. 53 del índice)",
+     "tipo": "oficial"
+    },
+    {
+     "url": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo",
+     "documento": "Control de versiones – Documentos Tipo (página CCE)",
+     "ubicacion": "tabla por sector y modalidad",
+     "tipo": "oficial"
+    }
+   ],
+   "estado": "verificado",
+   "notas": "Puntaje económico 59,5 (59,75 si la convocatoria se limita a Mipyme; 54,5 en San Andrés) por los 0,25 de emprendimientos de mujeres y 0,25 Mipyme. Añade reducción de 2 puntos por multas del último año (art. 58 Ley 2195 de 2022). Las fechas de cada subversión salen de los rótulos de la página CCE; el criterio exacto (aviso o publicación) de las Res. 161 y 304 no se leyó en la resolución."
+  },
+  {
+   "sector": "infraestructura_transporte",
+   "modalidad": "licitacion",
+   "nombre": "Documentos Tipo de licitación de obra pública de infraestructura de transporte – Versión 4",
+   "codigo": "CCE-EICP-GI-01 (Versión No. 8 del formato)",
+   "version": "V4",
+   "acto_adopcion": "Res. CCE 465 de 2024 (10-sep-2024), deroga la Res. 240 de 2020",
+   "vigente_desde": "2025-02-03",
+   "vigente_hasta": null,
+   "obligatorio_desde": "2025-02-03 (avisos de convocatoria desde esa fecha, art. 8 Res. 465 de 2024)",
+   "metodos": [
+    "Mediana con valor absoluto",
+    "Media geométrica",
+    "Media aritmética baja",
+    "Menor valor"
+   ],
+   "seleccion_metodo": "Centavos de la TRM certificada por la Superintendencia Financiera, «Rango (inclusive)»: 0.00–0.24 → 1 Mediana con valor absoluto; 0.25–0.49 → 2 Media geométrica; 0.50–0.74 → 3 Media aritmética baja; 0.75–0.99 → 4 Menor valor. Por lotes: el primer lote con el método de la TRM y los siguientes con el método siguiente en orden ascendente, reiniciando al agotarse.",
+   "regla_fecha_trm": "En la audiencia de adjudicación: se resuelven observaciones al informe, se abren los sobres económicos, se hacen correcciones aritméticas y el trámite de precios artificialmente bajos (num. 4.1.3); luego la entidad se pronuncia sobre propuestas rechazadas y válidas. Si ese pronunciamiento se hace hasta las 3:00 p. m., TRM que rija el día hábil siguiente; si es después de las 3:00 p. m., TRM que rija el segundo día hábil siguiente. Definido el método, sigue rigiendo aunque se suspenda la audiencia. La entidad debe verificar que el día hábil siguiente a la apertura no sea festivo en Estados Unidos.",
+   "puntaje_max_economico": 48.5,
+   "formulas": {
+    "mediana_con_valor_absoluto": "Me = mediana de los valores totales corregidos de las propuestas hábiles (ordenadas de forma descendente; impar: valor central; par: promedio de los dos centrales). I) Si el número de propuestas hábiles es impar, el máximo puntaje es para la propuesta que está en el valor de la mediana; las demás: Puntaje = [{1 − |(Me − Vi)/Me|} × Puntaje máximo (48,5)]. II) Si es par, el máximo puntaje es para la propuesta inmediatamente por debajo de la mediana (VMe); las demás: Puntaje = [{1 − |(VMe − Vi)/VMe|} × Puntaje máximo (48,5)].",
+    "media_geometrica": "MG = raíz n-ésima de (V1 × V2 × … × Vn), con n = cantidad de propuestas habilitadas (sin presupuesto oficial). Máximo puntaje a la propuesta más cercana (por exceso o por defecto) a MG; las demás: Puntaje = Puntaje máximo (48,5) × (1 − |MG − Vi|/MG).",
+    "media_aritmetica_baja": "XB = (Vmin + X̄)/2, con Vmin = valor total corregido de la propuesta válida más baja y X̄ = promedio aritmético simple de las propuestas válidas. Puntaje = Puntaje máximo (48,5) × (1 − (XB − Vi)/XB) para Vi ≤ XB; Puntaje = Puntaje máximo (48,5) × (1 − |XB − Vi|/XB) para Vi > XB.",
+    "menor_valor": "Vmin = mínimo de los valores totales corregidos válidos. Puntaje = Puntaje máximo (48,5) × Vmin / Vi."
+   },
+   "negativos": "Las propuestas que al aplicar las fórmulas obtengan puntajes negativos obtienen cero (0) puntos; se toma hasta el séptimo (7°) decimal; las fórmulas se aplican solo con las propuestas no rechazadas y válidas.",
+   "desempate": "Desempate por los factores sucesivos y excluyentes que trae el documento (servicios/bienes nacionales, mujer cabeza de familia, discapacidad, etc.); si persiste: orden alfabético de los empatados numerados desde 1, se toma la parte entera de la TRM que rigió el día del cierre, se divide entre el número de empatados y gana el número igual al residuo (residuo 0 = mayor número asignado).",
+   "una_oferta": "«En el evento que solo exista una oferta habilitada respecto de la cual se vaya a realizar la apertura del sobre No 2, la Entidad podrá prescindir de la definición de la TRM y escogencia de método de ponderación de la oferta económica» (literal A del num. 4.1.4). Conceptos C-1778 de 2025 y C-1400 de 2026: el puntaje se asigna «en su totalidad» a la oferta habilitada (inferencia: recibe el máximo del factor económico).",
+   "fuentes": [
+    {
+     "url": "https://www.colombiacompra.gov.co/documentos-tipo/modalidad/documentos-tipo-para-la-modalidad-de-licitacion-incluyendo-esquema-de-llave-en-mano-de-obra-publica-para-el-sector-de-infraestructura-de-transporte/01-documentos-tipo-de-licitacion-de-obra-publica-de-infraestructura-de-transporte",
+     "documento": "Página CCE «… Versión 4 – Vigente desde el 3 de febrero de 2025»",
+     "ubicacion": "lista de descargas",
+     "tipo": "oficial"
+    },
+    {
+     "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29920/",
+     "documento": "ZIP 05DT_Transp_TLP_V4 > DocBase_LicObra_TLPV4.docx",
+     "ubicacion": "Capítulo IV: tabla de puntajes; num. 4.1.3, 4.1.4 (pág. 58 del índice) y 4.8 Criterios de desempate",
+     "tipo": "oficial"
+    },
+    {
+     "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29385/",
+     "documento": "Res. 465 de 2024 (PDF escaneado con texto OCR)",
+     "ubicacion": "arts. 3 (inalterabilidad), 7 (desierta → menor cuantía) y 8 (vigencia), hojas 4-6",
+     "tipo": "oficial"
+    },
+    {
+     "url": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo",
+     "documento": "Control de versiones – Documentos Tipo (página CCE)",
+     "ubicacion": "tabla por sector y modalidad",
+     "tipo": "oficial"
+    }
+   ],
+   "estado": "verificado",
+   "notas": "Reconfirma lo verificado el 17-oct-2026. Puntaje 48,75 si la convocatoria se limita a Mipyme; 43,5 en San Andrés. La solicitud de justificación de precio artificialmente bajo va después de abrir el sobre 2 y antes de definir el método; la oferta no justificada se rechaza (num. 4.1.3)."
+  },
+  {
+   "sector": "infraestructura_transporte",
+   "modalidad": "menor_cuantia",
+   "nombre": "Documentos tipo de menor cuantía de obra pública de infraestructura de transporte – Versión 1",
+   "codigo": "CCE-EICP-GI-02 (Versión 2 del formato)",
+   "version": "V1",
+   "acto_adopcion": "Res. CCE 044 de 2020 (14-feb-2020); modificada por Res. 080 y Res. 116 de 2020",
+   "vigente_desde": "2020-02-17",
+   "vigente_hasta": "2020-12-31",
+   "obligatorio_desde": "2020-02-17 (avisos de convocatoria desde esa fecha, art. 3 Res. 044 de 2020)",
+   "metodos": [
+    "Media aritmética baja",
+    "Menor valor"
+   ],
+   "seleccion_metodo": "Centavos de la TRM, «Rango (inclusive)»: 0.00–0.50 → 1 Media aritmética baja; 0.51–0.99 → 2 Menor valor. Por lotes, método siguiente en orden ascendente.",
+   "regla_fecha_trm": "TRM que rija el segundo día hábil después del cierre del proceso (la publicada en la tarde del día hábil siguiente a la fecha efectiva de cierre). Ejemplo del documento: cierre 10-feb → TRM del 12-feb.",
+   "puntaje_max_economico": 70,
+   "formulas": {
+    "media_aritmetica_baja": "XB = (Vmin + X̄)/2. Puntaje = 70 × (1 − (XB − Vi)/XB) para Vi ≤ XB; 70 × (1 − |XB − Vi|/XB) para Vi > XB.",
+    "menor_valor": "Puntaje = 70 × Vmin / Vi (el documento escribe literalmente «70%*Vmin/Vi»; inferencia: son 70 puntos)."
+   },
+   "negativos": "Las propuestas que al aplicar las fórmulas obtengan puntajes negativos obtienen cero (0) puntos; se toma hasta el séptimo (7°) decimal; las fórmulas se aplican solo con las propuestas no rechazadas y válidas.",
+   "desempate": "Desempate (art. 2.2.1.1.2.2.9 Decreto 1082 citado por el documento): 1) mayor puntaje en el factor económico; 2) calidad; 3) industria nacional; 4) discapacidad; luego preferencias (servicios nacionales, Mipyme, etc.) y, al final, sorteo por balotas (no reproducible).",
+   "una_oferta": "No se encontró en el numeral 4.1.4 de este documento una regla para oferta única (búsqueda de «solo exista una», «una oferta habilitada», «prescindir»).",
+   "fuentes": [
+    {
+     "url": "https://www.colombiacompra.gov.co/documentos-tipo/modalidad/documentos-tipo-para-la-modalidad-de-seleccion-abreviada-de-menor-cuantia-de-obra-publica-para-el-sector-de-infraestructura-de-transporte/02-documentos-tipo-de-menor-cuantia-de-obra-publica-de-infraestructura-de-transporte",
+     "documento": "Página CCE «Documentos tipo de Menor cuantia … – Versión 1» (17-feb-2020 a 31-dic-2020)",
+     "ubicacion": "encabezado",
+     "tipo": "oficial"
+    },
+    {
+     "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29962/",
+     "documento": "ZIP > 05DT_MenorCuantia_TMenCV1_NV.zip > «Documento Base o Documento Tipo CCE-EICP-GI-02 Menor Cuantia.docx»",
+     "ubicacion": "Capítulo IV, tabla de puntajes y num. 4.1.4 (pág. 46 del índice)",
+     "tipo": "oficial"
+    },
+    {
+     "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29962/",
+     "documento": "ZIP > 03Res044_2020_TMenCV1_NV.pdf (Res. 044 de 2020)",
+     "ubicacion": "art. 3 Vigencia",
+     "tipo": "oficial"
+    },
+    {
+     "url": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo",
+     "documento": "Control de versiones – Documentos Tipo (página CCE)",
+     "ubicacion": "tabla por sector y modalidad",
+     "tipo": "oficial"
+    }
+   ],
+   "estado": "verificado",
+   "notas": "DIFIERE de V3/V4: solo dos métodos, corte en 0,50/0,51 y 70 puntos. Factor de calidad 20 e industria nacional 10 (sin puntaje de discapacidad)."
+  },
+  {
+   "sector": "infraestructura_transporte",
+   "modalidad": "menor_cuantia",
+   "nombre": "Documentos tipo de menor cuantía de obra pública de infraestructura de transporte – V2 (Res. 241 de 2020, sin Res. 161)",
+   "codigo": "CCE-EICP-GI-02",
+   "version": "V2 (Res. 241 de 2020, sin Res. 161)",
+   "acto_adopcion": "Res. CCE 241 de 2020, deroga la Res. 044 de 2020",
+   "vigente_desde": "2021-01-01",
+   "vigente_hasta": "2021-06-27",
+   "obligatorio_desde": "2021-01-01 (avisos desde esa fecha, art. 5 Res. 241 de 2020)",
+   "metodos": [
+    "Mediana con valor absoluto",
+    "Media geométrica",
+    "Media aritmética baja",
+    "Menor valor"
+   ],
+   "seleccion_metodo": "Centavos de la TRM certificada por la Superintendencia Financiera, «Rango (inclusive)»: 0.00–0.24 → 1 Mediana con valor absoluto; 0.25–0.49 → 2 Media geométrica; 0.50–0.74 → 3 Media aritmética baja; 0.75–0.99 → 4 Menor valor. Por lotes: el primer lote con el método de la TRM y los siguientes con el método siguiente en orden ascendente, reiniciando al agotarse.",
+   "regla_fecha_trm": "TRM que rija el segundo día hábil después del cierre del proceso (la publicada en la tarde del día hábil siguiente a la fecha efectiva de cierre). Ejemplo del documento: cierre 10-feb → TRM del 12-feb.",
+   "puntaje_max_economico": 60,
+   "formulas": {
+    "mediana_con_valor_absoluto": "Me = mediana de los valores totales corregidos de las propuestas hábiles (ordenadas de forma descendente; impar: valor central; par: promedio de los dos centrales). I) Si el número de propuestas hábiles es impar, el máximo puntaje es para la propuesta que está en el valor de la mediana; las demás: Puntaje = [{1 − |(Me − Vi)/Me|} × 60]. II) Si es par, el máximo puntaje es para la propuesta inmediatamente por debajo de la mediana (VMe); las demás: Puntaje = [{1 − |(VMe − Vi)/VMe|} × 60].",
+    "media_geometrica": "MG = raíz n-ésima de (V1 × V2 × … × Vn), con n = cantidad de propuestas habilitadas (sin presupuesto oficial). Máximo puntaje a la propuesta más cercana (por exceso o por defecto) a MG; las demás: Puntaje = 60 × (1 − |MG − Vi|/MG).",
+    "media_aritmetica_baja": "XB = (Vmin + X̄)/2, con Vmin = valor total corregido de la propuesta válida más baja y X̄ = promedio aritmético simple de las propuestas válidas. Puntaje = 60 × (1 − (XB − Vi)/XB) para Vi ≤ XB; Puntaje = 60 × (1 − |XB − Vi|/XB) para Vi > XB.",
+    "menor_valor": "Vmin = mínimo de los valores totales corregidos válidos. Puntaje = 60 × Vmin / Vi."
+   },
+   "negativos": "Las propuestas que al aplicar las fórmulas obtengan puntajes negativos obtienen cero (0) puntos; se toma hasta el séptimo (7°) decimal; las fórmulas se aplican solo con las propuestas no rechazadas y válidas.",
+   "desempate": "Desempate (art. 2.2.1.1.2.2.9 Decreto 1082 citado por el documento): 1) mayor puntaje en el factor económico; 2) calidad; 3) industria nacional; 4) discapacidad; luego preferencias (servicios nacionales, Mipyme, etc.) y, al final, sorteo por balotas (no reproducible).",
+   "una_oferta": "No se encontró en el numeral 4.1.4 de este documento una regla para oferta única (búsqueda de «solo exista una», «una oferta habilitada», «prescindir»).",
+   "fuentes": [
+    {
+     "url": "https://www.colombiacompra.gov.co/documentos-tipo/modalidad/documentos-tipo-para-la-modalidad-de-seleccion-abreviada-de-menor-cuantia-de-obra-publica-para-el-sector-de-infraestructura-de-transporte/02-documentos-tipo-de-menor-cuantia-de-obra-publica-de-infraestructura-de-transporte-2",
+     "documento": "Página CCE «Documentos tipo de Menor cuantia … – Versión 2» (1-ene-2021 a 2-feb-2025) con cuatro subversiones",
+     "ubicacion": "lista de descargas",
+     "tipo": "oficial"
+    },
+    {
+     "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29784/",
+     "documento": "ZIP Sin las mod. Res. 161 > 04DT_MenorCuantia_TMenCV2_NV.zip > Documento Base CCE-EICP-GI-02 (Versión No. 3 del formato)",
+     "ubicacion": "num. 4.1.4 (pág. 51 del índice)",
+     "tipo": "oficial"
+    },
+    {
+     "url": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo",
+     "documento": "Control de versiones – Documentos Tipo (página CCE)",
+     "ubicacion": "tabla por sector y modalidad",
+     "tipo": "oficial"
+    },
+    {
+     "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29784/",
+     "documento": "ZIP > 02Res241_2020_TMenCV2_NV.pdf (Res. 241 de 2020)",
+     "ubicacion": "art. 5 y parágrafo 1",
+     "tipo": "oficial"
+    }
+   ],
+   "estado": "verificado",
+   "notas": "Parágrafo 1 del art. 5 de la Res. 241: aplicación discrecional anticipada a avisos publicados tras la publicación de la resolución, indicándolo en el aviso; los procesos iniciados con V1 siguen con V1. La TRM es la del segundo día hábil tras el CIERRE (no tras el traslado, como en V3)."
+  },
+  {
+   "sector": "infraestructura_transporte",
+   "modalidad": "menor_cuantia",
+   "nombre": "Documentos tipo de menor cuantía de obra pública de infraestructura de transporte – V2 con Res. 161 de 2021",
+   "codigo": "CCE-EICP-GI-02",
+   "version": "V2 con Res. 161 de 2021",
+   "acto_adopcion": "Res. CCE 161 de 2021 (no abierta)",
+   "vigente_desde": "2021-06-28",
+   "vigente_hasta": "2021-11-01",
+   "obligatorio_desde": "fecha de la subversión",
+   "metodos": [
+    "Mediana con valor absoluto",
+    "Media geométrica",
+    "Media aritmética baja",
+    "Menor valor"
+   ],
+   "seleccion_metodo": "Centavos de la TRM certificada por la Superintendencia Financiera, «Rango (inclusive)»: 0.00–0.24 → 1 Mediana con valor absoluto; 0.25–0.49 → 2 Media geométrica; 0.50–0.74 → 3 Media aritmética baja; 0.75–0.99 → 4 Menor valor. Por lotes: el primer lote con el método de la TRM y los siguientes con el método siguiente en orden ascendente, reiniciando al agotarse.",
+   "regla_fecha_trm": "TRM que rija el segundo día hábil después del cierre del proceso (la publicada en la tarde del día hábil siguiente a la fecha efectiva de cierre). Ejemplo del documento: cierre 10-feb → TRM del 12-feb.",
+   "puntaje_max_economico": 60,
+   "formulas": {
+    "mediana_con_valor_absoluto": "Me = mediana de los valores totales corregidos de las propuestas hábiles (ordenadas de forma descendente; impar: valor central; par: promedio de los dos centrales). I) Si el número de propuestas hábiles es impar, el máximo puntaje es para la propuesta que está en el valor de la mediana; las demás: Puntaje = [{1 − |(Me − Vi)/Me|} × 60]. II) Si es par, el máximo puntaje es para la propuesta inmediatamente por debajo de la mediana (VMe); las demás: Puntaje = [{1 − |(VMe − Vi)/VMe|} × 60].",
+    "media_geometrica": "MG = raíz n-ésima de (V1 × V2 × … × Vn), con n = cantidad de propuestas habilitadas (sin presupuesto oficial). Máximo puntaje a la propuesta más cercana (por exceso o por defecto) a MG; las demás: Puntaje = 60 × (1 − |MG − Vi|/MG).",
+    "media_aritmetica_baja": "XB = (Vmin + X̄)/2, con Vmin = valor total corregido de la propuesta válida más baja y X̄ = promedio aritmético simple de las propuestas válidas. Puntaje = 60 × (1 − (XB − Vi)/XB) para Vi ≤ XB; Puntaje = 60 × (1 − |XB − Vi|/XB) para Vi > XB.",
+    "menor_valor": "Vmin = mínimo de los valores totales corregidos válidos. Puntaje = 60 × Vmin / Vi."
+   },
+   "negativos": "Las propuestas que al aplicar las fórmulas obtengan puntajes negativos obtienen cero (0) puntos; se toma hasta el séptimo (7°) decimal; las fórmulas se aplican solo con las propuestas no rechazadas y válidas.",
+   "desempate": "Desempate por los factores sucesivos y excluyentes que trae el documento (servicios/bienes nacionales, mujer cabeza de familia, discapacidad, etc.); si persiste: orden alfabético de los empatados numerados desde 1, se toma la parte entera de la TRM que rigió el día del cierre, se divide entre el número de empatados y gana el número igual al residuo (residuo 0 = mayor número asignado).",
+   "una_oferta": "No se encontró en el numeral 4.1.4 de este documento una regla para oferta única (búsqueda de «solo exista una», «una oferta habilitada», «prescindir»).",
+   "fuentes": [
+    {
+     "url": "https://www.colombiacompra.gov.co/documentos-tipo/modalidad/documentos-tipo-para-la-modalidad-de-seleccion-abreviada-de-menor-cuantia-de-obra-publica-para-el-sector-de-infraestructura-de-transporte/02-documentos-tipo-de-menor-cuantia-de-obra-publica-de-infraestructura-de-transporte-2",
+     "documento": "Página CCE «Documentos tipo de Menor cuantia … – Versión 2» (1-ene-2021 a 2-feb-2025) con cuatro subversiones",
+     "ubicacion": "lista de descargas",
+     "tipo": "oficial"
+    },
+    {
+     "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29781/",
+     "documento": "ZIP Mod. Res. 161 > 02DT_MenorCuantia_TMenCV2_NV.zip > Documento Base CCE-EICP-GI-02 (Versión No. 4 del formato)",
+     "ubicacion": "num. 4.1.4 (pág. 52 del índice)",
+     "tipo": "oficial"
+    },
+    {
+     "url": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo",
+     "documento": "Control de versiones – Documentos Tipo (página CCE)",
+     "ubicacion": "tabla por sector y modalidad",
+     "tipo": "oficial"
+    }
+   ],
+   "estado": "verificado",
+   "notas": "La TRM es la del segundo día hábil tras el CIERRE (no tras el traslado, como en V3)."
+  },
+  {
+   "sector": "infraestructura_transporte",
+   "modalidad": "menor_cuantia",
+   "nombre": "Documentos tipo de menor cuantía de obra pública de infraestructura de transporte – V2 con Res. 304 de 2021",
+   "codigo": "CCE-EICP-GI-02",
+   "version": "V2 con Res. 304 de 2021",
+   "acto_adopcion": "Res. CCE 304 de 2021 (no abierta)",
+   "vigente_desde": "2021-11-02",
+   "vigente_hasta": "2022-08-28",
+   "obligatorio_desde": "fecha de la subversión",
+   "metodos": [
+    "Mediana con valor absoluto",
+    "Media geométrica",
+    "Media aritmética baja",
+    "Menor valor"
+   ],
+   "seleccion_metodo": "Centavos de la TRM certificada por la Superintendencia Financiera, «Rango (inclusive)»: 0.00–0.24 → 1 Mediana con valor absoluto; 0.25–0.49 → 2 Media geométrica; 0.50–0.74 → 3 Media aritmética baja; 0.75–0.99 → 4 Menor valor. Por lotes: el primer lote con el método de la TRM y los siguientes con el método siguiente en orden ascendente, reiniciando al agotarse.",
+   "regla_fecha_trm": "TRM que rija el segundo día hábil después del cierre del proceso (la publicada en la tarde del día hábil siguiente a la fecha efectiva de cierre). Ejemplo del documento: cierre 10-feb → TRM del 12-feb.",
+   "puntaje_max_economico": 60,
+   "formulas": {
+    "mediana_con_valor_absoluto": "Me = mediana de los valores totales corregidos de las propuestas hábiles (ordenadas de forma descendente; impar: valor central; par: promedio de los dos centrales). I) Si el número de propuestas hábiles es impar, el máximo puntaje es para la propuesta que está en el valor de la mediana; las demás: Puntaje = [{1 − |(Me − Vi)/Me|} × 60]. II) Si es par, el máximo puntaje es para la propuesta inmediatamente por debajo de la mediana (VMe); las demás: Puntaje = [{1 − |(VMe − Vi)/VMe|} × 60].",
+    "media_geometrica": "MG = raíz n-ésima de (V1 × V2 × … × Vn), con n = cantidad de propuestas habilitadas (sin presupuesto oficial). Máximo puntaje a la propuesta más cercana (por exceso o por defecto) a MG; las demás: Puntaje = 60 × (1 − |MG − Vi|/MG).",
+    "media_aritmetica_baja": "XB = (Vmin + X̄)/2, con Vmin = valor total corregido de la propuesta válida más baja y X̄ = promedio aritmético simple de las propuestas válidas. Puntaje = 60 × (1 − (XB − Vi)/XB) para Vi ≤ XB; Puntaje = 60 × (1 − |XB − Vi|/XB) para Vi > XB.",
+    "menor_valor": "Vmin = mínimo de los valores totales corregidos válidos. Puntaje = 60 × Vmin / Vi."
+   },
+   "negativos": "Las propuestas que al aplicar las fórmulas obtengan puntajes negativos obtienen cero (0) puntos; se toma hasta el séptimo (7°) decimal; las fórmulas se aplican solo con las propuestas no rechazadas y válidas.",
+   "desempate": "Desempate por los factores sucesivos y excluyentes que trae el documento (servicios/bienes nacionales, mujer cabeza de familia, discapacidad, etc.); si persiste: orden alfabético de los empatados numerados desde 1, se toma la parte entera de la TRM que rigió el día del cierre, se divide entre el número de empatados y gana el número igual al residuo (residuo 0 = mayor número asignado).",
+   "una_oferta": "No se encontró en el numeral 4.1.4 de este documento una regla para oferta única (búsqueda de «solo exista una», «una oferta habilitada», «prescindir»).",
+   "fuentes": [
+    {
+     "url": "https://www.colombiacompra.gov.co/documentos-tipo/modalidad/documentos-tipo-para-la-modalidad-de-seleccion-abreviada-de-menor-cuantia-de-obra-publica-para-el-sector-de-infraestructura-de-transporte/02-documentos-tipo-de-menor-cuantia-de-obra-publica-de-infraestructura-de-transporte-2",
+     "documento": "Página CCE «Documentos tipo de Menor cuantia … – Versión 2» (1-ene-2021 a 2-feb-2025) con cuatro subversiones",
+     "ubicacion": "lista de descargas",
+     "tipo": "oficial"
+    },
+    {
+     "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29783/",
+     "documento": "ZIP Mod. Res. 304 > 02DT_MenorCuantia_TMenCV2_NV.zip > Documento Base CCE-EICP-GI-02 (Versión No. 5 del formato)",
+     "ubicacion": "num. 4.1.4 (pág. 53 del índice)",
+     "tipo": "oficial"
+    },
+    {
+     "url": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo",
+     "documento": "Control de versiones – Documentos Tipo (página CCE)",
+     "ubicacion": "tabla por sector y modalidad",
+     "tipo": "oficial"
+    }
+   ],
+   "estado": "verificado",
+   "notas": "La TRM es la del segundo día hábil tras el CIERRE (no tras el traslado, como en V3)."
+  },
+  {
+   "sector": "infraestructura_transporte",
+   "modalidad": "menor_cuantia",
+   "nombre": "Documentos tipo de menor cuantía de obra pública de infraestructura de transporte – V2 con Res. 275 de 2022",
+   "codigo": "CCE-EICP-GI-02",
+   "version": "V2 con Res. 275 de 2022",
+   "acto_adopcion": "Res. CCE 275 de 2022 (no abierta; descarga 29782 trae la Res. 241 con modificaciones y el listado maestro)",
+   "vigente_desde": "2022-08-29",
+   "vigente_hasta": "2025-02-02",
+   "obligatorio_desde": "fecha de la subversión",
+   "metodos": [
+    "Mediana con valor absoluto",
+    "Media geométrica",
+    "Media aritmética baja",
+    "Menor valor"
+   ],
+   "seleccion_metodo": "Centavos de la TRM certificada por la Superintendencia Financiera, «Rango (inclusive)»: 0.00–0.24 → 1 Mediana con valor absoluto; 0.25–0.49 → 2 Media geométrica; 0.50–0.74 → 3 Media aritmética baja; 0.75–0.99 → 4 Menor valor. Por lotes: el primer lote con el método de la TRM y los siguientes con el método siguiente en orden ascendente, reiniciando al agotarse.",
+   "regla_fecha_trm": "TRM que rija el segundo día hábil después del cierre del proceso (la publicada en la tarde del día hábil siguiente a la fecha efectiva de cierre). Ejemplo del documento: cierre 10-feb → TRM del 12-feb.",
+   "puntaje_max_economico": 59.5,
+   "formulas": {
+    "mediana_con_valor_absoluto": "Me = mediana de los valores totales corregidos de las propuestas hábiles (ordenadas de forma descendente; impar: valor central; par: promedio de los dos centrales). I) Si el número de propuestas hábiles es impar, el máximo puntaje es para la propuesta que está en el valor de la mediana; las demás: Puntaje = [{1 − |(Me − Vi)/Me|} × Puntaje máximo (59,5)]. II) Si es par, el máximo puntaje es para la propuesta inmediatamente por debajo de la mediana (VMe); las demás: Puntaje = [{1 − |(VMe − Vi)/VMe|} × Puntaje máximo (59,5)].",
+    "media_geometrica": "MG = raíz n-ésima de (V1 × V2 × … × Vn), con n = cantidad de propuestas habilitadas (sin presupuesto oficial). Máximo puntaje a la propuesta más cercana (por exceso o por defecto) a MG; las demás: Puntaje = Puntaje máximo (59,5) × (1 − |MG − Vi|/MG).",
+    "media_aritmetica_baja": "XB = (Vmin + X̄)/2, con Vmin = valor total corregido de la propuesta válida más baja y X̄ = promedio aritmético simple de las propuestas válidas. Puntaje = Puntaje máximo (59,5) × (1 − (XB − Vi)/XB) para Vi ≤ XB; Puntaje = Puntaje máximo (59,5) × (1 − |XB − Vi|/XB) para Vi > XB.",
+    "menor_valor": "Vmin = mínimo de los valores totales corregidos válidos. Puntaje = Puntaje máximo (59,5) × Vmin / Vi."
+   },
+   "negativos": "Las propuestas que al aplicar las fórmulas obtengan puntajes negativos obtienen cero (0) puntos; se toma hasta el séptimo (7°) decimal; las fórmulas se aplican solo con las propuestas no rechazadas y válidas.",
+   "desempate": "Desempate por los factores sucesivos y excluyentes que trae el documento (servicios/bienes nacionales, mujer cabeza de familia, discapacidad, etc.); si persiste: orden alfabético de los empatados numerados desde 1, se toma la parte entera de la TRM que rigió el día del cierre, se divide entre el número de empatados y gana el número igual al residuo (residuo 0 = mayor número asignado).",
+   "una_oferta": "No se encontró en el numeral 4.1.4 de este documento una regla para oferta única (búsqueda de «solo exista una», «una oferta habilitada», «prescindir»).",
+   "fuentes": [
+    {
+     "url": "https://www.colombiacompra.gov.co/documentos-tipo/modalidad/documentos-tipo-para-la-modalidad-de-seleccion-abreviada-de-menor-cuantia-de-obra-publica-para-el-sector-de-infraestructura-de-transporte/02-documentos-tipo-de-menor-cuantia-de-obra-publica-de-infraestructura-de-transporte-2",
+     "documento": "Página CCE «Documentos tipo de Menor cuantia … – Versión 2» (1-ene-2021 a 2-feb-2025) con cuatro subversiones",
+     "ubicacion": "lista de descargas",
+     "tipo": "oficial"
+    },
+    {
+     "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29783/",
+     "documento": "ZIP Mod. Res. 304 > 03DT_MenorCuantia_TMenCV2.zip («Res- 275-2022») > Documento Base CCE-EICP-GI-02 (Versión No. 6 del formato)",
+     "ubicacion": "num. 4.1.4 (pág. 60 del índice)",
+     "tipo": "oficial"
+    },
+    {
+     "url": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo",
+     "documento": "Control de versiones – Documentos Tipo (página CCE)",
+     "ubicacion": "tabla por sector y modalidad",
+     "tipo": "oficial"
+    }
+   ],
+   "estado": "verificado",
+   "notas": "Puntaje 59,5 (59,75 limitada a Mipyme). La TRM es la del segundo día hábil tras el CIERRE (no tras el traslado, como en V3)."
+  },
+  {
+   "sector": "infraestructura_transporte",
+   "modalidad": "menor_cuantia",
+   "nombre": "Documentos Tipo de selección abreviada de menor cuantía de obra pública de infraestructura de transporte – Versión 3",
+   "codigo": "CCE-EICP-GI-02 (Versión No. 6 del formato)",
+   "version": "V3",
+   "acto_adopcion": "Res. CCE 463 de 2024 (10-sep-2024 según OCR), deroga la Res. 241 de 2020",
+   "vigente_desde": "2025-02-03",
+   "vigente_hasta": null,
+   "obligatorio_desde": "2025-02-03 (avisos de convocatoria desde esa fecha, art. 7 Res. 463 de 2024)",
+   "metodos": [
+    "Mediana con valor absoluto",
+    "Media geométrica",
+    "Media aritmética baja",
+    "Menor valor"
+   ],
+   "seleccion_metodo": "Centavos de la TRM certificada por la Superintendencia Financiera, «Rango (inclusive)»: 0.00–0.24 → 1 Mediana con valor absoluto; 0.25–0.49 → 2 Media geométrica; 0.50–0.74 → 3 Media aritmética baja; 0.75–0.99 → 4 Menor valor. Por lotes: el primer lote con el método de la TRM y los siguientes con el método siguiente en orden ascendente, reiniciando al agotarse.",
+   "regla_fecha_trm": "TRM que rija el segundo día hábil después de finalizado el periodo de traslado del informe de evaluación (la publicada en la tarde del día hábil siguiente a esa fecha). Ejemplo del documento: traslado termina 10-feb → TRM del 12-feb. La entidad debe verificar que ese segundo día hábil no sea festivo en Estados Unidos.",
+   "puntaje_max_economico": 49.5,
+   "formulas": {
+    "mediana_con_valor_absoluto": "Me = mediana de los valores totales corregidos de las propuestas hábiles (ordenadas de forma descendente; impar: valor central; par: promedio de los dos centrales). I) Si el número de propuestas hábiles es impar, el máximo puntaje es para la propuesta que está en el valor de la mediana; las demás: Puntaje = [{1 − |(Me − Vi)/Me|} × Puntaje máximo (49,5)]. II) Si es par, el máximo puntaje es para la propuesta inmediatamente por debajo de la mediana (VMe); las demás: Puntaje = [{1 − |(VMe − Vi)/VMe|} × Puntaje máximo (49,5)].",
+    "media_geometrica": "MG = raíz n-ésima de (V1 × V2 × … × Vn), con n = cantidad de propuestas habilitadas (sin presupuesto oficial). Máximo puntaje a la propuesta más cercana (por exceso o por defecto) a MG; las demás: Puntaje = Puntaje máximo (49,5) × (1 − |MG − Vi|/MG).",
+    "media_aritmetica_baja": "XB = (Vmin + X̄)/2, con Vmin = valor total corregido de la propuesta válida más baja y X̄ = promedio aritmético simple de las propuestas válidas. Puntaje = Puntaje máximo (49,5) × (1 − (XB − Vi)/XB) para Vi ≤ XB; Puntaje = Puntaje máximo (49,5) × (1 − |XB − Vi|/XB) para Vi > XB.",
+    "menor_valor": "Vmin = mínimo de los valores totales corregidos válidos. Puntaje = Puntaje máximo (49,5) × Vmin / Vi."
+   },
+   "negativos": "Las propuestas que al aplicar las fórmulas obtengan puntajes negativos obtienen cero (0) puntos; se toma hasta el séptimo (7°) decimal; las fórmulas se aplican solo con las propuestas no rechazadas y válidas.",
+   "desempate": "Desempate por los factores sucesivos y excluyentes que trae el documento (servicios/bienes nacionales, mujer cabeza de familia, discapacidad, etc.); si persiste: orden alfabético de los empatados numerados desde 1, se toma la parte entera de la TRM que rigió el día del cierre, se divide entre el número de empatados y gana el número igual al residuo (residuo 0 = mayor número asignado).",
+   "una_oferta": "No se encontró en el numeral 4.1.4 de este documento una regla para oferta única (búsqueda de «solo exista una», «una oferta habilitada», «prescindir»). A diferencia de la licitación V4 y de la menor cuantía de infraestructura social V1, este documento no la trae.",
+   "fuentes": [
+    {
+     "url": "https://www.colombiacompra.gov.co/documentos-tipo/modalidad/02-documentos-tipo-de-menor-cuantia-infraestructura-de-transporte",
+     "documento": "Página CCE «… Versión 3 – Vigente desde el 3 de febrero de 2025»",
+     "ubicacion": "lista de descargas",
+     "tipo": "oficial"
+    },
+    {
+     "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29950/",
+     "documento": "ZIP 05DT_Transp_MenorCuantia_TMenC_V3 > DocBase_MenorC_TMenCV3.docx",
+     "ubicacion": "tabla de puntajes y num. 4.1.4 (pág. 64 del índice)",
+     "tipo": "oficial"
+    },
+    {
+     "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29395/",
+     "documento": "Res. 463 de 2024 (PDF con OCR)",
+     "ubicacion": "art. 7 Vigencia y derogatorias",
+     "tipo": "oficial"
+    },
+    {
+     "url": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo",
+     "documento": "Control de versiones – Documentos Tipo (página CCE)",
+     "ubicacion": "tabla por sector y modalidad",
+     "tipo": "oficial"
+    }
+   ],
+   "estado": "verificado",
+   "notas": "Reconfirma lo verificado el 17-oct-2026 en el documento tipo (no se reabrió el pliego de Caldas). Puntaje 49,75 si se limita a Mipyme."
+  },
+  {
+   "sector": "infraestructura_transporte",
+   "modalidad": "minima",
+   "nombre": "Mínima cuantía de obra pública de infraestructura de transporte – Versión 1",
+   "codigo": "CCE-EICP-GI-03",
+   "version": "V1 (Res. 094 de 2020) y subversiones Res. 161 de 2021 y Res. 146 de 2022",
+   "acto_adopcion": "Res. CCE 094 de 2020 (PDF escaneado, no leído); modificaciones Res. 161 de 2021 y Res. 146 de 2022",
+   "vigente_desde": "2020-06-10",
+   "vigente_hasta": "2023-02-26",
+   "obligatorio_desde": "2020-06-10",
+   "metodos": [
+    "Menor precio (sin fórmula de puntaje)"
+   ],
+   "seleccion_metodo": "No hay sorteo de método: «La Entidad evaluará la oferta de menor precio y verificará que cumpla las condiciones mínimas de la invitación»; si no cumple, sigue con la siguiente.",
+   "regla_fecha_trm": "No aplica al precio (la TRM solo se usa en el último criterio de desempate en las versiones que lo traen).",
+   "puntaje_max_economico": null,
+   "formulas": {
+    "menor_precio": "«La Entidad Estatal aceptará la oferta de menor precio, siempre que cumpla con las condiciones establecidas en la invitación.»"
+   },
+   "negativos": "No aplica (no hay puntaje).",
+   "desempate": "Criterios de desempate del num. 5.1.4 de la invitación.",
+   "una_oferta": "No aplica regla especial: se verifica la oferta de menor precio.",
+   "fuentes": [
+    {
+     "url": "https://www.colombiacompra.gov.co/documentos-tipo/modalidad/documentos-tipo-para-la-modalidad-de-minima-cuantia-de-obra-publica-para-el-sector-de-infraestructura-de-transporte/03-documentos-tipo-de-minima-cuantia-de-obra-publica-de-infraestructura-de-transporte",
+     "documento": "Página CCE de la versión",
+     "ubicacion": "encabezado y descargas",
+     "tipo": "oficial"
+    },
+    {
+     "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29788/",
+     "documento": "ZIP Sin modificaciones Res. 161 > 04DT_MinimaCuantia_TMinCV1_NV.zip > Invitación.docx; y 29786 (Mod. Res. 146 de 2022, vigente desde 28-03-2022) > Invitación CCE-EICP-GI-03",
+     "ubicacion": "Capítulo III, num. 3.5 Informe de evaluación y 3.6 Aceptación de la oferta",
+     "tipo": "oficial"
+    },
+    {
+     "url": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo",
+     "documento": "Control de versiones – Documentos Tipo (página CCE)",
+     "ubicacion": "tabla por sector y modalidad",
+     "tipo": "oficial"
+    }
+   ],
+   "estado": "parcial",
+   "notas": "La página de control dice «10/06/2020 – 28/03/2022», pero la misma CCE publica la subversión con Res. 146 de 2022 «vigente a partir del 28/03/2022» y la V2 desde 27-feb-2023: inferencia, V1 (con Res. 146) rigió hasta el 26-feb-2023. Fecha de inicio tomada de la página CCE, no de la Res. 094."
+  },
+  {
+   "sector": "infraestructura_transporte",
+   "modalidad": "minima",
+   "nombre": "Mínima cuantía de obra pública de infraestructura de transporte – Versión 2",
+   "codigo": "CCE-EICP-GI-03",
+   "version": "V2 (Res. 625 de 2022)",
+   "acto_adopcion": "Res. CCE 625 de 2022, deroga la Res. 094 de 2020 (art. 5: invitaciones publicadas desde el 27-feb-2023)",
+   "vigente_desde": "2023-02-27",
+   "vigente_hasta": "2025-02-02",
+   "obligatorio_desde": "2023-02-27",
+   "metodos": [
+    "Menor precio (sin fórmula de puntaje)"
+   ],
+   "seleccion_metodo": "No hay sorteo de método: «La Entidad evaluará la oferta de menor precio y verificará que cumpla las condiciones mínimas de la invitación»; si no cumple, sigue con la siguiente.",
+   "regla_fecha_trm": "No aplica al precio (la TRM solo se usa en el último criterio de desempate en las versiones que lo traen).",
+   "puntaje_max_economico": null,
+   "formulas": {
+    "menor_precio": "«La Entidad Estatal aceptará la oferta de menor precio, siempre que cumpla con las condiciones establecidas en la invitación.»"
+   },
+   "negativos": "No aplica (no hay puntaje).",
+   "desempate": "Criterios de desempate del num. 5.1.4 de la invitación.",
+   "una_oferta": "No aplica regla especial: se verifica la oferta de menor precio.",
+   "fuentes": [
+    {
+     "url": "https://www.colombiacompra.gov.co/documentos-tipo/modalidad/documentos-tipo-para-la-modalidad-de-minima-cuantia-de-obra-publica-para-el-sector-de-infraestructura-de-transporte/03-documentos-tipo-de-minima-cuantia-de-obra-publica-de-infraestructura-de-transporte-2",
+     "documento": "Página CCE de la versión",
+     "ubicacion": "encabezado y descargas",
+     "tipo": "oficial"
+    },
+    {
+     "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29790/",
+     "documento": "ZIP Mod. versión vigente hasta el 02-02-2025 > 05DT_MinimaCuantia_TMinCV2.zip > Invitación CCE-EICP-GI-03",
+     "ubicacion": "num. 3.5 y 3.6",
+     "tipo": "oficial"
+    },
+    {
+     "url": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo",
+     "documento": "Control de versiones – Documentos Tipo (página CCE)",
+     "ubicacion": "tabla por sector y modalidad",
+     "tipo": "oficial"
+    }
+   ],
+   "estado": "verificado",
+   "notas": ""
+  },
+  {
+   "sector": "infraestructura_transporte",
+   "modalidad": "minima",
+   "nombre": "Mínima cuantía de obra pública de infraestructura de transporte – Versión 2 con Res. 464 de 2024",
+   "codigo": "CCE-EICP-GI-03",
+   "version": "V2 con modificaciones Res. 464 de 2024",
+   "acto_adopcion": "Res. CCE 464 de 2024 (art. 22: invitaciones publicadas desde el 3-feb-2025)",
+   "vigente_desde": "2025-02-03",
+   "vigente_hasta": null,
+   "obligatorio_desde": "2025-02-03",
+   "metodos": [
+    "Menor precio (sin fórmula de puntaje)"
+   ],
+   "seleccion_metodo": "No hay sorteo de método: «La Entidad evaluará la oferta de menor precio y verificará que cumpla las condiciones mínimas de la invitación»; si no cumple, sigue con la siguiente.",
+   "regla_fecha_trm": "No aplica al precio (la TRM solo se usa en el último criterio de desempate en las versiones que lo traen).",
+   "puntaje_max_economico": null,
+   "formulas": {
+    "menor_precio": "«La Entidad Estatal aceptará la oferta de menor precio, siempre que cumpla con las condiciones establecidas en la invitación.»"
+   },
+   "negativos": "No aplica (no hay puntaje).",
+   "desempate": "Criterios de desempate del num. 5.1.4 de la invitación.",
+   "una_oferta": "No aplica regla especial: se verifica la oferta de menor precio.",
+   "fuentes": [
+    {
+     "url": "https://www.colombiacompra.gov.co/documentos-tipo/modalidad/03-documentos-tipo-de-minima-cuantia-infraestructura-de-transporte",
+     "documento": "Página CCE de la versión",
+     "ubicacion": "encabezado y descargas",
+     "tipo": "oficial"
+    },
+    {
+     "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/30021/",
+     "documento": "ZIP 05DT_Transp_MinimaCuantia_TMinCV2 > Invitacion_TMinCV2.docx",
+     "ubicacion": "num. 3.5 y 3.6",
+     "tipo": "oficial"
+    },
+    {
+     "url": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo",
+     "documento": "Control de versiones – Documentos Tipo (página CCE)",
+     "ubicacion": "tabla por sector y modalidad",
+     "tipo": "oficial"
+    },
+    {
+     "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29403/",
+     "documento": "Res. 464 de 2024 (PDF con OCR)",
+     "ubicacion": "art. 22 Vigencia",
+     "tipo": "oficial"
+    }
+   ],
+   "estado": "verificado",
+   "notas": "La página CCE muestra «Desde: 3 de febrero de 2026» y en el texto «Vigente desde el 3 de febrero de 2025» y «Resolución 464 del 10 de septiembre de 2023»; la resolución dice 2024 y 3-feb-2025."
+  },
+  {
+   "sector": "infraestructura_social",
+   "modalidad": "licitacion",
+   "nombre": "Documentos tipo de licitación de obra pública de infraestructura social – Versión 1 (transversales + complementarios de educación, salud y cultura/recreación/deporte)",
+   "codigo": "CCE-EICP-GI-14",
+   "version": "V1 (Res. 219 de 2021) y subversiones hasta Res. 275 de 2022",
+   "acto_adopcion": "Res. CCE 219 de 2021 (6-ago-2021); modificaciones posteriores (Res. 261 y 336 de 2021, 304 de 2021, 275 de 2022 según rótulos de la página CCE)",
+   "vigente_desde": "2021-08-30",
+   "vigente_hasta": "2026-02-15",
+   "obligatorio_desde": "2021-08-30 (avisos de convocatoria desde esa fecha, art. 6 Res. 219 de 2021)",
+   "metodos": [
+    "Mediana con valor absoluto",
+    "Media geométrica",
+    "Media aritmética baja",
+    "Menor valor"
+   ],
+   "seleccion_metodo": "Centavos de la TRM certificada por la Superintendencia Financiera, «Rango (inclusive)»: 0.00–0.24 → 1 Mediana con valor absoluto; 0.25–0.49 → 2 Media geométrica; 0.50–0.74 → 3 Media aritmética baja; 0.75–0.99 → 4 Menor valor. Por lotes: el primer lote con el método de la TRM y los siguientes con el método siguiente en orden ascendente, reiniciando al agotarse.",
+   "regla_fecha_trm": "TRM que rija el día hábil siguiente al día en que efectivamente se abre el sobre 2 (la que la Superfinanciera publica en la tarde del día de apertura). La apertura de los sobres económicos y la definición del método deben iniciarse y agotarse el mismo día antes de las 3:00 p. m.; si se suspende la audiencia, rige la TRM del día hábil siguiente a la apertura efectiva; definido el método, sigue rigiendo aunque se suspenda la audiencia. El documento la llama «la regla prevalente».",
+   "puntaje_max_economico": 60,
+   "formulas": {
+    "mediana_con_valor_absoluto": "Me = mediana de los valores totales corregidos de las propuestas hábiles (ordenadas de forma descendente; impar: valor central; par: promedio de los dos centrales). I) Si el número de propuestas hábiles es impar, el máximo puntaje es para la propuesta que está en el valor de la mediana; las demás: Puntaje = [{1 − |(Me − Vi)/Me|} × 60 (59,5 con Res. 275 de 2022)]. II) Si es par, el máximo puntaje es para la propuesta inmediatamente por debajo de la mediana (VMe); las demás: Puntaje = [{1 − |(VMe − Vi)/VMe|} × 60 (59,5 con Res. 275 de 2022)].",
+    "media_geometrica": "MG = raíz n-ésima de (V1 × V2 × … × Vn), con n = cantidad de propuestas habilitadas (sin presupuesto oficial). Máximo puntaje a la propuesta más cercana (por exceso o por defecto) a MG; las demás: Puntaje = 60 (59,5 con Res. 275 de 2022) × (1 − |MG − Vi|/MG).",
+    "media_aritmetica_baja": "XB = (Vmin + X̄)/2, con Vmin = valor total corregido de la propuesta válida más baja y X̄ = promedio aritmético simple de las propuestas válidas. Puntaje = 60 (59,5 con Res. 275 de 2022) × (1 − (XB − Vi)/XB) para Vi ≤ XB; Puntaje = 60 (59,5 con Res. 275 de 2022) × (1 − |XB − Vi|/XB) para Vi > XB.",
+    "menor_valor": "Vmin = mínimo de los valores totales corregidos válidos. Puntaje = 60 (59,5 con Res. 275 de 2022) × Vmin / Vi."
+   },
+   "negativos": "Las propuestas que al aplicar las fórmulas obtengan puntajes negativos obtienen cero (0) puntos; se toma hasta el séptimo (7°) decimal; las fórmulas se aplican solo con las propuestas no rechazadas y válidas. Cada fórmula repite la nota de 0,0 puntos si sale negativa.",
+   "desempate": "Desempate por los factores sucesivos y excluyentes que trae el documento (servicios/bienes nacionales, mujer cabeza de familia, discapacidad, etc.); si persiste: orden alfabético de los empatados numerados desde 1, se toma la parte entera de la TRM que rigió el día del cierre, se divide entre el número de empatados y gana el número igual al residuo (residuo 0 = mayor número asignado).",
+   "una_oferta": "No se encontró en el numeral 4.1.4 de este documento una regla para oferta única (búsqueda de «solo exista una», «una oferta habilitada», «prescindir»).",
+   "fuentes": [
+    {
+     "url": "https://www.colombiacompra.gov.co/documentos-tipo/modalidad/01-documentos-tipo-de-licitacion-de-obra-publica-de-infraestructura-social-2",
+     "documento": "Página CCE «Documentos Tipo … Infraestructura Social» versión 1 (30-ago-2021 a 15-feb-2026)",
+     "ubicacion": "encabezado",
+     "tipo": "oficial"
+    },
+    {
+     "url": "https://www.colombiacompra.gov.co/documentos-tipo/modalidad/01-documentos-tipo-de-licitacion-de-obra-publica-de-infraestructura-social-2/01-documentos-tipo-transversales-de-licitacion-de-obra-publica-de-infraestructura-social-sin-las-modificaciones-de-la-resolucion-304-de-2021-version-vigente-hasta-el-01-11-2021",
+     "documento": "Página CCE de los transversales V1 con tres descargas",
+     "ubicacion": "lista de descargas",
+     "tipo": "oficial"
+    },
+    {
+     "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29709/",
+     "documento": "ZIP «Sin modificaciones Res. 261 y 336» > Documento Base CCE-EICP-GI-14 (Versión No. 1)",
+     "ubicacion": "tabla de puntajes y num. 4.1.4 (pág. 51 del índice)",
+     "tipo": "oficial"
+    },
+    {
+     "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29709/",
+     "documento": "ZIP > 02Res219_2021_ISocialLV1.pdf (Res. 219 de 2021)",
+     "ubicacion": "art. 6 Vigencia",
+     "tipo": "oficial"
+    },
+    {
+     "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29707/",
+     "documento": "ZIP Mod. Res. 275 > Documento Base CCE-EICP-GI-14 (Versión No. 3)",
+     "ubicacion": "num. 4.1.4 (pág. 54 del índice); puntaje 59,5",
+     "tipo": "oficial"
+    },
+    {
+     "url": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo",
+     "documento": "Control de versiones – Documentos Tipo (página CCE)",
+     "ubicacion": "tabla por sector y modalidad",
+     "tipo": "oficial"
+    }
+   ],
+   "estado": "parcial",
+   "notas": "Leídas la primera y la última subversión: mismos 4 métodos, misma tabla y misma regla de TRM; puntaje 60 → 59,5 (59,75 Mipyme; 55/54,5 en San Andrés). Las subversiones intermedias (Res. 261, 336 y 304 de 2021) no se abrieron. Antes del 30-ago-2021 la obra social no tenía documento tipo de licitación."
+  },
+  {
+   "sector": "infraestructura_social",
+   "modalidad": "licitacion",
+   "nombre": "Documentos Tipo de licitación de obra pública de infraestructura social – Versión 2",
+   "codigo": "encabezado: «Versión: 2 del 21 de agosto de 2025»",
+   "version": "V2",
+   "acto_adopcion": "Res. CCE 539 de 2025 (agosto de 2025; fecha manuscrita poco legible, el encabezado del documento dice 21-ago-2025), deroga la Res. 219 de 2021 y las Res. 220, 392 y 454 de 2021",
+   "vigente_desde": "2026-02-16",
+   "vigente_hasta": null,
+   "obligatorio_desde": "2026-02-16 (avisos de convocatoria desde esa fecha, art. 23 Res. 539 de 2025)",
+   "metodos": [
+    "Mediana con valor absoluto",
+    "Media geométrica",
+    "Media aritmética baja",
+    "Menor valor"
+   ],
+   "seleccion_metodo": "Centavos de la TRM certificada por la Superintendencia Financiera, «Rango (inclusive)»: 0.00–0.24 → 1 Mediana con valor absoluto; 0.25–0.49 → 2 Media geométrica; 0.50–0.74 → 3 Media aritmética baja; 0.75–0.99 → 4 Menor valor. Por lotes: el primer lote con el método de la TRM y los siguientes con el método siguiente en orden ascendente, reiniciando al agotarse.",
+   "regla_fecha_trm": "En la audiencia de adjudicación: se resuelven observaciones al informe, se abren los sobres económicos, se hacen correcciones aritméticas y el trámite de precios artificialmente bajos (num. 4.1.3); luego la entidad se pronuncia sobre propuestas rechazadas y válidas. Si ese pronunciamiento se hace hasta las 3:00 p. m., TRM que rija el día hábil siguiente; si es después de las 3:00 p. m., TRM que rija el segundo día hábil siguiente. Definido el método, sigue rigiendo aunque se suspenda la audiencia.",
+   "puntaje_max_economico": 48.5,
+   "formulas": {
+    "mediana_con_valor_absoluto": "Me = mediana de los valores totales corregidos de las propuestas hábiles (ordenadas de forma descendente; impar: valor central; par: promedio de los dos centrales). I) Si el número de propuestas hábiles es impar, el máximo puntaje es para la propuesta que está en el valor de la mediana; las demás: Puntaje = [{1 − |(Me − Vi)/Me|} × Puntaje máximo (48,5)]. II) Si es par, el máximo puntaje es para la propuesta inmediatamente por debajo de la mediana (VMe); las demás: Puntaje = [{1 − |(VMe − Vi)/VMe|} × Puntaje máximo (48,5)].",
+    "media_geometrica": "MG = raíz n-ésima de (V1 × V2 × … × Vn), con n = cantidad de propuestas habilitadas (sin presupuesto oficial). Máximo puntaje a la propuesta más cercana (por exceso o por defecto) a MG; las demás: Puntaje = Puntaje máximo (48,5) × (1 − |MG − Vi|/MG).",
+    "media_aritmetica_baja": "XB = (Vmin + X̄)/2, con Vmin = valor total corregido de la propuesta válida más baja y X̄ = promedio aritmético simple de las propuestas válidas. Puntaje = Puntaje máximo (48,5) × (1 − (XB − Vi)/XB) para Vi ≤ XB; Puntaje = Puntaje máximo (48,5) × (1 − |XB − Vi|/XB) para Vi > XB.",
+    "menor_valor": "Vmin = mínimo de los valores totales corregidos válidos. Puntaje = Puntaje máximo (48,5) × Vmin / Vi."
+   },
+   "negativos": "Las propuestas que al aplicar las fórmulas obtengan puntajes negativos obtienen cero (0) puntos; se toma hasta el séptimo (7°) decimal; las fórmulas se aplican solo con las propuestas no rechazadas y válidas.",
+   "desempate": "Desempate por los factores sucesivos y excluyentes que trae el documento (servicios/bienes nacionales, mujer cabeza de familia, discapacidad, etc.); si persiste: orden alfabético de los empatados numerados desde 1, se toma la parte entera de la TRM que rigió el día del cierre, se divide entre el número de empatados y gana el número igual al residuo (residuo 0 = mayor número asignado).",
+   "una_oferta": "«En el evento que solo exista una oferta habilitada respecto de la cual se vaya a realizar la apertura del sobre No 2, la Entidad podrá prescindir de la definición de la TRM y escogencia de método de ponderación de la oferta económica» (literal A del num. 4.1.4).",
+   "fuentes": [
+    {
+     "url": "https://www.colombiacompra.gov.co/documentos-tipo/modalidad/01-documentos-tipo-de-licitacion-de-obra-publica-de-infraestructura-social/01-documentos-tipo-transversales",
+     "documento": "Página CCE «Documentos Tipo Transversales – Versión 2» (vigente desde 16-feb-2026)",
+     "ubicacion": "lista de descargas",
+     "tipo": "oficial"
+    },
+    {
+     "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29837/",
+     "documento": "ZIP 05DT_Transversales_ISocialLV2 > DocBase_LicitacionObra_ISocialLV2.docx",
+     "ubicacion": "tabla de puntajes y num. 4.1.4 (pág. 86 del índice)",
+     "tipo": "oficial"
+    },
+    {
+     "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29545/",
+     "documento": "Res. 539 de 2025 (PDF escaneado; hojas 13-14 leídas como imagen)",
+     "ubicacion": "art. 23 Vigencia y art. 24 Derogatorias",
+     "tipo": "oficial"
+    },
+    {
+     "url": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo",
+     "documento": "Control de versiones – Documentos Tipo (página CCE)",
+     "ubicacion": "tabla por sector y modalidad",
+     "tipo": "oficial"
+    }
+   ],
+   "estado": "verificado",
+   "notas": "Puntaje 48,75 limitada a Mipyme; 43,5/43,75 en San Andrés."
+  },
+  {
+   "sector": "infraestructura_social",
+   "modalidad": "menor_cuantia",
+   "nombre": "Documentos Tipo de selección abreviada de menor cuantía de obra pública de infraestructura social – Versión 1",
+   "codigo": "sin código legible en el encabezado («Documento Base | Selección abreviada de menor cuantía de infraestructura de social»)",
+   "version": "V1",
+   "acto_adopcion": "Res. CCE 540 de 2025 (21-ago-2025)",
+   "vigente_desde": "2026-02-16",
+   "vigente_hasta": null,
+   "obligatorio_desde": "2026-02-16 (avisos de convocatoria desde esa fecha, art. 22 Res. 540 de 2025)",
+   "metodos": [
+    "Mediana con valor absoluto",
+    "Media geométrica",
+    "Media aritmética baja",
+    "Menor valor"
+   ],
+   "seleccion_metodo": "Centavos de la TRM certificada por la Superintendencia Financiera, «Rango (inclusive)»: 0.00–0.24 → 1 Mediana con valor absoluto; 0.25–0.49 → 2 Media geométrica; 0.50–0.74 → 3 Media aritmética baja; 0.75–0.99 → 4 Menor valor. Por lotes: el primer lote con el método de la TRM y los siguientes con el método siguiente en orden ascendente, reiniciando al agotarse.",
+   "regla_fecha_trm": "TRM que rija el segundo día hábil después de finalizado el periodo de traslado del informe de evaluación (la publicada en la tarde del día hábil siguiente a esa fecha). Ejemplo del documento: traslado termina 10-feb → TRM del 12-feb. Excepción: si la entidad debe requerir a un proponente por un requisito que no advirtió (num. 1.6), la TRM es la del segundo día hábil después de finalizado el plazo concedido para subsanar o aclarar.",
+   "puntaje_max_economico": 49.5,
+   "formulas": {
+    "mediana_con_valor_absoluto": "Me = mediana de los valores totales corregidos de las propuestas hábiles (ordenadas de forma descendente; impar: valor central; par: promedio de los dos centrales). I) Si el número de propuestas hábiles es impar, el máximo puntaje es para la propuesta que está en el valor de la mediana; las demás: Puntaje = [{1 − |(Me − Vi)/Me|} × Puntaje máximo (49,5)]. II) Si es par, el máximo puntaje es para la propuesta inmediatamente por debajo de la mediana (VMe); las demás: Puntaje = [{1 − |(VMe − Vi)/VMe|} × Puntaje máximo (49,5)].",
+    "media_geometrica": "MG = raíz n-ésima de (V1 × V2 × … × Vn), con n = cantidad de propuestas habilitadas (sin presupuesto oficial). Máximo puntaje a la propuesta más cercana (por exceso o por defecto) a MG; las demás: Puntaje = Puntaje máximo (49,5) × (1 − |MG − Vi|/MG).",
+    "media_aritmetica_baja": "XB = (Vmin + X̄)/2, con Vmin = valor total corregido de la propuesta válida más baja y X̄ = promedio aritmético simple de las propuestas válidas. Puntaje = Puntaje máximo (49,5) × (1 − (XB − Vi)/XB) para Vi ≤ XB; Puntaje = Puntaje máximo (49,5) × (1 − |XB − Vi|/XB) para Vi > XB.",
+    "menor_valor": "Vmin = mínimo de los valores totales corregidos válidos. Puntaje = Puntaje máximo (49,5) × Vmin / Vi."
+   },
+   "negativos": "Las propuestas que al aplicar las fórmulas obtengan puntajes negativos obtienen cero (0) puntos; se toma hasta el séptimo (7°) decimal; las fórmulas se aplican solo con las propuestas no rechazadas y válidas.",
+   "desempate": "Desempate por los factores sucesivos y excluyentes que trae el documento (servicios/bienes nacionales, mujer cabeza de familia, discapacidad, etc.); si persiste: orden alfabético de los empatados numerados desde 1, se toma la parte entera de la TRM que rigió el día del cierre, se divide entre el número de empatados y gana el número igual al residuo (residuo 0 = mayor número asignado).",
+   "una_oferta": "«En el evento que solo exista una oferta habilitada, la Entidad podrá prescindir de la definición de la TRM y escogencia de método de ponderación de la oferta económica» (num. 4.1.4).",
+   "fuentes": [
+    {
+     "url": "https://www.colombiacompra.gov.co/documentos-tipo/modalidad/02-documentos-tipo-de-menor-cuantia-de-obra-publica-de-infraestructura-social/01-documentos-tipo-transversales",
+     "documento": "Página CCE «Documentos Tipo Transversales» menor cuantía social V1",
+     "ubicacion": "lista de descargas",
+     "tipo": "oficial"
+    },
+    {
+     "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29561/",
+     "documento": "ZIP 05DT_Transversales_ISocialMenCV1 > DocBase_ISocialMenCV1.docx",
+     "ubicacion": "tabla de puntajes y num. 4.1.4 (pág. 85 del índice)",
+     "tipo": "oficial"
+    },
+    {
+     "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29565/",
+     "documento": "Res. 540 de 2025 (PDF escaneado; hoja 12 leída como imagen)",
+     "ubicacion": "art. 22 Vigencia",
+     "tipo": "oficial"
+    },
+    {
+     "url": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo",
+     "documento": "Control de versiones – Documentos Tipo (página CCE)",
+     "ubicacion": "tabla por sector y modalidad",
+     "tipo": "oficial"
+    }
+   ],
+   "estado": "verificado",
+   "notas": "Antes del 16-feb-2026 la menor cuantía de obra social no tenía documento tipo: rige lo que fije cada pliego."
+  },
+  {
+   "sector": "infraestructura_social",
+   "modalidad": "minima",
+   "nombre": "Documentos Tipo de mínima cuantía de obra pública de infraestructura social – Versión 1",
+   "codigo": null,
+   "version": "V1",
+   "acto_adopcion": "Res. CCE 541 de 2025 (no abierta)",
+   "vigente_desde": "2026-02-16",
+   "vigente_hasta": null,
+   "obligatorio_desde": "2026-02-16 (según la página CCE; la resolución no se leyó)",
+   "metodos": [
+    "Menor precio (sin fórmula de puntaje)"
+   ],
+   "seleccion_metodo": "«La Entidad evaluará la oferta de menor precio y verificará que cumpla las condiciones mínimas de la invitación».",
+   "regla_fecha_trm": "No aplica al precio.",
+   "puntaje_max_economico": null,
+   "formulas": {
+    "menor_precio": "«La Entidad aceptará la oferta de menor precio, siempre que cumpla con las condiciones establecidas en la invitación» (num. 3.6)."
+   },
+   "negativos": "No aplica.",
+   "desempate": "Según la invitación (no revisado).",
+   "una_oferta": "No aplica regla especial.",
+   "fuentes": [
+    {
+     "url": "https://www.colombiacompra.gov.co/documentos-tipo/modalidad/03-documentos-tipo-de-minima-cuantia-de-obra-publica-de-infraestructura-social/01-documentos-tipo-transversales",
+     "documento": "Página CCE mínima cuantía social V1 (vigente desde 16-feb-2026)",
+     "ubicacion": "encabezado",
+     "tipo": "oficial"
+    },
+    {
+     "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29582/",
+     "documento": "ZIP 05DT_Transversales_ISocialMinCV1 > Invitacion_MinC_ISocialMinCV1.docx",
+     "ubicacion": "num. 3.5 y 3.6",
+     "tipo": "oficial"
+    },
+    {
+     "url": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo",
+     "documento": "Control de versiones – Documentos Tipo (página CCE)",
+     "ubicacion": "tabla por sector y modalidad",
+     "tipo": "oficial"
+    }
+   ],
+   "estado": "parcial",
+   "notas": "Fecha de vigencia sin leer en la Res. 541 de 2025."
+  },
+  {
+   "sector": "agua_potable_saneamiento",
+   "modalidad": "licitacion",
+   "nombre": "Documentos tipo de licitación de obra pública de infraestructura de agua potable y saneamiento básico – Versión 1 (Res. 248 de 2020) y subversiones Res. 161, 173 y 304 de 2021",
+   "codigo": "CCE-EICP-GI-09 (Versión No. 1 del formato en la original)",
+   "version": "V1",
+   "acto_adopcion": "Res. CCE 248 de 2020 (1-dic-2020); modificada por Res. 161 (17-jun-2021), 173 (30-jun-2021) y 304 (13-oct-2021) de 2021 (fechas según C-209 de 2022)",
+   "vigente_desde": "2020-12-11",
+   "vigente_hasta": "2022-08-28",
+   "obligatorio_desde": "2020-12-11 (avisos de convocatoria desde esa fecha, art. 6 Res. 248 de 2020)",
+   "metodos": [
+    "Mediana con valor absoluto",
+    "Media geométrica",
+    "Media aritmética baja",
+    "Menor valor"
+   ],
+   "seleccion_metodo": "Centavos de la TRM certificada por la Superintendencia Financiera, «Rango (inclusive)»: 0.00–0.24 → 1 Mediana con valor absoluto; 0.25–0.49 → 2 Media geométrica; 0.50–0.74 → 3 Media aritmética baja; 0.75–0.99 → 4 Menor valor. Por lotes: el primer lote con el método de la TRM y los siguientes con el método siguiente en orden ascendente, reiniciando al agotarse.",
+   "regla_fecha_trm": "TRM que rija el día hábil siguiente al día en que efectivamente se abre el sobre 2 (la que la Superfinanciera publica en la tarde del día de apertura). La apertura de los sobres económicos y la definición del método deben iniciarse y agotarse el mismo día antes de las 3:00 p. m.; si se suspende la audiencia, rige la TRM del día hábil siguiente a la apertura efectiva; definido el método, sigue rigiendo aunque se suspenda la audiencia.",
+   "puntaje_max_economico": 60,
+   "formulas": {
+    "mediana_con_valor_absoluto": "Me = mediana de los valores totales corregidos de las propuestas hábiles (ordenadas de forma descendente; impar: valor central; par: promedio de los dos centrales). I) Si el número de propuestas hábiles es impar, el máximo puntaje es para la propuesta que está en el valor de la mediana; las demás: Puntaje = [{1 − |(Me − Vi)/Me|} × Puntaje máximo (60)]. II) Si es par, el máximo puntaje es para la propuesta inmediatamente por debajo de la mediana (VMe); las demás: Puntaje = [{1 − |(VMe − Vi)/VMe|} × Puntaje máximo (60)].",
+    "media_geometrica": "MG = raíz n-ésima de (V1 × V2 × … × Vn), con n = cantidad de propuestas habilitadas (sin presupuesto oficial). Máximo puntaje a la propuesta más cercana (por exceso o por defecto) a MG; las demás: Puntaje = Puntaje máximo (60) × (1 − |MG − Vi|/MG).",
+    "media_aritmetica_baja": "XB = (Vmin + X̄)/2, con Vmin = valor total corregido de la propuesta válida más baja y X̄ = promedio aritmético simple de las propuestas válidas. Puntaje = Puntaje máximo (60) × (1 − (XB − Vi)/XB) para Vi ≤ XB; Puntaje = Puntaje máximo (60) × (1 − |XB − Vi|/XB) para Vi > XB.",
+    "menor_valor": "Vmin = mínimo de los valores totales corregidos válidos. Puntaje = Puntaje máximo (60) × Vmin / Vi."
+   },
+   "negativos": "Las propuestas que al aplicar las fórmulas obtengan puntajes negativos obtienen cero (0) puntos; se toma hasta el séptimo (7°) decimal; las fórmulas se aplican solo con las propuestas no rechazadas y válidas.",
+   "desempate": "No revisado en esta versión.",
+   "una_oferta": "No se encontró en el numeral 4.1.4 de este documento una regla para oferta única (búsqueda de «solo exista una», «una oferta habilitada», «prescindir»).",
+   "fuentes": [
+    {
+     "url": "https://www.colombiacompra.gov.co/documentos-tipo/modalidad/01-documentos-tipo-de-licitacion-de-obra-publica-de-infraestructura-de-agua-potable-y-saneamiento-basico",
+     "documento": "Página CCE agua potable V1 (11-dic-2020 a 28-ago-2022) con cuatro subversiones",
+     "ubicacion": "lista de descargas",
+     "tipo": "oficial"
+    },
+    {
+     "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29699/",
+     "documento": "ZIP «Sin modificaciones Res. 248» > 04DT_APSABLV1_NV.zip > Documento Base CCE-EICP-GI-09",
+     "ubicacion": "tabla de puntajes y num. 4.1.4 (pág. 51 del índice)",
+     "tipo": "oficial"
+    },
+    {
+     "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29847/",
+     "documento": "Res. 248 de 2020 con las modificaciones de la Res. 275 de 2022",
+     "ubicacion": "art. 6 Vigencia; Dada el 1-dic-2020",
+     "tipo": "oficial"
+    },
+    {
+     "url": "https://relatoria.colombiacompra.gov.co/wp-content/uploads/2024/05/1653489573115-C-209.docx",
+     "documento": "Concepto C-209 de 2022 (20-abr-2022)",
+     "ubicacion": "numerales 2.1 y 2.2",
+     "tipo": "oficial"
+    },
+    {
+     "url": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo",
+     "documento": "Control de versiones – Documentos Tipo (página CCE)",
+     "ubicacion": "tabla por sector y modalidad",
+     "tipo": "oficial"
+    }
+   ],
+   "estado": "parcial",
+   "notas": "Subversiones intermedias (Res. 161, 173, 304) no abiertas; la original y la de Res. 275 tienen el mismo 4.1.4 (inferencia: las intermedias también). Antes del 11-dic-2020 la obra de agua no tenía documento tipo. No hay documento tipo de agua para menor ni mínima cuantía en la página de control."
+  },
+  {
+   "sector": "agua_potable_saneamiento",
+   "modalidad": "licitacion",
+   "nombre": "Documentos tipo de licitación de obra pública de agua potable y saneamiento básico – Versión 1 con modificaciones Res. 275 de 2022",
+   "codigo": "CCE-EICP-GI-09 (Versión No. 4 del formato)",
+   "version": "V1 con Res. 275 de 2022",
+   "acto_adopcion": "Res. 248 de 2020 modificada por la Res. CCE 275 de 2022",
+   "vigente_desde": "2022-08-29",
+   "vigente_hasta": "2027-02-28",
+   "obligatorio_desde": "2022-08-29",
+   "metodos": [
+    "Mediana con valor absoluto",
+    "Media geométrica",
+    "Media aritmética baja",
+    "Menor valor"
+   ],
+   "seleccion_metodo": "Centavos de la TRM certificada por la Superintendencia Financiera, «Rango (inclusive)»: 0.00–0.24 → 1 Mediana con valor absoluto; 0.25–0.49 → 2 Media geométrica; 0.50–0.74 → 3 Media aritmética baja; 0.75–0.99 → 4 Menor valor. Por lotes: el primer lote con el método de la TRM y los siguientes con el método siguiente en orden ascendente, reiniciando al agotarse.",
+   "regla_fecha_trm": "TRM que rija el día hábil siguiente al día en que efectivamente se abre el sobre 2 (la que la Superfinanciera publica en la tarde del día de apertura). La apertura de los sobres económicos y la definición del método deben iniciarse y agotarse el mismo día antes de las 3:00 p. m.; si se suspende la audiencia, rige la TRM del día hábil siguiente a la apertura efectiva; definido el método, sigue rigiendo aunque se suspenda la audiencia.",
+   "puntaje_max_economico": 59.5,
+   "formulas": {
+    "mediana_con_valor_absoluto": "Me = mediana de los valores totales corregidos de las propuestas hábiles (ordenadas de forma descendente; impar: valor central; par: promedio de los dos centrales). I) Si el número de propuestas hábiles es impar, el máximo puntaje es para la propuesta que está en el valor de la mediana; las demás: Puntaje = [{1 − |(Me − Vi)/Me|} × Puntaje máximo (59,5)]. II) Si es par, el máximo puntaje es para la propuesta inmediatamente por debajo de la mediana (VMe); las demás: Puntaje = [{1 − |(VMe − Vi)/VMe|} × Puntaje máximo (59,5)].",
+    "media_geometrica": "MG = raíz n-ésima de (V1 × V2 × … × Vn), con n = cantidad de propuestas habilitadas (sin presupuesto oficial). Máximo puntaje a la propuesta más cercana (por exceso o por defecto) a MG; las demás: Puntaje = Puntaje máximo (59,5) × (1 − |MG − Vi|/MG).",
+    "media_aritmetica_baja": "XB = (Vmin + X̄)/2, con Vmin = valor total corregido de la propuesta válida más baja y X̄ = promedio aritmético simple de las propuestas válidas. Puntaje = Puntaje máximo (59,5) × (1 − (XB − Vi)/XB) para Vi ≤ XB; Puntaje = Puntaje máximo (59,5) × (1 − |XB − Vi|/XB) para Vi > XB.",
+    "menor_valor": "Vmin = mínimo de los valores totales corregidos válidos. Puntaje = Puntaje máximo (59,5) × Vmin / Vi."
+   },
+   "negativos": "Las propuestas que al aplicar las fórmulas obtengan puntajes negativos obtienen cero (0) puntos; se toma hasta el séptimo (7°) decimal; las fórmulas se aplican solo con las propuestas no rechazadas y válidas.",
+   "desempate": "Desempate por los factores sucesivos y excluyentes que trae el documento (servicios/bienes nacionales, mujer cabeza de familia, discapacidad, etc.); si persiste: orden alfabético de los empatados numerados desde 1, se toma la parte entera de la TRM que rigió el día del cierre, se divide entre el número de empatados y gana el número igual al residuo (residuo 0 = mayor número asignado).",
+   "una_oferta": "No se encontró en el numeral 4.1.4 de este documento una regla para oferta única (búsqueda de «solo exista una», «una oferta habilitada», «prescindir»).",
+   "fuentes": [
+    {
+     "url": "https://www.colombiacompra.gov.co/documentos-tipo/modalidad/documentos-tipo-para-la-modalidad-de-licitacion-de-obra-publica-para-el-sector-de-infraestructura-de-agua-potable-y-saneamiento-basico/01-documentos-tipo-para-los-procesos-de-licitacion-para-obras-de-infraestructura-de-agua-potable-y-saneamiento-basico",
+     "documento": "Página CCE «… – VIGENTE HASTA EL 28-02-2027» (Versión 1 con modificaciones Res 275 del 2022)",
+     "ubicacion": "lista de descargas",
+     "tipo": "oficial"
+    },
+    {
+     "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/30420/",
+     "documento": "ZIP 04DT_LicitacionObra_APSB_L_V1 > DocBase_APSB_L_V1.docx («Versión vigente a partir del 29 de agosto de 2022»)",
+     "ubicacion": "tabla de puntajes y num. 4.1.4 (pág. 60 del índice)",
+     "tipo": "oficial"
+    },
+    {
+     "url": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo",
+     "documento": "Control de versiones – Documentos Tipo (página CCE)",
+     "ubicacion": "tabla por sector y modalidad",
+     "tipo": "oficial"
+    }
+   ],
+   "estado": "verificado",
+   "notas": "El 1-mar-2027 entra la Res. 546 de 2026 (versión 2, agua, saneamiento y estructuras hidráulicas): fuera del rango pedido, sus métodos no se leyeron. Llave en mano (Res. 249 de 2020, CCE-EICP-GI-10) no abierta."
+  }
+ ],
+ "conceptos": [
+  {
+   "id": "C-982 de 2025",
+   "fecha": "2025-08-29",
+   "radicado": "entrada 1_2025_07_18_007380; salida 2_2025_08_29_009066",
+   "dice": "Sobre la licitación de transporte V4: describe los 4 métodos por centavos de la TRM y el procedimiento previo: pronunciarse sobre propuestas rechazadas y válidas; si es hasta las 3:00 p. m., TRM del día hábil siguiente; si es después, la del segundo día hábil siguiente. Trata también precios artificialmente bajos (art. 2.2.1.1.2.2.4 Decreto 1082). NO trata la oferta única: la premisa del dueño no se confirma para este concepto.",
+   "fuente": {
+    "url": "https://relatoria.colombiacompra.gov.co/wp-content/uploads/2025/09/C-982.docx",
+    "documento": "Concepto C-982 de 2025 (ficha: https://relatoria.colombiacompra.gov.co/conceptos/c-982-de-2025/)",
+    "ubicacion": "tesis y numerales 1-2",
+    "tipo": "oficial"
+   },
+   "estado": "verificado"
+  },
+  {
+   "id": "C-1778 de 2025",
+   "fecha": "2025-12-30",
+   "radicado": "entrada 1_2025_12_02_013544; salida 2_2025_12_30_013649",
+   "dice": "Con un único proponente habilitado en la licitación de transporte V4, la entidad «podrá prescindir de la definición de la TRM y de la determinación del método de ponderación de la oferta económica, por lo que la asignación del puntaje se realizará, en su totalidad, frente a la oferta habilitada» (cita el literal A del num. 4.1.4).",
+   "fuente": {
+    "url": "https://relatoria.colombiacompra.gov.co/wp-content/uploads/2026/01/C-1778.docx",
+    "documento": "Concepto C-1778 de 2025 (ficha: https://relatoria.colombiacompra.gov.co/conceptos/c-1778-de-2025/)",
+    "ubicacion": "tesis «Propuesta única habilitada»",
+    "tipo": "oficial"
+   },
+   "estado": "verificado"
+  },
+  {
+   "id": "C-1400 de 2026",
+   "fecha": "2026-10-15",
+   "radicado": "entrada 1_2026_09_07_011833; salida 2_2026_10_15_011142",
+   "dice": "Licitación de transporte V4: repite la regla de las 3:00 p. m. (día hábil siguiente o segundo día hábil siguiente), que la entidad puede suspender la audiencia y que el método definido sigue rigiendo; y, «sin perjuicio de lo anterior», repite la regla de la oferta única habilitada con el mismo texto de C-1778.",
+   "fuente": {
+    "url": "https://relatoria.colombiacompra.gov.co/wp-content/uploads/2026/10/C-1400.docx",
+    "documento": "Concepto C-1400 de 2026 (ficha: https://relatoria.colombiacompra.gov.co/conceptos/c-1400-de-2026/)",
+    "ubicacion": "tesis y respuesta",
+    "tipo": "oficial"
+   },
+   "estado": "verificado"
+  },
+  {
+   "id": "C-209 de 2022",
+   "fecha": "2022-04-20",
+   "radicado": "entrada P20220304002152; salida RS20220420004482",
+   "dice": "Agua potable (Res. 248 y 249 del 1-dic-2020): el num. 4.1.4 trae 4 alternativas (mediana con valor absoluto, media geométrica, media aritmética baja, menor valor) por centavos de la TRM; la apertura debe terminar antes de las 3:00 p. m. y la TRM aplicable es la que rija el día hábil siguiente a la apertura del segundo sobre («regla prevalente»). Fecha la Ley 2022 (22-jul-2020) y las Res. 161 (17-jun-2021), 173 (30-jun-2021) y 304 (13-oct-2021, avisos desde 2-nov-2021).",
+   "fuente": {
+    "url": "https://relatoria.colombiacompra.gov.co/wp-content/uploads/2024/05/1653489573115-C-209.docx",
+    "documento": "Concepto C-209 de 2022 (ficha: https://relatoria.colombiacompra.gov.co/conceptos/c-209-de-2022/)",
+    "ubicacion": "numerales 2.1 y 2.2",
+    "tipo": "oficial"
+   },
+   "estado": "verificado",
+   "notas": "El dueño citó «C-209» sin año. C-209 de 2025 (mínima cuantía, experiencia), C-209 de 2026 (empresas de servicios públicos) y C-209 de 2021/2023 tratan otros temas (leídas solo sus fichas)."
+  }
+ ],
+ "menor_cuantia_sin_documento_tipo": {
+  "regla": "Ninguna norma general fija un método ni un sorteo por TRM. Ley 1150 de 2007, art. 5 num. 2 (modificado por el art. 88 de la Ley 1474 de 2011): la oferta más favorable sale de la ponderación precisa y detallada del pliego, con a) puntajes o fórmulas de calidad y precio señaladas en el pliego, o b) la mejor relación costo-beneficio; en obra pública el menor plazo no se evalúa. Decreto 1082 de 2015, art. 2.2.1.1.2.2.2: en licitación y selección abreviada de menor cuantía la entidad determina la oferta más favorable con a) o b). Art. 2.2.1.2.1.2.20: procedimiento de menor cuantía (manifestación de interés en 3 días hábiles, sorteo si hay más de 10, informe de evaluación publicado 3 días hábiles). Inferencia: el método, la fórmula y el puntaje del precio son los que escriba cada pliego; muchos pliegos copian un documento tipo, pero eso hay que leerlo proceso por proceso.",
+  "fuente": [
+   {
+    "url": "http://www.secretariasenado.gov.co/senado/basedoc/ley_1150_2007.html",
+    "documento": "Ley 1150 de 2007, texto vigente (Secretaría del Senado)",
+    "ubicacion": "art. 5 num. 2",
+    "tipo": "oficial"
+   },
+   {
+    "url": "https://relatoria.colombiacompra.gov.co/normativa/decreto-1082-de-2015/",
+    "documento": "Decreto 1082 de 2015, transcripción de la relatoría de CCE (Función Pública y SUIN no respondieron)",
+    "ubicacion": "arts. 2.2.1.1.2.2.2 y 2.2.1.2.1.2.20",
+    "tipo": "oficial"
+   }
+  ],
+  "estado": "verificado",
+  "notas": "El texto del Decreto 1082 se leyó en la transcripción de CCE, no en SUIN ni en Función Pública; sus notas de vigencia no se cotejaron."
+ },
+ "obligatoriedad": {
+  "norma_vigente": "Parágrafo 7 del art. 2 de la Ley 1150 de 2007, adicionado por el art. 4 de la Ley 1882 de 2018 y modificado por el art. 1 de la Ley 2022 de 2020 (22-jul-2020, Diario Oficial 51.383, rige desde su publicación): CCE adopta documentos tipo «de obligatorio cumplimiento» para las entidades del Estatuto General; serán de uso obligatorio en obra pública, interventoría y consultoría de obra «en los términos fijados mediante la reglamentación correspondiente».",
+  "precision_premisa": "La Ley 2022 de 2020 NO modificó el art. 4 de la Ley 1150 de 2007: modificó el art. 4 de la Ley 1882 de 2018, que es el que añade el parágrafo 7 al art. 2 de la Ley 1150.",
+  "desde_cuando": "La obligación nace con cada acto de adopción y se aplica por la fecha de publicación del AVISO DE CONVOCATORIA (o de la invitación, en mínima cuantía), no por la de adjudicación: transporte licitación 1-abr-2019 (Decreto 342 de 2019, bajo la Ley 1882 de 2018); transporte menor cuantía 17-feb-2020 (Res. 044); transporte mínima 10-jun-2020 (página CCE); agua licitación 11-dic-2020 (Res. 248); social licitación 30-ago-2021 (Res. 219); social menor y mínima 16-feb-2026 (Res. 540 y 541).",
+  "inalterabilidad": "Decreto 1082 de 2015 art. 2.2.1.2.6.1.4 (introducido por el Decreto 342 de 2019): las entidades no pueden incluir ni modificar los factores económicos de escogencia ni los sistemas de ponderación del documento tipo; Res. 465 de 2024 art. 3.",
+  "desierta": "Res. 465 de 2024 art. 7: si se declara desierta una licitación de transporte con documentos tipo, el nuevo proceso usa los documentos tipo de menor cuantía de transporte.",
+  "fuentes": [
+   {
+    "url": "http://www.secretariasenado.gov.co/senado/basedoc/ley_2022_2020.html",
+    "documento": "Ley 2022 de 2020 (Secretaría del Senado)",
+    "ubicacion": "arts. 1 y 2",
+    "tipo": "oficial"
+   },
+   {
+    "url": "http://www.secretariasenado.gov.co/senado/basedoc/ley_1150_2007.html",
+    "documento": "Ley 1150 de 2007 (Senado)",
+    "ubicacion": "art. 2 parágrafo 7",
+    "tipo": "oficial"
+   },
+   {
+    "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29961/",
+    "documento": "Decreto 342 de 2019 (en ZIP V1)",
+    "ubicacion": "art. 1 (arts. 2.2.1.2.6.1.3 y .4) y art. 2",
+    "tipo": "oficial"
+   },
+   {
+    "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29385/",
+    "documento": "Res. 465 de 2024",
+    "ubicacion": "arts. 3, 7 y 8",
+    "tipo": "oficial"
+   }
+  ],
+  "estado": "verificado"
+ },
+ "errores_literales": [
+  {
+   "url": "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=77653",
+   "error": "curl: «curl: (60) SSL certificate problem: unable to get local issuer certificate»; WebFetch: «The server returned HTTP 503 Service Unavailable.»"
+  },
+  {
+   "url": "https://www.suin-juriscol.gov.co/viewDocument.asp?id=30019920",
+   "error": "curl: «curl: (60) SSL certificate problem: unable to get local issuer certificate»; WebFetch: «The server returned HTTP 503 Service Unavailable.»"
+  },
+  {
+   "url": "https://relatoria.colombiacompra.gov.co/conceptos/c-209-de-2024/",
+   "error": "HTTP 301 en bucle: «curl: (47) Maximum (50) redirects followed»"
+  },
+  {
+   "url": "https://www.colombiacompra.gov.co/documentos-tipo/modalidad/documentos-tipo-para-la-modalidad-de-seleccion-abreviada-de-menor-cuantia-de-obra-publica-para-el-sector-de-infraestructura-de-transporte/02-documentos-tipo-de-menor-cuantia-de-obra-publica-de-infraestructura-de-transporte-3",
+   "error": "«Página no encontrada» (URL de sondeo construida por esta sesión para buscar una V3 en el repositorio; no es fuente)"
+  },
+  {
+   "url": "https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo",
+   "error": "Incoherencias del portal (no HTTP): «Resolución 464 del 10 de septiembre de 2023» (la resolución es de 2024); mínima transporte V1 «10/06/2020 – 28/03/2022» y V2 desde 27/02/2023 (hueco); agua «V.1 con modificaciones Desde 11/12/2020» (la página de la versión dice 29/08/2022)."
+  },
+  {
+   "url": "https://www.colombiacompra.gov.co/documentos-tipo/modalidad/03-documentos-tipo-de-minima-cuantia-infraestructura-de-transporte",
+   "error": "Incoherencia del portal: «Desde: 3 de febrero de 2026» frente a «Vigente desde el 3 de febrero de 2025» en la misma página."
+  },
+  {
+   "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29960/",
+   "error": "PDF sin capa de texto (no legible sin OCR): 05Res142_2020_TLV2_NV.pdf (Res. 142 de 2020); hoja 9 de la Res. 116 de 2020 (fórmula de la media geométrica)."
+  },
+  {
+   "url": "https://www.colombiacompra.gov.co/documentos-tipo/descarga/29788/",
+   "error": "PDF sin capa de texto: 03Res094_2020_TMinCV1_NV.pdf (Res. 094 de 2020)."
+  }
+ ],
+ "no_encontrado": [
+  "Fecha de la Res. 116 de 2020 y si algún pliego de V2 aplicó la redacción original «media geométrica de los tres menores valores».",
+  "Contenido de la Res. 142 de 2020 (1-sep-2020), que la Res. 240 mantiene vigente para V3 (PDF escaneado).",
+  "Texto de las Res. 047 de 2020, 161 de 2021, 304 de 2021, 146 de 2022, 275 de 2022 y 541 de 2025 (sus fechas de aplicación salen de la página CCE o del concepto C-209 de 2022).",
+  "Subversiones intermedias de agua (Res. 161, 173, 304 de 2021) y de social (Res. 261, 336, 304 de 2021): no abiertas.",
+  "Documento tipo de agua llave en mano (Res. 249 de 2020) y el nuevo de agua (Res. 546 de 2026, desde 1-mar-2027): métodos no leídos.",
+  "Una regla de oferta única en transporte licitación V1-V3, menor cuantía de transporte V1-V3, social licitación V1 y agua V1: no existe en el num. 4.1.4 leído.",
+  "Decreto 1082 de 2015 en SUIN o Función Pública (solo la transcripción de CCE).",
+  "Los métodos de precio de procesos de menor cuantía o licitación de obra SIN documento tipo: dependen de cada pliego; no hay norma que los fije."
+ ],
+ "regla_para_el_motor": "Inferencia de esta lectura: la versión aplicable se elige por la fecha de publicación del aviso de convocatoria (invitación en mínima), no por la de adjudicación; entre el 27-nov-2020 y el 31-dic-2020 la entidad podía adoptar por anticipado V3 (licitación) o V2 (menor cuantía) de transporte indicándolo en el aviso, así que en ese tramo hay que leer el pliego. Fuera de los documentos tipo, el método es el que escriba cada pliego."
+}

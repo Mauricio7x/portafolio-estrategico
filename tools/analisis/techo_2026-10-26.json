@@ -1,0 +1,234 @@
+{
+ "generado": "2026-10-26T02:15:48.987Z",
+ "definicion": "Cota superior: la oferta del ganador queda primera (sola o empatada) con algún método, sobre la población usableMotor de fase0.js. Escenario 2: sin la oferta más baja que no es la del ganador.",
+ "techo": {
+  "licitacion": {
+   "2020": {
+    "procesos": 128,
+    "techo": 70,
+    "b0": 20,
+    "con_escenario_2": 128,
+    "techo_sin_baja": 74,
+    "b0_sin_baja": 39,
+    "pct": {
+     "techo": 54.7,
+     "b0": 15.6,
+     "techo_sin_baja": 57.8,
+     "b0_sin_baja": 30.5
+    }
+   },
+   "2021": {
+    "procesos": 294,
+    "techo": 127,
+    "b0": 42,
+    "con_escenario_2": 294,
+    "techo_sin_baja": 135,
+    "b0_sin_baja": 83,
+    "pct": {
+     "techo": 43.2,
+     "b0": 14.3,
+     "techo_sin_baja": 45.9,
+     "b0_sin_baja": 28.2
+    }
+   },
+   "2022": {
+    "procesos": 443,
+    "techo": 206,
+    "b0": 60,
+    "con_escenario_2": 443,
+    "techo_sin_baja": 227,
+    "b0_sin_baja": 140,
+    "pct": {
+     "techo": 46.5,
+     "b0": 13.5,
+     "techo_sin_baja": 51.2,
+     "b0_sin_baja": 31.6
+    }
+   },
+   "2023": {
+    "procesos": 595,
+    "techo": 290,
+    "b0": 77,
+    "con_escenario_2": 595,
+    "techo_sin_baja": 341,
+    "b0_sin_baja": 173,
+    "pct": {
+     "techo": 48.7,
+     "b0": 12.9,
+     "techo_sin_baja": 57.3,
+     "b0_sin_baja": 29.1
+    }
+   },
+   "2024": {
+    "procesos": 337,
+    "techo": 130,
+    "b0": 31,
+    "con_escenario_2": 337,
+    "techo_sin_baja": 160,
+    "b0_sin_baja": 78,
+    "pct": {
+     "techo": 38.6,
+     "b0": 9.2,
+     "techo_sin_baja": 47.5,
+     "b0_sin_baja": 23.1
+    }
+   },
+   "2025": {
+    "procesos": 424,
+    "techo": 165,
+    "b0": 39,
+    "con_escenario_2": 424,
+    "techo_sin_baja": 195,
+    "b0_sin_baja": 98,
+    "pct": {
+     "techo": 38.9,
+     "b0": 9.2,
+     "techo_sin_baja": 46,
+     "b0_sin_baja": 23.1
+    }
+   },
+   "2026": {
+    "procesos": 398,
+    "techo": 168,
+    "b0": 32,
+    "con_escenario_2": 398,
+    "techo_sin_baja": 188,
+    "b0_sin_baja": 87,
+    "pct": {
+     "techo": 42.2,
+     "b0": 8,
+     "techo_sin_baja": 47.2,
+     "b0_sin_baja": 21.9
+    }
+   },
+   "total": {
+    "procesos": 2629,
+    "techo": 1159,
+    "b0": 301,
+    "con_escenario_2": 2629,
+    "techo_sin_baja": 1324,
+    "b0_sin_baja": 700,
+    "pct": {
+     "techo": 44.1,
+     "b0": 11.4,
+     "techo_sin_baja": 50.4,
+     "b0_sin_baja": 26.6
+    }
+   }
+  },
+  "menor_cuantia": {
+   "2020": {
+    "procesos": 341,
+    "techo": 198,
+    "b0": 63,
+    "con_escenario_2": 341,
+    "techo_sin_baja": 236,
+    "b0_sin_baja": 150,
+    "pct": {
+     "techo": 58.1,
+     "b0": 18.5,
+     "techo_sin_baja": 69.2,
+     "b0_sin_baja": 44
+    }
+   },
+   "2021": {
+    "procesos": 574,
+    "techo": 334,
+    "b0": 103,
+    "con_escenario_2": 574,
+    "techo_sin_baja": 397,
+    "b0_sin_baja": 255,
+    "pct": {
+     "techo": 58.2,
+     "b0": 17.9,
+     "techo_sin_baja": 69.2,
+     "b0_sin_baja": 44.4
+    }
+   },
+   "2022": {
+    "procesos": 473,
+    "techo": 291,
+    "b0": 79,
+    "con_escenario_2": 473,
+    "techo_sin_baja": 319,
+    "b0_sin_baja": 204,
+    "pct": {
+     "techo": 61.5,
+     "b0": 16.7,
+     "techo_sin_baja": 67.4,
+     "b0_sin_baja": 43.1
+    }
+   },
+   "2023": {
+    "procesos": 724,
+    "techo": 461,
+    "b0": 145,
+    "con_escenario_2": 724,
+    "techo_sin_baja": 505,
+    "b0_sin_baja": 345,
+    "pct": {
+     "techo": 63.7,
+     "b0": 20,
+     "techo_sin_baja": 69.8,
+     "b0_sin_baja": 47.7
+    }
+   },
+   "2024": {
+    "procesos": 667,
+    "techo": 392,
+    "b0": 101,
+    "con_escenario_2": 667,
+    "techo_sin_baja": 462,
+    "b0_sin_baja": 268,
+    "pct": {
+     "techo": 58.8,
+     "b0": 15.1,
+     "techo_sin_baja": 69.3,
+     "b0_sin_baja": 40.2
+    }
+   },
+   "2025": {
+    "procesos": 745,
+    "techo": 421,
+    "b0": 131,
+    "con_escenario_2": 745,
+    "techo_sin_baja": 494,
+    "b0_sin_baja": 313,
+    "pct": {
+     "techo": 56.5,
+     "b0": 17.6,
+     "techo_sin_baja": 66.3,
+     "b0_sin_baja": 42
+    }
+   },
+   "2026": {
+    "procesos": 528,
+    "techo": 304,
+    "b0": 76,
+    "con_escenario_2": 528,
+    "techo_sin_baja": 344,
+    "b0_sin_baja": 211,
+    "pct": {
+     "techo": 57.6,
+     "b0": 14.4,
+     "techo_sin_baja": 65.2,
+     "b0_sin_baja": 40
+    }
+   },
+   "total": {
+    "procesos": 4063,
+    "techo": 2407,
+    "b0": 699,
+    "con_escenario_2": 4063,
+    "techo_sin_baja": 2766,
+    "b0_sin_baja": 1749,
+    "pct": {
+     "techo": 59.2,
+     "b0": 17.2,
+     "techo_sin_baja": 68.1,
+     "b0_sin_baja": 43
+    }
+   }
+  }
+ }
+}

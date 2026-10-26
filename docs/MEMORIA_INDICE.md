@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 2060817 bytes · 387 secciones · 30 con marcador de superación.
+Derivado del árbol: 2085800 bytes · 391 secciones · 32 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -357,44 +357,48 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | El muro de Vercel quedó puesto: las tareas de Vercel lo pasan, y cómo se mide (17-oct-2026) | 17-oct-2026 | 19301-19326 | 4487 |  |
 | El dictamen, el cronograma y los descuentos leen el documento que ES el pliego, no la última versión del vigía (18-oct-2026) | 18-oct-2026 | 19327-19392 | 9640 |  |
 | La sonda del muro: el latido y el vigilante prueban la portada sin el pase (18-oct-2026) | 18-oct-2026 | 19393-19431 | 4440 |  |
-| Base nacional de licitaciones de obra: un script que solo mide, fuera de la app (17-oct-2026) | 17-oct-2026 | 19432-19445 | 2139 | «Base nacional de obra: las ofertas se piden agrupadas, las filas repetidas de p6dx son fases y el proveedor se identifica por unión (17-oct-2026)» |
-| Base nacional de obra: las ofertas se piden agrupadas, las filas repetidas de p6dx son fases y el proveedor se identifica por unión (17-oct-2026) | 17-oct-2026 | 19446-19453 | 1579 |  |
-| El almacén R2 de la base nacional frena ANTES de pasar el gratis, porque Cloudflare no frena (17-oct-2026) | 17-oct-2026 | 19454-19462 | 3029 |  |
-| Base nacional de obra, Fase 1: una fila por proceso y cinco señales que solo invitan a revisar (17-oct-2026) | 17-oct-2026 | 19463-19475 | 2499 |  |
-| R2 rechazó el If-Match con el registro sin cambios, y la mínima cuantía no se mide con la vara de las demás (17-oct-2026) | 17-oct-2026 | 19476-19484 | 2420 |  |
-| Fase 2: el piso se reproduce, el ganador no — los datos abiertos no dicen quién quedó hábil (17-oct-2026) | 17-oct-2026 | 19485-19494 | 2664 |  |
-| Fase 3: la validación posible sin SECOP es coherencia interna, y se hace por censo, no por muestra (17-oct-2026) | 17-oct-2026 | 19495-19504 | 2114 |  |
-| La alerta de precio bajo se corta por modalidad con lo medido en SECOP II (18-oct-2026) | 18-oct-2026 | 19505-19519 | 3640 |  |
-| La fuente del corte se ve en la pantalla y la base se vuelve a medir cada mes, con un vigía que avisa y no corrige (18-oct-2026) | 18-oct-2026 | 19520-19532 | 4296 |  |
-| Las ganadoras que la base no cuenta: en licitación no mueven el corte; en mínima la regla del 50 % esconde ganadoras reales (18-oct-2026) | 18-oct-2026 | 19533-19542 | 2616 |  |
-| El rescate bajo el 50 %: la oferta ganadora que coincide con lo adjudicado y con su contrato cuenta, en todas las modalidades (18-oct-2026) | 18-oct-2026 | 19543-19554 | 3226 |  |
-| La llave del servidor no se copia de Vercel: se anota al ponerla (18-oct-2026) | 18-oct-2026 | 19555-19567 | 1833 |  |
-| Los pliegos de más de 20 MB que se midieron son escaneos: bajarlos por partes no da texto (18-oct-2026) | 18-oct-2026 | 19568-19599 | 3999 |  |
-| El tablero de pendientes mentía: la revisión del 18-oct, uno por uno contra el código (18-oct-2026) | 18-oct-2026 | 19600-19607 | 1742 |  |
-| Las tres lecturas del pliego del 18-oct: la versión que rige, el ejemplo entre corchetes y el techo con una versión sin tabla (18-oct-2026) | 18-oct-2026 | 19608-19615 | 1694 |  |
-| La carga en Precios no entra al vigía si el nombre dice que es otra cosa (18-oct-2026) | 18-oct-2026 | 19616-19656 | 5180 |  |
-| La Fase C se cierra: no se construye la descarga de pliegos de más de 20 MB (18-oct-2026) | 18-oct-2026 | 19657-19668 | 970 |  |
-| La cadena que no seguía con el muro: la llamada del servidor a sí mismo va con waitUntil y dice cómo le fue, y el latido hace hasta 3 tandas (18-oct-2026) | 18-oct-2026 | 19669-19703 | 9584 | «La carga completa ya no para con una actualización a medias, y el tiempo agotado de Upstash dice qué comando fue (18-oct-2026)» |
-| La fórmula en prosa no afirma el anticipo: «presupuesto oficial menos el anticipo…» es mención (18-oct-2026) | 18-oct-2026 | 19704-19732 | 2936 |  |
-| El clasificador lee los nombres con separadores y los nuevos de Colombia Compra («DocBase_…») (18-oct-2026) | 18-oct-2026 | 19733-19760 | 3687 |  |
-| La carga completa ya no para con una actualización a medias, y el tiempo agotado de Upstash dice qué comando fue (18-oct-2026) | 18-oct-2026 | 19761-19778 | 4215 |  |
-| La obra que copia el «aunar esfuerzos» del convenio que la financia no es un convenio (19-oct-2026) | 19-oct-2026 | 19779-19800 | 6718 |  |
-| El Formulario 1 en Excel: «VALOR TOTAL» es el total, y solo se da por leído lo que pasa la comprobación fila a fila (19-oct-2026) | 19-oct-2026 | 19801-19821 | 4939 | «La revisión adversaria del Formulario 1 en Excel: la hoja equivocada, la tolerancia, la caducidad y los topes (19-oct-2026)» |
-| El Formulario 1 en Excel se lee solo en el servidor, y solo se publica lo que pasa la puerta (19-oct-2026) | 19-oct-2026 | 19822-19845 | 5365 | «La revisión adversaria del Formulario 1 en Excel: la hoja equivocada, la tolerancia, la caducidad y los topes (19-oct-2026)» |
-| El Formulario 1 leído se lleva a Precios con «Cotizar en Precios» (19-oct-2026) | 19-oct-2026 | 19846-19865 | 4845 |  |
-| La revisión adversaria del Formulario 1 en Excel: la hoja equivocada, la tolerancia, la caducidad y los topes (19-oct-2026) | 19-oct-2026 | 19866-19887 | 6387 |  |
-| La lista abre con TODOS los procesos de obra abiertos, y los que no alcanzan van atenuados y al final (19-oct-2026) | 19-oct-2026 | 19888-19906 | 4193 |  |
-| La base de contratación estatal queda en docs/, sin cobertura medida, y el contador de uso ya existía (19-oct-2026) | 19-oct-2026 | 19907-19923 | 2582 |  |
-| El arranque de Precios estaba pisado por el de la app, y una función repetida en el mismo ámbito no avisa (19-oct-2026) | 19-oct-2026 | 19924-19938 | 3404 |  |
-| Lo verificado en producción el 19-oct-2026: el OCR ya está configurado; el respaldo en R2 y el correo de la mañana siguen sin configurar | 19-oct-2026 | 19939-19958 | 4610 |  |
-| Volver a buscar los documentos ya se puede pedir desde el expediente, y la aplicación no tenía ningún botón para hacerlo (19-oct-2026) | 19-oct-2026 | 19959-19977 | 3711 |  |
-| La causa real de un fallo de lectura se registra, se sanea y se dice, y una herramienta mide lo que Detekta no lee (19-oct-2026) | 19-oct-2026 | 19978-20005 | 8588 |  |
-| El Excel de la oferta económica se reconoce por más nombres y solo se publica lo que pasa la puerta; y un Excel de presupuesto subido tras el cierre es de un proponente (19-oct-2026) | 19-oct-2026 | 20006-20029 | 7598 |  |
-| Un escaneo leído a medias se guardaba como «Leído»: el OCR de los documentos ignoraba las páginas que el servicio no reconocía (20-oct-2026) | 20-oct-2026 | 20030-20056 | 8925 |  |
-| El avance de la lectura dice lo que la aplicación hace de verdad, y lo que el usuario pide pasa primero (20-oct-2026) | 20-oct-2026 | 20057-20085 | 7482 |  |
-| Las tandas de OCR se arman por PESO, no por 5 páginas fijas: el estudio previo del dueño falló con «código 413» (20-oct-2026) | 20-oct-2026 | 20086-20106 | 3916 |  |
-| La auditoría de lo leído: mide si hay INDICIOS de una lectura mala, jamás dice «correcto» (20-oct-2026) | 20-oct-2026 | 20107-20131 | 5723 |  |
-| La auditoría con su primer proceso real: lo casi vacío se marca, un presupuesto no se juzga por sus letras y los tiempos salen a la vista (21-oct-2026) | 21-oct-2026 | 20132-20162 | 8240 |  |
-| Cada subida cuesta un despliegue: una entrega, un envío (21-oct-2026) | 21-oct-2026 | 20163-20171 | 1688 |  |
-| El consejo de siete asesores entra al proyecto: sin la sala web, sin guardar nada en el repositorio y con lo que no sabe dicho (21-oct-2026) | 21-oct-2026 | 20172-20199 | 6048 |  |
-| Fase 0 de detekta-lector sobre los documentos que deciden en menor cuantía: cuatro causas medidas y cuatro arreglos (25-oct-2026) | 25-oct-2026 | 20200-20225 | 16662 |  |
+| Base nacional de licitaciones de obra: un script que solo mide, fuera de la app (17-oct-2026) | 17-oct-2026 | 19432-19446 | 2538 | «Base nacional de obra: las ofertas se piden agrupadas, las filas repetidas de p6dx son fases y el proveedor se identifica por unión (17-oct-2026)» · «Las reglas de lotes y de rango de la base nacional: un presupuesto ajustado no es lote, una oferta doble tampoco y los centavos no pasan el tope (26-oct-2026)» |
+| Base nacional de obra: las ofertas se piden agrupadas, las filas repetidas de p6dx son fases y el proveedor se identifica por unión (17-oct-2026) | 17-oct-2026 | 19447-19456 | 2028 | «Las reglas de lotes y de rango de la base nacional: un presupuesto ajustado no es lote, una oferta doble tampoco y los centavos no pasan el tope (26-oct-2026)» |
+| El almacén R2 de la base nacional frena ANTES de pasar el gratis, porque Cloudflare no frena (17-oct-2026) | 17-oct-2026 | 19457-19465 | 3029 |  |
+| Base nacional de obra, Fase 1: una fila por proceso y cinco señales que solo invitan a revisar (17-oct-2026) | 17-oct-2026 | 19466-19478 | 2499 |  |
+| R2 rechazó el If-Match con el registro sin cambios, y la mínima cuantía no se mide con la vara de las demás (17-oct-2026) | 17-oct-2026 | 19479-19487 | 2420 |  |
+| Fase 2: el piso se reproduce, el ganador no — los datos abiertos no dicen quién quedó hábil (17-oct-2026) | 17-oct-2026 | 19488-19497 | 2664 |  |
+| Fase 3: la validación posible sin SECOP es coherencia interna, y se hace por censo, no por muestra (17-oct-2026) | 17-oct-2026 | 19498-19507 | 2114 |  |
+| La alerta de precio bajo se corta por modalidad con lo medido en SECOP II (18-oct-2026) | 18-oct-2026 | 19508-19522 | 3640 |  |
+| La fuente del corte se ve en la pantalla y la base se vuelve a medir cada mes, con un vigía que avisa y no corrige (18-oct-2026) | 18-oct-2026 | 19523-19535 | 4296 |  |
+| Las ganadoras que la base no cuenta: en licitación no mueven el corte; en mínima la regla del 50 % esconde ganadoras reales (18-oct-2026) | 18-oct-2026 | 19536-19545 | 2616 |  |
+| El rescate bajo el 50 %: la oferta ganadora que coincide con lo adjudicado y con su contrato cuenta, en todas las modalidades (18-oct-2026) | 18-oct-2026 | 19546-19557 | 3226 |  |
+| La llave del servidor no se copia de Vercel: se anota al ponerla (18-oct-2026) | 18-oct-2026 | 19558-19570 | 1833 |  |
+| Los pliegos de más de 20 MB que se midieron son escaneos: bajarlos por partes no da texto (18-oct-2026) | 18-oct-2026 | 19571-19602 | 3999 |  |
+| El tablero de pendientes mentía: la revisión del 18-oct, uno por uno contra el código (18-oct-2026) | 18-oct-2026 | 19603-19610 | 1742 |  |
+| Las tres lecturas del pliego del 18-oct: la versión que rige, el ejemplo entre corchetes y el techo con una versión sin tabla (18-oct-2026) | 18-oct-2026 | 19611-19618 | 1694 |  |
+| La carga en Precios no entra al vigía si el nombre dice que es otra cosa (18-oct-2026) | 18-oct-2026 | 19619-19659 | 5180 |  |
+| La Fase C se cierra: no se construye la descarga de pliegos de más de 20 MB (18-oct-2026) | 18-oct-2026 | 19660-19671 | 970 |  |
+| La cadena que no seguía con el muro: la llamada del servidor a sí mismo va con waitUntil y dice cómo le fue, y el latido hace hasta 3 tandas (18-oct-2026) | 18-oct-2026 | 19672-19706 | 9584 | «La carga completa ya no para con una actualización a medias, y el tiempo agotado de Upstash dice qué comando fue (18-oct-2026)» |
+| La fórmula en prosa no afirma el anticipo: «presupuesto oficial menos el anticipo…» es mención (18-oct-2026) | 18-oct-2026 | 19707-19735 | 2936 |  |
+| El clasificador lee los nombres con separadores y los nuevos de Colombia Compra («DocBase_…») (18-oct-2026) | 18-oct-2026 | 19736-19763 | 3687 |  |
+| La carga completa ya no para con una actualización a medias, y el tiempo agotado de Upstash dice qué comando fue (18-oct-2026) | 18-oct-2026 | 19764-19781 | 4215 |  |
+| La obra que copia el «aunar esfuerzos» del convenio que la financia no es un convenio (19-oct-2026) | 19-oct-2026 | 19782-19803 | 6718 |  |
+| El Formulario 1 en Excel: «VALOR TOTAL» es el total, y solo se da por leído lo que pasa la comprobación fila a fila (19-oct-2026) | 19-oct-2026 | 19804-19824 | 4939 | «La revisión adversaria del Formulario 1 en Excel: la hoja equivocada, la tolerancia, la caducidad y los topes (19-oct-2026)» |
+| El Formulario 1 en Excel se lee solo en el servidor, y solo se publica lo que pasa la puerta (19-oct-2026) | 19-oct-2026 | 19825-19848 | 5365 | «La revisión adversaria del Formulario 1 en Excel: la hoja equivocada, la tolerancia, la caducidad y los topes (19-oct-2026)» |
+| El Formulario 1 leído se lleva a Precios con «Cotizar en Precios» (19-oct-2026) | 19-oct-2026 | 19849-19868 | 4845 |  |
+| La revisión adversaria del Formulario 1 en Excel: la hoja equivocada, la tolerancia, la caducidad y los topes (19-oct-2026) | 19-oct-2026 | 19869-19890 | 6387 |  |
+| La lista abre con TODOS los procesos de obra abiertos, y los que no alcanzan van atenuados y al final (19-oct-2026) | 19-oct-2026 | 19891-19909 | 4193 |  |
+| La base de contratación estatal queda en docs/, sin cobertura medida, y el contador de uso ya existía (19-oct-2026) | 19-oct-2026 | 19910-19926 | 2582 |  |
+| El arranque de Precios estaba pisado por el de la app, y una función repetida en el mismo ámbito no avisa (19-oct-2026) | 19-oct-2026 | 19927-19941 | 3404 |  |
+| Lo verificado en producción el 19-oct-2026: el OCR ya está configurado; el respaldo en R2 y el correo de la mañana siguen sin configurar | 19-oct-2026 | 19942-19961 | 4610 |  |
+| Volver a buscar los documentos ya se puede pedir desde el expediente, y la aplicación no tenía ningún botón para hacerlo (19-oct-2026) | 19-oct-2026 | 19962-19980 | 3711 |  |
+| La causa real de un fallo de lectura se registra, se sanea y se dice, y una herramienta mide lo que Detekta no lee (19-oct-2026) | 19-oct-2026 | 19981-20008 | 8588 |  |
+| El Excel de la oferta económica se reconoce por más nombres y solo se publica lo que pasa la puerta; y un Excel de presupuesto subido tras el cierre es de un proponente (19-oct-2026) | 19-oct-2026 | 20009-20032 | 7598 |  |
+| Un escaneo leído a medias se guardaba como «Leído»: el OCR de los documentos ignoraba las páginas que el servicio no reconocía (20-oct-2026) | 20-oct-2026 | 20033-20059 | 8925 |  |
+| El avance de la lectura dice lo que la aplicación hace de verdad, y lo que el usuario pide pasa primero (20-oct-2026) | 20-oct-2026 | 20060-20088 | 7482 |  |
+| Las tandas de OCR se arman por PESO, no por 5 páginas fijas: el estudio previo del dueño falló con «código 413» (20-oct-2026) | 20-oct-2026 | 20089-20109 | 3916 |  |
+| La auditoría de lo leído: mide si hay INDICIOS de una lectura mala, jamás dice «correcto» (20-oct-2026) | 20-oct-2026 | 20110-20134 | 5723 |  |
+| La auditoría con su primer proceso real: lo casi vacío se marca, un presupuesto no se juzga por sus letras y los tiempos salen a la vista (21-oct-2026) | 21-oct-2026 | 20135-20165 | 8240 |  |
+| Cada subida cuesta un despliegue: una entrega, un envío (21-oct-2026) | 21-oct-2026 | 20166-20174 | 1688 |  |
+| El consejo de siete asesores entra al proyecto: sin la sala web, sin guardar nada en el repositorio y con lo que no sabe dicho (21-oct-2026) | 21-oct-2026 | 20175-20202 | 6048 |  |
+| Fase 0 de detekta-lector sobre los documentos que deciden en menor cuantía: cuatro causas medidas y cuatro arreglos (25-oct-2026) | 25-oct-2026 | 20203-20229 | 16663 |  |
+| Probabilidad de adjudicación, Fase 0: las ofertas abiertas sí existen desde 2020, quién quedó hábil no, y la regla del precio solo se sabe donde hubo documento tipo (25-oct-2026) | 25-oct-2026 | 20230-20267 | 6698 |  |
+| Las reglas de lotes y de rango de la base nacional: un presupuesto ajustado no es lote, una oferta doble tampoco y los centavos no pasan el tope (26-oct-2026) | 26-oct-2026 | 20268-20291 | 5909 |  |
+| La prueba de los 30 del Nivel 3: con los hábiles reales el motor acierta en 6 de 9, y lo que falla son los puntos distintos del precio (26-oct-2026) | 26-oct-2026 | 20292-20320 | 4546 | «Las evaluaciones de cada entidad entran a la aplicación: el navegador lee el documento, una sesión de madrugada lo interpreta y la aplicación verifica cada cita (26-oct-2026)» |
+| Las evaluaciones de cada entidad entran a la aplicación: el navegador lee el documento, una sesión de madrugada lo interpreta y la aplicación verifica cada cita (26-oct-2026) | 26-oct-2026 | 20321-20353 | 6981 |  |

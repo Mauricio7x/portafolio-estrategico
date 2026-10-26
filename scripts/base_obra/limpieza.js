@@ -93,18 +93,50 @@ function proveedoresUnidos(ofertas) {
   return (o) => { const ids = identidades_(o); return ids.length ? raiz(ids[0]) : null; };
 }
 
-/* Lote según p6dx: un mismo id_del_portafolio con ≥ 2 precios base positivos distintos (cada
-   lote publica su fila con su precio). Las demás filas repetidas son FASES del mismo proceso. */
+/* Lote según p6dx (26-oct-2026, decisión del dueño sobre el hallazgo 1 del auditor de la Fase 0): 2+ precios base
+   positivos distintos DENTRO de una misma fase. Un precio distinto en OTRA fase es un AJUSTE del presupuesto: de
+   947 portafolios con dos precios, solo 8 los tienen en la misma fase; CO1.BDOS.4866609 trae 1.488.813.904 en
+   «Presentación de observaciones» y 1.491.889.110 en la de ofertas, `numero_de_lotes` 0 y un contrato. La regla
+   de antes (dos precios en cualquier fila) apartaba así 390 de 508 licitaciones; de 692 procesos que libera,
+   688 tienen un solo contrato en jbjy y ninguno contratistas distintos (revisión adversaria, en vivo).
+   Los lotes reales repiten el precio (CO1.REQ.10672613: 11.362.204.912 en sus cuatro filas) y se apartan por
+   `numero_de_lotes` en fila.js. NO se usa «dos adjudicaciones distintas»: se probó y apartaba 162 procesos
+   buenos, 146 con un solo contrato (filas cruzadas de p6dx y valores a menos del 1 %; revisión adversaria). */
 function lotePorPrecioBase(filas) {
-  const ps = new Set();
-  for (const f of filas || []) { const v = numeroONull(f.precio_base); if (v !== null && v > 0) ps.add(v); }
-  return ps.size > 1;
+  const porFase = new Map();
+  for (const f of filas || []) {
+    const v = numeroONull(f.precio_base);
+    if (v === null || v <= 0) continue;
+    const k = norm(f.fase || "");
+    if (!porFase.has(k)) porFase.set(k, new Set());
+    porFase.get(k).add(v);
+  }
+  return [...porFase.values()].some((s) => s.size > 1);
 }
 
 /* Ofertas de UN proceso → válidas + exclusiones contadas. precioBase null/≤0 → nada se
    puede juzgar en % y todas quedan «sin_precio_base». Duplicado = mismo (proveedor, valor).
-   Lote sospechoso = un proveedor con ≥2 valores distintos DENTRO del rango admisible (no se elige cuál: el proceso se
-   aparta entero). Fuera de rango: > precio base o < 50 % → marcadas, fuera del piso.
+   Lote sospechoso = la MITAD o más de los oferentes con 2+ valores distintos dentro del rango admisible (el proceso
+   se aparta entero; ver «UN OFERENTE CON DOS VALORES» abajo). Fuera de rango: ≥ precio base + 1 o < 50 % → marcadas,
+   fuera del piso.
+   TOLERANCIA DE CENTAVOS (26-oct-2026, hallazgo 3 del auditor): p6dx publica el precio base SIN decimales
+   (0 de 81.643 filas los traen), así que el precio real está entre `base` y `base + 1`. Una oferta queda
+   «sobre el precio base» solo desde `base + 1`: CO1.BDOS.4451814 ofertó 25.374.652.092,71 sobre una base de
+   25.374.652.092 y era lo adjudicado (1.620 ofertas así, 821 iguales a lo adjudicado).
+   UN OFERENTE CON DOS VALORES NO VUELVE LOTE AL PROCESO (26-oct-2026, hallazgo 2). Lo que lo sostiene son los
+   CONTRATOS: de 513 procesos que la regla vieja apartaba como lote y que pasan a usables, 500 tienen un solo
+   contrato en jbjy y ninguno contratistas distintos, y su dispersión es la de los usables de siempre (revisión
+   adversaria, en vivo). El `identificador_de_la_oferta` NO lo distingue: en los lotes reales cada valor también
+   trae el suyo (CO1.BDOS.1298792, CO1.BDOS.10335265). Los dobles son menos de la mitad de los oferentes en 495 de
+   496 procesos, y menos de la cuarta parte en 492 (`tools/analisis/adjudicacion/oferta_doble.js`); al ganador doble le adjudicaron la
+   oferta más nueva en 23 de 52 y la más vieja en 29: el orden no dice cuál vale. Por eso:
+   - si la MITAD o más de los oferentes traen dos valores, el proceso sigue siendo lote. Es una guarda casi
+     inerte (1 de 496 procesos): los lotes se apartan por `numero_de_lotes`;
+   - si no, del oferente doble se queda el ÚNICO valor más cercano a lo adjudicado si está a no más del 1 %
+     (el mismo criterio de fila.js para emparejar al ganador: CO1.BDOS.8795032 ofertó 6.511.543.527,58 y le
+     adjudicaron 6.511.543.530); de cualquier otro oferente doble no se sabe cuál vale y sale entero
+     (`oferta_doble`, sin dato), y el proceso se queda.
+   `rescate.valor_adjudicado` es el mismo dato que usa el rescate bajo el 50 %.
    RESCATE BAJO EL 50 % (18-oct-2026, decisión del dueño): una oferta bajo la mitad del precio base es
    casi siempre otra medida (un precio unitario, un valor en miles, un error de digitación) y se
    descarta. Se RESCATA solo si es igual, al peso, a lo adjudicado; si los contratos firmados en jbjy,
@@ -132,7 +164,7 @@ function rescatable(v, base, rescate) {
 }
 function limpiarOfertas(ofertas, precioBase, rescate = null) {
   const ex = { repetidas: 0, confidencial: 0, cero: 0, no_numerico: 0, sin_proveedor: 0, duplicada: 0, duplicada_entre_datasets: 0,
-    sobre_base: 0, bajo_50: 0, rescatada_bajo_50: 0, sin_precio_base: 0 };
+    sobre_base: 0, bajo_50: 0, rescatada_bajo_50: 0, sin_precio_base: 0, oferta_doble: 0 };
   const vistos = new Map(), porProv = new Map(), validas = [];
   const base = numeroONull(precioBase);
   const provDe = proveedoresUnidos(ofertas || []);
@@ -151,7 +183,7 @@ function limpiarOfertas(ofertas, precioBase, rescate = null) {
     if (vistos.has(k)) { if (vistos.get(k) !== o._ds) ex.duplicada_entre_datasets++; else ex.duplicada++; continue; }
     vistos.set(k, o._ds);
     if (base === null || base <= 0) { ex.sin_precio_base++; continue; }
-    if (v > base) { ex.sobre_base++; continue; }
+    if (v >= base + 1) { ex.sobre_base++; continue; }   // tolerancia de centavos: ver arriba
     const rescatada = v < 0.5 * base;
     if (rescatada) { if (!rescatable(v, base, rescate)) { ex.bajo_50++; continue; } ex.rescatada_bajo_50++; }
     if (!porProv.has(p)) porProv.set(p, new Set());
@@ -164,7 +196,20 @@ function limpiarOfertas(ofertas, precioBase, rescate = null) {
     ex.bajo_50 += ex.rescatada_bajo_50; ex.rescatada_bajo_50 = 0;
     validas.length = 0;
   }
-  const lote_sospechoso = [...porProv.values()].some((s) => s.size > 1);
+  const dobles = [...porProv.entries()].filter(([, s]) => s.size > 1).map(([p]) => p);
+  const lote_sospechoso = dobles.length > 0 && 2 * dobles.length >= porProv.size;
+  if (dobles.length && !lote_sospechoso) {
+    const adj = rescate ? numeroONull(rescate.valor_adjudicado) : null;
+    for (const p of dobles) {
+      const suyas = validas.filter((o) => o.proveedor === p);
+      // el único valor más cercano a lo adjudicado, si está a no más del 1 % (dos a la misma distancia: ninguno)
+      const dist = adj !== null && adj > 0 ? suyas.map((o) => Math.abs(o.valor - adj)) : [];
+      const dMin = dist.length ? Math.min(...dist) : Infinity;
+      const queda = dMin <= 0.01 * adj ? suyas.filter((o, i) => dist[i] === dMin) : [];
+      for (const o of suyas) if (!(queda.length === 1 && o === queda[0])) { validas.splice(validas.indexOf(o), 1); ex.oferta_doble++; }
+      if (queda.length === 1) porProv.set(p, new Set([queda[0].valor])); else porProv.delete(p);
+    }
+  }
   return { validas, excluidas: ex, lote_sospechoso, proveedores: porProv.size };
 }
 

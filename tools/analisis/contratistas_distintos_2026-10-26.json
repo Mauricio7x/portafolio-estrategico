@@ -1,0 +1,240 @@
+{
+ "generado": "2026-10-26T12:09:52.652Z",
+ "fuente": "jbjy-vk9h",
+ "por_modalidad": {
+  "licitacion": {
+   "usables": 3308,
+   "sin_medir": 0,
+   "sin_contrato": 69,
+   "con_contrato": 3239,
+   "un_contratista": 3238,
+   "dos_o_mas_contratistas": 1,
+   "dos_o_mas_vigentes": 1,
+   "de_esos_numero_de_lotes_0": 1,
+   "de_esos_suma_sobre_precio_base": 1,
+   "de_esos_ganador_entre_ellos": 1
+  },
+  "menor_cuantia": {
+   "usables": 4250,
+   "sin_medir": 0,
+   "sin_contrato": 30,
+   "con_contrato": 4220,
+   "un_contratista": 4218,
+   "dos_o_mas_contratistas": 2,
+   "dos_o_mas_vigentes": 2,
+   "de_esos_numero_de_lotes_0": 2,
+   "de_esos_suma_sobre_precio_base": 2,
+   "de_esos_ganador_entre_ellos": 2
+  },
+  "minima": {
+   "usables": 3625,
+   "sin_medir": 0,
+   "sin_contrato": 23,
+   "con_contrato": 3602,
+   "un_contratista": 3601,
+   "dos_o_mas_contratistas": 1,
+   "dos_o_mas_vigentes": 1,
+   "de_esos_numero_de_lotes_0": 1,
+   "de_esos_suma_sobre_precio_base": 1,
+   "de_esos_ganador_entre_ellos": 1
+  }
+ },
+ "ejemplos": [
+  {
+   "portafolio": "CO1.BDOS.3141866",
+   "modalidad": "licitacion",
+   "precio_base": 36796916347,
+   "valor_adjudicado": 34823065808,
+   "ganador": "CONSORCIO VIAS REGIONALES",
+   "contratos": [
+    {
+     "id": "CO1.PCCNTR.4080463",
+     "contratista": "C. MULTILAGO ANTIOQUIA02",
+     "documento": "No Definido",
+     "valor": "34815978965",
+     "estado": "En ejecución"
+    },
+    {
+     "id": "CO1.PCCNTR.6640246",
+     "contratista": "CONSORCIO VIAS REGIONALES",
+     "documento": "No Definido",
+     "valor": "44206545937",
+     "estado": "Modificado"
+    }
+   ]
+  },
+  {
+   "portafolio": "CO1.BDOS.10212939",
+   "modalidad": "menor_cuantia",
+   "precio_base": 929150829,
+   "valor_adjudicado": 856069185,
+   "ganador": "CONVEG S.A.S",
+   "contratos": [
+    {
+     "id": "CO1.PCCNTR.9568902",
+     "contratista": "CONSORCIO INFRAESTRUCTURA TUMACO",
+     "documento": "No Definido",
+     "valor": "851380905",
+     "estado": "terminado"
+    },
+    {
+     "id": "CO1.PCCNTR.9612369",
+     "contratista": "CONVEG S.A.S",
+     "documento": "901519494",
+     "valor": "856069185",
+     "estado": "En ejecución"
+    }
+   ]
+  },
+  {
+   "portafolio": "CO1.BDOS.2883650",
+   "modalidad": "menor_cuantia",
+   "precio_base": 250097000,
+   "valor_adjudicado": 238286980,
+   "ganador": "CONSORCIO MEGA-PROYECTOS",
+   "contratos": [
+    {
+     "id": "CO1.PCCNTR.3692649",
+     "contratista": "RICARDO JOSE MARTINEZ VELAIDEZ",
+     "documento": "1082472011",
+     "valor": "240693793",
+     "estado": "enviado Proveedor"
+    },
+    {
+     "id": "CO1.PCCNTR.3736335",
+     "contratista": "CONSORCIO MEGA-PROYECTOS",
+     "documento": "No Definido",
+     "valor": "238286980",
+     "estado": "En ejecución"
+    }
+   ]
+  },
+  {
+   "portafolio": "CO1.BDOS.6571558",
+   "modalidad": "minima",
+   "precio_base": 35601035,
+   "valor_adjudicado": 23875228,
+   "ganador": "OBRAS REFORMAS Y CONTRATOS SAS",
+   "contratos": [
+    {
+     "id": "CO1.PCCNTR.6847440",
+     "contratista": "OBRAS REFORMAS Y CONTRATOS SAS",
+     "documento": "901249086",
+     "valor": "23875228",
+     "estado": "terminado"
+    },
+    {
+     "id": "CO1.PCCNTR.6737393",
+     "contratista": "INGENIEROS M&S S.AS",
+     "documento": "901472703",
+     "valor": "23673661.76",
+     "estado": "enviado Proveedor"
+    }
+   ]
+  }
+ ],
+ "efecto": {
+  "procesos_que_apartaria": 4,
+  "techo": {
+   "licitacion": {
+    "antes": {
+     "procesos": 3308,
+     "techo_pct": 42.2
+    },
+    "con_guarda": {
+     "procesos": 3307,
+     "techo_pct": 42.2
+    }
+   },
+   "menor_cuantia": {
+    "antes": {
+     "procesos": 4250,
+     "techo_pct": 59.1
+    },
+    "con_guarda": {
+     "procesos": 4248,
+     "techo_pct": 59.1
+    }
+   }
+  },
+  "alerta_2024": {
+   "antes": {
+    "licitacion": [
+     {
+      "corte_pct": 70,
+      "ganadoras": 2190,
+      "bajo_el_corte": 1
+     },
+     {
+      "corte_pct": 88,
+      "ganadoras": 2190,
+      "bajo_el_corte": 33
+     }
+    ],
+    "menor_cuantia": [
+     {
+      "corte_pct": 70,
+      "ganadoras": 5894,
+      "bajo_el_corte": 2
+     },
+     {
+      "corte_pct": 88,
+      "ganadoras": 5894,
+      "bajo_el_corte": 124
+     }
+    ],
+    "minima": [
+     {
+      "corte_pct": 70,
+      "ganadoras": 3958,
+      "bajo_el_corte": 276
+     },
+     {
+      "corte_pct": 88,
+      "ganadoras": 3958,
+      "bajo_el_corte": 1379
+     }
+    ]
+   },
+   "con_guarda": {
+    "licitacion": [
+     {
+      "corte_pct": 70,
+      "ganadoras": 2190,
+      "bajo_el_corte": 1
+     },
+     {
+      "corte_pct": 88,
+      "ganadoras": 2190,
+      "bajo_el_corte": 33
+     }
+    ],
+    "menor_cuantia": [
+     {
+      "corte_pct": 70,
+      "ganadoras": 5893,
+      "bajo_el_corte": 2
+     },
+     {
+      "corte_pct": 88,
+      "ganadoras": 5893,
+      "bajo_el_corte": 124
+     }
+    ],
+    "minima": [
+     {
+      "corte_pct": 70,
+      "ganadoras": 3957,
+      "bajo_el_corte": 275
+     },
+     {
+      "corte_pct": 88,
+      "ganadoras": 3957,
+      "bajo_el_corte": 1378
+     }
+    ]
+   },
+   "nota": "La guarda se calcula con los contratos de la base desde 2020; un proceso de 2024 en adelante que no esté en ella no se aparta."
+  }
+ }
+}

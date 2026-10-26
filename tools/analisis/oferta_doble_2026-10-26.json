@@ -1,0 +1,160 @@
+{
+ "generado": "2026-10-26T02:27:53.347Z",
+ "procesos": 496,
+ "sin_medir": 0,
+ "por_proceso": {
+  "un_oferente_doble": 373,
+  "dos_o_mas_oferentes_dobles": 123,
+  "sin_doble_al_releer": 0
+ },
+ "oferentes_dobles": 672,
+ "con_dos_identificadores": 661,
+ "mismo_identificador_dos_valores": 11,
+ "ganador_doble": {
+  "casos": 52,
+  "adjudicada_la_mas_nueva": 23,
+  "adjudicada_la_mas_vieja": 29,
+  "no_se_puede_ordenar": 0
+ },
+ "ejemplos": [
+  {
+   "portafolio": "CO1.BDOS.7019570",
+   "proveedor": "o:consorcio espacio publico cb",
+   "adjudicada": {
+    "v": 8181818182,
+    "ids": [
+     "CO1.RPL.4553233"
+    ]
+   },
+   "otra": {
+    "v": 7719908283,
+    "ids": [
+     "CO1.RPL.4567546"
+    ]
+   }
+  },
+  {
+   "portafolio": "CO1.BDOS.8661016",
+   "proveedor": "o:consorcio cortissoz 2025",
+   "adjudicada": {
+    "v": 602450980.23,
+    "ids": [
+     "CO1.RPL.5145834"
+    ]
+   },
+   "otra": {
+    "v": 501192338.23,
+    "ids": [
+     "CO1.RPL.5139244"
+    ]
+   }
+  },
+  {
+   "portafolio": "CO1.BDOS.7853548",
+   "proveedor": "n:901947003",
+   "adjudicada": {
+    "v": 15716097925,
+    "ids": [
+     "CO1.RPL.4782370"
+    ]
+   },
+   "otra": {
+    "v": 15927000000,
+    "ids": [
+     "CO1.RPL.4792463"
+    ]
+   }
+  },
+  {
+   "portafolio": "CO1.BDOS.9259883",
+   "proveedor": "n:902047491",
+   "adjudicada": {
+    "v": 4649871712,
+    "ids": [
+     "CO1.RPL.5397792"
+    ]
+   },
+   "otra": {
+    "v": 4521614018,
+    "ids": [
+     "CO1.RPL.5399002"
+    ]
+   }
+  },
+  {
+   "portafolio": "CO1.BDOS.1519688",
+   "proveedor": "n:900090444",
+   "adjudicada": {
+    "v": 5660353967,
+    "ids": [
+     "CO1.RPL.1837340"
+    ]
+   },
+   "otra": {
+    "v": 5553244049,
+    "ids": [
+     "CO1.RPL.1835218"
+    ]
+   }
+  },
+  {
+   "portafolio": "CO1.BDOS.7010959",
+   "proveedor": "o:consorcio parques kennedy 2024",
+   "adjudicada": {
+    "v": 2851556145,
+    "ids": [
+     "CO1.RPL.4545207"
+    ]
+   },
+   "otra": {
+    "v": 2851556138,
+    "ids": [
+     "CO1.RPL.4554816"
+    ]
+   }
+  },
+  {
+   "portafolio": "CO1.BDOS.4547402",
+   "proveedor": "n:901744516",
+   "adjudicada": {
+    "v": 1109010916,
+    "ids": [
+     "CO1.RPL.3536379"
+    ]
+   },
+   "otra": {
+    "v": 1088156424,
+    "ids": [
+     "CO1.RPL.3537936"
+    ]
+   }
+  },
+  {
+   "portafolio": "CO1.BDOS.6963134",
+   "proveedor": "o:consorcio barrios unidos 24",
+   "adjudicada": {
+    "v": 2429938264,
+    "ids": [
+     "CO1.RPL.4542840"
+    ]
+   },
+   "otra": {
+    "v": 1901600443,
+    "ids": [
+     "CO1.RPL.4543055"
+    ]
+   }
+  }
+ ],
+ "parte_doble": {
+  "uno": {
+   "menos_de_un_cuarto": 369,
+   "la_mitad_o_mas": 1,
+   "entre_un_cuarto_y_la_mitad": 3
+  },
+  "dos_o_mas": {
+   "menos_de_un_cuarto": 123
+  }
+ },
+ "distancia_mediana_pct": 1.55
+}

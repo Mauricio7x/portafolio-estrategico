@@ -4003,7 +4003,7 @@ async function main() {
     const of = (nom, cod, v) => ({ nombre_proveedor: nom, c_digo_proveedor: cod, nit_del_proveedor: "000000000", valor_de_la_oferta: v });
     const r = lb.limpiarOfertas([of("A", "1", "950"), of("A", "1", "950"), of("Confidencial", "", "0"), of("B", "2", "0"),
       of("C", "3", ""), of("D", "4", "1001"), of("E", "5", "499"), of("F", "6", "900"), of("G", "7", "920")], "1000");
-    assert.deepStrictEqual(r.excluidas, { repetidas: 0, confidencial: 1, cero: 1, no_numerico: 1, sin_proveedor: 0, duplicada: 1, duplicada_entre_datasets: 0, sobre_base: 1, bajo_50: 1, rescatada_bajo_50: 0, sin_precio_base: 0 });
+    assert.deepStrictEqual(r.excluidas, { repetidas: 0, confidencial: 1, cero: 1, no_numerico: 1, sin_proveedor: 0, duplicada: 1, duplicada_entre_datasets: 0, sobre_base: 1, bajo_50: 1, rescatada_bajo_50: 0, sin_precio_base: 0, oferta_doble: 0 });
     assert.strictEqual(lb.limpiarOfertas([of("A", "1", "900"), of("A", "1", "9000")], "1000").lote_sospechoso, false, "un valor fuera de rango no vuelve lote al proceso");
     const misma = lb.limpiarOfertas([{ nombre_proveedor: "X", c_digo_proveedor: "77", nit_del_proveedor: "900111", valor_de_la_oferta: "900" },
       { nombre_proveedor: "X", c_digo_proveedor: "", nit_del_proveedor: "900111", valor_de_la_oferta: "900" }], "1000");
@@ -4021,7 +4021,45 @@ async function main() {
     assert.strictEqual(porNombre.validas.length, 1, "el nombre une la fila con NIT y la que trae «No Definido»");
     assert.strictEqual(lb.nitValido("0000000"), null); assert.strictEqual(lb.nitValido("CONSORCIO SED COLEGIOS 18"), null);
     assert.strictEqual(lb.lotePorPrecioBase([{ precio_base: "100" }, { precio_base: "100" }, { precio_base: "" }]), false, "filas repetidas con el mismo precio son fases, no lotes");
-    assert.strictEqual(lb.lotePorPrecioBase([{ precio_base: "100" }, { precio_base: "250" }]), true, "dos precios base en un portafolio = lotes");
+    /* 26-oct-2026 (hallazgo 1 del auditor de la Fase 0): un precio distinto en OTRA fase es un ajuste, no un lote
+       (CO1.BDOS.4866609); dos precios en la MISMA fase sí. El lote real de p6dx repite el precio
+       (CO1.REQ.10672613) y lo aparta `numero_de_lotes` en fila.js, no esta regla. */
+    const OBS = "Presentación de observaciones", OFE = "Fase de Selección (Presentación de ofertas)";
+    assert.strictEqual(lb.lotePorPrecioBase([{ fase: OBS, precio_base: "1488813904" }, { fase: OFE, precio_base: "1491889110", adjudicado: "Si", nombre_del_proveedor: "CONSORCIO EL ROBLE RAMIRIQUI", valor_total_adjudicacion: "1417966621" }]), false, "un presupuesto ajustado entre fases no es lote");
+    assert.strictEqual(lb.lotePorPrecioBase([{ fase: OFE, precio_base: "100" }, { fase: OFE, precio_base: "250" }]), true, "dos precios en la misma fase = lotes");
+    assert.strictEqual(lb.lotePorPrecioBase([{ precio_base: "100" }, { precio_base: "250" }]), true, "sin fase publicada, dos precios siguen siendo lotes (la misma fase vacía)");
+    assert.strictEqual(lb.lotePorPrecioBase([{ fase: "Presentación de Observaciones", precio_base: "100" }, { fase: "presentacion de observaciones", precio_base: "250" }]), true, "la fase se compara normalizada: mayúsculas y tildes no la vuelven otra");
+    const loteReal = [{ fase: OFE, precio_base: "11362204912", numero_de_lotes: "2", adjudicado: "Si", nombre_del_proveedor: "CONSORCIO VCGC-38", valor_total_adjudicacion: "4709875392", id_del_proceso: "CO1.REQ.10672613", modalidad_de_contratacion: "Licitación pública Obra Publica" },
+      { fase: OFE, precio_base: "11362204912", numero_de_lotes: "2", adjudicado: "Si", nombre_del_proveedor: "CONSORCIO VLC 2026", valor_total_adjudicacion: "5872605189", id_del_proceso: "CO1.REQ.10672613", modalidad_de_contratacion: "Licitación pública Obra Publica" },
+      { fase: OBS, precio_base: "11362204912", numero_de_lotes: "2", adjudicado: "No", nombre_del_proveedor: "No Definido", valor_total_adjudicacion: "0", id_del_proceso: "CO1.REQ.10516847", modalidad_de_contratacion: "Licitación pública Obra Publica" }];
+    assert.strictEqual(lb.lotePorPrecioBase(loteReal), false, "el lote real repite el precio: esta regla no lo ve…");
+    const filaLote = require("../scripts/base_obra/fila").filaDeProceso({ portafolio: "CO1.BDOS.10335265", filas: loteReal, ofertas: [of("A", "1", "4709875392")], lugar: null });
+    assert.strictEqual(filaLote.excluido, "lote_numero_de_lotes", "…y fila.js lo aparta por numero_de_lotes");
+    // tolerancia de centavos (hallazgo 3): p6dx trunca el precio base; desde base + 1 sí es «sobre el precio base»
+    const cent = lb.limpiarOfertas([of("A", "1", "1000.71"), of("B", "2", "1001"), of("C", "3", "999")], "1000");
+    assert.deepStrictEqual(cent.validas.map((o) => o.valor), [1000.71, 999], "1000,71 sobre una base de 1000 es válida; 1001 no");
+    assert.strictEqual(cent.excluidas.sobre_base, 1);
+    // oferta registrada dos veces (hallazgo 2): un oferente doble entre muchos no vuelve lote al proceso
+    const cinco = (va) => lb.limpiarOfertas([of("A", "1", "900"), of("A", "1", "880"), of("B", "2", "910"), of("C", "3", "930"), of("D", "4", "940")], "1000", va == null ? null : { valor_adjudicado: va });
+    const dg = cinco("880");
+    assert.strictEqual(dg.lote_sospechoso, false, "un oferente doble entre cuatro no es lote");
+    assert.deepStrictEqual(dg.validas.map((o) => o.valor), [880, 910, 930, 940], "del ganador doble queda la oferta igual a lo adjudicado");
+    assert.strictEqual(dg.excluidas.oferta_doble, 1);
+    const dn = cinco("910");
+    assert.deepStrictEqual(dn.validas.map((o) => o.valor), [910, 930, 940], "de un rival doble no se sabe cuál vale: sale entero");
+    assert.strictEqual(dn.excluidas.oferta_doble, 2);
+    assert.deepStrictEqual(cinco(null).validas.map((o) => o.valor), [910, 930, 940], "sin valor adjudicado, el oferente doble sale entero");
+    const mitad = lb.limpiarOfertas([of("A", "1", "900"), of("A", "1", "880"), of("B", "2", "910"), of("B", "2", "890"), of("C", "3", "930")], "1000", { valor_adjudicado: "880" });
+    assert.strictEqual(mitad.lote_sospechoso, true, "si la mitad o más de los oferentes traen dos valores es un lote no declarado, no ofertas dobles");
+    assert.strictEqual(mitad.excluidas.oferta_doble, 0, "con lote no se descarta ninguna oferta doble: el proceso se aparta entero");
+    const justo = lb.limpiarOfertas([of("A", "1", "900"), of("A", "1", "880"), of("B", "2", "910"), of("B", "2", "890"), of("C", "3", "930"), of("D", "4", "940")], "1000", { valor_adjudicado: "880" });
+    assert.strictEqual(justo.lote_sospechoso, true, "justo la mitad de los oferentes dobles ya es lote");
+    assert.deepStrictEqual(cinco("880.40").validas.map((o) => o.valor), [880, 910, 930, 940], "lo adjudicado se compara al peso, como el rescate");
+    // del ganador doble queda el ÚNICO valor más cercano a lo adjudicado, si está a no más del 1 % (el criterio de fila.js)
+    assert.deepStrictEqual(cinco("888").validas.map((o) => o.valor), [880, 910, 930, 940], "a 0,9 % de lo adjudicado se empareja");
+    assert.deepStrictEqual(cinco("870").validas.map((o) => o.valor), [910, 930, 940], "a más del 1 % no se empareja: sale entero");
+    const empate = lb.limpiarOfertas([of("A", "1", "995"), of("A", "1", "1005"), of("B", "2", "1010"), of("C", "3", "1020"), of("D", "4", "1030")], "1100", { valor_adjudicado: "1000" });
+    assert.deepStrictEqual(empate.validas.map((o) => o.valor), [1010, 1020, 1030], "dos valores a la misma distancia (y dentro del 1 %): no se elige ninguno");
     assert.deepStrictEqual(r.validas.map((o) => o.valor), [950, 900, 920]);
     assert.strictEqual(r.lote_sospechoso, false);
     assert.strictEqual(lb.limpiarOfertas([of("A", "1", "900"), of("A", "1", "800")], "1000").lote_sospechoso, true, "un proveedor con dos valores es lote");
@@ -4427,6 +4465,215 @@ async function main() {
       assert.ok(/corte\/\$\(date -u \+%Y-%m-%d\)-\$\{\{ github\.run_id \}\}/.test(yV), "dos corridas el mismo día no se pisan");
     }
     console.log("· unidad base de obra: «sin dato» ≠ 0, mapeo de modalidades, exclusiones contadas por motivo, lote, las dos σ, la regla de fila y el almacén que frena antes de pasar su tope (ida y vuelta contra un S3 falso)");
+  }
+
+  /* unidad: la captura de las evaluaciones de una entidad (Nivel 3, 26-oct-2026). EJECUTA lib/evaluacion.js y el
+     handler real (api/pliego.js → op=evaluacion) contra el Redis simulado, con un texto armado con cifras reales del
+     piloto (Suratá). Se aparta lo que no se sostiene: una cita que no está, un oferente que no está en su cita, una
+     cifra que no está completa en su cita, un estado sin palabra que lo respalde. Los hechos cuentan SOLO lo
+     verificado, y un puntaje que falta deja el proceso fuera de la cuenta («sin dato» no es «ganó el mejor»). */
+  bqEvaluaciones: { if (!corre("unidad evaluaciones")) break bqEvaluaciones;
+    const Ev = require("../lib/evaluacion.js");
+    assert.strictEqual(Ev.numeroDe("$ 942,406,356.00", "dinero"), 942406356, "dinero a la inglesa");
+    assert.strictEqual(Ev.numeroDe("1.116.184.929", "dinero"), 1116184929, "dinero a la colombiana");
+    assert.strictEqual(Ev.numeroDe("336.262", "dinero"), 336262, "en dinero, una marca con tres cifras detrás son miles");
+    assert.strictEqual(Ev.numeroDe("49,5", "puntaje"), 49.5);
+    assert.strictEqual(Ev.numeroDe("3.678,15", "trm"), 3678.15);
+    assert.strictEqual(Ev.numeroDe("3,053.48", "trm"), 3053.48);
+    assert.strictEqual(Ev.numeroDe("sin dato"), null, "sin cifras es null, jamás cero");
+    assert.ok(Ev.cifraEnCita("49,5", "INFRAOBRAS SAS 336.262.957,00 49,5 20 0,25", "puntaje"));
+    assert.ok(Ev.cifraEnCita("100", "16 CONSORCIO B-I 1373 $922,700,001.00 49.50 100.00", "puntaje"), "«100» y «100.00» son la misma cifra");
+    assert.ok(!Ev.cifraEnCita("49", "INFRAOBRAS 49,5", "puntaje"), "una cifra que solo está DENTRO de otra no cuenta");
+    assert.ok(Ev.nombreEnCita("A&N INGENIERÍA Y CONSTRUCCIONES S.A.S.", "11 A&N INGENIERÍA Y CONSTRUCCIONES S.A.S. $ 801.716.430,90 48,4010430"), "el «&» se compara igual a los dos lados");
+    assert.ok(!Ev.nombreEnCita("KAXA SAS", "2 CONSORCIO TORRE PT $ 958,799,541.00 46.97"), "otro oferente no sostiene la cita");
+    assert.strictEqual(Ev.elegirDocumento([{ tipo: "resolucion", nombre: "RESOLUCION DE ADJUDICACION.pdf", legible: true, fecha_carga: "2026-09-10" }, { tipo: "informe_evaluacion", nombre: "Informe definitivo.pdf", legible: true, fecha_carga: "2026-09-01" }]).papel, "informe_evaluacion", "el informe va antes que la resolución");
+    assert.strictEqual(Ev.elegirDocumento([{ tipo: "otro", nombre: "ACTA DE AUDIENCIA DE ADJUDICACION.pdf", legible: true }]).papel, "acta");
+    assert.strictEqual(Ev.elegirDocumento([{ tipo: "pliego", nombre: "pliego definitivo.pdf", legible: true }]), null, "un pliego no es una evaluación");
+    {
+      /* la resolución que lleva el nombre del consorcio ganador: el clasificador real la da por «de proponente» (RE_PROPONENTE:
+         «consorcio») y aun así es la evaluación que se busca; la elección no puede filtrar por `de_la_entidad` */
+      const res = require("../lib/documentos_proceso.js").clasificarArchivo({ nombre_archivo: "RESOLUCION DE ADJUDICACION CONSORCIO VIAS 2025.pdf", extension: "pdf", url_descarga_documento: "https://community.secop.gov.co/x", fecha_carga: "2026-03-01" }, { cierre: "2026-02-01" });
+      assert.strictEqual(res.de_la_entidad, false, "premisa: el clasificador la toma por documento de un proponente");
+      assert.strictEqual((Ev.elegirDocumento([res]) || {}).papel, "resolucion_adjudicacion", "la resolución con el nombre del consorcio se elige igual");
+    }
+
+    const L1 = "1. INGENIERIA COLOMBIANA MONTERUBIO S.A.S $ 1.478.561.138,00 1,98% 98,02% $ 1.478.561.138,00 27,50 49,50 77,00 2";
+    const L2 = "2. GENERAL SERVICIOS S&G S.A.S $ 1.467.349.444,00 2,73% 97,27% $ 1.467.349.444,00 27,50 49,12 76,62 3";
+    const L4 = "4. ELECTROUNIVERSAL S.A.S $ 1.496.070.581,00 0,82% 99,18% $ 1.496.070.581,00 30,25 48,91 79,16 1";
+    const L3 = "PROPONENTE 3. COOPRESSTA LTDA: EL PROPONENTE DEBE SEÑALAR EL CONTRATO QUE DA CUMPLIMIENTO A LA EXPERIENCIA ESPECIFICA. NO SUBSANA";
+    const METODO = "TRM del 1 de junio de 2026 corresponde a 3.678,15 método seleccionado MEDIANA ECONÓMICA CON VALOR ABSOLUTO";
+    const ADJ = "Se recomienda adjudicar al proponente ELECTROUNIVERSAL S.A.S por valor de $ 1.496.070.581,00";
+    const textoEv = ["\f1", "INFORME DE EVALUACIÓN TÉCNICA DEFINITIVO", METODO, "\f2", L1, L2, L4, "\f3", L3, ADJ].join("\n");
+    const hab = (oferente, cita, valor, pp, pt) => ({ oferente, estado: "habil", valor, puntaje_precio: pp, puntaje_total: pt, cita, pagina: 2 });
+    const captura = { documento_util: true,
+      metodo: { nombre: "mediana", cita: METODO, pagina: 1 }, trm: { valor: "3.678,15", fecha: "1 de junio de 2026", cita: METODO, pagina: 1 },
+      adjudicatario: { nombre: "ELECTROUNIVERSAL S.A.S", valor: "$ 1.496.070.581,00", cita: ADJ, pagina: 3 },
+      ofertas: [
+        hab("INGENIERIA COLOMBIANA MONTERUBIO S.A.S", L1, "$ 1.478.561.138,00", "49,50", "77,00"),
+        hab("GENERAL SERVICIOS S&G S.A.S", L2, "$ 1.467.349.444,00", "49,12", "76,62"),
+        hab("ELECTROUNIVERSAL S.A.S", L4, "$ 1.496.070.581,00", "48,91", "79,16"),
+        { oferente: "COOPRESSTA LTDA", estado: "rechazada", motivo: "experiencia", motivo_texto: "no señaló el contrato de la experiencia específica", cita: L3, pagina: 3 },
+        hab("CONSORCIO FANTASMA", "CONSORCIO FANTASMA $ 1.400.000.000,00 49,50 99,50", "$ 1.400.000.000,00", "49,50", "99,50"),
+        hab("KAXA SAS", L1, "$ 1.478.561.138,00", "49,50", "77,00"),
+      ] };
+    const v = Ev.verificarCaptura(captura, textoEv);
+    assert.ok(!v.errores, `la forma cuadra con el esquema: ${JSON.stringify(v.errores)}`);
+    assert.deepStrictEqual(v.captura.ofertas.map((o) => o.oferente), ["INGENIERIA COLOMBIANA MONTERUBIO S.A.S", "GENERAL SERVICIOS S&G S.A.S", "ELECTROUNIVERSAL S.A.S", "COOPRESSTA LTDA"], "la oferta inventada y la que no está en su cita se apartan");
+    assert.deepStrictEqual(v.verificacion.apartados.map((a) => a.motivo).sort(), ["cita_no_encontrada", "la_cita_no_nombra_al_oferente"], JSON.stringify(v.verificacion.apartados));
+    assert.deepStrictEqual([v.captura.metodo, v.captura.trm.valor, v.captura.adjudicatario.valor], ["mediana", 3678.15, 1496070581]);
+    assert.strictEqual(v.captura.ofertas[3].estado, "rechazada", "«NO SUBSANA» sostiene el rechazo");
+    // una cifra fuera de su cita se QUITA (queda sin dato); un estado sin palabra que lo respalde queda «sin_dato»
+    const v2 = Ev.verificarCaptura({ documento_util: true, ofertas: [hab("GENERAL SERVICIOS S&G S.A.S", L2, "$ 1.467.349.444,00", "49,12", "80,00"),
+      { oferente: "ELECTROUNIVERSAL S.A.S", estado: "rechazada", motivo: "tecnica", cita: L4, pagina: 2 }] }, textoEv);
+    assert.ok(v2.captura.ofertas[0].puntaje_total === undefined && v2.captura.ofertas[0].puntaje_precio === 49.12, `«80,00» no está en la cita: se quita, el resto queda: ${JSON.stringify(v2.captura.ofertas[0])}`);
+    assert.strictEqual(v2.captura.ofertas[1].estado, "sin_dato", "un «rechazada» sin palabra de rechazo en la cita no se cree");
+    assert.ok(v2.verificacion.apartados.some((a) => a.motivo === "cifra_fuera_de_la_cita") && v2.verificacion.apartados.some((a) => a.motivo === "estado_sin_respaldo_en_la_cita"));
+    assert.ok(Ev.verificarCaptura({ documento_util: true, ofertas: [{ oferente: "X", estado: "quizas", cita: "x", pagina: 1 }] }, textoEv).errores, "un estado fuera del esquema es error de forma");
+    /* con dos ofertas apartadas el proceso queda INCOMPLETO: sus rechazos cuentan, pero no entra en las reglas que comparan
+       ofertas entre sí (la apartada podía ser la del mejor puntaje de precio) */
+    assert.strictEqual(v.captura.completa, false, "con ofertas apartadas el proceso no está completo");
+    const Hi = Ev.hechosDeEntidad([{ captura: v.captura }]);
+    assert.deepStrictEqual([Hi.procesos, Hi.rechazadas, Hi.precio.con_dato, Hi.fuera_del_precio.con_dato], [1, 1, 0, 0], "un proceso incompleto no cuenta para el precio ni para los puntos fuera del precio");
+    // la misma captura sin las dos inventadas: completa
+    const capturaLimpia = { ...captura, ofertas: captura.ofertas.slice(0, 4) };
+    const vL = Ev.verificarCaptura(capturaLimpia, textoEv);
+    assert.ok(vL.captura.completa === true && vL.verificacion.apartados_total === 0, `la captura limpia está completa: ${JSON.stringify(vL.verificacion)}`);
+    // los hechos: el ganador no tenía el mejor puntaje de precio y dos hábiles perdieron puntos fuera del precio
+    const H = Ev.hechosDeEntidad([{ portafolio: "CO1.BDOS.1", id_proceso: "CO1.REQ.1", captura: vL.captura }]);
+    assert.deepStrictEqual([H.procesos, H.ofertas, H.habiles, H.rechazadas, H.sin_dato, H.motivos.experiencia], [1, 4, 3, 1, 0, 1]);
+    assert.deepStrictEqual(H.precio, { con_dato: 1, gano_sin_el_mejor_precio: 1 }, "Suratá: ganó la tercera en precio");
+    assert.deepStrictEqual([H.fuera_del_precio.con_dato, H.fuera_del_precio.con_diferencias, H.fuera_del_precio.ofertas_que_perdieron], [1, 1, 2]);
+    // páginas con imagen sin leer, o un texto cortado al tope: el proceso tampoco está completo
+    assert.strictEqual(Ev.verificarCaptura(capturaLimpia, textoEv, { paginas_sin_leer: [7] }).captura.completa, false, "una página sin leer deja el proceso incompleto");
+    assert.strictEqual(Ev.verificarCaptura(capturaLimpia, textoEv, { recortado: true }).captura.completa, false, "un texto recortado deja el proceso incompleto");
+
+    /* LO QUE CAZÓ LA REVISIÓN ADVERSARIA (26-oct-2026), cada caso con su reproducción */
+    // (1) una cita de más de 200 caracteres: `buscarCita` solo compara los primeros 200, y la cola inventada se colaba
+    {
+      const real = "INFORME DE EVALUACION DEFINITIVO DEL PROCESO DE LICITACION PUBLICA NUMERO DIEZ, VERIFICACION DE REQUISITOS HABILITANTES Y PONDERACION DE LAS OFERTAS PRESENTADAS POR LOS PROPONENTES DENTRO DEL PLAZO FIJADO EN EL CRONOGRAMA";
+      const t = ["\f1", real].join("\n"), larga = `${real} CONSORCIO FANTASMA $ 999.999.999,00 60,00 100,00 RECHAZADA`;
+      const r = Ev.verificarCaptura({ documento_util: true, ofertas: [{ oferente: "CONSORCIO FANTASMA", estado: "rechazada", valor: "$ 999.999.999,00", cita: larga, pagina: 1 }] }, t);
+      assert.ok(!r.captura.ofertas.length && r.verificacion.apartados[0].motivo === "cita_demasiado_larga", `una cita larga se aparta entera: ${JSON.stringify(r.verificacion.apartados)}`);
+    }
+    // (2) la coma corrida: «4,95» no es «49,5»; y una TRM «3.678» son 3.678 pesos
+    assert.ok(!Ev.cifraEnCita("4,95", "CONSORCIO X 49,5", "puntaje") && !Ev.cifraEnCita("$ 14.960.705,81", "1.496.070.581", "dinero") && !Ev.cifraEnCita("25", "INFRAOBRAS 49,5 20 0,25", "puntaje"), "una cifra con la coma en otro sitio no está en la cita");
+    assert.strictEqual(Ev.numeroDe("3.678", "trm"), 3678, "una TRM con una marca y tres cifras detrás son miles");
+    // (4) el estado: una palabra de rechazo gana a un puntaje, y «causales de rechazo» no es un rechazo
+    {
+      const fila = (txt) => ["\f1", txt].join("\n");
+      const estado = (txt, pedido, extra = {}) => Ev.verificarCaptura({ documento_util: true, ofertas: [{ oferente: "CONSORCIO ALFA", estado: pedido, cita: txt, pagina: 1, ...extra }] }, fila(txt)).captura.ofertas[0];
+      assert.strictEqual(estado("CONSORCIO ALFA $ 900.000.000,00 RECHAZADA 0,00", "habil", { puntaje_precio: "0,00" }).estado, "sin_dato", "«RECHAZADA 0,00» no queda hábil por traer un puntaje");
+      assert.strictEqual(estado("CONSORCIO ALFA INCUMPLE LA EXPERIENCIA EXIGIDA", "habil").estado, "sin_dato", "«INCUMPLE» no sostiene un hábil");
+      assert.strictEqual(estado("CONSORCIO ALFA NO SE HABILITA POR EXPERIENCIA", "habil").estado, "sin_dato", "«NO SE HABILITA» no sostiene un hábil");
+      assert.strictEqual(estado("CONSORCIO ALFA CUMPLE Y NO SE ENCUENTRA INCURSO EN CAUSALES DE RECHAZO", "habil").estado, "habil", "«no incurso en causales de rechazo» es de una oferta hábil");
+      assert.strictEqual(estado("CONSORCIO ALFA CUMPLE Y NO SE ENCUENTRA INCURSO EN CAUSALES DE RECHAZO", "rechazada").estado, "sin_dato", "y no sostiene un rechazo");
+      const m = estado("CONSORCIO ALFA RECHAZADA POR NO ACREDITAR LA EXPERIENCIA ESPECIFICA", "rechazada", { motivo: "financiera" });
+      assert.ok(m.estado === "rechazada" && m.motivo === undefined, `un motivo sin su palabra en el texto no se guarda: ${JSON.stringify(m)}`);
+      assert.strictEqual(estado("CONSORCIO ALFA RECHAZADA POR NO ACREDITAR LA EXPERIENCIA ESPECIFICA", "rechazada", { motivo: "experiencia" }).motivo, "experiencia");
+    }
+    // (5) un nombre parecido no es el mismo oferente
+    assert.ok(!Ev.nombreEnCita("CONSORCIO VIAS DEL NORTE", "3 CONSORCIO VIAS DEL SUR $ 900.000.000,00 48,10") && !Ev.nombreEnCita("CONSORCIO VIAL 2025", "CONSORCIO VIAL 2024 $ 1,00"), "todas las palabras propias del nombre, números incluidos");
+    assert.ok(!Ev.parecido("CONSORCIO VIAL SANTANDER 2025", "CONSORCIO VIAL SANTANDER 2024") && Ev.parecido("CONSORCIO TORRE PT", "CONSORCIO TORRE P.T."), "otro número es otro consorcio; la misma sigla escrita de otra forma, no");
+    assert.ok(!Ev.parecido("CONSORCIO VIAL SANTANDER 2025", "CONSORCIO VIAL SANTANDER"), "con número y sin él no se da por el mismo: ante la duda, el proceso no cuenta");
+    // (3) la misma oferta capturada dos veces se cuenta una; con cifras distintas, el proceso queda incompleto
+    {
+      const dos = Ev.verificarCaptura({ ...capturaLimpia, ofertas: [...capturaLimpia.ofertas, { oferente: "ELECTROUNIVERSAL S.A.S", estado: "sin_dato", cita: L4, pagina: 2 }] }, textoEv);
+      assert.ok(dos.captura.ofertas.length === 4 && dos.captura.completa === true, `repetida con los mismos datos: una sola y completa (${dos.captura.ofertas.length})`);
+      const H2 = Ev.hechosDeEntidad([{ captura: dos.captura }]);
+      assert.deepStrictEqual([H2.ofertas, H2.habiles, H2.precio.gano_sin_el_mejor_precio], [4, 3, 1]);
+      const choque = Ev.verificarCaptura({ ...capturaLimpia, ofertas: [...capturaLimpia.ofertas, hab("ELECTROUNIVERSAL S.A.S", L4, "$ 1.496.070.581,00", "30,25", "79,16")] }, textoEv);
+      assert.ok(choque.captura.completa === false && choque.captura.ofertas.find((o) => o.oferente === "ELECTROUNIVERSAL S.A.S").puntaje_precio === undefined, "repetida con puntajes distintos: sin dato e incompleta");
+    }
+    // «sin dato» no es «ganó el mejor»: con un hábil sin puntaje de precio, el proceso no entra en la cuenta
+    const sinUno = { ...vL.captura, ofertas: vL.captura.ofertas.map((o, i) => (i === 1 ? { ...o, puntaje_precio: undefined } : o)) };
+    assert.deepStrictEqual(Ev.hechosDeEntidad([{ captura: sinUno }]).precio, { con_dato: 0, gano_sin_el_mejor_precio: 0 }, "un puntaje que falta saca el proceso de la cuenta, no lo vuelve cero");
+    assert.strictEqual(Ev.hechosDeEntidad([{ captura: { documento_util: false, ofertas: [] } }]).procesos, 0, "un acta de apertura no cuenta como proceso leído");
+    assert.strictEqual(Ev.hechosDeEntidad([{ captura: { documento_util: false, ofertas: [{ oferente: "A", estado: "rechazada", motivo: "otro" }] } }]).rechazadas, 0, "un documento que no evalúa ofertas no suma rechazos aunque nombre a alguien");
+    const redondeo = { documento_util: true, completa: true, ofertas: [{ oferente: "A", estado: "habil", puntaje_precio: 48.1567425, puntaje_total: 99.6587425 }, { oferente: "B", estado: "habil", puntaje_precio: 48.5, puntaje_total: 100 }] };
+    assert.strictEqual(Ev.hechosDeEntidad([{ captura: redondeo }]).fuera_del_precio.con_diferencias, 0, "0,002 puntos de diferencia por redondeo no es perder puntos fuera del precio (Neiva)");
+
+    // el handler real, contra el Redis simulado
+    const APIp = require("../api/pliego.js");
+    const P = "CO1.BDOS.88800001", ID = "CO1.REQ.88800001";
+    const pT = await invocarPost(APIp, "/api/pliego?op=evaluacion", { id_proceso: ID, portafolio: P, entidad: "Gobernación de Prueba", nit: "800.123.456-7", documento: { nombre: "Informe definitivo.pdf", papel: "informe_evaluacion", id_documento: "1" }, texto: textoEv, paginas_ocr: 0 }, CAB_TOKEN);
+    assert.ok(pT.status === 200 && pT.cuerpo.estado === "en_cola", `el texto se guarda y queda en cola: ${pT.status} ${JSON.stringify(pT.cuerpo)}`);
+    const pend = await invocar(APIp, "/api/pliego?op=evaluacion&pendientes=1", CAB_TOKEN);
+    assert.ok(pend.status === 200 && pend.cuerpo.pendientes.some((x) => x.portafolio === P), `pendiente para la sesión: ${JSON.stringify(pend.cuerpo)}`);
+    const exp = await invocar(APIp, `/api/pliego?op=evaluacion&expediente=1&portafolio=${P}`, CAB_TOKEN);
+    assert.ok(exp.status === 200 && /=== Página 2 ===/.test(exp.cuerpo.texto_paginado) && exp.cuerpo.esquema && exp.cuerpo.instrucciones, "el expediente trae el texto paginado, el esquema y las instrucciones");
+    assert.strictEqual((await invocarPost(APIp, "/api/pliego?op=evaluacion", { portafolio: P, captura }, CAB_TOKEN)).status, 400, "la captura solo la manda una sesión (motor «sesion»)");
+    const malF = await invocarPost(APIp, "/api/pliego?op=evaluacion", { portafolio: P, motor: "sesion", captura: { ofertas: "todas" } }, CAB_TOKEN);
+    assert.ok(malF.status === 400 && Array.isArray(malF.cuerpo.detalle), "una forma mala responde 400 con el detalle");
+    assert.strictEqual((await invocarPost(APIp, "/api/pliego?op=evaluacion", { portafolio: "CO1.BDOS.99999999", motor: "sesion", captura }, CAB_TOKEN)).status, 404, "sin texto guardado no hay contra qué verificar");
+    const pC = await invocarPost(APIp, "/api/pliego?op=evaluacion", { portafolio: P, motor: "sesion", captura }, CAB_TOKEN);
+    assert.ok(pC.status === 200 && pC.cuerpo.verificacion.ofertas_verificadas === 4 && pC.cuerpo.verificacion.ofertas_recibidas === 6 && pC.cuerpo.verificacion.completa === false, `la captura se verifica y se guarda: ${JSON.stringify(pC.cuerpo)}`);
+    const eInc = await invocar(APIp, "/api/pliego?op=evaluacion&entidad=Gobernaci%C3%B3n%20de%20Prueba", CAB_TOKEN);
+    assert.ok(eInc.cuerpo.hechos.rechazadas === 1 && eInc.cuerpo.hechos.precio.con_dato === 0, `incompleta: cuenta el rechazo, no la regla de precio: ${JSON.stringify(eInc.cuerpo.hechos)}`);
+    // la sesión corrige y reenvía: la captura nueva reemplaza a la anterior
+    const pC2 = await invocarPost(APIp, "/api/pliego?op=evaluacion", { portafolio: P, motor: "sesion", captura: capturaLimpia }, CAB_TOKEN);
+    assert.ok(pC2.status === 200 && pC2.cuerpo.verificacion.completa === true, `reenviada y completa: ${JSON.stringify(pC2.cuerpo.verificacion)}`);
+    const pend2 = await invocar(APIp, "/api/pliego?op=evaluacion&pendientes=1", CAB_TOKEN);
+    assert.ok(!pend2.cuerpo.pendientes.some((x) => x.portafolio === P), "interpretado: deja de ser pendiente");
+    assert.strictEqual((await invocar(APIp, `/api/pliego?op=evaluacion&expediente=1&portafolio=${P}`, CAB_TOKEN)).status, 200, "pero el texto sigue para poder corregir y reenviar");
+    for (const q of ["entidad=Gobernaci%C3%B3n%20de%20Prueba", "entidad=Otro%20nombre&nit=800123456"]) {
+      const e = await invocar(APIp, `/api/pliego?op=evaluacion&${q}`, CAB_TOKEN);
+      assert.ok(e.status === 200 && e.cuerpo.hechos.procesos === 1 && e.cuerpo.hechos.rechazadas === 1 && e.cuerpo.hechos.precio.gano_sin_el_mejor_precio === 1 && e.cuerpo.procesos[P].estado === "leido",
+        `la entidad se encuentra por su nombre y por su NIT (${q}): ${JSON.stringify(e.cuerpo.hechos)}`);
+    }
+    {
+      const { escribirJSONComprimido: escEv } = require("../lib/almacen.js");
+      const rEv = crearRedis({});
+      // (8) un escaneo que el OCR no leyó llega como puros marcadores de página: no es un documento leído
+      const soloMarcas = Array.from({ length: 30 }, (_, i) => `\f${i + 1}`).join("\n");
+      const pV = await invocarPost(APIp, "/api/pliego?op=evaluacion", { id_proceso: "CO1.REQ.88800002", portafolio: "CO1.BDOS.88800002", entidad: "Gobernación de Prueba", texto: soloMarcas }, CAB_TOKEN);
+      assert.strictEqual(pV.status, 422, `solo marcadores de página: no se guarda (${pV.status})`);
+      // (7) un texto que caducó sin interpretarse deja de estar «en cola» y vuelve a ser un proceso por leer
+      const P3 = "CO1.BDOS.88800003";
+      await invocarPost(APIp, "/api/pliego?op=evaluacion", { id_proceso: "CO1.REQ.88800003", portafolio: P3, entidad: "Gobernación de Prueba", nit: "800123456", texto: textoEv }, CAB_TOKEN);
+      assert.strictEqual((await invocar(APIp, "/api/pliego?op=evaluacion&entidad=Gobernaci%C3%B3n%20de%20Prueba", CAB_TOKEN)).cuerpo.procesos[P3].estado, "en_cola");
+      await rEv.del(Ev.claveTexto(P3));
+      assert.strictEqual((await invocar(APIp, "/api/pliego?op=evaluacion&entidad=Gobernaci%C3%B3n%20de%20Prueba", CAB_TOKEN)).cuerpo.procesos[P3].estado, "caducado", "un texto caducado no queda «en cola» para siempre");
+      // (10) dos entidades homónimas: pedida con NIT, la entrada guardada con OTRO NIT no es suya
+      const P4 = "CO1.BDOS.88800004";
+      await invocarPost(APIp, "/api/pliego?op=evaluacion", { id_proceso: "CO1.REQ.88800004", portafolio: P4, entidad: "Gobernación de Prueba", nit: "890000002", texto: textoEv }, CAB_TOKEN);
+      const conNit = await invocar(APIp, "/api/pliego?op=evaluacion&entidad=Gobernaci%C3%B3n%20de%20Prueba&nit=800123456", CAB_TOKEN);
+      assert.ok(!conNit.cuerpo.procesos[P4] && conNit.cuerpo.procesos[P], `la homónima de otro NIT no se mezcla: ${Object.keys(conNit.cuerpo.procesos)}`);
+      // (6) con más de 200 textos ya interpretados, el pendiente sigue saliendo (se filtra antes de recortar)
+      for (let i = 0; i < 201; i++) {
+        const px = `CO1.BDOS.7710${String(i).padStart(4, "0")}`;
+        await escEv(rEv, Ev.claveTexto(px), { portafolio: px, id_proceso: `CO1.REQ.7710${i}`, entidad: "Relleno", texto: "x" }, { ttl: 600 });
+        await rEv.set(Ev.claveCaptura(px), "1");
+      }
+      // el pendiente llega DESPUÉS de los 201 (el barrido los devuelve antes que a él)
+      const P5 = "CO1.BDOS.88800005";
+      await invocarPost(APIp, "/api/pliego?op=evaluacion", { id_proceso: "CO1.REQ.88800005", portafolio: P5, entidad: "Relleno", texto: textoEv }, CAB_TOKEN);
+      const claves5 = await rEv.scan(Ev.claveTexto("*"));
+      assert.ok(claves5.indexOf(Ev.claveTexto(P5)) >= 200, `premisa: el pendiente queda más allá de los primeros 200 del barrido (${claves5.indexOf(Ev.claveTexto(P5))})`);
+      const pend3 = await invocar(APIp, "/api/pliego?op=evaluacion&pendientes=1", CAB_TOKEN);
+      assert.ok(pend3.cuerpo.pendientes.some((x) => x.portafolio === P5), `el pendiente no se esconde detrás de 201 ya interpretados: ${pend3.cuerpo.pendientes.length}`);
+      for (let i = 0; i < 201; i++) { const px = `CO1.BDOS.7710${String(i).padStart(4, "0")}`; await rEv.del(Ev.claveTexto(px)); await rEv.del(Ev.claveCaptura(px)); }
+      await rEv.del(Ev.claveTexto(P5));
+    }
+    const nada = await invocar(APIp, "/api/pliego?op=evaluacion&entidad=Entidad%20sin%20lecturas", CAB_TOKEN);
+    assert.ok(nada.status === 200 && nada.cuerpo.hechos.procesos === 0 && nada.cuerpo.hechos.rechazadas === 0, "una entidad sin lecturas: cero procesos leídos, sin inventar nada");
+    assert.strictEqual((await invocar(APIp, "/api/pliego?op=evaluacion", CAB_TOKEN)).status, 400, "sin entidad ni NIT: 400 con qué falta");
+    assert.strictEqual((await invocar(APIp, "/api/pliego?op=evaluacion&entidad=X")).status, 401, "sin credencial no hay datos");
+
+    // el lector del navegador: solo las páginas que pintan una imagen pasan por OCR (se ejecuta el código de public/pliego.js)
+    {
+      const fsE = require("fs"), pathE = require("path");
+      const srcP = fsE.readFileSync(pathE.join(__dirname, "..", "public", "pliego.js"), "utf8");
+      const ini = srcP.indexOf("  const OPS_DE_IMAGEN = "), fin = srcP.indexOf("  window.__pliegoLeerPdfMixto = ");
+      assert.ok(ini > 0 && fin > ini, "pliego.js define las páginas con imagen antes del lector mixto");
+      const { paginasConImagen, paginasParaOcr } = new Function(`${srcP.slice(ini, fin)}; return { paginasConImagen, paginasParaOcr };`)();
+      const OPS = { paintImageXObject: 85, paintInlineImageXObject: 86, paintJpegXObject: 82, showText: 44 };
+      assert.deepStrictEqual(paginasConImagen([[44, 44], [44, 85], [], [86], [82, 44]], OPS), [2, 4, 5], "texto solo no va a OCR; una tabla pegada como imagen sí");
+      /* los logos hacen que toda página pinte imagen: con cupo 2 de 6, van las dos de menos texto (la 5 y la 2), en orden de página */
+      const largos = [2146, 793, 2599, 1178, 636, 2170];
+      assert.deepStrictEqual(paginasParaOcr([1, 2, 3, 4, 5, 6], largos, 2), { lista: [2, 5], sinCupo: [1, 3, 4, 6] }, "el cupo de OCR va a las páginas con menos texto, no a las primeras");
+      assert.deepStrictEqual(paginasParaOcr([2, 4], largos, 30), { lista: [2, 4], sinCupo: [] }, "con cupo de sobra entran todas");
+    }
+    console.log("· unidad evaluaciones: cifras a la colombiana y a la inglesa, la cifra completa en su cita, el oferente en su cita, el estado con respaldo, los hechos solo con lo verificado y el handler real (texto → pendiente → expediente → captura verificada → hechos por nombre y por NIT)");
   }
 
   /* unidad: el corte de la alerta de precio artificialmente bajo, por modalidad (18-oct-2026).
@@ -12268,6 +12515,8 @@ async function main() {
           media: { clases: "", emoji: "●", titulo: "Media" }, alta: { clases: "", emoji: "●", titulo: "Alta" } };
         const htmlEntidadPorAnio = () => "", htmlProrrogaEntidad = () => "", htmlPlazoAdjudicacion = () => "", htmlDesiertos = () => "";
         const bloqueProponentes = () => "", bloqueEjecucion = () => "", tabla = () => "";
+        /* «Lo que dicen sus evaluaciones» (26-oct-2026) se pinta aparte, tras el modal: su bloque tiene su propia prueba */
+        let entidadAbierta = null; const pintarEvaluaciones = () => {};
         const cargando = (m) => "<p>" + esc(m) + "</p>";
         const conSesion = (o) => ({ ...(o || {}), credentials: "same-origin" });
         const msg401 = () => "401", fraseDeFallo = ({ status }) => "La consulta falló (código " + status + ").";

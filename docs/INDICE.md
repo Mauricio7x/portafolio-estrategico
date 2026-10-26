@@ -20,6 +20,7 @@ con `node tests/estado.js`, y las coordenadas las da `node tests/mapa.js <térmi
 | Documento | Estado | Sustituido por | Citado desde | Título |
 |---|---|---|---|---|
 | `docs/archivo/ANALISIS_ESTRATEGICO.md` | archivado | docs/CONSULTORIA_2026-09-04_RESUMEN.md | — | Análisis estratégico de Detekta · agosto 2026 |
+| `docs/ADJUDICACION_FASE0_2026-10-25.md` | informe fechado | — | — | Probabilidad de adjudicación · Fase 0: qué datos abiertos hay para saber quién gana una… |
 | `docs/CONSULTORIA_2026-09-04_RESUMEN.md` | informe fechado | — | `tests` | Consultoría integral sobre Detekta · resumen para el dueño (antes → mejora) |
 | `docs/ESTRUCTURA_ORGANIZACIONAL.md` | informe fechado | docs/ORGANIZACION_AGENTES.md | — | Detekta como empresa: la estructura que su funcionamiento exige |
 | `docs/INFRAESTRUCTURA_2026-09-27.md` | informe fechado | — | `lib` | Infraestructura de Detekta · lo que hay, lo que se propone y cuánto tarda llegar (27-se… |
@@ -29,6 +30,7 @@ con `node tests/estado.js`, y las coordenadas las da `node tests/mapa.js <térmi
 | `docs/PROPONENTE_PLURAL.md` | informe fechado | — | `lib` · `tests` | Proponente plural: la norma vigente, 241 pliegos reales y las cifras de los RUP |
 | `docs/RAMAS_RETIRADAS.md` | informe fechado | — | `tests` | Ramas superadas al unificar en `main` (21-ago-2026) |
 | `docs/CONTRATACION_ESTATAL.md` | informe fechado (19-oct-2026) | — | `.claude` | Contratación estatal de obra en Colombia · base de conocimiento |
+| `docs/ADJUDICACION_NIVEL3_DISENO_2026-10-26.md` | pendiente del dueño | — | `lib` | Probabilidad de adjudicación · Nivel 3: capturar quién quedó hábil para poder calcular … |
 | `docs/ARQUITECTURA_MULTITENANT.md` | pendiente del dueño | — | — | Anexo C · Arquitectura multi-inquilino, escalabilidad y datos |
 | `docs/CHECKLIST_PRODUCCION.md` | pendiente del dueño | — | — | Anexo F · Lista de verificación previa a producción |
 | `docs/EMPEZAR_AQUI.md` | pendiente del dueño | — | `README.md` | EMPEZAR AQUÍ · Guía de cero para convertir Detekta en un negocio |

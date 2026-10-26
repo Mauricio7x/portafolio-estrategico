@@ -1,0 +1,693 @@
+{
+ "por_modalidad": {
+  "licitacion": {
+   "2020": {
+    "adjudicados": 335,
+    "a": 335,
+    "b": 157,
+    "c": 191,
+    "d": 3,
+    "usable": 128
+   },
+   "2021": {
+    "adjudicados": 874,
+    "a": 870,
+    "b": 393,
+    "c": 618,
+    "d": 14,
+    "usable": 294
+   },
+   "2022": {
+    "adjudicados": 1297,
+    "a": 1287,
+    "b": 557,
+    "c": 855,
+    "d": 18,
+    "usable": 443
+   },
+   "2023": {
+    "adjudicados": 1307,
+    "a": 1305,
+    "b": 732,
+    "c": 985,
+    "d": 25,
+    "usable": 595
+   },
+   "2024": {
+    "adjudicados": 753,
+    "a": 751,
+    "b": 401,
+    "c": 529,
+    "d": 20,
+    "usable": 337
+   },
+   "2025": {
+    "adjudicados": 1170,
+    "a": 1163,
+    "b": 538,
+    "c": 795,
+    "d": 20,
+    "usable": 424
+   },
+   "2026": {
+    "adjudicados": 814,
+    "a": 811,
+    "b": 438,
+    "c": 599,
+    "d": 10,
+    "usable": 398
+   },
+   "otro_o_sin_fecha": {
+    "adjudicados": 17,
+    "a": 17,
+    "b": 10,
+    "c": 13,
+    "d": 0,
+    "usable": 10
+   }
+  },
+  "menor_cuantia": {
+   "2020": {
+    "adjudicados": 679,
+    "a": 675,
+    "b": 426,
+    "c": 552,
+    "d": 168,
+    "usable": 341
+   },
+   "2021": {
+    "adjudicados": 1253,
+    "a": 1245,
+    "b": 673,
+    "c": 1116,
+    "d": 307,
+    "usable": 574
+   },
+   "2022": {
+    "adjudicados": 1652,
+    "a": 1646,
+    "b": 565,
+    "c": 1078,
+    "d": 274,
+    "usable": 474
+   },
+   "2023": {
+    "adjudicados": 2143,
+    "a": 2134,
+    "b": 858,
+    "c": 1855,
+    "d": 420,
+    "usable": 724
+   },
+   "2024": {
+    "adjudicados": 1813,
+    "a": 1805,
+    "b": 797,
+    "c": 1598,
+    "d": 336,
+    "usable": 667
+   },
+   "2025": {
+    "adjudicados": 2743,
+    "a": 2736,
+    "b": 868,
+    "c": 2419,
+    "d": 354,
+    "usable": 745
+   },
+   "2026": {
+    "adjudicados": 1848,
+    "a": 1838,
+    "b": 629,
+    "c": 1636,
+    "d": 278,
+    "usable": 528
+   },
+   "otro_o_sin_fecha": {
+    "adjudicados": 39,
+    "a": 39,
+    "b": 14,
+    "c": 32,
+    "d": 3,
+    "usable": 11
+   }
+  },
+  "minima": {
+   "2020": {
+    "adjudicados": 618,
+    "a": 616,
+    "b": 438,
+    "c": 537,
+    "d": 302,
+    "usable": 374
+   },
+   "2021": {
+    "adjudicados": 889,
+    "a": 886,
+    "b": 540,
+    "c": 822,
+    "d": 397,
+    "usable": 467
+   },
+   "2022": {
+    "adjudicados": 1055,
+    "a": 1050,
+    "b": 489,
+    "c": 699,
+    "d": 401,
+    "usable": 420
+   },
+   "2023": {
+    "adjudicados": 1412,
+    "a": 1406,
+    "b": 615,
+    "c": 1234,
+    "d": 536,
+    "usable": 528
+   },
+   "2024": {
+    "adjudicados": 1382,
+    "a": 1375,
+    "b": 731,
+    "c": 1277,
+    "d": 603,
+    "usable": 661
+   },
+   "2025": {
+    "adjudicados": 1765,
+    "a": 1764,
+    "b": 766,
+    "c": 1628,
+    "d": 644,
+    "usable": 681
+   },
+   "2026": {
+    "adjudicados": 1070,
+    "a": 1066,
+    "b": 452,
+    "c": 951,
+    "d": 369,
+    "usable": 397
+   },
+   "otro_o_sin_fecha": {
+    "adjudicados": 32,
+    "a": 31,
+    "b": 14,
+    "c": 28,
+    "d": 10,
+    "usable": 13
+   }
+  }
+ },
+ "rescate_posible": {
+  "definicion": "Procesos analizados (adjudicados, sin exclusión previa, con ofertas) en los que alguna oferta NO confidencial con valor entre 0 y 50 % del precio base (0 < valor < 0.5*precio_base) es igual al valor adjudicado. 'peso' compara ambos redondeados al peso (mitad hacia arriba); 'exacto' compara los decimales completos; 'peso_con_identidad' exige además que la oferta baja tenga identidad (paso 3). Esas ofertas las descartaría mi paso 6; la lectura con rescate podría conservarlas.",
+  "total_procesos_peso": 68,
+  "total_procesos_exacto": 57,
+  "total_procesos_peso_con_identidad": 68,
+  "de_los_peso__hoy_en_b": 37,
+  "de_los_peso__hoy_no_b": 31,
+  "de_los_peso__con_exactamente_una_oferta_del_adjudicatario_hoy": 0,
+  "de_los_peso__sin_c_hoy": 67,
+  "de_los_peso__excluidos_por_lote_por_ofertas": 1,
+  "por_modalidad_y_anio": {
+   "licitacion": {
+    "2020": {},
+    "2021": {
+     "peso": 1,
+     "peso_no_b": 1,
+     "peso_sin_c": 1,
+     "exacto": 1,
+     "peso_con_identidad": 1
+    },
+    "2022": {
+     "peso": 3,
+     "peso_no_b": 3,
+     "peso_sin_c": 3,
+     "exacto": 3,
+     "peso_con_identidad": 3
+    },
+    "2023": {
+     "peso": 1,
+     "peso_no_b": 1,
+     "peso_sin_c": 1,
+     "exacto": 1,
+     "peso_con_identidad": 1
+    },
+    "2024": {},
+    "2025": {
+     "peso": 1,
+     "peso_en_b": 1,
+     "peso_sin_c": 1,
+     "exacto": 1,
+     "peso_con_identidad": 1
+    },
+    "2026": {},
+    "otro_o_sin_fecha": {}
+   },
+   "menor_cuantia": {
+    "2020": {
+     "peso": 2,
+     "peso_en_b": 1,
+     "peso_sin_c": 2,
+     "exacto": 2,
+     "peso_con_identidad": 2,
+     "peso_no_b": 1
+    },
+    "2021": {
+     "peso": 1,
+     "peso_no_b": 1,
+     "peso_sin_c": 1,
+     "exacto": 1,
+     "peso_con_identidad": 1
+    },
+    "2022": {
+     "peso": 1,
+     "peso_no_b": 1,
+     "peso_sin_c": 1,
+     "exacto": 1,
+     "peso_con_identidad": 1
+    },
+    "2023": {},
+    "2024": {
+     "peso": 1,
+     "peso_no_b": 1,
+     "peso_sin_c": 1,
+     "exacto": 1,
+     "peso_con_identidad": 1
+    },
+    "2025": {
+     "peso": 4,
+     "peso_no_b": 4,
+     "peso_sin_c": 4,
+     "peso_con_identidad": 4,
+     "exacto": 3
+    },
+    "2026": {
+     "peso": 1,
+     "peso_no_b": 1,
+     "peso_sin_c": 1,
+     "exacto": 1,
+     "peso_con_identidad": 1
+    },
+    "otro_o_sin_fecha": {}
+   },
+   "minima": {
+    "2020": {
+     "peso": 12,
+     "peso_no_b": 4,
+     "peso_sin_c": 11,
+     "exacto": 11,
+     "peso_con_identidad": 12,
+     "peso_en_b": 8,
+     "peso_y_lote_por_ofertas": 1
+    },
+    "2021": {
+     "peso": 10,
+     "peso_no_b": 5,
+     "peso_sin_c": 10,
+     "exacto": 8,
+     "peso_con_identidad": 10,
+     "peso_en_b": 5
+    },
+    "2022": {
+     "peso": 10,
+     "peso_en_b": 8,
+     "peso_sin_c": 10,
+     "peso_con_identidad": 10,
+     "exacto": 8,
+     "peso_no_b": 2
+    },
+    "2023": {
+     "peso": 8,
+     "peso_en_b": 5,
+     "peso_sin_c": 8,
+     "exacto": 5,
+     "peso_con_identidad": 8,
+     "peso_no_b": 3
+    },
+    "2024": {
+     "peso": 1,
+     "peso_en_b": 1,
+     "peso_sin_c": 1,
+     "exacto": 1,
+     "peso_con_identidad": 1
+    },
+    "2025": {
+     "peso": 9,
+     "peso_no_b": 2,
+     "peso_sin_c": 9,
+     "exacto": 8,
+     "peso_con_identidad": 9,
+     "peso_en_b": 7
+    },
+    "2026": {
+     "peso": 2,
+     "peso_no_b": 1,
+     "peso_sin_c": 2,
+     "peso_con_identidad": 2,
+     "peso_en_b": 1,
+     "exacto": 1
+    },
+    "otro_o_sin_fecha": {}
+   }
+  }
+ },
+ "notas": [
+  "Rescate NO implementado (según indicación): mis ofertas válidas pueden diferir de las de la base por esa causa; ver 'rescate_posible'.",
+  "Se usa Decimal exacto para todas las comparaciones de montos (sin redondeo de coma flotante). Un valor que no casa con ^-?\\d+(\\.\\d+)?$ (p. ej. ausente o con notación científica) es 'sin dato' y nunca 0.",
+  "§1 empate: si dos filas tienen la misma clave de ordenamiento completa gana la ÚLTIMA en el orden del archivo (ordenamiento estable ascendente, se toma el último). Variante 'empate_gana_la_primera_fila' medida en 'sensibilidad'.",
+  "§1 adjudicado: la comparación es exacta con el texto 'Si' (los datos solo traen 'Si' y 'No'). 'Fecha como texto' se usa tal cual viene (sin recortar espacios); campo ausente = ''.",
+  "§1 último entero del id_del_proceso: dígitos al final de la cadena sin espacios posteriores; si no hay, -1.",
+  "§2 solo se reportan las tres modalidades; un proceso adjudicado cuya fila elegida es 'fuera' no se cuenta en ninguna tabla (se cuenta en diagnostico.procesos_adjudicados_en_modalidad_fuera).",
+  "§4 año: se toman los 4 primeros caracteres de fecha_adjudicacion de la fila elegida; si no está en 2020-2026 (o falta) va a 'otro_o_sin_fecha'. Un proceso cuenta en la tabla solo si la fila elegida tiene adjudicado == 'Si'.",
+  "§5 precio base del proceso: las exclusiones leen TODAS las filas del proceso (conjunto de precio_base numéricos > 0): vacío -> 'sin precio base'; 2 o más valores numéricamente distintos -> 'lote'; si hay uno solo, ese es el precio base que se usa para filtrar ofertas (aunque la fila elegida no lo traiga). Variante 'precio_base_solo_fila_elegida' medida.",
+  "§5 columna a: usa valor_total_adjudicacion y precio_base de la FILA ELEGIDA (independiente de las exclusiones). Variante con el precio base único del proceso medida ('a_con_precio_base_del_proceso').",
+  "§5 numero_de_lotes de la fila elegida: solo excluye si es un número > 1; un valor no numérico (sin dato) no excluye.",
+  "§5 ofertas (paso 1): 'confidencial' se busca como subcadena del nombre comparable. Un grupo sin 'valor_de_la_oferta' (ausente) es sin dato y se descarta en el paso 2.",
+  "§5 paso 3, conflicto de NIT: se evalúa sobre los grupos que pasan los pasos 1 y 2, contando solo nombres comparables que identifican (no vacío/no definido/sin descripcion/confidencial). Variantes 'conflicto_nit_sobre_todos_los_grupos' y 'conflicto_nit_cuenta_cualquier_nombre' medidas.",
+  "§5 paso 3, quitar 'espacios, puntos y guiones' del NIT: se quitan todos los espacios en blanco (\\s), '.' y '-'. 'Dígitos' = solo 0-9.",
+  "§5 paso 3, 's a s'->'sas' y 's a'->'sa': se aplican a palabras sueltas (limitadas por espacio o extremo) tras quitar la puntuación y compactar espacios; primero 's a s' y luego 's a'. Variante como subcadena medida ('sas_como_subcadena').",
+  "§5 paso 3, 'no hay NIT ni nombre': significa sin NIT válido y no en conflicto, y sin nombre que identifique. El código c_digo_proveedor se recorta; identifica si no es vacío ni todo '0'. Dos grupos identificados solo por código y con el mismo código se consideran el MISMO oferente (variante 'codigo_nunca_une_grupos' medida).",
+  "§5 paso 3, unión transitiva: se calcula sobre los grupos que superan los pasos 1-3 (incluso si luego caen por 5 o 6). Variante 'union_solo_sobre_ofertas_finales' medida (filtra por 5 y 6 antes de unir).",
+  "§5 pasos 4-6: se aplican en ese orden sobre cada grupo identificado; el mismo (oferente, valor) se compara numéricamente (100 == 100.00). 'valor < 50 %' es estricto (valor*2 < precio_base); 'valor > precio_base' es estricto.",
+  "§5 lote por ofertas: si algún oferente conserva 2 o más valores distintos válidos, el proceso queda fuera de b, c, d y usable (no de adjudicados ni de a).",
+  "§5 c: no exige b. El adjudicatario es una identidad (NIT válido de nit_del_proveedor_adjudicado, no en conflicto en el proceso, y nombre comparable de nombre_del_proveedor que identifique); NO se usa su código (variante 'adjudicatario_tambien_por_codigo' medida). Cuenta las ofertas válidas cuyo oferente (componente de la unión) comparte alguna clave con esa identidad; c = exactamente una.",
+  "§5 d: dentro de b, cada oferta válida debe tener un NIT (clave 'n') en la identidad de su oferente, es decir, en alguno de los grupos unidos a ese oferente. Variante con el NIT del grupo conservado medida ('d_con_nit_del_grupo_conservado').",
+  "§5 usable: b y c, valor adjudicado numérico, |valor adjudicado - oferta del adjudicatario| * 100 <= oferta del adjudicatario (la base del 1 % es la oferta del adjudicatario), y más de un valor distinto entre las válidas.",
+  "Rescate_posible: cuenta procesos con una oferta no confidencial con 0 < valor < 50 % del precio base igual al valor adjudicado 'al peso' (ambos redondeados al peso, mitad hacia arriba); también se da el conteo exacto y el conteo exigiendo identidad."
+ ],
+ "diagnostico": {
+  "filas_leidas_p6dx": 81643,
+  "filas_sin_id_del_portafolio_ignoradas": 0,
+  "procesos_distintos": 34496,
+  "procesos_elegida_con_adjudicado_No": 7536,
+  "procesos_adjudicados_en_modalidad_fuera": 0,
+  "ofertas_cruzadas_ids": 25274,
+  "ofertas_cruzadas_ids_repetidos": 0,
+  "ofertas_cruzadas_grupos": 1039658,
+  "ofertas_cruzadas_ids_sin_proceso_en_p6dx": 0,
+  "recuento_de_grupos_y_casos_(lectura_base)": {
+   "grupos_vistos": 968932,
+   "grupos_que_quedan_como_oferta_valida": 188564,
+   "paso4_descartado_repetido": 765990,
+   "paso1_descartado_confidencial": 3091,
+   "paso5_descartado_mayor_al_precio_base": 5588,
+   "paso6_descartado_menor_al_50_por_ciento": 5687,
+   "paso2_descartado_valor_sin_dato": 12,
+   "procesos_con_oferente_unido_por_2_o_mas_NIT_distintos": 4
+  },
+  "totales_por_modalidad": {
+   "licitacion": {
+    "adjudicados": 6567,
+    "a": 6539,
+    "b": 3226,
+    "c": 4585,
+    "d": 110,
+    "usable": 2629
+   },
+   "menor_cuantia": {
+    "adjudicados": 12170,
+    "a": 12118,
+    "b": 4830,
+    "c": 10286,
+    "d": 2140,
+    "usable": 4064
+   },
+   "minima": {
+    "adjudicados": 8223,
+    "a": 8194,
+    "b": 4045,
+    "c": 7176,
+    "d": 3262,
+    "usable": 3541
+   }
+  },
+  "totales_generales": {
+   "adjudicados": 26960,
+   "a": 26851,
+   "b": 12101,
+   "c": 22047,
+   "d": 5512,
+   "usable": 10234
+  },
+  "exclusiones_y_conteos_por_modalidad": {
+   "licitacion": {
+    "analizados_con_ofertas": 5522,
+    "con_b": 3226,
+    "con_c": 4585,
+    "excl_numero_de_lotes_mayor_1": 392,
+    "excl_varios_precios_base": 508,
+    "excl_lote_por_ofertas": 466,
+    "excl_sin_ofertas": 142,
+    "excl_sin_precio_base": 3
+   },
+   "menor_cuantia": {
+    "analizados_con_ofertas": 11276,
+    "con_b": 4830,
+    "con_c": 10286,
+    "excl_numero_de_lotes_mayor_1": 184,
+    "excl_varios_precios_base": 291,
+    "excl_sin_ofertas": 419,
+    "excl_lote_por_ofertas": 32
+   },
+   "minima": {
+    "analizados_con_ofertas": 7881,
+    "con_b": 4045,
+    "con_c": 7176,
+    "excl_sin_ofertas": 305,
+    "excl_numero_de_lotes_mayor_1": 29,
+    "excl_lote_por_ofertas": 22,
+    "excl_varios_precios_base": 3,
+    "excl_sin_precio_base": 5
+   }
+  },
+  "procesos_cuya_fila_elegida_tiene_precio_base_distinto_del_unico_positivo": 1
+ },
+ "sensibilidad": {
+  "totales_lectura_base": {
+   "adjudicados": 26960,
+   "a": 26851,
+   "b": 12101,
+   "c": 22047,
+   "d": 5512,
+   "usable": 10234
+  },
+  "a_con_precio_base_del_proceso": {
+   "cambio": {
+    "a_pb": "proceso"
+   },
+   "totales": {
+    "adjudicados": 26960,
+    "a": 26852,
+    "b": 12101,
+    "c": 22047,
+    "d": 5512,
+    "usable": 10234
+   },
+   "diferencia_vs_base": {
+    "adjudicados": 0,
+    "a": 1,
+    "b": 0,
+    "c": 0,
+    "d": 0,
+    "usable": 0
+   }
+  },
+  "precio_base_solo_fila_elegida": {
+   "cambio": {
+    "pb_excl": "elegida"
+   },
+   "totales": {
+    "adjudicados": 26960,
+    "a": 26851,
+    "b": 12101,
+    "c": 22047,
+    "d": 5512,
+    "usable": 10234
+   },
+   "diferencia_vs_base": {
+    "adjudicados": 0,
+    "a": 0,
+    "b": 0,
+    "c": 0,
+    "d": 0,
+    "usable": 0
+   }
+  },
+  "conflicto_nit_sobre_todos_los_grupos": {
+   "cambio": {
+    "conf_todos": true
+   },
+   "totales": {
+    "adjudicados": 26960,
+    "a": 26851,
+    "b": 12101,
+    "c": 22047,
+    "d": 5512,
+    "usable": 10234
+   },
+   "diferencia_vs_base": {
+    "adjudicados": 0,
+    "a": 0,
+    "b": 0,
+    "c": 0,
+    "d": 0,
+    "usable": 0
+   }
+  },
+  "conflicto_nit_cuenta_cualquier_nombre": {
+   "cambio": {
+    "conf_nombres_todos": true
+   },
+   "totales": {
+    "adjudicados": 26960,
+    "a": 26851,
+    "b": 12101,
+    "c": 22047,
+    "d": 5512,
+    "usable": 10234
+   },
+   "diferencia_vs_base": {
+    "adjudicados": 0,
+    "a": 0,
+    "b": 0,
+    "c": 0,
+    "d": 0,
+    "usable": 0
+   }
+  },
+  "d_con_nit_del_grupo_conservado": {
+   "cambio": {
+    "d_nivel": "grupo"
+   },
+   "totales": {
+    "adjudicados": 26960,
+    "a": 26851,
+    "b": 12101,
+    "c": 22047,
+    "d": 5512,
+    "usable": 10234
+   },
+   "diferencia_vs_base": {
+    "adjudicados": 0,
+    "a": 0,
+    "b": 0,
+    "c": 0,
+    "d": 0,
+    "usable": 0
+   }
+  },
+  "codigo_nunca_une_grupos": {
+   "cambio": {
+    "cod_union": false
+   },
+   "totales": {
+    "adjudicados": 26960,
+    "a": 26851,
+    "b": 12101,
+    "c": 22047,
+    "d": 5512,
+    "usable": 10234
+   },
+   "diferencia_vs_base": {
+    "adjudicados": 0,
+    "a": 0,
+    "b": 0,
+    "c": 0,
+    "d": 0,
+    "usable": 0
+   }
+  },
+  "adjudicatario_tambien_por_codigo": {
+   "cambio": {
+    "adj_cod": true
+   },
+   "totales": {
+    "adjudicados": 26960,
+    "a": 26851,
+    "b": 12101,
+    "c": 22047,
+    "d": 5512,
+    "usable": 10234
+   },
+   "diferencia_vs_base": {
+    "adjudicados": 0,
+    "a": 0,
+    "b": 0,
+    "c": 0,
+    "d": 0,
+    "usable": 0
+   }
+  },
+  "union_solo_sobre_ofertas_finales": {
+   "cambio": {
+    "union_finales": true
+   },
+   "totales": {
+    "adjudicados": 26960,
+    "a": 26851,
+    "b": 12101,
+    "c": 22047,
+    "d": 5512,
+    "usable": 10234
+   },
+   "diferencia_vs_base": {
+    "adjudicados": 0,
+    "a": 0,
+    "b": 0,
+    "c": 0,
+    "d": 0,
+    "usable": 0
+   }
+  },
+  "sas_como_subcadena": {
+   "cambio": {
+    "sas": "subcadena"
+   },
+   "totales": {
+    "adjudicados": 26960,
+    "a": 26851,
+    "b": 12101,
+    "c": 22047,
+    "d": 5512,
+    "usable": 10234
+   },
+   "diferencia_vs_base": {
+    "adjudicados": 0,
+    "a": 0,
+    "b": 0,
+    "c": 0,
+    "d": 0,
+    "usable": 0
+   }
+  },
+  "empate_gana_la_primera_fila": {
+   "cambio": {
+    "empate": "primero"
+   },
+   "totales": {
+    "adjudicados": 26960,
+    "a": 26851,
+    "b": 12101,
+    "c": 22047,
+    "d": 5512,
+    "usable": 10234
+   },
+   "diferencia_vs_base": {
+    "adjudicados": 0,
+    "a": 0,
+    "b": 0,
+    "c": 0,
+    "d": 0,
+    "usable": 0
+   }
+  }
+ },
+ "tiempos_s": {
+  "carga_p6dx": 2.2,
+  "carga_total": 5.8,
+  "calculo_principal": 7.0,
+  "sensibilidad": 55.7,
+  "total": 68.6
+ }
+}

@@ -1,0 +1,1869 @@
+{
+ "generado": "2026-10-26T00:09:42.848Z",
+ "definiciones": {
+  "universo": "Procesos (id_del_portafolio de p6dx-8zbt, una fila elegida con limpieza.elegirFila) con tipo_de_contrato «Obra» (obraDeclarada) y modalidad licitación pública o selección abreviada de menor cuantía (limpieza.clasificarModalidad); mínima cuantía se cuenta aparte; concurso de méritos, contratación directa y régimen especial quedan fuera. La descarga toma las filas publicadas desde el 2020-01-01: un proceso cuya única fila es anterior queda fuera (borde de 2020).",
+  "ano_publicacion": "Año de la fecha_de_publicacion_del más antigua entre las filas del portafolio.",
+  "ano_adjudicacion": "Año de fecha_adjudicacion de la fila elegida. 2026 llega hasta el corte de la descarga.",
+  "a_valor_y_presupuesto": "Adjudicado con valor_total_adjudicacion > 0 y precio_base > 0.",
+  "a_consistente": "(a) y además valor adjudicado ≤ precio base (por encima es inconsistencia: dos casos medidos eran ×1000).",
+  "b_3_con_precio_bruto": "3 o más oferentes distintos (identidad unida de limpieza.proveedoresUnidos) con valor_de_la_oferta > 0, antes de cualquier rango.",
+  "b_3_validas": "3 o más ofertas VÁLIDAS (limpieza.limpiarOfertas: > 0, no «Confidencial», con oferente, sin duplicar, ≤ precio base y ≥ 50 % salvo el rescate) y el proceso no excluido (lotes, sin precio base…).",
+  "c_ganador_identificado": "Adjudicado con NIT válido o nombre del adjudicatario en p6dx.",
+  "c_ganador_emparejado": "Proceso no excluido (sin lotes, con precio base y ofertas) y la oferta del adjudicatario está entre las válidas, exactamente una (identidad unida NIT/nombre).",
+  "d_todas_con_nit": "Dentro de (b_3_validas): todas las ofertas válidas tienen un NIT válido en su identidad (clave «n:»).",
+  "d_alguna_solo_nombre": "Dentro de (b_3_validas): al menos una oferta válida se identifica solo por nombre o código de SECOP.",
+  "usable_motor": "(b_3_validas) y (c_ganador_emparejado), sin inconsistencia y con competencia de precio (no todas las válidas al mismo valor). Es la población de la Fase 1.",
+  "ofertas": "Una oferta es una combinación (proceso, oferente, valor) de wi7w-2nvm o b28v-edj8 pedida AGRUPADA en el servidor; las filas repetidas no son ofertas nuevas."
+ },
+ "universo": {
+  "licitacion": {
+   "2020": {
+    "procesos": 488,
+    "adjudicados": 393,
+    "no_adjudicados": 95
+   },
+   "2021": {
+    "procesos": 1292,
+    "adjudicados": 1018,
+    "no_adjudicados": 274
+   },
+   "2022": {
+    "procesos": 1678,
+    "adjudicados": 1273,
+    "no_adjudicados": 405
+   },
+   "2023": {
+    "procesos": 1489,
+    "adjudicados": 1206,
+    "no_adjudicados": 283
+   },
+   "2024": {
+    "procesos": 995,
+    "adjudicados": 810,
+    "no_adjudicados": 185
+   },
+   "2025": {
+    "procesos": 1523,
+    "adjudicados": 1268,
+    "no_adjudicados": 255
+   },
+   "2026": {
+    "procesos": 1127,
+    "adjudicados": 599,
+    "no_adjudicados": 528
+   },
+   "sin_ano": {
+    "procesos": 0,
+    "adjudicados": 0,
+    "no_adjudicados": 0
+   }
+  },
+  "menor_cuantia": {
+   "2020": {
+    "procesos": 874,
+    "adjudicados": 704,
+    "no_adjudicados": 170
+   },
+   "2021": {
+    "procesos": 1686,
+    "adjudicados": 1314,
+    "no_adjudicados": 372
+   },
+   "2022": {
+    "procesos": 2106,
+    "adjudicados": 1628,
+    "no_adjudicados": 478
+   },
+   "2023": {
+    "procesos": 2754,
+    "adjudicados": 2116,
+    "no_adjudicados": 638
+   },
+   "2024": {
+    "procesos": 2191,
+    "adjudicados": 1847,
+    "no_adjudicados": 344
+   },
+   "2025": {
+    "procesos": 3423,
+    "adjudicados": 2808,
+    "no_adjudicados": 615
+   },
+   "2026": {
+    "procesos": 2773,
+    "adjudicados": 1753,
+    "no_adjudicados": 1020
+   },
+   "sin_ano": {
+    "procesos": 0,
+    "adjudicados": 0,
+    "no_adjudicados": 0
+   }
+  },
+  "minima": {
+   "2020": {
+    "procesos": 744,
+    "adjudicados": 626,
+    "no_adjudicados": 118
+   },
+   "2021": {
+    "procesos": 1116,
+    "adjudicados": 895,
+    "no_adjudicados": 221
+   },
+   "2022": {
+    "procesos": 1291,
+    "adjudicados": 1057,
+    "no_adjudicados": 234
+   },
+   "2023": {
+    "procesos": 1726,
+    "adjudicados": 1414,
+    "no_adjudicados": 312
+   },
+   "2024": {
+    "procesos": 1644,
+    "adjudicados": 1387,
+    "no_adjudicados": 257
+   },
+   "2025": {
+    "procesos": 2166,
+    "adjudicados": 1779,
+    "no_adjudicados": 387
+   },
+   "2026": {
+    "procesos": 1410,
+    "adjudicados": 1065,
+    "no_adjudicados": 345
+   },
+   "sin_ano": {
+    "procesos": 0,
+    "adjudicados": 0,
+    "no_adjudicados": 0
+   }
+  }
+ },
+ "adjudicados": {
+  "licitacion": {
+   "2020": {
+    "adjudicados": 335,
+    "a_valor_y_presupuesto": 335,
+    "a_consistente": 335,
+    "no_consultado": 36,
+    "con_ofertas_publicadas": 299,
+    "sin_ofertas_publicadas": 0,
+    "sin_medir_ofertas": 0,
+    "b_3_con_precio_bruto": 257,
+    "b_3_validas": 157,
+    "c_ganador_identificado": 335,
+    "c_ganador_emparejado": 191,
+    "d_todas_con_nit": 3,
+    "d_alguna_solo_nombre": 154,
+    "ofertas_validas_b": 4406,
+    "ofertas_validas_b_con_nit": 2001,
+    "usable_motor": 128,
+    "excluido_lote": 133,
+    "sin_competencia_de_precio": 3,
+    "pct": {
+     "a_consistente": 100,
+     "con_ofertas_publicadas": 89.3,
+     "b_3_validas": 46.9,
+     "c_ganador_emparejado": 57,
+     "d_todas_con_nit_sobre_b": 1.9,
+     "ofertas_con_nit_sobre_b": 45.4,
+     "usable_motor": 38.2
+    }
+   },
+   "2021": {
+    "adjudicados": 874,
+    "a_valor_y_presupuesto": 874,
+    "a_consistente": 870,
+    "no_consultado": 97,
+    "con_ofertas_publicadas": 777,
+    "sin_ofertas_publicadas": 0,
+    "sin_medir_ofertas": 0,
+    "b_3_con_precio_bruto": 509,
+    "b_3_validas": 395,
+    "c_ganador_identificado": 874,
+    "c_ganador_emparejado": 620,
+    "d_todas_con_nit": 14,
+    "d_alguna_solo_nombre": 381,
+    "ofertas_validas_b": 9871,
+    "ofertas_validas_b_con_nit": 4813,
+    "usable_motor": 294,
+    "excluido_lote": 196,
+    "sin_competencia_de_precio": 20,
+    "pct": {
+     "a_consistente": 99.5,
+     "con_ofertas_publicadas": 88.9,
+     "b_3_validas": 45.2,
+     "c_ganador_emparejado": 70.9,
+     "d_todas_con_nit_sobre_b": 3.5,
+     "ofertas_con_nit_sobre_b": 48.8,
+     "usable_motor": 33.6
+    }
+   },
+   "2022": {
+    "adjudicados": 1297,
+    "a_valor_y_presupuesto": 1297,
+    "a_consistente": 1287,
+    "no_consultado": 102,
+    "con_ofertas_publicadas": 1060,
+    "sin_ofertas_publicadas": 135,
+    "sin_medir_ofertas": 0,
+    "b_3_con_precio_bruto": 654,
+    "b_3_validas": 557,
+    "c_ganador_identificado": 1297,
+    "c_ganador_emparejado": 855,
+    "d_todas_con_nit": 18,
+    "d_alguna_solo_nombre": 539,
+    "ofertas_validas_b": 11510,
+    "ofertas_validas_b_con_nit": 5722,
+    "usable_motor": 443,
+    "excluido_lote": 199,
+    "sin_competencia_de_precio": 24,
+    "pct": {
+     "a_consistente": 99.2,
+     "con_ofertas_publicadas": 81.7,
+     "b_3_validas": 42.9,
+     "c_ganador_emparejado": 65.9,
+     "d_todas_con_nit_sobre_b": 3.2,
+     "ofertas_con_nit_sobre_b": 49.7,
+     "usable_motor": 34.2
+    }
+   },
+   "2023": {
+    "adjudicados": 1307,
+    "a_valor_y_presupuesto": 1306,
+    "a_consistente": 1305,
+    "no_consultado": 90,
+    "con_ofertas_publicadas": 1204,
+    "sin_ofertas_publicadas": 13,
+    "sin_medir_ofertas": 0,
+    "b_3_con_precio_bruto": 849,
+    "b_3_validas": 732,
+    "c_ganador_identificado": 1307,
+    "c_ganador_emparejado": 985,
+    "d_todas_con_nit": 25,
+    "d_alguna_solo_nombre": 707,
+    "ofertas_validas_b": 10864,
+    "ofertas_validas_b_con_nit": 4597,
+    "usable_motor": 595,
+    "excluido_lote": 192,
+    "sin_competencia_de_precio": 26,
+    "pct": {
+     "a_consistente": 99.8,
+     "con_ofertas_publicadas": 92.1,
+     "b_3_validas": 56,
+     "c_ganador_emparejado": 75.4,
+     "d_todas_con_nit_sobre_b": 3.4,
+     "ofertas_con_nit_sobre_b": 42.3,
+     "usable_motor": 45.5
+    }
+   },
+   "2024": {
+    "adjudicados": 753,
+    "a_valor_y_presupuesto": 752,
+    "a_consistente": 751,
+    "no_consultado": 53,
+    "con_ofertas_publicadas": 700,
+    "sin_ofertas_publicadas": 0,
+    "sin_medir_ofertas": 0,
+    "b_3_con_precio_bruto": 545,
+    "b_3_validas": 401,
+    "c_ganador_identificado": 753,
+    "c_ganador_emparejado": 529,
+    "d_todas_con_nit": 20,
+    "d_alguna_solo_nombre": 381,
+    "ofertas_validas_b": 9548,
+    "ofertas_validas_b_con_nit": 3603,
+    "usable_motor": 337,
+    "excluido_lote": 185,
+    "sin_competencia_de_precio": 20,
+    "pct": {
+     "a_consistente": 99.7,
+     "con_ofertas_publicadas": 93,
+     "b_3_validas": 53.3,
+     "c_ganador_emparejado": 70.3,
+     "d_todas_con_nit_sobre_b": 5,
+     "ofertas_con_nit_sobre_b": 37.7,
+     "usable_motor": 44.8
+    }
+   },
+   "2025": {
+    "adjudicados": 1170,
+    "a_valor_y_presupuesto": 1169,
+    "a_consistente": 1163,
+    "no_consultado": 83,
+    "con_ofertas_publicadas": 1087,
+    "sin_ofertas_publicadas": 0,
+    "sin_medir_ofertas": 0,
+    "b_3_con_precio_bruto": 757,
+    "b_3_validas": 538,
+    "c_ganador_identificado": 1170,
+    "c_ganador_emparejado": 795,
+    "d_todas_con_nit": 20,
+    "d_alguna_solo_nombre": 518,
+    "ofertas_validas_b": 11356,
+    "ofertas_validas_b_con_nit": 3818,
+    "usable_motor": 424,
+    "excluido_lote": 289,
+    "sin_competencia_de_precio": 17,
+    "pct": {
+     "a_consistente": 99.4,
+     "con_ofertas_publicadas": 92.9,
+     "b_3_validas": 46,
+     "c_ganador_emparejado": 67.9,
+     "d_todas_con_nit_sobre_b": 3.7,
+     "ofertas_con_nit_sobre_b": 33.6,
+     "usable_motor": 36.2
+    }
+   },
+   "2026": {
+    "adjudicados": 814,
+    "a_valor_y_presupuesto": 813,
+    "a_consistente": 811,
+    "no_consultado": 51,
+    "con_ofertas_publicadas": 763,
+    "sin_ofertas_publicadas": 0,
+    "sin_medir_ofertas": 0,
+    "b_3_con_precio_bruto": 566,
+    "b_3_validas": 438,
+    "c_ganador_identificado": 809,
+    "c_ganador_emparejado": 599,
+    "d_todas_con_nit": 10,
+    "d_alguna_solo_nombre": 428,
+    "ofertas_validas_b": 9241,
+    "ofertas_validas_b_con_nit": 2922,
+    "usable_motor": 398,
+    "excluido_lote": 165,
+    "sin_competencia_de_precio": 10,
+    "pct": {
+     "a_consistente": 99.6,
+     "con_ofertas_publicadas": 93.7,
+     "b_3_validas": 53.8,
+     "c_ganador_emparejado": 73.6,
+     "d_todas_con_nit_sobre_b": 2.3,
+     "ofertas_con_nit_sobre_b": 31.6,
+     "usable_motor": 48.9
+    }
+   },
+   "otro_o_sin_fecha": {
+    "adjudicados": 17,
+    "a_valor_y_presupuesto": 17,
+    "a_consistente": 17,
+    "no_consultado": 0,
+    "con_ofertas_publicadas": 17,
+    "sin_ofertas_publicadas": 0,
+    "sin_medir_ofertas": 0,
+    "b_3_con_precio_bruto": 14,
+    "b_3_validas": 10,
+    "c_ganador_identificado": 16,
+    "c_ganador_emparejado": 13,
+    "d_todas_con_nit": 0,
+    "d_alguna_solo_nombre": 10,
+    "ofertas_validas_b": 359,
+    "ofertas_validas_b_con_nit": 128,
+    "usable_motor": 10,
+    "excluido_lote": 4,
+    "sin_competencia_de_precio": 0,
+    "pct": {
+     "a_consistente": 100,
+     "con_ofertas_publicadas": 100,
+     "b_3_validas": 58.8,
+     "c_ganador_emparejado": 76.5,
+     "d_todas_con_nit_sobre_b": 0,
+     "ofertas_con_nit_sobre_b": 35.7,
+     "usable_motor": 58.8
+    }
+   }
+  },
+  "menor_cuantia": {
+   "2020": {
+    "adjudicados": 679,
+    "a_valor_y_presupuesto": 679,
+    "a_consistente": 675,
+    "no_consultado": 21,
+    "con_ofertas_publicadas": 658,
+    "sin_ofertas_publicadas": 0,
+    "sin_medir_ofertas": 0,
+    "b_3_con_precio_bruto": 520,
+    "b_3_validas": 426,
+    "c_ganador_identificado": 679,
+    "c_ganador_emparejado": 552,
+    "d_todas_con_nit": 168,
+    "d_alguna_solo_nombre": 258,
+    "ofertas_validas_b": 3967,
+    "ofertas_validas_b_con_nit": 3326,
+    "usable_motor": 341,
+    "excluido_lote": 70,
+    "sin_competencia_de_precio": 24,
+    "pct": {
+     "a_consistente": 99.4,
+     "con_ofertas_publicadas": 96.9,
+     "b_3_validas": 62.7,
+     "c_ganador_emparejado": 81.3,
+     "d_todas_con_nit_sobre_b": 39.4,
+     "ofertas_con_nit_sobre_b": 83.8,
+     "usable_motor": 50.2
+    }
+   },
+   "2021": {
+    "adjudicados": 1253,
+    "a_valor_y_presupuesto": 1253,
+    "a_consistente": 1245,
+    "no_consultado": 36,
+    "con_ofertas_publicadas": 1217,
+    "sin_ofertas_publicadas": 0,
+    "sin_medir_ofertas": 0,
+    "b_3_con_precio_bruto": 735,
+    "b_3_validas": 673,
+    "c_ganador_identificado": 1253,
+    "c_ganador_emparejado": 1116,
+    "d_todas_con_nit": 307,
+    "d_alguna_solo_nombre": 366,
+    "ofertas_validas_b": 6650,
+    "ofertas_validas_b_con_nit": 5772,
+    "usable_motor": 574,
+    "excluido_lote": 63,
+    "sin_competencia_de_precio": 38,
+    "pct": {
+     "a_consistente": 99.4,
+     "con_ofertas_publicadas": 97.1,
+     "b_3_validas": 53.7,
+     "c_ganador_emparejado": 89.1,
+     "d_todas_con_nit_sobre_b": 45.6,
+     "ofertas_con_nit_sobre_b": 86.8,
+     "usable_motor": 45.8
+    }
+   },
+   "2022": {
+    "adjudicados": 1652,
+    "a_valor_y_presupuesto": 1652,
+    "a_consistente": 1646,
+    "no_consultado": 45,
+    "con_ofertas_publicadas": 1205,
+    "sin_ofertas_publicadas": 402,
+    "sin_medir_ofertas": 0,
+    "b_3_con_precio_bruto": 620,
+    "b_3_validas": 565,
+    "c_ganador_identificado": 1652,
+    "c_ganador_emparejado": 1078,
+    "d_todas_con_nit": 274,
+    "d_alguna_solo_nombre": 291,
+    "ofertas_validas_b": 5308,
+    "ofertas_validas_b_con_nit": 4785,
+    "usable_motor": 473,
+    "excluido_lote": 68,
+    "sin_competencia_de_precio": 34,
+    "pct": {
+     "a_consistente": 99.6,
+     "con_ofertas_publicadas": 72.9,
+     "b_3_validas": 34.2,
+     "c_ganador_emparejado": 65.3,
+     "d_todas_con_nit_sobre_b": 48.5,
+     "ofertas_con_nit_sobre_b": 90.1,
+     "usable_motor": 28.6
+    }
+   },
+   "2023": {
+    "adjudicados": 2143,
+    "a_valor_y_presupuesto": 2143,
+    "a_consistente": 2134,
+    "no_consultado": 56,
+    "con_ofertas_publicadas": 2068,
+    "sin_ofertas_publicadas": 19,
+    "sin_medir_ofertas": 0,
+    "b_3_con_precio_bruto": 923,
+    "b_3_validas": 858,
+    "c_ganador_identificado": 2143,
+    "c_ganador_emparejado": 1855,
+    "d_todas_con_nit": 420,
+    "d_alguna_solo_nombre": 438,
+    "ofertas_validas_b": 6091,
+    "ofertas_validas_b_con_nit": 5158,
+    "usable_motor": 724,
+    "excluido_lote": 90,
+    "sin_competencia_de_precio": 55,
+    "pct": {
+     "a_consistente": 99.6,
+     "con_ofertas_publicadas": 96.5,
+     "b_3_validas": 40,
+     "c_ganador_emparejado": 86.6,
+     "d_todas_con_nit_sobre_b": 49,
+     "ofertas_con_nit_sobre_b": 84.7,
+     "usable_motor": 33.8
+    }
+   },
+   "2024": {
+    "adjudicados": 1813,
+    "a_valor_y_presupuesto": 1813,
+    "a_consistente": 1805,
+    "no_consultado": 46,
+    "con_ofertas_publicadas": 1767,
+    "sin_ofertas_publicadas": 0,
+    "sin_medir_ofertas": 0,
+    "b_3_con_precio_bruto": 876,
+    "b_3_validas": 797,
+    "c_ganador_identificado": 1813,
+    "c_ganador_emparejado": 1598,
+    "d_todas_con_nit": 336,
+    "d_alguna_solo_nombre": 461,
+    "ofertas_validas_b": 7438,
+    "ofertas_validas_b_con_nit": 6211,
+    "usable_motor": 667,
+    "excluido_lote": 71,
+    "sin_competencia_de_precio": 64,
+    "pct": {
+     "a_consistente": 99.6,
+     "con_ofertas_publicadas": 97.5,
+     "b_3_validas": 44,
+     "c_ganador_emparejado": 88.1,
+     "d_todas_con_nit_sobre_b": 42.2,
+     "ofertas_con_nit_sobre_b": 83.5,
+     "usable_motor": 36.8
+    }
+   },
+   "2025": {
+    "adjudicados": 2743,
+    "a_valor_y_presupuesto": 2743,
+    "a_consistente": 2736,
+    "no_consultado": 50,
+    "con_ofertas_publicadas": 2693,
+    "sin_ofertas_publicadas": 0,
+    "sin_medir_ofertas": 0,
+    "b_3_con_precio_bruto": 952,
+    "b_3_validas": 868,
+    "c_ganador_identificado": 2743,
+    "c_ganador_emparejado": 2419,
+    "d_todas_con_nit": 354,
+    "d_alguna_solo_nombre": 514,
+    "ofertas_validas_b": 8588,
+    "ofertas_validas_b_con_nit": 6651,
+    "usable_motor": 745,
+    "excluido_lote": 83,
+    "sin_competencia_de_precio": 56,
+    "pct": {
+     "a_consistente": 99.7,
+     "con_ofertas_publicadas": 98.2,
+     "b_3_validas": 31.6,
+     "c_ganador_emparejado": 88.2,
+     "d_todas_con_nit_sobre_b": 40.8,
+     "ofertas_con_nit_sobre_b": 77.4,
+     "usable_motor": 27.2
+    }
+   },
+   "2026": {
+    "adjudicados": 1848,
+    "a_valor_y_presupuesto": 1848,
+    "a_consistente": 1838,
+    "no_consultado": 36,
+    "con_ofertas_publicadas": 1812,
+    "sin_ofertas_publicadas": 0,
+    "sin_medir_ofertas": 0,
+    "b_3_con_precio_bruto": 676,
+    "b_3_validas": 629,
+    "c_ganador_identificado": 1837,
+    "c_ganador_emparejado": 1636,
+    "d_todas_con_nit": 278,
+    "d_alguna_solo_nombre": 351,
+    "ofertas_validas_b": 6326,
+    "ofertas_validas_b_con_nit": 4735,
+    "usable_motor": 528,
+    "excluido_lote": 61,
+    "sin_competencia_de_precio": 68,
+    "pct": {
+     "a_consistente": 99.5,
+     "con_ofertas_publicadas": 98.1,
+     "b_3_validas": 34,
+     "c_ganador_emparejado": 88.5,
+     "d_todas_con_nit_sobre_b": 44.2,
+     "ofertas_con_nit_sobre_b": 74.8,
+     "usable_motor": 28.6
+    }
+   },
+   "otro_o_sin_fecha": {
+    "adjudicados": 39,
+    "a_valor_y_presupuesto": 39,
+    "a_consistente": 39,
+    "no_consultado": 1,
+    "con_ofertas_publicadas": 37,
+    "sin_ofertas_publicadas": 1,
+    "sin_medir_ofertas": 0,
+    "b_3_con_precio_bruto": 16,
+    "b_3_validas": 14,
+    "c_ganador_identificado": 35,
+    "c_ganador_emparejado": 32,
+    "d_todas_con_nit": 3,
+    "d_alguna_solo_nombre": 11,
+    "ofertas_validas_b": 106,
+    "ofertas_validas_b_con_nit": 89,
+    "usable_motor": 11,
+    "excluido_lote": 1,
+    "sin_competencia_de_precio": 3,
+    "pct": {
+     "a_consistente": 100,
+     "con_ofertas_publicadas": 94.9,
+     "b_3_validas": 35.9,
+     "c_ganador_emparejado": 82.1,
+     "d_todas_con_nit_sobre_b": 21.4,
+     "ofertas_con_nit_sobre_b": 84,
+     "usable_motor": 28.2
+    }
+   }
+  },
+  "minima": {
+   "2020": {
+    "adjudicados": 618,
+    "a_valor_y_presupuesto": 617,
+    "a_consistente": 616,
+    "no_consultado": 1,
+    "con_ofertas_publicadas": 617,
+    "sin_ofertas_publicadas": 0,
+    "sin_medir_ofertas": 0,
+    "b_3_con_precio_bruto": 495,
+    "b_3_validas": 438,
+    "c_ganador_identificado": 618,
+    "c_ganador_emparejado": 537,
+    "d_todas_con_nit": 302,
+    "d_alguna_solo_nombre": 136,
+    "ofertas_validas_b": 4277,
+    "ofertas_validas_b_con_nit": 4070,
+    "usable_motor": 374,
+    "excluido_lote": 28,
+    "sin_competencia_de_precio": 8,
+    "pct": {
+     "a_consistente": 99.7,
+     "con_ofertas_publicadas": 99.8,
+     "b_3_validas": 70.9,
+     "c_ganador_emparejado": 86.9,
+     "d_todas_con_nit_sobre_b": 68.9,
+     "ofertas_con_nit_sobre_b": 95.2,
+     "usable_motor": 60.5
+    }
+   },
+   "2021": {
+    "adjudicados": 889,
+    "a_valor_y_presupuesto": 888,
+    "a_consistente": 886,
+    "no_consultado": 2,
+    "con_ofertas_publicadas": 887,
+    "sin_ofertas_publicadas": 0,
+    "sin_medir_ofertas": 0,
+    "b_3_con_precio_bruto": 576,
+    "b_3_validas": 540,
+    "c_ganador_identificado": 889,
+    "c_ganador_emparejado": 822,
+    "d_todas_con_nit": 397,
+    "d_alguna_solo_nombre": 143,
+    "ofertas_validas_b": 4845,
+    "ofertas_validas_b_con_nit": 4630,
+    "usable_motor": 467,
+    "excluido_lote": 2,
+    "sin_competencia_de_precio": 11,
+    "pct": {
+     "a_consistente": 99.7,
+     "con_ofertas_publicadas": 99.8,
+     "b_3_validas": 60.7,
+     "c_ganador_emparejado": 92.5,
+     "d_todas_con_nit_sobre_b": 73.5,
+     "ofertas_con_nit_sobre_b": 95.6,
+     "usable_motor": 52.5
+    }
+   },
+   "2022": {
+    "adjudicados": 1055,
+    "a_valor_y_presupuesto": 1055,
+    "a_consistente": 1050,
+    "no_consultado": 0,
+    "con_ofertas_publicadas": 776,
+    "sin_ofertas_publicadas": 279,
+    "sin_medir_ofertas": 0,
+    "b_3_con_precio_bruto": 518,
+    "b_3_validas": 489,
+    "c_ganador_identificado": 1055,
+    "c_ganador_emparejado": 699,
+    "d_todas_con_nit": 401,
+    "d_alguna_solo_nombre": 88,
+    "ofertas_validas_b": 3905,
+    "ofertas_validas_b_con_nit": 3791,
+    "usable_motor": 420,
+    "excluido_lote": 1,
+    "sin_competencia_de_precio": 8,
+    "pct": {
+     "a_consistente": 99.5,
+     "con_ofertas_publicadas": 73.6,
+     "b_3_validas": 46.4,
+     "c_ganador_emparejado": 66.3,
+     "d_todas_con_nit_sobre_b": 82,
+     "ofertas_con_nit_sobre_b": 97.1,
+     "usable_motor": 39.8
+    }
+   },
+   "2023": {
+    "adjudicados": 1412,
+    "a_valor_y_presupuesto": 1410,
+    "a_consistente": 1406,
+    "no_consultado": 4,
+    "con_ofertas_publicadas": 1382,
+    "sin_ofertas_publicadas": 26,
+    "sin_medir_ofertas": 0,
+    "b_3_con_precio_bruto": 665,
+    "b_3_validas": 615,
+    "c_ganador_identificado": 1412,
+    "c_ganador_emparejado": 1234,
+    "d_todas_con_nit": 536,
+    "d_alguna_solo_nombre": 79,
+    "ofertas_validas_b": 4483,
+    "ofertas_validas_b_con_nit": 4384,
+    "usable_motor": 528,
+    "excluido_lote": 12,
+    "sin_competencia_de_precio": 19,
+    "pct": {
+     "a_consistente": 99.6,
+     "con_ofertas_publicadas": 97.9,
+     "b_3_validas": 43.6,
+     "c_ganador_emparejado": 87.4,
+     "d_todas_con_nit_sobre_b": 87.2,
+     "ofertas_con_nit_sobre_b": 97.8,
+     "usable_motor": 37.4
+    }
+   },
+   "2024": {
+    "adjudicados": 1382,
+    "a_valor_y_presupuesto": 1382,
+    "a_consistente": 1375,
+    "no_consultado": 0,
+    "con_ofertas_publicadas": 1382,
+    "sin_ofertas_publicadas": 0,
+    "sin_medir_ofertas": 0,
+    "b_3_con_precio_bruto": 774,
+    "b_3_validas": 731,
+    "c_ganador_identificado": 1382,
+    "c_ganador_emparejado": 1277,
+    "d_todas_con_nit": 603,
+    "d_alguna_solo_nombre": 128,
+    "ofertas_validas_b": 6260,
+    "ofertas_validas_b_con_nit": 6087,
+    "usable_motor": 660,
+    "excluido_lote": 6,
+    "sin_competencia_de_precio": 24,
+    "pct": {
+     "a_consistente": 99.5,
+     "con_ofertas_publicadas": 100,
+     "b_3_validas": 52.9,
+     "c_ganador_emparejado": 92.4,
+     "d_todas_con_nit_sobre_b": 82.5,
+     "ofertas_con_nit_sobre_b": 97.2,
+     "usable_motor": 47.8
+    }
+   },
+   "2025": {
+    "adjudicados": 1765,
+    "a_valor_y_presupuesto": 1765,
+    "a_consistente": 1764,
+    "no_consultado": 0,
+    "con_ofertas_publicadas": 1765,
+    "sin_ofertas_publicadas": 0,
+    "sin_medir_ofertas": 0,
+    "b_3_con_precio_bruto": 810,
+    "b_3_validas": 766,
+    "c_ganador_identificado": 1765,
+    "c_ganador_emparejado": 1628,
+    "d_todas_con_nit": 644,
+    "d_alguna_solo_nombre": 122,
+    "ofertas_validas_b": 5635,
+    "ofertas_validas_b_con_nit": 5486,
+    "usable_motor": 680,
+    "excluido_lote": 2,
+    "sin_competencia_de_precio": 25,
+    "pct": {
+     "a_consistente": 99.9,
+     "con_ofertas_publicadas": 100,
+     "b_3_validas": 43.4,
+     "c_ganador_emparejado": 92.2,
+     "d_todas_con_nit_sobre_b": 84.1,
+     "ofertas_con_nit_sobre_b": 97.4,
+     "usable_motor": 38.5
+    }
+   },
+   "2026": {
+    "adjudicados": 1070,
+    "a_valor_y_presupuesto": 1069,
+    "a_consistente": 1066,
+    "no_consultado": 1,
+    "con_ofertas_publicadas": 1069,
+    "sin_ofertas_publicadas": 0,
+    "sin_medir_ofertas": 0,
+    "b_3_con_precio_bruto": 483,
+    "b_3_validas": 452,
+    "c_ganador_identificado": 1061,
+    "c_ganador_emparejado": 951,
+    "d_todas_con_nit": 369,
+    "d_alguna_solo_nombre": 83,
+    "ofertas_validas_b": 3663,
+    "ofertas_validas_b_con_nit": 3552,
+    "usable_motor": 397,
+    "excluido_lote": 3,
+    "sin_competencia_de_precio": 25,
+    "pct": {
+     "a_consistente": 99.6,
+     "con_ofertas_publicadas": 99.9,
+     "b_3_validas": 42.2,
+     "c_ganador_emparejado": 88.9,
+     "d_todas_con_nit_sobre_b": 81.6,
+     "ofertas_con_nit_sobre_b": 97,
+     "usable_motor": 37.1
+    }
+   },
+   "otro_o_sin_fecha": {
+    "adjudicados": 32,
+    "a_valor_y_presupuesto": 32,
+    "a_consistente": 31,
+    "no_consultado": 0,
+    "con_ofertas_publicadas": 32,
+    "sin_ofertas_publicadas": 0,
+    "sin_medir_ofertas": 0,
+    "b_3_con_precio_bruto": 14,
+    "b_3_validas": 14,
+    "c_ganador_identificado": 31,
+    "c_ganador_emparejado": 28,
+    "d_todas_con_nit": 10,
+    "d_alguna_solo_nombre": 4,
+    "ofertas_validas_b": 94,
+    "ofertas_validas_b_con_nit": 89,
+    "usable_motor": 13,
+    "excluido_lote": 0,
+    "sin_competencia_de_precio": 1,
+    "pct": {
+     "a_consistente": 96.9,
+     "con_ofertas_publicadas": 100,
+     "b_3_validas": 43.8,
+     "c_ganador_emparejado": 87.5,
+     "d_todas_con_nit_sobre_b": 71.4,
+     "ofertas_con_nit_sobre_b": 94.7,
+     "usable_motor": 40.6
+    }
+   }
+  }
+ },
+ "calidad": {
+  "por_ano_adjudicacion": {
+   "2020": {
+    "licitacion": {
+     "grupos_de_la_consulta": 39784,
+     "valor_nulo_o_no_numerico": 0,
+     "valor_cero": 0,
+     "valor_negativo": 0,
+     "valor_uno": 4,
+     "valor_solo_nueves": 0,
+     "valor_billon_o_mas": 11,
+     "confidencial": 0,
+     "sobre_precio_base": 229,
+     "bajo_50_del_precio_base": 2518,
+     "entre_50_y_80": 1687,
+     "procesos_con_ofertas": 299,
+     "en_ambos_datasets": 0
+    },
+    "menor_cuantia": {
+     "grupos_de_la_consulta": 37297,
+     "valor_nulo_o_no_numerico": 0,
+     "valor_cero": 0,
+     "valor_negativo": 0,
+     "valor_uno": 1,
+     "valor_solo_nueves": 0,
+     "valor_billon_o_mas": 2,
+     "confidencial": 0,
+     "sobre_precio_base": 3271,
+     "bajo_50_del_precio_base": 666,
+     "entre_50_y_80": 2548,
+     "procesos_con_ofertas": 658,
+     "en_ambos_datasets": 0
+    },
+    "minima": {
+     "grupos_de_la_consulta": 9504,
+     "valor_nulo_o_no_numerico": 0,
+     "valor_cero": 0,
+     "valor_negativo": 0,
+     "valor_uno": 2,
+     "valor_solo_nueves": 0,
+     "valor_billon_o_mas": 0,
+     "confidencial": 0,
+     "sobre_precio_base": 326,
+     "bajo_50_del_precio_base": 243,
+     "entre_50_y_80": 4841,
+     "procesos_con_ofertas": 617,
+     "en_ambos_datasets": 0
+    }
+   },
+   "2021": {
+    "menor_cuantia": {
+     "grupos_de_la_consulta": 27013,
+     "valor_nulo_o_no_numerico": 0,
+     "valor_cero": 0,
+     "valor_negativo": 0,
+     "valor_uno": 4,
+     "valor_solo_nueves": 0,
+     "valor_billon_o_mas": 5,
+     "confidencial": 138,
+     "sobre_precio_base": 1377,
+     "bajo_50_del_precio_base": 391,
+     "entre_50_y_80": 876,
+     "procesos_con_ofertas": 1217,
+     "en_ambos_datasets": 0
+    },
+    "licitacion": {
+     "grupos_de_la_consulta": 56760,
+     "valor_nulo_o_no_numerico": 0,
+     "valor_cero": 0,
+     "valor_negativo": 0,
+     "valor_uno": 20,
+     "valor_solo_nueves": 0,
+     "valor_billon_o_mas": 43,
+     "confidencial": 202,
+     "sobre_precio_base": 752,
+     "bajo_50_del_precio_base": 2600,
+     "entre_50_y_80": 305,
+     "procesos_con_ofertas": 777,
+     "en_ambos_datasets": 0
+    },
+    "minima": {
+     "grupos_de_la_consulta": 11410,
+     "valor_nulo_o_no_numerico": 0,
+     "valor_cero": 0,
+     "valor_negativo": 0,
+     "valor_uno": 1,
+     "valor_solo_nueves": 0,
+     "valor_billon_o_mas": 0,
+     "confidencial": 73,
+     "sobre_precio_base": 286,
+     "bajo_50_del_precio_base": 231,
+     "entre_50_y_80": 4613,
+     "procesos_con_ofertas": 887,
+     "en_ambos_datasets": 0
+    }
+   },
+   "2022": {
+    "menor_cuantia": {
+     "grupos_de_la_consulta": 32173,
+     "valor_nulo_o_no_numerico": 0,
+     "valor_cero": 0,
+     "valor_negativo": 0,
+     "valor_uno": 4,
+     "valor_solo_nueves": 0,
+     "valor_billon_o_mas": 24,
+     "confidencial": 147,
+     "sobre_precio_base": 344,
+     "bajo_50_del_precio_base": 475,
+     "entre_50_y_80": 206,
+     "procesos_con_ofertas": 1205,
+     "en_ambos_datasets": 0
+    },
+    "licitacion": {
+     "grupos_de_la_consulta": 52536,
+     "valor_nulo_o_no_numerico": 0,
+     "valor_cero": 0,
+     "valor_negativo": 0,
+     "valor_uno": 10,
+     "valor_solo_nueves": 0,
+     "valor_billon_o_mas": 7,
+     "confidencial": 252,
+     "sobre_precio_base": 595,
+     "bajo_50_del_precio_base": 2160,
+     "entre_50_y_80": 761,
+     "procesos_con_ofertas": 1060,
+     "en_ambos_datasets": 0
+    },
+    "minima": {
+     "grupos_de_la_consulta": 7640,
+     "valor_nulo_o_no_numerico": 0,
+     "valor_cero": 0,
+     "valor_negativo": 0,
+     "valor_uno": 0,
+     "valor_solo_nueves": 0,
+     "valor_billon_o_mas": 0,
+     "confidencial": 94,
+     "sobre_precio_base": 201,
+     "bajo_50_del_precio_base": 127,
+     "entre_50_y_80": 1719,
+     "procesos_con_ofertas": 776,
+     "en_ambos_datasets": 0
+    }
+   },
+   "2023": {
+    "menor_cuantia": {
+     "grupos_de_la_consulta": 56081,
+     "valor_nulo_o_no_numerico": 0,
+     "valor_cero": 0,
+     "valor_negativo": 0,
+     "valor_uno": 7,
+     "valor_solo_nueves": 0,
+     "valor_billon_o_mas": 1,
+     "confidencial": 266,
+     "sobre_precio_base": 1385,
+     "bajo_50_del_precio_base": 2379,
+     "entre_50_y_80": 187,
+     "procesos_con_ofertas": 2068,
+     "en_ambos_datasets": 0
+    },
+    "licitacion": {
+     "grupos_de_la_consulta": 86507,
+     "valor_nulo_o_no_numerico": 0,
+     "valor_cero": 0,
+     "valor_negativo": 0,
+     "valor_uno": 31,
+     "valor_solo_nueves": 0,
+     "valor_billon_o_mas": 255,
+     "confidencial": 279,
+     "sobre_precio_base": 2699,
+     "bajo_50_del_precio_base": 5427,
+     "entre_50_y_80": 580,
+     "procesos_con_ofertas": 1204,
+     "en_ambos_datasets": 0
+    },
+    "minima": {
+     "grupos_de_la_consulta": 11866,
+     "valor_nulo_o_no_numerico": 0,
+     "valor_cero": 0,
+     "valor_negativo": 0,
+     "valor_uno": 0,
+     "valor_solo_nueves": 0,
+     "valor_billon_o_mas": 1,
+     "confidencial": 186,
+     "sobre_precio_base": 327,
+     "bajo_50_del_precio_base": 546,
+     "entre_50_y_80": 2859,
+     "procesos_con_ofertas": 1382,
+     "en_ambos_datasets": 0
+    }
+   },
+   "2024": {
+    "menor_cuantia": {
+     "grupos_de_la_consulta": 95564,
+     "valor_nulo_o_no_numerico": 0,
+     "valor_cero": 0,
+     "valor_negativo": 0,
+     "valor_uno": 5,
+     "valor_solo_nueves": 0,
+     "valor_billon_o_mas": 1,
+     "confidencial": 179,
+     "sobre_precio_base": 2848,
+     "bajo_50_del_precio_base": 855,
+     "entre_50_y_80": 235,
+     "procesos_con_ofertas": 1767,
+     "en_ambos_datasets": 0
+    },
+    "licitacion": {
+     "grupos_de_la_consulta": 89807,
+     "valor_nulo_o_no_numerico": 0,
+     "valor_cero": 0,
+     "valor_negativo": 0,
+     "valor_uno": 6,
+     "valor_solo_nueves": 0,
+     "valor_billon_o_mas": 25,
+     "confidencial": 231,
+     "sobre_precio_base": 2860,
+     "bajo_50_del_precio_base": 5478,
+     "entre_50_y_80": 584,
+     "procesos_con_ofertas": 700,
+     "en_ambos_datasets": 0
+    },
+    "minima": {
+     "grupos_de_la_consulta": 14742,
+     "valor_nulo_o_no_numerico": 0,
+     "valor_cero": 0,
+     "valor_negativo": 0,
+     "valor_uno": 2,
+     "valor_solo_nueves": 0,
+     "valor_billon_o_mas": 3,
+     "confidencial": 110,
+     "sobre_precio_base": 416,
+     "bajo_50_del_precio_base": 189,
+     "entre_50_y_80": 3028,
+     "procesos_con_ofertas": 1382,
+     "en_ambos_datasets": 0
+    }
+   },
+   "2025": {
+    "menor_cuantia": {
+     "grupos_de_la_consulta": 90624,
+     "valor_nulo_o_no_numerico": 4,
+     "valor_cero": 0,
+     "valor_negativo": 0,
+     "valor_uno": 0,
+     "valor_solo_nueves": 0,
+     "valor_billon_o_mas": 6,
+     "confidencial": 244,
+     "sobre_precio_base": 3336,
+     "bajo_50_del_precio_base": 857,
+     "entre_50_y_80": 1984,
+     "procesos_con_ofertas": 2693,
+     "en_ambos_datasets": 0
+    },
+    "licitacion": {
+     "grupos_de_la_consulta": 129616,
+     "valor_nulo_o_no_numerico": 0,
+     "valor_cero": 0,
+     "valor_negativo": 0,
+     "valor_uno": 54,
+     "valor_solo_nueves": 0,
+     "valor_billon_o_mas": 974,
+     "confidencial": 339,
+     "sobre_precio_base": 2999,
+     "bajo_50_del_precio_base": 6226,
+     "entre_50_y_80": 2658,
+     "procesos_con_ofertas": 1087,
+     "en_ambos_datasets": 0
+    },
+    "minima": {
+     "grupos_de_la_consulta": 13680,
+     "valor_nulo_o_no_numerico": 8,
+     "valor_cero": 0,
+     "valor_negativo": 0,
+     "valor_uno": 0,
+     "valor_solo_nueves": 0,
+     "valor_billon_o_mas": 0,
+     "confidencial": 87,
+     "sobre_precio_base": 691,
+     "bajo_50_del_precio_base": 221,
+     "entre_50_y_80": 2244,
+     "procesos_con_ofertas": 1765,
+     "en_ambos_datasets": 0
+    }
+   },
+   "2026": {
+    "menor_cuantia": {
+     "grupos_de_la_consulta": 72675,
+     "valor_nulo_o_no_numerico": 0,
+     "valor_cero": 0,
+     "valor_negativo": 0,
+     "valor_uno": 0,
+     "valor_solo_nueves": 0,
+     "valor_billon_o_mas": 3,
+     "confidencial": 161,
+     "sobre_precio_base": 2812,
+     "bajo_50_del_precio_base": 2388,
+     "entre_50_y_80": 997,
+     "procesos_con_ofertas": 1812,
+     "en_ambos_datasets": 0
+    },
+    "minima": {
+     "grupos_de_la_consulta": 10978,
+     "valor_nulo_o_no_numerico": 0,
+     "valor_cero": 0,
+     "valor_negativo": 0,
+     "valor_uno": 0,
+     "valor_solo_nueves": 0,
+     "valor_billon_o_mas": 1,
+     "confidencial": 41,
+     "sobre_precio_base": 675,
+     "bajo_50_del_precio_base": 1768,
+     "entre_50_y_80": 1567,
+     "procesos_con_ofertas": 1069,
+     "en_ambos_datasets": 0
+    },
+    "licitacion": {
+     "grupos_de_la_consulta": 86475,
+     "valor_nulo_o_no_numerico": 0,
+     "valor_cero": 0,
+     "valor_negativo": 0,
+     "valor_uno": 4,
+     "valor_solo_nueves": 0,
+     "valor_billon_o_mas": 35,
+     "confidencial": 229,
+     "sobre_precio_base": 892,
+     "bajo_50_del_precio_base": 7155,
+     "entre_50_y_80": 557,
+     "procesos_con_ofertas": 763,
+     "en_ambos_datasets": 0
+    }
+   },
+   "sin_fecha": {
+    "minima": {
+     "grupos_de_la_consulta": 513,
+     "valor_nulo_o_no_numerico": 0,
+     "valor_cero": 0,
+     "valor_negativo": 0,
+     "valor_uno": 0,
+     "valor_solo_nueves": 0,
+     "valor_billon_o_mas": 0,
+     "confidencial": 2,
+     "sobre_precio_base": 2,
+     "bajo_50_del_precio_base": 6,
+     "entre_50_y_80": 380,
+     "procesos_con_ofertas": 32,
+     "en_ambos_datasets": 0
+    },
+    "menor_cuantia": {
+     "grupos_de_la_consulta": 1687,
+     "valor_nulo_o_no_numerico": 0,
+     "valor_cero": 0,
+     "valor_negativo": 0,
+     "valor_uno": 0,
+     "valor_solo_nueves": 0,
+     "valor_billon_o_mas": 0,
+     "confidencial": 6,
+     "sobre_precio_base": 2,
+     "bajo_50_del_precio_base": 199,
+     "entre_50_y_80": 1,
+     "procesos_con_ofertas": 37,
+     "en_ambos_datasets": 0
+    },
+    "licitacion": {
+     "grupos_de_la_consulta": 4726,
+     "valor_nulo_o_no_numerico": 0,
+     "valor_cero": 0,
+     "valor_negativo": 0,
+     "valor_uno": 0,
+     "valor_solo_nueves": 0,
+     "valor_billon_o_mas": 0,
+     "confidencial": 9,
+     "sobre_precio_base": 0,
+     "bajo_50_del_precio_base": 1,
+     "entre_50_y_80": 0,
+     "procesos_con_ofertas": 17,
+     "en_ambos_datasets": 0
+    }
+   }
+  },
+  "exclusiones_limpieza": {
+   "menor_cuantia|repetidas": 3639248,
+   "menor_cuantia|confidencial": 1141,
+   "menor_cuantia|cero": 0,
+   "menor_cuantia|no_numerico": 4,
+   "menor_cuantia|sin_proveedor": 0,
+   "menor_cuantia|duplicada": 352290,
+   "menor_cuantia|duplicada_entre_datasets": 0,
+   "menor_cuantia|sobre_base": 1964,
+   "menor_cuantia|bajo_50": 2394,
+   "menor_cuantia|rescatada_bajo_50": 0,
+   "menor_cuantia|sin_precio_base": 0,
+   "minima|repetidas": 1611058,
+   "minima|confidencial": 593,
+   "minima|cero": 0,
+   "minima|no_numerico": 8,
+   "minima|sin_proveedor": 0,
+   "minima|duplicada": 38261,
+   "minima|duplicada_entre_datasets": 0,
+   "minima|sobre_base": 1734,
+   "minima|bajo_50": 1298,
+   "minima|rescatada_bajo_50": 0,
+   "minima|sin_precio_base": 0,
+   "licitacion|repetidas": 9959120,
+   "licitacion|confidencial": 1541,
+   "licitacion|cero": 0,
+   "licitacion|no_numerico": 0,
+   "licitacion|sin_proveedor": 0,
+   "licitacion|duplicada": 430457,
+   "licitacion|duplicada_entre_datasets": 0,
+   "licitacion|sobre_base": 2175,
+   "licitacion|bajo_50": 6570,
+   "licitacion|rescatada_bajo_50": 0,
+   "licitacion|sin_precio_base": 0
+  },
+  "nota": "Conteos de GRUPOS de la consulta agrupada (proceso, NIT, código, nombre, valor), no de ofertas ni de filas crudas: una oferta puede ser varios grupos porque c_digo_proveedor cambia dentro de una misma oferta (auditor, 25-oct-2026: 1.039.658 grupos para 215.375 combinaciones oferente-valor). Las ofertas distintas son las de limpiarOfertas (exclusiones_limpieza). Solo procesos adjudicados del universo; la moneda no viene en la consulta agrupada (el diccionario la cuenta por filas).",
+  "fallos_ofertas": 0,
+  "sin_ofertas_por_mes": {
+   "2022-09|menor_cuantia": 16,
+   "2022-09|minima": 16,
+   "2022-10|licitacion": 46,
+   "2022-10|menor_cuantia": 178,
+   "2022-10|minima": 97,
+   "2022-11|licitacion": 41,
+   "2022-11|menor_cuantia": 86,
+   "2022-11|minima": 75,
+   "2022-12|licitacion": 48,
+   "2022-12|menor_cuantia": 122,
+   "2022-12|minima": 91,
+   "2023-01|licitacion": 6,
+   "2023-01|menor_cuantia": 10,
+   "2023-01|minima": 8,
+   "2023-02|licitacion": 5,
+   "2023-02|menor_cuantia": 2,
+   "2023-02|minima": 5,
+   "2023-03|minima": 1,
+   "2023-06|menor_cuantia": 1,
+   "2023-06|minima": 1,
+   "2023-08|licitacion": 2,
+   "2023-08|menor_cuantia": 6,
+   "2023-08|minima": 5,
+   "2023-10|minima": 6,
+   "sin fec|menor_cuantia": 1
+  }
+ },
+ "unspsc": {
+  "por_modalidad": {
+   "menor_cuantia": {
+    "nucleo_72": {
+     "procesos": 11293,
+     "adjudicados": 9016,
+     "usable_motor": 3358
+    },
+    "otro": {
+     "procesos": 2070,
+     "adjudicados": 1585,
+     "usable_motor": 273
+    },
+    "marcado_81": {
+     "procesos": 1390,
+     "adjudicados": 1078,
+     "usable_motor": 308
+    },
+    "nucleo_95": {
+     "procesos": 332,
+     "adjudicados": 262,
+     "usable_motor": 79
+    },
+    "sin_codigo": {
+     "procesos": 572,
+     "adjudicados": 116,
+     "usable_motor": 18
+    },
+    "marcado_77": {
+     "procesos": 150,
+     "adjudicados": 113,
+     "usable_motor": 27
+    }
+   },
+   "minima": {
+    "nucleo_95": {
+     "procesos": 204,
+     "adjudicados": 180,
+     "usable_motor": 86
+    },
+    "nucleo_72": {
+     "procesos": 7148,
+     "adjudicados": 5918,
+     "usable_motor": 2723
+    },
+    "marcado_81": {
+     "procesos": 707,
+     "adjudicados": 575,
+     "usable_motor": 242
+    },
+    "otro": {
+     "procesos": 1674,
+     "adjudicados": 1326,
+     "usable_motor": 413
+    },
+    "sin_codigo": {
+     "procesos": 296,
+     "adjudicados": 171,
+     "usable_motor": 63
+    },
+    "marcado_77": {
+     "procesos": 68,
+     "adjudicados": 53,
+     "usable_motor": 12
+    }
+   },
+   "licitacion": {
+    "nucleo_72": {
+     "procesos": 6322,
+     "adjudicados": 4932,
+     "usable_motor": 2104
+    },
+    "marcado_81": {
+     "procesos": 767,
+     "adjudicados": 594,
+     "usable_motor": 209
+    },
+    "otro": {
+     "procesos": 1013,
+     "adjudicados": 793,
+     "usable_motor": 247
+    },
+    "marcado_77": {
+     "procesos": 140,
+     "adjudicados": 102,
+     "usable_motor": 13
+    },
+    "nucleo_95": {
+     "procesos": 181,
+     "adjudicados": 146,
+     "usable_motor": 56
+    },
+    "sin_codigo": {
+     "procesos": 169,
+     "adjudicados": 0,
+     "usable_motor": 0
+    }
+   }
+  },
+  "nucleo": [
+   "72",
+   "95"
+  ],
+  "marcados": [
+   "77",
+   "81"
+  ],
+  "lectura": {
+   "procesos_con_segmentos_distintos": 3732,
+   "codigo_solo_en_otra_fila": 9440,
+   "otros_segmentos": {
+    "10": 64,
+    "11": 54,
+    "12": 10,
+    "13": 4,
+    "14": 1,
+    "15": 5,
+    "20": 29,
+    "21": 11,
+    "22": 56,
+    "23": 25,
+    "24": 42,
+    "25": 19,
+    "26": 105,
+    "27": 31,
+    "30": 585,
+    "31": 93,
+    "32": 21,
+    "39": 312,
+    "40": 201,
+    "41": 31,
+    "42": 4,
+    "43": 25,
+    "44": 4,
+    "45": 11,
+    "46": 194,
+    "47": 61,
+    "48": 7,
+    "49": 90,
+    "50": 2,
+    "52": 14,
+    "53": 2,
+    "54": 1,
+    "55": 53,
+    "56": 76,
+    "60": 20,
+    "70": 725,
+    "71": 59,
+    "73": 141,
+    "76": 162,
+    "78": 38,
+    "80": 554,
+    "82": 25,
+    "83": 612,
+    "84": 7,
+    "85": 8,
+    "86": 16,
+    "90": 14,
+    "91": 5,
+    "92": 22,
+    "93": 101,
+    "94": 5
+   }
+  },
+  "con_red": {
+   "ok": true,
+   "filas_p6dx_por_tipo": [
+    {
+     "tipo_de_contrato": "Obra",
+     "filas": 46273
+    },
+    {
+     "tipo_de_contrato": "Prestación de servicios",
+     "filas": 8239
+    },
+    {
+     "tipo_de_contrato": "Suministros",
+     "filas": 874
+    },
+    {
+     "tipo_de_contrato": "Compraventa",
+     "filas": 612
+    },
+    {
+     "tipo_de_contrato": "Otro",
+     "filas": 591
+    },
+    {
+     "tipo_de_contrato": "Arrendamiento de muebles",
+     "filas": 68
+    },
+    {
+     "tipo_de_contrato": "Concesión",
+     "filas": 15
+    },
+    {
+     "tipo_de_contrato": "Negocio fiduciario",
+     "filas": 13
+    },
+    {
+     "tipo_de_contrato": "Servicios financieros",
+     "filas": 3
+    },
+    {
+     "tipo_de_contrato": "Asociación Público Privada",
+     "filas": 2
+    }
+   ],
+   "nota": "Son FILAS de p6dx (una por fase), no procesos; solo códigos con prefijo «V1.», así que no ve las filas «UNSPECIFIED» de un proceso que sí tiene código en otra fase. Sirve para ver qué deja fuera el filtro por tipo «Obra».",
+   "consultado_el": "2026-10-26T00:09:51.227Z",
+   "where": "fecha_de_publicacion_del >= '2020-01-01T00:00:00' AND modalidad_de_contratacion in ('Licitación pública','Licitación pública Obra Publica','Selección Abreviada de Menor Cuantía','Seleccion Abreviada Menor Cuantia Sin Manifestacion Interes') AND (codigo_principal_de_categoria like 'V1.72%' OR codigo_principal_de_categoria like 'V1.95%')"
+  }
+ },
+ "control": {
+  "filas_p6dx": 81643,
+  "filas_que_no_son_obra": 0,
+  "portafolios": 34496,
+  "filas_base": 34496
+ },
+ "embudo_base": {
+  "corte_procesos": "2026-10-25T20:46:08.173Z",
+  "corte_ofertas": "2026-10-25T20:49:05.816Z",
+  "generado": "2026-10-25T20:56:24.514Z",
+  "procesos": 34496,
+  "umbral_plazo_corto_dias": {
+   "licitacion": 26,
+   "menor_cuantia": 14,
+   "minima": 2
+  },
+  "n_ganador_repetido": 3,
+  "interes": {
+   "minimo": 10,
+   "ofertas_max": 2
+  },
+  "jbjy_fallos": [],
+  "por_modalidad": {
+   "menor_cuantia": {
+    "total": 15807,
+    "excluidos": {
+     "cero_ofertas_validas": 617,
+     "no_adjudicado": 3637,
+     "lote_numero_de_lotes": 184,
+     "lote_p6dx": 291,
+     "sin_ofertas_en_datos_abiertos": 419,
+     "lote_por_ofertas": 32
+    },
+    "real": 4830,
+    "baja": 5797,
+    "senales": {
+     "real": {
+      "una_oferta": {
+       "si": 0,
+       "no": 4830,
+       "sin_dato": 0
+      },
+      "adjudicado_99_con_una": {
+       "si": 0,
+       "no": 4830,
+       "sin_dato": 0
+      },
+      "plazo_corto": {
+       "si": 73,
+       "no": 4389,
+       "sin_dato": 368
+      },
+      "ganador_repetido": {
+       "si": 886,
+       "no": 3941,
+       "sin_dato": 3
+      },
+      "interes_sin_ofertas": {
+       "si": 0,
+       "no": 4762,
+       "sin_dato": 68
+      }
+     },
+     "baja": {
+      "una_oferta": {
+       "si": 3987,
+       "no": 1609,
+       "sin_dato": 201
+      },
+      "adjudicado_99_con_una": {
+       "si": 3232,
+       "no": 2316,
+       "sin_dato": 249
+      },
+      "plazo_corto": {
+       "si": 488,
+       "no": 4861,
+       "sin_dato": 448
+      },
+      "ganador_repetido": {
+       "si": 1781,
+       "no": 4006,
+       "sin_dato": 10
+      },
+      "interes_sin_ofertas": {
+       "si": 3866,
+       "no": 1791,
+       "sin_dato": 140
+      }
+     }
+    },
+    "ganador_identificado": 10614,
+    "oferta_ganadora_hallada": 10286,
+    "ubicacion_desde_direccion": 2,
+    "usables": 10627
+   },
+   "minima": {
+    "total": 10097,
+    "excluidos": {
+     "no_adjudicado": 1874,
+     "cero_ofertas_validas": 380,
+     "sin_ofertas_en_datos_abiertos": 305,
+     "lote_numero_de_lotes": 29,
+     "lote_por_ofertas": 22,
+     "lote_p6dx": 3,
+     "sin_precio_base": 5
+    },
+    "real": 4045,
+    "baja": 3434,
+    "senales": {
+     "real": {
+      "una_oferta": {
+       "si": 0,
+       "no": 4045,
+       "sin_dato": 0
+      },
+      "adjudicado_99_con_una": {
+       "si": 0,
+       "no": 4045,
+       "sin_dato": 0
+      },
+      "plazo_corto": {
+       "si": 128,
+       "no": 3917,
+       "sin_dato": 0
+      },
+      "ganador_repetido": {
+       "si": 976,
+       "no": 3065,
+       "sin_dato": 4
+      },
+      "interes_sin_ofertas": {
+       "si": 0,
+       "no": 0,
+       "sin_dato": 4045
+      }
+     },
+     "baja": {
+      "una_oferta": {
+       "si": 2050,
+       "no": 1214,
+       "sin_dato": 170
+      },
+      "adjudicado_99_con_una": {
+       "si": 1395,
+       "no": 1842,
+       "sin_dato": 197
+      },
+      "plazo_corto": {
+       "si": 178,
+       "no": 3256,
+       "sin_dato": 0
+      },
+      "ganador_repetido": {
+       "si": 1495,
+       "no": 1933,
+       "sin_dato": 6
+      },
+      "interes_sin_ofertas": {
+       "si": 0,
+       "no": 0,
+       "sin_dato": 3434
+      }
+     }
+    },
+    "ganador_identificado": 7469,
+    "oferta_ganadora_hallada": 7176,
+    "ubicacion_desde_direccion": 1,
+    "usables": 7479
+   },
+   "licitacion": {
+    "total": 8592,
+    "excluidos": {
+     "no_adjudicado": 2025,
+     "lote_numero_de_lotes": 391,
+     "lote_p6dx": 508,
+     "lote_por_ofertas": 464,
+     "cero_ofertas_validas": 153,
+     "sin_ofertas_en_datos_abiertos": 142,
+     "sin_precio_base": 4
+    },
+    "real": 3228,
+    "baja": 1677,
+    "senales": {
+     "real": {
+      "una_oferta": {
+       "si": 0,
+       "no": 3228,
+       "sin_dato": 0
+      },
+      "adjudicado_99_con_una": {
+       "si": 0,
+       "no": 3228,
+       "sin_dato": 0
+      },
+      "plazo_corto": {
+       "si": 201,
+       "no": 2732,
+       "sin_dato": 295
+      },
+      "ganador_repetido": {
+       "si": 143,
+       "no": 3084,
+       "sin_dato": 1
+      },
+      "interes_sin_ofertas": {
+       "si": 0,
+       "no": 0,
+       "sin_dato": 3228
+      }
+     },
+     "baja": {
+      "una_oferta": {
+       "si": 1113,
+       "no": 505,
+       "sin_dato": 59
+      },
+      "adjudicado_99_con_una": {
+       "si": 909,
+       "no": 695,
+       "sin_dato": 73
+      },
+      "plazo_corto": {
+       "si": 210,
+       "no": 1337,
+       "sin_dato": 130
+      },
+      "ganador_repetido": {
+       "si": 180,
+       "no": 1495,
+       "sin_dato": 2
+      },
+      "interes_sin_ofertas": {
+       "si": 0,
+       "no": 0,
+       "sin_dato": 1677
+      }
+     }
+    },
+    "ganador_identificado": 4902,
+    "oferta_ganadora_hallada": 4587,
+    "ubicacion_desde_direccion": 0,
+    "usables": 4905
+   }
+  },
+  "sensibilidad_ganador_repetido": {
+   "2": 2896,
+   "3": 1243,
+   "4": 684,
+   "5": 437
+  },
+  "parejas_entidad_ganador": 20267,
+  "proporcion_marcada": {
+   "menor_cuantia": {
+    "una_oferta": {
+     "marcados": 3987,
+     "con_dato": 10426,
+     "pct": 38.2
+    },
+    "adjudicado_99_con_una": {
+     "marcados": 3232,
+     "con_dato": 10378,
+     "pct": 31.1
+    },
+    "plazo_corto": {
+     "marcados": 561,
+     "con_dato": 9811,
+     "pct": 5.7
+    },
+    "ganador_repetido": {
+     "marcados": 2667,
+     "con_dato": 10614,
+     "pct": 25.1
+    },
+    "interes_sin_ofertas": {
+     "marcados": 3866,
+     "con_dato": 10419,
+     "pct": 37.1
+    }
+   },
+   "minima": {
+    "una_oferta": {
+     "marcados": 2050,
+     "con_dato": 7309,
+     "pct": 28
+    },
+    "adjudicado_99_con_una": {
+     "marcados": 1395,
+     "con_dato": 7282,
+     "pct": 19.2
+    },
+    "plazo_corto": {
+     "marcados": 306,
+     "con_dato": 7479,
+     "pct": 4.1
+    },
+    "ganador_repetido": {
+     "marcados": 2471,
+     "con_dato": 7469,
+     "pct": 33.1
+    },
+    "interes_sin_ofertas": {
+     "marcados": 0,
+     "con_dato": 0,
+     "pct": null
+    }
+   },
+   "licitacion": {
+    "una_oferta": {
+     "marcados": 1113,
+     "con_dato": 4846,
+     "pct": 23
+    },
+    "adjudicado_99_con_una": {
+     "marcados": 909,
+     "con_dato": 4832,
+     "pct": 18.8
+    },
+    "plazo_corto": {
+     "marcados": 411,
+     "con_dato": 4480,
+     "pct": 9.2
+    },
+    "ganador_repetido": {
+     "marcados": 323,
+     "con_dato": 4902,
+     "pct": 6.6
+    },
+    "interes_sin_ofertas": {
+     "marcados": 0,
+     "con_dato": 0,
+     "pct": null
+    }
+   }
+  },
+  "censo_contrato": {
+   "procesos": 23011,
+   "sin_contrato": 23008,
+   "sin_medir": 0,
+   "ganador": {
+    "si": 3,
+    "no": 0,
+    "sin_dato": 0
+   },
+   "valor": {
+    "igual": 2,
+    "mayor": 1,
+    "menor": 0,
+    "sin_dato": 0
+   }
+  },
+  "validas_frente_a_respuestas": {
+   "iguales": 20521,
+   "menos_validas": 2477,
+   "mas_validas": 13,
+   "sin_dato": 0
+  },
+  "inconsistencias": {
+   "valor_adjudicado_distinto_de_la_oferta_ganadora": 1434,
+   "valor_adjudicado_sobre_precio_base": 100
+  }
+ }
+}
