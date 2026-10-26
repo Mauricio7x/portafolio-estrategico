@@ -1,0 +1,666 @@
+{
+ "generado": "2026-10-26T12:06:35.327Z",
+ "fuente": "dmgg-8hin",
+ "semilla": 20261026,
+ "ano_adjudicacion": "2026",
+ "prioridad": [
+  "informe_evaluacion",
+  "resolucion_adjudicacion",
+  "acta"
+ ],
+ "procesos": [
+  {
+   "n": 1,
+   "modalidad": "licitacion",
+   "portafolio": "CO1.BDOS.9109608",
+   "id_proceso": "CO1.REQ.9451020",
+   "entidad": "ALCALDÍA MUNICIPAL DE CHAPARRAL",
+   "departamento": "Tolima",
+   "precio_base": 33717108487,
+   "valor_adjudicado": 33712486021,
+   "ofertas_validas": 3,
+   "fecha_adjudicacion": "2026-02-03",
+   "documento": {
+    "papel": "resolucion_adjudicacion",
+    "nombre": "RESOLUCION DE ADJUDICACION PLACA HUELLA CHAPARRAL.pdf",
+    "extension": "pdf",
+    "bytes": 546794,
+    "fecha_carga": "2026-02-02",
+    "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=747848932&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+    "otros_del_mismo_papel": 0
+   }
+  },
+  {
+   "n": 2,
+   "modalidad": "licitacion",
+   "portafolio": "CO1.BDOS.10038295",
+   "id_proceso": "CO1.REQ.10262411",
+   "entidad": "ALCALDIA DE MOCOA",
+   "departamento": "No Definido",
+   "precio_base": 6300609605,
+   "valor_adjudicado": 6020988767,
+   "ofertas_validas": 5,
+   "fecha_adjudicacion": "2026-06-05",
+   "documento": {
+    "papel": "informe_evaluacion",
+    "nombre": "17. INFORME  DE EVALUACION  FINAL PROCESO LP-001 de 2026.pdf",
+    "extension": "pdf",
+    "bytes": 30415387,
+    "fecha_carga": "2026-06-04",
+    "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=805430468&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+    "otros_del_mismo_papel": 1
+   }
+  },
+  {
+   "n": 3,
+   "modalidad": "licitacion",
+   "portafolio": "CO1.BDOS.10134286",
+   "id_proceso": "CO1.REQ.10664049",
+   "entidad": "MUNICIPIO DE VILLA DE LEYVA//",
+   "departamento": "Boyacá",
+   "precio_base": 2500000000,
+   "valor_adjudicado": 2354841569,
+   "ofertas_validas": 51,
+   "fecha_adjudicacion": "2026-09-23",
+   "documento": {
+    "papel": "resolucion_adjudicacion",
+    "nombre": "AJUSTE - RESOLUCION DE ADJUDICACION - LP-AMVL-002-2026.pdf",
+    "extension": "pdf",
+    "bytes": 3912969,
+    "fecha_carga": "2026-09-23",
+    "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=862157216&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+    "otros_del_mismo_papel": 0
+   }
+  },
+  {
+   "n": 4,
+   "modalidad": "licitacion",
+   "portafolio": "CO1.BDOS.10437199",
+   "id_proceso": "CO1.REQ.10753631",
+   "entidad": "AGUAS DE MANIZALES",
+   "departamento": "Caldas",
+   "precio_base": 1087051250,
+   "valor_adjudicado": 1019633877,
+   "ofertas_validas": 11,
+   "fecha_adjudicacion": "2026-09-07",
+   "documento": {
+    "papel": "acta",
+    "nombre": "ACTA DE APERTURA LP-04-2026.pdf",
+    "extension": "pdf",
+    "bytes": 829038,
+    "fecha_carga": "2026-07-28",
+    "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=832856745&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+    "otros_del_mismo_papel": 0
+   }
+  },
+  {
+   "n": 5,
+   "modalidad": "licitacion",
+   "portafolio": "CO1.BDOS.10531682",
+   "id_proceso": "CO1.REQ.10824154",
+   "entidad": "ALCALDIA DE SAN MARTIN  META",
+   "departamento": "Meta",
+   "precio_base": 510400054,
+   "valor_adjudicado": 510347179,
+   "ofertas_validas": 3,
+   "fecha_adjudicacion": "2026-09-09",
+   "documento": {
+    "papel": "acta",
+    "nombre": "ACTA DE AUCIENCIA APERTURA SOBRE 2.pdf",
+    "extension": "pdf",
+    "bytes": 24685382,
+    "fecha_carga": "2026-09-08",
+    "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=855192498&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+    "otros_del_mismo_papel": 0
+   }
+  },
+  {
+   "n": 6,
+   "modalidad": "licitacion",
+   "portafolio": "CO1.BDOS.9036443",
+   "id_proceso": "CO1.REQ.9468298",
+   "entidad": "INVIAS",
+   "departamento": "Distrito Capital de Bogotá",
+   "precio_base": 92538000000,
+   "valor_adjudicado": 86153322331,
+   "ofertas_validas": 19,
+   "fecha_adjudicacion": "2026-06-09",
+   "documento": {
+    "papel": "resolucion_adjudicacion",
+    "nombre": "3798_RESOLUCION_DE_ADJUDICACION_LICITACIÓN_PÚBLICA_v1 LP-038-2025.pdf",
+    "extension": "pdf",
+    "bytes": 451768,
+    "fecha_carga": "2026-06-09",
+    "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=806826061&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+    "otros_del_mismo_papel": 1
+   }
+  },
+  {
+   "n": 7,
+   "modalidad": "licitacion",
+   "portafolio": "CO1.BDOS.10332686",
+   "id_proceso": "CO1.REQ.10604452",
+   "entidad": "CORPORACION AUTONOMA REGIONAL DE LA FRONTERA NORORIENTAL+",
+   "departamento": "Norte de Santander",
+   "precio_base": 4615438058,
+   "valor_adjudicado": 4444636769,
+   "ofertas_validas": 10,
+   "fecha_adjudicacion": "2026-08-27",
+   "documento": {
+    "papel": "acta",
+    "nombre": "MPA-01-F-03_ACTA_EVALUACION_CALIDAD - FINAL - 25-8-2026.pdf",
+    "extension": "pdf",
+    "bytes": 338721,
+    "fecha_carga": "2026-08-26",
+    "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=847671358&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+    "otros_del_mismo_papel": 1
+   }
+  },
+  {
+   "n": 8,
+   "modalidad": "licitacion",
+   "portafolio": "CO1.BDOS.10347154",
+   "id_proceso": "CO1.REQ.10673793",
+   "entidad": "MUNICIPIO DE NEIVA",
+   "departamento": "Huila",
+   "precio_base": 12307831776,
+   "valor_adjudicado": 11535916022,
+   "ofertas_validas": 8,
+   "fecha_adjudicacion": "2026-09-23",
+   "documento": {
+    "papel": "resolucion_adjudicacion",
+    "nombre": "7. RESOLUCION 164 DE 2026 Adjudicación.pdf",
+    "extension": "pdf",
+    "bytes": 1764639,
+    "fecha_carga": "2026-09-22",
+    "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=862150519&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+    "otros_del_mismo_papel": 0
+   }
+  },
+  {
+   "n": 9,
+   "modalidad": "licitacion",
+   "portafolio": "CO1.BDOS.10374336",
+   "id_proceso": "CO1.REQ.10744395",
+   "entidad": "GOBERNACION DEL DEPARTAMENTO DEL CESAR",
+   "departamento": "Cesar",
+   "precio_base": 44575110710,
+   "valor_adjudicado": 43738636359,
+   "ofertas_validas": 12,
+   "fecha_adjudicacion": "2026-09-18",
+   "documento": {
+    "papel": "resolucion_adjudicacion",
+    "nombre": "RESOLUCION DE ADJUDICACION.pdf",
+    "extension": "pdf",
+    "bytes": 1603862,
+    "fecha_carga": "2026-09-17",
+    "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=859790872&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+    "otros_del_mismo_papel": 0
+   }
+  },
+  {
+   "n": 10,
+   "modalidad": "licitacion",
+   "portafolio": "CO1.BDOS.10291410",
+   "id_proceso": "CO1.REQ.10494785",
+   "entidad": "MUNICIPIO DE YONDO",
+   "departamento": "Antioquia",
+   "precio_base": 2299810414,
+   "valor_adjudicado": 2264711346,
+   "ofertas_validas": 6,
+   "fecha_adjudicacion": "2026-07-09",
+   "documento": {
+    "papel": "informe_evaluacion",
+    "nombre": "INFORME DE EVALUACION.pdf",
+    "extension": "pdf",
+    "bytes": 3964388,
+    "fecha_carga": "2026-08-25",
+    "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=846841346&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+    "otros_del_mismo_papel": 2
+   }
+  },
+  {
+   "n": 11,
+   "modalidad": "licitacion",
+   "portafolio": "CO1.BDOS.10054238",
+   "id_proceso": "CO1.REQ.10344820",
+   "entidad": "HOSPITAL MILITAR CENTRAL",
+   "departamento": "Distrito Capital de Bogotá",
+   "precio_base": 856960000,
+   "valor_adjudicado": 801716430,
+   "ofertas_validas": 16,
+   "fecha_adjudicacion": "2026-06-18",
+   "documento": {
+    "papel": "resolucion_adjudicacion",
+    "nombre": "RESOLUCIÓN DE ADJUDICACIÓN LP-001-2026.pdf",
+    "extension": "pdf",
+    "bytes": 817890,
+    "fecha_carga": "2026-06-18",
+    "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=811209159&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+    "otros_del_mismo_papel": 0
+   }
+  },
+  {
+   "n": 12,
+   "modalidad": "licitacion",
+   "portafolio": "CO1.BDOS.9224444",
+   "id_proceso": "CO1.REQ.9460745",
+   "entidad": "ALCALDIA DE FLORIDABLANCA",
+   "departamento": "Santander",
+   "precio_base": 1549491219,
+   "valor_adjudicado": 1477736317,
+   "ofertas_validas": 29,
+   "fecha_adjudicacion": "2026-02-23",
+   "documento": {
+    "papel": "resolucion_adjudicacion",
+    "nombre": "26- Resolución Adjudicación - FLO-INFRA-LP-010-2025.pdf",
+    "extension": "pdf",
+    "bytes": 503517,
+    "fecha_carga": "2026-03-04",
+    "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=761264843&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+    "otros_del_mismo_papel": 2
+   }
+  },
+  {
+   "n": 13,
+   "modalidad": "licitacion",
+   "portafolio": "CO1.BDOS.9139173",
+   "id_proceso": "CO1.REQ.9492444",
+   "entidad": "INVIAS",
+   "departamento": "Distrito Capital de Bogotá",
+   "precio_base": 153714557697,
+   "valor_adjudicado": 145090379104,
+   "ofertas_validas": 14,
+   "fecha_adjudicacion": "2026-06-09",
+   "documento": {
+    "papel": "resolucion_adjudicacion",
+    "nombre": "RESOLUCION DE ADJUDICACION LICITACION  PUBLICA 49-2025 V2.pdf",
+    "extension": "pdf",
+    "bytes": 412298,
+    "fecha_carga": "2026-06-09",
+    "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=806824777&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+    "otros_del_mismo_papel": 0
+   }
+  },
+  {
+   "n": 14,
+   "modalidad": "licitacion",
+   "portafolio": "CO1.BDOS.10115915",
+   "id_proceso": "CO1.REQ.10485322",
+   "entidad": "MUNICIPIO DE ASTREA",
+   "departamento": "Cesar",
+   "precio_base": 1869153654,
+   "valor_adjudicado": 1828788278,
+   "ofertas_validas": 8,
+   "fecha_adjudicacion": "2026-07-23",
+   "documento": {
+    "papel": "resolucion_adjudicacion",
+    "nombre": "Resolucion de adjudicacion LP-N° 001-2026.pdf",
+    "extension": "pdf",
+    "bytes": 215057,
+    "fecha_carga": "2026-07-22",
+    "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=828668017&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+    "otros_del_mismo_papel": 0
+   }
+  },
+  {
+   "n": 15,
+   "modalidad": "licitacion",
+   "portafolio": "CO1.BDOS.9052682",
+   "id_proceso": "CO1.REQ.9460813",
+   "entidad": "INVIAS",
+   "departamento": "Distrito Capital de Bogotá",
+   "precio_base": 118582489309,
+   "valor_adjudicado": 109545684914,
+   "ofertas_validas": 21,
+   "fecha_adjudicacion": "2026-05-20",
+   "documento": {
+    "papel": "informe_evaluacion",
+    "nombre": "Informe Evaluacion Oferta Economica LP-DEO-SGI-041-2025.pdf",
+    "extension": "pdf",
+    "bytes": 540318,
+    "fecha_carga": "2026-05-13",
+    "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=796876129&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+    "otros_del_mismo_papel": 0
+   }
+  },
+  {
+   "n": 16,
+   "modalidad": "menor_cuantia",
+   "portafolio": "CO1.BDOS.10498331",
+   "id_proceso": "CO1.REQ.10773471",
+   "entidad": "AEROCIVIL",
+   "departamento": "Distrito Capital de Bogotá",
+   "precio_base": 367500000,
+   "valor_adjudicado": 336262957,
+   "ofertas_validas": 34,
+   "fecha_adjudicacion": "2026-09-15",
+   "documento": {
+    "papel": "resolucion_adjudicacion",
+    "nombre": "RESOLUCION ADJUDICACION (2).pdf",
+    "extension": "pdf",
+    "bytes": 635619,
+    "fecha_carga": "2026-09-14",
+    "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=857664212&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+    "otros_del_mismo_papel": 0
+   }
+  },
+  {
+   "n": 17,
+   "modalidad": "menor_cuantia",
+   "portafolio": "CO1.BDOS.9972021",
+   "id_proceso": "CO1.REQ.10194898",
+   "entidad": "MUNICIPIO DE VILLAGÓMEZ*",
+   "departamento": "Cundinamarca",
+   "precio_base": 355794400,
+   "valor_adjudicado": 355062771,
+   "ofertas_validas": 4,
+   "fecha_adjudicacion": "2026-03-13",
+   "documento": {
+    "papel": "resolucion_adjudicacion",
+    "nombre": "Resolucion Adjudicacion samc 04 (2).pdf",
+    "extension": "pdf",
+    "bytes": 183466,
+    "fecha_carga": "2026-03-12",
+    "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=765337412&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+    "otros_del_mismo_papel": 2
+   }
+  },
+  {
+   "n": 18,
+   "modalidad": "menor_cuantia",
+   "portafolio": "CO1.BDOS.10750260",
+   "id_proceso": "CO1.REQ.11045620",
+   "entidad": "INSTITUTO DE FINANCIAMIENTO PROMOCIÓN Y DESARROLLO DE MANIZALES - INFI-MANIZALES",
+   "departamento": "Caldas",
+   "precio_base": 481950635,
+   "valor_adjudicado": 449696788,
+   "ofertas_validas": 4,
+   "fecha_adjudicacion": "2026-10-16",
+   "documento": {
+    "papel": "resolucion_adjudicacion",
+    "nombre": "RESOLUCION DE ADJUDICACION.pdf",
+    "extension": "pdf",
+    "bytes": 411873,
+    "fecha_carga": "2026-10-15",
+    "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=874716367&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+    "otros_del_mismo_papel": 0
+   }
+  },
+  {
+   "n": 19,
+   "modalidad": "menor_cuantia",
+   "portafolio": "CO1.BDOS.10434222",
+   "id_proceso": "CO1.REQ.10710540",
+   "entidad": "AEROCIVIL",
+   "departamento": "Distrito Capital de Bogotá",
+   "precio_base": 1050855152,
+   "valor_adjudicado": 942406356,
+   "ofertas_validas": 49,
+   "fecha_adjudicacion": "2026-08-06",
+   "documento": {
+    "papel": "resolucion_adjudicacion",
+    "nombre": "RESOLUCION DE ADJUDICACION 110 PLATO-signed.pdf",
+    "extension": "pdf",
+    "bytes": 1699899,
+    "fecha_carga": "2026-08-06",
+    "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=838344526&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+    "otros_del_mismo_papel": 0
+   }
+  },
+  {
+   "n": 20,
+   "modalidad": "menor_cuantia",
+   "portafolio": "CO1.BDOS.10380872",
+   "id_proceso": "CO1.REQ.10637471",
+   "entidad": "ALCALDÍA MUNICIPAL COTA",
+   "departamento": "Cundinamarca",
+   "precio_base": 375960770,
+   "valor_adjudicado": 370165886,
+   "ofertas_validas": 3,
+   "fecha_adjudicacion": "2026-07-23",
+   "documento": {
+    "papel": "resolucion_adjudicacion",
+    "nombre": "RESOLUCION DE ADJUDICACION.pdf",
+    "extension": "pdf",
+    "bytes": 873726,
+    "fecha_carga": "2026-07-23",
+    "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=829320220&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+    "otros_del_mismo_papel": 0
+   }
+  },
+  {
+   "n": 21,
+   "modalidad": "menor_cuantia",
+   "portafolio": "CO1.BDOS.10285684",
+   "id_proceso": "CO1.REQ.10501742",
+   "entidad": "AEROCIVIL",
+   "departamento": "Distrito Capital de Bogotá",
+   "precio_base": 800000000,
+   "valor_adjudicado": 729667653,
+   "ofertas_validas": 40,
+   "fecha_adjudicacion": "2026-07-01",
+   "documento": {
+    "papel": "resolucion_adjudicacion",
+    "nombre": "RESOLUCION DE ADJUDICACION PROCESO 26001209 H4 DE 2026.pdf",
+    "extension": "pdf",
+    "bytes": 997267,
+    "fecha_carga": "2026-06-30",
+    "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=818282963&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+    "otros_del_mismo_papel": 0
+   }
+  },
+  {
+   "n": 22,
+   "modalidad": "menor_cuantia",
+   "portafolio": "CO1.BDOS.10486764",
+   "id_proceso": "CO1.REQ.10755885",
+   "entidad": "AEROCIVIL",
+   "departamento": "Distrito Capital de Bogotá",
+   "precio_base": 1000000000,
+   "valor_adjudicado": 922700001,
+   "ofertas_validas": 38,
+   "fecha_adjudicacion": "2026-08-24",
+   "documento": {
+    "papel": "resolucion_adjudicacion",
+    "nombre": "RESOLUCION DE ADJUDICACION 114  - SISTEMAS ELECTRICOS TOLU.pdf",
+    "extension": "pdf",
+    "bytes": 1587967,
+    "fecha_carga": "2026-08-24",
+    "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=845624446&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+    "otros_del_mismo_papel": 1
+   }
+  },
+  {
+   "n": 23,
+   "modalidad": "menor_cuantia",
+   "portafolio": "CO1.BDOS.10631874",
+   "id_proceso": "CO1.REQ.10923737",
+   "entidad": "ALCALDIA MUNICIPAL DE BRICEÑO BOYACA",
+   "departamento": "Boyacá",
+   "precio_base": 487739534,
+   "valor_adjudicado": 487733245,
+   "ofertas_validas": 3,
+   "fecha_adjudicacion": "2026-09-10",
+   "documento": {
+    "papel": "resolucion_adjudicacion",
+    "nombre": "MB-CO-SAMC-009-2026 Acto Administrativo de Adjudicación.pdf",
+    "extension": "pdf",
+    "bytes": 5095749,
+    "fecha_carga": "2026-09-09",
+    "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=855852045&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+    "otros_del_mismo_papel": 0
+   }
+  },
+  {
+   "n": 24,
+   "modalidad": "menor_cuantia",
+   "portafolio": "CO1.BDOS.10184721",
+   "id_proceso": "CO1.REQ.10412530",
+   "entidad": "ARMADA NACIONAL ESCUELA NAVAL DE CADETES ALMIRANTE PADILLA",
+   "departamento": "Bolívar",
+   "precio_base": 600000000,
+   "valor_adjudicado": 574805702,
+   "ofertas_validas": 3,
+   "fecha_adjudicacion": "2026-05-28",
+   "documento": {
+    "papel": "resolucion_adjudicacion",
+    "nombre": "RESOLUCIÓN DE ADJUDICACIÓN.pdf",
+    "extension": "pdf",
+    "bytes": 400069,
+    "fecha_carga": "2026-05-27",
+    "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=801818764&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+    "otros_del_mismo_papel": 0
+   }
+  },
+  {
+   "n": 25,
+   "modalidad": "menor_cuantia",
+   "portafolio": "CO1.BDOS.10131395",
+   "id_proceso": "CO1.REQ.10360242",
+   "entidad": "AEROCIVIL",
+   "departamento": "Distrito Capital de Bogotá",
+   "precio_base": 1249780060,
+   "valor_adjudicado": 1116184929,
+   "ofertas_validas": 61,
+   "fecha_adjudicacion": "2026-06-10",
+   "documento": {
+    "papel": "resolucion_adjudicacion",
+    "nombre": "RESOLUCION ADJUDICACION CERRAMIENTO V.pdf",
+    "extension": "pdf",
+    "bytes": 511130,
+    "fecha_carga": "2026-06-10",
+    "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=807569269&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+    "otros_del_mismo_papel": 1
+   }
+  },
+  {
+   "n": 26,
+   "modalidad": "menor_cuantia",
+   "portafolio": "CO1.BDOS.10252244",
+   "id_proceso": "CO1.REQ.10466257",
+   "entidad": "ALCALDIA MUNICIPAL FUSAGASUGA",
+   "departamento": "Cundinamarca",
+   "precio_base": 291786944,
+   "valor_adjudicado": 248018941,
+   "ofertas_validas": 8,
+   "fecha_adjudicacion": "2026-06-19",
+   "documento": {
+    "papel": "resolucion_adjudicacion",
+    "nombre": "RESOLUCION DE ADJUDICACION.pdf",
+    "extension": "pdf",
+    "bytes": 246427,
+    "fecha_carga": "2026-06-18",
+    "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=811798789&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+    "otros_del_mismo_papel": 0
+   }
+  },
+  {
+   "n": 27,
+   "modalidad": "menor_cuantia",
+   "portafolio": "CO1.BDOS.10251767",
+   "id_proceso": "CO1.REQ.10493444",
+   "entidad": "FONDO ROTATORIO DE LA REGISTRADURIA",
+   "departamento": "Distrito Capital de Bogotá",
+   "precio_base": 578958622,
+   "valor_adjudicado": 558100048,
+   "ofertas_validas": 5,
+   "fecha_adjudicacion": "2026-06-19",
+   "documento": {
+    "papel": "resolucion_adjudicacion",
+    "nombre": "ResolucionAdjudicacionObrasAgrupaciónChocó.pdf",
+    "extension": "pdf",
+    "bytes": 284676,
+    "fecha_carga": "2026-06-19",
+    "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=811889238&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+    "otros_del_mismo_papel": 1
+   }
+  },
+  {
+   "n": 28,
+   "modalidad": "menor_cuantia",
+   "portafolio": "CO1.BDOS.10116502",
+   "id_proceso": "CO1.REQ.10354120",
+   "entidad": "DEPARTAMENTO DE SANTANDER",
+   "departamento": "Santander",
+   "precio_base": 1508481923,
+   "valor_adjudicado": 1496066384,
+   "ofertas_validas": 4,
+   "fecha_adjudicacion": "2026-06-05",
+   "documento": {
+    "papel": "informe_evaluacion",
+    "nombre": "17. Informe de Evaluacion Tecnico Definitivo - Surata.pdf",
+    "extension": "pdf",
+    "bytes": 583853,
+    "fecha_carga": "2026-06-04",
+    "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=805827424&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+    "otros_del_mismo_papel": 3
+   }
+  },
+  {
+   "n": 29,
+   "modalidad": "menor_cuantia",
+   "portafolio": "CO1.BDOS.9282110",
+   "id_proceso": "CO1.REQ.9500237",
+   "entidad": "ALCALDIA DE FLORIDABLANCA",
+   "departamento": "Santander",
+   "precio_base": 305813941,
+   "valor_adjudicado": 305644297,
+   "ofertas_validas": 3,
+   "fecha_adjudicacion": "2026-01-27",
+   "documento": {
+    "papel": "resolucion_adjudicacion",
+    "nombre": "29- Resolución Adjudicación -  FLO-INFRA-SA-MC-007-2025.pdf",
+    "extension": "pdf",
+    "bytes": 204687,
+    "fecha_carga": "2026-01-26",
+    "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=743022911&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+    "otros_del_mismo_papel": 1
+   }
+  },
+  {
+   "n": 30,
+   "modalidad": "menor_cuantia",
+   "portafolio": "CO1.BDOS.10481013",
+   "id_proceso": "CO1.REQ.10815921",
+   "entidad": "FONDO ROTATORIO DE LA REGISTRADURIA",
+   "departamento": "Distrito Capital de Bogotá",
+   "precio_base": 411815442,
+   "valor_adjudicado": 393283981,
+   "ofertas_validas": 5,
+   "fecha_adjudicacion": "2026-08-25",
+   "documento": {
+    "papel": "resolucion_adjudicacion",
+    "nombre": "ResolucionAdjudicacionSAMC032de2026ObraBuenaV.pdf",
+    "extension": "pdf",
+    "bytes": 226993,
+    "fecha_carga": "2026-08-25",
+    "url": "https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=846271333&InCommunity=False&InPaymentGateway=False&DocUniqueIdentifier=",
+    "otros_del_mismo_papel": 0
+   }
+  }
+ ],
+ "resumen": {
+  "licitacion": {
+   "universo": 489,
+   "elegidos": 15,
+   "saltados_sin_documento": 3,
+   "sin_medir": 0,
+   "por_papel": {
+    "resolucion_adjudicacion": 9,
+    "informe_evaluacion": 3,
+    "acta": 3
+   }
+  },
+  "menor_cuantia": {
+   "universo": 565,
+   "elegidos": 15,
+   "saltados_sin_documento": 3,
+   "sin_medir": 0,
+   "por_papel": {
+    "resolucion_adjudicacion": 14,
+    "informe_evaluacion": 1
+   }
+  }
+ }
+}
