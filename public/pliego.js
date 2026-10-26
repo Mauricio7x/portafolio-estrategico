@@ -1546,12 +1546,14 @@
      no cupo en la tanda anterior viaja como `sobrante` y abre la siguiente (no se rasteriza dos veces ni se pierde). Devuelve las imágenes con su número REAL de página,
      las que no se pudieron rasterizar y desde dónde sigue la lectura. `alPreparar(n)` se llama antes de cada página; si devuelve false la tanda se aborta. */
   const pesoDeImagen = (img) => String((img && img.base64) || "").length + 64;
-  async function rasterizarTanda(doc, primera, total, { sobrante = null, alPreparar = null } = {}) {
+  /* Con `lista` (las evaluaciones, 26-oct-2026: solo las páginas que traen imágenes), `primera`, `total` y `siguiente` son POSICIONES
+     en la lista (1…lista.length) y lo que se rasteriza es la página `lista[posición − 1]`; sin ella, son números de página, como siempre. */
+  async function rasterizarTanda(doc, primera, total, { sobrante = null, alPreparar = null, lista = null } = {}) {
     const imagenes = [], numeros = [], sinRaster = [];
     let bytes = 0, siguiente = primera, resto = null;
     if (sobrante) { imagenes.push(sobrante.img); numeros.push(sobrante.n); bytes += pesoDeImagen(sobrante.img); }
     while (siguiente <= total && imagenes.length < MAX_PAGINAS_OCR) {
-      const n = siguiente;
+      const n = lista ? lista[siguiente - 1] : siguiente;
       if (alPreparar && (await alPreparar(n)) === false) return { abortada: true };
       const img = await rasterizarPagina(doc, n);
       siguiente++;
@@ -1620,4 +1622,82 @@
         tiempos: { preparar_ms: Math.round(prepararMs), reconocer_ms: Math.round(reconocerMs), espera_ms: Math.round(esperaMs) } };
     } finally { try { await doc.destroy(); } catch { /* ya liberado */ } }
   };
+  /* LAS EVALUACIONES DE UNA ENTIDAD (26-oct-2026): el informe de evaluación o la resolución de adjudicación de un proceso cerrado. Muchas
+     traen el texto con capa, pero las TABLAS pegadas como imagen (las cinco resoluciones de Aerocivil del piloto del Nivel 3): por eso se
+     lee la capa de texto de todas las páginas y se pasan por OCR SOLO las que pintan alguna imagen, hasta `maxOcr` (el cupo diario del
+     servicio se cuida). El texto de cada página es la capa más lo que el OCR leyó de ella, con los MISMOS marcadores `\f<n>`: la cita
+     de una tabla en imagen se busca en su página. Sin clave de OCR o con el servicio saturado, se devuelve la capa de texto y se dice
+     (`sin_ocr`): lo que no se leyó no se finge leído. `paginasConImagen` va aparte: la suite lo ejecuta sin lienzo ni red. */
+  const OPS_DE_IMAGEN = ["paintImageXObject", "paintInlineImageXObject", "paintImageMaskXObject", "paintImageXObjectRepeat", "paintInlineImageXObjectGroup", "paintImageMaskXObjectGroup", "paintImageMaskXObjectRepeat", "paintJpegXObject"];
+  const paginasConImagen = (fnArrays, ops) => {
+    const buscadas = new Set(OPS_DE_IMAGEN.map((k) => ops && ops[k]).filter((v) => v !== undefined));
+    return fnArrays.map((fns, i) => ((fns || []).some((f) => buscadas.has(f)) ? i + 1 : null)).filter((n) => n !== null);
+  };
+  /* Con más páginas con imagen que cupo, el cupo va primero a las de MENOS texto con capa: los logos del encabezado hacen que TODA
+     página pinte una imagen (las resoluciones de Aerocivil: 2 imágenes por página), y la tabla pegada como imagen deja la suya casi sin
+     texto (589 a 795 caracteres frente a 1.474 a 2.599 en las de texto, medido en las filas 19 y 22 del piloto). Por orden de página
+     se gastaría el cupo en las primeras. Se devuelven en orden de página; las que no caben van en `sinCupo`. */
+  const paginasParaOcr = (conImagen, largos, maxOcr) => {
+    const lista = conImagen.length <= maxOcr ? conImagen.slice()
+      : [...conImagen].sort((a, b) => (largos[a - 1] || 0) - (largos[b - 1] || 0) || a - b).slice(0, maxOcr).sort((a, b) => a - b);
+    const elegidas = new Set(lista);
+    return { lista, sinCupo: conImagen.filter((n) => !elegidas.has(n)) };
+  };
+  const ocrPorPagina = (texto) => {
+    const m = new Map(); let n = null;
+    for (const l of String(texto || "").split(/\r\n|\r|\n/)) { const k = /^[ \t]*\f(\d+)[ \t]*$/.exec(l); if (k) { n = Number(k[1]); if (!m.has(n)) m.set(n, []); continue; } if (n != null) m.get(n).push(l); }
+    return m;
+  };
+  window.__pliegoLeerPdfMixto = async (datos, avisar = () => {}, { maxOcr = 30 } = {}) => {
+    const pdfjs = await cargarPdfJs();
+    const doc = await pdfjs.getDocument({ data: datos, isEvalSupported: false }).promise;
+    try {
+      const total = doc.numPages;
+      if (!total) throw new Error("El PDF no tiene páginas.");
+      const capa = [], fns = [];
+      for (let n = 1; n <= total; n++) {
+        avisar(n - 1, total, { etapa: "leyendo", desde: n, hasta: n });
+        await new Promise((r) => setTimeout(r, 0));
+        const pagina = await doc.getPage(n);
+        capa.push(lineasDePagina((await pagina.getTextContent()).items) || "");
+        try { fns.push((await pagina.getOperatorList()).fnArray); } catch { fns.push([]); }
+      }
+      const conImagen = paginasConImagen(fns, pdfjs.OPS);
+      const { lista, sinCupo } = paginasParaOcr(conImagen, capa.map((t) => t.replace(/\s+/g, "").length), maxOcr);
+      const leidas = new Map(), fallos = [], sinTexto = [];
+      let nota = null, siguiente = 1, sobrante = null, seguidasSinNada = 0;
+      while (lista.length && (siguiente <= lista.length || sobrante)) {
+        const tt = await rasterizarTanda(doc, siguiente, lista.length, { sobrante, lista, alPreparar: async (n) => { avisar(n - 1, total, { etapa: "preparando", desde: n, hasta: n }); await new Promise((r) => setTimeout(r, 0)); } });
+        siguiente = tt.siguiente; sobrante = tt.sobrante;
+        fallos.push(...tt.sinRaster);
+        const { imagenes, numeros } = tt;
+        if (!imagenes.length) continue;
+        avisar(numeros[0] - 1, total, { etapa: "reconociendo", desde: numeros[0], hasta: numeros[numeros.length - 1] });
+        const { rt, saturado } = await tandaOcrConEsperas(
+          () => pedir("/api/pliego?op=extraer-texto", { texto_extraido: "", imagenes_base64: imagenes, solo_reconocer: true }),
+          (ms) => avisar(numeros[0] - 1, total, { etapa: "espera_ocr", espera_s: Math.round(ms / 1000) }),
+          (ms) => new Promise((r) => setTimeout(r, ms)));
+        /* una caída de la red a mitad del OCR no tira la capa de texto ya leída: se guarda con su nota y las páginas que faltan */
+        if (rt.red) { nota = "la conexión se cortó durante el reconocimiento de imágenes: se guardó solo el texto con capa"; break; }
+        if (rt.estado === 401) throw new Error(MSG_401);
+        if (rt.cuerpo && rt.cuerpo.ocr_configurado === false) { nota = "el reconocimiento de imágenes no está configurado: se guardó solo el texto con capa"; break; }
+        if (saturado) { nota = "el servicio de reconocimiento de imágenes estaba saturado: se guardó solo el texto con capa"; break; }
+        const texto = rt.cuerpo && rt.cuerpo.ok && rt.cuerpo.texto_ocr ? renumerarMarcadores(rt.cuerpo.texto_ocr, numeros) : "";
+        const t = paginasDeTanda(rt.cuerpo, numeros, texto);
+        fallos.push(...t.sinLeer); sinTexto.push(...t.sinTexto);
+        if (!texto.trim()) { if (t.sinLeer.length && ++seguidasSinNada >= 2) { nota = "el reconocimiento de imágenes no respondió: se guardó solo el texto con capa"; break; } continue; }
+        seguidasSinNada = 0;
+        for (const [n, lineas] of ocrPorPagina(texto)) leidas.set(n, lineas.join("\n"));
+      }
+      const trozos = [];
+      for (let n = 1; n <= total; n++) {
+        trozos.push(marcadorPagina(n));
+        if (capa[n - 1]) trozos.push(capa[n - 1]);
+        if (leidas.get(n)) trozos.push(leidas.get(n));
+      }
+      const sinLeer = [...new Set([...fallos, ...lista.filter((n) => !leidas.has(n) && !sinTexto.includes(n)), ...sinCupo])].sort((a, b) => a - b);
+      return { texto: trozos.join("\n"), paginas: total, paginas_con_imagen: conImagen.length, paginas_ocr: leidas.size, sin_ocr: sinLeer, nota };
+    } finally { try { await doc.destroy(); } catch { /* ya liberado */ } }
+  };
+  window.__pliegoPaginasConImagen = paginasConImagen;
 })();

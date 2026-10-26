@@ -16,9 +16,11 @@
   al menos uno de estos documentos: informe de evaluación, resolución de adjudicación o acta.
 - **Probado a mano en 5 procesos:** se leyó quién quedó hábil, el porqué de cada rechazo y el método que salió
   por la TRM. Fueron rechazadas 12 de 32 ofertas.
-- **Probado con los 30 del piloto (26-oct-2026, § 10):** 20 de 30 documentos dicen quién quedó hábil. Con esos
-  hábiles y el método real, el motor de precio acierta al ganador en 6 de 9. En 2 de los 3 que fallan, el precio sale
-  bien y el ganador lo decidieron los puntos distintos del precio: la captura tiene que guardarlos también.
+- **Probado con los 30 del piloto (26-oct-2026, § 10 y § 11):** con las tablas en imagen leídas, 23 de 30 documentos
+  dicen quién quedó hábil. Con esos hábiles y el método real, el motor de precio acierta al ganador en 8 de 10. En los 2
+  que fallan, el precio sale bien y el ganador lo decidieron los puntos distintos del precio: la captura los guarda.
+- **Construido (§ 11):** la ventana de la entidad lee las evaluaciones de sus procesos cerrados y dice cuántas ofertas
+  rechazó, por qué, y si el ganador lo decidió el precio o los otros puntos, solo con datos verificados cita por cita.
 - La tasa de rechazo de una entidad con un margen de ±15 puntos pide unas 43 ofertas leídas. Con un margen de
   ±10, unas 97. En licitación, 307 entidades ya suman 43 ofertas en la base 2020-2026 (con las reglas
   corregidas el 26-oct-2026). Las demás se apoyan en el departamento y en la modalidad.
@@ -134,8 +136,8 @@ los rivales no cambian su precio por la oferta propia.
 
 1. **Prueba de la captura.** Con los hábiles y el método reales de un proceso, el motor debe reproducir al
    ganador casi siempre. Si no, la lectura está mal, no el modelo.
-   - Corregido el 26-oct-2026 con el piloto (§ 10): acertó en 6 de 9. En 2 de los 3 que fallan no era la lectura: el
-     ganador lo decidieron los puntos distintos del precio.
+   - Corregido el 26-oct-2026 con el piloto (§ 10 y § 11): acertó en 8 de 10. En los 2 que fallan no era la lectura:
+     el ganador lo decidieron los puntos distintos del precio.
 2. **Calibración.** Se entrena hasta 2025 y se prueba en 2026. Umbrales del C1: error de calibración de 5 puntos
    o menos, Brier con una mejora de 0,10 o más frente a 1/n, y al menos 300 procesos de prueba por modalidad.
 3. **El registro propio** (`docs/VALIDACION_MODELOS.md` § 2: presentado, ganado o perdido) es la prueba final
@@ -303,6 +305,9 @@ en menor cuantía.
 - **Plato:** con los 42 que cumplen, el motor da a otro. Sin CSJ GROUP, que ofreció el 81,9 % del presupuesto, da
   al ganador real. La tabla de ponderables no sale en el texto, así que que CSJ quedara fuera es una inferencia sin
   confirmar.
+  - **Corregido el mismo día (§ 11): la inferencia era falsa.** Leída la tabla de ponderación de la imagen, CSJ GROUP
+    sí está entre los hábiles. La lista que estaba mal era la de la tabla de habilitación de la misma resolución. Con
+    los 42 de la tabla de ponderación, el motor acierta.
 
 **Cuando el documento no dice el método.**
 - **Se deduce de los puntajes:**
@@ -358,7 +363,7 @@ certificado expedido ese día, que rige el día siguiente.
 | 16 | Aerocivil Rionegro | Sin dato (tabla en imagen) | — | — | — |
 | 17 | Villagómez | Sin dato (tabla en imagen) | — | — | — |
 | 18 | INFI-Manizales | 2 de 4 | Solo el total | No dice | Los 4 métodos dan el mismo |
-| 19 | Aerocivil Plato | 42 de 49 | No (imagen) | 3.204,51 → aritmética baja | Falla con 42; acierta sin CSJ [inferencia] |
+| 19 | Aerocivil Plato | 42 de 49 | No (imagen) | 3.204,51 → aritmética baja | Falla con 42 de la habilitación; con la tabla de ponderación acierta (§ 11) |
 | 20 | Cota | 1 de 3 | Sí | «Media aritmética» · 3.252,11 | Un solo hábil |
 | 21 | Aerocivil H4 | Sin dato (tablas en imagen) | — | — | — |
 | 22 | Aerocivil Tolú | 34 de 38 | No (imagen) | 3.053,48 → geométrica | Acierta (valores de wi7w) |
@@ -370,3 +375,96 @@ certificado expedido ese día, que rige el día siguiente.
 | 28 | Gobernación de Santander (Suratá) | 3 de 4 | Sí | Mediana · 3.678,15 | Falla: ganó la 3.ª en precio, por otros puntos |
 | 29 | Floridablanca SA-MC-007 | Deducido: 1 | No | No dice | Un solo hábil |
 | 30 | Registraduría (Buenaventura) | 4 de 5 | Sí | Fórmula propia | La fórmula propia casa exacta y acierta |
+
+## 11. Las tablas en imagen, los puntos fuera del precio y la captura en la aplicación (26-oct-2026)
+
+El dueño pidió hacer las tres decisiones de la § 10 en el orden ideal y construir lo necesario. El orden fue:
+1. Leer las tablas en imagen del piloto: da más casos y responde lo de Plato.
+2. Medir los puntos fuera del precio: fija qué guarda cada oferta.
+3. Construir la captura en la aplicación.
+
+**1 · Las tablas en imagen.** Se bajaron los PDF de su Drive y se extrajeron las imágenes de cada página. Las tablas
+se leyeron de la imagen, en la sesión y con dos lectores, sin copiar nada al Drive del dueño. Cada transcripción se
+comprobó de tres formas:
+- el motor reproduce sus puntajes de precio;
+- los valores casan al peso con `wi7w-2nvm`;
+- la suma de cada fila da su total.
+
+Lo que dio cada documento:
+- **Aerocivil Plato (19):** 42 de 42 puntajes con la media aritmética baja y el ganador real primero. **Corrige la
+  § 10:**
+  - CSJ GROUP sí estaba entre los hábiles.
+  - La tabla de ponderación no trae al consorcio TERMINAL Y TORRE PLATO SB, que la de habilitación daba por CUMPLE.
+  - Trae a AERO PLATO 1357, que aquella daba por RECHAZADO.
+  - Manda la tabla que puntúa.
+- **Aerocivil Tolú (22):** 34 de 34 con la media geométrica, que es la que dice su tabla, y el ganador real primero.
+- **Aerocivil H4 (21):** 29 de 29 con la media geométrica, con «TRM 25 de junio $ 3,428.32» (oficial ese día), y el
+  ganador real primero.
+- **Aerocivil Rionegro (16):** 34 de 34 con la mediana (la resolución no nombra el método), y el ganador real primero.
+- **Aerocivil Cerramiento (25):** 47 de 47 con la media aritmética baja, y el ganador real primero.
+  - La resolución dice «método de menor valor»: el documento se contradice.
+  - 20 de las 67 ofertas recibidas no están en la tabla final, y el documento no dice por qué.
+- **Hospital Militar (11):** las imágenes confirman los valores del sobre económico y el certificado de la TRM
+  («Generado el 27 de mayo de 2026», fecha «28/05/2026», «$3,631.57»).
+- **INVIAS 041 (15):** sus dos imágenes son las fórmulas del valor mínimo aceptable, sin cifras.
+- **Mocoa (2):** no se pudo bajar. Drive respondió «File too large for download, over limit of 10 MB».
+
+Las cifras, de `prueba_captura.js` sobre `tools/analisis/nivel3_piloto_lectura_2026-10-26.json`:
+- **Quién quedó hábil:** 23 de 30 documentos (17 explícito y 6 deducido). Corponor es parcial y 6 no lo traen.
+- **Puntaje del precio de todos los hábiles:** 16, más Cesar a medias.
+- **Método o TRM:** 15. Las 14 TRM casan con la serie oficial, y donde hay método y TRM, 13 de 14 casan con la tabla
+  de los documentos tipo; Cota no.
+- **Valores leídos:** 259 de 268 casan al peso con `wi7w-2nvm`. Las 9 diferencias son 7 «correcciones aritméticas» de
+  Cerramiento y 2 de Suratá.
+- **La prueba de la captura (§ 6.1):** el motor pone primero al ganador real en **8 de 10**. Los 2 que fallan, Cesar y
+  Suratá, los decidieron los puntos fuera del precio.
+- **Sin método escrito:** en Rionegro, Cerramiento y Fusagasugá el método se deduce exacto de los puntajes.
+
+**2 · Los puntos fuera del precio.** Se midieron en 10 procesos con el puntaje de precio y el total de todos los hábiles.
+- En 9 de los 10, no todos sacaron los mismos puntos fuera del precio.
+- Perdieron puntos 30 de 213 ofertas hábiles: «mujeres» 12, «industria nacional» 10, «Mipyme» 5 y «calidad» 1 (por
+  criterio, donde la tabla trae el desglose).
+- La de mejor puntaje de precio perdió puntos en 1 proceso, Suratá, y eso le quitó el contrato. En Cesar pasó lo
+  mismo, pero el OCR no deja ver el desglose completo.
+- Por eso la captura guarda, de cada oferta, el puntaje de precio, el total y los puntos por criterio, cada uno con su
+  cita.
+
+**3 · La captura, en la aplicación.**
+- **Dónde corre:**
+  - El navegador del dueño baja y lee el documento por la misma vía de Mis procesos: `op=descargar`, pdf.js y el OCR,
+    este solo en las páginas que pintan una imagen (`__pliegoLeerPdfMixto`).
+  - Con más páginas con imagen que cupo (30), el OCR va primero a las de menos texto: los logos hacen que toda página
+    pinte una imagen.
+  - Guarda el texto en `op=evaluacion`, un `op` nuevo del router `pliego`.
+  - Cada madrugada, una sesión de Claude Code (`/evaluaciones`, tarea programada) lee los textos en cola y devuelve,
+    por oferta, el estado, el motivo, los puntajes y los puntos fuera del precio, cada uno con su cita.
+  - `lib/evaluacion.js` verifica cada dato contra el texto y guarda solo lo que se sostiene:
+    - la cita tiene que estar en el texto y nombrar al oferente;
+    - la cifra tiene que estar completa en la cita;
+    - un estado necesita una palabra que lo respalde, y una de rechazo gana a un puntaje;
+    - una cita de más de 200 caracteres se aparta entera;
+    - «ganó sin el mejor puntaje de precio» y los puntos fuera del precio solo cuentan procesos completos: ninguna
+      oferta apartada, ninguna sin estado y ninguna página con imagen sin leer.
+- **Qué entidades van primero:** las que el dueño abra desde una tarjeta, que son las de los procesos que mira. En cada
+  ventana de entidad, el botón lee hasta 5 procesos cerrados desde 2025, que es lo que cubre el índice de datos.gov.co.
+- **Qué ve el usuario, en la ventana de la entidad («Lo que dicen sus evaluaciones»):**
+  - cuántas ofertas rechazó y por qué;
+  - en cuántos procesos ganó una oferta sin el mejor puntaje de precio;
+  - en cuántos alguna oferta hábil perdió puntos fuera del precio, y en qué criterio;
+  - plegado, el botón para leer más.
+  - Todo como «X de N». Lo que no se sabe es «sin dato» y no cuenta.
+- **No se toca:** el plan de lectura del pliego, la guía y el dictamen no leen estos documentos.
+
+**Sin verificar:**
+- la cuota diaria de OCR.space, anotada como 500 y sin verificar;
+- el tiempo que tarda en un teléfono leer una evaluación grande;
+- el texto de Mocoa;
+- por qué Cerramiento dejó 20 ofertas fuera de su tabla final.
+
+| # | Entidad | Antes (§ 10) | Con las tablas en imagen |
+|---|---|---|---|
+| 16 | Aerocivil Rionegro | Sin dato | 34 hábiles · mediana, deducida · acierta |
+| 19 | Aerocivil Plato | Falla con 42 | 42 hábiles · aritmética baja · acierta |
+| 21 | Aerocivil H4 | Sin dato | 29 hábiles · geométrica · acierta |
+| 22 | Aerocivil Tolú | Acierta (valores de wi7w) | 34 hábiles · geométrica · 34 de 34 puntajes exactos |
+| 25 | Aerocivil Cerramiento | Sin dato | 47 evaluadas · aritmética baja, aunque la resolución dice menor valor · acierta |

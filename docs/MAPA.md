@@ -6,10 +6,10 @@
 (no editar a mano: sale de `node tests/mapa.js --escribir`. Para ir a un sitio concreto,
  `node tests/mapa.js <término>` da la ruta, la línea y el sed exacto — más barato que leer esto)
 
-· SUPERFICIE HTTP — 43 op declaradas en los mapas de los routers:
+· SUPERFICIE HTTP — 44 op declaradas en los mapas de los routers:
   /api/admin?op=  rup · experiencia · cobertura · cargar-catalogo · exportar · importar · uso · respaldo · espacio · compactar · sesion · entrar · salir · crear-cuenta
   /api/perfil?op=  resumen · diagnostico · entrada · pulso · consorcio · consorcio-simular · seguimiento · cuenta · avisos · empresa-datos
-  /api/pliego?op=  extraer-texto · parsear · descargar · formulario1 · diff · cronograma · deducciones · dictamen · documentos · auditoria
+  /api/pliego?op=  extraer-texto · parsear · descargar · formulario1 · diff · cronograma · deducciones · dictamen · documentos · auditoria · evaluacion
   /api/procesos?op=  sync · historico · listar · baja · entidades · portada · manifestacion · latido · salud
   (api/apu.js e api/inteligencia.js despachan por accion/vista desde su handler:
    `node tests/estado.js` los enumera midiendo)
@@ -22,7 +22,7 @@
   pliego.js                   Router del dominio PLIEGO (Fase 0 · consolidación a 6 funciones)
   procesos.js                 Router del dominio PROCESOS (Fase 0 · consolidación a 6 funciones)
 
-· lib/ — 100 módulos:
+· lib/ — 101 módulos:
   accesibilidad.js            Accesibilidad operativa de la zona de la obra
   adendas.js                  Vigía de adendas · lo que el DATASET dice que cambió (Fase 5)
   almacen.js                  Esquema de claves Redis + compresión de chunks
@@ -66,6 +66,7 @@
   error_interno.js            La respuesta JSON de un fallo que nadie capturó (6-sep-2026)
   espacio.js                  Qué ocupa la base de datos, medido desde la aplicación (30-sep-2026)
   estadistica.js              La ÚNICA mediana de la aplicación
+  evaluacion.js               La CAPTURA de las evaluaciones de una entidad (Nivel 3, 26-oct-2026). PURO: sin red ni Redis.
   experiencia.js              La experiencia REALMENTE ejecutada como vocabulario
   filtros.js                  Filtros canónicos: estado, modalidad, objeto y PERTINENCIA
   filtros_lista.js            Aplicación en el SERVIDOR de los siete filtros del
@@ -176,13 +177,14 @@
   resumen.js                  El dashboard: ¿qué SON los procesos que hoy se ven?
   seguimiento.js              /api/perfil?op=seguimiento (ago 2026)
 
-· lib/handlers/pliego/ — 7 módulos:
+· lib/handlers/pliego/ — 8 módulos:
   auditoria.js                /api/pliego?op=auditoria · ¿LO QUE DETEKTA DICE HABER LEÍDO SE PUEDE LEER DE VERDAD? (20-oct-202
   cronograma.js               /api/pliego?op=cronograma (Fase 5)
   deducciones.js              /api/pliego?op=deducciones · Qué le van a descontar, leído del pliego
   dictamen.js                 /api/pliego?op=dictamen (proyecto «Don Héctor», 2-sep-2026)
   diff.js                     /api/pliego?op=diff (Fase 5 · vigía del TEXTO del pliego)
   documentos.js               /api/pliego?op=documentos (3-sep-2026)
+  evaluacion.js               /api/pliego?op=evaluacion (Nivel 3, 26-oct-2026)
   formulario1.js              POST /api/pliego?op=formulario1 (Fase 4)
 
 · lib/handlers/procesos/ — 9 módulos:
@@ -219,8 +221,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 389 secciones (30 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 20031  Un escaneo leído a medias se guardaba como «Leído»: el OCR de los documentos ignoraba las p…
+· MEMORIA · docs/MEMORIA.md — 390 secciones (31 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 20058  El avance de la lectura dice lo que la aplicación hace de verdad, y lo que el usuario pide …
   L 20087  Las tandas de OCR se arman por PESO, no por 5 páginas fijas: el estudio previo del dueño fa…
   L 20108  La auditoría de lo leído: mide si hay INDICIOS de una lectura mala, jamás dice «correcto» (…
@@ -229,7 +230,8 @@
   L 20173  El consejo de siete asesores entra al proyecto: sin la sala web, sin guardar nada en el rep…
   L 20200  Probabilidad de adjudicación, Fase 0: las ofertas abiertas sí existen desde 2020, quién que…
   L 20238  Las reglas de lotes y de rango de la base nacional: un presupuesto ajustado no es lote, una…
-  L 20262  La prueba de los 30 del Nivel 3: con los hábiles reales el motor acierta en 6 de 9, y lo qu…
+  L 20262  La prueba de los 30 del Nivel 3: con los hábiles reales el motor acierta en 6 de 9, y lo qu…  (superada)
+  L 20291  Las evaluaciones de cada entidad entran a la aplicación: el navegador lee el documento, una…
 
 · DOCUMENTOS docs/ — 76 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)

@@ -13,20 +13,12 @@ const zlib = require("zlib");
 const { crearCliente, escSoQL } = require("../../../lib/socrata");
 const Docs = require("../../../lib/documentos_proceso");
 const { usableMotor } = require("./fase0");
-const { muestra, papel, SEMILLA } = require("./viabilidad_nivel3");
+const { muestra, SEMILLA } = require("./viabilidad_nivel3");
 
-const PRIORIDAD = ["informe_evaluacion", "resolucion_adjudicacion", "acta"];
+/* `elegirDocumento` y su PRIORIDAD se mudaron a lib/evaluacion.js (26-oct-2026): la captura de producción elige el
+   documento con la misma regla que eligió el de esta prueba. */
+const { elegirDocumento, PRIORIDAD } = require("../../../lib/evaluacion");
 const log = (m) => process.stderr.write(m + "\n");
-
-/* El documento que se lee primero: por papel en el orden de PRIORIDAD; dentro del mismo papel, el último que la
-   entidad cargó (un informe definitivo reemplaza al preliminar). Solo legibles (PDF u hoja). */
-function elegirDocumento(archivos) {
-  for (const p of PRIORIDAD) {
-    const c = archivos.filter((a) => papel(a) === p && a.legible).sort((x, y) => String(y.fecha_carga || "").localeCompare(String(x.fecha_carga || "")));
-    if (c.length) return { papel: p, ...c[0], otros_del_mismo_papel: c.length - 1 };
-  }
-  return null;
-}
 
 async function main() {
   const [dir, salida, kTxt, anoTxt] = process.argv.slice(2);

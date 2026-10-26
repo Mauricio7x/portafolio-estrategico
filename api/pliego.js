@@ -20,6 +20,7 @@ const OPS = {
   dictamen: () => require("../lib/handlers/pliego/dictamen.js"),       // el pliego guardado, leído por un modelo, con citas verificadas por página
   documentos: () => require("../lib/handlers/pliego/documentos.js"),   // los documentos del proceso (índice de datos.gov.co), leídos solos al guardar en Mis procesos
   auditoria: () => require("../lib/handlers/pliego/auditoria.js"),     // si lo leído se puede leer de verdad: solo lectura, indicios por documento y página (no dice «correcto»)
+  evaluacion: () => require("../lib/handlers/pliego/evaluacion.js"),   // las evaluaciones de procesos cerrados de una entidad: quién quedó hábil y qué decidió al ganador, con citas verificadas
 };
 
 function opDe(req) {

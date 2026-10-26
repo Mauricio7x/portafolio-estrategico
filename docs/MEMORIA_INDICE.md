@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 2060411 bytes · 389 secciones · 30 con marcador de superación.
+Derivado del árbol: 2068356 bytes · 390 secciones · 31 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -399,4 +399,5 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | El consejo de siete asesores entra al proyecto: sin la sala web, sin guardar nada en el repositorio y con lo que no sabe dicho (21-oct-2026) | 21-oct-2026 | 20173-20199 | 6047 |  |
 | Probabilidad de adjudicación, Fase 0: las ofertas abiertas sí existen desde 2020, quién quedó hábil no, y la regla del precio solo se sabe donde hubo documento tipo (25-oct-2026) | 25-oct-2026 | 20200-20237 | 6698 |  |
 | Las reglas de lotes y de rango de la base nacional: un presupuesto ajustado no es lote, una oferta doble tampoco y los centavos no pasan el tope (26-oct-2026) | 26-oct-2026 | 20238-20261 | 5909 |  |
-| La prueba de los 30 del Nivel 3: con los hábiles reales el motor acierta en 6 de 9, y lo que falla son los puntos distintos del precio (26-oct-2026) | 26-oct-2026 | 20262-20287 | 3582 |  |
+| La prueba de los 30 del Nivel 3: con los hábiles reales el motor acierta en 6 de 9, y lo que falla son los puntos distintos del precio (26-oct-2026) | 26-oct-2026 | 20262-20290 | 4546 | «Las evaluaciones de cada entidad entran a la aplicación: el navegador lee el documento, una sesión de madrugada lo interpreta y la aplicación verifica cada cita (26-oct-2026)» |
+| Las evaluaciones de cada entidad entran a la aplicación: el navegador lee el documento, una sesión de madrugada lo interpreta y la aplicación verifica cada cita (26-oct-2026) | 26-oct-2026 | 20291-20323 | 6981 |  |

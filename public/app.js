@@ -3930,6 +3930,7 @@
       ${d.mensaje ? `<p class="mt-3 rounded-lg bg-amber-50 p-3 text-xs text-amber-800">${esc(d.mensaje)}</p>` : ""}
       ${estadoLista}
       ${quienGana}
+      <div data-evaluaciones class="mt-4"></div>
       ${bloqueProponentes(d.proponentes)}
       ${bloqueEjecucion(d.ejecucion)}
       ${tabla("Procesos incluidos", d.procesos || [], false)}
@@ -3940,6 +3941,111 @@
     ? "" : '<p class="mt-4 text-gray-500">No hay procesos históricos de esta entidad.</p>'}
       <p class="mt-4 text-xs text-gray-400">Datos del corpus histórico (procesos ya cerrados)${d.cache ? " · desde caché" : ""}.</p>
       ${d.marcaCarga ? `<span hidden data-carga="${esc(d.marcaCarga)}"></span>` : ""}`;
+    pintarEvaluaciones(d);
+  }
+
+  /* ══════════ Lo que dicen las evaluaciones de la entidad (Nivel 3, 26-oct-2026) ══════════
+     Quién quedó hábil en sus procesos ya cerrados, por qué rechazó y si al ganador lo decidió el precio o los
+     puntos fuera del precio. Sale de /api/pliego?op=evaluacion, SOLO con lo que se verificó cita por cita contra
+     el documento (lib/evaluacion.js): se dice «X de N» con su N, y lo que no se sabe es «sin dato».
+     Arriba, los hechos; plegado, el botón que baja y lee hasta 5 procesos más (la misma descarga y el mismo OCR
+     de Mis procesos, solo de las páginas que traen imágenes). Las tablas las interpreta la lectura automática de
+     cada madrugada: la ventana lo dice, no promete un resultado al instante. */
+  let entidadAbierta = null;
+  const DESDE_INDICE = "2025-01-01";   // datos.gov.co publica el índice de archivos desde el 1-ene-2025
+  const plural = (n, uno, varios) => `${n} ${n === 1 ? uno : varios}`;
+  /* los procesos que ya se intentaron en esta visita (leídos, sin documento o ya en cola): la segunda pulsación sigue
+     con los siguientes en vez de bajar y pasar por OCR los mismos (revisión adversaria del 26-oct-2026) */
+  const evalIntentados = new Set();
+  function candidatosEvaluacion(d, cuerpo) {
+    /* un texto que caducó sin interpretarse («caducado») vuelve a ser candidato */
+    const ya = new Set(Object.values((cuerpo && cuerpo.procesos) || {}).filter((p) => p && p.estado !== "caducado").map((p) => p.id_proceso).filter(Boolean));
+    return (d.procesos || []).filter((p) => p && /^CO1\.(REQ|PPI|NTC)\./.test(String(p.id || "")) && String(p.fecha_adjudicacion || "") >= DESDE_INDICE
+      && /licitaci|menor cuant|abreviada/i.test(String(p.modalidad || "")) && !ya.has(p.id) && !evalIntentados.has(p.id))
+      .sort((a, b) => String(b.fecha_adjudicacion || "").localeCompare(String(a.fecha_adjudicacion || "")));
+  }
+  function htmlEvaluaciones(c, d) {
+    const H = c.hechos || {}, T = c.textos || {}, motivos = T.motivos || {}, criterios = T.criterios || {};
+    const enCola = Object.values(c.procesos || {}).filter((p) => p && p.estado === "en_cola").length;
+    const partes = [];
+    if (!H.procesos) partes.push(`<p class="text-sm text-gray-600">Todavía no se ha leído ninguna de sus evaluaciones.</p>`);
+    else {
+      const lista = Object.entries(H.motivos || {}).sort((a, b) => b[1] - a[1])
+        .map(([k, n]) => `${esc(motivos[k] || "sin motivo escrito")} (${n})`).join(", ");
+      partes.push(`<p class="text-sm">En ${plural(H.procesos, "proceso leído", "procesos leídos")} rechazó <strong>${H.rechazadas}</strong> de ${plural(H.ofertas, "oferta", "ofertas")}${H.sin_dato ? ` (de ${H.sin_dato} el documento no dice si quedó hábil)` : ""}.</p>`);
+      if (lista) partes.push(`<p class="text-xs text-gray-600">Por qué: ${lista}.</p>`);
+      const P = H.precio || {};
+      if (P.con_dato) partes.push(P.gano_sin_el_mejor_precio
+        ? `<p class="mt-1 text-sm">En <strong>${P.gano_sin_el_mejor_precio}</strong> de ${plural(P.con_dato, "proceso", "procesos")} con puntajes publicados ganó una oferta que no tenía el mejor puntaje de precio: la decidieron los puntos fuera del precio.</p>`
+        : `<p class="mt-1 text-sm">En ${P.con_dato === 1 ? "el proceso" : `los ${P.con_dato} procesos`} con puntajes publicados ganó la oferta con el mejor puntaje de precio.</p>`);
+      const F = H.fuera_del_precio || {};
+      if (F.con_dato) {
+        const crit = Object.entries(F.criterios || {}).sort((a, b) => b[1] - a[1]).map(([k, n]) => `${esc(criterios[k] || k)} (${n})`).join(", ");
+        partes.push(F.con_diferencias
+          ? `<p class="text-xs text-gray-600">En ${F.con_diferencias} de ${plural(F.con_dato, "proceso", "procesos")}, ${plural(F.ofertas_que_perdieron, "oferta hábil perdió", "ofertas hábiles perdieron")} puntos fuera del precio${crit ? `: ${crit}` : ""}. Esos puntos dependen de los formatos de la oferta.</p>`
+          : `<p class="text-xs text-gray-600">En ${F.con_dato === 1 ? "el proceso" : `los ${F.con_dato} procesos`} con el desglose, todas las ofertas hábiles sacaron los mismos puntos fuera del precio.</p>`);
+      }
+    }
+    if (enCola) partes.push(`<p class="mt-1 text-xs text-gray-500">${plural(enCola, "documento leído espera", "documentos leídos esperan")} que se interpreten sus tablas; el resultado aparece aquí después de la lectura automática de la madrugada.</p>`);
+    const cand = candidatosEvaluacion(d, c), max = c.max_por_lectura || 5;
+    const tocar = cand.length
+      ? `<details class="mt-2"><summary class="cursor-pointer text-xs font-semibold text-gray-700">Leer más evaluaciones de esta entidad</summary>
+           <p class="mt-1 text-xs text-gray-600">Se bajan y se leen hasta ${max} de sus ${plural(cand.length, "proceso cerrado", "procesos cerrados")} desde 2025 que todavía no se han leído. Puede tardar unos minutos; deje esta ventana abierta.</p>
+           <p class="mt-2"><button type="button" data-leer-evaluaciones class="rounded-lg border border-gray-300 px-4 py-1.5 text-sm font-semibold transition hover:bg-gray-50">Leer hasta ${Math.min(max, cand.length)} procesos</button></p>
+           <div data-avance-evaluaciones class="mt-2" aria-live="polite"></div></details>`
+      : `<p class="mt-1 text-xs text-gray-500">No quedan procesos cerrados desde 2025 sin leer en la lista de esta entidad.</p>`;
+    return `<h3 class="text-sm font-semibold">Lo que dicen sus evaluaciones</h3>${partes.join("")}${tocar}`;
+  }
+  async function pintarEvaluaciones(d) {
+    const caja = document.querySelector("#modal-cuerpo [data-evaluaciones]");
+    if (!caja || !entidadAbierta) return;
+    const { entidad, nit } = entidadAbierta;
+    caja.innerHTML = `<p class="text-xs text-gray-500">Consultando lo leído en sus evaluaciones…</p>`;
+    let c;
+    try { c = await api(`/api/pliego?op=evaluacion&entidad=${encodeURIComponent(entidad)}${nit ? `&nit=${encodeURIComponent(nit)}` : ""}`); } catch (e) {
+      if (caja.isConnected) caja.innerHTML = `<p class="text-xs text-gray-500">Lo que dicen sus evaluaciones: no se pudo consultar ahora (${esc(fraseDeFallo(e))}). Cierre y abra esta ventana para intentarlo de nuevo.</p>`;
+      return;
+    }
+    if (!caja.isConnected) return;
+    caja.innerHTML = htmlEvaluaciones(c, d);
+    const boton = caja.querySelector("[data-leer-evaluaciones]");
+    if (boton) boton.addEventListener("click", () => leerEvaluaciones(d, c, caja, { entidad, nit }));
+  }
+  const ETAPA_EVAL = { leyendo: "leyendo la página", preparando: "preparando la imagen de la página", reconociendo: "reconociendo la página", espera_ocr: "el servicio de reconocimiento está ocupado; se espera y se reintenta, página" };
+  async function leerEvaluaciones(d, c, caja, { entidad, nit }) {
+    const avance = caja.querySelector("[data-avance-evaluaciones]"), boton = caja.querySelector("[data-leer-evaluaciones]");
+    const cola = candidatosEvaluacion(d, c).slice(0, c.max_por_lectura || 5);
+    const hechas = [];
+    const pinta = (ahora) => { if (avance) avance.innerHTML = [...hechas, ahora].filter(Boolean).map((l) => `<p class="text-xs">${l}</p>`).join(""); };
+    if (boton) boton.disabled = true;
+    let leidos = 0;
+    for (let k = 0; k < cola.length; k++) {
+      const p = cola[k], rot = `${k + 1} de ${cola.length}`;
+      try {
+        pinta(`${rot}: buscando su documento de evaluación…`);
+        const doc = await api(`/api/pliego?op=evaluacion&documento=1&id_proceso=${encodeURIComponent(p.id)}`);
+        if (!doc.documento) { evalIntentados.add(p.id); hechas.push(`${rot}: ${esc(doc.motivo || "sin documento de evaluación publicado")}`); continue; }
+        if (doc.ya_leido) { evalIntentados.add(p.id); hechas.push(`${rot}: ${doc.en_cola ? "ya estaba leído; espera la lectura automática." : "ya estaba leído."}`); continue; }
+        pinta(`${rot}: bajando «${esc(doc.documento.nombre)}»…`);
+        const bytes = await bajarPorTrozos(doc.documento.url, (llevan, total) => pinta(`${rot}: bajando «${esc(doc.documento.nombre)}» (${mbDe(llevan)}${total ? ` de ${mbDe(total)}` : ""})…`));
+        const leido = await window.__pliegoLeerPdfMixto(bytes, (hecho, total, e) => pinta(`${rot}: ${ETAPA_EVAL[(e && e.etapa) || "leyendo"] || "leyendo la página"} ${(e && e.desde) || hecho + 1} de ${total}${e && e.espera_s ? ` (${e.espera_s} s)` : ""}…`));
+        await api("/api/pliego?op=evaluacion", { method: "POST", body: { id_proceso: p.id, portafolio: doc.portafolio, entidad, nit: nit || null, documento: doc.documento, texto: leido.texto, paginas_ocr: leido.paginas_ocr, paginas_sin_leer: leido.sin_ocr || [] } });
+        evalIntentados.add(p.id);
+        leidos++;
+        hechas.push(`${rot}: leído «${esc(doc.documento.nombre)}»${leido.sin_ocr && leido.sin_ocr.length ? ` (sin leer ${plural(leido.sin_ocr.length, "página con imagen", "páginas con imagen")}${leido.nota ? `: ${esc(leido.nota)}` : ""})` : ""}.`);
+      } catch (e) {
+        hechas.push(`${rot}: no se pudo leer (${esc(fraseDeFallo(e))}).`);
+      }
+    }
+    pinta(leidos
+      ? `<strong>Listo:</strong> ${plural(leidos, "documento leído", "documentos leídos")}. Sus tablas se interpretan en la lectura automática de la madrugada y el resultado aparece en esta ventana.`
+      : "No se leyó ningún documento nuevo. Lo que pasó con cada uno está arriba.");
+    /* el botón dice lo que queda: los siguientes procesos, o que ya no hay más */
+    const quedan = candidatosEvaluacion(d, c).length, max = c.max_por_lectura || 5;
+    if (boton) {
+      if (quedan) { boton.textContent = `Leer hasta ${Math.min(max, quedan)} procesos más`; boton.disabled = false; }
+      else boton.replaceWith(Object.assign(document.createElement("span"), { className: "text-xs text-gray-500", textContent: "No quedan procesos cerrados desde 2025 sin leer en la lista de esta entidad." }));
+    }
   }
 
   /* ══════════ Desglose de la probabilidad (modal) ══════════
@@ -4174,6 +4280,7 @@
      otra entidad). */
   async function cargarDetalle(entidad, nit) {
     recargarModal = () => cargarDetalle(entidad, nit);
+    entidadAbierta = { entidad, nit: nit || null };
     const marca = `entidad-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
     const sigueAbierta = () => $("modal-cuerpo").innerHTML.includes(marca);
     $("modal-cuerpo").innerHTML = `<p class="py-8 text-center text-gray-400" data-carga="${marca}">Consultando esta entidad…</p>`;

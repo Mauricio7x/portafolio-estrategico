@@ -30,7 +30,7 @@ con `node tests/estado.js`, y las coordenadas las da `node tests/mapa.js <térmi
 | `docs/PROPONENTE_PLURAL.md` | informe fechado | — | `lib` · `tests` | Proponente plural: la norma vigente, 241 pliegos reales y las cifras de los RUP |
 | `docs/RAMAS_RETIRADAS.md` | informe fechado | — | `tests` | Ramas superadas al unificar en `main` (21-ago-2026) |
 | `docs/CONTRATACION_ESTATAL.md` | informe fechado (19-oct-2026) | — | `.claude` | Contratación estatal de obra en Colombia · base de conocimiento |
-| `docs/ADJUDICACION_NIVEL3_DISENO_2026-10-26.md` | pendiente del dueño | — | — | Probabilidad de adjudicación · Nivel 3: capturar quién quedó hábil para poder calcular … |
+| `docs/ADJUDICACION_NIVEL3_DISENO_2026-10-26.md` | pendiente del dueño | — | `lib` | Probabilidad de adjudicación · Nivel 3: capturar quién quedó hábil para poder calcular … |
 | `docs/ARQUITECTURA_MULTITENANT.md` | pendiente del dueño | — | — | Anexo C · Arquitectura multi-inquilino, escalabilidad y datos |
 | `docs/CHECKLIST_PRODUCCION.md` | pendiente del dueño | — | — | Anexo F · Lista de verificación previa a producción |
 | `docs/EMPEZAR_AQUI.md` | pendiente del dueño | — | `README.md` | EMPEZAR AQUÍ · Guía de cero para convertir Detekta en un negocio |

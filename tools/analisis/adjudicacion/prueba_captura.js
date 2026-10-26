@@ -74,6 +74,36 @@ function trm(proc) {
     metodo_por_trm: porTrm, metodo_documento: t.metodo_documento, coherente: porTrm && t.metodo_documento ? (enTabla ? porTrm === t.metodo_documento : false) : null };
 }
 
+/* LOS PUNTOS FUERA DEL PRECIO (fase 2 del Nivel 3, 26-oct-2026). Con el puntaje de precio y el total publicados para TODOS
+   los hábiles de un proceso, lo de fuera del precio es total − precio. Se cuenta: en cuántos procesos no todos sacaron lo
+   mismo, cuántas ofertas perdieron, si la de mejor precio perdió y si eso cambió al ganador, y —donde la tabla trae el
+   desglose— en qué criterio. Un hábil sin alguno de los dos puntajes deja el proceso fuera de la cuenta. «Perdió» es
+   quedar a más de 0,01 puntos del mejor: los totales se publican con dos decimales y el redondeo no es una pérdida. */
+const PERDIO = 0.01;
+function fueraDelPrecio(L) {
+  const R = { procesos_con_dato: 0, con_diferencias: 0, ofertas: 0, ofertas_que_perdieron: 0, mejor_precio_perdio: 0, cambio_al_ganador: 0, criterios: {}, filas: [] };
+  for (const p of L.procesos) {
+    const h = p.prueba && Array.isArray(p.prueba.habiles) ? p.prueba.habiles : [];
+    if (h.length < 2 || !h.every((x) => typeof x.puntaje_precio_documento === "number" && typeof x.puntaje_total_documento === "number")) continue;
+    const fuera = h.map((x) => Math.round((x.puntaje_total_documento - x.puntaje_precio_documento) * 1e6) / 1e6);
+    const max = Math.max(...fuera), mejorPrecio = Math.max(...h.map((x) => x.puntaje_precio_documento));
+    const perdieron = h.filter((x, i) => fuera[i] < max - PERDIO);
+    const iMejor = h.findIndex((x) => x.puntaje_precio_documento === mejorPrecio), ig = h.findIndex((x) => x.ganador);
+    R.procesos_con_dato++; R.ofertas += h.length; R.ofertas_que_perdieron += perdieron.length;
+    if (perdieron.length) R.con_diferencias++;
+    const mejorPerdio = fuera[iMejor] < max - PERDIO;
+    if (mejorPerdio) R.mejor_precio_perdio++;
+    const cambio = ig >= 0 && h[ig].puntaje_precio_documento < mejorPrecio - 1e-9;
+    if (cambio) R.cambio_al_ganador++;
+    for (const x of perdieron) for (const [k, v] of Object.entries(x.otros_puntos || {})) {
+      const mejor = Math.max(...h.map((y) => (y.otros_puntos && typeof y.otros_puntos[k] === "number" ? y.otros_puntos[k] : -Infinity)));
+      if (typeof v === "number" && v < mejor - PERDIO) R.criterios[k] = (R.criterios[k] || 0) + 1;
+    }
+    R.filas.push({ fila: p.fila, habiles: h.length, perdieron: perdieron.length, mejor_precio_perdio: mejorPerdio, gano_sin_el_mejor_precio: cambio });
+  }
+  return R;
+}
+
 function medir(L) {
   const filas = L.procesos.map((p) => ({ fila: p.fila, entidad: p.entidad, clasificacion: p.clasificacion, prueba: probar(p), trm: trm(p),
     valores: p.valores_leidos ? { leidos: p.valores_leidos.length, al_peso: p.valores_leidos.filter((x) => Math.abs(x.valor_documento - x.valor_wi7w_mas_cercano) < 1).length } : null }));
@@ -91,6 +121,7 @@ function medir(L) {
     prueba: { con_metodo_conocido: conocidos.length, reproduce: conocidos.filter((f) => f.prueba.reproduce).length,
       no_reproduce: conocidos.filter((f) => !f.prueba.reproduce).map((f) => f.fila),
       sin_metodo: cuenta((f) => f.prueba.clase === "sin_metodo"), un_habil: cuenta((f) => f.prueba.clase === "un_habil"), sin_prueba: cuenta((f) => f.prueba.clase === "sin_prueba") },
+    fuera_del_precio: fueraDelPrecio(L),
     valores_leidos: { leidos: filas.reduce((s, f) => s + (f.valores ? f.valores.leidos : 0), 0), al_peso: filas.reduce((s, f) => s + (f.valores ? f.valores.al_peso : 0), 0) },
     filas,
   };
@@ -107,6 +138,9 @@ function main() {
   console.log(`Puntaje del precio: ${R.puntaje_precio.todos} de todos los hábiles, ${R.puntaje_precio.parcial} parcial, ${R.puntaje_precio.solo_total} solo el total, ${R.puntaje_precio.solo_ganador} solo el del ganador`);
   console.log(`Método o TRM: ${R.metodo_o_trm} · TRM con valor ${R.trm.con_valor}, en la serie oficial ${R.trm.en_serie_oficial} · método y TRM coherentes ${R.trm.coherentes} de ${R.trm.con_metodo_y_trm}`);
   console.log(`Valores leídos que casan al peso con wi7w: ${R.valores_leidos.al_peso} de ${R.valores_leidos.leidos}`);
+  const F = R.fuera_del_precio;
+  console.log(`FUERA DEL PRECIO: ${F.procesos_con_dato} procesos con precio y total de todos los hábiles · en ${F.con_diferencias} no todos sacaron lo mismo · ${F.ofertas_que_perdieron} de ${F.ofertas} ofertas perdieron puntos · la de mejor precio perdió en ${F.mejor_precio_perdio} · ganó una sin el mejor precio en ${F.cambio_al_ganador} · criterios: ${Object.entries(F.criterios).map(([k, n]) => `${k} ${n}`).join(", ") || "—"}`);
+  console.log(`  por proceso: ${F.filas.map((x) => `${x.fila} (${x.perdieron}/${x.habiles}${x.gano_sin_el_mejor_precio ? ", ganó sin el mejor precio" : ""})`).join(" · ")}`);
   console.log(`PRUEBA (método conocido): reproduce ${R.prueba.reproduce} de ${R.prueba.con_metodo_conocido} · no: filas ${R.prueba.no_reproduce.join(", ")} · sin método ${R.prueba.sin_metodo} · un solo hábil ${R.prueba.un_habil} · sin prueba ${R.prueba.sin_prueba}`);
   for (const f of R.filas) {
     const p = f.prueba;
@@ -118,4 +152,4 @@ function main() {
 }
 
 if (require.main === module) main();
-module.exports = { medir, probar, trm, correr, mediaAritmeticaCastigoDoble };
+module.exports = { medir, probar, trm, correr, fueraDelPrecio, mediaAritmeticaCastigoDoble };

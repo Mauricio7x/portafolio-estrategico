@@ -1,5 +1,5 @@
 {
- "generado": "2026-10-26T16:43:58.943Z",
+ "generado": "2026-10-26T18:38:03.322Z",
  "que_es": "Lectura de los 30 documentos del piloto del Nivel 3 (tools/analisis/nivel3_piloto_2026-10-26.json), subidos por el dueño a Drive («Piloto Nivel 3») y leídos con Google Drive read_file_content el 26-oct-2026. El campo «lectura» es lo que transcribió cada lector con su cita literal (forma libre); «clasificacion», «metodo_trm» y «prueba» son de la sesión, con su motivo. Lo recalcula tools/analisis/adjudicacion/prueba_captura.js.",
  "base": "Valores «wi7w-2nvm» y ganador p6dx tomados de la base corregida de 2020 en adelante (corrida del 26-oct-2026, reglas del commit 9491ad0).",
  "verificacion": {
@@ -2103,7 +2103,7 @@
     "fecha_documento": "constancia del certificado del 27-may-2026",
     "trm_oficial": 3631.57,
     "vigencia_oficial": "2026-05-28",
-    "nota_trm": "El certificado expedido el 27 de mayo rige el 28: la entidad nombra la TRM por el día en que se expidió."
+    "nota_trm": "El certificado expedido el 27 de mayo rige el 28: la entidad nombra la TRM por el día en que se expidió. La imagen del certificado (página 14) lo confirma: «Generado el 27 de mayo de 2026», fecha «28/05/2026», «$3,631.57»."
    },
    "prueba": {
     "tipo": "metodo_conocido",
@@ -3322,7 +3322,7 @@
    "valor_adjudicado_p6dx": 109545684914,
    "clasificacion": {
     "habiles": "explicitos",
-    "habiles_motivo": "12 HÁBIL y 9 RECHAZO («DESCARTADO»). Es un informe: no trae puntajes ni adjudicatario.",
+    "habiles_motivo": "12 HÁBIL y 9 RECHAZO («DESCARTADO»). Es un informe: no trae puntajes ni adjudicatario. Sus dos imágenes son las fórmulas del valor mínimo aceptable, sin cifras.",
     "puntaje_precio": "sin_dato"
    },
    "metodo_trm": null,
@@ -3723,12 +3723,667 @@
    "ganador_p6dx": "INFRAOBRAS SAS",
    "valor_adjudicado_p6dx": 336262957,
    "clasificacion": {
-    "habiles": "sin_dato",
-    "habiles_motivo": "La tabla del resultado está en imagen; solo el ganador.",
-    "puntaje_precio": "sin_dato"
+    "habiles": "explicitos",
+    "habiles_motivo": "La tabla del resultado está en imagen (página 4): se leyó de la imagen, 34 hábiles con su orden de elegibilidad.",
+    "puntaje_precio": "todos"
    },
    "metodo_trm": null,
-   "prueba": null,
+   "prueba": {
+    "tipo": "sin_metodo",
+    "fuente_tabla": "imagen de la página 4 (resultados finales y orden de elegibilidad)",
+    "habiles": [
+     {
+      "nombre": "INFRAOBRAS SAS",
+      "nro": 15,
+      "valor": 336262957,
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 49.5,
+      "puntaje_total_documento": 100,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      },
+      "ganador": true
+     },
+     {
+      "nombre": "PROYECTA2 INGENIERIA S.A.S.",
+      "nro": 27,
+      "valor": 336239148.1,
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 49.49649518,
+      "puntaje_total_documento": 99.99649518,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "CONSORCIO AUSAN",
+      "nro": 22,
+      "valor": 335895028,
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 49.44583856,
+      "puntaje_total_documento": 99.94583856,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "ALCAX INGENIERIA S.A.S",
+      "nro": 4,
+      "valor": 335821698.37,
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 49.43504398,
+      "puntaje_total_documento": 99.93504398,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "CONSTRUCTODO SAS",
+      "nro": 26,
+      "valor": 336736914.5,
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 49.43023051,
+      "puntaje_total_documento": 99.93023051,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "SIRIUS INGENIERIA SAS",
+      "nro": 6,
+      "valor": 335674867,
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 49.41342949,
+      "puntaje_total_documento": 99.91342949,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "CONSORCIO RIO ROTA",
+      "nro": 19,
+      "valor": 335528017,
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 49.39181226,
+      "puntaje_total_documento": 99.89181226,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "KAXA SAS",
+      "nro": 3,
+      "valor": 335528016.41,
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 49.39181217,
+      "puntaje_total_documento": 99.89181217,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "Multiservicios Dina S.A.S.",
+      "nro": 12,
+      "valor": 335373454.49,
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 49.36905969,
+      "puntaje_total_documento": 99.86905969,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "CONSTRUCCIONES CONSULTORIAS E INGENIERIA SAS CONIN SAS",
+      "nro": 32,
+      "valor": 337216939,
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 49.35956791,
+      "puntaje_total_documento": 99.85956791,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "CONSORCIO TORRE RN",
+      "nro": 2,
+      "valor": 335306747,
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 49.35923994,
+      "puntaje_total_documento": 99.85923994,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "SERIN S.A.S.",
+      "nro": 17,
+      "valor": 337511956,
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 49.31613957,
+      "puntaje_total_documento": 99.81613957,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "L&C OBRAS Y SERVICIOS S.A.S.",
+      "nro": 8,
+      "valor": 337989708.78,
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 49.24581139,
+      "puntaje_total_documento": 99.74581139,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "INGEINCO S.A.S. INGENIERIA - INMOBILIARIA - CONSTRUCCION",
+      "nro": 30,
+      "valor": 334535848,
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 49.24575881,
+      "puntaje_total_documento": 99.74575881,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "CONSORCIO GYB.381",
+      "nro": 14,
+      "valor": 338026612,
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 49.24037901,
+      "puntaje_total_documento": 99.74037901,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "CONSTRUCCIONES Y DISEÑOS DEL NORTE SAS",
+      "nro": 18,
+      "valor": 334424966,
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 49.22943629,
+      "puntaje_total_documento": 99.72943629,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "CONSORCIO AEROCIVIL M&X",
+      "nro": 20,
+      "valor": 338284159,
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 49.20246649,
+      "puntaje_total_documento": 99.70246649,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "CONSORCIO MMTO RIONEGRO 1381 R-E",
+      "nro": 21,
+      "valor": 338467501,
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 49.1754774,
+      "puntaje_total_documento": 99.6754774,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "GHS INGENIERIA SAS",
+      "nro": 31,
+      "valor": 338467885,
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 49.17542088,
+      "puntaje_total_documento": 99.67542088,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "EMPRESA ASOCIATIVA DE TRABAJO LOS ASPIRANTES",
+      "nro": 7,
+      "valor": 338557347,
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 49.16225151,
+      "puntaje_total_documento": 99.66225151,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "DIMAR OBRAS DE INGENIERIA SAS",
+      "nro": 23,
+      "valor": 338724644,
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 49.13762435,
+      "puntaje_total_documento": 99.63762435,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "CONVEG S.A.S",
+      "nro": 10,
+      "valor": 339165751,
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 49.07269066,
+      "puntaje_total_documento": 99.57269066,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "CONSORCIO PROPISTAS",
+      "nro": 9,
+      "valor": 331877485,
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 48.85443123,
+      "puntaje_total_documento": 99.35443123,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "GEOCROP SAS",
+      "nro": 28,
+      "valor": 340688176,
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 48.84858022,
+      "puntaje_total_documento": 99.34858022,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "CSJ GROUP S.A.S.",
+      "nro": 5,
+      "valor": 330787294,
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 48.69394833,
+      "puntaje_total_documento": 99.19394833,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "Inarco PyC SAS",
+      "nro": 29,
+      "valor": 330052379,
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 48.58576427,
+      "puntaje_total_documento": 99.08576427,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "CARLOS ALBERTO BARANDICA NAVARRO",
+      "nro": 11,
+      "valor": 341774943.85,
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 48.68860123,
+      "puntaje_total_documento": 98.93860123,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "SAMAR CONSTRUCCIONES",
+      "nro": 33,
+      "valor": 326853436,
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 48.11485995,
+      "puntaje_total_documento": 98.61485995,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "COINCO DE COLOMBIA S.A.S",
+      "nro": 13,
+      "valor": 323767501,
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 47.66059111,
+      "puntaje_total_documento": 98.16059111,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "INCIGE INGENIERIA SAS",
+      "nro": 16,
+      "valor": 352799966,
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 47.06564936,
+      "puntaje_total_documento": 97.56564936,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "BASA DISEÑO S.A.S",
+      "nro": 34,
+      "valor": 355062405,
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 46.73260426,
+      "puntaje_total_documento": 97.23260426,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "CENIT Ingeniería y Geología SAS",
+      "nro": 1,
+      "valor": 316242459,
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 46.5528581,
+      "puntaje_total_documento": 97.0528581,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "CONSORCIO CIVIL 12",
+      "nro": 24,
+      "valor": 358175068,
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 46.27440089,
+      "puntaje_total_documento": 96.77440089,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "GRUPO S Y C S.A.S.",
+      "nro": 25,
+      "valor": 345449970,
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 48.14761451,
+      "puntaje_total_documento": 68.64761451,
+      "otros_puntos": {
+       "calidad": 0,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     }
+    ],
+    "nota": "La resolución no nombra el método. Los 34 puntajes de precio cuadran con la mediana al séptimo decimal."
+   },
+   "valores_leidos": [
+    {
+     "nombre": "INFRAOBRAS SAS",
+     "valor_documento": 336262957,
+     "valor_wi7w_mas_cercano": 336262957
+    },
+    {
+     "nombre": "PROYECTA2 INGENIERIA S.A.S.",
+     "valor_documento": 336239148.1,
+     "valor_wi7w_mas_cercano": 336239148.1
+    },
+    {
+     "nombre": "CONSORCIO AUSAN",
+     "valor_documento": 335895028,
+     "valor_wi7w_mas_cercano": 335895028
+    },
+    {
+     "nombre": "ALCAX INGENIERIA S.A.S",
+     "valor_documento": 335821698.37,
+     "valor_wi7w_mas_cercano": 335821698.37
+    },
+    {
+     "nombre": "CONSTRUCTODO SAS",
+     "valor_documento": 336736914.5,
+     "valor_wi7w_mas_cercano": 336736914.5
+    },
+    {
+     "nombre": "SIRIUS INGENIERIA SAS",
+     "valor_documento": 335674867,
+     "valor_wi7w_mas_cercano": 335674867
+    },
+    {
+     "nombre": "CONSORCIO RIO ROTA",
+     "valor_documento": 335528017,
+     "valor_wi7w_mas_cercano": 335528017
+    },
+    {
+     "nombre": "KAXA SAS",
+     "valor_documento": 335528016.41,
+     "valor_wi7w_mas_cercano": 335528016.41
+    },
+    {
+     "nombre": "Multiservicios Dina S.A.S.",
+     "valor_documento": 335373454.49,
+     "valor_wi7w_mas_cercano": 335373454.49
+    },
+    {
+     "nombre": "CONSTRUCCIONES CONSULTORIAS E INGENIERIA SAS CONIN SAS",
+     "valor_documento": 337216939,
+     "valor_wi7w_mas_cercano": 337216939
+    },
+    {
+     "nombre": "CONSORCIO TORRE RN",
+     "valor_documento": 335306747,
+     "valor_wi7w_mas_cercano": 335306747
+    },
+    {
+     "nombre": "SERIN S.A.S.",
+     "valor_documento": 337511956,
+     "valor_wi7w_mas_cercano": 337511956
+    },
+    {
+     "nombre": "L&C OBRAS Y SERVICIOS S.A.S.",
+     "valor_documento": 337989708.78,
+     "valor_wi7w_mas_cercano": 337989708.78
+    },
+    {
+     "nombre": "INGEINCO S.A.S. INGENIERIA - INMOBILIARIA - CONSTRUCCION",
+     "valor_documento": 334535848,
+     "valor_wi7w_mas_cercano": 334535848
+    },
+    {
+     "nombre": "CONSORCIO GYB.381",
+     "valor_documento": 338026612,
+     "valor_wi7w_mas_cercano": 338026612
+    },
+    {
+     "nombre": "CONSTRUCCIONES Y DISEÑOS DEL NORTE SAS",
+     "valor_documento": 334424966,
+     "valor_wi7w_mas_cercano": 334424966
+    },
+    {
+     "nombre": "CONSORCIO AEROCIVIL M&X",
+     "valor_documento": 338284159,
+     "valor_wi7w_mas_cercano": 338284159
+    },
+    {
+     "nombre": "CONSORCIO MMTO RIONEGRO 1381 R-E",
+     "valor_documento": 338467501,
+     "valor_wi7w_mas_cercano": 338467501
+    },
+    {
+     "nombre": "GHS INGENIERIA SAS",
+     "valor_documento": 338467885,
+     "valor_wi7w_mas_cercano": 338467885
+    },
+    {
+     "nombre": "EMPRESA ASOCIATIVA DE TRABAJO LOS ASPIRANTES",
+     "valor_documento": 338557347,
+     "valor_wi7w_mas_cercano": 338557347
+    },
+    {
+     "nombre": "DIMAR OBRAS DE INGENIERIA SAS",
+     "valor_documento": 338724644,
+     "valor_wi7w_mas_cercano": 338724644
+    },
+    {
+     "nombre": "CONVEG S.A.S",
+     "valor_documento": 339165751,
+     "valor_wi7w_mas_cercano": 339165751
+    },
+    {
+     "nombre": "CONSORCIO PROPISTAS",
+     "valor_documento": 331877485,
+     "valor_wi7w_mas_cercano": 331877485
+    },
+    {
+     "nombre": "GEOCROP SAS",
+     "valor_documento": 340688176,
+     "valor_wi7w_mas_cercano": 340688176
+    },
+    {
+     "nombre": "CSJ GROUP S.A.S.",
+     "valor_documento": 330787294,
+     "valor_wi7w_mas_cercano": 330787294
+    },
+    {
+     "nombre": "Inarco PyC SAS",
+     "valor_documento": 330052379,
+     "valor_wi7w_mas_cercano": 330052379
+    },
+    {
+     "nombre": "CARLOS ALBERTO BARANDICA NAVARRO",
+     "valor_documento": 341774943.85,
+     "valor_wi7w_mas_cercano": 341774943.85
+    },
+    {
+     "nombre": "SAMAR CONSTRUCCIONES",
+     "valor_documento": 326853436,
+     "valor_wi7w_mas_cercano": 326853436
+    },
+    {
+     "nombre": "COINCO DE COLOMBIA S.A.S",
+     "valor_documento": 323767501,
+     "valor_wi7w_mas_cercano": 323767501
+    },
+    {
+     "nombre": "INCIGE INGENIERIA SAS",
+     "valor_documento": 352799966,
+     "valor_wi7w_mas_cercano": 352799966
+    },
+    {
+     "nombre": "BASA DISEÑO S.A.S",
+     "valor_documento": 355062405,
+     "valor_wi7w_mas_cercano": 355062405
+    },
+    {
+     "nombre": "CENIT Ingeniería y Geología SAS",
+     "valor_documento": 316242459,
+     "valor_wi7w_mas_cercano": 316242459
+    },
+    {
+     "nombre": "CONSORCIO CIVIL 12",
+     "valor_documento": 358175068,
+     "valor_wi7w_mas_cercano": 358175068
+    },
+    {
+     "nombre": "GRUPO S Y C S.A.S.",
+     "valor_documento": 345449970,
+     "valor_wi7w_mas_cercano": 345449970
+    }
+   ],
    "lectura": {
     "coincide": {
      "respuesta": "sí",
@@ -4318,11 +4973,11 @@
    "valor_adjudicado_p6dx": 942406356,
    "clasificacion": {
     "habiles": "explicitos",
-    "habiles_motivo": "42 CUMPLE y 7 RECHAZADO en el informe definitivo; la tabla de ponderables está en imagen.",
-    "puntaje_precio": "sin_dato"
+    "habiles_motivo": "La tabla de ponderación (imagen de la página 5, leída de la imagen) trae 42 hábiles con sus puntajes; no coincide del todo con la tabla de habilitación de la misma resolución (ver la prueba).",
+    "puntaje_precio": "todos"
    },
    "metodo_trm": {
-    "metodo_documento": null,
+    "metodo_documento": "aritmetica_baja",
     "trm_documento": 3204.51,
     "fecha_documento": "«TRM vigente del 05 de agosto»",
     "trm_oficial": 3204.51,
@@ -4331,270 +4986,813 @@
    "prueba": {
     "tipo": "metodo_conocido",
     "metodo": "aritmetica_baja",
-    "metodo_fuente": "trm",
-    "variante": {
-     "sin": [
-      "CSJ GROUP S.A.S"
-     ],
-     "motivo": "Inferencia: CSJ ofreció el 81,9 % del presupuesto y pudo quedar fuera por precio artificialmente bajo en la tabla de ponderables, que está en imagen. Sin confirmar."
-    },
+    "metodo_fuente": "documento",
+    "fuente_tabla": "imagen de la página 5 (tabla de ponderación, 1082x843)",
     "habiles": [
      {
       "nombre": "G Y P INGENIERIA SAS",
-      "nombre_wi7w": "G Y P INGENIERIA SAS",
+      "nro": 1,
       "valor": 968403864,
-      "fuente_valor": "wi7w-2nvm"
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 46.45,
+      "puntaje_total_documento": 96.95,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
      },
      {
       "nombre": "CONSORCIO TORRE PT",
-      "nombre_wi7w": "CONSORCIO TORRE PT",
+      "nro": 2,
       "valor": 958799541,
-      "fuente_valor": "wi7w-2nvm"
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 46.97,
+      "puntaje_total_documento": 77.47,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 0,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
      },
      {
       "nombre": "CONSORCIO PLATO PT",
-      "nombre_wi7w": "CONSORCIO PLATO PT",
+      "nro": 3,
       "valor": 959430754,
-      "fuente_valor": "wi7w-2nvm"
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 46.94,
+      "puntaje_total_documento": 97.44,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
      },
      {
       "nombre": "CONSORCIO OBRAS CIVILES PTL",
-      "nombre_wi7w": "CONSORCIO OBRAS CIVILES PTL",
+      "nro": 4,
       "valor": 942406356,
-      "fuente_valor": "wi7w-2nvm",
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 47.86,
+      "puntaje_total_documento": 98.36,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      },
       "ganador": true
      },
      {
       "nombre": "CONSORCIO GYB.1357",
-      "nombre_wi7w": "CONSORCIO GYB.1357",
+      "nro": 5,
       "valor": 961740274,
-      "fuente_valor": "wi7w-2nvm"
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 46.82,
+      "puntaje_total_documento": 97.32,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
      },
      {
       "nombre": "SERIN S.A.S.",
-      "nombre_wi7w": "SERIN S.A.S.",
+      "nro": 6,
       "valor": 966259090,
-      "fuente_valor": "wi7w-2nvm"
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 46.57,
+      "puntaje_total_documento": 97.07,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
      },
      {
       "nombre": "CONSORCIO MTTO PLATO 1357 R-E-A",
-      "nombre_wi7w": "CONSORCIO MTTO PLATO 1357 R-E-A",
+      "nro": 7,
       "valor": 969834913,
-      "fuente_valor": "wi7w-2nvm"
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 46.38,
+      "puntaje_total_documento": 96.88,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
      },
      {
       "nombre": "CONSORCIO PLATO D&C",
-      "nombre_wi7w": "CONSORCIO PLATO D&C",
+      "nro": 8,
       "valor": 967836504,
-      "fuente_valor": "wi7w-2nvm"
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 46.48,
+      "puntaje_total_documento": 96.98,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
      },
      {
       "nombre": "CSJ GROUP S.A.S",
-      "nombre_wi7w": "CSJ GROUP S.A.S.",
+      "nro": 9,
       "valor": 860334570,
-      "fuente_valor": "wi7w-2nvm"
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 46.68,
+      "puntaje_total_documento": 97.18,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
      },
      {
       "nombre": "COINCO DE COLOMBIA S.A.S",
-      "nombre_wi7w": "COINCO DE COLOMBIA S.A.S",
+      "nro": 10,
       "valor": 968051625,
-      "fuente_valor": "wi7w-2nvm"
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 46.47,
+      "puntaje_total_documento": 96.97,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
      },
      {
       "nombre": "L&C OBRAS Y SERVICIOS S.A.S.",
-      "nombre_wi7w": "L&C OBRAS Y SERVICIOS S.A.S.",
+      "nro": 11,
       "valor": 967313633,
-      "fuente_valor": "wi7w-2nvm"
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 46.51,
+      "puntaje_total_documento": 97.01,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
      },
      {
-      "nombre": "CENIT Ingeniería y Geología SAS",
-      "nombre_wi7w": "CENIT Ingeniería y Geología SAS",
+      "nombre": "CENIT",
+      "nro": 12,
       "valor": 956279324,
-      "fuente_valor": "wi7w-2nvm"
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 47.11,
+      "puntaje_total_documento": 77.61,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 0,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
      },
      {
       "nombre": "CONSORCIO MANTENIMIENTO TORRE PLATO B-I",
-      "nombre_wi7w": "CONSORCIO MANTENIMIENTO TORRE PLATO B-I",
+      "nro": 13,
       "valor": 967627785,
-      "fuente_valor": "wi7w-2nvm"
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 46.5,
+      "puntaje_total_documento": 97,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
      },
      {
       "nombre": "CONSTRUCTORA Y FERRETERIA LA SABANA SAS",
-      "nombre_wi7w": "CONSTRUCTORA Y FERRETERIA LA SABANA SAS",
+      "nro": 14,
       "valor": 968464861,
-      "fuente_valor": "wi7w-2nvm"
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 46.45,
+      "puntaje_total_documento": 96.95,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
      },
      {
       "nombre": "CONSORCIO MAPLA26",
-      "nombre_wi7w": "CONSORCIO MAPLA26",
+      "nro": 15,
       "valor": 973241628,
-      "fuente_valor": "wi7w-2nvm"
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 46.19,
+      "puntaje_total_documento": 96.69,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
      },
      {
       "nombre": "CONSORCIO ING-PLATO",
-      "nombre_wi7w": "CONSORCIO ING-PLATO",
+      "nro": 16,
       "valor": 967204548,
-      "fuente_valor": "wi7w-2nvm"
-     },
-     {
-      "nombre": "CONSORCIO TERMINAL Y TORRE PLATO SB - 2026",
-      "nombre_wi7w": "CONSORCIO TERMINAL Y TORRE PLATO SB - 2026",
-      "valor": 901111732,
-      "fuente_valor": "wi7w-2nvm"
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 46.52,
+      "puntaje_total_documento": 97.02,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
      },
      {
       "nombre": "CONSORCIO GRURED AEROCIVIL",
-      "nombre_wi7w": "CONSORCIO GRURED AEROCIVIL",
+      "nro": 18,
       "valor": 987301863,
-      "fuente_valor": "wi7w-2nvm"
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 45.43,
+      "puntaje_total_documento": 95.93,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
      },
      {
       "nombre": "ALCAX INGENIERIA S.A.S",
-      "nombre_wi7w": "ALCAX INGENIERIA S.A.S",
+      "nro": 19,
       "valor": 959431521.63,
-      "fuente_valor": "wi7w-2nvm"
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 46.94,
+      "puntaje_total_documento": 97.44,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
      },
      {
       "nombre": "CONSORCIO CIVIL TERMINAL",
-      "nombre_wi7w": "CONSORCIO CIVIL TERMINAL",
+      "nro": 21,
       "valor": 968256606,
-      "fuente_valor": "wi7w-2nvm"
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 46.46,
+      "puntaje_total_documento": 96.96,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "CONSORCIO AERO PLATO 1357",
+      "nro": 22,
+      "valor": 962582930,
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 46.77,
+      "puntaje_total_documento": 97.27,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
      },
      {
       "nombre": "CONSORCIO INGENIERIA PLATO 321",
-      "nombre_wi7w": "CONSORCIO INGENIERIA PLATO 321",
+      "nro": 23,
       "valor": 968613332,
-      "fuente_valor": "wi7w-2nvm"
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 46.44,
+      "puntaje_total_documento": 96.94,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
      },
      {
       "nombre": "CONSORCIO OBRAS SAURAL",
-      "nombre_wi7w": "CONSORCIO OBRAS SAURAL",
+      "nro": 24,
       "valor": 960481700,
-      "fuente_valor": "wi7w-2nvm"
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 46.88,
+      "puntaje_total_documento": 97.38,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
      },
      {
       "nombre": "CONSORCIO TORRE AEROPLATO",
-      "nombre_wi7w": "CONSORCIO TORRE AEROPLATO",
+      "nro": 25,
       "valor": 958756094,
-      "fuente_valor": "wi7w-2nvm"
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 46.98,
+      "puntaje_total_documento": 97.48,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
      },
      {
       "nombre": "KAXA SAS",
-      "nombre_wi7w": "KAXA SAS",
+      "nro": 26,
       "valor": 960166889.94,
-      "fuente_valor": "wi7w-2nvm"
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 46.9,
+      "puntaje_total_documento": 97.4,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
      },
      {
       "nombre": "INGEBLAR SAS",
-      "nombre_wi7w": "INGEBLAR SAS",
+      "nro": 27,
       "valor": 1003041754,
-      "fuente_valor": "wi7w-2nvm"
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 44.57,
+      "puntaje_total_documento": 95.07,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
      },
      {
       "nombre": "C&C BEZALEEL S.A.S",
-      "nombre_wi7w": "C&C BEZALEEL S.A.S",
+      "nro": 28,
       "valor": 963962812,
-      "fuente_valor": "wi7w-2nvm"
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 46.69,
+      "puntaje_total_documento": 97.19,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
      },
      {
       "nombre": "CONSORCIO AEROCIVIL PLT",
-      "nombre_wi7w": "CONSORCIO AEROCIVIL PLT",
+      "nro": 29,
       "valor": 967313633,
-      "fuente_valor": "wi7w-2nvm"
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 46.51,
+      "puntaje_total_documento": 97.01,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
      },
      {
       "nombre": "CONSORCIO H&R AEROPUERTO PLATO 2026",
-      "nombre_wi7w": "CONSORCIO H&R AEROPUERTO PLATO 2026",
+      "nro": 30,
       "valor": 962896264,
-      "fuente_valor": "wi7w-2nvm"
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 46.75,
+      "puntaje_total_documento": 97.25,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
      },
      {
       "nombre": "INMARLI SAS",
-      "nombre_wi7w": "INMARLI SAS",
+      "nro": 31,
       "valor": 965170500,
-      "fuente_valor": "wi7w-2nvm"
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 46.63,
+      "puntaje_total_documento": 97.13,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
      },
      {
       "nombre": "INFRAOBRAS SAS",
-      "nombre_wi7w": "INFRAOBRAS SAS",
+      "nro": 33,
       "valor": 961532592,
-      "fuente_valor": "wi7w-2nvm"
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 46.83,
+      "puntaje_total_documento": 77.33,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 0,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
      },
      {
       "nombre": "CONSTRUCCIONES Y DISEÑOS DEL NORTE SAS",
-      "nombre_wi7w": "CONSTRUCCIONES Y DISEÑOS DEL NORTE SAS",
+      "nro": 34,
       "valor": 956276516,
-      "fuente_valor": "wi7w-2nvm"
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 47.11,
+      "puntaje_total_documento": 77.61,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 0,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
      },
      {
       "nombre": "CONSTRUCCIONES ARES SAS",
-      "nombre_wi7w": "CONSTRUCCIONES ARES SAS",
+      "nro": 35,
       "valor": 967836505,
-      "fuente_valor": "wi7w-2nvm"
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 46.48,
+      "puntaje_total_documento": 96.98,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
      },
      {
       "nombre": "BERMORI GRANADA VALENCIA",
-      "nombre_wi7w": "BERMORI GRANADA VALENCIA",
+      "nro": 37,
       "valor": 956276516,
-      "fuente_valor": "wi7w-2nvm"
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 47.11,
+      "puntaje_total_documento": 97.61,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
      },
      {
       "nombre": "Inarco PyC SAS",
-      "nombre_wi7w": "Inarco PyC  SAS",
+      "nro": 39,
       "valor": 972776842,
-      "fuente_valor": "wi7w-2nvm"
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 46.22,
+      "puntaje_total_documento": 96.72,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
      },
      {
       "nombre": "UAC SAS",
-      "nombre_wi7w": "UAC SAS",
+      "nro": 40,
       "valor": 969834220,
-      "fuente_valor": "wi7w-2nvm"
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 46.38,
+      "puntaje_total_documento": 96.88,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
      },
      {
       "nombre": "OMEKA INGENIERIA SAS",
-      "nombre_wi7w": "OMEKA INGENIERIA SAS",
+      "nro": 41,
       "valor": 968657632,
-      "fuente_valor": "wi7w-2nvm"
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 46.44,
+      "puntaje_total_documento": 96.94,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
      },
      {
       "nombre": "BASA DISEÑO S.A.S",
-      "nombre_wi7w": "BASA DISEÑO S.A.S",
+      "nro": 42,
       "valor": 1008753179,
-      "fuente_valor": "wi7w-2nvm"
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 44.26,
+      "puntaje_total_documento": 94.76,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
      },
      {
       "nombre": "SIRIUS INGENIERIA",
-      "nombre_wi7w": "SIRIUS INGENIERIA SAS",
+      "nro": 44,
       "valor": 960795179,
-      "fuente_valor": "wi7w-2nvm"
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 46.87,
+      "puntaje_total_documento": 77.37,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 0,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
      },
      {
       "nombre": "CONSTRUIR SEGEN",
-      "nombre_wi7w": "CONSTRUIR SEGEN",
+      "nro": 45,
       "valor": 963600691,
-      "fuente_valor": "wi7w-2nvm"
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 46.71,
+      "puntaje_total_documento": 76.96,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 0,
+       "mujeres": 0,
+       "mipyme": 0.25
+      }
      },
      {
       "nombre": "H.A.H CONSTRUCCIONES S.A.S",
-      "nombre_wi7w": "H.A.H CONSTRUCCIONES S.A.S",
+      "nro": 46,
       "valor": 961532464,
-      "fuente_valor": "wi7w-2nvm"
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 46.83,
+      "puntaje_total_documento": 97.33,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
      },
      {
       "nombre": "CONSORCIO INFRA-MAGDALENA C&C",
-      "nombre_wi7w": "CONSORCIO INFRA-MAGDALENA C&C",
+      "nro": 48,
       "valor": 968160337.3,
-      "fuente_valor": "wi7w-2nvm"
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 46.47,
+      "puntaje_total_documento": 76.97,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 0,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
      },
      {
       "nombre": "CONSORCIO AERO-MAGDALENA KR",
-      "nombre_wi7w": "CONSORCIO AERO-MAGDALENA KR",
+      "nro": 49,
       "valor": 968877488.47,
-      "fuente_valor": "wi7w-2nvm"
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 46.43,
+      "puntaje_total_documento": 76.93,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 0,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
      }
     ],
-    "nota": "La base trae CONSORCIO CAMPIN-CL y la resolución CONSORCIO AE-09 (RECHAZADO); se tratan como la misma oferta [inferencia]: ninguna de las dos entra a los hábiles."
+    "nota": "Tabla de ponderación (imagen de la página 5): 42 hábiles, método «Media aritmética baja», «TRM 05 de agosto $ 3,204.51», «Media aritmética baja $ 912,263,896.09». CSJ GROUP SÍ está entre los hábiles; el consorcio TERMINAL Y TORRE PLATO SB, que la tabla de habilitación da por CUMPLE, NO está en la de ponderación, y CONSORCIO AERO PLATO 1357, que aquella da por RECHAZADO, sí. La resolución se contradice; manda la tabla de ponderación, que es la que puntúa. La inferencia anterior («acierta sin CSJ») era equivocada."
    },
+   "valores_leidos": [
+    {
+     "nombre": "G Y P INGENIERIA SAS",
+     "valor_documento": 968403864,
+     "valor_wi7w_mas_cercano": 968403864
+    },
+    {
+     "nombre": "CONSORCIO TORRE PT",
+     "valor_documento": 958799541,
+     "valor_wi7w_mas_cercano": 958799541
+    },
+    {
+     "nombre": "CONSORCIO PLATO PT",
+     "valor_documento": 959430754,
+     "valor_wi7w_mas_cercano": 959430754
+    },
+    {
+     "nombre": "CONSORCIO OBRAS CIVILES PTL",
+     "valor_documento": 942406356,
+     "valor_wi7w_mas_cercano": 942406356
+    },
+    {
+     "nombre": "CONSORCIO GYB.1357",
+     "valor_documento": 961740274,
+     "valor_wi7w_mas_cercano": 961740274
+    },
+    {
+     "nombre": "SERIN S.A.S.",
+     "valor_documento": 966259090,
+     "valor_wi7w_mas_cercano": 966259090
+    },
+    {
+     "nombre": "CONSORCIO MTTO PLATO 1357 R-E-A",
+     "valor_documento": 969834913,
+     "valor_wi7w_mas_cercano": 969834913
+    },
+    {
+     "nombre": "CONSORCIO PLATO D&C",
+     "valor_documento": 967836504,
+     "valor_wi7w_mas_cercano": 967836504
+    },
+    {
+     "nombre": "CSJ GROUP S.A.S",
+     "valor_documento": 860334570,
+     "valor_wi7w_mas_cercano": 860334570
+    },
+    {
+     "nombre": "COINCO DE COLOMBIA S.A.S",
+     "valor_documento": 968051625,
+     "valor_wi7w_mas_cercano": 968051625
+    },
+    {
+     "nombre": "L&C OBRAS Y SERVICIOS S.A.S.",
+     "valor_documento": 967313633,
+     "valor_wi7w_mas_cercano": 967313633
+    },
+    {
+     "nombre": "CENIT",
+     "valor_documento": 956279324,
+     "valor_wi7w_mas_cercano": 956279324
+    },
+    {
+     "nombre": "CONSORCIO MANTENIMIENTO TORRE PLATO B-I",
+     "valor_documento": 967627785,
+     "valor_wi7w_mas_cercano": 967627785
+    },
+    {
+     "nombre": "CONSTRUCTORA Y FERRETERIA LA SABANA SAS",
+     "valor_documento": 968464861,
+     "valor_wi7w_mas_cercano": 968464861
+    },
+    {
+     "nombre": "CONSORCIO MAPLA26",
+     "valor_documento": 973241628,
+     "valor_wi7w_mas_cercano": 973241628
+    },
+    {
+     "nombre": "CONSORCIO ING-PLATO",
+     "valor_documento": 967204548,
+     "valor_wi7w_mas_cercano": 967204548
+    },
+    {
+     "nombre": "CONSORCIO GRURED AEROCIVIL",
+     "valor_documento": 987301863,
+     "valor_wi7w_mas_cercano": 987301863
+    },
+    {
+     "nombre": "ALCAX INGENIERIA S.A.S",
+     "valor_documento": 959431521.63,
+     "valor_wi7w_mas_cercano": 959431521.63
+    },
+    {
+     "nombre": "CONSORCIO CIVIL TERMINAL",
+     "valor_documento": 968256606,
+     "valor_wi7w_mas_cercano": 968256606
+    },
+    {
+     "nombre": "CONSORCIO AERO PLATO 1357",
+     "valor_documento": 962582930,
+     "valor_wi7w_mas_cercano": 962582930
+    },
+    {
+     "nombre": "CONSORCIO INGENIERIA PLATO 321",
+     "valor_documento": 968613332,
+     "valor_wi7w_mas_cercano": 968613332
+    },
+    {
+     "nombre": "CONSORCIO OBRAS SAURAL",
+     "valor_documento": 960481700,
+     "valor_wi7w_mas_cercano": 960481700
+    },
+    {
+     "nombre": "CONSORCIO TORRE AEROPLATO",
+     "valor_documento": 958756094,
+     "valor_wi7w_mas_cercano": 958756094
+    },
+    {
+     "nombre": "KAXA SAS",
+     "valor_documento": 960166889.94,
+     "valor_wi7w_mas_cercano": 960166889.94
+    },
+    {
+     "nombre": "INGEBLAR SAS",
+     "valor_documento": 1003041754,
+     "valor_wi7w_mas_cercano": 1003041754
+    },
+    {
+     "nombre": "C&C BEZALEEL S.A.S",
+     "valor_documento": 963962812,
+     "valor_wi7w_mas_cercano": 963962812
+    },
+    {
+     "nombre": "CONSORCIO AEROCIVIL PLT",
+     "valor_documento": 967313633,
+     "valor_wi7w_mas_cercano": 967313633
+    },
+    {
+     "nombre": "CONSORCIO H&R AEROPUERTO PLATO 2026",
+     "valor_documento": 962896264,
+     "valor_wi7w_mas_cercano": 962896264
+    },
+    {
+     "nombre": "INMARLI SAS",
+     "valor_documento": 965170500,
+     "valor_wi7w_mas_cercano": 965170500
+    },
+    {
+     "nombre": "INFRAOBRAS SAS",
+     "valor_documento": 961532592,
+     "valor_wi7w_mas_cercano": 961532592
+    },
+    {
+     "nombre": "CONSTRUCCIONES Y DISEÑOS DEL NORTE SAS",
+     "valor_documento": 956276516,
+     "valor_wi7w_mas_cercano": 956276516
+    },
+    {
+     "nombre": "CONSTRUCCIONES ARES SAS",
+     "valor_documento": 967836505,
+     "valor_wi7w_mas_cercano": 967836505
+    },
+    {
+     "nombre": "BERMORI GRANADA VALENCIA",
+     "valor_documento": 956276516,
+     "valor_wi7w_mas_cercano": 956276516
+    },
+    {
+     "nombre": "Inarco PyC SAS",
+     "valor_documento": 972776842,
+     "valor_wi7w_mas_cercano": 972776842
+    },
+    {
+     "nombre": "UAC SAS",
+     "valor_documento": 969834220,
+     "valor_wi7w_mas_cercano": 969834220
+    },
+    {
+     "nombre": "OMEKA INGENIERIA SAS",
+     "valor_documento": 968657632,
+     "valor_wi7w_mas_cercano": 968657632
+    },
+    {
+     "nombre": "BASA DISEÑO S.A.S",
+     "valor_documento": 1008753179,
+     "valor_wi7w_mas_cercano": 1008753179
+    },
+    {
+     "nombre": "SIRIUS INGENIERIA",
+     "valor_documento": 960795179,
+     "valor_wi7w_mas_cercano": 960795179
+    },
+    {
+     "nombre": "CONSTRUIR SEGEN",
+     "valor_documento": 963600691,
+     "valor_wi7w_mas_cercano": 963600691
+    },
+    {
+     "nombre": "H.A.H CONSTRUCCIONES S.A.S",
+     "valor_documento": 961532464,
+     "valor_wi7w_mas_cercano": 961532464
+    },
+    {
+     "nombre": "CONSORCIO INFRA-MAGDALENA C&C",
+     "valor_documento": 968160337.3,
+     "valor_wi7w_mas_cercano": 968160337.3
+    },
+    {
+     "nombre": "CONSORCIO AERO-MAGDALENA KR",
+     "valor_documento": 968877488.47,
+     "valor_wi7w_mas_cercano": 968877488.47
+    }
+   ],
    "lectura": {
     "coincide": {
      "respuesta": "sí (con discrepancia de número, ver notas)",
@@ -5253,12 +6451,580 @@
    "ganador_p6dx": "CONSORCIO AG PLATO 2026",
    "valor_adjudicado_p6dx": 729667653,
    "clasificacion": {
-    "habiles": "sin_dato",
-    "habiles_motivo": "Las tablas del cierre y de la evaluación están en imagen; solo el ganador.",
-    "puntaje_precio": "sin_dato"
+    "habiles": "explicitos",
+    "habiles_motivo": "Las tablas están en imagen (páginas 2 a 4): se leyeron de la imagen. Habilitación definitiva: 29 CUMPLE y 12 RECHAZADO de 41; ponderación de los 29.",
+    "puntaje_precio": "todos"
    },
-   "metodo_trm": null,
-   "prueba": null,
+   "metodo_trm": {
+    "metodo_documento": "geometrica",
+    "trm_documento": 3428.32,
+    "fecha_documento": "«TRM 25 de junio» (tabla en imagen)",
+    "trm_oficial": 3428.32,
+    "vigencia_oficial": "2026-06-25"
+   },
+   "prueba": {
+    "tipo": "metodo_conocido",
+    "metodo": "geometrica",
+    "metodo_fuente": "documento",
+    "fuente_tabla": "imagen de la página 4 (ponderación y orden de elegibilidad)",
+    "habiles": [
+     {
+      "nombre": "G Y P INGENIERIA SAS",
+      "nro": 1,
+      "valor": 732487576,
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 49.25,
+      "puntaje_total_documento": 99.75,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "CONSORCIO AERORAM",
+      "nro": 3,
+      "valor": 744724554,
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 48.42,
+      "puntaje_total_documento": 98.92,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "CONSORCIO CANALES PLATO 26",
+      "nro": 5,
+      "valor": 730649911,
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 49.38,
+      "puntaje_total_documento": 99.88,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "CONSORCIO MTO AERO LAS MERCEDES DE PLATO 20-26",
+      "nro": 6,
+      "valor": 731565889,
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 49.32,
+      "puntaje_total_documento": 99.82,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "RDM SAS",
+      "nro": 7,
+      "valor": 727112000,
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 49.38,
+      "puntaje_total_documento": 99.88,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "CONSORCIO FRANJAS A&D",
+      "nro": 8,
+      "valor": 731920430,
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 49.29,
+      "puntaje_total_documento": 99.79,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "CONSORCIO AG PLATO 2026",
+      "nro": 9,
+      "valor": 729667653,
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 49.44,
+      "puntaje_total_documento": 99.94,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      },
+      "ganador": true
+     },
+     {
+      "nombre": "H.A.H CONSTRUCCIONES S.A.S",
+      "nro": 10,
+      "valor": 730560000,
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 49.38,
+      "puntaje_total_documento": 99.88,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "CONSORCIO FRANJAS PLATO S&C",
+      "nro": 12,
+      "valor": 724484627,
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 49.2,
+      "puntaje_total_documento": 99.7,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "CONSORCIO MANTENIMIENTO PLATO",
+      "nro": 13,
+      "valor": 732077031,
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 49.28,
+      "puntaje_total_documento": 99.78,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "SOLUCIONES CIVILES DEL NORTE",
+      "nro": 14,
+      "valor": 731760000,
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 49.3,
+      "puntaje_total_documento": 99.8,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "CONSORCIO ROCERIAS MAGDALENA",
+      "nro": 16,
+      "valor": 731622826,
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 49.31,
+      "puntaje_total_documento": 99.81,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "INFRAOBRAS SAS",
+      "nro": 17,
+      "valor": 732000000,
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 49.29,
+      "puntaje_total_documento": 99.79,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "UNIÓN TEMPORAL MTO FRANJAS AEROPUERTO MAGDALENA",
+      "nro": 18,
+      "valor": 730400000,
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 49.39,
+      "puntaje_total_documento": 99.89,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "CONSORCIO AERO FRANJAS LAS MERCEDES",
+      "nro": 19,
+      "valor": 724225494,
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 49.19,
+      "puntaje_total_documento": 99.69,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "CONSTRUCCIONES Y DISEÑOS DEL NORTE SAS",
+      "nro": 20,
+      "valor": 728000000,
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 49.44,
+      "puntaje_total_documento": 99.69,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "TECNOPROC SAS",
+      "nro": 22,
+      "valor": 724000000,
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 49.17,
+      "puntaje_total_documento": 99.42,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "CONSORCIO AERO MERCEDES 026",
+      "nro": 23,
+      "valor": 732307617,
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 49.26,
+      "puntaje_total_documento": 99.76,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "UAC SAS",
+      "nro": 25,
+      "valor": 737036680,
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 48.94,
+      "puntaje_total_documento": 99.44,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "CONSORCIO AEROVAL LAS MERCEDES.",
+      "nro": 27,
+      "valor": 732534445,
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 49.25,
+      "puntaje_total_documento": 99.75,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "CONSTRUIR PERCAN",
+      "nro": 29,
+      "valor": 743515560,
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 48.5,
+      "puntaje_total_documento": 99,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "CONSORCIO FREAD 1209 PLATO",
+      "nro": 31,
+      "valor": 731200000,
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 49.34,
+      "puntaje_total_documento": 99.84,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "ALCAX INGENIERIA S.A.S",
+      "nro": 32,
+      "valor": 726414857,
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 49.33,
+      "puntaje_total_documento": 99.83,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "CAMUS INGENIERIA SAS",
+      "nro": 33,
+      "valor": 732475608.86,
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 49.25,
+      "puntaje_total_documento": 99.75,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "CONSORCIO AI FRANJAS",
+      "nro": 34,
+      "valor": 737472001,
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 48.91,
+      "puntaje_total_documento": 99.41,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "CONSORCIO AERO PLATO FRANJAS G&C",
+      "nro": 35,
+      "valor": 730481941,
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 49.39,
+      "puntaje_total_documento": 99.89,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "ARGAL INGENIERIA LTDA",
+      "nro": 36,
+      "valor": 724484627,
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 49.2,
+      "puntaje_total_documento": 99.7,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "CONSORCIO FRANJAS PLATO A-K",
+      "nro": 37,
+      "valor": 658785886,
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 44.74,
+      "puntaje_total_documento": 95.24,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "CONSORCIO AEROCIVIL MERCEDES 1209",
+      "nro": 38,
+      "valor": 736805166,
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 48.96,
+      "puntaje_total_documento": 99.46,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     }
+    ],
+    "nota": "Tabla de ponderación (imagen de la página 4): 29 hábiles, «Método Media geométrica», «Media geométrica $ 728,847,207.42», «TRM 25 de junio $ 3,428.32». La habilitación definitiva (imágenes de las páginas 3 y 4) da 29 CUMPLE de 41; la preliminar tenía otros (la evaluación cambió tras las subsanaciones). Al primero y al sexto en puntaje de precio los separó el punto de mujeres."
+   },
+   "valores_leidos": [
+    {
+     "nombre": "G Y P INGENIERIA SAS",
+     "valor_documento": 732487576,
+     "valor_wi7w_mas_cercano": 732487576
+    },
+    {
+     "nombre": "CONSORCIO AERORAM",
+     "valor_documento": 744724554,
+     "valor_wi7w_mas_cercano": 744724554
+    },
+    {
+     "nombre": "CONSORCIO CANALES PLATO 26",
+     "valor_documento": 730649911,
+     "valor_wi7w_mas_cercano": 730649911
+    },
+    {
+     "nombre": "CONSORCIO MTO AERO LAS MERCEDES DE PLATO 20-26",
+     "valor_documento": 731565889,
+     "valor_wi7w_mas_cercano": 731565889
+    },
+    {
+     "nombre": "RDM SAS",
+     "valor_documento": 727112000,
+     "valor_wi7w_mas_cercano": 727112000
+    },
+    {
+     "nombre": "CONSORCIO FRANJAS A&D",
+     "valor_documento": 731920430,
+     "valor_wi7w_mas_cercano": 731920430
+    },
+    {
+     "nombre": "CONSORCIO AG PLATO 2026",
+     "valor_documento": 729667653,
+     "valor_wi7w_mas_cercano": 729667653
+    },
+    {
+     "nombre": "H.A.H CONSTRUCCIONES S.A.S",
+     "valor_documento": 730560000,
+     "valor_wi7w_mas_cercano": 730560000
+    },
+    {
+     "nombre": "CONSORCIO FRANJAS PLATO S&C",
+     "valor_documento": 724484627,
+     "valor_wi7w_mas_cercano": 724484627
+    },
+    {
+     "nombre": "CONSORCIO MANTENIMIENTO PLATO",
+     "valor_documento": 732077031,
+     "valor_wi7w_mas_cercano": 732077031
+    },
+    {
+     "nombre": "SOLUCIONES CIVILES DEL NORTE",
+     "valor_documento": 731760000,
+     "valor_wi7w_mas_cercano": 731760000
+    },
+    {
+     "nombre": "CONSORCIO ROCERIAS MAGDALENA",
+     "valor_documento": 731622826,
+     "valor_wi7w_mas_cercano": 731622826
+    },
+    {
+     "nombre": "INFRAOBRAS SAS",
+     "valor_documento": 732000000,
+     "valor_wi7w_mas_cercano": 732000000
+    },
+    {
+     "nombre": "UNIÓN TEMPORAL MTO FRANJAS AEROPUERTO MAGDALENA",
+     "valor_documento": 730400000,
+     "valor_wi7w_mas_cercano": 730400000
+    },
+    {
+     "nombre": "CONSORCIO AERO FRANJAS LAS MERCEDES",
+     "valor_documento": 724225494,
+     "valor_wi7w_mas_cercano": 724225494
+    },
+    {
+     "nombre": "CONSTRUCCIONES Y DISEÑOS DEL NORTE SAS",
+     "valor_documento": 728000000,
+     "valor_wi7w_mas_cercano": 728000000
+    },
+    {
+     "nombre": "TECNOPROC SAS",
+     "valor_documento": 724000000,
+     "valor_wi7w_mas_cercano": 724000000
+    },
+    {
+     "nombre": "CONSORCIO AERO MERCEDES 026",
+     "valor_documento": 732307617,
+     "valor_wi7w_mas_cercano": 732307617
+    },
+    {
+     "nombre": "UAC SAS",
+     "valor_documento": 737036680,
+     "valor_wi7w_mas_cercano": 737036680
+    },
+    {
+     "nombre": "CONSORCIO AEROVAL LAS MERCEDES.",
+     "valor_documento": 732534445,
+     "valor_wi7w_mas_cercano": 732534445
+    },
+    {
+     "nombre": "CONSTRUIR PERCAN",
+     "valor_documento": 743515560,
+     "valor_wi7w_mas_cercano": 743515560
+    },
+    {
+     "nombre": "CONSORCIO FREAD 1209 PLATO",
+     "valor_documento": 731200000,
+     "valor_wi7w_mas_cercano": 731200000
+    },
+    {
+     "nombre": "ALCAX INGENIERIA S.A.S",
+     "valor_documento": 726414857,
+     "valor_wi7w_mas_cercano": 726414857
+    },
+    {
+     "nombre": "CAMUS INGENIERIA SAS",
+     "valor_documento": 732475608.86,
+     "valor_wi7w_mas_cercano": 732475608.86
+    },
+    {
+     "nombre": "CONSORCIO AI FRANJAS",
+     "valor_documento": 737472001,
+     "valor_wi7w_mas_cercano": 737472001
+    },
+    {
+     "nombre": "CONSORCIO AERO PLATO FRANJAS G&C",
+     "valor_documento": 730481941,
+     "valor_wi7w_mas_cercano": 730481941
+    },
+    {
+     "nombre": "ARGAL INGENIERIA LTDA",
+     "valor_documento": 724484627,
+     "valor_wi7w_mas_cercano": 724484627
+    },
+    {
+     "nombre": "CONSORCIO FRANJAS PLATO A-K",
+     "valor_documento": 658785886,
+     "valor_wi7w_mas_cercano": 658785886
+    },
+    {
+     "nombre": "CONSORCIO AEROCIVIL MERCEDES 1209",
+     "valor_documento": 736805166,
+     "valor_wi7w_mas_cercano": 736805166
+    }
+   ],
    "lectura": {
     "coincide": {
      "valor": "sí",
@@ -5312,11 +7078,11 @@
    "valor_adjudicado_p6dx": 922700001,
    "clasificacion": {
     "habiles": "explicitos",
-    "habiles_motivo": "34 CUMPLE y 4 RECHAZADO en el informe definitivo; la tabla de ponderables está en imagen.",
-    "puntaje_precio": "sin_dato"
+    "habiles_motivo": "34 CUMPLE y 4 RECHAZADO en el informe definitivo; la tabla de ponderación (imagen de la página 4) se leyó de la imagen.",
+    "puntaje_precio": "todos"
    },
    "metodo_trm": {
-    "metodo_documento": null,
+    "metodo_documento": "geometrica",
     "trm_documento": 3053.48,
     "fecha_documento": "«TRM vigente del 20 de agosto»",
     "trm_oficial": 3053.48,
@@ -5325,216 +7091,661 @@
    "prueba": {
     "tipo": "metodo_conocido",
     "metodo": "geometrica",
-    "metodo_fuente": "trm",
+    "metodo_fuente": "documento",
+    "fuente_tabla": "imagen de la página 4 (tabla de ponderación, 1087x768)",
     "habiles": [
      {
       "nombre": "INGEBLAR SAS",
-      "nombre_wi7w": "INGEBLAR SAS",
+      "nro": 1,
       "valor": 941524131,
-      "fuente_valor": "wi7w-2nvm"
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 48.49,
+      "puntaje_total_documento": 98.99,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
      },
      {
       "nombre": "CONVEG S.A.S",
-      "nombre_wi7w": "CONVEG S.A.S",
+      "nro": 2,
       "valor": 921000001,
-      "fuente_valor": "wi7w-2nvm"
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 49.41,
+      "puntaje_total_documento": 99.91,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
      },
      {
       "nombre": "MM CONSTRUCCIONES Y TECNOLOGIA S.A.S.",
-      "nombre_wi7w": "MM CONSTRUCCIONES Y TECNOLOGIA S.A.S.",
+      "nro": 3,
       "valor": 913000000,
-      "fuente_valor": "wi7w-2nvm"
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 48.98,
+      "puntaje_total_documento": 99.48,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
      },
      {
       "nombre": "BALER INGENIERIA SAS - BIC",
-      "nombre_wi7w": "BALER INGENIERIA SAS - BIC",
+      "nro": 4,
       "valor": 939697440,
-      "fuente_valor": "wi7w-2nvm"
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 48.59,
+      "puntaje_total_documento": 99.09,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
      },
      {
       "nombre": "CONSORCIO INFRAESTRUCTURA MORROSQUILLO",
-      "nombre_wi7w": "CONSORCIO INFRAESTRUCTURA MORROSQUILLO",
+      "nro": 5,
       "valor": 808600438,
-      "fuente_valor": "wi7w-2nvm"
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 43.38,
+      "puntaje_total_documento": 93.88,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
      },
      {
       "nombre": "CSJ GROUP S.A.S",
-      "nombre_wi7w": "CSJ GROUP S.A.S.",
+      "nro": 6,
       "valor": 921200040,
-      "fuente_valor": "wi7w-2nvm"
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 49.42,
+      "puntaje_total_documento": 99.67,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0,
+       "mipyme": 0.25
+      }
      },
      {
       "nombre": "CONSORCIO E-S",
-      "nombre_wi7w": "CONSORCIO E-S",
+      "nro": 7,
       "valor": 919645473,
-      "fuente_valor": "wi7w-2nvm"
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 49.34,
+      "puntaje_total_documento": 99.84,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
      },
      {
       "nombre": "CONDIS S.A.S",
-      "nombre_wi7w": "CONDIS S.A.S",
+      "nro": 8,
       "valor": 918799963,
-      "fuente_valor": "wi7w-2nvm"
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 49.29,
+      "puntaje_total_documento": 99.79,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
      },
      {
       "nombre": "CONSORCIO MANTENIMIENTO EC MORROSQUILLO",
-      "nombre_wi7w": "CONSORCIO MANTENIMIENTO EC MORROSQUILLO",
+      "nro": 9,
       "valor": 923299893,
-      "fuente_valor": "wi7w-2nvm"
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 49.47,
+      "puntaje_total_documento": 99.97,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
      },
      {
       "nombre": "CONSORCIO MORROSQUILLO D&C",
-      "nombre_wi7w": "CONSORCIO MORROSQUILLO D&C",
+      "nro": 10,
       "valor": 898500001,
-      "fuente_valor": "wi7w-2nvm"
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 48.2,
+      "puntaje_total_documento": 98.7,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
      },
      {
       "nombre": "ryo ingenieria y consultorias sas",
-      "nombre_wi7w": "ryo ingenieria y consultorias sas",
+      "nro": 11,
       "valor": 924300312,
-      "fuente_valor": "wi7w-2nvm"
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 49.41,
+      "puntaje_total_documento": 99.91,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
      },
      {
       "nombre": "AC Ingenieros S.A.S",
-      "nombre_wi7w": "AC Ingenieros S.A.S",
+      "nro": 12,
       "valor": 900000000,
-      "fuente_valor": "wi7w-2nvm"
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 48.28,
+      "puntaje_total_documento": 98.53,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0,
+       "mipyme": 0.25
+      }
      },
      {
-      "nombre": "D´INGEL SAS",
-      "nombre_wi7w": "D´INGEL SAS",
+      "nombre": "D'INGEL SAS",
+      "nro": 13,
       "valor": 960000000,
-      "fuente_valor": "wi7w-2nvm"
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 47.5,
+      "puntaje_total_documento": 97.75,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0,
+       "mipyme": 0.25
+      }
      },
      {
       "nombre": "CONSORCIO AERO MORROSQUILLO 2026",
-      "nombre_wi7w": "CONSORCIO AERO MORROSQUILLO 2026",
+      "nro": 14,
       "valor": 924501465,
-      "fuente_valor": "wi7w-2nvm"
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 49.4,
+      "puntaje_total_documento": 99.9,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
      },
      {
       "nombre": "CONSORCIO MANTENIMIENTO MORROSQUILLO B-I 1373",
-      "nombre_wi7w": "CONSORCIO MANTENIMIENTO MORROSQUILLO B-I 1373",
+      "nro": 16,
       "valor": 922700001,
-      "fuente_valor": "wi7w-2nvm",
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 49.5,
+      "puntaje_total_documento": 100,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      },
       "ganador": true
      },
      {
       "nombre": "AINECOL SAS",
-      "nombre_wi7w": "AINECOL SAS",
+      "nro": 17,
       "valor": 975000418,
-      "fuente_valor": "wi7w-2nvm"
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 46.69,
+      "puntaje_total_documento": 97.19,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
      },
      {
-      "nombre": "MULTIPLES TECNOLOGIAS APLICADAS DE COLOMBIA S.A.S",
-      "nombre_wi7w": "MULTIPLES TECNOLOGIAS APLICADAS DE COLOMBIA S.A.S",
+      "nombre": "MTA DE COLOMBIA.S.A.S.",
+      "nro": 18,
       "valor": 930227861,
-      "fuente_valor": "wi7w-2nvm"
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 49.1,
+      "puntaje_total_documento": 99.6,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
      },
      {
       "nombre": "CONSORCIO GOLFO ELECTRICO 2026",
-      "nombre_wi7w": "CONSORCIO GOLFO ELECTRICO 2026",
+      "nro": 19,
       "valor": 924799961,
-      "fuente_valor": "wi7w-2nvm"
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 49.39,
+      "puntaje_total_documento": 99.89,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
      },
      {
       "nombre": "CONSORCIO AERO MORROSQUILLO 1373 R-E",
-      "nombre_wi7w": "CONSORCIO AERO MORROSQUILLO 1373 R-E",
+      "nro": 20,
       "valor": 911880943,
-      "fuente_valor": "wi7w-2nvm"
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 48.92,
+      "puntaje_total_documento": 99.42,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
      },
      {
       "nombre": "CONSORCIO GOLFO-CL",
-      "nombre_wi7w": "CONSORCIO GOLFO-CL",
+      "nro": 21,
       "valor": 924000000,
-      "fuente_valor": "wi7w-2nvm"
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 49.43,
+      "puntaje_total_documento": 99.93,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
      },
      {
       "nombre": "KAXA SAS",
-      "nombre_wi7w": "KAXA SAS",
+      "nro": 23,
       "valor": 913000418,
-      "fuente_valor": "wi7w-2nvm"
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 48.98,
+      "puntaje_total_documento": 99.48,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
      },
      {
       "nombre": "CONSORCIO AEROPUERTO GOLFO DE MORROSQUILLO 2026",
-      "nombre_wi7w": "CONSORCIO AEROPUERTO GOLFO DE MORROSQUILLO 2026",
+      "nro": 24,
       "valor": 925000418,
-      "fuente_valor": "wi7w-2nvm"
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 49.38,
+      "puntaje_total_documento": 99.88,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
      },
      {
-      "nombre": "INGENIERIA DE OBRAS Y SERVICIOS SERVIOBRAS LTDA",
-      "nombre_wi7w": "INGENIERIA DE OBRAS Y SERVICIOS SERVIOBRAS LTDA",
+      "nombre": "SERVIOBRAS LTDA",
+      "nro": 25,
       "valor": 902567246,
-      "fuente_valor": "wi7w-2nvm"
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 48.42,
+      "puntaje_total_documento": 98.67,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0,
+       "mipyme": 0.25
+      }
      },
      {
       "nombre": "Rapidexxus S.A",
-      "nombre_wi7w": "Rapidexxus S.A",
+      "nro": 26,
       "valor": 975400000,
-      "fuente_valor": "wi7w-2nvm"
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 46.67,
+      "puntaje_total_documento": 97.17,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
      },
      {
       "nombre": "UNIÓN TEMPORAL AEROCIVIL ALCASIR 2026",
-      "nombre_wi7w": "UNIÓN TEMPORAL AEROCIVIL ALCASIR 2026",
+      "nro": 27,
       "valor": 927087797,
-      "fuente_valor": "wi7w-2nvm"
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 49.26,
+      "puntaje_total_documento": 99.76,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
      },
      {
       "nombre": "INSOL S.A.S.",
-      "nombre_wi7w": "INSOL S.A.S.",
+      "nro": 28,
       "valor": 903501882,
-      "fuente_valor": "wi7w-2nvm"
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 48.47,
+      "puntaje_total_documento": 98.97,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
      },
      {
       "nombre": "CONSORCIO AVANTES 1373",
-      "nombre_wi7w": "CONSORCIO AVANTES 1373",
+      "nro": 29,
       "valor": 935110898,
-      "fuente_valor": "wi7w-2nvm"
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 48.83,
+      "puntaje_total_documento": 99.33,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
      },
      {
       "nombre": "ALCAX INGENIERIA S.A.S",
-      "nombre_wi7w": "ALCAX INGENIERIA S.A.S",
+      "nro": 31,
       "valor": 913800379.37,
-      "fuente_valor": "wi7w-2nvm"
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 49.02,
+      "puntaje_total_documento": 99.52,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
      },
      {
       "nombre": "COINCO DE COLOMBIA S.A.S",
-      "nombre_wi7w": "COINCO DE COLOMBIA S.A.S",
+      "nro": 32,
       "valor": 924000001,
-      "fuente_valor": "wi7w-2nvm"
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 49.43,
+      "puntaje_total_documento": 99.93,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
      },
      {
       "nombre": "EQUIPOS E INGENIERIA DEL CARIBE S.A.S.",
-      "nombre_wi7w": "EQUIPOS E INGENIERIA DEL CARIBE S.A.S.",
+      "nro": 33,
       "valor": 942000147,
-      "fuente_valor": "wi7w-2nvm"
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 48.46,
+      "puntaje_total_documento": 98.96,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
      },
      {
       "nombre": "CONSORCIO AERO GOLFO 1373",
-      "nombre_wi7w": "CONSORCIO AERO GOLFO 1373",
+      "nro": 34,
       "valor": 922900002,
-      "fuente_valor": "wi7w-2nvm"
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 49.49,
+      "puntaje_total_documento": 99.99,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
      },
      {
       "nombre": "RGC ENGINEER SOLUTIONS SAS",
-      "nombre_wi7w": "RGC ENGINEER SOLUTIONS SAS",
+      "nro": 35,
       "valor": 930997190,
-      "fuente_valor": "wi7w-2nvm"
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 49.05,
+      "puntaje_total_documento": 99.55,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
      },
      {
       "nombre": "CONSORCIO LADO TIERRA MORROSQUILLO",
-      "nombre_wi7w": "CONSORCIO LADO TIERRA MORROSQUILLO",
+      "nro": 37,
       "valor": 923100088,
-      "fuente_valor": "wi7w-2nvm"
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 49.48,
+      "puntaje_total_documento": 99.98,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
      },
      {
       "nombre": "CONSORCIO WD2 2026",
-      "nombre_wi7w": "CONSORCIO WD2 2026",
+      "nro": 38,
       "valor": 943995469,
-      "fuente_valor": "wi7w-2nvm"
+      "fuente_valor": "documento (imagen)",
+      "puntaje_precio_documento": 48.36,
+      "puntaje_total_documento": 78.86,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 0,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
      }
     ],
-    "nota": "Tres nombres de la resolución salen distintos en la base y se casan por sus palabras: «MTA DE COLOMBIA» (MULTIPLES TECNOLOGIAS APLICADAS), «SERVIOBRAS LTDA» y «CONSORCIO E AERO MORROSQUILLO 1373 R-»."
+    "nota": "Tabla de ponderación (imagen de la página 4): 34 hábiles, «Media geométrica $ 922,694,606.75», «TRM 19 de agosto $ 3,053.48» (el certificado expedido el 19, que rige el 20)."
    },
+   "valores_leidos": [
+    {
+     "nombre": "INGEBLAR SAS",
+     "valor_documento": 941524131,
+     "valor_wi7w_mas_cercano": 941524131
+    },
+    {
+     "nombre": "CONVEG S.A.S",
+     "valor_documento": 921000001,
+     "valor_wi7w_mas_cercano": 921000001
+    },
+    {
+     "nombre": "MM CONSTRUCCIONES Y TECNOLOGIA S.A.S.",
+     "valor_documento": 913000000,
+     "valor_wi7w_mas_cercano": 913000000
+    },
+    {
+     "nombre": "BALER INGENIERIA SAS - BIC",
+     "valor_documento": 939697440,
+     "valor_wi7w_mas_cercano": 939697440
+    },
+    {
+     "nombre": "CONSORCIO INFRAESTRUCTURA MORROSQUILLO",
+     "valor_documento": 808600438,
+     "valor_wi7w_mas_cercano": 808600438
+    },
+    {
+     "nombre": "CSJ GROUP S.A.S",
+     "valor_documento": 921200040,
+     "valor_wi7w_mas_cercano": 921200040
+    },
+    {
+     "nombre": "CONSORCIO E-S",
+     "valor_documento": 919645473,
+     "valor_wi7w_mas_cercano": 919645473
+    },
+    {
+     "nombre": "CONDIS S.A.S",
+     "valor_documento": 918799963,
+     "valor_wi7w_mas_cercano": 918799963
+    },
+    {
+     "nombre": "CONSORCIO MANTENIMIENTO EC MORROSQUILLO",
+     "valor_documento": 923299893,
+     "valor_wi7w_mas_cercano": 923299893
+    },
+    {
+     "nombre": "CONSORCIO MORROSQUILLO D&C",
+     "valor_documento": 898500001,
+     "valor_wi7w_mas_cercano": 898500001
+    },
+    {
+     "nombre": "ryo ingenieria y consultorias sas",
+     "valor_documento": 924300312,
+     "valor_wi7w_mas_cercano": 924300312
+    },
+    {
+     "nombre": "AC Ingenieros S.A.S",
+     "valor_documento": 900000000,
+     "valor_wi7w_mas_cercano": 900000000
+    },
+    {
+     "nombre": "D'INGEL SAS",
+     "valor_documento": 960000000,
+     "valor_wi7w_mas_cercano": 960000000
+    },
+    {
+     "nombre": "CONSORCIO AERO MORROSQUILLO 2026",
+     "valor_documento": 924501465,
+     "valor_wi7w_mas_cercano": 924501465
+    },
+    {
+     "nombre": "CONSORCIO MANTENIMIENTO MORROSQUILLO B-I 1373",
+     "valor_documento": 922700001,
+     "valor_wi7w_mas_cercano": 922700001
+    },
+    {
+     "nombre": "AINECOL SAS",
+     "valor_documento": 975000418,
+     "valor_wi7w_mas_cercano": 975000418
+    },
+    {
+     "nombre": "MTA DE COLOMBIA.S.A.S.",
+     "valor_documento": 930227861,
+     "valor_wi7w_mas_cercano": 930227861
+    },
+    {
+     "nombre": "CONSORCIO GOLFO ELECTRICO 2026",
+     "valor_documento": 924799961,
+     "valor_wi7w_mas_cercano": 924799961
+    },
+    {
+     "nombre": "CONSORCIO AERO MORROSQUILLO 1373 R-E",
+     "valor_documento": 911880943,
+     "valor_wi7w_mas_cercano": 911880943
+    },
+    {
+     "nombre": "CONSORCIO GOLFO-CL",
+     "valor_documento": 924000000,
+     "valor_wi7w_mas_cercano": 924000000
+    },
+    {
+     "nombre": "KAXA SAS",
+     "valor_documento": 913000418,
+     "valor_wi7w_mas_cercano": 913000418
+    },
+    {
+     "nombre": "CONSORCIO AEROPUERTO GOLFO DE MORROSQUILLO 2026",
+     "valor_documento": 925000418,
+     "valor_wi7w_mas_cercano": 925000418
+    },
+    {
+     "nombre": "SERVIOBRAS LTDA",
+     "valor_documento": 902567246,
+     "valor_wi7w_mas_cercano": 902567246
+    },
+    {
+     "nombre": "Rapidexxus S.A",
+     "valor_documento": 975400000,
+     "valor_wi7w_mas_cercano": 975400000
+    },
+    {
+     "nombre": "UNIÓN TEMPORAL AEROCIVIL ALCASIR 2026",
+     "valor_documento": 927087797,
+     "valor_wi7w_mas_cercano": 927087797
+    },
+    {
+     "nombre": "INSOL S.A.S.",
+     "valor_documento": 903501882,
+     "valor_wi7w_mas_cercano": 903501882
+    },
+    {
+     "nombre": "CONSORCIO AVANTES 1373",
+     "valor_documento": 935110898,
+     "valor_wi7w_mas_cercano": 935110898
+    },
+    {
+     "nombre": "ALCAX INGENIERIA S.A.S",
+     "valor_documento": 913800379.37,
+     "valor_wi7w_mas_cercano": 913800379.37
+    },
+    {
+     "nombre": "COINCO DE COLOMBIA S.A.S",
+     "valor_documento": 924000001,
+     "valor_wi7w_mas_cercano": 924000001
+    },
+    {
+     "nombre": "EQUIPOS E INGENIERIA DEL CARIBE S.A.S.",
+     "valor_documento": 942000147,
+     "valor_wi7w_mas_cercano": 942000147
+    },
+    {
+     "nombre": "CONSORCIO AERO GOLFO 1373",
+     "valor_documento": 922900002,
+     "valor_wi7w_mas_cercano": 922900002
+    },
+    {
+     "nombre": "RGC ENGINEER SOLUTIONS SAS",
+     "valor_documento": 930997190,
+     "valor_wi7w_mas_cercano": 930997190
+    },
+    {
+     "nombre": "CONSORCIO LADO TIERRA MORROSQUILLO",
+     "valor_documento": 923100088,
+     "valor_wi7w_mas_cercano": 923100088
+    },
+    {
+     "nombre": "CONSORCIO WD2 2026",
+     "valor_documento": 943995469,
+     "valor_wi7w_mas_cercano": 943995469
+    }
+   ],
    "lectura": {
     "coincide": {
      "valor": "sí",
@@ -6146,9 +8357,9 @@
    "ganador_p6dx": "CONSORCIO CERRAMIENTO PERIMETRAL",
    "valor_adjudicado_p6dx": 1116184929,
    "clasificacion": {
-    "habiles": "sin_dato",
-    "habiles_motivo": "Las tablas están en imagen; solo sale la fila del ganador.",
-    "puntaje_precio": "solo_ganador"
+    "habiles": "explicitos",
+    "habiles_motivo": "La tabla de evaluación final está en imagen (página 3): se leyó de la imagen, 47 ofertas evaluadas de 67 recibidas.",
+    "puntaje_precio": "todos"
    },
    "metodo_trm": {
     "metodo_documento": "menor_valor",
@@ -6157,7 +8368,909 @@
     "trm_oficial": null,
     "vigencia_oficial": null
    },
-   "prueba": null,
+   "prueba": {
+    "tipo": "sin_metodo",
+    "fuente_tabla": "imagen de la página 3 (evaluación técnica final)",
+    "habiles": [
+     {
+      "nombre": "UT AERO CERRAMIENTO VANGUARDIA 26",
+      "nro": 1,
+      "valor": 1199779179,
+      "fuente_valor": "documento (imagen, corrección aritmética)",
+      "puntaje_precio_documento": 45.7932309,
+      "puntaje_total_documento": 95.7932309,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0,
+       "mipyme": 0
+      }
+     },
+     {
+      "nombre": "KAXA SAS",
+      "nro": 2,
+      "valor": 1148925133,
+      "fuente_valor": "documento (imagen, corrección aritmética)",
+      "puntaje_precio_documento": 48.0484621,
+      "puntaje_total_documento": 98.5484621,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "REINGENIERIA INTEGRAL SAS",
+      "nro": 3,
+      "valor": 1196473181,
+      "fuente_valor": "documento (imagen, corrección aritmética)",
+      "puntaje_precio_documento": 45.9398424,
+      "puntaje_total_documento": 96.4398424,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "CONSTRUCCIONES ARES SAS",
+      "nro": 4,
+      "valor": 1185403330,
+      "fuente_valor": "documento (imagen, corrección aritmética)",
+      "puntaje_precio_documento": 46.4307586,
+      "puntaje_total_documento": 96.9307586,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "Inarco PyC SAS",
+      "nro": 5,
+      "valor": 1179424829,
+      "fuente_valor": "documento (imagen, corrección aritmética)",
+      "puntaje_precio_documento": 46.695888,
+      "puntaje_total_documento": 97.195888,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "DEJO CONSTRUCCIONES SAS",
+      "nro": 8,
+      "valor": 1141312422,
+      "fuente_valor": "documento (imagen, corrección aritmética)",
+      "puntaje_precio_documento": 48.386064,
+      "puntaje_total_documento": 98.886064,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "CONSORCIO CERRAMIENTO VILLAVICENCIO JT.",
+      "nro": 9,
+      "valor": 1145113981,
+      "fuente_valor": "documento (imagen, corrección aritmética)",
+      "puntaje_precio_documento": 48.2174758,
+      "puntaje_total_documento": 98.4674758,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0
+      }
+     },
+     {
+      "nombre": "5INCO S&S SAS",
+      "nro": 10,
+      "valor": 1169111705,
+      "fuente_valor": "documento (imagen, corrección aritmética)",
+      "puntaje_precio_documento": 47.1532455,
+      "puntaje_total_documento": 97.4032455,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0
+      }
+     },
+     {
+      "nombre": "CENIT",
+      "nro": 11,
+      "valor": 1144733536,
+      "fuente_valor": "documento (imagen, corrección aritmética)",
+      "puntaje_precio_documento": 48.2343474,
+      "puntaje_total_documento": 98.7343474,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "Alogar",
+      "nro": 12,
+      "valor": 1136455785,
+      "fuente_valor": "documento (imagen, corrección aritmética)",
+      "puntaje_precio_documento": 48.601442,
+      "puntaje_total_documento": 99.101442,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "ARGAL INGENIERIA LTDA",
+      "nro": 13,
+      "valor": 1140182365,
+      "fuente_valor": "documento (imagen, corrección aritmética)",
+      "puntaje_precio_documento": 48.4361788,
+      "puntaje_total_documento": 98.9361788,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "Logia 3",
+      "nro": 17,
+      "valor": 1166380716,
+      "fuente_valor": "documento (imagen, corrección aritmética)",
+      "puntaje_precio_documento": 47.274357,
+      "puntaje_total_documento": 97.774357,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "CONSORCIO CERRAMIENTO 1093 VANGUARDIA",
+      "nro": 19,
+      "valor": 1155685052,
+      "fuente_valor": "documento (imagen, corrección aritmética)",
+      "puntaje_precio_documento": 47.7486791,
+      "puntaje_total_documento": 98.2486791,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "DICOIN INGENIEROS S.A.S",
+      "nro": 20,
+      "valor": 1175483090,
+      "fuente_valor": "documento (imagen, corrección aritmética)",
+      "puntaje_precio_documento": 46.8706928,
+      "puntaje_total_documento": 97.3706928,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "INGEVILL S.A.S",
+      "nro": 21,
+      "valor": 1156718551,
+      "fuente_valor": "documento (imagen, corrección aritmética)",
+      "puntaje_precio_documento": 47.7028464,
+      "puntaje_total_documento": 78.2028464,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 0,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "CONSORCIO CERRAMIENTO VANGUARDIA",
+      "nro": 22,
+      "valor": 1081059951,
+      "fuente_valor": "documento (imagen, corrección aritmética)",
+      "puntaje_precio_documento": 47.9419115,
+      "puntaje_total_documento": 98.4419115,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "INFRAOBRAS SAS",
+      "nro": 23,
+      "valor": 1156044378,
+      "fuente_valor": "documento (imagen, corrección aritmética)",
+      "puntaje_precio_documento": 47.732744,
+      "puntaje_total_documento": 98.232744,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "CONSORCIO CERRAMIENTO VANGUARDIA",
+      "nro": 24,
+      "valor": 1159990374,
+      "fuente_valor": "documento (imagen, corrección aritmética)",
+      "puntaje_precio_documento": 47.5577504,
+      "puntaje_total_documento": 98.0577504,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "CONSORCIO AEROCERRAMIENTO 26",
+      "nro": 25,
+      "valor": 1150927801,
+      "fuente_valor": "documento (imagen, corrección aritmética)",
+      "puntaje_precio_documento": 47.9596495,
+      "puntaje_total_documento": 98.2096495,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "CONSORCIO YOIO",
+      "nro": 26,
+      "valor": 1142798887,
+      "fuente_valor": "documento (imagen, corrección aritmética)",
+      "puntaje_precio_documento": 48.3201436,
+      "puntaje_total_documento": 98.8201436,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "CONSORCIO CERRAMIENTO VANGUARDIA CYC",
+      "nro": 28,
+      "valor": 1183672472,
+      "fuente_valor": "documento (imagen, corrección aritmética)",
+      "puntaje_precio_documento": 46.5075172,
+      "puntaje_total_documento": 97.0075172,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "CONSORCIO AG CERRAMIENTO META 26",
+      "nro": 29,
+      "valor": 1111183161,
+      "fuente_valor": "documento (imagen, corrección aritmética)",
+      "puntaje_precio_documento": 49.2777896,
+      "puntaje_total_documento": 99.7777896,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "CONSORCIO CERRAMIENTO PERIMETRAL",
+      "nro": 30,
+      "valor": 1116184929,
+      "fuente_valor": "documento (imagen, corrección aritmética)",
+      "puntaje_precio_documento": 49.4996036,
+      "puntaje_total_documento": 99.9996036,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      },
+      "ganador": true
+     },
+     {
+      "nombre": "CONSORCIO CERRAMIENTO VILLAVO",
+      "nro": 31,
+      "valor": 1145145669,
+      "fuente_valor": "documento (imagen, corrección aritmética)",
+      "puntaje_precio_documento": 48.2160705,
+      "puntaje_total_documento": 98.7160705,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "CONSORCIO CI VILLAVICENCIO 2026",
+      "nro": 32,
+      "valor": 1144149652,
+      "fuente_valor": "documento (imagen, corrección aritmética)",
+      "puntaje_precio_documento": 48.260241,
+      "puntaje_total_documento": 98.760241,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "CONSORCIO CERRAMIENTO AEROVILLAVICENCIO",
+      "nro": 34,
+      "valor": 1121310295,
+      "fuente_valor": "documento (imagen, corrección aritmética)",
+      "puntaje_precio_documento": 49.2731011,
+      "puntaje_total_documento": 99.7731011,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "CONSORCIO OBRAS VANGUARDIA 2026",
+      "nro": 35,
+      "valor": 1107440683,
+      "fuente_valor": "documento (imagen, corrección aritmética)",
+      "puntaje_precio_documento": 49.1118214,
+      "puntaje_total_documento": 99.6118214,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "CONSORCIO AERO CERRAMIENTO VILLAVICENCIO G&C",
+      "nro": 36,
+      "valor": 1153170256,
+      "fuente_valor": "documento (imagen, corrección aritmética)",
+      "puntaje_precio_documento": 47.8602031,
+      "puntaje_total_documento": 98.3602031,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "RDM SAS",
+      "nro": 41,
+      "valor": 1134537738,
+      "fuente_valor": "documento (imagen, corrección aritmética)",
+      "puntaje_precio_documento": 48.6865019,
+      "puntaje_total_documento": 98.6865019,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0,
+       "mipyme": 0
+      }
+     },
+     {
+      "nombre": "CONSORCIO AEROPUERTO VILLAVICENCIO 2026",
+      "nro": 42,
+      "valor": 1143048514,
+      "fuente_valor": "documento (imagen, corrección aritmética)",
+      "puntaje_precio_documento": 48.3090733,
+      "puntaje_total_documento": 98.8090733,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "CONSORCIO AEROCERRAMIENTO VANGUARDIA 26",
+      "nro": 44,
+      "valor": 1146161907,
+      "fuente_valor": "documento (imagen, corrección aritmética)",
+      "puntaje_precio_documento": 48.1710033,
+      "puntaje_total_documento": 98.6710033,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "CONSORCIO PREMIUM",
+      "nro": 45,
+      "valor": 1147921305,
+      "fuente_valor": "documento (imagen, corrección aritmética)",
+      "puntaje_precio_documento": 48.092979,
+      "puntaje_total_documento": 98.592979,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "4G4 INGENIERIA SAS",
+      "nro": 46,
+      "valor": 1173914982,
+      "fuente_valor": "documento (imagen, corrección aritmética)",
+      "puntaje_precio_documento": 46.9402339,
+      "puntaje_total_documento": 97.4402339,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "CONSORCIO LOVI MAESTRE 2026",
+      "nro": 47,
+      "valor": 1154796728,
+      "fuente_valor": "documento (imagen, corrección aritmética)",
+      "puntaje_precio_documento": 47.7880737,
+      "puntaje_total_documento": 98.2880737,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "Consorcio Cerramiento 2026",
+      "nro": 48,
+      "valor": 1158546245,
+      "fuente_valor": "documento (imagen, corrección aritmética)",
+      "puntaje_precio_documento": 47.6217934,
+      "puntaje_total_documento": 98.1217934,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "CONSORCIO AD-RO-1238",
+      "nro": 49,
+      "valor": 1142023456,
+      "fuente_valor": "documento (imagen, corrección aritmética)",
+      "puntaje_precio_documento": 48.3545317,
+      "puntaje_total_documento": 98.6045317,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "CONSTRUCCIONES PROCOLOMBIA SAS",
+      "nro": 50,
+      "valor": 1194788750,
+      "fuente_valor": "documento (imagen, corrección aritmética)",
+      "puntaje_precio_documento": 46.0145421,
+      "puntaje_total_documento": 96.5145421,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "KONKON S.A.S.",
+      "nro": 51,
+      "valor": 1148300351,
+      "fuente_valor": "documento (imagen, corrección aritmética)",
+      "puntaje_precio_documento": 48.0761694,
+      "puntaje_total_documento": 98.5761694,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "CONSORCIO CERRAMIENTOS KM",
+      "nro": 53,
+      "valor": 1134557780,
+      "fuente_valor": "documento (imagen, corrección aritmética)",
+      "puntaje_precio_documento": 48.6856131,
+      "puntaje_total_documento": 99.1856131,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "CONSORCIO AERO-IG 2026",
+      "nro": 55,
+      "valor": 1154513207,
+      "fuente_valor": "documento (imagen, corrección aritmética)",
+      "puntaje_precio_documento": 47.800647,
+      "puntaje_total_documento": 98.300647,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "CONSORCIO CERRAMIENTO A&S 2026",
+      "nro": 56,
+      "valor": 1154302164,
+      "fuente_valor": "documento (imagen, corrección aritmética)",
+      "puntaje_precio_documento": 47.8100062,
+      "puntaje_total_documento": 98.3100062,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "ryo ingenieria y consultorias sas",
+      "nro": 57,
+      "valor": 1160187572,
+      "fuente_valor": "documento (imagen, corrección aritmética)",
+      "puntaje_precio_documento": 47.5490052,
+      "puntaje_total_documento": 98.0490052,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "CONSORCIO CERRAMIENTO VANGUARDIA 2026",
+      "nro": 58,
+      "valor": 1194788750,
+      "fuente_valor": "documento (imagen, corrección aritmética)",
+      "puntaje_precio_documento": 46.0145421,
+      "puntaje_total_documento": 96.5145421,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "UNIÓN TEMPORAL CERRAMIENTO AEROPUERTO VANGUARDIA",
+      "nro": 61,
+      "valor": 1143548953,
+      "fuente_valor": "documento (imagen, corrección aritmética)",
+      "puntaje_precio_documento": 48.2868803,
+      "puntaje_total_documento": 98.7868803,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "CONSORCIO CERVIL",
+      "nro": 64,
+      "valor": 1124817110,
+      "fuente_valor": "documento (imagen, corrección aritmética)",
+      "puntaje_precio_documento": 49.1175839,
+      "puntaje_total_documento": 99.6175839,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "INTERBEST 2026",
+      "nro": 65,
+      "valor": 1146838849,
+      "fuente_valor": "documento (imagen, corrección aritmética)",
+      "puntaje_precio_documento": 48.1409828,
+      "puntaje_total_documento": 98.6409828,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0.25
+      }
+     },
+     {
+      "nombre": "CONSTRUCTORA Y FERRETERIA LA SABANA SAS",
+      "nro": 66,
+      "valor": 1140550056,
+      "fuente_valor": "documento (imagen, corrección aritmética)",
+      "puntaje_precio_documento": 48.4198728,
+      "puntaje_total_documento": 98.6698728,
+      "otros_puntos": {
+       "calidad": 30,
+       "industria_nacional": 20,
+       "mujeres": 0.25,
+       "mipyme": 0
+      }
+     }
+    ],
+    "nota": "La resolución dice «una vez aplicado el consecuente método de menor valor», pero los 47 puntajes de la tabla cuadran con la media aritmética baja al séptimo decimal: el documento se contradice. 20 de las 67 ofertas recibidas no están en la tabla final y el documento no dice por qué."
+   },
+   "valores_leidos": [
+    {
+     "nombre": "UT AERO CERRAMIENTO VANGUARDIA 26",
+     "valor_documento": 1199779179,
+     "valor_wi7w_mas_cercano": 1199779179
+    },
+    {
+     "nombre": "KAXA SAS",
+     "valor_documento": 1148925133,
+     "valor_wi7w_mas_cercano": 1148925132.59
+    },
+    {
+     "nombre": "REINGENIERIA INTEGRAL SAS",
+     "valor_documento": 1196473181,
+     "valor_wi7w_mas_cercano": 1196473181
+    },
+    {
+     "nombre": "CONSTRUCCIONES ARES SAS",
+     "valor_documento": 1185403330,
+     "valor_wi7w_mas_cercano": 1185403330
+    },
+    {
+     "nombre": "Inarco PyC SAS",
+     "valor_documento": 1179424829,
+     "valor_wi7w_mas_cercano": 1179424829
+    },
+    {
+     "nombre": "DEJO CONSTRUCCIONES SAS",
+     "valor_documento": 1141312422,
+     "valor_wi7w_mas_cercano": 1141312422
+    },
+    {
+     "nombre": "CONSORCIO CERRAMIENTO VILLAVICENCIO JT.",
+     "valor_documento": 1145113981,
+     "valor_wi7w_mas_cercano": 1145113981
+    },
+    {
+     "nombre": "5INCO S&S SAS",
+     "valor_documento": 1169111705,
+     "valor_wi7w_mas_cercano": 1169111705
+    },
+    {
+     "nombre": "CENIT",
+     "valor_documento": 1144733536,
+     "valor_wi7w_mas_cercano": 1144733536
+    },
+    {
+     "nombre": "Alogar",
+     "valor_documento": 1136455785,
+     "valor_wi7w_mas_cercano": 1136455785.29
+    },
+    {
+     "nombre": "ARGAL INGENIERIA LTDA",
+     "valor_documento": 1140182365,
+     "valor_wi7w_mas_cercano": 1140182365
+    },
+    {
+     "nombre": "Logia 3",
+     "valor_documento": 1166380716,
+     "valor_wi7w_mas_cercano": 1166380716
+    },
+    {
+     "nombre": "CONSORCIO CERRAMIENTO 1093 VANGUARDIA",
+     "valor_documento": 1155685052,
+     "valor_wi7w_mas_cercano": 1155685052
+    },
+    {
+     "nombre": "DICOIN INGENIEROS S.A.S",
+     "valor_documento": 1175483090,
+     "valor_wi7w_mas_cercano": 1175483090
+    },
+    {
+     "nombre": "INGEVILL S.A.S",
+     "valor_documento": 1156718551,
+     "valor_wi7w_mas_cercano": 1156718551
+    },
+    {
+     "nombre": "CONSORCIO CERRAMIENTO VANGUARDIA",
+     "valor_documento": 1081059951,
+     "valor_wi7w_mas_cercano": 1073511470
+    },
+    {
+     "nombre": "INFRAOBRAS SAS",
+     "valor_documento": 1156044378,
+     "valor_wi7w_mas_cercano": 1156044378
+    },
+    {
+     "nombre": "CONSORCIO CERRAMIENTO VANGUARDIA",
+     "valor_documento": 1159990374,
+     "valor_wi7w_mas_cercano": 1160187572
+    },
+    {
+     "nombre": "CONSORCIO AEROCERRAMIENTO 26",
+     "valor_documento": 1150927801,
+     "valor_wi7w_mas_cercano": 1152448238
+    },
+    {
+     "nombre": "CONSORCIO YOIO",
+     "valor_documento": 1142798887,
+     "valor_wi7w_mas_cercano": 1142798887
+    },
+    {
+     "nombre": "CONSORCIO CERRAMIENTO VANGUARDIA CYC",
+     "valor_documento": 1183672472,
+     "valor_wi7w_mas_cercano": 1183672472
+    },
+    {
+     "nombre": "CONSORCIO AG CERRAMIENTO META 26",
+     "valor_documento": 1111183161,
+     "valor_wi7w_mas_cercano": 1111183161
+    },
+    {
+     "nombre": "CONSORCIO CERRAMIENTO PERIMETRAL",
+     "valor_documento": 1116184929,
+     "valor_wi7w_mas_cercano": 1116184929
+    },
+    {
+     "nombre": "CONSORCIO CERRAMIENTO VILLAVO",
+     "valor_documento": 1145145669,
+     "valor_wi7w_mas_cercano": 1145145669
+    },
+    {
+     "nombre": "CONSORCIO CI VILLAVICENCIO 2026",
+     "valor_documento": 1144149652,
+     "valor_wi7w_mas_cercano": 1144149652
+    },
+    {
+     "nombre": "CONSORCIO CERRAMIENTO AEROVILLAVICENCIO",
+     "valor_documento": 1121310295,
+     "valor_wi7w_mas_cercano": 1121310295
+    },
+    {
+     "nombre": "CONSORCIO OBRAS VANGUARDIA 2026",
+     "valor_documento": 1107440683,
+     "valor_wi7w_mas_cercano": 1107440683
+    },
+    {
+     "nombre": "CONSORCIO AERO CERRAMIENTO VILLAVICENCIO G&C",
+     "valor_documento": 1153170256,
+     "valor_wi7w_mas_cercano": 1153170256
+    },
+    {
+     "nombre": "RDM SAS",
+     "valor_documento": 1134537738,
+     "valor_wi7w_mas_cercano": 1134537841
+    },
+    {
+     "nombre": "CONSORCIO AEROPUERTO VILLAVICENCIO 2026",
+     "valor_documento": 1143048514,
+     "valor_wi7w_mas_cercano": 1143048514
+    },
+    {
+     "nombre": "CONSORCIO AEROCERRAMIENTO VANGUARDIA 26",
+     "valor_documento": 1146161907,
+     "valor_wi7w_mas_cercano": 1146161907
+    },
+    {
+     "nombre": "CONSORCIO PREMIUM",
+     "valor_documento": 1147921305,
+     "valor_wi7w_mas_cercano": 1147921305.04
+    },
+    {
+     "nombre": "4G4 INGENIERIA SAS",
+     "valor_documento": 1173914982,
+     "valor_wi7w_mas_cercano": 1173914982
+    },
+    {
+     "nombre": "CONSORCIO LOVI MAESTRE 2026",
+     "valor_documento": 1154796728,
+     "valor_wi7w_mas_cercano": 1154796776
+    },
+    {
+     "nombre": "Consorcio Cerramiento 2026",
+     "valor_documento": 1158546245,
+     "valor_wi7w_mas_cercano": 1158670318
+    },
+    {
+     "nombre": "CONSORCIO AD-RO-1238",
+     "valor_documento": 1142023456,
+     "valor_wi7w_mas_cercano": 1142023456
+    },
+    {
+     "nombre": "CONSTRUCCIONES PROCOLOMBIA SAS",
+     "valor_documento": 1194788750,
+     "valor_wi7w_mas_cercano": 1194788750
+    },
+    {
+     "nombre": "KONKON S.A.S.",
+     "valor_documento": 1148300351,
+     "valor_wi7w_mas_cercano": 1148300351
+    },
+    {
+     "nombre": "CONSORCIO CERRAMIENTOS KM",
+     "valor_documento": 1134557780,
+     "valor_wi7w_mas_cercano": 1134557780
+    },
+    {
+     "nombre": "CONSORCIO AERO-IG 2026",
+     "valor_documento": 1154513207,
+     "valor_wi7w_mas_cercano": 1154513207.04
+    },
+    {
+     "nombre": "CONSORCIO CERRAMIENTO A&S 2026",
+     "valor_documento": 1154302164,
+     "valor_wi7w_mas_cercano": 1154302164
+    },
+    {
+     "nombre": "ryo ingenieria y consultorias sas",
+     "valor_documento": 1160187572,
+     "valor_wi7w_mas_cercano": 1160187572
+    },
+    {
+     "nombre": "CONSORCIO CERRAMIENTO VANGUARDIA 2026",
+     "valor_documento": 1194788750,
+     "valor_wi7w_mas_cercano": 1194788750
+    },
+    {
+     "nombre": "UNIÓN TEMPORAL CERRAMIENTO AEROPUERTO VANGUARDIA",
+     "valor_documento": 1143548953,
+     "valor_wi7w_mas_cercano": 1143548755
+    },
+    {
+     "nombre": "CONSORCIO CERVIL",
+     "valor_documento": 1124817110,
+     "valor_wi7w_mas_cercano": 1124817110
+    },
+    {
+     "nombre": "INTERBEST 2026",
+     "valor_documento": 1146838849,
+     "valor_wi7w_mas_cercano": 1146838849
+    },
+    {
+     "nombre": "CONSTRUCTORA Y FERRETERIA LA SABANA SAS",
+     "valor_documento": 1140550056,
+     "valor_wi7w_mas_cercano": 1140550056
+    }
+   ],
    "lectura": {
     "coincide": {
      "valor": "sí",

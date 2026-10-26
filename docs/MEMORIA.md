@@ -20261,9 +20261,11 @@ En una línea: con el visto bueno del dueño, `scripts/base_obra/limpieza.js` de
 
 ### La prueba de los 30 del Nivel 3: con los hábiles reales el motor acierta en 6 de 9, y lo que falla son los puntos distintos del precio (26-oct-2026)
 
+> SUPERADA el 26-oct-2026 por «Las evaluaciones de cada entidad entran a la aplicación: el navegador lee el documento, una sesión de madrugada lo interpreta y la aplicación verifica cada cita (26-oct-2026)» — con las tablas en imagen leídas, el motor pone primero al ganador real en 8 de 10 (no 6 de 9), y en Plato CSJ GROUP sí era hábil: la lista de hábiles salió de la tabla de habilitación y manda la tabla que puntúa.
+
 En una línea: el dueño subió a Drive los 30 documentos del piloto y se leyeron con cita; 20 dicen quién quedó hábil, y con esos hábiles y el método real el motor de precio (`metodos.js`) pone primero al ganador en 6 de 9, pero en 2 de los 3 que fallan el precio sale exacto y al ganador lo decidieron los puntos distintos del precio: la captura del Nivel 3 tiene que guardar el puntaje total de cada oferta, no solo si quedó hábil.
 
-> PENDIENTE · el dueño decide, para el Nivel 3 (`docs/ADJUDICACION_NIVEL3_DISENO_2026-10-26.md` § 8 y § 10): dónde corre la captura (un `op` del router `pliego` o una tanda fuera), qué entidades van primero, cómo se leen los documentos en imagen (convertirlos con Drive escribe copias en su Drive; OCR.space tiene la cuota sin verificar) y si la captura incluye los puntos distintos del precio.
+> RESUELTO el 26-oct-2026 por «Las evaluaciones de cada entidad entran a la aplicación: el navegador lee el documento, una sesión de madrugada lo interpreta y la aplicación verifica cada cita (26-oct-2026)» · el dueño pidió las tres en el orden ideal: las tablas en imagen se leyeron de sus imágenes en la sesión (sin copiar nada a su Drive), la captura guarda el puntaje de precio, el total y los puntos por criterio, y corre en la aplicación (`op=evaluacion` del router `pliego`) con las entidades que él abre. Texto original: el dueño decide, para el Nivel 3 (`docs/ADJUDICACION_NIVEL3_DISENO_2026-10-26.md` § 8 y § 10): dónde corre la captura (un `op` del router `pliego` o una tanda fuera), qué entidades van primero, cómo se leen los documentos en imagen (convertirlos con Drive escribe copias en su Drive; OCR.space tiene la cuota sin verificar) y si la captura incluye los puntos distintos del precio.
 
 - **Lo que no hay que re-aprender.**
   - **«Si el motor no reproduce, la lectura está mal» es falso.** En Cesar y en Suratá el motor reproduce los puntajes del precio publicados. Aun así, el ganador fue el cuarto de 4 y el tercero de 3 en precio. En Suratá los otros perdieron 20 puntos en los Formatos 14A y 14B, y la ganadora perdió 20 en servicios nacionales. Es el mismo hecho de Pasto en las fichas A-E.
@@ -20285,3 +20287,37 @@ En una línea: el dueño subió a Drive los 30 documentos del piloto y se leyero
   - Si «el máximo al más cercano» es regla del pliego o un error de la entidad.
   - Lo que hay en las tablas en imagen.
   - Son 9 procesos: es evidencia, no una estadística.
+
+### Las evaluaciones de cada entidad entran a la aplicación: el navegador lee el documento, una sesión de madrugada lo interpreta y la aplicación verifica cada cita (26-oct-2026)
+
+En una línea: el dueño pidió las tres decisiones del Nivel 3 en el orden ideal. Se leyeron de su imagen las tablas del piloto, y con ellas el motor pone primero al ganador real en 8 de 10. Se midió que en 9 de 10 procesos los hábiles no sacaron los mismos puntos fuera del precio. Y la captura quedó en la aplicación: el navegador baja y lee el documento, `/evaluaciones` lo interpreta cada madrugada y `lib/evaluacion.js` guarda solo lo que su cita sostiene.
+
+> PENDIENTE · medir con las primeras lecturas reales tres cosas: la cuota diaria de OCR.space (anotada como 500 y sin verificar); cuántos documentos quedan incompletos por el cupo de 30 páginas de OCR (con un logo en cada página, un documento de más de 30 páginas nunca queda completo y no entra en las reglas de precio); y cuánto tarda un teléfono en leer una evaluación grande.
+> PENDIENTE · el dueño decide si se corrige `buscarCita` (`lib/dictamen.js`): compara solo los primeros 200 caracteres de la cita, y el dictamen guarda hasta 400 y toma las cifras de la cita entera. Reproducido el 26-oct-2026: una cita de 283 caracteres con «$ 987.654.321» inventado al final pasa verificada y respalda esa cifra en el texto del punto. La captura de evaluaciones ya aparta esas citas; el arreglo del dictamen (comparar la cita entera) toca su veredicto y por eso espera su visto bueno.
+> PENDIENTE · del piloto quedan sin leer Mocoa (fila 2: Drive respondió «File too large for download, over limit of 10 MB») y el porqué de que Cerramiento (fila 25) traiga 47 de sus 67 ofertas en la tabla final.
+
+- **Dónde corre, y por qué no fuera.**
+  - Las sesiones no bajan de SECOP II: el 26-oct-2026 respondió 200 y luego 403 («Azure WAF»). El navegador sí baja, por `op=descargar`, y la aplicación ya tiene el OCR. Por eso el navegador lee y manda el TEXTO (`op=evaluacion` del router `pliego`, sin archivo nuevo en `api/`).
+  - La interpretación la hace una sesión de Claude Code (`/evaluaciones`, tarea programada diaria), como el dictamen y los precios. La aplicación no se fía de ella: verifica cada dato y guarda solo lo que se sostiene.
+  - El texto vive 30 días comprimido (`evaluacion:texto:{portafolio}`) para poder corregir y reenviar la captura; la captura vive 400 días.
+- **Qué entidades van primero:** las que el dueño abre desde una tarjeta. Cada pulsación lee hasta 5 procesos cerrados desde el 1-ene-2025 (licitación, menor cuantía o selección abreviada), porque `dmgg-8hin` solo trae archivos cargados desde esa fecha (`lib/documentos_proceso.js`).
+- **El OCR va solo a las páginas que pintan una imagen, y el cupo a las de menos texto.**
+  - Las tablas de Aerocivil son una imagen pegada en una página que sí tiene texto. El criterio de los escaneos («página casi sin texto») no las ve; se mira la lista de operaciones de pdf.js (`paintImageXObject` y compañía).
+  - Pero los logos hacen que TODA página pinte imagen (2 por página en las filas 19 y 22). Por eso, con más páginas que cupo (30), van primero las de menos texto con capa: las de tabla tenían de 589 a 795 caracteres, y las de texto, de 1.474 a 2.599 (`paginasParaOcr`).
+  - Las páginas que no se leyeron viajan con el texto (`paginas_sin_leer`) y dejan el proceso incompleto.
+- **La elección del documento vive en `lib/evaluacion.js`** (las herramientas del piloto la llaman). Prioridad: informe de evaluación, resolución de adjudicación y acta; dentro del mismo papel, el último cargado. NO filtra por `de_la_entidad`: una resolución con el nombre del consorcio cae como «de proponente» por `RE_PROPONENTE` y es justo la que se busca.
+- **Lo que cazó la revisión adversaria, y por qué no hay que deshacerlo.** Diez hallazgos, todos reproducidos antes de corregir (sondas en el scratchpad de la sesión):
+  - **Una cita de más de 200 caracteres se aparta entera.** `buscarCita` compara solo los primeros 200, y el nombre y las cifras se buscaban en toda la cita: 200 caracteres reales y una cola con «CONSORCIO FANTASMA $ 999.999.999,00» metían una oferta inventada. Recortar la cita no basta, porque la cola entraría por el recorte.
+  - **Una cifra se compara por su VALOR, no por sus dígitos.** Por dígitos, «4,95» casaba con «49,5». Con los puntajes de Suratá escritos así, la frase «ganó sin el mejor puntaje de precio» salía al revés. Una TRM «3.678» son 3.678 pesos.
+  - **Las reglas que comparan ofertas entre sí solo cuentan procesos COMPLETOS** (`captura.completa`): ninguna oferta apartada, ninguna sin estado, ninguna repetida con datos distintos, ninguna página sin leer y el texto entero. Con una oferta de menos, la que faltaba podía ser la del mejor puntaje de precio. Los rechazos sí cuentan en un proceso incompleto.
+  - **Una entrada por oferente:** la misma oferta capturada de dos tablas se junta. Antes se contaba dos veces (3 hábiles donde había 2).
+  - **El estado:** una palabra de rechazo gana a un puntaje («RECHAZADA 0,00» no es hábil). «INCUMPLE», «NO ADMITIDA» y «NO SE HABILITA» son rechazos. «No se encuentra incurso en causales de rechazo» es de una oferta hábil. El motivo necesita su palabra en el texto.
+  - **El nombre completo:** todas las palabras propias del oferente tienen que estar en su cita. Con la mitad, «CONSORCIO VIAS DEL NORTE» se sostenía en la fila de «… DEL SUR». El adjudicatario se busca primero por su nombre exacto, y un número distinto es otro consorcio.
+  - **En la aplicación:** los pendientes se filtran antes de recortar (200 textos ya interpretados escondían al pendiente). Un texto que caduca sin leerse vuelve a ser un proceso por leer («caducado»), y no queda «en cola» para siempre. Un escaneo que llega como puros marcadores de página no se guarda (422). La segunda pulsación sigue con los procesos siguientes. Dos entidades homónimas con NIT distinto no se mezclan. Una caída de la red a mitad del OCR conserva la capa de texto.
+  - **El hermano del dictamen se reprodujo y NO se tocó** (ver el PENDIENTE): cambia lo que decide su veredicto.
+- **Verificado.**
+  - Prueba por mutación del bloque «unidad evaluaciones»: 32 variantes, mueren las 32 (13 de las reglas de la captura y 19 de las correcciones de la revisión).
+  - Navegador real (Chromium): la ventana de la entidad pinta el bloque, lee un PDF del piloto con OCR simulado y, en la segunda pulsación, sigue con los 2 procesos que faltaban (7 pedidos, 7 distintos).
+  - `prueba_captura.js` da las mismas cifras antes y después de mudar la elección del documento.
+  - La suite: en el mensaje del commit.
+- **Sin verificar.** La cuota de OCR.space; el tiempo en un teléfono; si la vista previa de Vercel usa la misma base de datos que producción; por qué Cota no casa con la tabla de los documentos tipo.

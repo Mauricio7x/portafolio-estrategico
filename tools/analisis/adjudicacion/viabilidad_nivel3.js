@@ -18,16 +18,9 @@ const { usableMotor } = require("./fase0");
 const SEMILLA = 20261026;
 const log = (m) => process.stderr.write(m + "\n");
 
-/* Qué papel cumple el archivo para el Nivel 3. El tipo lo pone el clasificador de la aplicación; los dos
-   únicos añadidos son dentro de sus tipos: la resolución que ADJUDICA y el acta de cierre, audiencia o evaluación. */
-function papel(a) {
-  const n = Docs.nombrePlegado(a.nombre || "");
-  if (a.tipo === "informe_evaluacion") return "informe_evaluacion";
-  if (a.tipo === "resolucion" && /adjudic/.test(n)) return "resolucion_adjudicacion";
-  if (/\bacta\b/.test(n) && /(cierre|audiencia|adjudic|evaluac|apertura)/.test(n)) return "acta";
-  if (/(habilitant|ponderab|verificacion de requisitos)/.test(n)) return "habilitantes_o_ponderables";
-  return null;
-}
+/* Qué papel cumple el archivo para el Nivel 3: `papel` se mudó a lib/evaluacion.js (26-oct-2026), y la captura de
+   producción y este análisis usan la misma regla. */
+const { papel } = require("../../../lib/evaluacion");
 
 function muestra(usables, k, semilla) {
   const r = azar(semilla), a = usables.slice().sort((x, y) => x.portafolio.localeCompare(y.portafolio));
