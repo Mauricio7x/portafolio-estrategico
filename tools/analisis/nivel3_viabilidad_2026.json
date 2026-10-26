@@ -1,0 +1,90 @@
+{
+ "generado": "2026-10-26T02:17:34.815Z",
+ "fuente": "dmgg-8hin",
+ "semilla": 20261026,
+ "ano_adjudicacion": "2026",
+ "por_modalidad": {
+  "licitacion": {
+   "universo": 398,
+   "muestra": 100,
+   "sin_medir": 0,
+   "con_indice": 100,
+   "archivos": 6482,
+   "con_alguno": 89,
+   "con_alguno_legible": 89,
+   "por_papel": {
+    "informe_evaluacion": 17,
+    "resolucion_adjudicacion": 81,
+    "acta": 35,
+    "habilitantes_o_ponderables": 2
+   },
+   "ejemplos": [
+    {
+     "portafolio": "CO1.BDOS.10071999",
+     "papel": "acta",
+     "nombre": "ACTA DE AUDIENCIA PUBLICA.pdf",
+     "extension": "pdf"
+    },
+    {
+     "portafolio": "CO1.BDOS.10071999",
+     "papel": "informe_evaluacion",
+     "nombre": "23. Informe Preliminar de Evaluacion y Consolidado.pdf",
+     "extension": "pdf"
+    },
+    {
+     "portafolio": "CO1.BDOS.10071999",
+     "papel": "resolucion_adjudicacion",
+     "nombre": "RESOLUCION 08674 del 20 DE MAYO DE 2026 ADJUDICACION IT-LP-26-02.pdf",
+     "extension": "pdf"
+    },
+    {
+     "portafolio": "CO1.BDOS.10156832",
+     "papel": "habilitantes_o_ponderables",
+     "nombre": "Informe definitivo ponderables.pdf",
+     "extension": "pdf"
+    }
+   ]
+  },
+  "menor_cuantia": {
+   "universo": 528,
+   "muestra": 100,
+   "sin_medir": 0,
+   "con_indice": 100,
+   "archivos": 10983,
+   "con_alguno": 77,
+   "con_alguno_legible": 76,
+   "por_papel": {
+    "informe_evaluacion": 12,
+    "resolucion_adjudicacion": 69,
+    "acta": 7,
+    "habilitantes_o_ponderables": 13
+   },
+   "ejemplos": [
+    {
+     "portafolio": "CO1.BDOS.10184721",
+     "papel": "resolucion_adjudicacion",
+     "nombre": "RESOLUCIÓN DE ADJUDICACIÓN.pdf",
+     "extension": "pdf"
+    },
+    {
+     "portafolio": "CO1.BDOS.10113531",
+     "papel": "informe_evaluacion",
+     "nombre": "2. IInforme_Evaluacion_Tecnico_Biblioteca_FINAL4 (1) (2).pdf",
+     "extension": "pdf"
+    },
+    {
+     "portafolio": "CO1.BDOS.10113531",
+     "papel": "habilitantes_o_ponderables",
+     "nombre": "Formatos Financieros Habilitantes .zip",
+     "extension": "zip"
+    },
+    {
+     "portafolio": "CO1.BDOS.10694302",
+     "papel": "acta",
+     "nombre": "AP5-F70 ACTA RECOMENDACION DE ADJUDICACION FIRMADA.pdf",
+     "extension": "pdf"
+    }
+   ]
+  }
+ }
+}

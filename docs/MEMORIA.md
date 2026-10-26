@@ -19430,6 +19430,7 @@ En una línea: el 16-oct la producción quedó abierta un día sin que nadie lo 
 ### Base nacional de licitaciones de obra: un script que solo mide, fuera de la app (17-oct-2026)
 
 > SUPERADA el 17-oct-2026 por «Base nacional de obra: las ofertas se piden agrupadas, las filas repetidas de p6dx son fases y el proveedor se identifica por unión» — solo la clave de proveedor («NIT primero») y la idea de que varias filas en p6dx son el problema; el resto sigue vigente.
+> SUPERADA el 26-oct-2026 por «Las reglas de lotes y de rango de la base nacional: un presupuesto ajustado no es lote, una oferta doble tampoco y los centavos no pasan el tope (26-oct-2026)» — solo «Lote = un proveedor con ≥2 valores DENTRO del rango admisible»: un oferente con dos valores ya no aparta el proceso salvo que lo haga la mitad o más de los oferentes. El resto sigue vigente.
 
 En una línea: `scripts/base_obra/` (inventario + capa pura `limpieza.js`) lee p6dx, wi7w/b28v, jbjy y 9sue para medir el piso real y la competencia; no lo llama la aplicación, escribe fuera del repositorio y sus reglas de limpieza son decisiones que no hay que deshacer.
 
@@ -19442,6 +19443,8 @@ En una línea: `scripts/base_obra/` (inventario + capa pura `limpieza.js`) lee p
 - **Un lote de consulta que falla deja sus procesos «sin_medir_ofertas»**, nunca «sin ofertas»; el departamento se compara por igualdad exacta normalizada con alias solo para Bogotá (un `includes` casaba Santander con Norte de Santander, y el vacío con todo), y el vacío cuenta como «sin dato».
 
 ### Base nacional de obra: las ofertas se piden agrupadas, las filas repetidas de p6dx son fases y el proveedor se identifica por unión (17-oct-2026)
+
+> SUPERADA el 26-oct-2026 por «Las reglas de lotes y de rango de la base nacional: un presupuesto ajustado no es lote, una oferta doble tampoco y los centavos no pasan el tope (26-oct-2026)» — solo «las filas repetidas de un portafolio son FASES salvo que traigan precios base distintos (lotes)»: ahora es lote solo con dos precios en la MISMA fase (los lotes reales repiten el precio y los aparta `numero_de_lotes`). El resto sigue vigente.
 
 En una línea: wi7w repite cada oferta cientos de veces (un proceso por lotes trae 305.634 filas que son 381 combinaciones proveedor-valor), así que se pide agrupado en el servidor; en p6dx las filas repetidas de un portafolio son FASES salvo que traigan precios base distintos (lotes), y el oferente es la unión de NIT válido y nombre.
 
@@ -20198,10 +20201,10 @@ En una línea: el dueño pidió «implementar ese repositorio» (github.com/nate
 
 En una línea: el encargo «probabilidad de adjudicación, fases 0 y 1» suponía que no había ofertas de 2024 a 2026 y que habría que construir todo desde cero. Era falso: `wi7w-2nvm` (desde 2024) y `b28v-edj8` (hasta 2023) traen cada oferta, y `scripts/base_obra/` ya hacía la Fase 0 y el motor. Por eso se re-midió desde 2020 LLAMANDO esas reglas (`tools/analisis/adjudicacion/`), con un verificador independiente en Python. La Fase 1 espera el C1 del dueño.
 
-> PENDIENTE · el dueño responde el C1 de `docs/ADJUDICACION_FASE0_2026-10-25.md` § 9 (nivel de afirmación y umbrales). Con su «sí», la Fase 1 reconstruye al ganador con la versión de cada proceso; sin él, no se avanza.
-> PENDIENTE · volver a contar `jbjy-vk9h` (el 25-oct-2026 respondía `count(*) = 1000`) y, si se recuperó, correr otra vez `scripts/base_obra/base.js` sobre la misma carpeta: el rescate bajo el 50 % y el lugar de ejecución dependen de él.
+> RESUELTO el 26-oct-2026 por «Las reglas de lotes y de rango de la base nacional: un presupuesto ajustado no es lote, una oferta doble tampoco y los centavos no pasan el tope (26-oct-2026)» · el dueño eligió corregir las reglas y diseñar el Nivel 3; la Fase 1 con datos abiertos se descartó porque su techo medido (44,1 % licitación, 59,2 % menor cuantía) no llega al umbral. Texto original: el dueño responde el C1 de `docs/ADJUDICACION_FASE0_2026-10-25.md` § 9.
+> RESUELTO el 26-oct-2026 por «Las reglas de lotes y de rango de la base nacional: un presupuesto ajustado no es lote, una oferta doble tampoco y los centavos no pasan el tope (26-oct-2026)» · a las 03:00 UTC del 26-oct `jbjy-vk9h` tenía 5.660.938 filas; las corridas de antes y después se rehicieron con contratos (227 de 23.011 usables sin contrato). Texto original: volver a contar `jbjy-vk9h` y correr otra vez `base.js`.
 > PENDIENTE · decidir si «U.T. X» y «UT X» en un mismo proceso son el mismo oferente (`limpieza.nombreComparable` hoy los separa): CO1.BDOS.2165775 y CO1.BDOS.2008550; mirarlo en SECOP II antes de tocar la regla, que es compartida con el corte de la alerta de precio bajo.
-> PENDIENTE · el dueño decide si se corrigen en `scripts/base_obra/limpieza.js` y `fila.js` las tres reglas que el auditor del 25-oct-2026 mostró que apartan procesos buenos (precio base ajustado entre fases tomado por lotes, oferta registrada dos veces tomada por lote, «sobre el precio base» sin tolerancia de centavos): mueven la población de la Fase 1 y, en la próxima corrida mensual, la tabla `TEMERARIO_POR_MODALIDAD` que el vigía compara.
+> RESUELTO el 26-oct-2026 por «Las reglas de lotes y de rango de la base nacional: un presupuesto ajustado no es lote, una oferta doble tampoco y los centavos no pasan el tope (26-oct-2026)» · el dueño aprobó corregirlas con plan previo; se corrigieron las tres en `limpieza.js` (fila.js no necesitó cambios). Texto original: el dueño decide si se corrigen las tres reglas que el auditor del 25-oct-2026 mostró que apartan procesos buenos.
 
 - **Por qué no se reescribió en Python, aunque el encargo lo permitía.** La regla dura «no reescribir una regla: llamarla». `fase0.js` llama a `limpieza`, `fila`, `cifras.sinPrecio`, `obraDeclarada` (lib/filtros) y `segmentoDe` (lib/indice_baja). El Python existe solo como verificador (`tools/analisis/verificador/`): una segunda implementación a propósito, escrita por un subagente que no vio el código.
 - **Lo que no hay que re-aprender, medido el 25-oct-2026:**
@@ -20231,3 +20234,27 @@ En una línea: el encargo «probabilidad de adjudicación, fases 0 y 1» suponí
 **Verificado.** Suite: el resultado del cierre está en el mensaje del commit. Verificador independiente: 139 de 144 celdas iguales, y las 5 restantes explicadas proceso por proceso (`tools/analisis/verificador/ESPECIFICACION.md`). Auditor adversarial: 12 hallazgos en `docs/ADJUDICACION_FASE0_2026-10-25.md` § 8, con sus veredictos.
 
 **Sin verificar.** Cuál lectura de «U.T.» es la cierta; los nombres de las familias UNSPSC; que la familia 7214 sea la de vías; cuántas entidades sin documento tipo copian sus fórmulas.
+
+### Las reglas de lotes y de rango de la base nacional: un presupuesto ajustado no es lote, una oferta doble tampoco y los centavos no pasan el tope (26-oct-2026)
+
+En una línea: con el visto bueno del dueño, `scripts/base_obra/limpieza.js` deja de tomar por lote un precio base ajustado entre fases y un oferente con dos ofertas, y deja de poner «sobre el precio base» a una oferta que lo pasa por centavos. En 2020-2026, los procesos de licitación que sirven para estudiar quién gana pasan de 2.619 a 3.295. En la alerta de precio bajo, la fila de licitación queda «movida» (de 17 de 1.750 a 33 de 2.190 ganadoras bajo el 88 %), y la tabla no se tocó.
+
+> PENDIENTE · el dueño decide si actualiza la fila de licitación de `TEMERARIO_POR_MODALIDAD` (`lib/apu/piso_techo.js`): con las reglas corregidas, 33 de 2.190 ganadoras de 2024-2026 quedan bajo el corte del 88 % (1,5 de cada 100), frente a 17 de 1.750 en la tabla del 17-oct; el vigía dice «movido» porque el número de ganadoras sube más del 20 %. Menor cuantía (124 de 5.894) y mínima (276 de 3.958) siguen «igual». Caso dudoso: CO1.BDOS.8878617, con 58 ofertas entre el 63 y el 69 % del precio base.
+> PENDIENTE · 12 procesos con dos o más contratistas distintos en `jbjy-vk9h` y sin `numero_de_lotes` siguen contándose como un proceso (igual que antes de este cambio): pueden ser lotes no declarados. Ahora que `base.js` junta todos los contratos, la guarda natural sería «dos contratos de contratistas distintos = lote» en fila.js; medirla antes de ponerla.
+> PENDIENTE · las decisiones del Nivel 3 (`docs/ADJUDICACION_NIVEL3_DISENO_2026-10-26.md` § 8): si se construye la captura de habilitados con una prueba de 30 procesos, dónde corre y qué entidades van primero.
+
+- **Por qué no hay que volver a «dos precios = lote».** De 947 portafolios con dos precios, solo 8 los tienen en la misma fase. Los lotes reales REPITEN el precio: CO1.REQ.10672613 trae 11.362.204.912 en sus cuatro filas, y los aparta `numero_de_lotes` en fila.js. De 692 procesos que libera la regla nueva, 688 tienen un solo contrato y ninguno contratistas distintos (revisión adversaria, en vivo).
+- **Por qué no hay que agregar «dos adjudicaciones distintas = lote».** Se probó en esta misma sesión: marcaba 768 portafolios y apartaba 162 que antes servían, 146 con un solo contrato. Las causas eran filas cruzadas de p6dx (CO1.BDOS.6180429 trae 7 nombres por 7 valores y un contrato), valores a menos del 1 % y «No Definido» como segundo nombre (CO1.BDOS.10199457).
+- **La oferta doble se sostiene en los contratos, no en el identificador.** De 513 procesos que pasan de `lote_por_ofertas` a usables, 500 tienen un solo contrato y ninguno contratistas distintos.
+  - El `identificador_de_la_oferta` NO separa: en los lotes reales cada valor también trae el suyo (CO1.BDOS.1298792).
+  - La guarda «la mitad o más de los oferentes con dos valores = lote» es casi inerte (1 de 496 procesos).
+  - Al ganador doble le adjudicaron la oferta más nueva en 23 de 52 y la más vieja en 29. Por eso se queda el valor más cercano a lo adjudicado (si está a no más del 1 %, el criterio de fila.js), y un rival doble sale entero (`oferta_doble`).
+  - La primera versión emparejaba «al peso» y dejaba sin oferta a 7 ganadores que diferían en 2 a 4 pesos (CO1.BDOS.8795032).
+- **Centavos.** p6dx no publica decimales en el precio base: 0 de 81.643 filas. El precio real está entre `base` y `base + 1`, así que «sobre el precio base» empieza en `base + 1`.
+- **La medición de antes y después solo vale en igualdad de condiciones.** El primer «antes» corrió con `jbjy-vk9h` truncado (1.000 filas) y el primer «después» con contratos, y eso mezclaba el rescate bajo el 50 % con el cambio de reglas (lo cazó la revisión adversaria). Las cifras de esta sección salen de corridas con los mismos procesos de p6dx (`--reusar`) y contratos en las dos: `tools/analisis/reglas_antes_despues_2026-10-26.json`, con las huellas SHA-256.
+- **El techo de cualquier motor se mantiene** (licitación 44,1 % → 42,2 %; menor cuantía 59,3 % → 59,1 %). Lo que se gana es población (licitación 2.619 → 3.295) y menos sesgo: las reglas viejas apartaban justo los procesos con más competencia.
+- **Verificado.**
+  - Prueba por mutación: 12 variantes y mueren 11. Sobrevive «inventario sin lo adjudicado», que solo toca el resumen del embudo de `inventario.js` y no `base.jsonl.gz` ni `cifras.json`.
+  - Las pruebas del bloque «unidad base de obra» fallan contra el árbol anterior (revisión adversaria).
+  - La suite: en el mensaje del commit.
+- **Sin verificar.** Si el caso CO1.BDOS.8878617 es un precio base equivocado; si los 12 procesos con contratistas distintos son lotes.

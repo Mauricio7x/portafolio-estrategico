@@ -4003,7 +4003,7 @@ async function main() {
     const of = (nom, cod, v) => ({ nombre_proveedor: nom, c_digo_proveedor: cod, nit_del_proveedor: "000000000", valor_de_la_oferta: v });
     const r = lb.limpiarOfertas([of("A", "1", "950"), of("A", "1", "950"), of("Confidencial", "", "0"), of("B", "2", "0"),
       of("C", "3", ""), of("D", "4", "1001"), of("E", "5", "499"), of("F", "6", "900"), of("G", "7", "920")], "1000");
-    assert.deepStrictEqual(r.excluidas, { repetidas: 0, confidencial: 1, cero: 1, no_numerico: 1, sin_proveedor: 0, duplicada: 1, duplicada_entre_datasets: 0, sobre_base: 1, bajo_50: 1, rescatada_bajo_50: 0, sin_precio_base: 0 });
+    assert.deepStrictEqual(r.excluidas, { repetidas: 0, confidencial: 1, cero: 1, no_numerico: 1, sin_proveedor: 0, duplicada: 1, duplicada_entre_datasets: 0, sobre_base: 1, bajo_50: 1, rescatada_bajo_50: 0, sin_precio_base: 0, oferta_doble: 0 });
     assert.strictEqual(lb.limpiarOfertas([of("A", "1", "900"), of("A", "1", "9000")], "1000").lote_sospechoso, false, "un valor fuera de rango no vuelve lote al proceso");
     const misma = lb.limpiarOfertas([{ nombre_proveedor: "X", c_digo_proveedor: "77", nit_del_proveedor: "900111", valor_de_la_oferta: "900" },
       { nombre_proveedor: "X", c_digo_proveedor: "", nit_del_proveedor: "900111", valor_de_la_oferta: "900" }], "1000");
@@ -4021,7 +4021,45 @@ async function main() {
     assert.strictEqual(porNombre.validas.length, 1, "el nombre une la fila con NIT y la que trae «No Definido»");
     assert.strictEqual(lb.nitValido("0000000"), null); assert.strictEqual(lb.nitValido("CONSORCIO SED COLEGIOS 18"), null);
     assert.strictEqual(lb.lotePorPrecioBase([{ precio_base: "100" }, { precio_base: "100" }, { precio_base: "" }]), false, "filas repetidas con el mismo precio son fases, no lotes");
-    assert.strictEqual(lb.lotePorPrecioBase([{ precio_base: "100" }, { precio_base: "250" }]), true, "dos precios base en un portafolio = lotes");
+    /* 26-oct-2026 (hallazgo 1 del auditor de la Fase 0): un precio distinto en OTRA fase es un ajuste, no un lote
+       (CO1.BDOS.4866609); dos precios en la MISMA fase sí. El lote real de p6dx repite el precio
+       (CO1.REQ.10672613) y lo aparta `numero_de_lotes` en fila.js, no esta regla. */
+    const OBS = "Presentación de observaciones", OFE = "Fase de Selección (Presentación de ofertas)";
+    assert.strictEqual(lb.lotePorPrecioBase([{ fase: OBS, precio_base: "1488813904" }, { fase: OFE, precio_base: "1491889110", adjudicado: "Si", nombre_del_proveedor: "CONSORCIO EL ROBLE RAMIRIQUI", valor_total_adjudicacion: "1417966621" }]), false, "un presupuesto ajustado entre fases no es lote");
+    assert.strictEqual(lb.lotePorPrecioBase([{ fase: OFE, precio_base: "100" }, { fase: OFE, precio_base: "250" }]), true, "dos precios en la misma fase = lotes");
+    assert.strictEqual(lb.lotePorPrecioBase([{ precio_base: "100" }, { precio_base: "250" }]), true, "sin fase publicada, dos precios siguen siendo lotes (la misma fase vacía)");
+    assert.strictEqual(lb.lotePorPrecioBase([{ fase: "Presentación de Observaciones", precio_base: "100" }, { fase: "presentacion de observaciones", precio_base: "250" }]), true, "la fase se compara normalizada: mayúsculas y tildes no la vuelven otra");
+    const loteReal = [{ fase: OFE, precio_base: "11362204912", numero_de_lotes: "2", adjudicado: "Si", nombre_del_proveedor: "CONSORCIO VCGC-38", valor_total_adjudicacion: "4709875392", id_del_proceso: "CO1.REQ.10672613", modalidad_de_contratacion: "Licitación pública Obra Publica" },
+      { fase: OFE, precio_base: "11362204912", numero_de_lotes: "2", adjudicado: "Si", nombre_del_proveedor: "CONSORCIO VLC 2026", valor_total_adjudicacion: "5872605189", id_del_proceso: "CO1.REQ.10672613", modalidad_de_contratacion: "Licitación pública Obra Publica" },
+      { fase: OBS, precio_base: "11362204912", numero_de_lotes: "2", adjudicado: "No", nombre_del_proveedor: "No Definido", valor_total_adjudicacion: "0", id_del_proceso: "CO1.REQ.10516847", modalidad_de_contratacion: "Licitación pública Obra Publica" }];
+    assert.strictEqual(lb.lotePorPrecioBase(loteReal), false, "el lote real repite el precio: esta regla no lo ve…");
+    const filaLote = require("../scripts/base_obra/fila").filaDeProceso({ portafolio: "CO1.BDOS.10335265", filas: loteReal, ofertas: [of("A", "1", "4709875392")], lugar: null });
+    assert.strictEqual(filaLote.excluido, "lote_numero_de_lotes", "…y fila.js lo aparta por numero_de_lotes");
+    // tolerancia de centavos (hallazgo 3): p6dx trunca el precio base; desde base + 1 sí es «sobre el precio base»
+    const cent = lb.limpiarOfertas([of("A", "1", "1000.71"), of("B", "2", "1001"), of("C", "3", "999")], "1000");
+    assert.deepStrictEqual(cent.validas.map((o) => o.valor), [1000.71, 999], "1000,71 sobre una base de 1000 es válida; 1001 no");
+    assert.strictEqual(cent.excluidas.sobre_base, 1);
+    // oferta registrada dos veces (hallazgo 2): un oferente doble entre muchos no vuelve lote al proceso
+    const cinco = (va) => lb.limpiarOfertas([of("A", "1", "900"), of("A", "1", "880"), of("B", "2", "910"), of("C", "3", "930"), of("D", "4", "940")], "1000", va == null ? null : { valor_adjudicado: va });
+    const dg = cinco("880");
+    assert.strictEqual(dg.lote_sospechoso, false, "un oferente doble entre cuatro no es lote");
+    assert.deepStrictEqual(dg.validas.map((o) => o.valor), [880, 910, 930, 940], "del ganador doble queda la oferta igual a lo adjudicado");
+    assert.strictEqual(dg.excluidas.oferta_doble, 1);
+    const dn = cinco("910");
+    assert.deepStrictEqual(dn.validas.map((o) => o.valor), [910, 930, 940], "de un rival doble no se sabe cuál vale: sale entero");
+    assert.strictEqual(dn.excluidas.oferta_doble, 2);
+    assert.deepStrictEqual(cinco(null).validas.map((o) => o.valor), [910, 930, 940], "sin valor adjudicado, el oferente doble sale entero");
+    const mitad = lb.limpiarOfertas([of("A", "1", "900"), of("A", "1", "880"), of("B", "2", "910"), of("B", "2", "890"), of("C", "3", "930")], "1000", { valor_adjudicado: "880" });
+    assert.strictEqual(mitad.lote_sospechoso, true, "si la mitad o más de los oferentes traen dos valores es un lote no declarado, no ofertas dobles");
+    assert.strictEqual(mitad.excluidas.oferta_doble, 0, "con lote no se descarta ninguna oferta doble: el proceso se aparta entero");
+    const justo = lb.limpiarOfertas([of("A", "1", "900"), of("A", "1", "880"), of("B", "2", "910"), of("B", "2", "890"), of("C", "3", "930"), of("D", "4", "940")], "1000", { valor_adjudicado: "880" });
+    assert.strictEqual(justo.lote_sospechoso, true, "justo la mitad de los oferentes dobles ya es lote");
+    assert.deepStrictEqual(cinco("880.40").validas.map((o) => o.valor), [880, 910, 930, 940], "lo adjudicado se compara al peso, como el rescate");
+    // del ganador doble queda el ÚNICO valor más cercano a lo adjudicado, si está a no más del 1 % (el criterio de fila.js)
+    assert.deepStrictEqual(cinco("888").validas.map((o) => o.valor), [880, 910, 930, 940], "a 0,9 % de lo adjudicado se empareja");
+    assert.deepStrictEqual(cinco("870").validas.map((o) => o.valor), [910, 930, 940], "a más del 1 % no se empareja: sale entero");
+    const empate = lb.limpiarOfertas([of("A", "1", "995"), of("A", "1", "1005"), of("B", "2", "1010"), of("C", "3", "1020"), of("D", "4", "1030")], "1100", { valor_adjudicado: "1000" });
+    assert.deepStrictEqual(empate.validas.map((o) => o.valor), [1010, 1020, 1030], "dos valores a la misma distancia (y dentro del 1 %): no se elige ninguno");
     assert.deepStrictEqual(r.validas.map((o) => o.valor), [950, 900, 920]);
     assert.strictEqual(r.lote_sospechoso, false);
     assert.strictEqual(lb.limpiarOfertas([of("A", "1", "900"), of("A", "1", "800")], "1000").lote_sospechoso, true, "un proveedor con dos valores es lote");

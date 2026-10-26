@@ -48,6 +48,11 @@ const NUCLEO = new Set(["72", "95"]);
 const MARCADOS = new Set(["77", "81"]);
 const claseSegmento = (s) => (s == null ? "sin_codigo" : NUCLEO.has(s) ? "nucleo_" + s : MARCADOS.has(s) ? "marcado_" + s : "otro");
 
+/* La población de la Fase 1, en UN solo sitio (la tabla y techo.js la llaman): 3 o más ofertas válidas
+   sin exclusión, la oferta del ganador emparejada, sin inconsistencia y con competencia de precio. */
+const conTresValidas = (x) => !x.excluido && x.n_validas >= 3;
+const usableMotor = (x) => conTresValidas(x) && !sinPrecio(x) && !!x.oferta_ganadora && !x.inconsistencia;
+
 function celdaVacia() {
   return { adjudicados: 0, a_valor_y_presupuesto: 0, a_consistente: 0, no_consultado: 0, con_ofertas_publicadas: 0, sin_ofertas_publicadas: 0,
     sin_medir_ofertas: 0, b_3_con_precio_bruto: 0, b_3_validas: 0, c_ganador_identificado: 0, c_ganador_emparejado: 0,
@@ -189,14 +194,14 @@ async function main() {
     }
     if (x.ganador_id) c.c_ganador_identificado++;
     if (x.oferta_ganadora && !x.excluido) c.c_ganador_emparejado++;   // con lotes las ofertas no son comparables
-    const b = !x.excluido && x.n_validas >= 3;
+    const b = conTresValidas(x);
     if (b) {
       c.b_3_validas++;
       const conNit = x.ofertas_validas.filter((o) => String(o.proveedor || "").startsWith("n:")).length;
       c.ofertas_validas_b += x.ofertas_validas.length; c.ofertas_validas_b_con_nit += conNit;
       if (conNit === x.ofertas_validas.length) c.d_todas_con_nit++; else c.d_alguna_solo_nombre++;
       if (sinPrecio(x)) c.sin_competencia_de_precio++;
-      else if (x.oferta_ganadora && !x.inconsistencia) { c.usable_motor++; sx.usable_motor++; }
+      else if (usableMotor(x)) { c.usable_motor++; sx.usable_motor++; }
     }
   }
   // porcentajes sobre los adjudicados de cada celda
@@ -251,4 +256,4 @@ async function main() {
 }
 
 if (require.main === module) main().catch((e) => { log(`FALLO: ${e.stack || e.message}`); process.exit(1); });
-module.exports = { claseSegmento, NUCLEO, MARCADOS };
+module.exports = { claseSegmento, conTresValidas, usableMotor, NUCLEO, MARCADOS };

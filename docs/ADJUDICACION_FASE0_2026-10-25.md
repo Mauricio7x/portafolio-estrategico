@@ -19,7 +19,8 @@
 - Procesos de obra adjudicados entre 2020 y 2026 con 3 o más ofertas válidas, ganador emparejado y
   competencia de precio: **2.619 de licitación** y **4.052 de menor cuantía**. Es un piso. El auditor encontró
   que tres reglas de la base apartan procesos que sí sirven; corregidas, licitación subiría a unos 3.230
-  [inferencia: los arreglos se solapan]. Cambiarlas es decisión del dueño (sección 8).
+  [inferencia: los arreglos se solapan]. El dueño aprobó corregirlas; corregidas el 26-oct-2026, licitación
+  queda en 3.295 y menor cuantía en 4.239 (sección 11).
 - Hay un hueco: unos 850 procesos adjudicados entre sep-2022 y feb-2023 no tienen ninguna oferta publicada,
   y SECOP II les marca 0 respuestas. Fuera de ese hueco solo hay otro grupo pequeño (22 procesos, ago-oct-2023).
   En 2020, 2021 y 2024-2026, ninguna licitación ni menor cuantía adjudicada y consultada queda sin ofertas.
@@ -27,6 +28,8 @@
   primero con algún método en ~57 % de menor cuantía y ~39 % de licitación. Hay dos causas probables. No se sabe
   quién quedó habilitado. Y fuera de los documentos tipo, la fórmula es la de cada pliego (sección 6)
   [inferencia].
+- **Medido el 26-oct, de 2020 a 2026:** ningún motor con datos abiertos puede acertar más del 44,1 % en licitación
+  ni del 59,2 % en menor cuantía (sección 10). El camino que queda es el Nivel 3: capturar quién quedó hábil.
 
 ## 1. Qué base sirve y cuál no
 
@@ -235,7 +238,8 @@ principal volvió a reproducir los hallazgos 1 y 2. Van ordenados por cuánto mu
 | 10-11 | El hueco de 2022 o los faltantes vienen de la descarga. | No se sostiene. El hueco también está en `hgi6-6wh3`; y en 30 de 30 procesos el conteo en vivo coincide. | Ninguno |
 | 12 | El universo por tipo «Obra» deja fuera obra real (98 portafolios de «prestación de servicios», como el mantenimiento de vías del INVIAS, CO1.BDOS.5230611). | Dudoso | Alrededor del 2 % |
 
-**Por qué no se corrigieron aquí los hallazgos 1 a 5.** Las reglas están en `scripts/base_obra/limpieza.js` y
+**Por qué no se corrigieron aquí los hallazgos 1 a 5** (los hallazgos 1 a 3 se corrigieron después, con el visto
+bueno del dueño: sección 11). Las reglas están en `scripts/base_obra/limpieza.js` y
 `fila.js`. De ellas sale también el corte de la alerta de precio bajo que usa la aplicación
 (`TEMERARIO_POR_MODALIDAD` en `lib/apu/piso_techo.js`), así que cambiarlas mueve una cifra que decide
 dinero y pide el visto bueno del dueño. Hay además una razón técnica: en el hallazgo 2 falta decidir cuál de
@@ -243,6 +247,11 @@ las dos ofertas cuenta (al CONSORCIO MTR le adjudicaron la primera, según el au
 identificador de la oferta, que la consulta agrupada de hoy no trae.
 
 ## 9. CHECKPOINT C1: qué nivel de afirmación permiten estos datos
+
+> **Corregido el 26-oct-2026.** La primera versión recomendaba la opción A con un umbral del 70 % sin haber
+> medido su techo. Medido después (sección 10), ningún motor con datos abiertos puede pasar del 44,1 % en
+> licitación ni del 59,2 % en menor cuantía. La A queda descartada. El dueño eligió corregir las reglas y
+> diseñar el Nivel 3.
 
 **Resumen (10 puntos):**
 1. Las ofertas, oferente por oferente, existen de 2020 a 2026, salvo el hueco de sep-2022 a feb-2023.
@@ -269,7 +278,7 @@ identificador de la oferta, que la consulta agrupada de hoy no trae.
 
 | Opción | Qué se gana | Qué cuesta |
 |---|---|---|
-| **A. Fase 1 con la regla de cada versión** | Se sabe, con datos de 2020-2026, si el motor pasa del 57 % y del 39 % cuando cada proceso usa la versión de su fecha de aviso (incluidos los 2 métodos de 2020). Se mide en los dos escenarios y contra B0. | Una sesión. Puede confirmar que no alcanza, y ese también es un resultado válido. |
+| ~~A. Fase 1 con la regla de cada versión~~ (descartada el 26-oct) | Ninguna: su techo medido (sección 10) queda por debajo del umbral en todos los años y modalidades. | Una sesión para confirmar lo que el techo ya dice. |
 | **B. Directo al Nivel 3** | Diseño de la captura del informe de evaluación y de la muestra mínima por entidad: ataca la causa (la habilitación) y no el síntoma. | No re-mide el motor. La captura necesita leer documentos de SECOP II, que hoy responde 403 desde las sesiones (20-oct-2026). |
 | **C. Quedarse en el Nivel 1** | La banda histórica puede ir a la aplicación en un encargo aparte. | No dice nada de la probabilidad de ganar. |
 
@@ -287,3 +296,102 @@ identificador de la oferta, que la consulta agrupada de hoy no trae.
 - La habilitación no se observa.
 - Las fechas de la TRM (audiencia, traslado) se estiman, porque no se publican.
 - El contrafactual de una oferta propia supone que los rivales no reaccionan.
+
+## 10. Después del C1 (26-oct-2026): el techo de cualquier motor con datos abiertos
+
+Un motor que elige el método y la TRM solo puede acertar si la oferta del ganador real queda primera con ALGUNO
+de los 4 métodos. La proporción de procesos en que eso pasa es una cota superior del acierto, no el acierto.
+Se mide con `node tools/analisis/adjudicacion/techo.js <carpeta> <salida.json>`, sin red y sin azar, sobre los
+procesos «usables» de la sección 4. Las columnas:
+- **Techo:** el ganador queda primero (solo o empatado) con algún método, tomando todas las ofertas válidas.
+- **Sin la más baja:** lo mismo, quitando la oferta más baja que no es la del ganador (la sensibilidad a un
+  rechazo).
+- **B0:** la oferta del ganador es la más baja.
+
+| Año | Licitación: procesos | Techo | Sin la más baja | B0 | Menor cuantía: procesos | Techo | Sin la más baja | B0 |
+|---|---|---|---|---|---|---|---|---|
+| 2020 | 128 | 54,7 % | 57,8 % | 15,6 % | 341 | 58,1 % | 69,2 % | 18,5 % |
+| 2021 | 294 | 43,2 % | 45,9 % | 14,3 % | 574 | 58,2 % | 69,2 % | 17,9 % |
+| 2022 | 443 | 46,5 % | 51,2 % | 13,5 % | 473 | 61,5 % | 67,4 % | 16,7 % |
+| 2023 | 595 | 48,7 % | 57,3 % | 12,9 % | 724 | 63,7 % | 69,8 % | 20,0 % |
+| 2024 | 337 | 38,6 % | 47,5 % | 9,2 % | 667 | 58,8 % | 69,3 % | 15,1 % |
+| 2025 | 424 | 38,9 % | 46,0 % | 9,2 % | 745 | 56,5 % | 66,3 % | 17,6 % |
+| 2026 | 398 | 42,2 % | 47,2 % | 8,0 % | 528 | 57,6 % | 65,2 % | 14,4 % |
+| **2020-2026** | **2.629** | **44,1 %** | **50,4 %** | **11,4 %** | **4.063** | **59,2 %** | **68,1 %** | **17,2 %** |
+
+Lo que dice:
+- **El umbral del 70 % no se alcanza** en ningún año ni modalidad, ni siquiera quitando la oferta más baja. En
+  más de 4 de cada 10 licitaciones, el ganador no queda primero con ningún método aplicado a las ofertas
+  publicadas. Lo que falta es saber quién quedó hábil (y, fuera de los documentos tipo, la fórmula de cada
+  pliego), no elegir mejor la fórmula.
+- **La oferta más baja rara vez gana:** en 11 de cada 100 licitaciones y en 17 de cada 100 menores cuantías.
+- **El techo se calculó antes de corregir las reglas de la sección 8.** Se vuelve a medir después de corregirlas.
+- El 26-oct se dieron en el chat 44,2 % y 59,3 %. Salían de un cálculo sin el puntaje máximo de cada
+  modalidad, que cambia el redondeo al séptimo decimal y con él algunos empates. Mandan las cifras de esta tabla.
+
+**Decisión del dueño (26-oct-2026):** corregir las 3 reglas de la sección 8 con plan previo y diseñar el
+Nivel 3. La Fase 1 con datos abiertos no se hace.
+
+## 11. Las 3 reglas corregidas (26-oct-2026)
+
+Con el visto bueno del dueño se corrigieron en `scripts/base_obra/limpieza.js` las reglas de los hallazgos 1 a 3
+de la sección 8:
+
+1. **Lote por precio base.** Es lote solo si hay dos precios distintos DENTRO de una misma fase. Un precio
+   distinto en otra fase es un ajuste del presupuesto. Los lotes reales repiten el precio y los aparta
+   `numero_de_lotes`.
+   - Se probó además «dos adjudicaciones distintas = lote», y la revisión adversaria lo tumbó: apartaba 162
+     procesos buenos, 146 de ellos con un solo contrato. Se retiró.
+2. **Oferta registrada dos veces.** Un oferente con dos valores ya no aparta el proceso.
+   - Del ganador se queda el valor más cercano a lo adjudicado, si está a no más del 1 %.
+   - De un rival doble no se sabe cuál vale, y sale entero.
+   - Lo sostienen los contratos: de 513 procesos liberados, 500 tienen un solo contrato y ninguno tiene
+     contratistas distintos.
+   - El identificador de la oferta NO distingue un lote, porque en los lotes reales cada valor también trae el
+     suyo.
+3. **Centavos.** p6dx trunca los centavos del precio base. Una oferta es «sobre el precio base» solo desde
+   `base + 1`.
+
+Cómo se probó:
+- **Prueba por mutación:** 12 variantes, y mueren 11. La que sobrevive no se ve en las pruebas y solo toca el
+  resumen del embudo de `inventario.js`, no la base ni las cifras.
+- **Revisión adversaria:** un subagente distinto del que escribió el cambio, con reproducción en vivo.
+
+**Antes y después, en igualdad de condiciones** (los mismos procesos de p6dx y contratos de `jbjy-vk9h` en las dos
+corridas, porque `jbjy` volvió a tener 5.660.938 filas a las 03:00 UTC del 26-oct). Detalle y huellas SHA-256 en
+`tools/analisis/reglas_antes_despues_2026-10-26.json`.
+
+| 2020-2026 | Antes | Después |
+|---|---|---|
+| Licitación: usables para el motor | 2.619 | **3.295** |
+| Licitación: no consultados (por «lote») | 512 | 5 |
+| Licitación: techo de cualquier motor | 44,1 % | 42,2 % |
+| Menor cuantía: usables para el motor | 4.054 | **4.239** |
+| Menor cuantía: techo de cualquier motor | 59,3 % | 59,1 % |
+| Mínima: usables | 3.567 | 3.612 |
+
+El «antes» de esta tabla ya lleva contratos (rescate bajo el 50 % activo). Por eso menor cuantía da 4.054 usables
+y un techo de 59,3 %, frente a 4.052 y 59,2 % de las secciones 4 y 10, que corrieron sin contratos.
+
+| 2024-2026 (la ventana de la alerta de precio bajo) | Antes | Después |
+|---|---|---|
+| Piso (mediana − σ), licitación | 93,28 % (1.303 procesos) | 93,19 % (1.681) |
+| Piso (mediana − σ), menor cuantía | 93,42 % (2.107) | 93,35 % (2.207) |
+| Alerta 88 %, licitación: ganadoras bajo el corte | 18 de 1.787 | **33 de 2.190** |
+| Alerta 88 %, menor cuantía | 118 de 5.487 | 124 de 5.894 |
+| Alerta 70 %, mínima | 276 de 3.765 | 276 de 3.958 |
+
+**Lo que el dueño tiene que decidir.** El vigía (`vigilar_corte.js`) dice «movido» en licitación. La tabla
+vigente de la alerta (`TEMERARIO_POR_MODALIDAD`, datos al 17-oct-2026) dice «17 de 1.750 ganadoras» bajo el corte
+del 88 %, y con las reglas corregidas son 33 de 2.190: de 1 de cada 100 a 1,5 de cada 100.
+- El aviso sale porque el número de ganadoras comparables sube más del 20 % (de 1.750 a 2.190). La tasa sube
+  menos de 1 punto.
+- La revisión adversaria miró, en su propia corrida, 12 de las ganadoras nuevas bajo el corte. En 11, el oferente
+  doble era un rival, así que la ganadora es real.
+- Hay un caso dudoso, CO1.BDOS.8878617: sus 58 ofertas están entre el 63 y el 69 % del precio base.
+- **No se tocó la tabla.** Si se actualiza, es una decisión aparte, y la corrida mensual lo volverá a avisar
+  cuando este cambio llegue a `main`.
+
+**El techo casi no cambia.** Con más y mejores procesos, el techo de licitación baja (44,1 % → 42,2 %), porque
+los procesos que vuelven son los de más competencia. La conclusión de la sección 10 se mantiene: el camino es el
+Nivel 3 (`docs/ADJUDICACION_NIVEL3_DISENO_2026-10-26.md`).

@@ -169,7 +169,9 @@ async function main() {
       const os = ofertasDe.get(p.portafolio);
       cal.grupos_oferta += os.length;
       if (new Set(os.map((o) => o._ds)).size > 1) cal.en_ambos_datasets++;
-      const r = L.limpiarOfertas(os, base);
+      /* con lo adjudicado, como fila.js: de un oferente con dos ofertas se queda la del ganador (26-oct-2026); sin
+         contratos el rescate bajo el 50 % no actúa, igual que antes */
+      const r = L.limpiarOfertas(os, base, f.adjudicado === "Si" ? { valor_adjudicado: f.valor_total_adjudicacion } : null);
       for (const [k, v] of Object.entries(r.excluidas)) inc(cal.excl, k, v);
       if (r.excluidas.duplicada) cal.procesos_con_duplicadas++;
       if (r.excluidas.cero || r.excluidas.confidencial) cal.procesos_con_cero_o_conf++;
@@ -252,7 +254,8 @@ async function main() {
       try { os = (await ofertasAgrupadas(cliente("ofertas"), [pf], `oferta ${c}`)).map((o) => ({ ...o, _ds: DS.ofertas })); }
       catch (e) { R.validacion[c] = { ...v, portafolio: pf, sin_medir: true, status: e.status || null, error: e.detalle || e.message }; continue; }
     }
-    const r = L.limpiarOfertas(os, base); const st = L.estadisticas(r.validas.map((o) => o.valor));
+    const fe = L.elegirFila(fs2);
+    const r = L.limpiarOfertas(os, base, fe.adjudicado === "Si" ? { valor_adjudicado: fe.valor_total_adjudicacion } : null); const st = L.estadisticas(r.validas.map((o) => o.valor));
     const piso = (s) => (st.mediana !== null && s !== null ? st.mediana - s : null);
     R.validacion[c] = { ...v, portafolio: pf, filas_p6dx: fs2.length, precio_base: base, n_validas: st.n, excluidas: r.excluidas,
       lote: r.lote_sospechoso, mediana: st.mediana, sigma_pob: st.sigma_pob, sigma_muestral: st.sigma_muestral,
