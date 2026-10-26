@@ -229,9 +229,15 @@ hacia abajo) y el botón «Nuevo» de Drive.
    - Debe ver los 30 archivos dentro.
    - Si alguno no sube, vuelva a arrastrarlo solo.
 5. Escriba en la sesión «los 30 están en Drive».
-   - La sesión puede ver esa carpeta (comprobado el 26-oct-2026). Lee los archivos y mide, por proceso: si trae
-     la lista de hábiles y los puntajes, si es un escaneo, y el método y la TRM aplicados.
-   - Leer los PDF escaneados desde Drive está sin verificar.
+   - La sesión puede ver esa carpeta y leer sus PDF, también los escaneados. Se comprobó el 26-oct-2026 con 2
+     resoluciones de adjudicación de las fichas:
+     - **A (Pasto, SA-2026-9), con texto:** salió la tabla de 8 oferentes con 6 «HABILITADO» y 2 «RECHAZADO», el
+       día de la TRM («06 de octubre de 2026») y el puntaje del ganador (99,667). NO salieron el valor de la TRM
+       ni los puntajes de cada oferente, que probablemente eran imágenes [inferencia].
+     - **E (Caldas, SAMC-SI-020-2026), escaneada según las fichas:** salieron la TRM con su valor («$3.213,97») y
+       el orden de elegibilidad de los 8 hábiles de 9 ofertas, con sus valores.
+   - Con los 30, mide por proceso: si trae la lista de hábiles y los puntajes, el método y la TRM aplicados, y si
+     con esos hábiles el motor pone primero al ganador real.
 
 **Lo que esta lista ya dice.** En menor cuantía, casi todo lo disponible son resoluciones de adjudicación
 (14 de 15). Si las resoluciones no traen los hábiles, el Nivel 3 de menor cuantía dependerá de otros documentos de
