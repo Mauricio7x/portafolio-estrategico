@@ -6571,7 +6571,10 @@
           if (apertura !== aperturasEditor) { decirF("Se abrió otro proceso o borrador en Precios mientras se traían los ítems: pulse «Cotizar en Precios» otra vez.", true); f1.disabled = false; return; }
           const filasF1 = filasDesdePliego(items.map((i) => ({ numeral: i.codigo, descripcion: i.descripcion, unidad: i.unidad, cantidad: i.cantidad })));
           const aviso1 = `${filasF1.length} ítem(s) del Formulario 1 de la entidad${r.hoja ? ` (hoja «${r.hoja}»)` : ""}, leídos y comprobados contra su total${r.total != null ? ` de ${pesos(r.total)}` : ""}. El precio de la entidad no se lleva: lo ponen los bancos.`;
-          if (await mapearParaPrevisualizar(filasF1, { avisos: [aviso1], origen: r.nombre ? `el Formulario 1 «${r.nombre}»` : "el Formulario 1 leído" })) { abrirModalImportar(); decirF("Los ítems están en Precios: revise la vista previa y acepte los que quiera llevar."); }
+          /* los VALORES FIJOS fuera de los ítems (PMT, PGIO; 25-oct-2026) no son ítems y no entran a la tabla: se avisan con su cifra para que la oferta no quede corta */
+          const fijosF1 = Array.isArray(r.valores_fijos) ? r.valores_fijos.filter((x) => x && x.valor != null) : [];
+          const avisosF1 = fijosF1.length ? [aviso1, `El Formulario trae además ${fijosF1.length} valor(es) fijo(s) fuera de los ítems (${fijosF1.map((x) => `${x.etiqueta || "sin rótulo"} ${pesos(x.valor)}`).join("; ")}) por ${pesos(fijosF1.reduce((s, x) => s + x.valor, 0))}: no pasan a la tabla; súmelos tal cual a su oferta.`] : [aviso1];
+          if (await mapearParaPrevisualizar(filasF1, { avisos: avisosF1, origen: r.nombre ? `el Formulario 1 «${r.nombre}»` : "el Formulario 1 leído" })) { abrirModalImportar(); decirF("Los ítems están en Precios: revise la vista previa y acepte los que quiera llevar."); }
           else decirF("No se llevó nada: se canceló el acceso.", true);
         } catch (e) { decirF(`No se pudo traer el Formulario 1: ${fraseDeFallo(e)}`, true); }
         f1.disabled = false;

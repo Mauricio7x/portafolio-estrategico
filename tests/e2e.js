@@ -5039,6 +5039,132 @@ async function main() {
       assert.strictEqual(Dp.resumenLectura(dx(Dp.VERSION - 1)).pendientes.length, 1, "leído con otra versión: se vuelve a leer");
       assert.strictEqual(Dp.resumenLectura(dx(undefined)).pendientes.length, 1, "sin versión: tampoco vale");
     }
+    /* G · LOS VALORES FIJOS FUERA DE LOS ÍTEMS Y EL «VALOR TOTAL» CON SUFIJO (25-oct-2026). Fase 0 de detekta-lector sobre 9 Formularios reales de
+       menor cuantía: en 4 (Caldas ×2, Floridablanca, Turbaco) los ítems no sumaban el total porque entre el subtotal y el «VALOR TOTAL» va un
+       valor fijo que no es ítem («VALOR PMT (INMODIFICABLE)», «PGIO»); y en 19 de 25 Formularios abiertos que no pasaban, el total se rotulaba
+       «VALOR TOTAL PROYECTOS» / «DE OBRA» y el lector no lo veía. La cuenta tiene que CERRAR (ítems + fijos = total, 0,01 %); lo que no cierra no se inventa. */
+    {
+      const fijo = (rotulo, v) => ["", "", "", "", "", "", rotulo, "", "", "", v];
+      const subCon = (v) => ["", "", "", "", "", "", "SUBTOTAL OBRAS (INCLUYE IVA)", "", "", "", v];
+      // el formato real (Turbaco, Caldas): ítems → SUBTOTAL OBRAS → PMT/PGIO → VALOR TOTAL
+      const fm25 = XL.detectarFilasApu([...cuerpo, subCon(500000), fijo("VALOR PMT (INMODIFICABLE)", 20000), total(520000)]);
+      assert.strictEqual(fm25.filas.length, 3, "ni el subtotal, ni el PMT ni el total son ítems");
+      assert.deepStrictEqual([fm25.cuadre.estado, fm25.cuadre.total_declarado, fm25.cuadre.suma_items, fm25.cuadre.suma_fijos], ["cuadra", 520000, 500000, 20000]);
+      assert.deepStrictEqual(fm25.cuadre.valores_fijos, [{ fila_excel: 8, etiqueta: "VALOR PMT (INMODIFICABLE)", valor: 20000 }], "el valor fijo viaja con su fila, su rótulo y su cifra");
+      assert.ok(fm25.avisos.some((a) => /1 valor\(es\) fijo\(s\) fuera de los ítems \(VALOR PMT \(INMODIFICABLE\) \$20\.000\)/.test(a) && /súmelos tal cual a su oferta/.test(a)), JSON.stringify(fm25.avisos));
+      const vF = XL.verificarFormulario(fm25);
+      assert.deepStrictEqual([vF.publicable, vF.total], [true, 520000], "se publica con el total del archivo");
+      // dos fijos (plan de manejo ambiental y de tránsito), como Mariquita y Pasto
+      const dos = XL.detectarFilasApu([...cuerpo, fijo("PLAN DE MANEJO AMBIENTAL", 12000), fijo("PLAN DE MANEJO DE TRÁNSITO", 8000), total(520000)]);
+      assert.deepStrictEqual([dos.cuadre.estado, dos.cuadre.valores_fijos.map((x) => x.valor)], ["cuadra", [12000, 8000]]);
+      // lo que no cierra la cuenta no se inventa: ni se publica ni se cuenta el fijo, y el motivo dice que se vieron esas filas
+      const noCierra = XL.detectarFilasApu([...cuerpo, fijo("VALOR PMT (INMODIFICABLE)", 20000), total(530000)]);
+      assert.deepStrictEqual([noCierra.cuadre.estado, noCierra.cuadre.valores_fijos.length, noCierra.cuadre.fijos_descartados], ["no_cuadra", 0, 1]);
+      const vNo = XL.verificarFormulario(noCierra);
+      assert.strictEqual(vNo.publicable, false); assert.match(vNo.motivo, /ni sumándoles las 1 fila\(s\) con cifra que hay entre los ítems y el total/);
+      assert.ok(noCierra.avisos.some((a) => /ni sumando las 1 fila\(s\) con cifra/.test(a)), JSON.stringify(noCierra.avisos));
+      // un rótulo con cifra ANTES del primer ítem no es un valor fijo (es un título de capítulo con un número al lado)
+      const antes = XL.detectarFilasApu([cab, fijo("CAPÍTULO ESPECIAL", 20000), ...cuerpo.slice(3), total(520000)]);
+      assert.deepStrictEqual([antes.cuadre.estado, antes.cuadre.valores_fijos.length], ["no_cuadra", 0], "MUTACIÓN: sin la posición, cualquier título con cifra cerraría la cuenta");
+      // después de una fila de AIU no hay fijos: ahí el «VALOR TOTAL» es el precio con AIU, como antes
+      const conAiuF = XL.detectarFilasApu([...cuerpo, ["", "", "", "", "", "", "ADMINISTRACIÓN", "", "A=", 120000], fijo("PGIO", 20000), total(640000)]);
+      assert.strictEqual(conAiuF.cuadre.estado, "sin_referencia");
+      // si los ítems solos ya dan el total, una fila con cifra detrás no se vuelve fijo
+      const sobra = XL.detectarFilasApu([...cuerpo, total(500000), fijo("NOTA CON CIFRA", 7)]);
+      assert.deepStrictEqual([sobra.cuadre.estado, sobra.cuadre.valores_fijos.length], ["cuadra", 0]);
+      // un fijo con cifra solo en la columna de código no es un fijo: con columna VR TOTAL la cifra tiene que ir ahí, y sin ella, a la derecha de la descripción
+      const enCodigo = XL.detectarFilasApu([...cuerpo, ["", "", 20000, "", "", "", "PGIO", "", "", "", ""], total(520000)]);
+      assert.deepStrictEqual([enCodigo.cuadre.estado, enCodigo.cuadre.valores_fijos.length], ["no_cuadra", 0]);
+      const cabSin = ["Nº", "DESCRIPCIÓN", "UND.", "CANTIDAD", "VALOR UNITARIO"];
+      const itSin = (n, d, u, c, p) => [n, d, u, c, p];
+      const sinColTotal = [cabSin, itSin("1.1", "Localización", "m2", 100, 1000), itSin("1.2", "Excavación", "m3", 10, 20000)];
+      assert.deepStrictEqual([XL.detectarFilasApu([...sinColTotal, ["20000", "PGIO", "", "", ""], ["", "VALOR TOTAL", "", "", 320000]]).cuadre.estado], ["no_cuadra"], "MUTACIÓN: la cifra de la columna de código no es un valor fijo");
+      const fijoDerecha = XL.detectarFilasApu([...sinColTotal, ["", "PGIO", "", "", 20000], ["", "VALOR TOTAL", "", "", 320000]]);
+      assert.deepStrictEqual([fijoDerecha.cuadre.estado, fijoDerecha.cuadre.valores_fijos.map((x) => x.valor)], ["cuadra", [20000]], "sin columna VR TOTAL, la cifra a la derecha de la descripción sí");
+      // una fila con PRECIO y total pero sin unidad ni cantidad es un ítem a medio leer (le falta la cantidad), no un valor fijo: no cierra la cuenta por él
+      const aMedias = XL.detectarFilasApu([...cuerpo, ["", "", "", "", "", "", "ÍTEM SIN UNIDAD NI CANTIDAD", "", "", 5000, 20000], total(520000)]);
+      assert.deepStrictEqual([aMedias.cuadre.estado, aMedias.cuadre.valores_fijos.length], ["no_cuadra", 0], "MUTACIÓN: con precio y columna de total no es un fijo");
+      // el total con sufijo: «VALOR TOTAL PROYECTOS», «DE OBRA», «DEL PROYECTO», «CONTRATO» son el total del archivo…
+      for (const r of ["VALOR TOTAL PROYECTOS", "VALOR TOTAL DE OBRA", "VALOR TOTAL DEL PROYECTO", "VALOR TOTAL CONTRATO"]) {
+        const t = XL.detectarFilasApu([...cuerpo, total(500000, r)]);
+        assert.deepStrictEqual([t.cuadre.estado, t.cuadre.etiqueta_total], ["cuadra", r], `${r} es el total`);
+      }
+      // …y los que nombran una PARTE, no: capítulo, etapa, fase, lote, «sin IVA», AIU
+      for (const r of ["VALOR TOTAL CAPÍTULO 1", "VALOR TOTAL ETAPA 1", "VALOR TOTAL FASE 2", "VALOR TOTAL LOTE 1", "VALOR TOTAL SIN IVA", "VALOR TOTAL AIU", "VALOR TOTAL PARCIAL"]) {
+        assert.strictEqual(XL.detectarFilasApu([...cuerpo, total(500000, r)]).cuadre.estado, "sin_referencia", `${r} no es el total del archivo`);
+      }
+      const reemplazo = XL.detectarFilasApu([...cuerpo.slice(0, 4), total(100000, "VALOR TOTAL OBRA CIVIL"), cuerpo[4], cuerpo[5], total(500000)]);
+      assert.deepStrictEqual([reemplazo.cuadre.estado, reemplazo.cuadre.total_declarado, reemplazo.cuadre.etiqueta_total], ["cuadra", 500000, "VALOR TOTAL"], "un «VALOR TOTAL» a secas reemplaza al que traía sufijo");
+      assert.strictEqual(XL.detectarFilasApu([...cuerpo.slice(0, 4), total(100000), cuerpo[4], cuerpo[5], total(500000, "VALOR TOTAL OBRA CIVIL")]).cuadre.total_declarado, 100000, "y nunca al revés");
+      /* REVISIÓN ADVERSARIA (25-oct-2026): la posición y la aritmética solas dejaban pasar como «valor fijo» cualquier renglón que cerrara la cuenta
+         —una interventoría, un anticipo, un rótulo numérico, un título de capítulo, un ítem perdido— y la aplicación decía «súmelo tal cual». */
+      for (const r of ["INTERVENTORÍA", "ANTICIPO 30%", "2026", "CAPÍTULO 2 OBRAS COMPLEMENTARIAS", "ÍTEM PERDIDO"]) {
+        const nr = XL.detectarFilasApu([...cuerpo, fijo(r, 20000), total(520000)]);
+        assert.deepStrictEqual([nr.cuadre.estado, nr.cuadre.valores_fijos.length, nr.cuadre.fijos_descartados, nr.cuadre.fijos_no_reconocidos], ["no_cuadra", 0, 1, [r]], `MUTACIÓN: «${r}» cierra la cuenta pero no es un valor fijo`);
+        assert.match(XL.verificarFormulario(nr).motivo, new RegExp(`«${r.replace(/[%()]/g, "\\$&")}» no son un valor fijo reconocido`), "el motivo dice qué rótulo no se reconoció");
+      }
+      // «I.V.A.» y «ADMON» con punto o abreviados son filas de AIU: detrás de ellas no hay fijos y el total de abajo es el precio con AIU
+      for (const r of ["I.V.A. 19%", "ADMON 10%"]) assert.strictEqual(XL.detectarFilasApu([...cuerpo, fijo(r, 50000), total(550000)]).cuadre.estado, "sin_referencia", `${r} es AIU, no un fijo`);
+      // el hermano del costo directo: los ítems dan el «COSTO DIRECTO», pero más abajo va un PMT y un «VALOR TOTAL» mayor; antes el PMT se callaba y la guía decía «la suma da el total»
+      const hermano = XL.detectarFilasApu([...cuerpo, total(500000, "COSTO DIRECTO"), fijo("PMT", 20000), total(520000)]);
+      assert.deepStrictEqual([hermano.cuadre.estado, hermano.cuadre.total_declarado, hermano.cuadre.valores_fijos.map((x) => x.valor)], ["cuadra", 520000, [20000]], "MUTACIÓN: el total del archivo es el VALOR TOTAL de abajo, con el PMT");
+      const hermanoNo = XL.detectarFilasApu([...cuerpo, total(500000, "COSTO DIRECTO"), fijo("PMT", 20000), total(530000)]);
+      assert.deepStrictEqual([hermanoNo.cuadre.estado, hermanoNo.cuadre.total_posterior, hermanoNo.cuadre.valores_fijos.length], ["no_cuadra", { valor: 530000, etiqueta: "VALOR TOTAL", fila_excel: 9 }, 0], "MUTACIÓN: si el PMT no explica la diferencia, no cuadra (antes: «cuadra» con el costo directo)");
+      assert.match(XL.verificarFormulario(hermanoNo).motivo, /declara más abajo «VALOR TOTAL» \$530\.000 y las filas intermedias no explican la diferencia/);
+      assert.strictEqual(XL.detectarFilasApu([...cuerpo, total(500000, "COSTO DIRECTO"), total(530000)]).cuadre.estado, "no_cuadra", "sin fila intermedia, tampoco");
+      // «VALOR TOTAL ZONA 1» / «SEDE» nombran una parte: no son el total del archivo
+      for (const r of ["VALOR TOTAL ZONA 1", "VALOR TOTAL SEDE PRINCIPAL", "VALOR TOTAL TRAMO 2", "VALOR TOTAL INTERVENTORÍA"]) assert.strictEqual(XL.detectarFilasApu([...cuerpo, total(500000, r)]).cuadre.estado, "sin_referencia", `${r} no es el total`);
+      /* el rótulo del fijo FUERA de la columna de descripción (censo del 25-oct-2026: 4 Formularios CCE-EICP-FM-25 reales): «PMA» en la columna del
+         precio con la cifra en VR TOTAL, «PLAN DE MANEJO AMBIENTAL PMA» en la columna del número; y el PGIO con su TASA («0,039») en la columna
+         del precio, que no es un precio */
+      const enPrecio = XL.detectarFilasApu([...cuerpo, ["", "", "SUBTOTAL OBRAS", "", "", "", "", "", "", "", 500000], ["", "", "", "", "", "", "", "", "", "PMA", 12000], ["", "", "", "", "", "", "", "", "", "PMT", 8000], total(520000)]);
+      assert.deepStrictEqual([enPrecio.cuadre.estado, enPrecio.cuadre.valores_fijos.map((x) => [x.fila_excel, x.etiqueta, x.valor])], ["cuadra", [[8, "PMA", 12000], [9, "PMT", 8000]]], "MUTACIÓN: el rótulo en la columna del precio, con la cifra en VR TOTAL, es un fijo");
+      const enNumero = XL.detectarFilasApu([...cuerpo, ["", "", "PLAN DE MANEJO AMBIENTAL PMA", "", "", "", "", "", "", "", 20000], ["", "", "", "", "", "", "SUBTOTAL OBRAS (INCLUYE IVA)", "", "", "", 520000], total(520000)]);
+      assert.deepStrictEqual([enNumero.cuadre.estado, enNumero.cuadre.valores_fijos.map((x) => x.etiqueta)], ["cuadra", ["PLAN DE MANEJO AMBIENTAL PMA"]], "MUTACIÓN: el rótulo en la columna del número también");
+      assert.strictEqual(XL.detectarFilasApu([...cuerpo, ["", "", "PLAN DE MANEJO AMBIENTAL PMA", "", "", "", "nota", "", "", "", 20000], total(520000)]).cuadre.valores_fijos.length, 0, "con dos textos en la fila no se adivina cuál es el rótulo");
+      const tasa = XL.detectarFilasApu([...cuerpo, ["", "", "", "", "", "", "PLAN DE GESTIÓN INTEGRAL DE OBRAS - PGIO", "", "", 0.04, 20000], total(520000)]);
+      assert.deepStrictEqual([tasa.cuadre.estado, tasa.cuadre.valores_fijos.map((x) => x.valor)], ["cuadra", [20000]], "MUTACIÓN: una tasa en la columna del precio no es un precio");
+      assert.strictEqual(XL.detectarFilasApu([...cuerpo, ["", "", "", "", "", "", "PLAN DE GESTIÓN INTEGRAL DE OBRAS - PGIO", "", "", 4, 20000], total(520000)]).cuadre.valores_fijos.length, 0, "con un precio de verdad (≥ 1) sigue siendo un ítem a medio leer, no un fijo");
+      // un fijo que cierra la cuenta al 0,35 % (dentro del 0,5 % del cuadre) no se PUBLICA: publicar exige el 0,01 %, con fijos o sin ellos
+      const casi = XL.detectarFilasApu([...cuerpo, fijo("PMT", 20000), total(521800)]);
+      assert.deepStrictEqual([casi.cuadre.estado, XL.verificarFormulario(casi).publicable], ["cuadra", false], "MUTACIÓN: la tolerancia del cuadre no es la de publicar");
+      assert.match(XL.verificarFormulario(casi).motivo, /difiere del total del archivo en 0,345 %/);
+      assert.strictEqual(XL.clasificarRotuloTotal("VALOR TOTAL PROYECTOS"), null, "la regla compartida con el lector de PDF no cambia: allí «VALOR TOTAL …» sigue sin ser el total del documento");
+      // el módulo del servidor con un .xlsx de verdad: total del archivo, ítems y el fijo con su fila
+      const hojaFM25 = [{ nombre: "PRESUPUESTO OFICIAL (Entidad)", filas: [[null, null, "FORMULARIO 1"], [null, null, "Nº", "ÍTEM", null, null, "DESCRIPCIÓN", "UND.", "CANTIDAD", "VALOR UNITARIO", "VALOR TOTAL"],
+        [null, null, "1.1", null, null, null, "Localización y replanteo", "m2", 100, 1000, 100000], [null, null, "1.2", null, null, null, "Excavación manual", "m3", 10, 20000, 200000],
+        [null, null, null, null, null, null, "SUBTOTAL OBRAS (INCLUYE IVA)", null, null, null, 300000], [null, null, null, null, null, null, "PGIO", null, null, null, 50000], [null, null, null, null, null, null, "VALOR TOTAL", null, null, null, 350000]] }];
+      const leidoFM = await FE.leerFormularioExcel(libroBuf(hojaFM25));
+      assert.ok(leidoFM.ok && leidoFM.publicable === true, JSON.stringify(leidoFM).slice(0, 200));
+      assert.deepStrictEqual([leidoFM.total, leidoFM.fila_total, leidoFM.filas.length, leidoFM.valores_fijos], [350000, 7, 2, [{ fila_excel: 6, etiqueta: "PGIO", valor: 50000 }]]);
+      assert.deepStrictEqual((await FE.leerFormularioExcel(libroBuf(hojaF1(300000)))).valores_fijos, [], "sin filas fijas la lista va vacía");
+      // el servidor vuelve a comprobar TAMBIÉN los fijos: el cliente no puede inventarlos, moverlos ni cambiarles la cifra
+      const Dp2 = require("../lib/documentos_proceso.js");
+      const baseFijo = { ok: true, publicable: true, hoja: "P", total: 350000, fila_total: 7, filas_n: 2, filas: leidoFM.filas, valores_fijos: leidoFM.valores_fijos };
+      const okSrv = Dp2.formularioDeExcel(baseFijo);
+      assert.ok(okSrv.ok && okSrv.resumen.publicable === true && okSrv.resumen.suma_fijos === 50000 && okSrv.resumen.valores_fijos.length === 1 && okSrv.resumen.valores_fijos[0].etiqueta === "PGIO", JSON.stringify(okSrv.resumen));
+      assert.strictEqual(Dp2.formularioDeExcel({ ...baseFijo, valores_fijos: [] }).resumen.publicable, false, "sin el fijo, ítems ≠ total: no pasa");
+      assert.strictEqual(Dp2.formularioDeExcel({ ...baseFijo, valores_fijos: undefined }).resumen.publicable, false, "un cliente viejo que no manda fijos tampoco (MUTACIÓN: creerle al total sin recomprobar)");
+      assert.strictEqual(Dp2.formularioDeExcel({ ...baseFijo, valores_fijos: [{ fila_excel: 6, etiqueta: "PGIO", valor: 40000 }] }).resumen.publicable, false, "un fijo que no cierra la cuenta no pasa");
+      const srvInterv = Dp2.formularioDeExcel({ ...baseFijo, valores_fijos: [{ fila_excel: 6, etiqueta: "INTERVENTORIA", valor: 50000 }] }).resumen;
+      assert.ok(srvInterv.publicable === false && /«INTERVENTORIA» no son un valor fijo reconocido/.test(srvInterv.motivo), `MUTACIÓN: el servidor tampoco acepta un rótulo que no es de valor fijo aunque cierre la cuenta: ${srvInterv.motivo}`);
+      assert.strictEqual(Dp2.formularioDeExcel({ ...baseFijo, valores_fijos: [{ fila_excel: 2, etiqueta: "PGIO", valor: 50000 }] }).resumen.publicable, false, "un fijo colocado ANTES de los ítems no cuenta");
+      assert.strictEqual(Dp2.formularioDeExcel({ ...baseFijo, valores_fijos: [{ fila_excel: 9, etiqueta: "PGIO", valor: 50000 }] }).resumen.publicable, false, "ni uno colocado DESPUÉS del total");
+      assert.strictEqual(Dp2.formularioDeExcel({ ...baseFijo, fila_total: null }).resumen.publicable, false, "sin la fila del total no hay dónde colocar los fijos: no se publica");
+      assert.strictEqual(Dp2.formularioDeExcel({ ...baseFijo, valores_fijos: [{ fila_excel: 6, etiqueta: "PGIO", valor: "50000" }] }).resumen.publicable, false, "una cifra como cadena no es una cifra");
+      assert.doesNotThrow(() => Dp2.formularioDeExcel({ ...baseFijo, valores_fijos: [null, 5, { etiqueta: { toString: 1 } }] }), "basura en los fijos no lanza (sería un 500)");
+      assert.strictEqual(Dp2.formularioDeExcel({ ...baseFijo, valores_fijos: Array.from({ length: FE.MAX_FIJOS + 1 }, () => ({ fila_excel: 6, etiqueta: "x", valor: 1 })) }).ok, false, "más fijos que el tope: 400");
+      assert.strictEqual(Dp2.formularioDeExcel({ ...baseFijo, valores_fijos: [{ fila_excel: 6, etiqueta: `PGIO ${"x".repeat(500)}`, valor: 50000 }] }).resumen.valores_fijos[0].etiqueta.length, 120, "el rótulo se recorta");
+      // la guía lo dice con su cifra: no es un ítem para cotizar, va tal cual en la oferta
+      const G2 = require("../lib/guia_proceso.js");
+      const docsFijo = { indice: { archivos: [{ id_documento: "5", nombre: "F1.xlsx", url: "https://community.secop.gov.co/x?DocumentId=5", de_la_entidad: true, legible: true }], plan: [], cierre_usado: null }, leidos: {}, ilegibles: {},
+        formularios: { "5": { nombre: "F1.xlsx", tipo: "presupuesto", tipo_legible: "Presupuesto oficial", publicable: true, hoja: "P", total: 350000, fila_total: 7, filas_n: 2, valores_fijos: [{ fila_excel: 6, etiqueta: "PGIO", valor: 50000 }], version: Dp2.VERSION } } };
+      const lF = G2.bloqueDocumentos(docsFijo, { pendientes: [] }, { documentos: [] }, null).leidos.find((x) => x.id_documento === "5");
+      assert.ok(lF && /2 ítems que suman \$300\.000, y con los valores fijos por un total de \$350\.000/.test(lF.motivo) && /1 valor fijo fuera de los ítems \(PGIO \$50\.000\) que no es un ítem para cotizar: va tal cual en la oferta/.test(lF.motivo), lF && lF.motivo);
+      assert.deepStrictEqual(lF.valores_fijos, [{ fila_excel: 6, etiqueta: "PGIO", valor: 50000 }]);
+      const sinFijoG = G2.bloqueDocumentos({ ...docsFijo, formularios: { "5": { ...docsFijo.formularios["5"], valores_fijos: [] } } }, { pendientes: [] }, { documentos: [] }, null).leidos[0];
+      assert.ok(/2 ítems por un total de \$350\.000; la suma de los ítems da ese total/.test(sinFijoG.motivo) && !/valor fijo/.test(sinFijoG.motivo), sinFijoG.motivo);
+    }
     /* el bucle del navegador (public/app.js, leerDocumentos): el bloque del Excel se EJECUTA con `api` simulada, no se lee su texto */
     {
       const appF = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
@@ -9759,6 +9885,19 @@ async function main() {
     const partidaYMas = leer("\f34", ...intro, "72\t14\t10\tSERVICIOS DE CONSTRUCCION DE AUTOPISTAS Y CARRETERAS.", "72\tSERVICIOS DE CONSTRUCCIÓN Y REVESTIMIENTO Y PAVIMENTACION DE", "14\t11", "INFRAESTRUCTURA.",
       "72\t14\t15\tSERVICIOS DE PREPARACION DE TIERRAS", "72\t15\t27\tSERVICIOS DE INSTALACION Y REPARACION DE CONCRETO", extranjeros);
     assert.deepStrictEqual([partidaYMas[0].codigos, partidaYMas[0].completa], [["721410", "721411", "721415", "721527"], true], `fila partida entre filas enteras (CO1.REQ.10512619): ${JSON.stringify(partidaYMas)}`);
+    /* EL MEMBRETE ENTRE LA FRASE Y LA TABLA (25-oct-2026, Fase 0 de detekta-lector): en Manizales (CO1.REQ.10287523) la frase que ata cierra la
+       página 39 y la tabla abre la 40 tras el pie y la cabecera del documento tipo (unos 230 caracteres); el primer «72 14 10» se descartaba
+       por lejano y la lista quedaba vacía. El encabezado «Segmentos Familia Clase» pegado al código dice que ESA es la tabla anunciada. */
+    const membrete = ["39", "Código\tCCE-EICP-GI-02\tVersión\t6", "\f40", "DOCUMENTO BASE", "SELECCIÓN ABREVIADA DE MENOR CUANTÍA DE INFRAESTRUCTURA DE TRANSPORTE (VERSIÓN 3)", "Código\tCCE-EICP-GI-02\tPágina\t40 de 78", "Versión", "6", "No."];
+    const trasMembrete = leer("\f39", intro[0], intro[1], ...membrete, intro[2], "72\t14\t10\tServicios de construcción de autopistas y carreteras", "72\tServicios de construcción y revestimiento y pavimentación de", "14\t11", "infraestructura", extranjeros);
+    assert.deepStrictEqual(trasMembrete.length ? [trasMembrete[0].codigos, trasMembrete[0].completa, trasMembrete[0].pagina] : null, [["721410", "721411"], true, 40], `la tabla que abre la página siguiente, tras el membrete, se lee (MUTACIÓN: «lejos de la frase»): ${JSON.stringify(trasMembrete)}`);
+    const sinEncabezado = leer("\f39", intro[0], intro[1], ...membrete, "Los proponentes acreditarán para cada uno de los contratos aportados la siguiente información mediante alguno de los documentos señalados", "72\t14\t10\tServicios de construcción de autopistas y carreteras", extranjeros);
+    assert.deepStrictEqual(sinEncabezado, [], "MUTACIÓN: un código de seis cifras lejos de la frase y SIN el encabezado de la tabla delante sigue sin leerse");
+    // (revisión adversaria, 25-oct-2026) si entre la frase y el encabezado va la frase del OBJETO, o un hueco del formato («[Incluir…]»), esa tabla es la del objeto: nada
+    const objetoEnMedio = leer("\f39", intro[0], intro[1], ...membrete, "El objeto del proceso de contratación está codificado en el Clasificador de Bienes y Servicios así:", intro[2], "72\t14\t10\tServicios de construcción de autopistas y carreteras", extranjeros);
+    assert.deepStrictEqual(objetoEnMedio, [], `MUTACIÓN: la tabla del objeto tras el membrete no es la de la experiencia: ${JSON.stringify(objetoEnMedio)}`);
+    const huecoEnMedio = leer("\f39", intro[0], intro[1], ...membrete, "[Incluir los códigos del objeto]", intro[2], "72\t14\t10\tServicios de construcción de autopistas y carreteras", extranjeros);
+    assert.deepStrictEqual(huecoEnMedio, [], "MUTACIÓN: un hueco del formato entre la frase y la tabla tampoco");
     // el reconstruido es un código «corto»: solo dentro de una tabla abierta, no 200 caracteres después de la frase
     const lejos = leer("\f36", "Los contratos aportados para efectos de acreditación de la experiencia requerida deben estar clasificados en alguno de los siguientes códigos:", "texto de relleno sin cifras ".repeat(9), "30 Apoyo a la industria nacional 20 42", "72141000 Servicios de construcción de autopistas", extranjeros);
     assert.deepStrictEqual([lejos[0].codigos, lejos[0].completa], [["721410"], true], `la fila partida lejos de la frase no abre la tabla: ${JSON.stringify(lejos)}`);
@@ -14996,6 +15135,35 @@ async function main() {
         assert.strictEqual(pliego.numeroColombiano(entrada), esperado,
           `numeroColombiano(${JSON.stringify(entrada)}) debía dar ${esperado}`);
       }
+    }
+
+    /* 1b. EL DOCUMENTO EN FORMATO INGLÉS (25-oct-2026, Fase 0 de detekta-lector). Manizales (CO1.REQ.10287523) escribe
+       «1.00 $ 4,562.00 $ 4,562»; leído como colombiano, el unitario oficial salía mil veces menor (4,562 pesos) en 72 de 87
+       ítems, y ese unitario es el techo de la causal de rechazo por superarlo. El formato se decide por documento, con las
+       cifras que solo admiten una lectura; la duda deja el documento como colombiano. */
+    {
+      const fl = (...c) => c.join(TAB);
+      const cabI = fl("Nº", "ÍTEM DE PAGO", "DESCRIPCIÓN", "UND.", "CANTIDAD", "VALOR UNITARIO", "VALOR TOTAL");
+      const ingles = [cabI, fl("1", "001.044", "DESCAPOTE MANUAL E=0.20 M.", "M2", "1.00", "$ 4,562.00", "$ 4,562"), fl("2", "001.049", "CERRAMIENTO EN YUTE H= 2 M", "ML", "1.00", "$ 20,939.00", "$ 20,939"),
+        fl("3", "002.001", "EXCAVACION MECANICA", "M3", "12.50", "$ 1,250,300.00", "$ 15,628,750")].join("\n");
+      assert.strictEqual(pliego.formatoDeNumeros(ingles), "ingles");
+      const rI = pliego.parsearPliego(ingles);
+      assert.deepStrictEqual(rI.items.map((i) => [i.cantidad, i.unitario_oficial, i.total_oficial]), [[1, 4562, 4562], [1, 20939, 20939], [12.5, 1250300, 15628750]],
+        `en formato inglés «$ 4,562» son 4.562 pesos, no 4,562 (MUTACIÓN: mil veces menos): ${JSON.stringify(rI.items.map((i) => [i.cantidad, i.unitario_oficial, i.total_oficial]))}`);
+      assert.strictEqual(rI.diagnostico.formato_numeros, "ingles");
+      const colombiano = [cabI, fl("1,1", "", "Localización y replanteo", "ML", "1.088,40", "$ 15.407,00", "$ 16.768.978,80"), fl("1,2", "", "Excavación", "M3", "2.002,00", "$ 10.225,00", "$ 20.470.450,00"), fl("1,3", "", "Relleno", "M3", "1.500", "$ 1,5", "$ 2.250")].join("\n");
+      const rC = pliego.parsearPliego(colombiano);
+      assert.strictEqual(rC.diagnostico.formato_numeros, "colombiano");
+      assert.deepStrictEqual(rC.items.map((i) => [i.cantidad, i.unitario_oficial]), [[1088.4, 15407], [2002, 10225], [1500, 1.5]], "el formato colombiano se lee como siempre");
+      // mezclado (cifras inglesas en una nota de un documento colombiano): se queda colombiano, la duda no cambia nada
+      assert.strictEqual(pliego.formatoDeNumeros(colombiano + "\n" + fl("", "", "Nota: tasa de referencia 3,209.78 y 1,000.00 y 2,500.00", "", "", "", "")), "colombiano");
+      // dos cifras inglesas seguras no bastan: hacen falta tres
+      assert.strictEqual(pliego.formatoDeNumeros([cabI, fl("1", "", "A", "M2", "1.00", "$ 4,562.00", "$ 4,562"), fl("2", "", "B", "M2", "1.00", "$ 1,000.00", "$ 1,000")].join("\n")), "colombiano");
+      assert.strictEqual(pliego.aFormatoColombiano("1.00 $ 4,562.00 $ 4,562 y 001.044 y 20,939 y 1,250,300.00"), "1.00 $ 4.562,00 $ 4.562 y 001.044 y 20.939 y 1.250.300,00", "solo los tokens con miles por coma se reescriben");
+      // (revisión adversaria, 25-oct-2026) dos grupos de miles por coma sin decimales («1,250,300») solo existen en inglés: cuentan…
+      assert.strictEqual(pliego.formatoDeNumeros([cabI, fl("1", "", "A", "M3", "2.00", "$ 1,250,300", "$ 2,500,600"), fl("2", "", "B", "M3", "1.00", "$ 3,100,000", "$ 3,100,000")].join("\n")), "ingles", "MUTACIÓN: sin decimales, con dos grupos de miles, es inglés");
+      // …y una misma cifra repetida en el encabezado de cada página no son tres cifras: se cuentan valores DISTINTOS
+      assert.strictEqual(pliego.formatoDeNumeros(["Presupuesto oficial 1,250,300.00", "Presupuesto oficial 1,250,300.00", "Presupuesto oficial 1,250,300.00", cabI, fl("1", "", "A", "M3", "2", "$ 1500", "$ 3000")].join("\n")), "colombiano", "MUTACIÓN: tres apariciones de la misma cifra no deciden");
     }
 
     /* 2. UNIDADES: la celda tiene que SER una unidad, no contenerla. Si valiera
@@ -25075,7 +25243,8 @@ async function main() {
         assert.strictEqual(TE.leerTablaExperiencia(txtPartida).pagina, 55, "la cabecera partida en líneas también se lee");
         const CAB_T = "\f55\nNúmero de contratos\nValor mínimo a certificar\ncon los cuales el\n(como % del Presupuesto Oficial\nProponente cumple la\nde obra expresado en SMMLV)\nexperiencia acreditada\n";
         for (const [nombre, txt] of [["la columna girada (el porcentaje antes de la fila)", `${CAB_T}75%\nDe 1 hasta 2\n120%\nDe 3 hasta 4\n150%\nHasta 5\nSi el número de Contratos\n`],
-          ["cortada sin fila abierta (salto de página)", `${CAB_T}De 1 hasta 2 75%\nDe 3 hasta 4 120%\n\f56\nPliego de condiciones Página 56\nHasta 5 150%\n`], ["cortada (cinco en letras)", `${CAB_T}De 1 hasta 2 75%\nDe 3 hasta 4 120%\nHasta cinco (5) 150%\n`],
+          ["cortada sin fila abierta (salto de página y PROSA antes de la última fila)", `${CAB_T}De 1 hasta 2 75%\nDe 3 hasta 4 120%\n\f56\nPliego de condiciones Página 56\nEl proponente deberá acreditar lo anterior con el formato.\nHasta 5 150%\n`], ["cortada (cinco en letras)", `${CAB_T}De 1 hasta 2 75%\nDe 3 hasta 4 120%\nHasta cinco (5) 150%\n`],
+          ["cortada de verdad: el salto de página sin la última fila", `${CAB_T}De 1 hasta 2 75%\nDe 3 hasta 4 120%\n\f56\nPliego de condiciones Página 56\n3.5.10. ACREDITACIÓN\n`],
           ["sin «presupuesto» en el encabezado", "\f1\nValor mínimo a certificar\nDe 1 hasta 2 75%\nDe 3 hasta 4 120%\nHasta 5 150%\n"],
           ["prosa entre dos filas", "\f1\nValor mínimo a certificar (como % del Presupuesto Oficial)\nDe 1 hasta 2 75%\nel proponente deberá acreditar lo anterior con el formato\nDe 3 hasta 4 120%\nHasta 5 150%\n"],
           ["filas lejos del encabezado", `\f1\nde conformidad con el “valor mínimo a certificar (como % del Presupuesto Oficial de obra expresado en SMMLV)”.\n${"Los integrantes del proponente plural podrán acreditar la experiencia con los contratos que aporten. ".repeat(6)}\nDe 1 hasta 2 75%\nDe 3 hasta 4 120%\nHasta 5 150%\n`],
@@ -25083,6 +25252,22 @@ async function main() {
           ["filas sin encabezado", "\f1\nDe 1 hasta 2 75%\nDe 3 hasta 4 120%\nHasta 5 150%\n"], ["no empieza en uno", "\f1\nValor mínimo a certificar (como % del Presupuesto Oficial)\nDe 2 hasta 3 75%\nDe 4 hasta 5 120%\n"], ["solo el índice", "\f3\n3.5.9. RELACIÓN DE LOS CONTRATOS FRENTE AL PRESUPUESTO OFICIAL 37\n"]]) {
           assert.strictEqual(TE.leerTablaExperiencia(txt), null, `una tabla dudosa no se completa con la del pliego tipo (${nombre})`);
         }
+        /* LA TABLA PARTIDA POR EL SALTO DE PÁGINA (25-oct-2026, Fase 0 de detekta-lector): Manizales (CO1.REQ.10287523, menor cuantía) y Teruel
+           (CO1.REQ.11165702) siguen en la página siguiente con el pie, la cabecera del documento tipo y el ENCABEZADO de la tabla repetido en medio.
+           La regla «entre dos filas no puede haber texto» la cortaba y la casilla quedaba «sin dato» con la tabla entera en el pliego. El membrete
+           y el encabezado no son prosa; una palabra de prosa sigue cortándola (los casos nulos de arriba). SUPERA la parte «salto de página» de la
+           lista de tablas dudosas del 27-sep: aquella no tenía la última fila después del salto, y esa sigue siendo nula. */
+        const teruel = TE.leerTablaExperiencia("\f35\n3.5.9 RELACIÓN DE LOS CONTRATOS FRENTE AL PRESUPUESTO OFICIAL\nLa verificación del número de contratos para acreditar la experiencia se realiza de la siguiente\nmanera:\nNúmero de contratos con los\tValor mínimo a certificar\ncuales el Proponente cumple\t(como % del Presupuesto Oficial de\nla experiencia acreditada\tobra expresado en SMMLV)\nDe 1 hasta 2\t75%\n35\nCódigo:\tCCE-EICP-GI-01\tVersión:\t8\n\f36\nDOCUMENTO BASE\nLICITACIÓN DE INFRAESTRUCTURA DE TRANSPORTE (VERSIÓN 4)\nCódigo:\tCCE-EICP-GI-01\tPágina:\t36 de 77\nVersión No.:\t8\nNúmero de contratos con los\tValor mínimo a certificar\ncuales el Proponente cumple\t(como % del Presupuesto Oficial de\nla experiencia acreditada\tobra expresado en SMMLV)\nDe 3 hasta 4\t120%\nHasta 5\t150%\nSi el número de contratos aportados supera los cinco (5) inicialmente previstos en este numeral\n");
+        assert.deepStrictEqual(teruel && [teruel.tramos, teruel.pagina, teruel.pagina_hasta], [[{ desde: 1, hasta: 2, pct: 75 }, { desde: 3, hasta: 4, pct: 120 }, { desde: 5, hasta: 5, pct: 150 }], 35, 36], `la tabla partida por el salto de página se lee entera, con la página de la primera y la última fila (MUTACIÓN: el membrete corta la tabla): ${JSON.stringify(teruel)}`);
+        const pieSuelto = TE.leerTablaExperiencia(`${CAB_T}De 1 hasta 2 75%\nDe 3 hasta 4 120%\n\f56\nPliego de condiciones Página 56\nHasta 5 150%\n`);
+        assert.deepStrictEqual(pieSuelto && pieSuelto.tramos.map((t) => t.pct), [75, 120, 150], "el pie de página solo (sin encabezado repetido) tampoco es prosa");
+        assert.strictEqual(TE.leerTablaExperiencia(`${CAB_T}De 1 hasta 2 75%\nDe 3 hasta 4 120%\nVer nota 3 del anexo técnico\nHasta 5 150%\n`), null, "MUTACIÓN: una frase corta que no es membrete sigue cortando la tabla");
+        /* el número de página pegado a «Hasta 5» («56 hasta 5 150%») se salta; una fila GIRADA de verdad («De 4 hasta 3», «4 a 3») no: saltarla dejaba
+           leer la tabla sin la fila del 120 % (revisión adversaria del 25-oct-2026) */
+        assert.strictEqual(TE.leerTablaExperiencia(`${CAB_T}De 1 hasta 2 75%\nDe 4 hasta 3 120%\nHasta 5 150%\n`), null, "MUTACIÓN: una fila al revés (OCR) corta la tabla, no se salta");
+        assert.strictEqual(TE.leerTablaExperiencia(`${CAB_T}De 1 hasta 2 75%\n4 a 3 120 %\nHasta 5 150%\n`), null, "MUTACIÓN: «4 a 3» tampoco se salta");
+        const pie56 = TE.leerTablaExperiencia(`${CAB_T}De 1 hasta 2 75%\nDe 3 hasta 4 120%\n\f56\nPágina 56 de 77\n5 o más 150%\n`);
+        assert.deepStrictEqual(pie56 && pie56.tramos.map((t) => [t.desde, t.hasta, t.pct]), [[1, 2, 75], [3, 4, 120], [5, null, 150]], "el número de página antes de «5 o más» no es una fila");
         assert.deepStrictEqual([1, 2, 3, 4, 5, 7].map((n) => TE.proporcionDeTabla(tPasto.tramos, n)), [0.75, 0.75, 1.2, 1.2, 1.5, 1.5], "la última fila vale para los contratos adicionales de Mipyme");
         // el lector la guarda en los hechos del documento
         const hTabla = Docs.hechosDeTexto(txtPasto, { tipo: "pliego" });
@@ -25339,6 +25524,19 @@ async function main() {
             // y al revés: guardar un Formulario que sí pasa suelta el «ilegible» anterior del mismo documento
             const reF = await invocarPost(routerPliegoD, "/api/pliego?op=documentos", { id_proceso: idD, id_documento: "4", formulario_excel: buenoF }, CAB_TOKEN);
             assert.ok(reF.cuerpo.formularios["4"].publicable === true && reF.cuerpo.ilegibles["4"] === undefined, "el Formulario leído suelta el ilegible anterior");
+            // los VALORES FIJOS fuera de los ítems (PMT, PGIO; 25-oct-2026): el servidor los recomprueba, los guarda con los ítems y GET ?formulario= los devuelve para que Precios los avise
+            {
+              const conFijo = { ...buenoF, total: 350000, fila_total: 7, valores_fijos: [{ fila_excel: 6, etiqueta: "PGIO", valor: 50000 }] };
+              const fF = await invocarPost(routerPliegoD, "/api/pliego?op=documentos", { id_proceso: idD, id_documento: "4", formulario_excel: conFijo }, CAB_TOKEN);
+              assert.ok(fF.status === 200 && fF.cuerpo.formularios["4"].publicable === true && fF.cuerpo.formularios["4"].suma_fijos === 50000 && fF.cuerpo.formularios["4"].total === 350000, JSON.stringify(fF.cuerpo.formularios["4"]));
+              const gFijo = await invocar(routerPliegoD, `/api/pliego?op=documentos&${qD}&formulario=4`, CAB_TOKEN);
+              assert.deepStrictEqual([gFijo.cuerpo.total, gFijo.cuerpo.valores_fijos], [350000, [{ fila_excel: 6, etiqueta: "PGIO", valor: 50000 }]], `GET ?formulario= devuelve los valores fijos: ${JSON.stringify(gFijo.cuerpo).slice(0, 200)}`);
+              assert.strictEqual((await invocarPost(routerPliegoD, "/api/pliego?op=documentos", { id_proceso: idD, id_documento: "4", formulario_excel: { ...conFijo, valores_fijos: [] } }, CAB_TOKEN)).cuerpo.formularios["4"].publicable, false, "sin el fijo los ítems no dan el total: no se publica");
+              assert.strictEqual((await invocar(routerPliegoD, `/api/pliego?op=documentos&${qD}&formulario=4`, CAB_TOKEN)).status, 404, "y los ítems anteriores se borraron");
+              const reBueno = await invocarPost(routerPliegoD, "/api/pliego?op=documentos", { id_proceso: idD, id_documento: "4", formulario_excel: buenoF }, CAB_TOKEN);   // se deja como estaba para lo que sigue
+              assert.deepStrictEqual((await invocar(routerPliegoD, `/api/pliego?op=documentos&${qD}&formulario=4`, CAB_TOKEN)).cuerpo.valores_fijos, [], "sin fijos la lista va vacía, no ausente");
+              assert.strictEqual(reBueno.cuerpo.formularios["4"].publicable, true);
+            }
             // un resumen vigente cuyo archivo YA NO está en el índice no se sirve (la entidad lo reemplazó con un id nuevo)
             {
               const docsG = await leerF1(rF, Docs.claveDocs(idD));
@@ -50962,6 +51160,11 @@ async function main() {
       assert.ok(c4.H.mapeos.length === 0 && c4.H.modales === 0 && /Se abrió otro proceso o borrador en Precios/.test(c4.aviso.textContent) && c4.boton.disabled === false, "si mientras tanto se abrió otro proceso o borrador, los ítems NO se meten en él");
       const c5 = await correrClic({ respuesta: respF, mapea: false });
       assert.ok(c5.H.modales === 0 && /No se llevó nada/.test(c5.aviso.textContent) && c5.aviso.classes.has("text-red-700"), "si se canceló el acceso, no se dice que quedó en Precios");
+      // los VALORES FIJOS fuera de los ítems (PMT, PGIO; 25-oct-2026): se avisan con su cifra y NO entran como fila
+      const c6 = await correrClic({ respuesta: { ...respF, total: 350000, valores_fijos: [{ fila_excel: 6, etiqueta: "PGIO", valor: 50000 }] } });
+      assert.ok(c6.H.mapeos[0].meta.avisos.length === 2 && /trae además 1 valor\(es\) fijo\(s\) fuera de los ítems \(PGIO \$50000\) por \$50000: no pasan a la tabla; súmelos tal cual a su oferta/.test(c6.H.mapeos[0].meta.avisos[1]), JSON.stringify(c6.H.mapeos[0].meta.avisos));
+      assert.strictEqual(c6.H.mapeos[0].filas.length, 2, "el valor fijo no entra como fila de la tabla");
+      assert.strictEqual(c1.H.mapeos[0].meta.avisos.length, 1, "sin valores fijos no hay segundo aviso");
     }
     /* ── 4d · VOLVER A BUSCAR LOS DOCUMENTOS, DESDE EL EXPEDIENTE (19-oct-2026) ─────────────────────────────────────────────
        El botón de la guía de la tarjeta no lo llamaba ninguna pantalla desde el 7-sep: con documentos en la lista no había cómo pedir una adenda nueva ni
