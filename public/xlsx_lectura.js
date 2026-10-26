@@ -446,13 +446,37 @@
        sin este rótulo el cuadre salía «sin_referencia» en 201 de 325 Excel reales de procesos abiertos: se
        leían los ítems y no había con qué contrastarlos. Sigue valiendo todo lo de arriba: después de una
        fila de AIU/IVA es el precio con AIU y no sirve de ancla. */
+    /* EL «VALOR TOTAL» CON SUFIJO Y LOS VALORES FIJOS FUERA DE LOS ÍTEMS (25-oct-2026, Fase 0 de detekta-lector sobre 9 Formularios
+       reales de menor cuantía y 84 de procesos abiertos). Dos causas tapaban la mayoría de los «no se da por leído»:
+       · la entidad rotula el total «VALOR TOTAL PROYECTOS», «VALOR TOTAL DE OBRA», «VALOR TOTAL CONTRATO…» y el lector no lo veía
+         («sin total declarado», 19 de 25 Formularios de menor cuantía que no pasaban). Se acepta el sufijo salvo que nombre una PARTE
+         (capítulo, ítem, lote, parcial, unitario, «sin IVA», AIU), y un «VALOR TOTAL» a secas que venga después lo reemplaza.
+       · entre el subtotal de los ítems y el «VALOR TOTAL» va un VALOR FIJO que no es ítem —«VALOR PMT (INMODIFICABLE)», «PGIO»,
+         «PLAN DE MANEJO DE TRÁNSITO»— y los ítems «no sumaban el total» (B, C, D y H de la Fase 0: 4 de 9). Esas filas se ANOTAN como
+         candidatas y `cuadreDeControl` las acepta solo si van después del último ítem, antes del total, e ítems + fijos DA el total. */
     let totalDeclarado = null, vistoAiu = false;
+    const candidatosFijos = [];
+    /* un «VALOR TOTAL» que viene DESPUÉS de un COSTO DIRECTO explícito no lo reemplaza, pero se anota: si es mayor, entre los dos puede ir el
+       valor fijo (PMT) que el costo directo no incluye y la oferta sí (revisión adversaria, 25-oct-2026: antes el PMT se callaba) */
+    let totalPosterior = null;
+    const totalesConSufijo = [];   // «VALOR TOTAL ZONA 1», «VALOR TOTAL ZONA 2»: dos cifras distintas y ninguna general no son un total
     const RE_COSTO_DIRECTO = /^(TOTAL\s+|SUBTOTAL\s+)?COSTOS?\s+DIRECTOS?\b/;
     const RE_TOTAL_SECO = /^(VALOR\s+)?TOTAL(\s+GENERAL|\s+PRESUPUESTO)?$/;
-    const RE_AIU_FILA = /^(A\s?I\s?U|ADMINISTRACION|IMPREVISTOS|UTILIDAD|IVA)\b/;
+    const RE_VALOR_TOTAL_SUFIJO = /^VALOR\s+TOTAL\s+(?!.*\b(?:CAPITULOS?|CAP|ITEMS?|LOTES?|PARCIAL|UNITARIOS?|FILA|A\s?I\s?U|I\s?V\s?A|ANTES|ETAPAS?|FASES?|ZONAS?|GRUPOS?|TRAMOS?|SEDES?|FRENTES?|BLOQUES?|SECTOR(?:ES)?|MODULOS?|COMPONENTES?|ALTERNATIVAS?|INTERVENTORIA)\b)[A-Z0-9 ]+$/;
+    /* la fila del AIU o del IVA, también escrita con puntos o abreviada («I.V.A. 19%», «VALOR A.I.U. 30%», «ADMON», «IMPREV», «UTIL»,
+       «IMPREVISTO (I)»): normCab quita la puntuación y deja «I V A», que antes no casaba, y una fila de impuesto se publicaba como «valor
+       fijo» con el aviso de sumarla a la oferta (revisión adversaria, 25-oct-2026) */
+    const RE_AIU_FILA = /^(?:VALOR\s+|TOTAL\s+|PORCENTAJE\s+|MAS\s+)?(?:A\s?I\s?U|A\s?U|I\s?V\s?A|ADMON|ADMINISTRACION|IMPREV(?:ISTOS?)?|UTIL(?:IDAD(?:ES)?)?)\b/;
     const valorTotalDeFila = (f) => {
       if (cab.total >= 0) { const v = numeroDeCelda(f[cab.total]); if (v != null && v > 0) return v; }
       for (let j = f.length - 1; j >= 0; j--) { const v = numeroDeCelda(f[j]); if (v != null && v > 0) return v; }
+      return null;
+    };
+    /* la cifra de un valor fijo: la columna VR TOTAL si la hoja la tiene; si no, la última celda numérica A LA DERECHA de la descripción
+       (el «1» de la columna de código de un título de capítulo no es un valor fijo) */
+    const valorFijoDeFila = (f) => {
+      if (cab.total >= 0) { const v = numeroDeCelda(f[cab.total]); return v != null && v > 0 ? v : null; }
+      for (let j = f.length - 1; j > cab.descripcion; j--) { const v = numeroDeCelda(f[j]); if (v != null && v > 0) return v; }
       return null;
     };
     for (let i = cab.fila + 1; i < grid.length; i++) {
@@ -478,7 +502,7 @@
          un NÚMERO fuera de las columnas de código/descripción; el título, solo
          texto. El rótulo puede venir en la columna de descripción o en la de
          código («SUBTOTAL CAPITULO 1 | | | | | 100.000»). */
-      const RE_TOTALES = /^(COSTOS?\s|VALOR\s+TOTAL\b|TOTAL\b|SUBTOTAL\b|ADMINISTRACION\b|IMPREVISTOS\b|UTILIDAD\b|IVA\b|A\s?I\s?U\b|PRECIO\s+FINAL\b)/;
+      const RE_TOTALES = /^(COSTOS?\s|VALOR\s+TOTAL\b|TOTAL\b|SUBTOTAL\b|ADMINISTRACION\b|IMPREVISTOS\b|UTILIDAD\b|IVA\b|A\s?I\s?U\b|PRECIO\s+FINAL\b|(?:VALOR\s+|TOTAL\s+|PORCENTAJE\s+|MAS\s+)?(?:A\s?I\s?U|A\s?U|I\s?V\s?A|ADMON|IMPREV(?:ISTOS?)?|UTIL(?:IDAD(?:ES)?)?)\b)/;
       const rotulo = desc || codigo;
       const tieneNumero = f.some((c, j) => j !== cab.codigo && j !== cab.descripcion && (numeroDeCelda(c) || 0) > 0);
       const esFilaTotal = !!rotulo && !unidad && RE_TOTALES.test(normCab(rotulo)) && (tieneNumero || cantidad != null);
@@ -486,11 +510,15 @@
         const d = normCab(rotulo);
         if (RE_AIU_FILA.test(d)) vistoAiu = true;
         const esCostoDirecto = RE_COSTO_DIRECTO.test(d);
-        if (esCostoDirecto || (RE_TOTAL_SECO.test(d) && !vistoAiu)) {
+        const esSeco = RE_TOTAL_SECO.test(d), conSufijo = !esSeco && RE_VALOR_TOTAL_SUFIJO.test(d);
+        if (esCostoDirecto || ((esSeco || conSufijo) && !vistoAiu)) {
           const v = valorTotalDeFila(f);
-          // el «COSTO DIRECTO» explícito reemplaza a un «TOTAL» seco leído antes; nunca al revés
-          if (v != null && (totalDeclarado == null || (esCostoDirecto && !totalDeclarado.explicito))) {
-            totalDeclarado = { valor: v, etiqueta: rotulo, fila: i, explicito: esCostoDirecto };
+          if (v != null && conSufijo) totalesConSufijo.push(v);
+          if (v != null && !esCostoDirecto && totalDeclarado && totalDeclarado.explicito && !totalPosterior && i > totalDeclarado.fila) totalPosterior = { valor: v, etiqueta: rotulo, fila: i };
+          // el «COSTO DIRECTO» explícito reemplaza a un «TOTAL» seco leído antes, y un «VALOR TOTAL» a secas a uno con sufijo
+          // («VALOR TOTAL ETAPA 1» no es el total del archivo si después viene el «VALOR TOTAL»); nunca al revés
+          if (v != null && (totalDeclarado == null || (esCostoDirecto && !totalDeclarado.explicito) || (esSeco && totalDeclarado.sufijo))) {
+            totalDeclarado = { valor: v, etiqueta: rotulo, fila: i, explicito: esCostoDirecto, sufijo: conSufijo };
           }
         }
         continue;
@@ -498,9 +526,26 @@
       // fila de sección/capítulo: texto sin unidad ni cantidad. El título
       // suelto en la primera columna («SALÓN 216…») es el nivel MAYOR y
       // reinicia el menor; la descripción sin unidad es el nivel MENOR
+      /* el rótulo del valor fijo fuera de la columna de descripción (censo del 25-oct-2026: «PMA | 29.406.605» con el rótulo en la columna
+         del precio, «PLAN DE MANEJO AMBIENTAL PMA» en la del número): una fila sin descripción, sin unidad ni cantidad, con UN solo texto y
+         la cifra en la columna VR TOTAL, se anota con ese texto como rótulo; decide `cuadreDeControl` (la lista de rótulos y la cuenta) */
+      if (!desc && !unidad && cantidad == null) {
+        const textos = f.map((c) => (typeof c === "string" ? c.trim() : "")).filter((t) => t && numeroDeCelda(t) == null);
+        const vFijo = textos.length === 1 ? valorFijoDeFila(f) : null;
+        if (vFijo != null) candidatosFijos.push({ fila: i, etiqueta: textos[0], valor: vFijo });
+      }
       const soloTitulo = !desc && codigo && !unidad && cantidad == null;
       if (soloTitulo) { capMayor = codigo; capMenor = null; continue; }
-      if (desc && !unidad && cantidad == null) { capMenor = desc; continue; }
+      if (desc && !unidad && cantidad == null) {
+        /* una fila con rótulo y cifra, sin unidad ni cantidad ni precio, que no es total: candidata a VALOR FIJO fuera de los ítems
+           («VALOR PMT (INMODIFICABLE)», «PGIO»). Solo se anota con su fila; decide `cuadreDeControl`. Sigue siendo, como antes,
+           el título del capítulo menor: una fila que no resulte fijo no cambia nada de lo que ya hacía. */
+        const vFijo = valorFijoDeFila(f);
+        // con columna VR TOTAL la cifra va ahí y la de precio tiene que estar vacía; sin esa columna, la única columna de dinero es la del precio
+        // …salvo que lo que hay en la columna del precio sea una TASA («0,039» del PGIO como % del subtotal), que no es un precio (censo del 25-oct-2026)
+        if (vFijo != null && (precio == null || cab.total < 0 || (precio > 0 && precio < 1))) candidatosFijos.push({ fila: i, etiqueta: desc, valor: vFijo });
+        capMenor = desc; continue;
+      }
       if (!desc) continue;
       // filas de totales sin número («COSTOS DIRECTOS», «TOTAL»… con la celda vacía) no son ítems
       if (RE_TOTALES.test(normCab(desc)) && !unidad) continue;
@@ -534,9 +579,19 @@
     if (!filas.length) avisos.push("Se encontró la cabecera pero ninguna fila de ítem debajo.");
     if (sinCantidad) avisos.push(`${sinCantidad} fila(s) sin cantidad legible: viajan con cantidad vacía, nunca con 0.`);
     if (precioCero) avisos.push(`${precioCero} fila(s) traen precio 0 en el archivo: se tratan como SIN precio (un 0 no es un precio).`);
-    const cuadre = cuadreDeControl(filas, totalDeclarado);
-    if (cuadre.estado === "no_cuadra") {
-      avisos.push(`Cuadre de control: los ${cuadre.filas_sumadas} ítems leídos suman ${pesos(cuadre.suma_items)} y el archivo declara «${totalDeclarado.etiqueta}» ${pesos(cuadre.total_declarado)} (diferencia ${pesos(cuadre.desviacion)}, ${cuadre.desviacion_pct.toFixed(2)} %). Revise si falta un capítulo, sobra una fila o una cantidad se leyó mal antes de calcular nada.`);
+    /* dos o más «VALOR TOTAL <parte>» con cifras distintas y ningún total general (zonas, grupos, sedes): no se sabe cuál es el total
+       del archivo, y quedarse con el primero publicaba la primera parte como si fuera todo (revisión adversaria, 25-oct-2026) */
+    if (totalDeclarado && totalDeclarado.sufijo && new Set(totalesConSufijo).size >= 2) {
+      avisos.push(`El archivo trae ${new Set(totalesConSufijo).size} filas «VALOR TOTAL …» con cifras distintas y ninguna general: no se sabe cuál es el total del documento.`);
+      totalDeclarado = null;
+    }
+    const cuadre = cuadreDeControl(filas, totalDeclarado, candidatosFijos, totalPosterior);
+    if (cuadre.estado === "no_cuadra" && cuadre.total_posterior) {
+      avisos.push(`Cuadre de control: los ${cuadre.filas_sumadas} ítems leídos suman ${pesos(cuadre.suma_items)}, el costo directo, pero el archivo declara más abajo «${cuadre.total_posterior.etiqueta}» ${pesos(cuadre.total_posterior.valor)} y las filas intermedias no explican la diferencia${cuadre.fijos_no_reconocidos.length ? ` («${cuadre.fijos_no_reconocidos.join("», «")}» no son un valor fijo reconocido)` : ""}. Revise qué suma la entidad entre el costo directo y el total antes de calcular nada.`);
+    } else if (cuadre.estado === "cuadra" && cuadre.valores_fijos.length) {
+      avisos.push(`El archivo trae ${cuadre.valores_fijos.length} valor(es) fijo(s) fuera de los ítems (${cuadre.valores_fijos.map((x) => `${x.etiqueta} ${pesos(x.valor)}`).join("; ")}): los ítems suman ${pesos(cuadre.suma_items)} y con esos valores dan el total «${totalDeclarado.etiqueta}» ${pesos(cuadre.total_declarado)}. No son ítems y no entran a la tabla: súmelos tal cual a su oferta.`);
+    } else if (cuadre.estado === "no_cuadra") {
+      avisos.push(`Cuadre de control: los ${cuadre.filas_sumadas} ítems leídos suman ${pesos(cuadre.suma_items)} y el archivo declara «${totalDeclarado.etiqueta}» ${pesos(cuadre.total_declarado)} (diferencia ${pesos(cuadre.desviacion)}, ${cuadre.desviacion_pct.toFixed(2)} %)${cuadre.fijos_descartados ? `, ni sumando las ${cuadre.fijos_descartados} fila(s) con cifra que hay entre los ítems y el total${cuadre.fijos_no_reconocidos.length ? ` («${cuadre.fijos_no_reconocidos.join("», «")}» no son un valor fijo reconocido: PMT, PGIO, plan de manejo, provisión…)` : ""}` : ""}. Revise si falta un capítulo, sobra una fila o una cantidad se leyó mal antes de calcular nada.`);
     } else if (cuadre.estado === "no_comparable") {
       avisos.push(`Cuadre de control: el archivo declara «${totalDeclarado.etiqueta}» ${pesos(cuadre.total_declarado)} pero ${cuadre.filas_sin_valor} de ${filas.length} ítems no traen valor total legible: la suma no se puede comparar.`);
     }
@@ -552,9 +607,32 @@
      declara total). NUNCA bloquea: es un aviso, y una tabla que no cuadra
      puede importarse igual — lo que no puede es importarse sin decirlo. */
   const TOL_CUADRE_REL = 0.005;
-  function cuadreDeControl(filas, totalDeclarado) {
-    let suma = 0, sumadas = 0, sinValor = 0;
+  /* `fijos` (25-oct-2026): las filas candidatas a VALOR FIJO fuera de los ítems ({fila: índice en la rejilla, etiqueta, valor}).
+     Cuentan SOLO si los ítems solos no cuadran, van DESPUÉS del último ítem y ANTES de la fila del total, y ítems + fijos da el total
+     dentro de la misma tolerancia. Lo que no cierra la cuenta no se inventa: queda «no_cuadra» y se dice cuántas filas se descartaron.
+     Sin la fila de cada ítem y del total (una lectura sin posiciones) no hay fijos: la posición es lo que los separa de un capítulo. */
+  /* QUÉ RÓTULO ES UN VALOR FIJO (revisión adversaria, 25-oct-2026). La posición y la aritmética solas dejaban pasar cualquier renglón que la
+     entidad sume al total —una INTERVENTORÍA (contrato aparte), un ANTICIPO (no es un costo), un rótulo numérico, un título de capítulo con
+     cifra, un ítem perdido—, y la aplicación le decía al contratista «súmelo tal cual». Medido en los 20 Formularios reales que cerraron la
+     cuenta (A–I y el censo del 25-oct), el vocabulario de los fijos legítimos es corto y estable: PMT, PMA, PAGA, PGIO, plan de manejo
+     (ambiental, de tránsito o tráfico), gestión integral, seguridad y salud (SST), provisión, componente, certificación RETIE o RETILAP,
+     diseños y legalización, mitigación. Una fila que no case queda fuera y la lectura dice su rótulo; una que nombre un impuesto, el AIU,
+     un anticipo, una interventoría, un descuento o un total nunca es un fijo. Lista cerrada a propósito: ampliarla cuesta una línea y una
+     prueba; abrirla cuesta una oferta. */
+  const RE_FIJO = /\b(?:PMT|PMA|PAGA|PGIO|PLAN|MANEJO|AMBIENTAL|SOCIAL|TRANSITO|TRAFICO|SST|SEGURIDAD|SALUD|PROVISION(?:ES)?|COMPONENTE|CERTIFICACION(?:ES)?|RETIE|RETILAP|DISENOS?|MITIGACION|SENALIZACION|INMODIFICABLE|FIJOS?|GLOBAL|GESTION|IMPLEMENTACION|LEGALIZACION)\b/;
+  const RE_NO_FIJO = /\b(?:I\s?V\s?A|A\s?I\s?U|A\s?U|ADMON|ADMINISTRACION|IMPREV(?:ISTOS?)?|UTILIDAD(?:ES)?|UTIL|IMPUESTOS?|ANTICIPOS?|INTERVENTORIA|DESCUENTOS?|RETENCION(?:ES)?|ESTAMPILLAS?|SUBTOTAL|TOTAL|CAPITULOS?|CAP|ITEMS?)\b/;
+  const esFijoReconocido = (etiqueta) => { const d = normCab(etiqueta); return /[A-Z]/.test(d) && RE_FIJO.test(d) && !RE_NO_FIJO.test(d); };
+
+  /* `fijos`: las filas candidatas a VALOR FIJO ({fila: índice en la rejilla, etiqueta, valor}). `totalPosterior`: un «VALOR TOTAL» que el
+     archivo declara DESPUÉS de un COSTO DIRECTO explícito. Reglas: los ítems solos mandan si dan el total al 0,01 % (lo que se publica);
+     si no, cuentan los fijos RECONOCIDOS que van después del último ítem y antes de la fila del total, y solo si ítems + fijos da el total
+     (0,5 %) y mejor que los ítems solos. Con un costo directo explícito y un «VALOR TOTAL» mayor más abajo, el total del archivo es ese y la
+     cuenta tiene que cerrar con los fijos del tramo; si no cierra, no cuadra (antes el PMT se callaba y la guía decía «la suma da el total»).
+     Lo que no cierra no se inventa. Sin la fila de cada ítem y del total no hay fijos. */
+  function cuadreDeControl(filas, totalDeclarado, fijos = [], totalPosterior = null) {
+    let suma = 0, sumadas = 0, sinValor = 0, ultimaFilaItem = -1;
     for (const f of filas) {
+      if (Number.isInteger(f.fila_excel)) ultimaFilaItem = Math.max(ultimaFilaItem, f.fila_excel - 1);
       let v = f.total_archivo != null ? f.total_archivo : null;
       if (v == null && f.cantidad != null && f.precio_archivo != null) v = f.cantidad * f.precio_archivo;
       if (v == null) { sinValor++; continue; }
@@ -563,12 +641,36 @@
     const base = { suma_items: sumadas ? suma : null, filas_sumadas: sumadas, filas_sin_valor: sinValor,
       total_declarado: totalDeclarado ? totalDeclarado.valor : null, etiqueta_total: totalDeclarado ? totalDeclarado.etiqueta : null,
       fila_total: totalDeclarado && Number.isInteger(totalDeclarado.fila) ? totalDeclarado.fila + 1 : null,
-      tolerancia_rel: TOL_CUADRE_REL };
+      tolerancia_rel: TOL_CUADRE_REL, valores_fijos: [], suma_fijos: 0, fijos_descartados: 0, fijos_no_reconocidos: [], total_posterior: null };
     if (!totalDeclarado) return { ...base, estado: "sin_referencia", desviacion: null, desviacion_pct: null };
     if (sinValor > 0 || !sumadas) return { ...base, estado: "no_comparable", desviacion: null, desviacion_pct: null };
-    const desviacion = Math.abs(suma - totalDeclarado.valor);
-    const pct = totalDeclarado.valor > 0 ? (desviacion / totalDeclarado.valor) * 100 : null;
-    return { ...base, estado: pct != null && pct / 100 <= TOL_CUADRE_REL ? "cuadra" : "no_cuadra", desviacion, desviacion_pct: pct };
+    const candidatos = Array.isArray(fijos) ? fijos.filter((x) => x && Number.isInteger(x.fila) && typeof x.valor === "number" && Number.isFinite(x.valor) && x.valor > 0) : [];
+    const etiquetaDe = (x) => String(x.etiqueta == null ? "" : x.etiqueta).slice(0, 120);
+    const enTramo = (desde, hasta) => (Number.isInteger(desde) && desde >= 0 && Number.isInteger(hasta) ? candidatos.filter((x) => x.fila > desde && x.fila < hasta) : []);
+    const pctDe = (s, t) => (t > 0 ? (Math.abs(s - t) / t) * 100 : null);
+    const conFijos = (lista, objetivo) => {
+      const reconocidos = lista.filter((x) => esFijoReconocido(x.etiqueta)), noReconocidos = lista.filter((x) => !esFijoReconocido(x.etiqueta));
+      const sumaFijos = reconocidos.reduce((s, x) => s + x.valor, 0);
+      return { reconocidos, noReconocidos, sumaFijos, pct: pctDe(suma + sumaFijos, objetivo), cierra: reconocidos.length > 0 && pctDe(suma + sumaFijos, objetivo) != null && pctDe(suma + sumaFijos, objetivo) / 100 <= TOL_CUADRE_REL };
+    };
+    const noRec = (c) => c.noReconocidos.map(etiquetaDe).map((e) => e.slice(0, 60)).slice(0, 5);
+    const cuadraConFijos = (c, objetivo, etiqueta, fila) => ({ ...base, estado: "cuadra", total_declarado: objetivo, etiqueta_total: etiqueta, fila_total: fila + 1,
+      desviacion: Math.abs(suma + c.sumaFijos - objetivo), desviacion_pct: c.pct, suma_fijos: c.sumaFijos, fijos_descartados: candidatos.length - c.reconocidos.length, fijos_no_reconocidos: noRec(c),
+      valores_fijos: c.reconocidos.map((x) => ({ fila_excel: x.fila + 1, etiqueta: etiquetaDe(x), valor: x.valor })) });
+    const t0 = totalDeclarado, pct0 = pctDe(suma, t0.valor), desv0 = Math.abs(suma - t0.valor);
+    const exacto = pct0 != null && pct0 <= TOL_PUBLICAR_PCT, dentro = pct0 != null && pct0 / 100 <= TOL_CUADRE_REL;
+    /* el hermano del costo directo: los ítems dan el COSTO DIRECTO, pero más abajo el archivo declara un «VALOR TOTAL» mayor (sin AIU en medio) */
+    if ((exacto || dentro) && t0.explicito && totalPosterior && Number.isInteger(totalPosterior.fila) && totalPosterior.valor > t0.valor * (1 + TOL_CUADRE_REL)) {
+      const c = conFijos(enTramo(t0.fila, totalPosterior.fila), totalPosterior.valor);
+      if (c.cierra) return cuadraConFijos(c, totalPosterior.valor, totalPosterior.etiqueta, totalPosterior.fila);
+      return { ...base, estado: "no_cuadra", desviacion: Math.abs(suma - totalPosterior.valor), desviacion_pct: pctDe(suma, totalPosterior.valor), fijos_descartados: candidatos.length, fijos_no_reconocidos: noRec(c),
+        total_posterior: { valor: totalPosterior.valor, etiqueta: String(totalPosterior.etiqueta == null ? "" : totalPosterior.etiqueta).slice(0, 120), fila_excel: totalPosterior.fila + 1 } };
+    }
+    if (exacto) return { ...base, estado: "cuadra", desviacion: desv0, desviacion_pct: pct0 };
+    const c = conFijos(enTramo(ultimaFilaItem, t0.fila), t0.valor);
+    if (c.cierra && (pct0 == null || c.pct < pct0)) return cuadraConFijos(c, t0.valor, t0.etiqueta, t0.fila);
+    if (dentro) return { ...base, estado: "cuadra", desviacion: desv0, desviacion_pct: pct0 };
+    return { ...base, estado: "no_cuadra", desviacion: desv0, desviacion_pct: pct0, fijos_descartados: candidatos.length, fijos_no_reconocidos: noRec(c) };
   }
 
   /* la hoja con MÁS filas de ítem reconocibles gana; devolver la primera a
@@ -649,7 +751,8 @@
       const porque = {
         sin_referencia: "el archivo no declara un total con el que contrastar la lectura",
         no_comparable: "hay ítems sin valor total legible: la suma no se puede comparar",
-        no_cuadra: "los ítems leídos no suman el total que declara el archivo",
+        no_cuadra: cuadre.total_posterior ? `los ítems suman el costo directo, pero el archivo declara más abajo «${cuadre.total_posterior.etiqueta}» ${pesos(cuadre.total_posterior.valor)} y las filas intermedias no explican la diferencia${cuadre.fijos_no_reconocidos && cuadre.fijos_no_reconocidos.length ? ` («${cuadre.fijos_no_reconocidos.join("», «")}» no son un valor fijo reconocido)` : ""}`
+          : cuadre.fijos_descartados ? `los ítems leídos no suman el total que declara el archivo, ni sumándoles las ${cuadre.fijos_descartados} fila(s) con cifra que hay entre los ítems y el total${cuadre.fijos_no_reconocidos && cuadre.fijos_no_reconocidos.length ? ` («${cuadre.fijos_no_reconocidos.join("», «")}» no son un valor fijo reconocido: PMT, PGIO, plan de manejo, provisión…)` : ""}` : "los ítems leídos no suman el total que declara el archivo",
       };
       return no(porque[cuadre.estado] || "el cuadre de control no se pudo hacer");
     }
