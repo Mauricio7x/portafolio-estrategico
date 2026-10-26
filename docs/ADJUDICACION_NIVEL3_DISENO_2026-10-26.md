@@ -16,6 +16,9 @@
   al menos uno de estos documentos: informe de evaluación, resolución de adjudicación o acta.
 - **Probado a mano en 5 procesos:** se leyó quién quedó hábil, el porqué de cada rechazo y el método que salió
   por la TRM. Fueron rechazadas 12 de 32 ofertas.
+- **Probado con los 30 del piloto (26-oct-2026, § 10):** 20 de 30 documentos dicen quién quedó hábil. Con esos
+  hábiles y el método real, el motor de precio acierta al ganador en 6 de 9. En 2 de los 3 que fallan, el precio sale
+  bien y el ganador lo decidieron los puntos distintos del precio: la captura tiene que guardarlos también.
 - La tasa de rechazo de una entidad con un margen de ±15 puntos pide unas 43 ofertas leídas. Con un margen de
   ±10, unas 97. En licitación, 307 entidades ya suman 43 ofertas en la base 2020-2026 (con las reglas
   corregidas el 26-oct-2026). Las demás se apoyan en el departamento y en la modalidad.
@@ -131,6 +134,8 @@ los rivales no cambian su precio por la oferta propia.
 
 1. **Prueba de la captura.** Con los hábiles y el método reales de un proceso, el motor debe reproducir al
    ganador casi siempre. Si no, la lectura está mal, no el modelo.
+   - Corregido el 26-oct-2026 con el piloto (§ 10): acertó en 6 de 9. En 2 de los 3 que fallan no era la lectura: el
+     ganador lo decidieron los puntos distintos del precio.
 2. **Calibración.** Se entrena hasta 2025 y se prueba en 2026. Umbrales del C1: error de calibración de 5 puntos
    o menos, Brier con una mejora de 0,10 o más frente a 1/n, y al menos 300 procesos de prueba por modalidad.
 3. **El registro propio** (`docs/VALIDACION_MODELOS.md` § 2: presentado, ganado o perdido) es la prueba final
@@ -242,3 +247,126 @@ hacia abajo) y el botón «Nuevo» de Drive.
 **Lo que esta lista ya dice.** En menor cuantía, casi todo lo disponible son resoluciones de adjudicación
 (14 de 15). Si las resoluciones no traen los hábiles, el Nivel 3 de menor cuantía dependerá de otros documentos de
 SECOP II que no están en el índice abierto [inferencia; la prueba lo confirma o lo tumba].
+La prueba lo tumbó en parte: 9 de las 14 resoluciones de menor cuantía traen quién quedó hábil (§ 10).
+
+## 10. Lo que dieron los 30 (26-oct-2026)
+
+**Cómo se midió.** El dueño subió los 30 PDF a la carpeta «Piloto Nivel 3» de su Drive.
+- Se leyeron con Google Drive, que devuelve el texto (con OCR en los escaneados que lo traen). Tres lectores de 10
+  archivos cada uno anotaron, con una cita literal por dato: las ofertas, quién quedó hábil y por qué no, los
+  puntajes, el método, la TRM y el adjudicatario.
+- La sesión releyó 5 contra el texto (filas 6, 19, 22, 28 y 30) y coinciden en todo.
+- Cada TRM se buscó en la serie oficial de datos.gov.co (32sa-8pi3).
+- Lo leído queda en `tools/analisis/nivel3_piloto_lectura_2026-10-26.json`. Todas las cifras de esta sección
+  salen de `node tools/analisis/adjudicacion/prueba_captura.js tools/analisis/nivel3_piloto_lectura_2026-10-26.json`,
+  que corre el motor de precio de `scripts/base_obra/metodos.js` sobre los hábiles leídos.
+
+**Qué traen los documentos.**
+- **Quién quedó hábil:** 20 de 30.
+  - En 14 lo dicen explícito.
+  - En 6 se deduce: la tabla de puntaje, el puntaje mayor que 0, o «solo X subsanó».
+  - Corponor es parcial: el acta es de antes de abrir el precio.
+  - Los 9 restantes no lo traen.
+- **Puntaje del precio de todos los hábiles:** 11, más Cesar a medias por el OCR. Otros 3 traen solo el total y 4,
+  solo el del ganador.
+- **Método o TRM:** 14.
+  - Las 13 TRM casan con la serie oficial: 11 traen el valor y 2 solo los centavos.
+  - Donde el documento dice método y TRM (11 casos), 10 casan con la tabla de los documentos tipo. Cota no: dice
+    «media aritmética» con centavos 11.
+- **Valores de las ofertas:** 80 de 82 casan al peso con `wi7w-2nvm`. Las 2 diferencias son de Suratá, de 27 y
+  4.197 pesos.
+- Los adjudicatarios y sus valores casan con `p6dx-8zbt` en todos los que lo traen. Hay variantes de nombre:
+  «AZNE SAS» por «A&N INGENIERÍA», y «PTL» frente a «MGN» dentro de la misma resolución de Plato.
+
+**Por qué faltan datos.**
+- En 9 documentos al menos una tabla no sale en el texto, probablemente porque la entidad la pegó como imagen:
+  filas 2, 11, 15, 16, 17, 19, 21, 22 y 25. Mocoa (fila 2) son 113 páginas sin texto. Las cinco resoluciones de
+  Aerocivil tienen al menos una tabla así; en tres (16, 21 y 25) ni siquiera sale la de quién quedó hábil.
+- En 3 escaneos el OCR deja cifras dudosas: filas 9, 14 y 26.
+- Dos documentos no eran los que servían: el acta de apertura de Aguas de Manizales y un formulario de Yondó sin
+  nombres.
+- La sección 9 suponía que las resoluciones de menor cuantía quizá no traerían quién quedó hábil. La prueba lo
+  tumba en parte: 9 de las 14 lo traen.
+
+**La prueba de la captura (§ 6.1).** Se hizo en los 9 procesos con 2 o más hábiles y un método que dice el
+documento o que sale de su TRM. **El motor pone primero al ganador real en 6 de 9**: 5 de 6 en licitación y 1 de 3
+en menor cuantía.
+- Donde el documento publica los puntajes, el motor los reproduce:
+  - Villa de Leyva: 38 de 38 al séptimo decimal.
+  - Hospital Militar: 13 de 13.
+  - Suratá: 3 de 3 a dos decimales.
+- **Cesar y Suratá:** el precio se calcula bien, pero el ganador lo decidieron los puntos distintos del precio.
+  - En Cesar, la ganadora quedó cuarta de 4 en precio.
+  - En Suratá, quedó tercera de 3. Los otros dos perdieron 20 puntos (criterios ambientales y sociales, Formatos
+    14A y 14B), y la ganadora perdió 20 en servicios nacionales.
+  - Es el mismo hecho de Pasto en las fichas, donde la oferta más baja perdió 20 puntos por el Formato 14.
+- **Plato:** con los 42 que cumplen, el motor da a otro. Sin CSJ GROUP, que ofreció el 81,9 % del presupuesto, da
+  al ganador real. La tabla de ponderables no sale en el texto, así que que CSJ quedara fuera es una inferencia sin
+  confirmar.
+
+**Cuando el documento no dice el método.**
+- **Se deduce de los puntajes:**
+  - Astrea: menor valor, 4 de 5 exactos; el quinto difiere en un dígito del OCR.
+  - Fusagasugá: aritmética baja, 2 de 2.
+  - En los dos el motor pone primero al ganador real.
+- **Neiva y Escuela Naval:** los que no ganaron casan con la media geométrica. Al ganador la entidad le dio el
+  puntaje máximo, aunque la fórmula le da un poco menos. No cambia quién gana.
+- **Registraduría:** usa un pliego propio con 79,5 puntos de precio.
+  - En Buenaventura la fórmula es media aritmética con castigo doble por encima de la media. Se reproduce exacta y
+    no es ninguno de los 4 métodos.
+  - En Chocó ninguna fórmula probada casa.
+
+**La TRM que nombra la entidad.** En 2 casos (Hospital Militar y Floridablanca LP), «la TRM del día X» es el
+certificado expedido ese día, que rige el día siguiente.
+- En Floridablanca eso cambió el método: la TRM vigente el 20 de febrero (3.695,72) daba aritmética baja, y la que
+  usó (3.691,34) dio geométrica.
+- El motor debe tomar la TRM que nombra el documento, no recalcularla por fecha.
+
+**Qué cambia en este diseño.**
+- **§ 6.1:** si el motor no reproduce al ganador, no siempre es que la lectura esté mal. En 2 de 9 lo decidieron
+  los puntos distintos del precio.
+- **§ 3:** la captura tiene que guardar, por oferta, también el puntaje total y sus componentes, no solo si quedó
+  hábil.
+- **§ 5:** para dar «de cada 100 veces, gana tantas», el simulador necesita además la frecuencia con que los rivales
+  pierden puntos fuera del precio.
+- Son 9 procesos: es evidencia, no una estadística.
+
+**Lo que decide el dueño, además de lo de la § 8.**
+1. **Cómo leer los documentos en imagen,** que son una tercera parte. Hay dos caminos:
+   - Convertirlos con Drive: crea copias en su Drive, así que escribe fuera de la sesión y pide su visto bueno.
+   - Un servicio de OCR en producción: la cuota de OCR.space no está verificada (§ 7).
+2. **Si la captura incluye los puntos distintos del precio.** Es lo que falta para que la probabilidad sea creíble
+   donde esos puntos no los saca todo el mundo.
+
+| # | Entidad | Hábiles | Puntaje del precio | Método o TRM | Motor |
+|---|---|---|---|---|---|
+| 1 | Chaparral | Deducido: 1, el ganador | Solo el ganador | Geométrica · 3.670,47 | Un solo hábil |
+| 2 | Mocoa | Sin dato (113 páginas en imagen) | — | — | — |
+| 3 | Villa de Leyva | Deducidos: 38 con puntaje | Los 38 | Mediana · 3.126,08 | Acierta; 38 de 38 puntajes exactos |
+| 4 | Aguas de Manizales | Sin dato (acta de apertura) | — | — | — |
+| 5 | San Martín (Meta) | 1 de 3 | Sí | Geométrica · 3.099,48 | Un solo hábil |
+| 6 | INVIAS 038 | Deducidos: 9 con puntaje | Solo el total | Mediana · centavos 09 | Acierta (valores de wi7w) |
+| 7 | Corponor | Parcial: antes del precio | — | — | Sin ganador |
+| 8 | Neiva | 4 de 8 | Sí | Geométrica · 3.109,30 | Acierta; 3 de 4 exactos |
+| 9 | Gobernación del Cesar | Deducidos: 4 de 13 | Parcial (OCR) | Geométrica · 3.100,45 | Falla: ganó la 4.ª en precio, por otros puntos |
+| 10 | Yondó | Sin dato (formulario sin nombres) | — | — | — |
+| 11 | Hospital Militar | 13 de 16 | Sí | Aritmética baja · 3.631,57 | Acierta; 13 de 13 exactos |
+| 12 | Floridablanca LP-010 | Sin dato | Solo el ganador | Geométrica · 3.691,34 | — |
+| 13 | INVIAS 049 | Deducidos: 9 con puntaje | Solo el total | Mediana · centavos 00 | Acierta (valores de wi7w) |
+| 14 | Astrea | 6 de 8 (1 con la oferta económica «no válida») | Sí (OCR) | No dice | Menor valor: 4 de 5 exactos, acierta |
+| 15 | INVIAS 041 | 12 de 21 | No | No dice | Solo la aritmética baja acierta |
+| 16 | Aerocivil Rionegro | Sin dato (tabla en imagen) | — | — | — |
+| 17 | Villagómez | Sin dato (tabla en imagen) | — | — | — |
+| 18 | INFI-Manizales | 2 de 4 | Solo el total | No dice | Los 4 métodos dan el mismo |
+| 19 | Aerocivil Plato | 42 de 49 | No (imagen) | 3.204,51 → aritmética baja | Falla con 42; acierta sin CSJ [inferencia] |
+| 20 | Cota | 1 de 3 | Sí | «Media aritmética» · 3.252,11 | Un solo hábil |
+| 21 | Aerocivil H4 | Sin dato (tablas en imagen) | — | — | — |
+| 22 | Aerocivil Tolú | 34 de 38 | No (imagen) | 3.053,48 → geométrica | Acierta (valores de wi7w) |
+| 23 | Briceño | Sin dato (solo el ganador) | Solo el ganador | No dice | — |
+| 24 | Escuela Naval | 3 de 3 | Sí | No dice | Geométrica: 2 de 3 exactos, acierta |
+| 25 | Aerocivil Cerramiento | Sin dato (tablas en imagen) | Solo el ganador | Menor valor, sin TRM | — |
+| 26 | Fusagasugá | 4 de 8 | Sí (OCR) | No dice | Aritmética baja: 2 de 2, acierta |
+| 27 | Registraduría (Chocó) | 3 de 5 | Sí | No dice | Ninguna fórmula casa |
+| 28 | Gobernación de Santander (Suratá) | 3 de 4 | Sí | Mediana · 3.678,15 | Falla: ganó la 3.ª en precio, por otros puntos |
+| 29 | Floridablanca SA-MC-007 | Deducido: 1 | No | No dice | Un solo hábil |
+| 30 | Registraduría (Buenaventura) | 4 de 5 | Sí | Fórmula propia | La fórmula propia casa exacta y acierta |

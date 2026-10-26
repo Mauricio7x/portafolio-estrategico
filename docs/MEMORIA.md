@@ -20241,7 +20241,7 @@ En una línea: con el visto bueno del dueño, `scripts/base_obra/limpieza.js` de
 
 > PENDIENTE · el dueño decide si actualiza la fila de licitación de `TEMERARIO_POR_MODALIDAD` (`lib/apu/piso_techo.js`): con las reglas corregidas, 33 de 2.190 ganadoras de 2024-2026 quedan bajo el corte del 88 % (1,5 de cada 100), frente a 17 de 1.750 en la tabla del 17-oct; el vigía dice «movido» porque el número de ganadoras sube más del 20 %. Menor cuantía (124 de 5.894) y mínima (276 de 3.958) siguen «igual». Caso dudoso: CO1.BDOS.8878617, con 58 ofertas entre el 63 y el 69 % del precio base.
 > RESUELTO el 26-oct-2026 por «Las reglas de lotes y de rango de la base nacional: un presupuesto ajustado no es lote, una oferta doble tampoco y los centavos no pasan el tope (26-oct-2026)» · medida con `tools/analisis/adjudicacion/contratistas_distintos.js` (`tools/analisis/contratistas_distintos_2026-10-26.json`): de 11.183 procesos usables con las reglas corregidas, solo 4 tienen dos contratistas distintos (1 licitación, 2 menor cuantía, 1 mínima), y los 4 son un contrato con otro oferente que no se firmó, está terminado o fue reemplazado, más el contrato del adjudicatario de p6dx (readjudicaciones [inferencia], no lotes). La guarda «dos contratistas distintos = lote» NO se pone: apartaría esos 4 por error y no mueve el techo ni la alerta (mínima 276 → 275). Texto original: 12 procesos con dos o más contratistas distintos pueden ser lotes no declarados; medir la guarda antes de ponerla.
-> PENDIENTE · las decisiones del Nivel 3 (`docs/ADJUDICACION_NIVEL3_DISENO_2026-10-26.md` § 8): dónde corre la captura y qué entidades van primero. La prueba de 30 procesos ya tiene su lista y sus pasos (§ 9, `tools/analisis/nivel3_piloto_2026-10-26.json`): espera a que el dueño baje los 30 PDF a la carpeta «Piloto Nivel 3» de su Drive, porque SECOP II respondió 200 y luego 403 («Azure WAF») desde la sesión el 26-oct-2026 y la aplicación no lee esos documentos sola (`ORDEN_MAX_PLAN = 9`).
+> RESUELTO el 26-oct-2026 por «La prueba de los 30 del Nivel 3: con los hábiles reales el motor acierta en 6 de 9, y lo que falla son los puntos distintos del precio (26-oct-2026)» · el dueño subió los 30 PDF y se midieron; las decisiones que siguen abiertas pasan al PENDIENTE de esa sección. Texto original: las decisiones del Nivel 3 (`docs/ADJUDICACION_NIVEL3_DISENO_2026-10-26.md` § 8): dónde corre la captura y qué entidades van primero. La prueba de 30 procesos ya tiene su lista y sus pasos (§ 9, `tools/analisis/nivel3_piloto_2026-10-26.json`): espera a que el dueño baje los 30 PDF a la carpeta «Piloto Nivel 3» de su Drive, porque SECOP II respondió 200 y luego 403 («Azure WAF») desde la sesión el 26-oct-2026 y la aplicación no lee esos documentos sola (`ORDEN_MAX_PLAN = 9`).
 
 - **Por qué no hay que volver a «dos precios = lote».** De 947 portafolios con dos precios, solo 8 los tienen en la misma fase. Los lotes reales REPITEN el precio: CO1.REQ.10672613 trae 11.362.204.912 en sus cuatro filas, y los aparta `numero_de_lotes` en fila.js. De 692 procesos que libera la regla nueva, 688 tienen un solo contrato y ninguno contratistas distintos (revisión adversaria, en vivo).
 - **Por qué no hay que agregar «dos adjudicaciones distintas = lote».** Se probó en esta misma sesión: marcaba 768 portafolios y apartaba 162 que antes servían, 146 con un solo contrato. Las causas eran filas cruzadas de p6dx (CO1.BDOS.6180429 trae 7 nombres por 7 valores y un contrato), valores a menos del 1 % y «No Definido» como segundo nombre (CO1.BDOS.10199457).
@@ -20258,3 +20258,30 @@ En una línea: con el visto bueno del dueño, `scripts/base_obra/limpieza.js` de
   - Las pruebas del bloque «unidad base de obra» fallan contra el árbol anterior (revisión adversaria).
   - La suite: en el mensaje del commit.
 - **Sin verificar.** Si el caso CO1.BDOS.8878617 es un precio base equivocado; si los 12 procesos con contratistas distintos son lotes.
+
+### La prueba de los 30 del Nivel 3: con los hábiles reales el motor acierta en 6 de 9, y lo que falla son los puntos distintos del precio (26-oct-2026)
+
+En una línea: el dueño subió a Drive los 30 documentos del piloto y se leyeron con cita; 20 dicen quién quedó hábil, y con esos hábiles y el método real el motor de precio (`metodos.js`) pone primero al ganador en 6 de 9, pero en 2 de los 3 que fallan el precio sale exacto y al ganador lo decidieron los puntos distintos del precio: la captura del Nivel 3 tiene que guardar el puntaje total de cada oferta, no solo si quedó hábil.
+
+> PENDIENTE · el dueño decide, para el Nivel 3 (`docs/ADJUDICACION_NIVEL3_DISENO_2026-10-26.md` § 8 y § 10): dónde corre la captura (un `op` del router `pliego` o una tanda fuera), qué entidades van primero, cómo se leen los documentos en imagen (convertirlos con Drive escribe copias en su Drive; OCR.space tiene la cuota sin verificar) y si la captura incluye los puntos distintos del precio.
+
+- **Lo que no hay que re-aprender.**
+  - **«Si el motor no reproduce, la lectura está mal» es falso.** En Cesar y en Suratá el motor reproduce los puntajes del precio publicados. Aun así, el ganador fue el cuarto de 4 y el tercero de 3 en precio. En Suratá los otros perdieron 20 puntos en los Formatos 14A y 14B, y la ganadora perdió 20 en servicios nacionales. Es el mismo hecho de Pasto en las fichas A-E.
+  - **La TRM es la que nombra la entidad.** «La TRM del día X» puede ser el certificado expedido ese día, que rige el siguiente (Hospital Militar y Floridablanca LP). En Floridablanca eso cambió el método: la vigente el 20 de febrero, 3.695,72, daba aritmética baja; la que usó, 3.691,34, dio geométrica. No se recalcula por fecha.
+  - **No todas las entidades usan los 4 métodos de los documentos tipo.**
+    - La Registraduría tiene pliego propio con 79,5 puntos de precio. En Buenaventura usa media aritmética con castigo doble por encima, que se reproduce exacta.
+    - Cota usa «media aritmética» con centavos 11.
+    - Neiva y Escuela Naval dan el puntaje máximo a la oferta más cercana a la media geométrica, aunque la fórmula le da un poco menos.
+    - Esas fórmulas NO se copiaron al motor. La de Buenaventura vive solo en `prueba_captura.js`, para comprobar la lectura.
+  - **Un tercio pide OCR.** En 9 de 30 al menos una tabla no sale en el texto, probablemente por ser imagen: las cinco resoluciones de Aerocivil y las 113 páginas de Mocoa, entre otros. En menor cuantía, 9 de 14 resoluciones sí traen quién quedó hábil.
+- **Cómo se leyó, para repetirlo.**
+  - Tres lectores de 10 archivos cada uno, con `read_file_content` de Drive. No se les dio el ganador esperado, para que no lo confirmaran.
+  - Sus salidas se extrajeron con código a `tools/analisis/nivel3_piloto_lectura_2026-10-26.json`.
+  - La sesión releyó 5 contra el texto (filas 6, 19, 22, 28 y 30), buscó cada TRM en `32sa-8pi3` y comparó los valores con `wi7w-2nvm`: 80 de 82 al peso.
+  - Las filas 3 y 11 se comprueban solas: el motor reproduce sus 38 y 13 puntajes publicados al séptimo decimal.
+  - Las cifras salen de `node tools/analisis/adjudicacion/prueba_captura.js tools/analisis/nivel3_piloto_lectura_2026-10-26.json`.
+- **Sin verificar.**
+  - Que CSJ GROUP quedara fuera en Plato. Sin esa oferta el motor acierta, pero la tabla de ponderables no sale en el texto.
+  - Si «el máximo al más cercano» es regla del pliego o un error de la entidad.
+  - Lo que hay en las tablas en imagen.
+  - Son 9 procesos: es evidencia, no una estadística.
