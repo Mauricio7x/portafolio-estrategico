@@ -20193,3 +20193,41 @@ En una línea: el dueño pidió «implementar ese repositorio» (github.com/nate
 **Verificado.** `tests/e2e.js`, bloque «unidad consejo de asesores»: los siete asientos y ninguno más, cada uno con `Read, Grep, Glob` y su cerebro de ocho archivos con las ocho reglas; las referencias que la habilidad cita existen y la sala web no vuelve (ni `app/`, ni `sessions/`, ni `package.json`); el límite colombiano y el «no se guarda en el repositorio» están dichos; los textos no tutean ni llevan emojis (la misma función de la cerca de lenguaje); y el verificador de citas se EJECUTA con Python: acepta una cita de un cerebro y rechaza una inventada con código 1. 18 mutaciones (un asesor con `Bash` o `Write`, un cerebro sin un archivo, la sala web de vuelta, el límite colombiano borrado, las rondas guardadas en el repositorio, un verificador que siempre acepta o que no mira las rondas, sin licencia, un tuteo, un emoji, un asesor sin las reglas del proyecto, `app/` en el repositorio, un asesor o una referencia que falta, una banda con otro nombre y la sección de memoria sin su título); las 18 mueren. Dos sobrevivieron al principio por la propia prueba: la del tuteo solo usaba una de las dos cercas del proyecto (ahora usa también la de pronombres), y la de las bandas del veredicto buscaba la palabra en cualquier parte del archivo (ahora busca las cuatro filas con sus cortes).
 
 **Sin verificar.** Que el consejo dé decisiones útiles para el negocio del dueño (no se corrió ninguna: gasta tokens y el dueño no la ha pedido); cuántos tokens gasta; que las citas de los cerebros reproduzcan sus fuentes.
+
+### Probabilidad de adjudicación, Fase 0: las ofertas abiertas sí existen desde 2020, quién quedó hábil no, y la regla del precio solo se sabe donde hubo documento tipo (25-oct-2026)
+
+En una línea: el encargo «probabilidad de adjudicación, fases 0 y 1» suponía que no había ofertas de 2024 a 2026 y que habría que construir todo desde cero. Era falso: `wi7w-2nvm` (desde 2024) y `b28v-edj8` (hasta 2023) traen cada oferta, y `scripts/base_obra/` ya hacía la Fase 0 y el motor. Por eso se re-midió desde 2020 LLAMANDO esas reglas (`tools/analisis/adjudicacion/`), con un verificador independiente en Python. La Fase 1 espera el C1 del dueño.
+
+> PENDIENTE · el dueño responde el C1 de `docs/ADJUDICACION_FASE0_2026-10-25.md` § 9 (nivel de afirmación y umbrales). Con su «sí», la Fase 1 reconstruye al ganador con la versión de cada proceso; sin él, no se avanza.
+> PENDIENTE · volver a contar `jbjy-vk9h` (el 25-oct-2026 respondía `count(*) = 1000`) y, si se recuperó, correr otra vez `scripts/base_obra/base.js` sobre la misma carpeta: el rescate bajo el 50 % y el lugar de ejecución dependen de él.
+> PENDIENTE · decidir si «U.T. X» y «UT X» en un mismo proceso son el mismo oferente (`limpieza.nombreComparable` hoy los separa): CO1.BDOS.2165775 y CO1.BDOS.2008550; mirarlo en SECOP II antes de tocar la regla, que es compartida con el corte de la alerta de precio bajo.
+> PENDIENTE · el dueño decide si se corrigen en `scripts/base_obra/limpieza.js` y `fila.js` las tres reglas que el auditor del 25-oct-2026 mostró que apartan procesos buenos (precio base ajustado entre fases tomado por lotes, oferta registrada dos veces tomada por lote, «sobre el precio base» sin tolerancia de centavos): mueven la población de la Fase 1 y, en la próxima corrida mensual, la tabla `TEMERARIO_POR_MODALIDAD` que el vigía compara.
+
+- **Por qué no se reescribió en Python, aunque el encargo lo permitía.** La regla dura «no reescribir una regla: llamarla». `fase0.js` llama a `limpieza`, `fila`, `cifras.sinPrecio`, `obraDeclarada` (lib/filtros) y `segmentoDe` (lib/indice_baja). El Python existe solo como verificador (`tools/analisis/verificador/`): una segunda implementación a propósito, escrita por un subagente que no vio el código.
+- **Lo que no hay que re-aprender, medido el 25-oct-2026:**
+  - Las vistas «SECOP II - Ofertas - 2020…2023» (`atkq-fc9r`, `pp6p-gvye`, `yk6j-79e6`, `vz4x-85r3`) son filtros de `wi7w-2nvm` (`modifyingViewUid`). Por eso tienen 0, 0, 0 y 4 filas. Lo anterior a 2024 está en `b28v-edj8`.
+  - Ninguna columna de las dos bases de ofertas dice habilitada, rechazada o ganadora.
+  - Las llaves: ofertas y contratos casan con `id_del_portafolio`; `hgi6-6wh3` (`id_procedimiento`) casa con `id_del_proceso`.
+  - Desde 2023, la fila «Presentación de oferta» de menor cuantía trae «UNSPECIFIED» como código UNSPSC. El segmento se toma de otra fase del mismo portafolio (9.440 procesos).
+  - Hay un hueco de ofertas entre sep-2022 y feb-2023: unos 850 adjudicados con 0 ofertas en las dos bases y 0 respuestas en p6dx. Comprobado en vivo con CO1.BDOS.3121807. Es un hueco de la fuente, no de la descarga.
+  - Los procesos que inventario.js no consulta (sin precio base o lote en p6dx) NO son «sin ofertas»: van en `no_consultado`.
+  - `jbjy-vk9h` respondió `count(*) = 1000` ese día (recarga a medias [inferencia]): el rescate bajo el 50 % quedó en 0. Antes de usar contratos, volver a contar.
+- **El error que cazó el verificador.** La columna (a) contaba «sin inconsistencia», y `inconsistencia` también marca lo adjudicado a más del 1 % de la oferta del ganador. Eso es otra cosa, y bajaba (a) entre 2 y 17 puntos. Ahora (a) es `pct_adjudicado != null`.
+  - Tras la corrección quedan 6 procesos distintos, con causa conocida.
+  - Uno de ellos es real y abierto: `nombreComparable` cambia el punto por un espacio, y «U.T. X» y «UT X» son dos oferentes. Si fueran el mismo, el proceso sería un lote.
+- **La regla del precio depende del documento tipo vigente en la fecha del AVISO** (`tools/analisis/normas_metodos.json`, 22 versiones con fuente oficial).
+  - Menor cuantía de transporte V1 (17-feb a 31-dic-2020) tenía DOS métodos: «0.00 a 0.50 media aritmética baja, 0.51 a 0.99 menor valor». Comprobado en la descarga 29962 de Colombia Compra Eficiente.
+  - Licitación de transporte V1 (hasta el 9-mar-2020) tenía cinco.
+  - Fuera de los documentos tipo no hay método fijado. En menor cuantía, solo transporte lo tuvo hasta el 16-feb-2026.
+  - `metodos.js` sirve tal cual desde 2021. Para 2020 haría falta la regla de su versión, y va en `metodos.js` (una sola casa), no en otro archivo.
+
+- **Lo que cazó el auditor adversarial y NO se corrigió, porque es decisión del dueño** (las reglas son de `scripts/base_obra/limpieza.js` y `fila.js`, de donde sale el corte de la alerta de precio bajo). Reproducidos también por la sesión principal (1 y 2):
+  1. `lotePorPrecioBase` toma por lotes un precio base AJUSTADO entre fases. CO1.BDOS.4866609: 1.488.813.904 en observaciones y 1.491.889.110 en ofertas, 0 lotes, un adjudicatario. Pasa en 390 de 508 licitaciones.
+  2. `lote_sospechoso` toma por lote una oferta registrada dos veces. CONSORCIO MTR, CO1.BDOS.7853548: CO1.RPL.4782370 y CO1.RPL.4792463, el mismo día. Aparta justo los procesos de más competencia.
+  3. «sobre el precio base» no tiene tolerancia, y p6dx trunca los centavos del precio base: 1.620 ofertas lo pasan por menos de 1 peso.
+  - Con los tres corregidos, los usables de licitación subirían de 2.629 a unos 3.230 [inferencia: los arreglos se solapan].
+  - Para el 2 hace falta el `identificador_de_la_oferta` en la consulta agrupada: hoy no lo trae.
+
+**Verificado.** Suite: el resultado del cierre está en el mensaje del commit. Verificador independiente: 139 de 144 celdas iguales, y las 5 restantes explicadas proceso por proceso (`tools/analisis/verificador/ESPECIFICACION.md`). Auditor adversarial: 12 hallazgos en `docs/ADJUDICACION_FASE0_2026-10-25.md` § 8, con sus veredictos.
+
+**Sin verificar.** Cuál lectura de «U.T.» es la cierta; los nombres de las familias UNSPSC; que la familia 7214 sea la de vías; cuántas entidades sin documento tipo copian sus fórmulas.

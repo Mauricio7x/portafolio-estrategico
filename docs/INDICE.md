@@ -20,6 +20,7 @@ con `node tests/estado.js`, y las coordenadas las da `node tests/mapa.js <térmi
 | Documento | Estado | Sustituido por | Citado desde | Título |
 |---|---|---|---|---|
 | `docs/archivo/ANALISIS_ESTRATEGICO.md` | archivado | docs/CONSULTORIA_2026-09-04_RESUMEN.md | — | Análisis estratégico de Detekta · agosto 2026 |
+| `docs/ADJUDICACION_FASE0_2026-10-25.md` | informe fechado | — | — | Probabilidad de adjudicación · Fase 0: qué datos abiertos hay para saber quién gana una… |
 | `docs/CONSULTORIA_2026-09-04_RESUMEN.md` | informe fechado | — | `tests` | Consultoría integral sobre Detekta · resumen para el dueño (antes → mejora) |
 | `docs/ESTRUCTURA_ORGANIZACIONAL.md` | informe fechado | docs/ORGANIZACION_AGENTES.md | — | Detekta como empresa: la estructura que su funcionamiento exige |
 | `docs/INFRAESTRUCTURA_2026-09-27.md` | informe fechado | — | `lib` | Infraestructura de Detekta · lo que hay, lo que se propone y cuánto tarda llegar (27-se… |

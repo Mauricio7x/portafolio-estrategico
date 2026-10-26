@@ -2,7 +2,7 @@
      Es una FOTO para leer en GitHub; la fuente de verdad es ejecutar la herramienta. -->
 
 ```
-== MAPA DE DETEKTA · generado del árbol el 2026-10-25 ==
+== MAPA DE DETEKTA · generado del árbol el 2026-10-26 ==
 (no editar a mano: sale de `node tests/mapa.js --escribir`. Para ir a un sitio concreto,
  `node tests/mapa.js <término>` da la ruta, la línea y el sed exacto — más barato que leer esto)
 
@@ -219,8 +219,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 386 secciones (29 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 19957  Volver a buscar los documentos ya se puede pedir desde el expediente, y la aplicación no te…
+· MEMORIA · docs/MEMORIA.md — 387 secciones (29 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 19976  La causa real de un fallo de lectura se registra, se sanea y se dice, y una herramienta mid…
   L 20004  El Excel de la oferta económica se reconoce por más nombres y solo se publica lo que pasa l…
   L 20028  Un escaneo leído a medias se guardaba como «Leído»: el OCR de los documentos ignoraba las p…
@@ -230,9 +229,11 @@
   L 20130  La auditoría con su primer proceso real: lo casi vacío se marca, un presupuesto no se juzga…
   L 20161  Cada subida cuesta un despliegue: una entrega, un envío (21-oct-2026)
   L 20170  El consejo de siete asesores entra al proyecto: sin la sala web, sin guardar nada en el rep…
+  L 20197  Probabilidad de adjudicación, Fase 0: las ofertas abiertas sí existen desde 2020, quién que…
 
-· DOCUMENTOS docs/ — 74 (y 3 en docs/archivo/, superados: `--archivo` los lista):
+· DOCUMENTOS docs/ — 75 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)
+  ADJUDICACION_FASE0_2026-10-25.md        Probabilidad de adjudicación · Fase 0: qué datos abiertos hay para saber quién gana 
   APU_DIAGNOSTICO.md                      Diagnóstico del módulo APU frente a la especificación «APU profesional»
   APU_FUENTES.md                          Fuentes de precio del APU · qué se intentó, qué respondió y qué falta
   APU_INFORME_COMPLETO.md                 APU automatizado y rentabilidad real de contratos de obra pública en Colombia

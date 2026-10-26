@@ -1,0 +1,3052 @@
+{
+ "generado": "2026-10-26T00:09:42.848Z",
+ "para": "Fase 0 del estudio de probabilidad de adjudicación (docs/ADJUDICACION_FASE0_2026-10-25.md). Los datos NO van al repositorio: se reproducen con los comandos y se comprueban con el SHA-256.",
+ "comandos": [
+  "node scripts/base_obra/inventario.js <carpeta> 2020-01-01",
+  "node scripts/base_obra/base.js <carpeta>",
+  "node tools/analisis/adjudicacion/diccionario.js <carpeta>/diccionario.json",
+  "node tools/analisis/adjudicacion/fase0.js <carpeta> tools/analisis/fase0_ficha_datos.json <carpeta>/diccionario.json"
+ ],
+ "descarga": {
+  "desde": "2020-01-01",
+  "inicio": "2026-10-25T20:45:21.700Z",
+  "fin": "2026-10-25T20:55:24.886Z",
+  "fuentes": {
+   "procesos": {
+    "dataset": "p6dx-8zbt",
+    "filas": 81643,
+    "corte": "2026-10-25T20:46:08.173Z"
+   },
+   "ofertas": {
+    "dataset": "wi7w-2nvm",
+    "filas_cruzadas": 601149,
+    "corte": "2026-10-25T20:49:05.816Z"
+   },
+   "ofertas_hist": {
+    "dataset": "b28v-edj8",
+    "filas_cruzadas": 438509,
+    "corte": "2026-10-25T20:50:52.066Z"
+   }
+  },
+  "fallos_ofertas": 0
+ },
+ "archivos": [
+  {
+   "archivo": "p6dx_obra.json",
+   "bytes": 206383808,
+   "sha256": "dbd5e304464779e84d51303fd8a65ee91b3c92e0210dba19d607f2c4934c4330"
+  },
+  {
+   "archivo": "ofertas_cruzadas.json",
+   "bytes": 255272066,
+   "sha256": "1c29c4ce6b8b3c15ea5287a2174a410e7bef2d3257b5664c91c4688cd95ad09a"
+  },
+  {
+   "archivo": "resumen.json",
+   "bytes": 11570,
+   "sha256": "bee40bfb1d396d2cd9e32480e66a06ecd9108beab97e7765b33b3448ada5f403"
+  },
+  {
+   "archivo": "base.jsonl.gz",
+   "bytes": 11231691,
+   "sha256": "013d166f6db70764f60df214d8a82278341a52f5ae695f6e3e94d5f676c9399f"
+  },
+  {
+   "archivo": "resumen_base.json",
+   "bytes": 6541,
+   "sha256": "4b90dc2753ee023ec7bb875cf987edbe65f721c088adc90a2fe07c73412b154c"
+  },
+  {
+   "archivo": "fase0_tablas.json",
+   "bytes": 47971,
+   "sha256": "814372b0db923e22fd5b1d97560408469307c2891ce0be333cd6b1d0a76704df"
+  },
+  {
+   "archivo": "diccionario.json",
+   "bytes": 66009,
+   "sha256": "77c011dd25330ccadbe371f0172f8ca7527f8f5f16fa1c812a23c75c5908e622"
+  }
+ ],
+ "definiciones": {
+  "universo": "Procesos (id_del_portafolio de p6dx-8zbt, una fila elegida con limpieza.elegirFila) con tipo_de_contrato «Obra» (obraDeclarada) y modalidad licitación pública o selección abreviada de menor cuantía (limpieza.clasificarModalidad); mínima cuantía se cuenta aparte; concurso de méritos, contratación directa y régimen especial quedan fuera. La descarga toma las filas publicadas desde el 2020-01-01: un proceso cuya única fila es anterior queda fuera (borde de 2020).",
+  "ano_publicacion": "Año de la fecha_de_publicacion_del más antigua entre las filas del portafolio.",
+  "ano_adjudicacion": "Año de fecha_adjudicacion de la fila elegida. 2026 llega hasta el corte de la descarga.",
+  "a_valor_y_presupuesto": "Adjudicado con valor_total_adjudicacion > 0 y precio_base > 0.",
+  "a_consistente": "(a) y además valor adjudicado ≤ precio base (por encima es inconsistencia: dos casos medidos eran ×1000).",
+  "b_3_con_precio_bruto": "3 o más oferentes distintos (identidad unida de limpieza.proveedoresUnidos) con valor_de_la_oferta > 0, antes de cualquier rango.",
+  "b_3_validas": "3 o más ofertas VÁLIDAS (limpieza.limpiarOfertas: > 0, no «Confidencial», con oferente, sin duplicar, ≤ precio base y ≥ 50 % salvo el rescate) y el proceso no excluido (lotes, sin precio base…).",
+  "c_ganador_identificado": "Adjudicado con NIT válido o nombre del adjudicatario en p6dx.",
+  "c_ganador_emparejado": "Proceso no excluido (sin lotes, con precio base y ofertas) y la oferta del adjudicatario está entre las válidas, exactamente una (identidad unida NIT/nombre).",
+  "d_todas_con_nit": "Dentro de (b_3_validas): todas las ofertas válidas tienen un NIT válido en su identidad (clave «n:»).",
+  "d_alguna_solo_nombre": "Dentro de (b_3_validas): al menos una oferta válida se identifica solo por nombre o código de SECOP.",
+  "usable_motor": "(b_3_validas) y (c_ganador_emparejado), sin inconsistencia y con competencia de precio (no todas las válidas al mismo valor). Es la población de la Fase 1.",
+  "ofertas": "Una oferta es una combinación (proceso, oferente, valor) de wi7w-2nvm o b28v-edj8 pedida AGRUPADA en el servidor; las filas repetidas no son ofertas nuevas."
+ },
+ "control": {
+  "filas_p6dx": 81643,
+  "filas_que_no_son_obra": 0,
+  "portafolios": 34496,
+  "filas_base": 34496
+ },
+ "diccionario": {
+  "inicio": "2026-10-25T23:40:46.842Z",
+  "raiz": "https://www.datos.gov.co",
+  "datasets": {
+   "p6dx-8zbt": {
+    "url_datos": "https://www.datos.gov.co/resource/p6dx-8zbt.json",
+    "url_metadatos": "https://www.datos.gov.co/api/views/p6dx-8zbt.json",
+    "papel": "procesos (una fila por fase)",
+    "columna_fecha": "fecha_de_publicacion_del",
+    "metadatos": {
+     "ok": true,
+     "valor": {
+      "nombre": "SECOP II - Procesos de Contratación",
+      "descripcion": "Registro de los procesos de compra, sean o no adjudicados, hechos en la plataforma SECOP II desde su lanzamiento",
+      "vista_madre": null,
+      "filas_actualizadas_el": "2026-10-24T19:49:04.000Z",
+      "creado_el": "2019-10-01T04:42:01.000Z",
+      "columnas": [
+       {
+        "campo": "entidad",
+        "tipo": "text",
+        "nombre": "Entidad"
+       },
+       {
+        "campo": "nit_entidad",
+        "tipo": "text",
+        "nombre": "Nit Entidad"
+       },
+       {
+        "campo": "departamento_entidad",
+        "tipo": "text",
+        "nombre": "Departamento Entidad"
+       },
+       {
+        "campo": "ciudad_entidad",
+        "tipo": "text",
+        "nombre": "Ciudad Entidad"
+       },
+       {
+        "campo": "ordenentidad",
+        "tipo": "text",
+        "nombre": "OrdenEntidad"
+       },
+       {
+        "campo": "codigo_pci",
+        "tipo": "text",
+        "nombre": "Entidad Centralizada"
+       },
+       {
+        "campo": "id_del_proceso",
+        "tipo": "text",
+        "nombre": "ID del Proceso"
+       },
+       {
+        "campo": "referencia_del_proceso",
+        "tipo": "text",
+        "nombre": "Referencia del Proceso"
+       },
+       {
+        "campo": "ppi",
+        "tipo": "text",
+        "nombre": "PCI"
+       },
+       {
+        "campo": "id_del_portafolio",
+        "tipo": "text",
+        "nombre": "ID del Portafolio"
+       },
+       {
+        "campo": "nombre_del_procedimiento",
+        "tipo": "text",
+        "nombre": "Nombre del Procedimiento"
+       },
+       {
+        "campo": "descripci_n_del_procedimiento",
+        "tipo": "text",
+        "nombre": "Descripción del Procedimiento"
+       },
+       {
+        "campo": "fase",
+        "tipo": "text",
+        "nombre": "Fase"
+       },
+       {
+        "campo": "fecha_de_publicacion_del",
+        "tipo": "calendar_date",
+        "nombre": "Fecha de Publicacion del Proceso"
+       },
+       {
+        "campo": "fecha_de_ultima_publicaci",
+        "tipo": "calendar_date",
+        "nombre": "Fecha de Ultima Publicación"
+       },
+       {
+        "campo": "fecha_de_publicacion_fase",
+        "tipo": "calendar_date",
+        "nombre": "Fecha de Publicacion (Fase Planeacion Precalificacion)"
+       },
+       {
+        "campo": "fecha_de_publicacion_fase_1",
+        "tipo": "calendar_date",
+        "nombre": "Fecha de Publicacion (Fase Seleccion Precalificacion)"
+       },
+       {
+        "campo": "fecha_de_publicacion",
+        "tipo": "calendar_date",
+        "nombre": "Fecha de Publicacion (Manifestacion de Interes)"
+       },
+       {
+        "campo": "fecha_de_publicacion_fase_2",
+        "tipo": "calendar_date",
+        "nombre": "Fecha de Publicacion (Fase Borrador)"
+       },
+       {
+        "campo": "fecha_de_publicacion_fase_3",
+        "tipo": "calendar_date",
+        "nombre": "Fecha de Publicacion (Fase Seleccion)"
+       },
+       {
+        "campo": "precio_base",
+        "tipo": "number",
+        "nombre": "Precio Base"
+       },
+       {
+        "campo": "modalidad_de_contratacion",
+        "tipo": "text",
+        "nombre": "Modalidad de Contratacion"
+       },
+       {
+        "campo": "justificaci_n_modalidad_de",
+        "tipo": "text",
+        "nombre": "Justificación Modalidad de Contratación"
+       },
+       {
+        "campo": "duracion",
+        "tipo": "number",
+        "nombre": "Duracion"
+       },
+       {
+        "campo": "unidad_de_duracion",
+        "tipo": "text",
+        "nombre": "Unidad de Duracion"
+       },
+       {
+        "campo": "fecha_de_recepcion_de",
+        "tipo": "calendar_date",
+        "nombre": "Fecha de Recepcion de Respuestas"
+       },
+       {
+        "campo": "fecha_de_apertura_de_respuesta",
+        "tipo": "calendar_date",
+        "nombre": "Fecha de Apertura de Respuesta"
+       },
+       {
+        "campo": "fecha_de_apertura_efectiva",
+        "tipo": "calendar_date",
+        "nombre": "Fecha de Apertura Efectiva"
+       },
+       {
+        "campo": "ciudad_de_la_unidad_de",
+        "tipo": "text",
+        "nombre": "Ciudad de la Unidad de Contratación"
+       },
+       {
+        "campo": "nombre_de_la_unidad_de",
+        "tipo": "text",
+        "nombre": "Nombre de la Unidad de Contratación"
+       },
+       {
+        "campo": "proveedores_invitados",
+        "tipo": "number",
+        "nombre": "Proveedores Invitados"
+       },
+       {
+        "campo": "proveedores_con_invitacion",
+        "tipo": "number",
+        "nombre": "Proveedores con Invitacion Directa"
+       },
+       {
+        "campo": "visualizaciones_del",
+        "tipo": "number",
+        "nombre": "Visualizaciones del Procedimiento"
+       },
+       {
+        "campo": "proveedores_que_manifestaron",
+        "tipo": "number",
+        "nombre": "Proveedores que Manifestaron Interes"
+       },
+       {
+        "campo": "respuestas_al_procedimiento",
+        "tipo": "number",
+        "nombre": "Respuestas al Procedimiento"
+       },
+       {
+        "campo": "respuestas_externas",
+        "tipo": "number",
+        "nombre": "Respuestas Externas"
+       },
+       {
+        "campo": "conteo_de_respuestas_a_ofertas",
+        "tipo": "number",
+        "nombre": "Conteo de Respuestas a Ofertas"
+       },
+       {
+        "campo": "proveedores_unicos_con",
+        "tipo": "number",
+        "nombre": "Proveedores Unicos con Respuestas"
+       },
+       {
+        "campo": "numero_de_lotes",
+        "tipo": "number",
+        "nombre": "Numero de Lotes"
+       },
+       {
+        "campo": "estado_del_procedimiento",
+        "tipo": "text",
+        "nombre": "Estado del Procedimiento"
+       },
+       {
+        "campo": "id_estado_del_procedimiento",
+        "tipo": "number",
+        "nombre": "ID Estado del Procedimiento"
+       },
+       {
+        "campo": "adjudicado",
+        "tipo": "text",
+        "nombre": "Adjudicado"
+       },
+       {
+        "campo": "id_adjudicacion",
+        "tipo": "text",
+        "nombre": "ID Adjudicacion"
+       },
+       {
+        "campo": "codigoproveedor",
+        "tipo": "text",
+        "nombre": "CodigoProveedor"
+       },
+       {
+        "campo": "departamento_proveedor",
+        "tipo": "text",
+        "nombre": "Departamento Proveedor"
+       },
+       {
+        "campo": "ciudad_proveedor",
+        "tipo": "text",
+        "nombre": "Ciudad Proveedor"
+       },
+       {
+        "campo": "fecha_adjudicacion",
+        "tipo": "calendar_date",
+        "nombre": "Fecha Adjudicacion"
+       },
+       {
+        "campo": "valor_total_adjudicacion",
+        "tipo": "number",
+        "nombre": "Valor Total Adjudicacion"
+       },
+       {
+        "campo": "nombre_del_adjudicador",
+        "tipo": "text",
+        "nombre": "Nombre del Adjudicador"
+       },
+       {
+        "campo": "nombre_del_proveedor",
+        "tipo": "text",
+        "nombre": "Nombre del Proveedor Adjudicado"
+       },
+       {
+        "campo": "nit_del_proveedor_adjudicado",
+        "tipo": "text",
+        "nombre": "NIT del Proveedor Adjudicado"
+       },
+       {
+        "campo": "codigo_principal_de_categoria",
+        "tipo": "text",
+        "nombre": "Codigo Principal de Categoria"
+       },
+       {
+        "campo": "estado_de_apertura_del_proceso",
+        "tipo": "text",
+        "nombre": "Estado de Apertura del Proceso"
+       },
+       {
+        "campo": "tipo_de_contrato",
+        "tipo": "text",
+        "nombre": "Tipo de Contrato"
+       },
+       {
+        "campo": "subtipo_de_contrato",
+        "tipo": "text",
+        "nombre": "Subtipo de Contrato"
+       },
+       {
+        "campo": "categorias_adicionales",
+        "tipo": "text",
+        "nombre": "Categorias Adicionales"
+       },
+       {
+        "campo": "urlproceso",
+        "tipo": "url",
+        "nombre": "URLProceso"
+       },
+       {
+        "campo": "codigo_entidad",
+        "tipo": "number",
+        "nombre": "Codigo Entidad"
+       },
+       {
+        "campo": "estado_resumen",
+        "tipo": "text",
+        "nombre": "Estado Resumen"
+       }
+      ]
+     },
+     "ms": 428,
+     "consultado_el": "2026-10-25T23:40:47.275Z"
+    },
+    "filas": {
+     "ok": true,
+     "valor": 9377332,
+     "ms": 6306,
+     "consultado_el": "2026-10-25T23:40:53.581Z"
+    },
+    "filas_por_ano": {
+     "ok": true,
+     "valor": {
+      "2015": 5528,
+      "2016": 9904,
+      "2017": 43728,
+      "2018": 194742,
+      "2019": 186082,
+      "2020": 419702,
+      "2021": 652936,
+      "2022": 1038590,
+      "2023": 1531551,
+      "2024": 1670371,
+      "2025": 1934951,
+      "2026": 1561521,
+      "sin_fecha": 127726
+     },
+     "ms": 13098,
+     "consultado_el": "2026-10-25T23:41:06.679Z"
+    },
+    "filas_sin_fecha": {
+     "ok": true,
+     "valor": 127726,
+     "ms": 263,
+     "consultado_el": "2026-10-25T23:41:06.942Z"
+    },
+    "obra_por_ano": {
+     "ok": true,
+     "valor": {
+      "2015": 49,
+      "2016": 200,
+      "2017": 1051,
+      "2018": 4266,
+      "2019": 12276,
+      "2020": 6057,
+      "2021": 11914,
+      "2022": 16469,
+      "2023": 23240,
+      "2024": 19611,
+      "2025": 30689,
+      "2026": 21069,
+      "sin_fecha": 2440
+     },
+     "ms": 548,
+     "consultado_el": "2026-10-25T23:41:07.490Z"
+    },
+    "obra_por_ano_y_modalidad": {
+     "ok": true,
+     "valor": [
+      {
+       "ano": "2015",
+       "modalidad": "Contratación régimen especial",
+       "filas": 47
+      },
+      {
+       "ano": "2015",
+       "modalidad": "Mínima cuantía",
+       "filas": 2
+      },
+      {
+       "ano": "2016",
+       "modalidad": "Licitación pública",
+       "filas": 68
+      },
+      {
+       "ano": "2016",
+       "modalidad": "Selección Abreviada de Menor Cuantía",
+       "filas": 62
+      },
+      {
+       "ano": "2016",
+       "modalidad": "Contratación régimen especial",
+       "filas": 41
+      },
+      {
+       "ano": "2016",
+       "modalidad": "Mínima cuantía",
+       "filas": 29
+      },
+      {
+       "ano": "2017",
+       "modalidad": "Selección Abreviada de Menor Cuantía",
+       "filas": 372
+      },
+      {
+       "ano": "2017",
+       "modalidad": "Licitación pública",
+       "filas": 366
+      },
+      {
+       "ano": "2017",
+       "modalidad": "Mínima cuantía",
+       "filas": 206
+      },
+      {
+       "ano": "2017",
+       "modalidad": "Contratación régimen especial",
+       "filas": 84
+      },
+      {
+       "ano": "2017",
+       "modalidad": "Contratación régimen especial (con ofertas)",
+       "filas": 16
+      },
+      {
+       "ano": "2017",
+       "modalidad": "Contratación Directa (con ofertas)",
+       "filas": 7
+      },
+      {
+       "ano": "2018",
+       "modalidad": "Selección Abreviada de Menor Cuantía",
+       "filas": 2237
+      },
+      {
+       "ano": "2018",
+       "modalidad": "Mínima cuantía",
+       "filas": 880
+      },
+      {
+       "ano": "2018",
+       "modalidad": "Licitación pública Obra Publica",
+       "filas": 545
+      },
+      {
+       "ano": "2018",
+       "modalidad": "Licitación pública",
+       "filas": 244
+      },
+      {
+       "ano": "2018",
+       "modalidad": "Contratación régimen especial",
+       "filas": 218
+      },
+      {
+       "ano": "2018",
+       "modalidad": "Contratación régimen especial (con ofertas)",
+       "filas": 69
+      },
+      {
+       "ano": "2018",
+       "modalidad": "Contratación Directa (con ofertas)",
+       "filas": 28
+      },
+      {
+       "ano": "2018",
+       "modalidad": "Seleccion Abreviada Menor Cuantia Sin Manifestacion Interes",
+       "filas": 23
+      },
+      {
+       "ano": "2018",
+       "modalidad": "Contratación directa",
+       "filas": 22
+      },
+      {
+       "ano": "2019",
+       "modalidad": "Licitación pública Obra Publica",
+       "filas": 8067
+      },
+      {
+       "ano": "2019",
+       "modalidad": "Selección Abreviada de Menor Cuantía",
+       "filas": 2845
+      },
+      {
+       "ano": "2019",
+       "modalidad": "Mínima cuantía",
+       "filas": 937
+      },
+      {
+       "ano": "2019",
+       "modalidad": "Licitación pública",
+       "filas": 294
+      },
+      {
+       "ano": "2019",
+       "modalidad": "Contratación régimen especial",
+       "filas": 82
+      },
+      {
+       "ano": "2019",
+       "modalidad": "Seleccion Abreviada Menor Cuantia Sin Manifestacion Interes",
+       "filas": 37
+      },
+      {
+       "ano": "2019",
+       "modalidad": "Contratación régimen especial (con ofertas)",
+       "filas": 10
+      },
+      {
+       "ano": "2019",
+       "modalidad": "Contratación directa",
+       "filas": 2
+      },
+      {
+       "ano": "2019",
+       "modalidad": "Contratación Directa (con ofertas)",
+       "filas": 2
+      },
+      {
+       "ano": "2020",
+       "modalidad": "Selección Abreviada de Menor Cuantía",
+       "filas": 2597
+      },
+      {
+       "ano": "2020",
+       "modalidad": "Licitación pública Obra Publica",
+       "filas": 1676
+      },
+      {
+       "ano": "2020",
+       "modalidad": "Mínima cuantía",
+       "filas": 796
+      },
+      {
+       "ano": "2020",
+       "modalidad": "Contratación directa",
+       "filas": 577
+      },
+      {
+       "ano": "2020",
+       "modalidad": "Contratación Directa (con ofertas)",
+       "filas": 159
+      },
+      {
+       "ano": "2020",
+       "modalidad": "Contratación régimen especial",
+       "filas": 133
+      },
+      {
+       "ano": "2020",
+       "modalidad": "Contratación régimen especial (con ofertas)",
+       "filas": 62
+      },
+      {
+       "ano": "2020",
+       "modalidad": "Licitación pública",
+       "filas": 37
+      },
+      {
+       "ano": "2020",
+       "modalidad": "Seleccion Abreviada Menor Cuantia Sin Manifestacion Interes",
+       "filas": 20
+      },
+      {
+       "ano": "2021",
+       "modalidad": "Selección Abreviada de Menor Cuantía",
+       "filas": 4851
+      },
+      {
+       "ano": "2021",
+       "modalidad": "Licitación pública Obra Publica",
+       "filas": 3121
+      },
+      {
+       "ano": "2021",
+       "modalidad": "Contratación directa",
+       "filas": 1813
+      },
+      {
+       "ano": "2021",
+       "modalidad": "Mínima cuantía",
+       "filas": 1153
+      },
+      {
+       "ano": "2021",
+       "modalidad": "Contratación Directa (con ofertas)",
+       "filas": 385
+      },
+      {
+       "ano": "2021",
+       "modalidad": "Contratación régimen especial",
+       "filas": 332
+      },
+      {
+       "ano": "2021",
+       "modalidad": "Seleccion Abreviada Menor Cuantia Sin Manifestacion Interes",
+       "filas": 123
+      },
+      {
+       "ano": "2021",
+       "modalidad": "Contratación régimen especial (con ofertas)",
+       "filas": 73
+      },
+      {
+       "ano": "2021",
+       "modalidad": "Licitación pública",
+       "filas": 63
+      },
+      {
+       "ano": "2022",
+       "modalidad": "Selección Abreviada de Menor Cuantía",
+       "filas": 6301
+      },
+      {
+       "ano": "2022",
+       "modalidad": "Licitación pública Obra Publica",
+       "filas": 3875
+      },
+      {
+       "ano": "2022",
+       "modalidad": "Contratación régimen especial",
+       "filas": 3091
+      },
+      {
+       "ano": "2022",
+       "modalidad": "Mínima cuantía",
+       "filas": 1343
+      },
+      {
+       "ano": "2022",
+       "modalidad": "Contratación directa",
+       "filas": 1027
+      },
+      {
+       "ano": "2022",
+       "modalidad": "Contratación Directa (con ofertas)",
+       "filas": 311
+      },
+      {
+       "ano": "2022",
+       "modalidad": "Contratación régimen especial (con ofertas)",
+       "filas": 250
+      },
+      {
+       "ano": "2022",
+       "modalidad": "Seleccion Abreviada Menor Cuantia Sin Manifestacion Interes",
+       "filas": 165
+      },
+      {
+       "ano": "2022",
+       "modalidad": "Licitación pública",
+       "filas": 106
+      },
+      {
+       "ano": "2023",
+       "modalidad": "Selección Abreviada de Menor Cuantía",
+       "filas": 8469
+      },
+      {
+       "ano": "2023",
+       "modalidad": "Contratación régimen especial",
+       "filas": 6460
+      },
+      {
+       "ano": "2023",
+       "modalidad": "Licitación pública Obra Publica",
+       "filas": 3688
+      },
+      {
+       "ano": "2023",
+       "modalidad": "Contratación directa",
+       "filas": 1873
+      },
+      {
+       "ano": "2023",
+       "modalidad": "Mínima cuantía",
+       "filas": 1805
+      },
+      {
+       "ano": "2023",
+       "modalidad": "Contratación régimen especial (con ofertas)",
+       "filas": 480
+      },
+      {
+       "ano": "2023",
+       "modalidad": "Contratación Directa (con ofertas)",
+       "filas": 229
+      },
+      {
+       "ano": "2023",
+       "modalidad": "Seleccion Abreviada Menor Cuantia Sin Manifestacion Interes",
+       "filas": 181
+      },
+      {
+       "ano": "2023",
+       "modalidad": "Licitación pública",
+       "filas": 55
+      },
+      {
+       "ano": "2024",
+       "modalidad": "Selección Abreviada de Menor Cuantía",
+       "filas": 6638
+      },
+      {
+       "ano": "2024",
+       "modalidad": "Contratación régimen especial",
+       "filas": 6155
+      },
+      {
+       "ano": "2024",
+       "modalidad": "Licitación pública Obra Publica",
+       "filas": 2729
+      },
+      {
+       "ano": "2024",
+       "modalidad": "Mínima cuantía",
+       "filas": 1711
+      },
+      {
+       "ano": "2024",
+       "modalidad": "Contratación directa",
+       "filas": 1542
+      },
+      {
+       "ano": "2024",
+       "modalidad": "Contratación régimen especial (con ofertas)",
+       "filas": 491
+      },
+      {
+       "ano": "2024",
+       "modalidad": "Contratación Directa (con ofertas)",
+       "filas": 208
+      },
+      {
+       "ano": "2024",
+       "modalidad": "Seleccion Abreviada Menor Cuantia Sin Manifestacion Interes",
+       "filas": 82
+      },
+      {
+       "ano": "2024",
+       "modalidad": "Licitación pública",
+       "filas": 55
+      },
+      {
+       "ano": "2025",
+       "modalidad": "Selección Abreviada de Menor Cuantía",
+       "filas": 10404
+      },
+      {
+       "ano": "2025",
+       "modalidad": "Contratación régimen especial",
+       "filas": 9234
+      },
+      {
+       "ano": "2025",
+       "modalidad": "Licitación pública Obra Publica",
+       "filas": 4675
+      },
+      {
+       "ano": "2025",
+       "modalidad": "Contratación directa",
+       "filas": 2444
+      },
+      {
+       "ano": "2025",
+       "modalidad": "Mínima cuantía",
+       "filas": 2258
+      },
+      {
+       "ano": "2025",
+       "modalidad": "Contratación régimen especial (con ofertas)",
+       "filas": 1147
+      },
+      {
+       "ano": "2025",
+       "modalidad": "Contratación Directa (con ofertas)",
+       "filas": 380
+      },
+      {
+       "ano": "2025",
+       "modalidad": "Seleccion Abreviada Menor Cuantia Sin Manifestacion Interes",
+       "filas": 79
+      },
+      {
+       "ano": "2025",
+       "modalidad": "Licitación pública",
+       "filas": 68
+      },
+      {
+       "ano": "2026",
+       "modalidad": "Selección Abreviada de Menor Cuantía",
+       "filas": 7825
+      },
+      {
+       "ano": "2026",
+       "modalidad": "Contratación régimen especial",
+       "filas": 6311
+      },
+      {
+       "ano": "2026",
+       "modalidad": "Licitación pública Obra Publica",
+       "filas": 3140
+      },
+      {
+       "ano": "2026",
+       "modalidad": "Mínima cuantía",
+       "filas": 1480
+      },
+      {
+       "ano": "2026",
+       "modalidad": "Contratación directa",
+       "filas": 1350
+      },
+      {
+       "ano": "2026",
+       "modalidad": "Contratación régimen especial (con ofertas)",
+       "filas": 715
+      },
+      {
+       "ano": "2026",
+       "modalidad": "Contratación Directa (con ofertas)",
+       "filas": 174
+      },
+      {
+       "ano": "2026",
+       "modalidad": "Seleccion Abreviada Menor Cuantia Sin Manifestacion Interes",
+       "filas": 42
+      },
+      {
+       "ano": "2026",
+       "modalidad": "Licitación pública",
+       "filas": 32
+      },
+      {
+       "modalidad": "Selección Abreviada de Menor Cuantía",
+       "filas": 754
+      },
+      {
+       "modalidad": "Contratación régimen especial",
+       "filas": 609
+      },
+      {
+       "modalidad": "Licitación pública Obra Publica",
+       "filas": 372
+      },
+      {
+       "modalidad": "Mínima cuantía",
+       "filas": 294
+      },
+      {
+       "modalidad": "Licitación pública",
+       "filas": 127
+      },
+      {
+       "modalidad": "Contratación régimen especial (con ofertas)",
+       "filas": 119
+      },
+      {
+       "modalidad": "Contratación directa",
+       "filas": 98
+      },
+      {
+       "modalidad": "Contratación Directa (con ofertas)",
+       "filas": 50
+      },
+      {
+       "modalidad": "Seleccion Abreviada Menor Cuantia Sin Manifestacion Interes",
+       "filas": 17
+      }
+     ],
+     "ms": 484,
+     "consultado_el": "2026-10-25T23:41:07.974Z"
+    }
+   },
+   "jbjy-vk9h": {
+    "url_datos": "https://www.datos.gov.co/resource/jbjy-vk9h.json",
+    "url_metadatos": "https://www.datos.gov.co/api/views/jbjy-vk9h.json",
+    "papel": "contratos",
+    "columna_fecha": "fecha_de_firma",
+    "metadatos": {
+     "ok": true,
+     "valor": {
+      "nombre": "SECOP II - Contratos Electrónicos",
+      "descripcion": "Información de los contratos registrados en SECOP II desde su lanzamiento",
+      "vista_madre": null,
+      "filas_actualizadas_el": "2026-10-25T05:48:27.000Z",
+      "creado_el": "2019-10-01T04:42:13.000Z",
+      "columnas": [
+       {
+        "campo": "nombre_entidad",
+        "tipo": "text",
+        "nombre": "Nombre Entidad"
+       },
+       {
+        "campo": "nit_entidad",
+        "tipo": "number",
+        "nombre": "Nit Entidad"
+       },
+       {
+        "campo": "departamento",
+        "tipo": "text",
+        "nombre": "Departamento"
+       },
+       {
+        "campo": "ciudad",
+        "tipo": "text",
+        "nombre": "Ciudad"
+       },
+       {
+        "campo": "localizaci_n",
+        "tipo": "text",
+        "nombre": "Localización"
+       },
+       {
+        "campo": "orden",
+        "tipo": "text",
+        "nombre": "Orden"
+       },
+       {
+        "campo": "sector",
+        "tipo": "text",
+        "nombre": "Sector"
+       },
+       {
+        "campo": "rama",
+        "tipo": "text",
+        "nombre": "Rama"
+       },
+       {
+        "campo": "entidad_centralizada",
+        "tipo": "text",
+        "nombre": "Entidad Centralizada"
+       },
+       {
+        "campo": "proceso_de_compra",
+        "tipo": "text",
+        "nombre": "Proceso de Compra"
+       },
+       {
+        "campo": "id_contrato",
+        "tipo": "text",
+        "nombre": "ID Contrato"
+       },
+       {
+        "campo": "referencia_del_contrato",
+        "tipo": "text",
+        "nombre": "Referencia del Contrato"
+       },
+       {
+        "campo": "estado_contrato",
+        "tipo": "text",
+        "nombre": "Estado Contrato"
+       },
+       {
+        "campo": "codigo_de_categoria_principal",
+        "tipo": "text",
+        "nombre": "Codigo de Categoria Principal"
+       },
+       {
+        "campo": "descripcion_del_proceso",
+        "tipo": "text",
+        "nombre": "Descripcion del Proceso"
+       },
+       {
+        "campo": "tipo_de_contrato",
+        "tipo": "text",
+        "nombre": "Tipo de Contrato"
+       },
+       {
+        "campo": "modalidad_de_contratacion",
+        "tipo": "text",
+        "nombre": "Modalidad de Contratacion"
+       },
+       {
+        "campo": "justificacion_modalidad_de",
+        "tipo": "text",
+        "nombre": "Justificacion Modalidad de Contratacion"
+       },
+       {
+        "campo": "fecha_de_firma",
+        "tipo": "calendar_date",
+        "nombre": "Fecha de Firma"
+       },
+       {
+        "campo": "fecha_de_inicio_del_contrato",
+        "tipo": "calendar_date",
+        "nombre": "Fecha de Inicio del Contrato"
+       },
+       {
+        "campo": "fecha_de_fin_del_contrato",
+        "tipo": "calendar_date",
+        "nombre": "Fecha de Fin del Contrato"
+       },
+       {
+        "campo": "condiciones_de_entrega",
+        "tipo": "text",
+        "nombre": "Condiciones de Entrega"
+       },
+       {
+        "campo": "tipodocproveedor",
+        "tipo": "text",
+        "nombre": "TipoDocProveedor"
+       },
+       {
+        "campo": "documento_proveedor",
+        "tipo": "text",
+        "nombre": "Documento Proveedor"
+       },
+       {
+        "campo": "proveedor_adjudicado",
+        "tipo": "text",
+        "nombre": "Proveedor Adjudicado"
+       },
+       {
+        "campo": "es_grupo",
+        "tipo": "text",
+        "nombre": "Es Grupo"
+       },
+       {
+        "campo": "es_pyme",
+        "tipo": "text",
+        "nombre": "Es Pyme"
+       },
+       {
+        "campo": "habilita_pago_adelantado",
+        "tipo": "text",
+        "nombre": "Habilita Pago Adelantado"
+       },
+       {
+        "campo": "liquidaci_n",
+        "tipo": "text",
+        "nombre": "Liquidación"
+       },
+       {
+        "campo": "obligaci_n_ambiental",
+        "tipo": "text",
+        "nombre": "Obligación Ambiental"
+       },
+       {
+        "campo": "obligaciones_postconsumo",
+        "tipo": "text",
+        "nombre": "Obligaciones Postconsumo"
+       },
+       {
+        "campo": "reversion",
+        "tipo": "text",
+        "nombre": "Reversion"
+       },
+       {
+        "campo": "origen_de_los_recursos",
+        "tipo": "text",
+        "nombre": "Origen de los Recursos"
+       },
+       {
+        "campo": "destino_gasto",
+        "tipo": "text",
+        "nombre": "Destino Gasto"
+       },
+       {
+        "campo": "valor_del_contrato",
+        "tipo": "number",
+        "nombre": "Valor del Contrato"
+       },
+       {
+        "campo": "valor_de_pago_adelantado",
+        "tipo": "number",
+        "nombre": "Valor de pago adelantado"
+       },
+       {
+        "campo": "valor_facturado",
+        "tipo": "number",
+        "nombre": "Valor Facturado"
+       },
+       {
+        "campo": "valor_pendiente_de_pago",
+        "tipo": "number",
+        "nombre": "Valor Pendiente de Pago"
+       },
+       {
+        "campo": "valor_pagado",
+        "tipo": "number",
+        "nombre": "Valor Pagado"
+       },
+       {
+        "campo": "valor_amortizado",
+        "tipo": "number",
+        "nombre": "Valor Amortizado"
+       },
+       {
+        "campo": "valor_pendiente_de",
+        "tipo": "number",
+        "nombre": "Valor Pendiente de Amortizacion"
+       },
+       {
+        "campo": "valor_pendiente_de_ejecucion",
+        "tipo": "number",
+        "nombre": "Valor Pendiente de Ejecucion"
+       },
+       {
+        "campo": "saldo_cdp",
+        "tipo": "number",
+        "nombre": "Saldo CDP"
+       },
+       {
+        "campo": "saldo_vigencia",
+        "tipo": "number",
+        "nombre": "Saldo Vigencia"
+       },
+       {
+        "campo": "espostconflicto",
+        "tipo": "text",
+        "nombre": "EsPostConflicto"
+       },
+       {
+        "campo": "dias_adicionados",
+        "tipo": "number",
+        "nombre": "Dias adicionados"
+       },
+       {
+        "campo": "puntos_del_acuerdo",
+        "tipo": "text",
+        "nombre": "Puntos del Acuerdo"
+       },
+       {
+        "campo": "pilares_del_acuerdo",
+        "tipo": "text",
+        "nombre": "Pilares del Acuerdo"
+       },
+       {
+        "campo": "urlproceso",
+        "tipo": "url",
+        "nombre": "URLProceso"
+       },
+       {
+        "campo": "nombre_representante_legal",
+        "tipo": "text",
+        "nombre": "Nombre Representante Legal"
+       },
+       {
+        "campo": "nacionalidad_representante_legal",
+        "tipo": "text",
+        "nombre": "Nacionalidad Representante Legal"
+       },
+       {
+        "campo": "domicilio_representante_legal",
+        "tipo": "text",
+        "nombre": "Domicilio Representante Legal"
+       },
+       {
+        "campo": "tipo_de_identificaci_n_representante_legal",
+        "tipo": "text",
+        "nombre": "Tipo de Identificación Representante Legal"
+       },
+       {
+        "campo": "identificaci_n_representante_legal",
+        "tipo": "text",
+        "nombre": "Identificación Representante Legal"
+       },
+       {
+        "campo": "g_nero_representante_legal",
+        "tipo": "text",
+        "nombre": "Género Representante Legal"
+       },
+       {
+        "campo": "presupuesto_general_de_la_nacion_pgn",
+        "tipo": "number",
+        "nombre": "Presupuesto General de la Nacion – PGN"
+       },
+       {
+        "campo": "sistema_general_de_participaciones",
+        "tipo": "number",
+        "nombre": "Sistema General de Participaciones"
+       },
+       {
+        "campo": "sistema_general_de_regal_as",
+        "tipo": "number",
+        "nombre": "Sistema General de Regalías"
+       },
+       {
+        "campo": "recursos_propios_alcald_as_gobernaciones_y_resguardos_ind_genas_",
+        "tipo": "number",
+        "nombre": "Recursos Propios (Alcaldías y Gobernaciones)"
+       },
+       {
+        "campo": "recursos_de_credito",
+        "tipo": "number",
+        "nombre": "Recursos de Credito"
+       },
+       {
+        "campo": "recursos_propios",
+        "tipo": "number",
+        "nombre": "Otros Recursos (Especie, Privados, Cooperación, Propios Entidades Autónomas)"
+       },
+       {
+        "campo": "ultima_actualizacion",
+        "tipo": "calendar_date",
+        "nombre": "Ultima Actualizacion"
+       },
+       {
+        "campo": "codigo_entidad",
+        "tipo": "number",
+        "nombre": "Codigo Entidad"
+       },
+       {
+        "campo": "codigo_proveedor",
+        "tipo": "text",
+        "nombre": "Codigo Proveedor"
+       },
+       {
+        "campo": "fecha_inicio_liquidacion",
+        "tipo": "calendar_date",
+        "nombre": "Fecha Inicio Liquidacion"
+       },
+       {
+        "campo": "fecha_fin_liquidacion",
+        "tipo": "calendar_date",
+        "nombre": "Fecha Fin Liquidacion"
+       },
+       {
+        "campo": "objeto_del_contrato",
+        "tipo": "text",
+        "nombre": "Objeto del Contrato"
+       },
+       {
+        "campo": "duraci_n_del_contrato",
+        "tipo": "text",
+        "nombre": "Duración del contrato"
+       },
+       {
+        "campo": "nombre_del_banco",
+        "tipo": "text",
+        "nombre": "Nombre del banco"
+       },
+       {
+        "campo": "tipo_de_cuenta",
+        "tipo": "text",
+        "nombre": "Tipo de cuenta"
+       },
+       {
+        "campo": "n_mero_de_cuenta",
+        "tipo": "text",
+        "nombre": "Número de cuenta"
+       },
+       {
+        "campo": "el_contrato_puede_ser_prorrogado",
+        "tipo": "text",
+        "nombre": "El contrato puede ser prorrogado"
+       },
+       {
+        "campo": "fecha_de_notificaci_n_de_prorrogaci_n",
+        "tipo": "calendar_date",
+        "nombre": "Fecha de notificación de prorrogación"
+       },
+       {
+        "campo": "nombre_ordenador_del_gasto",
+        "tipo": "text",
+        "nombre": "Nombre ordenador del gasto"
+       },
+       {
+        "campo": "tipo_de_documento_ordenador_del_gasto",
+        "tipo": "text",
+        "nombre": "Tipo de documento Ordenador del gasto"
+       },
+       {
+        "campo": "n_mero_de_documento_ordenador_del_gasto",
+        "tipo": "text",
+        "nombre": "Número de documento Ordenador del gasto"
+       },
+       {
+        "campo": "nombre_supervisor",
+        "tipo": "text",
+        "nombre": "Nombre supervisor"
+       },
+       {
+        "campo": "tipo_de_documento_supervisor",
+        "tipo": "text",
+        "nombre": "Tipo de documento supervisor"
+       },
+       {
+        "campo": "n_mero_de_documento_supervisor",
+        "tipo": "text",
+        "nombre": "Número de documento supervisor"
+       },
+       {
+        "campo": "nombre_ordenador_de_pago",
+        "tipo": "text",
+        "nombre": "Nombre Ordenador de Pago"
+       },
+       {
+        "campo": "tipo_de_documento_ordenador_de_pago",
+        "tipo": "text",
+        "nombre": "Tipo de documento Ordenador de Pago"
+       },
+       {
+        "campo": "n_mero_de_documento_ordenador_de_pago",
+        "tipo": "text",
+        "nombre": "Número de documento Ordenador de Pago"
+       },
+       {
+        "campo": "documentos_tipo",
+        "tipo": "text",
+        "nombre": "Documentos Tipo"
+       },
+       {
+        "campo": "descripcion_documentos_tipo",
+        "tipo": "text",
+        "nombre": "Descripcion Documentos Tipo"
+       },
+       {
+        "campo": "direcci_n_de_ejecuci_n_del_contrato",
+        "tipo": "text",
+        "nombre": "Dirección de ejecución del contrato"
+       },
+       {
+        "campo": "criterios_de_sostenibilidad_ambiental",
+        "tipo": "text",
+        "nombre": "Criterios de sostenibilidad ambiental"
+       },
+       {
+        "campo": "requisitos_ambientales_en_las_especificaciones_t_cnicas",
+        "tipo": "text",
+        "nombre": "Requisitos ambientales en las especificaciones técnicas"
+       },
+       {
+        "campo": "criterios_ambientales_en_la_evaluaci_n_de_las_ofertas",
+        "tipo": "text",
+        "nombre": "Criterios ambientales en la evaluación de las ofertas"
+       },
+       {
+        "campo": "obligaciones_contractuales_o_poscontractuales_a_nivel_ambiental",
+        "tipo": "text",
+        "nombre": "Obligaciones contractuales o poscontractuales a nivel ambiental"
+       },
+       {
+        "campo": "uso_de_etiquetado_ecol_gico",
+        "tipo": "text",
+        "nombre": "Uso de etiquetado ecológico"
+       },
+       {
+        "campo": "obligaciones_posconsumo",
+        "tipo": "text",
+        "nombre": "Obligaciones posconsumo"
+       },
+       {
+        "campo": "fecha_inicio_obligaciones_posconsumo",
+        "tipo": "calendar_date",
+        "nombre": "Fecha inicio obligaciones posconsumo"
+       },
+       {
+        "campo": "fecha_fin_obligaciones_posconsumo",
+        "tipo": "calendar_date",
+        "nombre": "Fecha fin obligaciones posconsumo"
+       },
+       {
+        "campo": "fecha_inicio_reversi_n",
+        "tipo": "calendar_date",
+        "nombre": "Fecha inicio reversión"
+       },
+       {
+        "campo": "fecha_fin_reversi_n",
+        "tipo": "calendar_date",
+        "nombre": "Fecha fin reversión"
+       }
+      ]
+     },
+     "ms": 191,
+     "consultado_el": "2026-10-25T23:41:08.165Z"
+    },
+    "filas": {
+     "ok": true,
+     "valor": 1000,
+     "ms": 102,
+     "consultado_el": "2026-10-25T23:41:08.267Z"
+    },
+    "filas_por_ano": {
+     "ok": true,
+     "valor": {
+      "2018": 20,
+      "2019": 6,
+      "2020": 93,
+      "2021": 89,
+      "2022": 102,
+      "2023": 94,
+      "2024": 315,
+      "2025": 91,
+      "2026": 182,
+      "sin_fecha": 8
+     },
+     "ms": 146,
+     "consultado_el": "2026-10-25T23:41:08.413Z"
+    },
+    "filas_sin_fecha": {
+     "ok": true,
+     "valor": 8,
+     "ms": 178,
+     "consultado_el": "2026-10-25T23:41:08.592Z"
+    }
+   },
+   "hgi6-6wh3": {
+    "url_datos": "https://www.datos.gov.co/resource/hgi6-6wh3.json",
+    "url_metadatos": "https://www.datos.gov.co/api/views/hgi6-6wh3.json",
+    "papel": "proponentes por proceso",
+    "columna_fecha": "fecha_publicaci_n",
+    "metadatos": {
+     "ok": true,
+     "valor": {
+      "nombre": "Proponentes por Proceso SECOP II",
+      "descripcion": "Contiene información sobre los proveedores que presentan propuestas en los procesos de contratación pública gestionados a través de la plataforma SECOP II.",
+      "vista_madre": null,
+      "filas_actualizadas_el": "2026-10-25T06:21:12.000Z",
+      "creado_el": "2018-11-23T22:35:47.000Z",
+      "columnas": [
+       {
+        "campo": "id_procedimiento",
+        "tipo": "text",
+        "nombre": "ID Procedimiento"
+       },
+       {
+        "campo": "fecha_publicaci_n",
+        "tipo": "calendar_date",
+        "nombre": "Fecha Publicación"
+       },
+       {
+        "campo": "nombre_procedimiento",
+        "tipo": "text",
+        "nombre": "Nombre Procedimiento"
+       },
+       {
+        "campo": "nit_entidad",
+        "tipo": "number",
+        "nombre": "NIT Entidad"
+       },
+       {
+        "campo": "codigo_entidad",
+        "tipo": "number",
+        "nombre": "Codigo Entidad"
+       },
+       {
+        "campo": "entidad_compradora",
+        "tipo": "text",
+        "nombre": "Entidad Compradora"
+       },
+       {
+        "campo": "proveedor",
+        "tipo": "text",
+        "nombre": "Proveedor"
+       },
+       {
+        "campo": "nit_proveedor",
+        "tipo": "text",
+        "nombre": "NIT Proveedor"
+       },
+       {
+        "campo": "codigo_proveedor",
+        "tipo": "number",
+        "nombre": "Codigo Proveedor"
+       }
+      ]
+     },
+     "ms": 123,
+     "consultado_el": "2026-10-25T23:41:08.715Z"
+    },
+    "filas": {
+     "ok": true,
+     "valor": 2352116,
+     "ms": 1558,
+     "consultado_el": "2026-10-25T23:41:10.273Z"
+    },
+    "filas_por_ano": {
+     "ok": true,
+     "valor": {
+      "2015": 723,
+      "2016": 4994,
+      "2017": 39297,
+      "2018": 128752,
+      "2019": 171226,
+      "2020": 217446,
+      "2021": 269970,
+      "2022": 224236,
+      "2023": 289793,
+      "2024": 331968,
+      "2025": 373991,
+      "2026": 283445,
+      "sin_fecha": 16275
+     },
+     "ms": 1539,
+     "consultado_el": "2026-10-25T23:41:11.812Z"
+    },
+    "filas_sin_fecha": {
+     "ok": true,
+     "valor": 16275,
+     "ms": 153,
+     "consultado_el": "2026-10-25T23:41:11.965Z"
+    }
+   },
+   "wi7w-2nvm": {
+    "url_datos": "https://www.datos.gov.co/resource/wi7w-2nvm.json",
+    "url_metadatos": "https://www.datos.gov.co/api/views/wi7w-2nvm.json",
+    "papel": "ofertas desde 2024 (filas repetidas por oferta)",
+    "columna_fecha": "fecha_de_registro",
+    "metadatos": {
+     "ok": true,
+     "valor": {
+      "nombre": "SECOPII - Ofertas Por Proceso",
+      "descripcion": "Registro de las Ofertas cargadas en el sistema, por cada proceso de compra publica, desde el 01 de enero 2024",
+      "vista_madre": null,
+      "filas_actualizadas_el": "2026-10-25T15:18:34.000Z",
+      "creado_el": "2022-08-09T15:26:03.000Z",
+      "columnas": [
+       {
+        "campo": "fecha_de_registro",
+        "tipo": "calendar_date",
+        "nombre": "Fecha de Registro"
+       },
+       {
+        "campo": "referencia_de_la_oferta",
+        "tipo": "text",
+        "nombre": "Referencia de la Oferta"
+       },
+       {
+        "campo": "identificador_de_la_oferta",
+        "tipo": "text",
+        "nombre": "Identificador de la Oferta"
+       },
+       {
+        "campo": "valor_de_la_oferta",
+        "tipo": "number",
+        "nombre": "Valor de la Oferta"
+       },
+       {
+        "campo": "entidad_compradora",
+        "tipo": "text",
+        "nombre": "Entidad Compradora"
+       },
+       {
+        "campo": "nit_entidad_compradora",
+        "tipo": "number",
+        "nombre": "NIT Entidad Compradora"
+       },
+       {
+        "campo": "moneda",
+        "tipo": "text",
+        "nombre": "Moneda"
+       },
+       {
+        "campo": "descripcion_del_procedimiento",
+        "tipo": "text",
+        "nombre": "Descripcion del Procedimiento"
+       },
+       {
+        "campo": "referencia_del_proceso",
+        "tipo": "text",
+        "nombre": "Referencia del Proceso"
+       },
+       {
+        "campo": "id_del_proceso_de_compra",
+        "tipo": "text",
+        "nombre": "ID del Proceso de Compra"
+       },
+       {
+        "campo": "modalidad",
+        "tipo": "text",
+        "nombre": "Modalidad"
+       },
+       {
+        "campo": "invitacion_directa",
+        "tipo": "text",
+        "nombre": "Invitacion Directa"
+       },
+       {
+        "campo": "nombre_proveedor",
+        "tipo": "text",
+        "nombre": "Nombre Proveedor"
+       },
+       {
+        "campo": "nit_del_proveedor",
+        "tipo": "text",
+        "nombre": "NIT del Proveedor"
+       },
+       {
+        "campo": "c_digo_entidad",
+        "tipo": "text",
+        "nombre": "Código Entidad"
+       },
+       {
+        "campo": "c_digo_proveedor",
+        "tipo": "text",
+        "nombre": "Código Proveedor"
+       }
+      ]
+     },
+     "ms": 126,
+     "consultado_el": "2026-10-25T23:41:12.091Z"
+    },
+    "filas": {
+     "ok": true,
+     "valor": 51236830,
+     "ms": 51135,
+     "consultado_el": "2026-10-25T23:42:03.226Z"
+    },
+    "filas_por_ano": {
+     "ok": true,
+     "valor": {
+      "2023": 4,
+      "2024": 19625788,
+      "2025": 19347359,
+      "2026": 12263679
+     },
+     "ms": 8221,
+     "consultado_el": "2026-10-25T23:42:11.448Z"
+    },
+    "filas_sin_fecha": {
+     "ok": true,
+     "valor": 0,
+     "ms": 149,
+     "consultado_el": "2026-10-25T23:42:11.597Z"
+    },
+    "marcadores_por_ano": {
+     "valor_nulo": {
+      "ok": true,
+      "valor": {
+       "2025": 16917
+      },
+      "ms": 152,
+      "consultado_el": "2026-10-25T23:42:11.749Z"
+     },
+     "valor_cero": {
+      "ok": true,
+      "valor": {
+       "2024": 145840,
+       "2025": 132408,
+       "2026": 93551
+      },
+      "ms": 667,
+      "consultado_el": "2026-10-25T23:42:12.416Z"
+     },
+     "valor_negativo": {
+      "ok": true,
+      "valor": {},
+      "ms": 111,
+      "consultado_el": "2026-10-25T23:42:12.527Z"
+     },
+     "valor_uno": {
+      "ok": true,
+      "valor": {
+       "2024": 207297,
+       "2025": 64720,
+       "2026": 20905
+      },
+      "ms": 375,
+      "consultado_el": "2026-10-25T23:42:12.902Z"
+     },
+     "valor_999999999": {
+      "ok": true,
+      "valor": {
+       "2024": 178,
+       "2025": 1914
+      },
+      "ms": 107,
+      "consultado_el": "2026-10-25T23:42:13.009Z"
+     },
+     "valor_billon_o_mas": {
+      "ok": true,
+      "valor": {
+       "2024": 4867,
+       "2025": 7970,
+       "2026": 3397
+      },
+      "ms": 141,
+      "consultado_el": "2026-10-25T23:42:13.150Z"
+     },
+     "moneda_no_cop": {
+      "ok": true,
+      "valor": {},
+      "ms": 4694,
+      "consultado_el": "2026-10-25T23:42:17.844Z"
+     },
+     "confidencial": {
+      "ok": true,
+      "valor": {
+       "2024": 145840,
+       "2025": 132408,
+       "2026": 93551
+      },
+      "ms": 584,
+      "consultado_el": "2026-10-25T23:42:18.428Z"
+     },
+     "nit_no_definido": {
+      "ok": true,
+      "valor": {
+       "2024": 622475,
+       "2025": 810993,
+       "2026": 293602
+      },
+      "ms": 793,
+      "consultado_el": "2026-10-25T23:42:19.221Z"
+     }
+    },
+    "monedas": {
+     "ok": true,
+     "valor": [
+      {
+       "moneda": "COP",
+       "filas": 51236830
+      }
+     ],
+     "ms": 6176,
+     "consultado_el": "2026-10-25T23:42:25.397Z"
+    }
+   },
+   "b28v-edj8": {
+    "url_datos": "https://www.datos.gov.co/resource/b28v-edj8.json",
+    "url_metadatos": "https://www.datos.gov.co/api/views/b28v-edj8.json",
+    "papel": "ofertas hasta 2023 (filas repetidas por oferta)",
+    "columna_fecha": "fecha_de_registro",
+    "metadatos": {
+     "ok": true,
+     "valor": {
+      "nombre": "SECOPII - Ofertas Por Proceso Historico",
+      "descripcion": "Registro de las Ofertas cargadas en el sistema, por cada proceso de compra publica, hasta el 31 de diciembre de 2023",
+      "vista_madre": null,
+      "filas_actualizadas_el": "2026-10-25T13:54:42.000Z",
+      "creado_el": "2025-07-29T04:29:32.000Z",
+      "columnas": [
+       {
+        "campo": "fecha_de_registro",
+        "tipo": "calendar_date",
+        "nombre": "Fecha de Registro"
+       },
+       {
+        "campo": "referencia_de_la_oferta",
+        "tipo": "text",
+        "nombre": "Referencia de la Oferta"
+       },
+       {
+        "campo": "identificador_de_la_oferta",
+        "tipo": "text",
+        "nombre": "Identificador de la Oferta"
+       },
+       {
+        "campo": "valor_de_la_oferta",
+        "tipo": "number",
+        "nombre": "Valor de la Oferta"
+       },
+       {
+        "campo": "entidad_compradora",
+        "tipo": "text",
+        "nombre": "Entidad Compradora"
+       },
+       {
+        "campo": "nit_entidad_compradora",
+        "tipo": "number",
+        "nombre": "NIT Entidad Compradora"
+       },
+       {
+        "campo": "moneda",
+        "tipo": "text",
+        "nombre": "Moneda"
+       },
+       {
+        "campo": "descripcion_del_procedimiento",
+        "tipo": "text",
+        "nombre": "Descripcion del Procedimiento"
+       },
+       {
+        "campo": "referencia_del_proceso",
+        "tipo": "text",
+        "nombre": "Referencia del Proceso"
+       },
+       {
+        "campo": "id_del_proceso_de_compra",
+        "tipo": "text",
+        "nombre": "ID del Proceso de Compra"
+       },
+       {
+        "campo": "modalidad",
+        "tipo": "text",
+        "nombre": "Modalidad"
+       },
+       {
+        "campo": "invitacion_directa",
+        "tipo": "text",
+        "nombre": "Invitacion Directa"
+       },
+       {
+        "campo": "nombre_proveedor",
+        "tipo": "text",
+        "nombre": "Nombre Proveedor"
+       },
+       {
+        "campo": "nit_del_proveedor",
+        "tipo": "text",
+        "nombre": "NIT del Proveedor"
+       },
+       {
+        "campo": "c_digo_entidad",
+        "tipo": "text",
+        "nombre": "Código Entidad"
+       },
+       {
+        "campo": "c_digo_proveedor",
+        "tipo": "text",
+        "nombre": "Código Proveedor"
+       }
+      ]
+     },
+     "ms": 83,
+     "consultado_el": "2026-10-25T23:42:25.480Z"
+    },
+    "filas": {
+     "ok": true,
+     "valor": 44519591,
+     "ms": 16740,
+     "consultado_el": "2026-10-25T23:42:42.220Z"
+    },
+    "filas_por_ano": {
+     "ok": true,
+     "valor": {
+      "2015": 4651,
+      "2016": 29446,
+      "2017": 809053,
+      "2018": 3211745,
+      "2019": 4487638,
+      "2020": 9218132,
+      "2021": 8078085,
+      "2022": 7736561,
+      "2023": 10944280
+     },
+     "ms": 8640,
+     "consultado_el": "2026-10-25T23:42:50.860Z"
+    },
+    "filas_sin_fecha": {
+     "ok": true,
+     "valor": 0,
+     "ms": 109,
+     "consultado_el": "2026-10-25T23:42:50.969Z"
+    },
+    "marcadores_por_ano": {
+     "valor_nulo": {
+      "ok": true,
+      "valor": {
+       "2023": 1433
+      },
+      "ms": 176,
+      "consultado_el": "2026-10-25T23:42:51.145Z"
+     },
+     "valor_cero": {
+      "ok": true,
+      "valor": {
+       "2020": 450,
+       "2021": 73515,
+       "2022": 112110,
+       "2023": 220939
+      },
+      "ms": 791,
+      "consultado_el": "2026-10-25T23:42:51.936Z"
+     },
+     "valor_negativo": {
+      "ok": true,
+      "valor": {},
+      "ms": 95,
+      "consultado_el": "2026-10-25T23:42:52.031Z"
+     },
+     "valor_uno": {
+      "ok": true,
+      "valor": {
+       "2016": 19,
+       "2017": 10059,
+       "2018": 231629,
+       "2019": 9763,
+       "2020": 14115,
+       "2021": 58710,
+       "2022": 7625,
+       "2023": 10780
+      },
+      "ms": 512,
+      "consultado_el": "2026-10-25T23:42:52.543Z"
+     },
+     "valor_999999999": {
+      "ok": true,
+      "valor": {
+       "2017": 2,
+       "2018": 101,
+       "2019": 2,
+       "2021": 82,
+       "2022": 15,
+       "2023": 3080
+      },
+      "ms": 139,
+      "consultado_el": "2026-10-25T23:42:52.682Z"
+     },
+     "valor_billon_o_mas": {
+      "ok": true,
+      "valor": {
+       "2016": 262,
+       "2017": 60,
+       "2018": 1571,
+       "2019": 5142,
+       "2020": 4159,
+       "2021": 2099,
+       "2022": 5362,
+       "2023": 8532
+      },
+      "ms": 311,
+      "consultado_el": "2026-10-25T23:42:52.993Z"
+     },
+     "moneda_no_cop": {
+      "ok": true,
+      "valor": {},
+      "ms": 5890,
+      "consultado_el": "2026-10-25T23:42:58.883Z"
+     },
+     "confidencial": {
+      "ok": true,
+      "valor": {
+       "2020": 450,
+       "2021": 73515,
+       "2022": 112108,
+       "2023": 220939
+      },
+      "ms": 777,
+      "consultado_el": "2026-10-25T23:42:59.660Z"
+     },
+     "nit_no_definido": {
+      "ok": true,
+      "valor": {
+       "2015": 58,
+       "2016": 1329,
+       "2017": 96160,
+       "2018": 290843,
+       "2019": 425520,
+       "2020": 492405,
+       "2021": 393277,
+       "2022": 322689,
+       "2023": 391372
+      },
+      "ms": 2729,
+      "consultado_el": "2026-10-25T23:43:02.389Z"
+     }
+    },
+    "monedas": {
+     "ok": true,
+     "valor": [
+      {
+       "moneda": "COP",
+       "filas": 44519591
+      }
+     ],
+     "ms": 6924,
+     "consultado_el": "2026-10-25T23:43:09.313Z"
+    }
+   },
+   "atkq-fc9r": {
+    "url_datos": "https://www.datos.gov.co/resource/atkq-fc9r.json",
+    "url_metadatos": "https://www.datos.gov.co/api/views/atkq-fc9r.json",
+    "papel": "vista «Ofertas 2020» (filtro de wi7w)",
+    "columna_fecha": "fecha_de_registro",
+    "metadatos": {
+     "ok": true,
+     "valor": {
+      "nombre": "SECOP II - Ofertas - 2020",
+      "descripcion": "Registro de las Ofertas cargadas en el sistema por cada proceso de compra",
+      "vista_madre": "wi7w-2nvm",
+      "filas_actualizadas_el": "2026-10-25T15:18:34.000Z",
+      "creado_el": "2023-03-06T16:04:06.000Z",
+      "columnas": [
+       {
+        "campo": "fecha_de_registro",
+        "tipo": "calendar_date",
+        "nombre": "Fecha de Registro"
+       },
+       {
+        "campo": "referencia_de_la_oferta",
+        "tipo": "text",
+        "nombre": "Referencia de la Oferta"
+       },
+       {
+        "campo": "identificador_de_la_oferta",
+        "tipo": "text",
+        "nombre": "Identificador de la Oferta"
+       },
+       {
+        "campo": "valor_de_la_oferta",
+        "tipo": "number",
+        "nombre": "Valor de la Oferta"
+       },
+       {
+        "campo": "entidad_compradora",
+        "tipo": "text",
+        "nombre": "Entidad Compradora"
+       },
+       {
+        "campo": "nit_entidad_compradora",
+        "tipo": "number",
+        "nombre": "NIT Entidad Compradora"
+       },
+       {
+        "campo": "moneda",
+        "tipo": "text",
+        "nombre": "Moneda"
+       },
+       {
+        "campo": "descripcion_del_procedimiento",
+        "tipo": "text",
+        "nombre": "Descripcion del Procedimiento"
+       },
+       {
+        "campo": "referencia_del_proceso",
+        "tipo": "text",
+        "nombre": "Referencia del Proceso"
+       },
+       {
+        "campo": "id_del_proceso_de_compra",
+        "tipo": "text",
+        "nombre": "ID del Proceso de Compra"
+       },
+       {
+        "campo": "modalidad",
+        "tipo": "text",
+        "nombre": "Modalidad"
+       },
+       {
+        "campo": "invitacion_directa",
+        "tipo": "text",
+        "nombre": "Invitacion Directa"
+       },
+       {
+        "campo": "nombre_proveedor",
+        "tipo": "text",
+        "nombre": "Nombre Proveedor"
+       },
+       {
+        "campo": "nit_del_proveedor",
+        "tipo": "text",
+        "nombre": "NIT del Proveedor"
+       }
+      ]
+     },
+     "ms": 172,
+     "consultado_el": "2026-10-25T23:43:09.485Z"
+    },
+    "filas": {
+     "ok": true,
+     "valor": 0,
+     "ms": 122,
+     "consultado_el": "2026-10-25T23:43:09.607Z"
+    },
+    "filas_por_ano": {
+     "ok": true,
+     "valor": {},
+     "ms": 140,
+     "consultado_el": "2026-10-25T23:43:09.747Z"
+    },
+    "filas_sin_fecha": {
+     "ok": true,
+     "valor": 0,
+     "ms": 128,
+     "consultado_el": "2026-10-25T23:43:09.875Z"
+    }
+   },
+   "pp6p-gvye": {
+    "url_datos": "https://www.datos.gov.co/resource/pp6p-gvye.json",
+    "url_metadatos": "https://www.datos.gov.co/api/views/pp6p-gvye.json",
+    "papel": "vista «Ofertas 2021» (filtro de wi7w)",
+    "columna_fecha": "fecha_de_registro",
+    "metadatos": {
+     "ok": true,
+     "valor": {
+      "nombre": "SECOP II - Ofertas - 2021",
+      "descripcion": "Registro de las Ofertas cargadas en el sistema por cada proceso de compra",
+      "vista_madre": "wi7w-2nvm",
+      "filas_actualizadas_el": "2026-10-25T15:18:34.000Z",
+      "creado_el": "2023-03-06T16:04:56.000Z",
+      "columnas": [
+       {
+        "campo": "fecha_de_registro",
+        "tipo": "calendar_date",
+        "nombre": "Fecha de Registro"
+       },
+       {
+        "campo": "referencia_de_la_oferta",
+        "tipo": "text",
+        "nombre": "Referencia de la Oferta"
+       },
+       {
+        "campo": "identificador_de_la_oferta",
+        "tipo": "text",
+        "nombre": "Identificador de la Oferta"
+       },
+       {
+        "campo": "valor_de_la_oferta",
+        "tipo": "number",
+        "nombre": "Valor de la Oferta"
+       },
+       {
+        "campo": "entidad_compradora",
+        "tipo": "text",
+        "nombre": "Entidad Compradora"
+       },
+       {
+        "campo": "nit_entidad_compradora",
+        "tipo": "number",
+        "nombre": "NIT Entidad Compradora"
+       },
+       {
+        "campo": "moneda",
+        "tipo": "text",
+        "nombre": "Moneda"
+       },
+       {
+        "campo": "descripcion_del_procedimiento",
+        "tipo": "text",
+        "nombre": "Descripcion del Procedimiento"
+       },
+       {
+        "campo": "referencia_del_proceso",
+        "tipo": "text",
+        "nombre": "Referencia del Proceso"
+       },
+       {
+        "campo": "id_del_proceso_de_compra",
+        "tipo": "text",
+        "nombre": "ID del Proceso de Compra"
+       },
+       {
+        "campo": "modalidad",
+        "tipo": "text",
+        "nombre": "Modalidad"
+       },
+       {
+        "campo": "invitacion_directa",
+        "tipo": "text",
+        "nombre": "Invitacion Directa"
+       },
+       {
+        "campo": "nombre_proveedor",
+        "tipo": "text",
+        "nombre": "Nombre Proveedor"
+       },
+       {
+        "campo": "nit_del_proveedor",
+        "tipo": "text",
+        "nombre": "NIT del Proveedor"
+       }
+      ]
+     },
+     "ms": 106,
+     "consultado_el": "2026-10-25T23:43:09.981Z"
+    },
+    "filas": {
+     "ok": true,
+     "valor": 0,
+     "ms": 123,
+     "consultado_el": "2026-10-25T23:43:10.104Z"
+    },
+    "filas_por_ano": {
+     "ok": true,
+     "valor": {},
+     "ms": 101,
+     "consultado_el": "2026-10-25T23:43:10.205Z"
+    },
+    "filas_sin_fecha": {
+     "ok": true,
+     "valor": 0,
+     "ms": 152,
+     "consultado_el": "2026-10-25T23:43:10.357Z"
+    }
+   },
+   "yk6j-79e6": {
+    "url_datos": "https://www.datos.gov.co/resource/yk6j-79e6.json",
+    "url_metadatos": "https://www.datos.gov.co/api/views/yk6j-79e6.json",
+    "papel": "vista «Ofertas 2022» (filtro de wi7w)",
+    "columna_fecha": "fecha_de_registro",
+    "metadatos": {
+     "ok": true,
+     "valor": {
+      "nombre": "SECOP II - Ofertas - 2022",
+      "descripcion": "Registro de las Ofertas cargadas en el sistema por cada proceso de compra",
+      "vista_madre": "wi7w-2nvm",
+      "filas_actualizadas_el": "2026-10-25T15:18:34.000Z",
+      "creado_el": "2023-03-06T16:05:35.000Z",
+      "columnas": [
+       {
+        "campo": "fecha_de_registro",
+        "tipo": "calendar_date",
+        "nombre": "Fecha de Registro"
+       },
+       {
+        "campo": "referencia_de_la_oferta",
+        "tipo": "text",
+        "nombre": "Referencia de la Oferta"
+       },
+       {
+        "campo": "identificador_de_la_oferta",
+        "tipo": "text",
+        "nombre": "Identificador de la Oferta"
+       },
+       {
+        "campo": "valor_de_la_oferta",
+        "tipo": "number",
+        "nombre": "Valor de la Oferta"
+       },
+       {
+        "campo": "entidad_compradora",
+        "tipo": "text",
+        "nombre": "Entidad Compradora"
+       },
+       {
+        "campo": "nit_entidad_compradora",
+        "tipo": "number",
+        "nombre": "NIT Entidad Compradora"
+       },
+       {
+        "campo": "moneda",
+        "tipo": "text",
+        "nombre": "Moneda"
+       },
+       {
+        "campo": "descripcion_del_procedimiento",
+        "tipo": "text",
+        "nombre": "Descripcion del Procedimiento"
+       },
+       {
+        "campo": "referencia_del_proceso",
+        "tipo": "text",
+        "nombre": "Referencia del Proceso"
+       },
+       {
+        "campo": "id_del_proceso_de_compra",
+        "tipo": "text",
+        "nombre": "ID del Proceso de Compra"
+       },
+       {
+        "campo": "modalidad",
+        "tipo": "text",
+        "nombre": "Modalidad"
+       },
+       {
+        "campo": "invitacion_directa",
+        "tipo": "text",
+        "nombre": "Invitacion Directa"
+       },
+       {
+        "campo": "nombre_proveedor",
+        "tipo": "text",
+        "nombre": "Nombre Proveedor"
+       },
+       {
+        "campo": "nit_del_proveedor",
+        "tipo": "text",
+        "nombre": "NIT del Proveedor"
+       }
+      ]
+     },
+     "ms": 74,
+     "consultado_el": "2026-10-25T23:43:10.431Z"
+    },
+    "filas": {
+     "ok": true,
+     "valor": 0,
+     "ms": 129,
+     "consultado_el": "2026-10-25T23:43:10.560Z"
+    },
+    "filas_por_ano": {
+     "ok": true,
+     "valor": {},
+     "ms": 115,
+     "consultado_el": "2026-10-25T23:43:10.675Z"
+    },
+    "filas_sin_fecha": {
+     "ok": true,
+     "valor": 0,
+     "ms": 126,
+     "consultado_el": "2026-10-25T23:43:10.801Z"
+    }
+   },
+   "vz4x-85r3": {
+    "url_datos": "https://www.datos.gov.co/resource/vz4x-85r3.json",
+    "url_metadatos": "https://www.datos.gov.co/api/views/vz4x-85r3.json",
+    "papel": "vista «Ofertas 2023» (filtro de wi7w)",
+    "columna_fecha": "fecha_de_registro",
+    "metadatos": {
+     "ok": true,
+     "valor": {
+      "nombre": "SECOP II - Ofertas - 2023",
+      "descripcion": "Registro de las Ofertas cargadas en el sistema por cada proceso de compra",
+      "vista_madre": "wi7w-2nvm",
+      "filas_actualizadas_el": "2026-10-25T15:18:34.000Z",
+      "creado_el": "2023-03-06T22:04:13.000Z",
+      "columnas": [
+       {
+        "campo": "fecha_de_registro",
+        "tipo": "calendar_date",
+        "nombre": "Fecha de Registro"
+       },
+       {
+        "campo": "referencia_de_la_oferta",
+        "tipo": "text",
+        "nombre": "Referencia de la Oferta"
+       },
+       {
+        "campo": "identificador_de_la_oferta",
+        "tipo": "text",
+        "nombre": "Identificador de la Oferta"
+       },
+       {
+        "campo": "valor_de_la_oferta",
+        "tipo": "number",
+        "nombre": "Valor de la Oferta"
+       },
+       {
+        "campo": "entidad_compradora",
+        "tipo": "text",
+        "nombre": "Entidad Compradora"
+       },
+       {
+        "campo": "nit_entidad_compradora",
+        "tipo": "number",
+        "nombre": "NIT Entidad Compradora"
+       },
+       {
+        "campo": "moneda",
+        "tipo": "text",
+        "nombre": "Moneda"
+       },
+       {
+        "campo": "descripcion_del_procedimiento",
+        "tipo": "text",
+        "nombre": "Descripcion del Procedimiento"
+       },
+       {
+        "campo": "referencia_del_proceso",
+        "tipo": "text",
+        "nombre": "Referencia del Proceso"
+       },
+       {
+        "campo": "id_del_proceso_de_compra",
+        "tipo": "text",
+        "nombre": "ID del Proceso de Compra"
+       },
+       {
+        "campo": "modalidad",
+        "tipo": "text",
+        "nombre": "Modalidad"
+       },
+       {
+        "campo": "invitacion_directa",
+        "tipo": "text",
+        "nombre": "Invitacion Directa"
+       },
+       {
+        "campo": "nombre_proveedor",
+        "tipo": "text",
+        "nombre": "Nombre Proveedor"
+       },
+       {
+        "campo": "nit_del_proveedor",
+        "tipo": "text",
+        "nombre": "NIT del Proveedor"
+       }
+      ]
+     },
+     "ms": 129,
+     "consultado_el": "2026-10-25T23:43:10.930Z"
+    },
+    "filas": {
+     "ok": true,
+     "valor": 4,
+     "ms": 134,
+     "consultado_el": "2026-10-25T23:43:11.064Z"
+    },
+    "filas_por_ano": {
+     "ok": true,
+     "valor": {
+      "2023": 4
+     },
+     "ms": 169,
+     "consultado_el": "2026-10-25T23:43:11.233Z"
+    },
+    "filas_sin_fecha": {
+     "ok": true,
+     "valor": 0,
+     "ms": 142,
+     "consultado_el": "2026-10-25T23:43:11.375Z"
+    }
+   },
+   "qmzu-gj57": {
+    "url_datos": "https://www.datos.gov.co/resource/qmzu-gj57.json",
+    "url_metadatos": "https://www.datos.gov.co/api/views/qmzu-gj57.json",
+    "papel": "proveedores registrados",
+    "columna_fecha": "fecha_creacion",
+    "metadatos": {
+     "ok": true,
+     "valor": {
+      "nombre": "SECOP II - Proveedores Registrados",
+      "descripcion": "Información de los proveedores registrados en SECOP II",
+      "vista_madre": null,
+      "filas_actualizadas_el": "2026-10-25T13:05:27.000Z",
+      "creado_el": "2018-04-24T16:15:06.000Z",
+      "columnas": [
+       {
+        "campo": "codigo",
+        "tipo": "text",
+        "nombre": "Codigo"
+       },
+       {
+        "campo": "nombre",
+        "tipo": "text",
+        "nombre": "Nombre"
+       },
+       {
+        "campo": "nit",
+        "tipo": "text",
+        "nombre": "NIT"
+       },
+       {
+        "campo": "es_entidad",
+        "tipo": "text",
+        "nombre": "Es Entidad"
+       },
+       {
+        "campo": "es_grupo",
+        "tipo": "text",
+        "nombre": "Es grupo"
+       },
+       {
+        "campo": "esta_activa",
+        "tipo": "text",
+        "nombre": "Esta Activa"
+       },
+       {
+        "campo": "fecha_creacion",
+        "tipo": "calendar_date",
+        "nombre": "Fecha Creación"
+       },
+       {
+        "campo": "codigo_categoria_principal",
+        "tipo": "text",
+        "nombre": "Codigo Categoria Principal"
+       },
+       {
+        "campo": "descripcion_categoria_principal",
+        "tipo": "text",
+        "nombre": "Descripcion Categoria Principal"
+       },
+       {
+        "campo": "telefono",
+        "tipo": "text",
+        "nombre": "Telefono"
+       },
+       {
+        "campo": "fax",
+        "tipo": "text",
+        "nombre": "Fax"
+       },
+       {
+        "campo": "correo",
+        "tipo": "text",
+        "nombre": "Correo"
+       },
+       {
+        "campo": "direccion",
+        "tipo": "text",
+        "nombre": "Direccion"
+       },
+       {
+        "campo": "pais",
+        "tipo": "text",
+        "nombre": "Pais"
+       },
+       {
+        "campo": "departamento",
+        "tipo": "text",
+        "nombre": "Departamento"
+       },
+       {
+        "campo": "municipio",
+        "tipo": "text",
+        "nombre": "Municipio"
+       },
+       {
+        "campo": "sitio_web",
+        "tipo": "text",
+        "nombre": "Sitio web"
+       },
+       {
+        "campo": "tipo_empresa",
+        "tipo": "text",
+        "nombre": "Tipo Empresa"
+       },
+       {
+        "campo": "nombre_representante_legal",
+        "tipo": "text",
+        "nombre": "Nombre representante legal"
+       },
+       {
+        "campo": "tipo_doc_representante_legal",
+        "tipo": "text",
+        "nombre": "Tipo doc representante legal"
+       },
+       {
+        "campo": "n_mero_doc_representante_legal",
+        "tipo": "text",
+        "nombre": "Número doc representante legal"
+       },
+       {
+        "campo": "telefono_representante_legal",
+        "tipo": "text",
+        "nombre": "Telefono representante legal"
+       },
+       {
+        "campo": "correo_representante_legal",
+        "tipo": "text",
+        "nombre": "Correo representante legal"
+       },
+       {
+        "campo": "espyme",
+        "tipo": "text",
+        "nombre": "EsPyme"
+       },
+       {
+        "campo": "ubicacion",
+        "tipo": "text",
+        "nombre": "Ubicación"
+       },
+       {
+        "campo": "tama_o_entidad",
+        "tipo": "text",
+        "nombre": "Tamaño Entidad"
+       }
+      ]
+     },
+     "ms": 71,
+     "consultado_el": "2026-10-25T23:43:11.447Z"
+    },
+    "filas": {
+     "ok": true,
+     "valor": 1627308,
+     "ms": 255,
+     "consultado_el": "2026-10-25T23:43:11.702Z"
+    },
+    "filas_por_ano": {
+     "ok": true,
+     "valor": {
+      "2015": 2608,
+      "2016": 14141,
+      "2017": 98864,
+      "2018": 134166,
+      "2019": 85030,
+      "2020": 169936,
+      "2021": 195281,
+      "2022": 179514,
+      "2023": 172752,
+      "2024": 258729,
+      "2025": 183102,
+      "2026": 133185
+     },
+     "ms": 1115,
+     "consultado_el": "2026-10-25T23:43:12.817Z"
+    },
+    "filas_sin_fecha": {
+     "ok": true,
+     "valor": 0,
+     "ms": 127,
+     "consultado_el": "2026-10-25T23:43:12.944Z"
+    }
+   },
+   "32sa-8pi3": {
+    "url_datos": "https://www.datos.gov.co/resource/32sa-8pi3.json",
+    "url_metadatos": "https://www.datos.gov.co/api/views/32sa-8pi3.json",
+    "papel": "TRM (serie histórica)",
+    "columna_fecha": "vigenciadesde",
+    "metadatos": {
+     "ok": true,
+     "valor": {
+      "nombre": "Tasa de Cambio Representativa del Mercado- TRM",
+      "descripcion": "La Tasa de Cambio Representativa del Mercado–TRM corresponde al promedio ponderado de las operaciones de compra y venta de contado de dólares de los Estados Unidos de América a cambio de moneda legal colombiana.\nSe adjunta archivo con explicación detallada.",
+      "vista_madre": null,
+      "filas_actualizadas_el": "2026-10-23T23:05:19.000Z",
+      "creado_el": "2017-08-31T15:51:18.000Z",
+      "columnas": [
+       {
+        "campo": "valor",
+        "tipo": "number",
+        "nombre": "VALOR"
+       },
+       {
+        "campo": "unidad",
+        "tipo": "text",
+        "nombre": "UNIDAD"
+       },
+       {
+        "campo": "vigenciadesde",
+        "tipo": "calendar_date",
+        "nombre": "VIGENCIADESDE"
+       },
+       {
+        "campo": "vigenciahasta",
+        "tipo": "calendar_date",
+        "nombre": "VIGENCIAHASTA"
+       }
+      ]
+     },
+     "ms": 84,
+     "consultado_el": "2026-10-25T23:43:13.028Z"
+    },
+    "filas": {
+     "ok": true,
+     "valor": 8374,
+     "ms": 107,
+     "consultado_el": "2026-10-25T23:43:13.135Z"
+    },
+    "filas_por_ano": {
+     "ok": true,
+     "valor": {
+      "1991": 21,
+      "1992": 246,
+      "1993": 246,
+      "1994": 247,
+      "1995": 258,
+      "1996": 246,
+      "1997": 242,
+      "1998": 242,
+      "1999": 245,
+      "2000": 243,
+      "2001": 244,
+      "2002": 244,
+      "2003": 240,
+      "2004": 240,
+      "2005": 239,
+      "2006": 235,
+      "2007": 236,
+      "2008": 238,
+      "2009": 237,
+      "2010": 238,
+      "2011": 238,
+      "2012": 236,
+      "2013": 238,
+      "2014": 237,
+      "2015": 236,
+      "2016": 238,
+      "2017": 235,
+      "2018": 236,
+      "2019": 239,
+      "2020": 238,
+      "2021": 238,
+      "2022": 238,
+      "2023": 234,
+      "2024": 238,
+      "2025": 236,
+      "2026": 192
+     },
+     "ms": 130,
+     "consultado_el": "2026-10-25T23:43:13.265Z"
+    },
+    "filas_sin_fecha": {
+     "ok": true,
+     "valor": 0,
+     "ms": 107,
+     "consultado_el": "2026-10-25T23:43:13.372Z"
+    }
+   }
+  },
+  "llaves": {
+   "wi7w_a_p6dx": {
+    "ok": true,
+    "valor": {
+     "ejemplo": "CO1.BDOS.8512845",
+     "filas_p6dx_por_id_del_portafolio": 1,
+     "filas_p6dx_por_id_del_proceso": 0
+    },
+    "ms": 327,
+    "consultado_el": "2026-10-25T23:43:13.699Z"
+   },
+   "b28v_a_p6dx": {
+    "ok": true,
+    "valor": {
+     "ejemplo": "CO1.BDOS.4813226",
+     "filas_p6dx_por_id_del_portafolio": 1,
+     "filas_p6dx_por_id_del_proceso": 0
+    },
+    "ms": 323,
+    "consultado_el": "2026-10-25T23:43:14.022Z"
+   },
+   "jbjy_a_p6dx": {
+    "ok": true,
+    "valor": {
+     "ejemplo": "CO1.BDOS.10837474",
+     "filas_p6dx_por_id_del_portafolio": 3,
+     "filas_p6dx_por_id_del_proceso": 0
+    },
+    "ms": 750,
+    "consultado_el": "2026-10-25T23:43:14.773Z"
+   },
+   "hgi6_a_p6dx": {
+    "ok": true,
+    "valor": {
+     "ejemplo": "CO1.REQ.10315922",
+     "filas_p6dx_por_id_del_portafolio": 0,
+     "filas_p6dx_por_id_del_proceso": 1
+    },
+    "ms": 323,
+    "consultado_el": "2026-10-25T23:43:15.096Z"
+   },
+   "qmzu_a_wi7w": {
+    "ok": true,
+    "valor": {
+     "ejemplo": {
+      "c_digo_proveedor": "712584838",
+      "nit_del_proveedor": "900948144"
+     },
+     "filas_qmzu_por_codigo": 1,
+     "filas_qmzu_por_nit": 1
+    },
+    "ms": 360,
+    "consultado_el": "2026-10-25T23:43:15.456Z"
+   }
+  },
+  "notas": [
+   "Conteos de FILAS. En wi7w-2nvm y b28v-edj8 cada oferta se repite en muchas filas (una oferta es su identificador_de_la_oferta): un conteo de filas no es un conteo de ofertas."
+  ],
+  "marca_de_habilitacion": {
+   "columnas_wi7w": [
+    "fecha_de_registro",
+    "referencia_de_la_oferta",
+    "identificador_de_la_oferta",
+    "valor_de_la_oferta",
+    "entidad_compradora",
+    "nit_entidad_compradora",
+    "moneda",
+    "descripcion_del_procedimiento",
+    "referencia_del_proceso",
+    "id_del_proceso_de_compra",
+    "modalidad",
+    "invitacion_directa",
+    "nombre_proveedor",
+    "nit_del_proveedor",
+    "c_digo_entidad",
+    "c_digo_proveedor"
+   ],
+   "conclusion": "Ninguna columna de wi7w-2nvm ni de b28v-edj8 dice si la oferta quedó habilitada, rechazada o ganadora: el ganador sale de p6dx (nombre_del_proveedor, nit_del_proveedor_adjudicado, valor_total_adjudicacion) y de jbjy."
+  },
+  "fin": "2026-10-25T23:43:15.457Z"
+ },
+ "cobertura_por_ano": {
+  "licitacion": {
+   "2020": {
+    "adjudicados": 335,
+    "a": 335,
+    "b": 157,
+    "c": 191,
+    "d_todas_con_nit": 3,
+    "usable_motor": 128
+   },
+   "2021": {
+    "adjudicados": 874,
+    "a": 870,
+    "b": 395,
+    "c": 620,
+    "d_todas_con_nit": 14,
+    "usable_motor": 294
+   },
+   "2022": {
+    "adjudicados": 1297,
+    "a": 1287,
+    "b": 557,
+    "c": 855,
+    "d_todas_con_nit": 18,
+    "usable_motor": 443
+   },
+   "2023": {
+    "adjudicados": 1307,
+    "a": 1305,
+    "b": 732,
+    "c": 985,
+    "d_todas_con_nit": 25,
+    "usable_motor": 595
+   },
+   "2024": {
+    "adjudicados": 753,
+    "a": 751,
+    "b": 401,
+    "c": 529,
+    "d_todas_con_nit": 20,
+    "usable_motor": 337
+   },
+   "2025": {
+    "adjudicados": 1170,
+    "a": 1163,
+    "b": 538,
+    "c": 795,
+    "d_todas_con_nit": 20,
+    "usable_motor": 424
+   },
+   "2026": {
+    "adjudicados": 814,
+    "a": 811,
+    "b": 438,
+    "c": 599,
+    "d_todas_con_nit": 10,
+    "usable_motor": 398
+   },
+   "otro_o_sin_fecha": {
+    "adjudicados": 17,
+    "a": 17,
+    "b": 10,
+    "c": 13,
+    "d_todas_con_nit": 0,
+    "usable_motor": 10
+   }
+  },
+  "menor_cuantia": {
+   "2020": {
+    "adjudicados": 679,
+    "a": 675,
+    "b": 426,
+    "c": 552,
+    "d_todas_con_nit": 168,
+    "usable_motor": 341
+   },
+   "2021": {
+    "adjudicados": 1253,
+    "a": 1245,
+    "b": 673,
+    "c": 1116,
+    "d_todas_con_nit": 307,
+    "usable_motor": 574
+   },
+   "2022": {
+    "adjudicados": 1652,
+    "a": 1646,
+    "b": 565,
+    "c": 1078,
+    "d_todas_con_nit": 274,
+    "usable_motor": 473
+   },
+   "2023": {
+    "adjudicados": 2143,
+    "a": 2134,
+    "b": 858,
+    "c": 1855,
+    "d_todas_con_nit": 420,
+    "usable_motor": 724
+   },
+   "2024": {
+    "adjudicados": 1813,
+    "a": 1805,
+    "b": 797,
+    "c": 1598,
+    "d_todas_con_nit": 336,
+    "usable_motor": 667
+   },
+   "2025": {
+    "adjudicados": 2743,
+    "a": 2736,
+    "b": 868,
+    "c": 2419,
+    "d_todas_con_nit": 354,
+    "usable_motor": 745
+   },
+   "2026": {
+    "adjudicados": 1848,
+    "a": 1838,
+    "b": 629,
+    "c": 1636,
+    "d_todas_con_nit": 278,
+    "usable_motor": 528
+   },
+   "otro_o_sin_fecha": {
+    "adjudicados": 39,
+    "a": 39,
+    "b": 14,
+    "c": 32,
+    "d_todas_con_nit": 3,
+    "usable_motor": 11
+   }
+  },
+  "minima": {
+   "2020": {
+    "adjudicados": 618,
+    "a": 616,
+    "b": 438,
+    "c": 537,
+    "d_todas_con_nit": 302,
+    "usable_motor": 374
+   },
+   "2021": {
+    "adjudicados": 889,
+    "a": 886,
+    "b": 540,
+    "c": 822,
+    "d_todas_con_nit": 397,
+    "usable_motor": 467
+   },
+   "2022": {
+    "adjudicados": 1055,
+    "a": 1050,
+    "b": 489,
+    "c": 699,
+    "d_todas_con_nit": 401,
+    "usable_motor": 420
+   },
+   "2023": {
+    "adjudicados": 1412,
+    "a": 1406,
+    "b": 615,
+    "c": 1234,
+    "d_todas_con_nit": 536,
+    "usable_motor": 528
+   },
+   "2024": {
+    "adjudicados": 1382,
+    "a": 1375,
+    "b": 731,
+    "c": 1277,
+    "d_todas_con_nit": 603,
+    "usable_motor": 660
+   },
+   "2025": {
+    "adjudicados": 1765,
+    "a": 1764,
+    "b": 766,
+    "c": 1628,
+    "d_todas_con_nit": 644,
+    "usable_motor": 680
+   },
+   "2026": {
+    "adjudicados": 1070,
+    "a": 1066,
+    "b": 452,
+    "c": 951,
+    "d_todas_con_nit": 369,
+    "usable_motor": 397
+   },
+   "otro_o_sin_fecha": {
+    "adjudicados": 32,
+    "a": 31,
+    "b": 14,
+    "c": 28,
+    "d_todas_con_nit": 10,
+    "usable_motor": 13
+   }
+  }
+ },
+ "no_verificado": [
+  "Si valor_de_la_oferta es el precio que la entidad evaluó: se contrasta con lo adjudicado (inconsistencia > 1 %), no con el informe de evaluación.",
+  "Qué ofertas quedaron HABILITADAS: ninguna columna de wi7w-2nvm ni b28v-edj8 lo dice (metadatos del 25-oct-2026).",
+  "La moneda de cada oferta agrupada: la consulta agrupada no la trae; el diccionario la cuenta por filas.",
+  "Procesos con una sola fila anterior al 2020-01-01 (borde de 2020) y procesos adjudicados después del corte (2026 parcial).",
+  "El mismo identificador_de_la_oferta con dos valores: la consulta agrupada no lleva el identificador; no se midió aquí.",
+  "jbjy-vk9h (contratos) respondía count(*) = 1000 el 25-oct-2026 (medido dos veces, HTTP 200): la corrida halló contrato en 3 de los usables. Eso apaga el rescate bajo el 50 % (0 rescates; el 17-oct fueron 12, todos de mínima) y el lugar de ejecución, y SÍ puede mover (b) y (c): el auditor midió un techo de 52 procesos (46 de mínima). Volver a correr base.js cuando jbjy se recupere."
+ ],
+ "jbjy_al_correr": {
+  "usables": 23523,
+  "con_contrato": 3
+ }
+}
