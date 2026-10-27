@@ -231,7 +231,19 @@
       if (!h || !h.fecha) continue;
       out.push({ ...base, tipo: "hito", clave: h.id, etiqueta: h.etiqueta, fecha: String(h.fecha).slice(0, 10), origen: h.origen || "dataset", evidencia: h.evidencia || null, hecha: null });
     }
-    for (const t of p.tareas || []) {
+    /* SUS FECHAS SALEN DE `fechas_suyas` (27-oct-2026). La pestaña recibe la lista
+       LIGERA (lib/seguimiento, `aLigero`), que no trae `tareas`: leerlas de ahí
+       dejaba el calendario sin una sola nota suya, aunque la prueba —que le pasaba
+       `tareas` a mano— saliera en verde. `fechas_suyas` es la fuente que el
+       servidor declara para la pantalla, el calendario y el .ics (`fechasSuyas`):
+       sus notas pendientes con fecha y lo que vence de sus documentos. Sin ella
+       (un objeto armado a mano), las tareas de siempre. */
+    /* lo que vence de un documento dice que es un documento, con el mismo rótulo que
+       ya pone el .ics (lib/seguimiento `hitosConTareas`): no es una nota que se apuntó */
+    const suyas = Array.isArray(p.fechas_suyas)
+      ? p.fechas_suyas.map((f) => f && { id: f.id, texto: f.tipo === "documento" ? `Su documento: ${f.texto}` : f.texto, fecha: f.fecha, hecha: false })
+      : (p.tareas || []);
+    for (const t of suyas) {
       if (!t || !t.fecha) continue;
       out.push({ ...base, tipo: "tarea", clave: t.id, etiqueta: t.texto, fecha: String(t.fecha).slice(0, 10), origen: "usted", evidencia: null, hecha: t.hecha === true });
     }
@@ -622,6 +634,7 @@
               <input type="date" class="control-campo cas-tarea-fecha" data-seg-tarea-fecha="${esc(p.id)}" aria-label="Para cuándo lo necesita (opcional)">
               <button type="button" class="control-boton cas-org-boton" data-seg-tarea-anadir="${esc(p.id)}">Apuntar</button>
             </div>`}
+        <p class="cas-nota" data-seg-cuaderno-mensaje="${esc(p.id)}" role="status" aria-live="polite"></p>
         <p class="cas-rotulo">Sus notas</p>
         <textarea class="control-campo cas-notas" rows="3" maxlength="${largoNotas}" data-seg-notas="${esc(p.id)}" aria-label="Notas suyas sobre este proceso" placeholder="Lo que quiera recordar de este proceso: con quién habló, qué le dijeron, qué decidió.">${esc(notas)}</textarea>
         <div class="cas-notas-pie">
@@ -683,6 +696,17 @@
 
   const TONO_AVISO = { alta: "cas-aviso-alta", media: "cas-aviso-media", baja: "cas-aviso-baja" };
 
+  /* EL RÓTULO NO SE REPITE (27-oct-2026). El servidor ya escribe «Cambió: Fecha
+     de cierre…» y «Avisar que le interesa vence HOY…» (lib/seguimiento,
+     `alertasDe`), porque el correo usa la frase sola y la necesita entera; aquí
+     anteponerle el rótulo pintaba «Cambió: Cambió:». Si la frase ya empieza por
+     el rótulo, va sola. */
+  function fraseAviso(a, tipos = {}) {
+    const rotulo = String(tipos[a.tipo] || a.tipo || "");
+    const frase = String(a.mensaje || "");
+    return rotulo && !frase.toLowerCase().startsWith(rotulo.toLowerCase()) ? `${rotulo}: ${frase}` : frase;
+  }
+
   function htmlAlertas(alertas, { tipos = {}, abierto = false, tope = TOPE_AVISOS } = {}) {
     const grupos = agruparAlertas(alertas);
     if (!grupos.length) return "";
@@ -697,7 +721,7 @@
           <span class="exp-punto cas-aviso-punto" aria-hidden="true">&#9679;</span>
           <span class="cas-aviso-texto">
             <span class="cas-aviso-nombre">${esc(g.proceso)}</span>
-            <span class="cas-aviso-frase">${esc(tipos[a.tipo] || a.tipo)}: ${esc(a.mensaje || "")}</span>
+            <span class="cas-aviso-frase">${esc(fraseAviso(a, tipos))}</span>
           </span>
           ${mas > 0 ? `<span class="cas-aviso-n" title="Este proceso tiene ${miles(mas + 1)} avisos">+${miles(mas)}</span>` : ""}
         </button>
@@ -724,7 +748,7 @@
   }
 
   return {
-    TOPE_AVISOS, agruparAlertas, htmlAlertas, fraseAlertas,
+    TOPE_AVISOS, agruparAlertas, fraseAviso, htmlAlertas, fraseAlertas,
     VISTAS, ORDENES, AGRUPACIONES, CARPETA_TODO, CARPETA_SIN, POR_OMISION, CLAVE_PREFERENCIAS,
     leerPreferencias, guardarPreferencias, carpetaVigente,
     filtrar, ordenar, agrupar, textoDe,

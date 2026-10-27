@@ -49641,6 +49641,20 @@ async function main() {
       assert.strictEqual(proxima.urgencia, "media", "a dos días, urgencia media: la alta se reserva para hoy y mañana");
       assert.ok(!(g.alertas || []).some((a) => a.tipo === "tarea" && /Ya conseguí/.test(a.mensaje)), "lo ya hecho no vuelve a sonar");
 
+      /* 3f-bis · LO QUE RECIBE LA PESTAÑA, NO UN OBJETO ARMADO A MANO (27-oct-2026).
+         `g` es la lista LIGERA que sirve el servidor. Contra el árbol anterior caen
+         las tres: el calendario de la pestaña no veía ni una nota suya (leía
+         `tareas`, que la lista ligera no trae), y los dos cierres a 20 días
+         sumaban 6 recordatorios a «N avisos esta semana» y salían como «Faltan 7
+         días para: Cierre» (el filtro miraba el escalón 7/3/1, no la distancia). */
+      const agUno = K.agendaDe(g.procesos.filter((p) => p.id === "CAS.UNO"), { hoy: g.hoy });
+      assert.strictEqual(agUno.conteos_por_tipo.tarea, 2,
+        `las dos notas con fecha y sin hacer salen en el calendario de la pestaña, servidas por \`fechas_suyas\`: ${JSON.stringify(agUno.conteos_por_tipo)}`);
+      assert.strictEqual(g.resumen.avisos_proximos, 0,
+        `con los dos cierres a 20 días no suena ningún recordatorio esta semana: ${g.resumen.avisos_proximos}`);
+      assert.ok(!(g.alertas || []).some((a) => a.tipo === "aviso" && /^CAS\./.test(a.id)),
+        `un cierre a 20 días no está en «los próximos 7 días»: ${JSON.stringify((g.alertas || []).filter((a) => a.tipo === "aviso").map((a) => a.mensaje))}`);
+
       /* 3g · QUITAR UNA CARPETA NO BORRA NI UN PROCESO */
       const quit = (await cas("", { metodo: "POST", body: { perfil: PERF, accion: "carpeta_quitar", carpeta: c1.carpeta.id } })).cuerpo;
       assert.strictEqual(quit.procesos_sueltos, 1, "la respuesta dice cuántos procesos quedaron sueltos");
@@ -50062,6 +50076,162 @@ async function main() {
       assert.ok(D6.clasificarArchivo({ nombre_archivo: "Acta de sorteo.pdf" }).orden > 9, "el acta del sorteo no entra al plan de lectura automática");
       console.log("· unidad CASILLERO · la espera del sorteo: dos etapas en el recorrido, alertas por etapa, el sorteo como requisito de la guía y los documentos del aviso con tipo propio");
     }
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     unidad: LO QUE PIDE ATENCIÓN DICE LO QUE FALTA HOY (27-oct-2026)
+     ──────────────────────────────────────────────────────────────────────────
+     Tres defectos de Mis procesos, reproducidos con las funciones reales antes
+     de corregirlos (la parte que corre sobre la respuesta del servidor está en
+     «unidad CASILLERO DE MIS PROCESOS», 3f-bis). Contra el árbol anterior:
+       · `alertasDe` filtraba `a.dias_antes > dias` —el ESCALÓN 7/3/1, nunca
+         mayor que 7— y repetía el mensaje del día del recordatorio: un cierre del
+         20 de diciembre salía en octubre como «Faltan 7 días», y un hito a 5 días
+         se leía «Faltan 3 días»; «N avisos esta semana» sumaba los de diciembre;
+       · la pantalla anteponía el rótulo a una frase que ya lo trae: «Cambió:
+         Cambió:», y «Avisar que le interesa: Avisar que le interesa vence HOY»;
+       · el correo añadía «(fecha: …)» tras una frase que ya decía esa fecha. */
+  bqAvisosHoy: { if (!corre("unidad lo que pide atención · lo que falta hoy")) break bqAvisosHoy;
+    const S = require("../lib/seguimiento.js");
+    const Cro = require("../lib/cronograma.js");
+    const K = require("../public/casillero.js");
+    const Av = require("../lib/handlers/perfil/avisos.js");
+    const HOY = "2026-10-27";
+    const hitos = [{ id: "cierre", etiqueta: "Cierre: entrega de la oferta", fecha: "2026-12-20" }, { id: "apertura", etiqueta: "Apertura de ofertas", fecha: "2026-11-01" }];
+    const p = { id: "P1", estado: "preparando", proceso: { nombre: "SALONES COMUNALES", fecha_cierre: "2026-12-20T15:00:00" }, cerrado: false, dias_para_cierre: 54,
+      cambios: [{ campo: "fecha_cierre", mensaje: "Fecha de cierre: antes el viernes 2 de octubre, ahora el miércoles 14 de octubre." }],
+      tareas: [], documentos: [], avisos: Cro.avisosDe(hitos, HOY) };
+
+    /* 1 · el aviso cuenta desde HOY hasta el hito, y solo dentro de la semana */
+    const al = S.alertasDe([p], { dias: 7, hoy: HOY });
+    const avisos = al.filter((a) => a.tipo === "aviso");
+    assert.deepStrictEqual(avisos.map((a) => a.hito), ["apertura"], `el cierre del 20 de diciembre no es de «los próximos 7 días»: ${JSON.stringify(avisos)}`);
+    assert.strictEqual(avisos[0].mensaje, "Faltan 5 días para: Apertura de ofertas (domingo 1 de noviembre).", "dice lo que falta HOY, no el escalón del recordatorio");
+    assert.deepStrictEqual([avisos[0].fecha, avisos[0].urgencia], ["2026-11-01", "baja"], "la fecha de la alerta es la del hito");
+    assert.ok(!al.some((a) => /20 de diciembre/.test(a.mensaje)), "nada de diciembre en la lista de octubre");
+    // un cierre a 2 días también avisa: antes su único recordatorio era el T-1 y se descartaba por ser «cierre»
+    const p2 = { ...p, id: "P2", cambios: [], dias_para_cierre: 2, avisos: Cro.avisosDe([{ id: "cierre", etiqueta: "Cierre: entrega de la oferta", fecha: "2026-10-29" }], HOY) };
+    const al2 = S.alertasDe([p2], { dias: 7, hoy: HOY }).filter((a) => a.tipo === "aviso");
+    assert.ok(al2.length === 1 && /^Faltan 2 días para: Cierre/.test(al2[0].mensaje) && al2[0].urgencia === "media", `el cierre a dos días: ${JSON.stringify(al2)}`);
+    // a 1 día lo dice la alerta «cierre», sin un aviso repetido
+    const p3 = { ...p2, id: "P3", dias_para_cierre: 1, avisos: Cro.avisosDe([{ id: "cierre", etiqueta: "Cierre: entrega de la oferta", fecha: "2026-10-28" }], HOY) };
+    assert.deepStrictEqual(S.alertasDe([p3], { dias: 7, hoy: HOY }).map((a) => a.tipo), ["cierre"], "a un día, solo «Cierra mañana»");
+    // la frase es UNA: el recordatorio T-7/3/1 y la alerta la piden a la misma función
+    assert.strictEqual(Cro.avisosDe(hitos, HOY).find((a) => a.hito === "apertura" && a.dias_antes === 3).mensaje, Cro.fraseFaltan(3, "Apertura de ofertas", "2026-11-01"));
+    assert.strictEqual(Cro.fraseFaltan(1, "Cierre", "2026-10-28"), "Falta 1 día para: Cierre (miércoles 28 de octubre).");
+
+    /* 2 · «N avisos esta semana» cuenta los recordatorios que suenan de hoy a hoy + 7 */
+    assert.deepStrictEqual(p.avisos.map((a) => a.aviso), ["2026-10-29", "2026-10-31", "2026-12-13", "2026-12-17", "2026-12-19"], "T-3 y T-1 de la apertura; T-7, T-3 y T-1 del cierre");
+    assert.strictEqual(S.contarAvisosProximos([p], { dias: 7, hoy: HOY }), 2, "solo suenan esta semana los dos de la apertura");
+    assert.strictEqual(S.contarAvisosProximos([], { hoy: HOY }), 0);
+
+    /* 2b · EL CIERRE DE MAÑANA, MIRADO POR LA MAÑANA, AVISA (revisión adversaria del
+       27-oct). Armado con `enriquecer` y la hora real, no con `dias_para_cierre` a mano:
+       esa cuenta redondea las horas hacia arriba y a las 8 a. m. un cierre de mañana a
+       las 5 p. m. da 2, así que ni salía «Cierra mañana» ni este aviso. */
+    {
+      const tzAntes = process.env.TZ; process.env.TZ = "UTC";
+      try {
+        const ocho = Date.parse("2026-10-27T13:00:00Z"); // 8:00 a. m. en Colombia
+        const g = (c) => ({ id: "H", estado: "preparando", foto: { nombre: "OBRA", fecha_cierre: c, fecha_publicacion: "2026-10-01" } });
+        const alM = S.alertasDe([S.enriquecer(g("2026-10-28T17:00:00"), null, ocho)], { dias: 7, hoy: HOY });
+        assert.ok(alM.length === 1 && alM[0].tipo === "aviso" && alM[0].urgencia === "alta" && /^Falta 1 día para: Cierre/.test(alM[0].mensaje),
+          `el cierre de mañana tiene que avisar en algún sitio: ${JSON.stringify(alM)}`);
+        assert.deepStrictEqual(S.alertasDe([S.enriquecer(g("2026-10-27T17:00:00"), null, ocho)], { dias: 7, hoy: HOY }).map((a) => a.tipo), ["cierre"],
+          "el día del cierre lo dice la alerta «cierre», sin un aviso repetido");
+      } finally { if (tzAntes === undefined) delete process.env.TZ; else process.env.TZ = tzAntes; }
+    }
+
+    /* 3 · el rótulo no se antepone a una frase que ya lo trae */
+    const tipos = { cambio: "Cambió", manifestacion: "Avisar que le interesa", aviso: "Aviso" };
+    const html = K.htmlAlertas(al, { tipos, abierto: true });
+    assert.ok(!/Cambió: Cambió:/.test(html) && /Cambió: Fecha de cierre: antes el viernes 2 de octubre/.test(html), `un cambio dice «Cambió» una vez: ${html.replace(/\s+/g, " ").slice(0, 300)}`);
+    assert.strictEqual(K.fraseAviso({ tipo: "manifestacion", mensaje: "Avisar que le interesa vence HOY (lunes 26 de octubre), según el cronograma del pliego." }, tipos),
+      "Avisar que le interesa vence HOY (lunes 26 de octubre), según el cronograma del pliego.", "la manifestación confirmada no repite su rótulo");
+    assert.strictEqual(K.fraseAviso({ tipo: "aviso", mensaje: "Faltan 5 días para: Cierre." }, tipos), "Aviso: Faltan 5 días para: Cierre.", "cuando la frase no lo trae, el rótulo sigue");
+    assert.strictEqual(K.fraseAviso({ tipo: "otro", mensaje: "x" }, {}), "otro: x", "sin rótulo conocido, el tipo crudo, como antes");
+
+    /* 4 · el correo no dice dos veces la misma fecha */
+    const correo = Av.plantillaAviso({ perfil: "helder", alertas: al, fecha: HOY }).texto;
+    assert.ok(!/1 de noviembre\)\. \(fecha:/.test(correo) && /Faltan 5 días para: Apertura de ofertas \(domingo 1 de noviembre\)\./.test(correo),
+      `el renglón del aviso no repite «(fecha: …)»: ${correo}`);
+    const conFechaSola = Av.plantillaAviso({ perfil: "helder", alertas: [{ tipo: "sorteo", proceso: "OBRA", mensaje: "Mire si salió la lista.", fecha: "2026-10-20" }], fecha: HOY }).texto;
+    assert.ok(/Mire si salió la lista\. \(fecha: martes 20 de octubre\)/.test(conFechaSola), `la fecha se sigue diciendo cuando la frase no la trae: ${conFechaSola}`);
+    /* 5 · «N avisos esta semana» ya no se pinta: contaba recordatorios que ninguna lista
+       enseña, y junto a «Piden atención · N avisos» decía otra cifra con la misma palabra */
+    const appA = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+    const iRes5 = appA.indexOf("function htmlResumenSeguimiento(");
+    const chips5 = new Function(`${appA.slice(iRes5, appA.indexOf("\n  }", iRes5) + 4)}; return htmlResumenSeguimiento;`)();
+    assert.ok(!/esta semana/.test(chips5({ abiertos: 2, presentados: 0, cambios_pendientes: 1, avisos_proximos: 5 }, 3)), "el chip de los recordatorios de la semana no vuelve");
+
+    /* 6 · EL CUADERNO SE CAMBIA SOBRE LA LISTA COMPLETA, O NO SE CAMBIA (27-oct-2026).
+       El servidor sustituye la lista entera con lo que llega en `tareas`, y los tres
+       mandos del expediente la armaban con `(p.tareas || [])` sobre la fila LIGERA, que
+       no la trae: marcar una nota borraba todas (medido en Chromium con los routers
+       reales: 3 notas → 0). La lista sale del expediente abierto; si no está, null. */
+    const iT6 = appA.indexOf("  function tareasDelExpediente(id) {");
+    assert.ok(iT6 > 0, "app.js sin tareasDelExpediente: los mandos del cuaderno no tienen de dónde sacar la lista completa");
+    const fuenteT6 = appA.slice(iT6, appA.indexOf("\n  }", iT6) + 4);
+    const tareasDe6 = (datos) => new Function("segExpDatos", `${fuenteT6}; return tareasDelExpediente;`)(datos);
+    assert.strictEqual(tareasDe6(null)("A"), null, "sin expediente abierto no hay lista: no se envía nada");
+    assert.strictEqual(tareasDe6({ proceso: { id: "B", tareas: [] } })("A"), null, "el expediente de OTRO proceso no presta su lista");
+    assert.strictEqual(tareasDe6({ proceso: S.aLigero({ id: "A", estado: "interesa", tareas: [{ id: "t1", texto: "x" }] }) })("A"), null, "la fila ligera no trae la lista: null, nunca []");
+    assert.deepStrictEqual(tareasDe6({ proceso: { id: "A", tareas: [{ id: "t1", texto: "x" }] } })("A"), [{ id: "t1", texto: "x" }]);
+    assert.ok(!/\(p\.tareas \|\| \[\]\)\.(?:map|filter)\(|\[\.\.\.\(p\.tareas \|\| \[\]\)/.test(appA),
+      "censo de app.js: ningún mando vuelve a armar la lista de verificación desde una fila que puede no traerla");
+    assert.strictEqual((appA.match(/guardarDelProceso\([^;]*\btareas\b/g) || []).length, 1,
+      "censo de app.js: la lista de verificación se envía desde UN solo sitio (`cambiarTareas`), el que parte de la lista completa y va en fila");
+    /* y la fila: dos pulsaciones seguidas no se pisan (revisión adversaria del 27-oct:
+       marcar dos notas seguidas dejaba solo la segunda; apuntar y marcar perdía la
+       nueva). Se ejecuta el `cambiarTareas` REAL de app.js contra un servidor falso
+       que, como el de verdad, sustituye la lista entera y tarda en contestar. */
+    {
+      const iB6 = appA.indexOf("  function tareasDelExpediente(id) {"), fB6 = appA.indexOf("  /* LOS PROCESOS QUE SE ESTÁN VIENDO", iB6);
+      assert.ok(iB6 > 0 && fB6 > iB6, "el bloque del cuaderno sigue entero en app.js");
+      const bloque6 = appA.slice(iB6, fB6);
+      const montar6 = (datos) => {
+        const ent = { datos, pintadas: 0, envios: [], servidor: { tareas: datos && datos.proceso ? datos.proceso.tareas.map((t) => ({ ...t })) : [] } };
+        ent.guardar = async (id, cambio, opc) => {
+          ent.envios.push({ n: cambio.tareas.length, repintar: opc ? opc.repintar : undefined });
+          await new Promise((r) => setTimeout(r, 15));
+          ent.servidor.tareas = cambio.tareas.map((t, i) => ({ id: t.id || `n${i}`, ...t }));
+          return { guardado: { tareas: ent.servidor.tareas.map((t) => ({ ...t })) } };
+        };
+        const api = new Function("ent", `let segExpDatos = ent.datos, seguimientoCargadoPara = "x", segExpEscrituras = 0;
+          const secSeg = null, CSS = { escape: (s) => s }, document = { activeElement: null };
+          const guardarDelProceso = ent.guardar, pintarExpediente = () => { ent.pintadas += 1; }, refrescarExpediente = () => {}, mensajeSeg = () => {};
+          ${bloque6}; return { cambiarTareas, datos: () => segExpDatos, escrituras: () => segExpEscrituras };`)(ent);
+        return { ...api, ent };
+      };
+      const m6 = montar6({ proceso: { id: "A", tareas: [{ id: "t1", texto: "Póliza", hecha: false }, { id: "t2", texto: "RUT", hecha: false }] } });
+      const marcar6 = (idT) => (ts) => ts.map((t) => (t.id === idT ? { ...t, hecha: true } : t));
+      await Promise.all([m6.cambiarTareas("A", marcar6("t1")), m6.cambiarTareas("A", marcar6("t2"))]);
+      assert.deepStrictEqual(m6.ent.servidor.tareas.map((t) => `${t.id}:${t.hecha}`), ["t1:true", "t2:true"], "dos marcas seguidas quedan las dos");
+      await Promise.all([m6.cambiarTareas("A", (ts) => [...ts, { texto: "Nueva", hecha: false }]), m6.cambiarTareas("A", (ts) => ts.filter((t) => t.id !== "t2"))]);
+      assert.deepStrictEqual(m6.ent.servidor.tareas.map((t) => t.texto), ["Póliza", "Nueva"], "apuntar y quitar seguidos tampoco se pisan: la nota nueva sigue");
+      assert.deepStrictEqual(m6.datos().proceso.tareas.map((t) => t.texto), ["Póliza", "Nueva"], "el expediente queda con lo que devolvió el servidor");
+      assert.ok(m6.ent.envios.every((e) => e.repintar === false) && m6.escrituras() === 4 && m6.ent.pintadas === 4,
+        `cada pulsación guarda sin recargar la lista maestra, cuenta su escritura y repinta: ${JSON.stringify(m6.ent.envios)}`);
+      const sin6 = montar6(null);
+      assert.deepStrictEqual(await sin6.cambiarTareas("A", () => []), { sinLista: true }, "sin la lista completa la respuesta lo dice");
+      assert.strictEqual(sin6.ent.envios.length, 0, "y no se envía nada al servidor");
+      /* una lectura del expediente que viajaba mientras entró otro guardado llega VIEJA y no se pinta */
+      const iR6 = appA.indexOf("  async function refrescarExpediente() {");
+      const fuenteR6 = appA.slice(iR6, appA.indexOf("\n  }", iR6) + 4);
+      const r6 = new Function(`let segExpId = "A", segExpEscrituras = 0, segExpDatos = { proceso: { id: "A", tareas: ["nueva"] } }, pintadas = 0;
+        const $ = () => ({ value: "helder" }), pintarExpediente = () => { pintadas += 1; };
+        const api = async () => { segExpEscrituras += 1; return { proceso: { id: "A", tareas: ["vieja"] } }; };
+        ${fuenteR6}; return async () => { await refrescarExpediente(); return { tareas: segExpDatos.proceso.tareas, pintadas }; };`)();
+      assert.deepStrictEqual(await r6(), { tareas: ["nueva"], pintadas: 0 }, "la lectura que empezó antes de otro guardado se descarta");
+    }
+    /* 7 · el calendario lee `fechas_suyas` de la fila LIGERA, y lo que vence de un
+       documento dice que es un documento (el mismo rótulo que ya pone el .ics) */
+    const conDoc = { id: "D", estado: "preparando", proceso: { nombre: "OBRA" }, hitos: [],
+      tareas: [{ id: "t1", texto: "Pedir la póliza", hecha: false, fecha: "2026-10-30" }], documentos: [{ id: "d1", nombre: "RUT", vence: "2026-11-02", estado: "listo" }] };
+    conDoc.fechas_suyas = S.fechasSuyas(conDoc);
+    assert.deepStrictEqual(K.eventosDe(S.aLigero(conDoc)).map((e) => `${e.origen}|${e.etiqueta}`), ["usted|Pedir la póliza", "usted|Su documento: Vence RUT"],
+      "la nota y el vencimiento del documento llegan al calendario, cada uno con su nombre");
+    console.log("· unidad lo que pide atención · lo que falta hoy: el aviso cuenta desde hoy y solo dentro de la semana (y el cierre de mañana avisa por la mañana), la cuenta semanal mira el día del recordatorio, el rótulo no se repite, el correo no dice dos veces la fecha, el chip de la semana no vuelve y el cuaderno no se borra al marcar una nota");
   }
 
   /* ══════════════════════════════════════════════════════════════════════════
