@@ -4157,6 +4157,23 @@ async function main() {
         guardado.set(kReg, regBueno);
         const sinAnotar = { A: ops.A - opsAntesIlegible.A, B: ops.B - opsAntesIlegible.B };
         assert.ok(sinAnotar.A <= 2 && sinAnotar.B <= 2, `el margen sin anotar de dos corridas fallidas es de pocas operaciones (${JSON.stringify(sinAnotar)})`);
+        /* …pero lo que escriben la copia nocturna y la foto de los índices NO es de la base (27-oct-2026,
+           lib/objetos.PREFIJOS_DE_LA_APLICACION): contado como suyo, la copia de las noches 1 a 3 le
+           bloqueaba la subida del día 3. Sin registro y con SOLO objetos de la aplicación escritos este
+           mes, la base mide; un objeto suyo sin registro sigue negando. */
+        {
+          const apartados = new Map(guardado), opsAp = { ...ops };
+          guardado.clear();
+          const hoyB = new Date().toISOString();
+          for (const k of ["historico/2026-10.json.gz", "usuario/2026-10-27.detekta", "indice.json", "indices/baja.json.gz"]) guardado.set(k, { buf: Buffer.from("app"), etag: `"a${++etagN}"`, fecha: hoyB });
+          const medB = await alm.medir(envB);
+          assert.strictEqual(medB.objetos, 4, `con solo objetos de la aplicación escritos este mes, la base mide sin negarse: ${JSON.stringify(medB)}`);
+          guardado.delete(kReg);   // el registro que acaba de crear
+          guardado.set("corte/ajeno/x.json", { buf: Buffer.from("x"), etag: `"a${++etagN}"`, fecha: hoyB });
+          await assert.rejects(alm.medir(envB), /falta el registro del mes pero hay 1 objetos/, "un objeto de la base sin registro sigue negando");
+          guardado.clear(); for (const [k, v] of apartados) guardado.set(k, v);
+          ops.A = opsAp.A; ops.B = opsAp.B;   // lo gastado aquí no es de la base que se mide abajo
+        }
         // dos corridas a la vez: el PUT condicional deja pasar UNA y la otra aborta
         modo = { retrasoLista: 80 };
         const dos = await Promise.allSettled([alm.subir(dirB, "corte/a", envB), alm.subir(dirB, "corte/b", envB)]);
@@ -14392,7 +14409,11 @@ async function main() {
         assert.ok(guardados.has(ruta(`historico/${mes}.json.gz`)), `falta historico/${mes}.json.gz en el almacén`);
       }
       assert.ok(guardados.has(ruta(RS.OBJETO_INDICE)), "falta el índice de la copia");
+      // todo lo que escribe la copia va bajo un prefijo de la aplicación: la base nacional no lo cuenta como suyo
+      for (const k of guardados.keys()) assert.ok(OB.esDeLaAplicacion(k.replace("/detekta-copia/", "")), `la copia escribió «${k}» fuera de lib/objetos.PREFIJOS_DE_LA_APLICACION`);
       assert.ok(guardados.has(ruta(RS.objetoUsuario(new Date()))), "falta la copia de los datos del usuario");
+      // la vuelta rehace la foto de los índices que falte (lib/foto_indice.asegurarFotos) y lo dice
+      assert.ok(v1.cuerpo.fotos && v1.cuerpo.fotos.competencia && v1.cuerpo.fotos.baja, `la vuelta dice qué hizo con la foto de cada índice: ${JSON.stringify(v1.cuerpo.fotos)}`);
       const est1 = await leerJSONR(redis, CR.respaldoEstado);
       assert.strictEqual(est1.meses["2019-01"].filas, 30); assert.strictEqual(est1.meses["2019-02"].filas, 20);
       assert.ok(est1.ultima_completa, "una vuelta completa deja su fecha");
@@ -30103,7 +30124,13 @@ async function main() {
              DIFERIDO (dentro de una función), que es lo que de verdad evita el
              ciclo. Cualquier otro fichero de apu/, y cualquier cruce de primer
              nivel, siguen en rojo. */
-          const CRUCES_APU_DECLARADOS = { "rup.js": "apu_pliego.js" }; // quién → qué, y por qué: ver arriba
+          /* SEGUNDA EXCEPCIÓN DECLARADA (27-oct-2026). `lib/objetos.js` tacha el secreto del
+             almacén de archivos en sus errores con el censo ÚNICO de secretos,
+             `apu_ocr.tacharClave` (MEMORIA 27-sep-2026: «lib/objetos LLAMA a tacharClave en vez de
+             tener su propia lista»). Desde la foto de los índices (lib/foto_indice) los índices
+             requieren lib/objetos, así que la cadena de filtros llega hasta ahí. El cruce sigue
+             DIFERIDO dentro de una función; lib/foto_indice tacha por lib/objetos, sin cruzar él. */
+          const CRUCES_APU_DECLARADOS = { "rup.js": "apu_pliego.js", "objetos.js": "apu_ocr.js" }; // quién → qué, y por qué: ver arriba
           const alcanzados = new Set();
           const cruces = [];
           const recorrer = (rel, prof) => {
@@ -51957,6 +51984,450 @@ async function main() {
       await new Promise((z) => servidorU1.close(z));
     }
     console.log(`· unidad índice de baja por partes: un hash de ${mbGrande.toFixed(1).replace(".", ",")} MB contra el límite de 10 MB de Upstash se lee con HSCAN y da lo mismo que se escribió · el listado lo lee y la tarjeta tiene su baja · la lectura baja el COUNT si un viaje no cabe · la competencia, igual · op=salud publica la baja y deja de decir ok cuando no se lee · op=baja responde aunque su caché no quepa`);
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     LA FOTO DE LOS ÍNDICES EN EL ALMACÉN DE ARCHIVOS (27-oct-2026, lib/foto_indice)
+     ──────────────────────────────────────────────────────────────────────────
+     El 26-oct-2026 iban 9 de los 10 GB de ancho de banda gratis de Upstash, y cada
+     instancia fría del listado baja enteros el índice de competencia y los cuatro de
+     baja (~26 MB). Contra el árbol anterior, ninguna publicación sube foto y toda
+     lectura entera va por HSCAN. Aquí se EJECUTAN las funciones reales —la pasada
+     de los dos índices, sus lectores, el listado y op=salud— contra un Upstash
+     simulado propio y un almacén S3 falso que recalcula la firma:
+       · sin las variables OBJETOS_*: ni un comando de más, ni una petición al almacén;
+       · con ellas, la publicación sube la foto (clase STANDARD) y su clave pequeña
+         con el sello de la meta; la lectura desde la foto da EL MISMO objeto que la
+         de Redis y no manda ni un HSCAN de los índices;
+       · sello viejo, almacén que falla, almacén lento, archivo alterado, conteos
+         que no casan o tope del mes → Redis, con los mismos datos;
+       · un índice que cambia reescribe su foto; el tope de bytes y el de
+         operaciones frenan ANTES de gastar; ningún error enseña el secreto.
+     ══════════════════════════════════════════════════════════════════════════ */
+  bqFotoIndices: { if (!corre("unidad foto de los índices en el almacén")) break bqFotoIndices;
+    const http = require("http");
+    const zlib = require("zlib");
+    const OB = require("../lib/objetos.js");
+    const Foto = require("../lib/foto_indice.js");
+    const IBF = require("../lib/indice_baja.js");
+    const saludF = require("../lib/handlers/procesos/salud.js");
+    const { comprimir: compF } = require("../lib/almacen.js");
+    const upF = crearMockUpstash();
+    const puertoF = await escuchar(upF.server);
+    const urlF = `http://127.0.0.1:${puertoF}`;
+    const rF = crearRedis({ url: urlF, token: "token-de-prueba" });
+    const vistosF = [];
+    upF.romper((cmd) => { vistosF.push(cmd.map(String)); return null; });
+    const HASHES_INDICE = [CLAVES.indice, ...IBF.GRANULARIDADES.map((n) => CLAVES.indiceBaja(n))];
+    const hscansDe = (desde) => vistosF.slice(desde).filter((c) => /^HSCAN$/i.test(c[0]) && HASHES_INDICE.includes(c[1])).length;
+    const deFoto = (desde) => vistosF.slice(desde).filter((c) => String(c[1] || "").startsWith("indice:foto:")).length;
+
+    // el almacén falso: guarda en memoria, VERIFICA la firma y se puede romper
+    const SECRETO_F = "secreto-de-la-foto-987";
+    const guardadosF = new Map();
+    const pedidosF = [];
+    let modoF = {};
+    const s3F = http.createServer((req, res) => {
+      const partes = []; req.on("data", (c) => partes.push(c)); req.on("end", () => {
+        const cuerpo = Buffer.concat(partes);
+        const ruta = req.url.split("?")[0];
+        pedidosF.push({ metodo: req.method, ruta, clase: req.headers["x-amz-storage-class"] || null });
+        const auth = String(req.headers.authorization || "");
+        const m = /^AWS4-HMAC-SHA256 Credential=([^/]+)\/(\d{8})\/([^/]+)\/s3\/aws4_request, SignedHeaders=([^,]+), Signature=([0-9a-f]{64})$/.exec(auth);
+        const rechazar = (msg) => { res.writeHead(403, { "Content-Type": "application/xml" }); res.end(`<Error><Code>SignatureDoesNotMatch</Code><Message>${msg}</Message></Error>`); };
+        if (!m || m[1] !== "llave-foto") return rechazar("sin firma o llave desconocida");
+        const hash = req.headers["x-amz-content-sha256"];
+        if (hash !== OB.sha256(cuerpo)) return rechazar("el cuerpo no casa con x-amz-content-sha256");
+        const cab = {};
+        for (const n of m[4].split(";")) cab[n] = req.headers[n];
+        const esperada = OB.firmar({ metodo: req.method, ruta, cabeceras: cab, hashCuerpo: hash, amzFecha: req.headers["x-amz-date"], llave: m[1], secreto: SECRETO_F, region: m[3] }).firma;
+        if (esperada !== m[5]) return rechazar("la firma recalculada no cuadra");
+        const responder = () => {
+          if (modoF.falla500) { res.writeHead(500); return res.end("<Error><Code>InternalError</Code></Error>"); }
+          if (modoF.falla403) return rechazar(`forzado; el secreto era ${SECRETO_F}`);
+          if (req.method === "PUT") { guardadosF.set(ruta, cuerpo); res.writeHead(200, { ETag: `"${OB.sha256(cuerpo).slice(0, 16)}"` }); return res.end(); }
+          if (!ruta.startsWith("/detekta-base/")) { res.writeHead(404, { "Content-Type": "application/xml" }); return res.end("<Error><Code>NoSuchBucket</Code><Message>The specified bucket does not exist.</Message></Error>"); }
+          if (req.method === "GET") { if (!guardadosF.has(ruta)) { res.writeHead(404); return res.end("<Error><Code>NoSuchKey</Code></Error>"); } res.writeHead(200); return res.end(guardadosF.get(ruta)); }
+          res.writeHead(405); res.end();
+        };
+        const seguir = () => { if (modoF.lentoMs) setTimeout(responder, modoF.lentoMs); else responder(); };
+        // un gancho de una sola vez: lo que pasa en Redis MIENTRAS el almacén atiende este pedido
+        const gancho = req.method === "GET" ? modoF.alGet : req.method === "PUT" ? modoF.alPut : null;
+        if (gancho) { if (req.method === "GET") modoF.alGet = null; else modoF.alPut = null; Promise.resolve().then(gancho).then(seguir, seguir); return; }
+        seguir();
+      });
+    });
+    const puertoS3F = await escuchar(s3F);
+    const ENV_F = { OBJETOS_ENDPOINT: `http://127.0.0.1:${puertoS3F}`, OBJETOS_BUCKET: "detekta-base", OBJETOS_ACCESS_KEY_ID: "llave-foto", OBJETOS_SECRET_ACCESS_KEY: SECRETO_F };
+    const antesEnvF = Object.fromEntries([...Object.keys(ENV_F), "UPSTASH_REDIS_REST_URL"].map((k) => [k, process.env[k]]));
+    const conAlmacen = () => Object.assign(process.env, ENV_F);
+    const sinAlmacen = () => { for (const k of Object.keys(ENV_F)) delete process.env[k]; };
+    const rutaF = (nombre) => `/detekta-base/${Foto.objetoDe(nombre)}`;
+    const regF = async (nombre) => { const v = await rF.get(CLAVES.fotoIndice(nombre)); return v ? JSON.parse(v) : null; };
+    // JSON con las claves ordenadas: el orden de HSCAN no es un dato, el contenido sí
+    const canon = (x) => JSON.stringify(x, (k, v) => (v && typeof v === "object" && !Array.isArray(v) ? Object.fromEntries(Object.keys(v).sort().map((q) => [q, v[q]])) : v));
+
+    // un histórico mínimo que alimenta LOS DOS índices: dos entidades con base suficiente
+    let idF = 0;
+    const filaF = (entidad, depto, baja, oferentes) => {
+      const id = idF++;
+      return {
+        _k: `F${id}`, ":updated_at": "2025-03-01T00:00:00.000", id_del_proceso: `CO1.FOTO.${id}`,
+        nombre_del_procedimiento: `OBRA FOTO ${id}`, entidad, nit_entidad: depto === "BOYACA" ? "800000101" : "800000202",
+        departamento_entidad: depto, codigo_principal_de_categoria: "72141100",
+        adjudicado: "Si", estado_del_procedimiento: "Adjudicado", fecha_adjudicacion: `2025-03-${String(10 + (id % 15)).padStart(2, "0")}`,
+        precio_base: "1000000000", valor_total_adjudicacion: String(Math.round(1000000000 * (1 - baja / 100))),
+        respuestas_al_procedimiento: String(oferentes),
+        nit_del_proveedor_adjudicado: "901234567", nombre_del_proveedor: "CONSTRUCTORA FOTO SAS",
+      };
+    };
+    const ponerHistorico = async (filas) => {
+      for (let c = 0; c * 3 < filas.length; c++) await rF.set(`licitaciones:historico:mes:2025-03:chunk:${c}`, compF(filas.slice(c * 3, c * 3 + 3)));
+    };
+    const filasF = [
+      ...[5, 6, 7, 8, 9, 10].map((b, i) => filaF("ALCALDIA DE LA FOTO", "BOYACA", b, 2 + (i % 3))),
+      ...[1, 2, 2, 3, 4, 1].map((b, i) => filaF("GOBERNACION DE LA FOTO", "CALDAS", b, 4 + (i % 2))),
+    ];
+    try {
+      process.env.UPSTASH_REDIS_REST_URL = urlF;
+      await ponerHistorico(filasF);
+
+      /* 1 · SIN las variables: la publicación no sube nada y la lectura no gasta ni un comando de más */
+      sinAlmacen();
+      const m0 = await indiceComp.construirIndice(rF, { presupuestoMs: 60000, reiniciar: true });
+      const b0 = await IBF.construirIndiceBaja(rF, { presupuestoMs: 60000, reiniciar: true });
+      assert.ok(m0.done && b0.done, `los dos índices se construyen: ${JSON.stringify({ c: m0.done, b: b0.done })}`);
+      assert.ok(Object.keys(await rF.hgetall(CLAVES.indice)).length >= 2 && Object.keys(await rF.hgetall(CLAVES.indiceBaja("entidad"))).length >= 2,
+        "premisa: el fixture publica entidades en los dos índices");
+      assert.strictEqual(pedidosF.length, 0, "sin variables, la publicación no toca el almacén");
+      assert.strictEqual(await regF("competencia"), null); assert.strictEqual(await regF("baja"), null);
+      let marca = vistosF.length;
+      const redisB0 = await IBF.leerIndiceBaja(rF);
+      const redisC0 = await indiceComp.leerIndice(rF);
+      assert.strictEqual(deFoto(marca), 0, "sin variables, la lectura no pregunta por la foto (cero comandos de más)");
+      assert.strictEqual(vistosF.length - marca, 5, `sin variables, la lectura entera son los cinco HSCAN de siempre (fueron ${vistosF.length - marca})`);
+      assert.strictEqual(pedidosF.length, 0, "sin variables, la lectura no toca el almacén");
+
+      /* 2 · CON las variables: la publicación sube la foto, en STANDARD, con la clave pequeña y el sello de la meta */
+      conAlmacen();
+      const m1 = await indiceComp.construirIndice(rF, { presupuestoMs: 60000, reiniciar: true });
+      const b1 = await IBF.construirIndiceBaja(rF, { presupuestoMs: 60000, reiniciar: true });
+      const puts1 = pedidosF.filter((p) => p.metodo === "PUT");
+      assert.deepStrictEqual(puts1.map((p) => p.ruta).sort(), [rutaF("baja"), rutaF("competencia")].sort(), `las dos fotos suben: ${JSON.stringify(puts1)}`);
+      assert.ok(puts1.every((p) => p.clase === "STANDARD"), "cada foto va en la clase STANDARD (la única con gratis en R2)");
+      assert.ok(puts1.every((p) => OB.esDeLaAplicacion(p.ruta.replace("/detekta-base/", ""))), "la foto escribe bajo un prefijo de la aplicación (la base nacional no la cuenta como suya)");
+      const rc1 = await regF("competencia"), rb1 = await regF("baja");
+      assert.strictEqual(rc1.sello, indiceComp.selloIndice(await indiceComp.leerIndiceMeta(rF)), "la clave pequeña lleva el sello de la meta de competencia");
+      assert.strictEqual(rb1.sello, IBF.selloIndiceBaja(await IBF.leerIndiceBajaMeta(rF)), "la clave pequeña lleva el sello de la meta de baja");
+      assert.strictEqual(rc1.campos[CLAVES.indice], Object.keys(await rF.hgetall(CLAVES.indice)).length, "cuenta los campos del hash publicado");
+      for (const n of IBF.GRANULARIDADES) assert.strictEqual(rb1.campos[CLAVES.indiceBaja(n)], Object.keys(await rF.hgetall(CLAVES.indiceBaja(n))).length, `cuenta los campos de ${n}`);
+      assert.strictEqual(rb1.sha256, OB.sha256(guardadosF.get(rutaF("baja"))), "la huella es la del archivo subido");
+      assert.strictEqual((await Foto.opsDelMes(rF, new Date().toISOString().slice(0, 7))).a, 2, "cada subida se cuenta ANTES de gastarla (clase A)");
+      // el archivo trae, campo a campo, el MISMO texto que guarda Redis
+      const archivoB = JSON.parse(zlib.gunzipSync(guardadosF.get(rutaF("baja"))).toString("utf8"));
+      for (const n of IBF.GRANULARIDADES) assert.deepStrictEqual(archivoB.hashes[CLAVES.indiceBaja(n)], await rF.hgetall(CLAVES.indiceBaja(n)), `la foto de ${n} es el texto de Redis`);
+
+      /* 3 · la lectura desde la foto da EL MISMO objeto que la de Redis, y no manda ni un HSCAN */
+      sinAlmacen();
+      const redisB = await IBF.leerIndiceBaja(rF), redisC = await indiceComp.leerIndice(rF);
+      conAlmacen();
+      const opsAntes = await Foto.opsDelMes(rF, new Date().toISOString().slice(0, 7));
+      marca = vistosF.length;
+      const fotoB = await IBF.leerIndiceBaja(rF), fotoC = await indiceComp.leerIndice(rF);
+      assert.strictEqual(hscansDe(marca), 0, "desde la foto, ni un HSCAN de los índices");
+      assert.deepStrictEqual(fotoB, redisB, "baja: el objeto desde la foto es el de Redis");
+      assert.deepStrictEqual(fotoC, redisC, "competencia: el objeto desde la foto es el de Redis");
+      assert.strictEqual(canon(fotoB), canon(redisB)); assert.strictEqual(canon(fotoC), canon(redisC));
+      assert.strictEqual(Foto.ultimaLectura("baja").fuente, "almacen"); assert.strictEqual(Foto.ultimaLectura("competencia").fuente, "almacen");
+      const opsDespues = await Foto.opsDelMes(rF, new Date().toISOString().slice(0, 7));
+      assert.strictEqual(opsDespues.b - opsAntes.b, 2, "cada lectura del almacén se cuenta ANTES de gastarla (clase B)");
+      // la tarjeta lee lo mismo: la baja de una entidad, desde la foto
+      const fila = { entidad: "ALCALDIA DE LA FOTO", departamento_entidad: "BOYACA", codigo_principal_de_categoria: "72141100" };
+      assert.deepStrictEqual(IBF.bajaDeMercado(fotoB, fila), IBF.bajaDeMercado(redisB, fila), "la baja de la tarjeta no cambia por venir de la foto");
+
+      /* 4 · el listado y op=salud: la lectura en frío sale del almacén y la salud lo dice */
+      marca = vistosF.length;
+      const lectB = await oportunidades.cargarIndiceBaja(rF);
+      assert.strictEqual(vistosF.slice(marca).filter((c) => /^GET$/i.test(c[0]) && c[1] === CLAVES.indiceBajaMeta).length, 2,
+        "el listado le pasa su meta al lector: la meta se lee dos veces (antes y después), no tres");
+      const lectC = await oportunidades.cargarIndice(rF);
+      assert.ok(lectB.leido && lectC.leido, "el listado lee los dos índices");
+      assert.deepStrictEqual(lectB.indice, redisB); assert.deepStrictEqual(lectC.indice, redisC);
+      const sF = await invocar(saludF, "/api/procesos?op=salud");
+      assert.strictEqual(sF.status, 200);
+      assert.strictEqual(sF.cuerpo.lectura_indice_baja.fuente, "almacen", `op=salud dice de dónde salió la baja: ${JSON.stringify(sF.cuerpo.lectura_indice_baja)}`);
+      assert.strictEqual(sF.cuerpo.lectura_indice_competencia.fuente, "almacen", `y la competencia: ${JSON.stringify(sF.cuerpo.lectura_indice_competencia)}`);
+      assert.ok(sF.cuerpo.indice_baja.foto_en_almacen && sF.cuerpo.indice_baja.foto_en_almacen.al_dia === true, `la foto de la baja está al día: ${JSON.stringify(sF.cuerpo.indice_baja)}`);
+      assert.ok(sF.cuerpo.indice_competencia.foto_en_almacen && sF.cuerpo.indice_competencia.foto_en_almacen.al_dia === true, "y la de competencia");
+
+      /* 5 · sello viejo (una meta nueva sin foto todavía) → Redis, con los mismos datos */
+      const metaB = await IBF.leerIndiceBajaMeta(rF);
+      await rF.set(CLAVES.indiceBajaMeta, JSON.stringify({ ...metaB, generado: new Date(Date.now() + 5000).toISOString() }));
+      marca = vistosF.length; let getsAntes = pedidosF.filter((p) => p.metodo === "GET").length;
+      assert.deepStrictEqual(await IBF.leerIndiceBaja(rF), redisB, "sello viejo: los datos de Redis");
+      assert.strictEqual(hscansDe(marca), 4, "sello viejo: los cuatro HSCAN de la baja");
+      assert.strictEqual(Foto.ultimaLectura("baja").motivo, "foto_vieja");
+      assert.strictEqual(pedidosF.filter((p) => p.metodo === "GET").length, getsAntes, "sello viejo: ni se pide el archivo");
+      const sViejo = await invocar(saludF, "/api/procesos?op=salud");
+      assert.strictEqual(sViejo.cuerpo.indice_baja.foto_en_almacen.al_dia, false, "op=salud dice que la foto no está al día");
+      await rF.set(CLAVES.indiceBajaMeta, JSON.stringify(metaB));
+
+      /* 6 · almacén que falla, almacén lento → Redis */
+      modoF = { falla500: true };
+      marca = vistosF.length;
+      assert.deepStrictEqual(await IBF.leerIndiceBaja(rF), redisB, "almacén en 500: los datos de Redis");
+      assert.strictEqual(hscansDe(marca), 4); assert.strictEqual(Foto.ultimaLectura("baja").motivo, "fallo");
+      assert.strictEqual(Foto.pausaHasta(), null, "un almacén que CONTESTA con error (500) no pone a la instancia en pausa");
+      modoF = { lentoMs: 600 };
+      const t0F = Date.now();
+      const lenta = await Foto.leerFoto(rF, "baja", rb1.sello, { timeoutMs: 150 });
+      assert.strictEqual(lenta, null, "un almacén más lento que el tope no se espera");
+      assert.ok(Date.now() - t0F < 550, `y se abandona al tope (${Date.now() - t0F} ms)`);
+      assert.strictEqual(Foto.ultimaLectura("baja").motivo, "fallo");
+      modoF = {};
+      await new Promise((z) => setTimeout(z, 500));   // la respuesta lenta termina antes de seguir
+      /* el almacén que NO contestó pone a la instancia en pausa: el lector siguiente (el otro índice
+         del mismo listado en frío) no espera otro tope, no gasta un comando de la foto ni pide nada */
+      assert.ok(Foto.pausaHasta(), "un almacén que no contestó pone a la instancia en pausa");
+      marca = vistosF.length; getsAntes = pedidosF.filter((p) => p.metodo === "GET").length;
+      const t1F = Date.now();
+      assert.deepStrictEqual(await IBF.leerIndiceBaja(rF), redisB, "en pausa: los datos de Redis");
+      assert.ok(Date.now() - t1F < 2000, `en pausa no se espera al almacén (${Date.now() - t1F} ms)`);
+      assert.strictEqual(Foto.ultimaLectura("baja").motivo, "almacen_en_pausa");
+      assert.strictEqual(pedidosF.filter((p) => p.metodo === "GET").length, getsAntes, "en pausa, ni un pedido al almacén");
+      assert.strictEqual(deFoto(marca), 0, "en pausa, ni un comando de la foto en Redis");
+      assert.strictEqual((await Foto.escribirFoto(rF, "baja", rb1.sello, {})).motivo, "almacen_en_pausa", "en pausa tampoco se sube");
+      Foto.reiniciarPausa();
+      // el tope de espera POR OMISIÓN es corto: un mutante que lo suba a minutos colgaría el listado en frío
+      assert.ok(Foto.TIMEOUT_LEER_MS > 0 && Foto.TIMEOUT_LEER_MS <= 10000, `el tope de lectura es de segundos (${Foto.TIMEOUT_LEER_MS} ms)`);
+      const topesVistos = [];
+      const timeoutOriginal = AbortSignal.timeout;
+      AbortSignal.timeout = (ms) => { topesVistos.push(ms); return timeoutOriginal.call(AbortSignal, ms); };
+      try { await IBF.leerIndiceBaja(rF); } finally { AbortSignal.timeout = timeoutOriginal; }
+      assert.ok(topesVistos.includes(Foto.TIMEOUT_LEER_MS), `la lectura usa ese tope por omisión (vistos: ${JSON.stringify(topesVistos)})`);
+      assert.strictEqual(Foto.ultimaLectura("baja").fuente, "almacen", "y con el almacén contestando, la foto vuelve a servir");
+
+      /* 7 · un archivo alterado o unos conteos que no casan → Redis */
+      const buenoB = guardadosF.get(rutaF("baja"));
+      guardadosF.set(rutaF("baja"), Buffer.concat([buenoB, Buffer.from("x")]));
+      assert.deepStrictEqual(await IBF.leerIndiceBaja(rF), redisB); assert.strictEqual(Foto.ultimaLectura("baja").motivo, "huella_distinta");
+      const vencidaB = await regF("baja");
+      assert.strictEqual(vencidaB.sello, null, "una huella que no casa VENCE la clave pequeña (si no, quedaba «al día» para siempre)");
+      assert.strictEqual(vencidaB.vencida, "huella_distinta");
+      assert.strictEqual(vencidaB.bytes, rb1.bytes, "vencida, conserva los bytes del archivo que sigue en el almacén (el tope los suma)");
+      guardadosF.set(rutaF("baja"), buenoB);
+      await rF.set(CLAVES.fotoIndice("baja"), JSON.stringify({ ...rb1, campos: { ...rb1.campos, [CLAVES.indiceBaja("entidad")]: rb1.campos[CLAVES.indiceBaja("entidad")] + 1 } }));
+      assert.deepStrictEqual(await IBF.leerIndiceBaja(rF), redisB); assert.strictEqual(Foto.ultimaLectura("baja").motivo, "foto_ilegible");
+      // un archivo coherente con su clave pero con OTRO sello por dentro
+      const ajenoB = zlib.gzipSync(Buffer.from(JSON.stringify({ ...archivoB, sello: "otro|sello" })));
+      guardadosF.set(rutaF("baja"), ajenoB);
+      await rF.set(CLAVES.fotoIndice("baja"), JSON.stringify({ ...rb1, bytes: ajenoB.length, sha256: OB.sha256(ajenoB) }));
+      assert.deepStrictEqual(await IBF.leerIndiceBaja(rF), redisB); assert.strictEqual(Foto.ultimaLectura("baja").motivo, "foto_ilegible", "el sello de dentro también tiene que casar");
+      guardadosF.set(rutaF("baja"), buenoB);
+      // una foto con el sello bueno que no trae los cuatro hashes: Redis entero, no tres niveles vacíos
+      const incompleta = await Foto.escribirFoto(rF, "baja", rb1.sello, { [CLAVES.indiceBaja("entidad")]: await rF.hgetall(CLAVES.indiceBaja("entidad")) });
+      assert.strictEqual(incompleta.escrita, true);
+      assert.deepStrictEqual(await IBF.leerIndiceBaja(rF), redisB); assert.strictEqual(Foto.ultimaLectura("baja").motivo, "foto_incompleta");
+      guardadosF.set(rutaF("baja"), buenoB);
+      await rF.set(CLAVES.fotoIndice("baja"), JSON.stringify(rb1));
+      assert.deepStrictEqual(await IBF.leerIndiceBaja(rF), redisB); assert.strictEqual(Foto.ultimaLectura("baja").fuente, "almacen", "restaurada, vuelve a servir la foto");
+
+      /* 8 · tope de lecturas del mes → Redis sin pedir el archivo */
+      const mesF = new Date().toISOString().slice(0, 7);
+      const opsMesF = await Foto.opsDelMes(rF, mesF);
+      await rF.hincrby(CLAVES.fotoIndiceOps(mesF), "b", Foto.FOTOS_TOPES_OPS.b - opsMesF.b);
+      getsAntes = pedidosF.filter((p) => p.metodo === "GET").length;
+      assert.deepStrictEqual(await IBF.leerIndiceBaja(rF), redisB); assert.strictEqual(Foto.ultimaLectura("baja").motivo, "tope_del_mes");
+      assert.strictEqual(pedidosF.filter((p) => p.metodo === "GET").length, getsAntes, "con el tope del mes, el archivo no se pide");
+      await rF.del(CLAVES.fotoIndiceOps(mesF));
+
+      /* 9 · el índice cambia: la foto se reescribe con el sello nuevo y sigue dando lo de Redis */
+      await ponerHistorico([...filasF, ...[3, 4, 5, 6, 7].map((b) => filaF("ALCALDIA NUEVA DE LA FOTO", "BOYACA", b, 3))]);
+      const putsAntes9 = pedidosF.filter((p) => p.metodo === "PUT").length;
+      const b2 = await IBF.construirIndiceBaja(rF, { presupuestoMs: 60000, reiniciar: true });
+      assert.ok(b2.done && b2.procesos_analizados > b1.procesos_analizados, `la reconstrucción ve las filas nuevas: ${b1.procesos_analizados} → ${b2.procesos_analizados}`);
+      assert.strictEqual(pedidosF.filter((p) => p.metodo === "PUT").length - putsAntes9, 1, "la foto de la baja se vuelve a subir");
+      const rb2 = await regF("baja");
+      assert.strictEqual(rb2.sello, IBF.selloIndiceBaja(await IBF.leerIndiceBajaMeta(rF))); assert.notStrictEqual(rb2.sha256, rb1.sha256);
+      sinAlmacen(); const redisB2 = await IBF.leerIndiceBaja(rF); conAlmacen();
+      assert.deepStrictEqual(await IBF.leerIndiceBaja(rF), redisB2, "la foto nueva da lo mismo que el Redis nuevo");
+      assert.strictEqual(Foto.ultimaLectura("baja").fuente, "almacen");
+      assert.notDeepStrictEqual(redisB2, redisB, "premisa: el índice sí cambió");
+
+      /* 10 · el tope de bytes y el de operaciones frenan ANTES de gastar, y los lectores vuelven a Redis */
+      await rF.set(CLAVES.fotoIndice("competencia"), JSON.stringify({ ...rc1, bytes: Foto.FOTOS_TOPE_MB * 1e6 }));
+      const putsAntes10 = pedidosF.filter((p) => p.metodo === "PUT").length;
+      const fBytes = await Foto.escribirFoto(rF, "baja", rb2.sello, { [CLAVES.indiceBaja("entidad")]: { X: { a: 1 } } });
+      assert.strictEqual(fBytes.escrita, false); assert.strictEqual(fBytes.motivo, "tope");
+      assert.strictEqual(pedidosF.filter((p) => p.metodo === "PUT").length, putsAntes10, "pasado el tope de bytes, cero subidas");
+      const topeB = await regF("baja");
+      assert.ok(topeB && topeB.sello === null && topeB.vencida === "tope", `y la clave pequeña se vence: los lectores van a Redis (${JSON.stringify(topeB)})`);
+      assert.strictEqual(topeB.bytes, rb2.bytes, "vencida, sigue contando los bytes del archivo que quedó en el almacén");
+      assert.deepStrictEqual(await IBF.leerIndiceBaja(rF), redisB2); assert.strictEqual(Foto.ultimaLectura("baja").motivo, "foto_vieja");
+      await rF.set(CLAVES.fotoIndice("competencia"), JSON.stringify(rc1));
+      await rF.hincrby(CLAVES.fotoIndiceOps(mesF), "a", Foto.FOTOS_TOPES_OPS.a);
+      const fOps = await Foto.escribirFoto(rF, "baja", rb2.sello, { [CLAVES.indiceBaja("entidad")]: { X: { a: 1 } } });
+      assert.strictEqual(fOps.motivo, "tope", `el tope de operaciones clase A frena: ${JSON.stringify(fOps)}`);
+      assert.strictEqual(pedidosF.filter((p) => p.metodo === "PUT").length, putsAntes10, "pasado el tope de operaciones, cero subidas");
+      await rF.del(CLAVES.fotoIndiceOps(mesF));
+      await rF.hset(CLAVES.fotoIndiceOps(mesF), { a: "muchas" });
+      assert.strictEqual((await Foto.escribirFoto(rF, "baja", rb2.sello, {})).motivo, "tope", "un contador ilegible no es cero: no se sube");
+      await rF.del(CLAVES.fotoIndiceOps(mesF));
+
+      /* 11 · un fallo del almacén al subir: no tumba la publicación, borra la clave pequeña y no enseña el secreto */
+      await rF.set(CLAVES.fotoIndice("baja"), JSON.stringify(rb2));   // la clave de la publicación anterior
+      modoF = { falla403: true };
+      const b3 = await IBF.construirIndiceBaja(rF, { presupuestoMs: 60000, reiniciar: true });
+      modoF = {};
+      assert.strictEqual(b3.done, true, "el índice se publica aunque la foto no suba");
+      const r403 = await regF("baja");
+      assert.ok(r403 && r403.sello === null && r403.vencida === "fallo", `sin foto nueva no queda una clave con sello (${JSON.stringify(r403)})`);
+      assert.ok(r403.bytes >= rb2.bytes, "y los bytes que cuenta son los mayores entre el archivo viejo y el que pudo llegar");
+      const esc = Foto.ultimaEscritura("baja");
+      assert.ok(esc && esc.escrita === false && /403/.test(esc.detalle) && !esc.detalle.includes(SECRETO_F), `el fallo se dice sin el secreto: ${JSON.stringify(esc)}`);
+      sinAlmacen(); const redisB3 = await IBF.leerIndiceBaja(rF); conAlmacen();
+      assert.deepStrictEqual(await IBF.leerIndiceBaja(rF), redisB3, "sin foto, Redis");
+
+      /* 12 · la copia nocturna rehace la foto que falta (la de competencia sigue al día), desde el hash publicado */
+      const FUENTES_F = [indiceComp.FUENTE_FOTO, IBF.FUENTE_FOTO];
+      sinAlmacen(); assert.strictEqual(await Foto.asegurarFotos(rF, FUENTES_F), null, "sin variables no hace nada"); conAlmacen();
+      // si la meta cambia mientras se lee el hash, no sube nada
+      const espiaF = Object.create(rF);
+      espiaF.hgetallPorPartes = async (k) => {
+        const h = await rF.hgetallPorPartes(k);
+        if (k === CLAVES.indiceBaja("departamento")) {
+          const mm = await IBF.leerIndiceBajaMeta(rF);
+          await rF.set(CLAVES.indiceBajaMeta, JSON.stringify({ ...mm, generado: new Date(Date.now() + 9000).toISOString() }));
+        }
+        return h;
+      };
+      const metaAntes12 = await IBF.leerIndiceBajaMeta(rF);
+      const putsAntes12 = pedidosF.filter((p) => p.metodo === "PUT").length;
+      const cambio = await Foto.asegurarFotos(espiaF, FUENTES_F);
+      assert.strictEqual(cambio.baja.hecho, "cambio_mientras_se_leia", JSON.stringify(cambio));
+      assert.strictEqual(pedidosF.filter((p) => p.metodo === "PUT").length, putsAntes12, "con la meta cambiada a mitad, cero subidas");
+      await rF.set(CLAVES.indiceBajaMeta, JSON.stringify(metaAntes12));
+      const aseg = await Foto.asegurarFotos(rF, FUENTES_F);
+      assert.deepStrictEqual({ c: aseg.competencia.hecho, b: aseg.baja.hecho }, { c: "al_dia", b: "escrita" }, JSON.stringify(aseg));
+      assert.strictEqual((await regF("baja")).sello, IBF.selloIndiceBaja(metaAntes12));
+      assert.deepStrictEqual(await IBF.leerIndiceBaja(rF), redisB3, "la foto rehecha da lo mismo que Redis");
+      assert.strictEqual(Foto.ultimaLectura("baja").fuente, "almacen");
+      assert.strictEqual((await Foto.asegurarFotos(rF, FUENTES_F)).baja.hecho, "al_dia", "al día, no vuelve a leer ni a subir");
+
+      /* 13 · LA COPIA NOCTURNA NO LEE EL ÍNDICE ENTERO SI NO VA A PODER SUBIRLO (revisión adversaria,
+         27-oct-2026): con el tope del mes alcanzado, cero HSCAN; con un PUT que falla, lee una vez,
+         anota la espera y las noches siguientes no vuelven a leer; `forzar` la salta. */
+      const rbOk = await regF("baja");
+      const vencerBaja = () => rF.set(CLAVES.fotoIndice("baja"), JSON.stringify({ ...rbOk, sello: null, vencida: "prueba" }));
+      await vencerBaja();
+      await rF.hincrby(CLAVES.fotoIndiceOps(mesF), "a", Foto.FOTOS_TOPES_OPS.a);
+      marca = vistosF.length;
+      const conTope = await Foto.asegurarFotos(rF, FUENTES_F);
+      assert.deepStrictEqual({ h: conTope.baja.hecho, m: conTope.baja.motivo }, { h: "no_escrita", m: "tope" }, JSON.stringify(conTope));
+      assert.strictEqual(hscansDe(marca), 0, "con el tope del mes alcanzado, la copia nocturna no lee ni un HSCAN del índice");
+      await rF.del(CLAVES.fotoIndiceOps(mesF));
+      await rF.hset(CLAVES.fotoIndiceOps(mesF), { a: "ilegible" });
+      marca = vistosF.length;
+      assert.strictEqual((await Foto.asegurarFotos(rF, FUENTES_F)).baja.motivo, "tope", "un contador ilegible tampoco deja leer");
+      assert.strictEqual(hscansDe(marca), 0, "ni un HSCAN con el contador ilegible");
+      await rF.del(CLAVES.fotoIndiceOps(mesF));
+      modoF = { falla403: true };
+      marca = vistosF.length;
+      const conFallo = await Foto.asegurarFotos(rF, FUENTES_F);
+      assert.deepStrictEqual({ h: conFallo.baja.hecho, m: conFallo.baja.motivo }, { h: "no_escrita", m: "fallo" }, JSON.stringify(conFallo));
+      assert.strictEqual(hscansDe(marca), 4, "la primera noche con el PUT rechazado lee el índice una vez");
+      assert.ok(String(await rF.get(CLAVES.fotoIndiceEspera("baja"))).startsWith("fallo"), "y anota la espera");
+      assert.ok(!String(await rF.get(CLAVES.fotoIndiceEspera("baja"))).includes(SECRETO_F), "la espera no guarda el secreto");
+      marca = vistosF.length;
+      for (const noche of [2, 3]) {
+        const r = await Foto.asegurarFotos(rF, FUENTES_F);
+        assert.strictEqual(r.baja.hecho, "en_espera", `noche ${noche}: en espera, ${JSON.stringify(r)}`);
+      }
+      assert.strictEqual(hscansDe(marca), 0, "en espera, las noches siguientes no vuelven a leer el índice entero");
+      modoF = {};
+      const forzada = await Foto.asegurarFotos(rF, FUENTES_F, { forzar: true });
+      assert.strictEqual(forzada.baja.hecho, "escrita", `forzar salta la espera: ${JSON.stringify(forzada)}`);
+      await rF.del(CLAVES.fotoIndiceEspera("baja"));
+
+      /* 14 · LA FOTO ATASCADA SE DESATASCA: clave y archivo de escritores distintos (huella que no casa)
+         o un archivo borrado vencen la clave en la primera lectura en frío, op=salud deja de decir
+         «al día» y la copia nocturna la rehace. */
+      const rbAntes14 = await regF("baja");
+      await rF.set(CLAVES.fotoIndice("baja"), JSON.stringify({ ...rbAntes14, sha256: "0".repeat(64) }));   // la clave de otro escritor
+      assert.deepStrictEqual(await IBF.leerIndiceBaja(rF), redisB3); assert.strictEqual(Foto.ultimaLectura("baja").motivo, "huella_distinta");
+      const s14 = await invocar(saludF, "/api/procesos?op=salud");
+      assert.strictEqual(s14.cuerpo.indice_baja.foto_en_almacen.al_dia, false, `op=salud ya no dice «al día»: ${JSON.stringify(s14.cuerpo.indice_baja.foto_en_almacen)}`);
+      assert.strictEqual(s14.cuerpo.indice_baja.foto_en_almacen.vencida, "huella_distinta");
+      assert.strictEqual((await Foto.asegurarFotos(rF, FUENTES_F)).baja.hecho, "escrita", "la copia nocturna la rehace");
+      assert.deepStrictEqual(await IBF.leerIndiceBaja(rF), redisB3); assert.strictEqual(Foto.ultimaLectura("baja").fuente, "almacen", "rehecha, vuelve a servir");
+      guardadosF.delete(rutaF("baja"));   // el archivo borrado a mano
+      assert.deepStrictEqual(await IBF.leerIndiceBaja(rF), redisB3); assert.strictEqual(Foto.ultimaLectura("baja").motivo, "sin_archivo");
+      assert.strictEqual((await regF("baja")).sello, null, "el archivo que falta vence la clave");
+      assert.strictEqual((await Foto.asegurarFotos(rF, FUENTES_F)).baja.hecho, "escrita", "y la copia nocturna lo vuelve a subir");
+      // si la clave CAMBIÓ mientras se bajaba el archivo (otro escritor terminó), no se vence la nueva
+      const rbBuena = await regF("baja");
+      await rF.set(CLAVES.fotoIndice("baja"), JSON.stringify({ ...rbBuena, sha256: "1".repeat(64) }));
+      modoF = { alGet: async () => { await rF.set(CLAVES.fotoIndice("baja"), JSON.stringify(rbBuena)); } };
+      await IBF.leerIndiceBaja(rF);
+      modoF = {};
+      assert.strictEqual(Foto.ultimaLectura("baja").motivo, "huella_distinta");
+      assert.deepStrictEqual(await regF("baja"), rbBuena, "la clave que otro escritor dejó buena no se vence");
+
+      /* 15 · ORDEN DE LA ESCRITURA: mientras el archivo sube, la clave pequeña sigue siendo la VIEJA.
+         Con la clave primero, un corte entre los dos dejaba el sello nuevo apuntando al archivo viejo. */
+      let claveDuranteElPut;
+      modoF = { alPut: async () => { claveDuranteElPut = await regF("baja"); } };
+      const selloNuevo15 = `${rbBuena.sello}-otra`;
+      const e15 = await Foto.escribirFoto(rF, "baja", selloNuevo15, { [CLAVES.indiceBaja("entidad")]: { Z: { a: 1 } } });
+      modoF = {};
+      assert.strictEqual(e15.escrita, true);
+      assert.strictEqual(claveDuranteElPut && claveDuranteElPut.sello, rbBuena.sello, "durante el PUT, la clave pequeña todavía es la anterior");
+      assert.strictEqual((await regF("baja")).sello, selloNuevo15, "y después del PUT, la nueva");
+      assert.strictEqual((await Foto.asegurarFotos(rF, FUENTES_F)).baja.hecho, "escrita", "la copia nocturna la vuelve a la meta vigente");
+
+      /* 16 · LA RELECTURA DEL SELLO EN EL LISTADO (lib/handlers/procesos/listar.leerSellado): si una
+         publicación cae MIENTRAS se baja la foto (hashes y meta nuevos, foto todavía vieja), el
+         listado relee con la meta NUEVA y memoriza lo de Redis, no la foto vieja bajo el sello nuevo
+         —esa baja llega a la tarjeta y a Precios hasta la publicación siguiente—. */
+      const metaAntes16 = await IBF.leerIndiceBajaMeta(rF);
+      const kEnt16 = CLAVES.indiceBaja("entidad");
+      const camposEnt16 = await rF.hgetall(kEnt16);
+      const campo16 = Object.keys(camposEnt16).sort()[0];
+      const valor16 = JSON.parse(camposEnt16[campo16]);
+      modoF = { alGet: async () => {
+        await rF.hset(kEnt16, { [campo16]: JSON.stringify({ ...valor16, n: (valor16.n || 0) + 1000 }) });
+        await rF.set(CLAVES.indiceBajaMeta, JSON.stringify({ ...metaAntes16, generado: new Date(Date.now() + 60000).toISOString() }));
+      } };
+      const r16 = await oportunidades.cargarIndiceBaja(rF);
+      modoF = {};
+      sinAlmacen(); const redis16 = await IBF.leerIndiceBaja(rF); conAlmacen();
+      assert.notDeepStrictEqual(redis16, redisB3, "premisa: la publicación cambió el índice");
+      assert.strictEqual(r16.meta.generado, (await IBF.leerIndiceBajaMeta(rF)).generado, "el listado se queda con la meta nueva");
+      assert.deepStrictEqual(r16.indice, redis16, "y con los datos NUEVOS de Redis, no con la foto vieja");
+      const r16b = await oportunidades.cargarIndiceBaja(rF);
+      assert.deepStrictEqual(r16b.indice, redis16, "la instancia caliente sirve lo nuevo, no lo memorizado de la foto vieja");
+
+      /* 17 · un OBJETOS_BUCKET mal escrito no es «todavía no hay copia»: es un error que se dice */
+      const otroAlmacen = OB.crearObjetos({ ...ENV_F, OBJETOS_BUCKET: "otro-almacen" });
+      await assert.rejects(otroAlmacen.traer("indice.json"), (e) => e.status === 404 && /no existe el almacén «otro-almacen»/.test(e.message) && !e.message.includes(SECRETO_F),
+        "el almacén que no existe es un error con su nombre, sin el secreto");
+      assert.strictEqual(await OB.crearObjetos(ENV_F).traer("no-existe.json"), null, "un objeto que falta en el almacén bueno sigue siendo null");
+    } finally {
+      modoF = {};
+      Foto.reiniciarPausa();
+      for (const [k, v] of Object.entries(antesEnvF)) { if (v === undefined) delete process.env[k]; else process.env[k] = v; }
+      // la instancia no se queda con los índices de este bloque en su memoria caliente
+      try {
+        await rF.del(CLAVES.indiceMeta, CLAVES.indiceBajaMeta);
+        await oportunidades.cargarIndiceBaja(rF);
+        await oportunidades.cargarIndice(rF);
+      } catch { /* la limpieza no tapa el fallo de la prueba */ }
+      if (upF.server.closeAllConnections) upF.server.closeAllConnections();
+      if (s3F.closeAllConnections) s3F.closeAllConnections();
+      await new Promise((z) => upF.server.close(z));
+      await new Promise((z) => s3F.close(z));
+    }
+    console.log("· unidad foto de los índices en el almacén: sin variables, cero comandos de más · con ellas, la publicación sube la foto en STANDARD y la lectura da el mismo objeto sin un HSCAN · sello viejo, 500, lento, alterado, conteos y tope del mes → Redis · el que no contesta pausa la instancia · el índice que cambia reescribe su foto · los topes frenan antes de gastar · la copia nocturna no lee si no puede subir · la foto atascada se vence y se rehace · archivo antes que clave · la relectura del sello no memoriza la foto vieja · almacén inexistente ≠ sin copia · el 403 no enseña el secreto");
   }
 
   /* ═══ UNA TARJETA POR OBRA (26-sep-2026) ════════════════════════════════════════

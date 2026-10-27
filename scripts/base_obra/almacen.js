@@ -27,7 +27,7 @@
    BASE_TOPE_MB (opcional). */
 const fs = require("fs");
 const path = require("path");
-const { faltan, firmar, rutaCodificada, amzAhora, sha256 } = require("../../lib/objetos");
+const { faltan, firmar, rutaCodificada, amzAhora, sha256, esDeLaAplicacion } = require("../../lib/objetos");
 
 const MB = 1e6;                                    // MB decimales: 10 GB = 10.000 MB en la lectura menor
 const TOPE_CUENTA_MB = 9000;                       // decisión del dueño (17-oct-2026): 90 % de 10.000 MB
@@ -109,7 +109,9 @@ async function listar(c, mes) {
       const t = Number((m[1].match(/<Size>(\d+)<\/Size>/) || [])[1]);
       if (k === undefined || !Number.isFinite(t)) throw cortar("listado ilegible: un objeto sin <Key> o <Size>");
       usado += t; tam.set(decodXml(k), t);
-      if (((m[1].match(/<LastModified>([^<]+)<\/LastModified>/) || [])[1] || "").startsWith(mes)) delMes++;
+      // lo escrito este mes cuenta solo si es de la base: la copia nocturna y la foto de los
+      // índices escriben cada día y no pasan por este registro (lib/objetos.PREFIJOS_DE_LA_APLICACION)
+      if (!esDeLaAplicacion(decodXml(k)) && ((m[1].match(/<LastModified>([^<]+)<\/LastModified>/) || [])[1] || "").startsWith(mes)) delMes++;
     }
     const truncado = /<IsTruncated>true<\/IsTruncated>/.test(xml);
     token = truncado ? decodXml((xml.match(/<NextContinuationToken>([\s\S]*?)<\/NextContinuationToken>/) || [])[1] || "") : null;

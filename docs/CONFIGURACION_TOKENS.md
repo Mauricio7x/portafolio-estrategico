@@ -574,8 +574,20 @@ que la aplicación anota desde el 16-ago-2026): sin esta copia, si Upstash perdi
 perdería para siempre. La dispara un tercer cron de Vercel (`/api/respaldo`, 07:15 UTC ≈ 2:15 de la
 madrugada en Colombia).
 
-**Sin estas variables no se rompe nada**, pero no hay copia: `/api/respaldo` responde 503 diciendo
-qué variable falta, y `op=salud` lo publica en `respaldo.falta`.
+**Desde el 27-oct-2026 las mismas variables sirven también los índices.** Cada vez que la
+aplicación publica el índice de competencia o el de baja, sube una foto comprimida de ellos al
+mismo almacén (`indices/competencia.json.gz` e `indices/baja.json.gz`), y el listado, la portada,
+el resumen y el diagnóstico los leen de ahí en vez de bajarlos enteros de Upstash (unos 26 MB por
+instancia fría; Upstash gratis da 10 GB al mes de ancho de banda y R2 no cobra la salida). Si la
+foto no está al día, o el almacén falla, se leen de Upstash como siempre: las cifras no cambian
+(`lib/foto_indice.js`).
+
+**Puede ser el mismo almacén de la base nacional** (`detekta-base`): lo que escribe la aplicación va
+bajo `historico/`, `usuario/`, `indice.json` e `indices/`, y la base no lo cuenta como suyo.
+
+**Sin estas variables no se rompe nada**, pero no hay copia ni foto: `/api/respaldo` responde 503
+diciendo qué variable falta, `op=salud` lo publica en `respaldo.falta`, y los índices se leen de
+Upstash.
 
 **De dónde salen.** De Cloudflare R2 (o de cualquier almacén compatible con S3). Los pasos, según la
 documentación de Cloudflare actualizada el 18-ago-2026 (su panel no se vio desde la sesión de trabajo):
@@ -624,6 +636,13 @@ respuesta que dice que se puede restaurar; si algo falla, `problemas` nombra el 
 
 **Una advertencia.** Si pasan 48 horas sin una copia completa, `op=salud` se pone en rojo y lo dice:
 una copia que dejó de hacerse en silencio es no tener copia.
+
+**La foto de los índices** se comprueba en `https://detekta-app.vercel.app/api/procesos?op=salud`:
+`indice_baja.foto_en_almacen.al_dia` e `indice_competencia.foto_en_almacen.al_dia` en `true`
+dicen que la foto casa con el índice publicado, y `lectura_indice_baja.fuente` en `"almacen"`, que
+la última lectura de esa instancia salió de R2 y no de Upstash. La foto aparece en la primera
+publicación del índice después de pegar las variables o en la copia nocturna (07:15 UTC), que
+rehace la que falte; `vencida` dice por qué una foto dejó de servir.
 
 ---
 
