@@ -103,7 +103,8 @@ Vercel (`vercel.json`) llaman a `/api/sync` dos veces al día, a las 7:50 a. m. 
 (12:50 y 01:00 UTC; horario del dueño, 30-sep-2026), cada una seguida de `/api/latido` (13:30 y 02:30 UTC),
 que retoma la actualización si quedó cortada; a `/api/avisos` cada mañana (11:00 UTC), que es el aviso por
 correo de lo que cierra y de lo que cambió, y a `/api/respaldo` cada noche (07:15 UTC), que copia el histórico
-y los datos del usuario fuera de Upstash (`lib/respaldo.js`). Un flujo de GitHub (`.github/workflows/sync.yml`)
+y los datos del usuario fuera de Upstash (`lib/respaldo.js`) y rehace la foto de los índices que falte; con el
+almacén configurado, el listado lee los índices enteros de esa foto y no de Upstash (`lib/foto_indice.js`). Un flujo de GitHub (`.github/workflows/sync.yml`)
 repite la de la mañana y la de la noche como respaldo. Qué ocupa la base de datos, por familia de datos:
 `/api/admin?op=espacio` (con la llave; solo lee). Cada madrugada `/api/compactar` corre a las 08:40 y a las
 10:40 UTC: reescribe el histórico sin versiones viejas (lo viejo se borra en la vuelta siguiente, pasada una
