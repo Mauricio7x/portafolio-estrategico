@@ -1123,7 +1123,7 @@ Se retira también `alcanzable_con_socio` (D-08, en 4.1) y no entra el chip «ca
 - **Criterio de cierre**: (1) en `https://portafolio-estrategico.vercel.app`, con la clave del sitio, la tarjeta del proceso de Purificación dice «Solo si el pliego trae anticipo; sin anticipo, con PRODIAC (80/20).» y una fila cuyo objeto diga «Sin anticipo.» dice «Conviene con PRODIAC: aporta el respaldo que le falta · reparto sugerido 80/20»; (2) `https://portafolio-estrategico.vercel.app/api/oportunidades?token=<su token>` trae en cada fila `socio` con cinco claves y ninguna `alcanzable_con_socio`; (3) 4/4; (4) memoria con la marca y los generados; (5) pull request fusionado.
 - **Trampa conocida**: el tercer criterio del orden de socias es inerte y, cuando las dos cierran, decide la cuantía (Génesis por debajo del umbral, PRODIAC por encima): no se «arregla» aquí; «tiene la actividad» no es «tiene la experiencia»; medir en producción la fracción de filas con contrafáctica (registro en el log) y `por_pagina=100` contra el corte de 4,5 MiB; no tocar `congelarSocio` ni `aLigero`.
 - **Decide el dueño antes**: preguntas 1 y 3 de la sección 7.
-- **Cierre**: —
+- **Cierre**: 27-oct-2026, por encargo literal del dueño (la pregunta 1 respondida «sí» con su pedido; la 3, opción A), en la rama `claude/festive-faraday-1qg4ux`: el pull request y el hash quedan en el historial de `main`. Lo que cambió frente a la ficha, en `docs/MEMORIA.md § «La lista dice con quién y con qué parte, y la caja ya no deja pasar lo que ni con el anticipo máximo alcanza (27-oct-2026)»`.
 
 ### Tanda 2 · El perfil del competidor casi al instante (servidor)
 
