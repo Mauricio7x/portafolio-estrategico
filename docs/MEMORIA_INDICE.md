@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 2091957 bytes · 392 secciones · 32 con marcador de superación.
+Derivado del árbol: 2094854 bytes · 392 secciones · 32 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -402,4 +402,4 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | Las reglas de lotes y de rango de la base nacional: un presupuesto ajustado no es lote, una oferta doble tampoco y los centavos no pasan el tope (26-oct-2026) | 26-oct-2026 | 20268-20291 | 5909 |  |
 | La prueba de los 30 del Nivel 3: con los hábiles reales el motor acierta en 6 de 9, y lo que falla son los puntos distintos del precio (26-oct-2026) | 26-oct-2026 | 20292-20320 | 4546 | «Las evaluaciones de cada entidad entran a la aplicación: el navegador lee el documento, una sesión de madrugada lo interpreta y la aplicación verifica cada cita (26-oct-2026)» |
 | Las evaluaciones de cada entidad entran a la aplicación: el navegador lee el documento, una sesión de madrugada lo interpreta y la aplicación verifica cada cita (26-oct-2026) | 26-oct-2026 | 20321-20354 | 6982 |  |
-| La foto de los índices en el almacén de archivos: Upstash deja de bajar los índices enteros en cada instancia fría (27-oct-2026) | 27-oct-2026 | 20355-20371 | 6156 |  |
+| La foto de los índices en el almacén de archivos: Upstash deja de bajar los índices enteros en cada instancia fría (27-oct-2026) | 27-oct-2026 | 20355-20378 | 9053 |  |

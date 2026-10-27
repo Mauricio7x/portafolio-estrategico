@@ -641,8 +641,8 @@ una copia que dejó de hacerse en silencio es no tener copia.
 `indice_baja.foto_en_almacen.al_dia` e `indice_competencia.foto_en_almacen.al_dia` en `true`
 dicen que la foto casa con el índice publicado, y `lectura_indice_baja.fuente` en `"almacen"`, que
 la última lectura de esa instancia salió de R2 y no de Upstash. La foto aparece en la primera
-publicación del índice después de pegar las variables (la sincronización de la mañana o la de la
-noche).
+publicación del índice después de pegar las variables o en la copia nocturna (07:15 UTC), que
+rehace la que falte; `vencida` dice por qué una foto dejó de servir.
 
 ---
 
