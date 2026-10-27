@@ -605,7 +605,11 @@ documentación de Cloudflare actualizada el 18-ago-2026 (su panel no se vio desd
 5. El punto de entrada es `https://<ID de su cuenta>.r2.cloudflarestorage.com`: el ID de la cuenta
    aparece en el panel de Cloudflare (en R2, **Account Details**).
 
-**Cómo se pegan en Vercel** (§4 lo explica con clics), una por una:
+**Cómo se pegan en Vercel** (§4 lo explica con clics), una por una. Van en el PROYECTO
+(`detekta_dev` → «Settings» → «Environment Variables»). Si las crea como compartidas del equipo
+(pestaña «Shared»), hay que enlazarlas al proyecto en «Link to Projects»: sin ese enlace, la
+aplicación no las ve (pasó el 27-oct-2026). En los dos casos, solo las recibe un despliegue
+hecho después.
 
 - **`OBJETOS_ENDPOINT`** — el punto de entrada del paso 5.
 - **`OBJETOS_BUCKET`** — el nombre del paso 2.
