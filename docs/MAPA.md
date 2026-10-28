@@ -2,7 +2,7 @@
      Es una FOTO para leer en GitHub; la fuente de verdad es ejecutar la herramienta. -->
 
 ```
-== MAPA DE DETEKTA · generado del árbol el 2026-10-27 ==
+== MAPA DE DETEKTA · generado del árbol el 2026-10-28 ==
 (no editar a mano: sale de `node tests/mapa.js --escribir`. Para ir a un sitio concreto,
  `node tests/mapa.js <término>` da la ruta, la línea y el sed exacto — más barato que leer esto)
 
@@ -222,8 +222,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 394 secciones (34 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 20169  Cada subida cuesta un despliegue: una entrega, un envío (21-oct-2026)
+· MEMORIA · docs/MEMORIA.md — 395 secciones (34 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 20178  El consejo de siete asesores entra al proyecto: sin la sala web, sin guardar nada en el rep…
   L 20206  Fase 0 de detekta-lector sobre los documentos que deciden en menor cuantía: cuatro causas m…
   L 20233  Probabilidad de adjudicación, Fase 0: las ofertas abiertas sí existen desde 2020, quién que…
@@ -233,6 +232,7 @@
   L 20358  La foto de los índices en el almacén de archivos: Upstash deja de bajar los índices enteros…
   L 20384  La lista dice con quién y con qué parte, y la caja ya no deja pasar lo que ni con el antici…
   L 20437  Lo que pide atención dice lo que falta HOY, el cuaderno ya no se borra al marcar una nota y…
+  L 20454  El rótulo «Obra civil» ya no sale de una palabra genérica en un suministro, una compraventa…
 
 · DOCUMENTOS docs/ — 76 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)
