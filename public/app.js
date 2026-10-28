@@ -1232,15 +1232,17 @@
   function lineaMargen(m) {
     if (!m) return "";
     if (m.valor == null) return `<p class="mt-3 text-xs text-gray-500">${esc(m.motivo || "Sin referencia")}</p>`;
-    // bajo cero y con el techo como referencia (licitación y menor cuantía, 28-oct-2026) es ámbar: un aviso, no un «no da»
+    /* bajo cero y con el techo como referencia (licitación y menor cuantía, 28-oct-2026) es ámbar: un aviso, no un «no da»;
+       pero si su mínimo no cabe en el presupuesto es el rojo de siempre, como el «No se presente» de Precios */
+    const referenciaQueCabe = m.techo_es_referencia === true && m.minimo_sobre_presupuesto !== true;
     const signo = m.valor >= 0 ? "text-green-800 bg-green-50 ring-green-600/20"
-      : m.techo_es_referencia ? "text-amber-900 bg-amber-50 ring-amber-600/20" : "text-red-700 bg-red-50 ring-red-600/20";
+      : referenciaQueCabe ? "text-amber-900 bg-amber-50 ring-amber-600/20" : "text-red-700 bg-red-50 ring-red-600/20";
     /* «Recorrido», no «le quedan»: esta cifra es la distancia entre dos PRECIOS
        (su mínimo y el del mercado), o sea margen de maniobra para ofertar. La
        plata que deja el contrato es otra —la de la franja de arriba, que ya
        descontó la contribución y las deducciones— y llamarlas igual es la
        confusión que el encargo del dueño vino a corregir. */
-    return `<p class="mt-3 rounded-lg px-3 py-2 text-xs ring-1 ring-inset ${signo}">Puede mover el precio <strong>${fmtCOP.format(m.valor)}</strong> entre su precio mínimo (${fmtCOP.format(m.piso)}) y el precio al que se suele adjudicar en ${esc(m.donde || "esta zona")} (${fmtCOP.format(m.techo)}). No es lo que deja el contrato: eso es la cifra de arriba.${m.valor < 0 ? (m.techo_es_referencia
+    return `<p class="mt-3 rounded-lg px-3 py-2 text-xs ring-1 ring-inset ${signo}">Puede mover el precio <strong>${fmtCOP.format(m.valor)}</strong> entre su precio mínimo (${fmtCOP.format(m.piso)}) y el precio al que se suele adjudicar en ${esc(m.donde || "esta zona")} (${fmtCOP.format(m.techo)}). No es lo que deja el contrato: eso es la cifra de arriba.${m.valor < 0 ? (referenciaQueCabe
       // en licitación y menor cuantía ese precio es una referencia, no un requisito para ganar (28-oct-2026): no se dice «aquí no da»
       ? " El precio al que se suele adjudicar está POR DEBAJO de su mínimo; es una referencia, no un requisito para ganar."
       : " El precio de mercado está POR DEBAJO de su mínimo: aquí no da.") : ""}</p>`;
@@ -3470,6 +3472,11 @@
     const veredictoTxt = d.veredicto === "deja"
       ? `<p class="text-lg font-semibold" style="color: ${VERDE_CUENTA};">Le quedan ${esc(gPesos(d.valor))}</p>
          <p class="text-sm" style="color: var(--text-secondary);">Y hasta ${esc(gPesos(d.mejor))} si no gasta la reserva para imprevistos.</p>`
+      /* licitación y menor cuantía con costo (28-oct-2026): la pérdida es al precio de referencia, que no es el precio para
+         ganar; ni el rojo ni «no hay escenario», como la tarjeta (lib/ganancia, `perdida_al_precio_de_referencia`) */
+      : d.veredicto === "pierde" && g.perdida_al_precio_de_referencia === true
+        ? `<p class="text-lg font-semibold">Al precio de referencia perdería ${esc(gPesos(-d.mejor))}</p>
+           <p class="text-sm" style="color: var(--text-secondary);">Es el precio al que se suele adjudicar aquí, no un requisito para ganar: en licitaciones y menores cuantías el precio, por sí solo, no predijo quién gana.${g.piso_rentable != null ? ` Su precio mínimo para no perder plata es ${esc(gPesos(g.piso_rentable))}.` : ""}</p>`
       : d.veredicto === "pierde"
         ? `<p class="text-lg font-semibold" style="color: ${ROJO_CUENTA};">Pierde ${esc(gPesos(-d.mejor))}, aun en el mejor de los casos</p>
            <p class="text-sm" style="color: var(--text-secondary);">Con este precio y este costo, no hay escenario en que este contrato deje plata.</p>`

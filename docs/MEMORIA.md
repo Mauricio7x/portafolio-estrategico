@@ -20509,8 +20509,19 @@ En una línea: el dueño pidió «el % de adjudicación según el precio de la o
     - El aviso de la lista decía «el orden ya no castiga» sin condiciones, y el orden por margen o ganancia sigue usando el techo. Ahora dice que la opción de ganar ya no se rebaja.
     - El título «Precio sugerido» quedaba encima de «no sugiere un precio». Ahora dice «Precio de su oferta» donde la regla no sugiere.
     - La guía de Mis procesos aconsejaba «ubíquese donde gana bajo más métodos», que es el mecanismo medido peor que el azar. Ahora dice el hecho contado: la oferta más baja ganó en 368 de 3.295 licitaciones y en 732 de 4.239 menores cuantías. Lo cuenta el generador y viaja en `resumen.gano_la_mas_baja` del JSON; la guía lo lee de ahí, no se escribe a mano.
+- **Lo que tumbó la segunda revisión adversaria (28-oct-2026)**, hecha solo sobre los arreglos:
+  - **La referencia tapaba un rechazo cierto.** Si su mínimo pasa el presupuesto, Precios dice «No se presente», pero la tarjeta lo pintaba en ámbar como «solo una referencia». Ahora la marca de referencia exige que su mínimo quepa en el precio máximo (con el IVA de la utilidad si cuenta o no se sabe) y que el precio de referencia sea de historial medido. Si no, va la celda roja de siempre y se dice «su precio mínimo pasa el presupuesto oficial: una oferta así se rechaza». El margen lleva `minimo_sobre_presupuesto` y, con él, sigue en rojo.
+  - **El detalle de la ganancia** seguía en rojo, con «no hay escenario en que este contrato deje plata». Ahora sigue la misma marca y dice su mínimo (`piso_rentable` viaja en la ganancia).
+  - **La foto de Mis procesos y la guía** leían la modalidad sin su respaldo (`tipo_de_proceso`): desde el expediente, Precios abría con la curva.
+  - **La guarda «sobre el presupuesto» decidía con la baja redondeada a 2 decimales**: $40.000 sobre $1.000 millones pasaban. Ahora decide con la cifra sin redondear (`baja_ofertada_exacta`).
+  - **Sin los oferentes de la entidad**, el tramo de todos ponía «si todas tuvieran la misma opción, 3,7» junto a una probabilidad de 1 de cada 6 sacada del supuesto de cuántos compiten. Ahora sin oferentes no se dice (`sin_oferentes`).
+  - **«La oferta más baja ganó en 11 de cada 100» sin su azar** se leía como «la más barata casi nunca gana». Medido, gana como el azar: 11,2 frente a 10,2 en licitación y 17,3 frente a 18,9 en menor cuantía. La guía dice los dos números; el azar es la suma de 1/n por proceso que cuenta el generador (`azar_la_mas_baja`).
+  - **Con la mediana en 0**, la frase de la baja seguía diciendo «aquí se gana sin bajar el precio». En las modalidades cubiertas ahora dice lo que hicieron los que ganaron. El chip corto «Se gana sin bajar el precio» se dejó igual: lo fijan tres pruebas y describe a los ganadores.
+  - **Por lectura, sin camino a Precios encontrado**: `perfil/resumen.js`, `rastreo.js`, `competencia_detalle.js`, `probabilidad_desglose.js` y el campo `como_lo_adjudican` de la guía publican la modalidad sin el respaldo, como texto. Si algún día alimentan una decisión de precio, que llamen `modalidadDeFila`.
 - **Lo que no hay que deshacer**:
   - devolver una curva o un % por precio en licitación o menor cuantía sin pasar la regla de arriba;
+  - dejar que la marca de referencia suavice un mínimo que no cabe en el presupuesto;
+  - dar una cifra «de cada 100» sin su azar al lado;
   - enseñar una franja con menos de 100 ofertas;
   - comparar franjas de tramos de oferentes distintos, o caer al tramo de todos teniendo los oferentes;
   - decir una franja para una oferta sobre el presupuesto;

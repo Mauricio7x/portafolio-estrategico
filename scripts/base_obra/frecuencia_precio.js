@@ -103,12 +103,13 @@ function construir(base, { huella = null, generado = new Date().toISOString().sl
        «no tire el precio al piso», en vez de un mecanismo que, medido, predice peor que el azar */
     const porProceso = new Map();
     for (const o of om) { if (!porProceso.has(o.proceso)) porProceso.set(o.proceso, []); porProceso.get(o.proceso).push(o); }
-    let ganoLaMasBaja = 0;
+    let ganoLaMasBaja = 0, azarLaMasBaja = 0;
     for (const ofs of porProceso.values()) {
       const min = Math.min(...ofs.map((o) => o.pct));
       if (ofs.some((o) => o.gano && Math.abs(o.pct - min) < 1e-12)) ganoLaMasBaja++;
+      azarLaMasBaja += 1 / ofs.length;   // con la misma opción para todas, la más baja gana 1 de cada n
     }
-    resumen[m] = { procesos: porProceso.size, ofertas: om.length, gano_la_mas_baja: ganoLaMasBaja };
+    resumen[m] = { procesos: porProceso.size, ofertas: om.length, gano_la_mas_baja: ganoLaMasBaja, azar_la_mas_baja: +azarLaMasBaja.toFixed(1) };
   }
   return {
     formato: FORMATO, generado, base_sha256: huella,

@@ -38165,6 +38165,42 @@ async function main() {
             `la variante del último borrador (otro pliego) no puede llegar a otras tarjetas: ${conGan.map((f) => f.ganancia.iva_utilidad && f.ganancia.iva_utilidad.caso).join(",")}`);
           await redis.del(CLAVES.apuPresupuesto("helder", gOtro.cuerpo.id));
         }
+        /* LA TARJETA CON COSTO EN LICITACIÓN (28-oct-2026, la prueba de mutación lo dejó vivo): el listado le pasa la
+           modalidad a lib/ganancia, y la pérdida AL PRECIO DE REFERENCIA —con el mínimo dentro del presupuesto— viaja
+           con su marca y no como el «no se presente». El costo que cae en esa ventana se busca con el listado real. */
+        {
+          const FPl = require("../lib/frecuencia_precio.js");
+          const filaRef = rA.cuerpo.resultados.find((f) => f.id_del_proceso !== objetivo.id_del_proceso && f.cuantia_cop > 0
+            && f.ganancia && f.ganancia.origen_precio === "mercado" && FPl.precioNoPrediceEn(FPl.modalidadDeFila(f)));
+          assert.ok(filaRef, "el caso necesita una licitación con historial de baja");
+          const po = Number(filaRef.cuantia_cop);
+          let bajo = 0.5 * po, alto = po, hallada = null;
+          for (let i = 0; i < 24 && !hallada; i++) {
+            const cd = Math.round((bajo + alto) / 2);
+            const gR = await invocarPost(apuF8, "/api/apu/guardar", { perfil: "helder", nombre: "ventana", id_proceso: filaRef.id_del_proceso,
+              items: [{ descripcion: "x", unidad: "m", cantidad: 1, precio_manual: cd }], config: { ...cfgM, variante_iva: "sin_iva" }, total: Math.round(cd * 1.25), costo_directo: cd }, CAB_TOKEN);
+            assert.strictEqual(gR.status, 200);
+            const g = ((await L("")).cuerpo.resultados.find((f) => f.id_del_proceso === filaRef.id_del_proceso) || {}).ganancia || {};
+            await redis.del(CLAVES.apuPresupuesto("helder", gR.cuerpo.id));
+            if (g.base !== "apu") throw new Error(`el borrador de la ventana no llegó a la tarjeta: ${JSON.stringify(g).slice(0, 200)}`);
+            if (g.veredicto !== "pierde") bajo = cd;
+            else if (!(g.piso_rentable <= po)) alto = cd;
+            else hallada = g;
+          }
+          assert.ok(hallada, "con costo, hay una ventana donde pierde al precio de referencia y su mínimo cabe en el presupuesto");
+          assert.ok(hallada.perdida_al_precio_de_referencia === true && /Es una referencia, no un requisito para ganar/.test(hallada.frase),
+            `en licitación la pérdida de referencia viaja con su marca → ${hallada.perdida_al_precio_de_referencia} «${hallada.frase}»`);
+          // …y con su mínimo sobre el presupuesto, el rechazo cierto: la tarjeta y su margen lo dicen como Precios (segunda revisión)
+          const gS = await invocarPost(apuF8, "/api/apu/guardar", { perfil: "helder", nombre: "sobre el presupuesto", id_proceso: filaRef.id_del_proceso,
+            items: [{ descripcion: "x", unidad: "m", cantidad: 1, precio_manual: Math.round(po) }], config: { ...cfgM, variante_iva: "sin_iva" }, total: Math.round(po * 1.25), costo_directo: Math.round(po) }, CAB_TOKEN);
+          assert.strictEqual(gS.status, 200);
+          const fS = (await L("ordenar_por=margen")).cuerpo.resultados.find((f) => f.id_del_proceso === filaRef.id_del_proceso) || {};
+          await redis.del(CLAVES.apuPresupuesto("helder", gS.cuerpo.id));
+          assert.ok(fS.ganancia && fS.ganancia.veredicto === "pierde" && fS.ganancia.perdida_al_precio_de_referencia === false && /se rechaza/.test(fS.ganancia.frase),
+            `mínimo sobre el presupuesto: la tarjeta, en rojo y con el motivo → ${fS.ganancia && fS.ganancia.perdida_al_precio_de_referencia} «${fS.ganancia && fS.ganancia.frase}»`);
+          assert.ok(fS.margen_estimado && fS.margen_estimado.techo_es_referencia === true && fS.margen_estimado.minimo_sobre_presupuesto === true,
+            `…y el margen lleva la marca que lo deja en rojo → ${JSON.stringify(fS.margen_estimado)}`);
+        }
         // sin token: ni b_max ni borrador
         const rPubA = await invocar(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=100");
         assert.ok(rPubA.cuerpo.resultados.every((f) => f.baja_maxima && f.baja_maxima.valor === null && f.baja_maxima.origen === null && f.baja_maxima.borrador === null),
@@ -43246,6 +43282,9 @@ async function main() {
           const lmRef = lineaMargen({ valor: -5, piso: 15, techo: 10, techo_es_referencia: true }), lmNo = lineaMargen({ valor: -5, piso: 15, techo: 10 });
           assert.ok(!/aquí no da/.test(lmRef) && /referencia, no un requisito para ganar/.test(lmRef) && /text-amber-900/.test(lmRef) && !/text-red-700/.test(lmRef), `techo de referencia → ${lmRef}`);
           assert.ok(/aquí no da/.test(lmNo) && /text-red-700/.test(lmNo), `sin la marca, la regla de antes → ${lmNo}`);
+          // …pero si su mínimo no cabe en el presupuesto, el rojo de siempre: es el «No se presente» de Precios (segunda revisión)
+          const lmSobre = lineaMargen({ valor: -5, piso: 15, techo: 10, techo_es_referencia: true, minimo_sobre_presupuesto: true });
+          assert.ok(/aquí no da/.test(lmSobre) && /text-red-700/.test(lmSobre) && !/text-amber-900/.test(lmSobre), `mínimo sobre el presupuesto → ${lmSobre}`);
           assert.ok(/detalles por revisar/.test(lineaRequisitos({ p1_rup: { sin_dato: true } })),
             "sin_dato deja pasar CON aviso: ni verde limpio ni rojo (no saber no es fallar)");
 
@@ -52952,9 +52991,10 @@ async function main() {
     assert.ok(f.frase.includes("$30.000.000") && f.frase.includes("con 5 a 9 oferentes") && /de cada 100/.test(f.frase) && /misma opción/.test(f.frase), `la frase lo dice → «${f.frase}»`);
     assert.ok(!/\d\.\d{1,2}(?!\d)/.test(f.frase.replace(/\$[\d.]+/g, "")) && !/probabilidad/i.test(f.frase), `la frase va con coma decimal y no dice «probabilidad» → «${f.frase}»`);
     assert.ok(f.corta.startsWith("A este precio, en licitaciones con 5 a 9 oferentes, ganaron") && f.corta.length < 130, `la corta cabe bajo la cifra y dice de quién → «${f.corta}»`);
-    // sin oferentes conocidos: la de todos los procesos, y no dice un tramo que no se sabe
-    const fSin = FP.frecuenciaPorPrecio({ modalidad: "licitacion", baja_ofertada_pct: 5, oferentes: null, presupuesto_oficial: null });
-    assert.ok(fSin.aplica && fSin.franja.grupo === "*" && !/oferentes/.test(fSin.frase) && fSin.costo_bajar == null && !/\$/.test(fSin.frase), `sin oferentes ni presupuesto → «${fSin.frase}»`);
+    // sin oferentes conocidos no se dice (segunda revisión adversaria); sin presupuesto, la frase va sin el costo de bajar
+    assert.strictEqual(FP.frecuenciaPorPrecio({ modalidad: "licitacion", baja_ofertada_pct: 5, oferentes: null }).motivo, "sin_oferentes");
+    const fSin = FP.frecuenciaPorPrecio({ modalidad: "licitacion", baja_ofertada_pct: 1, oferentes: 7, presupuesto_oficial: null });
+    assert.ok(fSin.aplica && fSin.costo_bajar == null && !/\$/.test(fSin.frase), `sin presupuesto → «${fSin.frase}»`);
     // la franja con menos de 100 ofertas no se dice; ni la modalidad que no se midió; ni sin precio
     assert.strictEqual(FP.frecuenciaPorPrecio({ modalidad: "licitacion", baja_ofertada_pct: 40, oferentes: 5 }).motivo, "franja_sin_base");
     assert.strictEqual(FP.frecuenciaPorPrecio({ modalidad: "minima", baja_ofertada_pct: 5 }).motivo, "modalidad_sin_medir");
@@ -52963,13 +53003,13 @@ async function main() {
       "solo licitación y menor cuantía están medidas (y una propiedad heredada no cuenta)");
     // una franja de abajo con menos de 100 ofertas no se compara
     const tChica = { formato: 1, periodo: { desde: "2020", hasta: "2026" }, verificacion: { prueba: "2026", por_modalidad: { licitacion: { procesos_prueba: 400, mejora_pct: -0.3 } } },
-      celdas: { licitacion: { "*": { 94: { ofertas: 500, ganaron: 20, azar: 18 }, 90: { ofertas: 99, ganaron: 9, azar: 4 } } } } };
-    const fChica = FP.frecuenciaPorPrecio({ modalidad: "licitacion", baja_ofertada_pct: 5 }, { tabla: tChica });
+      celdas: { licitacion: { "5-9": { 94: { ofertas: 500, ganaron: 20, azar: 18 }, 90: { ofertas: 99, ganaron: 9, azar: 4 } } } } };
+    const fChica = FP.frecuenciaPorPrecio({ modalidad: "licitacion", baja_ofertada_pct: 5, oferentes: 7 }, { tabla: tChica });
     assert.ok(fChica.aplica && fChica.mas_abajo === null && !/más abajo/.test(fChica.frase), `la de abajo con 99 ofertas no se dice → «${fChica.frase}»`);
     assert.ok(/no predijo al ganador mejor que el azar/.test(fChica.frase), "con la verificación en contra, se dice");
     // SI UNA REGENERACIÓN DIERA QUE LA TABLA SÍ PREDICE, la frase deja de afirmar lo contrario
     const tMejor = JSON.parse(JSON.stringify(tChica)); tMejor.verificacion.por_modalidad.licitacion.mejora_pct = 2.1;
-    assert.ok(!/no predijo/.test(FP.frecuenciaPorPrecio({ modalidad: "licitacion", baja_ofertada_pct: 5 }, { tabla: tMejor }).frase), "con una verificación a favor, la frase no dice «no predijo»");
+    assert.ok(!/no predijo/.test(FP.frecuenciaPorPrecio({ modalidad: "licitacion", baja_ofertada_pct: 5, oferentes: 7 }, { tabla: tMejor }).frase), "con una verificación a favor, la frase no dice «no predijo»");
     assert.strictEqual(FP.frecuenciaPorPrecio({ modalidad: "licitacion", baja_ofertada_pct: 5 }, { tabla: null }).motivo, "sin_tabla", "sin tabla: «sin tabla», no un 500");
     // un archivo de OTRO formato (una regeneración con otra forma) es «sin tabla», no unas celdas leídas al revés
     {
@@ -52992,7 +53032,8 @@ async function main() {
     const ps = [0, 3, 9].map((b) => R.pGanarPorPrecio({ p_base: 0.25, baja_ofertada_pct: b, baja_mediana_pct: 6, baja_p25: 3, baja_p75: 9, oferentes: 7, presupuesto_oficial: 1e9, modalidad: "Licitación pública" }));
     assert.ok(ps.every((x) => x.p === 0.25 && x.modulada === false && x.sin_modular_por === "el_precio_no_predice"), `licitación: la base a cualquier precio → ${ps.map((x) => x.p).join(", ")}`);
     assert.strictEqual(ps[0].mensaje, FP.frecuenciaPorPrecio({ modalidad: "licitacion", baja_ofertada_pct: 0, oferentes: 7, presupuesto_oficial: 1e9 }).frase, "el mensaje es la frase medida");
-    const rr = R.rentabilidad({ precio_oferta: 970e6, costo_directo: 700e6, presupuesto_oficial: 1e9, p_base: 0.25, oferentes: 7, baja: { nivel: "medio", baja_mediana: 6, baja_p25: 3, baja_p75: 9 }, modalidad: "Selección Abreviada de Menor Cuantía" });
+    // los oferentes llegan como en el editor real: `competencia.promedio_oferentes` (un `oferentes` suelto lo ignora rentabilidad)
+    const rr = R.rentabilidad({ precio_oferta: 970e6, costo_directo: 700e6, presupuesto_oficial: 1e9, p_base: 0.25, competencia: { nivel: "medio", promedio_oferentes: 7 }, baja: { nivel: "medio", baja_mediana: 6, baja_p25: 3, baja_p75: 9 }, modalidad: "Selección Abreviada de Menor Cuantía" });
     assert.ok(rr.p_ganar === 0.25 && rr.p_ganar_detalle.frecuencia_precio && rr.p_ganar_detalle.frecuencia_precio.costo_bajar === 30000000,
       `rentabilidad() pasa el presupuesto y los oferentes a la frase → ${JSON.stringify(rr.p_ganar_detalle.frecuencia_precio && rr.p_ganar_detalle.frecuencia_precio.franja)}`);
     // la selección abreviada que NO es menor cuantía no se midió: conserva la curva
@@ -53045,7 +53086,7 @@ async function main() {
       assert.strictEqual(fr(5, 1.4).motivo, "pocos_oferentes", "1,4 oferentes: la tabla solo tiene procesos con 3 o más");
       assert.strictEqual(fr(8, 3).motivo, "franja_sin_base", "tramo de 3 o 4 sin 100 ofertas a ese precio: no se cae al de todos los procesos");
       assert.ok(fr(5, 2.6).aplica && fr(5, 2.6).franja.grupo === "3-4", "2,6 se redondea a 3, igual para la puerta y el tramo");
-      assert.ok(fr(8, null).aplica && fr(8, null).franja.grupo === "*", "sin oferentes conocidos, el de todos los procesos");
+      assert.strictEqual(fr(8, null).motivo, "sin_oferentes", "sin oferentes conocidos no se dice: el tramo de todos contradecía la probabilidad de la tarjeta");
       const f7 = fr(1, 7);
       assert.ok(/^A este precio, en licitaciones con 5 a 9 oferentes, ganaron [\d,]+ de cada 100; si todas tuvieran la misma opción, [\d,]+$/.test(f7.corta) && f7.corta.length < 130,
         `la frase corta dice de quién son las cifras → «${f7.corta}»`);
@@ -53053,12 +53094,18 @@ async function main() {
       assert.strictEqual(fr(-1.5, 7).motivo, "supera_presupuesto", "una oferta sobre el presupuesto se rechaza: no lleva «ganaron X de cada 100»");
       const f0 = fr(0, 7);
       assert.ok(f0.aplica && /las ofertas por el valor del presupuesto oficial, sin descuento, ganaron/.test(f0.frase) && !/entre el 100 y el 102/.test(f0.frase), `la oferta por el presupuesto → «${f0.frase}»`);
-      assert.strictEqual(FP.frecuenciaPorPrecio({ modalidad: "licitacion", baja_ofertada_pct: 55 }, { tabla: { formato: 1, celdas: { licitacion: { "*": { 50: { ofertas: 900, ganaron: 9, azar: 9 } } } } } }).motivo,
+      assert.strictEqual(FP.frecuenciaPorPrecio({ modalidad: "licitacion", baja_ofertada_pct: 55, oferentes: 7 }, { tabla: { formato: 1, celdas: { licitacion: { "5-9": { 50: { ofertas: 900, ganaron: 9, azar: 9 } } } } } }).motivo,
         "franja_sin_base", "la franja del borde junta todo lo que bajó más del 50 %: «entre el 50 y el 52 %» no sería cierto");
       // (c) Precios dice por qué no hay frase en esos dos casos
       const Rm = (b, n) => R.pGanarPorPrecio({ p_base: 0.6, baja_ofertada_pct: b, oferentes: n, presupuesto_oficial: 1e9, modalidad: "Licitación pública" });
       assert.ok(/solo tiene procesos con 3 o más ofertas/.test(Rm(5, 1.4).mensaje) && Rm(5, 1.4).frecuencia_precio === null && !/de cada 100/.test(Rm(5, 1.4).nota_corta), `pocos oferentes → «${Rm(5, 1.4).mensaje}»`);
       assert.ok(/por encima del presupuesto oficial no se dice/.test(Rm(-1.5, 7).mensaje), `sobre el presupuesto → «${Rm(-1.5, 7).mensaje}»`);
+      assert.ok(/No se sabe cuántos suelen presentarse/.test(Rm(5, null).mensaje), `sin oferentes → «${Rm(5, null).mensaje}»`);
+      // la guarda decide con la cifra SIN redondear: $40.000 sobre $1.000 millones redondeaban a «0 %» y pasaban
+      const rEnc = R.rentabilidad({ precio_oferta: 1000040000, costo_directo: 700e6, presupuesto_oficial: 1e9, p_base: 0.25, competencia: { nivel: "medio", promedio_oferentes: 12 },
+        baja: { nivel: "medio", baja_mediana: 6, baja_p25: 3, baja_p75: 9 }, modalidad: "Licitación pública" });
+      assert.ok(rEnc.p_ganar_detalle.frecuencia_precio === null && /por encima del presupuesto oficial no se dice/.test(rEnc.p_ganar_detalle.mensaje),
+        `$40.000 sobre el presupuesto → ${JSON.stringify(rEnc.p_ganar_detalle.frecuencia_precio && rEnc.p_ganar_detalle.frecuencia_precio.franja)}`);
       // (d) la tarjeta: con costo, la pérdida al precio de referencia no es «no se presente»; por la estructura de precio, sí sigue
       const G = require("../lib/ganancia.js");
       const bajaG = { nivel: "medio", baja_mediana: 30, procesos_contados: 12, granularidad_utilizada: "entidad", mensaje: "x" };
@@ -53072,6 +53119,34 @@ async function main() {
       const gSin = gan("Licitación pública", { costo_directo: null, borrador: null, aiu: { administracion_pct: 10, imprevistos_pct: 5, utilidad_pct: 1 } });
       assert.ok(gSin.perdida_al_precio_de_referencia === false, `sin costo, la pérdida es de la estructura de precio y vale a cualquier precio → ${gSin.veredicto}`);
       assert.strictEqual(G.gananciaDeProceso({ presupuesto_oficial: null }).perdida_al_precio_de_referencia, false, "el campo viaja también sin cifra");
+      /* LA REFERENCIA NO TAPA UN RECHAZO CIERTO (segunda revisión adversaria): con su mínimo sobre el presupuesto,
+         Precios dice «No se presente» y la tarjeta también, en rojo y con el motivo */
+      const gSobre = gan("Licitación pública", { costo_directo: 900e6 });
+      assert.ok(gSobre.veredicto === "pierde" && gSobre.perdida_al_precio_de_referencia === false && /pasa el presupuesto oficial \(\$1\.000\.000\.000\): una oferta así se rechaza/.test(gSobre.frase),
+        `mínimo sobre el presupuesto → ${gSobre.perdida_al_precio_de_referencia} «${gSobre.frase}»`);
+      assert.ok(gL.piso_rentable > 0 && gL.piso_rentable < 1e9, "la tarjeta lleva su mínimo para decirlo en el detalle");
+      // sin historial medido, V es el presupuesto: no se dice «el precio al que se suele adjudicar aquí»
+      const gSinBase = gan("Licitación pública", { baja: null, costo_directo: 990e6 });
+      assert.ok(gSinBase.perdida_al_precio_de_referencia === false && !/se suele adjudicar aquí/.test(String(gSinBase.frase)), `sin historial → «${gSinBase.frase}»`);
+      // el detalle de la ganancia (pintarDetalleGanancia REAL): la pérdida de referencia sin rojo y con su mínimo
+      const jsG = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+      const extraerG = (nombre) => { const i = jsG.indexOf(`function ${nombre}(`); assert.ok(i > 0, `app.js sin ${nombre}`); let d = 0;
+        for (let k = jsG.indexOf("{", i); k < jsG.length; k++) { if (jsG[k] === "{") d++; else if (jsG[k] === "}") { d--; if (d === 0) return jsG.slice(i, k + 1); } } throw new Error(`${nombre} sin cierre`); };
+      const modalDe = (g) => {
+        const nodosG = {};
+        const $G = (id) => nodosG[id] || (nodosG[id] = { id, innerHTML: "", textContent: "", value: "", checked: false, addEventListener() {} });
+        const fmtG = new Intl.NumberFormat("es-CO", { maximumFractionDigits: 0 });
+        new Function("$", "window", "esc", "gPesos", "VERDE_CUENTA", "ROJO_CUENTA", "htmlCascada", "cerrarModal", "buscar", "guardarEstructura", "estado",
+          `let gananciaEnDetalle = estado; ${extraerG("pintarDetalleGanancia")}; pintarDetalleGanancia();`)(
+          $G, { Ganancia: require("../public/ganancia.js") }, (x) => String(x == null ? "" : x), (v) => (v < 0 ? "-$" : "$") + fmtG.format(Math.abs(Math.round(v))),
+          "VERDE", "ROJO", () => "", () => {}, () => {}, () => {},
+          { l: {}, g, ajustes: { administracion_pct: 10, imprevistos_pct: 5, utilidad_pct: 5, contribucion_en_administracion: false, declarada: true } });
+        return nodosG["modal-cuerpo"].innerHTML;
+      };
+      const mRef = modalDe(gL), mRoja = modalDe(gR);
+      assert.ok(/Al precio de referencia perdería/.test(mRef) && /no un requisito para ganar/.test(mRef) && /Su precio mínimo para no perder plata es \$/.test(mRef)
+        && !/no hay escenario en que este contrato deje plata/.test(mRef) && !/ROJO/.test(mRef.slice(0, mRef.indexOf("Al precio de referencia") + 200)), "el detalle de la licitación: la referencia, sin rojo");
+      assert.ok(/Pierde \$[\d.]+, aun en el mejor de los casos/.test(mRoja) && /ROJO/.test(mRoja), "el detalle del régimen especial: el rojo de siempre");
       // (e) la baja de mercado dice el hecho, no «para tener opción», donde el precio no predijo
       const IBm = require("../lib/indice_baja.js");
       const idxDepB = { departamento_familia: { "TOLIMA|7214": { nivel: "medio", baja_mediana: 6, procesos: 40, departamento: "TOLIMA" } } };
@@ -53082,11 +53157,18 @@ async function main() {
       assert.ok(!/tener opción/.test(mL) && /descontaron cerca de 6% del presupuesto oficial/.test(mL) && /en contratos como este, descontaron/.test(mL), `licitación → «${mL}»`);
       assert.ok(!/tener opción/.test(mT), `la modalidad por su respaldo (tipo_de_proceso) también → «${mT}»`);
       assert.ok(/^Para tener opción/.test(mR), `régimen especial, sin medir: la instrucción de antes → «${mR}»`);
+      const idxDep0 = { departamento_familia: { "TOLIMA|7214": { nivel: "bajo", baja_mediana: 0, procesos: 40, departamento: "TOLIMA" } } };
+      const m0L = IBm.bajaDeMercado(idxDep0, filaB({ modalidad_de_contratacion: "Licitación pública" })).mensaje;
+      const m0R = IBm.bajaDeMercado(idxDep0, filaB({ modalidad_de_contratacion: "Contratación régimen especial (con ofertas)" })).mensaje;
+      assert.ok(!/se gana sin bajar/i.test(m0L) && /en TOLIMA, en contratos como este, los que ganaron ofertaron prácticamente por el presupuesto oficial/.test(m0L), `licitación con mediana 0 → «${m0L}»`);
+      assert.ok(/se gana sin bajar el precio/i.test(m0R), `régimen especial con mediana 0: la de antes → «${m0R}»`);
       // (f) la misma fila con la modalidad solo en su respaldo: el margen de la tarjeta lee la misma que la probabilidad
       const BM = require("../lib/baja_maxima.js");
       const costosB = { porProceso: new Map([["CO1.REQ.FP1", { id: "b1", costo_directo: 700e6, config: { aiu_pct: 10, imprevistos_pct: 5, utilidad_pct: 5 }, total_guardado: 900e6 }]]) };
       const rB = BM.pisoTechoDeBorrador({ id_del_proceso: "CO1.REQ.FP1", cuantia_cop: 1e9, tipo_de_proceso: "Licitación pública" }, costosB, { baja: bajaG });
       assert.ok(rB && rB.pt.techo_es_referencia === true && rB.pt.estado === "presentarse", `modalidad solo en tipo_de_proceso → ${rB && rB.pt.techo_es_referencia} ${rB && rB.pt.estado}`);
+      // la foto de Mis procesos y la guía también leen el respaldo (Precios se abre desde el expediente con esa modalidad)
+      assert.strictEqual(require("../lib/seguimiento.js").fotoDe({ id_del_proceso: "CO1.REQ.FP2", tipo_de_proceso: "Licitación pública" }).modalidad, "Licitación pública", "la foto guarda la modalidad del respaldo");
       // (g) …y el enlace a Precios lleva esa misma modalidad (qApu REAL, extraído de public/app.js)
       const jsQ = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
       const iQ = jsQ.indexOf("  function qApu(l) {");
@@ -53112,11 +53194,17 @@ async function main() {
         const c = (Gg.guiaDe({ fila: { id_del_proceso: "CO1.FPG", nombre_del_procedimiento: "MEJORAMIENTO DE VIA", modalidad_de_contratacion: lit, precio_base: "900000000", departamento_entidad: "Tolima", entidad: "ALCALDIA" }, perfil: "helder" }).consejos || [])
           .find((x) => x.clave === "precio_no_al_piso");
         assert.ok(mb && mb.procesos === t.resumen[clave].procesos && mb.gano_la_mas_baja === t.resumen[clave].gano_la_mas_baja, `${clave}: el conteo sale de la tabla → ${JSON.stringify(mb)}`);
-        const lineaMb = `la oferta más baja ganó en ${require("../lib/lenguaje_pantalla.js").numCO(mb.gano_la_mas_baja, 0)} (${Math.round(mb.de_cada_100)} de cada 100)`;
+        const lineaMb = `la oferta más baja ganó en ${require("../lib/lenguaje_pantalla.js").numCO(mb.gano_la_mas_baja, 0)} (${Math.round(mb.de_cada_100)} de cada 100; si todas tuvieran la misma opción, unas ${Math.round(mb.azar_de_100)})`;
         assert.ok(c && c.detalle.includes(lineaMb) && /no predijo quién gana/.test(c.detalle) && !/Ubíquese|bajo más métodos|gana la oferta cercana al centro/.test(c.detalle),
           `${clave}: «${c && c.detalle}»`);
       }
       assert.strictEqual(FP.masBajaGano("minima"), null, "la mínima no es de esta tabla");
+      // con el azar al lado (segunda revisión adversaria), y con la modalidad del respaldo
+      const mbL = FP.masBajaGano("licitacion");
+      const cT = (Gg.guiaDe({ fila: { id_del_proceso: "CO1.FPG2", nombre_del_procedimiento: "MEJORAMIENTO DE VIA", tipo_de_proceso: "Licitación pública", precio_base: "900000000", departamento_entidad: "Tolima", entidad: "ALCALDIA" }, perfil: "helder" }).consejos || [])
+        .find((x) => x.clave === "precio_no_al_piso");
+      assert.ok(cT && cT.detalle.includes(`si todas tuvieran la misma opción, unas ${Math.round(mbL.azar_de_100)})`) && Math.abs(mbL.azar_de_100 - (100 * t.resumen.licitacion.azar_la_mas_baja) / t.resumen.licitacion.procesos) < 1e-9,
+        `el azar de la oferta más baja, de la tabla, y la guía con tipo_de_proceso → «${cT && cT.detalle}»`);
     }
 
     /* 6 · la lista dice que su orden cambió y por qué (condición del consejo): una línea fija bajo el resumen */
