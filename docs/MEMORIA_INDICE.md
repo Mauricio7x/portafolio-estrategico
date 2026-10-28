@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 2188226 bytes · 401 secciones · 38 con marcador de superación.
+Derivado del árbol: 2196483 bytes · 402 secciones · 38 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -408,7 +408,8 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | El rótulo «Obra civil» ya no sale de una palabra genérica en un suministro, una compraventa o un servicio (28-oct-2026) | 28-oct-2026 | 20456-20478 | 8185 |  |
 | La compra o el servicio que no es obra ya no sale con «Obra civil», y «Otro» y «Decreto 092» entran en la regla de la palabra genérica (28-oct-2026) | 28-oct-2026 | 20479-20508 | 10195 | «Lo que la lista daba como obra sin serlo sale del tipo «obra», y «Otro» y «Decreto 092» salen de la regla de la palabra genérica (28-oct-2026)» · «La cuenta de días al cierre es una sola y por fecha civil, y el chip sigue a la regla explícita de no-obra aunque haya clase de obra pura (28-oct-2026)» |
 | Lo que la lista daba como obra sin serlo sale del tipo «obra», y «Otro» y «Decreto 092» salen de la regla de la palabra genérica (28-oct-2026) | 28-oct-2026 | 20509-20535 | 10422 | «La cuenta de días al cierre es una sola y por fecha civil, y el chip sigue a la regla explícita de no-obra aunque haya clase de obra pura (28-oct-2026)» |
-| El % de adjudicación según el precio no se enseña porque se midió que no predice: en licitación y menor cuantía se dice cuántas ofertas ganaron a ese precio (28-oct-2026) | 28-oct-2026 | 20536-20589 | 14377 | «La verificación del precio normaliza en cada proceso: el precio predice quién gana apenas mejor que el azar, no peor (28-oct-2026)» |
-| La referencia de precio va por tipo de obra: una vía y un acueducto se adjudican a precios distintos, pero en ninguno el precio predice quién gana (28-oct-2026) | 28-oct-2026 | 20590-20656 | 12105 |  |
+| El % de adjudicación según el precio no se enseña porque se midió que no predice: en licitación y menor cuantía se dice cuántas ofertas ganaron a ese precio (28-oct-2026) | 28-oct-2026 | 20536-20589 | 14436 | «La verificación del precio normaliza en cada proceso: el precio predice quién gana apenas mejor que el azar, no peor (28-oct-2026)» |
+| La referencia de precio va por tipo de obra: una vía y un acueducto se adjudican a precios distintos, pero en ninguno el precio predice quién gana (28-oct-2026) | 28-oct-2026 | 20590-20656 | 11571 |  |
 | La verificación del precio normaliza en cada proceso: el precio predice quién gana apenas mejor que el azar, no peor (28-oct-2026) | 28-oct-2026 | 20657-20678 | 3177 |  |
-| La cuenta de días al cierre es una sola y por fecha civil, y el chip sigue a la regla explícita de no-obra aunque haya clase de obra pura (28-oct-2026) | 28-oct-2026 | 20679-20702 | 9227 |  |
+| La cuenta de días al cierre es una sola y por fecha civil, y el chip sigue a la regla explícita de no-obra aunque haya clase de obra pura (28-oct-2026) | 28-oct-2026 | 20679-20703 | 9228 |  |
+| La referencia de un tramo concentrado se dice sin la entidad que lo concentra, el vocabulario de tipos va en dos capas y la captura de hábiles arranca desde la sesión (28-oct-2026) | 28-oct-2026 | 20704-20753 | 8731 |  |
