@@ -4941,10 +4941,17 @@
     if (empujarHash) { try { history.replaceState(null, "", "#/mis-procesos"); } catch { /* entorno raro */ } }
     if (ultimoSeguimiento) pintarSeguimiento(ultimoSeguimiento);
     try { window.scrollTo({ top: vuelta ? vuelta.y : 0 }); } catch { /* sin scroll */ }
-    if (vuelta && vuelta.id) {
+    const enfocarFila = () => {
+      if (!vuelta || !vuelta.id) return;
       const fila = secSeg && secSeg.querySelector(`[data-seg-abrir="${(window.CSS && CSS.escape) ? CSS.escape(vuelta.id) : vuelta.id}"]`);
       if (fila) { try { fila.focus({ preventScroll: true }); } catch { /* sin foco */ } }
-    }
+    };
+    enfocarFila();
+    /* LO QUE CAMBIÓ DENTRO SE TRAE AL VOLVER (28-oct-2026, revisión adversaria). Los guardados del
+       expediente (la etapa, la lista, el papeleo) no recargan la lista en cada pulsación y la
+       marcan para refrescarla «al volver», pero al volver se repintaba la copia vieja: los
+       resúmenes, la etapa y las palabras que busca la lista seguían siendo las de antes. */
+    if (devolver && seguimientoCargadoPara === null) cargarSeguimiento({ forzar: true }).then(enfocarFila, () => { /* el fallo lo dice cargarSeguimiento */ });
   }
 
   /* Cuántas cosas hay en cada sección: el número al lado del rótulo evita entrar
@@ -4988,6 +4995,13 @@
     const zona = secSeg && secSeg.querySelector("[data-exp-soltar]");
     if (zona) zona.classList.remove("hidden");
     segDocEditando = null;
+  }
+  // la respuesta de la etapa, en la cabecera del expediente (la de la lista está oculta ahí)
+  function decirEtapa(id, texto, tipo) {
+    const el = secSeg && secSeg.querySelector(`[data-exp-etapa-mensaje="${CSS.escape(id)}"]`);
+    if (!el) { mensajeSeg(texto, tipo); return; }
+    el.textContent = texto || "";
+    el.className = tipo === "error" ? "exp-seccion-nota text-red-700" : "exp-seccion-nota";
   }
   function decirDoc(texto, tipo) {
     const el = secSeg && secSeg.querySelector("[data-exp-doc-mensaje]");
@@ -6317,6 +6331,22 @@
       const sel = ev.target.closest("[data-seg-estado]");
       if (!sel) return;
       const id = sel.getAttribute("data-seg-estado");
+      /* DENTRO DEL EXPEDIENTE, CAMBIAR LA ETAPA REPINTA EL EXPEDIENTE (28-oct-2026, revisión
+         adversaria). «Lo siguiente que tiene que hacer» sale de la etapa, y la respuesta iba a
+         #seg-mensaje, que vive en la lista y está oculto con el expediente abierto: marcar «Me
+         presenté» no cambiaba nada a la vista, y un fallo era mudo. La lista se trae al volver. */
+      if (segExpId === id) {
+        const antes = segExpDatos && segExpDatos.proceso ? segExpDatos.proceso.estado : null;
+        try {
+          await api("/api/perfil?op=seguimiento", { method: "POST", body: { perfil: $("f-perfil").value, id, estado: sel.value } });
+          guardados.set(id, sel.value);
+          segExpEscrituras += 1;
+          seguimientoCargadoPara = null;
+          await refrescarExpediente();
+          decirEtapa(id, "Etapa guardada.", "ok");
+        } catch (e) { if (antes) sel.value = antes; decirEtapa(id, fraseDeFallo(e), "error"); }
+        return;
+      }
       try { await api("/api/perfil?op=seguimiento", { method: "POST", body: { perfil: $("f-perfil").value, id, estado: sel.value } }); guardados.set(id, sel.value); mensajeSeg("Estado actualizado.", "ok"); setTimeout(() => mensajeSeg(""), 2000); cargarSeguimiento({ forzar: true }); }
       catch (e) { mensajeSeg(fraseDeFallo(e), "error"); }
     });

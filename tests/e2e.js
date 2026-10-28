@@ -7133,6 +7133,131 @@ async function main() {
     console.log(`· unidad días al cierre por fecha civil: ${CASOS_D.length} casos (hoy, mañana y cerrado por la hora); con la medianoche de la fuente la cuenta no cambia (${comparadas} comparaciones); «cerrado» = «vencido»; Mis procesos y la guía llaman a la misma cuenta`);
   }
 
+  /* unidad: LO SIGUIENTE QUE TIENE QUE HACER DEPENDE DE LA ETAPA (28-oct-2026, «haz la 1, 2 y 3»).
+     Con «Me presenté» marcado, el expediente seguía diciendo «Lea primero las causales de rechazo y el
+     cronograma del pliego» (visto en el navegador el 27-sep-2026), y el paso a paso mandaba a pedir la
+     garantía y a cargar la oferta: lib/guia_proceso no miraba la etapa. Con el proceso cerrado salía el
+     mismo «Lea primero…» fechado hoy debajo de «El proceso ya cerró», en cualquier etapa. Cada aserción
+     marcada MUTACIÓN falla contra el árbol anterior o contra la mutación que nombra. */
+  bqSiguientePaso: { if (!corre("unidad siguiente paso según la etapa")) break bqSiguientePaso;
+    const Gs = require("../lib/guia_proceso.js");
+    const Xs = require("../public/expediente.js");
+    const SMs = require("../lib/perfiles.js").SMMLV;
+    const HOY_S = "2026-10-28", AHORA_S = Date.parse("2026-10-28T15:00:00Z"); // 10 a. m. en Colombia
+    const filaS = (cierre, extra = {}) => ({ id_del_proceso: "CO1.REQ.SIGUIENTE", nombre_del_procedimiento: "MEJORAMIENTO DE VIA TERCIARIA",
+      modalidad_de_contratacion: "Licitación pública Obra Publica", tipo_de_contrato: "Obra", precio_base: String(300 * SMs), departamento_entidad: "Tolima",
+      entidad: "ALCALDIA DE PRUEBA", duracion: "4", unidad_de_duracion: "Meses", fecha_de_recepcion_de: cierre, ...extra });
+    const ABIERTO = "2026-11-02T00:00:00.000", CERRADO = "2026-10-20T00:00:00.000";
+    const guiaS = (cierre, etapa, extra) => Gs.guiaDe({ fila: filaS(cierre, extra), perfil: "helder", ctx: { ahoraMs: AHORA_S, etapa } });
+    const titulos = (g) => g.pasos.map((p) => p.titulo);
+    const siguiente = (g) => (Xs.htmlSiguientePaso({ guia: g }, { hoy: HOY_S }).match(/<b>([^<]*)<\/b>/) || [])[1] || null;
+    const ANTES_DE_PRESENTAR = /Lea primero|garantía de seriedad|Cargue y PRESENTE|Envíe observaciones|Avise que le interesa/;
+
+    // (a) sin etapa y preparando, abierto: lo de siempre (no se toca lo que estaba bien)
+    for (const etapa of [null, "interesa", "preparando"]) {
+      const g = guiaS(ABIERTO, etapa);
+      assert.strictEqual(siguiente(g), "Lea primero las causales de rechazo y el cronograma del pliego", `${etapa}: ${JSON.stringify(titulos(g))}`);
+      assert.ok(titulos(g).includes("Cargue y PRESENTE la oferta completa") && titulos(g).includes("Pida la garantía de seriedad a su aseguradora"), `${etapa}: ${JSON.stringify(titulos(g))}`);
+    }
+    // (b) con oferta, abierto: nada de antes de presentar; lo siguiente es comprobar HOY que diga «Presentada»
+    for (const etapa of ["presentado", "ganado", "perdido"]) {
+      const g = guiaS(ABIERTO, etapa);
+      assert.ok(!titulos(g).some((t) => ANTES_DE_PRESENTAR.test(t)), `MUTACIÓN (sin «porPresentar»): con «${etapa}» quedaba lo de antes de presentar: ${JSON.stringify(titulos(g))}`);
+      const verifique = g.pasos.find((p) => /«Presentada»/.test(p.titulo));
+      assert.ok(verifique && verifique.cuando === HOY_S, `MUTACIÓN (la fecha del día anterior al cierre): comprobarlo es hoy, ya presentó: ${JSON.stringify(verifique)}`);
+      assert.strictEqual(siguiente(g), verifique.titulo, `${etapa}: ${JSON.stringify(titulos(g))}`);
+      // con el desenlace marcado, lo que le toca: «ganado» no espera el informe, «perdido» no firma
+      const despues = titulos(g).filter((t) => /informe de evaluación|Adjudicación, firma/.test(t));
+      assert.deepStrictEqual([titulos(g).includes("Cierre del proceso"), despues], [true, { presentado: ["Revise el informe de evaluación y responda dentro del traslado", "Adjudicación, firma y acta de inicio"], ganado: ["Adjudicación, firma y acta de inicio"], perdido: [] }[etapa]],
+        `MUTACIÓN (sin «pasosDespues»): ${etapa}: ${JSON.stringify(titulos(g))}`);
+    }
+    // (c) con oferta, cerrado: lo siguiente es lo que viene sin fecha (el informe, la firma), no «El proceso ya cerró» otra vez
+    const presCerrado = guiaS(CERRADO, "presentado");
+    assert.ok(!titulos(presCerrado).some((t) => ANTES_DE_PRESENTAR.test(t)), `antes: «Lea primero…» fechado hoy debajo de «El proceso ya cerró»: ${JSON.stringify(titulos(presCerrado))}`);
+    assert.strictEqual(siguiente(presCerrado), "Revise el informe de evaluación y responda dentro del traslado",
+      `MUTACIÓN (la pantalla sin el primero sin fecha): ${JSON.stringify(titulos(presCerrado))}`);
+    assert.ok(/Usted se presentó/.test(presCerrado.pasos[0].detalle) && !/Si se presentó/.test(presCerrado.pasos[0].detalle), `la etapa se sabe: no «si se presentó»: ${presCerrado.pasos[0].detalle}`);
+    const ganado = guiaS(CERRADO, "ganado");
+    assert.deepStrictEqual(titulos(ganado), ["El proceso ya cerró", "Adjudicación, firma y acta de inicio"], JSON.stringify(titulos(ganado)));
+    assert.strictEqual(siguiente(ganado), "Adjudicación, firma y acta de inicio");
+    assert.ok(/Usted marcó «Ganado»: constituya las pólizas/.test(ganado.pasos[1].detalle) && !/Si gana/.test(ganado.pasos[1].detalle), ganado.pasos[1].detalle);
+    const perdido = guiaS(CERRADO, "perdido");
+    assert.deepStrictEqual(titulos(perdido), ["El proceso ya cerró"], `perdido no firma ni espera el informe: ${JSON.stringify(titulos(perdido))}`);
+    assert.ok(/Usted marcó «Perdido»: descargue de SECOP II las ofertas/.test(perdido.pasos[0].detalle), perdido.pasos[0].detalle);
+    // (d) cerrado SIN oferta marcada: tampoco «Lea primero…», sea cual sea la etapa (el hermano del defecto)
+    for (const etapa of [null, "interesa", "preparando", "manifestado", "descartado", "no_sorteado"]) {
+      const g = guiaS(CERRADO, etapa);
+      assert.ok(!titulos(g).some((t) => /Lea primero/.test(t)), `MUTACIÓN (sin «!cerrado»): «${etapa}» cerrado mandaba a leer las causales hoy: ${JSON.stringify(titulos(g))}`);
+      assert.strictEqual(siguiente(g), "El proceso ya cerró", `${etapa}: ${JSON.stringify(titulos(g))}`);
+    }
+    assert.ok(/Si se presentó/.test(guiaS(CERRADO, "preparando").pasos[0].detalle), "sin la etapa de la oferta, la frase de siempre");
+    /* (d-bis) EN MENOR CUANTÍA, CERRADO (revisión adversaria): los pasos de la manifestación, sin fecha, pasaban a ser
+       «lo siguiente» —«Mire en SECOP II si quedó habilitado…» o «Avise que le interesa… el día que abra el plazo»— */
+    const menorCerrado = { modalidad_de_contratacion: "Selección abreviada de menor cuantía", precio_base: String(200 * SMs), fecha_de_publicacion_del: "2026-10-01T00:00:00.000", estado_del_procedimiento: "Publicado" };
+    for (const [fase, etapa] of [["Presentación de oferta", "manifestado"], ["Presentación de observaciones", null], ["Presentación de observaciones", "preparando"]]) {
+      const g = guiaS(CERRADO, etapa, { ...menorCerrado, fase });
+      assert.deepStrictEqual(titulos(g), ["El proceso ya cerró"], `MUTACIÓN (sin «!cerrado» en la manifestación): ${fase} · ${etapa}: ${JSON.stringify(titulos(g))}`);
+    }
+    assert.ok(/^Descargue de SECOP II/.test(guiaS(CERRADO, "descartado").pasos[0].detalle), "descartado: aprender, sin «si se presentó»");
+    // (e) descartado o fuera del sorteo, abierto: solo el cierre (para aprender); ni avisar, ni presentar, ni traslado, ni firma
+    const filaMenor = { modalidad_de_contratacion: "Selección abreviada de menor cuantía", precio_base: String(200 * SMs), fecha_de_publicacion_del: "2026-10-27T00:00:00.000", fase: "Presentación de oferta", estado_del_procedimiento: "Publicado" };
+    assert.ok(titulos(guiaS("2026-11-10T00:00:00.000", null, filaMenor)).some((t) => /Avise que le interesa/.test(t)), "el caso de control: en menor cuantía sin etapa SÍ se manda a avisar");
+    for (const etapa of ["descartado", "no_sorteado"]) {
+      assert.deepStrictEqual(titulos(guiaS("2026-11-10T00:00:00.000", etapa, filaMenor)), ["Cierre del proceso"],
+        `MUTACIÓN (sin «sinOfertaYa»): «${etapa}» recibía avisar, presentar, el traslado o la firma: ${JSON.stringify(titulos(guiaS("2026-11-10T00:00:00.000", etapa, filaMenor)))}`);
+    }
+    // (f) con oferta y sin fecha de cierre conocida: lo que viene después de presentar, no una sección vacía
+    const sinCierre = guiaS("", "presentado");
+    assert.deepStrictEqual(titulos(sinCierre), ["Revise el informe de evaluación y responda dentro del traslado", "Adjudicación, firma y acta de inicio"], JSON.stringify(titulos(sinCierre)));
+    assert.strictEqual(siguiente(sinCierre), "Revise el informe de evaluación y responda dentro del traslado");
+    assert.deepStrictEqual(titulos(guiaS("", "ganado")), ["Adjudicación, firma y acta de inicio"], "ganado sin cierre: la firma, como cerrado");
+    assert.deepStrictEqual(titulos(guiaS("", "perdido")), [], "perdido sin cierre: ni informe ni «Si gana»");
+    // (g) la pantalla, sola: todos los fechados atrás → el primero sin fecha; sin ninguno sin fecha → el primero de la lista
+    assert.strictEqual(siguiente({ pasos: [{ titulo: "A", cuando: "2026-10-01" }, { titulo: "B", cuando: null }] }), "B");
+    assert.strictEqual(siguiente({ pasos: [{ titulo: "A", cuando: "2026-10-01" }] }), "A");
+    assert.strictEqual(siguiente({ pasos: [{ titulo: "A", cuando: "2026-10-01" }, { titulo: "C", cuando: "2026-10-30" }, { titulo: "B", cuando: null }] }), "C", "un fechado por venir gana al sin fecha");
+    /* (h) LA PANTALLA, EJECUTADA (revisión adversaria): cambiar la etapa DENTRO del expediente lo repinta y lo dice
+       ahí (la respuesta iba a la lista, oculta); y volver de él trae la lista del servidor si algo cambió dentro. */
+    {
+      const appSP = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+      const iSel = appSP.indexOf('      const sel = ev.target.closest("[data-seg-estado]");');
+      const fSel = appSP.indexOf('catch (e) { mensajeSeg(fraseDeFallo(e), "error"); }', iSel);
+      assert.ok(iSel > 0 && fSel > iSel, "la rama de la etapa existe");
+      const ramaEtapa = appSP.slice(iSel, fSel + 'catch (e) { mensajeSeg(fraseDeFallo(e), "error"); }'.length);
+      const correr = async ({ abierto, falla }) => {
+        const hechos = [];
+        const ctxE = { segExpId: abierto ? "X1" : null, segExpDatos: { proceso: { id: "X1", estado: "interesa" } }, segExpEscrituras: 0, seguimientoCargadoPara: "helder" };
+        const sel = { value: "presentado", getAttribute: () => "X1", closest: (q) => (q === "[data-seg-estado]" ? sel : null) };
+        const f = new Function("ctxE", "api", "guardados", "mensajeSeg", "decirEtapa", "refrescarExpediente", "cargarSeguimiento", "fraseDeFallo", "$",
+          `return async (ev) => { let { segExpId, segExpDatos, segExpEscrituras, seguimientoCargadoPara } = ctxE; try { ${ramaEtapa} } finally { Object.assign(ctxE, { segExpEscrituras, seguimientoCargadoPara }); } };`)(
+          ctxE, async () => { if (falla) throw new Error("x"); hechos.push("post"); }, new Map(), (t) => hechos.push(`lista:${t}`), (id, t, tipo) => hechos.push(`cabecera:${tipo}:${t}`),
+          async () => hechos.push("repinta"), async () => hechos.push("recarga"), () => "No se pudo guardar.", () => ({ value: "helder" }));
+        await f({ target: sel });
+        return { hechos, ctxE, valor: sel.value };
+      };
+      const dentro = await correr({ abierto: true });
+      assert.deepStrictEqual(dentro.hechos, ["post", "repinta", "cabecera:ok:Etapa guardada."], `MUTACIÓN (sin la rama del expediente): ${JSON.stringify(dentro.hechos)}`);
+      assert.ok(dentro.ctxE.segExpEscrituras === 1 && dentro.ctxE.seguimientoCargadoPara === null, "una lectura vieja del expediente se descarta, y la lista se trae al volver");
+      const falla = await correr({ abierto: true, falla: true });
+      assert.deepStrictEqual([falla.hechos, falla.valor], [["cabecera:error:No se pudo guardar."], "interesa"], "un fallo se DICE en el expediente y la etapa vuelve a la guardada");
+      const fuera = await correr({ abierto: false });
+      assert.deepStrictEqual(fuera.hechos, ["post", "lista:Estado actualizado.", "recarga"], "en la lista, lo de siempre");
+      // volver: con algo cambiado dentro, la lista se pide al servidor; sin cambios, se repinta la que hay
+      const fnCerrarSP = appSP.slice(appSP.indexOf("function cerrarExpediente"), appSP.indexOf("function conteosExpediente"));
+      const volver = (cargadoPara, devolver = true) => {
+        const hechos = [];
+        new Function("seguimientoCargadoPara", "cargarSeguimiento", "pintarSeguimiento", "verVista", "secSeg", "ultimoSeguimiento", "history", "window",
+          `let segExpId = "X1", segExpDatos = {}, segVuelta = null; ${fnCerrarSP}; cerrarExpediente({ empujarHash: false, devolver: ${devolver} });`)(
+          cargadoPara, () => { hechos.push("recarga"); return Promise.resolve(); }, () => hechos.push("repinta"), () => {}, null, {}, {}, { scrollTo: () => {} });
+        return hechos;
+      };
+      assert.deepStrictEqual(volver(null), ["repinta", "recarga"], "MUTACIÓN (volver sin traer la lista): lo cambiado dentro se trae al volver");
+      assert.deepStrictEqual(volver("helder"), ["repinta"], "sin cambios dentro, no se pide nada");
+      assert.deepStrictEqual(volver(null, false), ["repinta"], "al cerrar por la pestaña, que ya pide la lista, no se pide dos veces");
+    }
+    console.log("· unidad siguiente paso según la etapa: con oferta, «Lea primero…» y la garantía se van y lo siguiente es comprobar «Presentada»; cerrado, el informe o la firma; descartado, solo el cierre; la etapa marcada en el expediente lo repinta");
+  }
+
   /* unidad: EQUIVALENCIAS funcionales. El lift se calcula sobre
      ADJUDICATARIOS, no sobre procesos: una entidad que saque 40 procesos
      gemelos no puede fabricar una equivalencia. */
@@ -50692,6 +50817,16 @@ async function main() {
       assert.strictEqual(p1e.notas, "Hablé con el ingeniero de la entidad.", "ni las notas");
       assert.strictEqual(p1.carpeta, c1.carpeta.id, "ni la carpeta");
       assert.strictEqual(p1.tiene_notas, true, "y la fila sabe que hay notas sin traérselas");
+      /* LA BÚSQUEDA SOBRE LA FILA QUE SIRVE EL SERVIDOR (28-oct-2026, «haz la 3»). La pestaña filtra la
+         lista LIGERA, sin notas ni lista de verificación: contra el árbol anterior, «poliza» e «ingeniero»
+         no encontraban CAS.UNO aunque su expediente sí los trae. */
+      const encuentra = (q) => K.filtrar(g.procesos, { texto: q }).some((p) => p.id === "CAS.UNO");
+      assert.ok(!("notas" in p1) && !("tareas" in p1), "la fila sigue sin traerse el cuaderno");
+      assert.ok(encuentra("poliza") && encuentra("INGENIERO") && encuentra("seriedad póliza"), `MUTACIÓN (sin «palabras_suyas»): buscar lo que usted escribió en la fila: ${p1.palabras_suyas}`);
+      assert.ok(encuentra("certificado"), "también lo que ya marcó como hecho: lo escribió usted");
+      assert.ok(!encuentra("poliza palabraquenoesta"), "y cada palabra buscada tiene que estar");
+      // la fila y el expediente completo dan el mismo resultado: una sola búsqueda, dos formas del proceso
+      for (const q of ["poliza", "entidad.", "hable", "visita de obra", "pas", "zzz"]) assert.strictEqual(K.filtrar([p1], { texto: q }).length, K.filtrar([p1e], { texto: q }).length, `«${q}»: la fila y el expediente tienen que coincidir`);
       assert.deepStrictEqual([p1.tareas_resumen.total, p1.tareas_resumen.hechas, p1.tareas_resumen.vencidas], [4, 1, 1]);
       assert.strictEqual(g.resumen.tareas_pendientes, 3);
       assert.strictEqual(g.resumen.tareas_vencidas, 1);
@@ -50754,12 +50889,17 @@ async function main() {
          nadie lee): la lista no pinta ni una letra de la guía, así que `aLigero`
          la deja fuera del cable junto con el cuaderno, el papeleo y los avisos.
          Esta prueba mide las DOS formas con el peor perfil posible y exige que
-         la diferencia siga siendo la que justifica la decisión. */
+         la diferencia siga siendo la que justifica la decisión.
+         LAS NOTAS Y LA LISTA SON PALABRAS DISTINTAS (28-oct-2026): desde que la
+         fila lleva `palabras_suyas` para la búsqueda, una nota de «NNNN…» se
+         reduce a UNA palabra y escondería el peso de verdad; el peor caso es
+         texto que no se repite. */
       {
+        const distintas = (largo, semilla) => { let s = "", k = 0; for (;;) { const w = `p${semilla}x${(k++).toString(36)}`; if (s.length + w.length + 1 > largo) return s; s += (s ? " " : "") + w; } };
         const peor = Array.from({ length: S.MAX_GUARDADOS }, (_, i) => ({
           id: `CO1.REQUERIMIENTO.${100000 + i}`, estado: "interesa", carpeta: `c${i % S.MAX_CARPETAS}`,
-          notas: "N".repeat(S.MAX_NOTAS),
-          tareas: Array.from({ length: S.MAX_TAREAS }, (_, j) => ({ id: `t${j}`, texto: "T".repeat(S.LARGO_TAREA), hecha: false, fecha: "2026-09-20", creada: "2026-09-07T10:00:00.000Z", hecha_el: null })),
+          notas: distintas(S.MAX_NOTAS, `${i}n`),
+          tareas: Array.from({ length: S.MAX_TAREAS }, (_, j) => ({ id: `t${j}`, texto: distintas(S.LARGO_TAREA, `${i}t${j}`), hecha: false, fecha: "2026-09-20", creada: "2026-09-07T10:00:00.000Z", hecha_el: null })),
           tareas_resumen: { total: S.MAX_TAREAS, hechas: 0, pendientes: S.MAX_TAREAS, vencidas: 0, proxima: null },
           documentos: Array.from({ length: S.MAX_DOCUMENTOS }, (_, j) => ({ id: `d${j}`, clave: "otro", nombre: "D".repeat(S.LARGO_DOC), estado: "por_conseguir", vence: "2026-09-18", nota: null, agregado: "2026-09-07T10:00:00.000Z", archivo: { nombre: "A".repeat(S.LARGO_DOC), paginas: 40, caracteres: 80000, leido_el: "2026-09-07T10:00:00.000Z", con_texto: true } })),
           documentos_resumen: { total: S.MAX_DOCUMENTOS, cuentan: S.MAX_DOCUMENTOS, listos: 0, por_conseguir: S.MAX_DOCUMENTOS, en_tramite: 0, con_archivo: S.MAX_DOCUMENTOS, vencidos: 0, vencen_antes_del_cierre: 3 },
@@ -50775,7 +50915,11 @@ async function main() {
         const bytesUno = pesar({ ok: true, proceso: peor[0] });
         const CORTE = 4.5 * 1024 * 1024;
         assert.ok(bytesPesado > CORTE, `la prueba solo mide algo si la forma vieja SÍ cruzaba el techo: ${(bytesPesado / 1048576).toFixed(2)} MiB`);
-        assert.ok(bytesLigero < CORTE / 4, `el peor perfil posible (${S.MAX_GUARDADOS} procesos con el cuaderno y el papeleo al tope) tiene que caber holgado en los 4,5 MB: ${(bytesLigero / 1048576).toFixed(2)} MiB`);
+        /* UN TERCIO, NO UN CUARTO (28-oct-2026, decisión del dueño: la búsqueda encuentra sus notas).
+           Las palabras de las notas y de la lista suben el peor perfil de 0,47 a 1,19 MiB (medido con
+           palabras que no se repiten): el 26 % del techo, con 3,8 veces de holgura. Si algún día pasa de
+           un tercio, lo que se quita es otra cosa, no el margen. */
+        assert.ok(bytesLigero < CORTE / 3, `el peor perfil posible (${S.MAX_GUARDADOS} procesos con el cuaderno y el papeleo al tope) tiene que caber holgado en los 4,5 MB: ${(bytesLigero / 1048576).toFixed(2)} MiB`);
         assert.ok(bytesUno < CORTE / 10, `un expediente completo, con guía, cabe de sobra: ${(bytesUno / 1048576).toFixed(3)} MiB`);
         // y lo que se quitó del cable NO se perdió: está en el expediente
         for (const clave of ["tareas", "documentos", "notas", "avisos", "guia"]) assert.ok(!(clave in ligeros[0]), `la lista no manda «${clave}»`);
@@ -51565,6 +51709,17 @@ async function main() {
       const conTodo = S.aLigero({ id: "X", estado: "interesa", guia: { obra: {} }, documentos: [{ id: "d" }], tareas: [{ id: "t" }], notas: "algo", avisos: [{}], hitos: [] });
       for (const clave of ["guia", "documentos", "tareas", "notas", "avisos"]) assert.ok(!(clave in conTodo), `aLigero tiene que quitar «${clave}» aunque venga lleno`);
       assert.strictEqual(conTodo.tiene_notas, true, "y dejar el HECHO de que hay notas, que es lo que la fila pinta");
+      /* sus PALABRAS sí viajan, para buscar (28-oct-2026): una vez cada una, ya en la forma de la búsqueda */
+      const conPalabras = S.aLigero({ id: "X", estado: "interesa", notas: "Póliza  de SERIEDAD, póliza", tareas: [{ id: "t", texto: "Pedir póliza" }, null, { id: "u" }] });
+      assert.strictEqual(conPalabras.palabras_suyas, "poliza de seriedad, pedir", `sin tildes, en minúsculas y sin repetir: ${conPalabras.palabras_suyas}`);
+      assert.strictEqual(conPalabras.palabras_suyas, require("../public/casillero.js").plano(conPalabras.palabras_suyas), "con la MISMA regla de la pantalla (`plano` de public/casillero.js)");
+      assert.strictEqual(S.aLigero({ id: "X", estado: "interesa", notas: null }).palabras_suyas, null, "sin notas ni lista no hay palabras: null, no una cadena vacía");
+      // lo que `plano` descompone y no quita se recompone para el cable (revisión adversaria): un texto coreano no se triplica
+      const coreano = "한국어 검색 테스트";
+      assert.strictEqual(S.aLigero({ id: "X", notas: coreano }).palabras_suyas, coreano, "MUTACIÓN (sin NFC): 9 bytes por sílaba en vez de 3");
+      assert.strictEqual(require("../public/casillero.js").filtrar([S.aLigero({ id: "X", notas: coreano })], { texto: "검색" }).length, 1, "y se sigue encontrando");
+      assert.strictEqual(S.aLigero({ id: "X", estado: "interesa", notas: "   ", tareas: "no es una lista" }).palabras_suyas, null);
+      assert.strictEqual(S.aLigero({ id: "X", documentos: [{ nombre: "RUP" }] }).palabras_suyas, null, "los nombres del papeleo NO entran (la búsqueda del expediente tampoco los mira)");
       assert.strictEqual(conTodo.tiene_guia, true);
       assert.strictEqual(filaLista.documentos_resumen.listos, 1, "pero sí CUÁNTO hay: la fila dice «1 de 1» sin traerse el papeleo");
       const uno = (await exp(`&perfil=${PERF}&expediente=${encodeURIComponent(fila.id_del_proceso)}`)).cuerpo;

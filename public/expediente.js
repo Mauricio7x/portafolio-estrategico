@@ -188,6 +188,7 @@
                title="Abre el proceso en SECOP II, en una pestaña nueva">Abrir en SECOP II<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7"/><path d="M9 7h8v8"/></svg></a>`
           : `<span class="exp-seccion-nota">La entidad no publicó el enlace a este proceso en SECOP II.</span>`}
       </div>
+      <p class="exp-seccion-nota" data-exp-etapa-mensaje="${esc(p.id)}" role="status"></p>
       <dl class="exp-cifras">
         ${cifras.map((c) => `<div class="exp-cifra${c.urgente ? " exp-cifra-urgente" : ""}"${c.titulo ? ` title="${esc(c.titulo)}"` : ""}>
           <dd class="exp-cifra-valor num">${cifraPartible(c.valor)}</dd><dt class="exp-cifra-rotulo">${esc(c.rotulo)}</dt></div>`).join("")}
@@ -551,12 +552,16 @@
   /* El SIGUIENTE PASO, en una frase y arriba del todo: un contratista no
      técnico necesita una instrucción, no un tablero. Sale del primer paso de la
      guía que todavía no ha pasado; si no hay guía todavía, se dice qué falta
-     para tenerla en vez de callar. */
+     para tenerla en vez de callar.
+     SI TODOS LOS FECHADOS QUEDARON ATRÁS, el siguiente es el primero SIN fecha
+     (28-oct-2026): con el proceso cerrado y la oferta presentada, lo que viene
+     —el informe de evaluación, la firma— no tiene fecha publicada, y caer al
+     primero de la lista repetía «El proceso ya cerró» como algo por hacer. */
   function htmlSiguientePaso(p, { hoy = null } = {}) {
     const pasos = (p.guia && p.guia.pasos) || [];
     const C = raizCalendario();
     const proximo = pasos.filter((s) => s.cuando).map((s) => ({ ...s, dia: String(s.cuando).slice(0, 10) }))
-      .sort((a, b) => a.dia.localeCompare(b.dia)).find((s) => !hoy || s.dia >= hoy) || pasos[0] || null;
+      .sort((a, b) => a.dia.localeCompare(b.dia)).find((s) => !hoy || s.dia >= hoy) || pasos.find((s) => !s.cuando) || pasos[0] || null;
     if (!proximo) return "";
     return `<section class="exp-seccion">
       <h3 class="exp-seccion-titulo">Lo siguiente que tiene que hacer</h3>
