@@ -52999,6 +52999,23 @@ async function main() {
     const rReg = entradaPT("Contratación régimen especial (con ofertas)");
     assert.ok(rReg.techo_es_referencia === false && rReg.estado === "no_presentarse" && rReg.precio_actual_estado === "sobre_el_techo", `régimen especial, sin medir: la regla de antes → ${rReg.estado} · ${rReg.precio_actual_estado}`);
 
+    /* 7 · el desglose de la probabilidad, con un índice de baja hecho a mano (del departamento, para que la regla de
+       conteo dijera «Baja»): en licitación el paso de precio vale 1, dice por qué y su confianza es «Media» (una
+       medición con todas las entidades juntas), sin la fórmula de la curva; en régimen especial, la curva de antes */
+    {
+      const PD = require("../lib/probabilidad_desglose.js");
+      const idxDep = { departamento_familia: { "TOLIMA|7214": { nivel: "medio", baja_mediana: 6, baja_p25: 3, baja_p75: 9, procesos: 40, departamento: "TOLIMA" } } };
+      const des = (m) => PD.desglosarProbabilidad({ entidad: "ALCALDIA SIN HISTORIA", departamento_entidad: "Tolima", codigo_principal_de_categoria: "72141000",
+        modalidad_de_contratacion: m, cuantia_cop: 9e8, precio_base: 9e8 }, null, idxDep, { baja_maxima_pct: 1, baja_maxima_origen: "declarada" });
+      const dL = des("Licitación pública"), p4L = dL.pasos[3];
+      assert.ok(p4L.datos_entrada.factor_aplicado === 1 && p4L.datos_entrada.origen_baja_maxima === "no_predice" && p4L.confianza === "Media"
+        && /P = P × 1/.test(p4L.formula) && !/mult\(/.test(p4L.formula) && /no le ganó/.test(p4L.fundamento) && !/la misma curva de precio del editor/.test(p4L.fundamento),
+        `licitación: el paso 4 dice lo medido → ${p4L.confianza} · «${p4L.formula}»`);
+      assert.ok((dL.explicacion_simple || []).some((x) => /no predijo quién gana/.test(x.texto)) && !(dL.explicacion_simple || []).some((x) => /le resta\./.test(x.texto)), "la explicación en palabras no dice que el precio le resta");
+      const p4R = des("Contratación régimen especial (con ofertas)").pasos[3];
+      assert.ok(p4R.datos_entrada.factor_aplicado < 1 && p4R.confianza === "Baja" && /mult\(/.test(p4R.formula), `régimen especial, sin medir: la curva de antes → ${p4R.datos_entrada.factor_aplicado} · ${p4R.confianza}`);
+    }
+
     /* 6 · la lista dice que su orden cambió y por qué (condición del consejo): una línea fija bajo el resumen */
     const htmlFP = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
     const aviso = (htmlFP.match(/<p id="aviso-orden-precio"[^>]*>([\s\S]*?)<\/p>/) || [])[1] || "";
