@@ -1232,13 +1232,20 @@
   function lineaMargen(m) {
     if (!m) return "";
     if (m.valor == null) return `<p class="mt-3 text-xs text-gray-500">${esc(m.motivo || "Sin referencia")}</p>`;
-    const signo = m.valor >= 0 ? "text-green-800 bg-green-50 ring-green-600/20" : "text-red-700 bg-red-50 ring-red-600/20";
+    /* bajo cero y con el techo como referencia (licitación y menor cuantía, 28-oct-2026) es ámbar: un aviso, no un «no da»;
+       pero si su mínimo no cabe en el presupuesto es el rojo de siempre, como el «No se presente» de Precios */
+    const referenciaQueCabe = m.techo_es_referencia === true && m.minimo_sobre_presupuesto !== true;
+    const signo = m.valor >= 0 ? "text-green-800 bg-green-50 ring-green-600/20"
+      : referenciaQueCabe ? "text-amber-900 bg-amber-50 ring-amber-600/20" : "text-red-700 bg-red-50 ring-red-600/20";
     /* «Recorrido», no «le quedan»: esta cifra es la distancia entre dos PRECIOS
        (su mínimo y el del mercado), o sea margen de maniobra para ofertar. La
        plata que deja el contrato es otra —la de la franja de arriba, que ya
        descontó la contribución y las deducciones— y llamarlas igual es la
        confusión que el encargo del dueño vino a corregir. */
-    return `<p class="mt-3 rounded-lg px-3 py-2 text-xs ring-1 ring-inset ${signo}">Puede mover el precio <strong>${fmtCOP.format(m.valor)}</strong> entre su precio mínimo (${fmtCOP.format(m.piso)}) y el precio al que se suele adjudicar en ${esc(m.donde || "esta zona")} (${fmtCOP.format(m.techo)}). No es lo que deja el contrato: eso es la cifra de arriba.${m.valor < 0 ? " El precio de mercado está POR DEBAJO de su mínimo: aquí no da." : ""}</p>`;
+    return `<p class="mt-3 rounded-lg px-3 py-2 text-xs ring-1 ring-inset ${signo}">Puede mover el precio <strong>${fmtCOP.format(m.valor)}</strong> entre su precio mínimo (${fmtCOP.format(m.piso)}) y el precio al que se suele adjudicar en ${esc(m.donde || "esta zona")} (${fmtCOP.format(m.techo)}). No es lo que deja el contrato: eso es la cifra de arriba.${m.valor < 0 ? (referenciaQueCabe
+      // en licitación y menor cuantía ese precio es una referencia, no un requisito para ganar (28-oct-2026): no se dice «aquí no da»
+      ? " El precio al que se suele adjudicar está POR DEBAJO de su mínimo; es una referencia, no un requisito para ganar."
+      : " El precio de mercado está POR DEBAJO de su mínimo: aquí no da.") : ""}</p>`;
   }
 
   /* Al cargar: el orden pedido en la URL (`?ordenar_por=margen`) y los
@@ -2451,7 +2458,11 @@
        dejaba en la zona muerta temporal —`ReferenceError` dentro del renderizado
        de la tarjeta, o sea la lista entera rota—. La suite no lo habría visto:
        sus pruebas de esta celda miran el fuente con regex, no la ejecutan. */
-    const rotulo = v === "pierde"
+    /* licitación y menor cuantía con costo (28-oct-2026): la pérdida es al precio de referencia, que no es el
+       precio para ganar; el rótulo lo dice y la celda no se pinta en rojo (lib/ganancia) */
+    const aReferencia = v === "pierde" && g.perdida_al_precio_de_referencia === true;
+    const rotulo = aReferencia ? "perdería al precio de referencia"
+      : v === "pierde"
       ? "de pérdida aun en el mejor caso"
       : (Number(cifra) < 0 ? "podría perder, en el peor caso" : "le quedan como mínimo si gana");
     /* Con una baja de 0 o negativa el precio de referencia ES el presupuesto
@@ -2494,7 +2505,7 @@
         data-objeto="${esc(l.nombre_del_procedimiento || l.id_del_proceso || "")}"
         aria-label="Ver cómo se calcula lo que deja este contrato">${cifraPartible}</button>`;
     return celda(boton, rotulo, "con el costo que usted calculó", lineas.join("\n"),
-      v === "pierde" ? "perdida" : "");
+      v === "pierde" && !aReferencia ? "perdida" : "");
   }
 
   /* POR QUÉ SE ENSEÑA UN PROCESO QUE SOLO NO ALCANZA (11-sep-2026).
@@ -2734,7 +2745,8 @@
     if (l.cuantia_nota) q.set("cuantia_nota", String(l.cuantia_nota));
     if (l.id_del_proceso != null) q.set("id_proceso", String(l.id_del_proceso));
     if (l.plazo_meses != null) q.set("plazo", String(l.plazo_meses));
-    if (l.modalidad_de_contratacion) q.set("modalidad", l.modalidad_de_contratacion);
+    // el campo y su respaldo declarado (lib/frecuencia_precio.modalidadDeFila): Precios tiene que leer la misma
+    if (l.modalidad_de_contratacion || l.tipo_de_proceso) q.set("modalidad", l.modalidad_de_contratacion || l.tipo_de_proceso);
     if (l.filtro && l.filtro.tipo) q.set("tipo", l.filtro.tipo);
     q.set("perfil", $("f-perfil").value);
     return q.toString();
@@ -3460,6 +3472,11 @@
     const veredictoTxt = d.veredicto === "deja"
       ? `<p class="text-lg font-semibold" style="color: ${VERDE_CUENTA};">Le quedan ${esc(gPesos(d.valor))}</p>
          <p class="text-sm" style="color: var(--text-secondary);">Y hasta ${esc(gPesos(d.mejor))} si no gasta la reserva para imprevistos.</p>`
+      /* licitación y menor cuantía con costo (28-oct-2026): la pérdida es al precio de referencia, que no es el precio para
+         ganar; ni el rojo ni «no hay escenario», como la tarjeta (lib/ganancia, `perdida_al_precio_de_referencia`) */
+      : d.veredicto === "pierde" && g.perdida_al_precio_de_referencia === true
+        ? `<p class="text-lg font-semibold">Al precio de referencia perdería ${esc(gPesos(-d.mejor))}</p>
+           <p class="text-sm" style="color: var(--text-secondary);">Es el precio al que se suele adjudicar aquí, no un requisito para ganar: en licitaciones y menores cuantías el precio, por sí solo, apenas predice quién gana.${g.piso_rentable != null ? ` Su precio mínimo para no perder plata es ${esc(gPesos(g.piso_rentable))}.` : ""}</p>`
       : d.veredicto === "pierde"
         ? `<p class="text-lg font-semibold" style="color: ${ROJO_CUENTA};">Pierde ${esc(gPesos(-d.mejor))}, aun en el mejor de los casos</p>
            <p class="text-sm" style="color: var(--text-secondary);">Con este precio y este costo, no hay escenario en que este contrato deje plata.</p>`
@@ -9299,6 +9316,9 @@
            interventoría, y sin este dato el piso del editor la cobraría donde
            la tarjeta no — dos cifras del mismo proceso. */
         tipo_trabajo: tipoProceso,
+        /* el OBJETO viaja para leer el tipo de obra (28-oct-2026): en licitación y menor cuantía, «dónde ofertaron
+           los que ganaron» es la referencia de su tipo (una vía y un acueducto se adjudican a precios distintos) */
+        objeto: $("objeto").value.trim().slice(0, 4000),
         unspsc: $("codigos-unspsc").value.trim(),
         cuantia: Number($("cuantia").value) || null,
         plazo_meses: Number($("plazo-meses").value) || 12,
@@ -9412,6 +9432,9 @@
       $("pt-oferentes-nota").textContent = cf.oferentes_motivo === "no_se_leyo" ? "No se pudo consultar esta vez: vuelva a cargar la página"
         : "Menos de 5 procesos con oferentes contados";
     }
+    /* en licitación y menor cuantía el techo es una REFERENCIA (28-oct-2026): «probablemente se gana» encima de
+       un veredicto que dice «no es un requisito para ganar» era contradecirse en el mismo panel */
+    $("pt-techo-rotulo").textContent = pt.techo_es_referencia ? "El precio al que se suele adjudicar aquí" : "El precio al que probablemente se gana";
     $("pt-piso").textContent = copRent(cf.piso_rentable);
     $("pt-piso-nota").textContent = cf.piso_es_cota_inferior
       ? "Cota inferior: cargue las deducciones de acta en Ajustes"
@@ -9517,7 +9540,7 @@
       marcas: [
         { rotulo: "lo que le cuesta", valor: costo },
         { rotulo: "por debajo pierde plata", valor: piso },
-        { rotulo: "precio al que suele ganarse", valor: techo },
+        { rotulo: pt.techo_es_referencia ? "precio al que se suele adjudicar" : "precio al que suele ganarse", valor: techo },
         tope,
       ],
       marcador,
@@ -9525,7 +9548,7 @@
       /* el nombre accesible SÍ lleva las cifras, con el mismo formato del panel:
          quien no ve el dibujo tiene que poder leer lo mismo */
       aria: `${marcador ? `Su precio ${copRent(precio)}. ` : ""}Le cuesta ${copRent(costo)}; `
-        + `por debajo de ${copRent(piso)} pierde plata; suele ganarse en ${copRent(techo)}; `
+        + `por debajo de ${copRent(piso)} pierde plata; ${pt.techo_es_referencia ? "se suele adjudicar en" : "suele ganarse en"} ${copRent(techo)}; `
         + (tope.valor !== po ? `con el IVA de la utilidad su precio cabe hasta ${copRent(tope.valor)}; ` : "")
         + `el presupuesto oficial es ${copRent(po)}.`,
       /* el ancho REAL del sitio donde va: así la letra mide 11 px en el teléfono y
@@ -9670,6 +9693,18 @@
       partes.push(`<p class="mt-3 rounded-lg bg-blue-50 px-3 py-2 text-xs text-blue-900">${esc(r.p_ganar_detalle.mensaje)}
         <br><span class="opacity-80">${esc(r.p_ganar_detalle.supuesto || "")}</span></p>`);
     }
+    /* EN LICITACIÓN Y MENOR CUANTÍA, CUÁNTO FALTA PARA UN % QUE CAMBIE CON EL PRECIO (28-oct-2026, decisión del
+       dueño tras el consejo): la frase de arriba es el hecho contado; un % que cambie con el precio solo se enciende
+       si las evaluaciones leídas (quién cumplió los requisitos) pasan la prueba de docs/MEMORIA.md. El contador va en
+       rojo cuando es cero; sin dato no se pinta como cero. */
+    if (r.p_ganar_detalle && r.p_ganar_detalle.sin_modular_por === "el_precio_no_predice") {
+      const n = c.evaluaciones_completas;
+      const leidas = n == null ? "sin dato" : num(n);
+      partes.push(`<p class="mt-2 text-xs ${n === 0 ? "text-red-700" : "text-gray-600"}"><span aria-hidden="true">●</span>
+        Evaluaciones leídas para saber quién cumplió los requisitos: <strong>${esc(leidas)}</strong>, contando todas las modalidades
+        y todos los años. Para que la aplicación diga cuánto cambia su opción con el precio hacen falta 200 procesos de 2026 de cada
+        modalidad; se revisa el 31 de enero de 2027.</p>`);
+    }
     $("rentabilidad-precio").innerHTML = partes.join("");
     $("rentabilidad-avisos").innerHTML = (r.advertencias || [])
       .map((x) => `<p class="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">${esc(x)}</p>`).join("");
@@ -9716,11 +9751,20 @@
     const cuerpo = $("ps-cuerpo");
     sec.classList.remove("hidden");
     ultimoOptimizador = o && o.aplicable ? o : null;
+    /* donde la regla de la modalidad dice que no se sugiere precio (mínima, concurso y, desde el 28-oct-2026,
+       licitación y menor cuantía), el título no puede decir «Precio sugerido» encima de «no sugiere un precio» */
+    const sinSugerenciaPorRegla = !!(o && (o.motivo === "gana_el_menor_precio" || o.motivo === "el_precio_no_puntua" || o.motivo === "el_precio_no_predice"));
+    if ($("ps-titulo")) $("ps-titulo").textContent = sinSugerenciaPorRegla ? "Precio de su oferta" : "Precio sugerido";
 
     if (!o || !o.aplicable) {
       cuerpo.classList.add("hidden");
       sin.classList.remove("hidden");
-      sin.innerHTML = `<p><span aria-hidden="true">●</span> ${esc((o && o.mensaje) || "No hay con qué sugerir un precio para este proceso.")}</p>${o && (o.motivo === "gana_el_menor_precio" || o.motivo === "el_precio_no_puntua") ? "" : botonPasoQueFalta()}`; // en mínima cuantía y en concurso de méritos no falta ningún paso: no se sugiere precio (N13')
+      /* licitación y menor cuantía (28-oct-2026): debajo, dónde ofertaron los que ganaron en su tipo de obra y su
+         modalidad, y a cuántos puntos va su oferta; es una referencia medida, no una sugerencia, y la frase lo dice */
+      const rg = o && o.motivo === "el_precio_no_predice" && o.rango_ganadores && o.rango_ganadores.frase ? o.rango_ganadores : null;
+      sin.innerHTML = `<p><span aria-hidden="true">●</span> ${esc((o && o.mensaje) || "No hay con qué sugerir un precio para este proceso.")}</p>`
+        + (rg ? `<p class="mt-3 rounded-lg bg-gray-50 px-3 py-2 text-sm text-gray-800 ring-1 ring-inset ring-gray-900/5" data-rango-ganadores>${esc(rg.frase)}</p>` : "")
+        + (sinSugerenciaPorRegla ? "" : botonPasoQueFalta()); // en mínima cuantía, en concurso de méritos y donde el precio, solo, apenas predice quién gana (licitación y menor cuantía, 28-oct-2026) no falta ningún paso: no se sugiere precio
       $("ps-origen").textContent = "";
       if ($("ps-hecho")) $("ps-hecho").textContent = "";
       return;
