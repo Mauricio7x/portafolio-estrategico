@@ -38166,30 +38166,18 @@ async function main() {
           await redis.del(CLAVES.apuPresupuesto("helder", gOtro.cuerpo.id));
         }
         /* LA TARJETA CON COSTO EN LICITACIÓN (28-oct-2026, la prueba de mutación lo dejó vivo): el listado le pasa la
-           modalidad a lib/ganancia, y la pérdida AL PRECIO DE REFERENCIA —con el mínimo dentro del presupuesto— viaja
-           con su marca y no como el «no se presente». El costo que cae en esa ventana se busca con el listado real. */
+           modalidad a lib/ganancia, y la tarjeta sabe si su precio de referencia es solo eso. La ventana donde pierde
+           AL precio de referencia con el mínimo dentro del presupuesto se prueba con la función real en «unidad
+           frecuencia por precio»: con la baja del 7 % de este corpus esa ventana no existe (hace falta más de ~8 %). */
         {
           const FPl = require("../lib/frecuencia_precio.js");
-          const filaRef = rA.cuerpo.resultados.find((f) => f.id_del_proceso !== objetivo.id_del_proceso && f.cuantia_cop > 0
-            && f.ganancia && f.ganancia.origen_precio === "mercado" && FPl.precioNoPrediceEn(FPl.modalidadDeFila(f)));
-          assert.ok(filaRef, "el caso necesita una licitación con historial de baja");
+          const conG = rA.cuerpo.resultados.filter((f) => f.ganancia && f.ganancia.valor != null);
+          assert.ok(conG.some((f) => FPl.precioNoPrediceEn(FPl.modalidadDeFila(f))), "el caso necesita tarjetas de licitación con ganancia");
+          for (const f of conG) assert.strictEqual(f.ganancia.techo_es_referencia, FPl.precioNoPrediceEn(FPl.modalidadDeFila(f)),
+            `la ganancia de ${f.id_del_proceso} (${FPl.modalidadDeFila(f)}) sabe si su precio de referencia es solo eso`);
+          const filaRef = conG.find((f) => f.id_del_proceso !== objetivo.id_del_proceso && f.cuantia_cop > 0 && FPl.precioNoPrediceEn(FPl.modalidadDeFila(f)));
+          assert.ok(filaRef, "el caso necesita una licitación con ganancia distinta del objetivo");
           const po = Number(filaRef.cuantia_cop);
-          let bajo = 0.5 * po, alto = po, hallada = null;
-          for (let i = 0; i < 24 && !hallada; i++) {
-            const cd = Math.round((bajo + alto) / 2);
-            const gR = await invocarPost(apuF8, "/api/apu/guardar", { perfil: "helder", nombre: "ventana", id_proceso: filaRef.id_del_proceso,
-              items: [{ descripcion: "x", unidad: "m", cantidad: 1, precio_manual: cd }], config: { ...cfgM, variante_iva: "sin_iva" }, total: Math.round(cd * 1.25), costo_directo: cd }, CAB_TOKEN);
-            assert.strictEqual(gR.status, 200);
-            const g = ((await L("")).cuerpo.resultados.find((f) => f.id_del_proceso === filaRef.id_del_proceso) || {}).ganancia || {};
-            await redis.del(CLAVES.apuPresupuesto("helder", gR.cuerpo.id));
-            if (g.base !== "apu") throw new Error(`el borrador de la ventana no llegó a la tarjeta: ${JSON.stringify(g).slice(0, 200)}`);
-            if (g.veredicto !== "pierde") bajo = cd;
-            else if (!(g.piso_rentable <= po)) alto = cd;
-            else hallada = g;
-          }
-          assert.ok(hallada, "con costo, hay una ventana donde pierde al precio de referencia y su mínimo cabe en el presupuesto");
-          assert.ok(hallada.perdida_al_precio_de_referencia === true && /Es una referencia, no un requisito para ganar/.test(hallada.frase),
-            `en licitación la pérdida de referencia viaja con su marca → ${hallada.perdida_al_precio_de_referencia} «${hallada.frase}»`);
           // …y con su mínimo sobre el presupuesto, el rechazo cierto: la tarjeta y su margen lo dicen como Precios (segunda revisión)
           const gS = await invocarPost(apuF8, "/api/apu/guardar", { perfil: "helder", nombre: "sobre el presupuesto", id_proceso: filaRef.id_del_proceso,
             items: [{ descripcion: "x", unidad: "m", cantidad: 1, precio_manual: Math.round(po) }], config: { ...cfgM, variante_iva: "sin_iva" }, total: Math.round(po * 1.25), costo_directo: Math.round(po) }, CAB_TOKEN);
@@ -53115,6 +53103,7 @@ async function main() {
       assert.ok(gL.veredicto === "pierde" && gL.perdida_al_precio_de_referencia === true && /Es una referencia, no un requisito para ganar/.test(gL.frase) && /Su precio mínimo para no perder plata es \$/.test(gL.frase),
         `licitación con costo → ${gL.veredicto} ${gL.perdida_al_precio_de_referencia} «${gL.frase}»`);
       assert.ok(gL.valor === gR.valor, "la cifra no cambia: cambia la frase que decidía con ella");
+      assert.ok(gL.techo_es_referencia === true && gR.techo_es_referencia === false, "la tarjeta sabe, por la modalidad, si su precio de referencia es solo eso");
       assert.ok(gR.veredicto === "pierde" && gR.perdida_al_precio_de_referencia === false && /deja una pérdida/.test(gR.frase), `régimen especial, sin medir: la de antes → «${gR.frase}»`);
       const gSin = gan("Licitación pública", { costo_directo: null, borrador: null, aiu: { administracion_pct: 10, imprevistos_pct: 5, utilidad_pct: 1 } });
       assert.ok(gSin.perdida_al_precio_de_referencia === false, `sin costo, la pérdida es de la estructura de precio y vale a cualquier precio → ${gSin.veredicto}`);
