@@ -30,6 +30,11 @@
 
 ## 1. Lo primero: lo que hoy puede costarle una oferta a quien usa Detekta
 
+> Revisado el 28-oct-2026, ejecutando cada caso sobre main: el 1, 2, 3, 5, 6 y 7 de la tabla ya no se
+> reproducen (los cerraron dos secciones del 27-sep de docs/MEMORIA.md); el 8 sigue vivo; el 4 no se
+> volvió a medir. Detalle en MEMORIA § «Lo siguiente tras presentarse sale de la etapa, la búsqueda
+> encuentra sus notas, y seis de los siete defectos de plata del 26-sep ya estaban cerrados (28-oct-2026)».
+
 La investigación encontró 16 defectos en pantallas que dan cifras. Un verificador adversario intentó
 reproducir y refutar cada uno contra el árbol: **14 confirmados, 2 parciales, 0 refutados**. Los de más
 riesgo, porque dicen «adelante» o «no vaya» sin saberlo:
