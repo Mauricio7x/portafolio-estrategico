@@ -128,13 +128,16 @@
 
   /* Sin tildes y en minúsculas: quien busca «vias» tiene que encontrar «vías».
      El texto del proceso incluye lo que USTED escribió (notas y lista de
-     verificación): un cuaderno donde no se buscan las propias notas no sirve. */
+     verificación): un cuaderno donde no se buscan las propias notas no sirve.
+     La LISTA de la pestaña es la ligera (lib/seguimiento `aLigero`), sin notas
+     ni lista: de ella llegan sus palabras en `palabras_suyas` (28-oct-2026),
+     normalizadas en el servidor con ESTA misma `plano`. */
   const plano = (s) => String(s ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
   function textoDe(p) {
     const pr = p.proceso || {};
     return plano([
       pr.nombre, pr.entidad, pr.departamento, pr.modalidad, p.id, p.notas, p.estado_etiqueta,
-      ...((p.tareas || []).map((t) => t.texto)),
+      ...((p.tareas || []).map((t) => t.texto)), p.palabras_suyas,
     ].filter(Boolean).join(" "));
   }
   function filtrar(procesos, { texto = "", carpeta = CARPETA_TODO } = {}) {
@@ -751,7 +754,7 @@
     TOPE_AVISOS, agruparAlertas, fraseAviso, htmlAlertas, fraseAlertas,
     VISTAS, ORDENES, AGRUPACIONES, CARPETA_TODO, CARPETA_SIN, POR_OMISION, CLAVE_PREFERENCIAS,
     leerPreferencias, guardarPreferencias, carpetaVigente,
-    filtrar, ordenar, agrupar, textoDe,
+    filtrar, ordenar, agrupar, textoDe, plano,
     TIPOS_EVENTO, tipoDeEvento, eventosDe, agendaDe, filtrarAgenda, rotuloEvento, fuenteEvento, tonoPlazo,
     htmlEvento, htmlDiaAgenda, htmlMesAgenda, htmlTiposEvento, mesPorDefecto, diaPorDefecto,
     htmlCarpetas, htmlOrganizar, htmlCarpetaDe, htmlCuaderno, htmlTarea, htmlCabeceraGrupo, insigniaCuaderno, fraseTareas,
