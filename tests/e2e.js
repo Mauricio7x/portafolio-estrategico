@@ -3062,6 +3062,23 @@ async function main() {
           // el APU del fixture va al ~10 % del presupuesto: un presupuesto a medio costear no se ubica frente a los ganadores
           && !/Su oferta va al/.test(psV) && /no una recomendación/.test(psV) && !/paso que falta|Ir al paso/i.test(psV),
           `«Precio de su oferta» con el objeto de una vía → ${psV.slice(0, 500)}`);
+        /* EL EDITOR PASA EL NIT (28-oct-2026): con una tabla a mano en la que una entidad concentra la menor cuantía con 3 o
+           4 oferentes (el tramo de la entidad del fixture), el editor REAL con el NIT de esa entidad da la referencia del tramo
+           sin la que concentra; sin NIT, no la da. La tabla se cambia en la caché de require y se restaura enseguida. */
+        const rutaFP = require.resolve("../data/frecuencia_precio.json"), FPm = require("../lib/frecuencia_precio.js");
+        const tablaReal = require(rutaFP), tablaMano = JSON.parse(JSON.stringify(tablaReal));
+        (tablaMano.tramos_concentrados.menor_cuantia["*"] || (tablaMano.tramos_concentrados.menor_cuantia["*"] = {}))["3-4"] = { entidad: "800111222", nombre: "ENTIDAD DE PRUEBA", procesos: 900, de: 1500, pct: 60,
+          sin_ella: { resumen: { procesos: 600, ganador_pct: { p25: 95, p50: 97, p75: 98 } }, celdas: {}, concentracion: null }, de_ella: { resumen: { procesos: 900, ganador_pct: { p25: 90, p50: 92, p75: 94 } }, celdas: {} } };
+        const pideMc = (nit) => invocar(editorS, "/api/apu/rentabilidad", CAB_TOKEN, { metodo: "POST", body: {
+          items: ITEMS_S, departamento: ENT_S[0].dep, config: { aiu_pct: 20, imprevistos_pct: 5, utilidad_pct: 5 }, entidad: ENT_S[0].n, ...(nit ? { entidad_nit: nit } : {}),
+          unspsc: "V1.72141000", cuantia: 900000000, plazo_meses: 3, modalidad: "Selección abreviada de menor cuantía", tipo_trabajo: "obra" } });
+        let rMcNit, rMcSin;
+        try { require.cache[rutaFP].exports = tablaMano; FPm._olvidar(); rMcNit = await pideMc(ENT_S[0].nit); rMcSin = await pideMc(null); }
+        finally { require.cache[rutaFP].exports = tablaReal; FPm._olvidar(); }
+        const rgNit = rMcNit.cuerpo.optimizador && rMcNit.cuerpo.optimizador.rango_ganadores, rgSin = rMcSin.cuerpo.optimizador && rMcSin.cuerpo.optimizador.rango_ganadores;
+        assert.ok(rMcNit.status === 200 && rgNit && rgNit.grupo === "3-4" && rgNit.poblacion === "todos_sin_la_entidad" && rgNit.p50 === 97 && /sin las de ENTIDAD DE PRUEBA/.test(rgNit.frase)
+          && rgSin && rgSin.aplica === false && rgSin.motivo === "tramo_concentrado",
+          `el NIT de la entidad llega a la referencia → ${JSON.stringify({ conNit: rgNit && [rgNit.grupo, rgNit.poblacion], sinNit: rgSin && [rgSin.motivo] })}`);
         // sin los oferentes de la entidad, el recuadro dice por qué no hay referencia (no se queda callado)
         AS.pintarPrecioSugerido({ ...cV.optimizador, rango_ganadores: { aplica: false, motivo: "sin_oferentes", frase: "Dónde ofertaron los que ganaron: no se dice, porque no se sabe cuántos suelen presentarse a esta entidad y el precio ganador cambia con cuántos compiten." } },
           cV.piso_techo, AS.supuestoDePrecios(cV));
@@ -4583,6 +4600,43 @@ async function main() {
     assert.ok(!Ev.nombreEnCita("KAXA SAS", "2 CONSORCIO TORRE PT $ 958,799,541.00 46.97"), "otro oferente no sostiene la cita");
     assert.strictEqual(Ev.elegirDocumento([{ tipo: "resolucion", nombre: "RESOLUCION DE ADJUDICACION.pdf", legible: true, fecha_carga: "2026-09-10" }, { tipo: "informe_evaluacion", nombre: "Informe definitivo.pdf", legible: true, fecha_carga: "2026-09-01" }]).papel, "informe_evaluacion", "el informe va antes que la resolución");
     assert.strictEqual(Ev.elegirDocumento([{ tipo: "otro", nombre: "ACTA DE AUDIENCIA DE ADJUDICACION.pdf", legible: true }]).papel, "acta");
+    /* un informe de UNA sola parte (jurídica, financiera o técnica) no dice quién quedó hábil: va después de la resolución
+       (la primera lectura de producción, Pasto SA-2026-12, 28-oct-2026); el que junta partes o trae la ponderación, no */
+    const juridico = { tipo: "informe_evaluacion", nombre: "INFORME DEFINITIVO DE EVALUACIÓN JURÍDICA.pdf", legible: true, fecha_carga: "2026-10-20" };
+    const resolucionP = { tipo: "resolucion", nombre: "RESOLUCION DE ADJUDICACION SA-2026-12.pdf", legible: true, fecha_carga: "2026-10-22" };
+    assert.strictEqual(Ev.elegirDocumento([juridico, resolucionP]).papel, "resolucion_adjudicacion", "la resolución antes que el informe jurídico solo");
+    assert.strictEqual(Ev.elegirDocumento([juridico]).papel, "informe_parcial", "sin otro documento, el parcial se lee igual");
+    for (const nombre of ["INFORME DE EVALUACION TECNICA Y ECONOMICA.pdf", "INFORME DE EVALUACION JURIDICO, TECNICO Y FINANCIERO.pdf", "INFORME DE EVALUACION FINANCIERA Y PONDERACION.pdf"]) {
+      assert.strictEqual(Ev.papel({ tipo: "informe_evaluacion", nombre }), "informe_evaluacion", `«${nombre}» no es parcial`);
+    }
+    assert.strictEqual(Ev.papel({ tipo: "informe_evaluacion", nombre: "Informe de verificación financiera.pdf" }), "informe_parcial");
+    /* LAS PARTES SON PALABRAS ENTERAS (sexta revisión adversaria): un comité, un anexo, un instituto o un politécnico
+       técnicos no son la evaluación técnica; la de experiencia sí es una parte, y «general» no completa la jurídica */
+    for (const nombre of ["INFORME DE EVALUACION COMITE TECNICO EVALUADOR.pdf", "Informe de evaluación de ofertas Politécnico Colombiano Jaime Isaza Cadavid.pdf",
+      "Informe de evaluación definitivo LP-003-2025 Instituto Técnico Industrial.pdf", "INFORME DE EVALUACION DEFINITIVO - ANEXO TECNICO.pdf"]) {
+      assert.strictEqual(Ev.papel({ tipo: "informe_evaluacion", nombre }), "informe_evaluacion", `«${nombre}» no es parcial`);
+    }
+    for (const nombre of ["Informe de evaluación de experiencia.pdf", "INFORME EVALUACION JURIDICA GENERAL.pdf"]) {
+      assert.strictEqual(Ev.papel({ tipo: "informe_evaluacion", nombre }), "informe_parcial", `«${nombre}» es parcial`);
+    }
+    /* LA VENTANA DE LA ENTIDAD LEE PRIMERO LO QUE CUENTA PARA EL PRECIO (28-oct-2026): licitación o menor cuantía con 3 o
+       más ofertas, y dentro lo más reciente; el resto después, sin esconderlo. Se ejecuta la función REAL de app.js */
+    {
+      const jsEv = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+      const iU = jsEv.indexOf("  const utilParaElPrecio = "), iC = jsEv.indexOf("  function candidatosEvaluacion(", iU);
+      assert.ok(iU > 0 && iC > iU, "app.js trae la regla del orden y los candidatos");
+      const fuenteC = jsEv.slice(iU, jsEv.indexOf("\n  }\n", iC) + 4);
+      const candidatos = new Function("evalIntentados", "DESDE_INDICE", `${fuenteC}\nreturn candidatosEvaluacion;`)(new Set(), "2025-01-01");
+      const dC = { procesos: [
+        { id: "CO1.REQ.1", modalidad: "Selección abreviada subasta inversa", numero_ofertas: 8, fecha_adjudicacion: "2026-10-01" },
+        { id: "CO1.REQ.2", modalidad: "Licitación pública Obra Publica", numero_ofertas: 1, fecha_adjudicacion: "2026-09-30" },
+        { id: "CO1.REQ.3", modalidad: "Selección Abreviada de Menor Cuantía", numero_ofertas: 9, fecha_adjudicacion: "2026-05-01" },
+        { id: "CO1.REQ.4", modalidad: "Licitación pública", numero_ofertas: 12, fecha_adjudicacion: "2025-03-01" },
+        { id: "CO1.REQ.5", modalidad: "Licitación pública", numero_ofertas: null, fecha_adjudicacion: "2026-10-05" },
+        { id: "CO1.REQ.6", modalidad: "Licitación pública", numero_ofertas: 7, fecha_adjudicacion: "2024-12-31" }] };
+      assert.deepStrictEqual(candidatos(dC, { procesos: {} }).map((p) => p.id), ["CO1.REQ.3", "CO1.REQ.4", "CO1.REQ.5", "CO1.REQ.1", "CO1.REQ.2"],
+        "primero menor cuantía y licitación con 3 o más ofertas, por fecha; sin el número de ofertas no cuenta como útil; antes de 2025 no hay índice");
+    }
     assert.strictEqual(Ev.elegirDocumento([{ tipo: "pliego", nombre: "pliego definitivo.pdf", legible: true }]), null, "un pliego no es una evaluación");
     {
       /* la resolución que lleva el nombre del consorcio ganador: el clasificador real la da por «de proponente» (RE_PROPONENTE:
@@ -53550,10 +53604,22 @@ async function main() {
         ["CONSTRUCCION DE CANCHA SINTETICA", "deporte"], ["CONSTRUCCION DE ANDENES Y SARDINELES", "deporte"],
         ["CONSTRUCCION DE MURO DE CONTENCION EN GAVIONES", "estabilizacion"], ["MANTENIMIENTO DEL ALUMBRADO PUBLICO", "electricas"],
         ["MANTENIMIENTO DEL PARQUE AUTOMOTOR", null], ["CONSTRUCCION DE MURO DE CERRAMIENTO", null], ["LIMPIEZA DE CANALES DEL AEROPUERTO", null],
-        ["REPARACION DE LA CUBIERTA DEL TANQUE DE RESERVA", null], ["CONSTRUCCION DE TANQUE ELEVADO", "agua"],
+        ["REPARACION DE LA CUBIERTA DEL TANQUE DE RESERVA", "agua"], ["CONSTRUCCION DE TANQUE ELEVADO", "agua"],
         // los hermanos que encontró la cuarta revisión adversaria
         ["CONSTRUCCION DEL MURO PERIMETRAL", null], ["CERRAMIENTO PERIMETRAL EN MURO DE LADRILLO", null], ["TANQUES DE ALMACENAMIENTO DE COMBUSTIBLE", null],
-        ["PLACA HUELLA EN LA VEREDA EL TANQUE", "vias"], ["PARQUE SOLAR FOTOVOLTAICO", null], ["PARQUE CEMENTERIO", null], ["PLAZA DE MERCADO DE PUENTE NACIONAL", null],
+        ["PLACA HUELLA EN LA VEREDA EL TANQUE", "vias"],
+        // las DOS CAPAS (28-oct-2026): una palabra que acompaña cuenta solo si ninguna fuerte casó
+        ["PAVIMENTACION Y ANDENES DE LA CALLE 5", "vias"], ["CONSTRUCCION DE ANDENES", "deporte"], ["MEJORAMIENTO DE LA VIA DE ACCESO A LA ESCUELA RURAL", "vias"],
+        ["TERMINACION CUBIERTA PLACA POLIDEPORTIVA IE SAN RAFAEL; SEDE LICEO", "deporte"], ["ADECUACIONES LOCATIVAS AL COLISEO MUNICIPAL", "deporte"],
+        ["REPARACIONES LOCATIVAS DE BIENES INMUEBLES DE LA SECRETARIA", "edificaciones"], ["IMPERMEABILIZACION DE CUBIERTAS Y MUROS EN LA SEDE", null],
+        ["CONSTRUCCION DE MURO EN CONCRETO EN EL TRAMO VIAL", "vias"], ["CONSTRUCCION DE MURO DE CONTENCION", "estabilizacion"],
+        // los términos nuevos, con su conteo en la tabla (lib/semantica)
+        ["MANTENIMIENTO DE SALONES COMUNALES", "edificaciones"], ["MEJORAMIENTO DE ESCENARIOS DEPORTIVOS", "deporte"], ["ADECUACION PLAZA DE MERCADO MUNICIPAL", "edificaciones"],
+        ["CONSTRUCCION DE ESTACION DE BOMBEO DE AGUAS RESIDUALES", "agua"], ["CONSTRUCCION POZO PROFUNDO", "agua"],
+        ["ESTACION DE POLICIA PIEDECUESTA Y SUBESTACION DE POLICIA PESCADERO", "edificaciones"], ["MANTENIMIENTO DE LA SUBESTACION ELECTRICA", "electricas"], ["PARQUE SOLAR FOTOVOLTAICO", null], ["PARQUE CEMENTERIO", null], ["PLAZA DE MERCADO DE PUENTE NACIONAL", "edificaciones"],
+        // el singular también casa, y la obra eléctrica de un edificio es el edificio (sexta revisión adversaria)
+        ["CONSTRUCCION DE PONTON VEREDA LA ESPERANZA", "vias"], ["CONSTRUCCION DE ANDEN Y SARDINEL", "deporte"], ["MURO EN GAVION", "estabilizacion"],
+        ["REFORZAMIENTO ESTRUCTURAL Y ADECUACIONES FISICAS Y ELECTRICAS DE LA SEDE FRAGUA", "edificaciones"], ["MANTENIMIENTO DE REDES ELECTRICAS SEDE GUAYURIBA", "electricas"],
         ["CONSTRUCCION DEL ALCANTARILLADO SANITARIO Y PAVIMENTACION DE LA CALLE 5", null], ["PRESTACION DE SERVICIOS DE ASEO", null], ["", null], [null, null]];
       for (const [obj, esperado] of casos) assert.strictEqual(FP.tipoDeObra(obj), esperado, `«${obj}» → ${esperado}`);
       assert.strictEqual(FP.nombreDeTipo("vias"), "vías y puentes");
@@ -53591,7 +53657,7 @@ async function main() {
         procT(27, "2025", [0.94, 0.97, 0.99], 2, "F"), procT(28, "2025", [0.94, 0.97, 0.99], 0, "G")];
       const objC = new Map([21, 22, 23, 24].map((i) => [`CO1.BDOS.${i}`, "PAVIMENTACION URBANA"]).concat([25, 26, 27, 28].map((i) => [`CO1.BDOS.${i}`, "OPTIMIZACION DEL ACUEDUCTO"])));
       const tC = GEN.construir(baseC, { huella: "d".repeat(64), generado: "2026-10-28", objetos: objC, huella_objetos: "e".repeat(64) });
-      assert.deepStrictEqual(tC.tipos_concentrados, { licitacion: { vias: { entidad: "A", procesos: 2, de: 4, pct: 50 } } }, `el censo barre todo par modalidad-tipo → ${JSON.stringify(tC.tipos_concentrados)}`);
+      assert.deepStrictEqual(tC.tipos_concentrados, { licitacion: { vias: { entidad: "A", nombre: null, procesos: 2, de: 4, pct: 50 } } }, `el censo barre todo par modalidad-tipo → ${JSON.stringify(tC.tipos_concentrados)}`);
       assert.ok(!tC.celdas_tipo.licitacion.vias && !tC.resumen_tipo.licitacion.vias && tC.celdas_tipo.licitacion.agua && tC.resumen_tipo.licitacion.agua.procesos === 4
         && tC.resumen_tipo.licitacion.sin_tipo.procesos === 4 && tC.resumen.licitacion.procesos === 8,
         "el tipo concentrado no se publica aparte; sus procesos quedan sin tipo y cuentan en la de todos");
@@ -53615,6 +53681,46 @@ async function main() {
       const tE = GEN.construir(baseE, { huella: "f".repeat(64), generado: "2026-10-28", objetos: new Map(baseE.map((x) => [x.portafolio, "PAVIMENTACION URBANA"])), huella_objetos: "f".repeat(64) });
       assert.ok(tE.tipos_concentrados.licitacion.vias.pct === 31.3 && !tE.resumen_tipo.licitacion.vias && !tE.celdas_tipo.licitacion.vias && tE.resumen.licitacion.por_grupo["10+"].procesos === 10,
         `el tipo concentrado sale entero → ${JSON.stringify({ c: tE.tipos_concentrados, r: tE.resumen_tipo.licitacion.vias && Object.keys(tE.resumen_tipo.licitacion.vias.por_grupo) })}`);
+      // las dos poblaciones del tramo concentrado, a mano: las cuatro vías con 10 ofertas son todas de A
+      const trV = tTr.tramos_concentrados.licitacion.vias["10+"];
+      assert.ok(trV.de_ella.resumen.procesos === 4 && trV.sin_ella.resumen.procesos === 0 && trV.de_ella.celdas["92"].ofertas === 20 && trV.de_ella.celdas["92"].ganaron === 4
+        && trV.de_ella.celdas["94"].ofertas === 20 && tTr.tramos_concentrados.licitacion["*"]["10+"].de_ella.resumen.procesos === 4,
+        `sin ella y la de ella, contadas → ${JSON.stringify({ de: trV.de_ella.resumen, celdas: trV.de_ella.celdas })}`);
+      // lo que queda sin la que concentra se censa otra vez: 10 vías con 10 ofertas, 5 de A, 3 de B, 1 de C y 1 de D
+      const baseRe = ["A", "A", "A", "A", "A", "B", "B", "B", "C", "D"].map((e, i) => procT(100 + i, "2025", diez(0.93), 0, e));
+      const tRe = GEN.construir(baseRe, { huella: "f".repeat(64), generado: "2026-10-28", objetos: new Map(baseRe.map((x) => [x.portafolio, "PAVIMENTACION URBANA"])), huella_objetos: "f".repeat(64) });
+      // (A reúne 5 de 10 vías: el tipo entero se aparta, y el tramo que queda concentrado es el de todos los tipos)
+      const reV = tRe.tramos_concentrados.licitacion["*"]["10+"];
+      assert.ok(reV.entidad === "A" && reV.sin_ella.resumen.procesos === 5 && reV.sin_ella.concentracion && reV.sin_ella.concentracion.entidad === "B" && reV.sin_ella.concentracion.pct === 60,
+        `sin A, B reúne 3 de 5 → ${JSON.stringify(reV.sin_ella.concentracion)}`);
+      // cada una con su prueba año por año, hecha solo con sus ofertas: las 5 de sin A y las 5 de A, todas de 2025
+      assert.ok(reV.sin_ella.verificacion && reV.sin_ella.verificacion.procesos_prueba === 5 && reV.de_ella.verificacion && reV.de_ella.verificacion.procesos_prueba === 5,
+        `las dos poblaciones con su prueba → ${JSON.stringify({ sin: reV.sin_ella.verificacion, de: reV.de_ella.verificacion })}`);
+      // el NIT con y sin dígito de verificación es la MISMA entidad (lib/contratos_en_ejecucion.nitSinDv)
+      const baseNit = [procT(91, "2025", [0.95, 0.97, 0.99], 0, "899999061"), procT(92, "2025", [0.95, 0.97, 0.99], 1, "8999990619"), procT(93, "2025", [0.95, 0.97, 0.99], 2, "899999061-9"),
+        procT(94, "2025", [0.95, 0.97, 0.99], 0, "800111222")];
+      const tNit = GEN.construir(baseNit, { huella: "f".repeat(64), generado: "2026-10-28", objetos: new Map(baseNit.map((x) => [x.portafolio, "PAVIMENTACION URBANA"])), huella_objetos: "f".repeat(64) });
+      assert.ok(tNit.tipos_concentrados.licitacion.vias.entidad === "899999061" && tNit.tipos_concentrados.licitacion.vias.procesos === 3, `con y sin dígito, una entidad → ${JSON.stringify(tNit.tipos_concentrados)}`);
+      /* UN NIT CON VARIOS NOMBRES NO SE NOMBRA (sexta revisión adversaria): el de Bogotá junta 34 dependencias, y el más
+         frecuente le pondría a un proceso de Suba el nombre de Engativá; el mismo nombre con otras tildes o mayúsculas, sí */
+      const conNombre = (x, nombre) => ({ ...x, entidad: nombre });
+      const baseNom = [conNombre(baseNit[0], "ALCALDIA LOCAL DE SUBA"), conNombre(baseNit[1], "ALCALDIA LOCAL DE ENGATIVÁ"), conNombre(baseNit[2], "ALCALDIA LOCAL DE SUBA"), baseNit[3]];
+      const tNom = GEN.construir(baseNom, { huella: "f".repeat(64), generado: "2026-10-28", objetos: new Map(baseNom.map((x) => [x.portafolio, "PAVIMENTACION URBANA"])), huella_objetos: "f".repeat(64) });
+      const baseUno = [conNombre(baseNit[0], "Alcaldía de Bogotá"), conNombre(baseNit[1], "ALCALDIA DE  BOGOTA"), conNombre(baseNit[2], "Alcaldía de Bogotá"), baseNit[3]];
+      const tUno = GEN.construir(baseUno, { huella: "f".repeat(64), generado: "2026-10-28", objetos: new Map(baseUno.map((x) => [x.portafolio, "PAVIMENTACION URBANA"])), huella_objetos: "f".repeat(64) });
+      assert.ok(tNom.tipos_concentrados.licitacion.vias.entidad === "899999061" && tNom.tipos_concentrados.licitacion.vias.nombre === null
+        && tUno.tipos_concentrados.licitacion.vias.nombre === "Alcaldía de Bogotá", `varios nombres, ninguno; uno solo, ese → ${JSON.stringify([tNom.tipos_concentrados.licitacion.vias, tUno.tipos_concentrados.licitacion.vias])}`);
+      /* (b3) LA PRUEBA DE UNA SUBPOBLACIÓN, solo con sus ofertas y cada año con los anteriores: 2021 enseña y no se prueba;
+         2022 se prueba con lo de 2021, y 2023 con lo de 2021 y 2022 (revisión adversaria, 28-oct-2026) */
+      const oP = (proceso, ano, pct, gano) => ({ proceso, ano, pct, gano, n: 2 });
+      const poolP = [oP("a", "2021", 0.93, 1), oP("a", "2021", 0.97, 0), oP("b", "2022", 0.93, 1), oP("b", "2022", 0.97, 0), oP("c", "2023", 0.97, 1), oP("c", "2023", 0.93, 0)];
+      const vP = GEN.verificarPoblacion(poolP);
+      const conAnteriores = (y) => GEN.celdasDe(poolP.filter((o) => o.ano < y));
+      const c22 = conAnteriores("2022"), c23 = conAnteriores("2023");
+      const pruebaP = poolP.filter((o) => o.ano >= "2022");
+      const esperadoP = GEN.brierDe(pruebaP, (o) => (o.ano === "2022" ? c22 : c23)[GEN.franjaDe(o.pct)]);
+      assert.ok(vP && vP.procesos_prueba === 2 && vP.ofertas_prueba === 4 && vP.mejora_pct === esperadoP.mejora_pct && vP.brier_tabla === esperadoP.brier_tabla,
+        `la prueba de una subpoblación, año por año con los anteriores → ${JSON.stringify(vP)} · esperado ${JSON.stringify(esperadoP)}`);
       /* (b4) LA VERIFICACIÓN NORMALIZA EN CADA PROCESO: dos ofertas de un proceso de 2 con una celda que dice «ganaron todas»
          dan 0,8 cada una sin normalizar (Brier 0,34 frente a 0,25 del azar: −36 %); normalizadas, 0,5 y 0,5: lo mismo que el azar */
       const bN = GEN.brierDe([{ proceso: "x", n: 2, gano: 1 }, { proceso: "x", n: 2, gano: 0 }], () => ({ ganaron: 30, ofertas: 30 }));
@@ -53634,8 +53740,11 @@ async function main() {
       /* LA REGLA DEL PORCENTAJE, AMARRADA A LA TABLA: si una tabla regenerada pasara el 3 % en una población medida, esta
          frase diría «predijo» mientras el resto de la pantalla sigue sin dar un porcentaje. Eso lo decide el dueño (MEMORIA) */
       const pobl = [...Object.values(t.verificacion_ventana.por_modalidad), ...Object.values(t.verificacion.por_modalidad),
-        ...["licitacion", "menor_cuantia"].flatMap((m) => Object.values(t.verificacion_ventana.por_tipo[m]))].filter((v) => v && v.procesos_prueba >= FP.MIN_PROCESOS_TIPO);
-      assert.ok(pobl.length >= 6 && pobl.every((v) => v.mejora_pct < FP.MEJORA_MINIMA_PCT), `ninguna población medida llega al 3 % → ${JSON.stringify(pobl.map((v) => v.mejora_pct))}`);
+        ...["licitacion", "menor_cuantia"].flatMap((m) => Object.values(t.verificacion_ventana.por_tipo[m])),
+        // y la de cada tramo sin la entidad que lo concentra, o la de ella, que es la que se dice junto a su cifra
+        ...Object.values(t.tramos_concentrados).flatMap((pt) => Object.values(pt).flatMap((pg) => Object.values(pg).flatMap((r) => [r.sin_ella && r.sin_ella.verificacion, r.de_ella && r.de_ella.verificacion])))]
+        .filter((v) => v && v.procesos_prueba >= FP.MIN_PROCESOS_TIPO);
+      assert.ok(pobl.length >= 8 && pobl.every((v) => v.mejora_pct < FP.MEJORA_MINIMA_PCT), `ninguna población medida llega al 3 % → ${JSON.stringify(pobl.map((v) => v.mejora_pct))}`);
       /* y las frases FIJAS de la tarjeta, el desglose, Precios y el sugeridor («apenas predice quién gana … casi igual que el
          azar») dependen de que las dos modalidades estén entre −3 y +3 %, año por año y en 2026 (revisión adversaria: con la
          tabla en −0,9 la suite pasaba y la pantalla seguía diciendo lo de antes) */
@@ -53689,15 +53798,103 @@ async function main() {
       assert.ok(t.celdas_tipo.licitacion.vias["10+"]["84"].ofertas < FP.MIN_OFERTAS && !fE2.aplica && fE2.motivo === "franja_sin_base" && fE2.tipo_obra === "vias", `sin ofertas a ese precio en su tipo → ${JSON.stringify(fE2)}`);
       const rrE2 = R.rentabilidad({ precio_oferta: 850e6, costo_directo: 600e6, presupuesto_oficial: 1e9, p_base: 0.2, competencia: { nivel: "medio", promedio_oferentes: 12 },
         baja: { nivel: "medio", baja_mediana: 6, baja_p25: 3, baja_p75: 9 }, modalidad: "Licitación pública", tipo_obra: "vias" }).p_ganar_detalle;
-      assert.ok(rrE2.frecuencia_precio === null && /no hay al menos 100 ofertas medidas de vías y puentes con ese número de oferentes/.test(rrE2.mensaje), `Precios lo dice → «${rrE2.mensaje}»`);
+      assert.ok(rrE2.frecuencia_precio === null && /no hay al menos 100 ofertas medidas en licitaciones de vías y puentes con 10 o más oferentes para decir cuántas ganaron/.test(rrE2.mensaje), `Precios lo dice → «${rrE2.mensaje}»`);
       /* EL TRAMO DE TODOS LOS TIPOS CONCENTRADO (cuarta revisión adversaria): en menor cuantía con 10 o más oferentes la
          Aerocivil reúne más de la mitad de los procesos; ni cuántas ganaron ni dónde ofertaron los ganadores se dicen */
       const cMC10 = t.tramos_concentrados.menor_cuantia["*"]["10+"];
       const fraseMC10 = `En menores cuantías con 10 o más oferentes una sola entidad reúne el ${nc(cMC10.pct, 1)} % de los procesos, y la cifra sería sobre todo la de esa entidad.`;
       const fMC10 = FP.frecuenciaPorPrecio({ modalidad: "menor_cuantia", baja_ofertada_pct: 5, oferentes: 12, presupuesto_oficial: 1e8 });
       const rMC10 = FP.rangoGanadores({ modalidad: "menor_cuantia", oferentes: 12, pct_oferta: 95 });
-      assert.ok(cMC10.pct > 100 * t.concentracion_max && !fMC10.aplica && fMC10.motivo === "tramo_concentrado" && fMC10.frase_motivo === fraseMC10
-        && !rMC10.aplica && rMC10.motivo === "tramo_concentrado" && rMC10.frase === `Dónde ofertaron los que ganaron: no se dice. ${fraseMC10}`, `menor cuantía con 10 o más → ${JSON.stringify(fMC10)} · «${rMC10.frase}»`);
+      const sinNit = " Sin el NIT de la entidad del proceso no se sabe si es esa u otra.";
+      assert.ok(cMC10.pct > 100 * t.concentracion_max && !fMC10.aplica && fMC10.motivo === "tramo_concentrado" && fMC10.frase_motivo === fraseMC10 + sinNit
+        && !rMC10.aplica && rMC10.motivo === "tramo_concentrado" && rMC10.frase === `Dónde ofertaron los que ganaron: no se dice. ${fraseMC10}${sinNit}`, `menor cuantía con 10 o más → ${JSON.stringify(fMC10).slice(0, 300)} · «${rMC10.frase}»`);
+      /* (1) SIN LA ENTIDAD QUE CONCENTRA, O LA DE ELLA (28-oct-2026, encargo del dueño): con el NIT de OTRA entidad, la cifra
+         del tramo sin la Aerocivil; con el de la Aerocivil (con o sin dígito de verificación), la suya */
+      const nomMC10 = cMC10.nombre, sinE = cMC10.sin_ella, deE = cMC10.de_ella;
+      assert.ok(nomMC10 && sinE.resumen.procesos >= FP.MIN_PROCESOS_TIPO && !sinE.concentracion && deE.resumen.procesos >= FP.MIN_PROCESOS_TIPO
+        && sinE.resumen.procesos + deE.resumen.procesos === cMC10.de, `las dos poblaciones suman el tramo → ${JSON.stringify({ sin: sinE.resumen.procesos, de: deE.resumen.procesos, tramo: cMC10.de })}`);
+      const rOtra = FP.rangoGanadores({ modalidad: "menor_cuantia", oferentes: 12, pct_oferta: 95, entidad_nit: "891280000-1" });
+      const fOtra = FP.frecuenciaPorPrecio({ modalidad: "menor_cuantia", baja_ofertada_pct: 5, oferentes: 12, presupuesto_oficial: 1e8, entidad_nit: "891280000-1" });
+      assert.ok(rOtra.aplica && rOtra.poblacion === "todos_sin_la_entidad" && rOtra.procesos === sinE.resumen.procesos && rOtra.p50 === sinE.resumen.ganador_pct.p50
+        && rOtra.frase.includes(`menores cuantías de todo tipo de obra con 10 o más oferentes adjudicadas entre 2020 y 2026, sin las de ${nomMC10}, la mitad`)
+        && rOtra.frase.includes(`${nomMC10} reúne el ${nc(cMC10.pct, 1)} % de las menores cuantías de todo tipo de obra con 10 o más oferentes y se cuenta aparte.`)
+        && fOtra.aplica && fOtra.poblacion === "todos_sin_la_entidad" && fOtra.franja.ofertas === sinE.celdas["94"].ofertas && fOtra.frase.includes(`, sin las de ${nomMC10}, las ofertas`),
+        `con el NIT de otra entidad → «${rOtra.frase}» · «${fOtra.frase}»`);
+      // CON SU PROPIA PRUEBA (revisión adversaria): la de las menores cuantías con 10 o más oferentes sin ella, no la de la modalidad
+      const vSin = sinE.verificacion;
+      const fraseVSin = `robado año por año en menores cuantías de todo tipo de obra con 10 o más oferentes, sin las de ${nomMC10}, `;
+      assert.ok(vSin && vSin.procesos_prueba >= FP.MIN_PROCESOS_TIPO && vSin.procesos_prueba !== t.verificacion_ventana.por_modalidad.menor_cuantia.procesos_prueba
+        && rOtra.verificacion.procesos === vSin.procesos_prueba && rOtra.verificacion.mejora_pct === vSin.mejora_pct && fOtra.verificacion.procesos === vSin.procesos_prueba
+        && rOtra.frase.includes(`p${fraseVSin}el precio predijo al ganador`) && fOtra.frase.includes(`P${fraseVSin}esta cuenta predijo al ganador`),
+        `la cifra sin ella va con su prueba → ${JSON.stringify(rOtra.verificacion)} · «${rOtra.frase}» · «${fOtra.frase}»`);
+      for (const nitA of [cMC10.entidad, `${cMC10.entidad}-1`, `${cMC10.entidad}1`]) {
+        const rSuya = FP.rangoGanadores({ modalidad: "menor_cuantia", oferentes: 12, pct_oferta: 95, entidad_nit: nitA });
+        assert.ok(rSuya.aplica && rSuya.poblacion === "todos_de_la_entidad" && rSuya.procesos === deE.resumen.procesos && rSuya.p50 === deE.resumen.ganador_pct.p50
+          && rSuya.frase.includes(`en ${nc(deE.resumen.procesos, 0)} menores cuantías de ${nomMC10} con 10 o más oferentes`)
+          && rSuya.frase.includes(`${nomMC10} es la entidad de este proceso y reúne el ${nc(cMC10.pct, 1)} % de las menores cuantías de todo tipo de obra con 10 o más oferentes: la cifra es la suya.`)
+          && deE.verificacion.procesos_prueba >= FP.MIN_PROCESOS_TIPO && rSuya.verificacion.procesos === deE.verificacion.procesos_prueba
+          && rSuya.frase.includes(`probado año por año en menores cuantías de ${nomMC10} con 10 o más oferentes, el precio predijo`),
+          `con el NIT de la que concentra («${nitA}») → «${rSuya.frase}»`);
+      }
+      /* EL PORCENTAJE DICE DE QUÉ PROCESOS ES (sexta revisión adversaria): con su tipo sin base, la frase de su tipo iba
+         antes y «AEROCIVIL reúne el 51,5 % de esos procesos» se leía de las vías (en vías con 10 o más, la Aerocivil tiene el 30 %) */
+      const rTipoSin = FP.rangoGanadores({ modalidad: "menor_cuantia", tipo_obra: "vias", oferentes: 12, pct_oferta: 95, entidad_nit: "890001639" });
+      assert.ok(rTipoSin.poblacion === "todos_sin_la_entidad" && rTipoSin.frase.includes("En vías y puentes") && !/de esos procesos/.test(rTipoSin.frase)
+        && rTipoSin.frase.includes(`${nomMC10} reúne el ${nc(cMC10.pct, 1)} % de las menores cuantías de todo tipo de obra con 10 o más oferentes y se cuenta aparte.`),
+        `su tipo sin base, el tramo sin ella → «${rTipoSin.frase}»`);
+      const rr59 = R.pGanarPorPrecio({ p_base: 0.2, baja_ofertada_pct: 15, baja_ofertada_exacta: 15, oferentes: 6, modalidad: "Selección abreviada de menor cuantía", presupuesto_oficial: 1e9,
+        tipo_obra: "vias", entidad_nit: "890001639" });
+      assert.ok(rr59.mensaje.includes(`en menores cuantías de vías y puentes con 5 a 9 oferentes, sin las de ${t.tramos_concentrados.menor_cuantia.vias["5-9"].nombre}, para decir cuántas ganaron.`), `el inciso cierra con coma → «${rr59.mensaje}»`);
+      const rrOtra = R.rentabilidad({ precio_oferta: 95e6, costo_directo: 70e6, presupuesto_oficial: 1e8, p_base: 0.2, competencia: { nivel: "medio", promedio_oferentes: 12 },
+        baja: { nivel: "medio", baja_mediana: 6, baja_p25: 3, baja_p75: 9 }, modalidad: "Selección abreviada de menor cuantía", entidad_nit: "891280000" }).p_ganar_detalle;
+      assert.ok(rrOtra.rango_ganadores && rrOtra.rango_ganadores.poblacion === "todos_sin_la_entidad" && rrOtra.frecuencia_precio && rrOtra.frecuencia_precio.poblacion === "todos_sin_la_entidad",
+        "Precios pasa el NIT de la entidad a las dos frases");
+      // el tramo de un tipo: vías de menor cuantía con 5 a 9 oferentes, sin el INVIAS o la del INVIAS
+      const cV59b = t.tramos_concentrados.menor_cuantia.vias["5-9"];
+      const rVsin = FP.rangoGanadores({ modalidad: "menor_cuantia", tipo_obra: "vias", oferentes: 6, entidad_nit: "891280000" });
+      const rVde = FP.rangoGanadores({ modalidad: "menor_cuantia", tipo_obra: "vias", oferentes: 6, entidad_nit: cV59b.entidad });
+      assert.ok(rVsin.poblacion === "tipo_sin_la_entidad" && rVsin.por_tipo && rVsin.procesos === cV59b.sin_ella.resumen.procesos && rVsin.frase.includes(`de vías y puentes con 5 a 9 oferentes adjudicadas entre 2020 y 2026, sin las de ${cV59b.nombre},`)
+        && (cV59b.de_ella.resumen.procesos >= FP.MIN_PROCESOS_TIPO ? rVde.poblacion === "tipo_de_la_entidad" && rVde.procesos === cV59b.de_ella.resumen.procesos : rVde.poblacion === "todos"),
+        `vías de menor cuantía con 5 a 9 → «${rVsin.frase}» · «${rVde.frase}»`);
+      /* LA PRUEBA DE LA CIFRA, NO LA DE SU TIPO (revisión adversaria, 28-oct-2026): junto a «vías … sin las de INVIAS» iba la
+         prueba de vías, que no tiene ese tramo (sus ofertas salieron de su tipo por el censo). Sin ella, la suya; la del
+         INVIAS no llega a 100 procesos de prueba, y va la de la modalidad, que la contiene (la de vías tampoco la tiene) */
+      const vVsin = cV59b.sin_ella.verificacion, vVde = cV59b.de_ella.verificacion, vMC = t.verificacion_ventana.por_modalidad.menor_cuantia;
+      assert.ok(vVsin.procesos_prueba >= FP.MIN_PROCESOS_TIPO && rVsin.verificacion.procesos === vVsin.procesos_prueba && rVsin.verificacion.mejora_pct === vVsin.mejora_pct
+        && rVsin.frase.includes(`probado año por año en menores cuantías de vías y puentes con 5 a 9 oferentes, sin las de ${cV59b.nombre}, el precio predijo`)
+        && vVde.procesos_prueba < FP.MIN_PROCESOS_TIPO && rVde.verificacion.poblacion === "menores cuantías" && rVde.verificacion.procesos === vMC.procesos_prueba,
+        `vías sin y con el INVIAS, cada una con su prueba → ${JSON.stringify({ sin: rVsin.verificacion, de: rVde.verificacion })}`);
+      /* lo que queda sin ella TAMBIÉN se censa: si otra entidad lo concentra, no se dice; y la de ella necesita 100 procesos
+         (tabla a mano) */
+      const gT = { procesos: 300, ganador_pct: { p25: 93, p50: 95, p75: 96 } };
+      const tSub = (sinC, deProc) => ({ formato: 1, celdas: { menor_cuantia: { "10+": {} } }, periodo: { desde: "2020", hasta: "2026" },
+        resumen: { menor_cuantia: { procesos: 600, por_grupo: { "10+": gT } } },
+        tramos_concentrados: { menor_cuantia: { "*": { "10+": { entidad: "899999059", nombre: "AEROCIVIL", procesos: 300, de: 600, pct: 50,
+          sin_ella: { resumen: { procesos: 300, ganador_pct: { p25: 94, p50: 96, p75: 97 } }, celdas: {}, concentracion: sinC },
+          de_ella: { resumen: { procesos: deProc, ganador_pct: { p25: 90, p50: 92, p75: 94 } }, celdas: {} } } } } } });
+      const rOtraC = FP.rangoGanadores({ modalidad: "menor_cuantia", oferentes: 12, entidad_nit: "891280000" }, { tabla: tSub({ entidad: "X", procesos: 90, de: 300, pct: 30 }, 300) });
+      const rSuyaChica = FP.rangoGanadores({ modalidad: "menor_cuantia", oferentes: 12, entidad_nit: "899999059" }, { tabla: tSub(null, 99) });
+      const rOtraBien = FP.rangoGanadores({ modalidad: "menor_cuantia", oferentes: 12, entidad_nit: "891280000" }, { tabla: tSub(null, 99) });
+      assert.ok(!rOtraC.aplica && rOtraC.motivo === "tramo_concentrado" && !/Sin el NIT/.test(rOtraC.frase) && !rSuyaChica.aplica && rOtraBien.aplica && rOtraBien.p50 === 96,
+        `otra que concentra lo que queda, o la suya chica, no se dicen → «${rOtraC.frase}» · «${rSuyaChica.frase}»`);
+      // cuántas ganaron tampoco sale de la suya chica: su puerta es la misma (rangoGanadores vuelve a mirar los 100 procesos; esta no)
+      const fSuyaChica = FP.frecuenciaPorPrecio({ modalidad: "menor_cuantia", baja_ofertada_pct: 5, oferentes: 12, presupuesto_oficial: 1e8, entidad_nit: "899999059" }, { tabla: tSub(null, 99) });
+      assert.ok(!fSuyaChica.aplica && fSuyaChica.motivo === "tramo_concentrado", `la suya con 99 procesos, en cuántas ganaron → ${JSON.stringify(fSuyaChica)}`);
+      /* sin 100 ofertas a ese precio en su tramo, no se cae a la cuenta de todos los tramos juntos («*»), aunque allí sí
+         las haya (tabla a mano: la publicada trae esa cuenta) */
+      const tTodosTramos = { formato: 1, periodo: { desde: "2020", hasta: "2026" }, resumen: { licitacion: { procesos: 900, por_grupo: { "10+": gT } } },
+        celdas: { licitacion: { "*": { "94": { ofertas: 5000, ganaron: 400, azar: 350 } }, "10+": {} } } };
+      const fTodosTramos = FP.frecuenciaPorPrecio({ modalidad: "licitacion", baja_ofertada_pct: 5, oferentes: 12, presupuesto_oficial: 1e9 }, { tabla: tTodosTramos });
+      assert.ok(t.celdas.licitacion["*"] && !fTodosTramos.aplica && fTodosTramos.motivo === "franja_sin_base", `su tramo sin ofertas a ese precio → ${JSON.stringify(fTodosTramos)}`);
+      // SIN UN NOMBRE ÚNICO, SU NIT, y la oración empieza en mayúscula (sexta revisión adversaria)
+      const tSinNombre = JSON.parse(JSON.stringify(tSub(null, 300)));
+      delete tSinNombre.tramos_concentrados.menor_cuantia["*"]["10+"].nombre;
+      const rSinNombre = FP.rangoGanadores({ modalidad: "menor_cuantia", oferentes: 12, entidad_nit: "899999059-2" }, { tabla: tSinNombre });
+      const rOtraSinNombre = FP.rangoGanadores({ modalidad: "menor_cuantia", oferentes: 12, entidad_nit: "891280000" }, { tabla: tSinNombre });
+      assert.ok(rSinNombre.aplica && rSinNombre.frase.includes("menores cuantías de la entidad con NIT 899999059 con 10 o más oferentes")
+        && rSinNombre.frase.includes("La entidad con NIT 899999059 es la entidad de este proceso") && !/esa entidad/.test(rSinNombre.frase)
+        && rOtraSinNombre.frase.includes(", sin las de la entidad con NIT 899999059,") && rOtraSinNombre.frase.includes("La entidad con NIT 899999059 reúne el 50 %"),
+        `sin nombre, su NIT → «${rSinNombre.frase}» · «${rOtraSinNombre.frase}»`);
       const rrMC10 = R.rentabilidad({ precio_oferta: 95e6, costo_directo: 70e6, presupuesto_oficial: 1e8, p_base: 0.2, competencia: { nivel: "medio", promedio_oferentes: 12 },
         baja: { nivel: "medio", baja_mediana: 6, baja_p25: 3, baja_p75: 9 }, modalidad: "Selección abreviada de menor cuantía" }).p_ganar_detalle;
       assert.ok(rrMC10.mensaje.includes(fraseMC10) && rrMC10.rango_ganadores && rrMC10.rango_ganadores.aplica === false, `Precios dice por qué no hay cifra → «${rrMC10.mensaje}»`);

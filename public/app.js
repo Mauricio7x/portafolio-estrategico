@@ -3974,12 +3974,16 @@
   /* los procesos que ya se intentaron en esta visita (leídos, sin documento o ya en cola): la segunda pulsación sigue
      con los siguientes en vez de bajar y pasar por OCR los mismos (revisión adversaria del 26-oct-2026) */
   const evalIntentados = new Set();
+  // un `numero_ofertas` de 0 en esta lista es «sin dato» (filaProceso): va detrás de los que se sabe que sirven, sin esconderse
+  const utilParaElPrecio = (p) => (/licitaci|menor cuant/i.test(String(p.modalidad || "")) && Number(p.numero_ofertas) >= 3 ? 0 : 1);
   function candidatosEvaluacion(d, cuerpo) {
     /* un texto que caducó sin interpretarse («caducado») vuelve a ser candidato */
     const ya = new Set(Object.values((cuerpo && cuerpo.procesos) || {}).filter((p) => p && p.estado !== "caducado").map((p) => p.id_proceso).filter(Boolean));
     return (d.procesos || []).filter((p) => p && /^CO1\.(REQ|PPI|NTC)\./.test(String(p.id || "")) && String(p.fecha_adjudicacion || "") >= DESDE_INDICE
       && /licitaci|menor cuant|abreviada/i.test(String(p.modalidad || "")) && !ya.has(p.id) && !evalIntentados.has(p.id))
-      .sort((a, b) => String(b.fecha_adjudicacion || "").localeCompare(String(a.fecha_adjudicacion || "")));
+      /* primero los que cuentan para medir el precio (licitación o menor cuantía con 3 o más ofertas, 28-oct-2026): el cupo
+         de 5 por pulsación y el del OCR se gastaban en servicios y en procesos de una sola oferta; y dentro, lo más reciente */
+      .sort((a, b) => utilParaElPrecio(a) - utilParaElPrecio(b) || String(b.fecha_adjudicacion || "").localeCompare(String(a.fecha_adjudicacion || "")));
   }
   function htmlEvaluaciones(c, d) {
     const H = c.hechos || {}, T = c.textos || {}, motivos = T.motivos || {}, criterios = T.criterios || {};

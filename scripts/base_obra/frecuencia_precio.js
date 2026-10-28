@@ -23,6 +23,7 @@ const crypto = require("crypto");
 const { usableMotor } = require("../../tools/analisis/adjudicacion/fase0");
 // el tipo de obra por el objeto del proceso: la MISMA regla que usa Precios (28-oct-2026)
 const { tipoDeObra, huellaVocabulario } = require("../../lib/frecuencia_precio.js");
+const { nitSinDv } = require("../../lib/contratos_en_ejecucion.js");
 
 const FORMATO = 1;
 const MODALIDADES = ["licitacion", "menor_cuantia"];
@@ -53,9 +54,12 @@ function ofertasDe(base, objetos = null) {
     const ano = String(x.fecha_adjudicacion || "").slice(0, 4);
     if (!/^\d{4}$/.test(ano)) continue;
     const tipo = objetos ? tipoDeObra(objetos.get(x.portafolio) || "") : null;
-    // la entidad, para el censo de concentración por tipo (una sola entidad no puede ser «el mercado» de un tipo)
-    const entidad = String(x.nit_entidad || x.entidad || "").trim() || null;
-    v.forEach((pct, i) => out.push({ mod: x.modalidad, ano, n: v.length, pct, gano: i === ig ? 1 : 0, proceso: x.portafolio, tipo, entidad }));
+    /* la entidad, para el censo de concentración (una sola entidad no puede ser «el mercado» de un tipo): por su NIT SIN
+       dígito de verificación (lib/contratos_en_ejecucion.nitSinDv, la regla del repositorio), porque la misma entidad
+       llega «899999061» y «8999990619»; un NIT ilegible, tal cual; sin NIT, por su nombre. El nombre viaja para decirlo en pantalla. */
+    const entidad = nitSinDv(x.nit_entidad) || String(x.nit_entidad || x.entidad || "").trim() || null;
+    const nombreEntidad = String(x.entidad || "").trim() || null;
+    v.forEach((pct, i) => out.push({ mod: x.modalidad, ano, n: v.length, pct, gano: i === ig ? 1 : 0, proceso: x.portafolio, tipo, entidad, nombre_entidad: nombreEntidad }));
   }
   return out;
 }
@@ -131,10 +135,14 @@ const CONCENTRACION_MAX = 0.25;
    que tampoco se sabe: cuenta en el total, no junta. */
 function concentradosPor(ofertas, claveDe) {
   const procesos = new Map();   // clave → Map(proceso → entidad)
+  const nombres = new Map();    // entidad → Map(nombre → procesos), para decir cuál es
   for (const o of ofertas) {
     const k = claveDe(o);
     if (k == null) continue;
     if (!procesos.has(k)) procesos.set(k, new Map());
+    if (!procesos.get(k).has(o.proceso) && o.entidad != null && o.nombre_entidad) {
+      const ns = nombres.get(o.entidad) || new Map(); ns.set(o.nombre_entidad, (ns.get(o.nombre_entidad) || 0) + 1); nombres.set(o.entidad, ns);
+    }
     procesos.get(k).set(o.proceso, o.entidad);
   }
   const out = new Map();
@@ -143,9 +151,22 @@ function concentradosPor(ofertas, claveDe) {
     for (const e of m.values()) if (e != null) porEntidad.set(e, (porEntidad.get(e) || 0) + 1);
     if (!porEntidad.size) continue;
     const [entidad, n] = [...porEntidad.entries()].sort((a, b) => b[1] - a[1])[0];
-    if (n / m.size > CONCENTRACION_MAX) out.set(k, { entidad, procesos: n, de: m.size, pct: +(100 * n / m.size).toFixed(1) });
+    /* UN NOMBRE SOLO SI ES ÚNICO (revisión adversaria, 28-oct-2026): un NIT con varios nombres es una entidad con varias
+       dependencias (el de Bogotá junta 34 alcaldías locales y secretarías); el más frecuente le pondría a un proceso de
+       Suba el nombre de Engativá. Sin nombre único va null, y la pantalla dice el NIT. Los nombres se comparan plegados. */
+    const ns = nombres.get(entidad);
+    const plegado = (x) => String(x).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().replace(/\s+/g, " ").trim();
+    const nombre = ns && new Set([...ns.keys()].map(plegado)).size === 1 ? [...ns.entries()].sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : 1))[0][0] : null;
+    if (n / m.size > CONCENTRACION_MAX) out.set(k, { entidad, nombre, procesos: n, de: m.size, pct: +(100 * n / m.size).toFixed(1) });
   }
   return out;
+}
+/* Las celdas de UNA población (un tramo): franja → {ofertas, ganaron, azar}, como las de `tabla`. */
+function celdasDe(ofertas) {
+  const c = {};
+  for (const o of ofertas) { const f = franjaDe(o.pct); sumar(c[f] || (c[f] = celdaVacia()), o); }
+  for (const x of Object.values(c)) x.azar = +x.azar.toFixed(3);
+  return c;
 }
 // el tipo entero, por modalidad: {mod: {tipo: {...}}}
 function concentraciones(ofertas) {
@@ -217,19 +238,25 @@ function verificar(ofertas) {
    (41 de agua en licitación). Aquí cada año de 2022 a 2026 se predice con la tabla aprendida SOLO con los años
    anteriores (ventana creciente: nunca se mira el futuro), y se suman. Por tipo, con la tabla de su tipo. */
 const ANOS_VENTANA = ["2022", "2023", "2024", "2025", "2026"];
+// las ofertas de `ofertas` que pasan `filtro`, cada año con la celda que da `celdaDeAno` aprendida con los años anteriores
+function ventanaDe(ofertas, filtro, celdaDeAno) {
+  const P = [];
+  const celdas = [];
+  for (const y of ANOS_VENTANA) {
+    const pr = ofertas.filter((o) => o.ano === y && filtro(o));
+    if (!pr.length) continue;
+    const cd = celdaDeAno(ofertas.filter((o) => o.ano < y));
+    for (const o of pr) { P.push(o); celdas.push(cd(o)); }
+  }
+  let i = 0;
+  return brierDe(P, () => celdas[i++]);
+}
+/* LA PRUEBA DE UNA SUBPOBLACIÓN (revisión adversaria, 28-oct-2026): la de un tramo sin la entidad que lo concentra, o la
+   de ella sola, aprendida y probada SOLO con sus ofertas (un tramo: la celda es la franja). Junto a «vías … sin las de
+   INVIAS» iba la prueba de vías, que no tiene ese tramo: sus ofertas salieron de su tipo por el censo. */
+const verificarPoblacion = (ofertas) => ventanaDe(ofertas, () => true, (ent) => { const c = celdasDe(ent); return (o) => c[franjaDe(o.pct)]; });
 function verificarVentana(ofertas) {
-  const juntar = (filtro, celdaDeAno) => {
-    const P = [];
-    const celdas = [];
-    for (const y of ANOS_VENTANA) {
-      const pr = ofertas.filter((o) => o.ano === y && filtro(o));
-      if (!pr.length) continue;
-      const cd = celdaDeAno(ofertas.filter((o) => o.ano < y));
-      for (const o of pr) { P.push(o); celdas.push(cd(o)); }
-    }
-    let i = 0;
-    return brierDe(P, () => celdas[i++]);
-  };
+  const juntar = (filtro, celdaDeAno) => ventanaDe(ofertas, filtro, celdaDeAno);
   const porModalidad = {}, porTipo = {};
   for (const m of MODALIDADES) {
     porModalidad[m] = juntar((o) => o.mod === m, (ent) => { const t = tabla(ent); return (o) => t[m][grupoDe(o.n)][franjaDe(o.pct)]; });
@@ -262,6 +289,17 @@ function construir(base, { huella = null, generado = new Date().toISOString().sl
   const tramos = concentracionesPorTramo(sinTipoEntero);
   const tramoDe = (o) => o.tipo && tramos[o.mod] && tramos[o.mod][o.tipo] && tramos[o.mod][o.tipo][grupoDe(o.n)];
   const ofertas = sinTipoEntero.map((o) => (tramoDe(o) ? { ...o, tipo: null } : o));
+  /* SIN LA ENTIDAD QUE CONCENTRA Y LA DE ELLA APARTE (28-oct-2026, encargo del dueño): callar un tramo concentrado dejaba
+     sin cifra a todas las demás entidades (en menor cuantía con 10 o más oferentes, 401 procesos de otras entidades).
+     Cada tramo concentrado lleva la misma población sin esa entidad —con su propio censo: si otra la reúne, tampoco se
+     dice— y la de esa entidad sola; lib/frecuencia_precio elige por el NIT de la entidad del proceso. */
+  for (const [m, porTipo] of Object.entries(tramos)) for (const [tipo, porGrupo] of Object.entries(porTipo)) for (const [g, rec] of Object.entries(porGrupo)) {
+    const pool = sinTipoEntero.filter((o) => o.mod === m && grupoDe(o.n) === g && (tipo === "*" || o.tipo === tipo));
+    const sin = pool.filter((o) => o.entidad !== rec.entidad), suyas = pool.filter((o) => o.entidad === rec.entidad);
+    rec.sin_ella = { resumen: resumenDe(sin, { porGrupo: false }), celdas: celdasDe(sin), concentracion: concentradosPor(sin, () => "*").get("*") || null,
+      verificacion: verificarPoblacion(sin) };
+    rec.de_ella = { resumen: resumenDe(suyas, { porGrupo: false }), celdas: celdasDe(suyas), verificacion: verificarPoblacion(suyas) };
+  }
   const anos = ofertas.map((o) => o.ano).sort();
   const resumen = {};
   const resumenTipo = {};
@@ -292,7 +330,7 @@ function construir(base, { huella = null, generado = new Date().toISOString().sl
   };
 }
 
-module.exports = { FORMATO, MODALIDADES, FRANJA_PP, GRUPOS, CONCENTRACION_MAX, grupoDe, franjaDe, ofertasDe, objetosDe, tabla, tablaPorTipo, resumenDe, concentraciones, concentracionesPorTramo, huellaVocabulario, brierDe, verificar, verificarVentana, construir };
+module.exports = { FORMATO, MODALIDADES, FRANJA_PP, GRUPOS, CONCENTRACION_MAX, grupoDe, franjaDe, ofertasDe, objetosDe, tabla, tablaPorTipo, resumenDe, concentraciones, concentracionesPorTramo, celdasDe, huellaVocabulario, brierDe, verificar, verificarVentana, verificarPoblacion, construir };
 
 if (require.main === module) {
   const [carpeta, salida = path.join(__dirname, "..", "..", "data", "frecuencia_precio.json")] = process.argv.slice(2);
