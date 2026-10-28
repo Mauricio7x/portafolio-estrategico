@@ -6592,6 +6592,99 @@ async function main() {
     console.log(`· unidad pertinencia: ${casos.length} objetos clasificados (los falsos positivos de producción, fuera)`);
   }
 
+  /* unidad: EL RÓTULO «OBRA CIVIL» NO SALE DE UNA PALABRA GENÉRICA EN UN CONTRATO QUE NO ES DE OBRA
+     (28-oct-2026, Paso 2 del plan «Detekta · Datos de la lista»). En la lista de Helder del 27-oct, 60
+     suministros y compraventas que no son de construcción salían con el chip verde «Obra civil» o
+     «Infraestructura»; en 38 lo único que decía obra era «mejoramiento», «mejorar», «reparación»,
+     «ampliación», «optimización» o «infraestructura» (la tecnológica, casi siempre). El rótulo pasa a
+     ámbar «Verificar objeto» con su motivo, y NADA se esconde: la ruta de texto y la de mínima cuantía
+     siguen admitiendo esas filas como cuando eran verdes. Los objetos son los de producción. */
+  bqObraGenerica: { if (!corre("unidad rótulo de obra con una palabra genérica")) break bqObraGenerica;
+    const Lfg = require("../lib/lenguaje_pantalla.js");
+    const filaG = (nombre, descripcion, tipo, extra = {}) => ({
+      id_del_proceso: "CO1.REQ.GENERICA", nombre_del_procedimiento: nombre, descripci_n_del_procedimiento: descripcion,
+      tipo_de_contrato: tipo, codigo_principal_de_categoria: "UNSPECIFIED", modalidad_de_contratacion: "Selección abreviada subasta inversa",
+      estado_del_procedimiento: "Publicado", ...extra,
+    });
+    // [palabra que disparaba el verde, fila real de producción del 27-oct]
+    const CASOS = [
+      ["mejorar", filaG("SUMINISTRO DE ALIMENTACIÓN POLICIA QUINDIO (Manifestación de interés (Menor Cuantía))",
+        "SUMINISTRO DE ALIMENTACIÓN PARA EL PERSONAL ADSCRITO Y DE APOYO AL DEPARTAMENTO DE POLICÍA QUINDÍO, QUE REALIZAN ACTIVIDADES DE CONTROL, DISUASIÓN Y PREVENCIÓN EN PRO DE MEJORAR LA CONVIVENCIA Y SEGURIDAD CIUDADANA EN EL DEPARTAMENTO DE POLICÍA QUINDÍO", "Suministros")],
+      ["ampliacion", filaG("RENOVACIÓN Y ACTUALIZACIÓN DEL LICENCIAMIENTO EDR/MDR; NX; IPS E IVX; ASÍ COMO LA AMPLIACIÓN DE LAS GARANTÍAS Y EL SERVICIO DE SOPORTE TÉCNICO ESPECIALIZADO PARA LOS SISTEMAS DE PREVENCIÓN DE INTRUSOS",
+        "RENOVACIÓN Y ACTUALIZACIÓN DEL LICENCIAMIENTO EDR/MDR, NX, IPS E IVX, ASÍ COMO LA AMPLIACIÓN DE LAS GARANTÍAS Y EL SERVICIO DE SOPORTE TÉCNICO ESPECIALIZADO PARA LOS SISTEMAS DE PREVENCIÓN DE INTRUSOS (IPS) Y MÓDULOS DE RED", "Compraventa")],
+      ["reparacion", filaG("SERVICIO DE MANTENIMIENTO Y REPARACIÓN DE VEHÍCULOS DE LA DIRECCIÓN DE INVESTIGACIÓN CRIMINAL E INTERPOL  VIGENCIA FUTURA (Presentación de oferta)",
+        "SERVICIO DE MANTENIMIENTO Y REPARACIÓN DE VEHÍCULOS DE LA DIRECCIÓN DE INVESTIGACIÓN CRIMINAL E INTERPOL - VIGENCIA FUTURA", "Prestación de servicios")],
+      ["mejoramiento", filaG("ADQUISICIÓN DE LOS ELEMENTOS QUE CONFORMAN EL KIT DE APOYO Y CUIDADO PERSONAL (HOMBRE Y MUJER); DESTINADOS A FORTALECER LAS CONDICIONES DE BIENESTAR",
+        "ADQUISICIÓN DE LOS ELEMENTOS QUE CONFORMAN EL KIT DE APOYO Y CUIDADO PERSONAL (HOMBRE Y MUJER), DESTINADOS A FORTALECER LAS CONDICIONES DE BIENESTAR, AUTOCUIDADO Y CALIDAD DE VIDA DEL PERSONAL DE LAS UNIDADES ADSCRITAS A LA POLICÍA NACIONAL, CONTRIBUYENDO AL MEJORAMIENTO DE SUS CONDICIONES DE HABITABILIDAD", "Compraventa")],
+      ["optimizacion", filaG("SEGURIDAD PERIMETRAL II",
+        "Adquirir la renovación de licencias, bienes e insumos tecnológicos requeridos para la administración, operación, mantenimiento, seguridad (firewall y antivirus), análisis de vulnerabilidades, soporte, optimización y fortalecimiento de la infraestructura tecnológica del Instituto", "Compraventa")],
+      ["infraestructura", filaG("ADQUISICIÓN Y RENOVACIÓN DE GARANTÍAS SOBRE LA PLATAFORMA E INFRAESTRUCTURA TECNOLÓGICA EXISTENTE EN LAS SEDES DEL MINISTERIO DE SALUD Y PROTECCIÓN SOCIAL",
+        "ADQUISICIÓN Y RENOVACIÓN DE GARANTÍAS SOBRE LA PLATAFORMA E INFRAESTRUCTURA TECNOLÓGICA EXISTENTE EN LAS SEDES DEL MINISTERIO DE SALUD Y PROTECCIÓN SOCIAL PARA ASEGURAR LA CONTINUIDAD OPERATIVA", "Compraventa")],
+    ];
+    for (const [palabra, fila] of CASOS) {
+      const ev = filtros.evaluarObjeto(fila, PERFILES.helder);
+      const p = ev.pertinencia || {};
+      assert.ok(p.nivel === "amarillo" && p.etiqueta === "Verificar objeto" && p.tipo === "indeterminado",
+        `MUTACIÓN: «${fila.nombre_del_procedimiento.slice(0, 50)}» (${fila.tipo_de_contrato}) seguía en verde «${p.etiqueta}» solo por «${palabra}»: ${JSON.stringify(p)}`);
+      assert.ok(Array.isArray(p.palabras_genericas) && p.palabras_genericas.includes(palabra), `dice qué palabras fueron: ${JSON.stringify(p)}`);
+      assert.ok(new RegExp(palabra.slice(0, 6), "i").test(p.motivo.normalize("NFD").replace(/[\u0300-\u036f]/g, "")) && /pliego/.test(p.motivo),
+        `el motivo nombra la palabra y manda al pliego: «${p.motivo}»`);
+      assert.strictEqual(Lfg.tuteoEn(p.motivo), null, `tuteo en «${p.motivo}»`);
+      assert.ok(!Lfg.RE_EMOJI_UI.test(p.motivo), `emoji en «${p.motivo}»`);
+      // NADA SE ESCONDE: la ruta de texto la sigue admitiendo, como cuando era verde
+      assert.ok(ev.ok === true && !ev.paso && ev.tier === "texto",
+        `MUTACIÓN: la fila desaparecía de la lista al pasar a ámbar (la ruta de texto exige verde): ${JSON.stringify({ ok: ev.ok, paso: ev.paso, tier: ev.tier })}`);
+      assert.ok(filtros.filtrarProcesosVisibles([{ ...fila, fecha_de_recepcion_de: "2099-01-01T17:00:00.000", fase: "Presentación de oferta" }], "helder", {}).visibles.length === 1,
+        `y la cascada entera la deja visible: «${fila.nombre_del_procedimiento.slice(0, 50)}»`);
+      // control: el MISMO objeto con contrato de obra sigue verde (la regla es del contrato, no de la palabra)
+      const pObra = filtros.evaluarObjeto({ ...fila, tipo_de_contrato: "Obra" }, PERFILES.helder).pertinencia;
+      assert.strictEqual(pObra.nivel, "verde", `con contrato de obra no cambia nada: ${JSON.stringify(pObra)}`);
+      // y sin tipo de contrato publicado tampoco: sin dato no se juzga
+      const pSin = filtros.evaluarObjeto({ ...fila, tipo_de_contrato: undefined }, PERFILES.helder).pertinencia;
+      assert.strictEqual(pSin.nivel, "verde", `sin tipo de contrato publicado no se baja el rótulo: ${JSON.stringify(pSin)}`);
+    }
+    // controles: otra señal de obra en el objeto, o el ancla que queda («vial»), mantienen el verde
+    const otraSenal = filtros.evaluarObjeto(filaG("SUMINISTRO DE MATERIALES PARA LA CONSTRUCCIÓN DE PLACA HUELLA Y EL MEJORAMIENTO DE LA VÍA", "", "Suministros"), PERFILES.helder).pertinencia;
+    assert.strictEqual(otraSenal.nivel, "verde", `con «construcción» además de la palabra genérica sigue verde: ${JSON.stringify(otraSenal)}`);
+    const conAncla = filtros.evaluarObjeto(filaG("MANTENIMIENTO DE LA INFRAESTRUCTURA VIAL DEL MUNICIPIO", "", "Prestación de servicios"), PERFILES.helder).pertinencia;
+    assert.strictEqual(conAncla.nivel, "verde", `«mantenimiento … vial» es obra aunque el contrato sea de servicios: ${JSON.stringify(conAncla)}`);
+    // la interventoría y la consultoría no se tocan: el MISMO objeto baja solo con un contrato de suministro
+    // (un control con la palabra «interventoría» en el objeto no discriminaba: esa palabra ya es verde sola)
+    const SEGUIMIENTO = "SEGUIMIENTO TECNICO AL MEJORAMIENTO DE LA SEDE COMUNAL";
+    for (const tipo of ["Interventoría", "Consultoría"]) {
+      const pt = filtros.evaluarObjeto(filaG(SEGUIMIENTO, "", tipo), PERFILES.helder).pertinencia;
+      assert.strictEqual(pt.nivel, "verde", `con contrato de ${tipo} sigue verde: ${JSON.stringify(pt)}`);
+    }
+    assert.strictEqual(filtros.evaluarObjeto(filaG(SEGUIMIENTO, "", "Suministros"), PERFILES.helder).pertinencia.nivel, "amarillo", "y con suministro baja: el control discrimina");
+    // VARIAS palabras: el motivo las nombra todas y no dice «lo único es…» de la primera (revisión adversaria)
+    const pauna = filtros.evaluarObjeto(filaG("FORTALECIMIENTO EN OPTIMIZACIÓN Y AMPLIACIÓN DE LA INFRAESTRUCTURA DE LOS ACUEDUCTOS DE FURATENA, CARARE, PISTORAQUE Y OTROS DEL MUNICIPIO DE PAUNA, BOYACÁ", "", "Compraventa"), PERFILES.helder).pertinencia;
+    assert.deepStrictEqual(pauna.palabras_genericas, ["optimizacion", "ampliacion", "infraestructura"], JSON.stringify(pauna));
+    assert.ok(pauna.motivo.includes("«optimización», «ampliación» e «infraestructura» no bastan") && !/lo único/.test(pauna.motivo),
+      `MUTACIÓN: el motivo nombraba solo una palabra: «${pauna.motivo}»`);
+    // NO EMPEORA LO QUE EL CÓDIGO SOSTIENE: con una clase de obra pura inscrita (paso 3), añadir la palabra no baja el verde
+    const conObraPura = (n) => filtros.evaluarObjeto(filaG(n, "", "Prestación de servicios", { codigo_principal_de_categoria: "V1.72101500" }), PERFILES.helder);
+    const sinPal = conObraPura("ARREGLOS LOCATIVOS Y PINTURA DE LA SEDE ADMINISTRATIVA"), conPal = conObraPura("ARREGLOS LOCATIVOS, PINTURA Y REPARACION DE LA SEDE ADMINISTRATIVA");
+    assert.ok(sinPal.tier === "clase" && sinPal.pertinencia.nivel === "verde", `premisa: con 72101500 sin la palabra es verde: ${JSON.stringify(sinPal.pertinencia)}`);
+    assert.strictEqual(conPal.pertinencia.nivel, "verde", `MUTACIÓN: añadir «reparación» bajaba el verde que sostiene la clase de obra pura: ${JSON.stringify(conPal.pertinencia)}`);
+    // …y NO APAGA el aviso de P1 por la clase de servicios (paso 4): el ámbar nuevo lo calcula igual
+    const servicio = (n) => filtros.evaluarObjeto(filaG(n, "", "Prestación de servicios", { codigo_principal_de_categoria: "V1.80101600" }), PERFILES.helder);
+    const sinMej = servicio("PRESTACION DE SERVICIOS PARA LA ORGANIZACION DEL ARCHIVO CENTRAL DEL MUNICIPIO"), conMej = servicio("PRESTACION DE SERVICIOS PARA EL MEJORAMIENTO DEL ARCHIVO CENTRAL DEL MUNICIPIO");
+    assert.strictEqual(sinMej.pertinencia.casa_solo_por_servicio, true, `premisa: sin la palabra, solo casa por servicios: ${JSON.stringify(sinMej.pertinencia)}`);
+    assert.ok(conMej.pertinencia.nivel === "amarillo" && conMej.pertinencia.casa_solo_por_servicio === true,
+      `MUTACIÓN: con «mejoramiento» el aviso de P1 por la clase de servicios se apagaba: ${JSON.stringify(conMej.pertinencia)}`);
+    // EL MOTIVO VERDE CITA LO QUE LO SOSTIENE: en un suministro, no la palabra genérica si el verde lo da otro verbo
+    const torres = filtros.evaluarObjeto(filaG("AMPLIACION Y MANTENIMIENTO DE LA RED DE TORRES DE TELECOMUNICACIONES", "", "Suministros"), PERFILES.helder).pertinencia;
+    assert.ok(torres.nivel === "verde" && !/ampliacion/.test(torres.motivo) && /mantenimiento/.test(torres.motivo),
+      `MUTACIÓN: el verde decía «ampliación» y lo sostiene «mantenimiento de la red»: ${JSON.stringify(torres)}`);
+    // EL HERMANO DE LA MÍNIMA CUANTÍA (paso 7-bis de lib/filtros): ahí la ruta de texto también exigía verde
+    const minima = filaG("ADQUISICIÓN DE KITS DE CUIDADO PERSONAL CONTRIBUYENDO AL MEJORAMIENTO DE LAS CONDICIONES DE HABITABILIDAD DE LAS UNIDADES", "", "Compraventa",
+      { modalidad_de_contratacion: "Mínima cuantía", codigo_principal_de_categoria: "V1.53131600" });
+    const evMin = filtros.evaluarObjeto(minima, PERFILES.helder);
+    assert.ok(evMin.ok === true && evMin.tier === "texto" && evMin.pertinencia.nivel === "amarillo" && evMin.pertinencia.palabras_genericas.includes("mejoramiento"),
+      `MUTACIÓN: en mínima cuantía la fila desaparecía al pasar a ámbar: ${JSON.stringify({ ok: evMin.ok, paso: evMin.paso, tier: evMin.tier, p: evMin.pertinencia && evMin.pertinencia.nivel })}`);
+    console.log(`· unidad rótulo de obra con una palabra genérica: ${CASOS.length} objetos de producción (suministro, compraventa y servicios) pasan de verde a «Verificar objeto» con la palabra y el motivo, sin esconderse (texto y mínima cuantía); el mismo objeto con contrato de obra, sin contrato publicado, con otra señal de obra o con interventoría sigue verde`);
+  }
+
   /* unidad: EQUIVALENCIAS funcionales. El lift se calcula sobre
      ADJUDICATARIOS, no sobre procesos: una entidad que saque 40 procesos
      gemelos no puede fabricar una equivalencia. */
