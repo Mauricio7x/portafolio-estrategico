@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 2141273 bytes · 396 secciones · 35 con marcador de superación.
+Derivado del árbol: 2151025 bytes · 397 secciones · 35 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -405,5 +405,6 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | La foto de los índices en el almacén de archivos: Upstash deja de bajar los índices enteros en cada instancia fría (27-oct-2026) | 27-oct-2026 | 20360-20385 | 10051 |  |
 | La lista dice con quién y con qué parte, y la caja ya no deja pasar lo que ni con el anticipo máximo alcanza (27-oct-2026) | 27-oct-2026 | 20386-20438 | 15687 |  |
 | Lo que pide atención dice lo que falta HOY, el cuaderno ya no se borra al marcar una nota y el calendario lee las fechas suyas (27-oct-2026) | 27-oct-2026 | 20439-20455 | 7052 |  |
-| El rótulo «Obra civil» ya no sale de una palabra genérica en un suministro, una compraventa o un servicio (28-oct-2026) | 28-oct-2026 | 20456-20478 | 7376 |  |
-| El % de adjudicación según el precio no se enseña porque se midió que no predice: en licitación y menor cuantía se dice cuántas ofertas ganaron a ese precio (28-oct-2026) | 28-oct-2026 | 20479-20529 | 13981 |  |
+| El rótulo «Obra civil» ya no sale de una palabra genérica en un suministro, una compraventa o un servicio (28-oct-2026) | 28-oct-2026 | 20456-20478 | 8185 |  |
+| La compra o el servicio que no es obra ya no sale con «Obra civil», y «Otro» y «Decreto 092» entran en la regla de la palabra genérica (28-oct-2026) | 28-oct-2026 | 20479-20505 | 8943 |  |
+| El % de adjudicación según el precio no se enseña porque se midió que no predice: en licitación y menor cuantía se dice cuántas ofertas ganaron a ese precio (28-oct-2026) | 28-oct-2026 | 20506-20556 | 13981 |  |

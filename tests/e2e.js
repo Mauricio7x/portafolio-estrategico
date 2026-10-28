@@ -6736,13 +6736,70 @@ async function main() {
     const torres = filtros.evaluarObjeto(filaG("AMPLIACION Y MANTENIMIENTO DE LA RED DE TORRES DE TELECOMUNICACIONES", "", "Suministros"), PERFILES.helder).pertinencia;
     assert.ok(torres.nivel === "verde" && !/ampliacion/.test(torres.motivo) && /mantenimiento/.test(torres.motivo),
       `MUTACIÓN: el verde decía «ampliación» y lo sostiene «mantenimiento de la red»: ${JSON.stringify(torres)}`);
-    // EL HERMANO DE LA MÍNIMA CUANTÍA (paso 7-bis de lib/filtros): ahí la ruta de texto también exigía verde
+    // LA MÍNIMA CUANTÍA: el 7-bis de lib/filtros también exige la pertinencia de texto; hoy esta fila entra antes por el paso 7
+    // (con verbo de obra el 7-bis es inalcanzable: lo confirmó la revisión adversaria del 28-oct), y la aserción fija que siga entrando
     const minima = filaG("ADQUISICIÓN DE KITS DE CUIDADO PERSONAL CONTRIBUYENDO AL MEJORAMIENTO DE LAS CONDICIONES DE HABITABILIDAD DE LAS UNIDADES", "", "Compraventa",
       { modalidad_de_contratacion: "Mínima cuantía", codigo_principal_de_categoria: "V1.53131600" });
     const evMin = filtros.evaluarObjeto(minima, PERFILES.helder);
     assert.ok(evMin.ok === true && evMin.tier === "texto" && evMin.pertinencia.nivel === "amarillo" && evMin.pertinencia.palabras_genericas.includes("mejoramiento"),
       `MUTACIÓN: en mínima cuantía la fila desaparecía al pasar a ámbar: ${JSON.stringify({ ok: evMin.ok, paso: evMin.paso, tier: evMin.tier, p: evMin.pertinencia && evMin.pertinencia.nivel })}`);
-    console.log(`· unidad rótulo de obra con una palabra genérica: ${CASOS.length} objetos de producción (suministro, compraventa y servicios) pasan de verde a «Verificar objeto» con la palabra y el motivo, sin esconderse (texto y mínima cuantía); el mismo objeto con contrato de obra, sin contrato publicado, con otra señal de obra o con interventoría sigue verde`);
+    /* ── PASO 2b (28-oct-2026): «Otro» y «Decreto 092», y la compra o el servicio que no es obra ── */
+    // 1 · la regla de las palabras genéricas cubre también «Otro» y «Decreto 092 de 2017» (contratos publicados, no «sin dato»)
+    for (const [tipo, nombre, palabra] of [
+      ["Otro", "ADQUISICIÓN DE AYUDAS TÉCNICAS Y TECNOLÓGICAS DIRIGIDAS A MEJORAR LA CALIDAD DE VIDA DE LA POBLACIÓN CON DISCAPACIDAD", "mejorar"],
+      ["Decreto 092 de 2017", "AMPLIACIÓN DE COBERTURA Y CONTINUIDAD DE CUPOS DE EDUCACIÓN SUPERIOR EN PROGRAMAS DE FORMACIÓN", "ampliacion"],
+    ]) {
+      const p = filtros.evaluarObjeto(filaG(nombre, "", tipo), PERFILES.helder).pertinencia;
+      assert.ok(p.nivel === "amarillo" && p.palabras_genericas.includes(palabra) && p.motivo.includes(`«${tipo}»`),
+        `MUTACIÓN: con contrato «${tipo}» seguía en verde «${p.etiqueta}» solo por «${palabra}»: ${JSON.stringify(p)}`);
+    }
+    // 2 · la COMPRA o el SERVICIO que no es obra (lo decide lib/filtros_lista.tipoTrabajoDe, llamado, no copiado)
+    const COMPRAS_Y_SERVICIOS = [
+      ["suministro", filaG("SASI-004-2026 copia_3 (Presentación de oferta)", "COMPRA DE SILLAS PARA GRADERÍA Y PUESTOS PARA JUGADORES DESTINADOS A LA ADECUACIÓN Y DOTACIÓN DE ESCENARIOS DEPORTIVOS, DE CONFORMIDAD CON LAS ESPECIFICACIONES TECNICAS", "Compraventa")],
+      ["suministro", filaG("SUMINISTRO DE PRODUCTOS QUÍMICOS", "FORTALECIMIENTO DE LOS SISTEMAS DE ACUEDUCTO DE LA UNIDAD DE SERVICIOS PUBLICOS MEDIANTE EL SUMINISTRO DE PRODUCTOS QUÍMICOS, REACTIVOS E INSUMOS NECESARIOS PARA GARANTIZAR EL TRATAMIENTO", "Suministros")],
+      ["suministro", filaG("F-035 COMPRA DE BONOS EXPEDIDOS NOMINALMENTE PARA LOS TRABAJADORES OFICIALES DE LA UNIDAD ADMINISTRATIVA ESPECIAL DE REHABILITACIÓN Y MANTENIMIENTO VIAL", "", "Compraventa")],
+      // la descripción completa: «el suministro de materiales» de un servicio no es la compra de material de obra
+      ["servicios", filaG("PRESTACIÓN INTEGRAL DE SERVICIOS DE ASEO (Presentación de oferta)", "PRESTACIÓN INTEGRAL DE SERVICIOS DE ASEO, LIMPIEZA, DESINFECCIÓN, CONSERVACIÓN DE INSTALACIONES, LAVADO Y DESINFECCIÓN DE TANQUES DE ALMACENAMIENTO DE AGUA, BAJO LA MODALIDAD DE TODO COSTO, INCLUYENDO EL SUMINISTRO DE MATERIALES, INSUMOS, EQUIPOS Y PERSONAL ESPECIALIZADO", "Prestación de servicios")],
+      // el hermano que la revisión adversaria encontró vivo: «Arrendamiento de muebles», que lib/filtros_lista ya trata como compra
+      ["suministro", filaG("ARRENDAMIENTO DE UN EQUIPO DE RADIOLOGÍA DIGITAL (CONVENCIONAL); INCLUYENDO ADECUACIÓN; INSTALACIÓN; MANTENIMIENTO PREVENTIVO; PREDICTIVO; CORRECTIVO Y SOPORTE TÉCNICO PARA EL HOSPITAL MILITAR CENTRAL", "ARRENDAMIENTO DE UN EQUIPO DE RADIOLOGÍA DIGITAL (CONVENCIONAL), INCLUYENDO ADECUACIÓN, INSTALACIÓN, MANTENIMIENTO PREVENTIVO, PREDICTIVO, CORRECTIVO Y SOPORTE TÉCNICO PARA EL HOSPITAL MILITAR CENTRAL.", "Arrendamiento de muebles")],
+    ];
+    for (const [trabajo, fila] of COMPRAS_Y_SERVICIOS) {
+      const ev = filtros.evaluarObjeto(fila, PERFILES.helder);
+      const p = ev.pertinencia || {};
+      // `tipo` indeterminado: con «obra_civil» el chip diría «Verificar objeto» y el resumen lo contaría como obra y podría destacarlo
+      assert.ok(p.nivel === "amarillo" && p.etiqueta === "Verificar objeto" && p.tipo === "indeterminado" && p.ambar_por_contrato === trabajo,
+        `MUTACIÓN: «${(fila.descripci_n_del_procedimiento || fila.nombre_del_procedimiento).slice(0, 50)}» (${fila.tipo_de_contrato}) seguía en verde «${p.etiqueta}»: ${JSON.stringify(p)}`);
+      assert.ok(p.motivo.includes(`«${fila.tipo_de_contrato}»`) && p.motivo.includes(`parece ${trabajo === "suministro" ? "una compra" : "un servicio"}`) && /pliego/.test(p.motivo) && Lfg.tuteoEn(p.motivo) === null,
+        `MUTACIÓN: el motivo no dice lo que se leyó («una compra» o «un servicio»): «${p.motivo}»`);
+      assert.ok(ev.ok === true && !ev.paso, `MUTACIÓN: la fila desaparecía al pasar a ámbar: ${JSON.stringify({ ok: ev.ok, paso: ev.paso })}`);
+      assert.strictEqual(filtros.evaluarObjeto({ ...fila, tipo_de_contrato: "Obra" }, PERFILES.helder).pertinencia.nivel, "verde", "con contrato de obra sigue verde");
+    }
+    // controles: la compra de MATERIAL DE OBRA sigue verde (la revisión a mano del 27-oct la dejó como del negocio)
+    for (const [nombre, tipo] of [
+      ["SUMINISTRO DE MEZCLA ASFALTICA PARA EL MANTENIMIENTO DE LAS VIAS URBANAS DEL MUNICIPIO", "Suministros"],
+      ["COMPRAVENTA DE MATERIALES DE CONSTRUCCIÓN Y FERRETERÍA PARA EL MANTENIMIENTO DE INSTALACIONES DE LA SEDE", "Compraventa"],
+      ["SUMINISTRO DE TUBERÍA EN CONCRETO PARA EL APOYO A LA EJECUCIÓN DE OBRAS DE DRENAJE EN LA RED VIAL TERCIARIA", "Suministros"],
+    ]) {
+      const p = filtros.evaluarObjeto(filaG(nombre, "", tipo), PERFILES.helder).pertinencia;
+      assert.strictEqual(p.nivel, "verde", `MUTACIÓN: la compra de material de obra bajaba a ámbar: «${nombre.slice(0, 50)}» ${JSON.stringify(p)}`);
+    }
+    // la OBRA publicada como «Otro» o «Decreto 092» sigue verde: el contrato solo pesa si el objeto no dice obra (revisión adversaria:
+    // bajar todo «Otro»/«092» sobrevivía al bloque; de las 24 filas «Otro» del 27-oct, 17 son obra o interventoría)
+    for (const [nombre, tipo] of [["CONSTRUCCIÓN DE LA E.S.E. HOSPITAL LOCAL DEL MUNICIPIO DE TENERIFE", "Otro"], ["CONSTRUCCIÓN DE PLACA HUELLA EN LA VEREDA EL ROSAL", "Decreto 092 de 2017"]]) {
+      const p = filtros.evaluarObjeto(filaG(nombre, "", tipo), PERFILES.helder).pertinencia;
+      assert.strictEqual(p.nivel, "verde", `MUTACIÓN: la obra publicada como «${tipo}» bajaba a ámbar: ${JSON.stringify(p)}`);
+    }
+    // el ámbar de la compra o el servicio NO APAGA el aviso de P1 por la clase de servicios (paso 4), como el de la palabra genérica
+    const aseoServ = filtros.evaluarObjeto({ ...COMPRAS_Y_SERVICIOS[3][1], codigo_principal_de_categoria: "V1.80101600" }, PERFILES.helder).pertinencia;
+    assert.ok(aseoServ.ambar_por_contrato === "servicios" && aseoServ.casa_solo_por_servicio === true,
+      `MUTACIÓN: el ámbar del servicio apagaba el aviso de P1 por la clase de servicios: ${JSON.stringify(aseoServ)}`);
+    // con una clase de obra pura inscrita (paso 3), la compra o el servicio tampoco bajan lo que el código sostiene
+    // (el MISMO objeto del aseo, que tiene verbo de obra y sin la clase baja: un objeto sin verbo no pasaba por la regla y no discriminaba)
+    const aseo = COMPRAS_Y_SERVICIOS[3][1];
+    const servObraPura = filtros.evaluarObjeto({ ...aseo, codigo_principal_de_categoria: "V1.72101500" }, PERFILES.helder);
+    assert.ok(servObraPura.tier === "clase" && servObraPura.pertinencia.nivel === "verde" && servObraPura.pertinencia.verbo,
+      `MUTACIÓN: el servicio bajaba lo que sostiene la clase de obra pura: ${JSON.stringify({ tier: servObraPura.tier, p: servObraPura.pertinencia })}`);
+    console.log(`· unidad rótulo de obra con una palabra genérica: ${CASOS.length} objetos de producción (suministro, compraventa y servicios) pasan de verde a «Verificar objeto» con la palabra y el motivo, sin esconderse (texto y mínima cuantía); el mismo objeto con contrato de obra, sin contrato publicado, con otra señal de obra o con interventoría sigue verde · «Otro» y «Decreto 092» entran en la regla, y ${COMPRAS_Y_SERVICIOS.length} compras o servicios que no son obra bajan sin esconderse; la compra de material de obra y la clase de obra pura siguen verdes`);
   }
 
   /* unidad: EQUIVALENCIAS funcionales. El lift se calcula sobre
