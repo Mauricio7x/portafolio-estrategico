@@ -53,7 +53,9 @@ function ofertasDe(base, objetos = null) {
     const ano = String(x.fecha_adjudicacion || "").slice(0, 4);
     if (!/^\d{4}$/.test(ano)) continue;
     const tipo = objetos ? tipoDeObra(objetos.get(x.portafolio) || "") : null;
-    v.forEach((pct, i) => out.push({ mod: x.modalidad, ano, n: v.length, pct, gano: i === ig ? 1 : 0, proceso: x.portafolio, tipo }));
+    // la entidad, para el censo de concentración por tipo (una sola entidad no puede ser «el mercado» de un tipo)
+    const entidad = String(x.nit_entidad || x.entidad || "").trim() || null;
+    v.forEach((pct, i) => out.push({ mod: x.modalidad, ano, n: v.length, pct, gano: i === ig ? 1 : 0, proceso: x.portafolio, tipo, entidad }));
   }
   return out;
 }
@@ -90,7 +92,7 @@ function tablaPorTipo(ofertas) {
 
 /* Lo que se dice de los procesos de un grupo: cuántos, el precio de los ganadores (cuartiles, en % del presupuesto, a
    un decimal: es para LEER, no decide nada) y en cuántos ganó la oferta más baja frente al azar. */
-function resumenDe(ofertas) {
+function resumenDe(ofertas, { porGrupo = true } = {}) {
   const porProceso = new Map();
   for (const o of ofertas) { if (!porProceso.has(o.proceso)) porProceso.set(o.proceso, []); porProceso.get(o.proceso).push(o); }
   let ganoLaMasBaja = 0, azarLaMasBaja = 0;
@@ -105,10 +107,46 @@ function resumenDe(ofertas) {
   ganadores.sort((a, b) => a - b);
   // el rango más cercano (nearest-rank): el valor de un ganador real, nunca una interpolación
   const cuartil = (q) => (ganadores.length ? +(100 * ganadores[Math.round(q * (ganadores.length - 1))]).toFixed(1) : null);
+  /* POR TRAMO DE OFERENTES (revisión adversaria, 28-oct-2026): el precio ganador cambia más con cuántos compiten
+     que con el tipo de obra (licitación de todo tipo de obra: 98,5 % con 3 o 4 oferentes, 95,0 % con 10 o más), así que la
+     referencia se dice del tramo de la entidad, como la frase de cuántas ganaron */
+  const grupos = porGrupo
+    ? Object.fromEntries(GRUPOS.map((g) => [g, resumenDe(ofertas.filter((o) => grupoDe(o.n) === g), { porGrupo: false })]).filter(([, r]) => r.procesos > 0))
+    : undefined;
   return {
     procesos: porProceso.size, ofertas: ofertas.length, gano_la_mas_baja: ganoLaMasBaja, azar_la_mas_baja: +azarLaMasBaja.toFixed(1),
     ganador_pct: ganadores.length ? { p25: cuartil(0.25), p50: cuartil(0.5), p75: cuartil(0.75) } : null,
+    ...(grupos ? { por_grupo: grupos } : {}),
   };
+}
+
+/* EL CENSO DE CONCENTRACIÓN (revisión adversaria, 28-oct-2026): «estabilización y drenaje» en menor cuantía eran, con
+   «canal» en el vocabulario, 144 de 186 procesos de la Aerocivil (limpieza de canales de aeropuertos), y aun sin esa
+   palabra la Aerocivil reúne el 49,4 % de los 77 que quedan; su mediana no era la del tipo sino la de esa entidad. Un tipo de obra en una modalidad donde una sola entidad reúne más de CONCENTRACION_MAX de los procesos no
+   se publica aparte: sus ofertas cuentan solo en la cifra de todos los tipos, y la tabla dice por qué. Se barre TODO
+   par modalidad-tipo, no una lista. */
+const CONCENTRACION_MAX = 0.25;
+function concentraciones(ofertas) {
+  const procesos = new Map();   // "mod|tipo" → Map(proceso → entidad)
+  for (const o of ofertas) {
+    if (!o.tipo) continue;
+    const k = `${o.mod}|${o.tipo}`;
+    if (!procesos.has(k)) procesos.set(k, new Map());
+    procesos.get(k).set(o.proceso, o.entidad);
+  }
+  const out = {};
+  for (const [k, m] of procesos) {
+    const porEntidad = new Map();
+    // una entidad que no se sabe no es «la misma entidad» que otra que tampoco se sabe: cuenta en el total, no junta
+    for (const e of m.values()) if (e != null) porEntidad.set(e, (porEntidad.get(e) || 0) + 1);
+    if (!porEntidad.size) continue;
+    const [entidad, n] = [...porEntidad.entries()].sort((a, b) => b[1] - a[1])[0];
+    if (n / m.size > CONCENTRACION_MAX) {
+      const [mod, tipo] = k.split("|");
+      (out[mod] || (out[mod] = {}))[tipo] = { entidad, procesos: n, de: m.size, pct: +(100 * n / m.size).toFixed(1) };
+    }
+  }
+  return out;
 }
 
 /* LA VERIFICACIÓN, fuera de muestra: la tabla aprendida con los años anteriores a 2026 (encogida hacia
@@ -174,8 +212,21 @@ function verificarVentana(ofertas) {
   return { anos: ANOS_VENTANA, encoger_k: ENCOGER_K, por_modalidad: porModalidad, por_tipo: porTipo };
 }
 
+/* portafolio → texto con el que se clasifica su tipo de obra, desde las filas de p6dx-8zbt. Es el NOMBRE del proceso,
+   que es lo que Precios recibe desde la lista (`objeto` de qApu): clasificar aquí también la descripción daba, con el
+   vocabulario de hoy, a 462 licitaciones y 542 menores cuantías un tipo distinto del que vería la pantalla (revisión
+   adversaria, 28-oct-2026). Manda la primera fila. */
+function objetosDe(filas) {
+  const objetos = new Map();
+  for (const r of filas || []) if (r && r.id_del_portafolio && !objetos.has(r.id_del_portafolio)) objetos.set(r.id_del_portafolio, String(r.nombre_del_procedimiento || ""));
+  return objetos;
+}
+
 function construir(base, { huella = null, generado = new Date().toISOString().slice(0, 10), objetos = null, huella_objetos = null } = {}) {
-  const ofertas = ofertasDe(base, objetos);
+  const crudas = ofertasDe(base, objetos);
+  // los tipos concentrados en una entidad no se publican aparte: sus ofertas quedan sin tipo (siguen en la de todos)
+  const concentrados = concentraciones(crudas);
+  const ofertas = crudas.map((o) => (o.tipo && concentrados[o.mod] && concentrados[o.mod][o.tipo] ? { ...o, tipo: null } : o));
   const anos = ofertas.map((o) => o.ano).sort();
   const resumen = {};
   const resumenTipo = {};
@@ -199,11 +250,12 @@ function construir(base, { huella = null, generado = new Date().toISOString().sl
     resumen, verificacion: verificar(ofertas), celdas: tabla(ofertas),
     /* por tipo de obra (lib/frecuencia_precio.tipoDeObra sobre el objeto del proceso); sin objetos, vacío */
     objetos_sha256: huella_objetos, resumen_tipo: objetos ? resumenTipo : null, celdas_tipo: objetos ? tablaPorTipo(ofertas) : null,
+    tipos_concentrados: objetos ? concentrados : null, concentracion_max: CONCENTRACION_MAX,
     verificacion_ventana: verificarVentana(ofertas),
   };
 }
 
-module.exports = { FORMATO, MODALIDADES, FRANJA_PP, GRUPOS, grupoDe, franjaDe, ofertasDe, tabla, tablaPorTipo, resumenDe, verificar, verificarVentana, construir };
+module.exports = { FORMATO, MODALIDADES, FRANJA_PP, GRUPOS, CONCENTRACION_MAX, grupoDe, franjaDe, ofertasDe, objetosDe, tabla, tablaPorTipo, resumenDe, concentraciones, verificar, verificarVentana, construir };
 
 if (require.main === module) {
   const [carpeta, salida = path.join(__dirname, "..", "..", "data", "frecuencia_precio.json")] = process.argv.slice(2);
@@ -211,13 +263,12 @@ if (require.main === module) {
   const archivo = path.join(carpeta, "base.jsonl.gz");
   const crudo = fs.readFileSync(archivo);
   const base = zlib.gunzipSync(crudo).toString("utf8").split("\n").filter(Boolean).map((l) => JSON.parse(l));
-  /* el objeto de cada proceso (nombre y descripción), del mismo inventario que hizo la base; sin él, sin tipos */
+  /* el objeto de cada proceso, del mismo inventario que hizo la base; sin él, sin tipos */
   const { leerJson } = require("./base.js");
   const filas = leerJson(carpeta, "p6dx_obra.json");
   let objetos = null, huellaObjetos = null;
   if (Array.isArray(filas)) {
-    objetos = new Map();
-    for (const r of filas) if (r && r.id_del_portafolio && !objetos.has(r.id_del_portafolio)) objetos.set(r.id_del_portafolio, `${r.nombre_del_procedimiento || ""} ${r.descripci_n_del_procedimiento || ""}`);
+    objetos = objetosDe(filas);
     huellaObjetos = crypto.createHash("sha256").update(JSON.stringify([...objetos.entries()].sort((a, b) => (a[0] < b[0] ? -1 : 1)))).digest("hex");
   }
   const r = construir(base, { huella: crypto.createHash("sha256").update(crudo).digest("hex"), objetos, huella_objetos: huellaObjetos });

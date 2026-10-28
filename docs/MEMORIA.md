@@ -20557,36 +20557,55 @@ En una línea: el dueño pidió «el % de adjudicación según el precio de la o
 
 ### La referencia de precio va por tipo de obra: una vía y un acueducto se adjudican a precios distintos, pero en ninguno el precio predice quién gana (28-oct-2026)
 
-En una línea: el dueño preguntó si un dato por modalidad mezcla obras que se adjudican distinto. Medido, sí: la mediana del precio ganador cambia de 1 a 4 puntos según el tipo de obra. Pero ni separando por tipo el precio predice quién gana. Por eso Precios dice, por tipo de obra y modalidad, dónde ofertaron los que ganaron y cuántas ofertas ganaron a su precio, como referencia medida y no como recomendación.
+En una línea: el dueño preguntó si un dato por modalidad mezcla obras que se adjudican distinto. Medido, sí, aunque menos que el número de oferentes: con los mismos oferentes, la mediana del precio ganador cambia de 0,7 a 1,4 puntos entre tipos de obra, y 3,5 puntos entre 3 o 4 oferentes y 10 o más. Ni separando por tipo el precio predice quién gana. Por eso Precios dice, por tipo de obra, modalidad y tramo de oferentes, dónde ofertaron los que ganaron y cuántas ofertas ganaron a su precio, como referencia medida y no como recomendación.
 
-> PENDIENTE · el tipo de obra sale de palabras del objeto (`lib/semantica.TIPOS_DE_OBRA`) y exige que case uno solo. Quedan sin tipo el 33 % de las licitaciones y el 41 % de las menores cuantías de la base, que usan la cifra de todos los tipos y lo dicen. No se separó por entidad: INVIAS y las gobernaciones pesan distinto en cada tipo y pueden explicar parte de la diferencia.
+> PENDIENTE · el tipo de obra sale de palabras del NOMBRE del proceso (`lib/semantica.TIPOS_DE_OBRA`) y exige que case uno solo. Quedan sin tipo el 43,2 % de las licitaciones y el 56,4 % de las menores cuantías de la tabla (este último incluye los 77 procesos de estabilización concentrados en la Aerocivil). Con su tipo y su tramo con 100 procesos o más hablan solo el 43,6 % de las licitaciones y el 35,0 % de las menores cuantías; el resto lleva la cifra de todos los tipos de su tramo, dicho. No se separó por entidad fuera del censo de concentración.
 
-- **Lo medido**, sobre la misma base (huella `317d096581bf…`; objetos de `p6dx_obra.json` del mismo inventario):
-  - **La mediana del precio ganador**, en % del presupuesto, con su intervalo del 90 % (remuestreo de procesos):
-    - en licitación: vías 95,0 (94,9–95,2; 1.207 procesos), agua 95,4 (95,1–95,5; 263) y edificaciones 96,2 (96,0–96,5; 556);
-    - en menor cuantía: vías 95,5 (95,3–95,6; 931), agua 96,9 (96,2–97,4; 141), edificaciones 97,1 (97,0–97,2; 1.222) y estabilización 93,0 (92,2–94,2; 180).
-    - Las diferencias son reales: los intervalos no se tocan.
-  - **Lo que más cambia entre tipos es cuántos compiten**: en licitación, las vías tienen una mediana de 24 oferentes y el agua 11. La frase ya separa por tramo de oferentes.
-  - **A un mismo precio y con los mismos oferentes**, en algunas franjas el número por tipo difiere más que el ruido. Por ejemplo, en menor cuantía con 5 a 9 oferentes, entre el 96 y el 98 %, ganaron 12 de cada 100 en vías y 16 en edificaciones, con un azar de 15.
-  - **¿Predice el precio dentro de cada tipo?** No. La prueba es año por año de 2022 a 2026, aprendiendo solo con los años anteriores (`verificacion_ventana` del JSON, reproducible con el generador):
-    - en licitación, de −1,1 % (edificaciones) a −0,1 % (estabilización);
-    - en menor cuantía, de −1,4 % a +0,1 % (agua, 91 procesos);
-    - ningún tipo se acerca al 3 % que exige la regla para dar un porcentaje.
+- **Lo medido**, sobre la tabla publicada (`data/frecuencia_precio.json`, base con huella `317d096581bf…`, objetos de `p6dx_obra.json` del mismo inventario). Es la mediana del precio ganador en % del presupuesto, con su intervalo del 90 % por remuestreo de procesos, siempre dentro del mismo tramo de oferentes:
+  - **licitación con 10 o más oferentes** (todos los tipos: 95,0; 95,0–95,1; 2.170 procesos):
+    - agua y saneamiento 94,3 (93,9–94,7; 107);
+    - vías y puentes 94,6 (94,4–94,8; 725);
+    - deporte y espacio público 95,4 (95,1–95,8; 218);
+    - edificaciones 95,5 (95,3–95,7; 255);
+    - el agua y las edificaciones no se tocan: 1,2 puntos.
+  - **menor cuantía con 5 a 9 oferentes** (todos: 96,0; 95,9–96,1; 1.866): vías 95,3 (95,0–95,4; 344) y edificaciones 96,7 (96,5–97,0; 429). No se tocan: 1,4 puntos.
+  - **menor cuantía con 3 o 4 oferentes**: vías 97,0 (96,3–98,0; 270) y edificaciones 97,7 (97,3–97,9; 313). Los intervalos SE TOCAN: ahí la diferencia no está probada.
+  - **Lo que más cambia es cuántos compiten**: en licitación de todos los tipos, 98,5 % con 3 o 4 oferentes, 96,5 % con 5 a 9 y 95,0 % con 10 o más. Por eso la referencia va por tramo.
+  - **¿Predice el precio dentro de cada tipo?** No. La prueba es año por año de 2022 a 2026, aprendiendo solo con los años anteriores (`verificacion_ventana`); en los tipos con 100 procesos de prueba o más:
+    - en licitación, de −1,2 % (edificaciones) a +0,2 % (agua, 166 procesos de prueba);
+    - en menor cuantía, de −1,1 % (edificaciones) a 0 % (deporte, 115);
+    - ningún tipo se acerca al 3 % que exige la regla para dar un porcentaje (`MEJORA_MINIMA_PCT`).
+  - El script de los intervalos quedó en el scratchpad de la sesión, sin versionar. Las medianas son las de `resumen_tipo[m][tipo].por_grupo`, reproducibles con el generador.
 - **Qué se construyó**:
-  - **La regla del tipo**, una sola: `lib/frecuencia_precio.tipoDeObra` sobre el objeto, con el vocabulario de `lib/semantica.TIPOS_DE_OBRA`. La llaman el generador de la tabla y Precios. Con dos tipos («alcantarillado y pavimentación») o ninguno da `null`: no se fuerza.
+  - **La regla del tipo**, una sola: `lib/frecuencia_precio.tipoDeObra`, con el vocabulario de `lib/semantica.TIPOS_DE_OBRA`. La llaman el generador y Precios, sobre el NOMBRE del proceso (`objetosDe`). Con dos tipos («alcantarillado y pavimentación») o ninguno da `null`: no se fuerza.
   - **La tabla** lleva además:
-    - `celdas_tipo`: modalidad → tipo → tramo → franja;
-    - `resumen_tipo`: los cuartiles del precio ganador por el rango más cercano (valores de ganadores reales, sin interpolar), y la oferta más baja con su azar;
-    - `verificacion.por_tipo`, con la prueba de 2026;
-    - `verificacion_ventana`, con la prueba año por año;
+    - `celdas_tipo` (modalidad → tipo → tramo → franja);
+    - `resumen_tipo` con `por_grupo`: los cuartiles del precio ganador por el rango más cercano (valores de ganadores reales, sin interpolar), también por tramo, y la oferta más baja con su azar;
+    - `tipos_concentrados` y `concentracion_max`;
+    - `verificacion_ventana`, con la prueba año por año por modalidad y por tipo;
     - `objetos_sha256`.
-  - **La frase de Precios** («ganaron X de cada 100») usa la celda de su tipo cuando tiene 100 ofertas. Si no, la de todos los tipos, y dice «de todo tipo de obra» y por qué. Las dos franjas van siempre de la misma población.
-  - **La referencia** (`rangoGanadores`) va en la sección «Precio de su oferta»: dónde ofertó la mitad de los ganadores y la mediana, en su tipo y modalidad con 100 procesos o más, y a cuántos puntos va su oferta. Cierra con lo que dice la verificación año por año de esa población.
-  - **Una sola cuenta.** La referencia se calcula una vez, en la rentabilidad (con el total que la entidad compara), y el editor la pasa al sugeridor.
-  - **La página manda el objeto** del proceso.
-- **Por qué no es una «sugerencia de precio»**: el dueño pidió «la sugerencia de % de precio a ofertar, dinámica, por tipo de contrato y modalidad». Un precio que se recomiende para ganar no tiene respaldo: ni por modalidad ni por tipo el precio le gana al azar. La referencia de dónde ofertaron los ganadores sí lo tiene, y sirve para ubicar el precio propio frente al mercado de su tipo de obra. La frase lo dice: «Es una referencia, no una recomendación».
+  - **Una puerta única para el tipo**, `tipoConBase`: 100 procesos de su tipo en su tramo de oferentes. La cruzan las dos frases. Si no, las dos son de todos los tipos de su tramo y dicen por qué.
+  - **La frase de cuántas ganaron** usa además la celda de su tipo solo si tiene 100 ofertas a ese precio. Las dos franjas (la suya y 3 puntos abajo) van siempre de la misma población.
+  - **La referencia** (`rangoGanadores`) va en «Precio de su oferta». Dice dónde ofertó la mitad de los ganadores, la mediana y a cuántos puntos va su oferta. Sin los oferentes de la entidad, o con menos de 3, no se dice, y la frase dice por qué.
+  - **Una sola verificación** (`verificacionDe`) para las dos frases: la año por año de su tipo si su prueba tuvo 100 procesos; si no, la de su modalidad; con una tabla anterior, la de 2026. La frase nombra la población probada.
+  - **Una sola cuenta.** La referencia se calcula una vez, en la rentabilidad (con el total que la entidad compara), y el editor la pasa al sugeridor. La página manda el objeto del proceso.
+- **Lo que tumbó la tercera revisión adversaria (28-oct-2026)**, sobre la primera versión por tipo:
+  - **La referencia no separaba por tramo de oferentes.** Una entidad de 3 oferentes recibía la mediana de una población casi toda de 10 o más, y la diferencia entre tramos pesa más que la de tipos.
+  - **«Estabilización y drenaje» en menor cuantía era la Aerocivil.** Con «canal» en el vocabulario, 144 de 186 procesos eran limpieza de canales de aeropuertos. Sin esa palabra la Aerocivil reúne aún el 49,4 % de los 77 que quedan. De ahí el censo de concentración: se barre todo par modalidad-tipo, y donde una sola entidad pasa del 25 % de los procesos el tipo no se publica aparte. Sus ofertas cuentan en la de todos, y la frase lo dice. Una entidad desconocida no se junta con otra desconocida.
+  - **El generador clasificaba con nombre y descripción, y la pantalla recibe solo el nombre.** Con el vocabulario de hoy, 462 licitaciones y 542 menores cuantías tendrían un tipo en la tabla y otro en Precios.
+  - **Falsos amigos del vocabulario**: Puente Aranda (una localidad de Bogotá), el parque automotor, el muro de cerramiento y los canales de aeropuerto. También faltaban «placa-huella», la red de distribución de agua potable y los andenes.
+  - **Dos verificaciones distintas en el mismo recuadro**, una de 2026 y otra año por año, con poblaciones distintas. Ahora es una.
+- **Lo que tumbó la cuarta pasada (28-oct-2026)**, sobre esos arreglos:
+  - **La frase de cuántas ganaron cruzaba la puerta del tipo con 100 ofertas, aunque vinieran de 18 procesos** (licitación de estabilización con 10 o más oferentes, 214 ofertas en la franja del 94 al 96 %), mientras la referencia del mismo recuadro daba todos los tipos. Ahora las dos cruzan la misma puerta de 100 procesos.
+  - **Sin los oferentes de la entidad, el recuadro de la referencia se quedaba callado.** Ahora dice por qué no hay cifra.
+  - **«1 puntos»**, en plural.
+  - Las cifras de esta sección («de 1 a 4 puntos», «145 de 194») salían del clasificador anterior y de la mediana sin tramo. Se rehicieron con la tabla publicada.
+- **Por qué no es una «sugerencia de precio»**: el dueño pidió «la sugerencia de % de precio a ofertar, dinámica, por tipo de contrato y modalidad». Un precio que se recomiende para ganar no tiene respaldo: ni por modalidad, ni por tipo, ni por tramo el precio le gana al azar. La referencia de dónde ofertaron los ganadores sí lo tiene, y sirve para ubicar el precio propio frente al mercado de su tipo de obra. La frase lo dice: «Es una referencia, no una recomendación».
 - **Lo que no hay que deshacer**:
   - forzar un tipo de obra cuando el objeto nombra dos;
-  - dar la cifra de un tipo con menos de 100 ofertas (frase) o de 100 procesos (referencia);
+  - dar la cifra de un tipo sin 100 procesos en su tramo, o la frase de cuántas ganaron sin 100 ofertas a ese precio;
+  - publicar aparte un tipo concentrado en una entidad;
+  - clasificar la tabla con otro texto que el que recibe la pantalla;
+  - dar la referencia sin el tramo de oferentes o con una verificación de otra población;
   - llamar «sugerencia» o «precio óptimo» a la referencia;
   - calcular la referencia en dos sitios.
