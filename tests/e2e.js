@@ -4636,6 +4636,59 @@ async function main() {
         { id: "CO1.REQ.6", modalidad: "Licitación pública", numero_ofertas: 7, fecha_adjudicacion: "2024-12-31" }] };
       assert.deepStrictEqual(candidatos(dC, { procesos: {} }).map((p) => p.id), ["CO1.REQ.3", "CO1.REQ.4", "CO1.REQ.5", "CO1.REQ.1", "CO1.REQ.2"],
         "primero menor cuantía y licitación con 3 o más ofertas, por fecha; sin el número de ofertas no cuenta como útil; antes de 2025 no hay índice");
+      /* EL LECTOR DE LA MADRUGADA (tests/capturar_evaluaciones.js, 28-oct-2026) lee solo lo que la ventana pone primero,
+         con su cupo; y de lo que pide la página, solo sale a producción el OCR (que no toca la base): cargar la página
+         con la llave reenviada en todo gastaba Upstash con la lista y actuaba con la llave */
+      const Lec = require("./capturar_evaluaciones.js");
+      const utilVentana = new Function(`${jsEv.slice(iU, jsEv.indexOf("\n", iU))}\nreturn utilParaElPrecio;`)();
+      for (const p of dC.procesos) {
+        const delLector = Lec.util(p), deLaVentana = utilVentana(p) === 0 && String(p.fecha_adjudicacion) >= "2025-01-01";
+        assert.strictEqual(delLector, deLaVentana, `el lector y la ventana coinciden en lo que sirve para el precio («${p.id}»)`);
+      }
+      assert.ok(!Lec.util({ id: "CO1.BDOS.9", modalidad: "Licitación pública", numero_ofertas: 5, fecha_adjudicacion: "2026-01-01" }), "sin id de proceso de SECOP II no hay documento que pedir");
+      assert.deepStrictEqual(Lec.argumentos([]), { perfil: "helder", maxDocs: 8, maxOcr: 120, porEntidad: 3, entidades: [], probarUrl: null, probarArchivo: null }, "el cupo por omisión: 8 documentos y 120 páginas de OCR por noche");
+      assert.throws(() => Lec.argumentos(["--max-ocr", "-1"]), /entero/, "un cupo negativo no se acepta");
+      /* LOS CANDIDATOS SALEN DE DATOS.GOV.CO con las reglas de la aplicación (revisión adversaria: la vista rápida de la
+         entidad trae la lista vacía a propósito, y el lector no leía nunca nada): una fila por proceso, el número de
+         ofertas de `oferentesDe` (0 es «sin dato»), la fecha de `primeraFecha`, lo más reciente primero */
+      const filasP6 = [
+        { id_del_proceso: "CO1.REQ.71", modalidad_de_contratacion: "Selección Abreviada de Menor Cuantía", fecha_adjudicacion: "2026-10-22T00:00:00.000", respuestas_al_procedimiento: "9" },
+        { id_del_proceso: "CO1.REQ.71", modalidad_de_contratacion: "Selección Abreviada de Menor Cuantía", fecha_adjudicacion: "2026-10-22T00:00:00.000", respuestas_al_procedimiento: "9" },
+        { id_del_proceso: "CO1.REQ.72", modalidad_de_contratacion: "Licitación pública Obra Publica", fecha_adjudicacion: "2026-11-02T00:00:00.000", respuestas_al_procedimiento: "0", proveedores_unicos_con: "0" },
+        { id_del_proceso: "CO1.REQ.73", modalidad_de_contratacion: "Licitación pública", fecha_adjudicacion: "2025-02-01T00:00:00.000", proveedores_unicos_con: "4" },
+        // la misma, otra vez y sin el número: no tapa la que sí lo trae
+        { id_del_proceso: "CO1.REQ.73", modalidad_de_contratacion: "Licitación pública", fecha_adjudicacion: "2025-02-01T00:00:00.000" },
+        { id_del_proceso: "", modalidad_de_contratacion: "Licitación pública", respuestas_al_procedimiento: "5" }];
+      const candP6 = Lec.candidatosDe(filasP6);
+      assert.deepStrictEqual(candP6.map((p) => [p.id, p.fecha_adjudicacion, p.numero_ofertas]), [["CO1.REQ.72", "2026-11-02", null], ["CO1.REQ.71", "2026-10-22", 9], ["CO1.REQ.73", "2025-02-01", 4]],
+        `una fila por proceso, 0 ofertas es «sin dato», lo más reciente primero → ${JSON.stringify(candP6)}`);
+      assert.deepStrictEqual(candP6.filter(Lec.util).map((p) => p.id), ["CO1.REQ.71", "CO1.REQ.73"], "sin el número de ofertas no sirve para el precio");
+      // el cupo cuenta las imágenes que SALEN al OCR, no las páginas que volvieron con texto
+      assert.ok(Lec.cabenEnElCupo(0, 5, 150) && Lec.cabenEnElCupo(145, 5, 150) && !Lec.cabenEnElCupo(146, 5, 150) && !Lec.cabenEnElCupo(0, null, 150) && !Lec.cabenEnElCupo(0, -1, 150),
+        "pasado el tope no sale ni una imagen, y un cuerpo ilegible no se reenvía");
+      assert.ok(Lec.llaveRechazada({ status: 401, j: { ok: false, error: "Token inválido" } }) && !Lec.llaveRechazada({ status: 200, j: { ok: true } }), "una llave rechazada es un fallo, no «nada que leer»");
+      assert.ok(Lec.baseCaida({ status: 500, j: { ok: false, error: "Error interno", detalle: "Upstash 403: ERR This database has reached current Fixed plan limits." } })
+        && Lec.baseCaida({ status: 503, j: { ok: false, error: "No se pudo consultar o guardar en el almacén. Intente de nuevo en un momento." } })
+        && !Lec.baseCaida({ status: 500, j: { ok: false, error: "No se pudo consultar o guardar en el almacén." } }), "la base caída se lee en el error, en el detalle o en el 503 del almacén");
+      // la base caída se reconoce por la respuesta de la aplicación (y entonces no se gasta OCR: no habría dónde guardar)
+      assert.ok(Lec.baseCaida({ j: { ok: false, error: "Redis: Upstash 403: ERR This database has reached current Fixed plan limits." } }) && !Lec.baseCaida({ j: { ok: true } })
+        && !Lec.baseCaida({ j: { ok: false, error: "Falta ?entidad=" } }) && !Lec.baseCaida({ j: null }), "la base caída es la que dice Redis o Upstash; otro error no lo es");
+      assert.throws(() => Lec.argumentos(["--max-docs", "muchos"]), /entero/, "ni uno que no es un número");
+      assert.deepStrictEqual(Lec.argumentos(["--max-docs", "2", "ALCALDIA DE PASTO|891280000"]).entidades, ["ALCALDIA DE PASTO|891280000"], "las entidades van tal cual");
+      const salen = [["POST", "http://127.0.0.1:9/api/pliego?op=extraer-texto", true], ["GET", "http://127.0.0.1:9/api/pliego?op=extraer-texto", false],
+        ["POST", "http://127.0.0.1:9/api/pliego?op=evaluacion", false], ["GET", "http://127.0.0.1:9/api/procesos?op=listar", false],
+        ["POST", "http://127.0.0.1:9/api/apu?op=extraer-texto", false], ["POST", "no es una URL", false]];
+      for (const [m, u, esperado] of salen) assert.strictEqual(Lec.reenviarAProduccion(m, u), esperado, `${m} ${u} ${esperado ? "sale" : "no sale"} a producción`);
+      const srvLec = await Lec.servirPublic();
+      try {
+        const pedirLocal = (ruta) => new Promise((ok, mal) => { const q = http.request({ host: "127.0.0.1", port: srvLec.address().port, path: ruta, method: "GET" }, (r) => { let b = ""; r.on("data", (c) => { b += c; }); r.on("end", () => ok({ status: r.statusCode, cuerpo: b })); }); q.on("error", mal); q.end(); });
+        const api = await pedirLocal("/api/procesos?op=listar"), idx = await pedirLocal("/index.html"), fuera = await pedirLocal("/../CLAUDE.md"), fuera2 = await pedirLocal("/%2e%2e/CLAUDE.md");
+        assert.ok(api.status === 404 && /sin servidor/.test(api.cuerpo) && idx.status === 200 && /__pliegoLeerPdfMixto|pliego\.js/.test(idx.cuerpo) && fuera.status === 404 && fuera2.status === 404,
+          `el servidor local sirve public/ y nada más: /api ${api.status}, index ${idx.status}, fuera ${fuera.status}/${fuera2.status}`);
+        // una ruta mal codificada responde 400 y el servidor sigue vivo (antes tumbaba el proceso sin su RESUMEN)
+        const mal = await pedirLocal("/%E0%A4%A"), otra = await pedirLocal("/index.html");
+        assert.ok(mal.status === 400 && otra.status === 200, `una ruta mal codificada no tumba el lector: ${mal.status} · después ${otra.status}`);
+      } finally { srvLec.close(); }
     }
     assert.strictEqual(Ev.elegirDocumento([{ tipo: "pliego", nombre: "pliego definitivo.pdf", legible: true }]), null, "un pliego no es una evaluación");
     {
@@ -4817,6 +4870,79 @@ async function main() {
     assert.ok(nada.status === 200 && nada.cuerpo.hechos.procesos === 0 && nada.cuerpo.hechos.rechazadas === 0, "una entidad sin lecturas: cero procesos leídos, sin inventar nada");
     assert.strictEqual((await invocar(APIp, "/api/pliego?op=evaluacion", CAB_TOKEN)).status, 400, "sin entidad ni NIT: 400 con qué falta");
     assert.strictEqual((await invocar(APIp, "/api/pliego?op=evaluacion&entidad=X")).status, 401, "sin credencial no hay datos");
+    /* UNA BASE QUE NO RESPONDE NO ES «NINGUNO» (28-oct-2026, medido en producción con Upstash al límite de su plan: la
+       ventana de Pasto respondía 200 con 0 procesos teniendo una captura verificada). La base simulada responde lo que
+       respondió Upstash, a todos los comandos o a uno solo, y cada camino del handler responde 503 */
+    {
+      const LIMITE = "ERR This database has reached current Fixed plan limits. Please upgrade manually or enable auto upgrade on Upstash Console";
+      const errorAntesEv = console.error;
+      console.error = () => {};
+      try {
+        upstash.romper(() => LIMITE);
+        for (const q of ["entidad=Gobernaci%C3%B3n%20de%20Prueba", "entidad=Entidad%20sin%20lecturas", "pendientes=1", `expediente=1&portafolio=${P}`]) {
+          const r = await invocar(APIp, `/api/pliego?op=evaluacion&${q}`, CAB_TOKEN);
+          assert.ok(r.status === 503 && r.cuerpo.ok === false && !r.cuerpo.hechos && !r.cuerpo.pendientes, `base caída en «${q}»: 503, no un cero ni un «no hay» → ${r.status} ${JSON.stringify(r.cuerpo).slice(0, 200)}`);
+          // el lector de la madrugada la reconoce en la respuesta REAL (el texto de Upstash va en `detalle`), y para
+          assert.ok(require("./capturar_evaluaciones.js").baseCaida({ status: r.status, j: r.cuerpo }), `el lector reconoce la base caída en «${q}» → ${JSON.stringify(r.cuerpo).slice(0, 160)}`);
+        }
+        /* EL HERMANO (sexta revisión de este día): op=documentos leía «vacío» si el GET fallaba y lo escribía encima,
+           y lo ya leído se perdía. Ahora la falla sube (el router responde) y lo guardado queda intacto */
+        upstash.romper(null);
+        {
+          const DpH = require("../lib/documentos_proceso.js"), { escribirJSONComprimido: escH, leerJSONComprimido: leerH } = require("../lib/almacen.js");
+          const rH = crearRedis({}), IDH = "CO1.REQ.88800901";
+          await escH(rH, DpH.claveDocs(IDH), { version: DpH.VERSION, id_proceso: IDH, indice: null, leidos: { "11": { nombre: "Pliego definitivo.pdf", origen: "ocr", paginas: 40, hechos: { version: 0 } } }, ilegibles: {}, formularios: {}, fallos: {}, relecturas: {} });
+          let unaVez = true;
+          upstash.romper((cmd) => (String(cmd[0]).toUpperCase() === "GET" && cmd[1] === DpH.claveDocs(IDH) && unaVez ? ((unaVez = false), LIMITE) : null));
+          const rDocs = await invocar(APIp, `/api/pliego?op=documentos&id_proceso=${IDH}`, CAB_TOKEN);
+          upstash.romper(null);
+          const despuesH = await leerH(rH, DpH.claveDocs(IDH));
+          assert.ok(rDocs.status >= 500 && despuesH && despuesH.leidos && despuesH.leidos["11"], `una lectura fallida de los documentos no borra lo leído: ${rDocs.status} · leídos ${JSON.stringify(Object.keys((despuesH && despuesH.leidos) || {}))}`);
+          await rH.del(DpH.claveDocs(IDH));
+          upstash.romper(() => LIMITE);
+        }
+        const rCap = await invocarPost(APIp, "/api/pliego?op=evaluacion", { portafolio: P, motor: "sesion", captura: capturaLimpia }, CAB_TOKEN);
+        assert.strictEqual(rCap.status, 503, `la captura con la base caída: 503, no «no hay texto guardado» → ${JSON.stringify(rCap.cuerpo).slice(0, 200)}`);
+        // solo falla leer la captura: el proceso salía «en cola» o «caducado» siendo «leído»
+        upstash.romper((cmd) => (String(cmd[0]).toUpperCase() === "GET" && String(cmd[1] || "").startsWith(Ev.claveCaptura("")) ? LIMITE : null));
+        const rGet = await invocar(APIp, "/api/pliego?op=evaluacion&entidad=Gobernaci%C3%B3n%20de%20Prueba", CAB_TOKEN);
+        assert.strictEqual(rGet.status, 503, `sin poder leer la captura no se dice su estado → ${JSON.stringify(rGet.cuerpo).slice(0, 200)}`);
+        // solo falla EXISTS: el texto caducado salía «en cola», y un interpretado volvía a ser pendiente
+        upstash.romper((cmd) => (String(cmd[0]).toUpperCase() === "EXISTS" ? LIMITE : null));
+        for (const q of ["entidad=Gobernaci%C3%B3n%20de%20Prueba", "pendientes=1"]) {
+          const r = await invocar(APIp, `/api/pliego?op=evaluacion&${q}`, CAB_TOKEN);
+          assert.strictEqual(r.status, 503, `sin poder saber si su texto sigue, «${q}» no lo adivina → ${JSON.stringify(r.cuerpo).slice(0, 200)}`);
+        }
+        // solo falla leer los textos: un pendiente desaparecía de la lista de la sesión sin decirlo
+        upstash.romper((cmd) => (String(cmd[0]).toUpperCase() === "GET" && String(cmd[1] || "").startsWith(Ev.claveTexto("")) ? LIMITE : null));
+        assert.strictEqual((await invocar(APIp, "/api/pliego?op=evaluacion&pendientes=1", CAB_TOKEN)).status, 503, "sin poder leer un texto, los pendientes no salen recortados");
+      } finally { upstash.romper(null); console.error = errorAntesEv; }
+      /* «¿ya se leyó?» antes de bajar y pasar por OCR: sin saberlo no se dice «no» (la pantalla lo bajaría otra vez y
+         gastaría el cupo de OCR para nada). El índice de datos.gov.co se sustituye por uno fijo: aquí se prueba la base */
+      {
+        const DocsH = require("../lib/handlers/pliego/documentos.js"), consultarAntes = DocsH.consultarIndice;
+        let portafolioDoc = P;
+        DocsH.consultarIndice = async () => ({ ok: true, indice: { id_del_portafolio: portafolioDoc, archivos: [{ tipo: "informe_evaluacion", nombre: "Informe definitivo.pdf", legible: true, extension: "pdf", url: "https://example.invalid/informe.pdf", id_documento: "1", fecha_carga: "2026-09-01" }] } });
+        console.error = () => {};
+        try {
+          // P tiene su captura (la pregunta es la captura); CO1.BDOS.88800004 tiene su texto en cola y no la tiene (la pregunta es su texto)
+          for (const [pf, que, roto, premisa] of [
+            [P, "GET de la captura", (cmd) => String(cmd[0]).toUpperCase() === "GET" && String(cmd[1] || "").startsWith(Ev.claveCaptura("")), (c) => c.ya_leido === true && c.en_cola === false],
+            ["CO1.BDOS.88800004", "EXISTS del texto", (cmd) => String(cmd[0]).toUpperCase() === "EXISTS", (c) => c.ya_leido === true && c.en_cola === true]]) {
+            portafolioDoc = pf;
+            const sanoD = await invocar(APIp, `/api/pliego?op=evaluacion&documento=1&id_proceso=${ID}`, CAB_TOKEN);
+            assert.ok(sanoD.status === 200 && premisa(sanoD.cuerpo), `premisa (${pf}): con la base sana se dice qué tiene → ${JSON.stringify(sanoD.cuerpo).slice(0, 200)}`);
+            upstash.romper((cmd) => (roto(cmd) ? LIMITE : null));
+            const rD = await invocar(APIp, `/api/pliego?op=evaluacion&documento=1&id_proceso=${ID}`, CAB_TOKEN);
+            upstash.romper(null);
+            assert.strictEqual(rD.status, 503, `sin el ${que}, «¿ya se leyó?» no responde «no» → ${JSON.stringify(rD.cuerpo).slice(0, 200)}`);
+          }
+        } finally { upstash.romper(null); DocsH.consultarIndice = consultarAntes; console.error = errorAntesEv; }
+      }
+      // con la base sana, lo de siempre (el interruptor no deja nada roto)
+      const rSana = await invocar(APIp, "/api/pliego?op=evaluacion&entidad=Gobernaci%C3%B3n%20de%20Prueba", CAB_TOKEN);
+      assert.ok(rSana.status === 200 && rSana.cuerpo.procesos[P].estado === "leido", `la base sana vuelve a responder: ${rSana.status}`);
+    }
 
     // el lector del navegador: solo las páginas que pintan una imagen pasan por OCR (se ejecuta el código de public/pliego.js)
     {

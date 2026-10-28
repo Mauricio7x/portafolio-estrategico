@@ -1,6 +1,6 @@
 ---
 name: evaluaciones
-description: Interpreta las evaluaciones de procesos ya cerrados que la pantalla de Detekta dejó leídas (informes de evaluación, resoluciones de adjudicación y actas) con la suscripción de Claude Code, y devuelve por oferta quién quedó hábil, por qué no, los puntajes y los puntos fuera del precio, con una cita por dato; la aplicación verifica cada cita y lo muestra en la ventana de la entidad. Uso: /evaluaciones
+description: Interpreta las evaluaciones de procesos ya cerrados que la pantalla de Detekta dejó leídas (informes de evaluación, resoluciones de adjudicación y actas) con la suscripción de Claude Code, y devuelve por oferta quién quedó hábil, por qué no, los puntajes y los puntos fuera del precio, con una cita por dato; la aplicación verifica cada cita y lo muestra en la ventana de la entidad. Con «leer», antes lee ella misma un cupo medido de documentos nuevos de las entidades de Mis procesos. Uso: /evaluaciones [leer]
 ---
 
 # Las evaluaciones de las entidades, desde esta sesión
@@ -10,7 +10,7 @@ evaluación o la resolución de adjudicación de sus procesos ya cerrados, los l
 imagen) y deja el TEXTO en la aplicación. Esta habilidad lee esos textos y devuelve los datos de cada oferta con
 su cita; la aplicación verifica cada cita contra el texto, guarda solo lo que se sostiene y lo muestra.
 
-Sin argumentos: atiende TODOS los pendientes. **Si esta sesión la abrió la tarea programada de la madrugada**,
+Sin argumentos: atiende TODOS los pendientes; con «leer», antes lee documentos nuevos (paso 0). **Si esta sesión la abrió la tarea programada de la madrugada**,
 nadie la está mirando: el resultado se ve en la ventana de la entidad en cuanto el paso 4 lo guarda. Si el
 paso 1 responde 403 del proxy de egreso, diga exactamente «La red del entorno no alcanza detekta-app.vercel.app:
 el entorno necesita acceso de red a ese dominio» y termine. Si aparece `EL MURO DE VERCEL RESPONDIÓ`, diga
@@ -18,6 +18,23 @@ exactamente «El muro de Vercel no deja pasar a esta sesión: falta VERCEL_AUTOM
 variables de entorno del entorno» y termine.
 
 ## Pasos (en este orden, sin saltarse ninguno)
+
+0. **Solo con el argumento «leer» (la tarea de la madrugada): leer documentos nuevos.** Sin «leer», salte al paso 1.
+
+   ```bash
+   node "$(git rev-parse --show-toplevel)/tests/capturar_evaluaciones.js" --perfil helder > /tmp/lectura.txt 2>&1; echo "SALIDA=$?"; tail -25 /tmp/lectura.txt
+   ```
+
+   El lector hace lo mismo que el botón «Leer más evaluaciones de esta entidad»: busca en datos.gov.co los procesos
+   cerrados de las entidades de Mis procesos que sirven para medir el precio (licitación o menor cuantía con 3 o más
+   ofertas), baja su informe o su resolución, lo lee con el OCR de la aplicación y deja el texto en cola. Tiene su
+   cupo: como mucho 8 documentos, no empieza uno nuevo pasadas 120 imágenes enviadas al OCR y pasadas 150 no manda
+   ninguna más (OCR.space gratis da 500 solicitudes al día por IP y 25.000 al mes; cada página es una imagen). No
+   cambie esos números.
+   - `SALIDA=3`: escriba tal cual la línea `La base de datos de Detekta no responde: hoy no se leyó ni se interpretó nada`
+     y termine (sin base no hay dónde guardar ni de dónde leer).
+   - `SALIDA=1`: diga en una línea la frase que sigue a `FALLO:` y siga con el paso 1 (puede haber pendientes de antes).
+   - `SALIDA=0`: copie la línea `RESUMEN` para el cierre y siga con el paso 1.
 
 1. **Pedir los pendientes.**
 
@@ -76,7 +93,7 @@ variables de entorno del entorno» y termine.
    apartadas, revise esas citas (literales, de la página declarada, con el nombre y la cifra dentro) y vuelva
    a enviar la captura corregida: cada envío reemplaza al anterior, y el texto sigue guardado 30 días.
 
-5. **Cerrar** con una línea por proceso: entidad, ofertas verificadas de recibidas, citas comprobadas y si quedó
+5. **Cerrar** con la línea `RESUMEN` del paso 0 si lo hubo, y con una línea por proceso: entidad, ofertas verificadas de recibidas, citas comprobadas y si quedó
    completo.
 
 Reglas que no se negocian: nunca invente una oferta, una cita ni una cifra; un dato que no está en el texto se
