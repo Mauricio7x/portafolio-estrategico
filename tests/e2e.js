@@ -6809,7 +6809,8 @@ async function main() {
       // `tipo` indeterminado: con «obra_civil» el chip diría «Verificar objeto» y el resumen lo contaría como obra y podría destacarlo
       assert.ok(p.nivel === "amarillo" && p.etiqueta === "Verificar objeto" && p.tipo === "indeterminado" && p.ambar_por_contrato === trabajo,
         `MUTACIÓN: «${(fila.descripci_n_del_procedimiento || fila.nombre_del_procedimiento).slice(0, 50)}» (${fila.tipo_de_contrato}) seguía en verde «${p.etiqueta}»: ${JSON.stringify(p)}`);
-      assert.ok(p.motivo.includes(`«${fila.tipo_de_contrato}»`) && p.motivo.includes(`parece ${trabajo === "suministro" ? "una compra" : "un servicio"}`) && /pliego/.test(p.motivo) && Lfg.tuteoEn(p.motivo) === null,
+      assert.ok(p.motivo.includes(`«${fila.tipo_de_contrato}»`) && p.motivo.includes(`parece ${trabajo === "suministro" ? "una compra" : "un servicio"}`) && /pliego/.test(p.motivo) && Lfg.tuteoEn(p.motivo) === null
+        && !/clase UNSPSC/.test(p.motivo),
         `MUTACIÓN: el motivo no dice lo que se leyó («una compra» o «un servicio»): «${p.motivo}»`);
       assert.ok(ev.ok === true && !ev.paso, `MUTACIÓN: la fila desaparecía al pasar a ámbar: ${JSON.stringify({ ok: ev.ok, paso: ev.paso })}`);
       assert.strictEqual(filtros.evaluarObjeto({ ...fila, tipo_de_contrato: "Obra" }, PERFILES.helder).pertinencia.nivel, "verde", "con contrato de obra sigue verde");
@@ -6837,8 +6838,13 @@ async function main() {
     // (el MISMO objeto del aseo, que tiene verbo de obra y sin la clase baja: un objeto sin verbo no pasaba por la regla y no discriminaba)
     const aseo = COMPRAS_Y_SERVICIOS[3][1];
     const servObraPura = filtros.evaluarObjeto({ ...aseo, codigo_principal_de_categoria: "V1.72101500" }, PERFILES.helder);
-    assert.ok(servObraPura.tier === "clase" && servObraPura.pertinencia.nivel === "verde" && servObraPura.pertinencia.verbo,
-      `MUTACIÓN: el servicio bajaba lo que sostiene la clase de obra pura: ${JSON.stringify({ tier: servObraPura.tier, p: servObraPura.pertinencia })}`);
+    /* DESDE EL 28-OCT (Paso 3, «haz la 1 y 2») la clase de obra pura YA NO sostiene el verde cuando la regla
+       explícita de no-obra de la lista dice «servicio»: el tipo de trabajo lo decía «por más código de obra que
+       traigan» (18-ago) y el chip decía «Obra civil» del mismo proceso. Ámbar, visible, y el motivo nombra la clase. */
+    assert.ok(servObraPura.tier === "clase" && servObraPura.ok === true && servObraPura.pertinencia.nivel === "amarillo"
+      && servObraPura.pertinencia.ambar_por_contrato === "servicios" && /clase UNSPSC del proceso es de obra o de ingeniería/.test(servObraPura.pertinencia.motivo),
+      `MUTACIÓN: con la clase de obra pura, el chip contradecía al tipo de trabajo: ${JSON.stringify({ tier: servObraPura.tier, p: servObraPura.pertinencia })}`);
+    // …y la palabra genérica sola (1-bis), más débil, sigue sin bajarla (la prueba de «ARREGLOS LOCATIVOS… REPARACIÓN» de arriba)
     /* ── PASO 2c (28-oct-2026, «haz la 1 y 2» del dueño): lo que lib/filtros_lista.tipoTrabajoDe daba como «obra» sin serlo ──
        Medido sobre las 762 del 27-oct: de 68 filas verdes en contratos que no son de obra que esa regla daba como obra, 35
        no lo eran. Se extienden las TRES listas que ya existían (servicios, equipos con su guarda de obra fuerte, alquiler),
@@ -6947,7 +6953,130 @@ async function main() {
       assert.strictEqual(FLc.tipoTrabajoDe(fila), "obra", `MUTACIÓN: la obra «${nombre.slice(0, 60)}» (${contrato}) salía del filtro de obra`);
       assert.strictEqual(filtros.evaluarObjeto(fila, PERFILES.helder).pertinencia.nivel, "verde", `MUTACIÓN: la obra «${nombre.slice(0, 60)}» perdía el chip verde`);
     }
+    /* ── PASO 3 (28-oct-2026, «haz la 1 y 2»): el chip sigue a la regla explícita de no-obra de la lista ── */
+    const FLp3 = require("../lib/filtros_lista.js");
+    // EL PASO 3 (sin verbo de obra): la clase de obra pura sostenía «Infraestructura» de una calibración (producción, CO1.REQ.10799777)
+    const calibracion = filaG("Contratar el servicio de calibración de los equipos monitores de neutrones; en las magnitudes dosimétricas correspondientes",
+      "Contratar el servicio de calibración de los equipos monitores de neutrones, en las magnitudes dosimétricas correspondientes, mediante un laboratorio que asegure trazabilidad metrológica y resultados confiables para la Dirección de Asuntos Nucleares.",
+      "Prestación de servicios", { codigo_principal_de_categoria: "V1.81141504" });
+    const evCal = filtros.evaluarObjeto(calibracion, PERFILES.helder);
+    assert.strictEqual(FLp3.tipoTrabajoDe(calibracion, evCal), "servicios", "premisa: la lista la da como servicio");
+    assert.ok(evCal.tier === "clase" && evCal.ok === true && evCal.pertinencia.nivel === "amarillo" && evCal.pertinencia.ambar_por_contrato === "servicios"
+      && /clase UNSPSC del proceso es de obra o de ingeniería/.test(evCal.pertinencia.motivo) && Lfg.tuteoEn(evCal.pertinencia.motivo) === null,
+      `MUTACIÓN: el chip decía «Infraestructura» de una calibración que la lista da como servicio: ${JSON.stringify(evCal.pertinencia)}`);
+    // la MISMA calibración con contrato de obra sigue verde: la clase manda cuando la entidad dice que es obra
+    assert.strictEqual(filtros.evaluarObjeto({ ...calibracion, tipo_de_contrato: "Obra" }, PERFILES.helder).pertinencia.nivel, "verde", "con contrato de obra la clase sigue mandando");
+    /* con la clase de obra pura, un objeto que EMPIEZA por un verbo de obra sigue verde aunque un término antiguo
+       de servicio lo nombre (revisión adversaria: «CONSTRUCCIÓN DEL CENTRO DÍA… ADULTOS MAYORES» bajaba) */
+    const centroDia = filtros.evaluarObjeto(filaG("CONSTRUCCIÓN DEL CENTRO DÍA PARA LA ATENCIÓN INTEGRAL DE ADULTOS MAYORES", "", "Otro", { codigo_principal_de_categoria: "V1.72101500" }), PERFILES.helder);
+    assert.ok(centroDia.tier === "clase" && centroDia.pertinencia.nivel === "verde", `MUTACIÓN: la obra con clase de obra pura bajaba por un término de servicio: ${JSON.stringify(centroDia.pertinencia)}`);
+    // y el ROJO (término no pertinente sin verbo, paso 2) va ANTES que la clase: lo no pertinente no pasa a ámbar
+    const alimentos = filtros.evaluarObjeto(filaG("SUMINISTRO DE ALIMENTOS PARA EL PERSONAL DE LA ENTIDAD", "", "Prestación de servicios", { codigo_principal_de_categoria: "V1.72101500" }), PERFILES.helder);
+    assert.ok(alimentos.pertinencia.nivel === "rojo" && alimentos.paso === "no_pertinente", `MUTACIÓN: lo no pertinente con clase de obra pura pasaba a ámbar: ${JSON.stringify({ paso: alimentos.paso, p: alimentos.pertinencia })}`);
+    // «Concesión» y «Asociación Público Privada» entran en el 1-ter: el servicio no sale verde
+    for (const tipo of ["Concesión", "Asociación Público Privada"]) {
+      const pc = filtros.evaluarObjeto({ ...COMPRAS_Y_SERVICIOS[3][1], tipo_de_contrato: tipo }, PERFILES.helder).pertinencia;
+      assert.ok(pc.nivel === "amarillo" && pc.ambar_por_contrato === "servicios" && pc.motivo.includes(`«${tipo}»`), `MUTACIÓN: con contrato «${tipo}» el servicio salía verde: ${JSON.stringify(pc)}`);
+    }
+    /* LA INTERVENTORÍA Y LA CONSULTORÍA VAN ANTES, como en `tipoTrabajoDe`: una concesión férrea con «Estudios y Diseños» y
+       «la ejecución de las Obras» (producción, CO1.REQ.10759463) sigue verde y la lista la sigue dando como consultoría */
+    const ferrea = filaG("otorgamiento de una concesión para que el Concesionario; por su cuenta y riesgo; lleve a cabo todas las actividades necesarias para la financiación; Estudios y Diseños; Gestión Social y Ambiental; trá",
+      "otorgamiento de una concesión para que el Concesionario, por su cuenta y riesgo, lleve a cabo todas las actividades necesarias para la financiación, Estudios y Diseños, Gestión Social y Ambiental, trámite de Licencias y Permisos, la ejecución de las Obras del Concesionario, provisión del Material Rodante, provisión e instalación de los Subsistemas Ferroviarios, las pruebas y puesta en marcha, la Operación y Mantenimiento, la prestación del servicio público de transporte férreo de pasajeros en Bo",
+      "Concesión");
+    assert.strictEqual(FLp3.noEsObraPorElObjeto(ferrea), null, "MUTACIÓN: la regla explícita saltaba la precedencia de la consultoría");
+    assert.strictEqual(filtros.evaluarObjeto(ferrea, PERFILES.helder).pertinencia.nivel, "verde", "MUTACIÓN: la concesión férrea con obras bajaba a ámbar");
+    // la regla explícita es la de la lista: donde dice algo, `tipoTrabajoDe` dice lo mismo
+    for (const [, fila] of COMPRAS_Y_SERVICIOS) assert.strictEqual(FLp3.noEsObraPorElObjeto(fila), FLp3.tipoTrabajoDe(fila), `la regla explícita y la lista discrepan: ${fila.nombre_del_procedimiento.slice(0, 40)}`);
     console.log(`· unidad rótulo de obra con una palabra genérica: ${CASOS.length} objetos de producción (suministro, compraventa y servicios) pasan de verde a «Verificar objeto» con la palabra y el motivo, sin esconderse (texto y mínima cuantía); el mismo objeto con contrato de obra, sin contrato publicado, con otra señal de obra o con interventoría sigue verde · ${COMPRAS_Y_SERVICIOS.length} compras o servicios que no son obra bajan sin esconderse; la compra de material de obra, la clase de obra pura y la obra publicada como «Otro» o «Decreto 092» siguen verdes · ${NO_ES_OBRA.length} objetos que no son obra salen del tipo «obra» y ${SI_ES_OBRA.length} obras reales se quedan`);
+  }
+
+  /* unidad: LOS DÍAS AL CIERRE POR FECHA CIVIL, Y «CERRADO» POR LA HORA (28-oct-2026, «haz la 1 y 2»).
+     Una sola cuenta (public/filtros.js diasParaCierre) para la lista, la portada, el pulso, Mis
+     procesos y la guía; contaba HORAS redondeando hacia arriba. Con la medianoche que publica hoy la
+     fuente ya daba la fecha civil (se fija abajo, contra la fórmula vieja): el defecto salía solo con
+     la hora publicada, y ahí decide si alcanza a presentarse. */
+  bqDiasCierre: { if (!corre("unidad días al cierre por fecha civil")) break bqDiasCierre;
+    const FLd = require("../public/filtros.js");
+    const filtrosD = require("../lib/filtros.js");
+    const col = (s) => Date.parse(`${s}-05:00`); // instante de Colombia
+    // [qué, ahora (Colombia), fecha_cierre tal como llega, días esperados]
+    const CASOS_D = [
+      ["con hora · cierra HOY a las 5 p. m., mirado a las 8 a. m.", "2026-10-28T08:00:00", "2026-10-28T17:00:00.000", 0],
+      ["con hora · cierra MAÑANA a las 5 p. m., mirado a las 8 a. m.", "2026-10-28T08:00:00", "2026-10-29T17:00:00.000", 1],
+      ["con hora · en 7 días", "2026-10-28T08:00:00", "2026-11-04T17:00:00.000", 7],
+      ["con hora · cerró HOY a las 9 a. m., mirado a las 5 p. m.", "2026-10-28T17:00:00", "2026-10-28T09:00:00.000", -1],
+      ["con hora · justo a la hora todavía es hoy", "2026-10-28T17:00:00", "2026-10-28T17:00:00.000", 0],
+      ["con hora · a las 11 p. m., el de mañana a las 8 a. m.", "2026-10-28T23:00:00", "2026-10-29T08:00:00.000", 1],
+      ["sin hora (medianoche) · hoy, a las 11 p. m. todavía es hoy", "2026-10-28T23:00:00", "2026-10-28T00:00:00.000", 0],
+      ["sin hora · ayer ya cerró", "2026-10-28T08:00:00", "2026-10-27T00:00:00.000", -1],
+      ["solo fecha · hoy", "2026-10-28T23:00:00", "2026-10-28", 0],
+      ["con zona · 22:00Z son las 5 p. m. de Colombia: hoy", "2026-10-28T08:00:00", "2026-10-28T22:00:00Z", 0],
+      ["con zona · de madrugada en Colombia (02:00) es el día civil de Colombia", "2026-10-28T02:00:00", "2026-10-29T03:00:00Z", 0],
+      // revisión adversaria: la medianoche CON «Z» es el día escrito, no las 7 p. m. del día anterior; y con zona y hora, el reloj
+      ["sin hora con zona · «T00:00:00.000Z» del 28, a las 10 a. m. del 28", "2026-10-28T10:00:00", "2026-10-28T00:00:00.000Z", 0],
+      ["con hora y zona · «T17:00:00-05:00», mirado a las 7 p. m.", "2026-10-28T19:00:00", "2026-10-28T17:00:00-05:00", -1],
+    ];
+    for (const [que, ahora, cierre, esperado] of CASOS_D) {
+      assert.strictEqual(FLd.diasParaCierre(cierre, col(ahora)), esperado, `MUTACIÓN: ${que}: ${FLd.diasParaCierre(cierre, col(ahora))}`);
+    }
+    // sin fecha legible: null, jamás un 0 que diría «cierra hoy»
+    assert.strictEqual(FLd.diasParaCierre(null, col("2026-10-28T08:00:00")), null);
+    assert.strictEqual(FLd.diasParaCierre("no es fecha", col("2026-10-28T08:00:00")), null);
+    /* CON LOS DATOS DE HOY NADA CAMBIA: la fuente publica la medianoche (las 762 filas del 27-oct), y con
+       ella la cuenta nueva da lo mismo que la vieja a cualquier hora del día (medido en 18.288 comparaciones) */
+    const vieja = (c, a) => Math.ceil((Date.parse(`${c}Z`) - (a - 5 * 3600000)) / 86400000);
+    const sinMenosCero = (x) => (x === 0 ? 0 : x); // la vieja da −0; se iguala solo ese, un null sigue siendo null
+    let comparadas = 0;
+    for (let k = -3; k <= 20; k++) for (const h of ["00:00:01", "04:59:00", "05:00:00", "08:00:00", "13:30:00", "19:00:00", "23:59:59"]) {
+      const cierre = new Date(Date.UTC(2026, 9, 28 + k)).toISOString().slice(0, 10) + "T00:00:00.000";
+      const a = col(`2026-10-28T${h}`);
+      assert.strictEqual(sinMenosCero(FLd.diasParaCierre(cierre, a)), sinMenosCero(vieja(cierre, a)), `con la medianoche la cuenta no cambia: ${cierre} a las ${h}`);
+      comparadas++;
+    }
+    /* «CERRADO» DICE LO MISMO QUE LO QUE DECIDE QUÉ SE VE: `cierre_vencido` llama a la misma regla de
+       «sin hora» (`cierreSinHora`), y la cuenta da negativo exactamente cuando él da vencido. Vale para los
+       formatos de la fuente (flotante y solo fecha); con zona y hora `cierre_vencido` es más indulgente (declarado) */
+    for (const cierre of ["2026-10-28T00:00:00.000", "2026-10-28", "2026-10-28T09:00:00.000", "2026-10-28T17:00:00.000", "2026-10-27T17:00:00.000"]) {
+      for (const h of ["2026-10-28T08:00:00", "2026-10-28T12:00:00", "2026-10-28T18:00:00", "2026-10-29T00:00:01"]) {
+        assert.strictEqual(filtrosD.cierre_vencido({ fecha_cierre: cierre }, col(h)), FLd.diasParaCierre(cierre, col(h)) < 0,
+          `MUTACIÓN: «cerrado» y «vencido» discrepan con el cierre ${cierre} a las ${h}`);
+      }
+    }
+    // Mis procesos y la guía LLAMAN a la misma cuenta (eran dos copias que contaban horas)
+    const Sd = require("../lib/seguimiento.js"), Gd = require("../lib/guia_proceso.js");
+    const gD = (c) => ({ id: "D1", estado: "preparando", foto: { nombre: "OBRA", fecha_cierre: c, fecha_publicacion: "2026-10-01" } });
+    const hoyCinco = Sd.enriquecer(gD("2026-10-28T17:00:00"), null, col("2026-10-28T08:00:00"));
+    assert.ok(hoyCinco.dias_para_cierre === 0 && hoyCinco.cerrado === false, `MUTACIÓN: Mis procesos, hoy a las 5 p. m. mirado a las 8 a. m.: ${hoyCinco.dias_para_cierre}`);
+    const yaCerro = Sd.enriquecer(gD("2026-10-28T09:00:00"), null, col("2026-10-28T17:00:00"));
+    assert.ok(yaCerro.cerrado === true, `MUTACIÓN: Mis procesos decía «Cierra HOY» de un proceso que cerró a las 9 a. m.: ${yaCerro.dias_para_cierre}`);
+    assert.deepStrictEqual(Sd.alertasDe([yaCerro], { dias: 7, hoy: "2026-10-28" }).filter((a) => a.tipo === "cierre"), [], "lo cerrado no pide presentar la oferta");
+    const fotoGd = Sd.fotoDe({ id_del_proceso: "CO1.D", nombre_del_procedimiento: "OBRA", fecha_cierre: "2026-10-28T17:00:00.000", modalidad_de_contratacion: "Licitación pública" });
+    const guiaD = Gd.guiaDe({ fila: null, foto: fotoGd, perfil: "helder", ctx: { ahoraMs: col("2026-10-28T08:00:00"), etapa: null } });
+    assert.ok(guiaD.obra.cierre.dias_para_cierre === 0 && guiaD.obra.cierre.cerrado === false, `MUTACIÓN: la guía, hoy a las 5 p. m.: ${JSON.stringify(guiaD.obra.cierre)}`);
+    const fotoGd9 = Sd.fotoDe({ id_del_proceso: "CO1.D9", nombre_del_procedimiento: "OBRA", fecha_cierre: "2026-10-28T09:00:00.000", modalidad_de_contratacion: "Licitación pública" });
+    const guiaD9 = Gd.guiaDe({ fila: null, foto: fotoGd9, perfil: "helder", ctx: { ahoraMs: col("2026-10-28T17:00:00"), etapa: null } });
+    assert.strictEqual(guiaD9.obra.cierre.cerrado, true, `MUTACIÓN: la guía decía que no había cerrado lo que cerró a las 9 a. m.: ${JSON.stringify(guiaD9.obra.cierre)}`);
+    /* EL AVISO DEL RUP, extraído de public/app.js y ejecutado: el día del vencimiento dice «es HOY», también de noche
+       en un navegador en hora de Bogotá (contar el día con getUTC* lo saltaría a «ya venció» desde las 7 p. m.) */
+    {
+      const srcApp = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+      const i0 = srcApp.indexOf("function alertaVigenciaRup");
+      let prof = 0, fin = srcApp.indexOf("{", i0);
+      for (let k = fin; k < srcApp.length; k++) { if (srcApp[k] === "{") prof++; else if (srcApp[k] === "}" && --prof === 0) { fin = k; break; } }
+      const rupD = new Function(`${srcApp.slice(i0, fin + 1)}; return alertaVigenciaRup;`)();
+      const tzAntes = process.env.TZ;
+      try {
+        for (const tz of ["UTC", "America/Bogota"]) {
+          process.env.TZ = tz;
+          for (const [h, m] of [[10, 30], [20, 30]]) {
+            const a = rupD(new Date(2026, 3, 7, h, m));
+            assert.ok(a && /es HOY/.test(a.frase), `MUTACIÓN: el 7 de abril de 2026 a las ${h}:${m} (${tz}) el aviso del RUP dice «es HOY»: ${a && a.frase}`);
+          }
+          assert.ok(/ya venció/.test(rupD(new Date(2026, 3, 8, 9, 0)).frase), `el 8 de abril ya venció (${tz})`);
+        }
+      } finally { if (tzAntes === undefined) delete process.env.TZ; else process.env.TZ = tzAntes; }
+    }
+    console.log(`· unidad días al cierre por fecha civil: ${CASOS_D.length} casos (hoy, mañana y cerrado por la hora); con la medianoche de la fuente la cuenta no cambia (${comparadas} comparaciones); «cerrado» = «vencido»; Mis procesos y la guía llaman a la misma cuenta`);
   }
 
   /* unidad: EQUIVALENCIAS funcionales. El lift se calcula sobre
@@ -38672,8 +38801,10 @@ async function main() {
       assert.ok(ag.porDepartamento.some((d) => d.cod === "sin_dato" && d.n === 1), "«No Definido» es sin_dato, no se reparte a ojo");
       assert.strictEqual(ag.porDepartamento[0].cod, "11", "Bogotá va primera por dinero en juego");
       assert.strictEqual(ag.cierranEstaSemana.n, 2, "cierran esta semana: la de hoy y la de 2 días");
-      assert.strictEqual(ag.cierranEstaSemana.muestra[0].dias, 1, "la que cierra hoy a las 23:00 tiene 1 día por delante (misma cuenta que el chip de la tarjeta)");
-      assert.strictEqual(ag.cierranEstaSemana.muestra[1].dias, 3);
+      /* desde el 28-oct-2026 la cuenta es por FECHA CIVIL (public/filtros.js): la que cierra HOY a las 23:00 es 0
+         («cierra hoy»), no 1 como cuando se contaban horas redondeando hacia arriba; la de 2 días, 2 */
+      assert.strictEqual(ag.cierranEstaSemana.muestra[0].dias, 0, "la que cierra hoy a las 23:00 cierra HOY (misma cuenta que el chip de la tarjeta)");
+      assert.strictEqual(ag.cierranEstaSemana.muestra[1].dias, 2);
       assert.strictEqual(ag.topEntidades[0].nombre, "ENTIDAD B");
       assert.strictEqual(ag.topEntidades[0].baja, null, "sin índice de baja no hay «suele bajar»: null, jamás 0");
       assert.strictEqual(ag.manifestacion.abiertos, 1, "solo la abreviada abierta ayer sigue en plazo; la de hace 10 días y la «sin manifestación» no");
@@ -43729,6 +43860,10 @@ async function main() {
           const abril = alertaVigenciaRup(new Date(2026, 3, 1));
           assert.ok(abril && abril.nivel === "rojo" && /faltan 6 días/.test(abril.frase),
             "el 1 de abril de 2026 faltan 6 días (el quinto hábil es el 7) y la alarma es roja");
+          // el MISMO día del vencimiento, ya de día, dice «es HOY» (se contaba por horas y saltaba a «ya venció»)
+          const elDia = alertaVigenciaRup(new Date(2026, 3, 7, 10, 30));
+          assert.ok(elDia && elDia.nivel === "rojo" && /es HOY/.test(elDia.frase) && /7 de abril/.test(elDia.frase),
+            `MUTACIÓN: el 7 de abril de 2026 a las 10:30 la alarma dice «es HOY»: ${elDia && elDia.frase}`);
           const tarde = alertaVigenciaRup(new Date(2026, 3, 20));
           assert.ok(tarde && tarde.nivel === "rojo" && /RUES/.test(tarde.frase) && /festivos/.test(tarde.frase),
             "pasada la fecha calculada: verificar en el RUES — los festivos pueden correr el plazo");
@@ -51090,17 +51225,19 @@ async function main() {
     assert.strictEqual(S.contarAvisosProximos([], { hoy: HOY }), 0);
 
     /* 2b · EL CIERRE DE MAÑANA, MIRADO POR LA MAÑANA, AVISA (revisión adversaria del
-       27-oct). Armado con `enriquecer` y la hora real, no con `dias_para_cierre` a mano:
-       esa cuenta redondea las horas hacia arriba y a las 8 a. m. un cierre de mañana a
-       las 5 p. m. da 2, así que ni salía «Cierra mañana» ni este aviso. */
+       27-oct). Armado con `enriquecer` y la hora real, no con `dias_para_cierre` a mano.
+       Hasta el 28-oct la cuenta redondeaba las horas hacia arriba y a las 8 a. m. un cierre
+       de mañana a las 5 p. m. daba 2: avisaba el recordatorio «Falta 1 día». Desde el 28-oct
+       cuenta por fecha civil, da 1, y lo dice la alerta «Cierra mañana», que es la que pide
+       presentar HOY (la del recordatorio se omite para no repetirla). */
     {
       const tzAntes = process.env.TZ; process.env.TZ = "UTC";
       try {
         const ocho = Date.parse("2026-10-27T13:00:00Z"); // 8:00 a. m. en Colombia
         const g = (c) => ({ id: "H", estado: "preparando", foto: { nombre: "OBRA", fecha_cierre: c, fecha_publicacion: "2026-10-01" } });
         const alM = S.alertasDe([S.enriquecer(g("2026-10-28T17:00:00"), null, ocho)], { dias: 7, hoy: HOY });
-        assert.ok(alM.length === 1 && alM[0].tipo === "aviso" && alM[0].urgencia === "alta" && /^Falta 1 día para: Cierre/.test(alM[0].mensaje),
-          `el cierre de mañana tiene que avisar en algún sitio: ${JSON.stringify(alM)}`);
+        assert.ok(alM.length === 1 && alM[0].tipo === "cierre" && alM[0].urgencia === "alta" && /^Cierra mañana/.test(alM[0].mensaje),
+          `MUTACIÓN: el cierre de mañana mirado a las 8 a. m. tiene que decir «Cierra mañana»: ${JSON.stringify(alM)}`);
         assert.deepStrictEqual(S.alertasDe([S.enriquecer(g("2026-10-27T17:00:00"), null, ocho)], { dias: 7, hoy: HOY }).map((a) => a.tipo), ["cierre"],
           "el día del cierre lo dice la alerta «cierre», sin un aviso repetido");
       } finally { if (tzAntes === undefined) delete process.env.TZ; else process.env.TZ = tzAntes; }
@@ -54999,8 +55136,8 @@ async function main() {
        por el que coincide a cualquier hora; una copia suelta de la cuenta del cierre no se cuela */
     {
       const DECLARADAS = {
-        "public/filtros.js": { n: 1, motivo: "diasParaCierre: LA cuenta compartida con el servidor (lee el texto flotante como UTC)" },
-        "public/app.js": { n: 1, motivo: "alertaVigenciaRup: resta dos instantes LOCALES (new Date(año, 3, d) y new Date()); no mezcla husos" },
+        "public/filtros.js": { n: 1, motivo: "diasParaCierre: LA cuenta compartida con el servidor, por fecha civil de Colombia (lee el texto flotante como UTC)" },
+        "public/app.js": { n: 1, motivo: "alertaVigenciaRup: resta dos FECHAS locales con Date.UTC(año, mes, día); no mezcla husos ni cuenta horas" },
         "public/casillero.js": { n: 1, motivo: "tonoPlazo: resta dos días YYYY-MM-DD al mediodía UTC; el «hoy» lo manda el servidor" },
         "public/portada.js": { n: 2, motivo: "«ayer» con toLocaleDateString en America/Bogota y sumarDiasISO con Date.UTC" },
       };

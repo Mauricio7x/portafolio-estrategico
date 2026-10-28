@@ -161,9 +161,29 @@
      3). Aquí el texto flotante se lee SIEMPRE como UTC, sea cual sea el huso de
      la máquina, y la cuenta sale igual en los dos lados a cualquier hora. Un
      texto CON zona («…Z», «…-05:00») o solo de fecha se lee como viene. null
-     sin fecha legible: jamás un 0 que diría «cierra hoy». */
+     sin fecha legible: jamás un 0 que diría «cierra hoy».
+     POR FECHA CIVIL, Y «CERRADO» POR LA HORA (28-oct-2026). Se contaban HORAS
+     redondeando hacia arriba: con la hora publicada, a las 8 a. m. un cierre de
+     HOY a las 5 p. m. salía «1» (mañana) y uno de las 9 a. m. seguía «0» (hoy)
+     a las 5 p. m. Ahora 0 es hoy y 1 es mañana por el calendario de Colombia, y
+     con hora publicada el reloj lo da por cerrado (−1) apenas pasa la hora. Sin
+     hora (la medianoche exacta de esta fuente, ver `cierreSinHora`) cuenta
+     hasta el final del día, como `lib/filtros.cierre_vencido`. Con los datos
+     reales nada cambió: el 27-oct las 762 filas traían la medianoche, y la cuenta
+     vieja ya daba la fecha civil (medido en 18.288 comparaciones). Un negativo
+     dice CERRADO, no cuántos días hace: lo que DECIDE (ventanas, chips, avisos,
+     «cerrado») mira solo el signo, y lo que MUESTRA el número (el Excel de la
+     lista, el orden, la bienvenida) solo ve filas visibles, que con la fuente de
+     hoy no pueden tener negativo (`cierre_vencido` las esconde en el mismo instante). */
   const OFFSET_COLOMBIA_MS = 5 * 3600 * 1000;
   const FLOTANTE_RE = /^(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?)$/;
+  /* ¿El cierre viene SIN HORA? «2026-09-15», o «…T00:00:00.000»: en esta fuente la medianoche
+     exacta es «no publicaron la hora», y vence al FINAL de su día (15-sep-2026). Una sola regla:
+     la llaman esta cuenta y `lib/filtros.cierre_vencido`, que decide qué se ve. */
+  function cierreSinHora(fechaCierre) {
+    const s = String(fechaCierre == null ? "" : fechaCierre);
+    return !/T[0-2]\d:[0-5]\d/.test(s) || /T00:00(?::00)?(?:\.0+)?(?:$|[^\d])/.test(s);
+  }
   function diasParaCierre(fechaCierre, ahoraMs) {
     if (fechaCierre == null || fechaCierre === "") return null;
     const s = String(fechaCierre).trim();
@@ -171,8 +191,20 @@
     const t = Date.parse(f ? `${f[1]}T${f[2]}Z` : s);
     if (!Number.isFinite(t)) return null;
     const ahora = Number.isFinite(ahoraMs) ? ahoraMs : Date.now();
-    const dias = Math.ceil((t - (ahora - OFFSET_COLOMBIA_MS)) / 86400000);
-    return Number.isFinite(dias) ? dias : null;
+    /* los dos instantes en hora de pared de Colombia leída como UTC. SIN hora, el día es el que
+       viene escrito, traiga zona o no («…T00:00:00.000Z» es el 28, no las 7 p. m. del 27); con
+       hora, solo un texto con ZONA explícita (Z, ±hh:mm) se corre las 5 h (revisión adversaria) */
+    const sinHora = cierreSinHora(s);
+    const fechaEscrita = s.match(/^(\d{4}-\d{2}-\d{2})/);
+    const cierreCol = sinHora && fechaEscrita ? Date.parse(`${fechaEscrita[1]}T00:00:00Z`)
+      : !f && /(?:Z|[+-]\d{2}:?\d{2})$/i.test(s) ? t - OFFSET_COLOMBIA_MS : t;
+    const ahoraCol = ahora - OFFSET_COLOMBIA_MS;
+    const dia = (ms) => Math.floor(ms / 86400000);
+    const dias = dia(cierreCol) - dia(ahoraCol);
+    if (!Number.isFinite(dias)) return null;
+    // con la hora publicada, el reloj: pasada la hora ya cerró, aunque sea hoy
+    if (dias >= 0 && !sinHora && cierreCol < ahoraCol) return -1;
+    return dias;
   }
   /* La ventana de un proceso a partir de los DÍAS que le quedan (número o
      null cuando no hay fecha). Sin fecha → null: no se inventa una ventana. */
@@ -596,7 +628,7 @@
 
   return {
     TIPOS_TRABAJO, TIPOS_POR_DEFECTO, MODALIDADES, DEPARTAMENTOS, RANGOS_CUANTIA, VENTANAS_CIERRE, ORDENES, conceptoDe, PARAMS,
-    claveDepartamento, departamento, rangoCuantiaDe, ventanaCierreDe, cumpleVentana, diasParaCierre,
+    claveDepartamento, departamento, rangoCuantiaDe, ventanaCierreDe, cumpleVentana, diasParaCierre, cierreSinHora,
     leerEstado, escribirEstado, fichas, sinFiltro, hayFiltros, etiquetaDe, cop,
     traducirConsulta, TIPO_FRASES, MODALIDAD_FRASES, CIERRE_FRASES, ALIAS_DEP,
   };

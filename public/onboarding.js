@@ -633,7 +633,7 @@
         <p class="mt-0.5 text-xs" style="color: var(--text-secondary);">${esc(m.objeto || "")}</p>
         <p class="mt-1 text-xs" style="color: var(--text-secondary);">
           ${m.valor ? esc(fmtCOP.format(m.valor)) : "Presupuesto no publicado"}
-          ${m.diasRestantes == null ? "" : ` · cierra ${m.diasRestantes === 0 ? "hoy" : m.diasRestantes === 1 ? "mañana" : `en ${m.diasRestantes} días`}`}
+          ${m.diasRestantes == null || m.diasRestantes < 0 ? "" : ` · cierra ${m.diasRestantes === 0 ? "hoy" : m.diasRestantes === 1 ? "mañana" : `en ${m.diasRestantes} días`}`}
         </p>
       </li>`).join("");
 
