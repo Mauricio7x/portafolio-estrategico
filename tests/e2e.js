@@ -53312,6 +53312,10 @@ async function main() {
         `vías → «${fV.frase}» · «${fV.corta}»`);
       const vVias = t.verificacion.por_tipo.licitacion.vias;
       assert.strictEqual(fV.verificacion.procesos_2026, vVias.procesos_prueba >= FP.MIN_PROCESOS_TIPO ? vVias.procesos_prueba : t.verificacion.por_modalidad.licitacion.procesos_prueba, "la verificación es la de su tipo si tuvo 100 procesos");
+      // un tipo con base a ese precio pero con menos de 100 procesos de prueba: la verificación es la de la modalidad
+      const fA = FP.frecuenciaPorPrecio({ modalidad: "licitacion", baja_ofertada_pct: 4, oferentes: 12, presupuesto_oficial: 1e9, tipo_obra: "agua" });
+      assert.ok(fA.por_tipo && t.verificacion.por_tipo.licitacion.agua.procesos_prueba < FP.MIN_PROCESOS_TIPO
+        && fA.verificacion.procesos_2026 === t.verificacion.por_modalidad.licitacion.procesos_prueba, `agua: cifras de su tipo, verificación de la modalidad → ${JSON.stringify(fA.verificacion)}`);
       const fE = FP.frecuenciaPorPrecio({ modalidad: "licitacion", baja_ofertada_pct: 4, oferentes: 7, presupuesto_oficial: 1e9, tipo_obra: "estabilizacion" });
       assert.ok(fE.aplica && !fE.por_tipo && fE.franja.tipo === null && /de todo tipo de obra/.test(fE.frase) && /En estabilización y drenaje no hay 100 ofertas a este precio/.test(fE.frase),
         `sin base en su tipo, la de todos y lo dice → «${fE.frase}»`);
@@ -53349,6 +53353,12 @@ async function main() {
       assert.ok(rrSin.p_ganar_detalle.rango_ganadores && !rrSin.p_ganar_detalle.rango_ganadores.por_tipo && /de todo tipo de obra/.test(rrSin.p_ganar_detalle.rango_ganadores.frase), "sin tipo, la de todos los tipos y lo dice");
       assert.strictEqual(R.rentabilidad({ precio_oferta: 960e6, costo_directo: 700e6, presupuesto_oficial: 1e9, p_base: 0.2, modalidad: "Mínima cuantía", tipo_obra: "vias" }).p_ganar_detalle.rango_ganadores, undefined,
         "en mínima cuantía no hay referencia de esta tabla (tiene la suya)");
+      /* (g) la página manda el objeto en el cálculo de Precios. Se lee el fuente de `calcularRentabilidad` porque armar
+         esa petición necesita el DOM entero; la ejecución real se comprueba en Chromium contra producción (MEMORIA) */
+      const jsR = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+      const iRen = jsR.indexOf("async function calcularRentabilidad(");
+      const cuerpoRen = jsR.slice(iRen, jsR.indexOf('api("/api/apu?op=rentabilidad"', iRen));
+      assert.ok(iRen > 0 && /\n\s+objeto: \$\("objeto"\)\.value\.trim\(\)\.slice\(0, 4000\),/.test(cuerpoRen), "el cálculo de Precios manda el objeto del proceso");
     }
 
     /* 6 · la lista dice que su orden cambió y por qué (condición del consejo): una línea fija bajo el resumen */
