@@ -6472,7 +6472,9 @@ async function main() {
       }
 
       /* C6 · LA TARJETA REAL: lineaRequisitos y bloqueSocio recortadas de
-         public/app.js, resumenSocio de listar.js, con las puertas y el socio reales. */
+         public/app.js y, desde el 27-oct-2026, el resumen que la fila lleva del consejo
+         (`lib/socio_por_proceso.resumenParaLista`, el que llama listar.js), con las
+         puertas y el socio reales. */
       {
         const appP = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
         const recortar = (src, firma, cierre) => {
@@ -6483,8 +6485,7 @@ async function main() {
         const escP = (x) => String(x == null ? "" : x);
         const lineaRequisitos = new Function("esc", `${recortar(appP, "  function lineaRequisitos(", "\n  }")}; return lineaRequisitos;`)(escP);
         const bloqueSocio = new Function("esc", `${recortar(appP, "  function bloqueSocio(l) {", "\n  }")}; return bloqueSocio;`)(escP);
-        const srcL = fs.readFileSync(path.join(__dirname, "..", "lib", "handlers", "procesos", "listar.js"), "utf8");
-        const resumenSocio = new Function(`${recortar(srcL, "function resumenSocio(v) {", "\n}")}; return resumenSocio;`)();
+        const resumenSocio = (v) => SPmod.resumenParaLista(v);
         const { evaluarRup } = require("../lib/rup.js");
         const tarjeta = (f) => {
           const rup = evaluarRup(f, "helder");
@@ -6648,6 +6649,99 @@ async function main() {
       console.log(`· unidad pertinencia · salud y servicios: ${SALUD.length} objetos de salud × las clases de servicios de 4 registros, fuera; hermanos en ámbar con aviso en P1`);
     }
     console.log(`· unidad pertinencia: ${casos.length} objetos clasificados (los falsos positivos de producción, fuera)`);
+  }
+
+  /* unidad: EL RÓTULO «OBRA CIVIL» NO SALE DE UNA PALABRA GENÉRICA EN UN CONTRATO QUE NO ES DE OBRA
+     (28-oct-2026, Paso 2 del plan «Detekta · Datos de la lista»). En la lista de Helder del 27-oct, 60
+     suministros y compraventas que no son de construcción salían con el chip verde «Obra civil» o
+     «Infraestructura»; en 38 lo único que decía obra era «mejoramiento», «mejorar», «reparación»,
+     «ampliación», «optimización» o «infraestructura» (la tecnológica, casi siempre). El rótulo pasa a
+     ámbar «Verificar objeto» con su motivo, y NADA se esconde: la ruta de texto y la de mínima cuantía
+     siguen admitiendo esas filas como cuando eran verdes. Los objetos son los de producción. */
+  bqObraGenerica: { if (!corre("unidad rótulo de obra con una palabra genérica")) break bqObraGenerica;
+    const Lfg = require("../lib/lenguaje_pantalla.js");
+    const filaG = (nombre, descripcion, tipo, extra = {}) => ({
+      id_del_proceso: "CO1.REQ.GENERICA", nombre_del_procedimiento: nombre, descripci_n_del_procedimiento: descripcion,
+      tipo_de_contrato: tipo, codigo_principal_de_categoria: "UNSPECIFIED", modalidad_de_contratacion: "Selección abreviada subasta inversa",
+      estado_del_procedimiento: "Publicado", ...extra,
+    });
+    // [palabra que disparaba el verde, fila real de producción del 27-oct]
+    const CASOS = [
+      ["mejorar", filaG("SUMINISTRO DE ALIMENTACIÓN POLICIA QUINDIO (Manifestación de interés (Menor Cuantía))",
+        "SUMINISTRO DE ALIMENTACIÓN PARA EL PERSONAL ADSCRITO Y DE APOYO AL DEPARTAMENTO DE POLICÍA QUINDÍO, QUE REALIZAN ACTIVIDADES DE CONTROL, DISUASIÓN Y PREVENCIÓN EN PRO DE MEJORAR LA CONVIVENCIA Y SEGURIDAD CIUDADANA EN EL DEPARTAMENTO DE POLICÍA QUINDÍO", "Suministros")],
+      ["ampliacion", filaG("RENOVACIÓN Y ACTUALIZACIÓN DEL LICENCIAMIENTO EDR/MDR; NX; IPS E IVX; ASÍ COMO LA AMPLIACIÓN DE LAS GARANTÍAS Y EL SERVICIO DE SOPORTE TÉCNICO ESPECIALIZADO PARA LOS SISTEMAS DE PREVENCIÓN DE INTRUSOS",
+        "RENOVACIÓN Y ACTUALIZACIÓN DEL LICENCIAMIENTO EDR/MDR, NX, IPS E IVX, ASÍ COMO LA AMPLIACIÓN DE LAS GARANTÍAS Y EL SERVICIO DE SOPORTE TÉCNICO ESPECIALIZADO PARA LOS SISTEMAS DE PREVENCIÓN DE INTRUSOS (IPS) Y MÓDULOS DE RED", "Compraventa")],
+      ["reparacion", filaG("SERVICIO DE MANTENIMIENTO Y REPARACIÓN DE VEHÍCULOS DE LA DIRECCIÓN DE INVESTIGACIÓN CRIMINAL E INTERPOL  VIGENCIA FUTURA (Presentación de oferta)",
+        "SERVICIO DE MANTENIMIENTO Y REPARACIÓN DE VEHÍCULOS DE LA DIRECCIÓN DE INVESTIGACIÓN CRIMINAL E INTERPOL - VIGENCIA FUTURA", "Prestación de servicios")],
+      ["mejoramiento", filaG("ADQUISICIÓN DE LOS ELEMENTOS QUE CONFORMAN EL KIT DE APOYO Y CUIDADO PERSONAL (HOMBRE Y MUJER); DESTINADOS A FORTALECER LAS CONDICIONES DE BIENESTAR",
+        "ADQUISICIÓN DE LOS ELEMENTOS QUE CONFORMAN EL KIT DE APOYO Y CUIDADO PERSONAL (HOMBRE Y MUJER), DESTINADOS A FORTALECER LAS CONDICIONES DE BIENESTAR, AUTOCUIDADO Y CALIDAD DE VIDA DEL PERSONAL DE LAS UNIDADES ADSCRITAS A LA POLICÍA NACIONAL, CONTRIBUYENDO AL MEJORAMIENTO DE SUS CONDICIONES DE HABITABILIDAD", "Compraventa")],
+      ["optimizacion", filaG("SEGURIDAD PERIMETRAL II",
+        "Adquirir la renovación de licencias, bienes e insumos tecnológicos requeridos para la administración, operación, mantenimiento, seguridad (firewall y antivirus), análisis de vulnerabilidades, soporte, optimización y fortalecimiento de la infraestructura tecnológica del Instituto", "Compraventa")],
+      ["infraestructura", filaG("ADQUISICIÓN Y RENOVACIÓN DE GARANTÍAS SOBRE LA PLATAFORMA E INFRAESTRUCTURA TECNOLÓGICA EXISTENTE EN LAS SEDES DEL MINISTERIO DE SALUD Y PROTECCIÓN SOCIAL",
+        "ADQUISICIÓN Y RENOVACIÓN DE GARANTÍAS SOBRE LA PLATAFORMA E INFRAESTRUCTURA TECNOLÓGICA EXISTENTE EN LAS SEDES DEL MINISTERIO DE SALUD Y PROTECCIÓN SOCIAL PARA ASEGURAR LA CONTINUIDAD OPERATIVA", "Compraventa")],
+    ];
+    for (const [palabra, fila] of CASOS) {
+      const ev = filtros.evaluarObjeto(fila, PERFILES.helder);
+      const p = ev.pertinencia || {};
+      assert.ok(p.nivel === "amarillo" && p.etiqueta === "Verificar objeto" && p.tipo === "indeterminado",
+        `MUTACIÓN: «${fila.nombre_del_procedimiento.slice(0, 50)}» (${fila.tipo_de_contrato}) seguía en verde «${p.etiqueta}» solo por «${palabra}»: ${JSON.stringify(p)}`);
+      assert.ok(Array.isArray(p.palabras_genericas) && p.palabras_genericas.includes(palabra), `dice qué palabras fueron: ${JSON.stringify(p)}`);
+      assert.ok(new RegExp(palabra.slice(0, 6), "i").test(p.motivo.normalize("NFD").replace(/[\u0300-\u036f]/g, "")) && /pliego/.test(p.motivo),
+        `el motivo nombra la palabra y manda al pliego: «${p.motivo}»`);
+      assert.strictEqual(Lfg.tuteoEn(p.motivo), null, `tuteo en «${p.motivo}»`);
+      assert.ok(!Lfg.RE_EMOJI_UI.test(p.motivo), `emoji en «${p.motivo}»`);
+      // NADA SE ESCONDE: la ruta de texto la sigue admitiendo, como cuando era verde
+      assert.ok(ev.ok === true && !ev.paso && ev.tier === "texto",
+        `MUTACIÓN: la fila desaparecía de la lista al pasar a ámbar (la ruta de texto exige verde): ${JSON.stringify({ ok: ev.ok, paso: ev.paso, tier: ev.tier })}`);
+      assert.ok(filtros.filtrarProcesosVisibles([{ ...fila, fecha_de_recepcion_de: "2099-01-01T17:00:00.000", fase: "Presentación de oferta" }], "helder", {}).visibles.length === 1,
+        `y la cascada entera la deja visible: «${fila.nombre_del_procedimiento.slice(0, 50)}»`);
+      // control: el MISMO objeto con contrato de obra sigue verde (la regla es del contrato, no de la palabra)
+      const pObra = filtros.evaluarObjeto({ ...fila, tipo_de_contrato: "Obra" }, PERFILES.helder).pertinencia;
+      assert.strictEqual(pObra.nivel, "verde", `con contrato de obra no cambia nada: ${JSON.stringify(pObra)}`);
+      // y sin tipo de contrato publicado tampoco: sin dato no se juzga
+      const pSin = filtros.evaluarObjeto({ ...fila, tipo_de_contrato: undefined }, PERFILES.helder).pertinencia;
+      assert.strictEqual(pSin.nivel, "verde", `sin tipo de contrato publicado no se baja el rótulo: ${JSON.stringify(pSin)}`);
+    }
+    // controles: otra señal de obra en el objeto, o el ancla que queda («vial»), mantienen el verde
+    const otraSenal = filtros.evaluarObjeto(filaG("SUMINISTRO DE MATERIALES PARA LA CONSTRUCCIÓN DE PLACA HUELLA Y EL MEJORAMIENTO DE LA VÍA", "", "Suministros"), PERFILES.helder).pertinencia;
+    assert.strictEqual(otraSenal.nivel, "verde", `con «construcción» además de la palabra genérica sigue verde: ${JSON.stringify(otraSenal)}`);
+    const conAncla = filtros.evaluarObjeto(filaG("MANTENIMIENTO DE LA INFRAESTRUCTURA VIAL DEL MUNICIPIO", "", "Prestación de servicios"), PERFILES.helder).pertinencia;
+    assert.strictEqual(conAncla.nivel, "verde", `«mantenimiento … vial» es obra aunque el contrato sea de servicios: ${JSON.stringify(conAncla)}`);
+    // la interventoría y la consultoría no se tocan: el MISMO objeto baja solo con un contrato de suministro
+    // (un control con la palabra «interventoría» en el objeto no discriminaba: esa palabra ya es verde sola)
+    const SEGUIMIENTO = "SEGUIMIENTO TECNICO AL MEJORAMIENTO DE LA SEDE COMUNAL";
+    for (const tipo of ["Interventoría", "Consultoría"]) {
+      const pt = filtros.evaluarObjeto(filaG(SEGUIMIENTO, "", tipo), PERFILES.helder).pertinencia;
+      assert.strictEqual(pt.nivel, "verde", `con contrato de ${tipo} sigue verde: ${JSON.stringify(pt)}`);
+    }
+    assert.strictEqual(filtros.evaluarObjeto(filaG(SEGUIMIENTO, "", "Suministros"), PERFILES.helder).pertinencia.nivel, "amarillo", "y con suministro baja: el control discrimina");
+    // VARIAS palabras: el motivo las nombra todas y no dice «lo único es…» de la primera (revisión adversaria)
+    const pauna = filtros.evaluarObjeto(filaG("FORTALECIMIENTO EN OPTIMIZACIÓN Y AMPLIACIÓN DE LA INFRAESTRUCTURA DE LOS ACUEDUCTOS DE FURATENA, CARARE, PISTORAQUE Y OTROS DEL MUNICIPIO DE PAUNA, BOYACÁ", "", "Compraventa"), PERFILES.helder).pertinencia;
+    assert.deepStrictEqual(pauna.palabras_genericas, ["optimizacion", "ampliacion", "infraestructura"], JSON.stringify(pauna));
+    assert.ok(pauna.motivo.includes("«optimización», «ampliación» e «infraestructura» no bastan") && !/lo único/.test(pauna.motivo),
+      `MUTACIÓN: el motivo nombraba solo una palabra: «${pauna.motivo}»`);
+    // NO EMPEORA LO QUE EL CÓDIGO SOSTIENE: con una clase de obra pura inscrita (paso 3), añadir la palabra no baja el verde
+    const conObraPura = (n) => filtros.evaluarObjeto(filaG(n, "", "Prestación de servicios", { codigo_principal_de_categoria: "V1.72101500" }), PERFILES.helder);
+    const sinPal = conObraPura("ARREGLOS LOCATIVOS Y PINTURA DE LA SEDE ADMINISTRATIVA"), conPal = conObraPura("ARREGLOS LOCATIVOS, PINTURA Y REPARACION DE LA SEDE ADMINISTRATIVA");
+    assert.ok(sinPal.tier === "clase" && sinPal.pertinencia.nivel === "verde", `premisa: con 72101500 sin la palabra es verde: ${JSON.stringify(sinPal.pertinencia)}`);
+    assert.strictEqual(conPal.pertinencia.nivel, "verde", `MUTACIÓN: añadir «reparación» bajaba el verde que sostiene la clase de obra pura: ${JSON.stringify(conPal.pertinencia)}`);
+    // …y NO APAGA el aviso de P1 por la clase de servicios (paso 4): el ámbar nuevo lo calcula igual
+    const servicio = (n) => filtros.evaluarObjeto(filaG(n, "", "Prestación de servicios", { codigo_principal_de_categoria: "V1.80101600" }), PERFILES.helder);
+    const sinMej = servicio("PRESTACION DE SERVICIOS PARA LA ORGANIZACION DEL ARCHIVO CENTRAL DEL MUNICIPIO"), conMej = servicio("PRESTACION DE SERVICIOS PARA EL MEJORAMIENTO DEL ARCHIVO CENTRAL DEL MUNICIPIO");
+    assert.strictEqual(sinMej.pertinencia.casa_solo_por_servicio, true, `premisa: sin la palabra, solo casa por servicios: ${JSON.stringify(sinMej.pertinencia)}`);
+    assert.ok(conMej.pertinencia.nivel === "amarillo" && conMej.pertinencia.casa_solo_por_servicio === true,
+      `MUTACIÓN: con «mejoramiento» el aviso de P1 por la clase de servicios se apagaba: ${JSON.stringify(conMej.pertinencia)}`);
+    // EL MOTIVO VERDE CITA LO QUE LO SOSTIENE: en un suministro, no la palabra genérica si el verde lo da otro verbo
+    const torres = filtros.evaluarObjeto(filaG("AMPLIACION Y MANTENIMIENTO DE LA RED DE TORRES DE TELECOMUNICACIONES", "", "Suministros"), PERFILES.helder).pertinencia;
+    assert.ok(torres.nivel === "verde" && !/ampliacion/.test(torres.motivo) && /mantenimiento/.test(torres.motivo),
+      `MUTACIÓN: el verde decía «ampliación» y lo sostiene «mantenimiento de la red»: ${JSON.stringify(torres)}`);
+    // EL HERMANO DE LA MÍNIMA CUANTÍA (paso 7-bis de lib/filtros): ahí la ruta de texto también exigía verde
+    const minima = filaG("ADQUISICIÓN DE KITS DE CUIDADO PERSONAL CONTRIBUYENDO AL MEJORAMIENTO DE LAS CONDICIONES DE HABITABILIDAD DE LAS UNIDADES", "", "Compraventa",
+      { modalidad_de_contratacion: "Mínima cuantía", codigo_principal_de_categoria: "V1.53131600" });
+    const evMin = filtros.evaluarObjeto(minima, PERFILES.helder);
+    assert.ok(evMin.ok === true && evMin.tier === "texto" && evMin.pertinencia.nivel === "amarillo" && evMin.pertinencia.palabras_genericas.includes("mejoramiento"),
+      `MUTACIÓN: en mínima cuantía la fila desaparecía al pasar a ámbar: ${JSON.stringify({ ok: evMin.ok, paso: evMin.paso, tier: evMin.tier, p: evMin.pertinencia && evMin.pertinencia.nivel })}`);
+    console.log(`· unidad rótulo de obra con una palabra genérica: ${CASOS.length} objetos de producción (suministro, compraventa y servicios) pasan de verde a «Verificar objeto» con la palabra y el motivo, sin esconderse (texto y mínima cuantía); el mismo objeto con contrato de obra, sin contrato publicado, con otra señal de obra o con interventoría sigue verde`);
   }
 
   /* unidad: EQUIVALENCIAS funcionales. El lift se calcula sobre
@@ -8264,6 +8358,487 @@ async function main() {
     console.log(`· unidad puerta caja sin anticipo · mensaje público: P3 y P2 nombran el ANTICIPO (no «no publica cuantía») sobre $850.000.000 `
       + `· el 0 % declarado deja de «asumirse» · la guía dice lo mismo que la puerta · ${textosB2.length} textos de usted, sin emoji y sin jerga `
       + `· la contribución sale de lib/ganancia (${GAN.CONTRIBUCION_PCT} %): suministro ${gSumB2.dinero.contribucion_obra_5pct_cop.toLocaleString("es-CO")}, interventoría null`);
+  }
+
+  /* unidad: LA CAJA CON EL ANTICIPO MÁXIMO, Y EL CONSEJO DE SOCIO EN LA FILA (27-oct-2026).
+     ------------------------------------------------------------------------
+     Encargo del dueño, literal: «también se debe mostrar procesos en los que se puede
+     presentar en consorcio y determinar qué % para cada proceso». Medido ese día sobre las
+     762 filas que producción le servía a Helder: 28 se alcanzaban con socio y la fila solo
+     decía «hace falta socio sí/no»; una concesión de $10.998.014.000.000 pasaba la caja de
+     una microempresa porque P3, con el anticipo sin publicar, dejaba pasar SIN el tope que
+     P2 ya aplica; y 20 «solo» dependían del anticipo por la caja sin que nadie lo dijera.
+     Cada pieza lleva la mutación que la tumba (ejecutada contra el árbol anterior):
+     (1) P3 no pasa si ni con el anticipo máximo que permite la ley alcanza, y dice desde qué
+         anticipo alcanzaría (`depende_del_anticipo`, los mismos nombres que P2);
+     (2) sin credencial esa cifra despeja el patrimonio y se tapa, y el texto público no dice
+         «el pliego declara que no habrá anticipo» sobre un anticipo que nadie publicó;
+     (3) el recomendador cuenta el anticipo de la caja como condición y calcula el plan B;
+     (4) la fila lleva con quién, la parte máxima del dueño, la condición, el plan B y una
+         línea del servidor de 90 caracteres o menos, de usted y sin jerga;
+     (5) el orden pone lo que cierra con socio junto a lo que el dueño hace solo, con su
+         parte del valor esperado, y la ganancia de esas filas va también por su parte. */
+  bqCajaSocio: { if (!corre("unidad caja con anticipo máximo y socio en la fila")) break bqCajaSocio;
+    const { enriquecer } = require("../lib/negocio.js");
+    const { p3Caja, evaluarPuertas, FRACCION_FINANCIACION } = require("../lib/puertas.js");
+    const { evaluarRup, topeAnticipoPct } = require("../lib/rup.js");
+    const { sinFinanzas } = require("../lib/publico.js");
+    const SPf = require("../lib/socio_por_proceso.js");
+    const PMf = require("../lib/perfiles.js");
+    const Lf = require("../lib/lenguaje_pantalla.js");
+    const Hf = PMf.PERFILES.helder;
+    const PATR = Math.round(Number(Hf.patrimonio));
+    const TOPE = topeAnticipoPct();
+    const filaCS = (cuantia, extra = {}) => enriquecer({
+      id_del_proceso: "CERRADURA-CAJA-SOCIO", nombre_del_procedimiento: "Construcción de puente vehicular sobre la quebrada",
+      descripci_n_del_procedimiento: "Obra civil de construcción de puente vehicular en concreto reforzado.",
+      precio_base: String(cuantia), duracion: "24", unidad_de_duracion: "Meses", tipo_de_contrato: "Obra",
+      modalidad_de_contratacion: "Licitación pública Obra Publica", codigo_principal_de_categoria: "V1.72141100", ...extra,
+    });
+    const juzgar = (f, perfil = "helder") => { const rup = evaluarRup(f, perfil, {}, {}); return { rup, puertas: evaluarPuertas(f, perfil, { rup }) }; };
+
+    // 1a · ni con el anticipo máximo legal alcanza: la caja NO pasa (antes pasaba «sin dato»)
+    const GRANDE = 15000000000;
+    const conTope = Math.round(GRANDE * (1 - TOPE / 100) * FRACCION_FINANCIACION);
+    assert.ok(conTope > PATR, `premisa: con el ${TOPE} % de anticipo habría que financiar ${conTope} y el patrimonio es ${PATR}`);
+    const fG = filaCS(GRANDE);
+    assert.strictEqual(fG.anticipo_declarado, false, "premisa: SECOP II no publica el anticipo");
+    const p3G = p3Caja(fG, Hf);
+    assert.strictEqual(p3G.pasa, false, "MUTACIÓN sin el tope: ni con el anticipo máximo legal alcanza y la caja seguía pasando");
+    assert.strictEqual(p3G.ni_con_anticipo_maximo, true);
+    assert.ok(!p3G.sin_dato, "no es un «sin dato»: el mejor caso posible ya no alcanza");
+    assert.strictEqual(p3G.financiacion_con_anticipo_maximo, conTope);
+    assert.strictEqual(p3G.anticipo_tope_legal_pct, TOPE);
+    assert.ok(/no publica el anticipo/.test(p3G.mensaje) && p3G.mensaje.includes(`${TOPE} %`) && !/declara que no habr/.test(p3G.mensaje),
+      `el mensaje dice que el anticipo no se publica y que ni el máximo legal alcanza: «${p3G.mensaje}»`);
+    assert.ok(juzgar(fG).puertas.no_viable_por.includes("Caja"), "la caja entra en los motivos de no viabilidad");
+
+    // 1b · solo alcanza con anticipo: pasa como «sin dato» y dice desde qué anticipo (P2 ya lo hacía)
+    const MEDIA = 7000000000;
+    const fM = filaCS(MEDIA);
+    const p3M = p3Caja(fM, Hf);
+    const minimoCaja = Math.ceil(100 * (1 - PATR / (MEDIA * FRACCION_FINANCIACION)) - 1e-9);
+    assert.ok(p3M.pasa === true && p3M.sin_dato === true && p3M.sin_dato_de === "anticipo", "sigue pasando: el anticipo no se conoce");
+    assert.strictEqual(p3M.depende_del_anticipo, true, "MUTACIÓN: sin esto un «solo» que necesita anticipo para la caja no se distingue");
+    assert.strictEqual(p3M.anticipo_minimo_pct, minimoCaja);
+    assert.strictEqual(p3M.anticipo_tope_legal_pct, TOPE);
+    assert.strictEqual(p3M.advertencia, true, "y la tarjeta baja a ámbar por el canal que ya existe");
+    // 1c · si alcanza sin anticipo, nada cambia
+    const p3C = p3Caja(filaCS(3000000000), Hf);
+    assert.ok(p3C.pasa && p3C.sin_dato && !p3C.depende_del_anticipo && p3C.anticipo_minimo_pct == null, JSON.stringify(p3C));
+    // 1d · sin patrimonio conocido NO se cierra: «sin dato» no es cero
+    for (const sinPatr of [{ ...Hf, patrimonio: null }, { ...Hf, patrimonio: undefined }, { ...Hf, patrimonio: "" }]) {
+      const r = p3Caja(fG, sinPatr);
+      assert.ok(r.pasa === true && r.sin_dato === true, `MUTACIÓN sin la guarda: el patrimonio ausente (${JSON.stringify(sinPatr.patrimonio)}) valía 0 y cerraba la caja`);
+    }
+
+    // 1e · el hermano: con el anticipo DECLARADO y el patrimonio sin dato, no se cierra ni se dice «$0»
+    const fDecl = filaCS(500000000, { descripci_n_del_procedimiento: "Obra civil de puente vehicular. El contrato contempla anticipo del 30% del valor." });
+    assert.strictEqual(fDecl.anticipo_declarado, true, "premisa: el anticipo está declarado");
+    const p3Decl = p3Caja(fDecl, { ...Hf, patrimonio: null });
+    assert.ok(p3Decl.pasa === true && p3Decl.sin_dato === true && p3Decl.sin_dato_de === "patrimonio" && p3Decl.patrimonio === null,
+      `MUTACIÓN: el patrimonio ausente valía 0 y la caja cerraba: ${JSON.stringify(p3Decl)}`);
+    assert.ok(!/\$0\b/.test(p3Decl.mensaje) && /patrimonio no está en su registro/.test(p3Decl.mensaje), `«${p3Decl.mensaje}»`);
+    const p3Mudo0 = p3Caja(fM, { ...Hf, patrimonio: null });
+    assert.ok(p3Mudo0.patrimonio === null && !/\$0\b/.test(p3Mudo0.mensaje), `sin anticipo publicado tampoco dice «$0»: «${p3Mudo0.mensaje}»`);
+    const pubDecl = sinFinanzas({ puertas: { p3_caja: p3Decl } }).puertas.p3_caja;
+    assert.ok(/falta el patrimonio de la empresa/.test(pubDecl.mensaje) && !/del proceso/.test(pubDecl.mensaje), `el público dice que falta un dato de la EMPRESA: «${pubDecl.mensaje}»`);
+
+    // 2 · sin credencial: ni el patrimonio ni la cifra que lo despeja; el texto no inventa la declaración
+    const pubG = sinFinanzas({ puertas: juzgar(fG).puertas }).puertas.p3_caja;
+    assert.strictEqual(pubG.patrimonio, null);
+    assert.ok(!/declara que no habr/.test(pubG.mensaje) && /no publica/.test(pubG.mensaje) && !pubG.mensaje.includes(PATR.toLocaleString("es-CO")),
+      `MUTACIÓN: sin la rama propia, el texto público decía «el pliego declara que no habrá anticipo»: «${pubG.mensaje}»`);
+    const pubM = sinFinanzas({ puertas: juzgar(fM).puertas }).puertas.p3_caja;
+    assert.strictEqual(pubM.anticipo_minimo_pct, null, "MUTACIÓN: con la cuantía pública, el anticipo mínimo despeja el patrimonio");
+    for (const m of [p3G.mensaje, p3M.mensaje, pubG.mensaje, pubM.mensaje, p3Decl.mensaje, p3Mudo0.mensaje, pubDecl.mensaje]) {
+      assert.strictEqual(Lf.tuteoEn(m), null, `tuteo en «${m}»`);
+      assert.ok(!Lf.RE_EMOJI_UI.test(m), `emoji en «${m}»`);
+    }
+
+    // 3 · el recomendador: con la caja que depende del anticipo, «solo» con su condición y el plan B
+    const jM = juzgar(fM);
+    assert.ok(jM.puertas.pasa_todas && jM.puertas.p2_k.pasa && !jM.puertas.p2_k.depende_del_anticipo,
+      "premisa: la capacidad le alcanza limpia; solo la caja depende del anticipo");
+    const vM = SPf.socioPorProceso({ fila: fM, base: "helder", candidatos: PMf.CANDIDATOS_CONSORCIO, ctx: jM });
+    assert.strictEqual(vM.recomendacion.tipo, "solo");
+    assert.strictEqual(vM.recomendacion.solo_con_anticipo, true, "MUTACIÓN: el anticipo de la caja no contaba como condición");
+    const planB = vM.recomendacion.si_no_trae_anticipo;
+    assert.ok(planB && planB.socio === "prodiac" && planB.cierra_todo === true && planB.reparto && planB.reparto.suya > 0,
+      `sin anticipo, PRODIAC aporta el respaldo (Génesis y PICS no llegan): ${JSON.stringify(planB)}`);
+    assert.ok(/anticipo/.test(vM.frase) && /PRODIAC/.test(vM.frase) && vM.frase.includes(`${minimoCaja} %`),
+      `la frase dice la condición, desde qué anticipo y el plan B: «${vM.frase}»`);
+
+    // 4 · la fila: con quién, la parte máxima, la condición, el plan B y una línea
+    const rM = SPf.resumenParaLista(vM);
+    assert.deepStrictEqual(Object.keys(rM).sort(), ["cierra_todo", "con", "con_nombre", "condiciones", "linea", "parte_suya_max", "si_no_se_cumple", "tipo"],
+      `MUTACIÓN: la fila volvía a llevar solo tipo y cierra_todo: ${Object.keys(rM).join(", ")}`);
+    assert.strictEqual(rM.tipo, "solo");
+    assert.strictEqual(rM.parte_suya_max, 100, "solo, se queda con todo");
+    assert.deepStrictEqual(rM.condiciones, ["anticipo"]);
+    assert.deepStrictEqual(rM.si_no_se_cumple, { con: "prodiac", con_nombre: "PRODIAC", parte_suya_max: planB.reparto.suya });
+    assert.ok(/anticipo/.test(rM.linea) && /PRODIAC/.test(rM.linea), `«${rM.linea}»`);
+    // con socio: la MISMA socia y la MISMA parte que el recomendador (una sola fuente del «con quién»)
+    const fCS = filaCS(GRANDE, { duracion: "36" });
+    const jC = juzgar(fCS);
+    const vC = SPf.socioPorProceso({ fila: fCS, base: "helder", candidatos: PMf.CANDIDATOS_CONSORCIO, ctx: jC });
+    assert.ok(vC.recomendacion.tipo === "con_socio" && vC.recomendacion.cierra_todo, `premisa: 15.000 M necesitan socio y PRODIAC cierra: «${vC.frase}»`);
+    const rC = SPf.resumenParaLista(vC);
+    assert.strictEqual(rC.con, vC.recomendacion.socio, "MUTACIÓN: la fila nombraba otra socia que el recomendador");
+    assert.strictEqual(rC.con_nombre, "PRODIAC");
+    assert.strictEqual(rC.parte_suya_max, vC.recomendacion.reparto.suya);
+    assert.ok(rC.linea.includes(`${rC.parte_suya_max} %`) && /PRODIAC/.test(rC.linea), `«${rC.linea}»`);
+    // ninguna socia cierra: no hay parte que prometer
+    const rNo = SPf.resumenParaLista({ recomendacion: { tipo: "con_socio", socio: "prodiac", nombre: "PRODIAC LTDA", cierra_todo: false, reparto: { suya: null, del_socio: null } }, base: { falta: ["capacidad"] } });
+    assert.strictEqual(rNo.parte_suya_max, null, "si el socio no cierra, la fila no promete una parte");
+    assert.ok(/puede no bastar/.test(rNo.linea), `«${rNo.linea}»`);
+    const rObjeto = SPf.resumenParaLista({ recomendacion: { tipo: "ninguna_sirve", motivo: "objeto" }, base: { falta: [] } });
+    assert.ok(rObjeto.linea === null && rObjeto.con === null && rObjeto.parte_suya_max === null, "un objeto que no es obra no lleva línea de socio");
+    assert.strictEqual(SPf.resumenParaLista(null), null);
+
+    // 4b · censo de las líneas: todas las ramas, de 90 caracteres o menos, de usted, sin emoji ni jerga
+    const ramas = [
+      rM, rC, rNo,
+      SPf.resumenParaLista({ recomendacion: { tipo: "solo", participacion_suya: 100 }, base: { falta: [] } }),
+      SPf.resumenParaLista({ recomendacion: { tipo: "solo", participacion_suya: 100, solo_con_anticipo: true }, base: { falta: [] } }),
+      SPf.resumenParaLista({ recomendacion: { tipo: "solo", participacion_suya: 100, solo_si_no_la_piden: true, si_la_piden: { socio: "prodiac", nombre: "PRODIAC LTDA", cierra_todo: true, reparto: { suya: 99 } } }, base: { falta: [] } }),
+      SPf.resumenParaLista({ recomendacion: { tipo: "solo", participacion_suya: 100, solo_si_no_la_piden: true }, base: { falta: [] } }),
+      SPf.resumenParaLista({ recomendacion: { tipo: "solo", participacion_suya: 100, solo_con_anticipo: true, solo_si_no_la_piden: true }, base: { falta: [] } }),
+      SPf.resumenParaLista({ recomendacion: { tipo: "con_socio", socio: "genesis", nombre: "Génesis Ingeniería y Construcción GIC SAS", cierra_todo: true, reparto: { suya: 33, del_socio: 67 } }, base: { falta: ["actividad"] } }),
+      SPf.resumenParaLista({ recomendacion: { tipo: "con_socio", socio: "pics", nombre: "PICS Ingeniería SAS", cierra_todo: true, reparto: { suya: 90, del_socio: 10 } }, base: { falta: ["caja"] } }),
+      SPf.resumenParaLista({ recomendacion: { tipo: "con_socio", socio: "prodiac", nombre: "PRODIAC LTDA", cierra_todo: true, reparto: { suya: 99, del_socio: 1 } }, base: { falta: ["tope"] } }),
+      SPf.resumenParaLista({ recomendacion: { tipo: "ninguna_sirve", motivo: "socios" }, base: { falta: ["capacidad"] } }),
+    ];
+    // una socia futura de nombre largo: la línea sigue cabiendo (cae a una versión más corta)
+    const LARGA = "Constructoraingenieriayconsultoriadelnorte Ltda";
+    ramas.push(
+      SPf.resumenParaLista({ recomendacion: { tipo: "con_socio", socio: "x", nombre: LARGA, cierra_todo: true, reparto: { suya: 80, del_socio: 20 } }, base: { falta: ["capacidad"] } }),
+      SPf.resumenParaLista({ recomendacion: { tipo: "solo", participacion_suya: 100, solo_con_anticipo: true, si_no_trae_anticipo: { socio: "x", nombre: LARGA, cierra_todo: true, reparto: { suya: 80 } } }, base: { falta: [] } }),
+      SPf.resumenParaLista({ recomendacion: { tipo: "con_socio", socio: "x", nombre: LARGA, cierra_todo: false }, base: { falta: ["capacidad"] } }));
+    for (const r of ramas) {
+      assert.ok(typeof r.linea === "string" && r.linea.length > 0 && r.linea.length <= 90, `MUTACIÓN sin la guarda: la línea mide ${r.linea && r.linea.length}: «${r.linea}»`);
+      assert.strictEqual(Lf.tuteoEn(r.linea), null, `tuteo en «${r.linea}»`);
+      assert.ok(!Lf.VOSEO_RE.test(r.linea) && !Lf.RE_EMOJI_UI.test(r.linea), `voseo o emoji en «${r.linea}»`);
+      for (const jerga of ["Mipyme", "cumple", "UNSPSC", "SMMLV", "residual", "CRPC", "puerta"]) {
+        assert.ok(!new RegExp(jerga, "i").test(r.linea), `la línea enseña «${jerga}»: «${r.linea}»`);
+      }
+      if (r.parte_suya_max != null && r.tipo === "con_socio") assert.ok(r.linea.includes(`${r.parte_suya_max} %`), `la línea dice la parte: «${r.linea}»`);
+    }
+
+    // 5 · el orden y la ganancia de la lista: funciones reales del handler
+    const Lst = require("../lib/handlers/procesos/listar.js");
+    const solo = { pasa_todas: true }, noViable = { pasa_todas: false };
+    assert.strictEqual(Lst.grupoDeOrden(solo, null), 1);
+    assert.strictEqual(Lst.grupoDeOrden(noViable, vC), 1, "MUTACIÓN: lo que cierra con socio quedaba al final, detrás de todo lo que el dueño hace solo");
+    assert.strictEqual(Lst.grupoDeOrden(noViable, { recomendacion: { tipo: "con_socio", cierra_todo: false } }), 0, "lo que solo se acerca sigue al final");
+    assert.strictEqual(Lst.grupoDeOrden(noViable, null), 0);
+    assert.strictEqual(Lst.veParaOrden(1000, vC), Math.round(1000 * vC.recomendacion.reparto.suya / 100), "con socio, su parte del valor esperado");
+    assert.strictEqual(Lst.veParaOrden(1000, vM), 1000, "solo, el valor esperado entero");
+    // el rescate por la caja: lo que SOLO la caja deja fuera y un socio abre, se queda en la lista
+    const pasa = { pasa: true }, cae = { pasa: false };
+    const conSocioV = { recomendacion: { tipo: "con_socio", cierra_todo: false } };
+    assert.strictEqual(Lst.rescatePorCaja({ p1_rup: pasa, p2_k: pasa, p3_caja: cae }, conSocioV), true,
+      "MUTACIÓN: la cascada no conoce la caja, y sin este rescate una obra que PRODIAC cubre desaparecía de la lista");
+    assert.strictEqual(Lst.rescatePorCaja({ p1_rup: pasa, p2_k: pasa, p3_caja: pasa }, conSocioV), false, "si la caja pasa no hay nada que rescatar");
+    assert.strictEqual(Lst.rescatePorCaja({ p1_rup: cae, p2_k: pasa, p3_caja: cae }, conSocioV), false, "lo que el objeto o el registro dejan fuera lo decide la cascada, no este rescate");
+    assert.strictEqual(Lst.rescatePorCaja({ p1_rup: pasa, p2_k: pasa, p3_caja: cae }, { recomendacion: { tipo: "ninguna_sirve" } }), false, "sin socio que lo abra, no se rescata");
+    const gan = { valor: 1000000, peor: -500000, mejor: 2000000, por_intento: 123457, base: "apu" };
+    const gC = Lst.gananciaConParteSuya(gan, vC);
+    const pct = vC.recomendacion.reparto.suya;
+    assert.deepStrictEqual(gC.parte_suya, { pct, valor: Math.round(1000000 * pct / 100), peor: Math.round(-500000 * pct / 100), mejor: Math.round(2000000 * pct / 100), por_intento: Math.round(123457 * pct / 100) },
+      "MUTACIÓN: la ganancia de una fila con socio era la del contrato entero");
+    assert.strictEqual(gan.parte_suya, undefined, "no se toca el objeto memoizado (lo usa el orden por ganancia)");
+    assert.strictEqual(Lst.gananciaConParteSuya(gan, vM), gan, "solo: la ganancia es toda suya, igual que antes");
+    assert.strictEqual(Lst.gananciaConParteSuya(null, vC), null, "sin credencial la ganancia es null y sigue siéndolo");
+
+    /* ── lo que tumbó la revisión adversaria del 27-oct-2026 ── */
+    // 6 · régimen especial: el 50 % es de la Ley 80; la entidad usa su propio manual y la caja no cierra con él
+    const fEsp = filaCS(GRANDE, { modalidad_de_contratacion: "Contratación régimen especial" });
+    const p3Esp = p3Caja(fEsp, Hf);
+    assert.ok(p3Esp.pasa === true && p3Esp.sin_dato_de === "anticipo" && !p3Esp.ni_con_anticipo_maximo,
+      `MUTACIÓN: en régimen especial la caja cerraba con el tope de la Ley 80: ${JSON.stringify(p3Esp)}`);
+    assert.ok(p3Esp.regimen_propio === true && p3Esp.depende_del_anticipo === true && p3Esp.anticipo_tope_legal_pct === null && p3Esp.advertencia === true,
+      `pasa en ámbar, con su nombre y sin citar un tope que no aplica: ${JSON.stringify(p3Esp)}`);
+    assert.strictEqual(p3Esp.anticipo_minimo_pct, Math.ceil(100 * (1 - PATR / (GRANDE * FRACCION_FINANCIACION)) - 1e-9));
+    assert.ok(!/ley/i.test(p3Esp.mensaje) && /propio manual/.test(p3Esp.mensaje), `«${p3Esp.mensaje}»`);
+    assert.ok(!juzgar(fEsp).puertas.no_viable_por.includes("Caja"), "en régimen especial la caja no entra en los motivos de no viabilidad");
+
+    // 7 · el patrimonio sin dato se marca en TODAS las salidas que pasan sin él; «depende» no es «no»
+    const p3SinPat = p3Caja(fM, { ...Hf, patrimonio: null });
+    assert.ok(p3SinPat.patrimonio_conocido === false && p3SinPat.depende_del_anticipo === null && p3SinPat.advertencia === false,
+      `MUTACIÓN: sin patrimonio «depende» salía false (un «no» que nadie midió): ${JSON.stringify(p3SinPat)}`);
+    assert.strictEqual(p3Decl.patrimonio_conocido, false, "con el anticipo declarado, también");
+    const p3Cero = p3Caja(filaCS(0), { ...Hf, patrimonio: null });
+    assert.ok(p3Cero.sin_dato_de === "cuantia" && p3Cero.patrimonio === null && p3Cero.patrimonio_conocido === false,
+      `MUTACIÓN: sin cuantía, el patrimonio ausente viajaba como 0: ${JSON.stringify(p3Cero)}`);
+    assert.strictEqual(p3Caja(fM, Hf).patrimonio_conocido, undefined, "con el patrimonio conocido no se marca nada");
+
+    // 8 · una socia SIN patrimonio en su registro no «aporta el respaldo» que le falta al dueño
+    const fSoloCaja = filaCS(GRANDE, { duracion: "48" });
+    const jSoloCaja = juzgar(fSoloCaja);
+    assert.ok(jSoloCaja.puertas.p1_rup.pasa && jSoloCaja.puertas.p2_k.pasa && jSoloCaja.puertas.p3_caja.pasa === false,
+      `premisa: con 48 meses solo la caja lo deja fuera: ${JSON.stringify(jSoloCaja.puertas.no_viable_por)}`);
+    PMf.PERFILES.cerr_sin_patrimonio = { ...PMf.PERFILES.prodiac, id: "cerr_sin_patrimonio", nombre: "SOCIA SIN PATRIMONIO SAS", patrimonio: null };
+    try {
+      const vSinPat = SPf.socioPorProceso({ fila: fSoloCaja, base: "helder", candidatos: ["cerr_sin_patrimonio"], ctx: jSoloCaja });
+      assert.ok(!(vSinPat.recomendacion.tipo === "con_socio" && vSinPat.recomendacion.cierra_todo) && !/aporta respaldo/.test(vSinPat.frase),
+        `MUTACIÓN: la socia sin patrimonio «aportaba el respaldo» con la cifra del dueño solo y cerraba todo: «${vSinPat.frase}»`);
+      const vConPat = SPf.socioPorProceso({ fila: fSoloCaja, base: "helder", candidatos: ["prodiac"], ctx: jSoloCaja });
+      assert.ok(vConPat.recomendacion.tipo === "con_socio" && vConPat.recomendacion.cierra_todo === true,
+        `control: la misma socia CON su patrimonio sí la cierra: «${vConPat.frase}»`);
+    } finally { delete PMf.PERFILES.cerr_sin_patrimonio; }
+
+    // 9 · la guía: si el pliego leído ya dijo que NO hay anticipo, gana él (y la cifra es la de financiar la obra entera)
+    const Gf = require("../lib/guia_proceso.js");
+    const filaGuia = { ...fG, departamento_entidad: "Tolima", entidad: "ALCALDIA DE PRUEBA" };
+    const cajaDe = (g) => { const out = []; const ir = (o) => { if (o && typeof o === "object") { if (o.clave === "caja" && typeof o.detalle === "string") out.push(o); for (const v of Object.values(o)) ir(v); } }; ir(g); return out[0] || null; };
+    const docsSinAnticipo = { leidos: { d1: { tipo: "pliego", nombre: "Pliego definitivo", hechos: { anticipo: { estado: "no", pagina: 12, linea: "No se entregará anticipo." } } } } };
+    const cajaNo = cajaDe(Gf.guiaDe({ fila: filaGuia, perfil: "helder", ctx: { ahoraMs: Date.now(), documentos: docsSinAnticipo } }));
+    assert.ok(cajaNo && /pliego leído dice que no hay anticipo/.test(cajaNo.detalle) && !/no publica si tiene anticipo/.test(cajaNo.detalle)
+      && cajaNo.detalle.includes(Math.round(p3G.financiacion_requerida).toLocaleString("es-CO")),
+      `MUTACIÓN: con el pliego que niega el anticipo, la guía decía «no publica si tiene anticipo» y la cifra del mejor caso: «${cajaNo && cajaNo.detalle}»`);
+    // el hermano: la caja que SOLO alcanza con anticipo, frente al pliego que lo niega, queda corta; la que alcanza sin él, cumple
+    const cajaMediaNo = cajaDe(Gf.guiaDe({ fila: { ...fM, departamento_entidad: "Tolima", entidad: "ALCALDIA DE PRUEBA" }, perfil: "helder", ctx: { ahoraMs: Date.now(), documentos: docsSinAnticipo } }));
+    assert.ok(cajaMediaNo && cajaMediaNo.estado === "revisar" && /pliego leído dice que no hay anticipo/.test(cajaMediaNo.detalle) && /queda corto/.test(cajaMediaNo.detalle),
+      `MUTACIÓN: con el pliego que niega el anticipo, la caja que solo alcanza con él seguía «sin dato» y pedía confirmar el pliego ya leído: ${JSON.stringify(cajaMediaNo)}`);
+    const cajaChicaNo = cajaDe(Gf.guiaDe({ fila: { ...filaCS(3000000000), departamento_entidad: "Tolima", entidad: "ALCALDIA DE PRUEBA" }, perfil: "helder", ctx: { ahoraMs: Date.now(), documentos: docsSinAnticipo } }));
+    assert.ok(cajaChicaNo && cajaChicaNo.estado === "cumple" && /su patrimonio alcanza/.test(cajaChicaNo.detalle), `la que alcanza sin anticipo, cumple: ${JSON.stringify(cajaChicaNo)}`);
+    const cajaSinDocs = cajaDe(Gf.guiaDe({ fila: filaGuia, perfil: "helder", ctx: { ahoraMs: Date.now() } }));
+    assert.ok(cajaSinDocs && /no publica si tiene anticipo/.test(cajaSinDocs.detalle) && cajaSinDocs.detalle.includes(conTope.toLocaleString("es-CO")),
+      `control: sin pliego leído dice que no se publica y la cifra con el anticipo máximo: «${cajaSinDocs && cajaSinDocs.detalle}»`);
+
+    // 10 · las adendas: la caja que solo alcanza con anticipo no es «ahora sí le alcanza»; el anticipo sin publicar no es «no se podía medir»
+    const Ad = require("../lib/adendas.js");
+    const adenda = (antes, despues) => Ad.evaluarAdendas({ ...filaCS(despues), _cambios: [{ campo: "precio_base", antes: String(antes), despues: String(despues) }] }, "helder").cambios[0].mensaje;
+    const aBaja = adenda(GRANDE, MEDIA);
+    assert.ok(aBaja.includes(`Ahora le alcanza la caja solo si el pliego da un anticipo del ${minimoCaja} % o más`) && !/Ahora sí le alcanza la caja/.test(aBaja),
+      `MUTACIÓN: «Ahora sí le alcanza la caja» sobre una caja que solo alcanza con anticipo: «${aBaja}»`);
+    const aSube = adenda(MEDIA, GRANDE);
+    assert.ok(/su caja ya no cubre lo que habría que financiar, ni con el anticipo máximo que permite la ley/.test(aSube) && !/Antes no se podía medir; con el valor publicado su caja/.test(aSube),
+      `MUTACIÓN: con la cuantía publicada, «antes no se podía medir» era falso: «${aSube}»`);
+    const aPasaACondicion = adenda(3000000000, MEDIA);
+    assert.ok(/Con el nuevo valor la caja le alcanza solo si el pliego da un anticipo/.test(aPasaACondicion),
+      `MUTACIÓN: pasar a depender del anticipo se callaba («Sus requisitos siguen igual»): «${aPasaACondicion}»`);
+    assert.ok(/la caja le alcanza aunque no haya anticipo/.test(adenda(MEDIA, 3000000000)), "y al revés también se dice");
+    // sin credencial: sin la cifra del anticipo (despeja el patrimonio exacto con la cuantía pública); el veredicto es el mismo
+    const adendaPub = (antes, despues) => Ad.evaluarAdendas({ ...filaCS(despues), _cambios: [{ campo: "precio_base", antes: String(antes), despues: String(despues) }] }, "helder", { conCifras: false }).cambios[0].mensaje;
+    const aBajaPub = adendaPub(GRANDE, MEDIA);
+    assert.ok(!/\d+ % o más/.test(aBajaPub) && !/caja (le alcanza )?solo si/.test(aBajaPub) && /la caja ya no lo deja fuera; SECOP II no publica el anticipo/.test(aBajaPub),
+      `MUTACIÓN: sin credencial la adenda decía si la caja depende del anticipo (o desde cuánto), que acota el patrimonio: «${aBajaPub}»`);
+    const aSubePub = adendaPub(MEDIA, GRANDE);
+    assert.ok(/ni con el anticipo máximo/.test(aSubePub), `el veredicto es el mismo sin credencial: «${aSubePub}»`);
+    assert.ok(/capacidad de contratación le alcanza solo si el pliego da un anticipo alto/.test(aSubePub) && !/\d+ % o más/.test(aSubePub),
+      `MUTACIÓN: sin credencial la frase de la capacidad llevaba «del N % o más», que despeja la K: «${aSubePub}»`);
+    for (const [antes, despues] of [[3000000000, MEDIA], [MEDIA, 3000000000]]) {
+      const m = adendaPub(antes, despues);
+      assert.ok(!/la caja le alcanza (solo si|aunque no haya anticipo)/.test(m) && !/\d+ % o más/.test(m),
+        `MUTACIÓN: sin credencial la adenda decía que la caja pasa a depender (o deja de depender) del anticipo: «${m}»`);
+    }
+    // con credencial sí se dice, con su cifra
+    assert.ok(/la caja le alcanza solo si el pliego da un anticipo del \d+ % o más/.test(adenda(3000000000, MEDIA)), `«${adenda(3000000000, MEDIA)}»`);
+
+    // 11 · sin cuantía, «solo» no afirma que le alcanza: no se midió
+    const fSinCuantia = filaCS(0);
+    const jSinCuantia = juzgar(fSinCuantia);
+    if (jSinCuantia.puertas.pasa_todas) {
+      const vSinCuantia = SPf.socioPorProceso({ fila: fSinCuantia, base: "helder", candidatos: PMf.CANDIDATOS_CONSORCIO, ctx: jSinCuantia });
+      const rSinCuantia = SPf.resumenParaLista(vSinCuantia);
+      assert.ok(vSinCuantia.recomendacion.solo_sin_cuantia === true && rSinCuantia.condiciones.includes("cuantia_sin_publicar") && !/le alcanza sin socio/.test(rSinCuantia.linea),
+        `MUTACIÓN: sin cuantía publicada la fila decía «le alcanza sin socio»: «${rSinCuantia.linea}»`);
+      assert.ok(rSinCuantia.linea.length <= 90 && Lf.tuteoEn(rSinCuantia.linea) === null && Lf.tuteoEn(vSinCuantia.frase) === null, `«${rSinCuantia.linea}» · «${vSinCuantia.frase}»`);
+      assert.ok(SPf.condicionesDeSolo(jSinCuantia.puertas).alguna, "y el conteo la cuenta «con condición»");
+    } else assert.fail(`premisa: sin cuantía publicada el proceso pasa (regla de faltantes): ${JSON.stringify(jSinCuantia.puertas.no_viable_por)}`);
+
+    // 12 · sin credencial: la respuesta pública no gana canales nuevos con esta entrega
+    const pubDep = sinFinanzas({ puertas: { p3_caja: p3M } }).puertas.p3_caja;
+    for (const c of ["patrimonio", "anticipo_minimo_pct", "depende_del_anticipo", "advertencia", "anticipo_tope_legal_pct"]) {
+      assert.strictEqual(pubDep[c], null, `MUTACIÓN: sin credencial viajaba «${c}» (${JSON.stringify(p3M[c])}), que con la financiación pública acota el patrimonio`);
+    }
+    assert.strictEqual(sinFinanzas({ puertas: { p3_caja: p3Esp } }).puertas.p3_caja.regimen_propio, null, "`regimen_propio` solo existe cuando depende: también se tapa");
+    for (const r of [rM, rC, rNo, ramas[5], ramas[9]]) {
+      const pub = sinFinanzas({ socio: r }).socio;
+      assert.deepStrictEqual(pub, { tipo: r.tipo, cierra_todo: r.cierra_todo, con: null, con_nombre: null, parte_suya_max: null, condiciones: null, si_no_se_cumple: null, linea: null },
+        `MUTACIÓN: sin credencial el socio llevaba con quién, la condición o la línea: ${JSON.stringify(pub)}`);
+    }
+
+    // 13 · el consejo congelado al guardar se calcula con el MISMO conocimiento que la lista
+    const Seg = require("../lib/handlers/perfil/seguimiento.js");
+    const CLASE_AJENA_CS = "441015", CLASE_DEL_RUP_CS = "111216";
+    const CONOC_CS = { equivalencias: { [CLASE_AJENA_CS]: [{ clase: CLASE_DEL_RUP_CS, lift: 9, adjudicatarios: 12 }] }, vocabulario: null };
+    const PROC_CS = { id_del_proceso: "SIM-EQ-CS", nombre_del_procedimiento: "Ejecucion del objeto contractual conforme al anexo tecnico", descripci_n_del_procedimiento: "",
+      codigo_principal_de_categoria: "V1." + CLASE_AJENA_CS + "00", cuantia_cop: 500000000, precio_base: 500000000, modalidad_de_contratacion: "Licitación pública",
+      fecha_cierre: "2099-01-01", duracion: 6, unidad_de_duracion: "Meses" };
+    const deLaLista = SPf.socioPorProceso({ fila: PROC_CS, base: "helder", candidatos: PMf.CANDIDATOS_CONSORCIO, ctx: { conocimiento: CONOC_CS } }).recomendacion.tipo;
+    const sinConocimiento = SPf.socioPorProceso({ fila: PROC_CS, base: "helder", candidatos: PMf.CANDIDATOS_CONSORCIO }).recomendacion.tipo;
+    assert.notStrictEqual(deLaLista, sinConocimiento, `premisa: el conocimiento cambia el consejo (${deLaLista} contra ${sinConocimiento})`);
+    const congelado = Seg.congelarSocio(PMf.ID_DUENO, PROC_CS, { conocimiento: CONOC_CS, compDe: () => null });
+    assert.strictEqual(congelado.recomendacion.tipo, deLaLista,
+      `MUTACIÓN: el consejo congelado al guardar ignoraba el conocimiento y contradecía la lista (${congelado.recomendacion.tipo} contra ${deLaLista})`);
+
+    console.log(`· unidad caja con anticipo máximo y socio en la fila: la caja cierra cuando ni con el ${TOPE} % alcanza (${conTope.toLocaleString("es-CO")} contra ${PATR.toLocaleString("es-CO")}) `
+      + `· con 7.000 M dice «desde el ${minimoCaja} %» y el plan B es PRODIAC · la fila nombra la misma socia y la misma parte (${rC.parte_suya_max} %) que el recomendador `
+      + `· ${ramas.length} líneas de 90 caracteres o menos, de usted · el orden y la ganancia van por su parte `
+      + `· régimen especial sin el tope de la ley · socia sin patrimonio no abre la caja · guía, adendas, consejo congelado y respuesta pública alineados`);
+  }
+
+  /* unidad: LA LISTA CON SOCIO, POR EL LISTADO REAL (27-oct-2026, revisión adversaria). Las funciones
+     sueltas del bloque anterior pasaban y el listado podía decir otra cosa: el conteo contaba «sin
+     socio» filas cuya tarjeta decía «Con PRODIAC se acerca», y nada probaba que una obra que SOLO la
+     caja deja fuera siguiera en la lista. Aquí pasa un corpus de seis obras por el handler entero
+     (cascada, puertas, rescate, orden, conteo, tarjeta y redacción pública) contra un Upstash
+     simulado aislado. La invariante que se defiende es la del dueño: el resumen cuenta lo que dicen
+     las tarjetas, y lo que se puede tomar con socio no va detrás de lo que no se puede tomar. */
+  bqListaSocio: { if (!corre("unidad lista con socio por el listado real")) break bqListaSocio;
+    const mockLS = crearMockUpstash();
+    const puertoLS = await escuchar(mockLS.server);
+    const urlSuiteLS = process.env.UPSTASH_REDIS_REST_URL;
+    process.env.UPSTASH_REDIS_REST_URL = `http://127.0.0.1:${puertoLS}`;
+    const PMls = require("../lib/perfiles.js");
+    const topeAntesLS = PMls.PERFILES.helder.topeSMMLV;
+    try {
+      const rLS = crearRedis({});
+      const { escribirChunks, escribirJSON } = require("../lib/almacen.js");
+      const { repartirDelta } = require("../lib/proyeccion.js");
+      const isoLS = (ms) => new Date(ms).toISOString().slice(0, 10);
+      const FUT_LS = `${isoLS(Date.now() + 20 * 86400e3)}T17:00:00.000`;
+      const PUB_LS = `${isoLS(Date.now() - 3 * 86400e3)}T00:00:00.000`;
+      // una entidad y un nombre por obra: la lista funde las versiones de la MISMA obra en una tarjeta
+      const OBRAS_LS = [
+        { id: "CO1.REQ.LS1", v: 900000000, m: 3, ent: "ALCALDÍA DE ALVARADO", nit: "800100001", que: "solo" },
+        { id: "CO1.REQ.LS2", v: 12000000000, m: 6, ent: "ALCALDÍA DE AMBALEMA", nit: "800100002", que: "con socio: capacidad y caja" },
+        { id: "CO1.REQ.LS3", v: 15000000000, m: 48, ent: "ALCALDÍA DE ANZOÁTEGUI", nit: "800100003", que: "con socio: solo la caja" },
+        { id: "CO1.REQ.LS4", v: 95947137840, m: 12, ent: "ALCALDÍA DE ARMERO", nit: "800100004", que: "se acerca" },
+        { id: "CO1.REQ.LS5", v: 3000000000, m: 48, ent: "ALCALDÍA DE ATACO", nit: "800100005", que: "solo (con tope: con socio)" },
+        { id: "CO1.REQ.LS6", v: 7000000000, m: 48, ent: "ALCALDÍA DE CAJAMARCA", nit: "800100006", que: "solo con anticipo" },
+      ];
+      const VEREDAS_LS = ["EL PALMAR", "LA ESPERANZA", "SAN ANTONIO", "BUENOS AIRES", "LA PRIMAVERA", "EL CEDRAL"];
+      const crudasLS = OBRAS_LS.map((o, i) => ({ ":id": `ls${i + 1}`, ":updated_at": new Date().toISOString(), id_del_proceso: o.id, entidad: o.ent, nit_entidad: o.nit,
+        departamento_entidad: "Tolima", ciudad_entidad: "IBAGUÉ", modalidad_de_contratacion: "Licitación pública Obra Publica", estado_del_procedimiento: "Publicado",
+        fase: "Presentación de oferta", fecha_de_publicacion_del: PUB_LS, fecha_de_recepcion_de: FUT_LS, precio_base: String(o.v),
+        nombre_del_procedimiento: `Construcción de placa huella en la vereda ${VEREDAS_LS[i]} tramo ${i + 1}`, descripci_n_del_procedimiento: "Obra civil de pavimentación rural en placa huella y obras de drenaje",
+        codigo_principal_de_categoria: "V1.72141100", tipo_de_contrato: "Obra", duracion: String(o.m), unidad_de_duracion: "Meses",
+        urlproceso: { url: `https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=CO1.NTC.LS${i + 1}` } }));
+      const repLS = repartirDelta(crudasLS);
+      const abiertasLS = repLS.activo.filter((f) => f.proceso_abierto);
+      assert.strictEqual(abiertasLS.length, OBRAS_LS.length, `el fixture: las ${OBRAS_LS.length} obras abiertas (${abiertasLS.length})`);
+      const porMesLS = new Map();
+      // LS3 trae una adenda de cuantía (de 3.000 M a 15.000 M): con credencial dice que ni con el anticipo máximo alcanza; sin ella, no
+      // y LS6 otra (de 3.000 M a 7.000 M): la caja pasa a depender del anticipo, «del N % o más» solo con credencial
+      const ADENDA_LS3 = [{ campo: "precio_base", antes: "3000000000", despues: "15000000000" }];
+      const ADENDA_LS6 = [{ campo: "precio_base", antes: "3000000000", despues: "7000000000" }];
+      const adendaDe = (id) => (id === "CO1.REQ.LS3" ? { _cambios: ADENDA_LS3 } : id === "CO1.REQ.LS6" ? { _cambios: ADENDA_LS6 } : {});
+      for (const f of abiertasLS) { const mes = String(f.fecha_de_publicacion_del).slice(0, 7); if (!porMesLS.has(mes)) porMesLS.set(mes, []); porMesLS.get(mes).push({ ...f, _k: f._k || f.id_del_proceso, ...adendaDe(f.id_del_proceso) }); }
+      await Promise.all([...porMesLS].map(([mes, fs]) => escribirChunks(rLS, (i) => CLAVES.chunk(mes, i), 0, fs)));
+      const ahoraLS = new Date().toISOString();
+      await escribirJSON(rLS, CLAVES.meta, { last_sync: ahoraLS, last_full: ahoraLS });
+
+      const listarLS = async (qs, cab) => {
+        const r = await invocar(oportunidades, `/api/oportunidades?perfil=helder&por_pagina=50${qs}`, cab || {});
+        assert.strictEqual(r.status, 200, `el listado responde: ${r.status} ${JSON.stringify(r.cuerpo).slice(0, 300)}`);
+        return r.cuerpo;
+      };
+      const porId = (c) => new Map(c.resultados.map((l) => [l.id_del_proceso, l]));
+      // lo que DICEN las tarjetas, contado igual que el resumen
+      const tallyDeTarjetas = (c) => {
+        const t = { solo: 0, solo_con_condicion: 0, con_socio: 0, se_acerca: 0, sin_socio: 0 };
+        for (const l of c.resultados) {
+          const so = l.socio || {};
+          if (so.tipo === "solo") t[so.condiciones && so.condiciones.length ? "solo_con_condicion" : "solo"]++;
+          else if (so.tipo === "con_socio") t[so.cierra_todo ? "con_socio" : "se_acerca"]++;
+          else t.sin_socio++;
+        }
+        return t;
+      };
+
+      // A · con credencial y «solo_viables» apagado: lo que pide la pantalla
+      const cA = await listarLS("&solo_viables=false", CAB_TOKEN);
+      const fA = porId(cA);
+      assert.deepStrictEqual([...fA.keys()].sort(), OBRAS_LS.map((o) => o.id).sort(), `las seis obras, también la que solo se acerca: ${[...fA.keys()].join(", ")}`);
+      const soA = (id) => fA.get(id).socio;
+      assert.ok(soA("CO1.REQ.LS1").tipo === "solo" && soA("CO1.REQ.LS1").condiciones.length === 0, `LS1 solo: ${JSON.stringify(soA("CO1.REQ.LS1"))}`);
+      for (const id of ["CO1.REQ.LS2", "CO1.REQ.LS3"]) {
+        const so = soA(id);
+        assert.ok(so.tipo === "con_socio" && so.cierra_todo === true && so.con === "prodiac" && so.parte_suya_max === 99 && /PRODIAC/.test(so.linea) && so.linea.includes("99 %"),
+          `${id}: con PRODIAC, usted hasta el 99 %: ${JSON.stringify(so)}`);
+      }
+      assert.ok(/financiar/.test(soA("CO1.REQ.LS3").linea), `LS3: lo que abre PRODIAC es la caja: «${soA("CO1.REQ.LS3").linea}»`);
+      const adA = fA.get("CO1.REQ.LS3").adendas;
+      assert.ok(adA && adA.cambios && /ni con el anticipo máximo/.test(adA.cambios[0].mensaje), `premisa: con credencial la adenda de LS3 lo dice: ${JSON.stringify(adA)}`);
+      const adA6 = fA.get("CO1.REQ.LS6").adendas;
+      assert.ok(adA6 && adA6.cambios && /caja le alcanza solo si el pliego da un anticipo del \d+ % o más/.test(adA6.cambios[0].mensaje), `premisa: con credencial la adenda de LS6 dice desde qué anticipo: ${JSON.stringify(adA6)}`);
+      const p3LS3 = fA.get("CO1.REQ.LS3").puertas;
+      assert.ok(p3LS3.p2_k.pasa === true && p3LS3.p3_caja.pasa === false && p3LS3.p3_caja.ni_con_anticipo_maximo === true, `premisa LS3: solo la caja lo deja fuera: ${JSON.stringify(p3LS3.no_viable_por)}`);
+      assert.ok(soA("CO1.REQ.LS4").tipo === "con_socio" && soA("CO1.REQ.LS4").cierra_todo === false && /puede no bastar/.test(soA("CO1.REQ.LS4").linea), `LS4 se acerca: ${JSON.stringify(soA("CO1.REQ.LS4"))}`);
+      assert.ok(soA("CO1.REQ.LS6").tipo === "solo" && soA("CO1.REQ.LS6").condiciones.includes("anticipo") && soA("CO1.REQ.LS6").si_no_se_cumple && soA("CO1.REQ.LS6").si_no_se_cumple.con === "prodiac",
+        `LS6 solo con anticipo y plan B: ${JSON.stringify(soA("CO1.REQ.LS6"))}`);
+      assert.ok(cA.conteo_socio && Object.values(cA.conteo_socio).reduce((a, b) => a + b, 0) === cA.total, `el conteo suma el total: ${JSON.stringify(cA.conteo_socio)} / ${cA.total}`);
+      assert.deepStrictEqual(cA.conteo_socio, tallyDeTarjetas(cA),
+        `MUTACIÓN: el resumen contaba «sin socio» lo que la tarjeta dice «se acerca»: ${JSON.stringify(cA.conteo_socio)} contra las tarjetas ${JSON.stringify(tallyDeTarjetas(cA))}`);
+      // el orden: lo que se puede tomar (solo o con un socio que cierra) va antes que lo que solo se acerca
+      const posA = (id) => cA.resultados.findIndex((l) => l.id_del_proceso === id);
+      for (const id of ["CO1.REQ.LS1", "CO1.REQ.LS2", "CO1.REQ.LS3", "CO1.REQ.LS5", "CO1.REQ.LS6"]) {
+        assert.ok(posA(id) < posA("CO1.REQ.LS4"), `MUTACIÓN: ${id} (se puede tomar) quedaba detrás de lo que solo se acerca: ${cA.resultados.map((l) => l.id_del_proceso).join(" · ")}`);
+      }
+      // con socio, la ganancia también por su parte
+      for (const id of ["CO1.REQ.LS2", "CO1.REQ.LS3"]) {
+        const g = fA.get(id).ganancia;
+        if (g) assert.ok(g.parte_suya && g.parte_suya.pct === 99, `${id}: la ganancia lleva su parte: ${JSON.stringify(g.parte_suya)}`);
+      }
+
+      // B · el default del servidor (solo lo que se puede tomar): la obra que SOLO la caja deja fuera sigue
+      const cB = await listarLS("", CAB_TOKEN);
+      const idsB = cB.resultados.map((l) => l.id_del_proceso).sort();
+      assert.ok(idsB.includes("CO1.REQ.LS3"), `MUTACIÓN: sin el rescate por la caja, la obra que PRODIAC cubre desaparecía de la lista: ${idsB.join(", ")}`);
+      assert.ok(!idsB.includes("CO1.REQ.LS4"), `lo que ningún socio cierra no se ofrece: ${idsB.join(", ")}`);
+      assert.deepStrictEqual(cB.conteo_socio, tallyDeTarjetas(cB), `también aquí el resumen cuenta las tarjetas: ${JSON.stringify(cB.conteo_socio)}`);
+      /* «Hoy hay N» y «Ver las N» (segunda revisión adversaria): el pulso cuenta con la MISMA regla de
+         rescate por la caja que la lista; con la regla solo en el listado, la portada decía 4 y la lista 5 */
+      const pulsoLS = require("../lib/handlers/perfil/pulso.js");
+      await rLS.del("pulso:helder");
+      const pLS = (await invocar(pulsoLS, "/api/perfil?op=pulso&perfil=helder&refrescar=1", CAB_TOKEN)).cuerpo;
+      assert.strictEqual(pLS.total, cB.total,
+        `MUTACIÓN: el pulso no rescataba por la caja y decía ${pLS.total} mientras la lista enseña ${cB.total} (${idsB.join(", ")})`);
+
+      // C · sin credencial: el socio solo dice tipo y si cierra; ni conteo, ni condición, ni cifras; el veredicto, el mismo
+      const cC = await listarLS("&solo_viables=false");
+      assert.strictEqual(cC.total, cA.total, "la misma cifra con y sin credencial: el veredicto no depende de quién pregunta");
+      const adC = porId(cC).get("CO1.REQ.LS3").adendas;
+      assert.ok(adC && adC.cambios && /ni con el anticipo máximo/.test(adC.cambios[0].mensaje) && !/\d+ % o más/.test(adC.cambios[0].mensaje),
+        `MUTACIÓN: sin credencial la adenda decía la cifra del anticipo: «${adC && adC.cambios && adC.cambios[0].mensaje}»`);
+      const adC6 = porId(cC).get("CO1.REQ.LS6").adendas;
+      assert.ok(adC6 && adC6.cambios && !/la caja le alcanza solo si/.test(adC6.cambios[0].mensaje) && !/\d+ % o más/.test(adC6.cambios[0].mensaje),
+        `MUTACIÓN: sin credencial la adenda de LS6 decía si la caja depende del anticipo, o desde cuánto: «${adC6 && adC6.cambios && adC6.cambios[0].mensaje}»`);
+      assert.strictEqual(cC.conteo_socio, null, "MUTACIÓN: sin credencial el conteo decía cuántas pasan solo con anticipo");
+      for (const l of cC.resultados) {
+        const so = l.socio;
+        assert.ok(so && so.con === null && so.con_nombre === null && so.parte_suya_max === null && so.condiciones === null && so.si_no_se_cumple === null && so.linea === null,
+          `MUTACIÓN: sin credencial «${l.id_del_proceso}» llevaba con quién, la condición o la línea: ${JSON.stringify(so)}`);
+        const p3 = l.puertas.p3_caja;
+        assert.strictEqual(p3.pasa, fA.get(l.id_del_proceso).puertas.p3_caja.pasa, `${l.id_del_proceso}: el veredicto de la caja es el mismo sin credencial`);
+        // null o ausente (la rama «ni con el anticipo máximo» no lleva el mínimo): lo que no puede es traer la cifra
+        for (const c of ["patrimonio", "anticipo_minimo_pct", "depende_del_anticipo", "advertencia", "anticipo_tope_legal_pct"]) assert.ok(p3[c] == null, `${l.id_del_proceso}: «${c}» sin credencial (${JSON.stringify(p3[c])})`);
+        assert.strictEqual(l.ganancia, null);
+      }
+
+      // D · el tope estratégico: la obra que pasa las cuatro puertas pero lo supera no la toma solo
+      const cD0 = await listarLS("&solo_viables=false", CAB_TOKEN); // la configuración ya quedó en el respaldo del repositorio
+      assert.strictEqual(porId(cD0).get("CO1.REQ.LS5").socio.tipo, "solo", "control: sin tope, LS5 va solo");
+      PMls.PERFILES.helder.topeSMMLV = 1000; // ≈ 1.751 M: LS1 queda por debajo, LS5 (3.000 M) por encima
+      const cD = await listarLS("&solo_viables=false", CAB_TOKEN);
+      const fD = porId(cD);
+      assert.ok(fD.get("CO1.REQ.LS5").puertas.pasa_todas === true, "premisa: las puertas no miran el tope");
+      assert.ok(fD.get("CO1.REQ.LS5").socio.tipo === "con_socio" && /tope/.test(fD.get("CO1.REQ.LS5").socio.linea), `LS5 con tope: ${JSON.stringify(fD.get("CO1.REQ.LS5").socio)}`);
+      assert.strictEqual(fD.get("CO1.REQ.LS1").socio.tipo, "solo", "LS1 está por debajo del tope");
+      assert.deepStrictEqual(cD.conteo_socio, tallyDeTarjetas(cD),
+        `MUTACIÓN: la obra por encima del tope se contaba «solo» y la tarjeta decía «con socio»: ${JSON.stringify(cD.conteo_socio)} contra ${JSON.stringify(tallyDeTarjetas(cD))}`);
+
+      console.log(`· unidad lista con socio por el listado real: ${OBRAS_LS.length} obras por el handler entero · el resumen cuenta lo que dicen las tarjetas (${JSON.stringify(cA.conteo_socio)}) `
+        + "· lo que se toma con socio va antes de lo que solo se acerca · la obra que solo la caja deja fuera sigue en la lista · sin credencial, solo tipo y si cierra · por encima del tope, con socio");
+    } finally {
+      PMls.PERFILES.helder.topeSMMLV = topeAntesLS;
+      process.env.UPSTASH_REDIS_REST_URL = urlSuiteLS;
+      await new Promise((r) => mockLS.server.close(r));
+    }
   }
 
   /* unidad: EL MISMO ANTICIPO AUSENTE, EN LA CASCADA DE LA K (13-sep-2026).
@@ -11880,19 +12455,23 @@ async function main() {
     {
       const fs3 = require("fs"), path3 = require("path");
 
-      /* (a) LA FILA LLEVA EL RESUMEN, NO EL VEREDICTO ENTERO. `resumenSocio` no
-         se exporta —es privada del handler—, así que se recorta y se ejecuta. */
+      /* (a) LA FILA LLEVA EL RESUMEN, NO EL VEREDICTO ENTERO. Desde el 27-oct-2026 el
+         resumen dice además con quién y qué parte (encargo del dueño: «determinar qué %
+         para cada proceso»); lo arma `lib/socio_por_proceso.resumenParaLista`, que es lo
+         que llama listar.js, y sus claves las fija el bloque «unidad caja con anticipo
+         máximo y socio en la fila». Aquí se conserva lo que el 11-sep cerró: sigue siendo
+         un orden de magnitud más liviano que el veredicto, y `cierra_todo` no se pierde. */
       const srcListar = fs3.readFileSync(path3.join(__dirname, "..", "lib", "handlers", "procesos", "listar.js"), "utf8");
-      const iRS = srcListar.indexOf("function resumenSocio(v) {");
-      assert.ok(iRS > 0, "listar.js sin resumenSocio: la fila volvería a cargar el veredicto entero");
-      const resumenSocio = new Function(`${srcListar.slice(iRS, srcListar.indexOf("\n}", iRS) + 2)}; return resumenSocio;`)();
+      assert.ok(/resumenParaLista\(socioDe\(l\)/.test(srcListar), "listar.js tiene que servir el RESUMEN del consejo, no el veredicto entero");
+      const resumenSocio = (v) => SP.resumenParaLista(v);
       const veredictoLargo = SP.socioPorProceso({
         fila: filaDe({ n: "CONSTRUCCION DE PAVIMENTO EN CONCRETO VIA LA ESPERANZA", v: 15000e6 }),
         candidatos: ["genesis", "prodiac"],
       });
       const resumido = resumenSocio(veredictoLargo);
-      assert.deepStrictEqual(Object.keys(resumido).sort(), ["cierra_todo", "tipo"],
-        `la fila solo lleva tipo y cierra_todo: ${Object.keys(resumido).join(", ")}`);
+      assert.deepStrictEqual(Object.keys(resumido).sort(), ["cierra_todo", "con", "con_nombre", "condiciones", "linea", "parte_suya_max", "si_no_se_cumple", "tipo"],
+        `la fila lleva el resumen del consejo y nada más: ${Object.keys(resumido).join(", ")}`);
+      assert.ok(!("opciones" in resumido) && !("avisos" in resumido) && !("frase" in resumido), "el porqué y los avisos siguen en el expediente");
       const pesoLargo = JSON.stringify(veredictoLargo).length, pesoCorto = JSON.stringify(resumido).length;
       assert.ok(pesoCorto * 20 < pesoLargo,
         `el resumen tiene que ser un orden de magnitud más liviano: ${pesoCorto} B contra ${pesoLargo} B`);
@@ -20127,6 +20706,39 @@ async function main() {
         "la instalación/montaje (verbo de obra, segmento 56) debía pasar y no aparece");
       assert.ok(todasH.some((l) => /Convocado/i.test(l.estado_del_procedimiento)),
         "los procesos Convocado (abiertos) debían aparecer");
+
+      /* EL CONSEJO DE SOCIO EN LA FILA, POR EL HANDLER REAL (27-oct-2026). Lo que la
+         unidad «caja con anticipo máximo y socio en la fila» fija con funciones sueltas,
+         aquí sobre la respuesta entera: un solo «con quién» (sin `alcanzable_con_socio`),
+         el resumen en todas las filas, el conteo que suma el total y el orden. */
+      {
+        assert.ok(todasH.every((l) => !("alcanzable_con_socio" in l)), "MUTACIÓN: la fila volvía a llevar un segundo «con quién»");
+        const clavesSocio = ["cierra_todo", "con", "con_nombre", "condiciones", "linea", "parte_suya_max", "si_no_se_cumple", "tipo"];
+        const malSocio = todasH.filter((l) => !l.socio || JSON.stringify(Object.keys(l.socio).sort()) !== JSON.stringify(clavesSocio));
+        assert.deepStrictEqual(malSocio.map((l) => l.id_del_proceso), [], "toda fila de Helder lleva el resumen del consejo");
+        const r1S = (await invocar(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=1", CAB_TOKEN)).cuerpo;
+        const cs = r1S.conteo_socio;
+        assert.ok(cs && Object.values(cs).reduce((a, b) => a + b, 0) === r1S.total, `conteo_socio suma el total: ${JSON.stringify(cs)} contra ${r1S.total}`);
+        assert.strictEqual(cs.solo + cs.solo_con_condicion, r1S.viables, "los «solo» son exactamente los que pasan solos");
+        assert.strictEqual(cs.con_socio, todasH.filter((l) => l.socio.tipo === "con_socio" && l.socio.cierra_todo).length, "el conteo y las filas dicen lo mismo");
+        assert.strictEqual(cs.solo_con_condicion, todasH.filter((l) => l.viable && l.socio.condiciones.length).length,
+          "los «solo con condición» del conteo son las filas cuyo resumen trae condición (la misma regla, condicionesDeSolo)");
+        // el orden: lo que cierra con socio nunca va detrás de algo que no se puede tomar
+        const grupo = (l) => (l.viable || (l.socio.tipo === "con_socio" && l.socio.cierra_todo) ? 1 : 0);
+        const primerCero = todasH.findIndex((l) => grupo(l) === 0);
+        assert.ok(primerCero === -1 || todasH.slice(primerCero).every((l) => grupo(l) === 0),
+          "MUTACIÓN: una fila que cierra con socio quedó detrás de una que no se puede tomar");
+        for (const l of todasH.filter((x) => x.socio.tipo === "con_socio" && x.socio.cierra_todo)) {
+          assert.ok(l.socio.parte_suya_max != null && l.socio.linea.includes(`${l.socio.parte_suya_max} %`), `con credencial, la parte y la línea: ${JSON.stringify(l.socio)}`);
+          if (l.ganancia) assert.ok(l.ganancia.parte_suya && l.ganancia.parte_suya.pct === l.socio.parte_suya_max, `la ganancia lleva su parte: ${JSON.stringify(l.ganancia.parte_suya)}`);
+        }
+        // sin credencial: el «con quién» sí, la parte no
+        const pubS = (await invocar(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=100")).cuerpo.resultados;
+        for (const l of pubS.filter((x) => x.socio && x.socio.tipo === "con_socio")) {
+          assert.ok(l.socio.parte_suya_max === null && !/%/.test(l.socio.linea || ""), `sin credencial la parte del dueño no sale: ${JSON.stringify(l.socio)}`);
+        }
+        console.log(`  · c-bis · socio en la fila: ${todasH.length} filas con resumen · conteo ${JSON.stringify(cs)} · ninguna con socio detrás de una que no se puede tomar`);
+      }
 
       /* ESTADO «Activo»: el defecto era que se descartaban EN SILENCIO. El caso
          unitario prueba la clasificación; esto prueba que la full los ingiere y
@@ -49739,6 +50351,20 @@ async function main() {
       assert.strictEqual(proxima.urgencia, "media", "a dos días, urgencia media: la alta se reserva para hoy y mañana");
       assert.ok(!(g.alertas || []).some((a) => a.tipo === "tarea" && /Ya conseguí/.test(a.mensaje)), "lo ya hecho no vuelve a sonar");
 
+      /* 3f-bis · LO QUE RECIBE LA PESTAÑA, NO UN OBJETO ARMADO A MANO (27-oct-2026).
+         `g` es la lista LIGERA que sirve el servidor. Contra el árbol anterior caen
+         las tres: el calendario de la pestaña no veía ni una nota suya (leía
+         `tareas`, que la lista ligera no trae), y los dos cierres a 20 días
+         sumaban 6 recordatorios a «N avisos esta semana» y salían como «Faltan 7
+         días para: Cierre» (el filtro miraba el escalón 7/3/1, no la distancia). */
+      const agUno = K.agendaDe(g.procesos.filter((p) => p.id === "CAS.UNO"), { hoy: g.hoy });
+      assert.strictEqual(agUno.conteos_por_tipo.tarea, 2,
+        `las dos notas con fecha y sin hacer salen en el calendario de la pestaña, servidas por \`fechas_suyas\`: ${JSON.stringify(agUno.conteos_por_tipo)}`);
+      assert.strictEqual(g.resumen.avisos_proximos, 0,
+        `con los dos cierres a 20 días no suena ningún recordatorio esta semana: ${g.resumen.avisos_proximos}`);
+      assert.ok(!(g.alertas || []).some((a) => a.tipo === "aviso" && /^CAS\./.test(a.id)),
+        `un cierre a 20 días no está en «los próximos 7 días»: ${JSON.stringify((g.alertas || []).filter((a) => a.tipo === "aviso").map((a) => a.mensaje))}`);
+
       /* 3g · QUITAR UNA CARPETA NO BORRA NI UN PROCESO */
       const quit = (await cas("", { metodo: "POST", body: { perfil: PERF, accion: "carpeta_quitar", carpeta: c1.carpeta.id } })).cuerpo;
       assert.strictEqual(quit.procesos_sueltos, 1, "la respuesta dice cuántos procesos quedaron sueltos");
@@ -50160,6 +50786,162 @@ async function main() {
       assert.ok(D6.clasificarArchivo({ nombre_archivo: "Acta de sorteo.pdf" }).orden > 9, "el acta del sorteo no entra al plan de lectura automática");
       console.log("· unidad CASILLERO · la espera del sorteo: dos etapas en el recorrido, alertas por etapa, el sorteo como requisito de la guía y los documentos del aviso con tipo propio");
     }
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     unidad: LO QUE PIDE ATENCIÓN DICE LO QUE FALTA HOY (27-oct-2026)
+     ──────────────────────────────────────────────────────────────────────────
+     Tres defectos de Mis procesos, reproducidos con las funciones reales antes
+     de corregirlos (la parte que corre sobre la respuesta del servidor está en
+     «unidad CASILLERO DE MIS PROCESOS», 3f-bis). Contra el árbol anterior:
+       · `alertasDe` filtraba `a.dias_antes > dias` —el ESCALÓN 7/3/1, nunca
+         mayor que 7— y repetía el mensaje del día del recordatorio: un cierre del
+         20 de diciembre salía en octubre como «Faltan 7 días», y un hito a 5 días
+         se leía «Faltan 3 días»; «N avisos esta semana» sumaba los de diciembre;
+       · la pantalla anteponía el rótulo a una frase que ya lo trae: «Cambió:
+         Cambió:», y «Avisar que le interesa: Avisar que le interesa vence HOY»;
+       · el correo añadía «(fecha: …)» tras una frase que ya decía esa fecha. */
+  bqAvisosHoy: { if (!corre("unidad lo que pide atención · lo que falta hoy")) break bqAvisosHoy;
+    const S = require("../lib/seguimiento.js");
+    const Cro = require("../lib/cronograma.js");
+    const K = require("../public/casillero.js");
+    const Av = require("../lib/handlers/perfil/avisos.js");
+    const HOY = "2026-10-27";
+    const hitos = [{ id: "cierre", etiqueta: "Cierre: entrega de la oferta", fecha: "2026-12-20" }, { id: "apertura", etiqueta: "Apertura de ofertas", fecha: "2026-11-01" }];
+    const p = { id: "P1", estado: "preparando", proceso: { nombre: "SALONES COMUNALES", fecha_cierre: "2026-12-20T15:00:00" }, cerrado: false, dias_para_cierre: 54,
+      cambios: [{ campo: "fecha_cierre", mensaje: "Fecha de cierre: antes el viernes 2 de octubre, ahora el miércoles 14 de octubre." }],
+      tareas: [], documentos: [], avisos: Cro.avisosDe(hitos, HOY) };
+
+    /* 1 · el aviso cuenta desde HOY hasta el hito, y solo dentro de la semana */
+    const al = S.alertasDe([p], { dias: 7, hoy: HOY });
+    const avisos = al.filter((a) => a.tipo === "aviso");
+    assert.deepStrictEqual(avisos.map((a) => a.hito), ["apertura"], `el cierre del 20 de diciembre no es de «los próximos 7 días»: ${JSON.stringify(avisos)}`);
+    assert.strictEqual(avisos[0].mensaje, "Faltan 5 días para: Apertura de ofertas (domingo 1 de noviembre).", "dice lo que falta HOY, no el escalón del recordatorio");
+    assert.deepStrictEqual([avisos[0].fecha, avisos[0].urgencia], ["2026-11-01", "baja"], "la fecha de la alerta es la del hito");
+    assert.ok(!al.some((a) => /20 de diciembre/.test(a.mensaje)), "nada de diciembre en la lista de octubre");
+    // un cierre a 2 días también avisa: antes su único recordatorio era el T-1 y se descartaba por ser «cierre»
+    const p2 = { ...p, id: "P2", cambios: [], dias_para_cierre: 2, avisos: Cro.avisosDe([{ id: "cierre", etiqueta: "Cierre: entrega de la oferta", fecha: "2026-10-29" }], HOY) };
+    const al2 = S.alertasDe([p2], { dias: 7, hoy: HOY }).filter((a) => a.tipo === "aviso");
+    assert.ok(al2.length === 1 && /^Faltan 2 días para: Cierre/.test(al2[0].mensaje) && al2[0].urgencia === "media", `el cierre a dos días: ${JSON.stringify(al2)}`);
+    // a 1 día lo dice la alerta «cierre», sin un aviso repetido
+    const p3 = { ...p2, id: "P3", dias_para_cierre: 1, avisos: Cro.avisosDe([{ id: "cierre", etiqueta: "Cierre: entrega de la oferta", fecha: "2026-10-28" }], HOY) };
+    assert.deepStrictEqual(S.alertasDe([p3], { dias: 7, hoy: HOY }).map((a) => a.tipo), ["cierre"], "a un día, solo «Cierra mañana»");
+    // la frase es UNA: el recordatorio T-7/3/1 y la alerta la piden a la misma función
+    assert.strictEqual(Cro.avisosDe(hitos, HOY).find((a) => a.hito === "apertura" && a.dias_antes === 3).mensaje, Cro.fraseFaltan(3, "Apertura de ofertas", "2026-11-01"));
+    assert.strictEqual(Cro.fraseFaltan(1, "Cierre", "2026-10-28"), "Falta 1 día para: Cierre (miércoles 28 de octubre).");
+
+    /* 2 · «N avisos esta semana» cuenta los recordatorios que suenan de hoy a hoy + 7 */
+    assert.deepStrictEqual(p.avisos.map((a) => a.aviso), ["2026-10-29", "2026-10-31", "2026-12-13", "2026-12-17", "2026-12-19"], "T-3 y T-1 de la apertura; T-7, T-3 y T-1 del cierre");
+    assert.strictEqual(S.contarAvisosProximos([p], { dias: 7, hoy: HOY }), 2, "solo suenan esta semana los dos de la apertura");
+    assert.strictEqual(S.contarAvisosProximos([], { hoy: HOY }), 0);
+
+    /* 2b · EL CIERRE DE MAÑANA, MIRADO POR LA MAÑANA, AVISA (revisión adversaria del
+       27-oct). Armado con `enriquecer` y la hora real, no con `dias_para_cierre` a mano:
+       esa cuenta redondea las horas hacia arriba y a las 8 a. m. un cierre de mañana a
+       las 5 p. m. da 2, así que ni salía «Cierra mañana» ni este aviso. */
+    {
+      const tzAntes = process.env.TZ; process.env.TZ = "UTC";
+      try {
+        const ocho = Date.parse("2026-10-27T13:00:00Z"); // 8:00 a. m. en Colombia
+        const g = (c) => ({ id: "H", estado: "preparando", foto: { nombre: "OBRA", fecha_cierre: c, fecha_publicacion: "2026-10-01" } });
+        const alM = S.alertasDe([S.enriquecer(g("2026-10-28T17:00:00"), null, ocho)], { dias: 7, hoy: HOY });
+        assert.ok(alM.length === 1 && alM[0].tipo === "aviso" && alM[0].urgencia === "alta" && /^Falta 1 día para: Cierre/.test(alM[0].mensaje),
+          `el cierre de mañana tiene que avisar en algún sitio: ${JSON.stringify(alM)}`);
+        assert.deepStrictEqual(S.alertasDe([S.enriquecer(g("2026-10-27T17:00:00"), null, ocho)], { dias: 7, hoy: HOY }).map((a) => a.tipo), ["cierre"],
+          "el día del cierre lo dice la alerta «cierre», sin un aviso repetido");
+      } finally { if (tzAntes === undefined) delete process.env.TZ; else process.env.TZ = tzAntes; }
+    }
+
+    /* 3 · el rótulo no se antepone a una frase que ya lo trae */
+    const tipos = { cambio: "Cambió", manifestacion: "Avisar que le interesa", aviso: "Aviso" };
+    const html = K.htmlAlertas(al, { tipos, abierto: true });
+    assert.ok(!/Cambió: Cambió:/.test(html) && /Cambió: Fecha de cierre: antes el viernes 2 de octubre/.test(html), `un cambio dice «Cambió» una vez: ${html.replace(/\s+/g, " ").slice(0, 300)}`);
+    assert.strictEqual(K.fraseAviso({ tipo: "manifestacion", mensaje: "Avisar que le interesa vence HOY (lunes 26 de octubre), según el cronograma del pliego." }, tipos),
+      "Avisar que le interesa vence HOY (lunes 26 de octubre), según el cronograma del pliego.", "la manifestación confirmada no repite su rótulo");
+    assert.strictEqual(K.fraseAviso({ tipo: "aviso", mensaje: "Faltan 5 días para: Cierre." }, tipos), "Aviso: Faltan 5 días para: Cierre.", "cuando la frase no lo trae, el rótulo sigue");
+    assert.strictEqual(K.fraseAviso({ tipo: "otro", mensaje: "x" }, {}), "otro: x", "sin rótulo conocido, el tipo crudo, como antes");
+
+    /* 4 · el correo no dice dos veces la misma fecha */
+    const correo = Av.plantillaAviso({ perfil: "helder", alertas: al, fecha: HOY }).texto;
+    assert.ok(!/1 de noviembre\)\. \(fecha:/.test(correo) && /Faltan 5 días para: Apertura de ofertas \(domingo 1 de noviembre\)\./.test(correo),
+      `el renglón del aviso no repite «(fecha: …)»: ${correo}`);
+    const conFechaSola = Av.plantillaAviso({ perfil: "helder", alertas: [{ tipo: "sorteo", proceso: "OBRA", mensaje: "Mire si salió la lista.", fecha: "2026-10-20" }], fecha: HOY }).texto;
+    assert.ok(/Mire si salió la lista\. \(fecha: martes 20 de octubre\)/.test(conFechaSola), `la fecha se sigue diciendo cuando la frase no la trae: ${conFechaSola}`);
+    /* 5 · «N avisos esta semana» ya no se pinta: contaba recordatorios que ninguna lista
+       enseña, y junto a «Piden atención · N avisos» decía otra cifra con la misma palabra */
+    const appA = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+    const iRes5 = appA.indexOf("function htmlResumenSeguimiento(");
+    const chips5 = new Function(`${appA.slice(iRes5, appA.indexOf("\n  }", iRes5) + 4)}; return htmlResumenSeguimiento;`)();
+    assert.ok(!/esta semana/.test(chips5({ abiertos: 2, presentados: 0, cambios_pendientes: 1, avisos_proximos: 5 }, 3)), "el chip de los recordatorios de la semana no vuelve");
+
+    /* 6 · EL CUADERNO SE CAMBIA SOBRE LA LISTA COMPLETA, O NO SE CAMBIA (27-oct-2026).
+       El servidor sustituye la lista entera con lo que llega en `tareas`, y los tres
+       mandos del expediente la armaban con `(p.tareas || [])` sobre la fila LIGERA, que
+       no la trae: marcar una nota borraba todas (medido en Chromium con los routers
+       reales: 3 notas → 0). La lista sale del expediente abierto; si no está, null. */
+    const iT6 = appA.indexOf("  function tareasDelExpediente(id) {");
+    assert.ok(iT6 > 0, "app.js sin tareasDelExpediente: los mandos del cuaderno no tienen de dónde sacar la lista completa");
+    const fuenteT6 = appA.slice(iT6, appA.indexOf("\n  }", iT6) + 4);
+    const tareasDe6 = (datos) => new Function("segExpDatos", `${fuenteT6}; return tareasDelExpediente;`)(datos);
+    assert.strictEqual(tareasDe6(null)("A"), null, "sin expediente abierto no hay lista: no se envía nada");
+    assert.strictEqual(tareasDe6({ proceso: { id: "B", tareas: [] } })("A"), null, "el expediente de OTRO proceso no presta su lista");
+    assert.strictEqual(tareasDe6({ proceso: S.aLigero({ id: "A", estado: "interesa", tareas: [{ id: "t1", texto: "x" }] }) })("A"), null, "la fila ligera no trae la lista: null, nunca []");
+    assert.deepStrictEqual(tareasDe6({ proceso: { id: "A", tareas: [{ id: "t1", texto: "x" }] } })("A"), [{ id: "t1", texto: "x" }]);
+    assert.ok(!/\(p\.tareas \|\| \[\]\)\.(?:map|filter)\(|\[\.\.\.\(p\.tareas \|\| \[\]\)/.test(appA),
+      "censo de app.js: ningún mando vuelve a armar la lista de verificación desde una fila que puede no traerla");
+    assert.strictEqual((appA.match(/guardarDelProceso\([^;]*\btareas\b/g) || []).length, 1,
+      "censo de app.js: la lista de verificación se envía desde UN solo sitio (`cambiarTareas`), el que parte de la lista completa y va en fila");
+    /* y la fila: dos pulsaciones seguidas no se pisan (revisión adversaria del 27-oct:
+       marcar dos notas seguidas dejaba solo la segunda; apuntar y marcar perdía la
+       nueva). Se ejecuta el `cambiarTareas` REAL de app.js contra un servidor falso
+       que, como el de verdad, sustituye la lista entera y tarda en contestar. */
+    {
+      const iB6 = appA.indexOf("  function tareasDelExpediente(id) {"), fB6 = appA.indexOf("  /* LOS PROCESOS QUE SE ESTÁN VIENDO", iB6);
+      assert.ok(iB6 > 0 && fB6 > iB6, "el bloque del cuaderno sigue entero en app.js");
+      const bloque6 = appA.slice(iB6, fB6);
+      const montar6 = (datos) => {
+        const ent = { datos, pintadas: 0, envios: [], servidor: { tareas: datos && datos.proceso ? datos.proceso.tareas.map((t) => ({ ...t })) : [] } };
+        ent.guardar = async (id, cambio, opc) => {
+          ent.envios.push({ n: cambio.tareas.length, repintar: opc ? opc.repintar : undefined });
+          await new Promise((r) => setTimeout(r, 15));
+          ent.servidor.tareas = cambio.tareas.map((t, i) => ({ id: t.id || `n${i}`, ...t }));
+          return { guardado: { tareas: ent.servidor.tareas.map((t) => ({ ...t })) } };
+        };
+        const api = new Function("ent", `let segExpDatos = ent.datos, seguimientoCargadoPara = "x", segExpEscrituras = 0;
+          const secSeg = null, CSS = { escape: (s) => s }, document = { activeElement: null };
+          const guardarDelProceso = ent.guardar, pintarExpediente = () => { ent.pintadas += 1; }, refrescarExpediente = () => {}, mensajeSeg = () => {};
+          ${bloque6}; return { cambiarTareas, datos: () => segExpDatos, escrituras: () => segExpEscrituras };`)(ent);
+        return { ...api, ent };
+      };
+      const m6 = montar6({ proceso: { id: "A", tareas: [{ id: "t1", texto: "Póliza", hecha: false }, { id: "t2", texto: "RUT", hecha: false }] } });
+      const marcar6 = (idT) => (ts) => ts.map((t) => (t.id === idT ? { ...t, hecha: true } : t));
+      await Promise.all([m6.cambiarTareas("A", marcar6("t1")), m6.cambiarTareas("A", marcar6("t2"))]);
+      assert.deepStrictEqual(m6.ent.servidor.tareas.map((t) => `${t.id}:${t.hecha}`), ["t1:true", "t2:true"], "dos marcas seguidas quedan las dos");
+      await Promise.all([m6.cambiarTareas("A", (ts) => [...ts, { texto: "Nueva", hecha: false }]), m6.cambiarTareas("A", (ts) => ts.filter((t) => t.id !== "t2"))]);
+      assert.deepStrictEqual(m6.ent.servidor.tareas.map((t) => t.texto), ["Póliza", "Nueva"], "apuntar y quitar seguidos tampoco se pisan: la nota nueva sigue");
+      assert.deepStrictEqual(m6.datos().proceso.tareas.map((t) => t.texto), ["Póliza", "Nueva"], "el expediente queda con lo que devolvió el servidor");
+      assert.ok(m6.ent.envios.every((e) => e.repintar === false) && m6.escrituras() === 4 && m6.ent.pintadas === 4,
+        `cada pulsación guarda sin recargar la lista maestra, cuenta su escritura y repinta: ${JSON.stringify(m6.ent.envios)}`);
+      const sin6 = montar6(null);
+      assert.deepStrictEqual(await sin6.cambiarTareas("A", () => []), { sinLista: true }, "sin la lista completa la respuesta lo dice");
+      assert.strictEqual(sin6.ent.envios.length, 0, "y no se envía nada al servidor");
+      /* una lectura del expediente que viajaba mientras entró otro guardado llega VIEJA y no se pinta */
+      const iR6 = appA.indexOf("  async function refrescarExpediente() {");
+      const fuenteR6 = appA.slice(iR6, appA.indexOf("\n  }", iR6) + 4);
+      const r6 = new Function(`let segExpId = "A", segExpEscrituras = 0, segExpDatos = { proceso: { id: "A", tareas: ["nueva"] } }, pintadas = 0;
+        const $ = () => ({ value: "helder" }), pintarExpediente = () => { pintadas += 1; };
+        const api = async () => { segExpEscrituras += 1; return { proceso: { id: "A", tareas: ["vieja"] } }; };
+        ${fuenteR6}; return async () => { await refrescarExpediente(); return { tareas: segExpDatos.proceso.tareas, pintadas }; };`)();
+      assert.deepStrictEqual(await r6(), { tareas: ["nueva"], pintadas: 0 }, "la lectura que empezó antes de otro guardado se descarta");
+    }
+    /* 7 · el calendario lee `fechas_suyas` de la fila LIGERA, y lo que vence de un
+       documento dice que es un documento (el mismo rótulo que ya pone el .ics) */
+    const conDoc = { id: "D", estado: "preparando", proceso: { nombre: "OBRA" }, hitos: [],
+      tareas: [{ id: "t1", texto: "Pedir la póliza", hecha: false, fecha: "2026-10-30" }], documentos: [{ id: "d1", nombre: "RUT", vence: "2026-11-02", estado: "listo" }] };
+    conDoc.fechas_suyas = S.fechasSuyas(conDoc);
+    assert.deepStrictEqual(K.eventosDe(S.aLigero(conDoc)).map((e) => `${e.origen}|${e.etiqueta}`), ["usted|Pedir la póliza", "usted|Su documento: Vence RUT"],
+      "la nota y el vencimiento del documento llegan al calendario, cada uno con su nombre");
+    console.log("· unidad lo que pide atención · lo que falta hoy: el aviso cuenta desde hoy y solo dentro de la semana (y el cierre de mañana avisa por la mañana), la cuenta semanal mira el día del recordatorio, el rótulo no se repite, el correo no dice dos veces la fecha, el chip de la semana no vuelve y el cuaderno no se borra al marcar una nota");
   }
 
   /* ══════════════════════════════════════════════════════════════════════════
@@ -55282,6 +56064,16 @@ async function main() {
         codigo_principal_de_categoria: "V1.72141100", duracion: "6", unidad_de_duracion: "Meses", estado_del_procedimiento: "Publicado", precio_base: "12000000000",
         modalidad_de_contratacion: "Contratación régimen especial", tipo_de_contrato: "Obra" };
       const r1 = sppRC({ fila: filaRC, base: "helder", candidatos: ["genesis", "prodiac", "pics"] });
+      /* EL TOPE DEL ANTICIPO ES DE LA LEY 80 Y NO DEL RÉGIMEN ESPECIAL (27-oct-2026, revisión
+         adversaria). Con 12.000 M a Helder no le alcanza la caja ni con el 50 % (1.200 M frente a
+         1.107 M de patrimonio): en una licitación pública la caja cierra y el consejo pasa a
+         PRODIAC; en régimen especial la entidad usa su propio manual, la caja no cierra con ese
+         tope y el «solo» dice las dos condiciones (anticipo y capacidad). */
+      chequeaRC(r1 && r1.recomendacion.solo_con_anticipo === true && r1.recomendacion.anticipo_minimo_pct === 54 && !r1.base.falta.includes("caja"),
+        `(1) régimen especial: la caja no cierra con el tope de la ley, pide un anticipo del 54 % (${r1 && JSON.stringify({ falta: r1.base.falta, ant: r1.recomendacion.anticipo_minimo_pct })})`);
+      const r12 = sppRC({ fila: { ...filaRC, modalidad_de_contratacion: "Licitación pública Obra Publica" }, base: "helder", candidatos: ["genesis", "prodiac", "pics"] });
+      chequeaRC(r12 && r12.recomendacion.tipo === "con_socio" && r12.base.falta.includes("caja") && r12.recomendacion.socio === "prodiac",
+        `(1) en licitación pública, con 12.000 M ni con el anticipo máximo le alcanza la caja: va con PRODIAC (${r12 && JSON.stringify({ tipo: r12.recomendacion.tipo, falta: r12.base.falta, socio: r12.recomendacion.socio })})`);
       chequeaRC(r1 && r1.recomendacion.tipo === "solo" && r1.recomendacion.solo_si_no_la_piden === true, `(1) régimen especial que no cabe: sigue «solo, si no la piden» (${r1 && JSON.stringify(r1.recomendacion).slice(0, 120)})`);
       chequeaRC(r1 && r1.opciones.length > 0 && r1.recomendacion.si_la_piden && r1.recomendacion.si_la_piden.socio === r1.opciones[0].socioId, `(1) y ofrece el socio para si la piden (opciones: ${r1 && r1.opciones.map((o) => o.socioId).join(",")})`);
       chequeaRC(r1 && new RegExp(`si la pide necesitaría un socio \\(${r1.recomendacion.si_la_piden ? r1.recomendacion.si_la_piden.nombre : "¿?"}`).test(r1.frase), `(1) la frase nombra el socio: «${r1 && r1.frase}»`);

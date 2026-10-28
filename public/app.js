@@ -4845,6 +4845,7 @@
   }
   let segExpId = null;            // qué expediente está abierto
   let segExpDatos = null;         // la respuesta de ?expediente=<id>
+  let segExpEscrituras = 0;       // cuántos guardados del expediente van: una lectura que empezó antes llega vieja
   let segExpSeccion = "resumen";  // en qué sección va
   let segExpCargando = false;
   /* DÓNDE ESTABA EL USUARIO ANTES DE ENTRAR (7-sep-2026). Volver de un
@@ -4982,6 +4983,7 @@
   async function guardarDocumentos(id, documentos, frase) {
     try {
       const r = await api("/api/perfil?op=seguimiento", { method: "POST", body: { perfil: $("f-perfil").value, id, documentos } });
+      segExpEscrituras += 1;
       if (segExpDatos && segExpDatos.proceso && r && r.guardado) {
         segExpDatos = { ...segExpDatos, proceso: { ...segExpDatos.proceso, documentos: r.guardado.documentos || [] } };
         /* el resumen lo calcula el SERVIDOR; para no inventarlo aquí se vuelve a
@@ -4995,8 +4997,12 @@
   }
   async function refrescarExpediente() {
     if (!segExpId) return;
+    const escrituras = segExpEscrituras;
     try {
       const r = await api(`/api/perfil?op=seguimiento&perfil=${encodeURIComponent($("f-perfil").value)}&expediente=${encodeURIComponent(segExpId)}`);
+      /* si otro guardado entró mientras esta lectura viajaba, la lectura es VIEJA:
+         pintarla devolvería la pantalla a antes de esa pulsación (revisión del 27-oct) */
+      if (escrituras !== segExpEscrituras) return;
       if (r && r.proceso && r.proceso.id === segExpId) { segExpDatos = r; pintarExpediente(); }
     } catch { /* el expediente ya está pintado con lo que se guardó */ }
   }
@@ -5109,7 +5115,15 @@
              <p class="exp-vacio-texto">La fuente pública solo publica los proponentes después de la apertura de ofertas. Vuelva cuando el proceso cierre.</p></div>`}
       </section>`;
     }
+    /* lo que el usuario está escribiendo en «Qué le falta» sobrevive al repintado
+       (guardar una casilla y su relectura repintan el expediente entero) */
+    const campoNueva = (k) => caja.querySelector(`[data-seg-tarea-${k}="${CSS.escape(p.id)}"]`);
+    const enCurso = ["texto", "fecha"].map((k) => { const c = campoNueva(k); return c && c.value ? { k, valor: c.value, foco: document.activeElement === c } : null; }).filter(Boolean);
+    const avisoCuaderno = () => caja.querySelector(`[data-seg-cuaderno-mensaje="${CSS.escape(p.id)}"]`);
+    const dicho = avisoCuaderno() && avisoCuaderno().textContent ? { texto: avisoCuaderno().textContent, clase: avisoCuaderno().className } : null;
     caja.innerHTML = `${cabecera}<div class="exp-cuerpo">${cuerpo}</div>`;
+    for (const b of enCurso) { const c = campoNueva(b.k); if (c) { c.value = b.valor; if (b.foco) c.focus(); } }
+    if (dicho && avisoCuaderno()) { avisoCuaderno().textContent = dicho.texto; avisoCuaderno().className = dicho.clase; }
     if (segExpSeccion === "resumen" && X.htmlPuedePresentarse) cargarPresentarse(p);
     /* EL FOCO ENTRA CON EL USUARIO (7-sep-2026). Al abrir un expediente el foco
        se quedaba en la fila que ya no está en pantalla: quien navega con teclado
@@ -5172,6 +5186,55 @@
     return r;
   }
   const procesoGuardado = (id) => ((ultimoSeguimiento && ultimoSeguimiento.procesos) || []).find((x) => x && x.id === id) || null;
+  /* LA LISTA DE VERIFICACIÓN SE LEE DEL EXPEDIENTE, NUNCA DE LA LISTA (27-oct-2026).
+     El servidor SUSTITUYE la lista entera con lo que llega en `tareas`, y la fila de
+     la lista (`procesoGuardado`) es la LIGERA, que no trae `tareas`: con
+     `(p.tareas || [])` marcar una nota enviaba la lista vacía y borraba el cuaderno
+     entero (medido en Chromium: 3 notas → 0 al marcar una). Sin la lista completa
+     no se envía nada: «sin dato» no es «lista vacía». */
+  function tareasDelExpediente(id) {
+    const p = segExpDatos && segExpDatos.proceso;
+    return p && p.id === id && Array.isArray(p.tareas) ? p.tareas : null;
+  }
+  const SIN_LISTA_COMPLETA = "No se pudo leer su lista completa, así que no se cambió nada. Vuelva a Mis procesos y entre otra vez a este proceso.";
+  /* UNA PULSACIÓN A LA VEZ (revisión adversaria del 27-oct). Como el servidor
+     sustituye la lista entera, dos pulsaciones seguidas que arman su lista con el
+     mismo estado se pisan: la segunda borra lo de la primera (reproducido: marcar
+     dos notas seguidas dejaba solo la segunda; apuntar y marcar perdía la nueva).
+     Cada cambio llega como una FUNCIÓN que arma la lista, y corre en fila: cuando le
+     toca, parte de lo último que devolvió el servidor. No se recarga la lista
+     maestra en cada pulsación (se refresca al volver, como en los documentos), y
+     lo que el usuario está escribiendo en «Qué le falta» sobrevive al repintado. */
+  let colaCuaderno = Promise.resolve();
+  function cambiarTareas(id, armar, { limpiarNueva = false } = {}) {
+    const turno = colaCuaderno.then(async () => {
+      const actuales = tareasDelExpediente(id);
+      if (!actuales) return { sinLista: true };
+      const r = await guardarDelProceso(id, { tareas: armar(actuales) }, { repintar: false });
+      seguimientoCargadoPara = null;
+      segExpEscrituras += 1;
+      if (segExpDatos && segExpDatos.proceso && segExpDatos.proceso.id === id && r && r.guardado) {
+        segExpDatos = { ...segExpDatos, proceso: { ...segExpDatos.proceso, tareas: r.guardado.tareas || [] } };
+        /* lo apuntado ya está en la lista: el campo se vacía; lo demás que se esté
+           escribiendo lo conserva `pintarExpediente` */
+        if (limpiarNueva) for (const k of ["texto", "fecha"]) { const c = secSeg && secSeg.querySelector(`[data-seg-tarea-${k}="${CSS.escape(id)}"]`); if (c) c.value = ""; }
+        pintarExpediente();
+        refrescarExpediente();
+      }
+      return r;
+    });
+    colaCuaderno = turno.catch(() => {});
+    return turno;
+  }
+  /* La respuesta de un mando del cuaderno se dice DENTRO del cuaderno: `mensajeSeg`
+     escribe en la caja de la lista, que en el expediente está oculta, y «Apuntado.»
+     o un fallo quedaban sin ninguna respuesta visible. */
+  function decirCuaderno(id, texto, tipo) {
+    const el = secSeg && secSeg.querySelector(`[data-seg-cuaderno-mensaje="${CSS.escape(id)}"]`);
+    if (!el) { mensajeSeg(texto, tipo); return; }
+    el.textContent = texto || "";
+    el.className = tipo === "error" ? "cas-nota text-red-700" : "cas-nota";
+  }
   /* LOS PROCESOS QUE SE ESTÁN VIENDO, en un solo sitio. Los usan el pintado, la
      navegación de mes y la pulsación de un día: tres filtrados copiados harían
      que la lista y el calendario acabaran enseñando conjuntos distintos. */
@@ -5519,7 +5582,10 @@
       r.presentados ? `<span class="bg-gray-900 rounded-full px-2.5 py-1">${r.presentados} sin resultado todavía</span>` : "",
       r.cambios_pendientes ? `<span class="rounded-full bg-red-100 px-2.5 py-1 text-red-700">${r.cambios_pendientes} cambio${r.cambios_pendientes === 1 ? "" : "s"} sin ver</span>` : "",
       r.manifestaciones_abiertas ? `<span class="rounded-full bg-amber-100 px-2.5 py-1 text-amber-900">${r.manifestaciones_abiertas} en los que todavía puede avisar que le interesa</span>` : "",
-      r.avisos_proximos ? `<span class="rounded-full bg-amber-100 px-2.5 py-1 text-amber-900">${r.avisos_proximos} aviso${r.avisos_proximos === 1 ? "" : "s"} esta semana</span>` : "",
+      /* «N avisos esta semana» ya no se pinta (27-oct-2026, decisión del dueño en el
+         plan de datos): contaba RECORDATORIOS T-7/3/1 que ninguna lista enseña, y a un
+         palmo de «Piden atención · N avisos» decía otra cifra con la misma palabra.
+         `resumen.avisos_proximos` sigue viajando, ya contado bien. */
     ].filter(Boolean).join("");
   }
   function pintarSeguimiento(r) {
@@ -6224,11 +6290,12 @@
       const casilla = ev.target.closest("[data-seg-tarea]");
       if (casilla) {
         const id = casilla.getAttribute("data-seg-tarea"), idT = casilla.getAttribute("data-seg-tarea-id");
-        const p = procesoGuardado(id); if (!p) return;
-        const tareas = (p.tareas || []).map((t) => (t.id === idT ? { ...t, hecha: casilla.checked } : t));
+        const hecha = casilla.checked;
         casilla.disabled = true;
-        try { await guardarDelProceso(id, { tareas }); }
-        catch (e) { casilla.disabled = false; casilla.checked = !casilla.checked; mensajeSeg(fraseDeFallo(e), "error"); }
+        try {
+          const r = await cambiarTareas(id, (ts) => ts.map((t) => (t.id === idT ? { ...t, hecha } : t)));
+          if (r && r.sinLista) { casilla.disabled = false; casilla.checked = !hecha; decirCuaderno(id, SIN_LISTA_COMPLETA, "error"); }
+        } catch (e) { casilla.disabled = false; casilla.checked = !hecha; decirCuaderno(id, fraseDeFallo(e), "error"); }
         return;
       }
       const sel = ev.target.closest("[data-seg-estado]");
@@ -6420,21 +6487,24 @@
         const campo = secSeg.querySelector(`[data-seg-tarea-texto="${CSS.escape(id)}"]`);
         const fecha = secSeg.querySelector(`[data-seg-tarea-fecha="${CSS.escape(id)}"]`);
         const texto = campo ? campo.value.trim() : "";
-        if (!texto) { mensajeSeg("Escriba qué le falta antes de apuntarlo.", "error"); return; }
-        const p = procesoGuardado(id); if (!p) return;
+        if (!texto) { decirCuaderno(id, "Escriba qué le falta antes de apuntarlo.", "error"); return; }
+        const nueva = { texto, fecha: (fecha && fecha.value) || null, hecha: false };
         anadir.disabled = true;
-        const tareas = [...(p.tareas || []), { texto, fecha: (fecha && fecha.value) || null, hecha: false }];
-        try { await guardarDelProceso(id, { tareas }); mensajeSeg("Apuntado.", "ok"); setTimeout(() => mensajeSeg(""), 2000); }
-        catch (e) { anadir.disabled = false; mensajeSeg(fraseDeFallo(e), "error"); }
+        try {
+          const r = await cambiarTareas(id, (ts) => [...ts, nueva], { limpiarNueva: true });
+          if (r && r.sinLista) { anadir.disabled = false; decirCuaderno(id, SIN_LISTA_COMPLETA, "error"); }
+          else { decirCuaderno(id, "Apuntado.", "ok"); setTimeout(() => decirCuaderno(id, ""), 2000); }
+        } catch (e) { anadir.disabled = false; decirCuaderno(id, fraseDeFallo(e), "error"); }
         return;
       }
       const quitarT = ev.target.closest("[data-seg-tarea-quitar]");
       if (quitarT) {
         const id = quitarT.getAttribute("data-seg-tarea-quitar"), idT = quitarT.getAttribute("data-seg-tarea-quitar-id");
-        const p = procesoGuardado(id); if (!p) return;
         quitarT.disabled = true;
-        try { await guardarDelProceso(id, { tareas: (p.tareas || []).filter((t) => t.id !== idT) }); }
-        catch (e) { quitarT.disabled = false; mensajeSeg(fraseDeFallo(e), "error"); }
+        try {
+          const r = await cambiarTareas(id, (ts) => ts.filter((t) => t.id !== idT));
+          if (r && r.sinLista) { quitarT.disabled = false; decirCuaderno(id, SIN_LISTA_COMPLETA, "error"); }
+        } catch (e) { quitarT.disabled = false; decirCuaderno(id, fraseDeFallo(e), "error"); }
         return;
       }
       /* toda la agenda en un archivo de calendario */
