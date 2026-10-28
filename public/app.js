@@ -12394,8 +12394,11 @@
       if (fecha.getDay() !== 0 && fecha.getDay() !== 6) habiles += 1;
     }
     const fechaTxt = fecha.toLocaleDateString("es-CO", { day: "numeric", month: "long" });
-    if (ahora.getTime() <= fecha.getTime()) {
-      const dias = Math.ceil((fecha.getTime() - ahora.getTime()) / 86400000);
+    /* por FECHA, no por horas (28-oct-2026): el mismo día del vencimiento, pasada la medianoche,
+       saltaba a «ya venció o está encima» y el «(es HOY)» no salía nunca */
+    const diaDe = (d) => Date.UTC(d.getFullYear(), d.getMonth(), d.getDate());
+    const dias = Math.round((diaDe(fecha) - diaDe(ahora)) / 86400000);
+    if (dias >= 0) {
       return {
         nivel: dias <= 15 ? "rojo" : "ambar",
         frase: `Atención: el RUP se renueva a más tardar el quinto día hábil de abril — este año, hacia el ${fechaTxt}`
