@@ -9316,6 +9316,9 @@
            interventoría, y sin este dato el piso del editor la cobraría donde
            la tarjeta no — dos cifras del mismo proceso. */
         tipo_trabajo: tipoProceso,
+        /* el OBJETO viaja para leer el tipo de obra (28-oct-2026): en licitación y menor cuantía, «dónde ofertaron
+           los que ganaron» es la referencia de su tipo (una vía y un acueducto se adjudican a precios distintos) */
+        objeto: $("objeto").value.trim().slice(0, 4000),
         unspsc: $("codigos-unspsc").value.trim(),
         cuantia: Number($("cuantia").value) || null,
         plazo_meses: Number($("plazo-meses").value) || 12,
@@ -9756,7 +9759,12 @@
     if (!o || !o.aplicable) {
       cuerpo.classList.add("hidden");
       sin.classList.remove("hidden");
-      sin.innerHTML = `<p><span aria-hidden="true">●</span> ${esc((o && o.mensaje) || "No hay con qué sugerir un precio para este proceso.")}</p>${sinSugerenciaPorRegla ? "" : botonPasoQueFalta()}`; // en mínima cuantía, en concurso de méritos y donde el precio, solo, no predijo quién gana (licitación y menor cuantía, 28-oct-2026) no falta ningún paso: no se sugiere precio
+      /* licitación y menor cuantía (28-oct-2026): debajo, dónde ofertaron los que ganaron en su tipo de obra y su
+         modalidad, y a cuántos puntos va su oferta; es una referencia medida, no una sugerencia, y la frase lo dice */
+      const rg = o && o.motivo === "el_precio_no_predice" && o.rango_ganadores && o.rango_ganadores.frase ? o.rango_ganadores : null;
+      sin.innerHTML = `<p><span aria-hidden="true">●</span> ${esc((o && o.mensaje) || "No hay con qué sugerir un precio para este proceso.")}</p>`
+        + (rg ? `<p class="mt-3 rounded-lg bg-gray-50 px-3 py-2 text-sm text-gray-800 ring-1 ring-inset ring-gray-900/5" data-rango-ganadores>${esc(rg.frase)}</p>` : "")
+        + (sinSugerenciaPorRegla ? "" : botonPasoQueFalta()); // en mínima cuantía, en concurso de méritos y donde el precio, solo, no predijo quién gana (licitación y menor cuantía, 28-oct-2026) no falta ningún paso: no se sugiere precio
       $("ps-origen").textContent = "";
       if ($("ps-hecho")) $("ps-hecho").textContent = "";
       return;

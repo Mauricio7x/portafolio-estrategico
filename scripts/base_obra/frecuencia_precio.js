@@ -21,6 +21,8 @@ const path = require("path");
 const zlib = require("zlib");
 const crypto = require("crypto");
 const { usableMotor } = require("../../tools/analisis/adjudicacion/fase0");
+// el tipo de obra por el objeto del proceso: la MISMA regla que usa Precios (28-oct-2026)
+const { tipoDeObra } = require("../../lib/frecuencia_precio.js");
 
 const FORMATO = 1;
 const MODALIDADES = ["licitacion", "menor_cuantia"];
@@ -38,8 +40,10 @@ function franjaDe(pct) {
   return Math.floor(p / FRANJA_PP) * FRANJA_PP;
 }
 
-/* Cada oferta válida de cada proceso utilizable: su precio en % del presupuesto, si ganó y su 1/n. */
-function ofertasDe(base) {
+/* Cada oferta válida de cada proceso utilizable: su precio en % del presupuesto, si ganó, su 1/n y el tipo de obra
+   de su proceso (null sin objeto o con un objeto que no se deja clasificar en uno solo). `objetos`: portafolio → texto
+   del objeto (nombre y descripción del proceso de p6dx-8zbt). */
+function ofertasDe(base, objetos = null) {
   const out = [];
   for (const x of base) {
     if (!MODALIDADES.includes(x.modalidad) || !usableMotor(x)) continue;
@@ -48,7 +52,8 @@ function ofertasDe(base) {
     if (ig < 0) continue;                       // la ganadora no se encuentra entre las válidas: no se adivina
     const ano = String(x.fecha_adjudicacion || "").slice(0, 4);
     if (!/^\d{4}$/.test(ano)) continue;
-    v.forEach((pct, i) => out.push({ mod: x.modalidad, ano, n: v.length, pct, gano: i === ig ? 1 : 0, proceso: x.portafolio }));
+    const tipo = objetos ? tipoDeObra(objetos.get(x.portafolio) || "") : null;
+    v.forEach((pct, i) => out.push({ mod: x.modalidad, ano, n: v.length, pct, gano: i === ig ? 1 : 0, proceso: x.portafolio, tipo }));
   }
   return out;
 }
@@ -68,48 +73,122 @@ function tabla(ofertas) {
   return t;
 }
 
+/* La misma tabla, abierta por tipo de obra: modalidad → tipo → tramo → franja. Las ofertas sin tipo no entran aquí:
+   cuentan en la de todos los tipos. */
+function tablaPorTipo(ofertas) {
+  const t = {};
+  for (const m of MODALIDADES) t[m] = {};
+  for (const o of ofertas) {
+    if (!o.tipo) continue;
+    const porTipo = t[o.mod][o.tipo] || (t[o.mod][o.tipo] = { "*": {}, ...Object.fromEntries(GRUPOS.map((g) => [g, {}])) });
+    const f = franjaDe(o.pct);
+    for (const g of [grupoDe(o.n), "*"]) { const c = porTipo[g][f] || (porTipo[g][f] = celdaVacia()); sumar(c, o); }
+  }
+  for (const m of MODALIDADES) for (const tp of Object.values(t[m])) for (const g of Object.keys(tp)) for (const c of Object.values(tp[g])) c.azar = +c.azar.toFixed(3);
+  return t;
+}
+
+/* Lo que se dice de los procesos de un grupo: cuántos, el precio de los ganadores (cuartiles, en % del presupuesto, a
+   un decimal: es para LEER, no decide nada) y en cuántos ganó la oferta más baja frente al azar. */
+function resumenDe(ofertas) {
+  const porProceso = new Map();
+  for (const o of ofertas) { if (!porProceso.has(o.proceso)) porProceso.set(o.proceso, []); porProceso.get(o.proceso).push(o); }
+  let ganoLaMasBaja = 0, azarLaMasBaja = 0;
+  const ganadores = [];
+  for (const ofs of porProceso.values()) {
+    const min = Math.min(...ofs.map((o) => o.pct));
+    if (ofs.some((o) => o.gano && Math.abs(o.pct - min) < 1e-12)) ganoLaMasBaja++;
+    azarLaMasBaja += 1 / ofs.length;   // con la misma opción para todas, la más baja gana 1 de cada n
+    const g = ofs.find((o) => o.gano);
+    if (g) ganadores.push(g.pct);
+  }
+  ganadores.sort((a, b) => a - b);
+  // el rango más cercano (nearest-rank): el valor de un ganador real, nunca una interpolación
+  const cuartil = (q) => (ganadores.length ? +(100 * ganadores[Math.round(q * (ganadores.length - 1))]).toFixed(1) : null);
+  return {
+    procesos: porProceso.size, ofertas: ofertas.length, gano_la_mas_baja: ganoLaMasBaja, azar_la_mas_baja: +azarLaMasBaja.toFixed(1),
+    ganador_pct: ganadores.length ? { p25: cuartil(0.25), p50: cuartil(0.5), p75: cuartil(0.75) } : null,
+  };
+}
+
 /* LA VERIFICACIÓN, fuera de muestra: la tabla aprendida con los años anteriores a 2026 (encogida hacia
    1/n con peso ENCOGER_K) frente a «1 de cada N», en las ofertas de 2026. Brier por oferta; la mejora
    negativa quiere decir que la tabla predice PEOR que el azar. */
+/* Una verificación: la celda que da `celdaDe` (aprendida con los años anteriores) frente a 1/n, en las ofertas `P`. */
+function brierDe(P, celdaDe) {
+  let s = 0, s0 = 0;
+  for (const o of P) {
+    const c = celdaDe(o);
+    const azar = 1 / o.n;
+    const p = c ? (c.ganaron + ENCOGER_K * azar) / (c.ofertas + ENCOGER_K) : azar;
+    s += (p - o.gano) ** 2; s0 += (azar - o.gano) ** 2;
+  }
+  return P.length ? {
+    ofertas_prueba: P.length, procesos_prueba: new Set(P.map((o) => o.proceso)).size,
+    brier_tabla: +(s / P.length).toFixed(5), brier_azar: +(s0 / P.length).toFixed(5),
+    mejora_pct: +(100 * (s0 - s) / s0).toFixed(1),
+  } : null;
+}
 function verificar(ofertas) {
   const entrena = ofertas.filter((o) => o.ano < ANO_PRUEBA), prueba = ofertas.filter((o) => o.ano === ANO_PRUEBA);
-  const t = tabla(entrena);
-  const out = {};
+  const t = tabla(entrena), tt = tablaPorTipo(entrena);
+  const out = {}, porTipo = {};
   for (const m of MODALIDADES) {
-    const P = prueba.filter((o) => o.mod === m);
-    let s = 0, s0 = 0;
-    for (const o of P) {
-      const c = t[m][grupoDe(o.n)][franjaDe(o.pct)];
-      const azar = 1 / o.n;
-      const p = c ? (c.ganaron + ENCOGER_K * azar) / (c.ofertas + ENCOGER_K) : azar;
-      s += (p - o.gano) ** 2; s0 += (azar - o.gano) ** 2;
+    out[m] = brierDe(prueba.filter((o) => o.mod === m), (o) => t[m][grupoDe(o.n)][franjaDe(o.pct)]);
+    // por tipo de obra, con la tabla de SU tipo: la que dice la frase cuando hay base
+    porTipo[m] = {};
+    for (const tipo of [...new Set(prueba.filter((o) => o.mod === m && o.tipo).map((o) => o.tipo))].sort()) {
+      porTipo[m][tipo] = brierDe(prueba.filter((o) => o.mod === m && o.tipo === tipo),
+        (o) => tt[m][tipo] && tt[m][tipo][grupoDe(o.n)][franjaDe(o.pct)]);
     }
-    out[m] = P.length ? {
-      ofertas_prueba: P.length, procesos_prueba: new Set(P.map((o) => o.proceso)).size,
-      brier_tabla: +(s / P.length).toFixed(5), brier_azar: +(s0 / P.length).toFixed(5),
-      mejora_pct: +(100 * (s0 - s) / s0).toFixed(1),
-    } : null;
   }
-  return { aprende: `hasta ${Number(ANO_PRUEBA) - 1}`, prueba: ANO_PRUEBA, encoger_k: ENCOGER_K, por_modalidad: out };
+  return { aprende: `hasta ${Number(ANO_PRUEBA) - 1}`, prueba: ANO_PRUEBA, encoger_k: ENCOGER_K, por_modalidad: out, por_tipo: porTipo };
 }
 
-function construir(base, { huella = null, generado = new Date().toISOString().slice(0, 10) } = {}) {
-  const ofertas = ofertasDe(base);
+/* LA VERIFICACIÓN AÑO POR AÑO (28-oct-2026): para probar por tipo de obra, 2026 solo deja pocos procesos por tipo
+   (41 de agua en licitación). Aquí cada año de 2022 a 2026 se predice con la tabla aprendida SOLO con los años
+   anteriores (ventana creciente: nunca se mira el futuro), y se suman. Por tipo, con la tabla de su tipo. */
+const ANOS_VENTANA = ["2022", "2023", "2024", "2025", "2026"];
+function verificarVentana(ofertas) {
+  const juntar = (filtro, celdaDeAno) => {
+    const P = [];
+    const celdas = [];
+    for (const y of ANOS_VENTANA) {
+      const pr = ofertas.filter((o) => o.ano === y && filtro(o));
+      if (!pr.length) continue;
+      const cd = celdaDeAno(ofertas.filter((o) => o.ano < y));
+      for (const o of pr) { P.push(o); celdas.push(cd(o)); }
+    }
+    let i = 0;
+    return brierDe(P, () => celdas[i++]);
+  };
+  const porModalidad = {}, porTipo = {};
+  for (const m of MODALIDADES) {
+    porModalidad[m] = juntar((o) => o.mod === m, (ent) => { const t = tabla(ent); return (o) => t[m][grupoDe(o.n)][franjaDe(o.pct)]; });
+    porTipo[m] = {};
+    for (const tipo of [...new Set(ofertas.filter((o) => o.mod === m && o.tipo).map((o) => o.tipo))].sort()) {
+      porTipo[m][tipo] = juntar((o) => o.mod === m && o.tipo === tipo,
+        (ent) => { const tt = tablaPorTipo(ent); return (o) => tt[m][tipo] && tt[m][tipo][grupoDe(o.n)][franjaDe(o.pct)]; });
+    }
+  }
+  return { anos: ANOS_VENTANA, encoger_k: ENCOGER_K, por_modalidad: porModalidad, por_tipo: porTipo };
+}
+
+function construir(base, { huella = null, generado = new Date().toISOString().slice(0, 10), objetos = null, huella_objetos = null } = {}) {
+  const ofertas = ofertasDe(base, objetos);
   const anos = ofertas.map((o) => o.ano).sort();
   const resumen = {};
+  const resumenTipo = {};
   for (const m of MODALIDADES) {
     const om = ofertas.filter((o) => o.mod === m);
     /* en cuántos procesos ganó la oferta MÁS BAJA (28-oct-2026): el hecho con el que la guía de Mis procesos dice
-       «no tire el precio al piso», en vez de un mecanismo que, medido, predice peor que el azar */
-    const porProceso = new Map();
-    for (const o of om) { if (!porProceso.has(o.proceso)) porProceso.set(o.proceso, []); porProceso.get(o.proceso).push(o); }
-    let ganoLaMasBaja = 0, azarLaMasBaja = 0;
-    for (const ofs of porProceso.values()) {
-      const min = Math.min(...ofs.map((o) => o.pct));
-      if (ofs.some((o) => o.gano && Math.abs(o.pct - min) < 1e-12)) ganoLaMasBaja++;
-      azarLaMasBaja += 1 / ofs.length;   // con la misma opción para todas, la más baja gana 1 de cada n
-    }
-    resumen[m] = { procesos: porProceso.size, ofertas: om.length, gano_la_mas_baja: ganoLaMasBaja, azar_la_mas_baja: +azarLaMasBaja.toFixed(1) };
+       «no tire el precio al piso», en vez de un mecanismo que, medido, predice peor que el azar; y a qué precio
+       ganaron, que es la referencia de Precios */
+    resumen[m] = resumenDe(om);
+    resumenTipo[m] = {};
+    const porTipo = new Map();
+    for (const o of om) { const k = o.tipo || null; if (!porTipo.has(k)) porTipo.set(k, []); porTipo.get(k).push(o); }
+    for (const [tipo, ofs] of porTipo) resumenTipo[m][tipo || "sin_tipo"] = resumenDe(ofs);
   }
   return {
     formato: FORMATO, generado, base_sha256: huella,
@@ -118,10 +197,13 @@ function construir(base, { huella = null, generado = new Date().toISOString().sl
     periodo: anos.length ? { desde: anos[0], hasta: anos[anos.length - 1] } : null,
     franja_pp: FRANJA_PP, grupos: GRUPOS,
     resumen, verificacion: verificar(ofertas), celdas: tabla(ofertas),
+    /* por tipo de obra (lib/frecuencia_precio.tipoDeObra sobre el objeto del proceso); sin objetos, vacío */
+    objetos_sha256: huella_objetos, resumen_tipo: objetos ? resumenTipo : null, celdas_tipo: objetos ? tablaPorTipo(ofertas) : null,
+    verificacion_ventana: verificarVentana(ofertas),
   };
 }
 
-module.exports = { FORMATO, MODALIDADES, FRANJA_PP, GRUPOS, grupoDe, franjaDe, ofertasDe, tabla, verificar, construir };
+module.exports = { FORMATO, MODALIDADES, FRANJA_PP, GRUPOS, grupoDe, franjaDe, ofertasDe, tabla, tablaPorTipo, resumenDe, verificar, verificarVentana, construir };
 
 if (require.main === module) {
   const [carpeta, salida = path.join(__dirname, "..", "..", "data", "frecuencia_precio.json")] = process.argv.slice(2);
@@ -129,7 +211,17 @@ if (require.main === module) {
   const archivo = path.join(carpeta, "base.jsonl.gz");
   const crudo = fs.readFileSync(archivo);
   const base = zlib.gunzipSync(crudo).toString("utf8").split("\n").filter(Boolean).map((l) => JSON.parse(l));
-  const r = construir(base, { huella: crypto.createHash("sha256").update(crudo).digest("hex") });
+  /* el objeto de cada proceso (nombre y descripción), del mismo inventario que hizo la base; sin él, sin tipos */
+  const { leerJson } = require("./base.js");
+  const filas = leerJson(carpeta, "p6dx_obra.json");
+  let objetos = null, huellaObjetos = null;
+  if (Array.isArray(filas)) {
+    objetos = new Map();
+    for (const r of filas) if (r && r.id_del_portafolio && !objetos.has(r.id_del_portafolio)) objetos.set(r.id_del_portafolio, `${r.nombre_del_procedimiento || ""} ${r.descripci_n_del_procedimiento || ""}`);
+    huellaObjetos = crypto.createHash("sha256").update(JSON.stringify([...objetos.entries()].sort((a, b) => (a[0] < b[0] ? -1 : 1)))).digest("hex");
+  }
+  const r = construir(base, { huella: crypto.createHash("sha256").update(crudo).digest("hex"), objetos, huella_objetos: huellaObjetos });
   fs.writeFileSync(salida, JSON.stringify(r) + "\n");
-  console.log(JSON.stringify({ salida, periodo: r.periodo, resumen: r.resumen, verificacion: r.verificacion.por_modalidad }));
+  console.log(JSON.stringify({ salida, periodo: r.periodo, resumen: r.resumen, verificacion: r.verificacion.por_modalidad, por_tipo: r.verificacion.por_tipo,
+    tipos: r.resumen_tipo && Object.fromEntries(Object.entries(r.resumen_tipo).map(([m, x]) => [m, Object.fromEntries(Object.entries(x).map(([k, v]) => [k, [v.procesos, v.ganador_pct]]))])) }));
 }

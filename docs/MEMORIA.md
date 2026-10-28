@@ -20554,3 +20554,39 @@ En una línea: el dueño pidió «el % de adjudicación según el precio de la o
   - decir una franja para una oferta sobre el presupuesto;
   - volver a rotular «Precio sugerido» una cifra al lado de un sugeridor que dice que no sugiere;
   - leer la modalidad de una fila sin su respaldo.
+
+### La referencia de precio va por tipo de obra: una vía y un acueducto se adjudican a precios distintos, pero en ninguno el precio predice quién gana (28-oct-2026)
+
+En una línea: el dueño preguntó si un dato por modalidad mezcla obras que se adjudican distinto. Medido, sí: la mediana del precio ganador cambia de 1 a 4 puntos según el tipo de obra. Pero ni separando por tipo el precio predice quién gana. Por eso Precios dice, por tipo de obra y modalidad, dónde ofertaron los que ganaron y cuántas ofertas ganaron a su precio, como referencia medida y no como recomendación.
+
+> PENDIENTE · el tipo de obra sale de palabras del objeto (`lib/semantica.TIPOS_DE_OBRA`) y exige que case uno solo. Quedan sin tipo el 33 % de las licitaciones y el 41 % de las menores cuantías de la base, que usan la cifra de todos los tipos y lo dicen. No se separó por entidad: INVIAS y las gobernaciones pesan distinto en cada tipo y pueden explicar parte de la diferencia.
+
+- **Lo medido**, sobre la misma base (huella `317d096581bf…`; objetos de `p6dx_obra.json` del mismo inventario):
+  - **La mediana del precio ganador**, en % del presupuesto, con su intervalo del 90 % (remuestreo de procesos):
+    - en licitación: vías 95,0 (94,9–95,2; 1.207 procesos), agua 95,4 (95,1–95,5; 263) y edificaciones 96,2 (96,0–96,5; 556);
+    - en menor cuantía: vías 95,5 (95,3–95,6; 931), agua 96,9 (96,2–97,4; 141), edificaciones 97,1 (97,0–97,2; 1.222) y estabilización 93,0 (92,2–94,2; 180).
+    - Las diferencias son reales: los intervalos no se tocan.
+  - **Lo que más cambia entre tipos es cuántos compiten**: en licitación, las vías tienen una mediana de 24 oferentes y el agua 11. La frase ya separa por tramo de oferentes.
+  - **A un mismo precio y con los mismos oferentes**, en algunas franjas el número por tipo difiere más que el ruido. Por ejemplo, en menor cuantía con 5 a 9 oferentes, entre el 96 y el 98 %, ganaron 12 de cada 100 en vías y 16 en edificaciones, con un azar de 15.
+  - **¿Predice el precio dentro de cada tipo?** No. La prueba es año por año de 2022 a 2026, aprendiendo solo con los años anteriores (`verificacion_ventana` del JSON, reproducible con el generador):
+    - en licitación, de −1,1 % (edificaciones) a −0,1 % (estabilización);
+    - en menor cuantía, de −1,4 % a +0,1 % (agua, 91 procesos);
+    - ningún tipo se acerca al 3 % que exige la regla para dar un porcentaje.
+- **Qué se construyó**:
+  - **La regla del tipo**, una sola: `lib/frecuencia_precio.tipoDeObra` sobre el objeto, con el vocabulario de `lib/semantica.TIPOS_DE_OBRA`. La llaman el generador de la tabla y Precios. Con dos tipos («alcantarillado y pavimentación») o ninguno da `null`: no se fuerza.
+  - **La tabla** lleva además:
+    - `celdas_tipo`: modalidad → tipo → tramo → franja;
+    - `resumen_tipo`: los cuartiles del precio ganador por el rango más cercano (valores de ganadores reales, sin interpolar), y la oferta más baja con su azar;
+    - `verificacion.por_tipo`, con la prueba de 2026;
+    - `verificacion_ventana`, con la prueba año por año;
+    - `objetos_sha256`.
+  - **La frase de Precios** («ganaron X de cada 100») usa la celda de su tipo cuando tiene 100 ofertas. Si no, la de todos los tipos, y dice «de todo tipo de obra» y por qué. Las dos franjas van siempre de la misma población.
+  - **La referencia** (`rangoGanadores`) va en la sección «Precio de su oferta»: dónde ofertó la mitad de los ganadores y la mediana, en su tipo y modalidad con 100 procesos o más, y a cuántos puntos va su oferta. Cierra con lo que dice la verificación año por año de esa población.
+  - **Una sola cuenta.** La referencia se calcula una vez, en la rentabilidad (con el total que la entidad compara), y el editor la pasa al sugeridor.
+  - **La página manda el objeto** del proceso.
+- **Por qué no es una «sugerencia de precio»**: el dueño pidió «la sugerencia de % de precio a ofertar, dinámica, por tipo de contrato y modalidad». Un precio que se recomiende para ganar no tiene respaldo: ni por modalidad ni por tipo el precio le gana al azar. La referencia de dónde ofertaron los ganadores sí lo tiene, y sirve para ubicar el precio propio frente al mercado de su tipo de obra. La frase lo dice: «Es una referencia, no una recomendación».
+- **Lo que no hay que deshacer**:
+  - forzar un tipo de obra cuando el objeto nombra dos;
+  - dar la cifra de un tipo con menos de 100 ofertas (frase) o de 100 procesos (referencia);
+  - llamar «sugerencia» o «precio óptimo» a la referencia;
+  - calcular la referencia en dos sitios.
