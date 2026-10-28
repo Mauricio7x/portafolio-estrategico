@@ -2,7 +2,7 @@
      Es una FOTO para leer en GitHub; la fuente de verdad es ejecutar la herramienta. -->
 
 ```
-== MAPA DE DETEKTA · generado del árbol el 2026-10-27 ==
+== MAPA DE DETEKTA · generado del árbol el 2026-10-28 ==
 (no editar a mano: sale de `node tests/mapa.js --escribir`. Para ir a un sitio concreto,
  `node tests/mapa.js <término>` da la ruta, la línea y el sed exacto — más barato que leer esto)
 
@@ -22,7 +22,7 @@
   pliego.js                   Router del dominio PLIEGO (Fase 0 · consolidación a 6 funciones)
   procesos.js                 Router del dominio PROCESOS (Fase 0 · consolidación a 6 funciones)
 
-· lib/ — 102 módulos:
+· lib/ — 103 módulos:
   accesibilidad.js            Accesibilidad operativa de la zona de la obra
   adendas.js                  Vigía de adendas · lo que el DATASET dice que cambió (Fase 5)
   almacen.js                  Esquema de claves Redis + compresión de chunks
@@ -74,6 +74,7 @@
   formulario1.js              Guardián del Formulario 1 (Fase 4 del plan v3)
   formulario_excel.js         EL FORMULARIO 1 DE UN .xlsx, LEÍDO SOLO Y CON PUERTA (19-oct-2026)
   foto_indice.js              Los índices enteros, servidos desde el almacén de archivos
+  frecuencia_precio.js        Cuántas ofertas ganaron a cada precio, dicho junto al precio
   ganancia.js                 ¿CUÁNTA PLATA DEJA ESTE CONTRATO?
   garantia_seriedad.js        EL PORCENTAJE DE LA GARANTÍA DE SERIEDAD QUE FIJA EL PLIEGO (28-sep-2026)
   glosario.js                 la marca y el glosario viven en public/glosario.js (UMD) y
@@ -222,17 +223,17 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 392 secciones (32 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 20110  La auditoría de lo leído: mide si hay INDICIOS de una lectura mala, jamás dice «correcto» (…
-  L 20135  La auditoría con su primer proceso real: lo casi vacío se marca, un presupuesto no se juzga…
-  L 20166  Cada subida cuesta un despliegue: una entrega, un envío (21-oct-2026)
-  L 20175  El consejo de siete asesores entra al proyecto: sin la sala web, sin guardar nada en el rep…
-  L 20203  Fase 0 de detekta-lector sobre los documentos que deciden en menor cuantía: cuatro causas m…
-  L 20230  Probabilidad de adjudicación, Fase 0: las ofertas abiertas sí existen desde 2020, quién que…
-  L 20268  Las reglas de lotes y de rango de la base nacional: un presupuesto ajustado no es lote, una…
-  L 20292  La prueba de los 30 del Nivel 3: con los hábiles reales el motor acierta en 6 de 9, y lo qu…  (superada)
-  L 20321  Las evaluaciones de cada entidad entran a la aplicación: el navegador lee el documento, una…
-  L 20355  La foto de los índices en el almacén de archivos: Upstash deja de bajar los índices enteros…
+· MEMORIA · docs/MEMORIA.md — 393 secciones (33 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
+  L 20137  La auditoría con su primer proceso real: lo casi vacío se marca, un presupuesto no se juzga…
+  L 20168  Cada subida cuesta un despliegue: una entrega, un envío (21-oct-2026)
+  L 20177  El consejo de siete asesores entra al proyecto: sin la sala web, sin guardar nada en el rep…
+  L 20205  Fase 0 de detekta-lector sobre los documentos que deciden en menor cuantía: cuatro causas m…
+  L 20232  Probabilidad de adjudicación, Fase 0: las ofertas abiertas sí existen desde 2020, quién que…
+  L 20270  Las reglas de lotes y de rango de la base nacional: un presupuesto ajustado no es lote, una…
+  L 20294  La prueba de los 30 del Nivel 3: con los hábiles reales el motor acierta en 6 de 9, y lo qu…  (superada)
+  L 20323  Las evaluaciones de cada entidad entran a la aplicación: el navegador lee el documento, una…
+  L 20357  La foto de los índices en el almacén de archivos: Upstash deja de bajar los índices enteros…
+  L 20383  El % de adjudicación según el precio no se enseña porque se midió que no predice: en licita…
 
 · DOCUMENTOS docs/ — 76 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)

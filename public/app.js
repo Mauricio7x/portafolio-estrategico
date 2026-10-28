@@ -1232,13 +1232,18 @@
   function lineaMargen(m) {
     if (!m) return "";
     if (m.valor == null) return `<p class="mt-3 text-xs text-gray-500">${esc(m.motivo || "Sin referencia")}</p>`;
-    const signo = m.valor >= 0 ? "text-green-800 bg-green-50 ring-green-600/20" : "text-red-700 bg-red-50 ring-red-600/20";
+    // bajo cero y con el techo como referencia (licitación y menor cuantía, 28-oct-2026) es ámbar: un aviso, no un «no da»
+    const signo = m.valor >= 0 ? "text-green-800 bg-green-50 ring-green-600/20"
+      : m.techo_es_referencia ? "text-amber-900 bg-amber-50 ring-amber-600/20" : "text-red-700 bg-red-50 ring-red-600/20";
     /* «Recorrido», no «le quedan»: esta cifra es la distancia entre dos PRECIOS
        (su mínimo y el del mercado), o sea margen de maniobra para ofertar. La
        plata que deja el contrato es otra —la de la franja de arriba, que ya
        descontó la contribución y las deducciones— y llamarlas igual es la
        confusión que el encargo del dueño vino a corregir. */
-    return `<p class="mt-3 rounded-lg px-3 py-2 text-xs ring-1 ring-inset ${signo}">Puede mover el precio <strong>${fmtCOP.format(m.valor)}</strong> entre su precio mínimo (${fmtCOP.format(m.piso)}) y el precio al que se suele adjudicar en ${esc(m.donde || "esta zona")} (${fmtCOP.format(m.techo)}). No es lo que deja el contrato: eso es la cifra de arriba.${m.valor < 0 ? " El precio de mercado está POR DEBAJO de su mínimo: aquí no da." : ""}</p>`;
+    return `<p class="mt-3 rounded-lg px-3 py-2 text-xs ring-1 ring-inset ${signo}">Puede mover el precio <strong>${fmtCOP.format(m.valor)}</strong> entre su precio mínimo (${fmtCOP.format(m.piso)}) y el precio al que se suele adjudicar en ${esc(m.donde || "esta zona")} (${fmtCOP.format(m.techo)}). No es lo que deja el contrato: eso es la cifra de arriba.${m.valor < 0 ? (m.techo_es_referencia
+      // en licitación y menor cuantía ese precio es una referencia, no un requisito para ganar (28-oct-2026): no se dice «aquí no da»
+      ? " El precio al que se suele adjudicar está POR DEBAJO de su mínimo; es una referencia, no un requisito para ganar."
+      : " El precio de mercado está POR DEBAJO de su mínimo: aquí no da.") : ""}</p>`;
   }
 
   /* Al cargar: el orden pedido en la URL (`?ordenar_por=margen`) y los
@@ -9600,6 +9605,18 @@
       partes.push(`<p class="mt-3 rounded-lg bg-blue-50 px-3 py-2 text-xs text-blue-900">${esc(r.p_ganar_detalle.mensaje)}
         <br><span class="opacity-80">${esc(r.p_ganar_detalle.supuesto || "")}</span></p>`);
     }
+    /* EN LICITACIÓN Y MENOR CUANTÍA, CUÁNTO FALTA PARA UN % QUE CAMBIE CON EL PRECIO (28-oct-2026, decisión del
+       dueño tras el consejo): la frase de arriba es el hecho contado; un % que cambie con el precio solo se enciende
+       si las evaluaciones leídas (quién cumplió los requisitos) pasan la prueba de docs/MEMORIA.md. El contador va en
+       rojo cuando es cero; sin dato no se pinta como cero. */
+    if (r.p_ganar_detalle && r.p_ganar_detalle.sin_modular_por === "el_precio_no_predice") {
+      const n = c.evaluaciones_completas;
+      const leidas = n == null ? "sin dato" : num(n);
+      partes.push(`<p class="mt-2 text-xs ${n === 0 ? "text-red-700" : "text-gray-600"}"><span aria-hidden="true">●</span>
+        Evaluaciones leídas para saber quién cumplió los requisitos: <strong>${esc(leidas)}</strong>, contando todas las modalidades
+        y todos los años. Para que la aplicación diga cuánto cambia su opción con el precio hacen falta 200 procesos de 2026 de cada
+        modalidad; se revisa el 31 de enero de 2027.</p>`);
+    }
     $("rentabilidad-precio").innerHTML = partes.join("");
     $("rentabilidad-avisos").innerHTML = (r.advertencias || [])
       .map((x) => `<p class="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">${esc(x)}</p>`).join("");
@@ -9650,7 +9667,7 @@
     if (!o || !o.aplicable) {
       cuerpo.classList.add("hidden");
       sin.classList.remove("hidden");
-      sin.innerHTML = `<p><span aria-hidden="true">●</span> ${esc((o && o.mensaje) || "No hay con qué sugerir un precio para este proceso.")}</p>${o && (o.motivo === "gana_el_menor_precio" || o.motivo === "el_precio_no_puntua") ? "" : botonPasoQueFalta()}`; // en mínima cuantía y en concurso de méritos no falta ningún paso: no se sugiere precio (N13')
+      sin.innerHTML = `<p><span aria-hidden="true">●</span> ${esc((o && o.mensaje) || "No hay con qué sugerir un precio para este proceso.")}</p>${o && (o.motivo === "gana_el_menor_precio" || o.motivo === "el_precio_no_puntua" || o.motivo === "el_precio_no_predice") ? "" : botonPasoQueFalta()}`; // en mínima cuantía, en concurso de méritos y donde el precio, solo, no predijo quién gana (licitación y menor cuantía, 28-oct-2026) no falta ningún paso: no se sugiere precio
       $("ps-origen").textContent = "";
       if ($("ps-hecho")) $("ps-hecho").textContent = "";
       return;

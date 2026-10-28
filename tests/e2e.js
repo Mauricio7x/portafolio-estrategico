@@ -1395,6 +1395,15 @@ function crearMockUpstash() {
         return cmd.slice(2).map((f) => (h && h.has(String(f)) ? h.get(String(f)) : null));
       }
       case "HLEN": return hashes.has(cmd[1]) ? hashes.get(cmd[1]).size : 0;
+      /* el contador de evaluaciones completas quita la que dejó de estarlo (lib/handlers/pliego/evaluacion, 28-oct-2026) */
+      case "HDEL": {
+        const h = hashes.get(cmd[1]);
+        if (!h) return 0;
+        let n = 0;
+        for (const f of cmd.slice(2)) if (h.delete(String(f))) n++;
+        if (!h.size) hashes.delete(cmd[1]);   // como Redis: el hash vacío deja de existir
+        return n;
+      }
       /* lo que usa la medición del espacio (lib/espacio, 30-sep-2026) */
       case "DBSIZE": return [...datos.keys()].filter((k) => viva(k)).length + hashes.size;
       case "STRLEN": return viva(cmd[1]) ? Buffer.byteLength(datos.get(cmd[1])) : 0;
@@ -2962,7 +2971,10 @@ async function main() {
       const rentaDe = async (e) => {
         const r = await invocar(editorS, "/api/apu/rentabilidad", CAB_TOKEN, { metodo: "POST", body: {
           items: ITEMS_S, departamento: e.dep, config: { aiu_pct: 20, imprevistos_pct: 5, utilidad_pct: 5 }, entidad: e.n, entidad_nit: e.nit,
-          unspsc: "V1.72141000", cuantia: 900000000, plazo_meses: 3, modalidad: "Licitación pública", tipo_trabajo: "obra" } });
+          /* «Selección abreviada» y no «Licitación pública»: desde el 28-oct-2026 la licitación no lleva curva
+             ni precio sugerido (el precio, solo, no predijo quién gana; lib/frecuencia_precio), y esta prueba es de
+             la MARCA de supuesto sobre la probabilidad y el sugeridor, que la selección abreviada conserva */
+          unspsc: "V1.72141000", cuantia: 900000000, plazo_meses: 3, modalidad: "Selección abreviada", tipo_trabajo: "obra" } });
         assert.strictEqual(r.status, 200, JSON.stringify(r.cuerpo).slice(0, 300));
         return r.cuerpo;
       };
@@ -2988,6 +3000,43 @@ async function main() {
           assert.ok(!/supuesto/i.test(String(nodoS("rentabilidad").innerHTML)) && !/supuesto/i.test(psProb + psVeg + psNota),
             `«${e.n}»: con base medida, ninguna marca de supuesto → ${txtS(tProb)} · ${psProb}`);
         }
+      }
+
+      /* 4c · PRECIOS EN LICITACIÓN (28-oct-2026, decisión del dueño tras el consejo): ni curva ni precio sugerido; la
+         frase medida, junto al precio, y el contador de evaluaciones leídas, en rojo si es cero y «sin dato» si no se
+         pudo leer. Editor REAL y pintado REAL. */
+      {
+        const rLic = await invocar(editorS, "/api/apu/rentabilidad", CAB_TOKEN, { metodo: "POST", body: {
+          items: ITEMS_S, departamento: ENT_S[0].dep, config: { aiu_pct: 20, imprevistos_pct: 5, utilidad_pct: 5 }, entidad: ENT_S[0].n, entidad_nit: ENT_S[0].nit,
+          unspsc: "V1.72141000", cuantia: 900000000, plazo_meses: 3, modalidad: "Licitación pública", tipo_trabajo: "obra" } });
+        assert.strictEqual(rLic.status, 200, JSON.stringify(rLic.cuerpo).slice(0, 300));
+        const cL = rLic.cuerpo;
+        const dL = cL.rentabilidad.p_ganar_detalle;
+        assert.ok(dL.sin_modular_por === "el_precio_no_predice" && dL.p === dL.p_base, `licitación: la probabilidad es la base → ${JSON.stringify({ p: dL.p, b: dL.p_base, s: dL.sin_modular_por })}`);
+        assert.ok(cL.optimizador && cL.optimizador.aplicable === false && cL.optimizador.motivo === "el_precio_no_predice", `licitación: sin precio sugerido → ${cL.optimizador && cL.optimizador.motivo}`);
+        assert.strictEqual(cL.evaluaciones_completas, 0, "el contador llega en la respuesta: aquí, cero");
+        // si el contador no responde es «sin dato» (null), jamás un 0 que se pintaría en rojo como si la lectura no avanzara
+        mockS.romper((cmd) => (String(cmd[0]).toUpperCase() === "HLEN" && cmd[1] === "evaluacion:completas" ? "ERR simulado: el contador no respondió" : null));
+        const rLicRoto = await invocar(editorS, "/api/apu/rentabilidad", CAB_TOKEN, { metodo: "POST", body: {
+          items: ITEMS_S, departamento: ENT_S[0].dep, config: { aiu_pct: 20, imprevistos_pct: 5, utilidad_pct: 5 }, entidad: ENT_S[0].n, entidad_nit: ENT_S[0].nit,
+          unspsc: "V1.72141000", cuantia: 900000000, plazo_meses: 3, modalidad: "Licitación pública", tipo_trabajo: "obra" } });
+        mockS.romper(null);
+        assert.ok(rLicRoto.status === 200 && rLicRoto.cuerpo.evaluaciones_completas === null, `con el contador caído, 200 y null → ${rLicRoto.status} ${rLicRoto.cuerpo && rLicRoto.cuerpo.evaluaciones_completas}`);
+        AS.pintarRentabilidad(cL);
+        const caja = txtS(nodoS("rentabilidad-precio").innerHTML);
+        /* el APU del fixture descuenta ~90 % del presupuesto: ahí ninguna franja tiene 100 ofertas y se dice
+           que no se ajusta y por qué; la frase con «de cada 100» se prueba en «unidad frecuencia por precio» */
+        assert.ok(caja.includes(txtS(dL.mensaje)), `la frase va junto al precio → mensaje «${dL.mensaje}» · caja «${caja}»`);
+        assert.ok(dL.frecuencia_precio ? /de cada 100/.test(caja) : /no predijo quién gana mejor que el azar/.test(caja) && /al menos 100 ofertas/.test(caja),
+          `sin franja con base, dice que no se ajusta y por qué → ${caja.slice(0, 400)}`);
+        assert.ok(/Evaluaciones leídas para saber quién cumplió los requisitos: 0 ?, contando todas las modalidades y todos los años/.test(caja) && /text-red-700/.test(String(nodoS("rentabilidad-precio").innerHTML)), "el contador en cero, en rojo, y dice qué cuenta");
+        const tProbL = String(nodoS("rentabilidad").innerHTML);
+        assert.ok(!/× [\d,]+ por precio/.test(txtS(tProbL)), `la tarjeta ya no dice «base × multiplicador por precio» → ${txtS(tProbL).slice(0, 200)}`);
+        AS.pintarRentabilidad({ ...cL, evaluaciones_completas: null });
+        assert.ok(/quién cumplió los requisitos: sin dato/.test(txtS(nodoS("rentabilidad-precio").innerHTML)) && !/text-red-700/.test(String(nodoS("rentabilidad-precio").innerHTML)), "sin dato no se pinta como cero");
+        AS.pintarPrecioSugerido(cL.optimizador, cL.piso_techo, AS.supuestoDePrecios(cL));
+        const sinPS = txtS(nodoS("ps-sin-datos").innerHTML || "");
+        assert.ok(/no sugiere un precio/.test(sinPS) && !/paso que falta|Ir al paso/i.test(sinPS), `el sugeridor dice por qué y no pide un paso que no falta → ${sinPS.slice(0, 200)}`);
       }
 
       /* 4b · PRECIOS CON UN ÍNDICE QUE NO SE PUDO LEER (24-sep-2026, medido en Chromium): el editor leía
@@ -4636,6 +4685,16 @@ async function main() {
       const e = await invocar(APIp, `/api/pliego?op=evaluacion&${q}`, CAB_TOKEN);
       assert.ok(e.status === 200 && e.cuerpo.hechos.procesos === 1 && e.cuerpo.hechos.rechazadas === 1 && e.cuerpo.hechos.precio.gano_sin_el_mejor_precio === 1 && e.cuerpo.procesos[P].estado === "leido",
         `la entidad se encuentra por su nombre y por su NIT (${q}): ${JSON.stringify(e.cuerpo.hechos)}`);
+    }
+    /* (11) el contador de Precios («Evaluaciones leídas para saber quién cumplió los requisitos», 28-oct-2026): entra
+       la captura completa y sale la que deja de estarlo en una relectura; si no saliera, el contador contaría de más */
+    {
+      const rCnt = crearRedis({});
+      assert.ok(await rCnt.hget(Ev.CLAVE_COMPLETAS, P), "la evaluación completa entra al contador");
+      await invocarPost(APIp, "/api/pliego?op=evaluacion", { portafolio: P, motor: "sesion", captura }, CAB_TOKEN);
+      assert.strictEqual(await rCnt.hget(Ev.CLAVE_COMPLETAS, P), null, "releída e incompleta, sale del contador");
+      await invocarPost(APIp, "/api/pliego?op=evaluacion", { portafolio: P, motor: "sesion", captura: capturaLimpia }, CAB_TOKEN);
+      assert.ok(await rCnt.hget(Ev.CLAVE_COMPLETAS, P), "completa otra vez, vuelve");
     }
     {
       const { escribirJSONComprimido: escEv } = require("../lib/almacen.js");
@@ -21453,16 +21512,29 @@ async function main() {
           const rBmax = await invocar(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=25&baja_max=0", CAB_TOKEN);
           assert.strictEqual(rBmax.cuerpo.baja_max_aplicada, 0);
           const porId = new Map(rTok.cuerpo.resultados.map((l) => [l.id_del_proceso, l]));
-          let cayeron = 0;
+          /* Desde el 28-oct-2026, en licitación y menor cuantía el precio, solo, no predijo quién gana
+             (lib/frecuencia_precio): ahí `baja_max=0` NO resta, el paso lo dice y p no se mueve. En las
+             demás modalidades el factor sigue restando como antes. */
+          const cubiertaBmax = (l) => require("../lib/frecuencia_precio.js").cubreModalidad(
+            require("../lib/guia_proceso.js").comoSeGanaElPrecio(l.modalidad_de_contratacion || l.tipo_de_proceso || "").clave);
+          let cayeron = 0, sinRestar = 0, otrasConPrecio = 0;
           for (const l of rBmax.cuerpo.resultados) {
             const antes = porId.get(l.id_del_proceso);
             if (!antes) continue;
             const pr = (l.p_ganar_detalle.ajustes || []).find((a) => a.nombre === "precio");
-            if (pr && pr.factor < 1) { cayeron++; assert.ok(l.p_ganar < antes.p_ganar, "un factor de precio < 1 tiene que bajar p"); }
+            if (pr && cubiertaBmax(l)) {
+              sinRestar++;
+              assert.ok(pr.factor === 1 && /no predijo quién gana/.test(pr.motivo) && l.p_ganar === antes.p_ganar,
+                `licitación o menor cuantía: con baja_max=0 el precio no resta → ${JSON.stringify(pr)} · ${antes.p_ganar} → ${l.p_ganar}`);
+            } else if (pr) {
+              otrasConPrecio++;
+              if (pr.factor < 1) { cayeron++; assert.ok(l.p_ganar < antes.p_ganar, "un factor de precio < 1 tiene que bajar p"); }
+            }
             assert.strictEqual(l.p_ganar_detalle.p_sin_precio, antes.p_ganar_detalle.p_sin_precio,
               "p_sin_precio no puede depender de baja_max");
           }
-          assert.ok(cayeron > 0, "con baja_max=0 alguna entidad que descuenta tenía que perder probabilidad");
+          assert.ok(sinRestar > 0, "el fixture: alguna licitación o menor cuantía con baja de mercado, donde baja_max=0 ya no resta");
+          if (otrasConPrecio > 0) assert.ok(cayeron > 0, "en las modalidades que conservan el factor, con baja_max=0 alguna entidad que descuenta tenía que perder probabilidad");
         }
 
         /* con token vuelven, y baja_entidad coincide con la mediana del objeto */
@@ -22654,15 +22726,29 @@ async function main() {
          baja máxima del dueño y la curva de rentabilidad, y sin b_max declarada
          es neutro y lo dice. La rampa de baja no puede reaparecer. */
       const paso4 = d.desglose[3];
-      assert.ok(/min\(baja_maxima_del_dueño, baja_mediana_entidad\)/.test(paso4.formula),
-        `el paso de precio no declara la fórmula: «${paso4.formula}»`);
-      assert.ok(/rentabilidad/.test(paso4.formula), "el paso de precio tiene que citar que la curva es la de lib/apu/rentabilidad");
+      /* desde el 28-oct-2026, en licitación y menor cuantía el precio no resta porque se MIDIÓ que no predice
+         (lib/frecuencia_precio): eso es una medición, no un «sin dato», y la fórmula no enseña la curva */
+      const claveMuestra = require("../lib/guia_proceso.js").modalidadEnLlano(muestra.modalidad_de_contratacion).clave;
+      const precioNoPrediceMuestra = require("../lib/frecuencia_precio.js").cubreModalidad(claveMuestra);
+      if (!precioNoPrediceMuestra) {
+        assert.ok(/min\(baja_maxima_del_dueño, baja_mediana_entidad\)/.test(paso4.formula),
+          `el paso de precio no declara la fórmula: «${paso4.formula}»`);
+        assert.ok(/rentabilidad/.test(paso4.formula), "el paso de precio tiene que citar que la curva es la de lib/apu/rentabilidad");
+      }
       assert.ok(!/baja_alta|baja_baja|interpolaci[óo]n lineal/.test(JSON.stringify(d.desglose)),
         "reaparecieron los escalones o la rampa de la baja en el desglose");
       if (paso4.datos_entrada.baja_mediana_pct != null) {
         assert.strictEqual(paso4.datos_entrada.factor_aplicado, 1, "sin baja máxima declarada el factor de precio tiene que ser 1");
-        assert.strictEqual(paso4.datos_entrada.origen_baja_maxima, "neutra");
-        assert.strictEqual(paso4.confianza, "Sin dato", "un factor neutro por falta de b_max no puede presentarse con confianza");
+        if (precioNoPrediceMuestra) {
+          assert.strictEqual(paso4.datos_entrada.origen_baja_maxima, "no_predice", `en ${claveMuestra} el precio no predice y el paso 4 lo dice`);
+          assert.strictEqual(paso4.confianza, "Media", "«no predice» es una medición con todas las entidades juntas: «Media», no «Sin dato»");
+          assert.ok(/P = P × 1/.test(paso4.formula) && !/mult\(/.test(paso4.formula) && /no le ganó/.test(paso4.fundamento) && !/la misma curva de precio del editor/.test(paso4.fundamento),
+            `el paso 4 en ${claveMuestra} enseña la curva que no corrió: «${paso4.formula}» · «${paso4.fundamento}»`);
+          assert.ok((d.explicacion_simple || []).some((x) => /no predijo quién gana/.test(x.texto)), "la explicación en palabras dice por qué el precio no resta");
+        } else {
+          assert.strictEqual(paso4.datos_entrada.origen_baja_maxima, "neutra");
+          assert.strictEqual(paso4.confianza, "Sin dato", "un factor neutro por falta de b_max no puede presentarse con confianza");
+        }
       }
 
       /* LA CADENA TIENE QUE CUADRAR DE ARRIBA ABAJO: cada paso parte de donde
@@ -37397,6 +37483,10 @@ async function main() {
       assert.strictEqual(primero.margen_estimado.valor, Math.round(pt.cifras.techo_competitivo - pt.cifras.piso_rentable), "margen ≡ techo − piso de lib/apu/piso_techo, ni un peso distinto");
       assert.strictEqual(primero.margen_estimado.piso, pt.cifras.piso_rentable);
       assert.strictEqual(primero.margen_estimado.techo, pt.cifras.techo_competitivo);
+      // la tarjeta sabe si ese techo es solo una referencia (licitación y menor cuantía, 28-oct-2026): si no, diría «aquí no da»
+      assert.strictEqual(primero.margen_estimado.techo_es_referencia,
+        require("../lib/frecuencia_precio.js").cubreModalidad(require("../lib/guia_proceso.js").modalidadEnLlano(objetivo.modalidad_de_contratacion).clave),
+        `el margen dice si su techo es una referencia (${objetivo.modalidad_de_contratacion})`);
       assert.strictEqual(primero.margen_estimado.donde, require("../lib/indice_baja.js").dondeSeMidio(pt.cifras.baja_granularidad), "el recorrido dice DÓNDE se midió el techo, con la misma derivación que la tarjeta");
       assert.ok([...require("../lib/indice_baja.js").GRANULARIDADES.map((g) => require("../lib/indice_baja.js").dondeSeMidio(g)), "esta zona"].includes(primero.margen_estimado.donde), primero.margen_estimado.donde);
       assert.strictEqual(rM2.cuerpo.margen.con_margen, antesConMargen + 1, "con_margen sube en uno (F8)");
@@ -37416,7 +37506,11 @@ async function main() {
         assert.strictEqual(filaA.baja_maxima.valor, bmaxEsperada, `b_max (${filaA.baja_maxima.valor}) ≠ 1 − (piso + su IVA de la utilidad)/PO (${bmaxEsperada})`);
         assert.strictEqual(filaA.baja_maxima.borrador, gCon.cuerpo.id);
         const ajP = (filaA.p_ganar_detalle.ajustes || []).find((a) => a.nombre === "precio");
-        if (ajP) assert.ok(/presupuesto guardado/.test(ajP.motivo), `el motivo tiene que decir que la b_max viene del APU: «${ajP.motivo}»`);
+        /* en licitación y menor cuantía (28-oct-2026) la b_max del APU se sigue calculando y publicando, pero el
+           paso de precio no la usa: se midió que el precio, solo, no predice, y el motivo lo dice */
+        const objetivoNoPredice = require("../lib/frecuencia_precio.js").cubreModalidad(require("../lib/guia_proceso.js").modalidadEnLlano(objetivo.modalidad_de_contratacion).clave);
+        if (ajP) assert.ok(objetivoNoPredice ? ajP.factor === 1 && /no predijo quién gana/.test(ajP.motivo) : /presupuesto guardado/.test(ajP.motivo),
+          `el motivo dice de dónde sale el paso de precio (${objetivo.modalidad_de_contratacion}): «${ajP.motivo}»`);
         // el APU manda sobre la declarada
         const rD = await L("baja_max=1");
         const filaD = rD.cuerpo.resultados.find((f) => f.id_del_proceso === objetivo.id_del_proceso);
@@ -42521,6 +42615,10 @@ async function main() {
           const lm = lineaMargen({ valor: 5, piso: 10, techo: 15, donde: "su departamento, en obras así" });
           assert.ok(/se suele adjudicar en su departamento, en obras así \(\$15\)/.test(lm) && !/esta entidad/.test(lm), `el recorrido dice DÓNDE se midió el precio de mercado → ${lm}`);
           assert.ok(/se suele adjudicar en esta zona/.test(lineaMargen({ valor: 5, piso: 10, techo: 15 })), "sin el campo, «esta zona»: nunca «esta entidad» sin haberlo medido");
+          // con el techo como referencia (licitación y menor cuantía, 28-oct-2026), bajo cero es un aviso ámbar, no «aquí no da»
+          const lmRef = lineaMargen({ valor: -5, piso: 15, techo: 10, techo_es_referencia: true }), lmNo = lineaMargen({ valor: -5, piso: 15, techo: 10 });
+          assert.ok(!/aquí no da/.test(lmRef) && /referencia, no un requisito para ganar/.test(lmRef) && /text-amber-900/.test(lmRef) && !/text-red-700/.test(lmRef), `techo de referencia → ${lmRef}`);
+          assert.ok(/aquí no da/.test(lmNo) && /text-red-700/.test(lmNo), `sin la marca, la regla de antes → ${lmNo}`);
           assert.ok(/detalles por revisar/.test(lineaRequisitos({ p1_rup: { sin_dato: true } })),
             "sin_dato deja pasar CON aviso: ni verde limpio ni rojo (no saber no es fallar)");
 
@@ -52004,6 +52102,129 @@ async function main() {
        · un índice que cambia reescribe su foto; el tope de bytes y el de
          operaciones frenan ANTES de gastar; ningún error enseña el secreto.
      ══════════════════════════════════════════════════════════════════════════ */
+  /* ═══ CUÁNTAS OFERTAS GANARON A CADA PRECIO (28-oct-2026, decisión del dueño tras el consejo) ═══════════
+     Medido en la base nacional de obra: en licitación y en menor cuantía, el precio como % del presupuesto,
+     solo, no predice quién gana mejor que el azar (aprender 2020-2025, probar 2026), y la curva sin medir que
+     movía la probabilidad con el precio se retiró de Precios, del sugeridor y de la lista. Lo que se dice es el
+     hecho contado (lib/frecuencia_precio, tabla de scripts/base_obra/frecuencia_precio.js). Funciones reales. */
+  bqFrecuenciaPrecio: { if (!corre("unidad frecuencia por precio")) break bqFrecuenciaPrecio;
+    const FP = require("../lib/frecuencia_precio.js");
+    const GEN = require("../scripts/base_obra/frecuencia_precio.js");
+    /* 1 · el generador cuenta bien, a mano: dos licitaciones de 2025 y una de 2026 */
+    const proc = (id, ano, pcts, iGana, mod = "licitacion") => ({ portafolio: `CO1.BDOS.${id}`, modalidad: mod, fecha_adjudicacion: `${ano}-05-01T00:00:00.000`,
+      precio_base: 1e9, ofertas_validas: pcts.map((q, i) => ({ proveedor: `P${i}`, valor: q * 1e9, pct: q })), n_validas: pcts.length,
+      oferta_ganadora: { pct: pcts[iGana], valor: pcts[iGana] * 1e9, proveedor: `P${iGana}` }, competencia: "real", inconsistencia: null, excluido: null });
+    const baseG = [proc(1, "2025", [0.95, 0.97, 0.99], 2), proc(2, "2025", [0.951, 0.93, 0.90, 0.991], 0), proc(3, "2026", [0.95, 0.96, 0.99], 1),
+      proc(4, "2025", [0.95, 0.96], 0), proc(5, "2025", [0.95, 0.96, 0.97], 1, "minima")];
+    const tG = GEN.construir(baseG, { huella: "a".repeat(64), generado: "2026-10-28" });
+    const c94 = tG.celdas.licitacion["*"]["94"], c98 = tG.celdas.licitacion["*"]["98"];
+    assert.deepStrictEqual({ o: c94.ofertas, g: c94.ganaron }, { o: 3, g: 1 }, `franja 94-96: 0,95 + 0,951 + 0,95, ganó la de 0,951 → ${JSON.stringify(c94)}`);
+    assert.strictEqual(c94.azar, +(1 / 3 + 1 / 4 + 1 / 3).toFixed(3), "el azar es la suma de 1/n de cada oferta");
+    assert.deepStrictEqual({ o: c98.ofertas, g: c98.ganaron }, { o: 3, g: 1 }, "franja 98-100: 0,99 (ganó), 0,991 y 0,99");
+    assert.strictEqual(tG.celdas.licitacion["3-4"]["94"].ofertas, 3, "el tramo de oferentes es el del proceso (3 y 4)");
+    assert.strictEqual(tG.resumen.licitacion.procesos, 3, "con 2 ofertas válidas el proceso no entra (usableMotor), y la mínima tampoco");
+    assert.ok(!tG.celdas.minima, "la mínima cuantía no es de esta tabla: tiene la suya");
+    assert.strictEqual(tG.verificacion.por_modalidad.licitacion.procesos_prueba, 1, "la verificación aprende hasta 2025 y prueba en 2026");
+    assert.deepStrictEqual(tG.periodo, { desde: "2025", hasta: "2026" });
+    assert.strictEqual(GEN.franjaDe(0.9999), 98); assert.strictEqual(GEN.franjaDe(0.4), 50); assert.strictEqual(GEN.franjaDe(1.5), 108);
+
+    /* 2 · la tabla del despliegue trae su procedencia y su propia verificación */
+    const t = FP.tabla();
+    assert.ok(t && t.formato === 1 && /^[0-9a-f]{64}$/.test(t.base_sha256) && t.periodo && t.verificacion, "data/frecuencia_precio.json con formato, huella, periodo y verificación");
+    for (const m of ["licitacion", "menor_cuantia"]) {
+      const v = t.verificacion.por_modalidad[m];
+      assert.ok(v && v.procesos_prueba >= 300 && Number.isFinite(v.mejora_pct), `${m}: verificada fuera de muestra con al menos 300 procesos de 2026 → ${JSON.stringify(v)}`);
+    }
+
+    /* 3 · la frase: el hecho de su franja, 3 puntos más abajo en la MISMA población, el azar y lo que cuesta bajar */
+    const f = FP.frecuenciaPorPrecio({ modalidad: "licitacion", baja_ofertada_pct: 1, oferentes: 7, presupuesto_oficial: 1e9 });
+    const celda = t.celdas.licitacion["5-9"]["98"];
+    assert.ok(f.aplica && f.franja.desde_pct === 98 && f.franja.grupo === "5-9" && f.franja.ofertas === celda.ofertas, `su franja: 98-100 %, 5 a 9 oferentes → ${JSON.stringify(f.franja)}`);
+    assert.ok(Math.abs(f.franja.ganaron_de_100 - (100 * celda.ganaron) / celda.ofertas) < 1e-9 && Math.abs(f.franja.azar_de_100 - (100 * celda.azar) / celda.ofertas) < 1e-9, "las cifras salen de la celda, sin redondear");
+    const celdaAbajo = t.celdas.licitacion["5-9"]["96"];
+    assert.ok(f.mas_abajo && f.mas_abajo.desde_pct === 96 && f.mas_abajo.grupo === "5-9" && f.mas_abajo.ofertas === celdaAbajo.ofertas
+      && Math.abs(f.mas_abajo.ganaron_de_100 - (100 * celdaAbajo.ganaron) / celdaAbajo.ofertas) < 1e-9, `3 puntos más abajo, en el mismo tramo y con SUS cifras → ${JSON.stringify(f.mas_abajo)}`);
+    assert.strictEqual(f.costo_bajar, 30000000, "bajar 3 puntos de 1.000 millones son 30 millones: una resta, no un modelo");
+    assert.ok(f.frase.includes("$30.000.000") && f.frase.includes("con 5 a 9 oferentes") && /de cada 100/.test(f.frase) && /misma opción/.test(f.frase), `la frase lo dice → «${f.frase}»`);
+    assert.ok(!/\d\.\d{1,2}(?!\d)/.test(f.frase.replace(/\$[\d.]+/g, "")) && !/probabilidad/i.test(f.frase), `la frase va con coma decimal y no dice «probabilidad» → «${f.frase}»`);
+    assert.ok(f.corta.startsWith("A este precio ganaron") && f.corta.length < 120, `la corta cabe bajo la cifra → «${f.corta}»`);
+    // sin oferentes conocidos: la de todos los procesos, y no dice un tramo que no se sabe
+    const fSin = FP.frecuenciaPorPrecio({ modalidad: "licitacion", baja_ofertada_pct: 5, oferentes: null, presupuesto_oficial: null });
+    assert.ok(fSin.aplica && fSin.franja.grupo === "*" && !/oferentes/.test(fSin.frase) && fSin.costo_bajar == null && !/\$/.test(fSin.frase), `sin oferentes ni presupuesto → «${fSin.frase}»`);
+    // la franja con menos de 100 ofertas no se dice; ni la modalidad que no se midió; ni sin precio
+    assert.strictEqual(FP.frecuenciaPorPrecio({ modalidad: "licitacion", baja_ofertada_pct: 40, oferentes: 5 }).motivo, "franja_sin_base");
+    assert.strictEqual(FP.frecuenciaPorPrecio({ modalidad: "minima", baja_ofertada_pct: 5 }).motivo, "modalidad_sin_medir");
+    assert.strictEqual(FP.frecuenciaPorPrecio({ modalidad: "licitacion", baja_ofertada_pct: null }).motivo, "sin_precio");
+    assert.ok(FP.cubreModalidad("licitacion") && FP.cubreModalidad("menor_cuantia") && !FP.cubreModalidad("minima") && !FP.cubreModalidad("seleccion_abreviada") && !FP.cubreModalidad("toString"),
+      "solo licitación y menor cuantía están medidas (y una propiedad heredada no cuenta)");
+    // una franja de abajo con menos de 100 ofertas no se compara
+    const tChica = { formato: 1, periodo: { desde: "2020", hasta: "2026" }, verificacion: { prueba: "2026", por_modalidad: { licitacion: { procesos_prueba: 400, mejora_pct: -0.3 } } },
+      celdas: { licitacion: { "*": { 94: { ofertas: 500, ganaron: 20, azar: 18 }, 90: { ofertas: 99, ganaron: 9, azar: 4 } } } } };
+    const fChica = FP.frecuenciaPorPrecio({ modalidad: "licitacion", baja_ofertada_pct: 5 }, { tabla: tChica });
+    assert.ok(fChica.aplica && fChica.mas_abajo === null && !/más abajo/.test(fChica.frase), `la de abajo con 99 ofertas no se dice → «${fChica.frase}»`);
+    assert.ok(/no predijo al ganador mejor que el azar/.test(fChica.frase), "con la verificación en contra, se dice");
+    // SI UNA REGENERACIÓN DIERA QUE LA TABLA SÍ PREDICE, la frase deja de afirmar lo contrario
+    const tMejor = JSON.parse(JSON.stringify(tChica)); tMejor.verificacion.por_modalidad.licitacion.mejora_pct = 2.1;
+    assert.ok(!/no predijo/.test(FP.frecuenciaPorPrecio({ modalidad: "licitacion", baja_ofertada_pct: 5 }, { tabla: tMejor }).frase), "con una verificación a favor, la frase no dice «no predijo»");
+    assert.strictEqual(FP.frecuenciaPorPrecio({ modalidad: "licitacion", baja_ofertada_pct: 5 }, { tabla: null }).motivo, "sin_tabla", "sin tabla: «sin tabla», no un 500");
+    // un archivo de OTRO formato (una regeneración con otra forma) es «sin tabla», no unas celdas leídas al revés
+    {
+      const rutaJSON = require.resolve("../data/frecuencia_precio.json");
+      const antes = require.cache[rutaJSON];
+      try {
+        require.cache[rutaJSON] = { id: rutaJSON, filename: rutaJSON, loaded: true, exports: { ...t, formato: 2 } };
+        FP._olvidar();
+        assert.strictEqual(FP.tabla(), null, "formato 2: la aplicación no la lee");
+        assert.strictEqual(FP.frecuenciaPorPrecio({ modalidad: "licitacion", baja_ofertada_pct: 1, oferentes: 7 }).motivo, "sin_tabla");
+      } finally {
+        if (antes) require.cache[rutaJSON] = antes; else delete require.cache[rutaJSON];
+        FP._olvidar();
+      }
+      assert.ok(FP.tabla() && FP.tabla().formato === 1, "y la de verdad vuelve");
+    }
+
+    /* 4 · Precios: la probabilidad es la base a cualquier precio y el mensaje es la frase, con el editor REAL */
+    const R = require("../lib/apu/rentabilidad.js");
+    const ps = [0, 3, 9].map((b) => R.pGanarPorPrecio({ p_base: 0.25, baja_ofertada_pct: b, baja_mediana_pct: 6, baja_p25: 3, baja_p75: 9, oferentes: 7, presupuesto_oficial: 1e9, modalidad: "Licitación pública" }));
+    assert.ok(ps.every((x) => x.p === 0.25 && x.modulada === false && x.sin_modular_por === "el_precio_no_predice"), `licitación: la base a cualquier precio → ${ps.map((x) => x.p).join(", ")}`);
+    assert.strictEqual(ps[0].mensaje, FP.frecuenciaPorPrecio({ modalidad: "licitacion", baja_ofertada_pct: 0, oferentes: 7, presupuesto_oficial: 1e9 }).frase, "el mensaje es la frase medida");
+    const rr = R.rentabilidad({ precio_oferta: 970e6, costo_directo: 700e6, presupuesto_oficial: 1e9, p_base: 0.25, oferentes: 7, baja: { nivel: "medio", baja_mediana: 6, baja_p25: 3, baja_p75: 9 }, modalidad: "Selección Abreviada de Menor Cuantía" });
+    assert.ok(rr.p_ganar === 0.25 && rr.p_ganar_detalle.frecuencia_precio && rr.p_ganar_detalle.frecuencia_precio.costo_bajar === 30000000,
+      `rentabilidad() pasa el presupuesto y los oferentes a la frase → ${JSON.stringify(rr.p_ganar_detalle.frecuencia_precio && rr.p_ganar_detalle.frecuencia_precio.franja)}`);
+    // la selección abreviada que NO es menor cuantía no se midió: conserva la curva
+    assert.strictEqual(R.pGanarPorPrecio({ p_base: 0.25, baja_ofertada_pct: 12, baja_mediana_pct: 6, baja_p25: 3, baja_p75: 9, modalidad: "Selección abreviada" }).modulada, true);
+
+    /* 5 · el panel piso/techo: en licitación y menor cuantía el techo es una REFERENCIA. «No se presente: el precio para
+       ganar está bajo su mínimo» y «baje hasta el techo para tener opción» afirman lo que se midió falso; las cifras no
+       cambian, y los rechazos ciertos (el mínimo sobre el presupuesto) siguen mandando. El régimen especial, sin medir, igual. */
+    const PT = require("../lib/apu/piso_techo.js");
+    const entradaPT = (modalidad, extra = {}) => PT.pisoTecho({ presupuesto_oficial: 1e9, costo_directo: 700e6, aiu: { administracion_pct: 10, imprevistos_pct: 5, utilidad_pct: 5 },
+      baja: { nivel: "medio", baja_mediana: 30, procesos_contados: 12, granularidad_utilizada: "entidad" }, modalidad, iva_utilidad: { variante: "sin_iva" }, precio_actual: 900e6, ...extra });
+    for (const m of ["Licitación pública", "Selección abreviada de menor cuantía"]) {
+      const r = entradaPT(m);
+      assert.ok(r.cifras.techo_competitivo === 700e6 && r.cifras.techo_competitivo < r.cifras.piso_rentable, `${m}: el techo (30 % de baja) queda bajo el mínimo → ${r.cifras.techo_competitivo} vs ${r.cifras.piso_rentable}`);
+      assert.ok(r.techo_es_referencia === true && r.estado === "presentarse" && r.veredicto === `Preséntese entre ${PT.cop(r.cifras.piso_rentable)} y $1.000.000.000.`, `${m}: el veredicto va del mínimo al presupuesto → ${r.estado} «${r.veredicto}»`);
+      assert.ok(/referencia, no un requisito para ganar/.test(r.detalle) && /por debajo de su mínimo/.test(r.detalle) && /no predijo quién gana/.test(r.detalle), `${m}: el detalle dice qué es el techo → «${r.detalle}»`);
+      assert.ok(r.precio_actual_estado === "en_rango" && /cubre su mínimo y cabe en el presupuesto/.test(r.frase_precio_actual) && !/baje hasta/.test(r.frase_precio_actual), `${m}: sobre el techo no se le dice «baje» → «${r.frase_precio_actual}»`);
+      assert.ok(/^El precio al que se suele adjudicar aquí/.test(r.frases.techo) && !/probablemente se gana/.test(r.frases.techo), `${m}: «${r.frases.techo}»`);
+      assert.strictEqual(entradaPT(m, { presupuesto_oficial: 800e6 }).estado, "no_presentarse_supera_presupuesto", `${m}: el mínimo sobre el presupuesto sigue siendo «No se presente»`);
+      // el IVA de la utilidad que pasa el presupuesto también sigue mandando: rechazo con «con_iva», duda sin saberlo
+      assert.strictEqual(entradaPT(m, { presupuesto_oficial: 890e6, iva_utilidad: { variante: "con_iva" } }).estado, "no_presentarse_supera_presupuesto", `${m}: con el IVA de la utilidad pasa el presupuesto`);
+      assert.strictEqual(entradaPT(m, { presupuesto_oficial: 890e6, iva_utilidad: null }).estado, "confirmar_iva", `${m}: sin saber si cuenta el IVA, la duda de siempre`);
+      const sinBaja = entradaPT(m, { baja: null });
+      assert.ok(sinBaja.estado === "presentarse" && /Sin referencia/.test(sinBaja.detalle), `${m}: sin historial, el rango y por qué no hay referencia → ${sinBaja.estado} «${sinBaja.detalle}»`);
+    }
+    const rReg = entradaPT("Contratación régimen especial (con ofertas)");
+    assert.ok(rReg.techo_es_referencia === false && rReg.estado === "no_presentarse" && rReg.precio_actual_estado === "sobre_el_techo", `régimen especial, sin medir: la regla de antes → ${rReg.estado} · ${rReg.precio_actual_estado}`);
+
+    /* 6 · la lista dice que su orden cambió y por qué (condición del consejo): una línea fija bajo el resumen */
+    const htmlFP = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
+    const aviso = (htmlFP.match(/<p id="aviso-orden-precio"[^>]*>([\s\S]*?)<\/p>/) || [])[1] || "";
+    assert.ok(/28 de octubre de 2026/.test(aviso) && /licitación y en menor cuantía/.test(aviso) && /no predijo quién gana/.test(aviso) && /Precios/.test(aviso) && !/\bhidden\b/.test(htmlFP.match(/<p id="aviso-orden-precio"[^>]*>/)[0]),
+      `el aviso del orden, visible, con fecha, modalidades, motivo y adónde ir → «${aviso.replace(/\s+/g, " ").trim()}»`);
+    console.log("· unidad frecuencia por precio: el generador cuenta a mano (franja, tramo, 1/n, la mínima fuera, 2026 de prueba) · la tabla con huella y verificación de ≥ 300 procesos · la frase de su franja, 3 puntos abajo en la misma población, el azar y la resta del 3 % · franja chica, modalidad sin medir y sin precio se callan · la conclusión sigue a la verificación · Precios con la base a cualquier precio");
+  }
+
   bqFotoIndices: { if (!corre("unidad foto de los índices en el almacén")) break bqFotoIndices;
     const http = require("http");
     const zlib = require("zlib");
@@ -52829,8 +53050,12 @@ async function main() {
     conCifra("puertas P4 (competencia baja)", pu.p4_competencia.mensaje, "promedio 1,5 oferentes");
     sinPunto("puertas P4 (competencia alta)", p4Competencia({ nivel: "alta", promedio_oferentes: 18.25, total_procesos: 12 }).mensaje);
 
-    /* 2 · lib/probabilidad: el motivo del ajuste de precio (la baja máxima del dueño, sin redondearla hacia arriba) */
-    const d = R4("probabilidad.js").estimarPDetalle(lic, {
+    /* 2 · lib/probabilidad: el motivo del ajuste de precio (la baja máxima del dueño, sin redondearla hacia arriba).
+       Desde el 28-oct-2026 la menor cuantía y la licitación ya no llevan ese factor (el precio, solo, no predijo
+       quién gana): el formato se prueba en régimen especial, donde el factor sigue, y abajo se comprueba que en
+       menor cuantía el paso dice por qué no resta. */
+    const licRegimen = { ...lic, modalidad_de_contratacion: "Contratación régimen especial (con ofertas)" };
+    const d = R4("probabilidad.js").estimarPDetalle(licRegimen, {
       competencia: { nivel: "baja", promedio_oferentes: 1.5, total_procesos: 39, rivales_estimados: 1.64, peso_datos: 0.862, prior: 2.46, prior_origen: "departamento:BOYACÁ" },
       baja: { nivel: "medio", baja_mediana: 5, procesos_contados: 9 },
       baja_para_precio: { nivel: "medio", baja_mediana: 3.4, baja_mediana_celda: 5, procesos_contados: 9 },
@@ -52841,6 +53066,17 @@ async function main() {
     sinPunto("probabilidad motivo «precio»", precio.motivo);
     conCifra("probabilidad motivo «precio»", precio.motivo, "~3,4 %");
     conCifra("probabilidad motivo «precio» (la baja máxima del dueño, sin redondear)", precio.motivo, "hasta 2,35 %");
+    {
+      const dMc = R4("probabilidad.js").estimarPDetalle(lic, {
+        competencia: { nivel: "baja", promedio_oferentes: 1.5, total_procesos: 39, rivales_estimados: 1.64, peso_datos: 0.862, prior: 2.46, prior_origen: "departamento:BOYACÁ" },
+        baja: { nivel: "medio", baja_mediana: 5, procesos_contados: 9 },
+        baja_para_precio: { nivel: "medio", baja_mediana: 3.4, baja_mediana_celda: 5, procesos_contados: 9 },
+        baja_maxima_pct: 2.35, baja_maxima_origen: "declarada", colision_cierres: 3,
+      });
+      const prMc = (dMc.ajustes || []).find((a) => a.nombre === "precio");
+      assert.ok(prMc && prMc.factor === 1 && /no predijo quién gana/.test(prMc.motivo), `menor cuantía: el precio no resta y lo dice → ${JSON.stringify(prMc)}`);
+      sinPunto("probabilidad motivo «precio» en menor cuantía", prMc.motivo);
+    }
 
     /* 3 · op=deducciones: la cifra que se LEE va con coma; la que se TECLEA, en la forma que la casilla
        acepta. Se lee el tipo real de #deducciones en public/index.html y se exige que lo que la frase manda
@@ -55717,7 +55953,10 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
       }
       for (const b of [4, 2]) {
         const x = R_SM.pGanarPorPrecio({ p_base: 0.2, baja_ofertada_pct: b, baja_mediana_pct: 6, baja_p25: 3, baja_p75: 9, modalidad: MIN_SM });
-        const curva = R_SM.pGanarPorPrecio({ p_base: 0.2, baja_ofertada_pct: b, baja_mediana_pct: 6, baja_p25: 3, baja_p75: 9, modalidad: "Licitación pública" });
+        /* «la curva de siempre», calculada aparte: desde el 28-oct-2026 la licitación ya no la usa
+           (el precio, solo, no predijo quién gana; lib/frecuencia_precio) */
+        const multB = R_SM.multiplicadorPrecio({ baja_ofertada_pct: b, baja_mediana_pct: 6, baja_p25: 3, baja_p75: 9 }).multiplicador;
+        const curva = { p: Math.round(Math.max(0.01, 0.2 * multB) * 1e4) / 1e4 };
         okSM(x.p < 0.2 && x.solo_rebaja === true && Math.abs(x.p - curva.p) < 1e-4 && /se rebaja por prudencia/.test(x.mensaje) && !/se sortea/.test(x.mensaje),
           `(1) mínima con baja ${b} %: bajar menos que los ganadores rebaja con la curva de siempre (p ${x.p} frente a ${curva.p})`);
       }
@@ -55743,8 +55982,12 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
         okSM(Object.prototype.hasOwnProperty.call(ESPERADA, g.clave) && ESPERADA[g.clave] === g.precio.se_gana, `(2) «${lit}» (${g.clave}): cómo se gana = ${g.precio.se_gana}`);
         okSM(g.precio_decide === (g.precio.se_gana === "menor_precio" ? true : g.precio.se_gana == null ? null : false), `(2) «${lit}»: precio_decide sale de la misma regla`);
         okSM(!VIEJA_SM.test(`${textosDe(p)} ${g.explicacion} ${g.precio.frase}`), `(2) «${lit}»: ninguna frase con la regla vieja → «${textosDe(p)} | ${g.explicacion}»`);
-        // con baja 8 % (más que la mediana): la mínima no premia; el concurso no modula; el sorteo y lo que no consta, sí
-        okSM((p.modulada === true) === (g.precio.se_gana !== "menor_precio" && g.precio.se_gana !== "no_puntua"), `(2) «${lit}»: modula por precio solo donde el precio puntúa con sorteo o no consta cómo (${p.modulada})`);
+        /* con baja 8 % (más que la mediana): la mínima no premia; el concurso no modula; el sorteo y lo que no
+           consta, sí, SALVO en licitación y menor cuantía, donde la base nacional midió que el precio, solo, no
+           predijo quién gana (28-oct-2026, lib/frecuencia_precio) */
+        const medidaSM = require("../lib/frecuencia_precio.js").cubreModalidad(g.clave);
+        okSM((p.modulada === true) === (g.precio.se_gana !== "menor_precio" && g.precio.se_gana !== "no_puntua" && !medidaSM), `(2) «${lit}»: modula por precio solo donde el precio puntúa con sorteo o no consta cómo, y no está medido (${p.modulada})`);
+        if (medidaSM) okSM(p.p === 0.2 && p.sin_modular_por === "el_precio_no_predice", `(2) «${lit}»: medido, la probabilidad es la base y dice por qué (${p.p}, ${p.sin_modular_por})`);
         if (g.precio.se_gana === "menor_precio") okSM(!/sorteo uniforme|tres de los cuatro|≈25 %/.test(textosDe(p)), `(2) «${lit}»: sin la curva del sorteo en el texto`);
       }
       // la guía entera de una mínima: consejo del menor precio, ninguno de «se sortea»
@@ -55769,16 +56012,19 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
       }
       okSM(!/tabla|0[.,]00|0[.,]25|0[.,]50|0[.,]75/.test(Object.values({ a: lic.precio.frase, b: lic.explicacion }).join(" ")), "(3) sin tabla de métodos: no se reconoce el pliego tipo de cada proceso");
     }
-    // (4) las cifras de la licitación NO cambian: la curva del sorteo es la misma con o sin modalidad
+    /* (4) LICITACIÓN Y MENOR CUANTÍA (28-oct-2026, decisión del dueño tras el consejo): la curva del sorteo
+           era un supuesto que nunca se midió; medido en la base nacional, el precio, solo, no predijo quién gana.
+           La probabilidad es la base a CUALQUIER precio, y el mensaje es el hecho contado de lib/frecuencia_precio. */
     {
-      for (const b of [2, 6, 8, 12]) {
-        const con = R_SM.pGanarPorPrecio({ p_base: 0.2, baja_ofertada_pct: b, baja_mediana_pct: 6, baja_p25: 3, baja_p75: 9, modalidad: LIC_SM });
-        /* la curva del sorteo calculada aparte: desde el 30-sep-2026 una llamada SIN modalidad ya
-           no es la referencia (no consta cómo puntúan → solo se rebaja; «unidad mínima cuantía con
-           tabla medida» (3)) */
-        const mult = R_SM.multiplicadorPrecio({ baja_ofertada_pct: b, baja_mediana_pct: 6, baja_p25: 3, baja_p75: 9 }).multiplicador;
-        const esperado = Math.round(Math.min(0.95, Math.max(0.01, 0.2 * mult)) * 1e4) / 1e4;
-        okSM(con.p === esperado && con.multiplicador === Math.round(mult * 1e3) / 1e3 && con.modulada === true, `(4) licitación con baja ${b} %: la misma cifra que antes (${con.p} / ${esperado})`);
+      for (const lit of [LIC_SM, "Selección Abreviada de Menor Cuantía"]) {
+        for (const b of [0, 2, 6, 8, 12]) {
+          const con = R_SM.pGanarPorPrecio({ p_base: 0.2, baja_ofertada_pct: b, baja_mediana_pct: 6, baja_p25: 3, baja_p75: 9, modalidad: lit, oferentes: 7, presupuesto_oficial: 1e9 });
+          okSM(con.p === 0.2 && con.modulada === false && con.multiplicador === 1 && con.sin_modular_por === "el_precio_no_predice",
+            `(4) «${lit}» con baja ${b} %: la base, sin curva (${con.p}, ${con.modulada}, ${con.sin_modular_por})`);
+          const f = require("../lib/frecuencia_precio.js").frecuenciaPorPrecio({ modalidad: G_SM.comoSeGanaElPrecio(lit).clave, baja_ofertada_pct: b, oferentes: 7, presupuesto_oficial: 1e9 });
+          okSM(f.aplica ? con.mensaje === f.frase && con.nota_corta === f.corta && con.frecuencia_precio && con.frecuencia_precio.franja.ofertas >= 100
+            : /no predijo quién gana mejor que el azar/.test(con.mensaje), `(4) «${lit}» con baja ${b} %: el mensaje es el hecho contado → «${con.mensaje}»`);
+        }
       }
     }
     // (5) el optimizador no sugiere precio donde gana el menor precio; en licitación sí
@@ -55788,8 +56034,11 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
       okSM(oMin.aplicable === false && oMin.motivo === "gana_el_menor_precio" && oMin.precio_optimo == null && oMin.descuento_optimo_pct == null,
         `(5) mínima: sin precio sugerido (${oMin.aplicable}, ${oMin.motivo}, ${oMin.descuento_optimo_pct})`);
       okSM(/gana la oferta de menor precio/.test(oMin.mensaje) && /cerca de 6 %/.test(oMin.mensaje) && /\(12 contratos\)/.test(oMin.mensaje) && /no sugiere un precio/.test(oMin.mensaje), `(5) mínima: dice por qué y el hecho → «${oMin.mensaje}»`);
+      /* desde el 28-oct-2026 tampoco en licitación: el precio, solo, no predijo quién gana, y el «óptimo»
+         saldría siempre en «no descuente nada» dicho como un cálculo */
       const oLic = O_SM.optimizarPrecioOferta(proc(LIC_SM), 70e6, {});
-      okSM(oLic.aplicable === true && oLic.descuento_optimo_pct != null, `(5) licitación: sigue sugiriendo precio (${oLic.aplicable}, ${oLic.descuento_optimo_pct})`);
+      okSM(oLic.aplicable === false && oLic.motivo === "el_precio_no_predice" && oLic.descuento_optimo_pct == null && /no sugiere un precio/.test(oLic.mensaje) && /no predijo quién gana/.test(oLic.mensaje),
+        `(5) licitación: sin precio sugerido, y dice por qué (${oLic.aplicable}, ${oLic.motivo}, «${oLic.mensaje}»)`);
       okSM(!VIEJA_SM.test([...(oMin.supuestos || []), ...Object.values(oMin.como_leerlo || {})].join(" ")), "(5) los supuestos del optimizador no dicen «se sortea en la audiencia»");
     }
     /* (7) CONCURSO DE MÉRITOS: el precio no da puntos (revisión adversaria, 28-sep-2026). La curva
@@ -55807,14 +56056,18 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
       okSM(/no da puntos/.test(oCon.mensaje) && /no sugiere un precio/.test(oCon.mensaje), `(7) concurso: dice por qué → «${oCon.mensaje}»`);
       // la pantalla no ofrece «el paso que falta» donde no falta ninguno
       const appSM = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
-      okSM(/o\.motivo === "gana_el_menor_precio" \|\| o\.motivo === "el_precio_no_puntua"\) \? "" : botonPasoQueFalta\(\)/.test(appSM), "(7) la pantalla no pide un paso que falta en concurso de méritos");
+      okSM(/o\.motivo === "gana_el_menor_precio" \|\| o\.motivo === "el_precio_no_puntua" \|\| o\.motivo === "el_precio_no_predice"\) \? "" : botonPasoQueFalta\(\)/.test(appSM), "(7) la pantalla no pide un paso que falta en concurso de méritos ni donde el precio, solo, no predijo quién gana");
       // hermano (segunda revisión, 28-sep-2026): la TARJETA del listado tampoco rebaja por precio en concurso
       const P_SM = require("../lib/probabilidad.js");
       const ctxP = { baja: { baja_mediana: 6, baja_p25: 3, baja_p75: 9, procesos_contados: 12, nivel: "medio" }, baja_maxima_pct: 1, baja_maxima_origen: "declarada" };
       const pasoPrecio = (m) => { const t = P_SM.trazaP({ modalidad_de_contratacion: m }, ctxP); return { t, pr: (t.pasos || []).find((x) => x.nombre === "precio") || null }; };
       const tc = pasoPrecio(CON_SM), tl = pasoPrecio(LIC_SM);
       okSM(tc.pr && tc.pr.factor === 1 && /no da puntos/.test(tc.pr.motivo), `(7) tarjeta en concurso: el precio no resta (${tc.pr && tc.pr.factor} «${tc.pr && tc.pr.motivo}»)`);
-      okSM(tl.pr && tl.pr.factor < 1 && tc.t.p > tl.t.p, `(7) tarjeta en licitación: sin cambios, no poder bajar al centro sigue restando (${tl.pr && tl.pr.factor})`);
+      /* desde el 28-oct-2026 la licitación tampoco resta por precio (medido); el régimen especial, que no se
+         midió, sigue restando */
+      okSM(tl.pr && tl.pr.factor === 1 && /no predijo quién gana/.test(tl.pr.motivo) && tc.t.p === tl.t.p, `(7) tarjeta en licitación: el precio no resta y lo dice (${tl.pr && tl.pr.factor} «${tl.pr && tl.pr.motivo}»)`);
+      const tr = pasoPrecio("Contratación régimen especial (con ofertas)");
+      okSM(tr.pr && tr.pr.factor < 1 && tc.t.p > tr.t.p, `(7) tarjeta en régimen especial: no poder bajar al centro sigue restando (${tr.pr && tr.pr.factor})`);
     }
     // (6) el ajuste competitivo y el «cómo leerlo» de op=rentabilidad, con el editor REAL
     {
@@ -55823,7 +56076,13 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
       // en la MISMA pantalla el optimizador dice «no sugiere un precio»: la cifra del ajuste no puede rotularse «Precio sugerido»
       okSM(aMin.rotulo_precio && !/sugerid/i.test(aMin.rotulo_precio) && !/precio sugerido/i.test(aMin.mensaje), `(6) ajuste en mínima: la cifra no se rotula como sugerencia («${aMin.rotulo_precio}»)`);
       const aLic = R_SM.ajusteCompetitivo({ baja: bajaSM, presupuesto_oficial: 100e6, precio_oferta: 90e6, modalidad: LIC_SM });
-      okSM(/NO es una recomendación de minimizar/.test(aLic.mensaje) && !VIEJA_SM.test(aLic.mensaje) && aLic.rotulo_precio === "Precio sugerido", `(6) ajuste en licitación: «${aLic.rotulo_precio}» · «${aLic.mensaje}»`);
+      /* desde el 28-oct-2026, en licitación la cifra tampoco es una sugerencia: el sugeridor de la misma
+         pantalla dice que no sugiere precio porque el precio, solo, no predijo quién gana (medido) */
+      okSM(aLic.rotulo_precio === "Presupuesto oficial menos esa baja" && !/precio sugerido|jugada dominante/i.test(aLic.mensaje)
+        && /no predijo quién gana mejor que el azar/.test(aLic.mensaje) && !VIEJA_SM.test(aLic.mensaje), `(6) ajuste en licitación: «${aLic.rotulo_precio}» · «${aLic.mensaje}»`);
+      // la modalidad que NO se midió conserva su sugerencia con el supuesto dicho: la regla nueva no se extiende sola
+      const aReg = R_SM.ajusteCompetitivo({ baja: bajaSM, presupuesto_oficial: 100e6, precio_oferta: 90e6, modalidad: "Contratación régimen especial (con ofertas)" });
+      okSM(aReg.rotulo_precio === "Precio sugerido" && /La cifra supone ese sorteo/.test(aReg.mensaje), `(6) ajuste en régimen especial: «${aReg.rotulo_precio}» · «${aReg.mensaje}»`);
       const editorSM = require("../lib/handlers/apu/editor.js");
       const itemsSM = require("../lib/apu/tipologias.js").itemsDeTipologia("VIA-PH").map((c) => ({ item_id: c, cantidad: c === "INV-PH.1" ? 300 : 60 }));
       const pedir = (modalidad) => invocar(editorSM, "/api/apu/rentabilidad", CAB_TOKEN, { metodo: "POST", body: {
@@ -55929,9 +56188,13 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
       // el sugeridor tampoco dice que bajar más compre probabilidad donde no consta cómo puntúan
       const oNc = O_MT.optimizarPrecioOferta({ presupuesto_oficial: 100e6, precio_venta: 100e6, baja: { nivel: "medio", baja_mediana: 6, baja_p25: 3, baja_p75: 9, procesos_contados: 12 }, p_base: 0.2, modalidad: "Contratación régimen especial (con ofertas)" }, 70e6, {});
       okMT(oNc.aplicable && /aquí bajar más no sube la probabilidad/.test(oNc.opciones.agresivo.explicacion) && !/menor valor/.test(oNc.opciones.agresivo.explicacion), `(3) sugeridor sin modalidad: la opción agresiva no promete probabilidad → «${oNc.opciones && oNc.opciones.agresivo.explicacion}»`);
+      /* la licitación ya no lleva la curva del sorteo (28-oct-2026: el precio, solo, no predijo quién gana);
+         la selección abreviada que no es menor cuantía, que no se midió, la conserva intacta */
       const lic = R_MT.pGanarPorPrecio({ p_base: 0.2, baja_ofertada_pct: 12, baja_mediana_pct: 6, baja_p25: 3, baja_p75: 9, modalidad: "Licitación pública" });
+      okMT(lic.p === 0.2 && lic.sin_modular_por === "el_precio_no_predice", `(3) licitación: la base, sin la curva (${lic.p}, ${lic.sin_modular_por})`);
+      const sa = R_MT.pGanarPorPrecio({ p_base: 0.2, baja_ofertada_pct: 12, baja_mediana_pct: 6, baja_p25: 3, baja_p75: 9, modalidad: "Selección abreviada" });
       const multLic = R_MT.multiplicadorPrecio({ baja_ofertada_pct: 12, baja_mediana_pct: 6, baja_p25: 3, baja_p75: 9 }).multiplicador;
-      okMT(lic.p > 0.2 && Math.abs(lic.p - Math.min(0.95, 0.2 * multLic)) < 1e-4 && !lic.solo_rebaja, `(3) licitación: la curva del sorteo intacta (${lic.p})`);
+      okMT(sa.p > 0.2 && Math.abs(sa.p - Math.min(0.95, 0.2 * multLic)) < 1e-4 && !sa.solo_rebaja, `(3) selección abreviada: la curva del sorteo intacta (${sa.p})`);
     }
     // (4) el sugeridor barre la mínima con la tabla y cada punto usa la MISMA probabilidad de Precios
     {
