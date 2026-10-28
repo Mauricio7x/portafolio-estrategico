@@ -2456,7 +2456,11 @@
        dejaba en la zona muerta temporal —`ReferenceError` dentro del renderizado
        de la tarjeta, o sea la lista entera rota—. La suite no lo habría visto:
        sus pruebas de esta celda miran el fuente con regex, no la ejecutan. */
-    const rotulo = v === "pierde"
+    /* licitación y menor cuantía con costo (28-oct-2026): la pérdida es al precio de referencia, que no es el
+       precio para ganar; el rótulo lo dice y la celda no se pinta en rojo (lib/ganancia) */
+    const aReferencia = v === "pierde" && g.perdida_al_precio_de_referencia === true;
+    const rotulo = aReferencia ? "perdería al precio de referencia"
+      : v === "pierde"
       ? "de pérdida aun en el mejor caso"
       : (Number(cifra) < 0 ? "podría perder, en el peor caso" : "le quedan como mínimo si gana");
     /* Con una baja de 0 o negativa el precio de referencia ES el presupuesto
@@ -2499,7 +2503,7 @@
         data-objeto="${esc(l.nombre_del_procedimiento || l.id_del_proceso || "")}"
         aria-label="Ver cómo se calcula lo que deja este contrato">${cifraPartible}</button>`;
     return celda(boton, rotulo, "con el costo que usted calculó", lineas.join("\n"),
-      v === "pierde" ? "perdida" : "");
+      v === "pierde" && !aReferencia ? "perdida" : "");
   }
 
   /* POR QUÉ SE ENSEÑA UN PROCESO QUE SOLO NO ALCANZA (11-sep-2026).
@@ -2739,7 +2743,8 @@
     if (l.cuantia_nota) q.set("cuantia_nota", String(l.cuantia_nota));
     if (l.id_del_proceso != null) q.set("id_proceso", String(l.id_del_proceso));
     if (l.plazo_meses != null) q.set("plazo", String(l.plazo_meses));
-    if (l.modalidad_de_contratacion) q.set("modalidad", l.modalidad_de_contratacion);
+    // el campo y su respaldo declarado (lib/frecuencia_precio.modalidadDeFila): Precios tiene que leer la misma
+    if (l.modalidad_de_contratacion || l.tipo_de_proceso) q.set("modalidad", l.modalidad_de_contratacion || l.tipo_de_proceso);
     if (l.filtro && l.filtro.tipo) q.set("tipo", l.filtro.tipo);
     q.set("perfil", $("f-perfil").value);
     return q.toString();
@@ -9417,6 +9422,9 @@
       $("pt-oferentes-nota").textContent = cf.oferentes_motivo === "no_se_leyo" ? "No se pudo consultar esta vez: vuelva a cargar la página"
         : "Menos de 5 procesos con oferentes contados";
     }
+    /* en licitación y menor cuantía el techo es una REFERENCIA (28-oct-2026): «probablemente se gana» encima de
+       un veredicto que dice «no es un requisito para ganar» era contradecirse en el mismo panel */
+    $("pt-techo-rotulo").textContent = pt.techo_es_referencia ? "El precio al que se suele adjudicar aquí" : "El precio al que probablemente se gana";
     $("pt-piso").textContent = copRent(cf.piso_rentable);
     $("pt-piso-nota").textContent = cf.piso_es_cota_inferior
       ? "Cota inferior: cargue las deducciones de acta en Ajustes"
@@ -9522,7 +9530,7 @@
       marcas: [
         { rotulo: "lo que le cuesta", valor: costo },
         { rotulo: "por debajo pierde plata", valor: piso },
-        { rotulo: "precio al que suele ganarse", valor: techo },
+        { rotulo: pt.techo_es_referencia ? "precio al que se suele adjudicar" : "precio al que suele ganarse", valor: techo },
         tope,
       ],
       marcador,
@@ -9530,7 +9538,7 @@
       /* el nombre accesible SÍ lleva las cifras, con el mismo formato del panel:
          quien no ve el dibujo tiene que poder leer lo mismo */
       aria: `${marcador ? `Su precio ${copRent(precio)}. ` : ""}Le cuesta ${copRent(costo)}; `
-        + `por debajo de ${copRent(piso)} pierde plata; suele ganarse en ${copRent(techo)}; `
+        + `por debajo de ${copRent(piso)} pierde plata; ${pt.techo_es_referencia ? "se suele adjudicar en" : "suele ganarse en"} ${copRent(techo)}; `
         + (tope.valor !== po ? `con el IVA de la utilidad su precio cabe hasta ${copRent(tope.valor)}; ` : "")
         + `el presupuesto oficial es ${copRent(po)}.`,
       /* el ancho REAL del sitio donde va: así la letra mide 11 px en el teléfono y
@@ -9733,11 +9741,15 @@
     const cuerpo = $("ps-cuerpo");
     sec.classList.remove("hidden");
     ultimoOptimizador = o && o.aplicable ? o : null;
+    /* donde la regla de la modalidad dice que no se sugiere precio (mínima, concurso y, desde el 28-oct-2026,
+       licitación y menor cuantía), el título no puede decir «Precio sugerido» encima de «no sugiere un precio» */
+    const sinSugerenciaPorRegla = !!(o && (o.motivo === "gana_el_menor_precio" || o.motivo === "el_precio_no_puntua" || o.motivo === "el_precio_no_predice"));
+    if ($("ps-titulo")) $("ps-titulo").textContent = sinSugerenciaPorRegla ? "Precio de su oferta" : "Precio sugerido";
 
     if (!o || !o.aplicable) {
       cuerpo.classList.add("hidden");
       sin.classList.remove("hidden");
-      sin.innerHTML = `<p><span aria-hidden="true">●</span> ${esc((o && o.mensaje) || "No hay con qué sugerir un precio para este proceso.")}</p>${o && (o.motivo === "gana_el_menor_precio" || o.motivo === "el_precio_no_puntua" || o.motivo === "el_precio_no_predice") ? "" : botonPasoQueFalta()}`; // en mínima cuantía, en concurso de méritos y donde el precio, solo, no predijo quién gana (licitación y menor cuantía, 28-oct-2026) no falta ningún paso: no se sugiere precio
+      sin.innerHTML = `<p><span aria-hidden="true">●</span> ${esc((o && o.mensaje) || "No hay con qué sugerir un precio para este proceso.")}</p>${sinSugerenciaPorRegla ? "" : botonPasoQueFalta()}`; // en mínima cuantía, en concurso de méritos y donde el precio, solo, no predijo quién gana (licitación y menor cuantía, 28-oct-2026) no falta ningún paso: no se sugiere precio
       $("ps-origen").textContent = "";
       if ($("ps-hecho")) $("ps-hecho").textContent = "";
       return;

@@ -4038,9 +4038,9 @@
         <p id="resumen-resultados" class="mb-4 text-sm text-gray-500" role="status"></p>
         <!-- 28-oct-2026, decisión del dueño tras el consejo: el orden cambió y se dice por qué (docs/MEMORIA.md) -->
         <p id="aviso-orden-precio" class="mb-4 rounded-xl bg-blue-50 p-3 text-xs text-blue-900 ring-1 ring-inset ring-blue-600/20">
-          Desde el 28 de octubre de 2026, en licitación y en menor cuantía el orden ya no castiga los procesos donde usted
-          no puede bajar tanto como los que suelen ganar: medido en la base nacional de 2020 a 2026, el precio, por sí
-          solo, no predijo quién gana. Lo que ganaron las ofertas a su precio está en la pestaña Precios.
+          Desde el 28 de octubre de 2026, en licitación y en menor cuantía la opción de ganar de cada proceso ya no se rebaja
+          donde usted no puede bajar tanto como los que suelen ganar: medido en la base nacional de 2020 a 2026, el precio,
+          por sí solo, no predijo quién gana. Lo que ganaron las ofertas a su precio está en la pestaña Precios.
         </p>
         <div id="lista" class="grid gap-4"></div>
         <div id="paginacion" class="mt-6 flex items-center justify-center gap-3 text-sm"></div>
@@ -4655,7 +4655,7 @@
               <p id="pt-piso-nota" class="text-xs text-gray-500"></p>
             </div>
             <div class="rounded-2xl bg-gray-100 p-4">
-              <p class="text-xs font-medium uppercase tracking-wide text-gray-500">El precio al que probablemente se gana</p>
+              <p id="pt-techo-rotulo" class="text-xs font-medium uppercase tracking-wide text-gray-500">El precio al que probablemente se gana</p>
               <p id="pt-techo" class="mt-1 text-2xl font-semibold tabular-nums">—</p>
               <p id="pt-techo-nota" class="text-xs text-gray-500"></p>
             </div>
@@ -4762,7 +4762,7 @@
 <section id="seccion-precio-sugerido" class="mt-6 hidden rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
         <div class="flex flex-wrap items-baseline justify-between gap-3">
           <div>
-            <h2 class="font-semibold tracking-tight">Precio sugerido</h2>
+            <h2 id="ps-titulo" class="font-semibold tracking-tight">Precio sugerido</h2>
             <!-- El párrafo explicaba el MODELO («cuatro métodos de ponderación —que se
                  sortean en la audiencia—»): para entender el número había que leerlo
                  entero. Se dice el hecho, y el segundo renglón lo calcula app.js con la

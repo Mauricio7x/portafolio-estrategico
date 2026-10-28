@@ -99,7 +99,16 @@ function construir(base, { huella = null, generado = new Date().toISOString().sl
   const resumen = {};
   for (const m of MODALIDADES) {
     const om = ofertas.filter((o) => o.mod === m);
-    resumen[m] = { procesos: new Set(om.map((o) => o.proceso)).size, ofertas: om.length };
+    /* en cuántos procesos ganó la oferta MÁS BAJA (28-oct-2026): el hecho con el que la guía de Mis procesos dice
+       «no tire el precio al piso», en vez de un mecanismo que, medido, predice peor que el azar */
+    const porProceso = new Map();
+    for (const o of om) { if (!porProceso.has(o.proceso)) porProceso.set(o.proceso, []); porProceso.get(o.proceso).push(o); }
+    let ganoLaMasBaja = 0;
+    for (const ofs of porProceso.values()) {
+      const min = Math.min(...ofs.map((o) => o.pct));
+      if (ofs.some((o) => o.gano && Math.abs(o.pct - min) < 1e-12)) ganoLaMasBaja++;
+    }
+    resumen[m] = { procesos: porProceso.size, ofertas: om.length, gano_la_mas_baja: ganoLaMasBaja };
   }
   return {
     formato: FORMATO, generado, base_sha256: huella,
