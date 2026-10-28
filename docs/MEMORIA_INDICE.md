@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 2170019 bytes · 399 secciones · 36 con marcador de superación.
+Derivado del árbol: 2177551 bytes · 400 secciones · 37 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -408,5 +408,6 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | El rótulo «Obra civil» ya no sale de una palabra genérica en un suministro, una compraventa o un servicio (28-oct-2026) | 28-oct-2026 | 20456-20478 | 8185 |  |
 | La compra o el servicio que no es obra ya no sale con «Obra civil», y «Otro» y «Decreto 092» entran en la regla de la palabra genérica (28-oct-2026) | 28-oct-2026 | 20479-20507 | 9824 | «Lo que la lista daba como obra sin serlo sale del tipo «obra», y «Otro» y «Decreto 092» salen de la regla de la palabra genérica (28-oct-2026)» |
 | Lo que la lista daba como obra sin serlo sale del tipo «obra», y «Otro» y «Decreto 092» salen de la regla de la palabra genérica (28-oct-2026) | 28-oct-2026 | 20508-20532 | 9968 |  |
-| El % de adjudicación según el precio no se enseña porque se midió que no predice: en licitación y menor cuantía se dice cuántas ofertas ganaron a ese precio (28-oct-2026) | 28-oct-2026 | 20533-20584 | 13982 |  |
-| La referencia de precio va por tipo de obra: una vía y un acueducto se adjudican a precios distintos, pero en ninguno el precio predice quién gana (28-oct-2026) | 28-oct-2026 | 20585-20638 | 8144 |  |
+| El % de adjudicación según el precio no se enseña porque se midió que no predice: en licitación y menor cuantía se dice cuántas ofertas ganaron a ese precio (28-oct-2026) | 28-oct-2026 | 20533-20586 | 14377 | «La verificación del precio normaliza en cada proceso: el precio predice quién gana apenas mejor que el azar, no peor (28-oct-2026)» |
+| La referencia de precio va por tipo de obra: una vía y un acueducto se adjudican a precios distintos, pero en ninguno el precio predice quién gana (28-oct-2026) | 28-oct-2026 | 20587-20653 | 12105 |  |
+| La verificación del precio normaliza en cada proceso: el precio predice quién gana apenas mejor que el azar, no peor (28-oct-2026) | 28-oct-2026 | 20654-20674 | 3176 |  |

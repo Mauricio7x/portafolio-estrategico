@@ -22,7 +22,7 @@ const zlib = require("zlib");
 const crypto = require("crypto");
 const { usableMotor } = require("../../tools/analisis/adjudicacion/fase0");
 // el tipo de obra por el objeto del proceso: la MISMA regla que usa Precios (28-oct-2026)
-const { tipoDeObra } = require("../../lib/frecuencia_precio.js");
+const { tipoDeObra, huellaVocabulario } = require("../../lib/frecuencia_precio.js");
 
 const FORMATO = 1;
 const MODALIDADES = ["licitacion", "menor_cuantia"];
@@ -126,41 +126,71 @@ function resumenDe(ofertas, { porGrupo = true } = {}) {
    se publica aparte: sus ofertas cuentan solo en la cifra de todos los tipos, y la tabla dice por qué. Se barre TODO
    par modalidad-tipo, no una lista. */
 const CONCENTRACION_MAX = 0.25;
-function concentraciones(ofertas) {
-  const procesos = new Map();   // "mod|tipo" → Map(proceso → entidad)
+/* La entidad que más procesos reúne en cada grupo que da `claveDe(oferta)` (null = la oferta no entra), cuando pasa de
+   CONCENTRACION_MAX: clave → {entidad, procesos, de, pct}. Una entidad que no se sabe no es «la misma entidad» que otra
+   que tampoco se sabe: cuenta en el total, no junta. */
+function concentradosPor(ofertas, claveDe) {
+  const procesos = new Map();   // clave → Map(proceso → entidad)
   for (const o of ofertas) {
-    if (!o.tipo) continue;
-    const k = `${o.mod}|${o.tipo}`;
+    const k = claveDe(o);
+    if (k == null) continue;
     if (!procesos.has(k)) procesos.set(k, new Map());
     procesos.get(k).set(o.proceso, o.entidad);
   }
-  const out = {};
+  const out = new Map();
   for (const [k, m] of procesos) {
     const porEntidad = new Map();
-    // una entidad que no se sabe no es «la misma entidad» que otra que tampoco se sabe: cuenta en el total, no junta
     for (const e of m.values()) if (e != null) porEntidad.set(e, (porEntidad.get(e) || 0) + 1);
     if (!porEntidad.size) continue;
     const [entidad, n] = [...porEntidad.entries()].sort((a, b) => b[1] - a[1])[0];
-    if (n / m.size > CONCENTRACION_MAX) {
-      const [mod, tipo] = k.split("|");
-      (out[mod] || (out[mod] = {}))[tipo] = { entidad, procesos: n, de: m.size, pct: +(100 * n / m.size).toFixed(1) };
-    }
+    if (n / m.size > CONCENTRACION_MAX) out.set(k, { entidad, procesos: n, de: m.size, pct: +(100 * n / m.size).toFixed(1) });
   }
+  return out;
+}
+// el tipo entero, por modalidad: {mod: {tipo: {...}}}
+function concentraciones(ofertas) {
+  const out = {};
+  for (const [k, v] of concentradosPor(ofertas, (o) => (o.tipo ? `${o.mod}|${o.tipo}` : null))) {
+    const [mod, tipo] = k.split("|");
+    (out[mod] || (out[mod] = {}))[tipo] = v;
+  }
+  return out;
+}
+/* CADA TRAMO QUE SE PUBLICA (cuarta revisión adversaria, 28-oct-2026): el censo del tipo entero no veía que un tramo
+   fuera de una sola entidad, y la cifra de todos los tipos no tenía censo. Medido: en menor cuantía con 10 o más
+   oferentes la Aerocivil reunía 425 de 826 procesos (51,5 %), y en menor cuantía de vías con 5 a 9, el INVIAS el 29,1 %.
+   {mod: {tipo | "*": {grupo: {...}}}}, donde "*" es la cifra de todos los tipos de ese tramo. */
+function concentracionesPorTramo(ofertas) {
+  const out = {};
+  const poner = (mod, tipo, grupo, v) => { ((out[mod] || (out[mod] = {}))[tipo] || (out[mod][tipo] = {}))[grupo] = v; };
+  for (const [k, v] of concentradosPor(ofertas, (o) => (o.tipo ? `${o.mod}|${o.tipo}|${grupoDe(o.n)}` : null))) { const [m, t, g] = k.split("|"); poner(m, t, g, v); }
+  for (const [k, v] of concentradosPor(ofertas, (o) => `${o.mod}|*|${grupoDe(o.n)}`)) { const [m, t, g] = k.split("|"); poner(m, t, g, v); }
   return out;
 }
 
 /* LA VERIFICACIÓN, fuera de muestra: la tabla aprendida con los años anteriores a 2026 (encogida hacia
-   1/n con peso ENCOGER_K) frente a «1 de cada N», en las ofertas de 2026. Brier por oferta; la mejora
-   negativa quiere decir que la tabla predice PEOR que el azar. */
-/* Una verificación: la celda que da `celdaDe` (aprendida con los años anteriores) frente a 1/n, en las ofertas `P`. */
+   1/n con peso ENCOGER_K y normalizada en cada proceso) frente a «1 de cada N», en las ofertas de 2026. Brier por
+   oferta; la mejora negativa quiere decir que la tabla predice PEOR que el azar. */
+/* Una verificación: la celda que da `celdaDe` (aprendida con los años anteriores) frente a 1/n, en las ofertas `P`.
+   NORMALIZADA EN CADA PROCESO (cuarta revisión adversaria, 28-oct-2026): en un proceso gana UNA oferta, así que las
+   probabilidades de sus ofertas tienen que sumar 1, como las del azar. Sin normalizar, la tasa de cada franja —aprendida
+   en años con otro número de oferentes dentro del mismo tramo— no sumaba 1 y el Brier castigaba ese descuadre, no al
+   precio: daba −0,9 % en licitación donde, normalizada, la misma tabla da +0,5 %. `celdaDe` se llama una vez por oferta
+   y en orden (verificarVentana depende de eso). */
 function brierDe(P, celdaDe) {
-  let s = 0, s0 = 0;
-  for (const o of P) {
+  const crudo = P.map((o) => {
     const c = celdaDe(o);
     const azar = 1 / o.n;
-    const p = c ? (c.ganaron + ENCOGER_K * azar) / (c.ofertas + ENCOGER_K) : azar;
+    return c ? (c.ganaron + ENCOGER_K * azar) / (c.ofertas + ENCOGER_K) : azar;
+  });
+  const suma = new Map();
+  P.forEach((o, i) => suma.set(o.proceso, (suma.get(o.proceso) || 0) + crudo[i]));
+  let s = 0, s0 = 0;
+  P.forEach((o, i) => {
+    const p = crudo[i] / suma.get(o.proceso);
+    const azar = 1 / o.n;
     s += (p - o.gano) ** 2; s0 += (azar - o.gano) ** 2;
-  }
+  });
   return P.length ? {
     ofertas_prueba: P.length, procesos_prueba: new Set(P.map((o) => o.proceso)).size,
     brier_tabla: +(s / P.length).toFixed(5), brier_azar: +(s0 / P.length).toFixed(5),
@@ -226,7 +256,12 @@ function construir(base, { huella = null, generado = new Date().toISOString().sl
   const crudas = ofertasDe(base, objetos);
   // los tipos concentrados en una entidad no se publican aparte: sus ofertas quedan sin tipo (siguen en la de todos)
   const concentrados = concentraciones(crudas);
-  const ofertas = crudas.map((o) => (o.tipo && concentrados[o.mod] && concentrados[o.mod][o.tipo] ? { ...o, tipo: null } : o));
+  const sinTipoEntero = crudas.map((o) => (o.tipo && concentrados[o.mod] && concentrados[o.mod][o.tipo] ? { ...o, tipo: null } : o));
+  /* y por tramo, con lo que queda: el tramo de un tipo concentrado también sale de su tipo (sus ofertas siguen en la
+     de todos); el de todos los tipos se publica, porque lo usa la verificación, y lib/frecuencia_precio no lo dice */
+  const tramos = concentracionesPorTramo(sinTipoEntero);
+  const tramoDe = (o) => o.tipo && tramos[o.mod] && tramos[o.mod][o.tipo] && tramos[o.mod][o.tipo][grupoDe(o.n)];
+  const ofertas = sinTipoEntero.map((o) => (tramoDe(o) ? { ...o, tipo: null } : o));
   const anos = ofertas.map((o) => o.ano).sort();
   const resumen = {};
   const resumenTipo = {};
@@ -250,12 +285,14 @@ function construir(base, { huella = null, generado = new Date().toISOString().sl
     resumen, verificacion: verificar(ofertas), celdas: tabla(ofertas),
     /* por tipo de obra (lib/frecuencia_precio.tipoDeObra sobre el objeto del proceso); sin objetos, vacío */
     objetos_sha256: huella_objetos, resumen_tipo: objetos ? resumenTipo : null, celdas_tipo: objetos ? tablaPorTipo(ofertas) : null,
-    tipos_concentrados: objetos ? concentrados : null, concentracion_max: CONCENTRACION_MAX,
+    tipos_concentrados: objetos ? concentrados : null, tramos_concentrados: tramos, concentracion_max: CONCENTRACION_MAX,
+    /* la huella del vocabulario con que se clasificó (cuarta revisión adversaria): la suite exige que sea la de hoy */
+    vocabulario_sha256: objetos ? huellaVocabulario() : null,
     verificacion_ventana: verificarVentana(ofertas),
   };
 }
 
-module.exports = { FORMATO, MODALIDADES, FRANJA_PP, GRUPOS, CONCENTRACION_MAX, grupoDe, franjaDe, ofertasDe, objetosDe, tabla, tablaPorTipo, resumenDe, concentraciones, verificar, verificarVentana, construir };
+module.exports = { FORMATO, MODALIDADES, FRANJA_PP, GRUPOS, CONCENTRACION_MAX, grupoDe, franjaDe, ofertasDe, objetosDe, tabla, tablaPorTipo, resumenDe, concentraciones, concentracionesPorTramo, huellaVocabulario, brierDe, verificar, verificarVentana, construir };
 
 if (require.main === module) {
   const [carpeta, salida = path.join(__dirname, "..", "..", "data", "frecuencia_precio.json")] = process.argv.slice(2);

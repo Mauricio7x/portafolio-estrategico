@@ -2972,7 +2972,7 @@ async function main() {
         const r = await invocar(editorS, "/api/apu/rentabilidad", CAB_TOKEN, { metodo: "POST", body: {
           items: ITEMS_S, departamento: e.dep, config: { aiu_pct: 20, imprevistos_pct: 5, utilidad_pct: 5 }, entidad: e.n, entidad_nit: e.nit,
           /* «Selección abreviada» y no «Licitación pública»: desde el 28-oct-2026 la licitación no lleva curva
-             ni precio sugerido (el precio, solo, no predijo quién gana; lib/frecuencia_precio), y esta prueba es de
+             ni precio sugerido (el precio, solo, apenas predice quién gana; lib/frecuencia_precio), y esta prueba es de
              la MARCA de supuesto sobre la probabilidad y el sugeridor, que la selección abreviada conserva */
           unspsc: "V1.72141000", cuantia: 900000000, plazo_meses: 3, modalidad: "Selección abreviada", tipo_trabajo: "obra" } });
         assert.strictEqual(r.status, 200, JSON.stringify(r.cuerpo).slice(0, 300));
@@ -3027,7 +3027,7 @@ async function main() {
         /* el APU del fixture descuenta ~90 % del presupuesto: ahí ninguna franja tiene 100 ofertas y se dice
            que no se ajusta y por qué; la frase con «de cada 100» se prueba en «unidad frecuencia por precio» */
         assert.ok(caja.includes(txtS(dL.mensaje)), `la frase va junto al precio → mensaje «${dL.mensaje}» · caja «${caja}»`);
-        assert.ok(dL.frecuencia_precio ? /de cada 100/.test(caja) : /no predijo quién gana mejor que el azar/.test(caja) && /al menos 100 ofertas/.test(caja),
+        assert.ok(dL.frecuencia_precio ? /de cada 100/.test(caja) : /apenas predice quién gana \(medido año por año/.test(caja) && /al menos 100 ofertas/.test(caja),
           `sin franja con base, dice que no se ajusta y por qué → ${caja.slice(0, 400)}`);
         assert.ok(/Evaluaciones leídas para saber quién cumplió los requisitos: 0 ?, contando todas las modalidades y todos los años/.test(caja) && /text-red-700/.test(String(nodoS("rentabilidad-precio").innerHTML)), "el contador en cero, en rojo, y dice qué cuenta");
         const tProbL = String(nodoS("rentabilidad").innerHTML);
@@ -3059,7 +3059,8 @@ async function main() {
         AS.pintarPrecioSugerido(cV.optimizador, cV.piso_techo, AS.supuestoDePrecios(cV));
         const psV = txtS(nodoS("ps-sin-datos").innerHTML);
         assert.ok(/Dónde ofertaron los que ganaron: en [\d.]+ licitaciones de todo tipo de obra con 3 o 4 oferentes/.test(psV) && psV.includes("En vías y puentes no hay 100 procesos con ese número de oferentes para contarlo aparte.")
-          && /Su oferta va al/.test(psV) && /no una recomendación/.test(psV) && !/paso que falta|Ir al paso/i.test(psV),
+          // el APU del fixture va al ~10 % del presupuesto: un presupuesto a medio costear no se ubica frente a los ganadores
+          && !/Su oferta va al/.test(psV) && /no una recomendación/.test(psV) && !/paso que falta|Ir al paso/i.test(psV),
           `«Precio de su oferta» con el objeto de una vía → ${psV.slice(0, 500)}`);
         // sin los oferentes de la entidad, el recuadro dice por qué no hay referencia (no se queda callado)
         AS.pintarPrecioSugerido({ ...cV.optimizador, rango_ganadores: { aplica: false, motivo: "sin_oferentes", frase: "Dónde ofertaron los que ganaron: no se dice, porque no se sabe cuántos suelen presentarse a esta entidad y el precio ganador cambia con cuántos compiten." } },
@@ -22329,7 +22330,7 @@ async function main() {
           const rBmax = await invocar(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=25&baja_max=0", CAB_TOKEN);
           assert.strictEqual(rBmax.cuerpo.baja_max_aplicada, 0);
           const porId = new Map(rTok.cuerpo.resultados.map((l) => [l.id_del_proceso, l]));
-          /* Desde el 28-oct-2026, en licitación y menor cuantía el precio, solo, no predijo quién gana
+          /* Desde el 28-oct-2026, en licitación y menor cuantía el precio, solo, apenas predice quién gana
              (lib/frecuencia_precio): ahí `baja_max=0` NO resta, el paso lo dice y p no se mueve. En las
              demás modalidades el factor sigue restando como antes. */
           const cubiertaBmax = (l) => require("../lib/frecuencia_precio.js").cubreModalidad(
@@ -22341,7 +22342,7 @@ async function main() {
             const pr = (l.p_ganar_detalle.ajustes || []).find((a) => a.nombre === "precio");
             if (pr && cubiertaBmax(l)) {
               sinRestar++;
-              assert.ok(pr.factor === 1 && /no predijo quién gana/.test(pr.motivo) && l.p_ganar === antes.p_ganar,
+              assert.ok(pr.factor === 1 && /apenas predice quién gana/.test(pr.motivo) && l.p_ganar === antes.p_ganar,
                 `licitación o menor cuantía: con baja_max=0 el precio no resta → ${JSON.stringify(pr)} · ${antes.p_ganar} → ${l.p_ganar}`);
             } else if (pr) {
               otrasConPrecio++;
@@ -23561,7 +23562,7 @@ async function main() {
           assert.strictEqual(paso4.confianza, "Media", "«no predice» es una medición con todas las entidades juntas: «Media», no «Sin dato»");
           assert.ok(/P = P × 1/.test(paso4.formula) && !/mult\(/.test(paso4.formula) && /no le ganó/.test(paso4.fundamento) && !/la misma curva de precio del editor/.test(paso4.fundamento),
             `el paso 4 en ${claveMuestra} enseña la curva que no corrió: «${paso4.formula}» · «${paso4.fundamento}»`);
-          assert.ok((d.explicacion_simple || []).some((x) => /no predijo quién gana/.test(x.texto)), "la explicación en palabras dice por qué el precio no resta");
+          assert.ok((d.explicacion_simple || []).some((x) => /apenas predice quién gana/.test(x.texto)), "la explicación en palabras dice por qué el precio no resta");
         } else {
           assert.strictEqual(paso4.datos_entrada.origen_baja_maxima, "neutra");
           assert.strictEqual(paso4.confianza, "Sin dato", "un factor neutro por falta de b_max no puede presentarse con confianza");
@@ -38340,7 +38341,7 @@ async function main() {
         /* en licitación y menor cuantía (28-oct-2026) la b_max del APU se sigue calculando y publicando, pero el
            paso de precio no la usa: se midió que el precio, solo, no predice, y el motivo lo dice */
         const objetivoNoPredice = require("../lib/frecuencia_precio.js").cubreModalidad(require("../lib/guia_proceso.js").modalidadEnLlano(objetivo.modalidad_de_contratacion).clave);
-        if (ajP) assert.ok(objetivoNoPredice ? ajP.factor === 1 && /no predijo quién gana/.test(ajP.motivo) : /presupuesto guardado/.test(ajP.motivo),
+        if (ajP) assert.ok(objetivoNoPredice ? ajP.factor === 1 && /apenas predice quién gana/.test(ajP.motivo) : /presupuesto guardado/.test(ajP.motivo),
           `el motivo dice de dónde sale el paso de precio (${objetivo.modalidad_de_contratacion}): «${ajP.motivo}»`);
         // el APU manda sobre la declarada
         const rD = await L("baja_max=1");
@@ -53198,10 +53199,10 @@ async function main() {
       celdas: { licitacion: { "5-9": { 94: { ofertas: 500, ganaron: 20, azar: 18 }, 90: { ofertas: 99, ganaron: 9, azar: 4 } } } } };
     const fChica = FP.frecuenciaPorPrecio({ modalidad: "licitacion", baja_ofertada_pct: 5, oferentes: 7 }, { tabla: tChica });
     assert.ok(fChica.aplica && fChica.mas_abajo === null && !/más abajo/.test(fChica.frase), `la de abajo con 99 ofertas no se dice → «${fChica.frase}»`);
-    assert.ok(/no predijo al ganador mejor que el azar/.test(fChica.frase), "con la verificación en contra, se dice");
+    assert.ok(/casi igual que el azar \(−0,3 %\)/.test(fChica.frase), "con la verificación en contra, se dice con su signo");
     // SI UNA REGENERACIÓN DIERA QUE LA TABLA SÍ PREDICE, la frase deja de afirmar lo contrario
     const tMejor = JSON.parse(JSON.stringify(tChica)); tMejor.verificacion.por_modalidad.licitacion.mejora_pct = 2.1;
-    assert.ok(!/no predijo/.test(FP.frecuenciaPorPrecio({ modalidad: "licitacion", baja_ofertada_pct: 5, oferentes: 7 }, { tabla: tMejor }).frase), "con una verificación a favor, la frase no dice «no predijo»");
+    assert.ok(/casi igual que el azar \(\+2,1 %\), lejos del 3 % mejor que se exige/.test(FP.frecuenciaPorPrecio({ modalidad: "licitacion", baja_ofertada_pct: 5, oferentes: 7 }, { tabla: tMejor }).frase), "con una verificación un poco a favor, «casi igual» con su signo");
     assert.strictEqual(FP.frecuenciaPorPrecio({ modalidad: "licitacion", baja_ofertada_pct: 5 }, { tabla: null }).motivo, "sin_tabla", "sin tabla: «sin tabla», no un 500");
     // un archivo de OTRO formato (una regeneración con otra forma) es «sin tabla», no unas celdas leídas al revés
     {
@@ -53241,7 +53242,7 @@ async function main() {
       const r = entradaPT(m);
       assert.ok(r.cifras.techo_competitivo === 700e6 && r.cifras.techo_competitivo < r.cifras.piso_rentable, `${m}: el techo (30 % de baja) queda bajo el mínimo → ${r.cifras.techo_competitivo} vs ${r.cifras.piso_rentable}`);
       assert.ok(r.techo_es_referencia === true && r.estado === "presentarse" && r.veredicto === `Preséntese entre ${PT.cop(r.cifras.piso_rentable)} y $1.000.000.000.`, `${m}: el veredicto va del mínimo al presupuesto → ${r.estado} «${r.veredicto}»`);
-      assert.ok(/referencia, no un requisito para ganar/.test(r.detalle) && /por debajo de su mínimo/.test(r.detalle) && /no predijo quién gana/.test(r.detalle), `${m}: el detalle dice qué es el techo → «${r.detalle}»`);
+      assert.ok(/referencia, no un requisito para ganar/.test(r.detalle) && /por debajo de su mínimo/.test(r.detalle) && /apenas predice quién gana/.test(r.detalle), `${m}: el detalle dice qué es el techo → «${r.detalle}»`);
       assert.ok(r.precio_actual_estado === "en_rango" && /cubre su mínimo y cabe en el presupuesto/.test(r.frase_precio_actual) && !/baje hasta/.test(r.frase_precio_actual), `${m}: sobre el techo no se le dice «baje» → «${r.frase_precio_actual}»`);
       assert.ok(/^El precio al que se suele adjudicar aquí/.test(r.frases.techo) && !/probablemente se gana/.test(r.frases.techo), `${m}: «${r.frases.techo}»`);
       assert.strictEqual(entradaPT(m, { presupuesto_oficial: 800e6 }).estado, "no_presentarse_supera_presupuesto", `${m}: el mínimo sobre el presupuesto sigue siendo «No se presente»`);
@@ -53266,7 +53267,7 @@ async function main() {
       assert.ok(p4L.datos_entrada.factor_aplicado === 1 && p4L.datos_entrada.origen_baja_maxima === "no_predice" && p4L.confianza === "Media"
         && /P = P × 1/.test(p4L.formula) && !/mult\(/.test(p4L.formula) && /no le ganó/.test(p4L.fundamento) && !/la misma curva de precio del editor/.test(p4L.fundamento),
         `licitación: el paso 4 dice lo medido → ${p4L.confianza} · «${p4L.formula}»`);
-      assert.ok((dL.explicacion_simple || []).some((x) => /no predijo quién gana/.test(x.texto)) && !(dL.explicacion_simple || []).some((x) => /le resta\./.test(x.texto)), "la explicación en palabras no dice que el precio le resta");
+      assert.ok((dL.explicacion_simple || []).some((x) => /apenas predice quién gana/.test(x.texto)) && !(dL.explicacion_simple || []).some((x) => /le resta\./.test(x.texto)), "la explicación en palabras no dice que el precio le resta");
       const p4R = des("Contratación régimen especial (con ofertas)").pasos[3];
       assert.ok(p4R.datos_entrada.factor_aplicado < 1 && p4R.confianza === "Baja" && /mult\(/.test(p4R.formula), `régimen especial, sin medir: la curva de antes → ${p4R.datos_entrada.factor_aplicado} · ${p4R.confianza}`);
     }
@@ -53388,7 +53389,7 @@ async function main() {
           .find((x) => x.clave === "precio_no_al_piso");
         assert.ok(mb && mb.procesos === t.resumen[clave].procesos && mb.gano_la_mas_baja === t.resumen[clave].gano_la_mas_baja, `${clave}: el conteo sale de la tabla → ${JSON.stringify(mb)}`);
         const lineaMb = `la oferta más baja ganó en ${require("../lib/lenguaje_pantalla.js").numCO(mb.gano_la_mas_baja, 0)} (${Math.round(mb.de_cada_100)} de cada 100; si todas tuvieran la misma opción, unas ${Math.round(mb.azar_de_100)})`;
-        assert.ok(c && c.detalle.includes(lineaMb) && /no predijo quién gana/.test(c.detalle) && !/Ubíquese|bajo más métodos|gana la oferta cercana al centro/.test(c.detalle),
+        assert.ok(c && c.detalle.includes(lineaMb) && /apenas predice quién gana/.test(c.detalle) && !/Ubíquese|bajo más métodos|gana la oferta cercana al centro/.test(c.detalle),
           `${clave}: «${c && c.detalle}»`);
       }
       assert.strictEqual(FP.masBajaGano("minima"), null, "la mínima no es de esta tabla");
@@ -53401,18 +53402,21 @@ async function main() {
     }
 
     /* 9 · POR TIPO DE OBRA (28-oct-2026, decisión del dueño: una vía y un acueducto se adjudican a precios distintos,
-       medido con el mismo número de oferentes, de 0,7 a 1,4 puntos de mediana entre tipos). La regla, el generador, el censo de concentración, la tabla, la puerta única
+       medido con el mismo número de oferentes: en licitación con 10 o más, de 94,3 % en agua a 95,5 % en edificaciones). La regla, el generador, el censo de concentración, la tabla, la puerta única
        de 100 procesos de su tipo en su tramo, la verificación única, las frases y Precios. */
     {
       // (a) la regla: un tipo solo; dos o ninguno, null. Los falsos amigos que encontró la tercera revisión adversaria
       const casos = [["MEJORAMIENTO DE LA VIA TERCIARIA MEDIANTE PLACA HUELLA", "vias"], ["Construcción de placa huella en la vereda El Carmen", "vias"],
         ["CONSTRUCCION DE PLACA-HUELLA", "vias"], ["CONSTRUCCION DEL PUENTE VEHICULAR SOBRE LA QUEBRADA", "vias"],
-        ["CONSTRUCCION DEL ACUEDUCTO VEREDAL", "agua"], ["AMPLIACION DE LA RED DE DISTRIBUCION DE AGUA POTABLE", "agua"],
+        ["CONSTRUCCION DEL ACUEDUCTO VEREDAL", "agua"], ["LINEA CONDUCCION TANQUE SUR - TANQUE ZONA INDUSTRIAL", "agua"], ["AMPLIACION DE LA RED DE DISTRIBUCION DE AGUA POTABLE", "agua"],
         ["ADECUACION DE LA SEDE EDUCATIVA RURAL", "edificaciones"], ["ADECUACION DE LA SEDE DE PUENTE ARANDA", "edificaciones"],
         ["CONSTRUCCION DE CANCHA SINTETICA", "deporte"], ["CONSTRUCCION DE ANDENES Y SARDINELES", "deporte"],
         ["CONSTRUCCION DE MURO DE CONTENCION EN GAVIONES", "estabilizacion"], ["MANTENIMIENTO DEL ALUMBRADO PUBLICO", "electricas"],
         ["MANTENIMIENTO DEL PARQUE AUTOMOTOR", null], ["CONSTRUCCION DE MURO DE CERRAMIENTO", null], ["LIMPIEZA DE CANALES DEL AEROPUERTO", null],
-        ["REPARACION DE LA CUBIERTA DEL TANQUE", null],
+        ["REPARACION DE LA CUBIERTA DEL TANQUE DE RESERVA", null], ["CONSTRUCCION DE TANQUE ELEVADO", "agua"],
+        // los hermanos que encontró la cuarta revisión adversaria
+        ["CONSTRUCCION DEL MURO PERIMETRAL", null], ["CERRAMIENTO PERIMETRAL EN MURO DE LADRILLO", null], ["TANQUES DE ALMACENAMIENTO DE COMBUSTIBLE", null],
+        ["PLACA HUELLA EN LA VEREDA EL TANQUE", "vias"], ["PARQUE SOLAR FOTOVOLTAICO", null], ["PARQUE CEMENTERIO", null], ["PLAZA DE MERCADO DE PUENTE NACIONAL", null],
         ["CONSTRUCCION DEL ALCANTARILLADO SANITARIO Y PAVIMENTACION DE LA CALLE 5", null], ["PRESTACION DE SERVICIOS DE ASEO", null], ["", null], [null, null]];
       for (const [obj, esperado] of casos) assert.strictEqual(FP.tipoDeObra(obj), esperado, `«${obj}» → ${esperado}`);
       assert.strictEqual(FP.nombreDeTipo("vias"), "vías y puentes");
@@ -53435,6 +53439,7 @@ async function main() {
         && tT.resumen.licitacion.por_grupo["3-4"].procesos === 5, `el resumen va por tramo de oferentes → ${JSON.stringify(tT.resumen_tipo.licitacion.vias.por_grupo)}`);
       assert.ok(tT.verificacion.por_tipo.licitacion.vias && tT.verificacion.por_tipo.licitacion.vias.procesos_prueba === 1, "la verificación por tipo prueba en 2026");
       assert.ok(tT.verificacion_ventana && tT.verificacion_ventana.por_tipo.licitacion.vias && tT.objetos_sha256 === "c".repeat(64), "y la de año por año, con la huella de los objetos");
+      assert.ok(tT.vocabulario_sha256 === FP.huellaVocabulario() && /^[0-9a-f]{64}$/.test(tT.vocabulario_sha256), "y con la huella del vocabulario con que clasificó");
       assert.deepStrictEqual(tT.tipos_concentrados, {}, "sin entidad conocida no se junta a nadie: ninguna concentración");
       assert.strictEqual(GEN.construir(baseT, { huella: "b".repeat(64) }).celdas_tipo, null, "sin objetos no hay tabla por tipo");
       // el generador clasifica con el NOMBRE del proceso, que es lo que recibe Precios, no con la descripción; manda la primera fila
@@ -53453,6 +53458,30 @@ async function main() {
       assert.ok(!tC.celdas_tipo.licitacion.vias && !tC.resumen_tipo.licitacion.vias && tC.celdas_tipo.licitacion.agua && tC.resumen_tipo.licitacion.agua.procesos === 4
         && tC.resumen_tipo.licitacion.sin_tipo.procesos === 4 && tC.resumen.licitacion.procesos === 8,
         "el tipo concentrado no se publica aparte; sus procesos quedan sin tipo y cuentan en la de todos");
+      /* (b3) EL CENSO POR TRAMO (cuarta revisión adversaria): cuatro licitaciones de vías con 10 ofertas, todas de la entidad
+         A, y trece de vías con 3 ofertas, de trece entidades. El tipo entero no está concentrado (4 de 17), pero su tramo
+         de 10 o más es de A: sale de su tipo, y la cifra de todos los tipos de ese tramo queda marcada para no decirse */
+      const diez = (q) => Array.from({ length: 10 }, (_, i) => q + i * 0.002);
+      const baseTr = [1, 2, 3, 4].map((i) => procT(40 + i, "2025", diez(0.93), 0, "A")).concat(Array.from({ length: 13 }, (_, i) => procT(50 + i, "2025", [0.95, 0.97, 0.99], i % 3, `E${i}`)));
+      const objTr = new Map([...baseTr].map((x) => [x.portafolio, "PAVIMENTACION URBANA"]));
+      const tTr = GEN.construir(baseTr, { huella: "f".repeat(64), generado: "2026-10-28", objetos: objTr, huella_objetos: "f".repeat(64) });
+      assert.ok(!(tTr.tipos_concentrados.licitacion && tTr.tipos_concentrados.licitacion.vias)
+        && tTr.tramos_concentrados.licitacion.vias["10+"].entidad === "A" && tTr.tramos_concentrados.licitacion.vias["10+"].pct === 100
+        && tTr.tramos_concentrados.licitacion["*"]["10+"].pct === 100 && !tTr.tramos_concentrados.licitacion.vias["3-4"]
+        && !tTr.resumen_tipo.licitacion.vias.por_grupo["10+"] && tTr.resumen_tipo.licitacion.vias.por_grupo["3-4"].procesos === 13 && tTr.resumen.licitacion.por_grupo["10+"].procesos === 4,
+        `el censo barre cada tramo de cada tipo y el de todos → ${JSON.stringify(tTr.tramos_concentrados)}`);
+      /* el censo del tipo ENTERO es más estricto que el del tramo, a propósito: una entidad con 4 de 6 vías con 3 ofertas
+         (67 %) y 1 de 10 con 10 ofertas (10 %) reúne 5 de 16 (31 %): el tipo no se publica en ningún tramo, tampoco en el
+         de 10 o más, donde ella sola no pasaría del 25 % */
+      const baseE = [1, 2, 3, 4].map((i) => procT(70 + i, "2025", [0.95, 0.97, 0.99], 0, "A")).concat([5, 6].map((i) => procT(70 + i, "2025", [0.95, 0.97, 0.99], 1, `B${i}`)),
+        Array.from({ length: 10 }, (_, i) => procT(80 + i, "2025", diez(0.93), 0, i === 0 ? "A" : `C${i}`)));
+      const tE = GEN.construir(baseE, { huella: "f".repeat(64), generado: "2026-10-28", objetos: new Map(baseE.map((x) => [x.portafolio, "PAVIMENTACION URBANA"])), huella_objetos: "f".repeat(64) });
+      assert.ok(tE.tipos_concentrados.licitacion.vias.pct === 31.3 && !tE.resumen_tipo.licitacion.vias && !tE.celdas_tipo.licitacion.vias && tE.resumen.licitacion.por_grupo["10+"].procesos === 10,
+        `el tipo concentrado sale entero → ${JSON.stringify({ c: tE.tipos_concentrados, r: tE.resumen_tipo.licitacion.vias && Object.keys(tE.resumen_tipo.licitacion.vias.por_grupo) })}`);
+      /* (b4) LA VERIFICACIÓN NORMALIZA EN CADA PROCESO: dos ofertas de un proceso de 2 con una celda que dice «ganaron todas»
+         dan 0,8 cada una sin normalizar (Brier 0,34 frente a 0,25 del azar: −36 %); normalizadas, 0,5 y 0,5: lo mismo que el azar */
+      const bN = GEN.brierDe([{ proceso: "x", n: 2, gano: 1 }, { proceso: "x", n: 2, gano: 0 }], () => ({ ganaron: 30, ofertas: 30 }));
+      assert.ok(bN.mejora_pct === 0 && bN.brier_tabla === 0.25, `las probabilidades de un proceso suman 1 → ${JSON.stringify(bN)}`);
       // (c) la tabla del despliegue trae los tipos, con sus cuartiles en orden, también por tramo, y ningún tipo concentrado publicado
       assert.ok(/^[0-9a-f]{64}$/.test(t.objetos_sha256) && t.resumen_tipo && t.celdas_tipo && t.verificacion_ventana, "la tabla publicada trae los tipos de obra y su verificación año por año");
       const enOrden = (g) => g && g.p25 <= g.p50 && g.p50 <= g.p75;
@@ -53463,11 +53492,23 @@ async function main() {
           assert.ok(!(t.tipos_concentrados[m] && t.tipos_concentrados[m][k]), `${m} ${k}: un tipo concentrado no se publica aparte`);
         }
       }
+      // la tabla se hizo con el vocabulario de hoy: cambiar una palabra exige regenerarla
+      assert.strictEqual(t.vocabulario_sha256, FP.huellaVocabulario(), "la tabla publicada se clasificó con el vocabulario de lib/semantica.TIPOS_DE_OBRA de hoy");
+      /* LA REGLA DEL PORCENTAJE, AMARRADA A LA TABLA: si una tabla regenerada pasara el 3 % en una población medida, esta
+         frase diría «predijo» mientras el resto de la pantalla sigue sin dar un porcentaje. Eso lo decide el dueño (MEMORIA) */
+      const pobl = [...Object.values(t.verificacion_ventana.por_modalidad), ...Object.values(t.verificacion.por_modalidad),
+        ...["licitacion", "menor_cuantia"].flatMap((m) => Object.values(t.verificacion_ventana.por_tipo[m]))].filter((v) => v && v.procesos_prueba >= FP.MIN_PROCESOS_TIPO);
+      assert.ok(pobl.length >= 6 && pobl.every((v) => v.mejora_pct < FP.MEJORA_MINIMA_PCT), `ninguna población medida llega al 3 % → ${JSON.stringify(pobl.map((v) => v.mejora_pct))}`);
+      /* y las frases FIJAS de la tarjeta, el desglose, Precios y el sugeridor («apenas predice quién gana … casi igual que el
+         azar») dependen de que las dos modalidades estén entre −3 y +3 %, año por año y en 2026 (revisión adversaria: con la
+         tabla en −0,9 la suite pasaba y la pantalla seguía diciendo lo de antes) */
+      const modales = ["licitacion", "menor_cuantia"].flatMap((m) => [t.verificacion_ventana.por_modalidad[m], t.verificacion.por_modalidad[m]]);
+      assert.ok(modales.every((v) => v && Math.abs(v.mejora_pct) < FP.MEJORA_MINIMA_PCT), `las frases fijas siguen a la tabla → ${JSON.stringify(modales.map((v) => v && v.mejora_pct))}`);
       const concMC = t.tipos_concentrados.menor_cuantia && t.tipos_concentrados.menor_cuantia.estabilizacion;
       assert.ok(concMC && concMC.pct > 100 * t.concentracion_max && !t.resumen_tipo.menor_cuantia.estabilizacion && !t.celdas_tipo.menor_cuantia.estabilizacion,
         `la menor cuantía de estabilización, concentrada en una entidad, no se publica aparte → ${JSON.stringify(concMC)}`);
-      // (d) la frase por tipo: las cifras de su celda, 3 puntos abajo del MISMO tipo, y la verificación año por año de su tipo
       const nc = require("../lib/lenguaje_pantalla.js").numCO;
+      // (d) la frase por tipo: las cifras de su celda, 3 puntos abajo del MISMO tipo, y la verificación año por año de su tipo
       const fV = FP.frecuenciaPorPrecio({ modalidad: "licitacion", baja_ofertada_pct: 4, oferentes: 12, presupuesto_oficial: 1e9, tipo_obra: "vias" });
       const cV = t.celdas_tipo.licitacion.vias["10+"]["96"];
       assert.ok(fV.aplica && fV.por_tipo && fV.franja.tipo === "vias" && fV.franja.ofertas === cV.ofertas && fV.mas_abajo && fV.mas_abajo.tipo === "vias"
@@ -53476,26 +53517,72 @@ async function main() {
       const vvV = t.verificacion_ventana.por_tipo.licitacion.vias;
       assert.ok(vvV.procesos_prueba >= FP.MIN_PROCESOS_TIPO && fV.verificacion.prueba === "año por año" && fV.verificacion.procesos === vvV.procesos_prueba
         && fV.verificacion.mejora_pct === vvV.mejora_pct && fV.verificacion.poblacion === "licitaciones de vías y puentes"
-        && fV.frase.includes(`Probado año por año en licitaciones de vías y puentes, esta cuenta ${vvV.mejora_pct <= 0 ? "no predijo al ganador mejor que el azar" : "apenas predijo"}`),
+        && vvV.mejora_pct > 0 && fV.frase.includes(`Probado año por año en licitaciones de vías y puentes, esta cuenta predijo al ganador casi igual que el azar (+${nc(vvV.mejora_pct, 1)} %), lejos del 3 % mejor que se exige para dar un porcentaje.`),
         `la verificación es la año por año de su tipo → ${JSON.stringify(fV.verificacion)} · «${fV.frase}»`);
       /* LA PUERTA ÚNICA: 214 ofertas de 18 licitaciones de estabilización con 10 o más oferentes pasaban la puerta de 100
          ofertas, y la frase salía de su tipo junto a una referencia de todos los tipos. Con menos de 100 procesos de su tipo
-         en su tramo, las dos frases son de todos los tipos, y lo dicen */
-      const cE = t.celdas_tipo.licitacion.estabilizacion["10+"]["94"];
-      assert.ok(cE && cE.ofertas >= FP.MIN_OFERTAS && t.resumen_tipo.licitacion.estabilizacion.por_grupo["10+"].procesos < FP.MIN_PROCESOS_TIPO, "el caso existe en la tabla publicada");
-      const fE = FP.frecuenciaPorPrecio({ modalidad: "licitacion", baja_ofertada_pct: 5, oferentes: 12, presupuesto_oficial: 1e9, tipo_obra: "estabilizacion" });
-      assert.ok(fE.aplica && !fE.por_tipo && fE.franja.tipo === null && /de todo tipo de obra/.test(fE.frase) && /En estabilización y drenaje no hay 100 procesos con ese número de oferentes/.test(fE.frase)
-        && fE.verificacion.poblacion === "licitaciones", `sin 100 procesos de su tipo en su tramo, la de todos y lo dice → «${fE.frase}»`);
-      // con 100 procesos de su tipo en su tramo pero sin 100 ofertas a ese precio: la de todos, y dice que faltan ofertas
+         en su tramo, las dos frases son de todos los tipos, y lo dicen. Hoy ese tramo está concentrado: tabla a mano */
+      const celdaH = { ofertas: 214, ganaron: 12, azar: 9 };
+      const gH = { procesos: 300, ganador_pct: { p25: 93, p50: 95, p75: 96 } };
+      const tH = (procTipo) => ({ formato: 1, periodo: { desde: "2020", hasta: "2026" },
+        celdas: { licitacion: { "10+": { 94: { ofertas: 5000, ganaron: 100, azar: 120 } } } }, celdas_tipo: { licitacion: { estabilizacion: { "10+": { 94: celdaH } } } },
+        resumen: { licitacion: { procesos: 300, por_grupo: { "10+": gH } } },
+        resumen_tipo: { licitacion: { estabilizacion: { procesos: procTipo, por_grupo: { "10+": { procesos: procTipo, ganador_pct: { p25: 92, p50: 94, p75: 95 } } } } } } });
+      const fH = FP.frecuenciaPorPrecio({ modalidad: "licitacion", baja_ofertada_pct: 5, oferentes: 12, tipo_obra: "estabilizacion" }, { tabla: tH(18) });
+      const rH = FP.rangoGanadores({ modalidad: "licitacion", tipo_obra: "estabilizacion", oferentes: 12 }, { tabla: tH(18) });
+      assert.ok(fH.aplica && !fH.por_tipo && fH.franja.ofertas === 5000 && /de todo tipo de obra/.test(fH.frase) && /En estabilización y drenaje no hay 100 procesos con ese número de oferentes/.test(fH.frase)
+        && !rH.por_tipo && rH.p50 === 95, `con 18 procesos de su tipo, las dos frases de todos los tipos → «${fH.frase}» · «${rH.frase}»`);
+      const fH2 = FP.frecuenciaPorPrecio({ modalidad: "licitacion", baja_ofertada_pct: 5, oferentes: 12, tipo_obra: "estabilizacion" }, { tabla: tH(120) });
+      assert.ok(fH2.aplica && fH2.por_tipo && fH2.franja.ofertas === 214, "con 120 procesos de su tipo, su tipo");
+      // un tramo de su tipo marcado como concentrado no se usa aunque traiga sus procesos (la guarda no depende del generador)
+      const tHc = { ...tH(120), tramos_concentrados: { licitacion: { estabilizacion: { "10+": { entidad: "A", procesos: 70, de: 120, pct: 58.3 } } } } };
+      const fHc = FP.frecuenciaPorPrecio({ modalidad: "licitacion", baja_ofertada_pct: 5, oferentes: 12, tipo_obra: "estabilizacion" }, { tabla: tHc });
+      const rHc = FP.rangoGanadores({ modalidad: "licitacion", tipo_obra: "estabilizacion", oferentes: 12 }, { tabla: tHc });
+      assert.ok(fHc.aplica && !fHc.por_tipo && !rHc.por_tipo && rHc.frase.includes("En estabilización y drenaje con ese número de oferentes una sola entidad reúne el 58,3 %"),
+        `el tramo concentrado de su tipo → «${rHc.frase}»`);
+      /* CON SU TIPO CRUZANDO LA PUERTA, SU TIPO O NADA (cuarta revisión adversaria): agua con 10 o más oferentes tiene 107
+         procesos, y al 87 % su franja no tiene 100 ofertas. Antes caía a todos los tipos junto a la referencia de agua */
+      const cA87 = t.celdas_tipo.licitacion.agua["10+"]["86"];
+      const fA87 = FP.frecuenciaPorPrecio({ modalidad: "licitacion", baja_ofertada_pct: 13, oferentes: 12, presupuesto_oficial: 1e9, tipo_obra: "agua" });
+      const rA87 = FP.rangoGanadores({ modalidad: "licitacion", tipo_obra: "agua", oferentes: 12, pct_oferta: 87 });
+      assert.ok(!(cA87 && cA87.ofertas >= FP.MIN_OFERTAS) && !fA87.aplica && fA87.motivo === "franja_sin_base" && fA87.tipo_obra === "agua" && fA87.por_tipo === true && rA87.por_tipo === true,
+        `agua al 87 %: la frase de su tipo o ninguna → ${JSON.stringify(fA87)}`);
+      // con 100 procesos de su tipo en su tramo pero sin 100 ofertas a ese precio: tampoco cae a todos los tipos
       const fE2 = FP.frecuenciaPorPrecio({ modalidad: "licitacion", baja_ofertada_pct: 15, oferentes: 12, presupuesto_oficial: 1e9, tipo_obra: "vias" });
-      assert.ok(t.celdas_tipo.licitacion.vias["10+"]["84"].ofertas < FP.MIN_OFERTAS && fE2.aplica && !fE2.por_tipo && /En vías y puentes no hay 100 ofertas a este precio con ese número de oferentes/.test(fE2.frase), `sin ofertas a ese precio en su tipo → «${fE2.frase}»`);
+      assert.ok(t.celdas_tipo.licitacion.vias["10+"]["84"].ofertas < FP.MIN_OFERTAS && !fE2.aplica && fE2.motivo === "franja_sin_base" && fE2.tipo_obra === "vias", `sin ofertas a ese precio en su tipo → ${JSON.stringify(fE2)}`);
+      const rrE2 = R.rentabilidad({ precio_oferta: 850e6, costo_directo: 600e6, presupuesto_oficial: 1e9, p_base: 0.2, competencia: { nivel: "medio", promedio_oferentes: 12 },
+        baja: { nivel: "medio", baja_mediana: 6, baja_p25: 3, baja_p75: 9 }, modalidad: "Licitación pública", tipo_obra: "vias" }).p_ganar_detalle;
+      assert.ok(rrE2.frecuencia_precio === null && /no hay al menos 100 ofertas medidas de vías y puentes con ese número de oferentes/.test(rrE2.mensaje), `Precios lo dice → «${rrE2.mensaje}»`);
+      /* EL TRAMO DE TODOS LOS TIPOS CONCENTRADO (cuarta revisión adversaria): en menor cuantía con 10 o más oferentes la
+         Aerocivil reúne más de la mitad de los procesos; ni cuántas ganaron ni dónde ofertaron los ganadores se dicen */
+      const cMC10 = t.tramos_concentrados.menor_cuantia["*"]["10+"];
+      const fraseMC10 = `En menores cuantías con 10 o más oferentes una sola entidad reúne el ${nc(cMC10.pct, 1)} % de los procesos, y la cifra sería sobre todo la de esa entidad.`;
+      const fMC10 = FP.frecuenciaPorPrecio({ modalidad: "menor_cuantia", baja_ofertada_pct: 5, oferentes: 12, presupuesto_oficial: 1e8 });
+      const rMC10 = FP.rangoGanadores({ modalidad: "menor_cuantia", oferentes: 12, pct_oferta: 95 });
+      assert.ok(cMC10.pct > 100 * t.concentracion_max && !fMC10.aplica && fMC10.motivo === "tramo_concentrado" && fMC10.frase_motivo === fraseMC10
+        && !rMC10.aplica && rMC10.motivo === "tramo_concentrado" && rMC10.frase === `Dónde ofertaron los que ganaron: no se dice. ${fraseMC10}`, `menor cuantía con 10 o más → ${JSON.stringify(fMC10)} · «${rMC10.frase}»`);
+      const rrMC10 = R.rentabilidad({ precio_oferta: 95e6, costo_directo: 70e6, presupuesto_oficial: 1e8, p_base: 0.2, competencia: { nivel: "medio", promedio_oferentes: 12 },
+        baja: { nivel: "medio", baja_mediana: 6, baja_p25: 3, baja_p75: 9 }, modalidad: "Selección abreviada de menor cuantía" }).p_ganar_detalle;
+      assert.ok(rrMC10.mensaje.includes(fraseMC10) && rrMC10.rango_ganadores && rrMC10.rango_ganadores.aplica === false, `Precios dice por qué no hay cifra → «${rrMC10.mensaje}»`);
+      // su tipo, si su tramo tiene 100 procesos y no está concentrado, sí se dice: edificaciones con 10 o más
+      assert.ok(FP.rangoGanadores({ modalidad: "menor_cuantia", tipo_obra: "edificaciones", oferentes: 12 }).por_tipo === true, "la menor cuantía de edificaciones con 10 o más sí tiene su referencia");
+      // el tramo de un tipo concentrado: menor cuantía de vías con 5 a 9 oferentes
+      const cV59 = t.tramos_concentrados.menor_cuantia.vias["5-9"];
+      const rV59 = FP.rangoGanadores({ modalidad: "menor_cuantia", tipo_obra: "vias", oferentes: 6 });
+      assert.ok(cV59 && !rV59.por_tipo && rV59.frase.includes(`En vías y puentes con ese número de oferentes una sola entidad reúne el ${nc(cV59.pct, 1)} % de los procesos: la cifra es la de todo tipo de obra.`),
+        `vías de menor cuantía con 5 a 9 → «${rV59.frase}»`);
       const fX = FP.frecuenciaPorPrecio({ modalidad: "licitacion", baja_ofertada_pct: 4, oferentes: 7, tipo_obra: "inventado" });
       assert.ok(fX.aplica && !fX.por_tipo && !/no hay 100/.test(fX.frase), "un tipo desconocido es inerte: ni se usa ni se nombra");
       // el tipo concentrado dice por qué no se cuenta aparte, en las dos frases
       const fC = FP.frecuenciaPorPrecio({ modalidad: "menor_cuantia", baja_ofertada_pct: 4, oferentes: 6, presupuesto_oficial: 1e8, tipo_obra: "estabilizacion" });
       const rC = FP.rangoGanadores({ modalidad: "menor_cuantia", tipo_obra: "estabilizacion", oferentes: 6, pct_oferta: 96 });
-      const fraseConc = `En estabilización y drenaje una sola entidad reúne el ${nc(concMC.pct, 1)} % de los procesos: la cifra es la de todo tipo de obra.`;
-      assert.ok(!fC.por_tipo && fC.frase.includes(fraseConc) && !rC.por_tipo && rC.frase.includes(fraseConc), `concentrado → «${fC.frase}» · «${rC.frase}»`);
+      /* con 77 procesos la razón de no contarlo aparte es que son menos de 100, no la concentración (revisión adversaria):
+         la concentración se dice solo donde había base; con una tabla a mano de 150 procesos */
+      const sinBaseE = "En estabilización y drenaje no hay 100 procesos con ese número de oferentes para contarlo aparte.";
+      assert.ok(concMC.de < FP.MIN_PROCESOS_TIPO && !fC.por_tipo && fC.frase.includes(sinBaseE) && !rC.por_tipo && rC.frase.includes(sinBaseE), `concentrado y chico → «${fC.frase}» · «${rC.frase}»`);
+      const tConc = { ...tH(18), tipos_concentrados: { licitacion: { estabilizacion: { entidad: "A", procesos: 60, de: 150, pct: 40 } } } };
+      const rConc = FP.rangoGanadores({ modalidad: "licitacion", tipo_obra: "estabilizacion", oferentes: 12 }, { tabla: tConc });
+      assert.ok(rConc.frase.includes("En estabilización y drenaje una sola entidad reúne el 40 % de los procesos: la cifra es la de todo tipo de obra."), `concentrado con base → «${rConc.frase}»`);
       // (e) dónde ofertaron los que ganaron: su tipo y su tramo con 100 procesos; si no, la de todos en su tramo; su oferta a cuántos puntos
       const rV = FP.rangoGanadores({ modalidad: "licitacion", tipo_obra: "vias", oferentes: 12, pct_oferta: 96 });
       const gV = t.resumen_tipo.licitacion.vias.por_grupo["10+"];
@@ -53503,18 +53590,31 @@ async function main() {
         && rV.frase.includes(`en ${nc(gV.procesos, 0)} licitaciones de vías y puentes con 10 o más oferentes`)
         && rV.frase.includes(`entre el ${nc(gV.ganador_pct.p25, 1)} y el ${nc(gV.ganador_pct.p75, 1)} %`) && rV.frase.includes(`la mediana fue el ${nc(gV.ganador_pct.p50, 1)} %`)
         && /Su oferta va al 96 %: [\d,]+ puntos por (encima|debajo) de esa mediana/.test(rV.frase) && /no una recomendación/.test(rV.frase)
-        && rV.frase.includes(`probado año por año en licitaciones de vías y puentes, el precio ${vvV.mejora_pct <= 0 ? "no predijo al ganador mejor que el azar" : "apenas predijo"}`),
+        && rV.frase.includes(`probado año por año en licitaciones de vías y puentes, el precio predijo al ganador casi igual que el azar (+${nc(vvV.mejora_pct, 1)} %)`),
         `vías con 12 oferentes → «${rV.frase}»`);
       assert.ok(Math.abs(rV.puntos_sobre_mediana - (96 - gV.ganador_pct.p50)) < 1e-9, "los puntos salen de la mediana publicada de su tramo");
       assert.ok(fV.verificacion.procesos === rV.verificacion.procesos && fV.verificacion.poblacion === rV.verificacion.poblacion, "las dos frases cierran con la MISMA verificación");
       const r1 = FP.rangoGanadores({ modalidad: "licitacion", tipo_obra: "vias", oferentes: 12, pct_oferta: gV.ganador_pct.p50 + 1 });
       assert.ok(/: 1 punto por encima de esa mediana/.test(r1.frase), `un punto, en singular → «${r1.frase}»`);
+      // la distancia se cuenta con las cifras que se muestran, a un decimal (cuarta revisión adversaria)
+      const rEn = FP.rangoGanadores({ modalidad: "licitacion", tipo_obra: "vias", oferentes: 12, pct_oferta: gV.ganador_pct.p50 + 0.04 });
+      const rUn = FP.rangoGanadores({ modalidad: "licitacion", tipo_obra: "vias", oferentes: 12, pct_oferta: gV.ganador_pct.p50 + 0.06 });
+      assert.ok(rEn.puntos_sobre_mediana === 0 && rEn.frase.includes(`Su oferta va al ${nc(gV.ganador_pct.p50, 1)} %, en esa mediana.`)
+        && rUn.frase.includes(`Su oferta va al ${nc(gV.ganador_pct.p50 + 0.1, 1)} %: 0,1 puntos por encima de esa mediana.`) && rUn.puntos_sobre_mediana === 0.1,
+        `con el redondeo de la pantalla, también en el campo → «${rEn.frase}» · «${rUn.frase}» · ${rUn.puntos_sobre_mediana}`);
+      // un presupuesto a medio costear (por debajo del 50 %) no se ubica frente a los ganadores
+      for (const p of [12, 50]) assert.ok(!/Su oferta/.test(FP.rangoGanadores({ modalidad: "licitacion", tipo_obra: "vias", oferentes: 12, pct_oferta: p }).frase), `al ${p} % no se ubica`);
+      assert.ok(/Su oferta va al 50,5 %/.test(FP.rangoGanadores({ modalidad: "licitacion", tipo_obra: "vias", oferentes: 12, pct_oferta: 50.5 }).frase), "por encima del 50 %, sí");
       // con 3 oferentes, el tramo «3-4»: vías tiene menos de 100 procesos ahí, así que va la de todos los tipos con 3 o 4
       const rV3 = FP.rangoGanadores({ modalidad: "licitacion", tipo_obra: "vias", oferentes: 3, pct_oferta: 96 });
       const g34 = t.resumen.licitacion.por_grupo["3-4"];
       assert.ok(t.resumen_tipo.licitacion.vias.por_grupo["3-4"].procesos < FP.MIN_PROCESOS_TIPO && rV3.aplica && !rV3.por_tipo && rV3.grupo === "3-4" && rV3.p50 === g34.ganador_pct.p50
         && /licitaciones de todo tipo de obra con 3 o 4 oferentes/.test(rV3.frase) && /En vías y puentes no hay 100 procesos con ese número de oferentes/.test(rV3.frase),
         `vías con 3 oferentes → «${rV3.frase}»`);
+      // un tramo de 5 procesos, 2 de una entidad: la razón es que son 5, no la concentración
+      const cEl3 = t.tramos_concentrados.licitacion && t.tramos_concentrados.licitacion.electricas && t.tramos_concentrados.licitacion.electricas["3-4"];
+      const rEl3 = FP.rangoGanadores({ modalidad: "licitacion", tipo_obra: "electricas", oferentes: 3 });
+      assert.ok(cEl3 && cEl3.de < FP.MIN_PROCESOS_TIPO && rEl3.frase.includes("En obras eléctricas no hay 100 procesos con ese número de oferentes") && !/una sola entidad/.test(rEl3.frase), `tramo chico → «${rEl3.frase}»`);
       const rEl = FP.rangoGanadores({ modalidad: "licitacion", tipo_obra: "electricas", oferentes: 12, pct_oferta: null });
       assert.ok(rEl.aplica && !rEl.por_tipo && rEl.p50 === t.resumen.licitacion.por_grupo["10+"].ganador_pct.p50 && /de todo tipo de obra con 10 o más oferentes/.test(rEl.frase)
         && /En obras eléctricas no hay 100 procesos/.test(rEl.frase) && !/Su oferta/.test(rEl.frase), `obras eléctricas (pocos procesos en licitación) → «${rEl.frase}»`);
@@ -53535,15 +53635,17 @@ async function main() {
       const vvMod = { por_modalidad: { licitacion: { procesos_prueba: 400, mejora_pct: -0.9 } } };
       const rgMas = (vv, v26) => FP.rangoGanadores({ modalidad: "licitacion", tipo_obra: "agua", oferentes: 12 }, { tabla: tMas(vv, v26) });
       const rA = rgMas({ ...vvMod, por_tipo: { licitacion: { agua: { procesos_prueba: 120, mejora_pct: 1.4 } } } });
-      assert.ok(rA.por_tipo && rA.p50 === 95.5 && rA.frase.includes("probado año por año en licitaciones de agua y saneamiento, el precio apenas predijo al ganador (1,4 % mejor que el azar), menos de lo que se exige para dar un porcentaje."),
+      assert.ok(rA.por_tipo && rA.p50 === 95.5 && rA.frase.includes("probado año por año en licitaciones de agua y saneamiento, el precio predijo al ganador casi igual que el azar (+1,4 %), lejos del 3 % mejor que se exige para dar un porcentaje."),
         `con la verificación un poco a favor → «${rA.frase}»`);
       const rB = rgMas({ ...vvMod, por_tipo: { licitacion: { agua: { procesos_prueba: 120, mejora_pct: 3.5 } } } });
-      assert.ok(rB.frase.includes("el precio predijo al ganador un 3,5 % mejor que el azar.") && !/apenas/.test(rB.frase), `con lo exigido → «${rB.frase}»`);
+      const rPeor = rgMas({ ...vvMod, por_tipo: { licitacion: { agua: { procesos_prueba: 120, mejora_pct: -4.2 } } } });
+      assert.ok(rPeor.frase.includes("el precio predijo al ganador peor que el azar (−4,2 %)."), `peor que el azar, dicho → «${rPeor.frase}»`);
+      assert.ok(rB.frase.includes("el precio predijo al ganador un 3,5 % mejor que el azar.") && !/casi igual/.test(rB.frase), `con lo exigido → «${rB.frase}»`);
       const rCh = rgMas({ ...vvMod, por_tipo: { licitacion: { agua: { procesos_prueba: 99, mejora_pct: 5 } } } });
-      assert.ok(rCh.por_tipo && rCh.verificacion.poblacion === "licitaciones" && rCh.verificacion.procesos === 400 && rCh.frase.includes("probado año por año en licitaciones, el precio no predijo al ganador mejor que el azar."),
+      assert.ok(rCh.por_tipo && rCh.verificacion.poblacion === "licitaciones" && rCh.verificacion.procesos === 400 && rCh.frase.includes("probado año por año en licitaciones, el precio predijo al ganador casi igual que el azar (−0,9 %), lejos del 3 % mejor"),
         `un tipo con 99 procesos de prueba usa la verificación de la modalidad → «${rCh.frase}»`);
       const r26 = rgMas(undefined, { prueba: "2026", por_modalidad: { licitacion: { procesos_prueba: 489, mejora_pct: -0.3 } } });
-      assert.ok(r26.verificacion.prueba === "con los procesos de 2026" && r26.frase.includes("probado con los procesos de 2026 en licitaciones, el precio no predijo al ganador mejor que el azar."),
+      assert.ok(r26.verificacion.prueba === "con los procesos de 2026" && r26.frase.includes("probado con los procesos de 2026 en licitaciones, el precio predijo al ganador casi igual que el azar (−0,3 %), lejos del 3 % mejor"),
         `una tabla sin la de año por año cae en la de 2026 → «${r26.frase}»`);
       const rNada = rgMas(undefined, undefined);
       assert.ok(rNada.aplica && /no hay una prueba de que ofertar ahí suba la opción de ganar/.test(rNada.frase), `sin ninguna verificación lo dice → «${rNada.frase}»`);
@@ -53572,7 +53674,7 @@ async function main() {
     /* 6 · la lista dice que su orden cambió y por qué (condición del consejo): una línea fija bajo el resumen */
     const htmlFP = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
     const aviso = (htmlFP.match(/<p id="aviso-orden-precio"[^>]*>([\s\S]*?)<\/p>/) || [])[1] || "";
-    assert.ok(/28 de octubre de 2026/.test(aviso) && /licitación y en menor cuantía/.test(aviso) && /no predijo quién gana/.test(aviso) && /Precios/.test(aviso) && !/\bhidden\b/.test(htmlFP.match(/<p id="aviso-orden-precio"[^>]*>/)[0]),
+    assert.ok(/28 de octubre de 2026/.test(aviso) && /licitación y en menor cuantía/.test(aviso) && /apenas predice quién gana/.test(aviso) && /Precios/.test(aviso) && !/\bhidden\b/.test(htmlFP.match(/<p id="aviso-orden-precio"[^>]*>/)[0]),
       `el aviso del orden, visible, con fecha, modalidades, motivo y adónde ir → «${aviso.replace(/\s+/g, " ").trim()}»`);
     console.log("· unidad frecuencia por precio: el generador cuenta a mano (franja, tramo, 1/n, la mínima fuera, 2026 de prueba) · la tabla con huella y verificación de ≥ 300 procesos · la frase de su franja, 3 puntos abajo en la misma población, el azar y la resta del 3 % · franja chica, modalidad sin medir y sin precio se callan · la conclusión sigue a la verificación · Precios con la base a cualquier precio");
   }
@@ -54426,7 +54528,7 @@ async function main() {
         baja_maxima_pct: 2.35, baja_maxima_origen: "declarada", colision_cierres: 3,
       });
       const prMc = (dMc.ajustes || []).find((a) => a.nombre === "precio");
-      assert.ok(prMc && prMc.factor === 1 && /no predijo quién gana/.test(prMc.motivo), `menor cuantía: el precio no resta y lo dice → ${JSON.stringify(prMc)}`);
+      assert.ok(prMc && prMc.factor === 1 && /apenas predice quién gana/.test(prMc.motivo), `menor cuantía: el precio no resta y lo dice → ${JSON.stringify(prMc)}`);
       sinPunto("probabilidad motivo «precio» en menor cuantía", prMc.motivo);
     }
 
@@ -57316,7 +57418,7 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
       for (const b of [4, 2]) {
         const x = R_SM.pGanarPorPrecio({ p_base: 0.2, baja_ofertada_pct: b, baja_mediana_pct: 6, baja_p25: 3, baja_p75: 9, modalidad: MIN_SM });
         /* «la curva de siempre», calculada aparte: desde el 28-oct-2026 la licitación ya no la usa
-           (el precio, solo, no predijo quién gana; lib/frecuencia_precio) */
+           (el precio, solo, apenas predice quién gana; lib/frecuencia_precio) */
         const multB = R_SM.multiplicadorPrecio({ baja_ofertada_pct: b, baja_mediana_pct: 6, baja_p25: 3, baja_p75: 9 }).multiplicador;
         const curva = { p: Math.round(Math.max(0.01, 0.2 * multB) * 1e4) / 1e4 };
         okSM(x.p < 0.2 && x.solo_rebaja === true && Math.abs(x.p - curva.p) < 1e-4 && /se rebaja por prudencia/.test(x.mensaje) && !/se sortea/.test(x.mensaje),
@@ -57375,7 +57477,7 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
       okSM(!/tabla|0[.,]00|0[.,]25|0[.,]50|0[.,]75/.test(Object.values({ a: lic.precio.frase, b: lic.explicacion }).join(" ")), "(3) sin tabla de métodos: no se reconoce el pliego tipo de cada proceso");
     }
     /* (4) LICITACIÓN Y MENOR CUANTÍA (28-oct-2026, decisión del dueño tras el consejo): la curva del sorteo
-           era un supuesto que nunca se midió; medido en la base nacional, el precio, solo, no predijo quién gana.
+           era un supuesto que nunca se midió; medido en la base nacional, el precio, solo, apenas predice quién gana.
            La probabilidad es la base a CUALQUIER precio, y el mensaje es el hecho contado de lib/frecuencia_precio. */
     {
       for (const lit of [LIC_SM, "Selección Abreviada de Menor Cuantía"]) {
@@ -57385,7 +57487,7 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
             `(4) «${lit}» con baja ${b} %: la base, sin curva (${con.p}, ${con.modulada}, ${con.sin_modular_por})`);
           const f = require("../lib/frecuencia_precio.js").frecuenciaPorPrecio({ modalidad: G_SM.comoSeGanaElPrecio(lit).clave, baja_ofertada_pct: b, oferentes: 7, presupuesto_oficial: 1e9 });
           okSM(f.aplica ? con.mensaje === f.frase && con.nota_corta === f.corta && con.frecuencia_precio && con.frecuencia_precio.franja.ofertas >= 100
-            : /no predijo quién gana mejor que el azar/.test(con.mensaje), `(4) «${lit}» con baja ${b} %: el mensaje es el hecho contado → «${con.mensaje}»`);
+            : /apenas predice quién gana \(medido año por año/.test(con.mensaje), `(4) «${lit}» con baja ${b} %: el mensaje es el hecho contado → «${con.mensaje}»`);
         }
       }
     }
@@ -57396,10 +57498,12 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
       okSM(oMin.aplicable === false && oMin.motivo === "gana_el_menor_precio" && oMin.precio_optimo == null && oMin.descuento_optimo_pct == null,
         `(5) mínima: sin precio sugerido (${oMin.aplicable}, ${oMin.motivo}, ${oMin.descuento_optimo_pct})`);
       okSM(/gana la oferta de menor precio/.test(oMin.mensaje) && /cerca de 6 %/.test(oMin.mensaje) && /\(12 contratos\)/.test(oMin.mensaje) && /no sugiere un precio/.test(oMin.mensaje), `(5) mínima: dice por qué y el hecho → «${oMin.mensaje}»`);
-      /* desde el 28-oct-2026 tampoco en licitación: el precio, solo, no predijo quién gana, y el «óptimo»
+      /* desde el 28-oct-2026 tampoco en licitación: el precio, solo, apenas predice quién gana, y el «óptimo»
          saldría siempre en «no descuente nada» dicho como un cálculo */
       const oLic = O_SM.optimizarPrecioOferta(proc(LIC_SM), 70e6, {});
-      okSM(oLic.aplicable === false && oLic.motivo === "el_precio_no_predice" && oLic.descuento_optimo_pct == null && /no sugiere un precio/.test(oLic.mensaje) && /no predijo quién gana/.test(oLic.mensaje),
+      okSM(oLic.aplicable === false && oLic.motivo === "el_precio_no_predice" && oLic.descuento_optimo_pct == null && /no sugiere un precio/.test(oLic.mensaje)
+        // sin remitir a «cuántas ganaron a su precio», que no sale en un tramo concentrado o sin base (revisión adversaria)
+        && !/cuántas ofertas ganaron a su precio/.test(oLic.mensaje) && /apenas predice quién gana/.test(oLic.mensaje),
         `(5) licitación: sin precio sugerido, y dice por qué (${oLic.aplicable}, ${oLic.motivo}, «${oLic.mensaje}»)`);
       okSM(!VIEJA_SM.test([...(oMin.supuestos || []), ...Object.values(oMin.como_leerlo || {})].join(" ")), "(5) los supuestos del optimizador no dicen «se sortea en la audiencia»");
     }
@@ -57419,7 +57523,7 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
       // la pantalla no ofrece «el paso que falta» donde no falta ninguno
       const appSM = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
       okSM(/const sinSugerenciaPorRegla = !!\(o && \(o\.motivo === "gana_el_menor_precio" \|\| o\.motivo === "el_precio_no_puntua" \|\| o\.motivo === "el_precio_no_predice"\)\);/.test(appSM)
-        && /\(sinSugerenciaPorRegla \? "" : botonPasoQueFalta\(\)\)/.test(appSM), "(7) la pantalla no pide un paso que falta en concurso de méritos ni donde el precio, solo, no predijo quién gana");
+        && /\(sinSugerenciaPorRegla \? "" : botonPasoQueFalta\(\)\)/.test(appSM), "(7) la pantalla no pide un paso que falta en concurso de méritos ni donde el precio, solo, apenas predice quién gana");
       // hermano (segunda revisión, 28-sep-2026): la TARJETA del listado tampoco rebaja por precio en concurso
       const P_SM = require("../lib/probabilidad.js");
       const ctxP = { baja: { baja_mediana: 6, baja_p25: 3, baja_p75: 9, procesos_contados: 12, nivel: "medio" }, baja_maxima_pct: 1, baja_maxima_origen: "declarada" };
@@ -57428,7 +57532,7 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
       okSM(tc.pr && tc.pr.factor === 1 && /no da puntos/.test(tc.pr.motivo), `(7) tarjeta en concurso: el precio no resta (${tc.pr && tc.pr.factor} «${tc.pr && tc.pr.motivo}»)`);
       /* desde el 28-oct-2026 la licitación tampoco resta por precio (medido); el régimen especial, que no se
          midió, sigue restando */
-      okSM(tl.pr && tl.pr.factor === 1 && /no predijo quién gana/.test(tl.pr.motivo) && tc.t.p === tl.t.p, `(7) tarjeta en licitación: el precio no resta y lo dice (${tl.pr && tl.pr.factor} «${tl.pr && tl.pr.motivo}»)`);
+      okSM(tl.pr && tl.pr.factor === 1 && /apenas predice quién gana/.test(tl.pr.motivo) && tc.t.p === tl.t.p, `(7) tarjeta en licitación: el precio no resta y lo dice (${tl.pr && tl.pr.factor} «${tl.pr && tl.pr.motivo}»)`);
       const tr = pasoPrecio("Contratación régimen especial (con ofertas)");
       okSM(tr.pr && tr.pr.factor < 1 && tc.t.p > tr.t.p, `(7) tarjeta en régimen especial: no poder bajar al centro sigue restando (${tr.pr && tr.pr.factor})`);
     }
@@ -57440,9 +57544,9 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
       okSM(aMin.rotulo_precio && !/sugerid/i.test(aMin.rotulo_precio) && !/precio sugerido/i.test(aMin.mensaje), `(6) ajuste en mínima: la cifra no se rotula como sugerencia («${aMin.rotulo_precio}»)`);
       const aLic = R_SM.ajusteCompetitivo({ baja: bajaSM, presupuesto_oficial: 100e6, precio_oferta: 90e6, modalidad: LIC_SM });
       /* desde el 28-oct-2026, en licitación la cifra tampoco es una sugerencia: el sugeridor de la misma
-         pantalla dice que no sugiere precio porque el precio, solo, no predijo quién gana (medido) */
+         pantalla dice que no sugiere precio porque el precio, solo, apenas predice quién gana (medido) */
       okSM(aLic.rotulo_precio === "Presupuesto oficial menos esa baja" && !/precio sugerido|jugada dominante/i.test(aLic.mensaje)
-        && /no predijo quién gana mejor que el azar/.test(aLic.mensaje) && !VIEJA_SM.test(aLic.mensaje), `(6) ajuste en licitación: «${aLic.rotulo_precio}» · «${aLic.mensaje}»`);
+        && /apenas predice quién gana \(medido año por año/.test(aLic.mensaje) && !VIEJA_SM.test(aLic.mensaje), `(6) ajuste en licitación: «${aLic.rotulo_precio}» · «${aLic.mensaje}»`);
       // la modalidad que NO se midió conserva su sugerencia con el supuesto dicho: la regla nueva no se extiende sola
       const aReg = R_SM.ajusteCompetitivo({ baja: bajaSM, presupuesto_oficial: 100e6, precio_oferta: 90e6, modalidad: "Contratación régimen especial (con ofertas)" });
       okSM(aReg.rotulo_precio === "Precio sugerido" && /La cifra supone ese sorteo/.test(aReg.mensaje), `(6) ajuste en régimen especial: «${aReg.rotulo_precio}» · «${aReg.mensaje}»`);
@@ -57553,7 +57657,7 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
       // el sugeridor tampoco dice que bajar más compre probabilidad donde no consta cómo puntúan
       const oNc = O_MT.optimizarPrecioOferta({ presupuesto_oficial: 100e6, precio_venta: 100e6, baja: { nivel: "medio", baja_mediana: 6, baja_p25: 3, baja_p75: 9, procesos_contados: 12 }, p_base: 0.2, modalidad: "Contratación régimen especial (con ofertas)" }, 70e6, {});
       okMT(oNc.aplicable && /aquí bajar más no sube la probabilidad/.test(oNc.opciones.agresivo.explicacion) && !/menor valor/.test(oNc.opciones.agresivo.explicacion), `(3) sugeridor sin modalidad: la opción agresiva no promete probabilidad → «${oNc.opciones && oNc.opciones.agresivo.explicacion}»`);
-      /* la licitación ya no lleva la curva del sorteo (28-oct-2026: el precio, solo, no predijo quién gana);
+      /* la licitación ya no lleva la curva del sorteo (28-oct-2026: el precio, solo, apenas predice quién gana);
          la selección abreviada que no es menor cuantía, que no se midió, la conserva intacta */
       const lic = R_MT.pGanarPorPrecio({ p_base: 0.2, baja_ofertada_pct: 12, baja_mediana_pct: 6, baja_p25: 3, baja_p75: 9, modalidad: "Licitación pública" });
       okMT(lic.p === 0.2 && lic.sin_modular_por === "el_precio_no_predice", `(3) licitación: la base, sin la curva (${lic.p}, ${lic.sin_modular_por})`);

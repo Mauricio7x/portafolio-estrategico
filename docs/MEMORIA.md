@@ -20532,6 +20532,8 @@ En una línea: `lib/filtros_lista.tipoTrabajoDe` daba como «obra» 35 objetos q
 
 ### El % de adjudicación según el precio no se enseña porque se midió que no predice: en licitación y menor cuantía se dice cuántas ofertas ganaron a ese precio (28-oct-2026)
 
+> SUPERADA el 28-oct-2026 por «La verificación del precio normaliza en cada proceso: el precio predice quién gana apenas mejor que el azar, no peor (28-oct-2026)» — en su medición, no en su decisión: los −0,3 % y −0,7 % de esta sección eran de probabilidades que no sumaban 1 en cada proceso; normalizadas dan +1,0 % y +0,4 %. El % por precio sigue sin darse: queda lejos del 3 %.
+
 En una línea: el dueño pidió «el % de adjudicación según el precio de la oferta»; medido fuera de muestra en la base nacional de obra, en licitación y menor cuantía el precio como % del presupuesto, solo, NO predice quién gana mejor que «1 de cada N oferentes», así que Precios deja de enseñar la curva precio→probabilidad (que nunca se midió), el sugeridor no sugiere precio, el listado deja de restar por precio, el techo del panel pasa a ser una referencia, y junto al precio va el hecho contado: cuántas de cada 100 ofertas a ese precio ganaron, 3 puntos más abajo y por azar.
 
 > PENDIENTE · la captura de hábiles no ha capturado nada (28-oct-2026: 0 textos pendientes en producción y 0 procesos en las dos entidades sembradas el 26-oct). La tarea de cada madrugada ya corre en una sesión con el repositorio y la habilidad, y responde «0 pendientes»: lo que falta es que la pantalla lea los documentos de evaluación (sin investigar: el 401 de `op=entidad` visto en Chromium). Los textos siguen en Upstash, no en R2. Sin eso el contador se queda en 0 y la regla de abajo no se puede probar nunca.
@@ -20584,24 +20586,24 @@ En una línea: el dueño pidió «el % de adjudicación según el precio de la o
 
 ### La referencia de precio va por tipo de obra: una vía y un acueducto se adjudican a precios distintos, pero en ninguno el precio predice quién gana (28-oct-2026)
 
-En una línea: el dueño preguntó si un dato por modalidad mezcla obras que se adjudican distinto. Medido, sí, aunque menos que el número de oferentes: con los mismos oferentes, la mediana del precio ganador cambia de 0,7 a 1,4 puntos entre tipos de obra, y 3,5 puntos entre 3 o 4 oferentes y 10 o más. Ni separando por tipo el precio predice quién gana. Por eso Precios dice, por tipo de obra, modalidad y tramo de oferentes, dónde ofertaron los que ganaron y cuántas ofertas ganaron a su precio, como referencia medida y no como recomendación.
+En una línea: el dueño preguntó si un dato por modalidad mezcla obras que se adjudican distinto. Medido, sí, aunque menos que el número de oferentes: con los mismos oferentes, la mediana del precio ganador cambia hasta 1,2 puntos entre tipos de obra, y 3,5 puntos entre 3 o 4 oferentes y 10 o más. Ni separando por tipo el precio predice quién gana lo bastante para dar un porcentaje. Por eso Precios dice, por tipo de obra, modalidad y tramo de oferentes, dónde ofertaron los que ganaron y cuántas ofertas ganaron a su precio, como referencia medida y no como recomendación.
 
-> PENDIENTE · el tipo de obra sale de palabras del NOMBRE del proceso (`lib/semantica.TIPOS_DE_OBRA`) y exige que case uno solo. Quedan sin tipo el 43,2 % de las licitaciones y el 56,4 % de las menores cuantías de la tabla (este último incluye los 77 procesos de estabilización concentrados en la Aerocivil). Con su tipo y su tramo con 100 procesos o más hablan solo el 43,6 % de las licitaciones y el 35,0 % de las menores cuantías; el resto lleva la cifra de todos los tipos de su tramo, dicho. No se separó por entidad fuera del censo de concentración.
+> PENDIENTE · publicar la menor cuantía con 10 o más oferentes SIN la Aerocivil (401 procesos, mediana 95,9) y la de la Aerocivil aparte, según la entidad del proceso: hoy no se dice ninguna. Y el censo cuenta como entidades distintas un NIT con y sin dígito de verificación (6 casos, como 899999061 y 8999990619); normalizarlo no cambia el censo de hoy. También: el tipo de obra sale de palabras del NOMBRE del proceso (`lib/semantica.TIPOS_DE_OBRA`) y exige que case uno solo. Quedan sin tipo el 44,0 % de las licitaciones y el 68,9 % de las menores cuantías de la tabla (incluye los procesos de los tipos y tramos concentrados en una entidad). Con su tipo y su tramo hablan solo el 43,6 % de las licitaciones y el 27,0 % de las menores cuantías; el resto lleva la cifra de todos los tipos de su tramo, dicho, y la menor cuantía con 10 o más oferentes no lleva ninguna (la Aerocivil reúne el 51,5 %). El tramo se toma del promedio de ofertas PRESENTADAS a la entidad en todas sus modalidades, y la tabla cuenta ofertas VÁLIDAS de su modalidad: no es exactamente la misma población (sin medir cuánto difiere). No se separó por entidad fuera del censo de concentración.
 
 - **Lo medido**, sobre la tabla publicada (`data/frecuencia_precio.json`, base con huella `317d096581bf…`, objetos de `p6dx_obra.json` del mismo inventario). Es la mediana del precio ganador en % del presupuesto, con su intervalo del 90 % por remuestreo de procesos, siempre dentro del mismo tramo de oferentes:
   - **licitación con 10 o más oferentes** (todos los tipos: 95,0; 95,0–95,1; 2.170 procesos):
-    - agua y saneamiento 94,3 (93,9–94,7; 107);
+    - agua y saneamiento 94,3 (94,0–94,8; 108);
     - vías y puentes 94,6 (94,4–94,8; 725);
-    - deporte y espacio público 95,4 (95,1–95,8; 218);
+    - deporte y espacio público 95,4 (95,1–95,7; 218);
     - edificaciones 95,5 (95,3–95,7; 255);
     - el agua y las edificaciones no se tocan: 1,2 puntos.
-  - **menor cuantía con 5 a 9 oferentes** (todos: 96,0; 95,9–96,1; 1.866): vías 95,3 (95,0–95,4; 344) y edificaciones 96,7 (96,5–97,0; 429). No se tocan: 1,4 puntos.
-  - **menor cuantía con 3 o 4 oferentes**: vías 97,0 (96,3–98,0; 270) y edificaciones 97,7 (97,3–97,9; 313). Los intervalos SE TOCAN: ahí la diferencia no está probada.
+  - **menor cuantía con 3 o 4 oferentes**: vías 96,8 (96,3–97,6; 271) y edificaciones 97,7 (97,3–98,0; 316). Los intervalos SE TOCAN: ahí la diferencia no está probada.
+  - **menor cuantía con 5 a 9 oferentes**: vías 95,3 y edificaciones 96,7 (431 procesos), pero las vías de ese tramo son en un 29,1 % del INVIAS y no se publican aparte.
   - **Lo que más cambia es cuántos compiten**: en licitación de todos los tipos, 98,5 % con 3 o 4 oferentes, 96,5 % con 5 a 9 y 95,0 % con 10 o más. Por eso la referencia va por tramo.
-  - **¿Predice el precio dentro de cada tipo?** No. La prueba es año por año de 2022 a 2026, aprendiendo solo con los años anteriores (`verificacion_ventana`); en los tipos con 100 procesos de prueba o más:
-    - en licitación, de −1,2 % (edificaciones) a +0,2 % (agua, 166 procesos de prueba);
-    - en menor cuantía, de −1,1 % (edificaciones) a 0 % (deporte, 115);
-    - ningún tipo se acerca al 3 % que exige la regla para dar un porcentaje (`MEJORA_MINIMA_PCT`).
+  - **¿Predice el precio dentro de cada tipo?** Apenas. La prueba es año por año de 2022 a 2026, aprendiendo solo con los años anteriores y normalizada en cada proceso (`verificacion_ventana`); en los tipos con 100 procesos de prueba o más:
+    - en licitación, de +0,1 % (edificaciones) a +1,2 % (agua, 167 procesos de prueba);
+    - en menor cuantía, −0,1 % (edificaciones) y +0,8 % (vías, 240);
+    - ningún tipo se acerca al 3 % que exige la regla para dar un porcentaje (`MEJORA_MINIMA_PCT`), y una prueba lo amarra a la tabla publicada.
   - El script de los intervalos quedó en el scratchpad de la sesión, sin versionar. Las medianas son las de `resumen_tipo[m][tipo].por_grupo`, reproducibles con el generador.
 - **Qué se construyó**:
   - **La regla del tipo**, una sola: `lib/frecuencia_precio.tipoDeObra`, con el vocabulario de `lib/semantica.TIPOS_DE_OBRA`. La llaman el generador y Precios, sobre el NOMBRE del proceso (`objetosDe`). Con dos tipos («alcantarillado y pavimentación») o ninguno da `null`: no se fuerza.
@@ -20622,17 +20624,51 @@ En una línea: el dueño preguntó si un dato por modalidad mezcla obras que se 
   - **El generador clasificaba con nombre y descripción, y la pantalla recibe solo el nombre.** Con el vocabulario de hoy, 462 licitaciones y 542 menores cuantías tendrían un tipo en la tabla y otro en Precios.
   - **Falsos amigos del vocabulario**: Puente Aranda (una localidad de Bogotá), el parque automotor, el muro de cerramiento y los canales de aeropuerto. También faltaban «placa-huella», la red de distribución de agua potable y los andenes.
   - **Dos verificaciones distintas en el mismo recuadro**, una de 2026 y otra año por año, con poblaciones distintas. Ahora es una.
-- **Lo que tumbó la cuarta pasada (28-oct-2026)**, sobre esos arreglos:
+- **Lo que encontró la sesión al rehacer las pruebas (28-oct-2026)**, sobre esos arreglos:
   - **La frase de cuántas ganaron cruzaba la puerta del tipo con 100 ofertas, aunque vinieran de 18 procesos** (licitación de estabilización con 10 o más oferentes, 214 ofertas en la franja del 94 al 96 %), mientras la referencia del mismo recuadro daba todos los tipos. Ahora las dos cruzan la misma puerta de 100 procesos.
   - **Sin los oferentes de la entidad, el recuadro de la referencia se quedaba callado.** Ahora dice por qué no hay cifra.
   - **«1 puntos»**, en plural.
   - Las cifras de esta sección («de 1 a 4 puntos», «145 de 194») salían del clasificador anterior y de la mediana sin tramo. Se rehicieron con la tabla publicada.
-- **Por qué no es una «sugerencia de precio»**: el dueño pidió «la sugerencia de % de precio a ofertar, dinámica, por tipo de contrato y modalidad». Un precio que se recomiende para ganar no tiene respaldo: ni por modalidad, ni por tipo, ni por tramo el precio le gana al azar. La referencia de dónde ofertaron los ganadores sí lo tiene, y sirve para ubicar el precio propio frente al mercado de su tipo de obra. La frase lo dice: «Es una referencia, no una recomendación».
+- **Lo que tumbó la cuarta revisión adversaria (28-oct-2026)**, sobre esos arreglos, y lo que se midió al reproducirla:
+  - **El censo era del tipo entero, y la cifra de todos los tipos no tenía censo.** Medido: en menor cuantía con 10 o más oferentes la Aerocivil reúne 425 de 826 procesos (51,5 %), y en menor cuantía de vías con 5 a 9, el INVIAS el 29,1 %. Ahora el generador barre cada tramo de cada tipo y el de todos los tipos (`tramos_concentrados`). El tramo concentrado de un tipo sale de su tipo; el de todos los tipos no se dice, ni cuántas ganaron ni dónde ofertaron los ganadores, y la frase dice por qué. Eso cubre también la primera parte (la frase de cuántas ganaron en menor cuantía con 10 o más oferentes era casi toda de la Aerocivil).
+  - **La frase de cuántas ganaron caía a todos los tipos** cuando su tipo cruzaba la puerta pero su franja no tenía 100 ofertas (agua al 87 %), al lado de la referencia de agua. Ahora, con su tipo cruzando la puerta, su tipo o nada.
+  - **Falsos amigos hermanos**: el muro perimetral o de cerramiento, los tanques de combustible y la «vereda El Tanque», el parque solar, educativo, cementerio, natural o industrial, Puente Nacional y Puente Iglesias; y faltaba la línea de conducción en agua. La tabla guarda la huella del vocabulario (`vocabulario_sha256`) y la suite exige que sea la de hoy.
+  - **«95,1 %, en esa mediana» del 95 %**: la distancia se cuenta con las cifras que se muestran. Y un presupuesto a medio costear (por debajo del 50 %) no se ubica frente a los ganadores.
+  - **La verificación no normalizaba**: ver la sección siguiente.
+- **Lo que tumbó la quinta revisión adversaria (28-oct-2026)**, sobre la verificación normalizada y el censo por tramo. Confirmó por su cuenta el +0,5 % y +0,3 % (intervalo del 95 % por remuestreo de procesos: 0,36 a 0,61 y 0,12 a 0,36), y que ningún modelo probado llega al 3 % (un logit condicional por tramos da 0,9 y 0,46). Encontró:
+  - **Un veredicto contra otro en el mismo recuadro**: el sugeridor decía «apenas predice» y la referencia de menor cuantía de edificaciones, con −0,1 %, «no predijo». Ahora toda mejora entre −3 y +3 % dice lo mismo: «casi igual que el azar (+0,6 %), lejos del 3 % mejor que se exige para dar un porcentaje», con su signo.
+  - **Las frases fijas no estaban amarradas a la tabla**: con la tabla en −0,9 la suite pasaba. Ahora una prueba exige que las dos modalidades estén entre −3 y +3 %, año por año y en 2026, mientras esas frases digan «casi igual».
+  - **El sugeridor remitía a «cuántas ganaron a su precio»** también donde esa frase no sale. Ya no remite.
+  - **«La cifra sería la de esa entidad» exageraba**: en menor cuantía con 10 o más oferentes la mezcla da 94,0, la Aerocivil sola 92,2 y sin ella 95,9 (401 procesos). Ahora dice «sería sobre todo la de esa entidad».
+  - **La razón equivocada en tramos chicos**: «una sola entidad reúne el 40 %» de 5 procesos. Ahora la concentración se dice solo si había 100 procesos antes de apartarlos; si no, la razón es que no hay 100.
+- **Por qué no es una «sugerencia de precio»**: el dueño pidió «la sugerencia de % de precio a ofertar, dinámica, por tipo de contrato y modalidad». Un precio que se recomiende para ganar no tiene respaldo: ni por modalidad, ni por tipo, ni por tramo el precio le gana al azar lo bastante para dar un porcentaje. La referencia de dónde ofertaron los ganadores sí lo tiene, y sirve para ubicar el precio propio frente al mercado de su tipo de obra. La frase lo dice: «Es una referencia, no una recomendación».
 - **Lo que no hay que deshacer**:
   - forzar un tipo de obra cuando el objeto nombra dos;
   - dar la cifra de un tipo sin 100 procesos en su tramo, o la frase de cuántas ganaron sin 100 ofertas a ese precio;
-  - publicar aparte un tipo concentrado en una entidad;
+  - publicar aparte un tipo, o un tramo, concentrado en una entidad, o decir la cifra de todos los tipos de un tramo concentrado;
   - clasificar la tabla con otro texto que el que recibe la pantalla;
   - dar la referencia sin el tramo de oferentes o con una verificación de otra población;
   - llamar «sugerencia» o «precio óptimo» a la referencia;
   - calcular la referencia en dos sitios.
+
+### La verificación del precio normaliza en cada proceso: el precio predice quién gana apenas mejor que el azar, no peor (28-oct-2026)
+
+En una línea: la verificación del precio comparaba con el azar unas probabilidades que no sumaban 1 dentro de cada proceso, y el castigo era del descuadre, no del precio. Normalizada, el precio predice al ganador APENAS mejor que el azar (+0,5 % en licitación y +0,3 % en menor cuantía, año por año), así que las pantallas dicen «apenas predice quién gana» y no «no predijo»; el % por precio sigue sin darse.
+
+- **Cómo se vio** (28-oct-2026, al medir un hallazgo de la cuarta revisión adversaria del tipo de obra): en licitación con 10 o más oferentes, cada año de 2020 a 2026 las ofertas del 88 al 92 % ganaron por encima del azar y las del 96 % por debajo (en 2026, la franja del 88 % ganó 9,5 de cada 100 con un azar de 3,1). Un patrón así de estable tenía que predecir algo, y la verificación decía −0,9 %.
+- **La causa**: la tabla aprende una tasa por franja dentro de un tramo («10 o más» va de 10 a más de 60 oferentes), y el número de oferentes cambia de un año a otro: el azar de la franja del 94 % fue 2,0 en 2020 y 4,1 en 2023. Aplicada a otro año, la tasa no suma 1 en cada proceso, y el Brier castiga eso.
+- **Lo medido**, con la misma base (huella `317d096581bf…`), año por año de 2022 a 2026, por oferta:
+  - la tabla sin normalizar: −0,9 % en licitación y −0,8 % en menor cuantía (lo que decía la tabla publicada antes);
+  - la misma tabla normalizada en cada proceso: +0,5 % y +0,3 %; en 2026 solo, +1,0 % y +0,4 %;
+  - el múltiplo del azar por franja, normalizado: +0,5 % y +0,3 %, lo mismo;
+  - la tabla normalizada sale positiva en 8 de los 10 años-modalidad, y los otros dos en 0,0 y −0,1.
+  El script de la comparación quedó en el scratchpad de la sesión, sin versionar; la versión normalizada es la de `scripts/base_obra/frecuencia_precio.brierDe`, reproducible.
+- **Qué cambió**:
+  - `brierDe` normaliza en cada proceso, y la tabla se regeneró;
+  - las pantallas que decían «el precio, por sí solo, no predijo quién gana (mejor que el azar)» dicen «apenas predice quién gana», y donde daban la medición, «casi igual que el azar, no lo bastante para dar un porcentaje»: la tarjeta, el desglose, Precios, el sugeridor, el panel piso/techo, la ganancia, la guía de Mis procesos y el aviso de la lista;
+  - el sugeridor ya no dice «bajarlo no le compra opción»: dice que no hay una cifra medida de cuánta le compra, y que lo que sí se sabe es la utilidad que le quita.
+- **La decisión no cambia**: +0,5 % queda lejos del 3 % que se escribió antes del primer dato para dar un %. Por eso la probabilidad no se modula por precio y no se sugiere un precio.
+- **Lo que no hay que deshacer**:
+  - verificar sin normalizar en cada proceso;
+  - escribir «no predijo» donde la medición dice «apenas», o un veredicto distinto según el signo de una mejora por debajo del 3 %;
+  - leer un +0,5 % como permiso para dar un porcentaje: la regla es del 3 %, y la prueba de la tabla publicada falla si una población la pasa, para que lo decida el dueño.

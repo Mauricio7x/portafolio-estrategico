@@ -3476,7 +3476,7 @@
          ganar; ni el rojo ni «no hay escenario», como la tarjeta (lib/ganancia, `perdida_al_precio_de_referencia`) */
       : d.veredicto === "pierde" && g.perdida_al_precio_de_referencia === true
         ? `<p class="text-lg font-semibold">Al precio de referencia perdería ${esc(gPesos(-d.mejor))}</p>
-           <p class="text-sm" style="color: var(--text-secondary);">Es el precio al que se suele adjudicar aquí, no un requisito para ganar: en licitaciones y menores cuantías el precio, por sí solo, no predijo quién gana.${g.piso_rentable != null ? ` Su precio mínimo para no perder plata es ${esc(gPesos(g.piso_rentable))}.` : ""}</p>`
+           <p class="text-sm" style="color: var(--text-secondary);">Es el precio al que se suele adjudicar aquí, no un requisito para ganar: en licitaciones y menores cuantías el precio, por sí solo, apenas predice quién gana.${g.piso_rentable != null ? ` Su precio mínimo para no perder plata es ${esc(gPesos(g.piso_rentable))}.` : ""}</p>`
       : d.veredicto === "pierde"
         ? `<p class="text-lg font-semibold" style="color: ${ROJO_CUENTA};">Pierde ${esc(gPesos(-d.mejor))}, aun en el mejor de los casos</p>
            <p class="text-sm" style="color: var(--text-secondary);">Con este precio y este costo, no hay escenario en que este contrato deje plata.</p>`
@@ -9764,7 +9764,7 @@
       const rg = o && o.motivo === "el_precio_no_predice" && o.rango_ganadores && o.rango_ganadores.frase ? o.rango_ganadores : null;
       sin.innerHTML = `<p><span aria-hidden="true">●</span> ${esc((o && o.mensaje) || "No hay con qué sugerir un precio para este proceso.")}</p>`
         + (rg ? `<p class="mt-3 rounded-lg bg-gray-50 px-3 py-2 text-sm text-gray-800 ring-1 ring-inset ring-gray-900/5" data-rango-ganadores>${esc(rg.frase)}</p>` : "")
-        + (sinSugerenciaPorRegla ? "" : botonPasoQueFalta()); // en mínima cuantía, en concurso de méritos y donde el precio, solo, no predijo quién gana (licitación y menor cuantía, 28-oct-2026) no falta ningún paso: no se sugiere precio
+        + (sinSugerenciaPorRegla ? "" : botonPasoQueFalta()); // en mínima cuantía, en concurso de méritos y donde el precio, solo, apenas predice quién gana (licitación y menor cuantía, 28-oct-2026) no falta ningún paso: no se sugiere precio
       $("ps-origen").textContent = "";
       if ($("ps-hecho")) $("ps-hecho").textContent = "";
       return;
