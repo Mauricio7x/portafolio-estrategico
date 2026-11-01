@@ -2,7 +2,7 @@
      Es una FOTO para leer en GitHub; la fuente de verdad es ejecutar la herramienta. -->
 
 ```
-== MAPA DE DETEKTA · generado del árbol el 2026-10-28 ==
+== MAPA DE DETEKTA · generado del árbol el 2026-11-01 ==
 (no editar a mano: sale de `node tests/mapa.js --escribir`. Para ir a un sitio concreto,
  `node tests/mapa.js <término>` da la ruta, la línea y el sed exacto — más barato que leer esto)
 
@@ -223,9 +223,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 404 secciones (38 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 20456  El rótulo «Obra civil» ya no sale de una palabra genérica en un suministro, una compraventa…
-  L 20479  La compra o el servicio que no es obra ya no sale con «Obra civil», y «Otro» y «Decreto 092…  (superada)
+· MEMORIA · docs/MEMORIA.md — 406 secciones (38 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 20509  Lo que la lista daba como obra sin serlo sale del tipo «obra», y «Otro» y «Decreto 092» sal…  (superada)
   L 20536  El % de adjudicación según el precio no se enseña porque se midió que no predice: en licita…  (superada)
   L 20590  La referencia de precio va por tipo de obra: una vía y un acueducto se adjudican a precios …
@@ -234,6 +232,8 @@
   L 20704  La referencia de un tramo concentrado se dice sin la entidad que lo concentra, el vocabular…
   L 20755  Lo siguiente tras presentarse sale de la etapa, la búsqueda encuentra sus notas, y seis de …
   L 20793  Una base que no responde no es «ninguno», y la madrugada lee sus propias evaluaciones con u…
+  L 20819  Una cifra de un informe de evaluación se lee por su último grupo: con dos cifras son centav…
+  L 20836  Lo que llenó Upstash en octubre fue el ancho de banda de lo programado, y noviembre va just…
 
 · DOCUMENTOS docs/ — 76 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)
