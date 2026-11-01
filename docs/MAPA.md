@@ -2,7 +2,7 @@
      Es una FOTO para leer en GitHub; la fuente de verdad es ejecutar la herramienta. -->
 
 ```
-== MAPA DE DETEKTA · generado del árbol el 2026-10-28 ==
+== MAPA DE DETEKTA · generado del árbol el 2026-11-01 ==
 (no editar a mano: sale de `node tests/mapa.js --escribir`. Para ir a un sitio concreto,
  `node tests/mapa.js <término>` da la ruta, la línea y el sed exacto — más barato que leer esto)
 
@@ -127,7 +127,7 @@
   unspsc.js                   Whitelists de los RUP + MATCHING JERÁRQUICO por niveles
   uso.js                      MEDIR EL USO, SIN ANALÍTICA DE TERCEROS (27-sep-2026)
 
-· lib/apu/ — 20 módulos:
+· lib/apu/ — 21 módulos:
   calculo.js                  Del costo directo al precio de oferta
   catalogo.js                 Catálogo de precios APU en Redis
   epc_items.js                LOS APU DE EPC COMO ÍTEMS COSTEABLES (ago 2026)
@@ -144,6 +144,7 @@
   piso_techo.js               (sin cabecera)
   precios.js                  La cascada de fuentes de precio
   precios_ia.js               Los APU generados por una SESIÓN de Claude Code (4-sep-2026)
+  referencia_entidades.js     Lo que presupuestaron las entidades por ítem, en los procesos guardados (1-nov-2026)
   rentabilidad.js             Precio competitivo, flujo de caja, VEG y payback
   retail.js                   Techo de tienda y de lista de fabricante, por insumo
   tipologias.js               Las 22 tipologías de obra y el mapa departamento→región
@@ -223,8 +224,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 404 secciones (38 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 20456  El rótulo «Obra civil» ya no sale de una palabra genérica en un suministro, una compraventa…
+· MEMORIA · docs/MEMORIA.md — 405 secciones (38 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 20479  La compra o el servicio que no es obra ya no sale con «Obra civil», y «Otro» y «Decreto 092…  (superada)
   L 20509  Lo que la lista daba como obra sin serlo sale del tipo «obra», y «Otro» y «Decreto 092» sal…  (superada)
   L 20536  El % de adjudicación según el precio no se enseña porque se midió que no predice: en licita…  (superada)
@@ -234,6 +234,7 @@
   L 20704  La referencia de un tramo concentrado se dice sin la entidad que lo concentra, el vocabular…
   L 20755  Lo siguiente tras presentarse sale de la etapa, la búsqueda encuentra sus notas, y seis de …
   L 20793  Una base que no responde no es «ninguno», y la madrugada lee sus propias evaluaciones con u…
+  L 20819  Lo que presupuestaron las entidades va al lado de cada ítem, el enlace de SECOP II pegado e…
 
 · DOCUMENTOS docs/ — 76 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)
