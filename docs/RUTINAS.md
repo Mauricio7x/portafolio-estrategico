@@ -187,7 +187,11 @@ QUÉ MIRAR · todo es LECTURA: ni un POST, ninguna sincronización
    mira el TAMAÑO del corpus: si SECOP renombra una columna del prefiltro, la sincronización descarta
    todas las filas, termina bien, escribe un corte fresco, y el latido sigue verde con la aplicación
    vacía.
-2. Por eso el tamaño, con la llave: GET /api/diagnostico?perfil=helder → total_activo. Si es 0 o
+2. Por eso el tamaño, con la llave: GET /api/diagnostico?perfil=helder&solo=tamano → total_activo
+   (y `fuente`: «conteo_guardado» si el corpus no cambió desde la última vez que se leyó entero,
+   «corpus» si se leyó ahora, «sin_corpus» si no hay ningún chunk). Pide SIEMPRE `solo=tamano`: el
+   diagnóstico entero lee el histórico, el corpus y los índices: 108 MB de Upstash por llamada
+   (medido el 1-nov-2026), unos 3,2 GB al mes de los 10 GB gratis. Si total_activo es 0 o
    absurdamente bajo, es alarma aunque salud diga que va bien. Di la cifra SIEMPRE: cada disparo es
    una sesión nueva y no recuerdas ayer, así que la cifra viaja en el aviso y el dueño ve la deriva.
 3. La cola de Precios: GET /api/apu?op=ia&pendientes=1 (cabecera x-historico-token) → en_cola y

@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 2220919 bytes · 406 secciones · 38 con marcador de superación.
+Derivado del árbol: 2226019 bytes · 407 secciones · 38 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -416,4 +416,5 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | Lo siguiente tras presentarse sale de la etapa, la búsqueda encuentra sus notas, y seis de los siete defectos de plata del 26-sep ya estaban cerrados (28-oct-2026) | 28-oct-2026 | 20755-20792 | 7496 |  |
 | Una base que no responde no es «ninguno», y la madrugada lee sus propias evaluaciones con un cupo medido (28-oct-2026) | 28-oct-2026 | 20793-20818 | 8491 |  |
 | Una cifra de un informe de evaluación se lee por su último grupo: con dos cifras son centavos, con tres son miles (1-nov-2026) | 1-nov-2026 | 20819-20835 | 4388 |  |
-| Lo que llenó Upstash en octubre fue el ancho de banda de lo programado, y noviembre va justo (1-nov-2026) | 1-nov-2026 | 20836-20858 | 4887 |  |
+| Lo que llenó Upstash en octubre fue el ancho de banda de lo programado, y noviembre va justo (1-nov-2026) | 1-nov-2026 | 20836-20859 | 4681 |  |
+| El vigilante pide el tamaño y no el diagnóstico entero, y el lector deja de leer el corpus del año (1-nov-2026) | 1-nov-2026 | 20860-20884 | 5306 |  |
