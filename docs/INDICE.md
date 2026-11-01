@@ -50,7 +50,7 @@ con `node tests/estado.js`, y las coordenadas las da `node tests/mapa.js <térmi
 | `docs/GUIA_MODELOS_Y_ESFUERZO.md` | referencia | — | — | Guía: qué modelo y qué esfuerzo usar en cada pregunta |
 | `docs/LEGAL_COLOMBIA.md` | referencia | — | — | Anexo A · Frente jurídico y regulatorio (Colombia) |
 | `docs/PRECIOS_DESDE_CLAUDE_CODE.md` | referencia | — | `README.md` · `tests` | Precios · cómo funciona «Buscar» y quién lo atiende |
-| `docs/RUTINAS.md` | referencia | — | `tests` | Rutinas programadas · qué pueden hacer, qué no, y cómo se crea una que funcione |
+| `docs/RUTINAS.md` | referencia | — | `lib` · `tests` | Rutinas programadas · qué pueden hacer, qué no, y cómo se crea una que funcione |
 
 ## Para ingeniero
 
