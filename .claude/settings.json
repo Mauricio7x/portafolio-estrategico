@@ -24,7 +24,8 @@
       "Bash(git log:*)",
       "Bash(git show:*)",
       "Bash(git diff:*)",
-      "Bash(git branch:*)"
+      "Bash(git branch:*)",
+      "mcp__github__pull_request_read"
     ]
   },
   "$comentario_complementos": [
