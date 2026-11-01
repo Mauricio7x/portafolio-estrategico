@@ -4657,6 +4657,60 @@ async function main() {
     assert.strictEqual(Ev.numeroDe("3.678,15", "trm"), 3678.15);
     assert.strictEqual(Ev.numeroDe("3,053.48", "trm"), 3053.48);
     assert.strictEqual(Ev.numeroDe("sin dato"), null, "sin cifras es null, jamás cero");
+    /* el último grupo decide (1-nov-2026): con una o dos cifras es el decimal, aunque la marca se repita o venga
+       mezclada. Con la regla anterior, «$857.184.194.75» (la oferta de GYMCOL SAS en la SA-2026-11 de Pasto) se leía
+       85.718 millones, y así se guardó. */
+    assert.strictEqual(Ev.numeroDe("$857.184.194.75", "dinero"), 857184194.75, "una marca repetida y dos cifras al final: la última es la decimal");
+    assert.strictEqual(Ev.numeroDe("$ 1.746.981.977.00", "dinero"), 1746981977);
+    assert.strictEqual(Ev.numeroDe("1,746,981,977,00", "dinero"), 1746981977, "lo mismo con comas");
+    assert.strictEqual(Ev.numeroDe("1.234.56", "puntaje"), 1234.56, "también en un puntaje");
+    assert.strictEqual(Ev.numeroDe("$859,492.599.67", "dinero"), 859492599.67, "miles con marcas mezcladas y dos cifras al final (el OCR de Pasto)");
+    assert.strictEqual(Ev.numeroDe("1.234,567", "puntaje"), 1234.567, "en un puntaje, la última marca distinta de las demás es la decimal");
+    /* en pesos, tres cifras al final son miles aunque las marcas se mezclen: el OCR de CO1.BDOS.10844111 escribe
+       «1.262.249.581 5,000.000 … 1.267.249.581», y la suma de la fila dice que son cinco millones, no cinco mil
+       (revisión adversaria del 1-nov-2026) */
+    assert.strictEqual(Ev.numeroDe("5,000.000", "dinero"), 5000000, "«5,000.000» son cinco millones");
+    assert.strictEqual(Ev.numeroDe("6.188,000", "dinero"), 6188000);
+    assert.strictEqual(Ev.numeroDe("1.234.567,890", "trm"), 1234567890);
+    assert.strictEqual(Ev.numeroDe("1.746,981.977", "dinero"), 1746981977, "en pesos, miles mezclados y tres cifras al final");
+    assert.strictEqual(Ev.numeroDe("1.746,981.977", "puntaje"), null, "en un puntaje, con las marcas mezcladas antes de la última no se sabe cuál es la decimal");
+    assert.ok(Ev.cifraEnCita("5.000.000", "3 ACTIVO TOTAL 1.262.249.581 5,000.000 IS 1.267.249.581", "dinero"), "la transcripción bien escrita casa con la del OCR");
+    assert.strictEqual(Ev.numeroDe("1,234,567,890", "trm"), 1234567890, "varias marcas iguales y tres cifras al final: miles");
+    assert.strictEqual(Ev.numeroDe("1.000.000", "puntaje"), 1000000, "también en un puntaje");
+    assert.strictEqual(Ev.numeroDe("0.2500", "puntaje"), 0.25, "en un puntaje, una sola marca y cuatro cifras detrás: la decimal");
+    assert.strictEqual(Ev.numeroDe("1.234,5678", "puntaje"), 1234.5678, "en un puntaje, la última marca distinta y cuatro cifras detrás: la decimal");
+    for (const tipo of ["dinero", "trm"]) for (const f of ["$ 15.051271", "375.0000", "1.234,5678"])
+      assert.strictEqual(Ev.numeroDe(f, tipo), null, `«${f}» en ${tipo}: un monto no trae cuatro decimales (un separador perdido daba quince pesos)`);
+    assert.strictEqual(Ev.numeroDe("20", "puntaje"), 20, "sin marcas, el número tal cual");
+    assert.strictEqual(Ev.numeroDe("1.116", "puntaje"), 1.116, "en un puntaje, una marca con tres cifras detrás es la decimal");
+    assert.strictEqual(Ev.numeroDe("$ 1.746.981.977.", "dinero"), 1746981977, "un punto al final es puntuación de la frase");
+    assert.strictEqual(Ev.numeroDe("$ 1.746.981.977...", "dinero"), 1746981977, "y varios también");
+    assert.strictEqual(Ev.numeroDe("$ 2862.859.775", "dinero"), 2862859775, "el primer grupo puede traer más de tres cifras (OCR de Pasto)");
+    assert.strictEqual(Ev.numeroDe("$.1.234.567", "dinero"), 1234567, "la marca de un prefijo («$.») no es una cifra");
+    assert.strictEqual(Ev.numeroDe("Pto.49,5", "puntaje"), 49.5);
+    assert.strictEqual(Ev.numeroDe("$859,492.599.67.", "dinero"), 859492599.67, "también detrás de los decimales");
+    assert.strictEqual(Ev.numeroDe(".5", "puntaje"), 0.5, "una marca al principio es la decimal");
+    for (const roto of ["1.74.981.977", "8.59.497.599.73", "1.746.981.97700", "1.746.981977,00", "1.5.3", "2.2.1.2.4.2.4", "1,.5"])
+      assert.strictEqual(Ev.numeroDe(roto, "dinero"), null, `«${roto}» no está escrito de ninguna forma: null, no sus cifras pegadas`);
+    assert.ok(Ev.cifraEnCita("$1.746.981.977,00", "por valor de $ 1.746.981.977.00 incluido IVA", "dinero"), "la misma cifra escrita de dos formas casa");
+    assert.ok(!Ev.cifraEnCita("$ 174.698.197.700", "por valor de $ 1.746.981.977.00 incluido IVA", "dinero"), "cien veces más no casa");
+    /* el censo: cualquier monto, escrito de cualquiera de las formas que traen los documentos (miles con punto, con
+       coma, con la misma marca que la decimal o mezclados, con centavos y sin ellos), se lee como ESE monto */
+    {
+      let semilla = 20261101;
+      const azar = () => { semilla = (semilla * 1103515245 + 12345) % 2147483648; return semilla / 2147483648; };
+      for (let n = 0; n < 400; n++) {
+        const centavos = Math.floor(azar() * 10 ** (2 + Math.floor(azar() * 11)));
+        const e = String(Math.floor(centavos / 100)), d = String(centavos % 100).padStart(2, "0"), esperado = Number(`${e}.${d}`);
+        const g = e.replace(/\B(?=(\d{3})+(?!\d))/g, "|"), con = (m) => g.replace(/\|/g, m);
+        let alterna = 0;
+        const mezcla = g.replace(/\|/g, () => (alterna++ % 2 ? "," : "."));
+        const formas = [`${con(".")},${d}`, `${con(",")}.${d}`, `${con(".")}.${d}`, `${con(",")},${d}`, `$ ${mezcla}.${d}`, `$${mezcla},${d}`];
+        for (const f of formas) for (const tipo of ["dinero", "trm", "puntaje"])
+          assert.strictEqual(Ev.numeroDe(f, tipo), esperado, `«${f}» (${tipo}) son ${esperado}`);
+        for (const tipo of ["dinero", "trm"]) for (const f of [con("."), con(","), `$ ${mezcla}`]) assert.strictEqual(Ev.numeroDe(f, tipo), Number(e), `«${f}» (${tipo}) son ${e}`);
+      }
+    }
     assert.ok(Ev.cifraEnCita("49,5", "INFRAOBRAS SAS 336.262.957,00 49,5 20 0,25", "puntaje"));
     assert.ok(Ev.cifraEnCita("100", "16 CONSORCIO B-I 1373 $922,700,001.00 49.50 100.00", "puntaje"), "«100» y «100.00» son la misma cifra");
     assert.ok(!Ev.cifraEnCita("49", "INFRAOBRAS 49,5", "puntaje"), "una cifra que solo está DENTRO de otra no cuenta");
