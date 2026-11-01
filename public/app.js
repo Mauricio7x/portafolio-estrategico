@@ -7787,8 +7787,11 @@
           items: itemsParaElMotor(),
           departamento: $("departamento").value,
           config: leerConfig(),
-          /* solo para no contar el propio proceso en «lo que presupuestaron las
-             entidades» (1-nov-2026): no cambia ninguna cifra del cálculo */
+          /* «lo que presupuestaron las entidades» (1-nov-2026): de qué perfil son los
+             procesos guardados que se leen, y cuál se cotiza para no contarlo. Ninguno de
+             los dos cambia una cifra del cálculo (los precios propios siguen con `perfil`,
+             que esta petición no manda: lo declara lib/handlers/apu/editor) */
+          perfil_procesos: ($("perfil") && $("perfil").value) || null,
           id_proceso: ($("id-proceso") && $("id-proceso").value.trim()) || null,
         },
       });
@@ -7802,9 +7805,13 @@
       if (r.normativa) pintarNormativa(r.normativa);
       /* «no se pudo consultar» ≠ «no hay»: si la lectura de los presupuestos de las
          entidades falló, se dice; callarlo dejaría creer que ningún proceso trae el ítem */
-      msgApu(r.referencia_entidades && r.referencia_entidades.fallo
+      const refEnt = r.referencia_entidades || {};
+      msgApu(refEnt.fallo
         ? "Presupuesto calculado. Esta vez no se pudieron leer los presupuestos de sus procesos guardados: lo que presupuestaron las entidades no aparece."
-        : "Presupuesto calculado.", "ok");
+        /* lo que no cupo en esta consulta se dice: callarlo haría leer «ninguno trae este ítem» */
+        : refEnt.pendientes > 0
+          ? `Presupuesto calculado. Faltan por leer ${refEnt.pendientes} de sus procesos guardados para lo que presupuestaron las entidades: pulse otra vez «${window.Glosario.VERBOS.generar_apu}» en un momento.`
+          : "Presupuesto calculado.", "ok");
       return true;
     } catch (e) {
       msgApu(mensajeDeFallo(e, "calcular el presupuesto"), "error");
