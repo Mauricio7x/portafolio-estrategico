@@ -675,6 +675,23 @@ la de otro documento tipo (licitación pública); eso **no se verificó** aquí.
 cambia: sigue siendo un sorteo en el que el menor valor sale en 1 de 4 rangos. Lo que estaba mal es
 la descripción.
 
+**Licitación pública, verificado el 1-nov-2026.** El Documento Base de licitación de obra pública de
+infraestructura social (código CCE-EICP-GI-14, versión 3; copia publicada por la UTS) trae la MISMA
+tabla y tampoco la del manual: «la Entidad tomará los centavos de la Tasa de Cambio Representativa
+del Mercado (TRM)» (numeral 4.1.4, pág. 45) y, en la pág. 46 de 79, de 0.00 a 0.24 mediana con valor
+absoluto, de 0.25 a 0.49 media geométrica, de 0.50 a 0.74 media aritmética baja y de 0.75 a 0.99 menor
+valor. Cambia el día de la TRM: allí es la «que rija al día hábil siguiente» a la apertura del sobre
+económico en la audiencia. Los conceptos C-594 y C-850 de 2025 de la Agencia confirman los cuatro
+métodos y los centavos para el documento de infraestructura de transporte (versiones 3 y 4), sin
+citar los rangos. **Sin verificar:** la versión VIGENTE de infraestructura social (la ficha de la
+Agencia dice «Versión 2», vigente desde el 16-feb-2026, y el 1-nov-2026 no tenía el documento para
+descargar). El modelo de `lib/apu/rentabilidad.js` (25 % menor valor) sigue valiendo con esta tabla.
+
+Fuentes: [Documento Base CCE-EICP-GI-14 v3](https://www.uts.edu.co/sitio/wp-content/uploads/2019/10/Documento-Base-CCE-EICP-GI-14_V3-LP-003.pdf),
+[C-850 de 2025](https://relatoria.colombiacompra.gov.co/conceptos/c-850-de-2025/),
+[C-594 de 2025](https://relatoria.colombiacompra.gov.co/conceptos/c-594-de-2025/),
+[ficha del documento tipo](https://www.colombiacompra.gov.co/?p=29539).
+
 **Fuentes:** los pliegos y documentos de evaluación de los 5 procesos (SECOP II), leídos con
 `detekta-lector` y verificados con `verificar_citas.py` el 17-oct-2026. Datos de adjudicación
 contrastados con `p6dx-8zbt` el mismo día.

@@ -127,7 +127,7 @@
   unspsc.js                   Whitelists de los RUP + MATCHING JERÁRQUICO por niveles
   uso.js                      MEDIR EL USO, SIN ANALÍTICA DE TERCEROS (27-sep-2026)
 
-· lib/apu/ — 20 módulos:
+· lib/apu/ — 21 módulos:
   calculo.js                  Del costo directo al precio de oferta
   catalogo.js                 Catálogo de precios APU en Redis
   epc_items.js                LOS APU DE EPC COMO ÍTEMS COSTEABLES (ago 2026)
@@ -144,6 +144,7 @@
   piso_techo.js               (sin cabecera)
   precios.js                  La cascada de fuentes de precio
   precios_ia.js               Los APU generados por una SESIÓN de Claude Code (4-sep-2026)
+  referencia_entidades.js     Lo que presupuestaron las entidades por ítem, en los procesos guardados (1-nov-2026)
   rentabilidad.js             Precio competitivo, flujo de caja, VEG y payback
   retail.js                   Techo de tienda y de lista de fabricante, por insumo
   tipologias.js               Las 22 tipologías de obra y el mapa departamento→región
@@ -223,8 +224,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 407 secciones (38 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 20536  El % de adjudicación según el precio no se enseña porque se midió que no predice: en licita…  (superada)
+· MEMORIA · docs/MEMORIA.md — 408 secciones (38 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 20590  La referencia de precio va por tipo de obra: una vía y un acueducto se adjudican a precios …
   L 20657  La verificación del precio normaliza en cada proceso: el precio predice quién gana apenas m…
   L 20679  La cuenta de días al cierre es una sola y por fecha civil, y el chip sigue a la regla explí…
@@ -234,6 +234,7 @@
   L 20819  Una cifra de un informe de evaluación se lee por su último grupo: con dos cifras son centav…
   L 20836  Lo que llenó Upstash en octubre fue el ancho de banda de lo programado, y noviembre va just…
   L 20860  El vigilante pide el tamaño y no el diagnóstico entero, y el lector deja de leer el corpus …
+  L 20886  Lo que presupuestaron las entidades va al lado de cada ítem, el enlace de SECOP II pegado e…
 
 · DOCUMENTOS docs/ — 76 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)

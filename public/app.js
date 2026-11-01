@@ -7548,6 +7548,23 @@
       r.correspondencia === "aproximada" ? ` · <span class="text-amber-700">insumo similar: ${esc(r.correspondencia_nota || "verificar equivalencia")}</span>` : ""}</span>`;
   }
 
+  /* ── Lo que presupuestaron las entidades (1-nov-2026, decisión del dueño) ──
+     La mediana del precio unitario de este ítem en los Formularios 1 de sus
+     procesos guardados (lib/apu/referencia_entidades). Es una REFERENCIA: no
+     entra en el costo y no cambia el presupuesto, y la frase lo dice. Con 1 o 2
+     procesos se dice cuántos hay; con ninguno no se pinta nada, porque la
+     ausencia no se rellena. Los procesos que la sostienen viajan en el `title`. */
+  function referenciaEntidadesHtml(it) {
+    const r = it && it.referencia_entidades;
+    if (!r || !(r.procesos > 0)) return "";
+    if (!r.hay) return `<p class="mt-3 text-[11px] text-gray-500">Presupuestos de las entidades: ${esc(r.motivo || "")}.</p>`;
+    return `<p class="mt-3 rounded-lg bg-gray-50 px-3 py-2 text-[12px] text-gray-700" title="${esc((r.ids || []).join("\n"))}">`
+      + `Lo que presupuestaron las entidades en ${r.procesos} de sus procesos guardados: `
+      + `<span class="num font-semibold">${pesos(r.precio)}</span> por ${esc(r.unidad)} `
+      + `(de <span class="num">${pesos(r.desde)}</span> a <span class="num">${pesos(r.hasta)}</span>). `
+      + `Es el precio que calculó cada entidad, no un costo: no cambia este presupuesto.</p>`;
+  }
+
   function pintarInsumos(i) {
     const caja = $("tabla").querySelector(`[data-celda="insumos-${i}"]`);
     if (!caja) return;
@@ -7569,6 +7586,7 @@
          justo los ítems sin composición —precio propio, del archivo, tecleado o
          ninguno—, o sea aquellos en los que la pregunta «¿por qué este precio y
          no otro?» no tiene ninguna otra respuesta en pantalla. */
+      if (it) caja.innerHTML += referenciaEntidadesHtml(it);
       if (it && it.cascada) caja.innerHTML += cascadaDe(it.cascada);
       caja.setAttribute("data-pintado", "1");
       return;
@@ -7643,6 +7661,7 @@
     caja.innerHTML = `
       ${notaInvias}${notaEpc}
       <div class="grid gap-4 xl:grid-cols-2">${rubros}</div>
+      ${referenciaEntidadesHtml(it)}
       ${cascadaHtml}
       <p class="mt-3 border-t border-gray-200 pt-2 text-right text-xs font-semibold">
         Total costo directo del ítem: <span class="num">${pesos(it.costo_directo_unitario)}</span>
@@ -7768,6 +7787,12 @@
           items: itemsParaElMotor(),
           departamento: $("departamento").value,
           config: leerConfig(),
+          /* «lo que presupuestaron las entidades» (1-nov-2026): de qué perfil son los
+             procesos guardados que se leen, y cuál se cotiza para no contarlo. Ninguno de
+             los dos cambia una cifra del cálculo (los precios propios siguen con `perfil`,
+             que esta petición no manda: lo declara lib/handlers/apu/editor) */
+          perfil_procesos: ($("perfil") && $("perfil").value) || null,
+          id_proceso: ($("id-proceso") && $("id-proceso").value.trim()) || null,
         },
       });
       if (!r) return false;
@@ -7778,7 +7803,15 @@
       /* Repintar con la normativa del CÁLCULO: viene para la región que el
          motor usó de verdad, no para la región base del catálogo. */
       if (r.normativa) pintarNormativa(r.normativa);
-      msgApu("Presupuesto calculado.", "ok");
+      /* «no se pudo consultar» ≠ «no hay»: si la lectura de los presupuestos de las
+         entidades falló, se dice; callarlo dejaría creer que ningún proceso trae el ítem */
+      const refEnt = r.referencia_entidades || {};
+      msgApu(refEnt.fallo
+        ? "Presupuesto calculado. Esta vez no se pudieron leer los presupuestos de sus procesos guardados: lo que presupuestaron las entidades no aparece."
+        /* lo que no cupo en esta consulta se dice: callarlo haría leer «ninguno trae este ítem» */
+        : refEnt.pendientes > 0
+          ? `Presupuesto calculado. Faltan por leer ${refEnt.pendientes} de sus procesos guardados para lo que presupuestaron las entidades: pulse otra vez «${window.Glosario.VERBOS.generar_apu}» en un momento.`
+          : "Presupuesto calculado.", "ok");
       return true;
     } catch (e) {
       msgApu(mensajeDeFallo(e, "calcular el presupuesto"), "error");
@@ -10589,9 +10622,22 @@
         ${x.objeto ? `<p class="mt-1 text-gray-600">${esc(x.objeto)}</p>` : ""}
         ${porque ? `<p class="mt-2 text-gray-700"><strong>Por qué:</strong> ${esc(porque)}</p>` : ""}
         ${x.estado || x.fase ? `<p class="mt-1 text-xs text-gray-500">Estado publicado: ${esc(x.estado || "—")} · Fase: ${esc(x.fase || "—")}</p>` : ""}
+        ${guardadoEnEstePerfil(x.id_proceso) ? `<button type="button" class="mt-2 rounded-lg bg-gray-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-gray-700" data-ra-expediente="${esc(x.id_proceso)}">Abrir su expediente</button>` : ""}
       </div>`;
     }).join("");
   }
+  /* QUIEN PEGA EL ENLACE DE UN PROCESO QUE YA GUARDÓ QUIERE ENTRAR A ÉL (1-nov-2026):
+     el botón sale solo si el perfil de la búsqueda es el activo, porque `guardados`
+     es la lista de ese perfil; con otro perfil no se sabe y no se ofrece. */
+  function guardadoEnEstePerfil(id) {
+    return !!id && $("ra-perfil").value === $("f-perfil").value && guardados.has(id);
+  }
+  $("ra-resultado").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-ra-expediente]");
+    if (!b) return;
+    activarPestana("seguimiento");
+    abrirExpediente(b.getAttribute("data-ra-expediente"));
+  });
   /* Las modalidades salen de public/filtros.js, la MISMA lista que alimenta la
      hoja de filtros del listado: escribirlas a mano aquí sería una segunda
      tabla de nombres que se desincroniza a la primera corrección. */

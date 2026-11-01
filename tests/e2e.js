@@ -3630,7 +3630,71 @@ async function main() {
         "`no_consta` no puede afirmar que el proceso no exista: la app no ha mirado SECOP II");
       assert.ok(nada.siguiente_paso, "una respuesta vacía sin siguiente paso es un callejón sin salida");
       assert.strictEqual(rastrear("ab", {}).ok, false, "una consulta de 2 caracteres devolvería medio corpus");
-      console.log("· unidad rastreo: servido · en_corpus con su motivo · descartado_en_ingesta con el del censo · no_consta sin afirmar de más");
+
+      /* EL ENLACE PEGADO DE SECOP II (1-nov-2026). El enlace trae el número del AVISO
+         (CO1.NTC.…), no el del proceso: se busca por identificador EXACTO en proceso,
+         `:id`, portafolio y el aviso de `urlproceso`, y un enlace sin número se rechaza
+         diciendo qué copiar (buscarlo como texto daría «no consta» sobre algo que está). */
+      {
+        const filasId = [
+          { id_del_proceso: "CO1.REQ.111", id_del_portafolio: "CO1.BDOS.222", referencia_del_proceso: "LP-01-2026", entidad: "ALCALDIA X",
+            urlproceso: { url: "https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=CO1.NTC.333&isFromPublicArea=True" } },
+          { id_del_proceso: "CO1.REQ.1110", referencia_del_proceso: "LP-02-2026", entidad: "ALCALDIA Y",
+            urlproceso: "https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=CO1.NTC.3330" },
+        ];
+        const idsDe = (consulta, extra = {}) => (rastrear(consulta, { filas: filasId, ...extra }).resultados || []).map((x) => x.id_proceso);
+        const pegado = rastrear("https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=CO1.NTC.333&isFromPublicArea=True&isModal=False", { filas: filasId });
+        assert.strictEqual(pegado.buscado_en, "identificador");
+        assert.deepStrictEqual(pegado.identificadores, ["CO1.NTC.333"]);
+        assert.deepStrictEqual(pegado.resultados.map((x) => x.id_proceso), ["CO1.REQ.111"], "el enlace del aviso encuentra su proceso");
+        assert.deepStrictEqual(idsDe("co1.req.111"), ["CO1.REQ.111"], "el número del proceso, en minúsculas");
+        assert.deepStrictEqual(idsDe("CO1.BDOS.222"), ["CO1.REQ.111"], "el portafolio");
+        assert.deepStrictEqual(idsDe("CO1.NTC.33"), [], "EXACTO: «CO1.NTC.33» no casa dentro de «CO1.NTC.333» ni de «CO1.NTC.3330»");
+        assert.deepStrictEqual(idsDe("CO1.REQ.111", { campo: "objeto" }), ["CO1.REQ.111"], "un número no es ambiguo: el ámbito no lo esconde");
+        const sinNumero = rastrear("https://community.secop.gov.co/Public/Tendering/ContractNoticeManagement/Index", { filas: filasId });
+        assert.strictEqual(sinNumero.ok, false);
+        assert.ok(/no trae el número del proceso/.test(sinNumero.error) && /copie el enlace/.test(sinNumero.error), sinNumero.error);
+        // el texto de siempre sigue buscando como antes
+        assert.deepStrictEqual(idsDe("LP-01"), ["CO1.REQ.111"]);
+        assert.strictEqual(rastrear("LP-01", { filas: filasId }).buscado_en, "todo");
+        // el censo de la ingesta también se busca por número
+        const enCensoId = rastrear("CO1.REQ.555", { filas: [], censo: { por_motivo: { cierre_vencido: 1 }, ejemplos: { cierre_vencido: [{ id_proceso: "CO1.REQ.555", referencia: "SA-9" }] } } });
+        assert.deepStrictEqual(enCensoId.resultados.map((x) => [x.id_proceso, x.donde]), [["CO1.REQ.555", "descartado_en_ingesta"]]);
+        /* Revisión adversaria del 1-nov-2026. (1) El ENLACE PEGADO de un proceso que tiró la
+           ingesta respondía «no consta»: la ficha del censo no guardaba ni el aviso ni el
+           portafolio. Se prueba con la ficha REAL (lib/censo_ingesta.ficha) de una fila con
+           su enlace como objeto, como lo publica Socrata. */
+        {
+          const { ficha } = require("../lib/censo_ingesta.js");
+          const filaTirada = { id_del_proceso: "CO1.REQ.777", id_del_portafolio: "CO1.BDOS.778", referencia_del_proceso: "MC-7",
+            urlproceso: { url: "https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=CO1.NTC.779&isFromPublicArea=True" } };
+          const f = ficha(filaTirada);
+          assert.deepStrictEqual([f.portafolio, f.avisos], ["CO1.BDOS.778", ["CO1.NTC.779"]]);
+          assert.strictEqual(ficha({ id_del_proceso: "CO1.REQ.1" }).avisos, null, "sin enlace no hay aviso: null, no una lista vacía inventada");
+          const censoT = { por_motivo: { blacklist: 1 }, ejemplos: { blacklist: [f] } };
+          for (const q of ["https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=CO1.NTC.779", "CO1.BDOS.778", "co1.req.777"]) {
+            const r = rastrear(q, { filas: [], censo: censoT });
+            assert.deepStrictEqual(r.resultados.map((x) => [x.id_proceso, x.donde]), [["CO1.REQ.777", "descartado_en_ingesta"]], q);
+          }
+        }
+        // (2) la modalidad no esconde un número exacto, y se declara que no se aplicó
+        {
+          const filaMin = { ...filasId[0], modalidad_de_contratacion: "Mínima cuantía" };
+          const conMod = rastrear("CO1.REQ.111", { filas: [filaMin], modalidad: "licitacion" });
+          assert.deepStrictEqual([conMod.encontrados, conMod.modalidad_aplicada], [1, false]);
+          // con texto sí filtra, como siempre
+          const texto = rastrear("LP-01", { filas: [filaMin], modalidad: "licitacion" });
+          assert.deepStrictEqual([texto.encontrados, texto.modalidad_aplicada], [0, true]);
+          assert.strictEqual(rastrear("LP-01", { filas: [filaMin], modalidad: "minima" }).encontrados, 1);
+        }
+        // (3) un número suelto y entero: ni pegado a letras ni seguido de ellas; y CO1.PPI no es una llave que se guarde
+        assert.deepStrictEqual(idsDe("XCO1.REQ.111"), []);
+        assert.deepStrictEqual(idsDe("CO1.REQ.111abc"), []);
+        assert.deepStrictEqual(idsDe("(CO1.REQ.111)"), ["CO1.REQ.111"]);
+        const ppi = rastrear("https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?ppi=CO1.PPI.444", { filas: filasId });
+        assert.strictEqual(ppi.ok, false, "un enlace con un número que ninguna columna guarda pide el enlace de la página del proceso");
+      }
+      console.log("· unidad rastreo: servido · en_corpus con su motivo · descartado_en_ingesta con el del censo · no_consta sin afirmar de más · el enlace pegado de SECOP II por número exacto");
     }
 
     /* EL RELOJ CIERRA PROCESOS (ago 2026, defecto de producción).
@@ -17929,6 +17993,217 @@ async function main() {
     }
   }
 
+  /* unidad: lo que presupuestaron las entidades (1-nov-2026, decisión del dueño) ·
+     la mediana del precio unitario de un ítem en los Formularios 1 de los procesos
+     guardados. Es REFERENCIA: las reglas que no hay que re-aprender están en la
+     cabecera de lib/apu/referencia_entidades y cada una tiene aquí su cerradura. */
+  bqRefEnt: { if (!corre("unidad referencia de las entidades")) break bqRefEnt;
+    const RE = require("../lib/apu/referencia_entidades.js");
+    const fila = (d, u, p) => ({ descripcion: d, unidad: u, cantidad: 1, precio_archivo: p, total_archivo: p });
+    const EXC = "Excavación manual en material común";
+    const form = (...filas) => ({ filas });
+    const mapeoReal = require("../lib/apu_mapeo.js").mapearItem({ descripcion_original: EXC, unidad: "m3" });
+    assert.strictEqual(mapeoReal.nivel, "firme", "la prueba usa una descripción que el mapeo real casa en firme");
+    const ITEM = mapeoReal.item_id;
+    // índice de procesos con su Formulario (cada uno su obra, salvo que se diga)
+    const indiceDe = (procesos, extra) => RE.construirIndice(procesos.map(([id, f1, obra]) => ({ id_proceso: id, obra, obs: RE.observacionesDeFormulario(f1) })), extra);
+
+    // el mínimo es el que fijó el dueño: 3 obras
+    assert.strictEqual(RE.MINIMO_PROCESOS, 3);
+    /* LOS DOS LADOS CON LA MISMA REGLA (revisión adversaria del 1-nov-2026): el ítem del
+       editor se casa por SU DESCRIPCIÓN, no por el código de su banco de precios (INV-, IDU:…),
+       que no comparte un solo código con el catálogo del lector. Variantes de mayúsculas,
+       tildes y unidad del mismo texto llegan al mismo ítem; sin descripción no hay casado. */
+    assert.strictEqual(RE.itemDelCatalogo(EXC, "m3"), ITEM);
+    assert.strictEqual(RE.itemDelCatalogo("EXCAVACION MANUAL EN MATERIAL COMUN", "M3"), ITEM);
+    assert.strictEqual(RE.itemDelCatalogo(null, "m3"), null, "un ítem sin descripción no se compara");
+    // con el mapeo REAL, un casado dudoso («revisar») no da ítem: ante la duda no se compara
+    assert.strictEqual(require("../lib/apu_mapeo.js").mapearItem({ descripcion_original: "Concreto", unidad: "m3" }).nivel, "revisar");
+    assert.strictEqual(RE.itemDelCatalogo("Concreto", "m3"), null);
+    assert.deepStrictEqual({ ...RE.observacionesDeFormulario(form(fila("Concreto", "m3", 500))).claves }, {}, "ni el renglón del Formulario");
+    assert.strictEqual(RE.itemDelCatalogo(EXC, "bulto grande"), null, "ni uno con la unidad ilegible");
+    // UNA observación por proceso: tres renglones del mismo ítem en un proceso cuentan una vez, con su mediana
+    {
+      const o = RE.observacionesDeFormulario(form(fila(EXC, "M3", 10000), fila(EXC, "m3", 20000), fila(EXC, "m³", 90000)));
+      assert.deepStrictEqual({ ...o.claves[`${ITEM}|m3`] }, { precio: 20000, renglones: 3 });
+      const idx = indiceDe([["A", form(fila(EXC, "M3", 10000), fila(EXC, "m3", 20000), fila(EXC, "m³", 90000))], ["B", form(fila(EXC, "m3", 25000))]]);
+      assert.strictEqual(idx.claves[`${ITEM}|m3`].length, 2, "dos procesos, dos observaciones");
+      const ref = RE.referenciaDe(idx, ITEM, "m3");
+      assert.strictEqual(ref.hay, false, "un pliego largo no llega solo al mínimo");
+      assert.strictEqual(ref.procesos, 2);
+      assert.ok(/solo 2 de sus procesos guardados traen/.test(ref.motivo), ref.motivo);
+    }
+    // con tres procesos responde: mediana de los TRES (no de los renglones), rango y quiénes
+    {
+      const idx = indiceDe([
+        ["A", form(fila(EXC, "M3", 10000), fila(EXC, "m3", 20000), fila(EXC, "m3", 90000))],
+        ["B", form(fila(EXC, "m3", 25000))],
+        ["CO1.REQ.C", form(fila(EXC, "m3", 31000))],
+      ]);
+      assert.deepStrictEqual(RE.referenciaDe(idx, ITEM, "M³"), { hay: true, unidad: "m3", precio: 25000, desde: 20000, hasta: 31000, procesos: 3, ids: ["A", "B", "CO1.REQ.C"] });
+      // el proceso que se cotiza no se cuenta, escrito como sea: con él fuera quedan 2 y no hay cifra
+      for (const excluir of ["CO1.REQ.C", "co1.req.c", [" Co1.Req.C "]]) {
+        const sinC = RE.referenciaDe(idx, ITEM, "m3", { excluir });
+        assert.strictEqual(sinC.hay, false, JSON.stringify(excluir));
+        assert.strictEqual(sinC.procesos, 2);
+      }
+      // LA UNIDAD NO SE CONVIERTE: el mismo ítem en m2 es otra clave
+      const enM2 = RE.referenciaDe(idx, ITEM, "m2");
+      assert.strictEqual(enM2.hay, false);
+      assert.strictEqual(enM2.procesos, 0);
+      // una unidad ilegible no casa con nada, y un ítem sin código tampoco
+      assert.strictEqual(RE.referenciaDe(idx, ITEM, "bulto grande").hay, false);
+      assert.strictEqual(RE.referenciaDe(idx, null, "m3").hay, false);
+    }
+    /* DOS PUBLICACIONES DE LA MISMA OBRA SON UNA (revisión del 1-nov-2026), con la regla del
+       listado: mismo portafolio Y mismo objeto. Otro objeto en el mismo portafolio es otra obra,
+       y sin portafolio cada proceso es la suya. */
+    {
+      const obras = RE.obrasDe([
+        { id: "co1.req.400", portafolio: "CO1.BDOS.9", nombre: "Pavimentación de la calle 10" },
+        { id: "CO1.REQ.401", portafolio: "CO1.BDOS.9", nombre: "Pavimentación de la calle 10" },
+        { id: "CO1.REQ.402", portafolio: "CO1.BDOS.9", nombre: "Interventoría de la pavimentación" },
+        { id: "CO1.REQ.500", portafolio: null, nombre: "Pavimentación de la calle 10" },
+      ]);
+      assert.strictEqual(obras.get("CO1.REQ.400"), obras.get("CO1.REQ.401"), "las dos publicaciones son la misma obra");
+      assert.notStrictEqual(obras.get("CO1.REQ.402"), obras.get("CO1.REQ.400"), "otro objeto en el mismo portafolio es otra obra");
+      assert.strictEqual(obras.get("CO1.REQ.500"), "CO1.REQ.500");
+      const idx = indiceDe([
+        ["CO1.REQ.400", form(fila(EXC, "m3", 10000)), obras.get("CO1.REQ.400")],
+        ["CO1.REQ.401", form(fila(EXC, "m3", 10000)), obras.get("CO1.REQ.401")],
+        ["CO1.REQ.500", form(fila(EXC, "m3", 30000)), obras.get("CO1.REQ.500")],
+      ]);
+      const ref = RE.referenciaDe(idx, ITEM, "m3");
+      assert.strictEqual(ref.hay, false, "dos obras no llegan al mínimo aunque sean tres procesos");
+      assert.strictEqual(ref.procesos, 2);
+      assert.strictEqual(idx.obras_con_formulario, 2);
+      assert.strictEqual(idx.procesos_con_formulario, 3);
+      const idx3 = indiceDe([
+        ["CO1.REQ.400", form(fila(EXC, "m3", 10000)), obras.get("CO1.REQ.400")],
+        ["CO1.REQ.401", form(fila(EXC, "m3", 10000)), obras.get("CO1.REQ.401")],
+        ["CO1.REQ.500", form(fila(EXC, "m3", 30000))],
+        ["CO1.REQ.600", form(fila(EXC, "m3", 12000))],
+      ]);
+      const r3 = RE.referenciaDe(idx3, ITEM, "m3");
+      assert.deepStrictEqual([r3.hay, r3.procesos, r3.precio], [true, 3, 12000]);
+      // cotizar una publicación saca de la cuenta su obra entera (su gemela trae el mismo Formulario)
+      const sinObra = RE.referenciaDe(idx3, ITEM, "m3", { excluir: ["CO1.REQ.401", obras.get("CO1.REQ.401")] });
+      assert.deepStrictEqual([sinObra.hay, sinObra.procesos], [false, 2]);
+    }
+    // «sin dato» ≠ 0: precio ausente, cero, negativo o no numérico no entra; y nada inventa un 0
+    {
+      const { renglones, descartados } = RE.renglonesDeFormulario(form(fila(EXC, "m3", 0), fila(EXC, "m3", -5), fila(EXC, "m3", null), fila(EXC, "m3", "25000"), fila(EXC, "zzz", 9000), fila("", "m3", 9000), fila(EXC, "m3", 12345)));
+      assert.strictEqual(descartados, 6);
+      assert.deepStrictEqual(renglones, [{ descripcion: EXC, unidad: "m3", precio: 12345 }]);
+    }
+    // SOLO el nivel «firme»: un casado «revisar» no entra (en precios, el falso caro es el positivo)
+    {
+      const mapear = (f) => ({ item_id: "X", nivel: f.descripcion_original === "firme" ? "firme" : "revisar" });
+      const idx = RE.construirIndice(["A", "B", "C"].map((id) => ({ id_proceso: id, obs: RE.observacionesDeFormulario(form(fila("dudoso", "m3", 100), fila("firme", "m3", 200)), { mapear }) })));
+      assert.deepStrictEqual(idx.claves["X|m3"].map((o) => o.precio), [200, 200, 200], "el renglón «revisar» no aporta su precio");
+      assert.strictEqual(idx.renglones_firmes, 3);
+      assert.strictEqual(idx.renglones_leidos, 6);
+    }
+    // el tope por Formulario es el del lector, y se DICE (un tope silencioso se lee como «se leyó todo»)
+    {
+      const muchos = Array.from({ length: RE.MAX_RENGLONES_PROCESO + 5 }, () => fila("firme", "m3", 1));
+      const o = RE.observacionesDeFormulario(form(...muchos), { mapear: () => ({ item_id: "X", nivel: "firme" }) });
+      assert.deepStrictEqual([o.leidos, o.sin_mapear], [RE.MAX_RENGLONES_PROCESO, 5]);
+      assert.strictEqual(RE.construirIndice([{ id_proceso: "A", obs: o }]).recortado, true);
+    }
+    /* EL TOPE DE UNA CONSULTA Y LO RECORDADO: lo que no cabe queda PENDIENTE y se dice; la
+       consulta siguiente no vuelve a leer lo ya leído; un Formulario que no está no se recuerda */
+    {
+      const leidas = [];
+      const f1De = { P1: form(fila("a", "m3", 1), fila("b", "m3", 2)), P2: form(fila("a", "m3", 3), fila("b", "m3", 4)), P3: form(fila("a", "m3", 5)), P4: null };
+      const leerF1s = async (t) => { leidas.push(...t.map((p) => p.id_proceso)); return t.map((p) => f1De[p.id_proceso]); };
+      const memoria = new Map();
+      const lista = ["P1", "P2", "P3", "P4"].map((id) => ({ id_proceso: id, firma: `${id}|7|hoy` }));
+      const mapear = () => ({ item_id: "X", nivel: "firme" });
+      const r1 = await RE.observacionesDeProcesos(lista, { cache: memoria, leerF1s, mapear, maxRenglones: 3, tanda: 2 });
+      assert.deepStrictEqual([...r1.porProceso.keys()], ["P1", "P2"], "el tope corta tras el proceso que lo cruza, sin dejarlo a medias");
+      assert.strictEqual(r1.pendientes, 2);
+      assert.deepStrictEqual(leidas, ["P1", "P2"], "con el tope gastado no se leen más Formularios de la base");
+      // y si el tope se gasta a mitad de una tanda, lo que queda de ella también espera
+      const r0 = await RE.observacionesDeProcesos(lista, { leerF1s, mapear, maxRenglones: 2, tanda: 3 });
+      assert.deepStrictEqual([[...r0.porProceso.keys()], r0.pendientes], [["P1"], 3]);
+      const idx = RE.construirIndice([...r1.porProceso].map(([id, obs]) => ({ id_proceso: id, obs })), { pendientes: r1.pendientes });
+      assert.strictEqual(idx.recortado, true);
+      assert.ok(/faltan por leer 2 de sus procesos guardados/.test(RE.referenciaDe(idx, "X", "kg").motivo), "lo pendiente se dice en el motivo");
+      leidas.length = 0;
+      const r2 = await RE.observacionesDeProcesos(lista, { cache: memoria, leerF1s, mapear, maxRenglones: 3, tanda: 2 });
+      assert.deepStrictEqual(leidas, ["P3", "P4"], "lo ya leído no se vuelve a leer");
+      assert.deepStrictEqual([...r2.porProceso.keys()].sort(), ["P1", "P2", "P3"]);
+      assert.strictEqual(r2.pendientes, 0);
+      assert.ok(!memoria.has("P4|7|hoy"), "un Formulario que no está no se recuerda: puede volver");
+    }
+    // el Formulario que vale: el último publicable de la versión vigente
+    {
+      const vig = (f) => f.version === 9;
+      assert.strictEqual(RE.formularioDelProceso({
+        1: { publicable: true, version: 9, fecha_carga: "2026-09-01" },
+        2: { publicable: true, version: 9, fecha_carga: "2026-10-01" },
+        3: { publicable: false, version: 9, fecha_carga: "2026-11-01" },
+        4: { publicable: true, version: 8, fecha_carga: "2026-12-01" },
+      }, vig), "2", "ni el que no pasó la puerta ni el leído con reglas viejas");
+      assert.strictEqual(RE.formularioDelProceso({}, vig), null);
+      assert.strictEqual(RE.formularioDelProceso(null, vig), null);
+    }
+    /* LA PANTALLA: se EJECUTA `referenciaEntidadesHtml` tal como está en public/app.js
+       (extraída del archivo, no copiada) con `esc` y `pesos` de prueba. Dice que es la
+       cifra de las entidades y que no cambia el presupuesto; con 1 o 2 procesos dice
+       cuántos; con ninguno no pinta nada; y habla de usted. */
+    const fuente = require("fs").readFileSync(require("path").join(__dirname, "..", "public", "app.js"), "utf8");
+    {
+      const ini = fuente.indexOf("  function referenciaEntidadesHtml(it) {");
+      assert.ok(ini > 0, "public/app.js tiene referenciaEntidadesHtml");
+      const fin = fuente.indexOf("\n  }\n", ini);
+      const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+      const pesos = (n) => (Number.isFinite(n) ? `$${new Intl.NumberFormat("es-CO").format(n)}` : "—");
+      const pintar = new Function("esc", "pesos", `${fuente.slice(ini, fin + 4)}; return referenciaEntidadesHtml;`)(esc, pesos);
+      const llena = pintar({ referencia_entidades: { hay: true, unidad: "m3", precio: 25000, desde: 20000, hasta: 30000, procesos: 3, ids: ["CO1.REQ.1", "CO1.REQ.2", "CO1.REQ.3"] } });
+      const textoLlena = llena.replace(/<[^>]+>/g, "");
+      assert.ok(/en 3 de sus procesos guardados/.test(textoLlena) && /\$25\.000 por m3/.test(textoLlena) && /de \$20\.000 a \$30\.000/.test(textoLlena), textoLlena);
+      assert.ok(/no es un costo|no un costo/.test(textoLlena) && /no cambia este presupuesto/.test(textoLlena), "dice que es referencia y que no mueve el presupuesto");
+      assert.ok(/title="CO1\.REQ\.1\nCO1\.REQ\.2\nCO1\.REQ\.3"/.test(llena), "los procesos que la sostienen van en el title");
+      const parcial = pintar({ referencia_entidades: { hay: false, procesos: 2, motivo: "solo 2 de sus procesos guardados traen este ítem en m3; hacen falta 3" } });
+      assert.ok(/solo 2 de sus procesos guardados/.test(parcial) && !/\$/.test(parcial), "con 2 procesos dice cuántos y no da cifra");
+      assert.strictEqual(pintar({ referencia_entidades: { hay: false, procesos: 0, motivo: "ninguno" } }), "", "sin procesos no se pinta nada");
+      assert.strictEqual(pintar({}), "");
+      assert.strictEqual(pintar(null), "");
+      const { tuteoEn } = require("../lib/lenguaje_pantalla.js");
+      assert.strictEqual(tuteoEn(textoLlena + " " + parcial), null, "la frase va de usted");
+    }
+    /* «CALCULAR» DICE DE QUÉ PERFIL SON LOS PROCESOS (revisión del 1-nov-2026): sin el campo, el
+       servidor leía los de «helder» trabajando con otro perfil. Se EJECUTA `calcularApu` tal como
+       está en public/app.js y se mira el cuerpo que manda; y el aviso de lo pendiente, de usted. */
+    {
+      const ini = fuente.indexOf("  async function calcularApu() {");
+      assert.ok(ini > 0, "public/app.js tiene calcularApu");
+      const fin = fuente.indexOf("\n  }\n", ini);
+      const el = (v) => ({ value: v, disabled: false, textContent: "" });
+      const dom = { "btn-calcular": el(""), "btn-exportar": el(""), departamento: el("CUNDINAMARCA"), "id-proceso": el(" CO1.REQ.999 "), perfil: el("genesis") };
+      let enviado = null; const mensajes = [];
+      const stubs = {
+        $: (id) => dom[id] || el(""),
+        api: async (ruta, o) => { enviado = { ruta, body: o.body }; return { items: [], resumen: {}, referencia_entidades: { consultada: true, pendientes: 4 } }; },
+        itemsParaElMotor: () => [{ item_id: "INV-200.1", descripcion: EXC, unidad: "m3", cantidad: 1 }],
+        leerConfig: () => ({}), filas: [1], window: { Glosario: { VERBOS: { generar_apu: "Calcular cuánto me cuesta" } } },
+        msgApu: (t) => mensajes.push(t), mensajeDeFallo: () => "", olvidarRevision: () => {}, pintarCalculoEnTabla: () => {}, pintarResumen: () => {}, pintarNormativa: () => {},
+      };
+      const n = Object.keys(stubs);
+      const calcularApu = new Function(...n, `let ultimoCalculo = null;\n${fuente.slice(ini, fin + 4)}\nreturn calcularApu;`)(...n.map((k) => stubs[k]));
+      await calcularApu();
+      assert.strictEqual(enviado.ruta, "/api/apu?op=calcular");
+      assert.strictEqual(enviado.body.perfil_procesos, "genesis", "los procesos guardados son los del perfil con que trabaja");
+      assert.strictEqual(enviado.body.id_proceso, "CO1.REQ.999");
+      assert.ok(!Object.prototype.hasOwnProperty.call(enviado.body, "perfil"), "los precios propios no cambian sin el visto bueno del dueño");
+      assert.ok(/Faltan por leer 4 de sus procesos guardados[\s\S]*«Calcular cuánto me cuesta»/.test(mensajes.join(" ")), mensajes.join(" | "));
+      assert.strictEqual(require("../lib/lenguaje_pantalla.js").tuteoEn(mensajes.join(" ")), null);
+    }
+    console.log("  · referencia de las entidades: el mismo casado en los dos lados, una observación por obra, mínimo de 3, sin conversión de unidad, solo casados firmes, el propio proceso fuera, el tope que se dice, y la frase y el perfil de la pantalla ejecutados");
+  }
+
   /* unidad: el catálogo de precios APU · las tres invariantes que atan sus
      números a la investigación recuperada, y la validación que impide guardar
      un catálogo con el que se calcularían precios malos.
@@ -31790,6 +32065,98 @@ async function main() {
       const calcInv = await invocarPost(apu, "/api/apu/calcular", { items: itemsPrueba, departamento: "ANTIOQUIA", config: cfgBase, perfil: "rup_inventado01" });
       assert.strictEqual(calcInv.status, 200, JSON.stringify(calcInv.cuerpo).slice(0, 200));
       assert.deepStrictEqual(await require("../lib/redis.js").crearRedis({}).scan("uso:rup_inventado01:*"), [], "un perfil que no existe no se cuenta");
+
+      /* ---- j.4b lo que presupuestaron las entidades (1-nov-2026) ----
+         Los Formularios 1 de los procesos GUARDADOS llegan a cada ítem como
+         referencia, SOLO con credencial, y NO cambian ninguna cifra del cálculo.
+         Revisión adversaria del 1-nov-2026: la versión anterior de esta prueba usaba
+         códigos LOC- que el motor no conoce, así que comparaba dos presupuestos de $0 y
+         no veía que en el flujo real la referencia no aparecía nunca. Aquí los ítems
+         salen de `importar`, como en la pantalla, con su código de banco y su costo. */
+      {
+        const Rm = require("../lib/redis.js").crearRedis({});
+        const Alm = require("../lib/almacen.js");
+        const DocsR = require("../lib/documentos_proceso.js");
+        const segAntes = { helder: await Rm.get("seguimiento:helder"), genesis: await Rm.get("seguimiento:genesis") };
+        const idsR = ["CO1.REQ.REF1", "CO1.REQ.REF2", "CO1.REQ.REF3", "CO1.REQ.REF4", "CO1.REQ.REF5"];
+        const preciosR = [20000, 25000, 30000, 26000, 20000];
+        /* REF5 es otra publicación de la obra de REF1, y REF6 (guardado, SIN Formulario) otra de
+           la de REF2: mismo portafolio y mismo objeto */
+        const fotos = { REF1: ["Obra uno", "R1"], REF2: ["Obra dos", "R2"], REF3: ["Obra tres", "R3"], REF4: ["Obra cuatro", "R4"], REF5: ["Obra uno", "R1"], REF6: ["Obra dos", "R2"] };
+        const fotoDe = (id) => { const [nombre, p] = fotos[id.split(".").pop()]; return { id, nombre, id_del_portafolio: `CO1.BDOS.${p}` }; };
+        const guardados = (ids) => JSON.stringify({ procesos: Object.fromEntries(ids.map((id) => [id, { estado: "interesa", foto: fotoDe(id) }])) });
+        const EXC = "Excavación manual en material común";
+        const imp = await invocarPost(apu, "/api/apu/importar", { filas: [{ descripcion: EXC, unidad: "m3", cantidad: 10 }, { descripcion: "Relleno con material seleccionado compactado", unidad: "m3", cantidad: 4 }], departamento: "ANTIOQUIA" }, CAB_TOKEN);
+        assert.strictEqual(imp.status, 200, JSON.stringify(imp.cuerpo).slice(0, 200));
+        const itemsR = imp.cuerpo.filas.map((f) => f.entrada_calculo);
+        assert.ok(itemsR.every((it) => it && it.item_id && !/^LOC-/.test(it.item_id) && it.descripcion), "los ítems del editor traen el código de su banco de precios, no el del lector: " + itemsR.map((it) => it && it.item_id).join(","));
+        const sinRefDe = (it) => { const c = { ...it }; delete c.referencia_entidades; return c; };
+        const calcular = (extra, cab = CAB_TOKEN) => invocarPost(apu, "/api/apu/calcular", { items: itemsR, departamento: "ANTIOQUIA", config: cfgBase, ...extra }, cab);
+        const excDe = (r) => r.cuerpo.items.find((it) => it.descripcion === EXC).referencia_entidades;
+        try {
+          await Rm.set("seguimiento:helder", guardados([...idsR, "CO1.REQ.REF6"]));
+          await Rm.set("seguimiento:genesis", JSON.stringify({ procesos: {} }));
+          for (let i = 0; i < idsR.length; i++) {
+            await Alm.escribirJSONComprimido(Rm, DocsR.claveDocs(idsR[i]), { indice: null, leidos: {}, ilegibles: {},
+              formularios: { 7: { publicable: true, version: DocsR.VERSION, fecha_carga: `2026-10-0${i + 1}`, leido_el: `2026-10-0${i + 1}T10:00:00Z` } } });
+            await Alm.escribirJSONComprimido(Rm, DocsR.claveF1(idsR[i], "7"), { nombre: "F1.xlsx", hoja: "P", total: 1, filas: [
+              { descripcion: "EXCAVACION MANUAL EN MATERIAL COMUN", unidad: "M3", cantidad: 10, precio_archivo: preciosR[i], total_archivo: preciosR[i] * 10 },
+              { descripcion: "Localización y replanteo", unidad: "m2", cantidad: 5, precio_archivo: 1000 + i, total_archivo: (1000 + i) * 5 },
+            ] }, { ttl: 600 });
+          }
+          apu.olvidarReferenciaEntidades();
+          // la línea base CON credencial: el perfil «genesis» no tiene procesos guardados
+          const base = await calcular({ perfil_procesos: "genesis" });
+          assert.strictEqual(base.status, 200, JSON.stringify(base.cuerpo).slice(0, 200));
+          assert.ok(base.cuerpo.resumen.costo_directo_total > 0, "la prueba compara un presupuesto con costo, no dos de $0");
+          assert.deepStrictEqual(base.cuerpo.items.map((it) => it.referencia_entidades.procesos), [0, 0], "los procesos son los del perfil que se pide, no los de «helder»");
+
+          // con los procesos de «helder» y cotizando REF4 (escrito en minúsculas, como lo teclearía el usuario)
+          const conRef = await calcular({ perfil_procesos: "helder", id_proceso: "co1.req.ref4" });
+          assert.strictEqual(conRef.status, 200);
+          assert.deepStrictEqual(excDe(conRef), { hay: true, unidad: "m3", precio: 25000, desde: 20000, hasta: 30000, procesos: 3, ids: ["CO1.REQ.REF1", "CO1.REQ.REF5", "CO1.REQ.REF2", "CO1.REQ.REF3"] },
+            "la mediana de TRES obras (REF1 y REF5 son la misma), SIN la que se cotiza (REF4)");
+          assert.strictEqual(conRef.cuerpo.items.find((it) => it.descripcion !== EXC).referencia_entidades.hay, false, "el relleno no está en ningún Formulario");
+          assert.strictEqual(conRef.cuerpo.referencia_entidades.consultada, true);
+          assert.deepStrictEqual([conRef.cuerpo.referencia_entidades.procesos_con_formulario, conRef.cuerpo.referencia_entidades.obras_con_formulario, conRef.cuerpo.referencia_entidades.pendientes], [5, 4, 0]);
+          // NINGUNA cifra del cálculo cambia: resumen e ítems idénticos a la línea base
+          assert.deepStrictEqual(conRef.cuerpo.resumen, base.cuerpo.resumen, "la referencia no toca el presupuesto");
+          assert.deepStrictEqual(conRef.cuerpo.items.map(sinRefDe), base.cuerpo.items.map(sinRefDe), "ni un ítem cambia");
+          // cotizar una publicación saca su obra ENTERA: REF5 es la obra de REF1, y quedan REF2, REF3 y REF4
+          assert.deepStrictEqual(excDe(await calcular({ perfil_procesos: "helder", id_proceso: "CO1.REQ.REF5" })), { hay: true, unidad: "m3", precio: 26000, desde: 25000, hasta: 30000, procesos: 3, ids: ["CO1.REQ.REF2", "CO1.REQ.REF3", "CO1.REQ.REF4"] });
+          // …también cuando la publicación que se cotiza no tiene Formulario y su gemela sí (REF6 → la obra de REF2)
+          assert.deepStrictEqual(excDe(await calcular({ perfil_procesos: "helder", id_proceso: "CO1.REQ.REF6" })), { hay: true, unidad: "m3", precio: 26000, desde: 20000, hasta: 30000, procesos: 3, ids: ["CO1.REQ.REF1", "CO1.REQ.REF5", "CO1.REQ.REF3", "CO1.REQ.REF4"] });
+          // sin `perfil_procesos` (una llamada a mano), el `perfil` de siempre: «helder» por defecto
+          assert.strictEqual(excDe(await calcular({})).procesos, 4);
+          // QUITAR un proceso se nota en la consulta SIGUIENTE, sin esperar a ninguna caché
+          await Rm.set("seguimiento:helder", guardados(["CO1.REQ.REF1", "CO1.REQ.REF4"]));
+          const tras = excDe(await calcular({ perfil_procesos: "helder", id_proceso: "CO1.REQ.REF4" }));
+          assert.deepStrictEqual([tras.hay, tras.procesos], [false, 1], JSON.stringify(tras));
+          // un perfil de forma inválida no lee nada y lo dice
+          const malo = await calcular({ perfil_procesos: "../helder" });
+          assert.deepStrictEqual([malo.status, malo.cuerpo.referencia_entidades.consultada, /no se reconoce/.test(malo.cuerpo.referencia_entidades.motivo)], [200, false, true]);
+          // sin credencial no sale: qué procesos guardó el dueño es dato del perfil
+          const publico = await calcular({ perfil_procesos: "helder" }, {});
+          assert.strictEqual(publico.status, 200);
+          assert.strictEqual(publico.cuerpo.referencia_entidades.consultada, false);
+          assert.ok(publico.cuerpo.items.every((it) => !Object.prototype.hasOwnProperty.call(it, "referencia_entidades")), "sin credencial no viaja");
+          // una base que no responde NO es «ninguno»: se declara `fallo` y los ítems salen intactos
+          apu.olvidarReferenciaEntidades();
+          const caida = { get: async () => { throw new Error("ERR simulado"); }, mget: async () => { throw new Error("ERR simulado"); } };
+          const itemsCaida = [{ item_id: "IDU:4390", descripcion: EXC, unidad: "m3", costo_total: 1 }];
+          const rc = await apu.conReferenciaDeEntidades(caida, "helder", itemsCaida, { conCredencial: true, excluir: null });
+          assert.strictEqual(rc.resumen.consultada, false);
+          assert.strictEqual(rc.resumen.fallo, true);
+          assert.ok(/no se pudieron leer/.test(rc.resumen.motivo), rc.resumen.motivo);
+          assert.strictEqual(rc.items, itemsCaida, "los ítems salen tal cual, sin una referencia inventada");
+          const fApp = require("fs").readFileSync(require("path").join(__dirname, "..", "public", "app.js"), "utf8");
+          assert.ok(/refEnt\.fallo[\s\S]{0,200}no se pudieron leer los presupuestos de sus procesos guardados/.test(fApp), "la pantalla lo dice al calcular");
+        } finally {
+          for (const p of ["helder", "genesis"]) { if (segAntes[p] == null) await Rm.del(`seguimiento:${p}`); else await Rm.set(`seguimiento:${p}`, segAntes[p]); }
+          for (const id of idsR) { await Rm.del(DocsR.claveDocs(id)); await Rm.del(DocsR.claveF1(id, "7")); }
+          apu.olvidarReferenciaEntidades();
+        }
+      }
       {
         const r = calc.cuerpo;
         let sumaTotales = 0;
