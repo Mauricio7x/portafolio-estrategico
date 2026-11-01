@@ -4976,7 +4976,8 @@ async function main() {
       {
         const DocsH = require("../lib/handlers/pliego/documentos.js"), consultarAntes = DocsH.consultarIndice;
         let portafolioDoc = P;
-        DocsH.consultarIndice = async () => ({ ok: true, indice: { id_del_portafolio: portafolioDoc, archivos: [{ tipo: "informe_evaluacion", nombre: "Informe definitivo.pdf", legible: true, extension: "pdf", url: "https://example.invalid/informe.pdf", id_documento: "1", fecha_carga: "2026-09-01" }] } });
+        let opcionesIndice = null;   // con qué opciones pide el índice la evaluación (1-nov-2026: sin leer el corpus)
+        DocsH.consultarIndice = async (r_, id_, opc) => (opcionesIndice = opc || {}, { ok: true, indice: { id_del_portafolio: portafolioDoc, archivos: [{ tipo: "informe_evaluacion", nombre: "Informe definitivo.pdf", legible: true, extension: "pdf", url: "https://example.invalid/informe.pdf", id_documento: "1", fecha_carga: "2026-09-01" }] } });
         console.error = () => {};
         try {
           // P tiene su captura (la pregunta es la captura); CO1.BDOS.88800004 tiene su texto en cola y no la tiene (la pregunta es su texto)
@@ -4986,6 +4987,7 @@ async function main() {
             portafolioDoc = pf;
             const sanoD = await invocar(APIp, `/api/pliego?op=evaluacion&documento=1&id_proceso=${ID}`, CAB_TOKEN);
             assert.ok(sanoD.status === 200 && premisa(sanoD.cuerpo), `premisa (${pf}): con la base sana se dice qué tiene → ${JSON.stringify(sanoD.cuerpo).slice(0, 200)}`);
+            assert.strictEqual(opcionesIndice && opcionesIndice.sinCorpus, true, "el documento de un proceso adjudicado se busca sin leer el corpus del año (la llave sale de p6dx)");
             upstash.romper((cmd) => (roto(cmd) ? LIMITE : null));
             const rD = await invocar(APIp, `/api/pliego?op=evaluacion&documento=1&id_proceso=${ID}`, CAB_TOKEN);
             upstash.romper(null);
@@ -5013,6 +5015,182 @@ async function main() {
       assert.deepStrictEqual(paginasParaOcr([2, 4], largos, 30), { lista: [2, 4], sinCupo: [] }, "con cupo de sobra entran todas");
     }
     console.log("· unidad evaluaciones: cifras a la colombiana y a la inglesa, la cifra completa en su cita, el oferente en su cita, el estado con respaldo, los hechos solo con lo verificado y el handler real (texto → pendiente → expediente → captura verificada → hechos por nombre y por NIT)");
+  }
+
+  /* unidad: la cuota de Upstash (1-nov-2026). En octubre lo programado gastó unos 11 GB de los 10 gratis: el vigilante
+     de la mañana pedía el diagnóstico ENTERO (108 MB) para leer una cifra, y el lector de evaluaciones leía el corpus
+     del año para sacar las entidades de Mis procesos y la llave de un proceso adjudicado. Se ejecutan los manejadores
+     reales contra un Upstash falso propio; `espiar` usa `romper` sin romper nada, para anotar qué claves pesadas
+     (chunks del corpus o del histórico, índices) se tocan. */
+  bqCuota: { if (!corre("unidad cuota de Upstash")) break bqCuota;
+    const mockQ = crearMockUpstash();
+    const puertoQ = await escuchar(mockQ.server);
+    const urlSuiteQ = process.env.UPSTASH_REDIS_REST_URL;
+    process.env.UPSTASH_REDIS_REST_URL = `http://127.0.0.1:${puertoQ}`;
+    try {
+      const rQ = crearRedis({});
+      const { escribirChunks, escribirJSON: escribirQ } = require("../lib/almacen.js");
+      const seguimientoQ = require("../lib/handlers/perfil/seguimiento.js");
+      const tamano = () => invocar(diagnostico, "/api/diagnostico?perfil=helder&solo=tamano", CAB_TOKEN);
+      const entero = () => invocar(diagnostico, "/api/diagnostico?perfil=helder&muestra=1", CAB_TOKEN);
+      const pesados = [];
+      const espiar = () => { pesados.length = 0; mockQ.romper((cmd) => { const op = String(cmd[0]).toUpperCase(); if (op !== "SCAN" && cmd.slice(1).some((x) => /^licitaciones:(activo|historico):|^indice:/.test(String(x)))) pesados.push(`${op} ${String(cmd[1]).slice(0, 50)}`); return null; }); };
+      const fila = (id, dia, mes = "2026-10") => ({ id_del_proceso: id, _k: id, entidad: "ALCALDÍA DE PRUEBA", nit_entidad: "800000001", fecha_de_publicacion_del: `${mes}-${dia}T00:00:00.000` });
+
+      // (1) sin ningún chunk el corpus está vacío: ese 0 es un dato, y es la alarma que busca el vigilante
+      const antes0 = mockQ.peticiones();
+      const v0 = await tamano();
+      const comandos0 = mockQ.peticiones() - antes0;
+      assert.ok(v0.status === 200 && v0.cuerpo.total_activo === 0 && v0.cuerpo.fuente === "sin_corpus", `corpus vacío: ${JSON.stringify(v0.cuerpo).slice(0, 200)}`);
+      assert.ok(comandos0 <= 2, `el corpus vacío no gasta más que la meta y el SCAN: ${comandos0} comandos`);
+      assert.strictEqual((await invocar(diagnostico, "/api/diagnostico?solo=tamano")).status, 401, "sin la llave no hay tamaño");
+
+      // (2) con corpus y sin conteo guardado se lee el corpus, y el conteo queda guardado con su sello
+      await escribirChunks(rQ, (i) => CLAVES.chunk("2026-10", i), 0, [fila("CO1.REQ.Q1", "01"), fila("CO1.REQ.Q2", "02"), fila("CO1.REQ.Q3", "03"), fila("CO1.REQ.Q4", "04"), fila("CO1.REQ.Q5", "05"), fila("CO1.REQ.Q1", "01")]);
+      await escribirQ(rQ, CLAVES.meta, { last_sync: "2026-11-01T01:00:00.000Z", last_full: "2026-10-01T00:00:00.000Z" });
+      const v1 = await tamano();
+      assert.ok(v1.status === 200 && v1.cuerpo.fuente === "corpus" && v1.cuerpo.total_activo === 5, `se cuenta el corpus, por procesos únicos: ${JSON.stringify(v1.cuerpo).slice(0, 200)}`);
+      const e1 = await entero();
+      assert.strictEqual(v1.cuerpo.total_activo, e1.cuerpo.embudo.total_activo, "la misma cifra que `embudo.total_activo` del diagnóstico entero");
+      const g1 = JSON.parse(await rQ.get(CLAVES.conteoCorpus));
+      assert.ok(g1 && g1.filas === 5 && g1.sello === "2026-11-01T01:00:00.000Z|2026-10-01T00:00:00.000Z|1", `el conteo queda guardado con el sello del corpus contado: ${JSON.stringify(g1)}`);
+
+      // (3) con el conteo del corpus de hoy no se toca ni un chunk, ni el histórico, ni un índice
+      espiar();
+      const v2 = await tamano();
+      mockQ.romper(null);
+      assert.ok(v2.cuerpo.fuente === "conteo_guardado" && v2.cuerpo.total_activo === 5 && !pesados.length, `${JSON.stringify(v2.cuerpo).slice(0, 200)} · tocó: ${pesados.join(", ")}`);
+      espiar();
+      await entero();
+      mockQ.romper(null);
+      assert.ok(pesados.some((x) => /^MGET licitaciones:activo/.test(x)), `premisa: el diagnóstico entero sí baja los chunks (${pesados.slice(0, 3).join(", ")})`);
+
+      // (4) el sello cambia con otra sincronización y con otro número de chunks: el conteo viejo ya no vale
+      await escribirQ(rQ, CLAVES.meta, { last_sync: "2026-11-01T13:00:00.000Z", last_full: "2026-10-01T00:00:00.000Z" });
+      const v3 = await tamano();
+      assert.ok(v3.cuerpo.fuente === "corpus" && v3.cuerpo.total_activo === 5, `otra sincronización: se vuelve a contar (${JSON.stringify(v3.cuerpo).slice(0, 160)})`);
+      await escribirChunks(rQ, (i) => CLAVES.chunk("2026-11", i), 0, [fila("CO1.REQ.Q9", "01", "2026-11")]);
+      const v4 = await tamano();
+      assert.ok(v4.cuerpo.fuente === "corpus" && v4.cuerpo.total_activo === 6, `un chunk más con la misma meta: se vuelve a contar (${JSON.stringify(v4.cuerpo).slice(0, 160)})`);
+      // con el sello de hoy pero un conteo ilegible, se cuenta: un conteo que no se lee no es un cero
+      const selloHoy = JSON.parse(await rQ.get(CLAVES.conteoCorpus)).sello;
+      for (const malo of [{ sello: selloHoy, filas: "seis" }, { sello: selloHoy, filas: "6" }, { sello: selloHoy, filas: 2.5 }, { sello: selloHoy, filas: -1 }, { sello: selloHoy }]) {
+        await rQ.set(CLAVES.conteoCorpus, JSON.stringify(malo));
+        const v5 = await tamano();
+        assert.ok(v5.cuerpo.fuente === "corpus" && v5.cuerpo.total_activo === 6, `conteo ilegible ${JSON.stringify(malo)}: se cuenta (${JSON.stringify(v5.cuerpo).slice(0, 160)})`);
+      }
+
+      // (4 bis) quien lee el corpus de Redis deja el conteo (la sincronización, al rehacer la portada, y la lista en frío)
+      const listarQ = require("../lib/handlers/procesos/listar.js");
+      await escribirQ(rQ, CLAVES.meta, { last_sync: "2026-11-01T14:00:00.000Z", last_full: "2026-10-01T00:00:00.000Z" });
+      await rQ.del(CLAVES.conteoCorpus);
+      const filasL = await listarQ.cargarCorpus(rQ, JSON.parse(await rQ.get(CLAVES.meta)));
+      const g2 = JSON.parse(await rQ.get(CLAVES.conteoCorpus));
+      assert.ok(filasL.length === 6 && g2 && g2.filas === 6 && g2.sello === "2026-11-01T14:00:00.000Z|2026-10-01T00:00:00.000Z|2", `cargarCorpus deja el conteo con su sello: ${JSON.stringify(g2)}`);
+      // …y si la instancia ya lo tenía en memoria (cargarCorpus no escribe), el tamaño lo deja guardado para la próxima
+      await rQ.del(CLAVES.conteoCorpus);
+      const v6 = await tamano();
+      const v7 = await tamano();
+      assert.ok(v6.cuerpo.fuente === "corpus" && v7.cuerpo.fuente === "conteo_guardado" && v7.cuerpo.total_activo === 6, `con el corpus en memoria, el conteo queda guardado: ${v6.cuerpo.fuente} → ${v7.cuerpo.fuente}`);
+      // una escritura del conteo que falla no tumba la lectura: es un atajo, no un dato
+      await escribirQ(rQ, CLAVES.meta, { last_sync: "2026-11-01T15:00:00.000Z", last_full: "2026-10-01T00:00:00.000Z" });
+      mockQ.romper((cmd) => (String(cmd[0]).toUpperCase() === "SET" && cmd[1] === CLAVES.conteoCorpus ? "ERR simulado: no cabe" : null));
+      const v8 = await tamano();
+      const lista8 = await listarQ.cargarCorpus(rQ, JSON.parse(await rQ.get(CLAVES.meta)));
+      mockQ.romper(null);
+      assert.ok(v8.status === 200 && v8.cuerpo.fuente === "corpus" && v8.cuerpo.total_activo === 6 && lista8.length === 6, `sin poder guardar el conteo, se cuenta igual: ${v8.status} ${JSON.stringify(v8.cuerpo).slice(0, 160)}`);
+
+      // (4 ter) con el mismo sello, el conteo tampoco vale con una carga completa en curso (reescribe los meses en su sitio y
+      // mueve la meta al terminar), con un progreso que no se lee, ni con un delta escrito después de contar (revisión adversaria)
+      await tamano();   // la prueba de arriba dejó sin guardar el conteo de esta meta: esta llamada lo cuenta y lo guarda
+      const vOk = await tamano();
+      assert.strictEqual(vOk.cuerpo.fuente, "conteo_guardado", "premisa: el conteo de hoy vale");
+      for (const [que, progreso] of [["una carga completa en curso", JSON.stringify({ tipo: "full", terminado: false, mesIdx: 3 })], ["un progreso ilegible", "{roto"]]) {
+        await rQ.set(CLAVES.progreso, progreso);
+        const vP = await tamano();
+        assert.ok(vP.cuerpo.fuente === "corpus" && vP.cuerpo.total_activo === 6, `con ${que}, se cuenta el corpus (${JSON.stringify(vP.cuerpo).slice(0, 160)})`);
+      }
+      await rQ.set(CLAVES.progreso, JSON.stringify({ tipo: "full", terminado: true }));
+      assert.strictEqual((await tamano()).cuerpo.fuente, "conteo_guardado", "con la carga completa terminada, el conteo vuelve a valer");
+      const metaHoy = JSON.parse(await rQ.get(CLAVES.meta));
+      const contadoEl = JSON.parse(await rQ.get(CLAVES.conteoCorpus)).medido;
+      await escribirQ(rQ, CLAVES.meta, { ...metaHoy, ultimo_delta: { ts: new Date(Date.parse(contadoEl) + 1).toISOString(), guardadas: 3 } });
+      await new Promise((r) => setTimeout(r, 10));   // el recuento de abajo queda después del delta
+      const vD = await tamano();
+      assert.ok(vD.cuerpo.fuente === "corpus", `un delta escrito después de contar (cortado: no mueve last_sync) invalida el conteo (${JSON.stringify(vD.cuerpo).slice(0, 160)})`);
+      assert.strictEqual((await tamano()).cuerpo.fuente, "conteo_guardado", "y el conteo nuevo, posterior al delta, vale");
+      await escribirQ(rQ, CLAVES.meta, { ...metaHoy, ultimo_delta: { ts: "ayer", guardadas: 3 } });
+      assert.strictEqual((await tamano()).cuerpo.fuente, "corpus", "con la fecha del último delta ilegible no se sabe si vino después: se cuenta");
+      await escribirQ(rQ, CLAVES.meta, metaHoy);
+
+      // (5) la base caída es un error, nunca un cero; y otro valor de `solo` es inerte: el diagnóstico entero
+      for (const [que, roto] of [["la meta, el progreso y el conteo", (cmd) => String(cmd[0]).toUpperCase() === "MGET" && cmd.includes(CLAVES.conteoCorpus)], ["el SCAN", (cmd) => String(cmd[0]).toUpperCase() === "SCAN"]]) {
+        mockQ.romper((cmd) => (roto(cmd) ? "ERR simulado: la base no respondió" : null));
+        const vR = await tamano();
+        mockQ.romper(null);
+        assert.ok(vR.status === 502 && vR.cuerpo.ok === false && vR.cuerpo.total_activo === undefined, `sin ${que}, el tamaño es un error y no un número: ${vR.status} ${JSON.stringify(vR.cuerpo).slice(0, 160)}`);
+      }
+      const vO = await invocar(diagnostico, "/api/diagnostico?perfil=helder&muestra=1&solo=otra", CAB_TOKEN);
+      assert.ok(vO.status === 200 && vO.cuerpo.embudo && vO.cuerpo.embudo.total_activo === 6, "otro valor de `solo` da el diagnóstico entero");
+
+      // (6) las entidades de Mis procesos salen de la foto guardada, sin el corpus
+      await escribirQ(rQ, "seguimiento:pruebacuota", { procesos: {
+        "CO1.REQ.Q1": { foto: { entidad: "ALCALDÍA DE PRUEBA", nit_entidad: "800000001" } },
+        "CO1.REQ.Q2": { foto: { entidad: " ALCALDÍA DE PRUEBA ", nit_entidad: "800000001" } },
+        "CO1.REQ.Q3": { foto: { entidad: "GOBERNACIÓN DE PRUEBA", nit_entidad: null } },
+        "CO1.REQ.Q4": { foto: null },
+        "CO1.REQ.Q5": { foto: { entidad: "", nit_entidad: "1" } } } });
+      espiar();
+      const s1 = await invocar(seguimientoQ, "/api/perfil?op=seguimiento&perfil=pruebacuota&solo=entidades", CAB_TOKEN);
+      mockQ.romper(null);
+      assert.ok(s1.status === 200 && !pesados.length, `la vista ligera no toca el corpus: ${s1.status} · ${pesados.join(", ")}`);
+      assert.deepStrictEqual(s1.cuerpo.entidades, [{ entidad: "ALCALDÍA DE PRUEBA", nit: "800000001" }, { entidad: "GOBERNACIÓN DE PRUEBA", nit: null }], "una vez cada entidad, con su NIT");
+      assert.ok(s1.cuerpo.guardados === 5 && s1.cuerpo.sin_foto === 2, `cuántos procesos no traen la entidad en su foto: ${JSON.stringify(s1.cuerpo).slice(0, 200)}`);
+      assert.strictEqual((await invocar(seguimientoQ, "/api/perfil?op=seguimiento&perfil=pruebacuota&solo=entidades")).status, 401, "sin la llave no hay entidades");
+      const sO = await invocar(seguimientoQ, "/api/perfil?op=seguimiento&perfil=pruebacuota&solo=otra", CAB_TOKEN);
+      assert.ok(sO.status === 200 && Array.isArray(sO.cuerpo.procesos) && sO.cuerpo.procesos.length === 5 && !sO.cuerpo.entidades, "otro valor de `solo` da la lista de siempre");
+
+      // (6 bis) en el ORDEN de la lista entera: primero la entidad del proceso abierto que cierra antes (el lector para en su cupo)
+      const enDias = (d) => new Date(Date.now() + d * 86400e3).toISOString().slice(0, 19);
+      await escribirQ(rQ, "seguimiento:pruebaorden", { procesos: {
+        "CO1.REQ.W1": { foto: { entidad: "ALCALDÍA VIEJA A", nit_entidad: "1", fecha_cierre: enDias(-40) }, actualizado: "2026-09-01T00:00:00.000Z" },
+        "CO1.REQ.W2": { foto: { entidad: "ALCALDÍA VIEJA B", nit_entidad: "2", fecha_cierre: enDias(-30) }, actualizado: "2026-10-01T00:00:00.000Z" },
+        "CO1.REQ.W3": { foto: { entidad: "GOBERNACIÓN QUE CIERRA EL MARTES", nit_entidad: "3", fecha_cierre: enDias(5) } },
+        "CO1.REQ.W4": { foto: { entidad: "ENTIDAD QUE CIERRA MAÑANA", nit_entidad: "4", fecha_cierre: enDias(1) } } } });
+      const oL = await invocar(seguimientoQ, "/api/perfil?op=seguimiento&perfil=pruebaorden&solo=entidades", CAB_TOKEN);
+      const oE = await invocar(seguimientoQ, "/api/perfil?op=seguimiento&perfil=pruebaorden", CAB_TOKEN);
+      const nombresDe = (r) => require("./capturar_evaluaciones.js").entidadesDeRespuesta(r.cuerpo).lista.map((x) => x.entidad);
+      assert.deepStrictEqual(nombresDe(oL), nombresDe(oE), "la vista ligera da las entidades en el orden de la lista entera");
+      assert.deepStrictEqual(nombresDe(oL), ["ENTIDAD QUE CIERRA MAÑANA", "GOBERNACIÓN QUE CIERRA EL MARTES", "ALCALDÍA VIEJA B", "ALCALDÍA VIEJA A"], "lo abierto que cierra antes, y después lo cerrado más reciente");
+
+      // (7) el lector de la madrugada: la vista ligera si basta, la lista entera si queda corta o el servidor no la conoce
+      const L = require("./capturar_evaluaciones.js");
+      assert.deepStrictEqual(L.entidadesDeRespuesta(s1.cuerpo), { lista: s1.cuerpo.entidades, incompleta: true }, "con procesos sin foto, la vista ligera queda corta");
+      assert.strictEqual(L.entidadesDeRespuesta({ entidades: [{ entidad: "X", nit: "1" }], sin_foto: 0 }).incompleta, false);
+      assert.strictEqual(L.entidadesDeRespuesta({ entidades: [{ entidad: "X", nit: "1" }] }).incompleta, true, "si no dice cuántos faltan, no se da por completa");
+      assert.deepStrictEqual(L.entidadesDeRespuesta({ procesos: [{ proceso: { entidad: "X", nit_entidad: "1" } }, { proceso: { entidad: "X", nit_entidad: "1" } }, { proceso: { entidad: "Y" } }] }),
+        { lista: [{ entidad: "X", nit: "1" }, { entidad: "Y", nit: null }], incompleta: false }, "la lista de siempre (un servidor sin la vista ligera) también sirve");
+      assert.strictEqual(L.entidadesDeRespuesta(null), null);
+      assert.strictEqual(L.entidadesDeRespuesta({ ok: false, error: "x" }), null);
+      const pedidas = [];
+      const falso = (respuestas) => async (ruta) => { pedidas.push(ruta); return respuestas.shift(); };
+      let m = await L.entidadesDeMisProcesos("helder", { pedirA: falso([{ status: 200, j: { ok: true, entidades: [{ entidad: "X", nit: "1" }], sin_foto: 0 } }]) });
+      assert.ok(pedidas.length === 1 && /&solo=entidades$/.test(pedidas[0]) && m.lista.length === 1, `la vista ligera basta: ${pedidas.join(" · ")}`);
+      pedidas.length = 0;
+      m = await L.entidadesDeMisProcesos("helder", { pedirA: falso([{ status: 200, j: { ok: true, entidades: [{ entidad: "X", nit: "1" }], sin_foto: 2 } }, { status: 200, j: { ok: true, procesos: [{ proceso: { entidad: "X", nit_entidad: "1" } }, { proceso: { entidad: "Y", nit_entidad: "2" } }] } }]) });
+      assert.ok(pedidas.length === 2 && !/solo=/.test(pedidas[1]) && m.lista.length === 2, `corta: se pide la lista entera (${pedidas.join(" · ")})`);
+      pedidas.length = 0;
+      m = await L.entidadesDeMisProcesos("helder", { pedirA: falso([{ status: 200, j: { ok: true, procesos: [{ proceso: { entidad: "X", nit_entidad: "1" } }] } }]) });
+      assert.ok(pedidas.length === 1 && m.lista.length === 1, "un servidor que no conoce la vista ligera responde la lista entera, y basta");
+      assert.deepStrictEqual(await L.entidadesDeMisProcesos("helder", { pedirA: falso([{ status: 503, j: { ok: false, error: "Redis: Upstash no respondió" } }]) }), { caida: true }, "la base caída se dice");
+      assert.deepStrictEqual(await L.entidadesDeMisProcesos("helder", { pedirA: falso([{ status: 200, j: { ok: true, entidades: [], sin_foto: 1 } }, { status: 503, j: { ok: false, error: "Redis: Upstash no respondió" } }]) }), { caida: true }, "también en la segunda petición");
+      await assert.rejects(L.entidadesDeMisProcesos("helder", { pedirA: falso([{ status: 401, j: { ok: false, error: "Token inválido" } }]) }), /401/, "una llave rechazada es un fallo, no una lista vacía");
+      console.log("· unidad cuota de Upstash: el tamaño del vigilante sale del conteo guardado con el sello del corpus (sin chunks, histórico ni índices), se recuenta cuando el sello cambia, la base caída es 502; las entidades de Mis procesos salen de la foto guardada y el lector pide la lista entera solo si queda corta");
+    } finally {
+      mockQ.romper(null);
+      process.env.UPSTASH_REDIS_REST_URL = urlSuiteQ;
+      mockQ.server.close();
+    }
   }
 
   /* unidad: el corte de la alerta de precio artificialmente bajo, por modalidad (18-oct-2026).
@@ -26875,6 +27053,27 @@ async function main() {
             const despuesP6dx = llamadasD.filter((u) => /p6dx-8zbt/.test(u) && /id_del_portafolio/.test(u)).length;
             assert.strictEqual(despuesP6dx, antesP6dx, `leer los documentos de un proceso cuyo registro trae la llave no puede consultar p6dx: ${despuesP6dx - antesP6dx} consulta(s)`);
             assert.ok(llamadasD.some((u) => /dmgg-8hin/.test(u) && u.includes(`proceso='${llavesD.get(filaConLlave.id_del_proceso)}'`)), "y el índice de archivos se pide con esa misma llave");
+          }
+          /* ═══ LA EVALUACIÓN DE UN PROCESO ADJUDICADO NO LEE EL CORPUS (1-nov-2026) ═══
+             `consultarIndice(…, { sinCorpus: true })`, que pide op=evaluacion&documento=1: la llave y las fechas salen de
+             p6dx. Buscar la fila en el corpus del año costaba leerlo entero (unos 22 MB de Upstash) en cada instancia
+             fría. `romper` aquí no rompe nada: anota los comandos que tocan los chunks del corpus (el SCAN corre aunque la
+             instancia lo tenga en memoria, así que la vía de siempre deja rastro). */
+          {
+            const DocsQ = require("../lib/handlers/pliego/documentos.js");
+            const tocados = [];
+            upstash.romper((cmd) => { if (cmd.slice(1).some((x) => /^licitaciones:activo:.*:chunk:/.test(String(x)))) tocados.push(String(cmd[0])); return null; });
+            let rS, rC, conSin;
+            try {
+              rS = await DocsQ.consultarIndice(redis, idD, { sinCorpus: true });
+              conSin = tocados.length;
+              rC = await DocsQ.consultarIndice(redis, idD);
+            } finally { upstash.romper(null); }
+            assert.strictEqual(conSin, 0, `sin corpus no se toca ni un chunk del corpus: ${tocados.slice(0, 3).join(", ")}`);
+            assert.ok(tocados.length > 0, "premisa: la vía de siempre sí busca la fila en el corpus");
+            assert.ok(rS.ok && rS.indice.id_del_portafolio === "CO1.BDOS.999" && rS.indice.id_del_portafolio_desde === "p6dx", `la llave sale de p6dx: ${JSON.stringify(rS).slice(0, 200)}`);
+            assert.ok(rS.indice.cierre_usado, "y el cierre, de la fila de p6dx");
+            assert.deepStrictEqual(rS.indice.archivos.map((x) => x.id_documento), rC.indice.archivos.map((x) => x.id_documento), "el mismo índice de archivos por las dos vías");
           }
           const nRed = llamadasD.length;
           const i2 = await invocar(routerPliegoD, `/api/pliego?op=documentos&${qD}`, CAB_TOKEN);

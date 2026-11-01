@@ -159,17 +159,37 @@ async function bajar(url) {
   throw new Error("el documento no terminó de llegar en 60 trozos");
 }
 
-async function entidadesDeMisProcesos(perfil) {
-  const r = await pedir(`/api/perfil?op=seguimiento&perfil=${encodeURIComponent(perfil)}`);
-  if (baseCaida(r)) return { caida: true };
-  if (!r.j || !Array.isArray(r.j.procesos)) throw new Error(`Mis procesos de «${perfil}»: ${r.status} ${JSON.stringify(r.j || r.texto).slice(0, 160)}`);
+/* Las entidades de una respuesta de Mis procesos, en las dos formas: la vista ligera (`solo=entidades`, 1-nov-2026),
+   que sale de la foto guardada de cada proceso sin leer el corpus del año, y la lista entera de siempre (lo que
+   responde un servidor que no conoce la vista ligera: un `solo` desconocido es inerte). `incompleta`: la vista
+   ligera no trae la entidad de algún proceso guardado (o no dice cuántos), y hay que pedir la lista entera. */
+function entidadesDeRespuesta(j) {
+  if (!j || typeof j !== "object") return null;
   const vistas = new Map();
-  for (const p of r.j.procesos) {
-    const q = p && p.proceso;
-    const entidad = q && String(q.entidad || "").trim(), nit = q && String(q.nit_entidad || "").trim();
-    if (entidad && !vistas.has(`${entidad}|${nit}`)) vistas.set(`${entidad}|${nit}`, { entidad, nit: nit || null });
+  const sumar = (entidad, nit) => { if (entidad && !vistas.has(`${entidad}|${nit}`)) vistas.set(`${entidad}|${nit}`, { entidad, nit: nit || null }); };
+  if (Array.isArray(j.entidades)) {
+    for (const e of j.entidades) sumar(e && String(e.entidad || "").trim(), e && String(e.nit || "").trim());
+    return { lista: [...vistas.values()], incompleta: j.sin_foto !== 0 };
   }
-  return { lista: [...vistas.values()] };
+  if (!Array.isArray(j.procesos)) return null;
+  for (const p of j.procesos) {
+    const q = p && p.proceso;
+    sumar(q && String(q.entidad || "").trim(), q && String(q.nit_entidad || "").trim());
+  }
+  return { lista: [...vistas.values()], incompleta: false };
+}
+async function entidadesDeMisProcesos(perfil, { pedirA = pedir } = {}) {
+  const ruta = `/api/perfil?op=seguimiento&perfil=${encodeURIComponent(perfil)}`;
+  let r = await pedirA(`${ruta}&solo=entidades`);
+  if (baseCaida(r)) return { caida: true };
+  let e = r.status === 200 ? entidadesDeRespuesta(r.j) : null;
+  if (e && e.incompleta) {
+    r = await pedirA(ruta);
+    if (baseCaida(r)) return { caida: true };
+    e = r.status === 200 ? entidadesDeRespuesta(r.j) : null;
+  }
+  if (!e || e.incompleta) throw new Error(`Mis procesos de «${perfil}»: ${r.status} ${JSON.stringify(r.j || r.texto).slice(0, 160)}`);
+  return { lista: e.lista };
 }
 
 async function principal() {
@@ -262,5 +282,5 @@ async function principal() {
   }
 }
 
-module.exports = { argumentos, util, reenviarAProduccion, servirPublic, baseCaida, llaveRechazada, cabenEnElCupo, candidatosDe, procesosDeLaEntidad };
+module.exports = { argumentos, util, reenviarAProduccion, servirPublic, baseCaida, llaveRechazada, cabenEnElCupo, candidatosDe, procesosDeLaEntidad, entidadesDeRespuesta, entidadesDeMisProcesos };
 if (require.main === module) principal().catch((e) => { console.log("FALLO:", String((e && e.message) || e).slice(0, 300)); console.log("RESUMEN", JSON.stringify({ fallo: true })); process.exitCode = 1; });
