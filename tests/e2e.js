@@ -18174,9 +18174,12 @@ async function main() {
       const { tuteoEn } = require("../lib/lenguaje_pantalla.js");
       assert.strictEqual(tuteoEn(textoLlena + " " + parcial), null, "la frase va de usted");
     }
-    /* «CALCULAR» DICE DE QUÉ PERFIL SON LOS PROCESOS (revisión del 1-nov-2026): sin el campo, el
-       servidor leía los de «helder» trabajando con otro perfil. Se EJECUTA `calcularApu` tal como
-       está en public/app.js y se mira el cuerpo que manda; y el aviso de lo pendiente, de usted. */
+    /* «CALCULAR» DICE CON QUÉ PERFIL SE TRABAJA (revisión del 1-nov-2026; desde el 2-nov-2026, con
+       el visto bueno del dueño, en `perfil`): sin el campo, el servidor leía los procesos guardados
+       y los PRECIOS PROPIOS de «helder» trabajando con otro perfil. Se EJECUTA `calcularApu` tal como
+       está en public/app.js y se mira el cuerpo que manda; y el aviso de lo pendiente, de usted. La
+       cifra que eso mueve se prueba contra el handler real en la iteración («CALCULAR» COSTEA CON
+       LOS PRECIOS DEL PERFIL CON QUE SE TRABAJA). */
     {
       const ini = fuente.indexOf("  async function calcularApu() {");
       assert.ok(ini > 0, "public/app.js tiene calcularApu");
@@ -18195,9 +18198,8 @@ async function main() {
       const calcularApu = new Function(...n, `let ultimoCalculo = null;\n${fuente.slice(ini, fin + 4)}\nreturn calcularApu;`)(...n.map((k) => stubs[k]));
       await calcularApu();
       assert.strictEqual(enviado.ruta, "/api/apu?op=calcular");
-      assert.strictEqual(enviado.body.perfil_procesos, "genesis", "los procesos guardados son los del perfil con que trabaja");
+      assert.strictEqual(enviado.body.perfil, "genesis", "los precios propios y los procesos guardados son los del perfil con que trabaja, el mismo que mandan «Guardar» y Piso/Techo");
       assert.strictEqual(enviado.body.id_proceso, "CO1.REQ.999");
-      assert.ok(!Object.prototype.hasOwnProperty.call(enviado.body, "perfil"), "los precios propios no cambian sin el visto bueno del dueño");
       assert.ok(/Faltan por leer 4 de sus procesos guardados[\s\S]*«Calcular cuánto me cuesta»/.test(mensajes.join(" ")), mensajes.join(" | "));
       assert.strictEqual(require("../lib/lenguaje_pantalla.js").tuteoEn(mensajes.join(" ")), null);
     }
@@ -32128,6 +32130,11 @@ async function main() {
           assert.deepStrictEqual(excDe(await calcular({ perfil_procesos: "helder", id_proceso: "CO1.REQ.REF6" })), { hay: true, unidad: "m3", precio: 26000, desde: 20000, hasta: 30000, procesos: 3, ids: ["CO1.REQ.REF1", "CO1.REQ.REF5", "CO1.REQ.REF3", "CO1.REQ.REF4"] });
           // sin `perfil_procesos` (una llamada a mano), el `perfil` de siempre: «helder» por defecto
           assert.strictEqual(excDe(await calcular({})).procesos, 4);
+          /* desde el 2-nov-2026 la pantalla manda `perfil` y no `perfil_procesos`: los procesos son los de
+             ESE perfil, no los de «helder» (sin esto, el arreglo de los precios propios rompía la referencia) */
+          assert.deepStrictEqual((await calcular({ perfil: "genesis" })).cuerpo.items.map((it) => it.referencia_entidades.procesos), [0, 0],
+            "con `perfil` de otro perfil, los procesos guardados son los de ese perfil");
+          assert.strictEqual(excDe(await calcular({ perfil: "helder" })).procesos, 4, "y con `perfil` «helder», los suyos");
           // QUITAR un proceso se nota en la consulta SIGUIENTE, sin esperar a ninguna caché
           await Rm.set("seguimiento:helder", guardados(["CO1.REQ.REF1", "CO1.REQ.REF4"]));
           const tras = excDe(await calcular({ perfil_procesos: "helder", id_proceso: "CO1.REQ.REF4" }));
@@ -33949,6 +33956,89 @@ async function main() {
         }, CAB_TOKEN);
         assert.strictEqual(czOtro.cuerpo.items[0].fuente, "catalogo",
           "los precios son POR CONTRATISTA: verlos desde otro perfil sería filtrar su mercado");
+
+        /* ═══ «CALCULAR» COSTEA CON LOS PRECIOS DEL PERFIL CON QUE SE TRABAJA (2-nov-2026) ═══
+           «Guardar» deja los precios corregidos bajo el perfil del selector y Piso/Techo los
+           lee de ahí, pero «Calcular» no mandaba el perfil: el servidor caía a «helder» y
+           costeaba con los precios de OTRO contratista —o con el catálogo— mientras el aviso de
+           «Guardar» prometía que «mandan sobre el catálogo», y el Piso/Techo que «Calcular»
+           dispara justo después salía con otro costo directo. Las pruebas de arriba mandaban
+           `perfil` a mano y no lo veían. Aquí se EJECUTA `calcularApu` tal como está en
+           public/app.js contra el handler real: la vía que usa la web de verdad. */
+        {
+          const fuenteCalc = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+          const iniC = fuenteCalc.indexOf("  async function calcularApu() {");
+          assert.ok(iniC > 0, "public/app.js tiene calcularApu");
+          const finC = fuenteCalc.indexOf("\n  }\n", iniC);
+          // Piso/Techo, la función real que «Calcular» dispara después: la igualdad se cierra por LOS DOS lados
+          const iniR = fuenteCalc.indexOf("  async function calcularRentabilidad(");
+          assert.ok(iniR > 0, "public/app.js tiene calcularRentabilidad");
+          const finR = fuenteCalc.indexOf("\n  }\n", iniR);
+          const PROPIO_GENESIS = 999990;
+          const gpG = await invocarPost(apu, "/api/apu/guardar", {
+            perfil: "genesis", nombre: "Precio propio de genesis", departamento: "ANTIOQUIA",
+            items: [{ item_id: "NOG-A2", cantidad: 1, precio_manual: PROPIO_GENESIS, origen_precio: "manual" }], config: cfgBase, total: 1,
+          }, CAB_TOKEN);
+          assert.strictEqual(gpG.status, 200, JSON.stringify(gpG.cuerpo).slice(0, 200));
+          assert.strictEqual(gpG.cuerpo.precios_aprendidos, 1);
+          try {
+            /* «Calcular» y Piso/Techo EJECUTADOS desde public/app.js con la misma pantalla falsa y contra
+               el handler real: si cualquiera de los dos deja de mandar el perfil, las cifras se separan */
+            const desdeLaPantalla = async (perfilActivo) => {
+              const el = (v) => ({ value: v, disabled: false, textContent: "" });
+              const dom = { "btn-calcular": el(""), "btn-exportar": el(""), "btn-rentabilidad": el(""), departamento: el("ANTIOQUIA"), "id-proceso": el(""), perfil: el(perfilActivo),
+                entidad: el(""), objeto: el(""), "codigos-unspsc": el(""), cuantia: el(""), "plazo-meses": el("") };
+              const ITEMS_PANTALLA = [{ item_id: "NOG-A2", cantidad: 12, precio_manual: null, origen_precio: null }];
+              let respuesta = null, piso = null, fallo = null;
+              const stubs = {
+                $: (id) => dom[id] || el(""),
+                api: async (ruta, o) => {
+                  if (ruta === "/api/apu?op=rentabilidad") {
+                    const r = await invocarPost(apu, "/api/apu/rentabilidad", o.body, CAB_TOKEN);
+                    assert.strictEqual(r.status, 200, JSON.stringify(r.cuerpo).slice(0, 200));
+                    piso = r.cuerpo;
+                    return null;   // la respuesta ya se tiene: la función termina sin pintar el panel
+                  }
+                  assert.strictEqual(ruta, "/api/apu?op=calcular");
+                  const r = await invocarPost(apu, "/api/apu/calcular", o.body, CAB_TOKEN);
+                  assert.strictEqual(r.status, 200, JSON.stringify(r.cuerpo).slice(0, 200));
+                  respuesta = r.cuerpo;
+                  return r.cuerpo;
+                },
+                itemsParaElMotor: () => ITEMS_PANTALLA,
+                leerConfig: () => cfgBase, filas: [1], window: { Glosario: { VERBOS: { generar_apu: "Calcular cuánto me cuesta" } } },
+                msgApu: () => {}, mensajeDeFallo: (e) => { fallo = e; return ""; }, pintarPrecioSugerido: () => {},
+                olvidarRevision: () => {}, pintarCalculoEnTabla: () => {}, pintarResumen: () => {}, pintarNormativa: () => {},
+                nitProceso: "", modalidadProceso: "", tipoProceso: "",
+              };
+              const n = Object.keys(stubs);
+              const { calcularApu, calcularRentabilidad } = new Function(...n,
+                `let ultimoCalculo = null, ultimaRentabilidad = null, rentabilidadEnVuelo = false;\n${fuenteCalc.slice(iniC, finC + 4)}\n${fuenteCalc.slice(iniR, finR + 4)}\nreturn { calcularApu, calcularRentabilidad };`)(...n.map((k) => stubs[k]));
+              const ok = await calcularApu();
+              if (fallo) throw fallo;
+              assert.strictEqual(ok, true, "«Calcular» terminó sin presupuesto");
+              await calcularRentabilidad({ auto: true });
+              if (fallo) throw fallo;
+              assert.ok(piso, "Piso/Techo no llegó al servidor");
+              return { item: respuesta.items[0], resumen: respuesta.resumen, cdPisoTecho: piso.presupuesto.resumen.costo_directo_total };
+            };
+            const g = await desdeLaPantalla("genesis");
+            assert.strictEqual(g.item.costo_directo_unitario, PROPIO_GENESIS,
+              `trabajando con «genesis», «Calcular» tiene que costear con el precio que guardó «genesis» (${PROPIO_GENESIS}), no con el de «helder» ni con el catálogo: salió ${g.item.costo_directo_unitario} (${g.item.origen_precio})`);
+            assert.strictEqual(g.item.origen_precio, "propio");
+            /* «Calcular» y el Piso/Techo que dispara después dan el MISMO costo directo para el
+               mismo perfil: dos cifras del mismo número que discrepan es el defecto que este
+               repositorio ya pagó dos veces */
+            assert.strictEqual(g.resumen.costo_directo_total, 12 * PROPIO_GENESIS);
+            assert.strictEqual(g.cdPisoTecho, g.resumen.costo_directo_total, "«Calcular» y Piso/Techo, desde la misma pantalla, dan el mismo costo directo");
+            const h = await desdeLaPantalla("helder");
+            assert.strictEqual(h.item.costo_directo_unitario, 27500, "y trabajando con «helder», con el suyo: un perfil no costea con los precios de otro");
+            assert.strictEqual(h.cdPisoTecho, h.resumen.costo_directo_total, "también con «helder»");
+            console.log(`  · «Calcular» y Piso/Techo desde la pantalla costean con el perfil activo: genesis ${g.resumen.costo_directo_total} = ${g.cdPisoTecho} · helder ${h.resumen.costo_directo_total} = ${h.cdPisoTecho}`);
+          } finally {
+            await redis.del("apu:precios:genesis", `apu:presupuesto:genesis:${gpG.cuerpo.id}`);
+          }
+        }
       }
 
       /* ═══ j.7-quater · EL MAPA DE PROVINCIAS DEL INVIAS ═══════════════════
@@ -34284,20 +34374,34 @@ async function main() {
           return s;
         };
         const nodos = { "f-perfil": selectFalso([["rup_abc123", "Mi RUP · Constructora"], ["cons_xyz789", "Consorcio 1"]]), perfil: selectFalso([]), "perfil-borrador-rotulo": { textContent: "" } };
-        const fns = new Function("$", "document", `${appP.slice(iniS, finS)}; return { sincronizarPerfilBorrador, asegurarOpcionPerfil, pintarRotuloPerfil };`)((id) => nodos[id] || null, { createElement: () => ({ value: "", textContent: "" }) });
+        /* EL CÁLCULO ES DE UN PERFIL (2-nov-2026): desde que «Calcular» manda `perfil`, cambiar por código el
+           perfil del borrador olvida el cálculo pintado (`invalidarOferta`), o «Guardar», la revisión y el Excel
+           seguirían con el costo calculado con los precios de otro perfil (revisión adversaria del mismo día) */
+        let olvidos = 0;
+        const invalidarOfertaFalsa = () => { olvidos++; };
+        const fns = new Function("$", "document", "invalidarOferta", `${appP.slice(iniS, finS)}; return { sincronizarPerfilBorrador, asegurarOpcionPerfil, pintarRotuloPerfil, ponerPerfilBorrador };`)((id) => nodos[id] || null, { createElement: () => ({ value: "", textContent: "" }) }, invalidarOfertaFalsa);
         fns.sincronizarPerfilBorrador();
         assert.deepStrictEqual(nodos.perfil.options.map((o) => o.value), ["rup_abc123", "cons_xyz789"], "el selector del borrador se llena con los perfiles de la barra");
         assert.strictEqual(nodos.perfil.value, "rup_abc123", "y queda en el perfil activo de la barra");
         assert.strictEqual(nodos["perfil-borrador-rotulo"].textContent, "Precios guardados para: Mi RUP · Constructora");
+        assert.strictEqual(olvidos, 0, "llenar el selector la primera vez no olvida nada: no había cálculo de otro perfil");
         nodos["f-perfil"].value = "cons_xyz789"; fns.sincronizarPerfilBorrador();
         assert.strictEqual(nodos.perfil.value, "cons_xyz789", "cambiar la barra arrastra al borrador"); assert.ok(/Consorcio 1$/.test(nodos["perfil-borrador-rotulo"].textContent));
+        assert.strictEqual(olvidos, 1, "cambiar la barra a otro perfil olvida el cálculo del anterior");
+        fns.sincronizarPerfilBorrador();
+        assert.strictEqual(olvidos, 1, "volver a Precios con el mismo perfil no olvida el cálculo");
         fns.asegurarOpcionPerfil("rup_nuevo1");
         assert.ok(nodos.perfil.options.some((o) => o.value === "rup_nuevo1"), "un perfil que llega por la URL de la tarjeta se añade aunque la barra no lo tenga");
+        fns.ponerPerfilBorrador("cons_xyz789");
+        assert.strictEqual(olvidos, 1, "la tarjeta con el mismo perfil no olvida el cálculo");
+        fns.ponerPerfilBorrador("rup_otro22");
+        assert.strictEqual(nodos.perfil.value, "rup_otro22", "el perfil de la tarjeta se pone aunque la opción no existiera");
+        assert.strictEqual(olvidos, 2, "la tarjeta con otro perfil olvida el cálculo del anterior");
         nodos["f-perfil"].options = []; nodos["f-perfil"].value = ""; fns.sincronizarPerfilBorrador();
         assert.strictEqual(nodos.perfil.value, ""); assert.ok(/elija|barra/i.test(nodos["perfil-borrador-rotulo"].textContent), "sin perfil el rótulo dice qué hacer");
         const cuerpoPre = appP.slice(appP.indexOf("function precargarDesdeURL()"), appP.indexOf("\n  function ", appP.indexOf("function precargarDesdeURL()") + 10));
-        assert.ok(/asegurarOpcionPerfil\(perfil\)/.test(cuerpoPre) && !/some\(\(o\) => o\.value === perfil\)\) \$\("perfil"\)\.value/.test(cuerpoPre),
-          "precargarDesdeURL asigna el perfil de la tarjeta SIN condicionarlo a que la opción exista");
+        assert.ok(/ponerPerfilBorrador\(perfil\)/.test(cuerpoPre) && !/\$\("perfil"\)\.value\s*=[^=]/.test(cuerpoPre),
+          "precargarDesdeURL pone el perfil de la tarjeta por ponerPerfilBorrador (sin condicionarlo a que la opción exista, y olvidando el cálculo de otro perfil)");
         assert.ok(/id === "f-perfil"\) \{[^\n]*sincronizarPerfilBorrador\(\);/.test(sinComentarios(appP)), "cambiar el perfil de la barra tiene que sincronizar el del borrador");
         /* TODA ESCRITURA DE LA BARRA POR CÓDIGO PASA POR fijarPerfilBarra (6-sep-2026, V-B2a-01).
            Medido en Chromium con el botón real: tras «Guardar consorcio» la barra decía el
@@ -34308,7 +34412,7 @@ async function main() {
            fuera de esa función. La reapertura de Precios se prueba con el arranque real (h-ter). */
         {
           nodos["f-perfil"] = selectFalso([["helder", "Helder"], ["cons_abc123", "Consorcio 1"]]);
-          const fnsFB = new Function("$", "document", `${appP.slice(iniS, finS)}; return { fijarPerfilBarra };`)((id) => nodos[id] || null, { createElement: () => ({ value: "", textContent: "" }) });
+          const fnsFB = new Function("$", "document", "invalidarOferta", `${appP.slice(iniS, finS)}; return { fijarPerfilBarra };`)((id) => nodos[id] || null, { createElement: () => ({ value: "", textContent: "" }) }, invalidarOfertaFalsa);
           fnsFB.fijarPerfilBarra("cons_abc123");
           assert.strictEqual(nodos["f-perfil"].value, "cons_abc123", "fijarPerfilBarra escribe la barra");
           assert.strictEqual(nodos.perfil.value, "cons_abc123", "…y arrastra al borrador");
