@@ -7787,11 +7787,13 @@
           items: itemsParaElMotor(),
           departamento: $("departamento").value,
           config: leerConfig(),
-          /* «lo que presupuestaron las entidades» (1-nov-2026): de qué perfil son los
-             procesos guardados que se leen, y cuál se cotiza para no contarlo. Ninguno de
-             los dos cambia una cifra del cálculo (los precios propios siguen con `perfil`,
-             que esta petición no manda: lo declara lib/handlers/apu/editor) */
-          perfil_procesos: ($("perfil") && $("perfil").value) || null,
+          /* EL PERFIL CON QUE SE TRABAJA (2-nov-2026, visto bueno del dueño), igual que
+             «Guardar» y Piso/Techo: sin él el servidor caía a «helder» y costeaba con los
+             precios corregidos de otro perfil, mientras «Guardar» los deja bajo este y el
+             Piso/Techo que se dispara después los lee de aquí. También dice de qué perfil
+             son los procesos guardados de «lo que presupuestaron las entidades». */
+          perfil: $("perfil").value,
+          // el proceso que se cotiza, para no contarlo en lo que presupuestaron las entidades
           id_proceso: ($("id-proceso") && $("id-proceso").value.trim()) || null,
         },
       });
@@ -9215,6 +9217,7 @@
   function sincronizarPerfilBorrador() {
     const sel = $("perfil"), barra = $("f-perfil");
     if (!sel || !barra) return;
+    const antes = sel.value;
     sel.innerHTML = "";
     for (const o of [...barra.options]) {
       if (!o.value) continue;
@@ -9225,6 +9228,29 @@
     const quiere = barra.value;
     if ([...sel.options].some((o) => o.value === quiere)) sel.value = quiere;
     pintarRotuloPerfil();
+    olvidarCalculoDeOtroPerfil(antes, sel.value);
+  }
+  /* EL CÁLCULO ES DE UN PERFIL (2-nov-2026). «Calcular» costea con los precios
+     corregidos del perfil del borrador, así que si el CÓDIGO lo cambia —la barra
+     al volver a Precios, el enlace de una tarjeta— el cálculo pintado ya no es de
+     este perfil, y «Guardar», la revisión y el Excel no pueden seguir usándolo:
+     medido en la revisión adversaria, «Guardar» mandaba bajo el consorcio el
+     costo directo calculado con los precios de «helder». Lo que cambia la persona
+     en el selector ya lo invalida `#ajustes-wrap`. Al llenarlo la primera vez
+     (vacío) no hay cálculo de otro perfil que olvidar. */
+  function olvidarCalculoDeOtroPerfil(antes, ahora) {
+    if (antes && ahora !== antes) invalidarOferta();
+  }
+  /* El perfil que trae la URL de la tarjeta: se asigna aunque la opción no exista
+     (`asegurarOpcionPerfil`) y, si es otro, el cálculo del anterior se olvida. */
+  function ponerPerfilBorrador(id) {
+    const sel = $("perfil");
+    if (!id || !sel) return;
+    const antes = sel.value;
+    asegurarOpcionPerfil(id);
+    sel.value = id;
+    pintarRotuloPerfil();
+    olvidarCalculoDeOtroPerfil(antes, sel.value);
   }
   /* TODA escritura del perfil de la barra por código pasa por aquí (6-sep-2026,
      V-B2a-01): asigna `#f-perfil` y arrastra al borrador, que es lo que el
@@ -9281,7 +9307,7 @@
     tipoProceso = p.get("tipo") || "";
     poner("plazo-meses", "plazo");
     const perfil = p.get("perfil");
-    if (perfil && $("perfil")) { asegurarOpcionPerfil(perfil); $("perfil").value = perfil; pintarRotuloPerfil(); }
+    if (perfil) ponerPerfilBorrador(perfil);
     // el NIT viaja aparte: el índice de baja se consulta por NOMBRE, y el NIT
     // solo sirve de puente cuando la entidad no viene (ver /api/apu/rentabilidad)
     nitProceso = p.get("entidad_nit") || "";
