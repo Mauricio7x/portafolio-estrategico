@@ -28,9 +28,10 @@ variables de entorno del entorno» y termine.
    El lector hace lo mismo que el botón «Leer más evaluaciones de esta entidad»: busca en datos.gov.co los procesos
    cerrados de las entidades de Mis procesos que sirven para medir el precio (licitación o menor cuantía con 3 o más
    ofertas), baja su informe o su resolución, lo lee con el OCR de la aplicación y deja el texto en cola. Tiene su
-   cupo: como mucho 8 documentos, no empieza uno nuevo pasadas 120 imágenes enviadas al OCR y pasadas 150 no manda
-   ninguna más (OCR.space gratis da 500 solicitudes al día por IP y 25.000 al mes; cada página es una imagen). No
-   cambie esos números.
+   cupo: como mucho 8 documentos leídos (3 por entidad), no empieza uno nuevo pasadas 120 imágenes enviadas al OCR y
+   pasadas 150 no manda ninguna más (OCR.space gratis da 500 solicitudes al día por IP y 25.000 al mes; cada página
+   es una imagen). Un proceso que la entidad todavía no publicó (`sin_documento` en el resumen) no gasta ese cupo: se
+   sigue con el siguiente, hasta 40 consultas por noche (`consultados`). No cambie esos números.
    - `SALIDA=3`: escriba tal cual la línea `La base de datos de Detekta no responde: hoy no se leyó ni se interpretó nada`
      y termine (sin base no hay dónde guardar ni de dónde leer).
    - `SALIDA=1`: diga en una línea la frase que sigue a `FALLO:` y siga con el paso 1 (puede haber pendientes de antes).

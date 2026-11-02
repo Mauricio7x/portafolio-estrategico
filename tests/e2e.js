@@ -4764,7 +4764,66 @@ async function main() {
         assert.strictEqual(delLector, deLaVentana, `el lector y la ventana coinciden en lo que sirve para el precio («${p.id}»)`);
       }
       assert.ok(!Lec.util({ id: "CO1.BDOS.9", modalidad: "Licitación pública", numero_ofertas: 5, fecha_adjudicacion: "2026-01-01" }), "sin id de proceso de SECOP II no hay documento que pedir");
-      assert.deepStrictEqual(Lec.argumentos([]), { perfil: "helder", maxDocs: 8, maxOcr: 120, porEntidad: 3, entidades: [], probarUrl: null, probarArchivo: null }, "el cupo por omisión: 8 documentos y 120 páginas de OCR por noche");
+      assert.deepStrictEqual(Lec.argumentos([]), { perfil: "helder", maxDocs: 8, maxOcr: 120, porEntidad: 3, maxConsultas: 40, consultasPorEntidad: 8, entidades: [], probarUrl: null, probarArchivo: null }, "el cupo por omisión: 8 documentos y 120 páginas de OCR por noche, 40 consultas, 8 por entidad");
+      assert.throws(() => Lec.argumentos(["--consultas-por-entidad", "x"]), /--consultas-por-entidad/);
+      assert.strictEqual(Lec.argumentos(["--max-consultas", "5"]).maxConsultas, 5);
+      assert.throws(() => Lec.argumentos(["--max-consultas", "-1"]), /--max-consultas/);
+      /* LA COLA DE UNA ENTIDAD (2-nov-2026): el cupo cuenta los documentos que de verdad se leen. La primera noche que
+         corrió sola gastó 6 de sus 8 intentos en procesos sin documento publicado, que se habrían repetido cada noche */
+      {
+        const cola = (estados) => estados.map((e, i) => ({ id: `CO1.REQ.C${i}`, estado: e, modalidad: "licitacion", numero_ofertas: 3 }));
+        const correrCola = async (estados, cupo = {}, resumen0 = {}) => {
+          const a = { ...Lec.argumentos([]), ...cupo };
+          const resumen = { intentados: 0, consultados: 0, sin_documento: 0, fallos: 0, base_caida: false, ...resumen0 };
+          const consultas = [], lecturas = [], paradas = [];
+          await Lec.recorrerCola(cola(estados), { a, resumen, imagenes: () => 0, vistos: new Set(), pararPorBase: (m) => { resumen.base_caida = true; paradas.push(m); },
+            consultar: async (p) => {
+              consultas.push(p.id);
+              if (p.estado === "roto") throw new Error("datos.gov.co no respondió");
+              if (p.estado === "caida") return { status: 503, j: { ok: false, error: "No se pudo consultar o guardar en el almacén", detalle: "Upstash: ERR max requests" } };
+              if (p.estado === "sin") return { status: 200, j: { ok: true, documento: null, motivo: "La entidad no publicó informe de evaluación…" } };
+              if (p.estado === "ya") return { status: 200, j: { ok: true, documento: { nombre: "x.pdf" }, ya_leido: true, en_cola: false } };
+              return { status: 200, j: { ok: true, portafolio: "CO1.BDOS.1", documento: { nombre: "Informe.pdf", url: "https://x" }, ya_leido: false } };
+            },
+            leerYGuardar: async (p) => { lecturas.push(p.id); return { id: p.id, estado: "leido" }; } });
+          return { resumen, consultas, lecturas, paradas };
+        };
+        let c = await correrCola(["sin", "sin", "sin", "doc", "doc"]);
+        assert.deepStrictEqual([c.resumen.consultados, c.resumen.intentados, c.resumen.sin_documento, c.lecturas.length], [5, 2, 3, 2],
+          `los procesos sin documento no gastan el cupo y la entidad sigue con los siguientes: ${JSON.stringify(c.resumen)}`);
+        c = await correrCola(["doc", "doc", "doc", "doc", "doc"]);
+        assert.deepStrictEqual([c.resumen.consultados, c.resumen.intentados], [3, 3], "3 documentos por entidad: el cuarto ya no se consulta");
+        c = await correrCola(["ya", "doc"]);
+        assert.deepStrictEqual([c.resumen.intentados, c.lecturas], [1, ["CO1.REQ.C1"]], "uno ya leído tampoco gasta el cupo");
+        c = await correrCola(Array(10).fill("sin"), { maxConsultas: 4 });
+        assert.strictEqual(c.resumen.consultados, 4, "las consultas a datos.gov.co tienen su propio tope");
+        c = await correrCola(Array(12).fill("sin"));
+        assert.strictEqual(c.resumen.consultados, 8, "a una sola entidad se le dedican como mucho 8 consultas");
+        /* una entidad con 45 procesos sin documento delante de otra que sí los tiene: la noche llega a la segunda
+           (revisión adversaria del 2-nov-2026: se gastaba las 40 consultas y leía 0) */
+        {
+          const a = Lec.argumentos([]);
+          const resumen = { intentados: 0, consultados: 0, sin_documento: 0, fallos: 0, base_caida: false };
+          const lecturas = [];
+          const ctx = { a, resumen, imagenes: () => 0, vistos: new Set(), pararPorBase: () => {},
+            consultar: async (p) => (p.estado === "sin" ? { status: 200, j: { ok: true, documento: null } } : { status: 200, j: { ok: true, portafolio: "CO1.BDOS.1", documento: { nombre: "x.pdf", url: "https://x" }, ya_leido: false } }),
+            leerYGuardar: async (p) => { lecturas.push(p.id); return { id: p.id, estado: "leido" }; } };
+          await Lec.recorrerCola(cola(Array(45).fill("sin")), ctx);
+          await Lec.recorrerCola(cola(Array(6).fill("doc")).map((p) => ({ ...p, id: `B${p.id}` })), ctx);
+          assert.ok(lecturas.length === 3 && resumen.consultados === 11, `la noche llega a la entidad que sí publicó: ${lecturas.length} leídos, ${resumen.consultados} consultas`);
+        }
+        c = await correrCola(["doc", "doc"], {}, { intentados: 7 });
+        assert.deepStrictEqual([c.resumen.intentados, c.lecturas.length], [8, 1], "el cupo de la noche manda sobre el de la entidad");
+        c = await correrCola(["roto", "doc"]);
+        assert.deepStrictEqual([c.resumen.fallos, c.lecturas.length], [1, 1], "una consulta que falla se cuenta y se sigue con la siguiente");
+        c = await correrCola(["caida", "doc"]);
+        assert.ok(c.resumen.base_caida && c.paradas.length === 1 && !c.lecturas.length && c.consultas.length === 1, "con la base caída se para ahí, sin leer más");
+        const utilQ = (id) => ({ id, modalidad: "licitacion", numero_ofertas: 4, fecha_adjudicacion: "2025-06-01T00:00:00.000" });
+        const procesosQ = [utilQ("CO1.REQ.Q1"), utilQ("CO1.REQ.Q2"), utilQ("CO1.REQ.Q3"), utilQ("CO1.REQ.Q4"), utilQ("CO1.REQ.Q5"), { ...utilQ("CO1.REQ.Q6"), numero_ofertas: 1 }, utilQ("CO1.REQ.Q7"), utilQ("CO1.REQ.Q8")];
+        assert.ok(procesosQ.filter(Lec.util).length === 7 && !Lec.util(procesosQ[5]), "premisa: siete útiles y uno de una oferta");
+        assert.deepStrictEqual(Lec.colaDeLaEntidad(procesosQ, new Set(["CO1.REQ.Q1"]), new Set(["CO1.REQ.Q2"])).map((p) => p.id), ["CO1.REQ.Q3", "CO1.REQ.Q4", "CO1.REQ.Q5", "CO1.REQ.Q7", "CO1.REQ.Q8"],
+          "la cola de la entidad es ENTERA (sin lo leído, lo mirado esta noche ni lo que no sirve): el cupo por entidad cuenta documentos, no candidatos");
+      }
       assert.throws(() => Lec.argumentos(["--max-ocr", "-1"]), /entero/, "un cupo negativo no se acepta");
       /* LOS CANDIDATOS SALEN DE DATOS.GOV.CO con las reglas de la aplicación (revisión adversaria: la vista rápida de la
          entidad trae la lista vacía a propósito, y el lector no leía nunca nada): una fila por proceso, el número de
@@ -8731,6 +8790,60 @@ async function main() {
         await hastaTerminar(rsSellado);
         assert.deepStrictEqual(lectura(indiceBaja.bajaDeMercado(await indiceBaja.leerIndiceBaja(rsSellado), licS)), lectura(bLimpio),
           "reanudado con su sello, publica lo mismo que desde cero");
+
+        // (iii) EL PROGRESO SE ESCRIBE UNA VEZ POR TRAMO (2-nov-2026): tras cada mes, una actualización mandaba de 25 a 43 MB
+        //       a Upstash solo en esas escrituras. Un tramo con los tres meses lo escribe una vez (antes de publicar); y una
+        //       lectura que falla deja guardado lo ya sumado, para que la siguiente no lo vuelva a leer
+        const conEscrituras = (rs) => { const n = { progreso: 0 }; const set0 = rs.set; rs.set = async (k, v, o) => { if (k === CLAVES.indiceBajaProgreso) n.progreso++; return set0(k, v, o); }; return n; };
+        const rsT = redisFalso(corpusS());
+        const nT = conEscrituras(rsT);
+        const rT = await indiceBaja.construirIndiceBaja(rsT, { reiniciar: true, presupuestoMs: 60000 });
+        assert.ok(rT.done && nT.progreso === 1, `un tramo con los tres meses escribe el progreso UNA vez: ${nT.progreso} (${JSON.stringify(rT).slice(0, 120)})`);
+        assert.strictEqual(await rsT.get(CLAVES.indiceBajaProgreso), null, "y al publicar lo borra");
+        assert.deepStrictEqual(lectura(indiceBaja.bajaDeMercado(await indiceBaja.leerIndiceBaja(rsT), licS)), lectura(bLimpio), "y publica lo mismo que desde cero");
+        const rsU = redisFalso(corpusS());
+        const nU = conEscrituras(rsU);
+        const u1 = await indiceBaja.construirIndiceBaja(rsU, { reiniciar: true, presupuestoMs: -1 });
+        assert.ok(!u1.done && nU.progreso === 1, `un mes por tramo: una escritura por tramo (${nU.progreso})`);
+        const rsF = redisFalso(corpusS());
+        const mget0 = rsF.mget;
+        let rotoF = true;
+        const leidosF = [];
+        rsF.mget = async (ks) => { if (rotoF && ks.some((k) => /2025-03/.test(k))) throw new Error("ERR simulado: el mes no respondió"); leidosF.push(...ks); return mget0(ks); };
+        await assert.rejects(indiceBaja.construirIndiceBaja(rsF, { reiniciar: true, presupuestoMs: 60000 }), /no respondió/, "el fallo de la lectura se dice");
+        const pF = await leerJSONComprimido(rsF, CLAVES.indiceBajaProgreso);
+        assert.deepStrictEqual(pF && pF.pendientes, ["2025-03"], `lo sumado antes del fallo queda guardado: ${JSON.stringify(pF && pF.pendientes)}`);
+        rotoF = false; leidosF.length = 0;
+        await hastaTerminar(rsF);
+        assert.ok(leidosF.length && leidosF.every((k) => /2025-03/.test(k)), `la siguiente no vuelve a leer los meses ya sumados: ${leidosF.join(", ")}`);
+        assert.deepStrictEqual(lectura(indiceBaja.bajaDeMercado(await indiceBaja.leerIndiceBaja(rsF), licS)), lectura(bLimpio), "y el índice sale igual que desde cero");
+
+        // (iv) UN CICLO NUEVO, COMO MUCHO CADA `minHorasEntreCiclos` (2-nov-2026, lo pasa la sincronización)
+        const conLecturas = (rs) => { const n = { mget: 0 }; const m0 = rs.mget; rs.mget = async (ks) => { n.mget++; return m0(ks); }; return n; };
+        const publicadoHace = async (rs, horas) => rs.set(CLAVES.indiceBajaMeta, JSON.stringify({ generado: new Date(Date.now() - horas * 3600e3).toISOString(), procesos_analizados: 6 }));
+        const rsC = redisFalso(corpusS());
+        await publicadoHace(rsC, 2);
+        const nC = conLecturas(rsC);
+        const c1 = await indiceBaja.construirIndiceBaja(rsC, { minHorasEntreCiclos: 24 });
+        assert.ok(c1.done && c1.al_dia && nC.mget === 0 && (await rsC.get(CLAVES.indiceBajaProgreso)) === null, `publicado hace 2 h: no empieza otro ciclo ni lee el histórico (${JSON.stringify(c1)} · ${nC.mget} lecturas)`);
+        const c0 = await indiceBaja.construirIndiceBaja(rsC, { minHorasEntreCiclos: 24, reiniciar: true });
+        assert.ok(c0.done && !c0.al_dia, "la reconstrucción pedida con «reiniciar» no pasa el tope");
+        const rsV = redisFalso(corpusS());
+        await publicadoHace(rsV, 25);
+        assert.ok(!(await indiceBaja.construirIndiceBaja(rsV, { minHorasEntreCiclos: 24 })).al_dia, "publicado hace 25 h: empieza");
+        const rsI = redisFalso(corpusS());
+        await rsI.set(CLAVES.indiceBajaMeta, JSON.stringify({ generado: "ayer", procesos_analizados: 6 }));
+        assert.ok(!(await indiceBaja.construirIndiceBaja(rsI, { minHorasEntreCiclos: 24 })).al_dia, "una publicación con la fecha ilegible no cuenta como reciente");
+        const rsE = redisFalso(corpusS());
+        await indiceBaja.construirIndiceBaja(rsE, { reiniciar: true, presupuestoMs: -1 });   // un ciclo a medias
+        await publicadoHace(rsE, 1);
+        const e1 = await indiceBaja.construirIndiceBaja(rsE, { minHorasEntreCiclos: 24, presupuestoMs: -1 });
+        assert.ok(!e1.al_dia && e1.pendientes === 1, `un ciclo empezado se sigue aunque haya una publicación reciente: ${JSON.stringify(e1)}`);
+        assert.ok(!(await indiceBaja.construirIndiceBaja(redisFalso(corpusS()), {})).al_dia, "sin el tope (la reconstrucción a mano) se construye siempre");
+        assert.ok(!(await indiceBaja.construirIndiceBaja(redisFalso(corpusS()), { minHorasEntreCiclos: 24 })).al_dia, "sin ninguna publicación todavía, el primer ciclo empieza");
+        const rsFut = redisFalso(corpusS());
+        await publicadoHace(rsFut, -48);
+        assert.ok(!(await indiceBaja.construirIndiceBaja(rsFut, { minHorasEntreCiclos: 24 })).al_dia, "una publicación con fecha en el futuro (reloj desfasado o dato roto) no cuenta como reciente: frenaría la baja hasta esa fecha");
       }
 
       for (const t of [...lugares, bEnt0.mensaje, bEnt3.mensaje, ...frasesLP, ...frasesCenso, fNeg, ptNeg.frases.baja, gEnt0.baja_frase, gPoca.baja_frase, gNula.baja_frase, gMano.baja_frase]) {
@@ -28313,6 +28426,28 @@ async function main() {
           const porCron = await pedirAvisos(`&perfil=${PERFIL_AV}&enviar=no`, { authorization: "Bearer secreto-del-cron-de-avisos" });
           assert.strictEqual(porCron.status, 200, JSON.stringify(porCron.cuerpo).slice(0, 200));
           assert.strictEqual((await invocar(routerPerfilAv, "/api/perfil?op=avisos", { authorization: "Bearer otro" })).status, 401, "un Bearer que no es el CRON_SECRET no abre el aviso");
+          // (1 bis bis) con el correo configurado, la tarea de cada mañana SÍ envía (el recorte de abajo es solo sin correo)
+          mandados = [];
+          const cronEnvia = await pedirAvisos(`&perfil=${PERFIL_AV}`, { authorization: "Bearer secreto-del-cron-de-avisos" });
+          assert.ok(cronEnvia.status === 200 && cronEnvia.cuerpo.enviados >= 1 && mandados.length >= 1, `con correo, el cron envía: ${JSON.stringify(cronEnvia.cuerpo).slice(0, 200)}`);
+          await redis.del(`avisos:enviado:${PERFIL_AV}:${DIA_BOGOTA}`);
+          /* (1 ter) la tarea de cada mañana SIN correo no calcula los avisos (2-nov-2026): cada cálculo lee el corpus (unos
+             22 MB de Upstash) y no saldría ningún correo. `romper` aquí solo anota qué se toca del corpus. La llave sigue
+             viendo la vista previa (la prueba (4) de arriba). */
+          for (const n of ["CORREO_API_KEY", "CORREO_REMITENTE", "CORREO_DESTINO"]) ponerAv(n, undefined);
+          const tocadosAv = [];
+          upstash.romper((cmd) => { if (String(cmd[0]).toUpperCase() !== "SCAN" && cmd.slice(1).some((x) => /^licitaciones:activo:|^seguimiento:/.test(String(x)))) tocadosAv.push(String(cmd[0])); return null; });
+          let cronSinCorreo;
+          try { cronSinCorreo = await pedirAvisos(`&perfil=${PERFIL_AV}`, { authorization: "Bearer secreto-del-cron-de-avisos" }); } finally { upstash.romper(null); }
+          assert.ok(cronSinCorreo.status === 200 && cronSinCorreo.cuerpo.enviados === 0 && cronSinCorreo.cuerpo.vista_previa.length === 0 && cronSinCorreo.cuerpo.perfiles_revisados === null,
+            `la tarea sin correo responde sin calcular: ${JSON.stringify(cronSinCorreo.cuerpo).slice(0, 240)}`);
+          assert.strictEqual(tocadosAv.length, 0, `la tarea sin correo no lee el corpus ni los procesos guardados: ${tocadosAv.join(", ")}`);
+          assert.ok(/&enviar=no/.test(cronSinCorreo.cuerpo.nota) && cronSinCorreo.cuerpo.correo.configurado === false, `y dice qué hacer para verlos: ${cronSinCorreo.cuerpo.nota}`);
+          const cronVer = await pedirAvisos(`&perfil=${PERFIL_AV}&enviar=no`, { authorization: "Bearer secreto-del-cron-de-avisos" });
+          assert.ok(cronVer.status === 200 && cronVer.cuerpo.vista_previa.length >= 1, "con «enviar=no» el cron también ve lo que saldría");
+          for (const t of textosDe(cronSinCorreo.cuerpo)) {
+            assert.ok(!Lp.VOSEO_RE.test(t) && !t.match(Lp.RE_EMOJI_UI) && !/\bUNSPSC\b|capacidad residual|cuatro puertas|\bJSON\b|\bRedis\b|\bcorpus\b/.test(t), `respuesta «cron sin correo»: «${t.slice(0, 90)}»`);
+          }
           ponerAv("CRON_SECRET", undefined);
 
           // limpieza: ni procesos ni marcas de esta prueba sobreviven a la iteración
@@ -53942,6 +54077,26 @@ async function main() {
       assert.ok(conFilas39.cuerpo.delta.guardadas > 0, `montaje: el delta tenía que escribir algo: ${JSON.stringify(conFilas39.cuerpo.delta)}`);
       assert.ok((await redis.scan("portada:*")).length > 0, "un delta que SÍ escribió filas tiene que reagregar la portada");
       medido39.conFilas = conFilas39.comandos;
+
+      /* ── E · el índice de baja: la sincronización empieza un ciclo nuevo como mucho cada 24 h (2-nov-2026) ── */
+      const cerrada39 = (id) => ({
+        estado_del_procedimiento: "Adjudicado", fase: "Presentación de oferta", adjudicado: "Si", respuestas_al_procedimiento: "4",
+        fecha_de_publicacion_del: `${ano39}-01-10T00:00:00.000`, fecha_de_recepcion_de: `${ano39}-02-10T17:00:00.000`, fecha_adjudicacion: `${ano39}-02-20T00:00:00.000`,
+        modalidad_de_contratacion: "Licitación pública", entidad: "ENTIDAD L3", nit_entidad: "800000001", departamento_entidad: "Tolima",
+        precio_base: "100000000", valor_total_adjudicacion: "95000000", nombre_del_proveedor: "CONSTRUCTORA L3 SAS", nit_del_proveedor_adjudicado: "900000003",
+        nombre_del_procedimiento: "CONSTRUCCIÓN DE OBRA CIVIL CERRADA", codigo_principal_de_categoria: "V1.72141000", urlproceso: "https://secop/l3c",
+        id_del_proceso: id, ":id": `l3c-${id}`, ":updated_at": new Date(Date.now() - 60e3).toISOString().replace("Z", ""),
+      });
+      for (const [horas, empieza] of [[2, false], [19, false], [21, true]]) {
+        await corpusAlDia39(new Date(Date.now() - 3600e3).toISOString());
+        await escribirJ39(redis, CLAVES.indiceBajaMeta, { generado: new Date(Date.now() - horas * 3600e3).toISOString(), procesos_analizados: 1 });
+        socrata.setDataset([cerrada39(`CO1.L3.CERRADA.${horas}`)]);
+        const rB = await invocarSync39("/api/procesos?op=sync&modo=delta&chain=0&presupuesto=20000");
+        socrata.setDataset([]);
+        assert.ok(rB.cuerpo.delta && rB.cuerpo.delta.historicas > 0, `montaje: el delta tenía que meter una fila cerrada al histórico: ${JSON.stringify(rB.cuerpo.delta)}`);
+        assert.ok(rB.cuerpo.baja && (rB.cuerpo.baja.al_dia === true) === !empieza,
+          `con el índice publicado hace ${horas} h, la sincronización ${empieza ? "empieza" : "no empieza"} otro ciclo: ${JSON.stringify(rB.cuerpo.baja)}`);
+      }
 
       /* ── D · «no sé» no puede valer «al día» ni «1-ene-2000» ── */
       const t39 = Date.parse("2026-09-12T12:00:00.000Z");

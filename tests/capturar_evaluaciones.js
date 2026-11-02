@@ -19,7 +19,8 @@
    150 no sale ninguna más (como mucho 8 documentos). Si OCR.space responde 429 o 5xx, el servidor reintenta cada imagen
    hasta 2 veces más (lib/apu_ocr.js): esas solicitudes no se ven desde aquí.
    Uso:
-     node tests/capturar_evaluaciones.js [--perfil helder] [--max-docs 8] [--max-ocr 120] [--por-entidad 3] ["ENTIDAD|NIT" ...]
+     node tests/capturar_evaluaciones.js [--perfil helder] [--max-docs 8] [--max-ocr 120] [--por-entidad 3] [--max-consultas 40]
+       [--consultas-por-entidad 8] ["ENTIDAD|NIT" ...]
      node tests/capturar_evaluaciones.js --probar-url <url del PDF> | --probar-archivo <ruta>   (lee uno y NO guarda nada)
    Sin entidades, las de los procesos de «Mis procesos» del perfil. Necesita HISTORICO_TOKEN y, con el muro de Vercel,
    VERCEL_AUTOMATION_BYPASS_SECRET. Termina con una línea «RESUMEN {json}». Código de salida: 0 hecho (aunque no haya
@@ -37,18 +38,20 @@ const util = (p) => /^CO1\.(REQ|PPI|NTC)\./.test(String(p.id || "")) && String(p
   && /licitaci|menor cuant/i.test(String(p.modalidad || "")) && Number(p.numero_ofertas) >= 3;
 
 function argumentos(argv) {
-  const a = { perfil: "helder", maxDocs: 8, maxOcr: 120, porEntidad: 3, entidades: [], probarUrl: null, probarArchivo: null };
+  const a = { perfil: "helder", maxDocs: 8, maxOcr: 120, porEntidad: 3, maxConsultas: 40, consultasPorEntidad: 8, entidades: [], probarUrl: null, probarArchivo: null };
   for (let i = 0; i < argv.length; i++) {
     const x = argv[i], sig = () => argv[++i];
     if (x === "--perfil") a.perfil = String(sig() || "");
     else if (x === "--max-docs") a.maxDocs = Number(sig());
     else if (x === "--max-ocr") a.maxOcr = Number(sig());
     else if (x === "--por-entidad") a.porEntidad = Number(sig());
+    else if (x === "--max-consultas") a.maxConsultas = Number(sig());
+    else if (x === "--consultas-por-entidad") a.consultasPorEntidad = Number(sig());
     else if (x === "--probar-url") a.probarUrl = String(sig() || "");
     else if (x === "--probar-archivo") a.probarArchivo = String(sig() || "");
     else a.entidades.push(x);
   }
-  for (const [k, bandera] of [["maxDocs", "--max-docs"], ["maxOcr", "--max-ocr"], ["porEntidad", "--por-entidad"]]) if (!Number.isInteger(a[k]) || a[k] < 0) throw new Error(`${bandera} debe ser un entero de 0 en adelante`);
+  for (const [k, bandera] of [["maxDocs", "--max-docs"], ["maxOcr", "--max-ocr"], ["porEntidad", "--por-entidad"], ["maxConsultas", "--max-consultas"], ["consultasPorEntidad", "--consultas-por-entidad"]]) if (!Number.isInteger(a[k]) || a[k] < 0) throw new Error(`${bandera} debe ser un entero de 0 en adelante`);
   return a;
 }
 
@@ -192,12 +195,48 @@ async function entidadesDeMisProcesos(perfil, { pedirA = pedir } = {}) {
   return { lista: e.lista };
 }
 
+/* LA COLA DE UNA ENTIDAD (2-nov-2026). El cupo de documentos (`maxDocs` por noche, `porEntidad` por entidad) cuenta
+   los documentos que de verdad se bajan y se leen. Un proceso cuya entidad todavía no publicó la evaluación
+   («sin_documento») o que ya estaba leído no lo gasta: se pasa al siguiente, y otra noche se vuelve a mirar, porque
+   la entidad lo puede publicar después. `maxConsultas` acota cuánto se le pregunta a datos.gov.co en una noche, y
+   `consultasPorEntidad` cuánto se le dedica a una sola: sin él, una entidad con 45 procesos sin documento se gastaba
+   las 40 consultas y las de atrás no se miraban nunca (revisión adversaria, 2-nov-2026, reproducido: 0 leídos).
+   La primera noche que corrió sola (2-nov-2026) gastó 6 de sus 8 intentos en procesos de Cartagena y Montería sin
+   documento; esas entidades van primeras en Mis procesos, así que se habría repetido cada noche.
+   `consultar(p)` pide op=evaluacion&documento=1; `leerYGuardar(p, doc)` baja, lee y guarda, y devuelve la fila. */
+/* lo que queda por mirar de una entidad: lo útil para el precio que no se leyó ni se miró esta noche, ENTERO (el
+   cupo por entidad cuenta documentos leídos, no candidatos: lo aplica `recorrerCola`) */
+const colaDeLaEntidad = (procesos, ya, vistos) => procesos.filter(util).filter((p) => !ya.has(p.id) && !vistos.has(p.id));
+async function recorrerCola(cola, { a, resumen, imagenes, consultar, leerYGuardar, pararPorBase, vistos, anotar = () => {} }) {
+  let deLaEntidad = 0, consultasDeLaEntidad = 0;
+  for (const p of cola) {
+    if (deLaEntidad >= a.porEntidad || consultasDeLaEntidad >= a.consultasPorEntidad || resumen.intentados >= a.maxDocs || imagenes() >= a.maxOcr || resumen.consultados >= a.maxConsultas || resumen.base_caida) break;
+    vistos.add(p.id);
+    resumen.consultados++; consultasDeLaEntidad++;
+    const t0 = Date.now();
+    let r;
+    try {
+      const doc = await consultar(p);
+      if (baseCaida(doc)) { pararPorBase(doc.j.detalle || doc.j.error); r = { id: p.id, estado: "base_caida" }; }
+      else if (!doc.j || !doc.j.ok) { resumen.fallos++; r = { id: p.id, estado: "fallo", error: `documento: ${doc.status} ${JSON.stringify(doc.j || doc.texto).slice(0, 160)}` }; }
+      else if (!doc.j.documento) { resumen.sin_documento++; r = { id: p.id, estado: "sin_documento", motivo: doc.j.motivo || null }; }
+      else if (doc.j.ya_leido) r = { id: p.id, estado: doc.j.en_cola ? "ya_en_cola" : "ya_leido" };
+      else {
+        resumen.intentados++; deLaEntidad++;
+        r = await leerYGuardar(p, doc);
+      }
+    } catch (e) { resumen.fallos++; r = { id: p.id, estado: "fallo", error: String((e && e.message) || e).slice(0, 200) }; }
+    r.segundos = Math.round((Date.now() - t0) / 1000); r.modalidad = p.modalidad; r.ofertas = p.numero_ofertas;
+    anotar(r);
+  }
+}
+
 async function principal() {
   const a = argumentos(process.argv.slice(2));
   const srv = await servirPublic();
   const origen = `http://127.0.0.1:${srv.address().port}`;
   const tope = a.maxOcr + 30;   // pasado el cupo se termina el documento en curso, con su propio tope de 30, y nada más
-  const resumen = { intentados: 0, leidos: 0, guardados: 0, imagenes_ocr: 0, envios_negados: 0, paginas_ocr: 0, con_paginas_sin_leer: 0, entidades: 0, fallos: 0, base_caida: false };
+  const resumen = { intentados: 0, consultados: 0, sin_documento: 0, leidos: 0, guardados: 0, imagenes_ocr: 0, envios_negados: 0, paginas_ocr: 0, con_paginas_sin_leer: 0, entidades: 0, fallos: 0, base_caida: false };
   let lector = null, codigo = 0;
   const imagenes = () => (lector ? lector.imagenes() : 0);
   const pararPorBase = (motivo) => { resumen.base_caida = true; codigo = 3; console.log(`La base de datos no responde (${String(motivo || "").slice(0, 160)}): se para aquí.`); };
@@ -223,10 +262,10 @@ async function principal() {
         entidades = m.lista;
       }
       resumen.entidades = entidades.length;
-      console.log(`== ${entidades.length} entidades · cupo: ${a.maxDocs} documentos, ${a.maxOcr} imágenes de OCR (tope duro ${tope}), ${a.porEntidad} por entidad`);
+      console.log(`== ${entidades.length} entidades · cupo: ${a.maxDocs} documentos, ${a.maxOcr} imágenes de OCR (tope duro ${tope}), ${a.porEntidad} por entidad, ${a.maxConsultas} consultas`);
       const vistos = new Set();
       for (const { entidad, nit } of entidades) {
-        if (resumen.intentados >= a.maxDocs || imagenes() >= a.maxOcr) break;
+        if (resumen.intentados >= a.maxDocs || imagenes() >= a.maxOcr || resumen.consultados >= a.maxConsultas) break;
         const qs = `entidad=${encodeURIComponent(entidad)}${nit ? `&nit=${encodeURIComponent(nit)}` : ""}`;
         const ev = await pedir(`/api/pliego?op=evaluacion&${qs}`);
         if (llaveRechazada(ev)) { codigo = 1; console.log(`FALLO: la aplicación rechazó la llave (${ev.status}).`); break; }
@@ -237,35 +276,20 @@ async function principal() {
         if (!ev.j || !ev.j.ok) { resumen.fallos++; console.log(`== ${entidad}: no se pudo consultar lo ya leído (${ev.status})`); continue; }
         const ya = new Set(Object.values(ev.j.procesos || {}).filter((p) => p && p.estado !== "caducado").map((p) => p.id_proceso).filter(Boolean));
         const utiles = procesos.filter(util);
-        const cola = utiles.filter((p) => !ya.has(p.id) && !vistos.has(p.id)).slice(0, a.porEntidad);
-        console.log(`== ${entidad}${nit ? ` (${nit})` : ""}: ${procesos.length} adjudicados desde 2025, ${utiles.length} útiles para la regla del precio, ${ya.size} ya leídos; se intentan ${cola.length}`);
-        for (const p of cola) {
-          if (resumen.intentados >= a.maxDocs || imagenes() >= a.maxOcr) break;
-          vistos.add(p.id);
-          resumen.intentados++;
-          const t0 = Date.now();
-          let r;
-          try {
-            const doc = await pedir(`/api/pliego?op=evaluacion&documento=1&id_proceso=${encodeURIComponent(p.id)}`);
-            if (baseCaida(doc)) { pararPorBase(doc.j.detalle || doc.j.error); r = { id: p.id, estado: "base_caida" }; }
-            else if (!doc.j || !doc.j.ok) { resumen.fallos++; r = { id: p.id, estado: "fallo", error: `documento: ${doc.status} ${JSON.stringify(doc.j || doc.texto).slice(0, 160)}` }; }
-            else if (!doc.j.documento) r = { id: p.id, estado: "sin_documento", motivo: doc.j.motivo || null };
-            else if (doc.j.ya_leido) r = { id: p.id, estado: doc.j.en_cola ? "ya_en_cola" : "ya_leido" };
-            else {
-              lector = lector || await abrirLector(origen, { topeImagenes: tope });
-              const leido = await lector.leer(await bajar(doc.j.documento.url));
-              resumen.leidos++; resumen.paginas_ocr += leido.paginas_ocr || 0; if (leido.sin_ocr.length) resumen.con_paginas_sin_leer++;
-              const g = await pedir("/api/pliego?op=evaluacion", { method: "POST", body: { id_proceso: p.id, portafolio: doc.j.portafolio, entidad, nit, documento: doc.j.documento, texto: leido.texto, paginas_ocr: leido.paginas_ocr, paginas_sin_leer: leido.sin_ocr } });
-              if (g.j && g.j.ok) resumen.guardados++;
-              else if (baseCaida(g) || g.status === 503) pararPorBase((g.j && (g.j.detalle || g.j.error)) || g.status);
-              else resumen.fallos++;
-              r = { id: p.id, estado: g.j && g.j.ok ? "leido" : "fallo_al_guardar", http: g.status, nombre: doc.j.documento.nombre, paginas: leido.paginas, ocr: leido.paginas_ocr, sin_leer: leido.sin_ocr.length, nota: leido.nota, error: g.j && !g.j.ok ? String(g.j.error || "").slice(0, 160) : undefined };
-            }
-          } catch (e) { resumen.fallos++; r = { id: p.id, estado: "fallo", error: String((e && e.message) || e).slice(0, 200) }; }
-          r.segundos = Math.round((Date.now() - t0) / 1000); r.modalidad = p.modalidad; r.ofertas = p.numero_ofertas;
-          console.log("  ", JSON.stringify(r));
-          if (resumen.base_caida) break;
-        }
+        const cola = colaDeLaEntidad(procesos, ya, vistos);
+        console.log(`== ${entidad}${nit ? ` (${nit})` : ""}: ${procesos.length} adjudicados desde 2025, ${utiles.length} útiles para la regla del precio, ${ya.size} ya leídos; ${cola.length} por mirar, hasta ${a.porEntidad} documentos`);
+        await recorrerCola(cola, { a, resumen, imagenes, vistos, pararPorBase, anotar: (r) => console.log("  ", JSON.stringify(r)),
+          consultar: (p) => pedir(`/api/pliego?op=evaluacion&documento=1&id_proceso=${encodeURIComponent(p.id)}`),
+          leerYGuardar: async (p, doc) => {
+            lector = lector || await abrirLector(origen, { topeImagenes: tope });
+            const leido = await lector.leer(await bajar(doc.j.documento.url));
+            resumen.leidos++; resumen.paginas_ocr += leido.paginas_ocr || 0; if (leido.sin_ocr.length) resumen.con_paginas_sin_leer++;
+            const g = await pedir("/api/pliego?op=evaluacion", { method: "POST", body: { id_proceso: p.id, portafolio: doc.j.portafolio, entidad, nit, documento: doc.j.documento, texto: leido.texto, paginas_ocr: leido.paginas_ocr, paginas_sin_leer: leido.sin_ocr } });
+            if (g.j && g.j.ok) resumen.guardados++;
+            else if (baseCaida(g) || g.status === 503) pararPorBase((g.j && (g.j.detalle || g.j.error)) || g.status);
+            else resumen.fallos++;
+            return { id: p.id, estado: g.j && g.j.ok ? "leido" : "fallo_al_guardar", http: g.status, nombre: doc.j.documento.nombre, paginas: leido.paginas, ocr: leido.paginas_ocr, sin_leer: leido.sin_ocr.length, nota: leido.nota, error: g.j && !g.j.ok ? String(g.j.error || "").slice(0, 160) : undefined };
+          } });
         if (resumen.base_caida || codigo === 1) break;
       }
     }
@@ -282,5 +306,5 @@ async function principal() {
   }
 }
 
-module.exports = { argumentos, util, reenviarAProduccion, servirPublic, baseCaida, llaveRechazada, cabenEnElCupo, candidatosDe, procesosDeLaEntidad, entidadesDeRespuesta, entidadesDeMisProcesos };
+module.exports = { argumentos, util, reenviarAProduccion, servirPublic, baseCaida, llaveRechazada, cabenEnElCupo, candidatosDe, procesosDeLaEntidad, entidadesDeRespuesta, entidadesDeMisProcesos, recorrerCola, colaDeLaEntidad };
 if (require.main === module) principal().catch((e) => { console.log("FALLO:", String((e && e.message) || e).slice(0, 300)); console.log("RESUMEN", JSON.stringify({ fallo: true })); process.exitCode = 1; });
