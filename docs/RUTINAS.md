@@ -197,9 +197,12 @@ QUÉ MIRAR · todo es LECTURA: ni un POST, ninguna sincronización
 3. La cola de Precios: GET /api/apu?op=ia&pendientes=1 (cabecera x-historico-token) → en_cola y
    solicitado_el. Una solicitud de más de tres horas es una PERSONA esperando un precio: dilo con su
    antigüedad y el nombre del presupuesto.
-4. El correo: GET /api/avisos?token=…&enviar=no → enviados, omitidos, fallos. Responde 200 CON
-   ok:false cuando el proveedor falla: un 200 no es un éxito. Y perfiles_revisados: 0 se ve igual que
-   un día tranquilo — dilo tal cual, sin interpretarlo.
+4. El correo: si en el paso 1 `aviso_por_correo.configurado` es false, NO llames a /api/avisos: di
+   «Correo de avisos sin configurar: faltan …» con la lista `falta` de salud. Cada llamada a avisos
+   lee todos los procesos guardados (unos 22 MB de Upstash, medido el 1-nov-2026) y sin correo no
+   saldría ninguno. Si está configurado: GET /api/avisos?token=…&enviar=no → enviados, omitidos,
+   fallos. Responde 200 CON ok:false cuando el proveedor falla: un 200 no es un éxito. Y
+   perfiles_revisados: 0 se ve igual que un día tranquilo — dilo tal cual, sin interpretarlo.
 5. GitHub, con las herramientas mcp__github__*: la última corrida de «Suite» y la de «Actualización
    de la tarde». Si alguna está en failure, di la causa en una frase.
 
