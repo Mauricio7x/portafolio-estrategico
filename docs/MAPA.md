@@ -22,7 +22,7 @@
   pliego.js                   Router del dominio PLIEGO (Fase 0 · consolidación a 6 funciones)
   procesos.js                 Router del dominio PROCESOS (Fase 0 · consolidación a 6 funciones)
 
-· lib/ — 105 módulos:
+· lib/ — 106 módulos:
   accesibilidad.js            Accesibilidad operativa de la zona de la obra
   adendas.js                  Vigía de adendas · lo que el DATASET dice que cambió (Fase 5)
   almacen.js                  Esquema de claves Redis + compresión de chunks
@@ -53,6 +53,7 @@
   correo.js                   Transporte de correo por REST — sin SDK, sin dependencias
   costos.js                   el motor de costo real vive en public/costos.js (UMD) y aquí
   cronograma.js               Cronograma del proceso con avisos T-7 / T-3 / T-1 (Fase 5)
+  cronograma_excel.js         EL CRONOGRAMA EN HOJA DE CÁLCULO, LEÍDO CON PUERTA (3-nov-2026)
   cuentas.js                  La infraestructura de las cuentas de usuario (la parte PURA)
   cuerpo.js                   Leer el cuerpo JSON de una petición, una sola vez
   deducciones.js              Qué le van a descontar de cada pago, leído del PLIEGO
@@ -226,8 +227,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 417 secciones (41 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 20890  Lo que presupuestaron las entidades va al lado de cada ítem, el enlace de SECOP II pegado e…
+· MEMORIA · docs/MEMORIA.md — 418 secciones (41 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 20917  Lo que no sale tampoco se calcula: los avisos sin correo, la baja como mucho un ciclo al dí…  (superada)
   L 20937  «Calcular» costea con los precios corregidos del perfil con que se trabaja, como «Guardar» …
   L 20959  La baja se publica cada 2 a 3 días, y una fila que no es un registro ya no tumba la lectura…
@@ -236,7 +236,8 @@
   L 21022  El calendario del proceso: las fechas de los documentos llegan a Mis procesos, SECOP II man…
   L 21063  Lo que tiene que entregar: la lista del pliego con su página, marcable en el papeleo, y el …
   L 21094  El OCR saturado ya no deja un documento incompleto para siempre, dos oferentes casi homónim…
-  L 21145  La tarjeta nueva: cinco renglones, con quién, y la competencia dentro con los contratos de …
+  L 21145  El cronograma en Excel se lee: el Anexo 2 de Colombia Compra entra a la línea de tiempo con…
+  L 21169  La tarjeta nueva: cinco renglones, con quién, y la competencia dentro con los contratos de …
 
 · DOCUMENTOS docs/ — 76 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)
