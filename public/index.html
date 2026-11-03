@@ -81,6 +81,27 @@
        ≥ 3.3 lleva y esta hoja no. La segunda mitad de la lección de #act-panel:
        `el.hidden` solo oculta si ninguna clase de display lo pisa. */
     [hidden] { display: none !important; }
+    /* ══════════ LA LETRA DE LEER: ATKINSON HYPERLEGIBLE (3-nov-2026) ══════════
+       El dueño eligió «la 11 con la 3»: los colores y la estructura de hoy con la lectura de la
+       maqueta «Claro y grande». Atkinson Hyperlegible la dibujó el Braille Institute para baja
+       visión: cada letra se distingue de su gemela (I l 1, O 0, rn m), y por eso el cero lleva
+       una raya. Licencia SIL Open Font License 1.1 (public/fuentes/OFL.txt, copiada del
+       repositorio de Google Fonts, ofl/atkinsonhyperlegible). Va ALOJADA en la aplicación
+       —la política de seguridad solo deja cargar letras de 'self'— y solo con el subconjunto
+       latino (U+0000-00FF y la puntuación), que trae tildes, eñe, ¿ y ¡: 17 KB por archivo.
+       Solo hay dos pesos (400 y 700): un 500 se pinta en 400 y un 600 en 700, que es como el
+       navegador resuelve un peso que falta. `font-display: swap`: mientras llega, el texto se
+       lee en la letra del sistema, nunca en blanco. La marca y los títulos siguen en el serif
+       del sistema (--font-display): eso no cambia. */
+    @font-face { font-family: "Atkinson Hyperlegible"; font-style: normal; font-weight: 400; font-display: swap;
+      src: url("/fuentes/atkinson-hyperlegible-400.woff2") format("woff2");
+      unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+    @font-face { font-family: "Atkinson Hyperlegible"; font-style: normal; font-weight: 700; font-display: swap;
+      src: url("/fuentes/atkinson-hyperlegible-700.woff2") format("woff2");
+      unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+    @font-face { font-family: "Atkinson Hyperlegible"; font-style: italic; font-weight: 400; font-display: swap;
+      src: url("/fuentes/atkinson-hyperlegible-400-italica.woff2") format("woff2");
+      unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
     /* ══════════ PIEL v3 · «Lino y tinta» (4-sep-2026) ══════════
        Encargo del dueño: un cambio total, un color elegante «que se vea caro» y
        que cada botón, animación y clic se sienta pensado. Todo lo de aquí sale
@@ -139,13 +160,18 @@
       --bg-inset-2: #ece9e3;
       --campo-bg: #ffffff;
       --text-primary: #1a1916;
-      --text-secondary: #5c5952;
+      /* LA 11 CON LA 3 (3-nov-2026): TODO EL TEXTO A 7:1 (AAA) contra las cuatro
+         superficies, también el gris más apagado. Antes la secundaria iba «al límite
+         AA» (6,4:1) para que la principal mandara; ahora la jerarquía la llevan el
+         tamaño y el peso, no un gris que a los 60 años no se lee. Solo se movió la
+         luminosidad, con el mismo tono cálido. Peor par: 7,5 y 7,1 sobre #ece9e3. */
+      --text-secondary: #4b4842;
       /* #6f6b62 daba 4,38:1 sobre el hundido FUERTE #ece9e3 —donde vive la
          «eyebrow» de los tiles (`.uppercase.tracking-wide`, 11 px)— aunque diera
          4,79 sobre el hundido normal: el censo miraba una sola de las dos
-         superficies hundidas. #6b675e da 4,65:1 y sigue siendo el gris más
-         apagado de los tres (12-sep-2026). */
-      --text-tertiary: #6b675e;
+         superficies hundidas. #6b675e daba 4,65:1 (12-sep-2026); desde el 3-nov-2026,
+         #4f4c45 da 7,06:1 en el peor de los cuatro. */
+      --text-tertiary: #4f4c45;
       --accent: #2b3f6b;
       --accent-hover: #1f3059;
       --accent-texto: #ffffff;
@@ -163,14 +189,26 @@
          Ahora L* 43,0 · 37,0 · 31,0: seis puntos entre cada uno, y el peligro pesa más
          que el aviso y el aviso más que el «todo bien» también en blanco y negro.
          El alfa de los tres -light baja de 0,12 a 0,10: es lo que le da margen al texto
-         que va encima. La suite lo recalcula todo y falla si alguien lo deshace. */
-      --ok: #2b7346;
-      --ok-light: rgba(43,115,70,0.10);
-      --ok-texto: #1f5c37;
-      --warn: #7f4b0c;
-      --warn-light: rgba(127,75,12,0.10);
-      --danger: #862822;
-      --danger-light: rgba(134,40,34,0.10);
+         que va encima. La suite lo recalcula todo y falla si alguien lo deshace.
+         (3) 7:1 SIN PERDER LA SEPARACIÓN (3-nov-2026, la 11 con la 3). Las dos reglas
+         tiran en contra: 7:1 sobre el hundido fuerte deja a los tres por debajo de L* 32,6,
+         y la separación pide cinco puntos entre cada uno, así que el peligro baja hasta
+         L* 19,1 (un vino tinto) — es el precio de que un daltónico siga distinguiendo el
+         aviso del «todo bien» con la letra a 7:1. Los tintes -light bajan a 0,06: con 0,10
+         la pastilla oscurecía su fondo lo bastante para exigir colores todavía más negros.
+         La separación se mide sobre lo que SE PINTA: el verde de las pastillas y de las
+         41 clases `text-green-*` es --ok-texto, no --ok (revisión adversaria: con --ok-texto
+         aparte, verde y ámbar quedaban a 2,9 puntos), así que ahora son el mismo color.
+         L* 30,0 · 24,4 · 19,1, y el peor par (la pastilla verde) da 7,03:1. La maqueta
+         «Claro y grande» y la de «la 11 con la 3» NO cumplían esta separación (los tres
+         quedaban en L* 31): se corrigió al implementarla, no se copió. */
+      --ok: #1e5031;
+      --ok-light: rgba(30,80,49,0.06);
+      --ok-texto: #1e5031;
+      --warn: #553208;
+      --warn-light: rgba(85,50,8,0.06);
+      --danger: #561a16;
+      --danger-light: rgba(86,26,22,0.06);
       /* --danger tiene DOS usos que NO comparten el mismo par (5-sep-2026): como
          TEXTO sobre la tarjeta y como FONDO de la insignia de «Mis procesos».
          En oscuro el token es un salmón claro y el blanco encima daba 2,72:1
@@ -203,18 +241,20 @@
          y el tamaño de la letra salían de declaraciones sueltas: por eso una
          pantalla nueva heredaba la paleta y no la jerarquía, y se veía barata
          con los colores buenos. Siete pasos de cada uno, base 4/8, y ninguno por
-         debajo de 11 px (la suite lo censa). El paso 5 (24 px) es el aire ENTRE
+         debajo de 11 px (la suite lo censa; 14 desde la escala de lectura del 3-nov). El paso 5 (24 px) es el aire ENTRE
          secciones y el 4 (16 px) el de dentro de una fila: cuando los dos valen
          lo mismo no se lee dónde acaba una idea y empieza otra. */
       --esp-1: 4px;  --esp-2: 8px;  --esp-3: 12px; --esp-4: 16px;
       --esp-5: 24px; --esp-6: 32px; --esp-7: 40px;
-      --tipo-1: 11px; --tipo-2: 13px; --tipo-3: 15px; --tipo-4: 17px;
-      --tipo-5: 21px; --tipo-6: 26px; --tipo-7: 32px;
+      --tipo-1: 14px; --tipo-2: 16px; --tipo-3: 17.5px; --tipo-4: 19px;
+      --tipo-5: 23px; --tipo-6: 26px; --tipo-7: 32px;
       /* el par de --warn: --ok y --danger tienen su color de TEXTO para ir
          encima de su fondo; --warn no lo tenía, y sin él un fondo ámbar con
-         texto encima repite el defecto de contraste que ya se corrigió arriba */
-      --warn-texto: #4a2c07;
-      --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', 'Segoe UI', system-ui, sans-serif;
+         texto encima repite el defecto de contraste que ya se corrigió arriba.
+         Desde el 3-nov-2026 el ámbar es OSCURO (#553208, para llegar a 7:1), así que
+         lo que va encima es blanco: 11,6:1 (la tinta daba 1,2). */
+      --warn-texto: #ffffff;
+      --font-sans: 'Atkinson Hyperlegible', -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', 'Segoe UI', system-ui, sans-serif;
       --font-display: ui-serif, 'New York', 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Georgia, 'Times New Roman', serif;
       --font-mono: 'SF Mono', 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
       /* movimiento: cinco duraciones y tres curvas, nada más (una animación por evento) */
@@ -251,17 +291,21 @@
         --bg-inset-2: #2c2b28;
         --campo-bg: #161514;
         --text-primary: #f3f0ea;
-        --text-secondary: #b1ada4;
+        /* 7:1 también en oscuro (3-nov-2026): se aclaran con el mismo tono. */
+        --text-secondary: #c0bdb5;
         /* #8a867e daba 4,38:1 sobre el hundido #232220 (AA solo si el texto es
            grande, y aquí es de 11-12 px). #948f86 da 4,94:1 y sigue siendo el
            gris más apagado de los tres. */
         /* …y lo mismo por el otro lado: #948f86 daba 4,94 sobre #232220 pero
-           4,40 sobre el hundido fuerte #2c2b28. #98938b da 4,64:1 (12-sep-2026). */
-        --text-tertiary: #98938b;
-        --accent: #9db3e8;
-        --accent-hover: #b3c5f0;
+           4,40 sobre el hundido fuerte #2c2b28. #98938b daba 4,64:1 (12-sep-2026);
+           #bab7b1 da 7,06:1 en el peor de los cuatro (3-nov-2026). */
+        --text-tertiary: #bab7b1;
+        /* #9db3e8 daba 6,77:1 sobre el hundido fuerte; #a4b9ea da 7,22 (3-nov-2026) */
+        --accent: #a4b9ea;
+        --accent-hover: #b8c9f0;
         --accent-texto: #121110;
-        --accent-light: rgba(157,179,232,0.16);
+        /* 0,16 dejaba el acento a 6,4:1 sobre su propio tinte en la tarjeta; 0,10 lo deja en 7,3 (3-nov-2026) */
+        --accent-light: rgba(164,185,234,0.10);
         /* EL MISMO CENSO, EN OSCURO (13-sep-2026). Aquí el par que fallaba era la
            pastilla roja: texto --danger sobre --danger-light daba 4,04:1 sobre el
            hundido fuerte. Y la separación era PEOR que en claro: L* 73,6 · 72,9 · 64,7,
@@ -274,14 +318,21 @@
            al verde sobre este fondo se vuelve rosa pálido (se probó: #f8beba pasa todas
            las medidas y deja de leerse como peligro). Entre cumplir una simetría y que
            el rojo siga pareciendo rojo, manda lo segundo: la separación, que es lo que
-           el daltonismo necesita, se conserva igual. */
-        --ok: #88d7a8;
-        --ok-light: rgba(136,215,168,0.10);
-        --ok-texto: #8fe0b0;
-        --warn: #e4a84b;
-        --warn-light: rgba(228,168,75,0.10);
-        --danger: #f18078;
-        --danger-light: rgba(241,128,120,0.10);
+           el daltonismo necesita, se conserva igual.
+           A 7:1 (3-nov-2026) ese dilema vuelve y se resuelve de otra forma: 7:1 sobre el
+           hundido fuerte pide L* 74 o más a los TRES, así que el peligro sube a L* 78,8
+           (#f7b2ad, coral claro: más saturado y más oscuro que el #f8beba que se descartó
+           por rosa) y los otros dos por encima, con 5 puntos entre cada uno; los tintes
+           bajan a 0,06 como en claro. L* 78,8 · 84,1 · 89,5; peor par 7,06:1. El verde que se
+           pinta (--ok-texto) es el mismo --ok: el #8fe0b0 de antes quedaba en L* 83,1, por DEBAJO
+           del ámbar (84,1), y un plazo tranquilo y uno cercano se veían del mismo gris. */
+        --ok: #c2ead2;
+        --ok-light: rgba(194,234,210,0.06);
+        --ok-texto: #c2ead2;
+        --warn: #efcd97;
+        --warn-light: rgba(239,205,151,0.06);
+        --danger: #f7b2ad;
+        --danger-light: rgba(247,178,173,0.06);
         --danger-texto: #1a1916;
         --border: rgba(255,255,255,0.09);
         --border-fuerte: rgba(255,255,255,0.18);
@@ -375,7 +426,7 @@
       opacity: 0; transition: transform var(--dur-4) var(--ease-expo), width var(--dur-4) var(--ease-expo), opacity var(--dur-2); }
     .pestanas.con-indicador::before { opacity: 1; }
     .pestana { position: relative; z-index: 1; display: inline-flex; align-items: center; height: 32px; padding: 0 15px;
-      border-radius: 980px; font-size: 13.5px; font-weight: 500; color: var(--text-secondary); white-space: nowrap;
+      border-radius: 980px; font-size: 16.5px; font-weight: 500; color: var(--text-secondary); white-space: nowrap;
       transition: color var(--dur-2) var(--ease-out); }
     .pestana:hover { color: var(--text-primary); }
     .pestana:active { transform: scale(0.97); }
@@ -392,7 +443,7 @@
     /* la insignia de «Mis procesos»: cuántas cosas piden atención (cambios sin
        ver + alertas urgentes); nace oculta y solo aparece con cifra > 0 */
     .insignia-pestana { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px;
-      padding: 0 5px; margin-left: 6px; border-radius: 9px; font-size: 11px; font-weight: 600; line-height: 1;
+      padding: 0 5px; margin-left: 6px; border-radius: 9px; font-size: 14px; font-weight: 600; line-height: 1;
       background: var(--danger); color: var(--danger-texto); font-variant-numeric: tabular-nums; animation: insignia-entra var(--dur-4) var(--ease-expo); }
     /* LA PAREJA .hidden GANA EN CUALQUIER ORDEN DE HOJA (5-sep-2026). La regla
        de arriba y la utilidad `.hidden` empatan en especificidad (0,1,0): con la
@@ -458,14 +509,14 @@
 
     /* botón de peligro (Eliminar RUP) */
     .btn-peligro { background: transparent; border: 1px solid var(--danger); color: var(--danger);
-      font-weight: 500; font-size: 13px; padding: 7px 14px; border-radius: 980px;
+      font-weight: 500; font-size: 16px; padding: 7px 14px; border-radius: 980px;
       transition: background var(--dur-2) var(--ease-out); cursor: pointer; }
     .btn-peligro:hover { background: var(--danger-light); }
     .btn-peligro:active { transform: scale(0.98); }
 
     /* ── botón principal de la portada: azul tinta lleno, píldora, filo de luz
        arriba (el «inset 0 1px» que todos los botones caros llevan) ── */
-    .btn-vidrio-acento { padding: 14px 32px; font-weight: 500; font-size: 16px; color: var(--accent-texto);
+    .btn-vidrio-acento { padding: 14px 32px; font-weight: 500; font-size: 18px; color: var(--accent-texto);
       background: var(--accent); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px);
       border: 1px solid transparent; border-radius: 980px; cursor: pointer; outline: none;
       box-shadow: inset 0 1px 0 rgba(255,255,255,0.14), 0 1px 2px rgba(26,25,22,0.16);
@@ -490,7 +541,7 @@
        del rótulo (`text-[17px]`) NO se toca: es el ancla de la regla que alinea
        los subtítulos de las tres puertas. */
     .puerta-entrada { position: relative; display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start; width: 100%; text-align: left;
-      padding: 18px 44px 18px 20px; border-radius: 10px; font-size: 14px; line-height: 1.35; font-weight: 400;
+      padding: 18px 44px 18px 20px; border-radius: 10px; font-size: 17px; line-height: 1.35; font-weight: 400;
       background: var(--bg-card); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px);
       border: 1px solid var(--border-fuerte); box-shadow: var(--filo); cursor: pointer;
       transition: transform var(--dur-3) var(--ease-out), box-shadow var(--dur-3) var(--ease-out), border-color var(--dur-2) var(--ease-out), background var(--dur-2) var(--ease-out); }
@@ -535,7 +586,7 @@
     .campo-buscar input { color: var(--text-primary); }
     .campo-buscar input::placeholder { color: var(--text-tertiary); }
     .control-select, .control-campo, .control-boton { background: var(--campo-bg); border: 0; color: var(--text-primary);
-      box-shadow: inset 0 0 0 1px var(--borde-campo); min-height: 38px; padding: 0 12px; font-size: 14px; font-weight: 500;
+      box-shadow: inset 0 0 0 1px var(--borde-campo); min-height: 38px; padding: 0 12px; font-size: 17px; font-weight: 500;
       transition: background var(--dur-2) var(--ease-out), color var(--dur-2) var(--ease-out); }
     .control-select { padding-right: 32px; -webkit-appearance: none; appearance: none;
       background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236f6b62' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
@@ -551,7 +602,7 @@
        —`py-3 text-sm` del botón del acceso, `px-4 py-2.5` y `px-3 py-2` de los
        controles y `text-xs` del selector de etapa— se quitó la utilidad de la
        plantilla: mandaba la clase y el marcado decía otra cosa. */
-    .control-select.text-sm, .control-campo.text-sm, .control-boton.text-sm { font-size: 14px; }
+    .control-select.text-sm, .control-campo.text-sm, .control-boton.text-sm { font-size: 17px; }
     .edit.rounded { border-radius: 4px; }
     .control-boton { cursor: pointer; }
     .control-boton:active { transform: scale(0.98); }
@@ -618,13 +669,14 @@
     /* la franja de TRES CIFRAS de la tarjeta (compiten · se gana 1 de N · deja por intento) */
     .metricas .metrica { padding: 12px 14px; min-width: 0; }
     .metricas .metrica + .metrica { border-left: 1px solid var(--border); }
-    .metrica-valor { font-size: 21px; font-weight: 600; letter-spacing: -0.5px; line-height: 1.1; color: var(--text-primary); font-variant-numeric: tabular-nums; }
+    .metrica-valor { font-size: 23px; font-weight: 600; letter-spacing: -0.5px; line-height: 1.1; color: var(--text-primary); font-variant-numeric: tabular-nums; }
     /* `overflow-wrap: anywhere` en el rótulo: «aproximadamente» medía 98 px en
        una columna de 82 y se salía de su tercio (medido a 390 px, 4-sep-2026) */
-    .metrica-rotulo { margin-top: 3px; font-size: 11.5px; line-height: 1.25; color: var(--text-secondary); overflow-wrap: anywhere; }
-    /* 11 px y no 10,5: la aplicación no baja de 11 px en ningún sitio (la suite
+    .metrica-rotulo { margin-top: 3px; font-size: 14.5px; line-height: 1.25; color: var(--text-secondary); overflow-wrap: anywhere; }
+    /* (escrito antes de la escala de lectura del 3-nov-2026, que lo pasó a 14 px; el suelo es hoy 13)
+       11 px y no 10,5: la aplicación no baja de 11 px en ningún sitio (la suite
        lo censa sobre este mismo <style>). En el teléfono esta nota no se pinta. */
-    .metrica-nota { margin-top: 2px; font-size: 11px; line-height: 1.25; color: var(--text-tertiary); overflow-wrap: anywhere; }
+    .metrica-nota { margin-top: 2px; font-size: 14px; line-height: 1.25; color: var(--text-tertiary); overflow-wrap: anywhere; }
     /* La ganancia en NEGATIVO se pinta en rojo, con el token de la paleta (no un
        hex suelto: en modo oscuro el rojo cambia). Es la única cifra de la franja
        que puede tener signo, y el signo es lo primero que hay que ver. */
@@ -642,8 +694,8 @@
     /* Un rango («−$32M a $257M») no cabe a 20 px en un tercio de tarjeta. Se
        encoge en vez de desbordar: la alternativa es que se salga de la caja en
        móvil, que es donde el dueño lo lee. */
-    .metrica.rango .metrica-valor { font-size: 15px; letter-spacing: -0.2px; }
-    @media (max-width: 640px) { .metrica.rango .metrica-valor { font-size: 13px; } }
+    .metrica.rango .metrica-valor { font-size: 17.5px; letter-spacing: -0.2px; }
+    @media (max-width: 640px) { .metrica.rango .metrica-valor { font-size: 16px; } }
     /* La cascada del detalle: una barra proporcional por línea para que la resta
        se VEA, no solo se lea. */
     .cascada-fila { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; align-items: baseline; padding: 7px 0; }
@@ -659,8 +711,10 @@
        Es la diferencia entre una lista de sitios donde mirar y un censo. Terreno firme desde 2023.
        La consulta por ventana se queda para las franjas que NO viven dentro de una tarjeta. */
     .tarjeta { container-type: inline-size; }
-    @container (max-width: 440px) { .metrica-valor { font-size: 17px; } .metricas .metrica { padding: 9px 10px; } .metrica-nota { display: none; } }
-    @media (max-width: 640px) { .metrica-valor { font-size: 17px; } .metricas .metrica { padding: 9px 10px; } .metrica-nota { display: none; } }
+    @container (max-width: 440px) { .metrica-valor { font-size: 19px; } .metricas .metrica { padding: 9px 10px; } .metrica-nota { display: none; } }
+    @media (max-width: 640px) { .metrica-valor { font-size: 19px; } .metricas .metrica { padding: 9px 10px; } .metrica-nota { display: none; } }
+    /* a 320 px, con la escala de lectura, «Calcular» salía 4 px de su tercio (revisión adversaria, 3-nov-2026) */
+    @media (max-width: 360px) { .metrica-valor { font-size: 17px; } }
     /* ── EL FRISO DEL MERCADO · piel «el umbral» (13-sep-2026, encargo del dueño) ──
        El dueño eligió la maqueta «el umbral»: la FRASE manda arriba y las tres
        cifras bajan de rango a un friso fino bajo una regla graduada. Lo que
@@ -683,12 +737,12 @@
               mask-image: linear-gradient(90deg, transparent 0%, #000 14%, #000 86%, transparent 100%); }
     #pulso-global .cifra { flex: 1 1 0; min-width: 0; text-align: center; padding: 16px 9px 15px; }
     #pulso-global .cifra + .cifra { border-left: 1px solid var(--border); }
-    #pulso-global .cifra b { display: block; font-size: 19px; font-weight: 500; line-height: 1.15; letter-spacing: -0.01em; white-space: nowrap; color: var(--text-primary); font-variant-numeric: tabular-nums; }
-    #pulso-global .cifra span { display: block; margin: 9px auto 0; max-width: 150px; font-size: 11px; font-weight: 500; line-height: 1.55; text-transform: uppercase; letter-spacing: .13em; color: var(--text-tertiary); }
-    @media (max-width: 640px) { #pulso-global { margin-top: 38px; } #pulso-global .cifra { padding: 14px 6px 13px; } #pulso-global .cifra b { font-size: 17px; white-space: normal; } }
+    #pulso-global .cifra b { display: block; font-size: 21px; font-weight: 500; line-height: 1.15; letter-spacing: -0.01em; white-space: nowrap; color: var(--text-primary); font-variant-numeric: tabular-nums; }
+    #pulso-global .cifra span { display: block; margin: 9px auto 0; max-width: 150px; font-size: 14px; font-weight: 500; line-height: 1.55; text-transform: uppercase; letter-spacing: .13em; color: var(--text-tertiary); }
+    @media (max-width: 640px) { #pulso-global { margin-top: 38px; } #pulso-global .cifra { padding: 14px 6px 13px; } #pulso-global .cifra b { font-size: 19px; white-space: normal; } }
     /* el día a día, dentro del friso y a la izquierda; el chevrón y su giro ya
        los pone la regla de `#onboarding summary` de más arriba */
-    #pulso-historia > summary { min-height: 24px; padding: 12px 3px 0; font-size: 12px; line-height: 1.45; color: var(--text-secondary); }
+    #pulso-historia > summary { min-height: 24px; padding: 12px 3px 0; font-size: 15px; line-height: 1.45; color: var(--text-secondary); }
 
     /* ── red de seguridad: qué VISTA se ve no puede depender de un CDN ──
        `abrirApp()` cambia de vista añadiendo y quitando la clase `hidden`, que
@@ -881,23 +935,23 @@
     #app .text-blue-800, #app .text-blue-900, #app .text-blue-950, #app .text-purple-800, #app .text-indigo-800 { color: var(--accent); }
     #app .text-blue-900\/60, #app .text-blue-700\/70 { color: var(--accent); opacity: 0.8; }
     /* los anillos de color de los avisos y chips pasan al tono apagado */
-    #app .ring-green-600\/20 { --tw-ring-color: rgba(43,115,70,0.25); }
-    #app .ring-amber-600\/20 { --tw-ring-color: rgba(127,75,12,0.25); }
-    #app .ring-red-600\/20 { --tw-ring-color: rgba(134,40,34,0.25); }
+    #app .ring-green-600\/20 { --tw-ring-color: rgba(30,80,49,0.25); }
+    #app .ring-amber-600\/20 { --tw-ring-color: rgba(85,50,8,0.25); }
+    #app .ring-red-600\/20 { --tw-ring-color: rgba(86,26,22,0.25); }
     #app .ring-gray-500\/20 { --tw-ring-color: var(--border-fuerte); }
     /* los anillos y bordes PASTEL (tono 200/300) tampoco seguían al tema: en oscuro pintaban un
        filete casi blanco alrededor de una caja oscura. Se traducen al mismo tono apagado que ya
        usan sus hermanos del 600 (13-sep-2026). */
-    :is(#app, #modal-competencia, #modal-eliminar, #modal-importar) .ring-red-200 { --tw-ring-color: rgba(134,40,34,0.25); }
-    :is(#app, #modal-competencia, #modal-eliminar, #modal-importar) .ring-emerald-200 { --tw-ring-color: rgba(43,115,70,0.25); }
-    :is(#app, #modal-competencia, #modal-eliminar, #modal-importar) .ring-amber-200 { --tw-ring-color: rgba(127,75,12,0.25); }
-    #app .border-amber-200, #app .border-amber-300 { border-color: rgba(127,75,12,0.35); }
+    :is(#app, #modal-competencia, #modal-eliminar, #modal-importar) .ring-red-200 { --tw-ring-color: rgba(86,26,22,0.25); }
+    :is(#app, #modal-competencia, #modal-eliminar, #modal-importar) .ring-emerald-200 { --tw-ring-color: rgba(30,80,49,0.25); }
+    :is(#app, #modal-competencia, #modal-eliminar, #modal-importar) .ring-amber-200 { --tw-ring-color: rgba(85,50,8,0.25); }
+    #app .border-amber-200, #app .border-amber-300 { border-color: rgba(85,50,8,0.35); }
     #app .border-amber-700 { border-color: var(--warn); }
     /* los blancos translúcidos de las plantillas (bg-white/70 del botón del
        aviso, bg-white/60 de las notas) son superficie del tema: en oscuro un
        blanco al 70 % sobre ámbar daba una pastilla gris con letra invisible */
     #app .bg-white\/70, #app .bg-white\/60, #app .hover\:bg-white:hover { background-color: var(--bg-card); color: var(--text-primary); }
-    #app .ring-amber-600\/30 { --tw-ring-color: rgba(127,75,12,0.35); }
+    #app .ring-amber-600\/30 { --tw-ring-color: rgba(85,50,8,0.35); }
     #app button.bg-white\/70 { border-radius: 980px; box-shadow: var(--shadow-sm), var(--filo); }
     /* chips (rounded-full de las plantillas): peso 500 y anillo interior de 1 px */
     #app .rounded-full.text-\[11px\], #app .rounded-full.text-xs, #app .rounded-full.px-2\.5 { font-weight: 500; box-shadow: inset 0 0 0 1px rgba(26,25,22,0.06); }
@@ -1061,13 +1115,13 @@
     .marca-boton.marca-informativa:active { transform: none; }
     .marca-boton.marca-informativa .marca-giro { display: none; }
     .marca-linea { display: flex; align-items: center; gap: 7px; }
-    .marca-nombre { font-family: var(--font-display); font-size: 21px; font-weight: 600; letter-spacing: -0.02em; color: var(--text-primary); line-height: 1; }
+    .marca-nombre { font-family: var(--font-display); font-size: 23px; font-weight: 600; letter-spacing: -0.02em; color: var(--text-primary); line-height: 1; }
     .marca-giro { flex-shrink: 0; color: var(--text-tertiary); transition: color var(--dur-2) var(--ease-out), transform var(--dur-4) var(--ease-expo); }
     .marca-boton:hover .marca-giro { color: var(--accent); transform: rotate(-60deg); }
     /* Mientras corre, la flecha gira de verdad: es la respuesta a la pulsación. */
     .marca-girando .marca-giro { color: var(--accent); animation: marca-vuelta 1.1s linear infinite; }
     @keyframes marca-vuelta { to { transform: rotate(360deg); } }
-    .marca-corte { display: block; margin-top: 2px; font-size: 11.5px; line-height: 1.35; color: var(--text-secondary);
+    .marca-corte { display: block; margin-top: 2px; font-size: 14.5px; line-height: 1.35; color: var(--text-secondary);
                    overflow-wrap: anywhere; }
     /* El corte que no es de hoy se pone en ÁMBAR: es la señal que empuja a
        pulsar, y la que hace que el usuario no tenga que acordarse solo. */
@@ -1133,19 +1187,19 @@
        la preposición nunca se capitaliza. Se sube SOLO la primera letra, y el
        texto sigue siendo el mismo que se usa dentro de las frases («ningún
        proceso cierra en agosto de 2026»), que ahí tiene que ir en minúscula. */
-    .cal-mes { font-size: 15px; font-weight: 600; color: var(--text-primary); }
+    .cal-mes { font-size: 17.5px; font-weight: 600; color: var(--text-primary); }
     .cal-mes::first-letter { text-transform: uppercase; }
     .cal-mes-btn { min-width: 34px; height: 34px; border-radius: 980px; border: 1px solid var(--border-fuerte);
-                   background: var(--bg-card); color: var(--text-primary); font-size: 18px; line-height: 1; cursor: pointer;
+                   background: var(--bg-card); color: var(--text-primary); font-size: 20px; line-height: 1; cursor: pointer;
                    transition: background var(--dur-2) var(--ease-out); }
     .cal-mes-btn:hover { background: var(--bg-inset); }
     .cal-mes-btn:active { transform: scale(0.95); }
     .cal-mes-btn:disabled { opacity: 0.3; cursor: default; }
-    .cal-resumen { margin-top: 6px; font-size: 12px; color: var(--text-secondary); }
+    .cal-resumen { margin-top: 6px; font-size: 15px; color: var(--text-secondary); }
     .cal-rejilla { margin-top: 12px; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
     /* los tres rótulos del calendario (día de la semana, conteo y etiqueta de la
-       ficha) suben de 10 a 11 px: el suelo de tamaño es 11 en toda la aplicación */
-    .cal-dow { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-tertiary); text-align: center; padding-bottom: 2px; }
+       ficha) suben de 10 a 11 px: el suelo de tamaño es 11 en toda la aplicación (13 desde el 3-nov-2026) */
+    .cal-dow { font-size: 14px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-tertiary); text-align: center; padding-bottom: 2px; }
     /* LA CASILLA ES RECTANGULAR EN ESCRITORIO Y CUADRADA EN MÓVIL, y no es
        estética: con `aspect-ratio: 1/1` y un `max-height`, en 1280 px la
        columna mide 170 px y la casilla 76 — quedaban siete islas separadas por
@@ -1158,27 +1212,27 @@
                  border: 1px solid transparent; background: var(--bg-inset); color: var(--text-secondary);
                  font: inherit; padding: 0; transition: background var(--dur-2) var(--ease-out), box-shadow var(--dur-2) var(--ease-out); }
     .cal-vacia { background: transparent; }
-    .cal-num { font-size: 12px; font-variant-numeric: tabular-nums; }
+    .cal-num { font-size: 15px; font-variant-numeric: tabular-nums; }
     .cal-con { background: var(--accent-light); color: var(--text-primary); cursor: pointer; }
     .cal-con:hover { box-shadow: inset 0 0 0 1px var(--accent); }
     .cal-con:active { transform: scale(0.96); }
-    .cal-con .cal-num { font-weight: 600; font-size: 13px; }
-    .cal-n { font-size: 11px; font-weight: 600; color: var(--accent); font-variant-numeric: tabular-nums; }
+    .cal-con .cal-num { font-weight: 600; font-size: 16px; }
+    .cal-n { font-size: 14px; font-weight: 600; color: var(--accent); font-variant-numeric: tabular-nums; }
     .cal-pasado { opacity: 0.45; }
     .cal-hoy { border-color: var(--accent); }
     .cal-hoy .cal-num { color: var(--accent); font-weight: 700; }
     .cal-abierto { outline: 2px solid var(--accent); outline-offset: -2px; }
     .cal-detalle { margin-top: 16px; }
-    .cal-dia-t { font-size: 13px; font-weight: 600; color: var(--text-primary); }
-    .cal-vacio { font-size: 12px; color: var(--text-secondary); }
+    .cal-dia-t { font-size: 16px; font-weight: 600; color: var(--text-primary); }
+    .cal-vacio { font-size: 15px; color: var(--text-secondary); }
     .cal-lista { margin-top: 8px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
     .cal-fila { min-width: 0; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-inset); transition: border-color var(--dur-2) var(--ease-out); }
     .cal-fila:hover { border-color: var(--border-fuerte); }
     .cal-fila-abierta, .cal-fila-abierta:hover { border-color: var(--accent); }
     .cal-fila-cabeza { display: block; width: 100%; text-align: left; padding: 10px 12px; background: transparent;
                        border: 0; font: inherit; cursor: pointer; min-width: 0; }
-    .cal-objeto { display: block; font-size: 13px; font-weight: 500; color: var(--text-primary); overflow-wrap: anywhere; }
-    .cal-meta { margin-top: 3px; display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; color: var(--text-secondary); }
+    .cal-objeto { display: block; font-size: 16px; font-weight: 500; color: var(--text-primary); overflow-wrap: anywhere; }
+    .cal-meta { margin-top: 3px; display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 15px; color: var(--text-secondary); }
     .cal-valor { font-variant-numeric: tabular-nums; }
     /* El lugar de ejecución es la ENTIDAD (decisión del 31-ago-2026), y su
        municipio va debajo en una línea propia: los nombres de entidad de SECOP
@@ -1186,27 +1240,30 @@
        hasta volverlo ilegible. `flex-basis: 100%` la baja entera. */
     .cal-lugar { overflow-wrap: anywhere; font-weight: 500; color: var(--text-primary); }
     .cal-sede { flex-basis: 100%; overflow-wrap: anywhere; }
-    .cal-chip { margin-top: 6px; display: inline-block; border-radius: 999px; padding: 2px 9px; font-size: 11px; font-weight: 600; }
+    .cal-chip { margin-top: 6px; display: inline-block; border-radius: 999px; padding: 2px 9px; font-size: 14px; font-weight: 600; }
     .cal-rojo { background: var(--danger-light); color: var(--danger); }
     .cal-ambar { background: var(--warn-light); color: var(--warn); }
     .cal-verde { background: var(--ok-light); color: var(--ok-texto); }
     .cal-gris { background: var(--bg-inset-2); color: var(--text-secondary); }
     .cal-ficha { border-top: 1px solid var(--border); padding: 10px 12px 12px; min-width: 0; }
     .cal-datos { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px 18px; }
-    .cal-dato dt { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-tertiary); }
-    .cal-dato dd { margin: 2px 0 0; font-size: 13px; color: var(--text-primary); overflow-wrap: anywhere; }
-    .cal-nota { margin-top: 10px; font-size: 11px; color: var(--text-secondary); }
+    .cal-dato dt { font-size: 14px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-tertiary); }
+    .cal-dato dd { margin: 2px 0 0; font-size: 16px; color: var(--text-primary); overflow-wrap: anywhere; }
+    .cal-nota { margin-top: 10px; font-size: 14px; color: var(--text-secondary); }
     .cal-plazo { margin-top: 10px; border-radius: var(--radius-sm); padding: 8px 10px; }
-    .cal-plazo-t { font-size: 12px; font-weight: 600; }
-    .cal-plazo-d, .cal-plazo-n { margin-top: 3px; font-size: 11px; color: var(--text-secondary); }
+    .cal-plazo-t { font-size: 15px; font-weight: 600; }
+    .cal-plazo-d, .cal-plazo-n { margin-top: 3px; font-size: 14px; color: var(--text-secondary); }
     .cal-ir { margin-top: 12px; display: inline-block; border-radius: 980px; border: 1px solid var(--border-fuerte);
-              padding: 7px 14px; font-size: 12px; font-weight: 500; color: var(--text-primary); text-decoration: none;
+              padding: 7px 14px; font-size: 15px; font-weight: 500; color: var(--text-primary); text-decoration: none;
               transition: background var(--dur-2) var(--ease-out); }
     .cal-ir:hover { background: var(--bg-inset); }
     @media (max-width: 640px) { .cal-celda { height: auto; aspect-ratio: 1 / 1; min-height: 38px; } }
     @media (max-width: 480px) {
       .cal-celda { min-height: 34px; }
-      .cal-num { font-size: 11px; }
+      .cal-num { font-size: 14px; }
+      /* el día CON procesos lleva número y conteo apilados: con la escala de lectura (16 + 14 px) se
+         salían 4 px de la casilla a 390 y 6 a 360 (revisión adversaria). Interlineado 1 y un paso menos */
+      .cal-con .cal-num { font-size: 14px; line-height: 1; } .cal-n { font-size: 13px; line-height: 1; }
       .cal-datos { grid-template-columns: 1fr; }
     }
     @media (prefers-reduced-motion: reduce) { .cal-con:hover, .cal-con:active { transform: none; } }
@@ -1233,37 +1290,37 @@
       display: flex; align-items: center; gap: 8px; padding: 0 12px; }
     .cas-vistas { display: inline-flex; gap: 2px; padding: 3px; border-radius: var(--radius-accion); background: var(--bg-inset-2); }
     .cas-vista-btn { min-height: 32px; padding: 0 14px; border: 0; border-radius: var(--radius-accion); background: transparent;
-      font-size: 13px; font-weight: 500; color: var(--text-secondary); cursor: pointer; transition: background var(--dur-2) var(--ease-out), color var(--dur-2) var(--ease-out); }
+      font-size: 16px; font-weight: 500; color: var(--text-secondary); cursor: pointer; transition: background var(--dur-2) var(--ease-out), color var(--dur-2) var(--ease-out); }
     .cas-vista-btn:hover { color: var(--text-primary); }
     .cas-vista-btn[aria-pressed="true"] { background: var(--bg-card); color: var(--text-primary); box-shadow: var(--shadow-sm); }
     .cas-carpetas { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px; }
     .cas-chip { min-height: 32px; padding: 0 12px; border-radius: var(--radius-accion); border: 1px solid var(--border-fuerte);
-      background: var(--bg-card); font-size: 12.5px; color: var(--text-secondary); cursor: pointer; transition: var(--transition); }
+      background: var(--bg-card); font-size: 15.5px; color: var(--text-secondary); cursor: pointer; transition: var(--transition); }
     .cas-chip:hover { background: var(--bg-inset); color: var(--text-primary); }
     .cas-chip-activo { background: var(--accent); border-color: var(--accent); color: var(--accent-texto); }
     .cas-tipos { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
     .cas-organizar { margin-top: 8px; }
-    .cas-organizar-titulo { cursor: pointer; display: flex; font-size: 13px; color: var(--text-secondary); }
+    .cas-organizar-titulo { cursor: pointer; display: flex; font-size: 16px; color: var(--text-secondary); }
     .cas-organizar-caja { margin-top: 8px; }
     .cas-organizar-mensaje { margin-top: 6px; }
     .cas-org { display: flex; flex-direction: column; gap: 8px; }
     .cas-org-nueva, .cas-org-fila, .cas-tarea-nueva { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
     .cas-org-lista { margin-top: 8px; display: flex; flex-direction: column; gap: 6px; list-style: none; padding: 0; }
-    .cas-org-campo { flex: 1 1 180px; min-width: 140px; min-height: 36px; padding: 0 10px; font-size: 13px; }
-    .cas-org-boton { min-height: 36px; padding: 0 12px; font-size: 13px; }
-    .cas-nota { font-size: 12px; color: var(--text-tertiary); }
+    .cas-org-campo { flex: 1 1 180px; min-width: 140px; min-height: 36px; padding: 0 10px; font-size: 16px; }
+    .cas-org-boton { min-height: 36px; padding: 0 12px; font-size: 16px; }
+    .cas-nota { font-size: 15px; color: var(--text-tertiary); }
     .cas-enlace { border: 0; background: none; padding: 0; font: inherit; color: var(--accent); cursor: pointer; text-align: left; }
     .cas-enlace:hover { text-decoration: underline; }
     .cas-grupo-cabeza { margin-top: 18px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px;
       padding-bottom: 6px; border-bottom: 1px solid var(--border); }
-    .cas-grupo-titulo { font-size: 15px; font-weight: 600; color: var(--text-primary); }
-    .cas-grupo-nota { font-size: 12px; color: var(--text-secondary); }
+    .cas-grupo-titulo { font-size: 17.5px; font-weight: 600; color: var(--text-primary); }
+    .cas-grupo-nota { font-size: 15px; color: var(--text-secondary); }
     .cas-grupo-vacio { margin-top: 8px; }
     /* el cuaderno: notas y lista de verificación de UN proceso */
     .cas-cuaderno { margin-top: 12px; }
-    .cas-cuaderno-titulo { cursor: pointer; display: flex; padding: 8px 12px; font-size: 13.5px; font-weight: 600; }
+    .cas-cuaderno-titulo { cursor: pointer; display: flex; padding: 8px 12px; font-size: 16.5px; font-weight: 600; }
     .cas-cuaderno-cuerpo { padding: 0 12px 12px; display: flex; flex-direction: column; gap: 8px; }
-    .cas-rotulo { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-tertiary); }
+    .cas-rotulo { font-size: 14px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-tertiary); }
     .cas-tareas { display: flex; flex-direction: column; gap: 6px; list-style: none; padding: 0; }
     .cas-tarea { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
     /* La casilla la dimensiona la regla global de esta casa (16 px) y el suelo
@@ -1272,18 +1329,18 @@
        la línea entera. Aquí solo se reparte el espacio. */
     .cas-tarea-marca { display: flex; align-items: center; gap: 8px; flex: 1 1 200px; min-width: 0; cursor: pointer; }
     .cas-tarea-casilla { flex: 0 0 auto; }
-    .cas-tarea-texto { flex: 1 1 160px; min-width: 0; font-size: 13.5px; color: var(--text-primary); }
+    .cas-tarea-texto { flex: 1 1 160px; min-width: 0; font-size: 16.5px; color: var(--text-primary); }
     .cas-tarea-hecha { color: var(--text-tertiary); text-decoration: line-through; }
-    .cas-tarea-quitar { border: 0; background: none; padding: 0 4px; font-size: 12px; color: var(--text-tertiary); cursor: pointer; }
+    .cas-tarea-quitar { border: 0; background: none; padding: 0 4px; font-size: 15px; color: var(--text-tertiary); cursor: pointer; }
     .cas-tarea-quitar:hover { color: var(--danger); }
-    .cas-tarea-campo { flex: 1 1 200px; min-width: 150px; min-height: 36px; padding: 0 10px; font-size: 13px; }
-    .cas-tarea-fecha { min-height: 36px; padding: 0 10px; font-size: 13px; }
-    .cas-notas { width: 100%; padding: 8px 10px; font-size: 13.5px; line-height: 1.45; resize: vertical; }
+    .cas-tarea-campo { flex: 1 1 200px; min-width: 150px; min-height: 36px; padding: 0 10px; font-size: 16px; }
+    .cas-tarea-fecha { min-height: 36px; padding: 0 10px; font-size: 16px; }
+    .cas-notas { width: 100%; padding: 8px 10px; font-size: 16.5px; line-height: 1.45; resize: vertical; }
     .cas-notas-pie { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
     /* el selector de carpeta de cada tarjeta */
     .cas-carpeta-sel { display: inline-flex; align-items: center; gap: 6px; }
-    .cas-carpeta-rotulo { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-tertiary); }
-    .cas-carpeta-select { min-height: 32px; font-size: 12.5px; }
+    .cas-carpeta-rotulo { font-size: 14px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-tertiary); }
+    .cas-carpeta-select { min-height: 32px; font-size: 15.5px; }
     @media (max-width: 480px) {
       .cas-barra { gap: 6px; }
       .cas-buscar { flex: 1 1 100%; }
@@ -1671,16 +1728,16 @@
        serif: sus números son de estilo antiguo y bailan en una columna. */
     .cabecera-pestana { margin-bottom: 30px; }
     .titulo-pestana { font-family: var(--font-display); font-size: 40px; line-height: 1.1; font-weight: 500; letter-spacing: -0.02em; color: var(--text-primary); }
-    .subtitulo-pestana { margin-top: 8px; max-width: 734px; font-size: 17px; line-height: 1.45; color: var(--text-secondary); }
-    .nota-pestana { margin-top: 10px; max-width: 734px; font-size: 13px; line-height: 1.4; color: var(--text-secondary); }
+    .subtitulo-pestana { margin-top: 8px; max-width: 734px; font-size: 19px; line-height: 1.45; color: var(--text-secondary); }
+    .nota-pestana { margin-top: 10px; max-width: 734px; font-size: 16px; line-height: 1.4; color: var(--text-secondary); }
     .nota-pestana:empty { display: none; }
     @media (max-width: 640px) {
       .cabecera-pestana { margin-bottom: 22px; }
       .titulo-pestana { font-size: 32px; }
-      .subtitulo-pestana { font-size: 15px; }
+      .subtitulo-pestana { font-size: 17.5px; }
     }
     /* la portada: marca en versalitas espaciadas encima del titular en serif */
-    .marca-portada { font-family: var(--font-sans); font-size: 13px; font-weight: 600; letter-spacing: 0.22em; text-transform: uppercase; color: var(--text-secondary); }
+    .marca-portada { font-family: var(--font-sans); font-size: 16px; font-weight: 600; letter-spacing: 0.22em; text-transform: uppercase; color: var(--text-secondary); }
     /* ── EL SERIF BAJA AL TITULAR INTERMEDIO (13-sep-2026, cuarta decisión de gusto del dueño) ──
        Hasta hoy el serif solo aparecía en la marca, el título de pestaña y el titular de la portada,
        y el paso intermedio —la frase que encabeza «Mi empresa» y la de la revisión— se quedaba en
@@ -1695,11 +1752,11 @@
     /* «Para Helder (persona natural), hoy» y compañía: los h2 grandes también en serif */
     #app h2.text-2xl, #app h2.text-3xl { font-family: var(--font-display); font-weight: 500; font-size: 26px; letter-spacing: -0.015em; }
 
-    /* ── Encabezados de sección: 20 px, 600, tracking −0,02. Los h2 que las
+    /* ── Encabezados de sección: 20 px (22 con la escala de lectura), 600, tracking −0,02. Los h2 que las
        plantillas marcan pequeños (text-sm) son sub-bloques y se quedan en
-       16 px. ── */
-    #app h2 { font-size: 20px; line-height: 1.25; font-weight: 600; letter-spacing: -0.02em; }
-    #app h2.text-sm, #app h2.text-base, #app h2.text-xs, #app h2.text-\[15px\] { font-size: 16px; letter-spacing: -0.01em; }
+       16 px (18 con la escala). ── */
+    #app h2 { font-size: 22px; line-height: 1.25; font-weight: 600; letter-spacing: -0.02em; }
+    #app h2.text-sm, #app h2.text-base, #app h2.text-xs, #app h2.text-\[15px\] { font-size: 18px; letter-spacing: -0.01em; }
     #app h3 { letter-spacing: -0.01em; }
 
     /* ── LOS TITULARES NO PARTEN MAL, Y LOS PÁRRAFOS NO DEJAN HUÉRFANAS (13-sep-2026) ──
@@ -1712,9 +1769,9 @@
        que está puesto. */
     #frase-portada, .titulo-pestana, .exp-nombre, .marca-gate, #app h1, #app h2, #app h3 { text-wrap: balance; }
     .subtitulo-pestana, #app p, #app li, #app dd { text-wrap: pretty; }
-    /* Un rótulo en versalitas es el «eyebrow» de todos los referentes: 11 px,
+    /* Un rótulo en versalitas es el «eyebrow» de todos los referentes: 11 px (14 con la escala de lectura),
        peso 500, terciario, tracking +0,06 em. */
-    #app thead th, #app .uppercase.tracking-wide, #app .uppercase.tracking-wider, #onboarding .uppercase.tracking-wide { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 500; color: var(--text-tertiary); }
+    #app thead th, #app .uppercase.tracking-wide, #app .uppercase.tracking-wider, #onboarding .uppercase.tracking-wide { font-size: 14px; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 500; color: var(--text-tertiary); }
     #app .text-gray-400, #onboarding .text-gray-400, #app .text-gray-300 { color: var(--text-tertiary); }
 
     /* ── Tarjetas: radio 20 las de primer nivel, 12 las anidadas; relleno 24
@@ -1827,8 +1884,8 @@
       transition: border-color var(--dur-2) var(--ease-out), background-color var(--dur-2) var(--ease-out), color var(--dur-2) var(--ease-out); }
     .zona-archivo:hover, .zona-archivo.sobre, .zona-archivo:focus-within { border-color: var(--accent); background: var(--accent-light); color: var(--text-primary); }
     .zona-archivo svg { width: 28px; height: 28px; color: var(--accent); }
-    .zona-archivo-titulo { font-size: 15px; font-weight: 600; color: var(--text-primary); }
-    .zona-archivo-sub { font-size: 12px; color: var(--text-secondary); max-width: 520px; }
+    .zona-archivo-titulo { font-size: 17.5px; font-weight: 600; color: var(--text-primary); }
+    .zona-archivo-sub { font-size: 15px; color: var(--text-secondary); max-width: 520px; }
 
     /* ── EL TITULAR DE MI EMPRESA EN 390 px: las tres cifras iban en tres
        columnas de 110 px y «$297.228 millones» se montaba encima del «214» de
@@ -1882,9 +1939,9 @@
       min-height: 32px; display: inline-flex; align-items: center; padding: 6px 10px; }
     #app summary { min-height: 24px; }
     #lista .tarjeta summary, #lista .tarjeta .detalle-probabilidad { min-height: 24px; padding: 4px 0; }
-    /* la barra del teléfono pasa de 10 a 11 px: es el único texto de 10 px que
+    /* la barra del teléfono pasa de 10 a 11 px (y a 14 con la escala de lectura del 3-nov-2026): es el único texto de 10 px que
        queda en la aplicación y es una barra tipo iOS, no una frase que leer */
-    #app .pestana-movil { font-size: 11px; }
+    #app .pestana-movil { font-size: 14px; }
 
     @media (max-width: 639px) {
       /* (3) LA BARRA SUPERIOR, EN UNA SOLA FILA. El selector de perfil caía a un
@@ -1905,8 +1962,8 @@
          (piel v3, decisión del h1 móvil a 32 px: se rebaja solo en el teléfono) */
       #app .cabecera-pestana h1 { font-size: 28px; }
       #app main.panel-pestana { padding-top: 20px; }
-      /* (5) el texto de la tarjeta, de 12 a 13 px: es lo que se LEE para decidir */
-      #lista .tarjeta .text-xs { font-size: 13px; }
+      /* (5) el texto de la tarjeta, de 12 a 13 px (16 con la escala de lectura): es lo que se LEE para decidir */
+      #lista .tarjeta .text-xs { font-size: 16px; }
       /* (6) los últimos 32 px de aire muerto entre la cabecera y la primera
          licitación, sin quitar ni un dato: la fila de fichas de filtro VACÍA
          dejaba su margen de 8 px, la cabecera de pestaña separaba 22 px y los
@@ -2078,7 +2135,7 @@
        Cuelga del PUNTERO y no de un ancho a propósito: un iPad en horizontal
        mide 1024 px y sigue siendo un dedo. */
     @media (pointer: coarse) {
-      :is(#onboarding, #gate, #app, #revision-oferta, #modal-competencia, #modal-eliminar, #modal-importar) :is(input, select, textarea) { font-size: 16px; }
+      :is(#onboarding, #gate, #app, #revision-oferta, #modal-competencia, #modal-eliminar, #modal-importar) :is(input, select, textarea) { font-size: 18px; }
     }
 
     /* ── UN CAMPO CON SUELO FIJO TAMBIÉN ENCOGE, POR DEBAJO DE 640 (12-sep-2026)
@@ -2122,6 +2179,127 @@
        la tarjeta porque aquí el velo es el PADRE (13-sep-2026). */
     #gate > div { background: var(--bg-card); border-radius: var(--radius-lg); box-shadow: 0 0 0 1px var(--border), var(--shadow-md), var(--filo); padding: 40px 32px;
       animation: dialogo-entra var(--dur-4) var(--ease-expo); }
+
+    /* ══════════ ESCALA DE LECTURA · la 11 con la 3 (3-nov-2026) ══════════
+       El dueño eligió la maqueta «la 11 con la 3»: los colores y la estructura de hoy con la
+       lectura de «Claro y grande» (texto de 18 px, nada de letra de 11). Se hace con UNA tabla de
+       equivalencias, aplicada en dos sitios de esta misma hoja y en ningún otro:
+         10→13 · 11→14 · 11,5→14,5 · 12→15 · 12,5→15,5 · 13→16 · 13,5→16,5 · 14→17 · 15→17,5 ·
+         16→18 · 17→19 · 18→20 · 19→21 · 20→22 · 21→23 · 22→24 · 24→26 · de 26 en adelante, igual.
+       (1) cada `font-size` en px de este <style> y los tokens --tipo-N ya están reescritos con ella
+       —la herramienta que la aplicó falla si aparece un tamaño sin fila—; (2) las utilidades de
+       Tailwind, que vienen compiladas en /tailwind.css y que las plantillas del JS escriben a mano
+       (594 «text-xs», 500 «text-sm» y 126 «text-[Npx]» el 3-nov), se reasignan AQUÍ con `html .text-xs`
+       (0,1,1): gana a la utilidad (0,1,0) por especificidad y no por el orden de las hojas, y pierde
+       a propósito contra las parejas `.clase.utilidad` (0,2,0) y las reglas con id, que fijan un
+       tamaño a conciencia y ya están reescritas con la misma tabla. NO va como `.text-xs` suelta:
+       el censo de empates de la suite la leería como una clase propia que pisa en silencio a la
+       utilidad del mismo nombre (lo hizo, y tenía razón: es ese mecanismo). NO se toca /tailwind.css (se genera fuera del
+       árbol: un cambio a mano se perdería al regenerarla) ni ninguna plantilla.
+       El interlineado va sin unidades: el de Tailwind era fijo (`.text-xs` 16 px) y con 15 px de
+       letra dejaba los renglones pegados.
+       Lo que NO entra, declarado: los rótulos de los gráficos SVG (`font-size="11"` en app.js y
+       pulso.js) se miden en unidades del dibujo y su posición se calculó para ese tamaño —agrandarlos
+       los monta unos sobre otros—; y la justificación imprimible (justificacion.js), que es otro
+       documento con su propia hoja. La suite censa que ningún tamaño de esta hoja baje de 13 px. */
+    /* lo que no lleva clase de tamaño hereda del cuerpo: 18 px */
+    body { font-size: 18px; line-height: 1.55; }
+    html .text-xs { font-size: 15px; line-height: 1.45; }
+    html .text-sm { font-size: 17px; line-height: 1.5; }
+    html .text-base { font-size: 18px; line-height: 1.55; }
+    html .text-lg { font-size: 20px; line-height: 1.5; }
+    html .text-xl { font-size: 22px; line-height: 1.4; }
+    html .text-2xl { font-size: 26px; line-height: 1.3; }
+    html .text-\[10px\] { font-size: 13px; }
+    html .text-\[11px\] { font-size: 14px; }
+    html .text-\[12px\] { font-size: 15px; }
+    html .text-\[13px\] { font-size: 16px; }
+    html .text-\[15px\] { font-size: 17.5px; }
+    html .text-\[17px\] { font-size: 19px; }
+    html .text-\[20px\] { font-size: 22px; }
+    html .text-\[21px\] { font-size: 23px; }
+    html .text-\[22px\] { font-size: 24px; }
+    html .text-\[24px\] { font-size: 26px; }
+    /* el botón «Seleccionar archivo» de los campos de archivo: un pseudoelemento con su propia utilidad */
+    html .file\:text-sm::file-selector-button { font-size: 17px; line-height: 1.5; }
+    /* EL INTERLINEADO QUE LA PLANTILLA FIJÓ A PROPÓSITO SIGUE MANDANDO. `html .text-*` (0,1,1) lleva
+       su interlineado y le ganaba a `leading-*` (0,1,0): la × de cierre de los diálogos pasaba de 28 a
+       39 px de alto y `leading-snug`/`leading-relaxed` se perdían (revisión adversaria, medido). Se
+       repiten aquí, con el MISMO valor que traen compiladas y la misma especificidad, después. */
+    html .leading-none { line-height: 1; } html .leading-tight { line-height: 1.25; } html .leading-snug { line-height: 1.375; }
+    html .leading-relaxed { line-height: 1.625; } html .leading-6 { line-height: 1.5rem; }
+    html .leading-\[1\.15\] { line-height: 1.15; } html .leading-\[1\.5\] { line-height: 1.5; }
+    @media (min-width: 640px) {
+      html .sm\:text-xs { font-size: 15px; line-height: 1.45; }
+      html .sm\:text-\[17px\] { font-size: 19px; }
+      /* las de 26 px o más no cambian de valor, pero SÍ hay que repetirlas aquí: sin esto, la base
+         `html .text-[22px]` (0,1,1) le ganaba a la utilidad `sm:text-[26px]` (0,1,0) y el titular
+         que en escritorio mide 26 se quedaba en 24 */
+      html .sm\:text-\[26px\] { font-size: 26px; } html .sm\:text-\[28px\] { font-size: 28px; }
+      html .sm\:text-\[34px\] { font-size: 34px; } html .sm\:text-\[36px\] { font-size: 36px; }
+      html .sm\:text-\[40px\] { font-size: 40px; }
+    }
+    /* y la de 1536 px: sin ella `html .sm:text-[34px]` le ganaba a `2xl:text-[40px]` y las cifras grandes
+       de Mi empresa bajaban de 40 a 34 en una pantalla ancha (revisión adversaria, medido a 1600 px) */
+    @media (min-width: 1536px) {
+      html .\32xl\:text-\[40px\] { font-size: 40px; }
+    }
+
+    /* ── LO QUE SE PULSA, GRANDE, Y LO QUE SE LEE, ENTERO (3-nov-2026, la 11 con la 3) ──
+       (1) BOTONES. Los de acción —los de la barra de herramientas, «Guardar» y «Calcular mi precio»
+       de la tarjeta, los del expediente y el botón principal de cada pantalla— miden 56 px de alto;
+       los secundarios (los del casillero, los mandos de vista, «Enterado») 48. Es lo que tenía la
+       maqueta aprobada. Va por CLASE, no por `button`: un `button` que se pinta como enlace dentro de
+       una frase («Ver cómo se calcula») no puede crecer a 56 sin partir el renglón. El objetivo táctil
+       de 44 px (el `::after` invisible de más arriba) sigue cubriendo a todos los demás.
+       `.btn-apu.cifra-pulsable` queda fuera: es la CIFRA «Calcular» de la celda, no un botón.
+       El identificador va DOBLADO (`#app#app`) a propósito: el suelo de 24 px de más arriba pesa
+       (1,3,1) por el `input:not()×3` de su lista, y `#lista .tarjeta .btn-guardar` (1,2,0) fija
+       32 px; medido en Chromium, los dos le ganaban a esta regla y «Guardar» seguía en 39 px.
+       Repetir el id sube a (2,…) sin cambiar a qué elementos alcanza. */
+    :is(#app#app, #onboarding#onboarding, #gate#gate, #modal-competencia#modal-competencia, #modal-importar#modal-importar, #modal-eliminar#modal-eliminar)
+      :is(.control-boton, .control-select, .control-campo, .campo-buscar, .btn-vidrio-acento, .btn-peligro, .exp-boton,
+          .btn-guardar, .btn-apu:not(.cifra-pulsable), button.bg-gray-900):not(.barra-superior *):not(:is(.cas-org-boton,
+          .cas-org-campo, .cas-tarea-campo, .cas-tarea-fecha, .cas-carpeta-select, .exp-boton-suave)) { min-height: 56px; }
+    /* la barra superior no: el selector de perfil y su vecindad son una barra fija de 56 px, y un
+       control de 56 dentro la volvía de 72 (medido); allí manda el objetivo táctil de 44 */
+    :is(#app#app, #onboarding#onboarding, #gate#gate, #modal-competencia#modal-competencia, #modal-importar#modal-importar, #modal-eliminar#modal-eliminar)
+      :is(.btn-guardar, .btn-apu:not(.cifra-pulsable)) { display: inline-flex; align-items: center; padding-inline: 20px; font-size: 17px; }
+    /* seis de estas clases van junto a `control-*` o `exp-boton`: la regla de 56 las EXCLUYE por nombre
+       (`:not(:is(…))`) en vez de pelear la especificidad —su `:is()` pesa (2,3,0) por el `.btn-apu:not()`
+       de la lista, y un empate de pesos falló una vez (medido: «Crear la carpeta» seguía en 56) */
+    #app#app :is(.exp-boton-suave, .cas-org-boton, .cas-org-campo, .cas-tarea-campo, .cas-tarea-fecha, .cas-carpeta-select,
+          .cas-vista-btn, .cas-chip, .exp-seccion-btn, .cas-aviso-btn, .cas-aviso-visto, .exp-volver):not(.barra-superior *) { min-height: 48px; }
+    #app#app .cal-mes-btn { min-width: 44px; height: 44px; }
+    /* el campo de búsqueda: el `input` de dentro ocupa ahora todo el alto de su etiqueta, y con su
+       fondo blanco tapaba el filo de arriba y de abajo de la etiqueta (medido: 41,5 px de los dos).
+       El filo lo pinta la etiqueta; el campo va transparente. */
+    :is(#app, #onboarding) .campo-buscar input:not([type=checkbox]):not([type=file]):not([type=radio]) { background-color: transparent; box-shadow: none; }
+
+    /* (2) ENLACES SUBRAYADOS. Un enlace que solo se distingue por el color es invisible para quien
+       no ve bien el azul tinta (WCAG 1.4.1). Todo `a[href]` que se lee como texto va subrayado; los
+       que se visten de botón o de ficha (llevan borde, anillo o una clase de botón) no, y tampoco
+       los que SON un renglón entero de una lista (`block`, `flex`, `grid`: «Arauca · 15 · $6.846
+       millones» en Mi empresa): ahí la fila y su barra ya dicen que se pulsa, y subrayar la fila
+       entera era una raya bajo cada cifra. Tampoco los `<a>` de dentro de un gráfico SVG (las cifras
+       del gráfico de urgencia salían subrayadas) ni `.cal-ir`, una píldora con su borde puesto por
+       la hoja y no por una clase de la plantilla. */
+    :is(#app, #onboarding, #gate, #modal-competencia, #modal-importar, #modal-eliminar)
+      a[href]:not([class*="btn"]):not([class*="boton"]):not([class*="puerta"]):not([class*="border"]):not([class*="ring-"]):not(.pestana):not(.pestana-movil):not(.block):not(.flex):not(.grid):not(svg *):not(.cal-ir) {
+      text-decoration-line: underline; text-decoration-thickness: from-font; text-underline-offset: 0.18em; }
+
+    /* (3) NADA CORTADO CON «…». Con la letra grande, lo que antes cabía en un renglón se cortaba:
+       el nombre del proceso y la frase del aviso en «Lo que pide atención», los nombres de las
+       entidades de Mi empresa y el título de la ventana de competencia. Se leen enteros, en los
+       renglones que hagan falta. Quedan fuera, a propósito: las celdas de la vista previa de una
+       tabla importada y la muestra de renglones no reconocidos del pliego (son muestras de una
+       línea por fila, con el texto completo en el archivo) y la hora de los datos en la barra del
+       teléfono, que es una sola línea fija. */
+    /* el título de la tarjeta y el de la fila del expediente: de 2 a 4 renglones antes del corte. Con
+       la letra grande, dos renglones dejaban fuera media frase de casi todo título de SECOP II. */
+    .titulo-tarjeta, .exp-fila-titulo { -webkit-line-clamp: 4; }
+    #app :is(.cas-aviso-nombre, .cas-aviso-frase), #tab-admin .truncate, #modal-titulo.truncate {
+      white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; }
   </style>
 </head>
 <body class="antialiased">

@@ -42998,11 +42998,18 @@ async function main() {
              en oscuro, medido en Chromium con CSS.getMatchedStylesForNode.
              Una superficie mirada deja las otras vivas: se barren las cuatro
              sobre las que el terciario puede caer. */
-          for (const superficie of ["bg-card", "bg-primary", "bg-inset", "bg-inset-2"]) {
-            const t = contraste(tk(tema, "text-tertiary"), tk(tema, superficie));
-            medidas.push(`terciario/${superficie} ${tema} ${t.toFixed(2)}:1`);
-            assert.ok(t >= 4.5,
-              `--text-tertiary sobre --${superficie} en ${tema} da ${t.toFixed(2)}:1 y el texto pequeño pide 4,5:1`);
+          /* 7:1 DESDE EL 3-NOV-2026 («la 11 con la 3», elegida por el dueño): todo el texto a nivel
+             AAA (WCAG 1.4.6), que es lo que prometía la maqueta «Claro y grande». Se barren las dos
+             tintas grises —la secundaria entra también: antes iba «al límite AA» a propósito— contra
+             las cuatro superficies. Falla contra la paleta del 2-nov (secundaria 5,8:1 y terciaria
+             4,65:1 sobre el hundido fuerte). */
+          for (const gris of ["text-secondary", "text-tertiary"]) {
+            for (const superficie of ["bg-card", "bg-primary", "bg-inset", "bg-inset-2"]) {
+              const t = contraste(tk(tema, gris), tk(tema, superficie));
+              medidas.push(`${gris}/${superficie} ${tema} ${t.toFixed(2)}:1`);
+              assert.ok(t >= 7,
+                `--${gris} sobre --${superficie} en ${tema} da ${t.toFixed(2)}:1 y la escala de lectura pide 7:1 (AAA) a todo el texto`);
+            }
           }
           /* ══ LOS TRES ESTADOS: EL MISMO CENSO, Y ADEMÁS SEPARADOS ENTRE SÍ (13-sep-2026) ══
              El censo de superficies estaba escrito para el gris terciario y los tres colores
@@ -43025,8 +43032,8 @@ async function main() {
               for (const superficie of SUPERFICIES) {
                 const c = contraste(tk(tema, estado), tk(tema, superficie));
                 medidas.push(`${estado}/${superficie} ${tema} ${c.toFixed(2)}:1`);
-                assert.ok(c >= 4.5,
-                  `--${estado} sobre --${superficie} en ${tema} da ${c.toFixed(2)}:1 y el texto pequeño pide 4,5:1 (se mide contra las CUATRO superficies, no contra la tarjeta)`);
+                assert.ok(c >= 7,
+                  `--${estado} sobre --${superficie} en ${tema} da ${c.toFixed(2)}:1 y la escala de lectura pide 7:1 (se mide contra las CUATRO superficies, no contra la tarjeta)`);
               }
             }
             for (const [nodo, texto, tinte] of [
@@ -43038,8 +43045,8 @@ async function main() {
               for (const superficie of SUPERFICIES) {
                 const c = contraste(tk(tema, texto), sobre(tk(tema, tinte), tk(tema, superficie)));
                 medidas.push(`${texto}/${tinte}/${superficie} ${tema} ${c.toFixed(2)}:1`);
-                assert.ok(c >= 4.5,
-                  `en ${nodo} (${tema}) el texto --${texto} sobre --${tinte} compuesto contra --${superficie} da ${c.toFixed(2)}:1: la pastilla es translúcida, así que el par que se ve depende de lo que haya DEBAJO`);
+                assert.ok(c >= 7,
+                  `en ${nodo} (${tema}) el texto --${texto} sobre --${tinte} compuesto contra --${superficie} da ${c.toFixed(2)}:1 y hacen falta 7: la pastilla es translúcida, así que el par que se ve depende de lo que haya DEBAJO`);
               }
             }
             const lEstrella = (c) => {
@@ -43047,8 +43054,12 @@ async function main() {
               return y <= 216 / 24389 ? y * 24389 / 27 : Math.pow(y, 1 / 3) * 116 - 16;
             };
             const lOk = lEstrella(tk(tema, "ok")), lWarn = lEstrella(tk(tema, "warn")), lDanger = lEstrella(tk(tema, "danger"));
-            medidas.push(`L* ${tema}: ok ${lOk.toFixed(1)} warn ${lWarn.toFixed(1)} danger ${lDanger.toFixed(1)}`);
-            for (const [a, na, b, nb] of [[lOk, "--ok", lWarn, "--warn"], [lWarn, "--warn", lDanger, "--danger"]]) {
+            /* y el verde que SE PINTA (3-nov-2026, revisión adversaria): `.cal-verde`, «En uso» y las 41 clases
+               `text-green-*` llevan --ok-texto, no --ok. Con 7:1 el oscuro quedaba en L* 83,1 contra un ámbar
+               de 84,1 —el mismo gris, y en orden invertido— y esta cerradura no lo veía porque medía --ok. */
+            const lOkTexto = lEstrella(tk(tema, "ok-texto"));
+            medidas.push(`L* ${tema}: ok ${lOk.toFixed(1)} ok-texto ${lOkTexto.toFixed(1)} warn ${lWarn.toFixed(1)} danger ${lDanger.toFixed(1)}`);
+            for (const [a, na, b, nb] of [[lOk, "--ok", lWarn, "--warn"], [lOkTexto, "--ok-texto", lWarn, "--warn"], [lWarn, "--warn", lDanger, "--danger"]]) {
               assert.ok(a - b >= 5,
                 `${na} y ${nb} en ${tema} están a ${(a - b).toFixed(1)} puntos de L* y hacen falta 5: dos estados con la misma luminosidad son el mismo gris para quien no distingue el rojo del verde, y aquí el error caro es no ver una alerta (el orden es siempre ok > warn > danger: el peligro pesa más)`);
             }
@@ -43376,10 +43387,13 @@ async function main() {
           "TODO resumen de pliegue de la aplicación llega a los 24 px de WCAG 2.5.8 (medían 16)");
         assert.ok(/#lista \.tarjeta summary, #lista \.tarjeta \.detalle-probabilidad \{[^}]*min-height:\s*24px/.test(estiloPropio),
           "«Más detalles» y «Ver cómo se calcula» de la tarjeta, a 24 px");
-        assert.ok(/#app \.pestana-movil \{ font-size: 11px; \}/.test(estiloPropio),
-          "la barra del teléfono sube de 10 a 11 px");
-        assert.ok(/#lista \.tarjeta \.text-xs \{[^}]*font-size:\s*13px/.test(telefono),
-          "en el teléfono el texto de la tarjeta —lo que se LEE para decidir— sube de 12 a 13 px");
+        /* Los dos valores siguientes los movió la ESCALA DE LECTURA (3-nov-2026, «la 11 con la 3»):
+           la misma tabla que reescribió el resto de la hoja (11→14, 13→16). Lo que se defiende sigue
+           siendo lo mismo —que existan y que estén por encima de su clase—; cambia el número. */
+        assert.ok(/#app \.pestana-movil \{ font-size: 14px; \}/.test(estiloPropio),
+          "la barra del teléfono: de 10 a 11 px (13-sep) y a 14 con la escala de lectura (3-nov-2026)");
+        assert.ok(/#lista \.tarjeta \.text-xs \{[^}]*font-size:\s*16px/.test(telefono),
+          "en el teléfono el texto de la tarjeta —lo que se LEE para decidir— va un paso por encima del resto: 16 px con la escala de lectura (antes 13)");
 
         /* CENSO, NO LISTA: ningún tamaño de 10 px puede volver por otra puerta.
            Se barren TODOS los atributos class de index.html y de los public/*.js
@@ -43400,10 +43414,15 @@ async function main() {
           }
           assert.deepStrictEqual(diez, [],
             `texto de 10 px fuera de la barra del teléfono (en el aparato del dueño eso no se lee): ${diez.join(" | ")}`);
+          /* El suelo del <style> propio sube de 11 a 13 px con la escala de lectura (3-nov-2026): el
+             más pequeño que escribe es `html .text-[10px]` → 13 (la barra del teléfono, que lleva esa
+             clase, se pinta a 14 porque `#app .pestana-movil` le gana) y el conteo del calendario. Los
+             atributos SVG de JavaScript conservan su suelo de 11 de abajo: se miden en unidades del
+             dibujo (excepción declarada en el bloque de la escala). */
           const pequenos = [...sinComentariosCss(estiloPropio).matchAll(/font-size:\s*([0-9.]+)px/g)]
-            .map((m) => +m[1]).filter((n) => n < 11);
+            .map((m) => +m[1]).filter((n) => n < 13);
           assert.deepStrictEqual(pequenos, [],
-            `el <style> propio fija tamaños de letra por debajo de 11 px: ${pequenos.join(", ")}`);
+            `el <style> propio fija tamaños de letra por debajo de 13 px (el suelo de la escala de lectura): ${pequenos.join(", ")}`);
           /* TERCERA VÍA, LA QUE FALTABA (5-sep-2026): los módulos INYECTAN SVG
              con el tamaño en un ATRIBUTO (`font-size="10"`), que no es ni el
              <style> propio ni la clase `text-[10px]`. Ocho nodos de los dos
@@ -43479,8 +43498,10 @@ async function main() {
           /* (a) NINGÚN CAMPO POR DEBAJO DE 16 px CON EL DEDO. Cuelga del puntero
              y NO de un ancho: un iPad en horizontal mide 1024 px y sigue siendo
              un dedo, y a 1024 una regla por max-width ya no aplicaría. */
-          const regla16 = coarse.match(/\{[^{}]*font-size:\s*16px;?[^{}]*\}/);
-          assert.ok(regla16, "falta la regla de 16 px para los campos en aparato táctil (el zoom de iOS)");
+          /* 16 px o MÁS: con la escala de lectura (3-nov-2026) la regla mide 18, porque un campo ya
+             mide 17 y forzarlo a 16 en el teléfono lo habría ENCOGIDO. Lo que iOS exige es el suelo. */
+          const regla16 = coarse.match(/\{[^{}]*font-size:\s*(?:1[6-9]|[2-9]\d)(?:\.\d+)?px;?[^{}]*\}/);
+          assert.ok(regla16, "falta la regla de 16 px o más para los campos en aparato táctil (el zoom de iOS)");
           const sel16 = coarse.slice(0, coarse.indexOf(regla16[0]));
           /* Las FAMILIAS de campo; los CONTENEDORES los cubre el censo de más
              abajo, que es lo que impide que vuelva a olvidarse uno. */
@@ -45877,6 +45898,83 @@ async function main() {
           "--transition: 0.18s cubic-bezier(0.2, 0, 0.38, 0.9)", "prefers-color-scheme: dark",
           "backdrop-filter: blur(", "--ease-expo:", "--dur-1:"]) {
           assert.ok(html.includes(debe), `index.html sin «${debe}» (falta el sistema de diseño)`);
+        }
+        /* 1.1-bis · LA ESCALA DE LECTURA Y SU LETRA (3-nov-2026, «la 11 con la 3»).
+           (a) CENSO de las utilidades de tamaño e interlineado: se recorren TODAS las reglas de
+           /tailwind.css cuyo selector lleva `text-` o `leading-` y que fijan `font-size` o
+           `line-height` —no una lista, y con los escapes y los pseudoelementos que traigan
+           (`.\32xl\:text-[40px]`, `.file\:text-sm::file-selector-button`)— y cada una tiene que estar
+           reasignada en el <style> propio, SIN COMENTARIOS y DENTRO DEL MISMO @media que la compilada,
+           como `html <selector> { font-size: <tabla>px…` (o el mismo `line-height`). Las de 26 px o más
+           valen lo mismo y solo se exigen las que llevan prefijo de ancho: sin repetirlas, la base
+           `html .text-[22px]` (0,1,1) le ganaba a `sm:text-[26px]` (0,1,0). Las `leading-*` porque
+           `html .text-*` lleva su interlineado y les ganaba. La primera versión de este censo leía el
+           HTML crudo y pasaba con una regla comentada, con una `sm:` fuera de su @media y sin ver
+           `2xl:` (revisión adversaria, con los tres mutantes ejecutados). Quita los comentarios con
+           `sinComentarios`, la de arriba del archivo: la `sinComentariosCss` de la cascada vive en otro
+           bloque y aquí no se ve (la segunda revisión lo cazó: «sinComentariosCss is not defined»). */
+        {
+          const tw = fs.readFileSync(path.join(__dirname, "..", "public", "tailwind.css"), "utf8");
+          const TABLA = { 10: 13, 11: 14, 11.5: 14.5, 12: 15, 12.5: 15.5, 13: 16, 13.5: 16.5, 14: 17, 15: 17.5, 16: 18,
+            17: 19, 18: 20, 19: 21, 20: 22, 21: 23, 22: 24, 24: 26 };
+          /* reglas con su @media de una hoja: [{ media: "(min-width:640px)" | null, sel, cuerpo }] */
+          const reglasConMedia = (css) => {
+            const out = []; let i = 0;
+            while (i < css.length) {
+              const a = css.indexOf("{", i); if (a < 0) break;
+              const cab = css.slice(i, a).trim();
+              if (cab.startsWith("@media")) {
+                let prof = 1, j = a + 1;
+                for (; j < css.length && prof > 0; j++) { if (css[j] === "{") prof++; else if (css[j] === "}") prof--; }
+                const media = cab.replace(/^@media\s*/, "").replace(/\s+/g, "");
+                for (const r of reglasConMedia(css.slice(a + 1, j - 1))) out.push({ ...r, media });
+                i = j; continue;
+              }
+              const b = css.indexOf("}", a);
+              for (const sel of cab.split(",")) out.push({ media: null, sel: sel.trim().replace(/^[}\s]+/, ""), cuerpo: css.slice(a + 1, b) });
+              i = b + 1;
+            }
+            return out;
+          };
+          const propia = reglasConMedia(sinComentarios(html.slice(html.indexOf("<style>") + 7, html.indexOf("</style>"))));
+          const compiladas = reglasConMedia(tw).filter((r) => /(?:^|[.:\\])(?:text|leading)-/.test(r.sel) && /font-size|line-height/.test(r.cuerpo));
+          assert.ok(compiladas.length >= 30, `el censo de utilidades de tamaño e interlineado se quedó corto (${compiladas.length}): revise el lector antes de fiarse de él`);
+          const malas = [];
+          for (const c of compiladas) {
+            const fs1 = /font-size:([0-9.]+)(rem|px)/.exec(c.cuerpo), lh = /line-height:([^;]+)/.exec(c.cuerpo);
+            const esLeading = /(?:^|[.:\\])leading-/.test(c.sel);
+            let quiere;
+            if (esLeading) quiere = (r) => new RegExp(`line-height:\\s*${lh[1].trim().replace(/\./g, "\\.")}\\s*(?:;|$)`).test(r.cuerpo);
+            else {
+              const px = fs1[2] === "rem" ? +fs1[1] * 16 : +fs1[1];
+              if (px >= 26 && !c.media) continue;
+              const esperado = px >= 26 ? px : TABLA[px];
+              if (esperado === undefined) { malas.push(`${c.sel} (${px} px) no tiene fila en la tabla de la escala`); continue; }
+              quiere = (r) => new RegExp(`font-size:\\s*${String(esperado).replace(".", "\\.")}px\\s*(?:;|$)`).test(r.cuerpo);
+            }
+            const hay = propia.some((r) => r.sel === `html ${c.sel}` && (r.media || null) === (c.media || null) && quiere(r));
+            if (!hay) malas.push(`${c.media ? `@media ${c.media} ` : ""}${c.sel}: falta «html ${c.sel}» con su valor${c.media ? " dentro de esa consulta" : ""}`);
+          }
+          assert.deepStrictEqual(malas, [], `utilidades sin reasignar a la escala de lectura: ${malas.join(" | ")}`);
+          /* (b) LA LETRA va alojada en la aplicación, con su licencia, y es la primera de la pila. Cada
+             `url()` de un @font-face —con comillas dobles, simples o sin ellas— tiene que ser un archivo
+             de public/ que exista y sea woff2 de verdad (firma «wOF2»): un archivo que falta no rompe
+             nada visible —el navegador cae a la letra del sistema en silencio—. */
+          const estiloSin = sinComentarios(html.slice(html.indexOf("<style>"), html.indexOf("</style>")));
+          assert.ok(/--font-sans:\s*'Atkinson Hyperlegible',/.test(estiloSin), "--font-sans tiene que empezar por 'Atkinson Hyperlegible' (la letra de la escala de lectura)");
+          const caras = [...estiloSin.matchAll(/@font-face\s*\{([^}]*)\}/g)].map((m) => m[1]);
+          const urls = caras.flatMap((c) => [...c.matchAll(/url\(\s*["']?([^"')\s]+)["']?\s*\)/g)].map((m) => m[1]));
+          assert.ok(caras.length >= 3 && urls.length >= caras.length, `se esperaban los tres archivos de Atkinson (400, 700 y cursiva): ${caras.length} @font-face, ${urls.length} url()`);
+          for (const u of urls) {
+            assert.ok(u.startsWith("/fuentes/"), `la letra se sirve desde la propia aplicación (/fuentes/), no desde «${u}»: la política de seguridad solo deja 'self'`);
+            const f = path.join(__dirname, "..", "public", u);
+            assert.ok(fs.existsSync(f), `el @font-face apunta a ${u} y ese archivo no existe en public/`);
+            assert.strictEqual(fs.readFileSync(f).subarray(0, 4).toString("latin1"), "wOF2", `${u} no es un woff2 (firma)`);
+          }
+          const ofl = path.join(__dirname, "..", "public", "fuentes", "OFL.txt");
+          assert.ok(fs.existsSync(ofl) && /SIL Open Font License, Version 1\.1/.test(fs.readFileSync(ofl, "utf8")),
+            "la licencia de la letra (SIL OFL 1.1) viaja con ella en public/fuentes/OFL.txt: la licencia lo exige al redistribuirla");
+          assert.ok(!/fonts\.(?:googleapis|gstatic)\.com/.test(html), "ninguna letra se carga de Google Fonts: la política de seguridad la bloquearía y el texto caería a la del sistema");
         }
         // 1.2 · los colores del tema oscuro anterior no pueden volver
         for (const prohibido of ["#0f172a", "#1e293b", "#334155", "#34d399", "#052e22"]) {
