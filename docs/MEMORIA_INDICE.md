@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 2316102 bytes · 416 secciones · 41 con marcador de superación.
+Derivado del árbol: 2328980 bytes · 417 secciones · 41 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -424,6 +424,7 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | La baja se publica cada 2 a 3 días, y una fila que no es un registro ya no tumba la lectura de los bloques (3-nov-2026) | 3-nov-2026 | 20959-20982 | 6111 |  |
 | Un consorcio con Helder de integrante hereda sus precios corregidos, y «Calcular» manda el tipo de trabajo (3-nov-2026) | 3-nov-2026 | 20983-21000 | 7606 |  |
 | La 11 con la 3: la letra de leer, todo el texto a 7:1 y una sola tabla de tamaños (3-nov-2026) | 3-nov-2026 | 21001-21021 | 8386 |  |
-| El calendario del proceso: las fechas de los documentos llegan a Mis procesos, SECOP II manda sobre el documento y el lector deja de inventar plazos (3-nov-2026) | 3-nov-2026 | 21022-21062 | 15437 |  |
+| El calendario del proceso: las fechas de los documentos llegan a Mis procesos, SECOP II manda sobre el documento y el lector deja de inventar plazos (3-nov-2026) | 3-nov-2026 | 21022-21062 | 15631 |  |
 | Lo que tiene que entregar: la lista del pliego con su página, marcable en el papeleo, y el papeleo en fila (3-nov-2026) | 3-nov-2026 | 21063-21093 | 12989 |  |
-| El OCR saturado ya no deja un documento incompleto para siempre, dos oferentes casi homónimos se separan por su número, y la cadencia de la baja se mide (3-nov-2026) | 3-nov-2026 | 21094-21143 | 13254 |  |
+| El OCR saturado ya no deja un documento incompleto para siempre, dos oferentes casi homónimos se separan por su número, y la cadencia de la baja se mide (3-nov-2026) | 3-nov-2026 | 21094-21144 | 13255 |  |
+| El cronograma en Excel se lee: el Anexo 2 de Colombia Compra entra a la línea de tiempo con su hoja y su celda, y de varias versiones habla solo la más nueva (3-nov-2026) | 3-nov-2026 | 21145-21167 | 12683 |  |

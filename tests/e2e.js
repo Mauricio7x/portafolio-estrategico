@@ -4504,6 +4504,416 @@ async function main() {
     console.log("· unidad calendario del proceso: cinco cronogramas reales y uno fuera de muestra sin una fecha falsa, el rango explícito, SECOP II manda, las fechas de los documentos en Mis procesos con un comando, lo próximo que vence y el huso que no mueve un día");
   }
 
+  /* ═══ unidad: EL CRONOGRAMA EN EXCEL (3-nov-2026) ═══════════════════════════
+     Encargo del dueño: que las fechas del «Anexo2 Cronograma Menor Cuantia V3» (.xlsm/.xlsx) —4 de 5
+     cronogramas reales medidos— entren a la misma línea de tiempo, avisos y «lo próximo que vence» de la
+     fase 1, con su fuente (archivo, hoja y celda). Los libros se ARMAN aquí con las celdas reales, en sus
+     direcciones reales y con cadenas compartidas (sharedStrings), como los guarda Excel:
+     · D (Turbaco) y el de Altos de Santa Elena (Cali, fuera de muestra: no se usó para escribir la regla):
+       TODAS las filas de las columnas C y D de la hoja, volcadas de los archivos reales el 3-nov-2026;
+     · B, C y E: las celdas que citan las fichas verificadas de detekta-lector (muestra/fichas_A-E); sus
+       archivos no se pudieron bajar enteros en la sesión (SECOP II respondió 403 y la copia desde Drive no
+       se pudo hacer), así que de ellos solo se exige lo citado.
+     Cada aserción marcada [MUT] FALLA contra el árbol anterior (la rama del calendario del proceso). */
+  bqCRX: { if (!corre("unidad cronograma en Excel")) break bqCRX;
+    const zlibX = require("zlib");
+    const CE = require("../lib/cronograma_excel.js");
+    const Cr = require("../lib/cronograma.js");
+    const Dp = require("../lib/documentos_proceso.js");
+    const Mn = require("../lib/manifestacion.js");
+    const G = require("../lib/guia_proceso.js");
+    const Xp = require("../public/expediente.js");
+    /* el número de serie de Excel (sistema 1900) de un día, calculado aparte del módulo; dos puntos fijos sacados
+       con otra herramienta (Python, date − 30-dic-1899): el 1-ene-2015 es 42005 —el mismo número que trae la hoja
+       «Festivos» del Anexo 2 real— y el 7-sep-2026, 46272 */
+    const S = (iso) => Math.round((Date.UTC(+iso.slice(0, 4), +iso.slice(5, 7) - 1, +iso.slice(8, 10)) - Date.UTC(1899, 11, 30)) / 86400000);
+    assert.deepStrictEqual([S("2015-01-01"), S("2026-09-07"), S("2099-12-31")], [42005, 46272, 73050], "la cuenta de la prueba coincide con la medida aparte");
+    /* un ZIP con DEFLATE, como lo guarda Excel */
+    const zipX = (entradas) => {
+      const partes = [], central = []; let off = 0;
+      for (const e of entradas) {
+        const datos = Buffer.from(e.datos), comp = zlibX.deflateRawSync(datos), nombre = Buffer.from(e.nombre), crc = zlibX.crc32(datos);
+        const lh = Buffer.alloc(30); lh.writeUInt32LE(0x04034b50, 0); lh.writeUInt16LE(20, 4); lh.writeUInt16LE(8, 8); lh.writeUInt32LE(crc, 14); lh.writeUInt32LE(comp.length, 18); lh.writeUInt32LE(datos.length, 22); lh.writeUInt16LE(nombre.length, 26);
+        partes.push(lh, nombre, comp);
+        const ch = Buffer.alloc(46); ch.writeUInt32LE(0x02014b50, 0); ch.writeUInt16LE(20, 4); ch.writeUInt16LE(20, 6); ch.writeUInt16LE(8, 10); ch.writeUInt32LE(crc, 16); ch.writeUInt32LE(comp.length, 20); ch.writeUInt32LE(datos.length, 24); ch.writeUInt16LE(nombre.length, 28); ch.writeUInt32LE(off, 42);
+        central.push(ch, nombre); off += 30 + nombre.length + comp.length;
+      }
+      const cd = Buffer.concat(central), eocd = Buffer.alloc(22);
+      eocd.writeUInt32LE(0x06054b50, 0); eocd.writeUInt16LE(entradas.length, 8); eocd.writeUInt16LE(entradas.length, 10); eocd.writeUInt32LE(cd.length, 12); eocd.writeUInt32LE(off, 16);
+      return Buffer.concat([...partes, cd, eocd]);
+    };
+    const escX = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    /* hojas: [{ nombre, celdas: [["D24", valor], …] }]; el texto va como cadena COMPARTIDA (t="s") y el número como número */
+    const libroX = (hojas, { fecha1904 = false, comilla = '"' } = {}) => {
+      const compartidas = [], idx = new Map();
+      const si = (t) => { if (!idx.has(t)) { idx.set(t, compartidas.length); compartidas.push(t); } return idx.get(t); };
+      const xmlHojas = hojas.map((h) => {
+        const porFila = new Map();
+        for (const [ref, v] of h.celdas) { if (v == null) continue; const n = +ref.replace(/^[A-Z]+/, ""); if (!porFila.has(n)) porFila.set(n, []); porFila.get(n).push([ref, v]); }
+        const filas = [...porFila.keys()].sort((a, b) => a - b).map((n) => `<row r="${n}">${porFila.get(n).map(([ref, v]) => (typeof v === "number" ? `<c r="${ref}"><v>${v}</v></c>` : `<c r="${ref}" t="s"><v>${si(String(v))}</v></c>`)).join("")}</row>`).join("");
+        const cols = (h.columnasOcultas || []).map((n) => `<col min="${n}" max="${n}" width="0" hidden="1"/>`).join("");
+        const filasXml = filas.replace(/<row r="(\d+)">/g, (m, n) => ((h.filasOcultas || []).includes(+n) ? `<row r="${n}" hidden="1">` : m));
+        return `<worksheet>${cols ? `<cols>${cols}</cols>` : ""}<sheetData>${filasXml}</sheetData></worksheet>`;
+      });
+      return zipX([
+        { nombre: "xl/workbook.xml", datos: `<workbook xmlns:r="x"><workbookPr${fecha1904 ? ` date1904=${comilla}1${comilla}` : ""}/><sheets>${hojas.map((h, i) => `<sheet name="${escX(h.nombre)}" sheetId="${i + 1}"${h.oculta ? ' state="hidden"' : ""} r:id="rId${i + 1}"/>`).join("")}</sheets></workbook>` },
+        { nombre: "xl/_rels/workbook.xml.rels", datos: `<Relationships>${hojas.map((h, i) => `<Relationship Id="rId${i + 1}" Target="worksheets/sheet${i + 1}.xml"/>`).join("")}</Relationships>` },
+        { nombre: "xl/sharedStrings.xml", datos: `<sst>${compartidas.map((t) => `<si><t xml:space="preserve">${escX(t)}</t></si>`).join("")}</sst>` },
+        ...xmlHojas.map((x, i) => ({ nombre: `xl/worksheets/sheet${i + 1}.xml`, datos: x })),
+      ]);
+    };
+    const HOJA = "Cronograma-Licitación Pública";
+    /* las hojas ocultas del Anexo 2 real: «Festivos» y «Laborales», llenas de números de serie en la columna A */
+    const OCULTAS = [{ nombre: "Festivos", celdas: [["C1", "aguregue los festivos del año"], ["A2", "Festivos Colombia"], ["A3", 42005], ["A4", 42016], ["A5", 42086], ["A6", 42092], ["A7", 42096], ["A8", 42097]] },
+      { nombre: "Laborales", celdas: [["C1", "Agregue los dias laborales de lunes a viernes del año"], ["A2", "Laborales"], ["A3", 42373], ["A4", 42374], ["A5", 42375], ["A6", 42376], ["A7", 42377]] }];
+    const anexo = (filas, extra = {}) => libroX([{ nombre: HOJA, celdas: filas.flatMap(([n, c, d]) => [[`C${n}`, c], [`D${n}`, d]]) }, ...OCULTAS], extra);
+    /* (0) LAS CELDAS REALES: [fila, columna C, columna D] */
+    const REALES = {
+      B: [[8, "Publicación del aviso de convocatoria pública", S("2026-08-04")], [11, "Plazo para presentar observaciones al proyecto de pliego de condiciones", S("2026-08-12")], [15, "Expedición y publicación del acto administrativo de apertura del proceso de selección", S("2026-08-28")], [17, "Plazo para manifestación de interés", S("2026-08-31")], [18, "Realización del sorteo", S("2026-09-02")], [24, "Fecha de cierre [presentación de ofertas]", S("2026-09-07")], [27, "Publicación del informe preliminar de evaluación", S("2026-09-16")], [28, "Traslado para observaciones al informe de evaluación de las ofertas (plazo máximo para presentación de subsanaciones)", S("2026-09-21")], [29, "Publicación del informe final de evaluación de la oferta", S("2026-09-23")], [30, "Publicación acto administrativo de adjudicación o de declaratoria de desierto", S("2026-09-24")]],
+      C: [[8, "Publicación del aviso de convocatoria pública", S("2026-04-29")], [12, "Respuesta a observaciones y sugerencias al proyecto de pliego de condiciones", S("2026-05-07")], [13, "Plazo para manifestación de interés de limitar la convocatoria a Mipymes", "N/A"], [15, "Expedición y publicación del acto administrativo de apertura del proceso de selección", S("2026-05-08")], [17, "Plazo para manifestación de interés", S("2026-05-13")], [18, "Realización del sorteo", S("2026-05-14")], [26, "Fecha de cierre [presentación de ofertas]", "15 de mayo de 2026 5:00 pm"], [29, "Publicación del informe preliminar de evaluación", S("2026-05-20")], [30, "Traslado para observaciones al informe de evaluación de las ofertas (plazo máximo para presentación de subsanaciones)", S("2026-05-27")], [31, "Publicación del informe final de evaluación de la oferta", S("2026-05-28")], [34, "Publicación acto administrativo de adjudicación o de declaratoria de desierto", S("2026-05-29")], [39, "[La Entidad deberá incluir en el cronograma la fecha establecida para el examen del sitio de la obra, teniendo presente que en ningún caso no asistir al sitio de la obra tendrá como consecuencia el rechazo de la oferta]", null]],
+      E: [[8, "Publicación del aviso de convocatoria pública", S("2026-07-07")], [11, "Plazo para presentar observaciones al proyecto de pliego de condiciones", S("2026-07-15")], [13, "Plazo para manifestación de interés de limitar la convocatoria a Mipymes", S("2026-07-16")], [15, "Expedición y publicación del acto administrativo de apertura del proceso de selección", S("2026-07-17")], [17, "Plazo para manifestación de interés", S("2026-07-21")], [18, "Realización del sorteo", S("2026-07-23")], [23, "Plazo máximo para la expedición de Adendas", S("2026-07-27")], [24, "Fecha de cierre [presentación de ofertas]", S("2026-07-29")], [27, "Publicación del informe preliminar de evaluación", S("2026-08-14")], [28, "Traslado para observaciones al informe de evaluación de las ofertas (plazo máximo para presentación de subsanaciones)", S("2026-08-20")], [29, "Publicación del informe final de evaluación de la oferta", S("2026-08-24")], [30, "Publicación acto administrativo de adjudicación o de declaratoria de desierto", S("2026-08-25")]],
+      D: [[4,"Anexo 2 - Cronograma  - Documento tipo de selección abreviada de menor cuantía de infraestructura de transporte - versión 3",null],[5,"Código","CCE-EICP-IDI-07"],[7,"Actividad","Fecha"],[8,"Publicación del aviso de convocatoria pública","25 de junio de 2026"],[9,"Publicación estudios y documentos previos","25 de junio de 2026"],[10,"Publicación del proyecto de pliego de condiciones","25 de junio de 2026"],[11,"Plazo para presentar observaciones al proyecto de pliego de condiciones","Hasta el 03 de julio de 2026"],[12,"Respuesta a observaciones y sugerencias al proyecto de pliego de condiciones","06 de julio de 2026"],[13,"Plazo para manifestación de interés de limitar la convocatoria a Mipymes","03 de julio de 2026"],[15,"Expedición y publicación del acto administrativo de apertura del proceso de selección","06 de julio de 2026"],[16,"Publicación del pliego de condiciones definitivo","06 de julio de 2026\t\t"],[17,"Plazo para manifestación de interés","Hasta el 09 de julio de 2026"],[18,"Realización del sorteo","N/A"],[19,"Publicación de la lista de precalificados","N/A"],[20,"[Audiencia de asignación de riesgos] *Opcional","N/A"],[22,"Presentación de observaciones al pliego de condiciones","09 de julio de 2026"],[24,"Respuesta a las observaciones al pliego de condiciones ","10 de julio de 2026"],[25,"Plazo máximo para la expedición de Adendas","10 de julio de 2026"],[26,"Fecha de cierre [presentación de ofertas]","15 de julio de 2026, hora: 8:00 am "],[28,"Informe de presentación de ofertas /Diligencia de apertura de las ofertas","15 de julio de 2026, hora: 8:05 am \t\t\r\n\t\t"],[29,"Publicación del informe preliminar de evaluación ","16 de julio de 2026"],[30,"Traslado para observaciones al informe de evaluación de las ofertas (plazo máximo para presentación de subsanaciones) ","hasta 22 de julio de 2026"],[31,"Publicación del informe final de evaluación de la oferta","23 de julio de 2026"],[32,"Audiencia de adjudicación *opcional por la Entidad hacerlo en audiencia","N/A"],[34,"Publicación acto administrativo de adjudicación o de declaratoria de desierto","23 de julio de 2026"],[35,"Firma del contrato","Dentro de los cinco (5) días siguientes a la publicación del acto administrativo de adjudicación\t\t"],[36,"Entrega de garantías de cumplimiento y responsabilidad civil extracontractual ","Dentro de los cinco (5) días hábiles siguientes contados a partir de la firma del contrato"],[37,"Aprobación de garantías","Dentro de los tres (3) días siguientes a la entrega de las garantías"],[39,"[La Entidad deberá incluir en el cronograma la fecha establecida para el examen del sitio de la obra, teniendo presente que en ningún caso no asistir al sitio de la obra tendrá como consecuencia el rechazo de la oferta]",null]],
+      SE: [[4,"Anexo 2 - Cronograma  - Documento tipo de selección abreviada de menor cuantía de infraestructura de transporte - versión 3",null],[5,"Código","CCE-EICP-IDI-07"],[7,"Actividad","Fecha"],[8,"Publicación del aviso de convocatoria pública","31/07/2026 23:59:00 PM"],[9,"Publicación estudios y documentos previos","31/07/2026 23:59:00 PM"],[10,"Publicación del proyecto de pliego de condiciones","31/07/2026 23:59:00 PM"],[11,"Plazo para presentar observaciones al proyecto de pliego de condiciones","10/08/2026 17:00:00 PM"],[12,"Respuesta a observaciones y sugerencias al proyecto de pliego de condiciones","13/08/2026 19:00:00 PM"],[13,"Plazo para manifestación de interés de limitar la convocatoria a Mipymes","N/A"],[15,"Expedición y publicación del acto administrativo de apertura del proceso de selección","13/08/2026 23:59:00 PM"],[16,"Publicación del pliego de condiciones definitivo","13/08/2026 23:59:00 PM"],[17,"Plazo para manifestación de interés","19/08/2026 17:00:00 PM"],[18,"Realización del sorteo","20/08/2026 10:00:00 AM"],[19,"Publicación de la lista de precalificados","20/08/2026 19:00:00 PM"],[20,"[Audiencia de asignación de riesgos] *Opcional","N/A"],[22,"Presentación de observaciones al pliego de condiciones","20/08/2026 17:00:00 PM"],[24,"Respuesta a las observaciones al pliego de condiciones ","24/08/2026 19:00:00 PM"],[25,"Plazo máximo para la expedición de Adendas","24/08/2026 19:00:00 PM"],[26,"Fecha de cierre [presentación de ofertas]","26/08/2026 8:00:00 AM"],[28,"Informe de presentación de ofertas /Diligencia de apertura de las ofertas","26/08/2026 8:05:00 AM"],[29,"Publicación del informe preliminar de evaluación ",null],[30,"Traslado para observaciones al informe de evaluación de las ofertas (plazo máximo para presentación de subsanaciones) ","31/07/2026 17:00:00 PM-03/09/2026 17:00 PM"],[31,"Publicación del informe final de evaluación de la oferta","7/09/2026 23:59:00 PM"],[32,"Audiencia de adjudicación *opcional por la Entidad hacerlo en audiencia","N/A"],[34,"Publicación acto administrativo de adjudicación o de declaratoria de desierto","9/09/2026 19:00:00 PM"],[35,"Firma del contrato","10/09/2026 14:00:00 PM"],[36,"Entrega de garantías de cumplimiento y responsabilidad civil extracontractual ","15/09/2026 14:00:00 PM"],[37,"Aprobación de garantías","15/09/2026 19:00:00 PM"],[39,"[La Entidad deberá incluir en el cronograma la fecha establecida para el examen del sitio de la obra, teniendo presente que en ningún caso no asistir al sitio de la obra tendrá como consecuencia el rechazo de la oferta]",null]],
+    };
+    /* LA VERDAD: hito → [fecha, celda]. B, C, D y E son las 43 fechas que las fichas citan y verificaron (la de
+       #315); D trae además 4 filas que las fichas no citan, comprobadas en la sesión contra su celda del archivo
+       real (D10, D12, D22, D24); SE es el de fuera de muestra, fila por fila contra su celda. */
+    const VERDAD = {
+      B: { aviso: ["2026-08-04", "D8"], observaciones_proyecto: ["2026-08-12", "D11"], pliego_definitivo: ["2026-08-28", "D15"], manifestacion: ["2026-08-31", "D17"], sorteo: ["2026-09-02", "D18"],
+        cierre: ["2026-09-07", "D24"], informe_evaluacion: ["2026-09-16", "D27"], traslado: ["2026-09-21", "D28"], informe_final: ["2026-09-23", "D29"], adjudicacion: ["2026-09-24", "D30"] },
+      C: { aviso: ["2026-04-29", "D8"], respuesta_observaciones_proyecto: ["2026-05-07", "D12"], pliego_definitivo: ["2026-05-08", "D15"], manifestacion: ["2026-05-13", "D17"], sorteo: ["2026-05-14", "D18"],
+        cierre: ["2026-05-15", "D26"], informe_evaluacion: ["2026-05-20", "D29"], traslado: ["2026-05-27", "D30"], informe_final: ["2026-05-28", "D31"], adjudicacion: ["2026-05-29", "D34"] },
+      D: { aviso: ["2026-06-25", "D8"], observaciones_proyecto: ["2026-07-03", "D11"], limitacion_mipyme: ["2026-07-03", "D13"], pliego_definitivo: ["2026-07-06", "D15"], manifestacion: ["2026-07-09", "D17"],
+        adendas: ["2026-07-10", "D25"], cierre: ["2026-07-15", "D26"], informe_evaluacion: ["2026-07-16", "D29"], traslado: ["2026-07-22", "D30"], informe_final: ["2026-07-23", "D31"], adjudicacion: ["2026-07-23", "D34"] },
+      E: { aviso: ["2026-07-07", "D8"], observaciones_proyecto: ["2026-07-15", "D11"], limitacion_mipyme: ["2026-07-16", "D13"], pliego_definitivo: ["2026-07-17", "D15"], manifestacion: ["2026-07-21", "D17"], sorteo: ["2026-07-23", "D18"],
+        adendas: ["2026-07-27", "D23"], cierre: ["2026-07-29", "D24"], informe_evaluacion: ["2026-08-14", "D27"], traslado: ["2026-08-20", "D28"], informe_final: ["2026-08-24", "D29"], adjudicacion: ["2026-08-25", "D30"] },
+    };
+    const D_EXTRA = { proyecto_pliego: ["2026-06-25", "D10"], respuesta_observaciones_proyecto: ["2026-07-06", "D12"], observaciones_pliego: ["2026-07-09", "D22"], respuesta_observaciones_pliego: ["2026-07-10", "D24"] };
+    const SE = { aviso: ["2026-07-31", "D8"], proyecto_pliego: ["2026-07-31", "D10"], observaciones_proyecto: ["2026-08-10", "D11"], respuesta_observaciones_proyecto: ["2026-08-13", "D12"], pliego_definitivo: ["2026-08-13", "D15"],
+      manifestacion: ["2026-08-19", "D17"], sorteo: ["2026-08-20", "D18"], observaciones_pliego: ["2026-08-20", "D22"], respuesta_observaciones_pliego: ["2026-08-24", "D24"], adendas: ["2026-08-24", "D25"], cierre: ["2026-08-26", "D26"],
+      traslado: ["2026-09-03", "D30"], informe_final: ["2026-09-07", "D31"], adjudicacion: ["2026-09-09", "D34"], firma: ["2026-09-10", "D35"] };
+    const lecturas = {};
+    let enLaVerdad = 0;
+    for (const [L, filas] of Object.entries(REALES)) {
+      const r = await CE.leerCronogramaExcel(anexo(filas));
+      lecturas[L] = r;
+      assert.ok(r.ok === true && r.publicable === true && r.hoja === HOJA, `[MUT] ${L}: el Anexo 2 se da por leído, de su hoja: ${JSON.stringify({ ok: r.ok, publicable: r.publicable, hoja: r.hoja, motivo: r.motivo })}`);
+      const leidas = Object.fromEntries(CE.hitosDeFilas(r.filas, r.hoja).hitos.map((h) => [h.id, [h.fecha, h.celda, h.hoja]]));
+      const esperado = L === "SE" ? SE : L === "D" ? { ...VERDAD.D, ...D_EXTRA } : VERDAD[L];
+      for (const [id, [f, c]] of Object.entries(esperado)) {
+        assert.deepStrictEqual(leidas[id], [f, c, HOJA], `[MUT] ${L}: ${id} tiene que ser ${f} de la celda ${c} (leyó ${JSON.stringify(leidas[id])})`);
+        if (VERDAD[L] && VERDAD[L][id]) enLaVerdad++;
+      }
+      for (const id of Object.keys(leidas)) assert.ok(id in esperado, `[MUT] ${L}: «${id}» ${JSON.stringify(leidas[id])} no es una fecha de ese cronograma: no se inventa`);
+    }
+    assert.strictEqual(enLaVerdad, 43, "[MUT] las 43 fechas de la verdad de B, C, D y E, todas con su celda");
+    // la hora escrita en la celda viaja; la de un número de serie no existe (B: «2026-09-07 00:00:00» es formato, no hora)
+    const hora = (L, id) => CE.hitosDeFilas(lecturas[L].filas, HOJA).hitos.find((h) => h.id === id).hora;
+    assert.deepStrictEqual([hora("D", "cierre"), hora("C", "cierre"), hora("SE", "cierre"), hora("B", "cierre")], ["08:00", "17:00", "08:00", null], "[MUT] la hora sale del texto de la celda; de un número de serie, ninguna");
+
+    /* (1) EL NÚMERO DE SERIE: solo dentro de la ventana creíble (1-ene-2015 a 31-dic-2099), la parte decimal no es una hora */
+    assert.deepStrictEqual([42004, 42005, 46272, 46272.375, 73050, 73050.99, 73051, 3, 45, -1, NaN].map(CE.valorDeCelda),
+      [null, "01/01/2015", "07/09/2026", "07/09/2026", "31/12/2099", "31/12/2099", null, null, null, null, null], "[MUT] la ventana del número de serie y la parte decimal sin hora");
+    assert.strictEqual(CE.valorDeCelda("06 de julio de 2026\t\t"), "06 de julio de 2026", "el texto se limpia de tabuladores (D16 del Anexo 2 real)");
+    assert.strictEqual(CE.valorDeCelda(true), null, "un booleano no es fecha");
+    {
+      // una hoja con forma de cronograma cuyas «fechas» son de 2012: fuera de la ventana no son fechas del proceso
+      const r2012 = await CE.leerCronogramaExcel(anexo(REALES.B.map(([n, c, d]) => [n, c, typeof d === "number" ? d - 5110 : d])));
+      assert.strictEqual(r2012.publicable, false, `[MUT] números fuera de la ventana (2012) no dan fechas: ${JSON.stringify(r2012).slice(0, 200)}`);
+    }
+
+    /* (2) LA PUERTA: lo que no es el cronograma del proceso no entrega ni una fecha, y dice por qué */
+    {
+      const leer = async (hojas, op) => CE.leerCronogramaExcel(libroX(hojas, op));
+      // una matriz de riesgos que nombra el cierre, la adjudicación, la firma, las adendas y el sorteo, con calificaciones de 1 a 5 al lado
+      const riesgos = await leer([{ nombre: "Matriz de riesgos", celdas: [["C3", "Riesgo de cierre anticipado del proceso"], ["D3", 3], ["C4", "Riesgo en la adjudicación por error en la evaluación"], ["D4", 4],
+        ["C5", "Demora en la firma del contrato"], ["D5", 2], ["C6", "Adendas expedidas tarde"], ["D6", 5], ["C7", "Sorteo impugnado"], ["D7", 3]] }]);
+      assert.ok(riesgos.ok === true && riesgos.publicable === false && riesgos.filas.length === 0 && /ninguna hoja/.test(riesgos.motivo), `una matriz de riesgos no pasa: ${riesgos.motivo}`);
+      // un presupuesto: descripciones y cifras de pesos (45.000 sería «15-mar-2023» si se convirtiera a ciegas)
+      const presupuesto = await leer([{ nombre: "PRESUPUESTO OFICIAL", celdas: [["C3", "Demolición de pavimento"], ["D3", 45000], ["C4", "Excavación mecánica"], ["D4", 46000], ["C5", "Base granular"], ["D5", 47000], ["C6", "Concreto hidráulico MR 45"], ["D6", 48000]] }]);
+      assert.ok(presupuesto.publicable === false && presupuesto.filas.length === 0, "[MUT] un presupuesto no pasa: sus filas no son actividades del proceso");
+      // la programación de la OBRA (un Gantt con fechas de verdad): no es el cronograma del proceso
+      const obra = await leer([{ nombre: "Cronograma de obra", celdas: [["C3", "Localización y replanteo"], ["D3", S("2026-10-01")], ["C4", "Excavación"], ["D4", S("2026-10-05")], ["C5", "Base y subbase"], ["D5", S("2026-10-20")], ["C6", "Pavimento rígido"], ["D6", S("2026-11-02")], ["C7", "Señalización"], ["D7", S("2026-11-20")]] }]);
+      assert.ok(obra.publicable === false && obra.filas.length === 0, "la programación de la obra no pasa");
+      // TRES actividades con su fecha no bastan; CUATRO sí (el umbral)
+      const tres = await leer([{ nombre: HOJA, celdas: [["C8", "Publicación del aviso de convocatoria pública"], ["D8", S("2026-08-04")], ["C17", "Plazo para manifestación de interés"], ["D17", S("2026-08-31")], ["C24", "Fecha de cierre [presentación de ofertas]"], ["D24", S("2026-09-07")]] }]);
+      assert.ok(tres.publicable === false && tres.filas.length === 0 && /solo 3 actividades/.test(tres.motivo) && /al menos 4/.test(tres.motivo), `[MUT] tres fechas no dan la hoja por leída: ${tres.motivo}`);
+      const cuatro = await leer([{ nombre: HOJA, celdas: [["C8", "Publicación del aviso de convocatoria pública"], ["D8", S("2026-08-04")], ["C17", "Plazo para manifestación de interés"], ["D17", S("2026-08-31")], ["C24", "Fecha de cierre [presentación de ofertas]"], ["D24", S("2026-09-07")], ["C30", "Publicación acto administrativo de adjudicación o de declaratoria de desierto"], ["D30", S("2026-09-24")]] }]);
+      assert.strictEqual(cuatro.publicable, true, "[MUT] cuatro sí");
+      // HITOS DISTINTOS, no filas: cinco filas del cierre con cinco fechas son UN hito
+      /* con la MISMA fecha, para que no lo tape la regla de las dos filas con fechas distintas */
+      const repetido = await leer([{ nombre: HOJA, celdas: [8, 9, 10, 11, 12].flatMap((n) => [[`C${n}`, "Fecha de cierre [presentación de ofertas]"], [`D${n}`, S("2026-09-07")]]) }]);
+      assert.ok(repetido.publicable === false && /solo una actividad del cronograma trae/.test(repetido.motivo), `[MUT] cinco filas de un mismo hito son un hito, no cinco: ${repetido.motivo}`);
+      // la fecha tiene que estar AL LADO: con una columna vacía en medio, no hay fila
+      const lejos = await leer([{ nombre: HOJA, celdas: REALES.B.flatMap(([n, c, d]) => [[`C${n}`, c], [`E${n}`, d]]) }]);
+      assert.ok(lejos.publicable === false && lejos.filas.length === 0 && /^ninguna hoja/.test(lejos.motivo), `[MUT] una fecha a dos columnas del rótulo no es la suya: ${lejos.motivo}`);
+      // el sistema de fechas de 1904 (Excel de Mac): sus series darían fechas corridas cuatro años
+      const mac = await CE.leerCronogramaExcel(anexo(REALES.B, { fecha1904: true }));
+      assert.ok(mac.ok === true && mac.publicable === false && /1904/.test(mac.motivo) && mac.filas.length === 0, `[MUT] un libro con fechas de 1904 no se da por leído: ${mac.motivo}`);
+      // solo las hojas ocultas (números de serie sin rótulos)
+      assert.strictEqual((await leer(OCULTAS)).publicable, false, "las hojas de festivos y laborales no son un cronograma");
+      // el rótulo puede ir en otra columna: la regla es «al lado», no «la C»
+      const corrido = await leer([{ nombre: HOJA, celdas: REALES.B.flatMap(([n, c, d]) => [[`B${n}`, c], [`C${n}`, d]]) }]);
+      assert.ok(corrido.publicable === true && corrido.filas.every((f) => /^C\d+$/.test(f.c)), "con el rótulo en la B, la fecha es la C y así se cita");
+      // lo que no es un libro
+      const noZip = await CE.leerCronogramaExcel(Buffer.from("<html>inicie sesión</html>"));
+      assert.ok(noZip.ok === false && /no es un libro/.test(noZip.motivo), noZip.motivo);
+    }
+
+    /* (3) EL SERVIDOR NO CREE LO QUE MANDA EL NAVEGADOR: vuelve a pasar la MISMA puerta */
+    {
+      const buena = JSON.parse(JSON.stringify(lecturas.B));
+      const r = Dp.cronogramaDeExcel(buena);
+      assert.ok(r.ok && r.resumen.publicable === true && r.resumen.fechas_n === 10 && r.resumen.hoja === HOJA && r.resumen.filas.length === buena.filas.length, `lo leído pasa otra vez: ${JSON.stringify(r).slice(0, 200)}`);
+      const sin = (x) => Dp.cronogramaDeExcel(x).resumen;
+      assert.ok(sin({ ...buena, filas: buena.filas.slice(0, 2) }).publicable === false && /al volver a comprobarlo en el servidor/.test(sin({ ...buena, filas: buena.filas.slice(0, 2) }).motivo), "[MUT] «publicable» con dos filas no se cree");
+      assert.strictEqual(sin({ ...buena, filas: buena.filas.map((f, i) => (i ? f : { ...f, c: "D0" })) }).publicable, false, "una celda que no existe");
+      assert.strictEqual(sin({ ...buena, filas: buena.filas.map((f, i) => (i ? f : { ...f, c: "E8" })) }).publicable, false, "fechas de dos columnas");
+      assert.strictEqual(sin({ ...buena, filas: buena.filas.map((f, i) => (i ? f : { ...f, c: "D11" })) }).publicable, false, "dos filas con la misma celda");
+      assert.strictEqual(sin({ ...buena, filas: [...buena.filas, { r: "Valor del contrato", v: "07/09/2026", c: "D40" }] }).publicable, false, "una fila que no nombra una actividad del cronograma");
+      assert.strictEqual(sin({ ...buena, hoja: "" }).publicable, false, "sin hoja no hay cita");
+      assert.deepStrictEqual([sin({ ok: false, motivo: "no se pudo abrir el libro: x" }).publicable, sin({ ok: false, motivo: "no se pudo abrir el libro: x" }).motivo], [false, "no se pudo abrir el libro: x"], "un libro que no se abrió guarda su motivo");
+      assert.strictEqual(Dp.cronogramaDeExcel("no soy un objeto").ok, false, "no es un objeto: 400");
+      assert.strictEqual(Dp.cronogramaDeExcel({ ...buena, filas: Array.from({ length: 41 }, (_, i) => buena.filas[i % buena.filas.length]) }).ok, false, "más de 40 filas: 400");
+      assert.strictEqual(Dp.cronogramaDeExcel({ ...buena, filas: null }).ok, false, "«publicable» sin filas: 400");
+      assert.ok(sin({ ...buena, filas: buena.filas.map((f) => ({ ...f, r: { toString: () => "x" } })) }).publicable === false, "un rótulo que no es texto no se convierte: se tipa");
+    }
+
+    /* (4) LAS FECHAS DEL EXCEL ENTRAN A LA LÍNEA DE TIEMPO (Docs.hitosDeDocumentos), con su ancla, y la falta deja de decirse */
+    {
+      const ANEXO = "Anexo2 Cronograma Menor Cuantia V3 (1).xlsm";
+      const archivoX = Dp.clasificarArchivo({ id_documento: "7", nombre_archivo: ANEXO, extensi_n: "xlsm", fecha_carga: "2026-08-27T19:00:00.000", url_descarga_documento: { url: "https://community.secop.gov.co/x?DocumentId=7" } });
+      assert.ok(archivoX.tipo === "cronograma" && archivoX.legible === true && archivoX.cola === true, `[MUT] el Anexo 2 en .xlsm se lee solo, en cola: ${JSON.stringify(archivoX)}`);
+      const pliego = { id_documento: "2", nombre: "Pliego.pdf", tipo: "pliego", tipo_legible: "Pliego de condiciones", legible: true, de_la_entidad: true, fecha_carga: "2026-08-03" };
+      const leidoPliego = { nombre: "Pliego.pdf", tipo: "pliego", tipo_legible: "Pliego de condiciones", fecha_carga: "2026-08-03", hechos: Dp.hechosDeTexto("\f6\nFecha de cierre [presentación de ofertas] 10/09/2026\nPublicación del aviso de convocatoria pública 04/08/2026", { tipo: "pliego" }) };
+      const resumen = Dp.cronogramaDeExcel(lecturas.B).resumen;
+      const conExcel = (x) => ({ indice: { archivos: [archivoX, pliego], plan: ["2", "7"] }, leidos: { 2: leidoPliego }, ilegibles: {}, cronogramas: { 7: { nombre: ANEXO, tipo: "cronograma", tipo_legible: "Cronograma", fecha_carga: "2026-08-27", leido_el: "x", version: CE.VERSION_LECTOR, ...resumen, ...x } } });
+      const hd = Dp.hitosDeDocumentos(conExcel({}));
+      const cie = hd.hitos.find((h) => h.id === "cierre");
+      assert.deepStrictEqual([cie && cie.fecha, cie && cie.hoja, cie && cie.celda, cie && cie.documento], ["2026-09-07", HOJA, "D24", ANEXO], `[MUT] el cierre sale del anexo del cronograma (manda sobre el pliego), con su celda: ${JSON.stringify(cie)}`);
+      assert.ok(!hd.hitos.some((h) => h.id === "manifestacion"), "la manifestación no se toma aquí (tiene su módulo y sus guardas)");
+      assert.deepStrictEqual(hd.cronograma_sin_leer, [], "[MUT] el aviso «no se pudo leer» desaparece para ese archivo");
+      assert.strictEqual(Dp.resumenLectura(conExcel({})).pendientes.length, 0, "[MUT] leído: ya no está pendiente");
+      assert.strictEqual(Cr.fuenteDeHito(cie), `Cronograma «${ANEXO}», hoja ${HOJA}, celda D24`, "[MUT] la fuente dice el archivo, la hoja y la celda");
+      // lo que no pasó la puerta: ninguna fecha, y el motivo en la nota
+      const malo = Dp.hitosDeDocumentos(conExcel({ publicable: false, motivo: "solo 2 actividades del cronograma traen su fecha al lado; hacen falta al menos 4 para dar la hoja por leída", filas: [] }));
+      assert.ok(!malo.hitos.some((h) => h.documento === ANEXO), "lo que no pasó la puerta no aporta ni una fecha");
+      assert.ok(malo.cronograma_sin_leer.length === 1 && /^no se da por leído: solo 2 actividades/.test(malo.cronograma_sin_leer[0].motivo), `[MUT] y se dice por qué: ${JSON.stringify(malo.cronograma_sin_leer)}`);
+      // una lectura cuyo archivo YA NO está en el índice (la entidad lo reemplazó con un id nuevo) no habla
+      assert.ok(!Dp.hitosDeDocumentos({ ...conExcel({}), indice: { archivos: [pliego], plan: ["2"] } }).hitos.some((h) => h.documento === ANEXO), "[MUT] la lectura de un archivo que salió del índice no aporta fechas");
+      // leído con un lector anterior: sin fechas, y otra vez por leer
+      const viejo = conExcel({ version: 0 });
+      assert.ok(!Dp.hitosDeDocumentos(viejo).hitos.some((h) => h.documento === ANEXO) && Dp.resumenLectura(viejo).pendientes.map((a) => a.id_documento).includes("7"), "[MUT] una lectura de otro lector vuelve a estar pendiente");
+      // un cronograma en el .xls antiguo sigue sin leerse, y lo dice
+      const xls = Dp.clasificarArchivo({ id_documento: "9", nombre_archivo: "Cronograma.xls", extensi_n: "xls" });
+      assert.ok(xls.legible === false && Dp.hitosDeDocumentos({ indice: { archivos: [{ ...xls, de_la_entidad: true }] }, leidos: {} }).cronograma_sin_leer[0].motivo.includes("hoja de cálculo"), "el .xls antiguo sigue diciendo que no se lee");
+      // SECOP II manda: la fecha del Excel viaja como «otra fecha» CON su hoja y su celda; con el mismo día, la hora dice de dónde sale
+      const comb = Cr.combinarHitos([{ id: "cierre", etiqueta: "Cierre", fecha: "2026-09-08", origen: "dataset" }], hd.hitos);
+      const otra = comb.find((h) => h.id === "cierre").otra_fecha;
+      assert.deepStrictEqual([otra.fecha, otra.hoja, otra.celda], ["2026-09-07", HOJA, "D24"], "[MUT] la otra fecha cita su celda");
+      const html = Xp.htmlFechas({ id: "X", hitos: [{ id: "cierre", fecha: "2026-09-08", etiqueta: "Cierre", origen: "dataset", otra_fecha: otra }] }, {});
+      assert.ok(html.includes(`(hoja ${HOJA}, celda D24)`) && !html.includes("pág."), `[MUT] el expediente dice la hoja y la celda de la otra fecha: ${html.slice(0, 400)}`);
+      const hD = Dp.hitosDeDocumentos({ ...conExcel({}), cronogramas: { 7: { nombre: ANEXO, tipo: "cronograma", tipo_legible: "Cronograma", fecha_carga: "2026-06-25", version: CE.VERSION_LECTOR, ...Dp.cronogramaDeExcel(lecturas.D).resumen } } }).hitos;
+      const conHora = Cr.combinarHitos([{ id: "cierre", etiqueta: "Cierre", fecha: "2026-07-15", origen: "dataset" }], hD).find((h) => h.id === "cierre");
+      assert.ok(conHora.hora === "08:00" && conHora.hora_segun && conHora.hora_segun.celda === "D26" && /celda D26/.test(Cr.fuenteDeHito(conHora.hora_segun)), `[MUT] la hora dice de qué celda sale: ${JSON.stringify(conHora.hora_segun)}`);
+      // la guía lo lista como leído, con cuántas fechas y de qué hoja; lo que no pasó, como no leído con su motivo
+      const gl = G.bloqueDocumentos(conExcel({}), Dp.resumenLectura(conExcel({})), { documentos: [] }, null);
+      const filaG = gl.leidos.find((x) => x.id_documento === "7");
+      assert.ok(filaG && filaG.cronograma_excel === true && /10 fechas leídas de la hoja «Cronograma-Licitación Pública»/.test(filaG.motivo), `[MUT] la guía lo da por leído: ${JSON.stringify(filaG)}`);
+      const gm = G.bloqueDocumentos(conExcel({ publicable: false, motivo: "solo 2 actividades del cronograma traen su fecha al lado", filas: [] }), { pendientes: [] }, { documentos: [] }, null);
+      assert.ok(gm.ilegibles.some((x) => x.id_documento === "7" && /^Cronograma en Excel que no se da por leído: solo 2 actividades/.test(x.motivo)) && !gm.leidos.some((x) => x.id_documento === "7"), "y el que no pasó, con su motivo");
+    }
+
+    /* (4b) LO QUE CAZÓ LA REVISIÓN ADVERSARIA (3-nov-2026): cada caso ponía en pantalla una fecha FALSA citada con su celda */
+    {
+      const leer = async (hojas, op) => CE.leerCronogramaExcel(libroX(hojas, op));
+      const celdasDe = (filas, col = "D") => filas.flatMap(([n, c, d]) => [[`C${n}`, c], [`${col}${n}`, d]]);
+      const fechasDe = (r) => Object.fromEntries(CE.hitosDeFilas(r.filas, r.hoja).hitos.map((h) => [h.id, h.fecha]));
+      // DOS COLUMNAS DE FECHA («Fecha inicio | Fecha fin», «Fecha | Fecha ajustada por la adenda»): la de al lado no tiene por qué ser la que rige
+      const dosCol = await leer([{ nombre: HOJA, celdas: [...celdasDe(REALES.B), ...REALES.B.filter(([, , d]) => typeof d === "number").map(([n, , d]) => [`E${n}`, d + 12])] }]);
+      assert.ok(dosCol.publicable === false && /más de una columna/.test(dosCol.motivo), `[MUT] dos columnas de fechas: no se adivina cuál rige: ${dosCol.motivo}`);
+      // la original OCULTA y la vigente al lado: no se lee la oculta
+      const colOculta = await leer([{ nombre: HOJA, columnasOcultas: [4], celdas: [...celdasDe(REALES.B), ...REALES.B.filter(([, , d]) => typeof d === "number").map(([n, , d]) => [`E${n}`, d + 12])] }]);
+      assert.ok(colOculta.publicable === false && colOculta.filas.length === 0, "la columna de fechas oculta no se lee");
+      // …y sola, sin otra columna con fechas que la delate: la oculta no da ninguna fecha
+      const soloOculta = await leer([{ nombre: HOJA, columnasOcultas: [4], celdas: celdasDe(REALES.B) }]);
+      assert.ok(soloOculta.publicable === false && /^ninguna hoja/.test(soloOculta.motivo), `[MUT] una columna oculta no se lee: ${soloOculta.motivo}`);
+      // UNA HOJA OCULTA con el cronograma viejo, puesta antes de la visible: manda la visible
+      const viejaB = REALES.B.map(([n, c, d]) => [n, c, typeof d === "number" ? d - 20 : d]);
+      const hojaOculta = await leer([{ nombre: "Cronograma viejo", oculta: true, celdas: celdasDe(viejaB) }, { nombre: HOJA, celdas: celdasDe(REALES.B) }]);
+      assert.ok(hojaOculta.publicable === true && hojaOculta.hoja === HOJA && fechasDe(hojaOculta).cierre === "2026-09-07", `[MUT] una hoja oculta no se lee: ${hojaOculta.hoja} ${fechasDe(hojaOculta).cierre}`);
+      // DOS HOJAS VISIBLES con fechas distintas («Cronograma inicial» y «Cronograma Adenda 1»): no se adivina
+      const dosHojas = await leer([{ nombre: "Cronograma inicial", celdas: celdasDe(viejaB) }, { nombre: "Cronograma Adenda 1", celdas: celdasDe(REALES.B) }]);
+      assert.ok(dosHojas.publicable === false && /más de un cronograma/.test(dosHojas.motivo), `[MUT] dos cronogramas que no coinciden: ${dosHojas.motivo}`);
+      // …y si dicen lo mismo, da igual cuál se cite
+      assert.strictEqual((await leer([{ nombre: "Copia", celdas: celdasDe(REALES.B) }, { nombre: HOJA, celdas: celdasDe(REALES.B) }])).publicable, true, "dos copias iguales no son un conflicto");
+      // UNA FILA OCULTA con el cierre viejo encima del vigente: se salta
+      const conFilaVieja = [...REALES.B.filter(([n]) => n < 24), [23, "Fecha de cierre [presentación de ofertas]", S("2026-08-30")], ...REALES.B.filter(([n]) => n >= 24)];
+      const filaOculta = await leer([{ nombre: HOJA, filasOcultas: [23], celdas: celdasDe(conFilaVieja) }]);
+      assert.ok(filaOculta.publicable === true && fechasDe(filaOculta).cierre === "2026-09-07", `[MUT] la fila oculta no se lee: ${fechasDe(filaOculta).cierre}`);
+      // …y VISIBLE, dos filas del mismo hito con fechas distintas: no se adivina (el lector se quedaba con la primera)
+      const dosFilas = await leer([{ nombre: HOJA, celdas: celdasDe(conFilaVieja) }]);
+      assert.ok(dosFilas.publicable === false && /dos filas dan fechas distintas para «Entrega de la oferta» \(celdas D23 y D24\)/.test(dosFilas.motivo), `[MUT] dos filas del cierre con fechas distintas: ${dosFilas.motivo}`);
+      // EL RECORTE NO SE COME EL FIN DE UN RANGO: «del 06/07/2026 al 15/07/2026» vence el 15, no el 6
+      const largo = "A partir de la publicación del pliego definitivo, esto es, del 06/07/2026 al 15/07/2026, hasta las 8:00 a.m.";
+      const conRango = await leer([{ nombre: HOJA, celdas: celdasDe(REALES.B.map(([n, c, d]) => [n, c, n === 24 ? largo : d])) }]);
+      assert.ok(conRango.publicable === true && fechasDe(conRango).cierre === "2026-07-15", `[MUT] un valor largo se lee entero: ${fechasDe(conRango).cierre}`);
+      // más largo que el tope: la fila se descarta, nunca se lee un pedazo (y el servidor tampoco recorta)
+      assert.strictEqual(CE.valorDeCelda("x".repeat(CE.MAX_VALOR + 1)), null, "[MUT] un texto más largo que el tope no se recorta: se descarta");
+      const buenaB = JSON.parse(JSON.stringify(lecturas.B));
+      assert.strictEqual(Dp.cronogramaDeExcel({ ...buenaB, filas: buenaB.filas.map((f, i) => (i ? f : { ...f, v: `${"y".repeat(CE.MAX_VALOR)} 07/09/2026` })) }).resumen.publicable, false, "[MUT] el servidor no recorta un valor largo");
+      assert.strictEqual(Dp.cronogramaDeExcel({ ...buenaB, hoja: "h".repeat(40) }).resumen.publicable, false, "[MUT] ni el nombre de una hoja de 40 caracteres");
+      // EL SISTEMA DE 1904 con comilla simple (XML válido)
+      assert.ok(/1904/.test((await CE.leerCronogramaExcel(anexo(REALES.B, { fecha1904: true, comilla: "'" }))).motivo || ""), "[MUT] date1904='1' también es el sistema de 1904");
+      // una fecha guardada como texto ISO (celdas t="d"): se lee el día
+      const iso = await leer([{ nombre: HOJA, celdas: celdasDe(REALES.B.map(([n, c, d]) => [n, c, typeof d === "number" ? `${new Date(Date.UTC(1899, 11, 30) + d * 864e5).toISOString().slice(0, 19)}` : d])) }]);
+      assert.ok(iso.publicable === true && fechasDe(iso).cierre === "2026-09-07", "una fecha ISO en texto se lee como día");
+      // y el motivo con cero no dice «solo 0»
+      assert.ok(/^ninguna actividad del cronograma trae su fecha al lado/.test(CE.puerta([{ r: "Fecha de cierre [presentación de ofertas]", v: "N/A", c: "D24" }], HOJA).motivo), "con cero: «ninguna actividad»");
+    }
+
+    /* (4c) DE LOS CRONOGRAMAS DE LA ENTIDAD HABLA SOLO EL MÁS NUEVO: una versión nueva reemplaza a la vieja ENTERA (revisión adversaria) */
+    {
+      const doc = (id, nombre, fecha, ext = "xlsm") => ({ ...Dp.clasificarArchivo({ id_documento: id, nombre_archivo: nombre, extensi_n: ext, fecha_carga: `${fecha}T19:00:00.000`, url_descarga_documento: { url: `https://community.secop.gov.co/x?DocumentId=${id}` } }), en_plan: true });
+      const viejoA = doc("20", "Anexo 2- Cronograma CMA-050.xlsm", "2026-08-05"), nuevoA = doc("21", "Anexo 2- Cronograma Defintivo CMA-050.xlsm", "2026-10-04"), adendaX = doc("22", "Anexo 2- Cronograma Adenda No.01.xlsm", "2026-10-18");
+      assert.ok(adendaX.tipo === "adenda" && adendaX.cronograma_excel === true && adendaX.legible === true && adendaX.cola === true, `[MUT] el cronograma de una adenda en Excel se lee con el mismo lector y sigue siendo adenda: ${JSON.stringify(adendaX)}`);
+      assert.ok(doc("23", "Adenda 1 formulario.xlsx", "2026-10-18", "xlsx").cronograma_excel === undefined, "una adenda en Excel que no es el cronograma no");
+      const entrada = (a, lectura, fecha) => ({ nombre: a.nombre, tipo: a.tipo, tipo_legible: a.tipo_legible, fecha_carga: fecha, version: CE.VERSION_LECTOR, ...Dp.cronogramaDeExcel(lectura).resumen });
+      // el NUEVO trae «N/A» donde el viejo tenía fecha: el sorteo viejo NO se cuela
+      const lecNA = await CE.leerCronogramaExcel(anexo(REALES.B.map(([n, c, d]) => [n, c, n === 18 || n === 28 ? "N/A" : d])));
+      const lecViejo = await CE.leerCronogramaExcel(anexo(REALES.B.map(([n, c, d]) => [n, c, typeof d === "number" ? d - 25 : d])));
+      const dos = { indice: { archivos: [viejoA, nuevoA], plan: ["20", "21"] }, leidos: {}, ilegibles: {}, cronogramas: { 20: entrada(viejoA, lecViejo, "2026-08-05"), 21: entrada(nuevoA, lecNA, "2026-10-04") } };
+      const h2 = Object.fromEntries(Dp.hitosDeDocumentos(dos).hitos.map((h) => [h.id, h.documento]));
+      assert.ok(!("sorteo" in h2) && !("traslado" in h2) && h2.cierre === nuevoA.nombre, `[MUT] solo habla el cronograma más nuevo: ${JSON.stringify(h2)}`);
+      assert.deepStrictEqual(Dp.hitosDeDocumentos(dos).cronograma_sin_leer, [], "y la versión vieja no se nombra");
+      // el NUEVO no pasa la puerta: ninguna fecha vieja, y la nota dice cuál falta y por qué
+      const noPasa = { ...dos, cronogramas: { 20: dos.cronogramas[20], 21: { ...dos.cronogramas[21], publicable: false, motivo: "solo 2 actividades del cronograma traen su fecha al lado", filas: [] } } };
+      const hNo = Dp.hitosDeDocumentos(noPasa);
+      assert.ok(hNo.hitos.length === 0 && hNo.cronograma_sin_leer.length === 1 && hNo.cronograma_sin_leer[0].nombre === nuevoA.nombre && /^no se da por leído/.test(hNo.cronograma_sin_leer[0].motivo), `[MUT] el que rige no se pudo leer: ninguna fecha vieja, y se dice: ${JSON.stringify(hNo)}`);
+      // la ADENDA en Excel (datos reales de CO1.BDOS.10607013): sin leer, nada del definitivo que reemplazó; leída, manda ella
+      const conAdenda = { indice: { archivos: [viejoA, nuevoA, adendaX], plan: ["21", "22", "20"] }, leidos: {}, ilegibles: {}, cronogramas: { 21: dos.cronogramas[21] } };
+      const hA = Dp.hitosDeDocumentos(conAdenda);
+      assert.ok(hA.hitos.length === 0 && hA.cronograma_sin_leer.some((x) => x.nombre === adendaX.nombre && x.motivo === "todavía no se ha leído"), `[MUT] la adenda sin leer no deja hablar al cronograma que reemplazó: ${JSON.stringify(hA)}`);
+      const adendaLeida = { ...conAdenda, cronogramas: { ...conAdenda.cronogramas, 22: entrada(adendaX, lecturas.B, "2026-10-18") } };
+      const cieA = Dp.hitosDeDocumentos(adendaLeida).hitos.find((h) => h.id === "cierre");
+      assert.deepStrictEqual([cieA.documento, cieA.tipo_documento, cieA.celda], [adendaX.nombre, "Adenda", "D24"], "leída, manda la adenda, con su celda");
+      assert.ok(G.bloqueDocumentos(adendaLeida, Dp.resumenLectura(adendaLeida), { documentos: [] }, null).adendas.find((x) => x.nombre === adendaX.nombre).leida === true, "y la lista de adendas la da por leída");
+      // el HERMANO en PDF: dos cronogramas en PDF de días distintos, habla solo el nuevo
+      const pdfV = { ...doc("30", "Cronograma proyecto.pdf", "2026-08-05", "pdf") }, pdfN = { ...doc("31", "Cronograma definitivo.pdf", "2026-10-04", "pdf") };
+      const leidoPdf = (a, t, f) => ({ nombre: a.nombre, tipo: "cronograma", tipo_legible: "Cronograma", fecha_carga: f, hechos: Dp.hechosDeTexto(t, { tipo: "cronograma" }) });
+      const pdfs = { indice: { archivos: [pdfV, pdfN], plan: ["30", "31"] }, ilegibles: {}, leidos: { 30: leidoPdf(pdfV, "Realización del sorteo 02/09/2026\nFecha de cierre [presentación de ofertas] 07/09/2026", "2026-08-05"), 31: leidoPdf(pdfN, "Realización del sorteo N/A\nFecha de cierre [presentación de ofertas] 20/10/2026", "2026-10-04") } };
+      assert.deepStrictEqual(Dp.hitosDeDocumentos(pdfs).hitos.map((h) => [h.id, h.fecha]), [["cierre", "2026-10-20"]], "[MUT] en PDF tampoco se cuela el sorteo del cronograma viejo");
+    }
+
+    /* (5) EL REGISTRO DE MIS PROCESOS: la hoja una vez por documento, la celda en cada fecha, SIN el renglón (la celda es la cita) */
+    {
+      const reg = (L) => {
+        const nombre = "CCE-EICP-IDI-07 Anexo2 Cronograma Menor Cuantia V3 30-07-2024.xlsm";
+        const a7 = Dp.clasificarArchivo({ id_documento: "7", nombre_archivo: nombre, extensi_n: "xlsm", fecha_carga: "2026-06-25T19:00:00.000", url_descarga_documento: { url: "https://community.secop.gov.co/x?DocumentId=7" } });
+        const hd = Dp.hitosDeDocumentos({ indice: { archivos: [a7] }, leidos: {}, cronogramas: { 7: { nombre, tipo: "cronograma", tipo_legible: "Cronograma", fecha_carga: "2026-06-25", version: CE.VERSION_LECTOR, ...Dp.cronogramaDeExcel(lecturas[L]).resumen } } });
+        /* sin esto la prueba pasaba VACÍA (cero fechas pesan poco): se vio con una mutación que quedó viva, 3-nov-2026 */
+        assert.strictEqual(hd.hitos.length, 14, `premisa: el registro lleva las 14 fechas del Anexo 2 real (sin la manifestación): ${L}`);
+        return { hd, s: JSON.stringify(Mn.serializarHitos(hd.hitos, hd.cronograma_sin_leer, "2026-11-03")) };
+      };
+      for (const L of ["D", "SE"]) {
+        const { hd, s } = reg(L);
+        assert.ok(Buffer.byteLength(s) < 1300, `[MUT] el registro de un Anexo 2 real pesa lo de la fase 1 (≈ 1,3 KB), no el doble: ${L} ${Buffer.byteLength(s)} bytes`);
+        const vuelta = Mn.expandirHitos(JSON.parse(s)).hitos;
+        assert.deepStrictEqual(vuelta.map((h) => [h.id, h.hoja, h.celda]), hd.hitos.map((h) => [h.id, HOJA, h.celda]), `[MUT] la hoja y la celda vuelven de Upstash: ${L}`);
+        assert.ok(vuelta.every((h) => h.evidencia === null), "sin el renglón: en una hoja de cálculo la celda es la cita");
+      }
+      const pdf = JSON.parse(JSON.stringify(Mn.serializarHitos([{ id: "aviso", fecha: "2026-08-04", origen: "pliego", pagina: 3, evidencia: "Publicación del aviso 04/08/2026", documento: "Pliego.pdf", tipo_documento: "Pliego" }], [], "2026-11-03")));
+      assert.ok(pdf.h[0].e === "Publicación del aviso 04/08/2026" && pdf.h[0].c === undefined && pdf.docs[0].hj === undefined, "un PDF sigue igual: su renglón y su página");
+      assert.deepStrictEqual(Cr.compactarHitos([{ id: "cierre", fecha: "2026-09-07", hoja: HOJA, celda: "D0" }, { id: "aviso", fecha: "2026-08-04", hoja: "x".repeat(32), celda: "D8" }, { id: "sorteo", fecha: "2026-09-02", celda: "D18" }]).map((h) => [h.hoja, h.celda]),
+        [[undefined, undefined], [undefined, undefined], [undefined, undefined]], "una celda que no existe, una hoja de más de 31 caracteres o una celda sin hoja no son un ancla");
+    }
+
+    /* (6) EL PLAN DE LECTURA: el cronograma en Excel va DETRÁS de todo y no saca a nadie del tope de 12 */
+    {
+      const doc = (id, nombre, ext = "pdf") => ({ id_documento: String(id), nombre_archivo: nombre, extensi_n: ext, fecha_carga: "2026-08-03T19:00:00.000", url_descarga_documento: { url: `https://community.secop.gov.co/x?DocumentId=${id}` } });
+      const doce = [doc(1, "Pliego de condiciones definitivo.pdf"), doc(2, "Adenda 1.pdf"), doc(3, "Adenda 2.pdf"), doc(4, "Estudios previos.pdf"), doc(5, "Anexo tecnico especificaciones.pdf"), doc(6, "Presupuesto oficial.pdf"),
+        doc(8, "Respuesta a observaciones.pdf"), doc(9, "Aviso de convocatoria.pdf"), doc(10, "Matriz de riesgos.pdf"), doc(11, "Respuesta observaciones 2.pdf"), doc(12, "Aviso 2.pdf"), doc(13, "Matriz de riesgos 2.pdf")];
+      const sinX = Dp.planDeLectura(doce).plan, conX = Dp.planDeLectura([...doce, doc(7, "Anexo2 Cronograma Menor Cuantia V3.xlsm", "xlsm")]).plan;
+      assert.deepStrictEqual(conX, sinX, "[MUT] con el plan lleno, el Excel no desplaza ninguna lectura de hoy");
+      const pocos = Dp.planDeLectura([doc(7, "Anexo2 Cronograma Menor Cuantia V3.xlsm", "xlsm"), doc(1, "Pliego de condiciones definitivo.pdf"), doc(9, "Aviso de convocatoria.pdf")]).plan;
+      assert.deepStrictEqual(pocos, ["1", "9", "7"], "con cupo, entra el último");
+      /* EL MÁS NUEVO PRIMERO (medido en 40 procesos reales: en 5 entraba el «Anexo 2» del proyecto y quedaba fuera el «… Definitivo»).
+         Los nombres y fechas son los de CO1.BDOS.10607013 (dmgg-8hin, 3-nov-2026), con once documentos que ocupan el cupo */
+      const once = doce.slice(0, 11);
+      const viejo = { ...doc(20, "Anexo 2- Cronograma CMA-050.xlsm", "xlsm"), fecha_carga: "2026-08-05T19:00:00.000" }, nuevo = { ...doc(21, "Anexo 2- Cronograma Defintivo CMA-050.xlsm", "xlsm"), fecha_carga: "2026-10-04T19:00:00.000" };
+      const conVersiones = Dp.planDeLectura([...once, viejo, nuevo]);
+      assert.ok(conVersiones.plan.includes("21") && !conVersiones.plan.includes("20"), `[MUT] con cupo para uno, se lee el cronograma que rige (el más nuevo): ${conVersiones.plan}`);
+      const fueraT = conVersiones.archivos.find((a) => a.id_documento === "20");
+      assert.strictEqual(fueraT.motivo_omision, "tope de documentos leídos solos");
+      /* y la nota de la línea de tiempo: la versión vieja sin leer NO se nombra si la nueva se leyó; sin la nueva, el que quedó fuera dice
+         que no se va a leer solo, no «todavía» */
+      const resB = Dp.cronogramaDeExcel(lecturas.B).resumen;
+      const docsV = { indice: { archivos: conVersiones.archivos, plan: conVersiones.plan }, leidos: {}, ilegibles: {},
+        cronogramas: { 21: { nombre: nuevo.nombre_archivo, tipo: "cronograma", tipo_legible: "Cronograma", fecha_carga: "2026-10-04", version: CE.VERSION_LECTOR, ...resB } } };
+      assert.deepStrictEqual(Dp.hitosDeDocumentos(docsV).cronograma_sin_leer, [], "[MUT] la versión vieja sin leer no se nombra: las fechas que rigen son las de la nueva");
+      // el cronograma que rige se quedó sin cupo: no se va a leer solo, y eso es lo que se dice (no «todavía»)
+      const lleno = Dp.planDeLectura([...doce, doc(7, "Anexo2 Cronograma Menor Cuantia V3.xlsm", "xlsm")]);
+      const sinCupo = Dp.hitosDeDocumentos({ indice: { archivos: lleno.archivos, plan: lleno.plan }, leidos: {}, ilegibles: {} }).cronograma_sin_leer;
+      assert.ok(sinCupo.some((x) => x.nombre === "Anexo2 Cronograma Menor Cuantia V3.xlsm" && /no entra entre los 12 documentos que la aplicación lee sola/.test(x.motivo)), `[MUT] sin cupo no es «todavía no se ha leído»: ${JSON.stringify(sinCupo)}`);
+    }
+
+    /* (7) EL NAVEGADOR (public/app.js, leerDocumentos): el bloque del Excel se EJECUTA con `api` simulada */
+    {
+      const appF = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+      const ini = appF.indexOf('if (/^(xlsx|xlsm)$/.test(String(a.extension || "").toLowerCase())) {');
+      const fin = appF.indexOf("let texto, recortadoEnOrigen = false", ini);
+      const bloque = appF.slice(ini, fin);
+      const correr = (archivo, respuestaDescargar) => {
+        const llamadas = [], ilegibles = [];
+        const api = async (ruta, o) => { llamadas.push({ ruta, cuerpo: o && o.body }); return /op=descargar/.test(ruta) ? respuestaDescargar : { ok: true }; };
+        const marcarIlegible = async (motivo, definitivo) => { ilegibles.push({ motivo, definitivo }); };
+        const f = new Function("api", "marcarIlegible", "a", "id", `let leidos = 0, fallidos = 0, seguido = false; return (async () => { for (const _ of [0]) { ${bloque}\n seguido = true; } return { leidos, fallidos, seguido }; })();`);
+        return f(api, marcarIlegible, { url: "https://community.secop.gov.co/x", id_documento: "7", ...archivo }, "CO1.REQ.1").then((r) => ({ ...r, llamadas, ilegibles }));
+      };
+      const lec = { ok: true, publicable: true, hoja: HOJA, filas: [{ r: "x", v: "y", c: "D8" }] };
+      const r1 = await correr({ extension: "xlsm", tipo: "cronograma", cronograma_excel: true }, { ok: true, formato: "cronograma", lectura: lec });
+      assert.deepStrictEqual(r1.llamadas.map((l) => l.cuerpo), [{ url: "https://community.secop.gov.co/x", formato: "cronograma" }, { id_proceso: "CO1.REQ.1", id_documento: "7", cronograma_excel: lec }], "[MUT] el cronograma va a SU lector y su lectura vuelve tal cual al servidor");
+      assert.deepStrictEqual([r1.leidos, r1.fallidos, r1.seguido, r1.ilegibles.length], [1, 0, false, 0]);
+      const r2 = await correr({ extension: "xlsx", tipo: "cronograma", cronograma_excel: true }, { ok: true, formato: "cronograma", lectura: { ok: false, motivo: "no se pudo abrir el libro: x" } });
+      assert.deepStrictEqual([r2.fallidos, r2.ilegibles.length, r2.llamadas.length, r2.llamadas[1].cuerpo.cronograma_excel.ok], [1, 0, 2, false], "[MUT] un libro que no se abre NO queda ilegible para siempre: su motivo se guarda como lectura");
+      const r3 = await correr({ extension: "xlsx", tipo: "presupuesto" }, { ok: true, formato: "xlsx", lectura: { ok: true, publicable: false, motivo: "m" } });
+      assert.strictEqual(r3.llamadas[0].cuerpo.formato, "xlsx", "el Formulario sigue por su lector");
+    }
+
+    /* (8) DE PUNTA A PUNTA POR EL SERVIDOR: op=documentos guarda la lectura, publica sus fechas a Mis procesos y protege de la pestaña vieja */
+    {
+      const DocsH = require("../lib/handlers/pliego/documentos.js");
+      const routerP = require("../api/pliego.js");
+      const id = "CO1.REQ.CRX-PUNTA";
+      const archivoX = { ...Dp.clasificarArchivo({ id_documento: "7", nombre_archivo: "Anexo2 Cronograma Menor Cuantia V3 (1).xlsm", extensi_n: "xlsm", fecha_carga: "2026-08-27T19:00:00.000", url_descarga_documento: { url: "https://community.secop.gov.co/x?DocumentId=7" } }), en_plan: true };
+      const archivoF = { ...Dp.clasificarArchivo({ id_documento: "8", nombre_archivo: "PRESUPUESTO OFICIAL.xlsx", extensi_n: "xlsx", fecha_carga: "2026-08-03T19:00:00.000", url_descarga_documento: { url: "https://community.secop.gov.co/x?DocumentId=8" } }), en_plan: true };
+      await DocsH.escribirDocs(redis, id, { id_proceso: id, indice: { version: Dp.VERSION, consultado_el: new Date().toISOString(), fuente: "dmgg-8hin", archivos: [archivoX, archivoF], plan: ["8", "7"] }, leidos: {}, ilegibles: {} });
+      const post = (cuerpo) => invocarPost(routerP, "/api/pliego?op=documentos", { id_proceso: id, ...cuerpo }, CAB_TOKEN);
+      const lec = JSON.parse(JSON.stringify(lecturas.B));
+      assert.strictEqual((await post({ id_documento: "8", cronograma_excel: lec })).status, 400, "[MUT] un archivo que no es un cronograma en Excel no se guarda como cronograma");
+      const viejaF = await post({ id_documento: "7", formulario_excel: { ok: true, publicable: false, motivo: "no hay ítems" } });
+      assert.ok(viejaF.status === 409 && /recargue la página y pulse «Volver a buscar los documentos»/.test(viejaF.cuerpo.error), `[MUT] la pestaña con el app.js de antes no lo guarda como Formulario, y dice qué hacer (recargar solo no basta): ${viejaF.status} ${viejaF.cuerpo.error}`);
+      const viejaI = await post({ id_documento: "7", ilegible: true, definitivo: true, motivo: "no es un libro de Excel que se pueda leer" });
+      assert.ok(viejaI.status === 200 && viejaI.cuerpo.ilegibles["7"] && viejaI.cuerpo.ilegibles["7"].definitivo === false, "[MUT] ni lo deja ilegible para siempre");
+      const ok = await post({ id_documento: "7", cronograma_excel: lec });
+      assert.ok(ok.status === 200 && ok.cuerpo.cronograma.publicable === true && ok.cuerpo.cronograma.fechas_n === 10 && ok.cuerpo.cronograma.filas === undefined && ok.cuerpo.ilegibles["7"] === undefined, `[MUT] se guarda, suelta el ilegible y no devuelve las filas: ${JSON.stringify(ok.cuerpo.cronograma)}`);
+      assert.deepStrictEqual(ok.cuerpo.pendientes.map((a) => a.id_documento), ["8"], "el cronograma leído ya no está pendiente");
+      const reg = (await Mn.leerHitosCronograma(redis, [id]))[id];
+      const cieR = reg && reg.hitos.find((h) => h.id === "cierre");
+      assert.deepStrictEqual([cieR && cieR.fecha, cieR && cieR.hoja, cieR && cieR.celda], ["2026-09-07", HOJA, "D24"], `[MUT] Mis procesos recibe las fechas del Excel con su celda, con UN comando: ${JSON.stringify(reg)}`);
+      const malo = await post({ id_documento: "7", cronograma_excel: { ...lec, filas: lec.filas.slice(0, 2) } });
+      assert.ok(malo.cuerpo.cronograma.publicable === false, "lo adulterado no pasa");
+      const regM = (await Mn.leerHitosCronograma(redis, [id]))[id];
+      assert.ok(regM.hitos.length === 0 && /^no se da por leído: al volver a comprobarlo en el servidor/.test(regM.cronograma_sin_leer[0].motivo), `[MUT] y la línea de tiempo dice por qué: ${JSON.stringify(regM)}`);
+      const il = await post({ id_documento: "7", ilegible: true, motivo: "no se pudo leer: el proxy cortó" });
+      assert.ok(il.status === 200 && il.cuerpo.ilegibles["7"], "un fallo posterior lo deja como no leído");
+      assert.strictEqual(Dp.hitosDeDocumentos((await DocsH.leerDocs(redis, id))).hitos.length, 0, "y sin ninguna fecha suya");
+      await redis.del(Dp.claveDocs(id));
+      await redis.hdel(Mn.CLAVE_CRONOGRAMA_HITOS, id);
+    }
+    console.log("· unidad cronograma en Excel: el Anexo 2 de Colombia Compra da las 43 fechas de la verdad con su hoja y su celda y 0 falsas (D y Santa Elena fila por fila), la puerta deja fuera matriz, presupuesto, obra, 3 fechas, fechas lejos y el sistema 1904, el servidor vuelve a comprobar, la línea de tiempo cita la celda, Mis procesos pesa lo mismo y el Excel no desplaza ninguna lectura");
+  }
+
   /* unidad: modalidades — solo lista blanca competitiva */
   bq10: { if (!corre("unidad modalidades")) break bq10;
     const casos = [
@@ -6647,11 +7057,12 @@ async function main() {
     const Cob = require("./cobertura.js");
     const filasCob = [
       { id_documento: "1", nombre_archivo: "PLIEGO DE CONDICIONES DEFINITIVO.pdf", extensi_n: "pdf", tamanno_archivo: "900000", fecha_carga: "2026-04-15T00:00:00.000", url_descarga_documento: { url: "https://community.secop.gov.co/x?DocumentId=1" } },
-      { id_documento: "2", nombre_archivo: "CRONOGRAMA.xlsx", extensi_n: "xlsx", tamanno_archivo: "40000", fecha_carga: "2026-04-15T00:00:00.000", url_descarga_documento: { url: "https://community.secop.gov.co/x?DocumentId=2" } },
+      /* una hoja de cálculo que NO se lee sola (desde el 3-nov-2026 el cronograma en Excel sí se lee: el ejemplo es la matriz de riesgos) */
+      { id_documento: "2", nombre_archivo: "MATRIZ DE RIESGOS.xlsx", extensi_n: "xlsx", tamanno_archivo: "40000", fecha_carga: "2026-04-15T00:00:00.000", url_descarga_documento: { url: "https://community.secop.gov.co/x?DocumentId=2" } },
       { id_documento: "3", nombre_archivo: "Anexos.zip", extensi_n: "zip", tamanno_archivo: "2000000", fecha_carga: "2026-04-15T00:00:00.000", url_descarga_documento: { url: "https://community.secop.gov.co/x?DocumentId=3" } },
     ];
     const tabla = Cob.tablaDeProceso(filasCob);
-    assert.ok(/en el plan de lectura: 1/.test(tabla[0]) && tabla.some((l) => /PLIEGO DE CONDICIONES DEFINITIVO\.pdf.*SE LEE/.test(l)) && tabla.some((l) => /CRONOGRAMA\.xlsx.*FUERA · hoja de cálculo/.test(l)) && tabla.some((l) => /Anexos\.zip.*FUERA · archivo comprimido/.test(l)), `la tabla dice qué se lee y qué no, y por qué:\n${tabla.join("\n")}`);
+    assert.ok(/en el plan de lectura: 1/.test(tabla[0]) && tabla.some((l) => /PLIEGO DE CONDICIONES DEFINITIVO\.pdf.*SE LEE/.test(l)) && tabla.some((l) => /MATRIZ DE RIESGOS\.xlsx.*FUERA · hoja de cálculo/.test(l)) && tabla.some((l) => /Anexos\.zip.*FUERA · archivo comprimido/.test(l)), `la tabla dice qué se lee y qué no, y por qué:\n${tabla.join("\n")}`);
     const cen = Cob.censo({ A: filasCob });
     assert.deepStrictEqual([cen.procesos, cen.entidad, cen.enPlan, cen.fuera, cen.sinPresupuesto], [1, 3, 1, 2, 1], "el censo cuenta lo de la entidad, lo que entra al plan y lo que queda fuera");
     assert.deepStrictEqual(cen.porMotivo.map(([k]) => k).sort(), ["archivo comprimido", "hoja de cálculo"]);
@@ -6693,7 +7104,9 @@ async function main() {
     // (2) lo que NO es el formulario sigue fuera (el nombre es solo el permiso para INTENTAR, y no se abre a todo)
     /* …y los nombres de evaluación que LLEVAN «propuesta/oferta económica» pero no son el formulario (revisión adversaria, reproducido: una matriz de evaluación entraba al plan y la guía
        decía «Formulario 1 en Excel que no se da por leído» de un archivo que no lo es) */
-    for (const n of ["CRONOGRAMA.xlsm", "6.1 MATRIZ RIESGOS ANEXO 3.xlsx", "11. Formato 5 - Capacidad Residual.xlsx", "ANEXO EXPERIENCIA.xlsx", "M1_Exp_CulturaRecDeporte_ISocialMenCV1.xlsx", "Formulario de Propuesta y desglose de AIU.xlsx", "F3_Experiencia_ISocialMenCV1.xlsx",
+    /* el cronograma en Excel se lee desde el 3-nov-2026, pero con SU lector (lib/cronograma_excel), nunca como Formulario: tipo cronograma, en cola */
+    { const c = clasif("CRONOGRAMA.xlsm", ANTES, CIERRE); assert.ok(c.tipo === "cronograma" && c.legible === true && c.cola === true, `«CRONOGRAMA.xlsm» se lee como cronograma, no como Formulario: tipo=${c.tipo} legible=${c.legible} cola=${c.cola}`); }
+    for (const n of ["6.1 MATRIZ RIESGOS ANEXO 3.xlsx", "11. Formato 5 - Capacidad Residual.xlsx", "ANEXO EXPERIENCIA.xlsx", "M1_Exp_CulturaRecDeporte_ISocialMenCV1.xlsx", "Formulario de Propuesta y desglose de AIU.xlsx", "F3_Experiencia_ISocialMenCV1.xlsx",
       "Formato evaluacion propuesta economica.xlsx", "Formato de ponderacion ofertas economicas.xlsx", "Formato resumen ofertas economicas recibidas.xlsx", "Formato acta de apertura propuesta economica.xlsx", "Cuadro comparativo ofertas economicas.xlsx", "Formato Propuesta Economica diligenciado Consorcio Vial.xlsx", "Factor de calidad propuesta economica.xlsx"]) {
       const c = clasif(n, ANTES, CIERRE);
       assert.ok(c.tipo !== "presupuesto" && c.legible === false, `«${n}» NO se lee como Formulario: tipo=${c.tipo}`);
@@ -18685,6 +19098,20 @@ async function main() {
           const x4 = await pedir({ formato: "xlsx" });
           assert.ok(x4.status === 200 && x4.cuerpo.lectura.ok === false && /no se pudo abrir el libro/.test(x4.cuerpo.lectura.motivo) && x4.cuerpo.lectura.filas === undefined,
             `un Word pedido como Excel NO es un error de la petición: es el resultado de leerlo (lectura.ok:false con su motivo), para que el navegador lo marque ilegible para siempre: ${x4.status} ${JSON.stringify(x4.cuerpo).slice(0, 200)}`);
+          /* EL CRONOGRAMA EN EXCEL (3-nov-2026): la misma descarga y la misma firma, OTRO lector (lib/cronograma_excel) con su puerta */
+          const libroCr = Buffer.from(require("../public/xlsx.js").construirLibro([{ nombre: "Cronograma-Licitación Pública", filas: [
+            [], [], [], [], [], [], [null, null, "Actividad", "Fecha"], [null, null, "Publicación del aviso de convocatoria pública", 46238], [null, null, "Plazo para manifestación de interés", 46265],
+            [null, null, "Fecha de cierre [presentación de ofertas]", 46272], [null, null, "Publicación acto administrativo de adjudicación o de declaratoria de desierto", 46289]] }]));
+          remoto = libroCr;
+          const c1 = await pedir({ formato: "cronograma" });
+          assert.ok(c1.status === 200 && c1.cuerpo.formato === "cronograma" && c1.cuerpo.lectura.publicable === true && c1.cuerpo.lectura.hoja === "Cronograma-Licitación Pública"
+            && c1.cuerpo.lectura.filas.some((f) => f.c === "D10" && f.v === "07/09/2026"), `[MUT] el cronograma vuelve con sus filas y su celda: ${JSON.stringify(c1.cuerpo).slice(0, 300)}`);
+          remoto = libroF1(300000);
+          const c2 = await pedir({ formato: "cronograma" });
+          assert.ok(c2.status === 200 && c2.cuerpo.lectura.publicable === false && c2.cuerpo.lectura.filas.length === 0 && !/Excavación|Localización/.test(JSON.stringify(c2.cuerpo)), `un Formulario pedido como cronograma no da fechas: ${JSON.stringify(c2.cuerpo).slice(0, 200)}`);
+          remoto = Buffer.from("<html>inicie sesión</html>");
+          assert.strictEqual((await pedir({ formato: "cronograma" })).status, 415, "lo que no es un libro no se lee como cronograma");
+          assert.ok(/cronograma/.test((await pedir({ formato: "pdf" })).cuerpo.error), "un formato desconocido dice cuáles hay");
           // …y el modo de siempre (la pantalla de Precios) sigue con su tope de 3 MB
           remoto = Buffer.alloc(TOPE_PDF_BASE64 + 1024); remoto.write("%PDF-1.7", 0, "latin1");
           const viejo = await pedir({});
@@ -27921,8 +28348,10 @@ async function main() {
         // solo el tipo «presupuesto» y solo .xlsx/.xlsm: el resto de las hojas de cálculo sigue sin leerse
         const cl = (nombre, ext) => Docs.clasificarArchivo({ id_documento: "1", nombre_archivo: nombre, extensi_n: ext, tamanno_archivo: "1000", url_descarga_documento: "https://community.secop.gov.co/x" });
         assert.deepStrictEqual([cl("PRESUPUESTO OFICIAL.xlsx", "xlsx").legible, cl("FORMULARIO 1 PRESUPUESTO.xlsm", "xlsm").legible], [true, true]);
-        assert.deepStrictEqual([cl("CRONOGRAMA.xlsx", "xlsx").legible, cl("MATRIZ DE RIESGOS.xlsx", "xlsx").legible, cl("PRESUPUESTO OFICIAL.xls", "xls").legible, cl("PRESUPUESTO OFICIAL.csv", "csv").legible], [false, false, false, false], "solo el presupuesto en .xlsx/.xlsm; ni otras hojas, ni el .xls antiguo, ni un CSV");
-        assert.strictEqual(cl("CRONOGRAMA.xlsx", "xlsx").motivo_ilegible, "hoja de cálculo", "lo demás se sigue explicando como antes");
+        /* desde el 3-nov-2026 el cronograma en .xlsx/.xlsm también se lee (con su lector, lib/cronograma_excel); el .xls antiguo de un cronograma no */
+        assert.deepStrictEqual([cl("MATRIZ DE RIESGOS.xlsx", "xlsx").legible, cl("PRESUPUESTO OFICIAL.xls", "xls").legible, cl("PRESUPUESTO OFICIAL.csv", "csv").legible, cl("CRONOGRAMA.xls", "xls").legible], [false, false, false, false], "solo el presupuesto y el cronograma en .xlsx/.xlsm; ni otras hojas, ni el .xls antiguo, ni un CSV");
+        assert.strictEqual(cl("CRONOGRAMA.xlsx", "xlsx").legible, true, "el cronograma en .xlsx se lee con su propio lector");
+        assert.strictEqual(cl("MATRIZ DE RIESGOS.xlsx", "xlsx").motivo_ilegible, "hoja de cálculo", "lo demás se sigue explicando como antes");
         // (4) la guía: el pliego que NIEGA el anticipo gana al objeto que lo insinúa; los hechos entran con su cita
         const ahoraD = Date.parse("2026-09-03T15:00:00Z");
         const baseD = { id_del_proceso: "D1", nombre_del_procedimiento: "CONSTRUCCION DE PLACA HUELLA, ANTICIPO DEL 30 %", entidad: "ALCALDIA DE PURIFICACION", departamento_entidad: "Tolima", modalidad_de_contratacion: "Licitación pública", precio_base: "850000000", duracion: "6", unidad_de_duracion: "Meses", codigo_principal_de_categoria: "V1.72141000", fecha_de_publicacion_del: "2026-09-01T10:00:00.000", fecha_de_recepcion_de: "2026-09-20T15:00:00.000", tipo_de_contrato: "Obra" };
