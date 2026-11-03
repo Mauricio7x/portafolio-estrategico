@@ -2051,7 +2051,7 @@
        mismo defecto que costó el proceso de Motavita. NO se oculta el proceso
        (puede haber avisado a tiempo y la app no lo sabe: el falso negativo
        cuesta más), pero la línea lo dice y baja a ámbar. */
-  function lineaRequisitos(puertas, manif, admiteOfertas, capitalTrabajo) {
+  function lineaRequisitos(puertas, manif, admiteOfertas, capitalTrabajo, socio) {
     const g = puertas || {};
     const detalle = [g.p1_rup, g.p2_k, g.p3_caja].map((p) => p && p.mensaje).filter(Boolean).join("\n");
     /* EL PUNTO ES EL SEMÁFORO (23-sep-2026). La piel v3 pinta el TEXTO ámbar en tinta
@@ -2089,6 +2089,18 @@
        servidor (`p1_rup.mensaje`, lib/requisitos_ley), nunca «no encaja con su registro». */
     if (g.p1_rup && g.p1_rup.pasa === false && g.p1_rup.objeto_dudoso_sin_registro && g.p1_rup.mensaje) {
       return linea("text-amber-700", `${String(g.p1_rup.mensaje).replace(/\.\s*$/, "")}${sinOfertas}.`);
+    }
+    /* SOLO NO, CON UN SOCIO SÍ (3-nov-2026, «la 11 con la 3»). La fila que el dueño solo no alcanza
+       pero que CIERRA con una socia (`socio.cierra_todo`, el mismo veredicto que la ordena en el primer
+       grupo, lib/socio_por_proceso) no se pinta en rojo como imposible: se dice el hecho entero, en
+       ámbar, y debajo va con quién y con qué parte. Si la socia solo se ACERCA, sigue el rojo. */
+    const cierraConSocio = !!(socio && socio.tipo === "con_socio" && socio.cierra_todo === true);
+    if (cierraConSocio && ((g.p1_rup && g.p1_rup.pasa === false) || (g.p2_k && g.p2_k.pasa === false))) {
+      /* el plazo para avisar vencido NO se tapa, como en las ramas hermanas del anticipo y de `supera_si_la_piden`
+         (revisión adversaria del 3-nov-2026: este ámbar callaba lo que el rojo de antes tampoco decía, pero en
+         ámbar se lee «preséntese»; es el defecto de Motavita) */
+      const vencidoS = manif && manif.aplica && manif.estado === "vencida" ? "; y el plazo para avisar que le interesa ya venció: solo puede presentarse si avisó a tiempo" : "";
+      return linea("text-amber-700", `Solo no le alcanza; con un socio, sí${sinOfertas}${vencidoS}.`);
     }
     if (g.p1_rup && g.p1_rup.pasa === false) return linea("text-red-700", `Este proceso no encaja con su registro${sinOfertas}.`);
     if (g.p2_k && g.p2_k.pasa === false) return linea("text-red-700", `Supera su capacidad de contratación${sinOfertas}.`);
@@ -2140,9 +2152,21 @@
     }
     if (plazoIdo) return linea("text-amber-700", "Cumple los requisitos, pero el plazo para avisar que le interesa ya venció: solo puede presentarse si avisó a tiempo.");
     /* con el aviso del capital de trabajo (la línea de debajo) no se dice «cumple» en verde */
-    const conAviso = [g.p1_rup, g.p2_k, g.p3_caja].some((p) => p && (p.sin_dato || (p.pasa && p.advertencia))) || !!(capitalTrabajo && capitalTrabajo.frase);
-    if (conAviso) return linea("text-amber-700", "Cumple los requisitos, con detalles por revisar.");
-    return linea("text-green-700", "Cumple los requisitos para presentarse.");
+    /* «PRESÉNTESE» (3-nov-2026, decisión del dueño del 27-oct: el verde dice qué hacer, no un estado).
+       Con detalles, el ámbar nombra CUÁLES —los mismos predicados de `conAviso`, uno por puerta—: «con
+       detalles por revisar» obligaba a abrir el pliegue para saber si era el registro o la caja. Lo que
+       Detekta NO revisa (la experiencia y las cifras financieras del pliego) lo dice «Por qué». */
+    const conDetalle = (p) => !!(p && (p.sin_dato || (p.pasa && p.advertencia)));
+    const cosas = [];
+    if (conDetalle(g.p1_rup)) cosas.push("su registro de proponente");
+    if (conDetalle(g.p2_k)) cosas.push("lo que puede contratar");
+    if (conDetalle(g.p3_caja)) cosas.push("la plata para arrancar");
+    if (capitalTrabajo && capitalTrabajo.frase) cosas.push("el capital de trabajo");
+    if (cosas.length) {
+      const lista = cosas.length === 1 ? cosas[0] : `${cosas.slice(0, -1).join(", ")} y ${cosas[cosas.length - 1]}`;
+      return linea("text-amber-700", `Preséntese, revise ${cosas.length === 1 ? "una cosa" : `${cosas.length} cosas`}: ${lista}.`);
+    }
+    return linea("text-green-700", "Preséntese.");
   }
 
   /* EL CAPITAL DE TRABAJO DE LOS PLIEGOS TIPO (27-sep-2026, N31). La frase la redacta el
@@ -2524,9 +2548,32 @@
      LO QUE ESTA LÍNEA NUNCA DICE: que con un socio se CUMPLE el pliego. Dice
      que se abren las puertas que la aplicación mide, que es otra cosa; por eso
      el caso «se acerca pero puede no bastar» tiene su propia redacción. */
+  /* CON QUIÉN, EN LA TARJETA (3-nov-2026, «la 11 con la 3»; supera para la tarjeta la decisión del
+     11-sep de verlo solo al guardar: el dueño lo pidió el 27-oct, «en "puede presentarse" decir con
+     quién y en qué %»). La frase NO se redacta aquí: es `socio.linea`, la de lib/socio_por_proceso
+     (`resumenParaLista`), que ya cabe en 90 caracteres y ya dice «Solo», «Con PRODIAC… Usted, hasta el
+     80 %» o «se acerca, pero puede no bastar». La parte es un TECHO antes de leer el pliego, y se dice.
+     Sin credencial la línea viaja en `null` (lib/publico): entonces se dice lo de antes, sin nombre
+     ni cifra. */
   function bloqueSocio(l) {
     const s = l && l.socio;
-    if (!s || s.tipo !== "con_socio") return "";
+    if (!s) return "";
+    if (s.linea) {
+      const tope = /\d\s?%/.test(s.linea) ? ` <span class="text-gray-500">· es un tope antes de leer el pliego</span>` : "";
+      /* el icono va AQUÍ dentro (y no en una constante del módulo): la suite recorta esta función y la
+         ejecuta sola, y un nombre de fuera la rompería */
+      const icono = '<svg class="inline h-4 w-4" style="vertical-align: -3px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19c.6-3.2 2.8-5 5.5-5s4.9 1.8 5.5 5"/><circle cx="16.5" cy="9" r="2.6"/><path d="M15.5 14.2c2.4-.2 4.4 1.4 5 4.3"/></svg>';
+      return `<p class="mt-1 text-sm text-gray-700" data-socio-linea>${icono} ${esc(s.linea)}${tope}</p>`;
+    }
+    if (s.tipo !== "con_socio") return "";
+    /* sin credencial (la línea viaja en null) no se repite lo que el veredicto YA dijo: cuando `lineaRequisitos`
+       tomó la rama «Solo no le alcanza; con un socio, sí» (registro o capacidad en rojo, y no la del objeto dudoso
+       de la mínima cuantía, que va antes), aquí solo queda qué hacer (revisión adversaria del 3-nov-2026).
+       La suite cuenta que la frase salga UNA vez en la tarjeta real. */
+    const p = l.puertas || {};
+    const dijoSocio = s.cierra_todo === true && ((p.p1_rup && p.p1_rup.pasa === false) || (p.p2_k && p.p2_k.pasa === false))
+      && !(p.p1_rup && p.p1_rup.pasa === false && p.p1_rup.objeto_dudoso_sin_registro && p.p1_rup.mensaje);
+    if (dijoSocio) return `<p class="mt-2 text-sm text-amber-800">Guárdelo y le decimos con cuál conviene y en qué reparto.</p>`;
     return s.cierra_todo
       ? `<p class="mt-2 text-sm text-amber-800">Solo no le alcanza; con un socio, sí. Guárdelo y le decimos con cuál conviene y en qué reparto.</p>`
       : `<p class="mt-2 text-sm text-amber-800">Solo no le alcanza; con un socio se acerca, pero puede no bastar. Guárdelo para verlo en detalle.</p>`;
@@ -2543,19 +2590,9 @@
     /* Las cifras del `title` van en es-CO, como las de la tarjeta: «1.64» y
        «×1.08» con punto inglés se leen en Colombia como miles. El factor lleva
        dos decimales (`nf2`) y no uno: «×1,1» diría un 10 % donde hay un 8 %. */
-    const ajustes = (d.ajustes || [])
-      .map((a) => `${a.nombre}${a.factor == null || !Number.isFinite(Number(a.factor)) ? "" : ` ×${nf2.format(Number(a.factor))}`}: ${a.motivo}`).join("\n");
-    // la BANDA (A6): con pocos datos la cifra se puede mover mucho, y se dice
-    const banda = d.p_lo != null && d.p_hi != null
-      ? `Banda del 90 %: ${Math.round(d.p_lo * 100)} %–${Math.round(d.p_hi * 100)} %` : "";
     /* índice sin leer: la fuente «conservador» no es un hecho de la entidad, y el
        title dice lo que pasó con las palabras del chip (UN texto, UN predicado) */
     const noLeido = !cuantosCompiten(l) && competenciaNoLeida(l.competencia_entidad);
-    const titulo = [noLeido ? COMPETENCIA_ENTIDAD.no_se_leyo.ayuda : FUENTE_P[d.fuente] || "", d.rivales_esperados != null && Number.isFinite(Number(d.rivales_esperados)) ? `Rivales esperados: ${fmtNum.format(Number(d.rivales_esperados))}` : "", banda, ajustes,
-      "Pulse para ver el desglose completo del cálculo"].filter(Boolean).join("\n");
-    // sin id no hay nada que consultar: se pinta el texto de siempre, no un
-    // botón que al pulsarlo tenga que disculparse
-    const id = l.id_del_proceso || "";
 
     /* EL HECHO MEDIDO VA PRIMERO Y EN GRANDE; la frecuencia lo traduce a
        decisión. El porcentaje NO se pinta: ver «frecuenciaNatural».
@@ -2587,20 +2624,13 @@
        con pocos procesos el encogimiento también dice «entidad», y ahí la celda
        1 no tiene cifra). El cálculo sigue ordenando la lista y se ve entero en
        «Ver cómo se calcula». */
-    const frec = frecuenciaConBase(d.fuente, l.competencia_entidad, l.p_ganar);
     /* de dónde sale el cálculo que ordena la lista, con las palabras de FUENTE_P;
        con el índice sin leer, la ayuda del chip (no hay nada que afirmar de la entidad) */
-    const verCalculo = "Ese cálculo solo ordena la lista; se ve en «Ver cómo se calcula».";
+    const verCalculo = "Ese cálculo solo ordena la lista.";
     const origenSinBase = noLeido ? COMPETENCIA_ENTIDAD.no_se_leyo.ayuda
       : d.fuente === "entidad"
         ? `Esta entidad tiene pocos procesos con el número de ofertas publicado: no alcanza para decir cuántas empresas compiten. ${verCalculo}`
         : FUENTE_P[d.fuente] ? `${FUENTE_P[d.fuente]}. ${verCalculo}` : "Sin datos de cuántas empresas compiten en esta entidad.";
-    /* El FACTOR PRINCIPAL (motivoProbabilidad) se pinta solo cuando trae una
-       señal propia — poca competencia, prórroga, colisión de cierres, baja —:
-       sus dos ramas de respaldo («Basado en…», «Sin histórico…») repiten lo
-       que la fuente ya dice, y dos frases iguales enseñan menos que una. */
-    const motivo = motivoProbabilidad(l);
-    const motivoPropio = /^(Basado en|Sin el número de ofertas)/.test(motivo) ? "" : motivo;
     /* Sin base, el título de la celda 1 dice de dónde sale el cálculo (FUENTE_P),
        no un «5 empresas» fijo que contradecía a la fuente del departamento. */
     const fuente = compiten
@@ -2625,15 +2655,6 @@
       : celda("—", noLeido ? "no se pudo consultar" : "sin datos de cuántos compiten", "", fuente);
     /* «sin datos de esta entidad» era falso al lado de «7 contratos · esta
        entidad» de la celda 3 (23-sep-2026): lo que falta es cuántos compiten */
-    const cGana = frec
-      ? celda(`1 de ${frec.de_cada}`, "se gana, aproximadamente", motivoPropio ? esc(motivoPropio) : "", `${frec.frase}${motivoPropio ? " " + motivoPropio : ""}`)
-      : noLeido
-        ? celda("—", "no se pudo consultar", "", origenSinBase)
-        : !compiten && d.fuente === "entidad"
-          ? celda("—", "pocos datos de esta entidad", "", origenSinBase)
-          : d.fuente === "departamento" || d.fuente === "conservador"
-            ? celda("—", "sin saber cuántos compiten", "", origenSinBase)
-            : celda("—", "sin datos para estimar", "", "Sin datos suficientes para estimar cuántas veces se gana algo así.");
     /* LA TERCERA CIFRA ES LA PLATA QUE QUEDA (ago 2026, encargo del dueño).
        Antes decía «$1.183M de contrato esperado por intento», que era el
        presupuesto oficial × la opción de ganar. Correcto y leído al revés: el
@@ -2655,14 +2676,16 @@
        en `null` sin credencial (sale de su costo y de su estructura de precio),
        y ahí también se dice. */
     const cDeja = bloqueGanancia(l, celda);
+    /* «SE GANA 1 DE N» SALE DE LA TARJETA (3-nov-2026, decisión del dueño del 27-oct; supera la ficha
+       D-14): no es un hecho de la entidad sino una fórmula —1/(1+rivales) con tres ajustes— y no sale de
+       la misma base que «compiten». Se quedan el HECHO (cuántas suelen competir) y lo que le DEJA el
+       contrato, que es la cuenta de Piso/Techo y no depende de esa frecuencia. La celda del medio y el
+       desglose («Ver cómo se calcula», que enseñaba el «16,7 %») dejan de pintarse; `p_ganar` sigue
+       ordenando la lista. */
     return `
-      <div class="metricas mt-4 grid grid-cols-3 rounded-xl" style="background: var(--bg-inset);">
-        ${cCompiten}${cGana}${cDeja}
-      </div>
-      ${id
-    ? `<p class="mt-1.5 text-right text-xs"><button type="button" class="detalle-probabilidad cursor-pointer underline decoration-dotted decoration-gray-400 underline-offset-4 transition hover:text-gray-900" style="color: var(--text-secondary);"
-               data-id="${esc(id)}" data-objeto="${esc(l.nombre_del_procedimiento || id)}" title="${esc(titulo)}">Ver cómo se calcula</button></p>`
-    : ""}`;
+      <div class="metricas mt-4 grid grid-cols-2 rounded-xl" style="background: var(--bg-inset);">
+        ${cCompiten}${cDeja}
+      </div>`;
   }
 
   /* La querystring que antes viajaba a /apu.html: mismos nombres de parámetro
@@ -2752,9 +2775,6 @@
     return q.toString();
   }
 
-  // el rango viaja en masculino del servidor («bajo/medio/alto» califica al
-  // RANGO); en pantalla califica a «cuantía» y se concuerda
-  const RANGO_CUANTIA = { bajo: "baja", medio: "media", alto: "alta" };
 
   /* ══════ LAS OTRAS PUBLICACIONES DE LA MISMA OBRA (27-sep-2026) ══════
      La lista enseña una tarjeta por obra, y la fila que queda lleva en
@@ -2824,6 +2844,34 @@
     return lineas.join("");
   }
 
+  /* ══════════ LA TARJETA NUEVA (3-nov-2026, elegida por el dueño sobre la maqueta «nueva con competidores») ══════════
+     El dueño, sobre su captura de producción: «no haya tanto texto… confunde, marea» y «ya no podemos saber quiénes se
+     presentan, quién gana y cuántos ha ganado y por cuál valor total y cuándo fue el último contrato… todo eso debe volver».
+     A la vista quedan CINCO renglones: qué es y cuánto vale · el veredicto y con quién · UNA línea de qué hacer y para
+     cuándo · cuántos compiten con «Ver la competencia» y «Por qué» · los botones. Medido en la maqueta y en el banco:
+     de 170-192 palabras por tarjeta cerrada a unas 60. NADA se reescribe: la línea de qué hacer es el texto de
+     `chipManifestacion` y `chipCierre` (las reglas de la manifestación y del cierre siguen en un solo sitio), y lo que
+     se plegó —las puertas, los avisos largos, la franja, las fichas— va entero dentro de «Por qué». */
+  const desentidad = (t) => String(t).replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, "&");
+  const textoDeHtml = (h) => desentidad(String(h || "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim());
+  function lineaAccion(l, cierre, cierreTxt, dias) {
+    const piezas = [chipManifestacion(l.manifestacion), chipCierre(cierre, cierreTxt, dias)].filter(Boolean);
+    if (!piezas.length) return "";
+    /* clases LITERALES, no armadas con `${}`: el censo de clases de la suite lee el código y una armada no la ve */
+    const clase = piezas.some((h) => /bg-red-100/.test(h)) ? "t-accion t-accion-rojo"
+      : piezas.some((h) => /bg-amber-100/.test(h)) ? "t-accion t-accion-ambar" : "t-accion t-accion-neutro";
+    const titulos = piezas.map((h) => (h.match(/ title="([^"]*)"/) || [])[1]).filter(Boolean).join(" · ");
+    return `<p class="${clase}" data-accion-tarjeta${titulos ? ` title="${titulos}"` : ""}>${piezas.map((h) => esc(textoDeHtml(h))).join(" · ")}</p>`;
+  }
+  function lineaCompiten(l) {
+    const c = cuantosCompiten(l);
+    /* sin cifra, se dice POR QUÉ con las palabras del chip: con el índice sin leer no es «sin datos» (nadie lo
+       miró), es «no se pudo consultar» — el mismo predicado `competenciaNoLeida` de la franja y del chip */
+    if (!c) return `<span>${esc((competenciaNoLeida(l.competencia_entidad) ? COMPETENCIA_ENTIDAD.no_se_leyo : COMPETENCIA_ENTIDAD.sin_dato).titulo)}</span>`;
+    const n = Math.max(1, Math.round(c.promedio));
+    return n === 1 ? "<span>Suele presentarse <b>1 empresa</b></span>" : `<span>Compiten unas <b>${n} empresas</b></span>`;
+  }
+
   function tarjeta(l) {
     const rup = l.rup || {};
     const cierre = l.fecha_cierre ? new Date(l.fecha_cierre) : null;
@@ -2833,59 +2881,65 @@
     // «No viable» se ATENÚA, no se esconde (cuando el toggle lo permite): ver un
     // proceso grande caído por caja enseña más que su ausencia
     const noViable = l.viable === false;
+    /* lo que CIERRA con una socia no se atenúa ni lleva «No viable» (3-nov-2026): está en el primer grupo
+       del orden desde el 27-oct (lib/handlers/procesos/listar, `grupoDeOrden`) y la tarjeta lo pintaba a
+       media tinta entre las que el dueño hace solo. `viable` sigue diciendo «solo pasa las puertas». */
+    const cierraConSocio = !!(l.socio && l.socio.tipo === "con_socio" && l.socio.cierra_todo === true);
+    const atenuar = noViable && !cierraConSocio;
     const motivos = (puertas.no_viable_por || []).join(" · ");
+    const zona = textoDeHtml(chipZona(l.zona));
+    const id = String(l.id_del_proceso || "");
 
     return `
-    <article class="tarjeta rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-900/5${noViable ? " opacity-50" : ""}">
+    <article class="tarjeta rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-900/5${atenuar ? " opacity-50" : ""}">
       <div class="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between sm:gap-3">
         <div class="min-w-0 flex-1">
           <h3 class="titulo-tarjeta font-semibold leading-snug tracking-tight" title="${esc(l.nombre_del_procedimiento || "")}">${esc(l.nombre_del_procedimiento || l.id_del_proceso || "Proceso sin nombre")}</h3>
-          <p class="mt-1 text-sm text-gray-500">${esc(l.entidad || "Entidad no informada")}${l.departamento_entidad && !/no definido/i.test(l.departamento_entidad) ? ` · ${esc(l.departamento_entidad)}` : ""}</p>
+          <p class="mt-1 text-sm text-gray-500">${esc(l.entidad || "Entidad no informada")}${l.departamento_entidad && !/no definido/i.test(l.departamento_entidad) ? ` · ${esc(l.departamento_entidad)}` : ""}${zona ? ` · ${esc(zona)}` : ""}</p>
         </div>
         <div class="sm:text-right">
           ${l.cuantia_cop
     /* sin `|| 0`: un «$0» afirma que la obra vale cero pesos donde el dato no
-       vino (R1, la invariante de la cabecera). El PAA ya lo decía bien. */
-    ? `<p class="text-lg font-semibold tabular-nums">${fmtCOP.format(l.cuantia_cop)}</p>
-          <p class="text-xs uppercase tracking-wide text-gray-400">cuantía ${esc(RANGO_CUANTIA[l.cuantia_rango] || l.cuantia_rango || "")}</p>`
+       vino (R1, la invariante de la cabecera). El PAA ya lo decía bien.
+       Sin «cuantía alta» debajo (3-nov-2026, decisión del 27-oct, D-19). */
+    ? `<p class="text-lg font-semibold tabular-nums">${fmtCOP.format(l.cuantia_cop)}</p>`
     : '<p class="text-sm font-medium text-gray-400">Cuantía no publicada</p>'}
         </div>
       </div>
 
-      ${noViable ? `<p class="mt-3">${chip(`No viable${motivos ? ` — ${esc(motivos)}` : ""}`, "bg-red-100 text-red-700 ring-1 ring-inset ring-red-600/20",
-    "No cumple uno de sus requisitos: abra «Más detalles» para ver cuál")}</p>` : ""}
+      ${atenuar ? `<p class="mt-3">${chip(`No viable${motivos ? ` — ${esc(motivos)}` : ""}`, "bg-red-100 text-red-700 ring-1 ring-inset ring-red-600/20",
+    "No cumple uno de sus requisitos: abra «Por qué» para ver cuál")}</p>` : ""}
 
-      ${lineaRequisitos(puertas, l.manifestacion, l.filtro && l.filtro.admite_ofertas, l.aviso_capital_trabajo)}
+      <div class="t-decision">
+      ${lineaRequisitos(puertas, l.manifestacion, l.filtro && l.filtro.admite_ofertas, l.aviso_capital_trabajo, l.socio)}
       ${lineaCapitalTrabajo(l.aviso_capital_trabajo)}
-
       ${bloqueSocio(l)}
-
-      ${bloqueProbabilidad(l)}
-
-      <div class="mt-3 flex flex-wrap items-center gap-2">
-        ${paaEncendido ? chip("Activo · abierto", "bg-green-100 text-green-800 ring-1 ring-inset ring-green-600/20",
-    "Proceso PUBLICADO en SECOP II, con pliego y fecha de cierre — a diferencia de las previsiones del PAA") : ""}
-        ${chipCierre(cierre, cierreTxt, diasCierre)}
-        ${chipManifestacion(l.manifestacion)}
-        ${bandaCompetencia(l.competencia_entidad, l.entidad, l.nit_entidad)}
-        ${chipZona(l.zona)}
-        ${l._cierre_prorrogado ? chip("Cierre prorrogado", "bg-indigo-100 text-indigo-800", "El cierre se movió por adenda: suele indicar que no llegaron ofertas suficientes") : ""}
       </div>
 
-      ${lineasOtrasVersiones(l)}${noViable ? "" : avisoCompetencia(l.competencia_entidad)}
-      ${noViable ? "" : avisoCierre(diasCierre)}
-      ${noViable ? "" : avisoManifestacion(l.manifestacion)}
+      ${lineaAccion(l, cierre, cierreTxt, diasCierre)}
+      ${lineasOtrasVersiones(l)}
       ${lineaMargen(l.margen_estimado)}
       ${bloqueAdendas(l.adendas)}
 
-      <!-- Los chips de EVIDENCIA (puertas con sus cifras, anticipo, baja,
-           ubicación, encaje del RUP, modalidad, tipo de precio) se conservan
-           ENTEROS, plegados: quince chips visibles enterraban lo que decide.
-           La información no se pierde — deja de estorbar. -->
-      <details class="mt-3">
-        <summary class="cursor-pointer text-xs text-gray-400 transition hover:text-gray-600">Más detalles</summary>
+      <div class="t-hechos">${lineaCompiten(l)}
+        <button type="button" class="t-desplegar" data-ver-competencia data-entidad="${esc(l.entidad || "")}"${l.nit_entidad ? ` data-nit="${esc(String(l.nit_entidad))}"` : ""} aria-expanded="false" aria-controls="compe-${esc(id)}">Ver la competencia</button>
+        <button type="button" class="t-desplegar" data-ver-porque aria-expanded="false" aria-controls="porque-${esc(id)}">Por qué</button>
+      </div>
+      <div class="t-panel" id="compe-${esc(id)}" data-panel-competencia hidden></div>
+      <!-- «Por qué»: lo que se plegó, ENTERO. Lo que Detekta NO mide va primero, al lado de lo que sí. -->
+      <div class="t-panel" id="porque-${esc(id)}" data-panel-porque hidden>
+        <p class="text-xs text-gray-600" data-no-revisado>Lo que no se revisó: la experiencia y las cifras financieras que pide el pliego. Revíselas en el pliego antes de ofertar.</p>
         ${badgesPuertas(puertas)}
-        <div class="mt-2 flex flex-wrap gap-2">
+        ${atenuar ? "" : avisoCompetencia(l.competencia_entidad)}
+        ${atenuar ? "" : avisoCierre(diasCierre)}
+        ${atenuar ? "" : avisoManifestacion(l.manifestacion)}
+        ${bloqueProbabilidad(l)}
+        <div class="mt-3 flex flex-wrap items-center gap-2">
+          ${paaEncendido ? chip("Activo · abierto", "bg-green-100 text-green-800 ring-1 ring-inset ring-green-600/20",
+    "Proceso PUBLICADO en SECOP II, con pliego y fecha de cierre — a diferencia de las previsiones del PAA") : ""}
+          ${bandaCompetencia(l.competencia_entidad, l.entidad, l.nit_entidad)}
+          ${chipZona(l.zona)}
+          ${l._cierre_prorrogado ? chip("Cierre prorrogado", "bg-indigo-100 text-indigo-800", "El cierre se movió por adenda: suele indicar que no llegaron ofertas suficientes") : ""}
           ${chipBaja(l.baja_mercado)}
           ${chip(esc(`${l.ciudad_entidad || l.departamento_entidad || "Ubicación n/d"}`) + (l.ubicacion_valida ? " ✓" : ""), l.ubicacion_valida ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600")}
           ${badgesRup(rup, puertas.p1_rup)}
@@ -2897,19 +2951,127 @@
     "El riesgo de cantidades es del contratista: no se reconocen mayores cantidades. Verifique el formulario del pliego antes de fijar el precio") : ""}
         </div>
         ${lineaBajaDepartamento(l.baja_departamento)}
-      </details>
+        <p class="mt-2 text-xs text-gray-500">${esc(l.estado_del_procedimiento || "")}${l.fase && String(l.fase).trim() && String(l.fase).trim().toLowerCase() !== String(l.estado_del_procedimiento || "").trim().toLowerCase() ? ` · ${esc(String(l.fase).trim())}` : ""}</p>
+      </div>
 
-      <div class="mt-4 flex items-center justify-between gap-3 text-sm">
-        <span class="text-gray-400">${esc(l.estado_del_procedimiento || "")}${l.fase && String(l.fase).trim() && String(l.fase).trim().toLowerCase() !== String(l.estado_del_procedimiento || "").trim().toLowerCase() ? ` · ${esc(String(l.fase).trim())}` : ""}</span>
-        <span class="flex items-center gap-3">
-          ${botonGuardar(l)}
-          <button type="button" class="btn-apu rounded-lg border border-gray-300 px-3 py-1 text-xs font-semibold transition hover:bg-gray-50"
-                  data-apu-q="${esc(qApu(l))}" title="Calcular cuánto me cuesta y qué me deja este proceso, en la pestaña Precios">Calcular mi precio</button>
-          ${urlSegura(l.urlproceso) ? `<a href="${esc(urlSegura(l.urlproceso))}" target="_blank" rel="noopener noreferrer" class="font-medium text-blue-600 hover:underline">Ver en SECOP II ↗</a>` : ""}
-        </span>
+      <div class="t-pie">
+        ${botonGuardar(l)}
+        <button type="button" class="btn-apu rounded-lg border border-gray-300 px-3 py-1 text-xs font-semibold transition hover:bg-gray-50"
+                data-apu-q="${esc(qApu(l))}" title="Calcular cuánto me cuesta y qué me deja este proceso, en la pestaña Precios">Calcular mi precio</button>
+        ${urlSegura(l.urlproceso) ? `<a href="${esc(urlSegura(l.urlproceso))}" target="_blank" rel="noopener noreferrer" class="font-medium text-blue-600 hover:underline">Ver en SECOP II ↗</a>` : ""}
       </div>
     </article>`;
   }
+
+  /* ══════════ «Ver la competencia», DENTRO de la tarjeta (3-nov-2026) ══════════
+     La misma consulta que la ventana de siempre (`op=entidad`, con la sesión, su caché de una hora en el
+     servidor): primero lo PUBLICADO, que llega al instante, y después el recorrido completo, que trae las
+     OBRAS aparte (lib/competencia_detalle, `obras`) y quiénes se presentan. Cuesta lo mismo que abrir la
+     ventana: solo se pide al pulsar, una vez por tarjeta. «Ver los procesos uno por uno» abre la ventana. */
+  function htmlCompetenciaTarjeta(d, parcial) {
+    const pl = (n, uno, varios) => `${fmt.format(n)} ${n === 1 ? uno : varios}`;
+    /* un conteo ausente es «sin dato», jamás 0 (`Number(null) === 0`: la ausencia se descarta ANTES) */
+    const cnt = (v) => (v == null || v === "" || !Number.isFinite(Number(v)) ? null : Number(v));
+    /* la entidad que no está en el histórico: se dice ESO, no «ningún proceso tiene ganador» (que con cero
+       procesos es verdad vacía y se lee como un hecho), y no se ofrece una ventana que diría lo mismo */
+    if (d.encontrada === false) return `<p class="t-sub">Todavía no hay procesos anteriores de esta entidad para comparar, o figuran con otro nombre.</p>`;
+    const i = d.indice || {};
+    const o = d.obras || null;
+    const filaG = (g) => `<li><span class="t-quien">${esc(g.nombre)}${g.nit ? `<small>NIT ${esc(g.nit)}</small>` : ""}</span>
+        <span class="t-cuanto"><b>${cnt(g.ganados) == null ? "contratos sin dato" : pl(cnt(g.ganados), "contrato", "contratos")}</b><small>${g.valor_adjudicado_cop == null ? "valor sin dato" : `${esc(pesos(g.valor_adjudicado_cop))} en total`}</small><small>último: ${fmtUltima(g.ultima_adjudicacion) == null ? "sin fecha" : esc(fmtUltima(g.ultima_adjudicacion))}</small></span></li>`;
+    /* `unidad` nombra la base de CADA bloque: «obras» en el de obra, «procesos» en el de todos.
+       NO SABER no es CERO (revisión adversaria del 3-nov): sin el bloque (`null`: nada publicado, o la revisión
+       cortada) se dice que no se sabe todavía; «ningún … tiene ganador publicado» solo con una base MEDIDA de 0 */
+    const ganan = (titulo, a, sinGanador, unidad) => {
+      const base = a ? cnt(a.procesos_con_ganador) : null;
+      if (base == null) return `<div class="t-g"><h4>${titulo}</h4><p class="t-sub">${parcial ? "Contando quién gana con todos sus procesos…" : "Sin datos de quién gana aquí por ahora."}</p></div>`;
+      if (base === 0) return `<div class="t-g"><h4>${titulo}</h4><p class="t-sub">${sinGanador}</p></div>`;
+      const top = (a.top || []).slice(0, 3);
+      const c = a.concentracion;
+      const distintos = cnt(a.distintos);
+      const cBase = c ? cnt(c.base) : null, cGan = c ? cnt(c.ganados) : null, cPct = c ? cnt(c.pct) : null;
+      const lider = c && c.lider && cBase != null && cGan != null && cPct != null
+        ? `${esc(c.lider)} se lleva ${fmt.format(cGan)} de ${pl(cBase, `${unidad[0]} con ganador`, `${unidad[1]} con ganador`)} (${fmt.format(cPct)} %).`
+        : `${pl(base, `${unidad[0]} con ganador`, `${unidad[1]} con ganador`)}${distintos ? `, ${pl(distintos, "ganador distinto", "ganadores distintos")}` : ""}.`;
+      // cuántos más, sin prometer dónde verlos: la ventana trae los cinco primeros, no la lista entera
+      const mas = distintos != null && distintos > top.length ? `<p class="t-sub">Y ${pl(distintos - top.length, "ganador más", "ganadores más")}.</p>` : "";
+      return `<div class="t-g"><h4>${titulo}</h4><p class="t-sub">${lider}</p><ol class="t-filas">${top.map(filaG).join("")}</ol>${mas}</div>`;
+    };
+    const promTodos = i.promedio_oferentes != null && i.procesos_contados > 0
+      ? `${fmtNum.format(i.promedio_oferentes)} por proceso, en ${pl(i.procesos_contados, "proceso", "procesos")}` : null;
+    const conOfertasObra = o ? cnt(o.con_ofertas) : null;
+    /* el promedio de obra lleva el MISMO mínimo que el de todos (`min_procesos`): por debajo se dice la base */
+    const promObras = o && o.promedio_oferentes != null && conOfertasObra > 0
+      ? `${fmtNum.format(o.promedio_oferentes)} por obra, en ${pl(conOfertasObra, "obra", "obras")}`
+      : o && conOfertasObra > 0 ? `solo ${pl(conOfertasObra, "tiene", "tienen")} el número de ofertas publicado, muy pocas para un promedio` : null;
+    const filaP = (t) => `<li><span class="t-quien">${esc(t.nombre)}${t.nit ? `<small>NIT ${esc(t.nit)}</small>` : ""}</span>
+        <span class="t-cuanto"><b>${cnt(t.veces) == null ? "veces sin dato" : pl(cnt(t.veces), "vez", "veces")}</b><small>la última: ${fmtUltima(t.ultima_vez) == null ? "sin fecha" : esc(fmtUltima(t.ultima_vez))}</small></span></li>`;
+    /* sin el motivo crudo del servidor (puede traer un error de red en inglés o la palabra «corpus») */
+    const presentanDe = (p, u, esperando) => !p ? `<p class="t-sub">${esperando ? "Revisando quiénes se han presentado…" : "Sin datos de quiénes se presentan."}</p>`
+      : !p.ok ? `<p class="t-sub">${cnt(p.procesos_consultados) === 0 ? `Todavía no hay ${u[1]} que consultar.` : "No se pudo consultar quiénes se presentan. Intente más tarde."}</p>`
+        : !(p.top || []).length ? `<p class="t-sub">SECOP II todavía no publica quiénes se presentaron a ${u[2]}.</p>`
+          : `<p class="t-sub">${cnt(p.proponentes_distintos) != null && cnt(p.procesos_con_proponentes) != null ? `${pl(cnt(p.proponentes_distintos), "empresa distinta", "empresas distintas")} en ${pl(cnt(p.procesos_con_proponentes), u[0], u[1])}. ` : ""}Las que más vuelven:</p><ol class="t-filas">${p.top.slice(0, 3).map(filaP).join("")}</ol>`;
+    const U_OBRA = ["obra ya cerrada", "obras ya cerradas", "sus obras"];
+    const U_TODOS = ["proceso ya cerrado", "procesos ya cerrados", "los procesos de esta entidad"];
+    return `
+      <div class="t-compe-hechos">
+        <div><span class="t-rot">Cuántas empresas se presentan</span>${promObras ? `<span class="t-cifra">En contratos de obra: ${promObras}</span>` : ""}${promTodos ? `<span class="t-cifra-2">En todos sus procesos: ${promTodos}</span>` : ""}${!promObras && !promTodos ? `<span class="t-cifra-2">Sin datos de cuántas se presentan.</span>` : ""}</div>
+      </div>
+      ${o ? ganan("Quién gana aquí, en contratos de obra", o.adjudicatarios, "Ninguna obra de esta entidad tiene ganador publicado.", ["obra", "obras"])
+    : `<p class="t-sub">${parcial ? "Separando los contratos de obra…" : "Sin datos para separar los contratos de obra."}</p>`}
+      ${ganan("Quién gana aquí, en todos sus procesos", d.adjudicatarios, "Ningún proceso de esta entidad tiene ganador publicado.", ["proceso", "procesos"])}
+      ${o && o.proponentes !== undefined ? `<div class="t-g"><h4>Quiénes se presentan, en contratos de obra</h4>${presentanDe(o.proponentes, U_OBRA, false)}</div>` : ""}
+      <div class="t-g"><h4>Quiénes se presentan, en todos sus procesos</h4>${presentanDe(d.proponentes, U_TODOS, parcial)}</div>
+      <button type="button" class="t-desplegar" data-ver-procesos>Ver los procesos uno por uno</button>`;
+  }
+  /* El MISMO recorrido que la ventana (`cargarDetalle`): lo publicado se pinta solo si trae algo
+     (`indice || adjudicatarios`); el corte (`barrido.completo === false`) usa el mensaje del servidor y no
+     ofrece repetir lo que no cabe (`reintento_util === false`, 24-sep-2026); el 401 de CUALQUIERA de las dos
+     consultas pasa por `msg401`. Revisión adversaria del 3-nov-2026: el panel daba «código 200» como fallo. */
+  async function abrirCompetenciaTarjeta(btn) {
+    const tarjetaEl = btn.closest(".tarjeta");
+    const panel = tarjetaEl && tarjetaEl.querySelector("[data-panel-competencia]");
+    if (!panel) return;
+    const abierto = btn.getAttribute("aria-expanded") === "true";
+    btn.setAttribute("aria-expanded", String(!abierto));
+    panel.hidden = abierto;
+    if (abierto || panel.getAttribute("data-cargado")) return;
+    panel.setAttribute("data-cargado", "1");
+    const entidad = btn.getAttribute("data-entidad") || "", nit = btn.getAttribute("data-nit");
+    panel.setAttribute("data-entidad", entidad); if (nit) panel.setAttribute("data-nit", nit);
+    panel.innerHTML = `<p class="t-sub">Consultando la competencia de esta entidad…</p>`;
+    const pedir = async (extra) => {
+      let r;
+      try {
+        r = await fetch(`/api/inteligencia?op=entidad&entidad=${encodeURIComponent(entidad)}${nit ? `&nit=${encodeURIComponent(nit)}` : ""}${extra}`, conSesion());
+      } catch { return { r: null, cuerpo: null }; }
+      // el parseo va APARTE del fetch: el muro del edge responde HTML (`leerJson` nunca lanza)
+      return { r, cuerpo: await leerJson(r) };
+    };
+    const reintentar = `<button type="button" class="t-desplegar" data-reintentar-competencia>Intentar de nuevo</button>`;
+    const rapido = await pedir("&publicado=1");
+    if (rapido.r && rapido.r.status === 401) { panel.innerHTML = `<p class="t-sub">${msg401(rapido.cuerpo)}</p>`; return; }
+    const pintado = rapido.r && rapido.r.ok && rapido.cuerpo && rapido.cuerpo.ok && (rapido.cuerpo.indice || rapido.cuerpo.adjudicatarios) ? rapido.cuerpo : null;
+    panel.innerHTML = pintado ? htmlCompetenciaTarjeta(pintado, true)
+      : `<p class="t-sub">Revisando todos los procesos de esta entidad. Puede tardar hasta un minuto.</p>`;
+    const { r, cuerpo } = await pedir("");
+    if (r && r.status === 401) { panel.innerHTML = `<p class="t-sub">${msg401(cuerpo)}</p>`; return; }
+    if (!r || !r.ok || !cuerpo || !cuerpo.ok) {
+      const motivo = !r ? "No se pudo contactar el servidor." : (cuerpo && cuerpo.error) || fraseDeFallo({ status: r.status });
+      panel.innerHTML = (pintado ? htmlCompetenciaTarjeta({ ...pintado, obras: null }, false) : "")
+        + `<p class="t-sub">${pintado ? "No se pudo revisar todos sus procesos" : "No se pudo consultar la competencia"}: ${esc(motivo)} ${reintentar}</p>`;
+      return;
+    }
+    if (cuerpo.barrido && cuerpo.barrido.completo === false) {
+      const base = pintado ? { ...pintado, indice: pintado.indice || cuerpo.indice, adjudicatarios: pintado.adjudicatarios || cuerpo.adjudicatarios } : cuerpo;
+      const util = cuerpo.barrido.reintento_util !== false;
+      panel.innerHTML = htmlCompetenciaTarjeta({ ...base, obras: null }, false)
+        + `<p class="t-sub">${esc(cuerpo.mensaje || "No se alcanzó a revisar todos los procesos de esta entidad.")}${util ? ` ${reintentar}` : ""}</p>`;
+      return;
+    }
+    panel.innerHTML = htmlCompetenciaTarjeta(cuerpo, false);
+  }
+
 
   /* El rótulo de «Solo cerca de mi zona» dice DESDE DÓNDE se midió (6-sep-2026,
      M-SEG-10): «(Bogotá / Ibagué)» solo cuando el servidor lo dice en
@@ -2979,7 +3141,12 @@
         ? ` · ordenadas por lo que le queda: ${cuerpo.margen.con_margen} con costo calculado${cuerpo.margen.borradores_sin_costo ? `, ${cuerpo.margen.borradores_sin_costo} borrador${cuerpo.margen.borradores_sin_costo === 1 ? "" : "es"} sin costo (vuelva a calcular y guardar)` : ""}; las demás sin referencia, abajo`
         : "")
       + (cuerpo.viables !== undefined ? ` · ${cuerpo.viables} cumplen sus requisitos` : "")
-      + (cuerpo.no_viables ? `, ${cuerpo.no_viables} no viable${cuerpo.no_viables === 1 ? "" : "s"}` : "")
+      /* `no_viables` son las filas que usted SOLO no alcanza (`viable: false`). Desde el 3-nov-2026 no todas
+         dicen «No viable»: las que cierran con una socia dicen «Solo no le alcanza; con un socio, sí». La
+         cifra se nombra con lo que comparten LAS DOS tarjetas, no con la palabra de una de ellas, sin
+         «solo» (se lee «sin compañía» y «únicamente») y sin «socio» (una sola cifra de esta línea habla de
+         socio, la de la casilla `con_socio`): las dos cosas las prohíbe la cerradura de esta línea. */
+      + (cuerpo.no_viables ? `, ${cuerpo.no_viables} que no alcanza por su cuenta` : "")
       + (reparto ? ` · ${reparto}` : "")
       + (cuerpo.incluye_sin_unspsc ? " · incluye procesos sin código de clasificación" : "");
     $("lista").innerHTML = cuerpo.resultados.map(tarjeta).join("");
@@ -4570,6 +4737,27 @@
     }
     const gBtn = e.target.closest(".btn-guardar");
     if (gBtn) { alternarGuardado(gBtn.getAttribute("data-id"), gBtn); return; }
+    const vc = e.target.closest("[data-ver-competencia]");
+    if (vc) { abrirCompetenciaTarjeta(vc); return; }
+    const vp = e.target.closest("[data-ver-porque]");
+    if (vp) {
+      const panel = vp.closest(".tarjeta") && vp.closest(".tarjeta").querySelector("[data-panel-porque]");
+      if (panel) { const ab = vp.getAttribute("aria-expanded") === "true"; vp.setAttribute("aria-expanded", String(!ab)); panel.hidden = ab; }
+      return;
+    }
+    const re = e.target.closest("[data-reintentar-competencia]");
+    if (re) {
+      const tj = re.closest(".tarjeta"), bt = tj && tj.querySelector("[data-ver-competencia]"), pn = tj && tj.querySelector("[data-panel-competencia]");
+      if (bt && pn) { pn.removeAttribute("data-cargado"); bt.setAttribute("aria-expanded", "false"); abrirCompetenciaTarjeta(bt); }
+      return;
+    }
+    const vpr = e.target.closest("[data-ver-procesos]");
+    if (vpr) {
+      const pn = vpr.closest("[data-panel-competencia]");
+      const ent = pn && pn.getAttribute("data-entidad");
+      if (ent) { abrirModal(ent, "Competencia histórica"); cargarDetalle(ent, pn.getAttribute("data-nit")); }
+      return;
+    }
     const b = e.target.closest(".banda-competencia");
     if (!b) return;
     const entidad = b.getAttribute("data-entidad");

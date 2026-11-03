@@ -2605,16 +2605,19 @@ async function main() {
       for (const l of c1.resultados) {
         const html = AL.tarjeta(l).replace(/<wbr>/g, "");
         const c = celdasL(html);
-        assert.deepStrictEqual(c.slice(0, 2).map((x) => [x.valor, x.rotulo]), [["—", "no se pudo consultar"], ["—", "no se pudo consultar"]],
-          `«${l.entidad}»: con el índice sin leer las celdas 1 y 2 dicen lo que pasó → ${JSON.stringify(c.slice(0, 2))}`);
-        assert.ok(c[0].title === ayudaNL && c[1].title === ayudaNL, `«${l.entidad}»: su title es el MISMO texto del chip → ${c[0].title} | ${c[1].title}`);
-        assert.ok(verCalculoL(html).startsWith(ayudaNL), `«${l.entidad}»: «Ver cómo se calcula» tampoco afirma «Sin histórico» → ${verCalculoL(html)}`);
+        /* desde el 3-nov-2026 la franja tiene DOS celdas (compiten · lo que deja): «se gana 1 de N» y
+           «Ver cómo se calcula» salieron de la tarjeta (decisión del dueño del 27-oct, «la 11 con la 3») */
+        assert.strictEqual(c.length, 2, `«${l.entidad}»: la franja tiene dos celdas, sin la de «se gana» → ${JSON.stringify(c)}`);
+        assert.deepStrictEqual([c[0].valor, c[0].rotulo], ["—", "no se pudo consultar"],
+          `«${l.entidad}»: con el índice sin leer la celda de cuántos compiten dice lo que pasó → ${JSON.stringify(c[0])}`);
+        assert.ok(c[0].title === ayudaNL, `«${l.entidad}»: su title es el MISMO texto del chip → ${c[0].title}`);
+        assert.ok(!verCalculoL(html) && !/detalle-probabilidad|se gana, aproximadamente/.test(html), `«${l.entidad}»: ni «Ver cómo se calcula» ni «se gana» en la tarjeta`);
         assert.ok(!NIEGA_L.test(html), `«${l.entidad}»: nada en la tarjeta (texto ni title) le niega datos a la entidad → «${(html.match(NIEGA_L) || [])[0]}»`);
         assert.ok(/No se pudo consultar la competencia de esta entidad/.test(html) && /bg-amber-50/.test(html), `«${l.entidad}»: el chip ámbar sigue ahí`);
       }
       // control: con el índice leído la celda 1 mide y la 2 no dice «no se pudo consultar»
       const cCtrl = celdasL(AL.tarjeta(c4.resultados[0]).replace(/<wbr>/g, ""));
-      assert.ok(/^~\d/.test(cCtrl[0].valor) && !/no se pudo consultar/.test(cCtrl[1].rotulo), `control con el índice leído → ${JSON.stringify(cCtrl.slice(0, 2))}`);
+      assert.ok(/^~\d/.test(cCtrl[0].valor) && cCtrl.length === 2, `control con el índice leído → ${JSON.stringify(cCtrl)}`);
       /* …y el caso del HOSPITAL (índice LEÍDO, entidad sin conteo de ofertas, su baja SÍ medida): la
          celda 2 decía «sin datos de esta entidad» y el title «Sin histórico de la entidad ni del
          departamento» al lado de «6 contratos · esta entidad» en la celda 3. Lo que falta es
@@ -2624,15 +2627,13 @@ async function main() {
         const c = celdasL(html);
         assert.ok(l.p_ganar_detalle.fuente === "conservador" || l.p_ganar_detalle.fuente === "departamento", `«${l.entidad}»: el escenario es sin base → ${l.p_ganar_detalle.fuente}`);
         /* el lugar va en el RÓTULO desde el 23-sep (se ve en el teléfono; la nota lleva el conteo) */
-        assert.ok(/ en esta entidad\b/.test(c[2].rotulo) && /^\d+ contratos$/.test(c[2].nota), `«${l.entidad}»: la celda 3 mide la baja de ESTA entidad → ${JSON.stringify(c[2])}`);
-        assert.deepStrictEqual([c[1].valor, c[1].rotulo], ["—", "sin saber cuántos compiten"], `«${l.entidad}»: la celda 2 nombra lo que falta → ${JSON.stringify(c[1])}`);
-        const propio = [c[0].rotulo, c[0].title, c[1].rotulo, c[1].title, verCalculoL(html)].join(" | ");
+        assert.ok(/ en esta entidad\b/.test(c[1].rotulo) && /^\d+ contratos$/.test(c[1].nota), `«${l.entidad}»: la celda de lo que deja mide la baja de ESTA entidad → ${JSON.stringify(c[1])}`);
+        const propio = [c[0].rotulo, c[0].title].join(" | ");
         /* la frase NEUTRA desde el 24-sep-2026 («unidad competencia de la fila»): «esta entidad no publica
            cuántos ofertaron» afirmaba de la entidad algo que nadie miró cuando el índice falta o el nombre
            no casa; lo que se sabe es que a Detekta le faltan datos de cuántos compiten */
-        assert.ok(!NIEGA_ENT.test(propio) && /^No hay datos suficientes de cuántos compiten en esta entidad/.test(c[1].title) && !/no publica/.test(propio)
-          && /supuesto conservador|promedio de su departamento/.test(c[1].title),
-          `«${l.entidad}»: celdas 1-2 y «Ver cómo se calcula» dicen el hecho, no le niegan datos → «${(propio.match(NIEGA_ENT) || [])[0]}» · ${c[1].title}`);
+        assert.ok(!NIEGA_ENT.test(propio) && !/no publica/.test(propio) && /supuesto conservador|promedio de su departamento/.test(c[0].title),
+          `«${l.entidad}»: la celda de cuántos compiten dice el hecho, no le niega datos → «${(propio.match(NIEGA_ENT) || [])[0]}» · ${c[0].title}`);
         /* el renglón de competencia de «Más detalles» (lib/puertas.p4Competencia, 23-sep-2026): con
            el índice leído y la entidad sin conteo de ofertas, decía «No hay histórico suficiente de
            esta entidad» al lado de «N contratos» en la celda 3 */
@@ -8164,7 +8165,9 @@ async function main() {
           const rup = evaluarRup(f, "helder");
           const puertas = puertasMod.evaluarPuertas(f, "helder", { rup });
           const socio = resumenSocio(SPmod.socioPorProceso({ fila: f, base: "helder", candidatos: perfilesMod.CANDIDATOS_CONSORCIO, ctx: { rup, puertas } }));
-          return { linea: lineaRequisitos(puertas).replace(/<[^>]+>/g, ""), clase: lineaRequisitos(puertas), socio: bloqueSocio({ socio }) };
+          /* desde el 3-nov-2026 la línea recibe el socio, como la tarjeta real: si una socia CIERRA, el rojo
+             pasa a «Solo no le alcanza; con un socio, sí», y la línea de con quién es la del servidor */
+          return { linea: lineaRequisitos(puertas, null, undefined, null, socio).replace(/<[^>]+>/g, ""), clase: lineaRequisitos(puertas, null, undefined, null, socio), socio: bloqueSocio({ socio }), resumen: socio };
         };
         // (a) el hermano con clase propia de Helder: la línea de arriba lo dice en ámbar
         const a = tarjeta(filaP("SERVICIO DE MENSAJERÍA Y CORRESPONDENCIA", "V1.80101600"));
@@ -8188,7 +8191,10 @@ async function main() {
           `el expediente dice por qué no basta: ${JSON.stringify(spGD.recomendacion.cierra_todo)} «${spGD.frase}»`);
         // (d) y la obra que solo Génesis cubre conserva su «con un socio, sí»: la promesa no se apagó para todo
         const d = tarjeta(filaP("INTERVENCIÓN DEL TALUD DEL SECTOR LA ESPERANZA", "V1.72141200"));
-        assert.ok(/Este proceso no encaja con su registro/.test(d.linea) && /con un socio, sí/.test(d.socio), `la obra de Génesis no pierde su frase: «${d.linea}» / «${d.socio}»`);
+        assert.ok(/Solo no le alcanza; con un socio, sí/.test(d.linea) && /text-amber-700/.test(d.clase) && !/no encaja/.test(d.linea),
+          `la obra de Génesis no pierde su promesa, y ya no se pinta en rojo como imposible: «${d.linea}»`);
+        assert.ok(d.resumen && d.resumen.linea && d.socio.includes(d.resumen.linea) && /^Con /.test(d.resumen.linea),
+          `debajo, con quién: la línea del servidor, tal cual: «${d.socio}» / ${JSON.stringify(d.resumen)}`);
 
         /* (f) EL PUNTO DE LA LÍNEA ES EL SEMÁFORO (23-sep-2026, tercera ronda). La piel v3
            pinta el TEXTO ámbar en tinta (`#app .text-amber-700`), y el aviso de P1 no se
@@ -8210,6 +8216,9 @@ async function main() {
           [{ ...ok3, p3_caja: { pasa: false } }], [{ ...ok3, p3_caja: { pasa: false } }, { aplica: true, estado: "vencida" }],
           [ok3, { aplica: true, estado: "vencida" }], [{ ...ok3, p1_rup: { pasa: true, sin_dato: true } }], [ok3],
           [{ ...ok3, p2_k: { pasa: true, advertencia: true, depende_del_anticipo: true, anticipo_minimo_pct: 46, anticipo_tope_legal_pct: 50 } }],
+          // (3-nov-2026) lo que cierra con un socio, y el «Preséntese, revise…» con varias cosas
+          [{ p1_rup: { pasa: true }, p2_k: { pasa: false } }, null, undefined, null, { tipo: "con_socio", cierra_todo: true }],
+          [{ ...ok3, p1_rup: { pasa: true, sin_dato: true }, p3_caja: { pasa: true, advertencia: true } }],
         ];
         const sinColor = [];
         const estadosVistos = new Set();
@@ -8223,6 +8232,43 @@ async function main() {
         }
         assert.deepStrictEqual(sinColor, [], `la línea «${sinColor[0]}» pinta el punto sin el color de su estado`);
         assert.deepStrictEqual([...estadosVistos].sort(), ["cumple", "no_cumple", "revisar"], "el censo de ramas no cubre los tres estados de la línea");
+        /* (h) «PRESÉNTESE» Y «SOLO NO, CON UN SOCIO SÍ» (3-nov-2026, «la 11 con la 3»; decisión del dueño
+           del 27-oct). Lo que se defiende es que la PALABRA siga a las puertas sin cambiar ninguna regla:
+           verde solo con las tres limpias; ámbar que NOMBRA cada puerta con detalle (los mismos predicados
+           de antes: `sin_dato`, o `pasa` con `advertencia`) y el capital de trabajo; y el rojo de la
+           capacidad o del registro pasa a ámbar SOLO si la socia cierra todo (`cierra_todo === true`),
+           nunca con «se acerca» ni sin socio. MUTACIÓN: contra el árbol del 2-nov el verde decía
+           «Cumple los requisitos para presentarse» y el ámbar «con detalles por revisar», y la fila que
+           cierra con socio salía en rojo («Supera su capacidad de contratación»). */
+        {
+          const t = (...a) => lineaRequisitos(...a).replace(/<[^>]+>/g, "").replace(/^●\s*/, "");
+          const cl = (...a) => (lineaRequisitos(...a).match(/text-(?:red|amber|green)-700/) || [])[0];
+          assert.deepStrictEqual([t(ok3), cl(ok3)], ["Preséntese.", "text-green-700"], "las tres puertas limpias: «Preséntese.», en verde");
+          const dos = { ...ok3, p1_rup: { pasa: true, sin_dato: true }, p3_caja: { pasa: true, advertencia: true } };
+          assert.deepStrictEqual([t(dos), cl(dos)], ["Preséntese, revise 2 cosas: su registro de proponente y la plata para arrancar.", "text-amber-700"], `dos puertas con detalle: «${t(dos)}»`);
+          const tres = { p1_rup: { pasa: true, advertencia: true }, p2_k: { pasa: true, sin_dato: true }, p3_caja: { pasa: true } };
+          assert.strictEqual(t(tres, null, undefined, { frase: "x" }), "Preséntese, revise 3 cosas: su registro de proponente, lo que puede contratar y el capital de trabajo.", `con el capital de trabajo: «${t(tres, null, undefined, { frase: "x" })}»`);
+          assert.strictEqual(t({ ...ok3, p2_k: { pasa: true, sin_dato: true } }), "Preséntese, revise una cosa: lo que puede contratar.");
+          // una advertencia en una puerta que NO pasa no es «detalle»: es el rojo de siempre
+          const SI = { tipo: "con_socio", cierra_todo: true }, CASI = { tipo: "con_socio", cierra_todo: false };
+          for (const roja of [{ ...ok3, p2_k: { pasa: false } }, { ...ok3, p1_rup: { pasa: false } }]) {
+            assert.deepStrictEqual([t(roja, null, undefined, null, SI), cl(roja, null, undefined, null, SI)], ["Solo no le alcanza; con un socio, sí.", "text-amber-700"], `con una socia que cierra todo: «${t(roja, null, undefined, null, SI)}»`);
+            assert.strictEqual(cl(roja, null, undefined, null, CASI), "text-red-700", "con una socia que solo se ACERCA sigue el rojo: no se promete lo que el pliego no confirma");
+            assert.strictEqual(cl(roja), "text-red-700", "sin socio, el rojo de siempre");
+            assert.strictEqual(cl(roja, null, undefined, null, { tipo: "con_socio", cierra_todo: null }), "text-red-700", "`cierra_todo` sin dato no es «sí» (null no es true)");
+            assert.strictEqual(cl(roja, null, undefined, null, { tipo: "solo", cierra_todo: true }), "text-red-700", "solo con tipo `con_socio`");
+          }
+          assert.strictEqual(t({ ...ok3, p2_k: { pasa: false } }, null, false, null, SI), "Solo no le alcanza; con un socio, sí; y todavía no admite ofertas: el pliego está en proyecto.", "y si no admite ofertas, se dice también");
+          /* el plazo para avisar vencido NO se tapa con el ámbar (revisión adversaria del 3-nov-2026, reproducida:
+             decía «Solo no le alcanza; con un socio, sí.» y callaba que ya no puede avisar; las ramas hermanas
+             del anticipo y de `supera_si_la_piden` ya lo colgaban, con las mismas palabras) */
+          const vencida = { aplica: true, estado: "vencida" };
+          assert.strictEqual(t({ ...ok3, p2_k: { pasa: false } }, vencida, true, null, SI),
+            "Solo no le alcanza; con un socio, sí; y el plazo para avisar que le interesa ya venció: solo puede presentarse si avisó a tiempo.",
+            `con el plazo vencido, se dice: «${t({ ...ok3, p2_k: { pasa: false } }, vencida, true, null, SI)}»`);
+          const hermana = t({ ...ok3, p2_k: { pasa: true, supera_si_la_piden: true } }, vencida, true);
+          assert.ok(hermana.endsWith("; y el plazo para avisar que le interesa ya venció: solo puede presentarse si avisó a tiempo."), `la misma coletilla que la rama hermana: «${hermana}»`);
+        }
         // …y la tarjeta real del hermano de mensajería: el aviso de P1, con el punto ámbar
         {
           const f = filaP("SERVICIO DE MENSAJERÍA Y CORRESPONDENCIA", "V1.80101600");
@@ -14678,6 +14724,35 @@ async function main() {
         `una fila que solo no alcanza tiene que decir por qué se enseña y dónde está el consejo: ${conSocio}`);
       const flojo = bloqueSocio({ socio: { tipo: "con_socio", cierra_todo: false } });
       assert.ok(/puede no bastar/.test(flojo), `cuando el socio no cierra todo, la tarjeta NO promete: ${flojo}`);
+      /* (b-bis) CON QUIÉN, EN LA TARJETA (3-nov-2026, «la 11 con la 3»; supera para la tarjeta lo que este
+         bloque cerró el 11-sep). Con la línea del servidor (`resumenParaLista`, con credencial) la tarjeta la
+         pinta TAL CUAL —no la redacta—, escapada, y marca la parte como tope cuando lleva un porcentaje.
+         Sin la línea (sin credencial, lib/publico la manda en null) sigue lo de arriba. MUTACIÓN: contra el
+         árbol del 2-nov la fila «solo» no decía nada y la de socio decía «Guárdelo y le decimos con cuál». */
+      {
+        assert.ok(resumido && typeof resumido.linea === "string" && resumido.linea.length > 0, `premisa: el resumen real trae su línea: ${JSON.stringify(resumido)}`);
+        const real = bloqueSocio({ socio: resumido });
+        assert.ok(real.includes(resumido.linea) && /data-socio-linea/.test(real), `la tarjeta pinta la línea del servidor, tal cual: ${real}`);
+        assert.strictEqual(/tope antes de leer el pliego/.test(real), /\d\s?%/.test(resumido.linea), `la nota del tope va si y solo si la línea lleva una parte: ${real}`);
+        const conParte = bloqueSocio({ socio: { tipo: "con_socio", cierra_todo: true, linea: "Con PRODIAC: suma la capacidad que le falta. Usted, hasta el 80 %." } });
+        assert.ok(/Usted, hasta el 80 %/.test(conParte) && /es un tope antes de leer el pliego/.test(conParte) && !/Gu[áa]rdelo y le decimos/.test(conParte), `con parte: ${conParte}`);
+        const solo = bloqueSocio({ socio: { tipo: "solo", cierra_todo: null, linea: "Solo: le alcanza sin socio." } });
+        assert.ok(/Solo: le alcanza sin socio\./.test(solo) && !/tope/.test(solo), `«solo» también se dice, sin nota de tope: ${solo}`);
+        const escR = (x) => String(x == null ? "" : x).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+        const bsEsc = new Function("esc", `${appT.slice(iBS, appT.indexOf("\n  }", iBS) + 4)}; return bloqueSocio;`)(escR);
+        const sucio = bsEsc({ socio: { tipo: "con_socio", cierra_todo: true, linea: "Con <img src=x onerror=alert(1)>: 80 %" } });
+        assert.ok(!/<img/.test(sucio) && /&lt;img/.test(sucio), `la línea del servidor va escapada: ${sucio}`);
+        assert.ok(!/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u.test(real), "el icono es un SVG en línea, no un emoji");
+        /* sin credencial y con el veredicto que YA dice «Solo no le alcanza; con un socio, sí» (registro o capacidad
+           en rojo), el cuadro no lo repite: solo qué hacer (revisión adversaria del 3-nov-2026, reproducida) */
+        for (const pu of [{ p2_k: { pasa: false } }, { p1_rup: { pasa: false } }]) {
+          const sinCred = bloqueSocio({ socio: { tipo: "con_socio", cierra_todo: true, linea: null }, puertas: pu });
+          assert.ok(/Guárdelo y le decimos con cuál conviene y en qué reparto\./.test(sinCred) && !/Solo no le alcanza/.test(sinCred), `sin repetir el veredicto: ${sinCred}`);
+        }
+        // la rama del objeto dudoso de la mínima cuantía va ANTES y no dice «socio»: ahí el cuadro sí lo dice
+        const dudoso = bloqueSocio({ socio: { tipo: "con_socio", cierra_todo: true }, puertas: { p1_rup: { pasa: false, objeto_dudoso_sin_registro: true, mensaje: "El objeto no dice que sea obra." } } });
+        assert.ok(/Solo no le alcanza; con un socio, sí/.test(dudoso), `con el veredicto del objeto dudoso, el cuadro dice lo del socio: ${dudoso}`);
+      }
 
       /* UN MODAL QUE FALLA TIENE QUE OFRECER SALIDA (14-sep-2026). Cuando el
          histórico devolvió un 504, la ventana se quedaba con el error y un solo
@@ -15040,6 +15115,118 @@ async function main() {
       assert.ok(completo.procesos.length > 0, "el barrido completo trae la lista auditable");
       assert.ok(!completo.barrido || completo.barrido.completo !== false, "un barrido completo no se declara parcial");
 
+      /* LAS OBRAS, APARTE (3-nov-2026, decisión del dueño sobre la tarjeta nueva: «el 1 y 2»). En el MISMO
+         recorrido se cuenta lo que SECOP II PUBLICA como contrato de obra —ganadores, adjudicadas, cuántas ofertas
+         llegan y quiénes se presentan— con el mismo acumulador que «todos sus procesos», y el predicado es
+         `obraDeclarada` de lib/filtros, LLAMADO (revisión adversaria del 3-nov: una copia sería una tercera lista).
+         No es el filtro de la lista (`tipoTrabajoDe`): con las filas reales de Coper leía como obra el suministro
+         de llantas para volquetas, y esa fila real va aquí. Se ejecuta el recorrido real sobre un corpus mezclado,
+         con un hgi6 local que anota qué ids se le preguntan. MUTACIÓN: contra el árbol del 2-nov `obras` no existía. */
+      {
+        const http = require("http");
+        const { obraDeclarada } = require("../lib/filtros.js");
+        const { tipoTrabajoDe } = require("../lib/filtros_lista.js");
+        const filaO = (i) => ({ ...filaDe(i), id_del_proceso: `O${i}`, _k: `O${i}`,
+          tipo_de_contrato: i % 2 === 0 ? "Obra" : "Prestación de servicios",
+          nombre_del_procedimiento: i % 2 === 0 ? `CONSTRUCCIÓN DE PLACA HUELLA EN LA VEREDA ${i}` : `SERVICIO DE VIGILANCIA PARA LA SEDE ${i}`,
+          nombre_del_proveedor: i % 2 === 0 ? `CONSTRUCTORA DE OBRA ${i % 4}` : `SERVICIOS ${i % 3}`,
+          nit_del_proveedor_adjudicado: i % 2 === 0 ? `91${i % 4}` : `92${i % 3}` });
+        const especiales = [
+          // la fila real de Coper (p6dx-8zbt, 3-nov-2026): suministro con «mejoramiento» en el objeto. NO es obra
+          { ...filaDe(90), id_del_proceso: "LLANTAS", _k: "LLANTAS", tipo_de_contrato: "Suministros", nombre_del_procedimiento: "SUMINISTRO E INSTALACIÓN DE LLANTAS PARA LA RETROEXCAVADORA EN DESARROLLO DE LOS PROYECTOS DE MEJORAMIENTO DE VÍAS", nombre_del_proveedor: "LLANTAS Y SERVICIOS SAS", nit_del_proveedor_adjudicado: "930" },
+          // contratada como servicio: el rótulo publicado no la cuenta (lo dice la pantalla: «contratos de obra»)
+          { ...filaDe(91), id_del_proceso: "PHSERV", _k: "PHSERV", tipo_de_contrato: "Prestación de servicios", nombre_del_procedimiento: "MANTENIMIENTO Y REHABILITACIÓN DEL PUENTE COLGANTE DE LA VEREDA", nombre_del_proveedor: "CONSTRUCTORA DE OBRA 9", nit_del_proveedor_adjudicado: "919" },
+        ];
+        assert.strictEqual(tipoTrabajoDe(especiales[0]), "obra", "premisa medida: el filtro de la lista lee las llantas como obra (por eso no se usa aquí)");
+        assert.ok(!obraDeclarada(especiales[0]) && !obraDeclarada(especiales[1]), "premisa: ninguna de las dos está publicada como contrato de obra");
+        const corpusDe = (filas) => { const m = new Map(); for (let c = 0; c * 10 < filas.length; c++) m.set(`licitaciones:historico:mes:2026-02:chunk:${c}`, comp(filas.slice(c * 10, c * 10 + 10))); return m; };
+        const redisDe = (m) => ({ ...redisD(0), scan: async () => [...m.keys()], mget: async (ks) => ks.map((k) => m.get(k) ?? null) });
+        const filas = []; for (let i = 0; i < 40; i++) filas.push(filaO(i)); filas.push(...especiales);
+        const idsObra = new Set(filas.filter((f) => obraDeclarada(f)).map((f) => f.id_del_proceso));
+        assert.strictEqual(idsObra.size, 20, "premisa: 20 contratos publicados como obra");
+        // hgi6 local: quien se presenta a una obra es «OFERENTE DE OBRA»; a lo demás, «OFERENTE DE SERVICIOS»
+        const preguntados = [];
+        const srvP = http.createServer((req, res) => {
+          const u = new URL(req.url, "http://x"); const ids = [...String(u.searchParams.get("$where") || "").matchAll(/'([^']+)'/g)].map((m) => m[1]);
+          preguntados.push(ids); res.writeHead(200, { "Content-Type": "application/json" });
+          if (/count\(distinct/.test(u.searchParams.get("$select") || "")) return res.end(JSON.stringify([{ procesos: String(ids.length) }]));
+          const g = {}; for (const id of ids) { const n = idsObra.has(id) ? "OFERENTE DE OBRA" : "OFERENTE DE SERVICIOS"; g[n] = (g[n] || 0) + 1; }
+          res.end(JSON.stringify(Object.entries(g).map(([proveedor, veces]) => ({ proveedor, nit_proveedor: "No Definido", veces: String(veces), ultima: "2026-03-01T00:00:00.000" }))));
+        });
+        await new Promise((r) => srvP.listen(0, "127.0.0.1", r));
+        const antesP = process.env.PROPONENTES_BASE_URL;
+        process.env.PROPONENTES_BASE_URL = `http://127.0.0.1:${srvP.address().port}/resource/hgi6-6wh3.json`;
+        let d, sinTipo, pocas, preguntadosSinTipo;
+        try {
+          d = (await competenciaDetalle.detalleEntidad(redisDe(corpusDe(filas)), "ALCALDIA DE PRUEBA", { usarCache: false })).cuerpo;
+          // una fila adjudicada sin `tipo_de_contrato` (trozo viejo del histórico): sin base para separar las obras
+          preguntados.length = 0;
+          sinTipo = (await competenciaDetalle.detalleEntidad(redisDe(corpusDe([...filas, { ...filaDe(92), id_del_proceso: "SINTIPO", _k: "SINTIPO", tipo_de_contrato: "", nombre_del_procedimiento: "MEJORAMIENTO DE LA VÍA" }])), "ALCALDIA DE PRUEBA", { usarCache: false })).cuerpo;
+          preguntadosSinTipo = preguntados.slice();
+          // cuatro obras con ofertas: por debajo del mínimo no hay promedio
+          pocas = (await competenciaDetalle.detalleEntidad(redisDe(corpusDe(filas.filter((f, k) => k >= 40 || k % 2 === 1 || k < 8))), "ALCALDIA DE PRUEBA", { usarCache: false })).cuerpo;
+        } finally { process.env.PROPONENTES_BASE_URL = antesP; srvP.close(); }
+        const obrasEsperadas = filas.filter((f) => idsObra.has(f.id_del_proceso));
+        const promObra = obrasEsperadas.reduce((x, f) => x + Number(f.respuestas_al_procedimiento), 0) / obrasEsperadas.length;
+        assert.ok(d.obras && d.obras.adjudicadas === 20 && d.obras.con_ofertas === 20, `las obras se cuentan aparte, con el rótulo publicado (sin las llantas ni la obra contratada como servicio): ${JSON.stringify(d.obras && { a: d.obras.adjudicadas, c: d.obras.con_ofertas })}`);
+        assert.strictEqual(d.obras.promedio_oferentes, Math.round(promObra * 10) / 10, "el promedio de ofertas de las obras sale SOLO de las obras, con el redondeo del índice");
+        assert.strictEqual(d.obras.adjudicatarios.procesos_con_ganador, 20, "los ganadores de obra se cuentan sobre las 20 obras");
+        assert.ok(d.obras.adjudicatarios.top.length > 0 && d.obras.adjudicatarios.top.every((g) => /^CONSTRUCTORA DE OBRA/.test(g.nombre)),
+          `en «contratos de obra» no se cuela un ganador de servicios ni el de las llantas: ${d.obras.adjudicatarios.top.map((g) => g.nombre).join(" · ")}`);
+        assert.ok(!d.obras.adjudicatarios.top.some((g) => /LLANTAS/.test(g.nombre)), "el de las llantas no está entre los de obra");
+        assert.strictEqual(d.adjudicatarios.procesos_con_ganador, 42, "«en todos sus procesos» sigue contando los 42");
+        assert.ok(d.adjudicatarios.top.some((g) => /^SERVICIOS/.test(g.nombre)), "y ahí sí están los de servicios");
+        // quiénes se presentan A SUS OBRAS: la misma consulta, solo con los ids de obra
+        const po = d.obras.proponentes;
+        assert.ok(po && po.ok === true && po.top.length === 1 && po.top[0].nombre === "OFERENTE DE OBRA" && po.procesos_con_proponentes === 20,
+          `quiénes se presentan a sus obras sale de las obras: ${JSON.stringify(po && { ok: po.ok, n: po.procesos_con_proponentes, top: po.top.map((t) => t.nombre) })}`);
+        assert.ok(d.proponentes.top.some((t) => t.nombre === "OFERENTE DE SERVICIOS"), "el de todos sus procesos sigue con todos");
+        assert.ok(preguntadosSinTipo.length >= 2 && preguntadosSinTipo.every((ids) => !ids.every((id) => idsObra.has(id)) || ids.length === 0),
+          "sin base de obras no se gasta la consulta de sus proponentes");
+        assert.strictEqual(sinTipo.obras, null, `una fila sin tipo deja las obras sin base: null, no ceros (${JSON.stringify(sinTipo.obras)})`);
+        assert.ok(sinTipo.adjudicatarios && sinTipo.adjudicatarios.procesos_con_ganador === 43, "y «todos sus procesos» sale igual");
+        /* segunda revisión adversaria, reproducida: (1) caída la consulta de quiénes se presentan A SUS OBRAS, el detalle
+           NO se guarda en la caché (se servía una hora el fallo); sin ids de obra, sí (es un hecho, no una caída).
+           (2) una fila CERRADA sin adjudicar y sin tipo también entra en quiénes se presentan: deja las obras sin base */
+        {
+          const srvCae = http.createServer((req, res) => {
+            const u = new URL(req.url, "http://x"); const ids = [...String(u.searchParams.get("$where") || "").matchAll(/'([^']+)'/g)].map((m) => m[1]);
+            if (ids.length && ids.every((id) => idsObra.has(id))) { res.writeHead(500); return res.end("{}"); } // solo la de obras cae
+            res.writeHead(200, { "Content-Type": "application/json" });
+            if (/count\(distinct/.test(u.searchParams.get("$select") || "")) return res.end(JSON.stringify([{ procesos: String(ids.length) }]));
+            res.end(JSON.stringify([{ proveedor: "OFERENTE", nit_proveedor: "No Definido", veces: String(ids.length), ultima: "2026-03-01T00:00:00.000" }]));
+          });
+          await new Promise((r) => srvCae.listen(0, "127.0.0.1", r));
+          const antesC = process.env.PROPONENTES_BASE_URL;
+          process.env.PROPONENTES_BASE_URL = `http://127.0.0.1:${srvCae.address().port}/resource/hgi6-6wh3.json`;
+          let cae, sinObras, cerradaSinTipo, escCae, escSinObras;
+          // cerrada SIN adjudicar (ni fecha ni ganador) y sin tipo: entra en quiénes se presentan, no en lo adjudicado
+          const CERRADA_SIN_TIPO = { ...filaDe(93), id_del_proceso: "DESIERTA", _k: "DESIERTA", adjudicado: "No", estado_del_procedimiento: "Cancelado",
+            fecha_adjudicacion: "", nombre_del_proveedor: "", nit_del_proveedor_adjudicado: "", tipo_de_contrato: "", nombre_del_procedimiento: "MEJORAMIENTO DE LA VÍA" };
+          {
+            const { cuentaParaCompetencia } = require("../lib/indice_competencia.js");
+            const { estado_abierto } = require("../lib/filtros.js");
+            assert.ok(!cuentaParaCompetencia(CERRADA_SIN_TIPO) && !estado_abierto(CERRADA_SIN_TIPO), "premisa: la fila está cerrada y no cuenta como adjudicada");
+          }
+          try {
+            escrituras.length = 0;
+            cae = (await competenciaDetalle.detalleEntidad(redisDe(corpusDe(filas)), "ALCALDIA DE PRUEBA", { usarCache: false })).cuerpo;
+            escCae = escrituras.slice(); escrituras.length = 0;
+            sinObras = (await competenciaDetalle.detalleEntidad(redisDe(corpusDe(filas.filter((f) => !obraDeclarada(f)))), "ALCALDIA DE PRUEBA", { usarCache: false })).cuerpo;
+            escSinObras = escrituras.slice(); escrituras.length = 0;
+            cerradaSinTipo = (await competenciaDetalle.detalleEntidad(redisDe(corpusDe([...filas, CERRADA_SIN_TIPO])), "ALCALDIA DE PRUEBA", { usarCache: false })).cuerpo;
+            escrituras.length = 0;
+          } finally { process.env.PROPONENTES_BASE_URL = antesC; srvCae.close(); }
+          assert.ok(cae.proponentes.ok === true && cae.obras.proponentes.ok === false, `premisa: solo cae la consulta de las obras: ${JSON.stringify({ t: cae.proponentes.ok, o: cae.obras.proponentes.ok })}`);
+          assert.ok(!escCae.some((k) => /detalle/.test(k)), `caída la consulta de las obras, el detalle no se cachea: ${JSON.stringify(escCae)}`);
+          assert.ok(sinObras.obras && sinObras.obras.proponentes && sinObras.obras.proponentes.procesos_consultados === 0 && escSinObras.some((k) => /detalle/.test(k)),
+            `sin obras no hay nada que consultar, y eso sí se cachea: ${JSON.stringify({ o: sinObras.obras && sinObras.obras.proponentes, e: escSinObras })}`);
+          assert.strictEqual(cerradaSinTipo.obras, null, `una fila cerrada sin tipo también deja las obras sin base: ${JSON.stringify(cerradaSinTipo.obras)}`);
+        }
+        assert.ok(pocas.obras && pocas.obras.con_ofertas === 4 && pocas.obras.promedio_oferentes === null && pocas.obras.min_procesos === 5,
+          `con menos obras que el mínimo no hay promedio, pero sí la base: ${JSON.stringify(pocas.obras && { c: pocas.obras.con_ofertas, p: pocas.obras.promedio_oferentes, m: pocas.obras.min_procesos })}`);
+      }
+
       // techo imposible de cumplir: la respuesta cambia de naturaleza
       escrituras.length = 0;
       const parcial = (await competenciaDetalle.detalleEntidad(redisD(25), "ALCALDIA DE PRUEBA",
@@ -15055,6 +15242,7 @@ async function main() {
       assert.strictEqual(parcial.indice.nivel, "alta", "el nivel publicado se conserva");
       assert.deepStrictEqual(parcial.procesos, [], "la lista auditable no se enseña a medias");
       assert.strictEqual(parcial.adjudicatarios, null, "«quién gana aquí» sobre medio corpus sería una cifra falsa");
+      assert.strictEqual(parcial.obras, null, "las obras sobre medio corpus tampoco: sin el recorrido completo, null (no un cero)");
       /* 23-sep-2026: el mensaje dice el HECHO sin jerga («no alcanzó a armarse»); la
          frase anterior hablaba de «índice», de un «histórico demasiado grande» y de
          cifras que «son ciertas». La cerca de lenguaje de este caso vive en el bloque
@@ -15065,6 +15253,13 @@ async function main() {
         "no se pudo leer NO es «no hay»: esa frase sería una afirmación que el barrido no sostiene");
       assert.strictEqual(parcial.cache, false);
       assert.deepStrictEqual(escrituras, [], "una respuesta parcial NO se cachea: congelaría una hora lo que no se pudo leer");
+      {
+        // la entidad que no está: tampoco hay obras que contar (null, no un cero). Va DESPUÉS de la cerradura de la caché
+        const nada = (await competenciaDetalle.detalleEntidad(redisD(25), "ENTIDAD QUE NO ESTA EN ESTE CORPUS", { usarCache: false })).cuerpo;
+        assert.strictEqual(nada.encontrada, false, `la entidad ausente se declara ausente: ${JSON.stringify(nada.encontrada)}`);
+        assert.strictEqual(nada.obras, null, `sin la entidad no hay obras que contar: null, no un cero (${JSON.stringify(nada.obras)})`);
+        escrituras.length = 0;
+      }
 
       // y sin índice publicado no se inventa una banda: no hay nada que enseñar
       const parcialSinIndice = (await competenciaDetalle.detalleEntidad(redisD(25, false), "ALCALDIA DE PRUEBA",
@@ -15193,6 +15388,8 @@ async function main() {
         assert.strictEqual(comp.adjudicatarios.origen, "barrido", `${ent}: el recorrido completo declara su origen`);
         assert.ok(pub.adjudicatarios, `${ent}: publicado=1 no trae quién gana`);
         assert.strictEqual(pub.adjudicatarios.origen, "publicado");
+        // lo publicado no separa las obras (3-nov-2026): `null`, jamás un objeto con ceros; el recorrido sí las trae
+        assert.strictEqual(pub.obras, null, `${ent}: publicado=1 no inventa las obras: ${JSON.stringify(pub.obras)}`);
         assert.strictEqual(pub.adjudicatarios.construido, metaG.construido, `${ent}: el publicado dice de cuándo es`);
         assert.deepStrictEqual(soloCampos(pub.adjudicatarios), soloCampos(comp.adjudicatarios),
           `${ent}: lo publicado y lo recorrido tienen que ser la MISMA cifra`);
@@ -16140,30 +16337,30 @@ async function main() {
         const html = R23.tarjeta(l).replace(/<wbr>/g, "");
         const c = celdas23(html);
         vistas23[nombre] = { l, html, c };
-        assert.strictEqual(c.length, 3, `${nombre}: la franja tiene tres celdas`);
+        /* DOS celdas desde el 3-nov-2026 (compiten · lo que deja): «se gana 1 de N» salió de la tarjeta */
+        assert.strictEqual(c.length, 2, `${nombre}: la franja tiene dos celdas`);
+        assert.ok(!/se gana, aproximadamente|detalle-probabilidad|\b1 de \d/.test(html), `${nombre}: ni «1 de N» ni «Ver cómo se calcula» en la tarjeta`);
         assert.ok(!CORTO23.test(html), `${nombre}: ninguna cifra en pesos de la tarjeta va redondeada (texto ni título): ${(html.match(CORTO23) || [])[0]}`);
         // el CENSO de las cifras en pesos de la tarjeta: todas exactas, con los miles agrupados
         for (const m of html.matchAll(/\$\s?[\d.,]+/g)) {
           const cifra = m[0].replace(/[.,]$/, "");
           assert.ok(/^\$\s?(0|\d{1,3}(\.\d{3})*)$/.test(cifra), `${nombre}: «${cifra}» no es una cifra exacta en pesos`);
         }
-        assert.ok(!/≈/.test(html), `${nombre}: la celda 3 ya no pinta un precio aproximado`);
-        // INVARIANTE: si la celda 1 no tiene cifra, la celda 2 tampoco
-        if (c[0].valor === "—") assert.strictEqual(c[1].valor, "—", `${nombre}: celda 1 «—» ⇒ celda 2 «—» (${JSON.stringify(c[1])})`);
+        assert.ok(!/≈/.test(html), `${nombre}: la celda de lo que deja ya no pinta un precio aproximado`);
         assert.ok(!/5 empresas/.test(c[0].title), `${nombre}: el título de la celda 1 sale de la fuente, no del «5 empresas» fijo`);
       }
       const v1 = vistas23["(i) 6.300.000.000, mediana 0"], v2 = vistas23["(ii) 1.598.000, mediana 0"], v3 = vistas23["(iii) 1.598.000.000, mediana 3"];
       const v4 = vistas23["(iv) promedio del departamento"], v5 = vistas23["(v) sin base"];
-      assert.deepStrictEqual([v1.c[2].valor, v1.c[2].rotulo, v1.c[2].nota], ["Sin bajar", `ganaron sin bajar el precio en ${v1.l.ganancia.baja_donde}`, "7 contratos"],
-        `(i) con mediana 0 la celda 3 dice el hecho y DÓNDE, no repite el presupuesto: ${JSON.stringify(v1.c[2])}`);
-      assert.strictEqual(v1.c[2].title, `${v1.l.ganancia.baja_frase || v1.l.baja_mercado.mensaje} Para saber cuánto le deja, calcule su costo en Precios: pulse la cifra.`,
+      assert.deepStrictEqual([v1.c[1].valor, v1.c[1].rotulo, v1.c[1].nota], ["Sin bajar", `ganaron sin bajar el precio en ${v1.l.ganancia.baja_donde}`, "7 contratos"],
+        `(i) con mediana 0 la celda 3 dice el hecho y DÓNDE, no repite el presupuesto: ${JSON.stringify(v1.c[1])}`);
+      assert.strictEqual(v1.c[1].title, `${v1.l.ganancia.baja_frase || v1.l.baja_mercado.mensaje} Para saber cuánto le deja, calcule su costo en Precios: pulse la cifra.`,
         "(i) sin bajar, el título es la frase del servidor y la instrucción: la tarjeta no añade NINGUNA cifra en pesos");
       assert.ok(/>Se gana sin bajar el precio</.test(v1.html) && !/Suelen bajar -?0 %/.test(v1.html), "(i) el chip de «Más detalles» dice el hecho, no «Suelen bajar 0 %»");
       assert.ok(/>Suelen bajar 3 %</.test(v3.html), "(iii) con mediana 3, «Suelen bajar 3 %», sin pesos al lado");
-      assert.ok(!/\$2M|\$2 M|1,6 millones/.test(v2.html) && v2.c[2].valor === "Sin bajar", `(ii) «$2M» no aparece sobre un presupuesto de $1.598.000: ${JSON.stringify(v2.c[2])}`);
+      assert.ok(!/\$2M|\$2 M|1,6 millones/.test(v2.html) && v2.c[1].valor === "Sin bajar", `(ii) «$2M» no aparece sobre un presupuesto de $1.598.000: ${JSON.stringify(v2.c[1])}`);
       assert.ok(/\$\s1\.598\.000</.test(v2.html), "(ii) la cabecera sigue enseñando la cifra exacta (`fmtCOP` separa con un espacio duro)");
-      assert.deepStrictEqual([v3.c[2].valor, v3.c[2].rotulo, v3.c[2].nota], ["3 %", `bajaron los que ganaron en ${v3.l.ganancia.baja_donde}`, "7 contratos"],
-        `(iii) con mediana 3 la celda dice cuánto bajaron y dónde: ${JSON.stringify(v3.c[2])}`);
+      assert.deepStrictEqual([v3.c[1].valor, v3.c[1].rotulo, v3.c[1].nota], ["3 %", `bajaron los que ganaron en ${v3.l.ganancia.baja_donde}`, "7 contratos"],
+        `(iii) con mediana 3 la celda dice cuánto bajaron y dónde: ${JSON.stringify(v3.c[1])}`);
       /* EL DÓNDE VA EN EL RÓTULO, QUE SÍ SE VE EN EL TELÉFONO (23-sep-2026, revisión adversaria, lente del
          navegador): la nota (`.metrica-nota`) no se pinta por debajo de 640 px de ventana ni de 440 px de
          tarjeta, y el `title` no existe en una pantalla táctil. Con el lugar solo en la nota, a 390 px la
@@ -16183,11 +16380,11 @@ async function main() {
         for (const [nombre, v] of [["(i)", v1], ["(iii)", v3], ["(iv)", v4], ["(vi) departamento, mediana 0", conDepto0]]) {
           const donde = v.l.ganancia.baja_donde;
           assert.ok(typeof donde === "string" && donde.length > 0, `${nombre}: premisa, el servidor publica \`baja_donde\``);
-          assert.ok(v.c[2].rotulo.endsWith(` en ${donde}`) && !v.c[2].nota.includes(donde),
-            `${nombre}: el dónde de la baja va en el rótulo, que sí se ve en el teléfono, no en la nota: ${JSON.stringify(v.c[2])}`);
+          assert.ok(v.c[1].rotulo.endsWith(` en ${donde}`) && !v.c[1].nota.includes(donde),
+            `${nombre}: el dónde de la baja va en el rótulo, que sí se ve en el teléfono, no en la nota: ${JSON.stringify(v.c[1])}`);
         }
-        assert.ok(/su departamento/.test(v4.c[2].rotulo) && /su departamento/.test(conDepto0.c[2].rotulo),
-          `(iv) y (vi): la baja del departamento no se lee como la de esta entidad: ${v4.c[2].rotulo} · ${conDepto0.c[2].rotulo}`);
+        assert.ok(/su departamento/.test(v4.c[1].rotulo) && /su departamento/.test(conDepto0.c[1].rotulo),
+          `(iv) y (vi): la baja del departamento no se lee como la de esta entidad: ${v4.c[1].rotulo} · ${conDepto0.c[1].rotulo}`);
         /* EL CHIP DICE EL HECHO SIN LUGAR (revisión adversaria, 23-sep): decía «Aquí se gana sin bajar el
            precio» con la baja del departamento, y la celda 3 de la misma tarjeta, «su departamento». El
            lugar lo pone la celda con el `baja_donde` del servidor; el chip no decodifica la granularidad.
@@ -16201,34 +16398,34 @@ async function main() {
         assert.ok(/no tiene historial propio suficiente/.test(conDepto0.l.baja_mercado.mensaje), "premisa: la frase del servidor dice que la base es ajena");
       }
       /* la frase es la del servidor: `baja_frase` de la ganancia (contrato del 23-sep) o, sin ella, el mensaje del índice */
-      assert.ok(v3.c[2].title.includes("Con esa baja, este proceso se adjudicaría en $1.550.060.000.") && v3.c[2].title.startsWith(v3.l.ganancia.baja_frase || v3.l.baja_mercado.mensaje),
-        `(iii) el precio con esa baja, EXACTO, detrás de la frase del servidor: ${v3.c[2].title}`);
+      assert.ok(v3.c[1].title.includes("Con esa baja, este proceso se adjudicaría en $1.550.060.000.") && v3.c[1].title.startsWith(v3.l.ganancia.baja_frase || v3.l.baja_mercado.mensaje),
+        `(iii) el precio con esa baja, EXACTO, detrás de la frase del servidor: ${v3.c[1].title}`);
       /* «sin datos de esta entidad» era FALSO al lado de la celda 3 que mide la baja de esa misma
          entidad (23-sep-2026, la tarjeta del Hospital): lo que falta es cuántos compiten */
-      assert.deepStrictEqual([v4.c[0].valor, v4.c[1].valor, v4.c[1].rotulo], ["—", "—", "sin saber cuántos compiten"], `(iv) con el promedio del departamento no hay «1 de N»: ${JSON.stringify(v4.c)}`);
-      assert.ok(/promedio de su departamento/.test(v4.c[1].title) && /Ver cómo se calcula/.test(v4.c[1].title), `(iv) el título dice de dónde sale el cálculo y dónde se ve: ${v4.c[1].title}`);
-      assert.ok(/supuesto conservador/.test(v1.c[1].title) && /Ver cómo se calcula/.test(v1.c[1].title), `(i) con el supuesto, lo mismo: ${v1.c[1].title}`);
-      assert.strictEqual(v5.c[2].valor, "Calcular", "(v) sin base de baja, la celda pide el costo");
-      // con base de ESTA entidad la frecuencia sí se pinta
+      assert.strictEqual(v4.c[0].valor, "—", `(iv) con el promedio del departamento la celda de cuántos compiten no tiene cifra: ${JSON.stringify(v4.c)}`);
+      assert.ok(/promedio de su departamento/.test(v4.c[0].title) && !/Ver cómo se calcula/.test(v4.c[0].title), `(iv) el título dice de dónde sale el cálculo, sin mandar a un enlace que ya no está: ${v4.c[0].title}`);
+      assert.ok(/supuesto conservador/.test(v1.c[0].title) && !/Ver cómo se calcula/.test(v1.c[0].title), `(i) con el supuesto, lo mismo: ${v1.c[0].title}`);
+      assert.strictEqual(v5.c[1].valor, "Calcular", "(v) sin base de baja, la celda pide el costo");
+      // con base de ESTA entidad la celda 1 mide; la frecuencia ya NO se pinta (salió de la tarjeta el 3-nov-2026)
       const conBase23 = celdas23(R23.tarjeta({ ...v1.l, p_ganar: 1 / 6, p_ganar_detalle: { fuente: "entidad", rivales_esperados: 1.4, ajustes: [] }, competencia_entidad: { nivel: "baja", promedio_oferentes: 1.4, total_procesos: 55 } }));
-      assert.deepStrictEqual([conBase23[0].valor, conBase23[1].valor], ["~1", "1 de 6"], `con el histórico de la entidad la frecuencia se pinta: ${JSON.stringify(conBase23)}`);
-      // «entidad» encogida con pocos procesos: la celda 1 no tiene cifra, así que la 2 tampoco
+      assert.ok(conBase23[0].valor === "~1" && conBase23.length === 2 && !conBase23.some((x) => /1 de 6/.test(x.valor)), `con el histórico de la entidad la celda 1 mide y no hay «1 de 6»: ${JSON.stringify(conBase23)}`);
+      // «entidad» encogida con pocos procesos: la celda 1 no tiene cifra
       const encogida23 = celdas23(R23.tarjeta({ ...v1.l, p_ganar: 0.3, p_ganar_detalle: { fuente: "entidad", rivales_esperados: 2.3, ajustes: [], encogido: true }, competencia_entidad: { nivel: "sin_dato", promedio_oferentes: null, total_procesos: 3 } }));
-      assert.deepStrictEqual([encogida23[0].valor, encogida23[1].valor], ["—", "—"], `pocos procesos de la entidad: sin «1 de N» (${JSON.stringify(encogida23)})`);
+      assert.deepStrictEqual([encogida23[0].valor, encogida23.length], ["—", 2], `pocos procesos de la entidad: sin «1 de N» (${JSON.stringify(encogida23)})`);
       // la baja AUSENTE nunca cae en «Sin bajar», y una negativa sí (el techo no supera el presupuesto)
       const g23 = v1.l.ganancia;
-      assert.strictEqual(celdas23(R23.tarjeta({ ...v1.l, ganancia: { ...g23, baja_aplicada_pct: null } }))[2].valor, "Calcular", "sin el campo (respuesta anterior), «Calcular»: un null no es «sin bajar»");
-      assert.strictEqual(celdas23(R23.tarjeta({ ...v1.l, ganancia: { ...g23, baja_aplicada_pct: undefined } }))[2].valor, "Calcular");
-      assert.strictEqual(celdas23(R23.tarjeta({ ...v1.l, ganancia: { ...g23, baja_aplicada_pct: -2 } }))[2].valor, "Sin bajar", "una mediana negativa es «sin bajar», no «−2 %»");
-      assert.deepStrictEqual((({ rotulo, nota }) => [rotulo, nota])(celdas23(R23.tarjeta({ ...v1.l, ganancia: { ...g23, baja_donde: undefined } }))[2]),
+      assert.strictEqual(celdas23(R23.tarjeta({ ...v1.l, ganancia: { ...g23, baja_aplicada_pct: null } }))[1].valor, "Calcular", "sin el campo (respuesta anterior), «Calcular»: un null no es «sin bajar»");
+      assert.strictEqual(celdas23(R23.tarjeta({ ...v1.l, ganancia: { ...g23, baja_aplicada_pct: undefined } }))[1].valor, "Calcular");
+      assert.strictEqual(celdas23(R23.tarjeta({ ...v1.l, ganancia: { ...g23, baja_aplicada_pct: -2 } }))[1].valor, "Sin bajar", "una mediana negativa es «sin bajar», no «−2 %»");
+      assert.deepStrictEqual((({ rotulo, nota }) => [rotulo, nota])(celdas23(R23.tarjeta({ ...v1.l, ganancia: { ...g23, baja_donde: undefined } }))[1]),
         ["ganaron sin bajar el precio en esta zona", "7 contratos"], "sin el campo del servidor no se afirma «esta entidad»");
       // la frase es la del servidor: `baja_frase` manda; sin ella, `baja_mercado.mensaje`; sin las dos, no hay título que redactar
-      assert.ok(celdas23(R23.tarjeta({ ...v3.l, ganancia: { ...v3.l.ganancia, baja_frase: "FRASE DEL SERVIDOR." } }))[2].title.startsWith("FRASE DEL SERVIDOR. Con esa baja"), "`baja_frase` manda sobre el mensaje del índice");
-      assert.strictEqual(celdas23(R23.tarjeta({ ...v3.l, ganancia: { ...v3.l.ganancia, baja_frase: null }, baja_mercado: { ...v3.l.baja_mercado, mensaje: null } }))[2].title, "", "sin frase del servidor la tarjeta no redacta una cuarta");
+      assert.ok(celdas23(R23.tarjeta({ ...v3.l, ganancia: { ...v3.l.ganancia, baja_frase: "FRASE DEL SERVIDOR." } }))[1].title.startsWith("FRASE DEL SERVIDOR. Con esa baja"), "`baja_frase` manda sobre el mensaje del índice");
+      assert.strictEqual(celdas23(R23.tarjeta({ ...v3.l, ganancia: { ...v3.l.ganancia, baja_frase: null }, baja_mercado: { ...v3.l.baja_mercado, mensaje: null } }))[1].title, "", "sin frase del servidor la tarjeta no redacta una cuarta");
       // con costo medido (rama APU) y mediana 0, el presupuesto no se repite como «precio al que se suele adjudicar»
       const apu23 = fila23(6300000000, { indiceBaja: bajaEnt23(0), costo: 4.9e9 });
       assert.strictEqual(apu23.ganancia.base, "apu");
-      const cApu23 = celdas23(R23.tarjeta(apu23))[2];
+      const cApu23 = celdas23(R23.tarjeta(apu23))[1];
       assert.ok(/Precio de referencia: el presupuesto oficial\./.test(cApu23.title) && !/al que se suele adjudicar/.test(cApu23.title), `rama con costo: ${cApu23.title}`);
       assert.ok(/^−?\$\d{1,3}(\.\d{3})*$/.test(cApu23.valor), `la ganancia de un contrato va EXACTA: ${cApu23.valor}`);
       /* …y con una mediana NEGATIVA, que el índice admite (hasta BAJA_MIN) y `piso_techo` publica tal cual: la
@@ -16239,7 +16436,7 @@ async function main() {
       for (const mediana of [-2, -0.5]) {
         const apuNeg23 = fila23(6300000000, { indiceBaja: bajaEnt23(mediana), costo: 4.9e9 });
         assert.deepStrictEqual([apuNeg23.ganancia.base, apuNeg23.ganancia.baja_aplicada_pct], ["apu", mediana], `mediana ${mediana}: llega tal cual a la tarjeta`);
-        const tNeg23 = celdas23(R23.tarjeta(apuNeg23))[2].title;
+        const tNeg23 = celdas23(R23.tarjeta(apuNeg23))[1].title;
         assert.ok(/Precio de referencia: el presupuesto oficial\./.test(tNeg23) && !/al que se suele adjudicar|por debajo del presupuesto/.test(tNeg23),
           `rama con costo, mediana ${mediana}: el precio de referencia es el presupuesto, dicho como lo que es: ${tNeg23}`);
       }
@@ -16247,7 +16444,7 @@ async function main() {
       {
         const apuSin = fila23(6300000000, { indiceBaja: bajaEnt23(3), costo: 4.9e9 });
         assert.ok(apuSin.ganancia.por_intento != null && apuSin.p_ganar_detalle.fuente !== "entidad", "el caso es sin base y con ganancia por intento");
-        const tSin = celdas23(R23.tarjeta(apuSin))[2].title;
+        const tSin = celdas23(R23.tarjeta(apuSin))[1].title;
         assert.ok(/Ganancia media por intento \(con un supuesto de cuántos compiten: no hay datos de esta entidad\):/.test(tSin), `sin base, la ganancia por intento dice que es un supuesto: ${tSin}`);
         const apuCon = { ...apuSin, p_ganar_detalle: { ...apuSin.p_ganar_detalle, fuente: "entidad" }, competencia_entidad: { nivel: "baja", promedio_oferentes: 1.4, total_procesos: 55 } };
         /* UNA cifra para «si no gasta la reserva para imprevistos» (24-sep-2026): la línea del cliente
@@ -16255,7 +16452,7 @@ async function main() {
            distintas para la misma condición ($5.925.132.840 y $6.240.132.840, medido en Chromium) */
         const reservas = [...tSin.matchAll(/reserva para imprevistos[^$]*(\$[\d.]+)/g)].map((x) => x[1]);
         assert.ok(reservas.length >= 1 && new Set(reservas).size === 1, `el title da UNA cifra para la reserva sin gastar: ${JSON.stringify(reservas)} · ${tSin}`);
-        const tCon = celdas23(R23.tarjeta(apuCon))[2].title;
+        const tCon = celdas23(R23.tarjeta(apuCon))[1].title;
         assert.ok(/Ganancia media por intento: /.test(tCon) && !/con un supuesto de cuántos compiten/.test(tCon), `con base de la entidad no se marca como supuesto: ${tCon}`);
       }
       /* …y parte por grupos de miles: a 390 px «−$4.028.210.988» medía 153 px en una celda de 102 y
@@ -26046,8 +26243,13 @@ async function main() {
           "el botón de copiar tiene que nacer oculto: solo aparece en el desglose y cuando hay algo que copiar");
         assert.ok(jsSinComentarios.includes("detalle-probabilidad"),
           "«Prob. estimada» no es clicable: falta la clase del disparador");
-        assert.ok(/decoration-dotted/.test(jsSinComentarios),
-          "el subrayado punteado es lo que anuncia que la cifra se puede pulsar");
+        /* Desde el 3-nov-2026 la TARJETA ya no pinta el disparador («Ver cómo se calcula» enseñaba la
+           probabilidad; decisión del dueño del 27-oct, «la 11 con la 3»), y era su única entrada: el
+           desglose queda servido y cableado, sin enlace en pantalla (PENDIENTE en la memoria: decidir si
+           vuelve por otro lado o se retira). Lo que se vigila ahora es que la tarjeta no lo pinte. */
+        const iBP = js.indexOf("  function bloqueProbabilidad(l) {"), fBP = js.indexOf("\n  }\n", iBP);
+        assert.ok(iBP > 0 && !/class="detalle-probabilidad/.test(sinComentarios(js.slice(iBP, fBP))),
+          "la franja de la tarjeta no pinta «Ver cómo se calcula»: la probabilidad salió de la tarjeta");
         /* LLAMA A LA CANÓNICA, no al alias: el alias es un rewrite y, si
            fallara, el modal tiene que seguir funcionando. Misma lección que
            /api/admin/cargar-experiencia-genesis. */
@@ -29640,6 +29842,7 @@ async function main() {
         assert.strictEqual(r.status, 200, "no encontrar no es un error del servidor");
         assert.strictEqual(r.cuerpo.ok, true);
         assert.strictEqual(r.cuerpo.encontrada, false, "debe decir explícitamente que no la encontró");
+        assert.strictEqual(r.cuerpo.obras, null, "sin la entidad no hay obras que contar: null, no un cero");
         assert.deepStrictEqual(r.cuerpo.procesos, []);
         assert.deepStrictEqual(r.cuerpo.excluidos, []);
         assert.ok(/no hay procesos/i.test(r.cuerpo.mensaje), "un array vacío sin explicación no sirve");
@@ -38862,30 +39065,26 @@ async function main() {
           assert.ok(/no ajusta la probabilidad/.test(precioPub.motivo), `el motivo público no puede afirmar un ajuste que no existe: «${precioPub.motivo}»`);
           assert.strictEqual(detalle.p, detalle.p_sin_precio, "sin baja máxima declarada el precio no mueve la p (factor 1)");
         }
-        const linea = js.slice(js.indexOf("const ajustes = (d.ajustes"));
-        const expr = linea.slice(linea.indexOf(".map("), linea.indexOf(".join("));
-        /* Desde el 26-sep-2026 la lambda pinta el factor con `nf2`, el formateador es-CO
-           de app.js («×1,08» y no «×1.08»). Se le da el MISMO formateador, leído de su
-           definición en el fuente: una copia escrita aquí podría divergir de la real. */
-        const defNf2 = (js.match(/\bconst nf2 = new Intl\.NumberFormat\([^;]*\);/) || [])[0];
-        assert.ok(defNf2, "app.js sin el formateador `nf2` con el que el title pinta el factor");
-        const pintado = eval(`(() => { ${defNf2} return (${expr.slice(5, expr.lastIndexOf(")"))}); })()`); // la lambda del fuente
-        for (const a of pub.ajustes) {
-          const texto = pintado(a);
-          assert.ok(!/×\s*null|×\s*undefined|NaN/.test(texto),
-            `el tooltip público pinta un factor vacío: «${texto}»`);
-          assert.ok(texto.includes(a.nombre), "el ajuste tiene que seguir nombrándose aunque se le tape el factor");
-        }
-        // y con token el factor SÍ se pinta: la guarda no puede tragarse el dato
-        // (el ajuste se llama `precio` desde A4; con b_max=3 sobre mediana 8 el factor es < 1)
+        /* EL TOOLTIP QUE PINTABA LOS FACTORES YA NO EXISTE (3-nov-2026). Era el `title` de «Ver cómo se
+           calcula» en la tarjeta, y salió con la probabilidad (decisión del dueño del 27-oct, «la 11 con
+           la 3»). Lo que esta cerradura defendía —que un factor redactado no se pinte «×null» y que el
+           presente salga con coma decimal— se defiende ahora así: (1) la lista pública sigue tapando el
+           factor (arriba, la salida REAL de `sinFinanzas`), y (2) NINGÚN sitio de app.js vuelve a pintar
+           `a.factor` como cifra: si alguien repone el tooltip, tiene que reponer también esta prueba
+           ejecutando su `map`. El `eval` sobre la línea del fuente se fue con la línea: buscar algo que
+           no está y cortar en -1 armaba un fragmento roto («Unexpected token ')'», medido). */
+        assert.ok(!js.includes("const ajustes = (d.ajustes"), "el tooltip de los factores volvió a app.js: reponga la prueba que ejecuta su `map` con la salida pública");
+        assert.ok(!/×\$\{[^}]*\.factor/.test(js), "app.js vuelve a pintar el factor de un ajuste como cifra («×…»): con la lista pública llega en null");
+        assert.ok(pub.ajustes.every((a) => a.nombre === "precio" || a.factor === null || a.factor === undefined || Number.isFinite(Number(a.factor))),
+          `premisa: la lista pública trae factores tapados o numéricos, nunca otra cosa: ${JSON.stringify(pub.ajustes)}`);
+        // y con token el factor sigue viajando en el servidor (el desglose lo explica; la tarjeta ya no lo pinta)
         const conTope = estimarPDetalle({}, {
           competencia: { nivel: "media", promedio_oferentes: 3, total_procesos: 40 },
           baja: { nivel: "medio", baja_mediana: 8, procesos_contados: 40 }, baja_maxima_pct: 3,
         });
-        // …con la coma decimal de Colombia: «×0.85» con punto inglés se lee como miles (26-sep-2026)
-        const pintadoPrecio = pintado(conTope.ajustes.find((a) => a.nombre === "precio"));
-        assert.ok(/×0,\d+/.test(pintadoPrecio) && !/×\d+\.\d/.test(pintadoPrecio),
-          `con el factor presente, el tooltip tiene que pintarlo, con coma decimal: «${pintadoPrecio}»`);
+        const precioConTope = conTope.ajustes.find((a) => a.nombre === "precio");
+        assert.ok(precioConTope && Number.isFinite(precioConTope.factor) && precioConTope.factor < 1,
+          `con token el factor del precio sigue calculado (< 1 con b_max=3 sobre mediana 8): ${JSON.stringify(precioConTope)}`);
       }
       /* …y el detalle de competencia viaja con la SESIÓN del dueño (17-oct-2026; antes,
          el token integrado): el endpoint sigue exigiendo credencial en el servidor y
@@ -46091,8 +46290,12 @@ async function main() {
           // …pero si su mínimo no cabe en el presupuesto, el rojo de siempre: es el «No se presente» de Precios (segunda revisión)
           const lmSobre = lineaMargen({ valor: -5, piso: 15, techo: 10, techo_es_referencia: true, minimo_sobre_presupuesto: true });
           assert.ok(/aquí no da/.test(lmSobre) && /text-red-700/.test(lmSobre) && !/text-amber-900/.test(lmSobre), `mínimo sobre el presupuesto → ${lmSobre}`);
-          assert.ok(/detalles por revisar/.test(lineaRequisitos({ p1_rup: { sin_dato: true } })),
-            "sin_dato deja pasar CON aviso: ni verde limpio ni rojo (no saber no es fallar)");
+          {
+            // 3-nov-2026: el ámbar ya no dice «con detalles por revisar»: NOMBRA lo que hay que revisar
+            const sd = lineaRequisitos({ p1_rup: { sin_dato: true } });
+            assert.ok(/text-amber-700/.test(sd) && !/text-green-700|text-red-700/.test(sd) && /revise una cosa: su registro de proponente/.test(sd),
+              `sin_dato deja pasar CON aviso: ni verde limpio ni rojo (no saber no es fallar) → ${sd}`);
+          }
 
           /* BORRADOR: no admite ofertas, y eso manda sobre el veredicto — da
              igual que cumpla los requisitos si hoy no se le puede presentar
@@ -46102,8 +46305,8 @@ async function main() {
           assert.ok(/no admite ofertas/.test(borrador) && /amber/.test(borrador),
             "un proceso en borrador tiene que decir que todavía no admite ofertas, en ámbar");
           assert.ok(/borrador u observaciones/.test(borrador) && !/: está en borrador\./.test(borrador), "desde el 22-sep `admite_ofertas=false` llega también con la fase de observaciones: la línea no puede afirmar «borrador» a secas");
-          assert.ok(!/Cumple los requisitos para presentarse/.test(borrador),
-            "no puede invitar a presentarse a un proceso que no admite ofertas");
+          assert.ok(!/Cumple los requisitos para presentarse|Preséntese/.test(borrador),
+            "no puede invitar a presentarse a un proceso que no admite ofertas (ni con la palabra de antes ni con «Preséntese», la del 3-nov-2026)");
           assert.ok(/observar el pliego/.test(borrador),
             "y dice qué SÍ se puede hacer: observar el pliego (mandamiento 7), no preparar la oferta");
           // el resto no se contagia: sin el dato, el veredicto es el de siempre
@@ -46126,9 +46329,11 @@ async function main() {
              puede presentar nada (5 de 1.138 en producción). */
           assert.ok(/lineaRequisitos\(puertas, l\.manifestacion, l\.filtro && l\.filtro\.admite_ofertas[,)]/.test(cuerpoT),
             "el veredicto tiene que recibir `admite_ofertas`: un borrador no admite ofertas");
-          assert.ok(cuerpoT.indexOf("Más detalles") > 0
-            && cuerpoT.indexOf("badgesPuertas(puertas)") > cuerpoT.indexOf("Más detalles"),
-          "las cuatro puertas viven plegadas en «Más detalles»: quince chips visibles enterraban lo que decide");
+          /* el pliegue se llama «Por qué» desde el 3-nov-2026 (la tarjeta nueva); la cerradura que EJECUTA la tarjeta
+             real y mira el texto visible vive en el bloque «unidad pantalla: días, resumen y cabecera», (e) */
+          assert.ok(cuerpoT.indexOf("data-panel-porque") > 0
+            && cuerpoT.indexOf("badgesPuertas(puertas)") > cuerpoT.indexOf("data-panel-porque"),
+          "las cuatro puertas viven plegadas en «Por qué»: quince chips visibles enterraban lo que decide");
           /* El contador de cierre compara contra ahora−5h (hora Colombia
              flotante leída como UTC): sin la resta, «cierra hoy» se diría un
              día antes — la misma regla de `cierre_vencido` en el servidor.
@@ -46619,7 +46824,7 @@ async function main() {
         const soloTexto = (h) => h.replace(/<[^>]+>/g, "").trim();
         const puertasOk = { p1_rup: { pasa: true }, p2_k: { pasa: true }, p3_caja: { pasa: true } };
         const verde = lineaReq(puertasOk, null);
-        assert.ok(/text-green/.test(verde) && /Cumple los requisitos para presentarse/.test(soloTexto(verde)));
+        assert.ok(/text-green/.test(verde) && soloTexto(verde) === "● Preséntese.", `el verde dice qué hacer (3-nov-2026): «${soloTexto(verde)}»`);
         const conPlazoIdo = lineaReq(puertasOk, { aplica: true, estado: "vencida" });
         assert.ok(!/text-green/.test(conPlazoIdo), "con el plazo vencido el veredicto NO puede seguir en verde");
         assert.ok(/ya venció/.test(soloTexto(conPlazoIdo)) && /si avisó a tiempo/.test(soloTexto(conPlazoIdo)),
@@ -46836,10 +47041,15 @@ async function main() {
            desglose auditable y el editor de APU). */
         /* desde el 23-sep la frecuencia pasa por la regla de «hay base medida» que comparten la
            tarjeta y el desglose (`frecuenciaConBase`), y esa regla es la que llama a frecuenciaNatural */
+        /* 3-nov-2026 (decisión del dueño del 27-oct, «1, apruebo todo»): la frecuencia «se gana 1 de N» SALE de la
+           tarjeta —es una fórmula, 1/(1+rivales) con tres ajustes, y no sale de la misma base que «compiten»—; el
+           hecho medido se queda. La regla de la frecuencia sigue viva para el desglose (`frecuenciaConBase` →
+           `frecuenciaNatural`), que queda sin entrada en pantalla: PENDIENTE en la memoria. */
         const iFcb = jsSin.indexOf("function frecuenciaConBase(");
-        assert.ok(/cuantosCompiten\(l\)/.test(cuerpoBloque) && /frecuenciaConBase\([^)]*l\.p_ganar\)/.test(cuerpoBloque)
-          && iFcb > 0 && /frecuenciaNatural\(p\)/.test(jsSin.slice(iFcb, jsSin.indexOf("\n  }", iFcb))),
-        "la tarjeta debe pintar el hecho medido (cuántos compiten) y la frecuencia natural");
+        assert.ok(/cuantosCompiten\(l\)/.test(cuerpoBloque), "la tarjeta debe pintar el hecho medido (cuántos compiten)");
+        assert.ok(!/frecuenciaConBase\(|frecuenciaNatural\(/.test(cuerpoBloque), "la tarjeta ya no pinta la frecuencia «se gana 1 de N» (decisión del 27-oct)");
+        assert.ok(iFcb > 0 && /frecuenciaNatural\(p\)/.test(jsSin.slice(iFcb, jsSin.indexOf("\n  }", iFcb))),
+          "la regla de la frecuencia sigue en un solo sitio para el desglose");
         assert.ok(!/fraseProbabilidad|probabilidad de ganar|Prob\./i.test(cuerpoBloque),
           "la palabra «probabilidad» no puede volver a la tarjeta: es lo que se lee como una promesa");
 
@@ -46868,7 +47078,9 @@ async function main() {
         assert.strictEqual(cuantosCompiten({ competencia_entidad: {} }), null);
         assert.strictEqual(cuantosCompiten({}), null);
 
-        assert.ok(/detalle-probabilidad/.test(cuerpoBloque), "la frase debe seguir abriendo el modal de desglose");
+        /* 3-nov-2026: el disparador del desglose («Ver cómo se calcula») salió de la tarjeta con la probabilidad
+           (decisión del dueño del 27-oct); el desglose sigue servido y SIN entrada: PENDIENTE en la memoria */
+        assert.ok(!/detalle-probabilidad/.test(cuerpoBloque), "la tarjeta ya no abre el desglose desde la franja");
 
         /* ═══ LA TERCERA CIFRA ES LA PLATA QUE QUEDA (ago 2026) ══════════════
            Defecto de producto reportado por el dueño con sus palabras: «el
@@ -58149,7 +58361,7 @@ async function main() {
       ponerHuso("America/Bogota");
       assert.strictEqual(new Date("2026-09-29T00:00:00.000").getTime(), Date.parse("2026-09-29T05:00:00Z"),
         "premisa: el huso de Bogotá tiene que aplicarse en este proceso (sin él, esta cerradura no vería el defecto)");
-      const { F, ctx, porId } = cargarFrontU6(["tarjeta", "pintar", "botones", "detener", "bloqueProbabilidad", "refrescarTrasActualizar"]);
+      const { F, ctx, porId } = cargarFrontU6(["tarjeta", "pintar", "botones", "detener", "bloqueProbabilidad", "refrescarTrasActualizar", "htmlCompetenciaTarjeta", "lineaAccion", "abrirCompetenciaTarjeta"]);
       const reloj = (ms) => vm.runInContext(`Date.now = () => ${ms};`, ctx);
 
       /* (a) el chip de la tarjeta REAL */
@@ -58185,8 +58397,16 @@ async function main() {
       ok6(!/\d+ solo con un socio/.test(frase), `(b) la casilla \`con_socio\` NO se presenta como «solo con un socio»: «${frase}»`);
       ok6(!/\bsolo\b/i.test(frase), `(b) la línea no usa «solo» (se lee a la vez «sin compañía» y «únicamente»): «${frase}»`);
       const tarjetaNoViable = textoU6(F.tarjeta(FILA_SIN_CAPACIDAD));
-      ok6(/No viable/.test(tarjetaNoViable) && !/No encaja con su registro/.test(tarjetaNoViable), `(b) premisa: la no viable por capacidad lleva el chip «No viable» y encaja con su registro: ${tarjetaNoViable.slice(0, 160)}`);
-      ok6(/, 60 no viables\b/.test(frase), `(b) la cifra de las no viables se dice con la palabra del chip («60 no viables»): «${frase}»`);
+      /* desde el 3-nov-2026 la fila que cierra con una socia (esta lo hace: `cierra_todo: true`) no se atenúa ni
+         lleva «No viable»: dice «Solo no le alcanza; con un socio, sí». La que solo se ACERCA, sí. */
+      ok6(/Solo no le alcanza; con un socio, sí/.test(tarjetaNoViable) && !/No viable/.test(tarjetaNoViable) && !/opacity-50/.test(F.tarjeta(FILA_SIN_CAPACIDAD)),
+        `(b) la que cierra con socio no se pinta como imposible: ${tarjetaNoViable.slice(0, 200)}`);
+      const casiU6 = F.tarjeta({ ...FILA_SIN_CAPACIDAD, socio: { tipo: "con_socio", cierra_todo: false } });
+      ok6(/opacity-50/.test(casiU6) && /No viable/.test(textoU6(casiU6)), "(b) la que solo se acerca sigue atenuada y con «No viable»");
+      const sinSocioU6 = F.tarjeta({ ...FILA_SIN_CAPACIDAD, socio: null });
+      ok6(/opacity-50/.test(sinSocioU6) && /No viable/.test(textoU6(sinSocioU6)), "(b) y sin socio, también");
+      ok6(!/No encaja con su registro/.test(tarjetaNoViable), `(b) premisa: la no viable por capacidad encaja con su registro: ${tarjetaNoViable.slice(0, 160)}`);
+      ok6(/, 60 que no alcanza por su cuenta\b/.test(frase) && !/no viables/.test(frase), `(b) la cifra de las que usted no alcanza por su cuenta se dice con lo que comparten sus dos tarjetas («60 que no alcanza por su cuenta»): «${frase}»`);
       const cifrasConSocio = frase.split(/ · |, | y /).filter((x) => /^\d/.test(x) && /socio/.test(x));
       ok6(cifrasConSocio.length === 1, `(b) una sola cifra de la línea habla de socio cuando no hay casilla \`no_encaja\`: ${JSON.stringify(cifrasConSocio)}`);
       const fraseSeis = resumenDe(CUERPO_SEIS);
@@ -58197,7 +58417,7 @@ async function main() {
       const fraseUno = resumenDe({ ...CUERPO_U6, total: 4, viables: 3, no_viables: 1, solo_viables: false,
         por_match: { clase: 1, familia: 0, equivalente: 0, texto: 1, con_socio: 1, no_encaja: 1 } });
       ok6(/\b1 encaja con su registro de proponente\b/.test(fraseUno) && /\b1 no encaja con su registro pero la alcanza un socio\b/.test(fraseUno)
-        && /\b1 no encaja con su registro ni la alcanza un socio\b/.test(fraseUno) && /, 1 no viable\b/.test(fraseUno), `(b) con una sola fila en una casilla el verbo concuerda: «${fraseUno}»`);
+        && /\b1 no encaja con su registro ni la alcanza un socio\b/.test(fraseUno) && /, 1 que no alcanza por su cuenta\b/.test(fraseUno), `(b) con una sola fila en una casilla el verbo concuerda: «${fraseUno}»`);
       const viejoServidor = JSON.parse(JSON.stringify(CUERPO_U6)); delete viejoServidor.por_match.no_encaja; delete viejoServidor.por_match.con_socio;
       const fraseVieja = resumenDe(viejoServidor);
       ok6(!/registro de proponente|por verificar/.test(fraseVieja), `(b) con un reparto al que le faltan casillas (no puede sumar el total) el reparto se calla: «${fraseVieja}»`);
@@ -58243,13 +58463,161 @@ async function main() {
       await asentar();
       ok6(/No se pudo confirmar el corte/.test(sello()), `(c) si la lista falla al confirmar el corte, la cabecera lo dice en vez de quedarse en «Confirmando…» o «Trayendo…»: «${sello()}»`);
 
-      /* (d) el `title` de «Ver cómo se calcula», con cifras es-CO */
+      /* (d) el `title` de «Ver cómo se calcula», con cifras es-CO. Desde el 3-nov-2026 la tarjeta ya no lleva
+         ese enlace (enseñaba la probabilidad; decisión del dueño del 27-oct): lo que se defiende es que no
+         vuelva por la puerta de un `title` y que ninguna cifra de la franja salga con decimal inglés. */
       const conDetalle = { ...FILA_U6, p_ganar: 0.38, p_ganar_detalle: { fuente: "entidad", rivales_esperados: 1.64, p_lo: 0.37, p_hi: 0.46,
         ajustes: [{ nombre: "colision_cierres", factor: 1.08, motivo: "la entidad cierra 4 procesos el mismo día" }, { nombre: "baja_mercado", factor: null, motivo: "requiere credencial" }] } };
-      const titulos = [...String(F.bloqueProbabilidad(conDetalle)).matchAll(/title="([^"]*)"/g)].map((m) => m[1]).join("\n");
-      ok6(/Rivales esperados: 1,6\b/.test(titulos) && !/1\.64/.test(titulos), `(d) «Rivales esperados» sale con coma decimal: «${titulos.split("\n").find((x) => /Rivales/.test(x)) || "(sin línea de rivales)"}»`);
-      ok6(/×1,08\b/.test(titulos) && !/×1\.08/.test(titulos), `(d) el factor del ajuste sale con coma y sus dos decimales («×1,08»): «${titulos.split("\n").find((x) => /colision/.test(x)) || "(sin línea del ajuste)"}»`);
-      ok6(!/×null|×0\b|×NaN/.test(titulos), `(d) un factor redactado (null) sigue sin cifra: «${titulos.split("\n").find((x) => /baja_mercado/.test(x)) || ""}»`);
+      const htmlDetalle = String(F.bloqueProbabilidad(conDetalle));
+      const titulos = [...htmlDetalle.matchAll(/title="([^"]*)"/g)].map((m) => m[1]).join("\n");
+      ok6(!/detalle-probabilidad|Ver cómo se calcula/.test(htmlDetalle) && !/Rivales esperados|Banda del 90/.test(titulos), `(d) la franja ya no lleva «Ver cómo se calcula» ni su desglose en un title: «${titulos.slice(0, 200)}»`);
+      ok6(!/\b1\.64\b|×1\.08|×null|×NaN/.test(htmlDetalle), `(d) ninguna cifra de la franja sale con decimal inglés ni un factor redactado: «${htmlDetalle.slice(0, 200)}»`);
+
+      // la frase del socio sale UNA vez en la tarjeta real sin credencial (antes la decían el veredicto y el cuadro)
+      for (const f of [FILA_SIN_CAPACIDAD, FILA_SIN_REGISTRO]) {
+        const veces = textoU6(F.tarjeta(f)).split("Solo no le alcanza; con un socio, sí").length - 1;
+        ok6(veces === 1, `(d) «Solo no le alcanza; con un socio, sí» sale una vez en la tarjeta de ${f.id_del_proceso}, no ${veces}`);
+      }
+      /* (e) LA TARJETA NUEVA (3-nov-2026, «nueva con competidores», elegida por el dueño). Se ejecuta la tarjeta REAL.
+         (1) A la vista, cinco renglones y un TOPE de palabras: la tarjeta cerrada de producción medía 170-192 palabras
+         sin el título; la nueva, ~60. Lo largo —las puertas, los tres avisos, la franja, las fichas— va entero, plegado,
+         en «Por qué». (2) La línea de qué hacer es el texto de `chipManifestacion` y `chipCierre`, no una redacción
+         nueva. (3) «Ver la competencia» se arma con `op=entidad`: en obra y en todos sus procesos, quién gana con
+         contratos, valor total y último, y quiénes se presentan. MUTACIÓN: contra el árbol del 2-nov la tarjeta
+         enseñaba la fila de fichas y las tres cajas de «Atención» a la vista y no había panel de competencia. */
+      {
+        const html = F.tarjeta(FILA_U6);
+        const iPan = html.indexOf('data-panel-competencia'), iPie = html.indexOf('<div class="t-pie">');
+        ok6(iPan > 0 && iPie > iPan && /data-panel-competencia hidden/.test(html) && /data-panel-porque hidden/.test(html), "(e) los dos desplegables nacen cerrados, con su panel");
+        const visible = textoU6(html.slice(0, html.lastIndexOf('<div class="t-panel"', iPan)) + html.slice(iPie)).replace(textoU6((html.match(/<h3[\s\S]*?<\/h3>/) || [""])[0]), "");
+        const palabras = visible.split(/\s+/).filter((w) => /[A-Za-zÁÉÍÓÚÑáéíóúñ0-9]/.test(w)).length;
+        ok6(palabras <= 75, `(e) la tarjeta cerrada no pasa de 75 palabras a la vista sin el título (tiene ${palabras}): «${visible.slice(0, 300)}»`);
+        /* cada cosa plegada está DENTRO de «Por qué» y NO a la vista (MUTACIÓN: con las puertas devueltas encima de
+           «Ver la competencia» la prueba vieja seguía en verde, porque buscaba la línea de lo no revisado) */
+        const porque = html.slice(html.indexOf("data-panel-porque"), iPie);
+        const aLaVista = html.slice(0, iPan) + html.slice(iPie);
+        // los textos se comparan en el TEXTO pintado (el `title` del veredicto, que ya llevaba los tres renglones, es ayuda al pasar el ratón, no se lee a la vista)
+        for (const [n, frag] of [["el renglón de la capacidad", PUERTAS_OK.p2_k.mensaje], ["el de la caja", PUERTAS_OK.p3_caja.mensaje], ["el del registro", PUERTAS_OK.p1_rup.mensaje],
+          ["la modalidad", FILA_U6.modalidad_de_contratacion], ["la fase", FILA_U6.fase]])
+          ok6(textoU6(porque).includes(frag) && !textoU6(aLaVista).includes(frag), `(e) «Por qué» lleva ${n}, y no a la vista: ${textoU6(porque).includes(frag)} / ${textoU6(aLaVista).includes(frag)}`);
+        for (const [n, marca] of [["lo que no se revisó", "data-no-revisado"], ["la franja", 'class="metricas']])
+          ok6(porque.includes(marca) && !aLaVista.includes(marca), `(e) «Por qué» lleva ${n}, y no a la vista`);
+        ok6(!/Atención:/.test(html.slice(0, iPan)), "(e) ninguna caja de «Atención» a la vista: su texto va en «Por qué»");
+        ok6(/data-ver-competencia/.test(html) && /data-ver-porque/.test(html), "(e) los dos botones están");
+        // (2) la línea de qué hacer ES el texto de los chips, con el tono del más urgente
+        const m = { aplica: true, estado: "por_confirmar", secop_recibia: true, secop_fecha_legible: "domingo 1 de noviembre" };
+        const linea = F.lineaAccion({ manifestacion: m }, new Date("2026-11-05T00:00:00"), "5 de nov de 2026", 2);
+        ok6(/t-accion-rojo/.test(linea) && textoU6(linea).includes("abierto en SECOP II el domingo 1 de noviembre") && textoU6(linea).includes("Cierra en 2 días · 5 de nov de 2026"),
+          `(e) la línea de qué hacer junta los dos chips, en rojo: «${textoU6(linea)}»`);
+        ok6(F.lineaAccion({ manifestacion: null }, null, null, null) === "", "(e) sin cierre ni manifestación, no hay línea (no se inventa una)");
+        ok6(!/&amp;amp;|&lt;span/.test(F.lineaAccion({ manifestacion: { aplica: true, estado: "por_abrir", secop_fase: "Borrador & observaciones" } }, null, null, null)), "(e) el texto del chip no se escapa dos veces");
+        // (3) el panel, con la forma REAL de op=entidad
+        const d = {
+          ok: true, indice: { promedio_oferentes: 1.3, procesos_contados: 87 },
+          adjudicatarios: { procesos_con_ganador: 40, distintos: 12, concentracion: { lider: "H CONSTRUCOL S.A.S.", ganados: 9, base: 40, pct: 23 },
+            top: [{ nombre: "H CONSTRUCOL S.A.S.", nit: "901086376", ganados: 9, valor_adjudicado_cop: 900000000, ultima_adjudicacion: "2025-12-05" }] },
+          obras: { adjudicadas: 14, con_ofertas: 16, promedio_oferentes: 1.19,
+            adjudicatarios: { procesos_con_ganador: 14, distintos: 9, concentracion: null,
+              top: [{ nombre: "H CONSTRUCOL S.A.S.", nit: "901086376", ganados: 4, valor_adjudicado_cop: 577008752, ultima_adjudicacion: "2025-12-05" },
+                { nombre: "Empresa <img src=x onerror=alert(1)>", nit: null, ganados: 3, valor_adjudicado_cop: null, ultima_adjudicacion: null }] } },
+          proponentes: { ok: true, procesos_con_proponentes: 14, proponentes_distintos: 12, top: [{ nombre: "EDILSON ERNESTO BAREÑO MORENO", nit: "9398385", veces: 3, ultima_vez: "2026-10-20" }] },
+        };
+        const panel = F.htmlCompetenciaTarjeta(d, false), tP = textoU6(panel);
+        ok6(/Quién gana aquí, en contratos de obra/.test(tP) && /Quién gana aquí, en todos sus procesos/.test(tP), `(e) las dos bases, rotuladas: «${tP.slice(0, 200)}»`);
+        ok6(/En contratos de obra: 1,2 por obra, en 16 obras/.test(tP), `(e) cuántas se presentan en obra, con su base: «${tP.slice(0, 160)}»`);
+        ok6(/En todos sus procesos: 1,3 por proceso, en 87 procesos/.test(tP), "(e) y en todos sus procesos, la cifra de hoy");
+        ok6(/4 contratos/.test(tP) && /\$577\.008\.752 en total/.test(tP) && /NIT 901086376/.test(tP) && /último:/.test(tP), `(e) quién gana: contratos, valor total, NIT y último: «${tP.slice(0, 400)}»`);
+        ok6(/valor sin dato/.test(tP) && /último: sin fecha/.test(tP), "(e) sin valor ni fecha se dice, jamás un $0 ni una fecha inventada");
+        ok6(!/<img/.test(panel) && /&lt;img/.test(panel), "(e) el nombre del ganador va escapado");
+        // cada bloque nombra SU base: «procesos» en el de todos, «obras» en el de obra (antes un singular decía «obra» en los dos)
+        ok6(/H CONSTRUCOL S\.A\.S\. se lleva 9 de 40 procesos con ganador \(23 %\)\./.test(tP), `(e) la concentración dice de qué base: «${tP.slice(0, 500)}»`);
+        ok6(/14 obras con ganador, 9 ganadores distintos\./.test(tP), "(e) sin concentración, el bloque de obra cuenta obras, no procesos");
+        const unoSolo = textoU6(F.htmlCompetenciaTarjeta({ ...d, obras: null, adjudicatarios: { procesos_con_ganador: 1, distintos: 1, concentracion: null, top: d.adjudicatarios.top } }, false));
+        ok6(/1 proceso con ganador, 1 ganador distinto\./.test(unoSolo) && !/1 obra con ganador/.test(unoSolo), `(e) el singular del bloque de todos dice «proceso»: «${unoSolo.slice(0, 300)}»`);
+        // un conteo que no vino es «sin dato», jamás «0 contratos» (`Number(null) === 0`)
+        const sinConteo = textoU6(F.htmlCompetenciaTarjeta({ ...d, obras: null,
+          adjudicatarios: { ...d.adjudicatarios, top: [{ nombre: "X SAS", nit: null, ganados: null, valor_adjudicado_cop: null, ultima_adjudicacion: null }] },
+          proponentes: { ok: true, procesos_con_proponentes: null, proponentes_distintos: null, top: [{ nombre: "Y SAS", nit: null, veces: null, ultima_vez: null }] } }, false));
+        ok6(/contratos sin dato/.test(sinConteo) && /veces sin dato/.test(sinConteo) && !/\b0 (contratos?|veces|vez|empresas?)\b/.test(sinConteo),
+          `(e) sin conteo se dice «sin dato», jamás un cero: «${sinConteo.slice(0, 500)}»`);
+        /* medido en el banco del navegador (3-nov-2026): con la entidad fuera del histórico el panel decía «Ningún
+           proceso de esta entidad tiene ganador publicado» —verdad vacía con cero procesos— y dejaba «Quiénes se
+           presentan» sin nada debajo */
+        const ausente = F.htmlCompetenciaTarjeta({ ok: true, encontrada: false, indice: null, adjudicatarios: null, obras: null, procesos: [] }, false);
+        ok6(/Todavía no hay procesos anteriores de esta entidad para comparar/.test(textoU6(ausente)) && !/ganador publicado/.test(ausente) && !/data-ver-procesos/.test(ausente),
+          `(e) la entidad que no está en el histórico lo dice, sin un «ningún ganador» vacío: «${textoU6(ausente)}»`);
+        const sinProp = textoU6(F.htmlCompetenciaTarjeta({ ...d, proponentes: null }, false));
+        ok6(/Quiénes se presentan, en todos sus procesos Sin datos de quiénes se presentan\./.test(sinProp), `(e) sin proponentes, el bloque dice «sin datos», no queda vacío: «${sinProp.slice(-200)}»`);
+        /* REVISIÓN ADVERSARIA DEL 3-NOV-2026 (cada caso, reproducido antes de corregirlo):
+           (r1) NO SABER no es CERO: sin el bloque de ganadores (nada publicado, o la revisión cortada) no se dice
+           «ningún proceso tiene ganador»; eso, solo con una base medida de 0 */
+        const sinBloque = textoU6(F.htmlCompetenciaTarjeta({ ...d, obras: null, adjudicatarios: null }, false));
+        ok6(/Quién gana aquí, en todos sus procesos Sin datos de quién gana aquí por ahora\./.test(sinBloque) && !/ganador publicado/.test(sinBloque), `(e) sin el bloque, «sin datos», no un cero: «${sinBloque.slice(0, 300)}»`);
+        const cero = textoU6(F.htmlCompetenciaTarjeta({ ...d, obras: null, adjudicatarios: { procesos_con_ganador: 0, distintos: 0, concentracion: null, top: [] } }, false));
+        ok6(/Ningún proceso de esta entidad tiene ganador publicado/.test(cero), "(e) con la base medida en 0, sí se dice que ninguno tiene ganador");
+        ok6(/Contando quién gana/.test(textoU6(F.htmlCompetenciaTarjeta({ ...d, obras: null, adjudicatarios: null }, true))), "(e) mientras llega el recorrido, «contando», no «sin datos»");
+        // (r5) cuántos ganadores más, SIN prometer que la ventana los trae (trae los cinco primeros)
+        ok6(/Y 11 ganadores más\./.test(tP) && !/en «Ver los procesos uno por uno»/.test(tP), `(e) «y N más» sin prometer dónde: «${tP.slice(0, 900)}»`);
+        // (r3) el promedio de obra lleva el MISMO mínimo que el de todos: por debajo, la base y no una cifra
+        const pocasObras = textoU6(F.htmlCompetenciaTarjeta({ ...d, obras: { ...d.obras, con_ofertas: 3, promedio_oferentes: null } }, false));
+        ok6(/En contratos de obra: solo 3 tienen el número de ofertas publicado, muy pocas para un promedio/.test(pocasObras) && !/por obra, en 3 obras/.test(pocasObras), `(e) con pocas obras no hay promedio: «${pocasObras.slice(0, 200)}»`);
+        // quiénes se presentan A SUS OBRAS, con su base, aparte de todos sus procesos
+        const conPropObra = textoU6(F.htmlCompetenciaTarjeta({ ...d, obras: { ...d.obras, proponentes: { ok: true, procesos_con_proponentes: 14, proponentes_distintos: 12, top: [{ nombre: "H CONSTRUCOL S.A.S.", nit: "901086376", veces: 4, ultima_vez: "2025-11-27" }] } } }, false));
+        ok6(/Quiénes se presentan, en contratos de obra 12 empresas distintas en 14 obras ya cerradas\. Las que más vuelven: H CONSTRUCOL S\.A\.S\./.test(conPropObra) && /Quiénes se presentan, en todos sus procesos 12 empresas distintas en 14 procesos ya cerrados/.test(conPropObra),
+          `(e) quiénes se presentan, en obra y en todos sus procesos: «${conPropObra.slice(-700)}»`);
+        const propCaida = textoU6(F.htmlCompetenciaTarjeta({ ...d, proponentes: { ok: false, procesos_consultados: 9, motivo: "no se pudo consultar la lista de proponentes: fetch failed" } }, false));
+        ok6(/No se pudo consultar quiénes se presentan\. Intente más tarde\./.test(propCaida) && !/fetch failed|corpus/.test(propCaida), `(e) el motivo crudo del servidor no llega a la pantalla: «${propCaida.slice(-300)}»`);
+        /* (r1) el RECORRIDO del panel, con la función real y un servidor de mentira: el corte llega en 200 y el
+           panel decía «El servidor no respondió como se esperaba (código 200)» y ofrecía repetir lo que no cabe */
+        {
+          const resp = (status, cuerpo) => ({ status, ok: status >= 200 && status < 300, headers: { get: () => "application/json" }, json: async () => cuerpo });
+          const montar = () => {
+            const at = (o) => ({ attrs: o, getAttribute(k) { return k in this.attrs ? this.attrs[k] : null; }, setAttribute(k, v) { this.attrs[k] = String(v); }, removeAttribute(k) { delete this.attrs[k]; } });
+            const panel = Object.assign(at({}), { hidden: true, innerHTML: "" });
+            const btn = Object.assign(at({ "aria-expanded": "false", "data-entidad": "ALCALDIA DE PRUEBA" }), { closest: () => ({ querySelector: (q) => (q === "[data-panel-competencia]" ? panel : null) }) });
+            return { panel, btn };
+          };
+          const correr = async (rapido, completo) => {
+            const { panel, btn } = montar(); const pedidas = []; let intermedio = null;
+            ctx.fetch = async (url) => {
+              pedidas.push(String(url));
+              if (!/publicado=1/.test(url)) intermedio = textoU6(panel.innerHTML); // lo que se ve mientras llega el recorrido
+              const x = /publicado=1/.test(url) ? rapido : completo; if (x instanceof Error) throw x; return x;
+            };
+            try { await F.abrirCompetenciaTarjeta(btn); } finally { ctx.fetch = () => new Promise(() => {}); }
+            return { html: panel.innerHTML, t: textoU6(panel.innerHTML), hidden: panel.hidden, pedidas, aria: btn.getAttribute("aria-expanded"), intermedio };
+          };
+          const PUB = { ok: true, encontrada: true, indice: { promedio_oferentes: 1.3, procesos_contados: 87 }, adjudicatarios: d.adjudicatarios, obras: null, proponentes: null, barrido: { completo: false, motivo: "solo_publicado" } };
+          const MSG = "La lista completa no alcanzó a armarse a tiempo. Vuelva a intentarlo en un rato.";
+          const corte = await correr(resp(200, PUB), resp(200, { ...PUB, barrido: { completo: false, motivo: "tiempo", reintento_util: false }, mensaje: MSG }));
+          ok6(corte.t.includes(MSG) && !/código 200/.test(corte.t) && !/data-reintentar-competencia/.test(corte.html) && /H CONSTRUCOL/.test(corte.t) && !corte.hidden && corte.aria === "true",
+            `(e) el corte dice el mensaje del servidor, conserva lo publicado y no ofrece repetir lo que no cabe: «${corte.t.slice(-300)}»`);
+          const corteUtil = await correr(resp(200, PUB), resp(200, { ...PUB, barrido: { completo: false, motivo: "tiempo" }, mensaje: MSG }));
+          ok6(/data-reintentar-competencia/.test(corteUtil.html), "(e) con el reintento útil, el botón está");
+          const nadaPub = await correr(resp(200, { ...PUB, indice: null, adjudicatarios: null }), resp(200, { ...PUB, indice: null, adjudicatarios: null, barrido: { completo: false, motivo: "tiempo", reintento_util: false }, mensaje: MSG }));
+          ok6(!/ganador publicado/.test(nadaPub.t) && /Sin datos de quién gana aquí por ahora/.test(nadaPub.t), `(e) sin nada publicado y con el corte, «sin datos», no «ningún proceso»: «${nadaPub.t.slice(0, 300)}»`);
+          // lo publicado VACÍO no se pinta como si fuera la respuesta (la guarda `indice || adjudicatarios` de la ventana)
+          ok6(nadaPub.intermedio === "Revisando todos los procesos de esta entidad. Puede tardar hasta un minuto.", `(e) mientras llega el recorrido, sin nada publicado, se dice que se está revisando: «${nadaPub.intermedio}»`);
+          ok6(/H CONSTRUCOL/.test(corte.intermedio || "") && /Separando los contratos de obra…/.test(corte.intermedio) && /Revisando quiénes se han presentado…/.test(corte.intermedio),
+            `(e) con lo publicado, se pinta lo publicado mientras llega el resto: «${String(corte.intermedio).slice(0, 300)}»`);
+          const vence = await correr(resp(200, PUB), resp(401, { ok: false, error: "sesión vencida" }));
+          ok6(/Su sesión terminó o no se reconoce/.test(vence.t), `(e) el 401 de la SEGUNDA consulta también lleva a entrar de nuevo: «${vence.t}»`);
+          const sinRed = await correr(new Error("red caída"), new Error("red caída"));
+          ok6(/No se pudo consultar la competencia: No se pudo contactar el servidor\./.test(sinRed.t) && /data-reintentar-competencia/.test(sinRed.html), `(e) sin red, lo dice y ofrece reintentar: «${sinRed.t}»`);
+          const bien = await correr(resp(200, PUB), resp(200, { ...d, encontrada: true, barrido: { completo: true } }));
+          ok6(/Quién gana aquí, en contratos de obra/.test(bien.t) && bien.pedidas.length === 2 && /publicado=1/.test(bien.pedidas[0]) && !/publicado=1/.test(bien.pedidas[1]), `(e) lo publicado primero y el recorrido después: ${bien.pedidas.join(" | ")}`);
+        }
+        ok6(/Quiénes se presentan/.test(tP) && /EDILSON ERNESTO BAREÑO MORENO/.test(tP) && /3 veces/.test(tP), "(e) quiénes se presentan, con cuántas veces");
+        ok6(/data-ver-procesos/.test(panel), "(e) y la salida a la ventana de siempre");
+        const sinObras = textoU6(F.htmlCompetenciaTarjeta({ ...d, obras: null, proponentes: null }, true));
+        ok6(/Separando los contratos de obra/.test(sinObras) && !/contratos de obra/.test(sinObras.replace(/Separando los contratos de obra/, "")) && /en todos sus procesos/.test(sinObras),
+          `(e) mientras llega el recorrido, lo publicado y un «separando»: «${sinObras.slice(0, 200)}»`);
+        {
+          const sinBase = textoU6(F.htmlCompetenciaTarjeta({ ...d, obras: null }, false));
+          ok6(!/Quién gana aquí, en contratos de obra/.test(sinBase) && /Sin datos para separar los contratos de obra\./.test(sinBase),
+            `(e) sin base para las obras, el bloque no aparece con ceros y lo dice (segunda revisión): «${sinBase.slice(0, 200)}»`);
+        }
+      }
     } finally {
       ponerHuso(tzSuite);
     }
@@ -59783,10 +60151,10 @@ async function main() {
         const texto = html.replace(/<[^>]+>/g, " ").replace(/&amp;/g, "&").replace(/&quot;/g, "\"").replace(/&#39;/g, "'").replace(/\s+/g, " ");
         okCt(texto.includes(avisoPant.frase), "la tarjeta pinta la frase del capital de trabajo");
         okCt(/<p class="[^"]*text-amber-700[^"]*"[^>]*>(?:(?!<\/p>)[\s\S])*capital de trabajo/.test(html), "…en ámbar");
-        okCt(!texto.includes("Cumple los requisitos para presentarse."), "…y la línea principal no dice «cumple» en verde encima del aviso");
+        okCt(!/Cumple los requisitos para presentarse\.|● Preséntese\./.test(texto) && /Preséntese, revise [^.]*el capital de trabajo\./.test(texto), "…y la línea principal no dice «Preséntese» a secas en verde encima del aviso: nombra lo que hay que revisar");
         const verdes = { p1_rup: { pasa: true }, p2_k: { pasa: true }, p3_caja: { pasa: true } };
-        okCt(/Cumple los requisitos para presentarse/.test(app.lineaRequisitos(verdes, null, true)), "control: sin el aviso la línea sigue en verde");
-        okCt(!/Cumple los requisitos para presentarse/.test(app.lineaRequisitos(verdes, null, true, avisoPant)), "con el aviso, ámbar");
+        okCt(/text-green-700[^>]*>(?:<[^>]+>●<\/span>|●) Preséntese\.<\/p>/.test(app.lineaRequisitos(verdes, null, true)), "control: sin el aviso la línea sigue en verde");
+        okCt(/text-amber-700/.test(app.lineaRequisitos(verdes, null, true, avisoPant)) && !/text-green-700/.test(app.lineaRequisitos(verdes, null, true, avisoPant)), "con el aviso, ámbar");
         const sinAviso = { ...filaLista }; delete sinAviso.aviso_capital_trabajo;
         okCt(!app.tarjeta(sinAviso).includes("capital de trabajo"), "sin el campo, la tarjeta no dice nada del capital de trabajo");
       }
