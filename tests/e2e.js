@@ -2145,7 +2145,23 @@ async function main() {
     let avisoSinTecho = null;
     await leerChunksDedup(redisFake(), claves, { onIncompleto: () => { avisoSinTecho = true; } });
     assert.strictEqual(avisoSinTecho, null, "sin `hasta` la lectura es completa y no avisa de nada");
-    console.log(`· unidad lote de lectura: ${N} chunks pequeños en ${r1.mgets()} MGET (con lote fijo de 8 serían ${viajesFijos}), filas idénticas, chunk ilegible bien nombrado y techo que corta avisando`);
+    /* (5) UNA FILA QUE NO ES UN REGISTRO SE SALTA, Y UN BLOQUE QUE NO ES UNA LISTA ES ILEGIBLE (3-nov-2026): un `null`
+       tumbaba la lectura entera en los tres modos (`r._historia` de null) y, con ella, el índice de baja, que se reanudaba
+       en el mismo mes sin terminar nunca; un número o un texto la tumbaban con `senales` o `historia`; un bloque que era un
+       objeto la tumbaba («is not iterable») y uno que era un texto se leía letra por letra. */
+    const claveSucia = claves[7], claveObjeto = claves[8], claveTexto = claves[9];
+    const sucio = { [claveSucia]: comprimir([null, { _k: "k7", ":updated_at": "2026-09-01", n: 7 }, 5, "fila", [{ _k: "kx" }]]),
+      [claveObjeto]: comprimir({ _k: "k8", n: 8 }), [claveTexto]: comprimir("k9") };
+    for (const modo of [{}, { senales: true }, { historia: true }]) {
+      const ilegibles = [];
+      const leidas = await leerChunksDedup(redisFake(sucio), claves, { ...modo, onCorrupto: (k) => ilegibles.push(k) });
+      assert.strictEqual(leidas.length, N - 2, `${JSON.stringify(modo)}: las filas que no son registros no cuentan y las demás sí (leyó ${leidas.length})`);
+      assert.ok(leidas.every((r) => r && typeof r === "object" && !Array.isArray(r) && /^k\d+$/.test(r._k)), `${JSON.stringify(modo)}: ninguna «fila» es un número, una letra o una lista`);
+      assert.ok(leidas.some((r) => r._k === "k7"), `${JSON.stringify(modo)}: el registro bueno del bloque con basura se lee`);
+      assert.deepStrictEqual(ilegibles.sort(), [claveObjeto, claveTexto].sort(),
+        `${JSON.stringify(modo)}: el bloque que no es una lista se avisa como ilegible y el que solo trae filas vacías no (avisó ${ilegibles.join(", ") || "nada"})`);
+    }
+    console.log(`· unidad lote de lectura: ${N} chunks pequeños en ${r1.mgets()} MGET (con lote fijo de 8 serían ${viajesFijos}), filas idénticas, chunk ilegible bien nombrado, techo que corta avisando y filas que no son registros saltadas`);
   }
 
   /* unidad: la detección de anticipo no cruza frases ni ignora negaciones.
@@ -8844,6 +8860,26 @@ async function main() {
         const rsFut = redisFalso(corpusS());
         await publicadoHace(rsFut, -48);
         assert.ok(!(await indiceBaja.construirIndiceBaja(rsFut, { minHorasEntreCiclos: 24 })).al_dia, "una publicación con fecha en el futuro (reloj desfasado o dato roto) no cuenta como reciente: frenaría la baja hasta esa fecha");
+
+        // (v) UNA FILA VACÍA EN UN BLOQUE DEL HISTÓRICO NO DEJA LA BAJA SIN TERMINAR (3-nov-2026): el `null` tumbaba la
+        //     lectura del mes, el ciclo se reanudaba en ese mismo mes en cada actualización y el índice no se publicaba más
+        const cN = corpusS();
+        cN["2025-02"].splice(1, 0, null, 7, "fila");
+        const rsN = redisFalso({ ...cN, "2025-04": { no_es: "una lista" } });
+        const rN = await hastaTerminar(rsN);
+        assert.ok(rN && rN.procesos_analizados === 6, `con filas vacías y un bloque que no es una lista, el ciclo termina y cuenta los 6 procesos: ${JSON.stringify(rN).slice(0, 160)}`);
+        assert.deepStrictEqual(lectura(indiceBaja.bajaDeMercado(await indiceBaja.leerIndiceBaja(rsN), licS)), lectura(bLimpio), "y publica lo mismo que sin ellas");
+        //     …y el bloque que quedó fuera se DICE en la meta (revisión adversaria): antes atascaba el ciclo, ahora no puede callarse
+        assert.strictEqual(rN.bloques_ilegibles, 1, `el bloque que no es una lista se cuenta en la meta: ${rN.bloques_ilegibles}`);
+        assert.strictEqual((await indiceBaja.leerIndiceBajaMeta(rsN)).bloques_ilegibles, 1, "y queda publicado con la meta");
+        assert.strictEqual(rT.bloques_ilegibles, 0, `sin bloques rotos, la meta dice 0: ${rT.bloques_ilegibles}`);
+        const rsAnt = redisFalso(corpusS());
+        await indiceBaja.construirIndiceBaja(rsAnt, { reiniciar: true, presupuestoMs: -1 });
+        const pAnt = await leerJSONComprimido(rsAnt, CLAVES.indiceBajaProgreso);
+        delete pAnt.stats.bloques_ilegibles;                                    // un progreso de la versión anterior
+        await escribirJSONComprimido(rsAnt, CLAVES.indiceBajaProgreso, pAnt);
+        const rAnt = await hastaTerminar(rsAnt);
+        assert.strictEqual(rAnt.bloques_ilegibles, null, `un ciclo empezado sin el contador no publica 0 («no sé»): ${rAnt.bloques_ilegibles}`);
       }
 
       for (const t of [...lugares, bEnt0.mensaje, bEnt3.mensaje, ...frasesLP, ...frasesCenso, fNeg, ptNeg.frases.baja, gEnt0.baja_frase, gPoca.baja_frase, gNula.baja_frase, gMano.baja_frase]) {
@@ -35692,6 +35728,28 @@ async function main() {
         assert.strictEqual(conCorrupto.status, 200, "un chunk corrupto no puede tumbar el catálogo");
         assert.strictEqual(conCorrupto.cuerpo.via, "hashes");
         assert.strictEqual(conCorrupto.cuerpo.items.length, S.items.length);
+        // …ni uno que no es una lista o que trae una fila que no es lo que escribe la carga (3-nov-2026): `r.t` o `d.codigo`
+        // de null la tumbaban, y una fila sin su `t` se saltaba con el MISMO número de filas (la cuenta de `registros` no la
+        // caza) y un ítem perdía un insumo: su costo directo bajaba en silencio (revisión adversaria)
+        {
+          const { comprimir: comprimirCat, descomprimir: descomprimirCat } = require("../lib/almacen.js");
+          await invocar(apuCargar, "/api/admin/apu/cargar-catalogo?forzar=true", CAB_TOKEN, { metodo: "POST" });
+          const sanas = descomprimirCat(await redis.get("apu:catalogo:chunk:0"));
+          assert.ok(Array.isArray(sanas) && sanas.length > 1, "premisa: el bloque 0 del catálogo trae filas");
+          const sanoCat = (await invocar(apuPublico, "/api/apu/catalogo")).cuerpo;
+          assert.strictEqual(sanoCat.via, "snapshot", "premisa: sano, se sirve la copia rápida");
+          const enteroCat = [sanoCat.items.length, sanoCat.insumos.length, sanoCat.regiones.length];
+          const otra = (f) => sanas.map((r, i) => (i === sanas.length - 1 ? f(r) : r));   // mismo número de filas
+          for (const [que, basura] of [["[null]", [null]], ["un objeto", { t: "item", d: {} }], ["una fila cambiada por 7", otra(() => 7)],
+            ["una fila sin su tipo", otra((r) => ({ _k: r._k, d: r.d }))], ["una fila de otro tipo", otra((r) => ({ ...r, t: "otro" }))],
+            ["una fila con `d` vacío", otra((r) => ({ ...r, d: null }))]]) {
+            await redis.set("apu:catalogo:chunk:0", comprimirCat(basura));
+            const conBasura = await invocar(apuPublico, "/api/apu/catalogo");
+            assert.strictEqual(conBasura.status, 200, `un chunk con ${que} no puede tumbar el catálogo`);
+            assert.deepStrictEqual([conBasura.cuerpo.via, conBasura.cuerpo.items.length, conBasura.cuerpo.insumos.length, conBasura.cuerpo.regiones.length],
+              ["hashes", ...enteroCat], `un chunk con ${que} invalida el snapshot y se cae a los hashes, entero`);
+          }
+        }
         // dejarlo sano para lo que venga después
         await invocar(apuCargar, "/api/admin/apu/cargar-catalogo?forzar=true", CAB_TOKEN, { metodo: "POST" });
       }
@@ -54182,7 +54240,8 @@ async function main() {
       assert.ok((await redis.scan("portada:*")).length > 0, "un delta que SÍ escribió filas tiene que reagregar la portada");
       medido39.conFilas = conFilas39.comandos;
 
-      /* ── E · el índice de baja: la sincronización empieza un ciclo nuevo como mucho cada 24 h (2-nov-2026) ── */
+      /* ── E · el índice de baja: la sincronización empieza un ciclo nuevo como mucho cada 44 h (2-nov-2026: 20 h;
+         3-nov-2026, decisión del dueño: 44 h, para que se publique cada 2 a 3 días) ── */
       const cerrada39 = (id) => ({
         estado_del_procedimiento: "Adjudicado", fase: "Presentación de oferta", adjudicado: "Si", respuestas_al_procedimiento: "4",
         fecha_de_publicacion_del: `${ano39}-01-10T00:00:00.000`, fecha_de_recepcion_de: `${ano39}-02-10T17:00:00.000`, fecha_adjudicacion: `${ano39}-02-20T00:00:00.000`,
@@ -54191,7 +54250,7 @@ async function main() {
         nombre_del_procedimiento: "CONSTRUCCIÓN DE OBRA CIVIL CERRADA", codigo_principal_de_categoria: "V1.72141000", urlproceso: "https://secop/l3c",
         id_del_proceso: id, ":id": `l3c-${id}`, ":updated_at": new Date(Date.now() - 60e3).toISOString().replace("Z", ""),
       });
-      for (const [horas, empieza] of [[2, false], [19, false], [21, true]]) {
+      for (const [horas, empieza] of [[2, false], [21, false], [43, false], [45, true]]) {
         await corpusAlDia39(new Date(Date.now() - 3600e3).toISOString());
         await escribirJ39(redis, CLAVES.indiceBajaMeta, { generado: new Date(Date.now() - horas * 3600e3).toISOString(), procesos_analizados: 1 });
         socrata.setDataset([cerrada39(`CO1.L3.CERRADA.${horas}`)]);
