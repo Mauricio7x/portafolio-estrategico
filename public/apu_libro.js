@@ -299,8 +299,13 @@
           ? `Sin APU de respaldo. Referencia del catálogo: $${Math.round(it.cd_catalogo).toLocaleString("es-CO")}. `
           : "Sin APU de respaldo en el catálogo. ")
           + (propio
-            ? "Es un precio que usted ya corrigió antes y quedó guardado en su perfil: manda sobre el "
-              + "catálogo porque viene de su proveedor y de su región."
+            /* la herencia del consorcio (3-nov-2026, decisión del dueño): el rótulo sigue siendo
+               «Su precio» y el detalle dice de quién lo toma un consorcio que no lo ha corregido */
+            ? (it.propio_heredado_de && typeof it.propio_heredado_de === "object"
+              ? `Es un precio que usted corrigió como ${String(it.propio_heredado_de.nombre || "Helder").slice(0, 120)} y quedó guardado en ese perfil: `
+                + "este consorcio todavía no lo ha corregido, así que lo toma de ahí. Manda sobre el catálogo porque viene de su proveedor y de su región."
+              : "Es un precio que usted ya corrigió antes y quedó guardado en su perfil: manda sobre el "
+                + "catálogo porque viene de su proveedor y de su región.")
             : delArchivo
               ? "El precio viene del archivo importado y manda sobre el catálogo."
               : "El precio lo escribió usted a mano."),

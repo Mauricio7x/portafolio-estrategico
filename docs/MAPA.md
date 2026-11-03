@@ -2,7 +2,7 @@
      Es una FOTO para leer en GitHub; la fuente de verdad es ejecutar la herramienta. -->
 
 ```
-== MAPA DE DETEKTA · generado del árbol el 2026-11-02 ==
+== MAPA DE DETEKTA · generado del árbol el 2026-11-03 ==
 (no editar a mano: sale de `node tests/mapa.js --escribir`. Para ir a un sitio concreto,
  `node tests/mapa.js <término>` da la ruta, la línea y el sed exacto — más barato que leer esto)
 
@@ -224,8 +224,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 410 secciones (38 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 20679  La cuenta de días al cierre es una sola y por fecha civil, y el chip sigue a la regla explí…
+· MEMORIA · docs/MEMORIA.md — 411 secciones (38 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 20704  La referencia de un tramo concentrado se dice sin la entidad que lo concentra, el vocabular…
   L 20755  Lo siguiente tras presentarse sale de la etapa, la búsqueda encuentra sus notas, y seis de …
   L 20793  Una base que no responde no es «ninguno», y la madrugada lee sus propias evaluaciones con u…
@@ -235,6 +234,7 @@
   L 20886  Lo que presupuestaron las entidades va al lado de cada ítem, el enlace de SECOP II pegado e…
   L 20913  Lo que no sale tampoco se calcula: los avisos sin correo, la baja como mucho un ciclo al dí…
   L 20932  «Calcular» costea con los precios corregidos del perfil con que se trabaja, como «Guardar» …
+  L 20954  Un consorcio con Helder de integrante hereda sus precios corregidos, y «Calcular» manda el …
 
 · DOCUMENTOS docs/ — 76 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)
