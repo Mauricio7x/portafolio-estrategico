@@ -4961,7 +4961,8 @@
     const d = g.documentos || {};
     const dEnt = (d.leidos || []).length + (d.por_leer || []).length + (d.ilegibles || []).length + (d.no_legibles || []).length;
     return {
-      documentos: dEnt + (p.documentos || []).length,
+      documentos: dEnt + (p.documentos || []).filter((x) => !x.req).length,
+      entregar: p.entregar && p.entregar.resumen ? p.entregar.resumen.total : 0,
       exige: (g.exigencias || []).length || (g.requisitos || []).length,
       fechas: (p.hitos || []).length + (p.fechas_suyas || []).length,
       cuaderno: (p.tareas || []).length,
@@ -5007,23 +5008,60 @@
     const el = secSeg && secSeg.querySelector("[data-exp-doc-mensaje]");
     if (el) { el.textContent = texto || ""; el.className = tipo === "error" ? "exp-seccion-nota text-red-700" : "exp-seccion-nota"; }
   }
-  /* Guardar la lista entera: el servidor la normaliza y devuelve el guardado,
-     y con él se repinta SOLO el expediente — la lista maestra se refresca al
-     volver, no en cada pulsación. */
-  async function guardarDocumentos(id, documentos, frase) {
-    try {
-      const r = await api("/api/perfil?op=seguimiento", { method: "POST", body: { perfil: $("f-perfil").value, id, documentos } });
-      segExpEscrituras += 1;
-      if (segExpDatos && segExpDatos.proceso && r && r.guardado) {
-        segExpDatos = { ...segExpDatos, proceso: { ...segExpDatos.proceso, documentos: r.guardado.documentos || [] } };
-        /* el resumen lo calcula el SERVIDOR; para no inventarlo aquí se vuelve a
-           pedir el expediente en segundo plano y se repinta cuando llega */
-        pintarExpediente();
-        refrescarExpediente();
-      }
-      decirDoc(r && r.aviso ? r.aviso : (frase || "Guardado."), r && r.aviso ? "error" : "ok");
-      seguimientoCargadoPara = null;
-    } catch (e) { decirDoc(fraseDeFallo(e), "error"); }
+  /* EL PAPELEO VA EN FILA (3-nov-2026), como el cuaderno desde el 27-oct. El servidor SUSTITUYE la lista entera con
+     lo que llega en `documentos`, y cada mando la armaba con lo que había en pantalla al pulsar: dos guardados
+     seguidos salían del MISMO estado y el segundo borraba lo del primero (era el PENDIENTE de «Lo que pide atención
+     dice lo que falta HOY…»). Marcar las filas de «Lo que tiene que entregar» —que viven en este mismo papeleo— es
+     justo ese caso. Ahora cada cambio es una FUNCIÓN que arma la lista; corre en fila y, cuando le toca, parte de lo
+     último que devolvió el servidor. Sin la lista completa del expediente no se envía nada. */
+  /* MARCAR UNA FILA DE «LO QUE TIENE QUE ENTREGAR». La marca es un documento del papeleo con `req` = la identidad de la
+     fila. Si la fila ya trae una marca (o un documento suyo que le da el estado), se cambia ESA, por su id: una marca que
+     casó por nombre tras una adenda se re-ancla a la identidad nueva. Volver a «Por conseguir» sin fecha ni nota quita la
+     marca (es el estado de partida: guardarla solo gastaría sitio). La pantalla cambia al instante y el servidor manda. */
+  function decirEntrega(texto, tipo) {
+    const el = secSeg && secSeg.querySelector("[data-exp-ent-mensaje]");
+    if (el) { el.textContent = texto || ""; el.className = tipo === "error" ? "exp-ent-mensaje text-red-700" : "exp-ent-mensaje"; }
+    else decirDoc(texto, tipo);
+  }
+  function marcarEntregable(id, { req, idDoc = null, nombre = null, estado = null, vence }) {
+    const e = segExpDatos && segExpDatos.proceso && segExpDatos.proceso.id === id ? segExpDatos.proceso.entregar : null;
+    const fila = e && Array.isArray(e.filas) ? e.filas.find((f) => f.id === req) : null;
+    if (fila && estado) fila.estado = estado;   // al instante; el servidor confirma al refrescar
+    return cambiarDocumentos(id, (ds) => {
+      const i = ds.findIndex((x) => (idDoc && x.id === idDoc) || (!idDoc && x.req === req));
+      const previo = i >= 0 ? ds[i] : null;
+      const nuevo = { ...(previo || { clave: "otro", nombre: String(nombre || "").slice(0, 120) || null }),
+        ...(previo && !previo.req ? {} : { req }), ...(estado ? { estado } : {}), ...(vence !== undefined ? { vence: vence || null } : {}) };
+      const partida = (nuevo.estado || "por_conseguir") === "por_conseguir" && !nuevo.vence && !nuevo.nota && !nuevo.archivo && nuevo.req;
+      if (previo) return partida ? ds.filter((_, k) => k !== i) : ds.map((x, k) => (k === i ? nuevo : x));
+      return partida ? ds : [...ds, nuevo];
+    }, (r) => (r && r.guardado ? "Guardado." : ""), { decir: decirEntrega });
+  }
+  function documentosDelExpediente(id) {
+    const p = segExpDatos && segExpDatos.proceso;
+    return p && p.id === id && Array.isArray(p.documentos) ? p.documentos : null;
+  }
+  let colaPapeleo = Promise.resolve();
+  function cambiarDocumentos(id, armar, frase, { decir = decirDoc } = {}) {
+    const turno = colaPapeleo.then(async () => {
+      const actuales = documentosDelExpediente(id);
+      if (!actuales) { decir(SIN_LISTA_COMPLETA, "error"); return { sinLista: true }; }
+      try {
+        const r = await guardarDelProceso(id, { documentos: armar(actuales) }, { repintar: false });
+        segExpEscrituras += 1;
+        seguimientoCargadoPara = null;
+        if (segExpDatos && segExpDatos.proceso && segExpDatos.proceso.id === id && r && r.guardado) {
+          segExpDatos = { ...segExpDatos, proceso: { ...segExpDatos.proceso, documentos: r.guardado.documentos || [] } };
+          /* la lista y sus cuentas las arma el SERVIDOR: se repinta con lo guardado y se vuelve a pedir el expediente */
+          pintarExpediente();
+          refrescarExpediente();
+        }
+        decir(r && r.aviso ? r.aviso : (typeof frase === "function" ? frase(r) : frase || "Guardado."), r && r.aviso ? "error" : "ok");
+        return r;
+      } catch (e) { decir(fraseDeFallo(e), "error"); return { error: true }; }
+    });
+    colaPapeleo = turno.catch(() => {});
+    return turno;
   }
   async function refrescarExpediente() {
     if (!segExpId) return;
@@ -5043,15 +5081,14 @@
     const clave = val("clave");
     if (!nombre && (!clave || clave === "otro")) { decirDoc("Póngale un nombre al documento para poder encontrarlo después.", "error"); return; }
     const p = segExpDatos && segExpDatos.proceso; if (!p) return;
-    const previos = p.documentos || [];
-    const nuevo = { id: segDocEditando || undefined, clave, nombre: nombre || null, estado: val("estado"), vence: val("vence") || null };
-    const anterior = segDocEditando ? previos.find((x) => x.id === segDocEditando) : null;
-    const lista = segDocEditando
-      ? previos.map((x) => (x.id === segDocEditando ? { ...x, ...nuevo, id: x.id, archivo: x.archivo } : x))
-      : [...previos, { ...nuevo, id: undefined, archivo: segArchivoPendiente }];
+    const editando = segDocEditando;
+    const nuevo = { id: editando || undefined, clave, nombre: nombre || null, estado: val("estado"), vence: val("vence") || null };
+    const archivo = segArchivoPendiente;
     segArchivoPendiente = null;
     cerrarAltaDocumento();
-    await guardarDocumentos(id, lista, anterior ? "Documento actualizado." : "Documento añadido al expediente.");
+    await cambiarDocumentos(id, (previos) => (editando
+      ? previos.map((x) => (x.id === editando ? { ...x, ...nuevo, id: x.id, archivo: x.archivo } : x))
+      : [...previos, { ...nuevo, id: undefined, archivo }]), editando ? "Documento actualizado." : "Documento añadido al expediente.");
   }
   /* El rastro del archivo que el usuario acaba de elegir, a la espera de que
      guarde el alta. Los BYTES no viajan: viaja lo que se le pudo leer. */
@@ -5120,6 +5157,9 @@
             <div data-seg-dictamen="${esc(p.id)}"><div class="exp-campo-acciones"><button type="button" class="exp-boton" data-seg-dictamen-ver="${esc(p.id)}">Ver el dictamen del pliego</button></div></div>
             <p class="exp-seccion-nota">¿El pliego no se leyó solo? <button type="button" class="exp-doc-enlace" data-seg-abrir-lector="${esc(p.id)}">Cargue el pliego en Precios</button> y vuelva aquí.</p>
           </section>` + X.htmlPie(p);
+    } else if (segExpSeccion === "entregar") {
+      /* la lista la arma el servidor (lib/entregar); si el pliego se está leyendo, el avance va arriba, como en «Documentos» */
+      cuerpo = `<div data-exp-docs-avance="${esc(p.id)}" aria-live="polite">${htmlAvanceDocs(p.id)}</div>` + X.htmlEntregar(p, { estadosDoc: r.estados_documento || {}, hoy: r.hoy || null });
     } else if (segExpSeccion === "documentos") {
       cuerpo = `<div data-exp-docs-avance="${esc(p.id)}" aria-live="polite">${htmlAvanceDocs(p.id)}</div>`
         + X.htmlDocumentos(p, { estadosDoc: r.estados_documento || {}, hoy: r.hoy || null, topes: r.topes || {} });
@@ -5151,9 +5191,20 @@
     const enCurso = ["texto", "fecha"].map((k) => { const c = campoNueva(k); return c && c.value ? { k, valor: c.value, foco: document.activeElement === c } : null; }).filter(Boolean);
     const avisoCuaderno = () => caja.querySelector(`[data-seg-cuaderno-mensaje="${CSS.escape(p.id)}"]`);
     const dicho = avisoCuaderno() && avisoCuaderno().textContent ? { texto: avisoCuaderno().textContent, clase: avisoCuaderno().className } : null;
+    /* el «Guardado.» de «Lo que tiene que entregar» también sobrevive al repintado (medido en Chromium: el refresco que
+       sigue a cada marca lo borraba, y la pulsación quedaba sin respuesta escrita); y el foco vuelve al mando que se tocó */
+    const avisoEntrega = () => caja.querySelector(`[data-exp-ent-mensaje="${CSS.escape(p.id)}"]`);
+    const dichoEnt = avisoEntrega() && avisoEntrega().textContent ? { texto: avisoEntrega().textContent, clase: avisoEntrega().className } : null;
+    /* y los pliegues abiertos de la lista (la cita, la fecha) siguen abiertos: cerrarlos al guardar escondía el campo que se estaba usando */
+    const abiertosEnt = [...caja.querySelectorAll("details[data-exp-ent-detalle][open]")].map((d) => d.getAttribute("data-exp-ent-detalle"));
+    const focoEnt = document.activeElement && caja.contains(document.activeElement) && document.activeElement.getAttribute
+      ? ["data-exp-ent-estado", "data-exp-ent-vence"].map((a) => (document.activeElement.getAttribute(a) ? `[${a}="${CSS.escape(document.activeElement.getAttribute(a))}"]` : null)).find(Boolean) : null;
     caja.innerHTML = `${cabecera}<div class="exp-cuerpo">${cuerpo}</div>`;
     for (const b of enCurso) { const c = campoNueva(b.k); if (c) { c.value = b.valor; if (b.foco) c.focus(); } }
     if (dicho && avisoCuaderno()) { avisoCuaderno().textContent = dicho.texto; avisoCuaderno().className = dicho.clase; }
+    if (dichoEnt && avisoEntrega()) { avisoEntrega().textContent = dichoEnt.texto; avisoEntrega().className = dichoEnt.clase; }
+    for (const id of abiertosEnt) { const d = caja.querySelector(`details[data-exp-ent-detalle="${CSS.escape(id)}"]`); if (d) d.open = true; }
+    if (focoEnt) { const c = caja.querySelector(focoEnt); if (c) { try { c.focus({ preventScroll: true }); } catch { /* sin foco */ } } }
     if (segExpSeccion === "resumen" && X.htmlPuedePresentarse) cargarPresentarse(p);
     /* EL FOCO ENTRA CON EL USUARIO (7-sep-2026). Al abrir un expediente el foco
        se quedaba en la fila que ya no está en pantalla: quien navega con teclado
@@ -6316,6 +6367,21 @@
         catch (e) { car.disabled = false; mensajeSeg(fraseDeFallo(e), "error"); }
         return;
       }
+      /* LO QUE TIENE QUE ENTREGAR: cómo va cada fila y cuándo vence */
+      const entEstado = ev.target.closest("[data-exp-ent-estado]");
+      if (entEstado && segExpId) {
+        await marcarEntregable(segExpId, { req: entEstado.getAttribute("data-exp-ent-estado"), idDoc: entEstado.getAttribute("data-exp-ent-doc") || null, nombre: entEstado.getAttribute("data-exp-ent-nombre"), estado: entEstado.value });
+        return;
+      }
+      const entVence = ev.target.closest("[data-exp-ent-vence]");
+      /* UNA FECHA A MEDIO ESCRIBIR NO SE GUARDA (revisión adversaria): en Chrome, `change` salta con cada dígito del año
+         («0002-12-01», «0020-…»); guardarla la dejaba en null en el servidor, el repintado borraba el campo y la pantalla
+         decía «Guardado.». Se guarda vacía (quitar la fecha) o con un año de cuatro cifras que empiece por 19 o 20 */
+      if (entVence && segExpId && entVence.value && !/^(?:19|20)\d\d-\d\d-\d\d$/.test(entVence.value)) return;
+      if (entVence && segExpId) {
+        await marcarEntregable(segExpId, { req: entVence.getAttribute("data-exp-ent-vence"), idDoc: entVence.getAttribute("data-exp-ent-doc") || null, nombre: entVence.getAttribute("data-exp-ent-nombre"), vence: entVence.value || null });
+        return;
+      }
       /* marcar o desmarcar una anotación de la lista de verificación */
       const casilla = ev.target.closest("[data-seg-tarea]");
       if (casilla) {
@@ -6441,13 +6507,20 @@
       if (docGuardar) { await guardarDocumentoDelAlta(docGuardar.getAttribute("data-exp-alta-guardar")); return; }
       const docEditar = ev.target.closest("[data-exp-doc-editar]");
       if (docEditar) { abrirAltaDocumento(segExpId, docEditar.getAttribute("data-exp-doc-editar")); return; }
+      const entQuitar = ev.target.closest("[data-exp-ent-quitar]");
+      if (entQuitar && segExpId) {
+        const idD = entQuitar.getAttribute("data-exp-ent-quitar");
+        entQuitar.disabled = true;
+        await cambiarDocumentos(segExpId, (ds) => ds.filter((x) => x.id !== idD), "Marca quitada.", { decir: decirEntrega });
+        return;
+      }
       const docQuitar = ev.target.closest("[data-exp-doc-quitar]");
       if (docQuitar) {
         const idD = docQuitar.getAttribute("data-exp-doc-quitar");
         const p = segExpDatos && segExpDatos.proceso;
         if (!p) return;
         docQuitar.disabled = true;
-        await guardarDocumentos(p.id, (p.documentos || []).filter((x) => x.id !== idD), "Documento quitado del expediente.");
+        await cambiarDocumentos(p.id, (ds) => ds.filter((x) => x.id !== idD), "Documento quitado del expediente.");
         return;
       }
       /* ══════════ LOS MANDOS DEL CASILLERO (7-sep-2026) ══════════ */
