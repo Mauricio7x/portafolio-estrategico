@@ -22,7 +22,7 @@
   pliego.js                   Router del dominio PLIEGO (Fase 0 · consolidación a 6 funciones)
   procesos.js                 Router del dominio PROCESOS (Fase 0 · consolidación a 6 funciones)
 
-· lib/ — 103 módulos:
+· lib/ — 105 módulos:
   accesibilidad.js            Accesibilidad operativa de la zona de la obra
   adendas.js                  Vigía de adendas · lo que el DATASET dice que cambió (Fase 5)
   almacen.js                  Esquema de claves Redis + compresión de chunks
@@ -62,6 +62,8 @@
   documentos_proceso.js       LOS DOCUMENTOS DE UN PROCESO, LEÍDOS SOLOS (3-sep-2026)
   docx.js                     El texto de un documento de Word (.docx), sin dependencias
   ejecucion.js                Cómo EJECUTA sus contratos de obra una entidad (jbjy-vk9h)
+  entregables.js              LO QUE EL PLIEGO PIDE ENTREGAR CON LA OFERTA, CON SU PÁGINA (3-nov-2026)
+  entregar.js                 «LO QUE TIENE QUE ENTREGAR»: UNA SOLA LISTA POR PROCESO, ARMADA EN EL SERVIDOR (3-nov-2026)
   equivalencias.js            Qué clases UNSPSC son AFINES en el mercado real
   error_interno.js            La respuesta JSON de un fallo que nadie capturó (6-sep-2026)
   espacio.js                  Qué ocupa la base de datos, medido desde la aplicación (30-sep-2026)
@@ -224,8 +226,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 413 secciones (40 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 20795  Una base que no responde no es «ninguno», y la madrugada lee sus propias evaluaciones con u…
+· MEMORIA · docs/MEMORIA.md — 414 secciones (40 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 20821  Una cifra de un informe de evaluación se lee por su último grupo: con dos cifras son centav…
   L 20838  Lo que llenó Upstash en octubre fue el ancho de banda de lo programado, y noviembre va just…
   L 20862  El vigilante pide el tamaño y no el diagnóstico entero, y el lector deja de leer el corpus …
@@ -235,6 +236,7 @@
   L 20957  La baja se publica cada 2 a 3 días, y una fila que no es un registro ya no tumba la lectura…
   L 20981  Un consorcio con Helder de integrante hereda sus precios corregidos, y «Calcular» manda el …
   L 20999  La 11 con la 3: la letra de leer, todo el texto a 7:1 y una sola tabla de tamaños (3-nov-20…
+  L 21020  Lo que tiene que entregar: la lista del pliego con su página, marcable en el papeleo, y el …
 
 · DOCUMENTOS docs/ — 76 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)
