@@ -565,34 +565,66 @@
      anotación propia como una fecha publicada por la entidad. */
   function lineaDeTiempo(p) {
     const suyas = (p.fechas_suyas || []).map((f) => ({ fecha: f.fecha, etiqueta: f.texto, origen: "usted", tipo: f.tipo }));
-    const hitos = (p.hitos || []).map((h) => ({ fecha: String(h.fecha).slice(0, 10), etiqueta: h.etiqueta, origen: h.origen || "dataset", evidencia: h.evidencia || null }));
+    /* desde el 3-nov-2026 también las fechas que dicen los documentos leídos: cada una trae del
+       servidor su `fuente` (documento y página), la hora, el rango y, si SECOP II publica otra
+       cosa para el mismo hito, `otra_fecha`. Aquí solo se copian: no se recalcula ni un día. */
+    const pv = p.proximo_vencimiento || null;
+    const hitos = (p.hitos || []).map((h) => ({ id: h.id || null, fecha: String(h.fecha).slice(0, 10), etiqueta: h.etiqueta, origen: h.origen || "dataset", evidencia: h.evidencia || null,
+      fuente: h.fuente || null, hora_legible: h.hora_legible || null, desde: h.desde || null, otra_fecha: h.otra_fecha || null,
+      proximo: !!(pv && pv.id === h.id && pv.fecha === String(h.fecha).slice(0, 10)) }));
     return [...hitos, ...suyas].sort((a, b) => String(a.fecha).localeCompare(String(b.fecha)));
   }
   const FUENTE_FECHA = {
     usted: "lo anotó usted", pliego: "fecha del cronograma del pliego",
     calculado: "fecha calculada por la aplicación, no publicada", dataset: "fecha publicada en SECOP II",
   };
+  /* De dónde sale la fecha: la frase del servidor si la trae (nombra el documento y la página),
+     con la primera letra en mayúscula; si no, la de siempre por su origen. */
+  function fuenteFecha(f) {
+    if (f.origen === "usted") return FUENTE_FECHA.usted;
+    if (f.origen === "calculado") return FUENTE_FECHA.calculado;
+    if (f.fuente) return `Según ${f.fuente}`;
+    return FUENTE_FECHA[f.origen] || FUENTE_FECHA.dataset;
+  }
   function htmlFechas(p, { hoy = null } = {}) {
     const C = raizCalendario();
+    const legible = (d) => (C ? C.fechaLegible(d) : d);
     const fs = lineaDeTiempo(p);
+    const sinLeer = Array.isArray(p.cronograma_sin_leer) ? p.cronograma_sin_leer.filter((x) => x && x.nombre) : [];
+    /* EL CRONOGRAMA QUE NO SE LEYÓ SE DICE (3-nov-2026): cuatro de cada cinco cronogramas de menor
+       cuantía medidos son una hoja de cálculo que la aplicación no lee, y sin esta línea la falta de
+       fechas parecería un proceso sin cronograma. */
+    const notaSinLeer = sinLeer.length
+      ? `<p class="exp-seccion-nota exp-nota-ojo">El cronograma de la entidad está en ${sinLeer.length === 1 ? "un archivo" : "archivos"} que no se pudo leer aquí (${sinLeer.map((x) => `«${esc(x.nombre)}»: ${esc(x.motivo || "sin leer")}`).join("; ")}). Ábralo en SECOP II: las fechas que no aparezcan abajo están ahí.</p>`
+      : "";
     if (!fs.length) {
-      return `<section class="exp-seccion"><h3 class="exp-seccion-titulo">Fechas</h3>
+      return `<section class="exp-seccion"><h3 class="exp-seccion-titulo">Fechas</h3>${notaSinLeer}
         <div class="exp-vacio"><p class="exp-vacio-titulo">Este proceso no publica ninguna fecha</p>
         <p class="exp-vacio-texto">Cuando la entidad publique el cronograma, o cuando usted anote una fecha suya, aparecerán aquí y en el calendario de Mis procesos.</p></div></section>`;
     }
+    const hayDeDocumentos = fs.some((f) => f.origen === "pliego");
     const filas = fs.map((f) => {
       const pasada = hoy && f.fecha < hoy;
       const esHoy = hoy && f.fecha === hoy;
-      return `<div class="exp-doc${pasada ? " exp-fecha-pasada" : ""}">
-        <span class="exp-doc-folio num">${esc(C ? C.fechaLegible(f.fecha) : f.fecha)}</span>
+      const cuando = `${f.desde && f.desde < f.fecha ? `Del ${legible(f.desde)} al ${legible(f.fecha)}` : legible(f.fecha)}${f.hora_legible ? `, ${f.hora_legible}` : ""}`;
+      const otra = f.otra_fecha && f.otra_fecha.fecha
+        ? ` · El documento${f.otra_fecha.documento ? ` «${f.otra_fecha.documento}»` : ""} dice ${legible(f.otra_fecha.fecha)}${f.otra_fecha.pagina != null ? ` (pág. ${f.otra_fecha.pagina})` : ""}: manda SECOP II, confírmelo allí.`
+        : "";
+      const estado = esHoy ? '<span class="exp-estado exp-urgente">Hoy</span>'
+        : pasada ? '<span class="exp-estado exp-estado-nd"><span class="exp-punto" aria-hidden="true">&#9679;</span>Pasó</span>'
+          : f.proximo ? '<span class="exp-estado exp-estado-falta"><span class="exp-punto" aria-hidden="true">&#9679;</span>Lo próximo que vence</span>' : "";
+      return `<div class="exp-doc exp-fila-fecha${pasada ? " exp-fecha-pasada" : ""}">
+        <span class="exp-doc-folio num">${esc(cuando)}</span>
         <span class="exp-doc-nombre">${esc(f.etiqueta)}</span>
-        <span class="exp-doc-meta">${esc(FUENTE_FECHA[f.origen] || FUENTE_FECHA.dataset)}${f.evidencia ? ` · ${esc(f.evidencia)}` : ""}</span>
-        <span class="exp-doc-mandos">${esHoy ? '<span class="exp-estado exp-urgente">Hoy</span>' : pasada ? '<span class="exp-estado exp-estado-nd"><span class="exp-punto" aria-hidden="true">&#9679;</span>Pasó</span>' : ""}</span>
+        <span class="exp-doc-meta">${esc(fuenteFecha(f))}${f.evidencia && !/^[a-z0-9_]+$/.test(f.evidencia) ? (f.origen === "pliego" ? ` · «${esc(f.evidencia)}»` : ` · ${esc(f.evidencia)}`) : ""}${esc(otra)}</span>
+        <span class="exp-doc-mandos">${estado}</span>
       </div>`;
     }).join("");
     return `<section class="exp-seccion">
       <h3 class="exp-seccion-titulo">Fechas</h3>
       <p class="exp-seccion-nota">El cronograma de la entidad y las fechas que puso usted, en orden. Cada una dice de dónde sale.</p>
+      ${hayDeDocumentos ? '<p class="exp-seccion-nota">Las fechas que dicen los documentos son las que la entidad escribió en ellos. Si después las movió en SECOP II sin publicar una adenda, aquí no se ve: antes de un plazo, confírmelo en SECOP II.</p>' : ""}
+      ${notaSinLeer}
       <div class="exp-docs">${filas}</div>
       <div class="exp-campo-acciones">
         <button type="button" class="exp-boton exp-boton-suave" data-seg-ics="${esc(p.id)}">Descargar estas fechas (calendario)</button>

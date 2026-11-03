@@ -437,8 +437,19 @@
      Y la fila ENTERA es el botón que abre el expediente: en el teléfono, un
      objetivo de 64 px de alto no se falla. */
   const TONO_SENAL = { alta: "exp-senal-alta", media: "exp-senal-media", baja: "exp-senal-baja" };
+  /* LO PRÓXIMO QUE VENCE (3-nov-2026, encargo del dueño): el plazo más cercano que le pide algo
+     en su etapa —observaciones, limitar a Mipymes, el traslado del informe…— llega RESUELTO del
+     servidor (lib/seguimiento.proximoVencimiento). La entrega de la oferta y el aviso de interés
+     tienen sus propias señales más arriba en la cascada; aquí entra lo demás, con su fecha. */
+  function proximoQueVence(p) {
+    const pv = p.proximo_vencimiento;
+    if (!pv || pv.id === "cierre" || pv.id === "manifestacion" || !Number.isInteger(pv.dias) || pv.dias < 0 || !pv.corta) return null;
+    return pv;
+  }
+  const venceEn = (pv) => (pv.dias === 0 ? "vence hoy" : pv.dias === 1 ? "vence mañana" : `vence en ${pv.dias} días`);
   function senalDe(p) {
     const m = p.manifestacion, dr = p.documentos_resumen || {}, tr = p.tareas_resumen || {};
+    const pv = proximoQueVence(p);
     if ((p.cambios || []).length) return { urgencia: "alta", texto: (p.cambios || []).length === 1 ? "Cambió algo del proceso" : `Cambiaron ${(p.cambios || []).length} cosas del proceso` };
     /* LA ETAPA MANDA SOBRE EL AVISO (22-sep-2026). A quien ya avisó (`ya_aviso`,
        resuelto por el servidor) no se le pide avisar; en espera del sorteo la
@@ -468,11 +479,16 @@
     if (!p.ya_aviso && m && m.aplica && (m.estado === "abierta" || m.estado === "pudo_vencer" || m.estado === "sin_fecha")) {
       return { urgencia: "media", texto: m.estado === "pudo_vencer" ? "Verifique si todavía puede avisar que le interesa" : "Todavía puede avisar que le interesa" };
     }
+    /* un plazo que vence hoy o mañana va DESPUÉS del aviso de interés (revisión adversaria, 3-nov-2026): sin
+       avisar no hay oferta, y unas observaciones son opcionales */
+    if (pv && pv.dias <= 1) return { urgencia: "alta", texto: `${pv.corta}: ${venceEn(pv)}`, fecha: pv.fecha };
     if (p.estado === "manifestado") return { urgencia: "baja", texto: "En espera del sorteo o de la lista de interesados" };
     if (!p.ya_aviso && m && m.aplica && m.estado === "por_abrir" && m.secop_observaciones_cerradas) return { urgencia: "media", texto: "Puede abrir en cualquier momento el plazo para avisar que le interesa: mire el cronograma" };
     if (!p.ya_aviso && m && m.aplica && m.estado === "por_abrir") return { urgencia: "baja", texto: "Todavía no abre el plazo para avisar que le interesa" };
     if (tr.vencidas) return { urgencia: "media", texto: tr.vencidas === 1 ? "Se le pasó una fecha que usted apuntó" : `Se le pasaron ${miles(tr.vencidas)} fechas que usted apuntó` };
+    if (pv && pv.dias <= 7 && !(p.cerrado === false && p.dias_para_cierre != null && p.dias_para_cierre < pv.dias)) return { urgencia: "media", texto: `${pv.corta}: ${venceEn(pv)}`, fecha: pv.fecha };
     if (p.cerrado === false && p.dias_para_cierre != null && p.dias_para_cierre <= 7) return { urgencia: "media", texto: `Cierra en ${p.dias_para_cierre} días` };
+    if (pv && !(p.cerrado === false && p.dias_para_cierre != null && p.dias_para_cierre < pv.dias)) return { urgencia: "baja", texto: `Lo próximo: ${pv.corta}, ${venceEn(pv)}` };
     if (p.cerrado === true) return { urgencia: "baja", texto: "Ya cerró" };
     if (p.dias_para_cierre == null) return { urgencia: "baja", texto: "Sin fecha de cierre publicada" };
     return { urgencia: "baja", texto: `Cierra en ${p.dias_para_cierre} días` };
@@ -497,13 +513,16 @@
     const dinero = presupuestoDelProceso(pr.presupuesto_cop);
     const C = raizCalendario();
     const cierre = pr.fecha_cierre ? (C ? C.fechaLegible(String(pr.fecha_cierre).slice(0, 10)) : String(pr.fecha_cierre).slice(0, 10)) : null;
+    /* la fecha que acompaña la señal es la de LO QUE SEÑALA: la del plazo próximo cuando la señal es
+       ese plazo (3-nov-2026), y la del cierre en las demás, como siempre */
+    const fechaSenal = s.fecha ? (C ? C.fechaLegible(s.fecha) : s.fecha) : cierre;
     const dr = p.documentos_resumen || {};
     const etapa = estados[p.estado] || p.estado_etiqueta || "";
     return `<button type="button" class="exp-fila" data-seg-abrir="${esc(p.id)}" aria-label="Abrir el expediente de ${esc(pr.nombre || p.id)}">
       <span class="exp-fila-texto">
         <span class="exp-fila-titulo">${esc(pr.nombre || p.id)}</span>
         <span class="exp-fila-meta">${esc(pr.entidad || "Entidad no publicada")}${pr.departamento ? ` &middot; ${esc(pr.departamento)}` : ""}${etapa ? ` &middot; ${esc(etapa)}` : ""}</span>
-        <span class="exp-fila-senal ${TONO_SENAL[s.urgencia] || TONO_SENAL.baja}"><span class="exp-punto" aria-hidden="true">&#9679;</span>${esc(s.texto)}${cierre && s.urgencia !== "baja" ? ` &middot; ${esc(cierre)}` : ""}</span>
+        <span class="exp-fila-senal ${TONO_SENAL[s.urgencia] || TONO_SENAL.baja}"><span class="exp-punto" aria-hidden="true">&#9679;</span>${esc(s.texto)}${fechaSenal && s.urgencia !== "baja" ? ` &middot; ${esc(fechaSenal)}` : ""}</span>
       </span>
       <span class="exp-fila-cifras">
         <span class="exp-cifra" title="${esc(dinero.titulo)}"><span class="exp-cifra-valor num">${esc(dinero.texto)}</span><span class="exp-cifra-rotulo">Presupuesto</span></span>
