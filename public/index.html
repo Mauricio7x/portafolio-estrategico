@@ -1645,6 +1645,11 @@
     .exp-campo-rotulo { font-size: var(--tipo-1); font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-tertiary); }
     .exp-campo-acciones { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: var(--esp-2); margin-top: var(--esp-2); }
     .exp-fecha-pasada .exp-doc-nombre, .exp-fecha-pasada .exp-doc-folio { color: var(--text-tertiary); }
+    /* LA FECHA DE UNA FILA DE «FECHAS» TIENE TECHO (3-nov-2026, medido en Chromium a 390 px): con un
+       rango («Del 4 de noviembre al 5 de noviembre») o una hora, la columna `auto` tomaba el ancho
+       entero del texto y la del nombre —que corta en cualquier letra— se quedaba en UNA letra de
+       ancho, sin desbordar nada (scrollWidth no lo ve). Con techo, la fecha baja a dos o tres renglones. */
+    .exp-fila-fecha .exp-doc-folio { max-width: 7.5rem; }
     /* A 390 px LA CABECERA DEJA DE SER PEGAJOSA. Con el nombre a dos líneas, las
        tres cifras, los dos selectores y la tira de secciones mide unos 210 px;
        pegados arriba de una pantalla útil de ~780 px, el índice de documentos se

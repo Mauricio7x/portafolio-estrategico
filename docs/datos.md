@@ -322,3 +322,11 @@ lista «abierto ahora» son las abreviadas de menor cuantía (excluida la varian
 Interes», que existe en el dataset) cuyo plazo calculado no venció; los días de oficina que quedan se
 recalculan con la fecha de HOY en Colombia al servir. «Próximos a abrir» sale del PAA (`9sue-ezhx`)
 al construir la portada; si no responde, `proximos:null` → «Sin referencia», jamás 0.
+
+**Las demás fechas del cronograma (3-nov-2026):** el dataset solo publica la publicación, el cierre
+(recepción de ofertas) y la apertura de ofertas. Observaciones, respuestas, audiencia, informe,
+traslado y adjudicación salen de los DOCUMENTOS leídos (adenda, anexo del cronograma, pliego, aviso),
+con su documento y su página, y se guardan en `cronograma:hitos` (un campo por proceso, con la misma
+poda) para que Mis procesos las lea con un solo comando. Si el dataset y el documento traen el mismo
+hito, **manda el dataset**: el pliego tipo dice que ante una inconsistencia prevalece la plataforma.
+Detalle en `docs/MEMORIA.md` § «El calendario del proceso: las fechas de los documentos llegan a Mis procesos, SECOP II manda sobre el documento y el lector deja de inventar plazos (3-nov-2026)».
