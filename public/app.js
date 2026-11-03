@@ -7776,6 +7776,35 @@
     aiu_subcontratista_pct: f.aiu_subcontratista_pct == null ? null : f.aiu_subcontratista_pct,
   }));
 
+  /* LO QUE EL CÁLCULO NO PUDO LEER, DICHO EN EL MENSAJE QUE QUEDA (3-nov-2026). Una sola
+     redacción para «Calcular» y para el mensaje final de Piso/Techo: «Calcular» dispara
+     Piso/Techo justo después, y su «Rentabilidad y precio sugerido actualizados» PISABA estos
+     avisos (revisión adversaria: el fallo de los precios de Helder se veía un instante, y la
+     tabla y el panel podían quedar con costos distintos sin decirlo). «No se pudo consultar» no
+     es «no hay»: callarlo dejaría creer que el presupuesto ya tenía sus precios. */
+  function avisosDePreciosCorregidos(r) {
+    const verbo = window.Glosario.VERBOS.generar_apu;
+    if (r && r.precios_propios_fallo) return [`Esta vez no se pudieron leer sus precios corregidos: se usó el precio de referencia. Pulse otra vez «${verbo}» en un momento.`];
+    const h = r && r.precios_heredados;
+    if (h && h.fallo) {
+      return [h.de
+        ? `Esta vez no se pudieron leer los precios que usted corrigió como Helder: en los ítems que este consorcio no ha corregido se usó el precio de referencia. Pulse otra vez «${verbo}» en un momento.`
+        : `Esta vez no se pudo consultar si este consorcio toma los precios que usted corrigió como Helder: en los ítems que no ha corregido se usó el precio de referencia. Pulse otra vez «${verbo}» en un momento.`];
+    }
+    return [];
+  }
+  function avisosDelCalculo(r) {
+    const verbo = window.Glosario.VERBOS.generar_apu;
+    const refEnt = (r && r.referencia_entidades) || {};
+    const out = [];
+    /* «no se pudo consultar» ≠ «no hay»: si la lectura de los presupuestos de las entidades
+       falló, se dice; callarlo dejaría creer que ningún proceso trae el ítem */
+    if (refEnt.fallo) out.push("Esta vez no se pudieron leer los presupuestos de sus procesos guardados: lo que presupuestaron las entidades no aparece.");
+    /* lo que no cupo en esta consulta se dice: callarlo haría leer «ninguno trae este ítem» */
+    else if (refEnt.pendientes > 0) out.push(`Faltan por leer ${refEnt.pendientes} de sus procesos guardados para lo que presupuestaron las entidades: pulse otra vez «${verbo}» en un momento.`);
+    return out.concat(avisosDePreciosCorregidos(r));
+  }
+
   async function calcularApu() {
     const btn = $("btn-calcular");
     btn.disabled = true;
@@ -7793,6 +7822,10 @@
              Piso/Techo que se dispara después los lee de aquí. También dice de qué perfil
              son los procesos guardados de «lo que presupuestaron las entidades». */
           perfil: $("perfil").value,
+          /* EL TIPO DE TRABAJO (3-nov-2026, visto bueno del dueño), igual que Piso/Techo: la
+             contribución del 5 % es de los contratos de obra pública, y sin él «Calcular» la
+             pintaba en una interventoría donde Piso/Techo la dejaba en 0 */
+          tipo_trabajo: tipoProceso,
           // el proceso que se cotiza, para no contarlo en lo que presupuestaron las entidades
           id_proceso: ($("id-proceso") && $("id-proceso").value.trim()) || null,
         },
@@ -7805,15 +7838,8 @@
       /* Repintar con la normativa del CÁLCULO: viene para la región que el
          motor usó de verdad, no para la región base del catálogo. */
       if (r.normativa) pintarNormativa(r.normativa);
-      /* «no se pudo consultar» ≠ «no hay»: si la lectura de los presupuestos de las
-         entidades falló, se dice; callarlo dejaría creer que ningún proceso trae el ítem */
-      const refEnt = r.referencia_entidades || {};
-      msgApu(refEnt.fallo
-        ? "Presupuesto calculado. Esta vez no se pudieron leer los presupuestos de sus procesos guardados: lo que presupuestaron las entidades no aparece."
-        /* lo que no cupo en esta consulta se dice: callarlo haría leer «ninguno trae este ítem» */
-        : refEnt.pendientes > 0
-          ? `Presupuesto calculado. Faltan por leer ${refEnt.pendientes} de sus procesos guardados para lo que presupuestaron las entidades: pulse otra vez «${window.Glosario.VERBOS.generar_apu}» en un momento.`
-          : "Presupuesto calculado.", "ok");
+      // lo que el cálculo no pudo leer, dicho (ver `avisosDelCalculo`)
+      msgApu(["Presupuesto calculado.", ...avisosDelCalculo(r)].join(" "), "ok");
       return true;
     } catch (e) {
       msgApu(mensajeDeFallo(e, "calcular el presupuesto"), "error");
@@ -9427,7 +9453,10 @@
       // el piso y el techo viajan en `piso_techo`, no en el optimizador: la curva los marca;
       // y la marca de supuesto de la probabilidad, la misma del bloque de rentabilidad
       pintarPrecioSugerido(c.optimizador, c.piso_techo, supuestoDePrecios(c));
-      msgApu(auto ? "Rentabilidad y precio sugerido actualizados." : "Rentabilidad actualizada.", "ok");
+      /* este mensaje es el que QUEDA tras «Calcular» con proceso: lleva los avisos del cálculo de
+         la tabla y los de este presupuesto, sin repetir (3-nov-2026; antes los pisaba) */
+      const avisos = [...new Set([...avisosDelCalculo(ultimoCalculo), ...avisosDePreciosCorregidos(c)])];
+      msgApu([auto ? "Rentabilidad y precio sugerido actualizados." : "Rentabilidad actualizada.", ...avisos].join(" "), "ok");
     } catch (e) {
       msgApu(mensajeDeFallo(e, "calcular la ganancia"), "error");
       /* También en automático hay que dejar rastro visible: si no, tras pulsar

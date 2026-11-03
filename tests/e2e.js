@@ -2145,7 +2145,23 @@ async function main() {
     let avisoSinTecho = null;
     await leerChunksDedup(redisFake(), claves, { onIncompleto: () => { avisoSinTecho = true; } });
     assert.strictEqual(avisoSinTecho, null, "sin `hasta` la lectura es completa y no avisa de nada");
-    console.log(`· unidad lote de lectura: ${N} chunks pequeños en ${r1.mgets()} MGET (con lote fijo de 8 serían ${viajesFijos}), filas idénticas, chunk ilegible bien nombrado y techo que corta avisando`);
+    /* (5) UNA FILA QUE NO ES UN REGISTRO SE SALTA, Y UN BLOQUE QUE NO ES UNA LISTA ES ILEGIBLE (3-nov-2026): un `null`
+       tumbaba la lectura entera en los tres modos (`r._historia` de null) y, con ella, el índice de baja, que se reanudaba
+       en el mismo mes sin terminar nunca; un número o un texto la tumbaban con `senales` o `historia`; un bloque que era un
+       objeto la tumbaba («is not iterable») y uno que era un texto se leía letra por letra. */
+    const claveSucia = claves[7], claveObjeto = claves[8], claveTexto = claves[9];
+    const sucio = { [claveSucia]: comprimir([null, { _k: "k7", ":updated_at": "2026-09-01", n: 7 }, 5, "fila", [{ _k: "kx" }]]),
+      [claveObjeto]: comprimir({ _k: "k8", n: 8 }), [claveTexto]: comprimir("k9") };
+    for (const modo of [{}, { senales: true }, { historia: true }]) {
+      const ilegibles = [];
+      const leidas = await leerChunksDedup(redisFake(sucio), claves, { ...modo, onCorrupto: (k) => ilegibles.push(k) });
+      assert.strictEqual(leidas.length, N - 2, `${JSON.stringify(modo)}: las filas que no son registros no cuentan y las demás sí (leyó ${leidas.length})`);
+      assert.ok(leidas.every((r) => r && typeof r === "object" && !Array.isArray(r) && /^k\d+$/.test(r._k)), `${JSON.stringify(modo)}: ninguna «fila» es un número, una letra o una lista`);
+      assert.ok(leidas.some((r) => r._k === "k7"), `${JSON.stringify(modo)}: el registro bueno del bloque con basura se lee`);
+      assert.deepStrictEqual(ilegibles.sort(), [claveObjeto, claveTexto].sort(),
+        `${JSON.stringify(modo)}: el bloque que no es una lista se avisa como ilegible y el que solo trae filas vacías no (avisó ${ilegibles.join(", ") || "nada"})`);
+    }
+    console.log(`· unidad lote de lectura: ${N} chunks pequeños en ${r1.mgets()} MGET (con lote fijo de 8 serían ${viajesFijos}), filas idénticas, chunk ilegible bien nombrado, techo que corta avisando y filas que no son registros saltadas`);
   }
 
   /* unidad: la detección de anticipo no cruza frases ni ignora negaciones.
@@ -8844,6 +8860,26 @@ async function main() {
         const rsFut = redisFalso(corpusS());
         await publicadoHace(rsFut, -48);
         assert.ok(!(await indiceBaja.construirIndiceBaja(rsFut, { minHorasEntreCiclos: 24 })).al_dia, "una publicación con fecha en el futuro (reloj desfasado o dato roto) no cuenta como reciente: frenaría la baja hasta esa fecha");
+
+        // (v) UNA FILA VACÍA EN UN BLOQUE DEL HISTÓRICO NO DEJA LA BAJA SIN TERMINAR (3-nov-2026): el `null` tumbaba la
+        //     lectura del mes, el ciclo se reanudaba en ese mismo mes en cada actualización y el índice no se publicaba más
+        const cN = corpusS();
+        cN["2025-02"].splice(1, 0, null, 7, "fila");
+        const rsN = redisFalso({ ...cN, "2025-04": { no_es: "una lista" } });
+        const rN = await hastaTerminar(rsN);
+        assert.ok(rN && rN.procesos_analizados === 6, `con filas vacías y un bloque que no es una lista, el ciclo termina y cuenta los 6 procesos: ${JSON.stringify(rN).slice(0, 160)}`);
+        assert.deepStrictEqual(lectura(indiceBaja.bajaDeMercado(await indiceBaja.leerIndiceBaja(rsN), licS)), lectura(bLimpio), "y publica lo mismo que sin ellas");
+        //     …y el bloque que quedó fuera se DICE en la meta (revisión adversaria): antes atascaba el ciclo, ahora no puede callarse
+        assert.strictEqual(rN.bloques_ilegibles, 1, `el bloque que no es una lista se cuenta en la meta: ${rN.bloques_ilegibles}`);
+        assert.strictEqual((await indiceBaja.leerIndiceBajaMeta(rsN)).bloques_ilegibles, 1, "y queda publicado con la meta");
+        assert.strictEqual(rT.bloques_ilegibles, 0, `sin bloques rotos, la meta dice 0: ${rT.bloques_ilegibles}`);
+        const rsAnt = redisFalso(corpusS());
+        await indiceBaja.construirIndiceBaja(rsAnt, { reiniciar: true, presupuestoMs: -1 });
+        const pAnt = await leerJSONComprimido(rsAnt, CLAVES.indiceBajaProgreso);
+        delete pAnt.stats.bloques_ilegibles;                                    // un progreso de la versión anterior
+        await escribirJSONComprimido(rsAnt, CLAVES.indiceBajaProgreso, pAnt);
+        const rAnt = await hastaTerminar(rsAnt);
+        assert.strictEqual(rAnt.bloques_ilegibles, null, `un ciclo empezado sin el contador no publica 0 («no sé»): ${rAnt.bloques_ilegibles}`);
       }
 
       for (const t of [...lugares, bEnt0.mensaje, bEnt3.mensaje, ...frasesLP, ...frasesCenso, fNeg, ptNeg.frases.baja, gEnt0.baja_frase, gPoca.baja_frase, gNula.baja_frase, gMano.baja_frase]) {
@@ -18297,6 +18333,9 @@ async function main() {
       const ini = fuente.indexOf("  async function calcularApu() {");
       assert.ok(ini > 0, "public/app.js tiene calcularApu");
       const fin = fuente.indexOf("\n  }\n", ini);
+      // los avisos del cálculo viven justo antes y se ejecutan con ella (3-nov-2026)
+      const iniAvisos = fuente.indexOf("  function avisosDePreciosCorregidos(");
+      assert.ok(iniAvisos > 0 && iniAvisos < ini, "los avisos del cálculo van justo antes de calcularApu");
       const el = (v) => ({ value: v, disabled: false, textContent: "" });
       const dom = { "btn-calcular": el(""), "btn-exportar": el(""), departamento: el("CUNDINAMARCA"), "id-proceso": el(" CO1.REQ.999 "), perfil: el("genesis") };
       let enviado = null; const mensajes = [];
@@ -18306,13 +18345,15 @@ async function main() {
         itemsParaElMotor: () => [{ item_id: "INV-200.1", descripcion: EXC, unidad: "m3", cantidad: 1 }],
         leerConfig: () => ({}), filas: [1], window: { Glosario: { VERBOS: { generar_apu: "Calcular cuánto me cuesta" } } },
         msgApu: (t) => mensajes.push(t), mensajeDeFallo: () => "", olvidarRevision: () => {}, pintarCalculoEnTabla: () => {}, pintarResumen: () => {}, pintarNormativa: () => {},
+        tipoProceso: "interventoria",
       };
       const n = Object.keys(stubs);
-      const calcularApu = new Function(...n, `let ultimoCalculo = null;\n${fuente.slice(ini, fin + 4)}\nreturn calcularApu;`)(...n.map((k) => stubs[k]));
+      const calcularApu = new Function(...n, `let ultimoCalculo = null;\n${fuente.slice(iniAvisos, fin + 4)}\nreturn calcularApu;`)(...n.map((k) => stubs[k]));
       await calcularApu();
       assert.strictEqual(enviado.ruta, "/api/apu?op=calcular");
       assert.strictEqual(enviado.body.perfil, "genesis", "los precios propios y los procesos guardados son los del perfil con que trabaja, el mismo que mandan «Guardar» y Piso/Techo");
       assert.strictEqual(enviado.body.id_proceso, "CO1.REQ.999");
+      assert.strictEqual(enviado.body.tipo_trabajo, "interventoria", "el tipo de trabajo viaja como en Piso/Techo: decide si se cobra la contribución del 5 % (3-nov-2026)");
       assert.ok(/Faltan por leer 4 de sus procesos guardados[\s\S]*«Calcular cuánto me cuesta»/.test(mensajes.join(" ")), mensajes.join(" | "));
       assert.strictEqual(require("../lib/lenguaje_pantalla.js").tuteoEn(mensajes.join(" ")), null);
     }
@@ -19853,6 +19894,30 @@ async function main() {
           assert.strictEqual(usa("INV-671.1", sinFecha), null, "sin fecha no se arriesga");
           // los otros dos alias NO son ambiguos (200 y 671 estaban libres)
           assert.strictEqual(usa("INV-200.1", { "INV-201.1": { precio: 33333, guardado_el: "2026-01-01" } }), 33333);
+        }
+
+        /* ═══ LA HERENCIA DEL CONSORCIO, EN DOS PASOS (3-nov-2026, decisión del dueño) ═══
+           Un consorcio con Helder de integrante toma los precios que el dueño corrigió como
+           Helder para lo que el consorcio no ha corregido, y el del consorcio manda. Se busca
+           en dos pasos y no en un mapa mezclado: con el código INVIAS reutilizado, la clave
+           NUEVA de Helder le ganaría a la VIEJA del consorcio. */
+        {
+          const precios = require("../lib/apu/precios.js");
+          const HELDER = { perfil: "helder", nombre: "Helder" };
+          const conH = (propio, deHelder) => precios.conHerencia(propio, deHelder, HELDER);
+          const usaD = (id, mapa) => { const r = precios.delUsuario(id, mapa); return r.hay ? [r.precio, r.detalle.heredado_de ? r.detalle.heredado_de.perfil : null] : null; };
+          assert.deepStrictEqual(usaD("NOG-A2", conH({}, { "NOG-A2": { precio: 27500 } })), [27500, "helder"], "sin precio del consorcio, el de Helder, y dice de quién");
+          assert.deepStrictEqual(usaD("NOG-A2", conH({ "NOG-A2": { precio: 31000 } }, { "NOG-A2": { precio: 27500 } })), [31000, null], "con precio del consorcio, manda el suyo");
+          assert.deepStrictEqual(usaD("INV-661.1", conH({ "INV-673.1": { precio: 50000, guardado_el: "2026-10-01" } }, { "INV-661.1": { precio: 40000, guardado_el: "2026-09-01" } })), [50000, null],
+            "el del consorcio gana aunque esté bajo la clave vieja y el de Helder bajo la nueva: mezclar los mapas lo perdería");
+          assert.deepStrictEqual(usaD("NOG-A2", conH({ "NOG-A2": { precio: 0 } }, { "NOG-A2": { precio: 27500 } })), [27500, "helder"], "un registro del consorcio sin precio válido no tapa al de Helder");
+          assert.strictEqual(usaD("INV-661.1", conH({}, { "INV-661.1": { precio: 11111, guardado_el: "2026-01-01" } })), null, "las reglas de fecha valen también para lo heredado");
+          assert.strictEqual(Object.keys(conH({ A: { precio: 1 } }, { B: { precio: 2 }, C: { precio: 3 } })).length, 1, "contar los precios propios no cuenta los heredados");
+          const solo = { "NOG-A2": { precio: 31000 } };
+          assert.strictEqual(precios.conHerencia(solo, {}, HELDER), solo, "sin heredados no cambia nada");
+          assert.strictEqual(precios.conHerencia(null, { x: { precio: 1 } }, HELDER), null, "sin mapa propio (no se pudo leer) sigue siendo null");
+          const czH = precios.cotizar({ items: [{ item_id: "NOG-A2", cantidad: 1 }], preciosUsuario: conH({}, { "NOG-A2": { precio: 27500 } }) }).items[0];
+          assert.deepStrictEqual([czH.fuente, czH.precio_unitario], ["usuario", 27500], "la cotización ve lo mismo: es la misma función");
         }
 
         // el badge de pantalla y el marcador del Excel salen de esta MISMA función
@@ -34105,6 +34170,8 @@ async function main() {
           const iniC = fuenteCalc.indexOf("  async function calcularApu() {");
           assert.ok(iniC > 0, "public/app.js tiene calcularApu");
           const finC = fuenteCalc.indexOf("\n  }\n", iniC);
+          const iniAv = fuenteCalc.indexOf("  function avisosDePreciosCorregidos(");
+          assert.ok(iniAv > 0 && iniAv < iniC, "los avisos del cálculo van justo antes de calcularApu");
           // Piso/Techo, la función real que «Calcular» dispara después: la igualdad se cierra por LOS DOS lados
           const iniR = fuenteCalc.indexOf("  async function calcularRentabilidad(");
           assert.ok(iniR > 0, "public/app.js tiene calcularRentabilidad");
@@ -34119,12 +34186,13 @@ async function main() {
           try {
             /* «Calcular» y Piso/Techo EJECUTADOS desde public/app.js con la misma pantalla falsa y contra
                el handler real: si cualquiera de los dos deja de mandar el perfil, las cifras se separan */
-            const desdeLaPantalla = async (perfilActivo) => {
+            const desdeLaPantalla = async (perfilActivo, tipo = "") => {
               const el = (v) => ({ value: v, disabled: false, textContent: "" });
               const dom = { "btn-calcular": el(""), "btn-exportar": el(""), "btn-rentabilidad": el(""), departamento: el("ANTIOQUIA"), "id-proceso": el(""), perfil: el(perfilActivo),
                 entidad: el(""), objeto: el(""), "codigos-unspsc": el(""), cuantia: el(""), "plazo-meses": el("") };
               const ITEMS_PANTALLA = [{ item_id: "NOG-A2", cantidad: 12, precio_manual: null, origen_precio: null }];
               let respuesta = null, piso = null, fallo = null;
+              const mensajes = [];
               const stubs = {
                 $: (id) => dom[id] || el(""),
                 api: async (ruta, o) => {
@@ -34132,7 +34200,9 @@ async function main() {
                     const r = await invocarPost(apu, "/api/apu/rentabilidad", o.body, CAB_TOKEN);
                     assert.strictEqual(r.status, 200, JSON.stringify(r.cuerpo).slice(0, 200));
                     piso = r.cuerpo;
-                    return null;   // la respuesta ya se tiene: la función termina sin pintar el panel
+                    /* se devuelve: Piso/Techo termina y deja SU mensaje, que es el que queda en pantalla
+                       tras «Calcular» con proceso (y el que pisaba los avisos, revisión del 3-nov-2026) */
+                    return r.cuerpo;
                   }
                   assert.strictEqual(ruta, "/api/apu?op=calcular");
                   const r = await invocarPost(apu, "/api/apu/calcular", o.body, CAB_TOKEN);
@@ -34142,20 +34212,22 @@ async function main() {
                 },
                 itemsParaElMotor: () => ITEMS_PANTALLA,
                 leerConfig: () => cfgBase, filas: [1], window: { Glosario: { VERBOS: { generar_apu: "Calcular cuánto me cuesta" } } },
-                msgApu: () => {}, mensajeDeFallo: (e) => { fallo = e; return ""; }, pintarPrecioSugerido: () => {},
+                msgApu: (m) => mensajes.push(m), mensajeDeFallo: (e) => { fallo = e; return ""; }, pintarPrecioSugerido: () => {},
+                pintarPisoTecho: () => {}, pintarRentabilidad: () => {}, supuestoDePrecios: () => null,
                 olvidarRevision: () => {}, pintarCalculoEnTabla: () => {}, pintarResumen: () => {}, pintarNormativa: () => {},
-                nitProceso: "", modalidadProceso: "", tipoProceso: "",
+                nitProceso: "", modalidadProceso: "", tipoProceso: tipo,
               };
               const n = Object.keys(stubs);
               const { calcularApu, calcularRentabilidad } = new Function(...n,
-                `let ultimoCalculo = null, ultimaRentabilidad = null, rentabilidadEnVuelo = false;\n${fuenteCalc.slice(iniC, finC + 4)}\n${fuenteCalc.slice(iniR, finR + 4)}\nreturn { calcularApu, calcularRentabilidad };`)(...n.map((k) => stubs[k]));
+                `let ultimoCalculo = null, ultimaRentabilidad = null, rentabilidadEnVuelo = false;\n${fuenteCalc.slice(iniAv, finC + 4)}\n${fuenteCalc.slice(iniR, finR + 4)}\nreturn { calcularApu, calcularRentabilidad };`)(...n.map((k) => stubs[k]));
               const ok = await calcularApu();
               if (fallo) throw fallo;
               assert.strictEqual(ok, true, "«Calcular» terminó sin presupuesto");
               await calcularRentabilidad({ auto: true });
               if (fallo) throw fallo;
               assert.ok(piso, "Piso/Techo no llegó al servidor");
-              return { item: respuesta.items[0], resumen: respuesta.resumen, cdPisoTecho: piso.presupuesto.resumen.costo_directo_total };
+              return { item: respuesta.items[0], resumen: respuesta.resumen, cdPisoTecho: piso.presupuesto.resumen.costo_directo_total,
+                resumenPisoTecho: piso.presupuesto.resumen, cuerpo: respuesta, piso, mensajes, queda: mensajes[mensajes.length - 1] || "" };
             };
             const g = await desdeLaPantalla("genesis");
             assert.strictEqual(g.item.costo_directo_unitario, PROPIO_GENESIS,
@@ -34169,6 +34241,100 @@ async function main() {
             const h = await desdeLaPantalla("helder");
             assert.strictEqual(h.item.costo_directo_unitario, 27500, "y trabajando con «helder», con el suyo: un perfil no costea con los precios de otro");
             assert.strictEqual(h.cdPisoTecho, h.resumen.costo_directo_total, "también con «helder»");
+            /* EL RESUMEN ENTERO, no solo el costo directo (3-nov-2026): «Calcular» tampoco mandaba el
+               TIPO DE TRABAJO y, en una interventoría, pintaba la contribución del 5 % que Piso/Techo
+               dejaba en 0 (revisión adversaria del 2-nov-2026). Las dos acciones arman el presupuesto
+               con la misma función: si reciben lo mismo, el resumen es idéntico */
+            assert.deepStrictEqual(g.resumen, g.resumenPisoTecho, "«Calcular» y Piso/Techo dan el mismo resumen");
+            const iv = await desdeLaPantalla("helder", "interventoria");
+            assert.strictEqual(iv.resumen.contribucion_obra_publica, 0, "una interventoría no causa la contribución del 5 % de obra pública: «Calcular» no la pinta");
+            assert.deepStrictEqual(iv.resumen, iv.resumenPisoTecho, "y con una interventoría «Calcular» y Piso/Techo siguen dando el mismo resumen");
+            const ob = await desdeLaPantalla("helder", "obra");
+            assert.ok(ob.resumen.contribucion_obra_publica > 0, "en una obra sí la cobra");
+            assert.deepStrictEqual(ob.resumen, ob.resumenPisoTecho);
+
+            /* ═══ LA HERENCIA DEL CONSORCIO (3-nov-2026, decisión del dueño: «solo de Helder») ═══
+               Un consorcio con Helder de integrante toma los precios que el dueño corrigió como
+               Helder para lo que el consorcio no ha corregido; el del consorcio manda; uno sin
+               Helder no hereda nada (ni de «genesis», que aquí SÍ tiene precio); Piso/Techo ve lo
+               mismo; y si los precios de Helder no se pueden leer, la pantalla lo dice. */
+            const C3 = require("../lib/consorcio.js");
+            const consH = C3.generarId(), consSin = C3.generarId();
+            await C3.guardarConsorcio(redis, { id: consH, nombre: "Con Helder", integrantes: [{ perfilId: "helder", participacion: 60 }, { perfilId: "genesis", participacion: 40 }] });
+            await C3.guardarConsorcio(redis, { id: consSin, nombre: "Sin Helder", integrantes: [{ perfilId: "genesis", participacion: 50 }, { perfilId: "prodiac", participacion: 50 }] });
+            let gCons = null;
+            try {
+              const ch = await desdeLaPantalla(consH);
+              assert.deepStrictEqual([ch.item.costo_directo_unitario, ch.item.origen_precio, ch.item.propio_heredado_de && ch.item.propio_heredado_de.perfil], [27500, "propio", "helder"],
+                `un consorcio con Helder toma el precio que el dueño corrigió como Helder: ${JSON.stringify([ch.item.costo_directo_unitario, ch.item.origen_precio, ch.item.propio_heredado_de])}`);
+              assert.deepStrictEqual(ch.cuerpo.precios_heredados && [ch.cuerpo.precios_heredados.de.perfil, ch.cuerpo.precios_heredados.fallo], ["helder", false]);
+              assert.deepStrictEqual(ch.resumen, ch.resumenPisoTecho, "Piso/Techo hereda lo mismo");
+              /* SIN CREDENCIAL no se lee ningún precio corregido, ni propio ni heredado: `calcular` es
+                 pública y el perfil viaja en la petición (la guarda, EJECUTADA; antes solo la vigilaba un regex) */
+              for (const perfilPub of [consH, "helder"]) {
+                const pub = await invocarPost(apu, "/api/apu/calcular", { items: [{ item_id: "NOG-A2", cantidad: 12 }], departamento: "ANTIOQUIA", config: cfgBase, perfil: perfilPub }, {});
+                assert.strictEqual(pub.status, 200);
+                assert.ok(pub.cuerpo.items[0].origen_precio !== "propio" && pub.cuerpo.items[0].costo_directo_unitario !== 27500
+                  && pub.cuerpo.precios_propios_aplicados === false && pub.cuerpo.precios_heredados === null,
+                  `sin credencial no sale el precio corregido de nadie (${perfilPub}): ${JSON.stringify([pub.cuerpo.items[0].costo_directo_unitario, pub.cuerpo.items[0].origen_precio, pub.cuerpo.precios_heredados])}`);
+              }
+              assert.ok(/corrigió como Helder/.test(Libro.clasificarOrigen(ch.item, ch.cuerpo).motivo) && Libro.clasificarOrigen(ch.item, ch.cuerpo).etiqueta === "Su precio",
+                "el rótulo sigue siendo «Su precio» y el detalle dice que viene de Helder");
+              const czC = await invocarPost(apu, "/api/apu/cotizar", { perfil: consH, departamento: "ANTIOQUIA", items: [{ item_id: "NOG-A2", cantidad: 4 }] }, CAB_TOKEN);
+              assert.deepStrictEqual([czC.status, czC.cuerpo.items[0].fuente, czC.cuerpo.items[0].precio_unitario], [200, "usuario", 27500], "la cotización del consorcio hereda igual");
+              assert.deepStrictEqual(czC.cuerpo.precios_propios.heredados && [czC.cuerpo.precios_propios.heredados.de.perfil, czC.cuerpo.precios_propios.heredados.fallo], ["helder", false], "y dice de quién hereda");
+              upstash.romper((cmd) => (String(cmd[0]).toUpperCase() === "HGETALL" && cmd[1] === "apu:precios:helder" ? "ERR simulado: no respondió" : null));
+              let czCaida;
+              try { czCaida = await invocarPost(apu, "/api/apu/cotizar", { perfil: consH, departamento: "ANTIOQUIA", items: [{ item_id: "NOG-A2", cantidad: 4 }] }, CAB_TOKEN); } finally { upstash.romper(null); }
+              assert.ok(/No se pudieron leer los precios que usted corrigió como Helder/.test(czCaida.cuerpo.precios_propios.mensaje || ""), `la cotización tampoco calla la falla: ${JSON.stringify(czCaida.cuerpo.precios_propios)}`);
+              assert.ok(!/no se pudieron|no se pudo consultar/.test(ch.queda), `sin fallas no se avisa nada: ${ch.queda}`);
+              /* LO QUE NO SE PUDO LEER SE DICE, Y EN EL MENSAJE QUE QUEDA (revisión adversaria del 3-nov-2026).
+                 «Calcular» con proceso dispara Piso/Techo, cuyo mensaje es el último y pisaba el aviso; se
+                 mira el ÚLTIMO, no la unión de todos. «No se pudo» no es «no hereda» ni «no hay». */
+              const conFalla = async (regla, perfilP) => { upstash.romper(regla); try { return await desdeLaPantalla(perfilP); } finally { upstash.romper(null); } };
+              const esHgetallDe = (cmd, clave) => String(cmd[0]).toUpperCase() === "HGETALL" && cmd[1] === clave;
+              const ERR_SIM = "ERR simulado: no respondió";
+              const AV_HELDER = /no se pudieron leer los precios que usted corrigió como Helder/;
+              // (a) los de Helder no responden en ninguna de las dos lecturas
+              const caida = await conFalla((cmd) => (esHgetallDe(cmd, "apu:precios:helder") ? ERR_SIM : null), consH);
+              assert.notStrictEqual(caida.item.costo_directo_unitario, 27500, "sin poder leerlos no se hereda nada");
+              assert.strictEqual(caida.cuerpo.precios_heredados && caida.cuerpo.precios_heredados.fallo, true, `«Calcular» declara que no se pudieron leer: ${JSON.stringify(caida.cuerpo.precios_heredados)}`);
+              assert.strictEqual(caida.piso.precios_heredados && caida.piso.precios_heredados.fallo, true, "Piso/Techo también lo declara");
+              assert.ok(AV_HELDER.test(caida.queda), `el mensaje que queda lo dice: ${caida.mensajes.join(" | ")}`);
+              // (b) solo falla la lectura de «Calcular»: la tabla y el panel quedan distintos, y el mensaje que queda lo dice
+              let lecturasB = 0;
+              const soloCalc = await conFalla((cmd) => (esHgetallDe(cmd, "apu:precios:helder") && ++lecturasB === 1 ? ERR_SIM : null), consH);
+              assert.notStrictEqual(soloCalc.resumen.costo_directo_total, soloCalc.cdPisoTecho, "la prueba reproduce la tabla y el panel con costos distintos");
+              assert.ok(AV_HELDER.test(soloCalc.queda), `con la tabla y el panel distintos, el mensaje que queda lo dice: ${soloCalc.mensajes.join(" | ")}`);
+              // (c) solo falla la de Piso/Techo
+              let lecturasC = 0;
+              const soloPiso = await conFalla((cmd) => (esHgetallDe(cmd, "apu:precios:helder") && ++lecturasC === 2 ? ERR_SIM : null), consH);
+              assert.ok(AV_HELDER.test(soloPiso.queda), `si falla la lectura de Piso/Techo, también se dice: ${soloPiso.mensajes.join(" | ")}`);
+              // (d) no se pudo leer la definición del consorcio: no se le habla de «sus precios de Helder», se dice que no se pudo consultar
+              const sinDef = await conFalla((cmd) => (String(cmd[0]).toUpperCase() === "GET" && cmd[1] === C3.CLAVE_CONSORCIOS ? ERR_SIM : null), consSin);
+              assert.deepStrictEqual(sinDef.cuerpo.precios_heredados, { de: null, fallo: true });
+              assert.ok(/no se pudo consultar si este consorcio toma los precios/.test(sinDef.queda) && !AV_HELDER.test(sinDef.queda), `sin la definición no se afirma que tenga a Helder: ${sinDef.queda}`);
+              // (e) los precios del propio perfil no responden (también con «helder», desde antes callado)
+              const propiosCaidos = await conFalla((cmd) => (esHgetallDe(cmd, "apu:precios:helder") ? ERR_SIM : null), "helder");
+              assert.deepStrictEqual([propiosCaidos.cuerpo.precios_propios_fallo, propiosCaidos.piso.precios_propios_fallo], [true, true]);
+              assert.ok(/no se pudieron leer sus precios corregidos/.test(propiosCaidos.queda), `«no se pudo» no es «no hay»: ${propiosCaidos.queda}`);
+              assert.strictEqual(require("../lib/lenguaje_pantalla.js").tuteoEn([caida, soloCalc, soloPiso, sinDef, propiosCaidos].map((x) => x.queda).join(" ")), null);
+              // el precio corregido PARA el consorcio manda sobre el heredado
+              gCons = await invocarPost(apu, "/api/apu/guardar", { perfil: consH, nombre: "Del consorcio", departamento: "ANTIOQUIA",
+                items: [{ item_id: "NOG-A2", cantidad: 1, precio_manual: 31000, origen_precio: "manual" }], config: cfgBase, total: 1 }, CAB_TOKEN);
+              assert.strictEqual(gCons.status, 200, JSON.stringify(gCons.cuerpo).slice(0, 200));
+              const chPropio = await desdeLaPantalla(consH);
+              assert.deepStrictEqual([chPropio.item.costo_directo_unitario, chPropio.item.propio_heredado_de || null], [31000, null], "el precio del consorcio manda sobre el de Helder");
+              // un consorcio SIN Helder no hereda: ni de Helder ni de «genesis», que tiene precio
+              const sinH = await desdeLaPantalla(consSin);
+              assert.ok(sinH.item.origen_precio !== "propio" && ![27500, PROPIO_GENESIS].includes(sinH.item.costo_directo_unitario),
+                `un consorcio sin Helder no hereda de nadie: ${JSON.stringify([sinH.item.costo_directo_unitario, sinH.item.origen_precio])}`);
+              assert.strictEqual(sinH.cuerpo.precios_heredados, null);
+              console.log(`  · el consorcio hereda de Helder: ${ch.item.costo_directo_unitario} · con su propio precio ${chPropio.item.costo_directo_unitario} · sin Helder ${sinH.item.costo_directo_unitario} (${sinH.item.origen_precio}) · interventoría sin contribución, obra ${ob.resumen.contribucion_obra_publica}`);
+            } finally {
+              await C3.borrarConsorcio(redis, consH); await C3.borrarConsorcio(redis, consSin);
+              await redis.del(`apu:precios:${consH}`, ...(gCons && gCons.cuerpo && gCons.cuerpo.id ? [`apu:presupuesto:${consH}:${gCons.cuerpo.id}`] : []));
+            }
             console.log(`  · «Calcular» y Piso/Techo desde la pantalla costean con el perfil activo: genesis ${g.resumen.costo_directo_total} = ${g.cdPisoTecho} · helder ${h.resumen.costo_directo_total} = ${h.cdPisoTecho}`);
           } finally {
             await redis.del("apu:precios:genesis", `apu:presupuesto:genesis:${gpG.cuerpo.id}`);
@@ -35692,6 +35858,28 @@ async function main() {
         assert.strictEqual(conCorrupto.status, 200, "un chunk corrupto no puede tumbar el catálogo");
         assert.strictEqual(conCorrupto.cuerpo.via, "hashes");
         assert.strictEqual(conCorrupto.cuerpo.items.length, S.items.length);
+        // …ni uno que no es una lista o que trae una fila que no es lo que escribe la carga (3-nov-2026): `r.t` o `d.codigo`
+        // de null la tumbaban, y una fila sin su `t` se saltaba con el MISMO número de filas (la cuenta de `registros` no la
+        // caza) y un ítem perdía un insumo: su costo directo bajaba en silencio (revisión adversaria)
+        {
+          const { comprimir: comprimirCat, descomprimir: descomprimirCat } = require("../lib/almacen.js");
+          await invocar(apuCargar, "/api/admin/apu/cargar-catalogo?forzar=true", CAB_TOKEN, { metodo: "POST" });
+          const sanas = descomprimirCat(await redis.get("apu:catalogo:chunk:0"));
+          assert.ok(Array.isArray(sanas) && sanas.length > 1, "premisa: el bloque 0 del catálogo trae filas");
+          const sanoCat = (await invocar(apuPublico, "/api/apu/catalogo")).cuerpo;
+          assert.strictEqual(sanoCat.via, "snapshot", "premisa: sano, se sirve la copia rápida");
+          const enteroCat = [sanoCat.items.length, sanoCat.insumos.length, sanoCat.regiones.length];
+          const otra = (f) => sanas.map((r, i) => (i === sanas.length - 1 ? f(r) : r));   // mismo número de filas
+          for (const [que, basura] of [["[null]", [null]], ["un objeto", { t: "item", d: {} }], ["una fila cambiada por 7", otra(() => 7)],
+            ["una fila sin su tipo", otra((r) => ({ _k: r._k, d: r.d }))], ["una fila de otro tipo", otra((r) => ({ ...r, t: "otro" }))],
+            ["una fila con `d` vacío", otra((r) => ({ ...r, d: null }))]]) {
+            await redis.set("apu:catalogo:chunk:0", comprimirCat(basura));
+            const conBasura = await invocar(apuPublico, "/api/apu/catalogo");
+            assert.strictEqual(conBasura.status, 200, `un chunk con ${que} no puede tumbar el catálogo`);
+            assert.deepStrictEqual([conBasura.cuerpo.via, conBasura.cuerpo.items.length, conBasura.cuerpo.insumos.length, conBasura.cuerpo.regiones.length],
+              ["hashes", ...enteroCat], `un chunk con ${que} invalida el snapshot y se cae a los hashes, entero`);
+          }
+        }
         // dejarlo sano para lo que venga después
         await invocar(apuCargar, "/api/admin/apu/cargar-catalogo?forzar=true", CAB_TOKEN, { metodo: "POST" });
       }
@@ -48555,9 +48743,13 @@ async function main() {
       const editorSrc = fs.readFileSync(path.join(RAIZ, "lib/handlers/apu/editor.js"), "utf8");
       assert.ok(/const PUBLICAS = \["catalogo", "inferir", "calcular"\]/.test(editorSrc),
         "`inferir` y `calcular` son públicas por decisión del dueño");
-      /* la guarda: los precios propios SOLO se leen con credencial */
-      assert.ok(/conCredencial\s*\?\s*await require\("\.\.\/\.\.\/apu\/precios\.js"\)\.leerPreciosUsuario/.test(editorSrc),
+      /* la guarda: los precios propios SOLO se leen con credencial. Desde el 3-nov-2026 se leen por
+         `preciosCorregidosDe` (que suma la herencia del consorcio), y la guarda la EJECUTA la iteración
+         («SIN CREDENCIAL no se lee ningún precio corregido»); aquí queda la forma y el censo */
+      assert.ok(/conCredencial\s*\?\s*await preciosCorregidosDe\(redis, perfil\)/.test(editorSrc),
         "sin credencial NO se pueden leer los precios corregidos del dueño: el perfil viaja en la petición");
+      assert.strictEqual((sinComentarios(editorSrc).match(/leerPreciosUsuario\(/g) || []).length, 2,
+        "los precios corregidos se leen SOLO dentro de preciosCorregidosDe (los del perfil y los heredados): otra lectura se saltaría la guarda o la herencia");
       assert.ok(/precios_propios_aplicados: conCredencial/.test(editorSrc),
         "la respuesta tiene que declarar si se aplicaron los precios propios");
       assert.ok(!/await presupuestoDe\(redis, datos, perfil\)/.test(editorSrc),
@@ -54280,7 +54472,8 @@ async function main() {
       assert.ok((await redis.scan("portada:*")).length > 0, "un delta que SÍ escribió filas tiene que reagregar la portada");
       medido39.conFilas = conFilas39.comandos;
 
-      /* ── E · el índice de baja: la sincronización empieza un ciclo nuevo como mucho cada 24 h (2-nov-2026) ── */
+      /* ── E · el índice de baja: la sincronización empieza un ciclo nuevo como mucho cada 44 h (2-nov-2026: 20 h;
+         3-nov-2026, decisión del dueño: 44 h, para que se publique cada 2 a 3 días) ── */
       const cerrada39 = (id) => ({
         estado_del_procedimiento: "Adjudicado", fase: "Presentación de oferta", adjudicado: "Si", respuestas_al_procedimiento: "4",
         fecha_de_publicacion_del: `${ano39}-01-10T00:00:00.000`, fecha_de_recepcion_de: `${ano39}-02-10T17:00:00.000`, fecha_adjudicacion: `${ano39}-02-20T00:00:00.000`,
@@ -54289,7 +54482,7 @@ async function main() {
         nombre_del_procedimiento: "CONSTRUCCIÓN DE OBRA CIVIL CERRADA", codigo_principal_de_categoria: "V1.72141000", urlproceso: "https://secop/l3c",
         id_del_proceso: id, ":id": `l3c-${id}`, ":updated_at": new Date(Date.now() - 60e3).toISOString().replace("Z", ""),
       });
-      for (const [horas, empieza] of [[2, false], [19, false], [21, true]]) {
+      for (const [horas, empieza] of [[2, false], [21, false], [43, false], [45, true]]) {
         await corpusAlDia39(new Date(Date.now() - 3600e3).toISOString());
         await escribirJ39(redis, CLAVES.indiceBajaMeta, { generado: new Date(Date.now() - horas * 3600e3).toISOString(), procesos_analizados: 1 });
         socrata.setDataset([cerrada39(`CO1.L3.CERRADA.${horas}`)]);
