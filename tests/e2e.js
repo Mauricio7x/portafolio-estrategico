@@ -3865,8 +3865,11 @@ async function main() {
     // UNA HORA AMBIGUA ES UNA HORA AUSENTE: «5:00» sin marca podría ser la tarde
     assert.strictEqual(Cm.horaEnLinea("Manifestación de interés 14/09/2026 5:00"), null, "sin marca a.m./p.m. y con hora ≤ 12 no se adivina");
     assert.strictEqual(Cm.horaEnLinea("Manifestación de interés 14/09/2026"), null, "sin hora, null: la ausencia no se rellena");
-    // los demás hitos NO cambian de criterio
-    assert.strictEqual(Cm.extraerHitos("Cierre: presentación de ofertas 25/09/2026 al 30/09/2026").hitos[0].fecha, "2026-09-25", "el resto de hitos sigue tomando la primera fecha");
+    /* los demás hitos: desde el 3-nov-2026 un PLAZO con rango EXPLÍCITO («del … al …») toma el fin, como
+       la manifestación (bloque «unidad calendario del proceso»); sin conector entre las dos fechas sigue
+       tomando la primera, que es la regla que este bloque fijó: jamás la fecha más tarde por adivinar */
+    assert.strictEqual(Cm.extraerHitos("Cierre: presentación de ofertas 25/09/2026 al 30/09/2026").hitos[0].fecha, "2026-09-30", "un rango explícito del cierre vence en su último día");
+    assert.strictEqual(Cm.extraerHitos("Cierre: presentación de ofertas 25/09/2026 · 30/09/2026").hitos[0].fecha, "2026-09-25", "dos fechas sin conector: la primera, como siempre");
     /* UN EJEMPLO ENTRE CORCHETES NO ES UN HITO (18-oct-2026): el de la plantilla entraba como
        adjudicación de 2020 y tapaba la fecha real. Contra el árbol anterior, sale 2020-02-10. */
     const conEjemplo = Cm.extraerHitos("[Por ejemplo, si la audiencia de adjudicación se realiza el 10 de febrero de 2020, el plazo empieza a contar desde el día siguiente.] La audiencia de adjudicación se realizará el 25 de noviembre de 2026.").hitos;
@@ -4129,6 +4132,376 @@ async function main() {
       assert.deepStrictEqual([fac.total, fac.sin_vencer, fac.abiertas, fac.por_abrir, fac.vencidas], [2, 1, 0, 1, 1], `por_abrir se cuenta aparte: ${JSON.stringify(fac)}`);
     }
     console.log("· unidad manifestación calibrada: la cerca del rótulo de SECOP II (y su gemela), el cierre sin hora, el censo de candidatas de cierre, la fecha LÍMITE del renglón, «vencida» solo constatada, la hora de punta a punta, el anticipo retenido, la señal publicada fase × estado (112/298 medidos por el dueño) y la fase en las DOS direcciones (por abrir · cerrada), con el refresco de la portada leyéndola");
+  }
+
+  /* ═══ unidad: EL CALENDARIO DEL PROCESO (3-nov-2026) ══════════════════════
+     Encargo del dueño (fase 1): «línea de tiempo en el expediente con las fechas
+     publicadas (observaciones, respuesta, cierre, evaluación, subsanación,
+     audiencia, adjudicación), cada una con su fuente. En Mis procesos, «lo próximo
+     que vence»». Medido ANTES con las celdas literales de cinco cronogramas reales
+     de menor cuantía (detekta-lector, muestra/fichas_A-E): el lector leía 30 fechas
+     bien, 18 no y 4 FALSAS. Cada aserción marcada [MUT] FALLA contra el árbol
+     anterior (se ejecutó contra él antes de commitear). */
+  bqCAL: { if (!corre("unidad calendario del proceso")) break bqCAL;
+    const Cr = require("../lib/cronograma.js");
+    const Dp = require("../lib/documentos_proceso.js");
+    const Mn = require("../lib/manifestacion.js");
+    const Sg = require("../lib/seguimiento.js");
+    const Hb = require("../lib/habiles.js");
+    const Xp = require("../public/expediente.js");
+    const Ks = require("../public/casillero.js");
+    const leer = (lineas) => Object.fromEntries(Cr.extraerHitos(lineas.join("\n")).hitos.map((h) => [h.id, h.fecha]));
+
+    /* (1) LOS CINCO CRONOGRAMAS REALES, rótulo + valor de cada fila en el orden de la hoja.
+       Los cuatro Excel son el «Anexo2 Cronograma Menor Cuantia V3» de Colombia Compra; la
+       ficha A es un PDF y va con las letras revueltas que deja el lector, tal cual. */
+    const REALES = {
+      A: ["P púu bb ll ii cc aación del aviso de convocatoria 28 de Agosto de 2026", "P deu fb inli ic tia vc oión del pliego de condiciones 8 de Septiembre de 2026",
+        "Plazo para manifestación de interés 11 de septiembre de 2026", "Realización del sorteo 14 de septiembre de 2026", "Fecha de cierre [presentación de ofertas] 18 de septiembre de 2026",
+        "Publicación del informe preliminar de 22 de septiembre de 2026", "evaluación de las ofertas (plazo máximo 25 de septiembre de 2026",
+        "P deu b lali c oa feci ró tan del informe final de evaluación 29 de septiembre de 2026",
+        "adjudicación o de declaratoria de desierto [Enlace SECOP II] Dto. 1082/15 art. 2.2.1.1.1.7.1. Firma del contrato 02 de octubre de 2026",
+        "Publicación acto administrativo de 01 de octubre de 2026"],
+      B: ["Publicación del aviso de convocatoria pública 04/08/2026", "Plazo para presentar observaciones al proyecto de pliego de condiciones 12/08/2026",
+        "Expedición y publicación del acto administrativo de apertura del proceso de selección 28/08/2026", "Plazo para manifestación de interés 31/08/2026",
+        "Realización del sorteo 02/09/2026", "Fecha de cierre [presentación de ofertas] 07/09/2026", "Publicación del informe preliminar de evaluación 16/09/2026",
+        "Traslado para observaciones al informe de evaluación de las ofertas (plazo máximo para presentación de subsanaciones) 21/09/2026",
+        "Publicación del informe final de evaluación de la oferta 23/09/2026", "Publicación acto administrativo de adjudicación o de declaratoria de desierto 24/09/2026"],
+      C: ["Publicación del aviso de convocatoria pública 29/04/2026", "Respuesta a observaciones y sugerencias al proyecto de pliego de condiciones 07/05/2026",
+        "Expedición y publicación del acto administrativo de apertura del proceso de selección 08/05/2026", "Plazo para manifestación de interés 13/05/2026",
+        "Realización del sorteo 14/05/2026", "Fecha de cierre [presentación de ofertas] 15 de mayo de 2026 5:00 pm", "Publicación del informe preliminar de evaluación 20/05/2026",
+        "Traslado para observaciones al informe de evaluación de las ofertas (plazo máximo para presentación de subsanaciones) 27/05/2026",
+        "Publicación del informe final de evaluación de la oferta 28/05/2026", "Publicación acto administrativo de adjudicación o de declaratoria de desierto 29/05/2026"],
+      D: ["Publicación del aviso de convocatoria pública 25 de junio de 2026", "Plazo para presentar observaciones al proyecto de pliego de condiciones Hasta el 03 de julio de 2026",
+        "Plazo para manifestación de interés de limitar la convocatoria a Mipymes 03 de julio de 2026", "Expedición y publicación del acto administrativo de apertura del proceso de selección 06 de julio de 2026",
+        "Plazo para manifestación de interés Hasta el 09 de julio de 2026", "Realización del sorteo N/A", "Plazo máximo para la expedición de Adendas 10 de julio de 2026",
+        "Fecha de cierre [presentación de ofertas] 15 de julio de 2026, hora: 8:00 am", "Publicación del informe preliminar de evaluación 16 de julio de 2026",
+        "Traslado para observaciones al informe de evaluación de las ofertas (plazo máximo para presentación de subsanaciones) hasta 22 de julio de 2026",
+        "Publicación del informe final de evaluación de la oferta 23 de julio de 2026", "Publicación acto administrativo de adjudicación o de declaratoria de desierto 23 de julio de 2026"],
+      E: ["Publicación del aviso de convocatoria pública 07/07/2026", "Plazo para presentar observaciones al proyecto de pliego de condiciones 15/07/2026",
+        "Plazo para manifestación de interés de limitar la convocatoria a Mipymes 16/07/2026", "Expedición y publicación del acto administrativo de apertura del proceso de selección 17/07/2026",
+        "Plazo para manifestación de interés 21/07/2026", "Realización del sorteo 23/07/2026", "Plazo máximo para la expedición de Adendas 27/07/2026",
+        "Fecha de cierre [presentación de ofertas] 29/07/2026", "Publicación del informe preliminar de evaluación 14/08/2026",
+        "Traslado para observaciones al informe de evaluación de las ofertas (plazo máximo para presentación de subsanaciones) 20/08/2026",
+        "Publicación del informe final de evaluación de la oferta 24/08/2026", "Publicación acto administrativo de adjudicación o de declaratoria de desierto 25/08/2026"],
+    };
+    /* La verdad es la de las fichas (cada celda citada y verificada). En A la adjudicación tiene el
+       rótulo partido en dos renglones y el pliego definitivo está revuelto: no se le exigen al lector,
+       pero leerlos con OTRA fecha sí es un error. */
+    const VERDAD = {
+      A: { aviso: "2026-08-28", manifestacion: "2026-09-11", sorteo: "2026-09-14", cierre: "2026-09-18", informe_evaluacion: "2026-09-22", informe_final: "2026-09-29", firma: "2026-10-02" },
+      B: { aviso: "2026-08-04", observaciones_proyecto: "2026-08-12", pliego_definitivo: "2026-08-28", manifestacion: "2026-08-31", sorteo: "2026-09-02", cierre: "2026-09-07", informe_evaluacion: "2026-09-16", traslado: "2026-09-21", informe_final: "2026-09-23", adjudicacion: "2026-09-24" },
+      C: { aviso: "2026-04-29", respuesta_observaciones_proyecto: "2026-05-07", pliego_definitivo: "2026-05-08", manifestacion: "2026-05-13", sorteo: "2026-05-14", cierre: "2026-05-15", informe_evaluacion: "2026-05-20", traslado: "2026-05-27", informe_final: "2026-05-28", adjudicacion: "2026-05-29" },
+      D: { aviso: "2026-06-25", observaciones_proyecto: "2026-07-03", limitacion_mipyme: "2026-07-03", pliego_definitivo: "2026-07-06", manifestacion: "2026-07-09", adendas: "2026-07-10", cierre: "2026-07-15", informe_evaluacion: "2026-07-16", traslado: "2026-07-22", informe_final: "2026-07-23", adjudicacion: "2026-07-23" },
+      E: { aviso: "2026-07-07", observaciones_proyecto: "2026-07-15", limitacion_mipyme: "2026-07-16", pliego_definitivo: "2026-07-17", manifestacion: "2026-07-21", sorteo: "2026-07-23", adendas: "2026-07-27", cierre: "2026-07-29", informe_evaluacion: "2026-08-14", traslado: "2026-08-20", informe_final: "2026-08-24", adjudicacion: "2026-08-25" },
+    };
+    for (const [l, filas] of Object.entries(REALES)) {
+      const leidos = leer(filas);
+      for (const [id, f] of Object.entries(VERDAD[l])) assert.strictEqual(leidos[id], f, `[MUT] ficha ${l}: ${id} tiene que ser ${f} (leyó ${leidos[id]})`);
+      for (const id of Object.keys(leidos)) assert.ok(id in VERDAD[l], `[MUT] ficha ${l}: «${id}» (${leidos[id]}) no es un hito de ese cronograma: no se inventa`);
+    }
+    /* las dos FALSAS más caras, dichas aparte: el plazo para avisar que le interesa salía de la fila de
+       limitar a Mipymes, 6 y 5 días ANTES del real (el plazo que puede esconder un proceso) */
+    assert.strictEqual(leer(REALES.D).manifestacion, "2026-07-09", "[MUT] D: la limitación a Mipymes no es la manifestación de interés");
+    assert.strictEqual(leer(REALES.E).manifestacion, "2026-07-21", "[MUT] E: ídem");
+    // el renglón revuelto de A: la fecha es de la fila que abre más cerca de ella (la firma), no de la adjudicación
+    assert.strictEqual(leer(REALES.A).adjudicacion, undefined, "[MUT] A: «adjudicación … Firma del contrato 02 de octubre» no da la adjudicación con la fecha de la firma");
+
+    /* (2) FUERA DE MUESTRA: el cronograma de la convocatoria UPN-VAD-CP-016-2026 (régimen especial),
+       que no se usó para escribir las reglas, con los renglones que da su texto. El árbol anterior leía
+       «Plazo para presentar observaciones AL INFORME de evaluación 23 de octubre» como el plazo de
+       observaciones AL PLIEGO: 14 días MÁS TARDE que el real (9 de octubre). */
+    {
+      const upn = ["Publicación del aviso de Convocatoria Pública 6 de octubre de 2026 Página web del SECOP: www.colombiacompra.gov.co",
+        "Fecha límite para presentación de observaciones 9 de octubre de 2026",
+        "www.colombiacompra.gov.co Respuestas a las Observaciones de los Términos de Referencia 14 de octubre de 2026 Página web del SECOP: www.colombiacompra.gov.co",
+        "Cierre del proceso de selección 19 de octubre de 2026", "Apertura de ofertas 19 de octubre de 2026",
+        "Plazo para presentar observaciones al informe de evaluación 23 de octubre de 2026 Página web del SECOP: www.colombiacompra.gov.co",
+        "Respuestas a las observaciones al informe inicial de evaluación e informe final de evaluación",
+        "Publicación del acto de adjudicación 28 de octubre de 2026 Página web del SECOP: www.colombiacompra.gov.co"];
+      const r = leer(upn);
+      assert.strictEqual(r.observaciones_pliego, "2026-10-09", `[MUT] el plazo de observaciones al pliego es el 9, no el del informe: ${JSON.stringify(r)}`);
+      assert.strictEqual(r.traslado, "2026-10-23", "[MUT] «observaciones al informe» es el traslado");
+      assert.strictEqual(r.respuesta_observaciones_pliego, "2026-10-14", "[MUT] la respuesta de la entidad tiene su hito");
+      assert.deepStrictEqual([r.aviso, r.cierre, r.adjudicacion], ["2026-10-06", "2026-10-19", "2026-10-28"]);
+      // y el renglón del informe SOLO —sin un plazo de observaciones antes que lo tape— tampoco es el del pliego
+      const soloInforme = Cr.extraerHitos("Plazo para presentar observaciones al informe de evaluación 23 de octubre de 2026").hitos;
+      assert.deepStrictEqual(soloInforme.map((h) => h.id), ["traslado"], `[MUT] «observaciones al informe» nunca es el plazo de observaciones al pliego: ${JSON.stringify(soloInforme)}`);
+    }
+
+    /* (3) EL RANGO EXPLÍCITO: en un PLAZO vale el fin (y el inicio viaja en `desde`); en un EVENTO, el
+       inicio. Dos fechas SIN conector no son un rango: se toma la primera (lo que da un plazo más
+       temprano, nunca uno más tarde que el real). */
+    {
+      const obs = Cr.extraerHitos("Plazo para presentar observaciones al pliego de condiciones definitivo 16/10/2026 hasta 18/10/2026").hitos[0];
+      assert.deepStrictEqual([obs.id, obs.fecha, obs.desde], ["observaciones_pliego", "2026-10-18", "2026-10-16"], `[MUT] el plazo vence el 18: ${JSON.stringify(obs)}`);
+      const cie = Cr.extraerHitos("Cierre: presentación de ofertas 25/09/2026 al 30/09/2026").hitos[0];
+      assert.deepStrictEqual([cie.fecha, cie.desde], ["2026-09-30", "2026-09-25"], "[MUT] del cierre en rango vale el último día (antes el primero: cinco días antes)");
+      const del = Cr.extraerHitos("Plazo para presentar observaciones al proyecto de pliego Del 1 de octubre de 2026 al 8 de octubre de 2026").hitos[0];
+      assert.strictEqual(del.fecha, "2026-10-08", "[MUT] «Del … al …» con meses en letras");
+      const ev = Cr.extraerHitos("Publicación del proyecto de pliego del 01/10/2026 al 08/10/2026").hitos[0];
+      assert.deepStrictEqual([ev.id, ev.fecha, ev.hasta], ["proyecto_pliego", "2026-10-01", "2026-10-08"], "un EVENTO es el día en que pasa: el inicio");
+      const pegadas = Cr.extraerHitos("Fecha de cierre 20/10/2026 · Publicación 27/10/2026").hitos[0];
+      assert.deepStrictEqual([pegadas.fecha, pegadas.desde], ["2026-10-20", undefined], "dos filas pegadas no son un rango: jamás la fecha más tarde");
+      assert.strictEqual(Cr.rangoEnLinea("Cierre 20/10/2026 y 27/10/2026"), null, "«y» no es un conector de rango");
+      const conHora = Cr.extraerHitos("Manifestación de interés   14/09/2026 8:00 a.m.   hasta 16/09/2026 5:00 p.m.").hitos[0];
+      assert.deepStrictEqual([conHora.fecha, conHora.hora, conHora.desde], ["2026-09-16", "17:00", "2026-09-14"], "la manifestación sigue tomando el límite, con su hora");
+    }
+
+    /* (4) LOS HITOS QUE FALTABAN y los rótulos que se confundían */
+    {
+      const t = ["Audiencia de asignación de riesgos y aclaración de pliegos 14/10/2026 10:00 a.m.", "Plazo para subsanar 06/11/2026",
+        "Respuesta a observaciones al pliego de condiciones definitivo 20/10/2026", "Plazo para presentar observaciones al pliego de condiciones definitivo 18/10/2026",
+        "Respuesta a las observaciones al informe de evaluación 10/11/2026"];
+      const r = Object.fromEntries(Cr.extraerHitos(t.join("\n")).hitos.map((h) => [h.id, h]));
+      assert.deepStrictEqual([r.audiencia_riesgos && r.audiencia_riesgos.fecha, r.audiencia_riesgos && r.audiencia_riesgos.hora], ["2026-10-14", "10:00"], "[MUT] la audiencia de riesgos");
+      assert.strictEqual(r.subsanacion && r.subsanacion.fecha, "2026-11-06", "[MUT] el plazo para subsanar");
+      assert.strictEqual(r.observaciones_pliego && r.observaciones_pliego.fecha, "2026-10-18",
+        "[MUT] una RESPUESTA que va antes en el texto no es el plazo de observaciones (era el 20, dos días DESPUÉS del plazo real)");
+      assert.strictEqual(r.respuesta_observaciones_pliego && r.respuesta_observaciones_pliego.fecha, "2026-10-20");
+      assert.strictEqual(r.respuesta_observaciones_informe && r.respuesta_observaciones_informe.fecha, "2026-11-10", "[MUT] la respuesta a las observaciones al informe no es el traslado");
+      assert.strictEqual(r.traslado, undefined, "ningún renglón de este texto es el traslado");
+      for (const h of Cr.HITOS) assert.ok(["plazo", "evento"].includes(h.tipo) && typeof h.accion === "boolean" && ["antes", "despues"].includes(h.etapa) && h.corta, `cada hito declara tipo, acción, etapa y rótulo corto: ${h.id}`);
+    }
+
+    /* (5) SI SECOP II Y EL DOCUMENTO TRAEN EL MISMO HITO, MANDA SECOP II («en caso de alguna
+       inconsistencia prevalece lo establecido en la plataforma», pág. 6 del pliego tipo de la ficha B)
+       y lo del documento viaja al lado. Antes mandaba el documento. */
+    {
+      const ds = Cr.hitosDeFila({ fecha_de_publicacion_del: "2026-10-01T00:00:00", fecha_cierre: "2026-10-27" });
+      const pl = Cr.extraerHitos("Presentación de ofertas 20/10/2026 10:00 a.m.").hitos;
+      const c = Cr.combinarHitos(ds, pl).find((h) => h.id === "cierre");
+      assert.deepStrictEqual([c.fecha, c.origen], ["2026-10-27", "dataset"], `[MUT] el cierre es el de la plataforma: ${JSON.stringify(c)}`);
+      assert.strictEqual(c.otra_fecha && c.otra_fecha.fecha, "2026-10-20", "[MUT] y lo que dice el documento no se calla");
+      const igual = Cr.combinarHitos(ds, Cr.extraerHitos("Fecha de cierre 27/10/2026 9:00 a.m.").hitos).find((h) => h.id === "cierre");
+      assert.deepStrictEqual([igual.fecha, igual.hora, igual.otra_fecha], ["2026-10-27", "09:00", undefined], "con el mismo día, el documento aporta la hora");
+    }
+
+    /* (6) EL LECTOR DE DOCUMENTOS GUARDA TODAS LAS FECHAS (el cronograma tipo trae 14 filas; el tope era
+       12) y sus hechos se rehacen solos con estas reglas, sin bajar nada ni releer los Formularios 1. */
+    {
+      const h = Dp.hechosDeTexto(REALES.E.join("\n") + "\nAudiencia de asignación de riesgos 18/07/2026\nRespuesta a observaciones al pliego 19/07/2026", { tipo: "cronograma" });
+      assert.ok(h.hitos.length >= 14, `[MUT] no se corta en 12: ${h.hitos.length}`);
+      assert.ok(Dp.hechosVersion().endsWith(`|c${Cr.VERSION_HITOS}`), "[MUT] la versión de los hechos lleva la del lector de fechas");
+      assert.ok(!/\|c/.test(String(Dp.VERSION)), "la versión del plan de lectura NO cambia: eso relee los Formularios 1 en Excel");
+    }
+
+    /* (7) LAS FECHAS DE VARIOS DOCUMENTOS EN UNA LÍNEA DE TIEMPO: la adenda nueva gana a la vieja y al
+       cronograma; lo que NARRA fechas (un informe, una resolución) y lo que subió un proponente no
+       hablan por la entidad; la manifestación se queda en su módulo; y el cronograma que no se leyó se dice. */
+    {
+      const hechos = (txt, tipo) => Dp.hechosDeTexto(txt, { tipo });
+      const docs = {
+        indice: { archivos: [
+          { id_documento: "1", nombre: "Anexo 2 Cronograma.pdf", tipo: "cronograma", legible: true, de_la_entidad: true, fecha_carga: "2026-10-01" },
+          { id_documento: "2", nombre: "Adenda 1.pdf", tipo: "adenda", legible: true, de_la_entidad: true, fecha_carga: "2026-10-05" },
+          { id_documento: "3", nombre: "Adenda 2.pdf", tipo: "adenda", legible: true, de_la_entidad: true, fecha_carga: "2026-10-08" },
+          { id_documento: "4", nombre: "Informe de evaluación.pdf", tipo: "informe_evaluacion", legible: true, de_la_entidad: true, fecha_carga: "2026-10-20" },
+          { id_documento: "5", nombre: "Pliego.pdf", tipo: "pliego", legible: true, de_la_entidad: false, fecha_carga: "2026-10-20" },
+          { id_documento: "6", nombre: "Anexo2 Cronograma Menor Cuantia V3.xlsm", tipo: "cronograma", legible: false, de_la_entidad: true, fecha_carga: "2026-10-01" },
+        ] },
+        leidos: {
+          1: { nombre: "Anexo 2 Cronograma.pdf", tipo: "cronograma", tipo_legible: "Cronograma", hechos: hechos("\f3\nFecha de cierre [presentación de ofertas] 15/10/2026\nPlazo para presentar observaciones al pliego 08/10/2026\nPlazo para manifestación de interés 06/10/2026", "cronograma") },
+          2: { nombre: "Adenda 1.pdf", tipo: "adenda", tipo_legible: "Adenda", hechos: hechos("Fecha de cierre 16/10/2026", "adenda") },
+          3: { nombre: "Adenda 2.pdf", tipo: "adenda", tipo_legible: "Adenda", hechos: hechos("Fecha de cierre 17/10/2026", "adenda") },
+          4: { nombre: "Informe de evaluación.pdf", tipo: "informe_evaluacion", tipo_legible: "Informe de evaluación", hechos: hechos("El cierre se practicó el 15/10/2026", "informe_evaluacion") },
+          5: { nombre: "Pliego.pdf", tipo: "pliego", tipo_legible: "Pliego de condiciones", hechos: hechos("Audiencia de adjudicación 30/10/2026", "pliego") },
+        },
+      };
+      const r = Dp.hitosDeDocumentos(docs);
+      const por = Object.fromEntries(r.hitos.map((h) => [h.id, h]));
+      assert.strictEqual(por.cierre.fecha, "2026-10-17", "la adenda MÁS NUEVA manda");
+      assert.strictEqual(por.cierre.documento, "Adenda 2.pdf");
+      assert.deepStrictEqual([por.observaciones_pliego.fecha, por.observaciones_pliego.documento, por.observaciones_pliego.pagina], ["2026-10-08", "Anexo 2 Cronograma.pdf", 3], "lo que la adenda no toca sale del cronograma, con su página");
+      assert.strictEqual(por.manifestacion, undefined, "la manifestación tiene su módulo y sus guardas: no entra por aquí");
+      assert.strictEqual(por.adjudicacion, undefined, "un archivo que subió un proponente no habla por la entidad");
+      assert.deepStrictEqual(r.cronograma_sin_leer.map((x) => x.nombre), ["Anexo2 Cronograma Menor Cuantia V3.xlsm"], "el cronograma en Excel que no se lee se nombra");
+      assert.ok(/hoja de cálculo/.test(r.cronograma_sin_leer[0].motivo));
+      /* el peso que viaja: con el peor caso (25 fechas, renglones y nombres enormes) el registro no pasa de 20 fechas ni de ~4 KB */
+      const enorme = Array.from({ length: 25 }, (_, i) => ({ id: Cr.HITOS[i % Cr.HITOS.length].id, fecha: "2026-10-10", evidencia: "x".repeat(900), documento: "d".repeat(500), tipo_documento: "t".repeat(200), pagina: 3 }));
+      const comp = Cr.compactarHitos(enorme);
+      const guardado = JSON.stringify(Mn.serializarHitos(comp, [], "2026-10-01"));
+      assert.ok(comp.length <= Cr.MAX_HITOS_GUARDADOS && guardado.length < 3500, `el registro está acotado: ${comp.length} fechas, ${guardado.length} bytes (con 200 guardados, < 0,7 MB en el peor caso)`);
+      const vuelta = Mn.expandirHitos(JSON.parse(guardado)).hitos;
+      assert.deepStrictEqual([vuelta.length, vuelta[0].etiqueta, vuelta[0].documento.length, vuelta[0].evidencia.length, vuelta[0].evidencia.slice(-1)], [comp.length, Cr.HITO_POR_ID[comp[0].id].etiqueta, 80, 100, "…"],
+        "lo guardado vuelve completo: el rótulo se rehace, el documento se repone en cada fecha y lo recortado termina en «…»");
+      assert.deepStrictEqual(Cr.compactarHitos([{ id: "cierre", fecha: "2026-02-31" }, { id: "inventado", fecha: "2026-10-10" }]), [], "un día que no existe o un hito desconocido no se guardan");
+    }
+
+    /* (8) EL REGISTRO EN UPSTASH: se escribe al guardar el índice (op=documentos, con credencial), se lee
+       con UN comando, se BORRA cuando ya no hay nada que decir y un valor corrupto no tumba nada. */
+    {
+      const DocsH = require("../lib/handlers/pliego/documentos.js");
+      const idA = "CO1.REQ.CAL-REG", idB = "CO1.REQ.CAL-NADA";
+      await redis.del(Mn.CLAVE_CRONOGRAMA_HITOS);
+      await DocsH.escribirDocs(redis, idA, { id_proceso: idA, indice: { archivos: [{ id_documento: "1", nombre: "Cronograma.pdf", tipo: "cronograma", legible: true, de_la_entidad: true }] },
+        leidos: { 1: { nombre: "Cronograma.pdf", tipo: "cronograma", tipo_legible: "Cronograma", hechos: Dp.hechosDeTexto("Plazo para presentar observaciones al pliego 08/10/2026", { tipo: "cronograma" }) } } });
+      await redis.hset(Mn.CLAVE_CRONOGRAMA_HITOS, { "CO1.REQ.CAL-ROTO": "{esto no es json" });
+      const leidos = await Mn.leerHitosCronograma(redis, [idA, idB, "CO1.REQ.CAL-ROTO"]);
+      assert.deepStrictEqual(Object.keys(leidos), [idA], `[MUT] guardar el índice publica sus fechas; lo corrupto y lo ausente no existen: ${JSON.stringify(leidos)}`);
+      assert.strictEqual(leidos[idA].hitos[0].id, "observaciones_pliego");
+      // un índice que ya no dice ninguna fecha borra el registro viejo: no puede seguir hablando
+      await DocsH.escribirDocs(redis, idA, { id_proceso: idA, indice: { archivos: [] }, leidos: {} });
+      assert.strictEqual(await redis.hget(Mn.CLAVE_CRONOGRAMA_HITOS, idA), null, "sin fechas, el campo se borra");
+      assert.deepStrictEqual(await Mn.leerHitosCronograma({ hmget: async () => { throw new Error("base caída"); } }, [idA]), {}, "una base que no responde es «sin registro», no un error");
+      await redis.del(Mn.CLAVE_CRONOGRAMA_HITOS);
+    }
+
+    /* (9) LO QUE PIDE ALGO EN SU ETAPA: una sola regla para las alertas y para «lo próximo que vence».
+       Con las fechas de los documentos un proceso pasa de 4 a ~15 y avisarlas todas es ruido. */
+    {
+      assert.strictEqual(Sg.hitoPide("observaciones_pliego", "interesa"), true);
+      assert.strictEqual(Sg.hitoPide("observaciones_pliego", "presentado"), false, "presentada la oferta, observar el pliego ya pasó");
+      assert.strictEqual(Sg.hitoPide("traslado", "interesa"), false, "el informe de evaluación no le toca a quien no presentó");
+      assert.strictEqual(Sg.hitoPide("traslado", "presentado"), true, "y a quien presentó sí: es cuando subsana");
+      assert.strictEqual(Sg.hitoPide("respuesta_observaciones_pliego", "interesa"), false, "una respuesta de la entidad no le pide nada");
+      assert.strictEqual(Sg.hitoPide("manifestacion", "manifestado"), false, "a quien ya avisó no se le pide avisar");
+      assert.strictEqual(Sg.hitoPide("cierre", "perdido"), false, "la historia no pide nada");
+      assert.strictEqual(Sg.hitoPide("publicacion", "interesa"), null, "lo que no es del cronograma lo decide el código de siempre");
+      const hs = [{ id: "observaciones_pliego", etiqueta: "x", fecha: "2026-10-08", origen: "pliego" }, { id: "audiencia_riesgos", etiqueta: "x", fecha: "2026-10-07", origen: "pliego" },
+        { id: "cierre", etiqueta: "x", fecha: "2026-10-15", origen: "dataset" }, { id: "traslado", etiqueta: "x", fecha: "2026-10-22", origen: "pliego" }];
+      const pv = Sg.proximoVencimiento(hs, "2026-10-06", "interesa");
+      assert.deepStrictEqual([pv.id, pv.dias, pv.corta], ["observaciones_pliego", 2, "Observaciones al pliego"], "una audiencia no «vence»: el próximo plazo es el de observaciones");
+      assert.strictEqual(Sg.proximoVencimiento(hs, "2026-10-16", "presentado").id, "traslado", "a quien presentó, lo próximo es el traslado del informe");
+      assert.strictEqual(Sg.proximoVencimiento(hs, "2026-10-30", "presentado"), null, "sin plazos por delante, null: nunca una fecha inventada");
+    }
+
+    /* (10) DE PUNTA A PUNTA: un proceso guardado en Mis procesos, con su cronograma leído. El cierre de
+       SECOP II gana al del documento, lo próximo que vence es lo que le pide algo, el centro de alertas
+       avisa solo eso y la lista viaja ligera. Las fechas son relativas a HOY en Colombia. */
+    {
+      const routerPerfilCal = require("../api/perfil.js");
+      const DocsH = require("../lib/handlers/pliego/documentos.js");
+      const PERF = "calendario";
+      const hoy = Hb.hoyColombia();
+      const d = (n) => Hb.sumarDias(hoy, n);
+      const dmy = (iso) => iso.split("-").reverse().join("/");
+      const id = "CO1.REQ.CAL-PUNTA";
+      const foto = { id_del_proceso: id, nombre_del_procedimiento: "OBRA DEL CALENDARIO", entidad: "ALCALDÍA DE PRUEBA", modalidad_de_contratacion: "Licitación pública",
+        precio_base: "250000000", fecha_de_publicacion_del: `${d(-6)}T08:00:00.000`, fecha_de_recepcion_de: `${d(10)}T17:00:00.000` };
+      const g = await invocar(routerPerfilCal, "/api/perfil?op=seguimiento", CAB_TOKEN, { metodo: "POST", body: { perfil: PERF, id, estado: "interesa", foto } });
+      assert.strictEqual(g.status, 200, JSON.stringify(g.cuerpo).slice(0, 200));
+      const texto = ["\f2", `Publicación del aviso de convocatoria pública ${dmy(d(-6))}`,
+        `Plazo para presentar observaciones al pliego de condiciones ${dmy(d(1))} hasta ${dmy(d(2))}`,
+        `Audiencia de asignación de riesgos ${dmy(d(3))} 10:00 a.m.`, `Respuesta a observaciones al pliego de condiciones ${dmy(d(4))}`,
+        `Fecha de cierre [presentación de ofertas] ${dmy(d(9))} 9:00 a.m.`, `Publicación del informe preliminar de evaluación ${dmy(d(14))}`,
+        `Traslado para observaciones al informe de evaluación de las ofertas (plazo máximo para presentación de subsanaciones) ${dmy(d(17))}`].join("\n");
+      await DocsH.escribirDocs(redis, id, { id_proceso: id, indice: { archivos: [{ id_documento: "7", nombre: "Anexo 2 - Cronograma.pdf", tipo: "cronograma", legible: true, de_la_entidad: true, fecha_carga: d(-6) }] },
+        leidos: { 7: { nombre: "Anexo 2 - Cronograma.pdf", tipo: "cronograma", tipo_legible: "Cronograma", fecha_carga: d(-6), hechos: Dp.hechosDeTexto(texto, { tipo: "cronograma" }) } } });
+      const lista = (await invocar(routerPerfilCal, `/api/perfil?op=seguimiento&perfil=${PERF}`, CAB_TOKEN)).cuerpo;
+      const p = lista.procesos.find((x) => x.id === id);
+      assert.ok(p, "el proceso está en la lista");
+      const ids = p.hitos.map((h) => h.id);
+      for (const x of ["observaciones_pliego", "audiencia_riesgos", "respuesta_observaciones_pliego", "informe_evaluacion", "traslado", "cierre"]) assert.ok(ids.includes(x), `[MUT] Mis procesos ve «${x}»: ${ids.join(", ")}`);
+      assert.strictEqual(p.hitos.find((h) => h.id === "cierre").fecha, d(10), "[MUT] el cierre es el de SECOP II, no el del documento");
+      assert.deepStrictEqual([p.proximo_vencimiento && p.proximo_vencimiento.id, p.proximo_vencimiento && p.proximo_vencimiento.dias], ["observaciones_pliego", 2], `[MUT] lo próximo que vence: ${JSON.stringify(p.proximo_vencimiento)}`);
+      assert.ok(p.hitos.filter((h) => h.origen === "pliego").every((h) => h.evidencia === undefined && h.fuente === undefined && h.otra_fecha === undefined), "la lista viaja ligera: el renglón, la fuente y la otra fecha van en el expediente");
+      const alertas = lista.alertas.filter((a) => a.id === id).map((a) => a.hito || a.tipo);
+      assert.ok(alertas.includes("observaciones_pliego") && alertas.includes("audiencia_riesgos"), `[MUT] avisa lo que le pide algo: ${alertas}`);
+      assert.ok(!alertas.includes("respuesta_observaciones_pliego"), `una respuesta de la entidad no avisa: ${alertas}`);
+      // el expediente: cada fecha con su documento y su página, y la del documento que contradice a SECOP II
+      const uno = (await invocar(routerPerfilCal, `/api/perfil?op=seguimiento&perfil=${PERF}&expediente=${encodeURIComponent(id)}`, CAB_TOKEN)).cuerpo;
+      const pe = uno.proceso;
+      assert.ok(pe && pe.id === id, `el expediente devuelve el proceso: ${JSON.stringify(uno).slice(0, 200)}`);
+      const obs = (pe.hitos || []).find((h) => h.id === "observaciones_pliego");
+      assert.ok(obs && /Cronograma «Anexo 2 - Cronograma\.pdf», pág\. 2/.test(obs.fuente), `[MUT] la fuente nombra el documento y la página: ${JSON.stringify(obs)}`);
+      assert.strictEqual(obs.desde, d(1), "y el rango viaja");
+      const cie = (pe.hitos || []).find((h) => h.id === "cierre");
+      assert.ok(cie && cie.otra_fecha && cie.otra_fecha.fecha === d(9), `[MUT] el documento dice otro cierre y se dice: ${JSON.stringify(cie)}`);
+      // la pantalla: «lo próximo que vence» en la fila, con SU fecha, y la línea de tiempo del expediente
+      const s = Ks.senalDe(p);
+      assert.deepStrictEqual([s.urgencia, s.texto], ["media", "Observaciones al pliego: vence en 2 días"], `[MUT] la fila dice lo próximo que vence: ${JSON.stringify(s)}`);
+      /* la fecha que acompaña la señal es la del plazo que señala, no la del cierre (antes, siempre la del cierre) */
+      const Cal = require("../public/calendario.js");
+      const fila = Ks.htmlFila(p, { hoy });
+      assert.ok(fila.includes(`vence en 2 días &middot; ${Cal.fechaLegible(d(2))}`) && !fila.includes(`&middot; ${Cal.fechaLegible(d(10))}`),
+        `[MUT] la fila pone la fecha del plazo que señala: ${fila.slice(0, 600)}`);
+      const html = Xp.htmlFechas(pe, { hoy });
+      assert.ok(/Según Cronograma «Anexo 2 - Cronograma\.pdf», pág\. 2/.test(html), "[MUT] la línea de tiempo dice de qué documento y página sale cada fecha");
+      assert.ok(/Lo próximo que vence/.test(html), "[MUT] y marca lo próximo que vence");
+      assert.ok(/manda SECOP II, confírmelo allí/.test(html), "[MUT] y que el documento dice otro cierre");
+      assert.ok(/Del .* al /.test(html), "[MUT] y el rango del plazo");
+      assert.ok(!/fecha_de_publicacion_del/.test(html), "el nombre de una columna de los datos abiertos no es un texto de pantalla");
+      /* el «Descargar estas fechas (calendario)» del expediente lleva las MISMAS fechas que pinta (revisión
+         adversaria: la rama ?ics=<id> no las leía y el archivo traía solo el cierre); y lo que no le pide nada en
+         su etapa va sin alarmas */
+      const cal = String((await invocar(routerPerfilCal, `/api/perfil?op=seguimiento&perfil=${PERF}&ics=${encodeURIComponent(id)}`, CAB_TOKEN)).cuerpo || "");
+      assert.ok(/SUMMARY:Fecha límite de observaciones al pliego/.test(cal) && /SUMMARY:Audiencia de aclaración del pliego y de riesgos/.test(cal), `[MUT] el .ics de un proceso lleva sus fechas leídas: ${cal.slice(0, 300)}`);
+      const eventoInforme = (cal.split("BEGIN:VEVENT").find((e) => /SUMMARY:Publicación del informe de evaluación/.test(e)) || "");
+      assert.ok(eventoInforme && !/BEGIN:VALARM/.test(eventoInforme), "[MUT] el informe de evaluación no le pide nada a quien aún no presentó: va sin alarmas");
+      /* lo que este bloque sembró se va: el bloque de la copia de datos exporta TODO lo del usuario y
+         un proceso de prueba olvidado aquí le cambiaba la cuenta (medido: «1 !== 0» en la suite entera) */
+      for (const patron of [`*${PERF}*`, "*CAL-PUNTA*", "*CAL-REG*", "*CAL-NADA*", "*CAL-ROTO*"]) {
+        const ks = await redis.scan(patron);
+        if (ks.length) await redis.del(...ks);
+      }
+      await redis.del(Mn.CLAVE_CRONOGRAMA_HITOS);
+      for (const patron of [`*${PERF}*`, "*CAL-PUNTA*", "*CAL-REG*"]) assert.deepStrictEqual(await redis.scan(patron), [], `no queda nada sembrado: ${patron}`);
+    }
+
+    /* (11) EL HUSO NO MUEVE NI UN DÍA: a las 11:30 p. m. de Bogotá (04:30 UTC del día siguiente) lo
+       próximo que vence y las alertas son las mismas con TZ=UTC (Vercel) y TZ=America/Bogota. */
+    {
+      const tzAntes = process.env.TZ;
+      const ahora = Date.parse("2026-10-16T04:30:00Z");   // jueves 15 de octubre, 11:30 p. m. en Colombia
+      const guardado = { id: "TZ-1", estado: "interesa", foto: { nombre: "TZ", fecha_cierre: "2026-10-27T17:00:00.000", fecha_publicacion: "2026-10-01" } };
+      const reg = { hitos: Cr.compactarHitos(Cr.extraerHitos("Plazo para presentar observaciones al pliego 16/10/2026\nAudiencia de asignación de riesgos 17/10/2026").hitos.map((h) => ({ ...h, documento: "Cronograma.pdf" }))) };
+      const vistas = [];
+      try {
+        for (const tz of ["UTC", "America/Bogota"]) {
+          process.env.TZ = tz;
+          const e = Sg.enriquecer(guardado, null, ahora, { hitosDocumentos: reg });
+          const al = Sg.alertasDe([e], { hoy: Hb.hoyColombia(ahora) }).filter((a) => a.tipo === "aviso").map((a) => `${a.hito}:${a.urgencia}`);
+          vistas.push(JSON.stringify([Hb.hoyColombia(ahora), e.proximo_vencimiento && e.proximo_vencimiento.dias, al]));
+        }
+      } finally { if (tzAntes === undefined) delete process.env.TZ; else process.env.TZ = tzAntes; }
+      assert.strictEqual(vistas[0], vistas[1], `el huso del servidor no cambia el día: ${vistas.join(" / ")}`);
+      assert.ok(vistas[0].startsWith('["2026-10-15",1,'), `a las 11:30 p. m. del 15 en Bogotá, las observaciones del 16 vencen mañana: ${vistas[0]}`);
+    }
+    /* (12) LO QUE CAZÓ LA REVISIÓN ADVERSARIA (3-nov-2026), cada caso reproducido antes del arreglo */
+    {
+      // un rango de OTRA fila no le alarga el plazo a la primera
+      for (const [linea, id, f] of [
+        ["Plazo para presentar observaciones al pliego de condiciones 10/10/2026 Audiencia de adjudicación del 20/10/2026 al 21/10/2026", "observaciones_pliego", "2026-10-10"],
+        ["Fecha de cierre [presentación de ofertas] 18/09/2026 Evaluación de las ofertas del 21/09/2026 al 25/09/2026", "cierre", "2026-09-18"],
+        ["Plazo máximo para la expedición de Adendas 10 de julio de 2026 Fecha de cierre [presentación de ofertas] 15 de julio de 2026 - 16 de julio de 2026", "adendas", "2026-07-10"],
+        // el rótulo de la fecha va ANTES de ella
+        ["Plazo para presentar observaciones al pliego de condiciones 10/10/2026 Respuesta a observaciones 12/10/2026", "observaciones_pliego", "2026-10-10"],
+        ["Fecha de cierre [presentación de ofertas] 18/09/2026 Plazo para subsanar 25/09/2026", "cierre", "2026-09-18"],
+        // el plazo del proponente le gana a la respuesta de la entidad en la misma fila
+        ["Plazo para presentar observaciones al pliego de condiciones definitivo y respuesta a las observaciones 10/10/2026", "observaciones_pliego", "2026-10-10"],
+        // «con limitación a Mipymes» dentro de la fila de la manifestación no es la fila de limitar
+        ["Plazo para manifestación de interés (con limitación a Mipymes) Hasta el 09/07/2026", "manifestacion", "2026-07-09"],
+      ]) {
+        const h = Cr.extraerHitos(linea).hitos[0];
+        assert.deepStrictEqual([h && h.id, h && h.fecha], [id, f], `[MUT] «${linea}»: ${JSON.stringify(h)}`);
+      }
+      // la hora de OTRA fila no es la del cierre, y la que pone el documento dice de dónde sale
+      const dos = Cr.extraerHitos("Cierre del proceso y entrega de propuestas 27/10/2026 a las 10:00 a.m. Audiencia de apertura de sobres 27/10/2026 a las 10:30 a.m.").hitos[0];
+      assert.strictEqual(dos.hora, null, `[MUT] dos horas de dos filas: la hora es ausente, no la última (${dos.hora})`);
+      const filaDs = { fecha_de_publicacion_del: "2026-10-01T00:00:00", fecha_cierre: "2026-10-27" };
+      const conHoraDoc = Sg.hitosDe(filaDs, "2026-10-20", { hitosDocumentos: Cr.compactarHitos(Cr.extraerHitos("Fecha de cierre 27/10/2026 9:00 a.m.").hitos.map((h) => ({ ...h, documento: "Cronograma.pdf", tipo_documento: "Cronograma" }))) })
+        .find((h) => h.id === "cierre");
+      assert.ok(conHoraDoc.hora === "09:00" && /la hora, según Cronograma «Cronograma\.pdf»/.test(conHoraDoc.fuente), `[MUT] la hora que aporta el documento lo dice: ${conHoraDoc.fuente}`);
+      // las fechas de unos hechos de OTRA versión de las reglas no entran
+      const viejos = Dp.hitosDeDocumentos({ indice: { archivos: [{ id_documento: "1", tipo: "cronograma", de_la_entidad: true }] },
+        leidos: { 1: { nombre: "C.pdf", tipo: "cronograma", hechos: { version: "21|x", hitos: [{ id: "observaciones_pliego", fecha: "2026-10-23", etiqueta: "x" }] } } } });
+      assert.strictEqual(viejos.hitos.length, 0, "[MUT] unos hechos del lector viejo no hablan: se rehacen primero");
+      // el DÍA del plazo también avisa
+      const hoyS = "2026-11-05";
+      const eHoy = Sg.enriquecer({ id: "HOY-1", estado: "presentado", foto: { nombre: "OBRA HOY", fecha_cierre: "2026-10-30T17:00:00.000", fecha_publicacion: "2026-10-01" } }, null, Date.parse("2026-11-05T15:00:00Z"),
+        { hitosDocumentos: { hitos: Cr.compactarHitos(Cr.extraerHitos("Plazo para subsanar 05/11/2026").hitos.map((h) => ({ ...h, documento: "C.pdf" }))) } });
+      const alHoy = Sg.alertasDe([eHoy], { hoy: hoyS }).filter((a) => a.hito === "subsanacion");
+      assert.ok(alHoy.length === 1 && alHoy[0].urgencia === "alta" && /^Es hoy: /.test(alHoy[0].mensaje), `[MUT] el día del plazo para subsanar avisa «Es hoy»: ${JSON.stringify(alHoy)}`);
+      // en la fila, el aviso de interés va antes que un plazo opcional que vence mañana
+      const sManif = Ks.senalDe({ estado: "interesa", ya_aviso: false, manifestacion: { aplica: true, estado: "abierta" }, cerrado: false, dias_para_cierre: 12,
+        proximo_vencimiento: { id: "observaciones_pliego", corta: "Observaciones al pliego", fecha: "2026-11-04", dias: 1 } });
+      assert.strictEqual(sManif.texto, "Todavía puede avisar que le interesa", `[MUT] sin avisar no hay oferta: ${JSON.stringify(sManif)}`);
+      // la fecha CALCULADA sigue diciendo la frase de siempre
+      const htmlCalc = Xp.htmlFechas({ id: "C-1", hitos: [{ id: "manifestacion", etiqueta: "Avisar que le interesa", fecha: "2026-11-06", origen: "calculado", fuente: "fecha CALCULADA por Detekta, no publicada" }] }, { hoy: "2026-11-03" });
+      assert.ok(/fecha calculada por la aplicación, no publicada/.test(htmlCalc) && !/Según fecha CALCULADA/.test(htmlCalc), "[MUT] una fecha calculada no se presenta «según» una fuente");
+    }
+    console.log("· unidad calendario del proceso: cinco cronogramas reales y uno fuera de muestra sin una fecha falsa, el rango explícito, SECOP II manda, las fechas de los documentos en Mis procesos con un comando, lo próximo que vence y el huso que no mueve un día");
   }
 
   /* unidad: modalidades — solo lista blanca competitiva */
