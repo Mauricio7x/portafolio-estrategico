@@ -26,7 +26,7 @@ la URL:
 
 | Apartado | Dirección | Qué se hace ahí |
 | --- | --- | --- |
-| **Mi empresa** | `#/mi-empresa` | El perfil: RUP (por archivo o por PDF), experiencia ejecutada, cobertura del RUP, consorcios, resumen del mercado y, plegado, el sistema (parámetros de costo, sincronización, diagnóstico). *Mi empresa → Sistema* y *Mi empresa → Verifique a su socio antes de firmar* son rutas de esa pestaña |
+| **Mi empresa** | `#/mi-empresa` | El perfil: RUP (por archivo o por PDF), experiencia ejecutada, cobertura del RUP, consorcios, resumen del mercado y, plegado, el sistema (parámetros de costo, sincronización, diagnóstico). *Mi empresa → Ajustes* y *Mi empresa → Verifique a su socio antes de firmar* son rutas de esa pestaña |
 | **Licitaciones** | `#/licitaciones` | Las oportunidades viables del perfil, con sus filtros en la URL, el detalle de cada proceso y el índice de baja de mercado (a qué precio se adjudica) |
 | **Mis procesos** | `#/mis-procesos` | Seguimiento de los procesos elegidos: cambios del pliego, cronograma, deducciones y el dictamen del pliego |
 | **Precios** | `#/precios` | El editor de APU (análisis de precios unitarios) con el lector de pliegos, el catálogo de precios, la rentabilidad y el panel piso / techo |

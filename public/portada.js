@@ -380,5 +380,5 @@
     return true;
   }
 
-  return { arrancar, teaser, pesosCortos, pesosExactos, textoActualizado, desactualizado, htmlHero, htmlTeaser, htmlCierran, htmlManifestacion, htmlEntidades, htmlDepartamentos, enlaceLista, htmlHistoria, HISTORIA_VENTANA_DIAS, HISTORIA_MIN_PUNTOS };
+  return { arrancar, teaser, pesosCortos, pesosExactos, textoActualizado, desactualizado, sumarDiasISO, htmlHero, htmlTeaser, htmlCierran, htmlManifestacion, htmlEntidades, htmlDepartamentos, enlaceLista, htmlHistoria, HISTORIA_VENTANA_DIAS, HISTORIA_MIN_PUNTOS };
 });

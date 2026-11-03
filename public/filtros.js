@@ -261,8 +261,10 @@
      abiertos y los que están dentro de la ventana en que el plazo puede cerrar
      (la ley fija un máximo de 3 días hábiles desde la apertura, no un plazo:
      la entidad pone el suyo en el pliego). `manif=todas`, los de menor cuantía
-     con manifestación, vencida o no. Cualquier otro valor es INERTE. */
-  const MANIF_IDS = new Set(["abierta", "todas"]);
+     con manifestación, vencida o no. `manif=urgente` (3-nov-2026), las que hay que avisar HOY: la cifra roja de
+     Mi empresa, con el mismo predicado que la cuenta (lib/filtros_lista, `urgenteDeFaceta`). Cualquier otro
+     valor es INERTE. */
+  const MANIF_IDS = new Set(["abierta", "todas", "urgente"]);
   const lista = (v) => String(v || "").split(",").map((s) => s.trim()).filter(Boolean);
   const idsDe = (arr) => new Set(arr.map((x) => x.id));
   const TIPO_IDS = idsDe(TIPOS_TRABAJO), MODALIDAD_IDS = idsDe(MODALIDADES), CIERRE_IDS = idsDe(VENTANAS_CIERRE);
@@ -380,7 +382,8 @@
     /* «todavía puede» AFIRMABA lo que casi nunca se sabe: desde el 15-sep-2026 la
        casilla deja pasar todo aquello en lo que no CONSTA que el plazo venciera,
        y la ficha dice eso mismo. */
-    if (estado.manif) out.push({ filtro: "manif", etiqueta: estado.manif === "abierta" ? "Avisar que le interesa: el plazo no consta vencido" : "Avisar que le interesa: procesos pequeños" });
+    if (estado.manif) out.push({ filtro: "manif", etiqueta: estado.manif === "abierta" ? "Avisar que le interesa: el plazo no consta vencido"
+      : estado.manif === "urgente" ? "Avisar que le interesa: hay que avisar hoy" : "Avisar que le interesa: procesos pequeños" });
     return out;
   }
 
