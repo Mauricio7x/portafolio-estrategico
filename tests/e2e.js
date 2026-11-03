@@ -4840,6 +4840,118 @@ async function main() {
         assert.deepStrictEqual(Lec.colaDeLaEntidad(procesosQ, new Set(["CO1.REQ.Q1"]), new Set(["CO1.REQ.Q2"])).map((p) => p.id), ["CO1.REQ.Q3", "CO1.REQ.Q4", "CO1.REQ.Q5", "CO1.REQ.Q7", "CO1.REQ.Q8"],
           "la cola de la entidad es ENTERA (sin lo leído, lo mirado esta noche ni lo que no sirve): el cupo por entidad cuenta documentos, no candidatos");
       }
+      /* OCR.SPACE SATURADO (3-nov-2026): la noche del 3-nov, 7 de 8 documentos se guardaron sin su OCR y el lector los daba
+         por leídos para siempre. Un documento al que le faltó OCR por una falla pasajera se aparta (misma noche) o se
+         relee (otras noches); el que no cabía en el cupo por documento no, porque releerlo daría lo mismo */
+      {
+        const L = (sin, nota = null) => ({ sin_ocr: sin, nota });
+        assert.strictEqual(Lec.faltaOcrPasajero(L([3]), {}), false, "páginas fuera del cupo por documento (sin nota ni señal): no es pasajero");
+        for (const s of ["saturo", "aplazo", "nego"]) assert.strictEqual(Lec.faltaOcrPasajero(L([3]), { [s]: true }), true, `con «${s}» es pasajero`);
+        assert.strictEqual(Lec.faltaOcrPasajero(L([3], "la conexión se cortó…"), {}), true, "la página dijo por qué (la red): pasajero");
+        assert.strictEqual(Lec.faltaOcrPasajero(L([], "x"), { saturo: true }), false, "sin páginas sin leer no falta nada");
+        assert.deepStrictEqual([Lec.queHacerConLaLectura(L([3]), { saturo: true }, true), Lec.queHacerConLaLectura(L([3]), { aplazo: true }, true),
+          Lec.queHacerConLaLectura(L([3]), { saturo: true }, false), Lec.queHacerConLaLectura(L([3]), { nego: true }, true),
+          Lec.queHacerConLaLectura(L([3], "la red"), {}, true), Lec.queHacerConLaLectura(L([]), { saturo: true }, true), Lec.queHacerConLaLectura(L([3]), {}, true)],
+          ["aplazar", "aplazar", "guardar_pendiente", "guardar_pendiente", "guardar_pendiente", "guardar", "guardar"],
+          "saturado o en pausa se aparta en la primera vuelta y se guarda pendiente en la segunda; sin cupo de la noche o por la red, pendiente (esta noche no se arregla)");
+        const { ya, releer } = Lec.yaYReleer({
+          "CO1.BDOS.1": { id_proceso: "CO1.REQ.A", estado: "leido" },
+          "CO1.BDOS.2": { id_proceso: "CO1.REQ.B", estado: "leido", ocr_pendiente: true, intentos_ocr: 1 },
+          "CO1.BDOS.3": { id_proceso: "CO1.REQ.C", estado: "leido", ocr_pendiente: true, intentos_ocr: Lec.MAX_INTENTOS_OCR },
+          "CO1.BDOS.4": { id_proceso: "CO1.REQ.D", estado: "caducado" },
+          "CO1.BDOS.5": { id_proceso: "CO1.REQ.E", estado: "en_cola", ocr_pendiente: true },
+          "CO1.BDOS.6": { id_proceso: "CO1.REQ.F", estado: "leido" }, "CO1.BDOS.7": { id_proceso: "CO1.REQ.F", estado: "leido", ocr_pendiente: true, intentos_ocr: 2 } });
+        assert.deepStrictEqual([[...ya].sort(), [...releer.entries()].sort()], [["CO1.REQ.A", "CO1.REQ.C"], [["CO1.REQ.B", 1], ["CO1.REQ.E", 1], ["CO1.REQ.F", 2]]],
+          "ya leídos los terminados y los que agotaron sus intentos; por releer los que les falta OCR (sin intentos legibles cuenta 1); un caducado, por leer como antes");
+        assert.strictEqual(Lec.MAX_INTENTOS_OCR, 3, "tres noches como mucho");
+        // la guardia de lo que sale al OCR: la señal de saturación, la pausa y el cupo, sin navegador
+        let reloj = 1000, enviados = 0;
+        const saturadoR = { status: 200, contentType: "application/json", body: Buffer.from(JSON.stringify({ ok: false, ocr: { saturado: true } })) };
+        const g = Lec.crearGuardiaOcr({ topeImagenes: 5, ahora: () => reloj, reenviar: async () => { enviados++; return saturadoR; } });
+        const tanda = (n) => JSON.stringify({ imagenes_base64: Array(n).fill("x") });
+        let r = await g.atender(tanda(2));
+        assert.deepStrictEqual([r.status, g.estado.saturaciones, g.estado.imagenes, enviados], [200, 1, 2, 1], "la respuesta saturada de producción se cuenta");
+        g.pausar(Lec.PAUSA_OCR_MS);
+        r = await g.atender(tanda(1));
+        assert.deepStrictEqual([r.status, g.estado.aplazadas, enviados, g.estado.imagenes], [400, 1, 1, 2], "en pausa no sale ninguna imagen ni gasta cupo");
+        reloj += Lec.PAUSA_OCR_MS;
+        r = await g.atender(tanda(1));
+        assert.deepStrictEqual([r.status, enviados], [200, 2], "pasada la pausa vuelve a salir");
+        r = await g.atender(tanda(3));
+        assert.deepStrictEqual([r.status, g.estado.negadas, enviados], [400, 1, 2], "pasado el cupo de la noche, se niega y se cuenta aparte");
+        const g2 = Lec.crearGuardiaOcr({ reenviar: async () => ({ status: 200, contentType: "application/json", body: Buffer.from('{"ok":true,"texto_ocr":"x","ocr":{"saturado":false}}') }) });
+        await g2.atender(tanda(1));
+        assert.strictEqual(g2.estado.saturaciones, 0, "una respuesta que no está saturada no cuenta");
+        assert.ok(Lec.PAUSA_OCR_MS >= 5 * 60e3 && Lec.PAUSA_OCR_MS <= 30 * 60e3, `la pausa es de minutos, no de segundos ni de horas: ${Lec.PAUSA_OCR_MS}`);
+        // la cola: uno guardado sin su OCR se vuelve a leer aunque la aplicación diga «ya leído»
+        const leidosR = [];
+        const ctxR = (releerR) => ({ a: Lec.argumentos([]), resumen: { intentados: 0, consultados: 0, sin_documento: 0, fallos: 0, base_caida: false }, imagenes: () => 0, vistos: new Set(), pararPorBase: () => {}, releer: releerR,
+          consultar: async () => ({ status: 200, j: { ok: true, portafolio: "CO1.BDOS.1", documento: { nombre: "x.pdf", url: "https://x" }, ya_leido: true, en_cola: false } }),
+          leerYGuardar: async (p) => { leidosR.push(p.id); return { id: p.id, estado: "leido" }; } });
+        await Lec.recorrerCola([{ id: "CO1.REQ.R1" }, { id: "CO1.REQ.R2" }], ctxR(new Map([["CO1.REQ.R2", 1]])));
+        assert.deepStrictEqual(leidosR, ["CO1.REQ.R2"], "solo el que falta releer, no el terminado");
+        /* EL FLUJO DE CADA DOCUMENTO (`crearFlujo`), con un lector y una aplicación simulados (revisión adversaria del 3-nov-2026):
+           el RESUMEN cuenta solo lo que la aplicación guardó, una relectura va marcada y cuenta aunque falle, y la segunda
+           vuelta respeta el cupo de la noche */
+        const flujoDe = ({ guion, respuestas = [], maxOcr = 120, releer = [], fallaDescarga = false }) => {
+          let k = 0, rk = 0, reloj = 0;
+          const e = { sat: 0, apl: 0, neg: 0, img: 0, pausa: 0 };
+          const lector = { saturaciones: () => e.sat, aplazadas: () => e.apl, negadas: () => e.neg, imagenes: () => e.img, pausaHasta: () => e.pausa,
+            pausarOcr: (ms) => { e.pausa = Math.max(e.pausa, reloj + ms); },
+            leer: async () => { const g = guion[k++]; if (g.satura) e.sat++; if (g.aplaza) e.apl++; if (g.nego) e.neg++; e.img += g.imagenes || 0; return { texto: "x".repeat(80), paginas: 3, paginas_ocr: g.ocr || 0, sin_ocr: g.sin || [], nota: null }; } };
+          const resumen = { leidos: 0, guardados: 0, paginas_ocr: 0, con_paginas_sin_leer: 0, aplazados: 0, ocr_pendiente: 0, releidos: 0, relecturas_sin_mejora: 0, fallos: 0, base_caida: false };
+          const posts = [];
+          const flujo = Lec.crearFlujo({ a: { ...Lec.argumentos([]), maxOcr }, resumen, obtenerLector: async () => lector, pararPorBase: () => { resumen.base_caida = true; },
+            pedirApp: async (ruta, { body }) => { posts.push(body); return respuestas[rk++] || { status: 200, j: { ok: true, estado: "en_cola" } }; },
+            bajarDoc: async () => { if (fallaDescarga) throw new Error("SECOP no respondió"); return Buffer.from("pdf"); },
+            esperar: async (ms) => { reloj += ms; }, ahora: () => reloj });
+          for (const [id, n] of releer) flujo.releerTodo.set(id, n);
+          return { flujo, resumen, posts, e, lecturas: () => k };
+        };
+        const docF = (n) => ({ j: { portafolio: `CO1.BDOS.${n}`, documento: { nombre: `${n}.pdf`, url: "https://x" } } });
+        // (a) una relectura saturada se aparta, satura otra vez en la segunda vuelta y la aplicación no la mejora: se cuenta así
+        let F = flujoDe({ guion: [{ satura: true, sin: [2] }, { satura: true, sin: [2] }], releer: [["CO1.REQ.F1", 1]], respuestas: [{ status: 200, j: { ok: true, estado: "sin_mejora", ocr_pendiente: true } }] });
+        let rF = await F.flujo.leerYGuardarDe("Ent", "1")({ id: "CO1.REQ.F1" }, docF(1));
+        assert.strictEqual(rF.estado, "aplazado", "saturado en la primera vuelta: se aparta");
+        await F.flujo.segundaVuelta();
+        assert.deepStrictEqual([F.posts.length, F.posts[0].relectura, F.posts[0].intento_ocr, F.posts[0].ocr_pendiente], [1, true, 2, true], `en la segunda vuelta se manda marcada como relectura y con su intento: ${JSON.stringify(F.posts[0])}`);
+        assert.deepStrictEqual([F.resumen.guardados, F.resumen.relecturas_sin_mejora, F.resumen.releidos, F.resumen.ocr_pendiente], [0, 1, 0, 1], `«sin mejora» no se cuenta como guardado ni como releído: ${JSON.stringify(F.resumen)}`);
+        F = flujoDe({ guion: [{ satura: true, sin: [2] }, { satura: true, sin: [2] }], releer: [["CO1.REQ.F1", 1]], respuestas: [{ status: 200, j: { ok: true, estado: "sin_mejora", ocr_pendiente: false } }] });
+        await F.flujo.leerYGuardarDe("Ent", "1")({ id: "CO1.REQ.F1" }, docF(1));
+        await F.flujo.segundaVuelta();
+        assert.deepStrictEqual([F.resumen.relecturas_sin_mejora, F.resumen.ocr_pendiente], [1, 0], "una relectura «sin mejora» que la aplicación ya no deja pendiente no se cuenta como pendiente");
+        // (b) un guardado que falla no suma «ocr_pendiente» ni «releidos»
+        F = flujoDe({ guion: [{ nego: true, sin: [2] }], releer: [["CO1.REQ.F2", 1]], respuestas: [{ status: 422, j: { ok: false, error: "no legible" } }] });
+        rF = await F.flujo.leerYGuardarDe("Ent", "1")({ id: "CO1.REQ.F2" }, docF(2));
+        assert.ok(rF.ocr_pendiente && F.posts[0].ocr_pendiente === true, `premisa: sin cupo de la noche, la lectura sale pendiente (${JSON.stringify(rF)})`);
+        assert.deepStrictEqual([F.resumen.fallos, F.resumen.ocr_pendiente, F.resumen.releidos, F.resumen.guardados], [1, 0, 0, 0], `lo que la aplicación no guardó no se cuenta como hecho: ${JSON.stringify(F.resumen)}`);
+        // (c) la descarga de una relectura falla: el intento se anota igual (sin texto) y el fallo sube
+        F = flujoDe({ guion: [], releer: [["CO1.REQ.F3", 2]], fallaDescarga: true, respuestas: [{ status: 200, j: { ok: true, estado: "sin_mejora" } }] });
+        await assert.rejects(F.flujo.leerYGuardarDe("Ent", "1")({ id: "CO1.REQ.F3" }, docF(3)), /SECOP/);
+        assert.deepStrictEqual([F.posts.length, F.posts[0] && F.posts[0].relectura, F.posts[0] && F.posts[0].intento_ocr, F.posts[0] && F.posts[0].texto, F.resumen.relecturas_sin_mejora], [1, true, 3, "", 0], "una relectura que no se pudo bajar también cuenta su intento (es un fallo, no una relectura «sin mejora»)");
+        // …y si lo que falla es la lectura misma (la página se cae), también (segunda revisión adversaria)
+        F = flujoDe({ guion: [], releer: [["CO1.REQ.F8", 1]] });
+        F.flujo.releerTodo.set("CO1.REQ.F8", 1);
+        const flujoCae = Lec.crearFlujo({ a: Lec.argumentos([]), resumen: F.resumen, obtenerLector: async () => ({ saturaciones: () => 0, aplazadas: () => 0, negadas: () => 0, imagenes: () => 0, pausaHasta: () => 0, pausarOcr: () => {}, leer: async () => { throw new Error("Target crashed"); } }),
+          pedirApp: async (ruta, { body }) => { F.posts.push(body); return { status: 200, j: { ok: true, estado: "sin_mejora", ocr_pendiente: true } }; }, bajarDoc: async () => Buffer.from("pdf"), pararPorBase: () => {} });
+        flujoCae.releerTodo.set("CO1.REQ.F8", 1);
+        await assert.rejects(flujoCae.leerYGuardarDe("Ent", "1")({ id: "CO1.REQ.F8" }, docF(8)), /Target crashed/);
+        assert.deepStrictEqual([F.posts.length, F.posts[0].relectura, F.posts[0].intento_ocr], [1, true, 2], "una relectura cuya lectura se cae también anota su intento");
+        F = flujoDe({ guion: [], fallaDescarga: true });
+        await assert.rejects(F.flujo.leerYGuardarDe("Ent", "1")({ id: "CO1.REQ.F4" }, docF(4)), /SECOP/);
+        assert.strictEqual(F.posts.length, 0, "una lectura nueva que no se pudo bajar no manda nada: vuelve a ser candidata");
+        // (d) la segunda vuelta respeta el cupo de la noche: lo que no cabe no se lee; la relectura anota su intento
+        F = flujoDe({ guion: [{ satura: true, sin: [2], imagenes: 6 }, { aplaza: true, sin: [2], imagenes: 6 }, { ocr: 1 }, { ocr: 1 }], maxOcr: 10, releer: [["CO1.REQ.F6", 1]], respuestas: [{ status: 200, j: { ok: true, estado: "sin_mejora", ocr_pendiente: true } }] });
+        await F.flujo.leerYGuardarDe("Ent", "1")({ id: "CO1.REQ.F5" }, docF(5));
+        await F.flujo.leerYGuardarDe("Ent", "1")({ id: "CO1.REQ.F6" }, docF(6));
+        assert.strictEqual(F.flujo.aplazados.length, 2, "premisa: dos apartados");
+        await F.flujo.segundaVuelta();
+        assert.deepStrictEqual([F.lecturas(), F.posts.length, F.posts[0] && F.posts[0].relectura, F.posts[0] && F.posts[0].texto], [2, 1, true, ""], `pasado el cupo no se vuelve a leer nada: solo la relectura anota su intento (${F.lecturas()} lecturas, ${JSON.stringify(F.posts.map((x) => x.id_proceso))})`);
+        // (e) sin saturación, se guarda sin más y cuenta como guardado
+        F = flujoDe({ guion: [{ ocr: 2 }] });
+        rF = await F.flujo.leerYGuardarDe("Ent", "1")({ id: "CO1.REQ.F7" }, docF(7));
+        assert.deepStrictEqual([rF.estado, F.resumen.guardados, F.posts[0].relectura, F.posts[0].ocr_pendiente], ["leido", 1, undefined, undefined], "una lectura normal no lleva marcas");
+      }
       assert.throws(() => Lec.argumentos(["--max-ocr", "-1"]), /entero/, "un cupo negativo no se acepta");
       /* LOS CANDIDATOS SALEN DE DATOS.GOV.CO con las reglas de la aplicación (revisión adversaria: la vista rápida de la
          entidad trae la lista vacía a propósito, y el lector no leía nunca nada): una fila por proceso, el número de
@@ -4970,6 +5082,100 @@ async function main() {
     assert.ok(!Ev.nombreEnCita("CONSORCIO VIAS DEL NORTE", "3 CONSORCIO VIAS DEL SUR $ 900.000.000,00 48,10") && !Ev.nombreEnCita("CONSORCIO VIAL 2025", "CONSORCIO VIAL 2024 $ 1,00"), "todas las palabras propias del nombre, números incluidos");
     assert.ok(!Ev.parecido("CONSORCIO VIAL SANTANDER 2025", "CONSORCIO VIAL SANTANDER 2024") && Ev.parecido("CONSORCIO TORRE PT", "CONSORCIO TORRE P.T."), "otro número es otro consorcio; la misma sigla escrita de otra forma, no");
     assert.ok(!Ev.parecido("CONSORCIO VIAL SANTANDER 2025", "CONSORCIO VIAL SANTANDER"), "con número y sin él no se da por el mismo: ante la duda, el proceso no cuenta");
+    /* (5b) DOS OFERENTES CASI HOMÓNIMOS Y UN NOMBRE PARTIDO POR LA CELDA (3-nov-2026, el lector del Tolima): «CONSORCIO HERVEO
+       ETAPA 1» (propuesta 1) y «CONSORCIO HERVEO ETAPA 1.» (propuesta 6) se juntaban en uno y la sesión dejó fuera a uno; la
+       tabla estrecha de la MEN-137 corta «INFRACULTUR … AL» y la oferta se apartaba */
+    {
+      const textoH = "\f1\nINFORME DE EVALUACION DE LAS OFERTAS ECONOMICAS\nPROPUESTAS # VALORES\nCONSORCIO HERVEO ETAPA 1 1 $ 17.168.528.688,14\nCONSORCIO MITIGACION 2027 2 $ 17.217.869.986,44\nCONSORCIO HERVEO ETAPA 1. 6 $ 17.836.806.038,96\nRESUMEN CONSORCIO HERVEO ETAPA 1 VALOR $ 17.168.528.688,14\nCONSORCIO DELTA 3 $ 100.000.000,00\nCONSORCIO DELTA 5 $ 120.000.000,00\n"
+        + "\f2\nPUNTAJE TOTAL\nCIVILES SAS 48,412374 4\nCONSORCIO\n$\nINFRACULTUR 2 94,28% 30,25 77,57173 3\n405.328.218,66\nAL 26 47,321732 2\nCONSORCIO VI 9 AL 10\n"
+        + "CONSORCIO HERVEO ETAPA 1. 6 $ 17.836.806.038,96 SEGUNDA TABLA\nCONSORCIO MITIGACION 2027. HABILITADO\n";
+      const fila1 = "CONSORCIO HERVEO ETAPA 1 1 $ 17.168.528.688,14", fila6 = "CONSORCIO HERVEO ETAPA 1. 6 $ 17.836.806.038,96";
+      const of = (oferente, cita, valor, extra = {}) => ({ oferente, estado: "sin_dato", ...(valor !== undefined ? { valor } : {}), cita, pagina: 1, ...extra });
+      const capH = (ofertas) => Ev.verificarCaptura({ documento_util: true, ofertas }, textoH);
+      const motivos = (v) => v.verificacion.apartados.map((x) => x.motivo);
+      let v = capH([of("CONSORCIO HERVEO ETAPA 1", fila1, "$ 17.168.528.688,14", { numero: "1" }), of("CONSORCIO HERVEO ETAPA 1.", fila6, "$ 17.836.806.038,96", { numero: "6" })]);
+      assert.ok(!v.errores, `el esquema acepta «numero»: ${JSON.stringify(v.errores)}`);
+      assert.deepStrictEqual(v.captura.ofertas.map((o) => [o.oferente, o.numero, o.valor]), [["CONSORCIO HERVEO ETAPA 1", "1", 17168528688.14], ["CONSORCIO HERVEO ETAPA 1.", "6", 17836806038.96]],
+        "numeradas distinto en el documento y escritas distinto: dos oferentes, cada uno con su valor");
+      assert.ok(!motivos(v).some((m) => /repetido/.test(m)), `y ninguno se da por repetido: ${motivos(v)}`);
+      v = capH([of("CONSORCIO HERVEO ETAPA 1", fila1, "$ 17.168.528.688,14"), of("CONSORCIO HERVEO ETAPA 1.", fila6, "$ 17.836.806.038,96")]);
+      assert.ok(v.captura.ofertas.length === 1 && v.captura.completa === false && motivos(v).includes("oferente_repetido_con_cifras_distintas"), "sin su número, siguen juntos y el proceso queda incompleto: lo de antes");
+      v = capH([of("CONSORCIO HERVEO ETAPA 1", fila1, "$ 17.168.528.688,14", { numero: "1" }), of("CONSORCIO HERVEO ETAPA 1.", fila6, "$ 17.836.806.038,96", { numero: "7" })]);
+      assert.ok(motivos(v).includes("numero_fuera_de_la_cita") && v.captura.ofertas.length === 1, "un número que no está en la cita no separa");
+      v = capH([of("CONSORCIO HERVEO ETAPA 1", "RESUMEN CONSORCIO HERVEO ETAPA 1 VALOR $ 17.168.528.688,14", "$ 17.168.528.688,14", { numero: "1" })]);
+      assert.strictEqual(v.captura.ofertas.length, 1, `premisa: la cita está en el texto y nombra al oferente (${JSON.stringify(v.verificacion.apartados)})`);
+      assert.ok(motivos(v).includes("numero_fuera_de_la_cita") && v.captura.ofertas[0].numero === undefined, "el «1» del propio nombre no cuenta como número de la propuesta");
+      v = capH([of("CONSORCIO HERVEO ETAPA 1", fila1, "$ 17.168.528.688,14", { numero: "01" })]);
+      assert.strictEqual(v.captura.ofertas[0].numero, "1", "«01» es el 1");
+      v = capH([of("CONSORCIO MITIGACION 2027", "CONSORCIO MITIGACION 2027 2 $ 17.217.869.986,44", "$ 17.217.869.986,44", { numero: "2" }),
+        of("CONSORCIO MITIGACION 2027", "PROPUESTAS # VALORES CONSORCIO HERVEO ETAPA 1 1 $ 17.168.528.688,14 CONSORCIO MITIGACION 2027", "$ 17.168.528.688,14", { numero: "1" })]);
+      assert.ok(v.captura.ofertas.length === 1 && v.captura.completa === false, "la MISMA escritura con dos números no se separa (dos columnas del mismo oferente): queda junta e incompleta");
+      v = capH([of("CONSORCIO DELTA", "CONSORCIO DELTA 3 $ 100.000.000,00", "$ 100.000.000,00", { numero: "3" }), of("CONSORCIO DELTA", "CONSORCIO DELTA 5 $ 120.000.000,00", "$ 120.000.000,00", { numero: "5" })]);
+      assert.ok(v.captura.ofertas.length === 1 && motivos(v).includes("oferente_con_dos_numeros_sin_separar"),
+        `dos números válidos, literales y en la misma página, pero la MISMA escritura: no se separan (${motivos(v)})`);
+      v = capH([of("CONSORCIO HERVEO ETAPA 1", fila1, "$ 17.168.528.688,14", { numero: "1" }), of("CONSORCIO HERVEO ETAPA 1.", fila6, "$ 17.836.806.038,96", { numero: "6" }), of("CONSORCIO HERVEO ETAPA 1", fila1, "$ 17.168.528.688,14")]);
+      assert.ok(v.captura.ofertas.length === 2 && v.captura.completa === false && motivos(v).includes("oferente_repetido_sin_numero"), "una tercera entrada de ese nombre sin número no se sabe de cuál es: se aparta e incompleto");
+      // el nombre partido por la celda
+      const filaI = "CONSORCIO\n$\nINFRACULTUR 2 94,28% 30,25 77,57173 3\n405.328.218,66\nAL 26 47,321732 2";
+      v = Ev.verificarCaptura({ documento_util: true, ofertas: [{ oferente: "CONSORCIO INFRACULTURAL", estado: "sin_dato", valor: "405.328.218,66", cita: filaI, pagina: 2 }] }, textoH);
+      assert.deepStrictEqual([v.captura.ofertas.length, v.captura.ofertas[0] && v.captura.ofertas[0].valor], [1, 405328218.66], `la palabra partida por la celda se reconoce en su fila: ${JSON.stringify(v.verificacion.apartados)}`);
+      assert.strictEqual(Ev.numeroDePropuesta("2", "CONSORCIO INFRACULTURAL", filaI), "2", "el número pegado a un pedazo del nombre partido («INFRACULTUR 2») cuenta");
+      assert.ok(!Ev.nombreEnCita("CONSORCIO VIAL", "CONSORCIO VI 9 AL 10") && !Ev.nombreEnCita("CONSORCIO INFRACULTURAL", "CONSORCIO AL 2 INFRACULTUR") && !Ev.nombreEnCita("CONSORCIO INFRACULTURAL", "CONSORCIO INFRA 2"),
+        "una palabra corta no se arma con pedazos, los pedazos van en orden, y un pedazo solo no es la palabra");
+      assert.ok(!Ev.nombreEnCita("CONSORCIO CAUCA", "CONSORCIO CAU 9 CA 10") && Ev.nombreEnCita("CONSORCIO CAUCANO", "CONSORCIO CAU 9 CANO 10"), "con menos de 6 letras no se arma («CAUCA» con «CAU» y «CA»); con 6 o más, sí");
+      assert.ok(Ev.nombreEnCita("CONSORCIO INFRACULTURAL", "CONSORCIO INFRA 2 CULTUR 3 AL") && !Ev.nombreEnCita("CONSORCIO INFRACULTURAL", "CONSORCIO INF RA CUL TURAL") && !Ev.nombreEnCita("CONSORCIO INFRACULTURAL", "CONSORCIO IN 2 FRACULTUR AL"),
+        "hasta tres pedazos, el primero de 3 letras o más");
+      assert.ok(Ev.nombreEnCita("SOLUCIONES PRACTICAS CIVILES SAS", "SOLUCIONES\n$\nPRACTICAS 3 96,80% 50,25 98,66237 2\n416.171.069,44\nCIVILES SAS 48,412374 4"), "un nombre partido por palabras, con celdas en medio, ya se reconocía (MEN-137)");
+      assert.ok(/numero/.test(Ev.INSTRUCCIONES) && /partido|parte el nombre/.test(Ev.INSTRUCCIONES), "las instrucciones de la sesión dicen cuándo dar el número y cómo citar un nombre partido");
+      /* REVISIÓN ADVERSARIA DEL 3-NOV-2026: una oferta no puede contar como dos */
+      const N = Ev.numeroDePropuesta;
+      assert.deepStrictEqual([N("14", "CONSORCIO HERVEO ETAPA 1", fila1), N("688", "CONSORCIO HERVEO ETAPA 1", fila1), N("1", "CONSORCIO HERVEO ETAPA 1", fila1), N("6", "CONSORCIO X", "6. CONSORCIO X HABIL"),
+        N("51", "CONSORCIO VIA IBAGUE", "CONSORCIO VIA IBAGUE 9 $ 16.934.626.019,62 91,81% 51 48,5000"), N("9", "CONSORCIO VIA IBAGUE", "CONSORCIO VIA IBAGUE 9 $ 16.934.626.019,62 91,81% 51 48,5000")],
+        [null, null, "1", "6", null, "9"], "el número de la propuesta: ni un pedazo de una cifra (centavos, miles), ni un puntaje de otra columna; pegado al nombre, antes o después");
+      v = capH([of("CONSORCIO HERVEO ETAPA 1.", fila1, "$ 17.168.528.688,14", { numero: "1" }), of("CONSORCIO HERVEO ETAPA 1", fila6, "$ 17.836.806.038,96", { numero: "6" })]);
+      assert.ok(v.captura.ofertas.length === 1 && v.captura.completa === false && motivos(v).includes("oferente_con_dos_numeros_sin_separar"),
+        `cada escritura tiene que estar literal en su fila (el punto de más lo pone quien captura): juntas e incompletas (${motivos(v)})`);
+      v = capH([of("CONSORCIO HERVEO ETAPA 1", fila1, "$ 17.168.528.688,14", { numero: "1" }), { ...of("CONSORCIO HERVEO ETAPA 1.", "CONSORCIO HERVEO ETAPA 1. 6 $ 17.836.806.038,96 SEGUNDA TABLA", "$ 17.836.806.038,96", { numero: "6" }), pagina: 2 }]);
+      assert.deepStrictEqual(v.captura.ofertas.map((o) => o.numero), ["1", "6"],
+        "citadas en páginas distintas (la tabla de puntajes partida en dos), pero el texto las trae JUNTAS en una página, cada una con su número: son dos (la LPO-116 real)");
+      const textoG = "\f1\nINFORME PRELIMINAR\nCONSORCIO GAMA 2026 1 $ 900.000.000,00\n\f2\nINFORME FINAL\nCONSORCIO GAMA 2026. 4 $ 950.000.000,00\n\f3\nPROPONENTES\nCONSORCIO GAMA 2026\nCONSORCIO GAMA 2026.\n";
+      v = Ev.verificarCaptura({ documento_util: true, ofertas: [{ oferente: "CONSORCIO GAMA 2026", numero: "1", estado: "sin_dato", valor: "$ 900.000.000,00", cita: "CONSORCIO GAMA 2026 1 $ 900.000.000,00", pagina: 1 },
+        { oferente: "CONSORCIO GAMA 2026.", numero: "4", estado: "sin_dato", valor: "$ 950.000.000,00", cita: "CONSORCIO GAMA 2026. 4 $ 950.000.000,00", pagina: 2 }] }, textoG);
+      assert.ok(v.captura.ofertas.length === 1 && v.captura.completa === false && motivos(v).includes("oferente_con_dos_numeros_sin_separar"),
+        `sin ninguna página donde estén las dos CON SU NÚMERO (una página que solo las nombra no basta): juntas e incompletas (${motivos(v)})`);
+      // la misma firma escrita «S.A.S» y «SAS», o «P.T.» y «PT»: UNA oferta (antes contaban como dos y el proceso salía completo)
+      const textoT = "\f1\nHABILITACION\nCONSORCIO TORRE P.T. HABIL\nINGENIAMOS COLOMBIA S.A.S HABIL\n\f2\nPUNTAJES\nCONSORCIO TORRE PT 48,50\nINGENIAMOS COLOMBIA SAS 47,00\n";
+      v = Ev.verificarCaptura({ documento_util: true, ofertas: [
+        { oferente: "CONSORCIO TORRE P.T.", estado: "habil", cita: "CONSORCIO TORRE P.T. HABIL", pagina: 1 }, { oferente: "CONSORCIO TORRE PT", estado: "habil", puntaje_precio: "48,50", cita: "CONSORCIO TORRE PT 48,50", pagina: 2 },
+        { oferente: "INGENIAMOS COLOMBIA S.A.S", estado: "habil", cita: "INGENIAMOS COLOMBIA S.A.S HABIL", pagina: 1 }, { oferente: "INGENIAMOS COLOMBIA SAS", estado: "habil", puntaje_precio: "47,00", cita: "INGENIAMOS COLOMBIA SAS 47,00", pagina: 2 }] }, textoT);
+      assert.deepStrictEqual(v.captura.ofertas.map((o) => o.puntaje_precio), [48.5, 47], `cada firma escrita de dos formas en dos tablas es una sola oferta, con sus datos juntos (${JSON.stringify(v.captura.ofertas.map((o) => o.oferente))})`);
+      assert.deepStrictEqual([Ev.claveDeOferente("INGENIAMOS COLOMBIA S.A.S"), Ev.claveDeOferente("CONSORCIO TORRE P.T."), Ev.claveDeOferente("CONSORCIO HERVEO ETAPA 1.")], ["ingeniamos colombia sas", "consorcio torre pt", "consorcio herveo etapa 1"],
+        "las letras sueltas seguidas se pegan; las cifras no");
+      assert.deepStrictEqual([Ev.claveDeOferente("UNION TEMPORAL A 1"), Ev.claveDeOferente("CONSORCIO S A 2026")], ["union temporal a 1", "consorcio sa 2026"], "una cifra suelta no se pega a la letra de al lado");
+      // dos tablas en la misma página numeradas fila por fila, la misma firma con «S.A.S» en una y «SAS» en la otra: no son dos
+      const textoD = "\f1\nTABLA A\nINGENIAMOS COLOMBIA S.A.S 1 HABIL\nCONSORCIO BETA 2 HABIL\nTABLA B\nCONSORCIO BETA 1 $ 100.000.000,00\nINGENIAMOS COLOMBIA SAS 2 $ 200.000.000,00\nTABLA C\nINGENIAMOS COLOMBIA SAS 1 $ 150.000.000,00\n";
+      v = Ev.verificarCaptura({ documento_util: true, ofertas: [{ oferente: "INGENIAMOS COLOMBIA S.A.S", numero: "1", estado: "habil", cita: "INGENIAMOS COLOMBIA S.A.S 1 HABIL", pagina: 1 },
+        { oferente: "INGENIAMOS COLOMBIA SAS", numero: "2", estado: "habil", valor: "$ 200.000.000,00", cita: "INGENIAMOS COLOMBIA SAS 2 $ 200.000.000,00", pagina: 1 }] }, textoD);
+      assert.ok(v.captura.ofertas.length === 1 && v.captura.completa === false && motivos(v).includes("oferente_con_dos_numeros_sin_separar"),
+        `escrituras que solo difieren en los puntos de una sigla no separan, aunque traigan números distintos: juntas e incompletas (${motivos(v)})`);
+      v = Ev.verificarCaptura({ documento_util: true, ofertas: [{ oferente: "INGENIAMOS COLOMBIA S.A.S", numero: "1", estado: "habil", cita: "INGENIAMOS COLOMBIA S.A.S 1 HABIL", pagina: 1 },
+        { oferente: "INGENIAMOS COLOMBIA SAS", numero: "1", estado: "habil", valor: "$ 150.000.000,00", cita: "INGENIAMOS COLOMBIA SAS 1 $ 150.000.000,00", pagina: 1 }] }, textoD);
+      assert.ok(v.captura.ofertas.length === 1 && !motivos(v).some((m) => /escrituras|numeros/.test(m)), `dos escrituras con el MISMO número comprobado son la misma oferta, sin apartar nada (${motivos(v)})`);
+      v = capH([of("CONSORCIO HERVEO ETAPA 1", fila1, "$ 17.168.528.688,14"), of("CONSORCIO HERVEO ETAPA 1.", fila6, undefined)]);
+      assert.ok(v.captura.ofertas.length === 1 && v.captura.completa === false && motivos(v).includes("dos_escrituras_en_la_misma_pagina"),
+        `dos escrituras literales en la misma página y sin número, aunque una no traiga cifras: no se sabe si son dos, incompleto (${motivos(v)})`);
+      v = capH([of("CONSORCIO MITIGACION 2027", "CONSORCIO MITIGACION 2027 2 $ 17.217.869.986,44", "$ 17.217.869.986,44"), { ...of("CONSORCIO MITIGACION 2027.", "CONSORCIO MITIGACION 2027. HABILITADO", undefined), pagina: 2 }]);
+      assert.ok(v.captura.ofertas.length === 1 && !motivos(v).some((m) => /escrituras|repetido|numeros/.test(m)), `la misma firma escrita de dos formas en dos tablas de páginas distintas se junta como siempre, sin apartar nada (${motivos(v)})`);
+      // la página del texto las trae juntas, pero la cita de una no trae su escritura (la del punto): no se separa
+      const textoL = "\f1\nOFERTAS\nCONSORCIO DELTA 2026 3 $ 100.000.000,00\nCONSORCIO DELTA 2026. 5 $ 200.000.000,00\n\f2\nRESUMEN\nCONSORCIO DELTA 2026 5 $ 200.000.000,00\n";
+      v = Ev.verificarCaptura({ documento_util: true, ofertas: [{ oferente: "CONSORCIO DELTA 2026", numero: "3", estado: "sin_dato", cita: "CONSORCIO DELTA 2026 3 $ 100.000.000,00", pagina: 1 },
+        { oferente: "CONSORCIO DELTA 2026.", numero: "5", estado: "sin_dato", cita: "RESUMEN CONSORCIO DELTA 2026 5 $ 200.000.000,00", pagina: 2 }] }, textoL);
+      assert.ok(v.captura.ofertas.length === 1 && motivos(v).includes("oferente_con_dos_numeros_sin_separar"), `una escritura que no está literal en su propia cita no separa (${motivos(v)})`);
+      const colaVecina = "CIVILES SAS 48,412374 4\nCONSORCIO\n$\nINFRACULTUR 2 94,28% 30,25 77,57173 3\n405.328.218,66\nAL 26 47,321732 2";
+      const vecina = (pp) => Ev.verificarCaptura({ documento_util: true, ofertas: [{ oferente: "CONSORCIO INFRACULTURAL", estado: "sin_dato", puntaje_precio: pp, cita: colaVecina, pagina: 2 }] }, textoH);
+      assert.ok(vecina("48,412374").captura.ofertas[0].puntaje_precio === undefined && vecina("47,321732").captura.ofertas[0].puntaje_precio === 47.321732,
+        "con el nombre partido, las cifras se buscan desde donde empieza el nombre: el puntaje de la fila de arriba no es suyo");
+    }
     // (3) la misma oferta capturada dos veces se cuenta una; con cifras distintas, el proceso queda incompleto
     {
       const dos = Ev.verificarCaptura({ ...capturaLimpia, ofertas: [...capturaLimpia.ofertas, { oferente: "ELECTROUNIVERSAL S.A.S", estado: "sin_dato", cita: L4, pagina: 2 }] }, textoEv);
@@ -5024,6 +5230,107 @@ async function main() {
       assert.strictEqual(await rCnt.hget(Ev.CLAVE_COMPLETAS, P), null, "releída e incompleta, sale del contador");
       await invocarPost(APIp, "/api/pliego?op=evaluacion", { portafolio: P, motor: "sesion", captura: capturaLimpia }, CAB_TOKEN);
       assert.ok(await rCnt.hget(Ev.CLAVE_COMPLETAS, P), "completa otra vez, vuelve");
+    }
+    /* (12) EL OCR PENDIENTE Y LA RELECTURA (3-nov-2026): el lector guarda con `ocr_pendiente` lo que se quedó sin OCR por
+       una falla pasajera; la marca sobrevive a la captura (si no, el proceso se daba por terminado), y el texto releído de
+       un proceso ya interpretado vuelve a la cola hasta su captura nueva */
+    {
+      const rRl = crearRedis({});
+      const P6 = "CO1.BDOS.88800006";
+      const ver = async () => (await invocar(APIp, "/api/pliego?op=evaluacion&entidad=Gobernaci%C3%B3n%20de%20Prueba&nit=800123456", CAB_TOKEN)).cuerpo.procesos[P6];
+      const enPend = async () => (await invocar(APIp, "/api/pliego?op=evaluacion&pendientes=1", CAB_TOKEN)).cuerpo.pendientes.some((x) => x.portafolio === P6);
+      const guardar = (extra) => invocarPost(APIp, "/api/pliego?op=evaluacion", { id_proceso: "CO1.REQ.88800006", portafolio: P6, entidad: "Gobernación de Prueba", nit: "800123456", texto: textoEv, paginas_ocr: 0, ...extra }, CAB_TOKEN);
+      const capturar = () => invocarPost(APIp, "/api/pliego?op=evaluacion", { portafolio: P6, motor: "sesion", captura: capturaLimpia }, CAB_TOKEN);
+      assert.strictEqual((await guardar({ ocr_pendiente: true, paginas_sin_leer: [] })).status, 200);
+      assert.strictEqual((await ver()).ocr_pendiente, false, "sin páginas sin leer no queda nada pendiente, aunque lo pida, y la marca va explícita");
+      await guardar({ ocr_pendiente: true, intento_ocr: 2, paginas_sin_leer: [2] });
+      let e6 = await ver();
+      assert.deepStrictEqual([e6.ocr_pendiente, e6.intentos_ocr], [true, 2], `le faltó OCR: queda marcado con su intento (${JSON.stringify(e6)})`);
+      await guardar({ ocr_pendiente: true, intento_ocr: 99, paginas_sin_leer: [2] });
+      assert.strictEqual((await ver()).intentos_ocr, 1, "un intento fuera de rango no se cree: cuenta 1");
+      await guardar({ ocr_pendiente: true, intento_ocr: 2, paginas_sin_leer: [2] });
+      assert.strictEqual((await capturar()).status, 200);
+      e6 = await ver();
+      assert.deepStrictEqual([e6.estado, e6.ocr_pendiente, e6.intentos_ocr], ["leido", true, 2], `la captura no borra la marca: ${JSON.stringify(e6)}`);
+      assert.ok(!(await enPend()), "interpretado: no es pendiente");
+      await guardar({ paginas_sin_leer: [] });
+      assert.ok(await enPend(), "releído completo después de su captura: vuelve a la cola de interpretación");
+      assert.ok(!(await ver()).ocr_pendiente, "y ya no le falta OCR");
+      assert.strictEqual((await capturar()).status, 200);
+      assert.ok(!(await enPend()), "la captura nueva lo saca de la cola");
+      assert.strictEqual(Number(await rRl.exists(Ev.claveRelectura(P6))), 0, "y borra la marca de relectura");
+      await guardar({ paginas_sin_leer: [] });
+      assert.ok(!(await rRl.exists(Ev.claveRelectura("CO1.BDOS.88800007"))), "premisa: un proceso nunca interpretado no tiene marca");
+      await invocarPost(APIp, "/api/pliego?op=evaluacion", { id_proceso: "CO1.REQ.88800007", portafolio: "CO1.BDOS.88800007", entidad: "Gobernación de Prueba", nit: "800123456", texto: textoEv }, CAB_TOKEN);
+      assert.strictEqual(Number(await rRl.exists(Ev.claveRelectura("CO1.BDOS.88800007"))), 0, "el primer texto de un proceso no es una relectura");
+      await capturar();
+      assert.strictEqual((await ver()).ocr_pendiente, false, "la captura de un texto completo deja la marca explícita en false");
+      /* lo guardado ANTES de la marca (la noche del 3-nov): una entrada sin la clave cuya captura quedó con páginas sin
+         leer se relee una vez; con la marca explícita (ya releída) o sin páginas sin leer, no */
+      const { escribirJSONComprimido: escRl } = require("../lib/almacen.js");
+      const P8 = "CO1.BDOS.88800008", eP8 = Ev.claveEntidad("nit:800123456");
+      const ver8 = async () => (await invocar(APIp, "/api/pliego?op=evaluacion&entidad=Gobernaci%C3%B3n%20de%20Prueba&nit=800123456", CAB_TOKEN)).cuerpo.procesos[P8];
+      await rRl.hset(eP8, { [P8]: JSON.stringify({ id_proceso: "CO1.REQ.88800008", nit: "800123456", estado: "leido" }) });
+      await escRl(rRl, Ev.claveCaptura(P8), { portafolio: P8, captura: { documento_util: true, ofertas: [] }, verificacion: { completa: false, paginas_sin_leer: 3 } });
+      let e8 = await ver8();
+      assert.deepStrictEqual([e8.ocr_pendiente, e8.intentos_ocr], [true, 1], `anterior a la marca y con páginas sin leer: una relectura (${JSON.stringify(e8)})`);
+      await rRl.hset(eP8, { [P8]: JSON.stringify({ id_proceso: "CO1.REQ.88800008", nit: "800123456", estado: "leido", ocr_pendiente: false }) });
+      assert.strictEqual((await ver8()).ocr_pendiente, false, "ya releído (marca explícita): no se relee cada noche");
+      await rRl.hset(eP8, { [P8]: JSON.stringify({ id_proceso: "CO1.REQ.88800008", nit: "800123456", estado: "leido" }) });
+      await escRl(rRl, Ev.claveCaptura(P8), { portafolio: P8, captura: { documento_util: true, ofertas: [] }, verificacion: { completa: true } });
+      assert.strictEqual((await ver8()).ocr_pendiente, undefined, "anterior y completo: nada que releer");
+      await rRl.hdel(eP8, P8); await rRl.del(Ev.claveCaptura(P8));
+      /* LA RELECTURA SOLO CAMBIA EL TEXTO SI LO MEJORA, Y CUENTA AUNQUE FALLE (revisión adversaria del 3-nov-2026): una
+         relectura peor pisaba el texto bueno, y una que fallaba (nada legible) no contaba y el proceso se releía siempre */
+      const P9 = "CO1.BDOS.88800009";
+      const ver9 = async () => (await invocar(APIp, "/api/pliego?op=evaluacion&entidad=Gobernaci%C3%B3n%20de%20Prueba&nit=800123456", CAB_TOKEN)).cuerpo.procesos[P9];
+      const exp9 = async () => (await invocar(APIp, `/api/pliego?op=evaluacion&expediente=1&portafolio=${P9}`, CAB_TOKEN)).cuerpo;
+      const g9 = (extra) => invocarPost(APIp, "/api/pliego?op=evaluacion", { id_proceso: "CO1.REQ.88800009", portafolio: P9, entidad: "Gobernación de Prueba", nit: "800123456", texto: textoEv, paginas_ocr: 0, ...extra }, CAB_TOKEN);
+      await g9({ ocr_pendiente: true, intento_ocr: 1, paginas_sin_leer: [2, 3] });
+      const antes9 = await exp9();
+      assert.ok(antes9.texto_guardado_el, "el expediente dice cuándo se guardó su texto");
+      let r9 = await g9({ relectura: true, ocr_pendiente: true, intento_ocr: 2, paginas_sin_leer: [2, 3] });
+      assert.deepStrictEqual([r9.status, r9.cuerpo.estado, (await exp9()).texto_guardado_el], [200, "sin_mejora", antes9.texto_guardado_el], `con las mismas páginas sin leer, el texto no se cambia (${JSON.stringify(r9.cuerpo)})`);
+      assert.deepStrictEqual([(await ver9()).ocr_pendiente, (await ver9()).intentos_ocr], [true, 2], "pero el intento cuenta");
+      r9 = await g9({ relectura: true, intento_ocr: 3, texto: "", paginas_sin_leer: [] });
+      assert.deepStrictEqual([r9.status, r9.cuerpo.estado, (await ver9()).intentos_ocr, (await exp9()).texto_guardado_el], [200, "sin_mejora", 3, antes9.texto_guardado_el], "una relectura sin texto legible no es un 422: se conserva lo que había y se cuenta el intento");
+      r9 = await g9({ relectura: true, ocr_pendiente: true, intento_ocr: 2, paginas_sin_leer: [2, 3, 4] });
+      assert.strictEqual((await exp9()).texto_guardado_el, antes9.texto_guardado_el, "una relectura PEOR (más páginas sin leer) no pisa el texto");
+      await new Promise((r) => setTimeout(r, 5));
+      r9 = await g9({ relectura: true, intento_ocr: 2, paginas_sin_leer: [] });
+      const despues9 = await exp9();
+      assert.ok(r9.cuerpo.estado === "en_cola" && despues9.texto_guardado_el !== antes9.texto_guardado_el && (await ver9()).ocr_pendiente === false, `una relectura MEJOR sí lo cambia: ${JSON.stringify(r9.cuerpo)}`);
+      // la captura se hizo sobre un texto: si cambió mientras tanto, 409
+      const viejoEl = antes9.texto_guardado_el;
+      const c409 = await invocarPost(APIp, "/api/pliego?op=evaluacion", { portafolio: P9, motor: "sesion", texto_guardado_el: viejoEl, captura: capturaLimpia }, CAB_TOKEN);
+      assert.strictEqual(c409.status, 409, `una captura sobre un texto que cambió no se verifica contra el nuevo: ${c409.status}`);
+      assert.strictEqual((await invocarPost(APIp, "/api/pliego?op=evaluacion", { portafolio: P9, motor: "sesion", texto_guardado_el: despues9.texto_guardado_el, captura: capturaLimpia }, CAB_TOKEN)).status, 200, "sobre el texto vigente, sí");
+      assert.strictEqual((await invocarPost(APIp, "/api/pliego?op=evaluacion", { portafolio: P9, motor: "sesion", captura: capturaLimpia }, CAB_TOKEN)).status, 200, "sin la fecha (una sesión de antes), como siempre");
+      // una relectura que mejora deja su marca aunque todavía no haya captura (la del texto anterior podía estar escribiéndose)
+      const P10 = "CO1.BDOS.88800010";
+      const g10 = (extra) => invocarPost(APIp, "/api/pliego?op=evaluacion", { id_proceso: "CO1.REQ.88800010", portafolio: P10, entidad: "Gobernación de Prueba", nit: "800123456", texto: textoEv, paginas_ocr: 0, ...extra }, CAB_TOKEN);
+      await g10({ ocr_pendiente: true, intento_ocr: 1, paginas_sin_leer: [2] });
+      assert.strictEqual(Number(await rRl.exists(Ev.claveRelectura(P10))), 0, "premisa: el primer texto, sin captura, no tiene marca");
+      await g10({ relectura: true, intento_ocr: 2, paginas_sin_leer: [] });
+      assert.strictEqual(Number(await rRl.exists(Ev.claveRelectura(P10))), 1, "la relectura que mejora la deja, con o sin captura");
+      await rRl.del(Ev.claveRelectura(P10)); await rRl.del(Ev.claveTexto(P10)); await rRl.hdel(Ev.claveEntidad("nit:800123456"), P10);
+      // los intentos no vuelven atrás con la captura (una relectura «sin mejora» los sube en la entrada, no en el texto)
+      await g9({ ocr_pendiente: true, intento_ocr: 1, paginas_sin_leer: [2] });
+      await g9({ relectura: true, ocr_pendiente: true, intento_ocr: 2, paginas_sin_leer: [2] });
+      assert.strictEqual((await ver9()).intentos_ocr, 2, "premisa: la entrada tiene 2 intentos");
+      await invocarPost(APIp, "/api/pliego?op=evaluacion", { portafolio: P9, motor: "sesion", captura: capturaLimpia }, CAB_TOKEN);
+      assert.deepStrictEqual([(await ver9()).ocr_pendiente, (await ver9()).intentos_ocr], [true, 2], "la captura conserva los intentos más altos, no los del texto");
+      // la marca de relectura de OTRO texto (uno que llegó mientras la captura se escribía) no se borra
+      await rRl.set(Ev.claveRelectura(P9), "2099-01-01T00:00:00.000Z");
+      await invocarPost(APIp, "/api/pliego?op=evaluacion", { portafolio: P9, motor: "sesion", captura: capturaLimpia }, CAB_TOKEN);
+      assert.strictEqual(String(await rRl.get(Ev.claveRelectura(P9))), "2099-01-01T00:00:00.000Z", "la captura solo borra la marca de su propio texto");
+      assert.ok((await invocar(APIp, "/api/pliego?op=evaluacion&pendientes=1", CAB_TOKEN)).cuerpo.pendientes.some((x) => x.portafolio === P9), "y el proceso sigue en la cola");
+      await rRl.del(Ev.claveRelectura(P9));
+      // sin el texto anterior (caducó) y sin nada legible: se anota y sigue pendiente (el lector para en su tope)
+      await rRl.del(Ev.claveTexto(P9));
+      r9 = await g9({ relectura: true, intento_ocr: 2, texto: "", paginas_sin_leer: [] });
+      assert.deepStrictEqual([r9.status, r9.cuerpo.estado, r9.cuerpo.conservado, (await ver9()).ocr_pendiente, (await ver9()).intentos_ocr], [200, "sin_mejora", false, true, 2], "sin texto anterior ni nada legible: se anota el intento y queda pendiente");
+      await rRl.hdel(Ev.claveEntidad("nit:800123456"), P9); await rRl.del(Ev.claveCaptura(P9));
     }
     {
       const { escribirJSONComprimido: escEv } = require("../lib/almacen.js");
@@ -54491,6 +54798,30 @@ async function main() {
         assert.ok(rB.cuerpo.delta && rB.cuerpo.delta.historicas > 0, `montaje: el delta tenía que meter una fila cerrada al histórico: ${JSON.stringify(rB.cuerpo.delta)}`);
         assert.ok(rB.cuerpo.baja && (rB.cuerpo.baja.al_dia === true) === !empieza,
           `con el índice publicado hace ${horas} h, la sincronización ${empieza ? "empieza" : "no empieza"} otro ciclo: ${JSON.stringify(rB.cuerpo.baja)}`);
+        /* …y lo deja anotado (3-nov-2026): la cadencia se mide en producción, no se estima */
+        const anotada = ((await leerJ39(redis, CLAVES.indiceBajaTramos)) || [])[0];
+        assert.ok(anotada && (empieza ? ["tramo", "publicado"].includes(anotada.resultado) : anotada.resultado === "al_dia") && Number.isFinite(Date.parse(anotada.ts)),
+          `la actualización anota qué hizo la baja (${horas} h): ${JSON.stringify(anotada)}`);
+      }
+      {
+        const tramos = await leerJ39(redis, CLAVES.indiceBajaTramos);
+        assert.ok(Array.isArray(tramos) && tramos.some((x) => x.resultado === "sin_cerradas"), `una actualización con datos y sin procesos cerrados queda anotada como tal: ${JSON.stringify(tramos && tramos.map((x) => x.resultado))}`);
+        const salud39 = await invocar(require("../api/procesos.js"), "/api/procesos?op=salud");
+        assert.deepStrictEqual(salud39.cuerpo.indice_baja && salud39.cuerpo.indice_baja.ultimas_actualizaciones && salud39.cuerpo.indice_baja.ultimas_actualizaciones.map((x) => x.resultado), tramos.map((x) => x.resultado),
+          "la salud enseña lo anotado, la más reciente primero");
+        // la lista no crece sin tope
+        await escribirJ39(redis, CLAVES.indiceBajaTramos, Array.from({ length: 30 }, (_, i) => ({ ts: new Date(Date.now() - i * 3600e3).toISOString(), resultado: "al_dia" })));
+        await corpusAlDia39(new Date(Date.now() - 3600e3).toISOString());
+        await escribirJ39(redis, CLAVES.indiceBajaMeta, { generado: new Date(Date.now() - 3600e3).toISOString(), procesos_analizados: 1 });
+        socrata.setDataset([cerrada39("CO1.L3.CERRADA.TOPE")]);
+        await invocarSync39("/api/procesos?op=sync&modo=delta&chain=0&presupuesto=20000");
+        socrata.setDataset([]);
+        const tope = await leerJ39(redis, CLAVES.indiceBajaTramos);
+        assert.strictEqual(tope.length, sync.TRAMOS_BAJA_GUARDADOS, `se guardan las últimas ${sync.TRAMOS_BAJA_GUARDADOS}: ${tope.length}`);
+        const e = sync.entradaTramoBaja;
+        assert.deepStrictEqual([e(null, "sin_cerradas", 0).resultado, e({ done: false, pendientes: 3 }, null, 5).resultado, e({ done: false, pendientes: 3 }, null, 5).meses_pendientes,
+          e({ done: true, al_dia: true }, null, 1).resultado, e({ done: true }, null, 1).resultado, e({ done: false, error: "ERR" }, null, 1).resultado, e({ done: true, vacio: true }, null, 1).resultado, e(null, null, 0), e({ done: false, enCurso: true }, null, 1).resultado],
+          ["sin_cerradas", "tramo", 3, "al_dia", "publicado", "error", "vacio", null, "en_curso"], "cada resultado con su nombre; sin baja ni motivo, no se anota nada; con otra construcción en curso no es un tramo");
       }
 
       /* ── D · «no sé» no puede valer «al día» ni «1-ene-2000» ── */

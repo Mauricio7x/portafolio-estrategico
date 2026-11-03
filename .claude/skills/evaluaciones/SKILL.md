@@ -22,7 +22,7 @@ variables de entorno del entorno» y termine.
 0. **Solo con el argumento «leer» (la tarea de la madrugada): leer documentos nuevos.** Sin «leer», salte al paso 1.
 
    ```bash
-   node "$(git rev-parse --show-toplevel)/tests/capturar_evaluaciones.js" --perfil helder > /tmp/lectura.txt 2>&1; echo "SALIDA=$?"; tail -25 /tmp/lectura.txt
+   node "$(git rev-parse --show-toplevel)/tests/capturar_evaluaciones.js" --perfil helder > /tmp/lectura.txt 2>&1; echo "SALIDA=$?" >> /tmp/lectura.txt; tail -25 /tmp/lectura.txt
    ```
 
    El lector hace lo mismo que el botón «Leer más evaluaciones de esta entidad»: busca en datos.gov.co los procesos
@@ -32,6 +32,12 @@ variables de entorno del entorno» y termine.
    pasadas 150 no manda ninguna más (OCR.space gratis da 500 solicitudes al día por IP y 25.000 al mes; cada página
    es una imagen). Un proceso que la entidad todavía no publicó (`sin_documento` en el resumen) no gasta ese cupo: se
    sigue con el siguiente, hasta 40 consultas por noche (`consultados`). No cambie esos números.
+   Si OCR.space está saturado, el lector deja de mandarle imágenes 10 minutos, aparta los documentos que lo necesitan
+   (`aplazados`) y los vuelve a leer al final; lo que tampoco entonces se pudo, lo guarda con lo que trae la capa y lo
+   relee otra noche (`ocr_pendiente`; `releidos` cuenta los de noches anteriores). Por eso puede tardar más de 30
+   minutos: córrala en segundo plano si su herramienta lo permite, y si la orden se corta por tiempo, espere a que
+   `/tmp/lectura.txt` traiga la línea `SALIDA=` (o a que `pgrep -f capturar_evaluaciones` no encuentre nada) y siga
+   con lo que diga; no la lance otra vez.
    - `SALIDA=3`: escriba tal cual la línea `La base de datos de Detekta no responde: hoy no se leyó ni se interpretó nada`
      y termine (sin base no hay dónde guardar ni de dónde leer).
    - `SALIDA=1`: diga en una línea la frase que sigue a `FALLO:` y siga con el paso 1 (puede haber pendientes de antes).
@@ -66,6 +72,14 @@ variables de entorno del entorno» y termine.
    - UNA entrada por oferente, con `oferente` tal como está escrito en la fila que cita. Si aparece en dos tablas
      (habilitación y ponderación), junte sus datos en una sola entrada: la cita de la fila con las cifras y
      `estado_cita` para la otra. Dos entradas del mismo oferente con cifras distintas dejan el proceso incompleto;
+   - `numero`: el número de la propuesta, si el documento las numera, tal cual («6»), pegado al nombre en la misma
+     fila de la cita. No use el orden de elegibilidad ni un puntaje. Si en la MISMA tabla hay dos oferentes que se
+     llaman casi igual, cada uno en su fila con su número, capture los dos con su nombre tal como está escrito en su
+     fila: la aplicación los separa solo así; si no, los junta y el proceso queda incompleto. Nunca deje fuera una
+     oferta para que cuadre;
+   - si la tabla parte el nombre en varias líneas o mete otras columnas en medio, la cita se copia igual, literal y
+     con esas líneas y celdas, hasta 200 caracteres, empezando en la línea donde empieza el nombre: la aplicación lo
+     encuentra aunque venga partido, y busca sus cifras desde ahí;
    - `estado`: «habil» si quedó hábil o figura en la tabla de ponderación; «rechazada» si el documento lo dice;
      «sin_dato» si no lo dice. No lo deduzca;
    - las cifras como TEXTO copiado tal cual («$ 942,406,356.00», «49,5»): valor, puntaje de precio, puntaje
@@ -85,12 +99,13 @@ variables de entorno del entorno» y termine.
 4. **Enviarla.** La aplicación verifica cada cita y guarda solo lo que se sostiene:
 
    ```bash
-   node -e 'const c=require("/tmp/captura.json"); process.stdout.write(JSON.stringify({portafolio:"<PORTAFOLIO>",motor:"sesion",captura:c}))' > /tmp/cuerpo.json
+   node -e 'const c=require("/tmp/captura.json"), e=require("/tmp/expediente.json"); if (e.portafolio !== "<PORTAFOLIO>") { console.error("El expediente guardado es de otro proceso: repita el paso 2 con este portafolio."); process.exit(1); } process.stdout.write(JSON.stringify({portafolio:"<PORTAFOLIO>",motor:"sesion",texto_guardado_el:e.texto_guardado_el,captura:c}))' > /tmp/cuerpo.json
    curl -s -X POST -H "x-historico-token: $TOKEN" -H "x-vercel-protection-bypass: $VERCEL_AUTOMATION_BYPASS_SECRET" -H "Content-Type: application/json" --data-binary @/tmp/cuerpo.json "$APP" -o /tmp/respuesta.json
    node -e 'const r=require("/tmp/respuesta.json"); console.log(r.ok?`GUARDADO · ofertas ${r.verificacion.ofertas_verificadas}/${r.verificacion.ofertas_recibidas} · citas ${r.verificacion.citas_verificadas}/${r.verificacion.citas_total} · apartados ${r.verificacion.apartados_total} · completo ${r.verificacion.completa ? "sí" : "no"}`:`ERROR ${r.error} ${JSON.stringify(r.detalle||"")}`); for (const a of (r.verificacion&&r.verificacion.apartados)||[]) console.log("  apartado:",JSON.stringify(a))'
    ```
 
-   Si responde 400 con `detalle`, corrija la forma y vuelva a enviar. Si `apartados` trae ofertas o cifras
+   Si responde 409, el lector cambió el texto de ese proceso mientras usted lo leía: vuelva al paso 2 con ese
+   portafolio y rehaga la captura sobre el texto nuevo. Si responde 400 con `detalle`, corrija la forma y vuelva a enviar. Si `apartados` trae ofertas o cifras
    apartadas, revise esas citas (literales, de la página declarada, con el nombre y la cifra dentro) y vuelva
    a enviar la captura corregida: cada envío reemplaza al anterior, y el texto sigue guardado 30 días.
 
