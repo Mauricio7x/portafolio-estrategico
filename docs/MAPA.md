@@ -22,7 +22,7 @@
   pliego.js                   Router del dominio PLIEGO (Fase 0 · consolidación a 6 funciones)
   procesos.js                 Router del dominio PROCESOS (Fase 0 · consolidación a 6 funciones)
 
-· lib/ — 104 módulos:
+· lib/ — 106 módulos:
   accesibilidad.js            Accesibilidad operativa de la zona de la obra
   adendas.js                  Vigía de adendas · lo que el DATASET dice que cambió (Fase 5)
   almacen.js                  Esquema de claves Redis + compresión de chunks
@@ -63,6 +63,8 @@
   documentos_proceso.js       LOS DOCUMENTOS DE UN PROCESO, LEÍDOS SOLOS (3-sep-2026)
   docx.js                     El texto de un documento de Word (.docx), sin dependencias
   ejecucion.js                Cómo EJECUTA sus contratos de obra una entidad (jbjy-vk9h)
+  entregables.js              LO QUE EL PLIEGO PIDE ENTREGAR CON LA OFERTA, CON SU PÁGINA (3-nov-2026)
+  entregar.js                 «LO QUE TIENE QUE ENTREGAR»: UNA SOLA LISTA POR PROCESO, ARMADA EN EL SERVIDOR (3-nov-2026)
   equivalencias.js            Qué clases UNSPSC son AFINES en el mercado real
   error_interno.js            La respuesta JSON de un fallo que nadie capturó (6-sep-2026)
   espacio.js                  Qué ocupa la base de datos, medido desde la aplicación (30-sep-2026)
@@ -225,8 +227,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 415 secciones (41 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 20840  Lo que llenó Upstash en octubre fue el ancho de banda de lo programado, y noviembre va just…
+· MEMORIA · docs/MEMORIA.md — 416 secciones (41 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 20864  El vigilante pide el tamaño y no el diagnóstico entero, y el lector deja de leer el corpus …
   L 20890  Lo que presupuestaron las entidades va al lado de cada ítem, el enlace de SECOP II pegado e…
   L 20917  Lo que no sale tampoco se calcula: los avisos sin correo, la baja como mucho un ciclo al dí…  (superada)
@@ -235,7 +236,8 @@
   L 20983  Un consorcio con Helder de integrante hereda sus precios corregidos, y «Calcular» manda el …
   L 21001  La 11 con la 3: la letra de leer, todo el texto a 7:1 y una sola tabla de tamaños (3-nov-20…
   L 21022  El calendario del proceso: las fechas de los documentos llegan a Mis procesos, SECOP II man…
-  L 21063  El cronograma en Excel se lee: el Anexo 2 de Colombia Compra entra a la línea de tiempo con…
+  L 21063  Lo que tiene que entregar: la lista del pliego con su página, marcable en el papeleo, y el …
+  L 21094  El cronograma en Excel se lee: el Anexo 2 de Colombia Compra entra a la línea de tiempo con…
 
 · DOCUMENTOS docs/ — 76 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)

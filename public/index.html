@@ -1338,7 +1338,11 @@
     .cas-notas { width: 100%; padding: 8px 10px; font-size: 16.5px; line-height: 1.45; resize: vertical; }
     .cas-notas-pie { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
     /* el selector de carpeta de cada tarjeta */
-    .cas-carpeta-sel { display: inline-flex; align-items: center; gap: 6px; }
+    /* el selector de la etapa con su opción más larga («Avisé que me interesa, en espera del sorteo») llevaba la cabecera
+       del expediente a 409 px en un teléfono de 390 (medido en Chromium el 3-nov-2026, ya antes de la lista de lo que hay
+       que entregar): el selector se encoge hasta el ancho que tenga */
+    .cas-carpeta-sel { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; min-width: 0; }
+    .cas-carpeta-sel .cas-carpeta-select { min-width: 0; max-width: 100%; }
     .cas-carpeta-rotulo { font-size: 14px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-tertiary); }
     .cas-carpeta-select { min-height: 32px; font-size: 15.5px; }
     @media (max-width: 480px) {
@@ -1584,6 +1588,31 @@
     .exp-estado-falta .exp-punto { color: var(--warn); }
     .exp-estado-mal .exp-punto { color: var(--danger); }
     .exp-estado-nd .exp-punto { color: var(--text-tertiary); }
+    /* LO QUE TIENE QUE ENTREGAR (3-nov-2026): una fila por exigencia, el nombre y su mando en la primera línea, de
+       dónde sale debajo, y lo que hay que tocar (la cita, la fecha) plegado. A 390 px el mando baja a su propia línea. */
+    .exp-ent-cifra { margin-top: var(--esp-2); font-size: var(--tipo-3); color: var(--text-secondary); }
+    .exp-ent-cifra-n { font-size: var(--tipo-6); font-weight: 600; color: var(--text-primary); margin-right: 4px; }
+    .exp-ent-lectura { margin-top: var(--esp-3); padding: var(--esp-2) var(--esp-3); border-radius: 10px; background: var(--warn-light);
+      color: var(--warn); font-size: var(--tipo-2); line-height: 1.5; }
+    .exp-ent-lectura p + p { margin-top: var(--esp-1); }
+    .exp-ent-mensaje { margin-top: var(--esp-2); font-size: var(--tipo-2); color: var(--text-secondary); min-height: 1em; }
+    .exp-ent-grupo { margin-top: var(--esp-4); }
+    .exp-ent-subtitulo { font-size: var(--tipo-1); font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-tertiary); }
+    .exp-ent-fila { padding: var(--esp-3) 0; border-bottom: 1px solid var(--border); }
+    .exp-ent-cabeza { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--esp-3); }
+    .exp-ent-nombre { min-width: 0; display: flex; align-items: baseline; gap: var(--esp-1); font-size: var(--tipo-3); font-weight: 500;
+      color: var(--text-primary); overflow-wrap: anywhere; }
+    .exp-ent-nombre .exp-estado { padding: 0; border: 0; background: none; min-height: 0; }
+    .exp-ent-estado { flex: 0 0 auto; width: auto; min-width: 9.5rem; }
+    .exp-ent-meta, .exp-ent-dato { margin-top: 2px; font-size: var(--tipo-2); color: var(--text-secondary); overflow-wrap: anywhere; }
+    .exp-ent-duda { margin-top: 2px; font-size: var(--tipo-2); color: var(--warn); }
+    .exp-ent-detalle { margin-top: var(--esp-1); font-size: var(--tipo-2); color: var(--text-secondary); }
+    .exp-ent-detalle summary { cursor: pointer; min-height: 24px; color: var(--accent); }
+    .exp-ent-cita { margin: var(--esp-2) 0; padding-left: var(--esp-3); border-left: 2px solid var(--border); color: var(--text-primary); font-size: var(--tipo-2); line-height: 1.55; }
+    @media (max-width: 640px) {
+      .exp-ent-cabeza { flex-wrap: wrap; }
+      .exp-ent-estado { width: 100%; }
+    }
     /* ¿PUEDE PRESENTARSE? (27-sep-2026): renglones apilados que envuelven — a 390 px una tabla obligaba a desplazar de lado */
     .exp-subtitulo { margin-top: var(--esp-4); font-size: var(--tipo-1); font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-tertiary); }
     .exp-filas-datos { list-style: none; margin: var(--esp-2) 0 0; padding: 0; }

@@ -54091,6 +54091,346 @@ async function main() {
 
 
   /* ═══════════════════════════════════════════════════════════════════════════
+     LO QUE TIENE QUE ENTREGAR (3-nov-2026) · lib/entregables + lib/entregar + el papeleo en fila
+     ───────────────────────────────────────────────────────────────────────────
+     Por proceso, la lista de lo que el pliego pide entregar con la oferta, cada fila con
+     cita y página, marcable y guardada en el papeleo del expediente. Lo que se cierra aquí,
+     contra las funciones REALES y con fragmentos LITERALES de pliegos reales (Fase 0 en
+     detekta-lector/entregables_fase0_2026-11-03: 14 pliegos, verdad leída a ciegas):
+       1) el extractor: la lista del capítulo IX y no el índice, el nombre que empieza por
+          la palabra del tipo, la letra separada («Formato 8 B»), el nombre delante del
+          rótulo («… (ANEXO No. 7 y No. 8)»), las viñetas bajo «deberá aportar…:», lo de
+          después de adjudicar fuera, lo de la entidad aparte, y CADA cita en su página;
+       2) el papeleo acepta las marcas (`req`) con su tope y sin mezclarlas con lo suyo;
+       3) la lista une pliego, cálculo, dictamen (solo citas comprobadas) y lo usual (marcado);
+       4) una marca SOBREVIVE a una adenda que renumera, por el router real;
+       5) dos guardados seguidos del papeleo no se pisan (el `cambiarDocumentos` REAL de app.js);
+       6) la pantalla: «N de M listos», lo no leído dicho, de usted y sin jerga propia.
+     ═══════════════════════════════════════════════════════════════════════════ */
+  bq37e: { if (!corre("unidad LO QUE TIENE QUE ENTREGAR")) break bq37e;
+    const E = require("../lib/entregables.js"), L = require("../lib/entregar.js"), DocsE = require("../lib/documentos_proceso.js");
+    const S = require("../lib/seguimiento.js"), Dn = require("../lib/diff.js"), Xe = require("../public/expediente.js");
+    const { tuteoEn: tuteoE, RE_EMOJI_UI: emojiE } = require("../lib/lenguaje_pantalla.js");
+    /* fragmentos LITERALES del pliego A de la muestra (CO1.REQ.11036237, Pasto, documento base de menor cuantía de
+       transporte v3), con sus páginas del PDF; el 8 B y el Formulario 1 con la forma exacta en que los saca pdf.js */
+    const PLIEGO_A = ["\f5", "CAPITULO IX LISTA DE ANEXOS, FORMATOS, MATRICES Y FORMULARIOS\t78",
+      "\f17", "2.1.\tCARTA DE PRESENTACIÓN DE LA OFERTA",
+      "El proponente debe presentar el Formato 1 – Carta de Presentación de la Oferta el cual debe ir",
+      "firmado por la persona natural proponente o por el representante legal del proponente individual o",
+      "plural o por el apoderado.",
+      "\f64", "jurídica cuando esta es inferior a un (1) año y que manifieste adicionalmente que mantendrá dicho",
+      "personal por un lapso igual al término de ejecución del contrato, para lo cual deberá diligenciar el",
+      "«Formato 8 B – Vinculación de personas en condición de discapacidad». En caso de modificarse la",
+      "fecha de cierre del proceso, se tendrá como referencia para establecer el plazo de vigencia del",
+      "\f72", "CAPÍTULO VII GARANTÍAS", "7.1.\tGARANTÍA DE SERIEDAD DE LA OFERTA",
+      "El proponente debe presentar con la propuesta una garantía de seriedad de la oferta que cumpla",
+      "con los parámetros, condiciones y requisitos que se indican en este numeral.",
+      "\f76", "Este seguro deberá constituirse y presentarse para aprobación de la entidad, dentro del mismo",
+      "término establecido para la garantía única de cumplimiento.",
+      "\f77", "El proponente adjudicatario debe presentar el Registro Único Tributario—RUT y demás documentos necesarios para la celebración",
+      "del contrato al momento de firma.",
+      "\f78", "CAPITULO IX LISTA DE ANEXOS, FORMATOS, MATRICES Y FORMULARIOS", "[Las entidades no pueden modificar el presente listado]",
+      "9.1\tANEXOS", "1. Anexo 1 – Anexo Técnico", "2. Anexo 2 – Cronograma", "3. Anexo 3 – Glosario", "4. Anexo 4 – Pacto de Transparencia", "5. Anexo 5 – Minuta del Contrato",
+      "\f79", "9.2\tFORMATOS", "1. Formato 1 – Carta de presentación de la oferta",
+      "2. Formato 2 – Conformación de Proponente plural (Formato 2A- Consorcios) (Formato 2B-", "UT)",
+      "3. Formato 3 – Experiencia", "4. Formato 4 – Capacidad financiera y organizacional", "5. Formato 5 – Capacidad residual",
+      "6. Formato 6 – Pagos de seguridad social y aportes legales", "7. Formato 7 – Factor de calidad", "8. Formato 8 – Factores de desempate",
+      "9. Formato 9 – Puntaje de Industria Nacional.", "10. Formato 10 – Carta Manifestación de Interés",
+      "11. Formato 11 – Autorización para el tratamiento de datos personales", "12. Formato 12 – Acreditación de emprendimientos y empresas de mujeres",
+      "13. Formato 13 – Acreditación de Mipyme", "14. Formato 14 – Factor de Calidad Ambiental y Social",
+      "9.3\tMATRICES", "1. Matriz 1 – Experiencia", "2. Matriz 2 – Indicadores financieros y organizacionales", "3. Matriz 3 – Riesgos",
+      "9.4\tFORMULARIOS", "1. Formulario 1– Formulario de Presupuesto Oficial"].join("\n");
+    /* la lista de Floridablanca (pliego C, CO1.REQ.10441750, pág. 22): viñetas bajo «deberá aportar los siguientes documentos:» */
+    const PLIEGO_C = ["\f22", "F. El proponente deberá aportar los siguientes documentos:", "•\tCARTA DE PRESENTACIÓN DE LA PROPUESTA.",
+      "•\tCERTIFICADO VIGENTE DE CONSTITUCIÓN, EXISTENCIA Y REPRESENTACIÓN", "LEGAL.", "•\tINSCRIPCIÓN EN EL REGISTRO ÚNICO DE PROPONENTES (RUP)",
+      "•\tDOCUMENTO DE IDENTIDAD.", "•\tACTA DE JUNTA DE SOCIOS", "•\tREGISTRO ÚNICO TRIBUTARIO (RUT)."].join("\n");
+    /* el pliego propio de IDIGER (ronda 7, CO1.REQ.10882579, págs. 37 y 58): el nombre va DELANTE del rótulo */
+    const PLIEGO_I = ["\f37", "3.2.1. Carta de presentación de la propuesta (ANEXO No. 1).", "\f58", "3.4.3. PERSONAL MÍNIMO REQUERIDO (ANEXO No. 7 y No. 8)"].join("\n");
+
+    /* ── 1 · EL EXTRACTOR ─────────────────────────────────────────────────── */
+    const citasEnSuPagina = (texto, r) => {
+      const pags = new Map(E.paginasDe(texto).map((p) => [p.pagina, p.texto]));
+      return r.filas.filter((f) => !(pags.get(f.pagina) || "").includes(f.cita)).map((f) => `${E.tituloDe(f)} (pág. ${f.pagina})`);
+    };
+    const tA = Dn.normalizarConPaginas(PLIEGO_A);
+    const rA = E.leerEntregables(tA);
+    const fA = (tipo, n) => rA.filas.find((f) => f.tipo === tipo && f.numero === n) || null;
+    assert.deepStrictEqual(citasEnSuPagina(tA, rA), [], "ninguna fila cita algo que no esté en la página que dice");
+    assert.strictEqual(rA.lista_de_anexos && rA.lista_de_anexos.pagina, 78,
+      "la lista es la del capítulo IX (pág. 78), no el índice del principio (pág. 5, «… FORMULARIOS 78» sin puntos)");
+    assert.deepStrictEqual(Array.from({ length: 14 }, (_, i) => String(i + 1)).filter((n) => !fA("formato", n)), [], "los 14 formatos de la lista salen");
+    assert.strictEqual(fA("formato", "8").nombre, "Factores de desempate");
+    assert.strictEqual(fA("formulario", "1") && fA("formulario", "1").nombre, "Formulario de Presupuesto Oficial",
+      "MUTACIÓN (el título «9.4 FORMULARIOS 1.» leído como rótulo): el nombre salía «Formulario»");
+    const f8b = fA("formato", "8B");
+    assert.ok(f8b && f8b.pagina === 64 && /discapacidad/.test(f8b.nombre), `la letra separada («Formato 8 B –») es el 8B, en su página: ${JSON.stringify(f8b)}`);
+    assert.strictEqual(f8b.duda, null, "y la frase es del proponente aunque diga «término de ejecución del contrato» (señal débil de después de adjudicar)");
+    assert.strictEqual(fA("formato", "13").duda, "solo_lista", "lo que solo está en la lista sale «por confirmar», no se calla");
+    assert.strictEqual(fA("formato", "1").duda, null, "el Formato 1 se pide en el texto (pág. 17)");
+    assert.strictEqual(fA("formato", "1").pagina, 17, "y la página es la de la exigencia, no la de la lista");
+    assert.ok(rA.filas.some((f) => f.clave === "garantia-seriedad" && f.pagina === 72 && !f.duda), "la garantía de seriedad, pedida con el verbo en la pág. 72");
+    assert.ok(!rA.filas.some((f) => /cumplimiento/i.test(E.tituloDe(f))), "la garantía única de cumplimiento es de después de adjudicar: no es para presentar la oferta");
+    assert.ok(!rA.filas.some((f) => f.clave === "rut"), "MUTACIÓN (sin la regla de después de adjudicar): en este pliego el RUT solo lo presenta el adjudicatario (pág. 77)");
+    assert.ok(rA.de_la_entidad.some((x) => x.tipo === "anexo" && x.numero === "1") && rA.de_la_entidad.some((x) => x.tipo === "matriz" && x.numero === "3"),
+      "el anexo técnico y la matriz de riesgos son de la entidad: van aparte");
+    assert.ok(!rA.filas.some((f) => f.tipo === "matriz" || (f.tipo === "anexo" && /t[eé]cnico|cronograma|glosario|minuta/i.test(f.nombre || ""))), "y no se mezclan con lo que usted entrega");
+    assert.ok(/consorcio/.test(fA("formato", "2").condicion || "") && /Mipyme/.test(fA("formato", "13").condicion || ""), "la condición sale del NOMBRE del formato");
+    const tC = Dn.normalizarConPaginas(PLIEGO_C), rC = E.leerEntregables(tC);
+    assert.deepStrictEqual(citasEnSuPagina(tC, rC), []);
+    for (const k of ["rut", "existencia-representacion", "documento-identidad", "rup", "autorizacion-organo-social"]) {
+      const f = rC.filas.find((x) => x.clave === k);
+      assert.ok(f && f.pagina === 22 && f.duda === null, `«${k}»: la viñeta bajo «deberá aportar los siguientes documentos:» hereda la exigencia: ${JSON.stringify(f)}`);
+    }
+    const tI = Dn.normalizarConPaginas(PLIEGO_I), rI = E.leerEntregables(tI);
+    const anexo = (n) => rI.filas.find((f) => f.tipo === "anexo" && f.numero === n) || null;
+    assert.strictEqual(anexo("1") && anexo("1").nombre, "Carta de presentación de la propuesta", "el nombre DELANTE de «(ANEXO No. 1)»");
+    assert.ok(anexo("7") && anexo("8") && /personal/i.test(anexo("8").nombre || ""), "«(ANEXO No. 7 y No. 8)»: los dos números, con el nombre de delante");
+    /* la identidad va por el NOMBRE: el mismo formato con otro número tiene la misma clave */
+    assert.strictEqual(E.claveNombre("Factores de desempate"), E.claveNombre("Factor de desempate"), "el plural no cambia la identidad");
+    assert.notStrictEqual(E.idDe({ tipo: "formato", numero: "8", clave: "factor-desempate" }), E.idDe({ tipo: "formato", numero: "10", clave: "factor-desempate" }));
+    /* solo en la familia del pliego, y con la versión nueva de los hechos */
+    assert.ok(DocsE.VERSION >= 23 && DocsE.hechosDeTexto(PLIEGO_A, { tipo: "documento_base" }).entregables.filas.length === rA.filas.length);
+    assert.strictEqual(DocsE.hechosDeTexto(PLIEGO_A, { tipo: "estudio_previo" }).entregables, null, "un estudio previo nombra formatos que no son la exigencia: no se lee ahí");
+    /* la condición solo si es segura: «Poder del apoderado» nunca sale «solo en consorcio» (la frase hablaba de plurales) */
+    const rP = E.leerEntregables("\f9\nCuando el proponente plural actúe por medio de apoderado, deberá aportar el poder debidamente otorgado.");
+    const poder = rP.filas.find((f) => f.clave === "poder");
+    assert.ok(poder && /apoderado/.test(poder.condicion) && !/consorcio/i.test(poder.condicion), `MUTACIÓN (condición por las palabras de la frase): ${JSON.stringify(poder)}`);
+
+    /* ── 1b · LO QUE TUMBÓ LA REVISIÓN ADVERSARIA EN EL EXTRACTOR ───────────── */
+    {
+      /* (1) una condición falsa le quitaba un punto: Hábitat (r7_00) pág. 82, literal */
+      const HAB = ["\f82", "4.4.\tVINCULACIÓN DE PERSONAS CON DISCAPACIDAD", "La Entidad asignará un (1) punto al Proponente que acredite el número mínimo",
+        "de personas con discapacidad de acuerdo con el número total de trabajadores", "de la planta de su personal en los términos señalados en el artículo 2.2.1.2.4.2.6.",
+        "del Decreto 1082 de 2015 (adicionado por el Decreto 392 de 2018).", "Para esto debe presentar: i) el Formato 8 – Vinculación de personas con",
+        "discapacidad suscrito por la persona natural, el representante legal o el revisor"].join("\n");
+      const f8h = E.leerEntregables(Dn.normalizarConPaginas(HAB)).filas.find((f) => f.tipo === "formato" && f.numero === "8");
+      assert.strictEqual(f8h.condicion, "Para obtener puntaje.", `MUTACIÓN (la primera regla que casa): da un punto y salía «Solo si hay que desempatar»: ${f8h.condicion}`);
+      const f8sin = E.leerEntregables("\f3\nEl proponente debe presentar el Formato 8 – Vinculación de personas con discapacidad.").filas.find((f) => f.numero === "8");
+      assert.ok(/confirme/i.test(f8sin.condicion) && !/^Solo si/.test(f8sin.condicion), "sin saber si es puntaje o desempate, la condición manda a confirmar: nunca «Solo si…»");
+      /* (5) una sola mención condicionada no manda sobre las demás, y un propósito no es condición */
+      const rS = E.leerEntregables("\f30\nEn caso de que no requiera autorización para subcontratar, el proponente deberá aportar el acta de liquidación del contrato.\n\f31\nLa experiencia se acredita con el acta de liquidación de cada contrato.");
+      assert.strictEqual(rS.filas.find((f) => f.clave === "soportes-experiencia").condicion, null, "MUTACIÓN (condición de una sola mención): la pág. 31 lo nombra sin condición, así que no se dice «solo si…»");
+      const rP2 = E.leerEntregables("\f9\nPara la verificación de esta circunstancia, el proponente deberá aportar el certificado de existencia y representación legal.");
+      assert.strictEqual(rP2.filas.find((f) => f.clave === "existencia-representacion").condicion, null, "«Para la verificación…» es un propósito, no una condición");
+      /* (6) el tope se DICE */
+      const largo = ["\f1", ...Array.from({ length: E.MAX_FILAS + 6 }, (_, i) => `El proponente deberá diligenciar el Formato ${(i % 40) + 1}${"ABCDEFGH"[Math.floor(i / 40)] || ""} – Papel número ${i} del pliego.`)].join("\n");
+      const rL = E.leerEntregables(largo);
+      assert.ok(rL.recortada === true && rL.filas.length === E.MAX_FILAS, "más filas que el tope: se corta y se marca");
+      const Lr = L.listaParaEntregar({ docs: { leidos: { x: { nombre: "Pliego larguísimo.pdf", tipo: "pliego", fecha_carga: "2026-10-01", hechos: { entregables: rL } } } } });
+      assert.deepStrictEqual(Lr.lectura.recortados, ["Pliego larguísimo.pdf"], "MUTACIÓN (`recortada` sin leer): la lista dice qué documento no cupo");
+      assert.ok(/pide más cosas de las que caben/.test(Xe.htmlEntregar({ id: "X", entregar: Lr }, { estadosDoc: S.ESTADO_DOC_ETIQUETA })), "y la pantalla lo dice");
+    }
+
+    /* ── 2 · EL PAPELEO GUARDA LAS MARCAS ──────────────────────────────────── */
+    const conMarcas = S.normalizarDocumentos([
+      { nombre: "Póliza Seguros 123", clave: "garantia_seriedad", estado: "listo" },
+      { req: "formato|5|capacidad-residual", nombre: "Formato 5", estado: "listo" },
+      { req: "formato|5|capacidad-residual", nombre: "repetida", estado: "en_tramite" },
+      { req: "NO ES UNA IDENTIDAD", nombre: "ilegible" },
+    ], { ahora: "2026-11-03T12:00:00.000Z" });
+    assert.deepStrictEqual(conMarcas.map((d) => d.req || d.clave), ["garantia_seriedad", "formato|5|capacidad-residual"],
+      "una marca repetida o ilegible se descarta: convertirla en «documento suyo» pintaría una fila de la lista en «Sus documentos»");
+    assert.strictEqual(S.resumenDocumentos(conMarcas, "2026-11-03", null).total, 1, "las marcas no cuentan como papeles suyos: su cuenta es la de la lista");
+    const muchas = S.normalizarDocumentos([...Array.from({ length: S.MAX_DOCUMENTOS + 3 }, (_, i) => ({ nombre: `doc ${i}` })), ...Array.from({ length: S.MAX_MARCAS + 5 }, (_, i) => ({ req: `documento||fila-${i}`, estado: "listo" }))]);
+    assert.deepStrictEqual([muchas.filter((d) => !d.req).length, muchas.filter((d) => d.req).length], [S.MAX_DOCUMENTOS, S.MAX_MARCAS], "dos topes: marcar la lista no le quita sitio a lo suyo");
+    const bytesMarca = JSON.stringify(S.normalizarDocumentos([{ req: `formato|8|${E.claveNombre("Factores de desempate")}`, nombre: "Formato 8 – Factores de desempate", estado: "listo", vence: "2026-12-01" }], { ahora: "2026-11-03T12:00:00.000Z" })[0]).length;
+    assert.ok(bytesMarca < 260, `una marca pesa ${bytesMarca} bytes`);
+
+    /* ── 3 · LA LISTA UNE CUATRO FUENTES ───────────────────────────────────── */
+    const hA = DocsE.hechosDeTexto(PLIEGO_A, { tipo: "documento_base" });
+    const docsLista = { id_proceso: "X1", indice: { archivos: [
+      { id_documento: "p1", nombre: "1. DOCUMENTO BASE - PLIEGO DE CONDICIONES DEFINITIVO.pdf", tipo: "documento_base", de_la_entidad: true, en_plan: true, fecha_carga: "2026-09-07" },
+      { id_documento: "a1", nombre: "ADENDA No. 1.pdf", tipo: "adenda", de_la_entidad: true, en_plan: true, fecha_carga: "2026-09-10" },
+      { id_documento: "s1", nombre: "Pliego escaneado.pdf", tipo: "pliego", de_la_entidad: true, en_plan: true, fecha_carga: "2026-09-05" }] },
+      leidos: { p1: { nombre: "1. DOCUMENTO BASE - PLIEGO DE CONDICIONES DEFINITIVO.pdf", tipo: "documento_base", fecha_carga: "2026-09-07", hechos: hA },
+        s1: { nombre: "Pliego escaneado.pdf", tipo: "pliego", fecha_carga: "2026-09-05", origen: "ocr", paginas: 6, paginas_total: 20, hechos: DocsE.hechosDeTexto(PLIEGO_C, { tipo: "pliego" }) } }, ilegibles: {} };
+    const guiaLista = { requisitos: [
+      { clave: "garantia_seriedad", titulo: "Garantía de seriedad de la oferta (10 % del presupuesto)", estado: "pendiente", detalle: "Para este proceso serían cerca de $107.660.648 asegurados. Sin la póliza no hay oferta." },
+      { clave: "financieros", titulo: "Indicadores financieros", estado: "revisar", detalle: "x" },
+      { clave: "registro", titulo: "Registro de proponente vigente", estado: "cumple", detalle: "y" },
+      { clave: "capacidad", titulo: "Capacidad para facturar este contrato sin pasarse", estado: "sin_dato", detalle: "Se evalúa con la fila viva del proceso y su perfil." }],
+      exigencias: [{ clave: "liquidez", titulo: "Liquidez mínima", exige: "1,50", estado: "cumple" }, { clave: "capital_trabajo", titulo: "Capital de trabajo", exige: "$355.280.137", estado: "revisar" }] };
+    const dictLista = { generado: "2026-11-02T10:00:00.000Z", documento: "1. DOCUMENTO BASE", filas: [
+      { texto: "Constancia de asistencia a la visita de obra", pagina: 15, cita: "certificado de asistencia a la visita de obra", cita_verificada: true },
+      { texto: "Certificado de paz y salvo de la DIAN", pagina: 30, cita: "una cita que no se comprobó", cita_verificada: false }] };
+    const f5 = E.idDe(fA("formato", "5")), f8 = fA("formato", "8");
+    const L1 = L.listaParaEntregar({ docs: docsLista, guia: guiaLista, dictamen: dictLista, hoy: "2026-09-12", cierre: "2026-09-20T15:00:00.000",
+      documentos: S.normalizarDocumentos([{ req: f5, nombre: "Formato 5", estado: "listo", vence: "2026-09-15" },
+        { nombre: "Póliza Seguros 123", clave: "garantia_seriedad", estado: "en_tramite" },
+        { req: "formato|99|algo-viejo", nombre: "Algo de otra versión", estado: "listo" }]) });
+    const fl = (id) => L1.filas.find((f) => f.id === id) || null;
+    const gar = L1.filas.find((f) => f.clave === "garantia-seriedad");
+    assert.ok(gar && gar.fuente === "pliego" && /10 %/.test(gar.dato || "") && gar.requisito_guia === "garantia_seriedad", `lo calculado se PEGA a la fila del pliego: ${JSON.stringify(gar)}`);
+    assert.ok(gar.marca && gar.marca.por === "documento" && gar.estado === "en_tramite", "la póliza que anotó como «garantía de seriedad» le da su estado a la fila");
+    const f4 = L1.filas.find((f) => f.tipo === "formato" && f.numero === "4");
+    assert.ok(/Liquidez mínima: 1,50/.test(f4.dato || "") && /Capital de trabajo/.test(f4.dato || ""), "los indicadores y el capital van con el Formato 4");
+    assert.ok(L1.filas.some((f) => f.fuente === "dictamen" && /visita/i.test(f.titulo) && f.confianza === "por_confirmar"), "del dictamen entra lo citado y comprobado");
+    assert.ok(!L1.filas.some((f) => /DIAN/.test(f.titulo)), "MUTACIÓN (sin mirar cita_verificada): lo que el dictamen no pudo citar no entra (D3)");
+    assert.ok(L1.filas.filter((f) => f.fuente === "usual").every((f) => f.confianza === "por_confirmar" && /suele/.test(f.por_que)), "lo usual sale marcado como tal y por confirmar (D2)");
+    assert.ok(!L1.filas.some((f) => f.fuente === "usual" && f.clave === "rup"), "lo usual solo si el pliego leído no lo trae: el RUP salió del pliego escaneado");
+    assert.strictEqual(fl(f5).dato, null, "MUTACIÓN (copiar la frase de la guía sin dato): «Se evalúa con la fila viva…» es de la aplicación, no del pliego (visto en Chromium)");
+    assert.strictEqual(fl(f5).requisito_guia, "capacidad", "pero el vínculo con el cálculo sigue");
+    assert.strictEqual(fl(f5).alerta, "vence_antes_del_cierre", "un «listo» que vence antes del cierre se dice…");
+    assert.strictEqual(L1.resumen.listos, 0, "…y no cuenta como listo (la palabra dice lo mismo que el color)");
+    assert.deepStrictEqual(L1.huerfanas.map((h) => h.nombre), ["Algo de otra versión"], "la marca que ya no casa con ninguna fila no se pierde: se dice");
+    assert.ok(L1.lectura.sin_leer.some((x) => /ADENDA/.test(x.nombre)), "la adenda que no se leyó se dice");
+    assert.ok(L1.lectura.a_medias.some((x) => /escaneado/.test(x.nombre) && x.paginas === 6 && x.paginas_total === 20), "y el escaneo leído a medias, con cuánto");
+    assert.strictEqual(L1.pliego.nombre, "1. DOCUMENTO BASE - PLIEGO DE CONDICIONES DEFINITIVO.pdf", "manda el definitivo más nuevo (la regla del dictamen)");
+    assert.strictEqual(L1.filas.find((f) => f.clave === "rut").duda, "version_anterior", "lo que solo trae un documento anterior al que manda sale «por confirmar», con el porqué");
+    const L0 = L.listaParaEntregar({ docs: null, guia: { requisitos: [{ clave: "registro", titulo: "Registro de proponente: la ley no lo exige en esta modalidad", estado: "revisar" }] } });
+    assert.ok(!L0.hay_lectura && L0.filas.length && L0.filas.every((f) => f.confianza === "por_confirmar"), "sin pliego leído la lista existe, entera «por confirmar»");
+    assert.ok(!L0.filas.some((f) => f.clave === "rup"), "y no pide el RUP donde la ley no lo exige");
+    assert.ok(!L0.filas.some((f) => f.clave === "garantia-seriedad"), "ni la garantía de seriedad si la guía no la pide");
+    /* LO QUE TUMBÓ LA REVISIÓN ADVERSARIA EN LA LISTA */
+    {
+      const base = (tipo, numero, nombre) => { const f = { tipo, numero, nombre, clave: E.claveNombre(nombre) }; return { ...f, id: E.idDe(f), duda: null }; };
+      /* (3) el pliego tipo repite nombres: 8H y 10H «Acreditación Mipyme»; una marca por nombre no elige a ciegas */
+      const repetidas = [base("formato", "8H", "Acreditación Mipyme"), base("formato", "10H", "Acreditación Mipyme"), base("formato", "13", "Acreditación de emprendimientos y empresas de mujeres")];
+      const hu = L.emparejarMarcas(repetidas, [{ id: "m1", req: "formato|13|acreditacion-mipyme", nombre: "Formato 13 – Acreditación de Mipyme", estado: "listo" }]);
+      assert.ok(repetidas.every((f) => !f.marca), `MUTACIÓN (la primera con ese nombre): un «listo» de Mipyme no puede caer en el 8H, el 10H ni en el de mujeres: ${JSON.stringify(repetidas.map((f) => f.marca))}`);
+      assert.strictEqual(hu.length, 1, "queda huérfana, a la vista");
+      const repetidas2 = [base("formato", "8H", "Acreditación Mipyme"), base("formato", "10H", "Acreditación Mipyme")];
+      L.emparejarMarcas(repetidas2, [{ id: "m2", req: "formato|10h|acreditacion-mipyme-vieja", estado: "listo" }]);
+      assert.ok(!repetidas2[0].marca, "entre dos del mismo nombre, solo la del MISMO número");
+      /* (9) lo marcado antes de leer el pliego sigue en su formato cuando el pliego se lee */
+      const Lsin = L.listaParaEntregar({ docs: null, guia: { requisitos: [{ clave: "experiencia", titulo: "Experiencia", estado: "revisar" }] } });
+      const idCarta = Lsin.filas.find((f) => f.clave === "carta-presentacion-oferta").id, idExp = Lsin.filas.find((f) => f.clave === "experiencia").id;
+      const Lcon = L.listaParaEntregar({ docs: docsLista, guia: { requisitos: [{ clave: "experiencia", titulo: "Experiencia", estado: "revisar" }] },
+        documentos: S.normalizarDocumentos([{ req: idCarta, nombre: "Carta", estado: "listo" }, { req: idExp, nombre: "Experiencia", estado: "en_tramite" }]) });
+      assert.strictEqual(Lcon.huerfanas.length, 0, `MUTACIÓN (sin alias): las marcas de antes de leer el pliego no quedan huérfanas: ${JSON.stringify(Lcon.huerfanas)}`);
+      assert.strictEqual(Lcon.filas.find((f) => f.tipo === "formato" && f.numero === "1").estado, "listo");
+      assert.strictEqual(Lcon.filas.find((f) => f.tipo === "formato" && f.numero === "3").estado, "en_tramite");
+      /* (7) el dictamen se clasifica por su texto, no por lo que su cita nombra de paso */
+      const Ld = L.listaParaEntregar({ docs: docsLista, dictamen: { generado: "2026-11-02", filas: [{ texto: "Visita de obra obligatoria con constancia firmada", pagina: 12, cita: "inscrito en el RUP deberá asistir a la visita de obra", cita_verificada: true }] } });
+      assert.ok(Ld.filas.some((f) => f.fuente === "dictamen" || (f.clave === "constancia-visita" && f.dictamen)), "MUTACIÓN (texto y cita juntos): la visita no se pierde dentro de la fila del RUP");
+      assert.ok(!(Ld.filas.find((f) => f.clave === "rup") || {}).dictamen, "y el RUP no se queda con ese dictamen");
+      /* (8) un documento suyo da su estado a UNA fila, no a todas las de su requisito */
+      const dos = L.listaParaEntregar({ docs: { leidos: { x: { nombre: "P.pdf", tipo: "pliego", fecha_carga: "2026-10-01", hechos: { entregables: E.leerEntregables("\f5\nEl proponente deberá aportar las hojas de vida del director de obra.\nEl proponente deberá aportar el certificado de asistencia a la visita de obra.") } } } },
+        guia: { requisitos: [{ clave: "personal_y_visita", titulo: "Equipo y visita", estado: "revisar" }] }, documentos: [{ id: "h", clave: "personal_y_visita", nombre: "Hoja de vida ing. residente", estado: "listo" }] });
+      assert.strictEqual(dos.filas.filter((f) => f.estado === "listo").length, 0, "MUTACIÓN (un documento suyo para todas las filas del requisito): la hoja de vida no marca la constancia de la visita");
+    }
+    /* el resumen del dictamen: solo lo comprobado */
+    const Dic = require("../lib/dictamen.js");
+    const resDic = Dic.resumenParaEntregar({ generado: "2026-11-02", dictamen: { requisitos_para_participar: [
+      { texto: "Visita de obra", pagina: 15, pagina_real: 15, cita: "certificado de visita", cita_verificada: true },
+      { texto: "Algo sin cita", pagina: 3, cita: null, cita_verificada: false }], pendientes_de_verificar: [] } });
+    assert.deepStrictEqual(resDic.filas.map((x) => x.texto), ["Visita de obra"]);
+
+    /* ── 4 · UNA MARCA SOBREVIVE A UNA ADENDA (por el router real) ───────── */
+    {
+      const routerE = require("../api/perfil.js");
+      const { escribirJSONComprimido: escE } = require("../lib/almacen.js");
+      const expE = (qs, opts = {}) => invocar(routerE, `/api/perfil?op=seguimiento${qs}`, CAB_TOKEN, opts);
+      const PERF_E = "entregar";
+      const filaE = generarDatasetHistorico().filter((f) => Number(f.precio_base) > 0)[1];
+      const IDE = filaE.id_del_proceso;
+      assert.strictEqual((await expE("", { metodo: "POST", body: { perfil: PERF_E, id: IDE, estado: "preparando", foto: filaE } })).status, 200);
+      const docsDe = (leidos) => ({ version: DocsE.VERSION, id_proceso: IDE, indice: { archivos: Object.entries(leidos).map(([id, x]) => ({ id_documento: id, nombre: x.nombre, tipo: x.tipo, de_la_entidad: true, en_plan: true, fecha_carga: x.fecha_carga })), plan: Object.keys(leidos) }, leidos, ilegibles: {}, formularios: {} });
+      const v1 = { nombre: "Pliego definitivo.pdf", tipo: "pliego", fecha_carga: "2026-09-07", hechos: DocsE.hechosDeTexto(PLIEGO_A, { tipo: "pliego" }) };
+      await escE(redis, DocsE.claveDocs(IDE), docsDe({ p1: v1 }));
+      const abrir = async () => (await expE(`&perfil=${PERF_E}&expediente=${encodeURIComponent(IDE)}`)).cuerpo.proceso;
+      const e1 = await abrir();
+      assert.ok(e1.entregar && e1.entregar.filas.length > 20, "el expediente trae la lista armada en el servidor");
+      const desempate1 = e1.entregar.filas.find((f) => f.tipo === "formato" && f.numero === "8");
+      assert.ok(desempate1, "el Formato 8 de la versión 1");
+      const guardadoE = await expE("", { metodo: "POST", body: { perfil: PERF_E, id: IDE, documentos: [...e1.documentos, { req: desempate1.id, nombre: desempate1.titulo, estado: "no_aplica" }] } });
+      assert.strictEqual(guardadoE.status, 200);
+      const e2 = await abrir();
+      assert.strictEqual(e2.entregar.filas.find((f) => f.id === desempate1.id).estado, "no_aplica", "la marca se guarda con el perfil y el proceso");
+      /* la adenda: el pliego nuevo renumera los formatos (como el documento tipo de licitación social v2: el de desempate pasa al 10) */
+      const PLIEGO_A2 = PLIEGO_A.replace("8. Formato 8 – Factores de desempate", "8. Formato 8 – Vinculación de personas con discapacidad").replace("10. Formato 10 – Carta Manifestación de Interés", "10. Formato 10 – Factores de desempate");
+      const v2 = { nombre: "Pliego definitivo con adenda 1.pdf", tipo: "pliego", fecha_carga: "2026-09-15", hechos: DocsE.hechosDeTexto(PLIEGO_A2, { tipo: "pliego" }) };
+      await escE(redis, DocsE.claveDocs(IDE), docsDe({ p1: v1, p2: v2 }));
+      const e3 = await abrir();
+      const desempate3 = e3.entregar.filas.find((f) => f.tipo === "formato" && f.numero === "10");
+      assert.ok(desempate3 && /desempate/i.test(desempate3.titulo), `la versión nueva trae «Formato 10 – Factores de desempate»: ${desempate3 && desempate3.titulo}`);
+      assert.strictEqual(desempate3.estado, "no_aplica", "MUTACIÓN (identidad solo por número): la marca sigue al nombre en la versión vigente");
+      assert.strictEqual(desempate3.marca.por, "nombre_o_numero_cambio", "y se dice que casó por el nombre");
+      assert.strictEqual(e3.entregar.huerfanas.length, 0, "no queda huérfana");
+      assert.ok(!e3.entregar.filas.some((f) => f.id === desempate1.id), "MUTACIÓN (pintar la vieja aparte): el mismo papel con otro número se funde en la versión vigente —marcar la vieja cambiaba la nueva (revisión adversaria)—");
+      assert.ok(desempate3.alias.includes(desempate1.id) && desempate3.antes === "8", "y la nueva dice qué número tenía");
+      /* y sin las dos versiones (la vieja ya no se lee): la marca sigue igual */
+      await escE(redis, DocsE.claveDocs(IDE), docsDe({ p2: v2 }));
+      const e4 = await abrir();
+      assert.strictEqual(e4.entregar.filas.find((f) => f.tipo === "formato" && f.numero === "10").estado, "no_aplica");
+      assert.ok(!e4.entregar.filas.some((f) => f.tipo === "formato" && f.numero === "8" && f.estado === "no_aplica"), "el nuevo Formato 8 (otro papel) no hereda la marca por su número");
+    }
+
+    /* ── 5 · DOS GUARDADOS SEGUIDOS DEL PAPELEO NO SE PISAN ──────────────── */
+    {
+      const appE = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+      const iB = appE.indexOf("  function decirEntrega(texto, tipo) {"), fB = appE.indexOf("  async function refrescarExpediente() {", iB);
+      assert.ok(iB > 0 && fB > iB, "el bloque del papeleo en fila sigue entero en app.js");
+      const bloque = appE.slice(iB, fB);
+      const montar = (datos) => {
+        const ent = { datos, pintadas: 0, envios: 0, dichos: [], servidor: { documentos: datos && datos.proceso ? datos.proceso.documentos.map((d) => ({ ...d })) : [] } };
+        ent.guardar = async (id, cambio, opc) => {
+          ent.envios += 1; ent.repintar = opc && opc.repintar;
+          await new Promise((r) => setTimeout(r, 15));   // tarda, como el de verdad
+          ent.servidor.documentos = S.normalizarDocumentos(cambio.documentos, { ahora: "2026-11-03T12:00:00.000Z" });   // y SUSTITUYE la lista entera
+          return { guardado: { documentos: ent.servidor.documentos.map((d) => ({ ...d })) } };
+        };
+        const api = new Function("ent", `let segExpDatos = ent.datos, seguimientoCargadoPara = "x", segExpEscrituras = 0;
+          const secSeg = null, SIN_LISTA_COMPLETA = "sin lista", fraseDeFallo = (e) => String(e);
+          const guardarDelProceso = ent.guardar, pintarExpediente = () => { ent.pintadas += 1; }, refrescarExpediente = () => {}, decirDoc = (t) => ent.dichos.push(t);
+          ${bloque}; return { cambiarDocumentos, marcarEntregable, datos: () => segExpDatos };`)(ent);
+        return { ...api, ent };
+      };
+      const m = montar({ proceso: { id: "A", documentos: [{ id: "d1", clave: "garantia_seriedad", nombre: "Póliza", estado: "en_tramite" }], entregar: { filas: [] } } });
+      await Promise.all([m.marcarEntregable("A", { req: "formato|1|carta-presentacion-oferta", nombre: "Formato 1", estado: "listo" }),
+        m.marcarEntregable("A", { req: "formato|3|experiencia", nombre: "Formato 3", estado: "en_tramite" })]);
+      assert.deepStrictEqual(m.ent.servidor.documentos.map((d) => d.req || d.clave).sort(), ["formato|1|carta-presentacion-oferta", "formato|3|experiencia", "garantia_seriedad"],
+        "MUTACIÓN (la lista armada al pulsar, fuera de la fila): dos marcas seguidas quedan las dos y la póliza no se pierde");
+      await Promise.all([m.marcarEntregable("A", { req: "formato|5|capacidad-residual", nombre: "Formato 5", estado: "listo" }), m.cambiarDocumentos("A", (ds) => ds.filter((d) => d.id !== "d1"), "Quitado.")]);
+      assert.deepStrictEqual(m.ent.servidor.documentos.map((d) => d.req || d.clave).sort(), ["formato|1|carta-presentacion-oferta", "formato|3|experiencia", "formato|5|capacidad-residual"], "marcar y quitar seguidos tampoco se pisan");
+      assert.ok(m.ent.repintar === false, "sin recargar la lista maestra en cada pulsación");
+      await m.marcarEntregable("A", { req: "formato|3|experiencia", estado: "por_conseguir" });
+      assert.ok(!m.ent.servidor.documentos.some((d) => d.req === "formato|3|experiencia"), "volver a «Por conseguir» sin fecha quita la marca: es el estado de partida");
+      /* una marca que casó por el nombre tras una adenda se cambia por SU id, y queda anclada a la identidad nueva */
+      const idViejo = m.ent.servidor.documentos.find((d) => d.req === "formato|5|capacidad-residual").id;
+      await m.marcarEntregable("A", { req: "formato|7|capacidad-residual", idDoc: idViejo, estado: "no_aplica" });
+      assert.deepStrictEqual(m.ent.servidor.documentos.filter((d) => /capacidad/.test(d.req || "")).map((d) => `${d.id === idViejo}:${d.req}:${d.estado}`), ["true:formato|7|capacidad-residual:no_aplica"]);
+      const sin = montar(null);
+      assert.deepStrictEqual(await sin.cambiarDocumentos("A", () => []), { sinLista: true }, "sin la lista completa la respuesta lo dice…");
+      assert.strictEqual(sin.ent.envios, 0, "…y no se envía nada");
+      /* (revisión adversaria) una fecha a medio escribir («0002-12-01», el `change` de cada dígito en Chrome) no se guarda */
+      const iV = appE.indexOf('const entVence = ev.target.closest("[data-exp-ent-vence]");');
+      assert.ok(iV > 0 && /if \(entVence && segExpId && entVence\.value && !\/\^\(\?:19\|20\)\\d\\d-\\d\\d-\\d\\d\$\/\.test\(entVence\.value\)\) return;/.test(appE.slice(iV, iV + 900)),
+        "el oyente de la fecha descarta un año a medio escribir antes de guardar");
+      assert.ok(/abiertosEnt/.test(appE) && /data-exp-ent-detalle/.test(fs.readFileSync(path.join(__dirname, "..", "public", "expediente.js"), "utf8")), "y el pliegue abierto sigue abierto al repintar");
+      /* el censo: el papeleo se envía desde UN solo sitio, el que va en fila */
+      assert.strictEqual((appE.match(/guardarDelProceso\([^;]*\bdocumentos\b/g) || []).length, 1, "censo de app.js: el papeleo se envía solo desde `cambiarDocumentos`");
+      assert.ok(!/body: \{[^}]*\bdocumentos\b/.test(appE), "censo de app.js: ningún otro POST lleva `documentos`");
+    }
+
+    /* ── 6 · LA PANTALLA ──────────────────────────────────────────────────── */
+    {
+      assert.ok(Xe.SECCIONES.some((s) => s.id === "entregar" && s.etiqueta === "Lo que tiene que entregar"), "la sección del expediente se llama como la pidió el dueño");
+      const pE = { id: "X1", proceso: { nombre: "Obra" }, documentos: [], entregar: L1 };
+      const html = Xe.htmlEntregar(pE, { estadosDoc: S.ESTADO_DOC_ETIQUETA, hoy: "2026-09-12" });
+      assert.ok(new RegExp(`${L1.resumen.listos} de ${L1.resumen.cuentan}</span> listos`).test(html), "la cifra: «N de M listos»");
+      assert.ok(/No se leyó «ADENDA No\. 1\.pdf»/.test(html) && /escaneo que quedó a medias/.test(html), "lo no leído y lo leído a medias se dicen arriba");
+      assert.ok(/Por confirmar\./.test(html) && /Lo que le piden a todos/.test(html) && /Según su caso/.test(html));
+      assert.ok(/data-exp-ent-quitar=/.test(html), "la marca huérfana se puede quitar");
+      assert.ok(!/casilla/i.test(html), "no se llama «casillas»: ese nombre ya significa otra cosa en pantalla");
+      assert.strictEqual(tuteoE(html.replace(/<[^>]+>/g, " ")), null, "de usted");
+      assert.strictEqual((html.match(emojiE) || []).length, 0, "sin emoji");
+      assert.ok(/aria-label="Cómo va: /.test(html), "cada mando dice de qué fila es");
+      const cab = Xe.cifrasDe({ ...pE, documentos_resumen: { cuentan: 0 } });
+      assert.strictEqual(cab[2].valor, `${L1.resumen.listos} de ${L1.resumen.cuentan}`, "la cabecera dice la misma cifra de la lista");
+      assert.ok(/No se pudo armar la lista/.test(Xe.htmlEntregar({ id: "X", entregar: null })), "sin lista se dice, no se pinta un título vacío");
+      /* los textos propios: de usted y sin la jerga interna (lo que copia del pliego —«Formato 5 – Capacidad residual»— es del pliego) */
+      const propios = [...Object.values(L.POR_QUE), ...L.VINCULOS.filter((v) => v.nueva).map((v) => v.nueva.nombre), ...L.USUALES.map((u) => `${u.nombre} ${u.condicion || ""}`), ...E.CATALOGO.map((c) => `${c.nombre} ${c.condicion || ""}`)];
+      for (const t of propios) {
+        assert.strictEqual(tuteoE(t), null, `de usted: «${t}»`);
+        assert.ok(!/dataset|capacidad residual|habilitante|\bCRPC?\b|\bSMMLV\b|casilla/i.test(t), `jerga interna en pantalla: «${t}»`);
+      }
+    }
+    console.log(`· unidad LO QUE TIENE QUE ENTREGAR: ${rA.filas.length} filas de los fragmentos del pliego A con cada cita en su página, la lista del capítulo IX y no el índice, la letra separada, el nombre delante del rótulo, las viñetas bajo «deberá aportar…:», lo de la entidad aparte · el papeleo con dos topes (una marca pesa ${bytesMarca} B) · cuatro fuentes y lo no leído dicho · la marca sobrevive a una adenda que renumera, por el router real · dos guardados seguidos no se pisan · la pantalla «N de M listos»`);
+  }
+
+
+  /* ═══════════════════════════════════════════════════════════════════════════
      R-11 (27-sep-2026) · CON CUÁNTO OFERTARON TODOS
      ───────────────────────────────────────────────────────────────────────────
      wi7w-2nvm publica las ofertas de cada expediente, repetidas (1.836 filas para
