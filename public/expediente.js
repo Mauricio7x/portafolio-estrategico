@@ -106,6 +106,7 @@
      que solo importa cuando ya cerró. */
   const SECCIONES = Object.freeze([
     Object.freeze({ id: "resumen", etiqueta: "Resumen" }),
+    Object.freeze({ id: "entregar", etiqueta: "Lo que tiene que entregar" }),
     Object.freeze({ id: "documentos", etiqueta: "Documentos" }),
     Object.freeze({ id: "exige", etiqueta: "Lo que exige" }),
     Object.freeze({ id: "fechas", etiqueta: "Fechas" }),
@@ -135,6 +136,7 @@
     const pr = p.proceso || {};
     const dinero = K ? K.presupuestoDelProceso(pr.presupuesto_cop) : { texto: "—", titulo: "" };
     const dr = p.documentos_resumen || {};
+    const er = p.entregar && p.entregar.resumen ? p.entregar.resumen : null;
     const cierre = p.cerrado === true ? { valor: "Cerró", rotulo: "Entrega de la oferta", urgente: false }
       : p.dias_para_cierre == null ? { valor: "Sin fecha", rotulo: "Entrega de la oferta", urgente: false }
         : p.dias_para_cierre === 0 ? { valor: "Hoy", rotulo: "Entrega de la oferta", urgente: true }
@@ -143,7 +145,11 @@
     return [
       { valor: dinero.texto, rotulo: "Presupuesto oficial", titulo: dinero.titulo, urgente: false },
       { ...cierre, titulo: pr.fecha_cierre ? String(pr.fecha_cierre).slice(0, 10) : "" },
-      dr.cuentan
+      /* con la lista de lo que hay que entregar armada, la cifra es la suya: «N de M listos», donde un «listo» que vence
+         antes del cierre no cuenta (la palabra dice lo mismo que el color) */
+      er && er.cuentan
+        ? { valor: `${miles(er.listos)} de ${miles(er.cuentan)}`, rotulo: "Listos para entregar", titulo: "Lo que tiene que entregar que ya marcó como listo", urgente: !!er.con_problema_de_fecha }
+      : dr.cuentan
         ? { valor: `${miles(dr.listos)} de ${miles(dr.cuentan)}`, rotulo: "Papeles listos", titulo: "Los documentos que marcó como listos", urgente: !!(dr.vencidos || dr.vencen_antes_del_cierre) }
         : { valor: "Sin abrir", rotulo: "Su papeleo", titulo: "Todavía no ha registrado ningún documento en este expediente", urgente: false },
     ];
@@ -388,7 +394,8 @@
 
   function htmlDocumentos(p, { estadosDoc = {}, hoy = null, topes = {} } = {}) {
     const deEntidad = documentosEntidad(p);
-    const suyos = p.documentos || [];
+    /* las marcas de «Lo que tiene que entregar» viven en este papeleo (con `req`) pero se pintan en su sección */
+    const suyos = (p.documentos || []).filter((d) => !d.req);
     const pr = p.proceso || {};
     const tope = topes.documentos || 30;
     let folio = 0;
@@ -464,6 +471,92 @@
        conserva el orden de siempre, que es el que explica de dónde salen los
        folios */
     return (!hayEnt && suyos.length) ? secSuyos + secEnt : secEnt + secSuyos;
+  }
+
+  /* ══════════════════════ LO QUE TIENE QUE ENTREGAR (3-nov-2026) ══════════════════════
+     La lista la arma el SERVIDOR (lib/entregar): lo leído del pliego con su página, lo que la guía calcula, lo que el
+     dictamen citó y la aplicación comprobó, y lo que se suele pedir marcado como tal. Aquí solo se pinta, y se marca
+     cada fila (por conseguir · en trámite · listo · no aplica): la marca se guarda en el papeleo del expediente.
+     LO QUE HAY QUE VER, ARRIBA: la cifra «N de M listos» y lo que no se leyó. Lo que hay que TOCAR (la cita, la fecha
+     de vencimiento) va plegado en cada fila. «Por confirmar» no es un estado del usuario: es la duda de la aplicación,
+     y va en palabras al lado del nombre. */
+  const ETIQUETA_FUENTE = Object.freeze({ pliego: "Pliego", calculado: "Calculado por la aplicación", dictamen: "Dictamen del pliego", usual: "Se suele pedir" });
+  function claseEstadoEntrega(f) {
+    if (f.alerta) return "exp-estado-mal";
+    return f.estado === "listo" ? "exp-estado-ok" : f.estado === "no_aplica" ? "exp-estado-nd" : "exp-estado-falta";
+  }
+  function htmlFilaEntrega(f, { estadosDoc = {}, hoy = null } = {}) {
+    const C = raizCalendario();
+    const dia = (x) => (x && C ? C.fechaLegibleAnio(x) : x);
+    const donde = [
+      f.fuente === "pliego" ? `${f.documento ? esc(f.documento) : "Pliego"}${f.pagina != null ? `, pág. ${esc(f.pagina)}` : ""}` : esc(ETIQUETA_FUENTE[f.fuente] || ""),
+      f.fuente === "dictamen" && f.pagina != null ? `pág. ${esc(f.pagina)}` : null,
+      f.condicion ? esc(f.condicion) : null,
+      f.antes ? `En la versión anterior del pliego era el número ${esc(f.antes)}` : null,
+    ].filter(Boolean).join(" · ");
+    const v = f.marca && f.marca.vence;
+    const fecha = !v ? "" : f.alerta === "vencido" ? `<b>Venció el ${esc(dia(v))}</b>` : f.alerta === "vence_antes_del_cierre" ? `<b>Vence el ${esc(dia(v))}, antes del cierre</b>` : `Vence el ${esc(dia(v))}`;
+    const palabra = f.alerta === "vencido" ? "Vencido" : f.alerta === "vence_antes_del_cierre" ? "Vence antes del cierre" : (estadosDoc[f.estado] || f.estado);
+    const otras = (f.otras_paginas || []).length ? `También en ${f.otras_paginas.length === 1 ? "la página" : "las páginas"} ${f.otras_paginas.map((n) => esc(n)).join(", ")}.` : "";
+    const tambien = (f.tambien_en || []).length ? `También lo trae: ${f.tambien_en.map((n) => `«${esc(n)}»`).join(", ")}.` : "";
+    const opciones = Object.entries(estadosDoc).map(([k, t]) => `<option value="${esc(k)}"${k === f.estado ? " selected" : ""}>${esc(t)}</option>`).join("");
+    return `<div class="exp-ent-fila" data-exp-ent="${esc(f.id)}">
+      <div class="exp-ent-cabeza">
+        <span class="exp-ent-nombre"><span class="exp-estado ${claseEstadoEntrega(f)}"><span class="exp-punto" aria-hidden="true">&#9679;</span><span class="sr-only">${esc(palabra)}: </span></span>${esc(f.titulo)}</span>
+        <select class="control-select exp-ent-estado" data-exp-ent-estado="${esc(f.id)}"${f.marca && f.marca.id_doc ? ` data-exp-ent-doc="${esc(f.marca.id_doc)}"` : ""} data-exp-ent-nombre="${esc(f.titulo)}" aria-label="Cómo va: ${esc(f.titulo)}">${opciones}</select>
+      </div>
+      <p class="exp-ent-meta">${donde}${fecha ? ` · ${fecha}` : ""}</p>
+      ${f.confianza === "por_confirmar" ? `<p class="exp-ent-duda"><b>Por confirmar.</b> ${esc(f.por_que || "Confírmelo en el pliego.")}</p>` : ""}
+      ${f.dato ? `<p class="exp-ent-dato">${esc(f.dato)}</p>` : ""}
+      <details class="exp-ent-detalle" data-exp-ent-detalle="${esc(f.id)}"><summary>${f.cita ? "Lo que dice el pliego y la fecha de vencimiento" : "Fecha de vencimiento"}</summary>
+        ${f.cita ? `<blockquote class="exp-ent-cita">«${esc(f.cita)}»</blockquote>` : ""}
+        ${f.dictamen ? `<p class="exp-seccion-nota">El dictamen del pliego también lo pide (pág. ${esc(f.dictamen.pagina)}): «${esc(f.dictamen.cita)}».</p>` : ""}
+        ${otras || tambien ? `<p class="exp-seccion-nota">${otras} ${tambien}</p>` : ""}
+        <label class="exp-campo"><span class="exp-campo-rotulo">Vence el (opcional)</span>
+          <input type="date" class="control-campo" value="${esc(v || "")}" data-exp-ent-vence="${esc(f.id)}"${f.marca && f.marca.id_doc ? ` data-exp-ent-doc="${esc(f.marca.id_doc)}"` : ""} data-exp-ent-nombre="${esc(f.titulo)}" aria-label="Fecha en que vence: ${esc(f.titulo)}"></label>
+      </details>
+    </div>`;
+  }
+  function htmlLecturaEntrega(e) {
+    const l = e.lectura || {};
+    const C = raizCalendario();
+    const dia = (x) => esc(x && C ? C.fechaLegibleAnio(x) : x);
+    const lineas = [];
+    if (!e.hay_lectura) lineas.push(l.hay_indice ? "<b>El pliego todavía no se ha leído.</b> Esta lista sale de lo que la aplicación calcula y de lo que se suele pedir: confírmela en el pliego." : "<b>Todavía no se han encontrado los documentos de este proceso.</b> Búsquelos en «Documentos»; mientras tanto, esta lista es lo que se suele pedir.");
+    else if (e.pliego) lineas.push(`Leído de «${esc(e.pliego.nombre || "pliego")}»${e.pliego.fecha_carga ? `, publicado el ${dia(e.pliego.fecha_carga)}` : ""}.`);
+    if (e.solo_borrador) lineas.push("<b>Solo se leyó el proyecto de pliego.</b> El definitivo puede cambiar esta lista.");
+    if ((e.por_actualizar || []).length) lineas.push(`Se está volviendo a leer ${e.por_actualizar.length === 1 ? "un documento" : `${miles(e.por_actualizar.length)} documentos`} con la versión nueva del lector: vuelva a abrir esta sección en un momento.`);
+    for (const x of (l.sin_leer || [])) lineas.push(`<b>No se leyó «${esc(x.nombre)}»</b>${x.fecha_carga ? ` (publicado el ${dia(x.fecha_carga)})` : ""}${x.motivo ? `: ${esc(x.motivo)}` : ""}. Lo que pida ese documento no sale aquí.`);
+    for (const n of (l.recortados || [])) lineas.push(`<b>«${esc(n)}» pide más cosas de las que caben en esta lista</b>: lo que falta al final no sale aquí; revise el pliego.`);
+    for (const x of (l.a_medias || [])) lineas.push(x.recortado ? `<b>«${esc(x.nombre)}» es tan largo que se leyó hasta donde cabe.</b> Lo que pida al final puede no salir aquí.` : `<b>«${esc(x.nombre)}» es un escaneo que quedó a medias</b>${x.paginas != null && x.paginas_total != null ? ` (${miles(x.paginas)} de ${miles(x.paginas_total)} páginas)` : ""}: lo que pida en las otras páginas no sale aquí.`);
+    return lineas.length ? `<div class="exp-ent-lectura" role="note">${lineas.map((x) => `<p>${x}</p>`).join("")}</div>` : "";
+  }
+  function htmlEntregar(p, { estadosDoc = {}, hoy = null } = {}) {
+    const e = p.entregar;
+    if (!e) return `<section class="exp-seccion"><h3 class="exp-seccion-titulo">Lo que tiene que entregar</h3>
+      <div class="exp-vacio"><p class="exp-vacio-titulo">No se pudo armar la lista de este proceso</p>
+      <p class="exp-vacio-texto">Vuelva a Mis procesos y entre otra vez. Si sigue así, revise el pliego en «Documentos».</p></div></section>`;
+    const r = e.resumen || {};
+    const todos = (e.filas || []).filter((f) => f.grupo !== "segun_caso");
+    const caso = (e.filas || []).filter((f) => f.grupo === "segun_caso");
+    const fila = (f) => htmlFilaEntrega(f, { estadosDoc, hoy });
+    const huerfanas = (e.huerfanas || []).length ? `<div class="exp-ent-grupo"><h4 class="exp-ent-subtitulo">Marcas que ya no casan con el pliego leído</h4>
+        <p class="exp-seccion-nota">En la lista de hoy no hay una fila que sea, sin duda, ese papel: puede venir de otra versión del pliego, de antes de leerlo, o el pliego trae dos papeles con el mismo nombre. No se borran solas: márquelo de nuevo en su fila y quite esta.</p>
+        ${e.huerfanas.map((h) => `<div class="exp-ent-fila"><div class="exp-ent-cabeza"><span class="exp-ent-nombre">${esc(h.nombre || "Marca sin nombre")} · ${esc(estadosDoc[h.estado] || h.estado)}</span>
+          <button type="button" class="exp-doc-enlace" data-exp-ent-quitar="${esc(h.id_doc)}">Quitar esta marca</button></div></div>`).join("")}</div>` : "";
+    const paraLeer = (e.de_la_entidad || []).length ? `<details class="exp-ent-detalle"><summary>Lo que la entidad publica para leer (no se entrega): ${miles(e.de_la_entidad.length)}</summary>
+        <p class="exp-seccion-nota">${e.de_la_entidad.map((x) => `${esc(`${x.tipo === "matriz" ? "Matriz" : x.tipo === "anexo" ? "Anexo" : x.tipo === "formato" ? "Formato" : "Apéndice"} ${x.numero}${x.nombre ? ` – ${x.nombre}` : ""}`)}${x.pagina != null ? ` (pág. ${esc(x.pagina)})` : ""}`).join(" · ")}</p></details>` : "";
+    return `<section class="exp-seccion">
+      <h3 class="exp-seccion-titulo">Lo que tiene que entregar</h3>
+      <p class="exp-ent-cifra"><span class="exp-ent-cifra-n num">${miles(r.listos)} de ${miles(r.cuentan)}</span> listos${r.no_aplica ? ` · ${miles(r.no_aplica)} no ${r.no_aplica === 1 ? "aplica" : "aplican"}` : ""}${r.por_confirmar ? ` · ${miles(r.por_confirmar)} por confirmar en el pliego` : ""}${r.con_problema_de_fecha ? ` · <b>${miles(r.con_problema_de_fecha)} con un problema de fecha</b>` : ""}</p>
+      ${htmlLecturaEntrega(e)}
+      <p class="exp-ent-mensaje" data-exp-ent-mensaje="${esc(p.id)}" role="status"></p>
+      ${todos.length ? `<div class="exp-ent-grupo"><h4 class="exp-ent-subtitulo">Lo que le piden a todos</h4>${todos.map(fila).join("")}</div>` : ""}
+      ${caso.length ? `<div class="exp-ent-grupo"><h4 class="exp-ent-subtitulo">Según su caso</h4><p class="exp-seccion-nota">Consorcio, extranjeros, puntaje o desempate: marque «No aplica» lo que no sea su caso.</p>${caso.map(fila).join("")}</div>` : ""}
+      ${huerfanas}
+      ${paraLeer}
+      <p class="exp-seccion-nota">La lista sale del pliego que se leyó y no lo sustituye: antes de entregar, léalo. Lo que marca aquí se guarda en su expediente, con su perfil.</p>
+    </section>`;
   }
 
   /* ══════════════════════ LAS FECHAS ══════════════════════
@@ -1087,7 +1180,7 @@
   }
   return {
     htmlPuedePresentarse, opcionesPresentarse, veredictoPresentarse, casillasPresentarse, rojosDe,
-    SECCIONES, seccionValida, cifrasDe, htmlCabecera, htmlPie, htmlConQuien, urlSegura, enlaceSecop, htmlOferta, htmlOfertasTodos, frasesLlenado, nombreLleno,
+    SECCIONES, seccionValida, cifrasDe, htmlEntregar, htmlFilaEntrega, htmlCabecera, htmlPie, htmlConQuien, urlSegura, enlaceSecop, htmlOferta, htmlOfertasTodos, frasesLlenado, nombreLleno,
     documentosEntidad, tiposSuyos, pesoLegible, formatoDe, textoAvance, fraccionAvance, htmlAvance, duracionLegible, frasesTiempo, htmlFilaDoc, htmlFilaDocSuyo, htmlDocumentos,
     lineaDeTiempo, htmlFechas, htmlDatosClave, htmlSiguientePaso,
   };
