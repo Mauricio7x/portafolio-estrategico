@@ -300,9 +300,20 @@
     if (!window.Pulso) return;
     const sel = $("f-perfil");
     const perfil = sel ? sel.value : "";
-    const nombre = sel && sel.selectedOptions[0] ? sel.selectedOptions[0].text.replace(/^Consorcio · /, "") : "";
+    const nombre = sel && sel.selectedOptions[0] ? sel.selectedOptions[0].text.replace(/^Consorcio · /, "").replace(/^Mi RUP(?: \(subido en PDF\))?(?: · |$)/, "").trim() : "";
     // con la sesión del dueño viajan las cifras del perfil (patrimonio, capacidad) para «Tu registro»
     window.Pulso.arrancar(perfil, { nombre, forzar: !!opciones.forzar }).catch(() => {});
+  }
+  /* «Con plazo» (3-nov-2026) vive en su propia sección: sus tarjetas filtran la lista con la MISMA función */
+  for (const idPlazo of ["pulso-plazo"]) {
+    const nodo = document.getElementById(idPlazo);
+    if (!nodo) continue;
+    nodo.addEventListener("click", (ev) => {
+      const el = ev.target.closest("[data-filtro]");
+      if (!el) return;
+      ev.preventDefault();
+      aplicarFiltroDelPulso(el.getAttribute("data-filtro"));
+    });
   }
   document.getElementById("pulso").addEventListener("click", (ev) => {
     const el = ev.target.closest("[data-filtro]");
@@ -317,12 +328,23 @@
     ev.preventDefault();
     aplicarFiltroDelPulso(el.getAttribute("data-filtro"));
   });
+  let ordenAntesDelEnlace = null;
   function aplicarFiltroDelPulso(filtro) {
     /* el atributo es una QUERY de la Fase 8 («cierre=7d», «dep=TOLIMA»,
        «min=0&max=50000000», «entidad=899999081»; «todo» = sin filtros): la
        lee el MISMO `leerEstado` que lee la URL, así una barra del gráfico y un
        enlace pegado en Chrome significan exactamente lo mismo */
     const params = new URLSearchParams(String(filtro || "") === "todo" ? "" : String(filtro || ""));
+    /* el ORDEN que trae el enlace («Ver por fecha»: `ordenar_por=cierre`, 3-nov-2026) va al selector antes de filtrar:
+       `leerEstado` lee filtros, no el orden (revisión adversaria: la lista abría con el orden que tuviera) */
+    const ord = params.get("ordenar_por");
+    if (ord && $("f-ordenar") && [...$("f-ordenar").options].some((o) => o.value === ord)) {
+      if (ordenAntesDelEnlace == null) ordenAntesDelEnlace = $("f-ordenar").value;
+      $("f-ordenar").value = ord; pintarConceptoOrden();
+    } else if (ordenAntesDelEnlace != null && $("f-ordenar")) {
+      // un enlace SIN orden devuelve el que había antes del «Ver por fecha»: el orden de un enlace no se queda pegado
+      $("f-ordenar").value = ordenAntesDelEnlace; ordenAntesDelEnlace = null; pintarConceptoOrden();
+    }
     cambiarFiltros(window.Filtros.leerEstado(params));
     /* el pulso vive en Mi empresa y la lista en Licitaciones: la cifra LLEVA a la
        lista. Si hubo cambio de pestaña, basta el `scrollTo(0)` de activarPestana:
@@ -802,6 +824,7 @@
       "rup-gestion-titulo-dueno": "el rótulo del pliegue promete subir y descargar el registro",
       "seccion-sistema": "parámetros de costo, contratos ejecutados, auditoría, sincronización y reconstrucciones: configuración de la empresa que administra el sitio",
       "rastreo-wrap": "su selector de perfil solo conoce el del dueño y el de sus socias",
+      "plg-mercado": "el plegado «Cómo está el mercado» solo guarda el tablero del dueño (op=resumen)",
       "btn-apu-cargar": "op=cargar-catalogo reescribe el catálogo de precios compartido (pestaña Precios)",
     },
     /* lo que solo ve el visitante */
@@ -817,6 +840,13 @@
       calendario: "los cierres de sus procesos guardados (seguimiento del perfil de la barra)",
       "seccion-consorcio": "armar un consorcio con las socias del dueño: sus nombres salen de op=consorcio, que pide llave",
       "seccion-socio": "consulta fuentes públicas sobre un tercero; no lleva cifras del dueño",
+      "mi-atencion": "los avisos de SUS procesos guardados (op=seguimiento con el perfil de la barra)",
+      "pulso-plazo": "«Con plazo»: la tercera parte del pulso, mismo perfil",
+      "mi-procesos": "sus procesos por etapa y sus próximas fechas (op=seguimiento con el perfil de la barra)",
+      "plg-donde": "plegado con los repartos del pulso: mismo perfil",
+      "plg-calendario": "plegado con el calendario de cierres del pulso: mismo perfil",
+      "plg-rup": "plegado con su registro en cifras",
+      "plg-socias": "plegado con el consorcio y la verificación del socio",
     },
   };
   let vistaVisitanteActiva = false;
@@ -1904,7 +1934,7 @@
       : MATCH_UNSPSC[(rup && rup.tier) || "ninguno"] || MATCH_UNSPSC.ninguno;
     const u = (rup && rup.unspsc) || {};
     const detalle = [u.mensaje, u.codigo_proceso ? `Proceso: ${u.codigo_proceso}` : null,
-      u.codigo_rup ? `RUP: ${u.codigo_rup}` : null].filter(Boolean).join(" · ");
+      u.codigo_rup ? `Su registro: ${u.codigo_rup}` : null].filter(Boolean).join(" · ");
     let salida = chip(m.texto, m.clases, detalle);
     const p = rup && rup.pertinencia;
     if (p) salida += chip(esc(p.etiqueta || ""), PERTINENCIA[p.nivel] || PERTINENCIA.amarillo, p.motivo || "");
@@ -2886,7 +2916,12 @@
        media tinta entre las que el dueño hace solo. `viable` sigue diciendo «solo pasa las puertas». */
     const cierraConSocio = !!(l.socio && l.socio.tipo === "con_socio" && l.socio.cierra_todo === true);
     const atenuar = noViable && !cierraConSocio;
-    const motivos = (puertas.no_viable_por || []).join(" · ");
+    /* el chip dice el requisito con las palabras de sus renglones, no la sigla del servidor («RUP · K · Caja»,
+       lib/puertas `no_viable_por`, que se queda como código): un código que no está en el mapa pasa tal cual */
+    const G = typeof window === "object" && window && window.Glosario;
+    const NOMBRE_REQUISITO = { RUP: G ? G.corto("rup").toLowerCase() : "registro de proponente",
+      K: G ? G.corto("capacidad_contratacion").toLowerCase() : "capacidad de facturar", Caja: "caja" };
+    const motivos = (puertas.no_viable_por || []).map((m) => NOMBRE_REQUISITO[m] || m).join(" · ");
     const zona = textoDeHtml(chipZona(l.zona));
     const id = String(l.id_del_proceso || "");
 
@@ -4800,7 +4835,7 @@
   $("btn-reintentar").addEventListener("click", () => { reintentosSync = 0; buscar(); });
   for (const id of ["f-perfil", "f-cuantia", "f-entidad", "f-ubicacion", "f-ordenar", "f-orden",
     "f-sin-unspsc", "f-solo-viables", "f-zona"]) {
-    $(id).addEventListener("change", () => { pagina = 1; if (id === "f-ordenar" || id === "f-zona") { escribirFiltrosEnURL(); pintarControlesFiltros(); } if (id === "f-ordenar") pintarConceptoOrden(); buscar(); if (id === "f-perfil") { refrescarPulso(); sincronizarPerfilBorrador(); guardados.clear(); seguimientoCargadoPara = null; cargarSeguimiento({ forzar: true }); } });
+    $(id).addEventListener("change", () => { pagina = 1; if (id === "f-ordenar" || id === "f-zona") { escribirFiltrosEnURL(); pintarControlesFiltros(); } if (id === "f-ordenar") { pintarConceptoOrden(); ordenAntesDelEnlace = null; } buscar(); if (id === "f-perfil") { refrescarPulso(); sincronizarPerfilBorrador(); guardados.clear(); seguimientoCargadoPara = null; cargarSeguimiento({ forzar: true }); } });
   }
   /* «Ver PAA» NO re-consulta /api/oportunidades: son dos fuentes distintas y
      encender la previsión no puede cambiar la lista de lo que está abierto. Lo
@@ -5785,6 +5820,88 @@
       el.classList.toggle("hidden", !n);
     }
   }
+  const tiposDeAviso = () => ({ cambio: "Cambió", manifestacion: window.Glosario.corto("manifestacion_interes"), cierre: "Cierre", aviso: "Aviso", tarea: "Su nota", sorteo: "Sorteo o lista de interesados", vigencia: "Vigencia de un documento" });
+  /* ══════ MI EMPRESA, LO DE SUS PROCESOS GUARDADOS (3-nov-2026, la maqueta c07) ══════
+     «Lo que pide atención», «Sus procesos» y «Próximas fechas» salen de la MISMA respuesta de `op=seguimiento` que
+     pinta Mis procesos —ni una consulta más— y con las MISMAS piezas: la frase y la lista de avisos de
+     public/casillero.js (`fraseAlertas`, `htmlAlertas`), los rótulos de etapa del servidor (`estados`) y la agenda
+     (`agendaDe`, `rotuloEvento`, `fuenteEvento`). Un conteo que no viene no se pinta como 0. */
+  let miAvisosAbierto = false;
+  function pintarMiEmpresaSeguimiento(r) {
+    const K = raizCasillero();
+    const at = $("mi-atencion"), pr = $("mi-procesos");
+    if (!at && !pr) return;
+    const procesos = r && Array.isArray(r.procesos) ? r.procesos : [];
+    const as = r && Array.isArray(r.alertas) ? r.alertas : [];
+    if (at) {
+      at.classList.toggle("hidden", !(K && as.length));
+      if (K && as.length) {
+        $("mi-atencion-n").textContent = K.fraseAlertas(as, 7);
+        $("mi-atencion-lista").innerHTML = K.htmlAlertas(as, { tipos: tiposDeAviso(), abierto: miAvisosAbierto, tope: 4 });
+      }
+    }
+    if (!pr) return;
+    pr.classList.toggle("hidden", !procesos.length);
+    if (!procesos.length) return;
+    const rs = (r && r.resumen) || {};
+    const pe = rs.por_estado || {};
+    const etiquetas = (r && r.estados) || {};
+    const orden = Array.isArray(r && r.orden_estados) ? r.orden_estados : Object.keys(etiquetas);
+    const cnt = (v) => (v == null || v === "" || !Number.isFinite(Number(v)) ? null : Number(v));
+    const filas = orden.filter((e) => cnt(pe[e]) > 0).map((e) => `<button type="button" class="mi-etapa" data-mi-etapa="${esc(e)}"><span class="min-w-0">${esc(etiquetas[e] || e)}</span><span class="mi-etapa-n">${fmt.format(cnt(pe[e]))}</span></button>`).join("");
+    const total = cnt(rs.total), abiertos = cnt(rs.abiertos);
+    const pie = total != null ? `${fmt.format(total)} ${total === 1 ? "guardado" : "guardados"} en total${abiertos != null ? ` · ${fmt.format(abiertos)} ${abiertos === 1 ? "sigue abierto" : "siguen abiertos"}` : ""}` : "";
+    $("mi-etapas").innerHTML = `${filas}${pie ? `<p class="mi-total">${pie}</p>` : ""}`;
+    // las próximas fechas: los tres primeros días desde hoy que tienen algo, con de quién es cada fecha
+    const hoy = (r && r.hoy) || null;
+    const agenda = K ? K.agendaDe(procesos, { hoy }) : null;
+    const dias = agenda ? agenda.dias.filter((d) => !hoy || d.fecha >= hoy).slice(0, 3) : [];
+    const nombreDia = (f) => {
+      if (hoy && f === hoy) return "Hoy";
+      const Pt = window.Portada;
+      if (hoy && Pt && Pt.sumarDiasISO && Pt.sumarDiasISO(hoy, 1) === f) return "Mañana";
+      const d = new Date(`${f}T12:00:00Z`);
+      if (!Number.isFinite(d.getTime())) return f;
+      const t = d.toLocaleDateString("es-CO", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" }).replace(",", "");
+      return t.charAt(0).toUpperCase() + t.slice(1);
+    };
+    $("mi-agenda").innerHTML = !K ? "" : !dias.length
+      ? `<p class="mi-hito">Ninguna fecha próxima en sus procesos guardados.</p>`
+      : dias.map((d) => {
+        const evs = d.eventos.slice(0, 3);
+        const mas = d.eventos.length - evs.length;
+        return `<div class="mi-dia${hoy && d.fecha === hoy ? " mi-dia-hoy" : ""}"><h3>${esc(nombreDia(d.fecha))}</h3>${evs.map((e) => `<p class="mi-hito"><b>${esc(e.proceso)}</b> · ${esc(K.rotuloEvento(e))}${e.etiqueta && e.tipo === "tarea" ? `: ${esc(e.etiqueta)}` : ""}<small>${esc(K.fuenteEvento(e).replace(/^./, (c) => c.toUpperCase()))}</small></p>`).join("")}${mas > 0 ? `<p class="mi-hito"><small>Y ${fmt.format(mas)} ${mas === 1 ? "fecha más" : "fechas más"} ese día.</small></p>` : ""}</div>`;
+      }).join("");
+  }
+  /* Los botones de lo pintado arriba responden aquí, con lo MISMO que en Mis procesos: un aviso abre el
+     expediente, «Enterado» da por visto el cambio, una etapa abre Mis procesos filtrado por ella. */
+  for (const idMi of ["mi-atencion", "mi-procesos"]) {
+    const nodo = $(idMi);
+    if (!nodo) continue;
+    nodo.addEventListener("click", async (ev) => {
+      const verMas = ev.target.closest("[data-cas-avisos-mas]");
+      if (verMas) { miAvisosAbierto = !miAvisosAbierto; if (ultimoSeguimiento) pintarMiEmpresaSeguimiento(ultimoSeguimiento); return; }
+      const ir = ev.target.closest("[data-seg-ir]");
+      if (ir) { activarPestana("seguimiento"); await abrirExpediente(ir.getAttribute("data-seg-ir")); return; }
+      const en = ev.target.closest("[data-seg-enterado]");
+      if (en) {
+        const id = en.getAttribute("data-seg-enterado"); en.disabled = true; en.textContent = "Guardando…";
+        try { await api("/api/perfil?op=seguimiento", { method: "POST", body: { perfil: $("f-perfil").value, id, enterado: true } }); await cargarSeguimiento({ forzar: true }); }
+        catch (e) { en.disabled = false; en.textContent = "No se pudo: intente de nuevo"; en.title = fraseDeFallo(e); }
+        return;
+      }
+      const et = ev.target.closest("[data-mi-etapa]");
+      if (et) { segFiltroEstado = et.getAttribute("data-mi-etapa"); activarPestana("seguimiento"); if (ultimoSeguimiento) pintarSeguimiento(ultimoSeguimiento); return; }
+      const vs = ev.target.closest("[data-mi-ir-seguimiento]");
+      if (vs) {
+        segFiltroEstado = "todos";
+        if (vs.getAttribute("data-mi-ir-seguimiento") === "calendario") guardarPrefCasillero({ vista: "calendario" });
+        activarPestana("seguimiento");
+        if (ultimoSeguimiento) pintarSeguimiento(ultimoSeguimiento);
+        return;
+      }
+    });
+  }
   function pintarAlertasSeguimiento(r) {
     const sec = $("seg-alertas"), ul = $("seg-alertas-lista"), n = $("seg-alertas-n");
     if (!sec) return;
@@ -5793,7 +5910,7 @@
     if (!as.length) return;
     /* «sorteo» (22-sep-2026): la alerta de la etapa «avisé · en espera del sorteo».
        Sin rótulo aquí la pantalla pintaba la clave cruda «sorteo:» (medido en Chromium). */
-    const tipo = { cambio: "Cambió", manifestacion: window.Glosario.corto("manifestacion_interes"), cierre: "Cierre", aviso: "Aviso", tarea: "Su nota", sorteo: "Sorteo o lista de interesados", vigencia: "Vigencia de un documento" };
+    const tipo = tiposDeAviso();
     const K = raizCasillero();
     n.textContent = K ? K.fraseAlertas(as, 7) : `${as.length} en los próximos 7 días`;
     /* AGRUPADO POR PROCESO Y PLEGADO (8-sep-2026): lo pinta public/casillero.js,
@@ -5859,6 +5976,7 @@
   }
   function pintarSeguimiento(r) {
     ultimoSeguimiento = r;
+    pintarMiEmpresaSeguimiento(r);
     const lista = $("seg-lista"), vacio = $("seg-vacio"), res = $("seg-resumen"), filtros = $("seg-filtros");
     if (!lista) return;
     const todos = r.procesos || [];
@@ -6533,7 +6651,7 @@
     cons.part[actual] = 100 - parte; cons.part[socioId] = parte;
     activarPestana("admin");
     pintarConsorcio(); programarSimulacion();
-    const sec = $("seccion-consorcio"); if (sec) sec.scrollIntoView({ behavior: "smooth", block: "start" });
+    const sec = $("seccion-consorcio"); if (sec) { abrirPliegues(sec); sec.scrollIntoView({ behavior: "smooth", block: "start" }); }
   }
 
   const secSeg = document.getElementById("tab-seguimiento") || document.getElementById("seccion-seguimiento");
@@ -6998,13 +7116,14 @@
       const socioArmar = ev.target.closest("[data-seg-socio-armar]");
       if (socioArmar) { armarConsorcioEnMiEmpresa(socioArmar.getAttribute("data-seg-socio-armar"), Number(socioArmar.getAttribute("data-seg-socio-parte-armar"))); return; }
       const socioIr = ev.target.closest("[data-seg-socio-ir]");
-      if (socioIr) { activarPestana("admin"); const sec = $(socioIr.getAttribute("data-seg-socio-ir")); if (sec) sec.scrollIntoView({ behavior: "smooth", block: "start" }); return; }
+      if (socioIr) { activarPestana("admin"); const sec = $(socioIr.getAttribute("data-seg-socio-ir")); if (sec) { abrirPliegues(sec); sec.scrollIntoView({ behavior: "smooth", block: "start" }); } return; }
       const ver = ev.target.closest("[data-seg-verificar]");
       if (ver) {
         // reutiliza «Verifique a su socio»: mismo flujo, mismo NIT — vive en Mi empresa
         $("socio-id").value = ver.getAttribute("data-seg-verificar");
         $("socio-representante").value = "";
         activarPestana("admin");
+        abrirPliegues($("seccion-socio"));
         $("seccion-socio").scrollIntoView({ behavior: "smooth", block: "start" });
         verificarSocio();
       }
@@ -7238,7 +7357,7 @@
     }
 
     caja.innerHTML = `
-      <p class="text-xs text-gray-500">${r.fuente === "redis" ? "Parámetros guardados por la empresa" : "Valores de arranque (todavía no se ha guardado ninguno)"}${r.guardado_el ? ` · ${esc(String(r.guardado_el).slice(0, 10))}` : ""}. Se editan en Mi empresa → Sistema.</p>
+      <p class="text-xs text-gray-500">${r.fuente === "redis" ? "Parámetros guardados por la empresa" : "Valores de arranque (todavía no se ha guardado ninguno)"}${r.guardado_el ? ` · ${esc(String(r.guardado_el).slice(0, 10))}` : ""}. Se editan en Mi empresa → Ajustes.</p>
       <div class="mt-3 rounded-xl bg-white p-3 ring-1 ring-gray-900/5">
         <p class="font-medium">Cómo entra la jornada en el costo</p>
         <p class="mt-1 text-xs text-gray-600">La mano de obra del catálogo se cotiza por día con jornales de un contrato adjudicado (Bogotá, 2025, jornada de ${esc(motor.horas_semana_calibracion)} h).

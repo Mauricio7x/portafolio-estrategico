@@ -4,7 +4,7 @@
 
 Documento público y auditable. Cada fórmula, porcentaje y norma que usa el editor de APU para
 costear la mano de obra y los costos indirectos, con el **estado de verificación** de cada
-parámetro. Los valores viven en `apu:parametros` (editables en *Mi empresa → Sistema →
+parámetro. Los valores viven en `apu:parametros` (editables en *Mi empresa → Ajustes →
 Parámetros de costo*) y se sirven en `GET /api/apu?op=parametros`; la pestaña *Precios* los enseña
 en «Cómo calculamos» y rehace el ejemplo en el navegador con `public/costos.js`, el **mismo
 módulo** que usa el servidor (`lib/costos.js` lo re-exporta; no hay copia).

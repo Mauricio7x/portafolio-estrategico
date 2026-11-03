@@ -7800,8 +7800,11 @@ async function main() {
         codigosProceso: [{ codigo: "72141200", nivel: 6 }] });
       assert.ok(/72141200/.test(porVerbo.mensaje) && !/[Ss]in código/.test(porVerbo.mensaje), porVerbo.mensaje);
       // y sin códigos (o con el segmento suelto) los mensajes de siempre siguen igual
-      assert.ok(/Objeto de obra sin código UNSPSC/.test(textoUnspsc.evaluarTexto("x", { hayVerboObra: true, codigosProceso: [] }).mensaje));
-      assert.ok(/solo declara el segmento/.test(textoUnspsc.evaluarTexto("x", { hayVerboObra: true, segmentoAfin: true, codigosProceso: [{ codigo: "72000000", nivel: 2 }] }).mensaje));
+      // (desde el 3-nov-2026 sin la sigla: «Por qué» sin jerga; lo que dicen no cambia)
+      assert.ok(/Objeto de obra sin un tipo de trabajo publicado/.test(textoUnspsc.evaluarTexto("x", { hayVerboObra: true, codigosProceso: [] }).mensaje));
+      assert.ok(/solo declara un tipo de trabajo muy general/.test(textoUnspsc.evaluarTexto("x", { hayVerboObra: true, segmentoAfin: true, codigosProceso: [{ codigo: "72000000", nivel: 2 }] }).mensaje));
+      for (const m of [textoUnspsc.evaluarTexto("x", { hayVerboObra: true, codigosProceso: [] }).mensaje, porVerbo.mensaje, muro.unspsc.mensaje])
+        assert.ok(!/UNSPSC|\bRUP\b/.test(m), `el detalle del registro no usa siglas: ${m}`);
     }
 
     // el veredicto es GRADUADO, nunca booleano: tipo de trabajo detectado
@@ -8532,7 +8535,7 @@ async function main() {
        explícita de no-obra de la lista dice «servicio»: el tipo de trabajo lo decía «por más código de obra que
        traigan» (18-ago) y el chip decía «Obra civil» del mismo proceso. Ámbar, visible, y el motivo nombra la clase. */
     assert.ok(servObraPura.tier === "clase" && servObraPura.ok === true && servObraPura.pertinencia.nivel === "amarillo"
-      && servObraPura.pertinencia.ambar_por_contrato === "servicios" && /clase UNSPSC del proceso es de obra o de ingeniería/.test(servObraPura.pertinencia.motivo),
+      && servObraPura.pertinencia.ambar_por_contrato === "servicios" && /tipo de trabajo que publica el proceso es de obra o de ingeniería/.test(servObraPura.pertinencia.motivo),
       `MUTACIÓN: con la clase de obra pura, el chip contradecía al tipo de trabajo: ${JSON.stringify({ tier: servObraPura.tier, p: servObraPura.pertinencia })}`);
     // …y la palabra genérica sola (1-bis), más débil, sigue sin bajarla (la prueba de «ARREGLOS LOCATIVOS… REPARACIÓN» de arriba)
     /* ── PASO 2c (28-oct-2026, «haz la 1 y 2» del dueño): lo que lib/filtros_lista.tipoTrabajoDe daba como «obra» sin serlo ──
@@ -8560,6 +8563,10 @@ async function main() {
       ["servicios", "Decreto 092 de 2017", "COMPETITIVO", "AMPLIACIÓN DE COBERTURA Y CONTINUIDAD DE CUPOS DE EDUCACIÓN SUPERIOR EN PROGRAMAS DE FORMACIÓN TECNICO LABORAL O PROGRAMAS DE FORMACION PROFESIONAL EN LA MODALIDAD PRESENCIAL, DISTANCIA Y VIRTUAL - JORNADA DIURNA, NOCTURNA Y SABATINA, PARA JÓVENES Y ADULTOS FINANCIADOS POR EL DEPARTAMENTO DEL TOLIMA, EN LA VIGENCIA COMPRENDIDA ENTRE EL SEMESTRE B-2026 Y EL SEMESTRE A-2031, EN DESARROLLO DEL PROYECTO  APOYO A LA EDUCACIÓN SUPERIOR PARA UN TALENTO HUMANO CON PERTINENCIA REGIONAL, EN EL DEPARTAMENT"], // CO1.REQ.11252659
       ["servicios", "Prestación de servicios", "PRESTAR LOS SERVICIOS PARA DESARROLLAR PROCESOS PEDAGÓGICOS; CULTURALES; FORMATIVOS Y COMUNITARIOS ORIENTADOS A LA CONSTRUCCIÓN DE PAZ; LA RECONCILIACIÓN; LA MEMORIA HISTÓRICA; LA REPARACIÓN INTEGRAL", "PRESTAR LOS SERVICIOS PARA DESARROLLAR PROCESOS PEDAGÓGICOS, CULTURALES, FORMATIVOS Y COMUNITARIOS ORIENTADOS A LA CONSTRUCCIÓN DE PAZ, LA RECONCILIACIÓN, LA MEMORIA HISTÓRICA, LA REPARACIÓN INTEGRAL A LAS VÍCTIMAS Y EL FORTALECIMIENTO DEL TEJIDO SOCIAL EN LA LOCALIDAD DE ENGATIVÁ"], // CO1.REQ.11242250
       ["servicios", "Prestación de servicios", "PRESTAR LOS SERVICIOS PARA LA  IMPLEMENTACIÓN DE ACCIONES ENCAMINADAS AL FORTALECIMIENTO DE CAPACIDADES  COMUNITARIAS Y CIUDADANAS PARA LA PROMOCIÓN DE LA CORRESPONSABILIDAD EN LA GESTIÓN DE  LA SEGU", "PRESTAR LOS SERVICIOS PARA LA  IMPLEMENTACIÓN DE ACCIONES ENCAMINADAS AL FORTALECIMIENTO DE CAPACIDADES  COMUNITARIAS Y CIUDADANAS PARA LA PROMOCIÓN DE LA CORRESPONSABILIDAD EN LA GESTIÓN DE  LA SEGURIDAD Y LA CONVIVENCIA, LA APROPIACIÓN DEL CÓDIGO NACIONAL DE SEGURIDAD Y  CONVIVENCIA CIUDADANA Y LA APLICACIÓN DE ENFOQUES RESTAURATIVOS PARA LA PROMOCIÓN DE  LA JUSTICIA Y EL CUIDADO DEL ESPACIO PÚBLICO Y EL MEDIO AMBIENTE"], // CO1.REQ.11176717
+      /* las llantas de Coper (3-nov-2026, p6dx-8zbt): la descarga de ese día trae el nombre, no la descripción;
+         va el nombre en los dos campos */
+      ["suministro", "Suministros", "SUMINISTRO E INSTALACIÓN DE LLANTAS; NEUMATICOS Y PROTECTORES PARA LAS VOLQUETAS EN DESARROLLO DE LOS PROYECTOS DE MEJORAMIENTO DE VIAS TERCIARIAS - RECOLECCIÓN DE RESIDUOS Y VEHICULOS DE APOYO DE PRO", "SUMINISTRO E INSTALACIÓN DE LLANTAS; NEUMATICOS Y PROTECTORES PARA LAS VOLQUETAS EN DESARROLLO DE LOS PROYECTOS DE MEJORAMIENTO DE VIAS TERCIARIAS - RECOLECCIÓN DE RESIDUOS Y VEHICULOS DE APOYO DE PRO"], // CO1.REQ.6213036
+      ["suministro", "Suministros", "SUMINISTRO E INSTALACIÓN DE LLANTAS PARA LA RETROEXCAVADORA EN DESARROLLO DE LOS PROYECTOS DE MEJORAMIENTO DE VIAS TERCIARIAS MUNICIPIO DE COPER - BOYACÁ.", "SUMINISTRO E INSTALACIÓN DE LLANTAS PARA LA RETROEXCAVADORA EN DESARROLLO DE LOS PROYECTOS DE MEJORAMIENTO DE VIAS TERCIARIAS MUNICIPIO DE COPER - BOYACÁ."], // CO1.REQ.6322817
       ["servicios", "Prestación de servicios", "TRANSPORTE DE CARGA", "PRESTACION DE SERVICIOS DE TRANSPORTE DE CARGA INCLUIDOS EL CARGUE Y DESCARGUE DE MATERIALES HERRAMIENTAS EQUIPOS MUEBLES Y ENSERES PARA ATENDER LAS NECESIDADES DE REUBICACION ADECUACION Y RECUPERACION DE LOS ESPACIOS DE LA INSTITUCION UNIVERSITARIA ANTONIO JOSE CAMACHO UNIAJC DERIVADAS DEL SISMO DEL 10 DE AGOSTO DE 2026 INCLUIDO EL TRASLADO DE LOS BIENES REQUERIDOS PARA LA REUBICACION Y PUESTA EN FUNCIONAMIENTO DE LA SEDE PRINCIPAL DEL PROGRAMA SISBEN EN EJECUCION DEL CONVENIO INTERADMINISTRATI"], // CO1.REQ.11242281
       ["suministro", "Suministros", "PROPORCIONAR; PONER EN USO; REALIZAR EL DESMONTE Y BRINDAR EL SOPORTE TÉCNICO ESPECIALIZADO DE LA INFRAESTRUCTURA NECESARIA PARA LA CORRECTA ADECUACIÓN; DOTACIÓN Y OPERACIÓN DE LOS ESCENARIOS DESTINAD", "PROPORCIONAR, PONER EN USO, REALIZAR EL DESMONTE Y BRINDAR EL SOPORTE TÉCNICO ESPECIALIZADO DE LA INFRAESTRUCTURA NECESARIA PARA LA CORRECTA ADECUACIÓN, DOTACIÓN Y OPERACIÓN DE LOS ESCENARIOS DESTINADOS AL DESARROLLO DE LOS EVENTOS OFICIALES PROGRAMADOS EN EL MARCO DE LA 70ª FERIA DE MANIZALES 2027."], // CO1.REQ.11259605
       ["servicios", "Prestación de servicios", "CONTRATAR EL MANTENIMIENTO INTEGRAL DE LOS EQUIPOS ELECTROMECÁNICOS; ELECTRÓNICOS; MAQUINARIA Y EQUIPOS DE PISCINAS UBICADOS EN PARQUES; ESCENARIOS Y EN LA SEDE ADMINISTRATIVA DEL IDRD.", "CONTRATAR EL MANTENIMIENTO INTEGRAL DE LOS EQUIPOS ELECTROMECÁNICOS, ELECTRÓNICOS, MAQUINARIA Y EQUIPOS DE PISCINAS UBICADOS EN PARQUES, ESCENARIOS Y EN LA SEDE ADMINISTRATIVA DEL IDRD."], // CO1.REQ.11177278
@@ -8585,6 +8592,11 @@ async function main() {
     }
     // LA OBRA REAL SIGUE SIENDO OBRA (en el filtro y en el chip), aunque el contrato no sea de obra: las de producción que leyó la sesión
     const SI_ES_OBRA = [
+      /* obras que NOMBRAN llantas o neumáticos y no las compran (revisión adversaria del 3-nov-2026: con la palabra
+         suelta en la lista de servicios salían «servicios»; el término va atado a la compra). Objetos de prueba. */
+      ["Otro", "ESTABILIZACION DE TALUDES CON MUROS EN LLANTAS USADAS EN LA VIA VEREDAL EL ROSAL", ""],
+      ["Otro", "MANTENIMIENTO RUTINARIO DE VIAS TERCIARIAS DEL MUNICIPIO CON RODILLO NEUMATICO", ""],
+      ["Otro", "MANTENIMIENTO Y ADECUACION DEL PARQUE INFANTIL CON JUEGOS EN LLANTAS", ""],
       ["Otro", "PROYECTO LLAVE EN MANO A PRECIO GLOBAL FIJO SIN FORMULA DE REAJUSTE; PARA DESARROLLAR LOS ESTUDIOS; DISEÑOS Y CONSTRUCCION DEL NUEVO HOSPITAL DE ALGECIRAS HUILA", "PROYECTO LLAVE EN MANO A PRECIO GLOBAL FIJO SIN FORMULA DE REAJUSTE, PARA DESARROLLAR LOS ESTUDIOS, DISEÑOS Y CONSTRUCCION DEL NUEVO HOSPITAL DE ALGECIRAS HUILA"], // CO1.REQ.11219096
       ["Prestación de servicios", "ADECUACIÓN DE LA INFRAESTRUCTURA DE LAS UNIDADES DE SERVICIOS DE SALUD DE LA SUBRED INTEGRADA DE SERVICIOS DE SALUD NORTE E.S.E", "ADECUACIÓN DE LA INFRAESTRUCTURA DE LAS UNIDADES DE SERVICIOS DE SALUD DE LA SUBRED INTEGRADA DE SERVICIOS DE SALUD NORTE E.S.E."], // CO1.REQ.11247350
       ["Otro", "AMPLIACION DEL SERVICIO DE URGENCIAS DE LA ESE HOSPITAL UNIVERSITARIO DEL CARIBE DEL DEPARTAMENTO DE BOLIVAR; EN EL DISTRITO DE CARTAGENA DE INDIAS.", "AMPLIACION DEL SERVICIO DE URGENCIAS DE LA ESE HOSPITAL UNIVERSITARIO DEL CARIBE DEL DEPARTAMENTO DE BOLIVAR, EN EL DISTRITO DE CARTAGENA DE INDIAS."], // CO1.REQ.11123002
@@ -8652,7 +8664,7 @@ async function main() {
     const evCal = filtros.evaluarObjeto(calibracion, PERFILES.helder);
     assert.strictEqual(FLp3.tipoTrabajoDe(calibracion, evCal), "servicios", "premisa: la lista la da como servicio");
     assert.ok(evCal.tier === "clase" && evCal.ok === true && evCal.pertinencia.nivel === "amarillo" && evCal.pertinencia.ambar_por_contrato === "servicios"
-      && /clase UNSPSC del proceso es de obra o de ingeniería/.test(evCal.pertinencia.motivo) && Lfg.tuteoEn(evCal.pertinencia.motivo) === null,
+      && /tipo de trabajo que publica el proceso es de obra o de ingeniería/.test(evCal.pertinencia.motivo) && Lfg.tuteoEn(evCal.pertinencia.motivo) === null,
       `MUTACIÓN: el chip decía «Infraestructura» de una calibración que la lista da como servicio: ${JSON.stringify(evCal.pertinencia)}`);
     // la MISMA calibración con contrato de obra sigue verde: la clase manda cuando la entidad dice que es obra
     assert.strictEqual(filtros.evaluarObjeto({ ...calibracion, tipo_de_contrato: "Obra" }, PERFILES.helder).pertinencia.nivel, "verde", "con contrato de obra la clase sigue mandando");
@@ -8930,7 +8942,8 @@ async function main() {
     const eq = equivalencias.equivalenteDe(mapa, cod, idxHelder);
     assert.ok(eq && eq.tier === "equivalente", "el proceso de la clase afín debía casar por equivalencia");
     assert.strictEqual(eq.codigo_rup, "72141000");
-    assert.ok(/evidencia hist[oó]rica/i.test(eq.mensaje), "el mensaje debe decir de dónde sale la afinidad");
+    // desde el 3-nov-2026 sin «lift» ni «clase»: la fuente se dice con palabras (los procesos ya adjudicados)
+    assert.ok(/en los procesos ya adjudicados, \d+ empresas han ganado en los dos/.test(eq.mensaje) && !/lift|UNSPSC|\bRUP\b/.test(eq.mensaje), `el mensaje debe decir de dónde sale la afinidad: ${eq.mensaje}`);
     assert.strictEqual(equivalencias.equivalenteDe({ 801416: [{ clase: "999999", lift: 9 }] }, cod, idxHelder), null,
       "una afinidad hacia una clase que el perfil NO tiene no sirve de nada");
     console.log("· unidad equivalencias: lift por adjudicatarios, tres umbrales y búsqueda por perfil");
@@ -11182,6 +11195,33 @@ async function main() {
     assert.strictEqual(p2Ok.advertencia, false, "la tarjeta sigue en verde donde no hay nada que revisar");
     assert.ok(/^Consume /.test(p2Ok.mensaje), "y el mensaje de siempre no cambia");
     assert.strictEqual(p2Ok.anticipo_minimo_pct, null, "sin duda no hay cifra de anticipo");
+    /* «POR QUÉ» SIN JERGA (3-nov-2026, «haz la 2» del dueño). La cerca de lenguaje censa el CÓDIGO de public/*.js
+       y la jerga entraba por lo que REDACTA el servidor: la tarjeta pintaba «Consume 28 % de su capacidad residual
+       (CRPC $… / K $…)». Aquí se censan las SALIDAS reales —cada mensaje de la capacidad (cabe, no cabe, anticipo,
+       sin cuantía, tope), su versión sin credencial y cada tier del registro—, no se busca en el fuente.
+       MUTACIÓN: contra el árbol del 3-nov, la primera salida ya tenía «capacidad residual», «CRPC» y «K». */
+    {
+      const { mensajeP2Publico: mP2pub } = require("../lib/publico.js");
+      const { p1Rup } = require("../lib/puertas.js");
+      const JERGA_SRV = [[/UNSPSC/, "UNSPSC"], [/capacidad residual/i, "capacidad residual"], [/\bCRPC?\b/, "CRP/CRPC"],
+        [/\(K\b|\bK \$|\bsu K\b|\bK\)/, "K como sigla"], [/\bRUP\b/, "RUP"], [/\bpuertas?\b/i, "puerta"], [/segmento 72/i, "segmento 72"], [/blacklist/i, "blacklist"]];
+      const sinCuantia = p2K({ ...licOk, cuantia_cop: 0, precio_base: "" }, perfilH);
+      const conTope = p2K(licOk, { ...perfilH, topeSMMLV: 1 });
+      assert.strictEqual(conTope.dentro_de_tope, false, "premisa: con un tope de 1 SMMLV el proceso supera el tope");
+      const salidas = [
+        ["cabe", p2Ok], ["no cabe", p2K(licImp, perfilH)], ["anticipo", p2Banda], ["sin cuantía", sinCuantia], ["tope", conTope],
+      ].flatMap(([n, p]) => [[`capacidad, ${n}`, p.mensaje], [`capacidad sin credencial, ${n}`, mP2pub(p)]])
+        .concat(["clase", "familia", "equivalente", "texto", "ninguno"].map((tier) => [`registro, ${tier}`, p1Rup({ tier, paso: null }).mensaje]));
+      const sucias = [];
+      for (const [donde, texto] of salidas) {
+        assert.ok(typeof texto === "string" && texto.length > 10, `${donde}: sin mensaje que censar (${JSON.stringify(texto)})`);
+        for (const [re, nombre] of JERGA_SRV) if (re.test(texto)) sucias.push(`${donde} («${nombre}»): ${texto}`);
+      }
+      assert.deepStrictEqual(sucias, [], `«Por qué» no puede hablar en jerga:\n${sucias.join("\n")}`);
+      // las cifras siguen: la frase cambia sus PALABRAS, no lo que mide
+      assert.ok(/^Consume \d+ % de lo que le queda disponible para contratar \(\$/.test(p2Ok.mensaje), `la frase de siempre, en llano: «${p2Ok.mensaje}»`);
+      assert.ok(/supera lo que le queda disponible para contratar/.test(p2K(licImp, perfilH).mensaje), "lo que no cabe lo dice con la misma frase que la rama que no consta (lib/puertas)");
+    }
 
     // 5 · los DOS sitios no pueden divergir: la regla es UNA, no dos equivalentes de hoy
     for (const l of [licBanda, licCero, licImp, licOk]) {
@@ -15137,7 +15177,9 @@ async function main() {
           // contratada como servicio: el rótulo publicado no la cuenta (lo dice la pantalla: «contratos de obra»)
           { ...filaDe(91), id_del_proceso: "PHSERV", _k: "PHSERV", tipo_de_contrato: "Prestación de servicios", nombre_del_procedimiento: "MANTENIMIENTO Y REHABILITACIÓN DEL PUENTE COLGANTE DE LA VEREDA", nombre_del_proveedor: "CONSTRUCTORA DE OBRA 9", nit_del_proveedor_adjudicado: "919" },
         ];
-        assert.strictEqual(tipoTrabajoDe(especiales[0]), "obra", "premisa medida: el filtro de la lista lee las llantas como obra (por eso no se usa aquí)");
+        /* hasta el 3-nov el filtro de la lista leía estas llantas como obra; ya no (lib/filtros_lista,
+           `llantas?|neumaticos?`). Aquí se usa el rótulo publicado de todos modos: es la regla del panel */
+        assert.notStrictEqual(tipoTrabajoDe(especiales[0]), "obra", "las llantas tampoco son obra para el filtro de la lista");
         assert.ok(!obraDeclarada(especiales[0]) && !obraDeclarada(especiales[1]), "premisa: ninguna de las dos está publicada como contrato de obra");
         const corpusDe = (filas) => { const m = new Map(); for (let c = 0; c * 10 < filas.length; c++) m.set(`licitaciones:historico:mes:2026-02:chunk:${c}`, comp(filas.slice(c * 10, c * 10 + 10))); return m; };
         const redisDe = (m) => ({ ...redisD(0), scan: async () => [...m.keys()], mget: async (ks) => ks.map((k) => m.get(k) ?? null) });
@@ -16537,14 +16579,15 @@ async function main() {
          corto: es un agregado declarado en el censo de abajo. */
       {
         const Pul23 = require("../public/pulso.js");
-        const heroUno23 = Pul23.htmlHero({ total: 1, valorTotal: 1598000, cierranEstaSemana: { n: 1, valor: 1598000 } }, "H");
-        const uno23 = txt23(heroUno23);
-        assert.ok(/\$1\.598\.000 en juego/.test(uno23) && /suman \$1\.598\.000\./.test(uno23) && !/millones/.test(uno23), `pulso con un proceso: su cifra exacta: ${uno23}`);
-        assert.ok(/>\$1\.<wbr>598\.<wbr>000<\/p>/.test(heroUno23), "la cifra grande exacta ofrece dónde partir después de cada punto de miles (entre 640 y 1000 px su columna mide 166-208 px)");
-        const soloUna23 = txt23(Pul23.htmlHero({ total: 3, sinPresupuesto: 2, valorTotal: 1598000000, cierranEstaSemana: { n: 0, valor: 0 } }, "H"));
+        /* desde el 3-nov-2026 el dinero en juego vive en «Dónde están…» (`htmlEnJuego`) y la suma de lo que cierra
+           en su tarjeta de «Con plazo» (`htmlCierran`): las mismas reglas, en su sitio nuevo */
+        const enJ = (x) => txt23(Pul23.htmlEnJuego(x)), cie = (x) => txt23(Pul23.htmlCierran(x));
+        const uno23 = enJ({ total: 1, valorTotal: 1598000 }) + " " + cie({ cierranEstaSemana: { n: 1, valor: 1598000 } });
+        assert.ok(/\$1\.598\.000 en juego/.test(uno23) && /Vale \$1\.598\.000\./.test(uno23) && !/millones/.test(uno23), `pulso con un proceso: su cifra exacta: ${uno23}`);
+        const soloUna23 = enJ({ total: 3, sinPresupuesto: 2, valorTotal: 1598000000 });
         assert.ok(/\$1\.598\.000\.000 en juego/.test(soloUna23), `tres procesos y solo uno publica presupuesto: el dinero es la cifra de ese: ${soloUna23}`);
-        const varios23 = txt23(Pul23.htmlHero({ total: 5, valorTotal: 9876543210, cierranEstaSemana: { n: 1, valor: 1598000000 } }, "H"));
-        assert.ok(/\$9\.877 millones en juego/.test(varios23) && /suman \$1\.598\.000\.000\./.test(varios23), `pulso con varios: el dinero en juego es un agregado corto y la suma de lo que cierra, exacta: ${varios23}`);
+        const varios23 = enJ({ total: 5, valorTotal: 9876543210 }) + " " + cie({ cierranEstaSemana: { n: 2, valor: 1598000000 } });
+        assert.ok(/\$9\.877 millones en juego/.test(varios23) && /Suman \$1\.598\.000\.000\./.test(varios23), `pulso con varios: el dinero en juego es un agregado corto y la suma de lo que cierra, exacta: ${varios23}`);
         for (const v of [1598000, 1598000000, 850000.4, 999999, 0, null, "", -1, "abc", 4.7e12]) {
           assert.strictEqual(Pul23.pesosExactos(v), Por23.pesosExactos(v), `pesosExactos difiere entre pulso y portada para ${v}`);
           // …también con el conteo de cuántos suman (24-sep-2026): la rama «uno solo va exacto» es la misma en las dos copias
@@ -16616,8 +16659,8 @@ async function main() {
             (v) => PorC23.htmlEntidades({ topEntidades: [{ nombre: "HOSPITAL CENTRAL DE LA POLICIA", abiertos: 1, valor: v }] })],
           "portada.js › htmlDepartamentos › pesosCortos": [2, "agregado: lo abierto de un departamento (texto y título)",
             (v) => PorC23.htmlDepartamentos({ porDepartamento: [{ cod: "11", nombre: "Bogotá", n: 1, valor: v }] })],
-          "pulso.js › htmlHero › pesosCortos": [1, "agregado: el dinero en juego de VARIOS procesos (la suma de lo que cierra esta semana va siempre exacta, como en la portada)",
-            (v) => PulC23.htmlHero({ total: 3, sinPresupuesto: 2, valorTotal: v, cierranEstaSemana: { n: 1, valor: v } }, "H")],
+          "pulso.js › htmlEnJuego › pesosCortos": [1, "agregado: el dinero en juego de VARIOS procesos (la suma de lo que cierra esta semana va siempre exacta, como en la portada; desde el 3-nov-2026 en «Dónde están…»)",
+            (v) => PulC23.htmlEnJuego({ total: 3, sinPresupuesto: 2, valorTotal: v }) + PulC23.htmlCierran({ cierranEstaSemana: { n: 1, valor: v } })],
           "pulso.js › columnas › pesosCortos": [1, "agregado: la suma de una columna de la gráfica",
             (v) => PulC23.columnas([{ etiqueta: "oct", titulo: "Octubre", n: 1, valor: v }, { etiqueta: "nov", titulo: "Noviembre", n: 3, valor: v, sumandos: 1 }])],
           "pulso.js › barrasRank › pesosCortos": [1, "agregado: la suma de una fila del ranking (entidad o departamento)",
@@ -25303,7 +25346,7 @@ async function main() {
         for (const l of conAfin) {
           assert.strictEqual(l.rup.tier, "equivalente", "el rescate por afinidad debe llevar su propio tier");
           assert.strictEqual(l.rup.unspsc.codigo_rup, "72141000", "debe decir CON QUÉ clase del RUP es afín");
-          assert.ok(/evidencia hist[oó]rica/i.test(l.rup.unspsc.mensaje), "la tarjeta debe explicar de dónde sale");
+          assert.ok(/en los procesos ya adjudicados/.test(l.rup.unspsc.mensaje), `la tarjeta debe explicar de dónde sale (sin siglas desde el 3-nov-2026): ${l.rup.unspsc.mensaje}`);
           assert.ok(l.rup.pertinencia.nivel === "amarillo",
             "sin vocabulario de obra el veredicto es «verificar», no un verde");
         }
@@ -29461,7 +29504,8 @@ async function main() {
            un proceso abierto hoy —cuyo plazo puede ser de 4 horas— no contaba
            como urgente en ninguna faceta. La invariante del proyecto se sigue
            cumpliendo y se comprueba aparte: urgentes ⊂ abiertas. */
-        assert.deepStrictEqual(fac, { total: 3, sin_vencer: 3, abiertas: 1, urgentes: 1, pudo_vencer: 1, vencidas: 0, sin_fecha: 1, por_abrir: 0 }, JSON.stringify(fac));
+        // `urgentes_por_confirmar` (3-nov-2026) ⊂ `urgentes`: la única urgente de este caso es la que SECOP II no confirma
+        assert.deepStrictEqual(fac, { total: 3, sin_vencer: 3, abiertas: 1, urgentes: 1, urgentes_por_confirmar: 1, pudo_vencer: 1, vencidas: 0, sin_fecha: 1, por_abrir: 0 }, JSON.stringify(fac));
         assert.ok(fac.urgentes <= fac.abiertas, "urgentes ⊂ abiertas: una urgente sigue siendo una abierta");
         /* LAS DOS INCLUSIONES QUE SOSTIENEN LA PANTALLA (15-sep-2026). La cifra
            que va al lado de la casilla es `sin_vencer` y la lista que la casilla
@@ -32072,7 +32116,7 @@ async function main() {
            el mensaje dice qué falta. */
         assert.strictEqual(fila0.rup.k_cop, null, "sin el total del segmento 72 la K del perfil dinámico es «sin dato»");
         assert.ok(fila0.puertas.p2_k.pasa === true && fila0.puertas.p2_k.sin_dato === true, "…y la puerta de capacidad deja pasar");
-        assert.ok(/segmento 72/.test(fila0.puertas.p2_k.mensaje), `…diciendo qué falta: «${fila0.puertas.p2_k.mensaje}»`);
+        assert.ok(/el valor total de sus contratos de construcción inscritos en el registro/.test(fila0.puertas.p2_k.mensaje), `…diciendo qué falta, sin la sigla del segmento (3-nov-2026): «${fila0.puertas.p2_k.mensaje}»`);
       }
 
       /* 5 · los tres perfiles del dueño NO se tocan */
@@ -42032,8 +42076,8 @@ async function main() {
          oculta sería un pulso a medias sin decirlo. */
       {
         const pjs = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", "pulso.js"), "utf8"));
-        assert.ok(/getElementById\("pulso-repartos"\)/.test(pjs) && /for \(const nodo of \[raiz, repartos\]\)/.test(pjs),
-          "pulso.js tiene que enseñar y esconder `#pulso` y `#pulso-repartos` a la vez");
+        assert.ok(/getElementById\("pulso-repartos"\)/.test(pjs) && /getElementById\("pulso-plazo"\)/.test(pjs) && /for \(const nodo of \[raiz, repartos, plazo\]\)/.test(pjs),
+          "pulso.js tiene que enseñar y esconder `#pulso`, `#pulso-repartos` y `#pulso-plazo` a la vez (la tercera, «Con plazo», desde el 3-nov-2026)");
         assert.ok(!/raiz\.classList\.(add|remove)\("hidden"\)/.test(pjs),
           "ninguna rama puede tocar solo `#pulso`: dejaría los repartos colgados en el estado contrario");
       }
@@ -42052,12 +42096,20 @@ async function main() {
          siendo un cambio de POSICIÓN y nada más — lo que el calendario hace no
          cambió—, pero el orden se fija entero para que no vuelva a moverse sin
          que alguien lea esto. */
-      const ORDEN_EMPRESA = ['id="pulso"', 'id="pulso-repartos"', 'id="dashboard"', 'id="seccion-rup"',
-        'id="calendario"', 'id="seccion-consorcio"', 'id="seccion-socio"'];
+      /* ⚠️ Y CAMBIÓ OTRA VEZ EL 3-nov-2026 (la maqueta c07, «haz la 1, 2 y 3»): arriba lo que pide hacer algo hoy
+         —el titular, lo que piden sus procesos, «Con plazo», sus procesos y sus fechas— y «Actualizar datos»; debajo,
+         PLEGADOS y en este orden, dónde están · cuándo cierra cada una · su registro · socias y consorcio · el mercado.
+         Nada se retiró. */
+      const ORDEN_EMPRESA = ['id="pulso"', 'id="mi-atencion"', 'id="pulso-plazo"', 'id="mi-procesos"', 'id="actualizar"',
+        'id="plg-donde"', 'id="pulso-repartos"', 'id="plg-calendario"', 'id="calendario"', 'id="plg-rup"', 'id="seccion-rup"',
+        'id="plg-socias"', 'id="seccion-consorcio"', 'id="seccion-socio"', 'id="plg-mercado"', 'id="dashboard"'];
       const posiciones = ORDEN_EMPRESA.map((id) => ({ id, i: tab.indexOf(id) }));
       for (const { id, i } of posiciones) assert.ok(i > 0, `falta ${id} en la pestaña Mi empresa`);
       assert.deepStrictEqual([...posiciones].sort((a, b) => a.i - b.i).map((x) => x.id), ORDEN_EMPRESA,
-        "Mi empresa va: «Para Helder, hoy» → dónde/quién → tablero → su registro → calendario → consorcio y socio");
+        "Mi empresa va: el titular → lo que pide atención → con plazo → sus procesos → actualizar → y plegados: dónde están → calendario → su registro → socias → mercado");
+      // lo que la maqueta no enseña a la vista va PLEGADO, y nace cerrado
+      for (const id of ["plg-donde", "plg-calendario", "plg-rup", "plg-socias", "plg-mercado"])
+        assert.ok(new RegExp(`<details id="${id}" class="plegado-empresa">`).test(tab), `#${id} es un plegado que nace cerrado`);
       const lic = htmlL.slice(iTab, htmlL.indexOf('id="tab-apu"'));
       assert.ok(!lic.includes('id="pulso"') && lic.indexOf('id="f-ordenar"') > 0, "Licitaciones ya no lleva el pulso: empieza por la barra de herramientas");
       const nav = htmlL.slice(htmlL.indexOf('aria-label="Secciones"'), htmlL.indexOf("</nav>"));
@@ -42222,11 +42274,15 @@ async function main() {
          a secas, «$312.000 millones» cabe en 1727 px y PARTE EN DOS en 1280, y
          el bloque que desde el 31-ago-2026 abre la pestaña se ve descuadrado.
          Medido en Chromium; aquí se fija el escalón para que no vuelva. */
-      assert.ok(/sm:text-\[34px\][^"]*2xl:text-\[40px\]/.test(PulsoPub.htmlHero(p0, "X")),
-        "el titular tiene que escalar 26 → 34 → 40 px: sin la parada de 34, la cifra del medio parte en dos a 1280 px");
+      /* EL TITULAR ES UNA FRASE (3-nov-2026, la maqueta c07): «Para X hay N licitaciones abiertas a las que puede
+         presentarse», con «Verlas». El dinero en juego baja a «Dónde están…» y lo que cierra esta semana es su
+         tarjeta en «Con plazo»; las tres cifras siguen, cada una enlazada a su lista. */
       const hero = PulsoPub.htmlHero(p0, "Constructora X");
-      assert.ok(/Para Constructora X, hoy/.test(hero) && /47/.test(hero) && /\$312\.000 millones/.test(hero) && /cierran esta semana/.test(hero), "hero: nombre, cuántas, cuánto, cierran");
-      assert.ok(/data-filtro="cierre=7d"/.test(hero) && /data-filtro="todo"/.test(hero), "las cifras enlazan a la lista");
+      assert.ok(/class="mi-titular-h"/.test(hero) && /Para Constructora X hay <span class="mi-num">47<\/span> licitaciones abiertas a las que puede presentarse/.test(hero), `hero: nombre y cuántas, en una frase: ${hero}`);
+      const enJuego0 = PulsoPub.htmlEnJuego(p0), cierran0 = PulsoPub.htmlCierran(p0);
+      assert.ok(/\$312\.000 millones/.test(enJuego0) && /6 cierran esta semana/.test(cierran0.replace(/<[^>]+>/g, "")), "el dinero y lo que cierra siguen, en su sitio");
+      assert.ok(/data-filtro="cierre=7d&amp;ordenar_por=cierre"/.test(cierran0) && /data-filtro="todo"/.test(hero), "las cifras enlazan a la lista (la de la semana, ordenada por cierre)");
+      assert.strictEqual(PulsoPub.htmlCierran({ ...p0, cierranEstaSemana: { n: 0, valor: null } }), "", "sin cierres esta semana no hay tarjeta: un «0» no se pinta");
       const dep = PulsoPub.htmlDepartamentos(p0), entH = PulsoPub.htmlEntidades(p0);
       /* BARRAS RANKEADAS (encargo del ingeniero, ago 2026): mismo dato, forma
          nueva. Lo que se vigila es lo que decide —el enlace a la lista, la
@@ -42298,13 +42354,13 @@ async function main() {
          de licitaciones; en la portada por dinero — dos preguntas distintas, dos
          órdenes, y cada pantalla dice el suyo). Con 0 o sin dato no se pinta
          nada: «0 sin departamento» es ruido y null jamás se pinta como 0. */
-      assert.ok(/publican presupuesto/.test(hero) && /\b2 no lo publican/.test(hero), `el hero dice cuántas no publican presupuesto: ${hero.replace(/\s+/g, " ").slice(-260)}`);
+      assert.ok(/publican presupuesto/.test(enJuego0) && /\b2 no lo publican/.test(enJuego0), `el dinero en juego dice cuántas no publican presupuesto: ${enJuego0.replace(/\s+/g, " ").slice(-260)}`);
       assert.ok(/\b1 sin departamento publicado; no se reparten a ojo/.test(dep), `«Dónde están» dice cuántas quedan fuera del reparto: ${dep.slice(-300)}`);
       assert.ok(/Barras por número de licitaciones; el dinero, al lado/.test(dep), "«Dónde están» dice qué mide la barra (número, no dinero)");
       assert.ok(/Barras por número de licitaciones; el dinero, al lado/.test(entH) && !/sin entidad/.test(entH), "«Quién las publica» también dice qué mide la barra, y con sinEntidad 0 no habla de ausencias");
       assert.ok(/\b3 sin entidad publicada; no se reparten a ojo/.test(PulsoPub.htmlEntidades({ ...p0, sinEntidad: 3 })), "…y con ausencias de entidad las declara (hermano del departamento)");
       for (const v of [0, null, undefined]) {
-        assert.ok(!/publican presupuesto|no lo publican/.test(PulsoPub.htmlHero({ ...p0, sinPresupuesto: v }, "X")), `con sinPresupuesto=${v} el hero no habla de ausencias`);
+        assert.ok(!/publican presupuesto|no lo publican/.test(PulsoPub.htmlEnJuego({ ...p0, sinPresupuesto: v })), `con sinPresupuesto=${v} el dinero en juego no habla de ausencias`);
         assert.ok(!/sin departamento/.test(PulsoPub.htmlDepartamentos({ ...p0, sinDepartamento: v })), `con sinDepartamento=${v} no se pinta «0 sin departamento»`);
       }
       /* …y el conteo lo hace la función real con la MISMA regla que el dinero (ausente,
@@ -42322,9 +42378,9 @@ async function main() {
       }
       const cero = PulsoPub.htmlHero({ total: 0, visibles: 12, corpus_vacio: false }, "");
       assert.ok(/ninguna licitación abierta encaja/.test(cero) && /Hay 12 de su tipo de obra/.test(cero) && !/data-filtro/.test(cero), "con cero viables no hay cifras que enlazar y se dice por qué");
-      assert.strictEqual(PulsoPub.htmlHero({ total: 3, valorTotal: null, cierranEstaSemana: { n: 0, valor: null } }, "").includes("Sin referencia"), true, "sin cuantías publicadas el dinero es «Sin referencia», no $0");
+      assert.strictEqual(PulsoPub.htmlEnJuego({ total: 3, valorTotal: null }).includes("Sin referencia"), true, "sin cuantías publicadas el dinero es «Sin referencia», no $0");
       for (const v of [4.7e12, 312e9, 52.4e6, 850000, 0, null]) assert.strictEqual(PulsoPub.pesosCortos(v), PortadaPub2.pesosCortos(v), `pesosCortos difiere entre pulso y portada para ${v}`);
-      assert.ok(!/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u.test(hero + dep + entH + cero + PortadaPub2.htmlTeaser({ procesosAbiertos: 1306, valorTotal: 13.9e12, entidadesActivas: 573 })), "sin emojis");
+      assert.ok(!/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u.test(hero + enJuego0 + cierran0 + dep + entH + cero + PortadaPub2.htmlTeaser({ procesosAbiertos: 1306, valorTotal: 13.9e12, entidadesActivas: 573 })), "sin emojis");
       const teaser = PortadaPub2.htmlTeaser({ procesosAbiertos: 1306, valorTotal: 13.9e12, entidadesActivas: 573 });
       assert.ok(/1\.306/.test(teaser) && /\$13,9 billones/.test(teaser) && /573/.test(teaser) && (teaser.match(/<div class="cifra">/g) || []).length === 3, "el teaser son tres cifras");
       assert.ok(!/pt-btn-cuales/.test(PortadaPub2.htmlHero({ procesosAbiertos: 1, valorTotal: 1, entidadesActivas: 1, generado: new Date().toISOString() }, { conBoton: false })), "dentro del tablero el hero de la portada va sin el botón de entrada");
@@ -50808,7 +50864,29 @@ async function main() {
       assert.ok(!Pulso.htmlTipo && !Pulso.htmlModalidad && !Pulso.htmlCierre && !Pulso.htmlCuantia,
         "los cuatro gráficos retirados no pueden volver por la puerta de atrás: si algún día se reponen, se repone también su cerradura");
       const mf = Pulso.htmlManifestacion({ manifestacion: { total: 6, abiertas: 4, urgentes: 4, vencidas: 2, sin_fecha: 0 } });
-      assert.ok(/data-filtro="manif=abierta"/.test(mf), "el aviso de manifestación lleva a su lista");
+      /* desde el 3-nov-2026 abre `manif=urgente`: antes abría `manif=abierta`, que trae también las que no urgen, y
+         «en 4 procesos… hay que avisar hoy» abría una lista con más; y dice «hay que avisar hoy», no «puede cerrar hoy»,
+         porque la urgencia cuenta también los plazos confirmados que vencen mañana (revisión adversaria) */
+      assert.ok(/data-filtro="manif=urgente"/.test(mf) && /En 4 procesos hay que avisar hoy que le interesa/.test(mf.replace(/<[^>]+>/g, "")), `el aviso de manifestación lleva a SU lista: ${mf}`);
+      assert.ok(!/no confirma/.test(mf), "sin el conteo de las que SECOP II no confirma, la frase no se dice");
+      assert.ok(/En 2, SECOP II no confirma si el plazo sigue abierto/.test(Pulso.htmlManifestacion({ manifestacion: { urgentes: 4, urgentes_por_confirmar: 2 } })), "con el conteo, se dice con su cifra");
+      /* LA IGUALDAD QUE IMPORTA, EJECUTADA: la faceta `urgentes` (la cifra roja) y el filtro `manif=urgente` (la lista
+         que abre) cuentan lo MISMO sobre un censo de estados de la manifestación; y `urgentes_por_confirmar` ⊂ `urgentes` */
+      {
+        const FLu = require("../lib/filtros_lista.js");
+        const ESTADOS_M = [null, { estado: "vencida" }, { estado: "sin_fecha" }, { estado: "pudo_vencer" }, { estado: "por_abrir" },
+          { estado: "por_confirmar" }, { estado: "abierta", confirmada: true, dias_calendario: 0 }, { estado: "abierta", confirmada: true, dias_calendario: 1 },
+          { estado: "abierta", confirmada: true, dias_calendario: 2 }, { estado: "abierta", confirmada: false, dias_calendario: 0 }, { estado: "abierta", confirmada: true, dias_calendario: null }];
+        const filasU = ESTADOS_M.map((m, i) => ({ id_del_proceso: `U${i}`, _m: m }));
+        const clasU = (l) => ({ manifestacion: l._m, tipo: "obra", modalidad: "abreviada", departamento: null, rango: null, ventana: null });
+        const fU = FLu.facetas(filasU, clasU).manifestacion;
+        const enListaU = filasU.filter((l) => FLu.cumple(l, clasU(l), Fl.leerEstado({ manif: "urgente" }))).length;
+        assert.strictEqual(fU.urgentes, 3, `premisa: el censo tiene 3 urgentes (por confirmar y dos confirmadas a un día o menos): ${JSON.stringify(fU)}`);
+        assert.strictEqual(enListaU, fU.urgentes, "la tarjeta roja dice N y la lista que abre trae N");
+        assert.strictEqual(fU.urgentes_por_confirmar, 1, "de las urgentes, una no la confirma SECOP II");
+        assert.strictEqual(Fl.leerEstado({ manif: "urgente" }).manif, "urgente", "`manif=urgente` es un valor del filtro (cualquier otro sigue inerte)");
+        assert.strictEqual(Fl.leerEstado({ manif: "urgentisima" }).manif, null, "un valor desconocido sigue siendo inerte");
+      }
       /* CERO NO SE PINTA: un recuadro que dice «0» se deja de mirar. */
       assert.strictEqual(Pulso.htmlManifestacion({ manifestacion: { urgentes: 0 } }), "", "sin manifestaciones urgentes no se pinta nada");
       /* La modalidad que el calendario enseña en la ficha SALE del catálogo de
@@ -59769,12 +59847,12 @@ async function main() {
           okRL(p.p2_k.pasa === true && !p.p2_k.advertencia, `(1) ${nombre} con ${perfil}: la capacidad pasa limpia (pasa=${p.p2_k.pasa}, advertencia=${p.p2_k.advertencia}) — «${p.p2_k.mensaje}»`);
           okRL(/solo se exige en contratos de obra/.test(p.p2_k.mensaje || "") && /Decreto 1082 de 2015, art\. 2\.2\.1\.1\.1\.6\.4/.test(p.p2_k.mensaje || ""),
             `(1) ${nombre} con ${perfil}: la puerta dice por qué no se pide, con su norma — «${p.p2_k.mensaje}»`);
-          okRL(!/supera su capacidad/.test(p.p2_k.mensaje || ""), `(1) ${nombre} con ${perfil}: no dice «supera su capacidad» — «${p.p2_k.mensaje}»`);
+          okRL(!/supera su capacidad|supera lo que le queda disponible/.test(p.p2_k.mensaje || ""), `(1) ${nombre} con ${perfil}: no dice que no le alcanza — «${p.p2_k.mensaje}»`);
           okRL(rup.dentro_de_k === true && rup.capacidad_ok === true, `(1) ${nombre} con ${perfil}: la cascada tampoco la retira por capacidad (dentro_de_k=${rup.dentro_de_k})`);
           okRL(visibleRL(fila, perfil), `(1) ${nombre} con ${perfil}: se ve con el filtro por defecto y sin socio`);
         }
         const pO = PuRL.evaluarPuertas(OBRA_RL, perfil, {});
-        okRL(pO.p2_k.pasa === false && /supera su capacidad/.test(pO.p2_k.mensaje), `(1) control: la OBRA de 12.000 millones con ${perfil} sigue sin caber — «${pO.p2_k.mensaje}»`);
+        okRL(pO.p2_k.pasa === false && /supera lo que le queda disponible para contratar/.test(pO.p2_k.mensaje), `(1) control: la OBRA de 12.000 millones con ${perfil} sigue sin caber — «${pO.p2_k.mensaje}»`);
         okRL(!visibleRL(OBRA_RL, perfil), `(1) control: la OBRA con ${perfil} sigue fuera de la lista sin socio`);
       }
       // concurso de méritos publicado como «Prestación de servicios»: la modalidad es la de los consultores

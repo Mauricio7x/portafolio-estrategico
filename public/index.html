@@ -2367,6 +2367,49 @@
     #lista .t-pie { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 12px; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border); }
     #lista .t-pie a[target="_blank"] { margin-left: auto; }
     @media (max-width: 639px) { #lista .t-filas li { grid-template-columns: 1fr; } #lista .t-cuanto { text-align: left; } #lista .t-pie a[target="_blank"] { margin-left: 0; } }
+
+    /* ══════ MI EMPRESA COMO LA MAQUETA C07 (3-nov-2026) ══════
+       Los colores son los tokens de la piel; los tamaños, los de la tabla de «la 11 con la 3». */
+    #tab-admin .mi-bloque { margin-bottom: 26px; }
+    #tab-admin .mi-cab { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 14px; margin-bottom: 10px; }
+    #tab-admin .mi-cab-t { margin: 0; font-size: 20px; font-weight: 700; color: var(--text-primary); }
+    #tab-admin .mi-nota { font-size: 16px; color: var(--text-secondary); }
+    #tab-admin .mi-ceja { margin: 0 0 6px; font-size: 17px; color: var(--text-secondary); }
+    #tab-admin .mi-titular { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 14px 24px; }
+    #tab-admin .mi-titular-h { margin: 0; font-size: 28px; line-height: 1.25; font-weight: 700; color: var(--text-primary); letter-spacing: -0.4px; }
+    @media (min-width: 640px) { #tab-admin .mi-titular-h { font-size: 34px; } }
+    #tab-admin .mi-num { font-variant-numeric: tabular-nums; }
+    #tab-admin .mi-tareas { display: grid; gap: 10px; }
+    #tab-admin .mi-tarea { display: flex; align-items: center; gap: 14px; min-height: 56px; padding: 14px 16px; border-radius: var(--radius-md); color: var(--text-primary); text-decoration: none; }
+    /* la tarjeta entera es el enlace, pero solo «Ver…» va subrayado (la regla de enlaces de la piel subrayaba
+       el texto entero de la tarjeta: medido en Chromium) */
+    #app #tab-admin a.mi-tarea, #app #tab-admin a.mi-tarea .mi-tarea-texto, #app #tab-admin a.mi-tarea .mi-tarea-texto * { text-decoration: none; }
+    #tab-admin .mi-tarea-rojo { background: var(--danger-light); }
+    #tab-admin .mi-tarea-ambar { background: var(--warn-light); }
+    #tab-admin .mi-tarea-rojo .mi-punto { color: var(--danger); }
+    #tab-admin .mi-tarea-ambar .mi-punto { color: var(--warn); }
+    #tab-admin .mi-tarea-texto { min-width: 0; flex: 1; }
+    #tab-admin .mi-tarea-texto b { display: block; font-size: 19px; font-weight: 700; line-height: 1.35; }
+    #tab-admin .mi-tarea-sub { display: block; margin-top: 2px; font-size: 16px; color: var(--text-secondary); }
+    #tab-admin .mi-ir { flex: none; font-size: 17px; font-weight: 700; color: var(--accent); text-decoration: underline; text-underline-offset: 0.18em; }
+    #app #tab-admin .mi-enlace { border: 0; background: transparent; padding: 8px 2px; min-height: 44px; color: var(--accent); font-weight: 700; font-size: 17px;
+      text-decoration: underline; text-underline-offset: 0.18em; cursor: pointer; }
+    #tab-admin .mi-etapa { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 2px 14px; width: 100%; min-height: 48px; padding: 8px 4px;
+      border: 0; border-bottom: 1px solid var(--border); background: transparent; color: var(--text-primary); font-size: 17px; text-align: left; cursor: pointer; }
+    #tab-admin .mi-etapa:last-of-type { border-bottom: 0; }
+    #tab-admin .mi-etapa-n { font-weight: 700; font-variant-numeric: tabular-nums; }
+    #tab-admin .mi-total { margin: 10px 4px 0; font-size: 16px; color: var(--text-secondary); }
+    #tab-admin .mi-dia + .mi-dia { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border); }
+    #tab-admin .mi-dia h3 { margin: 0 0 6px; font-size: 17px; font-weight: 700; color: var(--text-primary); }
+    #tab-admin .mi-dia-hoy h3 { color: var(--danger); }
+    #tab-admin .mi-hito { margin: 0 0 8px; font-size: 16px; color: var(--text-primary); }
+    #tab-admin .mi-hito small { display: block; font-size: 15px; color: var(--text-secondary); }
+    #tab-admin .plegado-empresa { border-top: 1px solid var(--border); }
+    #tab-admin .plegado-empresa:last-of-type { border-bottom: 1px solid var(--border); }
+    #tab-admin .plegado-empresa-titulo { display: flex; align-items: center; min-height: 56px; padding: 8px 4px; font-size: 18px; font-weight: 700; color: var(--text-primary); cursor: pointer; }
+    #tab-admin .plegado-empresa-cuerpo { padding: 4px 0 18px; }
+    /* un plegado sin nada que enseñar (el tablero del visitante, el consorcio de un solo perfil) no se pinta vacío */
+    #tab-admin .plegado-empresa[hidden] { display: none; }
   </style>
 </head>
 <body class="antialiased">
@@ -2725,7 +2768,10 @@
            Licitaciones). Debajo, en cifras, su registro de proponente; y lo que
            hay que TOCAR (subir un RUP, cargar experiencia) va plegado: la pestaña
            motiva a licitar, no exige entender el programa. -->
-      <header class="cabecera-pestana">
+      <!-- LA CABECERA SE QUEDA, PARA QUIEN NO VE (3-nov-2026): el titular a la vista es la frase del pulso
+           («Para Helder hay N licitaciones abiertas…», la maqueta c07); el nombre de la pestaña sigue siendo
+           el h1 para un lector de pantalla. -->
+      <header class="cabecera-pestana sr-only">
         <h1 class="titulo-pestana">Mi empresa</h1>
         <p class="subtitulo-pestana">Qué puede ganar hoy con su perfil, y qué le falta para ganar más.</p>
       </header>
@@ -2771,13 +2817,117 @@
              menor cuantía no se puede ofertar sin avisar antes, y el plazo lo
              fija la entidad —a veces son horas—. Nace oculto y solo aparece si
              hay alguno: un recuadro que dice «0» se deja de mirar. -->
-        <div id="pu-manifestacion" class="mt-4 hidden"></div>
+      </section>
+
+      <!-- ══════ MI EMPRESA COMO LA MAQUETA C07 (3-nov-2026, «haz la 1, 2 y 3» del dueño) ══════
+           Arriba, lo que pide hacer algo HOY: el titular, lo que piden sus procesos guardados, lo que tiene plazo
+           y cómo van sus procesos con sus próximas fechas. Debajo, PLEGADO, todo lo demás: nada se retiró (la
+           regla del 24-ago-2026: «se mueve, no se retira»; borrar un nodo mata la pestaña) y ningún id cambió.
+           «Actualizar datos» sigue a la vista (decisión del 24-ago), aunque la maqueta no lo traía. -->
+      <!-- LO QUE PIDE ATENCIÓN EN SUS PROCESOS GUARDADOS: los mismos avisos de Mis procesos (`op=seguimiento`,
+           que ya se pide al abrir la aplicación), con la misma frase y el mismo pintado (public/casillero.js). -->
+      <section id="mi-atencion" class="mi-bloque hidden" aria-labelledby="mi-atencion-t">
+        <div class="mi-cab"><h2 id="mi-atencion-t" class="mi-cab-t">Lo que pide atención</h2><span id="mi-atencion-n" class="mi-nota"></span></div>
+        <div id="mi-atencion-lista" class="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-gray-900/5"></div>
+        <button type="button" class="mi-enlace" data-mi-ir-seguimiento="1">Ver todos sus procesos</button>
+      </section>
+      <!-- CON PLAZO: las dos cifras del pulso que se vencen. Cada tarjeta ES la lista que abre: la de avisar hoy abre
+           `manif=urgente` (la misma cuenta de lib/filtros_lista) y la de la semana, `cierre=7d`. -->
+      <section id="pulso-plazo" class="mi-bloque hidden" aria-labelledby="pulso-plazo-t">
+        <div class="mi-cab"><h2 id="pulso-plazo-t" class="mi-cab-t">Con plazo</h2><span class="mi-nota">Licitaciones a las que puede presentarse</span></div>
+        <div class="mi-tareas">
+          <div id="pu-manifestacion" class="hidden"></div>
+          <div id="pu-cierran" class="hidden"></div>
+        </div>
+      </section>
+      <!-- SUS PROCESOS Y SUS PRÓXIMAS FECHAS: de `op=seguimiento`, sin una consulta más. -->
+      <section id="mi-procesos" class="mi-bloque hidden" aria-label="Sus procesos guardados">
+        <div class="grid gap-4 md:grid-cols-2">
+          <div class="min-w-0">
+            <div class="mi-cab"><h2 class="mi-cab-t">Sus procesos</h2></div>
+            <div id="mi-etapas" class="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-gray-900/5"></div>
+          </div>
+          <div class="min-w-0">
+            <div class="mi-cab"><h2 class="mi-cab-t">Próximas fechas</h2><button type="button" class="mi-enlace" data-mi-ir-seguimiento="calendario">Ver el calendario</button></div>
+            <div id="mi-agenda" class="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-gray-900/5"></div>
+          </div>
+        </div>
+      </section>
+
+<!-- ══════ ACTUALIZAR DATOS · el botón único (encargo del ingeniero, 24-ago-2026) ══════
+         «Puede ser un botón de actualizar datos en tiempo real, con una
+         animación de carga que al ser lenta le dé la sensación de que va
+         cargando poco a poco, mostrando un texto como "Cargando datos de
+         SECOP II"».
+
+         ⚠️ SIN PORCENTAJE, Y ESO NO ES UN RECORTE: ES LA ÚNICA FORMA
+         HONESTA. Se midió antes de dibujar nada. «Ponerse al día» (el
+         delta, que es lo que el usuario normal necesita) barre por
+         `:updated_at` con keyset y NO PUBLICA NINGÚN DENOMINADOR: su
+         respuesta trae `ciclo_leidas`, `guardadas` y `parcial`, y ni un
+         solo campo de total esperado. Una barra de porcentaje ahí sería un
+         número inventado en la pantalla que le dice al dueño si sus datos
+         están al día. La sensación de avance que pide el ingeniero sale de
+         donde sí es real: los CONTEOS que crecen tanda a tanda. La barra es
+         indeterminada —dice «está trabajando», no «va por el 42 %»—.
+         La CARGA COMPLETA sí tiene denominador (`count(*)` por mes, ver
+         lib/socrata.contarMes) y conserva su barra con porcentaje real,
+         plegada abajo con el resto del instrumental. -->
+      <!-- MISMAS CLASES QUE EL RESTO DE TARJETAS, y no un estilo en línea
+         propio: `bg-white rounded-2xl` es la utilidad que la capa de piel
+         traduce a `var(--bg-card)` + blur + borde en `#app
+         .bg-white.rounded-2xl`, y con ella la tarjeta hereda sola las tres
+         preferencias del sistema (reducir transparencia, reducir
+         movimiento, más contraste). Un `style="background: var(--bg-card)"`
+         a mano se queda SIN blur y sin esas variantes: sería una segunda
+         definición de «tarjeta de vidrio» que se despeina por su cuenta. -->
+      <section id="actualizar" class="mt-4 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+        <div class="flex flex-wrap items-center justify-between gap-4">
+        <div class="min-w-0">
+          <h2 class="font-semibold tracking-tight">Actualizar datos</h2>
+          <p class="mt-1 text-sm" style="color: var(--text-secondary);">Trae de SECOP II lo publicado desde la última vez. Puede cerrar la pestaña: el avance queda guardado.</p>
+        </div>
+        <!-- El fondo y el color del texto salen de la MISMA regla (`bg-gray-900`
+             → --accent + --accent-texto): escribir `background: var(--accent)` a
+             mano con `text-white` dejaba letra blanca sobre el azul CLARO del
+             tema oscuro (2,09:1 medido; el mínimo es 4,5:1) y se saltaba el
+             radio del sistema. -->
+        <button id="btn-actualizar-datos" type="button"
+                class="shrink-0 bg-gray-900 px-6 py-3 text-sm font-semibold transition disabled:opacity-40">
+          Actualizar datos
+        </button>
+        </div>
+        <!-- Nace oculto con el ATRIBUTO `hidden`, no con la clase de Tailwind:
+           el CDN está bloqueado en la red institucional del dueño y allí la
+           clase no existe — el defecto ya medido en Chromium. -->
+        <div id="act-panel" hidden class="mt-5">
+        <div class="flex items-center gap-3">
+          <span id="act-spin" class="h-4 w-4 shrink-0 rounded-full border-2 spin" style="border-color: var(--border); border-top-color: var(--accent);"></span>
+          <p id="act-estado" class="text-sm font-medium">Cargando datos de SECOP II…</p>
+        </div>
+        <div class="mt-3 h-1.5 overflow-hidden rounded-full" style="background: var(--bg-inset);">
+          <div id="act-barra" class="h-full w-1/3 rounded-full barra-indeterminada" style="background: var(--accent);"></div>
+        </div>
+        <p id="act-cifras" class="mt-2 text-xs tabular-nums" style="color: var(--text-secondary);"></p>
+        </div>
       </section>
 
 
+      <!-- ══════ «EL MERCADO COMPLETO HOY» SE RETIRÓ (encargo del ingeniero, ago 2026) ══════
+           Era un <details> con la portada del mercado ENTERO embebida dentro de Mi
+           empresa: 10 palabras de rótulo y, al abrirlo, las cifras de todas las
+           empresas del país. En una pestaña que responde «¿a qué me presento YO
+           hoy?», el agregado nacional es ruido — y el dueño lo dijo con esas
+           palabras: «no quiero ver el texto de "el mercado completo hoy"».
+           `public/portada.js` NO se retira: sigue sirviendo el TEASER de tres
+           cifras de la landing (`Portada.teaser` → #pulso-global), que es otra
+           pantalla y otra pregunta. `arrancar()` ya devolvía false sin #portada,
+           así que no queda ninguna llamada colgando. -->
 
-
-
+      <!-- PLEGADO (3-nov-2026): dónde están, quién las publica y cuánto hay en juego; antes, a la vista bajo el titular -->
+      <details id="plg-donde" class="plegado-empresa">
+        <summary class="plegado-empresa-titulo"><span class="min-w-0 flex-1">Dónde están y quién publica más</span></summary>
+        <div class="plegado-empresa-cuerpo">
       <!-- LOS DOS REPARTOS, DESPUÉS DEL CALENDARIO: dicen dónde están y quién
            las publica, que es contexto para elegir — no algo que se venza. -->
       <section id="pulso-repartos" class="hidden mb-6">
@@ -2797,7 +2947,236 @@
         </div>
         <p id="pu-nota" class="mt-2 text-[11px]" style="color: var(--text-secondary);"></p>
       </section>
+        <div id="pu-enjuego" class="mt-2 px-1"></div>
+        </div>
+      </details>
 
+      <!-- PLEGADO (3-nov-2026): el mes de cierres de las licitaciones a las que puede presentarse; la tarjeta «cierran esta semana» de arriba abre la lista por fecha -->
+      <details id="plg-calendario" class="plegado-empresa">
+        <summary class="plegado-empresa-titulo"><span class="min-w-0 flex-1">Cuándo cierra cada licitación</span></summary>
+        <div class="plegado-empresa-cuerpo">
+      <!-- ══════════ EL CALENDARIO DE CIERRES (encargo del ingeniero, 31-ago-2026) ══════════
+           «Un calendario en el que se vea el mes actual, el día en el que
+           estamos y cuándo vencen los procesos de este mes, para poder darle
+           clic al que le interese y presentarse.» Vive JUSTO ENCIMA de «Crear
+           consorcio» y «Verifique a su socio» — sitio que eligió el ingeniero
+           el 31-ago-2026, en una segunda pasada sobre el mismo día: primero lo
+           de SU empresa (el titular, los repartos, el tablero y su registro) y
+           después el calendario, pegado a las dos herramientas con las que
+           decide con quién se presenta. Es un cambio de POSICIÓN: el bloque va
+           entero, sin tocar una línea de lo que hace.
+
+           Nace OCULTO y lo llena public/calendario.js con el mismo agregado de
+           `/api/perfil?op=pulso` que ya alimenta el resto de Mi empresa (son
+           EXACTAMENTE los mismos procesos que cuenta la pestaña: un calendario
+           que enseñara otra lista sería un segundo juicio). Sin cierres que
+           situar no se enseña: vacío y honesto antes que bonito y falso. -->
+      <section id="calendario" class="mb-6 mt-6 hidden rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5 sm:p-8">
+        <h2 class="text-sm font-semibold tracking-tight" style="color: var(--text-primary);">Cuándo se vence cada proceso</h2>
+        <p class="mt-1 text-xs" style="color: var(--text-secondary);">Los procesos a los que puede presentarse, en el día en que la entidad cierra la entrega de ofertas. Pulse un día y luego un proceso para ver de qué se trata, cuánto vale y dónde queda.</p>
+        <div id="cal-cuerpo" class="mt-4 min-w-0"></div>
+      </section>
+        </div>
+      </details>
+
+      <!-- PLEGADO (3-nov-2026): su registro en cifras, la ficha para los formatos y lo que hay que tocar -->
+      <details id="plg-rup" class="plegado-empresa">
+        <summary class="plegado-empresa-titulo"><span class="min-w-0 flex-1">Su registro de proponente</span></summary>
+        <div class="plegado-empresa-cuerpo">
+<section id="seccion-rup" class="mt-6 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 class="font-semibold tracking-tight">Su registro de proponente</h2>
+            <p class="mt-1 text-sm text-gray-500">Decide a qué licitaciones puede presentarse.</p>
+          </div>
+          <button id="btn-nuevo-rup" type="button"
+                  class="rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700">
+            + Nuevo RUP (PDF)
+          </button>
+        </div>
+
+        <!-- EL REGISTRO EN CIFRAS: lo pinta public/pulso.js con el bloque
+             `empresa` de /api/perfil?op=pulso (tipos de trabajo, experiencia
+             acreditada, contratos, tope; patrimonio y capacidad solo con
+             token). Nace oculto; sin datos no se pinta nada. -->
+        <div id="rup-cifras" class="mt-4 hidden"></div>
+
+        <!-- LA FICHA DE DATOS EN EXCEL (7-sep-2026, M-COMP-07): los mismos datos
+             que se ven arriba, en una hoja de cálculo, para copiarlos a los
+             formatos que exija cada pliego. NO reproduce ningún formato oficial:
+             ese lo fija cada pliego. El resultado de pulsarlo se lee en
+             #ficha-empresa-estado, debajo. -->
+        <div class="mt-4">
+          <button id="btn-ficha-empresa" type="button" class="control-boton inline-flex items-center gap-2 rounded-xl text-sm" title="Descargar sus datos en una hoja de cálculo para copiarlos a los formatos del pliego">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 4v11"></path><path d="m7 10 5 5 5-5"></path><path d="M5 19h14"></path></svg>
+            Ficha de la empresa (Excel)
+          </button>
+          <p id="ficha-empresa-estado" class="mt-2 hidden text-xs" role="status"></p>
+        </div>
+
+        <!-- LOS DATOS QUE VAN EN LOS FORMATOS DE LA ENTIDAD (27-sep-2026): los
+             escribe el usuario una vez y el botón «Llenar con sus datos» de cada
+             documento de Word del expediente los pone en el formato que publicó la
+             entidad (lib/formato_entidad). Se guardan con la clave del sitio
+             (op=empresa-datos). Plegado: se toca una vez. -->
+        <details id="empresa-datos" class="mt-4">
+          <summary class="cursor-pointer text-sm font-medium">Datos para los formatos del pliego</summary>
+          <p class="mt-2 text-xs text-gray-500">Escríbalos una vez, tal como aparecen en su certificado de existencia y representación. Con ellos, en cada proceso guardado, la aplicación llena la carta de presentación y los formatos en Word que publica la entidad. Lo que deje en blanco queda en blanco en el formato.</p>
+          <form id="form-empresa-datos" method="dialog" class="mt-3 grid gap-3 sm:grid-cols-2" autocomplete="off">
+            <label class="text-xs">Nombre o razón social<input name="razon_social" type="text" maxlength="160" class="control-campo mt-1 w-full rounded-xl text-sm"></label>
+            <label class="text-xs">NIT<input name="nit" type="text" inputmode="numeric" maxlength="20" placeholder="Por ejemplo: 900.123.456-7" class="control-campo mt-1 w-full rounded-xl text-sm"></label>
+            <label class="text-xs">Nombre del representante legal<input name="representante_legal" type="text" maxlength="120" class="control-campo mt-1 w-full rounded-xl text-sm"></label>
+            <label class="text-xs">Cédula del representante legal<input name="representante_documento" type="text" inputmode="numeric" maxlength="20" class="control-campo mt-1 w-full rounded-xl text-sm"></label>
+            <label class="text-xs">Dirección<input name="direccion" type="text" maxlength="160" class="control-campo mt-1 w-full rounded-xl text-sm"></label>
+            <label class="text-xs">Ciudad<input name="ciudad" type="text" maxlength="80" class="control-campo mt-1 w-full rounded-xl text-sm"></label>
+            <label class="text-xs">Teléfono<input name="telefono" type="tel" maxlength="40" class="control-campo mt-1 w-full rounded-xl text-sm"></label>
+            <label class="text-xs">Correo electrónico<input name="correo" type="email" maxlength="120" class="control-campo mt-1 w-full rounded-xl text-sm"></label>
+          </form>
+          <button id="btn-empresa-datos" type="button" class="control-boton mt-3 rounded-xl text-sm">Guardar los datos</button>
+          <p id="empresa-datos-estado" class="mt-2 hidden text-xs" role="status"></p>
+        </details>
+
+        <!-- Alarma de renovación (quinto día hábil de abril): la pinta
+             pintarAlertaVigencia() al arrancar la pestaña; fuera de la
+             ventana febrero-abril permanece oculta -->
+        <p id="rup-alerta-vigencia" class="mt-4 hidden rounded-xl px-4 py-3 text-sm font-medium"></p>
+
+        <!-- Lo que hay que TOCAR va plegado: subir/descargar el archivo del
+             registro, ver el perfil vigente, eliminarlo. Ningún id cambia. -->
+        <details id="rup-gestion" class="mt-4">
+          <!-- EL PLIEGUE DICE LO QUE HAY DENTRO SEGÚN QUIÉN MIRA (6-sep-2026, M-SEG-02):
+               quien entra por su RUP sin la clave del sitio solo puede ELIMINAR su
+               registro; subir o descargar el JSON de los perfiles es del dueño y
+               vive en #rup-gestion-dueno, que la vista de visitante oculta. Los dos
+               rótulos van en el HTML y app.js solo alterna `hidden`. -->
+          <summary class="cursor-pointer text-sm font-medium text-gray-700 hover:text-gray-900"><span id="rup-gestion-titulo-dueno">Actualizar, descargar o eliminar el registro</span><span id="rup-gestion-titulo-visitante" hidden>Eliminar su registro</span></summary>
+        <div id="rup-gestion-dueno">
+        <p class="mt-3 max-w-2xl text-sm text-gray-500">Suba el certificado RUP en PDF (crea un perfil propio) o cargue el archivo JSON de los perfiles. El cambio surte efecto en la siguiente consulta.</p>
+        <div class="mt-4 flex flex-wrap items-center gap-3">
+          <input id="rup-json-archivo" type="file" accept=".json,application/json" aria-label="Archivo JSON con los perfiles"
+                 class="block max-w-sm text-sm text-gray-600 file:mr-3 file:rounded-xl file:border-0 file:bg-gray-900 file:px-4 file:py-2.5 file:text-sm file:font-medium file:text-white hover:file:bg-gray-700">
+          <button id="btn-rup-descargar" type="button"
+                  class="rounded-xl border border-gray-300 px-4 py-2.5 text-sm font-medium transition hover:bg-gray-100">
+            Descargar el perfil actual (JSON)
+          </button>
+        </div>
+
+        <div id="rup-vista" class="mt-5 hidden">
+          <h3 class="text-sm font-semibold tracking-tight">Vista previa</h3>
+          <ul id="rup-resumen" class="mt-2 space-y-1 text-sm text-gray-700"></ul>
+          <pre id="rup-preview" class="mt-3 max-h-72 overflow-auto rounded-xl bg-gray-50 p-4 font-mono text-xs text-gray-600 ring-1 ring-inset ring-gray-900/5"></pre>
+          <div class="mt-4 flex flex-wrap items-center gap-3">
+            <button id="btn-rup-cargar" type="button"
+                    class="rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700 disabled:opacity-40">
+              Confirmar carga
+            </button>
+            <button id="btn-rup-cancelar" type="button"
+                    class="rounded-xl border border-gray-300 px-4 py-2.5 text-sm font-medium transition hover:bg-gray-100">
+              Cancelar
+            </button>
+          </div>
+        </div>
+
+        <p id="rup-json-mensaje" class="mt-5 hidden rounded-xl px-4 py-3 text-sm"></p>
+        <ul id="rup-errores" class="mt-3 hidden space-y-1 rounded-xl bg-red-50 p-4 text-sm text-red-700 ring-1 ring-inset ring-red-600/20"></ul>
+
+        <div class="mt-6 border-t border-gray-100 pt-4">
+          <h3 class="text-sm font-semibold tracking-tight">Perfil actual</h3>
+          <div id="rup-actual" class="mt-2 text-sm text-gray-600">—</div>
+        </div>
+        </div>
+
+        <!-- Zona de riesgo: separada por un divisor y 16px, como manda el sistema -->
+        <div class="mt-6 border-t border-gray-100 pt-4">
+          <div class="flex flex-wrap items-center gap-4">
+            <button id="btn-eliminar-rup" type="button" class="btn-peligro">Eliminar este perfil</button>
+            <span class="text-xs text-gray-500">Se eliminarán todos los filtros y datos asociados al perfil activo.</span>
+          </div>
+          <p id="eliminar-rup-mensaje" class="mt-3 hidden rounded-xl px-4 py-3 text-sm"></p>
+        </div>
+        </details>
+      </section>
+        </div>
+      </details>
+
+      <!-- PLEGADO (3-nov-2026): armar un consorcio y verificar a un socio -->
+      <details id="plg-socias" class="plegado-empresa">
+        <summary class="plegado-empresa-titulo"><span class="min-w-0 flex-1">Socias y consorcio</span></summary>
+        <div class="plegado-empresa-cuerpo">
+      <!-- ══════ Fase 10 · Consorcio a la medida ══════
+           Nace OCULTO: app.js lo enseña solo cuando hay DOS o más perfiles
+           individuales cargados (Helder, Génesis, RUP subidos). Compara
+           CAPACIDAD, nunca precios (art. 410A del Código Penal). -->
+      <div class="mt-8 grid gap-6 lg:grid-cols-2 lg:items-start">
+      <section id="seccion-consorcio" class="hidden rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+        <h2 class="font-semibold tracking-tight">Crear consorcio</h2>
+        <p class="mt-1 text-sm text-gray-500">Para presentarse en compañía a lo que solo no alcanza. Los indicadores salen de sumar los balances de todos, como los calcula el pliego tipo: la parte de cada uno no los cambia.</p>
+        <!-- EL NOMBRE DEL CONSORCIO, que lo pone el usuario (encargo del
+             ingeniero, 24-ago-2026). El servidor YA lo aceptaba desde la Fase 10
+             —`POST ?op=consorcio {nombre, integrantes}`— y el frontend nunca lo
+             mandaba, así que todos acababan llamándose «Consorcio N». Vacío
+             sigue cayendo a «Consorcio N»: el defecto no cambia. -->
+        <label class="mt-4 block">
+          <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">¿Cómo se va a llamar?</span>
+          <input id="cons-nombre" type="text" maxlength="140" autocomplete="off"
+                 placeholder="Consorcio Vías del Tolima (opcional)"
+                 aria-label="Nombre del consorcio"
+                 class="control-campo w-full rounded-xl text-sm">
+        </label>
+        <p class="mt-3 text-xs font-medium uppercase tracking-wide text-gray-500">¿Quiénes van juntos?</p>
+        <div id="cons-integrantes" class="mt-2 space-y-2"></div>
+        <p class="mt-4 text-xs font-medium uppercase tracking-wide text-gray-500">¿Qué parte pone cada uno?</p>
+        <div id="cons-participaciones" class="mt-2 space-y-3"></div>
+        <p id="cons-suma" class="mt-2 text-sm"></p>
+        <div id="cons-resultado" class="mt-4 hidden rounded-xl bg-gray-50 p-4 ring-1 ring-inset ring-gray-900/5"></div>
+        <p id="cons-mensaje" class="mt-3 hidden rounded-xl px-4 py-3 text-sm"></p>
+        <div id="cons-guardados" class="mt-4 text-sm"></div>
+      </section>
+
+      <!-- ══════ Verifique a su socio (due diligence de 20 minutos) ══════
+           Truco #15 del manual: cinco fuentes públicas antes de firmar un
+           consorcio. Dos las consulta la app sola (datos abiertos: SIRI y
+           SECOP); las otras tres se abren desde acá con el enlace. Nace
+           VISIBLE (el socio suele ser una empresa externa, no un perfil). -->
+      <section id="seccion-socio" class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+        <h2 class="font-semibold tracking-tight">Verifique a su socio antes de firmar</h2>
+        <p class="mt-1 text-sm text-gray-500">Un integrante inhabilitado contamina al consorcio completo. La app revisa sola sanciones (Procuraduría) e historial en SECOP; las otras tres fuentes, con enlace.</p>
+        <div class="mt-4 grid gap-2 sm:max-w-xl sm:grid-cols-[1fr_auto]">
+          <input id="socio-id" type="text" inputmode="numeric" autocomplete="off" placeholder="NIT o cédula del socio (ej. 900123456)"
+                 aria-label="NIT o cédula del socio"
+                 class="rounded-xl border border-gray-300 px-4 py-2.5 text-sm outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10">
+          <button id="btn-socio-verificar" type="button"
+                  class="rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700 disabled:opacity-40">
+            Verificar
+          </button>
+          <input id="socio-representante" type="text" inputmode="numeric" autocomplete="off" placeholder="Cédula del representante legal (opcional)"
+                 aria-label="Cédula del representante legal del socio (opcional)"
+                 class="rounded-xl border border-gray-300 px-4 py-2 text-sm outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10 sm:col-span-2">
+        </div>
+        <p id="socio-mensaje" class="mt-3 hidden rounded-xl px-4 py-3 text-sm"></p>
+        <div id="socio-resultado" class="mt-4 hidden"></div>
+
+        <!-- POR QUÉ SE ESCOGE —O SE CAMBIA— DE SOCIO (11-sep-2026, encargo del dueño).
+             Lo que la gente con años en esto mira antes de firmar, y que no sale de
+             ninguna cifra del registro. Va PLEGADO y en esta sección, que es donde se
+             revisa a un socio. EL TEXTO NO VIVE AQUÍ: lo pinta public/app.js desde
+             RAZONES_SOCIO, porque el índice es el andamio y la pantalla la pintan los
+             módulos (la suite pone techo de palabras a esta pestaña justamente para
+             eso). Cada razón lleva la norma de la que sale, y la que no tiene norma lo
+             dice: un motivo sin fuente no se escribe. -->
+        <details class="mt-6 rounded-xl bg-gray-50 p-4 ring-1 ring-inset ring-gray-900/5">
+          <summary class="cursor-pointer text-sm font-medium">Por qué se escoge —o se cambia— de socio</summary>
+          <div id="socio-razones" class="mt-3"></div>
+        </details>
+      </section>
+      </div>
+        </div>
+      </details>
+
+      <!-- PLEGADO (3-nov-2026): el tablero del dueño —cuánto bajan, contra cuántos compite, por año—; solo para quien administra el sitio -->
+      <details id="plg-mercado" class="plegado-empresa">
+        <summary class="plegado-empresa-titulo"><span class="min-w-0 flex-1">Cómo está el mercado</span></summary>
+        <div class="plegado-empresa-cuerpo">
       <!-- ══════ EL TABLERO, AHORA DEBAJO (ago 2026 · reordenado el 31-ago-2026) ══════
            «El tablero de procesos que tienes oculto podría ser el tablero principal
            de mi empresa… no quiero párrafos enormes, quiero datos representados en
@@ -2993,278 +3372,9 @@
           </button>
         </div>
       </section>
-<!-- ══════ ACTUALIZAR DATOS · el botón único (encargo del ingeniero, 24-ago-2026) ══════
-         «Puede ser un botón de actualizar datos en tiempo real, con una
-         animación de carga que al ser lenta le dé la sensación de que va
-         cargando poco a poco, mostrando un texto como "Cargando datos de
-         SECOP II"».
-
-         ⚠️ SIN PORCENTAJE, Y ESO NO ES UN RECORTE: ES LA ÚNICA FORMA
-         HONESTA. Se midió antes de dibujar nada. «Ponerse al día» (el
-         delta, que es lo que el usuario normal necesita) barre por
-         `:updated_at` con keyset y NO PUBLICA NINGÚN DENOMINADOR: su
-         respuesta trae `ciclo_leidas`, `guardadas` y `parcial`, y ni un
-         solo campo de total esperado. Una barra de porcentaje ahí sería un
-         número inventado en la pantalla que le dice al dueño si sus datos
-         están al día. La sensación de avance que pide el ingeniero sale de
-         donde sí es real: los CONTEOS que crecen tanda a tanda. La barra es
-         indeterminada —dice «está trabajando», no «va por el 42 %»—.
-         La CARGA COMPLETA sí tiene denominador (`count(*)` por mes, ver
-         lib/socrata.contarMes) y conserva su barra con porcentaje real,
-         plegada abajo con el resto del instrumental. -->
-      <!-- MISMAS CLASES QUE EL RESTO DE TARJETAS, y no un estilo en línea
-         propio: `bg-white rounded-2xl` es la utilidad que la capa de piel
-         traduce a `var(--bg-card)` + blur + borde en `#app
-         .bg-white.rounded-2xl`, y con ella la tarjeta hereda sola las tres
-         preferencias del sistema (reducir transparencia, reducir
-         movimiento, más contraste). Un `style="background: var(--bg-card)"`
-         a mano se queda SIN blur y sin esas variantes: sería una segunda
-         definición de «tarjeta de vidrio» que se despeina por su cuenta. -->
-      <section id="actualizar" class="mt-4 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
-        <div class="flex flex-wrap items-center justify-between gap-4">
-        <div class="min-w-0">
-          <h2 class="font-semibold tracking-tight">Actualizar datos</h2>
-          <p class="mt-1 text-sm" style="color: var(--text-secondary);">Trae de SECOP II lo publicado desde la última vez. Puede cerrar la pestaña: el avance queda guardado.</p>
         </div>
-        <!-- El fondo y el color del texto salen de la MISMA regla (`bg-gray-900`
-             → --accent + --accent-texto): escribir `background: var(--accent)` a
-             mano con `text-white` dejaba letra blanca sobre el azul CLARO del
-             tema oscuro (2,09:1 medido; el mínimo es 4,5:1) y se saltaba el
-             radio del sistema. -->
-        <button id="btn-actualizar-datos" type="button"
-                class="shrink-0 bg-gray-900 px-6 py-3 text-sm font-semibold transition disabled:opacity-40">
-          Actualizar datos
-        </button>
-        </div>
-        <!-- Nace oculto con el ATRIBUTO `hidden`, no con la clase de Tailwind:
-           el CDN está bloqueado en la red institucional del dueño y allí la
-           clase no existe — el defecto ya medido en Chromium. -->
-        <div id="act-panel" hidden class="mt-5">
-        <div class="flex items-center gap-3">
-          <span id="act-spin" class="h-4 w-4 shrink-0 rounded-full border-2 spin" style="border-color: var(--border); border-top-color: var(--accent);"></span>
-          <p id="act-estado" class="text-sm font-medium">Cargando datos de SECOP II…</p>
-        </div>
-        <div class="mt-3 h-1.5 overflow-hidden rounded-full" style="background: var(--bg-inset);">
-          <div id="act-barra" class="h-full w-1/3 rounded-full barra-indeterminada" style="background: var(--accent);"></div>
-        </div>
-        <p id="act-cifras" class="mt-2 text-xs tabular-nums" style="color: var(--text-secondary);"></p>
-        </div>
-      </section>
+      </details>
 
-      <!-- ══════ «EL MERCADO COMPLETO HOY» SE RETIRÓ (encargo del ingeniero, ago 2026) ══════
-           Era un <details> con la portada del mercado ENTERO embebida dentro de Mi
-           empresa: 10 palabras de rótulo y, al abrirlo, las cifras de todas las
-           empresas del país. En una pestaña que responde «¿a qué me presento YO
-           hoy?», el agregado nacional es ruido — y el dueño lo dijo con esas
-           palabras: «no quiero ver el texto de "el mercado completo hoy"».
-           `public/portada.js` NO se retira: sigue sirviendo el TEASER de tres
-           cifras de la landing (`Portada.teaser` → #pulso-global), que es otra
-           pantalla y otra pregunta. `arrancar()` ya devolvía false sin #portada,
-           así que no queda ninguna llamada colgando. -->
-
-<section id="seccion-rup" class="mt-6 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
-        <div class="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h2 class="font-semibold tracking-tight">Su registro de proponente</h2>
-            <p class="mt-1 text-sm text-gray-500">Decide a qué licitaciones puede presentarse.</p>
-          </div>
-          <button id="btn-nuevo-rup" type="button"
-                  class="rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700">
-            + Nuevo RUP (PDF)
-          </button>
-        </div>
-
-        <!-- EL REGISTRO EN CIFRAS: lo pinta public/pulso.js con el bloque
-             `empresa` de /api/perfil?op=pulso (tipos de trabajo, experiencia
-             acreditada, contratos, tope; patrimonio y capacidad solo con
-             token). Nace oculto; sin datos no se pinta nada. -->
-        <div id="rup-cifras" class="mt-4 hidden"></div>
-
-        <!-- LA FICHA DE DATOS EN EXCEL (7-sep-2026, M-COMP-07): los mismos datos
-             que se ven arriba, en una hoja de cálculo, para copiarlos a los
-             formatos que exija cada pliego. NO reproduce ningún formato oficial:
-             ese lo fija cada pliego. El resultado de pulsarlo se lee en
-             #ficha-empresa-estado, debajo. -->
-        <div class="mt-4">
-          <button id="btn-ficha-empresa" type="button" class="control-boton inline-flex items-center gap-2 rounded-xl text-sm" title="Descargar sus datos en una hoja de cálculo para copiarlos a los formatos del pliego">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 4v11"></path><path d="m7 10 5 5 5-5"></path><path d="M5 19h14"></path></svg>
-            Ficha de la empresa (Excel)
-          </button>
-          <p id="ficha-empresa-estado" class="mt-2 hidden text-xs" role="status"></p>
-        </div>
-
-        <!-- LOS DATOS QUE VAN EN LOS FORMATOS DE LA ENTIDAD (27-sep-2026): los
-             escribe el usuario una vez y el botón «Llenar con sus datos» de cada
-             documento de Word del expediente los pone en el formato que publicó la
-             entidad (lib/formato_entidad). Se guardan con la clave del sitio
-             (op=empresa-datos). Plegado: se toca una vez. -->
-        <details id="empresa-datos" class="mt-4">
-          <summary class="cursor-pointer text-sm font-medium">Datos para los formatos del pliego</summary>
-          <p class="mt-2 text-xs text-gray-500">Escríbalos una vez, tal como aparecen en su certificado de existencia y representación. Con ellos, en cada proceso guardado, la aplicación llena la carta de presentación y los formatos en Word que publica la entidad. Lo que deje en blanco queda en blanco en el formato.</p>
-          <form id="form-empresa-datos" method="dialog" class="mt-3 grid gap-3 sm:grid-cols-2" autocomplete="off">
-            <label class="text-xs">Nombre o razón social<input name="razon_social" type="text" maxlength="160" class="control-campo mt-1 w-full rounded-xl text-sm"></label>
-            <label class="text-xs">NIT<input name="nit" type="text" inputmode="numeric" maxlength="20" placeholder="Por ejemplo: 900.123.456-7" class="control-campo mt-1 w-full rounded-xl text-sm"></label>
-            <label class="text-xs">Nombre del representante legal<input name="representante_legal" type="text" maxlength="120" class="control-campo mt-1 w-full rounded-xl text-sm"></label>
-            <label class="text-xs">Cédula del representante legal<input name="representante_documento" type="text" inputmode="numeric" maxlength="20" class="control-campo mt-1 w-full rounded-xl text-sm"></label>
-            <label class="text-xs">Dirección<input name="direccion" type="text" maxlength="160" class="control-campo mt-1 w-full rounded-xl text-sm"></label>
-            <label class="text-xs">Ciudad<input name="ciudad" type="text" maxlength="80" class="control-campo mt-1 w-full rounded-xl text-sm"></label>
-            <label class="text-xs">Teléfono<input name="telefono" type="tel" maxlength="40" class="control-campo mt-1 w-full rounded-xl text-sm"></label>
-            <label class="text-xs">Correo electrónico<input name="correo" type="email" maxlength="120" class="control-campo mt-1 w-full rounded-xl text-sm"></label>
-          </form>
-          <button id="btn-empresa-datos" type="button" class="control-boton mt-3 rounded-xl text-sm">Guardar los datos</button>
-          <p id="empresa-datos-estado" class="mt-2 hidden text-xs" role="status"></p>
-        </details>
-
-        <!-- Alarma de renovación (quinto día hábil de abril): la pinta
-             pintarAlertaVigencia() al arrancar la pestaña; fuera de la
-             ventana febrero-abril permanece oculta -->
-        <p id="rup-alerta-vigencia" class="mt-4 hidden rounded-xl px-4 py-3 text-sm font-medium"></p>
-
-        <!-- Lo que hay que TOCAR va plegado: subir/descargar el archivo del
-             registro, ver el perfil vigente, eliminarlo. Ningún id cambia. -->
-        <details id="rup-gestion" class="mt-4">
-          <!-- EL PLIEGUE DICE LO QUE HAY DENTRO SEGÚN QUIÉN MIRA (6-sep-2026, M-SEG-02):
-               quien entra por su RUP sin la clave del sitio solo puede ELIMINAR su
-               registro; subir o descargar el JSON de los perfiles es del dueño y
-               vive en #rup-gestion-dueno, que la vista de visitante oculta. Los dos
-               rótulos van en el HTML y app.js solo alterna `hidden`. -->
-          <summary class="cursor-pointer text-sm font-medium text-gray-700 hover:text-gray-900"><span id="rup-gestion-titulo-dueno">Actualizar, descargar o eliminar el registro</span><span id="rup-gestion-titulo-visitante" hidden>Eliminar su registro</span></summary>
-        <div id="rup-gestion-dueno">
-        <p class="mt-3 max-w-2xl text-sm text-gray-500">Suba el certificado RUP en PDF (crea un perfil propio) o cargue el archivo JSON de los perfiles. El cambio surte efecto en la siguiente consulta.</p>
-        <div class="mt-4 flex flex-wrap items-center gap-3">
-          <input id="rup-json-archivo" type="file" accept=".json,application/json" aria-label="Archivo JSON con los perfiles"
-                 class="block max-w-sm text-sm text-gray-600 file:mr-3 file:rounded-xl file:border-0 file:bg-gray-900 file:px-4 file:py-2.5 file:text-sm file:font-medium file:text-white hover:file:bg-gray-700">
-          <button id="btn-rup-descargar" type="button"
-                  class="rounded-xl border border-gray-300 px-4 py-2.5 text-sm font-medium transition hover:bg-gray-100">
-            Descargar el perfil actual (JSON)
-          </button>
-        </div>
-
-        <div id="rup-vista" class="mt-5 hidden">
-          <h3 class="text-sm font-semibold tracking-tight">Vista previa</h3>
-          <ul id="rup-resumen" class="mt-2 space-y-1 text-sm text-gray-700"></ul>
-          <pre id="rup-preview" class="mt-3 max-h-72 overflow-auto rounded-xl bg-gray-50 p-4 font-mono text-xs text-gray-600 ring-1 ring-inset ring-gray-900/5"></pre>
-          <div class="mt-4 flex flex-wrap items-center gap-3">
-            <button id="btn-rup-cargar" type="button"
-                    class="rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700 disabled:opacity-40">
-              Confirmar carga
-            </button>
-            <button id="btn-rup-cancelar" type="button"
-                    class="rounded-xl border border-gray-300 px-4 py-2.5 text-sm font-medium transition hover:bg-gray-100">
-              Cancelar
-            </button>
-          </div>
-        </div>
-
-        <p id="rup-json-mensaje" class="mt-5 hidden rounded-xl px-4 py-3 text-sm"></p>
-        <ul id="rup-errores" class="mt-3 hidden space-y-1 rounded-xl bg-red-50 p-4 text-sm text-red-700 ring-1 ring-inset ring-red-600/20"></ul>
-
-        <div class="mt-6 border-t border-gray-100 pt-4">
-          <h3 class="text-sm font-semibold tracking-tight">Perfil actual</h3>
-          <div id="rup-actual" class="mt-2 text-sm text-gray-600">—</div>
-        </div>
-        </div>
-
-        <!-- Zona de riesgo: separada por un divisor y 16px, como manda el sistema -->
-        <div class="mt-6 border-t border-gray-100 pt-4">
-          <div class="flex flex-wrap items-center gap-4">
-            <button id="btn-eliminar-rup" type="button" class="btn-peligro">Eliminar este perfil</button>
-            <span class="text-xs text-gray-500">Se eliminarán todos los filtros y datos asociados al perfil activo.</span>
-          </div>
-          <p id="eliminar-rup-mensaje" class="mt-3 hidden rounded-xl px-4 py-3 text-sm"></p>
-        </div>
-        </details>
-      </section>
-
-      <!-- ══════════ EL CALENDARIO DE CIERRES (encargo del ingeniero, 31-ago-2026) ══════════
-           «Un calendario en el que se vea el mes actual, el día en el que
-           estamos y cuándo vencen los procesos de este mes, para poder darle
-           clic al que le interese y presentarse.» Vive JUSTO ENCIMA de «Crear
-           consorcio» y «Verifique a su socio» — sitio que eligió el ingeniero
-           el 31-ago-2026, en una segunda pasada sobre el mismo día: primero lo
-           de SU empresa (el titular, los repartos, el tablero y su registro) y
-           después el calendario, pegado a las dos herramientas con las que
-           decide con quién se presenta. Es un cambio de POSICIÓN: el bloque va
-           entero, sin tocar una línea de lo que hace.
-
-           Nace OCULTO y lo llena public/calendario.js con el mismo agregado de
-           `/api/perfil?op=pulso` que ya alimenta el resto de Mi empresa (son
-           EXACTAMENTE los mismos procesos que cuenta la pestaña: un calendario
-           que enseñara otra lista sería un segundo juicio). Sin cierres que
-           situar no se enseña: vacío y honesto antes que bonito y falso. -->
-      <section id="calendario" class="mb-6 mt-6 hidden rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5 sm:p-8">
-        <h2 class="text-sm font-semibold tracking-tight" style="color: var(--text-primary);">Cuándo se vence cada proceso</h2>
-        <p class="mt-1 text-xs" style="color: var(--text-secondary);">Los procesos a los que puede presentarse, en el día en que la entidad cierra la entrega de ofertas. Pulse un día y luego un proceso para ver de qué se trata, cuánto vale y dónde queda.</p>
-        <div id="cal-cuerpo" class="mt-4 min-w-0"></div>
-      </section>
-
-      <!-- ══════ Fase 10 · Consorcio a la medida ══════
-           Nace OCULTO: app.js lo enseña solo cuando hay DOS o más perfiles
-           individuales cargados (Helder, Génesis, RUP subidos). Compara
-           CAPACIDAD, nunca precios (art. 410A del Código Penal). -->
-      <div class="mt-8 grid gap-6 lg:grid-cols-2 lg:items-start">
-      <section id="seccion-consorcio" class="hidden rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
-        <h2 class="font-semibold tracking-tight">Crear consorcio</h2>
-        <p class="mt-1 text-sm text-gray-500">Para presentarse en compañía a lo que solo no alcanza. Los indicadores salen de sumar los balances de todos, como los calcula el pliego tipo: la parte de cada uno no los cambia.</p>
-        <!-- EL NOMBRE DEL CONSORCIO, que lo pone el usuario (encargo del
-             ingeniero, 24-ago-2026). El servidor YA lo aceptaba desde la Fase 10
-             —`POST ?op=consorcio {nombre, integrantes}`— y el frontend nunca lo
-             mandaba, así que todos acababan llamándose «Consorcio N». Vacío
-             sigue cayendo a «Consorcio N»: el defecto no cambia. -->
-        <label class="mt-4 block">
-          <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">¿Cómo se va a llamar?</span>
-          <input id="cons-nombre" type="text" maxlength="140" autocomplete="off"
-                 placeholder="Consorcio Vías del Tolima (opcional)"
-                 aria-label="Nombre del consorcio"
-                 class="control-campo w-full rounded-xl text-sm">
-        </label>
-        <p class="mt-3 text-xs font-medium uppercase tracking-wide text-gray-500">¿Quiénes van juntos?</p>
-        <div id="cons-integrantes" class="mt-2 space-y-2"></div>
-        <p class="mt-4 text-xs font-medium uppercase tracking-wide text-gray-500">¿Qué parte pone cada uno?</p>
-        <div id="cons-participaciones" class="mt-2 space-y-3"></div>
-        <p id="cons-suma" class="mt-2 text-sm"></p>
-        <div id="cons-resultado" class="mt-4 hidden rounded-xl bg-gray-50 p-4 ring-1 ring-inset ring-gray-900/5"></div>
-        <p id="cons-mensaje" class="mt-3 hidden rounded-xl px-4 py-3 text-sm"></p>
-        <div id="cons-guardados" class="mt-4 text-sm"></div>
-      </section>
-
-      <!-- ══════ Verifique a su socio (due diligence de 20 minutos) ══════
-           Truco #15 del manual: cinco fuentes públicas antes de firmar un
-           consorcio. Dos las consulta la app sola (datos abiertos: SIRI y
-           SECOP); las otras tres se abren desde acá con el enlace. Nace
-           VISIBLE (el socio suele ser una empresa externa, no un perfil). -->
-      <section id="seccion-socio" class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
-        <h2 class="font-semibold tracking-tight">Verifique a su socio antes de firmar</h2>
-        <p class="mt-1 text-sm text-gray-500">Un integrante inhabilitado contamina al consorcio completo. La app revisa sola sanciones (Procuraduría) e historial en SECOP; las otras tres fuentes, con enlace.</p>
-        <div class="mt-4 grid gap-2 sm:max-w-xl sm:grid-cols-[1fr_auto]">
-          <input id="socio-id" type="text" inputmode="numeric" autocomplete="off" placeholder="NIT o cédula del socio (ej. 900123456)"
-                 aria-label="NIT o cédula del socio"
-                 class="rounded-xl border border-gray-300 px-4 py-2.5 text-sm outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10">
-          <button id="btn-socio-verificar" type="button"
-                  class="rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700 disabled:opacity-40">
-            Verificar
-          </button>
-          <input id="socio-representante" type="text" inputmode="numeric" autocomplete="off" placeholder="Cédula del representante legal (opcional)"
-                 aria-label="Cédula del representante legal del socio (opcional)"
-                 class="rounded-xl border border-gray-300 px-4 py-2 text-sm outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10 sm:col-span-2">
-        </div>
-        <p id="socio-mensaje" class="mt-3 hidden rounded-xl px-4 py-3 text-sm"></p>
-        <div id="socio-resultado" class="mt-4 hidden"></div>
-
-        <!-- POR QUÉ SE ESCOGE —O SE CAMBIA— DE SOCIO (11-sep-2026, encargo del dueño).
-             Lo que la gente con años en esto mira antes de firmar, y que no sale de
-             ninguna cifra del registro. Va PLEGADO y en esta sección, que es donde se
-             revisa a un socio. EL TEXTO NO VIVE AQUÍ: lo pinta public/app.js desde
-             RAZONES_SOCIO, porque el índice es el andamio y la pantalla la pintan los
-             módulos (la suite pone techo de palabras a esta pestaña justamente para
-             eso). Cada razón lleva la norma de la que sale, y la que no tiene norma lo
-             dice: un motivo sin fuente no se escribe. -->
-        <details class="mt-6 rounded-xl bg-gray-50 p-4 ring-1 ring-inset ring-gray-900/5">
-          <summary class="cursor-pointer text-sm font-medium">Por qué se escoge —o se cambia— de socio</summary>
-          <div id="socio-razones" class="mt-3"></div>
-        </details>
-      </section>
-      </div>
 
       <!-- ══════ Experiencia ejecutada ══════ -->
 
@@ -3298,9 +3408,9 @@
            acordeón abierto con seis paneles técnicos es lo que hacía que la pestaña
            pareciera imposible de manejar. -->
       <details id="seccion-sistema" class="mt-10 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
-        <summary class="cursor-pointer font-semibold tracking-tight"><span class="min-w-0 flex-1">Sistema
-          <span class="ml-2 text-sm font-normal text-gray-500">— tablero, catálogo de precios y sincronización.
-            No hace falta abrirlo para usar la aplicación.</span></span>
+        <summary class="cursor-pointer font-semibold tracking-tight"><span class="min-w-0 flex-1">Ajustes
+          <span class="ml-2 text-sm font-normal text-gray-500">— costos, experiencia y sincronización.
+            No hace falta abrirlo.</span></span>
         </summary>
 
         

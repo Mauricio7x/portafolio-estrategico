@@ -72,34 +72,59 @@
      enteros, como ya baja «$312.000 / millones». `<wbr>` no pinta nada. */
   const cifraGrande = (v, rotulo, attrs = "", { partible = false } = {}) => `<div ${attrs}><p class="text-[26px] font-semibold tracking-tight sm:text-[34px] 2xl:text-[40px]" style="color: var(--text-primary); letter-spacing: -1px;">${partible ? esc(v).replace(/\./g, ".<wbr>") : esc(v)}</p><p class="text-[11px] uppercase tracking-wide sm:text-xs" style="color: var(--text-secondary);">${esc(rotulo)}</p></div>`;
 
+  /* «PARA HELDER HAY N LICITACIONES ABIERTAS» (3-nov-2026, la maqueta c07 que eligió el dueño, con el nombre que
+     el ingeniero pidió «de primeras» el 31-ago): UNA cifra, en una frase, y el botón que la abre. El dinero en juego
+     y lo que no publica presupuesto bajan a «Dónde están y quién publica más» (`htmlEnJuego`); la suma de lo que
+     cierra esta semana va con su tarjeta («Con plazo», `htmlCierran`): nada se retira, se reparte. */
+  const fechaLarga = (iso) => {
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || ""));
+    if (!m) return null;
+    const d = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3], 12));
+    return d.toLocaleDateString("es-CO", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" }).replace(",", "");
+  };
   function htmlHero(p, nombrePerfil) {
-    const quien = nombrePerfil ? `Para ${esc(nombrePerfil)}, hoy` : "Para su empresa, hoy";
+    const quien = nombrePerfil ? `Para ${esc(nombrePerfil)}` : "Para su empresa";
+    const hoy = fechaLarga(p.calendario && p.calendario.hoy);
+    const ceja = hoy ? `<p class="mi-ceja">Hoy, ${esc(hoy)}</p>` : "";
     if (!p.total) {
-      return `<p class="text-[20px] leading-tight sm:text-[26px]" style="color: var(--text-primary); font-weight: 300;">${quien}: ninguna licitación abierta encaja con su perfil.</p>
+      return `${ceja}<p class="mi-titular-h">${quien}: ninguna licitación abierta encaja con su perfil.</p>
         <p class="mt-2 text-sm" style="color: var(--text-secondary);">${p.corpus_vacio ? "Todavía no hay licitaciones cargadas en el sistema." : `Hay ${num(p.visibles)} de su tipo de obra, pero ninguna cumple hoy sus requisitos (registro de proponente, capacidad de facturar y caja). Suba un RUP más completo o revise Mi empresa.`}</p>`;
     }
-    const c = p.cierranEstaSemana || { n: 0, valor: null };
-    /* EL DINERO EN JUEGO DE UN SOLO PROCESO ES LA CIFRA DE ESE PROCESO (23-sep-2026):
-       «$1,6 millones en juego» sobre uno de $1.598.000, que la lista enseña
-       exacto, era la misma queja del dueño entre dos pestañas. Suman al dinero
-       las que publican presupuesto (el total menos las que no lo publican), así
-       que con UNA sola va exacta; con varias sigue corta, porque la cifra grande
-       de 34 px no cabe entera a 1280 px (arriba). La suma de lo que cierra esta
-       semana va SIEMPRE exacta, como en la portada (`Portada.htmlCierran`): es la
-       misma suma y se lee igual en las dos pantallas. La regla «uno solo va
-       exacto» no se copia aquí: vive en `pesosCortos`, que recibe cuántas suman
-       (24-sep-2026), y la cifra que sale exacta ofrece dónde partir. */
+    return `<div class="mi-titular"><div class="min-w-0">${ceja}<p class="mi-titular-h">${quien} hay <span class="mi-num">${num(p.total)}</span> ${p.total === 1 ? "licitación abierta a la que puede presentarse" : "licitaciones abiertas a las que puede presentarse"}</p></div>
+      <button type="button" class="rounded-xl bg-gray-900 px-5 py-2 text-sm font-medium text-white transition hover:bg-gray-700" data-filtro="todo" title="Ver la lista completa">Verlas</button></div>`;
+  }
+  /* EL DINERO EN JUEGO DE UN SOLO PROCESO ES LA CIFRA DE ESE PROCESO (23-sep-2026):
+     «$1,6 millones en juego» sobre uno de $1.598.000, que la lista enseña
+     exacto, era la misma queja del dueño entre dos pestañas. Suman al dinero
+     las que publican presupuesto (el total menos las que no lo publican), así
+     que con UNA sola va exacta; con varias sigue corta. La regla «uno solo va
+     exacto» no se copia aquí: vive en `pesosCortos`, que recibe cuántas suman
+     (24-sep-2026). Desde el 3-nov-2026 vive en el plegado «Dónde están…». */
+  function htmlEnJuego(p) {
+    if (!p.total) return "";
     const enJuego = pesosCortos(p.valorTotal, p.total - (p.sinPresupuesto > 0 ? p.sinPresupuesto : 0));
-    const exacta = enJuego != null && enJuego === pesosExactos(p.valorTotal);
-    return `
-      <p class="text-[20px] leading-tight sm:text-[26px]" style="color: var(--text-primary); font-weight: 300;">${quien}</p>
-      <div class="mt-4 grid grid-cols-3 gap-3">
-        ${cifraGrande(num(p.total), p.total === 1 ? "licitación a la que puede presentarse" : "licitaciones a las que puede presentarse", `class="cursor-pointer" data-filtro="todo" role="link" tabindex="0" title="Ver la lista completa"`)}
-        ${cifraGrande(enJuego || "Sin referencia", "en juego (presupuestos oficiales)", "", { partible: exacta })}
-        ${cifraGrande(num(c.n), c.n === 1 ? "cierra esta semana" : "cierran esta semana", `class="cursor-pointer" data-filtro="cierre=7d" role="link" tabindex="0" title="Ver las que cierran en 7 días"`)}
-      </div>
-      ${c.n && pesosExactos(c.valor) ? `<p class="mt-2 text-xs" style="color: var(--text-secondary);">Las que cierran esta semana suman ${esc(pesosExactos(c.valor))}.</p>` : ""}
-      ${p.sinPresupuesto > 0 ? `<p class="mt-2 text-xs" style="color: var(--text-secondary);">${esc(fraseSinPresupuesto(p.sinPresupuesto))}</p>` : ""}`;
+    return `<p class="text-sm" style="color: var(--text-primary);"><b>${esc(enJuego || "Sin referencia")}</b> en juego (presupuestos oficiales).</p>
+      ${p.sinPresupuesto > 0 ? `<p class="mt-1 text-xs" style="color: var(--text-secondary);">${esc(fraseSinPresupuesto(p.sinPresupuesto))}</p>` : ""}`;
+  }
+  /* «N CIERRAN ESTA SEMANA» (3-nov-2026): la tarjeta ámbar de «Con plazo». La cifra es la de siempre
+     (`cierranEstaSemana`, la que abre `?cierre=7d`: la suite fija la igualdad) y abre la lista ordenada por
+     cierre. «La primera» sale del calendario de la MISMA respuesta (el primer día con cierres), y la suma va
+     exacta, como iba debajo del titular. */
+  function htmlCierran(p) {
+    const c = p.cierranEstaSemana;
+    if (!c || !(c.n > 0)) return "";
+    const cal = p.calendario || {};
+    const dia = (cal.dias || []).find((d) => d && d.n > 0 && (!cal.hoy || d.fecha >= cal.hoy));
+    // «mañana» con la cuenta de días que ya existe (public/portada.js, `sumarDiasISO`): llamada, no copiada
+    const Pt = typeof window === "object" && window && window.Portada;
+    const manana = cal.hoy && Pt && Pt.sumarDiasISO ? Pt.sumarDiasISO(cal.hoy, 1) : null;
+    const cuando = !dia ? null : dia.fecha === cal.hoy ? "hoy" : manana && dia.fecha === manana ? "mañana" : fechaLarga(dia.fecha);
+    const suma = pesosExactos(c.valor);
+    const sub = [cuando ? `La primera cierra ${cuando === "hoy" || cuando === "mañana" ? cuando : `el ${cuando}`}.` : "", suma ? `${c.n === 1 ? "Vale" : "Suman"} ${suma}.` : ""].filter(Boolean).join(" ");
+    return `<a href="?cierre=7d&amp;ordenar_por=cierre#/licitaciones" data-filtro="cierre=7d&amp;ordenar_por=cierre" class="mi-tarea mi-tarea-ambar" role="link">
+      <span class="mi-punto" aria-hidden="true">&#9679;</span>
+      <span class="mi-tarea-texto"><b>${num(c.n)} ${c.n === 1 ? "cierra esta semana" : "cierran esta semana"}</b>${sub ? `<span class="mi-tarea-sub">${esc(sub)}</span>` : ""}</span>
+      <span class="mi-ir">Ver por fecha</span></a>`;
   }
   /* UNA redacción para «cuántas no publican presupuesto» (6-sep-2026, B4b-H2):
      la usa el hero del pulso y la pantalla de resultado del onboarding, que
@@ -616,11 +641,18 @@
     const m = p.manifestacion;
     if (!m || !m.urgentes) return "";
     const n = m.urgentes;
-    return `<a href="?manif=abierta#/licitaciones" data-filtro="manif=abierta" class="block rounded-xl px-4 py-3"
-      style="background: var(--danger-light); color: var(--text-primary);"
-      title="Selección abreviada de menor cuantía: primero hay que avisar que le interesa y después se oferta. El plazo lo fija la entidad en el pliego y puede ser de solo unas horas. Ver la lista.">
-      <span class="text-sm font-semibold">${num(n)} ${n === 1 ? "proceso donde hay que avisar HOY" : "procesos donde hay que avisar HOY"} que le interesa</span>
-      <span class="mt-0.5 block text-[11px]" style="color: var(--text-secondary);">Sin esa manifestación no puede presentar oferta. El plazo puede ser de unas horas.</span></a>`;
+    /* «en N, SECOP II no confirma» solo con ese conteo (lib/filtros_lista, `urgentes_por_confirmar`); sin él, no
+       se dice: la frase de la maqueta («algunas no se sabe…») sin cifra detrás sería un supuesto */
+    const pc = Number.isFinite(m.urgentes_por_confirmar) && m.urgentes_por_confirmar > 0 ? m.urgentes_por_confirmar : 0;
+    /* «hay que avisar HOY», no «puede cerrar hoy»: `esUrgente` cuenta también los plazos confirmados que vencen
+       MAÑANA (revisión adversaria). Lo que es verdad para los dos es la orden. */
+    const titulo = n === 1 ? "En 1 proceso hay que avisar hoy que le interesa"
+      : `En ${num(n)} procesos hay que avisar hoy que le interesa`;
+    return `<a href="?manif=urgente#/licitaciones" data-filtro="manif=urgente" class="mi-tarea mi-tarea-rojo" role="link"
+      title="Selección abreviada de menor cuantía: primero hay que avisar que le interesa y después se oferta. El plazo lo fija la entidad en el pliego y puede ser de solo unas horas.">
+      <span class="mi-punto" aria-hidden="true">&#9679;</span>
+      <span class="mi-tarea-texto"><b>${titulo}</b><span class="mi-tarea-sub">Sin avisar que le interesa no puede presentar oferta.${pc ? ` En ${num(pc)}, SECOP II no confirma si el plazo sigue abierto.` : ""}</span></span>
+      <span class="mi-ir">${n === 1 ? "Verlo" : `Ver los ${num(n)}`}</span></a>`;
   }
 
   function htmlNota(p) {
@@ -699,8 +731,16 @@
        calendario. Se enseñan y se esconden JUNTAS: si una se quedara visible
        con la otra oculta, la pestaña enseñaría medio pulso sin decirlo. */
     const repartos = d.getElementById("pulso-repartos");
+    /* y desde el 3-nov-2026 una tercera, «Con plazo» (`#pulso-plazo`), que se enseña con las otras dos y se
+       esconde sola si sus dos tarjetas están vacías */
+    const plazo = d.getElementById("pulso-plazo");
     const mostrar = (visible) => {
-      for (const nodo of [raiz, repartos]) if (nodo) nodo.classList.toggle("hidden", !visible);
+      for (const nodo of [raiz, repartos, plazo]) if (nodo) nodo.classList.toggle("hidden", !visible);
+      /* los plegados que guardan partes del pulso no se pintan vacíos (revisión adversaria: perfil sin licitaciones
+         o pulso caído dejaban «Dónde están…» y «Cuándo cierra…» a la vista sin nada dentro) */
+      const vacio = (sel) => { const n = d.getElementById(sel); return !n || n.classList.contains("hidden") || !String(n.innerHTML || "").trim(); };
+      const pd = d.getElementById("plg-donde"); if (pd) pd.hidden = !visible || (vacio("pu-departamentos") && vacio("pu-entidades") && vacio("pu-enjuego"));
+      const pc = d.getElementById("plg-calendario"); if (pc) pc.hidden = !visible || vacio("calendario");
     };
     if (!raiz || !perfil) return false;
     if (perfilPintado === perfil && !opciones.forzar) return true;
@@ -732,6 +772,10 @@
     d.getElementById("pu-entidades").innerHTML = htmlEntidades(p);
     const manif = d.getElementById("pu-manifestacion");
     if (manif) { manif.innerHTML = htmlManifestacion(p); manif.classList.toggle("hidden", !manif.innerHTML); }
+    const cierran = d.getElementById("pu-cierran");
+    if (cierran) { cierran.innerHTML = htmlCierran(p); cierran.classList.toggle("hidden", !cierran.innerHTML); }
+    const enJuego = d.getElementById("pu-enjuego");
+    if (enJuego) enJuego.innerHTML = htmlEnJuego(p);
     /* ═══ EL CALENDARIO DE CIERRES ═══ Vive en su propia sección y en su propio
        módulo, pero se pinta desde AQUÍ y con el agregado que ya vino en esta
        misma respuesta: pedirlo por su cuenta serían dos peticiones al mismo
@@ -748,6 +792,7 @@
     d.getElementById("pu-departamentos").classList.toggle("hidden", !(p.porDepartamento || []).length);
     d.getElementById("pu-entidades").classList.toggle("hidden", !(p.topEntidades || []).length);
     mostrar(true);
+    if (plazo) plazo.classList.toggle("hidden", !((manif && manif.innerHTML) || (cierran && cierran.innerHTML)));
     perfilPintado = perfil;
     return true;
   }
@@ -755,5 +800,5 @@
   /* lo último que el servidor dijo de la empresa, o null si no hay nada pintado */
   const ultimaEmpresa = () => empresaPintada;
 
-  return { arrancar, olvidar, ultimaEmpresa, pesosCortos, pesosExactos, htmlHero, htmlEmpresa, htmlDepartamentos, htmlEntidades, htmlManifestacion, svgBarras, columnas, barrasRank, apilada, escalaPosicion, ticksRedondos, htmlNota, fraseSinPresupuesto };
+  return { arrancar, olvidar, ultimaEmpresa, pesosCortos, pesosExactos, htmlHero, htmlEnJuego, htmlCierran, htmlEmpresa, htmlDepartamentos, htmlEntidades, htmlManifestacion, svgBarras, columnas, barrasRank, apilada, escalaPosicion, ticksRedondos, htmlNota, fraseSinPresupuesto };
 });
