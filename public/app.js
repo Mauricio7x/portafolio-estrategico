@@ -5878,6 +5878,15 @@
           /* el Formulario 1 en Excel (19-oct-2026) lo lee el servidor y SOLO entrega ítems si cuadran con su total y fila a fila:
              el navegador no interpreta el libro, lo pide y devuelve el resultado, que el servidor vuelve a comprobar */
           if (/^(xlsx|xlsm)$/.test(String(a.extension || "").toLowerCase())) {
+            /* el CRONOGRAMA en Excel (3-nov-2026) tiene su propio lector en el servidor (formato «cronograma», lib/cronograma_excel): el del
+               Formulario no lo reconoce. Su resultado, se diera o no por leído, se devuelve tal cual para que el servidor lo vuelva a comprobar
+               y guarde el motivo: así no queda «ilegible» para siempre y la pantalla dice por qué no se leyó */
+            if (a.cronograma_excel === true) {
+              const xc = await api("/api/pliego?op=descargar", { method: "POST", body: { url: a.url, formato: "cronograma" } });
+              await api("/api/pliego?op=documentos", { method: "POST", body: { id_proceso: id, id_documento: a.id_documento, cronograma_excel: xc.lectura || { ok: false, motivo: "el servidor no devolvió la lectura del libro" } } });
+              if (xc.lectura && xc.lectura.ok === true) leidos++; else fallidos++;
+              continue;
+            }
             const x = await api("/api/pliego?op=descargar", { method: "POST", body: { url: a.url, formato: "xlsx" } });
             if (!x.lectura || x.lectura.ok !== true) { await marcarIlegible(`no es un libro de Excel que se pueda leer: ${(x.lectura && x.lectura.motivo) || "sin más datos"}`, true); fallidos++; continue; }
             await api("/api/pliego?op=documentos", { method: "POST", body: { id_proceso: id, id_documento: a.id_documento, formulario_excel: x.lectura } });

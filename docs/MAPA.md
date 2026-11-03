@@ -22,7 +22,7 @@
   pliego.js                   Router del dominio PLIEGO (Fase 0 · consolidación a 6 funciones)
   procesos.js                 Router del dominio PROCESOS (Fase 0 · consolidación a 6 funciones)
 
-· lib/ — 103 módulos:
+· lib/ — 104 módulos:
   accesibilidad.js            Accesibilidad operativa de la zona de la obra
   adendas.js                  Vigía de adendas · lo que el DATASET dice que cambió (Fase 5)
   almacen.js                  Esquema de claves Redis + compresión de chunks
@@ -53,6 +53,7 @@
   correo.js                   Transporte de correo por REST — sin SDK, sin dependencias
   costos.js                   el motor de costo real vive en public/costos.js (UMD) y aquí
   cronograma.js               Cronograma del proceso con avisos T-7 / T-3 / T-1 (Fase 5)
+  cronograma_excel.js         EL CRONOGRAMA EN HOJA DE CÁLCULO, LEÍDO CON PUERTA (3-nov-2026)
   cuentas.js                  La infraestructura de las cuentas de usuario (la parte PURA)
   cuerpo.js                   Leer el cuerpo JSON de una petición, una sola vez
   deducciones.js              Qué le van a descontar de cada pago, leído del PLIEGO
@@ -224,8 +225,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 413 secciones (40 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 20795  Una base que no responde no es «ninguno», y la madrugada lee sus propias evaluaciones con u…
+· MEMORIA · docs/MEMORIA.md — 414 secciones (40 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 20821  Una cifra de un informe de evaluación se lee por su último grupo: con dos cifras son centav…
   L 20838  Lo que llenó Upstash en octubre fue el ancho de banda de lo programado, y noviembre va just…
   L 20862  El vigilante pide el tamaño y no el diagnóstico entero, y el lector deja de leer el corpus …
@@ -235,6 +235,7 @@
   L 20957  La baja se publica cada 2 a 3 días, y una fila que no es un registro ya no tumba la lectura…
   L 20981  Un consorcio con Helder de integrante hereda sus precios corregidos, y «Calcular» manda el …
   L 20999  El calendario del proceso: las fechas de los documentos llegan a Mis procesos, SECOP II man…
+  L 21040  El cronograma en Excel se lee: el Anexo 2 de Colombia Compra entra a la línea de tiempo con…
 
 · DOCUMENTOS docs/ — 76 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)

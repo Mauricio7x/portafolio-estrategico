@@ -515,7 +515,7 @@
       const esHoy = hoy && f.fecha === hoy;
       const cuando = `${f.desde && f.desde < f.fecha ? `Del ${legible(f.desde)} al ${legible(f.fecha)}` : legible(f.fecha)}${f.hora_legible ? `, ${f.hora_legible}` : ""}`;
       const otra = f.otra_fecha && f.otra_fecha.fecha
-        ? ` · El documento${f.otra_fecha.documento ? ` «${f.otra_fecha.documento}»` : ""} dice ${legible(f.otra_fecha.fecha)}${f.otra_fecha.pagina != null ? ` (pág. ${f.otra_fecha.pagina})` : ""}: manda SECOP II, confírmelo allí.`
+        ? ` · El documento${f.otra_fecha.documento ? ` «${f.otra_fecha.documento}»` : ""} dice ${legible(f.otra_fecha.fecha)}${f.otra_fecha.celda && f.otra_fecha.hoja ? ` (hoja ${f.otra_fecha.hoja}, celda ${f.otra_fecha.celda})` : f.otra_fecha.pagina != null ? ` (pág. ${f.otra_fecha.pagina})` : ""}: manda SECOP II, confírmelo allí.`
         : "";
       const estado = esHoy ? '<span class="exp-estado exp-urgente">Hoy</span>'
         : pasada ? '<span class="exp-estado exp-estado-nd"><span class="exp-punto" aria-hidden="true">&#9679;</span>Pasó</span>'
