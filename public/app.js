@@ -5820,6 +5820,9 @@
       el.classList.toggle("hidden", !n);
     }
   }
+  /* El enlace a SECOP II de cada proceso guardado, para el botón «Abrir SECOP II» de sus avisos
+     (3-nov-2026, c07): `Casillero.enlacesDe`, que llama a la regla del expediente (`enlaceSecop`). */
+  const enlacesDeAvisos = (r) => { const K = raizCasillero(); return K && r ? K.enlacesDe(r.procesos) : null; };
   const tiposDeAviso = () => ({ cambio: "Cambió", manifestacion: window.Glosario.corto("manifestacion_interes"), cierre: "Cierre", aviso: "Aviso", tarea: "Su nota", sorteo: "Sorteo o lista de interesados", vigencia: "Vigencia de un documento" });
   /* ══════ MI EMPRESA, LO DE SUS PROCESOS GUARDADOS (3-nov-2026, la maqueta c07) ══════
      «Lo que pide atención», «Sus procesos» y «Próximas fechas» salen de la MISMA respuesta de `op=seguimiento` que
@@ -5837,7 +5840,7 @@
       at.classList.toggle("hidden", !(K && as.length));
       if (K && as.length) {
         $("mi-atencion-n").textContent = K.fraseAlertas(as, 7);
-        $("mi-atencion-lista").innerHTML = K.htmlAlertas(as, { tipos: tiposDeAviso(), abierto: miAvisosAbierto, tope: 4 });
+        $("mi-atencion-lista").innerHTML = K.htmlAlertas(as, { tipos: tiposDeAviso(), abierto: miAvisosAbierto, tope: 4, enlaces: enlacesDeAvisos(r) });
       }
     }
     if (!pr) return;
@@ -5915,7 +5918,7 @@
     n.textContent = K ? K.fraseAlertas(as, 7) : `${as.length} en los próximos 7 días`;
     /* AGRUPADO POR PROCESO Y PLEGADO (8-sep-2026): lo pinta public/casillero.js,
        que es la capa de pintado de esta pestaña y la que la suite ejecuta. */
-    ul.innerHTML = K ? K.htmlAlertas(as, { tipos: tipo, abierto: segAvisosAbierto })
+    ul.innerHTML = K ? K.htmlAlertas(as, { tipos: tipo, abierto: segAvisosAbierto, enlaces: enlacesDeAvisos(r) })
       : as.map((a) => `<li class="text-sm">${esc(a.proceso)}: ${esc(a.mensaje)}</li>`).join("");
   }
   /* CÓMO LE VA DE VERDAD (M-DGF-09, 6-sep-2026). `resumen.por_estado` viajaba
@@ -5959,18 +5962,24 @@
      la frase: «sin resultado todavía». El chip-filtro sigue diciendo «Me
      presenté (N)»: ese es el mando de la etapa, no un conteo. Función PURA para
      que la suite ejecute las dos y compare el vocabulario. */
+  /* LAS TRES CIFRAS DE c07 (3-nov-2026): «N guardados · N siguen abiertos · N cambios sin ver». Las otras
+     dos píldoras se retiran porque YA se dicen debajo: «sin resultado todavía» es la cláusula de «Cómo le
+     va» y la etapa «Me presenté N», y «puede avisar que le interesa» es la señal de cada fila y el aviso de
+     «Lo que pide atención». Un conteo que no llegó no se pinta como 0 (`abiertos` venía sin guarda). Función
+     PURA y sin cierres de este archivo: la suite la extrae y la ejecuta sola. */
   function htmlResumenSeguimiento(rs, nGuardados) {
     const r = rs || {};
     if (!nGuardados) return "";
+    const cnt = (v) => (v == null || v === "" || !Number.isFinite(Number(v)) ? null : Number(v));
+    const abiertos = cnt(r.abiertos), cambios = cnt(r.cambios_pendientes);
+    const pildora = (n, texto, rojo = false) => `<span class="${rojo ? "seg-contador seg-contador-rojo" : "seg-contador"}"><b>${Number(n).toLocaleString("es-CO")}</b> ${texto}</span>`;
     return [
-      `<span class="rounded-full bg-gray-100 px-2.5 py-1 text-gray-700">${nGuardados} guardado${nGuardados === 1 ? "" : "s"}</span>`,
-      `<span class="rounded-full bg-gray-100 px-2.5 py-1 text-gray-700">${r.abiertos} abierto${r.abiertos === 1 ? "" : "s"}</span>`,
-      r.presentados ? `<span class="bg-gray-900 rounded-full px-2.5 py-1">${r.presentados} sin resultado todavía</span>` : "",
-      r.cambios_pendientes ? `<span class="rounded-full bg-red-100 px-2.5 py-1 text-red-700">${r.cambios_pendientes} cambio${r.cambios_pendientes === 1 ? "" : "s"} sin ver</span>` : "",
-      r.manifestaciones_abiertas ? `<span class="rounded-full bg-amber-100 px-2.5 py-1 text-amber-900">${r.manifestaciones_abiertas} en los que todavía puede avisar que le interesa</span>` : "",
+      pildora(nGuardados, nGuardados === 1 ? "guardado" : "guardados"),
+      abiertos != null ? pildora(abiertos, abiertos === 1 ? "sigue abierto" : "siguen abiertos") : "",
+      cambios ? pildora(cambios, cambios === 1 ? "cambio sin ver" : "cambios sin ver", true) : "",
       /* «N avisos esta semana» ya no se pinta (27-oct-2026, decisión del dueño en el
          plan de datos): contaba RECORDATORIOS T-7/3/1 que ninguna lista enseña, y a un
-         palmo de «Piden atención · N avisos» decía otra cifra con la misma palabra.
+         palmo de «Piden atención · N avisos» (hoy «Lo que pide atención») decía otra cifra con la misma palabra.
          `resumen.avisos_proximos` sigue viajando, ya contado bien. */
     ].filter(Boolean).join("");
   }
@@ -5999,8 +6008,9 @@
     if (filtros) {
       const orden = ["todos", ...(r.orden_estados || Object.keys(r.estados || {}))];
       const cuenta = (e) => (e === "todos" ? todos.length : todos.filter((p) => p.estado === e).length);
+      /* «Nombre N», como en c07 (3-nov-2026): la cifra aparte, sin paréntesis */
       filtros.innerHTML = todos.length ? orden.filter((e) => e === "todos" || cuenta(e)).map((e) =>
-        chipToggle(segFiltroEstado === e, `${e === "todos" ? "Todos" : (r.estados[e] || e)} (${cuenta(e)})`, "", `data-seg-filtro="${e}"`)).join("") : "";
+        `<button type="button" class="seg-etapa" aria-pressed="${segFiltroEstado === e ? "true" : "false"}" data-seg-filtro="${esc(e)}">${esc(e === "todos" ? "Todos" : ((r.estados || {})[e] || e))} <span class="seg-etapa-n">${fmt.format(cuenta(e))}</span></button>`).join("") : "";
     }
     pintarAlertasSeguimiento(r);
     /* ── EL CASILLERO ──

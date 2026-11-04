@@ -2,7 +2,7 @@
      Es una FOTO para leer en GitHub; la fuente de verdad es ejecutar la herramienta. -->
 
 ```
-== MAPA DE DETEKTA · generado del árbol el 2026-11-03 ==
+== MAPA DE DETEKTA · generado del árbol el 2026-11-04 ==
 (no editar a mano: sale de `node tests/mapa.js --escribir`. Para ir a un sitio concreto,
  `node tests/mapa.js <término>` da la ruta, la línea y el sed exacto — más barato que leer esto)
 
@@ -227,8 +227,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 419 secciones (43 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 20941  «Calcular» costea con los precios corregidos del perfil con que se trabaja, como «Guardar» …
+· MEMORIA · docs/MEMORIA.md — 420 secciones (43 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 20963  La baja se publica cada 2 a 3 días, y una fila que no es un registro ya no tumba la lectura…
   L 20987  Un consorcio con Helder de integrante hereda sus precios corregidos, y «Calcular» manda el …
   L 21005  La 11 con la 3: la letra de leer, todo el texto a 7:1 y una sola tabla de tamaños (3-nov-20…
@@ -238,6 +237,7 @@
   L 21149  El cronograma en Excel se lee: el Anexo 2 de Colombia Compra entra a la línea de tiempo con…
   L 21173  La tarjeta nueva: cinco renglones, con quién, y la competencia dentro con los contratos de …
   L 21192  Mi empresa como la maqueta c07, «Por qué» sin siglas y las llantas fuera de «Obra» (3-nov-2…
+  L 21209  Mis procesos como la maqueta c07 (4-nov-2026)
 
 · DOCUMENTOS docs/ — 76 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)
