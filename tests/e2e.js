@@ -27763,8 +27763,19 @@ async function main() {
             assert.ok(/3 presentadas/.test(textoFrase), `la frase habla de las ofertas entregadas: ${textoFrase}`);
             assert.ok(!/presentad/i.test(textoChips),
               `«presentad» significa «entregadas» en la frase de arriba: el chip de conteo no puede usar esa raíz para otra cifra (${textoChips})`);
-            assert.ok(/1 sin resultado todavía/.test(textoChips) && /1 sin resultado todavía/.test(textoFrase),
-              `el chip y la frase llaman igual a la MISMA cifra (${porEstadoB7a.presentado} esperando resultado): ${textoChips}`);
+            /* LAS TRES CIFRAS DE c07 (3-nov-2026): la píldora «sin resultado todavía» se retiró y esa cifra se
+               dice UNA vez, en la frase de «Cómo le va» (y en la etapa «Me presenté N»). Ningún chip de conteo
+               puede volver a decirla con otra palabra, ni con la misma: dos sitios para un número divergen. */
+            assert.ok(/1 sin resultado todavía/.test(textoFrase), `la frase dice la cifra que espera resultado: ${textoFrase}`);
+            assert.ok(!/sin resultado/.test(textoChips), `y ya no la repite una píldora: ${textoChips}`);
+            assert.strictEqual(textoChips, "4 guardados 2 siguen abiertos 1 cambio sin ver",
+              `las tres cifras de la maqueta, en su orden y con sus palabras: ${textoChips}`);
+            assert.ok(/seg-contador seg-contador-rojo"><b>1<\/b> cambio sin ver/.test(chips), "los cambios sin ver llevan el borde rojo");
+            const sinAbiertos = resumenChips({ cambios_pendientes: 0 }, 3).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+            assert.strictEqual(sinAbiertos, "3 guardados", `«abiertos» que no llegó no se pinta como «undefined» ni como 0: ${sinAbiertos}`);
+            assert.ok(/1 sigue abierto/.test(resumenChips({ abiertos: 1 }, 1).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ")), "en singular, «1 sigue abierto»");
+            assert.ok(/0 siguen abiertos/.test(resumenChips({ abiertos: 0 }, 2).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ")),
+              "un 0 MEDIDO de abiertos sí se dice: es un dato (todos cerraron), no una ausencia");
             assert.strictEqual(resumenChips({ abiertos: 0, presentados: 0 }, 0), "", "sin guardados no hay chips de conteo");
             assert.ok(!/ 0 /.test(` ${resumenChips({ abiertos: 1, presentados: 0, cambios_pendientes: 0, avisos_proximos: 0 }, 1).replace(/<[^>]+>/g, " ")} `.replace(/\s+/g, " ")),
               "un conteo en 0 no se pinta como chip: «0 sin resultado» es ruido");
@@ -53892,8 +53903,10 @@ async function main() {
         const abierto = K.htmlAlertas(muchas, { tipos, abierto: true });
         assert.strictEqual((abierto.match(/class="cas-aviso /g) || []).length, 5, "desplegado se ven todos");
         assert.ok(/Ver menos/.test(abierto) && /aria-expanded="true"/.test(abierto), "y se puede volver a plegar");
-        /* EL «+N» DICE CUÁNTOS MÁS TIENE ESE PROCESO, y no aparece con uno solo */
-        assert.ok(/>\+2</.test(plegado), "el proceso con tres avisos enseña «+2»");
+        /* EL CONTADOR DICE CUÁNTOS MÁS TIENE ESE PROCESO, y no aparece con uno solo. Desde el 3-nov-2026
+           lo dice con palabras, como en c07 («2 avisos más de este proceso»), no con «+2» */
+        assert.ok(/>2 avisos más de este proceso</.test(plegado), "el proceso con tres avisos enseña «2 avisos más de este proceso»");
+        assert.ok(/>1 aviso más de este proceso</.test(K.htmlAlertas(muchas.slice(0, 2), { tipos })), "y en singular con uno más");
         assert.strictEqual((plegado.match(/class="cas-aviso-n"/g) || []).length, 1, "y el que solo tiene uno no lleva contador");
         /* LA FRASE DEL AVISO NO SE REESCRIBE NI SE RECORTA EN EL TEXTO: cortar
            una frase a la mitad cambia lo que dice. La recorta el CSS. */
@@ -53910,12 +53923,74 @@ async function main() {
         assert.strictEqual(K.htmlAlertas([], { tipos }), "", "sin avisos no se pinta nada");
         /* y app.js lo CABLEA: el pliegue sobrevive a los repintados y pulsar un
            aviso ya no busca la tarjeta que se retiró */
-        assert.ok(/K\.htmlAlertas\(as, \{ tipos: tipo, abierto: segAvisosAbierto \}\)/.test(appCas),
+        assert.ok(/K\.htmlAlertas\(as, \{ tipos: tipo, abierto: segAvisosAbierto, enlaces: enlacesDeAvisos\(r\) \}\)/.test(appCas),
           "app.js delega el pintado en casillero.js y le pasa el estado del pliegue");
         assert.ok(/if \(ir\) \{ await abrirExpediente\(ir\.getAttribute\("data-seg-ir"\)\); return; \}/.test(appCas),
           "pulsar un aviso ABRE el expediente");
         assert.ok(!/data-seg-id=/.test(appCas),
           "y ya no queda ningún selector de la tarjeta retirada: buscarla devolvía «ese proceso no está en lo que tiene filtrado», una afirmación FALSA sobre los datos del usuario");
+        /* «ABRIR SECOP II» EN EL AVISO DE INTERÉS (3-nov-2026, c07). El enlace sale del PROCESO (el aviso no lo
+           trae), pasa por la `urlSegura` del expediente —llamada, no copiada— y solo va donde lo que se dice se
+           hace en SECOP II: el aviso de interés o el sorteo. Un `javascript:` publicado por la entidad no se
+           pinta; un proceso sin enlace, tampoco: la ausencia no se rellena con el id. */
+        {
+          const man = [av("M", "alta", "Avisar que le interesa vence mañana: hágalo hoy en SECOP II.", "manifestacion"),
+            av("S", "media", "SECOP II ya no recibe avisos de interés en este proceso.", "sorteo"),
+            av("C", "alta", "Cierra mañana.", "cierre"), av("H", "alta", "Avisar que le interesa vence HOY.", "manifestacion"),
+            av("N", "alta", "Avisar que le interesa vence HOY.", "manifestacion")];
+          const enl = { M: "https://community.secop.gov.co/x?a=1&b=2", S: "https://community.secop.gov.co/s", C: "https://community.secop.gov.co/c", H: "javascript:alert(1)" };
+          const conE = K.htmlAlertas(man, { tipos, abierto: true, enlaces: enl });
+          const filaDe = (id) => { const k = conE.indexOf(`data-seg-ir="${id}"`); return conE.slice(k, conE.indexOf("</li>", k)); };
+          assert.ok(/class="cas-aviso-secop" href="https:\/\/community\.secop\.gov\.co\/x\?a=1&amp;b=2" target="_blank" rel="noopener noreferrer"/.test(filaDe("M")),
+            `el aviso de interés lleva su enlace, escapado y en pestaña nueva: ${filaDe("M").slice(0, 400)}`);
+          assert.ok(/>Abrir SECOP II</.test(filaDe("M")), "con las palabras de la maqueta");
+          assert.ok(/cas-aviso-secop/.test(filaDe("S")), "el del sorteo también: lo que pide es mirarlo en SECOP II");
+          assert.ok(!/cas-aviso-secop/.test(filaDe("C")), "un cierre no lleva el botón: lo que pide no se hace en SECOP II desde aquí");
+          assert.ok(!/cas-aviso-secop|javascript:/.test(filaDe("H")), "un enlace con esquema que no es http(s) no se pinta");
+          assert.ok(!/cas-aviso-secop/.test(filaDe("N")), "un proceso sin enlace no recibe uno inventado");
+          assert.ok(!/cas-aviso-secop/.test(K.htmlAlertas(man, { tipos, abierto: true })), "sin el mapa de enlaces no hay botón");
+          /* el icono dice el TIPO y el color sigue siendo el del PLAZO (7-sep): un cambio de urgencia media no se pinta rojo */
+          const media = K.htmlAlertas([av("Z", "media", "Cambió: algo.", "cambio")], { tipos });
+          assert.ok(/class="cas-aviso cas-aviso-media"/.test(media) && /<svg[^>]*aria-hidden="true"/.test(media), "el icono es un SVG mudo, con el tono del plazo");
+          assert.ok(/K\.htmlAlertas\(as, \{ tipos: tiposDeAviso\(\), abierto: miAvisosAbierto, tope: 4, enlaces: enlacesDeAvisos\(r\) \}\)/.test(appCas),
+            "Mi empresa pinta los avisos con el MISMO mapa de enlaces que Mis procesos");
+          assert.ok(/const enlacesDeAvisos = \(r\) => \{ const K = raizCasillero\(\); return K && r \? K\.enlacesDe\(r\.procesos\) : null; \};/.test(appCas),
+            "y app.js arma el mapa con `Casillero.enlacesDe`, no con una copia");
+          /* el MAPA, ejecutado (revisión adversaria): con la clave equivocada el botón no salía nunca y nada fallaba.
+             La guía viva gana a la foto guardada; un proceso sin enlace no entra. */
+          const mapa = K.enlacesDe([
+            { id: "M", proceso: { url: "https://community.secop.gov.co/foto" }, guia: { obra: { enlace_secop: "https://community.secop.gov.co/viva" } } },
+            { id: "S", proceso: { url: "https://community.secop.gov.co/s" } },
+            { id: "N", proceso: {} }, { proceso: { url: "https://x" } },
+          ]);
+          assert.deepStrictEqual(mapa, { M: "https://community.secop.gov.co/viva", S: "https://community.secop.gov.co/s" }, `el mapa va por el id del proceso: ${JSON.stringify(mapa)}`);
+          const deMapa = K.htmlAlertas(man, { tipos, abierto: true, enlaces: mapa });
+          assert.ok(/data-seg-ir="M"[\s\S]*?href="https:\/\/community\.secop\.gov\.co\/viva"/.test(deMapa.slice(0, deMapa.indexOf("</li>"))), "y ese mapa enciende el botón del aviso con el mismo id");
+          /* el title dice lo que se hace allí: en el sorteo ya NO se avisa (ya avisó) */
+          assert.ok(/allí se avisa que le interesa/.test(filaDe("M")) && /allí se ve si salió la lista o el sorteo/.test(filaDe("S")) && !/se avisa/.test(filaDe("S")),
+            "el title del sorteo no dice «allí se avisa que le interesa» junto a una frase que dice que ya no se recibe");
+          /* el icono CAMBIA con la clase del aviso (revisión adversaria: la prueba pasaba con el calendario en todos) */
+          const iconoDe = (html) => (html.match(/<span class="cas-aviso-punto" aria-hidden="true">(<svg[\s\S]*?<\/svg>)/) || [])[1];
+          const iCambio = iconoDe(media), iInteres = iconoDe(filaDe("M")), iSorteo = iconoDe(filaDe("S")), iCierre = iconoDe(filaDe("C"));
+          assert.ok(iCambio.includes(K.SVG_AVISO.cambio) && iInteres.includes(K.SVG_AVISO.manifestacion) && iCierre.includes(K.SVG_AVISO.fecha), "cada clase lleva su trazo");
+          assert.strictEqual(iSorteo, iInteres, "el sorteo es de la familia del aviso de interés");
+          assert.strictEqual(new Set([iCambio, iInteres, iCierre]).size, 3, "tres clases, tres iconos distintos");
+        }
+        /* LA FILA EN TRES COLUMNAS (3-nov-2026, c07): qué es y de quién · etapa y lo próximo · cuánto vale. La
+           etapa deja la línea de la entidad; la señal sigue siendo UNA y su tono es el del plazo. */
+        {
+          const fila3 = K.htmlFila({ id: "F", estado: "interesa", cerrado: false, dias_para_cierre: 1, proceso: { nombre: "OBRA", entidad: "ALCALDÍA", departamento: "Meta", presupuesto_cop: 1598000 } },
+            { estados: { interesa: "Me interesa" } });
+          const tramo = (cl) => { const k = fila3.indexOf(`class="${cl}`); return k < 0 ? "" : fila3.slice(k, fila3.indexOf("\n", k)); };
+          assert.ok(/ALCALDÍA &middot; Meta<\/span>/.test(tramo("exp-fila-meta")) && !/Me interesa/.test(tramo("exp-fila-meta")), `la línea de la entidad ya no lleva la etapa: ${tramo("exp-fila-meta")}`);
+          assert.ok(/class="exp-fila-etapa exp-senal-alta"/.test(fila3), "la columna de la etapa lleva el tono del plazo (cierra mañana: alta)");
+          const iEt = fila3.indexOf("exp-fila-etapa"), iCif = fila3.indexOf("exp-fila-cifras");
+          assert.ok(iEt > fila3.indexOf("exp-fila-texto") && iCif > iEt, "y va entre el título y el valor");
+          assert.ok(/exp-fila-estado"><span class="exp-punto" aria-hidden="true">&#9679;<\/span>Me interesa<\/span>/.test(fila3), "la etapa encabeza la columna, con su punto");
+          assert.ok(/<span class="exp-fila-senal">Cierra mañana/.test(fila3), "y debajo lo próximo, una sola cosa");
+          const sinEtapa = K.htmlFila({ id: "G", proceso: { nombre: "OBRA" } });
+          assert.ok(!/exp-fila-estado/.test(sinEtapa) && /exp-fila-senal"><span class="exp-punto"/.test(sinEtapa), "sin etapa conocida el punto pasa a la señal: no se pinta una etapa vacía");
+        }
       }
       /* EL BUSCADOR ES UNA FILA, NO UN BLOQUE. `.cas-buscar` heredaba de
          `.campo-buscar` el fondo y el filo pero NO la maqueta —que en el

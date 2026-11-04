@@ -66,6 +66,12 @@
     if (typeof window !== "undefined" && window.Calendario) return window.Calendario;
     try { return require("./calendario.js"); } catch { return null; }
   }
+  /* public/expediente.js, igual de diferido: el enlace a SECOP II de un aviso pasa por SU `urlSegura`
+     (3-nov-2026). Una cuarta copia de esa regla en este archivo divergiría a la primera corrección. */
+  function raizExpediente() {
+    if (typeof window !== "undefined" && window.Expediente) return window.Expediente;
+    try { return require("./expediente.js"); } catch { return null; }
+  }
 
   /* ══════════════════════ CÓMO SE ORGANIZA LA PANTALLA ══════════════════════ */
 
@@ -518,11 +524,18 @@
     const fechaSenal = s.fecha ? (C ? C.fechaLegible(s.fecha) : s.fecha) : cierre;
     const dr = p.documentos_resumen || {};
     const etapa = estados[p.estado] || p.estado_etiqueta || "";
+    /* TRES COLUMNAS (3-nov-2026, la maqueta c07 que eligió el dueño): qué es y de quién · en qué etapa va
+       y lo próximo · cuánto vale. La etapa deja la línea de la entidad y encabeza la columna de lo que
+       pasa, con el punto del PLAZO (el color mide plazo, no etapa: 7-sep). La señal sigue siendo UNA. */
+    const tono = TONO_SENAL[s.urgencia] || TONO_SENAL.baja;
     return `<button type="button" class="exp-fila" data-seg-abrir="${esc(p.id)}" aria-label="Abrir el expediente de ${esc(pr.nombre || p.id)}">
       <span class="exp-fila-texto">
         <span class="exp-fila-titulo">${esc(pr.nombre || p.id)}</span>
-        <span class="exp-fila-meta">${esc(pr.entidad || "Entidad no publicada")}${pr.departamento ? ` &middot; ${esc(pr.departamento)}` : ""}${etapa ? ` &middot; ${esc(etapa)}` : ""}</span>
-        <span class="exp-fila-senal ${TONO_SENAL[s.urgencia] || TONO_SENAL.baja}"><span class="exp-punto" aria-hidden="true">&#9679;</span>${esc(s.texto)}${fechaSenal && s.urgencia !== "baja" ? ` &middot; ${esc(fechaSenal)}` : ""}</span>
+        <span class="exp-fila-meta">${esc(pr.entidad || "Entidad no publicada")}${pr.departamento ? ` &middot; ${esc(pr.departamento)}` : ""}</span>
+      </span>
+      <span class="exp-fila-etapa ${tono}">
+        ${etapa ? `<span class="exp-fila-estado"><span class="exp-punto" aria-hidden="true">&#9679;</span>${esc(etapa)}</span>` : ""}
+        <span class="exp-fila-senal">${etapa ? "" : `<span class="exp-punto" aria-hidden="true">&#9679;</span>`}${esc(s.texto)}${fechaSenal && s.urgencia !== "baja" ? ` &middot; ${esc(fechaSenal)}` : ""}</span>
       </span>
       <span class="exp-fila-cifras">
         <span class="exp-cifra" title="${esc(dinero.titulo)}"><span class="exp-cifra-valor num">${esc(dinero.texto)}</span><span class="exp-cifra-rotulo">Presupuesto</span></span>
@@ -693,7 +706,7 @@
      teléfono, para decir cuatro cosas.
 
      Se agrupa POR PROCESO: una fila por proceso, el nombre una sola vez, la
-     frase del aviso MÁS URGENTE debajo, y «+N» cuando ese proceso tiene más.
+     frase del aviso MÁS URGENTE debajo, y «N avisos más de este proceso» (antes «+N», 3-nov) cuando tiene más.
      La frase NO se reescribe ni se recorta en el texto —cortar una frase a la
      mitad cambia lo que dice— : se pinta entera y la recorta el CSS, y al
      desplegar se lee completa. Cuatro filas caben y el resto va tras «Ver los N
@@ -716,7 +729,28 @@
     return [...porProceso.values()];
   }
 
+  /* EL ENLACE A SECOP II DE CADA PROCESO GUARDADO (id → url), para «Abrir SECOP II» de sus avisos. La regla es
+     la del expediente (`enlaceSecop`: la guía viva primero, la foto guardada después), llamada; aquí vive para
+     que la suite la EJECUTE (revisión adversaria: un mapa con la clave equivocada dejaba el botón mudo sin que
+     ninguna prueba lo notara). La clave es `p.id`, la misma que trae cada aviso. */
+  function enlacesDe(procesos) {
+    const X = raizExpediente();
+    if (!X || typeof X.enlaceSecop !== "function") return null;
+    const m = {};
+    for (const p of Array.isArray(procesos) ? procesos : []) { const u = p && p.id ? X.enlaceSecop(p) : null; if (u) m[p.id] = u; }
+    return m;
+  }
+
   const TONO_AVISO = { alta: "cas-aviso-alta", media: "cas-aviso-media", baja: "cas-aviso-baja" };
+  /* EL ICONO DICE QUÉ CLASE DE AVISO ES (3-nov-2026, c07): un cambio, el aviso de interés o una fecha.
+     El COLOR sigue siendo el del plazo (`urgencia`), no el del tipo (regla del 7-sep): la maqueta pintaba
+     el cambio siempre ámbar y el aviso siempre rojo, y eso habría dicho «urge» de algo que no urge. */
+  const SVG_AVISO = {
+    cambio: '<path d="M20 12a8 8 0 1 1-2.34-5.66"/><path d="M20 4v5h-5"/>',
+    manifestacion: '<path d="M12 3 L2 20 L22 20 Z"/><path d="M12 10v4"/><path d="M12 17h.01"/>',
+    fecha: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+  };
+  const iconoAviso = (tipo) => `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${SVG_AVISO[tipo] || SVG_AVISO.fecha}</svg>`;
 
   /* EL RÓTULO NO SE REPITE (27-oct-2026). El servidor ya escribe «Cambió: Fecha
      de cierre…» y «Avisar que le interesa vence HOY…» (lib/seguimiento,
@@ -729,24 +763,34 @@
     return rotulo && !frase.toLowerCase().startsWith(rotulo.toLowerCase()) ? `${rotulo}: ${frase}` : frase;
   }
 
-  function htmlAlertas(alertas, { tipos = {}, abierto = false, tope = TOPE_AVISOS } = {}) {
+  /* `enlaces`: el enlace a SECOP II de cada proceso (id → url), resuelto por quien llama con la regla del
+     expediente (`enlaceSecop`). El aviso no lo trae: vive en el proceso. Aquí se vuelve a pasar por
+     `urlSegura` y, sin enlace seguro, el botón no se pinta (la ausencia no se rellena con el id). */
+  function htmlAlertas(alertas, { tipos = {}, abierto = false, tope = TOPE_AVISOS, enlaces = null } = {}) {
     const grupos = agruparAlertas(alertas);
     if (!grupos.length) return "";
     const visibles = abierto ? grupos : grupos.slice(0, tope);
     const ocultos = grupos.length - visibles.length;
+    const X = enlaces ? raizExpediente() : null;
     const fila = (g) => {
       const a = g.principal;
       const mas = g.alertas.length - 1;
+      const clase = a.tipo === "cambio" ? "cambio" : a.tipo === "manifestacion" || a.tipo === "sorteo" ? "manifestacion" : "fecha";
+      /* «Abrir SECOP II» solo donde lo que se dice es el aviso de interés o el sorteo: los dos mandan a
+         mirarlo EN SECOP II (lib/seguimiento.alertasDe), y allí se hace */
+      const secop = clase === "manifestacion" && X && typeof X.urlSegura === "function" ? X.urlSegura(enlaces[g.id]) : null;
       return `<li class="cas-aviso ${TONO_AVISO[g.urgencia] || TONO_AVISO.baja}">
         <button type="button" class="cas-aviso-btn" data-seg-ir="${esc(g.id)}"
                 aria-label="Abrir el expediente de ${esc(g.proceso)}">
-          <span class="exp-punto cas-aviso-punto" aria-hidden="true">&#9679;</span>
+          <span class="cas-aviso-punto" aria-hidden="true">${iconoAviso(clase)}</span>
           <span class="cas-aviso-texto">
             <span class="cas-aviso-nombre">${esc(g.proceso)}</span>
             <span class="cas-aviso-frase">${esc(fraseAviso(a, tipos))}</span>
+            ${mas > 0 ? `<span class="cas-aviso-n">${mas === 1 ? "1 aviso más" : `${miles(mas)} avisos más`} de este proceso</span>` : ""}
           </span>
-          ${mas > 0 ? `<span class="cas-aviso-n" title="Este proceso tiene ${miles(mas + 1)} avisos">+${miles(mas)}</span>` : ""}
         </button>
+        ${secop ? `<a class="cas-aviso-secop" href="${esc(secop)}" target="_blank" rel="noopener noreferrer"
+            title="${a.tipo === "sorteo" ? "Abre el proceso en SECOP II, en una pestaña nueva: allí se ve si salió la lista o el sorteo" : "Abre el proceso en SECOP II, en una pestaña nueva: allí se avisa que le interesa"}">Abrir SECOP II<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7"/><path d="M9 7h8v8"/></svg></a>` : ""}
         ${g.conCambio ? `<button type="button" class="cas-aviso-visto" data-seg-enterado="${esc(g.id)}"
             title="Dar por visto: el próximo aviso será solo si vuelve a cambiar">Enterado</button>` : ""}
       </li>`;
@@ -770,7 +814,7 @@
   }
 
   return {
-    TOPE_AVISOS, agruparAlertas, fraseAviso, htmlAlertas, fraseAlertas,
+    TOPE_AVISOS, agruparAlertas, fraseAviso, htmlAlertas, fraseAlertas, enlacesDe, SVG_AVISO,
     VISTAS, ORDENES, AGRUPACIONES, CARPETA_TODO, CARPETA_SIN, POR_OMISION, CLAVE_PREFERENCIAS,
     leerPreferencias, guardarPreferencias, carpetaVigente,
     filtrar, ordenar, agrupar, textoDe, plano,
