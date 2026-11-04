@@ -4795,6 +4795,11 @@ async function main() {
       assert.ok(fechasDe(copia).observaciones_pliego === "2026-09-03" && celdaDe(hC, "observaciones_pliego") === "D20" && !hC.some((h) => h.celda === "D12"),
         `[MUT] la copia no se vuelve el plazo de observaciones al pliego, y el de verdad (D20) no se pierde: ${JSON.stringify(hC.map((h) => [h.celda, h.id, h.fecha]))}`);
       assert.strictEqual(Dp.cronogramaDeExcel(JSON.parse(JSON.stringify(copia))).resumen.publicable, true, "y el servidor la recibe igual");
+      /* UNA FECHA ESCRITA QUE NO SE PUDO LEER NO LA SUPLE OTRA FILA (vista previa del 4-nov-2026, CO1.BDOS.10891997): «21 septiembre de
+         2026» no se reconoce y el aviso de convocatoria salía del aviso del artículo 30, con el día de otra actividad. Falta; no se cambia */
+      const sinDe = await leer([{ nombre: HOJA, celdas: celdasDe([...REALES.B.map(([n, c, d]) => [n, c, n === 8 ? "04 agosto de 2026" : d]), [12, "Publicación del Aviso (artículo 30 de la Ley 80 de 1993)", S("2026-08-11")]].sort((a, b) => a[0] - b[0])) }]);
+      const hS = sinDe.publicable ? CE.hitosDeFilas(sinDe.filas, sinDe.hoja).hitos : [];
+      assert.ok(sinDe.publicable === true && !("aviso" in fechasDe(sinDe)) && !hS.some((h) => h.celda === "D12"), `[MUT] el aviso que no se pudo leer no lo suple el del artículo 30: ${sinDe.motivo} ${JSON.stringify(hS.map((h) => [h.celda, h.id, h.fecha]))}`);
       // lo que se guardó con la regla de antes (versión 1, que rechazaba esos anexos) no vale: se vuelve a leer solo
       assert.ok(CE.VERSION_LECTOR >= 2 && Dp.cronogramaVigente({ version: 1 }) === false, "[MUT] una lectura de la versión 1 se vuelve a leer");
       // EL RECORTE NO SE COME EL FIN DE UN RANGO: «del 06/07/2026 al 15/07/2026» vence el 15, no el 6

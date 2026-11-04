@@ -21230,7 +21230,9 @@ En una línea: en el Anexo 2 en Excel la hoja ya no se rechaza porque dos activi
   - **Los eventos y el cierre toman la primera fila**, que en la plantilla es la del hito.
   - **La misma fecha dos veces no choca.**
   
-  Los 13 rechazos medidos eran todos de eventos o del cierre. Que ahora se leen se comprueba en la vista previa del pull request.
+  Leídos en la vista previa del pull request (#322, solo lectura), 12 de los 13 pasan, con 13 a 16 fechas cada uno. Los cruces son los de los motivos: aviso de convocatoria y aviso del artículo 30 de la Ley 80; audiencia de adjudicación y publicación del acto; cierre y diligencia de apertura en el concurso. El que sigue fuera, CO1.BDOS.10865282, trae la MISMA actividad («Entrega de la oferta», D22 y D23) con dos fechas: es el caso que debe rechazarse.
+- **Una fecha escrita que no se pudo leer no la suple otra fila (`hitosDeFilas`).** Lo halló esa lectura, en CO1.BDOS.10891997. La fila del aviso de convocatoria dice «21 septiembre de 2026», sin el «de» después del día, y `Cron.fechaEnLinea` no la reconoce. Así, el aviso salía de «Publicación del Aviso (artículo 30 de la Ley 80 de 1993)», el 1-oct, que es otra actividad. Ahora la fila que trae un mes y un año sin leer se queda con su hito, sin fecha: falta, que es el error barato. Un «N/A» o un «Dentro de los cinco días siguientes…» no retiene nada. En las 38 lecturas reales publicables solo cambia esa: sale el aviso falso.
+  - El lector de fechas no se tocó, porque es el de los PDF y su medición (50/50) es otra. Lo dejan sin leer «21 septiembre de 2026» y «10 de septiembre el 2026»: 14 filas en 3 anexos (CO1.REQ.10974584, sus dos versiones, y CO1.BDOS.10891997).
 - **Cada fila se lee sola (lib/cronograma_excel.hitosDeFilas).** Pasadas juntas, el lector de los PDF no repite un hito ya tomado y prueba el siguiente que case. Eso sirve en un PDF, donde un renglón pega dos filas; en una hoja produce fechas falsas. Barrido sobre los 50 rótulos reales vistos: en 15 parejas del mismo hito, la segunda fila se volvía otra actividad (observaciones al proyecto → observaciones al pliego, traslado → subsanación, limitación a Mipymes → manifestación).
   - **El defecto ya estaba en producción.** Con una copia de la MISMA fecha la puerta de antes pasaba, y daba el plazo de observaciones al pliego con la fecha del proyecto.
   - **El primer arreglo tampoco servía.** Filtrar después de la pasada dejaba la copia ocupando el hito, y la fila de verdad de abajo se perdía: 198 hitos perdidos en 20.000 hojas al azar con rótulos reales.
@@ -21244,7 +21246,7 @@ En una línea: en el Anexo 2 en Excel la hoja ya no se rechaza porque dos activi
   - **3 no se leen:**
     - CO1.REQ.10997002: «solo 3 actividades… traen su fecha al lado».
     - CO1.REQ.10995743: «ninguna actividad… trae su fecha al lado», y además fuera del plan.
-    - CO1.REQ.11033801: «dos filas… «Pliego definitivo» (D13 y D14)», y además fuera del plan. Es un evento, así que con la regla nueva puede pasar; se comprueba en la vista previa.
+    - CO1.REQ.11033801: «dos filas… «Pliego definitivo» (D13 y D14)», y además fuera del plan. Es un evento: en la vista previa pasa, con 15 fechas. El «pliego definitivo» sale de la primera fila (el acto de apertura, D13, 22-sep), un día antes de la del pliego (D14, 23-sep). La cita muestra el rótulo de D13.
 
     Los dos primeros no se pudieron abrir para ver por qué: SECOP II responde 403 (Microsoft-Azure-Application-Gateway) a esta máquina el 4-nov.
   - **En la lista de Mis procesos de ese día, 0 procesos tenían fechas de un Excel.** La lectura ocurre cuando el dueño abre el proceso. Cuatro índices guardados todavía decían «hoja de cálculo que la aplicación todavía no lee»: se guardaron antes del cambio y duran 12 h.
