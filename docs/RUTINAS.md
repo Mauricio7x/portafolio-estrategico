@@ -182,7 +182,7 @@ Y EL PASE DEL MURO va en CADA llamada a la aplicación, también sin imprimirlo:
 
 QUÉ MIRAR · todo es LECTURA: ni un POST, ninguna sincronización
 1. GET /api/procesos?op=salud — ok, motivo, edad_horas (umbral 30), ultimo_error,
-   historico_hace_dias, aviso_por_correo.
+   historico_hace_dias, aviso_por_correo, revision_adendas.
    LO QUE MÁS IMPORTA: ok:true NO significa que la aplicación esté bien. Está medido que salud no
    mira el TAMAÑO del corpus: si SECOP renombra una columna del prefiltro, la sincronización descarta
    todas las filas, termina bien, escribe un corte fresco, y el latido sigue verde con la aplicación
@@ -203,6 +203,12 @@ QUÉ MIRAR · todo es LECTURA: ni un POST, ninguna sincronización
    saldría ninguno. Si está configurado: GET /api/avisos?token=…&enviar=no → enviados, omitidos,
    fallos. Responde 200 CON ok:false cuando el proveedor falla: un 200 no es un éxito. Y
    perfiles_revisados: 0 se ve igual que un día tranquilo — dilo tal cual, sin interpretarlo.
+   La revisión de adendas corre en la tarea de las 11:00 UTC aunque no haya correo (desde el
+   4-nov-2026) y su resumen está en salud, en `revision_adendas`: di «Adendas: N procesos
+   revisados, N índices pedidos, N adendas nuevas» con sus cifras. Si `fecha` no es la de hoy en
+   Colombia, la tarea de esta mañana no corrió: dilo. Si es null, todavía no ha corrido ninguna (no
+   es «cero adendas»). `fallos`, `sin_tiempo` o `detenida: true` se dicen tal cual. Tu llamada a
+   avisos con «enviar=no» NO dispara la revisión: no la repitas por tu cuenta.
 5. GitHub, con las herramientas mcp__github__*: la última corrida de «Suite» y la de «Actualización
    de la tarde». Si alguna está en failure, di la causa en una frase.
 

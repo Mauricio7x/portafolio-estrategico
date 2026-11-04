@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 2383475 bytes · 426 secciones · 44 con marcador de superación.
+Derivado del árbol: 2393949 bytes · 427 secciones · 45 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -417,23 +417,24 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | Una base que no responde no es «ninguno», y la madrugada lee sus propias evaluaciones con un cupo medido (28-oct-2026) | 28-oct-2026 | 20801-20826 | 8491 |  |
 | Una cifra de un informe de evaluación se lee por su último grupo: con dos cifras son centavos, con tres son miles (1-nov-2026) | 1-nov-2026 | 20827-20843 | 4388 |  |
 | Lo que llenó Upstash en octubre fue el ancho de banda de lo programado, y noviembre va justo (1-nov-2026) | 1-nov-2026 | 20844-20867 | 4681 |  |
-| El vigilante pide el tamaño y no el diagnóstico entero, y el lector deja de leer el corpus del año (1-nov-2026) | 1-nov-2026 | 20868-20893 | 5307 |  |
-| Lo que presupuestaron las entidades va al lado de cada ítem, el enlace de SECOP II pegado encuentra su proceso, y la tabla de la TRM de licitación pública coincide con la de menor cuantía (1-nov-2026) | 1-nov-2026 | 20894-20920 | 11684 |  |
-| Lo que no sale tampoco se calcula: los avisos sin correo, la baja como mucho un ciclo al día y el cupo del lector en documentos leídos (2-nov-2026) | 2-nov-2026 | 20921-20940 | 5440 | «La baja se publica cada 2 a 3 días, y una fila que no es un registro ya no tumba la lectura de los bloques (3-nov-2026)» |
-| «Calcular» costea con los precios corregidos del perfil con que se trabaja, como «Guardar» y Piso/Techo (2-nov-2026) | 2-nov-2026 | 20941-20962 | 7805 |  |
-| La baja se publica cada 2 a 3 días, y una fila que no es un registro ya no tumba la lectura de los bloques (3-nov-2026) | 3-nov-2026 | 20963-20986 | 6111 |  |
-| Un consorcio con Helder de integrante hereda sus precios corregidos, y «Calcular» manda el tipo de trabajo (3-nov-2026) | 3-nov-2026 | 20987-21004 | 7606 |  |
-| La 11 con la 3: la letra de leer, todo el texto a 7:1 y una sola tabla de tamaños (3-nov-2026) | 3-nov-2026 | 21005-21025 | 8386 |  |
-| El calendario del proceso: las fechas de los documentos llegan a Mis procesos, SECOP II manda sobre el documento y el lector deja de inventar plazos (3-nov-2026) | 3-nov-2026 | 21026-21066 | 15631 |  |
-| Lo que tiene que entregar: la lista del pliego con su página, marcable en el papeleo, y el papeleo en fila (3-nov-2026) | 3-nov-2026 | 21067-21097 | 12989 |  |
-| El OCR saturado ya no deja un documento incompleto para siempre, dos oferentes casi homónimos se separan por su número, y la cadencia de la baja se mide (3-nov-2026) | 3-nov-2026 | 21098-21148 | 13255 |  |
-| El cronograma en Excel se lee: el Anexo 2 de Colombia Compra entra a la línea de tiempo con su hoja y su celda, y de varias versiones habla solo la más nueva (3-nov-2026) | 3-nov-2026 | 21149-21174 | 13047 | «Dos filas con fechas distintas: choca la misma actividad o un plazo, no un aviso ni una adjudicación, y cada fila se lee sola; medido sobre los procesos guardados (4-nov-2026)» |
-| La tarjeta nueva: cinco renglones, con quién, y la competencia dentro con los contratos de obra aparte (3-nov-2026) | 3-nov-2026 | 21175-21193 | 11346 |  |
-| Mi empresa como la maqueta c07, «Por qué» sin siglas y las llantas fuera de «Obra» (3-nov-2026) | 3-nov-2026 | 21194-21210 | 7626 |  |
-| Mis procesos como la maqueta c07 (4-nov-2026) | 4-nov-2026 | 21211-21227 | 5631 |  |
-| Dos filas con fechas distintas: choca la misma actividad o un plazo, no un aviso ni una adjudicación, y cada fila se lee sola; medido sobre los procesos guardados (4-nov-2026) | 4-nov-2026 | 21228-21270 | 9001 |  |
-| Cada cifra de Mi empresa abre exactamente su lista: el filtro «Solo las que puede presentarse» (4-nov-2026) | 4-nov-2026 | 21271-21282 | 4215 |  |
-| Una sola frase para la capacidad que le queda, y Mis procesos en dos renglones entre 641 y 860 px (4-nov-2026) | 4-nov-2026 | 21283-21291 | 2063 |  |
-| Las fechas que hay que confirmar: el Anexo 2 que rige pasa el tope, el cierre desmentido y la fecha que no cuadra dicen «verifíquela», y el traslado vence el último día (4-nov-2026) | 4-nov-2026 | 21292-21333 | 6530 |  |
-| La alerta de precio bajo dice lo que mide la base con las reglas del 26-oct: 33 de 2.190 en licitación (4-nov-2026) | 4-nov-2026 | 21334-21341 | 1589 |  |
-| La adenda que usted no ha visto avisa, y la que no se ha leído pone «verifíquela» en las fechas anteriores (4-nov-2026) | 4-nov-2026 | 21342-21368 | 5345 |  |
+| El vigilante pide el tamaño y no el diagnóstico entero, y el lector deja de leer el corpus del año (1-nov-2026) | 1-nov-2026 | 20868-20894 | 5690 | «La tarea de la mañana busca las adendas de los procesos guardados, sin leer el corpus y con los topes medidos (4-nov-2026)» |
+| Lo que presupuestaron las entidades va al lado de cada ítem, el enlace de SECOP II pegado encuentra su proceso, y la tabla de la TRM de licitación pública coincide con la de menor cuantía (1-nov-2026) | 1-nov-2026 | 20895-20921 | 11684 |  |
+| Lo que no sale tampoco se calcula: los avisos sin correo, la baja como mucho un ciclo al día y el cupo del lector en documentos leídos (2-nov-2026) | 2-nov-2026 | 20922-20941 | 5440 | «La baja se publica cada 2 a 3 días, y una fila que no es un registro ya no tumba la lectura de los bloques (3-nov-2026)» |
+| «Calcular» costea con los precios corregidos del perfil con que se trabaja, como «Guardar» y Piso/Techo (2-nov-2026) | 2-nov-2026 | 20942-20963 | 7805 |  |
+| La baja se publica cada 2 a 3 días, y una fila que no es un registro ya no tumba la lectura de los bloques (3-nov-2026) | 3-nov-2026 | 20964-20987 | 6111 |  |
+| Un consorcio con Helder de integrante hereda sus precios corregidos, y «Calcular» manda el tipo de trabajo (3-nov-2026) | 3-nov-2026 | 20988-21005 | 7606 |  |
+| La 11 con la 3: la letra de leer, todo el texto a 7:1 y una sola tabla de tamaños (3-nov-2026) | 3-nov-2026 | 21006-21026 | 8386 |  |
+| El calendario del proceso: las fechas de los documentos llegan a Mis procesos, SECOP II manda sobre el documento y el lector deja de inventar plazos (3-nov-2026) | 3-nov-2026 | 21027-21067 | 15631 |  |
+| Lo que tiene que entregar: la lista del pliego con su página, marcable en el papeleo, y el papeleo en fila (3-nov-2026) | 3-nov-2026 | 21068-21098 | 12989 |  |
+| El OCR saturado ya no deja un documento incompleto para siempre, dos oferentes casi homónimos se separan por su número, y la cadencia de la baja se mide (3-nov-2026) | 3-nov-2026 | 21099-21149 | 13255 |  |
+| El cronograma en Excel se lee: el Anexo 2 de Colombia Compra entra a la línea de tiempo con su hoja y su celda, y de varias versiones habla solo la más nueva (3-nov-2026) | 3-nov-2026 | 21150-21175 | 13047 | «Dos filas con fechas distintas: choca la misma actividad o un plazo, no un aviso ni una adjudicación, y cada fila se lee sola; medido sobre los procesos guardados (4-nov-2026)» |
+| La tarjeta nueva: cinco renglones, con quién, y la competencia dentro con los contratos de obra aparte (3-nov-2026) | 3-nov-2026 | 21176-21194 | 11346 |  |
+| Mi empresa como la maqueta c07, «Por qué» sin siglas y las llantas fuera de «Obra» (3-nov-2026) | 3-nov-2026 | 21195-21211 | 7626 |  |
+| Mis procesos como la maqueta c07 (4-nov-2026) | 4-nov-2026 | 21212-21228 | 5631 |  |
+| Dos filas con fechas distintas: choca la misma actividad o un plazo, no un aviso ni una adjudicación, y cada fila se lee sola; medido sobre los procesos guardados (4-nov-2026) | 4-nov-2026 | 21229-21271 | 9001 |  |
+| Cada cifra de Mi empresa abre exactamente su lista: el filtro «Solo las que puede presentarse» (4-nov-2026) | 4-nov-2026 | 21272-21283 | 4215 |  |
+| Una sola frase para la capacidad que le queda, y Mis procesos en dos renglones entre 641 y 860 px (4-nov-2026) | 4-nov-2026 | 21284-21292 | 2063 |  |
+| Las fechas que hay que confirmar: el Anexo 2 que rige pasa el tope, el cierre desmentido y la fecha que no cuadra dicen «verifíquela», y el traslado vence el último día (4-nov-2026) | 4-nov-2026 | 21293-21334 | 6530 |  |
+| La alerta de precio bajo dice lo que mide la base con las reglas del 26-oct: 33 de 2.190 en licitación (4-nov-2026) | 4-nov-2026 | 21335-21342 | 1589 |  |
+| La adenda que usted no ha visto avisa, y la que no se ha leído pone «verifíquela» en las fechas anteriores (4-nov-2026) | 4-nov-2026 | 21343-21370 | 5596 |  |
+| La tarea de la mañana busca las adendas de los procesos guardados, sin leer el corpus y con los topes medidos (4-nov-2026) | 4-nov-2026 | 21371-21413 | 9840 |  |
