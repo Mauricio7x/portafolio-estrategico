@@ -21232,11 +21232,11 @@ En una línea: cuarta y última entrega de «la 11 con la 3» («haz el 1» del 
 
 En una línea: en el Anexo 2 en Excel la hoja ya no se rechaza porque dos actividades DISTINTAS caigan en un mismo hito con días distintos (aviso de convocatoria y avisos siguientes, audiencia de adjudicación y publicación del acto, dos filas del cierre: así se rechazaban 13 de 36 anexos públicos sanos); sigue rechazándose la MISMA actividad con dos fechas y cualquier PLAZO que SECOP II no publica con dos fechas, y cada fila se lee sola, de modo que una copia ya no se lleva el hito de otra fila.
 
-> PENDIENTE · el cupo de 12 documentos deja fuera el Anexo 2 que rige en 2 de los 15 procesos guardados que lo traen (CO1.REQ.10995743 y CO1.REQ.11033801, medido el 4-nov-2026). El plan pone el cronograma en Excel en la cola, detrás de lo que ya se leía, y aquí lo llenan siete adendas o versiones repetidas del anexo técnico. Leerlo cuesta una llamada al servidor y ningún OCR. Decidir si el cronograma en Excel queda fuera del cupo.
+> RESUELTO el 4-nov-2026 por «Las fechas que hay que confirmar: el Anexo 2 que rige pasa el tope, el cierre desmentido y la fecha que no cuadra dicen «verifíquela», y el traslado vence el último día (4-nov-2026)» · el cupo de 12 documentos deja fuera el Anexo 2 que rige en 2 de los 15 procesos guardados que lo traen (CO1.REQ.10995743 y CO1.REQ.11033801, medido el 4-nov-2026). El plan pone el cronograma en Excel en la cola, detrás de lo que ya se leía, y aquí lo llenan siete adendas o versiones repetidas del anexo técnico. Leerlo cuesta una llamada al servidor y ningún OCR. Decidir si el cronograma en Excel queda fuera del cupo.
 
-> PENDIENTE · el orden por TIPO de `hitosDeDocumentos` (adenda > cronograma > pliego > documento base) no mira la fecha. Un Anexo 2 subido con el proyecto de pliego le gana a un documento base o pliego definitivo posterior. Y cuando SECOP II desmiente su cierre (2 de 11 anexos leídos el 4-nov), sus fechas de evaluación y adjudicación salen sin aviso, aunque pueden ser de antes de un cambio. Ya pasaba con el anexo en PDF de la fase 1; el Excel lo vuelve frecuente. Decidir si el desmentido del cierre marca «verifíquelo» en el resto de fechas de ese documento.
+> RESUELTO el 4-nov-2026 por «Las fechas que hay que confirmar: el Anexo 2 que rige pasa el tope, el cierre desmentido y la fecha que no cuadra dicen «verifíquela», y el traslado vence el último día (4-nov-2026)» · se resolvió el aviso; el orden por tipo sigue igual, y un Anexo 2 subido con el proyecto le sigue ganando a un pliego definitivo posterior que no lo contradiga en el cierre. Era: el orden por TIPO de `hitosDeDocumentos` (adenda > cronograma > pliego > documento base) no mira la fecha. Un Anexo 2 subido con el proyecto de pliego le gana a un documento base o pliego definitivo posterior. Y cuando SECOP II desmiente su cierre (2 de 11 anexos leídos el 4-nov), sus fechas de evaluación y adjudicación salen sin aviso, aunque pueden ser de antes de un cambio. Ya pasaba con el anexo en PDF de la fase 1; el Excel lo vuelve frecuente. Decidir si el desmentido del cierre marca «verifíquelo» en el resto de fechas de ese documento.
 
-> PENDIENTE · ninguna guarda mira el orden de las fechas de un mismo cronograma. En CO1.REQ.10974584 la entidad escribió «18 de diciembre del 2026» para el informe preliminar (celda D27), entre un cierre del 17-sep y una adjudicación del 25-sep, y así saldría, citado con su celda. Es lo que dice el documento, pero es un error de digitación evidente. Es 1 de 25 anexos leídos.
+> RESUELTO el 4-nov-2026 por «Las fechas que hay que confirmar: el Anexo 2 que rige pasa el tope, el cierre desmentido y la fecha que no cuadra dicen «verifíquela», y el traslado vence el último día (4-nov-2026)» · ninguna guarda mira el orden de las fechas de un mismo cronograma. En CO1.REQ.10974584 la entidad escribió «18 de diciembre del 2026» para el informe preliminar (celda D27), entre un cierre del 17-sep y una adjudicación del 25-sep, y así saldría, citado con su celda. Es lo que dice el documento, pero es un error de digitación evidente. Es 1 de 25 anexos leídos.
 
 > PENDIENTE · el hito «Último día para adendas» casa con cualquier renglón que diga «adenda» (`/adendas?/i`, lib/cronograma.HITOS, compartido con los PDF). «Fecha de cierre (modificada por Adenda 1)» o «Plazo para subsanar (ampliado mediante Adenda 2)» salen como ese hito con su fecha (revisión adversaria del 4-nov-2026, reproducido). No avisa ni entra en «lo próximo que vence» (`accion:false`), pero sale en la línea de tiempo con una fecha que no es suya.
 
@@ -21291,3 +21291,45 @@ En una línea: la capacidad que le queda (la de contratación menos lo que ya ej
 - **«Lo que podría facturar» NO se tocó**: lo dicen las ramas de la guía donde no se pudieron restar los contratos en ejecución, y es otro dato (la capacidad sin descontar). Tampoco el título del requisito («Capacidad para facturar este contrato sin pasarse»), que es el término del glosario para la capacidad de contratación.
 - **Las cifras no cambian**: solo las palabras alrededor de los mismos porcentajes y pesos.
 - **Mis procesos entre 641 y 860 px**: el título con el valor al lado y, debajo, la etapa y lo próximo en una línea; la flecha a la derecha de los dos. Medido en Chromium (banco de Mis procesos): a 700 px las filas miden 120-164 px (antes unos 230), a 641 px el título tiene 365-405 px de ancho y a 860 px 584-624 px; 0 textos bajo 7:1, sin desbordes, la consola igual que en `main`. A 1280 y a 390 px las medidas no cambian (85-104 px y 251-321 px).
+
+### Las fechas que hay que confirmar: el Anexo 2 que rige pasa el tope, el cierre desmentido y la fecha que no cuadra dicen «verifíquela», y el traslado vence el último día (4-nov-2026)
+
+En una línea: cuatro cambios sobre las fechas de los documentos, encargados por el dueño («haz el 1 2 y 3», y el cuarto hallado al probarlos y aprobado aparte). El cronograma en Excel del día que rige se lee aunque el plan de 12 esté lleno. Cada documento guarda el cierre que se le lee, y si SECOP II pone otro, todas sus fechas dicen «verifíquela». La fecha que no cuadra con las demás de su documento, también. Y «Desde: X Hasta: Y» da el plazo Y, no X.
+
+> PENDIENTE · un cronograma de OBRA más nuevo que el Anexo 2 silencia al Anexo 2 (revisión adversaria del 4-nov-2026, caso sintético; sin medir cuántos reales). «Cronograma de obra.xlsx», un Gantt, se clasifica `cronograma`. Si es del día más nuevo, la regla de la familia (`diaQueRigeCronograma`) lo toma como el que rige: pasa el tope en lugar del Anexo 2 y, como no pasa la puerta, ninguna fecha del Anexo 2 habla. Lo mismo con «CRONOGRAMA EJECUCION PROCESO OUTSOURCING.xlsx» (CO1.REQ.11239668). Decidir si un Excel de la familia que la puerta rechazó por «ninguna hoja trae las actividades del cronograma» deja de contar como el que rige.
+
+> PENDIENTE · la pestaña del pliego (`op=cronograma`) y su .ics no miran el orden de las fechas ni el cierre desmentido: la regla de este cambio vive en Mis procesos (`hitosDeDocumentos` y `lib/seguimiento.hitosDe`). Es el hermano: el mismo informe del «18 de diciembre» saldría sin marca en esa pestaña si el pliego trajera el cronograma.
+
+> PENDIENTE · de una adenda que cita el cierre viejo en un considerando («se fijó como fecha de cierre el 05/10/2026») y fija el nuevo después, el lector toma la PRIMERA línea del cierre (revisión adversaria, reproducido con texto armado). Desde este cambio, esa lectura además marca «verifíquela» en todas sus fechas. La frase dice «se lee como cierre», no «pone», para no afirmar lo que el documento no decide. La causa es del lector de los PDF y no se tocó.
+
+- **1 · El Anexo 2 que rige pasa el tope (`planDeLectura`).** Los cronogramas en Excel del día más nuevo de la familia se leen aunque el plan esté lleno. Entran como mucho 3, solo entre los que se pueden leer (con dirección, legibles y de menos de 20 MB), y cuentan para el cupo como siempre.
+  - **Por qué es seguro:** el tope de 12 existe por el tiempo de rehacer TEXTOS. Un Excel guarda ~20 filas en `docs.cronogramas`, sin OCR.
+  - **La familia, en un solo sitio:** `esCronogramaDeLaFamilia` y `diaQueRigeCronograma`, que usa también `hitosDeDocumentos`.
+  - **Medido con 70 índices reales** (los 29 guardados y la muestra de 40): 0 documentos salen del plan y entran 9 cronogramas en Excel. Entre ellos, los de CO1.REQ.10995743 y CO1.REQ.11033801; varios se llaman «Adenda 2», «actualizado» o «Definitivo», o sea, el que rige.
+  - Sin subir `Docs.VERSION`: el índice se renueva solo en 12 h.
+- **2 · El cierre que SECOP II desmiente (`lib/seguimiento.hitosDe`).** Cada documento guarda el cierre que se le lee: `cierre_documento`, que en el registro va UNA vez por documento como `ci`.
+  - Si no coincide con el de SECOP II, las demás fechas de ese documento llevan `verificar`: «en «Anexo 2 Cronograma.xlsm» se lee como cierre el … y SECOP II pone el …: sus fechas pudieron cambiar». No se afirma cuál tiene razón: la adenda puede ir por delante de SECOP II.
+  - Un cierre que no cuadra con su propio documento no se usa para comparar: es la errata, no un cambio.
+  - **Medido en los guardados del dueño:** marca el anexo de CO1.REQ.11037442 (5-oct contra 7-oct) y el de CO1.REQ.10974584 (17-sep contra 16-sep).
+  - **Sin verificar en producción:** según el expediente, la adenda de CO1.REQ.11233080 se lee con cierre el 6-nov y SECOP II pone el 5-nov, así que sus fechas deberían salir marcadas cuando se rehagan.
+- **3 · La fecha que no cuadra (`Cron.fechasFueraDeOrden`, por documento, antes de mezclar documentos).** Solo mira relaciones firmes:
+  - lo de antes del cierre va antes del cierre;
+  - lo de después va después;
+  - informe ≤ traslado ≤ informe final ≤ adjudicación ≤ firma.
+  
+  Se marca la fecha con más choques, y si empatan, todas las empatadas, **salvo el cierre, que es el ancla**: si empata, se marca la otra. Así, una línea mal leída que choca solo con él no le quita la comparación con SECOP II (revisión adversaria, reproducido).
+  - **Medido en los 38 anexos reales que pasan:** marca 2, los dos de CO1.REQ.10974584 (el informe del «18 de diciembre»; en la versión vieja, también el cierre de diciembre). Ninguna marca sobra.
+  - **En PDF no hay medición real:** no hay un corpus de textos de cronogramas en PDF. Solo 2 procesos del dueño tienen fechas de PDF en producción, y la regla no marca ninguna.
+- **4 · «Desde: X Hasta: Y» (`CONECTOR_RANGO_RE`), hallado al probar lo anterior y aprobado por el dueño.** Es la fila del traslado de la plantilla de Colombia Compra, en 19 de 38 anexos reales. Sin aceptar «Hasta:» con dos puntos, ni el punto antes de él, el plazo salía el PRIMER día, de dos a cinco días antes del que escribió la entidad.
+  - Cambian 15 traslados. Los otros 4 ya daban el día bueno, o la entidad escribió mal el año.
+  - El punto vale solo antes de «hasta» (revisión adversaria): delante de «A» o «al» daba plazos MÁS TARDE en renglones pegados.
+  - `VERSION_HITOS` pasa a 3: las fechas de los PDF guardados se rehacen desde su texto, sin descargar nada.
+- **Dónde se ve el «verifíquela»** (una sola frase, `Cron.notaVerificar`):
+  - en el centro de alertas y el correo;
+  - en el .ics;
+  - en «lo próximo que vence» y la fila («… vence en 3 días (verifíquela)»);
+  - en el calendario;
+  - en el expediente. Ahí, el porqué que comparten varias fechas va UNA vez arriba: en Chromium a 390 px, la misma frase en 11 filas alargaba la página de 6.272 a 8.276 px. Cada fila conserva su marca, también junto a «Hoy» y a «Lo próximo que vence».
+  
+  La fecha nunca se esconde, porque en Mis procesos el falso caro es no avisar. En Chromium (390 y 1280 px, temas claro y oscuro), la marca tiene contraste de 9,1:1 y la frase 7,7:1, sin desborde y con la consola limpia.
+- **La manifestación del mismo documento no recibe «verifíquela»:** tiene su módulo y sus guardas (`lib/manifestacion`), y no entra por `hitosDeDocumentos`.

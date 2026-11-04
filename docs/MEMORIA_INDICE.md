@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 2368970 bytes · 423 secciones · 44 con marcador de superación.
+Derivado del árbol: 2376304 bytes · 424 secciones · 44 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -431,6 +431,7 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | La tarjeta nueva: cinco renglones, con quién, y la competencia dentro con los contratos de obra aparte (3-nov-2026) | 3-nov-2026 | 21175-21193 | 11346 |  |
 | Mi empresa como la maqueta c07, «Por qué» sin siglas y las llantas fuera de «Obra» (3-nov-2026) | 3-nov-2026 | 21194-21212 | 7624 |  |
 | Mis procesos como la maqueta c07 (4-nov-2026) | 4-nov-2026 | 21213-21230 | 5630 |  |
-| Dos filas con fechas distintas: choca la misma actividad o un plazo, no un aviso ni una adjudicación, y cada fila se lee sola; medido sobre los procesos guardados (4-nov-2026) | 4-nov-2026 | 21231-21273 | 8197 |  |
+| Dos filas con fechas distintas: choca la misma actividad o un plazo, no un aviso ni una adjudicación, y cada fila se lee sola; medido sobre los procesos guardados (4-nov-2026) | 4-nov-2026 | 21231-21273 | 9001 |  |
 | Cada cifra de Mi empresa abre exactamente su lista: el filtro «Solo las que puede presentarse» (4-nov-2026) | 4-nov-2026 | 21274-21285 | 4215 |  |
-| Una sola frase para la capacidad que le queda, y Mis procesos en dos renglones entre 641 y 860 px (4-nov-2026) | 4-nov-2026 | 21286-21293 | 2062 |  |
+| Una sola frase para la capacidad que le queda, y Mis procesos en dos renglones entre 641 y 860 px (4-nov-2026) | 4-nov-2026 | 21286-21294 | 2063 |  |
+| Las fechas que hay que confirmar: el Anexo 2 que rige pasa el tope, el cierre desmentido y la fecha que no cuadra dicen «verifíquela», y el traslado vence el último día (4-nov-2026) | 4-nov-2026 | 21295-21335 | 6529 |  |

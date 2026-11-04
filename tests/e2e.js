@@ -4411,11 +4411,12 @@ async function main() {
       assert.ok(cie && cie.otra_fecha && cie.otra_fecha.fecha === d(9), `[MUT] el documento dice otro cierre y se dice: ${JSON.stringify(cie)}`);
       // la pantalla: «lo próximo que vence» en la fila, con SU fecha, y la línea de tiempo del expediente
       const s = Ks.senalDe(p);
-      assert.deepStrictEqual([s.urgencia, s.texto], ["media", "Observaciones al pliego: vence en 2 días"], `[MUT] la fila dice lo próximo que vence: ${JSON.stringify(s)}`);
+      /* el documento pone el cierre el día 9 y SECOP II el 10: desde el 4-nov-2026 sus fechas piden confirmarse (lib/seguimiento.hitosDe) */
+      assert.deepStrictEqual([s.urgencia, s.texto], ["media", "Observaciones al pliego: vence en 2 días (verifíquela)"], `[MUT] la fila dice lo próximo que vence: ${JSON.stringify(s)}`);
       /* la fecha que acompaña la señal es la del plazo que señala, no la del cierre (antes, siempre la del cierre) */
       const Cal = require("../public/calendario.js");
       const fila = Ks.htmlFila(p, { hoy });
-      assert.ok(fila.includes(`vence en 2 días &middot; ${Cal.fechaLegible(d(2))}`) && !fila.includes(`&middot; ${Cal.fechaLegible(d(10))}`),
+      assert.ok(fila.includes(`vence en 2 días (verifíquela) &middot; ${Cal.fechaLegible(d(2))}`) && !fila.includes(`&middot; ${Cal.fechaLegible(d(10))}`),
         `[MUT] la fila pone la fecha del plazo que señala: ${fila.slice(0, 600)}`);
       const html = Xp.htmlFechas(pe, { hoy });
       assert.ok(/Según Cronograma «Anexo 2 - Cronograma\.pdf», pág\. 2/.test(html), "[MUT] la línea de tiempo dice de qué documento y página sale cada fecha");
@@ -4853,6 +4854,124 @@ async function main() {
       assert.deepStrictEqual(Dp.hitosDeDocumentos(pdfs).hitos.map((h) => [h.id, h.fecha]), [["cierre", "2026-10-20"]], "[MUT] en PDF tampoco se cuela el sorteo del cronograma viejo");
     }
 
+    /* (4d) LOS TRES PENDIENTES DEL 4-nov-2026 (encargo del dueño, «haz el 1 2 y 3») */
+    {
+      const Sg = require("../lib/seguimiento.js");
+      const Cas = require("../public/casillero.js");
+      const archivo = (id, nombre, fecha, ext = "pdf") => Dp.clasificarArchivo({ id_documento: id, nombre_archivo: nombre, extensi_n: ext, fecha_carga: `${fecha}T19:00:00.000`,
+        url_descarga_documento: { url: `https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=${id}` }, tamanno_archivo: "40000" });
+      /* (1) EL ANEXO 2 QUE RIGE SE LEE AUNQUE EL PLAN ESTÉ LLENO: doce adendas llenan el cupo (CO1.REQ.11033801 traía siete); el Excel
+         del día más nuevo de la familia entra igual, el viejo no, y no sale ninguno de los que ya se leían */
+      const adendas = Array.from({ length: 12 }, (_, i) => archivo(`A${i}`, `ADENDA No. ${i + 1}.pdf`, `2026-09-${String(14 + i).padStart(2, "0")}`));
+      const nuevo = archivo("X2", "Anexo 2 Cronograma DEFINITIVO.xlsm", "2026-09-22", "xlsm"), viejo = archivo("X1", "Anexo 2 Cronograma.xlsm", "2026-09-13", "xlsm");
+      const crudo = (a) => ({ id_documento: a.id_documento, nombre_archivo: a.nombre, extensi_n: a.extension, fecha_carga: `${a.fecha_carga}T19:00:00.000`, url_descarga_documento: { url: a.url }, tamanno_archivo: "40000" });
+      const lleno = Dp.planDeLectura([...adendas, viejo, nuevo].map(crudo));
+      const sinExcel = Dp.planDeLectura(adendas.map(crudo));
+      assert.ok(lleno.plan.includes("X2") && !lleno.plan.includes("X1"), `[MUT] con el cupo lleno, el Anexo 2 que rige se lee y el viejo no: ${lleno.plan.join(",")}`);
+      assert.ok(sinExcel.plan.every((id) => lleno.plan.includes(id)) && lleno.plan.length === sinExcel.plan.length + 1, `no saca a ningún documento que ya se leía: ${lleno.plan.join(",")}`);
+      assert.strictEqual(lleno.archivos.find((a) => a.id_documento === "X1").motivo_omision, "tope de documentos leídos solos", "el viejo sigue fuera, con su motivo");
+      // …y si el día más nuevo de la familia es un PDF, ningún Excel viejo pasa el tope
+      const conPdf = Dp.planDeLectura([...adendas, nuevo, archivo("P9", "Cronograma definitivo.pdf", "2026-09-30")].map(crudo));
+      assert.ok(!conPdf.plan.includes("X2"), `el que pasa el tope es el del día que rige, no cualquier Excel: ${conPdf.plan.join(",")}`);
+      /* el cupo de tres, solo entre los que se pueden leer (revisión adversaria, reproducido): uno sin dirección y dos de más de 20 MB lo agotaban */
+      const sinUrl = { ...crudo(archivo("Y1", "Anexo 2 Cronograma a.xlsm", "2026-09-22", "xlsm")), url_descarga_documento: null };
+      const grande = (id) => ({ ...crudo(archivo(id, `Anexo 2 Cronograma ${id}.xlsm`, "2026-09-22", "xlsm")), tamanno_archivo: String(30 * 1024 * 1024) });
+      /* el legible va de ÚLTIMO en el orden (mismo día, id mayor): así, si los ilegibles gastaran el cupo, quedaría fuera */
+      const legibleZ = crudo(archivo("Z9", "Anexo 2 Cronograma z.xlsm", "2026-09-22", "xlsm"));
+      const agotado = Dp.planDeLectura([...adendas.map(crudo), sinUrl, grande("Y2"), grande("Y3"), legibleZ]);
+      assert.ok(agotado.plan.includes("Z9"), `[MUT] los que no se pueden leer no gastan el cupo: ${agotado.plan.join(",")}`);
+      /* (3) UNA FECHA QUE NO CUADRA CON LAS DEMÁS DE SU DOCUMENTO: las celdas reales de CO1.REQ.10974584 (el informe preliminar
+         del «18 de diciembre» entre un cierre del 17-sep y una adjudicación del 25-sep) y su versión vieja (cierre e informe en
+         diciembre); en los anexos sanos, ninguna */
+      const filasReales = (cambios) => [[6, "Publicación del aviso de convocatoria pública", "02 de septiembre del 2026"], [8, "Publicación del proyecto de pliego de condiciones", "02 de septiembre del 2026"],
+        [9, "Plazo para presentar observaciones al proyecto de pliego de condiciones", "09 de septiembre del 2026"], [22, "Respuesta a las observaciones al pliego de condiciones", "16 de septiembre del 2026"],
+        [23, "Plazo máximo para la expedición de Adendas", "16 de septiembre del 2026"], [24, "Fecha de cierre [presentación de ofertas]", "17 de septiembre del 2026 a las 9:00 am"],
+        [27, "Publicación del informe preliminar de evaluación", "18 de diciembre del 2026"], [28, "Traslado para observaciones al informe de evaluación de las ofertas (plazo máximo para presentación de subsanaciones)", "Desde: 21 de septiembre del 2026 Hasta: 23 de septiembre del 2026"],
+        [29, "Publicación del informe final de evaluación de la oferta", "24 de septiembre del 2026"], [32, "Publicación acto administrativo de adjudicación o de declaratoria de desierto", "25 de septiembre del 2026"],
+        [33, "Firma del contrato", "28 de septiembre del 2026"]].map(([n, r, v]) => ({ r, v: cambios[n] || v, c: `D${n}` }));
+      const fueraDe = (filas) => [...Cr.fechasFueraDeOrden(CE.hitosDeFilas(filas, HOJA).hitos)].sort();
+      assert.deepStrictEqual(fueraDe(filasReales({})), ["informe_evaluacion"], "[MUT] el informe del 18 de diciembre no cuadra; las cuatro fechas buenas que lo rodean, sí");
+      assert.deepStrictEqual(fueraDe(filasReales({ 24: "16 de diciembre del 2026 a las 9:00 am", 27: "17 de diciembre del 2026" })), ["cierre", "informe_evaluacion"], "[MUT] en la versión vieja, el cierre y el informe de diciembre");
+      for (const L of ["B", "C", "D", "E"]) if (lecturas[L]) assert.deepStrictEqual(fueraDe(lecturas[L].filas), [], `[MUT] ningún anexo sano marca nada (${L})`);
+      assert.deepStrictEqual([...Cr.fechasFueraDeOrden(Cr.extraerHitos("Fecha de cierre 07/09/2026\nTraslado del informe de evaluación 12/09/2026\nPublicación del informe de evaluación 25/09/2026\nAdjudicación 20/09/2026").hitos)], ["informe_evaluacion"], "y en un PDF, la misma regla");
+      // lo de ANTES del cierre va antes; lo de DESPUÉS (también lo que no está en la cadena de evaluación, como subsanar) va después
+      assert.deepStrictEqual([...Cr.fechasFueraDeOrden(Cr.extraerHitos("Fecha de cierre 10/09/2026\nPlazo para presentar observaciones al pliego 20/09/2026").hitos)], ["observaciones_pliego"], "[MUT] un plazo de antes del cierre que cae después");
+      assert.deepStrictEqual([...Cr.fechasFueraDeOrden(Cr.extraerHitos("Fecha de cierre 10/09/2026\nPlazo para subsanar 05/09/2026").hitos)], ["subsanacion"], "[MUT] un plazo de después del cierre que cae antes");
+      // con un solo choque entre dos fechas no se sabe cuál está mal: se marcan las dos…
+      assert.deepStrictEqual([...Cr.fechasFueraDeOrden(Cr.extraerHitos("Publicación del informe de evaluación 20/09/2026\nAdjudicación 15/09/2026").hitos)].sort(), ["adjudicacion", "informe_evaluacion"], "[MUT] con empate, las dos");
+      // …salvo que una sea el cierre: es el ancla, y se marca la otra (revisión adversaria: perderlo dejaba sin comparar con SECOP II)
+      assert.deepStrictEqual([...Cr.fechasFueraDeOrden(Cr.extraerHitos("Fecha de cierre 07/09/2026\nPublicación del informe de evaluación 01/09/2026").hitos)], ["informe_evaluacion"], "[MUT] con empate con el cierre, la otra");
+      /* EL RANGO «Desde: X Hasta: Y» (hallado al probar esto, 19 de 38 anexos reales): el traslado vence el último día, no el primero */
+      assert.deepStrictEqual(Cr.rangoEnLinea("Desde: 21 de septiembre del 2026 Hasta: 23 de septiembre del 2026"), { desde: "2026-09-21", hasta: "2026-09-23" }, "[MUT] «Hasta:» con dos puntos es un rango");
+      assert.deepStrictEqual(Cr.rangoEnLinea("Desde: 20 de noviembre de 2026. Hasta: 24 de noviembre de 2026."), { desde: "2026-11-20", hasta: "2026-11-24" }, "[MUT] …también con punto tras la primera fecha");
+      assert.deepStrictEqual(Cr.rangoEnLinea("Desde: 28/09/2026 15:00 pm Hasta: 01/10/2026 15:00 pm (fecha de finalización)"), { desde: "2026-09-28", hasta: "2026-10-01" }, "…y con la hora de la primera");
+      assert.strictEqual(Cr.rangoEnLinea("Cierre 20/10/2026. Informe 27/10/2026"), null, "dos filas pegadas con un punto NO son un rango");
+      // el punto vale solo antes de «hasta» (revisión adversaria): con «A» o «al» detrás, el plazo saldría MÁS TARDE que el real
+      assert.strictEqual(Cr.rangoEnLinea("Cierre del proceso 20/10/2026. A 27/10/2026 se publica el informe"), null, "el punto no abre rango con «A»");
+      assert.strictEqual(Cr.rangoEnLinea("Plazo para presentar observaciones al pliego 15/10/2026. al 16/10/2026"), null, "ni con «al»");
+      // y lo leído de un PDF con la regla vieja se rehace desde su texto (la versión de las fechas entra en la de los hechos)
+      assert.ok(Cr.VERSION_HITOS >= 3 && Dp.hechosVersion().endsWith(`|c${Cr.VERSION_HITOS}`), "[MUT] la versión de las fechas subió con el rango nuevo");
+      const trasladoReal = CE.hitosDeFilas(filasReales({}), HOJA).hitos.find((h) => h.id === "traslado");
+      assert.deepStrictEqual([trasladoReal.fecha, trasladoReal.desde, trasladoReal.celda], ["2026-09-23", "2026-09-21", "D28"], `[MUT] el traslado real de CO1.REQ.10974584 vence el 23, no el 21: ${JSON.stringify(trasladoReal)}`);
+      /* (2) Y CADA DOCUMENTO DICE SU PROPIO CIERRE: Mis procesos lo compara con el de SECOP II */
+      const xReal = archivo("R1", "Anexo 2 Cronograma.xlsm", "2026-09-11", "xlsm");
+      const conReal = (filas) => ({ indice: { archivos: [xReal], plan: ["R1"] }, leidos: {}, ilegibles: {},
+        cronogramas: { R1: { nombre: xReal.nombre, tipo: "cronograma", tipo_legible: "Cronograma", fecha_carga: xReal.fecha_carga, version: CE.VERSION_LECTOR, ...Dp.cronogramaDeExcel({ ok: true, publicable: true, hoja: HOJA, filas }).resumen } } });
+      const regReal = Dp.hitosDeDocumentos(conReal(filasReales({})));
+      const porId = (hs) => Object.fromEntries(hs.map((h) => [h.id, h]));
+      assert.ok(porId(regReal.hitos).informe_evaluacion.fuera_de_orden === true && regReal.hitos.filter((h) => h.fuera_de_orden).length === 1, `[MUT] la fecha que no cuadra viaja marcada: ${JSON.stringify(regReal.hitos.filter((h) => h.fuera_de_orden))}`);
+      assert.ok(regReal.hitos.every((h) => h.cierre_documento === "2026-09-17"), "[MUT] cada fecha sabe qué cierre pone su documento");
+      assert.ok(Dp.hitosDeDocumentos(conReal(filasReales({ 24: "16 de diciembre del 2026 a las 9:00 am", 27: "17 de diciembre del 2026" }))).hitos.every((h) => !h.cierre_documento),
+        "un cierre que no cuadra con su propio documento no se usa para comparar: es la errata, no un cambio");
+      // y una línea que choca SOLO con el cierre no le quita el cierre al documento: se sigue comparando con SECOP II
+      const conMalLeida = [...filasReales({}), { r: "Presentación de observaciones al pliego de condiciones", v: "30 de septiembre del 2026", c: "D21" }].sort((x, y) => +x.c.slice(1) - +y.c.slice(1));
+      const regMal = Dp.hitosDeDocumentos(conReal(conMalLeida));
+      assert.ok(regMal.hitos.every((h) => h.cierre_documento === "2026-09-17") && porId(regMal.hitos).observaciones_pliego.fuera_de_orden === true,
+        `[MUT] el cierre sigue siendo el ancla: ${JSON.stringify(regMal.hitos.map((h) => [h.id, h.cierre_documento, !!h.fuera_de_orden]))}`);
+      // …y los dos datos sobreviven al registro de Mis procesos (con UN comando), sin repetir el cierre en cada fecha
+      const ida = Mn.serializarHitos(regReal.hitos, [], "2026-11-04");
+      const vuelta = Mn.expandirHitos(JSON.parse(JSON.stringify(ida)));
+      assert.ok(ida.docs.length === 1 && ida.docs[0].ci === "2026-09-17" && ida.h.filter((x) => x.o === 1).length === 1 && !ida.h.some((x) => "cierre_documento" in x), `el registro guarda el cierre UNA vez por documento: ${JSON.stringify(ida).slice(0, 300)}`);
+      assert.ok(vuelta.hitos.every((h) => h.cierre_documento === "2026-09-17") && porId(vuelta.hitos).informe_evaluacion.fuera_de_orden === true, "[MUT] y vuelven al leerlo");
+      /* EN MIS PROCESOS: SECOP II dice 16-sep, el documento 17-sep (el caso real) → todas sus fechas piden confirmarse, el cierre no
+         (es el de SECOP II); con el mismo cierre, o sin cierre de SECOP II, ninguna; la que no cuadra dice por qué */
+      const guardado = (cierre) => ({ id: "CRX-VER", estado: "preparando", foto: { nombre: "Proceso", fecha_cierre: cierre, fecha_publicacion: "2026-09-01" } });
+      const ahora = Date.parse("2026-09-12T15:00:00Z");
+      const e = Sg.enriquecer(guardado("2026-09-16T09:00:00.000"), null, ahora, { hitosDocumentos: vuelta });
+      const doc = e.hitos.filter((h) => h.origen === "pliego");
+      assert.ok(doc.length > 5 && doc.every((h) => typeof h.verificar === "string" && h.verificar), `[MUT] SECOP II desmiente el cierre: todas las fechas del documento piden confirmarse: ${JSON.stringify(doc.map((h) => [h.id, h.verificar]))}`);
+      assert.strictEqual(porId(doc).traslado.verificar, "en «Anexo 2 Cronograma.xlsm» se lee como cierre el jueves 17 de septiembre y SECOP II pone el miércoles 16 de septiembre: sus fechas pudieron cambiar", "y dice por qué, nombrando el documento, sin afirmar cuál tiene razón");
+      assert.strictEqual(porId(doc).informe_evaluacion.verificar, "no cuadra con las demás fechas de «Anexo 2 Cronograma.xlsm»", "[MUT] la que no cuadra dice eso, y de qué documento");
+      assert.ok(!e.hitos.find((h) => h.id === "cierre").verificar, "el cierre es el de SECOP II: no se marca");
+      const igual = Sg.enriquecer(guardado("2026-09-17T09:00:00.000"), null, ahora, { hitosDocumentos: vuelta }).hitos.filter((h) => h.verificar).map((h) => h.id);
+      assert.deepStrictEqual(igual, ["informe_evaluacion"], "[MUT] con el mismo cierre, solo la que no cuadra");
+      const sinSecop = Sg.enriquecer({ id: "CRX-VER", estado: "preparando", foto: { nombre: "Proceso", fecha_publicacion: "2026-09-01" } }, null, ahora, { hitosDocumentos: vuelta }).hitos.filter((h) => h.verificar).map((h) => h.id);
+      assert.deepStrictEqual(sinSecop, ["informe_evaluacion"], "sin cierre de SECOP II no hay con qué comparar");
+      // DONDE SE VE: el aviso, lo próximo que vence, la lista ligera, el .ics, la señal de la fila, el calendario y el expediente
+      // a quien ya presentó la oferta, lo próximo es el traslado del documento: también lo dice
+      const ep = Sg.enriquecer({ ...guardado("2026-09-16T09:00:00.000"), estado: "presentado" }, null, ahora, { hitosDocumentos: vuelta });
+      assert.ok(ep.proximo_vencimiento && ep.proximo_vencimiento.id === "traslado" && /sus fechas pudieron cambiar/.test(ep.proximo_vencimiento.verificar || ""), `[MUT] lo próximo que vence lo dice: ${JSON.stringify(ep.proximo_vencimiento)}`);
+      const avisos = Sg.alertasDe([ep], { hoy: "2026-09-12", dias: 30 }).filter((a) => a.tipo === "aviso" && a.hito !== "cierre");
+      assert.ok(avisos.length && avisos.every((a) => / Verifíquela en SECOP II: en «Anexo 2 Cronograma\.xlsm» se lee como cierre el jueves 17 de septiembre/.test(a.mensaje)), `[MUT] el aviso (y el correo) lo dicen: ${JSON.stringify(avisos.map((a) => a.mensaje))}`);
+      // el mismo día del plazo también lo dice
+      const delDia = Sg.alertasDe([Sg.enriquecer({ ...guardado("2026-09-16T09:00:00.000"), estado: "presentado" }, null, Date.parse("2026-09-23T15:00:00Z"), { hitosDocumentos: vuelta })], { hoy: "2026-09-23" })
+        .find((a) => a.tipo === "aviso" && a.hito === "traslado");
+      assert.ok(delDia && /^Es hoy: .* Verifíquela en SECOP II: en «Anexo 2 Cronograma\.xlsm» se lee como cierre/.test(delDia.mensaje), `[MUT] el aviso del día del plazo lo dice: ${JSON.stringify(delDia)}`);
+      assert.ok(Sg.aLigero(e).hitos.filter((h) => h.origen === "pliego").every((h) => h.verificar === true), "[MUT] la lista ligera conserva el sí, sin la frase");
+      assert.ok(/Verifíquela en SECOP II: no cuadra con las demás fechas de «Anexo 2 Cronograma\.xlsm»\./.test(Cr.ics(e.hitos, { proceso: "P" }).replace(/\r\n /g, "")), "[MUT] y el .ics");
+      const pv = { ...ep.proximo_vencimiento, dias: 3 };
+      assert.ok(/\(verifíquela\)$/.test(Cas.senalDe({ estado: "preparando", ya_aviso: true, proximo_vencimiento: pv, hitos: [] }).texto), `[MUT] la fila: ${Cas.senalDe({ estado: "preparando", ya_aviso: true, proximo_vencimiento: pv, hitos: [] }).texto}`);
+      const ev = Cas.eventosDe({ id: "CRX-VER", hitos: Sg.aLigero(e).hitos, fechas_suyas: [] }).find((x) => x.clave === "traslado");
+      assert.ok(/verifíquela en SECOP II/.test(Cas.fuenteEvento(ev)), `[MUT] el calendario: ${Cas.fuenteEvento(ev)}`);
+      const htmlExp = Xp.htmlFechas(ep, { hoy: "2026-09-12" });
+      assert.ok(/>Verifíquela</.test(htmlExp) && /Verifíquela en SECOP II: no cuadra con las demás fechas de «Anexo 2 Cronograma\.xlsm»\./.test(htmlExp) && /Lo próximo que vence: verifíquela/.test(htmlExp), "[MUT] el expediente marca la fecha y dice por qué");
+      /* el porqué que comparten varias fechas va UNA vez, arriba (visto en Chromium a 390 px: once veces la misma frase) */
+      assert.ok((htmlExp.match(/se lee como cierre el jueves 17 de septiembre/g) || []).length === 1 && /«Verifíquela»: en «Anexo 2 Cronograma\.xlsm» se lee como cierre/.test(htmlExp), `[MUT] la frase compartida, una vez: ${(htmlExp.match(/se lee como cierre/g) || []).length}`);
+      // «Hoy» no tapa la marca (revisión adversaria): el traslado que vence hoy dice las dos cosas
+      assert.ok(/Hoy: verifíquela/.test(Xp.htmlFechas(ep, { hoy: "2026-09-23" })), "[MUT] el día del plazo, «Hoy: verifíquela»");
+      assert.ok(!/[Vv]erifíquela/.test(Xp.htmlFechas({ ...ep, proximo_vencimiento: null, hitos: ep.hitos.map(({ verificar, ...h }) => h) }, { hoy: "2026-09-12" })), "sin nada que confirmar, ninguna marca");
+    }
+
     /* (5) EL REGISTRO DE MIS PROCESOS: la hoja una vez por documento, la celda en cada fecha, SIN el renglón (la celda es la cita) */
     {
       const reg = (L) => {
@@ -4882,7 +5001,8 @@ async function main() {
       const doce = [doc(1, "Pliego de condiciones definitivo.pdf"), doc(2, "Adenda 1.pdf"), doc(3, "Adenda 2.pdf"), doc(4, "Estudios previos.pdf"), doc(5, "Anexo tecnico especificaciones.pdf"), doc(6, "Presupuesto oficial.pdf"),
         doc(8, "Respuesta a observaciones.pdf"), doc(9, "Aviso de convocatoria.pdf"), doc(10, "Matriz de riesgos.pdf"), doc(11, "Respuesta observaciones 2.pdf"), doc(12, "Aviso 2.pdf"), doc(13, "Matriz de riesgos 2.pdf")];
       const sinX = Dp.planDeLectura(doce).plan, conX = Dp.planDeLectura([...doce, doc(7, "Anexo2 Cronograma Menor Cuantia V3.xlsm", "xlsm")]).plan;
-      assert.deepStrictEqual(conX, sinX, "[MUT] con el plan lleno, el Excel no desplaza ninguna lectura de hoy");
+      /* desde el 4-nov-2026 el Anexo 2 que rige ENTRA aunque el plan esté lleno (encargo del dueño): por fuera del cupo, sin desplazar a nadie */
+      assert.deepStrictEqual(conX, [...sinX, "7"], "[MUT] con el plan lleno, el Excel no desplaza ninguna lectura de hoy, y entra después de todas");
       const pocos = Dp.planDeLectura([doc(7, "Anexo2 Cronograma Menor Cuantia V3.xlsm", "xlsm"), doc(1, "Pliego de condiciones definitivo.pdf"), doc(9, "Aviso de convocatoria.pdf")]).plan;
       assert.deepStrictEqual(pocos, ["1", "9", "7"], "con cupo, entra el último");
       /* EL MÁS NUEVO PRIMERO (medido en 40 procesos reales: en 5 entraba el «Anexo 2» del proyecto y quedaba fuera el «… Definitivo»).
@@ -4899,10 +5019,14 @@ async function main() {
       const docsV = { indice: { archivos: conVersiones.archivos, plan: conVersiones.plan }, leidos: {}, ilegibles: {},
         cronogramas: { 21: { nombre: nuevo.nombre_archivo, tipo: "cronograma", tipo_legible: "Cronograma", fecha_carga: "2026-10-04", version: CE.VERSION_LECTOR, ...resB } } };
       assert.deepStrictEqual(Dp.hitosDeDocumentos(docsV).cronograma_sin_leer, [], "[MUT] la versión vieja sin leer no se nombra: las fechas que rigen son las de la nueva");
-      // el cronograma que rige se quedó sin cupo: no se va a leer solo, y eso es lo que se dice (no «todavía»)
-      const lleno = Dp.planDeLectura([...doce, doc(7, "Anexo2 Cronograma Menor Cuantia V3.xlsm", "xlsm")]);
+      /* el cronograma que rige se quedó sin cupo: no se va a leer solo, y eso es lo que se dice (no «todavía»). Desde el 4-nov-2026
+         los del día que rige pasan el tope, como mucho TRES: el cuarto del mismo día es el que queda fuera */
+      const cuatro = [7, 14, 15, 16].map((n) => doc(n, `Anexo2 Cronograma Menor Cuantia V3 parte ${n}.xlsm`, "xlsm"));
+      const lleno = Dp.planDeLectura([...doce, ...cuatro]);
+      const fueraX = lleno.archivos.filter((a) => a.cronograma_excel && !a.en_plan).map((a) => a.nombre);
+      assert.ok(fueraX.length === 1 && lleno.plan.length === sinX.length + 3, `[MUT] pasan el tope tres del día que rige, no más: ${lleno.plan.join(",")}`);
       const sinCupo = Dp.hitosDeDocumentos({ indice: { archivos: lleno.archivos, plan: lleno.plan }, leidos: {}, ilegibles: {} }).cronograma_sin_leer;
-      assert.ok(sinCupo.some((x) => x.nombre === "Anexo2 Cronograma Menor Cuantia V3.xlsm" && /no entra entre los 12 documentos que la aplicación lee sola/.test(x.motivo)), `[MUT] sin cupo no es «todavía no se ha leído»: ${JSON.stringify(sinCupo)}`);
+      assert.ok(sinCupo.some((x) => x.nombre === fueraX[0] && /no entra entre los 12 documentos que la aplicación lee sola/.test(x.motivo)), `[MUT] sin cupo no es «todavía no se ha leído»: ${JSON.stringify(sinCupo)}`);
     }
 
     /* (7) EL NAVEGADOR (public/app.js, leerDocumentos): el bloque del Excel se EJECUTA con `api` simulada */

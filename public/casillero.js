@@ -238,7 +238,7 @@
     const out = [];
     for (const h of p.hitos || []) {
       if (!h || !h.fecha) continue;
-      out.push({ ...base, tipo: "hito", clave: h.id, etiqueta: h.etiqueta, fecha: String(h.fecha).slice(0, 10), origen: h.origen || "dataset", evidencia: h.evidencia || null, hecha: null });
+      out.push({ ...base, tipo: "hito", clave: h.id, etiqueta: h.etiqueta, fecha: String(h.fecha).slice(0, 10), origen: h.origen || "dataset", evidencia: h.evidencia || null, hecha: null, verificar: !!h.verificar });
     }
     /* SUS FECHAS SALEN DE `fechas_suyas` (27-oct-2026). La pestaña recibe la lista
        LIGERA (lib/seguimiento, `aLigero`), que no trae `tareas`: leerlas de ahí
@@ -325,6 +325,7 @@
   }
   function fuenteEvento(e) {
     if (e.origen === "usted") return "lo anotó usted";
+    if (e.origen === "pliego" && e.verificar) return "fecha del cronograma del pliego: verifíquela en SECOP II";
     if (e.origen === "pliego") return "fecha del cronograma del pliego";
     if (e.origen === "calculado") return "fecha calculada por la aplicación, no publicada";
     return "fecha publicada en SECOP II";
@@ -452,7 +453,8 @@
     if (!pv || pv.id === "cierre" || pv.id === "manifestacion" || !Number.isInteger(pv.dias) || pv.dias < 0 || !pv.corta) return null;
     return pv;
   }
-  const venceEn = (pv) => (pv.dias === 0 ? "vence hoy" : pv.dias === 1 ? "vence mañana" : `vence en ${pv.dias} días`);
+  /* una fecha que hay que confirmar lo dice en la misma señal (4-nov-2026): el porqué, en el expediente */
+  const venceEn = (pv) => `${pv.dias === 0 ? "vence hoy" : pv.dias === 1 ? "vence mañana" : `vence en ${pv.dias} días`}${pv.verificar ? " (verifíquela)" : ""}`;
   function senalDe(p) {
     const m = p.manifestacion, dr = p.documentos_resumen || {}, tr = p.tareas_resumen || {};
     const pv = proximoQueVence(p);

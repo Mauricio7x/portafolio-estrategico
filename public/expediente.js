@@ -571,6 +571,7 @@
     const pv = p.proximo_vencimiento || null;
     const hitos = (p.hitos || []).map((h) => ({ id: h.id || null, fecha: String(h.fecha).slice(0, 10), etiqueta: h.etiqueta, origen: h.origen || "dataset", evidencia: h.evidencia || null,
       fuente: h.fuente || null, hora_legible: h.hora_legible || null, desde: h.desde || null, otra_fecha: h.otra_fecha || null,
+      verificar: typeof h.verificar === "string" && h.verificar.trim() ? h.verificar.trim() : null,
       proximo: !!(pv && pv.id === h.id && pv.fecha === String(h.fecha).slice(0, 10)) }));
     return [...hitos, ...suyas].sort((a, b) => String(a.fecha).localeCompare(String(b.fecha)));
   }
@@ -603,6 +604,14 @@
         <p class="exp-vacio-texto">Cuando la entidad publique el cronograma, o cuando usted anote una fecha suya, aparecerán aquí y en el calendario de Mis procesos.</p></div></section>`;
     }
     const hayDeDocumentos = fs.some((f) => f.origen === "pliego");
+    /* EL PORQUÉ DE «VERIFÍQUELA», UNA VEZ (4-nov-2026, visto en Chromium a 390 px): el cierre desmentido marca TODAS las fechas de un
+       documento, y la misma frase en once filas hacía la sección de varios metros. La que comparten dos o más fechas va arriba, una
+       vez; cada fila conserva su marca y, si su porqué es solo suyo, lo dice ella. */
+    const cuantas = new Map();
+    for (const f of fs) if (f.verificar) cuantas.set(f.verificar, (cuantas.get(f.verificar) || 0) + 1);
+    const arriba = [...cuantas].filter(([, n]) => n > 1);
+    /* sin cuántas: las que ya pasaron dicen «Pasó», no «Verifíquela», y la cuenta las incluiría */
+    const notaVerificar = arriba.map(([t]) => `<p class="exp-seccion-nota exp-nota-ojo">«Verifíquela»: ${esc(t)}. Confírmelas en SECOP II antes de un plazo.</p>`).join("");
     const filas = fs.map((f) => {
       const pasada = hoy && f.fecha < hoy;
       const esHoy = hoy && f.fecha === hoy;
@@ -610,13 +619,17 @@
       const otra = f.otra_fecha && f.otra_fecha.fecha
         ? ` · El documento${f.otra_fecha.documento ? ` «${f.otra_fecha.documento}»` : ""} dice ${legible(f.otra_fecha.fecha)}${f.otra_fecha.celda && f.otra_fecha.hoja ? ` (hoja ${f.otra_fecha.hoja}, celda ${f.otra_fecha.celda})` : f.otra_fecha.pagina != null ? ` (pág. ${f.otra_fecha.pagina})` : ""}: manda SECOP II, confírmelo allí.`
         : "";
-      const estado = esHoy ? '<span class="exp-estado exp-urgente">Hoy</span>'
+      /* UNA FECHA QUE HAY QUE CONFIRMAR (4-nov-2026): el porqué lo resuelve el servidor (lib/seguimiento.hitosDe) y aquí se dice
+         junto a la fuente, con su marca; no se esconde la fecha */
+      const verificar = f.verificar && cuantas.get(f.verificar) === 1 ? ` · Verifíquela en SECOP II: ${f.verificar}.` : "";
+      const estado = esHoy ? `<span class="exp-estado exp-urgente">Hoy${f.verificar ? ": verifíquela" : ""}</span>`
         : pasada ? '<span class="exp-estado exp-estado-nd"><span class="exp-punto" aria-hidden="true">&#9679;</span>Pasó</span>'
-          : f.proximo ? '<span class="exp-estado exp-estado-falta"><span class="exp-punto" aria-hidden="true">&#9679;</span>Lo próximo que vence</span>' : "";
+          : f.proximo ? `<span class="exp-estado exp-estado-falta"><span class="exp-punto" aria-hidden="true">&#9679;</span>Lo próximo que vence${f.verificar ? ": verifíquela" : ""}</span>`
+            : f.verificar ? '<span class="exp-estado exp-estado-falta"><span class="exp-punto" aria-hidden="true">&#9679;</span>Verifíquela</span>' : "";
       return `<div class="exp-doc exp-fila-fecha${pasada ? " exp-fecha-pasada" : ""}">
         <span class="exp-doc-folio num">${esc(cuando)}</span>
         <span class="exp-doc-nombre">${esc(f.etiqueta)}</span>
-        <span class="exp-doc-meta">${esc(fuenteFecha(f))}${f.evidencia && !/^[a-z0-9_]+$/.test(f.evidencia) ? (f.origen === "pliego" ? ` · «${esc(f.evidencia)}»` : ` · ${esc(f.evidencia)}`) : ""}${esc(otra)}</span>
+        <span class="exp-doc-meta">${esc(fuenteFecha(f))}${f.evidencia && !/^[a-z0-9_]+$/.test(f.evidencia) ? (f.origen === "pliego" ? ` · «${esc(f.evidencia)}»` : ` · ${esc(f.evidencia)}`) : ""}${esc(otra)}${esc(verificar)}</span>
         <span class="exp-doc-mandos">${estado}</span>
       </div>`;
     }).join("");
@@ -625,6 +638,7 @@
       <p class="exp-seccion-nota">El cronograma de la entidad y las fechas que puso usted, en orden. Cada una dice de dónde sale.</p>
       ${hayDeDocumentos ? '<p class="exp-seccion-nota">Las fechas que dicen los documentos son las que la entidad escribió en ellos. Si después las movió en SECOP II sin publicar una adenda, aquí no se ve: antes de un plazo, confírmelo en SECOP II.</p>' : ""}
       ${notaSinLeer}
+      ${notaVerificar}
       <div class="exp-docs">${filas}</div>
       <div class="exp-campo-acciones">
         <button type="button" class="exp-boton exp-boton-suave" data-seg-ics="${esc(p.id)}">Descargar estas fechas (calendario)</button>
