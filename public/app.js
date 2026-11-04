@@ -5911,7 +5911,7 @@
       const en = ev.target.closest("[data-seg-enterado]");
       if (en) {
         const id = en.getAttribute("data-seg-enterado"); en.disabled = true; en.textContent = "Guardando…";
-        try { await api("/api/perfil?op=seguimiento", { method: "POST", body: { perfil: $("f-perfil").value, id, enterado: true } }); await cargarSeguimiento({ forzar: true }); }
+        try { await api("/api/perfil?op=seguimiento", { method: "POST", body: { perfil: $("f-perfil").value, id, enterado: true, adendas_vistas: adendasEnsenadas(id) } }); await cargarSeguimiento({ forzar: true }); }
         catch (e) { en.disabled = false; en.textContent = "No se pudo: intente de nuevo"; en.title = fraseDeFallo(e); }
         return;
       }
@@ -6004,6 +6004,12 @@
          palmo de «Piden atención · N avisos» (hoy «Lo que pide atención») decía otra cifra con la misma palabra.
          `resumen.avisos_proximos` sigue viajando, ya contado bien. */
     ].filter(Boolean).join("");
+  }
+  /* LAS ADENDAS QUE ESTA PANTALLA ENSEÑÓ (4-nov-2026): «Enterado» da por vistas solo esas. La lectura de documentos corre justo después
+     de abrir Mis procesos y puede traer otra adenda mientras usted mira la lista: esa no se dio a ver y sigue pendiente. */
+  function adendasEnsenadas(id) {
+    const p = ultimoSeguimiento && Array.isArray(ultimoSeguimiento.procesos) ? ultimoSeguimiento.procesos.find((x) => x && x.id === id) : null;
+    return p ? (p.cambios || []).filter((c) => c && c.campo === "adendas" && Array.isArray(c.ahora)).flatMap((c) => c.ahora.map(String)) : [];
   }
   function pintarSeguimiento(r) {
     ultimoSeguimiento = r;
@@ -7000,7 +7006,7 @@
       const en = ev.target.closest("[data-seg-enterado]");
       if (en) {
         const id = en.getAttribute("data-seg-enterado"); en.disabled = true;
-        try { await api("/api/perfil?op=seguimiento", { method: "POST", body: { perfil: $("f-perfil").value, id, enterado: true } }); await cargarSeguimiento({ forzar: true }); }
+        try { await api("/api/perfil?op=seguimiento", { method: "POST", body: { perfil: $("f-perfil").value, id, enterado: true, adendas_vistas: adendasEnsenadas(id) } }); await cargarSeguimiento({ forzar: true }); }
         catch (e) { en.disabled = false; mensajeSeg(fraseDeFallo(e), "error"); }
         return;
       }

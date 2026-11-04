@@ -4972,6 +4972,86 @@ async function main() {
       assert.ok(!/[Vv]erifíquela/.test(Xp.htmlFechas({ ...ep, proximo_vencimiento: null, hitos: ep.hitos.map(({ verificar, ...h }) => h) }, { hoy: "2026-09-12" })), "sin nada que confirmar, ninguna marca");
     }
 
+    /* (4e) LAS ADENDAS (4-nov-2026, encargo del dueño: «haz el 1 y 2»): la que no se ha leído pide «verifíquela» en las fechas de los
+       documentos anteriores, y la que usted no ha visto es un cambio del proceso */
+    {
+      const Sg = require("../lib/seguimiento.js");
+      const Cas = require("../public/casillero.js");
+      const arch = (id, nombre, fecha, ext = "pdf", extra = {}) => Dp.clasificarArchivo({ id_documento: id, nombre_archivo: nombre, extensi_n: ext, fecha_carga: `${fecha}T19:00:00.000`,
+        url_descarga_documento: { url: `https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=${id}` }, tamanno_archivo: "40000", ...extra });
+      const anexoP = arch("7", "Anexo 2 Cronograma.pdf", "2026-10-01"), ad1 = arch("8", "Adenda No. 1.pdf", "2026-10-10"), ad2 = arch("9", "Adenda No. 2.pdf", "2026-10-20");
+      const formato = arch("10", "Formato economico ajustado adenda 2.xlsx", "2026-10-21", "xlsx"), zipA = arch("11", "Documentos modificados con adenda 3.zip", "2026-10-22", "zip");
+      const leido = (a, t) => ({ nombre: a.nombre, tipo: a.tipo, tipo_legible: a.tipo_legible, fecha_carga: a.fecha_carga, hechos: Dp.hechosDeTexto(t, { tipo: a.tipo }) });
+      const docsA = (archivos, leidos) => ({ indice: { archivos, plan: archivos.map((a) => a.id_documento) }, ilegibles: {}, leidos });
+      const textoAnexo = "Plazo para presentar observaciones al pliego 15/10/2026\nFecha de cierre 30/10/2026\nPublicación del informe de evaluación 05/11/2026\nAdjudicación 12/11/2026";
+      const base = docsA([anexoP, ad1, ad2, formato], { 7: leido(anexoP, textoAnexo), 8: leido(ad1, "Adjudicación 13/11/2026") });
+      const regA = Dp.hitosDeDocumentos(base);
+      assert.deepStrictEqual(regA.adendas.map((a) => a.id), ["10", "9", "8"], "las adendas de la entidad, la más nueva primero");
+      assert.deepStrictEqual([regA.adenda_sin_leer && regA.adenda_sin_leer.id, regA.adenda_sin_leer && regA.adenda_sin_leer.motivo], ["9", "todavía no se ha leído"],
+        `[MUT] la más nueva SIN LEER, sin contar el formato en Excel (no trae fechas): ${JSON.stringify(regA.adenda_sin_leer)}`);
+      assert.strictEqual(Dp.hitosDeDocumentos({ ...base, leidos: { ...base.leidos, 9: leido(ad2, "Adjudicación 14/11/2026") } }).adenda_sin_leer, null, "[MUT] leídas todas, ninguna");
+      // un comprimido sí cuenta: puede traer el cronograma nuevo y no se abre
+      const conZip = Dp.hitosDeDocumentos({ ...docsA([anexoP, ad1, ad2, formato, zipA], { ...base.leidos, 9: leido(ad2, "Adjudicación 14/11/2026") }) });
+      assert.ok(conZip.adenda_sin_leer && conZip.adenda_sin_leer.id === "11", `[MUT] un .zip de adenda cuenta como sin leer: ${JSON.stringify(conZip.adenda_sin_leer)}`);
+      // una adenda que subió un proponente no es de la entidad
+      assert.ok(!Dp.hitosDeDocumentos(docsA([anexoP, { ...ad2, de_la_entidad: false }], { 7: leido(anexoP, textoAnexo) })).adendas.length, "la de un proponente no cuenta");
+      // el registro la guarda y la devuelve; sin adendas, no agrega nada (el registro pesa lo mismo)
+      const idaA = Mn.serializarHitos(regA.hitos, [], "2026-10-22", { adendas: regA.adendas, adendaSinLeer: regA.adenda_sin_leer });
+      const vueltaA = Mn.expandirHitos(JSON.parse(JSON.stringify(idaA)));
+      assert.ok(vueltaA.adendas.length === 3 && vueltaA.adenda_sin_leer.id === "9" && vueltaA.adenda_sin_leer.motivo === "todavía no se ha leído", `[MUT] van y vuelven por el registro: ${JSON.stringify(idaA.as)}`);
+      /* `ad` va siempre (vacío si no hay): un registro de ANTES de las adendas se lee como «sin dato» (null), no como «ninguna» —con []
+         un «Enterado» guardaba «vio cero» y luego avisaba las viejas (revisión adversaria, reproducido) */
+      const sinAdendas = Mn.serializarHitos(regA.hitos, [], "2026-10-22");
+      assert.ok(Array.isArray(sinAdendas.ad) && !sinAdendas.ad.length && !("as" in sinAdendas), "sin adendas: `ad` vacío y sin `as`");
+      const viejo = { ...JSON.parse(JSON.stringify(sinAdendas)) }; delete viejo.ad;
+      assert.ok(Mn.expandirHitos(viejo).adendas === null && Array.isArray(Mn.expandirHitos(JSON.parse(JSON.stringify(sinAdendas))).adendas), "[MUT] un registro viejo dice «no se sabe» (null); uno nuevo sin adendas, []");
+      assert.deepStrictEqual(Sg.adendasNuevas(null, { guardado: "2026-10-01T10:00:00Z" }), [], "sin dato, ningún aviso");
+      // CUÁNDO UNA ADENDA CUENTA COMO LEÍDA (revisión adversaria, reproducido): con hechos de ESTA versión, y si no trajo fechas, sin hablar del cronograma
+      const conAd2 = (x) => Dp.hitosDeDocumentos({ ...base, leidos: { ...base.leidos, 9: x } }).adenda_sin_leer;
+      const vieja = leido(ad2, "Adjudicación 14/11/2026"); vieja.hechos = { ...vieja.hechos, version: "0|0|c1" };
+      assert.ok(conAd2(vieja) && conAd2(vieja).id === "9", "[MUT] leída con una versión vieja de las reglas no cuenta: sus fechas no hablan hasta rehacerse");
+      const enProsa = conAd2(leido(ad2, "ADENDA No. 2. Se modifica el cronograma del proceso: la fecha de cierre será el seis (6) de noviembre de dos mil veintiséis."));
+      assert.ok(enProsa && enProsa.id === "9" && enProsa.motivo === "se leyó, pero no se le pudo leer ninguna fecha", `[MUT] leída SIN fechas pero hablando del cronograma, sigue pidiendo «verifíquela»: ${JSON.stringify(enProsa)}`);
+      assert.strictEqual(conAd2(leido(ad2, "ADENDA No. 2. Se modifica la experiencia exigida en el numeral 3.2.")), null, "leída sin fechas y sin hablar del cronograma: leída");
+      assert.strictEqual(conAd2(leido(ad2, "ADENDA No. 2. El cronograma del proceso se mantiene sin modificaciones. Se ajusta el formato 5.")), null, "[MUT] «el cronograma se mantiene» no cuenta");
+      // un .xls cuyo nombre dice cronograma sí cuenta, aunque no se pueda leer aquí; otro .xls no
+      const xlsCron = arch("12", "Adenda No. 3 Cronograma ajustado.xls", "2026-10-23", "xls");
+      const conXls = Dp.hitosDeDocumentos({ ...base, indice: { ...base.indice, archivos: [...base.indice.archivos, xlsCron] }, leidos: { ...base.leidos, 9: leido(ad2, "Adjudicación 14/11/2026") } }).adenda_sin_leer;
+      assert.ok(conXls && conXls.id === "12" && conXls.motivo === "no se puede leer aquí", `[MUT] el .xls del cronograma cuenta: ${JSON.stringify(conXls)}`);
+      // MIS PROCESOS: las fechas de documentos ANTERIORES a la adenda sin leer piden confirmarse; las de SECOP II no
+      const gA = { id: "AD-P", estado: "preparando", guardado: "2026-10-05T10:00:00.000Z", foto: { nombre: "P", fecha_cierre: "2026-10-30T09:00:00.000", fecha_publicacion: "2026-09-28" } };
+      const ahoraA = Date.parse("2026-10-22T15:00:00Z");
+      const eA = Sg.enriquecer(gA, null, ahoraA, { hitosDocumentos: vueltaA });
+      const porIdA = Object.fromEntries(eA.hitos.map((h) => [h.id, h]));
+      assert.strictEqual(porIdA.informe_evaluacion.verificar, "«Adenda No. 2.pdf», publicada el martes 20 de octubre, todavía no se ha leído: puede cambiar las fechas de los documentos anteriores", "[MUT] la fecha del anexo anterior lo dice");
+      assert.ok(/«Adenda No\. 2\.pdf»/.test(porIdA.adjudicacion.verificar || "") && !porIdA.cierre.verificar && !porIdA.publicacion.verificar, "[MUT] también la de la Adenda 1, que es anterior; no las de SECOP II");
+      const sinAd = Sg.enriquecer(gA, null, ahoraA, { hitosDocumentos: { ...vueltaA, adenda_sin_leer: null } }).hitos.filter((h) => h.verificar);
+      assert.deepStrictEqual(sinAd, [], "sin adenda sin leer, nada");
+      const nueva = Sg.enriquecer(gA, null, ahoraA, { hitosDocumentos: { ...vueltaA, adenda_sin_leer: { ...vueltaA.adenda_sin_leer, fecha: "2026-10-05" } } }).hitos.find((h) => h.id === "adjudicacion");
+      assert.ok(!nueva.verificar, "[MUT] la fecha de un documento MÁS NUEVO que la adenda sin leer no se marca");
+      // EL AVISO: las publicadas después de guardar, en UN cambio; «Enterado» (visto_adendas) las da por vistas; lo que es historia, nada
+      assert.deepStrictEqual(eA.cambios.map((c) => [c.campo, c.cantidad]), [["adendas", 3]], `[MUT] tres adendas nuevas son UN cambio: ${JSON.stringify(eA.cambios)}`);
+      assert.ok(/^La entidad publicó 3 documentos de adenda; el más nuevo, «Formato economico ajustado adenda 2\.xlsx», el miércoles 21 de octubre\. Revise qué cambió\.$/.test(eA.cambios[0].mensaje), eA.cambios[0].mensaje);
+      assert.deepStrictEqual(Sg.enriquecer({ ...gA, guardado: "2026-10-15T10:00:00.000Z" }, null, ahoraA, { hitosDocumentos: vueltaA }).cambios.map((c) => c.cantidad), [2], "[MUT] antes del primer «Enterado», cuentan las publicadas DESPUÉS de guardar");
+      /* …desde el DÍA DE COLOMBIA del guardado, ese día incluido (revisión adversaria, reproducido): guardado el 20-oct a las 6 p. m. o a
+         las 9 p. m. de Colombia (en UTC, el 21), la adenda del 20 avisa */
+      for (const g of ["2026-10-20T23:00:00.000Z", "2026-10-21T02:00:00.000Z"]) assert.deepStrictEqual(Sg.enriquecer({ ...gA, guardado: g }, null, ahoraA, { hitosDocumentos: vueltaA }).cambios.map((c) => c.cantidad), [2], `[MUT] la del mismo día de Colombia avisa (${g})`);
+      // un proceso que ya cerró no avisa adendas: ya no cambian nada de la oferta
+      assert.deepStrictEqual(Sg.enriquecer(gA, null, Date.parse("2026-11-02T15:00:00Z"), { hitosDocumentos: vueltaA }).cambios, [], "[MUT] cerrado, sin aviso de adendas");
+      assert.deepStrictEqual(Sg.enriquecer({ ...gA, visto_adendas: ["10", "9", "8"] }, null, ahoraA, { hitosDocumentos: vueltaA }).cambios, [], "[MUT] las que ya vio no avisan");
+      // tras «Enterado» se compara por identificador, no por fecha: la que no estaba en el registro ese día (el índice va días atrás) avisa
+      assert.deepStrictEqual(Sg.enriquecer({ ...gA, visto_adendas: ["10", "8"] }, null, ahoraA, { hitosDocumentos: vueltaA }).cambios.map((c) => c.cantidad), [1], "[MUT] …y la que no vio, sí");
+      assert.deepStrictEqual(Sg.enriquecer({ ...gA, estado: "perdido" }, null, ahoraA, { hitosDocumentos: vueltaA }).cambios, [], "[MUT] un proceso que ya es historia no avisa");
+      // LA FILA lo dice por su nombre, y con más de un cambio sigue la frase de siempre
+      assert.strictEqual(Cas.senalDe(Sg.aLigero(eA)).texto, "La entidad publicó 3 documentos de adenda", `[MUT] la fila: ${Cas.senalDe(Sg.aLigero(eA)).texto}`);
+      // EL CENTRO DE ALERTAS en pantalla tampoco le pone «Cambió:» delante (revisión adversaria, reproducido: solo el correo salía limpio)
+      const alA = Sg.alertasDe([eA], { hoy: "2026-10-22" }).find((a) => a.campo === "adendas");
+      assert.ok(/^La entidad publicó 3 documentos de adenda/.test(Cas.fraseAviso(alA, { cambio: "Cambió" })) && Cas.fraseAviso({ tipo: "cambio", mensaje: "Fecha de cierre: antes x, ahora y." }, { cambio: "Cambió" }).startsWith("Cambió: "), "[MUT] la pantalla dice lo que pasó, sin «Cambió:»");
+      assert.strictEqual(Cas.senalDe({ ...Sg.aLigero(eA), cambios: [...eA.cambios, { campo: "fecha_cierre", mensaje: "x" }] }).texto, "Cambiaron 2 cosas del proceso", "con otro cambio, la frase de siempre");
+      // EL EXPEDIENTE: la nota única arriba (el mismo porqué en varias fechas)
+      assert.ok(/«Verifíquela»: «Adenda No\. 2\.pdf», publicada el martes 20 de octubre, todavía no se ha leído/.test(Xp.htmlFechas(eA, { hoy: "2026-10-22" })), "el expediente lo dice una vez arriba");
+    }
+
     /* (5) EL REGISTRO DE MIS PROCESOS: la hoja una vez por documento, la celda en cada fecha, SIN el renglón (la celda es la cita) */
     {
       const reg = (L) => {
@@ -29784,8 +29864,15 @@ async function main() {
         assert.strictEqual(gC.status, 200);
         assert.strictEqual(gC.cuerpo.guardado.foto.fecha_cierre, cierreViejo, "la foto del cliente se conserva (con estado_secop del corpus añadido)");
         assert.ok(gC.cuerpo.guardado.foto.estado_secop, "al guardar por primera vez la referencia toma el estado de SECOP II del corpus");
+        /* LA ADENDA NUEVA (4-nov-2026): el registro del proceso trae una adenda publicada DESPUÉS de guardarlo → un cambio más,
+           que sale en el centro de alertas sin «Cambió:» delante, que «Enterado» da por visto y que otro guardado no resucita */
+        const diaAdenda = H.sumarDias(new Date().toISOString().slice(0, 10), 2);
+        await Mseg2.guardarHitosCronograma(redis, filaV.id_del_proceso, { hitos: [], cronograma_sin_leer: [], adendas: [{ id: "AD-1", nombre: "Adenda No. 1.pdf", fecha: diaAdenda }] });
         const l3 = (await seg2("&perfil=helder")).cuerpo;
         const pC = l3.procesos.find((p) => p.id === filaV.id_del_proceso);
+        const cAd = pC.cambios.find((c) => c.campo === "adendas");
+        assert.ok(cAd && /^La entidad publicó «Adenda No\. 1\.pdf» el .*\. Revise qué cambió\.$/.test(cAd.mensaje), `[MUT] la adenda nueva es un cambio del proceso: ${JSON.stringify(pC.cambios)}`);
+        assert.ok(l3.alertas.some((a) => a.tipo === "cambio" && a.campo === "adendas" && /^La entidad publicó «Adenda No\. 1\.pdf»/.test(a.mensaje)), "[MUT] y sale en el centro de alertas (y el correo), sin «Cambió:» delante");
         assert.ok(pC.cambios.some((c) => c.campo === "fecha_cierre" && /antes .* ahora/.test(c.mensaje)), `cambio de cierre detectado: ${JSON.stringify(pC.cambios)}`);
         assert.strictEqual(pC.cambios_pendientes, pC.cambios.length);
         assert.ok(l3.alertas.some((a) => a.tipo === "cambio" && a.id === filaV.id_del_proceso), "el centro de alertas lista el cambio");
@@ -29797,6 +29884,30 @@ async function main() {
         const pC2 = l4.procesos.find((p) => p.id === filaV.id_del_proceso);
         assert.deepStrictEqual(pC2.cambios, [], "tras «Enterado» no hay cambios pendientes");
         assert.strictEqual(pC2.estado, "interesa"); assert.ok(pC2.visto_el);
+        // cambiar la etapa reescribe el guardado: las adendas vistas se conservan (si no, la adenda volvía a avisar)
+        assert.strictEqual((await seg2("", { metodo: "POST", body: { perfil: "helder", id: filaV.id_del_proceso, estado: "preparando" } })).status, 200);
+        assert.ok(!(await seg2("&perfil=helder")).cuerpo.procesos.find((p) => p.id === filaV.id_del_proceso).cambios.some((c) => c.campo === "adendas"), "[MUT] otro guardado no resucita la adenda vista");
+        // …y una adenda que sale después vuelve a avisar, sola
+        await Mseg2.guardarHitosCronograma(redis, filaV.id_del_proceso, { hitos: [], cronograma_sin_leer: [], adendas: [{ id: "AD-2", nombre: "Adenda No. 2.pdf", fecha: diaAdenda }, { id: "AD-1", nombre: "Adenda No. 1.pdf", fecha: diaAdenda }] });
+        const cAd2 = (await seg2("&perfil=helder")).cuerpo.procesos.find((p) => p.id === filaV.id_del_proceso).cambios.find((c) => c.campo === "adendas");
+        assert.ok(cAd2 && cAd2.cantidad === 1 && /«Adenda No\. 2\.pdf»/.test(cAd2.mensaje), `[MUT] la siguiente adenda avisa sola: ${JSON.stringify(cAd2)}`);
+        /* «Enterado» da por vista solo la que la pantalla ENSEÑÓ (`adendas_vistas`): la AD-3 entró al registro después de pintar la
+           lista y sigue pendiente (revisión adversaria, reproducido) */
+        await Mseg2.guardarHitosCronograma(redis, filaV.id_del_proceso, { hitos: [], cronograma_sin_leer: [], adendas: [{ id: "AD-3", nombre: "Adenda No. 3.pdf", fecha: diaAdenda }, { id: "AD-2", nombre: "Adenda No. 2.pdf", fecha: diaAdenda }, { id: "AD-1", nombre: "Adenda No. 1.pdf", fecha: diaAdenda }] });
+        assert.strictEqual((await seg2("", { metodo: "POST", body: { perfil: "helder", id: filaV.id_del_proceso, enterado: true, adendas_vistas: ["AD-2"] } })).status, 200);
+        const cAd3 = (await seg2("&perfil=helder")).cuerpo.procesos.find((p) => p.id === filaV.id_del_proceso).cambios.find((c) => c.campo === "adendas");
+        assert.ok(cAd3 && cAd3.cantidad === 1 && /«Adenda No\. 3\.pdf»/.test(cAd3.mensaje), `[MUT] la que no se enseñó sigue pendiente: ${JSON.stringify(cAd3)}`);
+        // un registro de ANTES de las adendas (sin `ad`) no deja «vio cero»: «Enterado» no toca lo visto
+        await redis.hset(Mseg2.CLAVE_CRONOGRAMA_HITOS, { [filaV.id_del_proceso]: JSON.stringify({ v: 2, fecha: diaAdenda, escrito: diaAdenda, docs: [], h: [], sin_leer: [] }) });
+        assert.strictEqual((await seg2("", { metodo: "POST", body: { perfil: "helder", id: filaV.id_del_proceso, enterado: true } })).status, 200);
+        await Mseg2.guardarHitosCronograma(redis, filaV.id_del_proceso, { hitos: [], cronograma_sin_leer: [], adendas: [{ id: "AD-3", nombre: "Adenda No. 3.pdf", fecha: diaAdenda }, { id: "AD-2", nombre: "Adenda No. 2.pdf", fecha: diaAdenda }, { id: "AD-1", nombre: "Adenda No. 1.pdf", fecha: diaAdenda }] });
+        const cAd4 = (await seg2("&perfil=helder")).cuerpo.procesos.find((p) => p.id === filaV.id_del_proceso).cambios.find((c) => c.campo === "adendas");
+        assert.ok(cAd4 && cAd4.cantidad === 1 && /«Adenda No\. 3\.pdf»/.test(cAd4.mensaje), `[MUT] con un registro sin dato, lo visto se conserva: ${JSON.stringify(cAd4)}`);
+        // al guardar por PRIMERA vez, las adendas que el registro ya trae cuentan como vistas: estaban antes de guardarlo
+        await seg2(`&perfil=helder&id=${encodeURIComponent(filaV.id_del_proceso)}`, { metodo: "DELETE" });
+        assert.strictEqual((await seg2("", { metodo: "POST", body: { perfil: "helder", id: filaV.id_del_proceso, estado: "interesa" } })).status, 200);
+        assert.ok(!(await seg2("&perfil=helder")).cuerpo.procesos.find((p) => p.id === filaV.id_del_proceso).cambios.some((c) => c.campo === "adendas"), "[MUT] las adendas que ya estaban al guardar no avisan");
+        await redis.hdel(Mseg2.CLAVE_CRONOGRAMA_HITOS, filaV.id_del_proceso);
         assert.strictEqual((await seg2("", { metodo: "POST", body: { perfil: "helder", id: "CO1.NO.EXISTE", enterado: true } })).status, 404, "enterado de algo no guardado → 404");
         // limpieza
         for (const id of [idMC, filaV.id_del_proceso]) await seg2(`&perfil=helder&id=${encodeURIComponent(id)}`, { metodo: "DELETE" });

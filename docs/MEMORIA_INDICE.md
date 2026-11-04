@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 2376304 bytes · 424 secciones · 44 con marcador de superación.
+Derivado del árbol: 2381650 bytes · 425 secciones · 44 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -434,4 +434,5 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | Dos filas con fechas distintas: choca la misma actividad o un plazo, no un aviso ni una adjudicación, y cada fila se lee sola; medido sobre los procesos guardados (4-nov-2026) | 4-nov-2026 | 21231-21273 | 9001 |  |
 | Cada cifra de Mi empresa abre exactamente su lista: el filtro «Solo las que puede presentarse» (4-nov-2026) | 4-nov-2026 | 21274-21285 | 4215 |  |
 | Una sola frase para la capacidad que le queda, y Mis procesos en dos renglones entre 641 y 860 px (4-nov-2026) | 4-nov-2026 | 21286-21294 | 2063 |  |
-| Las fechas que hay que confirmar: el Anexo 2 que rige pasa el tope, el cierre desmentido y la fecha que no cuadra dicen «verifíquela», y el traslado vence el último día (4-nov-2026) | 4-nov-2026 | 21295-21335 | 6529 |  |
+| Las fechas que hay que confirmar: el Anexo 2 que rige pasa el tope, el cierre desmentido y la fecha que no cuadra dicen «verifíquela», y el traslado vence el último día (4-nov-2026) | 4-nov-2026 | 21295-21336 | 6530 |  |
+| La adenda que usted no ha visto avisa, y la que no se ha leído pone «verifíquela» en las fechas anteriores (4-nov-2026) | 4-nov-2026 | 21337-21363 | 5345 |  |

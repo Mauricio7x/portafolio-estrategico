@@ -458,6 +458,9 @@
   function senalDe(p) {
     const m = p.manifestacion, dr = p.documentos_resumen || {}, tr = p.tareas_resumen || {};
     const pv = proximoQueVence(p);
+    /* una adenda nueva se dice por su nombre (4-nov-2026): «Cambió algo del proceso» no decía qué ni dónde mirarlo */
+    const soloAdendas = (p.cambios || []).length === 1 && p.cambios[0].campo === "adendas";
+    if (soloAdendas) { const n = Number(p.cambios[0].cantidad) || 1; return { urgencia: "alta", texto: n === 1 ? "La entidad publicó una adenda" : `La entidad publicó ${n} documentos de adenda` }; }
     if ((p.cambios || []).length) return { urgencia: "alta", texto: (p.cambios || []).length === 1 ? "Cambió algo del proceso" : `Cambiaron ${(p.cambios || []).length} cosas del proceso` };
     /* LA ETAPA MANDA SOBRE EL AVISO (22-sep-2026). A quien ya avisó (`ya_aviso`,
        resuelto por el servidor) no se le pide avisar; en espera del sorteo la
@@ -762,6 +765,8 @@
   function fraseAviso(a, tipos = {}) {
     const rotulo = String(tipos[a.tipo] || a.tipo || "");
     const frase = String(a.mensaje || "");
+    /* la adenda ya dice lo que pasó («La entidad publicó…»): sin «Cambió:» delante (revisión adversaria, 4-nov-2026) */
+    if (a.tipo === "cambio" && a.campo === "adendas") return frase;
     return rotulo && !frase.toLowerCase().startsWith(rotulo.toLowerCase()) ? `${rotulo}: ${frase}` : frase;
   }
 
