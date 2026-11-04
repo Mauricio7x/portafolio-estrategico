@@ -5667,6 +5667,19 @@ async function main() {
       // la tabla REAL tiene lo que el vigía necesita, y main escribe vigilancia.json sin fallar ni con cifras.json ausente
       const PTv = require("../lib/apu/piso_techo.js");
       for (const [k, t] of Object.entries(PTv.TEMERARIO_POR_MODALIDAD)) assert.ok(t.ganadoras > 0 && Number.isInteger(t.bajo_el_corte) && /^\d{1,2}-[a-z]{3}-\d{4}$/.test(t.datos_al) && t.nombre, `fila ${k} de la tabla incompleta para el vigía`);
+      /* LA TABLA DICE LO QUE SE MIDIÓ (4-nov-2026, decisión del dueño): cada fila es la cifra de la base con las reglas
+         del 26-oct (`vigia_despues` de la medición guardada). Si alguien cambia la tabla sin una medición nueva, o la
+         medición sin la tabla, esto falla: la frase de la alerta es un hecho medido, no un texto. */
+      {
+        const medida = JSON.parse(require("fs").readFileSync(require("path").join(__dirname, "..", "tools", "analisis", "reglas_antes_despues_2026-10-26.json"), "utf8")).desde_2024.vigia_despues;
+        for (const [k, t] of Object.entries(PTv.TEMERARIO_POR_MODALIDAD)) {
+          const m = /(\d+) de (\d+)/.exec(String(medida[k] || ""));
+          assert.ok(m, `la medición del 26-oct trae la fila ${k}: ${medida[k]}`);
+          assert.deepStrictEqual([t.bajo_el_corte, t.ganadoras, t.datos_al], [Number(m[1]), Number(m[2]), "26-oct-2026"], `fila ${k}: la tabla = lo medido el 26-oct («${medida[k]}»)`);
+        }
+        assert.ok(/33 de 2\.190 ofertas ganadoras con datos comparables tuvieron más del 12 % de descuento/.test(PTv.fraseCorte(PTv.TEMERARIO_POR_MODALIDAD.licitacion)), "y la frase de licitación lo dice");
+        assert.deepStrictEqual([PTv.TEMERARIO_POR_MODALIDAD.licitacion.baja_pct, PTv.TEMERARIO_POR_MODALIDAD.menor_cuantia.baja_pct, PTv.TEMERARIO_POR_MODALIDAD.minima.baja_pct], [12, 12, 30], "los cortes NO cambian");
+      }
       const osV = require("os"), fsV = require("fs"), pathV = require("path"), cpV = require("child_process");
       const dV = fsV.mkdtempSync(pathV.join(osV.tmpdir(), "vigia-")), resumenV = pathV.join(dV, "resumen.md");
       const salidaV = cpV.spawnSync(process.execPath, [pathV.join(__dirname, "..", "scripts", "base_obra", "vigilar_corte.js"), dV], { env: { ...process.env, GITHUB_STEP_SUMMARY: resumenV }, encoding: "utf8" });
@@ -6690,12 +6703,12 @@ async function main() {
       const u = PT.umbralTemerario(m);
       assert.strictEqual(u.corte_pct, corte, `corte de «${m}»: ${u.corte_pct} (esperado ${corte})`);
       assert.strictEqual(u.baja_pct, 100 - corte); assert.strictEqual(u.medido, medido, `«${m}» medido=${u.medido}`);
-      assert.ok(medido ? new RegExp(`adjudicadas en SECOP II desde 2024 \\(datos al 17-oct-2026\\), [\\d.]+ de [\\d.]+ ofertas ganadoras con datos comparables tuvieron más del ${100 - corte} % de descuento\\.$`).test(u.fuente) && u.fuente.startsWith({ licitacion: "En licitaciones ", menor_cuantia: "En menores cuantías ", minima: "En mínimas cuantías " }[u.clave])
+      assert.ok(medido ? new RegExp(`adjudicadas en SECOP II desde 2024 \\(datos al 26-oct-2026\\), [\\d.]+ de [\\d.]+ ofertas ganadoras con datos comparables tuvieron más del ${100 - corte} % de descuento\\.$`).test(u.fuente) && u.fuente.startsWith({ licitacion: "En licitaciones ", menor_cuantia: "En menores cuantías ", minima: "En mínimas cuantías " }[u.clave])
         : (m ? /Sin medición para esta modalidad/ : /No se conoce la modalidad del proceso/).test(u.fuente), `«${m}»: la fuente va al lado de la cifra («${u.fuente}»)`);
       assert.ok(!/\d ?%/.test(u.fuente) || medido, `«${m}»: sin medición la fuente no repite la cifra («${u.fuente}»)`);
     }
     // cada fila medida cita SU conteo (el de cifras.json, umbral_alerta, campo «todas»)
-    assert.ok(/17 de 1\.750/.test(PT.umbralTemerario(LIC).fuente) && /116 de 5\.387/.test(PT.umbralTemerario(SAMC).fuente) && /270 de 3\.720/.test(PT.umbralTemerario(MIN).fuente));
+    assert.ok(/33 de 2\.190/.test(PT.umbralTemerario(LIC).fuente) && /124 de 5\.894/.test(PT.umbralTemerario(SAMC).fuente) && /276 de 3\.958/.test(PT.umbralTemerario(MIN).fuente));
     // la frase sale de los DATOS de la tabla, no de un texto escrito aparte
     assert.ok(/2\.000 ofertas ganadoras/.test(PT.fraseCorte({ ...PT.TEMERARIO_POR_MODALIDAD.licitacion, ganadoras: 2000 })), "cambiar el conteo cambia la frase");
     // las claves de la tabla son claves que de verdad emite el clasificador (si no, la fila sería inerte)
@@ -6719,9 +6732,9 @@ async function main() {
     // convive con el aviso del límite medido de la entidad (main, 17-oct-2026): entre el corte y el
     // máximo medido no hay alerta, hay ámbar «para justificar» con su fuente
     const amb = tem(90000000, SAMC);
-    assert.strictEqual(amb.nivel, "informativo"); assert.strictEqual(amb.marca, "justificar"); assert.ok(/116 de 5\.387/.test(amb.umbral_fuente || ""), "el ámbar también lleva la fuente del corte");
+    assert.strictEqual(amb.nivel, "informativo"); assert.strictEqual(amb.marca, "justificar"); assert.ok(/124 de 5\.894/.test(amb.umbral_fuente || ""), "el ámbar también lleva la fuente del corte");
     assert.strictEqual(tem(95000000, SAMC).nivel, "ok", "sobre el máximo medido y sin llegar al corte: ok");
-    assert.ok(/270 de 3\.720/.test(tem(69000000, MIN).umbral_fuente || ""), "la alerta de mínima lleva su fuente medida");
+    assert.ok(/276 de 3\.958/.test(tem(69000000, MIN).umbral_fuente || ""), "la alerta de mínima lleva su fuente medida");
     // lo que declara quien llama sigue mandando, y entonces no se le pega una fuente que no es la suya
     const decl = tem(85000000, LIC, { umbral_temerario_pct: 20 });
     assert.notStrictEqual(decl.nivel, "alerta", "umbral_temerario_pct declarado gana al de la modalidad"); assert.strictEqual(decl.umbral_fuente, null);
@@ -6746,7 +6759,7 @@ async function main() {
     assert.strictEqual(pt(MIN).cifras.umbral_temerario, Math.round(500e6 * 0.70), "mínima: umbral en el 70 %");
     assert.strictEqual(pt(null).cifras.umbral_temerario, Math.round(500e6 * 0.80), "sin modalidad: 80 %");
     assert.strictEqual(pt(LIC, { temerario_pct: 20 }).cifras.umbral_temerario, Math.round(500e6 * 0.80), "temerario_pct declarado gana");
-    assert.ok(/Referencia: 88 %.*17 de 1\.750/.test(pt(LIC).fuentes.umbral_temerario), pt(LIC).fuentes.umbral_temerario);
+    assert.ok(/Referencia: 88 %.*33 de 2\.190/.test(pt(LIC).fuentes.umbral_temerario), pt(LIC).fuentes.umbral_temerario);
     assert.ok(pt(LIC).supuestos.some((s) => /\(88 % del presupuesto oficial, medido para esta modalidad\)/.test(s)), "el supuesto dice el corte medido");
     assert.ok(pt(null).supuestos.some((s) => /\(80 % del presupuesto oficial\)/.test(s)), "sin modalidad, el supuesto de siempre");
     // con el corte DECLARADO no se le pega la fuente medida ni el «medido»
@@ -62419,7 +62432,7 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
         await disparar("btn-revisar-oferta", "click", {}); await asentarRO();
         const sinComentariosJ = (h) => h.replace(/<!--[\s\S]*?-->/g, "");   // lo que se VE, no lo que queda comentado
         const hj = sinComentariosJ(porId.get("revision-oferta").innerHTML);
-        okRO(/Su precio puede parecer artificialmente bajo/.test(hj) && /data-umbral-fuente>En mínimas cuantías de obra adjudicadas en SECOP II desde 2024 \(datos al 17-oct-2026\), 270 de 3\.720 ofertas ganadoras con datos comparables tuvieron más del 30 % de descuento\.</.test(hj),
+        okRO(/Su precio puede parecer artificialmente bajo/.test(hj) && /data-umbral-fuente>En mínimas cuantías de obra adjudicadas en SECOP II desde 2024 \(datos al 26-oct-2026\), 276 de 3\.958 ofertas ganadoras con datos comparables tuvieron más del 30 % de descuento\.</.test(hj),
           `(j) la alerta de mínima pinta debajo su fuente medida: ${(hj.match(/data-umbral-fuente>[^<]*/) || ["(no está)"])[0]}`);
         // con el corte DECLARADO (umbral_fuente null) no se pinta una fuente que no es la suya
         respuestaJ = (cuerpo) => { const r = F1.validarFormulario1({ ...cuerpo, umbral_temerario_pct: 20 }); return { ok: true, ...r }; };
