@@ -91,7 +91,7 @@
         <p class="mt-2 text-sm" style="color: var(--text-secondary);">${p.corpus_vacio ? "Todavía no hay licitaciones cargadas en el sistema." : `Hay ${num(p.visibles)} de su tipo de obra, pero ninguna cumple hoy sus requisitos (registro de proponente, capacidad de facturar y caja). Suba un RUP más completo o revise Mi empresa.`}</p>`;
     }
     return `<div class="mi-titular"><div class="min-w-0">${ceja}<p class="mi-titular-h">${quien} hay <span class="mi-num">${num(p.total)}</span> ${p.total === 1 ? "licitación abierta a la que puede presentarse" : "licitaciones abiertas a las que puede presentarse"}</p></div>
-      <button type="button" class="rounded-xl bg-gray-900 px-5 py-2 text-sm font-medium text-white transition hover:bg-gray-700" data-filtro="todo" title="Ver la lista completa">Verlas</button></div>`;
+      <button type="button" class="rounded-xl bg-gray-900 px-5 py-2 text-sm font-medium text-white transition hover:bg-gray-700" data-filtro="${SOLO}" title="Ver las licitaciones a las que puede presentarse">Verlas</button></div>`;
   }
   /* EL DINERO EN JUEGO DE UN SOLO PROCESO ES LA CIFRA DE ESE PROCESO (23-sep-2026):
      «$1,6 millones en juego» sobre uno de $1.598.000, que la lista enseña
@@ -121,7 +121,7 @@
     const cuando = !dia ? null : dia.fecha === cal.hoy ? "hoy" : manana && dia.fecha === manana ? "mañana" : fechaLarga(dia.fecha);
     const suma = pesosExactos(c.valor);
     const sub = [cuando ? `La primera cierra ${cuando === "hoy" || cuando === "mañana" ? cuando : `el ${cuando}`}.` : "", suma ? `${c.n === 1 ? "Vale" : "Suman"} ${suma}.` : ""].filter(Boolean).join(" ");
-    return `<a href="?cierre=7d&amp;ordenar_por=cierre#/licitaciones" data-filtro="cierre=7d&amp;ordenar_por=cierre" class="mi-tarea mi-tarea-ambar" role="link">
+    return `<a href="?${esc(conSolo("cierre=7d&ordenar_por=cierre"))}#/licitaciones" data-filtro="${esc(conSolo("cierre=7d&ordenar_por=cierre"))}" class="mi-tarea mi-tarea-ambar" role="link">
       <span class="mi-punto" aria-hidden="true">&#9679;</span>
       <span class="mi-tarea-texto"><b>${num(c.n)} ${c.n === 1 ? "cierra esta semana" : "cierran esta semana"}</b>${sub ? `<span class="mi-tarea-sub">${esc(sub)}</span>` : ""}</span>
       <span class="mi-ir">Ver por fecha</span></a>`;
@@ -174,11 +174,17 @@
   const VISIBLES_REPARTO = 8;
   const visiblesDe = (p) => (Number.isInteger(p.top) && p.top > 0 ? p.top : VISIBLES_REPARTO);
 
+  /* LA CIFRA ABRE SU LISTA (4-nov-2026, decisión del dueño): todo lo de este pulso cuenta lo que usted puede
+     presentarse (op=pulso, `solo_viables` encendido), así que cada enlace lleva `solo=viables` en el `href`
+     —abrirlo en otra pestaña o copiarlo dice lo mismo que pulsarlo— y en el `data-filtro`. El tablero del dueño
+     («Cómo está el mercado») NO: cuenta sobre todas las visibles y sus barras abren la lista de todo. */
+  const SOLO = "solo=viables";
+  const conSolo = (filtro) => (filtro ? `${filtro}&${SOLO}` : SOLO);
   function htmlDepartamentos(p) {
     const lista = p.porDepartamento || [];
     if (!lista.length) return "";
     const g = barrasRank(lista, {
-      filtroDe: (x) => `dep=${encodeURIComponent(x.nombre)}`, tope: visiblesDe(p),
+      filtroDe: (x) => conSolo(`dep=${encodeURIComponent(x.nombre)}`), tope: visiblesDe(p),
       plegarResto: (n) => `Ver ${n === 1 ? "el departamento restante" : `los ${num(n)} departamentos restantes`}`,
     });
     if (!g) return "";
@@ -190,7 +196,7 @@
     const lista = p.topEntidades || [];
     if (!lista.length) return "";
     const g = barrasRank(lista, {
-      filtroDe: (x) => x.nit ? `entidad=${encodeURIComponent(x.nit)}` : `entidad=${encodeURIComponent(x.nombre)}`, tope: visiblesDe(p),
+      filtroDe: (x) => conSolo(x.nit ? `entidad=${encodeURIComponent(x.nit)}` : `entidad=${encodeURIComponent(x.nombre)}`), tope: visiblesDe(p),
       plegarResto: (n) => `Ver ${n === 1 ? "la entidad restante" : `las ${num(n)} entidades restantes`}`,
     });
     if (!g) return "";
@@ -648,7 +654,7 @@
        MAÑANA (revisión adversaria). Lo que es verdad para los dos es la orden. */
     const titulo = n === 1 ? "En 1 proceso hay que avisar hoy que le interesa"
       : `En ${num(n)} procesos hay que avisar hoy que le interesa`;
-    return `<a href="?manif=urgente#/licitaciones" data-filtro="manif=urgente" class="mi-tarea mi-tarea-rojo" role="link"
+    return `<a href="?${esc(conSolo("manif=urgente"))}#/licitaciones" data-filtro="${esc(conSolo("manif=urgente"))}" class="mi-tarea mi-tarea-rojo" role="link"
       title="Selección abreviada de menor cuantía: primero hay que avisar que le interesa y después se oferta. El plazo lo fija la entidad en el pliego y puede ser de solo unas horas.">
       <span class="mi-punto" aria-hidden="true">&#9679;</span>
       <span class="mi-tarea-texto"><b>${titulo}</b><span class="mi-tarea-sub">Sin avisar que le interesa no puede presentar oferta.${pc ? ` En ${num(pc)}, SECOP II no confirma si el plazo sigue abierto.` : ""}</span></span>
