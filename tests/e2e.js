@@ -11206,6 +11206,21 @@ async function main() {
       // c · la guía de Mis procesos: «confírmelo» con la cifra, no «cumple» con un 134 %
       const capG = require("../lib/guia_proceso.js").guiaDe({ fila: licBanda, perfil: PERFIL, ctx: { ahoraMs: Date.now() } }).requisitos.find((r) => r.clave === "capacidad");
       assert.ok(capG.estado === "revisar" && new RegExp(`anticipo del ${esperado} % o más`).test(capG.detalle), JSON.stringify(capG));
+      assert.ok(capG.detalle.includes(`% de ${require("../lib/requisitos_ley.js").LO_DISPONIBLE}.`) && !/puede facturar hoy/.test(capG.detalle),
+        `la guía nombra la capacidad que le queda con la MISMA frase que «Por qué» (4-nov-2026): «${capG.detalle}»`);
+      /* CENSO: la frase se DEFINE una vez (lib/requisitos_ley) y todos la llaman; y la redacción vieja, que nombraba
+         el mismo hecho con otras palabras, no vuelve a ningún módulo del servidor */
+      {
+        const libDir = path.join(__dirname, "..", "lib");
+        const fuentesLib = [];
+        const barrer = (d) => { for (const n of fs.readdirSync(d, { withFileTypes: true })) { const ruta = path.join(d, n.name); if (n.isDirectory()) barrer(ruta); else if (n.name.endsWith(".js")) fuentesLib.push(ruta); } };
+        barrer(libDir);
+        const conLiteral = fuentesLib.filter((f) => fs.readFileSync(f, "utf8").includes("lo que le queda disponible para contratar")).map((f) => path.relative(libDir, f));
+        assert.deepStrictEqual(conLiteral, ["requisitos_ley.js"], `la frase de la capacidad que le queda se escribe en UN sitio y los demás la llaman: ${conLiteral.join(", ")}`);
+        const viejas = fuentesLib.filter((f) => /puede facturar hoy|lo que usted puede facturar/.test(fs.readFileSync(f, "utf8"))).map((f) => path.relative(libDir, f));
+        assert.deepStrictEqual(viejas, [], `la redacción vieja del mismo hecho no vuelve: ${viejas.join(", ")}`);
+        assert.strictEqual(require("../lib/socio_por_proceso.js").CARENCIAS.capacidad, `la cuantía supera ${require("../lib/requisitos_ley.js").LO_DISPONIBLE}`, "la línea del socio también");
+      }
       // d · el expediente no afirma «le alcanza sin socio»
       const socioB = require("../lib/socio_por_proceso.js").socioPorProceso({ fila: licBanda, base: PERFIL, candidatos: ["genesis"] });
       assert.ok(socioB.recomendacion.tipo === "solo" && socioB.recomendacion.solo_con_anticipo === true && /si el pliego da un anticipo/.test(socioB.frase) && !/le alcanza sin socio/.test(socioB.frase), socioB.frase);
@@ -54096,6 +54111,15 @@ async function main() {
           assert.ok(/<span class="exp-fila-senal">Cierra mañana/.test(fila3), "y debajo lo próximo, una sola cosa");
           const sinEtapa = K.htmlFila({ id: "G", proceso: { nombre: "OBRA" } });
           assert.ok(!/exp-fila-estado/.test(sinEtapa) && /exp-fila-senal"><span class="exp-punto"/.test(sinEtapa), "sin etapa conocida el punto pasa a la señal: no se pinta una etapa vacía");
+          /* ENTRE 641 Y 860 PX, DOS RENGLONES (4-nov-2026): título y valor arriba, etapa y lo próximo debajo. El CSS no
+             se ejecuta en Node: se fija la regla y su efecto se midió en Chromium (filas de 120-164 px a 700, antes ~230) */
+          const htmlF = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
+          const iMed = htmlF.indexOf("@media (min-width: 641px) and (max-width: 860px) {");
+          assert.ok(iMed > 0, "la franja media tiene su propia regla");
+          const med = htmlF.slice(iMed, htmlF.indexOf("\n    }\n", iMed));
+          assert.ok(/\.exp-fila-cifras \{ grid-column: 2; grid-row: 1; \}/.test(med) && /\.exp-fila-etapa \{ grid-column: 1 \/ 3; grid-row: 2;/.test(med),
+            `el valor va al lado del título y la etapa debajo: ${med}`);
+          assert.ok(htmlF.includes("@media (max-width: 640px) {\n      .exp-fila { grid-template-columns: minmax(0, 1fr) auto; }"), "y el teléfono conserva sus tres renglones");
         }
       }
       /* EL BUSCADOR ES UNA FILA, NO UN BLOQUE. `.cas-buscar` heredaba de
@@ -60120,6 +60144,9 @@ async function main() {
         const g = GpRL.guiaDe({ fila: { ...fila }, perfil: "helder", ctx: { ahoraMs: AHORA_RL } });
         const cap = (g.requisitos || []).find((r) => r.clave === "capacidad") || {};
         okRL(cap.estado === "revisar" && /Confirme en el pliego si pide capacidad de contratación/.test(cap.detalle || ""), `(2) ${nombre}: la guía dice «confírmelo» — ${cap.estado}: «${cap.detalle}»`);
+        /* UNA frase para la capacidad que le queda (4-nov-2026): la guía dice lo mismo que «Por qué» (lib/puertas) */
+        okRL((cap.detalle || "").includes(`supera ${require("../lib/requisitos_ley.js").LO_DISPONIBLE}`) && !/puede facturar hoy/.test(cap.detalle || ""),
+          `(2) ${nombre}: la guía nombra la capacidad como «Por qué» — «${cap.detalle}»`);
         const s = SpRL.socioPorProceso({ fila: { ...fila }, base: "helder", candidatos: ["genesis", "prodiac"], ctx: {} });
         okRL(!s || !/Esta le alcanza sin socio/.test(s.frase || ""), `(2) ${nombre}: el consejo de socio no dice «le alcanza sin socio» — «${s && s.frase}»`);
       }
