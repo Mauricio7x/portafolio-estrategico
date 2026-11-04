@@ -30191,6 +30191,207 @@ async function main() {
           for (const t of textosDe(cronSinCorreo.cuerpo)) {
             assert.ok(!Lp.VOSEO_RE.test(t) && !t.match(Lp.RE_EMOJI_UI) && !/\bUNSPSC\b|capacidad residual|cuatro puertas|\bJSON\b|\bRedis\b|\bcorpus\b/.test(t), `respuesta «cron sin correo»: «${t.slice(0, 90)}»`);
           }
+          /* (1 quater) LA REVISIÓN DE ADENDAS DE LA MAÑANA (4-nov-2026). El cron pide el índice de documentos de los procesos
+             guardados que lo ameritan, con la MISMA regla del GET (`refrescarIndice`), sin leer el corpus (la llave y el cierre
+             salen de p6dx) y con sus topes. Los guardados se escriben directo en la base, en un perfil propio, y datos.gov.co va
+             simulado: p6dx da la llave y el cierre, y dmgg-8hin un índice con la adenda nueva. Cada caso marcado con «revisión»
+             lo reprodujo la revisión adversaria del mismo día contra la primera versión. */
+          {
+            const { CLAVES: CLr } = require("../lib/almacen.js");
+            const DocsR = require("../lib/handlers/pliego/documentos.js");
+            const DpR = require("../lib/documentos_proceso.js");
+            const MsegR = require("../lib/manifestacion.js");
+            const LECTOR_R = require("../lib/cronograma_excel.js").VERSION_LECTOR;
+            const PERFIL_REV = "revision-de-adendas", PERFIL_TOPE = "revision-tope";
+            const hoyReal = new Date().toISOString().slice(0, 10);
+            const cierreReal = Hav.sumarDias(hoyReal, 10);   // abierto con el reloj real (la lista) y con el inyectado (la revisión)
+            const filaArch = (id, nombre, dia) => ({ id_documento: id, nombre_archivo: nombre, tamanno_archivo: "1000", extensi_n: "pdf", fecha_carga: `${dia}T10:00:00.000`,
+              url_descarga_documento: { url: `https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=${id}` } });
+            const PLIEGO = filaArch("7101", "Pliego de condiciones definitivo.pdf", Hav.sumarDias(hoyReal, -6));
+            const ADENDA = filaArch("7102", "Adenda No. 1.pdf", Hav.sumarDias(hoyReal, -1));
+            const ID_ABIERTO = "CO1.REV.ABIERTO", ID_FRESCO = "CO1.REV.FRESCO", ID_HISTORIA = "CO1.REV.HISTORIA", ID_VIEJO = "CO1.REV.CERRADO.VIEJO", ID_REGLAS = "CO1.REV.REGLAS";
+            const guardadoR = (estado, cierre) => ({ estado, foto: { nombre: "OBRA DE PRUEBA DE LA REVISIÓN", entidad: "ALCALDÍA DE PRUEBA", fecha_cierre: cierre ? `${cierre}T17:00:00` : null },
+              guardado: `${Hav.sumarDias(hoyReal, -5)}T15:00:00.000Z`, actualizado: `${Hav.sumarDias(hoyReal, -5)}T15:00:00.000Z` });
+            await redis.set(`seguimiento:${PERFIL_REV}`, JSON.stringify({ procesos: {
+              [ID_ABIERTO]: guardadoR("interesa", cierreReal), [ID_FRESCO]: guardadoR("preparando", cierreReal), [ID_HISTORIA]: guardadoR("descartado", cierreReal),
+              [ID_VIEJO]: guardadoR("presentado", Hav.sumarDias(DIA_BOGOTA, -40)), [ID_REGLAS]: guardadoR("interesa", cierreReal) } }));
+            const indiceR = (hace) => { const p = DpR.planDeLectura([PLIEGO], { cierre: cierreReal });
+              return { version: DpR.VERSION, consultado_el: new Date(Date.now() - hace).toISOString(), fuente: "dmgg-8hin", id_del_portafolio: "CO1.BDOS.7100", id_del_portafolio_desde: "corpus", cierre_usado: cierreReal, archivos: p.archivos, plan: p.plan, resumen: p.resumen }; };
+            const docsR = (id, hace, extra = {}) => ({ version: DpR.VERSION, id_proceso: id, indice: indiceR(hace), leidos: {}, ilegibles: {}, formularios: {}, fallos: {}, relecturas: {}, ...extra });
+            const viejoR = async (id) => { const d = await DocsR.leerDocs(redis, id); d.indice = { ...d.indice, consultado_el: new Date(Date.now() - 13 * 3600e3).toISOString() }; await DocsR.escribirDocs(redis, id, d); };
+            await DocsR.escribirDocs(redis, ID_ABIERTO, docsR(ID_ABIERTO, 13 * 3600e3));
+            await DocsR.escribirDocs(redis, ID_FRESCO, docsR(ID_FRESCO, 3600e3));
+            await DocsR.escribirDocs(redis, ID_REGLAS, docsR(ID_REGLAS, 13 * 3600e3, { leidos: { 7101: { tipo: "pliego", hechos: { version: "reglas-de-antes", hitos: [] } } } }));
+            const docsReglasAntes = await redis.get(DpR.claveDocs(ID_REGLAS));
+            const fetchAntesR = global.fetch;
+            const pedidosR = [];
+            let datosCaido = false, datosHtml = false, p6dxVacio = false, durante = null;
+            global.fetch = async (url, opciones) => {
+              const u = decodeURIComponent(String(url));
+              const esP6 = /p6dx-8zbt/.test(u) && /id_del_portafolio/.test(u), esIdx = /dmgg-8hin/.test(u);
+              if (!esP6 && !esIdx) return fetchAntesR(url, opciones);
+              pedidosR.push(u);
+              if (datosCaido) throw new Error("datos.gov.co no respondió (simulado)");
+              if (datosHtml) { const html = "<!DOCTYPE html><html><body>Un momento…</body></html>"; return { ok: true, status: 200, headers: { get: () => "text/html" }, json: async () => JSON.parse(html), text: async () => html }; }
+              if (esIdx && durante) { const f = durante; durante = null; await f(u); }   // lo que hace la pantalla mientras la revisión espera
+              const idQ = (u.match(/id_del_proceso='([^']+)'/) || [])[1];
+              const cuerpo = esP6 ? (!p6dxVacio && idQ && idQ.startsWith("CO1.REV.") ? [{ id_del_proceso: idQ, id_del_portafolio: `CO1.BDOS.${idQ}`, fecha_de_recepcion_de: `${cierreReal}T17:00:00.000` }] : [])
+                : (/proceso='CO1\.BDOS\.CO1\.REV\./.test(u) ? [PLIEGO, ADENDA] : []);
+              return { ok: true, status: 200, headers: { get: () => "application/json" }, json: async () => cuerpo, text: async () => JSON.stringify(cuerpo) };
+            };
+            const comandosR = [];
+            const porCronR = (qs) => pedirAvisos(qs, { authorization: "Bearer secreto-del-cron-de-avisos" });
+            const sinMarcas = async () => { for (const k of await redis.scan("avisos:adendas:*")) await redis.del(k); };
+            const saludR = async () => (await invocar(require("../lib/handlers/procesos/salud.js"), "/api/procesos?op=salud")).cuerpo.revision_adendas;
+            const cercaR = (donde, cuerpo) => { for (const t of textosDe(cuerpo)) assert.ok(!Lp.VOSEO_RE.test(t) && !t.match(Lp.RE_EMOJI_UI) && !/\bUNSPSC\b|capacidad residual|cuatro puertas|\bJSON\b|\bRedis\b|\bcorpus\b|\bERR\b|DOCTYPE/.test(t), `respuesta «${donde}»: «${t.slice(0, 90)}»`); };
+            try {
+              await sinMarcas();
+              upstash.romper((cmd) => { comandosR.push(cmd.map(String)); return null; });
+              let rev;
+              try { rev = await porCronR(`&perfil=${PERFIL_REV}`); } finally { upstash.romper(null); }
+              const ra = rev.cuerpo.revision_adendas;
+              assert.ok(rev.status === 200 && ra && !ra.ya_revisado_hoy && rev.cuerpo.enviados === 0, `[MUT] el cron sin correo hace la revisión de adendas: ${JSON.stringify(rev.cuerpo).slice(0, 300)}`);
+              assert.strictEqual(ra.candidatos, 3, `[MUT] entran el abierto, el fresco y el de reglas anteriores; ni la historia ni el cerrado hace 40 días: ${JSON.stringify(ra)}`);
+              assert.deepStrictEqual(ra.con_adenda_nueva, [ID_ABIERTO], `[MUT] la adenda nueva del índice refrescado: ${JSON.stringify(ra)}`);
+              assert.ok(ra.adendas_nuevas === 1 && ra.refrescados === 1 && ra.revisados === 3, JSON.stringify(ra));
+              assert.ok(ra.saltados.some((s) => s.id === ID_FRESCO && /12 horas/.test(s.motivo)), `[MUT] un índice de menos de 12 h no se vuelve a pedir: ${JSON.stringify(ra.saltados)}`);
+              assert.ok(ra.saltados.some((s) => s.id === ID_REGLAS && /reglas anteriores/.test(s.motivo)), `[MUT] con lecturas de reglas anteriores se salta: ${JSON.stringify(ra.saltados)}`);
+              assert.strictEqual(await redis.get(DpR.claveDocs(ID_REGLAS)), docsReglasAntes, "[MUT] y su registro queda intacto (escribirlo borraría sus fechas)");
+              assert.ok(!pedidosR.some((u) => [ID_FRESCO, ID_HISTORIA, ID_VIEJO, ID_REGLAS].some((x) => u.includes(x))), `solo se consulta datos.gov.co por lo que se refresca: ${pedidosR.join(" | ")}`);
+              /* LA CERRADURA DEL TOPE: ni una lectura del corpus (22 MB de Upstash por vez, lo que llenó la base el 28-oct) y pocos
+                 comandos: 1 GET por proceso; por índice pedido, releer el registro, SET, HSET y HLEN; y la marca, el guardado y el resumen. */
+              const corpusR = comandosR.filter((c) => c.slice(1).some((x) => /^licitaciones:/.test(x)));
+              assert.deepStrictEqual(corpusR, [], `[MUT] la revisión de la mañana no lee el corpus: ${JSON.stringify(corpusR).slice(0, 300)}`);
+              assert.ok(comandosR.length <= ra.revisados + 4 * ra.refrescados + 4, `[MUT] la revisión cuesta pocos comandos: ${comandosR.length} (${comandosR.map((c) => `${c[0]} ${c[1] || ""}`).join(", ")})`);
+              // el registro de fechas trae la adenda, y Mis procesos la avisa sin que nadie abra el expediente
+              const regR = (await MsegR.leerHitosCronograma(redis, [ID_ABIERTO]))[ID_ABIERTO];
+              assert.ok(regR && Array.isArray(regR.adendas) && regR.adendas.some((a) => a.id === "7102"), `[MUT] el registro de fechas queda con la adenda: ${JSON.stringify(regR)}`);
+              const listaR = (await segAv(`&perfil=${PERFIL_REV}`)).cuerpo;
+              assert.ok((listaR.alertas || []).some((a) => a.campo === "adendas" && a.proceso === "OBRA DE PRUEBA DE LA REVISIÓN" && /^La entidad publicó «Adenda No\. 1\.pdf»/.test(a.mensaje)), `y Mis procesos la avisa: ${JSON.stringify(listaR.alertas).slice(0, 300)}`);
+              assert.strictEqual((await DocsR.leerDocs(redis, ID_ABIERTO)).indice.id_del_portafolio_desde, "p6dx", "la llave y el cierre salieron de p6dx, no del corpus");
+              // op=salud lo publica en su mismo MGET, con conteos y sin un solo id (es pública)
+              const salR = await saludR();
+              assert.ok(salR && salR.fecha === DIA_BOGOTA && salR.revisados === 3 && salR.refrescados === 1 && salR.adendas_nuevas === 1 && salR.saltados === 2 && salR.detenida === false, `[MUT] op=salud dice cómo le fue a la revisión: ${JSON.stringify(salR)}`);
+              assert.ok(!/CO1\./.test(JSON.stringify(salR)), `op=salud es pública: ni un id de proceso: ${JSON.stringify(salR)}`);
+              {
+                // un registro escrito por otra versión (o a mano) no cuela un id ni un texto en la respuesta pública
+                const crudoR = await redis.get(CLr.revisionAdendas);
+                await redis.set(CLr.revisionAdendas, JSON.stringify({ ...JSON.parse(crudoR), ids: [ID_ABIERTO], revisados: "3", detenida: "la base de datos dejó de responder: CO1.REV.X" }));
+                const salH = await saludR();
+                assert.ok(salH && !/CO1\./.test(JSON.stringify(salH)) && salH.revisados === null && salH.detenida === false && !("ids" in salH), `[MUT] op=salud pasa lo guardado por su lista de campos: ${JSON.stringify(salH)}`);
+                await redis.set(CLr.revisionAdendas, crudoR);
+              }
+              cercaR("revisión de adendas", rev.cuerpo);
+              // una vez por día: el segundo disparo del cron no consulta nada
+              pedidosR.length = 0;
+              const rev2 = await porCronR(`&perfil=${PERFIL_REV}`);
+              assert.ok(rev2.cuerpo.revision_adendas && rev2.cuerpo.revision_adendas.ya_revisado_hoy === true && pedidosR.length === 0, `[MUT] el segundo disparo del día no revisa: ${JSON.stringify(rev2.cuerpo.revision_adendas).slice(0, 200)}`);
+              // lo que pega el vigilante no revisa: la llave sin «&adendas=1», ni el cron con «enviar=no»
+              assert.strictEqual((await pedirAvisos(`&perfil=${PERFIL_REV}&enviar=no`)).cuerpo.revision_adendas, null, "[MUT] la vista previa con la llave no dispara la revisión");
+              assert.strictEqual((await porCronR(`&perfil=${PERFIL_REV}&enviar=no`)).cuerpo.revision_adendas, null, "[MUT] tampoco el cron con «enviar=no»");
+              /* LA PRUEBA A MANO (llave y «&adendas=1») revisa aunque el cron ya lo hizo hoy, y no toca ni la marca ni el resumen
+                 (revisión: tomaba la marca y dejaba sin revisar la mañana entera, y op=salud mostraba lo parcial) */
+              const resumenAntesR = await redis.get(CLr.revisionAdendas);
+              // datos.gov.co caído: el índice guardado se conserva, el fallo se anota y el aviso responde igual
+              await viejoR(ID_ABIERTO);
+              const antesCaida = await redis.get(DpR.claveDocs(ID_ABIERTO));
+              datosCaido = true;
+              let rev3; try { rev3 = await pedirAvisos(`&perfil=${PERFIL_REV}&adendas=1`); } finally { datosCaido = false; }
+              assert.ok(rev3.status === 200 && !rev3.cuerpo.revision_adendas.ya_revisado_hoy && rev3.cuerpo.revision_adendas.fallos.some((f) => f.id === ID_ABIERTO && /no se pudo consultar/.test(f.motivo)), `[MUT] la llave con «&adendas=1» revisa, y con datos.gov.co caído anota el fallo: ${JSON.stringify(rev3.cuerpo.revision_adendas).slice(0, 300)}`);
+              assert.strictEqual(await redis.get(DpR.claveDocs(ID_ABIERTO)), antesCaida, "[MUT] y el índice guardado queda como estaba");
+              assert.strictEqual(await redis.get(CLr.revisionAdendas), resumenAntesR, "[MUT] la prueba a mano no escribe el resumen que publica op=salud");
+              // (revisión) el muro de un servidor que responde una página: el motivo se dice sin el texto de la máquina
+              datosHtml = true;
+              const errorAntesH = console.error; console.error = () => {};
+              let revH; try { revH = await pedirAvisos(`&perfil=${PERFIL_REV}&adendas=1`); } finally { datosHtml = false; console.error = errorAntesH; }
+              assert.ok(revH.cuerpo.revision_adendas.fallos.some((f) => f.id === ID_ABIERTO && /página web/.test(f.motivo)), `[MUT] el fallo por una página dice qué pasó: ${JSON.stringify(revH.cuerpo.revision_adendas.fallos)}`);
+              cercaR("revisión con el muro de un servidor", revH.cuerpo);
+              assert.strictEqual(await redis.get(DpR.claveDocs(ID_ABIERTO)), antesCaida, "y el índice guardado queda como estaba");
+              // (revisión) p6dx que no devuelve la llave: un índice que dice MENOS que el guardado no se cree
+              p6dxVacio = true;
+              let rev5; try { rev5 = await pedirAvisos(`&perfil=${PERFIL_REV}&adendas=1`); } finally { p6dxVacio = false; }
+              assert.ok(rev5.cuerpo.revision_adendas.fallos.some((f) => f.id === ID_ABIERTO && /sin los documentos que este proceso ya tenía/.test(f.motivo)), `[MUT] p6dx sin la llave no deja un índice vacío: ${JSON.stringify(rev5.cuerpo.revision_adendas).slice(0, 300)}`);
+              assert.strictEqual(await redis.get(DpR.claveDocs(ID_ABIERTO)), antesCaida, "[MUT] el índice guardado sigue entero");
+              assert.ok(((await MsegR.leerHitosCronograma(redis, [ID_ABIERTO]))[ID_ABIERTO] || {}).adendas, "[MUT] y el registro de fechas no se borra");
+              // (revisión) lo que la pantalla guarda MIENTRAS la revisión espera a datos.gov.co no se pierde
+              durante = async () => { const d = await DocsR.leerDocs(redis, ID_ABIERTO); d.leidos["7101"] = { tipo: "pliego", leido_el: new Date().toISOString(), hechos: { version: DpR.hechosVersion(), hitos: [] } }; await DocsR.escribirDocs(redis, ID_ABIERTO, d); };
+              const rev6 = await pedirAvisos(`&perfil=${PERFIL_REV}&adendas=1`);
+              assert.ok(rev6.cuerpo.revision_adendas.refrescados === 1, JSON.stringify(rev6.cuerpo.revision_adendas).slice(0, 300));
+              const tras6 = await DocsR.leerDocs(redis, ID_ABIERTO);
+              assert.ok(tras6.leidos["7101"] && Date.now() - Date.parse(tras6.indice.consultado_el) < 3600e3, `[MUT] el documento que la pantalla guardó mientras tanto sigue leído, con el índice nuevo: ${JSON.stringify(Object.keys(tras6.leidos))}`);
+              // (revisión) …y si la pantalla refrescó el índice en ese rato, la revisión no lo toca
+              await viejoR(ID_ABIERTO);
+              let consultadoPantalla = null;
+              durante = async () => { const d = await DocsR.leerDocs(redis, ID_ABIERTO); consultadoPantalla = new Date(Date.now() - 60e3).toISOString(); d.indice = { ...d.indice, consultado_el: consultadoPantalla }; await DocsR.escribirDocs(redis, ID_ABIERTO, d); };
+              const rev7 = await pedirAvisos(`&perfil=${PERFIL_REV}&adendas=1`);
+              assert.ok(rev7.cuerpo.revision_adendas.saltados.some((s) => s.id === ID_ABIERTO && /mientras tanto/.test(s.motivo)) && (await DocsR.leerDocs(redis, ID_ABIERTO)).indice.consultado_el === consultadoPantalla,
+                `[MUT] lo que la pantalla escribió en ese rato no se pisa: ${JSON.stringify(rev7.cuerpo.revision_adendas.saltados)}`);
+              // (revisión) un cronograma en Excel leído con el lector anterior también se salta: escribirlo borraba sus fechas
+              await DocsR.escribirDocs(redis, ID_FRESCO, docsR(ID_FRESCO, 13 * 3600e3, { cronogramas: { 7101: { version: "lector-de-antes", publicable: true, hoja: "Cronograma", filas: [{ r: "Cierre", f: "14/11/2026" }] } } }));
+              const docsExcelAntes = await redis.get(DpR.claveDocs(ID_FRESCO));
+              const rev8 = await pedirAvisos(`&perfil=${PERFIL_REV}&adendas=1`);
+              assert.ok(rev8.cuerpo.revision_adendas.saltados.some((s) => s.id === ID_FRESCO && /reglas anteriores/.test(s.motivo)), `[MUT] el Excel de otro lector se salta: ${JSON.stringify(rev8.cuerpo.revision_adendas.saltados)}`);
+              assert.strictEqual(await redis.get(DpR.claveDocs(ID_FRESCO)), docsExcelAntes, "[MUT] y su registro queda intacto");
+              // el censo de lo que las reglas de hoy ya no dan por leído: hechos y cronogramas en Excel del índice que pasaron la puerta
+              {
+                const idxC = { archivos: [{ id_documento: "1" }, { id_documento: "2" }] };
+                const al = { hechos: { version: DpR.hechosVersion() } }, viejo = { hechos: { version: "otra" } };
+                assert.strictEqual(DpR.lecturasDeOtraVersion({ indice: idxC, leidos: { 1: al }, cronogramas: { 2: { version: LECTOR_R, publicable: true } } }), 0, "todo al día: 0");
+                assert.strictEqual(DpR.lecturasDeOtraVersion({ indice: idxC, leidos: { 1: viejo } }), 1, "[MUT] los hechos de otra versión cuentan");
+                assert.strictEqual(DpR.lecturasDeOtraVersion({ indice: idxC, cronogramas: { 2: { version: "otra", publicable: true } } }), 1, "[MUT] el Excel de otro lector que pasó la puerta cuenta");
+                assert.strictEqual(DpR.lecturasDeOtraVersion({ indice: idxC, cronogramas: { 9: { version: "otra", publicable: true }, 2: { version: "otra", publicable: false } } }), 0,
+                  "el que ya no está en el índice o no pasó la puerta no aporta fechas: no cuenta (si contara, el proceso no se revisaría nunca)");
+              }
+              // (revisión) la base que deja de responder: la revisión del cron para, op=salud lo dice y el aviso responde igual
+              await sinMarcas(); await viejoR(ID_ABIERTO);
+              upstash.romper((cmd) => (String(cmd[0]).toUpperCase() === "GET" && String(cmd[1]).startsWith("pliego:") ? "ERR caído a propósito" : null));
+              const errorAntesR = console.error; console.error = () => {};   // el registro de la función dice el error de la base: aquí se espera
+              let rev4; try { rev4 = await porCronR(`&perfil=${PERFIL_REV}`); } finally { upstash.romper(null); console.error = errorAntesR; }
+              assert.ok(rev4.status === 200 && /dejó de responder/.test(rev4.cuerpo.revision_adendas.detenida || "") && rev4.cuerpo.revision_adendas.revisados === 0, `[MUT] al primer error de la base la revisión para: ${JSON.stringify(rev4.cuerpo.revision_adendas).slice(0, 300)}`);
+              cercaR("revisión que paró", rev4.cuerpo);
+              const salD = await saludR();
+              assert.ok(salD && salD.detenida === true && salD.fecha === DIA_BOGOTA, `[MUT] op=salud dice que la revisión de hoy paró, y no que no corrió: ${JSON.stringify(salD)}`);
+              // (revisión) dos disparos a la vez: revisa uno solo
+              await sinMarcas(); await viejoR(ID_ABIERTO);
+              const [d1, d2] = await Promise.all([porCronR(`&perfil=${PERFIL_REV}`), porCronR(`&perfil=${PERFIL_REV}`)]);
+              assert.strictEqual([d1, d2].filter((x) => x.cuerpo.revision_adendas && x.cuerpo.revision_adendas.ya_revisado_hoy === true).length, 1, `[MUT] dos disparos a la vez: uno revisa y el otro no: ${JSON.stringify([d1.cuerpo.revision_adendas, d2.cuerpo.revision_adendas]).slice(0, 300)}`);
+              /* EL TOPE cuenta los índices PEDIDOS, no lo leído (revisión: 30 frescos dejaban sin pedir a los siguientes), y un primer
+                 índice no trae adendas «nuevas» (revisión: contaba todas las que ya había) */
+              const procesosTope = {};
+              for (let i = 0; i < avisos.MAX_PROCESOS_REVISION + 5; i++) procesosTope[`CO1.REV.TOPE.${i}`] = guardadoR("interesa", cierreReal);
+              await redis.set(`seguimiento:${PERFIL_TOPE}`, JSON.stringify({ procesos: procesosTope }));
+              const rTope = await avisos.revisarAdendas(redis, { ahora: AHORA, perfil: PERFIL_TOPE, cron: false });
+              assert.ok(rTope.candidatos === avisos.MAX_PROCESOS_REVISION + 5 && rTope.refrescados === avisos.MAX_PROCESOS_REVISION && rTope.fuera_del_tope === 5, `[MUT] como mucho ${avisos.MAX_PROCESOS_REVISION} índices pedidos por corrida: ${JSON.stringify({ ...rTope, saltados: rTope.saltados.length, con_adenda_nueva: rTope.con_adenda_nueva.length })}`);
+              assert.strictEqual(rTope.adendas_nuevas, 0, "[MUT] un primer índice no trae adendas nuevas: trae las que ya había");
+              const rTope2 = await avisos.revisarAdendas(redis, { ahora: AHORA, perfil: PERFIL_TOPE, cron: false });
+              assert.ok(rTope2.refrescados === 5 && rTope2.saltados.length === avisos.MAX_PROCESOS_REVISION, `[MUT] los que quedaron fuera se piden aunque los primeros 30 estén frescos: ${JSON.stringify({ refrescados: rTope2.refrescados, saltados: rTope2.saltados.length, fuera: rTope2.fuera_del_tope })}`);
+              // la base que falla con muchos procesos en cola: no se da un paso más (como mucho uno por trabajador en vuelo)
+              let getsTope = 0;
+              upstash.romper((cmd) => (String(cmd[0]).toUpperCase() === "GET" && String(cmd[1]).startsWith("pliego:CO1.REV.TOPE.") ? (getsTope++, "ERR caído a propósito") : null));
+              const errorAntesT = console.error; console.error = () => {};
+              let rCaida; try { rCaida = await avisos.revisarAdendas(redis, { ahora: AHORA, perfil: PERFIL_TOPE, cron: false }); } finally { upstash.romper(null); console.error = errorAntesT; }
+              assert.ok(rCaida.detenida && getsTope <= 3, `[MUT] al primer error de la base la revisión para: ${getsTope} lecturas intentadas de ${avisos.MAX_PROCESOS_REVISION + 5}`);
+              let t = 0;
+              const rTiempo = await avisos.revisarAdendas(redis, { ahora: AHORA, perfil: PERFIL_TOPE, cron: false, reloj: () => (t += avisos.PRESUPUESTO_REVISION_MS * 0.75) });
+              assert.ok(rTiempo.revisados === 1 && rTiempo.sin_tiempo === rTiempo.candidatos - 1, `[MUT] pasado el presupuesto de tiempo no empieza ningún proceso nuevo: ${JSON.stringify({ revisados: rTiempo.revisados, sin_tiempo: rTiempo.sin_tiempo })}`);
+              // qué procesos y en qué orden: abiertos primero (el que cierra antes), después los cerrados hace 30 días o menos, al final los sin cierre
+              const gOrden = { procesos: {
+                A: { estado: "interesa", foto: { fecha_cierre: "2026-11-20T10:00:00" } }, B: { estado: "interesa", foto: { fecha_cierre: "2026-11-06T10:00:00" } },
+                C: { estado: "presentado", foto: { fecha_cierre: "2026-10-30T10:00:00" } }, D: { estado: "presentado", foto: { fecha_cierre: "2026-10-05T10:00:00" } },
+                E: { estado: "interesa", foto: {} }, F: { estado: "ganado", foto: { fecha_cierre: "2026-11-20T10:00:00" } },
+                G: { estado: "presentado", foto: { fecha_cierre: "2026-10-04T10:00:00" } },
+                H: { estado: "interesa", foto: { fecha_cierre: "2026-09-01T10:00:00", secop_visto: "2026-09-01" }, visto: { fecha_cierre: "2026-11-10T10:00:00", secop_visto: "2026-10-15" } } } };
+              assert.deepStrictEqual(avisos.procesosARevisar([gOrden, { procesos: { B: { estado: "descartado", foto: {} }, Z: { estado: "perdido", foto: {} } } }], "2026-11-04"), ["B", "H", "A", "C", "D", "E"],
+                "[MUT] sin historia, sin repetidos, con la foto más reciente (el «visto» de H) y hasta 30 días después del cierre (D sí, G no)");
+            } finally {
+              global.fetch = fetchAntesR;
+              const idsR = [ID_ABIERTO, ID_FRESCO, ID_HISTORIA, ID_VIEJO, ID_REGLAS, ...Array.from({ length: avisos.MAX_PROCESOS_REVISION + 5 }, (_, i) => `CO1.REV.TOPE.${i}`)];
+              await redis.hdel(MsegR.CLAVE_CRONOGRAMA_HITOS, ...idsR);
+              await redis.del(`seguimiento:${PERFIL_REV}`, `seguimiento:${PERFIL_TOPE}`, CLr.revisionAdendas, ...idsR.map((x) => DpR.claveDocs(x)));
+              await sinMarcas();
+            }
+            console.log("  · revisión de adendas de la mañana: la adenda nueva entra al registro y a Mis procesos sin leer el corpus, una vez al día (también con dos disparos a la vez), sin pisar lo que la pantalla guarda, con tope de índices pedidos y de tiempo, y op=salud la cuenta sin ids, también cuando para");
+          }
           ponerAv("CRON_SECRET", undefined);
 
           // limpieza: ni procesos ni marcas de esta prueba sobreviven a la iteración
@@ -30848,7 +31049,7 @@ async function main() {
          última llamada del servidor a sí mismo: si el pase EXISTE (nunca su valor), el código
          y el resultado; su forma se cierra en el bloque «autollamada del servidor». */
       assert.deepStrictEqual(Object.keys(rSalud.cuerpo).sort(),
-        ["autollamada", "aviso_por_correo", "candado_segundos", "edad_horas", "edad_maxima_horas", "escritura", "historico_hace_dias", "indice_baja", "indice_competencia", "latido", "lectura_indice_baja", "lectura_indice_competencia", "limite_de_registros_por_conexion", "medicion_listado", "motivo", "ok", "respaldo", "sincronizacion_protegida", "sincronizando", "ultima_sincronizacion", "ultimo_error"]);
+        ["autollamada", "aviso_por_correo", "candado_segundos", "edad_horas", "edad_maxima_horas", "escritura", "historico_hace_dias", "indice_baja", "indice_competencia", "latido", "lectura_indice_baja", "lectura_indice_competencia", "limite_de_registros_por_conexion", "medicion_listado", "motivo", "ok", "respaldo", "revision_adendas", "sincronizacion_protegida", "sincronizando", "ultima_sincronizacion", "ultimo_error"]);
       assert.deepStrictEqual(Object.keys(rSalud.cuerpo.respaldo).sort(),
         ["configurado", "falta", "hace_horas", "meses_en_copia", "meses_solo_en_copia", "nunca_corrio", "ultima_completa", "ultimo_error", "vieja"],
         "la copia nocturna publica su estado y qué falta, nada más");
@@ -56626,11 +56827,12 @@ async function main() {
       // op=salud es PÚBLICA y su forma está cerrada: este arreglo no le añade ni le quita campos
       // (los dos del índice de competencia llegaron el 23-sep-2026, `respaldo` el 27-sep-2026, con su propia cerradura, y
       // `escritura` el 30-sep-2026: null salvo con «&escritura=1», bloque «unidad base de datos llena»;
-      // `autollamada` el 18-oct-2026, bloque «autollamada del servidor»)
+      // `autollamada` el 18-oct-2026, bloque «autollamada del servidor»;
+      // `revision_adendas` el 4-nov-2026: conteos de la revisión de adendas de la mañana, bloque del aviso diario)
       assert.deepStrictEqual(Object.keys(s39c.cuerpo).sort(),
         ["autollamada", "aviso_por_correo", "candado_segundos", "edad_horas", "edad_maxima_horas", "escritura", "historico_hace_dias",
           "indice_baja", "indice_competencia", "latido", "lectura_indice_baja", "lectura_indice_competencia",
-          "limite_de_registros_por_conexion", "medicion_listado", "motivo", "ok", "respaldo", "sincronizacion_protegida",
+          "limite_de_registros_por_conexion", "medicion_listado", "motivo", "ok", "respaldo", "revision_adendas", "sincronizacion_protegida",
           "sincronizando", "ultima_sincronizacion", "ultimo_error"]);
 
       /* ── B y C · qué se rehace y qué no (el trabajo caro escala con el CORPUS) ── */
