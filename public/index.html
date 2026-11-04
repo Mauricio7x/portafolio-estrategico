@@ -1660,7 +1660,7 @@
 
     /* «PIDEN ATENCIÓN», COMPACTO (8-sep-2026). Una fila por PROCESO, no por
        aviso: dos renglones recortados por CSS —el nombre y la frase entera del
-       aviso más urgente— y «+N» cuando ese proceso tiene más. El recorte es
+       aviso más urgente— y «N avisos más de este proceso» (antes «+N») cuando tiene más. El recorte es
        visual, nunca del texto: una frase cortada a la mitad dice otra cosa. */
     .cas-avisos { display: flex; flex-direction: column; gap: 2px; }
     .cas-aviso { display: flex; align-items: center; gap: var(--esp-2); border-radius: var(--radius-sm); }
@@ -1690,11 +1690,55 @@
     .cas-aviso-mas:hover { text-decoration: underline; }
     @media (min-width: 640px) { .cas-aviso-nombre, .cas-aviso-frase { font-size: var(--tipo-3); } .cas-aviso-frase { font-size: var(--tipo-2); } }
 
+    /* MIS PROCESOS COMO c07 (3-nov-2026). La cabecera con tres cifras en píldora, «Lo que pide atención»
+       y «Sus procesos» con sus dos vistas al lado del título; las etapas como «Nombre N». Los colores son
+       los tokens de la piel: ningún literal. */
+    #tab-seguimiento .seg-contadores { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+    #tab-seguimiento .seg-contador { border: 2px solid var(--border-fuerte); border-radius: 999px; padding: 7px 16px; font-size: 17px; color: var(--text-secondary); }
+    #tab-seguimiento .seg-contador b { color: var(--text-primary); font-weight: 700; font-variant-numeric: tabular-nums; }
+    #tab-seguimiento .seg-contador-rojo { border-color: var(--danger); }
+    #tab-seguimiento .seg-bloque { margin-top: 26px; }
+    #tab-seguimiento .seg-cab { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 14px; margin-bottom: 10px; }
+    #tab-seguimiento .seg-cab-procesos { align-items: center; }
+    #tab-seguimiento .seg-cab-t { margin: 0; font-size: 20px; font-weight: 700; color: var(--text-primary); }
+    #tab-seguimiento .seg-nota { margin: 0; font-size: 16px; color: var(--text-secondary); }
+    #tab-seguimiento .seg-etapas { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 4px; }
+    #app#app #tab-seguimiento .seg-etapa { min-height: 48px; padding: 0 16px; border: 0; border-radius: 999px; background: transparent;
+      font-size: 17px; color: var(--text-secondary); cursor: pointer; }
+    #tab-seguimiento .seg-etapa:hover { background: var(--bg-inset); color: var(--text-primary); }
+    #app#app #tab-seguimiento .seg-etapa[aria-pressed="true"] { background: var(--accent); color: var(--accent-texto); font-weight: 600; }
+    #tab-seguimiento .seg-etapa-n { font-variant-numeric: tabular-nums; font-weight: 700; }
+    /* «Abrir SECOP II» en el aviso de interés: un enlace vestido de botón, como «Enterado» */
+    #app#app .cas-aviso-secop { display: inline-flex; align-items: center; gap: 6px; flex: 0 0 auto; min-height: 48px; padding: 0 14px;
+      border-radius: var(--radius-accion); background: var(--bg-card); box-shadow: inset 0 0 0 1px var(--border-fuerte);
+      font-size: var(--tipo-2); font-weight: 600; color: var(--text-primary); text-decoration-line: none; white-space: nowrap; }
+    #app#app .cas-aviso-secop:hover { background: var(--bg-inset); }
+    /* en el teléfono el botón de al lado no aprieta el texto: baja a su propio renglón (medido: el aviso
+       con «Abrir SECOP II» medía 430 px de alto a 390 px, con el texto en una columna de 90 px) */
+    .cas-aviso { flex-wrap: wrap; }
+    .cas-aviso-btn { flex: 1 1 260px; }
+    .cas-aviso-btn + :is(.cas-aviso-secop, .cas-aviso-visto) { margin-left: auto; }
+    .cas-aviso-n { display: block; margin-top: 2px; font-size: var(--tipo-2); font-weight: 400; color: var(--text-secondary); padding: 0; }
+
     /* 10 · LA FILA DE LA LISTA MAESTRA. La fila ENTERA es el botón que abre el
        expediente: en el teléfono un objetivo de 64 px no se falla. Una fila dice
        UNA cosa —la que más urge— y dos cifras alineadas; no cinco fichas. */
-    .exp-lista { display: flex; flex-direction: column; gap: var(--esp-2); }
-    .exp-fila { display: grid; grid-template-columns: 1fr auto auto; gap: var(--esp-3); align-items: center;
+    /* UNA CAJA CON RENGLONES, NO UNA PILA DE TARJETAS (3-nov-2026, c07): la lista se lee como una tabla
+       de tres columnas —qué es · en qué va y lo próximo · cuánto vale— y en el teléfono como dos
+       renglones por proceso. Sin `overflow:hidden`: recortaría el anillo de foco de la primera fila. */
+    .exp-lista { display: flex; flex-direction: column; gap: 0; border-radius: var(--radius-md); background: var(--bg-card); box-shadow: 0 0 0 1px var(--border), var(--filo); }
+    .exp-lista:empty { display: none; }
+    .exp-lista > .exp-fila { border-radius: 0; box-shadow: none; background: transparent; }
+    .exp-lista > .exp-fila:first-child { border-top-left-radius: var(--radius-md); border-top-right-radius: var(--radius-md); }
+    .exp-lista > .exp-fila:last-child { border-bottom-left-radius: var(--radius-md); border-bottom-right-radius: var(--radius-md); }
+    .exp-lista > .exp-fila + .exp-fila { border-top: 1px solid var(--border); }
+    .exp-lista > .exp-fila:hover { background: var(--bg-inset); box-shadow: none; }
+    .exp-fila-etapa { min-width: 0; display: flex; flex-direction: column; gap: 2px; font-size: var(--tipo-2); color: var(--text-secondary); }
+    .exp-fila-estado { display: flex; align-items: center; gap: 6px; font-weight: 500; color: var(--text-primary); }
+    .exp-fila-etapa .exp-fila-senal { margin-top: 0; color: inherit; }
+    /* la pista de las cifras tiene ANCHO FIJO: con `auto` cada fila medía la suya y la columna de la etapa
+       bailaba 40 px de un renglón a otro (revisión adversaria); 180 px caben «$ 999.999.999.999» */
+    .exp-fila { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 250px) 180px auto; gap: var(--esp-3) var(--esp-4); align-items: center;
       width: 100%; text-align: left; padding: var(--esp-4); border: 0; cursor: pointer;
       border-radius: var(--radius-md); background: var(--bg-card); box-shadow: 0 0 0 1px var(--border), var(--filo);
       transition: box-shadow var(--dur-2) var(--ease-out), background-color var(--dur-2) var(--ease-out); }
@@ -1709,17 +1753,24 @@
     .exp-senal-alta .exp-punto { color: var(--danger); }
     .exp-senal-media .exp-punto { color: var(--warn); }
     .exp-senal-baja .exp-punto { color: var(--text-tertiary); }
-    .exp-fila-cifras { display: flex; gap: var(--esp-4); }
+    .exp-fila-cifras { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
     .exp-fila-cifras .exp-cifra { flex: 0 0 auto; min-width: 0; padding: 0; border: 0; text-align: right; }
     .exp-fila-cifras .exp-cifra + .exp-cifra { border-left: 0; }
     .exp-fila-cifras .exp-cifra-valor { font-size: var(--tipo-4); }
     .exp-fila-ir { color: var(--text-tertiary); display: flex; }
     .exp-fila:hover .exp-fila-ir { color: var(--accent); }
-    @media (max-width: 640px) {
-      .exp-fila { grid-template-columns: 1fr auto; }
-      .exp-fila-cifras { grid-column: 1 / -1; justify-content: flex-start; gap: var(--esp-5);
+    /* en renglones hasta 860 px, no hasta 640: entre los dos la pista de la etapa se comía el título, que
+       quedaba en 160 px y cuatro renglones (medido a 700 px: filas de 175 px) */
+    @media (max-width: 860px) {
+      .exp-fila { grid-template-columns: minmax(0, 1fr) auto; }
+      .exp-fila-texto { grid-column: 1; grid-row: 1; }
+      .exp-fila-ir { grid-column: 2; grid-row: 1; }
+      .exp-fila-etapa { grid-column: 1 / -1; grid-row: 2; }
+      .exp-fila-cifras { grid-column: 1 / -1; grid-row: 3; flex-direction: row; align-items: baseline; justify-content: flex-start; gap: var(--esp-5);
         margin-top: var(--esp-3); padding-top: var(--esp-3); border-top: 1px solid var(--border); }
       .exp-fila-cifras .exp-cifra { text-align: left; }
+    }
+    @media (max-width: 640px) {
       .exp-cifra { min-width: 0; }
     }
     /* 11 · EL ALTA DE UN DOCUMENTO: cuatro campos y ninguno más. Pedir seis por
@@ -3962,21 +4013,22 @@
            la interacción de la pestaña se delega desde `#tab-seguimiento`: fuera
            de aquí habría que duplicar los cuatro oyentes. -->
       <div id="seg-maestra">
-      <div class="cabecera-pestana flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 class="titulo-pestana">Mis procesos</h1>
-          <p class="subtitulo-pestana">Los que guardó desde la lista: qué necesita para presentarse a cada uno, en qué etapa va, qué viene en el cronograma y qué cambió desde la última vez que lo miró.</p>
-        </div>
-        <div id="seg-resumen" class="flex flex-wrap gap-2 text-xs"></div>
+      <!-- LA CABECERA DE c07 (3-nov-2026): el título y tres cifras («guardados · siguen abiertos · cambios
+           sin ver»). El párrafo de 27 palabras que explicaba la pestaña se retira: la pestaña se explica sola
+           y el vacío ya dice qué hace. -->
+      <div class="cabecera-pestana">
+        <h1 class="titulo-pestana">Mis procesos</h1>
+        <div id="seg-resumen" class="seg-contadores"></div>
       </div>
 
-      <!-- centro de alertas: nace oculto; aparece con la primera alerta -->
-      <section id="seg-alertas" class="mt-6 hidden rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-900/5">
-        <div class="flex flex-wrap items-center justify-between gap-2">
-          <h3 class="font-semibold tracking-tight">Piden atención</h3>
-          <p id="seg-alertas-n" class="text-xs text-gray-500"></p>
+      <!-- centro de alertas: nace oculto; aparece con la primera alerta. Se llama como en Mi empresa:
+           es la MISMA lista, pintada con las mismas piezas -->
+      <section id="seg-alertas" class="seg-bloque hidden" aria-labelledby="seg-alertas-t">
+        <div class="seg-cab">
+          <h2 id="seg-alertas-t" class="seg-cab-t">Lo que pide atención</h2>
+          <p id="seg-alertas-n" class="seg-nota"></p>
         </div>
-        <div id="seg-alertas-lista" class="mt-3"></div>
+        <div id="seg-alertas-lista" class="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-gray-900/5"></div>
       </section>
 
       <!-- ══════ MIS PROCESOS (ago 2026): guardar, seguir y estudiar a la competencia ══════
@@ -3985,15 +4037,21 @@
            presentaron y qué dicen las fuentes abiertas de cada uno. Los datos
            salen de /api/perfil?op=seguimiento; nace oculto y aparece con el
            primer proceso guardado (o con el resumen si ya hay). -->
-      <section id="seccion-seguimiento" class="mt-6 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+      <section id="seccion-seguimiento" class="seg-bloque" aria-labelledby="seg-procesos-t">
+        <!-- «SUS PROCESOS» Y SUS DOS VISTAS JUNTO AL TÍTULO (3-nov-2026, c07): Lista | Calendario mandan
+             sobre lo que viene debajo, y por eso van con su título y no al lado del buscador. -->
+        <div class="seg-cab seg-cab-procesos">
+          <h2 id="seg-procesos-t" class="seg-cab-t">Sus procesos</h2>
+          <div class="cas-vistas" role="group" aria-label="Cómo quiere verlos">
+            <button type="button" id="seg-vista-lista" class="cas-vista-btn" data-cas-vista="lista" aria-pressed="true">Lista</button>
+            <button type="button" id="seg-vista-calendario" class="cas-vista-btn" data-cas-vista="calendario" aria-pressed="false">Calendario</button>
+          </div>
+        </div>
         <!-- cómo le va de verdad: ganadas · perdidas · sin resultado, solo con
              tres o más presentadas; nace oculto y lo pinta pintarSeguimiento -->
         <div id="seg-desenlace" class="mb-4 hidden"></div>
-        <div class="flex flex-wrap items-center justify-between gap-3">
-          <!-- el título de la pestaña ya dice qué es esto: repetirlo aquí solo
-               gastaba una línea. Quedan los filtros por etapa. -->
-          <div id="seg-filtros" class="flex flex-wrap gap-1.5 text-xs"></div>
-        </div>
+        <!-- las etapas, «Nombre N» como en c07 -->
+        <div id="seg-filtros" class="seg-etapas"></div>
 
         <!-- ══════ EL CASILLERO (7-sep-2026) ══════
              Encargo del dueño: «que se parezca a un casillero, como un drive,
@@ -4013,13 +4071,10 @@
           <!-- DOS MANDOS, NO SEIS (7-sep-2026). Antes de ver un solo proceso
                había que pasar por buscar, ordenar, agrupar, la vista, un botón
                de descarga y cinco fichas de carpeta: a 390 px eran doce mandos
-               apilados, una pantalla entera de botones. Se quedan los dos que
-               se usan en cada visita —buscar y la vista— y el resto se pliega
-               en «Ordenar y agrupar», que nace cerrado. -->
-          <div class="cas-vistas" role="group" aria-label="Cómo quiere verlos">
-            <button type="button" id="seg-vista-lista" class="cas-vista-btn" data-cas-vista="lista" aria-pressed="true">Lista</button>
-            <button type="button" id="seg-vista-calendario" class="cas-vista-btn" data-cas-vista="calendario" aria-pressed="false">Calendario</button>
-          </div>
+               apilados, una pantalla entera de botones. Se quedan a la vista los
+               dos que se usan en cada visita —buscar y la vista, que desde el
+               3-nov va junto a «Sus procesos»— y el resto se pliega en «Ordenar
+               y agrupar», que nace cerrado. -->
         </div>
         <details id="seg-organizar" class="cas-organizar">
           <summary class="cas-organizar-titulo"><span class="min-w-0 flex-1">Ordenar, agrupar y organizar las carpetas</span></summary>
