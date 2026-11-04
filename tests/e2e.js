@@ -4754,7 +4754,54 @@ async function main() {
       assert.ok(filaOculta.publicable === true && fechasDe(filaOculta).cierre === "2026-09-07", `[MUT] la fila oculta no se lee: ${fechasDe(filaOculta).cierre}`);
       // …y VISIBLE, dos filas del mismo hito con fechas distintas: no se adivina (el lector se quedaba con la primera)
       const dosFilas = await leer([{ nombre: HOJA, celdas: celdasDe(conFilaVieja) }]);
-      assert.ok(dosFilas.publicable === false && /dos filas dan fechas distintas para «Entrega de la oferta» \(celdas D23 y D24\)/.test(dosFilas.motivo), `[MUT] dos filas del cierre con fechas distintas: ${dosFilas.motivo}`);
+      assert.ok(dosFilas.publicable === false && /la misma actividad, «Entrega de la oferta», trae dos fechas distintas \(celdas D23 y D24\)/.test(dosFilas.motivo), `[MUT] dos filas del cierre con fechas distintas: ${dosFilas.motivo}`);
+      // …aunque la copia cambie mayúsculas, tildes, signos o espacios: es la misma actividad
+      const copiaDisfrazada = conFilaVieja.map(([n, c, d]) => [n, n === 23 ? "FECHA DE CIERRE  [Presentacion de ofertas]:" : c, d]);
+      const disfrazada = await leer([{ nombre: HOJA, celdas: celdasDe(copiaDisfrazada) }]);
+      assert.ok(disfrazada.publicable === false && /la misma actividad, «Entrega de la oferta», trae dos fechas distintas \(celdas D23 y D24\)/.test(disfrazada.motivo), `[MUT] la copia con otra letra sigue siendo la misma actividad: ${disfrazada.motivo}`);
+      /* ACTIVIDADES DISTINTAS EN UN MISMO HITO (4-nov-2026, 13 de 36 anexos públicos medidos en producción): la licitación pública
+         trae la audiencia de adjudicación y, al día siguiente, la publicación del acto; y más de un aviso. No es un conflicto: manda
+         la primera fila, y la segunda no aporta otra fecha */
+      const lp = [...REALES.B.filter(([n]) => n !== 30), [9, "Aviso de convocatoria (segunda publicación)", S("2026-08-11")], [30, "Audiencia de adjudicación", S("2026-09-24")],
+        [31, "Publicación acto administrativo de adjudicación o de declaratoria de desierto", S("2026-09-25")]].sort((a, b) => a[0] - b[0]);
+      const licitacion = await leer([{ nombre: HOJA, celdas: celdasDe(lp) }]);
+      const hLp = licitacion.publicable ? CE.hitosDeFilas(licitacion.filas, licitacion.hoja).hitos : [];
+      const celdaDe = (hs, id) => (hs.find((h) => h.id === id) || {}).celda;
+      assert.ok(licitacion.publicable === true, `[MUT] dos actividades distintas del mismo hito no tumban la hoja: ${licitacion.motivo}`);
+      assert.ok(fechasDe(licitacion).adjudicacion === "2026-09-24" && celdaDe(hLp, "adjudicacion") === "D30" && fechasDe(licitacion).aviso === "2026-08-04" && celdaDe(hLp, "aviso") === "D8",
+        `manda la primera fila de cada hito: ${JSON.stringify(hLp.map((h) => [h.celda, h.id, h.fecha]))}`);
+      assert.ok(!hLp.some((h) => h.celda === "D9" || h.celda === "D31"), `[MUT] la segunda fila no aporta ninguna fecha: ${JSON.stringify(hLp.map((h) => [h.celda, h.id]))}`);
+      assert.strictEqual(Dp.cronogramaDeExcel(JSON.parse(JSON.stringify(licitacion))).resumen.publicable, true, "el servidor aplica la misma regla al recibirla");
+      // …y el cierre con dos rótulos y dos días también pasa: lo publica SECOP II, que manda; el del anexo es la primera fila
+      const dosCierres = await leer([{ nombre: HOJA, celdas: celdasDe([...REALES.B, [25, "Nueva fecha de cierre", S("2026-09-09")]].sort((a, b) => a[0] - b[0])) }]);
+      assert.ok(dosCierres.publicable === true && fechasDe(dosCierres).cierre === "2026-09-07" && celdaDe(CE.hitosDeFilas(dosCierres.filas, dosCierres.hoja).hitos, "cierre") === "D24", `[MUT] el cierre con dos rótulos toma la primera fila: ${dosCierres.motivo}`);
+      /* PERO UN PLAZO QUE SECOP II NO PUBLICA, con dos fechas, choca aunque los rótulos difieran (revisión adversaria del 4-nov-2026,
+         reproducido): la adenda que escribe el plazo nuevo en otra fila («… (Adenda 1)», «Nuevo plazo para…») dejaba el VIEJO, y nada
+         lo corrige. El error caro es el plazo falso; sin él, «no se da por leído», con su motivo */
+      const obsPliego = [20, "Presentación de observaciones al pliego de condiciones", S("2026-09-03")];
+      for (const [rot, dia] of [["Plazo para presentar observaciones al pliego de condiciones (Adenda 1)", "2026-09-05"], ["Nuevo plazo para presentar observaciones al pliego", "2026-09-05"]]) {
+        const adenda = await leer([{ nombre: HOJA, celdas: celdasDe([...REALES.B, obsPliego, [21, rot, S(dia)]].sort((a, b) => a[0] - b[0])) }]);
+        assert.ok(adenda.publicable === false && /dos filas dan fechas distintas para el plazo «Observaciones al pliego» \(celdas D20 y D21\)/.test(adenda.motivo), `[MUT] un plazo con dos fechas no se adivina («${rot}»): ${adenda.motivo}`);
+      }
+      const otraRedaccion = await leer([{ nombre: HOJA, celdas: celdasDe([...REALES.B, [12, "Plazo para presentar las observaciones al proyecto de pliego", S("2026-08-14")]].sort((a, b) => a[0] - b[0])) }]);
+      assert.ok(otraRedaccion.publicable === false && /el plazo «Observaciones al proyecto de pliego» \(celdas D11 y D12\)/.test(otraRedaccion.motivo), `[MUT] el plazo de observaciones al proyecto con dos fechas: ${otraRedaccion.motivo}`);
+      /* UNA FILA NO SE LLEVA EL HITO DE OTRA (4-nov-2026): pasadas juntas, el lector de los PDF no repite un hito ya tomado y prueba
+         el siguiente que case. La copia de «observaciones al proyecto de pliego» con la MISMA fecha (que la puerta deja pasar) salía
+         como el plazo de observaciones AL PLIEGO con la fecha del proyecto, y la fila de verdad de ese plazo se perdía. Fila por fila,
+         cada una da su actividad y de cada una manda la primera */
+      const copia = await leer([{ nombre: HOJA, celdas: celdasDe([...REALES.B, obsPliego, [12, "Plazo para presentar observaciones al proyecto de Pliego de Condiciones", S("2026-08-12")]].sort((a, b) => a[0] - b[0])) }]);
+      const hC = copia.publicable ? CE.hitosDeFilas(copia.filas, copia.hoja).hitos : [];
+      assert.ok(copia.publicable === true && fechasDe(copia).observaciones_proyecto === "2026-08-12" && celdaDe(hC, "observaciones_proyecto") === "D11", `la copia con la misma fecha no tumba la hoja: ${copia.motivo} ${JSON.stringify(hC.map((h) => [h.celda, h.id, h.fecha]))}`);
+      assert.ok(fechasDe(copia).observaciones_pliego === "2026-09-03" && celdaDe(hC, "observaciones_pliego") === "D20" && !hC.some((h) => h.celda === "D12"),
+        `[MUT] la copia no se vuelve el plazo de observaciones al pliego, y el de verdad (D20) no se pierde: ${JSON.stringify(hC.map((h) => [h.celda, h.id, h.fecha]))}`);
+      assert.strictEqual(Dp.cronogramaDeExcel(JSON.parse(JSON.stringify(copia))).resumen.publicable, true, "y el servidor la recibe igual");
+      /* UNA FECHA ESCRITA QUE NO SE PUDO LEER NO LA SUPLE OTRA FILA (vista previa del 4-nov-2026, CO1.BDOS.10891997): «21 septiembre de
+         2026» no se reconoce y el aviso de convocatoria salía del aviso del artículo 30, con el día de otra actividad. Falta; no se cambia */
+      const sinDe = await leer([{ nombre: HOJA, celdas: celdasDe([...REALES.B.map(([n, c, d]) => [n, c, n === 8 ? "04 agosto de 2026" : d]), [12, "Publicación del Aviso (artículo 30 de la Ley 80 de 1993)", S("2026-08-11")]].sort((a, b) => a[0] - b[0])) }]);
+      const hS = sinDe.publicable ? CE.hitosDeFilas(sinDe.filas, sinDe.hoja).hitos : [];
+      assert.ok(sinDe.publicable === true && !("aviso" in fechasDe(sinDe)) && !hS.some((h) => h.celda === "D12"), `[MUT] el aviso que no se pudo leer no lo suple el del artículo 30: ${sinDe.motivo} ${JSON.stringify(hS.map((h) => [h.celda, h.id, h.fecha]))}`);
+      // lo que se guardó con la regla de antes (versión 1, que rechazaba esos anexos) no vale: se vuelve a leer solo
+      assert.ok(CE.VERSION_LECTOR >= 2 && Dp.cronogramaVigente({ version: 1 }) === false, "[MUT] una lectura de la versión 1 se vuelve a leer");
       // EL RECORTE NO SE COME EL FIN DE UN RANGO: «del 06/07/2026 al 15/07/2026» vence el 15, no el 6
       const largo = "A partir de la publicación del pliego definitivo, esto es, del 06/07/2026 al 15/07/2026, hasta las 8:00 a.m.";
       const conRango = await leer([{ nombre: HOJA, celdas: celdasDe(REALES.B.map(([n, c, d]) => [n, c, n === 24 ? largo : d])) }]);
