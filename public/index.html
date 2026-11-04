@@ -1759,9 +1759,18 @@
     .exp-fila-cifras .exp-cifra-valor { font-size: var(--tipo-4); }
     .exp-fila-ir { color: var(--text-tertiary); display: flex; }
     .exp-fila:hover .exp-fila-ir { color: var(--accent); }
-    /* en renglones hasta 860 px, no hasta 640: entre los dos la pista de la etapa se comía el título, que
-       quedaba en 160 px y cuatro renglones (medido a 700 px: filas de 175 px) */
-    @media (max-width: 860px) {
+    /* ENTRE 641 Y 860 PX, DOS RENGLONES (4-nov-2026): el título con el valor al lado y, debajo, la etapa con lo
+       próximo a todo lo ancho. Las tres columnas de escritorio no caben (la pista de la etapa dejaba el título en
+       160 px y cuatro renglones) y los tres renglones del teléfono medían unos 230 px por fila (medido a 700 px). */
+    @media (min-width: 641px) and (max-width: 860px) {
+      .exp-fila { grid-template-columns: minmax(0, 1fr) auto auto; align-items: start; }
+      .exp-fila-texto { grid-column: 1; grid-row: 1; }
+      .exp-fila-cifras { grid-column: 2; grid-row: 1; }
+      .exp-fila-ir { grid-column: 3; grid-row: 1 / span 2; align-self: center; }
+      .exp-fila-etapa { grid-column: 1 / 3; grid-row: 2; flex-direction: row; flex-wrap: wrap; align-items: baseline; gap: 2px var(--esp-3); }
+    }
+    /* en el teléfono, tres renglones: título y flecha, etapa y lo próximo, y las cifras */
+    @media (max-width: 640px) {
       .exp-fila { grid-template-columns: minmax(0, 1fr) auto; }
       .exp-fila-texto { grid-column: 1; grid-row: 1; }
       .exp-fila-ir { grid-column: 2; grid-row: 1; }
@@ -1769,8 +1778,6 @@
       .exp-fila-cifras { grid-column: 1 / -1; grid-row: 3; flex-direction: row; align-items: baseline; justify-content: flex-start; gap: var(--esp-5);
         margin-top: var(--esp-3); padding-top: var(--esp-3); border-top: 1px solid var(--border); }
       .exp-fila-cifras .exp-cifra { text-align: left; }
-    }
-    @media (max-width: 640px) {
       .exp-cifra { min-width: 0; }
     }
     /* 11 · EL ALTA DE UN DOCUMENTO: cuatro campos y ninguno más. Pedir seis por
