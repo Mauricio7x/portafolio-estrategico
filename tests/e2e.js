@@ -11330,6 +11330,21 @@ async function main() {
       // c · la guía de Mis procesos: «confírmelo» con la cifra, no «cumple» con un 134 %
       const capG = require("../lib/guia_proceso.js").guiaDe({ fila: licBanda, perfil: PERFIL, ctx: { ahoraMs: Date.now() } }).requisitos.find((r) => r.clave === "capacidad");
       assert.ok(capG.estado === "revisar" && new RegExp(`anticipo del ${esperado} % o más`).test(capG.detalle), JSON.stringify(capG));
+      assert.ok(capG.detalle.includes(`% de ${require("../lib/requisitos_ley.js").LO_DISPONIBLE}.`) && !/puede facturar hoy/.test(capG.detalle),
+        `la guía nombra la capacidad que le queda con la MISMA frase que «Por qué» (4-nov-2026): «${capG.detalle}»`);
+      /* CENSO: la frase se DEFINE una vez (lib/requisitos_ley) y todos la llaman; y la redacción vieja, que nombraba
+         el mismo hecho con otras palabras, no vuelve a ningún módulo del servidor */
+      {
+        const libDir = path.join(__dirname, "..", "lib");
+        const fuentesLib = [];
+        const barrer = (d) => { for (const n of fs.readdirSync(d, { withFileTypes: true })) { const ruta = path.join(d, n.name); if (n.isDirectory()) barrer(ruta); else if (n.name.endsWith(".js")) fuentesLib.push(ruta); } };
+        barrer(libDir);
+        const conLiteral = fuentesLib.filter((f) => fs.readFileSync(f, "utf8").includes("lo que le queda disponible para contratar")).map((f) => path.relative(libDir, f));
+        assert.deepStrictEqual(conLiteral, ["requisitos_ley.js"], `la frase de la capacidad que le queda se escribe en UN sitio y los demás la llaman: ${conLiteral.join(", ")}`);
+        const viejas = fuentesLib.filter((f) => /puede facturar hoy|lo que usted puede facturar/.test(fs.readFileSync(f, "utf8"))).map((f) => path.relative(libDir, f));
+        assert.deepStrictEqual(viejas, [], `la redacción vieja del mismo hecho no vuelve: ${viejas.join(", ")}`);
+        assert.strictEqual(require("../lib/socio_por_proceso.js").CARENCIAS.capacidad, `la cuantía supera ${require("../lib/requisitos_ley.js").LO_DISPONIBLE}`, "la línea del socio también");
+      }
       // d · el expediente no afirma «le alcanza sin socio»
       const socioB = require("../lib/socio_por_proceso.js").socioPorProceso({ fila: licBanda, base: PERFIL, candidatos: ["genesis"] });
       assert.ok(socioB.recomendacion.tipo === "solo" && socioB.recomendacion.solo_con_anticipo === true && /si el pliego da un anticipo/.test(socioB.frase) && !/le alcanza sin socio/.test(socioB.frase), socioB.frase);
@@ -41071,6 +41086,107 @@ async function main() {
       assert.deepStrictEqual(FiltrosPub.leerEstado(p1), e1, "ida y vuelta por la URL sin pérdida");
       const fichas1 = FiltrosPub.fichas(e1);
       assert.strictEqual(fichas1.length, 7, "siete fichas (F8)");
+      /* «SOLO LAS QUE PUEDE PRESENTARSE» (4-nov-2026, decisión del dueño): la cifra de Mi empresa abre EXACTAMENTE
+         su lista. El filtro `solo=viables` es la casilla «Ocultar las que … no alcanzan» hecha filtro: viaja en la
+         dirección, se ve como ficha con su ×, y quitarlo vuelve a la lista de todo (el defecto del 19-oct). */
+      {
+        const eS = FiltrosPub.leerEstado(new URLSearchParams("solo=viables&cierre=7d"));
+        assert.strictEqual(eS.solo, "viables");
+        assert.strictEqual(FiltrosPub.leerEstado(new URLSearchParams("solo=todas")).solo, null, "otro valor es INERTE");
+        assert.strictEqual(FiltrosPub.leerEstado({}).solo, null, "sin el parámetro, la lista de todo");
+        assert.strictEqual(FiltrosPub.escribirEstado(eS, new URLSearchParams()).get("solo"), "viables", "y viaja de vuelta a la dirección");
+        assert.deepStrictEqual(FiltrosPub.leerEstado(FiltrosPub.escribirEstado(eS, new URLSearchParams())), eS, "ida y vuelta sin pérdida");
+        const fS = FiltrosPub.fichas(eS).find((f) => f.filtro === "solo");
+        assert.ok(fS && fS.etiqueta === "Solo las que puede presentarse", `la ficha lo dice en llano: ${JSON.stringify(FiltrosPub.fichas(eS))}`);
+        assert.strictEqual(FiltrosPub.sinFiltro(eS, "solo").solo, null, "su × lo quita");
+        assert.strictEqual(FiltrosPub.sinFiltro(eS, "solo").cierre.ventana, "7d", "y deja los demás filtros");
+        /* el ENLACE de cada cifra lo lleva: se EJECUTA `aplicarFiltroDelPulso` de app.js con sus vecinos simulados */
+        const appS = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+        const iA = appS.indexOf("  function aplicarFiltroDelPulso(filtro) {"), fA = appS.indexOf("\n  }\n", iA);
+        assert.ok(iA > 0 && fA > iA, "app.js trae aplicarFiltroDelPulso");
+        const correrA = (filtro) => {
+          let recibido = null;
+          new Function("$", "window", "cambiarFiltros", "activarPestana", "pintarConceptoOrden", "ordenAntesDelEnlace",
+            `${appS.slice(iA, fA + 4)}\n aplicarFiltroDelPulso(${JSON.stringify(filtro)});`)(
+            (id) => (id === "tab-licitaciones" ? { classList: { contains: () => true } } : null),
+            { Filtros: FiltrosPub }, (e) => { recibido = e; }, () => {}, () => {}, null);
+          return recibido;
+        };
+        for (const filtro of ["", "todo", "manif=urgente", "cierre=7d&ordenar_por=cierre", "dep=73", "entidad=899999081"]) {
+          const e = correrA(filtro);
+          assert.ok(e && e.solo === "viables", `la cifra «${filtro || "titular"}» abre solo las que puede presentarse, como las cuenta: ${JSON.stringify(e)}`);
+        }
+        assert.strictEqual(correrA("manif=urgente").manif, "urgente", "sin perder el filtro de la cifra");
+        /* CENSO DE LOS ENLACES DEL PULSO PERSONAL (revisión adversaria): cada `href` y cada `data-filtro` que pinta lleva
+           `solo=viables` —abrir en otra pestaña o copiar el enlace dice lo mismo que pulsarlo—; se EJECUTAN las piezas */
+        const PulS = require("../public/pulso.js");
+        const piezasS = {
+          titular: PulS.htmlHero({ total: 139, visibles: 140, valorTotal: 1e9, calendario: { hoy: "2026-11-04" } }, "Helder"),
+          cierran: PulS.htmlCierran({ cierranEstaSemana: { n: 139, valor: 1e9 }, calendario: { hoy: "2026-11-04", dias: [] } }),
+          avisar: PulS.htmlManifestacion({ manifestacion: { urgentes: 41 } }),
+          donde: PulS.htmlDepartamentos({ total: 139, porDepartamento: [{ nombre: "Atlántico", n: 1, valor: 1e8 }, { nombre: "Meta", n: 4, valor: 2e8 }] }),
+          quien: PulS.htmlEntidades({ total: 139, topEntidades: [{ nit: "899999081", nombre: "E", n: 2, valor: 1e8 }, { nombre: "SIN NIT", n: 1, valor: 1e7 }] }),
+        };
+        let enlacesS = 0;
+        for (const [k, html] of Object.entries(piezasS)) {
+          const filtros = [...html.matchAll(/(?:href="\?|data-filtro=")([^"#]*)/g)].map((m) => m[1].replace(/&amp;/g, "&"));
+          assert.ok(filtros.length > 0, `«${k}» pinta al menos un enlace: ${html.slice(0, 200)}`);
+          for (const f of filtros) {
+            enlacesS++;
+            assert.strictEqual(FiltrosPub.leerEstado(new URLSearchParams(f)).solo, "viables", `«${k}»: el enlace «${f}» abre solo las que puede presentarse, como las cuenta la cifra`);
+          }
+        }
+        assert.ok(enlacesS >= 11, `se censaron ${enlacesS} enlaces`);
+        assert.ok(/for \(const idPlazo of \["pulso-plazo", "pulso-repartos"\]\)/.test(appS), "los repartos (fuera de #pulso) filtran con la MISMA función, sin recargar");
+        /* la casilla y el filtro son UNA cosa: se EJECUTAN `pintarControlesFiltros` (el estado pinta la casilla) y el
+           oyente de la casilla (la casilla escribe el estado), con un DOM simulado */
+        const nodoS = () => ({ innerHTML: "", value: "", checked: false, textContent: "", options: [], style: {}, hidden: false,
+          classList: { toggle() {}, add() {}, remove() {}, contains: () => false }, appendChild() {}, setAttribute() {}, addEventListener() {} });
+        const dom = {};
+        const $S = (id) => (dom[id] = dom[id] || nodoS());
+        const iPC = appS.indexOf("  function pintarControlesFiltros() {"), fPC = appS.indexOf("\n  }\n", iPC);
+        const pintarS = (estado) => new Function("$", "FL", "estadoFiltros", "chipToggle", "conteo", "tiposActivos", "esc", "document", "pintarAvisoManifestacion", "ultimasFacetas",
+          `${appS.slice(iPC, fPC + 4)}\n pintarControlesFiltros();`)($S, FiltrosPub, estado, () => "", () => "", () => [], (x) => String(x ?? ""),
+          { activeElement: null, createElement: () => nodoS() }, () => {}, null);
+        $S("f-solo-viables").checked = false; pintarS({ solo: "viables" });
+        assert.strictEqual(dom["f-solo-viables"].checked, true, "con el filtro puesto, la casilla se pinta encendida");
+        assert.ok(/Solo las que puede presentarse/.test(dom["fl-fichas"].innerHTML) && /data-fl-quitar="solo"/.test(dom["fl-fichas"].innerHTML), "y la ficha se ve, con su ×");
+        pintarS({});
+        assert.strictEqual(dom["f-solo-viables"].checked, false, "quitada la ficha, la casilla se apaga");
+        const iL = appS.indexOf('  $("f-solo-viables").addEventListener("change", () => {'), fL = appS.indexOf("\n  });\n", iL);
+        assert.ok(iL > 0 && fL > iL, "app.js trae el oyente de la casilla");
+        const oirS = (marcada, estado) => {
+          let manejador = null, recibido = null;
+          new Function("$", "cambiarFiltros", "estadoFiltros", appS.slice(iL, fL + 6))(
+            (id) => (id === "f-solo-viables" ? { checked: marcada, addEventListener: (ev, fn) => { manejador = fn; } } : nodoS()), (e) => { recibido = e; }, estado);
+          manejador();
+          return recibido;
+        };
+        assert.strictEqual(oirS(true, { cierre: { ventana: "7d" } }).solo, "viables", "encender la casilla pone el filtro");
+        assert.strictEqual(oirS(true, { cierre: { ventana: "7d" } }).cierre.ventana, "7d", "sin perder los demás");
+        assert.strictEqual(oirS(false, { solo: "viables" }).solo, null, "apagarla lo quita");
+        /* «VER LAS N» DE LA PUERTA DE ENTRADA Y DEL CONSORCIO (revisión adversaria): las dos N cuentan las que puede
+           presentarse, y la lista que abren también. La de la entrada se EJECUTA con su navegador simulado. */
+        const onbS = fs.readFileSync(path.join(__dirname, "..", "public", "onboarding.js"), "utf8");
+        const iO = onbS.indexOf("    btn.onclick = () => {"), fO = onbS.indexOf("\n    };\n", iO);
+        assert.ok(iO > 0 && fO > iO, "onboarding.js trae el «Ver las N»");
+        const verLasN = (n, search, urlDash) => {
+          const btn = {}; const win = { location: { origin: "https://detekta.local", search, href: null } };
+          new Function("btn", "cuerpo", "n", "window", "URL", "URLSearchParams", `${onbS.slice(iO, fO + 7)}`)(btn, { perfil_id: "rup_x", url_dashboard: urlDash }, n, win, URL, URLSearchParams);
+          btn.onclick();
+          return new URL(win.location.href, "https://detekta.local");
+        };
+        assert.strictEqual(verLasN(139, "", null).searchParams.get("solo"), "viables", "«Ver las 139» abre las 139");
+        assert.strictEqual(verLasN(139, "?dep=Meta", null).searchParams.get("dep"), "Meta", "y el filtro que traía de la portada sigue viajando");
+        assert.strictEqual(verLasN(0, "", null).searchParams.get("solo"), null, "«Entrar de todos modos» (ninguna cumple) abre la lista de todo: si no, saldría vacía");
+        assert.strictEqual(verLasN(139, "?solo=zzz", null).searchParams.get("solo"), "zzz", "un `solo` que ya trae no se pisa (y uno desconocido sigue inerte)");
+        assert.ok(/if \(cons\.ultimo && cons\.ultimo\.procesosConsorcio > 0\) cambiarFiltros\(\{ \.\.\.FL\.leerEstado\(\{\}\), solo: "viables" \}\);/.test(appS),
+          "el «Ver las N» del consorcio abre esas N: sin otros filtros (N no los cuenta) y solo las que el consorcio puede presentarse");
+        /* el contador: con la ficha sola no dice «139 de 139» (la base ya va sin las que no alcanza) */
+        assert.ok(/const soloLaFicha = fichasActivas\.length === 1 && fichasActivas\[0\]\.filtro === "solo";/.test(appS)
+          && /soloLaFicha \? `\$\{cuerpo\.total\} \$\{cuerpo\.total === 1 \? "licitación a la" : "licitaciones a las"\} que puede presentarse`/.test(appS),
+          "con solo esa ficha el contador dice «N licitaciones a las que puede presentarse»");
+      }
       assert.ok(fichas1.every((f) => !/modalidad|cuant[ií]a|unspsc|dane/i.test(f.etiqueta.split(":")[0])), "las fichas hablan en llano");
       assert.strictEqual(FiltrosPub.fichas(FiltrosPub.leerEstado({})).length, 0, "el tipo por defecto NO es una ficha: no lo eligió el usuario");
       assert.strictEqual(FiltrosPub.sinFiltro(e1, "dep").dep, null);
@@ -42463,7 +42579,8 @@ async function main() {
       assert.ok(/class="mi-titular-h"/.test(hero) && /Para Constructora X hay <span class="mi-num">47<\/span> licitaciones abiertas a las que puede presentarse/.test(hero), `hero: nombre y cuántas, en una frase: ${hero}`);
       const enJuego0 = PulsoPub.htmlEnJuego(p0), cierran0 = PulsoPub.htmlCierran(p0);
       assert.ok(/\$312\.000 millones/.test(enJuego0) && /6 cierran esta semana/.test(cierran0.replace(/<[^>]+>/g, "")), "el dinero y lo que cierra siguen, en su sitio");
-      assert.ok(/data-filtro="cierre=7d&amp;ordenar_por=cierre"/.test(cierran0) && /data-filtro="todo"/.test(hero), "las cifras enlazan a la lista (la de la semana, ordenada por cierre)");
+      assert.ok(/data-filtro="cierre=7d&amp;ordenar_por=cierre&amp;solo=viables"/.test(cierran0) && /data-filtro="solo=viables"/.test(hero),
+        "las cifras enlazan a la lista (la de la semana, ordenada por cierre), y desde el 4-nov solo a las que puede presentarse, que es lo que cuentan");
       assert.strictEqual(PulsoPub.htmlCierran({ ...p0, cierranEstaSemana: { n: 0, valor: null } }), "", "sin cierres esta semana no hay tarjeta: un «0» no se pinta");
       const dep = PulsoPub.htmlDepartamentos(p0), entH = PulsoPub.htmlEntidades(p0);
       /* BARRAS RANKEADAS (encargo del ingeniero, ago 2026): mismo dato, forma
@@ -42524,11 +42641,11 @@ async function main() {
         const texto13 = (d13 + e13).replace(/<[^>]+>/g, " ");
         assert.strictEqual(tuteo13(texto13), null, "el plegado habla de usted"); assert.ok(!texto13.match(emoji13), "sin emoji");
       }
-      assert.ok(/data-filtro="dep=TOLIMA"/.test(dep) && /data-filtro="dep=CUNDINAMARCA"/.test(dep), "cada departamento enlaza a su lista");
+      assert.ok(/data-filtro="dep=TOLIMA&amp;solo=viables"/.test(dep) && /data-filtro="dep=CUNDINAMARCA&amp;solo=viables"/.test(dep), "cada departamento enlaza a su lista (solo las que puede presentarse, que es lo que cuenta: 4-nov)");
       assert.ok(/width:100\.0%/.test(dep) && /width:60\.0%/.test(dep), "la barra es proporcional al conteo (20 y 12 sobre un máximo de 20)");
       assert.ok(/9 en total/.test(dep), "se dice cuántos departamentos quedan fuera del top");
       assert.ok(/\$100\.000 millones/.test(dep), "…y el DINERO viaja al lado del conteo: ya estaba en el dato y no se pintaba");
-      assert.ok(/data-filtro="entidad=800113389"/.test(entH) && /30 en total/.test(entH), "las entidades enlazan por NIT y dicen cuántas más hay");
+      assert.ok(/data-filtro="entidad=800113389&amp;solo=viables"/.test(entH) && /30 en total/.test(entH), "las entidades enlazan por NIT y dicen cuántas más hay");
       /* EL PULSO DECLARA SU COBERTURA (6-sep-2026, M-DGF-03). Tres cosas que se
          callaban: cuántas no publican presupuesto (el hero decía «en juego» como
          si fuera la suma completa), cuántas no traen departamento (viajaba en la
@@ -46467,9 +46584,13 @@ async function main() {
             const iP = appP.indexOf("  function parametros() {"), fP = appP.indexOf("    return p;\n  }", iP);
             assert.ok(iP > 0 && fP > iP, "app.js trae parametros()");
             const cuerpoP = appP.slice(iP, fP + "    return p;\n  }".length);
-            const correrP = (marcada) => new Function("$", "pagina", "FL", "estadoFiltros", "estructuraGuardada", `${cuerpoP}\n return parametros();`)(
+            const correrP = (marcada, estado = {}) => new Function("$", "pagina", "FL", "estadoFiltros", "estructuraGuardada", `${cuerpoP}\n return parametros();`)(
               (id) => ({ value: id === "f-perfil" ? "helder" : id === "f-ordenar" ? "atractividad" : id === "f-orden" ? "desc" : "", checked: id === "f-solo-viables" ? marcada : false }),
-              1, { escribirEstado: () => {} }, {}, () => null);
+              1, { escribirEstado: () => {} }, estado, () => null);
+            /* el filtro `solo=viables` (4-nov-2026: el enlace de una cifra de Mi empresa) pide lo que cuenta la cifra
+               aunque la casilla todavía no se haya pintado encendida */
+            assert.strictEqual(correrP(false, { solo: "viables" }).get("solo_viables"), null, "con `solo=viables` en el estado se pide lo mismo que cuenta la cifra");
+            assert.strictEqual(correrP(false, { solo: "zzz" }).get("solo_viables"), "false", "un valor desconocido es inerte");
             assert.strictEqual(correrP(false).get("solo_viables"), "false", "apagada, el navegador pide TODO (solo_viables=false)");
             assert.strictEqual(correrP(true).get("solo_viables"), null, "encendida, no manda nada: el servidor oculta los que no pasan (su defecto)");
             assert.strictEqual(correrP(false).get("perfil"), "helder", "y el resto de los parámetros sigue igual");
@@ -51049,7 +51170,7 @@ async function main() {
       /* desde el 3-nov-2026 abre `manif=urgente`: antes abría `manif=abierta`, que trae también las que no urgen, y
          «en 4 procesos… hay que avisar hoy» abría una lista con más; y dice «hay que avisar hoy», no «puede cerrar hoy»,
          porque la urgencia cuenta también los plazos confirmados que vencen mañana (revisión adversaria) */
-      assert.ok(/data-filtro="manif=urgente"/.test(mf) && /En 4 procesos hay que avisar hoy que le interesa/.test(mf.replace(/<[^>]+>/g, "")), `el aviso de manifestación lleva a SU lista: ${mf}`);
+      assert.ok(/data-filtro="manif=urgente&amp;solo=viables"/.test(mf) && /En 4 procesos hay que avisar hoy que le interesa/.test(mf.replace(/<[^>]+>/g, "")), `el aviso de manifestación lleva a SU lista: ${mf}`);
       assert.ok(!/no confirma/.test(mf), "sin el conteo de las que SECOP II no confirma, la frase no se dice");
       assert.ok(/En 2, SECOP II no confirma si el plazo sigue abierto/.test(Pulso.htmlManifestacion({ manifestacion: { urgentes: 4, urgentes_por_confirmar: 2 } })), "con el conteo, se dice con su cifra");
       /* LA IGUALDAD QUE IMPORTA, EJECUTADA: la faceta `urgentes` (la cifra roja) y el filtro `manif=urgente` (la lista
@@ -54114,6 +54235,15 @@ async function main() {
           assert.ok(/<span class="exp-fila-senal">Cierra mañana/.test(fila3), "y debajo lo próximo, una sola cosa");
           const sinEtapa = K.htmlFila({ id: "G", proceso: { nombre: "OBRA" } });
           assert.ok(!/exp-fila-estado/.test(sinEtapa) && /exp-fila-senal"><span class="exp-punto"/.test(sinEtapa), "sin etapa conocida el punto pasa a la señal: no se pinta una etapa vacía");
+          /* ENTRE 641 Y 860 PX, DOS RENGLONES (4-nov-2026): título y valor arriba, etapa y lo próximo debajo. El CSS no
+             se ejecuta en Node: se fija la regla y su efecto se midió en Chromium (filas de 120-164 px a 700, antes ~230) */
+          const htmlF = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
+          const iMed = htmlF.indexOf("@media (min-width: 641px) and (max-width: 860px) {");
+          assert.ok(iMed > 0, "la franja media tiene su propia regla");
+          const med = htmlF.slice(iMed, htmlF.indexOf("\n    }\n", iMed));
+          assert.ok(/\.exp-fila-cifras \{ grid-column: 2; grid-row: 1; \}/.test(med) && /\.exp-fila-etapa \{ grid-column: 1 \/ 3; grid-row: 2;/.test(med),
+            `el valor va al lado del título y la etapa debajo: ${med}`);
+          assert.ok(htmlF.includes("@media (max-width: 640px) {\n      .exp-fila { grid-template-columns: minmax(0, 1fr) auto; }"), "y el teléfono conserva sus tres renglones");
         }
       }
       /* EL BUSCADOR ES UNA FILA, NO UN BLOQUE. `.cas-buscar` heredaba de
@@ -60138,6 +60268,9 @@ async function main() {
         const g = GpRL.guiaDe({ fila: { ...fila }, perfil: "helder", ctx: { ahoraMs: AHORA_RL } });
         const cap = (g.requisitos || []).find((r) => r.clave === "capacidad") || {};
         okRL(cap.estado === "revisar" && /Confirme en el pliego si pide capacidad de contratación/.test(cap.detalle || ""), `(2) ${nombre}: la guía dice «confírmelo» — ${cap.estado}: «${cap.detalle}»`);
+        /* UNA frase para la capacidad que le queda (4-nov-2026): la guía dice lo mismo que «Por qué» (lib/puertas) */
+        okRL((cap.detalle || "").includes(`supera ${require("../lib/requisitos_ley.js").LO_DISPONIBLE}`) && !/puede facturar hoy/.test(cap.detalle || ""),
+          `(2) ${nombre}: la guía nombra la capacidad como «Por qué» — «${cap.detalle}»`);
         const s = SpRL.socioPorProceso({ fila: { ...fila }, base: "helder", candidatos: ["genesis", "prodiac"], ctx: {} });
         okRL(!s || !/Esta le alcanza sin socio/.test(s.frase || ""), `(2) ${nombre}: el consejo de socio no dice «le alcanza sin socio» — «${s && s.frase}»`);
       }

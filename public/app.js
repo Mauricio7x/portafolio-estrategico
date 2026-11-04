@@ -305,7 +305,9 @@
     window.Pulso.arrancar(perfil, { nombre, forzar: !!opciones.forzar }).catch(() => {});
   }
   /* «Con plazo» (3-nov-2026) vive en su propia sección: sus tarjetas filtran la lista con la MISMA función */
-  for (const idPlazo of ["pulso-plazo"]) {
+  /* y los repartos (4-nov-2026, revisión adversaria): «Dónde están» y «Quién las publica» viven en su plegado,
+     fuera de #pulso, y sin oyente seguían el `href` con una recarga entera */
+  for (const idPlazo of ["pulso-plazo", "pulso-repartos"]) {
     const nodo = document.getElementById(idPlazo);
     if (!nodo) continue;
     nodo.addEventListener("click", (ev) => {
@@ -335,6 +337,12 @@
        lee el MISMO `leerEstado` que lee la URL, así una barra del gráfico y un
        enlace pegado en Chrome significan exactamente lo mismo */
     const params = new URLSearchParams(String(filtro || "") === "todo" ? "" : String(filtro || ""));
+    /* LA CIFRA ABRE EXACTAMENTE SU LISTA (4-nov-2026, decisión del dueño). Las cifras de Mi empresa cuentan lo que
+       usted puede presentarse (op=pulso: `solo_viables` encendido) y la lista, con la casilla apagada que viene
+       por defecto desde el 19-oct, traía además las que no alcanza, atenuadas: «139» abría 140. El enlace lleva
+       `solo=viables` y la lista enseña la ficha «Solo las que puede presentarse» para quitarlo. La lista normal
+       sigue enseñándolo todo. */
+    params.set("solo", "viables");
     /* el ORDEN que trae el enlace («Ver por fecha»: `ordenar_por=cierre`, 3-nov-2026) va al selector antes de filtrar:
        `leerEstado` lee filtros, no el orden (revisión adversaria: la lista abría con el orden que tuviera) */
     const ord = params.get("ordenar_por");
@@ -953,6 +961,8 @@
   }
   function pintarControlesFiltros() {
     const e = estadoFiltros;
+    // la casilla «Ocultar las que … no alcanzan» refleja el filtro `solo` (una ficha quitada la apaga)
+    if ($("f-solo-viables")) $("f-solo-viables").checked = !!(e && e.solo === "viables");
     // 1 · tipo de trabajo (chips que se encienden y apagan)
     const tipos = tiposActivos();
     $("fl-tipo").innerHTML = FL.TIPOS_TRABAJO.map((t) =>
@@ -1307,7 +1317,9 @@
        su capacidad o su caja no alcanzan van ATENUADOS y al final, con su motivo (medido el 19-oct con las puertas reales sobre 1.101
        procesos: entre 55 y 142 según el perfil). Esconderlos era decidir por él qué no ver. Encenderlo vuelve a ocultarlos; nunca se mezclan
        con los que sí pasan. El servidor conserva `solo_viables=true` como defecto: los demás clientes y el pulso cuentan igual que antes. */
-    if (!$("f-solo-viables").checked) p.set("solo_viables", "false");
+    /* y con el filtro `solo=viables` (4-nov-2026: el enlace de una cifra de Mi empresa, o la casilla) se pide lo
+       mismo que cuenta la cifra; se mira el ESTADO y no solo la casilla, que se pinta después de la primera búsqueda */
+    if (!$("f-solo-viables").checked && !(estadoFiltros && estadoFiltros.solo === "viables")) p.set("solo_viables", "false");
     // apagado por defecto: sin código del RUP y sin vocabulario claro de obra,
     // el proceso es ruido (software, equipos, servicios de salud…). Encenderlo
     // los devuelve, siempre marcados como «Objeto sugiere obra».
@@ -3168,9 +3180,14 @@
     /* la base es la lista POR DEFECTO (la misma N del pulso), no la anterior al
        filtro por defecto: «126 de 771», no «126 de 827» */
     const base = cuerpo.totalPorDefecto != null ? cuerpo.totalPorDefecto : (cuerpo.totalSinFiltros != null ? cuerpo.totalSinFiltros : cuerpo.total);
-    const conFiltros = FL.fichas(estadoFiltros).length > 0;
+    const fichasActivas = FL.fichas(estadoFiltros);
+    const conFiltros = fichasActivas.length > 0;
+    /* con la ficha «Solo las que puede presentarse» sola, «139 de 139» decía que no escondía nada (la base del
+       servidor ya va sin las que no alcanza): se dice qué son (4-nov-2026, revisión adversaria) */
+    const soloLaFicha = fichasActivas.length === 1 && fichasActivas[0].filtro === "solo";
     $("resumen-resultados").textContent =
-      (conFiltros ? `${cuerpo.total} de ${base} licitaciones` : `${cuerpo.total} oportunidad${cuerpo.total === 1 ? "" : "es"}`)
+      (soloLaFicha ? `${cuerpo.total} ${cuerpo.total === 1 ? "licitación a la" : "licitaciones a las"} que puede presentarse`
+        : conFiltros ? `${cuerpo.total} de ${base} licitaciones` : `${cuerpo.total} oportunidad${cuerpo.total === 1 ? "" : "es"}`)
       + ` para el perfil «${$("f-perfil").selectedOptions[0].text}»`
       + (cuerpo.ordenado_por === "margen" && cuerpo.margen
         ? ` · ordenadas por lo que le queda: ${cuerpo.margen.con_margen} con costo calculado${cuerpo.margen.borradores_sin_costo ? `, ${cuerpo.margen.borradores_sin_costo} borrador${cuerpo.margen.borradores_sin_costo === 1 ? "" : "es"} sin costo (vuelva a calcular y guardar)` : ""}; las demás sin referencia, abajo`
@@ -4834,9 +4851,14 @@
   $("btn-buscar").addEventListener("click", () => { pagina = 1; reintentosSync = 0; buscar(); });
   $("btn-reintentar").addEventListener("click", () => { reintentosSync = 0; buscar(); });
   for (const id of ["f-perfil", "f-cuantia", "f-entidad", "f-ubicacion", "f-ordenar", "f-orden",
-    "f-sin-unspsc", "f-solo-viables", "f-zona"]) {
+    "f-sin-unspsc", "f-zona"]) {
     $(id).addEventListener("change", () => { pagina = 1; if (id === "f-ordenar" || id === "f-zona") { escribirFiltrosEnURL(); pintarControlesFiltros(); } if (id === "f-ordenar") { pintarConceptoOrden(); ordenAntesDelEnlace = null; } buscar(); if (id === "f-perfil") { refrescarPulso(); sincronizarPerfilBorrador(); guardados.clear(); seguimientoCargadoPara = null; cargarSeguimiento({ forzar: true }); } });
   }
+  /* LA CASILLA ES EL FILTRO `solo` (4-nov-2026): encenderla o apagarla cambia el estado de los filtros, que
+     escribe la dirección, pinta la ficha y busca. Así la casilla, la ficha y un enlace pegado dicen lo mismo. */
+  $("f-solo-viables").addEventListener("change", () => {
+    cambiarFiltros({ ...(estadoFiltros || {}), solo: $("f-solo-viables").checked ? "viables" : null });
+  });
   /* «Ver PAA» NO re-consulta /api/oportunidades: son dos fuentes distintas y
      encender la previsión no puede cambiar la lista de lo que está abierto. Lo
      que sí hace es repintar las tarjetas activas, porque el badge «Activo»
@@ -13264,7 +13286,9 @@
         try { localStorage.setItem("detekta_consorcio", JSON.stringify({ id: g.id, nombre: g.nombre })); } catch { /* sin almacenamiento */ }
         pintarConsorciosGuardados();
         activarPestana("licitaciones");
-        pagina = 1; buscar();
+        /* «Ver las N» abre esas N (4-nov-2026): N cuenta las que el consorcio puede presentarse, sin otros filtros */
+        if (cons.ultimo && cons.ultimo.procesosConsorcio > 0) cambiarFiltros({ ...FL.leerEstado({}), solo: "viables" });
+        else { pagina = 1; buscar(); }
       } catch (e) { const m = $("cons-mensaje"); m.className = "mt-3 rounded-xl px-4 py-3 text-sm bg-red-50 text-red-700"; m.textContent = fraseDeFallo(e); m.classList.remove("hidden"); }
       finally { btn.disabled = false; }
       return;
