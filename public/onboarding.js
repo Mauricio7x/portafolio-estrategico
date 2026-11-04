@@ -649,6 +649,8 @@
         for (const [k, v] of new URLSearchParams(window.location.search)) {
           if (k !== "perfil" && !u.searchParams.has(k)) u.searchParams.set(k, v);
         }
+        /* «Ver las N» abre esas N (4-nov-2026): N cuenta las que puede presentarse */
+        if (n > 0 && !u.searchParams.has("solo")) u.searchParams.set("solo", "viables");
         if (!u.hash) u.hash = "#/licitaciones";
         destino = u.pathname + u.search + u.hash;
       } catch { /* URL rara: se va sin filtro */ }

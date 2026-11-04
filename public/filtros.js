@@ -255,7 +255,7 @@
      Los nombres de los parámetros son cortos y estables (son un contrato: un
      enlace guardado tiene que seguir valiendo). Un valor desconocido se IGNORA,
      jamás vacía la lista ni da error (la regla de `?zona=`). */
-  const PARAMS = Object.freeze(["tipo", "modalidad", "dep", "ciudad", "min", "max", "cierre", "cierreDesde", "cierreHasta", "entidad", "q", "manif", "ordenar_por"]);
+  const PARAMS = Object.freeze(["tipo", "modalidad", "dep", "ciudad", "min", "max", "cierre", "cierreDesde", "cierreHasta", "entidad", "q", "manif", "solo", "ordenar_por"]);
   /* Avisar que le interesa (menor cuantía): `manif=abierta` deja los procesos
      en los que TODAVÍA VALE LA PENA avisar — los que con certeza siguen
      abiertos y los que están dentro de la ventana en que el plazo puede cerrar
@@ -318,6 +318,11 @@
     const entidad = String(get("entidad") || "").trim() || null;
     const texto = String(get("q") || "").trim() || null;
     const manif = MANIF_IDS.has(String(get("manif") || "")) ? String(get("manif")) : null;
+    /* `solo=viables` (4-nov-2026, decisión del dueño): solo las que usted puede presentarse —las que pasan su
+       registro, su capacidad y su caja, solo o con un socio—, que es lo que CUENTAN las cifras de Mi empresa
+       (op=pulso cuenta con `solo_viables` encendido). Es la casilla «Ocultar las que … no alcanzan» hecha
+       filtro: un enlace de una cifra la enciende y se ve como ficha con su ×. Otro valor es inerte. */
+    const solo = String(get("solo") || "") === "viables" ? "viables" : null;
     return {
       // solo valores desconocidos («tipo=zzz») = filtro inerte, no lista vacía
       tipo: tipo && tipo.length ? [...new Set(tipo)] : null,
@@ -329,6 +334,7 @@
       entidad,
       q: texto,
       manif,
+      solo,
     };
   }
 
@@ -350,6 +356,7 @@
     if (estado.entidad) p.set("entidad", estado.entidad);
     if (estado.q) p.set("q", estado.q);
     if (estado.manif) p.set("manif", estado.manif);
+    if (estado.solo === "viables") p.set("solo", "viables");
     return p;
   }
 
@@ -384,6 +391,7 @@
        y la ficha dice eso mismo. */
     if (estado.manif) out.push({ filtro: "manif", etiqueta: estado.manif === "abierta" ? "Avisar que le interesa: el plazo no consta vencido"
       : estado.manif === "urgente" ? "Avisar que le interesa: hay que avisar hoy" : "Avisar que le interesa: procesos pequeños" });
+    if (estado.solo === "viables") out.push({ filtro: "solo", etiqueta: "Solo las que puede presentarse" });
     return out;
   }
 
