@@ -5972,6 +5972,30 @@
     return `<p class="text-[11px] uppercase tracking-wide text-gray-400">Cómo le va</p>
       <p class="mt-1 text-sm font-semibold">Ganó ${g} de ${total} presentadas${s > 0 ? ` · ${s} sin resultado todavía` : ""}</p>${barra}`;
   }
+  /* DÓNDE GANA (5-nov-2026, plan «Detekta a otro nivel», proceso 14): las mismas presentadas de «Cómo le va»,
+     separadas por entidad, tipo de obra y modalidad (`resumen.resultados_por`, lib/seguimiento.resultadosPor). Solo
+     CONTEOS, con la frase «ganó 1 de 2»: nunca un porcentaje sobre dos casos. Plegado: lo que hay que VER va arriba
+     (la frase y la barra) y el detalle, a un toque. Con menos de tres presentadas, o sin el dato, no se pinta nada:
+     «sin dato» no es «0». Un conteo que no es un entero válido saca ese grupo, no lo pinta en 0. Función pura. */
+  function htmlResultadosPor(rp) {
+    if (!rp || typeof rp !== "object") return "";
+    const total = Number(rp.total_presentadas);
+    if (!Number.isInteger(total) || total < 3) return "";
+    const entero = (v) => (Number.isInteger(v) && v >= 0 ? v : null);
+    const mayuscula = (t) => { const x = String(t || ""); return x.charAt(0).toUpperCase() + x.slice(1); };
+    const dims = [["entidad", "Por entidad"], ["tipo", "Por tipo de obra"], ["modalidad", "Por modalidad"]];
+    const bloques = dims.map(([k, titulo]) => {
+      const d = rp[k];
+      const grupos = (d && Array.isArray(d.grupos) ? d.grupos : [])
+        .filter((g) => g && entero(g.presentadas) && entero(g.ganadas) !== null && entero(g.sin_resultado) !== null);
+      if (!grupos.length) return "";
+      const filas = grupos.map((g) => `<li>${esc(mayuscula(g.grupo))}: ganó ${g.ganadas} de ${g.presentadas}${g.sin_resultado > 0 ? ` · ${g.sin_resultado} sin resultado todavía` : ""}</li>`).join("");
+      const otros = entero(d.otros) ? `<li class="text-gray-500">y ${d.otros} ${d.otros === 1 ? "grupo" : "grupos"} más</li>` : "";
+      return `<div class="mt-2"><p class="text-xs font-semibold">${titulo}</p><ul class="mt-1 space-y-0.5 text-xs tabular-nums">${filas}${otros}</ul></div>`;
+    }).join("");
+    if (!bloques) return "";
+    return `<details class="mt-2"><summary class="cursor-pointer text-xs text-gray-600">Dónde gana: por entidad, tipo de obra y modalidad</summary>${bloques}</details>`;
+  }
   /* UNA PALABRA POR CONCEPTO EN LA MISMA CAJA (6-sep-2026). Los chips de
      conteo decían «1 presentado» contando SOLO la etapa «Me presenté» —las que
      esperan resultado— mientras dos filas más arriba «Ganó 1 de 3 presentadas»
@@ -6023,6 +6047,7 @@
     if (desenlace) {
       desenlace.innerHTML = htmlDesenlaceSeguimiento(r.resumen ? r.resumen.por_estado : null);
       desenlace.classList.toggle("hidden", !desenlace.innerHTML);
+      if (desenlace.innerHTML) desenlace.insertAdjacentHTML("beforeend", htmlResultadosPor(r.resumen ? r.resumen.resultados_por : null));
     }
     /* «Todavía no ha guardado ningún proceso» es una AFIRMACIÓN sobre los datos
        del usuario: solo puede hacerse cuando la respuesta llegó BIEN y venía

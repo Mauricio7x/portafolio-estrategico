@@ -650,6 +650,58 @@ rehace la que falte; `vencida` dice por qué una foto dejó de servir.
 
 ---
 
+### 3.12 · `TELEGRAM_BOT_TOKEN` y `TELEGRAM_CHAT_ID` — el aviso al teléfono por Telegram (opcional, recomendado)
+
+**Qué es.** El mismo aviso de cada mañana del correo (§3.8), pero como mensaje de Telegram en su
+teléfono: lo que cierra hoy o mañana, lo que cambió en un pliego y el plazo para avisar que le
+interesa. Funciona solo o junto con el correo; cada canal lleva su propia marca del día, así que si
+uno falla el otro sale igual y el que falló se puede reintentar.
+
+**Por qué Telegram.** Enviar mensajes con un bot de Telegram no cuesta nada (la página oficial,
+<https://core.telegram.org/bots/faq>, leída el 5-nov-2026, dice que los bots mandan mensajes «at no
+cost»). WhatsApp cobra cada mensaje que inicia la empresa y exige plantillas aprobadas por Meta.
+
+**Cuánto gasta de la base de datos.** Poco: para el aviso de la mañana la aplicación pide los
+procesos guardados abiertos directamente a datos.gov.co, en vez de leer todos los procesos de
+Upstash. Los que ya cerraron se leen de la base de datos de Detekta, como en la pantalla, para que el
+aviso diga exactamente lo mismo que Mis procesos. La respuesta de `/api/avisos` dice en
+`filas_vivas.via` qué camino usó y en `filas_vivas.dudosos` cuántos procesos fueron a la base de datos.
+
+**Los pasos (en el teléfono y en Chrome):**
+
+1. Abra Telegram en su teléfono, busque **@BotFather** y abra ese chat.
+2. Escriba `/newbot`. Le pide un nombre (el que verá en el chat, por ejemplo `Detekta avisos`) y un
+   nombre de usuario que debe terminar en `bot` (por ejemplo `detekta_avisos_bot`).
+3. Al terminar, @BotFather le manda la **llave del bot** (un texto con números, dos puntos y letras).
+   Es una contraseña: no la pegue en ningún chat ni en el código.
+4. Abra su bot nuevo en Telegram (el enlace sale en el mismo mensaje) y mándele cualquier mensaje,
+   por ejemplo `hola`. Telegram guarda ese mensaje 24 horas para que la aplicación encuentre su chat.
+5. En Vercel (§4): **Settings** → **Environment Variables** → **Add New** → nombre
+   **`TELEGRAM_BOT_TOKEN`**, valor: la llave del paso 3 → **Save** → **Deployments** → **Redeploy** (§5).
+6. En el Chrome donde ya entró a la aplicación (§0.3), pegue:
+
+   ```
+   https://detekta-app.vercel.app/api/avisos?telegram=chat
+   ```
+
+   Debe ver `"chats"` con su nombre y un `"chat_id"`. Si sale vacío, vuelva al paso 4 (el mensaje
+   tiene que ser de las últimas 24 horas).
+7. En Vercel, **Add New** → nombre **`TELEGRAM_CHAT_ID`**, valor: el número de `chat_id` (con el
+   signo menos si lo trae) → **Save** → **Redeploy**.
+8. Compruébelo pegando en Chrome:
+
+   ```
+   https://detekta-app.vercel.app/api/avisos?telegram=prueba
+   ```
+
+   Debe ver `"enviado": true` y recibir en Telegram un mensaje de prueba. Si dice
+   `"enviado": false`, `motivo` explica qué respondió Telegram.
+
+**Hace falta también `CRON_SECRET`** (§3.6), por lo mismo que el correo: sin ella, el cron de cada
+mañana no tiene cómo identificarse.
+
+---
+
 ## 4. Parte C · Cómo pegar una variable en Vercel (con clics)
 
 Este procedimiento es el mismo para todas.
