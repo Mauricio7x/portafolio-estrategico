@@ -3079,7 +3079,7 @@
              (op=empresa-datos). Plegado: se toca una vez. -->
         <details id="empresa-datos" class="mt-4">
           <summary class="cursor-pointer text-sm font-medium">Datos para los formatos del pliego</summary>
-          <p class="mt-2 text-xs text-gray-500">Escríbalos una vez, tal como aparecen en su certificado de existencia y representación. Con ellos, en cada proceso guardado, la aplicación llena la carta de presentación y los formatos en Word que publica la entidad. Lo que deje en blanco queda en blanco en el formato.</p>
+          <p class="mt-2 text-xs text-gray-500">Escríbalos una vez, como aparecen en su certificado de existencia y representación. Con ellos se llenan la carta de presentación y los formatos en Word del pliego. Lo que deje en blanco queda en blanco.</p>
           <!-- DE QUIÉN SON ESTOS DATOS (5-nov-2026): los de su empresa o los de cada consorcio, para llenar los formatos con el
                consorcio con que se presenta. Las opciones las pone app.js con los consorcios de «Crear consorcio» -->
           <label class="mt-3 block text-xs">De quién son estos datos
@@ -3088,11 +3088,14 @@
             <label class="text-xs">Nombre o razón social<input name="razon_social" type="text" maxlength="160" class="control-campo mt-1 w-full rounded-xl text-sm"></label>
             <label class="text-xs">NIT<input name="nit" type="text" inputmode="numeric" maxlength="20" placeholder="Por ejemplo: 900.123.456-7" class="control-campo mt-1 w-full rounded-xl text-sm"></label>
             <label class="text-xs">Nombre del representante legal<input name="representante_legal" type="text" maxlength="120" class="control-campo mt-1 w-full rounded-xl text-sm"></label>
-            <label class="text-xs">Cédula del representante legal<input name="representante_documento" type="text" inputmode="numeric" maxlength="20" class="control-campo mt-1 w-full rounded-xl text-sm"></label>
+            <label class="text-xs">Cédula del representante legal<input name="representante_documento" type="text" inputmode="numeric" maxlength="20" placeholder="Por ejemplo: 9.396.710" class="control-campo mt-1 w-full rounded-xl text-sm"></label>
+            <label class="text-xs">Cédula expedida en<input name="representante_expedicion" type="text" maxlength="60" placeholder="Por ejemplo: Sogamoso" class="control-campo mt-1 w-full rounded-xl text-sm"></label>
+            <label class="text-xs">Matrícula profesional<input name="matricula_profesional" type="text" maxlength="40" placeholder="Por ejemplo: 25202-79699 CND" class="control-campo mt-1 w-full rounded-xl text-sm"></label>
+            <label class="text-xs">Persona de contacto<input name="persona_contacto" type="text" maxlength="120" placeholder="Para notificaciones" class="control-campo mt-1 w-full rounded-xl text-sm"></label>
             <label class="text-xs">Dirección<input name="direccion" type="text" maxlength="160" class="control-campo mt-1 w-full rounded-xl text-sm"></label>
             <label class="text-xs">Ciudad<input name="ciudad" type="text" maxlength="80" class="control-campo mt-1 w-full rounded-xl text-sm"></label>
             <label class="text-xs">Teléfono<input name="telefono" type="tel" maxlength="40" class="control-campo mt-1 w-full rounded-xl text-sm"></label>
-            <label class="text-xs">Correo electrónico<input name="correo" type="email" maxlength="120" class="control-campo mt-1 w-full rounded-xl text-sm"></label>
+            <label class="text-xs">Correo electrónico<input name="correo" type="text" inputmode="email" maxlength="160" placeholder="Uno o dos, separados por un guion" class="control-campo mt-1 w-full rounded-xl text-sm"></label>
           </form>
           <button id="btn-empresa-datos" type="button" class="control-boton mt-3 rounded-xl text-sm">Guardar los datos</button>
           <p id="empresa-datos-estado" class="mt-2 hidden text-xs" role="status"></p>
