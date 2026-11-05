@@ -390,10 +390,10 @@
 
   /* Descarga en el navegador. Separada de `construirLibro` para que la
      construcción se pueda probar en Node sin tocar el DOM. */
-  function descargar(bytes, nombreArchivo) {
-    const blob = new Blob([bytes], {
-      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    });
+  /* `tipo`: el del archivo; por defecto el del libro de Excel. Las observaciones al pliego (public/pliego.js) bajan un
+     Word con este MISMO escritor de ZIP y esta misma descarga (5-nov-2026): un segundo escritor divergiría */
+  function descargar(bytes, nombreArchivo, tipo = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet") {
+    const blob = new Blob([bytes], { type: tipo });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -406,5 +406,5 @@
     setTimeout(() => URL.revokeObjectURL(url), 4000);
   }
 
-  return { construirLibro, descargar, letraColumna, ESTILOS: ORDEN_ESTILOS };
+  return { construirLibro, descargar, letraColumna, escribirZip, ESTILOS: ORDEN_ESTILOS };
 });

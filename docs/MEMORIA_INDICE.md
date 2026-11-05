@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 2425361 bytes · 432 secciones · 46 con marcador de superación.
+Derivado del árbol: 2431635 bytes · 433 secciones · 46 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -441,5 +441,6 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | El aviso al teléfono por Telegram, sin leer el corpus, dónde gana el dueño y lo que midió la fase 0 (5-nov-2026) | 5-nov-2026 | 21416-21456 | 7990 |  |
 | La fase 2 del plan: la cita entera, el juicio que no depende del lote, cuánto falta, qué pesa cada requisito, el rastro de lectura y la búsqueda del oficio (5-nov-2026) | 5-nov-2026 | 21457-21477 | 7398 |  |
 | La fase 3 del plan: la oferta propia por el NIT, por qué quedó así, lo que el competidor tiene por ejecutar, qué se puede corregir después y los bancos de precios cerrados (5-nov-2026) | 5-nov-2026 | 21478-21497 | 5422 |  |
-| Las fases 4 y 5 del plan: cuáles contratos acreditar, los contratos que terminan pronto, lo que falta por conseguir, SECOP I a pedido y la carga en el teléfono medida (5-nov-2026) | 5-nov-2026 | 21498-21508 | 3854 |  |
-| El costo de preparar la oferta es la póliza de seriedad, y lo que el dueño decidió no hacer (5-nov-2026) | 5-nov-2026 | 21509-21520 | 5582 |  |
+| Las fases 4 y 5 del plan: cuáles contratos acreditar, los contratos que terminan pronto, lo que falta por conseguir, SECOP I a pedido y la carga en el teléfono medida (5-nov-2026) | 5-nov-2026 | 21498-21508 | 3942 |  |
+| El costo de preparar la oferta es la póliza de seriedad, y lo que el dueño decidió no hacer (5-nov-2026) | 5-nov-2026 | 21509-21521 | 5687 |  |
+| El % de la garantía del pliego llega a Precios, y las observaciones al pliego redactadas con su cita comprobada (5-nov-2026) | 5-nov-2026 | 21522-21544 | 6081 |  |

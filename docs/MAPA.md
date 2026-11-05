@@ -6,10 +6,10 @@
 (no editar a mano: sale de `node tests/mapa.js --escribir`. Para ir a un sitio concreto,
  `node tests/mapa.js <término>` da la ruta, la línea y el sed exacto — más barato que leer esto)
 
-· SUPERFICIE HTTP — 44 op declaradas en los mapas de los routers:
+· SUPERFICIE HTTP — 45 op declaradas en los mapas de los routers:
   /api/admin?op=  rup · experiencia · cobertura · cargar-catalogo · exportar · importar · uso · respaldo · espacio · compactar · sesion · entrar · salir · crear-cuenta
   /api/perfil?op=  resumen · diagnostico · entrada · pulso · consorcio · consorcio-simular · seguimiento · cuenta · avisos · empresa-datos
-  /api/pliego?op=  extraer-texto · parsear · descargar · formulario1 · diff · cronograma · deducciones · dictamen · documentos · auditoria · evaluacion
+  /api/pliego?op=  extraer-texto · parsear · descargar · formulario1 · diff · cronograma · deducciones · dictamen · documentos · auditoria · evaluacion · observaciones
   /api/procesos?op=  sync · historico · listar · baja · entidades · portada · manifestacion · latido · salud
   (api/apu.js e api/inteligencia.js despachan por accion/vista desde su handler:
    `node tests/estado.js` los enumera midiendo)
@@ -22,7 +22,7 @@
   pliego.js                   Router del dominio PLIEGO (Fase 0 · consolidación a 6 funciones)
   procesos.js                 Router del dominio PROCESOS (Fase 0 · consolidación a 6 funciones)
 
-· lib/ — 108 módulos:
+· lib/ — 109 módulos:
   accesibilidad.js            Accesibilidad operativa de la zona de la obra
   adendas.js                  Vigía de adendas · lo que el DATASET dice que cambió (Fase 5)
   almacen.js                  Esquema de claves Redis + compresión de chunks
@@ -92,6 +92,7 @@
   modo.js                     EL INTERRUPTOR, y vive en un solo sitio
   negocio.js                  Reglas de negocio: enriquecer(licitacion)
   objetos.js                  El almacén de archivos (compatible con S3), sin dependencias
+  observaciones.js            Las observaciones al pliego, redactadas (5-nov-2026)
   ofertas.js                  CON CUÁNTO OFERTARON TODOS (27-sep-2026, R-11)
   paa.js                      Plan Anual de Adquisiciones (dataset Socrata `9sue-ezhx`)
   paa_acierto.js              ¿Cuánto de lo que el PAA anuncia acaba saliendo?
@@ -185,7 +186,7 @@
   resumen.js                  El dashboard: ¿qué SON los procesos que hoy se ven?
   seguimiento.js              /api/perfil?op=seguimiento (ago 2026)
 
-· lib/handlers/pliego/ — 8 módulos:
+· lib/handlers/pliego/ — 9 módulos:
   auditoria.js                /api/pliego?op=auditoria · ¿LO QUE DETEKTA DICE HABER LEÍDO SE PUEDE LEER DE VERDAD? (20-oct-202
   cronograma.js               /api/pliego?op=cronograma (Fase 5)
   deducciones.js              /api/pliego?op=deducciones · Qué le van a descontar, leído del pliego
@@ -194,6 +195,7 @@
   documentos.js               /api/pliego?op=documentos (3-sep-2026)
   evaluacion.js               /api/pliego?op=evaluacion (Nivel 3, 26-oct-2026)
   formulario1.js              POST /api/pliego?op=formulario1 (Fase 4)
+  observaciones.js            /api/pliego?op=observaciones (5-nov-2026)
 
 · lib/handlers/procesos/ — 9 módulos:
   baja.js                     El índice de baja de mercado, completo o por entidad
@@ -229,8 +231,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 432 secciones (46 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 21285  Una sola frase para la capacidad que le queda, y Mis procesos en dos renglones entre 641 y …
+· MEMORIA · docs/MEMORIA.md — 433 secciones (46 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 21294  Las fechas que hay que confirmar: el Anexo 2 que rige pasa el tope, el cierre desmentido y …
   L 21336  La alerta de precio bajo dice lo que mide la base con las reglas del 26-oct: 33 de 2.190 en…
   L 21344  La adenda que usted no ha visto avisa, y la que no se ha leído pone «verifíquela» en las fe…
@@ -240,6 +241,7 @@
   L 21478  La fase 3 del plan: la oferta propia por el NIT, por qué quedó así, lo que el competidor ti…
   L 21498  Las fases 4 y 5 del plan: cuáles contratos acreditar, los contratos que terminan pronto, lo…
   L 21509  El costo de preparar la oferta es la póliza de seriedad, y lo que el dueño decidió no hacer…
+  L 21522  El % de la garantía del pliego llega a Precios, y las observaciones al pliego redactadas co…
 
 · DOCUMENTOS docs/ — 76 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)
