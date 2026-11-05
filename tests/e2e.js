@@ -10910,6 +10910,8 @@ async function main() {
     assert.ok(!p3G.sin_dato, "no es un «sin dato»: el mejor caso posible ya no alcanza");
     assert.strictEqual(p3G.financiacion_con_anticipo_maximo, conTope);
     assert.strictEqual(p3G.anticipo_tope_legal_pct, TOPE);
+    assert.ok(p3G.falta_cop === conTope - PATR && p3G.mensaje.includes(`le faltan ≈ $${(conTope - PATR).toLocaleString("es-CO")}`), `cuánto falta, con el mejor caso (proceso 4.2): ${JSON.stringify([p3G.falta_cop, p3G.mensaje])}`);
+    assert.strictEqual(require("../lib/publico.js").sinFinanzas({ puertas: { p3_caja: p3G } }).puertas.p3_caja.falta_cop, null, "sin credencial se tacha: con la financiación pública despejaría el patrimonio");
     assert.ok(/no publica el anticipo/.test(p3G.mensaje) && p3G.mensaje.includes(`${TOPE} %`) && !/declara que no habr/.test(p3G.mensaje),
       `el mensaje dice que el anticipo no se publica y que ni el máximo legal alcanza: «${p3G.mensaje}»`);
     assert.ok(juzgar(fG).puertas.no_viable_por.includes("Caja"), "la caja entra en los motivos de no viabilidad");
@@ -11463,6 +11465,20 @@ async function main() {
     assert.strictEqual(imp.dentro_de_k, false, "no cabe ni con el anticipo máximo que la ley permite: la puerta cierra");
     assert.strictEqual(imp.k_depende_del_anticipo, false, "…y no se puede culpar al dato que falta");
     assert.strictEqual(p2K(licImp, perfilH).pasa, false);
+    /* CUÁNTO FALTA (5-nov-2026, proceso 4.2): la diferencia de las dos cifras que ya dice el mensaje; con el anticipo
+       sin publicar, también la del anticipo máximo legal (la cifra segura); sin credencial, tachadas las dos */
+    {
+      const pI = p2K(licImp, perfilH), pC = p2K(licCero, perfilH);
+      assert.strictEqual(pI.falta_cop, pI.crpc - pI.crp, `falta = carga − disponible (MUTACIÓN: sin el campo): ${JSON.stringify([pI.falta_cop, pI.crpc, pI.crp])}`);
+      const minimo = Math.round(calcCRPC(CUANTIA_IMPOSIBLE, 100 * TOPE_ANTICIPO_SUMA, plazoMesesDe(licImp)) - crp(perfilH, CUANTIA_IMPOSIBLE));
+      assert.ok(Math.abs(pI.falta_con_anticipo_maximo_cop - minimo) <= 1 && pI.falta_con_anticipo_maximo_cop < pI.falta_cop, `con el anticipo máximo legal falta menos: ${JSON.stringify([pI.falta_con_anticipo_maximo_cop, minimo])}`);
+      assert.ok(pI.mensaje.includes(`le faltan $${pI.falta_cop.toLocaleString("es-CO")} sin anticipo`) && /con el anticipo máximo que permite la ley, faltarían \$/.test(pI.mensaje), `el mensaje dice las dos: «${pI.mensaje}»`);
+      assert.ok(pC.falta_cop > 0 && pC.falta_con_anticipo_maximo_cop === null && pC.mensaje.includes(`le faltan $${pC.falta_cop.toLocaleString("es-CO")}.`), `con el anticipo DECLARADO en 0 hay una sola cifra: «${pC.mensaje}»`);
+      assert.deepStrictEqual([p2Banda.falta_cop, p2Banda.falta_con_anticipo_maximo_cop], [null, null], "si pasa, no falta nada");
+      const pubI = require("../lib/publico.js").sinFinanzas({ puertas: { p2_k: pI } }).puertas.p2_k;
+      assert.deepStrictEqual([pubI.falta_cop, pubI.falta_con_anticipo_maximo_cop], [null, null], "sin credencial se tachan: con la carga pública despejarían la capacidad (MUTACIÓN: fuera de la lista)");
+      assert.ok(!/faltan/.test(pubI.mensaje), `el mensaje público no lleva la cifra: «${pubI.mensaje}»`);
+    }
 
     // 4 · lo ordinario no se toca: cabe con o sin anticipo y NO se advierte de nada
     const licOk = filaB3("ok", { precio_base: "1000000000" });
@@ -13545,6 +13561,73 @@ async function main() {
     assert.ok(liqLotes.estado === "revisar" && /va por lotes/.test(liqLotes.texto), `por lotes se confirma (MUTACIÓN: se elegía con el total): ${JSON.stringify(liqLotes)}`);
     const dcLotes = Dcm.armarEntrada({ fila: filaR, perfil: { ...PM.prodiac, liquidez: 1.35 }, perfilId: "prodiac", texto: M2R + "\nLOTE 1: vía urbana\nLOTE 2: vía rural", version: {}, hoy: "2026-09-27" }).lecturas_de_la_app.requisitos_numericos.liquidez;
     assert.strictEqual(dcLotes.cumple_segun_la_app, null, "el dictamen tampoco elige por lotes");
+    /* EL JUICIO QUE NO DEPENDE DEL LOTE (5-nov-2026, plan «Detekta a otro nivel», proceso 4.1): si el perfil cumple LAS DOS
+       cifras de la matriz, o no llega a NINGUNA, el lote no cambia nada y se juzga; entre las dos, se sigue confirmando */
+    {
+      const M2L = M2R + "\nLOTE 1: vía urbana\nLOTE 2: vía rural";
+      const hL = Dp.hechosDeTexto(M2L, { tipo: "matriz_indicadores" });
+      const guiaL = (perfilObj, clave = "requisito_liquidez") => Dp.loQueDicen({ indice: { archivos: [], plan: [] }, leidos: { r: { nombre: "m2.docx", tipo: "matriz_indicadores", hechos: hL } }, ilegibles: {} },
+        { perfilObj: { tamanoEmpresa: "gran_empresa", ...perfilObj }, presupuestoCOP: 68539 * require("../lib/perfiles.js").SMMLV, tipoContrato: "Obra" }).hechos.find((x) => x.clave === clave);
+      const dcL = (perfil, id = "liquidez") => Dcm.armarEntrada({ fila: filaR, perfil: { ...PM.prodiac, ...perfil }, perfilId: "prodiac", texto: M2L, version: {}, hoy: "2026-09-27" }).lecturas_de_la_app.requisitos_numericos[id];
+      const alta = guiaL({ liquidez: 1.5 }), baja = guiaL({ liquidez: 1.2 });
+      assert.ok(alta.estado === "cumple" && !alta.confirmar && /cumple las dos/.test(alta.texto) && /el lote al que se presente/.test(alta.texto), `1,5 cumple 1,3 y 1,4: cumple en cualquier lote (MUTACIÓN: se mandaba a confirmar): ${JSON.stringify(alta)}`);
+      assert.ok(baja.estado === "no_cumple" && /no llega a ninguna de las dos/.test(baja.texto), `1,2 no llega a ninguna: no cumple en ningún lote: ${JSON.stringify(baja)}`);
+      assert.strictEqual(guiaL({ liquidez: 1.35 }).estado, "revisar", "entre las dos cifras, depende del lote: se sigue confirmando");
+      assert.strictEqual(guiaL({ endeudamiento: 0.6 }, "requisito_endeudamiento").estado, "cumple", "el endeudamiento (máximo): 0,60 está por debajo de 0,70 y de 0,75");
+      assert.strictEqual(guiaL({ endeudamiento: 0.72 }, "requisito_endeudamiento").estado, "revisar", "0,72 pasa en una columna y no en la otra: se confirma");
+      assert.strictEqual(guiaL({}).estado, "revisar", "sin la cifra de la empresa no se juzga nada");
+      /* REVISIÓN ADVERSARIA (5-nov-2026), cada hallazgo con su cerradura */
+      {
+        const M2b = (b) => ["Rango 1\tRango 2", ">0\t<40.000\t>= 40.000\t-", "(Cifras expresadas en SMMLV)",
+          "Índices de capacidad financiera y organizacionales para los demás Proponentes", "Indicador\tValor concertado Rango 1\tValor concertado Rango 2", `Índice de liquidez\t≥1,3\t≥${b}`].join("\n");
+        const hP = Dp.hechosDeTexto(M2b("1,4"), { tipo: "pliego" });
+        const conOtro = (h2, tipo2, liquidez) => Dp.loQueDicen({ indice: { archivos: [], plan: [] }, ilegibles: {}, leidos: {
+          p: { nombre: "pliego.pdf", tipo: "pliego", hechos: hP, fecha_carga: "2026-10-01" }, a: { nombre: "otro.pdf", tipo: tipo2, hechos: h2, fecha_carga: "2026-10-20" } } },
+          { perfilObj: { tamanoEmpresa: "gran_empresa", liquidez }, presupuestoCOP: null, tipoContrato: "Obra" }).hechos.find((x) => x.clave === "requisito_liquidez");
+        // (1) una adenda que cambia SOLO la segunda columna cuenta: ni «cumple» ni «no cumple» con la cifra vieja
+        const sube = conOtro(Dp.hechosDeTexto(`ADENDA No. 1\n${M2b("1,9")}`, { tipo: "adenda" }), "adenda", 1.5);
+        assert.ok(sube.estado === "revisar" && sube.cambiado_por_adenda === true && /1,3 y 1,9/.test(sube.texto), `la adenda de 1,4 a 1,9 cuenta (MUTACIÓN: comparando solo la primera cifra, «cumple»): ${JSON.stringify([sube.estado, sube.texto])}`);
+        const baja = conOtro(Dp.hechosDeTexto(`ADENDA No. 1\n${M2b("1,2")}`, { tipo: "adenda" }), "adenda", 1.25);
+        assert.strictEqual(baja.estado, "revisar", `la adenda que baja la segunda columna no deja un «no cumple» falso: ${baja.texto}`);
+        const matriz = conOtro(Dp.hechosDeTexto(M2b("1,9"), { tipo: "matriz_indicadores" }), "matriz_indicadores", 1.5);
+        assert.ok(matriz.estado === "revisar" && /Otro documento dice otra cifra: 1,3 y 1,9/.test(matriz.texto), `dos documentos con otra segunda columna se contradicen y se dice (MUTACIÓN: «cumple» callado): ${JSON.stringify([matriz.estado, matriz.texto])}`);
+        // (2) sin saber si es Mipyme, el dictamen no afirma «no cumple» contra la tabla de los demás (la guía tampoco)
+        const TM = `\f1\n${["Rango 1\tRango 2", ">0\t<40.000\t>= 40.000\t-", "(Cifras expresadas en SMMLV)", "Índices de capacidad financiera para Mipyme", "Indicador\tRango 1\tRango 2", "Índice de liquidez\t≥1,0\t≥1,1",
+          "Índices de capacidad financiera y organizacionales para los demás Proponentes", "Indicador\tRango 1\tRango 2", "Índice de liquidez\t≥1,3\t≥1,4", "LOTE 1: vía urbana", "LOTE 2: vía rural"].join("\n")}`;
+        const perfilM = { id: "x", nombre: "X", liquidez: 1.15, tamanoEmpresa: null };
+        const eM = Dcm.armarEntrada({ fila: filaR, perfil: perfilM, perfilId: "x", texto: TM, version: {}, hoy: "2026-11-05" });
+        const vM = Dcm.verificarDictamen(require("../lib/dictamen_reglas.js").generarDictamenPorReglas({ entrada: eM, texto: TM }), TM, eM);
+        const rqM = vM.dictamen.requisitos_para_participar.find((r) => /liquidez/i.test(r.texto));
+        assert.ok(vM.dictamen.veredicto !== "no_presentarse" && eM.lecturas_de_la_app.requisitos_numericos.liquidez.cumple_segun_la_app === null && rqM.estado === "revisar" && /tamaño de su empresa/.test(rqM.motivo_estado),
+          `sin el tamaño de la empresa, «confírmelo», nunca «no presentarse» (MUTACIÓN: sin la guarda de Mipyme): ${JSON.stringify([vM.dictamen.veredicto, rqM.estado, rqM.motivo_estado])}`);
+        // (7) con la cifra entre las dos columnas el dictamen por reglas no dice «no tiene esa cifra»: dice que depende
+        const eE = Dcm.armarEntrada({ fila: filaR, perfil: { ...PM.prodiac, liquidez: 1.35 }, perfilId: "prodiac", texto: `\f1\n${M2L}`, version: {}, hoy: "2026-09-27" });
+        const rqE = Dcm.verificarDictamen(require("../lib/dictamen_reglas.js").generarDictamenPorReglas({ entrada: eE, texto: `\f1\n${M2L}` }), `\f1\n${M2L}`, eE).dictamen.requisitos_para_participar.find((r) => /liquidez/i.test(r.texto));
+        assert.ok(rqE.estado === "revisar" && /\(1,35\) se compara con varias cifras de esa línea \(1,3 y 1,4\)/.test(rqE.motivo_estado) && !/no tiene esa cifra/.test(rqE.motivo_estado), `«confírmelo» con su cifra (MUTACIÓN: «La aplicación no tiene esa cifra»): ${JSON.stringify(rqE)}`);
+        // el hermano de antes: el vigía de adendas también ve un cambio de la segunda columna
+        const DfV = require("../lib/diff.js"), vig = DfV.compararHabilitantes(DfV.extraerHabilitantes(M2b("1,4")), DfV.extraerHabilitantes(M2b("1,9")), "prodiac");
+        assert.ok(vig.length === 1 && /cambió de 1,3 y 1,4 a 1,3 y 1,9/.test(vig[0].mensaje), `el vigía avisa la segunda columna (MUTACIÓN: sin cambios): ${JSON.stringify(vig)}`);
+      }
+      // el dictamen dice lo mismo que la guía, con la misma regla
+      assert.deepStrictEqual([dcL({ liquidez: 1.5 }).cumple_segun_la_app, dcL({ liquidez: 1.5 }).en_ambas_columnas, dcL({ liquidez: 1.2 }).cumple_segun_la_app, dcL({ liquidez: 1.35 }).cumple_segun_la_app],
+        ["si", true, "no", null], "el dictamen juzga igual que la guía (MUTACIÓN: no juzgaba con lotes)");
+      // un consorcio no entra: su cifra sale de la fórmula del pliego por columna
+      const plural = require("../lib/perfiles.js").derivarPlural([{ perfil: { ...PM.prodiac, liquidez: 1.5 }, perfilId: "prodiac", participacion: 0.5 }, { perfil: { ...PM.pics, liquidez: 1.5 }, perfilId: "pics", participacion: 0.5 }]);
+      assert.ok(plural.plural && plural.integrantes.length === 2, "premisa: el consorcio se arma como en la aplicación");
+      assert.strictEqual(Dcm.armarEntrada({ fila: filaR, perfil: plural, perfilId: "prodiac", texto: M2L, version: {}, hoy: "2026-09-27" }).lecturas_de_la_app.requisitos_numericos.liquidez.cumple_segun_la_app, null, "un consorcio sigue sin juicio por columnas");
+      // la experiencia y el capital de trabajo SÍ dependen del lote: la regla no los toca
+      const Dfx = require("../lib/diff.js");
+      assert.strictEqual(Dfx.juicioEnAmbasColumnas({ valores: [100, 200], limite_rango_smmlv: 1000 }, Dfx.REQUISITOS.find((r) => r.id === "experiencia_smmlv"), () => "si"), null, "la experiencia no se juzga por columnas");
+      assert.strictEqual(Dfx.juicioEnAmbasColumnas({ valores: [1, 2], limite_rango_smmlv: 1000 }, Dfx.REQUISITOS.find((r) => r.id === "capital_trabajo"), () => "si"), null, "el capital de trabajo tampoco");
+      assert.strictEqual(Dfx.juicioEnAmbasColumnas({ valores: [1.3, 1.4] }, Dfx.REQUISITOS.find((r) => r.id === "liquidez"), () => "si"), null, "sin el límite de la matriz leído, dos cifras sueltas no se juzgan");
+      // el dictamen por reglas lo dice en palabras y la verificación acepta sus cifras
+      const DR = require("../lib/dictamen_reglas.js");
+      const M2Lp = `\f1\n${M2L}`;   // con la marca de página, como lo guarda el lector
+      const entL = Dcm.armarEntrada({ fila: filaR, perfil: { ...PM.prodiac, liquidez: 1.5 }, perfilId: "prodiac", texto: M2Lp, version: {}, hoy: "2026-09-27" });
+      const vL = Dcm.verificarDictamen(DR.generarDictamenPorReglas({ entrada: entL, texto: M2Lp }), M2Lp, entL);
+      const rq = vL.ok && vL.dictamen.requisitos_para_participar.find((r) => /liquidez/i.test(r.texto));
+      assert.ok(rq && rq.estado === "cumple" && /sea cual sea el lote/.test(rq.motivo_estado) && /1,3 y 1,4/.test(rq.motivo_estado), `el dictamen por reglas explica por qué juzga y la verificación no aparta sus cifras: ${JSON.stringify(rq || vL.no_verificados)}`);
+    }
     console.log("· unidad indicadores y Mipyme: la tabla de los demás por omisión y la de Mipyme según el RUP · «Liquidez ≥ 3,00» en tabla · el análisis del sector fuera · el OCR se confirma · la Matriz 2 al plan · cinco, seis o siete contratos");
   }
   /* LO QUE ENSEÑARON LOS NUEVE PROCESOS DEL DUEÑO (27-sep-2026): una revisión a mano de lo que la
@@ -14036,6 +14119,20 @@ async function main() {
     const dB = await invocar(routerT, `/api/pliego?op=dictamen&id_proceso=${idB}&perfil=helder`, CAB_TOKEN);
     assert.ok(dB.status === 200 && dB.cuerpo.hay_texto === true && dB.cuerpo.documento_texto && dB.cuerpo.documento_texto.nombre === "DOCUMENTO BASE.pdf",
       `y la consulta del dictamen ya no dice «no hay texto»: ${JSON.stringify(dB.cuerpo).slice(0, 300)}`);
+    /* (1b) CÓMO SE LEYÓ llega al dictamen (5-nov-2026, proceso 5.3): el documento leído de un escaneo dice «ocr», el del PDF
+       con texto «texto», y la consulta del dictamen trae el rastro de lectura de ese texto */
+    assert.strictEqual(tB.origen_lectura, "texto", `el documento leído del PDF dice «texto» (MUTACIÓN: sin el campo): ${tB.origen_lectura}`);
+    assert.ok(dB.cuerpo.rastro_lectura && dB.cuerpo.rastro_lectura.origen === "texto" && Array.isArray(dB.cuerpo.rastro_lectura.paginas_con_poco_texto), `el dictamen trae el rastro: ${JSON.stringify(dB.cuerpo.rastro_lectura)}`);
+    {
+      const idOcr = "CO1.REQ.TXT0OCR";
+      await sembrar(idOcr, [arch("1", "PLIEGO ESCANEADO.pdf", "pliego", "2026-09-10")]);
+      const rOcr = await invocarPost(routerT, "/api/pliego?op=documentos", { id_proceso: idOcr, id_documento: "1", texto: PLIEGO, origen: "ocr" }, CAB_TOKEN);
+      assert.strictEqual(rOcr.status, 200, JSON.stringify(rOcr.cuerpo).slice(0, 300));
+      const tOcr = await textoGuardado(redis, idOcr);
+      assert.strictEqual(tOcr.origen_lectura, "ocr", "el pliego leído de un escaneo dice «ocr», también por su versión del vigía");
+      const dOcr = await invocar(routerT, `/api/pliego?op=dictamen&id_proceso=${idOcr}&perfil=helder`, CAB_TOKEN);
+      assert.strictEqual(dOcr.cuerpo.rastro_lectura && dOcr.cuerpo.rastro_lectura.origen, "ocr", `y el dictamen lo sabe: ${JSON.stringify(dOcr.cuerpo.rastro_lectura)}`);
+    }
     // (2) el pliego y DESPUÉS unas observaciones con «pliego» en el nombre: el vigía no las registra y el texto es el pliego
     const idO = "CO1.REQ.TXT002";
     await sembrar(idO, [arch("1", "PLIEGO DEFINITIVO.pdf", "pliego", "2026-03-19"), arch("2", "OBSERVACIONES PLIEGO DEF LP-004-2026.pdf", "pliego", "2026-03-24")]);
@@ -14051,6 +14148,7 @@ async function main() {
     await Dv.registrarVersion(redis, { idProceso: idV, texto: OBS, origen: "documentos:OBSERVACIONES PLIEGO DEF LP-004-2026", ahora: Date.parse("2026-03-25T10:00:00Z") });
     const tV = await textoGuardado(redis, idV);
     assert.ok(tV.version === 1 && /PLIEGO DE CONDICIONES DEFINITIVO/.test(tV.texto), `sin documentos leídos, la última versión del vigía que sea del pliego, nunca un anexo de la lectura automática (MUTACIÓN: la última a secas, las observaciones): v${tV.version}`);
+    assert.strictEqual(tV.origen_lectura == null, true, "sin documento leído detrás, no se sabe cómo se leyó: nada, nunca «texto»");
     // (4) lo cargado A MANO después de la lectura automática gana; antes, no
     const idM = "CO1.REQ.TXT004";
     await sembrar(idM, [arch("1", "DOCUMENTO BASE.pdf", "documento_base", "2026-09-10")]);
@@ -41988,6 +42086,28 @@ async function main() {
       await L("tipo=obra&dep=73&modalidad=licitacion,abreviada&cierre=%2B15d&min=1&q=a");
       const msF = Date.now() - tF;
       assert.ok(msF < 800, `la lista filtrada tardó ${msF} ms (tope 800)`);
+      /* LA BÚSQUEDA DEL OFICIO (5-nov-2026, proceso 2): «vías» encuentra «pavimentación» y «placa huella» con la regla de
+         tipos de obra que ya existe, dice por qué palabra salió cada una, y lo que no está en el diccionario se busca tal cual */
+      {
+        const FLo = require("../lib/filtros_lista.js");
+        const filaO = (id, n, d, e = "ALCALDÍA DE PRUEBA") => ({ id_del_proceso: id, nombre_del_procedimiento: n, descripci_n_del_procedimiento: d, entidad: e, tipo_de_contrato: "Obra" });
+        const filasO = [filaO("V1", "Pavimentación de la carrera 5", "Obra"), filaO("V2", "Construcción de placa-huella vereda El Rosal", ""), filaO("V3", "Mejoramiento de vías terciarias", ""),
+          filaO("A1", "Construcción de aulas", "Colegio"), filaO("P1", "Construcción de puente vehicular", ""), filaO("E1", "Mantenimiento de la sede", "", "INSTITUTO NACIONAL DE VÍAS")];
+        const clasO = FLo.crearClasificador({ ahora: Date.now() });
+        const ids = (q) => FLo.aplicar(filasO, { ...require("../public/filtros.js").leerEstado({}), tipo: null, q }, clasO).map((f) => f.id_del_proceso).sort();
+        assert.deepStrictEqual(ids("vías"), ["E1", "P1", "V1", "V2", "V3"], `«vías» encuentra la pavimentación, la placa huella y el puente (MUTACIÓN: solo la subcadena «vias»): ${ids("vías")}`);
+        assert.deepStrictEqual(ids("puente"), ["P1"], "«puente» no está en el diccionario: se busca tal cual (un puente no es cualquier vía)");
+        assert.deepStrictEqual(ids("aulas"), ["A1"], "lo de siempre sigue igual");
+        assert.deepStrictEqual(FLo.coincidenciaDeConsulta(filasO[0], "vías"), { palabra: "Pavimentación", tipo: "vías y puentes" }, "dice la palabra del objeto con sus tildes y el tipo de obra");
+        assert.strictEqual(FLo.coincidenciaDeConsulta(filasO[1], "vías").palabra, "placa-huella");
+        assert.strictEqual(FLo.coincidenciaDeConsulta(filaO("V4", "Adecuación de vía/puente sector norte", ""), "vías").palabra, "vía", "la palabra pegada a otra por un signo sale con su tilde (revisión adversaria)");
+        assert.strictEqual(FLo.coincidenciaDeConsulta(filasO[2], "vías"), null, "la que trae la palabra literal no necesita explicación");
+        assert.strictEqual(FLo.coincidenciaDeConsulta(filasO[5], "vías"), null, "la entidad «de Vías» casa por la palabra literal, como antes");
+        assert.strictEqual(FLo.oficioDeConsulta("vías en tolima"), null, "solo cuando la consulta ENTERA es del diccionario");
+        const lc = new Function("esc", `${fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8").match(/function lineaCoincidencia\(c\) \{[\s\S]*?\n  \}/)[0]}; return lineaCoincidencia;`)((x) => String(x));
+        assert.strictEqual(lc({ palabra: "Pavimentación", tipo: "vías y puentes" }).replace(/<[^>]+>/g, ""), "Salió por «Pavimentación», que es de vías y puentes.", "la tarjeta dice por qué salió");
+        assert.strictEqual(lc(null), "", "sin el campo, nada");
+      }
 
       /* ---- (5) orden por margen: nada se inventa ---- */
       const rM0 = await L("ordenar_por=margen");
@@ -47254,6 +47374,19 @@ async function main() {
           assert.ok(/text-red-700/.test(rojoObs) && /no encaja con su registro; y todavía no admite ofertas: el pliego está en proyecto\./.test(rojoObs), `el RUP que no encaja no se esconde tras el ámbar → ${rojoObs}`);
           const rojoK = lineaRequisitos({ p1_rup: { pasa: true }, p2_k: { pasa: false } }, { aplica: true, estado: "por_abrir", secop_observaciones_cerradas: true }, false);
           assert.ok(/text-red-700/.test(rojoK) && /Supera su capacidad de contratación; y todavía no admite ofertas: las observaciones ya cerraron/.test(rojoK), rojoK);
+          /* CUÁNTO FALTA (5-nov-2026, proceso 4.2): la línea dice la cifra que manda el servidor; con el anticipo sin
+             publicar, la del mejor caso y «al menos»; sin credencial (campos en null), la frase de siempre */
+          {
+            const lineaRP = new Function("esc", "pesos", `${extraer("lineaRequisitos")}; return lineaRequisitos;`)((x) => String(x), (n) => `$${Number(n).toLocaleString("es-CO")}`);
+            const plano = (g) => lineaRP(g).replace(/<[^>]+>/g, "");
+            assert.strictEqual(plano({ p1_rup: { pasa: true }, p2_k: { pasa: false, falta_cop: 1500000, falta_con_anticipo_maximo_cop: null } }), "● Supera su capacidad de contratación: le faltan $1.500.000.", "la capacidad dice cuánto falta (MUTACIÓN: solo «supera»)");
+            assert.strictEqual(plano({ p1_rup: { pasa: true }, p2_k: { pasa: false, falta_cop: 3000000, falta_con_anticipo_maximo_cop: 1000000 } }), "● Supera su capacidad de contratación: le faltan al menos $1.000.000.", "sin anticipo publicado, la cifra segura es la del anticipo máximo, con «al menos»");
+            assert.strictEqual(plano({ p1_rup: { pasa: true }, p2_k: { pasa: false, falta_cop: null, falta_con_anticipo_maximo_cop: null } }), "● Supera su capacidad de contratación.", "sin credencial (tachada), la frase de siempre, sin cifra");
+            const cajaF = plano({ p1_rup: { pasa: true }, p2_k: { pasa: true }, p3_caja: { pasa: false, falta_cop: 2000000 } });
+            assert.ok(/financiarla está justo \(le faltan ≈ \$2\.000\.000 de patrimonio\): considere crédito o consorcio/.test(cajaF), cajaF);
+            assert.ok(!/faltan/.test(plano({ p1_rup: { pasa: true }, p2_k: { pasa: true }, p3_caja: { pasa: false, falta_cop: null } })), "la caja sin la cifra no inventa una");
+            assert.ok(/aun con el anticipo máximo que permite la ley le faltan al menos \$400\.000\.000 de patrimonio/.test(plano({ p1_rup: { pasa: true }, p2_k: { pasa: true }, p3_caja: { pasa: false, ni_con_anticipo_maximo: true, falta_cop: 400000000 } })), "ni con el anticipo máximo: la cifra es el mínimo, con «al menos» (revisión adversaria; MUTACIÓN: «≈»)");
+          }
           assert.strictEqual(lineaRequisitos({ p1_rup: { pasa: false } }).replace(/<[^>]+>/g, ""), "● Este proceso no encaja con su registro.", "sin la fase, el rojo de siempre, sin coletilla");
           assert.ok(!/el día que abra/.test(lineaRequisitos({ p1_rup: { pasa: true }, p2_k: { pasa: true }, p3_caja: { pasa: true } }, { aplica: true, estado: "por_confirmar" }, true)), "con el plazo corriendo no se habla de «el día que abra»");
           const lineaMargen = new Function("esc", "fmtCOP", `${extraer("lineaMargen")}; return lineaMargen;`)((x) => String(x), { format: (n) => `$${n}` });
@@ -52715,6 +52848,31 @@ async function main() {
         assert.deepStrictEqual(Dc.buscarCita("de ejecución", 4, idx), { verificada: true, pagina_real: 4 }, "una cita corta presente en una sola página se acepta");
         const idxDoble = Dc.paginasDe("\f1\nplazo de ejecución uno\n\f2\nplazo de ejecución dos\n");
         assert.deepStrictEqual(Dc.buscarCita("de ejecución", 1, idxDoble), { motivo: "cita_ambigua" }, "corta y en dos páginas: ambigua");
+        /* LA CITA ENTERA (5-nov-2026, PENDIENTE del 26-oct-2026 resuelto): antes se comparaban solo los primeros 200
+           caracteres y una cola inventada pasaba verificada y respaldaba su cifra. Y una cita que sigue en la página
+           siguiente se verifica contra la unión de DOS páginas CONSECUTIVAS, nunca de páginas lejanas. */
+        {
+          const relleno = (n, pre) => Array.from({ length: n }, (_, i) => `${pre}${i}`).join(" ");
+          const p1 = `El proponente debe acreditar contratos de obra cuyo valor sumado sea igual o superior al cien por ciento del presupuesto oficial expresado en SMMLV, ejecutados en los ultimos diez anos, con certificacion de la entidad contratante y acta de liquidacion. ${relleno(25, "uno")}`;
+          const p2 = `Continuacion con la capacidad residual exigida y la formula del pliego. ${relleno(25, "dos")}`;
+          const p4 = `Pagina lejana con otra cosa. ${relleno(25, "cuatro")}`;
+          const txt = ["\f1", p1, "\f2", p2, "\f3", "algo en medio que no es nada de lo anterior", "\f4", p4].join("\n");
+          const ix = Dc.paginasDe(txt);
+          const larga = p1.slice(0, 260);
+          assert.ok(larga.length > Dc.CITA_MAX, "premisa: la cita pasa de los 200 caracteres de antes");
+          assert.deepStrictEqual(Dc.buscarCita(larga, 1, ix), { verificada: true, pagina_real: 1 }, "una cita larga y real se verifica entera");
+          const inventada = `${p1.slice(0, 210)} por un valor de $ 987.654.321 que el pliego no dice.`;
+          assert.deepStrictEqual(Dc.buscarCita(inventada, 1, ix), { motivo: "cita_no_encontrada" }, "con una cola inventada la cita ya no pasa");
+          const cruce = `${p1.slice(-60)} ${p2.slice(0, 60)}`;
+          assert.deepStrictEqual(Dc.buscarCita(cruce, 1, ix), { verificada: true, pagina_real: 1 }, "la cita que sigue en la página siguiente se verifica, con la primera de las dos");
+          assert.deepStrictEqual(Dc.buscarCita(cruce, 2, ix), { verificada: true, pagina_real: 1 }, "y también si el modelo dijo la segunda");
+          assert.deepStrictEqual(Dc.buscarCita(cruce, 4, ix), { verificada: false, pagina_real: 1 }, "declarada en otra página: se conserva con su página real, sin verificar");
+          assert.deepStrictEqual(Dc.buscarCita(`${p2.slice(-40)} ${p4.slice(0, 40)}`, 2, ix), { motivo: "cita_no_encontrada" }, "páginas NO consecutivas no se unen: fabricaría una cita");
+          // y la cifra de la cola inventada ya no respalda el texto del punto (verificarDictamen la aparta)
+          const entX = Dc.armarEntrada({ fila: null, perfil: PERFILES_DC.helder, perfilId: "helder", texto: txt, version: {}, hoy: "2026-09-02" });
+          const vX = Dc.verificarDictamen({ ...DICTAMEN_OK, motivos: [{ texto: "Hay que acreditar $ 987.654.321 en contratos.", pagina: 1, cita: inventada }] }, txt, entX);
+          assert.ok(vX.ok && !vX.dictamen.motivos.some((m) => /987\.654\.321/.test(m.texto)) && vX.no_verificados.some((x) => x.motivo === "cita_no_encontrada" && /987\.654\.321/.test(x.texto)), `la cifra inventada no entra al dictamen: ${JSON.stringify(vX.no_verificados)}`);
+        }
         const v = Dc.verificarDictamen({ ...DICTAMEN_OK, motivos: [{ texto: "x", pagina: 3, cita: null }, { texto: "y", pagina: 99, cita: "seis (6) meses" }] }, TEXTO_DC, Dc.armarEntrada({ fila: null, perfil: PERFILES_DC.helder, perfilId: "helder", texto: TEXTO_DC, version: {}, hoy: "2026-09-02" }));
         assert.strictEqual(v.dictamen.motivos[0].motivo_verificacion, "sin_cita", "página numérica sin cita = afirmación sin respaldo");
         assert.strictEqual(v.dictamen.motivos[0].pagina, null);
@@ -53028,6 +53186,49 @@ async function main() {
           assert.ok(html.includes(esperado), `el pintado tiene que contener «${esperado}»`);
         }
         assert.ok(!/<script/.test(html), "todo string del modelo pasa por esc()");
+        /* EL RASTRO DE LECTURA (5-nov-2026, proceso 5.3): la cita comprobada contra un texto mal leído se manda a verificar
+           en el PDF, con el porqué; sin indicios no se dice nada; nada se aparta */
+        {
+          const largoR = "palabra del pliego con texto corrido ".repeat(40);
+          const txtR = [1, 2, 3, 4, 5].map((n) => `\f${n}\n${n === 3 ? "Plazo de ejecucion seis meses contados desde el acta" : largoR}`).join("\n");
+          const rR = Dc.rastroDeLectura(txtR, { origen: "ocr", paginas_total: 5 });
+          assert.deepStrictEqual([rR.origen, rR.paginas_con_poco_texto, rR.indicio_documento], ["ocr", [3], null], `el rastro: escaneo y la página 3 con muy poco texto: ${JSON.stringify(rR)}`);
+          assert.deepStrictEqual(Dc.rastroDeLectura(txtR, {}).origen, null, "sin saber cómo se leyó, null (no «texto»)");
+          assert.strictEqual(Dc.rastroDeLectura("", {}), null, "sin texto no hay rastro");
+          // revisión adversaria: más allá de la página 600 (el tope del detalle de la auditoría) también se ve
+          const largo700 = Array.from({ length: 700 }, (_, k) => `\f${k + 1}\n${k === 699 ? "Plazo de ejecucion seis meses contados desde el acta" : largoR}`).join("\n");
+          assert.deepStrictEqual(Dc.rastroDeLectura(largo700, {}).paginas_con_poco_texto, [700], "la página 700 con poco texto se marca (MUTACIÓN: la lista recortada a 600 o a 40)");
+          const rotoR = Dc.rastroDeLectura([1, 2].map((n) => `\f${n}\n${"1 2 3 4 5 6 7 8 9 0 ".repeat(60)}`).join("\n"), { origen: "texto" });
+          assert.ok(rotoR && /pocas letras/.test(rotoR.indicio_documento), `un documento casi sin letras tiene un indicio de lectura rota: ${JSON.stringify(rotoR)}`);
+          const motivoEn = (pag, cita) => ({ texto: `MOTIVO-${pag}`, pagina: pag, cita, cita_verificada: true, pagina_real: pag });
+          const dR = { ...v.dictamen, motivos: [motivoEn(3, "Plazo de ejecucion seis meses"), motivoEn(1, "palabra del pliego"), motivoEn(2, "palabra con 25 por ciento")] };
+          const conRastro = pintarDictamen({ ...fixture, dictamen: dR, rastro_lectura: rR }, { MARCA, esc: escF });
+          const tramo = (t) => { const k = conRastro.indexOf(t); return conRastro.slice(k, conRastro.indexOf("</li>", k)); };
+          assert.ok(/Verifíquela en el PDF: esa página trae muy poco texto/.test(tramo("MOTIVO-3")), `la cita de la página con poco texto se manda a verificar (MUTACIÓN: sin el rastro): ${tramo("MOTIVO-3")}`);
+          assert.ok(!/Verifíquela/.test(tramo("MOTIVO-1")), "una cita sin cifras de un escaneo, en una página normal, no se marca");
+          assert.ok(/Verifíquela en el PDF: el pliego se leyó de un escaneo y la cita trae cifras/.test(tramo("MOTIVO-2")), "una cita con cifras de un escaneo, sí");
+          assert.ok(/contra el texto guardado \(\d+ hay que verificarlas en el PDF/.test(conRastro), "el resumen dice cuántas hay que verificar");
+          const sinRastro = pintarDictamen({ ...fixture, dictamen: dR }, { MARCA, esc: escF });
+          assert.ok(!/Verifíquela/.test(sinRastro) && !/hay que verificarlas/.test(sinRastro), "sin rastro (un servidor anterior), nada cambia");
+          const conIndicio = pintarDictamen({ ...fixture, dictamen: dR, rastro_lectura: { origen: "texto", paginas_con_poco_texto: [], indicio_documento: "el texto del pliego tiene caracteres rotos" } }, { MARCA, esc: escF });
+          assert.ok(/Verifíquela en el PDF: el texto del pliego tiene caracteres rotos/.test(conIndicio.slice(conIndicio.indexOf("MOTIVO-1"))), "un indicio del documento entero marca todas las citas");
+        }
+        /* QUÉ PESA CADA REQUISITO (5-nov-2026, proceso 5.2): la causal de rechazo primero y en rojo, lo que exigen para
+           participar con las palabras del glosario, la condición del contrato dicha como tal; CENSO contra el servidor */
+        {
+          const req = (tipo, texto) => ({ texto, pagina: 3, cita: "Plazo de ejecución: seis (6) meses", tipo, estado: "sin_dato_del_perfil", dato_comparado: null, motivo_estado: "x", cita_verificada: true, pagina_real: 3 });
+          const conPeso = pintarDictamen({ ...fixture, dictamen: { ...v.dictamen, requisitos_para_participar: [req("plazo", "PLAZO-UNO"), req("garantias", "GARANTIA-DOS"), req("financiero", "FINANCIERO-TRES"), req("causal_de_rechazo", "RECHAZO-CUATRO")] } }, { MARCA, esc: escF });
+          const pos = ["RECHAZO-CUATRO", "FINANCIERO-TRES", "GARANTIA-DOS", "PLAZO-UNO"].map((t) => conPeso.indexOf(t));
+          assert.ok(pos.every((x) => x > 0) && pos.every((x, k) => k === 0 || x > pos[k - 1]), `la causal de rechazo va primero y la condición del contrato al final (MUTACIÓN: en el orden del modelo): ${pos}`);
+          assert.ok(/text-red-700">\(Si falta, rechazan la oferta\)/.test(conPeso) && conPeso.includes("(Lo exigen para participar)") && conPeso.includes("(Condición del contrato: no impide presentarse)"), "cada uno dice qué pesa");
+          assert.ok(!/habilitante/i.test(conPeso.replace(/<[^>]+>/g, "")), "sin la jerga «habilitante»");
+          const bloquePeso = fuenteFront.slice(fuenteFront.indexOf("const PESO = {"), fuenteFront.indexOf("const ordenPeso"));
+          const conPesoTipos = [...bloquePeso.matchAll(/\b([a-z_]+):\s*"/g)].map((m) => m[1]);
+          const sinPeso = JSON.parse(bloquePeso.match(/const SIN_PESO = (\[[^\]]*\])/)[1]);
+          const faltan = Dc.TIPOS_REQUISITO.filter((t) => !conPesoTipos.includes(t) && !sinPeso.includes(t));
+          const sobran = [...conPesoTipos, ...sinPeso].filter((t) => !Dc.TIPOS_REQUISITO.includes(t));
+          assert.deepStrictEqual([faltan, sobran], [[], []], "censo: cada tipo de requisito del servidor tiene peso o está declarado sin él, y ninguno sobra");
+        }
         assert.ok(!/pág\. null|undefined|\bK\b|anticipo_o_pago_anticipado/.test(html), "sin «pág. null», «undefined», «K» ni valores crudos del enum");
         // el texto del documento base no tiene número de versión: se dice el archivo (18-oct-2026)
         const delBase = pintarDictamen({ ...fixture, version_texto: null, documento_texto: { tipo: "Documento base del pliego tipo", nombre: "DOCUMENTO <b>BASE</b>.pdf", id_documento: "1" } }, { MARCA, esc: escF });
@@ -53053,6 +53254,18 @@ async function main() {
            mensaje mandaba a «Ver si ya está lista» y el botón no se pintaba */
         const releyendoF = pintarDictamen({ ...fixture, lectura_completa_disponible: true, motor: "sesion", pedido_sesion: { ok: true, el: "2026-09-26T15:31:00.000Z" } }, { MARCA, esc: escF });
         assert.ok(releyendoF.includes("Ver si ya está lista") && releyendoF.includes("la lectura completa anterior"), "volviendo a leer, la caja ofrece mirar si ya está y dice qué se ve mientras tanto");
+        /* CUÁNTO TARDÓ LA LECTURA (5-nov-2026, proceso 5): la de la lectura completa, desde que se pidió; la duración de una
+           respuesta guardada es la de la petición y no se dice (salía «0 segundos») */
+        {
+          const conLectura = pintarDictamen({ ...fixture, motor: "sesion", cache: true, duracionMs: 300, lectura: { pedido: "2026-11-05T10:00:00.000Z", entregado: "2026-11-05T10:12:30.000Z", minutos: 12.5 } }, { MARCA, esc: escF });
+          assert.ok(/la lectura completa tardó 12,5 minutos desde que se pidió/.test(conLectura) && !/ segundos/.test(conLectura), `la lectura completa dice cuánto tardó (MUTACIÓN: sin el campo): ${(conLectura.match(/Cómo se hizo[^<]*/) || [""])[0]}`);
+          const guardadoF = pintarDictamen({ ...fixture, cache: true, duracionMs: 300 }, { MARCA, esc: escF });
+          assert.ok(!/ 0 segundos| segundos/.test(guardadoF), `un dictamen guardado no dice «0 segundos» (MUTACIÓN: la duración de la petición): ${(guardadoF.match(/Cómo se hizo[^<]*/) || [""])[0]}`);
+          assert.ok(/ 4 segundos/.test(pintarDictamen({ ...fixture, cache: false, duracionMs: 4200 }, { MARCA, esc: escF })), "una lectura recién hecha sí dice sus segundos");
+          assert.strictEqual(Dc.lecturaDesdePedido({ el: "2026-11-05T10:00:00.000Z" }, "2026-11-05T10:12:30.000Z").minutos, 12.5, "12 minutos y medio");
+          assert.deepStrictEqual([Dc.lecturaDesdePedido(null, "2026-11-05T10:12:30.000Z"), Dc.lecturaDesdePedido({ el: "2026-11-05T10:12:30.000Z" }, "2026-11-05T10:00:00.000Z"), Dc.lecturaDesdePedido({ el: "2026-11-03T10:00:00.000Z" }, "2026-11-05T10:00:00.000Z"), Dc.lecturaDesdePedido({ el: "x" }, "2026-11-05T10:00:00.000Z")],
+            [null, null, null, null], "sin pedido, al revés, con más de un día en medio o con una hora ilegible, no se inventa un inicio");
+        }
         assert.ok(/pedir_sesion: true/.test(fuenteFront) && /enCaja\("btn-dictamen-completo"\)/.test(fuenteFront) && /enCaja\("btn-dictamen-completo-ver"\)/.test(fuenteFront), "los dos botones están cableados dentro de la caja");
         const gris = pintarDictamen({ ...fixture, dictamen: { ...v.dictamen, veredicto: "sin_hechos_comprobados" }, que_hacer: Dc.MENSAJES.GRIS_QUE_HACER }, { MARCA, esc: escF });
         assert.ok(/gray/.test(gris) && gris.includes("Falta información para opinar") && gris.includes(Dc.MENSAJES.GRIS_QUE_HACER), "el gris dice qué hacer");
@@ -53286,8 +53499,13 @@ async function main() {
             const sU = await pedir({ refrescar: true });
             assert.ok(sU.cuerpo.tope_alcanzado !== true && disparos.length === antesT + 1 && (await redis.get(claveSR)) === String(topeD), "la última permitida se despierta y suma");
             // (3) el dictamen de la sesión llega: la cuenta se borra y se puede volver a pedir
+            const pedidoT = JSON.parse(await redis.get(Dc.clavePedido(ID_RG, "genesis")));
             const psT = await invocarPost(routerPliego, URL_DC, { id_proceso: ID_RG, perfil: "genesis", motor: "sesion", dictamen: crudoG }, CAB_TOKEN);
             assert.strictEqual(psT.status, 200);
+            assert.ok(psT.cuerpo.lectura && psT.cuerpo.lectura.pedido === pedidoT.el && psT.cuerpo.lectura.entregado === psT.cuerpo.generado && psT.cuerpo.lectura.minutos >= 0,
+              `el dictamen que llega guarda cuánto tardó desde el pedido (MUTACIÓN: sin el campo): ${JSON.stringify(psT.cuerpo.lectura)}`);
+            const gT = await invocar(routerPliego, `${URL_DC}&id_proceso=${ID_RG}&perfil=genesis`, CAB_TOKEN);
+            assert.deepStrictEqual(gT.cuerpo.lectura, psT.cuerpo.lectura, "y lo conserva guardado");
             assert.strictEqual(await redis.get(claveSR), null, "el dictamen que llega borra la cuenta: la rutina funciona");
             // (4) una cuenta ilegible no frena: se pide, que es el lado seguro
             await redis.set(claveSR, "basura"); await redis.del(Dc.clavePedido(ID_RG, "genesis"));

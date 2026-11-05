@@ -1018,7 +1018,22 @@
       if (x.pagina_real != null) return `está en la página ${x.pagina_real}`;
       return "según los datos del proceso";
     };
-    const item = (x) => `<li>${esc(x.texto)} <span class="text-xs text-gray-500">(${esc(donde(x))})</span>${x.cita ? `<br><span class="text-xs italic text-gray-500">«${esc(x.cita)}»</span>` : ""}</li>`;
+    /* EL RASTRO DE LECTURA (5-nov-2026, proceso 5.3): la cita se comprobó contra el texto guardado, no contra el PDF. Si
+       ese texto salió de un escaneo (y la cita trae cifras), la página trae muy poco texto o el documento tiene indicios de
+       lectura rota, se dice «verifíquela en el PDF» con el porqué. Una sola copia, aquí: el servidor manda los hechos
+       (lib/dictamen.rastroDeLectura) y solo la pantalla los usa. La página con poco texto y el documento con indicios,
+       siempre; el escaneo, solo si la cita trae cifras (lo que el OCR suele equivocar es un dígito). No aparta nada. */
+    const rastro = r.rastro_lectura && typeof r.rastro_lectura === "object" ? r.rastro_lectura : null;
+    const porQueVerificar = (x) => {
+      if (!x || !rastro || typeof x.cita !== "string" || !x.cita.trim()) return null;
+      if (rastro.indicio_documento) return rastro.indicio_documento;
+      const pag = Number.isInteger(x.pagina_real) ? x.pagina_real : Number.isInteger(x.pagina) ? x.pagina : null;
+      if (pag != null && Array.isArray(rastro.paginas_con_poco_texto) && rastro.paginas_con_poco_texto.includes(pag)) return "esa página trae muy poco texto frente al resto del pliego";
+      if (rastro.origen === "ocr" && /\d/.test(x.cita)) return "el pliego se leyó de un escaneo y la cita trae cifras";
+      return null;
+    };
+    const verifique = (x) => { const m = porQueVerificar(x); return m ? `<br><span class="text-xs font-medium text-amber-700">Verifíquela en el PDF: ${esc(m)}.</span>` : ""; };
+    const item = (x) => `<li>${esc(x.texto)} <span class="text-xs text-gray-500">(${esc(donde(x))})</span>${x.cita ? `<br><span class="text-xs italic text-gray-500">«${esc(x.cita)}»</span>` : ""}${verifique(x)}</li>`;
     const ETIQUETA = {
       experiencia_especifica: "Experiencia específica", financiero: "Requisito financiero", capacidad_de_contratacion: "Capacidad de contratación",
       personal: "Personal exigido", equipos_o_laboratorio: "Equipos o laboratorio", certificaciones: "Certificaciones", garantias: "Garantías",
@@ -1027,6 +1042,21 @@
       marca_sin_equivalente: "Marca sin la fórmula “o equivalente”", licencia_o_permiso: "Licencia o permiso",
       visita_obligatoria: "Visita obligatoria", causal_de_rechazo: "Causal de rechazo", adenda: "Adenda", otro: "Otro", experiencia_general: "Experiencia general",
     };
+    /* QUÉ PESA CADA REQUISITO (5-nov-2026, plan «Detekta a otro nivel», proceso 5.2): si falta, ¿rechazan la oferta, no lo
+       dejan participar, o es una condición del contrato que no impide presentarse? Se deduce del TIPO que ya trae cada
+       requisito, sin pedirle nada nuevo al modelo (no cambia las instrucciones ni invalida los dictámenes guardados). Solo
+       se etiqueta donde el tipo lo dice sin duda; garantías, personal, equipos, certificaciones, licencias, adendas y «otro»
+       dependen del pliego y van sin etiqueta. La suite censa que cada tipo del servidor esté aquí o declarado sin peso.
+       «Habilitante» es jerga: se dice con las palabras del glosario. */
+    const PESO = {
+      causal_de_rechazo: "Si falta, rechazan la oferta", visita_obligatoria: "Si falta, rechazan la oferta",
+      experiencia_especifica: "Lo exigen para participar", experiencia_general: "Lo exigen para participar", financiero: "Lo exigen para participar", capacidad_de_contratacion: "Lo exigen para participar",
+      forma_de_pago: "Condición del contrato: no impide presentarse", anticipo_o_pago_anticipado: "Condición del contrato: no impide presentarse", plazo: "Condición del contrato: no impide presentarse", multas: "Condición del contrato: no impide presentarse",
+      item_sin_valor: "Condición del contrato: no impide presentarse", subcontratista_o_proveedor_impuesto: "Condición del contrato: no impide presentarse", marca_sin_equivalente: "Condición del contrato: no impide presentarse",
+    };
+    const SIN_PESO = ["personal", "equipos_o_laboratorio", "certificaciones", "garantias", "licencia_o_permiso", "adenda", "otro"];
+    /* los que rechazan la oferta, primero: es lo que hay que mirar antes que nada */
+    const ordenPeso = (x) => (PESO[x.tipo] === PESO.causal_de_rechazo ? 0 : PESO[x.tipo] === PESO.financiero ? 1 : PESO[x.tipo] ? 3 : 2);
     /* las palabras de cumple / confírmelo / no cumple son las del glosario (una sola copia); leído aquí, no al cargar */
     const EST = (typeof window !== "undefined" && window.Glosario && window.Glosario.ESTADO) || null;
     const ESTADO = { cumple: EST ? EST.cumple.largo : "Cumple", no_cumple: EST ? EST.no_cumple.largo : "No cumple", revisar: EST ? EST.revisar.largo : "Confirme en el pliego", sin_dato_del_perfil: "Sin dato en su perfil: verifíquelo" };
@@ -1056,7 +1086,8 @@
        pasa por el vigía, y los 4 pliegos de más de 20 MB medidos el 18-oct-2026 son escaneos */
     const nuevo = r.mas_nuevo_sin_leer && typeof r.mas_nuevo_sin_leer === "object" && r.mas_nuevo_sin_leer.nombre ? r.mas_nuevo_sin_leer : null;
     if (nuevo) html += `<p class="mt-1 text-xs font-medium text-amber-700">Ojo: SECOP II publicó después «${esc(nuevo.nombre)}»${nuevo.fecha_carga ? ` (${esc(fecha(nuevo.fecha_carga))})` : ""} ${nuevo.pendiente === true ? "y la aplicación todavía no lo ha leído. Este dictamen es sobre una versión anterior: vuelva a pedirlo cuando la aplicación lo haya leído." : `y la aplicación no lo pudo leer${nuevo.motivo ? ` (${esc(nuevo.motivo)})` : ""}. Este dictamen es sobre una versión anterior: revise ese documento en SECOP II antes de decidir. Si el PDF trae texto (no es un escaneo), cárguelo en Precios con este proceso abierto y vuelva a pedir el dictamen.`}</p>`;
-    html += `<p class="mt-1 text-xs text-gray-500">Se comprobaron ${esc(ver.citas_verificadas || 0)} de ${esc(ver.citas_total || 0)} citas${r.paginas != null ? ` · ${esc(r.paginas - (Array.isArray(r.paginas_vacias) ? r.paginas_vacias.length : 0))} páginas leídas de ${esc(r.paginas)}` : ""} · faltan ${faltan} datos de su empresa</p>`;
+    const aVerificar = [...motivos, ...requisitos, ...riesgos, ...(Array.isArray(d.puntos_a_favor) ? d.puntos_a_favor : []), ...(Array.isArray(d.pendientes_de_verificar) ? d.pendientes_de_verificar : [])].filter((x) => porQueVerificar(x)).length;
+    html += `<p class="mt-1 text-xs text-gray-500">Se comprobaron ${esc(ver.citas_verificadas || 0)} de ${esc(ver.citas_total || 0)} citas contra el texto guardado${aVerificar ? ` (${aVerificar} hay que verificarlas en el PDF: el texto puede estar mal leído)` : ""}${r.paginas != null ? ` · ${esc(r.paginas - (Array.isArray(r.paginas_vacias) ? r.paginas_vacias.length : 0))} páginas leídas de ${esc(r.paginas)}` : ""} · faltan ${faltan} datos de su empresa</p>`;
     if (motivos.length) html += `<p class="mt-3 text-xs font-medium uppercase tracking-wide text-gray-500">Por qué</p><ul class="mt-1 space-y-1">${motivos.map(item).join("")}</ul>`;
     if (lecturas.length || r.capacidad_disponible_cop != null) {
       html += `<p class="mt-3 text-xs font-medium uppercase tracking-wide text-gray-500">${esc(MARCA.nombre)} ya midió</p><ul class="mt-1 space-y-0.5 text-xs">`;
@@ -1072,9 +1103,9 @@
     html += `<details class="mt-3"${gris ? " open" : ""}><summary class="cursor-pointer text-sm font-medium">Ver el dictamen completo</summary><div class="mt-2 space-y-3 text-sm">`;
     if (requisitos.length) {
       html += `<div><p class="text-xs font-medium uppercase tracking-wide text-gray-500">Requisitos para poder participar</p><ul class="mt-1 space-y-1">`;
-      for (const x of requisitos) {
-        html += `<li><span class="font-medium">${esc(ETIQUETA[x.tipo] || ETIQUETA.otro)}</span> · ${esc(ESTADO[x.estado] || ESTADO.sin_dato_del_perfil)}<br>${esc(x.texto)} <span class="text-xs text-gray-500">(${esc(donde(x))})</span>`
-          + `${x.cita ? `<br><span class="text-xs italic text-gray-500">«${esc(x.cita)}»</span>` : ""}`
+      for (const x of requisitos.map((x, i) => [x, i]).sort((a, b) => ordenPeso(a[0]) - ordenPeso(b[0]) || a[1] - b[1]).map(([x]) => x)) {
+        html += `<li><span class="font-medium">${esc(ETIQUETA[x.tipo] || ETIQUETA.otro)}</span>${PESO[x.tipo] ? ` <span class="text-xs ${PESO[x.tipo] === PESO.causal_de_rechazo ? "font-medium text-red-700" : "text-gray-500"}">(${esc(PESO[x.tipo])})</span>` : ""} · ${esc(ESTADO[x.estado] || ESTADO.sin_dato_del_perfil)}<br>${esc(x.texto)} <span class="text-xs text-gray-500">(${esc(donde(x))})</span>`
+          + `${x.cita ? `<br><span class="text-xs italic text-gray-500">«${esc(x.cita)}»</span>` : ""}${verifique(x)}`
           + `<br><span class="text-xs text-gray-600">${x.dato_comparado && x.dato_comparado_valor != null ? `Comparado con: ${esc(x.dato_comparado_etiqueta || x.dato_comparado)} ${esc(valorDe(x.dato_comparado, x.dato_comparado_valor))}` : `${esc(MARCA.nombre)} no tiene esa cifra`}${x.motivo_estado ? ` · ${esc(x.motivo_estado)}` : ""}</span></li>`;
       }
       html += "</ul></div>";
@@ -1085,7 +1116,7 @@
       for (const x of riesgos) {
         if (x.base === "sin_fuente" && !sinFuente) { sinFuente = true; html += `<li class="text-xs font-medium text-gray-500">Criterio general, sin respaldo en el pliego</li>`; }
         html += `<li><span class="font-medium">Gravedad ${esc(x.gravedad)}</span> · ${esc(x.texto)} <span class="text-xs text-gray-500">(${x.base === "datos_de_la_app" ? "Según los datos de la aplicación" : x.base === "norma" ? "Según la norma citada" : esc(donde(x))})</span>`
-          + `${x.cita ? `<br><span class="text-xs italic text-gray-500">«${esc(x.cita)}»</span>` : ""}${x.que_hacer ? `<br><span class="text-xs text-gray-600">Qué hacer: ${esc(x.que_hacer)}</span>` : ""}</li>`;
+          + `${x.cita ? `<br><span class="text-xs italic text-gray-500">«${esc(x.cita)}»</span>` : ""}${verifique(x)}${x.que_hacer ? `<br><span class="text-xs text-gray-600">Qué hacer: ${esc(x.que_hacer)}</span>` : ""}</li>`;
       }
       html += "</ul></div>";
     }
@@ -1100,10 +1131,13 @@
         + apartadas.map((a) => `<li>${esc(a.texto)} <span class="italic">— ${esc(a.motivo === "registro_informal" ? "Redacción no admitida" : (MOTIVO[a.motivo] || a.motivo))}</span></li>`).join("") + "</ul></details>";
     }
     if (d.confianza_motivo) html += `<p class="text-xs text-gray-500">${esc(d.confianza_motivo)}</p>`;
-    const seg = Number.isFinite(Number(r.duracionMs)) ? Math.round(Number(r.duracionMs) / 1000) : null;
+    /* la duración de una respuesta GUARDADA es la de la petición, no la de la lectura (salía «0 segundos»): solo se dice
+       la de una lectura recién hecha; la de la lectura completa sale de `lectura` (desde que se pidió hasta la entrega) */
+    const seg = !r.cache && Number.isFinite(Number(r.duracionMs)) ? Math.round(Number(r.duracionMs) / 1000) : null;
+    const minLectura = r.lectura && Number.isFinite(Number(r.lectura.minutos)) ? Number(r.lectura.minutos) : null;
     if (r.origen_legible) html += `<p class="text-xs text-gray-500">${esc(r.origen_legible)}</p>`;
     const versionInstr = String(r.version_instrucciones || "").slice(0, 10);
-    html += `<p class="text-xs text-gray-400">Cómo se hizo: leído el ${esc(fecha(r.generado))}${r.paginas != null ? ` · ${esc(r.paginas)} páginas del pliego` : ""}, ${r.version_texto != null ? `versión ${esc(r.version_texto)}` : docTexto ? `«${esc(docTexto.nombre)}»` : "texto guardado"}${seg != null ? ` · ${seg} segundos` : ""}${versionInstr ? ` · instrucciones del ${esc(fecha(versionInstr))}` : ""}${r.uso_mes && r.uso_mes.dictamenes != null ? ` · este mes: ${esc(r.uso_mes.dictamenes)} dictámenes` : ""}${r.cache ? " · guardado" : ""}</p>`;
+    html += `<p class="text-xs text-gray-400">Cómo se hizo: leído el ${esc(fecha(r.generado))}${r.paginas != null ? ` · ${esc(r.paginas)} páginas del pliego` : ""}, ${r.version_texto != null ? `versión ${esc(r.version_texto)}` : docTexto ? `«${esc(docTexto.nombre)}»` : "texto guardado"}${minLectura != null ? ` · la lectura completa tardó ${esc(minLectura.toLocaleString("es-CO"))} minutos desde que se pidió` : seg != null ? ` · ${seg} segundos` : ""}${versionInstr ? ` · instrucciones del ${esc(fecha(versionInstr))}` : ""}${r.uso_mes && r.uso_mes.dictamenes != null ? ` · este mes: ${esc(r.uso_mes.dictamenes)} dictámenes` : ""}${r.cache ? " · guardado" : ""}</p>`;
     html += "</div></details>";
     /* LA LECTURA COMPLETA (26-sep-2026): con la rutina del dictamen configurada, el botón
        despierta una sesión que lee el pliego entero; mientras llega, se ve la lectura por
