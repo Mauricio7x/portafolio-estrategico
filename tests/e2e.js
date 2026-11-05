@@ -3013,6 +3013,31 @@ async function main() {
         assert.ok(txtS(tVeg).includes(`$${new Intl.NumberFormat("es-CO").format(polS)} de la póliza de seriedad (10 % del presupuesto, el de los documentos tipo: si el pliego pide más, cuesta más)`),
           `la tarjeta dice de dónde sale el costo de preparar → ${txtS(tVeg)}`);
         assert.ok(/la póliza de seriedad$/.test(String(nodoS("ps-veg-nota").textContent)), `la nota del precio sugerido dice qué se resta → ${nodoS("ps-veg-nota").textContent}`);
+        /* con el % del pliego (viaja desde Mis procesos como `pct_seriedad`): la póliza de ESTE pliego, en la tarjeta y en
+           cada punto del precio sugerido; un % ilegible es inerte (5-nov-2026) */
+        if (!conBase) {
+          const R5 = require("../lib/apu/rentabilidad.js");
+          const conPct = async (pct) => { const rr = await invocar(editorS, "/api/apu/rentabilidad", CAB_TOKEN, { metodo: "POST", body: {
+            items: ITEMS_S, departamento: e.dep, config: { aiu_pct: 20, imprevistos_pct: 5, utilidad_pct: 5 }, entidad: e.n, entidad_nit: e.nit,
+            unspsc: "V1.72141000", cuantia: 900000000, plazo_meses: 3, modalidad: "Selección abreviada", tipo_trabajo: "obra", pct_seriedad: pct } });
+            assert.strictEqual(rr.status, 200, JSON.stringify(rr.cuerpo).slice(0, 300)); return rr.cuerpo; };
+          const c20 = await conPct(20);
+          const pol20 = R5.costoPreparacionDe({ presupuestoCop: 900000000, pctSeriedad: 20 });
+          assert.ok(c20.rentabilidad.costo_preparacion === pol20 && c20.rentabilidad.costo_preparacion_pct_seriedad === 20 && c20.rentabilidad.costo_preparacion_pct_del_pliego === true,
+            `el editor usa el % del pliego → ${JSON.stringify([c20.rentabilidad.costo_preparacion, c20.rentabilidad.costo_preparacion_pct_seriedad, c20.rentabilidad.costo_preparacion_pct_del_pliego])}`);
+          const dif = pol20 - polS;
+          assert.ok(dif > 0 && c20.optimizador.curva.length === cR.optimizador.curva.length
+            && c20.optimizador.curva.every((x, i) => x.veg === cR.optimizador.curva[i].veg - dif),
+            `cada punto del precio sugerido resta la póliza del 20 % (${dif} más) → ${JSON.stringify([c20.optimizador.curva[0] && c20.optimizador.curva[0].veg, cR.optimizador.curva[0] && cR.optimizador.curva[0].veg])}`);
+          AS.pintarRentabilidad(c20);
+          const tVeg20 = tarjetasS().find((x) => x.includes(vegRotulo)) || "";
+          assert.ok(txtS(tVeg20).includes("(20 % del presupuesto, el que fija el pliego)"), `la tarjeta dice que el % es el del pliego → ${txtS(tVeg20)}`);
+          for (const malo of ["abc", 0, 150, true, " "]) {
+            const cm = await conPct(malo);
+            assert.ok(cm.rentabilidad.costo_preparacion === polS && cm.rentabilidad.costo_preparacion_pct_del_pliego === false, `un % ilegible es inerte: ${JSON.stringify(malo)} → ${cm.rentabilidad.costo_preparacion}`);
+          }
+          AS.pintarRentabilidad(cR);
+        }
         assert.ok(!/× \d+\.\d/.test(txtS(tProb)), `el multiplicador de precio va en es-CO → ${txtS(tProb)}`);
         const psProb = String(nodoS("ps-prob").textContent), psVeg = String(nodoS("ps-veg").textContent), psNota = String(nodoS("ps-prob-nota").textContent);
         if (!conBase) {
@@ -13765,6 +13790,35 @@ async function main() {
     const filaSE2 = { ...filaSE, cuantia_cop: 1700000000 };
     assert.deepStrictEqual(Gp.topeOfertaDe({ fila: filaSE2, documentos: docsSE }), Gp.guiaDe({ fila: filaSE2, perfil: "helder", ctx: { ahoraMs: Date.parse("2026-09-03T15:00:00Z"), documentos: docsSE } }).tope_oferta, "la misma cifra de SECOP II que la guía, también cuando la fila trae cuantía y precio base distintos (MUTACIÓN: otro presupuesto)");
     assert.deepStrictEqual(Gp.topeOfertaDe({ fila: null, foto: { presupuesto_cop: 1744426146 }, documentos: docsSE }), Gp.guiaDe({ fila: null, foto: { presupuesto_cop: 1744426146 }, perfil: "helder", ctx: { documentos: docsSE } }).tope_oferta, "sin fila viva, la misma foto para los dos");
+    /* EL % DE LA GARANTÍA PARA PRECIOS (5-nov-2026): el costo de preparar la oferta es la póliza de seriedad, y su % lo
+       fija el pliego. La guía y la consulta liviana de la tarjeta (paraPreciosDe) dan el MISMO, elegido por garantiaElegida */
+    {
+      const gar = (t) => ({ indice: { archivos: [], plan: [] }, ilegibles: {}, leidos: { a: doc(`\f1\nGARANTÍA DE SERIEDAD DE LA OFERTA\n${t}\n`, "pliego") } });
+      const veinte = gar("El proponente deberá constituir una garantía de seriedad de la oferta por un valor equivalente al veinte por ciento (20 %) del presupuesto oficial del proceso.");
+      const conMipyme = gar("Valor asegurado: para los proponentes que no ostenten la calidad de Mipyme, el veinte por ciento (20 %) del presupuesto oficial. Para las Mipyme, el diez por ciento (10 %) del presupuesto oficial.");
+      const ahoraG = Date.parse("2026-09-03T15:00:00Z");
+      for (const [que, docs, perfil, esperado] of [
+        ["el 20 % del pliego", veinte, "helder", { pct: 20, clase: "pliego" }],
+        ["el de las Mipyme, a una Mipyme según su registro", conMipyme, "helder", { pct: 10, clase: "mipyme" }],
+        ["el de los demás, a una empresa que no es Mipyme", conMipyme, "prodiac", { pct: 20, clase: "pliego" }],
+        ["sin perfil, el de los demás", conMipyme, null, { pct: 20, clase: "pliego" }],
+        ["sin documentos leídos, nada: Precios usa el 10 % de los documentos tipo y lo dice", null, "helder", null],
+      ]) {
+        const liviana = Gp.paraPreciosDe({ fila: filaSE, documentos: docs, perfil });
+        const guia = Gp.guiaDe({ fila: filaSE, perfil, ctx: { ahoraMs: ahoraG, documentos: docs } });
+        assert.deepStrictEqual(liviana.garantia_precios, esperado, `${que}: ${JSON.stringify(liviana.garantia_precios)}`);
+        assert.deepStrictEqual(guia.garantia_precios, esperado, `${que}, en la guía: ${JSON.stringify(guia.garantia_precios)}`);
+        assert.deepStrictEqual(liviana.tope_oferta, Gp.topeOfertaDe({ fila: filaSE, documentos: docs }), `${que}: el techo de la consulta liviana no cambia`);
+      }
+      // solo viaja un % que el pliego fija: la referencia, «la de los demás no se leyó» y las cifras sin separar no
+      for (const clase of ["referencia", "sin_general", "ambigua"]) assert.strictEqual(Gp.garantiaParaPrecios({ pct: 10, clase }), null, `«${clase}» no viaja a Precios como si fuera el del pliego`);
+      assert.deepStrictEqual(Gp.garantiaParaPrecios({ pct: 15, clase: "varias" }), { pct: 15, clase: "varias" }, "con varias cifras, la mayor (la que eligió la guía)");
+      for (const pct of [0, -1, 150, null, "x"]) assert.strictEqual(Gp.garantiaParaPrecios({ pct, clase: "pliego" }), null, `un % ilegible no viaja: ${pct}`);
+      assert.strictEqual(Gp.garantiaParaPrecios(null), null);
+      // solo el % de las Mipyme leído y la empresa no lo es: la de los demás es mayor y no se leyó → no viaja
+      const soloMipyme = gar("Para las Mipyme, la garantía de seriedad de la oferta será del diez por ciento (10 %) del presupuesto oficial.");
+      assert.strictEqual(Gp.paraPreciosDe({ fila: filaSE, documentos: soloMipyme, perfil: "prodiac" }).garantia_precios, null, "sin la cifra de los demás, a una empresa que no es Mipyme no le viaja el 10 % de las Mipyme");
+    }
     // G.5 nombra contra qué compara, y un valor desconocido de la fuente es inerte
     const V5 = require("../lib/apu/validaciones.js");
     const g5 = V5.validarPresupuesto({ items: [], resumen: { precio_final: 1700000000 }, configuracion: { cuantia_fuente: "pliego" }, cuantia_cop: 1581425810 }).hallazgos.find((h) => h.codigo === "excede_la_cuantia" || h.id === "excede_la_cuantia" || /supera el presupuesto/.test(h.titulo || ""));
@@ -14325,6 +14379,146 @@ async function main() {
       }
     }
     console.log("· unidad el texto del pliego: el documento base leído llega al dictamen, los anexos con «pliego» en el nombre no entran al vigía ni dan el texto, lo cargado a mano después gana, el definitivo más reciente manda, y el tope de 400 KB");
+  }
+  bqObservaciones: { if (!corre("unidad observaciones al pliego")) break bqObservaciones;
+    /* LAS OBSERVACIONES AL PLIEGO (5-nov-2026, encargo del dueño): un BORRADOR que redacta una sesión de Claude Code y
+       la aplicación VERIFICA (lib/observaciones, con las piezas del dictamen). Con el router REAL sobre el Redis simulado,
+       la `textoGuardado` real, la pantalla real (pintarObservaciones) y el Word real (docxObservaciones sobre el escritor
+       de ZIP de public/xlsx.js, abierto después con lib/docx). */
+    const Dv = require("../lib/diff.js");
+    const O = require("../lib/observaciones.js");
+    const routerO = require("../api/pliego.js");
+    const idO = "CO1.REQ.OBS001";
+    const PLIEGO_O = "\f1\nPLIEGO DE CONDICIONES DEFINITIVO DEL PROCESO LP-OBS-2026.\n\f2\n3.2 EXPERIENCIA ESPECÍFICA\nEl proponente deberá acreditar experiencia en máximo dos (2) contratos cuyo valor sumado sea igual o superior a 2.000 SMMLV, clasificados en el código 721411.\nArtículo 5 de la Ley 1150 de 2007.\n\f3\n4.1 FORMA DE PAGO\nLa entidad pagará el valor del contrato en un único pago al finalizar la obra, previo recibo a satisfacción.\n";
+    const pedirO = (q) => invocar(routerO, `/api/pliego?op=observaciones&${q}`, CAB_TOKEN);
+    const enviarO = (obs, extra = {}) => invocarPost(routerO, "/api/pliego?op=observaciones", { id_proceso: idO, perfil: "helder", motor: "sesion", observaciones: obs, ...extra }, CAB_TOKEN);
+    // sin texto guardado: el GET dice que no hay, el expediente dice qué hacer, y sin credencial es 401
+    const g0 = await pedirO(`id_proceso=${idO}&perfil=helder`);
+    assert.ok(g0.status === 200 && g0.cuerpo.ok && g0.cuerpo.hay_observaciones === false && /Redactar observaciones/.test(g0.cuerpo.que_hacer), `sin observaciones, se dice: ${JSON.stringify(g0.cuerpo).slice(0, 300)}`);
+    const e0 = await pedirO(`id_proceso=${idO}&perfil=helder&expediente=1`);
+    assert.ok(e0.cuerpo.hay_texto === false && /texto guardado del pliego/.test(e0.cuerpo.error), `sin texto, el expediente lo dice: ${JSON.stringify(e0.cuerpo).slice(0, 300)}`);
+    assert.strictEqual((await invocar(routerO, `/api/pliego?op=observaciones&id_proceso=${idO}&perfil=helder`, {})).status, 401, "sin credencial: 401 (viajan las cifras del perfil)");
+    assert.strictEqual((await pedirO(`id_proceso=${encodeURIComponent("no es <un> id")}&perfil=helder`)).status, 400, "un id sin la forma de SECOP II (la regla del dictamen, ID_RE): 400");
+    await Dv.registrarVersion(redis, { idProceso: idO, texto: PLIEGO_O, origen: "lector" });
+    // el expediente: las instrucciones, el esquema, la entrada del dictamen y el pliego paginado
+    const e1 = await pedirO(`id_proceso=${idO}&perfil=helder&expediente=1`);
+    assert.ok(e1.status === 200 && e1.cuerpo.expediente === true && e1.cuerpo.instrucciones === O.PROMPT_SISTEMA && JSON.stringify(e1.cuerpo.esquema) === JSON.stringify(O.ESQUEMA_SALIDA)
+      && /=== Página 2 ===/.test(e1.cuerpo.texto_paginado) && e1.cuerpo.entrada && e1.cuerpo.entrada.perfil && /op=dictamen/.test(e1.cuerpo.dictamen.como_pedirlo),
+      `el expediente trae lo que la sesión necesita: ${JSON.stringify(Object.keys(e1.cuerpo))}`);
+    // el envío: se verifica cada cita en su página y se aparta lo que no se sostiene
+    const ob = (prioridad, pagina, cita, solicitud, fundamento, extra = {}) => ({ tema: "experiencia", prioridad, pagina, cita, solicitud, fundamento, norma_id: null, ...extra });
+    const r1 = await enviarO({ resumen: "Se observan la experiencia exigida y la forma de pago.", observaciones: [
+      ob("aclaracion", 2, "clasificados en el código 721411", "Se solicita aclarar si se aceptan obras equivalentes.", "La regla no dice si se aceptan obras equivalentes."),
+      ob("le_resta_opciones", 3, "en un único pago al finalizar la obra", "Se solicita establecer pagos parciales por avance de obra.", "Un único pago al final obliga a financiar toda la obra.", { tema: "forma_de_pago" }),
+      ob("lo_deja_por_fuera", 2, "cuyo valor sumado sea igual o superior a 2.000 SMMLV", "Se solicita reducir el valor a 1.500 SMMLV.", "Es desproporcionado."),
+      ob("lo_deja_por_fuera", 2, "cuyo valor sumado sea igual o superior a 2.000 SMMLV", "Se solicita ajustar el valor exigido a uno proporcional al del contrato.", "Según el artículo 5 de la Ley 1150, los requisitos deben ser proporcionales al objeto y al valor.", { norma_id: "inventada" }),
+      ob("le_resta_opciones", 2, "deberá acreditar experiencia en máximo dos (2) contratos", "Se solicita permitir más contratos.", "Según la Ley 80 de 1993 debe haber pluralidad de oferentes."),
+      ob("aclaracion", 2, "deberá acreditar experiencia en máximo dos (2) contratos", "Se solicita aclarar la regla.", "El pliego parece hecho a la medida de un oferente."),
+      ob("aclaracion", 1, "esta frase no aparece en ninguna parte del pliego", "Se solicita aclarar.", "Sin fuente."),
+      ob("aclaracion", 2, "clasificados en el código 721411", "Se solicita aclarar otra vez lo mismo.", "Repetida."),
+      ob("aclaracion", 1, "previo recibo a satisfacción", "Se solicita aclarar quién firma el recibo a satisfacción.", "El pliego no dice quién firma el recibo.", { tema: "forma_de_pago" }),
+    ] });
+    assert.ok(r1.status === 200 && r1.cuerpo.ok && r1.cuerpo.hay_observaciones === true, `el envío se guarda: ${r1.status} ${JSON.stringify(r1.cuerpo).slice(0, 300)}`);
+    const oks = r1.cuerpo.observaciones;
+    assert.deepStrictEqual(oks.map((x) => [x.prioridad, x.pagina_real]), [["lo_deja_por_fuera", 2], ["le_resta_opciones", 3], ["aclaracion", 2], ["aclaracion", 3]],
+      `quedan las cuatro que se sostienen, primero la que hoy lo deja por fuera: ${JSON.stringify(oks.map((x) => [x.prioridad, x.cita]))}`);
+    assert.ok(oks.slice(0, 3).every((x) => x.cita_verificada === true) && oks.every((x) => x.norma_id === null), "las citas quedaron verificadas en su página, y una norma_id desconocida se quita");
+    assert.ok(oks[3].cita_verificada === false && oks[3].pagina === 1 && oks[3].pagina_real === 3, `la cita que está en OTRA página que la declarada se queda con la página real: ${JSON.stringify(oks[3])}`);
+    assert.deepStrictEqual(r1.cuerpo.no_verificados.map((x) => x.motivo).sort(), ["cifra_sin_respaldo", "cita_no_encontrada", "frase_de_acusacion", "norma_sin_fuente", "repetida"],
+      `se apartan: la cifra inventada, la norma que el pliego no nombra, la frase que acusa, la cita que no existe y la repetida: ${JSON.stringify(r1.cuerpo.no_verificados)}`);
+    assert.ok(r1.cuerpo.verificacion.observaciones_comprobadas === 4 && r1.cuerpo.verificacion.observaciones_recibidas === 9 && r1.cuerpo.verificacion.citas_verificadas === 6 && r1.cuerpo.verificacion.normas_quitadas === 1,
+      `la cuenta: 4 observaciones de 9; 6 citas en la página declarada (como el dictamen); 1 norma_id quitada: ${JSON.stringify(r1.cuerpo.verificacion)}`);
+    // lo guardado se sirve sin leer el texto del pliego, con la identidad del texto con que se verificó
+    const g1 = await pedirO(`id_proceso=${idO}&perfil=helder`);
+    assert.ok(g1.cuerpo.hay_observaciones === true && g1.cuerpo.observaciones.length === 4 && g1.cuerpo.texto_id && /borrador/i.test(g1.cuerpo.borrador) && g1.cuerpo.orden_sesion === `/observaciones ${idO} helder`,
+      `el GET sirve lo guardado: ${JSON.stringify(g1.cuerpo).slice(0, 300)}`);
+    // la forma mala es 400 con el detalle; sin el objeto, 400
+    const rMal = await enviarO({ resumen: "x", observaciones: [{ ...ob("urgente", 2, "x".repeat(30), "a", "b") }] });
+    assert.ok(rMal.status === 400 && rMal.cuerpo.motivo === "forma" && rMal.cuerpo.detalle.some((d) => /enum/.test(d)), `una prioridad fuera del esquema: 400 con el detalle: ${JSON.stringify(rMal.cuerpo.detalle)}`);
+    assert.strictEqual((await enviarO(null)).status, 400, "sin el objeto de observaciones: 400");
+    assert.strictEqual((await invocarPost(routerO, "/api/pliego?op=observaciones", { id_proceso: idO, perfil: "helder", observaciones: { resumen: "", observaciones: [] } }, CAB_TOKEN)).status, 400, "sin motor «sesion»: 400");
+    /* LO QUE TUMBÓ LA REVISIÓN ADVERSARIA (5-nov-2026): normas con «N.º», con palabras en medio, «<n> de <año>», el código de
+       una sentencia, un prefijo («artículo 2» con «artículo 25» en la página) y cifras en letras */
+    {
+      const respO = require("../lib/dictamen.js").plegar("El proponente deberá cumplir el artículo 25 del pliego y la Ley 1150 de 2007. El plazo es de noventa (90) días.");
+      for (const n of ["Ley N.º 80 de 1993", "Ley Nº. 1150 de 2007", "Ley n.° 1882", "Decreto Único Reglamentario 1082 de 2015", "Documento CONPES 3714 de 2011", "sentencia de 2009 (C-713)", "el artículo 2 del pliego", "Circular Externa 1 de 2019", "art.24", "Sentencia SU-095",
+        "conforme a la 1882 de 2018", "el Decreto Único Reglamentario 1082", "la Circular Externa 1"]) {
+        assert.ok(O.normaSinRespaldo(n, respO), `«${n}» es una norma sin respaldo`);
+      }
+      for (const n of ["el artículo 25 del pliego", "la Ley 1150 de 2007", "de acuerdo con el valor 2.000", "según el numeral 3.2 del pliego"]) assert.strictEqual(O.normaSinRespaldo(n, respO), null, `«${n}» no se aparta`);
+      for (const c of ["reducir el plazo a sesenta días", "el cien por ciento del presupuesto", "ciento veinte días"]) assert.ok(O.cifraEnLetrasSinRespaldo(c, respO), `«${c}» es una cifra en letras sin respaldo`);
+      for (const c of ["un plazo de noventa días", "un único pago", "dos contratos"]) assert.strictEqual(O.cifraEnLetrasSinRespaldo(c, respO), null, `«${c}» no se aparta (el pliego dice «noventa (90) días»)`);
+      const vL = O.verificarObservaciones({ resumen: "", observaciones: [ob("le_resta_opciones", 3, "en un único pago al finalizar la obra", "Se solicita pagar a los treinta días de cada acta.", "Así lo pide el sector.", { tema: "forma_de_pago" })] }, PLIEGO_O, {});
+      assert.deepStrictEqual(vL.no_verificados.map((x) => x.motivo), ["cifra_sin_respaldo"], "en la verificación entera, la cifra en letras sin respaldo se aparta");
+    }
+    // el resumen con una cifra o una norma sin respaldo se calla, no se publica
+    assert.strictEqual(O.verificarObservaciones({ resumen: "Se pide bajar al 50 % según la Ley 80 de 1993.", observaciones: [] }, PLIEGO_O, {}).resumen, "", "un resumen con cifra o norma sin fuente se calla");
+    // EL PEDIDO por la rutina del dictamen: sin rutina, 503 con la orden de Claude Code; con ella, UNA vez, con `tarea=observaciones`
+    const sinRutina = await invocarPost(routerO, "/api/pliego?op=observaciones", { id_proceso: idO, perfil: "helder", pedir_sesion: true }, CAB_TOKEN);
+    assert.ok(sinRutina.status === 503 && /\/observaciones CO1\.REQ\.OBS001 helder/.test(sinRutina.cuerpo.que_hacer), `sin rutina, dice cómo pedirlas en Claude Code: ${JSON.stringify(sinRutina.cuerpo).slice(0, 300)}`);
+    {
+      const envU = process.env.RUTINA_DICTAMEN_URL, envT = process.env.RUTINA_DICTAMEN_TOKEN, fetchAntes = global.fetch; const cuerpos = [];
+      global.fetch = async (u, o) => { if (/claude_code\/routines/.test(String(u))) { cuerpos.push(JSON.parse(o.body).text); return { ok: true, status: 200, json: async () => ({ claude_code_session_id: "session_O", claude_code_session_url: "https://claude.ai/code/session_O" }) }; } return fetchAntes(u, o); };
+      try {
+        process.env.RUTINA_DICTAMEN_URL = "https://api.anthropic.com/v1/claude_code/routines/trig_O/fire"; process.env.RUTINA_DICTAMEN_TOKEN = "sk-ant-oat01-O";
+        const pedir = () => invocarPost(routerO, "/api/pliego?op=observaciones", { id_proceso: idO, perfil: "helder", pedir_sesion: true }, CAB_TOKEN);
+        const p1 = await pedir();
+        assert.ok(p1.status === 200 && cuerpos.length === 1 && /tarea=observaciones id_proceso=CO1\.REQ\.OBS001 perfil=helder/.test(cuerpos[0]) && p1.cuerpo.pedido_sesion && p1.cuerpo.pedido_sesion.ok === true,
+          `se pide a la rutina del dictamen con tarea=observaciones: ${JSON.stringify(cuerpos)} ${JSON.stringify(p1.cuerpo).slice(0, 200)}`);
+        const p2 = await pedir();
+        assert.ok(p2.cuerpo.repetida === true && cuerpos.length === 1, `un segundo clic no abre otra sesión: ${JSON.stringify(p2.cuerpo).slice(0, 200)}`);
+        assert.ok((await pedirO(`id_proceso=${idO}&perfil=helder`)).cuerpo.pedido_sesion.ok === true, "el GET dice que hay una redacción pedida");
+        // el pedido de observaciones no ocupa el del dictamen: son dos claves
+        const Dct = require("../lib/dictamen.js");
+        assert.strictEqual(await redis.get(Dct.clavePedido(idO, "helder")), null, "pedir observaciones no marca la lectura del dictamen como pedida");
+        // al llegar las observaciones, el pedido queda atendido y la cuenta de pedidos sin respuesta vuelve a cero
+        await enviarO({ resumen: "Se observa la forma de pago.", observaciones: [ob("le_resta_opciones", 3, "en un único pago al finalizar la obra", "Se solicita establecer pagos parciales por avance de obra.", "Un único pago al final obliga a financiar toda la obra.", { tema: "forma_de_pago" })] });
+        assert.ok((await pedirO(`id_proceso=${idO}&perfil=helder`)).cuerpo.pedido_sesion === null && (await redis.get(O.claveSinRespuesta(idO, "helder"))) === null, "al llegar, el pedido y la cuenta se borran");
+        // el tope de pedidos seguidos sin respuesta, el MISMO del dictamen (lib/rutina.pedirUnaVez)
+        await redis.set(O.claveSinRespuesta(idO, "helder"), String(Dct.LECTURAS_TOPE_SIN_RESPUESTA));
+        const p3 = await pedir();
+        assert.ok(p3.cuerpo.tope_alcanzado === true && cuerpos.length === 1 && /veces seguidas/.test(p3.cuerpo.error), `pasado el tope no se dispara otra: ${JSON.stringify(p3.cuerpo).slice(0, 200)}`);
+      } finally {
+        global.fetch = fetchAntes;
+        if (envU === undefined) delete process.env.RUTINA_DICTAMEN_URL; else process.env.RUTINA_DICTAMEN_URL = envU;
+        if (envT === undefined) delete process.env.RUTINA_DICTAMEN_TOKEN; else process.env.RUTINA_DICTAMEN_TOKEN = envT;
+      }
+    }
+    // LA PANTALLA y EL WORD: las funciones reales de public/pliego.js, sobre lo guardado
+    const fuentePl = fs.readFileSync(path.join(__dirname, "..", "public", "pliego.js"), "utf8");
+    const extraerPl = (n) => { const k = fuentePl.indexOf(`  function ${n}(`); assert.ok(k > 0, `public/pliego.js sin ${n}`); return fuentePl.slice(k, fuentePl.indexOf("\n  }\n", k) + 4); };
+    const kMot = fuentePl.indexOf("  const MOTIVO_OBS = {"); const MOTIVO_SRC = fuentePl.slice(kMot, fuentePl.indexOf("};", kMot) + 2);
+    const kTem = fuentePl.indexOf("  const TEMAS_OBS = {"); const TEMAS_OBS = new Function(`${fuentePl.slice(kTem, fuentePl.indexOf("};", kTem) + 2)}; return TEMAS_OBS;`)();
+    const pintarObs = new Function(`${MOTIVO_SRC}\n${extraerPl("pintarObservaciones")}; return pintarObservaciones;`)();
+    const docxObs = new Function(`${extraerPl("docxObservaciones")}; return docxObservaciones;`)();
+    const escO = (x) => String(x == null ? "" : x).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+    const guardadoO = { ...r1.cuerpo, rutina_disponible: true, pedido_sesion: null, borrador: O.mensaje("BORRADOR"), id_proceso: idO, orden_sesion: `/observaciones ${idO} helder` };
+    const htmlO = pintarObs(guardadoO, { esc: escO, temas: TEMAS_OBS, otraVersion: false });
+    const txtO = htmlO.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
+    assert.ok(/1\. Experiencia Hoy lo deja por fuera/.test(txtO) && /Texto del pliego \(pág\. 3\)/.test(txtO) && /Se pide: Se solicita establecer pagos parciales/.test(txtO)
+      && /Observaciones que no se pudieron comprobar \(5\)/.test(txtO) && /Observaciones con su cita comprobada en el pliego: 4 de 9/.test(txtO) && /data-obs-word/.test(htmlO) && /Volver a redactarlas/.test(txtO) && /Es un borrador/.test(txtO),
+      `la pantalla pinta las cuatro, en orden, con su página, lo apartado aparte y el botón del Word: ${txtO.slice(0, 600)}`);
+    assert.ok(/otra versión del pliego/.test(pintarObs(guardadoO, { esc: escO, temas: TEMAS_OBS, otraVersion: true })), "redactadas sobre otra versión del pliego, se dice");
+    assert.strictEqual(g0.cuerpo.como_pedirlas, O.mensaje("PEDIR_SIN_RUTINA_QUE_HACER", { id: idO, perfil: "helder" }), "sin rutina, el servidor dice cómo pedirlas a mano");
+    const sinO = pintarObs({ ok: true, hay_observaciones: false, rutina_disponible: false, como_pedirlas: g0.cuerpo.como_pedirlas }, { esc: escO, temas: TEMAS_OBS });
+    assert.ok(/Pídalas desde Claude Code con la orden «\/observaciones CO1\.REQ\.OBS001 helder»/.test(sinO) && !/data-obs-pedir/.test(sinO), "sin rutina: la orden de Claude Code y ningún botón que no haría nada");
+    assert.ok(/data-obs-pedir/.test(pintarObs({ ok: true, hay_observaciones: false, rutina_disponible: true }, { esc: escO, temas: TEMAS_OBS })), "con rutina: el botón de redactar");
+    assert.ok(/data-obs-ver/.test(pintarObs({ ok: true, hay_observaciones: false, rutina_disponible: true, pedido_sesion: { ok: true, el: new Date().toISOString() } }, { esc: escO, temas: TEMAS_OBS })), "con la redacción pedida: «Ver si ya están listas»");
+    const { RE_EMOJI_UI: RE_EMOJI_O, VOSEO_RE: VOSEO_O } = require("../lib/lenguaje_pantalla.js");
+    assert.ok(!RE_EMOJI_O.test(htmlO) && !VOSEO_O.test(txtO), "sin emojis ni tuteo en la sección");
+    // el Word: un .docx que se abre (lib/docx lo lee) y trae SOLO lo comprobado, la carta en tercera persona y los corchetes
+    const w = docxObs({ ...guardadoO, proceso: { id: idO, entidad: "ALCALDÍA DE PRUEBA & CÍA", objeto: "MEJORAMIENTO DE VÍAS" } }, { temas: TEMAS_OBS, escribirZip: require("../public/xlsx.js").escribirZip });
+    const lectura = require("../lib/docx.js").textoDeDocx(Buffer.from(w.bytes));
+    assert.ok(lectura.ok, `el Word se abre: ${lectura.motivo}`);
+    const tW = lectura.texto;
+    assert.ok(/ALCALDÍA DE PRUEBA & CÍA/.test(tW) && /Observaciones al pliego de condiciones del proceso CO1\.REQ\.OBS001/.test(tW) && /Observación 1\. Experiencia/.test(tW) && /Observación 4\./.test(tW) && !/Observación 5/.test(tW)
+      && /Texto del pliego \(página 3\): «en un único pago al finalizar la obra»/.test(tW) && /Texto del pliego \(página 3\): «previo recibo a satisfacción»/.test(tW) && /PRUEBA &amp; CÍA/.test(w.documento) && /\[Nombre y firma del representante legal\]/.test(tW) && /\[Ciudad\], \[fecha\]/.test(tW) && !/1\.500 SMMLV/.test(tW) && !/Ley 80/.test(tW),
+      `el Word trae las cuatro comprobadas, con la página REAL de cada cita, la entidad escapada, sin lo apartado y con los corchetes: ${tW.slice(0, 700)}`);
+    assert.ok(/^Observaciones al pliego CO1\.REQ\.OBS001\.docx$/.test(w.nombre), `el nombre del archivo: ${w.nombre}`);
+    // un carácter que el XML no admite (U+FFFF, un sustituto suelto) no deja el Word sin abrir (revisión adversaria)
+    const wRaro = docxObs({ ...guardadoO, observaciones: [{ ...guardadoO.observaciones[0], solicitud: "Se solicita aclarar\uFFFF la regla\uD800." }] }, { temas: TEMAS_OBS, escribirZip: require("../public/xlsx.js").escribirZip });
+    assert.ok(!/[\uFFFE\uFFFF]/.test(wRaro.documento) && !/[\uD800-\uDFFF]/.test(wRaro.documento) && /Se solicita aclarar la regla\./.test(wRaro.documento), "el Word quita lo que el XML no admite");
+    console.log("· unidad observaciones al pliego: el expediente, la verificación (cita en su página, cifra, norma, acusación, repetida) y el orden; lo guardado sin leer el pliego; el pedido por la rutina del dictamen una vez y con tope; la pantalla y el Word reales");
   }
   bqCargaEnPrecios: { if (!corre("unidad la carga en Precios")) break bqCargaEnPrecios;
     /* LO QUE SE CARGA EN PRECIOS SOLO ENTRA AL VIGÍA SI ES EL PLIEGO (18-oct-2026). La pantalla pide también el
@@ -29720,6 +29914,22 @@ async function main() {
               const st = await segD(`&perfil=helder&expediente=${encodeURIComponent(idD)}&solo=tope`);
               assert.ok(st.status === 200 && st.cuerpo.id === idD && !st.cuerpo.proceso, `solo=tope responde el techo y nada más: ${JSON.stringify(st.cuerpo).slice(0, 200)}`);
               assert.deepStrictEqual(st.cuerpo.tope_oferta, gD.tope_oferta, "solo=tope da el MISMO techo que la guía del expediente");
+              assert.ok(Object.prototype.hasOwnProperty.call(st.cuerpo, "garantia_precios") && JSON.stringify(st.cuerpo.garantia_precios) === JSON.stringify(gD.garantia_precios === undefined ? null : gD.garantia_precios),
+                `solo=tope da el MISMO % de la garantía que la guía del expediente: ${JSON.stringify([st.cuerpo.garantia_precios, gD.garantia_precios])}`);
+              /* el CABLEADO, que con este pliego (sin cláusula de garantía) compararía null con null (revisión adversaria): el
+                 manejador le pasa a paraPreciosDe el perfil de la consulta y los documentos de ESE proceso, y responde lo que devuelve */
+              {
+                const GpT = require("../lib/guia_proceso.js");
+                const origPP = GpT.paraPreciosDe;
+                const llamadas = [];
+                GpT.paraPreciosDe = (a) => { llamadas.push(a); return { tope_oferta: origPP(a).tope_oferta, garantia_precios: { pct: 17, clase: "mipyme" } }; };
+                try {
+                  const stG = await segD(`&perfil=helder&expediente=${encodeURIComponent(idD)}&solo=tope`);
+                  assert.ok(llamadas.length === 1 && llamadas[0].perfil === "helder" && llamadas[0].documentos && llamadas[0].documentos.leidos,
+                    `solo=tope llama a paraPreciosDe con el perfil y los documentos (MUTACIÓN: sin el perfil, el % de las Mipyme no se elige): ${JSON.stringify(llamadas.map((x) => ({ perfil: x.perfil, docs: !!x.documentos })))}`);
+                  assert.deepStrictEqual(stG.cuerpo.garantia_precios, { pct: 17, clase: "mipyme" }, "solo=tope responde la garantía que devuelve paraPreciosDe");
+                } finally { GpT.paraPreciosDe = origPP; }
+              }
               assert.strictEqual(cargas, 0, `solo=tope no carga los índices de la guía (MUTACIÓN: con la guía entera, ${cargas})`);
               const sgOtra = await segD(`&perfil=helder&expediente=${encodeURIComponent(idD)}&solo=otra_cosa`);
               assert.ok(sgOtra.status === 200 && sgOtra.cuerpo.proceso && sgOtra.cuerpo.proceso.guia && cargas > 0, "un valor desconocido de `solo` es inerte: el expediente completo");
@@ -36578,6 +36788,8 @@ async function main() {
                 pintarPisoTecho: () => {}, pintarRentabilidad: () => {}, supuestoDePrecios: () => null,
                 olvidarRevision: () => {}, pintarCalculoEnTabla: () => {}, pintarResumen: () => {}, pintarNormativa: () => {},
                 nitProceso: "", modalidadProceso: "", tipoProceso: tipo,
+                // sin un % del pliego vigente (5-nov-2026): el cuerpo lleva `pct_seriedad: null` y vale el 10 % de los documentos tipo
+                pctSeriedadVigente: () => null,
               };
               const n = Object.keys(stubs);
               const { calcularApu, calcularRentabilidad } = new Function(...n,
@@ -63018,7 +63230,7 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
         body: nodo(null), documentElement: nodo(null), readyState: "complete", visibilityState: "visible" };
       ctx.window = ctx; ctx.self = ctx; ctx.globalThis = ctx;
       vm.createContext(ctx);
-      const exponer = ["abrirPreciosDesdeTarjeta", "guardados", "qApuDelExpediente", "techoDesdeGuia", "restituirContextoProceso", "leerConfig", "qApu", "ofertaParaRevision", "filasDesdePliego", "reiniciarEditorParaProceso", "precargarDesdeURL", "revisarOferta", "pintarTabla", "pintarIa", "precargarTrasCatalogo", "totalVisibleDeFila", "abrirEditorConProceso"];
+      const exponer = ["abrirPreciosDesdeTarjeta", "guardados", "qApuDelExpediente", "techoDesdeGuia", "seriedadDesdeGuia", "pctSeriedadVigente", "calcularRentabilidad", "pintarRentabilidad", "restituirContextoProceso", "leerConfig", "qApu", "ofertaParaRevision", "filasDesdePliego", "reiniciarEditorParaProceso", "precargarDesdeURL", "revisarOferta", "pintarTabla", "pintarIa", "precargarTrasCatalogo", "totalVisibleDeFila", "abrirEditorConProceso"];
       for (const f of orden) {
         let src = fs.readFileSync(pub(f), "utf8");
         if (f === "app.js") {
@@ -63605,6 +63817,54 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
         T.restituirContextoProceso({ id_proceso: "CO1.OTRO", cuantia: 1581425810 });
         okRO(T.leerConfig().cuantia_fuente === null && P2.get("cuantia-nota").clases.has("hidden") && T.leer().cdp === null, "(g) el borrador de otro proceso no hereda el techo ni la nota del pliego anterior");
       }
+      /* (g-bis) EL % DE LA GARANTÍA DEL PLIEGO EN PRECIOS (5-nov-2026), con la pantalla real: la guía → qApu → precarga →
+         el cuerpo del cálculo; y no lo hereda otro proceso */
+      {
+        const { F: T, ctx: C, porId: P } = cargarFrontRO();
+        await asentarRO();
+        const guiaU = { tope_oferta: null, garantia_precios: { pct: 20, clase: "pliego" } };
+        okRO(JSON.stringify(T.seriedadDesdeGuia(guiaU)) === '{"seriedad_pct":20,"seriedad_clase":"pliego"}', `(g-bis) la guía pasa el % del pliego y su clase: ${JSON.stringify(T.seriedadDesdeGuia(guiaU))}`);
+        okRO(T.seriedadDesdeGuia({ garantia_precios: { pct: 10, clase: "mipyme" } }).seriedad_clase === "mipyme" && T.seriedadDesdeGuia({ garantia_precios: { pct: 10, clase: "<x>" } }).seriedad_clase === "pliego", "(g-bis) la clase viaja; una desconocida es inerte");
+        for (const malo of [null, {}, { garantia_precios: null }, { garantia_precios: { pct: 0 } }, { garantia_precios: { pct: 150 } }, { garantia_precios: { pct: "x" } }]) {
+          okRO(Object.keys(T.seriedadDesdeGuia(malo)).length === 0, `(g-bis) sin un % legible no pasa nada: ${JSON.stringify(malo)}`);
+        }
+        T.abrirEditorConProceso(T.qApuDelExpediente({ nombre: "UPN", presupuesto_cop: 1348958930 }, "CO1.UPN", guiaU));
+        T.precargarDesdeURL();
+        okRO(T.pctSeriedadVigente() === 20, `(g-bis) Precios arranca con el % del pliego: ${T.pctSeriedadVigente()} (perfil «${P.get("perfil").value}»)`);
+        // EL PERFIL (revisión adversaria): el % se eligió para el perfil de la guía; con otro perfil en Precios no vale
+        const perfilAntes = P.get("perfil").value;
+        P.get("perfil").value = "otro_perfil";
+        okRO(T.pctSeriedadVigente() === null, "(g-bis) con otro perfil en Precios, el % de la guía de otro perfil no viaja (MUTACIÓN: sin mirar el perfil, 10 % de Mipyme a quien no lo es)");
+        P.get("perfil").value = perfilAntes;
+        okRO(T.pctSeriedadVigente() === 20, "(g-bis) de vuelta al perfil de la guía, vale otra vez");
+        /* la tarjeta dice de QUÉ % se trata según su clase: el de las Mipyme pide el certificado; el mayor de varios, confirmar */
+        const tarjetaCon = (clase, pct) => {
+          T.abrirEditorConProceso(T.qApuDelExpediente({ nombre: "UPN", presupuesto_cop: 1348958930 }, "CO1.UPN", { garantia_precios: { pct, clase } })); T.precargarDesdeURL();
+          try { T.pintarRentabilidad({ rentabilidad: { costo_preparacion: 253879, costo_preparacion_origen: "poliza_seriedad", costo_preparacion_pct_seriedad: pct, costo_preparacion_pct_del_pliego: true, veg: 1000000, p_ganar: 0.2 } }); }
+          catch (e) { return `ERROR ${e.message}`; }
+          return String(P.get("rentabilidad").innerHTML).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
+        };
+        const tM = tarjetaCon("mipyme", 10), tV = tarjetaCon("varias", 15), tP = tarjetaCon("pliego", 20);
+        okRO(/10 % del presupuesto, el que fija el pliego para las Mipyme: si no entrega el certificado, le aplica el de los demás/.test(tM), `(g-bis) el % de las Mipyme lo dice: ${tM.slice(0, 400)}`);
+        okRO(/15 % del presupuesto, el mayor de los que trae el pliego: confirme cuál le aplica/.test(tV), `(g-bis) el mayor de varios lo dice: ${tV.slice(0, 400)}`);
+        okRO(/20 % del presupuesto, el que fija el pliego\)/.test(tP), `(g-bis) el general, «el que fija el pliego»: ${tP.slice(0, 400)}`);
+        const cuerpos = [];
+        C.fetch = (url, cfg) => { if (/op=rentabilidad/.test(String(url))) cuerpos.push(JSON.parse(cfg.body)); return new Promise(() => {}); };
+        T.fijar({ filas: [{ item_id: "INV-PH.1", cantidad: 1 }] });
+        T.calcularRentabilidad(); await asentarRO();
+        okRO(cuerpos.length === 1 && cuerpos[0].pct_seriedad === 20, `(g-bis) el cálculo lleva el % del pliego: ${JSON.stringify(cuerpos.map((x) => x.pct_seriedad))}`);
+        P.get("id-proceso").value = "CO1.OTRO";
+        okRO(T.pctSeriedadVigente() === null, "(g-bis) con otro id de proceso escrito a mano, el % ya no vale");
+        P.get("id-proceso").value = "CO1.UPN";
+        T.restituirContextoProceso({ id_proceso: "CO1.UPN" });
+        okRO(T.pctSeriedadVigente() === 20, "(g-bis) el borrador del MISMO proceso conserva el % del pliego");
+        T.restituirContextoProceso({ id_proceso: "CO1.OTRO" });
+        okRO(T.pctSeriedadVigente() === null, "(g-bis) el borrador de otro proceso no hereda el % del pliego");
+        P.get("id-proceso").value = "CO1.UPN";
+        okRO(T.pctSeriedadVigente() === null, "(g-bis) tras abrir el borrador de otro proceso, volver a escribir el id de antes no revive su %");
+        T.abrirEditorConProceso(T.qApu({ id_del_proceso: "CO1.UPN", cuantia_cop: 1348958930 })); T.precargarDesdeURL();
+        okRO(T.pctSeriedadVigente() === null, "(g-bis) abrir el proceso sin la garantía de la guía no conserva la de antes");
+      }
       /* (h) EL TECHO DESDE LA TARJETA DE LICITACIONES (17-oct-2026): «Calcular mi precio» de un proceso GUARDADO pide su
          guía (GET ?expediente=, solo lee) y arranca con el techo del pliego; sin guardar, como siempre; con la consulta
          caída o vencida, con SECOP II y lo dice; y una respuesta tardía no pisa lo que se abrió después (revisión adversaria) */
@@ -63629,6 +63889,14 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
         okRO(urls.length === 1 && /expediente=CO1\.SE/.test(urls[0]) && /[?&]solo=tope(&|$)/.test(urls[0]), `(h) guardado: pide SOLO el techo del expediente, sin la guía entera (MUTACIÓN: sin \`solo=tope\`, la guía con sus índices): ${JSON.stringify(urls)}`);
         okRO(r.durante[0] === "Consultando el pliego…" && r.durante[1] === true && r.b.disabled === false && r.b.innerHTML === "Calcular mi precio", `(h) la pulsación responde y el botón vuelve: ${JSON.stringify(r.durante)}`);
         okRO(P3.get("cuantia").value === "1581425810" && /pliego definitivo/.test(nota()) && T.leerConfig().cuantia_fuente === "pliego", `(h) guardado con techo: Precios arranca con el del pliego (MUTACIÓN: sin la consulta, $1.744.426.146): «${P3.get("cuantia").value}»`);
+        // el % de la garantía viaja en la misma consulta (5-nov-2026), y el de otro proceso no
+        okRO(T.pctSeriedadVigente() === null, `(h) la consulta sin garantía no pone un %: ${T.pctSeriedadVigente()}`);
+        responder = () => Promise.resolve(respuestaRO(200, { ok: true, id: "CO1.SE", tope_oferta: guiaSE.tope_oferta, garantia_precios: { pct: 20, clase: "pliego" } }));
+        r = await abrir(filaSE);
+        okRO(T.pctSeriedadVigente() === 20, `(h) la tarjeta trae el % del pliego: ${T.pctSeriedadVigente()}`);
+        responder = () => Promise.resolve(respuestaRO(200, { ok: true, id: "CO1.OTRO", tope_oferta: guiaSE.tope_oferta, garantia_precios: { pct: 20, clase: "pliego" } }));
+        r = await abrir(filaSE);
+        okRO(T.pctSeriedadVigente() === null, `(h) el % de otro proceso no viaja: ${T.pctSeriedadVigente()}`);
         // sin techo, o la guía de otro proceso, o de OTRA cifra de SECOP II que la de la tarjeta: la cifra de la tarjeta, sin nota
         for (const [que, resp, fila] of [["sin techo", () => respuestaRO(200, { ok: true, id: "CO1.SE", tope_oferta: { valor: 1744426146, fuente: "secop", secop: 1744426146 } }), filaSE], ["el techo de otro proceso", () => respuestaRO(200, { ok: true, id: "CO1.OTRO", tope_oferta: guiaSE.tope_oferta }), filaSE], ["el techo con otra cifra de SECOP II", () => respuestaRO(200, { ok: true, id: "CO1.SE", tope_oferta: guiaSE.tope_oferta }), { ...filaSE, cuantia_cop: 1700000000 }], ["sin presupuesto en SECOP II", () => respuestaRO(200, { ok: true, id: "CO1.SE", tope_oferta: null }), filaSE]]) {
           responder = () => Promise.resolve(resp());

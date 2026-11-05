@@ -72,3 +72,23 @@ proveedores impuestos, marcas sin «o equivalente», licencias y permisos, visit
 de rechazo. Lo que no encuentra lo lista como «no encontrado en el pliego», que es un resultado, no una
 ausencia: el pliego puede decirlo con otras palabras. Nunca baja el veredicto a «no conviene presentarse»
 sin un requisito numérico incumplido y citado.
+
+## Las observaciones al pliego, con la misma suscripción (5-nov-2026)
+
+Debajo del dictamen, en **Mis procesos** → el proceso guardado → «Dictamen del pliego», está la sección
+**«Observaciones al pliego»**. Es un **borrador** para pedirle a la entidad que cambie o aclare el pliego
+en la etapa de observaciones: cada observación lleva su página, el texto exacto del pliego y lo que se pide
+cambiar, primero las que hoy dejan por fuera al perfil según el dictamen. Usted lo lee, llena lo que va
+entre corchetes (ciudad, fecha, firma, NIT) y lo radica en SECOP II. Nada se envía solo.
+
+- **Desde el botón** «Redactar observaciones al pliego»: usa la MISMA rutina del dictamen (no hay que
+  configurar nada nuevo). El servidor la despierta con `tarea=observaciones` y la habilidad `/dictamen` la
+  remite a `.claude/skills/observaciones/SKILL.md`. Se comprueba con «Ver si ya están listas».
+- **Desde Claude Code**: `/observaciones CO1.REQ.123456 helder`.
+- **Lo que comprueba la aplicación** (`lib/observaciones.verificarObservaciones`, con las piezas del
+  dictamen): la cita entera en su página; ninguna cifra sin respaldo en la cita, su página o los datos del
+  perfil; ninguna ley, decreto, resolución, artículo o sentencia con su número que el pliego no nombre;
+  ninguna frase que atribuya intenciones a la entidad. Lo que no pasa queda en «Observaciones que no se
+  pudieron comprobar» y no entra en el Word.
+- **El Word** se arma en el navegador con el escritor propio de `public/xlsx.js` («Descargar en Word»).
+

@@ -1224,6 +1224,172 @@
     pintarCajaDictamen(pintarDictamen(r, { esc, MARCA: window.Glosario.MARCA }), id);
     const estado = enCaja("dictamen-estado");
     if (estado && r.cache && r.generado) estado.textContent = `Dictamen generado el ${String(r.generado).slice(0, 10).split("-").reverse().join("/")} (guardado)`;
+    /* las observaciones al pliego van DEBAJO del dictamen: se redactan a partir de él (5-nov-2026) */
+    cargarObservaciones(id, r);
+  }
+
+  /* ══════════ LAS OBSERVACIONES AL PLIEGO (5-nov-2026, encargo del dueño) ══════════
+     Un BORRADOR que el dueño lee antes de radicar: cada observación con su página, el texto
+     exacto del pliego y lo que se pide cambiar, primero las que hoy lo dejan por fuera. Lo
+     redacta una sesión de Claude Code (/observaciones) y el servidor verifica cada cita
+     (lib/observaciones). Aquí solo se pinta y se arma el Word con el escritor de ZIP de
+     public/xlsx.js. `pintarObservaciones` y `docxObservaciones` son AUTOCONTENIDAS (reciben
+     lo que usan por parámetro) para que la suite las EJECUTE sobre un fixture. */
+  const MOTIVO_OBS = {
+    cita_no_encontrada: "la cita no está en el pliego", pagina_ilegible: "la página de la cita no se pudo leer", cita_ambigua: "la cita es muy corta y aparece en varias páginas",
+    cifra_sin_respaldo: "trae una cifra que no está en el pliego", norma_sin_fuente: "nombra una norma que el pliego no cita", frase_de_acusacion: "atribuye intenciones a la entidad",
+    registro_informal: "redacción no admitida", repetida: "repite la cita de otra observación", sin_cita: "no trae el texto del pliego", sin_solicitud: "no dice qué se pide",
+  };
+  function pintarObservaciones(o, ctx) {
+    const esc = ctx.esc;
+    const PRIORIDAD = { lo_deja_por_fuera: "Hoy lo deja por fuera", le_resta_opciones: "Le resta opciones", aclaracion: "Pide una aclaración" };
+    const TONO = { lo_deja_por_fuera: "bg-red-50 text-red-700 ring-red-600/20", le_resta_opciones: "bg-amber-50 text-amber-800 ring-amber-600/20", aclaracion: "bg-gray-50 text-gray-600 ring-gray-500/20" };
+    const TEMA = ctx.temas || {};
+    let html = `<p class="text-xs font-medium uppercase tracking-wide text-gray-500">Observaciones al pliego</p>`;
+    const pedido = o.pedido_sesion && (o.pedido_sesion.ok || o.pedido_sesion.indeterminada) ? o.pedido_sesion : null;
+    if (pedido) {
+      let hora = "";
+      try { hora = new Date(pedido.el).toLocaleTimeString("es-CO", { timeZone: "America/Bogota", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }); } catch { hora = ""; }
+      html += `<p class="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800 ring-1 ring-inset ring-amber-600/20">Redacción pedida${hora ? ` a las ${esc(hora)}` : ""}: tarda unos minutos.</p>`;
+    }
+    const lista = o.hay_observaciones && Array.isArray(o.observaciones) ? o.observaciones : [];
+    const boton = (idB, texto, fuerte) => `<button type="button" data-obs-${idB} class="rounded-lg px-3 py-1.5 text-sm font-medium ${fuerte ? "bg-gray-900" : "ring-1 ring-inset ring-gray-300"}">${esc(texto)}</button>`;
+    const pedir = o.rutina_disponible ? (pedido ? boton("ver", "Ver si ya están listas", true) : boton("pedir", o.hay_observaciones ? "Volver a redactarlas" : "Redactar observaciones al pliego", !o.hay_observaciones)) : "";
+    const sinRutina = o.rutina_disponible || !o.como_pedirlas ? "" : `<p class="mt-2 text-xs text-gray-500">${esc(o.como_pedirlas)}</p>`;
+    if (!o.hay_observaciones) {
+      html += `<p class="mt-2 text-sm text-gray-700">Con el dictamen se puede pedir un borrador de observaciones a la entidad: cada una con su página, el texto exacto del pliego y lo que se pide cambiar, primero las que hoy lo dejan por fuera. Es un borrador que usted lee antes de radicarlo.</p>`;
+      return `${html}${sinRutina}<div class="mt-3 flex flex-wrap gap-2">${pedir}</div><p data-obs-estado class="mt-2 text-xs text-gray-500"></p>`;
+    }
+    html += `<p class="mt-2 rounded-lg bg-gray-50 px-3 py-2 text-xs text-gray-600 ring-1 ring-inset ring-gray-500/20">${esc(o.borrador || "")}</p>`;
+    if (ctx.otraVersion) html += `<p class="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800 ring-1 ring-inset ring-amber-600/20">Se redactaron sobre otra versión del pliego que la del dictamen: vuelva a redactarlas antes de radicarlas.</p>`;
+    if (o.resumen) html += `<p class="mt-2 text-sm text-gray-700">${esc(o.resumen)}</p>`;
+    if (!lista.length) html += `<p class="mt-2 text-sm text-gray-700">No quedó ninguna observación comprobada.</p>`;
+    else {
+      html += `<ol class="mt-2 space-y-3">${lista.map((x, i) => `<li class="text-sm">`
+        + `<p class="font-medium text-gray-900">${i + 1}. ${esc(TEMA[x.tema] || x.tema)} <span class="ml-1 rounded px-1.5 py-0.5 text-xs ring-1 ring-inset ${TONO[x.prioridad] || TONO.aclaracion}">${esc(PRIORIDAD[x.prioridad] || "")}</span></p>`
+        + `<p class="mt-1 text-xs text-gray-500">Texto del pliego${x.pagina_real != null ? ` (pág. ${esc(x.pagina_real)})` : ""}: <span class="italic">«${esc(x.cita)}»</span></p>`
+        + `<p class="mt-1 text-gray-700"><span class="font-medium">Se pide:</span> ${esc(x.solicitud)}</p>`
+        + `<p class="mt-1 text-gray-700"><span class="font-medium">Por qué:</span> ${esc(x.fundamento)}</p></li>`).join("")}</ol>`;
+    }
+    const apartadas = Array.isArray(o.no_verificados) ? o.no_verificados : [];
+    if (apartadas.length) {
+      html += `<details class="mt-2"><summary class="cursor-pointer text-xs font-medium uppercase tracking-wide text-gray-500">Observaciones que no se pudieron comprobar (${apartadas.length})</summary>`
+        + `<p class="mt-1 text-xs text-gray-500">No van en el Word.</p><ul class="mt-1 space-y-1 text-xs text-gray-500">`
+        + apartadas.map((a) => `<li>${esc(a.texto)} <span class="italic">— ${esc(MOTIVO_OBS[a.motivo] || a.motivo)}</span></li>`).join("") + "</ul></details>";
+    }
+    const ver = o.verificacion || {};
+    if (Number.isFinite(Number(ver.observaciones_recibidas))) html += `<p class="mt-2 text-xs text-gray-400">Observaciones con su cita comprobada en el pliego: ${esc(ver.observaciones_comprobadas)} de ${esc(ver.observaciones_recibidas)}${o.generado ? ` · redactadas el ${esc(String(o.generado).slice(0, 10).split("-").reverse().join("/"))}` : ""}.</p>`;
+    return `${html}${sinRutina}<div class="mt-3 flex flex-wrap gap-2">${lista.length ? boton("word", "Descargar en Word", true) : ""}${pedir}</div><p data-obs-estado class="mt-2 text-xs text-gray-500"></p>`;
+  }
+
+  /* El Word: una carta a la entidad en tercera persona impersonal. Lo que la aplicación no sabe
+     (ciudad, fecha, firma, NIT) va entre corchetes para que el dueño lo llene. Solo entran las
+     observaciones comprobadas, con la página donde de verdad está la cita. */
+  function docxObservaciones(o, ctx) {
+    const xml = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\uFFFE\uFFFF]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g, "");
+    const run = (t, { b = false, i = false } = {}) => `<w:r><w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:cs="Arial"/>${b ? "<w:b/>" : ""}${i ? "<w:i/>" : ""}<w:sz w:val="22"/></w:rPr><w:t xml:space="preserve">${xml(t)}</w:t></w:r>`;
+    const par = (runs, { jc = "both", despues = 160 } = {}) => `<w:p><w:pPr><w:spacing w:after="${despues}"/><w:jc w:val="${jc}"/></w:pPr>${(Array.isArray(runs) ? runs : [runs]).join("")}</w:p>`;
+    const TEMA = ctx.temas || {};
+    const p = o.proceso || {};
+    const lista = Array.isArray(o.observaciones) ? o.observaciones : [];
+    const cuerpo = [
+      par(run("[Ciudad], [fecha]"), { jc: "left" }),
+      par(run("Señores"), { jc: "left", despues: 0 }),
+      par(run(p.entidad || "[Entidad]", { b: true }), { jc: "left" }),
+      par([run("Asunto: ", { b: true }), run(`Observaciones al pliego de condiciones del proceso ${o.id_proceso || p.id || "[número del proceso]"}`)], { jc: "left", despues: 0 }),
+      ...(p.objeto ? [par([run("Objeto: ", { b: true }), run(p.objeto)])] : [par("")]),
+      par(run("Respetados señores:"), { jc: "left" }),
+      par(run("Dentro del plazo previsto en el cronograma del proceso, se presentan las siguientes observaciones al pliego de condiciones:")),
+    ];
+    lista.forEach((x, k) => {
+      cuerpo.push(par(run(`Observación ${k + 1}. ${TEMA[x.tema] || x.tema}`, { b: true }), { jc: "left", despues: 80 }));
+      cuerpo.push(par([run(`Texto del pliego${x.pagina_real != null ? ` (página ${x.pagina_real})` : ""}: `, { b: true }), run(`«${x.cita}»`, { i: true })], { despues: 80 }));
+      cuerpo.push(par([run("Solicitud: ", { b: true }), run(x.solicitud)], { despues: 80 }));
+      cuerpo.push(par([run("Fundamento: ", { b: true }), run(x.fundamento)]));
+    });
+    cuerpo.push(par(run("Atentamente,"), { jc: "left", despues: 600 }));
+    cuerpo.push(par(run("[Nombre y firma del representante legal]"), { jc: "left", despues: 0 }));
+    cuerpo.push(par(run("[Razón social] · NIT [número]"), { jc: "left" }));
+    const documento = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>${cuerpo.join("")}<w:sectPr><w:pgSz w:w="12240" w:h="15840"/><w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440" w:header="708" w:footer="708" w:gutter="0"/></w:sectPr></w:body></w:document>`;
+    const tipos = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>`;
+    const rels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>`;
+    const enc = (s) => new TextEncoder().encode(s);
+    const bytes = ctx.escribirZip([{ nombre: "[Content_Types].xml", datos: enc(tipos) }, { nombre: "_rels/.rels", datos: enc(rels) }, { nombre: "word/document.xml", datos: enc(documento) }]);
+    const nombre = `Observaciones al pliego ${String(o.id_proceso || p.id || "proceso").replace(/[^A-Za-z0-9.\-]+/g, " ").trim().slice(0, 60)}.docx`;
+    return { bytes, nombre, documento };
+  }
+
+  const TEMAS_OBS = {
+    experiencia: "Experiencia", indicadores_financieros: "Indicadores financieros", capacidad_de_contratacion: "Capacidad de contratación",
+    personal: "Personal", equipos: "Equipos", plazo: "Plazo de ejecución", cronograma: "Cronograma del proceso", garantias: "Garantías",
+    forma_de_pago: "Forma de pago", presupuesto_y_precios: "Presupuesto y precios", especificaciones_tecnicas: "Especificaciones técnicas",
+    factores_de_puntaje: "Factores de puntaje", documentos_y_formatos: "Documentos y formatos", contradiccion_entre_documentos: "Contradicción entre documentos", otro: "Otro aspecto",
+  };
+  let observacionesUltimas = null;
+  /* el contenedor va DENTRO de la caja del dictamen (la de Mis procesos o la del lector): se busca ahí */
+  function cajaObservaciones() {
+    const c = cajaDictamen();
+    if (!c) return null;
+    let o = c.querySelector("[data-obs-caja]");
+    if (!o) { o = document.createElement("div"); o.setAttribute("data-obs-caja", ""); o.className = "mt-4 border-t border-gray-200 pt-3"; c.appendChild(o); }
+    return o;
+  }
+  function pintarSeccionObservaciones(o, id, dictamen) {
+    const caja = cajaObservaciones();
+    if (!caja) return;
+    observacionesUltimas = o;
+    /* la versión del texto con que se verificaron frente a la del dictamen que se ve: otra versión se dice */
+    const otraVersion = !!(o.hay_observaciones && dictamen && o.texto_id && dictamen.texto_id && String(o.texto_id) !== String(dictamen.texto_id));
+    caja.innerHTML = pintarObservaciones(o, { esc, temas: TEMAS_OBS, otraVersion });
+    const estado = () => caja.querySelector("[data-obs-estado]");
+    const bPedir = caja.querySelector("[data-obs-pedir]");
+    if (bPedir) bPedir.addEventListener("click", () => pedirObservaciones(id, dictamen));
+    const bVer = caja.querySelector("[data-obs-ver]");
+    if (bVer) bVer.addEventListener("click", async () => {
+      bVer.disabled = true; bVer.textContent = "Mirando…";
+      await cargarObservaciones(id, dictamen);
+      const e = estado();
+      if (e) e.textContent = observacionesUltimas && observacionesUltimas.hay_observaciones && !(observacionesUltimas.pedido_sesion && observacionesUltimas.pedido_sesion.ok)
+        ? "Listas: este es el borrador de observaciones." : "Todavía no están listas. Vuelva a mirar en unos minutos.";
+    });
+    const bWord = caja.querySelector("[data-obs-word]");
+    if (bWord) bWord.addEventListener("click", () => {
+      const e = estado();
+      try {
+        const w = docxObservaciones(observacionesUltimas || {}, { temas: TEMAS_OBS, escribirZip: window.XLSXApu.escribirZip });
+        window.XLSXApu.descargar(w.bytes, w.nombre, "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+        if (e) e.textContent = `Descargado: «${w.nombre}». Léalo y llene lo que va entre corchetes antes de radicarlo.`;
+      } catch (err) { if (e) e.textContent = `No se pudo armar el Word: ${window.Glosario.fraseDeFallo(err)}`; }
+    });
+  }
+  async function cargarObservaciones(id, dictamen) {
+    if (!id) return;
+    const r = await pedirGet(`/api/pliego?op=observaciones&id_proceso=${encodeURIComponent(id)}&perfil=${encodeURIComponent(perfilDictamen())}`);
+    /* la caja pudo cambiar de proceso mientras tanto: solo se pinta sobre el dictamen del MISMO proceso */
+    if (!dictamenUltimo || dictamenUltimo.id_proceso !== id) return;
+    const caja = cajaObservaciones();
+    if (!caja) return;
+    if (r.red || r.estado === 401 || !r.cuerpo || !r.cuerpo.ok) {
+      caja.innerHTML = `<p class="text-xs font-medium uppercase tracking-wide text-gray-500">Observaciones al pliego</p><p class="mt-2 text-xs text-gray-500">${esc(r.red || (r.estado === 401 ? MSG_401 : (r.cuerpo && r.cuerpo.error) || window.Glosario.fraseDeFallo({ status: r.estado })))}</p>`;
+      return;
+    }
+    pintarSeccionObservaciones(r.cuerpo, id, dictamen);
+  }
+  async function pedirObservaciones(id, dictamen) {
+    const caja = cajaObservaciones();
+    const b = caja && caja.querySelector("[data-obs-pedir]");
+    if (b) { b.disabled = true; b.textContent = "Pidiendo la redacción…"; }
+    let r;
+    try {
+      const resp = await fetch("/api/pliego?op=observaciones", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id_proceso: id, perfil: perfilDictamen(), pedir_sesion: true }) });
+      let datos = null;
+      try { datos = await resp.json(); } catch { datos = null; }
+      r = { estado: resp.status, cuerpo: datos };
+    } catch (e) { r = { estado: 0, cuerpo: null, red: window.Glosario.fraseDeFallo(e) }; }
+    await cargarObservaciones(id, dictamen);
+    const e = cajaObservaciones() && cajaObservaciones().querySelector("[data-obs-estado]");
+    const c = r.cuerpo || {};
+    if (e) e.textContent = r.red || (r.estado === 401 ? MSG_401 : `${c.error || ""} ${c.que_hacer || ""}`.trim() || window.Glosario.fraseDeFallo({ status: r.estado }));
   }
 
   /* La respuesta del servidor que no es un dictamen se traduce a un estado con

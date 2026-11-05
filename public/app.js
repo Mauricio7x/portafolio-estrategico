@@ -2754,10 +2754,19 @@
     return { cuantia_cop: t.valor, cuantia_fuente: "pliego",
       cuantia_nota: `Techo: ${fmtCOP.format(t.valor)}, del pliego definitivo${t.pagina != null ? ` (pág. ${t.pagina})` : ""}; SECOP II publica ${fmtCOP.format(t.secop)}. Su oferta no puede pasar la más baja.` };
   }
-  // «Cargue el pliego en Precios» desde el expediente: la foto del guardado más el techo de su guía
+  /* el % de la garantía que fija el pliego (lib/guia_proceso.garantiaParaPrecios): con él Precios calcula la póliza de
+     ESTE pliego como costo de preparar la oferta (5-nov-2026); sin él, nada, y Precios usa el 10 % de los documentos tipo */
+  const CLASES_SERIEDAD = ["pliego", "mipyme", "varias"];
+  function seriedadDesdeGuia(g) {
+    const s = g && g.garantia_precios;
+    const pct = s ? Number(s.pct) : NaN;
+    // la clase viaja con el %: la tarjeta no dice «el que fija el pliego» de un % de las Mipyme o del mayor de varios (revisión adversaria)
+    return Number.isFinite(pct) && pct > 0 && pct <= 100 ? { seriedad_pct: pct, seriedad_clase: CLASES_SERIEDAD.includes(s.clase) ? s.clase : "pliego" } : {};
+  }
+  // «Cargue el pliego en Precios» desde el expediente: la foto del guardado más el techo y la garantía de su guía
   function qApuDelExpediente(pr, id, g) {
     return qApu({ nombre_del_procedimiento: pr.nombre, entidad: pr.entidad, nit_entidad: pr.nit_entidad, departamento_entidad: pr.departamento,
-      cuantia_cop: pr.presupuesto_cop, id_del_proceso: id, modalidad_de_contratacion: pr.modalidad, ...techoDesdeGuia(g) });
+      cuantia_cop: pr.presupuesto_cop, id_del_proceso: id, modalidad_de_contratacion: pr.modalidad, ...techoDesdeGuia(g), ...seriedadDesdeGuia(g) });
   }
   /* EL TECHO DEL PLIEGO TAMBIÉN DESDE LA TARJETA (17-oct-2026, visto bueno del dueño). «Calcular mi precio» en Licitaciones
      arrancaba siempre con la cifra de SECOP II; si el proceso está GUARDADO, su guía (la consulta del expediente, que solo
@@ -2788,7 +2797,7 @@
         new Promise((_, no) => { reloj = setTimeout(() => no(new Error("tiempo")), TECHO_TARJETA_MS); }),
       ]);
       // `solo=tope`: el techo sin la guía entera (la primera vez en una instancia la guía tardó 13 s, medido)
-      const g = r && r.id === id ? { tope_oferta: r.tope_oferta || null } : null;
+      const g = r && r.id === id ? { tope_oferta: r.tope_oferta || null, garantia_precios: r.garantia_precios || null } : null;
       consultado = !!g;
       sinPliego = !!g && r.documentos_leidos === 0;
       const techo = techoDesdeGuia(g);
@@ -2796,6 +2805,8 @@
         const t = new URLSearchParams(qApu(techo));
         for (const k of ["cuantia", "cuantia_fuente", "cuantia_nota"]) q.set(k, t.get(k));
       }
+      const sp = seriedadDesdeGuia(g);
+      if (sp.seriedad_pct) { q.set("seriedad", String(sp.seriedad_pct)); q.set("seriedad_clase", sp.seriedad_clase); }
     } catch { /* sin la guía, Precios arranca con la cifra de SECOP II y lo dice */ }
     finally {
       clearTimeout(reloj);
@@ -2822,6 +2833,7 @@
     if (l.cuantia_cop != null) q.set("cuantia", String(l.cuantia_cop));
     if (l.cuantia_fuente === "pliego") q.set("cuantia_fuente", "pliego");
     if (l.cuantia_nota) q.set("cuantia_nota", String(l.cuantia_nota));
+    if (l.seriedad_pct != null) { q.set("seriedad", String(l.seriedad_pct)); if (l.seriedad_clase) q.set("seriedad_clase", String(l.seriedad_clase)); }
     if (l.id_del_proceso != null) q.set("id_proceso", String(l.id_del_proceso));
     if (l.plazo_meses != null) q.set("plazo", String(l.plazo_meses));
     // el campo y su respaldo declarado (lib/frecuencia_precio.modalidadDeFila): Precios tiene que leer la misma
@@ -9751,6 +9763,14 @@
      trabajo que el botón existe para ahorrar. */
   let paramsProceso = null;   // los fija abrirEditorConProceso (botón APU de una tarjeta)
   let cuantiaDelPliego = null; // {id, valor}: el techo vino del pliego definitivo de ESE proceso; G.5 lo dice así mientras no se cambie
+  /* {id, pct, clase, perfil}: el % de la garantía de seriedad que fija el pliego de ESE proceso PARA ESE perfil (viaja como
+     «seriedad» desde Mis procesos); solo cuenta mientras el proceso abierto y el perfil de Precios sean los mismos: el de
+     las Mipyme no le vale a una empresa que no lo es (revisión adversaria, 5-nov-2026: cambiar el perfil lo dejaba viajando) */
+  let seriedadDelPliego = null;
+  const seriedadVigente = () => (seriedadDelPliego
+    && (($("id-proceso") && $("id-proceso").value.trim()) || "") === seriedadDelPliego.id
+    && (($("perfil") && $("perfil").value) || "") === seriedadDelPliego.perfil ? seriedadDelPliego : null);
+  const pctSeriedadVigente = () => { const s = seriedadVigente(); return s ? s.pct : null; };
   function pintarNotaCuantia(nota) { const n = $("cuantia-nota"); if (n) { n.textContent = nota || ""; n.classList.toggle("hidden", !nota); } }
   // ¿el campo sigue con la cifra del pliego del proceso abierto? Si el usuario la cambió u otro proceso ocupa el editor, no
   const techoSigueDelPliego = () => !!cuantiaDelPliego && $("cuantia").value.trim() !== "" && Number($("cuantia").value) === cuantiaDelPliego.valor
@@ -9911,6 +9931,11 @@
     poner("cuantia", "cuantia");
     cuantiaDelPliego = p.get("cuantia_fuente") === "pliego" && Number(p.get("cuantia")) > 0 && idEntrante ? { id: idEntrante, valor: Number(p.get("cuantia")) } : null;
     pintarNotaCuantia(cuantiaDelPliego ? (p.get("cuantia_nota") || "") : (p.get("cuantia_aviso") || ""));
+    const pctS = (p.get("seriedad") || "").trim() === "" ? NaN : Number(p.get("seriedad"));
+    const claseS = ["pliego", "mipyme", "varias"].includes(p.get("seriedad_clase")) ? p.get("seriedad_clase") : "pliego";
+    // el perfil con que la guía eligió el %: el de la dirección (Mis procesos lo pone) o, sin él, el de Precios
+    const perfilS = p.get("perfil") || ($("perfil") ? $("perfil").value : "");
+    seriedadDelPliego = idEntrante && Number.isFinite(pctS) && pctS > 0 && pctS <= 100 ? { id: idEntrante, pct: pctS, clase: claseS, perfil: perfilS } : null;
     modalidadProceso = p.get("modalidad") || "";
     tipoProceso = p.get("tipo") || "";
     poner("plazo-meses", "plazo");
@@ -9958,7 +9983,7 @@
     const mismo = !!idBorrador && idBorrador === idAbierto;
     const dato = (guardado, actual) => (guardado != null && guardado !== "" ? String(guardado) : mismo ? actual : "");
     const campo = (id, guardado) => { if ($(id)) $(id).value = dato(guardado, $(id).value); };
-    if (!mismo) olvidarDerivadosDelProceso();
+    if (!mismo) { olvidarDerivadosDelProceso(); seriedadDelPliego = null; }   // la garantía era del pliego de otro proceso
     /* el borrador manda sobre la precarga de la URL: la segunda precarga (tras el catálogo)
        ya no reinicia el editor para volver al proceso de la URL (segunda revisión) */
     borradorAbierto = true;
@@ -10026,6 +10051,8 @@
         // etiqueta: viaja y vuelve, pero no condiciona el optimizador
         id_proceso: $("id-proceso").value.trim() || null,
         perfil: $("perfil").value,
+        // el % de la garantía que fija el pliego de este proceso: el costo de preparar la oferta es esa póliza
+        pct_seriedad: pctSeriedadVigente(),
       };
       const c = await api("/api/apu?op=rentabilidad", { method: "POST", body: cuerpo });
       if (!c) return; // el usuario canceló el diálogo del token
@@ -10366,8 +10393,14 @@
     const hayVeg = r.veg != null && Number.isFinite(Number(r.veg));
     /* el costo de preparar la oferta es la póliza de seriedad (5-nov-2026, lib/apu/rentabilidad.costoPreparacionDe):
        se dice de dónde sale la cifra, y si el porcentaje es el de los documentos tipo y no el del pliego */
+    /* de qué % se trata, dicho por su clase (lib/guia_proceso.garantiaElegida): el de las Mipyme pide el certificado y el
+       mayor de varias cifras pide confirmar cuál aplica */
+    const sv = r.costo_preparacion_pct_del_pliego ? seriedadVigente() : null;
+    const delPliego = sv && sv.pct === r.costo_preparacion_pct_seriedad && sv.clase === "mipyme" ? ", el que fija el pliego para las Mipyme: si no entrega el certificado, le aplica el de los demás"
+      : sv && sv.pct === r.costo_preparacion_pct_seriedad && sv.clase === "varias" ? ", el mayor de los que trae el pliego: confirme cuál le aplica"
+      : ", el que fija el pliego";
     const costoPrep = r.costo_preparacion_origen === "poliza_seriedad"
-      ? `${copRent(r.costo_preparacion)} de la póliza de seriedad (${pctRent(r.costo_preparacion_pct_seriedad)} del presupuesto${r.costo_preparacion_pct_del_pliego ? "" : ", el de los documentos tipo: si el pliego pide más, cuesta más"})`
+      ? `${copRent(r.costo_preparacion)} de la póliza de seriedad (${pctRent(r.costo_preparacion_pct_seriedad)} del presupuesto${r.costo_preparacion_pct_del_pliego ? delPliego : ", el de los documentos tipo: si el pliego pide más, cuesta más"})`
       : r.costo_preparacion == null ? "la póliza de seriedad, que sin presupuesto no se calcula"
       : `${copRent(r.costo_preparacion)} de preparar la oferta`;
     t.push(tarjetaRent(window.Glosario.traducir("veg"), `${copRent(r.veg)}${sup && hayVeg ? marcaSupuesto : ""}`,
