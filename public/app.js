@@ -10364,8 +10364,14 @@
        el POSITIVO: un verde sobre un supuesto se lee como «vale la pena»); el
        rojo de una cifra que no alcanza se conserva, porque avisar no presupuesta */
     const hayVeg = r.veg != null && Number.isFinite(Number(r.veg));
+    /* el costo de preparar la oferta es la póliza de seriedad (5-nov-2026, lib/apu/rentabilidad.costoPreparacionDe):
+       se dice de dónde sale la cifra, y si el porcentaje es el de los documentos tipo y no el del pliego */
+    const costoPrep = r.costo_preparacion_origen === "poliza_seriedad"
+      ? `${copRent(r.costo_preparacion)} de la póliza de seriedad (${pctRent(r.costo_preparacion_pct_seriedad)} del presupuesto${r.costo_preparacion_pct_del_pliego ? "" : ", el de los documentos tipo: si el pliego pide más, cuesta más"})`
+      : r.costo_preparacion == null ? "la póliza de seriedad, que sin presupuesto no se calcula"
+      : `${copRent(r.costo_preparacion)} de preparar la oferta`;
     t.push(tarjetaRent(window.Glosario.traducir("veg"), `${copRent(r.veg)}${sup && hayVeg ? marcaSupuesto : ""}`,
-      `${sup && hayVeg ? "Con la probabilidad supuesta: " : ""}P(ganar) × utilidad − ${copRent(r.costo_preparacion)} de preparar la oferta`,
+      `${sup && hayVeg ? "Con la probabilidad supuesta: " : ""}P(ganar) × utilidad − ${costoPrep}`,
       r.veg != null && r.veg <= 0 ? "mal" : sup ? null : "bien"));
     t.push(tarjetaRent("Utilidad esperada", copRent(r.utilidad_esperada), "Antes de impuesto de renta",
       // `null <= 0` es true: sin la guarda, un «—» (sin dato) se pintaba en rojo
@@ -10493,7 +10499,7 @@
        no la llevan: el máximo no se mueve al escalar la probabilidad */
     const conMarca = (txt) => (supuesto && txt !== "—" ? `${txt} (supuesto)` : txt);
     $("ps-veg").textContent = conMarca(copRent(op.veg));
-    $("ps-veg-nota").textContent = `${supuesto ? "Con la probabilidad supuesta: " : ""}P(ganar) × utilidad neta − costo de preparar la oferta`;
+    $("ps-veg-nota").textContent = `${supuesto ? "Con la probabilidad supuesta: " : ""}P(ganar) × utilidad neta − la póliza de seriedad`;
     $("ps-prob").textContent = op.probabilidad == null ? "—" : conMarca(pctRent(op.probabilidad * 100));
     const comp = o.comparacion_con_actual;
     const notaProb = comp && comp.diferencia_veg != null

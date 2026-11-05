@@ -3006,6 +3006,13 @@ async function main() {
         const tProb = tarjetasS().find((x) => x.includes("Probabilidad de ganar")) || "";
         const tVeg = tarjetasS().find((x) => x.includes(vegRotulo)) || "";
         assert.ok(tProb && tVeg, "el bloque de rentabilidad pinta las dos tarjetas");
+        /* el costo de preparar es la póliza de seriedad del presupuesto (5-nov-2026): el editor REAL la calcula con la
+           cuantía y la tarjeta REAL dice de dónde sale y que el 10 % no es el del pliego */
+        const polS = require("../lib/apu/rentabilidad.js").costoPreparacionDe({ presupuestoCop: 900000000 });
+        assert.strictEqual(cR.rentabilidad.costo_preparacion, polS, `el editor resta la póliza del 10 % de la cuantía → ${cR.rentabilidad.costo_preparacion}`);
+        assert.ok(txtS(tVeg).includes(`$${new Intl.NumberFormat("es-CO").format(polS)} de la póliza de seriedad (10 % del presupuesto, el de los documentos tipo: si el pliego pide más, cuesta más)`),
+          `la tarjeta dice de dónde sale el costo de preparar → ${txtS(tVeg)}`);
+        assert.ok(/la póliza de seriedad$/.test(String(nodoS("ps-veg-nota").textContent)), `la nota del precio sugerido dice qué se resta → ${nodoS("ps-veg-nota").textContent}`);
         assert.ok(!/× \d+\.\d/.test(txtS(tProb)), `el multiplicador de precio va en es-CO → ${txtS(tProb)}`);
         const psProb = String(nodoS("ps-prob").textContent), psVeg = String(nodoS("ps-veg").textContent), psNota = String(nodoS("ps-prob-nota").textContent);
         if (!conBase) {
@@ -3014,7 +3021,8 @@ async function main() {
           assert.ok(/\(supuesto\)$/.test(psProb) && /\(supuesto\)$/.test(psVeg) && /^Supuesto, no medición/.test(psNota),
             `«${e.n}»: el precio sugerido marca las mismas cifras → ${psProb} · ${psVeg} · ${psNota}`);
         } else {
-          assert.ok(!/supuesto/i.test(String(nodoS("rentabilidad").innerHTML)) && !/supuesto/i.test(psProb + psVeg + psNota),
+          /* la palabra entera: «del presupuesto» (la póliza de seriedad, 5-nov-2026) no es la marca de supuesto */
+          assert.ok(!/\bsupuesto/i.test(String(nodoS("rentabilidad").innerHTML)) && !/\bsupuesto/i.test(psProb + psVeg + psNota),
             `«${e.n}»: con base medida, ninguna marca de supuesto → ${txtS(tProb)} · ${psProb}`);
         }
       }
@@ -22080,6 +22088,83 @@ async function main() {
         constante escrita el día del arreglo.
      (El cierre C —`op=catalogo` declara version_semilla y desactualizado— vive
      dentro de `iteracion()`, donde el catálogo está de verdad cargado en Redis.) */
+  /* EL COSTO DE PREPARAR LA OFERTA ES LA PÓLIZA DE SERIEDAD (5-nov-2026, dato del dueño: «enviar una oferta solo nos
+     cuesta la póliza»). Antes eran $5.000.000 fijos y sin fuente, que dejaban sin ganancia esperada todo contrato de menos
+     de $62,5 millones. Ahora: (presupuesto oficial × % de la garantía × tasa de la prima + gastos de expedición) × 1,19,
+     con la tasa y los gastos mayores de las dos pólizas de 2026 del dueño (Drive): la de la UPN se reconstruye al peso. */
+  bqPol: { if (!corre("unidad APU · costo de preparar = póliza de seriedad")) break bqPol;
+    const R = require("../lib/apu/rentabilidad.js");
+    const { optimizarPrecioOferta } = require("../lib/apu/optimizador.js");
+    assert.strictEqual(R.C_PREPARACION_DEFECTO, undefined, "los $5.000.000 fijos sin fuente ya no existen");
+    assert.strictEqual(R.TASA_PRIMA_SERIEDAD, 404688 / 269791786.20, "la tasa de la prima es la de la póliza de la UPN (Aseguradora Solidaria), la mayor de las dos");
+    assert.strictEqual(R.GASTOS_EXPEDICION_POLIZA, 11000, "los gastos de expedición, los mayores de las dos pólizas");
+    assert.strictEqual(R.IVA_POLIZA, 0.19, "el IVA de las dos pólizas es el 19 % de prima + gastos");
+    assert.strictEqual(R.PCT_SERIEDAD_DEFECTO, 10, "sin el % del pliego, el 10 % de los documentos tipo");
+    // la póliza de la UPN: 20 % de $1.348.958.930 → total impreso $494.668 (la suma de sus partes da $494.669: redondeo del IVA)
+    const upn = R.costoPreparacionDe({ presupuestoCop: 1348958930, pctSeriedad: 20 });
+    assert.ok(Math.abs(upn - 494668) <= 1, `la póliza de la UPN se reconstruye al peso: ${upn}`);
+    // la de Cali: 10 % de $1.581.425.810; con la tasa y los gastos mayores sale MÁS de lo pagado ($231.777): en precios no se queda corto
+    const cali = R.costoPreparacionDe({ presupuestoCop: 1581425810 });
+    assert.strictEqual(cali, Math.round((1581425810 * 10 / 100 * 404688 / 269791786.20 + 11000) * 1.19));
+    assert.ok(cali >= 231777, `con la tasa mayor, la póliza de Cali no puede salir por debajo de lo pagado: ${cali}`);
+    // los gastos fijos van aparte: un contrato pequeño no sale con una póliza de unos pocos miles
+    assert.ok(R.costoPreparacionDe({ presupuestoCop: 20e6 }) >= Math.round(11000 * 1.19), "un contrato de $20 millones paga al menos los gastos de expedición con su IVA");
+    // sin presupuesto no hay cifra: null, nunca $0
+    for (const sin of [{}, { presupuestoCop: null }, { presupuestoCop: 0 }, { presupuestoCop: -5 }, { presupuestoCop: "x" }]) {
+      assert.strictEqual(R.costoPreparacionDe(sin), null, `sin presupuesto, null: ${JSON.stringify(sin)}`);
+    }
+    // un % ilegible o fuera de rango vuelve al 10 %
+    const diez = R.costoPreparacionDe({ presupuestoCop: 1e9 });
+    for (const pct of [null, 0, -3, 150, "abc", true, " ", []]) assert.strictEqual(R.costoPreparacionDe({ presupuestoCop: 1e9, pctSeriedad: pct }), diez, `pct ${JSON.stringify(pct)}`);
+    assert.strictEqual(R.costoPreparacionDe({ presupuestoCop: 1e9, pctSeriedad: "20" }), R.costoPreparacionDe({ presupuestoCop: 1e9, pctSeriedad: 20 }), "un % en texto numérico vale");
+    assert.ok(R.costoPreparacionDe({ presupuestoCop: 1e9, pctSeriedad: 20 }) > diez, "a mayor %, mayor póliza");
+
+    // rentabilidad(): sin costo declarado, la póliza de este proceso, con el presupuesto oficial como base
+    const ent = { precio_oferta: 950e6, costo_directo: 700e6, presupuesto_oficial: 1e9, p_base: 0.25 };
+    const r1 = R.rentabilidad(ent);
+    assert.strictEqual(r1.costo_preparacion, diez, "sin declarar, el costo es la póliza del 10 % del presupuesto");
+    assert.strictEqual(r1.costo_preparacion_origen, "poliza_seriedad");
+    assert.strictEqual(r1.costo_preparacion_pct_seriedad, 10);
+    assert.strictEqual(r1.costo_preparacion_pct_del_pliego, false, "el 10 % por defecto NO es el del pliego");
+    assert.strictEqual(r1.veg, Math.round(r1.p_ganar * r1.utilidad_esperada - diez), "lo que deja por intento resta la póliza");
+    const r20 = R.rentabilidad({ ...ent, pct_seriedad: 20 });
+    assert.strictEqual(r20.costo_preparacion, R.costoPreparacionDe({ presupuestoCop: 1e9, pctSeriedad: 20 }));
+    assert.strictEqual(r20.costo_preparacion_pct_seriedad, 20);
+    assert.strictEqual(r20.costo_preparacion_pct_del_pliego, true);
+    // un costo declarado manda, y el 0 declarado ES un dato
+    const r0 = R.rentabilidad({ ...ent, costo_preparacion: 0 });
+    assert.strictEqual(r0.costo_preparacion, 0, "un 0 declarado es un dato: no se cambia por la póliza");
+    assert.strictEqual(r0.costo_preparacion_origen, "declarado");
+    assert.strictEqual(r0.costo_preparacion_pct_seriedad, null);
+    assert.strictEqual(R.rentabilidad({ ...ent, costo_preparacion: 3e6 }).costo_preparacion, 3e6);
+    for (const vacio of ["", " ", "\t", false, true, [], {}]) {
+      assert.strictEqual(R.rentabilidad({ ...ent, costo_preparacion: vacio }).costo_preparacion_origen, "poliza_seriedad", `un campo vacío o que no es número no es «$0 declarado»: ${JSON.stringify(vacio)}`);
+    }
+    assert.strictEqual(R.rentabilidad({ ...ent, costo_preparacion: "0" }).costo_preparacion, 0, "un «0» en texto sí es un dato");
+    assert.strictEqual(R.rentabilidad({ ...ent, costo_preparacion: -1 }).costo_preparacion, diez, "un negativo no es un costo: la póliza");
+    const rTrue = R.rentabilidad({ ...ent, pct_seriedad: true });
+    assert.ok(rTrue.costo_preparacion_pct_seriedad === 10 && rTrue.costo_preparacion_pct_del_pliego === false, "un % booleano no es «el del pliego»");
+    // sin presupuesto oficial, la base es el precio de la oferta
+    const rSinPo = R.rentabilidad({ ...ent, presupuesto_oficial: null });
+    assert.strictEqual(rSinPo.costo_preparacion, R.costoPreparacionDe({ presupuestoCop: 950e6 }), "sin presupuesto oficial, la base es el precio de la oferta");
+
+    // el optimizador: el MISMO costo (el del presupuesto) en todos los puntos de la rejilla
+    const proc = { presupuesto_oficial: 250e6, p_base: 0.3, precio_venta: 240e6,
+      baja: { nivel: "entidad", baja_mediana: 6, baja_p25: 3, baja_p75: 9, procesos_contados: 20, granularidad_utilizada: "entidad" } };
+    const oDef = optimizarPrecioOferta(proc, 190e6, { desde_pp: 0, hasta_pp: 10 });
+    const oPol = optimizarPrecioOferta(proc, 190e6, { desde_pp: 0, hasta_pp: 10, costo_preparacion: R.costoPreparacionDe({ presupuestoCop: 250e6 }) });
+    const oCinco = optimizarPrecioOferta(proc, 190e6, { desde_pp: 0, hasta_pp: 10, costo_preparacion: 5e6 });
+    assert.ok(oDef.aplicable && oDef.curva.length > 3, `el optimizador debía aplicar: ${oDef.motivo}`);
+    assert.deepStrictEqual(oDef.curva.map((x) => x.veg), oPol.curva.map((x) => x.veg), "sin declarar, el optimizador usa la póliza del presupuesto");
+    assert.notDeepStrictEqual(oDef.curva.map((x) => x.veg), oCinco.curva.map((x) => x.veg), "y no los $5.000.000 de antes");
+    for (const vacio of [" ", false, []]) {
+      assert.deepStrictEqual(optimizarPrecioOferta(proc, 190e6, { desde_pp: 0, hasta_pp: 10, costo_preparacion: vacio }).curva.map((x) => x.veg), oDef.curva.map((x) => x.veg),
+        `en el optimizador, ${JSON.stringify(vacio)} no es «$0 declarado»`);
+    }
+    const pDef = oDef.curva[0];
+    assert.ok(oDef.curva.every((x) => x.veg == null || x.veg > oCinco.curva.find((y) => y.descuento === x.descuento).veg),
+      `con la póliza (unos $57 mil) cada punto deja más que con $5 millones: ${pDef.veg}`);
+  }
   bq46: { if (!corre("unidad APU · dinero de la oferta")) break bq46;
     const { calcularPresupuesto: calcD } = require("../lib/apu/calculo.js");
     const { contextoDePresupuesto } = require("../lib/apu/rentabilidad.js");
