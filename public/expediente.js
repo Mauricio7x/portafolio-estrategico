@@ -436,7 +436,7 @@
      nombre: los tipo de Colombia Compra los numeran «F1_…», «A4_Pacto…», «M2_…» (matriz), «A1_Tecnico» (anexo técnico) */
   /* (revisión adversaria, 5-nov-2026) «técnico» a secas tumbaba el «Formato 12 – Factor de sostenibilidad técnico ambiental»:
      lo que no se entrega es el ANEXO técnico, la matriz de RIESGOS o una matriz numerada «M2_», no cualquier palabra */
-  const NO_SE_ENTREGA = /minuta|anexo\s*(?:\d+\s*[-–:.]?\s*)?(?:anexo\s*)?t[eé]cnico|_t[eé]cnico_|^\s*A\d+_t[eé]cnico|glosario|cronograma|matri[zc]\s+(?:de\s+)?riesgos?|_riesgos_|docbase|documento\s*base|estudios?\s+previos?|pliego|aviso|resoluci|^\s*M\d+[_\s-]|bienesnac/i;
+  const NO_SE_ENTREGA = /minuta|anexo\s*(?:\d+\s*[-–:.]?\s*)?(?:anexo\s*)?t[eé]cnico|_t[eé]cnico_|^\s*A\d+_t[eé]cnico|glosario|cronograma|matri[zc]\s+(?:de\s+)?riesgos?|_riesgos_|docbase|documento\s*base|estudios?\s+previos?|pliego|aviso|resoluci|^\s*M\d+[_\s-]|bienesnac|manifest\w*\s*inter|manifestaci[oó]n\s+de\s+inter[eé]s/i;   // la manifestación de interés se presentó antes: no va en la oferta
   const SE_ENTREGA = /formato|formulario|proforma|carta|pacto|^\s*F\d+[A-Z]?[_\s-]|^\s*form[_\s-]|^\s*anexo/i;
   /* el servidor lista como «formato» solo los Word; un Excel o un PDF de formato (el 3 de experiencia, el 5 de capacidad
      residual, el Formulario 1) queda en «no se lee solo» o «leído»: entra igual si su NOMBRE dice que es un formato */
@@ -445,13 +445,21 @@
      carpeta del .zip, para cargarla en la sección que diga el pliego */
   const ES_OFERTA_ECONOMICA = /oferta\s*econ|propuesta\s*econ|prop_?econ|presupuesto\s+oficial|formulario\s*(?:n[°º.o]*\s*)?1\b/i;
   function formatosParaEntregar(p) {
+    const vistos = new Set();   // un mismo archivo puede salir en dos listas de la guía: entra una vez
     return documentosEntidad(p).filter((f) => {
+      if (f.url && vistos.has(f.url)) return false;
       const n = String(f.nombre || "");
       if (!f.url || NO_SE_ENTREGA.test(n)) return false;
-      return f.estado === "formato" ? SE_ENTREGA.test(n) : NOMBRE_DE_FORMATO.test(n);
+      const si = f.estado === "formato" ? SE_ENTREGA.test(n) : NOMBRE_DE_FORMATO.test(n);
+      if (si) vistos.add(f.url);
+      return si;
     }).map((f) => ({ ...f, economica: ES_OFERTA_ECONOMICA.test(String(f.nombre || "")) }));
   }
 
+  /* el pacto de transparencia: el Documento Base del tipo (ISocialMenCV1) dice que con la firma de la carta se acepta y «no será
+     necesaria la entrega de este documento»; va en el .zip igual, con la nota, porque el pliego puede pedirlo */
+  const esPacto = (n) => /pacto\s*_?\s*de\s+transparencia|pacto_?transp/i.test(String(n || ""));
+  const NOTA_PACTO = "El Documento Base del tipo dice que con la firma de la carta de presentación se acepta el pacto y no hace falta entregarlo: confírmelo en el pliego.";
   function armarZipOferta({ proceso = {}, conQuien = null, formatos = [], originales = [], suyos = [], aMano = [], hoy = null } = {}, ctx = {}) {
     const ascii = (s) => String(s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\x20-\x7e]/g, "").replace(/[\\/:*?"<>|]+/g, " ").replace(/\s+/g, " ").trim();
     const n2 = (i) => String(i + 1).padStart(2, "0");
@@ -483,6 +491,7 @@
       const re = f.resumen || {};
       if (re.de_cada_integrante) lineas.push("       Solo se escribió lo de la entidad: en consorcio lo presenta cada integrante, con sus propios datos.");
       if (re.ofrecimiento) lineas.push("       Es un ofrecimiento que da puntaje y compromete: decida si lo ofrece. No se firmó.");
+      if (esPacto(f.nombre)) lineas.push(`       ${NOTA_PACTO}`);
       if (re.declaracion) lineas.push("       Declara bajo juramento una condición (Mipyme, mujeres, discapacidad…): fírmelo solo si la cumple. No se firmó.");
       if (Array.isArray(re.pendientes) && re.pendientes.length) lineas.push(`       Queda por escribir: ${re.pendientes.join(" · ")}.`);
       const fi = re.firma;
@@ -500,6 +509,7 @@
       lineas.push(`   - ${ruta.slice(ruta.indexOf("/") + 1)}`);
       const pq = porQueNo(o.nombre);
       if (pq) lineas.push(`       No se llenó: ${pq}`);
+      if (esPacto(o.nombre)) lineas.push(`       ${NOTA_PACTO}`);
     });
     if (economicos.length) {
       lineas.push("", "2B. LA OFERTA ECONÓMICA, TAL COMO LA PUBLICÓ LA ENTIDAD (cárguela en SU sección de SECOP II: el precio nunca va con lo técnico)");

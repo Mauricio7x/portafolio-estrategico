@@ -57606,6 +57606,28 @@ async function main() {
       assert.ok(bloque.por_leer.every((x) => x.url), "y los por leer también la llevan");
       const sinCierre = G.bloqueDocumentos({ ...docsG, indice: { ...docsG.indice, cierre_usado: null } }, Dp.resumenLectura(docsG), { documentos: [] }, null);
       assert.deepStrictEqual(sinCierre.formatos.map((x) => x.id_documento), ["3"], "sin cierre conocido manda la clasificación: la carta queda fuera antes que arriesgar la de un proponente");
+      /* LOS FORMATOS TIPO «F7 …» (5-nov-2026, CO1.REQ.11246436: el .zip solo traía la carta y el pacto): se reconocen por el
+         nombre, también en un índice guardado antes, como «otro»; un formato en PDF entra; una matriz «M4 …», no */
+      const crudosT = [
+        { id_documento: "11", nombre_archivo: "F7 FactorCal ISocialMenCV1.docx", extensi_n: "docx", fecha_carga: "2026-09-01T00:00:00.000", url_descarga_documento: u(11) },
+        { id_documento: "12", nombre_archivo: "F13 AcredMipyme ISocialMenCV1.docx", extensi_n: "docx", fecha_carga: "2026-09-01T00:00:00.000", url_descarga_documento: u(12) },
+        { id_documento: "13", nombre_archivo: "Formato Informacion participacion de sociedades controlantes y controladas.pdf", extensi_n: "pdf", fecha_carga: "2026-09-01T00:00:00.000", url_descarga_documento: u(13) },
+        { id_documento: "14", nombre_archivo: "M4 BienesNacRelev ISocialMenCV1.docx", extensi_n: "docx", fecha_carga: "2026-09-01T00:00:00.000", url_descarga_documento: u(14) },
+        { id_documento: "15", nombre_archivo: "3 PPC CDV ADULTO MAYOR DT CARTAGENA.pdf", extensi_n: "pdf", fecha_carga: "2026-09-01T00:00:00.000", url_descarga_documento: u(15) },
+      ];
+      assert.notStrictEqual(Dp.clasificarArchivo(crudosT[4]).tipo, "formato", "«…CARTAGENA» no es una «carta»");
+      // medido en 3.940 nombres de SECOP II: la carta pegada sigue siendo carta; un «F68» de una persona no es un formato tipo
+      for (const n of ["CartadepresentaciondelaPropuesta.pdf", "GCCON-F-061Cartadepresentacion de la propuesta (2).docx", "F12_FactoraAmbSocial__ASBEH_L_V2.docx", "F5 CapRes TMenCV3.xlsx"]) assert.strictEqual(Dp.clasificarArchivo({ nombre_archivo: n }).tipo, "formato", `«${n}» es un formato`);
+      for (const n of ["F68 CARLOS ALBERTO RENDON CARDONA.pdf", "Solicitud Liquidacion Deivy Cartagena.pdf", "CERTIFICACION BANCARIA CIV CARTAGO.pdf"]) assert.notStrictEqual(Dp.clasificarArchivo({ nombre_archivo: n }).tipo, "formato", `«${n}» no es un formato`);
+      assert.strictEqual(Dp.clasificarArchivo(crudosT[0]).tipo, "formato", "«F7 FactorCal …» es un formato");
+      const planT = Dp.planDeLectura(crudosT, { cierre: "2026-09-15" });
+      // un índice guardado con la clasificación de antes: el F13 como «otro» y el pliego de Cartagena como «formato»
+      const viejoIdx = planT.archivos.map((x) => (x.id_documento === "12" ? { ...x, tipo: "otro" } : x.id_documento === "15" ? { ...x, tipo: "formato" } : x));
+      const bloqueT = G.bloqueDocumentos({ indice: { archivos: viejoIdx, plan: planT.plan, cierre_usado: "2026-09-15" }, leidos: {}, ilegibles: {} }, { pendientes: [] }, { documentos: [] }, null);
+      assert.deepStrictEqual(bloqueT.formatos.map((x) => x.id_documento).sort(), ["11", "12", "13"], `los formatos tipo, el del índice viejo y el PDF; ni la matriz ni el pliego «…CARTAGENA» que el índice viejo daba por formato: ${JSON.stringify(bloqueT.formatos.map((x) => x.nombre))}`);
+      const entT = Xf.formatosParaEntregar({ guia: { documentos: { ...bloqueT, no_legibles: [{ nombre: "F10 ManifestInteres ISocialMenCV1.docx", url: "https://community.secop.gov.co/m" }, { nombre: "F7 FactorCal ISocialMenCV1.docx", url: bloqueT.formatos[0].url }] } } });
+      assert.deepStrictEqual(entT.map((f) => f.nombre).sort(), ["F13 AcredMipyme ISocialMenCV1.docx", "F7 FactorCal ISocialMenCV1.docx", "Formato Informacion participacion de sociedades controlantes y controladas.pdf"],
+        `al .zip: cada formato una vez, y la manifestación de interés (que se presentó antes) no: ${JSON.stringify(entT.map((f) => f.nombre))}`);
       const filas = Xf.documentosEntidad({ guia: { documentos: bloque } });
       assert.ok(filas.some((f) => f.estado === "formato" && /data-seg-llenar=/.test(Xf.htmlFilaDoc(f, 1)) && /Formato para llenar/.test(Xf.htmlFilaDoc(f, 1))), "en el expediente salen como «Formato para llenar», con su botón");
     }
@@ -64348,20 +64370,21 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
           guia: { documentos: { formatos: [{ id_documento: "1", nombre: "F1_CartaPres_ISocialMenCV1.docx", url: "https://community.secop.gov.co/a" }, { id_documento: "2", nombre: "F6_PagoSS_Aportes_ISocialMenCV1.docx", url: "https://community.secop.gov.co/b" },
             { id_documento: "3", nombre: "F3_Experiencia_ISocialMenCV1.xlsx", url: "https://community.secop.gov.co/c" }, { id_documento: "4", nombre: "A5_MinutaContrato_ISocialMenCV1.docx", url: "https://community.secop.gov.co/d" },
             { id_documento: "5", nombre: "M3_Riesgos_ISocialMenCV1.docx", url: "https://community.secop.gov.co/e" }, { id_documento: "6", nombre: "Anexo 1 - Anexo Técnico.docx", url: "https://community.secop.gov.co/f" },
-            { id_documento: "7", nombre: "Formato 12 - Factor de sostenibilidad técnico ambiental agregado.docx", url: "https://community.secop.gov.co/g" }, { id_documento: "10", nombre: "FORMATO OFERTA ECONOMICA.docx", url: "https://community.secop.gov.co/j" }],
+            { id_documento: "7", nombre: "Formato 12 - Factor de sostenibilidad técnico ambiental agregado.docx", url: "https://community.secop.gov.co/g" }, { id_documento: "10", nombre: "FORMATO OFERTA ECONOMICA.docx", url: "https://community.secop.gov.co/j" },
+            { id_documento: "11", nombre: "Anexo 4 PactoTransp ISocialMenCV1.docx", url: "https://community.secop.gov.co/k" }],
             no_legibles: [{ id_documento: "8", nombre: "Form_PropEconomica_ISocialMenCV1.xlsx", url: "https://community.secop.gov.co/h" }, { id_documento: "9", nombre: "Estudio de mercado.xlsx", url: "https://community.secop.gov.co/i" }] } } };
         TO.fijar({ segExpDatos: { ok: true, proceso: procO, consorcios: [{ id: "cons_infragr1", nombre: "CONSORCIO INFRAESTRUCTURA GR", integrantes: [] }], hoy: "2026-11-05" } });
         await TO.armarZipDelProceso("CO1.ZIP2");
         const llO = pedO.filter((b) => b.formato === "llenar"), orO = pedO.filter((b) => b.formato === "original");
-        okRO(llO.map((b) => b.url).join() === "https://community.secop.gov.co/a,https://community.secop.gov.co/b,https://community.secop.gov.co/g" && llO.every((b) => b.proceso && b.proceso.entidad === "ALCALDÍA DE CARTAGENA" && b.proceso.referencia === "SA-MC-001-2026" && b.proceso.ciudad_entidad === "Cartagena" && b.proceso.objeto === "ADECUACIÓN DE CENTROS DE VIDA"),
+        okRO(llO.map((b) => b.url).join() === "https://community.secop.gov.co/a,https://community.secop.gov.co/b,https://community.secop.gov.co/g,https://community.secop.gov.co/k" && llO.every((b) => b.proceso && b.proceso.entidad === "ALCALDÍA DE CARTAGENA" && b.proceso.referencia === "SA-MC-001-2026" && b.proceso.ciudad_entidad === "Cartagena" && b.proceso.objeto === "ADECUACIÓN DE CENTROS DE VIDA"),
           `(g-ter) se llenan los Word que se entregan, con lo del proceso (la minuta y la matriz no): ${JSON.stringify(llO.map((b) => [b.url, b.proceso]))}`);
-        okRO(orO.map((b) => b.url).sort().join() === "https://community.secop.gov.co/b,https://community.secop.gov.co/c,https://community.secop.gov.co/g,https://community.secop.gov.co/h,https://community.secop.gov.co/j", `(g-ter) los que no se llenaron, el Excel de formato y la oferta económica se traen tal cual (el estudio de mercado no): ${JSON.stringify(orO.map((b) => b.url))}`);
+        okRO(orO.map((b) => b.url).sort().join() === "https://community.secop.gov.co/b,https://community.secop.gov.co/c,https://community.secop.gov.co/g,https://community.secop.gov.co/h,https://community.secop.gov.co/j,https://community.secop.gov.co/k", `(g-ter) los que no se llenaron, el Excel de formato y la oferta económica se traen tal cual (el estudio de mercado no): ${JSON.stringify(orO.map((b) => b.url))}`);
         const zO = Buffer.from(desO[0] ? desO[0].bytes : []);
         const Dz = require("../lib/docx.js");
         const ent2 = Dz.entradaZip(zO, "2 Formatos tal como los publico la entidad/01 F6_PagoSS_Aportes_ISocialMenCV1.docx"), ent3 = Dz.entradaZip(zO, "2 Formatos tal como los publico la entidad/02 F3_Experiencia_ISocialMenCV1.xlsx");
         const leO = Dz.entradaZip(zO, "LEAME - revise antes de subir.txt").datos.toString("utf8");
         okRO(ent2.datos && ent2.datos.toString() === "ORIGINAL https://community.secop.gov.co/b" && ent3.datos && ent3.datos.toString() === "ORIGINAL https://community.secop.gov.co/c"
-          && Dz.entradaZip(zO, "4 Oferta economica - va en su propia seccion/01 Form_PropEconomica_ISocialMenCV1.xlsx").datos && Dz.entradaZip(zO, "4 Oferta economica - va en su propia seccion/02 FORMATO OFERTA ECONOMICA.docx").datos && /el precio nunca va con lo técnico/.test(leO) && /compárelos con el pliego/.test(leO)
+          && Dz.entradaZip(zO, "4 Oferta economica - va en su propia seccion/01 Form_PropEconomica_ISocialMenCV1.xlsx").datos && Dz.entradaZip(zO, "4 Oferta economica - va en su propia seccion/02 FORMATO OFERTA ECONOMICA.docx").datos && /el precio nunca va con lo técnico/.test(leO) && /compárelos con el pliego/.test(leO) && /se acepta el pacto y no hace falta entregarlo/.test(leO)
           && /Queda por escribir: \[Dirección de la entidad\]/.test(leO) && /No se llenó: En consorcio, este formato lo presenta cada integrante/.test(leO) && !/Minuta|Riesgos|Anexo T/.test(leO) && !pedO.some((b) => /\/[def]$/.test(b.url)),
           `(g-ter) el .zip: los llenos, los demás byte a byte, y la hoja dice qué falta en cada uno: ${leO.slice(0, 900)}`);
         // quitar: la confirmación manda el DELETE del proceso

@@ -21680,6 +21680,14 @@ En una línea: el .zip de la oferta trae TODOS los formatos que se entregan (los
   - En los 150 formatos del corpus, como consorcio y como persona jurídica, 98 se llenan.
   - La firma cae solo en las 8 cartas de presentación, y el objeto en 171 encabezados.
   - La revisión midió además, sobre el corpus, que el XML es válido en los 158 documentos y que no cambia el número de párrafos ni de tablas.
+- **Por qué el .zip de Cartagena solo traía la carta y el pacto (5-nov-2026, el segundo .zip del dueño, contrastado con los 29 archivos que la entidad publicó en SECOP II, conjunto dmgg-8hin):**
+  - La clasificación por nombre reconoce un formato por «formato», «formulario», «anexo» o «carta». Los formatos tipo se llaman «F7 FactorCal ISocialMenCV1.docx», «F13 AcredMipyme…»: caían en «otro» y no salían en ninguna lista.
+  - Ahora «F» + número con el sufijo de versión del tipo («…ISocialMenCV1», «…TMenCV3», «…APSB_L_V1») es formato. La guía vuelve a mirar el nombre en los índices ya guardados, que traen el tipo de antes.
+  - «carta» sin límite tomaba «…DT CARTAGENA.pdf», el pliego, por formato. Ahora se excluyen Cartagena y Cartago, y «carta» pegada («CartadepresentaciondelaPropuesta.pdf») sigue contando.
+  - Medido en 3.966 nombres de SECOP II: 116 dejan de ser formato (todos con Cartagena o Cartago) y 15 pasan a serlo (todos formatos tipo); ningún otro nombre cambia. «F68 CARLOS ALBERTO…» es de una persona y no entra.
+  - Con los archivos reales, el .zip de Cartagena trae ahora 16 formatos en vez de 5, y no trae la manifestación de interés, que se presentó antes.
+  - El pacto de transparencia va con la nota del Documento Base: con la firma de la carta se acepta, y «no será necesaria la entrega de este documento».
+  - **Sin verificar:** el pliego de Cartagena se llama «3 PPC CDV ADULTO MAYOR DT CARTAGENA.pdf». Ningún tipo lo reconoce como pliego, así que no se lee solo; no se tocó aquí.
 - **Lo que tumbó la segunda revisión adversaria, cada cosa reproducida y con su cerradura en «unidad FORMATOS DE LA ENTIDAD» o «unidad revisor de la oferta»:**
   - **ALTA.** La acreditación Mipyme salía firmada sola, en 8 formatos del corpus.
   - El campo de Word «[Nombre del Proponente]» seguía a la vista delante del nombre.
