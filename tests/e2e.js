@@ -57351,6 +57351,101 @@ async function main() {
         await Cf.borrarConsorcio(crearRedisF({}), "cons_prueba01");
         assert.strictEqual(await crearRedisF({}).get("config:empresa:cons_prueba01"), null, "borrar el consorcio borra sus datos para los formatos");
         assert.strictEqual((await pedirF({ perfil: "cons_prueba01", nombre: "FORMATO 1 CARTA DE PRESENTACION.docx" })).status, 404, "y ya no llena");
+        /* LOS DATOS COMPLETOS Y LA FIRMA (5-nov-2026, encargo del dueño con la carta de Cali delante): la ciudad de expedición
+           de la cédula, la matrícula, la persona de contacto, dos correos, y la imagen de la firma en el renglón del proponente */
+        const F2 = require("../lib/formato_entidad.js");
+        const routerPF = require("../api/perfil.js");
+        const g2 = await invocarPost(routerPF, "/api/perfil?op=empresa-datos", { perfil: "fmt_firma", datos: { razon_social: "CONSORCIO INFRAESTRUCTURA 1A", representante_legal: "HELDER GUSTAVO RODRIGUEZ SANTANA",
+          representante_documento: "9.396.710", representante_expedicion: "Sogamoso", matricula_profesional: "25202-79699 CND", persona_contacto: "HELDER GUSTAVO RODRIGUEZ SANTANA",
+          correo: "heldersantana71@hotmail.com - ingenieria.genesis.sas@gmail.com", telefono: "3112289205 - 3188497483" } }, CAB_TOKEN);
+        assert.ok(g2.status === 200, `los campos nuevos y los dos correos se guardan: ${JSON.stringify(g2.cuerpo).slice(0, 200)}`);
+        assert.strictEqual((await invocarPost(routerPF, "/api/perfil?op=empresa-datos", { perfil: "fmt_firma2", datos: { correo: "a@b.co - c@d.co - e@f.co" } }, CAB_TOKEN)).status, 400, "tres correos no");
+        assert.strictEqual((await invocarPost(routerPF, "/api/perfil?op=empresa-datos", { perfil: "fmt_firma2", datos: { matricula_profesional: "<script>" } }, CAB_TOKEN)).status, 400, "una matrícula con forma rara no");
+        const xmlF = Buffer.from(doc(P("Nombre del Proponente: ______") + P("Nombre del Representante Legal: ______") + P("C. C. No. ______") + P("Matrícula Profesional No. ______") + P("Persona de contacto: ______") + P("______________________ (Firma del proponente o de su Representante Legal)")));
+        const zlibF = require("zlib");
+        const docxDe = (xml) => require("../lib/docx.js").reescribirZip(Buffer.from(require("../public/xlsx.js").escribirZip([
+          { nombre: "[Content_Types].xml", datos: Buffer.from('<?xml version="1.0"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="xml" ContentType="application/xml"/></Types>') },
+          { nombre: "word/document.xml", datos: Buffer.from("x") }])), { reemplazos: { "word/document.xml": xml } }).buf;
+        remoto = docxDe(xmlF);
+        /* un PNG DE VERDAD (gris, w×h), con sus CRC: el de antes era una cabecera que ningún programa dibujaba (revisión adversaria) */
+        const pngReal = (w, h) => {
+          const trozo = (tipo, datos) => { const t = Buffer.concat([Buffer.from(tipo, "latin1"), datos]); const l = Buffer.alloc(4), c = Buffer.alloc(4); l.writeUInt32BE(datos.length); c.writeUInt32BE(zlibF.crc32(t) >>> 0); return Buffer.concat([l, t, c]); };
+          const ihdr = Buffer.alloc(13); ihdr.writeUInt32BE(w, 0); ihdr.writeUInt32BE(h, 4); ihdr[8] = 8; ihdr[9] = 0;
+          const filas = Buffer.alloc((w + 1) * h, 0x60); for (let y = 0; y < h; y++) filas[y * (w + 1)] = 0;
+          return Buffer.concat([Buffer.from("89504E470D0A1A0A", "hex"), trozo("IHDR", ihdr), trozo("IDAT", zlibF.deflateSync(filas)), trozo("IEND", Buffer.alloc(0))]);
+        };
+        const png = pngReal(200, 80);
+        const conFirma = await pedirF({ perfil: "fmt_firma", nombre: "FORMATO 1 CARTA DE PRESENTACION.docx", firma: png.toString("base64") });
+        assert.ok(conFirma.status === 200 && conFirma.cuerpo.firma && conFirma.cuerpo.firma.puesta === true && /Firma del proponente/.test(conFirma.cuerpo.firma.renglon), `la firma se pone en el renglón del proponente: ${JSON.stringify(conFirma.cuerpo.firma)}`);
+        const salida = Buffer.from(conFirma.cuerpo.base64, "base64");
+        const Dx2 = require("../lib/docx.js");
+        assert.strictEqual(Dx2.textoDeDocx(salida).texto, "Nombre del Proponente: CONSORCIO INFRAESTRUCTURA 1A\nNombre del Representante Legal: HELDER GUSTAVO RODRIGUEZ SANTANA\nC. C. No. 9.396.710 de Sogamoso\nMatrícula Profesional No. 25202-79699 CND\nPersona de contacto: HELDER GUSTAVO RODRIGUEZ SANTANA\n______________________ (Firma del proponente o de su Representante Legal)",
+          "la cédula con su ciudad de expedición, la matrícula profesional y la persona de contacto");
+        const media = Dx2.entradaZip(salida, "word/media/firma_detekta.png"), relsF = Dx2.entradaZip(salida, "word/_rels/document.xml.rels"), tiposF = Dx2.entradaZip(salida, "[Content_Types].xml");
+        const docF = Dx2.entradaZip(salida, "word/document.xml").datos.toString("utf8");
+        assert.ok(media.datos && media.datos.equals(png) && /Id="rIdFirmaDetekta"[^>]*Target="media\/firma_detekta\.png"/.test(relsF.datos.toString()) && /<Default Extension="png" ContentType="image\/png"\/>/.test(tiposF.datos.toString()),
+          "la imagen entra al paquete con su relación y su tipo (aunque el Word no traía relaciones)");
+        assert.ok(docF.indexOf('r:embed="rIdFirmaDetekta"') > 0 && docF.indexOf('r:embed="rIdFirmaDetekta"') < docF.indexOf("Firma del proponente") && docF.split('r:embed="rIdFirmaDetekta"').length === 2,
+          "UNA firma, justo antes del renglón de firma");
+        /* nunca en el renglón de otro (la revisión adversaria del 5-nov la vio caer en el del contratante, el del profesional
+           y encima del revisor fiscal): la regla es positiva, y un «Firma:» suelto lo decide el renglón que lo sigue */
+        for (const t of ["Firma del contador", "Firma del Revisor Fiscal", "Firma del representante legal del integrante", "Firma del representante legal de la entidad", "Firmado en Ibagué", "La firma de este documento",
+          "(Firma) Contador Público T.P. ______", "Firma: Revisor Fiscal", "Firma del representante legal de la interventoría", "Firma del representante legal de la empresa contratante", "Firma del representante legal del banco",
+          "Firma del representante legal de la aseguradora", "Firma del representante legal del contratista", "Firma: ______ Profesional propuesto", "Firma: ________ (Director de obra)", "Firma de quien certifica",
+          "FIRMA DEL REPRESENTANTE LEGAL DEL CONSORCIO", "(Firma)", "Firma:", "[Nombre y firma de quien avala la propuesta]", "Firma del representante legal de la firma auditora", "Firma del tercero autorizado"]) {
+          assert.strictEqual(F2.ponerFirmaEnXml(doc(P(t)), { ancho: 200, alto: 80 }).renglon, null, `«${t}» no es el renglón de firma del proponente`);
+        }
+        for (const t of ["Firma del Representante Legal", "FIRMA DEL OFERENTE", "Firma del Representante Legal del Proponente", "Firma y sello del representante legal", "Firma del representante legal o apoderado", "[Firma del Proponente o de su representante Legal]", "Firma Representante Legal del Oferente", "Nombre y firma del representante legal del Proponente:"]) assert.ok(F2.ponerFirmaEnXml(doc(P(t)), { ancho: 200, alto: 80 }).renglon, `«${t}» sí`);
+        assert.ok(F2.ponerFirmaEnXml(doc(P("(Firma)") + P("Nombre del Representante Legal: ______")), { ancho: 200, alto: 80 }).renglon, "«(Firma)» con el representante legal debajo, sí");
+        assert.strictEqual(F2.ponerFirmaEnXml(doc(P("Firma: ______") + P("Nombre del profesional: ______") + P("Matrícula profesional No. ____")), { ancho: 200, alto: 80 }).renglon, null, "«Firma:» con un profesional debajo, no");
+        assert.strictEqual(F2.ponerFirmaEnXml(doc(P("(Firma)") + P("Contador Público") + P("Representante legal del proponente")), { ancho: 200, alto: 80 }).renglon, null, "el primer renglón que nombra a otra persona decide: no");
+        assert.strictEqual(F2.ponerFirmaEnXml(doc(P("Firma del tercero autorizado") + P("Representante legal: ______")), { ancho: 200, alto: 80 }).renglon, null, "«Firma de(l) otro» no lo salva el renglón de abajo");
+        // las proformas de la UPN (ofertas presentadas del Drive del dueño): «Firma:» y debajo «Nombre de quien firma»; si firma el contador, no
+        assert.ok(F2.ponerFirmaEnXml(doc(P("Firma: ______") + P("Nombre de quien firma: ______")), { ancho: 200, alto: 80 }).renglon, "«Firma:» con «Nombre de quien firma» debajo, sí");
+        assert.strictEqual(F2.ponerFirmaEnXml(doc(P("Firma: ______") + P("Nombre del Contador Publico o Revisor Fiscal: ______")), { ancho: 200, alto: 80 }).renglon, null, "«Firma:» con el contador debajo, no");
+        // el revisor fiscal y el representante en fila: la firma va en el del representante, encima de su raya
+        const dosF = F2.ponerFirmaEnXml(doc(P("Firma: ______") + P("Revisor Fiscal") + P("T.P. ____") + P("Firma: ______") + P("Representante legal")), { ancho: 200, alto: 80 }).xml;
+        assert.ok(dosF.indexOf("r:embed") > dosF.indexOf("Revisor Fiscal") && dosF.indexOf("r:embed") < dosF.lastIndexOf("Firma: ______"), "con el revisor fiscal arriba, la firma va en el renglón del representante");
+        const raya = F2.ponerFirmaEnXml(doc(P("Nombre del proponente: X") + P("_____________________") + P("Firma del representante legal")), { ancho: 200, alto: 80 }).xml;
+        assert.ok(raya.indexOf("r:embed") < raya.indexOf("_____________________"), "con la raya sola arriba del rótulo, la firma va encima de la raya");
+        // sin deformarse: una firma alargada conserva su proporción
+        const med = F2.medidaFirma(2000, 100), med2 = F2.medidaFirma(300, 600);
+        assert.ok(Math.abs(med.cx / med.cy - 20) < 0.01 && Math.abs(med2.cx / med2.cy - 0.5) < 0.01 && med2.cy <= 900000, `la firma conserva su proporción: ${JSON.stringify([med, med2])}`);
+        // un documento donde no se llenó ninguna casilla del proponente no sale firmado (antes era «llénelo a mano»)
+        const soloF = F2.llenarFormato(docxDe(Buffer.from(doc(P("CERTIFICACIÓN DE EXPERIENCIA") + P("Firma del proponente")))), { razon_social: "X" }, { firma: png });
+        assert.ok(soloF.buf === null && soloF.firma.puesta === false && /ninguna casilla/.test(soloF.firma.motivo), `sin ninguna casilla llena, no se firma: ${JSON.stringify(soloF.firma)}`);
+        // relaciones autocerradas: la imagen lleva su relación, o no se pone
+        assert.ok(/<Relationships xmlns="x"><Relationship Id="rIdFirmaDetekta"[^>]*\/><\/Relationships>$/.test(F2.conRelacionFirma('<?xml version="1.0"?><Relationships xmlns="x"/>', "firma_detekta.png")), "las relaciones autocerradas reciben la de la firma");
+        assert.strictEqual(F2.conRelacionFirma("<basura>", "f.png"), null, "si las relaciones no se pueden leer, no hay firma");
+        assert.ok(/<Types xmlns="x"><Default Extension="png"/.test(F2.conTipoImagen('<Types xmlns="x"/>', "png")), "los tipos autocerrados reciben el de la imagen");
+        // un PNG que solo trae la cabecera no es una imagen
+        assert.strictEqual(F2.tamanoImagen(png.subarray(0, 33)), null, "un PNG cortado no es una imagen");
+        assert.strictEqual(F2.tamanoImagen(Buffer.concat([png.subarray(0, 33), Buffer.alloc(60)])), null, "un PNG con su cabecera y sin su cierre no es una imagen");
+        const noImg = await pedirF({ perfil: "fmt_firma", nombre: "FORMATO 1 CARTA DE PRESENTACION.docx", firma: Buffer.from("no es una imagen").toString("base64") });
+        assert.ok(noImg.status === 200 && noImg.cuerpo.firma.puesta === false && /no es un PNG ni un JPG/.test(noImg.cuerpo.firma.motivo), "una firma que no es imagen no se pone y se dice");
+        assert.strictEqual((await pedirF({ perfil: "fmt_firma", nombre: "FORMATO 1 CARTA DE PRESENTACION.docx" })).cuerpo.firma, null, "sin firma, nada");
+        // el renglón que ya trae su «de ____»: la ciudad va en esa casilla, una vez
+        const dosBl = F2.llenarXml(doc(P("Nombre del Proponente: ______") + P("Nombre del Representante Legal: ______") + P("C. C. No. ______ de ______")), F2.normalizarDatos({ razon_social: "X", representante_legal: "Y", representante_documento: "9.396.710", representante_expedicion: "Sogamoso" }));
+        assert.ok(/C\. C\. No\. 9\.396\.710 de Sogamoso$/m.test(require("../lib/docx.js").lineasDeXml(dosBl.xml).join("\n")), `con «de ____» en el renglón, la ciudad va en su casilla: ${require("../lib/docx.js").lineasDeXml(dosBl.xml).join(" | ")}`);
+        for (const r of ["C. C. No. ______ del municipio de ______", "C. C. No. ______, de ______", "C. C. No. ______ Lugar de expedición: ______"]) {
+          const lin = require("../lib/docx.js").lineasDeXml(F2.llenarXml(doc(P("Nombre del Representante Legal: ______") + P(r)), F2.normalizarDatos({ representante_legal: "Y", representante_documento: "9.396.710", representante_expedicion: "Sogamoso" })).xml).join("\n");
+          assert.ok(!/Sogamoso/.test(lin), `«${r}»: si sigue otra cosa, la ciudad no se pega: ${lin}`);
+        }
+        /* la matrícula y la persona de contacto de OTRO (revisión adversaria): la del director de obra, la del ingeniero que
+           abona, la persona de contacto del contratante en un formato de experiencia */
+        const datosM = F2.normalizarDatos({ razon_social: "X", representante_legal: "Y", representante_documento: "9.396.710", matricula_profesional: "25202-79699 CND", persona_contacto: "HELDER", telefono: "311" });
+        for (const [cuerpo, que] of [[P("ANEXO 6 PERSONAL") + P("Nombre del proponente: ______") + P("Cargo: Director de obra") + P("Nombre del profesional: ______") + P("Matrícula profesional No. ______"), "director de obra"],
+          [P("CARTA DE PRESENTACIÓN") + P("Nombre del proponente: ______") + P("Nombre del representante legal: ______") + P("C.C. No. ______") + P("ABONO DE LA PROPUESTA") + P("Nombre del ingeniero que abona: ______") + P("Matrícula profesional No. ______"), "ingeniero que abona"]]) {
+          const rr = F2.llenarXml(doc(cuerpo), datosM);
+          assert.ok(!rr.llenados.some((x) => x.campo === "matricula_profesional") && rr.dudosos.some((x) => x.campo === "matricula_profesional"), `la matrícula del ${que} no es la del representante: ${JSON.stringify(rr.llenados.map((x) => x.campo))}`);
+        }
+        const exper = F2.llenarXml(doc(P("ANEXO 5 EXPERIENCIA DEL PROPONENTE") + P("Nombre del proponente: ______") + P("Entidad contratante: ______") + P("Persona de contacto: ______")), datosM);
+        assert.ok(!exper.llenados.some((x) => x.campo === "persona_contacto"), "fuera de la carta de presentación, la persona de contacto no se escribe");
+        const mismaL = F2.llenarXml(doc(P("CARTA DE PRESENTACIÓN") + P("Nombre del proponente: ______") + P("Nombre del representante legal: ______") + P("Matrícula profesional No. ______")), datosM);
+        assert.ok(mismaL.llenados.some((x) => x.campo === "matricula_profesional"), "justo tras el nombre del representante, la matrícula sí");
+        // en el documento del consorcio, la firma no se pone (lo firma cada integrante)
+        assert.strictEqual(F2.llenarFormato(docxDe(Buffer.from(doc(P("FORMATO 2 CONFORMACIÓN DE CONSORCIO") + P("(Firma)")))), { razon_social: "X" }, { firma: png }).firma.motivo, "el documento del consorcio lo firma cada integrante", "el documento del consorcio no se firma con la imagen, y se dice por qué");
+        remoto = base;
         const ok = await pedirF({ perfil: "fmt_prueba" });
         assert.strictEqual(ok.status, 200, JSON.stringify(ok.cuerpo).slice(0, 300));
         const lleno = Buffer.from(ok.cuerpo.base64, "base64");
@@ -63411,7 +63506,7 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
         return porId.get(id);
       };
       const almacen = () => { const m = new Map(); return { getItem: (k) => (m.has(k) ? m.get(k) : null), setItem: (k, v) => m.set(k, String(v)), removeItem: (k) => m.delete(k), clear: () => m.clear() }; };
-      const ctx = { console: { log() {}, warn() {}, error() {}, info() {}, debug() {} }, URL, URLSearchParams, Intl, TextEncoder, TextDecoder, AbortController, structuredClone, queueMicrotask,
+      const ctx = { console: { log() {}, warn() {}, error() {}, info() {}, debug() {} }, URL, URLSearchParams, Intl, TextEncoder, TextDecoder, AbortController, structuredClone, queueMicrotask, atob, btoa,
         setTimeout: () => 1, setInterval: () => 1, clearTimeout() {}, clearInterval() {}, requestAnimationFrame: () => 1,
         fetch: () => new Promise(() => {}), history: { replaceState() {}, pushState() {} }, navigator: { language: "es-CO", userAgent: "node", clipboard: {} },
         location: { search: "", hash: "", href: "http://localhost/", pathname: "/", origin: "http://localhost", replace() {}, assign() {} },
@@ -64081,6 +64176,25 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
         const zz = Buffer.from(descargas[0] ? descargas[0].bytes : []);
         const leZ = require("../lib/docx.js").entradaZip(zz, "LEAME - revise antes de subir.txt");
         okRO(leZ.datos && /Se presenta con: CONSORCIO INFRAESTRUCTURA GR/.test(leZ.datos.toString("utf8")), "(g-ter) con la hoja que dice con quién se presenta");
+        /* LA FIRMA viaja en CADA llenado, en base64, y la que pesa más de 400 KB no sale (5-nov-2026) */
+        const { F: TF, ctx: CF, porId: PF } = cargarFrontRO();
+        await asentarRO();
+        const pedF = [], desF = [];
+        CF.fetch = (url, cfg) => { if (/op=descargar/.test(String(url))) { pedF.push(JSON.parse(cfg.body)); return Promise.resolve(respuestaRO(200, { ok: true, formato: "llenar", base64: Buffer.from(docxMin).toString("base64"), llenados: [], sin_dato: [], firma: { puesta: true, renglon: "(Firma del proponente)" } })); } return new Promise(() => {}); };
+        CF.XLSXApu.descargar = (bytes, nombre) => desF.push({ bytes, nombre });
+        const bytesFirma = Buffer.from("89504E470D0A1A0A0000000D49484452", "hex");
+        let archivoF = { size: bytesFirma.length, arrayBuffer: async () => bytesFirma.buffer.slice(bytesFirma.byteOffset, bytesFirma.byteOffset + bytesFirma.length) };
+        const estadoF = { textContent: "", classList: { toggle() {} } };
+        PF.get("tab-seguimiento").querySelector = (sel) => (/data-exp-zip-firma/.test(sel) ? { files: [archivoF] } : /data-exp-zip-estado/.test(sel) ? estadoF : null);
+        TF.fijar({ segExpDatos: { ok: true, proceso: procZ, consorcios: [], hoy: "2026-11-05" } });
+        await TF.armarZipDelProceso("CO1.ZIP");
+        okRO(pedF.length === 2 && pedF.every((b) => b.firma === bytesFirma.toString("base64")), `(g-ter) la imagen de la firma va en cada formato: ${JSON.stringify(pedF.map((b) => b.firma))}`);
+        const leF = require("../lib/docx.js").entradaZip(Buffer.from(desF[0] ? desF[0].bytes : []), "LEAME - revise antes de subir.txt");
+        okRO(leF.datos && /La firma quedó encima de: «\(Firma del proponente\)»/.test(leF.datos.toString("utf8")) && /no es una firma digital/.test(leF.datos.toString("utf8")) && !/firme los formatos/.test(estadoF.textContent),
+          `(g-ter) la hoja dice dónde quedó la firma y que no es firma digital, y el aviso no pide firmarlos: ${estadoF.textContent}`);
+        pedF.length = 0; archivoF = { size: 400 * 1024 + 1, arrayBuffer: async () => new ArrayBuffer(0) };
+        await TF.armarZipDelProceso("CO1.ZIP");
+        okRO(pedF.length === 0 && /pesa más de 400 KB/.test(estadoF.textContent), `(g-ter) la firma de más de 400 KB no sale y se dice: ${estadoF.textContent}`);
         // quitar: la confirmación manda el DELETE del proceso
         pedidos.length = 0;
         const btnSi = { getAttribute: (k) => (k === "data-exp-quitar-confirmar" ? "CO1.ZIP" : null), disabled: false, textContent: "Sí, quitarlo" };

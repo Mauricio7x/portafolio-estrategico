@@ -416,7 +416,10 @@
     const llenables = documentosEntidad(p).filter((f) => f.origen === "entidad" && f.url && f.formato === "DOCX");
     return `<section class="exp-seccion">
         <h3 class="exp-seccion-titulo">El .zip para subir a SECOP II</h3>
-        <p class="exp-seccion-nota">Llena ${llenables.length === 1 ? "el formato de Word de la entidad" : llenables.length ? `los ${miles(llenables.length)} formatos de Word de la entidad` : "los formatos de Word de la entidad (todavía no hay ninguno encontrado)"} con los datos de <b>${esc(conQuien || "su empresa")}</b> y junta los documentos que usted elija de su computador. Los formatos quedan <b>sin firma</b>. Revíselo antes de subirlo. Sus archivos no salen de su computador.</p>
+        <p class="exp-seccion-nota">Llena ${llenables.length === 1 ? "el formato de Word de la entidad" : llenables.length ? `los ${miles(llenables.length)} formatos de Word de la entidad` : "los formatos de Word de la entidad (todavía no hay ninguno encontrado)"} con los datos de <b>${esc(conQuien || "su empresa")}</b> y junta los documentos que usted elija de su computador. Si elige la imagen de su firma, va encima del renglón de firma del proponente cuando el formato lo trae; los demás quedan <b>sin firma</b>. Revíselo antes de subirlo. Sus documentos no salen de su computador.</p>
+        <label class="exp-campo"><span class="exp-campo-rotulo">La firma del representante legal (imagen PNG o JPG, opcional)</span>
+          <input type="file" accept="image/png,image/jpeg" data-exp-zip-firma="${esc(p.id)}" class="control-campo" aria-label="La imagen de la firma para los formatos"></label>
+        <p class="exp-seccion-nota">Si la elige, viaja con cada formato para ponerla encima del renglón de firma del proponente o de su representante legal. No se guarda en ninguna parte. La hoja que va dentro del .zip dice en cuáles quedó.</p>
         <label class="exp-campo"><span class="exp-campo-rotulo">Sus documentos (registro de proponentes, cédula, certificados, estados financieros)</span>
           <input type="file" multiple data-exp-zip-archivos="${esc(p.id)}" class="control-campo" aria-label="Sus documentos para el .zip"></label>
         <div class="exp-soltar-mandos"><button type="button" class="exp-boton" data-exp-zip="${esc(p.id)}">Armar el .zip</button></div>
@@ -446,13 +449,16 @@
     lineas.push(`OFERTA PARA EL PROCESO ${proceso.id || ""}`, `${proceso.nombre || ""}`, `Entidad: ${proceso.entidad || "no publicada"}`,
       `Se presenta con: ${conQuien || "su empresa"}`, `Armado${hoy ? ` el ${hoy}` : ""}. REVÍSELO ANTES DE SUBIRLO A SECOP II.`, "");
     const llenos = formatos.filter((f) => f.bytes), sinLlenar = formatos.filter((f) => !f.bytes);
-    lineas.push("1. FORMATOS DE LA ENTIDAD LLENOS (sin firma: fírmelos antes de subirlos)");
+    const conFirma = formatos.some((f) => f.resumen && f.resumen.firma && f.resumen.firma.puesta);
+    lineas.push(conFirma ? "1. FORMATOS DE LA ENTIDAD LLENOS (revise dónde quedó la firma en cada uno)" : "1. FORMATOS DE LA ENTIDAD LLENOS (sin firma: fírmelos antes de subirlos)");
     if (!llenos.length) lineas.push("   Ninguno.");
     llenos.forEach((f, i) => {
       const ruta = `1 Formatos llenos/${n2(i)} ${nombreArchivo(String(f.nombre).replace(/\.docx$/i, ""), i, 90)} (lleno).docx`;
       entradas.push({ nombre: ruta, datos: f.bytes instanceof Uint8Array ? f.bytes : new Uint8Array(f.bytes) });
       lineas.push(`   - ${ruta.slice(ruta.indexOf("/") + 1)}`);
       for (const fr of (ctx.frasesLlenado ? ctx.frasesLlenado(f.resumen) : [])) lineas.push(`       ${fr}`);
+      const fi = f.resumen && f.resumen.firma;
+      if (fi) lineas.push(`       ${fi.puesta ? `La firma quedó encima de: «${fi.renglon}».` : `Sin firma: ${fi.motivo}.`}`);
     });
     lineas.push("", "2. FORMATOS QUE NO SE LLENARON (llénelos a mano)");
     const faltan = [...sinLlenar.map((f) => `${f.nombre}: ${f.error || "no tiene casillas del proponente que se puedan llenar sin riesgo de equivocarse"}`), ...aMano.map((n) => `${n}: no es un documento de Word`)];
@@ -469,7 +475,7 @@
       entradas.push({ nombre: ruta, datos: d.bytes instanceof Uint8Array ? d.bytes : new Uint8Array(d.bytes) });
       lineas.push(`   - ${ruta.slice(ruta.indexOf("/") + 1)}`);
     });
-    lineas.push("", "LO QUE ESTE ARCHIVO NO HACE", "   - No firma ningún documento.", "   - No llena el documento de conformación del consorcio o de la unión temporal: lleva los datos de cada integrante.",
+    lineas.push("", "LO QUE ESTE ARCHIVO NO HACE", conFirma ? "   - La imagen de la firma no es una firma digital: confirme en el pliego que la entidad acepta la firma escaneada." : "   - No firma ningún documento.", "   - No llena el documento de conformación del consorcio o de la unión temporal: lleva los datos de cada integrante.",
       "   - No comprueba que sus documentos estén vigentes ni que sean los que pide el pliego: compare con «Lo que tiene que entregar».",
       "   - No sube nada a SECOP II.");
     const leame = lineas.join("\r\n");
@@ -914,6 +920,7 @@
     if (r.dudosos && r.dudosos.length) out.push(`Quedó en blanco porque no es seguro que sea del proponente: ${[...new Set(r.dudosos.map((x) => `«${String(x.renglon || x.nombre).slice(0, 60)}»`))].join(", ")}.`);
     if (r.hay_consorcio) out.push("La parte del consorcio o de la unión temporal no se llenó: lleva los datos de cada integrante.");
     if (r.para_persona_natural) out.push("Este formato dice ser para persona natural: confirme que es el que le corresponde a su empresa.");
+    if (r.de_cada_integrante) out.push("En consorcio, este formato lo presenta cada integrante con sus propios datos.");
     return out;
   }
   /* sin tildes ni otros caracteres fuera de ASCII: con uno solo, Chromium

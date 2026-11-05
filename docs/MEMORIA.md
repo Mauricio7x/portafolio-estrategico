@@ -21580,6 +21580,7 @@ En una línea: cada proceso guardado dice con qué se presenta (el dueño solo o
   - **Qué hace:** cada formato de Word de la entidad se llena por el MISMO camino de «Llenar con sus datos», con el perfil con que se presenta. Los archivos que el usuario elige se leen en el navegador y no salen del computador. El .zip se arma con el escritor de `public/xlsx.js` (`armarZipOferta`).
   - **La hoja LEAME:** con quién se presenta, qué casilla se escribió de cada formato, qué quedó en blanco, qué formatos se llenan a mano (los que no son Word o no tienen casillas seguras), y que el archivo no firma ni sube nada.
   - **Firma:** el dueño eligió «sin firma, listo para firmar». No se escribe ninguna imagen de firma.
+    > SUPERADA el 5-nov-2026 por «Los datos completos para los formatos y la imagen de la firma en el .zip (5-nov-2026)» — el dueño ya tiene la imagen de su firma y pidió que se ponga; sin imagen, sigue sin firma.
 - **Llenar con un consorcio.** La carta de presentación de un consorcio lleva SU nombre y el de su representante. Por eso se llena, y SOLO ella, con los datos guardados PARA ese consorcio (Mi empresa → «Datos para los formatos del pliego» → «De quién son estos datos»), nunca con los de un integrante. Sin ellos, el 409 dice dónde escribirlos. El NIT del consorcio queda en blanco mientras no exista.
 - **Quitar un proceso.** El servidor siempre lo admitió (DELETE de `op=seguimiento`); se habilita el botón en la cabecera del expediente, con dos pasos y la frase de lo que se pierde (sin `confirm()` del navegador).
 - **Lo que tumbó la revisión adversaria (5-nov-2026), cada cosa reproducida y con su cerradura:**
@@ -21591,3 +21592,46 @@ En una línea: cada proceso guardado dice con qué se presenta (el dueño solo o
   - **Nombres dentro del .zip:** el nombre largo perdía su extensión y el de otro alfabeto quedaba vacío. Un archivo de 0 bytes entraba sin aviso.
   - **Dos pruebas solo buscaban texto en el código.** Ahora el .zip, el botón suelto y «Sí, quitarlo» se ejecutan en el arnés de la pantalla.
 - **Sin verificar:** ningún .zip se ha armado todavía con formatos reales de un proceso de producción y los datos de un consorcio. Cuántos formatos de consorcio tienen casillas de «proponente» que en realidad son de cada integrante (el documento de conformación ya se aparta) no se midió con este cambio. La regla de «lo inequívoco del proponente» es la del 27-sep, medida en 132 formatos de empresa individual.
+
+### Los datos completos para los formatos y la imagen de la firma en el .zip (5-nov-2026)
+
+En una línea: «Datos para los formatos del pliego» pide además la ciudad de expedición de la cédula, la matrícula profesional y la persona de contacto, y admite dos correos; y el .zip de la oferta pone la imagen de la firma que el usuario elige, una vez por formato, encima del renglón de firma del proponente o de su representante legal, sin guardarla en ninguna parte.
+> PENDIENTE · datos que las ofertas presentadas repiten y la aplicación no llena (33 documentos de 8 proponentes leídos en el Drive del dueño, 5-nov-2026): los integrantes del consorcio con su porcentaje y su NIT, el representante legal de cada integrante, el suplente, el contador o revisor fiscal con su tarjeta profesional, el lugar y la fecha de firma, y los de la garantía de seriedad. Cada uno pide su propia regla y su prueba; el dueño decide cuál sigue.
+
+- **El encargo.** El dueño, con la carta de presentación del CONSORCIO INFRAESTRUCTURA 1A (Cali, Santa Elena) delante: «adapta la solicitud de los datos … para poder poner toda la información que se necesita para llenar los formatos, y ya tengo la firma, al final sí se añadirá». Luego: «tienes un repertorio enorme de ofertas presentadas, tanto mías como de otras empresas, ten en cuenta eso».
+- **Supera una parte del 5-nov.** En «Con qué consorcio se presenta cada proceso, el .zip de la oferta y quitar un proceso por un tiempo», el punto «Firma: sin firma, listo para firmar» queda superado por esta sección. Sin imagen, el .zip sigue saliendo sin firma.
+- **Los campos nuevos.** `representante_expedicion`, `matricula_profesional` (dígitos, letras, punto, guion y espacio) y `persona_contacto`. El correo admite uno o dos, separados por guion, coma o punto y coma; tres se rechazan.
+  - **La ciudad de expedición va con la cédula** («9.396.710 de Sogamoso»). Si el renglón trae su propio «de ____», va en esa casilla. Si sigue otra cosa («del municipio de ____», «Lugar de expedición: ____»), no se escribe: el usuario la llena.
+  - **La matrícula, solo la del representante:** en el renglón que sigue al nombre del representante o a su cédula. La revisión adversaria la vio caer en la del director de obra y en la del ingeniero que abona.
+  - **La persona de contacto, solo en la carta de presentación:** en un formato de experiencia es la del contratante.
+  - **Rótulos cortos** («Cédula expedida en», «Matrícula profesional», «Persona de contacto»), con la ayuda en el texto de muestra. Mi empresa tiene un techo de palabras en la suite y estaba en 1399 (el tope es menos de 1400); ahora tiene 1396.
+- **La firma.**
+  - **No se guarda.** El usuario la elige en el expediente («La firma del representante legal (imagen PNG o JPG, opcional)»). Viaja en cada llenado; el servidor la pone en ese documento y la suelta. PNG con su cabecera y su cierre o JPG con sus dimensiones, hasta 400 KB y reconocido por sus bytes. Lo demás no se pone y la hoja LEAME dice por qué.
+  - **La regla es POSITIVA, no una lista de exclusiones:**
+    - Sí, con «Firma del proponente», «Firma del oferente», o «Firma del representante legal» a secas, «del proponente», «de la sociedad» u «o apoderado». Entre paréntesis o entre corchetes: los formatos tipo de Colombia Compra dicen «[Firma del Proponente o de su representante Legal]».
+    - Con «Firma:» o «(Firma)» sueltos, decide el primer renglón con texto que sigue: si nombra al representante legal, al proponente o a «quien firma», sí. Si nombra a otra persona (contador, revisor fiscal, contratante, banco, aseguradora, profesional, director, integrante…), no.
+    - La imagen va encima de la raya cuando la raya va sola arriba del rótulo.
+    - Conserva su proporción en una caja de 4,5 × 2,5 cm.
+  - **No se firma:** el documento del consorcio (lo firma cada integrante), ni un documento en el que no se llenó ninguna casilla del proponente. La revisión vio firmarse así una certificación de experiencia, que antes salía «llénelo a mano».
+  - **Una imagen no es una firma digital.** La hoja LEAME lo dice y manda a confirmar en el pliego que la entidad acepta la firma escaneada.
+- **El .docx.** La imagen es una entrada nueva (`word/media/firma_detekta.png|jpg`) con su relación y su tipo. `lib/docx.js` ganó `reescribirZip`, que reemplaza varias entradas y agrega otras; `reemplazarEntrada` lo llama. Si las relaciones o los tipos vienen autocerrados se abren. Si no se pueden leer, la firma no se pone: una imagen sin relación es una referencia rota (la revisión la reprodujo con `puesta: true`).
+- **Medido contra lo real (5-nov-2026):**
+  - **150 formatos de SECOP II del corpus de la sesión** (formatos tipo de Colombia Compra, de licitación, menor y mínima cuantía e infraestructura social):
+    - 27 se llenan, y los 27 reciben la firma encima de la raya del proponente. Ninguno la recibe en el renglón de otro.
+    - 113 no tienen casillas seguras y no se firman. Los 10 del consorcio tampoco.
+    - Antes de admitir los corchetes, 21 de los 27 se quedaban sin firma.
+    - Las 27 cédulas salen con su ciudad, y las 8 matrículas en el renglón del representante.
+  - **33 ofertas presentadas** del Drive del dueño (sus consorcios 1A, HGR y ATENEA HGR, DRV INGENIERIA SAS y cuatro más, casi todas cartas de evaluación) dieron:
+    - el rótulo «Firma:» con «Nombre de quien firma» de las proformas de la UPN (8 documentos), ya admitido;
+    - que la matrícula es siempre la del representante (5 de 5);
+    - y los datos del PENDIENTE de arriba.
+- **Lo que tumbó la revisión adversaria, cada cosa reproducida y con su cerradura en «unidad FORMATOS DE LA ENTIDAD»:**
+  - **ALTA.** La firma caía en el renglón del contratante, del profesional y sobre el del revisor fiscal.
+  - **ALTA.** La matrícula y la persona de contacto se escribían en las de otro.
+  - Relaciones autocerradas sin la imagen.
+  - Un texto que decía «sus archivos no salen de su computador», cuando la firma sí viaja.
+  - La imagen salía deformada, y un PNG falso pasaba.
+  - El LEAME se contradecía.
+  - La ciudad salía duplicada.
+- **La cerradura:** «unidad FORMATOS DE LA ENTIDAD» y «unidad revisor de la oferta» (la imagen viaja en cada formato, la de más de 400 KB no sale, la hoja dice dónde quedó). Se corrieron 34 mutaciones y todas quedan cazadas: las que sobrevivieron una vuelta se cerraron con pruebas nuevas.
+- **Sin verificar:** que Word (no LibreOffice ni python-docx) abra el documento con la firma; y la firma sobre un formato real de un proceso de producción armado desde la pantalla.

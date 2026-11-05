@@ -5570,11 +5570,21 @@
     const aMano = docs.filter((f) => f.estado === "formato" && f.formato !== "DOCX").map((f) => f.nombre);
     if (boton) boton.disabled = true;
     try {
+      /* LA FIRMA (5-nov-2026): la imagen que el usuario eligió; viaja en cada llenado y no se guarda en ninguna parte */
+      const entradaFirma = secSeg.querySelector(`[data-exp-zip-firma="${CSS.escape(id)}"]`);
+      const archivoFirma = entradaFirma && entradaFirma.files && entradaFirma.files[0] ? entradaFirma.files[0] : null;
+      let firma = null;
+      if (archivoFirma) {
+        if (archivoFirma.size > 400 * 1024) { decir("La imagen de la firma pesa más de 400 KB: redúzcala (por ejemplo, recórtela) y vuelva a intentarlo.", true); return; }
+        const bytesF = new Uint8Array(await archivoFirma.arrayBuffer());
+        let bin = ""; for (let k = 0; k < bytesF.length; k += 0x8000) bin += String.fromCharCode.apply(null, bytesF.subarray(k, k + 0x8000));
+        firma = btoa(bin);
+      }
       const formatos = [];
       for (const [i, f] of llenables.entries()) {
         decir(`Llenando ${i + 1} de ${llenables.length}: «${f.nombre}»…`);
         try {
-          const rr = await api("/api/pliego?op=descargar", { method: "POST", body: { url: f.url, formato: "llenar", perfil, nombre: f.nombre } });
+          const rr = await api("/api/pliego?op=descargar", { method: "POST", body: { url: f.url, formato: "llenar", perfil, nombre: f.nombre, ...(firma ? { firma } : {}) } });
           formatos.push({ nombre: f.nombre, bytes: rr && rr.base64 ? Uint8Array.from(atob(rr.base64), (c) => c.charCodeAt(0)) : null, resumen: rr, error: rr && !rr.base64 ? rr.motivo || null : null });
         } catch (e) {
           // sin los datos de quien se presenta no se llena ninguno: se para y se dice dónde escribirlos
@@ -5583,6 +5593,7 @@
         }
       }
       const entrada = secSeg.querySelector(`[data-exp-zip-archivos="${CSS.escape(id)}"]`);
+      // (la firma se leyó antes de llenar: va en cada petición del llenado)
       const suyos = [];
       for (const a of (entrada && entrada.files) ? [...entrada.files] : []) {
         decir(`Leyendo «${a.name}»…`);
@@ -5593,7 +5604,8 @@
         { escribirZip: window.XLSXApu.escribirZip, frasesLlenado: X.frasesLlenado });
       window.XLSXApu.descargar(z.bytes, z.nombre, "application/zip");
       const llenos = formatos.filter((x) => x.bytes).length;
-      decir(`Descargado «${z.nombre}»: ${llenos} de ${llenables.length} formatos llenos, ${suyos.length} documentos suyos. Lea el «LEAME» que va dentro, firme los formatos y revise todo antes de subirlo.`);
+      const firmados = formatos.filter((x) => x.resumen && x.resumen.firma && x.resumen.firma.puesta).length;
+      decir(`Descargado «${z.nombre}»: ${llenos} de ${llenables.length} formatos llenos${firmados ? ` (${firmados} con la imagen de la firma)` : ""}, ${suyos.length} documentos suyos. Lea el «LEAME» que va dentro, ${firmados ? "revise dónde quedó la firma, firme los que no la llevan" : "firme los formatos"} y revise todo antes de subirlo.`);
     } catch (e) { decir(`No se pudo armar el .zip: ${fraseDeFallo(e)}`, true); }
     finally { if (boton) boton.disabled = false; }
   }
