@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 2409561 bytes · 429 secciones · 46 con marcador de superación.
+Derivado del árbol: 2419343 bytes · 431 secciones · 46 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -438,5 +438,7 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | La alerta de precio bajo dice lo que mide la base con las reglas del 26-oct: 33 de 2.190 en licitación (4-nov-2026) | 4-nov-2026 | 21336-21343 | 1589 |  |
 | La adenda que usted no ha visto avisa, y la que no se ha leído pone «verifíquela» en las fechas anteriores (4-nov-2026) | 4-nov-2026 | 21344-21371 | 5596 |  |
 | La tarea de la mañana busca las adendas de los procesos guardados, sin leer el corpus y con los topes medidos (4-nov-2026) | 4-nov-2026 | 21372-21415 | 9841 |  |
-| El aviso al teléfono por Telegram, sin leer el corpus, dónde gana el dueño y lo que midió la fase 0 (5-nov-2026) | 5-nov-2026 | 21416-21456 | 7513 |  |
-| La fase 2 del plan: la cita entera, el juicio que no depende del lote, cuánto falta, qué pesa cada requisito, el rastro de lectura y la búsqueda del oficio (5-nov-2026) | 5-nov-2026 | 21457-21476 | 7062 |  |
+| El aviso al teléfono por Telegram, sin leer el corpus, dónde gana el dueño y lo que midió la fase 0 (5-nov-2026) | 5-nov-2026 | 21416-21456 | 7796 |  |
+| La fase 2 del plan: la cita entera, el juicio que no depende del lote, cuánto falta, qué pesa cada requisito, el rastro de lectura y la búsqueda del oficio (5-nov-2026) | 5-nov-2026 | 21457-21477 | 7398 |  |
+| La fase 3 del plan: la oferta propia por el NIT, por qué quedó así, lo que el competidor tiene por ejecutar, qué se puede corregir después y los bancos de precios cerrados (5-nov-2026) | 5-nov-2026 | 21478-21497 | 5422 |  |
+| Las fases 4 y 5 del plan: cuáles contratos acreditar, los contratos que terminan pronto, lo que falta por conseguir, SECOP I a pedido y la carga en el teléfono medida (5-nov-2026) | 5-nov-2026 | 21498-21507 | 3741 |  |

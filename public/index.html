@@ -4443,6 +4443,8 @@
           <!-- lo previsto mes a mes (M-DGF-10): nace oculto; app.js lo pinta solo con algún mes con procesos -->
           <div id="paa-meses" class="mt-4 hidden"></div>
           <div id="paa-lista" class="mt-4 grid gap-3"></div>
+          <!-- los contratos de obra de esa entidad que terminan pronto (proceso 15): app.js lo pinta solo con una entidad escrita -->
+          <div id="paa-por-vencer" class="mt-4"></div>
           <p id="paa-censo" class="mt-4 text-xs text-gray-400"></p>
         </div>
       </section>
@@ -4461,6 +4463,8 @@
         </p>
         <div id="lista" class="grid gap-4"></div>
         <div id="paginacion" class="mt-6 flex items-center justify-center gap-3 text-sm"></div>
+        <!-- SECOP I (5-nov-2026): los procesos de obra que la lista no trae; app.js lo pinta con los departamentos del filtro -->
+        <div id="secop1" class="mt-6"></div>
       </section>
 
       <footer class="pb-6 pt-10 text-center text-xs text-gray-400">

@@ -687,10 +687,29 @@ citar los rangos. **Sin verificar:** la versión VIGENTE de infraestructura soci
 Agencia dice «Versión 2», vigente desde el 16-feb-2026, y el 1-nov-2026 no tenía el documento para
 descargar). El modelo de `lib/apu/rentabilidad.js` (25 % menor valor) sigue valiendo con esta tabla.
 
+**Corrección del 5-nov-2026 (el día de la TRM).** El párrafo anterior atribuía al documento social la regla «la TRM
+que rija al día hábil siguiente» a la apertura del sobre económico. Esa redacción es la de una copia vieja (CCE-EICP-GI-14
+v3 de la UTS). En los documentos oficiales descargados el 5-nov-2026 del sitio de Colombia Compra Eficiente (numeral
+4.1.4 de cada documento base) el día depende del documento:
+
+- **Licitación de transporte V.4 y licitación social V.2** (la social rige desde el 16-feb-2026): si la entidad se
+  pronuncia sobre las ofertas rechazadas y válidas hasta las 3:00 p. m., toma la TRM que rija para el día hábil siguiente;
+  si lo hace después, la del segundo día hábil siguiente.
+- **Licitación de agua potable V.1 con modificaciones (Res. 275 de 2022)**: la TRM que rija el día hábil siguiente al día
+  en que efectivamente se abre el segundo sobre, con la apertura terminada antes de las 3:00 p. m.
+- **Selección abreviada de menor cuantía, transporte V.3 y social V.1**: la que rija el segundo día hábil después de
+  terminado el traslado del informe de evaluación (lo de arriba).
+- **Mínima cuantía**: no sortea método; la TRM solo sirve para el desempate final.
+
+La tabla de centavos es la misma en los seis documentos con varios oferentes puntuados. Como nadie conoce los centavos al
+ofertar, los cuatro métodos caen cada uno en un cuarto del rango: el 25 % de `lib/apu/rentabilidad.js` es lo que la regla
+implica, no un supuesto.
+
 Fuentes: [Documento Base CCE-EICP-GI-14 v3](https://www.uts.edu.co/sitio/wp-content/uploads/2019/10/Documento-Base-CCE-EICP-GI-14_V3-LP-003.pdf),
 [C-850 de 2025](https://relatoria.colombiacompra.gov.co/conceptos/c-850-de-2025/),
 [C-594 de 2025](https://relatoria.colombiacompra.gov.co/conceptos/c-594-de-2025/),
-[ficha del documento tipo](https://www.colombiacompra.gov.co/?p=29539).
+[ficha del documento tipo](https://www.colombiacompra.gov.co/?p=29539),
+[control de versiones de los documentos tipo](https://www.colombiacompra.gov.co/normativa-y-relatoria/control-de-versiones-documentos-tipo).
 
 **Fuentes:** los pliegos y documentos de evaluación de los 5 procesos (SECOP II), leídos con
 `detekta-lector` y verificados con `verificar_citas.py` el 17-oct-2026. Datos de adjudicación

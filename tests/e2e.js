@@ -30220,6 +30220,8 @@ async function main() {
           assert.ok(/Cierra mañana/.test(sinCfg.cuerpo.vista_previa[0].texto),
             `la vista previa tiene que llevar las frases de alertasDe sobre el reloj inyectado (${new Date(AHORA).toISOString()} = ${DIA_BOGOTA} en Colombia, con un cierre el ${CIERRE_MANANA}); dio: ${sinCfg.cuerpo.vista_previa[0].texto.replace(/\n/g, " · ").slice(0, 240)}`);
           assert.strictEqual((await redis.get(`avisos:enviado:${PERFIL_AV}:${DIA_BOGOTA}`)), null, "sin envío no se quema el día");
+          assert.ok(/Precios de referencia: el banco/.test(sinCfg.cuerpo.vista_previa[0].texto) && !(await redis.get(require("../lib/handlers/perfil/avisos.js").claveBancosMes(DIA_BOGOTA))),
+            "la vista previa enseña los bancos cerrados y no quema la marca del mes (5-nov-2026)");
 
           // (2) y (3) CON configuración: un correo con las frases del corpus, y el día es el colombiano
           ponerAv("CORREO_API_KEY", CLAVE_AV); ponerAv("CORREO_REMITENTE", "avisos@ejemplo.test"); ponerAv("CORREO_DESTINO", "ingeniero@ejemplo.test");
@@ -30252,7 +30254,13 @@ async function main() {
             assert.ok(!txt.match(Lp.RE_EMOJI_UI), `${donde}: pictograma`);
             assert.ok(!/\bRUP\b|UNSPSC|capacidad residual|cuatro puertas|JSON/.test(txt), `${donde}: jerga`);
           }
-          assert.strictEqual(mandados[0].cuerpo.subject, `Detekta: ${alertasReales.length} avisos de sus procesos guardados`, mandados[0].cuerpo.subject);
+          /* LOS PRECIOS DE REFERENCIA CON SU PERIODO CERRADO (5-nov-2026, proceso 8.6): una vez al mes van en el mismo aviso,
+             una línea por banco; la marca del mes se pone al salir y el siguiente aviso del mes ya no los repite */
+          const bancosAv = require("../lib/handlers/perfil/avisos.js").avisosDeBancos(AHORA);
+          assert.ok(bancosAv.length >= 1, `premisa: con el reloj de la prueba algún banco ya cerró su periodo: ${new Date(AHORA).toISOString()}`);
+          for (const b of bancosAv) assert.ok(mandados[0].cuerpo.text.includes(`Precios de referencia: ${b.mensaje}`), `el aviso lleva el banco cerrado (MUTACIÓN: sin la línea): ${b.mensaje.slice(0, 120)}`);
+          assert.ok(await redis.get(require("../lib/handlers/perfil/avisos.js").claveBancosMes(DIA_BOGOTA)), "la marca del mes queda puesta al salir el aviso");
+          assert.strictEqual(mandados[0].cuerpo.subject, `Detekta: ${alertasReales.length + bancosAv.length} avisos de sus procesos guardados`, mandados[0].cuerpo.subject);
           /* R-05 (27-sep-2026) · el censo sigue viendo TODO, y el perfil de un VISITANTE (rup_…, subió su registro desde la
              aplicación) se excluye DECLARADO: su aviso no va al correo del dueño. Mismo cierre de mañana, otro perfil. */
           {
@@ -52666,6 +52674,15 @@ async function main() {
         // la tabla del pliego tipo: con menos contratos se exige menos (la cifra leída puede ser la fila de cinco)
         const tabla = Rp.experienciaSola({ perfil: { expSeg72MayoresSMMLV: [600, 300] }, exigidaSMMLV: 1500, presupuestoSMMLV: 1000, tipoContrato: "Obra" });
         assert.deepStrictEqual([tabla.estado, tabla.alcanza_con, tabla.exigida], ["revisar", 2, 750], "dos contratos que suman 900 pasan el 75 % de 1.000");
+        /* CUÁLES ACREDITAR (5-nov-2026, plan «Detekta a otro nivel», proceso 3, opción a): los que llegan con menos
+           contratos son los mayores; se proponen en la frase y no mueven el veredicto */
+        {
+          const xC = Dfx.experienciaSumadaDe(tabla);
+          assert.ok(Array.isArray(xC.cuales_smmlv) && xC.cuales_smmlv.length === 2 && xC.cuales_smmlv[0] >= xC.cuales_smmlv[1], `los dos que llegan, de mayor a menor (MUTACIÓN: sin la lista): ${JSON.stringify(xC)}`);
+          const fC = Dfx.fraseExperiencia("revisar", xC, 1000);
+          assert.ok(fC.includes(`Los que llegan con menos contratos son sus 2 mayores: `) && /salarios mínimos\./.test(fC) && /de qué códigos/.test(fC), fC);
+          assert.strictEqual(tabla.estado, "revisar", "la lista no cambia el juicio: sigue «confírmelo»");
+        }
 
         // (b) el dictamen por reglas, de punta a punta: «con reservas», no «no presentarse»
         const filaR = (exig) => ({ id_del_proceso: "CO1.R02", tipo_de_contrato: "Obra", cuantia_cop: String(Math.round(exig * SMMLV_DC / 1.2)) });
@@ -53222,6 +53239,12 @@ async function main() {
           assert.ok(pos.every((x) => x > 0) && pos.every((x, k) => k === 0 || x > pos[k - 1]), `la causal de rechazo va primero y la condición del contrato al final (MUTACIÓN: en el orden del modelo): ${pos}`);
           assert.ok(/text-red-700">\(Si falta, rechazan la oferta\)/.test(conPeso) && conPeso.includes("(Lo exigen para participar)") && conPeso.includes("(Condición del contrato: no impide presentarse)"), "cada uno dice qué pesa");
           assert.ok(!/habilitante/i.test(conPeso.replace(/<[^>]+>/g, "")), "sin la jerga «habilitante»");
+          // qué se puede corregir después (proceso 4.3), con su fuente y sin la jerga «subsanable»
+          const corr = (conPeso.match(/<p[^>]*data-se-corrige[^>]*>[\s\S]*?<\/p>/) || [""])[0].replace(/<[^>]+>/g, "");
+          assert.ok(/hasta que termine el traslado del informe de evaluación/.test(corr) && /cumplido el día del cierre/.test(corr) && /garantía de seriedad no va con la oferta, la rechazan/.test(corr)
+            && /Ley 1150 de 2007, art\. 5, parágrafos 1 y 3, con la reforma de la Ley 1882 de 2018/.test(corr) && !/subsan/i.test(corr), `la regla de la ley, con su fuente (MUTACIÓN: sin la nota): ${corr}`);
+          const enRegimen = pintarDictamen({ ...fixture, modalidad: "Contratación régimen especial (con ofertas)", dictamen: { ...v.dictamen, requisitos_para_participar: [req("financiero", "F")] } }, { MARCA, esc: escF });
+          assert.ok(!/data-se-corrige/.test(enRegimen), "en régimen especial esa regla no rige: no se pinta (revisión adversaria)");
           const bloquePeso = fuenteFront.slice(fuenteFront.indexOf("const PESO = {"), fuenteFront.indexOf("const ordenPeso"));
           const conPesoTipos = [...bloquePeso.matchAll(/\b([a-z_]+):\s*"/g)].map((m) => m[1]);
           const sinPeso = JSON.parse(bloquePeso.match(/const SIN_PESO = (\[[^\]]*\])/)[1]);
@@ -56218,6 +56241,9 @@ async function main() {
       const pE = { id: "X1", proceso: { nombre: "Obra" }, documentos: [], entregar: L1 };
       const html = Xe.htmlEntregar(pE, { estadosDoc: S.ESTADO_DOC_ETIQUETA, hoy: "2026-09-12" });
       assert.ok(new RegExp(`${L1.resumen.listos} de ${L1.resumen.cuentan}</span> listos`).test(html), "la cifra: «N de M listos»");
+      /* ¿listo para presentar? (5-nov-2026, proceso 12.2): lo que falta, dicho como hecho */
+      assert.ok(!L1.resumen.por_conseguir || html.includes(`faltan ${L1.resumen.por_conseguir} por conseguir`), `lo que falta por conseguir se cuenta (MUTACIÓN: sin la cifra): ${JSON.stringify(L1.resumen)}`);
+      assert.ok(L1.resumen.por_conseguir > 0, "premisa: la prueba tiene filas por conseguir");
       assert.ok(/No se leyó «ADENDA No\. 1\.pdf»/.test(html) && /escaneo que quedó a medias/.test(html), "lo no leído y lo leído a medias se dicen arriba");
       assert.ok(/Por confirmar\./.test(html) && /Lo que le piden a todos/.test(html) && /Según su caso/.test(html));
       assert.ok(/data-exp-ent-quitar=/.test(html), "la marca huérfana se puede quitar");
@@ -56308,6 +56334,48 @@ async function main() {
       // empates: dos iguales comparten puesto (la columna y «la suya» cuentan igual)
       const emp = agruparOfertas([fo("A", "UNO", "900000000"), fo("B", "DOS", "900000000"), fo("C", "TRES", "1000000000"), fo("D", "CUATRO", "1100000000")], { suOferta: { valor_cop: 1000000000 } });
       assert.deepStrictEqual(emp.ofertas.map((o) => o.puesto), [1, 1, 3, 4], "dos ofertas iguales comparten puesto");
+      /* LA SUYA POR EL NIT Y POR QUÉ QUEDÓ ASÍ (5-nov-2026, procesos 14.4 y 14.2) */
+      {
+        const { mismoNit, explicarResultado } = require("../lib/ofertas.js");
+        assert.deepStrictEqual([mismoNit("901096271-1", "901096271"), mismoNit("901096271-1", "9010962711"), mismoNit("901096271", "901096272"), mismoNit("No Definido", "901096271"), mismoNit("12", "12")],
+          [true, true, false, false, false], "el NIT con o sin dígito de verificación es el mismo; otro número o un relleno, no");
+        const filasN = [fo("A", "AASING SAS", "2199985727", { nit_del_proveedor: "900111222" }), fo("B", "HELDER CONSTRUCCIONES", "2280000000", { nit_del_proveedor: "9396710" }), fo("C", "CONSORCIO C", "2400000000", { nit_del_proveedor: "800333444" })];
+        const gN = agruparOfertas(filasN, { presupuestoCop: 2500000000, suOferta: { valor_cop: 2300000000 }, ganadores: [{ nombre: "AASING SAS", valor: 2199985727 }], nitsPropios: ["9396710-3"] });
+        assert.deepStrictEqual(gN.su_oferta, { valor_cop: 2280000000, puesto: 2, de: 3, por_debajo_del_presupuesto_pct: 8.8, esta_publicada: true, por_nit: true },
+          `la suya se reconoce por el NIT aunque el valor anotado no coincida al peso (MUTACIÓN: solo por el valor): ${JSON.stringify(gN.su_oferta)}`);
+        assert.deepStrictEqual(gN.ofertas.map((o) => !!o.propia), [false, true, false], "y se marca en la lista");
+        const dosMias = agruparOfertas([fo("A", "YO", "100", { nit_del_proveedor: "9396710" }), fo("B", "YO", "200", { nit_del_proveedor: "9396710" })], { nitsPropios: ["9396710-3"] });
+        assert.ok(dosMias.ofertas.every((o) => !o.propia) && dosMias.su_oferta === null, "dos ofertas con el mismo NIT (dos lotes): no se elige una");
+        /* REVISIÓN ADVERSARIA (5-nov-2026): la cédula de un desconocido con un dígito de más no es la suya; el rechazo de
+           un nombre parecido no se le atribuye; con dos ofertas iguales al peso no se adivina cuál es la suya */
+        assert.deepStrictEqual([mismoNit("9396710-3", "93967105"), mismoNit("9396710-3", "93967103"), mismoNit("901096271-1", "9010962719"), mismoNit("1234567", "12345678")], [false, true, false, false],
+          "solo el número igual o con SU dígito de verificación (MUTACIÓN: cualquier dígito de más)");
+        const ajena = agruparOfertas([fo("A", "PEDRO PEREZ", "950000000", { nit_del_proveedor: "93967105" }), fo("B", "GANA SAS", "990000000", { nit_del_proveedor: "900111222" })], { ganadores: [{ nombre: "GANA SAS", valor: 990000000 }], nitsPropios: ["9396710-3"] });
+        assert.ok(!ajena.ofertas.some((o) => o.propia) && ajena.su_oferta === null && explicarResultado(ajena) === null, "la oferta de un desconocido no sale como la suya");
+        const parecida = explicarResultado(agruparOfertas([fo("A", "CONSORCIO ANDES", "950000000", { nit_del_proveedor: "9396710" }), fo("B", "GANA SAS", "990000000")], { ganadores: [{ nombre: "GANA SAS", valor: 990000000 }], nitsPropios: ["9396710-3"] }),
+          { captura: { documento_util: true, completa: false, ofertas: [{ oferente: "UNION TEMPORAL ANDES", estado: "rechazada", motivo: "experiencia", cita: "UNION TEMPORAL ANDES NO CUMPLE" }] } });
+        assert.ok(!parecida.lineas.some((l) => /rechazó/.test(l.texto)) && parecida.evaluacion_leida === true && parecida.con_evaluacion === false, `el rechazo de un nombre parecido no se le atribuye (MUTACIÓN: con «parecido»): ${JSON.stringify(parecida)}`);
+        const dosIguales = agruparOfertas([fo("A", "RIVAL SAS", "950000000"), fo("B", "OTRO CONSORCIO", "950000000"), fo("C", "GANA SAS", "990000000")], { suOferta: { valor_cop: 950000000 }, ganadores: [{ nombre: "GANA SAS", valor: 990000000 }] });
+        assert.strictEqual(explicarResultado(dosIguales), null, "dos ofertas iguales al valor anotado: no se elige una");
+        const exN = explicarResultado(gN, null);
+        assert.deepStrictEqual(exN.lineas.map((l) => l.texto), ["Su oferta, $2.280.000.000, quedó de número 2 entre 3 por precio, de la más baja a la más alta.", "Ganó AASING SAS con $2.199.985.727: ofertó 3,5 % menos que usted."],
+          `la explicación con las ofertas (MUTACIÓN: sin la explicación): ${JSON.stringify(exN)}`);
+        assert.strictEqual(exN.con_evaluacion, false);
+        const captura = { captura: { documento_util: true, completa: true, metodo: "geometrica", adjudicatario: { nombre: "AASING SAS" }, ofertas: [
+          { oferente: "AASING SAS", estado: "habil", puntaje_total: 98.5, puntaje_precio: 48.5, cita: "AASING SAS HÁBIL 98,50" },
+          { oferente: "HELDER CONSTRUCCIONES", estado: "habil", puntaje_total: 91.2, puntaje_precio: 41.2, cita: "HELDER CONSTRUCCIONES HÁBIL 91,20" }] } };
+        const exE = explicarResultado(gN, captura);
+        assert.ok(exE.con_evaluacion && exE.lineas.some((l) => l.texto === "La evaluación la dejó hábil." && l.cita === "HELDER CONSTRUCCIONES HÁBIL 91,20")
+          && exE.lineas.some((l) => /Sacó 91,2 puntos en total; el ganador, 98,5/.test(l.texto)) && exE.lineas.some((l) => /En el precio sacó 41,2; el ganador, 48,5/.test(l.texto))
+          && exE.lineas.some((l) => l.texto === "El precio se puntuó con la media geométrica."), `con la evaluación, cada dato con su cita: ${JSON.stringify(exE.lineas)}`);
+        const rech = explicarResultado(gN, { captura: { ...captura.captura, ofertas: [captura.captura.ofertas[0], { oferente: "HELDER CONSTRUCCIONES", estado: "rechazada", motivo: "experiencia", cita: "HELDER RECHAZADA" }] } });
+        assert.ok(rech.lineas.some((l) => l.texto === "La evaluación la rechazó por experiencia."), "el rechazo, con su motivo");
+        assert.strictEqual(explicarResultado(agruparOfertas(filasN, { ganadores: [{ nombre: "AASING SAS", valor: 2199985727 }] }), captura), null, "sin saber cuál es la suya, no hay explicación (nunca la de otro)");
+        const masCara = explicarResultado(agruparOfertas([fo("A", "GANA SAS", "2300000000"), fo("B", "YO", "2200000000", { nit_del_proveedor: "9396710" })], { ganadores: [{ nombre: "GANA SAS", valor: 2300000000 }], nitsPropios: ["9396710-3"] }));
+        assert.ok(masCara.lineas.some((l) => /MÁS que usted: no ganó por ser la más barata/.test(l.texto)), "si el ganador ofertó más caro, se dice: no fue el precio");
+        assert.deepStrictEqual(Seg.nitsDelPerfil("no_existe"), [], "un perfil que no existe no tiene NIT");
+        assert.ok(Seg.nitsDelPerfil("helder").some((n) => /9396710/.test(n)), `el perfil del dueño trae su NIT del registro: ${JSON.stringify(Seg.nitsDelPerfil("helder"))}`);
+      }
       assert.strictEqual(emp.su_oferta.puesto, 3);
       assert.strictEqual(emp.mediana_cop, 900000000, "con número par «la del medio» es una oferta REAL, no el promedio de las dos centrales (950 millones no lo ofertó nadie)");
       assert.strictEqual(agruparOfertas(dos).mediana_cop, null, "con dos no hay «del medio»");
@@ -56434,8 +56502,13 @@ async function main() {
         const g1 = await seg("", { metodo: "POST", body: { perfil: "ofertas_r11", id: idR, estado: "presentado", oferta: "450 millones", foto: fotoR } });
         assert.strictEqual(g1.status, 200, JSON.stringify(g1.cuerpo).slice(0, 300));
         assert.strictEqual(g1.cuerpo.guardado.foto.id_del_portafolio, "CO1.BDOS.R11", "la llave del expediente viaja en la foto (fotoDe)");
+        /* la evaluación leída de ese expediente: el detalle la usa para explicar el resultado (5-nov-2026, proceso 14.2) */
+        await require("../lib/almacen.js").escribirJSONComprimido(redis, require("../lib/evaluacion.js").claveCaptura("CO1.BDOS.R11"),
+          { portafolio: "CO1.BDOS.R11", captura: { documento_util: true, completa: true, metodo: "aritmetica_baja", adjudicatario: { nombre: "OFERENTE DOS SAS" }, ofertas: [{ oferente: "OFERENTE DOS SAS", estado: "habil", cita: "OFERENTE DOS SAS HÁBIL" }] } }, { ttl: 600 });
         const det = (await seg(`&perfil=ofertas_r11&detalle=${encodeURIComponent(idR)}&refrescar=1`)).cuerpo;
         const o = det.ofertas;
+        assert.ok(o.explicacion && o.explicacion.con_evaluacion && o.explicacion.lineas.some((l) => l.texto === "Su oferta es la que figura como adjudicada.")
+          && o.explicacion.lineas.some((l) => l.texto === "El precio se puntuó con la media aritmética baja."), `el detalle explica el resultado con la evaluación leída (MUTACIÓN: sin leerla): ${JSON.stringify(o.explicacion)}`);
         assert.ok(o && o.ok === true, `el detalle trae las ofertas: ${JSON.stringify(o).slice(0, 300)}`);
         assert.strictEqual(o.distintas, 2, "diez filas, dos ofertas");
         assert.deepStrictEqual(o.ofertas.map((x) => x.valor_cop), [450000000, 480000000]);
@@ -56510,6 +56583,13 @@ async function main() {
       assert.ok(/no coincide al peso con ninguna oferta publicada/.test(noCoincide) && !/habría sido|número \d+ de la más baja/.test(noCoincide), `la suya sin coincidir: sin puesto inventado: ${noCoincide}`);
       assert.ok(/no respondió a tiempo/.test(txt(Xo.htmlOfertasTodos({ ok: false, motivo: "no se pudo consultar las ofertas del proceso: SECOP II no respondió a tiempo." }))), "el fallo dice su motivo");
       assert.strictEqual(Xo.htmlOfertasTodos(null), "", "sin el campo (caché anterior a R-11) no se pinta nada");
+      // por qué quedó así y la suya por el NIT (5-nov-2026)
+      const conEx = Xo.htmlOfertasTodos({ ...base, su_oferta: { ...base.su_oferta, por_nit: true }, ofertas: base.ofertas.map((x, i) => (i === 1 ? { ...x, propia: true } : x)),
+        explicacion: { con_evaluacion: true, lineas: [{ fuente: "ofertas", texto: "Ganó AASING SAS con $2.199.985.727: ofertó 4,3 % menos que usted." }, { fuente: "evaluacion", texto: "La evaluación la dejó hábil.", cita: "CONSORCIO B HÁBIL" }] } });
+      assert.ok(/Por qué quedó así/.test(conEx) && /ofertó 4,3 % menos que usted/.test(conEx) && /«CONSORCIO B HÁBIL»/.test(conEx) && /de la evaluación del proceso que la aplicación leyó/.test(conEx), "la explicación se pinta con su cita y su fuente (MUTACIÓN: sin el bloque)");
+      assert.ok(/La suya \(reconocida por el NIT de su empresa\)/.test(txt(conEx)) && /● La suya/.test(conEx), "la suya por el NIT se dice y se marca en la lista");
+      assert.ok(!/Por qué quedó así/.test(h), "sin explicación, nada");
+      assert.ok(/la evaluación leída de este proceso no trae la fila de su oferta/.test(Xo.htmlOfertasTodos({ ...base, explicacion: { con_evaluacion: false, evaluacion_leida: true, lineas: [{ fuente: "ofertas", texto: "x" }] } })), "leída sin la fila de la suya no es «todavía no se ha leído»");
       const confid = txt(Xo.htmlOfertasTodos({ ...base, hay_confidenciales: true }));
       assert.ok(/confidenciales: de esas no se publica ni quién ni cuánto/.test(confid));
       /* cableado, EJECUTANDO la función real de la pantalla (no buscándola por
@@ -61578,6 +61658,79 @@ async function main() {
       assert.ok(q0.ok && q0.sce.length === 0 && q0.consultas === 2, "sin consorcios: dos consultas y nada que restar");
       const qSin = await CE.consultarContratosEnEjecucion(null, { ahora: AHORA });
       assert.ok(!qSin.ok && /no tiene NIT/.test(qSin.motivo), "sin NIT no se consulta");
+      /* LO QUE UN COMPETIDOR TIENE POR EJECUTAR (5-nov-2026, proceso 7.2): la misma consulta, resumida como hecho */
+      const res = CE.resumenParaCompetidor(q);
+      const suParte = q.sce.filter((c) => c.v > 0).reduce((a, c) => a + c.v * (typeof c.pct === "number" ? c.pct : 100) / 100, 0);
+      assert.deepStrictEqual([res.ok, res.contratos, res.valor_su_parte_cop, res.no_contados], [true, 3, Math.round(suParte), 1], `el resumen cuenta los vigentes, su parte y los que no se pudieron contar (MUTACIÓN: el valor total sin la participación): ${JSON.stringify(res)}`);
+      assert.strictEqual(res.termina_el_ultimo, q.sce.map((c) => c.fin).sort().slice(-1)[0], "y cuándo termina el último");
+      assert.deepStrictEqual(CE.resumenParaCompetidor({ ok: false, motivo: "SECOP II no respondió" }), { ok: false, motivo: "SECOP II no respondió" }, "una consulta caída no es «no tiene contratos»");
+      // revisión adversaria: los firmados sin iniciar son carga que viene, no falta de dato
+      const rFirm = CE.resumenParaCompetidor({ ok: true, sce: [], aparte: [{ estado: "Aprobado", v: 8000000000, pct: null }, { estado: "Aprobado", v: 5000000000, pct: 100 }, { estado: "En ejecución", v: null }] });
+      assert.deepStrictEqual([rFirm.contratos, rFirm.firmados_sin_iniciar, rFirm.valor_firmados_sin_iniciar_cop, rFirm.no_contados], [0, 2, 13000000000, 1], JSON.stringify(rFirm));
+      const rIntC = require("../api/inteligencia.js");
+      const hC = await invocar(rIntC, "/api/inteligencia?op=competidor&adjudicatario=nit%3A9396710&contratos=1&id_tipo=nit", CAB_TOKEN);
+      assert.ok(hC.status === 200 && hC.cuerpo.contratos && hC.cuerpo.contratos.ok && Number.isInteger(hC.cuerpo.contratos.contratos) && hC.cuerpo.contratos.contratos > 0, `la vista del competidor responde con el resumen (con el reloj de hoy): ${JSON.stringify(hC.cuerpo).slice(0, 300)}`);
+      const hCod = await invocar(rIntC, "/api/inteligencia?op=competidor&adjudicatario=nit%3A9396710&contratos=1&id_tipo=codigo_secop", CAB_TOKEN);
+      assert.ok(hCod.cuerpo.contratos && hCod.cuerpo.contratos.ok === false && /código interno/.test(hCod.cuerpo.contratos.motivo), "con un código interno de SECOP no se busca: daría un «no tiene» falso");
+      const hSin = await invocar(rIntC, "/api/inteligencia?op=competidor&adjudicatario=nit%3A9396710&contratos=1", {});
+      assert.strictEqual(hSin.status, 401, "sin credencial, nada");
+      const frase = new Function("esc", `${fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8").match(/function fraseContratosRival\(x\) \{[\s\S]*?\n  \}/)[0]}; return fraseContratosRival;`)((x) => String(x));
+      const fr = frase({ ok: true, contratos: 2, valor_su_parte_cop: 1500000000, termina_el_ultimo: "2027-03-31", no_contados: 1, truncado: false });
+      assert.ok(/^Tiene 2 contratos de obra vigentes en SECOP II; su parte del valor firmado suma \$1\.500\.000\.000 y el último termina el 31 de marzo de 2027\./.test(fr) && /Otros 1 no se pudieron contar/.test(fr) && /no su capacidad de contratación/.test(fr), fr);
+      assert.ok(/^No tiene contratos de obra vigentes en SECOP II\./.test(frase({ ok: true, contratos: 0, valor_su_parte_cop: null, termina_el_ultimo: null, no_contados: 0 })), "cero contratos con la consulta hecha es un hecho");
+      const frF = frase({ ok: true, contratos: 0, valor_su_parte_cop: null, termina_el_ultimo: null, firmados_sin_iniciar: 2, valor_firmados_sin_iniciar_cop: 13000000000, no_contados: 0 });
+      assert.ok(/^No tiene contratos de obra en ejecución que se puedan contar/.test(frF) && /Además tiene 2 firmados que todavía no empiezan \(su parte: \$13\.000\.000\.000\)/.test(frF), `con firmados no se dice «no tiene» (MUTACIÓN: sin el grupo): ${frF}`);
+      /* LOS CONTRATOS DE OBRA QUE TERMINAN PRONTO (5-nov-2026, proceso 15): una consulta por entidad, como dato */
+      {
+        const pedidas = [];
+        const filasV = [
+          { id_contrato: "CO1.PCCNTR.10", nombre_entidad: "ALCALDIA DE IBAGUE", proveedor_adjudicado: "CONSORCIO VIAS 2026", valor_del_contrato: "1500000000", fecha_de_fin_del_contrato: "2026-12-15T00:00:00.000", objeto_del_contrato: "MANTENIMIENTO RUTINARIO DE LA MALLA VIAL", estado_contrato: "En ejecución" },
+          { id_contrato: "CO1.PCCNTR.10", nombre_entidad: "ALCALDIA DE IBAGUE", proveedor_adjudicado: "CONSORCIO VIAS 2026", valor_del_contrato: "1500000000", fecha_de_fin_del_contrato: "2026-12-15T00:00:00.000", objeto_del_contrato: "MANTENIMIENTO RUTINARIO DE LA MALLA VIAL", estado_contrato: "En ejecución" },
+          { id_contrato: "CO1.PCCNTR.11", nombre_entidad: "ALCALDIA DE IBAGUE", proveedor_adjudicado: "No Definido", valor_del_contrato: "0", fecha_de_fin_del_contrato: "2027-02-01T00:00:00.000", objeto_del_contrato: "CONSTRUCCION DEL PUENTE PEATONAL", estado_contrato: "Modificado" },
+        ];
+        const stub = async (url) => { pedidas.push(decodeURIComponent(String(url))); return { ok: true, status: 200, headers: { get: () => null }, text: async () => JSON.stringify(filasV), json: async () => filasV }; };
+        const pv = await CE.contratosPorVencer("Alcaldía de Ibagué", { fetchImpl: stub, ahora: Date.parse("2026-11-05T15:00:00Z") });
+        assert.ok(pv.ok && pv.contratos.length === 2, `una fila repetida cuenta una vez: ${JSON.stringify(pv).slice(0, 300)}`);
+        assert.deepStrictEqual([pv.contratos[0].mantenimiento, pv.contratos[1].mantenimiento], [true, false], "el mantenimiento se marca aparte (MUTACIÓN: sin la marca)");
+        assert.deepStrictEqual([pv.contratos[1].contratista, pv.contratos[1].valor_cop], [null, null], "«No Definido» y el valor 0 son sin dato, nunca un nombre ni $0");
+        assert.ok(/tipo_de_contrato='Obra'/.test(pedidas[0]) && /fecha_de_fin_del_contrato between '2026-11-05T00:00:00' and '2027-05-04T23:59:59'/.test(pedidas[0]) && /\(upper\(nombre_entidad\) like '%ALCALDÍA%' OR upper\(nombre_entidad\) like '%ALCALDIA%'\) AND \(upper\(nombre_entidad\) like '%IBAGUÉ%' OR upper\(nombre_entidad\) like '%IBAGUE%'\)/.test(pedidas[0]),
+          `la consulta: obra, de hoy a seis meses y la entidad escrita: ${pedidas[0]}`);
+        assert.ok(pv.tasa_medida && pv.tasa_medida.mantenimiento.con_sucesor === 9 && pv.tasa_medida.mantenimiento.de === 40, "la tasa medida viaja con la lista");
+        const corta = await CE.contratosPorVencer("ab", { fetchImpl: stub });
+        assert.ok(!corta.ok && /Escriba el nombre de una entidad/.test(corta.motivo), "sin entidad no se consulta");
+        const caida = await CE.contratosPorVencer("Ibagué", { fetchImpl: async () => { throw new Error("ECONNRESET"); } });
+        assert.ok(!caida.ok && /no se pudo consultar SECOP II/.test(caida.motivo), "SECOP II caído: se dice, no una lista vacía");
+        const hp = new Function("esc", `${fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8").match(/function htmlPorVencer\(x\) \{[\s\S]*?\n  \}/)[0]}; return htmlPorVencer;`)((x) => String(x));
+        const tx = hp(pv).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
+        assert.ok(/2 contratos de obra que terminan antes del/.test(tx) && /mantenimiento: suele volver a licitarse/.test(tx) && /contratista sin publicar · valor sin publicar/.test(tx) && /tómelo como indicio, no como promesa/.test(tx), tx);
+        assert.ok(/SECOP II no tiene contratos de obra vigentes de una entidad que se llame «X»/.test(hp({ ok: true, entidad_buscada: "X", hasta: "2027-05-04", contratos: [] })), "ninguno: se dice con la entidad y la fecha");
+      }
+      /* TAMBIÉN EN SECOP I (5-nov-2026, fase 5): una consulta en vivo por departamento, con la regla de modalidad de la lista */
+      {
+        const S1 = require("../lib/secop1.js");
+        const pedidas1 = [];
+        const filas1 = [
+          { numero_de_constancia: "26-13-1", nombre_entidad: "TOLIMA - ALCALDÍA MUNICIPIO DE ALVARADO", departamento_entidad: "Tolima", municipio_entidad: "Alvarado", modalidad_de_contratacion: "Contratación Mínima Cuantía", cuantia_proceso: "49000000", fecha_de_cargue_en_el_secop: "2026-10-27T00:00:00.000", detalle_del_objeto_a_contratar: "MANTENIMIENTO DE LA BIBLIOTECA", ruta_proceso_en_secop_i: { url: "https://www.contratos.gov.co/consultas/detalleProceso.do?numConstancia=26-13-1" } },
+          { numero_de_constancia: "26-13-1", nombre_entidad: "TOLIMA - ALCALDÍA MUNICIPIO DE ALVARADO", departamento_entidad: "Tolima", modalidad_de_contratacion: "Contratación Mínima Cuantía", cuantia_proceso: "49000000", fecha_de_cargue_en_el_secop: "2026-10-27T00:00:00.000" },
+          { numero_de_constancia: "26-1-2", nombre_entidad: "TOLIMA - ALCALDÍA DE X", departamento_entidad: "Tolima", modalidad_de_contratacion: "Contratación Directa (Ley 1150 de 2007)", cuantia_proceso: "90000000", fecha_de_cargue_en_el_secop: "2026-10-20T00:00:00.000" },
+          { numero_de_constancia: "26-11-3", nombre_entidad: "TOLIMA - ALCALDÍA DE DOLORES", departamento_entidad: "Tolima", modalidad_de_contratacion: "Selección Abreviada de Menor Cuantía (Ley 1150 de 2007)", cuantia_proceso: "0", fecha_de_cargue_en_el_secop: "2026-10-23T00:00:00.000", ruta_proceso_en_secop_i: { url: "https://otro.sitio.co/x" } },
+        ];
+        const stub1 = async (url) => { pedidas1.push(decodeURIComponent(String(url))); return { ok: true, status: 200, headers: { get: () => null }, text: async () => JSON.stringify(filas1), json: async () => filas1 }; };
+        const r1 = await S1.convocadosSecopI({ departamentos: ["Tolima"], fetchImpl: stub1, ahora: Date.parse("2026-11-05T15:00:00Z") });
+        assert.ok(r1.ok && r1.procesos.length === 2 && r1.no_competitivos === 1, `una constancia repetida cuenta una vez y la contratación directa sale (la regla de la lista): ${JSON.stringify(r1).slice(0, 300)}`);
+        assert.deepStrictEqual([r1.procesos[1].cuantia_cop, r1.procesos[1].url, r1.procesos[0].url.startsWith("https://www.contratos.gov.co/")], [null, null, true], "el valor 0 es sin dato y un enlace de otro dominio no se pinta");
+        assert.ok(/tipo_de_contrato='Obra' AND estado_del_proceso='Convocado' AND fecha_de_cargue_en_el_secop >= '2026-09-06T00:00:00' AND departamento_entidad in \('Tolima'\)/.test(pedidas1[0]), `la consulta: ${pedidas1[0]}`);
+        const sinDep = await S1.convocadosSecopI({ departamentos: [], fetchImpl: stub1 });
+        assert.ok(!sinDep.ok && /Elija uno o más departamentos/.test(sinDep.motivo), "sin departamento no se consulta el país entero");
+        const caido1 = await S1.convocadosSecopI({ departamentos: ["Tolima"], fetchImpl: async () => { throw new Error("ECONNRESET"); } });
+        assert.ok(!caido1.ok && /No se pudo consultar SECOP I/.test(caido1.motivo), "SECOP I caído: se dice");
+        const h1 = await invocar(require("../api/inteligencia.js"), "/api/inteligencia?vista=secop1&departamentos=zz", CAB_TOKEN);
+        assert.ok(h1.status === 200 && h1.cuerpo.secop1 && h1.cuerpo.secop1.ok === false && /Elija uno o más departamentos/.test(h1.cuerpo.secop1.motivo), `un código desconocido es inerte: ${JSON.stringify(h1.cuerpo).slice(0, 200)}`);
+        assert.strictEqual((await invocar(require("../api/inteligencia.js"), "/api/inteligencia?vista=secop1&departamentos=73", {})).status, 401, "sin credencial, nada");
+        const hs = new Function("esc", `${fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8").match(/function htmlSecop1\(x\) \{[\s\S]*?\n  \}/)[0]}; return htmlSecop1;`)((x) => String(x));
+        const t1 = hs(r1).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
+        assert.ok(/2 procesos de obra convocados en SECOP I/.test(t1) && /Ver en SECOP I/.test(hs(r1)) && /no publica en datos abiertos la fecha de cierre/.test(t1) && /valor sin publicar/.test(t1), t1);
+      }
     } finally { socrata.setDatasetGrupos([]); socrata.setDatasetContratos(contratosAntes); }
 
     // (4) LA LECTURA EN lib/perfiles: el sello viaja en el MISMO MGET que el del RUP, se cuelga del perfil

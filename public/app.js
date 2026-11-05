@@ -3200,6 +3200,7 @@
     /* con la ficha «Solo las que puede presentarse» sola, «139 de 139» decía que no escondía nada (la base del
        servidor ya va sin las que no alcanza): se dice qué son (4-nov-2026, revisión adversaria) */
     const soloLaFicha = fichasActivas.length === 1 && fichasActivas[0].filtro === "solo";
+    pintarSecop1();
     $("resumen-resultados").textContent =
       (soloLaFicha ? `${cuerpo.total} ${cuerpo.total === 1 ? "licitación a la" : "licitaciones a las"} que puede presentarse`
         : conFiltros ? `${cuerpo.total} de ${base} licitaciones` : `${cuerpo.total} oportunidad${cuerpo.total === 1 ? "" : "es"}`)
@@ -3425,6 +3426,81 @@
     if (barrido.truncado) notas.push(`barrido truncado en ${barrido.filas_leidas} filas: acote con una entidad`);
     if (desc.fecha_ilegible) notas.push(`${desc.fecha_ilegible} sin fecha legible (no se pueden situar en la ventana)`);
     $("paa-censo").textContent = notas.length ? `Dataset ${cuerpo.dataset} · ${notas.join(" · ")}.` : "";
+    pintarBotonPorVencer(ent);
+  }
+
+  /* TAMBIÉN EN SECOP I (5-nov-2026, plan «Detekta a otro nivel», fase 5): la lista solo trae SECOP II, y la fase 0 midió
+     que SECOP I publicó el 45 % de los procesos de obra competitivos en 90 días. A pedido, con los departamentos del
+     filtro, el servidor consulta f789-7hwg en vivo (lib/secop1) y aquí se pinta lo publicado con su enlace. Sin
+     departamento elegido no se consulta todo el país: se pide elegir uno. */
+  function pintarSecop1() {
+    const caja = $("secop1");
+    if (!caja) return;
+    const deps = Array.isArray(estadoFiltros && estadoFiltros.dep) ? estadoFiltros.dep : [];
+    caja.innerHTML = `<div class="rounded-2xl bg-gray-50 p-4"><p class="text-sm font-medium">También en SECOP I</p>
+      <p class="mt-1 text-xs text-gray-600">Esta lista trae los procesos de SECOP II. Las alcaldías pequeñas publican buena parte de sus obras en SECOP I.</p>
+      ${deps.length ? `<button type="button" class="mt-2 rounded-lg px-3 py-1.5 text-sm font-medium ring-1 ring-inset ring-gray-300" data-secop1>Buscar obras convocadas en SECOP I en ${esc(deps.map((c) => (window.Filtros && window.Filtros.departamento(c) ? window.Filtros.departamento(c).nombre : c)).join(", "))}</button>`
+        : `<p class="mt-2 text-xs text-gray-500">Elija uno o más departamentos en los filtros para buscar también allí.</p>`}
+      <div class="mt-2" data-secop1-salida></div></div>`;
+    const b = caja.querySelector("[data-secop1]"), salida = caja.querySelector("[data-secop1-salida]");
+    if (!b) return;
+    b.addEventListener("click", async () => {
+      b.disabled = true;
+      salida.innerHTML = `<p class="text-sm text-gray-500">Consultando SECOP I…</p>`;
+      let r;
+      try { r = await fetch(`/api/inteligencia?${new URLSearchParams({ vista: "secop1", departamentos: deps.join(",") })}`, conSesion()); } catch { salida.innerHTML = `<p class="text-sm text-red-700">No se pudo contactar el servidor. Intente de nuevo.</p>`; b.disabled = false; return; }
+      const c = await leerJson(r);
+      b.disabled = false;
+      if (r.status === 401) { salida.innerHTML = `<p class="text-sm text-red-700">${msg401(c)}</p>`; return; }
+      if (!r.ok || !c || !c.ok) { salida.innerHTML = `<p class="text-sm text-red-700">${esc((c && c.error) || fraseDeFallo({ status: r.status }))}</p>`; return; }
+      salida.innerHTML = htmlSecop1(c.secop1);
+    });
+  }
+  function htmlSecop1(x) {
+    if (!x || x.ok !== true) return `<p class="text-sm text-gray-600">${esc((x && x.motivo) || "No se pudo consultar SECOP I.")}</p>`;
+    const fecha = (f) => { const t = new Date(`${f}T12:00:00`); return f && Number.isFinite(t.getTime()) ? t.toLocaleDateString("es-CO", { day: "numeric", month: "long" }) : "sin fecha"; };
+    if (!x.procesos.length) return `<p class="text-sm text-gray-600">SECOP I no tiene procesos de obra convocados en ${esc(x.departamentos.join(", "))} publicados desde el ${esc(fecha(x.desde))}.</p>`;
+    const filas = x.procesos.map((p) => `<li class="py-2"><span class="font-medium">${esc(p.entidad || "Entidad sin nombre")}</span>${p.municipio ? ` <span class="text-xs text-gray-500">(${esc(p.municipio)})</span>` : ""}<br>
+      <span class="text-xs text-gray-700">${esc(p.objeto || "Sin objeto publicado")}</span><br>
+      <span class="text-xs text-gray-500">${esc(p.modalidad || "")} · ${p.cuantia_cop != null ? `$${esc(Math.round(p.cuantia_cop).toLocaleString("es-CO"))}` : "valor sin publicar"} · publicado el ${esc(fecha(p.publicado))}${p.url ? ` · <a href="${esc(p.url)}" target="_blank" rel="noopener noreferrer" class="font-medium text-blue-600 hover:underline">Ver en SECOP I ↗</a>` : ""}</span></li>`).join("");
+    return `<p class="text-sm font-medium">${x.procesos.length} proceso${x.procesos.length === 1 ? "" : "s"} de obra convocado${x.procesos.length === 1 ? "" : "s"} en SECOP I${x.truncado ? " (los más recientes; hay más)" : ""}</p>
+      <ul class="mt-1 divide-y divide-gray-100">${filas}</ul>
+      <p class="mt-2 text-xs text-gray-500">SECOP I no publica en datos abiertos la fecha de cierre: entre al enlace y mire el cronograma antes de prepararse, porque alguno puede haber cerrado. Estos procesos no pasan por las cuentas de su empresa de la lista de arriba. Fuente: SECOP I, procesos de compra pública (datos.gov.co), publicados desde el ${esc(fecha(x.desde))}.</p>`;
+  }
+
+  /* LOS CONTRATOS DE OBRA QUE TERMINAN PRONTO (5-nov-2026, plan «Detekta a otro nivel», proceso 15): con una entidad
+     escrita, un botón que pide a SECOP II sus contratos de obra que terminan en los próximos 6 meses. Es un DATO, con la
+     tasa medida al lado; no es un aviso. Sin entidad, nada (la consulta es por entidad). */
+  function pintarBotonPorVencer(ent) {
+    const caja = $("paa-por-vencer");
+    if (!caja) return;
+    if (!ent) { caja.innerHTML = ""; return; }
+    caja.innerHTML = `<button type="button" class="rounded-lg px-3 py-1.5 text-sm font-medium ring-1 ring-inset ring-gray-300" data-por-vencer>Ver sus contratos de obra que terminan en los próximos 6 meses</button><div class="mt-2" data-por-vencer-salida></div>`;
+    const b = caja.querySelector("[data-por-vencer]"), salida = caja.querySelector("[data-por-vencer-salida]");
+    b.addEventListener("click", async () => {
+      b.disabled = true;
+      salida.innerHTML = `<p class="text-sm text-gray-500">Consultando SECOP II…</p>`;
+      let r;
+      try { r = await fetch(`/api/inteligencia?${new URLSearchParams({ vista: "paa", por_vencer: "1", entidad: ent })}`, conSesion()); } catch { salida.innerHTML = `<p class="text-sm text-red-700">No se pudo contactar el servidor. Intente de nuevo.</p>`; b.disabled = false; return; }
+      const c = await leerJson(r);
+      b.disabled = false;
+      if (r.status === 401) { salida.innerHTML = `<p class="text-sm text-red-700">${msg401(c)}</p>`; return; }
+      if (!r.ok || !c || !c.ok) { salida.innerHTML = `<p class="text-sm text-red-700">${esc((c && c.error) || fraseDeFallo({ status: r.status }))}</p>`; return; }
+      salida.innerHTML = htmlPorVencer(c.por_vencer);
+    });
+  }
+  function htmlPorVencer(x) {
+    if (!x || x.ok !== true) return `<p class="text-sm text-gray-600">${esc((x && x.motivo) || "No se pudo consultar SECOP II.")}</p>`;
+    const fecha = (f) => { const t = new Date(`${f}T12:00:00`); return f && Number.isFinite(t.getTime()) ? t.toLocaleDateString("es-CO", { day: "numeric", month: "long", year: "numeric" }) : "sin fecha"; };
+    const t = x.tasa_medida || {};
+    const tasa = t.mantenimiento && t.obra_unica ? `De cada ${t.mantenimiento.de} contratos grandes de mantenimiento que terminaron en el primer semestre de 2025, ${t.mantenimiento.con_sucesor} tuvieron la misma obra licitada otra vez en los 6 meses siguientes (${t.mantenimiento.con_sucesor_antes_y_despues} contando los 90 días antes de terminar); de ${t.obra_unica.de} obras únicas, ${t.obra_unica.con_sucesor}. Es una muestra pequeña de contratos grandes: tómelo como indicio, no como promesa.` : "";
+    if (!x.contratos.length) return `<p class="text-sm text-gray-600">SECOP II no tiene contratos de obra vigentes de una entidad que se llame «${esc(x.entidad_buscada)}» que terminen antes del ${esc(fecha(x.hasta))}.</p>`;
+    const filas = x.contratos.map((k) => `<li class="py-1.5"><span class="font-medium">${esc(k.entidad || "")}</span>${k.mantenimiento ? ` <span class="text-xs font-medium text-amber-700">(mantenimiento: suele volver a licitarse)</span>` : ""}<br>
+      <span class="text-xs text-gray-600">${esc(k.objeto || "Sin objeto publicado")}</span><br>
+      <span class="text-xs text-gray-500">Termina el ${esc(fecha(k.termina))} · ${k.contratista ? `lo tiene ${esc(k.contratista)}` : "contratista sin publicar"} · ${k.valor_cop != null ? `$${esc(Math.round(k.valor_cop).toLocaleString("es-CO"))}` : "valor sin publicar"}</span></li>`).join("");
+    return `<p class="text-sm font-medium">${x.contratos.length} contrato${x.contratos.length === 1 ? "" : "s"} de obra que terminan antes del ${esc(fecha(x.hasta))}${x.truncado ? " (los primeros; hay más)" : ""}</p>
+      <ul class="mt-1 divide-y divide-gray-100">${filas}</ul>
+      <p class="mt-2 text-xs text-gray-500">${esc(tasa)} Fuente: SECOP II, contratos (datos.gov.co); la fecha de fin es la vigente hoy y puede cambiar con una prórroga.</p>`;
   }
 
   /* ══════════ Detalle de competencia (modal) ══════════
@@ -4686,9 +4762,48 @@
         </table>
       </div>
       ${d.origen === "publicado" ? pieResumenArmado(d.construido) : ""}
+      ${d.identificacion && ["nit", "documento"].includes(d.identificacion.tipo) && d.clave ? `<div class="mt-3">
+        <button type="button" class="rounded-lg px-3 py-1.5 text-sm font-medium ring-1 ring-inset ring-gray-300" data-contratos-rival="${esc(d.clave)}" data-id-tipo="${esc(d.identificacion.tipo)}">Ver lo que tiene por ejecutar</button>
+        <p class="mt-1 text-sm text-gray-600" data-contratos-rival-salida></p></div>` : ""}
       ${estado}${reintentar}
       <p class="mt-3 rounded-lg bg-gray-50 p-3 text-xs text-gray-500">${esc(d.que_es || "")}</p>
       ${marcaCarga}`;
+    /* el botón de lo que tiene por ejecutar se cablea aquí; la función vive al lado (la suite pinta esta función suelta,
+       sin ella, y el pintado no puede romperse por eso) */
+    if (typeof cablearContratosRival === "function") cablearContratosRival();
+  }
+  /* LO QUE EL COMPETIDOR TIENE POR EJECUTAR (5-nov-2026, proceso 7.2): a pedido, porque son de dos a cuatro consultas a
+     SECOP II. El servidor resume (lib/contratos_en_ejecucion.resumenParaCompetidor); aquí solo se dice, y siempre con
+     la aclaración de que no es su capacidad de contratación. */
+  function fraseContratosRival(x) {
+    if (!x || x.ok !== true) return (x && x.motivo) || "No se pudo consultar SECOP II. Intente de nuevo.";
+    const pesosR = (n) => `$${Math.round(Number(n)).toLocaleString("es-CO")}`;
+    const fechaR = (f) => { const t = new Date(`${f}T12:00:00`); return Number.isFinite(t.getTime()) ? t.toLocaleDateString("es-CO", { day: "numeric", month: "long", year: "numeric" }) : f; };
+    const firmados = x.firmados_sin_iniciar > 0 ? ` Además tiene ${x.firmados_sin_iniciar} firmado${x.firmados_sin_iniciar === 1 ? "" : "s"} que todavía no empieza${x.firmados_sin_iniciar === 1 ? "" : "n"}${x.valor_firmados_sin_iniciar_cop != null ? ` (su parte: ${pesosR(x.valor_firmados_sin_iniciar_cop)})` : ""}.` : "";
+    const noContados = x.no_contados > 0 ? ` Otros ${x.no_contados} no se pudieron contar: a SECOP II le falta su valor, sus fechas o su parte en el consorcio, o el plazo ya venció sin una prórroga publicada.` : "";
+    const corte = x.truncado ? " La consulta llegó al tope de registros: puede tener más." : "";
+    const aclara = " Es lo que tiene firmado, no su capacidad de contratación: sin su registro de proponentes no se puede calcular.";
+    /* «no tiene» solo si NO hay nada aparte: con firmados o no contados, «ninguno en ejecución que se pueda contar» */
+    if (!x.contratos) return `${x.firmados_sin_iniciar > 0 || x.no_contados > 0 ? "No tiene contratos de obra en ejecución que se puedan contar en SECOP II." : "No tiene contratos de obra vigentes en SECOP II."}${firmados}${noContados}${corte}${aclara}`;
+    return `Tiene ${x.contratos} contrato${x.contratos === 1 ? "" : "s"} de obra vigente${x.contratos === 1 ? "" : "s"} en SECOP II${x.valor_su_parte_cop != null ? `; su parte del valor firmado suma ${pesosR(x.valor_su_parte_cop)}` : ""}${x.termina_el_ultimo ? ` y el último termina el ${fechaR(x.termina_el_ultimo)}` : ""}.${firmados}${noContados}${corte}${aclara}`;
+  }
+  function cablearContratosRival() {
+    const b = document.querySelector("[data-contratos-rival]");
+    const salida = document.querySelector("[data-contratos-rival-salida]");
+    if (!b || !salida) return;
+    b.addEventListener("click", async () => {
+      b.disabled = true;
+      salida.textContent = "Consultando sus contratos en SECOP II…";
+      let r;
+      try {
+        r = await fetch(`/api/inteligencia?op=competidor&adjudicatario=${encodeURIComponent(b.dataset.contratosRival)}&contratos=1&id_tipo=${encodeURIComponent(b.dataset.idTipo || "")}`, conSesion());
+      } catch { salida.textContent = "No se pudo contactar el servidor. Intente de nuevo."; b.disabled = false; return; }
+      const c = await leerJson(r);
+      b.disabled = false;
+      if (r.status === 401) { salida.innerHTML = msg401(c); return; }
+      if (!r.ok || !c || !c.ok) { salida.textContent = (c && c.error) || fraseDeFallo({ status: r.status }); return; }
+      salida.textContent = fraseContratosRival(c.contratos);
+    });
   }
 
   /* EN DOS PASOS, como la entidad (23-sep-2026): recorrer todos los contratos

@@ -22,7 +22,7 @@
   pliego.js                   Router del dominio PLIEGO (Fase 0 · consolidación a 6 funciones)
   procesos.js                 Router del dominio PROCESOS (Fase 0 · consolidación a 6 funciones)
 
-· lib/ — 107 módulos:
+· lib/ — 108 módulos:
   accesibilidad.js            Accesibilidad operativa de la zona de la obra
   adendas.js                  Vigía de adendas · lo que el DATASET dice que cambió (Fase 5)
   almacen.js                  Esquema de claves Redis + compresión de chunks
@@ -119,6 +119,7 @@
   rup.js                      Validación RUP por perfil → rup_valido(licitacion, perfil)
   rup_pdf.js                  Extraer un perfil de RUP del TEXTO de un certificado en PDF
   rutina.js                   despertar una rutina de Claude Code por HTTP (26-sep-2026)
+  secop1.js                   Los procesos de obra que SECOP I tiene convocados (5-nov-2026)
   seguimiento.js              MIS PROCESOS: guardar, seguir y estudiar a la competencia (ago 2026)
   semantica.js                Clasificación semántica del objeto contractual
   sesion.js                   La sesión del DUEÑO: una cuenta, una cookie, un límite de intentos
@@ -228,9 +229,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 429 secciones (46 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 21213  Mis procesos como la maqueta c07 (4-nov-2026)
-  L 21230  Dos filas con fechas distintas: choca la misma actividad o un plazo, no un aviso ni una adj…
+· MEMORIA · docs/MEMORIA.md — 431 secciones (46 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 21273  Cada cifra de Mi empresa abre exactamente su lista: el filtro «Solo las que puede presentar…
   L 21285  Una sola frase para la capacidad que le queda, y Mis procesos en dos renglones entre 641 y …
   L 21294  Las fechas que hay que confirmar: el Anexo 2 que rige pasa el tope, el cierre desmentido y …
@@ -239,6 +238,8 @@
   L 21372  La tarea de la mañana busca las adendas de los procesos guardados, sin leer el corpus y con…
   L 21416  El aviso al teléfono por Telegram, sin leer el corpus, dónde gana el dueño y lo que midió l…
   L 21457  La fase 2 del plan: la cita entera, el juicio que no depende del lote, cuánto falta, qué pe…
+  L 21478  La fase 3 del plan: la oferta propia por el NIT, por qué quedó así, lo que el competidor ti…
+  L 21498  Las fases 4 y 5 del plan: cuáles contratos acreditar, los contratos que terminan pronto, lo…
 
 · DOCUMENTOS docs/ — 76 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)
