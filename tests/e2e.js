@@ -14440,15 +14440,20 @@ async function main() {
     /* LO QUE TUMBÓ LA REVISIÓN ADVERSARIA (5-nov-2026): normas con «N.º», con palabras en medio, «<n> de <año>», el código de
        una sentencia, un prefijo («artículo 2» con «artículo 25» en la página) y cifras en letras */
     {
-      const respO = require("../lib/dictamen.js").plegar("El proponente deberá cumplir el artículo 25 del pliego y la Ley 1150 de 2007. El plazo es de noventa (90) días.");
+      const pagO = "El proponente deberá cumplir el artículo 25 del pliego y la Ley 1150 de 2007. El plazo es de noventa (90) días.";
+      const respO = require("../lib/dictamen.js").plegar(pagO), numO = require("../lib/dictamen.js").numerosDe(pagO);
       for (const n of ["Ley N.º 80 de 1993", "Ley Nº. 1150 de 2007", "Ley n.° 1882", "Decreto Único Reglamentario 1082 de 2015", "Documento CONPES 3714 de 2011", "sentencia de 2009 (C-713)", "el artículo 2 del pliego", "Circular Externa 1 de 2019", "art.24", "Sentencia SU-095",
         "conforme a la 1882 de 2018", "el Decreto Único Reglamentario 1082", "la Circular Externa 1"]) {
         assert.ok(O.normaSinRespaldo(n, respO), `«${n}» es una norma sin respaldo`);
       }
       for (const n of ["el artículo 25 del pliego", "la Ley 1150 de 2007", "de acuerdo con el valor 2.000", "según el numeral 3.2 del pliego"]) assert.strictEqual(O.normaSinRespaldo(n, respO), null, `«${n}» no se aparta`);
-      for (const c of ["reducir el plazo a sesenta días", "el cien por ciento del presupuesto", "ciento veinte días"]) assert.ok(O.cifraEnLetrasSinRespaldo(c, respO), `«${c}» es una cifra en letras sin respaldo`);
-      for (const c of ["un plazo de noventa días", "un único pago", "dos contratos"]) assert.strictEqual(O.cifraEnLetrasSinRespaldo(c, respO), null, `«${c}» no se aparta (el pliego dice «noventa (90) días»)`);
+      for (const c of ["reducir el plazo a sesenta días", "el cien por ciento del presupuesto", "ciento veinte días"]) assert.ok(O.cifraEnLetrasSinRespaldo(c, respO, numO), `«${c}» es una cifra en letras sin respaldo`);
+      for (const c of ["un plazo de noventa días", "un único pago", "dos contratos"]) assert.strictEqual(O.cifraEnLetrasSinRespaldo(c, respO, numO), null, `«${c}» no se aparta (el pliego dice «noventa (90) días»: lo respalda su valor)`);
       const vL = O.verificarObservaciones({ resumen: "", observaciones: [ob("le_resta_opciones", 3, "en un único pago al finalizar la obra", "Se solicita pagar a los treinta días de cada acta.", "Así lo pide el sector.", { tema: "forma_de_pago" })] }, PLIEGO_O, {});
+      /* por VALOR, solo las cifras de la cita: una fecha de la página («30 de noviembre») no respalda «treinta días» (revisión adversaria) */
+      const PLIEGO_F = `${PLIEGO_O}\f4\nCRONOGRAMA\nLa audiencia de cierre será el 30 de noviembre de 2026 a las 10:00.\n`;
+      const vF = O.verificarObservaciones({ resumen: "", observaciones: [ob("aclaracion", 4, "La audiencia de cierre será el", "Se solicita ampliar el plazo para presentar ofertas a treinta días.", "El plazo actual es corto.", { tema: "cronograma" })] }, PLIEGO_F, {});
+      assert.deepStrictEqual(vF.no_verificados.map((x) => x.motivo), ["cifra_sin_respaldo"], `una fecha de la página no respalda «treinta días»: ${JSON.stringify(vF.observaciones)}`);
       assert.deepStrictEqual(vL.no_verificados.map((x) => x.motivo), ["cifra_sin_respaldo"], "en la verificación entera, la cifra en letras sin respaldo se aparta");
     }
     // el resumen con una cifra o una norma sin respaldo se calla, no se publica
@@ -53207,6 +53212,56 @@ async function main() {
         assert.strictEqual(Dc.cifraSinRespaldo("plazo de 45 días", respaldo), null);
         assert.strictEqual(Dc.cifraSinRespaldo("anticipo del 30 %", respaldo), "30 %");
         assert.strictEqual(Dc.cifraSinRespaldo("Ley 80 de 1993, artículo 5, página 12 y numeral 3.2.1", new Set()), null, "leyes, artículos, páginas y numerales no son cifras");
+        /* LAS CIFRAS EN LETRAS (5-nov-2026, encargo del dueño): «sesenta días» o «el cien por ciento» pasaban, porque el
+           censo solo veía dígitos. Una cantidad en letras con su unidad tiene respaldo si la frase está en la cita o su
+           página, o si su VALOR está entre las cifras de respaldo */
+        const pagL = "El plazo de ejecución es de 90 días calendario. El anticipo será del treinta por ciento (30%) del valor del contrato. La garantía de cumplimiento será del diez por ciento del valor.";
+        const plegL = Dc.plegar(pagL), numL = Dc.numerosDe(pagL);
+        assert.strictEqual(Dc.cifraEnLetrasSinRespaldo("un plazo de noventa días", plegL, numL), null, "«noventa días» con «90 días» en la página: el valor la respalda");
+        assert.strictEqual(Dc.cifraEnLetrasSinRespaldo("el treinta por ciento de anticipo", plegL, numL), null, "la frase está en la página (sin el «(30%)» que el pliego intercala)");
+        assert.strictEqual(Dc.cifraEnLetrasSinRespaldo("reducir el plazo a sesenta días", plegL, numL), "sesenta días", "«sesenta días» no está: se aparta");
+        assert.strictEqual(Dc.cifraEnLetrasSinRespaldo("el cien por ciento del presupuesto", plegL, numL), "cien por ciento");
+        assert.strictEqual(Dc.cifraEnLetrasSinRespaldo("un único pago y dos contratos", plegL, numL), null, "«un único» y «dos contratos» no son cifras con unidad");
+        assert.strictEqual(Dc.cifraEnLetrasSinRespaldo("noventa días y dos meses de liquidación", plegL, numL), "dos meses", "el segundo tramo, el que empieza en «y», también se comprueba");
+        assert.strictEqual(Dc.cifraEnLetrasSinRespaldo("el diez por ciento", plegL, new Set()), null, "la frase escrita SOLO en letras en la página la respalda, sin cifras de respaldo");
+        /* LO QUE TUMBÓ LA REVISIÓN ADVERSARIA: la cola de una cifra más larga («ochenta» dentro de «ciento ochenta»), las
+           formas que no se veían y el retroceso con «millones» repetido */
+        const pagR = "El plazo será de ciento ochenta días. Experiencia de dos mil SMMLV. Anticipo del treinta y cinco por ciento.";
+        for (const [t, esperado] of [["solo ochenta días", "ochenta días"], ["experiencia de mil SMMLV", "mil SMMLV"], ["anticipo del cinco por ciento", "cinco por ciento"],
+          ["veintidós días", "veintidós días"], ["doscientas horas", "doscientas horas"], ["cinco millones de pesos", "cinco millones de pesos"], ["cuarenta porciento", "cuarenta porciento"],
+          ["un semestre", "un semestre"], ["ciento ochenta días", null], ["dos mil salarios", null], ["treinta y cinco por ciento", null]]) {
+          assert.strictEqual(Dc.cifraEnLetrasSinRespaldo(t, Dc.plegar(pagR), null), esperado, `«${t}» frente a «${pagR}»`);
+        }
+        assert.strictEqual(Dc.cifraEnLetrasSinRespaldo("un plazo de noventa días", Dc.plegar("El plazo es de noventa (90) días."), null), null, "«noventa (90) días» en la página respalda «noventa días» aunque no haya cifras");
+        assert.strictEqual(Dc.cifraEnLetrasSinRespaldo("un plazo de noventa días", Dc.plegar("El plazo es de noventa dias calendario."), null), null, "«día» y «días», con o sin tilde, son la misma unidad");
+        assert.strictEqual(Dc.cifraEnLetrasSinRespaldo("en tres meses", Dc.plegar("El plazo es de tres mes."), null), null, "«mes» y «meses» son la misma unidad");
+        // el texto que NO casa es el que retrocede: «millones» repetido sin unidad tardaba 28 s
+        const t0L = Date.now(); Dc.cifraEnLetrasSinRespaldo(`¿${"millones ".repeat(26)}?`, "", null);
+        assert.ok(Date.now() - t0L < 200, `«millones» repetido no se cuelga (tardaba 28 s): ${Date.now() - t0L} ms`);
+        for (const [t, v] of [["noventa", 90], ["ciento veinte", 120], ["dos mil quinientos", 2500], ["treinta y cinco", 35], ["veintiún", 21], ["un millón", 1e6], ["noventa pesos", null],
+          ["dos mil millones", 2e9], ["un millón quinientos mil", 1.5e6], ["quinientas", 500], ["veintidós", 22]]) {
+          assert.strictEqual(Dc.numeroDeLetras(Dc.plegar(t)), v, `«${t}» vale ${v}`);
+        }
+        // en la verificación ENTERA del dictamen: un motivo con cita y un riesgo con una cifra en letras sin respaldo se apartan
+        const TL = `\f1\nPORTADA DEL PLIEGO DE CONDICIONES\n\f2\n${pagL}\n`;
+        const crudoL = { veredicto: "presentarse_con_reservas", veredicto_frase: "Puede presentarse con cuidado.", confianza: "media", confianza_motivo: "",
+          motivos: [{ texto: "El plazo es de noventa días.", pagina: 2, cita: "El plazo de ejecución es de 90 días calendario" }, { texto: "El plazo real es de sesenta días.", pagina: 2, cita: "El plazo de ejecución es de 90 días calendario" },
+            { texto: "La garantía de cumplimiento es del diez por ciento.", pagina: 2, cita: "El plazo de ejecución es de 90 días calendario" }],
+          requisitos_para_participar: [], riesgos: [{ texto: "El anticipo es del cuarenta por ciento.", pagina: 2, cita: "El anticipo será del treinta por ciento", gravedad: "media", base: "pliego", referencia: null, que_hacer: "Confírmelo." }],
+          puntos_a_favor: [], pendientes_de_verificar: [], preguntas_para_la_entidad: ["¿El plazo de ciento veinte días incluye la liquidación?"], no_encontrado_en_el_pliego: [] };
+        const vLet = Dc.verificarDictamen(crudoL, TL, {});
+        assert.ok(vLet.ok, JSON.stringify(vLet.detalle || ""));
+        assert.deepStrictEqual(vLet.dictamen.motivos.map((m) => m.texto), ["El plazo es de noventa días.", "La garantía de cumplimiento es del diez por ciento."],
+          `quedan los motivos con respaldo (el del «diez por ciento», por su PÁGINA, no por su cita) y se aparta el de «sesenta días»: ${JSON.stringify(vLet.no_verificados)}`);
+        assert.strictEqual(vLet.dictamen.riesgos.length, 0, "el riesgo del «cuarenta por ciento» (la página dice treinta) se aparta");
+        assert.strictEqual(vLet.dictamen.preguntas_para_la_entidad.length, 0, "una pregunta con «ciento veinte días» sin respaldo se aparta, como con dígitos");
+        assert.strictEqual(vLet.verificacion.apartadas_por_motivo.cifra_sin_respaldo, 3, JSON.stringify(vLet.verificacion.apartadas_por_motivo));
+        const vConf = Dc.verificarDictamen({ ...crudoL, confianza_motivo: "Faltan treinta días de información del pliego." }, TL, {});
+        assert.ok(vConf.dictamen.confianza_motivo === "" && vConf.no_verificados.some((x) => x.campo === "confianza_motivo" && x.motivo === "cifra_sin_respaldo"), "el motivo de la confianza con una cifra en letras sin respaldo se aparta");
+        // la frase del veredicto con una cifra en letras vuelve a la frase fija
+        assert.notStrictEqual(Dc.verificarDictamen({ ...crudoL, veredicto_frase: "Puede presentarse con treinta días de margen." }, TL, {}).dictamen.veredicto_frase, "Puede presentarse con treinta días de margen.", "la frase del veredicto con una cifra en letras se reemplaza");
+        // las observaciones llaman la MISMA regla (no reescribirla: llamarla)
+        assert.strictEqual(require("../lib/observaciones.js").cifraEnLetrasSinRespaldo, Dc.cifraEnLetrasSinRespaldo, "las observaciones usan la regla del dictamen");
       }
 
       /* ── 9 · censo recursivo: acusación, emoji y tuteo con las MISMAS cercas ── */
