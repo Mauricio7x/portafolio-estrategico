@@ -54953,21 +54953,21 @@ async function main() {
         suyos: [{ nombre: "RUP Helder.pdf", bytes: pdf }, { nombre: "RUP Helder.pdf", bytes: pdf }, { nombre: "vacio.pdf", bytes: new Uint8Array(0) }], aMano: ["ANEXO 5 MATRIZ.xlsx"], hoy: "2026-11-05" },
         { escribirZip: zipW, frasesLlenado: X.frasesLlenado });
       const buf = Buffer.from(z.bytes);
-      assert.deepStrictEqual(z.archivos, ["LEAME - revise antes de subir.txt", "1 Formatos llenos/01 FORMATO 1 CARTA DE PRESENTACION (lleno).docx", "2 Sus documentos/01 RUP Helder.pdf", "2 Sus documentos/02 RUP Helder.pdf"],
+      assert.deepStrictEqual(z.archivos, ["LEAME - revise antes de subir.txt", "1 Formatos llenos/01 FORMATO 1 CARTA DE PRESENTACION (lleno).docx", "3 Sus documentos/01 RUP Helder.pdf", "3 Sus documentos/02 RUP Helder.pdf"],
         `el .zip trae la hoja, el formato lleno (sin tildes en el nombre) y sus documentos, numerados: ${JSON.stringify(z.archivos)}`);
       assert.strictEqual(z.nombre, "Oferta CO1.REQ.123.zip");
       const leame = Dz.entradaZip(buf, "LEAME - revise antes de subir.txt");
       const tL = leame.datos ? leame.datos.toString("utf8") : String(leame.motivo);
-      assert.ok(/Se presenta con: CONSORCIO INFRAESTRUCTURA GR/.test(tL) && /sin firma/.test(tL) && /FORMATO 3 EXPERIENCIA\.docx: no tiene casillas/.test(tL) && /ANEXO 5 MATRIZ\.xlsx: no es un documento de Word/.test(tL)
+      assert.ok(/Se presenta con: CONSORCIO INFRAESTRUCTURA GR/.test(tL) && /sin firma/.test(tL) && /«FORMATO 3 EXPERIENCIA\.docx»: no se llenó \(no tiene casillas del proponente\)\. Bájelo de SECOP II/.test(tL) && /ANEXO 5 MATRIZ\.xlsx: no es un documento de Word/.test(tL)
         && /«Nombre del proponente: CONSORCIO INFRAESTRUCTURA GR»/.test(tL) && /Quedó en blanco porque no lo ha guardado en Mi empresa: NIT/.test(tL) && /No firma ningún documento/.test(tL) && /No sube nada a SECOP II/.test(tL) && /NO ENTRÓ «vacio\.pdf»: el archivo está vacío/.test(tL),
         `la hoja dice con quién, qué se llenó, qué falta llenar a mano y lo que el archivo no hace: ${tL.slice(0, 900)}`);
       // un nombre largo conserva su extensión, y uno sin letras legibles queda «documento N»
       const zN = X.armarZipOferta({ proceso: { id: "X" }, suyos: [{ nombre: `${"Certificado de existencia y representación legal ".repeat(4)}vigente noviembre.pdf`, bytes: pdf }, { nombre: "Документ.pdf", bytes: pdf }] }, { escribirZip: zipW });
-      assert.ok(/\.pdf$/.test(zN.archivos[1]) && zN.archivos[1].length < 140 && zN.archivos[2] === "2 Sus documentos/02 documento 2.pdf", `nombres dentro del .zip: ${JSON.stringify(zN.archivos)}`);
-      const pdfDentro = Dz.entradaZip(buf, "2 Sus documentos/01 RUP Helder.pdf");
+      assert.ok(/\.pdf$/.test(zN.archivos[1]) && zN.archivos[1].length < 140 && zN.archivos[2] === "3 Sus documentos/02 documento 2.pdf", `nombres dentro del .zip: ${JSON.stringify(zN.archivos)}`);
+      const pdfDentro = Dz.entradaZip(buf, "3 Sus documentos/01 RUP Helder.pdf");
       assert.ok(pdfDentro.datos && Buffer.from(pdfDentro.datos).equals(Buffer.from(pdf)), "sus documentos van byte a byte");
       const secZ = X.htmlZipOferta({ id: "CO1.REQ.123", guia: { documentos: { formatos: [{ id_documento: "1", nombre: "FORMATO 1.docx", url: "https://community.secop.gov.co/x" }] } } }, { conQuien: "CONSORCIO INFRAESTRUCTURA GR" });
-      assert.ok(/El \.zip para subir a SECOP II/.test(secZ) && /Llena el formato de Word de la entidad/.test(secZ) && /CONSORCIO INFRAESTRUCTURA GR/.test(secZ) && /sin firma/.test(secZ) && /data-exp-zip="CO1\.REQ\.123"/.test(secZ) && /type="file" multiple/.test(secZ),
+      assert.ok(/El \.zip para subir a SECOP II/.test(secZ) && /Junta el formato que se entrega: los de Word, llenos con los datos de/.test(secZ) && /tal como los publicó la entidad/.test(secZ) && /CONSORCIO INFRAESTRUCTURA GR/.test(secZ) && /sin firma/.test(secZ) && /data-exp-zip="CO1\.REQ\.123"/.test(secZ) && /type="file" multiple/.test(secZ),
         `la sección del expediente dice con quién se llena, que queda sin firma, y trae el botón y la elección de archivos: ${secZ.slice(0, 500)}`);
       // que el .zip pida cada formato con el perfil con que se presenta lo EJECUTA «unidad revisor de la oferta» (g-ter)
     }
@@ -57347,6 +57347,36 @@ async function main() {
         assert.ok(deCada.status === 200 && deCada.cuerpo.base64 === null && deCada.cuerpo.de_cada_integrante === true && /cada integrante con sus propios datos/.test(deCada.cuerpo.motivo),
           `con un consorcio, un formato que no es la carta de presentación no se llena: ${JSON.stringify(deCada.cuerpo).slice(0, 300)}`);
         assert.ok((await pedirF({ perfil: "fmt_prueba", nombre: "FORMATO 6 PAGOS DE SEGURIDAD SOCIAL Y APORTES.docx" })).cuerpo.base64, "con una empresa sola, ese mismo formato sí se llena, como siempre");
+        /* (5-nov-2026) con el consorcio: lo de cada integrante recibe solo lo de la ENTIDAD; los ofrecimientos del proponente
+           plural, sus datos y la X de «Consorcio» (de su nombre), sin firma */
+        const viejoRemoto = remoto;
+        const pngC = (() => { const zz = require("zlib"); const trozo = (t, d) => { const x = Buffer.concat([Buffer.from(t, "latin1"), d]); const l = Buffer.alloc(4), c = Buffer.alloc(4); l.writeUInt32BE(d.length); c.writeUInt32BE(zz.crc32(x) >>> 0); return Buffer.concat([l, x, c]); };
+          const ih = Buffer.alloc(13); ih.writeUInt32BE(20, 0); ih.writeUInt32BE(8, 4); ih[8] = 8; return Buffer.concat([Buffer.from("89504E470D0A1A0A", "hex"), trozo("IHDR", ih), trozo("IDAT", zz.deflateSync(Buffer.alloc(21 * 8))), trozo("IEND", Buffer.alloc(0))]); })();
+        const docEnt = (titulo) => (() => { const zz = require("zlib"); const x = Buffer.from(doc(P(titulo) + P("Señores") + P("[NOMBRE DE LA ENTIDAD]") + P("REFERENCIA: Proceso de Contratación [Incluir número del Proceso de Contratación]") + P("Objeto:") + P("[Indicar el lote o lotes a los cuales se presenta oferta]") + P("Nombre del Proponente: ______") + P("Manifiesto bajo la gravedad del juramento lo que sigue en este formato.").repeat(5) + P("El proponente es:", "\t", "Unión temporal ___ Consorcio ___") + P("(Firma del proponente)")));
+          return require("../lib/docx.js").reescribirZip(base, { reemplazos: { "word/document.xml": x } }).buf; })();
+        const procCtx = { entidad: "ALCALDÍA DE CARTAGENA", referencia: "SA-MC-001-2026", ciudad_entidad: "Cartagena", objeto: "OBRA" };
+        remoto = docEnt("FORMATO 6 PAGOS DE SEGURIDAD SOCIAL");
+        const pss = await pedirF({ perfil: "cons_prueba01", nombre: "FORMATO 6 PAGOS DE SEGURIDAD SOCIAL Y APORTES.docx", proceso: procCtx, firma: pngC.toString("base64") });
+        const tPss = pss.cuerpo.base64 ? Dx.textoDeDocx(Buffer.from(pss.cuerpo.base64, "base64")).texto : "";
+        assert.ok(pss.status === 200 && pss.cuerpo.de_cada_integrante === true && /ALCALDÍA DE CARTAGENA/.test(tPss) && /Nombre del Proponente: ______/.test(tPss) && /Consorcio ___/.test(tPss) && !(pss.cuerpo.firma && pss.cuerpo.firma.puesta),
+          `lo de cada integrante: solo la entidad, ni el nombre del consorcio ni la firma: ${tPss.replace(/\n/g, " | ")} ${JSON.stringify(pss.cuerpo).slice(0, 400)}`);
+        remoto = docEnt("FORMATO 7 FACTOR DE CALIDAD");
+        const fc = await pedirF({ perfil: "cons_prueba01", nombre: "F7_FactorCal_ISocialMenCV1.docx", proceso: procCtx, firma: pngC.toString("base64") });
+        const tFc = Dx.textoDeDocx(Buffer.from(fc.cuerpo.base64, "base64")).texto;
+        assert.ok(/Nombre del Proponente: CONSORCIO INFRAESTRUCTURA 1A/.test(tFc) && /Objeto: OBRA/.test(tFc) && /Consorcio _X_/.test(tFc) && /ALCALDÍA DE CARTAGENA/.test(tFc) && fc.cuerpo.ofrecimiento === true && fc.cuerpo.firma.puesta === false,
+          `el ofrecimiento del proponente plural: sus datos, «Consorcio» marcado por su nombre, sin firma: ${tFc.replace(/\n/g, " | ")}`);
+        // EL ORIGINAL, TAL CUAL: los mismos bytes que publicó la entidad; lo que no es Word, Excel ni PDF, no
+        const orig = await pedirF({ formato: "original" });
+        assert.ok(orig.status === 200 && Buffer.from(orig.cuerpo.base64, "base64").equals(remoto) && orig.cuerpo.tipo_archivo === "zip", `el formato tal como lo publicó la entidad, byte a byte: ${JSON.stringify(orig.cuerpo).slice(0, 200)}`);
+        const remotoAntes = remoto; remoto = Buffer.from("<html>inicie sesión</html>");
+        assert.strictEqual((await pedirF({ formato: "original" })).status, 415, "una página de sesión no sale como «original»");
+        remoto = Buffer.from("%PDF-1.4 prueba"); const oPdf = await pedirF({ formato: "original" });
+        assert.ok(oPdf.status === 200 && oPdf.cuerpo.tipo_archivo === "pdf", "un PDF sale tal cual");
+        remoto = Buffer.concat([Buffer.from("D0CF11E0A1B11AE1", "hex"), Buffer.alloc(600)]); const oOle = await pedirF({ formato: "original" });
+        assert.ok(oOle.status === 200 && oOle.cuerpo.tipo_archivo === "ole", "un .doc o .xls antiguo también sale tal cual");
+        remoto = remotoAntes; const oDesde = await pedirF({ formato: "original", desde: 100 });
+        assert.ok(oDesde.status === 200 && Buffer.from(oDesde.cuerpo.base64, "base64").equals(remoto), "con «desde», el original sigue siendo el archivo entero, no un trozo"); remoto = remotoAntes;
+        remoto = viejoRemoto;
         // borrar el consorcio se lleva sus datos para los formatos
         await Cf.borrarConsorcio(crearRedisF({}), "cons_prueba01");
         assert.strictEqual(await crearRedisF({}).get("config:empresa:cons_prueba01"), null, "borrar el consorcio borra sus datos para los formatos");
@@ -57360,6 +57390,8 @@ async function main() {
           correo: "heldersantana71@hotmail.com - ingenieria.genesis.sas@gmail.com", telefono: "3112289205 - 3188497483" } }, CAB_TOKEN);
         assert.ok(g2.status === 200, `los campos nuevos y los dos correos se guardan: ${JSON.stringify(g2.cuerpo).slice(0, 200)}`);
         assert.strictEqual((await invocarPost(routerPF, "/api/perfil?op=empresa-datos", { perfil: "fmt_firma2", datos: { correo: "a@b.co - c@d.co - e@f.co" } }, CAB_TOKEN)).status, 400, "tres correos no");
+        assert.strictEqual((await invocarPost(routerPF, "/api/perfil?op=empresa-datos", { perfil: "fmt_firma2", datos: { tipo_proponente: "sociedad_rara" } }, CAB_TOKEN)).status, 400, "un tipo de proponente fuera de la lista no");
+        assert.strictEqual((await invocarPost(routerPF, "/api/perfil?op=empresa-datos", { perfil: "fmt_firma2", datos: { grupo_empresarial: "quizas" } }, CAB_TOKEN)).status, 400, "una declaración que no es «sí» o «no», tampoco");
         assert.strictEqual((await invocarPost(routerPF, "/api/perfil?op=empresa-datos", { perfil: "fmt_firma2", datos: { matricula_profesional: "<script>" } }, CAB_TOKEN)).status, 400, "una matrícula con forma rara no");
         const xmlF = Buffer.from(doc(P("Nombre del Proponente: ______") + P("Nombre del Representante Legal: ______") + P("C. C. No. ______") + P("Matrícula Profesional No. ______") + P("Persona de contacto: ______") + P("______________________ (Firma del proponente o de su Representante Legal)")));
         const zlibF = require("zlib");
@@ -57445,6 +57477,101 @@ async function main() {
         assert.ok(mismaL.llenados.some((x) => x.campo === "matricula_profesional"), "justo tras el nombre del representante, la matrícula sí");
         // en el documento del consorcio, la firma no se pone (lo firma cada integrante)
         assert.strictEqual(F2.llenarFormato(docxDe(Buffer.from(doc(P("FORMATO 2 CONFORMACIÓN DE CONSORCIO") + P("(Firma)")))), { razon_social: "X" }, { firma: png }).firma.motivo, "el documento del consorcio lo firma cada integrante", "el documento del consorcio no se firma con la imagen, y se dice por qué");
+        /* LA PLANTILLA DE COLOMBIA COMPRA, COMPLETA (5-nov-2026, la carta de Cartagena CO1.REQ.11246436 delante): lo de la ENTIDAD
+           con lo que publica SECOP II, los corchetes del proponente, las X de las declaraciones y el bloque de notificaciones */
+        const Lx = require("../lib/docx.js");
+        const dPl = F2.normalizarDatos({ razon_social: "CONSORCIO INFRAESTRUCTURA 1A", representante_legal: "HELDER GUSTAVO RODRIGUEZ SANTANA", direccion: "CALLE 8 N° 9 - 19", ciudad: "Ibagué (Tolima)",
+          telefono: "3112289205", correo: "a@b.co", persona_contacto: "HELDER", grupo_empresarial: "no", cotiza_bolsa: "no" });
+        const ctxPl = { entidad: "ALCALDÍA DE CARTAGENA", referencia: "SA-MC-001-2026", ciudad_entidad: "Cartagena", objeto: "ADECUACIÓN DE CENTROS DE VIDA", tipo: "consorcio" };
+        const xmlPl = doc(P("[Número del Proceso de Contratación]") + P("Señores") + P("[NOMBRE DE LA ", "ENTIDAD]") + P("[Dirección de la entidad]") + P("[Ciudad]")
+          + P("REFERENCIA:", "\t", "Proceso de contratación No. ", "[Incluir número del proceso de contratación", "], en adelante el “proceso de contratación”") + P("Objeto: ")
+          + P("[Nombre del representante legal del proponente] en mi calidad de representante legal de [Nombre del proponente] o [Nombre del proponente- persona natural] en adelante el “proponente”")
+          + P("El proponente es:", "\t", "Persona natural__ Persona jurídica nacional ___ Unión temporal ___ Consorcio ___ Otro__")
+          + P("El proponente o alguno de los miembros del proponente plural pertenece a un grupo empresarial: sí__ no___ Nombre del grupo empresarial: __________")
+          + P("El proponente cotiza en bolsa: sí___ no____ Composición accionaria del proponente")
+          + P("Dirección y ciudad") + P("[Dirección de la compañía]") + P("Teléfono", "\t", "[Teléfono de la compañía]") + P("Correo electrónico", "\t", "[Dirección de correo electrónico de la compañía]")
+          + P("Nombre del proponente", "\t", "______") + P("Dirección de correo", "\t", "______") + P("Correo electrónico", "\t", "______") + P("Telefax", "\t", "______")
+          + P("[Ciudad]"));
+        const cPl = F2.completarPlantilla(xmlPl, dPl, ctxPl);
+        assert.deepStrictEqual(Lx.lineasDeXml(cPl.xml), ["SA-MC-001-2026", "Señores", "ALCALDÍA DE CARTAGENA", "[Dirección de la entidad]", "Cartagena",
+          "REFERENCIA:\tProceso de contratación No. SA-MC-001-2026, en adelante el “proceso de contratación”", "Objeto: ADECUACIÓN DE CENTROS DE VIDA",
+          "HELDER GUSTAVO RODRIGUEZ SANTANA en mi calidad de representante legal de CONSORCIO INFRAESTRUCTURA 1A en adelante el “proponente”",
+          "El proponente es:\tPersona natural__ Persona jurídica nacional ___ Unión temporal ___ Consorcio _X_ Otro__",
+          "El proponente o alguno de los miembros del proponente plural pertenece a un grupo empresarial: sí__ no_X_ Nombre del grupo empresarial: __________",
+          "El proponente cotiza en bolsa: sí___ no_X__ Composición accionaria del proponente",
+          "Dirección y ciudad", "CALLE 8 N° 9 - 19 – Ibagué (Tolima)", "Teléfono\t3112289205", "Correo electrónico\ta@b.co",
+          "Nombre del proponente\t______", "Dirección de correo\tCALLE 8 N° 9 - 19", "Correo electrónico\t______", "Telefax\t3112289205", "[Ciudad]"],
+          "la carta tipo, completa: la entidad, el proceso, el objeto, el proponente sin la alternativa de persona natural, las X y las notificaciones; el [Ciudad] fuera del encabezado no se toca");
+        assert.ok(cPl.pendientes.includes("[Dirección de la entidad]") && cPl.pendientes.includes("[Ciudad]") && cPl.pendientes.some((x) => /composición accionaria/.test(x)), `lo que no se sabe se dice: ${JSON.stringify(cPl.pendientes)}`);
+        // el gris de la plantilla no se hereda
+        const gris = F2.completarPlantilla(doc('<w:p><w:r><w:rPr><w:highlight w:val="lightGray"/></w:rPr><w:t>[NOMBRE DE LA ENTIDAD]</w:t></w:r></w:p>'), dPl, ctxPl).xml;
+        assert.ok(/ALCALDÍA DE CARTAGENA/.test(gris) && !/w:highlight/.test(gris), "el dato escrito sobre el corchete no queda resaltado en gris");
+        // sin el dato, nada: ni el tipo, ni las declaraciones, ni lo del proceso
+        const sinD = Lx.lineasDeXml(F2.completarPlantilla(xmlPl, F2.normalizarDatos({ razon_social: "X" }), {}).xml);
+        assert.ok(sinD.includes("El proponente es:\tPersona natural__ Persona jurídica nacional ___ Unión temporal ___ Consorcio ___ Otro__") && sinD.some((l) => /grupo empresarial: sí__ no___/.test(l)) && sinD.includes("[Número del Proceso de Contratación]"),
+          "sin el tipo, sin la declaración o sin lo del proceso, la casilla queda como la publicó la entidad");
+        // la persona natural tiene su propia frase: sus corchetes no se tocan
+        const nat = Lx.lineasDeXml(F2.completarPlantilla(xmlPl, dPl, { ...ctxPl, tipo: "persona_natural" }).xml);
+        assert.ok(nat.some((l) => /^\[Nombre del representante legal del proponente\] en mi calidad/.test(l)) && nat.some((l) => /Persona natural_X_/.test(l)), `una persona natural: su X, y la frase del representante intacta: ${nat.filter((l) => /calidad|Persona natural/.test(l)).join(" | ")}`);
+        // el nombre del representante en un campo de Word (MACROBUTTON, el Formato 7 de los tipo)
+        const macro = '<w:p><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> MACROBUTTON  AbrirEspacioPárrafo "[Nombre del representante legal del Proponente]" </w:instrText></w:r><w:r><w:fldChar w:fldCharType="end"/></w:r><w:r><w:t xml:space="preserve">en mi calidad de representante legal de o [ Nombre del Proponente - persona natural] en adelante</w:t></w:r></w:p>';
+        const cM = F2.completarPlantilla(doc(macro), dPl, ctxPl);
+        assert.ok(Lx.lineasDeXml(cM.xml)[0] === "HELDER GUSTAVO RODRIGUEZ SANTANA, en mi calidad de representante legal de CONSORCIO INFRAESTRUCTURA 1A en adelante" && !/MACROBUTTON|fldChar/.test(cM.xml),
+          `el campo de Word con el representante, y «de o [persona natural]» con el nombre del proponente: ${Lx.lineasDeXml(cM.xml)[0]}`);
+        // «… o [Nombre del representante del Proponente Plural]» tras otra alternativa: se quita (Formato 9)
+        assert.strictEqual(Lx.lineasDeXml(F2.completarPlantilla(doc(P("en mi calidad de representante legal de [Nombre del Proponente - persona jurídica] o [Nombre del Proponente- persona natural] o [Nombre del representante del Proponente Plural] en adelante")), dPl, ctxPl).xml)[0],
+          "en mi calidad de representante legal de CONSORCIO INFRAESTRUCTURA 1A en adelante", "las alternativas que no aplican se quitan; no queda «o HELDER»");
+        // un formato con varias cartas (7A, 7B…): cada «Señores» admite otra vez los datos, con su ciudad y su objeto
+        const dosC = F2.llenarFormato(docxDe(Buffer.from(doc((P("Señores") + P("[Ciudad]") + P("REFERENCIA: Proceso No. 1") + P("Objeto:") + P("[Indicar el lote]") + P("Nombre del Proponente: ______")).repeat(2)))),
+          { razon_social: "X SAS" }, { nombre: "F7_FactorCal_ISocialMenCV1.docx", contexto: ctxPl, firma: png });
+        assert.deepStrictEqual(Lx.textoDeDocx(dosC.buf).texto.split("\n"), [].concat(...[1, 2].map(() => ["Señores", "Cartagena", "REFERENCIA: Proceso No. 1", "Objeto: ADECUACIÓN DE CENTROS DE VIDA", "[Indicar el lote]", "Nombre del Proponente: X SAS"])),
+          "cada carta del formato, con sus datos");
+        // un ofrecimiento que da puntaje se llena pero no se firma solo; tampoco uno con solo lo de la entidad
+        assert.ok(dosC.ofrecimiento === true && dosC.firma.puesta === false && /ofrecimiento/.test(dosC.firma.motivo), `el factor de calidad no se firma solo: ${JSON.stringify(dosC.firma)}`);
+        const desemp = F2.llenarFormato(docxDe(Buffer.from(doc(P("FORMATO 7 FACTORES DE DESEMPATE") + P("Nombre del Proponente: ______") + P("[Firma del Proponente o de su representante legal]")))), { razon_social: "X SAS" }, { firma: png });
+        assert.ok(desemp.firma.puesta === false, "el de desempate (declara bajo juramento condiciones del personal) tampoco");
+        // un solo objeto por carta; «Dirección de correo» sin «Correo electrónico» debajo no es la postal; el documento del consorcio no se toca
+        const unObj = Lx.lineasDeXml(F2.completarPlantilla(doc(P("Señores") + P("REFERENCIA: Proceso No. 1") + P("Objeto:") + P("[Indicar el lote]") + P("Objeto:") + P("[Indicar el lote]") + P("Nombre del proponente: X") + P("Dirección de correo", "\t", "______") + P("Teléfono: 1")), dPl, ctxPl).xml);
+        assert.ok(unObj[2] === "Objeto: ADECUACIÓN DE CENTROS DE VIDA" && unObj[4] === "Objeto:" && unObj[7] === "Dirección de correo\t______", `un objeto por carta, y la «Dirección de correo» dudosa queda en blanco: ${unObj.join(" | ")}`);
+        const desemp2 = F2.llenarFormato(docxDe(Buffer.from(doc(P("FORMATO 7 – CRITERIOS DE DESEMPATE") + P("Nombre del Proponente: ______") + P("[Firma del Proponente o de su representante legal]")))), { razon_social: "X SAS" }, { nombre: "F7_FactoresDesemp_TMinCV2.docx", firma: png });
+        assert.ok(desemp2.ofrecimiento === true && desemp2.firma.puesta === false, "el de desempate se reconoce también por el nombre abreviado del archivo");
+        const conf = F2.llenarFormato(docxDe(Buffer.from(doc(P("FORMATO 2 CONFORMACIÓN DE CONSORCIO") + P("Señores") + P("[NOMBRE DE LA ENTIDAD]")))), { razon_social: "X" }, { contexto: ctxPl });
+        assert.ok(conf.buf === null && !conf.llenados.length, "el documento de conformación del consorcio no recibe ni lo de la entidad");
+        /* lo que tumbó la segunda revisión adversaria (5-nov-2026), cada cosa reproducida */
+        // ALTA: la acreditación Mipyme (una declaración jurada de una condición) no se firma sola
+        const mipy = F2.llenarFormato(docxDe(Buffer.from(doc(P("FORMATO 13 ACREDITACIÓN DE MIPYME") + P("actuando en representación de [Indicar nombre del Proponente] declaramos bajo la gravedad del juramento") + P("[Nombre y firma del representante legal]")))),
+          { razon_social: "X SAS", tipo_proponente: "persona_juridica" }, { nombre: "F13_AcredMipyme_ISocialMenCV1.docx", firma: png });
+        assert.ok(mipy.buf && mipy.declaracion === true && mipy.firma.puesta === false && /condición/.test(mipy.firma.motivo), `la acreditación Mipyme se llena y no se firma sola: ${JSON.stringify(mipy.firma)}`);
+        // el campo de Word con el NOMBRE DEL PROPONENTE (F7, F12, F14) se llena y la alternativa se quita
+        const campoW = (t) => `<w:r><w:rPr><w:b/></w:rPr><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> MACROBUTTON  AbrirEspacioPárrafo "${t}" </w:instrText></w:r><w:r><w:fldChar w:fldCharType="end"/></w:r>`;
+        const macro2 = F2.completarPlantilla(doc(`<w:p>${campoW("[Nombre del representante legal del Proponente]")}<w:r><w:t xml:space="preserve">en mi calidad de representante legal de </w:t></w:r>${campoW("[Nombre del Proponente]")}<w:r><w:t xml:space="preserve"> o [Nombre del Proponente - persona natural] en adelante</w:t></w:r></w:p>`), dPl, ctxPl);
+        assert.strictEqual(Lx.lineasDeXml(macro2.xml)[0], "HELDER GUSTAVO RODRIGUEZ SANTANA, en mi calidad de representante legal de CONSORCIO INFRAESTRUCTURA 1A en adelante", "los dos campos de Word, llenos, y sin la alternativa");
+        assert.ok(/<w:b\/>/.test(macro2.xml), "el dato conserva la letra del campo");
+        const macroP = F2.completarPlantilla(doc(`<w:p>${campoW("[Incluir el lote]")}</w:p>`), dPl, ctxPl);
+        assert.ok(macroP.pendientes.includes("[Incluir el lote]") && Lx.lineasDeXml(macroP.xml)[0] === "[Incluir el lote]", "un campo que no se llena se ve igual y se lista como pendiente");
+        // la X no se come lo que sigue
+        assert.ok(Lx.lineasDeXml(F2.completarPlantilla(doc(P("El proponente o alguno de los miembros del proponente plural pertenece a un grupo empresarial: sí__ no___ Nombre")), { ...dPl, grupo_empresarial: "si" }, ctxPl).xml)[0].includes("sí_X_ no___"), "la X con raya de dos deja el espacio que sigue");
+        // el objeto: no en la columna «OBJETO» de una tabla, no donde la entidad ya lo escribió, entero si cabe, nada si es enorme
+        const encab = (cola) => doc(P("Señores") + P("ENT") + P("REFERENCIA: Proceso No. 1") + P("Objeto:") + cola);
+        assert.strictEqual(Lx.lineasDeXml(F2.completarPlantilla(encab(P("[Indicar el lote]")), dPl, { ...ctxPl, objeto: "A".repeat(242) }).xml)[3], `Objeto: ${"A".repeat(242)}`, "un objeto de 242 caracteres va entero");
+        assert.strictEqual(Lx.lineasDeXml(F2.completarPlantilla(encab(P("[Indicar el lote]")), dPl, { ...ctxPl, objeto: "A".repeat(601) }).xml)[3], "Objeto:", "uno de más de 600 no se escribe (cortado sería peor)");
+        assert.strictEqual(Lx.lineasDeXml(F2.completarPlantilla(encab(P("MEJORAMIENTO DE LA VÍA QUE YA ESCRIBIÓ LA ENTIDAD")), dPl, ctxPl).xml)[3], "Objeto:", "si debajo va el objeto que escribió la entidad, no se escribe otro");
+        assert.ok(!Lx.lineasDeXml(F2.completarPlantilla(doc(P("Señores") + P("Experiencia") + P("Objeto:") + P("[Valor]")), dPl, ctxPl).xml).some((l) => /ADECUACIÓN/.test(l)), "lejos de la REFERENCIA no hay objeto");
+        // «Persona de contacto» con el campo de Word «[Nombre]» al lado (la carta de Cartagena): el nombre en su lugar, no pegado al campo
+        const celda = (x) => `<w:tc><w:p>${x}</w:p></w:tc>`;
+        const autor = '<w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> AUTHOR  "Nombre y Apellidos" \\* FirstCap  \\* MERGEFORMAT </w:instrText></w:r><w:r><w:fldChar w:fldCharType="end"/></w:r>';
+        const tablaC = `<w:tbl><w:tr>${celda('<w:r><w:t>Persona de contacto</w:t></w:r>')}${celda(campoW("[Nombre]") + autor)}</w:tr></w:tbl>`;
+        const cont = F2.llenarFormato(docxDe(Buffer.from(doc(P("CARTA DE PRESENTACIÓN") + P("Recibiré notificaciones del contrato en:") + tablaC + P("Nombre del proponente: ______")))), { razon_social: "X SAS", persona_contacto: "HELDER" }, { nombre: "F1_CartaPres.docx" });
+        assert.ok(/Persona de contacto\tHELDER\n/.test(Lx.textoDeDocx(cont.buf).texto + "\n") && !/\[Nombre\]|MACROBUTTON|AUTHOR/.test(Lx.entradaZip(cont.buf, "word/document.xml").datos.toString()), `la persona de contacto en el lugar del campo «[Nombre]», y sin el campo AUTHOR que imprimía el nombre de quien hizo la plantilla: ${Lx.textoDeDocx(cont.buf).texto.replace(/\n/g, " | ")}`);
+        const contOtro = F2.llenarFormato(docxDe(Buffer.from(doc(P("ANEXO 5 EXPERIENCIA DEL PROPONENTE") + P("Entidad contratante: ______") + tablaC + P("Nombre del proponente: ______")))), { razon_social: "X SAS", persona_contacto: "HELDER" }, { nombre: "Experiencia.docx" });
+        assert.ok(!/HELDER/.test(Lx.textoDeDocx(contOtro.buf).texto), "fuera de «Recibiré notificaciones», el «[Nombre]» de la persona de contacto es de otro: no se llena");
+        const mipy2 = F2.llenarFormato(docxDe(Buffer.from(doc(P("ACREDITACIÓN") + P("actuando en representación de [Indicar nombre del Proponente]") + P("[Nombre y firma del representante legal]")))), { razon_social: "X SAS", tipo_proponente: "persona_juridica" }, { nombre: "Formato 14 - Acreditación de Mipyme.docx", firma: png });
+        assert.ok(mipy2.firma.puesta === false, "la Mipyme se reconoce también por el nombre largo del archivo");
+        // la segunda carta de OTRO (el revisor fiscal) no recibe los datos: solo los ofrecimientos traen varias cartas del mismo
+        const revF = F2.llenarFormato(docxDe(Buffer.from(doc(P("FORMATO 4 CAPACIDAD FINANCIERA") + P("Señores") + P("Nombre del proponente: ______") + P("Señores") + P("CERTIFICACIÓN DEL REVISOR FISCAL") + P("Nombre del proponente: ______")))), { razon_social: "X SAS" }, { nombre: "F4_CapFin.docx" });
+        assert.deepStrictEqual(Lx.textoDeDocx(revF.buf).texto.split("\n").slice(-1), ["Nombre del proponente: ______"], "en un formato que no es un ofrecimiento, cada dato una sola vez");
+        const soloEnt = F2.llenarFormato(docxDe(Buffer.from(doc(P("Señores") + P("[NOMBRE DE LA ENTIDAD]") + P("(Firma del proponente)")))), {}, { contexto: ctxPl, firma: png });
+        assert.ok(soloEnt.buf && soloEnt.firma.puesta === false && /ninguna casilla del proponente/.test(soloEnt.firma.motivo), "con solo lo de la entidad no se firma");
         remoto = base;
         const ok = await pedirF({ perfil: "fmt_prueba" });
         assert.strictEqual(ok.status, 200, JSON.stringify(ok.cuerpo).slice(0, 300));
@@ -57604,7 +57731,15 @@ async function main() {
       assert.strictEqual(Xf.nombreLleno("ANEXO 3: CARTA.docx"), "ANEXO 3 CARTA (con sus datos).docx");
       assert.strictEqual(Xf.nombreLleno("ANEXO 3 - CARTA DE PRESENTACIÓN.docx".normalize("NFD")), "ANEXO 3 - CARTA DE PRESENTACION (con sus datos).docx", "sin tildes: con una, el navegador guardaba «download» sin extensión");
       const htmlF = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
-      for (const k of Fe.CAMPOS_DATOS) assert.ok(new RegExp(`<input name="${k}"`).test(htmlF), `el formulario de Mi empresa pide «${k}», el mismo nombre que llena el formato`);
+      // (5-nov-2026) las tres declaraciones son listas de opciones: <select>, con los mismos valores que admite el servidor
+      for (const k of Fe.CAMPOS_DATOS) assert.ok(new RegExp(`<(?:input|select) name="${k}"`).test(htmlF), `el formulario de Mi empresa pide «${k}», el mismo nombre que llena el formato`);
+      const EDc = require("../lib/handlers/perfil/empresa_datos.js").CAMPOS;
+      for (const k of ["tipo_proponente", "grupo_empresarial", "cotiza_bolsa"]) {
+        const sel = (htmlF.match(new RegExp(`<select name="${k}"[\\s\\S]*?</select>`)) || [""])[0];
+        const vals = [...sel.matchAll(/<option value="([^"]*)"/g)].map((m) => m[1]).filter(Boolean);
+        assert.ok(vals.length >= 2 && vals.every((v) => EDc[k].forma.test(v)), `«${k}»: cada opción de la lista la admite el servidor: ${JSON.stringify(vals)}`);
+      }
+      assert.deepStrictEqual([...(htmlF.match(/<select name="tipo_proponente"[\s\S]*?<\/select>/) || [""])[0].matchAll(/<option value="([^"]+)"/g)].map((m) => m[1]), Fe.TIPOS_PROPONENTE, "los tipos de la lista son los que entiende el llenado");
     }
     console.log("· unidad FORMATOS DE LA ENTIDAD: solo lo inequívoco del proponente (ni encabezado de la entidad, ni corchetes, ni consorcio, ni la cédula de quien no se sabe), blanco partido en corridas, tablas, el mismo Word con una sola entrada cambiada (con y sin descriptor), datos con credencial y TTL, y el descargador en modo «llenar»");
   }
@@ -64195,6 +64330,40 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
         pedF.length = 0; archivoF = { size: 400 * 1024 + 1, arrayBuffer: async () => new ArrayBuffer(0) };
         await TF.armarZipDelProceso("CO1.ZIP");
         okRO(pedF.length === 0 && /pesa más de 400 KB/.test(estadoF.textContent), `(g-ter) la firma de más de 400 KB no sale y se dice: ${estadoF.textContent}`);
+        /* TODO LO QUE SE ENTREGA, Y TAL CUAL LO QUE NO SE LLENA (5-nov-2026, «solo me descargó ese»): los Word se llenan con lo del
+           proceso; el que no se llena y el Excel van con los bytes de la entidad; la minuta no se entrega y no entra */
+        const { F: TO, ctx: CO, porId: PO } = cargarFrontRO();
+        await asentarRO();
+        const pedO = [], desO = [];
+        CO.fetch = (url, cfg) => {
+          if (!/op=descargar/.test(String(url))) return new Promise(() => {});
+          const b = JSON.parse(cfg.body); pedO.push(b);
+          if (b.formato === "original") return Promise.resolve(respuestaRO(200, { ok: true, formato: "original", base64: Buffer.from(`ORIGINAL ${b.url}`).toString("base64") }));
+          if (/a$/.test(b.url)) return Promise.resolve(respuestaRO(200, { ok: true, formato: "llenar", base64: Buffer.from(docxMin).toString("base64"), llenados: [{ campo: "entidad" }], pendientes: ["[Dirección de la entidad]"], firma: null }));
+          return Promise.resolve(respuestaRO(200, { ok: true, formato: "llenar", base64: null, llenados: [], motivo: "En consorcio, este formato lo presenta cada integrante con sus propios datos: llénelo con los de cada uno." }));
+        };
+        CO.XLSXApu.descargar = (bytes, nombre) => desO.push({ bytes, nombre });
+        PO.get("tab-seguimiento").querySelector = (sel) => (/data-exp-zip-estado/.test(sel) ? { textContent: "", classList: { toggle() {} } } : null);
+        const procO = { id: "CO1.ZIP2", perfil_de_la_guia: "cons_infragr1", proceso: { nombre: "ADECUACIÓN DE CENTROS DE VIDA", entidad: "ALCALDÍA DE CARTAGENA", referencia: "SA-MC-001-2026", ciudad_entidad: "Cartagena" }, documentos: [],
+          guia: { documentos: { formatos: [{ id_documento: "1", nombre: "F1_CartaPres_ISocialMenCV1.docx", url: "https://community.secop.gov.co/a" }, { id_documento: "2", nombre: "F6_PagoSS_Aportes_ISocialMenCV1.docx", url: "https://community.secop.gov.co/b" },
+            { id_documento: "3", nombre: "F3_Experiencia_ISocialMenCV1.xlsx", url: "https://community.secop.gov.co/c" }, { id_documento: "4", nombre: "A5_MinutaContrato_ISocialMenCV1.docx", url: "https://community.secop.gov.co/d" },
+            { id_documento: "5", nombre: "M3_Riesgos_ISocialMenCV1.docx", url: "https://community.secop.gov.co/e" }, { id_documento: "6", nombre: "Anexo 1 - Anexo Técnico.docx", url: "https://community.secop.gov.co/f" },
+            { id_documento: "7", nombre: "Formato 12 - Factor de sostenibilidad técnico ambiental agregado.docx", url: "https://community.secop.gov.co/g" }, { id_documento: "10", nombre: "FORMATO OFERTA ECONOMICA.docx", url: "https://community.secop.gov.co/j" }],
+            no_legibles: [{ id_documento: "8", nombre: "Form_PropEconomica_ISocialMenCV1.xlsx", url: "https://community.secop.gov.co/h" }, { id_documento: "9", nombre: "Estudio de mercado.xlsx", url: "https://community.secop.gov.co/i" }] } } };
+        TO.fijar({ segExpDatos: { ok: true, proceso: procO, consorcios: [{ id: "cons_infragr1", nombre: "CONSORCIO INFRAESTRUCTURA GR", integrantes: [] }], hoy: "2026-11-05" } });
+        await TO.armarZipDelProceso("CO1.ZIP2");
+        const llO = pedO.filter((b) => b.formato === "llenar"), orO = pedO.filter((b) => b.formato === "original");
+        okRO(llO.map((b) => b.url).join() === "https://community.secop.gov.co/a,https://community.secop.gov.co/b,https://community.secop.gov.co/g" && llO.every((b) => b.proceso && b.proceso.entidad === "ALCALDÍA DE CARTAGENA" && b.proceso.referencia === "SA-MC-001-2026" && b.proceso.ciudad_entidad === "Cartagena" && b.proceso.objeto === "ADECUACIÓN DE CENTROS DE VIDA"),
+          `(g-ter) se llenan los Word que se entregan, con lo del proceso (la minuta y la matriz no): ${JSON.stringify(llO.map((b) => [b.url, b.proceso]))}`);
+        okRO(orO.map((b) => b.url).sort().join() === "https://community.secop.gov.co/b,https://community.secop.gov.co/c,https://community.secop.gov.co/g,https://community.secop.gov.co/h,https://community.secop.gov.co/j", `(g-ter) los que no se llenaron, el Excel de formato y la oferta económica se traen tal cual (el estudio de mercado no): ${JSON.stringify(orO.map((b) => b.url))}`);
+        const zO = Buffer.from(desO[0] ? desO[0].bytes : []);
+        const Dz = require("../lib/docx.js");
+        const ent2 = Dz.entradaZip(zO, "2 Formatos tal como los publico la entidad/01 F6_PagoSS_Aportes_ISocialMenCV1.docx"), ent3 = Dz.entradaZip(zO, "2 Formatos tal como los publico la entidad/02 F3_Experiencia_ISocialMenCV1.xlsx");
+        const leO = Dz.entradaZip(zO, "LEAME - revise antes de subir.txt").datos.toString("utf8");
+        okRO(ent2.datos && ent2.datos.toString() === "ORIGINAL https://community.secop.gov.co/b" && ent3.datos && ent3.datos.toString() === "ORIGINAL https://community.secop.gov.co/c"
+          && Dz.entradaZip(zO, "4 Oferta economica - va en su propia seccion/01 Form_PropEconomica_ISocialMenCV1.xlsx").datos && Dz.entradaZip(zO, "4 Oferta economica - va en su propia seccion/02 FORMATO OFERTA ECONOMICA.docx").datos && /el precio nunca va con lo técnico/.test(leO) && /compárelos con el pliego/.test(leO)
+          && /Queda por escribir: \[Dirección de la entidad\]/.test(leO) && /No se llenó: En consorcio, este formato lo presenta cada integrante/.test(leO) && !/Minuta|Riesgos|Anexo T/.test(leO) && !pedO.some((b) => /\/[def]$/.test(b.url)),
+          `(g-ter) el .zip: los llenos, los demás byte a byte, y la hoja dice qué falta en cada uno: ${leO.slice(0, 900)}`);
         // quitar: la confirmación manda el DELETE del proceso
         pedidos.length = 0;
         const btnSi = { getAttribute: (k) => (k === "data-exp-quitar-confirmar" ? "CO1.ZIP" : null), disabled: false, textContent: "Sí, quitarlo" };

@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 2448721 bytes · 436 secciones · 47 con marcador de superación.
+Derivado del árbol: 2456777 bytes · 437 secciones · 47 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -310,7 +310,7 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | El revisor de la oferta deja de decir «lista» con errores: identificador, IVA, cantidad sin dato, otro proceso y lectura tardía (27/28-sep-2026, N11-A) | 27/28-sep-2026 | 18286-18295 | 3868 |  |
 | Los indicadores del consorcio se juzgan con la fórmula del pliego, y el 50/50 supuesto no niega (27/28-sep-2026, N21) | 27/28-sep-2026 | 18296-18309 | 4204 |  |
 | «Cómo se gana con el precio» por modalidad: sin sorteo en mínima cuantía ni en concurso de méritos (27/28-sep-2026, N13') | 27/28-sep-2026 | 18310-18321 | 3087 | «La mínima cuantía con su tabla medida: la probabilidad es en cuántas de cada 100 el ganador bajó menos que usted (30-sep-2026)» |
-| El formato de la entidad, lleno: solo lo inequívoco del proponente, en el Word que ella publicó (27-sep-2026) | 27-sep-2026 | 18322-18394 | 8364 | «Con qué consorcio se presenta cada proceso, el .zip de la oferta y quitar un proceso por un tiempo (5-nov-2026)» |
+| El formato de la entidad, lleno: solo lo inequívoco del proponente, en el Word que ella publicó (27-sep-2026) | 27-sep-2026 | 18322-18394 | 8302 | «Con qué consorcio se presenta cada proceso, el .zip de la oferta y quitar un proceso por un tiempo (5-nov-2026)» |
 | El rojo intermitente del listado era una conexión que el Redis simulado cerraba (27-sep-2026) | 27-sep-2026 | 18395-18408 | 1433 |  |
 | El veredicto en las palabras del dueño: «Puede ir solo», «Necesita socio» con cuál, y «No alcanza» con su porqué (27-sep-2026) | 27-sep-2026 | 18409-18439 | 3527 |  |
 | El IVA de la utilidad se cuenta con una sola regla en las cifras de precio, y sin saber si la entidad lo incluye, se cuenta (28-sep-2026) | 28-sep-2026 | 18440-18465 | 6049 | «El Excel dice el total que se escribe en SECOP II: la baja en cada fila, el IVA de la utilidad rebajada y su fila según el pliego (30-sep-2026)» |
@@ -446,4 +446,5 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | El % de la garantía del pliego llega a Precios, y las observaciones al pliego redactadas con su cita comprobada (5-nov-2026) | 5-nov-2026 | 21524-21547 | 6210 |  |
 | Las cifras en letras también se comprueban en el dictamen, y la prima mínima no se pedirá (5-nov-2026) | 5-nov-2026 | 21548-21567 | 3444 |  |
 | Con qué consorcio se presenta cada proceso, el .zip de la oferta y quitar un proceso por un tiempo (5-nov-2026) | 5-nov-2026 | 21568-21595 | 6261 |  |
-| Los datos completos para los formatos y la imagen de la firma en el .zip (5-nov-2026) | 5-nov-2026 | 21596-21637 | 6693 |  |
+| Los datos completos para los formatos y la imagen de la firma en el .zip (5-nov-2026) | 5-nov-2026 | 21596-21638 | 6694 |  |
+| La plantilla de Colombia Compra completa y el .zip con todo lo que se entrega (5-nov-2026) | 5-nov-2026 | 21639-21692 | 8117 |  |
