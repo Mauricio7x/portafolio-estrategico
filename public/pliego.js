@@ -1102,7 +1102,17 @@
     }
     html += `<details class="mt-3"${gris ? " open" : ""}><summary class="cursor-pointer text-sm font-medium">Ver el dictamen completo</summary><div class="mt-2 space-y-3 text-sm">`;
     if (requisitos.length) {
-      html += `<div><p class="text-xs font-medium uppercase tracking-wide text-gray-500">Requisitos para poder participar</p><ul class="mt-1 space-y-1">`;
+      /* QUÉ SE PUEDE CORREGIR DESPUÉS (5-nov-2026, plan «Detekta a otro nivel», proceso 4.3). La regla de la ley, leída el
+         5-nov-2026 en la Secretaría del Senado (Ley 1150 de 2007, art. 5: parágrafo 1 modificado por el art. 5 de la Ley
+         1882 de 2018, única modificación registrada, y parágrafo 3): lo que no da puntaje se entrega hasta el traslado del
+         informe de evaluación, sin acreditar hechos posteriores al cierre; la garantía de seriedad que no va con la oferta
+         no se corrige. Mínima cuantía y subasta quedan por fuera de esa regla, y se dice. «Subsanable» es jerga (glosario). */
+      /* en régimen especial (manual propio) y en contratación directa esa regla de la Ley 1150 no rige así: no se pinta
+         (revisión adversaria, 5-nov-2026); sin modalidad conocida, sí, porque casi toda la obra va por esas modalidades */
+      const sinReglaGeneral = /r[eé]gimen especial|directa/i.test(String(r.modalidad || ""));
+      html += `<div><p class="text-xs font-medium uppercase tracking-wide text-gray-500">Requisitos para poder participar</p>`
+        + (sinReglaGeneral ? "" : `<p class="mt-1 text-xs text-gray-600" data-se-corrige>Si a su oferta le falta un documento de lo que exigen para participar y no da puntaje, la entidad se lo pide y usted lo entrega hasta que termine el traslado del informe de evaluación. Lo que se completa es la prueba: el requisito tiene que estar cumplido el día del cierre. Lo que da puntaje no se completa después, y si la garantía de seriedad no va con la oferta, la rechazan. En mínima cuantía y en subasta los plazos son otros. <span class="text-gray-400">(Ley 1150 de 2007, art. 5, parágrafos 1 y 3, con la reforma de la Ley 1882 de 2018.)</span></p>`)
+        + `<ul class="mt-1 space-y-1">`;
       for (const x of requisitos.map((x, i) => [x, i]).sort((a, b) => ordenPeso(a[0]) - ordenPeso(b[0]) || a[1] - b[1]).map(([x]) => x)) {
         html += `<li><span class="font-medium">${esc(ETIQUETA[x.tipo] || ETIQUETA.otro)}</span>${PESO[x.tipo] ? ` <span class="text-xs ${PESO[x.tipo] === PESO.causal_de_rechazo ? "font-medium text-red-700" : "text-gray-500"}">(${esc(PESO[x.tipo])})</span>` : ""} · ${esc(ESTADO[x.estado] || ESTADO.sin_dato_del_perfil)}<br>${esc(x.texto)} <span class="text-xs text-gray-500">(${esc(donde(x))})</span>`
           + `${x.cita ? `<br><span class="text-xs italic text-gray-500">«${esc(x.cita)}»</span>` : ""}${verifique(x)}`

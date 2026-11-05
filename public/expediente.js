@@ -548,7 +548,7 @@
         <p class="exp-seccion-nota">${e.de_la_entidad.map((x) => `${esc(`${x.tipo === "matriz" ? "Matriz" : x.tipo === "anexo" ? "Anexo" : x.tipo === "formato" ? "Formato" : "Apéndice"} ${x.numero}${x.nombre ? ` – ${x.nombre}` : ""}`)}${x.pagina != null ? ` (pág. ${esc(x.pagina)})` : ""}`).join(" · ")}</p></details>` : "";
     return `<section class="exp-seccion">
       <h3 class="exp-seccion-titulo">Lo que tiene que entregar</h3>
-      <p class="exp-ent-cifra"><span class="exp-ent-cifra-n num">${miles(r.listos)} de ${miles(r.cuentan)}</span> listos${r.no_aplica ? ` · ${miles(r.no_aplica)} no ${r.no_aplica === 1 ? "aplica" : "aplican"}` : ""}${r.por_confirmar ? ` · ${miles(r.por_confirmar)} por confirmar en el pliego` : ""}${r.con_problema_de_fecha ? ` · <b>${miles(r.con_problema_de_fecha)} con un problema de fecha</b>` : ""}</p>
+      <p class="exp-ent-cifra"><span class="exp-ent-cifra-n num">${miles(r.listos)} de ${miles(r.cuentan)}</span> listos${r.por_conseguir ? ` · faltan ${miles(r.por_conseguir)} por conseguir` : ""}${r.en_tramite ? ` · ${miles(r.en_tramite)} en trámite` : ""}${r.no_aplica ? ` · ${miles(r.no_aplica)} no ${r.no_aplica === 1 ? "aplica" : "aplican"}` : ""}${r.por_confirmar ? ` · ${miles(r.por_confirmar)} por confirmar en el pliego` : ""}${r.con_problema_de_fecha ? ` · <b>${miles(r.con_problema_de_fecha)} con un problema de fecha</b>` : ""}</p>
       ${htmlLecturaEntrega(e)}
       <p class="exp-ent-mensaje" data-exp-ent-mensaje="${esc(p.id)}" role="status"></p>
       ${todos.length ? `<div class="exp-ent-grupo"><h4 class="exp-ent-subtitulo">Lo que le piden a todos</h4>${todos.map(fila).join("")}</div>` : ""}
@@ -871,22 +871,28 @@
     else if (gan.length > 1) lineas.push(`Se adjudicó a ${gan.length}: ${esc(gan.map((g) => g.nombre).join(", "))}.`);
     const s = o.su_oferta;
     if (s && s.puesto != null) {
-      lineas.push(`La suya, ${esc(pesos(s.valor_cop))}, ${s.puesto === 1 ? "es la más baja" : `quedó de número ${s.puesto} de la más baja a la más alta`}, entre ${s.de}.`);
+      lineas.push(`La suya${s.por_nit ? " (reconocida por el NIT de su empresa)" : ""}, ${esc(pesos(s.valor_cop))}, ${s.puesto === 1 ? "es la más baja" : `quedó de número ${s.puesto} de la más baja a la más alta`}, entre ${s.de}.`);
     } else if (s) {
       lineas.push(`La suya, ${esc(pesos(s.valor_cop))}, no coincide al peso con ninguna oferta publicada. Si la cifra que anotó no es la exacta, corríjala en «Resumen» para ver en qué puesto quedó.`);
     }
     if (o.faltan_por_publicar > 0) lineas.push(`El proceso registra ${o.respondieron_segun_el_proceso} respuestas y datos.gov.co publica ${o.distintas}: faltan ${o.faltan_por_publicar}.`);
     if (o.sin_valor_publicado > 0) lineas.push(`${o.sin_valor_publicado === 1 ? "Una no publica" : `${o.sin_valor_publicado} no publican`} su valor.`);
     if (o.hay_confidenciales) lineas.push("Además hay ofertas marcadas como confidenciales: de esas no se publica ni quién ni cuánto.");
+    /* POR QUÉ QUEDÓ ASÍ (5-nov-2026, proceso 14.2): lo arma el servidor (lib/ofertas.explicarResultado) con las ofertas y
+       la evaluación leída, cada línea con su fuente; aquí solo se pinta. La cita de la evaluación va debajo, en cursiva. */
+    const ex = o.explicacion && Array.isArray(o.explicacion.lineas) && o.explicacion.lineas.length ? o.explicacion : null;
+    const bloqueExplicacion = ex ? `<div class="exp-seccion-cuerpo" data-seg-explicacion><p class="font-medium">Por qué quedó así</p><ul class="mt-1 space-y-1">${ex.lineas.map((l) => `<li>${esc(l.texto)}${l.cita ? `<br><span class="text-xs italic text-gray-500">«${esc(l.cita)}»</span>` : ""}</li>`).join("")}</ul>`
+      + `<p class="mt-1 text-xs text-gray-500">${ex.con_evaluacion ? "Sale de las ofertas publicadas en SECOP II y de la evaluación del proceso que la aplicación leyó." : ex.evaluacion_leida ? "Sale de las ofertas publicadas en SECOP II; la evaluación leída de este proceso no trae la fila de su oferta." : "Sale de las ofertas publicadas en SECOP II; la evaluación de este proceso todavía no se ha leído."}</p></div>` : "";
     const celdaPct = (pct) => pct == null ? "—" : pct >= 0 ? `${esc(String(pct).replace(".", ","))} % por debajo` : `${esc(String(-pct).replace(".", ","))} % por encima`;
     const filas = (o.ofertas || []).map((x) => `<tr class="align-top">
         <td class="py-1 pr-3 text-right num">${x.puesto != null ? x.puesto : "—"}</td>
-        <td class="py-1 pr-3">${esc(x.proponente || "Sin nombre publicado")}${x.adjudicada ? ` <span class="font-medium text-emerald-700">● Ganó</span>` : ""}</td>
+        <td class="py-1 pr-3">${esc(x.proponente || "Sin nombre publicado")}${x.adjudicada ? ` <span class="font-medium text-emerald-700">● Ganó</span>` : ""}${x.propia ? ` <span class="font-medium text-blue-700">● La suya</span>` : ""}</td>
         <td class="py-1 pr-3 text-right num">${x.valor_cop != null ? esc(pesos(x.valor_cop)) : "sin valor publicado"}</td>
         <td class="py-1 text-right num">${celdaPct(x.por_debajo_del_presupuesto_pct)}</td>
       </tr>`).join("");
     return `<section class="exp-seccion" data-seg-ofertas-todos>${titulo}
       ${lineas.map((l) => `<p class="exp-seccion-cuerpo">${l}</p>`).join("")}
+      ${bloqueExplicacion}
       <details class="exp-seccion-cuerpo"><summary class="exp-doc-enlace">Ver ${o.distintas === 1 ? "la oferta" : `las ${o.distintas} ofertas`}</summary>
         <div class="mt-2 overflow-x-auto"><table class="w-full text-xs">
           <thead class="text-left text-[11px] uppercase tracking-wide text-gray-400"><tr><th class="pb-1 pr-3 text-right">Puesto</th><th class="pb-1 pr-3">Proponente</th><th class="pb-1 pr-3 text-right">Valor ofertado</th><th class="pb-1 text-right">Frente al presupuesto</th></tr></thead>

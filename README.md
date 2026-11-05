@@ -121,7 +121,7 @@ con esa medición (toda `op` real está aquí; nada de aquí es inventado):
 - `/api/pliego?op=` extraer-texto · parsear · descargar · formulario1 · diff · cronograma · deducciones · dictamen · documentos · auditoria · evaluacion
 - `/api/admin?op=` rup · experiencia · cobertura · cargar-catalogo · exportar · importar · uso · respaldo · espacio · compactar · sesion · entrar · salir · crear-cuenta
 - `/api/apu?accion=` catalogo · inferir · calcular · cotizar · rentabilidad · guardar · cargar · listar · importar · extraer-texto · descargar · parametros · ia
-- `/api/inteligencia?vista=` adjudicatario · competidor · entidad · paa · probabilidad · socio
+- `/api/inteligencia?vista=` adjudicatario · competidor · entidad · paa · probabilidad · secop1 · socio
 
 Qué pide llave y qué es público lo dice cada handler llamando a `lib/auth.js`; `node tests/estado.js`
 lista los puntos de llamada. El cuerpo JSON de cualquier POST lo lee `lib/cuerpo.js` (un solo tope,
