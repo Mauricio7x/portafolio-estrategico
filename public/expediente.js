@@ -413,10 +413,10 @@
      usuario elija de su computador, y una hoja con lo que se llenó y lo que falta. Se arma en el navegador: sus archivos
      no salen del computador. Lo revisa el ingeniero antes de subirlo. `conQuien` = nombre de con qué se presenta. */
   function htmlZipOferta(p, { conQuien = null } = {}) {
-    const llenables = documentosEntidad(p).filter((f) => f.origen === "entidad" && f.url && f.formato === "DOCX");
+    const llenables = formatosParaEntregar(p);
     return `<section class="exp-seccion">
         <h3 class="exp-seccion-titulo">El .zip para subir a SECOP II</h3>
-        <p class="exp-seccion-nota">Llena ${llenables.length === 1 ? "el formato de Word de la entidad" : llenables.length ? `los ${miles(llenables.length)} formatos de Word de la entidad` : "los formatos de Word de la entidad (todavía no hay ninguno encontrado)"} con los datos de <b>${esc(conQuien || "su empresa")}</b> y junta los documentos que usted elija de su computador. Si elige la imagen de su firma, va encima del renglón de firma del proponente cuando el formato lo trae; los demás quedan <b>sin firma</b>. Revíselo antes de subirlo. Sus documentos no salen de su computador.</p>
+        <p class="exp-seccion-nota">Junta ${llenables.length === 1 ? "el formato que se entrega" : llenables.length ? `los ${miles(llenables.length)} formatos que se entregan` : "los formatos que se entregan (todavía no hay ninguno encontrado)"}: los de Word, llenos con los datos de <b>${esc(conQuien || "su empresa")}</b>; los demás, tal como los publicó la entidad. También los documentos que usted elija de su computador. Si elige la imagen de su firma, va en la carta y en las declaraciones del proponente; los ofrecimientos de puntaje y las declaraciones de una condición (Mipyme, desempate) quedan <b>sin firma</b>, para que usted decida. Revíselo antes de subirlo. Sus documentos no salen de su computador.</p>
         <label class="exp-campo"><span class="exp-campo-rotulo">La firma del representante legal (imagen PNG o JPG, opcional)</span>
           <input type="file" accept="image/png,image/jpeg" data-exp-zip-firma="${esc(p.id)}" class="control-campo" aria-label="La imagen de la firma para los formatos"></label>
         <p class="exp-seccion-nota">Si la elige, viaja con cada formato para ponerla encima del renglón de firma del proponente o de su representante legal. No se guarda en ninguna parte. La hoja que va dentro del .zip dice en cuáles quedó.</p>
@@ -430,7 +430,29 @@
      (lo que respondió el llenado de cada uno), `suyos` = [{nombre, bytes}], `aMano` = nombres de formatos que no son Word.
      Devuelve {bytes, nombre, leame}. Los nombres van sin tildes: con una, un teléfono no abre el archivo (la regla de
      `nombreLleno`). */
-  function armarZipOferta({ proceso = {}, conQuien = null, formatos = [], suyos = [], aMano = [], hoy = null } = {}, ctx = {}) {
+  /* LOS FORMATOS QUE SE ENTREGAN (5-nov-2026): de los documentos de la entidad clasificados como formato, los que el
+     proponente presenta (cartas, formatos, formularios, proformas, el pacto de transparencia). No entran los que solo se
+     leen —la minuta del contrato, el anexo técnico, el glosario, el cronograma, las matrices, el documento base—. Por el
+     nombre: los tipo de Colombia Compra los numeran «F1_…», «A4_Pacto…», «M2_…» (matriz), «A1_Tecnico» (anexo técnico) */
+  /* (revisión adversaria, 5-nov-2026) «técnico» a secas tumbaba el «Formato 12 – Factor de sostenibilidad técnico ambiental»:
+     lo que no se entrega es el ANEXO técnico, la matriz de RIESGOS o una matriz numerada «M2_», no cualquier palabra */
+  const NO_SE_ENTREGA = /minuta|anexo\s*(?:\d+\s*[-–:.]?\s*)?(?:anexo\s*)?t[eé]cnico|_t[eé]cnico_|^\s*A\d+_t[eé]cnico|glosario|cronograma|matri[zc]\s+(?:de\s+)?riesgos?|_riesgos_|docbase|documento\s*base|estudios?\s+previos?|pliego|aviso|resoluci|^\s*M\d+[_\s-]|bienesnac/i;
+  const SE_ENTREGA = /formato|formulario|proforma|carta|pacto|^\s*F\d+[A-Z]?[_\s-]|^\s*form[_\s-]|^\s*anexo/i;
+  /* el servidor lista como «formato» solo los Word; un Excel o un PDF de formato (el 3 de experiencia, el 5 de capacidad
+     residual, el Formulario 1) queda en «no se lee solo» o «leído»: entra igual si su NOMBRE dice que es un formato */
+  const NOMBRE_DE_FORMATO = /formato|formulario|proforma|^\s*F\d+[A-Z]?[_\s-]|^\s*form[_\s-]/i;
+  /* EL PRECIO VA APARTE: «el precio jamás en la carpeta técnica» (lib/guia_proceso). La oferta económica entra en su propia
+     carpeta del .zip, para cargarla en la sección que diga el pliego */
+  const ES_OFERTA_ECONOMICA = /oferta\s*econ|propuesta\s*econ|prop_?econ|presupuesto\s+oficial|formulario\s*(?:n[°º.o]*\s*)?1\b/i;
+  function formatosParaEntregar(p) {
+    return documentosEntidad(p).filter((f) => {
+      const n = String(f.nombre || "");
+      if (!f.url || NO_SE_ENTREGA.test(n)) return false;
+      return f.estado === "formato" ? SE_ENTREGA.test(n) : NOMBRE_DE_FORMATO.test(n);
+    }).map((f) => ({ ...f, economica: ES_OFERTA_ECONOMICA.test(String(f.nombre || "")) }));
+  }
+
+  function armarZipOferta({ proceso = {}, conQuien = null, formatos = [], originales = [], suyos = [], aMano = [], hoy = null } = {}, ctx = {}) {
     const ascii = (s) => String(s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\x20-\x7e]/g, "").replace(/[\\/:*?"<>|]+/g, " ").replace(/\s+/g, " ").trim();
     const n2 = (i) => String(i + 1).padStart(2, "0");
     /* el nombre recortado CONSERVA su extensión (con 110 caracteres se perdía el «.pdf»), y sin nada legible —un nombre en
@@ -448,7 +470,8 @@
     const lineas = [];
     lineas.push(`OFERTA PARA EL PROCESO ${proceso.id || ""}`, `${proceso.nombre || ""}`, `Entidad: ${proceso.entidad || "no publicada"}`,
       `Se presenta con: ${conQuien || "su empresa"}`, `Armado${hoy ? ` el ${hoy}` : ""}. REVÍSELO ANTES DE SUBIRLO A SECOP II.`, "");
-    const llenos = formatos.filter((f) => f.bytes), sinLlenar = formatos.filter((f) => !f.bytes);
+    const llenos = formatos.filter((f) => f.bytes);
+    const porQueNo = (nombre) => { const f = formatos.find((x) => x.nombre === nombre && !x.bytes); return f ? (f.error || (f.resumen && f.resumen.motivo) || null) : null; };
     const conFirma = formatos.some((f) => f.resumen && f.resumen.firma && f.resumen.firma.puesta);
     lineas.push(conFirma ? "1. FORMATOS DE LA ENTIDAD LLENOS (revise dónde quedó la firma en cada uno)" : "1. FORMATOS DE LA ENTIDAD LLENOS (sin firma: fírmelos antes de subirlos)");
     if (!llenos.length) lineas.push("   Ninguno.");
@@ -457,13 +480,39 @@
       entradas.push({ nombre: ruta, datos: f.bytes instanceof Uint8Array ? f.bytes : new Uint8Array(f.bytes) });
       lineas.push(`   - ${ruta.slice(ruta.indexOf("/") + 1)}`);
       for (const fr of (ctx.frasesLlenado ? ctx.frasesLlenado(f.resumen) : [])) lineas.push(`       ${fr}`);
-      const fi = f.resumen && f.resumen.firma;
+      const re = f.resumen || {};
+      if (re.de_cada_integrante) lineas.push("       Solo se escribió lo de la entidad: en consorcio lo presenta cada integrante, con sus propios datos.");
+      if (re.ofrecimiento) lineas.push("       Es un ofrecimiento que da puntaje y compromete: decida si lo ofrece. No se firmó.");
+      if (re.declaracion) lineas.push("       Declara bajo juramento una condición (Mipyme, mujeres, discapacidad…): fírmelo solo si la cumple. No se firmó.");
+      if (Array.isArray(re.pendientes) && re.pendientes.length) lineas.push(`       Queda por escribir: ${re.pendientes.join(" · ")}.`);
+      const fi = re.firma;
       if (fi) lineas.push(`       ${fi.puesta ? `La firma quedó encima de: «${fi.renglon}».` : `Sin firma: ${fi.motivo}.`}`);
     });
-    lineas.push("", "2. FORMATOS QUE NO SE LLENARON (llénelos a mano)");
-    const faltan = [...sinLlenar.map((f) => `${f.nombre}: ${f.error || "no tiene casillas del proponente que se puedan llenar sin riesgo de equivocarse"}`), ...aMano.map((n) => `${n}: no es un documento de Word`)];
-    if (!faltan.length) lineas.push("   Ninguno.");
-    for (const x of faltan) lineas.push(`   - ${x}`);
+    /* LOS DEMÁS, TAL COMO LOS PUBLICÓ LA ENTIDAD (5-nov-2026): el mismo archivo, byte a byte, para llenarlo a mano sin
+       buscarlo en SECOP II; y el que no se pudo traer, con su motivo */
+    lineas.push("", "2. FORMATOS TAL COMO LOS PUBLICÓ LA ENTIDAD (sin tocar: llénelos a mano)");
+    const traidos = originales.filter((o) => o.bytes && o.bytes.length);
+    if (!traidos.length && !originales.length && !aMano.length) lineas.push("   Ninguno.");
+    const economicos = traidos.filter((o) => ES_OFERTA_ECONOMICA.test(String(o.nombre || "")));
+    traidos.filter((o) => !economicos.includes(o)).forEach((o, i) => {
+      const ruta = `2 Formatos tal como los publico la entidad/${n2(i)} ${nombreArchivo(o.nombre, i, 100)}`;
+      entradas.push({ nombre: ruta, datos: o.bytes instanceof Uint8Array ? o.bytes : new Uint8Array(o.bytes) });
+      lineas.push(`   - ${ruta.slice(ruta.indexOf("/") + 1)}`);
+      const pq = porQueNo(o.nombre);
+      if (pq) lineas.push(`       No se llenó: ${pq}`);
+    });
+    if (economicos.length) {
+      lineas.push("", "2B. LA OFERTA ECONÓMICA, TAL COMO LA PUBLICÓ LA ENTIDAD (cárguela en SU sección de SECOP II: el precio nunca va con lo técnico)");
+      economicos.forEach((o, i) => {
+        const ruta = `4 Oferta economica - va en su propia seccion/${n2(i)} ${nombreArchivo(o.nombre, i, 100)}`;
+        entradas.push({ nombre: ruta, datos: o.bytes instanceof Uint8Array ? o.bytes : new Uint8Array(o.bytes) });
+        lineas.push(`   - ${ruta.slice(ruta.indexOf("/") + 1)} (sus precios se arman en Precios)`);
+      });
+    }
+    for (const o of originales.filter((x) => !(x.bytes && x.bytes.length))) lineas.push(`   - NO SE PUDO TRAER «${o.nombre}»: ${o.error || "SECOP II no lo entregó"}. Bájelo de SECOP II.`);
+    // uno que no se llenó y del que no llegó el original tampoco se calla
+    for (const f of formatos.filter((x) => !x.bytes && !originales.some((o) => o.nombre === x.nombre))) lineas.push(`   - «${f.nombre}»: no se llenó (${porQueNo(f.nombre) || "sin motivo"}). Bájelo de SECOP II y llénelo a mano.`);
+    for (const n of aMano) lineas.push(`   - ${n}: no es un documento de Word. Bájelo de SECOP II.`);
     lineas.push("", "3. SUS DOCUMENTOS");
     // un archivo vacío (0 bytes) no entra: no es un documento, y se dice
     const vacios = suyos.filter((d) => !(d.bytes && d.bytes.length));
@@ -471,10 +520,11 @@
     if (!conBytes.length) lineas.push("   No eligió ninguno.");
     for (const d of vacios) lineas.push(`   - NO ENTRÓ «${d.nombre}»: el archivo está vacío (0 bytes). Vuelva a sacarlo de donde lo tiene.`);
     conBytes.forEach((d, i) => {
-      const ruta = `2 Sus documentos/${n2(i)} ${nombreArchivo(d.nombre, i, 110)}`;
+      const ruta = `3 Sus documentos/${n2(i)} ${nombreArchivo(d.nombre, i, 110)}`;
       entradas.push({ nombre: ruta, datos: d.bytes instanceof Uint8Array ? d.bytes : new Uint8Array(d.bytes) });
       lineas.push(`   - ${ruta.slice(ruta.indexOf("/") + 1)}`);
     });
+    lineas.push("", "EL NOMBRE DE LA ENTIDAD, EL NÚMERO DEL PROCESO Y EL OBJETO salen de lo que publica SECOP II: compárelos con el pliego antes de firmar.");
     lineas.push("", "LO QUE ESTE ARCHIVO NO HACE", conFirma ? "   - La imagen de la firma no es una firma digital: confirme en el pliego que la entidad acepta la firma escaneada." : "   - No firma ningún documento.", "   - No llena el documento de conformación del consorcio o de la unión temporal: lleva los datos de cada integrante.",
       "   - No comprueba que sus documentos estén vigentes ni que sean los que pide el pliego: compare con «Lo que tiene que entregar».",
       "   - No sube nada a SECOP II.");
@@ -1294,7 +1344,7 @@
   return {
     htmlPuedePresentarse, opcionesPresentarse, veredictoPresentarse, casillasPresentarse, rojosDe,
     QUITAR_PROCESOS_TEMPORAL, SECCIONES, seccionValida, cifrasDe, htmlEntregar, htmlFilaEntrega, htmlCabecera, htmlPie, htmlConQuien, urlSegura, enlaceSecop, htmlOferta, htmlOfertasTodos, frasesLlenado, nombreLleno,
-    documentosEntidad, htmlZipOferta, armarZipOferta, tiposSuyos, pesoLegible, formatoDe, textoAvance, fraccionAvance, htmlAvance, duracionLegible, frasesTiempo, htmlFilaDoc, htmlFilaDocSuyo, htmlDocumentos,
+    documentosEntidad, formatosParaEntregar, htmlZipOferta, armarZipOferta, tiposSuyos, pesoLegible, formatoDe, textoAvance, fraccionAvance, htmlAvance, duracionLegible, frasesTiempo, htmlFilaDoc, htmlFilaDocSuyo, htmlDocumentos,
     lineaDeTiempo, htmlFechas, htmlDatosClave, htmlSiguientePaso,
   };
 });

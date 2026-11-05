@@ -5548,6 +5548,12 @@
 
   /* con qué se presenta a ESTE proceso: el perfil (el de la guía, que ya resolvió el consorcio elegido) y su nombre */
   function perfilDelProceso(p) { return (p && p.perfil_de_la_guia) || $("f-perfil").value; }
+  /* lo del PROCESO que piden los encabezados de los formatos tipo (5-nov-2026): el nombre de la entidad, su número del
+     proceso, su ciudad y el objeto, tal como los publica SECOP II */
+  function delProcesoParaFormatos(p) {
+    const pr = (p && p.proceso) || {};
+    return { entidad: pr.entidad || null, referencia: pr.referencia || null, ciudad_entidad: pr.ciudad_entidad || null, objeto: pr.objeto || (pr.nombre && pr.nombre.length < 200 ? pr.nombre : null) };   // el nombre guardado se corta a 200: cortado no se escribe
+  }
   function conQuienDe(p, r) {
     const id = perfilDelProceso(p);
     const o = opcionesPresentado(r || segExpDatos).find((x) => x.id === id);
@@ -5565,9 +5571,13 @@
     if (!X || !p) { decir("Abra el proceso otra vez: el expediente no está cargado.", true); return; }
     if (!window.XLSXApu || typeof window.XLSXApu.escribirZip !== "function") { decir("El armador de archivos no cargó en esta página: recargue e intente de nuevo.", true); return; }
     const perfil = perfilDelProceso(p);
-    const docs = X.documentosEntidad(p);
-    const llenables = docs.filter((f) => f.origen === "entidad" && f.url && f.formato === "DOCX");
-    const aMano = docs.filter((f) => f.estado === "formato" && f.formato !== "DOCX").map((f) => f.nombre);
+    /* TODOS los formatos que se entregan (5-nov-2026, encargo del dueño: «solo me descargó ese»): los de Word se llenan; los
+       que no se llenan, y los de Excel o PDF, van TAL COMO LOS PUBLICÓ LA ENTIDAD, sin tocar. La minuta, el anexo técnico,
+       el documento base o las matrices no se entregan y no entran */
+    const deEntrega = X.formatosParaEntregar(p);
+    // la oferta económica no se llena aquí (sus precios se arman en Precios) y va en su propia carpeta, tal como la publicó la entidad
+    const llenables = deEntrega.filter((f) => f.formato === "DOCX" && !f.economica);
+    const contextoP = delProcesoParaFormatos(p);
     if (boton) boton.disabled = true;
     try {
       /* LA FIRMA (5-nov-2026): la imagen que el usuario eligió; viaja en cada llenado y no se guarda en ninguna parte */
@@ -5584,7 +5594,7 @@
       for (const [i, f] of llenables.entries()) {
         decir(`Llenando ${i + 1} de ${llenables.length}: «${f.nombre}»…`);
         try {
-          const rr = await api("/api/pliego?op=descargar", { method: "POST", body: { url: f.url, formato: "llenar", perfil, nombre: f.nombre, ...(firma ? { firma } : {}) } });
+          const rr = await api("/api/pliego?op=descargar", { method: "POST", body: { url: f.url, formato: "llenar", perfil, nombre: f.nombre, proceso: contextoP, ...(firma ? { firma } : {}) } });
           formatos.push({ nombre: f.nombre, bytes: rr && rr.base64 ? Uint8Array.from(atob(rr.base64), (c) => c.charCodeAt(0)) : null, resumen: rr, error: rr && !rr.base64 ? rr.motivo || null : null });
         } catch (e) {
           // sin los datos de quien se presenta no se llena ninguno: se para y se dice dónde escribirlos
@@ -5592,20 +5602,29 @@
           formatos.push({ nombre: f.nombre, bytes: null, resumen: null, error: fraseDeFallo(e) });
         }
       }
+      /* lo que no se llenó, y lo que no es Word: el archivo que publicó la entidad, byte a byte */
+      const originales = [];
+      const sinLlenar = deEntrega.filter((f) => !formatos.some((x) => x.nombre === f.nombre && x.bytes));
+      for (const [i, f] of sinLlenar.entries()) {
+        decir(`Trayendo tal cual ${i + 1} de ${sinLlenar.length}: «${f.nombre}»…`);
+        try {
+          const ro = await api("/api/pliego?op=descargar", { method: "POST", body: { url: f.url, formato: "original" } });
+          originales.push({ nombre: f.nombre, bytes: ro && ro.base64 ? Uint8Array.from(atob(ro.base64), (c) => c.charCodeAt(0)) : null, error: ro && !ro.base64 ? ro.error || null : null });
+        } catch (e) { originales.push({ nombre: f.nombre, bytes: null, error: fraseDeFallo(e) }); }
+      }
       const entrada = secSeg.querySelector(`[data-exp-zip-archivos="${CSS.escape(id)}"]`);
-      // (la firma se leyó antes de llenar: va en cada petición del llenado)
       const suyos = [];
       for (const a of (entrada && entrada.files) ? [...entrada.files] : []) {
         decir(`Leyendo «${a.name}»…`);
         suyos.push({ nombre: a.name, bytes: new Uint8Array(await a.arrayBuffer()) });
       }
       const pr = p.proceso || {};
-      const z = X.armarZipOferta({ proceso: { id, nombre: pr.nombre, entidad: pr.entidad }, conQuien: conQuienDe(p), formatos, suyos, aMano, hoy: segExpDatos.hoy || null },
+      const z = X.armarZipOferta({ proceso: { id, nombre: pr.nombre, entidad: pr.entidad }, conQuien: conQuienDe(p), formatos, originales, suyos, hoy: segExpDatos.hoy || null },
         { escribirZip: window.XLSXApu.escribirZip, frasesLlenado: X.frasesLlenado });
       window.XLSXApu.descargar(z.bytes, z.nombre, "application/zip");
-      const llenos = formatos.filter((x) => x.bytes).length;
+      const llenos = formatos.filter((x) => x.bytes).length, tal = originales.filter((x) => x.bytes).length;
       const firmados = formatos.filter((x) => x.resumen && x.resumen.firma && x.resumen.firma.puesta).length;
-      decir(`Descargado «${z.nombre}»: ${llenos} de ${llenables.length} formatos llenos${firmados ? ` (${firmados} con la imagen de la firma)` : ""}, ${suyos.length} documentos suyos. Lea el «LEAME» que va dentro, ${firmados ? "revise dónde quedó la firma, firme los que no la llevan" : "firme los formatos"} y revise todo antes de subirlo.`);
+      decir(`Descargado «${z.nombre}»: ${llenos} formatos llenos${firmados ? ` (${firmados} con la imagen de la firma)` : ""}, ${tal} tal como los publicó la entidad, ${suyos.length} documentos suyos. Lea el «LEAME» que va dentro: dice qué falta en cada uno.`);
     } catch (e) { decir(`No se pudo armar el .zip: ${fraseDeFallo(e)}`, true); }
     finally { if (boton) boton.disabled = false; }
   }
@@ -7392,7 +7411,7 @@
         try {
           // con el perfil con que se presenta a ESTE proceso, el MISMO del .zip (revisión adversaria: dos botones, dos empresas)
           const pLl = segExpDatos && segExpDatos.proceso && segExpId === segExpDatos.proceso.id ? segExpDatos.proceso : null;
-          const r = await api("/api/pliego?op=descargar", { method: "POST", body: { url: llenar.getAttribute("data-seg-llenar"), formato: "llenar", perfil: perfilDelProceso(pLl), nombre: llenar.getAttribute("data-seg-llenar-nombre") } });
+          const r = await api("/api/pliego?op=descargar", { method: "POST", body: { url: llenar.getAttribute("data-seg-llenar"), formato: "llenar", perfil: perfilDelProceso(pLl), nombre: llenar.getAttribute("data-seg-llenar-nombre"), proceso: delProcesoParaFormatos(pLl) } });
           if (r.base64) {
             const bytes = Uint8Array.from(atob(r.base64), (c) => c.charCodeAt(0));
             descargarBlob(new Blob([bytes], { type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" }), X.nombreLleno(llenar.getAttribute("data-seg-llenar-nombre")));

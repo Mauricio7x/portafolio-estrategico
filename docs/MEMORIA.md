@@ -18326,7 +18326,7 @@ En una línea: Precios decía de una mínima cuantía «se sortea en la audienci
 En una línea: el dueño eligió que la aplicación llene el formato que publica la entidad en SECOP II, y ahora cada documento de Word del expediente trae «Llenar con sus datos», que devuelve ESE archivo con la razón social, el NIT, el representante legal y su cédula, la dirección, la ciudad, el teléfono y el correo que el usuario guardó una vez en Mi empresa, solo en las casillas inequívocas del proponente y diciendo qué escribió, qué dejó en blanco y por qué.
 
 > RESUELTO el 27-sep-2026 por «El veredicto en las palabras del dueño: «Puede ir solo», «Necesita socio» con cuál, y «No alcanza» con su porqué (27-sep-2026)» · el dueño pidió seguir con él; se cambiaron las palabras y el porqué, no las reglas de alcance.
-> PENDIENTE · formatos que HOY no se llenan, medidos en 13 reales: los que ponen el dato entre corchetes («[Nombre del representante legal…]», compromiso anticorrupción, Mipyme), los de capacidad financiera («Proponente:» es a veces la persona y no la empresa) y el documento de consorcio (lleva los datos de cada integrante). Llenarlos exige otra regla por tipo de formato, con su propia prueba.
+> RESUELTO el 5-nov-2026 por «La plantilla de Colombia Compra completa y el .zip con todo lo que se entrega (5-nov-2026)» · los corchetes de los formatos tipo (los del proponente, los de la entidad y las X de la carta) ya se llenan con frases exactas; la capacidad financiera y el documento de consorcio pasan al PENDIENTE de esa sección.
 
 **No deshace la decisión del 7-sep («datos, no formato», M-COMP-07).** Aquella prohibía REPRODUCIR de memoria un formato
 oficial, porque sería inventar una norma. Aquí no se reproduce nada: se escribe en el archivo real que la entidad publicó
@@ -21635,3 +21635,58 @@ En una línea: «Datos para los formatos del pliego» pide además la ciudad de 
   - La ciudad salía duplicada.
 - **La cerradura:** «unidad FORMATOS DE LA ENTIDAD» y «unidad revisor de la oferta» (la imagen viaja en cada formato, la de más de 400 KB no sale, la hoja dice dónde quedó). Se corrieron 34 mutaciones y todas quedan cazadas: las que sobrevivieron una vuelta se cerraron con pruebas nuevas.
 - **Sin verificar:** que Word (no LibreOffice ni python-docx) abra el documento con la firma; y la firma sobre un formato real de un proceso de producción armado desde la pantalla.
+
+### La plantilla de Colombia Compra completa y el .zip con todo lo que se entrega (5-nov-2026)
+
+En una línea: el .zip de la oferta trae TODOS los formatos que se entregan (los de Word llenos y los demás byte a byte, tal como los publicó la entidad), y el llenado completa los corchetes de los formatos tipo con lo que publica SECOP II de la entidad y con los datos del proponente, marca las X de las declaraciones que el usuario guardó y nunca firma solo un ofrecimiento de puntaje.
+> PENDIENTE · siguen sin llenarse solos: la composición accionaria de la carta (los accionistas de cada sociedad), la capacidad financiera (Formato 4), el documento de conformación del consorcio (Formato 2) y los formatos que en un consorcio presenta cada integrante (seguridad social, Mipyme, datos personales), que hoy llevan solo lo de la entidad; los Excel (Formato 3 de experiencia, Formato 5 de capacidad residual, Formulario 1) van tal cual. Cada uno pide su regla y su prueba; el dueño decide cuál sigue.
+
+- **El encargo.** El dueño probó el .zip en «ADECUACIÓN Y MANTENIMENTOS DE CENTROS DE VIDA PARA EL ADULTO MAYOR…» (CO1.REQ.11246436, Alcaldía de Cartagena, formato tipo ISocialMenCV1) y «solo me descargó ese»: la carta, llena a medias. Pidió que todo salga «tal cual el formato que expide la entidad, sin modificatorios», porque cree que modificarlo es motivo de rechazo, y que el usuario «no tenga que hacer nada más que revisar». Por ahora, con sus datos y los de sus consorcios 1A y GR.
+- **Lo que dice el Documento Base del tipo (ISocialMenCV1, copia del corpus; el pliego de Cartagena no se leyó):**
+  - La ENTIDAD no puede modificar los formatos, salvo lo que va «en corchetes y resaltado en gris». El proponente debe diligenciarlos y llenar «todos los espacios en blanco».
+  - Las causales de rechazo son solo las de su lista.
+  - Modificar un formato es causal de rechazo solo en el Formulario 1 (ítems, descripción, unidades o cantidades).
+  - También son causales las tachaduras o enmendaduras no salvadas en un documento habilitante o de puntaje (las de lo habilitante se pueden subsanar) y la propuesta condicionada.
+  - Por eso la regla aquí es la del lado seguro: se escribe solo en los espacios y en los corchetes; el texto de la entidad no se toca. Lo único que se quita es la alternativa «o [Nombre del Proponente- persona natural]» cuando el proponente no lo es, como hizo el dueño en su carta de Cali.
+- **Qué entra al .zip** (`formatosParaEntregar`): de los documentos que el servidor clasifica como formato, los que se entregan (formatos, formularios, proformas, cartas, pacto, anexos numerados). No entran la minuta, el anexo técnico, el glosario, el cronograma, las matrices ni el documento base. Los de Word se llenan. Los que no se llenan, y los Excel y PDF, van con sus bytes por `formato: "original"` de `op=descargar` (ZIP o PDF, con el tope de la respuesta). La hoja LEAME dice qué falta escribir en cada uno.
+- **El llenado de la plantilla** (`completarPlantilla`, después de `llenarXml`, nunca en el documento del consorcio). Solo frases exactas, medidas en el censo de corchetes de 94 formatos tipo:
+  - **De la entidad, con lo de SECOP II:**
+    - «[NOMBRE DE LA ENTIDAD]» (210 veces en el censo) y «[Incluir número del Proceso de Contratación]» (196).
+    - «[Ciudad]», solo en el encabezado, tras «Señores».
+    - El objeto, solo en el «Objeto:» vacío que está a lo sumo tres renglones bajo la REFERENCIA y va seguido del lote o del saludo. Va entero y sale de la descripción del procedimiento; si pasa de 600 caracteres no se escribe, porque cortado sería peor.
+    - `fotoDe` guarda ahora `referencia`, `ciudad_entidad` y `objeto`.
+    - «[Dirección de la Entidad]» no se sabe y queda en blanco.
+    - La hoja manda a comparar con el pliego el nombre de la entidad, el número del proceso y el objeto.
+  - **Del proponente, si no es persona natural** (su frase es otra):
+    - el representante y el nombre del proponente. Los campos de Word (MACROBUTTON) cuyo texto es un corchete se vuelven ese mismo texto, con su letra, ANTES de llenar. Lo que se ve no cambia: el de los formatos 7, 12 y 14 se llena, y el que no se llena se lista;
+    - «o [Nombre del representante del Proponente Plural]» como alternativa se quita;
+    - el bloque «Recibiré notificaciones en»;
+    - «Dirección de correo» seguida de «Correo electrónico», que es la postal;
+    - y «Telefax», con el teléfono.
+  - **Las X** de «El proponente es», «grupo empresarial» y «cotiza en bolsa», solo con el dato que el usuario guardó (tres listas nuevas en Mi empresa). El tipo de un consorcio sale de su nombre.
+  - El gris de la plantilla no se hereda.
+  - **Cada «Señores» abre una carta nueva**, y los datos se vuelven a escribir: el Formato 7 trae 7A, 7B y 7C.
+- **El campo AUTHOR de la plantilla se quita en lo que se llena.** La carta tipo trae junto a «Otro__» y en la casilla de la persona de contacto un campo AUTHOR «Nombre y Apellidos». LibreOffice, o Word al actualizar los campos, lo llena con el autor del archivo: en la carta de Cartagena, «Natalia Andrea Estupiñán Castro», el nombre de un tercero en una carta jurada. Visto al pasar la carta llena a PDF. En lo que va tal cual no se toca.
+- **La firma no se pone sola:**
+  - en un ofrecimiento (`ES_OFRECIMIENTO`: factor de calidad, industria nacional, sostenibilidad ambiental y social, desempate). Firmarlo compromete al proponente con algo que cuesta;
+  - en una declaración jurada de una condición (`ES_DECLARACION_DE_CONDICION`: Mipyme, emprendimiento de mujeres, discapacidad, población vulnerable). Si la condición se tiene lo sabe el dueño;
+  - en un documento donde solo se escribió lo de la entidad.
+- **Varias cartas en un mismo documento:** cada «Señores» vuelve a admitir los datos solo en los ofrecimientos, que traen varias cartas del MISMO proponente. En cualquier otro documento, una segunda carta puede ser la del revisor fiscal.
+- **La oferta económica va aparte:** «el precio jamás en la carpeta técnica» (`lib/guia_proceso`). Entra en la carpeta «4 Oferta economica - va en su propia seccion», tal como la publicó la entidad.
+- **Los formatos en Excel y PDF también entran:** el servidor lista como formato solo los Word, así que un Excel o un PDF entra por su nombre («Formato», «Formulario», «F3_…»). Un .doc o .xls antiguo (OLE2) también sale tal cual.
+- **Con un consorcio** se llenan con sus datos la carta y los ofrecimientos del proponente plural (el Documento Base pide que los diligencie el representante del plural). Los demás formatos llevan solo lo de la entidad, sin la X de «Consorcio»: los presenta cada integrante.
+- **Medido (5-nov-2026):**
+  - La carta de Cartagena sale completa. Quedan solo la dirección de la entidad, el lote, los folios reservados y la composición accionaria.
+  - En los 150 formatos del corpus, como consorcio y como persona jurídica, 98 se llenan.
+  - La firma cae solo en las 8 cartas de presentación, y el objeto en 171 encabezados.
+  - La revisión midió además, sobre el corpus, que el XML es válido en los 158 documentos y que no cambia el número de párrafos ni de tablas.
+- **Lo que tumbó la segunda revisión adversaria, cada cosa reproducida y con su cerradura en «unidad FORMATOS DE LA ENTIDAD» o «unidad revisor de la oferta»:**
+  - **ALTA.** La acreditación Mipyme salía firmada sola, en 8 formatos del corpus.
+  - El campo de Word «[Nombre del Proponente]» seguía a la vista delante del nombre.
+  - La persona de contacto quedaba pegada a un campo «[Nombre]».
+  - El objeto caía en la columna «OBJETO» de una tabla o debajo del que ya había escrito la entidad, y se cortaba a 200 caracteres.
+  - El Formato 12 de sostenibilidad quedaba fuera del .zip («técnico») y la oferta económica entraba con lo técnico.
+  - Los Excel nunca entraban.
+  - La X de «Consorcio» se marcaba en lo de cada integrante.
+  - La X se comía el espacio que seguía.
+  - Un .doc antiguo daba 415, y el «original» con `desde` daba un trozo.
