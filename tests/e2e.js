@@ -54857,6 +54857,122 @@ async function main() {
     console.log(`  · medir el uso: siete acciones por perfil y mes de Colombia · espera acotada (${Date.now() - t0} ms la corrida) · guardar y «Me presenté» cuentan al llegar · op=uso con credencial, piso declarado`);
   }
 
+  bqPresentado: { if (!corre("unidad con qué se presenta y quitar un proceso")) break bqPresentado;
+    /* CON QUÉ SE PRESENTA Y QUITAR UN PROCESO (5-nov-2026, encargo del dueño). Ha hecho manifestaciones con dos consorcios
+       distintos (Helder 90 % con Génesis o con PRODIAC 10 %): cada proceso guardado dice con cuál se presenta, Mis
+       procesos filtra por eso, y la guía se calcula con ese consorcio. Quitar un proceso, por ahora, desde el expediente.
+       Con el router REAL sobre el Redis simulado y las funciones REALES de la pantalla. */
+    const routerP = require("../api/perfil.js");
+    const C = require("../lib/consorcio.js");
+    const S = require("../lib/seguimiento.js");
+    const K = require("../public/casillero.js");
+    const X = require("../public/expediente.js");
+    const seg = (qs, opts = {}) => invocar(routerP, `/api/perfil?op=seguimiento${qs}`, CAB_TOKEN, opts);
+    const PERF = "helder";
+    const ids = ["CO1.PRES.1", "CO1.PRES.2", "CO1.PRES.3"];
+    for (const id of ids) await seg(`&perfil=${PERF}&id=${encodeURIComponent(id)}`, { metodo: "DELETE" });
+    const c1a = await C.guardarConsorcio(redis, { id: "cons_infra1a", nombre: "CONSORCIO INFRAESTRUCTURA 1A", integrantes: [{ perfilId: "helder", participacion: 90 }, { perfilId: "genesis", participacion: 10 }] });
+    const cgr = await C.guardarConsorcio(redis, { id: "cons_infragr", nombre: "CONSORCIO INFRAESTRUCTURA GR", integrantes: [{ perfilId: "helder", participacion: 90 }, { perfilId: "prodiac", participacion: 10 }] });
+    assert.ok(c1a && cgr, "los dos consorcios del dueño, sembrados como los guarda Mi empresa");
+    const foto = (n) => ({ nombre: `OBRA ${n}`, entidad: "ALCALDÍA DE PRUEBA", departamento_entidad: "Tolima", precio_base: "800000000" });
+    for (const [i, id] of ids.entries()) assert.strictEqual((await seg("", { metodo: "POST", body: { perfil: PERF, id, estado: "interesa", foto: foto(i) } })).status, 200);
+    // elegir: un consorcio suyo, él solo, y un valor que no es ninguno (inerte, se conserva lo que había y se dice)
+    const r1 = await seg("", { metodo: "POST", body: { perfil: PERF, id: ids[0], presentado_con: "cons_infra1a" } });
+    assert.ok(r1.status === 200 && r1.cuerpo.guardado.presentado_con === "cons_infra1a", `se guarda el consorcio elegido: ${JSON.stringify(r1.cuerpo).slice(0, 200)}`);
+    assert.strictEqual((await seg("", { metodo: "POST", body: { perfil: PERF, id: ids[1], presentado_con: "helder" } })).cuerpo.guardado.presentado_con, "helder", "o él solo");
+    const rMal = await seg("", { metodo: "POST", body: { perfil: PERF, id: ids[0], presentado_con: "cons_noexiste" } });
+    assert.ok(rMal.status === 200 && rMal.cuerpo.guardado.presentado_con === "cons_infra1a" && rMal.cuerpo.presentado_con_no_valido === true && /ya no existe/.test(rMal.cuerpo.aviso),
+      `un consorcio que no existe es inerte y se dice: ${JSON.stringify(rMal.cuerpo).slice(0, 300)}`);
+    assert.strictEqual((await seg("", { metodo: "POST", body: { perfil: PERF, id: ids[1], estado: "preparando" } })).cuerpo.guardado.presentado_con, "helder", "cambiar la etapa no borra con qué se presenta");
+    /* SOLO UN CONSORCIO SUYO (revisión adversaria): Génesis no puede elegir el de Helder + PRODIAC, ni lo ve en la lista */
+    await seg("", { metodo: "POST", body: { perfil: "genesis", id: "CO1.PRES.G", estado: "interesa", foto: foto(9) } });
+    const ajeno = await seg("", { metodo: "POST", body: { perfil: "genesis", id: "CO1.PRES.G", presentado_con: "cons_infragr" } });
+    assert.ok(ajeno.cuerpo.presentado_con_no_valido === true && !ajeno.cuerpo.guardado.presentado_con, `un consorcio del que no hace parte es inerte: ${JSON.stringify(ajeno.cuerpo).slice(0, 200)}`);
+    assert.ok(ajeno.cuerpo.presentado_con_no_valido && (await seg("", { metodo: "POST", body: { perfil: "genesis", id: "CO1.PRES.G", presentado_con: "cons_infra1a" } })).cuerpo.guardado.presentado_con === "cons_infra1a", "el suyo sí");
+    assert.deepStrictEqual((await seg("&perfil=genesis")).cuerpo.consorcios.map((c) => c.id), ["cons_infra1a"], "y la lista solo trae los consorcios de los que hace parte");
+    await seg("&perfil=genesis&id=CO1.PRES.G", { metodo: "DELETE" });
+    // la lista: el campo, y los consorcios para elegir (nombre e integrantes, ninguna cifra financiera)
+    const lista = (await seg(`&perfil=${PERF}`)).cuerpo;
+    const de = (id) => lista.procesos.find((x) => x.id === id);
+    assert.deepStrictEqual(ids.map((id) => de(id).presentado_con), ["cons_infra1a", "helder", null], "la lista dice con qué se presenta cada uno; sin elegir, null");
+    assert.deepStrictEqual(lista.consorcios.map((c) => c.nombre), ["CONSORCIO INFRAESTRUCTURA 1A", "CONSORCIO INFRAESTRUCTURA GR"], "y los consorcios para elegir");
+    assert.deepStrictEqual(lista.consorcios[0].integrantes, [{ perfil: "helder", participacion: 90 }, { perfil: "genesis", participacion: 10 }]);
+    assert.ok(!/liquidez|patrimonio|capacidad/i.test(JSON.stringify(lista.consorcios)), "la lista de consorcios no lleva cifras financieras");
+    // el expediente: la guía se calcula con el consorcio elegido
+    const e1 = (await seg(`&perfil=${PERF}&expediente=${ids[0]}`)).cuerpo;
+    assert.ok(e1.proceso.perfil_de_la_guia === "cons_infra1a" && e1.proceso.guia && e1.proceso.guia.perfil === "cons_infra1a",
+      `la guía del proceso se calcula con el consorcio elegido: ${JSON.stringify({ pg: e1.proceso.perfil_de_la_guia, g: e1.proceso.guia && e1.proceso.guia.perfil })}`);
+    const e2 = (await seg(`&perfil=${PERF}&expediente=${ids[2]}`)).cuerpo;
+    assert.ok(e2.proceso.guia && e2.proceso.guia.perfil === PERF && !e2.proceso.perfil_de_la_guia, "sin elegir, la guía es la del perfil de la barra, como siempre");
+    // borrado el consorcio en Mi empresa: la guía vuelve al perfil de la barra y el expediente lo dice
+    await C.borrarConsorcio(redis, "cons_infra1a");
+    const e1b = (await seg(`&perfil=${PERF}&expediente=${ids[0]}`)).cuerpo;
+    assert.ok(e1b.proceso.presentado_con_caducado === true && e1b.proceso.guia.perfil === PERF, `un consorcio borrado no tumba el expediente: ${JSON.stringify({ c: e1b.proceso.presentado_con_caducado, g: e1b.proceso.guia && e1b.proceso.guia.perfil })}`);
+    assert.ok(/El consorcio elegido ya no existe en Mi empresa: la guía se calculó con su perfil/.test(X.htmlCabecera(e1b.proceso, { consorcios: [], perfilActual: { id: PERF, nombre: "Helder" } })), "y la cabecera lo dice");
+    await C.guardarConsorcio(redis, { id: "cons_infra1a", nombre: "CONSORCIO INFRAESTRUCTURA 1A", integrantes: [{ perfilId: "helder", participacion: 90 }, { perfilId: "genesis", participacion: 10 }] });
+    // sin elegir = null al vaciarlo
+    assert.strictEqual((await seg("", { metodo: "POST", body: { perfil: PERF, id: ids[1], presentado_con: "" } })).cuerpo.guardado.presentado_con, undefined, "vaciarlo lo deja sin elegir");
+    await seg("", { metodo: "POST", body: { perfil: PERF, id: ids[1], presentado_con: "cons_infragr" } });
+
+    // LA PANTALLA: el filtro, los chips, la etiqueta de la fila y el selector de la cabecera (funciones reales)
+    const ps = (await seg(`&perfil=${PERF}`)).cuerpo.procesos.filter((x) => ids.includes(x.id));
+    assert.deepStrictEqual(K.filtrar(ps, { presentado: "cons_infragr" }).map((x) => x.id), [ids[1]], "el filtro por un consorcio");
+    assert.deepStrictEqual(K.filtrar(ps, { presentado: "sin" }).map((x) => x.id), [ids[2]], "el filtro «sin elegir»");
+    assert.strictEqual(K.filtrar(ps, { presentado: "todo" }).length, 3, "«todos»");
+    const opc = [{ id: PERF, nombre: "Helder (solo)" }, { id: "cons_infra1a", nombre: "CONSORCIO INFRAESTRUCTURA 1A" }, { id: "cons_infragr", nombre: "CONSORCIO INFRAESTRUCTURA GR" }];
+    const chips = K.htmlPresentados(opc, ps, { activa: "cons_infragr" }).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
+    assert.ok(/Se presenta con/.test(chips) && /CONSORCIO INFRAESTRUCTURA 1A \(1\)/.test(chips) && /CONSORCIO INFRAESTRUCTURA GR \(1\)/.test(chips) && /Sin elegir \(1\)/.test(chips) && /Todos \(3\)/.test(chips), `los chips con cuántos tiene cada uno: ${chips}`);
+    assert.ok(/aria-pressed="true" data-cas-presentado="cons_infragr"/.test(K.htmlPresentados(opc, ps, { activa: "cons_infragr" })), "el activo se marca");
+    assert.strictEqual(K.htmlPresentados([], ps.map((x) => ({ ...x, presentado_con: null }))), "", "sin consorcios ni ninguno elegido, no se pinta nada");
+    const fila = K.htmlFila(ps.find((x) => x.id === ids[1]), { nombresPresentado: { cons_infragr: "CONSORCIO INFRAESTRUCTURA GR" } });
+    assert.ok(/Se presenta con: <span class="font-medium">CONSORCIO INFRAESTRUCTURA GR<\/span>/.test(fila), "la fila dice con qué se presenta");
+    assert.ok(!/Se presenta con/.test(K.htmlFila(ps.find((x) => x.id === ids[2]), {})), "sin elegir, la fila no dice nada");
+    const cab = X.htmlCabecera(ps.find((x) => x.id === ids[1]), { consorcios: [{ id: "cons_infra1a", nombre: "CONSORCIO INFRAESTRUCTURA 1A", integrantes: [{ perfil: "helder", participacion: 90 }, { perfil: "genesis", participacion: 10 }] }, { id: "cons_infragr", nombre: "CONSORCIO INFRAESTRUCTURA GR", integrantes: [] },
+      { id: "cons_991", nombre: "C 99-1", integrantes: [{ perfil: "helder", participacion: 99 }, { perfil: "pics", participacion: 1 }] }, { id: "cons_995", nombre: "C 99,5", integrantes: [{ perfil: "helder", participacion: 99.5 }, { perfil: "pics", participacion: 0.5 }] }], perfilActual: { id: PERF, nombre: "Helder" } });
+    assert.ok(/C 99-1 · 99 % \+ 1 %/.test(cab) && /C 99,5 · 99,5 % \+ 0,5 %/.test(cab), `la participación tal cual (un 1 % salía «100 %»): ${cab.slice(cab.indexOf("C 99-1"), cab.indexOf("C 99-1") + 120)}`);
+    assert.ok(/data-seg-presentado="CO1\.PRES\.2"/.test(cab) && /<option value="cons_infragr" selected>CONSORCIO INFRAESTRUCTURA GR<\/option>/.test(cab) && /CONSORCIO INFRAESTRUCTURA 1A · 90 % \+ 10 %/.test(cab) && /Helder \(solo\)/.test(cab),
+      `la cabecera trae el selector con los consorcios y sus porcentajes: ${cab.slice(cab.indexOf("Se presenta con"), cab.indexOf("Se presenta con") + 700)}`);
+
+    // QUITAR UN PROCESO (TEMPORAL): el botón en la cabecera, con el aviso de lo que se pierde, y el DELETE real
+    assert.strictEqual(X.QUITAR_PROCESOS_TEMPORAL, true, "el botón temporal de quitar está encendido (encargo del 5-nov-2026: se apaga cuando el dueño lo diga)");
+    assert.ok(/data-exp-quitar="CO1\.PRES\.2"/.test(cab) && /no se puede deshacer/.test(cab) && /data-exp-quitar-confirmar="CO1\.PRES\.2"/.test(cab), "la cabecera trae el botón, el aviso y la confirmación");
+    const q = await seg(`&perfil=${PERF}&id=${ids[2]}`, { metodo: "DELETE" });
+    assert.ok(q.status === 200 && q.cuerpo.quitado === true && !(await seg(`&perfil=${PERF}`)).cuerpo.procesos.some((x) => x.id === ids[2]), "el proceso se quita de Mis procesos");
+    // que «Sí, quitarlo» mande el DELETE lo EJECUTA «unidad revisor de la oferta» (g-ter)
+    for (const id of ids) await seg(`&perfil=${PERF}&id=${encodeURIComponent(id)}`, { metodo: "DELETE" });
+    await C.borrarConsorcio(redis, "cons_infra1a"); await C.borrarConsorcio(redis, "cons_infragr");
+    /* EL .ZIP PARA SUBIR A SECOP II (5-nov-2026): se arma DE VERDAD con el escritor de public/xlsx.js y se vuelve a abrir con lib/docx */
+    {
+      const Dz = require("../lib/docx.js");
+      const zipW = require("../public/xlsx.js").escribirZip;
+      const word = zipW([{ nombre: "word/document.xml", datos: new TextEncoder().encode("<w:document/>") }]);
+      const pdf = new TextEncoder().encode("%PDF-1.4 cuerpo del RUP");
+      const z = X.armarZipOferta({ proceso: { id: "CO1.REQ.123", nombre: "MEJORAMIENTO DE VÍAS", entidad: "ALCALDÍA DE ALVARADO" }, conQuien: "CONSORCIO INFRAESTRUCTURA GR",
+        formatos: [{ nombre: "FORMATO 1 CARTA DE PRESENTACIÓN.docx", bytes: word, resumen: { llenados: [{ campo: "razon_social", nombre: "Nombre o razón social", renglon: "Nombre del proponente: CONSORCIO INFRAESTRUCTURA GR" }], sin_dato: [{ nombre: "NIT" }] } },
+          { nombre: "FORMATO 3 EXPERIENCIA.docx", bytes: null, resumen: null, error: "no tiene casillas del proponente" }],
+        suyos: [{ nombre: "RUP Helder.pdf", bytes: pdf }, { nombre: "RUP Helder.pdf", bytes: pdf }, { nombre: "vacio.pdf", bytes: new Uint8Array(0) }], aMano: ["ANEXO 5 MATRIZ.xlsx"], hoy: "2026-11-05" },
+        { escribirZip: zipW, frasesLlenado: X.frasesLlenado });
+      const buf = Buffer.from(z.bytes);
+      assert.deepStrictEqual(z.archivos, ["LEAME - revise antes de subir.txt", "1 Formatos llenos/01 FORMATO 1 CARTA DE PRESENTACION (lleno).docx", "2 Sus documentos/01 RUP Helder.pdf", "2 Sus documentos/02 RUP Helder.pdf"],
+        `el .zip trae la hoja, el formato lleno (sin tildes en el nombre) y sus documentos, numerados: ${JSON.stringify(z.archivos)}`);
+      assert.strictEqual(z.nombre, "Oferta CO1.REQ.123.zip");
+      const leame = Dz.entradaZip(buf, "LEAME - revise antes de subir.txt");
+      const tL = leame.datos ? leame.datos.toString("utf8") : String(leame.motivo);
+      assert.ok(/Se presenta con: CONSORCIO INFRAESTRUCTURA GR/.test(tL) && /sin firma/.test(tL) && /FORMATO 3 EXPERIENCIA\.docx: no tiene casillas/.test(tL) && /ANEXO 5 MATRIZ\.xlsx: no es un documento de Word/.test(tL)
+        && /«Nombre del proponente: CONSORCIO INFRAESTRUCTURA GR»/.test(tL) && /Quedó en blanco porque no lo ha guardado en Mi empresa: NIT/.test(tL) && /No firma ningún documento/.test(tL) && /No sube nada a SECOP II/.test(tL) && /NO ENTRÓ «vacio\.pdf»: el archivo está vacío/.test(tL),
+        `la hoja dice con quién, qué se llenó, qué falta llenar a mano y lo que el archivo no hace: ${tL.slice(0, 900)}`);
+      // un nombre largo conserva su extensión, y uno sin letras legibles queda «documento N»
+      const zN = X.armarZipOferta({ proceso: { id: "X" }, suyos: [{ nombre: `${"Certificado de existencia y representación legal ".repeat(4)}vigente noviembre.pdf`, bytes: pdf }, { nombre: "Документ.pdf", bytes: pdf }] }, { escribirZip: zipW });
+      assert.ok(/\.pdf$/.test(zN.archivos[1]) && zN.archivos[1].length < 140 && zN.archivos[2] === "2 Sus documentos/02 documento 2.pdf", `nombres dentro del .zip: ${JSON.stringify(zN.archivos)}`);
+      const pdfDentro = Dz.entradaZip(buf, "2 Sus documentos/01 RUP Helder.pdf");
+      assert.ok(pdfDentro.datos && Buffer.from(pdfDentro.datos).equals(Buffer.from(pdf)), "sus documentos van byte a byte");
+      const secZ = X.htmlZipOferta({ id: "CO1.REQ.123", guia: { documentos: { formatos: [{ id_documento: "1", nombre: "FORMATO 1.docx", url: "https://community.secop.gov.co/x" }] } } }, { conQuien: "CONSORCIO INFRAESTRUCTURA GR" });
+      assert.ok(/El \.zip para subir a SECOP II/.test(secZ) && /Llena el formato de Word de la entidad/.test(secZ) && /CONSORCIO INFRAESTRUCTURA GR/.test(secZ) && /sin firma/.test(secZ) && /data-exp-zip="CO1\.REQ\.123"/.test(secZ) && /type="file" multiple/.test(secZ),
+        `la sección del expediente dice con quién se llena, que queda sin firma, y trae el botón y la elección de archivos: ${secZ.slice(0, 500)}`);
+      // que el .zip pida cada formato con el perfil con que se presenta lo EJECUTA «unidad revisor de la oferta» (g-ter)
+    }
+    console.log("· unidad con qué se presenta y quitar un proceso: el consorcio por proceso (inerte si no existe, se conserva al cambiar la etapa), la lista de consorcios sin cifras, la guía con ese consorcio y el aviso si se borró, el filtro, los chips, la fila y el selector reales, y el botón temporal de quitar");
+  }
   bq36: { if (!corre("unidad CASILLERO DE MIS PROCESOS")) break bq36;
     const routerPerfilCas = require("../api/perfil.js");
     const S = require("../lib/seguimiento.js");
@@ -57211,8 +57327,30 @@ async function main() {
         assert.ok(vacio.status === 409 && vacio.cuerpo.sin_datos, "unos datos guardados en blanco no son datos: dice dónde escribirlos");
         const porNombreF = await pedirF({ perfil: "fmt_prueba", nombre: "Formato 2 Conformacion de proponente plural.docx" });
         assert.ok(porNombreF.status === 200 && porNombreF.cuerpo.base64 === null && porNombreF.cuerpo.hay_consorcio === true, `el nombre del archivo llega al llenado: ${JSON.stringify(porNombreF.cuerpo).slice(0, 200)}`);
-        const cons = await pedirF({ perfil: "cons_ab" });
-        assert.ok(cons.status === 400 && /una sola/.test(cons.cuerpo.error), "un perfil de consorcio no llena con los datos de nadie");
+        /* UN CONSORCIO, SOLO CON SUS PROPIOS DATOS (5-nov-2026, encargo del dueño: el .zip de la oferta con el consorcio con que se
+           presenta). Sin datos guardados PARA ese consorcio, 409 con dónde escribirlos; nunca los de un integrante. «juntos», fuera */
+        const Cf = require("../lib/consorcio.js");
+        const crearRedisF = require("../lib/redis.js").crearRedis;
+        assert.strictEqual((await pedirF({ perfil: "cons_noexiste" })).status, 404, "un consorcio que no existe en Mi empresa no llena (revisión adversaria)");
+        await Cf.guardarConsorcio(crearRedisF({}), { id: "cons_prueba01", nombre: "CONSORCIO INFRAESTRUCTURA 1A", integrantes: [{ perfilId: "helder", participacion: 90 }, { perfilId: "genesis", participacion: 10 }] });
+        const cons = await pedirF({ perfil: "cons_prueba01", nombre: "FORMATO 1 CARTA DE PRESENTACION.docx" });
+        assert.ok(cons.status === 409 && cons.cuerpo.sin_datos && /este consorcio/.test(cons.cuerpo.error) && /De quién son estos datos/.test(cons.cuerpo.error), `un consorcio sin datos propios no llena con los de nadie y dice dónde escribirlos: ${JSON.stringify(cons.cuerpo)}`);
+        const juntos = await pedirF({ perfil: "juntos" });
+        assert.ok(juntos.status === 400 && /una sola/.test(juntos.cuerpo.error), "el perfil «juntos» (50/50 retirado) sigue sin llenar");
+        await invocarPost(require("../api/perfil.js"), "/api/perfil?op=empresa-datos", { perfil: "cons_prueba01", datos: { razon_social: "CONSORCIO INFRAESTRUCTURA 1A", representante_legal: "HELDER GUSTAVO RODRIGUEZ" } }, CAB_TOKEN);
+        const consOk = await pedirF({ perfil: "cons_prueba01", nombre: "FORMATO 1 CARTA DE PRESENTACION.docx" });
+        assert.ok(consOk.status === 200 && Dx.textoDeDocx(Buffer.from(consOk.cuerpo.base64, "base64")).texto === "NIT: ______\nNombre del Representante Legal: HELDER GUSTAVO RODRIGUEZ",
+          `la carta de presentación, con los datos del consorcio (sin NIT, que el consorcio no tiene todavía, queda en blanco): ${JSON.stringify(consOk.cuerpo).slice(0, 300)}`);
+        /* LO QUE FIRMA CADA INTEGRANTE NO SE LLENA CON EL CONSORCIO (revisión adversaria, reproducido): seguridad social, Mipyme,
+           anticorrupción no dicen «consorcio» en el título y recibían su nombre y su representante */
+        const deCada = await pedirF({ perfil: "cons_prueba01", nombre: "FORMATO 6 PAGOS DE SEGURIDAD SOCIAL Y APORTES.docx" });
+        assert.ok(deCada.status === 200 && deCada.cuerpo.base64 === null && deCada.cuerpo.de_cada_integrante === true && /cada integrante con sus propios datos/.test(deCada.cuerpo.motivo),
+          `con un consorcio, un formato que no es la carta de presentación no se llena: ${JSON.stringify(deCada.cuerpo).slice(0, 300)}`);
+        assert.ok((await pedirF({ perfil: "fmt_prueba", nombre: "FORMATO 6 PAGOS DE SEGURIDAD SOCIAL Y APORTES.docx" })).cuerpo.base64, "con una empresa sola, ese mismo formato sí se llena, como siempre");
+        // borrar el consorcio se lleva sus datos para los formatos
+        await Cf.borrarConsorcio(crearRedisF({}), "cons_prueba01");
+        assert.strictEqual(await crearRedisF({}).get("config:empresa:cons_prueba01"), null, "borrar el consorcio borra sus datos para los formatos");
+        assert.strictEqual((await pedirF({ perfil: "cons_prueba01", nombre: "FORMATO 1 CARTA DE PRESENTACION.docx" })).status, 404, "y ya no llena");
         const ok = await pedirF({ perfil: "fmt_prueba" });
         assert.strictEqual(ok.status, 200, JSON.stringify(ok.cuerpo).slice(0, 300));
         const lleno = Buffer.from(ok.cuerpo.base64, "base64");
@@ -63285,14 +63423,14 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
         body: nodo(null), documentElement: nodo(null), readyState: "complete", visibilityState: "visible" };
       ctx.window = ctx; ctx.self = ctx; ctx.globalThis = ctx;
       vm.createContext(ctx);
-      const exponer = ["abrirPreciosDesdeTarjeta", "guardados", "qApuDelExpediente", "techoDesdeGuia", "seriedadDesdeGuia", "pctSeriedadVigente", "calcularRentabilidad", "pintarRentabilidad", "restituirContextoProceso", "leerConfig", "qApu", "ofertaParaRevision", "filasDesdePliego", "reiniciarEditorParaProceso", "precargarDesdeURL", "revisarOferta", "pintarTabla", "pintarIa", "precargarTrasCatalogo", "totalVisibleDeFila", "abrirEditorConProceso"];
+      const exponer = ["abrirPreciosDesdeTarjeta", "guardados", "qApuDelExpediente", "techoDesdeGuia", "seriedadDesdeGuia", "pctSeriedadVigente", "calcularRentabilidad", "pintarRentabilidad", "armarZipDelProceso", "restituirContextoProceso", "leerConfig", "qApu", "ofertaParaRevision", "filasDesdePliego", "reiniciarEditorParaProceso", "precargarDesdeURL", "revisarOferta", "pintarTabla", "pintarIa", "precargarTrasCatalogo", "totalVisibleDeFila", "abrirEditorConProceso"];
       for (const f of orden) {
         let src = fs.readFileSync(pub(f), "utf8");
         if (f === "app.js") {
           const i = src.lastIndexOf("})();"); assert.ok(i > 0, "app.js sin el cierre de su IIFE");
           src = `${src.slice(0, i)}window.__cerraduraRO = { ${exponer.map((n) => `${n}: typeof ${n} === "undefined" ? undefined : ${n}`).join(", ")},
             leer: () => ({ filas, ultimoCalculo, modalidad: modalidadProceso, cdp: cuantiaDelPliego }),
-            fijar: (o) => { if ("filas" in o) filas = o.filas; if ("ultimoCalculo" in o) ultimoCalculo = o.ultimoCalculo; if ("importacion" in o) importacion = o.importacion; if ("modalidad" in o) modalidadProceso = o.modalidad; } };\n${src.slice(i)}`;
+            fijar: (o) => { if ("filas" in o) filas = o.filas; if ("ultimoCalculo" in o) ultimoCalculo = o.ultimoCalculo; if ("importacion" in o) importacion = o.importacion; if ("modalidad" in o) modalidadProceso = o.modalidad; if ("segExpDatos" in o) { segExpDatos = o.segExpDatos; segExpId = o.segExpDatos && o.segExpDatos.proceso ? o.segExpDatos.proceso.id : null; } } };\n${src.slice(i)}`;
         }
         if (f === "pliego.js") {
           /* el lector presta su documento vivo y su rasterizado: sin pdf.js ni lienzo aquí,
@@ -63919,6 +64057,41 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
         okRO(T.pctSeriedadVigente() === null, "(g-bis) tras abrir el borrador de otro proceso, volver a escribir el id de antes no revive su %");
         T.abrirEditorConProceso(T.qApu({ id_del_proceso: "CO1.UPN", cuantia_cop: 1348958930 })); T.precargarDesdeURL();
         okRO(T.pctSeriedadVigente() === null, "(g-bis) abrir el proceso sin la garantía de la guía no conserva la de antes");
+      }
+      /* (g-ter) EL .ZIP Y QUITAR UN PROCESO, EJECUTADOS (5-nov-2026; la revisión adversaria pidió que no fueran una regex sobre el
+         fuente): el .zip pide CADA formato con el perfil con que se presenta (el consorcio) y lo descarga; la confirmación de
+         quitar manda el DELETE */
+      {
+        const { F: T, ctx: C, disparar: disZ } = cargarFrontRO();
+        await asentarRO();
+        const pedidos = [], descargas = [];
+        const docxMin = require("../public/xlsx.js").escribirZip([{ nombre: "word/document.xml", datos: new TextEncoder().encode("<w:document/>") }]);
+        C.fetch = (url, cfg) => {
+          if (/op=descargar/.test(String(url))) { pedidos.push(JSON.parse(cfg.body)); return Promise.resolve(respuestaRO(200, { ok: true, formato: "llenar", base64: Buffer.from(docxMin).toString("base64"), llenados: [], sin_dato: [] })); }
+          if (/op=seguimiento/.test(String(url))) { pedidos.push({ url: String(url), metodo: cfg && cfg.method }); return Promise.resolve(respuestaRO(200, { ok: true, procesos: [], carpetas: [] })); }
+          return new Promise(() => {});
+        };
+        C.XLSXApu.descargar = (bytes, nombre, tipo) => descargas.push({ bytes, nombre, tipo });
+        const procZ = { id: "CO1.ZIP", perfil_de_la_guia: "cons_infragr1", proceso: { nombre: "OBRA", entidad: "ALCALDÍA" }, documentos: [],
+          guia: { documentos: { formatos: [{ id_documento: "1", nombre: "FORMATO 1 CARTA DE PRESENTACION.docx", url: "https://community.secop.gov.co/a" }, { id_documento: "2", nombre: "FORMATO 6.docx", url: "https://community.secop.gov.co/b" }] } } };
+        T.fijar({ segExpDatos: { ok: true, proceso: procZ, consorcios: [{ id: "cons_infragr1", nombre: "CONSORCIO INFRAESTRUCTURA GR", integrantes: [] }], hoy: "2026-11-05" } });
+        await T.armarZipDelProceso("CO1.ZIP");
+        okRO(pedidos.length === 2 && pedidos.every((b) => b.formato === "llenar" && b.perfil === "cons_infragr1"), `(g-ter) cada formato se pide con el consorcio con que se presenta: ${JSON.stringify(pedidos.map((b) => b.perfil))}`);
+        okRO(descargas.length === 1 && descargas[0].nombre === "Oferta CO1.ZIP.zip" && descargas[0].tipo === "application/zip", `(g-ter) y se descarga el .zip: ${JSON.stringify(descargas.map((d) => [d.nombre, d.tipo]))}`);
+        const zz = Buffer.from(descargas[0] ? descargas[0].bytes : []);
+        const leZ = require("../lib/docx.js").entradaZip(zz, "LEAME - revise antes de subir.txt");
+        okRO(leZ.datos && /Se presenta con: CONSORCIO INFRAESTRUCTURA GR/.test(leZ.datos.toString("utf8")), "(g-ter) con la hoja que dice con quién se presenta");
+        // quitar: la confirmación manda el DELETE del proceso
+        pedidos.length = 0;
+        const btnSi = { getAttribute: (k) => (k === "data-exp-quitar-confirmar" ? "CO1.ZIP" : null), disabled: false, textContent: "Sí, quitarlo" };
+        await disZ("tab-seguimiento", "click", { target: { closest: (sel) => (sel === "[data-exp-quitar-confirmar]" ? btnSi : null) } });
+        okRO(pedidos.some((x) => x.metodo === "DELETE" && /op=seguimiento/.test(x.url) && /id=CO1\.ZIP/.test(x.url)), `(g-ter) «Sí, quitarlo» manda el DELETE: ${JSON.stringify(pedidos)}`);
+        // «Llenar con sus datos» de un formato suelto llena con el MISMO perfil que el .zip (revisión adversaria: dos botones, dos empresas)
+        T.fijar({ segExpDatos: { ok: true, proceso: procZ, consorcios: [], hoy: "2026-11-05" } });
+        pedidos.length = 0;
+        const btnLl = { getAttribute: (k) => ({ "data-seg-llenar": "https://community.secop.gov.co/a", "data-seg-llenar-nombre": "FORMATO 1 CARTA DE PRESENTACION.docx", "data-seg-llenar-n": "1" }[k] || null), disabled: false };
+        await disZ("tab-seguimiento", "click", { target: { closest: (sel) => (sel === "[data-seg-llenar]" ? btnLl : null) } });
+        okRO(pedidos.length === 1 && pedidos[0].perfil === "cons_infragr1", `(g-ter) el botón suelto llena con el perfil con que se presenta: ${JSON.stringify(pedidos.map((b) => b.perfil))}`);
       }
       /* (h) EL TECHO DESDE LA TARJETA DE LICITACIONES (17-oct-2026): «Calcular mi precio» de un proceso GUARDADO pide su
          guía (GET ?expediente=, solo lee) y arranca con el techo del pliego; sin guardar, como siempre; con la consulta

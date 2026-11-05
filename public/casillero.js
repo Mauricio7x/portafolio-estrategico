@@ -146,12 +146,16 @@
       ...((p.tareas || []).map((t) => t.texto)), p.palabras_suyas,
     ].filter(Boolean).join(" "));
   }
-  function filtrar(procesos, { texto = "", carpeta = CARPETA_TODO } = {}) {
+  /* CON QUÉ SE PRESENTA (5-nov-2026, encargo del dueño): «todo», «sin» (sin elegir) o el id del perfil o del consorcio */
+  const PRESENTADO_TODO = "todo", PRESENTADO_SIN = "sin";
+  function filtrar(procesos, { texto = "", carpeta = CARPETA_TODO, presentado = PRESENTADO_TODO } = {}) {
     const q = plano(texto).trim();
     const partes = q ? q.split(/\s+/) : [];
     return (procesos || []).filter((p) => {
       if (carpeta === CARPETA_SIN && p.carpeta) return false;
       if (carpeta !== CARPETA_TODO && carpeta !== CARPETA_SIN && p.carpeta !== carpeta) return false;
+      if (presentado === PRESENTADO_SIN && p.presentado_con) return false;
+      if (presentado !== PRESENTADO_TODO && presentado !== PRESENTADO_SIN && p.presentado_con !== presentado) return false;
       if (!partes.length) return true;
       const t = textoDe(p);
       return partes.every((x) => t.includes(x));
@@ -518,7 +522,7 @@
     return { texto: `$ ${miles(Math.round(n))}`, titulo: "Presupuesto oficial publicado en SECOP II" };
   }
 
-  function htmlFila(p, { hoy = null, estados = {} } = {}) {
+  function htmlFila(p, { hoy = null, estados = {}, nombresPresentado = null } = {}) {
     const pr = p.proceso || {};
     const s = senalDe(p);
     const dinero = presupuestoDelProceso(pr.presupuesto_cop);
@@ -537,6 +541,7 @@
       <span class="exp-fila-texto">
         <span class="exp-fila-titulo">${esc(pr.nombre || p.id)}</span>
         <span class="exp-fila-meta">${esc(pr.entidad || "Entidad no publicada")}${pr.departamento ? ` &middot; ${esc(pr.departamento)}` : ""}</span>
+        ${p.presentado_con ? `<span class="exp-fila-meta">Se presenta con: <span class="font-medium">${esc((nombresPresentado && nombresPresentado[p.presentado_con]) || "un consorcio que ya no existe en Mi empresa")}</span></span>` : ""}
       </span>
       <span class="exp-fila-etapa ${tono}">
         ${etapa ? `<span class="exp-fila-estado"><span class="exp-punto" aria-hidden="true">&#9679;</span>${esc(etapa)}</span>` : ""}
@@ -567,6 +572,20 @@
     }
     if (sueltos) filas.push(chip(activa === CARPETA_SIN, `Sin carpeta (${miles(sueltos)})`, `data-cas-carpeta="${CARPETA_SIN}"`));
     return filas.join("");
+  }
+
+  /* «Se presenta con»: los chips del filtro. `opciones` = [{id, nombre}] (él solo y sus consorcios); cada uno con cuántos
+     procesos tiene, «Sin elegir» si hay alguno sin elegir, y nada si no hay ningún consorcio ni ninguno elegido */
+  function htmlPresentados(opciones, procesos, { activa = PRESENTADO_TODO } = {}) {
+    const ps = procesos || [];
+    const cuenta = (id) => ps.filter((p) => p.presentado_con === id).length;
+    const sin = ps.filter((p) => !p.presentado_con).length;
+    const conAlguno = ps.some((p) => p.presentado_con);
+    if (!(opciones || []).length && !conAlguno) return "";
+    const filas = [chip(activa === PRESENTADO_TODO, `Todos (${miles(ps.length)})`, `data-cas-presentado="${PRESENTADO_TODO}"`)];
+    for (const o of opciones || []) filas.push(chip(activa === o.id, `${o.nombre} (${miles(cuenta(o.id))})`, `data-cas-presentado="${esc(o.id)}"`));
+    if (sin && conAlguno) filas.push(chip(activa === PRESENTADO_SIN, `Sin elegir (${miles(sin)})`, `data-cas-presentado="${PRESENTADO_SIN}"`));
+    return `<span class="cas-carpeta-rotulo">Se presenta con</span>${filas.join("")}`;
   }
 
   /* El panel para crear, cambiar de nombre y quitar carpetas. Va plegado: lo que
@@ -824,7 +843,7 @@
     TOPE_AVISOS, agruparAlertas, fraseAviso, htmlAlertas, fraseAlertas, enlacesDe, SVG_AVISO,
     VISTAS, ORDENES, AGRUPACIONES, CARPETA_TODO, CARPETA_SIN, POR_OMISION, CLAVE_PREFERENCIAS,
     leerPreferencias, guardarPreferencias, carpetaVigente,
-    filtrar, ordenar, agrupar, textoDe, plano,
+    filtrar, ordenar, agrupar, textoDe, plano, PRESENTADO_TODO, PRESENTADO_SIN, htmlPresentados,
     TIPOS_EVENTO, tipoDeEvento, eventosDe, agendaDe, filtrarAgenda, rotuloEvento, fuenteEvento, tonoPlazo,
     htmlEvento, htmlDiaAgenda, htmlMesAgenda, htmlTiposEvento, mesPorDefecto, diaPorDefecto,
     htmlCarpetas, htmlOrganizar, htmlCarpetaDe, htmlCuaderno, htmlTarea, htmlCabeceraGrupo, insigniaCuaderno, fraseTareas,

@@ -164,7 +164,11 @@
     return `<p class="exp-aviso-presupuesto" role="note"><strong>${esc(h.titulo)}.</strong> ${esc(h.texto)}${h.pagina != null ? ` <span class="exp-aviso-fuente">${esc(h.documento || "Pliego")}, pág. ${esc(h.pagina)}.</span>` : ""}</p>`;
   }
 
-  function htmlCabecera(p, { estados = {}, seccion = "resumen", conteos = {}, carpetas = [] } = {}) {
+  /* QUITAR UN PROCESO DE MIS PROCESOS, TEMPORAL (5-nov-2026, encargo del dueño: «solo habilitar esa función temporalmente,
+     luego quitarla»). El servidor siempre lo admitió (DELETE de op=seguimiento); lo que se habilita es el botón. Para
+     retirarlo: poner esto en false (la suite lo dice) y cerrar el PENDIENTE de la memoria. */
+  const QUITAR_PROCESOS_TEMPORAL = true;
+  function htmlCabecera(p, { estados = {}, seccion = "resumen", conteos = {}, carpetas = [], consorcios = [], perfilActual = null } = {}) {
     const pr = p.proceso || {};
     const etapa = estados[p.estado] || p.estado_etiqueta || "";
     const cifras = cifrasDe(p);
@@ -189,12 +193,24 @@
             <option value="">Sin carpeta</option>
             ${(carpetas || []).map((c) => `<option value="${esc(c.id)}"${p.carpeta === c.id ? " selected" : ""}>${esc(c.nombre)}</option>`).join("")}
           </select></label>
+        ${perfilActual ? `<label class="cas-carpeta-sel"><span class="cas-carpeta-rotulo">Se presenta con</span>
+          <select class="control-select cas-carpeta-select" data-seg-presentado="${esc(p.id)}" aria-label="Con qué perfil o consorcio se presenta a este proceso">
+            <option value="">Sin elegir</option>
+            <option value="${esc(perfilActual.id)}"${p.presentado_con === perfilActual.id ? " selected" : ""}>${esc(perfilActual.nombre)} (solo)</option>
+            ${(consorcios || []).map((c) => `<option value="${esc(c.id)}"${p.presentado_con === c.id ? " selected" : ""}>${esc(c.nombre)}${(c.integrantes || []).length && (c.integrantes || []).every((i) => Number.isFinite(Number(i.participacion)) && i.participacion !== null && i.participacion !== "") ? ` · ${esc(c.integrantes.map((i) => `${Number(i.participacion).toLocaleString("es-CO", { maximumFractionDigits: 2 })} %`).join(" + "))}` : ""}</option>`).join("")}
+            ${p.presentado_con && p.presentado_con !== perfilActual.id && !(consorcios || []).some((c) => c.id === p.presentado_con) ? `<option value="${esc(p.presentado_con)}" selected>Un consorcio que ya no existe en Mi empresa</option>` : ""}
+          </select></label>` : ""}
         ${secop
           ? `<a class="exp-boton exp-boton-suave exp-ir-secop" href="${esc(secop)}" target="_blank" rel="noopener noreferrer"
                title="Abre el proceso en SECOP II, en una pestaña nueva">Abrir en SECOP II<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7"/><path d="M9 7h8v8"/></svg></a>`
           : `<span class="exp-seccion-nota">La entidad no publicó el enlace a este proceso en SECOP II.</span>`}
       </div>
+      ${p.presentado_con_caducado ? `<p class="exp-seccion-nota">El consorcio elegido ya no existe en Mi empresa: la guía se calculó con su perfil. Ármelo de nuevo o elija otro.</p>` : ""}
       <p class="exp-seccion-nota" data-exp-etapa-mensaje="${esc(p.id)}" role="status"></p>
+      ${QUITAR_PROCESOS_TEMPORAL ? `<p class="exp-seccion-nota"><button type="button" class="exp-doc-enlace" data-exp-quitar="${esc(p.id)}">Quitar este proceso de Mis procesos</button></p>
+        <p class="exp-seccion-nota hidden" data-exp-quitar-aviso="${esc(p.id)}" role="alert">Se borran sus notas, su papeleo y lo que apuntó de este proceso, y no se puede deshacer.
+          <button type="button" class="exp-boton exp-boton-suave" data-exp-quitar-confirmar="${esc(p.id)}">Sí, quitarlo</button>
+          <button type="button" class="exp-doc-enlace" data-exp-quitar-cancelar="${esc(p.id)}">No, dejarlo</button></p>` : ""}
       <dl class="exp-cifras">
         ${cifras.map((c) => `<div class="exp-cifra${c.urgente ? " exp-cifra-urgente" : ""}"${c.titulo ? ` title="${esc(c.titulo)}"` : ""}>
           <dd class="exp-cifra-valor num">${cifraPartible(c.valor)}</dd><dt class="exp-cifra-rotulo">${esc(c.rotulo)}</dt></div>`).join("")}
@@ -392,7 +408,77 @@
     return out;
   }
 
-  function htmlDocumentos(p, { estadosDoc = {}, hoy = null, topes = {} } = {}) {
+  /* EL .ZIP PARA SUBIR A SECOP II (5-nov-2026, encargo del dueño): los formatos de Word de la entidad llenos con los datos
+     del perfil o del consorcio con que se presenta —SIN firma: el dueño eligió firmarlos él—, más los documentos que el
+     usuario elija de su computador, y una hoja con lo que se llenó y lo que falta. Se arma en el navegador: sus archivos
+     no salen del computador. Lo revisa el ingeniero antes de subirlo. `conQuien` = nombre de con qué se presenta. */
+  function htmlZipOferta(p, { conQuien = null } = {}) {
+    const llenables = documentosEntidad(p).filter((f) => f.origen === "entidad" && f.url && f.formato === "DOCX");
+    return `<section class="exp-seccion">
+        <h3 class="exp-seccion-titulo">El .zip para subir a SECOP II</h3>
+        <p class="exp-seccion-nota">Llena ${llenables.length === 1 ? "el formato de Word de la entidad" : llenables.length ? `los ${miles(llenables.length)} formatos de Word de la entidad` : "los formatos de Word de la entidad (todavía no hay ninguno encontrado)"} con los datos de <b>${esc(conQuien || "su empresa")}</b> y junta los documentos que usted elija de su computador. Los formatos quedan <b>sin firma</b>. Revíselo antes de subirlo. Sus archivos no salen de su computador.</p>
+        <label class="exp-campo"><span class="exp-campo-rotulo">Sus documentos (registro de proponentes, cédula, certificados, estados financieros)</span>
+          <input type="file" multiple data-exp-zip-archivos="${esc(p.id)}" class="control-campo" aria-label="Sus documentos para el .zip"></label>
+        <div class="exp-soltar-mandos"><button type="button" class="exp-boton" data-exp-zip="${esc(p.id)}">Armar el .zip</button></div>
+        <p class="exp-seccion-nota" data-exp-zip-estado="${esc(p.id)}" role="status"></p>
+      </section>`;
+  }
+  /* El .zip, AUTOCONTENIDO para que la suite lo arme de verdad: `formatos` = [{nombre, bytes|null, resumen|null, error|null}]
+     (lo que respondió el llenado de cada uno), `suyos` = [{nombre, bytes}], `aMano` = nombres de formatos que no son Word.
+     Devuelve {bytes, nombre, leame}. Los nombres van sin tildes: con una, un teléfono no abre el archivo (la regla de
+     `nombreLleno`). */
+  function armarZipOferta({ proceso = {}, conQuien = null, formatos = [], suyos = [], aMano = [], hoy = null } = {}, ctx = {}) {
+    const ascii = (s) => String(s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\x20-\x7e]/g, "").replace(/[\\/:*?"<>|]+/g, " ").replace(/\s+/g, " ").trim();
+    const n2 = (i) => String(i + 1).padStart(2, "0");
+    /* el nombre recortado CONSERVA su extensión (con 110 caracteres se perdía el «.pdf»), y sin nada legible —un nombre en
+       otro alfabeto— queda «documento N» (revisión adversaria) */
+    const nombreArchivo = (nombre, i, tope) => {
+      const a = ascii(nombre);
+      const m = /(\.[A-Za-z0-9]{1,6})$/.exec(a);
+      const ext = m ? m[1] : "";
+      const base = (m ? a.slice(0, -ext.length) : a).trim().slice(0, tope).trim();
+      return `${base || `documento ${i + 1}`}${ext}`;
+    };
+    const enc = (s) => new TextEncoder().encode(s);
+    const entradas = [];
+    // cada archivo lleva su número delante («01 », «02 »…): dos nombres iguales no chocan dentro del .zip
+    const lineas = [];
+    lineas.push(`OFERTA PARA EL PROCESO ${proceso.id || ""}`, `${proceso.nombre || ""}`, `Entidad: ${proceso.entidad || "no publicada"}`,
+      `Se presenta con: ${conQuien || "su empresa"}`, `Armado${hoy ? ` el ${hoy}` : ""}. REVÍSELO ANTES DE SUBIRLO A SECOP II.`, "");
+    const llenos = formatos.filter((f) => f.bytes), sinLlenar = formatos.filter((f) => !f.bytes);
+    lineas.push("1. FORMATOS DE LA ENTIDAD LLENOS (sin firma: fírmelos antes de subirlos)");
+    if (!llenos.length) lineas.push("   Ninguno.");
+    llenos.forEach((f, i) => {
+      const ruta = `1 Formatos llenos/${n2(i)} ${nombreArchivo(String(f.nombre).replace(/\.docx$/i, ""), i, 90)} (lleno).docx`;
+      entradas.push({ nombre: ruta, datos: f.bytes instanceof Uint8Array ? f.bytes : new Uint8Array(f.bytes) });
+      lineas.push(`   - ${ruta.slice(ruta.indexOf("/") + 1)}`);
+      for (const fr of (ctx.frasesLlenado ? ctx.frasesLlenado(f.resumen) : [])) lineas.push(`       ${fr}`);
+    });
+    lineas.push("", "2. FORMATOS QUE NO SE LLENARON (llénelos a mano)");
+    const faltan = [...sinLlenar.map((f) => `${f.nombre}: ${f.error || "no tiene casillas del proponente que se puedan llenar sin riesgo de equivocarse"}`), ...aMano.map((n) => `${n}: no es un documento de Word`)];
+    if (!faltan.length) lineas.push("   Ninguno.");
+    for (const x of faltan) lineas.push(`   - ${x}`);
+    lineas.push("", "3. SUS DOCUMENTOS");
+    // un archivo vacío (0 bytes) no entra: no es un documento, y se dice
+    const vacios = suyos.filter((d) => !(d.bytes && d.bytes.length));
+    const conBytes = suyos.filter((d) => d.bytes && d.bytes.length);
+    if (!conBytes.length) lineas.push("   No eligió ninguno.");
+    for (const d of vacios) lineas.push(`   - NO ENTRÓ «${d.nombre}»: el archivo está vacío (0 bytes). Vuelva a sacarlo de donde lo tiene.`);
+    conBytes.forEach((d, i) => {
+      const ruta = `2 Sus documentos/${n2(i)} ${nombreArchivo(d.nombre, i, 110)}`;
+      entradas.push({ nombre: ruta, datos: d.bytes instanceof Uint8Array ? d.bytes : new Uint8Array(d.bytes) });
+      lineas.push(`   - ${ruta.slice(ruta.indexOf("/") + 1)}`);
+    });
+    lineas.push("", "LO QUE ESTE ARCHIVO NO HACE", "   - No firma ningún documento.", "   - No llena el documento de conformación del consorcio o de la unión temporal: lleva los datos de cada integrante.",
+      "   - No comprueba que sus documentos estén vigentes ni que sean los que pide el pliego: compare con «Lo que tiene que entregar».",
+      "   - No sube nada a SECOP II.");
+    const leame = lineas.join("\r\n");
+    entradas.unshift({ nombre: "LEAME - revise antes de subir.txt", datos: enc(`\ufeff${leame}`) });
+    const bytes = ctx.escribirZip(entradas);
+    return { bytes, nombre: `Oferta ${ascii(proceso.id || "proceso").slice(0, 60)}.zip`, leame, archivos: entradas.map((e) => e.nombre) };
+  }
+
+  function htmlDocumentos(p, { estadosDoc = {}, hoy = null, topes = {}, conQuien = null } = {}) {
     const deEntidad = documentosEntidad(p);
     /* las marcas de «Lo que tiene que entregar» viven en este papeleo (con `req`) pero se pintan en su sección */
     const suyos = (p.documentos || []).filter((d) => !d.req);
@@ -470,7 +556,7 @@
     /* lo lleno primero cuando lo otro es un hueco; si las dos están vacías se
        conserva el orden de siempre, que es el que explica de dónde salen los
        folios */
-    return (!hayEnt && suyos.length) ? secSuyos + secEnt : secEnt + secSuyos;
+    return htmlZipOferta(p, { conQuien }) + ((!hayEnt && suyos.length) ? secSuyos + secEnt : secEnt + secSuyos);
   }
 
   /* ══════════════════════ LO QUE TIENE QUE ENTREGAR (3-nov-2026) ══════════════════════
@@ -1200,8 +1286,8 @@
   }
   return {
     htmlPuedePresentarse, opcionesPresentarse, veredictoPresentarse, casillasPresentarse, rojosDe,
-    SECCIONES, seccionValida, cifrasDe, htmlEntregar, htmlFilaEntrega, htmlCabecera, htmlPie, htmlConQuien, urlSegura, enlaceSecop, htmlOferta, htmlOfertasTodos, frasesLlenado, nombreLleno,
-    documentosEntidad, tiposSuyos, pesoLegible, formatoDe, textoAvance, fraccionAvance, htmlAvance, duracionLegible, frasesTiempo, htmlFilaDoc, htmlFilaDocSuyo, htmlDocumentos,
+    QUITAR_PROCESOS_TEMPORAL, SECCIONES, seccionValida, cifrasDe, htmlEntregar, htmlFilaEntrega, htmlCabecera, htmlPie, htmlConQuien, urlSegura, enlaceSecop, htmlOferta, htmlOfertasTodos, frasesLlenado, nombreLleno,
+    documentosEntidad, htmlZipOferta, armarZipOferta, tiposSuyos, pesoLegible, formatoDe, textoAvance, fraccionAvance, htmlAvance, duracionLegible, frasesTiempo, htmlFilaDoc, htmlFilaDocSuyo, htmlDocumentos,
     lineaDeTiempo, htmlFechas, htmlDatosClave, htmlSiguientePaso,
   };
 });

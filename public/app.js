@@ -1547,24 +1547,38 @@
     p.textContent = texto;
     p.className = `mt-2 text-xs ${tono === "error" ? "text-red-700" : tono === "ok" ? "text-emerald-700" : "text-gray-600"}`;
   }
+  /* de quién son los datos: el perfil de la barra o uno de sus consorcios (los de «Crear consorcio», op=consorcio) */
+  const perfilDatosEmpresa = () => { const s = $("empresa-datos-de"); return (s && s.value) || $("f-perfil").value; };
+  async function opcionesDatosEmpresa() {
+    const s = $("empresa-datos-de");
+    if (!s) return;
+    const antes = s.value;
+    const sel = $("f-perfil");
+    const yo = { id: sel.value, nombre: sel.selectedOptions && sel.selectedOptions[0] ? sel.selectedOptions[0].text : sel.value };
+    let cons = [];
+    try { const r = await api("/api/perfil?op=consorcio"); cons = Object.values((r && r.consorcios) || {}).filter((c) => c && /^cons_/.test(c.id || "")); } catch { cons = []; }
+    s.innerHTML = [`<option value="${esc(yo.id)}">${esc(yo.nombre)}</option>`, ...cons.map((c) => `<option value="${esc(c.id)}">${esc(c.nombre || c.id)}</option>`)].join("");
+    if ([...s.options].some((o) => o.value === antes)) s.value = antes;
+  }
   async function cargarDatosEmpresa() {
     for (const i of formEmpresa.elements) i.value = "";
     decirDatosEmpresa("Leyendo sus datos…", "neutro");
     try {
-      const r = await api(`/api/perfil?op=empresa-datos&perfil=${encodeURIComponent($("f-perfil").value)}`);
+      const r = await api(`/api/perfil?op=empresa-datos&perfil=${encodeURIComponent(perfilDatosEmpresa())}`);
       for (const [k, v] of Object.entries(r.datos || {})) { const i = formEmpresa.elements[k]; if (i) i.value = v || ""; }
       decirDatosEmpresa(r.guardado_el ? `Guardados el ${fechaCorta(r.guardado_el)}. Revíselos si algo cambió en su certificado.` : "Todavía no ha guardado estos datos.", "neutro");
     } catch (e) { decirDatosEmpresa(`No se pudieron leer sus datos: ${fraseDeFallo(e)}`, "error"); }
   }
-  $("empresa-datos").addEventListener("toggle", () => { if ($("empresa-datos").open) cargarDatosEmpresa(); });
-  $("f-perfil").addEventListener("change", () => { if ($("empresa-datos").open) cargarDatosEmpresa(); });
+  $("empresa-datos").addEventListener("toggle", async () => { if ($("empresa-datos").open) { await opcionesDatosEmpresa(); cargarDatosEmpresa(); } });
+  $("f-perfil").addEventListener("change", async () => { if ($("empresa-datos").open) { await opcionesDatosEmpresa(); cargarDatosEmpresa(); } });
+  if ($("empresa-datos-de")) $("empresa-datos-de").addEventListener("change", () => cargarDatosEmpresa());
   $("btn-empresa-datos").addEventListener("click", async () => {
     const boton = $("btn-empresa-datos");
     const datos = Object.fromEntries([...formEmpresa.elements].filter((i) => i.name).map((i) => [i.name, i.value]));
     boton.disabled = true;
     decirDatosEmpresa("Guardando…", "neutro");
     try {
-      await api("/api/perfil?op=empresa-datos", { method: "POST", body: { perfil: $("f-perfil").value, datos } });
+      await api("/api/perfil?op=empresa-datos", { method: "POST", body: { perfil: perfilDatosEmpresa(), datos } });
       decirDatosEmpresa("Guardados. Ya puede llenar los formatos de Word desde cada proceso guardado, en «Documentos».", "ok");
     } catch (e) { decirDatosEmpresa(`No se guardaron: ${fraseDeFallo(e)}`, "error"); }
     boton.disabled = false;
@@ -5220,6 +5234,15 @@
     return null;
   }
   let segPref = (() => { const K = raizCasillero(); return K ? K.leerPreferencias() : { vista: "lista", orden: "cierre", agrupar: "carpeta", carpeta: "todo" }; })();
+  /* CON QUÉ SE PRESENTA (5-nov-2026, encargo del dueño): el filtro de Mis procesos por su perfil o por uno de sus consorcios.
+     Vive en memoria, como el de la etapa. `opcionesPresentado` arma las opciones con la lista que sirve el servidor */
+  let segPresentado = "todo";
+  function opcionesPresentado(r) {
+    const sel = $("f-perfil");
+    const perfil = (sel && sel.value) || (r && r.perfil) || "";
+    const nombre = sel && sel.selectedOptions && sel.selectedOptions[0] ? String(sel.selectedOptions[0].text).replace(/\s*\(.*\)\s*$/, "").trim() : perfil;
+    return [{ id: perfil, nombre: `${nombre || perfil} (solo)`, solo: true, nombre_corto: nombre || perfil }, ...(((r && r.consorcios) || []).map((c) => ({ id: c.id, nombre: c.nombre, integrantes: c.integrantes || [] })))];
+  }
   let segAgendaMes = null, segAgendaDia = null;   // el mes y el día abiertos del calendario
   let segAgendaTipo = "todos";                    // qué fechas se están viendo
   /* EL CUADERNO SOBREVIVE A LOS REPINTADOS (7-sep-2026). La lista se repinta
@@ -5523,13 +5546,67 @@
         : `«${nombre}» anotado. Diga qué documento es y guárdelo.`, "ok");
   }
 
+  /* con qué se presenta a ESTE proceso: el perfil (el de la guía, que ya resolvió el consorcio elegido) y su nombre */
+  function perfilDelProceso(p) { return (p && p.perfil_de_la_guia) || $("f-perfil").value; }
+  function conQuienDe(p, r) {
+    const id = perfilDelProceso(p);
+    const o = opcionesPresentado(r || segExpDatos).find((x) => x.id === id);
+    return o ? (o.solo ? o.nombre_corto : o.nombre) : id;
+  }
+  /* EL .ZIP PARA SUBIR A SECOP II (5-nov-2026): cada formato de Word de la entidad se llena por el MISMO camino de «Llenar
+     con sus datos» (op=descargar con formato «llenar»), con el perfil con que se presenta; los archivos que el usuario
+     elige se leen en el navegador; el .zip lo arma public/expediente.armarZipOferta con el escritor de public/xlsx.js */
+  async function armarZipDelProceso(id) {
+    const X = raizExpediente();
+    const p = segExpDatos && segExpDatos.proceso && segExpDatos.proceso.id === id ? segExpDatos.proceso : null;
+    const estado = secSeg.querySelector(`[data-exp-zip-estado="${CSS.escape(id)}"]`);
+    const boton = secSeg.querySelector(`[data-exp-zip="${CSS.escape(id)}"]`);
+    const decir = (t, error) => { if (!estado) return; estado.textContent = t; estado.classList.toggle("text-red-700", !!error); };
+    if (!X || !p) { decir("Abra el proceso otra vez: el expediente no está cargado.", true); return; }
+    if (!window.XLSXApu || typeof window.XLSXApu.escribirZip !== "function") { decir("El armador de archivos no cargó en esta página: recargue e intente de nuevo.", true); return; }
+    const perfil = perfilDelProceso(p);
+    const docs = X.documentosEntidad(p);
+    const llenables = docs.filter((f) => f.origen === "entidad" && f.url && f.formato === "DOCX");
+    const aMano = docs.filter((f) => f.estado === "formato" && f.formato !== "DOCX").map((f) => f.nombre);
+    if (boton) boton.disabled = true;
+    try {
+      const formatos = [];
+      for (const [i, f] of llenables.entries()) {
+        decir(`Llenando ${i + 1} de ${llenables.length}: «${f.nombre}»…`);
+        try {
+          const rr = await api("/api/pliego?op=descargar", { method: "POST", body: { url: f.url, formato: "llenar", perfil, nombre: f.nombre } });
+          formatos.push({ nombre: f.nombre, bytes: rr && rr.base64 ? Uint8Array.from(atob(rr.base64), (c) => c.charCodeAt(0)) : null, resumen: rr, error: rr && !rr.base64 ? rr.motivo || null : null });
+        } catch (e) {
+          // sin los datos de quien se presenta no se llena ninguno: se para y se dice dónde escribirlos
+          if (e && /Todavía no ha guardado los datos|ya no existe en Mi empresa/.test(String(e.message || ""))) { decir(String(e.message), true); return; }
+          formatos.push({ nombre: f.nombre, bytes: null, resumen: null, error: fraseDeFallo(e) });
+        }
+      }
+      const entrada = secSeg.querySelector(`[data-exp-zip-archivos="${CSS.escape(id)}"]`);
+      const suyos = [];
+      for (const a of (entrada && entrada.files) ? [...entrada.files] : []) {
+        decir(`Leyendo «${a.name}»…`);
+        suyos.push({ nombre: a.name, bytes: new Uint8Array(await a.arrayBuffer()) });
+      }
+      const pr = p.proceso || {};
+      const z = X.armarZipOferta({ proceso: { id, nombre: pr.nombre, entidad: pr.entidad }, conQuien: conQuienDe(p), formatos, suyos, aMano, hoy: segExpDatos.hoy || null },
+        { escribirZip: window.XLSXApu.escribirZip, frasesLlenado: X.frasesLlenado });
+      window.XLSXApu.descargar(z.bytes, z.nombre, "application/zip");
+      const llenos = formatos.filter((x) => x.bytes).length;
+      decir(`Descargado «${z.nombre}»: ${llenos} de ${llenables.length} formatos llenos, ${suyos.length} documentos suyos. Lea el «LEAME» que va dentro, firme los formatos y revise todo antes de subirlo.`);
+    } catch (e) { decir(`No se pudo armar el .zip: ${fraseDeFallo(e)}`, true); }
+    finally { if (boton) boton.disabled = false; }
+  }
+
   function pintarExpediente() {
     const X = raizExpediente(), caja = $("seg-expediente");
     if (!caja) return;
     if (!X || !segExpDatos || !segExpDatos.proceso) { mensajeExpediente("El expediente no cargó en esta página: recargue e intente de nuevo.", "error"); return; }
     const r = segExpDatos, p = r.proceso;
     segExpSeccion = X.seccionValida(segExpSeccion);
-    const cabecera = X.htmlCabecera(p, { estados: r.estados || {}, seccion: segExpSeccion, conteos: conteosExpediente(p), carpetas: r.carpetas || [] });
+    const opcP = opcionesPresentado(r);
+    const cabecera = X.htmlCabecera(p, { estados: r.estados || {}, seccion: segExpSeccion, conteos: conteosExpediente(p), carpetas: r.carpetas || [],
+      consorcios: opcP.filter((o) => !o.solo), perfilActual: { id: opcP[0].id, nombre: opcP[0].nombre_corto } });
     const g = p.guia || null;
     let cuerpo = "";
     if (segExpSeccion === "resumen") {
@@ -5549,7 +5626,7 @@
       cuerpo = `<div data-exp-docs-avance="${esc(p.id)}" aria-live="polite">${htmlAvanceDocs(p.id)}</div>` + X.htmlEntregar(p, { estadosDoc: r.estados_documento || {}, hoy: r.hoy || null });
     } else if (segExpSeccion === "documentos") {
       cuerpo = `<div data-exp-docs-avance="${esc(p.id)}" aria-live="polite">${htmlAvanceDocs(p.id)}</div>`
-        + X.htmlDocumentos(p, { estadosDoc: r.estados_documento || {}, hoy: r.hoy || null, topes: r.topes || {} });
+        + X.htmlDocumentos(p, { estadosDoc: r.estados_documento || {}, hoy: r.hoy || null, topes: r.topes || {}, conQuien: conQuienDe(p, r) });
     } else if (segExpSeccion === "exige") {
       cuerpo = g ? `<section class="exp-seccion"><h3 class="exp-seccion-titulo">Lo que exige este pliego</h3>${htmlVeredicto(g)}${htmlCifrasPliego(g)}
           <div data-seg-socio-caja="${esc(p.id)}" class="hidden"></div></section>`
@@ -6219,7 +6296,12 @@
     pintarBarraCasillero(r, carpetas);
     const busqueda = ($("seg-buscar") && $("seg-buscar").value) || "";
     const porEtapa = segFiltroEstado === "todos" ? todos : todos.filter((p) => p.estado === segFiltroEstado);
-    const ps = K ? K.ordenar(K.filtrar(porEtapa, { texto: busqueda, carpeta: segPref.carpeta }), { por: segPref.orden }) : porEtapa;
+    /* un filtro de consorcio que ya no existe (se borró en Mi empresa) vuelve a «todos»: un valor desconocido es inerte */
+    const opcPres = opcionesPresentado(r);
+    if (segPresentado !== "todo" && segPresentado !== "sin" && !opcPres.some((o) => o.id === segPresentado)) segPresentado = "todo";
+    const cajaPres = $("seg-presentados");
+    if (cajaPres && K && K.htmlPresentados) cajaPres.innerHTML = K.htmlPresentados(opcPres, todos, { activa: segPresentado });
+    const ps = K ? K.ordenar(K.filtrar(porEtapa, { texto: busqueda, carpeta: segPref.carpeta, presentado: segPresentado }), { por: segPref.orden }) : porEtapa;
     const enCalendario = segPref.vista === "calendario";
     /* LA FILA, NO LA TARJETA (7-sep-2026). La tarjeta anterior pintaba entre
        200 y 350 nodos por proceso —ocho fondos de color, dos selectores y hasta
@@ -6229,7 +6311,8 @@
        más urge) y dos cifras alineadas, y todo lo demás vive en el expediente,
        que se pinta una vez y para un solo proceso. Es a la vez el arreglo de
        diseño y el de desempeño. */
-    const filaSeg = (p) => (K ? K.htmlFila(p, { hoy: r.hoy || null, estados: r.estados || {} }) : `<p class="text-sm">${esc((p.proceso || {}).nombre || p.id)}</p>`);
+    const nombresPresentado = Object.fromEntries(opcPres.map((o) => [o.id, o.solo ? `${o.nombre_corto} (solo)` : o.nombre]));
+    const filaSeg = (p) => (K ? K.htmlFila(p, { hoy: r.hoy || null, estados: r.estados || {}, nombresPresentado }) : `<p class="text-sm">${esc((p.proceso || {}).nombre || p.id)}</p>`);
     /* La LISTA, agrupada como el usuario pidió (por carpeta, por etapa o de
        corrido). La cabecera de cada grupo dice cuántos hay y qué cierra antes. */
     const grupos = K
@@ -6246,6 +6329,8 @@
       if (segPref.carpeta === "sin") motivos.push("«Sin carpeta»");
       else if (segPref.carpeta !== "todo") motivos.push(`la carpeta «${esc((carpetas.find((c) => c.id === segPref.carpeta) || {}).nombre || "")}»`);
       if (busqueda.trim()) motivos.push(`lo que buscó («${esc(busqueda.trim())}»)`);
+      if (segPresentado === "sin") motivos.push("«Sin elegir» con qué se presenta");
+      else if (segPresentado !== "todo") motivos.push(`que se presente con «${esc((opcPres.find((o) => o.id === segPresentado) || {}).nombre || "")}»`);
       lista.innerHTML = `<p class="text-sm text-gray-500">Tiene ${todos.length} proceso${todos.length === 1 ? "" : "s"} guardado${todos.length === 1 ? "" : "s"}, pero ninguno casa con ${motivos.length ? motivos.join(" y ") : "los filtros puestos"}.</p>
         <button type="button" id="seg-limpiar" class="mt-3 rounded-xl border border-gray-300 bg-white px-5 py-2 text-sm font-medium transition hover:bg-gray-50">Quitar los filtros y ver todos</button>`;
     }
@@ -6295,7 +6380,9 @@
     if (!caja || caja.dataset.consultado === "1") return;
     caja.dataset.consultado = "1";
     if (typeof window.__pliegoDictamenEn !== "function") { caja.innerHTML = `<p class="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">El lector de pliegos no cargó en esta página: recargue e intente de nuevo.</p>`; return; }
-    await window.__pliegoDictamenEn(caja, id, $("f-perfil").value);
+    /* con el perfil con que se presenta a ESTE proceso, el MISMO que usó la guía del expediente (5-nov-2026) */
+    const pe = segExpDatos && segExpDatos.proceso && segExpDatos.proceso.id === id ? segExpDatos.proceso.perfil_de_la_guia : null;
+    await window.__pliegoDictamenEn(caja, id, pe || $("f-perfil").value);
   }
   /* ── Los documentos del proceso se leen SOLOS (3-sep-2026) ──
      Al guardar (y al abrir Mis procesos con documentos por leer) el navegador pide
@@ -6887,6 +6974,21 @@
         catch (e) { car.disabled = false; mensajeSeg(fraseDeFallo(e), "error"); }
         return;
       }
+      /* CON QUÉ SE PRESENTA: se guarda y el expediente se vuelve a pedir, porque la guía, el dictamen y lo que tiene que
+         entregar se calculan con ese perfil (5-nov-2026) */
+      const presSel = ev.target.closest("[data-seg-presentado]");
+      if (presSel) {
+        const id = presSel.getAttribute("data-seg-presentado");
+        presSel.disabled = true;
+        try {
+          const rr = await guardarDelProceso(id, { presentado_con: presSel.value || null }, { repintar: false });
+          segExpEscrituras += 1;
+          seguimientoCargadoPara = null;
+          if (segExpId === id) await refrescarExpediente();
+          decirEtapa(id, rr && rr.aviso ? rr.aviso : presSel.value ? "Guardado: la guía y el dictamen se calculan ahora con ese perfil." : "Quedó sin elegir.", rr && rr.aviso ? "error" : "ok");
+        } catch (e) { presSel.disabled = false; decirEtapa(id, fraseDeFallo(e), "error"); }
+        return;
+      }
       /* LO QUE TIENE QUE ENTREGAR: cómo va cada fila y cuándo vence */
       const entEstado = ev.target.closest("[data-exp-ent-estado]");
       if (entEstado && segExpId) {
@@ -6993,6 +7095,27 @@
       const abrir = ev.target.closest("[data-seg-abrir]");
       if (abrir) { await abrirExpediente(abrir.getAttribute("data-seg-abrir")); return; }
       if (ev.target.closest("[data-exp-volver]")) { cerrarExpediente(); return; }
+      const qZip = ev.target.closest("[data-exp-zip]");
+      if (qZip) { await armarZipDelProceso(qZip.getAttribute("data-exp-zip")); return; }
+      /* QUITAR UN PROCESO (TEMPORAL, 5-nov-2026): el primer clic dice qué se pierde; el segundo lo quita */
+      const qQuitar = ev.target.closest("[data-exp-quitar]");
+      if (qQuitar) { const av = secSeg.querySelector(`[data-exp-quitar-aviso="${CSS.escape(qQuitar.getAttribute("data-exp-quitar"))}"]`); if (av) av.classList.remove("hidden"); return; }
+      const qCancelar = ev.target.closest("[data-exp-quitar-cancelar]");
+      if (qCancelar) { const av = secSeg.querySelector(`[data-exp-quitar-aviso="${CSS.escape(qCancelar.getAttribute("data-exp-quitar-cancelar"))}"]`); if (av) av.classList.add("hidden"); return; }
+      const qSi = ev.target.closest("[data-exp-quitar-confirmar]");
+      if (qSi) {
+        const id = qSi.getAttribute("data-exp-quitar-confirmar");
+        qSi.disabled = true; qSi.textContent = "Quitando…";
+        try {
+          await api(`/api/perfil?op=seguimiento&perfil=${encodeURIComponent($("f-perfil").value)}&id=${encodeURIComponent(id)}`, { method: "DELETE" });
+          guardados.delete(id);
+          cerrarExpediente();
+          seguimientoCargadoPara = null;
+          await cargarSeguimiento({ forzar: true });
+          mensajeSeg("Proceso quitado de Mis procesos.", "ok"); setTimeout(() => mensajeSeg(""), 3000);
+        } catch (e) { qSi.disabled = false; qSi.textContent = "Sí, quitarlo"; decirEtapa(id, fraseDeFallo(e), "error"); }
+        return;
+      }
       /* el número del proceso, para pegarlo en SECOP II o en un mensaje: copiarlo a mano costaba (17-oct-2026) */
       const copiarId = ev.target.closest("[data-exp-copiar-id]");
       if (copiarId) {
@@ -7046,6 +7169,8 @@
       /* ══════════ LOS MANDOS DEL CASILLERO (7-sep-2026) ══════════ */
       const vista = ev.target.closest("[data-cas-vista]");
       if (vista) { guardarPrefCasillero({ vista: vista.getAttribute("data-cas-vista") }); if (ultimoSeguimiento) pintarSeguimiento(ultimoSeguimiento); return; }
+      const pres = ev.target.closest("[data-cas-presentado]");
+      if (pres) { segPresentado = pres.getAttribute("data-cas-presentado") || "todo"; if (ultimoSeguimiento) pintarSeguimiento(ultimoSeguimiento); return; }
       const carp = ev.target.closest("[data-cas-carpeta]");
       if (carp) { guardarPrefCasillero({ carpeta: carp.getAttribute("data-cas-carpeta") }); if (ultimoSeguimiento) pintarSeguimiento(ultimoSeguimiento); return; }
       /* navegar por el calendario del casillero: mes, día y tipo de fecha solo
@@ -7075,6 +7200,7 @@
       const limpiar = ev.target.closest("#seg-limpiar");
       if (limpiar) {
         segFiltroEstado = "todos";
+        segPresentado = "todo";
         if ($("seg-buscar")) $("seg-buscar").value = "";
         guardarPrefCasillero({ carpeta: "todo" });
         if (ultimoSeguimiento) pintarSeguimiento(ultimoSeguimiento);
@@ -7252,7 +7378,9 @@
         llenar.disabled = true;
         decirL("Bajando el documento de SECOP II y llenándolo con sus datos…");
         try {
-          const r = await api("/api/pliego?op=descargar", { method: "POST", body: { url: llenar.getAttribute("data-seg-llenar"), formato: "llenar", perfil: $("f-perfil").value, nombre: llenar.getAttribute("data-seg-llenar-nombre") } });
+          // con el perfil con que se presenta a ESTE proceso, el MISMO del .zip (revisión adversaria: dos botones, dos empresas)
+          const pLl = segExpDatos && segExpDatos.proceso && segExpId === segExpDatos.proceso.id ? segExpDatos.proceso : null;
+          const r = await api("/api/pliego?op=descargar", { method: "POST", body: { url: llenar.getAttribute("data-seg-llenar"), formato: "llenar", perfil: perfilDelProceso(pLl), nombre: llenar.getAttribute("data-seg-llenar-nombre") } });
           if (r.base64) {
             const bytes = Uint8Array.from(atob(r.base64), (c) => c.charCodeAt(0));
             descargarBlob(new Blob([bytes], { type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" }), X.nombreLleno(llenar.getAttribute("data-seg-llenar-nombre")));
