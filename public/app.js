@@ -2093,6 +2093,12 @@
        mismo defecto que costó el proceso de Motavita. NO se oculta el proceso
        (puede haber avisado a tiempo y la app no lo sabe: el falso negativo
        cuesta más), pero la línea lo dice y baja a ámbar. */
+  /* POR QUÉ SALIÓ (5-nov-2026, proceso 2): la búsqueda del oficio encontró la fila por otra palabra del mismo tipo de obra
+     («vías» → «pavimentación»); se dice cuál, para que se vea por qué apareció. Sin el campo, nada. */
+  function lineaCoincidencia(c) {
+    if (!c || typeof c.palabra !== "string" || !c.palabra.trim()) return "";
+    return `<p class="mt-1 text-xs text-gray-500">Salió por «${esc(c.palabra)}»${c.tipo ? `, que es de ${esc(c.tipo)}` : ""}.</p>`;
+  }
   function lineaRequisitos(puertas, manif, admiteOfertas, capitalTrabajo, socio) {
     const g = puertas || {};
     const detalle = [g.p1_rup, g.p2_k, g.p3_caja].map((p) => p && p.mensaje).filter(Boolean).join("\n");
@@ -2145,7 +2151,14 @@
       return linea("text-amber-700", `Solo no le alcanza; con un socio, sí${sinOfertas}${vencidoS}.`);
     }
     if (g.p1_rup && g.p1_rup.pasa === false) return linea("text-red-700", `Este proceso no encaja con su registro${sinOfertas}.`);
-    if (g.p2_k && g.p2_k.pasa === false) return linea("text-red-700", `Supera su capacidad de contratación${sinOfertas}.`);
+    /* CUÁNTO FALTA (5-nov-2026, proceso 4.2): la cifra la calcula el servidor (lib/puertas, `falta_cop`); sin
+       credencial viaja tapada y la línea queda como antes */
+    /* con el anticipo sin publicar, la cifra segura es la del mejor caso (el máximo legal): «al menos» */
+    if (g.p2_k && g.p2_k.pasa === false) {
+      const fMin = g.p2_k.falta_con_anticipo_maximo_cop, f = g.p2_k.falta_cop;
+      const cuanto = Number.isFinite(fMin) && fMin > 0 ? `: le faltan al menos ${pesos(fMin)}` : Number.isFinite(f) && f > 0 && fMin == null ? `: le faltan ${pesos(f)}` : "";
+      return linea("text-red-700", `Supera su capacidad de contratación${cuanto}${sinOfertas}.`);
+    }
     /* EL CÓDIGO CASA SOLO POR UNA CLASE DE SERVICIOS QUE NO SON OBRA (23-sep-2026):
        va justo detrás de los rojos y antes que todo lo demás, porque es lo que decide
        si el proceso es de su oficio; el genérico «con detalles por revisar» lo
@@ -2190,7 +2203,8 @@
     if (g.p3_caja && g.p3_caja.pasa === false) {
       return linea("text-amber-700", plazoIdo
         ? "Financiarla está justo — y además el plazo para avisar que le interesa ya venció: solo puede presentarse si avisó a tiempo."
-        : "Puede presentarse, pero financiarla está justo: considere crédito o consorcio.");
+        /* con el anticipo sin publicar y ni el máximo legal alcanzando, la cifra es la del MEJOR caso: «al menos» (revisión adversaria, 5-nov-2026) */
+        : `Puede presentarse, pero financiarla está justo${Number.isFinite(g.p3_caja.falta_cop) && g.p3_caja.falta_cop > 0 ? (g.p3_caja.ni_con_anticipo_maximo ? ` (aun con el anticipo máximo que permite la ley le faltan al menos ${pesos(g.p3_caja.falta_cop)} de patrimonio)` : ` (le faltan ≈ ${pesos(g.p3_caja.falta_cop)} de patrimonio)`) : ""}: considere crédito o consorcio.`);
     }
     if (plazoIdo) return linea("text-amber-700", "Cumple los requisitos, pero el plazo para avisar que le interesa ya venció: solo puede presentarse si avisó a tiempo.");
     /* con el aviso del capital de trabajo (la línea de debajo) no se dice «cumple» en verde */
@@ -2967,6 +2981,7 @@
       ${lineasOtrasVersiones(l)}
       ${lineaMargen(l.margen_estimado)}
       ${bloqueAdendas(l.adendas)}
+      ${lineaCoincidencia(l.coincidencia)}
 
       <div class="t-hechos">${lineaCompiten(l)}
         <button type="button" class="t-desplegar" data-ver-competencia data-entidad="${esc(l.entidad || "")}"${l.nit_entidad ? ` data-nit="${esc(String(l.nit_entidad))}"` : ""} aria-expanded="false" aria-controls="compe-${esc(id)}">Ver la competencia</button>
