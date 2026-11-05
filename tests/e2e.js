@@ -17982,9 +17982,10 @@ async function main() {
       {
         const AS = require("../lib/aviso_salud.js");
         const httpAv = require("http");
-        const recibidos = []; let falla = false;
+        const recibidos = [], recibidosTg = []; let falla = false;
         const srvAv = httpAv.createServer((rq, rs) => { let b = ""; rq.on("data", (c) => { b += c; }); rq.on("end", () => {
           if (falla) { rs.writeHead(500); return rs.end("caido"); }
+          if (/\/sendMessage$/.test(rq.url)) { recibidosTg.push({ url: rq.url, ...JSON.parse(b) }); rs.writeHead(200, { "Content-Type": "application/json" }); return rs.end(JSON.stringify({ ok: true, result: { message_id: recibidosTg.length } })); }
           recibidos.push(JSON.parse(b)); rs.writeHead(200, { "Content-Type": "application/json" }); rs.end(JSON.stringify({ id: `av-${recibidos.length}` }));
         }); });
         await new Promise((r) => srvAv.listen(0, "127.0.0.1", r));
@@ -18060,6 +18061,24 @@ async function main() {
           await redis.set(CL.avisoSalud, JSON.stringify({ rojo: true, desde: hace(30), avisado_ts: null, motivos: [] }));
           const a9 = await latir();
           assert.ok(a9.enviado === null && /no está configurado/.test(a9.fallo || ""), `sin correo configurado se dice qué falta: ${JSON.stringify(a9)}`);
+          /* (5-nov-2026) con SOLO Telegram configurado, la alarma sale por Telegram: asunto y texto en un mensaje, la llave
+             del bot en la ruta y jamás en lo que se publica; si Telegram falla, no cuenta como avisado. */
+          const envTg = { TELEGRAM_BOT_TOKEN: "777:llave-salud", TELEGRAM_CHAT_ID: "42", TELEGRAM_API_URL: `http://127.0.0.1:${srvAv.address().port}` };
+          Object.assign(antesAv, Object.fromEntries(Object.keys(envTg).filter((k) => !(k in antesAv)).map((k) => [k, process.env[k]])));
+          Object.assign(process.env, envTg);
+          await redis.set(CL.avisoSalud, JSON.stringify({ rojo: true, desde: hace(30), avisado_ts: null, motivos: [] }));
+          const a10 = await latir();
+          assert.strictEqual(a10.enviado, "rojo", `con solo Telegram la alarma sale: ${JSON.stringify(a10)}`);
+          assert.strictEqual(recibidosTg.length, 1);
+          assert.ok(recibidosTg[0].url === "/bot777:llave-salud/sendMessage" && recibidosTg[0].chat_id === "42", JSON.stringify(recibidosTg[0]));
+          assert.ok(/hay un problema que revisar/.test(recibidosTg[0].text) && /sincronización falló/.test(recibidosTg[0].text), `el mensaje lleva el asunto y el motivo: ${recibidosTg[0].text}`);
+          assert.ok(!JSON.stringify(a10).includes("llave-salud"), "la llave del bot no se publica");
+          await redis.set(CL.avisoSalud, JSON.stringify({ rojo: true, desde: hace(30), avisado_ts: null, motivos: [] }));
+          falla = true;
+          const a11 = await latir();
+          falla = false;
+          assert.ok(a11.enviado === null && /Telegram/.test(a11.fallo || "") && !String(a11.fallo).includes("llave-salud"), `Telegram caído: no cuenta como avisado y se dice sin la llave: ${JSON.stringify(a11)}`);
+          assert.strictEqual((await leerAv()).avisado_ts, null, "un aviso que no salió por ningún canal no queda como avisado");
         } finally {
           for (const [k, v] of Object.entries(antesAv)) { if (v === undefined) delete process.env[k]; else process.env[k] = v; }
           await redis.del(CL.avisoSalud);
@@ -27972,6 +27991,51 @@ async function main() {
             assert.ok(htmlSeg.indexOf('id="seg-desenlace"') < htmlSeg.indexOf('id="seg-filtros"'), "el resultado va ARRIBA de los chips-filtro");
             assert.ok(/desenlace\.innerHTML = htmlDesenlaceSeguimiento\(r\.resumen \? r\.resumen\.por_estado : null\);\s*\n\s*desenlace\.classList\.toggle\("hidden", !desenlace\.innerHTML\);/.test(appSeg),
               "pintarSeguimiento pinta el desenlace desde resumen.por_estado y esconde la caja cuando no hay nada que decir");
+            /* (4-ter) DÓNDE GANA (5-nov-2026, plan «Detekta a otro nivel», proceso 14): `resultadosPor` del servidor y
+               `htmlResultadosPor` de la pantalla, EJECUTADAS. Conteos por entidad, tipo de obra (la regla de Precios,
+               tipoDeObra) y modalidad; nunca un porcentaje; «Sin dato» y «Varios tipos o sin tipo» dichos; tope con
+               «otros»; nada con menos de tres presentadas; un nombre de entidad con HTML sale escapado. */
+            {
+              const Sres = require("../lib/seguimiento.js");
+              const pr = (estado, nombre, entidad, modalidad) => ({ estado, proceso: { nombre, entidad, modalidad } });
+              const rp = Sres.resultadosPor([
+                pr("ganado", "PAVIMENTACIÓN DE LA VÍA A", "ALCALDÍA <b>A</b>", "Licitación pública"),
+                pr("perdido", "PAVIMENTACIÓN VÍA B", "ALCALDÍA <b>A</b>", "Licitación pública"),
+                pr("presentado", "CONSTRUCCIÓN DEL ACUEDUCTO Y PAVIMENTACIÓN", "GOBERNACIÓN", ""),
+                pr("perdido", "MEJORAMIENTO DE LA SEDE EDUCATIVA", "", "Selección abreviada de menor cuantía"),
+                pr("interesa", "NO CUENTA", "OTRA", "x"), pr("descartado", "TAMPOCO", "OTRA", "x"), pr("preparando", "NI ESTE", "OTRA", "x"),
+              ]);
+              assert.strictEqual(rp.total_presentadas, 4, "solo ganadas, perdidas y sin resultado: lo guardado sin presentar no es un resultado");
+              assert.deepStrictEqual(rp.entidad.grupos[0], { grupo: "ALCALDÍA <b>A</b>", presentadas: 2, ganadas: 1, perdidas: 1, sin_resultado: 0 }, JSON.stringify(rp.entidad));
+              assert.ok(rp.entidad.grupos.some((g) => g.grupo === "Sin dato"), "una entidad vacía es «Sin dato», no un grupo inventado");
+              assert.ok(rp.tipo.grupos.some((g) => g.grupo === "vías y puentes" && g.presentadas === 2), JSON.stringify(rp.tipo));
+              assert.ok(rp.tipo.grupos.some((g) => g.grupo === Sres.SIN_TIPO && g.sin_resultado === 1), "acueducto Y pavimentación no se fuerza a un tipo (la regla de tipoDeObra exige uno)");
+              assert.ok(rp.modalidad.grupos.some((g) => g.grupo === "Sin dato"), "una modalidad vacía es «Sin dato»");
+              const muchos = Sres.resultadosPor(Array.from({ length: Sres.MAX_GRUPOS_RESULTADO + 3 }, (_, i) => pr("perdido", "VÍA", `ENTIDAD ${i}`, "Licitación pública")));
+              assert.ok(muchos.entidad.grupos.length === Sres.MAX_GRUPOS_RESULTADO && muchos.entidad.otros === 3, "con más grupos que el tope, se dice cuántos quedaron fuera");
+              assert.ok(!JSON.stringify(rp).includes("%"), "conteos, nunca porcentajes");
+              const iRp = appSeg.indexOf("function htmlResultadosPor(");
+              assert.ok(iRp > 0, "app.js sin htmlResultadosPor: Mis procesos no dice dónde gana");
+              const escRp = (x) => String(x ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+              const htmlRp = new Function("esc", `${appSeg.slice(iRp, appSeg.indexOf("\n  }", iRp) + 4)}; return htmlResultadosPor;`)(escRp);
+              const hRp = htmlRp(rp);
+              assert.ok(/Dónde gana/.test(hRp) && /<details/.test(hRp), "plegado, con su rótulo");
+              assert.ok(hRp.includes("ALCALDÍA &lt;b&gt;A&lt;/b&gt;: ganó 1 de 2"), `la frase con el conteo y el nombre escapado: ${hRp.slice(0, 400)}`);
+              assert.ok(/1 sin resultado todavía/.test(hRp) && /Por tipo de obra/.test(hRp) && /Por modalidad/.test(hRp));
+              assert.ok(!/%|probabilidad/.test(hRp.replace(/<[^>]+>/g, " ")), "sin porcentajes ni probabilidad");
+              for (const sinDato of [null, undefined, "x", { total_presentadas: 2, entidad: rp.entidad }, { total_presentadas: "4" }, { total_presentadas: 4 }]) {
+                assert.strictEqual(htmlRp(sinDato), "", `sin tres presentadas o sin grupos no hay caja: ${JSON.stringify(sinDato)}`);
+              }
+              assert.ok(/y 3 grupos más/.test(htmlRp(muchos)), "el tope se dice en pantalla");
+              const hMalo = htmlRp({ total_presentadas: 3, entidad: { grupos: [{ grupo: "X", presentadas: null, ganadas: 1, sin_resultado: 0 }], otros: 0 } });
+              assert.strictEqual(hMalo, "", "un conteo ausente saca el grupo: no se pinta en 0");
+              const { RE_EMOJI_UI: emojiRp, tuteoEn: tuteoRp } = require("../lib/lenguaje_pantalla.js");
+              const textoRp = hRp.replace(/<[^>]+>/g, " ");
+              assert.ok(!textoRp.match(emojiRp) && tuteoRp(textoRp) === null, "sin emoji y de usted");
+              assert.ok(/desenlace\.classList\.toggle\("hidden", !desenlace\.innerHTML\);\s*\n\s*if \(desenlace\.innerHTML\) desenlace\.insertAdjacentHTML\("beforeend", htmlResultadosPor\(r\.resumen \? r\.resumen\.resultados_por : null\)\);/.test(appSeg),
+                "pintarSeguimiento añade «Dónde gana» debajo de «Cómo le va» y solo si esa caja se pintó");
+              assert.ok(/resultados_por: S\.resultadosPor\(procesos\)/.test(fs.readFileSync(path.join(__dirname, "..", "lib", "handlers", "perfil", "seguimiento.js"), "utf8")), "el resumen de op=seguimiento lleva resultados_por");
+            }
 
             /* (4-bis) B7a-H1 (6-sep-2026) · UNA PALABRA POR CONCEPTO EN LA MISMA CAJA.
                El chip de conteo decía «1 presentado» contando SOLO `por_estado.presentado`
@@ -30002,7 +30066,7 @@ async function main() {
         const ID_CIERRE = "CO1.AVISO.CIERRE.1";
         const CIERRE_MANANA = "2026-09-11T17:00:00.000"; // mañana en Colombia respecto de AHORA
         const ponerAv = (k, v) => { if (v === undefined) delete process.env[k]; else process.env[k] = v; };
-        const guardadosEnvAv = ["CORREO_API_KEY", "CORREO_REMITENTE", "CORREO_DESTINO", "CORREO_API_URL", "CRON_SECRET"].map((n) => [n, process.env[n]]);
+        const guardadosEnvAv = ["CORREO_API_KEY", "CORREO_REMITENTE", "CORREO_DESTINO", "CORREO_API_URL", "CRON_SECRET", "TELEGRAM_BOT_TOKEN", "TELEGRAM_CHAT_ID", "TELEGRAM_API_URL"].map((n) => [n, process.env[n]]);
         const CLAVE_AV = "clave-del-proveedor-de-prueba";
         const segAv = (qs, opts = {}) => invocar(routerPerfilAv, `/api/perfil?op=seguimiento${qs}`, CAB_TOKEN, opts);
         let mandados = [];
@@ -30077,7 +30141,7 @@ async function main() {
           const { alertas: alertasReales } = await alertasDelPerfil(redis, PERFIL_AV, AHORA);
           assert.ok(alertasReales.length >= 2, `la prueba necesita un cierre y un cambio: ${JSON.stringify(alertasReales.map((a) => a.tipo))}`);
           for (const a of alertasReales) {
-            assert.ok(mandados[0].cuerpo.text.includes(a.mensaje), `el correo tiene que llevar la frase que la pantalla enseña: «${a.mensaje.slice(0, 60)}»`);
+            assert.ok(mandados[0].cuerpo.text.includes(a.mensaje), `el correo tiene que llevar la frase que la pantalla enseña: «${a.mensaje.slice(0, 160)}»; el correo dijo: ${mandados[0].cuerpo.text.replace(/\n/g, " · ").slice(0, 900)}`);
           }
           assert.ok(/Cierra mañana/.test(mandados[0].cuerpo.text), "el proceso que cierra el día civil siguiente en Colombia se anuncia como «cierra mañana»");
           assert.ok(/Cambió: /.test(mandados[0].cuerpo.text), "lo que cambió en el pliego también viaja en el correo");
@@ -30151,6 +30215,235 @@ async function main() {
           assert.strictEqual(raro.cuerpo.perfil, null, "el perfil ilegible no se adopta como filtro");
           assert.ok(/no se pudo leer/.test(raro.cuerpo.nota), raro.cuerpo.nota);
           for (const p of [PERFIL_AV, "helder"]) await redis.del(`avisos:enviado:${p}:${DIA_BOGOTA}`);
+
+          /* ═══ EL AVISO SIN LEER EL CORPUS Y EL CANAL DE TELEGRAM (5-nov-2026, plan «Detekta a otro nivel», proceso 11) ═══
+             (a) el aviso de la mañana pide las filas vivas a p6dx (`filaVivaSinCorpus`) y NO llama a `cargarCorpus`:
+                 con el canal encendido no gasta los ~22 MB del corpus en Upstash; y dice qué vía usó;
+             (b) las frases son las MISMAS que con el corpus (la proyección es `repartirDelta`, la de la sincronización);
+             (c) si datos.gov.co no responde, vuelve al corpus y el aviso sale igual;
+             (d) espejo de la pantalla: un cerrado hace más de DIAS_ESPEJO_CERRADO no trae fila viva; de una
+                 re-publicación gana el `:updated_at` más reciente;
+             (e) Telegram es un SEGUNDO canal con su propia marca del día: si falla, el correo sale y solo Telegram
+                 se reintenta; la llave del bot jamás vuelve en una respuesta;
+             (f) las dos ayudas «telegram=chat» y «telegram=prueba», y cualquier otro valor es inerte. */
+          {
+            const Tg = require("../lib/telegram.js");
+            const Lst = require("../lib/handlers/procesos/listar.js");
+            const SegH = require("../lib/handlers/perfil/seguimiento.js");
+            const origCargar = Lst.cargarCorpus;
+            let lecturasCorpus = 0;
+            Lst.cargarCorpus = (...a) => { lecturasCorpus++; return origCargar(...a); };
+            try {
+              // (a) un perfil con TODOS sus vigentes abiertos en p6dx: el aviso no lee el corpus y dice lo de la pantalla
+              const PERFIL_SC = "aviso-sin-corpus";
+              const gSc = await segAv("", { metodo: "POST", body: { perfil: PERFIL_SC, id: filaAv.id_del_proceso, estado: "interesa", foto: { ...filaAv, fecha_cierre: `${Hav.sumarDias(String(filaAv.fecha_cierre).slice(0, 10), -5)}T10:00:00` } } });
+              assert.strictEqual(gSc.status, 200, JSON.stringify(gSc.cuerpo).slice(0, 200));
+              mandados = []; lecturasCorpus = 0;
+              const sc = await pedirAvisos(`&perfil=${PERFIL_SC}`);
+              assert.strictEqual(sc.cuerpo.enviados, 1, JSON.stringify(sc.cuerpo).slice(0, 300));
+              assert.strictEqual(lecturasCorpus, 0, `con todos los vigentes abiertos en p6dx el aviso no lee el corpus del año (lo leyó ${lecturasCorpus} veces)`);
+              assert.deepStrictEqual([sc.cuerpo.filas_vivas.via, sc.cuerpo.filas_vivas.dudosos], [SegH.VIA_FILAS.datos, 0], JSON.stringify(sc.cuerpo.filas_vivas));
+              assert.ok(sc.cuerpo.filas_vivas.consultas >= 1, "una consulta por cada 40 procesos guardados");
+              lecturasCorpus = 0;
+              const { alertas: pantallaSc } = await alertasDelPerfil(redis, PERFIL_SC, AHORA);
+              assert.ok(lecturasCorpus >= 1, "la pantalla sigue leyendo el corpus (la prueba de equivalencia lo necesita)");
+              assert.ok(pantallaSc.some((a) => /^Cambió: /.test(a.mensaje)), JSON.stringify(pantallaSc.map((a) => a.mensaje)));
+              for (const a of pantallaSc) assert.ok(mandados[0].cuerpo.text.includes(a.mensaje), `sin corpus el aviso dice lo mismo que la pantalla: falta «${a.mensaje.slice(0, 70)}»`);
+              await redis.del(`avisos:enviado:${PERFIL_SC}:${DIA_BOGOTA}`);
+              await segAv(`&perfil=${PERFIL_SC}&id=${encodeURIComponent(filaAv.id_del_proceso)}`, { metodo: "DELETE" });
+              await redis.del(`seguimiento:${PERFIL_SC}`);
+              // (b) un perfil con un vigente que p6dx no trae: ESE va al corpus (dudoso) y las frases siguen siendo las de la pantalla
+              mandados = []; lecturasCorpus = 0;
+              const mixto = await pedirAvisos(`&perfil=${PERFIL_AV}`);
+              assert.deepStrictEqual([mixto.cuerpo.filas_vivas.via, mixto.cuerpo.filas_vivas.dudosos], [SegH.VIA_FILAS.mixta, 1], JSON.stringify(mixto.cuerpo.filas_vivas));
+              assert.ok(lecturasCorpus >= 1, "el dudoso se lee del corpus, como en la pantalla");
+              const { alertas: conCorpus } = await alertasDelPerfil(redis, PERFIL_AV, AHORA);
+              assert.ok(conCorpus.length >= 2);
+              for (const a of conCorpus) assert.ok(mandados[0].cuerpo.text.includes(a.mensaje), `el aviso dice lo mismo que la pantalla: falta «${a.mensaje.slice(0, 70)}»`);
+              await redis.del(`avisos:enviado:${PERFIL_AV}:${DIA_BOGOTA}`);
+
+              // (c) datos.gov.co caído: vuelve al corpus y el aviso sale con las mismas frases
+              mandados = []; lecturasCorpus = 0;
+              const baseAntes = process.env.SECOP_BASE_URL;
+              process.env.SECOP_BASE_URL = "http://127.0.0.1:9/no-hay-nadie.json";
+              let caido;
+              try { caido = await pedirAvisos(`&perfil=${PERFIL_AV}`); } finally { if (baseAntes === undefined) delete process.env.SECOP_BASE_URL; else process.env.SECOP_BASE_URL = baseAntes; }
+              assert.strictEqual(caido.cuerpo.filas_vivas.via, SegH.VIA_FILAS.base, JSON.stringify(caido.cuerpo.filas_vivas));
+              assert.ok(caido.cuerpo.filas_vivas.motivo && /datos\.gov\.co/.test(caido.cuerpo.filas_vivas.motivo), caido.cuerpo.filas_vivas.motivo);
+              assert.ok(lecturasCorpus >= 1, "con datos.gov.co caído el aviso vuelve a la vía del corpus");
+              assert.strictEqual(caido.cuerpo.enviados, 1, "y el aviso no se pierde");
+              for (const a of conCorpus) assert.ok(mandados[0].cuerpo.text.includes(a.mensaje), `por el corpus, la misma frase: «${a.mensaje.slice(0, 60)}»`);
+              await redis.del(`avisos:enviado:${PERFIL_AV}:${DIA_BOGOTA}`);
+
+              // (d) qué fila usa el aviso, con las filas REALES del simulador alteradas
+              const idsGuardados = Object.keys((await SegH.leerGuardados(redis, PERFIL_AV)).procesos);
+              const idVivo = filaAv.id_del_proceso;
+              /* `proceso_abierto` lo decide el reloj REAL (lib/filtros.estado_abierto), no el inyectado: las fechas del caso «abierto» van contra hoy */
+              const HOY_REAL = Hav.hoyColombia(Date.now());
+              const fechaDe = (dias) => `${Hav.sumarDias(HOY_REAL, dias)}T10:00:00.000`;
+              const conCierre = (f, dias, estado) => { const x = { ...f }; for (const k of Object.keys(x)) if (/fecha_de_recepcion|fecha_l_mite|cierre/i.test(k)) x[k] = fechaDe(dias); if (estado) x.estado_del_procedimiento = estado; return x; };
+              let wheres = [];
+              const alterar = (modo) => async (url, o) => {
+                wheres.push(new URL(url).searchParams.get("$where") || "");
+                const r = await fetch(url, o);
+                const filas = await r.json();
+                const base = filas.find((f) => f.id_del_proceso === idVivo);
+                if (!base) return { ok: true, status: 200, json: async () => filas };
+                if (modo === "cerrado") return { ok: true, status: 200, json: async () => filas.map((f) => f.id_del_proceso === idVivo ? conCierre(f, -10, "Adjudicado") : f) };
+                // dos versiones del mismo proceso: la de :updated_at mayor gana llegue primero o última
+                const nueva = { ...conCierre(base, 20), ":updated_at": "2099-01-01T00:00:00.000Z" };
+                const vieja = { ...conCierre(base, 3), ":updated_at": "2000-01-01T00:00:00.000Z" };
+                const resto = filas.filter((f) => f.id_del_proceso !== idVivo);
+                return { ok: true, status: 200, json: async () => (modo === "versiones" ? [nueva, ...resto, vieja] : [vieja, ...resto, nueva]) };
+              };
+              const conHistoria = new Map([["p", { procesos: { [idVivo]: { estado: "interesa", foto: {} }, "CO1.HISTORIA.1": { estado: "ganado", foto: {} } } }]]);
+              // un CERRADO según p6dx es dudoso: su fila sale del corpus (como en la pantalla), nunca la cerrada de p6dx
+              wheres = []; lecturasCorpus = 0;
+              const vCerr = await SegH.vivasParaAviso(redis, conHistoria, { fetchImpl: alterar("cerrado") });
+              assert.strictEqual(vCerr.dudosos, 1, JSON.stringify(vCerr));
+              assert.ok(lecturasCorpus >= 1, "el cerrado se busca en el corpus");
+              assert.ok(!vCerr.vivas.get(idVivo) || vCerr.vivas.get(idVivo).estado_del_procedimiento !== "Adjudicado", "la fila cerrada de p6dx no se usa: puede no estar ya en la pantalla");
+              assert.ok(!wheres.some((w) => w.includes("CO1.HISTORIA.1")), `lo que ya es historia no se pide a datos.gov.co: ${wheres.join(" | ")}`);
+              // un ABIERTO según p6dx sale de p6dx, sin corpus; de dos versiones gana el :updated_at más reciente, en cualquier orden
+              for (const modo of ["versiones", "versiones_al_reves"]) {
+                lecturasCorpus = 0;
+                const v = await SegH.vivasParaAviso(redis, conHistoria, { fetchImpl: alterar(modo) });
+                assert.deepStrictEqual([v.via, v.dudosos, lecturasCorpus], [SegH.VIA_FILAS.datos, 0, 0], `${modo}: ${JSON.stringify([v.via, v.dudosos, lecturasCorpus])}`);
+                assert.strictEqual(String(v.vivas.get(idVivo).fecha_cierre).slice(0, 10), Hav.sumarDias(HOY_REAL, 20), `${modo}: gana la del :updated_at más reciente, llegue como llegue`);
+              }
+              const rLote = await SegH.filaVivaSinCorpus([...idsGuardados, ...Array.from({ length: 45 }, (_, i) => `CO1.NOEXISTE.${i}`)]);
+              assert.strictEqual(rLote.consultas, 2, "una consulta por cada 40 procesos: 47 procesos son 2 consultas");
+              const rNoLista = await SegH.filaVivaSinCorpus(idsGuardados, { fetchImpl: async () => ({ ok: true, status: 200, json: async () => ({ error: "no es lista" }) }) });
+              assert.strictEqual(rNoLista.ok, false, "una respuesta que no es lista no es «ningún proceso»: es un fallo y el aviso vuelve al corpus");
+              // PÁGINAS ENTERAS: los duplicados de un proceso no dejan sin fila a los demás del lote
+              const cruda = (await (await fetch(`${process.env.SECOP_BASE_URL}?$where=${encodeURIComponent(`id_del_proceso='${idVivo}'`)}`)).json())[0];
+              assert.ok(cruda, "la prueba necesita la fila cruda del simulador");
+              const otroId = "CO1.REQ.PAGINA.2";
+              const pag = async (url) => { const off = Number(new URL(url).searchParams.get("$offset") || 0);
+                const filas = off === 0 ? [{ ...cruda, ":id": "d1" }, { ...cruda, ":id": "d2" }] : off === 2 ? [{ ...cruda, id_del_proceso: otroId, ":id": "d3" }] : [];
+                return { ok: true, status: 200, json: async () => filas }; };
+              const rPag = await SegH.filaVivaSinCorpus([idVivo, otroId], { fetchImpl: pag, pagina: 2 });
+              assert.ok(rPag.ok && rPag.filas.has(idVivo) && rPag.filas.has(otroId) && rPag.consultas === 2, `con la primera página llena de duplicados, el otro proceso llega en la segunda: ${JSON.stringify({ ok: rPag.ok, n: rPag.filas && rPag.filas.size, c: rPag.consultas })}`);
+              const lleno = async () => ({ ok: true, status: 200, json: async () => [{ ...cruda, ":id": "x1" }, { ...cruda, ":id": "x2" }] });
+              const rLleno = await SegH.filaVivaSinCorpus([idVivo], { fetchImpl: lleno, pagina: 2, maxPaginas: 3 });
+              assert.ok(rLleno.ok === false && /a medias/.test(rLleno.motivo) && rLleno.consultas === 3, `más páginas que el tope: falla y vuelve al corpus, nunca a medias: ${JSON.stringify(rLleno)}`);
+              let tReloj = 0;
+              const rLento = await SegH.filaVivaSinCorpus([...idsGuardados, ...Array.from({ length: 80 }, (_, i) => `CO1.LENTO.${i}`)], { reloj: () => (tReloj += 6000), presupuestoMs: 10000 });
+              assert.ok(rLento.ok === false && /tardó/.test(rLento.motivo), `el plazo total corta y vuelve al corpus: ${JSON.stringify(rLento)}`);
+
+              // (e) TELEGRAM como segundo canal
+              const LLAVE_TG = "123456:llave-del-bot-de-prueba";
+              ponerAv("TELEGRAM_BOT_TOKEN", LLAVE_TG); ponerAv("TELEGRAM_CHAT_ID", "-1001234");
+              let tgMandados = [], tgRoto = false, tgCuerpoRoto = null;
+              const transporteTg = async (url, o) => {
+                if (/\/sendMessage$/.test(url)) {
+                  tgMandados.push({ url, cuerpo: JSON.parse(o.body) });
+                  if (tgRoto) return { ok: false, status: 401, text: async () => tgCuerpoRoto || JSON.stringify({ ok: false, description: `Unauthorized for ${LLAVE_TG}` }) };
+                  return { ok: true, status: 200, text: async () => JSON.stringify({ ok: true, result: { message_id: 100 + tgMandados.length } }) };
+                }
+                if (/\/getUpdates$/.test(url)) return { ok: true, status: 200, text: async () => JSON.stringify({ ok: true, result: [
+                  { update_id: 1, message: { chat: { id: 555, type: "private", first_name: "Mauricio" }, text: "hola" } },
+                  { update_id: 2, message: { chat: { id: 555, type: "private", first_name: "Mauricio" }, text: "otra vez" } },
+                  { update_id: 3, message: { chat: { id: -1009, type: "group", title: "Obra" }, text: "x" } }] }) };
+                return transporte(url, o);
+              };
+              mandados = []; tgMandados = [];
+              const dos = await pedirAvisos(`&perfil=${PERFIL_AV}`, CAB_TOKEN, { fetchImpl: transporteTg });
+              assert.strictEqual(dos.cuerpo.enviados, 2, `correo y Telegram: dos envíos: ${JSON.stringify(dos.cuerpo.detalle_enviados)} ${JSON.stringify(dos.cuerpo.fallos)}`);
+              assert.deepStrictEqual(dos.cuerpo.detalle_enviados.map((x) => x.canal).sort(), ["correo", "telegram"]);
+              assert.strictEqual(tgMandados.length, 1, "un aviso corto es UN mensaje");
+              assert.strictEqual(tgMandados[0].url, `${Tg.URL_DEFECTO}/bot${LLAVE_TG}/sendMessage`, "la llave va en la ruta, como la define Telegram");
+              assert.strictEqual(tgMandados[0].cuerpo.chat_id, "-1001234", "el chat sale de TELEGRAM_CHAT_ID");
+              assert.strictEqual(tgMandados[0].cuerpo.text, mandados[0].cuerpo.text, "Telegram lleva el MISMO texto del correo: no hay una segunda redacción");
+              assert.ok(!("parse_mode" in tgMandados[0].cuerpo), "sin parse_mode: el texto sale tal cual, sin escapar nada");
+              assert.ok(await redis.get(`avisos:telegram:${PERFIL_AV}:${DIA_BOGOTA}`) && await redis.get(`avisos:enviado:${PERFIL_AV}:${DIA_BOGOTA}`), "cada canal con su marca del día");
+              assert.strictEqual(dos.cuerpo.telegram.configurado, true);
+              assert.ok(!JSON.stringify(dos.cuerpo).includes(LLAVE_TG), "la llave del bot no vuelve en la respuesta");
+              // el mismo día no repite ninguno de los dos
+              mandados = []; tgMandados = [];
+              const rep2 = await pedirAvisos(`&perfil=${PERFIL_AV}`, CAB_TOKEN, { fetchImpl: transporteTg });
+              assert.strictEqual(rep2.cuerpo.enviados, 0); assert.strictEqual(mandados.length + tgMandados.length, 0);
+              assert.ok(rep2.cuerpo.omitidos.some((o) => o.canal === "telegram" && /ya se había enviado por Telegram/.test(o.motivo)), JSON.stringify(rep2.cuerpo.omitidos));
+              // Telegram falla y el correo sale: solo la marca de Telegram se borra, y la llave no viaja en el motivo
+              for (const k of [`avisos:telegram:${PERFIL_AV}:${DIA_BOGOTA}`, `avisos:enviado:${PERFIL_AV}:${DIA_BOGOTA}`]) await redis.del(k);
+              mandados = []; tgMandados = []; tgRoto = true;
+              const medio = await pedirAvisos(`&perfil=${PERFIL_AV}`, CAB_TOKEN, { fetchImpl: transporteTg });
+              tgRoto = false;
+              assert.strictEqual(medio.cuerpo.enviados, 1, "el correo salió aunque Telegram falló");
+              assert.ok(medio.cuerpo.fallos.some((f) => f.canal === "telegram" && /401/.test(f.motivo)), JSON.stringify(medio.cuerpo.fallos));
+              assert.ok(!JSON.stringify(medio.cuerpo).includes(LLAVE_TG), `la llave del bot no puede volver en el motivo: ${JSON.stringify(medio.cuerpo.fallos)}`);
+              assert.strictEqual(await redis.get(`avisos:telegram:${PERFIL_AV}:${DIA_BOGOTA}`), null, "la marca de Telegram se borra para reintentar");
+              assert.ok(await redis.get(`avisos:enviado:${PERFIL_AV}:${DIA_BOGOTA}`), "la del correo se queda: ya salió");
+              mandados = []; tgMandados = [];
+              const reint = await pedirAvisos(`&perfil=${PERFIL_AV}`, CAB_TOKEN, { fetchImpl: transporteTg });
+              assert.deepStrictEqual([reint.cuerpo.enviados, mandados.length, tgMandados.length], [1, 0, 1], "el reintento solo manda lo que faltó: Telegram");
+              // un 200 que no confirma (HTML del muro o ok:false) no es un envío hecho
+              for (const k of [`avisos:telegram:${PERFIL_AV}:${DIA_BOGOTA}`]) await redis.del(k);
+              for (const malo of ["<html>muro</html>", JSON.stringify({ ok: false })]) {
+                const rM = await Tg.enviarTelegram({ texto: "x" }, { fetchImpl: async () => ({ ok: true, status: 200, text: async () => malo }) });
+                assert.strictEqual(rM.ok, false, `un 200 con «${malo}» no confirma el envío`);
+              }
+              // una excepción de red que repite la llave sale tachada
+              const rEx = await Tg.enviarTelegram({ texto: "x" }, { fetchImpl: async (u) => { throw new Error(`fallo hacia ${u}`); } });
+              assert.ok(rEx.ok === false && !rEx.motivo.includes(LLAVE_TG) && /tachada/.test(rEx.motivo), rEx.motivo);
+              // partir un aviso largo: trozos de como mucho MAX_CARACTERES, por renglones enteros y en orden
+              const largo = Array.from({ length: 300 }, (_, i) => `- Proceso ${i}: cierra mañana y cambió el presupuesto de la obra número ${i}.`).join("\n");
+              const trozos = Tg.partirTexto(largo);
+              assert.ok(trozos.length >= 2 && trozos.every((t) => t.length <= Tg.MAX_CARACTERES), `trozos: ${trozos.map((t) => t.length)}`);
+              assert.strictEqual(trozos.join("\n"), largo, "partir no pierde ni reordena ningún renglón");
+              assert.ok(Tg.partirTexto("x".repeat(9000)).every((t) => t.length <= Tg.MAX_CARACTERES), "ni una palabra imposible pasa del tope");
+              const emojis = "a" + "\u{1F600}".repeat(3000);
+              const tEmo = Tg.partirTexto(emojis);
+              assert.ok(tEmo.join("") === emojis && tEmo.every((t) => t.length <= Tg.MAX_CARACTERES && !/[\uD800-\uDBFF]$/.test(t) && !/^[\uDC00-\uDFFF]/.test(t)), "el corte a la fuerza no parte un carácter doble por la mitad");
+              // una llave pegada en Vercel con un espacio o salto de línea al final también se tacha (la ruta la lleva recortada)
+              const antesLlave = process.env.TELEGRAM_BOT_TOKEN;
+              process.env.TELEGRAM_BOT_TOKEN = "999:llave-con-espacio \n";
+              try {
+                const rSp = await Tg.enviarTelegram({ texto: "x" }, { env: { ...process.env, TELEGRAM_CHAT_ID: "1", TELEGRAM_API_URL: "sin-esquema.example" } });
+                assert.ok(rSp.ok === false && !rSp.motivo.includes("999:llave-con-espacio") && /tachada/.test(rSp.motivo), rSp.motivo);
+              } finally { if (antesLlave === undefined) delete process.env.TELEGRAM_BOT_TOKEN; else process.env.TELEGRAM_BOT_TOKEN = antesLlave; }
+              let nLargo = 0;
+              const rLargo = await Tg.enviarTelegram({ texto: largo }, { fetchImpl: async () => { nLargo++; return { ok: true, status: 200, text: async () => JSON.stringify({ ok: true, result: { message_id: nLargo } }) }; } });
+              assert.ok(rLargo.ok && rLargo.mensajes === trozos.length && nLargo === trozos.length, JSON.stringify(rLargo));
+              // solo Telegram (sin correo): la tarea de la mañana SÍ calcula y envía
+              for (const n of ["CORREO_API_KEY", "CORREO_REMITENTE", "CORREO_DESTINO"]) ponerAv(n, undefined);
+              ponerAv("CRON_SECRET", "secreto-solo-telegram");
+              for (const k of [`avisos:telegram:${PERFIL_AV}:${DIA_BOGOTA}`]) await redis.del(k);
+              mandados = []; tgMandados = [];
+              const soloTg = await pedirAvisos(`&perfil=${PERFIL_AV}`, { authorization: "Bearer secreto-solo-telegram" }, { fetchImpl: transporteTg });
+              assert.deepStrictEqual([soloTg.cuerpo.enviados, mandados.length, tgMandados.length], [1, 0, 1], `con solo Telegram, el cron calcula y envía: ${JSON.stringify(soloTg.cuerpo).slice(0, 300)}`);
+              ponerAv("CRON_SECRET", undefined);
+              // (f) las ayudas
+              const chat = await pedirAvisos("&telegram=chat", CAB_TOKEN, { fetchImpl: transporteTg });
+              assert.strictEqual(chat.status, 200);
+              assert.deepStrictEqual(chat.cuerpo.chats.map((c) => c.chat_id), ["555", "-1009"], "un chat por número, sin repetir");
+              assert.strictEqual(chat.cuerpo.chats[0].nombre, "Mauricio");
+              assert.ok(/TELEGRAM_CHAT_ID/.test(chat.cuerpo.que_hacer), chat.cuerpo.que_hacer);
+              tgMandados = [];
+              const prueba = await pedirAvisos("&telegram=prueba", CAB_TOKEN, { fetchImpl: transporteTg });
+              assert.ok(prueba.cuerpo.enviado === true && tgMandados.length === 1 && /prueba/.test(tgMandados[0].cuerpo.text), JSON.stringify(prueba.cuerpo));
+              ponerAv("TELEGRAM_CHAT_ID", undefined);
+              const pruebaSin = await pedirAvisos("&telegram=prueba", CAB_TOKEN, { fetchImpl: transporteTg });
+              assert.ok(pruebaSin.cuerpo.enviado === false && pruebaSin.cuerpo.telegram.falta.includes("TELEGRAM_CHAT_ID") && pruebaSin.cuerpo.telegram.que_hacer, JSON.stringify(pruebaSin.cuerpo));
+              ponerAv("TELEGRAM_BOT_TOKEN", undefined);
+              const chatSin = await pedirAvisos("&telegram=chat", CAB_TOKEN, { fetchImpl: transporteTg });
+              assert.ok(chatSin.cuerpo.ok === false && /TELEGRAM_BOT_TOKEN/.test(chatSin.cuerpo.motivo) && chatSin.cuerpo.que_hacer, JSON.stringify(chatSin.cuerpo));
+              assert.strictEqual((await invocar(routerPerfilAv, "/api/perfil?op=avisos&telegram=chat")).status, 401, "las ayudas exigen la llave, como el aviso");
+              const inerteTg = await pedirAvisos(`&perfil=${PERFIL_AV}&telegram=marciano&enviar=no`);
+              assert.ok(Array.isArray(inerteTg.cuerpo.vista_previa) && !("chats" in inerteTg.cuerpo), "un valor desconocido de «telegram» es INERTE: sigue el aviso normal");
+              for (const [donde, cuerpo] of [["dos canales", dos.cuerpo], ["telegram caído", medio.cuerpo], ["chats", chat.cuerpo], ["prueba", prueba.cuerpo], ["prueba sin chat", pruebaSin.cuerpo], ["chat sin llave", chatSin.cuerpo], ["datos caído", caido.cuerpo]]) {
+                for (const t of textosDe(cuerpo)) {
+                  assert.ok(!Lp.VOSEO_RE.test(t), `respuesta «${donde}»: tuteo «${(t.match(Lp.VOSEO_RE) || [])[0]}» en «${t.slice(0, 90)}»`);
+                  assert.ok(!t.match(Lp.RE_EMOJI_UI), `respuesta «${donde}»: pictograma en «${t.slice(0, 90)}»`);
+                }
+              }
+              ponerAv("CORREO_API_KEY", CLAVE_AV); ponerAv("CORREO_REMITENTE", "avisos@ejemplo.test"); ponerAv("CORREO_DESTINO", "ingeniero@ejemplo.test");
+              for (const k of [`avisos:telegram:${PERFIL_AV}:${DIA_BOGOTA}`, `avisos:enviado:${PERFIL_AV}:${DIA_BOGOTA}`]) await redis.del(k);
+            } finally {
+              Lst.cargarCorpus = origCargar;
+              for (const n of ["TELEGRAM_BOT_TOKEN", "TELEGRAM_CHAT_ID"]) ponerAv(n, undefined);
+            }
+          }
 
           /* CENSO de lenguaje sobre TODO lo que la op devuelve —no una lista de
              campos: la jerga vuelve por el que no se miró—, en las cuatro

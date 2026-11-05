@@ -1152,6 +1152,7 @@ de la garantía de seriedad (sí sus defectos formales), la falta de capacidad, 
 circunstancia **ocurrida después del cierre** (se reexpide un certificado; no se crea un hecho nuevo).
 
 ### Los 4 métodos de ponderación económica y cómo se sortea
+> SUPERADA el 5-nov-2026 por «El aviso al teléfono por Telegram, sin leer el corpus, dónde gana el dueño y lo que midió la fase 0 (5-nov-2026)» — los documentos tipo vigentes de obra (licitación de transporte V.4, social V.2, agua V.1, menor cuantía de transporte V.3 y social V.1, numeral 4.1.4) sortean con los CENTAVOS de la TRM, no con el primer decimal, entre mediana con valor absoluto (0,00–0,24), media geométrica (0,25–0,49), media aritmética baja (0,50–0,74) y menor valor (0,75–0,99). No existen la «media aritmética alta» ni la «geométrica con presupuesto oficial». El día de la TRM cambia según el documento. El resto de la sección (valor esperado, precio artificialmente bajo) sigue en pie.
 
 1. **Media aritmética** — gana el más cercano al promedio de las hábiles.
 2. **Media aritmética alta** — promedio solo de las que están por encima de la media.
@@ -21411,3 +21412,44 @@ En una línea: la tarea de las 11:00 UTC (`/api/avisos`, op=avisos) pide cada ma
   - Una prueba anterior cambió a propósito: la lista de campos de op=salud, que la suite fija en dos sitios, ahora lleva `revision_adendas`.
   - Mutaciones: 32 de 32 detectadas, cada una con la suite corriendo en una copia aparte: sin `sinCorpus`, sin el salto de 12 h, sin la guarda de reglas anteriores o con el censo sin los Excel, el tope sobre lo leído o sin tope, sin presupuesto, sin la marca o sin NX, la historia o los cerrados viejos dentro, sin la foto más reciente, la revisión con `enviar=no` o con la llave sola, seguir tras la base caída, la prueba a mano con marca o con resumen, el índice que dice menos, datos.gov.co caído que escribe, el GET sin corpus o sin soltar los ilegibles, sin releer, pisar lo de la pantalla, el primer índice con adendas nuevas, sin resumen al parar, y la jerga de la base o de datos.gov.co en la respuesta.
   - Revisión adversaria por un subagente sobre una copia congelada, con una reproducción ejecutada por hallazgo: 1 alto, 3 medios y 7 bajos, todos atendidos arriba. El de las 400 filas de dmgg-8hin es de antes de este cambio y queda como PENDIENTE.
+
+### El aviso al teléfono por Telegram, sin leer el corpus, dónde gana el dueño y lo que midió la fase 0 (5-nov-2026)
+
+En una línea: el aviso de cada mañana y la alarma de salud salen también por Telegram (gratis, inerte hasta que el dueño pegue dos variables); el aviso pide a p6dx los guardados abiertos y lee del corpus solo los cerrados, para decir lo mismo que la pantalla; Mis procesos dice dónde gana el dueño (por entidad, tipo de obra y modalidad); y el calendario suscribible quedó fuera porque el muro de Vercel no lo deja leer.
+
+> PENDIENTE · encender Telegram es del dueño: crear el bot y pegar TELEGRAM_BOT_TOKEN y TELEGRAM_CHAT_ID en Vercel, con los pasos de docs/CONFIGURACION_TOKENS.md § «3.12 · `TELEGRAM_BOT_TOKEN` y `TELEGRAM_CHAT_ID` — el aviso al teléfono por Telegram (opcional, recomendado)». También hace falta CRON_SECRET. Luego, medir en producción cuánto tarda la función con la revisión de adendas y los envíos.
+> PENDIENTE · el calendario suscribible depende de una decisión del dueño: el muro de Vercel en todo el sitio (17-oct-2026) impide que un calendario externo lo lea.
+> PENDIENTE · leer SECOP I (f789-7hwg) en la ingesta: el 45 % de la obra competitiva de 90 días pasó por allí, y no trae fecha de cierre.
+> PENDIENTE · el complemento del analista (V-18) tiene mal el día de la TRM de la licitación social V.2. Allí manda la regla de las 3:00 p. m. (día hábil siguiente, o segundo); la del día hábil siguiente a la apertura del sobre 2 es la de agua V.1.
+
+- **Por qué Telegram y no WhatsApp.** Encargo del dueño del 5-nov-2026 («haz todas las mejoras que propones»), sobre el plan «Plan Detekta a otro nivel», proceso 11. La Bot API envía «at no cost» y pide un POST (core.telegram.org/bots/faq, leída el 5-nov-2026). WhatsApp cobra «on a per-message basis», y los mensajes que inicia la empresa necesitan plantilla aprobada (developers.facebook.com/docs/whatsapp/pricing, leída el 5-nov-2026). La tarifa en pesos no se pudo leer porque está en una tabla aparte. Un mensaje admite «1-4096 characters» (core.telegram.org/bots/api, leída el 5-nov-2026).
+- **Lo que no hay que deshacer:**
+  - **El aviso lee el corpus solo cuando hace falta.** `filaVivaSinCorpus` (lib/handlers/perfil/seguimiento.js) pide a p6dx solo los guardados vigentes, una consulta por cada 40, y les aplica `repartirDelta(...).activo`, la misma proyección de la sincronización. Encender un canal le costaba al plan gratis los 22 MB del corpus cada mañana (0,65 GB al mes).
+    - Lo que no es historia y p6dx da por ABIERTO sale de p6dx. Está en el corpus, porque la carga completa y el delta guardan todo lo abierto, y sale de la misma carga diaria.
+    - Lo CERRADO, o lo que p6dx no trae, es dudoso (`vivasParaAviso`) y se lee del corpus, como en la pantalla.
+    - Lo que es historia no se pide: `alertasDe` no avisa de ello.
+    - `filas_vivas` dice la vía y cuántos dudosos hubo. El ahorro es entero solo los días sin un guardado vigente cerrado (sin medir en producción).
+    - Si datos.gov.co falla, todo sale del corpus.
+    - La pantalla sigue leyendo el corpus.
+  - **Por qué no una regla de días (revisión adversaria del 5-nov-2026, reproducida).** La primera versión usaba «cerrado hace menos de 35 días» y fallaba en los dos sentidos. Callaba la adjudicación que el delta ya había escrito en el corpus (cierre de hace 65 días, «Adjudicado» ayer). Y anunciaba un cambio de un cerrado que la compactación, o la carga completa mensual, ya había retirado de la pantalla. Que un cerrado siga en el corpus depende de la historia de la sincronización, y eso no se deduce de la fecha.
+  - **Páginas enteras o nada.** En p6dx hay procesos con cientos de filas idénticas (CO1.REQ.10280132 tiene 288, medido el 5-nov-2026). Un `$limit` fijo se llenaba con ellas y dejaba sin fila a los otros 39 del lote, con `ok:true`.
+    - Se pagina por `:id` hasta una página corta.
+    - Con más de 5 páginas de 1.000, o pasados 10 s en total, la respuesta es `ok:false` y el aviso vuelve al corpus.
+    - De una re-publicación gana el `:updated_at` más reciente, llegue en el orden que llegue.
+  - **Una marca del día por canal.** `avisos:enviado:{perfil}:{fecha}` (la del correo, con su nombre de siempre) y `avisos:telegram:{perfil}:{fecha}`. Si uno falla, el otro sale y solo se reintenta el que faltó.
+  - **Telegram lleva el mismo texto del correo, sin parse_mode.** No hay una segunda redacción ni nada que escapar.
+  - **La llave del bot va en la ruta, porque así la define Telegram.** Ningún motivo lleva la URL, y TELEGRAM_BOT_TOKEN entró al censo de `tacharClave` (lib/apu_ocr.js).
+  - **Dos ayudas en /api/avisos, con la llave.** `&telegram=chat` lista los chats que le escribieron al bot en 24 h (getUpdates) para copiar el suyo; `&telegram=prueba` manda un mensaje. Cualquier otro valor es inerte.
+  - **La alarma de salud (latido) sale por cada canal configurado.** Cuenta como avisada si salió por al menos uno.
+  - **«Dónde gana».** `S.resultadosPor` cuenta las presentadas (ganadas, perdidas y sin resultado) por entidad, tipo de obra (`frecuencia_precio.tipoDeObra`, llamada y no copiada) y modalidad.
+    - Son conteos, nunca porcentajes.
+    - Lo que la fila no dice va como «Sin dato».
+    - Un objeto con dos tipos va como «Varios tipos o sin tipo».
+    - El tope es de 8 grupos, con `otros`.
+    - La pantalla (`htmlResultadosPor`) lo enseña plegado bajo «Cómo le va», con tres o más presentadas.
+- **El calendario suscribible NO se hizo.** Producción está detrás del muro de Vercel («Protected by Vercel Authentication», decisión del dueño del 17-oct-2026). Así, Google Calendar o el iPhone no pueden leer una dirección de Detekta. La única forma sería poner el pase del muro (VERCEL_AUTOMATION_BYPASS_SECRET) en la dirección del calendario, y eso le abriría todo el sitio a quien la tenga. El .ics descargable sigue como estaba.
+- **Lo que midió la fase 0** (datos abiertos, 5-nov-2026, consultas en scratchpad de la sesión):
+  - **SECOP I sigue vivo.** En f789-7hwg hubo 1.915 procesos de obra competitiva entre el 7-ago y el 4-nov-2026, frente a 2.298 de SECOP II: el 45 % de la suma. Los publican sobre todo alcaldías pequeñas (Nariño 287, Cauca 164, Chocó 159). El conjunto no trae fecha de cierre de ofertas.
+  - **p6dx-8zbt se reemplaza entero en cada carga.** Las 9.420.913 filas tenían el mismo `:updated_at` (2026-11-03T14:48:10Z). El dato más reciente tenía unos 2,5 días, con la cabecera `X-SODA2-Data-Out-Of-Date: true`. Por eso leerlo más seguido no trae nada nuevo, y la «frescura por prioridad» del plan se descartó.
+  - **Contratos que vuelven a licitarse.** Entre los contratos de obra que terminaron en el primer semestre de 2025 (jbjy-vk9h), salió un proceso de la misma obra y dependencia dentro de los 6 meses siguientes en 9 de 40 recurrentes (mantenimiento y conservación), frente a 1 de 20 no recurrentes. Contando los 90 días anteriores al fin, fueron 16 de 40. Es un indicio de una muestra chica, no una tasa.
+  - **Documentos tipo.** Puntaje de la oferta económica: 48,5 en licitación de transporte y social, 59,5 en agua y 49,5 en menor cuantía. Mínima cuantía no sortea método. La subsanación sigue en el art. 5 de la Ley 1882 de 2018 (parágrafo 1 del art. 5 de la Ley 1150 de 2007), «hasta el término de traslado del informe de evaluación», sin reforma registrada en la Secretaría del Senado al 15-oct-2026.
