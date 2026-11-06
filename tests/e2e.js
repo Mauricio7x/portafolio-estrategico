@@ -8725,7 +8725,10 @@ async function main() {
     const otraSenal = filtros.evaluarObjeto(filaG("SUMINISTRO DE MATERIALES PARA LA CONSTRUCCIÓN DE PLACA HUELLA Y EL MEJORAMIENTO DE LA VÍA", "", "Suministros"), PERFILES.helder).pertinencia;
     assert.strictEqual(otraSenal.nivel, "verde", `con «construcción» además de la palabra genérica sigue verde: ${JSON.stringify(otraSenal)}`);
     const conAncla = filtros.evaluarObjeto(filaG("MANTENIMIENTO DE LA INFRAESTRUCTURA VIAL DEL MUNICIPIO", "", "Prestación de servicios"), PERFILES.helder).pertinencia;
-    assert.strictEqual(conAncla.nivel, "verde", `«mantenimiento … vial» es obra aunque el contrato sea de servicios: ${JSON.stringify(conAncla)}`);
+    /* el ancla sigue impidiendo el ámbar de la PALABRA GENÉRICA (1-bis); desde el 6-nov-2026 lo baja el
+       contrato de servicios (1-quater, «la entidad publicó el contrato como…»), que no es esta regla */
+    assert.ok(conAncla.nivel === "amarillo" && conAncla.ambar_por_contrato === "contrato_de_compra_o_servicio" && !conAncla.palabras_genericas,
+      `«mantenimiento … vial» en un contrato de servicios: no lo baja la palabra genérica, lo baja el contrato: ${JSON.stringify(conAncla)}`);
     // la interventoría y la consultoría no se tocan: el MISMO objeto baja solo con un contrato de suministro
     // (un control con la palabra «interventoría» en el objeto no discriminaba: esa palabra ya es verde sola)
     const SEGUIMIENTO = "SEGUIMIENTO TECNICO AL MEJORAMIENTO DE LA SEDE COMUNAL";
@@ -8751,9 +8754,14 @@ async function main() {
     assert.ok(conMej.pertinencia.nivel === "amarillo" && conMej.pertinencia.casa_solo_por_servicio === true,
       `MUTACIÓN: con «mejoramiento» el aviso de P1 por la clase de servicios se apagaba: ${JSON.stringify(conMej.pertinencia)}`);
     // EL MOTIVO VERDE CITA LO QUE LO SOSTIENE: en un suministro, no la palabra genérica si el verde lo da otro verbo
-    const torres = filtros.evaluarObjeto(filaG("AMPLIACION Y MANTENIMIENTO DE LA RED DE TORRES DE TELECOMUNICACIONES", "", "Suministros"), PERFILES.helder).pertinencia;
+    /* desde el 6-nov-2026 un suministro con verbo de obra ya no es verde (1-quater): el verde con otro verbo se
+       prueba con «Otro», que sigue en la regla de la cita, y el ámbar del suministro cita lo mismo */
+    const torres = filtros.evaluarObjeto(filaG("AMPLIACION Y MANTENIMIENTO DE LA RED DE TORRES DE TELECOMUNICACIONES", "", "Otro"), PERFILES.helder).pertinencia;
     assert.ok(torres.nivel === "verde" && !/ampliacion/.test(torres.motivo) && /mantenimiento/.test(torres.motivo),
       `MUTACIÓN: el verde decía «ampliación» y lo sostiene «mantenimiento de la red»: ${JSON.stringify(torres)}`);
+    const torresSum = filtros.evaluarObjeto(filaG("AMPLIACION Y MANTENIMIENTO DE LA RED DE TORRES DE TELECOMUNICACIONES", "", "Suministros"), PERFILES.helder).pertinencia;
+    assert.ok(torresSum.ambar_por_contrato === "contrato_de_compra_o_servicio" && /dice «mantenimiento de la red»/.test(torresSum.motivo),
+      `el ámbar del suministro cita lo que sostenía el verde, no «ampliación»: ${JSON.stringify(torresSum)}`);
     // LA MÍNIMA CUANTÍA: el 7-bis de lib/filtros también exige la pertinencia de texto; hoy esta fila entra antes por el paso 7
     // (con verbo de obra el 7-bis es inalcanzable: lo confirmó la revisión adversaria del 28-oct), y la aserción fija que siga entrando
     const minima = filaG("ADQUISICIÓN DE KITS DE CUIDADO PERSONAL CONTRIBUYENDO AL MEJORAMIENTO DE LAS CONDICIONES DE HABITABILIDAD DE LAS UNIDADES", "", "Compraventa",
@@ -8888,6 +8896,7 @@ async function main() {
       assert.ok(ev.ok === true && !ev.paso, `la fila desaparecía: ${JSON.stringify({ ok: ev.ok, paso: ev.paso })}`);
     }
     // LA OBRA REAL SIGUE SIENDO OBRA (en el filtro y en el chip), aunque el contrato no sea de obra: las de producción que leyó la sesión
+    const CONTRATO_DE_COMPRA_O_SERVICIO_T = new Set(["Suministros", "Compraventa", "Prestación de servicios", "Arrendamiento de muebles"]);
     const SI_ES_OBRA = [
       /* obras que NOMBRAN llantas o neumáticos y no las compran (revisión adversaria del 3-nov-2026: con la palabra
          suelta en la lista de servicios salían «servicios»; el término va atado a la compra). Objetos de prueba. */
@@ -8950,7 +8959,15 @@ async function main() {
     for (const [contrato, nombre, descripcion] of SI_ES_OBRA) {
       const fila = filaG(nombre, descripcion, contrato);
       assert.strictEqual(FLc.tipoTrabajoDe(fila), "obra", `MUTACIÓN: la obra «${nombre.slice(0, 60)}» (${contrato}) salía del filtro de obra`);
-      assert.strictEqual(filtros.evaluarObjeto(fila, PERFILES.helder).pertinencia.nivel, "verde", `MUTACIÓN: la obra «${nombre.slice(0, 60)}» perdía el chip verde`);
+      /* desde el 6-nov-2026, en un contrato de compra o servicio el chip es el ámbar del CONTRATO (1-quater), visible;
+         lo que estas filas vigilan es que no lo baje la regla de la compra o el servicio (1-ter) ni la palabra genérica */
+      const ev = filtros.evaluarObjeto(fila, PERFILES.helder);
+      if (CONTRATO_DE_COMPRA_O_SERVICIO_T.has(contrato)) {
+        assert.ok(ev.ok && ev.pertinencia.ambar_por_contrato === "contrato_de_compra_o_servicio",
+          `MUTACIÓN: la obra «${nombre.slice(0, 60)}» (${contrato}) la bajaba otra regla que la del contrato: ${JSON.stringify(ev.pertinencia)}`);
+      } else {
+        assert.strictEqual(ev.pertinencia.nivel, "verde", `MUTACIÓN: la obra «${nombre.slice(0, 60)}» perdía el chip verde`);
+      }
     }
     /* ── PASO 3 (28-oct-2026, «haz la 1 y 2»): el chip sigue a la regla explícita de no-obra de la lista ── */
     const FLp3 = require("../lib/filtros_lista.js");
@@ -8987,6 +9004,180 @@ async function main() {
     // la regla explícita es la de la lista: donde dice algo, `tipoTrabajoDe` dice lo mismo
     for (const [, fila] of COMPRAS_Y_SERVICIOS) assert.strictEqual(FLp3.noEsObraPorElObjeto(fila), FLp3.tipoTrabajoDe(fila), `la regla explícita y la lista discrepan: ${fila.nombre_del_procedimiento.slice(0, 40)}`);
     console.log(`· unidad rótulo de obra con una palabra genérica: ${CASOS.length} objetos de producción (suministro, compraventa y servicios) pasan de verde a «Verificar objeto» con la palabra y el motivo, sin esconderse (texto y mínima cuantía); el mismo objeto con contrato de obra, sin contrato publicado, con otra señal de obra o con interventoría sigue verde · ${COMPRAS_Y_SERVICIOS.length} compras o servicios que no son obra bajan sin esconderse; la compra de material de obra, la clase de obra pura y la obra publicada como «Otro» o «Decreto 092» siguen verdes · ${NO_ES_OBRA.length} objetos que no son obra salen del tipo «obra» y ${SI_ES_OBRA.length} obras reales se quedan`);
+  }
+
+  /* unidad: LA OBRA QUE LA ENTIDAD NO DECLARÓ (6-nov-2026, tarea 7; paso 5 del plan del 6-nov, aprobado por el dueño).
+     (a) 1-quater de lib/filtros.evaluarPertinencia: en un contrato publicado como compra o servicio, el verbo de obra
+     ya no basta para el verde; el chip pasa al ámbar del CONTRATO y la fila sigue visible. (b) lib/filtros_lista: las
+     frases que dicen «obra» fuera de contexto y cinco términos de servicio sacan del tipo «obra» lo que no lo es.
+     Todas las filas son reales, de p6dx-8zbt (22-sep a 6-nov-2026), con su texto publicado. */
+  bqObraNoDeclarada: { if (!corre("unidad obra que la entidad no declaró")) break bqObraNoDeclarada;
+    const Lnd = require("../lib/lenguaje_pantalla.js");
+    const FLnd = require("../lib/filtros_lista.js");
+    const { norm: normNd } = require("../lib/semantica.js");
+    const R = {
+      "CO1.REQ.11223025": ["Suministros", "SUMINISTRO E INSTALACIÓN DE EQUIPOS DE AUDIO Y VIDEO PARA DOTAR LOS DIFERENTES ESPACIOS DEL ÁREA METROPOLITANA DEL VALLE DE ABURRÁ Y SUS SEDES (Presentación de oferta)", "SUMINISTRO E INSTALACIÓN DE EQUIPOS DE AUDIO Y VIDEO PARA DOTAR LOS DIFERENTES ESPACIOS DEL ÁREA METROPOLITANA DEL VALLE DE ABURRÁ Y SUS SEDES", "UNSPECIFIED", "Selección abreviada subasta inversa"],
+      "CO1.REQ.10783688": ["Prestación de servicios", "PRESTAR SERVICIOS PARA EJECUTAR POR SU CUENTA Y RIESGO; BAJO LA MODALIDAD DE PRECIO FIJO MENSUAL; LA MANO DE OBRA Y DIRECCIÓN TÉCNICA PARA LA CONSTRUCCIÓN QUE ADELANTA EL GAULA MILITAR ELITE NO 1 DE M", "PRESTAR SERVICIOS PARA EJECUTAR POR SU CUENTA Y RIESGO, BAJO LA MODALIDAD DE PRECIO FIJO MENSUAL, LA MANO DE OBRA Y DIRECCIÓN TÉCNICA PARA LA CONSTRUCCIÓN QUE ADELANTA EL GAULA MILITAR ELITE NO 1 DE MANO DEL COMANDO DE INGENIEROS DEL EJÉRCITO NACIONAL UBICADO EN LA BASE MILITAR NO 1 UBICADA EN EL CANTÓN MILITAR DE COMUNICACIONES EN LA CALLE 5A, 15-00, EN FACATATIVÁ, CUNDINAMARCA, DE ACUERDO CON LOS PLANOS, DISEÑOS Y ESPECIFICACIONES TÉCNICAS DEL ANEXO NO 1", "V1.80111701", "Mínima cuantía"],
+      "CO1.REQ.11301202": ["Compraventa", "05_9204_522 CONTRATAR LA COMPRA DE ESTIBAS ANTIDERRAMES PARA EL ALMACENAMIENTO SEGURO Y LA CONTENCIÓN DE SUSTANCIAS LIQUIDAS Y RESIDUOS PELIGROSOS FORTALECIENDO LAS CONDICIONES DE SEGURIDAD Y PROTECCI", "05_9204_522 CONTRATAR LA COMPRA DE ESTIBAS ANTIDERRAMES PARA EL ALMACENAMIENTO SEGURO Y LA CONTENCIÓN DE SUSTANCIAS LIQUIDAS Y RESIDUOS PELIGROSOS FORTALECIENDO LAS CONDICIONES DE SEGURIDAD Y PROTECCIÓN AMBIENTAL DEL CENTRO DE TECNOLOGÍA DE LA MANUFACTURA AVANZADA", "UNSPECIFIED", "Mínima cuantía"],
+      "CO1.REQ.11300612": ["Arrendamiento de muebles", "ARRENDAMIENTO DE UN (1) ACELERADOR LINEAL PARA EL HOSPITAL MILITAR CENTRAL", "ARRENDAMIENTO DE UN (1) ACELERADOR LINEAL CON ESTACIÓN DE TRABAJO QUE INCLUYA PREINSTALACIÓN, ADECUACIÓN E INSTALACIÓN DE LAS ÁREAS FÍSICAS INCLUYENDO MANTENIMIENTO PREVENTIVO, PREDICTIVO, CORRECTIVO Y SOPORTE TÉCNICO, PARA EL HOSPITAL MILITAR CENTRAL", "UNSPECIFIED", "Licitación pública"],
+      "CO1.REQ.11113057": ["Suministros", "CONTRATO DE OBRA PARA LA ADECUACIÓN DE ESPACIOS COMUNES EN LA PLAZA DE MERCADO DEL MUNICIPIO DE AMAGÁ; EN CUMPLIMIENTO DE LA NORMATIVIDAD Y REGULACIONES EN MATERIA SANITARIA", "CONTRATO DE OBRA PARA LA ADECUACIÓN DE ESPACIOS COMUNES EN LA PLAZA DE MERCADO DEL MUNICIPIO DE AMAGÁ, EN CUMPLIMIENTO DE LA NORMATIVIDAD Y REGULACIONES EN MATERIA SANITARIA", "UNSPECIFIED", "Mínima cuantía"],
+      "CO1.REQ.11313617": ["Compraventa", "AVISOS CON IMAGEN CORPORATIVA DE LAS OFICINAS APE", "41_1010_193 Adquisición, compra y/o adecuación de los avisos con imagen corporativa de las oficinas APE.", "UNSPECIFIED", "Mínima cuantía"],
+      "CO1.REQ.11119591": ["Prestación de servicios", "MURO DE ESCALADA", "CONTRATAR LOS SERVICIOS DE INSPECCION Y MANTENIMIENTO GENERAL DEL MURO DE ESCALADA, ASI COMO LA CERTIFICACION E INSPECCION DE LOS ANCLAJES Y DEMAS ELEMENTOS QUE LO COMPONEN DE LA DIRECCIÓN DE VETERANOS Y REHABILITACIÓN INCLUSIVA DEL MINISTERIO DE DEFENSA NACIONAL.", "UNSPECIFIED", "Mínima cuantía"],
+      "CO1.REQ.11209295": ["Prestación de servicios", "PRESTACIÓN DEL SERVICIO DE MANTENIMIENTO FORESTAL PARA LA INTERVENCIÓN DE INDIVIDUOS FORESTALES MEDIANTE ACTIVIDADES DE PODA Y TALA; ORIENTADAS A LA MITIGACIÓN DE RIESGOS; LA PROTECCIÓN DE LA INTEGRID", "PRESTACIÓN DEL SERVICIO DE MANTENIMIENTO FORESTAL PARA LA\nINTERVENCIÓN DE INDIVIDUOS FORESTALES MEDIANTE ACTIVIDADES DE PODA\nY TALA, ORIENTADAS A LA MITIGACIÓN DE RIESGOS, LA PROTECCIÓN DE LA\nINTEGRIDAD DE LA COMUNIDAD Y LA CONSERVACIÓN DEL ESPACIO PÚBLICO EN\nEL MUNICIPIO DE DAGUA, VALLE DEL CAUCA.", "UNSPECIFIED", "Mínima cuantía"],
+      "CO1.REQ.11261458": ["Prestación de servicios", "PRESTAR EL SERVICIO INTEGRAL DE MANTENIMIENTO PREVENTIVO Y CORRECTIVO TÉCNICO ESPECIALIZADO PARA LA PLANTA DE TRATAMIENTO DE AGUA POTABLE (PTAP) Y LA REALIZACIÓN DE PRUEBAS DE LABORATORIO DE CALIDAD D", "PRESTAR EL SERVICIO INTEGRAL DE MANTENIMIENTO PREVENTIVO Y CORRECTIVO TÉCNICO ESPECIALIZADO PARA LA PLANTA DE TRATAMIENTO DE AGUA POTABLE (PTAP) Y LA REALIZACIÓN DE PRUEBAS DE LABORATORIO DE CALIDAD DE AGUA EN TANQUES Y REDES DE DISTRIBUCIÓN DE LAS SEDES DEL NIVEL CENTRAL DE LA FISCALÍA GENERAL DE LA NACIÓN", "UNSPECIFIED", "Selección abreviada subasta inversa"],
+      "CO1.REQ.11116046": ["Prestación de servicios", "REHABILITACIÓN Y ADECUACIÓN DE LA INFRAESTRUCTURA DEL CENTRO VIDA DEL MUNICIPIO DE LA MESA-CUNDINAMARCA; VIGENCIA 2026. (Manifestación de interés (Menor Cuantía))", "REHABILITACIÓN Y ADECUACIÓN DE LA INFRAESTRUCTURA DEL CENTRO VIDA DEL MUNICIPIO DE LA MESA-CUNDINAMARCA, VIGENCIA 2026.", "UNSPECIFIED", "Selección Abreviada de Menor Cuantía"],
+      "CO1.REQ.11107617": ["Suministros", "SUMINISTRO E INSTALACIÓN DE LUMINARIAS  (Manifestación de interés (Menor Cuantía)) (Presentación de oferta)", "SUMINISTRO E INSTALACIÓN DE LUMINARIAS TIPO LED Y COMPONENTES ELÉCTRICOS DESTINADOS AL MEJORAMIENTO, FORTALECIMIENTO Y MODERNIZACIÓN DE LA INFRAESTRUCTURA DEL SISTEMA DE ALUMBRADO PÚBLICO PARA LA PRESTACIÓN EFICIENTE DEL SERVICIO EN EL MUNICIPIO DE SEVILLA, VALLE DEL CAUCA", "UNSPECIFIED", "Selección Abreviada de Menor Cuantía"],
+      "CO1.REQ.11174379": ["Compraventa", "ADQUISICIÓN DE MATERIALES DE FERRETERÍA Y/O CONSTRUCCIÓN PARA REALIZAR EL MANTENIMIENTO DE LOS ESCENARIOS DEPORTIVOS A CARGO DE LA SECRETARIA DE DEPORTES Y RECREACIÓN DEL MUNICIPIO DE NEIVA", "ADQUISICIÓN DE MATERIALES DE FERRETERÍA Y/O CONSTRUCCIÓN PARA REALIZAR EL MANTENIMIENTO DE LOS ESCENARIOS DEPORTIVOS A CARGO DE LA SECRETARIA DE DEPORTES Y RECREACIÓN DEL MUNICIPIO DE NEIVA", "UNSPECIFIED", "Mínima cuantía"],
+      "CO1.REQ.11168512": ["Prestación de servicios", "CONTRATAR EL MANTENIMIENTO CORRECTIVO Y PREVENTIVO DE LOS MOTORES FUERA DE BORDA DE PROPIEDAD DE LA DEFENSORÍA DEL PUEBLO; INCLUIDOS REPUESTOS Y MANO DE OBRA.", "CONTRATAR EL MANTENIMIENTO CORRECTIVO Y PREVENTIVO DE LOS MOTORES FUERA DE BORDA DE PROPIEDAD DE LA DEFENSORÍA DEL PUEBLO, INCLUIDOS REPUESTOS Y MANO DE OBRA.", "UNSPECIFIED", "Mínima cuantía"],
+      "CO1.REQ.11147010": ["Prestación de servicios", "SERVICIO FOTOCOPIADO", "SERVICIO INTEGRAL DE COPIADO, FOTOCOPIADO, ESCANEADO E IMPRESIÓN CON SUMINISTRO DE EQUIPOS, REPUESTOS E INSUMOS, MANO DE OBRA, SERVICIO TÉCNICO DE SOPORTE Y MANTENIMIENTO PREVENTIVO Y CORRECTIVO, DENTRO DE LAS INSTALACIONES DE LA DIRECCIÓN GENERAL DE SANIDAD MILITAR", "UNSPECIFIED", "Mínima cuantía"],
+      "CO1.REQ.11182982": ["Prestación de servicios", "CONTADOR DE OBRAS", "DESARROLLO, IMPLEMENTACION Y SOPORTE TECNICO DE UNA SOLUCION INFORMATICA WEB, PARA VISIBILIZAR EL INVENTARIO DE OBRAS DEL PLAN DE DESARROLLO TERRITORIAL", "UNSPECIFIED", "Mínima cuantía"],
+      "CO1.REQ.11120261": ["Prestación de servicios", "Mantenimiento maquinaria amarilla", "CONTRATAR EL MANTENIMIENTO PREVENTIVO Y CORRECTIVO DE MAQUINARIA AMARILLA Y/O SUS ADITAMENTOS DEL CENTRO DE LA CONSTRUCCION PARA LA VIGENCIA 2026", "UNSPECIFIED", "Mínima cuantía"],
+      "CO1.REQ.11118153": ["Prestación de servicios", "DESARROLLO DE CAMPAÑAS DE SEGURIDAD VIAL  CONSTRUYENDO UN FUTURO SIN SINIESTROS VIALES: ESTRATEGIA INTEGRAL DE PREVENCIÓN; EDUCACIÓN Y CONVIVENCIA VIAL  EN TURBACO (Manifestación de interés (Menor Cua", "DESARROLLO DE CAMPAÑAS DE SEGURIDAD VIAL  CONSTRUYENDO UN FUTURO SIN SINIESTROS VIALES: ESTRATEGIA INTEGRAL DE PREVENCIÓN, EDUCACIÓN\nY CONVIVENCIA VIAL  EN TURBACO", "UNSPECIFIED", "Selección Abreviada de Menor Cuantía"],
+      "CO1.REQ.11226755": ["Prestación de servicios", "MANTENIMIENTO CORRECTIVO Y/O PREVENTIVO A TODO COSTO INCLUIDAS AUTOPARTES Y MANO DE OBRA (EXCEPTO SERVICIOS DE CONSTRUCCIÓN) DE LOS VEHÍCULOS DE TRANSPORTE TIPO AMBULANCIA PERTENECIENTES AL ESTABLECIM", "MANTENIMIENTO CORRECTIVO Y/O PREVENTIVO A TODO COSTO INCLUIDAS AUTOPARTES Y MANO DE OBRA (EXCEPTO SERVICIOS DE CONSTRUCCIÓN) DE LOS VEHÍCULOS DE TRANSPORTE TIPO AMBULANCIA PERTENECIENTES AL ESTABLECIMIENTO DE SANIDAD MILITAR ESM BAS 12 GR. FERNANDO SERRANO URIBE Y LOS ESTABLECIMIENTOS DE SANIDAD MILITAR SATÉLITES (BASCN, BICAZ 36); ESTABLECIMIENTO DE SANIDAD MILITAR ESM BAS 27 SIMONA DE LA LUZ DUQUE ALZATE Y LOS ESTABLECIMIENTOS DE SANIDAD MILITAR SATÉLITES (BAACA, BICAS, BIRIP, BIROR, BISOL", "UNSPECIFIED", "Mínima cuantía"],
+      "CO1.REQ.11280166": ["Compraventa", "CONTRATAR SERVICIOS DE MANTENIMIENTO; REPARACIÓN E INSTALACIÓN (EXCEPTO SERVICIOS DE CONSTRUCCION) MANTENIMIENTO EN LA MAQUINARIA Y EQUIPOS A PRECIOS UNITARIOS PARA LOS PROYECTOS PANADERIA DEL ESTABLE", "CONTRATAR SERVICIOS DE MANTENIMIENTO, REPARACIÓN E INSTALACIÓN (EXCEPTO SERVICIOS DE CONSTRUCCION) MANTENIMIENTO EN LA MAQUINARIA Y EQUIPOS A PRECIOS UNITARIOS PARA LOS PROYECTOS PANADERIA DEL ESTABLECIMIENTO PENITENCIARIO DE MEDIANA SEGURIDAD Y CARCELARIO DE OCAÑA.", "UNSPECIFIED", "Mínima cuantía"],
+      "CO1.REQ.11181110": ["Prestación de servicios", "SVIV MINC 018 DE 2026", "PRESTAR LOS SERVICIOS DE APOYO EN LA DIFUSION Y COMUNICACION DE LOS PROGRAMAS Y PROYECTOS ENCAMINADOS A LA EJECUCION DE OBRAS DE MEJORAMIENTO Y MANTENIMIENTO DE LA RED VIAL TERCIARIA CON EL FIN DE BRINDAR ESPACIOS DE ARTICULACION PARA BRINDAR MEJORES SERVICIOS A LOS CIUDADANOS Y A SATISFACER SUS NECESIDADES, CONTRIBUYENDO AL DESARROLLO DE LAS COMUNIDADES EN EL MUNICIPIO DE OCAÑA", "UNSPECIFIED", "Mínima cuantía"],
+      "CO1.REQ.11115245": ["Prestación de servicios", "PRESTACION DE SERVICIO", "PRESTACIÓN DE SERVICIOS PARA APOYAR LA DIVULGACIÓN DE  OBRAS DE INFRAESTRUCTURA DEL DEPARTAMENTO DE SUCRE", "UNSPECIFIED", "Mínima cuantía"],
+      "CO1.REQ.11142911": ["Prestación de servicios", "Muestreo aguas residuales", "Contratar el muestreo y caracterización de aguas residuales en la Planta de Tratamiento de Aguas Residuales del Centro de Orientación y Atención Especializada Santo Ángel, de acuerdo con la normatividad vigente.", "UNSPECIFIED", "Mínima cuantía"],
+      "CO1.REQ.11187119": ["Prestación de servicios", "PRESTACIÓN DE LOS SERVICIOS DE CARACTERIZACIÓN DE VERTIMIENTOS DE AGUAS RESIDUALES A TODO COSTO", "PRESTACIÓN DE LOS SERVICIOS DE CARACTERIZACIÓN DE VERTIMIENTOS DE AGUAS RESIDUALES A TODO COSTO, INCLUYENDO INSUMOS, ELEMENTOS, MANO DE OBRA DE TOMA Y ANÁLISIS DE LAS MUESTRAS DE CADA UNO DE LOS PARÁMETROS DEL ESTUDIO PARA LA UNIDAD PRESTADORA DE SALUD CÓRDOBA EN LOS ESPRI MONTERÍA Y ESPRI LORICA", "UNSPECIFIED", "Mínima cuantía"],
+      "CO1.REQ.11233662": ["Prestación de servicios", "CARACTERIZACIÓN DE LOS VERTIMIENTOS", "CARACTERIZACIÓN DE LOS VERTIMIENTOS LÍQUIDOS PROVENIENTES DEL SISTEMA DE ALCANTARILLADO DEL CASCO URBANO Y EL CENTRO POBLADO EL DIAMANTE QUE DESCARGA EN EL AFLUENTE NATURAL DEL MUNICIPIO DE PAMPLONITA, NORTE DE SANTANDER", "UNSPECIFIED", "Mínima cuantía"]
+    };
+    const filaR = (id, cambios = {}) => {
+      const [tipo, nombre, desc, cod, mod] = R[id];
+      return { id_del_proceso: id, nombre_del_procedimiento: nombre, descripci_n_del_procedimiento: desc, tipo_de_contrato: tipo,
+        codigo_principal_de_categoria: cod, modalidad_de_contratacion: mod, estado_del_procedimiento: "Publicado", ...cambios };
+    };
+    const ev = (f) => filtros.evaluarObjeto(f, PERFILES.helder);
+    const fallasNd = [];
+    const comprobar = (cond, msg) => { if (!cond) fallasNd.push(msg); };
+
+    /* (a) verde → ámbar del contrato: cinco que no son obra (avisos con imagen corporativa, un muro de escalada, poda y tala,
+       estibas antiderrames «para la contención», el arrendamiento de un acelerador lineal «con adecuación e instalación») y
+       tres que sí lo son o lo parecen (el mantenimiento de una PTAP, la rehabilitación del Centro Vida y un «CONTRATO DE OBRA
+       PARA LA ADECUACIÓN» publicado como suministro): el ámbar dice la verdad de todas, y ninguna se esconde */
+    const AMBAR = ["CO1.REQ.11313617", "CO1.REQ.11119591", "CO1.REQ.11209295", "CO1.REQ.11301202", "CO1.REQ.11300612", "CO1.REQ.11261458", "CO1.REQ.11116046", "CO1.REQ.11113057", "CO1.REQ.11223025", "CO1.REQ.10783688"];
+    for (const id of AMBAR) {
+      const f = filaR(id);
+      const e = ev(f);
+      const p = e.pertinencia || {};
+      comprobar(FLnd.tipoTrabajoDe(f) === "obra", `premisa: ${id} es «obra» para la lista (${FLnd.tipoTrabajoDe(f)})`);
+      comprobar(p.nivel === "amarillo" && p.tipo === "indeterminado" && p.etiqueta === "Verificar objeto" && p.ambar_por_contrato === "contrato_de_compra_o_servicio",
+        `MUTACIÓN: ${id} (${f.tipo_de_contrato}) seguía verde o lo bajaba otra regla: ${JSON.stringify(p)}`);
+      comprobar(typeof p.motivo === "string" && p.motivo.includes(`«${f.tipo_de_contrato}»`) && /confirme en el pliego/.test(p.motivo) && !/\s{2}/.test(p.motivo),
+        `el motivo cita el contrato tal como se publicó y manda al pliego: «${p.motivo}»`);
+      /* «el objeto dice «…»» es una CITA: está tal cual (en minúsculas, con sus tildes) en UN campo publicado, o son dos
+         tramos con «…» cuando la forma solo existe al pegar el final del nombre con el principio de la descripción */
+      const enCampo = (c) => String(c || "").replace(/\s+/g, " ").toLocaleLowerCase("es-CO");
+      const partes = typeof p.verbo === "string" ? p.verbo.replace(/…$/, "").split(" … ") : [];
+      comprobar(partes.length === 1 ? [f.nombre_del_procedimiento, f.descripci_n_del_procedimiento].some((c) => enCampo(c).includes(partes[0]))
+        : partes.length === 2 && enCampo(f.nombre_del_procedimiento).endsWith(partes[0]) && enCampo(f.descripci_n_del_procedimiento).startsWith(partes[1]),
+        `MUTACIÓN: «el objeto dice «${p.verbo}»» no está así en el objeto publicado de ${id}`);
+      comprobar(Lnd.tuteoEn(p.motivo || "") === null && !Lnd.RE_EMOJI_UI.test(p.motivo || ""), `tuteo o emoji en «${p.motivo}»`);
+      comprobar(e.ok === true && !e.paso, `MUTACIÓN: ${id} desaparecía al pasar a ámbar: ${JSON.stringify({ ok: e.ok, paso: e.paso })}`);
+      comprobar(filtros.filtrarProcesosVisibles([{ ...f, fecha_de_recepcion_de: "2099-01-01T17:00:00.000", fase: "Presentación de oferta" }], "helder", {}).visibles.length === 1,
+        `la cascada entera deja visible ${id}`);
+      // la regla es del CONTRATO: con obra, «Otro», «Decreto 092», «Concesión» o sin contrato publicado sigue verde
+      for (const otro of ["Obra", "Otro", "Decreto 092 de 2017", "Concesión", undefined]) {
+        const po = ev(filaR(id, { tipo_de_contrato: otro })).pertinencia || {};
+        comprobar(po.nivel === "verde", `MUTACIÓN: ${id} con contrato «${otro}» bajaba a ámbar: ${JSON.stringify(po)}`);
+      }
+    }
+    // la cita lleva las tildes de lo publicado (sobre el texto normalizado salía «rehabilitacion», 181 de 371 motivos)
+    comprobar(/dice «rehabilitación»/.test((ev(filaR("CO1.REQ.11116046")).pertinencia || {}).motivo || ""),
+      `MUTACIÓN: la cita salía sin tildes: «${(ev(filaR("CO1.REQ.11116046")).pertinencia || {}).motivo}»`);
+    // y no une los dos campos en una frase que nadie escribió (14 de 371 motivos): dos tramos con «…»
+    const cruzada = (ev(filaR("CO1.REQ.11223025")).pertinencia || {}).verbo || "";
+    comprobar(/ … /.test(cruzada), `MUTACIÓN: la cita de CO1.REQ.11223025 unía el nombre y la descripción: «${cruzada}»`);
+    /* EL CHIP Y P1 NO SE CONTRADICEN (revisión adversaria): «LA MANO DE OBRA Y DIRECCIÓN TÉCNICA PARA LA CONSTRUCCIÓN…»
+       casa por una clase de servicios (80111701); el ámbar del contrato dice que el objeto SÍ dice obra, así que P1 no
+       puede avisar «el objeto no dice que sea una obra» en la misma tarjeta (con el verde no avisaba) */
+    {
+      const fP1 = filaR("CO1.REQ.10783688");
+      const eP1 = ev(fP1);
+      comprobar(eP1.tier === "clase" && eP1.pertinencia && eP1.pertinencia.ambar_por_contrato === "contrato_de_compra_o_servicio", `premisa: ${JSON.stringify({ tier: eP1.tier, p: eP1.pertinencia })}`);
+      const rupP1 = require("../lib/rup.js").evaluarRup(fP1, "helder", { vocabulario: require("../lib/texto_unspsc.js").vocabularioActivo(null) }, {});
+      const puP1 = require("../lib/puertas.js").evaluarPuertas(fP1, "helder", { rup: rupP1 });
+      comprobar(eP1.pertinencia.casa_solo_por_servicio === false && puP1.p1_rup && puP1.p1_rup.advertencia === false && !/no dice que sea una obra/.test(puP1.p1_rup.mensaje || ""),
+        `MUTACIÓN: el chip decía «aunque el objeto dice «construcción»» y P1 «el objeto no dice que sea una obra»: ${JSON.stringify({ p1: puP1.p1_rup })}`);
+    }
+    // la cita del motivo es el texto: «mantenimiento de la infraestructura», no la señal sin la palabra genérica («la   vial»)
+    const vial = ev(filaR("CO1.REQ.11116046", { nombre_del_procedimiento: "MANTENIMIENTO DE LA INFRAESTRUCTURA VIAL DEL MUNICIPIO", descripci_n_del_procedimiento: "" })).pertinencia;
+    comprobar(/dice «mantenimiento de la infraestructura/.test(vial.motivo || ""), `MUTACIÓN: el motivo citaba una frase que no está en el objeto: «${vial.motivo}»`);
+    // fuera, a propósito: la consultoría y la interventoría en un contrato de servicios
+    const consultoria = ev(filaR("CO1.REQ.11116046", { nombre_del_procedimiento: "ESTUDIOS Y DISEÑOS PARA LA REHABILITACIÓN Y ADECUACIÓN DE LA INFRAESTRUCTURA DEL CENTRO VIDA", descripci_n_del_procedimiento: "" })).pertinencia;
+    comprobar(consultoria.nivel === "verde" && consultoria.tipo === "consultoria", `MUTACIÓN: la consultoría en un contrato de servicios bajaba a ámbar: ${JSON.stringify(consultoria)}`);
+    const interventoria = ev(filaR("CO1.REQ.11116046", { nombre_del_procedimiento: "INTERVENTORÍA TÉCNICA A LA REHABILITACIÓN Y ADECUACIÓN DE LA INFRAESTRUCTURA DEL CENTRO VIDA", descripci_n_del_procedimiento: "" })).pertinencia;
+    comprobar(interventoria.nivel === "verde", `MUTACIÓN: la interventoría en un contrato de servicios bajaba a ámbar: ${JSON.stringify(interventoria)}`);
+    // la compra de MATERIAL DE OBRA sigue verde aunque la lista la lea como obra (revisión a mano del 27-oct)…
+    for (const id of ["CO1.REQ.11107617", "CO1.REQ.11174379"]) {
+      const f = filaR(id);
+      const p = ev(f).pertinencia || {};
+      comprobar(FLnd.tipoTrabajoDe(f) === "obra", `premisa: ${id} es «obra» para la lista`);
+      comprobar(p.nivel === "verde", `MUTACIÓN: la compra de material de obra ${id} (${f.tipo_de_contrato}) bajaba a ámbar: ${JSON.stringify(p)}`);
+      // …y la excepción es de la COMPRA: el mismo objeto como prestación de servicios baja
+      const ps = ev(filaR(id, { tipo_de_contrato: "Prestación de servicios" })).pertinencia || {};
+      comprobar(ps.ambar_por_contrato === "contrato_de_compra_o_servicio", `MUTACIÓN: la excepción del material valía también para el servicio (${id}): ${JSON.stringify(ps)}`);
+    }
+    /* lo que el 1-ter ya juzgó compra de material de obra POR LA CABEZA del objeto sigue verde aunque el contrato diga
+       servicios: la excepción de la compra es del objeto (28-oct), y el ámbar del contrato no la deshace */
+    const compraEnServicio = ev(filaR("CO1.REQ.11116046", { nombre_del_procedimiento: "SUMINISTRO DE MATERIALES PARA LA CONSTRUCCIÓN DE PLACA HUELLA Y EL MEJORAMIENTO DE LA VÍA", descripci_n_del_procedimiento: "" }));
+    comprobar(FLnd.noEsObraPorElObjeto(filaR("CO1.REQ.11116046", { nombre_del_procedimiento: "SUMINISTRO DE MATERIALES PARA LA CONSTRUCCIÓN DE PLACA HUELLA Y EL MEJORAMIENTO DE LA VÍA", descripci_n_del_procedimiento: "" })) === "suministro",
+      "premisa: la compra de material por la cabeza es «suministro» para la lista");
+    comprobar(compraEnServicio.pertinencia && compraEnServicio.pertinencia.nivel === "verde",
+      `MUTACIÓN: la compra de material de obra publicada como prestación de servicios bajaba a ámbar: ${JSON.stringify(compraEnServicio.pertinencia)}`);
+    // la clase de obra pura inscrita sostiene el verde, como en la palabra genérica (1-bis)
+    const pura = ev(filaR("CO1.REQ.11116046", { codigo_principal_de_categoria: "V1.72101500" }));
+    comprobar(pura.tier === "clase" && pura.pertinencia && pura.pertinencia.nivel === "verde",
+      `MUTACIÓN: con la clase de obra pura inscrita el contrato de servicios bajaba el verde: ${JSON.stringify({ tier: pura.tier, p: pura.pertinencia })}`);
+
+    /* (b) lo que dice «obra» fuera de contexto y los cinco términos de servicio: cada fila real sale del tipo «obra», el chip lo
+       baja la regla de la compra o el servicio (1-ter) en los contratos que no son de obra, y nada se esconde */
+    const FUERA = [
+      ["CO1.REQ.11168512", "servicios"], ["CO1.REQ.11147010", "servicios"], // «mano de obra»
+      ["CO1.REQ.11182982", "servicios"], // «contador de obras» (nombre) e «inventario de obras» (descripción)
+      ["CO1.REQ.11120261", "servicios"], // «centro de la construcción»
+      ["CO1.REQ.11118153", "servicios"], // «construyendo un futuro»
+      ["CO1.REQ.11226755", "servicios"], ["CO1.REQ.11280166", "suministro"], // «(excepto servicios de construcción)»
+      ["CO1.REQ.11181110", "servicios"], // «difusión y comunicación»
+      ["CO1.REQ.11115245", "servicios"], // «divulgación de obras»
+      ["CO1.REQ.11142911", "servicios"], // «muestreo y caracterización»
+      ["CO1.REQ.11187119", "servicios"], ["CO1.REQ.11233662", "servicios"], // «caracterización de (los) vertimientos»
+    ];
+    for (const [id, tipo] of FUERA) {
+      const f = filaR(id);
+      comprobar(FLnd.tipoTrabajoDe(f) === tipo, `MUTACIÓN: ${id} era «${FLnd.tipoTrabajoDe(f)}» para la lista, no «${tipo}»`);
+      const e = ev(f);
+      comprobar(e.ok === true && e.pertinencia && e.pertinencia.nivel === "amarillo", `${id} sale en ámbar y visible: ${JSON.stringify({ ok: e.ok, p: e.pertinencia })}`);
+      const eo = ev(filaR(id, { tipo_de_contrato: "Otro" }));
+      comprobar(eo.ok === true && eo.pertinencia && eo.pertinencia.ambar_por_contrato === "servicios",
+        `MUTACIÓN: con contrato «Otro», ${id} seguía verde (la regla explícita no llegaba al chip): ${JSON.stringify({ ok: eo.ok, p: eo.pertinencia })}`);
+      comprobar(FLnd.tipoTrabajoDe(filaR(id, { tipo_de_contrato: "Obra" })) === "obra", `el contrato de obra manda en ${id}`);
+    }
+    // en un contrato de COMPRA, lo que solo decía «mano de obra» es compra, no servicio (la misma regla de `esCompra`)
+    comprobar(FLnd.tipoTrabajoDe(filaR("CO1.REQ.11168512", { tipo_de_contrato: "Compraventa" })) === "suministro",
+      `MUTACIÓN: la regla de la frase fuera de contexto daba «servicios» en una compraventa (${FLnd.tipoTrabajoDe(filaR("CO1.REQ.11168512", { tipo_de_contrato: "Compraventa" }))})`);
+    // el verbo con el que la cascada decide qué se ve NO cambia: ahí el falso caro es esconder
+    comprobar(filtros.hayVerboDeObra(normNd(`${R["CO1.REQ.11168512"][1]} ${R["CO1.REQ.11168512"][2]}`)) === true,
+      "MUTACIÓN: la frase fuera de contexto se quitaba también del verbo de la cascada (podía esconder procesos)");
+    /* lo que mantiene la obra en «obra»: para las FRASES, cualquier otro verbo de obra del objeto (la regla exige que sin la
+       frase no quede ninguno); para los TÉRMINOS de servicio, solo un verbo de obra en la CABEZA del objeto: van sin la
+       guarda de obra fuerte, como los del 28-oct (con ella se perdían el muestreo «en la planta de tratamiento» o «del
+       alcantarillado» y el «(excepto servicios de construcción)»). Límite conocido, sin caso en 22.996 filas reales: «MANTENIMIENTO
+       DE VÍAS Y DIVULGACIÓN DE OBRAS» sale servicio (revisión adversaria) */
+    const SIGUE_OBRA = [
+      ["Prestación de servicios", "CONSTRUCCIÓN DEL MURO DE CONTENCIÓN DE LA VÍA, INCLUYE MATERIALES Y MANO DE OBRA"],
+      ["Otro", "CONSTRUCCIÓN DE AULAS EN LA SEDE DEL CENTRO DE LA CONSTRUCCIÓN DEL SENA"],
+      ["Otro", "CONSTRUCCIÓN DE LA PLANTA DE TRATAMIENTO DE AGUAS RESIDUALES, INCLUIDO EL MUESTREO Y CARACTERIZACIÓN DE VERTIMIENTOS"],
+      ["Otro", "MEJORAMIENTO DE VÍAS TERCIARIAS Y DIVULGACIÓN DE OBRAS EN LA COMUNIDAD"],
+      ["Otro", "ADECUACIÓN DE LA SEDE (EXCEPTO SERVICIOS DE CONSTRUCCIÓN DE LA CUBIERTA)"],
+      // la frase es «mano de obra», no «obra»: las obras del objeto siguen contando
+      ["Otro", "OBRAS DE PROTECCIÓN DE LA ORILLA DEL RÍO A TODO COSTO CON MANO DE OBRA CALIFICADA"],
+    ];
+    for (const [contrato, objeto] of SIGUE_OBRA) {
+      const f = filaR("CO1.REQ.11116046", { tipo_de_contrato: contrato, nombre_del_procedimiento: objeto, descripci_n_del_procedimiento: "" });
+      comprobar(FLnd.tipoTrabajoDe(f) === "obra", `MUTACIÓN: «${objeto}» (${contrato}) salía del tipo «obra»`);
+    }
+    if (fallasNd.length) throw new Error(`unidad obra que la entidad no declaró: ${fallasNd.length} comprobaciones fallan:\n  - ${fallasNd.join("\n  - ")}`);
+    console.log(`· unidad obra que la entidad no declaró: ${AMBAR.length} objetos de producción en contratos de compra o servicio pasan de verde al ámbar del contrato, visibles y con el contrato citado; con obra, «Otro», «Decreto 092», «Concesión» o sin contrato siguen verdes, y también la consultoría, la interventoría, la compra de material de obra y la clase de obra pura · ${FUERA.length} objetos que decían «obra» fuera de contexto salen del tipo «obra» sin esconderse, y ${SIGUE_OBRA.length} obras con las mismas frases se quedan`);
   }
 
   /* unidad: LOS DÍAS AL CIERRE POR FECHA CIVIL, Y «CERRADO» POR LA HORA (28-oct-2026, «haz la 1 y 2»).
@@ -62595,6 +62786,40 @@ async function main() {
         const hs = new Function("esc", `${fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8").match(/function htmlSecop1\(x\) \{[\s\S]*?\n  \}/)[0]}; return htmlSecop1;`)((x) => String(x));
         const t1 = hs(r1).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
         assert.ok(/2 procesos de obra convocados en SECOP I/.test(t1) && /Ver en SECOP I/.test(hs(r1)) && /no publica en datos abiertos la fecha de cierre/.test(t1) && /valor sin publicar/.test(t1), t1);
+        /* LA VENTANA POR MODALIDAD (6-nov-2026, tarea 7): 22 días en mínima cuantía, 40 en menor cuantía y 58 en licitación
+           (percentil 90 de lo que tardaron en adjudicarse las obras de SECOP I cargadas del 8 al 22-ago; lib/secop1). Lo que
+           pasó su ventana va al final y marcado, nunca fuera; sin ventana medida (subasta) no se marca nada */
+        assert.deepStrictEqual(["Contratación Mínima Cuantía", "Selección Abreviada de Menor Cuantía (Ley 1150 de 2007)", "Licitación obra pública", "Licitación Pública", "Subasta", "Concurso de Méritos Abierto"].map((m) => (S1.ventanaDe(m) || {}).dias || null),
+          [22, 40, 58, 58, null, null], "la ventana de cada modalidad de f789-7hwg");
+        const filasV = [
+          { numero_de_constancia: "V-1", nombre_entidad: "ALCALDÍA A", departamento_entidad: "Tolima", modalidad_de_contratacion: "Contratación Mínima Cuantía", fecha_de_cargue_en_el_secop: "2026-10-14T00:00:00.000" }, // 22 días: dentro
+          { numero_de_constancia: "V-2", nombre_entidad: "ALCALDÍA B", departamento_entidad: "Tolima", modalidad_de_contratacion: "Contratación Mínima Cuantía", fecha_de_cargue_en_el_secop: "2026-10-13T00:00:00.000" }, // 23 días: pasó
+          { numero_de_constancia: "V-3", nombre_entidad: "ALCALDÍA C", departamento_entidad: "Tolima", modalidad_de_contratacion: "Selección Abreviada de Menor Cuantía (Ley 1150 de 2007)", fecha_de_cargue_en_el_secop: "2026-09-26T00:00:00.000" }, // 40: dentro
+          { numero_de_constancia: "V-4", nombre_entidad: "ALCALDÍA D", departamento_entidad: "Tolima", modalidad_de_contratacion: "Selección Abreviada de Menor Cuantía (Ley 1150 de 2007)", fecha_de_cargue_en_el_secop: "2026-09-25T00:00:00.000" }, // 41: pasó
+          { numero_de_constancia: "V-5", nombre_entidad: "ALCALDÍA E", departamento_entidad: "Tolima", modalidad_de_contratacion: "Licitación obra pública", fecha_de_cargue_en_el_secop: "2026-09-08T00:00:00.000" }, // 58: dentro
+          { numero_de_constancia: "V-6", nombre_entidad: "ALCALDÍA F", departamento_entidad: "Tolima", modalidad_de_contratacion: "Licitación Pública", fecha_de_cargue_en_el_secop: "2026-09-07T00:00:00.000" }, // 59: pasó
+          { numero_de_constancia: "V-7", nombre_entidad: "ALCALDÍA G", departamento_entidad: "Tolima", modalidad_de_contratacion: "Subasta", fecha_de_cargue_en_el_secop: "2026-09-07T00:00:00.000" }, // sin ventana medida
+          { numero_de_constancia: "V-8", nombre_entidad: "ALCALDÍA H", departamento_entidad: "Tolima", modalidad_de_contratacion: "Contratación Mínima Cuantía", fecha_de_cargue_en_el_secop: "" }, // sin fecha
+        ];
+        const stubV = async () => ({ ok: true, status: 200, headers: { get: () => null }, text: async () => JSON.stringify(filasV), json: async () => filasV });
+        const rV = await S1.convocadosSecopI({ departamentos: ["Tolima", "Huila"], fetchImpl: stubV, ahora: Date.parse("2026-11-05T15:00:00Z") });
+        const porId = Object.fromEntries(rV.procesos.map((p) => [p.constancia, p]));
+        assert.deepStrictEqual(filasV.map((f) => [porId[f.numero_de_constancia].dias_publicado, porId[f.numero_de_constancia].probablemente_cerro]),
+          [[22, false], [23, true], [40, false], [41, true], [58, false], [59, true], [59, null], [null, null]],
+          `los días desde la carga y la marca, en el borde de cada ventana: ${JSON.stringify(rV.procesos.map((p) => [p.constancia, p.dias_publicado, p.probablemente_cerro]))}`);
+        assert.ok(rV.procesos.some((p) => p.constancia === "V-5") && rV.no_competitivos === 0,
+          "MUTACIÓN: «Licitación obra pública», la licitación de obra de SECOP I, salía como no competitiva y no se mostraba (6-nov-2026)");
+        assert.strictEqual(rV.procesos.length, filasV.length, "MUTACIÓN: lo que pasó su ventana se escondía");
+        assert.deepStrictEqual(rV.procesos.map((p) => p.constancia), ["V-1", "V-3", "V-5", "V-7", "V-8", "V-2", "V-4", "V-6"], "lo que probablemente cerró va al final, en el mismo orden; lo demás, arriba");
+        assert.strictEqual(rV.probablemente_cerrados, 3, "la cuenta de los que pasaron su ventana");
+        const tV = hs(rV).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
+        assert.ok(/8 procesos de obra convocados en SECOP I: 3 probablemente ya cerraron y van al final/.test(tV)
+          && /Probablemente ya cerró: en mínima cuantía, 9 de cada 10 obras se adjudican antes de 22 días\. Confírmelo en el enlace\./.test(tV)
+          && /en licitación, 9 de cada 10 obras se adjudican antes de 58 días/.test(tV) && /\(hace 22 días\)/.test(tV)
+          && /publicadas entre el 8 y el 22 de agosto de 2026/.test(tV), tV);
+        assert.strictEqual((tV.match(/Probablemente ya cerró:/g) || []).length, 3, `solo los tres que pasaron su ventana llevan la marca: ${tV}`);
+        const tUno = hs({ ...rV, procesos: rV.procesos.filter((p) => p.constancia === "V-2" || p.constancia === "V-1") }).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
+        assert.ok(/2 procesos de obra convocados en SECOP I: 1 probablemente ya cerró y va al final/.test(tUno), tUno);
       }
     } finally { socrata.setDatasetGrupos([]); socrata.setDatasetContratos(contratosAntes); }
 
