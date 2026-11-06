@@ -5602,9 +5602,39 @@
           formatos.push({ nombre: f.nombre, bytes: null, resumen: null, error: fraseDeFallo(e) });
         }
       }
+      /* LO DE CADA INTEGRANTE (fase 1, 6-nov-2026): en consorcio, el Formato 6 (seguridad social) o el 13 (Mipyme) los presenta
+         CADA integrante con sus datos. Se pide una copia por integrante (sin la firma: la imagen es la del representante del
+         consorcio) y solo entra la que lleva algo del integrante; si no guardó sus datos, se dice dónde */
+      const cons = (segExpDatos.consorcios || []).find((c) => c && c.id === perfil);
+      const avisosIntegrantes = [];
+      if (cons && Array.isArray(cons.integrantes)) {
+        const delProp = (rr) => (rr && rr.llenados || []).some((x) => !["entidad", "numero_proceso", "ciudad_entidad", "objeto"].includes(x.campo));
+        for (let i = 0; i < formatos.length; i++) {
+          const f = formatos[i];
+          if (!(f.resumen && f.resumen.de_cada_integrante)) continue;
+          const copias = [];
+          let faltan = 0;
+          for (const it of cons.integrantes) {
+            decir(`Llenando «${f.nombre}» para cada integrante…`);
+            try {
+              const ri = await api("/api/pliego?op=descargar", { method: "POST", body: { url: (llenables.find((x) => x.nombre === f.nombre) || {}).url, formato: "llenar", perfil: it.perfil, nombre: f.nombre, proceso: contextoP } });
+              if (ri && ri.base64 && delProp(ri)) copias.push({ nombre: `${String(f.nombre).replace(/\.docx$/i, "")} - ${ri.proponente || it.perfil}.docx`, origen: f.nombre, bytes: Uint8Array.from(atob(ri.base64), (c) => c.charCodeAt(0)), resumen: { ...ri, de_cada_integrante: false, de_integrante: ri.proponente || it.perfil } });
+              else { faltan++; avisosIntegrantes.push(`«${f.nombre}» de «${it.perfil}»: no se encontró ninguna casilla suya que llenar sin riesgo. Use la copia con solo lo de la entidad y llénela a mano.`); }
+            } catch (e) {
+              faltan++;
+              /* (revisión adversaria, 6-nov-2026, reproducido) cada integrante sin su copia se dice, con la causa; antes solo se
+                 avisaba al que no había guardado sus datos y los demás desaparecían del .zip sin rastro */
+              if (/Todavía no ha guardado los datos/.test(String(e && e.message || ""))) avisosIntegrantes.push(`«${it.perfil}» no tiene guardados sus «Datos para los formatos del pliego»: guárdelos en Mi empresa y vuelva a armar el .zip.`);
+              else avisosIntegrantes.push(`«${f.nombre}» de «${it.perfil}»: no se pudo llenar (${fraseDeFallo(e)}). Use la copia con solo lo de la entidad y llénela a mano.`);
+            }
+          }
+          // la copia con solo lo de la entidad se queda si a algún integrante le falta la suya: es la que él llena a mano
+          if (copias.length) { const reemplazo = faltan ? [...copias, f] : copias; formatos.splice(i, 1, ...reemplazo); i += reemplazo.length - 1; }
+        }
+      }
       /* lo que no se llenó, y lo que no es Word: el archivo que publicó la entidad, byte a byte */
       const originales = [];
-      const sinLlenar = deEntrega.filter((f) => !formatos.some((x) => x.nombre === f.nombre && x.bytes));
+      const sinLlenar = deEntrega.filter((f) => !formatos.some((x) => (x.nombre === f.nombre || x.origen === f.nombre) && x.bytes));
       for (const [i, f] of sinLlenar.entries()) {
         decir(`Trayendo tal cual ${i + 1} de ${sinLlenar.length}: «${f.nombre}»…`);
         try {
@@ -5619,8 +5649,8 @@
         suyos.push({ nombre: a.name, bytes: new Uint8Array(await a.arrayBuffer()) });
       }
       const pr = p.proceso || {};
-      const z = X.armarZipOferta({ proceso: { id, nombre: pr.nombre, entidad: pr.entidad }, conQuien: conQuienDe(p), formatos, originales, suyos, hoy: segExpDatos.hoy || null },
-        { escribirZip: window.XLSXApu.escribirZip, frasesLlenado: X.frasesLlenado });
+      const z = X.armarZipOferta({ proceso: { id, nombre: pr.nombre, entidad: pr.entidad }, conQuien: conQuienDe(p), formatos, originales, suyos, hoy: segExpDatos.hoy || null, avisos: [...new Set(avisosIntegrantes)] },
+        { escribirZip: window.XLSXApu.escribirZip, frasesLlenado: X.frasesLlenado, fecha: new Date() });
       window.XLSXApu.descargar(z.bytes, z.nombre, "application/zip");
       const llenos = formatos.filter((x) => x.bytes).length, tal = originales.filter((x) => x.bytes).length;
       const firmados = formatos.filter((x) => x.resumen && x.resumen.firma && x.resumen.firma.puesta).length;

@@ -460,7 +460,7 @@
      necesaria la entrega de este documento»; va en el .zip igual, con la nota, porque el pliego puede pedirlo */
   const esPacto = (n) => /pacto\s*_?\s*de\s+transparencia|pacto_?transp/i.test(String(n || ""));
   const NOTA_PACTO = "El Documento Base del tipo dice que con la firma de la carta de presentación se acepta el pacto y no hace falta entregarlo: confírmelo en el pliego.";
-  function armarZipOferta({ proceso = {}, conQuien = null, formatos = [], originales = [], suyos = [], aMano = [], hoy = null } = {}, ctx = {}) {
+  function armarZipOferta({ proceso = {}, conQuien = null, formatos = [], originales = [], suyos = [], aMano = [], hoy = null, avisos = [] } = {}, ctx = {}) {
     const ascii = (s) => String(s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\x20-\x7e]/g, "").replace(/[\\/:*?"<>|]+/g, " ").replace(/\s+/g, " ").trim();
     const n2 = (i) => String(i + 1).padStart(2, "0");
     /* el nombre recortado CONSERVA su extensión (con 110 caracteres se perdía el «.pdf»), y sin nada legible —un nombre en
@@ -489,13 +489,15 @@
       lineas.push(`   - ${ruta.slice(ruta.indexOf("/") + 1)}`);
       for (const fr of (ctx.frasesLlenado ? ctx.frasesLlenado(f.resumen) : [])) lineas.push(`       ${fr}`);
       const re = f.resumen || {};
+      if (re.de_integrante) lineas.push(`       Es la copia de ${re.de_integrante}: en consorcio lo presenta cada integrante con sus datos.`);
+      if (re.conformacion) lineas.push("       Es el documento de conformación del consorcio: lo firman el representante de cada integrante y el del consorcio.");
       if (re.desempate) lineas.push("       Es un factor de desempate: llénelo y fírmelo solo si cumple la condición que declara.");
       else if (re.ofrecimiento) lineas.push("       Es un ofrecimiento que da puntaje y compromete: súbalo solo si lo ofrece.");
       if (esPacto(f.nombre)) lineas.push(`       ${NOTA_PACTO}`);
       if (re.declaracion) lineas.push("       Declara bajo juramento una condición (Mipyme, mujeres, discapacidad…): fírmelo solo si la cumple. No se firmó.");
       if (Array.isArray(re.pendientes) && re.pendientes.length) lineas.push(`       Queda por escribir: ${re.pendientes.join(" · ")}.`);
       // lo ya dicho arriba (pacto, desempate, ofrecimiento, declaración, lo de cada integrante) no se repite en la línea de la firma
-      const fi = re.firma && !re.firma.puesta && (esPacto(f.nombre) || re.desempate || re.ofrecimiento || re.declaracion || re.de_cada_integrante) ? null : re.firma;
+      const fi = re.firma && !re.firma.puesta && (esPacto(f.nombre) || re.desempate || re.ofrecimiento || re.declaracion || re.de_cada_integrante || re.conformacion || re.de_integrante) ? null : re.firma;
       if (fi) lineas.push(`       ${fi.puesta ? `La firma quedó encima de: «${fi.renglon}»${fi.veces > 1 ? ` (en sus ${fi.veces} cartas)` : ""}.` : `Sin firma: ${fi.motivo}.`}`);
     });
     /* LOS DEMÁS, TAL COMO LOS PUBLICÓ LA ENTIDAD (5-nov-2026): el mismo archivo, byte a byte, para llenarlo a mano sin
@@ -535,13 +537,14 @@
       entradas.push({ nombre: ruta, datos: d.bytes instanceof Uint8Array ? d.bytes : new Uint8Array(d.bytes) });
       lineas.push(`   - ${ruta.slice(ruta.indexOf("/") + 1)}`);
     });
+    if (avisos.length) lineas.push("", "LO QUE FALTA DE LOS INTEGRANTES", ...avisos.map((a) => `   - ${a}`));
     lineas.push("", "EL NOMBRE DE LA ENTIDAD, EL NÚMERO DEL PROCESO Y EL OBJETO salen de lo que publica SECOP II: compárelos con el pliego antes de firmar.");
-    lineas.push("", "LO QUE ESTE ARCHIVO NO HACE", conFirma ? "   - La imagen de la firma no es una firma digital: confirme en el pliego que la entidad acepta la firma escaneada." : "   - No firma ningún documento.", "   - No llena el documento de conformación del consorcio o de la unión temporal: lleva los datos de cada integrante.",
+    lineas.push("", "LO QUE ESTE ARCHIVO NO HACE", conFirma ? "   - La imagen de la firma no es una firma digital: confirme en el pliego que la entidad acepta la firma escaneada." : "   - No firma ningún documento.", "   - No decide por usted la duración del consorcio, el suplente, quién factura ni lo que declara (Mipyme, desempate): eso queda en blanco.",
       "   - No comprueba que sus documentos estén vigentes ni que sean los que pide el pliego: compare con «Lo que tiene que entregar».",
       "   - No sube nada a SECOP II.");
     const leame = lineas.join("\r\n");
     entradas.unshift({ nombre: "LEAME - revise antes de subir.txt", datos: enc(`\ufeff${leame}`) });
-    const bytes = ctx.escribirZip(entradas);
+    const bytes = ctx.escribirZip(entradas, { fecha: ctx.fecha || null });   // la fecha y hora reales en cada archivo (no 1899)
     return { bytes, nombre: `Oferta ${ascii(proceso.id || "proceso").slice(0, 60)}.zip`, leame, archivos: entradas.map((e) => e.nombre) };
   }
 
