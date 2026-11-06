@@ -6,9 +6,9 @@
 (no editar a mano: sale de `node tests/mapa.js --escribir`. Para ir a un sitio concreto,
  `node tests/mapa.js <término>` da la ruta, la línea y el sed exacto — más barato que leer esto)
 
-· SUPERFICIE HTTP — 45 op declaradas en los mapas de los routers:
+· SUPERFICIE HTTP — 46 op declaradas en los mapas de los routers:
   /api/admin?op=  rup · experiencia · cobertura · cargar-catalogo · exportar · importar · uso · respaldo · espacio · compactar · sesion · entrar · salir · crear-cuenta
-  /api/perfil?op=  resumen · diagnostico · entrada · pulso · consorcio · consorcio-simular · seguimiento · cuenta · avisos · empresa-datos
+  /api/perfil?op=  resumen · diagnostico · entrada · pulso · consorcio · consorcio-simular · seguimiento · cuenta · avisos · empresa-datos · no-es-obra
   /api/pliego?op=  extraer-texto · parsear · descargar · formulario1 · diff · cronograma · deducciones · dictamen · documentos · auditoria · evaluacion · observaciones
   /api/procesos?op=  sync · historico · listar · baja · entidades · portada · manifestacion · latido · salud
   (api/apu.js e api/inteligencia.js despachan por accion/vista desde su handler:
@@ -175,13 +175,14 @@
 · lib/handlers/inteligencia/ — 1 módulos:
   detalle.js                  Consultas de SOLO LECTURA sobre el mercado
 
-· lib/handlers/perfil/ — 9 módulos:
+· lib/handlers/perfil/ — 10 módulos:
   avisos.js                   /api/perfil?op=avisos (6-sep-2026, M-COMP-03)
   consorcio.js                /api/perfil?op=consorcio | op=consorcio-simular (Fase 10)
   cuenta.js                   (sin cabecera)
   diagnostico.js              ¿En qué paso de la cascada se pierden los procesos?
   empresa_datos.js            (sin cabecera)
   entrada.js                  /api/perfil?op=diagnostico (POST) · PUERTA DE ENTRADA DE 60 SEGUNDOS (Fase 2)
+  no_es_obra.js               (sin cabecera)
   pulso.js                    GET /api/perfil?op=pulso&perfil=… (ago 2026)
   resumen.js                  El dashboard: ¿qué SON los procesos que hoy se ven?
   seguimiento.js              /api/perfil?op=seguimiento (ago 2026)
@@ -231,8 +232,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 441 secciones (48 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 21513  El costo de preparar la oferta es la póliza de seriedad, y lo que el dueño decidió no hacer…
+· MEMORIA · docs/MEMORIA.md — 442 secciones (48 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 21526  El % de la garantía del pliego llega a Precios, y las observaciones al pliego redactadas co…
   L 21550  Las cifras en letras también se comprueban en el dictamen, y la prima mínima no se pedirá (…
   L 21570  Con qué consorcio se presenta cada proceso, el .zip de la oferta y quitar un proceso por un…
@@ -242,6 +242,7 @@
   L 21742  SECOP II dejó de publicar el código de actividad el 16-sep-2026: lo que se perdió, lo que s…
   L 21792  El pliego definitivo tiene otro número: Mis procesos y el aviso de la mañana siguen la publ…
   L 21814  Lo que la entidad publicó como compra o servicio ya no sale verde por un verbo de obra, la …
+  L 21840  «No es obra» quita un proceso de su lista, con su otra publicación, y la lista dice cuántos…
 
 · DOCUMENTOS docs/ — 76 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)

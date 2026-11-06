@@ -9180,6 +9180,89 @@ async function main() {
     console.log(`· unidad obra que la entidad no declaró: ${AMBAR.length} objetos de producción en contratos de compra o servicio pasan de verde al ámbar del contrato, visibles y con el contrato citado; con obra, «Otro», «Decreto 092», «Concesión» o sin contrato siguen verdes, y también la consultoría, la interventoría, la compra de material de obra y la clase de obra pura · ${FUERA.length} objetos que decían «obra» fuera de contexto salen del tipo «obra» sin esconderse, y ${SIGUE_OBRA.length} obras con las mismas frases se quedan`);
   }
 
+  /* unidad: «NO ES OBRA» (6-nov-2026, paso 6 del plan del 6-nov; lib/handlers/perfil/no_es_obra). El dueño quita un proceso
+     de SU lista; sale también la otra publicación del mismo objeto de la misma entidad, nunca la de otra entidad; la lista
+     dice cuántos quitó y los enseña con `ver_quitados=1`; se devuelve; sin credencial no se escribe nada. */
+  bqNoEsObra: { if (!corre("unidad no es obra")) break bqNoEsObra;
+    const NEO = require("../lib/handlers/perfil/no_es_obra.js");
+    const rPerfilNE = require("../api/perfil.js"), rProcNE = require("../api/procesos.js");
+    const fallasNE = [];
+    const okNE = (c, m) => { if (!c) fallasNE.push(m); };
+    // la firma: misma entidad y mismo objeto = el mismo proceso en otra publicación; otra entidad no
+    const base = { nombre: "MEJORAMIENTO DE VÍAS (Manifestación de interés (Menor Cuantía)) (Presentación de oferta)", descripcion: "", entidad: "ALCALDÍA DE X", nit: "890.000.111-2" };
+    okNE(NEO.firmaDe(base) === NEO.firmaDe({ ...base, nombre: "MEJORAMIENTO DE VÍAS" }), "la fase pegada al nombre no cambia la firma (borrador y definitivo)");
+    okNE(NEO.firmaDe(base) !== NEO.firmaDe({ ...base, nit: "800.999.888-1", entidad: "ALCALDÍA DE Y" }), "MUTACIÓN: otra entidad con el mismo objeto se quitaba también");
+    okNE(NEO.firmaDe({ ...base, nombre: "OBRA", descripcion: "" }) === null, "un objeto de menos de 10 letras no da firma: no se quita nada por ella");
+    const idx = NEO.indice({ quitados: [{ id: "CO1.REQ.1", firma: NEO.firmaDe({ ...base, descripcion: "MANTENIMIENTO DE LA RED DE ALCANTARILLADO DEL BARRIO CENTRO" }) }] });
+    const fila = (id, desc, nit) => ({ id_del_proceso: id, nombre_del_procedimiento: "X", descripci_n_del_procedimiento: desc, entidad: "ALCALDÍA DE X", nit_entidad: nit });
+    okNE(idx.esQuitado(fila("CO1.REQ.1", "OTRA COSA DISTINTA DEL TODO", "1")), "por número");
+    okNE(idx.esQuitado(fila("CO1.REQ.2", "Mantenimiento de la red de alcantarillado del barrio Centro", "890000111-2")), "MUTACIÓN: la otra publicación del mismo objeto y la misma entidad volvía a salir");
+    okNE(!idx.esQuitado(fila("CO1.REQ.3", "MANTENIMIENTO DE LA RED DE ALCANTARILLADO DEL BARRIO CENTRO", "800999888")), "MUTACIÓN: el mismo objeto de otra entidad se escondía");
+    // el manejador: credencial siempre, acciones y números válidos
+    okNE((await invocar(rPerfilNE, "/api/perfil?op=no-es-obra&perfil=helder", {})).status === 401, "sin credencial no se lee");
+    okNE((await invocar(rPerfilNE, "/api/perfil?op=no-es-obra", {}, { metodo: "POST", body: { perfil: "helder", accion: "quitar", id: "CO1.REQ.1" } })).status === 401, "MUTACIÓN: sin credencial se escribía");
+    okNE((await invocar(rPerfilNE, "/api/perfil?op=no-es-obra", CAB_TOKEN, { metodo: "POST", body: { perfil: "helder", accion: "borrar", id: "CO1.REQ.1" } })).status === 400, "una acción desconocida es 400");
+    okNE((await invocar(rPerfilNE, "/api/perfil?op=no-es-obra", CAB_TOKEN, { metodo: "POST", body: { perfil: "helder", accion: "quitar", id: "<x>" } })).status === 400, "un número inválido es 400");
+    // de punta a punta con la lista real y el corpus simulado de la suite
+    const lista = async (extra = "") => (await invocar(rProcNE, `/api/procesos?op=listar&perfil=helder&solo_viables=false&por_pagina=100${extra}`, CAB_TOKEN)).cuerpo || {};
+    /* tres procesos sembrados en un bloque propio del corpus simulado: el definitivo de una obra, su borrador con OTRO número
+       (mismo objeto, misma entidad) y la misma obra de OTRA entidad */
+    const { comprimir: compNE, CLAVES: CLNE } = require("../lib/almacen.js");
+    const obraNE = (id, nit, entidad, fase) => ({ _k: id, id_del_proceso: id, nombre_del_procedimiento: `CONSTRUCCIÓN DE PLACA HUELLA EN LA VEREDA EL CENTRO (${fase})`,
+      descripci_n_del_procedimiento: "CONSTRUCCIÓN DE PLACA HUELLA EN LA VEREDA EL CENTRO DEL MUNICIPIO, SEGÚN LOS PLANOS Y ESPECIFICACIONES", tipo_de_contrato: "Obra",
+      modalidad_de_contratacion: "Mínima cuantía", estado_del_procedimiento: "Publicado", fase, fecha_de_recepcion_de: "2099-01-01T17:00:00.000",
+      fecha_de_publicacion_del: "2026-11-01T00:00:00.000", precio_base: "90000000", entidad, nit_entidad: nit, departamento_entidad: "Tolima",
+      codigo_principal_de_categoria: "UNSPECIFIED", ":updated_at": "2026-11-01T00:00:00.000", urlproceso: { url: `https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=${id}` } });
+    const SEMBRADOS_NE = [obraNE("CO1.REQ.NEO1", "890000111", "ALCALDÍA DE NEOVILLA", "Presentación de oferta"), obraNE("CO1.REQ.NEO2", "890000111", "ALCALDÍA DE NEOVILLA", "Presentación de observaciones"),
+      obraNE("CO1.REQ.NEO3", "800999888", "ALCALDÍA DE OTRAVILLA", "Presentación de oferta")];
+    const claveNE = CLNE.chunk("2026-11", 977);
+    await redis.set(claveNE, compNE(SEMBRADOS_NE));
+    let L0 = await lista();
+    const idsL0 = new Set((L0.resultados || []).map((l) => l.id_del_proceso));
+    const primera = (L0.resultados || []).find((l) => l.id_del_proceso === "CO1.REQ.NEO1");
+    okNE(idsL0.has("CO1.REQ.NEO3"), `premisa: la obra de la otra entidad está en la lista: ${[...idsL0].filter((x) => /NEO/.test(x)).join(", ")}`);
+    okNE(!!primera && L0.quitados_por_usted === 0, `premisa: la lista trae procesos y nada quitado: ${JSON.stringify({ n: (L0.resultados || []).length, q: L0.quitados_por_usted })}`);
+    if (primera) {
+      const q = await invocar(rPerfilNE, "/api/perfil?op=no-es-obra", CAB_TOKEN, { metodo: "POST", body: { perfil: "helder", accion: "quitar", id: primera.id_del_proceso,
+        nombre: primera.nombre_del_procedimiento, descripcion: primera.descripci_n_del_procedimiento, entidad: primera.entidad, nit: primera.nit_entidad } });
+      okNE(q.status === 200 && q.cuerpo.ok && q.cuerpo.quitados[0].id === primera.id_del_proceso, `se guarda: ${q.status} ${JSON.stringify(q.cuerpo).slice(0, 200)}`);
+      const L1 = await lista();
+      okNE(!(L1.resultados || []).some((l) => l.id_del_proceso === primera.id_del_proceso || l.id_del_proceso === "CO1.REQ.NEO2"), "MUTACIÓN: el proceso quitado, o su otra publicación, seguía en la lista");
+      okNE((L1.resultados || []).some((l) => l.id_del_proceso === "CO1.REQ.NEO3"), "MUTACIÓN: la misma obra de OTRA entidad salía de la lista");
+      okNE(L1.quitados_por_usted >= 1 && L1.total === L0.total - L1.quitados_por_usted, `la lista dice cuántos quitó y el total los descuenta: ${JSON.stringify({ antes: L0.total, despues: L1.total, quitados: L1.quitados_por_usted })}`);
+      const L2 = await lista("&ver_quitados=1");
+      const vuelta = (L2.resultados || []).find((l) => l.id_del_proceso === primera.id_del_proceso);
+      okNE(L2.ver_quitados === true && vuelta && vuelta.quitado_por_usted === true && L2.total === L0.total, "MUTACIÓN: con «Ver» no volvían, marcados, los que quitó");
+      const lec = await invocar(rPerfilNE, "/api/perfil?op=no-es-obra&perfil=helder", CAB_TOKEN);
+      okNE(lec.status === 200 && lec.cuerpo.quitados.length === 1, `se lee lo guardado: ${JSON.stringify(lec.cuerpo).slice(0, 160)}`);
+      const d = await invocar(rPerfilNE, "/api/perfil?op=no-es-obra", CAB_TOKEN, { metodo: "POST", body: { perfil: "helder", accion: "devolver", id: primera.id_del_proceso } });
+      okNE(d.status === 200 && d.cuerpo.quitados.length === 0, "se devuelve");
+      const L3 = await lista();
+      okNE((L3.resultados || []).some((l) => l.id_del_proceso === primera.id_del_proceso) && L3.quitados_por_usted === 0 && L3.total === L0.total, "MUTACIÓN: devuelto no volvía a la lista");
+      // si lo guardado no se puede leer, no se quita nada (la lista sale entera)
+      const leerOrig = NEO.leerQuitados;
+      await invocar(rPerfilNE, "/api/perfil?op=no-es-obra", CAB_TOKEN, { metodo: "POST", body: { perfil: "helder", accion: "quitar", id: primera.id_del_proceso } });
+      try {
+        NEO.leerQuitados = async () => { throw new Error("Upstash caído"); };
+        const L4 = await lista();
+        okNE(L4.total === L0.total && L4.quitados_por_usted === 0, "MUTACIÓN: sin poder leer lo quitado, la lista se vaciaba o fallaba");
+      } finally {
+        NEO.leerQuitados = leerOrig;
+        await invocar(rPerfilNE, "/api/perfil?op=no-es-obra", CAB_TOKEN, { metodo: "POST", body: { perfil: "helder", accion: "devolver", id: primera.id_del_proceso } });
+      }
+    }
+    // lo sembrado y lo guardado se borran: la prueba de la copia de datos cuenta las claves `config:*` que quedan
+    await redis.del(claveNE, NEO.clave("helder"));
+    // la pantalla: el botón está en la tarjeta, dice qué hace, y la línea de arriba dice cuántos quitó
+    const appNE = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+    const bNE = new Function("esc", `${appNE.match(/function botonNoEsObra\(l\) \{[\s\S]*?\n  \}/)[0]}; return botonNoEsObra;`)((x) => String(x));
+    okNE(/>No es obra</.test(bNE({ id_del_proceso: "CO1.REQ.9" })) && /data-accion="quitar"/.test(bNE({ id_del_proceso: "CO1.REQ.9" })), "el botón quita");
+    okNE(/>Devolver a la lista</.test(bNE({ id_del_proceso: "CO1.REQ.9", quitado_por_usted: true })), "en lo quitado, el botón devuelve");
+    okNE(/\$\{botonNoEsObra\(l\)\}/.test(appNE) && /procesos quitados"\} por usted con «No es obra»/.test(appNE) && /data-deshacer-no-obra/.test(appNE), "la tarjeta lleva el botón, la lista dice cuántos quitó y el aviso trae «Deshacer»");
+    if (fallasNE.length) throw new Error(`unidad no es obra: ${fallasNE.length} comprobaciones fallan:\n  - ${fallasNE.join("\n  - ")}`);
+    console.log("· unidad no es obra: quitar saca el proceso y la otra publicación del mismo objeto de la misma entidad (no la de otra), la lista dice cuántos quitó y con «Ver» vuelven marcados, se devuelve, sin credencial no se escribe y sin poder leer lo guardado la lista sale entera");
+  }
+
   /* unidad: LOS DÍAS AL CIERRE POR FECHA CIVIL, Y «CERRADO» POR LA HORA (28-oct-2026, «haz la 1 y 2»).
      Una sola cuenta (public/filtros.js diasParaCierre) para la lista, la portada, el pulso, Mis
      procesos y la guía; contaba HORAS redondeando hacia arriba. Con la medianoche que publica hoy la
@@ -47823,9 +47906,9 @@ async function main() {
             const iP = appP.indexOf("  function parametros() {"), fP = appP.indexOf("    return p;\n  }", iP);
             assert.ok(iP > 0 && fP > iP, "app.js trae parametros()");
             const cuerpoP = appP.slice(iP, fP + "    return p;\n  }".length);
-            const correrP = (marcada, estado = {}) => new Function("$", "pagina", "FL", "estadoFiltros", "estructuraGuardada", `${cuerpoP}\n return parametros();`)(
+            const correrP = (marcada, estado = {}) => new Function("$", "pagina", "FL", "estadoFiltros", "estructuraGuardada", "verQuitados", `${cuerpoP}\n return parametros();`)(
               (id) => ({ value: id === "f-perfil" ? "helder" : id === "f-ordenar" ? "atractividad" : id === "f-orden" ? "desc" : "", checked: id === "f-solo-viables" ? marcada : false }),
-              1, { escribirEstado: () => {} }, estado, () => null);
+              1, { escribirEstado: () => {} }, estado, () => null, false); // `verQuitados`: «Ver los que quitó» (6-nov-2026), apagado
             /* el filtro `solo=viables` (4-nov-2026: el enlace de una cifra de Mi empresa) pide lo que cuenta la cifra
                aunque la casilla todavía no se haya pintado encendida */
             assert.strictEqual(correrP(false, { solo: "viables" }).get("solo_viables"), null, "con `solo=viables` en el estado se pide lo mismo que cuenta la cifra");
