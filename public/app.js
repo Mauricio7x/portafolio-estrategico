@@ -3486,12 +3486,18 @@
     if (!x || x.ok !== true) return `<p class="text-sm text-gray-600">${esc((x && x.motivo) || "No se pudo consultar SECOP I.")}</p>`;
     const fecha = (f) => { const t = new Date(`${f}T12:00:00`); return f && Number.isFinite(t.getTime()) ? t.toLocaleDateString("es-CO", { day: "numeric", month: "long" }) : "sin fecha"; };
     if (!x.procesos.length) return `<p class="text-sm text-gray-600">SECOP I no tiene procesos de obra convocados en ${esc(x.departamentos.join(", "))} publicados desde el ${esc(fecha(x.desde))}.</p>`;
-    const filas = x.procesos.map((p) => `<li class="py-2"><span class="font-medium">${esc(p.entidad || "Entidad sin nombre")}</span>${p.municipio ? ` <span class="text-xs text-gray-500">(${esc(p.municipio)})</span>` : ""}<br>
+    const hace = (d) => (d == null ? "" : d === 0 ? " (hoy)" : d === 1 ? " (hace 1 día)" : ` (hace ${d} días)`);
+    /* LA VENTANA POR MODALIDAD (6-nov-2026, lib/secop1): lo publicado hace más días de los que tardan 9 de cada 10 obras
+       de su modalidad en adjudicarse va ABAJO y marcado, con el hecho; no se esconde (es una inferencia) */
+    const fila = (p) => `<li class="py-2"><span class="font-medium">${esc(p.entidad || "Entidad sin nombre")}</span>${p.municipio ? ` <span class="text-xs text-gray-500">(${esc(p.municipio)})</span>` : ""}<br>
       <span class="text-xs text-gray-700">${esc(p.objeto || "Sin objeto publicado")}</span><br>
-      <span class="text-xs text-gray-500">${esc(p.modalidad || "")} · ${p.cuantia_cop != null ? `$${esc(Math.round(p.cuantia_cop).toLocaleString("es-CO"))}` : "valor sin publicar"} · publicado el ${esc(fecha(p.publicado))}${p.url ? ` · <a href="${esc(p.url)}" target="_blank" rel="noopener noreferrer" class="font-medium text-blue-600 hover:underline">Ver en SECOP I ↗</a>` : ""}</span></li>`).join("");
-    return `<p class="text-sm font-medium">${x.procesos.length} proceso${x.procesos.length === 1 ? "" : "s"} de obra convocado${x.procesos.length === 1 ? "" : "s"} en SECOP I${x.truncado ? " (los más recientes; hay más)" : ""}</p>
-      <ul class="mt-1 divide-y divide-gray-100">${filas}</ul>
-      <p class="mt-2 text-xs text-gray-500">SECOP I no publica en datos abiertos la fecha de cierre: entre al enlace y mire el cronograma antes de prepararse, porque alguno puede haber cerrado. Estos procesos no pasan por las cuentas de su empresa de la lista de arriba. Fuente: SECOP I, procesos de compra pública (datos.gov.co), publicados desde el ${esc(fecha(x.desde))}.</p>`;
+      <span class="text-xs text-gray-500">${esc(p.modalidad || "")} · ${p.cuantia_cop != null ? `$${esc(Math.round(p.cuantia_cop).toLocaleString("es-CO"))}` : "valor sin publicar"} · publicado el ${esc(fecha(p.publicado))}${esc(hace(p.dias_publicado))}${p.url ? ` · <a href="${esc(p.url)}" target="_blank" rel="noopener noreferrer" class="font-medium text-blue-600 hover:underline">Ver en SECOP I ↗</a>` : ""}</span>${p.probablemente_cerro === true
+        ? `<br><span class="text-xs text-gray-600"><span class="text-gray-400">●</span> Probablemente ya cerró: en ${esc(p.ventana_modalidad || "su modalidad")}, 9 de cada 10 obras se adjudican antes de ${esc(p.ventana_dias)} días. Confírmelo en el enlace.</span>` : ""}</li>`;
+    const abiertos = x.procesos.filter((p) => p.probablemente_cerro !== true), viejos = x.procesos.filter((p) => p.probablemente_cerro === true);
+    return `<p class="text-sm font-medium">${x.procesos.length} proceso${x.procesos.length === 1 ? "" : "s"} de obra convocado${x.procesos.length === 1 ? "" : "s"} en SECOP I${x.truncado ? " (los más recientes; hay más)" : ""}${viejos.length ? `: ${viejos.length} probablemente ya cerr${viejos.length === 1 ? "ó" : "aron"} y ${viejos.length === 1 ? "va" : "van"} al final` : ""}</p>
+      ${abiertos.length ? `<ul class="mt-1 divide-y divide-gray-100">${abiertos.map(fila).join("")}</ul>` : ""}
+      ${viejos.length ? `<p class="mt-3 text-xs font-medium text-gray-600">Publicados hace más tiempo del que suele tardar la adjudicación</p><ul class="mt-1 divide-y divide-gray-100 text-gray-500">${viejos.map(fila).join("")}</ul>` : ""}
+      <p class="mt-2 text-xs text-gray-500">SECOP I no publica en datos abiertos la fecha de cierre: entre al enlace y mire el cronograma antes de prepararse, porque alguno puede haber cerrado. «Probablemente ya cerró» sale de lo que tardaron en adjudicarse las obras de SECOP I publicadas entre el 8 y el 22 de agosto de 2026. Estos procesos no pasan por las cuentas de su empresa de la lista de arriba. Fuente: SECOP I, procesos de compra pública (datos.gov.co), publicados desde el ${esc(fecha(x.desde))}.</p>`;
   }
 
   /* LOS CONTRATOS DE OBRA QUE TERMINAN PRONTO (5-nov-2026, plan «Detekta a otro nivel», proceso 15): con una entidad
