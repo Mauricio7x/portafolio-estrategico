@@ -9263,6 +9263,78 @@ async function main() {
     console.log("· unidad no es obra: quitar saca el proceso y la otra publicación del mismo objeto de la misma entidad (no la de otra), la lista dice cuántos quitó y con «Ver» vuelven marcados, se devuelve, sin credencial no se escribe y sin poder leer lo guardado la lista sale entera");
   }
 
+  /* unidad: LOS DATOS DE LOS FORMATOS QUE YA SON PÚBLICOS, POR NIT (6-nov-2026, tarea 8; lib/datos_publicos_empresa). Filas
+     REALES de datos.gov.co bajadas el 6-nov-2026: el RUES (c82u-588k) de ICARO CONSTRUCCIONES SAS y de PROYCON, y el registro
+     de proveedores de SECOP II (qmzu-gj57) de ICARO, que la llama «Persona Jurídica Extranjera» y le pone a la propia empresa
+     de representante legal: la identidad sale solo del RUES, y de SECOP II solo el contacto. */
+  bqDatosPublicos: { if (!corre("unidad datos públicos de la empresa")) break bqDatosPublicos;
+    const DPE = require("../lib/datos_publicos_empresa.js");
+    const FX = {"rues_icaro": {"camara_comercio": "BOGOTA", "matricula": "2589663", "razon_social": "ICARO CONSTRUCCIONES SAS", "nit": "900865276", "digito_verificacion": "2", "estado_matricula": "ACTIVA", "ultimo_ano_renovado": "2026", "fecha_renovacion": "20260325", "organizacion_juridica": "SOCIEDADES POR ACCIONES SIMPLIFICADAS SAS", "representante_legal": "LUIS ALEJANDRO RODRIGUEZ MERCHAN", "num_identificacion_representante_legal": "19456370", "clase_identificacion_rl": "CEDULA DE CIUDADANIA", "fecha_actualizacion": "2026/03/25 13:47:34.730000000"}, "qmzu_icaro": {"nombre": "ICARO CONSTRUCCIONES SAS", "nit": "900865276", "esta_activa": "Si", "fecha_creacion": "2023-11-15T17:30:26.000", "direccion": "CL 23 66 39 TO 8 AP 1004", "municipio": "Bogotá", "departamento": "Distrito Capital de Bogotá", "telefono": "3577131", "correo": "icaroconstruccionesciviles@gmail.com", "tipo_empresa": "Persona Jurídica Extranjera sin domicilio en Colombia", "nombre_representante_legal": "ICARO CONSTRUCCIONES SAS", "tipo_doc_representante_legal": "NIT", "n_mero_doc_representante_legal": "900865276"}, "rues_proycon": {"camara_comercio": "BOGOTA", "matricula": "3276359", "razon_social": "PROYECTOS Y CONSTRUCCIONES PROYCON S.A.S.", "nit": "901405659", "digito_verificacion": "0", "estado_matricula": "ACTIVA", "ultimo_ano_renovado": "2024", "fecha_renovacion": "20240401", "organizacion_juridica": "SOCIEDADES POR ACCIONES SIMPLIFICADAS SAS", "representante_legal": "JONATHAN ALFREDO YATE RODRIGUEZ", "num_identificacion_representante_legal": "1015445863", "clase_identificacion_rl": "CEDULA DE CIUDADANIA", "fecha_actualizacion": "2024/04/01 23:51:37.370000000"}};
+    const fallasDP = [];
+    const okDP = (c, m) => { if (!c) fallasDP.push(m); };
+    const stubDP = (rues, secop) => async (url) => {
+      const u = decodeURIComponent(String(url));
+      if (/c82u-588k/.test(u) && rues instanceof Error) throw rues;
+      const cuerpo = /c82u-588k/.test(u) ? rues : /qmzu-gj57/.test(u) ? secop : [];
+      return { ok: true, status: 200, headers: { get: () => null }, text: async () => JSON.stringify(cuerpo), json: async () => cuerpo };
+    };
+    const AHORA = Date.parse("2026-11-06T15:00:00Z");
+    // (1) ICARO: la identidad del RUES, el contacto de SECOP II, cada dato con su fuente
+    const r1 = await DPE.datosPublicosPorNit("900865276", { fetchImpl: stubDP([FX.rues_icaro], [FX.qmzu_icaro]), ahora: AHORA });
+    const v1 = Object.fromEntries(Object.entries(r1.sugeridos || {}).map(([k, x]) => [k, x.valor]));
+    okDP(r1.ok && v1.razon_social === "ICARO CONSTRUCCIONES SAS" && v1.nit === "900.865.276-2", `la razón social y el NIT con su dígito, del RUES: ${JSON.stringify(v1)}`);
+    okDP(v1.representante_legal === "LUIS ALEJANDRO RODRIGUEZ MERCHAN" && v1.representante_documento === "19456370",
+      `MUTACIÓN: el representante salía de SECOP II («ICARO CONSTRUCCIONES SAS», la propia empresa): ${JSON.stringify(v1)}`);
+    okDP(v1.tipo_proponente === "persona_juridica", `MUTACIÓN: el tipo de persona salía de SECOP II («Extranjera») o no salía: ${v1.tipo_proponente}`);
+    okDP(v1.direccion === "CL 23 66 39 TO 8 AP 1004" && v1.ciudad === "Bogotá" && v1.telefono === "3577131" && v1.correo === "icaroconstruccionesciviles@gmail.com",
+      `el contacto, de SECOP II: ${JSON.stringify(v1)}`);
+    okDP(/^RUES \(Confecámaras\), matrícula 2589663 de la Cámara de Comercio de BOGOTA, dato actualizado el 2026-03-25$/.test(r1.sugeridos.razon_social.fuente)
+      && /^registro de proveedores de SECOP II, escrito por la empresa \(cuenta creada el 2023-11-15\)$/.test(r1.sugeridos.telefono.fuente), "cada dato dice de dónde salió y su fecha");
+    okDP(!r1.avisos.length, `sin avisos con la matrícula activa y renovada en 2026: ${JSON.stringify(r1.avisos)}`);
+    // (2) PROYCON: renovada por última vez en 2024 se avisa; sin cuenta en SECOP II se dice, y el contacto no se inventa
+    const r2 = await DPE.datosPublicosPorNit("901.405.659-7", { fetchImpl: stubDP([FX.rues_proycon], []), ahora: AHORA });
+    okDP(r2.avisos.some((a) => /renovó por última vez en 2024/.test(a)), `MUTACIÓN: la matrícula sin renovar desde 2024 no se avisaba: ${JSON.stringify(r2.avisos)}`);
+    okDP(r2.avisos.some((a) => /dígito de verificación que escribió \(7\) no es el del RUES \(0\)/.test(a)), "el dígito de verificación distinto se avisa");
+    okDP(r2.sugeridos.nit && r2.sugeridos.nit.valor === "901.405.659-0", `MUTACIÓN: el dígito «0» se leía como sin dato: ${JSON.stringify(r2.sugeridos.nit)}`);
+    okDP(r2.avisos.some((a) => /SECOP II no tiene un proveedor registrado/.test(a)) && !r2.sugeridos.telefono && !r2.sugeridos.direccion, "MUTACIÓN: sin cuenta en SECOP II salía un contacto");
+    // (3) el RUES caído se dice; SECOP II sigue dando el contacto, y la razón social sale de allí solo porque el RUES no la dio
+    const r3 = await DPE.datosPublicosPorNit("900865276", { fetchImpl: stubDP(new Error("ECONNRESET"), [FX.qmzu_icaro]), ahora: AHORA });
+    okDP(r3.ok && r3.avisos.some((a) => /No se pudo consultar el RUES/.test(a)) && r3.sugeridos.telefono && !r3.sugeridos.representante_legal && !r3.sugeridos.tipo_proponente,
+      `con el RUES caído, se dice y la identidad no sale de SECOP II: ${JSON.stringify(r3)}`.slice(0, 400));
+    okDP(r3.sugeridos.razon_social && /SECOP II/.test(r3.sugeridos.razon_social.fuente), "la razón social de SECOP II solo cuando el RUES no la dio");
+    // (4) varias matrículas: la activa y renovada más tarde; «No Provisto» es sin dato
+    const vieja = { ...FX.rues_icaro, matricula: "1", estado_matricula: "CANCELADA", ultimo_ano_renovado: "2026", representante_legal: "OTRO" };
+    const r4 = await DPE.datosPublicosPorNit("900865276", { fetchImpl: stubDP([vieja, FX.rues_icaro], [{ ...FX.qmzu_icaro, telefono: "No Provisto" }]), ahora: AHORA });
+    okDP(r4.sugeridos.representante_legal.valor === "LUIS ALEJANDRO RODRIGUEZ MERCHAN" && !r4.sugeridos.telefono, `MUTACIÓN: ganaba la matrícula cancelada o «No Provisto» se sugería: ${JSON.stringify(r4.sugeridos)}`.slice(0, 300));
+    okDP(!(await DPE.datosPublicosPorNit("abc", { fetchImpl: stubDP([], []) })).ok, "un NIT que no se lee no consulta nada");
+    // (5) el manejador: credencial, NIT, y cada sugerencia pasa por la forma del guardado
+    const rP = require("../api/perfil.js");
+    okDP((await invocar(rP, "/api/perfil?op=empresa-datos&publicos=1&nit=900865276", {})).status === 401, "sin credencial no se consulta");
+    const origDP = DPE.datosPublicosPorNit;
+    try {
+      DPE.datosPublicosPorNit = (nit) => origDP(nit, { fetchImpl: stubDP([FX.rues_icaro], [{ ...FX.qmzu_icaro, telefono: "LLAMAR AL GERENTE" }]), ahora: AHORA });
+      const h = await invocar(rP, "/api/perfil?op=empresa-datos&publicos=1&nit=900865276", CAB_TOKEN);
+      okDP(h.status === 200 && h.cuerpo.sugeridos.razon_social && !h.cuerpo.sugeridos.telefono && h.cuerpo.avisos.some((a) => /«Teléfono» de registro de proveedores de SECOP II no tiene la forma esperada/.test(a)),
+        `MUTACIÓN: un teléfono que el guardado rechazaría se sugería: ${JSON.stringify(h.cuerpo).slice(0, 300)}`);
+      okDP(/confírmelos en su certificado/.test(h.cuerpo.nota || ""), "la respuesta manda al certificado");
+      const sinNit = await invocar(rP, "/api/perfil?op=empresa-datos&publicos=1", CAB_TOKEN);
+      okDP(sinNit.status === 400 && /Escriba el NIT/.test(sinNit.cuerpo.error || ""), "sin NIT, 400 con qué hacer");
+      const g = await invocar(rP, "/api/perfil?op=empresa-datos&perfil=helder", CAB_TOKEN);
+      okDP(g.status === 200 && "datos" in g.cuerpo, "la lectura de siempre sigue igual");
+    } finally {
+      DPE.datosPublicosPorNit = origDP;
+    }
+    // (6) la pantalla: el botón existe, y lo escrito y lo público se comparan bien
+    const appDP = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+    const mismo = new Function(`${appDP.match(/function mismoDatoPublico\(a, b\) \{[\s\S]*?\n  \}/)[0]}; return mismoDatoPublico;`)();
+    okDP(mismo("900.865.276-2", "900865276-2") && mismo("icaro construcciones s.a.s ", "ICARO CONSTRUCCIONES S.A.S") && mismo("Bogota", "Bogotá") && !mismo("3001234567", "3577131"),
+      "lo escrito y lo público se comparan por dígitos o sin tildes");
+    okDP(/id="btn-empresa-publicos"/.test(fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8")) && /if \(!actual \|\| completaNit\)/.test(appDP),
+      "el botón está en la página y solo se llenan los campos vacíos (o el NIT sin su dígito)");
+    if (fallasDP.length) throw new Error(`unidad datos públicos de la empresa: ${fallasDP.length} comprobaciones fallan:\n  - ${fallasDP.join("\n  - ")}`);
+    console.log("· unidad datos públicos de la empresa: con filas reales, la identidad sale del RUES y el contacto de SECOP II, cada dato con su fuente y su fecha; la matrícula sin renovar, el dígito distinto, la fuente caída y la cuenta inexistente se dicen; lo que el guardado rechazaría no se sugiere");
+  }
+
   /* unidad: LOS DÍAS AL CIERRE POR FECHA CIVIL, Y «CERRADO» POR LA HORA (28-oct-2026, «haz la 1 y 2»).
      Una sola cuenta (public/filtros.js diasParaCierre) para la lista, la portada, el pulso, Mis
      procesos y la guía; contaba HORAS redondeando hacia arriba. Con la medianoche que publica hoy la

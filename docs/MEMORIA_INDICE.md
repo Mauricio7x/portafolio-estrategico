@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 2495825 bytes · 442 secciones · 48 con marcador de superación.
+Derivado del árbol: 2499799 bytes · 443 secciones · 48 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -452,4 +452,5 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | SECOP II dejó de publicar el código de actividad el 16-sep-2026: lo que se perdió, lo que se recupera por el objeto y lo que no tiene fuente (6-nov-2026) | 16-sep-2026 | 21742-21791 | 11802 |  |
 | El pliego definitivo tiene otro número: Mis procesos y el aviso de la mañana siguen la publicación vigente del expediente (6-nov-2026) | 6-nov-2026 | 21792-21813 | 4236 |  |
 | Lo que la entidad publicó como compra o servicio ya no sale verde por un verbo de obra, la «obra» fuera de contexto sale del tipo, y SECOP I marca lo que probablemente cerró (6-nov-2026) | 6-nov-2026 | 21814-21839 | 10137 |  |
-| «No es obra» quita un proceso de su lista, con su otra publicación, y la lista dice cuántos quitó (6-nov-2026) | 6-nov-2026 | 21840-21852 | 3222 |  |
+| «No es obra» quita un proceso de su lista, con su otra publicación, y la lista dice cuántos quitó (6-nov-2026) | 6-nov-2026 | 21840-21853 | 3223 |  |
+| Los datos de los formatos que ya son públicos se traen con el NIT: la identidad del RUES y el contacto de SECOP II (6-nov-2026) | 6-nov-2026 | 21854-21868 | 3973 |  |

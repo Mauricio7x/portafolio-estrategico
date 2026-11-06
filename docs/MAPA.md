@@ -22,7 +22,7 @@
   pliego.js                   Router del dominio PLIEGO (Fase 0 · consolidación a 6 funciones)
   procesos.js                 Router del dominio PROCESOS (Fase 0 · consolidación a 6 funciones)
 
-· lib/ — 109 módulos:
+· lib/ — 110 módulos:
   accesibilidad.js            Accesibilidad operativa de la zona de la obra
   adendas.js                  Vigía de adendas · lo que el DATASET dice que cambió (Fase 5)
   almacen.js                  Esquema de claves Redis + compresión de chunks
@@ -56,6 +56,7 @@
   cronograma_excel.js         EL CRONOGRAMA EN HOJA DE CÁLCULO, LEÍDO CON PUERTA (3-nov-2026)
   cuentas.js                  La infraestructura de las cuentas de usuario (la parte PURA)
   cuerpo.js                   Leer el cuerpo JSON de una petición, una sola vez
+  datos_publicos_empresa.js   Los datos de los formatos que ya son públicos, por NIT (6-nov-2026)
   deducciones.js              Qué le van a descontar de cada pago, leído del PLIEGO
   dictamen.js                 Dictamen del pliego (proyecto «Don Héctor», 2-sep-2026) — PURO
   dictamen_reglas.js          EL DICTAMEN POR REGLAS, SIN MODELO (proyecto «Don Héctor», 3-sep-2026)
@@ -232,8 +233,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 442 secciones (48 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 21526  El % de la garantía del pliego llega a Precios, y las observaciones al pliego redactadas co…
+· MEMORIA · docs/MEMORIA.md — 443 secciones (48 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 21550  Las cifras en letras también se comprueban en el dictamen, y la prima mínima no se pedirá (…
   L 21570  Con qué consorcio se presenta cada proceso, el .zip de la oferta y quitar un proceso por un…
   L 21598  Los datos completos para los formatos y la imagen de la firma en el .zip (5-nov-2026)
@@ -243,6 +243,7 @@
   L 21792  El pliego definitivo tiene otro número: Mis procesos y el aviso de la mañana siguen la publ…
   L 21814  Lo que la entidad publicó como compra o servicio ya no sale verde por un verbo de obra, la …
   L 21840  «No es obra» quita un proceso de su lista, con su otra publicación, y la lista dice cuántos…
+  L 21854  Los datos de los formatos que ya son públicos se traen con el NIT: la identidad del RUES y …
 
 · DOCUMENTOS docs/ — 76 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)
