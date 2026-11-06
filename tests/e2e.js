@@ -4185,6 +4185,15 @@ async function main() {
     const Xp = require("../public/expediente.js");
     const Ks = require("../public/casillero.js");
     const leer = (lineas) => Object.fromEntries(Cr.extraerHitos(lineas.join("\n")).hitos.map((h) => [h.id, h.fecha]));
+    /* (0) EL HITO «ÚLTIMO DÍA PARA ADENDAS» EXIGE EL ACTO (6-nov-2026, pendiente de la revisión del 4-nov, reproducido): con
+       `/adendas?/` a secas, el renglón del cierre o el de subsanar que nombran la adenda que los cambió salían como ese hito,
+       y el cierre del documento se perdía. Los rótulos reales del hito siguen casando. */
+    for (const [renglon, id] of [["Fecha de cierre (modificada por Adenda 1) 20/11/2026", "cierre"], ["Plazo para subsanar (ampliado mediante Adenda 2) 25/11/2026", "subsanacion"],
+      ["Fecha límite para expedir adendas 15/11/2026", "adendas"], ["Plazo máximo para la expedición de adendas 15/11/2026", "adendas"], ["Publicación de adendas 14/11/2026", "adendas"],
+      ["Último día para publicar adendas 14/11/2026", "adendas"], ["Adendas 14/11/2026", "adendas"]]) {
+      assert.deepStrictEqual(Object.keys(leer([renglon])), [id], `[MUT] «${renglon}» es ${id}: ${JSON.stringify(leer([renglon]))}`);
+    }
+    assert.ok(Cr.VERSION_HITOS >= 5, "[MUT] la versión de las reglas subió: lo ya leído se rehace con el hito nuevo");
 
     /* (1) LOS CINCO CRONOGRAMAS REALES, rótulo + valor de cada fila en el orden de la hoja.
        Los cuatro Excel son el «Anexo2 Cronograma Menor Cuantia V3» de Colombia Compra; la
@@ -4734,6 +4743,22 @@ async function main() {
       const malo = Dp.hitosDeDocumentos(conExcel({ publicable: false, motivo: "solo 2 actividades del cronograma traen su fecha al lado; hacen falta al menos 4 para dar la hoja por leída", filas: [] }));
       assert.ok(!malo.hitos.some((h) => h.documento === ANEXO), "lo que no pasó la puerta no aporta ni una fecha");
       assert.ok(malo.cronograma_sin_leer.length === 1 && /^no se da por leído: solo 2 actividades/.test(malo.cronograma_sin_leer[0].motivo), `[MUT] y se dice por qué: ${JSON.stringify(malo.cronograma_sin_leer)}`);
+      /* UN CRONOGRAMA DE OBRA MÁS NUEVO NO SILENCIA AL ANEXO 2 (6-nov-2026, pendiente de la revisión del 4-nov): «Cronograma de obra.xlsx»,
+         un Gantt subido DESPUÉS, se clasifica cronograma por el nombre; la puerta lo rechaza porque ninguna hoja trae las actividades del
+         cronograma del PROCESO, y desde ese rechazo no cuenta como el que rige: el Anexo 2 sigue hablando. Otro rechazo (pocas filas, un
+         libro que no abrió) sí sigue contando: ahí el que rige existe y no se pudo leer, y la nota lo dice */
+      {
+        const gantt = Dp.clasificarArchivo({ id_documento: "9", nombre_archivo: "Cronograma de obra.xlsx", extensi_n: "xlsx", fecha_carga: "2026-09-02T10:00:00.000", url_descarga_documento: { url: "https://community.secop.gov.co/x?DocumentId=9" } });
+        const conGantt = (motivo) => { const d = conExcel({}); d.indice.archivos = [...d.indice.archivos, gantt]; d.indice.plan = [...d.indice.plan, "9"];
+          d.cronogramas[9] = { nombre: "Cronograma de obra.xlsx", tipo: "cronograma", fecha_carga: "2026-09-02", leido_el: "x", version: CE.VERSION_LECTOR, publicable: false, motivo, filas: [] }; return d; };
+        const g1 = Dp.hitosDeDocumentos(conGantt("ninguna hoja trae las actividades del cronograma con su fecha al lado"));
+        const cG = g1.hitos.find((h) => h.id === "cierre");
+        assert.ok(gantt.tipo === "cronograma" && cG && cG.documento === ANEXO && cG.fecha === "2026-09-07",
+          `[MUT] el Gantt más nuevo que no es un cronograma del proceso silenciaba al Anexo 2: ${JSON.stringify({ tipo: gantt.tipo, cierre: cG, sin_leer: g1.cronograma_sin_leer })}`);
+        const g2 = Dp.hitosDeDocumentos(conGantt("solo 2 actividades del cronograma traen su fecha al lado; hacen falta al menos 4 para dar la hoja por leída"));
+        assert.ok(!g2.hitos.some((h) => h.documento === ANEXO) && g2.cronograma_sin_leer.some((c) => /solo 2 actividades/.test(c.motivo)),
+          `[MUT] otro rechazo sigue contando como el que rige, y se dice: ${JSON.stringify(g2.cronograma_sin_leer)}`);
+      }
       // una lectura cuyo archivo YA NO está en el índice (la entidad lo reemplazó con un id nuevo) no habla
       assert.ok(!Dp.hitosDeDocumentos({ ...conExcel({}), indice: { archivos: [pliego], plan: ["2"] } }).hitos.some((h) => h.documento === ANEXO), "[MUT] la lectura de un archivo que salió del índice no aporta fechas");
       // leído con un lector anterior: sin fechas, y otra vez por leer
