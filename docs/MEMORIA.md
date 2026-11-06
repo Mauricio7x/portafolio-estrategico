@@ -21687,6 +21687,24 @@ En una línea: el .zip de la oferta trae TODOS los formatos que se entregan (los
   - Medido en 3.966 nombres de SECOP II: 116 dejan de ser formato (todos con Cartagena o Cartago) y 15 pasan a serlo (todos formatos tipo); ningún otro nombre cambia. «F68 CARLOS ALBERTO…» es de una persona y no entra.
   - Con los archivos reales, el .zip de Cartagena trae ahora 16 formatos en vez de 5, y no trae la manifestación de interés, que se presentó antes.
   - El pacto de transparencia va con la nota del Documento Base: con la firma de la carta se acepta, y «no será necesaria la entrega de este documento».
+- **La firma, corregida con el tercer .zip (6-nov-2026). El dueño: «la firma está en sitios donde no debería estar o a veces ni aparece».**
+  - Quedaba contra el margen izquierdo, lejos de la raya centrada. El párrafo de la imagen no tenía formato. Ahora copia la alineación y la sangría del renglón sobre el que va, sin su numeración, y se queda pegado a él (`keepNext`).
+  - No aparecía en los ofrecimientos (7, 9, 14), por la regla de esta misma sección de no firmarlos solos. El dueño la pidió, así que se firman en CADA carta (el 7 trae tres) y la hoja dice «súbalo solo si lo ofrece»: una firma solo compromete en lo que se sube.
+  - Siguen sin firma el desempate y las declaraciones de una condición (Mipyme, mujeres, discapacidad), que afirman bajo juramento algo que solo el dueño sabe si cumple.
+  - Medido con los archivos reales de Cartagena: firma en la carta (1), en el 7 (3), en el 14 (2) y en el 9 (1). La segunda carta del 9 de la entidad no trae renglón de firma.
+- **El Excel de la oferta económica «no abre» (6-nov-2026):**
+  - El del .zip es idéntico, byte a byte, al de la entidad (mismo SHA-1). LibreOffice y openpyxl lo abren.
+  - El de la entidad trae 114 vínculos a libros de otro computador («…/Javier_or_compa/zulma/Fin/…») y 2.734 nombres rotos (#REF!).
+  - Sin verificar en Excel; se pidió al dueño el mensaje y el equipo.
+- **Lo que tenía mal el tercer .zip del dueño (6-nov-2026), corregido y con su cerradura:**
+  - La hoja LEAME repetía 42 veces lo mismo y enseñaba renglones a MEDIO llenar («…de [Nombre del propo…»), porque cada anotación de la plantilla guarda el renglón en el momento en que se escribe. Ahora dice por separado:
+    - las casillas, una vez cada una;
+    - lo que se completó de la plantilla, por su nombre;
+    - las X, con su opción;
+    - y lo de la entidad, en una línea.
+  - El Formato 2 decía «lo presenta cada integrante». Es la conformación del consorcio, que firman todos.
+  - Los avisos de la firma repetían lo ya dicho, el desempate se llamaba «ofrecimiento que da puntaje» y el Formato 13 avisaba «para persona natural» aunque trae también la parte de la jurídica.
+  - La segunda carta del Formato 14 de la entidad no trae el espacio del nombre («en mi calidad de representante legal de…»). Ahora el representante va delante, como en las otras cartas: escribir en un tramo vacío AÑADE al final, así que el nombre entra reemplazando la primera letra.
   - **Sin verificar:** el pliego de Cartagena se llama «3 PPC CDV ADULTO MAYOR DT CARTAGENA.pdf». Ningún tipo lo reconoce como pliego, así que no se lee solo; no se tocó aquí.
 - **Lo que tumbó la segunda revisión adversaria, cada cosa reproducida y con su cerradura en «unidad FORMATOS DE LA ENTIDAD» o «unidad revisor de la oferta»:**
   - **ALTA.** La acreditación Mipyme salía firmada sola, en 8 formatos del corpus.
