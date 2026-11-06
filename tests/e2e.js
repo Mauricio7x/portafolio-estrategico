@@ -62809,14 +62809,22 @@ async function main() {
     const vivienda = { ...base, tipo_de_contrato: "Obra", nombre_del_procedimiento: "CONTRATAR LA EJECUCIÓN DE 150 MEJORAMIENTOS DE VIVIENDA EN ZONA RURAL", descripci_n_del_procedimiento: "CONTRATAR LA EJECUCIÓN DE 150 MEJORAMIENTOS DE VIVIENDA EN ZONA RURAL" };
     const baterias = { ...base, modalidad_de_contratacion: "Mínima cuantía", tipo_de_contrato: "Obra", nombre_del_procedimiento: "BATERIAS SANITARIAS", descripci_n_del_procedimiento: "Modernización de las baterías sanitarias y cocinetas de bloques de la Dirección Regional." };
     const convivencia = { ...base, tipo_de_contrato: "Obra", nombre_del_procedimiento: "ACCIONES Y ESTRATEGIAS PARA LA PROMOCIÓN Y PREVENCIÓN DE LA CONVIVENCIA Y SEGURIDAD", descripci_n_del_procedimiento: "No definido" };
+    /* (0) LOS PLURALES (6-nov-2026): «150 MEJORAMIENTOS DE VIVIENDA» ya no necesita el tipo «Obra»: el plural
+       es verbo de obra por sí mismo y el objeto lo sostiene en verde, se declare como se declare. Hasta el
+       6-nov era el ejemplo de «objeto sin vocabulario»; ese papel lo hace ahora el de las baterías. */
+    okOD(FiOD.admisibleParaIngesta({ ...vivienda, tipo_de_contrato: "Prestación de servicios" }) === true, "«150 MEJORAMIENTOS DE VIVIENDA» entra por el objeto, sin el tipo «Obra»");
+    {
+      const v = FiOD.evaluarObjeto(vivienda, POD.helder, {}, {});
+      okOD(v.ok === true && v.pertinencia && v.pertinencia.nivel === "verde", `«mejoramientos» es verbo de obra: verde por el objeto (${v.ok} ${v.pertinencia && v.pertinencia.nivel})`);
+    }
     // (1) la ingesta: con «Obra» entran; sin él, como antes, no
     for (const f of [vivienda, baterias]) {
       okOD(FiOD.admisibleParaIngesta(f) === true, `entra a la ingesta: ${f.nombre_del_procedimiento}`);
-      okOD(FiOD.admisibleParaIngesta({ ...f, tipo_de_contrato: "Prestación de servicios" }) === false, `sin el tipo «Obra» sigue fuera: ${f.nombre_del_procedimiento}`);
+      if (f !== vivienda) okOD(FiOD.admisibleParaIngesta({ ...f, tipo_de_contrato: "Prestación de servicios" }) === false, `sin el tipo «Obra» sigue fuera: ${f.nombre_del_procedimiento}`);
       okOD(FiOD.admisibleParaIngesta({ ...f, tipo_de_contrato: " OBRA " }) === true, "la grafía de SECOP no importa (mayúsculas, espacios)");
     }
     // (2) el perfil: en ámbar, con la frase que dice por qué
-    for (const f of [vivienda, baterias]) {
+    for (const f of [baterias]) {
       const v = FiOD.evaluarObjeto(f, POD.helder, {}, {});
       okOD(v.ok === true && v.unspsc.obra_declarada === true && /registra como contrato de obra/.test(v.unspsc.mensaje), `el perfil lo enseña con su motivo: ${f.nombre_del_procedimiento} → ${v.ok} ${v.paso} ${v.unspsc && v.unspsc.mensaje}`);
       okOD(v.pertinencia && v.pertinencia.nivel !== "verde", `va en ámbar, no en verde: ${v.pertinencia && v.pertinencia.nivel}`);
@@ -62829,7 +62837,8 @@ async function main() {
     // (3-bis) la tarjeta y la guía dicen lo que lo sostiene (el tipo de contrato), no «el texto del objeto»
     {
       const { evaluarPuertas } = require("../lib/puertas.js");
-      const pz = evaluarPuertas({ ...vivienda, precio_base: "300000000", cuantia_cop: 300000000, departamento_entidad: "Tolima", entidad: "ALCALDIA" }, "helder");
+      // en menor cuantía: en mínima la frase de «la ley no exige registro» manda sobre esta (lib/puertas.p1Rup)
+      const pz = evaluarPuertas({ ...baterias, modalidad_de_contratacion: "Selección Abreviada de Menor Cuantía", precio_base: "300000000", cuantia_cop: 300000000, departamento_entidad: "Tolima", entidad: "ALCALDIA" }, "helder");
       const p1 = pz && pz.p1_rup;
       okOD(p1 && /registra como contrato de obra/.test(p1.mensaje || "") && !/solo lo sostiene el texto del objeto/.test(p1.mensaje || ""), `la puerta del registro dice que lo sostiene el tipo de contrato: ${p1 && p1.mensaje}`);
     }
@@ -62839,6 +62848,69 @@ async function main() {
     okOD(JSON.stringify(FiOD.evaluarObjeto(conCodigo, POD.helder, {}, {})) === JSON.stringify(FiOD.evaluarObjeto({ ...conCodigo, tipo_de_contrato: null }, POD.helder, {}, {})), "con códigos, el tipo de contrato no cambia el veredicto");
     // (5) el sello de la regla de ingesta cambia (la portada no pinta el salto como mercado)
     okOD(FiOD.selloReglaIngesta() !== "f1115f53b37d", `el sello de la regla cambió respecto del de main antes de este cambio (f1115f53b37d): ${FiOD.selloReglaIngesta()}`);
+    /* (6) LA EXENCIÓN DEL 8-BIS TAMBIÉN CUANDO EL VOCABULARIO RECONOCE ALGO (6-nov-2026). Desde el 16-sep-2026
+       SECOP II publica sin código casi todo; un «Obra» cuyo objeto sí sugería una familia caía en «texto
+       débil» y se escondía, mientras que el mismo proceso sin vocabulario entraba en ámbar. Casos REALES
+       (p6dx-8zbt), funciones reales; las dos primeras comprobaciones fallan contra el árbol anterior. */
+    const remodelaciones = { ...base, tipo_de_contrato: "Obra", nombre_del_procedimiento: "CONTRATAR EN NOMBRE DE LA NACIÓN CONSEJO SUPERIOR DE LA JUDICATURA DIRECCIÓN SECCIONAL DE ADMINISTRACIÓN JUDICIAL DE MONTERÍA LAS REMODELACIONES LOCATIVAS INTERNAS Y EXTERNAS EN EL PALACIO DE JUSTICIA", descripci_n_del_procedimiento: "CONTRATAR EN NOMBRE DE LA NACIÓN CONSEJO SUPERIOR DE LA JUDICATURA DIRECCIÓN SECCIONAL DE ADMINISTRACIÓN JUDICIAL DE MONTERÍA LAS REMODELACIONES LOCATIVAS INTERNAS Y EXTERNAS EN EL PALACIO DE JUSTICIA DE LA CIUDAD DE MONTERIA - DEPARTAMENTO DE CORDOBA" };
+    const colegio = { ...base, tipo_de_contrato: "Obra", nombre_del_procedimiento: "MANTENIMIENTO CORRECTIVO Y PREVENTIVO DE LA INSTITUCIÓN EDUCATIVA MARÍA INMACULADA; SEDE POLICARPA SALAVARRIETA; DE VILLA DEL ROSARIO; NORTE DE SANTANDER (Manifestación de interés (Menor Cuantía))", descripci_n_del_procedimiento: "MANTENIMIENTO CORRECTIVO Y PREVENTIVO DE LA INSTITUCIÓN EDUCATIVA MARÍA INMACULADA, SEDE POLICARPA SALAVARRIETA, DE VILLA DEL ROSARIO, NORTE DE SANTANDER" };
+    {
+      // con el vocabulario de la semilla, como en producción (que además mezcla el derivado de Redis)
+      const conVocab = { vocabulario: require("../lib/texto_unspsc.js").vocabularioActivo(null) };
+      const r = FiOD.evaluarObjeto(remodelaciones, POD.helder, conVocab, {});
+      okOD(r.ok === true, `«LAS REMODELACIONES LOCATIVAS» (CO1.REQ.10799641, tipo Obra, sin código) se le enseña: ${r.ok} ${r.paso}`);
+      const c = FiOD.evaluarObjeto(colegio, POD.helder, conVocab, {});
+      okOD(c.ok === true && c.pertinencia && c.pertinencia.nivel !== "verde", `un «Obra» que el vocabulario reconoce no se esconde y va en ámbar (CO1.REQ.11119820): ${c.ok} ${c.paso} ${c.pertinencia && c.pertinencia.nivel}`);
+      const cs = FiOD.evaluarObjeto({ ...colegio, tipo_de_contrato: "Prestación de servicios" }, POD.helder, conVocab, {});
+      okOD(cs.ok === false && cs.paso === "texto_debil", `sin el tipo «Obra», el mismo objeto sigue en «texto débil» (la exención es del tipo): ${cs.ok} ${cs.paso}`);
+    }
+    /* (7) LOS PLURALES QUE NO ENTRAN, medidos sobre 15.011 procesos reales del 22-sep al 6-nov-2026: con
+       «ampliaciones» entraba una semana universitaria y con «pavimentos», EN VERDE, la compra de equipos de un
+       laboratorio. Si alguien los añade, esto falla. */
+    const semana = { ...base, tipo_de_contrato: "Prestación de servicios", nombre_del_procedimiento: "SEMANA UNIVERSITARIA", descripci_n_del_procedimiento: "PRESTAR EL SERVICIO PARA LA CELEBRACIÓN DE LA SEMANA UNIVERSITARIA, A REALIZARSE EN LA SEDE MOCOA, SUBSEDE SIBUNDOY, AMPLIACIONES VALLE DEL GUAMUEZ Y PUERTO ASIS DE LA INSTITUCIÓN UNIVERSITARIA DEL PUTUMAYO" };
+    const laboratorio = { ...base, modalidad_de_contratacion: "Selección abreviada subasta inversa", tipo_de_contrato: "Suministros", nombre_del_procedimiento: "8081-285 SUMINISTRO DE EQUIPOS; ELEMENTOS E INSUMOS PARA EL LABORATORIO DE SUELOS; ASFALTOS Y PAVIMENTOS DE LA UAERMV", descripci_n_del_procedimiento: "8081-285 SUMINISTRO DE EQUIPOS, ELEMENTOS E INSUMOS PARA EL LABORATORIO DE SUELOS, ASFALTOS Y PAVIMENTOS DE LA UAERMV" };
+    for (const f of [semana, laboratorio]) {
+      const ok = FiOD.admisibleParaIngesta(f) && FiOD.evaluarObjeto(f, POD.helder, {}, {}).ok;
+      okOD(!ok, `no entra por un plural que no nombra obra: ${f.nombre_del_procedimiento}`);
+    }
+    /* (8) La guarda: «mantenimiento locativo» no es verbo de obra (medido el 6-nov-2026: metía EN VERDE el aseo
+       y la jardinería). Si alguien lo añade, esto falla. */
+    const aseo = { ...base, modalidad_de_contratacion: "Selección abreviada subasta inversa", tipo_de_contrato: "Prestación de servicios", nombre_del_procedimiento: "PRESTACIÓN DEL SERVICIO DE ASEO; JARDINERÍA Y MANTENIMIENTO LOCATIVO PARA LA UNIDAD PRESTADORA DE SALUD CALDAS  (Presentación de oferta)", descripci_n_del_procedimiento: "CONTRATAR LA PRESTACIÓN DEL SERVICIO DE ASEO, JARDINERÍA Y MANTENIMIENTO LOCATIVO PARA LA UNIDAD PRESTADORA DE SALUD CALDAS - ESTABLECIMIENTO COMPLEMENTARIO EN SALUD CALDAS, Y EL SERVICIO DE ASEO HOSPITALARIO PARA LA UNIDAD MÉDICA ESAGU" };
+    okOD(!(FiOD.admisibleParaIngesta(aseo) && FiOD.evaluarObjeto(aseo, POD.helder, {}, {}).ok), "el aseo con «mantenimiento locativo» no entra como obra");
+    /* (9) LO QUE TUMBÓ LA REVISIÓN ADVERSARIA (6-nov-2026), cada cosa con su cerradura:
+       a) cada plural nuevo es verbo fuerte por sí mismo (sin esto, quitar seis de ellos no fallaba nada); */
+    {
+      const { VERBOS_DE_OBRA_FUERTES: VF } = require("../lib/semantica.js");
+      for (const w of ["rehabilitaciones", "reconstrucciones", "remodelaciones", "reforzamientos", "repotenciaciones", "pavimentaciones", "repavimentaciones", "mejoramientos"])
+        okOD(VF.test(FiOD.norm(`las ${w} de la via`)), `«${w}» es verbo fuerte de obra`);
+    }
+    // c) la guarda de la salud conoce el plural: «REHABILITACIONES ORALES» no sale verde como obra
+    for (const n of ["PRESTACION DE SERVICIOS DE SALUD PARA REHABILITACIONES ORALES", "PRESTACION DE SERVICIOS DE SALUD DE REHABILITACIONES FISICAS Y TERAPIAS"]) {
+      const f = { ...base, tipo_de_contrato: "Prestación de servicios", nombre_del_procedimiento: n, descripci_n_del_procedimiento: n };
+      const r = FiOD.admisibleParaIngesta(f) ? FiOD.evaluarObjeto(f, POD.helder, {}, {}) : { ok: false };
+      okOD(!(r.ok && r.pertinencia && r.pertinencia.nivel === "verde"), `la salud en plural no es obra verde: ${n} → ${r.ok} ${r.pertinencia && r.pertinencia.nivel}`);
+    }
+    // d) una compra marcada «Obra» con otro nombre (compraventa, adquisiciones) no la rescata el tipo
+    {
+      const conVocab = { vocabulario: require("../lib/texto_unspsc.js").vocabularioActivo(null) };
+      // sobre el objeto REAL del colegio (sin verbo de obra propio, así que solo lo salvaría la exención)
+      const cola = "MANTENIMIENTO CORRECTIVO Y PREVENTIVO DE LA INSTITUCIÓN EDUCATIVA MARÍA INMACULADA, SEDE POLICARPA SALAVARRIETA";
+      for (const n of [`COMPRAVENTA DE MATERIALES PARA EL ${cola}`, `ADQUISICIONES DE MATERIALES PARA EL ${cola}`]) {
+        const r = FiOD.evaluarObjeto({ ...base, tipo_de_contrato: "Obra", nombre_del_procedimiento: n, descripci_n_del_procedimiento: n }, POD.helder, conVocab, {});
+        okOD(r.ok === false, `una compra marcada «Obra» no entra por el tipo: ${n} → ${r.ok} ${r.paso}`);
+      }
+      /* …pero el alquiler NO es compra: la licitación REAL de «ADMINISTRACIÓN, OPERACIÓN, MANTENIMIENTO Y ALQUILER DE LA
+         MAQUINARIA PESADA… PARA LA ATENCIÓN DE LA RED VIAL» (CO1.REQ.11301662, tipo «Obra», sin código) se sigue viendo */
+      {
+        const f = { ...base, modalidad_de_contratacion: "Licitación pública Obra Publica", tipo_de_contrato: "Obra", nombre_del_procedimiento: "ICCU-LP-075-2026",
+          descripci_n_del_procedimiento: "ADMINISTRACIÓN, OPERACIÓN, MANTENIMIENTO Y ALQUILER DE LA MAQUINARIA PESADA Y VEHÍCULOS PARA LA ATENCIÓN DE LA RED VIAL EN EL DEPARTAMENTO DE CUNDINAMARCA" };
+        const r = FiOD.admisibleParaIngesta(f) ? FiOD.evaluarObjeto(f, POD.helder, conVocab, {}) : { ok: false, paso: "no_se_guarda" };
+        okOD(r.ok === true, `el alquiler de maquinaria para la red vial de tipo «Obra» se sigue viendo: ${r.ok} ${r.paso}`);
+      }
+      // e) lo que salva la exención dice que lo sostiene el tipo de contrato, no «solo el texto»
+      const c = FiOD.evaluarObjeto(colegio, POD.helder, conVocab, {});
+      okOD(c.unspsc && c.unspsc.obra_declarada === true && /registra como contrato de obra/.test(c.unspsc.mensaje || ""), `la exención dice lo que lo sostiene: ${c.unspsc && c.unspsc.mensaje}`);
+    }
     if (fallasOD.length) throw new Error(`unidad obra declarada por SECOP: ${fallasOD.length} comprobaciones fallan:\n  - ${fallasOD.join("\n  - ")}`);
     console.log("· unidad obra declarada por SECOP: el tipo «Obra» sin códigos entra a la ingesta y el perfil lo enseña en ámbar con su motivo; lo que no es obra sigue fuera; con códigos nada cambia");
   }
