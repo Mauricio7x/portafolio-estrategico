@@ -489,13 +489,14 @@
       lineas.push(`   - ${ruta.slice(ruta.indexOf("/") + 1)}`);
       for (const fr of (ctx.frasesLlenado ? ctx.frasesLlenado(f.resumen) : [])) lineas.push(`       ${fr}`);
       const re = f.resumen || {};
-      if (re.de_cada_integrante) lineas.push("       Solo se escribió lo de la entidad: en consorcio lo presenta cada integrante, con sus propios datos.");
-      if (re.ofrecimiento) lineas.push("       Es un ofrecimiento que da puntaje y compromete: decida si lo ofrece. No se firmó.");
+      if (re.desempate) lineas.push("       Es un factor de desempate: llénelo y fírmelo solo si cumple la condición que declara.");
+      else if (re.ofrecimiento) lineas.push("       Es un ofrecimiento que da puntaje y compromete: súbalo solo si lo ofrece.");
       if (esPacto(f.nombre)) lineas.push(`       ${NOTA_PACTO}`);
       if (re.declaracion) lineas.push("       Declara bajo juramento una condición (Mipyme, mujeres, discapacidad…): fírmelo solo si la cumple. No se firmó.");
       if (Array.isArray(re.pendientes) && re.pendientes.length) lineas.push(`       Queda por escribir: ${re.pendientes.join(" · ")}.`);
-      const fi = re.firma;
-      if (fi) lineas.push(`       ${fi.puesta ? `La firma quedó encima de: «${fi.renglon}».` : `Sin firma: ${fi.motivo}.`}`);
+      // lo ya dicho arriba (pacto, desempate, ofrecimiento, declaración, lo de cada integrante) no se repite en la línea de la firma
+      const fi = re.firma && !re.firma.puesta && (esPacto(f.nombre) || re.desempate || re.ofrecimiento || re.declaracion || re.de_cada_integrante) ? null : re.firma;
+      if (fi) lineas.push(`       ${fi.puesta ? `La firma quedó encima de: «${fi.renglon}»${fi.veces > 1 ? ` (en sus ${fi.veces} cartas)` : ""}.` : `Sin firma: ${fi.motivo}.`}`);
     });
     /* LOS DEMÁS, TAL COMO LOS PUBLICÓ LA ENTIDAD (5-nov-2026): el mismo archivo, byte a byte, para llenarlo a mano sin
        buscarlo en SECOP II; y el que no se pudo traer, con su motivo */
@@ -971,8 +972,21 @@
     /* CADA casilla con su renglón y lo que quedó escrito (revisión adversaria: con
        solo los nombres, un correo escrito dos veces —una en la casilla postal— se
        leía «Correo electrónico» una vez) */
-    const renglones = (l) => (l || []).map((x) => `«${String(x.renglon || x.nombre).slice(0, 90)}»`).join("; ");
-    if (r.llenados && r.llenados.length) out.push(`Se escribió en ${r.llenados.length === 1 ? "esta casilla" : `estas ${r.llenados.length} casillas`}: ${renglones(r.llenados)}. Revise cada dato en el documento antes de firmarlo.`);
+    /* (5-nov-2026, el .zip de Cartagena del dueño) la lista repetía 42 veces lo mismo y enseñaba renglones a MEDIO llenar
+       («…de [Nombre del propo…»): las casillas del proponente van una vez cada una; lo que se completó de la plantilla, por su
+       nombre; lo de la entidad, en una línea */
+    const DE_LA_ENTIDAD = ["entidad", "numero_proceso", "ciudad_entidad", "objeto"];
+    const MARCAS = ["tipo_proponente", "grupo_empresarial", "cotiza_bolsa"];
+    const todos = r.llenados || [];
+    const casillas = [...new Set(todos.filter((x) => !x.plantilla).map((x) => `«${String(x.renglon || x.nombre).slice(0, 90)}»`))];
+    const dePlantilla = [...new Set(todos.filter((x) => x.plantilla && !DE_LA_ENTIDAD.includes(x.campo) && !MARCAS.includes(x.campo)).map((x) => x.nombre || x.campo))];
+    const marcas = [...new Set(todos.filter((x) => MARCAS.includes(x.campo)).map((x) => `${String(x.nombre || x.campo).toLowerCase()}: «${x.valor || "X"}»`))];
+    const entidad = [...new Set(todos.filter((x) => DE_LA_ENTIDAD.includes(x.campo)).map((x) => String(x.nombre || x.campo).toLowerCase()))];
+    if (casillas.length) out.push(`Se escribió en ${casillas.length === 1 ? "esta casilla" : `estas ${casillas.length} casillas`}: ${casillas.join("; ")}.`);
+    if (dePlantilla.length) out.push(`Se completó en la plantilla: ${dePlantilla.join(", ").toLowerCase()}.`);
+    if (marcas.length) out.push(`Se marcó con X: ${marcas.join(", ")}.`);
+    if (entidad.length) out.push(`De la entidad, con lo que publica SECOP II: ${entidad.join(", ")}.`);
+    if (todos.length) out.push("Revise cada dato en el documento antes de firmarlo.");
     else out.push(r.motivo || "No se encontró ninguna casilla de los datos del proponente que se pueda llenar sin riesgo de equivocarse: llénelo a mano.");
     if (r.sin_dato && r.sin_dato.length) out.push(`Quedó en blanco porque no lo ha guardado en Mi empresa: ${nombres(r.sin_dato)}.`);
     /* con el renglón: la misma casilla puede haberse escrito en un sitio y dejado en
@@ -980,7 +994,8 @@
     if (r.dudosos && r.dudosos.length) out.push(`Quedó en blanco porque no es seguro que sea del proponente: ${[...new Set(r.dudosos.map((x) => `«${String(x.renglon || x.nombre).slice(0, 60)}»`))].join(", ")}.`);
     if (r.hay_consorcio) out.push("La parte del consorcio o de la unión temporal no se llenó: lleva los datos de cada integrante.");
     if (r.para_persona_natural) out.push("Este formato dice ser para persona natural: confirme que es el que le corresponde a su empresa.");
-    if (r.de_cada_integrante) out.push("En consorcio, este formato lo presenta cada integrante con sus propios datos.");
+    if (r.de_cada_integrante && todos.length) out.push("En consorcio lo presenta cada integrante con sus propios datos: aquí solo se escribió lo de la entidad.");
+    else if (r.de_cada_integrante && !r.motivo) out.push("En consorcio, este formato lo presenta cada integrante con sus propios datos.");
     return out;
   }
   /* sin tildes ni otros caracteres fuera de ASCII: con uno solo, Chromium
