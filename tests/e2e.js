@@ -62915,6 +62915,107 @@ async function main() {
     console.log("· unidad obra declarada por SECOP: el tipo «Obra» sin códigos entra a la ingesta y el perfil lo enseña en ámbar con su motivo; lo que no es obra sigue fuera; con códigos nada cambia");
   }
 
+  bqVigenteExpediente: { if (!corre("unidad publicación vigente del expediente")) break bqVigenteExpediente;
+    /* EL PLIEGO DEFINITIVO TIENE OTRO NÚMERO (6-nov-2026). Mis procesos leía la fila del número GUARDADO: si era el del
+       borrador, seguía con su cierre viejo y, en 5 de 150 expedientes reales de obra, lo daba por CERRADO mientras el
+       definitivo recibía ofertas. Filas REALES de p6dx-8zbt (CO1.BDOS…, CO1.REQ.11184835 → CO1.REQ.11293508), funciones
+       reales; lo que depende del día mueve las fechas respecto de hoy (la suite corre cualquier día). */
+    const fallasVE = [];
+    const okVE = (c, que) => { if (!c) fallasVE.push(que); };
+    const S_VE = require("../lib/seguimiento.js");
+    const F_VE = require("../lib/filtros.js");
+    const FILAS_VE = [{":id": "row-bkx7_8jvq~wspg", ":updated_at": "2026-11-05T20:27:14.165Z", "entidad": "INSTITUCIÓN EDUCATIVA PROVENZA", "nit_entidad": "804005058", "departamento_entidad": "Santander", "ciudad_entidad": "Bucaramanga", "ordenentidad": "Territorial", "id_del_proceso": "CO1.REQ.11184835", "referencia_del_proceso": "001-2026", "id_del_portafolio": "CO1.BDOS.10997225", "nombre_del_procedimiento": "ADECUACIÓN DE ÁREA CONTIGUA A LA CAFETERÍA DE LA INSTITUCIÓN EDUCATIVA PROVENZA SEDE A DEL MUNICIPIO DE BUCARAMANGA PARA SU USO COMO ZONA DE ESTANCIA Y ESPARCIMIENTO ESCOLAR", "descripci_n_del_procedimiento": "ADECUACIÓN DE ÁREA CONTIGUA A LA CAFETERÍA DE LA INSTITUCIÓN EDUCATIVA PROVENZA SEDE A DEL MUNICIPIO DE BUCARAMANGA PARA SU USO COMO ZONA DE ESTANCIA Y ESPARCIMIENTO ESCOLAR.", "fase": "Presentación de observaciones", "fecha_de_publicacion_del": "2026-10-09T00:00:00.000", "fecha_de_ultima_publicaci": "2026-10-09T00:00:00.000", "fecha_de_publicacion_fase_2": "2026-10-09T00:00:00.000", "precio_base": "123680268", "modalidad_de_contratacion": "Selección Abreviada de Menor Cuantía", "justificaci_n_modalidad_de": "Presupuesto menor al 10% de la Menor Cuantía", "duracion": "30", "unidad_de_duracion": "día(s)", "fecha_de_recepcion_de": "2026-10-27T00:00:00.000", "fecha_de_apertura_de_respuesta": "2026-10-27T00:00:00.000", "fecha_de_apertura_efectiva": "2026-10-27T00:00:00.000", "numero_de_lotes": "0", "estado_del_procedimiento": "Evaluación", "id_estado_del_procedimiento": "60", "adjudicado": "No", "valor_total_adjudicacion": "0", "codigo_principal_de_categoria": "UNSPECIFIED", "estado_de_apertura_del_proceso": "Cerrado", "tipo_de_contrato": "Obra", "subtipo_de_contrato": "No Definido", "categorias_adicionales": "No definido", "urlproceso": {"url": "https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=CO1.NTC.11045261"}, "codigo_entidad": "717710339", "estado_resumen": "Presentación de observaciones"}, {":id": "row-7kwt.kib8~6f8b", ":updated_at": "2026-11-05T20:27:14.165Z", "entidad": "INSTITUCIÓN EDUCATIVA PROVENZA", "nit_entidad": "804005058", "departamento_entidad": "Santander", "ciudad_entidad": "Bucaramanga", "ordenentidad": "Territorial", "id_del_proceso": "CO1.REQ.11293508", "referencia_del_proceso": "001-2026 (Manifestación de interés (Menor Cuantía)) (Presentación de oferta)", "id_del_portafolio": "CO1.BDOS.10997225", "nombre_del_procedimiento": "ADECUACIÓN DE ÁREA CONTIGUA A LA CAFETERÍA DE LA INSTITUCIÓN EDUCATIVA PROVENZA SEDE A DEL MUNICIPIO DE BUCARAMANGA PARA SU USO COMO ZONA DE ESTANCIA Y ESPARCIMIENTO ESCOLAR  (Manifestación de interés", "descripci_n_del_procedimiento": "ADECUACIÓN DE ÁREA CONTIGUA A LA CAFETERÍA DE LA INSTITUCIÓN EDUCATIVA PROVENZA SEDE A DEL MUNICIPIO DE BUCARAMANGA PARA SU USO COMO ZONA DE ESTANCIA Y ESPARCIMIENTO ESCOLAR.", "fase": "Presentación de oferta", "fecha_de_publicacion_del": "2026-10-29T00:00:00.000", "fecha_de_ultima_publicaci": "2026-10-29T00:00:00.000", "fecha_de_publicacion_fase_3": "2026-10-29T00:00:00.000", "precio_base": "123680268", "modalidad_de_contratacion": "Selección Abreviada de Menor Cuantía", "justificaci_n_modalidad_de": "Presupuesto menor al 10% de la Menor Cuantía", "duracion": "30", "unidad_de_duracion": "día(s)", "fecha_de_recepcion_de": "2026-11-09T00:00:00.000", "fecha_de_apertura_de_respuesta": "2026-11-09T00:00:00.000", "numero_de_lotes": "0", "estado_del_procedimiento": "Publicado", "id_estado_del_procedimiento": "50", "adjudicado": "No", "valor_total_adjudicacion": "0", "codigo_principal_de_categoria": "UNSPECIFIED", "estado_de_apertura_del_proceso": "Abierto", "tipo_de_contrato": "Obra", "subtipo_de_contrato": "No Definido", "categorias_adicionales": "No definido", "urlproceso": {"url": "https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=CO1.NTC.11146854"}, "codigo_entidad": "717710339", "estado_resumen": "Presentación de oferta"}];
+    const borr = FILAS_VE.find((f) => f.id_del_proceso === "CO1.REQ.11184835"), vig = FILAS_VE.find((f) => f.id_del_proceso === "CO1.REQ.11293508");
+    const pf = borr.id_del_portafolio;
+    // (1) la regla: lo de SECOP II del definitivo, con el número, el nombre y la referencia del guardado; copia, sin tocar el corpus
+    const v1 = S_VE.vigenteDelExpediente(borr.id_del_proceso, borr, pf, [borr, vig]);
+    okVE(v1 && v1.id_del_proceso === "CO1.REQ.11184835" && v1.version_vigente_id === "CO1.REQ.11293508", `el guardado conserva su número y sigue al definitivo: ${v1 && v1.id_del_proceso} → ${v1 && v1.version_vigente_id}`);
+    okVE(v1.referencia_del_proceso === borr.referencia_del_proceso && v1.nombre_del_procedimiento === borr.nombre_del_procedimiento, `la referencia y el nombre son los del guardado (los formatos no llevan la fase pegada): ${v1.referencia_del_proceso}`);
+    okVE(JSON.stringify(v1.urlproceso) === JSON.stringify(vig.urlproceso), "el enlace abre la publicación vigente");
+    okVE(!("version_vigente_id" in vig) && v1 !== vig, "no se modifica la fila del corpus: se devuelve una copia");
+    okVE(String(v1.fecha_de_recepcion_de).slice(0, 10) === "2026-11-09", `las fechas son las del definitivo: ${v1.fecha_de_recepcion_de}`);
+    // (2) sin la fila del borrador (ya salió del corpus), con el expediente y el nombre de la foto
+    const v2 = S_VE.vigenteDelExpediente(borr.id_del_proceso, null, { portafolio: pf, nombre: borr.nombre_del_procedimiento }, [vig]);
+    okVE(v2 && v2.id_del_proceso === "CO1.REQ.11184835" && v2.version_vigente_id === "CO1.REQ.11293508", "sin la fila guardada, vale el expediente de la foto");
+    // (2b) …y sin la fila guardada, otra obra del mismo expediente NO es la vigente (revisión adversaria: saltaba de obra)
+    okVE(S_VE.vigenteDelExpediente(borr.id_del_proceso, null, { portafolio: pf, nombre: "SUMINISTRO DE PAPELERÍA PARA LA SEDE" }, [vig]) === null, "sin la fila guardada, el nombre de la foto impide tomar otra obra");
+    // (3) el guardado ya es el vigente: la misma fila, sin marca
+    okVE(S_VE.vigenteDelExpediente(vig.id_del_proceso, vig, pf, [borr, vig]) === vig, "el definitivo guardado se queda con su fila");
+    // (4) otro objeto en el mismo expediente no se toma por la vigente (la MISMA regla de la lista: mismoObjeto)
+    const otro = { ...vig, id_del_proceso: "CO1.REQ.99999999", nombre_del_procedimiento: "SUMINISTRO DE PAPELERÍA PARA LA SEDE", descripci_n_del_procedimiento: "SUMINISTRO DE PAPELERÍA PARA LA SEDE" };
+    okVE(F_VE.mismoObjeto(borr, otro) === false, "precondición: el otro objeto no es el mismo");
+    okVE(S_VE.vigenteDelExpediente(borr.id_del_proceso, borr, pf, [borr, otro]) === borr, "otro objeto del expediente no reemplaza al guardado");
+    // (5) sin expediente ni filas, nada cambia
+    okVE(S_VE.vigenteDelExpediente(borr.id_del_proceso, borr, "", null) === borr, "sin expediente, la fila guardada");
+    // (6) el aviso lo dice: el número cambió, antes que las fechas; y tras «Enterado» (visto = la foto viva) no se repite
+    const cam = S_VE.cambiosDe(S_VE.fotoViva(borr), S_VE.fotoViva(v1));
+    okVE(cam.length && cam[0].campo === "id" && /otro número: CO1\.REQ\.11293508/.test(cam[0].mensaje), `el aviso nombra el número nuevo primero: ${JSON.stringify(cam[0])}`);
+    okVE(cam.some((c) => c.campo === "fecha_cierre"), "y dice el cierre de antes y el de ahora");
+    okVE(S_VE.cambiosDe(S_VE.fotoViva(v1), S_VE.fotoViva(v1)).length === 0, "tras «Enterado» el aviso del número no se repite");
+    // (7) el estado: con el borrador cerrado y el definitivo abierto (fechas movidas a hoy), Mis procesos lo ve ABIERTO
+    {
+      const dia = (d) => new Date(Date.now() + d * 86400000).toISOString().slice(0, 10) + "T00:00:00.000";
+      const b7 = { ...borr, fecha_de_recepcion_de: dia(-10) }, v7 = { ...vig, fecha_de_recepcion_de: dia(20), fecha_de_publicacion_del: dia(-2), fecha_de_ultima_publicaci: dia(-2) };
+      okVE(F_VE.estado_abierto(b7) === false && F_VE.estado_abierto(v7) === true, `precondición: borrador cerrado y definitivo abierto (${F_VE.estado_abierto(b7)} ${F_VE.estado_abierto(v7)})`);
+      okVE(F_VE.estado_abierto(S_VE.vigenteDelExpediente(b7.id_del_proceso, b7, pf, [b7, v7])) === true, "el guardado con el número del borrador se ve abierto");
+    }
+    // (8) el aviso de la mañana pide el expediente a datos.gov.co (no al corpus) y usa la vigente
+    {
+      const SegVE = require("../lib/handlers/perfil/seguimiento.js");
+      const dia = (d) => new Date(Date.now() + d * 86400000).toISOString().slice(0, 10) + "T00:00:00.000";
+      const b8 = { ...borr, fecha_de_recepcion_de: dia(-10) }, v8 = { ...vig, fecha_de_recepcion_de: dia(20), fecha_de_publicacion_del: dia(-2), fecha_de_ultima_publicaci: dia(-2) };
+      const wheres = [];
+      const fetchImpl = async (url) => {
+        const w = new URL(url).searchParams.get("$where") || ""; wheres.push(w);
+        const filas = w.startsWith("id_del_portafolio") ? [b8, v8] : w.includes("CO1.REQ.11184835") ? [b8] : [];
+        return { ok: true, status: 200, json: async () => filas };
+      };
+      let lecturas = 0;
+      const redisVE = { get: async () => { lecturas++; return null; }, mget: async () => { lecturas++; return []; }, hgetall: async () => { lecturas++; return {}; } };
+      const guardadosVE = new Map([["p", { procesos: { "CO1.REQ.11184835": { estado: "interesa", foto: { id: "CO1.REQ.11184835", id_del_portafolio: pf } } } }]]);
+      const r8 = await SegVE.vivasParaAviso(redisVE, guardadosVE, { fetchImpl });
+      const f8 = r8.vivas.get("CO1.REQ.11184835");
+      okVE(f8 && f8.id_del_proceso === "CO1.REQ.11184835" && f8.version_vigente_id === "CO1.REQ.11293508", `el aviso usa la publicación vigente: ${f8 && f8.version_vigente_id} (${JSON.stringify({ via: r8.via, dudosos: r8.dudosos })})`);
+      okVE(wheres.some((w) => w.startsWith("id_del_portafolio in") && w.includes(pf)), `pide el expediente a datos.gov.co: ${wheres.join(" | ")}`);
+      okVE(r8.dudosos === 0 && lecturas === 0, `con la vigente abierta no lee la base de Detekta (dudosos ${r8.dudosos}, lecturas ${lecturas})`);
+      // un fallo de la consulta por expediente se dice, y el aviso sigue con la fila de cada número guardado
+      const fetchFalla = async (url) => { const w = new URL(url).searchParams.get("$where") || ""; if (w.startsWith("id_del_portafolio")) throw new Error("caída"); return fetchImpl(url); };
+      const r8b = await SegVE.vivasParaAviso(redisVE, guardadosVE, { fetchImpl: fetchFalla });
+      okVE(typeof r8b.expedientes_sin_leer === "string" && r8b.expedientes_sin_leer.length > 0, `si no se leen los expedientes, se dice: ${r8b.expedientes_sin_leer}`);
+    }
+    /* (9) LA PANTALLA DE MIS PROCESOS, de punta a punta por /api/perfil con la base simulada de la suite (revisión
+       adversaria: la pantalla no tenía prueba, y «Enterado» no apagaba el aviso con la fila del borrador ya fuera del
+       corpus). El corpus solo trae el definitivo; el guardado es el número del borrador. */
+    {
+      const L9 = require("../lib/handlers/procesos/listar.js");
+      const corpusOrig = L9.cargarCorpus;
+      const { repartirDelta } = require("../lib/proyeccion.js");
+      const rep9 = repartirDelta(FILAS_VE);
+      const todas9 = [...(rep9.activo || []), ...(rep9.historico || [])];
+      const vigP = todas9.find((f) => f.id_del_proceso === "CO1.REQ.11293508") || vig;
+      const borP = todas9.find((f) => f.id_del_proceso === "CO1.REQ.11184835") || borr;
+      const PERF9 = "vigenteexpediente";
+      const router9 = require("../api/perfil.js");
+      try {
+        L9.cargarCorpus = async () => [vigP];
+        const g9 = await invocar(router9, "/api/perfil?op=seguimiento", CAB_TOKEN, { metodo: "POST", body: { perfil: PERF9, id: borr.id_del_proceso, estado: "interesa", foto: S_VE.fotoDe(borP) } });
+        okVE(g9.status === 200, `se guarda el borrador: ${g9.status} ${JSON.stringify(g9.cuerpo).slice(0, 160)}`);
+        const ver = async () => { const c = (await invocar(router9, `/api/perfil?op=seguimiento&perfil=${PERF9}`, CAB_TOKEN)).cuerpo; return ((c && c.procesos) || []).find((x) => x.id === borr.id_del_proceso || (x.proceso && x.proceso.id === borr.id_del_proceso)) || {}; };
+        const pA = await ver();
+        okVE(pA.proceso && String(pA.proceso.fecha_cierre || "").slice(0, 10) === "2026-11-09", `la pantalla muestra el cierre del definitivo: ${pA.proceso && pA.proceso.fecha_cierre}`);
+        okVE((pA.cambios || []).some((c) => c.campo === "id"), `la pantalla dice que cambió el número: ${JSON.stringify((pA.cambios || []).map((c) => c.campo))}`);
+        const ent = await invocar(router9, "/api/perfil?op=seguimiento", CAB_TOKEN, { metodo: "POST", body: { perfil: PERF9, id: borr.id_del_proceso, enterado: true } });
+        okVE(ent.status === 200, `«Enterado» responde: ${ent.status} ${JSON.stringify(ent.cuerpo).slice(0, 160)}`);
+        const pD = await ver();
+        okVE(!(pD.cambios || []).length, `tras «Enterado» no queda aviso de cambio: ${JSON.stringify((pD.cambios || []).map((c) => c.campo))}`);
+      } finally {
+        L9.cargarCorpus = corpusOrig;
+      }
+    }
+    if (fallasVE.length) throw new Error(`unidad publicación vigente del expediente: ${fallasVE.length} comprobaciones fallan:\n  - ${fallasVE.join("\n  - ")}`);
+    console.log("· unidad publicación vigente del expediente: el guardado con el número del borrador toma de SECOP II lo del definitivo (misma regla que la lista) y conserva su número, nombre y referencia; el aviso dice el número nuevo una vez, el aviso de la mañana pide el expediente a datos.gov.co y la pantalla real lo enseña");
+  }
+
   bqContratoUPN: { if (!corre("unidad contrato de la Universidad Pedagógica")) break bqContratoUPN;
     /* LA ENTRADA DE LA UNIVERSIDAD PEDAGÓGICA EN LA LISTA DE HELDER (27-sep-2026, decisión del
        dueño). Decía `v: 443141528, pct: 60, plazoMeses: 12, restanMeses: 8`: el valor ya era el
