@@ -45702,6 +45702,19 @@ async function main() {
       const rics = await invocarPost(routerPliego, "/api/pliego?op=cronograma&formato=ics", { id_proceso: "CO1.CRONO.X", texto: t1 });
       assert.strictEqual(rics.status, 200); assert.ok(/text\/calendar/.test(rics.cabeceras["content-type"]));
       assert.ok(/BEGIN:VCALENDAR/.test(rics.cuerpo) && /TRIGGER:-P7D/.test(rics.cuerpo) && /TRIGGER:-P3D/.test(rics.cuerpo) && /TRIGGER:-P1D/.test(rics.cuerpo) && /DTSTART;VALUE=DATE:20260825/.test(rics.cuerpo), "el .ics lleva los tres avisos como alarmas");
+      /* LA PESTAÑA DEL PLIEGO Y SU .ICS MARCAN LA FECHA QUE NO CUADRA (6-nov-2026, el hermano de Mis procesos): un informe de evaluación
+         antes del cierre sale con «Verifíquela en SECOP II», en la respuesta y en el calendario; nada se esconde */
+      const tOrden = "Publicación del aviso de convocatoria 01/10/2026\nFecha de cierre [presentación de ofertas] 20/10/2026\nPublicación del informe de evaluación 18/10/2026\nAudiencia de adjudicación 30/10/2026";
+      const rOr = await invocarPost(routerPliego, "/api/pliego?op=cronograma", { id_proceso: "CO1.CRONO.ORDEN", texto: tOrden });
+      const inf = (rOr.cuerpo.hitos || []).find((h) => h.id === "informe_evaluacion");
+      assert.ok(inf && inf.verificar === "no cuadra con las demás fechas de este pliego" && !(rOr.cuerpo.hitos || []).find((h) => h.id === "adjudicacion").verificar,
+        `[MUT] la pestaña del pliego no marcaba la fecha fuera de orden (o marcaba las demás): ${JSON.stringify(rOr.cuerpo.hitos)}`.slice(0, 400));
+      const icsOr = await invocarPost(routerPliego, "/api/pliego?op=cronograma&formato=ics", { id_proceso: "CO1.CRONO.ORDEN", texto: tOrden });
+      assert.ok(/Verifíquela en SECOP II: no cuadra con las demás fechas de este pliego/.test(String(icsOr.cuerpo).replace(/\r?\n /g, "")), "[MUT] el .ics del pliego no llevaba la marca");
+      // y la del cierre desmentido, la MISMA regla de Mis procesos (lib/cronograma.verificarPorCierre)
+      const mCierre = Cr.marcarDocumento(Cr.extraerHitos("Fecha de cierre 20/10/2026\nAudiencia de adjudicación 30/10/2026").hitos);
+      assert.ok(/^en este pliego se lee como cierre el .*20 de octubre y SECOP II pone el .*27 de octubre: sus fechas pudieron cambiar$/.test(Cr.verificarPorCierre(mCierre[1], "2026-10-27", "este pliego") || "")
+        && Cr.verificarPorCierre(mCierre[1], "2026-10-20", "este pliego") === null, "[MUT] el cierre desmentido marca, y el que coincide no");
       // con un proceso del corpus, el hito de cierre sale del dataset aunque no haya texto
       const idCorpus = (await filaDelListado(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=100&incluir_cerradas=1&solo_viables=false", CAB_TOKEN, (f) => f.fecha_cierre)).id_del_proceso;
       const rd = await invocar(routerPliego, `/api/pliego?op=cronograma&id_proceso=${encodeURIComponent(idCorpus)}`);
