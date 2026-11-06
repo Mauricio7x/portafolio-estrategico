@@ -1575,6 +1575,60 @@
   $("empresa-datos").addEventListener("toggle", async () => { if ($("empresa-datos").open) { await opcionesDatosEmpresa(); cargarDatosEmpresa(); } });
   $("f-perfil").addEventListener("change", async () => { if ($("empresa-datos").open) { await opcionesDatosEmpresa(); cargarDatosEmpresa(); } });
   if ($("empresa-datos-de")) $("empresa-datos-de").addEventListener("change", () => cargarDatosEmpresa());
+  /* LO QUE YA ES PÚBLICO, POR NIT (6-nov-2026, lib/datos_publicos_empresa): la identidad del RUES y el contacto del registro
+     de proveedores de SECOP II. Llena SOLO los campos vacíos (lo escrito por usted no se toca, y si el dato público es otro
+     se le dice), cada dato con su fuente, y no guarda: el usuario lo revisa contra su certificado y pulsa «Guardar». */
+  /* ¿lo escrito y lo público dicen lo mismo? Un número (NIT, cédula, teléfono) por sus dígitos; un texto sin tildes,
+     mayúsculas ni espacios de más */
+  function mismoDatoPublico(a, b) {
+    const numero = /^[\d.\s\-+()]+$/;
+    if (numero.test(a) && numero.test(String(b))) return a.replace(/\D/g, "") === String(b).replace(/\D/g, "");
+    const t = (x) => String(x).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\s+/g, " ").trim();
+    return t(a) === t(b);
+  }
+  function htmlDatosPublicos(r, llenados, distintos) {
+    const nombre = (k) => { const i = formEmpresa.elements[k]; const l = i && i.closest("label"); return l ? l.childNodes[0].textContent.trim() : k; };
+    const valorLegible = (k, v) => (k === "tipo_proponente" ? ({ persona_natural: "Persona natural", persona_juridica: "Persona jurídica" }[v] || v) : v);
+    const partes = [];
+    if (llenados.length) {
+      partes.push(`<p class="font-medium">Se llenaron ${llenados.length} ${llenados.length === 1 ? "campo" : "campos"} con datos públicos. Revíselos con su certificado de existencia y representación y pulse «Guardar los datos»:</p>`
+        + `<ul class="mt-1 list-disc pl-5">${llenados.map((k) => `<li>${esc(nombre(k))}: «${esc(valorLegible(k, r.sugeridos[k].valor))}». Fuente: ${esc(r.sugeridos[k].fuente)}.</li>`).join("")}</ul>`);
+    } else {
+      partes.push(`<p class="font-medium">No se llenó ningún campo: ${Object.keys(r.sugeridos || {}).length ? "los que tienen dato público ya tenían algo escrito" : "no hay datos públicos con ese NIT"}.</p>`);
+    }
+    if (distintos.length) {
+      partes.push(`<p class="mt-2">Donde ya había algo escrito no se cambió nada, pero el dato público es otro:</p><ul class="mt-1 list-disc pl-5">${distintos.map((k) => `<li>${esc(nombre(k))}: usted escribió «${esc(valorLegible(k, formEmpresa.elements[k].value))}» y ${esc(r.sugeridos[k].fuente.split(",")[0])} dice «${esc(valorLegible(k, r.sugeridos[k].valor))}».</li>`).join("")}</ul>`);
+    }
+    for (const a of r.avisos || []) partes.push(`<p class="mt-2">${esc(a)}</p>`);
+    return partes.join("");
+  }
+  $("btn-empresa-publicos").addEventListener("click", async () => {
+    const boton = $("btn-empresa-publicos"), caja = $("empresa-datos-publicos");
+    const nit = (formEmpresa.elements.nit.value || "").trim();
+    caja.hidden = false;
+    caja.className = "mt-2 text-xs text-gray-700";
+    if (!nit) { caja.textContent = "Escriba primero el NIT en su campo y vuelva a pulsar."; caja.className = "mt-2 text-xs text-red-700"; formEmpresa.elements.nit.focus(); return; }
+    boton.disabled = true;
+    caja.textContent = "Consultando el RUES y SECOP II en datos.gov.co…";
+    try {
+      const r = await api(`/api/perfil?op=empresa-datos&publicos=1&nit=${encodeURIComponent(nit)}`);
+      const llenados = [], distintos = [];
+      for (const [k, s] of Object.entries(r.sugeridos || {})) {
+        const i = formEmpresa.elements[k];
+        if (!i) continue;
+        const actual = (i.value || "").trim();
+        // el NIT escrito para buscar, sin dígito de verificación: se completa con el del RUES (es el mismo NIT)
+        const completaNit = k === "nit" && /-\d$/.test(String(s.valor)) && actual.replace(/\D/g, "") === String(s.valor).replace(/-\d$/, "").replace(/\D/g, "");
+        if (!actual || completaNit) { i.value = s.valor; llenados.push(k); }
+        else if (!mismoDatoPublico(actual, s.valor)) distintos.push(k);
+      }
+      caja.innerHTML = htmlDatosPublicos(r, llenados, distintos);
+    } catch (e) {
+      caja.textContent = `No se pudieron traer los datos públicos: ${fraseDeFallo(e)}`;
+      caja.className = "mt-2 text-xs text-red-700";
+    }
+    boton.disabled = false;
+  });
   $("btn-empresa-datos").addEventListener("click", async () => {
     const boton = $("btn-empresa-datos");
     const datos = Object.fromEntries([...formEmpresa.elements].filter((i) => i.name).map((i) => [i.name, i.value]));
