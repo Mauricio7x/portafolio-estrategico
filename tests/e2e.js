@@ -54956,6 +54956,11 @@ async function main() {
       assert.deepStrictEqual(z.archivos, ["LEAME - revise antes de subir.txt", "1 Formatos llenos/01 FORMATO 1 CARTA DE PRESENTACION (lleno).docx", "3 Sus documentos/01 RUP Helder.pdf", "3 Sus documentos/02 RUP Helder.pdf"],
         `el .zip trae la hoja, el formato lleno (sin tildes en el nombre) y sus documentos, numerados: ${JSON.stringify(z.archivos)}`);
       assert.strictEqual(z.nombre, "Oferta CO1.REQ.123.zip");
+      // (6-nov-2026) cada archivo del .zip lleva la fecha y hora de cuando se armó; sin `fecha`, la fija de siempre (el Windows del dueño enseñaba «29/12/1899»)
+      const zF = X.armarZipOferta({ proceso: { id: "F" }, suyos: [{ nombre: "a.pdf", bytes: pdf }] }, { escribirZip: zipW, fecha: new Date(2026, 10, 6, 11, 35, 20) });
+      const cab = Buffer.from(zF.bytes).subarray(10, 14);
+      assert.ok(cab.readUInt16LE(2) === (((2026 - 1980) << 9) | (11 << 5) | 6) && cab.readUInt16LE(0) === ((11 << 11) | (35 << 5) | 10), `la fecha real en la cabecera: ${cab.toString("hex")}`);
+      assert.strictEqual(Buffer.from(zipW([{ nombre: "x", datos: new Uint8Array(1) }])).readUInt16LE(12), 0x21, "sin fecha, el .xlsx sigue siendo reproducible (1980-01-01)");
       const leame = Dz.entradaZip(buf, "LEAME - revise antes de subir.txt");
       const tL = leame.datos ? leame.datos.toString("utf8") : String(leame.motivo);
       assert.ok(/Se presenta con: CONSORCIO INFRAESTRUCTURA GR/.test(tL) && /sin firma/.test(tL) && /«FORMATO 3 EXPERIENCIA\.docx»: no se llenó \(no tiene casillas del proponente\)\. Bájelo de SECOP II/.test(tL) && /ANEXO 5 MATRIZ\.xlsx: no es un documento de Word/.test(tL)
@@ -57362,7 +57367,29 @@ async function main() {
           `lo de cada integrante: solo la entidad, ni el nombre del consorcio ni la firma: ${tPss.replace(/\n/g, " | ")} ${JSON.stringify(pss.cuerpo).slice(0, 400)}`);
         remoto = (() => { const x = Buffer.from(doc(P("FORMATO 2 CONFORMACIÓN DE CONSORCIO") + P("Los suscritos manifestamos que el consorcio está integrado por:"))); return require("../lib/docx.js").reescribirZip(base, { reemplazos: { "word/document.xml": x } }).buf; })();
         const f2 = await pedirF({ perfil: "cons_prueba01", nombre: "F2 PropPlural ISocialMenCV1.docx", proceso: procCtx });
+        remoto = (() => { const x = Buffer.from(doc(P("FORMATO 2A — DOCUMENTO DE CONFORMACIÓN DE CONSORCIO") + P("El Consorcio se denomina CONSORCIO ____________.") + P("El Señor[a] ___________ [indicar el nombre del representante legal del consorcio] acepta su nombramiento como representante legal del CONSORCIO [Nombre del Consorcio]"))); return require("../lib/docx.js").reescribirZip(base, { reemplazos: { "word/document.xml": x } }).buf; })();
+        const f2b = await pedirF({ perfil: "cons_prueba01", nombre: "F2 PropPlural ISocialMenCV1.docx", proceso: procCtx });
+        const tF2 = f2b.cuerpo.base64 ? Dx.textoDeDocx(Buffer.from(f2b.cuerpo.base64, "base64")).texto : "";
+        assert.ok(f2b.cuerpo.conformacion === true && /se denomina CONSORCIO INFRAESTRUCTURA 1A\./.test(tF2) && /El Señor\[a\] HELDER GUSTAVO RODRIGUEZ, acepta su nombramiento como representante legal del CONSORCIO INFRAESTRUCTURA 1A/.test(tF2) && f2b.cuerpo.de_cada_integrante === false,
+          `el Formato 2 con el nombre y el representante del consorcio guardados: ${tF2.replace(/\n/g, " | ")}`);
         assert.ok(f2.status === 200 && f2.cuerpo.base64 === null && /documento de conformación del consorcio: lo firman todos los integrantes/.test(f2.cuerpo.motivo), `el Formato 2 no dice «lo presenta cada integrante»: ${f2.cuerpo.motivo}`);
+        /* (revisión adversaria, 6-nov-2026, reproducido) una UNIÓN TEMPORAL no llena la sección 2A de consorcio con sus datos */
+        await Cf.guardarConsorcio(crearRedisF({}), { id: "cons_pruebaut", nombre: "UNIÓN TEMPORAL VÍAS DEL SUR", integrantes: [{ perfilId: "helder", participacion: 50 }, { perfilId: "fmt_prueba", participacion: 50 }] });
+        await invocarPost(require("../api/perfil.js"), "/api/perfil?op=empresa-datos", { perfil: "cons_pruebaut", datos: { razon_social: "UNIÓN TEMPORAL VÍAS DEL SUR", representante_legal: "HELDER GUSTAVO RODRIGUEZ" } }, CAB_TOKEN);
+        const f2ut = await pedirF({ perfil: "cons_pruebaut", nombre: "F2 PropPlural ISocialMenCV1.docx", proceso: procCtx });
+        const tF2ut = f2ut.cuerpo.base64 ? Dx.textoDeDocx(Buffer.from(f2ut.cuerpo.base64, "base64")).texto : "";
+        assert.ok(f2ut.status === 200 && f2ut.cuerpo.conformacion === false && !/VÍAS DEL SUR/.test(tF2ut), `la unión temporal no llena la conformación de consorcio: ${JSON.stringify(f2ut.cuerpo).slice(0, 300)} ${tF2ut.replace(/\n/g, " | ")}`);
+        /* (revisión adversaria, 6-nov-2026, reproducido) «lo presenta cada integrante» solo para la lista del Documento Base: la
+           manifestación de interés (la firman todos en un solo documento) se queda con solo lo de la entidad, en una copia */
+        const remotoPrevio = remoto;
+        remoto = docEnt("FORMATO 10 CARTA MANIFESTACIÓN DE INTERÉS");
+        const manif = await pedirF({ perfil: "cons_prueba01", nombre: "F10 ManifestInteres ISocialMenCV1.docx", proceso: procCtx });
+        assert.ok(manif.status === 200 && manif.cuerpo.base64 && manif.cuerpo.de_cada_integrante === false && manif.cuerpo.solo_entidad === true,
+          `la manifestación de interés: una copia, con solo lo de la entidad, sin partirse por integrante: ${JSON.stringify(manif.cuerpo).slice(0, 300)}`);
+        remoto = docEnt("FORMATO 13 ACREDITACIÓN DE MIPYME");
+        const mip = await pedirF({ perfil: "cons_prueba01", nombre: "F13 AcredMipyme ISocialMenCV1.docx", proceso: procCtx });
+        assert.ok(mip.cuerpo.de_cada_integrante === true && !mip.cuerpo.solo_entidad, `la Mipyme sí la presenta cada integrante: ${JSON.stringify(mip.cuerpo).slice(0, 300)}`);
+        remoto = remotoPrevio;
         remoto = docEnt("FORMATO 7 FACTOR DE CALIDAD");
         const fc = await pedirF({ perfil: "cons_prueba01", nombre: "F7_FactorCal_ISocialMenCV1.docx", proceso: procCtx, firma: pngC.toString("base64") });
         const tFc = Dx.textoDeDocx(Buffer.from(fc.cuerpo.base64, "base64")).texto;
@@ -57591,6 +57618,72 @@ async function main() {
         assert.strictEqual(f13.para_persona_natural, false, "con una parte de persona jurídica más abajo, no es «para persona natural»");
         // el desempate se dice como desempate, no como «ofrecimiento que da puntaje»
         assert.ok(desemp.desempate === true && /desempate/.test(desemp.firma.motivo), `el desempate, con su motivo: ${JSON.stringify(desemp.firma)}`);
+        /* FASE 1 (6-nov-2026, «ejecuta» del dueño): EL DOCUMENTO DE CONFORMACIÓN, como lo llenó él en Cali; lo que deciden los
+           integrantes (duración, suplente, facturación, lugar y fecha) queda y se dice; la sección 2B no se toca */
+        const celdaF = (x) => `<w:tc><w:p><w:r><w:t xml:space="preserve">${x}</w:t></w:r></w:p></w:tc>`;
+        const xml2 = doc(P("FORMATO 2A — DOCUMENTO DE CONFORMACIÓN DE CONSORCIO") + P("Señores") + P("[NOMBRE DE LA ENTIDAD]")
+          + P("Los suscritos, [nombre del representante legal del integrante 1] y [nombre del representante legal del integrante 2] debidamente autorizados para actuar en nombre y representación de [nombre o razón social del integrante 1] y [nombre o razón social del integrante 2]")
+          + `<w:tbl><w:tr>${celdaF("Nombre del integrante")}${celdaF("Compromiso (%)")}</w:tr><w:tr>${celdaF("[Indicar los nombres de los integrantes del consorcio]")}${celdaF("[Indicar el porcentaje de participación de cada uno de los integrantes]")}</w:tr></w:tbl>`
+          + P("El Consorcio se denomina CONSORCIO ____________.") + P("El objeto del consorcio es ________________.") + P("La duración del consorcio es __________________.")
+          + P("El representante del consorcio es ____________ [indicar el nombre], identificado con C. C. No. ______ de ______, quien está facultado")
+          + P("El representante suplente del consorcio es ________ [indicar el nombre], identificado con C. C. No. ______ de ______")
+          + P("El Señor[a] ___________ [indicar el nombre del representante legal del consorcio] acepta su nombramiento como representante legal del CONSORCIO [Nombre del Consorcio]")
+          + P("El Domicilio del consorcio es:") + P("Dirección de correo", "\t", "______") + P("Dirección electrónica", "\t", "______") + P("Teléfono", "\t", "______") + P("Ciudad", "\t", "______")
+          + P("En constancia, se firma en ______, a los ____ días") + `<w:tbl><w:tr>${celdaF("[Nombre del proponente o representante legal de cada uno de los integrantes]")}${celdaF("[Nombre del proponente o representante legal de cada uno de los integrantes]")}</w:tr></w:tbl>`
+          + P("FORMATO 2B — DOCUMENTO DE CONFORMACIÓN DE UNIÓN TEMPORAL") + P("Los suscritos, [nombre del representante legal del integrante 1] y [nombre del representante legal del integrante 2]"));
+        const confC = { nombre: "CONSORCIO INFRAESTRUCTURA 1A", representante: { nombre: "HELDER GUSTAVO RODRIGUEZ SANTANA", cedula: "9´396.710", expedicion: "Sogamoso" },
+          domicilio: { direccion: "CALLE 8 N° 9 - 19", correo: "a@b.co", telefono: "311", ciudad: "Ibagué" },
+          integrantes: [{ nombre: "HELDER GUSTAVO RODRIGUEZ SANTANA", representante: "HELDER GUSTAVO RODRIGUEZ SANTANA", natural: true, participacion: 90 }, { nombre: "GÉNESIS INGENIERÍA Y CONSTRUCCIÓN GIC S.A.S.", representante: "LILIANA JOHANA SALAS", natural: false, participacion: 10 }] };
+        const c2 = F2.completarConformacion(xml2, confC, { entidad: "ALCALDÍA DE CARTAGENA", referencia: "SAMC-SPDS-004-2026", objeto: "ADECUACIÓN DE CENTROS DE VIDA" });
+        const l2 = Lx.lineasDeXml(c2.xml);
+        assert.deepStrictEqual(l2, ["FORMATO 2A — DOCUMENTO DE CONFORMACIÓN DE CONSORCIO", "Señores", "ALCALDÍA DE CARTAGENA",
+          "Los suscritos, HELDER GUSTAVO RODRIGUEZ SANTANA y LILIANA JOHANA SALAS debidamente autorizados para actuar en nombre y representación de nombre propio y GÉNESIS INGENIERÍA Y CONSTRUCCIÓN GIC S.A.S.",
+          "Nombre del integrante\tCompromiso (%)", "HELDER GUSTAVO RODRIGUEZ SANTANA\t90 %", "GÉNESIS INGENIERÍA Y CONSTRUCCIÓN GIC S.A.S.\t10 %",
+          "El Consorcio se denomina CONSORCIO INFRAESTRUCTURA 1A.", "El objeto del consorcio es participar en el proceso de contratación No. SAMC-SPDS-004-2026, cuyo objeto es “ADECUACIÓN DE CENTROS DE VIDA”.",
+          "La duración del consorcio es __________________.", "El representante del consorcio es HELDER GUSTAVO RODRIGUEZ SANTANA, identificado con C. C. No. 9´396.710 de Sogamoso, quien está facultado",
+          "El representante suplente del consorcio es ________ [indicar el nombre], identificado con C. C. No. ______ de ______",
+          "El Señor[a] HELDER GUSTAVO RODRIGUEZ SANTANA, acepta su nombramiento como representante legal del CONSORCIO INFRAESTRUCTURA 1A",
+          "El Domicilio del consorcio es:", "Dirección de correo\tCALLE 8 N° 9 - 19", "Dirección electrónica\ta@b.co", "Teléfono\t311", "Ciudad\tIbagué",
+          "En constancia, se firma en ______, a los ____ días", "HELDER GUSTAVO RODRIGUEZ SANTANA\tLILIANA JOHANA SALAS",
+          "FORMATO 2B — DOCUMENTO DE CONFORMACIÓN DE UNIÓN TEMPORAL", "Los suscritos, [nombre del representante legal del integrante 1] y [nombre del representante legal del integrante 2]"],
+          "la conformación 2A llena como la de Cali, con los integrantes en filas; la 2B como estaba");
+        assert.ok(["La duración del consorcio", "El representante suplente y su cédula", "El lugar y la fecha de la firma"].every((x) => c2.pendientes.includes(x)) && c2.pendientes.some((x) => /Confirme la participación: HELDER GUSTAVO RODRIGUEZ SANTANA 90 %/.test(x)) && !c2.pendientes.some((x) => /integrante 1/.test(x)),
+          `lo que deciden los integrantes se dice; lo de la 2B no: ${JSON.stringify(c2.pendientes)}`);
+        // con un integrante sin nombre o sin participación, la tabla no se toca
+        assert.ok(F2.completarConformacion(xml2, { ...confC, integrantes: [confC.integrantes[0], { ...confC.integrantes[1], participacion: null }] }, {}).pendientes.includes("La tabla de los integrantes y su participación"), "sin la participación de todos, la tabla queda y se dice");
+        /* LOS CORCHETES DE UN INTEGRANTE (Formato 6 y 13): solo en el renglón del representante legal, nunca en el del revisor fiscal;
+           el tamaño del RUP, en la sección de su tipo */
+        const dGen = F2.normalizarDatos({ razon_social: "GÉNESIS SAS", representante_legal: "LILIANA JOHANA SALAS", representante_documento: "28.936.342", nit: "901.096.271-1", tipo_proponente: "persona_juridica" });
+        const f6 = Lx.lineasDeXml(F2.completarPlantilla(doc(P("[Incluir el nombre del representante legal de la persona jurídica] identificado con [Incluir el número de identificación] en mi condición de representante legal de [Incluir la razón social de la persona jurídica] identificada con NIT [Incluir el NIT], bajo la gravedad")
+          + P("[Incluir el nombre del revisor fiscal, según corresponda] identificado con [Incluir el número de identificación], y con tarjeta profesional No. [Incluir número de tarjeta profesional], en mi condición de Revisor Fiscal de [Incluir la razón social de la persona jurídica]")
+          + P("[Incluir el nombre del representante legal y el contador] identificados con [Incluir los números de identificación], actuando en representación de [Indicar nombre del Proponente] se encuentra clasificado como: [Indicar si es micro, pequeña y mediana empresa]")
+          + P("[Incluir el nombre de la persona natural y el contador público] identificados con [Incluir los números de identificación], declaramos que la [incluir el nombre del establecimiento de comercio] se encuentra clasificado como: [Indicar si es micro, pequeña y mediana empresa]")), dGen, { tamano: "microempresa" }).xml);
+        assert.strictEqual(f6[0], "LILIANA JOHANA SALAS identificado con 28.936.342 en mi condición de representante legal de GÉNESIS SAS identificada con NIT 901.096.271-1, bajo la gravedad", "el renglón del representante legal del integrante");
+        assert.ok(/^\[Incluir el nombre del revisor fiscal/.test(f6[1]) && /\[Incluir el número de identificación\]/.test(f6[1]) && /\[Incluir la razón social de la persona jurídica\]$/.test(f6[1]), `el del revisor fiscal, no: ${f6[1]}`);
+        assert.ok(/actuando en representación de GÉNESIS SAS se encuentra clasificado como: microempresa$/.test(f6[2]) && /clasificado como: \[Indicar si es micro/.test(f6[3]), `el tamaño del RUP en la sección de la persona jurídica, no en la de la natural: ${f6[2]} | ${f6[3]}`);
+        const mixto = Lx.lineasDeXml(F2.completarPlantilla(doc(P("[Incluir el nombre del representante legal de la persona jurídica] y el revisor fiscal identificados con [Incluir el número de identificación], en mi condición de representante legal de [Incluir la razón social de la persona jurídica]")), dGen, {}).xml)[0];
+        assert.ok(/^\[Incluir el nombre del representante legal/.test(mixto), `un renglón que también es del revisor fiscal no se llena: ${mixto}`);
+        const natJ = Lx.lineasDeXml(F2.completarPlantilla(doc(P("actuando en representación de [Indicar nombre del Proponente] se encuentra clasificado como: [Indicar si es micro, pequeña y mediana empresa]")), F2.normalizarDatos({ tipo_proponente: "persona_natural" }), { tamano: "microempresa" }).xml)[0];
+        assert.ok(/\[Indicar si es micro/.test(natJ), `a una persona natural no se le marca el tamaño en la sección de la jurídica: ${natJ}`);
+        /* (revisión adversaria, 6-nov-2026, reproducido) el revisor fiscal nombrado SOLO dentro de un corchete: ni su nombre ni su
+           cédula reciben los del representante; y cada corchete del representante, una vez */
+        const revC = Lx.lineasDeXml(F2.completarPlantilla(doc(P("[Incluir el nombre del representante legal de la persona jurídica] identificado con [Incluir el número de identificación] y [Incluir el nombre del revisor fiscal] identificado con [Incluir el número de identificación], en mi condición de representante legal de [Incluir la razón social de la persona jurídica]")
+          + P("[Incluir el nombre del representante legal de la persona jurídica] identificado con [Incluir el número de identificación] y [Incluir el número de identificación] en mi condición de representante legal de [Incluir la razón social de la persona jurídica]")), dGen, {}).xml);
+        assert.ok(!/28\.936\.342|LILIANA/.test(revC[0]) && /GÉNESIS SAS$/.test(revC[0]), `con el revisor en un corchete, ni nombre ni cédula: ${revC[0]}`);
+        assert.ok((revC[1].match(/28\.936\.342/g) || []).length === 1 && /\[Incluir el número de identificación\] en mi condición/.test(revC[1]), `la cédula una sola vez: ${revC[1]}`);
+        /* (revisión adversaria, 6-nov-2026, reproducido) Word parte «FORMATO 2B» en dos trozos: la 2B sigue sin tocarse */
+        const xml2p = xml2.replace(P("FORMATO 2B — DOCUMENTO DE CONFORMACIÓN DE UNIÓN TEMPORAL"), P("FORMATO 2", "B — DOCUMENTO DE CONFORMACIÓN DE UNIÓN ", "TEMPORAL"));
+        assert.ok(xml2p !== xml2, "la prueba parte de verdad el título de la 2B");
+        const c2p = F2.completarConformacion(xml2p, confC, {});
+        const l2p = Lx.lineasDeXml(c2p.xml);
+        assert.ok(!c2p.pendientes.some((x) => /integrante 1/.test(x)), `con el título partido, lo de la 2B no se lista como pendiente: ${JSON.stringify(c2p.pendientes)}`);
+        assert.strictEqual(l2p[l2p.length - 1], "Los suscritos, [nombre del representante legal del integrante 1] y [nombre del representante legal del integrante 2]", "con el título partido, la 2B no recibe a los integrantes");
+        // (revisión adversaria) «Dirección de correo electrónico» no es la dirección postal
+        const domE = Lx.lineasDeXml(F2.completarConformacion(doc(P("FORMATO 2A — DOCUMENTO DE CONFORMACIÓN DE CONSORCIO") + P("El Domicilio del consorcio es:") + P("Dirección de correo electrónico", "\t", "______")), confC, {}).xml);
+        assert.ok(!/CALLE 8/.test(domE.join("|")), `la dirección postal no va en el renglón del correo: ${domE.join(" | ")}`);
+        // (revisión adversaria) un documento que dice «consorcio» y en el que solo se escribió la entidad no se toma por la conformación
+        const etq = F2.llenarFormato(docxDe(Buffer.from(doc(P("FORMATO 6 PARA CADA INTEGRANTE DEL CONSORCIO") + P("Señores") + P("[NOMBRE DE LA ENTIDAD]")))), {}, { contexto: ctxPl, conformacion: confC });
+        assert.ok(!etq.conformacion, `solo la entidad no lo vuelve el documento de conformación: ${JSON.stringify({ conformacion: etq.conformacion, llenados: etq.llenados })}`);
         const soloEnt = F2.llenarFormato(docxDe(Buffer.from(doc(P("Señores") + P("[NOMBRE DE LA ENTIDAD]") + P("(Firma del proponente)")))), {}, { contexto: ctxPl, firma: png });
         assert.ok(soloEnt.buf && soloEnt.firma.puesta === false && /ninguna casilla del proponente/.test(soloEnt.firma.motivo), "con solo lo de la entidad no se firma");
         remoto = base;
@@ -64429,6 +64522,43 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
         const btnLl = { getAttribute: (k) => ({ "data-seg-llenar": "https://community.secop.gov.co/a", "data-seg-llenar-nombre": "FORMATO 1 CARTA DE PRESENTACION.docx", "data-seg-llenar-n": "1" }[k] || null), disabled: false };
         await disZ("tab-seguimiento", "click", { target: { closest: (sel) => (sel === "[data-seg-llenar]" ? btnLl : null) } });
         okRO(pedidos.length === 1 && pedidos[0].perfil === "cons_infragr1", `(g-ter) el botón suelto llena con el perfil con que se presenta: ${JSON.stringify(pedidos.map((b) => b.perfil))}`);
+      }
+      /* (g-quater) LO DE CADA INTEGRANTE (fase 1, 6-nov-2026): con el consorcio, el Formato 6 sale en una copia por integrante con
+         SUS datos (sin la firma del representante del consorcio); al que no guardó sus datos, la hoja le dice dónde */
+      {
+        const { F: TI, ctx: CI, porId: PI } = cargarFrontRO();
+        await asentarRO();
+        const pedI = [], desI = [];
+        const docxI = require("../public/xlsx.js").escribirZip([{ nombre: "word/document.xml", datos: new TextEncoder().encode("<w:document/>") }]);
+        CI.fetch = (url, cfg) => {
+          if (!/op=descargar/.test(String(url))) return new Promise(() => {});
+          const b = JSON.parse(cfg.body); pedI.push(b);
+          if (b.formato === "original") return Promise.resolve(respuestaRO(200, { ok: true, formato: "original", base64: Buffer.from("ORIGINAL").toString("base64") }));
+          if (b.perfil === "cons_infragr1") return Promise.resolve(respuestaRO(200, { ok: true, formato: "llenar", base64: Buffer.from(docxI).toString("base64"), llenados: [{ campo: "entidad", nombre: "Nombre de la entidad" }], de_cada_integrante: true }));
+          if (b.perfil === "helder") return Promise.resolve(respuestaRO(200, { ok: true, formato: "llenar", base64: Buffer.from(docxI).toString("base64"), llenados: [{ campo: "razon_social", nombre: "Nombre", renglon: "Nombre: HELDER" }], proponente: "HELDER GUSTAVO RODRIGUEZ SANTANA" }));
+          if (b.perfil === "prodiac") return Promise.resolve(respuestaRO(200, { ok: true, formato: "llenar", base64: Buffer.from(docxI).toString("base64"), llenados: [{ campo: "entidad", nombre: "Nombre de la entidad" }], proponente: "PRODIAC LTDA" }));
+          return Promise.resolve(respuestaRO(409, { ok: false, sin_datos: true, error: "Todavía no ha guardado los datos de su empresa. Escríbalos una vez en Mi empresa." }));
+        };
+        CI.XLSXApu.descargar = (bytes, nombre) => desI.push({ bytes, nombre });
+        PI.get("tab-seguimiento").querySelector = (sel) => (/data-exp-zip-estado/.test(sel) ? { textContent: "", classList: { toggle() {} } } : null);
+        const procI = { id: "CO1.INT", perfil_de_la_guia: "cons_infragr1", proceso: { nombre: "OBRA", entidad: "ALCALDÍA" }, documentos: [],
+          guia: { documentos: { formatos: [{ id_documento: "1", nombre: "F6 PagoSS Aportes ISocialMenCV1.docx", url: "https://community.secop.gov.co/f6" }, { id_documento: "2", nombre: "F13 AcredMipyme ISocialMenCV1.docx", url: "https://community.secop.gov.co/f13" }] } } };
+        TI.fijar({ segExpDatos: { ok: true, proceso: procI, consorcios: [{ id: "cons_infragr1", nombre: "CONSORCIO INFRAESTRUCTURA GR", integrantes: [{ perfil: "helder", participacion: 80 }, { perfil: "genesis", participacion: 10 }, { perfil: "prodiac", participacion: 10 }] }], hoy: "2026-11-06" } });
+        await TI.armarZipDelProceso("CO1.INT");
+        const zI = Buffer.from(desI[0] ? desI[0].bytes : []);
+        const DzI = require("../lib/docx.js");
+        const leI = desI[0] ? DzI.entradaZip(zI, "LEAME - revise antes de subir.txt").datos.toString("utf8") : "SIN .ZIP";
+        okRO(pedI.some((b) => b.perfil === "helder" && !b.firma) && pedI.some((b) => b.perfil === "genesis") && !pedI.some((b) => b.formato === "original"),
+          `(g-quater) se pide una copia por integrante, sin firma, y el formato de la entidad no se trae aparte: ${JSON.stringify(pedI.map((b) => [b.perfil, b.formato]))}`);
+        okRO(desI[0] && DzI.entradaZip(zI, "1 Formatos llenos/01 F6 PagoSS Aportes ISocialMenCV1 - HELDER GUSTAVO RODRIGUEZ SANTANA (lleno).docx").datos && /Es la copia de HELDER GUSTAVO RODRIGUEZ SANTANA/.test(leI)
+          && !/PRODIAC/.test(leI) && /LO QUE FALTA DE LOS INTEGRANTES/.test(leI) && /«genesis» no tiene guardados sus «Datos para los formatos del pliego»/.test(leI),
+          `(g-quater) la copia de Helder entra con su nota, y de Génesis se dice qué falta: ${leI.slice(0, 900)}`);
+        /* (revisión adversaria, 6-nov-2026, reproducido) el integrante sin copia (Prodiac: nada suyo que llenar; Génesis: sin datos)
+           no desaparece: se dice con su causa y se queda la copia con solo lo de la entidad, para llenarla a mano */
+        const nombresI = desI[0] ? [...zI.toString("latin1").matchAll(/1 Formatos llenos\/[^\x00-\x1f]*?\.docx/g)].map((m) => m[0]) : [];
+        okRO(/«F6 PagoSS Aportes ISocialMenCV1\.docx» de «prodiac»: no se encontró ninguna casilla suya/.test(leI) && DzI.entradaZip(zI, "1 Formatos llenos/02 F6 PagoSS Aportes ISocialMenCV1 (lleno).docx").datos
+          && (leI.match(/«genesis» no tiene guardados/g) || []).length === 1,
+          `(g-quater) quien se queda sin copia se dice, una vez, y la copia de la entidad se queda: ${JSON.stringify([...new Set(nombresI)])} ${leI.slice(0, 1400)}`);
       }
       /* (h) EL TECHO DESDE LA TARJETA DE LICITACIONES (17-oct-2026): «Calcular mi precio» de un proceso GUARDADO pide su
          guía (GET ?expediente=, solo lee) y arranca con el techo del pliego; sin guardar, como siempre; con la consulta

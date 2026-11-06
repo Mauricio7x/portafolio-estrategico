@@ -68,8 +68,14 @@
   /* ───────────────────────── ZIP (solo método STORE) ────────────────────
      Sin descriptores de datos ni ZIP64: un presupuesto jamás se acerca a los
      4 GB ni a las 65 535 entradas donde ZIP64 empezaría a hacer falta. */
-  function escribirZip(entradas) {
+  /* `fecha` (opcional, 6-nov-2026): la fecha y hora de cada archivo. Sin ella, la fija de siempre (1980-01-01), para que un .xlsx
+     no cambie de bytes por haberse generado un minuto más tarde. El .zip de la oferta la pasa: con la fija, el explorador de
+     Windows enseñaba «29/12/1899 7:00 p. m.» en cada documento (el dueño: «se nota que es de IA») */
+  function escribirZip(entradas, { fecha = null } = {}) {
     const trozos = [];
+    const f = fecha instanceof Date && !isNaN(fecha) && fecha.getFullYear() >= 1980 ? fecha : null;
+    const horaDos = f ? ((f.getHours() << 11) | (f.getMinutes() << 5) | Math.floor(f.getSeconds() / 2)) : 0;
+    const fechaDos = f ? (((f.getFullYear() - 1980) << 9) | ((f.getMonth() + 1) << 5) | f.getDate()) : 0x21;
     const central = [];
     let desplazamiento = 0;
 
@@ -83,7 +89,7 @@
       // por haberse generado un minuto más tarde — así el archivo es reproducible
       const cabecera = [
         ...u32(0x04034b50), ...u16(20), ...u16(0x0800), ...u16(0), // 0x0800 = nombres en UTF-8
-        ...u16(0), ...u16(0x21),                                   // hora, fecha (1980-01-01)
+        ...u16(horaDos), ...u16(fechaDos),                         // hora, fecha (1980-01-01 sin `fecha`)
         ...u32(crc), ...u32(datos.length), ...u32(datos.length),
         ...u16(nombreBytes.length), ...u16(0),
       ];
@@ -91,7 +97,7 @@
 
       central.push([
         ...u32(0x02014b50), ...u16(20), ...u16(20), ...u16(0x0800), ...u16(0),
-        ...u16(0), ...u16(0x21),
+        ...u16(horaDos), ...u16(fechaDos),
         ...u32(crc), ...u32(datos.length), ...u32(datos.length),
         ...u16(nombreBytes.length), ...u16(0), ...u16(0),
         ...u16(0), ...u16(0), ...u32(0), ...u32(desplazamiento),

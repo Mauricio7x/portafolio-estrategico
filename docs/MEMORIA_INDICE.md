@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 2460843 bytes · 437 secciones · 47 con marcador de superación.
+Derivado del árbol: 2465871 bytes · 438 secciones · 47 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -447,4 +447,5 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | Las cifras en letras también se comprueban en el dictamen, y la prima mínima no se pedirá (5-nov-2026) | 5-nov-2026 | 21548-21567 | 3444 |  |
 | Con qué consorcio se presenta cada proceso, el .zip de la oferta y quitar un proceso por un tiempo (5-nov-2026) | 5-nov-2026 | 21568-21595 | 6261 |  |
 | Los datos completos para los formatos y la imagen de la firma en el .zip (5-nov-2026) | 5-nov-2026 | 21596-21638 | 6694 |  |
-| La plantilla de Colombia Compra completa y el .zip con todo lo que se entrega (5-nov-2026) | 5-nov-2026 | 21639-21718 | 12183 |  |
+| La plantilla de Colombia Compra completa y el .zip con todo lo que se entrega (5-nov-2026) | 5-nov-2026 | 21639-21719 | 12184 |  |
+| Cada integrante con su copia, la conformación del consorcio llena y la fecha real del .zip (6-nov-2026) | 6-nov-2026 | 21720-21738 | 5027 |  |
