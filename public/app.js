@@ -894,6 +894,8 @@
 
   /* ══════════ Consulta ══════════ */
   let pagina = 1, reintentosSync = 0, timerReintento = null;
+  // con «Ver los que quitó» la lista pide también lo quitado con «No es obra» (6-nov-2026)
+  let verQuitados = false;
   let peticionActual = 0; // descarta respuestas fuera de orden (carrera de filtros)
   /* ¿Está encendido «Ver PAA»? Lo consulta `tarjeta()` para decidir si pinta el
      badge «Activo». Fuera de esa vista NO se pinta, y no es un olvido: un chip
@@ -1300,6 +1302,7 @@
 
   function parametros() {
     const p = new URLSearchParams({ perfil: $("f-perfil").value, pagina: String(pagina), por_pagina: "20" });
+    if (verQuitados) p.set("ver_quitados", "1");
     // Fase 8: los siete filtros viajan al servidor (se aplican allí)
     FL.escribirEstado(estadoFiltros, p);
     /* NO se envía `nivel_competencia` (ago 2026): ese campo sale de columnas
@@ -3042,8 +3045,10 @@
         <p class="mt-2 text-xs text-gray-500">${esc(l.estado_del_procedimiento || "")}${l.fase && String(l.fase).trim() && String(l.fase).trim().toLowerCase() !== String(l.estado_del_procedimiento || "").trim().toLowerCase() ? ` · ${esc(String(l.fase).trim())}` : ""}</p>
       </div>
 
+      ${l.quitado_por_usted ? `<p class="mt-2 text-xs text-gray-700">Usted lo quitó de su lista con «No es obra». Si se equivocó, devuélvalo.</p>` : ""}
       <div class="t-pie">
         ${botonGuardar(l)}
+        ${botonNoEsObra(l)}
         <button type="button" class="btn-apu rounded-lg border border-gray-300 px-3 py-1 text-xs font-semibold transition hover:bg-gray-50"
                 data-apu-q="${esc(qApu(l))}" title="Calcular cuánto me cuesta y qué me deja este proceso, en la pestaña Precios">Calcular mi precio</button>
         ${urlSegura(l.urlproceso) ? `<a href="${esc(urlSegura(l.urlproceso))}" target="_blank" rel="noopener noreferrer" class="font-medium text-blue-600 hover:underline">Ver en SECOP II ↗</a>` : ""}
@@ -3244,6 +3249,12 @@
       + (reparto ? ` · ${reparto}` : "")
       + (cuerpo.incluye_sin_unspsc ? " · incluye procesos sin código de clasificación" : "");
     $("lista").innerHTML = cuerpo.resultados.map(tarjeta).join("");
+    {
+      const n = Number(cuerpo.quitados_por_usted) || 0;
+      if (cuerpo.ver_quitados) avisoNoEsObra(`Se ven también los ${n} que quitó con «No es obra», marcados. <button type="button" class="ml-1 font-semibold underline" data-ver-quitados="0">Ocultarlos</button>`);
+      else if (n) avisoNoEsObra(`${n} ${n === 1 ? "proceso quitado" : "procesos quitados"} por usted con «No es obra». <button type="button" class="ml-1 font-semibold underline" data-ver-quitados="1">${n === 1 ? "Verlo" : "Verlos"}</button>`);
+      else if ($("aviso-no-obra") && !/Quitó de su lista|Listo: volvió/.test($("aviso-no-obra").textContent)) avisoNoEsObra("");
+    }
 
     const totalPaginas = Math.max(1, Math.ceil(cuerpo.total / cuerpo.por_pagina));
     const pag = $("paginacion");
@@ -4919,6 +4930,21 @@
 
   // delegación: las tarjetas se repintan en cada búsqueda, así que el listener
   // vive en el contenedor y no en cada badge
+  /* «Deshacer» del aviso de «No es obra» y «Ver los que quitó» / «Ocultarlos» de la línea de arriba (6-nov-2026) */
+  document.addEventListener("click", async (e) => {
+    const des = e.target.closest("[data-deshacer-no-obra]");
+    if (des) {
+      des.disabled = true;
+      const id = des.getAttribute("data-deshacer-no-obra");
+      const r = await enviarNoEsObra("devolver", id, null);
+      if (!r.ok) { des.disabled = false; avisoNoEsObra(r.error, true); return; }
+      avisoNoEsObra("Listo: volvió a su lista.");
+      buscar();
+      return;
+    }
+    const ver = e.target.closest("[data-ver-quitados]");
+    if (ver) { verQuitados = ver.getAttribute("data-ver-quitados") === "1"; pagina = 1; buscar(); }
+  });
   $("lista").addEventListener("click", (e) => {
     /* La probabilidad va PRIMERO: su botón vive dentro de la tarjeta y, si se
        resolviera después, un `closest` más laxo podría quedárselo antes. Son
@@ -4951,6 +4977,8 @@
     }
     const gBtn = e.target.closest(".btn-guardar");
     if (gBtn) { alternarGuardado(gBtn.getAttribute("data-id"), gBtn); return; }
+    const neo = e.target.closest(".btn-no-obra");
+    if (neo) { alternarNoEsObra(neo); return; }
     const vc = e.target.closest("[data-ver-competencia]");
     if (vc) { abrirCompetenciaTarjeta(vc); return; }
     const vp = e.target.closest("[data-ver-porque]");
@@ -5087,6 +5115,51 @@
      la pulsación quite lo que de verdad está guardado, y `data-fila` el de la
      tarjeta, para repintarla después. La búsqueda va DENTRO de la función, sin
      ayudantes: la suite la extrae sola para probar sus rótulos. */
+  /* «NO ES OBRA» (6-nov-2026, op=no-es-obra): quita el proceso de SU lista (y las otras publicaciones del mismo
+     objeto de la misma entidad), con «Deshacer» a la vista; la lista dice cuántos quitó y los enseña con un toque.
+     No excluye por palabra: eso escondería obras futuras sin que nadie las viera. */
+  function botonNoEsObra(l) {
+    const quitado = !!l.quitado_por_usted;
+    return `<button type="button" class="btn-no-obra rounded-lg border border-gray-300 px-3 py-1 text-xs font-semibold transition hover:bg-gray-50" data-id="${esc(l.id_del_proceso)}" data-accion="${quitado ? "devolver" : "quitar"}"
+      title="${quitado ? "Volver a mostrar este proceso en su lista" : "Quitar este proceso de su lista porque no es una obra. Se puede deshacer"}">${quitado ? "Devolver a la lista" : "No es obra"}</button>`;
+  }
+  function avisoNoEsObra(html, error) {
+    const caja = $("aviso-no-obra");
+    if (!caja) return;
+    caja.className = `mb-3 rounded-lg px-3 py-2 text-sm ${error ? "bg-red-50 text-red-800" : "bg-gray-100 text-gray-800"}`;
+    caja.innerHTML = html;
+    caja.hidden = !html;
+  }
+  async function enviarNoEsObra(accion, id, l) {
+    let r = null, c = null;
+    try {
+      r = await fetch("/api/perfil?op=no-es-obra", conSesion({ method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({ perfil: $("f-perfil").value, accion, id, nombre: (l && l.nombre_del_procedimiento) || "", descripcion: (l && l.descripci_n_del_procedimiento) || "", entidad: (l && l.entidad) || "", nit: (l && l.nit_entidad) || "" }) }));
+      c = await leerJson(r);
+    } catch { r = null; }
+    if (r && r.status === 401) return { ok: false, error: msg401(c) };
+    if (!r || !r.ok || !c || !c.ok) return { ok: false, error: esc((c && c.error) || "No se pudo guardar. Revise la conexión e intente de nuevo.") };
+    return { ok: true };
+  }
+  async function alternarNoEsObra(btn) {
+    const id = btn.getAttribute("data-id"), accion = btn.getAttribute("data-accion");
+    const arr = (ultimaBusqueda && (ultimaBusqueda.resultados || ultimaBusqueda.oportunidades)) || [];
+    const l = arr.find((x) => String(x.id_del_proceso) === String(id)) || null;
+    const antes = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = accion === "quitar" ? "Quitando…" : "Devolviendo…";
+    const r = await enviarNoEsObra(accion, id, l);
+    if (!r.ok) { btn.disabled = false; btn.textContent = antes; avisoNoEsObra(r.error, true); return; }
+    if (accion === "quitar") {
+      const t = btn.closest(".tarjeta");
+      if (t) t.remove();
+      const objeto = String((l && (l.descripci_n_del_procedimiento || l.nombre_del_procedimiento)) || id).replace(/\s+/g, " ").trim();
+      avisoNoEsObra(`Quitó de su lista «${esc(objeto.length > 90 ? `${objeto.slice(0, 90)}…` : objeto)}». <button type="button" class="ml-1 font-semibold underline" data-deshacer-no-obra="${esc(id)}">Deshacer</button>`);
+      return;
+    }
+    avisoNoEsObra("");
+    buscar();
+  }
   function botonGuardar(l) {
     const id = l.id_del_proceso || "";
     if (!id) return "";

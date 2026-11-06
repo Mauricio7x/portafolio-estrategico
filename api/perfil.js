@@ -39,6 +39,8 @@ const OPS = {
   /* LOS DATOS QUE VAN EN LOS FORMATOS DE LA ENTIDAD (27-sep-2026): razón social,
      NIT, representante legal, dirección, teléfono, correo; credencial siempre */
   "empresa-datos": () => require("../lib/handlers/perfil/empresa_datos.js"),
+  /* LO QUE EL DUEÑO QUITÓ DE SU LISTA con «No es obra» (6-nov-2026): por número y por objeto de la misma entidad */
+  "no-es-obra": () => require("../lib/handlers/perfil/no_es_obra.js"),
 };
 
 function opDe(req) {
