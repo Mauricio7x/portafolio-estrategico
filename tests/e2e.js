@@ -63329,6 +63329,33 @@ async function main() {
       const c = FiOD.evaluarObjeto(colegio, POD.helder, conVocab, {});
       okOD(c.unspsc && c.unspsc.obra_declarada === true && /registra como contrato de obra/.test(c.unspsc.mensaje || ""), `la exención dice lo que lo sostiene: ${c.unspsc && c.unspsc.mensaje}`);
     }
+    /* f) LA CONSULTORÍA DE INGENIERÍA SIN CÓDIGO (7-nov-2026): filas reales de p6dx-8zbt (22-sep a 6-nov) que la ingesta dejaba
+       fuera o el 8-bis escondía. Entran, en ámbar y dicho así; sin códigos solo; el avalúo con topografía para comprar predios no */
+    {
+      const RC = {"CO1.REQ.11168519": ["Consultoría", "CONTRATACIÓN DE LA  CONSULTORÍA PARA LA ELABORACIÓN DEL ESTUDIO GEOTÉCNICO DEFINITIVO  DEL PROYECTO CISAE; LOCALIZADO EN TOLEMAIDA NILO; CUNDINAMARCA.", "CONTRATACIÓN DE LA CONSULTORÍA PARA LA ELABORACIÓN DEL ESTUDIO GEOTÉCNICO DEFINITIVO DEL PROYECTO CISAE, LOCALIZADO EN TOLEMAIDA NILO, CUNDINAMARCA.", "UNSPECIFIED", "Mínima cuantía"], "CO1.REQ.11161823": ["Interventoría", "Concurso de méritos abierto Número No. 003 de 2026", "CONSULTORIA PARA LA REALIZACION DE LOS ESTUDIOS DE VULNERABILIDAD SÍSIMICA Y PATOLOGÍA ESTRUCTURAL DE LAS SEDES EDUCATIVAS VOLCÁN, ERMITAÑO, RESGUARDO Y ROA, Y DEL ESTUDIO DE SUELOS Y GEOTÉCNICA DE LA SEDE EDUCATIVA KENNEDY DEL MUNICIPIO DE SUTAMARCHÁN.", "UNSPECIFIED", "Concurso de méritos abierto"], "CO1.REQ.11239741": ["Consultoría", "ESTUDIO DE SUELOS JARDÍN ATA 2", "REALIZAR EL ESTUDIO DE SUELOS DEL PREDIO UBICADO EN LA CARRERA 2 NO 4 -10, IDENTIFICADO COMO JARDIN INFANTIL ATA, QUE INCLUYA LA EXPLORACIÓN, CARACTERIZACION Y ANALISIS DE LAS CONDICIONES GEOTECNICAS DEL TERRENO", "UNSPECIFIED", "Mínima cuantía"], "CO1.REQ.11161675": ["Prestación de servicios", "MYCA-SMACC-MC-045-2026", "REALIZAR EL AVALÚO COMERCIAL, ESTUDIO DE TÍTULOS Y LEVANTAMIENTO TOPOGRÁFICO A DOS (2) INMUEBLES RURALES DENOMINADOS  EL REFUGIO , Y  FINCA BUENOS AIRES  UBICADOS EN LA VEREDA PALO BAJITO DEL CORREGIMIENTO DE MATA DE LIMÓN, JURISDICCIÓN DEL MUNICIPIO DE YOPAL", "UNSPECIFIED", "Mínima cuantía"], "CO1.REQ.11176008": ["Consultoría", "CONSULTORÍA PARA LA ELABORACIÓN DE ESTUDIOS GEOTÉCNICOS; EVALUACIÓN DE ESTABILIDAD DEL TALUD; PATOLOGÍA Y DISEÑO ESTRUCTURAL PARA LA MITIGACIÓN DEL RIESGO EN EL SECTOR LAS CAMELIAS DEL MUNICIPIO DE MA", "CONSULTORÍA PARA LA ELABORACIÓN DE ESTUDIOS GEOTÉCNICOS, EVALUACIÓN DE ESTABILIDAD DEL TALUD, PATOLOGÍA Y DISEÑO ESTRUCTURAL PARA LA MITIGACIÓN DEL RIESGO EN EL SECTOR LAS CAMELIAS DEL MUNICIPIO DE MACHETÁ, CUNDINAMARCA", "UNSPECIFIED", "Mínima cuantía"]};
+      const conVocab = { vocabulario: require("../lib/texto_unspsc.js").vocabularioActivo(null) };
+      const filaC = (id, cambios = {}) => { const [tipo, nombre, desc, cod, mod] = RC[id]; return { id_del_proceso: id, nombre_del_procedimiento: nombre, descripci_n_del_procedimiento: desc,
+        tipo_de_contrato: tipo, codigo_principal_de_categoria: cod, categorias_adicionales: "No definido", modalidad_de_contratacion: mod, estado_del_procedimiento: "Publicado", ...cambios }; };
+      for (const id of ["CO1.REQ.11168519", "CO1.REQ.11239741", "CO1.REQ.11176008", "CO1.REQ.11161823"]) {
+        const f = filaC(id);
+        okOD(FiOD.admisibleParaIngesta(f), `MUTACIÓN: la ingesta dejaba fuera el estudio de ingeniería sin código ${id}`);
+        const r = FiOD.evaluarObjeto(f, POD.helder, conVocab, {});
+        okOD(r.ok === true && r.tier === "texto" && r.unspsc && r.unspsc.consultoria_sin_codigo === true && /estudio de ingeniería/.test(r.unspsc.mensaje || "")
+          && r.pertinencia && r.pertinencia.nivel !== "verde", `MUTACIÓN: ${id} se escondía o no decía lo que lo sostiene: ${JSON.stringify({ ok: r.ok, paso: r.paso, u: r.unspsc && r.unspsc.mensaje, p: r.pertinencia && r.pertinencia.nivel })}`);
+        okOD(FiOD.filtrarProcesosVisibles([{ ...f, fecha_de_recepcion_de: "2099-01-01T17:00:00.000", fase: "Presentación de oferta" }], "helder", {}).visibles.length === 1, `la cascada entera deja visible ${id}`);
+      }
+      // P1 dice lo que lo sostiene, no «solo el texto» (en un concurso de méritos: en mínima cuantía manda la frase de la ley, que no pide registro)
+      const pu = require("../lib/puertas.js").evaluarPuertas(filaC("CO1.REQ.11161823"), "helder", { rup: require("../lib/rup.js").evaluarRup(filaC("CO1.REQ.11161823"), "helder", conVocab, {}) });
+      okOD(pu.p1_rup && /estudio de ingeniería/.test(pu.p1_rup.mensaje || ""), `MUTACIÓN: P1 no decía que es un estudio de ingeniería sin código: ${pu.p1_rup && pu.p1_rup.mensaje}`);
+      // con código, deciden los códigos: el rescate no toca lo que ya tenía (la regla de 2025 del ámbar con gerencia sigue)
+      // un código que el registro no tiene (computadores): llega al paso 7, y aun así el rescate no actúa porque hay código
+      const conCod = FiOD.evaluarObjeto(filaC("CO1.REQ.11239741", { codigo_principal_de_categoria: "V1.43211500" }), POD.helder, conVocab, {});
+      okOD(!(conCod.unspsc && conCod.unspsc.consultoria_sin_codigo), "MUTACIÓN: el rescate actuaba también con código");
+      // fuera, a propósito: el avalúo con topografía para comprar predios, y la patología clínica
+      const aval = filaC("CO1.REQ.11161675");
+      okOD(!FiOD.admisibleParaIngesta(aval), "MUTACIÓN: el avalúo con levantamiento topográfico entraba como consultoría de ingeniería");
+      okOD(!FiOD.admisibleParaIngesta({ ...aval, nombre_del_procedimiento: "PRESTACIÓN DEL SERVICIO DE PATOLOGÍA CLÍNICA", descripci_n_del_procedimiento: "" }), "MUTACIÓN: la patología clínica entraba por «patología»");
+    }
     if (fallasOD.length) throw new Error(`unidad obra declarada por SECOP: ${fallasOD.length} comprobaciones fallan:\n  - ${fallasOD.join("\n  - ")}`);
     console.log("· unidad obra declarada por SECOP: el tipo «Obra» sin códigos entra a la ingesta y el perfil lo enseña en ámbar con su motivo; lo que no es obra sigue fuera; con códigos nada cambia");
   }
