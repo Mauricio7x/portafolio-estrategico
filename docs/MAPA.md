@@ -2,7 +2,7 @@
      Es una FOTO para leer en GitHub; la fuente de verdad es ejecutar la herramienta. -->
 
 ```
-== MAPA DE DETEKTA · generado del árbol el 2026-11-06 ==
+== MAPA DE DETEKTA · generado del árbol el 2026-11-07 ==
 (no editar a mano: sale de `node tests/mapa.js --escribir`. Para ir a un sitio concreto,
  `node tests/mapa.js <término>` da la ruta, la línea y el sed exacto — más barato que leer esto)
 
@@ -233,9 +233,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 445 secciones (48 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 21598  Los datos completos para los formatos y la imagen de la firma en el .zip (5-nov-2026)
-  L 21641  La plantilla de Colombia Compra completa y el .zip con todo lo que se entrega (5-nov-2026)
+· MEMORIA · docs/MEMORIA.md — 447 secciones (48 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 21722  Cada integrante con su copia, la conformación del consorcio llena y la fecha real del .zip …
   L 21742  SECOP II dejó de publicar el código de actividad el 16-sep-2026: lo que se perdió, lo que s…
   L 21792  El pliego definitivo tiene otro número: Mis procesos y el aviso de la mañana siguen la publ…
@@ -244,6 +242,8 @@
   L 21854  Los datos de los formatos que ya son públicos se traen con el NIT: la identidad del RUES y …
   L 21870  Dos defectos de las fechas de los documentos, reproducidos y arreglados: el hito de adendas…
   L 21883  La pestaña del pliego y su .ics marcan la fecha que no cuadra y el cierre desmentido, con l…
+  L 21892  La consultoría de ingeniería sin código se ve, en ámbar: estudios de suelos, geotecnia, pat…
+  L 21906  En los pliegos tipo de obra que tiene el dueño, los códigos UNSPSC no piden inscripción en …
 
 · DOCUMENTOS docs/ — 76 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)
