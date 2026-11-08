@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 2511196 bytes · 447 secciones · 48 con marcador de superación.
+Derivado del árbol: 2519210 bytes · 448 secciones · 48 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -457,4 +457,5 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | Dos defectos de las fechas de los documentos, reproducidos y arreglados: el hito de adendas exige el acto, y un Gantt no calla al Anexo 2 (6-nov-2026) | 6-nov-2026 | 21870-21882 | 2449 |  |
 | La pestaña del pliego y su .ics marcan la fecha que no cuadra y el cierre desmentido, con la misma regla de Mis procesos (6-nov-2026) | 6-nov-2026 | 21883-21891 | 1803 |  |
 | La consultoría de ingeniería sin código se ve, en ámbar: estudios de suelos, geotecnia, patología estructural y vulnerabilidad sísmica (7-nov-2026) | 7-nov-2026 | 21892-21905 | 2406 |  |
-| En los pliegos tipo de obra que tiene el dueño, los códigos UNSPSC no piden inscripción en el RUP: piden que cada contrato de experiencia esté clasificado en alguno (7-nov-2026) | 7-nov-2026 | 21906-21916 | 3523 |  |
+| En los pliegos tipo de obra que tiene el dueño, los códigos UNSPSC no piden inscripción en el RUP: piden que cada contrato de experiencia esté clasificado en alguno (7-nov-2026) | 7-nov-2026 | 21906-21917 | 3857 |  |
+| Con el pliego leído, la puerta del registro mira los contratos de experiencia con los códigos del pliego, no la inscripción (8-nov-2026) | 8-nov-2026 | 21918-21963 | 7680 |  |

@@ -2,7 +2,7 @@
      Es una FOTO para leer en GitHub; la fuente de verdad es ejecutar la herramienta. -->
 
 ```
-== MAPA DE DETEKTA · generado del árbol el 2026-11-07 ==
+== MAPA DE DETEKTA · generado del árbol el 2026-11-08 ==
 (no editar a mano: sale de `node tests/mapa.js --escribir`. Para ir a un sitio concreto,
  `node tests/mapa.js <término>` da la ruta, la línea y el sed exacto — más barato que leer esto)
 
@@ -233,8 +233,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 447 secciones (48 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 21722  Cada integrante con su copia, la conformación del consorcio llena y la fecha real del .zip …
+· MEMORIA · docs/MEMORIA.md — 448 secciones (48 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 21742  SECOP II dejó de publicar el código de actividad el 16-sep-2026: lo que se perdió, lo que s…
   L 21792  El pliego definitivo tiene otro número: Mis procesos y el aviso de la mañana siguen la publ…
   L 21814  Lo que la entidad publicó como compra o servicio ya no sale verde por un verbo de obra, la …
@@ -244,6 +243,7 @@
   L 21883  La pestaña del pliego y su .ics marcan la fecha que no cuadra y el cierre desmentido, con l…
   L 21892  La consultoría de ingeniería sin código se ve, en ámbar: estudios de suelos, geotecnia, pat…
   L 21906  En los pliegos tipo de obra que tiene el dueño, los códigos UNSPSC no piden inscripción en …
+  L 21918  Con el pliego leído, la puerta del registro mira los contratos de experiencia con los códig…
 
 · DOCUMENTOS docs/ — 76 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)

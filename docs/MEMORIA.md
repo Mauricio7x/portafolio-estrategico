@@ -21906,7 +21906,7 @@ En una línea: un estudio de ingeniería sin código de actividad (estudio de su
 ### En los pliegos tipo de obra que tiene el dueño, los códigos UNSPSC no piden inscripción en el RUP: piden que cada contrato de experiencia esté clasificado en alguno (7-nov-2026)
 
 En una línea: en los 12 pliegos del documento tipo de Colombia Compra (infraestructura de transporte, menor cuantía y licitación) que el dueño guarda en su Drive, la tabla de códigos de la sección 1.4 solo describe el objeto, y la única regla con códigos es la de experiencia (3.5.4: «Los contratos aportados para efectos de acreditación de la experiencia requerida deben estar clasificados en alguno de los siguientes códigos»); la inscripción del proponente en códigos concretos solo aparece en los dos términos de referencia de la Universidad Pedagógica Nacional, que no usan el documento tipo.
-> PENDIENTE · decisión del dueño (decide dinero: la puerta del registro, P1): hoy P1 compara los códigos del PROCESO con los INSCRITOS en el registro del perfil; en los pliegos tipo lo que se exige es que cada CONTRATO de experiencia aportado esté clasificado en alguno de los códigos de 3.5.4. Hacerlo bien pide la lista de contratos de experiencia de cada perfil CON sus códigos (del RUP), que el perfil no guarda hoy (`config:experiencia` es global y el veredicto usa los 7 mayores valores del segmento 72). Plan propuesto: leer del RUP los contratos con sus códigos, leer del pliego la lista de 3.5.4, y que P1 diga «de sus contratos, N están clasificados en alguno de los códigos que pide el pliego»; donde no haya pliego leído, P1 sigue como hoy.
+> RESUELTO el 8-nov-2026 por «Con el pliego leído, la puerta del registro mira los contratos de experiencia con los códigos del pliego, no la inscripción (8-nov-2026)» · el dueño eligió «sí, por experiencia»; los contratos por código ya estaban (`data/contratos_rup.json`, 26-sep), así que no hizo falta el RUP en PDF. Texto original: decisión del dueño (decide dinero: la puerta del registro, P1): hoy P1 compara los códigos del PROCESO con los INSCRITOS en el registro del perfil; en los pliegos tipo lo que se exige es que cada CONTRATO de experiencia aportado esté clasificado en alguno de los códigos de 3.5.4. Hacerlo bien pide la lista de contratos de experiencia de cada perfil CON sus códigos (del RUP), que el perfil no guarda hoy (`config:experiencia` es global y el veredicto usa los 7 mayores valores del segmento 72). Plan propuesto: leer del RUP los contratos con sus códigos, leer del pliego la lista de 3.5.4, y que P1 diga «de sus contratos, N están clasificados en alguno de los códigos que pide el pliego»; donde no haya pliego leído, P1 sigue como hoy.
 
 - **Cómo se midió** (7-nov-2026, un agente que leyó el Drive del dueño; resultado en el scratchpad de la sesión, `drive_pliegos.json`): cinco búsquedas, 26 archivos con pinta de pliego leídos completos; 14 textos con tabla (12 procesos), 0 legibles sin tabla, 4 escaneados sin texto (LP-CARDIQUE-010-2026 y tres «documento base»).
 - **Verificado en la fuente por la sesión**: la búsqueda de texto completo del Drive encuentra la frase de 3.5.4 en «14- CCE-EICP-GI-02 Documento Base o Documento Tipo DEFINITIVO Menor Cuantia V3 30-07-2024.pdf» (Floridablanca, FLO-INFRA-SA-MC-001-2026; página 35 según el agente; la tabla de 1.4 en la página 7, códigos 72101500, 72103300 y 72141100).
@@ -21914,3 +21914,50 @@ En una línea: en los 12 pliegos del documento tipo de Colombia Compra (infraest
 - **La Universidad Pedagógica** sí verifica la clasificación en el RUP (4.2.1: «se verificará que el oferente esté clasificado en los siguientes códigos»; en consorcio, cada integrante en al menos uno y entre todos, todos), aunque su 1.15 dice que la codificación «no será requisito habilitante para la clasificación del proponente»: el pliego se contradice.
 - **Los códigos se escriben de muchas formas**: 8 dígitos, 6 dígitos (`721410`), columnas segmento/familia/clase (`72 14 10`), o de cuarto nivel (Cali: 72141003…). Turbaco trae la errata `72 14 111`. Un lector de esta tabla tiene que aceptar todas y no corregir erratas.
 - **Lo que esto NO dice**: no es una lectura de la norma (el documento tipo lo expide Colombia Compra Eficiente y su versión cambia); son los 12 pliegos que el dueño tiene. Antes de cambiar P1 hay que confirmar la versión vigente del documento tipo en la fuente oficial.
+
+### Con el pliego leído, la puerta del registro mira los contratos de experiencia con los códigos del pliego, no la inscripción (8-nov-2026)
+
+En una línea: en la guía de un proceso guardado con el pliego leído, el requisito del registro ya no pregunta si el código está inscrito sino cuántos de sus contratos del registro tienen los códigos que el pliego pide para la experiencia («Tiene 4 contratos…», «Ninguno de los contratos…: necesitaría un socio que la tenga»); cada duda del pliego es «revisar» con su motivo, y sin pliego leído, con una lista dudosa, con una frase sobre la inscripción o sobre el personal, la puerta de siempre.
+> PENDIENTE · la tarjeta de la lista (lib/puertas, P1) sigue con la inscripción: no lee el pliego. Un proceso guardado puede decir «cumple» en la tarjeta y «no cumple» en la guía cuando el pliego pide códigos que sus contratos no tienen. Llevarlo a la tarjeta pide los códigos del pliego para procesos que no se han guardado (la lista no baja documentos).
+
+- **Lo que decidió el dueño** (8-nov-2026, «Si por experiencia»), sobre el hallazgo del 7-nov en los 12 pliegos tipo de su Drive.
+- **Qué cambió.**
+  - `lib/reparto.contratosConCodigosDelPliego` LLAMA a las piezas del reparto: `indiceDe` (el mismo certificado del perfil), `clasesDesconocidas`, `reglaExacta`/`mayoresConExacta` («al menos N» o «todos» en cada contrato) y `mayoresCon` («alguno»).
+  - `lib/guia_proceso.js` la llama con `codigosDe` (ahora exportado por `lib/documentos_proceso.js`) y arma «Contratos de su registro con los códigos que pide el pliego para la experiencia».
+  - Los dos requisitos del registro llevan un campo estable, `medida` («contratos» o «inscripcion») y `pide_registro`. Lo leen `lib/entregar.js` (omitir el certificado en mínima cuantía) y `public/expediente.js` (el porqué del «No alcanza»), en vez del título.
+- **Medido con los cuatro perfiles y el índice real.**
+  - Con 721033: Helder 4 contratos (la cifra del 26-sep: «cuatro contratos, 127,59 salarios»); Génesis, PICS y PRODIAC, siete o más.
+  - Con 721412 y 721518 (clases que tienen otras empresas): Helder ninguno.
+  - Con 721210: Helder 1.
+  - Consorcio Helder + Génesis con 721412: siete o más (los de Génesis).
+- **La revisión adversaria tumbó la primera versión** (la misma tarde). Las piezas del reparto son una cota que solo NIEGA; aquí la puerta también AFIRMA. La primera versión decía «cumple» con reglas que no había leído o medido:
+  - «entre todos los contratos»;
+  - una regla sin leer;
+  - «al menos N» con N mayor que la lista;
+  - el pliego y una adenda con listas distintas, sumadas en una unión;
+  - una frase sobre la INSCRIPCIÓN del proponente.
+
+  Además, el expediente decía «no está inscrito» cuando el código sí lo estaba, y la experiencia de la misma guía decía «buena señal» junto al «ninguno de sus contratos».
+- **La segunda revisión adversaria** (sobre la versión rehecha) encontró tres casos más que decidían dinero, todos con reproducción:
+  - una tabla escalonada («Segmento 72000000 · Familia 72140000 · Clase 72141200») daba «cumple» con siete contratos, porque contaba con el segmento: ahora cuenta con las HOJAS de la lista y, si solo casan el segmento o la familia, «revisar» con la frase que lo dice;
+  - el pliego «todos en cada contrato» y una adenda «alguno», con la MISMA lista, daban «no cumple» y «necesitaría un socio»: ahora es la duda «reglas distintas»;
+  - «cada uno con los siguientes códigos», que el propio lector marca DUDOSA, daba «no cumple»: `reglaDe` devuelve `dudosa` y la puerta no niega con ella (`reglaDeCita` la vuelve a leer de la cita, porque las lecturas guardadas antes no traen el campo).
+
+  También corrigió textos: la fila de la socia del expediente perdía `medida` (lib/consorcio.js y public/expediente.js) y decía «no está inscrito»; la experiencia decía «ninguno… en los códigos» cuando cinco tenían alguno, y «no cuenta» en mínima cuantía. El sujeto de la frase pasó a ser el sustantivo más cercano antes del verbo («Respecto de los contratos…, el proponente deberá encontrarse inscrito» es de la inscripción), y la experiencia de una persona del equipo («el director de obra deberá acreditar…») devuelve null.
+- **Lo que no hay que deshacer.**
+  - **Las dudas son un catálogo** (`lib/reparto.DUDAS_CONTRATOS`), con una frase cada una en `lib/guia_proceso.TEXTO_DUDA_CONTRATOS`. La suite exige que sean el mismo conjunto, y una duda fuera del catálogo lanza un error. Una duda sin frase decía «pero : revise».
+  - **La frase cortada no decide.** El lector guarda cada cita con sus primeros `CITA_MAX` (400) caracteres, y el recorte se come el FINAL, donde van «cada uno con los siguientes códigos» y el verbo del sujeto. Releyendo el diff se reprodujo con una frase de 529 caracteres: «no cumple» firme. Desde ahí, una cita al tope es la duda «frase cortada».
+  - **Para negar, la unión entera; para afirmar y contar, las hojas.** La unión solo ensancha, así que un «ninguno» con ella es seguro; un «sí» con el segmento no lo es.
+  - **«Cumple» solo sin ninguna duda.** Hace falta todo esto: una sola lista; la frase nombra los contratos; la regla es «alguno», «todos» de un solo código, o la regla por contrato con alcance explícito y medida con los códigos de cada contrato.
+  - **«No cumple» solo firme.** Se dice en dos casos, y siempre con una frase que nombre los contratos y en una modalidad donde la ley pide el registro:
+    - ningún contrato tiene ninguno de los códigos de la unión (con cualquier regla hace falta al menos uno);
+    - la regla «en cada contrato», con una sola lista, no la reúne ninguno. Es la lectura estricta que el dueño eligió el 26-sep.
+  - **Todo lo demás es «revisar», con el motivo dicho**: listas distintas; entre todos; regla sin leer; alcance sin decir (aquí dice además cuántos tienen alguno y cuántos todos a la vez); sin los códigos de cada contrato; frase que no nombra los contratos.
+  - **Mínima cuantía, contratación directa y régimen especial**: el «no» pasa a «revisar». Allí la experiencia puede acreditarse con contratos fuera del registro (en régimen especial, según el manual de la entidad). El «sí» no cambia: como la puerta de la inscripción, que en mínima cuantía también dice «cumple» si el trabajo encaja.
+  - **Sujeto de la frase.** «El proponente deberá estar inscrito… en los siguientes códigos» es de la inscripción: devuelve null y responde la puerta de siempre. «Los contratos aportados por el proponente…» es de los contratos: manda el sujeto que va antes, en la misma frase.
+  - **Cuenta los contratos, no los suma.** Si alcanza el VALOR lo dicen el requisito de experiencia y el reparto, como antes.
+  - **«7 o más».** El índice guarda los siete mayores de cada clase; en un consorcio, basta con que un integrante llegue a siete.
+  - **Una lista dudosa no decide.** Usa la puerta de siempre en estos casos: una clase que no tiene ninguna empresa (basura del lector); solo «el segmento 72»; un perfil o un integrante sin índice del mismo certificado.
+- **Verificado.**
+  - «unidad códigos de la experiencia» y «socio por proceso», con el lector real sobre frases de 3.5.4, la guía real, el consorcio de `derivarPlural`, `lib/entregar` y el expediente.
+  - 33 mutaciones, mueren 33. Dos sobrevivían por la prueba, no por el código: la frase de la inscripción que ni el lector lee (se cambió por una que sí lee) y el «del proponente» justo antes del verbo, que ninguna frase tenía (se añadió).
