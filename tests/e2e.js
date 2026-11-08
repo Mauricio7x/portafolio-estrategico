@@ -13797,6 +13797,152 @@ async function main() {
       const casExp = (rT.exigencias || []).filter((x) => /^experiencia/.test(x.clave) && x.exige != null);
       assert.ok(casExp.length && casExp.every((x) => x.estado === "no_cumple" && /no se llega con ningún reparto/.test(x.nota || "")), `la casilla de experiencia: ${JSON.stringify(casExp.map((x) => [x.clave, x.estado, x.nota]))}`);
     }
+    /* LA PUERTA DEL REGISTRO MIRA LOS CONTRATOS DE EXPERIENCIA (8-nov-2026, decisión del dueño: «sí, por experiencia»). En los
+       pliegos tipo la regla con códigos es la de experiencia (3.5.4), no la de inscripción: con el pliego leído, la guía cuenta
+       cuántos de sus contratos tienen esos códigos (lib/reparto.contratosConCodigosDelPliego, las mismas piezas del reparto).
+       La revisión adversaria del mismo día: la puerta AFIRMA, no solo niega, así que cada duda del pliego es «revisar». */
+    {
+      const DpR = require("../lib/documentos_proceso.js"), GR = require("../lib/guia_proceso.js"), RpR = require("../lib/reparto.js");
+      const vocR = { vocabulario: require("../lib/texto_unspsc.js").vocabularioActivo(null) };
+      const F354 = "3.5.4 Los contratos aportados para efectos de acreditación de la experiencia requerida deben estar clasificados en alguno de los siguientes códigos:";
+      const CADA = (cuantos) => `3.5.4 Cada uno de los contratos aportados para acreditar la experiencia debe estar clasificado en ${cuantos} los siguientes códigos:`;
+      const docR = (id, nombre, tipo, frase, cods) => ({ id, nombre, tipo, h: DpR.hechosDeTexto(`\f35\n${frase}\n${cods.join("\n")}\n3.6 CAPACIDAD FINANCIERA`, { tipo }) });
+      const docsDe = (...ds) => ({ indice: { archivos: ds.map((d) => ({ id_documento: d.id, nombre: d.nombre, tipo: d.tipo, de_la_entidad: true, legible: true, fecha_carga: "2026-10-01" })) },
+        leidos: Object.fromEntries(ds.map((d) => [d.id, { nombre: d.nombre, tipo: d.tipo, fecha_carga: "2026-10-01", hechos: d.h }])) });
+      const docsCon = (cods, frase = F354) => docsDe(docR("1", "Pliego.pdf", "pliego", frase, cods));
+      const filaR = { id_del_proceso: "CO1.REQ.REGEXP", nombre_del_procedimiento: "MEJORAMIENTO DE VIAS TERCIARIAS", descripci_n_del_procedimiento: "MEJORAMIENTO DE VIAS TERCIARIAS EN PLACA HUELLA",
+        tipo_de_contrato: "Obra", modalidad_de_contratacion: "Licitación pública", estado_del_procedimiento: "Publicado", codigo_principal_de_categoria: "UNSPECIFIED", precio_base: "900000000",
+        fecha_de_recepcion_de: "2099-01-01T17:00:00.000", entidad: "ALCALDIA X" };
+      const guiaR = (docs, perfil = "helder", f = filaR) => GR.guiaDe({ fila: f, perfil, ctx: { documentos: docs, conocimiento: vocR } });
+      const regR = (docs, perfil, f) => guiaR(docs, perfil, f).requisitos.find((x) => x.clave === "registro");
+      const midR = (cods, frase) => RpR.contratosConCodigosDelPliego(PERFILES.helder, DpR.codigosDe(docsCon(cods, frase)));
+      // 721033: Helder tiene 4 contratos con ese código (la cifra del 26-sep en la memoria: «cuatro contratos, 127,59 salarios»)
+      const c4 = regR(docsCon(["72 10 33"]));
+      assert.ok(c4.estado === "cumple" && c4.medida === "contratos" && /^Tiene 4 contratos en su registro clasificados en el código que pide el pliego para la experiencia \(721033\)\./.test(c4.detalle)
+        && /no a la inscripción del proponente/.test(c4.detalle), `[MUT] con el pliego leído la puerta cuenta los contratos con los códigos: ${JSON.stringify(c4)}`);
+      // uno solo, en singular (721210: un contrato)
+      const c1 = regR(docsCon(["72 12 10"]));
+      assert.ok(c1.estado === "cumple" && /^Tiene 1 contrato en su registro clasificado en el código/.test(c1.detalle), `[MUT] «1 contrato… clasificado»: ${c1.detalle}`);
+      // clases que tienen otras empresas y Helder no: ninguno, y la salida es un socio
+      const c0 = regR(docsCon(["72 14 12", "72 15 18"]));
+      assert.ok(c0.estado === "no_cumple" && /^Ninguno de los contratos de su registro está clasificado en los códigos .*\(721412, 721518\): con su registro solo no acredita esa experiencia; necesitaría un socio/.test(c0.detalle), `[MUT] sin contratos con los códigos, «no cumple» y el socio: ${JSON.stringify(c0)}`);
+      // …y la experiencia de la misma guía no lo contradice con «buena señal» (H6 de la revisión adversaria)
+      const e0 = guiaR(docsCon(["72 14 12", "72 15 18"])).requisitos.find((x) => x.clave === "experiencia");
+      assert.ok(/su contrato más grande no cuenta para ella/.test(e0.detalle) && !/buena señal/.test(e0.detalle), `[MUT] la experiencia no contradice al registro: ${e0.detalle}`);
+      assert.ok(/buena señal/.test(guiaR(docsCon(["72 10 33"])).requisitos.find((x) => x.clave === "experiencia").detalle), "con contratos con los códigos, la experiencia sigue como antes");
+      // en mínima cuantía la ley no pide registro: sin contratos, «revisar», sin el socio; con contratos, «cumple» como la puerta de la inscripción
+      const cm = regR(docsCon(["72 14 12"]), "helder", { ...filaR, modalidad_de_contratacion: "Mínima cuantía" });
+      assert.ok(cm.estado === "revisar" && /la ley no/i.test(cm.detalle) && !/socio/.test(cm.detalle) && cm.pide_registro === false, `[MUT] en mínima cuantía no es «no cumple»: ${JSON.stringify(cm)}`);
+      const cmc = regR(docsCon(["72 10 33"]), "helder", { ...filaR, modalidad_de_contratacion: "Mínima cuantía" });
+      assert.ok(cmc.estado === "cumple" && /^Tiene 4 contratos/.test(cmc.detalle) && /la ley no/i.test(cmc.detalle), `[MUT] en mínima cuantía con contratos, «cumple»: ${JSON.stringify(cmc)}`);
+      // régimen especial: manda el manual de la entidad, que puede aceptar experiencia fuera del registro
+      const ce = regR(docsCon(["72 14 12"]), "helder", { ...filaR, modalidad_de_contratacion: "Contratación régimen especial" });
+      assert.ok(ce.estado === "revisar" && /propio manual: confirme en el pliego si acepta experiencia que no esté en el registro/.test(ce.detalle), `[MUT] en régimen especial no es «no cumple»: ${JSON.stringify(ce)}`);
+      // la lista de entregables: en mínima cuantía sin la fila del registro (el campo estable `pide_registro`, no el título); en licitación, con ella
+      const LE = require("../lib/entregar.js");
+      const conRup = (g, d) => LE.listaParaEntregar({ guia: g, docs: d }).filas.some((f) => f.clave === "rup");
+      assert.ok(!conRup(guiaR(docsCon(["72 10 33"]), "helder", { ...filaR, modalidad_de_contratacion: "Mínima cuantía" }), docsCon(["72 10 33"])), "[MUT] en mínima cuantía, con el pliego leído, no se pide el certificado del registro");
+      assert.ok(conRup(guiaR(docsCon(["72 10 33"])), docsCon(["72 10 33"])), "en licitación, con el pliego leído, sí se pide el certificado del registro");
+      // sin pliego leído, la puerta de siempre (la inscripción), con su campo estable
+      const cs = regR(null);
+      assert.ok(/inscrito/.test(cs.titulo) && !/códigos que pide el pliego/.test(cs.titulo) && cs.medida === "inscripcion", `[MUT] sin pliego leído, la puerta sigue como antes: ${JSON.stringify(cs)}`);
+      // una clase que no tiene NINGUNA empresa (basura del lector) no mide: la puerta de siempre
+      assert.strictEqual(midR(["85 72 15"]), null, "[MUT] con una clase desconocida no se mide por contratos");
+      // solo el segmento («el segmento correspondiente… es el 72») no estrecha: la puerta de siempre
+      assert.strictEqual(RpR.contratosConCodigosDelPliego(PERFILES.helder, { codigos: ["72"], lecturas: [], solo_segmento: true }), null, "[MUT] con solo el segmento no se mide por contratos");
+      // el sujeto es el proponente inscrito: es la regla de la inscripción, no la de los contratos; «los contratos aportados por el proponente» sí es de contratos
+      // (la frase sin «experiencia» ni siquiera la lee el lector: la que se prueba es la que sí lee)
+      assert.ok(DpR.codigosDe(docsCon(["72 10 33"], "3.5.4 Para acreditar la experiencia, el proponente deberá estar inscrito en el RUP en alguno de los siguientes códigos:")).lecturas.length === 1, "el lector lee la frase de la inscripción con experiencia");
+      assert.strictEqual(midR(["72 10 33"], "3.5.4 Para acreditar la experiencia, el proponente deberá estar inscrito en el RUP en alguno de los siguientes códigos:"), null, "[MUT] la frase de la inscripción no se mide por contratos");
+      assert.strictEqual((midR(["72 10 33"], "3.5.4 Los contratos aportados por el proponente para acreditar la experiencia deben estar clasificados en alguno de los siguientes códigos:") || {}).estado, "cumple", "[MUT] «los contratos aportados por el proponente» es de los contratos");
+      // con siete se dice «7 o más»: el índice guarda los siete mayores de cada clase
+      const c7 = regR(docsCon(["72 10 15", "72 10 33", "72 14 11"]));
+      assert.ok(c7.estado === "cumple" && /^Tiene 7 o más contratos en su registro clasificados en alguno de los códigos/.test(c7.detalle), `[MUT] con siete, «7 o más»: ${c7.detalle}`);
+      // la regla por contrato, explícita y medida con los códigos de cada contrato: afirma y niega
+      const cx = regR(docsCon(["72 14 10", "72 14 11"], CADA("todos")));
+      assert.ok(cx.estado === "cumple" && /con todos los códigos que pide el pliego en cada contrato \(721410, 721411\)/.test(cx.detalle), `[MUT] «todos» en cada contrato, medido: ${cx.detalle}`);
+      const cxn = regR(docsCon(["72 10 33", "72 12 10"], CADA("todos")));
+      assert.ok(cxn.estado === "no_cumple" && /^Ninguno de los contratos de su registro está clasificado con todos los códigos/.test(cxn.detalle), `[MUT] «todos» en cada contrato que ninguno reúne, «no cumple»: ${cxn.detalle}`);
+      const c2 = regR(docsCon(["72 14 10", "72 14 11", "72 10 33"], CADA("al menos dos de")));
+      assert.ok(c2.estado === "cumple" && /con al menos 2 de los códigos que pide el pliego en cada contrato/.test(c2.detalle), `[MUT] «al menos 2» en cada contrato, medido: ${c2.detalle}`);
+      // «todos» de un solo código es «alguno»: sin duda
+      assert.strictEqual(midR(["72 10 33"], CADA("todos")).estado, "cumple", "[MUT] «todos» de un solo código no es una duda");
+      // sin los códigos de cada contrato, la regla por contrato no se mide: «revisar», con los que tienen alguno
+      const reales = require("../data/contratos_rup_codigos.json");
+      const huella = reales.helder;
+      try {
+        delete reales.helder;
+        const sm = midR(["72 14 10", "72 14 11"], CADA("todos"));
+        assert.ok(sm.estado === "revisar" && sm.dudas.includes("regla_sin_medir"), `[MUT] sin los códigos de cada contrato, «revisar»: ${JSON.stringify(sm)}`);
+      } finally { reales.helder = huella; }
+      /* cada duda del pliego es «revisar», nunca «cumple», y nunca «no cumple» si alguno de sus contratos tiene un código */
+      const dudaDe = (r, d) => r && r.estado === "revisar" && r.dudas.includes(d);
+      // «todos» sin decir si en cada contrato o entre todos: ninguno los reúne, pero 5 tienen alguno
+      const rs = regR(docsCon(["72 10 33", "72 12 10"], "3.5.4 Los contratos aportados para acreditar la experiencia deben estar clasificados en todos los siguientes códigos:"));
+      assert.ok(rs.estado === "revisar" && /^Tiene 5 contratos en su registro con alguno de los códigos .*\(721033, 721210\), ninguno con todos a la vez, pero el pliego no dice si los códigos van en cada contrato o entre todos/.test(rs.detalle), `[MUT] el alcance sin decir no niega: ${rs.detalle}`);
+      assert.ok(dudaDe(midR(["72 10 33", "72 12 10"], "3.5.4 Entre todos los contratos aportados para acreditar la experiencia se deben acreditar todos los siguientes códigos:"), "entre_todos"), "[MUT] «entre todos los contratos» es «revisar»");
+      const rl = regR(docsCon(["72 10 33"], "3.5.4 Los contratos aportados para acreditar la experiencia deben estar clasificados en los siguientes códigos:"));
+      assert.ok(rl.estado === "revisar" && /la regla del pliego no se pudo leer entera: revise/.test(rl.detalle) && !/más de un código/.test(rl.detalle), `[MUT] la regla sin leer es «revisar», sin un motivo que no es: ${rl.detalle}`);
+      assert.ok(dudaDe(midR(["72 10 33", "72 12 10"], CADA("al menos tres de")), "regla_sin_leer"), "[MUT] «al menos 3» de una lista de 2 es una mala lectura: «revisar»");
+      const rn = regR(docsCon(["72 10 33"], "3.5.4 La experiencia requerida deberá acreditarse en alguno de los siguientes códigos:"));
+      assert.ok(rn.estado === "revisar" && /no dice si los códigos son de los contratos/.test(rn.detalle) && !/no a la inscripción/.test(rn.detalle), `[MUT] la frase que no nombra los contratos es «revisar»: ${rn.detalle}`);
+      const rn0 = regR(docsCon(["72 14 12"], "3.5.4 La experiencia requerida deberá acreditarse en alguno de los siguientes códigos:"));
+      assert.ok(rn0.estado === "revisar" && /^Ninguno de los contratos de su registro tiene el código/.test(rn0.detalle), `[MUT] sin nombrar los contratos, ni siquiera «ninguno» es «no cumple»: ${rn0.detalle}`);
+      // el pliego y una adenda con listas distintas: la unión no afirma
+      const rd = regR(docsDe(docR("1", "Pliego.pdf", "pliego", F354, ["72 10 33"]), docR("2", "Adenda 1.pdf", "adenda", F354, ["72 12 10"])));
+      assert.ok(rd.estado === "revisar" && /listas de códigos distintas/.test(rd.detalle), `[MUT] listas distintas, «revisar»: ${rd.detalle}`);
+      // …también cuando la regla por contrato de una lista no la reúne nadie: la adenda pudo cambiar la lista
+      const rdx = RpR.contratosConCodigosDelPliego(PERFILES.helder, DpR.codigosDe(docsDe(docR("1", "Pliego.pdf", "pliego", CADA("todos"), ["72 10 33", "72 12 10"]), docR("2", "Adenda 1.pdf", "adenda", F354, ["72 14 10"]))));
+      assert.ok(dudaDe(rdx, "listas_distintas"), `[MUT] con listas distintas la regla por contrato no niega: ${JSON.stringify(rdx)}`);
+      // un consorcio: lo que acredita cualquiera de sus integrantes
+      const PRr = require("../lib/perfiles.js");
+      const plR = (a, b) => PRr.derivarPlural([{ perfil: PERFILES[a], perfilId: a, participacion: 0.5 }, { perfil: PERFILES[b], perfilId: b, participacion: 0.5 }]);
+      const k1 = RpR.contratosConCodigosDelPliego(plR("helder", "genesis"), DpR.codigosDe(docsCon(["72 14 12"])));
+      assert.ok(k1 && k1.estado === "cumple" && k1.integrantes === 2 && k1.contratos === 7 && k1.o_mas, `[MUT] con un socio que tiene los contratos, el consorcio cumple: ${JSON.stringify(k1)}`);
+      const k0 = RpR.contratosConCodigosDelPliego(plR("helder", "pics"), DpR.codigosDe(docsCon(["72 14 12"])));
+      assert.ok(k0 && k0.estado === "no_cumple", `[MUT] si ninguno de los dos los tiene, el consorcio no cumple: ${JSON.stringify(k0)}`);
+      assert.strictEqual(RpR.contratosConCodigosDelPliego(PRr.derivarPlural([{ perfil: PERFILES.helder, perfilId: "helder", participacion: 0.5 }, { perfil: { ...PERFILES.pics, contratosRup: 1 }, perfilId: "pics", participacion: 0.5 }]), DpR.codigosDe(docsCon(["72 14 12"]))), null,
+        "[MUT] si a un integrante no se le puede medir (otro certificado), el consorcio tampoco");
+      /* LA SEGUNDA REVISIÓN ADVERSARIA (8-nov-2026), cada hallazgo con su reproducción hecha prueba */
+      // (1) la tabla escalonada nombra UNA clase: contar con el segmento hacía valer cualquier contrato de obra civil
+      const esc = ["Segmento 72000000 Servicios de edificación, construcción de instalaciones y mantenimiento", "Familia 72140000 Servicios de construcción pesada", "Clase 72141200 Servicios de construcción de autopistas y carreteras"];
+      const re1 = regR(docsCon(esc));
+      assert.ok(re1.estado === "revisar" && /^Ninguno de los contratos de su registro tiene la clase que pide el pliego para la experiencia \(72141200\); sí tiene contratos con el segmento o la familia .*\(72000000, 72140000\): revise/.test(re1.detalle), `[MUT] la tabla escalonada no afirma con el segmento: ${re1.detalle}`);
+      assert.strictEqual(midR(["72140000", "72141200"], CADA("todos")).estado, "revisar", "[MUT] «todos» de familia y clase no cuenta con la familia");
+      assert.strictEqual(regR(docsCon(["Segmento 72000000 Servicios de edificación", "Familia 72100000 Servicios de mantenimiento y reparación de construcciones", "Clase 72103300 Servicios de mantenimiento de infraestructura"])).estado, "cumple", "con la clase que sí tiene, la tabla escalonada afirma");
+      // (2) el pliego «todos en cada contrato» y la adenda «alguno», con la MISMA lista: ni «sí» ni «no» firme
+      const re2 = regR(docsDe(docR("1", "Pliego.pdf", "pliego", CADA("todos"), ["72 10 33", "72 12 10"]), docR("2", "Adenda 1.pdf", "adenda", F354, ["72 10 33", "72 12 10"])));
+      assert.ok(re2.estado === "revisar" && /la misma lista con reglas distintas/.test(re2.detalle) && !/socio/.test(re2.detalle), `[MUT] reglas distintas con la misma lista, «revisar»: ${re2.detalle}`);
+      // (3) «cada uno con los siguientes códigos»: el lector la toma «todos» y la marca DUDOSA; la puerta no la vuelve un «no» firme
+      assert.ok(require("../lib/codigos_experiencia.js").reglaDeCita("Con máximo seis (6) contratos de obra terminados, cada uno con los siguientes códigos:").dudosa === true, "el lector marca dudosa la regla de «cada uno con…»");
+      const re3 = regR(docsCon(["72 10 33", "72 12 10"], "3.5.4 La experiencia se acreditará con máximo seis (6) contratos de obra terminados, cada uno con los siguientes códigos:"));
+      assert.ok(re3.estado === "revisar" && /no dice si cada contrato necesita todos los códigos o solo uno/.test(re3.detalle), `[MUT] la regla dudosa no niega: ${re3.detalle}`);
+      // (5) la frase de la experiencia: con la regla por contrato no dice «ninguno… en los códigos» (5 tienen alguno); fuera del registro no dice «no cuenta»
+      const ex5 = guiaR(docsCon(["72 10 33", "72 12 10"], CADA("todos"))).requisitos.find((x) => x.clave === "experiencia");
+      assert.ok(/^Ninguno de los contratos de su registro tiene todos los códigos que el pliego pide en cada contrato: su contrato más grande no cuenta/.test(ex5.detalle), `[MUT] la experiencia con la regla por contrato: ${ex5.detalle}`);
+      const exM = guiaR(docsCon(["72 14 12"]), "helder", { ...filaR, modalidad_de_contratacion: "Mínima cuantía" }).requisitos.find((x) => x.clave === "experiencia");
+      assert.ok(/confirme en el pliego si acepta experiencia que no esté en el registro/.test(exM.detalle) && !/no cuenta para ella/.test(exM.detalle), `[MUT] en mínima cuantía la experiencia no afirma «no cuenta»: ${exM.detalle}`);
+      // (6) el sujeto de la frase: el sustantivo más cercano antes del verbo, no «contratos» en cualquier parte
+      assert.strictEqual(midR(["72 14 12"], "3.5.4 Respecto de los contratos de experiencia, el proponente deberá encontrarse inscrito en alguno de los siguientes códigos:"), null, "[MUT] «respecto de los contratos…, el proponente deberá encontrarse inscrito» es de la inscripción");
+      assert.strictEqual((midR(["72 14 12"], "3.5.4 El proponente acreditará la experiencia con contratos inscritos en el RUP, clasificados en alguno de los siguientes códigos:") || {}).estado, "no_cumple", "[MUT] «acreditará la experiencia con contratos inscritos» es de los contratos");
+      assert.strictEqual((midR(["72 14 12"], "3.5.4 La experiencia se acreditará con contratos inscritos en el RUP del proponente, clasificados en alguno de los siguientes códigos:") || {}).estado, "no_cumple", "[MUT] «del proponente» es un complemento, no el sujeto");
+      /* la cita se guarda con sus primeros 400 caracteres y el recorte se come el FINAL («…cada uno con lo»): una frase larga
+         no niega con la regla que se perdió, ni afirma (se reprodujo releyendo el diff: daba «no cumple» firme) */
+      const larga = "3.5.4 Para efectos de la acreditación de la experiencia requerida en el presente proceso, que corresponde a obras de construcción, mejoramiento, rehabilitación o mantenimiento de vías terciarias, urbanas o rurales, en pavimento rígido, flexible o placa huella, incluyendo obras de drenaje, alcantarillado pluvial, cunetas, muros de contención, señalización vertical y horizontal, y demás obras complementarias necesarias para su correcto funcionamiento, los contratos aportados deberán estar, cada uno con los siguientes códigos:";
+      const rcort = midR(["72 10 33", "72 12 10"], larga);
+      assert.ok(rcort && rcort.estado === "revisar" && rcort.dudas.includes("frase_cortada"), `[MUT] la frase cortada no decide: ${JSON.stringify(rcort)}`);
+      // (7) la experiencia de una persona del equipo no es la del proponente
+      assert.strictEqual(midR(["72 14 12"], "3.5.4 El director de obra deberá acreditar experiencia como director en contratos clasificados en alguno de los siguientes códigos:"), null, "[MUT] la experiencia del director de obra no se mide con los contratos del proponente");
+      // cada duda tiene su frase (censo del catálogo, no lista de sitios): una sin frase decía «pero : revise»
+      for (const d of RpR.DUDAS_CONTRATOS) assert.ok(typeof GR.TEXTO_DUDA_CONTRATOS[d] === "string" && GR.TEXTO_DUDA_CONTRATOS[d].length > 10, `[MUT] la duda «${d}» no tiene frase en la guía`);
+      assert.deepStrictEqual(Object.keys(GR.TEXTO_DUDA_CONTRATOS).sort(), [...RpR.DUDAS_CONTRATOS].sort(), "las frases y el catálogo de dudas son el mismo conjunto");
+      // (4) la fila de la socia del expediente: el simulador lleva `medida`, y el porqué habla de los contratos de los dos
+      const Cr = require("../lib/consorcio.js"), XPr = require("../public/expediente.js");
+      const sim = await Cr.simular(null, { integrantes: [{ perfilId: "helder", participacion: 60 }, { perfilId: "pics", participacion: 40 }], proceso: filaR, documentos: docsCon(["72 14 12"]), conocimiento: vocR });
+      assert.ok(sim.puertas_app && sim.puertas_app.estados.registro.medida === "contratos", `[MUT] el simulador lleva la medida del registro: ${JSON.stringify(sim.puertas_app && sim.puertas_app.estados)}`);
+      const filaSoc = XPr.opcionesPresentarse({ guia: guiaR(docsCon(["72 14 12"])) }, [{ socio: { id: "pics", nombre: "PICS" }, r: sim }]).find((o) => o.tipo === "socio");
+      assert.deepStrictEqual(XPr.rojosDe(filaSoc).filter((t) => /registro/.test(t)), ["ninguno de los contratos de los dos registros tiene los códigos que pide el pliego para la experiencia"], `[MUT] el porqué de la socia: ${JSON.stringify(XPr.rojosDe(filaSoc))}`);
+    }
     console.log("· unidad códigos de la experiencia: el lector ata los códigos a la experiencia y no al objeto · el índice de contratos por código, sin nombres y del mismo certificado · la cota por códigos solo niega · Helder + Génesis ante 72103300: usted no pasa del 10 %");
   }
 
@@ -16001,6 +16147,13 @@ async function main() {
       assert.ok(/También alcanza con Obras Ltda\. Solo no alcanza/.test(hPunto) && !/\.\./.test(hPunto.split("Lo que pide")[0]), `sin «..»: ${hPunto}`);
       // un rojo sin cifra suya se dice sin inventarla
       assert.deepStrictEqual(XP.rojosDe({ tipo: "solo", exigencias: [exP("liquidez", "Liquidez mínima", "1,2", null, "no_cumple")], requisitos: [] }), ["liquidez mínima (el pliego pide 1,2)"]);
+      /* el registro medido por los CONTRATOS de experiencia (8-nov-2026, `medida: "contratos"`): el porqué no dice «no está
+         inscrito», que sería falso cuando el código sí lo está y lo que falta es un contrato con él; sin `medida`, la frase de siempre */
+      const hRegC = textoP(XP.htmlPuedePresentarse({ id: "x", guia: { exigencias: casillasP("revisar", "cumple", "cumple"),
+        requisitos: [{ clave: "registro", titulo: "Contratos de su registro con los códigos que pide el pliego para la experiencia", estado: "no_cumple", medida: "contratos" }, reqsP("cumple", "cumple")[1]] } }, { sin_socias: true, filas: [] }));
+      assert.ok(/Solo no alcanza: ninguno de sus contratos del registro tiene los códigos que pide el pliego para la experiencia\./.test(hRegC) && !/no está inscrito/.test(hRegC), `[MUT] el porqué del registro por contratos: ${hRegC}`);
+      const hRegI = textoP(XP.htmlPuedePresentarse({ id: "x", guia: { exigencias: casillasP("revisar", "cumple", "cumple"), requisitos: reqsP("no_cumple", "cumple") } }, { sin_socias: true, filas: [] }));
+      assert.ok(/Solo no alcanza: este tipo de trabajo no está inscrito en el registro de proponente\./.test(hRegI), `el porqué del registro por inscripción sigue igual: ${hRegI}`);
       // con una socia, la cifra es la de las dos empresas juntas: no se le atribuye al usuario
       assert.deepStrictEqual(XP.rojosDe({ tipo: "socio", exigencias: [exP("endeudamiento", "Endeudamiento máximo", "0,65", "0,71", "no_cumple", { suyo_rotulo: "El suyo" })], requisitos: [] }), ["endeudamiento máximo (el pliego pide 0,65; los dos juntos: 0,71)"]);
       // mientras se consulta a las socias, no se afirma nada todavía
@@ -16008,7 +16161,7 @@ async function main() {
       assert.ok(/● Por saber Solo no alcanza: endeudamiento máximo \(el pliego pide 0,65; el suyo: 0,71\)\. Midiendo con sus socias/.test(hCarga) && /Pasando las cifras del pliego con cada socia/.test(hCarga), `mientras carga, se dice: ${hCarga}`);
       // el nombre de la socia se escapa
       assert.ok(!/<img/.test(XP.htmlPuedePresentarse(pP, { filas: [socP("<img src=x>", 60, ["revisar", "cumple", "cumple"])] })), "el nombre de la socia va escapado");
-      const textoPres = `${hP} ${hExpC} ${hCap} ${hProv} ${hSinSocias} ${hVacio} ${hCons} ${hFallo} ${hImp} ${hCarga} ${hPasto} ${hPastoS} ${hSinCob} ${hSinLiq} ${hPastoC} ${hSinCas} ${hConfirmar} ${hConsOk} ${hPrimera} ${hForz} ${hSoloUno} ${hPunto}`;
+      const textoPres = `${hP} ${hExpC} ${hCap} ${hProv} ${hSinSocias} ${hVacio} ${hCons} ${hFallo} ${hImp} ${hCarga} ${hPasto} ${hPastoS} ${hSinCob} ${hSinLiq} ${hPastoC} ${hSinCas} ${hConfirmar} ${hConsOk} ${hPrimera} ${hForz} ${hSoloUno} ${hPunto} ${hRegC} ${hRegI}`;
       assert.strictEqual(L3.tuteoEn(textoPres), null, "¿Puede presentarse? habla de usted");
       for (const jerga of ["UNSPSC", "SMMLV", "capacidad residual", "CRPC", "cuatro puertas", "probabilidad"]) {
         assert.ok(!new RegExp(jerga, "i").test(textoPres), `¿Puede presentarse? enseña jerga: «${jerga}»`);

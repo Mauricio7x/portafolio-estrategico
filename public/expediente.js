@@ -1136,7 +1136,8 @@
   function requisitosPresentarse(lista) {
     return REQUISITOS_PRESENTARSE.map((k) => {
       const x = (Array.isArray(lista) ? lista : []).find((q) => q && q.clave === k);
-      return x ? { clave: k, titulo: x.titulo || (k === "registro" ? "Registro de proponente" : "Capacidad de contratación"), estado: x.estado || null } : null;
+      // `medida` (8-nov-2026): el registro puede medir la inscripción o, con el pliego leído, los contratos de experiencia
+      return x ? { clave: k, titulo: x.titulo || (k === "registro" ? "Registro de proponente" : "Capacidad de contratación"), estado: x.estado || null, medida: x.medida || null } : null;
     });
   }
   /* la experiencia nunca se pinta «cumple»: lo más que dice la app es «confírmelo» (lib/guia_proceso, `nunca_cumple`) */
@@ -1209,7 +1210,7 @@
         suya: rec && rec.suya != null ? Number(rec.suya) : null, del_socio: rec && rec.del_socio != null ? Number(rec.del_socio) : null,
         provisional: !!(rec && rec.provisional),
         exigencias: r && Array.isArray(r.exigencias) ? r.exigencias : null,
-        requisitos: requisitosPresentarse(est ? REQUISITOS_PRESENTARSE.map((k) => (est[k] ? { clave: k, estado: est[k].estado } : null)).filter(Boolean) : null),
+        requisitos: requisitosPresentarse(est ? REQUISITOS_PRESENTARSE.map((k) => (est[k] ? { clave: k, estado: est[k].estado, medida: est[k].medida || null } : null)).filter(Boolean) : null),
         avisos: rec && Array.isArray(rec.avisos) ? rec.avisos.map((a) => (typeof a === "string" ? a : a && a.frase) || "").filter(Boolean) : [],
         sin_reparto_por: rec && rec.suya == null && ((rec.experiencia && rec.experiencia.estado === "imposible") || (Array.isArray(rec.en_rojo_con_cualquier_reparto) && rec.en_rojo_con_cualquier_reparto.length)) ? "no" : null,
       };
@@ -1239,6 +1240,13 @@
      título de la guía («Registro de proponente vigente, con este tipo de trabajo inscrito»)
      partía la lista con su coma y el de la socia salía con otro nombre (revisión adversaria) */
   const RAZON_REQUISITO = Object.freeze({ registro: "este tipo de trabajo no está inscrito en el registro de proponente", capacidad: "falta capacidad para facturar este contrato" });
+  /* con el pliego leído la guía mide el registro por los CONTRATOS de experiencia, no por la inscripción (8-nov-2026,
+     `medida: "contratos"`): decir «no está inscrito» sería falso cuando el código sí lo está y los contratos no lo tienen */
+  const RAZON_REGISTRO_CONTRATOS = "ninguno de sus contratos del registro tiene los códigos que pide el pliego para la experiencia";
+  // con una socia la cifra es de las DOS empresas (como «los dos juntos» de las casillas): «sus contratos» se leía como los del usuario
+  const RAZON_REGISTRO_CONTRATOS_DOS = "ninguno de los contratos de los dos registros tiene los códigos que pide el pliego para la experiencia";
+  const razonRequisito = (r, o) => (r.clave === "registro" && r.medida === "contratos" ? (o && o.tipo === "socio" ? RAZON_REGISTRO_CONTRATOS_DOS : RAZON_REGISTRO_CONTRATOS)
+    : RAZON_REQUISITO[r.clave] || minuscula(r.titulo));
   function rojosDe(o) {
     const out = [];
     for (const x of casillasPresentarse(o.exigencias)) {
@@ -1252,7 +1260,7 @@
       const rotulo = o.tipo === "socio" ? "los dos juntos" : minuscula(x.suyo_rotulo || "usted tiene");
       out.push(`${minuscula(x.titulo)} (el pliego pide ${x.exige}${x.suyo != null ? `; ${rotulo}: ${x.suyo}` : ""})`);
     }
-    for (const r of o.requisitos || []) if (r && r.estado === "no_cumple") out.push(RAZON_REQUISITO[r.clave] || minuscula(r.titulo));
+    for (const r of o.requisitos || []) if (r && r.estado === "no_cumple") out.push(razonRequisito(r, o));
     if (!out.length && o.tipo === "socio" && o.suya == null && o.sin_reparto_por === "no") out.push("ningún reparto de la participación sirve");
     return out;
   }
