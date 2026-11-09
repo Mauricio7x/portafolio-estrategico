@@ -12640,6 +12640,74 @@ async function main() {
     }
   }
 
+  /* unidad: EL MEDIDOR DEL ANCHO DE BANDA DE UPSTASH (9-nov-2026). Encargo del dueño: saber qué
+     operación gasta los 10 GB al mes del plan gratis, medido en producción y no con un modelo. Cada
+     router mide su petición (lib/medidor_redis), lib/redis.cmd suma los bytes de ida y vuelta de cada
+     comando, y al terminar se anota en el hash del día. Se EJECUTA con los routers reales:
+       (1) apagado (fuera de Vercel, como la suite entera), no anota nada;
+       (2) encendido: una petición con la llave anota su operación, con bytes > 0 y los comandos que
+           de verdad hizo (los del mock, menos los de la propia anotación);
+       (3) una petición que no tocó la base (la puerta sin credencial) no anota ni gasta;
+       (4) una operación desconocida se anota como «otra», no crea campos a gusto de quien llama;
+       (5) op=uso&redis=1 lo lee, ordenado de lo que más gasta a lo que menos. */
+  bqMedidor: { if (!corre("unidad medidor del ancho de banda")) break bqMedidor;
+    const M = require("../lib/medidor_redis.js");
+    const rProc = require("../api/procesos.js"), rAdm = require("../api/admin.js");
+    const hoy = new Date().toISOString().slice(0, 10);
+    const claveHoy = M.claveDelDia(hoy);
+    const antesEnv = process.env.DETEKTA_MEDIR_REDIS;
+    /* `invocar` resuelve al RESPONDER; la anotación corre después, al terminar la función (como en
+       Vercel, que espera a la promesa del handler). Se espera a que el mock deje de recibir comandos. */
+    const quieto = async () => { let antes = -1; for (let i = 0; i < 200 && upstash.peticiones() !== antes; i++) { antes = upstash.peticiones(); await new Promise((r) => setTimeout(r, 15)); } };
+    await redis.del(claveHoy);
+    try {
+      // (1) apagado
+      delete process.env.DETEKTA_MEDIR_REDIS;
+      assert.strictEqual(M.activo(), false, "la suite corre fuera de Vercel: el medidor está apagado");
+      await invocar(rProc, "/api/procesos?op=salud", CAB_TOKEN); await quieto();
+      assert.deepStrictEqual(await redis.hgetall(claveHoy) || {}, {}, "apagado no anota nada");
+      // (2) encendido
+      process.env.DETEKTA_MEDIR_REDIS = "1";
+      const p0 = upstash.peticiones();
+      const r = await invocar(rProc, "/api/procesos?op=salud", CAB_TOKEN); await quieto();
+      assert.strictEqual(r.status, 200, `la salud responde igual con el medidor: ${r.status}`);
+      const gastados = upstash.peticiones() - p0;
+      const h = await redis.hgetall(claveHoy);
+      const veces = Number(h["procesos:salud|veces"]), bytes = Number(h["procesos:salud|bytes"]), comandos = Number(h["procesos:salud|comandos"]);
+      assert.strictEqual(veces, 1, `anota la petición una vez: ${JSON.stringify(h)}`);
+      assert.ok(bytes > 50, `con los bytes que viajaron: ${bytes}`);
+      assert.strictEqual(comandos, gastados - 4, `los comandos de la petición son los del mock menos los 4 de la anotación (3 HINCRBY y la caducidad del primer día): ${comandos} de ${gastados}`);
+      assert.ok(Number(await redis.ttl(claveHoy)) > 39 * 86400, "el hash del día caduca a los 40 días");
+      await invocar(rProc, "/api/procesos?op=salud", CAB_TOKEN); await quieto();
+      assert.strictEqual(Number((await redis.hgetall(claveHoy))["procesos:salud|veces"]), 2, "la segunda petición suma");
+      // (3) sin credencial: ni anota ni gasta
+      const p1 = upstash.peticiones();
+      assert.strictEqual((await invocar(rProc, "/api/procesos?op=listar&perfil=helder")).status, 401); await quieto();
+      assert.strictEqual(upstash.peticiones() - p1, 0, "la puerta sin credencial sigue sin gastar un comando, con el medidor encendido");
+      assert.ok(!("procesos:listar|veces" in (await redis.hgetall(claveHoy))), "y no se anota");
+      // (4) operación desconocida
+      // con una cookie de sesión inventada pero bien formada, la puerta consulta la base (1 MGET) y la petición se anota
+      const rInv = await invocar(rProc, "/api/procesos?op=Inventada-XYZ", { cookie: `${require("../lib/sesion.js").COOKIE_SESION}=${"ab".repeat(32)}` }); await quieto();
+      assert.strictEqual(rInv.status, 401, "la sesión inventada no pasa");
+      assert.strictEqual(Number((await redis.hgetall(claveHoy))["procesos:otra|veces"]), 1, "la operación desconocida que gastó se anota como «otra»");
+      const h4 = await redis.hgetall(claveHoy);
+      assert.ok(!Object.keys(h4).some((k) => /inventada/i.test(k)), `una operación desconocida no crea su campo: ${Object.keys(h4).join(", ")}`);
+      // (5) la lectura
+      const u = await invocar(rAdm, "/api/admin?op=uso&redis=1&dias=2", CAB_TOKEN); await quieto();
+      assert.strictEqual(u.status, 200, `op=uso&redis=1 responde: ${JSON.stringify(u.cuerpo).slice(0, 200)}`);
+      const fila = u.cuerpo.por_operacion.find((f) => f.operacion === "procesos:salud");
+      assert.ok(fila && fila.veces === 2 && fila.bytes >= bytes && fila.mb_por_vez != null, `la salud aparece con sus dos veces: ${JSON.stringify(u.cuerpo.por_operacion).slice(0, 300)}`);
+      const orden = u.cuerpo.por_operacion.map((f) => f.bytes);
+      assert.deepStrictEqual(orden, [...orden].sort((a, b) => b - a), "de lo que más gasta a lo que menos");
+      assert.strictEqual(u.cuerpo.dias, 2, "los días pedidos");
+      assert.strictEqual((await invocar(rAdm, "/api/admin?op=uso&redis=1&dias=muchos", CAB_TOKEN)).cuerpo.dias, 7, "unos días que no se entienden son inertes (7)"); await quieto();
+      console.log(`· unidad medidor del ancho de banda: apagado no anota · encendido, la salud anota ${bytes} bytes en ${comandos} comandos (los del mock menos los 4 de anotar) · la puerta sin credencial ni anota ni gasta · una op desconocida no crea campo · op=uso&redis=1 ordena por bytes`);
+    } finally {
+      if (antesEnv === undefined) delete process.env.DETEKTA_MEDIR_REDIS; else process.env.DETEKTA_MEDIR_REDIS = antesEnv;
+      await redis.del(claveHoy);
+    }
+  }
+
   /* unidad: EL MODO CUENTA, CONSTRUIDO Y APAGADO (11-sep-2026).
      Lo que esta cerradura defiende es sobre todo que el modo APAGADO no cambie
      nada: el dueño pidió la infraestructura, no el cambio de producto. Y que

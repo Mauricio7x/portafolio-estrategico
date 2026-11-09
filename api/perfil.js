@@ -50,8 +50,10 @@ function opDe(req) {
   return m ? m[1].toLowerCase() : "";
 }
 
-module.exports = async function handler(req, res) {
+async function despachar(req, res) {
   const op = opDe(req);
+  // la operación, para la medición del ancho de banda (lib/medidor_redis); una desconocida se anota como «otra»
+  require("../lib/medidor_redis.js").etiquetar(`perfil:${Object.prototype.hasOwnProperty.call(OPS, op) ? op : "otra"}`);
   /* LA PUERTA (9-nov-2026): sin la sesión ni la llave no pasa nada, salvo el
      censo declarado en lib/auth (entrar, salir y las tareas programadas). */
   const puerta = await require("../lib/auth.js").autorizarPuerta(req, "perfil", op);
@@ -86,6 +88,10 @@ module.exports = async function handler(req, res) {
     return require("../lib/error_interno.js").responderErrorInterno(res, "perfil", e);
   }
 };
+
+/* Cada petición se mide (lib/medidor_redis: cuánto ancho de banda de Upstash gasta, por operación).
+   Apagado fuera de Vercel: entonces solo llama a despachar. */
+module.exports = (req, res) => require("../lib/medidor_redis.js").medir("perfil", () => despachar(req, res));
 
 /* Las operaciones que despacha, para el censo de la puerta en la suite (9-nov-2026). */
 module.exports.OPS = Object.freeze(Object.keys(OPS));
