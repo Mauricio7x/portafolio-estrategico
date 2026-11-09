@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 2523666 bytes · 449 secciones · 48 con marcador de superación.
+Derivado del árbol: 2529389 bytes · 450 secciones · 49 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -429,34 +429,35 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | El OCR saturado ya no deja un documento incompleto para siempre, dos oferentes casi homónimos se separan por su número, y la cadencia de la baja se mide (3-nov-2026) | 3-nov-2026 | 21104-21154 | 13255 |  |
 | El cronograma en Excel se lee: el Anexo 2 de Colombia Compra entra a la línea de tiempo con su hoja y su celda, y de varias versiones habla solo la más nueva (3-nov-2026) | 3-nov-2026 | 21155-21180 | 13047 | «Dos filas con fechas distintas: choca la misma actividad o un plazo, no un aviso ni una adjudicación, y cada fila se lee sola; medido sobre los procesos guardados (4-nov-2026)» |
 | La tarjeta nueva: cinco renglones, con quién, y la competencia dentro con los contratos de obra aparte (3-nov-2026) | 3-nov-2026 | 21181-21199 | 11346 |  |
-| Mi empresa como la maqueta c07, «Por qué» sin siglas y las llantas fuera de «Obra» (3-nov-2026) | 3-nov-2026 | 21200-21216 | 7626 |  |
-| Mis procesos como la maqueta c07 (4-nov-2026) | 4-nov-2026 | 21217-21233 | 5631 |  |
-| Dos filas con fechas distintas: choca la misma actividad o un plazo, no un aviso ni una adjudicación, y cada fila se lee sola; medido sobre los procesos guardados (4-nov-2026) | 4-nov-2026 | 21234-21276 | 9308 |  |
-| Cada cifra de Mi empresa abre exactamente su lista: el filtro «Solo las que puede presentarse» (4-nov-2026) | 4-nov-2026 | 21277-21288 | 4215 |  |
-| Una sola frase para la capacidad que le queda, y Mis procesos en dos renglones entre 641 y 860 px (4-nov-2026) | 4-nov-2026 | 21289-21297 | 2063 |  |
-| Las fechas que hay que confirmar: el Anexo 2 que rige pasa el tope, el cierre desmentido y la fecha que no cuadra dicen «verifíquela», y el traslado vence el último día (4-nov-2026) | 4-nov-2026 | 21298-21339 | 7107 |  |
-| La alerta de precio bajo dice lo que mide la base con las reglas del 26-oct: 33 de 2.190 en licitación (4-nov-2026) | 4-nov-2026 | 21340-21347 | 1589 |  |
-| La adenda que usted no ha visto avisa, y la que no se ha leído pone «verifíquela» en las fechas anteriores (4-nov-2026) | 4-nov-2026 | 21348-21375 | 5596 |  |
-| La tarea de la mañana busca las adendas de los procesos guardados, sin leer el corpus y con los topes medidos (4-nov-2026) | 4-nov-2026 | 21376-21419 | 9841 |  |
-| El aviso al teléfono por Telegram, sin leer el corpus, dónde gana el dueño y lo que midió la fase 0 (5-nov-2026) | 5-nov-2026 | 21420-21460 | 7990 |  |
-| La fase 2 del plan: la cita entera, el juicio que no depende del lote, cuánto falta, qué pesa cada requisito, el rastro de lectura y la búsqueda del oficio (5-nov-2026) | 5-nov-2026 | 21461-21481 | 7398 |  |
-| La fase 3 del plan: la oferta propia por el NIT, por qué quedó así, lo que el competidor tiene por ejecutar, qué se puede corregir después y los bancos de precios cerrados (5-nov-2026) | 5-nov-2026 | 21482-21501 | 5422 |  |
-| Las fases 4 y 5 del plan: cuáles contratos acreditar, los contratos que terminan pronto, lo que falta por conseguir, SECOP I a pedido y la carga en el teléfono medida (5-nov-2026) | 5-nov-2026 | 21502-21512 | 3942 |  |
-| El costo de preparar la oferta es la póliza de seriedad, y lo que el dueño decidió no hacer (5-nov-2026) | 5-nov-2026 | 21513-21525 | 5860 |  |
-| El % de la garantía del pliego llega a Precios, y las observaciones al pliego redactadas con su cita comprobada (5-nov-2026) | 5-nov-2026 | 21526-21549 | 6210 |  |
-| Las cifras en letras también se comprueban en el dictamen, y la prima mínima no se pedirá (5-nov-2026) | 5-nov-2026 | 21550-21569 | 3444 |  |
-| Con qué consorcio se presenta cada proceso, el .zip de la oferta y quitar un proceso por un tiempo (5-nov-2026) | 5-nov-2026 | 21570-21597 | 6261 |  |
-| Los datos completos para los formatos y la imagen de la firma en el .zip (5-nov-2026) | 5-nov-2026 | 21598-21640 | 6694 |  |
-| La plantilla de Colombia Compra completa y el .zip con todo lo que se entrega (5-nov-2026) | 5-nov-2026 | 21641-21721 | 12184 |  |
-| Cada integrante con su copia, la conformación del consorcio llena y la fecha real del .zip (6-nov-2026) | 6-nov-2026 | 21722-21741 | 5028 |  |
-| SECOP II dejó de publicar el código de actividad el 16-sep-2026: lo que se perdió, lo que se recupera por el objeto y lo que no tiene fuente (6-nov-2026) | 16-sep-2026 | 21742-21791 | 12133 |  |
-| El pliego definitivo tiene otro número: Mis procesos y el aviso de la mañana siguen la publicación vigente del expediente (6-nov-2026) | 6-nov-2026 | 21792-21813 | 4236 |  |
-| Lo que la entidad publicó como compra o servicio ya no sale verde por un verbo de obra, la «obra» fuera de contexto sale del tipo, y SECOP I marca lo que probablemente cerró (6-nov-2026) | 6-nov-2026 | 21814-21839 | 10137 |  |
-| «No es obra» quita un proceso de su lista, con su otra publicación, y la lista dice cuántos quitó (6-nov-2026) | 6-nov-2026 | 21840-21853 | 3223 |  |
-| Los datos de los formatos que ya son públicos se traen con el NIT: la identidad del RUES y el contacto de SECOP II (6-nov-2026) | 6-nov-2026 | 21854-21869 | 3974 |  |
-| Dos defectos de las fechas de los documentos, reproducidos y arreglados: el hito de adendas exige el acto, y un Gantt no calla al Anexo 2 (6-nov-2026) | 6-nov-2026 | 21870-21882 | 2449 |  |
-| La pestaña del pliego y su .ics marcan la fecha que no cuadra y el cierre desmentido, con la misma regla de Mis procesos (6-nov-2026) | 6-nov-2026 | 21883-21891 | 1803 |  |
-| La consultoría de ingeniería sin código se ve, en ámbar: estudios de suelos, geotecnia, patología estructural y vulnerabilidad sísmica (7-nov-2026) | 7-nov-2026 | 21892-21905 | 2406 |  |
-| En los pliegos tipo de obra que tiene el dueño, los códigos UNSPSC no piden inscripción en el RUP: piden que cada contrato de experiencia esté clasificado en alguno (7-nov-2026) | 7-nov-2026 | 21906-21917 | 3857 |  |
-| Con el pliego leído, la puerta del registro mira los contratos de experiencia con los códigos del pliego, no la inscripción (8-nov-2026) | 8-nov-2026 | 21918-21964 | 7681 |  |
-| El armazón medido antes de rediseñarlo: Mi empresa dice qué no llegó, «Atrás» vuelve a la pestaña anterior y las dos ventanas que faltaban cierran con Escape (9-nov-2026) | 9-nov-2026 | 21965-21975 | 4455 |  |
+| Mi empresa como la maqueta c07, «Por qué» sin siglas y las llantas fuera de «Obra» (3-nov-2026) | 3-nov-2026 | 21200-21218 | 8137 | «Mi empresa: «Hoy» con cuatro piezas y una barra con ocho apartados; la plata en juego vuelve con quién la pone (9-nov-2026)» |
+| Mis procesos como la maqueta c07 (4-nov-2026) | 4-nov-2026 | 21219-21235 | 5631 |  |
+| Dos filas con fechas distintas: choca la misma actividad o un plazo, no un aviso ni una adjudicación, y cada fila se lee sola; medido sobre los procesos guardados (4-nov-2026) | 4-nov-2026 | 21236-21278 | 9308 |  |
+| Cada cifra de Mi empresa abre exactamente su lista: el filtro «Solo las que puede presentarse» (4-nov-2026) | 4-nov-2026 | 21279-21290 | 4215 |  |
+| Una sola frase para la capacidad que le queda, y Mis procesos en dos renglones entre 641 y 860 px (4-nov-2026) | 4-nov-2026 | 21291-21299 | 2063 |  |
+| Las fechas que hay que confirmar: el Anexo 2 que rige pasa el tope, el cierre desmentido y la fecha que no cuadra dicen «verifíquela», y el traslado vence el último día (4-nov-2026) | 4-nov-2026 | 21300-21341 | 7107 |  |
+| La alerta de precio bajo dice lo que mide la base con las reglas del 26-oct: 33 de 2.190 en licitación (4-nov-2026) | 4-nov-2026 | 21342-21349 | 1589 |  |
+| La adenda que usted no ha visto avisa, y la que no se ha leído pone «verifíquela» en las fechas anteriores (4-nov-2026) | 4-nov-2026 | 21350-21377 | 5596 |  |
+| La tarea de la mañana busca las adendas de los procesos guardados, sin leer el corpus y con los topes medidos (4-nov-2026) | 4-nov-2026 | 21378-21421 | 9841 |  |
+| El aviso al teléfono por Telegram, sin leer el corpus, dónde gana el dueño y lo que midió la fase 0 (5-nov-2026) | 5-nov-2026 | 21422-21462 | 7990 |  |
+| La fase 2 del plan: la cita entera, el juicio que no depende del lote, cuánto falta, qué pesa cada requisito, el rastro de lectura y la búsqueda del oficio (5-nov-2026) | 5-nov-2026 | 21463-21483 | 7398 |  |
+| La fase 3 del plan: la oferta propia por el NIT, por qué quedó así, lo que el competidor tiene por ejecutar, qué se puede corregir después y los bancos de precios cerrados (5-nov-2026) | 5-nov-2026 | 21484-21503 | 5422 |  |
+| Las fases 4 y 5 del plan: cuáles contratos acreditar, los contratos que terminan pronto, lo que falta por conseguir, SECOP I a pedido y la carga en el teléfono medida (5-nov-2026) | 5-nov-2026 | 21504-21514 | 3942 |  |
+| El costo de preparar la oferta es la póliza de seriedad, y lo que el dueño decidió no hacer (5-nov-2026) | 5-nov-2026 | 21515-21527 | 5860 |  |
+| El % de la garantía del pliego llega a Precios, y las observaciones al pliego redactadas con su cita comprobada (5-nov-2026) | 5-nov-2026 | 21528-21551 | 6210 |  |
+| Las cifras en letras también se comprueban en el dictamen, y la prima mínima no se pedirá (5-nov-2026) | 5-nov-2026 | 21552-21571 | 3444 |  |
+| Con qué consorcio se presenta cada proceso, el .zip de la oferta y quitar un proceso por un tiempo (5-nov-2026) | 5-nov-2026 | 21572-21599 | 6261 |  |
+| Los datos completos para los formatos y la imagen de la firma en el .zip (5-nov-2026) | 5-nov-2026 | 21600-21642 | 6694 |  |
+| La plantilla de Colombia Compra completa y el .zip con todo lo que se entrega (5-nov-2026) | 5-nov-2026 | 21643-21723 | 12184 |  |
+| Cada integrante con su copia, la conformación del consorcio llena y la fecha real del .zip (6-nov-2026) | 6-nov-2026 | 21724-21743 | 5028 |  |
+| SECOP II dejó de publicar el código de actividad el 16-sep-2026: lo que se perdió, lo que se recupera por el objeto y lo que no tiene fuente (6-nov-2026) | 16-sep-2026 | 21744-21793 | 12133 |  |
+| El pliego definitivo tiene otro número: Mis procesos y el aviso de la mañana siguen la publicación vigente del expediente (6-nov-2026) | 6-nov-2026 | 21794-21815 | 4236 |  |
+| Lo que la entidad publicó como compra o servicio ya no sale verde por un verbo de obra, la «obra» fuera de contexto sale del tipo, y SECOP I marca lo que probablemente cerró (6-nov-2026) | 6-nov-2026 | 21816-21841 | 10137 |  |
+| «No es obra» quita un proceso de su lista, con su otra publicación, y la lista dice cuántos quitó (6-nov-2026) | 6-nov-2026 | 21842-21855 | 3223 |  |
+| Los datos de los formatos que ya son públicos se traen con el NIT: la identidad del RUES y el contacto de SECOP II (6-nov-2026) | 6-nov-2026 | 21856-21871 | 3974 |  |
+| Dos defectos de las fechas de los documentos, reproducidos y arreglados: el hito de adendas exige el acto, y un Gantt no calla al Anexo 2 (6-nov-2026) | 6-nov-2026 | 21872-21884 | 2449 |  |
+| La pestaña del pliego y su .ics marcan la fecha que no cuadra y el cierre desmentido, con la misma regla de Mis procesos (6-nov-2026) | 6-nov-2026 | 21885-21893 | 1803 |  |
+| La consultoría de ingeniería sin código se ve, en ámbar: estudios de suelos, geotecnia, patología estructural y vulnerabilidad sísmica (7-nov-2026) | 7-nov-2026 | 21894-21907 | 2406 |  |
+| En los pliegos tipo de obra que tiene el dueño, los códigos UNSPSC no piden inscripción en el RUP: piden que cada contrato de experiencia esté clasificado en alguno (7-nov-2026) | 7-nov-2026 | 21908-21919 | 3857 |  |
+| Con el pliego leído, la puerta del registro mira los contratos de experiencia con los códigos del pliego, no la inscripción (8-nov-2026) | 8-nov-2026 | 21920-21966 | 7681 |  |
+| El armazón medido antes de rediseñarlo: Mi empresa dice qué no llegó, «Atrás» vuelve a la pestaña anterior y las dos ventanas que faltaban cierran con Escape (9-nov-2026) | 9-nov-2026 | 21967-21978 | 4456 |  |
+| Mi empresa: «Hoy» con cuatro piezas y una barra con ocho apartados; la plata en juego vuelve con quién la pone (9-nov-2026) | 9-nov-2026 | 21979-21992 | 5211 |  |

@@ -17769,6 +17769,8 @@ async function main() {
             (v) => PorC23.htmlDepartamentos({ porDepartamento: [{ cod: "11", nombre: "Bogotá", n: 1, valor: v }] })],
           "pulso.js › htmlEnJuego › pesosCortos": [1, "agregado: el dinero en juego de VARIOS procesos (la suma de lo que cierra esta semana va siempre exacta, como en la portada; desde el 3-nov-2026 en «Dónde están…»)",
             (v) => PulC23.htmlEnJuego({ total: 3, sinPresupuesto: 2, valorTotal: v }) + PulC23.htmlCierran({ cierranEstaSemana: { n: 1, valor: v } })],
+          "pulso.js › htmlTotal › pesosCortos": [2, "agregado: la plata en juego de VARIOS procesos en «Hoy» y lo que pone el departamento que más pone (9-nov-2026); con UN proceso, las dos van exactas",
+            (v) => PulC23.htmlTotal({ total: 1, sinPresupuesto: 0, valorTotal: v, porDepartamento: [{ nombre: "Bogotá", n: 1, valor: v }] })],
           "pulso.js › columnas › pesosCortos": [1, "agregado: la suma de una columna de la gráfica",
             (v) => PulC23.columnas([{ etiqueta: "oct", titulo: "Octubre", n: 1, valor: v }, { etiqueta: "nov", titulo: "Noviembre", n: 3, valor: v, sumandos: 1 }])],
           "pulso.js › barrasRank › pesosCortos": [1, "agregado: la suma de una fila del ranking (entidad o departamento)",
@@ -43951,7 +43953,8 @@ async function main() {
         assert.ok(!/raiz\.classList\.(add|remove)\("hidden"\)/.test(pjs),
           "ninguna rama puede tocar solo `#pulso`: dejaría los repartos colgados en el estado contrario");
       }
-      assert.ok(/<section id="pulso" class="hidden/.test(tab), "el pulso nace OCULTO (vacío y honesto hasta que hay datos)");
+      // desde el 9-nov-2026 dice además su apartado de la barra («hoy»); sigue naciendo oculto
+      assert.ok(/<section id="pulso" data-me-apartado="hoy" class="hidden/.test(tab), "el pulso nace OCULTO (vacío y honesto hasta que hay datos)");
       /* ORDEN NUEVO (encargo del ingeniero): el TABLERO abre la pestaña —«podría
          ser el tablero principal de mi empresa»—, después el pulso y después el
          registro. El pliegue del mercado nacional desapareció. */
@@ -43978,8 +43981,10 @@ async function main() {
       assert.deepStrictEqual([...posiciones].sort((a, b) => a.i - b.i).map((x) => x.id), ORDEN_EMPRESA,
         "Mi empresa va: el titular → lo que pide atención → con plazo → sus procesos → actualizar → y plegados: dónde están → calendario → su registro → socias → mercado");
       // lo que la maqueta no enseña a la vista va PLEGADO, y nace cerrado
+      /* desde el 9-nov-2026 cada plegado dice además su apartado de la barra (`data-me-apartado`): sigue naciendo cerrado,
+         y dentro de su apartado lo abre `elegirApartadoMiEmpresa` */
       for (const id of ["plg-donde", "plg-calendario", "plg-rup", "plg-socias", "plg-mercado"])
-        assert.ok(new RegExp(`<details id="${id}" class="plegado-empresa">`).test(tab), `#${id} es un plegado que nace cerrado`);
+        assert.ok(new RegExp(`<details id="${id}" data-me-apartado="[a-z]+" class="plegado-empresa">`).test(tab), `#${id} es un plegado que nace cerrado`);
       const lic = htmlL.slice(iTab, htmlL.indexOf('id="tab-apu"'));
       assert.ok(!lic.includes('id="pulso"') && lic.indexOf('id="f-ordenar"') > 0, "Licitaciones ya no lleva el pulso: empieza por la barra de herramientas");
       const nav = htmlL.slice(htmlL.indexOf('aria-label="Secciones"'), htmlL.indexOf("</nav>"));
@@ -43993,7 +43998,11 @@ async function main() {
          que Mis procesos crecía, culpando a Mi empresa. Se corta en el `</main>`
          de Mi empresa, que es el panel del que habla la aserción. */
       const soloEmpresa = htmlL.slice(iTabAdmin, htmlL.indexOf("</main>", iTabAdmin));
-      const palabrasEmpresa = soloEmpresa.replace(/<!--[\s\S]*?-->/g, "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().split(" ").length;
+      /* la barra de Mi empresa (9-nov-2026) son los NOMBRES de sus ocho apartados, no prosa: el tope mide la prosa de la
+         pestaña, y contarla obligaría a quitar texto que sí se lee para dejar sitio a la navegación */
+      const iBarraME = soloEmpresa.indexOf('<nav id="me-barra"');
+      const soloEmpresaSinBarra = iBarraME < 0 ? soloEmpresa : soloEmpresa.slice(0, iBarraME) + soloEmpresa.slice(soloEmpresa.indexOf("</nav>", iBarraME) + 6);
+      const palabrasEmpresa = soloEmpresaSinBarra.replace(/<!--[\s\S]*?-->/g, "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().split(" ").length;
       assert.ok(palabrasEmpresa < 1400, `Mi empresa (con Sistema plegado incluido) tiene ${palabrasEmpresa} palabras en el HTML`);
       /* y Mis procesos tiene su propio techo, ahora que se puede medir sola: el
          HTML de la pestaña es el andamio —lo que se ve lo pintan casillero.js y
@@ -52357,10 +52366,13 @@ async function main() {
          mate el tablero, el RUP, el catálogo y los parámetros EN SILENCIO. */
       const iSis = tabAdmin.indexOf('id="seccion-sistema"');
       assert.ok(iSis > 0, "sigue existiendo el pliegue «Sistema»");
-      for (const id of ["seccion-experiencia", "seccion-cobertura"]) {
+      /* Desde el 9-nov-2026 (decisión del dueño) salen de «Sistema» a su apartado de la barra: «Obra que ya ejecutó» y
+         «Su registro» (los códigos que le faltan responden con qué renovarlo). Siguen fuera de la vista principal —«Hoy»
+         no los enseña— y siguen sin poder retirarse. */
+      for (const [id, ap] of [["seccion-experiencia", "obra"], ["seccion-cobertura", "registro"]]) {
         const i = tabAdmin.indexOf(`id="${id}"`);
         assert.ok(i > 0, `#${id} NO se retira: borrarlo mata la pestaña entera (arrancarPaneles no tiene guarda)`);
-        assert.ok(i > iSis, `#${id} tiene que vivir DENTRO de «Sistema», fuera de la vista principal`);
+        assert.ok(new RegExp(`<section id="${id}" data-me-apartado="${ap}"`).test(tabAdmin), `#${id} vive en su apartado «${ap}», fuera de «Hoy»`);
       }
       /* …y las que responden «¿a qué me presento hoy?» siguen ARRIBA. */
       for (const id of ["pulso", "seccion-rup", "seccion-consorcio", "seccion-socio", "actualizar"]) {
@@ -65651,6 +65663,104 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
     }
     if (fallasAR.length) throw new Error(`unidad armazón: ${fallasAR.length} comprobaciones fallan:\n  - ${fallasAR.join("\n  - ")}`);
     console.log("· unidad armazón · lo que no llega, atrás y las ventanas: Mi empresa dice qué no llegó y ofrece «Reintentar» arriba (sin red, servidor caído y muro del sitio) y calla lo que ya dice la pantalla de entrar; «Atrás» vuelve a la pestaña anterior sin apilar repetidas ni tocar las anclas; «¿Eliminar…?» y la vista previa de importar meten el foco, cierran con Escape y lo devuelven");
+  }
+
+  bqMiEmpresaBarra: { if (!corre("unidad Mi empresa · Hoy y su barra")) break bqMiEmpresaBarra;
+    /* MI EMPRESA CON «HOY» Y SU BARRA (9-nov-2026, decisión del dueño sobre su maqueta): Hoy = titular (ofertas),
+       avisos de interés, plata en juego con lo que pone el departamento que más pone, y sus procesos guardados con
+       «piden atención» en una línea; lo demás en ocho apartados. Funciones reales. */
+    const fallasME = [];
+    const okME = (c, que) => { if (!c) fallasME.push(que); };
+    delete require.cache[require.resolve("../public/pulso.js")];
+    const PulME = require("../public/pulso.js");
+    const textoME = (h) => String(h).replace(/<[^>]+>/g, " ").replace(/&amp;/g, "&").replace(/\s+/g, " ").trim();
+    // (a) la plata en juego, con el departamento que más pone (la misma suma de lib/portada)
+    const baseME = { total: 762, valorTotal: 18.9e12, sinPresupuesto: 0, porDepartamento: [{ nombre: "Distrito Capital de Bogotá", n: 152, valor: 17.6e12 }, { nombre: "Cundinamarca", n: 87, valor: 93540e6 }] };
+    const tot = textoME(PulME.htmlTotal(baseME));
+    okME(/\$18,9 billones/.test(tot) && /Distrito Capital de Bogotá pone \$17,6 billones \(93 %\): un solo departamento mueve esta cifra\./.test(tot), `(a) la tarjeta dice la plata y quién la pone: ${tot}`);
+    okME(/data-me-ir="mercado"/.test(PulME.htmlTotal(baseME)), "(a) «Ver dónde están» abre el apartado del mercado");
+    const repartido = textoME(PulME.htmlTotal({ ...baseME, porDepartamento: [{ nombre: "Boyacá", n: 10, valor: 6e12 }, { nombre: "Meta", n: 9, valor: 5e12 }] }));
+    okME(/Boyacá pone .* \(32 %\)\./.test(repartido) && !/un solo departamento/.test(repartido), `(a) por debajo de la mitad no se dice que uno solo la mueve: ${repartido}`);
+    const casiTodo = textoME(PulME.htmlTotal({ ...baseME, porDepartamento: [{ nombre: "Boyacá", n: 10, valor: 18.88e12 }, { nombre: "Meta", n: 1, valor: 0.02e12 }] }));
+    okME(/\(99 %\)/.test(casiTodo) && !/\(100 %\)/.test(casiTodo), `(a) un 100 % redondeado que no es todo se dice 99 %: ${casiTodo}`);
+    okME(PulME.htmlTotal({ ...baseME, total: 0 }) === "" && PulME.htmlTotal({ ...baseME, valorTotal: 0 }) === "", "(a) sin licitaciones o sin presupuestos publicados no hay tarjeta (no un $0)");
+    // (b) los avisos de interés: la cifra es `sin_vencer` (la de la lista que abre `manif=abierta`), no `abiertas`
+    const sinUrg = PulME.htmlManifestacion({ manifestacion: { urgentes: 0, sin_vencer: 5, abiertas: 2 } });
+    okME(/En 5 el plazo para avisar que le interesa no consta vencido/.test(textoME(sinUrg)) && /manif=abierta/.test(sinUrg), `(b) sin urgentes, cuántos no constan vencidos y abre su lista: ${textoME(sinUrg)}`);
+    const conUrg = textoME(PulME.htmlManifestacion({ manifestacion: { urgentes: 67, sin_vencer: 120, abiertas: 90 } }));
+    okME(/En 67 procesos hay que avisar hoy/.test(conUrg) && /En total, en 120 el plazo/.test(conUrg) && !/\b90\b/.test(conUrg), `(b) con urgentes, la orden y el total que abre la lista: ${conUrg}`);
+    okME(PulME.htmlManifestacion({ manifestacion: { urgentes: 0, sin_vencer: null } }) === "" && PulME.htmlManifestacion({ manifestacion: { urgentes: 0, sin_vencer: 0 } }) === "", "(b) sin el conteo, o con 0 medido, no hay tarjeta");
+    // (c) elegir un apartado: la función REAL con un documento falso
+    const jsME = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+    const cortarME = (firma) => { const i = jsME.indexOf(firma); if (i < 0) { fallasME.push(`app.js sin «${firma.trim()}»`); return ""; } return jsME.slice(i, jsME.indexOf("\n  }", i) + 4); };
+    const lineaME = (marca) => { const i = jsME.indexOf(marca); return i < 0 ? "" : jsME.slice(i, jsME.indexOf("\n", i)); };
+    const fuenteElegir = [lineaME("  const APARTADOS_ME = "), cortarME("  function elegirApartadoMiEmpresa(")].join("\n");
+    if (fuenteElegir.trim()) {
+      const ME = new Function(`
+        const atributos = {};
+        const tab = { setAttribute: (k, v) => { atributos[k] = v; }, getAttribute: (k) => atributos[k],
+          querySelectorAll: (sel) => (sel.includes('data-me-apartado="registro"') ? [detalles] : []), querySelector: () => null };
+        const detalles = { open: false };
+        const botones = ["hoy", "registro", "ajustes"].map((id) => { const b = { id, attrs: {}, textContent: { hoy: "Hoy", registro: "Su registro", ajustes: "Ajustes" }[id],
+          getAttribute: (k) => (k === "data-me-ir" ? id : b.attrs[k]), setAttribute: (k, v) => { b.attrs[k] = v; }, removeAttribute: (k) => { delete b.attrs[k]; } }; return b; });
+        const titulo = { textContent: "", hidden: true, focus() {} };
+        const document = { getElementById: (id) => (id === "tab-admin" ? tab : id === "me-titulo" ? titulo : null), querySelectorAll: () => botones };
+        const window = { scrollTo() {} };
+        ${fuenteElegir}
+        return { elegirApartadoMiEmpresa, atributos, botones, titulo, detalles };`)();
+      const r1 = ME.elegirApartadoMiEmpresa("registro", { enfocar: false });
+      okME(r1 === "registro" && ME.atributos["data-me"] === "registro" && ME.titulo.textContent === "Su registro" && !ME.titulo.hidden && ME.detalles.open === true,
+        `(c) elegir «Su registro» cambia data-me, pone el título y abre su plegado: ${JSON.stringify({ r1, d: ME.atributos["data-me"], t: ME.titulo.textContent })}`);
+      okME(ME.botones.find((b) => b.id === "registro").attrs["aria-current"] === "page" && !ME.botones.find((b) => b.id === "hoy").attrs["aria-current"], "(c) la barra marca el apartado elegido y solo ese");
+      const r2 = ME.elegirApartadoMiEmpresa("<script>", { enfocar: false });
+      okME(r2 === "hoy" && ME.atributos["data-me"] === "hoy" && ME.titulo.hidden, "(c) un apartado desconocido es INERTE: cae a «hoy»");
+    }
+    // (d) censo: TODO bloque de primer nivel de Mi empresa con id dice su apartado, y cada apartado tiene botón y regla
+    const htmlME = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8").replace(/<!--[\s\S]*?-->/g, "");
+    const iTab = htmlME.indexOf('id="tab-admin"'), iFin = htmlME.indexOf('id="tab-seguimiento"');
+    const tramo = htmlME.slice(htmlME.indexOf(">", iTab) + 1, iFin);
+    const hijos = []; let prof = 0;
+    for (const m of tramo.matchAll(/<(\/?)([a-z0-9]+)\b([^>]*?)(\/?)>/g)) {
+      const [, cierre, tag, attrs, auto] = m;
+      if (["br", "img", "input", "meta", "link", "hr", "source", "wbr", "path", "rect", "circle", "line", "polyline"].includes(tag) || auto) { continue; }
+      if (cierre) { prof--; continue; }
+      if (prof === 0) hijos.push({ tag, id: (attrs.match(/\bid="([^"]+)"/) || [])[1] || null, ap: (attrs.match(/data-me-apartado="([^"]+)"/) || [])[1] || null });
+      prof++;
+    }
+    const APS = (lineaME("  const APARTADOS_ME = ").match(/\[([^\]]+)\]/) || ["", ""])[1].split(",").map((x) => x.trim().replace(/"/g, "")).filter(Boolean);
+    const sinApartado = hijos.filter((h) => h.id && !h.ap && !["me-barra", "me-titulo"].includes(h.id) && h.tag !== "main");
+    okME(hijos.length > 10 && sinApartado.length === 0, `(d) censo: cada bloque de primer nivel con id dice su apartado; sin él: ${sinApartado.map((h) => h.id).join(", ")}`);
+    okME(hijos.every((h) => !h.ap || APS.includes(h.ap)), "(d) ningún bloque dice un apartado que no existe");
+    for (const a of APS) {
+      okME(new RegExp(`data-me-ir="${a}"`).test(htmlME), `(d) el apartado «${a}» tiene botón en la barra`);
+      okME(htmlME.includes(`#app #tab-admin[data-me="${a}"] > [data-me-apartado]:not([data-me-apartado="${a}"]) { display: none; }`), `(d) el apartado «${a}» tiene su regla en la hoja`);
+      okME(hijos.some((h) => h.ap === a), `(d) el apartado «${a}» tiene al menos un bloque`);
+    }
+    okME(/<main id="tab-admin"[^>]*data-me="hoy"/.test(htmlME), "(d) Mi empresa nace en «Hoy» desde el marcado (no depende del script)");
+    // (e) los saltos de otras pestañas abren el apartado antes del plegado
+    okME(/function abrirPliegues\(destino\) \{[\s\S]{0,400}closest\("#tab-admin > \[data-me-apartado\]"\)[\s\S]{0,200}elegirApartadoMiEmpresa\(/.test(jsME), "(e) abrirPliegues abre primero el apartado del destino");
+    okME(/const linea = \$\("mi-atencion-linea"\);[\s\S]{0,200}K\.fraseAlertas\(as, 7\)/.test(jsME), "(e) «piden atención» usa la frase de siempre (fraseAlertas), no una cuenta nueva");
+    // (f) la barra no le ofrece al visitante un apartado que vería vacío (función REAL con un documento falso)
+    const fuentePoda = cortarME("  function podarBarraMiEmpresa() {");
+    if (fuentePoda) {
+      const P = new Function(`
+        const bloques = { obra: [{ hidden: true }], registro: [{ hidden: false }, { hidden: true }], ajustes: [{ hidden: true }, { hidden: true }] };
+        const botones = ["hoy", "registro", "obra", "ajustes"].map((ap) => ({ ap, hidden: false, getAttribute: () => ap }));
+        const tab = { attrs: { "data-me": "obra" }, getAttribute(k) { return this.attrs[k]; } };
+        const document = { getElementById: () => tab, querySelectorAll: (sel) => {
+          if (sel === "#me-barra .me-ir") return botones;
+          const m = sel.match(/data-me-apartado="([a-z]+)"/); return m ? (bloques[m[1]] || []) : []; } };
+        const elegidos = []; const elegirApartadoMiEmpresa = (id) => { elegidos.push(id); tab.attrs["data-me"] = id; };
+        ${fuentePoda}
+        podarBarraMiEmpresa();
+        return { botones, elegidos };`)();
+      const oc = Object.fromEntries(P.botones.map((b) => [b.ap, b.hidden]));
+      okME(!oc.hoy && !oc.registro && oc.obra && oc.ajustes, `(f) se esconden solo los apartados con TODOS sus bloques escondidos: ${JSON.stringify(oc)}`);
+      okME(P.elegidos.join() === "hoy", "(f) si estaba en un apartado que quedó vacío, vuelve a Hoy");
+    }
+    okME(/podarBarraMiEmpresa\(\);/.test(cortarME("  function vistaDeVisitante(activa) {")), "(f) la vista de visitante poda la barra");
+    if (fallasME.length) throw new Error(`unidad Mi empresa: ${fallasME.length} comprobaciones fallan:\n  - ${fallasME.join("\n  - ")}`);
+    console.log("· unidad Mi empresa · Hoy y su barra: la plata en juego dice qué departamento la mueve (99 % si no es todo), los avisos cuentan lo que abre su lista, elegir un apartado es inerte ante lo desconocido y cada bloque de la pestaña dice su apartado (censo)");
   }
 
   bqIteraciones: {

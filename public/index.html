@@ -2468,6 +2468,61 @@
     #tab-admin .plegado-empresa-cuerpo { padding: 4px 0 18px; }
     /* un plegado sin nada que enseñar (el tablero del visitante, el consorcio de un solo perfil) no se pinta vacío */
     #tab-admin .plegado-empresa[hidden] { display: none; }
+
+    /* ══════ MI EMPRESA CON SU BARRA (9-nov-2026, decisión del dueño) ══════
+       Un apartado a la vez, y lo decide la HOJA, no el JavaScript: `#tab-admin` lleva `data-me` (nace «hoy» en el
+       marcado) y cada bloque su `data-me-apartado`; `elegirApartadoMiEmpresa` (app.js) solo cambia `data-me`, marca la
+       barra, pone el título y abre el plegado. Así «Hoy» se ve bien aunque el script tarde o falle. (2,2,0) gana a las
+       reglas de bloque de la pestaña sin `!important`. Dentro de un apartado el rótulo del plegado sobra: el título
+       lo dice `#me-titulo`. */
+    #app #tab-admin[data-me="hoy"] > [data-me-apartado]:not([data-me-apartado="hoy"]) { display: none; }
+    #app #tab-admin[data-me="registro"] > [data-me-apartado]:not([data-me-apartado="registro"]) { display: none; }
+    #app #tab-admin[data-me="formatos"] > [data-me-apartado]:not([data-me-apartado="formatos"]) { display: none; }
+    #app #tab-admin[data-me="obra"] > [data-me-apartado]:not([data-me-apartado="obra"]) { display: none; }
+    #app #tab-admin[data-me="socias"] > [data-me-apartado]:not([data-me-apartado="socias"]) { display: none; }
+    #app #tab-admin[data-me="mercado"] > [data-me-apartado]:not([data-me-apartado="mercado"]) { display: none; }
+    #app #tab-admin[data-me="noesta"] > [data-me-apartado]:not([data-me-apartado="noesta"]) { display: none; }
+    #app #tab-admin[data-me="ajustes"] > [data-me-apartado]:not([data-me-apartado="ajustes"]) { display: none; }
+    #app #tab-admin:not([data-me="hoy"]) > details[data-me-apartado] > summary { display: none; }
+    #app #tab-admin:not([data-me="hoy"]) > details[data-me-apartado] { border: 0; margin-top: 0; padding-top: 0; }
+    #tab-admin[data-me] { display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; }
+    #tab-admin .me-titulo { margin: 0 0 18px; font-family: var(--font-display); font-size: 34px; font-weight: 500; line-height: 1.15; color: var(--text-primary); }
+    #tab-admin .me-barra { display: flex; flex-direction: column; gap: 2px; }
+    #tab-admin .me-barra-t { margin: 0 0 6px; font-size: 17px; font-weight: 700; color: var(--text-primary); }
+    #app #tab-admin .me-barra button { min-height: 48px; padding: 8px 14px; border: 0; border-radius: 12px; background: transparent; color: var(--text-secondary);
+      font-size: 17px; text-align: left; cursor: pointer; }
+    #app #tab-admin .me-barra button:hover { background: var(--bg-inset); color: var(--text-primary); }
+    #app #tab-admin .me-barra button[aria-current="page"] { background: var(--accent-light); color: var(--text-primary); font-weight: 700; }
+    #app #tab-admin .me-barra .me-volver { display: none; color: var(--accent); font-weight: 700; text-decoration: underline; text-underline-offset: 0.18em; padding-left: 4px; }
+    /* «Próximas fechas» y la lista de avisos salen de Hoy: viven en Mis procesos. Sus nodos se quedan (app.js los pinta) */
+    #app #tab-admin #mi-atencion, #app #tab-admin #mi-procesos .mi-col-fechas { display: none; }
+    #app #tab-admin #mi-procesos > .grid { grid-template-columns: minmax(0, 1fr); }
+    #app #tab-admin .mi-atencion-linea { display: flex; width: 100%; align-items: center; gap: 10px; min-height: 52px; margin: 0 0 10px; padding: 10px 14px;
+      border: 0; border-radius: var(--radius-md); background: var(--danger-light); color: var(--danger); font-size: 17px; font-weight: 700; text-align: left; cursor: pointer; }
+    #app #tab-admin .mi-atencion-linea.hidden { display: none; }
+    #app #tab-admin .mi-atencion-linea .mi-ir { margin-left: auto; color: inherit; }
+    #tab-admin #pulso-plazo .mi-tareas { grid-template-columns: minmax(0, 1fr); }
+    #tab-admin .mi-tarea-neutra { background: var(--bg-card); border: 1px solid var(--border); }
+    #tab-admin .mi-tarea-neutra .mi-punto { color: var(--text-secondary); }
+    #tab-admin .mi-tarea-col { flex-direction: column; align-items: flex-start; gap: 6px; }
+    #tab-admin .mi-tarea-cifra { display: block; font-size: 32px; font-weight: 700; line-height: 1.15; font-variant-numeric: tabular-nums; }
+    #tab-admin .mi-aviso-reparto { display: block; margin-top: 8px; padding: 8px 12px; border-radius: 10px; background: var(--warn-light); color: var(--warn); font-size: 16px; }
+    /* Computador: la barra a la izquierda, sola en su columna; el contenido a la derecha */
+    @media (min-width: 900px) {
+      #tab-admin[data-me] { grid-template-columns: 240px minmax(0, 1fr); column-gap: 40px; }
+      #tab-admin[data-me] > * { grid-column: 2; }
+      #tab-admin[data-me] > #me-barra { grid-column: 1; grid-row: 1 / span 40; align-self: start; position: sticky; top: 96px; }
+      #tab-admin .me-ir-pie { margin-top: 14px; border-top: 1px solid var(--border); }
+      #tab-admin #pulso-plazo .mi-tareas { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      #tab-admin .me-barra-t { display: none; }
+    }
+    /* Teléfono: en Hoy la lista va al final; en otro apartado solo queda «Volver a Hoy», arriba */
+    @media (max-width: 899px) {
+      #tab-admin[data-me="hoy"] > #me-barra { order: 99; margin-top: 18px; padding: 8px; border-radius: var(--radius-md); background: var(--bg-card); border: 1px solid var(--border); }
+      #tab-admin[data-me="hoy"] > #me-barra [data-me-ir="hoy"] { display: none; }
+      #tab-admin:not([data-me="hoy"]) > #me-barra .me-ir, #tab-admin:not([data-me="hoy"]) > #me-barra .me-barra-t { display: none; }
+      #app #tab-admin:not([data-me="hoy"]) > #me-barra .me-volver { display: block; }
+    }
   </style>
 </head>
 <body class="antialiased">
@@ -2807,7 +2862,26 @@
     </nav>
 
     <!-- ════════════════════ PESTAÑA 1 · Mi empresa (principal) ════════════════════ -->
-    <main id="tab-admin" role="tabpanel" tabindex="0" aria-labelledby="pest-admin" class="panel-pestana mx-auto max-w-6xl px-5 py-8">
+    <main id="tab-admin" role="tabpanel" tabindex="0" aria-labelledby="pest-admin" data-me="hoy" class="panel-pestana mx-auto max-w-6xl px-5 py-8">
+      <!-- ══════ LA BARRA DE MI EMPRESA (9-nov-2026, decisión del dueño sobre su maqueta) ══════
+           «Hoy» queda con el titular (las licitaciones a las que puede presentarse), los avisos de interés, la plata en
+           juego con lo que pone el departamento que más pone, y sus procesos guardados con «piden atención» en una
+           línea. Lo demás vive en su apartado. Cada bloque dice el suyo con `data-me-apartado`; `elegirApartadoMiEmpresa`
+           (app.js) enseña uno y esconde los otros con `.me-otro`. Nada se borra: se mueve. En el computador la barra va
+           a la izquierda; en el teléfono la lista va al final de «Hoy» y en los demás apartados queda «Volver a Hoy». -->
+      <nav id="me-barra" class="me-barra" aria-label="Apartados de Mi empresa">
+        <button type="button" class="me-volver" data-me-ir="hoy">Volver a Hoy</button>
+        <p class="me-barra-t">Más de Mi empresa</p>
+        <button type="button" class="me-ir" data-me-ir="hoy" aria-current="page">Hoy</button>
+        <button type="button" class="me-ir" data-me-ir="registro">Su registro</button>
+        <button type="button" class="me-ir" data-me-ir="formatos">Datos para los formatos</button>
+        <button type="button" class="me-ir" data-me-ir="obra">Obra que ya ejecutó</button>
+        <button type="button" class="me-ir" data-me-ir="socias">Socias y consorcio</button>
+        <button type="button" class="me-ir" data-me-ir="mercado">Cómo está el mercado</button>
+        <button type="button" class="me-ir" data-me-ir="noesta">¿Por qué no está un proceso?</button>
+        <button type="button" class="me-ir me-ir-pie" data-me-ir="ajustes">Ajustes</button>
+      </nav>
+      <h2 id="me-titulo" class="me-titulo" tabindex="-1" hidden></h2>
 
       <!-- ══════ Perfiles y RUP ══════ -->
             <!-- ══════════════ MI EMPRESA · lo único que un contratista toca ══════════════
@@ -2861,14 +2935,14 @@
            secciones de abajo se escondían sin una palabra. Las cifras siguen sin inventarse; lo que cambia es
            que se dice qué no llegó y se ofrece «Reintentar» a la vista. Lo escribe `pintarFalloMiEmpresa`
            (app.js) con la frase de `Pulso.fraseFallo`. Mismas clases que el mensaje y el botón de Mis procesos. -->
-      <div id="mi-fallo" class="mb-6 hidden rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
+      <div id="mi-fallo" data-me-apartado="hoy" class="mb-6 hidden rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
         <p id="mi-fallo-texto"></p>
         <button id="mi-fallo-reintentar" type="button"
                 class="mt-3 rounded-xl border border-gray-300 bg-white px-5 py-2 text-sm font-medium transition hover:bg-gray-50">
           Reintentar
         </button>
       </div>
-      <section id="pulso" class="hidden mb-6">
+      <section id="pulso" data-me-apartado="hoy" class="hidden mb-6">
         <!-- ⚠️ TRANSLÚCIDO SIN BLUR ERA LO PEOR DE LOS DOS MUNDOS (24-ago-2026).
              Estos siete recuadros fijaban `var(--bg-card)` —que es
              `rgba(255,255,255,0.72)`— en un `style` en línea, y como no llevan
@@ -2895,28 +2969,31 @@
            «Actualizar datos» sigue a la vista (decisión del 24-ago), aunque la maqueta no lo traía. -->
       <!-- LO QUE PIDE ATENCIÓN EN SUS PROCESOS GUARDADOS: los mismos avisos de Mis procesos (`op=seguimiento`,
            que ya se pide al abrir la aplicación), con la misma frase y el mismo pintado (public/casillero.js). -->
-      <section id="mi-atencion" class="mi-bloque hidden" aria-labelledby="mi-atencion-t">
+      <section id="mi-atencion" data-me-apartado="hoy" class="mi-bloque hidden" aria-labelledby="mi-atencion-t">
         <div class="mi-cab"><h2 id="mi-atencion-t" class="mi-cab-t">Lo que pide atención</h2><span id="mi-atencion-n" class="mi-nota"></span></div>
         <div id="mi-atencion-lista" class="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-gray-900/5"></div>
         <button type="button" class="mi-enlace" data-mi-ir-seguimiento="1">Ver todos sus procesos</button>
       </section>
       <!-- CON PLAZO: las dos cifras del pulso que se vencen. Cada tarjeta ES la lista que abre: la de avisar hoy abre
            `manif=urgente` (la misma cuenta de lib/filtros_lista) y la de la semana, `cierre=7d`. -->
-      <section id="pulso-plazo" class="mi-bloque hidden" aria-labelledby="pulso-plazo-t">
-        <div class="mi-cab"><h2 id="pulso-plazo-t" class="mi-cab-t">Con plazo</h2><span class="mi-nota">Licitaciones a las que puede presentarse</span></div>
+      <section id="pulso-plazo" data-me-apartado="hoy" class="mi-bloque hidden" aria-labelledby="pulso-plazo-t">
+        <div class="mi-cab"><h2 id="pulso-plazo-t" class="mi-cab-t">Avisos de interés y plata en juego</h2></div>
         <div class="mi-tareas">
           <div id="pu-manifestacion" class="hidden"></div>
-          <div id="pu-cierran" class="hidden"></div>
+          <div id="pu-total" class="hidden"></div>
         </div>
       </section>
       <!-- SUS PROCESOS Y SUS PRÓXIMAS FECHAS: de `op=seguimiento`, sin una consulta más. -->
-      <section id="mi-procesos" class="mi-bloque hidden" aria-label="Sus procesos guardados">
+      <section id="mi-procesos" data-me-apartado="hoy" class="mi-bloque hidden" aria-label="Sus procesos guardados">
         <div class="grid gap-4 md:grid-cols-2">
           <div class="min-w-0">
             <div class="mi-cab"><h2 class="mi-cab-t">Sus procesos</h2></div>
+            <!-- «piden atención» en UNA línea (9-nov-2026): la lista completa vive en Mis procesos -->
+            <button type="button" id="mi-atencion-linea" class="mi-atencion-linea hidden" data-mi-ir-seguimiento="1"></button>
             <div id="mi-etapas" class="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-gray-900/5"></div>
           </div>
-          <div class="min-w-0">
+          <!-- «Próximas fechas» sale de Hoy (9-nov-2026): sigue en el calendario de Mis procesos; el nodo se queda -->
+          <div class="min-w-0 mi-col-fechas">
             <div class="mi-cab"><h2 class="mi-cab-t">Próximas fechas</h2><button type="button" class="mi-enlace" data-mi-ir-seguimiento="calendario">Ver el calendario</button></div>
             <div id="mi-agenda" class="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-gray-900/5"></div>
           </div>
@@ -2950,7 +3027,7 @@
          movimiento, más contraste). Un `style="background: var(--bg-card)"`
          a mano se queda SIN blur y sin esas variantes: sería una segunda
          definición de «tarjeta de vidrio» que se despeina por su cuenta. -->
-      <section id="actualizar" class="mt-4 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+      <section id="actualizar" data-me-apartado="ajustes" class="mt-4 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
         <div class="flex flex-wrap items-center justify-between gap-4">
         <div class="min-w-0">
           <h2 class="font-semibold tracking-tight">Actualizar datos</h2>
@@ -2994,7 +3071,7 @@
            así que no queda ninguna llamada colgando. -->
 
       <!-- PLEGADO (3-nov-2026): dónde están, quién las publica y cuánto hay en juego; antes, a la vista bajo el titular -->
-      <details id="plg-donde" class="plegado-empresa">
+      <details id="plg-donde" data-me-apartado="mercado" class="plegado-empresa">
         <summary class="plegado-empresa-titulo"><span class="min-w-0 flex-1">Dónde están y quién publica más</span></summary>
         <div class="plegado-empresa-cuerpo">
       <!-- LOS DOS REPARTOS, DESPUÉS DEL CALENDARIO: dicen dónde están y quién
@@ -3021,8 +3098,9 @@
       </details>
 
       <!-- PLEGADO (3-nov-2026): el mes de cierres de las licitaciones a las que puede presentarse; la tarjeta «cierran esta semana» de arriba abre la lista por fecha -->
-      <details id="plg-calendario" class="plegado-empresa">
+      <details id="plg-calendario" data-me-apartado="mercado" class="plegado-empresa">
         <summary class="plegado-empresa-titulo"><span class="min-w-0 flex-1">Cuándo cierra cada licitación</span></summary>
+        <div id="pu-cierran" class="mi-tareas hidden"></div>
         <div class="plegado-empresa-cuerpo">
       <!-- ══════════ EL CALENDARIO DE CIERRES (encargo del ingeniero, 31-ago-2026) ══════════
            «Un calendario en el que se vea el mes actual, el día en el que
@@ -3049,7 +3127,7 @@
       </details>
 
       <!-- PLEGADO (3-nov-2026): su registro en cifras, la ficha para los formatos y lo que hay que tocar -->
-      <details id="plg-rup" class="plegado-empresa">
+      <details id="plg-rup" data-me-apartado="registro" class="plegado-empresa">
         <summary class="plegado-empresa-titulo"><span class="min-w-0 flex-1">Su registro de proponente</span></summary>
         <div class="plegado-empresa-cuerpo">
 <section id="seccion-rup" class="mt-6 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
@@ -3088,36 +3166,7 @@
              documento de Word del expediente los pone en el formato que publicó la
              entidad (lib/formato_entidad). Se guardan con la clave del sitio
              (op=empresa-datos). Plegado: se toca una vez. -->
-        <details id="empresa-datos" class="mt-4">
-          <summary class="cursor-pointer text-sm font-medium">Datos para los formatos del pliego</summary>
-          <p class="mt-2 text-xs text-gray-500">Escríbalos como en su certificado de existencia y representación; lo vacío queda vacío.</p>
-          <!-- DE QUIÉN SON ESTOS DATOS (5-nov-2026): los de su empresa o los de cada consorcio, para llenar los formatos con el
-               consorcio con que se presenta. Las opciones las pone app.js con los consorcios de «Crear consorcio» -->
-          <label class="mt-3 block text-xs">De quién son estos datos
-            <select id="empresa-datos-de" class="control-select mt-1 w-full rounded-xl text-sm" aria-label="De quién son estos datos"></select></label>
-          <!-- LO QUE YA ES PÚBLICO, POR NIT (6-nov-2026): con el NIT escrito, trae del RUES y de los proveedores de SECOP II
-               lo que haya y lo pone SOLO en los campos vacíos, cada dato con su fuente; no guarda nada (op=empresa-datos&publicos=1) -->
-          <button id="btn-empresa-publicos" type="button" class="mt-3 rounded-xl border border-gray-300 px-3 py-2 text-sm font-medium transition hover:bg-gray-50" title="Llena los campos vacíos con el RUES y SECOP II; revíselos y guarde">Traer con el NIT</button>
-          <div id="empresa-datos-publicos" class="mt-2 text-xs" role="status" hidden></div>
-          <form id="form-empresa-datos" method="dialog" class="mt-3 grid gap-3 sm:grid-cols-2" autocomplete="off">
-            <label class="text-xs">Nombre o razón social<input name="razon_social" type="text" maxlength="160" class="control-campo mt-1 w-full rounded-xl text-sm"></label>
-            <label class="text-xs">NIT<input name="nit" type="text" inputmode="numeric" maxlength="20" placeholder="Por ejemplo: 900.123.456-7" class="control-campo mt-1 w-full rounded-xl text-sm"></label>
-            <label class="text-xs">Nombre del representante legal<input name="representante_legal" type="text" maxlength="120" class="control-campo mt-1 w-full rounded-xl text-sm"></label>
-            <label class="text-xs">Cédula del representante legal<input name="representante_documento" type="text" inputmode="numeric" maxlength="20" placeholder="Por ejemplo: 9.396.710" class="control-campo mt-1 w-full rounded-xl text-sm"></label>
-            <label class="text-xs">Cédula expedida en<input name="representante_expedicion" type="text" maxlength="60" placeholder="Por ejemplo: Sogamoso" class="control-campo mt-1 w-full rounded-xl text-sm"></label>
-            <label class="text-xs">Matrícula profesional<input name="matricula_profesional" type="text" maxlength="40" placeholder="Por ejemplo: 25202-79699 CND" class="control-campo mt-1 w-full rounded-xl text-sm"></label>
-            <label class="text-xs">Persona de contacto<input name="persona_contacto" type="text" maxlength="120" placeholder="Para notificaciones" class="control-campo mt-1 w-full rounded-xl text-sm"></label>
-            <label class="text-xs">Dirección<input name="direccion" type="text" maxlength="160" class="control-campo mt-1 w-full rounded-xl text-sm"></label>
-            <label class="text-xs">Ciudad<input name="ciudad" type="text" maxlength="80" class="control-campo mt-1 w-full rounded-xl text-sm"></label>
-            <label class="text-xs">Teléfono<input name="telefono" type="tel" maxlength="40" class="control-campo mt-1 w-full rounded-xl text-sm"></label>
-            <label class="text-xs">Tipo de proponente<select name="tipo_proponente" class="control-select mt-1 w-full rounded-xl text-sm"><option value=""></option><option value="persona_natural">Persona natural</option><option value="persona_juridica">Persona jurídica nacional</option><option value="consorcio">Consorcio</option><option value="union_temporal">Unión temporal</option></select></label>
-            <label class="text-xs">Grupo empresarial<select name="grupo_empresarial" class="control-select mt-1 w-full rounded-xl text-sm"><option value=""></option><option value="no">No</option><option value="si">Sí</option></select></label>
-            <label class="text-xs">Cotiza en bolsa<select name="cotiza_bolsa" class="control-select mt-1 w-full rounded-xl text-sm"><option value=""></option><option value="no">No</option><option value="si">Sí</option></select></label>
-            <label class="text-xs">Correo electrónico<input name="correo" type="text" inputmode="email" maxlength="160" placeholder="Uno o dos, separados por un guion" class="control-campo mt-1 w-full rounded-xl text-sm"></label>
-          </form>
-          <button id="btn-empresa-datos" type="button" class="control-boton mt-3 rounded-xl text-sm">Guardar los datos</button>
-          <p id="empresa-datos-estado" class="mt-2 hidden text-xs" role="status"></p>
-        </details>
+        
 
         <!-- Alarma de renovación (quinto día hábil de abril): la pinta
              pintarAlertaVigencia() al arrancar la pestaña; fuera de la
@@ -3183,7 +3232,213 @@
       </details>
 
       <!-- PLEGADO (3-nov-2026): armar un consorcio y verificar a un socio -->
-      <details id="plg-socias" class="plegado-empresa">
+      <!-- SALEN A SU APARTADO (9-nov-2026, decisión del dueño): «Códigos que le faltan» va con Su registro (responde
+           con qué códigos renovarlo), «Datos para los formatos» y «Obra que ya ejecutó» tienen apartado propio en la
+           barra de Mi empresa. Se MUEVEN con su marcado entero: ningún id cambia. -->
+      <section id="seccion-cobertura" data-me-apartado="registro" class="mt-8 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 class="font-semibold tracking-tight">Códigos que le faltan en su registro de proponente</h2>
+            <p class="mt-1 text-sm text-gray-500">Con qué códigos adjudica el mercado lo que usted hace, y cuáles no tiene inscritos. Se mira antes de renovar el registro (abril).</p>
+          </div>
+          <div class="flex flex-wrap items-end gap-3">
+            <label class="block">
+              <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Perfil</span>
+              <!-- SIN «Consorcio» (11-sep-2026): era el reparto fijo 50/50 que se
+                   eliminó, y ofrecerlo aquí sería reintroducir lo retirado. El
+                   valor sigue RESPONDIENDO en el servidor —un enlace guardado es
+                   inerte, jamás un error—; lo que desaparece es ofrecerlo. -->
+              <select id="c-perfil" class="rounded-lg border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900/10">
+                <option value="helder">Helder</option>
+                <option value="genesis">Génesis</option>
+              </select>
+            </label>
+            <button id="btn-cobertura" type="button"
+                    class="inline-flex items-center gap-2 rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700 disabled:opacity-40">
+              <span id="c-spin" class="hidden h-3 w-3 rounded-full border-2 border-white/40 border-t-white spin"></span>
+              Ejecutar auditoría
+            </button>
+            <button id="btn-cobertura-exportar" type="button" disabled
+                    class="rounded-xl border border-gray-300 px-4 py-2.5 text-sm font-medium transition hover:bg-gray-100 disabled:opacity-40">
+              Exportar a JSON ↓
+            </button>
+          </div>
+        </div>
+
+        <label class="mt-4 inline-flex items-center gap-2 text-sm text-gray-600">
+          <input id="c-usar-experiencia" type="checkbox" checked
+                 class="rounded border-gray-300 text-gray-900 focus:ring-gray-900/10">
+          Usar mi experiencia para priorizar
+        </label>
+
+        <p id="c-aviso" class="mt-5 hidden rounded-xl px-4 py-3 text-sm"></p>
+
+        <div id="c-skeleton" class="mt-6 hidden animate-pulse space-y-4">
+          <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
+            <div class="h-24 rounded-2xl bg-gray-100"></div><div class="h-24 rounded-2xl bg-gray-100"></div>
+            <div class="h-24 rounded-2xl bg-gray-100"></div><div class="h-24 rounded-2xl bg-gray-100"></div>
+          </div>
+          <div class="h-56 rounded-2xl bg-gray-100"></div>
+        </div>
+
+        <div id="c-contenido" class="mt-6 hidden">
+          <p id="c-alerta" class="mb-4 hidden rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 ring-1 ring-inset ring-red-600/20"></p>
+
+          <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
+            <div class="rounded-2xl bg-red-50 p-4">
+              <p class="text-xs font-medium uppercase tracking-wide text-red-900/60">Críticos</p>
+              <p id="c-criticos" class="mt-1 text-3xl font-semibold tabular-nums text-red-950">—</p>
+              <p class="text-xs text-red-900/60">inscribir ya</p>
+            </div>
+            <div class="rounded-2xl bg-orange-50 p-4">
+              <p class="text-xs font-medium uppercase tracking-wide text-orange-900/60">Altos</p>
+              <p id="c-altos" class="mt-1 text-3xl font-semibold tabular-nums text-orange-950">—</p>
+              <p class="text-xs text-orange-900/60">evaluar</p>
+            </div>
+            <div class="rounded-2xl bg-amber-50 p-4">
+              <p class="text-xs font-medium uppercase tracking-wide text-amber-900/60">Medios</p>
+              <p id="c-medios" class="mt-1 text-3xl font-semibold tabular-nums text-amber-950">—</p>
+              <p class="text-xs text-amber-900/60">vigilar</p>
+            </div>
+            <div class="rounded-2xl bg-gray-100 p-4">
+              <p class="text-xs font-medium uppercase tracking-wide text-gray-500">Bajos</p>
+              <p id="c-bajos" class="mt-1 text-3xl font-semibold tabular-nums text-gray-800">—</p>
+              <p class="text-xs text-gray-500">sin urgencia</p>
+            </div>
+          </div>
+
+          <p id="c-cobertura-nota" class="mt-4 text-sm text-gray-600"></p>
+
+          <div class="mt-4 overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead class="text-left text-xs uppercase tracking-wide text-gray-400">
+                <tr>
+                  <th class="py-1 pr-2">Código</th><th class="py-1 pr-2">Criticidad</th>
+                  <th class="py-1 pr-2 text-right">Adjudicados</th><th class="py-1 pr-2 text-right">Muy similares</th>
+                  <th class="py-1 pr-2 text-right">Similitud</th><th class="py-1 pr-2 text-right">Cuantía media</th>
+                  <th class="py-1">Recomendación</th>
+                </tr>
+              </thead>
+              <tbody id="c-faltantes" class="divide-y divide-gray-100"></tbody>
+            </table>
+          </div>
+          <p class="mt-2 text-xs text-gray-400">Pulse una fila para ver los objetos de ejemplo y las entidades que más usan ese código.</p>
+
+          <div id="c-excluidos" class="mt-6"></div>
+          <p id="c-meta" class="mt-6 text-xs text-gray-400"></p>
+        </div>
+      </section>
+      <details id="empresa-datos" data-me-apartado="formatos" class="mt-4">
+          <summary class="cursor-pointer text-sm font-medium">Datos para los formatos del pliego</summary>
+          <p class="mt-2 text-xs text-gray-500">Escríbalos como en su certificado de existencia y representación; lo vacío queda vacío.</p>
+          <!-- DE QUIÉN SON ESTOS DATOS (5-nov-2026): los de su empresa o los de cada consorcio, para llenar los formatos con el
+               consorcio con que se presenta. Las opciones las pone app.js con los consorcios de «Crear consorcio» -->
+          <label class="mt-3 block text-xs">De quién son estos datos
+            <select id="empresa-datos-de" class="control-select mt-1 w-full rounded-xl text-sm" aria-label="De quién son estos datos"></select></label>
+          <!-- LO QUE YA ES PÚBLICO, POR NIT (6-nov-2026): con el NIT escrito, trae del RUES y de los proveedores de SECOP II
+               lo que haya y lo pone SOLO en los campos vacíos, cada dato con su fuente; no guarda nada (op=empresa-datos&publicos=1) -->
+          <button id="btn-empresa-publicos" type="button" class="mt-3 rounded-xl border border-gray-300 px-3 py-2 text-sm font-medium transition hover:bg-gray-50" title="Llena los campos vacíos con el RUES y SECOP II; revíselos y guarde">Traer con el NIT</button>
+          <div id="empresa-datos-publicos" class="mt-2 text-xs" role="status" hidden></div>
+          <form id="form-empresa-datos" method="dialog" class="mt-3 grid gap-3 sm:grid-cols-2" autocomplete="off">
+            <label class="text-xs">Nombre o razón social<input name="razon_social" type="text" maxlength="160" class="control-campo mt-1 w-full rounded-xl text-sm"></label>
+            <label class="text-xs">NIT<input name="nit" type="text" inputmode="numeric" maxlength="20" placeholder="Por ejemplo: 900.123.456-7" class="control-campo mt-1 w-full rounded-xl text-sm"></label>
+            <label class="text-xs">Nombre del representante legal<input name="representante_legal" type="text" maxlength="120" class="control-campo mt-1 w-full rounded-xl text-sm"></label>
+            <label class="text-xs">Cédula del representante legal<input name="representante_documento" type="text" inputmode="numeric" maxlength="20" placeholder="Por ejemplo: 9.396.710" class="control-campo mt-1 w-full rounded-xl text-sm"></label>
+            <label class="text-xs">Cédula expedida en<input name="representante_expedicion" type="text" maxlength="60" placeholder="Por ejemplo: Sogamoso" class="control-campo mt-1 w-full rounded-xl text-sm"></label>
+            <label class="text-xs">Matrícula profesional<input name="matricula_profesional" type="text" maxlength="40" placeholder="Por ejemplo: 25202-79699 CND" class="control-campo mt-1 w-full rounded-xl text-sm"></label>
+            <label class="text-xs">Persona de contacto<input name="persona_contacto" type="text" maxlength="120" placeholder="Para notificaciones" class="control-campo mt-1 w-full rounded-xl text-sm"></label>
+            <label class="text-xs">Dirección<input name="direccion" type="text" maxlength="160" class="control-campo mt-1 w-full rounded-xl text-sm"></label>
+            <label class="text-xs">Ciudad<input name="ciudad" type="text" maxlength="80" class="control-campo mt-1 w-full rounded-xl text-sm"></label>
+            <label class="text-xs">Teléfono<input name="telefono" type="tel" maxlength="40" class="control-campo mt-1 w-full rounded-xl text-sm"></label>
+            <label class="text-xs">Tipo de proponente<select name="tipo_proponente" class="control-select mt-1 w-full rounded-xl text-sm"><option value=""></option><option value="persona_natural">Persona natural</option><option value="persona_juridica">Persona jurídica nacional</option><option value="consorcio">Consorcio</option><option value="union_temporal">Unión temporal</option></select></label>
+            <label class="text-xs">Grupo empresarial<select name="grupo_empresarial" class="control-select mt-1 w-full rounded-xl text-sm"><option value=""></option><option value="no">No</option><option value="si">Sí</option></select></label>
+            <label class="text-xs">Cotiza en bolsa<select name="cotiza_bolsa" class="control-select mt-1 w-full rounded-xl text-sm"><option value=""></option><option value="no">No</option><option value="si">Sí</option></select></label>
+            <label class="text-xs">Correo electrónico<input name="correo" type="text" inputmode="email" maxlength="160" placeholder="Uno o dos, separados por un guion" class="control-campo mt-1 w-full rounded-xl text-sm"></label>
+          </form>
+          <button id="btn-empresa-datos" type="button" class="control-boton mt-3 rounded-xl text-sm">Guardar los datos</button>
+          <p id="empresa-datos-estado" class="mt-2 hidden text-xs" role="status"></p>
+        </details>
+      <section id="seccion-experiencia" data-me-apartado="obra" class="mt-8 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+        <h2 class="font-semibold tracking-tight">Obra que ya ejecutó</h2>
+        <p class="mt-1 text-sm text-gray-500">Sus contratos ejecutados: en qué <em>sabe</em> trabajar. Priorizan los códigos que le faltan.</p>
+        <!-- A QUIÉN PERTENECE (6-sep-2026, M-SEG-02): la memoria de ago-2026 decía que «la UI
+             lo dice» y solo lo decía un comentario del código. Se dice aquí, en pantalla. -->
+        <p id="exp-aviso-empresa" class="mt-1 text-xs text-gray-500">Esta carga es de la empresa que administra el sitio y vale para todos sus perfiles.</p>
+
+        <!-- Lo que hay HOY va arriba y a la vista; la carga, plegada -->
+        <div id="exp-actual" class="mt-3 text-sm text-gray-600">—</div>
+
+        <details id="exp-gestion" class="mt-4">
+          <summary class="cursor-pointer text-sm font-medium text-gray-700 hover:text-gray-900">Cargar o actualizar la experiencia</summary>
+
+        <!-- carga por CSV (formato estándar) — la cablea onboarding.js -->
+        <div id="exp-panel" class="mt-4 rounded-xl bg-gray-50 p-4 ring-1 ring-inset ring-gray-900/5">
+          <h3 class="text-sm font-semibold tracking-tight">Cargar experiencia desde CSV</h3>
+          <a href="/formato_experiencia.csv" download
+             class="mt-2 inline-block text-sm font-medium text-blue-600 hover:underline">Descargar formato (CSV) ↓</a>
+          <div class="mt-3 grid gap-2 sm:max-w-md">
+            <input id="exp-archivo" type="file" accept=".csv,text/csv" aria-label="Archivo CSV de experiencia"
+                   class="block w-full text-sm text-gray-600 file:mr-3 file:rounded-lg file:border-0 file:bg-gray-100 file:px-3 file:py-1.5 file:text-sm file:font-medium hover:file:bg-gray-200">
+            <button id="btn-exp-cargar" type="button"
+                    class="rounded-xl bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-700">
+              Cargar experiencia (CSV)
+            </button>
+          </div>
+          <p id="exp-mensaje" class="mt-3 hidden rounded-lg px-3 py-2 text-xs"></p>
+        </div>
+
+        <!-- «Puesta en producción» (los 3 pasos de Génesis) vivía aquí y era
+             el residuo más técnico VISIBLE de la pestaña: cuatro botones de
+             operador con el nombre de otra empresa y un script de shell, al
+             lado de la carga de experiencia del usuario. Hoy vive dentro de
+             «Sistema», junto a la sincronización que su paso 3 dispara. -->
+
+        <label class="mt-4 block">
+          <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Contratos (JSON)</span>
+          <textarea id="exp-json" rows="8" spellcheck="false"
+                    class="w-full rounded-xl border border-gray-300 p-4 font-mono text-xs outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10"
+                    placeholder='{"contratos": [{"no_contrato": "001-2024", "entidad": "ALCALDIA MUNICIPAL DE PURIFICACION", "objeto": "CONSTRUCCION DE PLACA HUELLA EN LA VEREDA EL PORVENIR", "modalidad": "Licitacion publica", "participacion": 100, "valor_cop": 350000000, "fecha_inicio": "2024-03-15", "fecha_fin": "2024-09-15", "valor_smmlv": 450.5}]}'></textarea>
+        </label>
+
+        <div class="mt-3 flex flex-wrap items-center gap-3">
+          <button id="btn-exp-validar" type="button"
+                  class="rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700 disabled:opacity-40">
+            Cargar experiencia (JSON)
+          </button>
+          <button id="btn-exp-descargar" type="button"
+                  class="rounded-xl border border-gray-300 px-4 py-2.5 text-sm font-medium transition hover:bg-gray-100">
+            Descargar experiencia actual
+          </button>
+        </div>
+
+        <div id="exp-vista" class="mt-5 hidden">
+          <h3 class="text-sm font-semibold tracking-tight">Vista previa</h3>
+          <p id="exp-vista-nota" class="mt-0.5 text-xs text-gray-400"></p>
+          <div class="mt-2 overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead class="text-left text-xs uppercase tracking-wide text-gray-400">
+                <tr><th class="py-1 pr-2">N.º</th><th class="py-1 pr-2">Entidad</th><th class="py-1 pr-2">Objeto</th><th class="py-1 pr-2 text-right">Valor</th><th class="py-1 text-right">Salarios mínimos</th></tr>
+              </thead>
+              <tbody id="exp-preview" class="divide-y divide-gray-100"></tbody>
+            </table>
+          </div>
+          <div class="mt-4 flex flex-wrap items-center gap-3">
+            <button id="btn-exp-confirmar" type="button"
+                    class="rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700 disabled:opacity-40">
+              Confirmar carga
+            </button>
+            <button id="btn-exp-cancelar" type="button"
+                    class="rounded-xl border border-gray-300 px-4 py-2.5 text-sm font-medium transition hover:bg-gray-100">
+              Cancelar
+            </button>
+          </div>
+        </div>
+
+        <p id="exp-json-mensaje" class="mt-5 hidden rounded-xl px-4 py-3 text-sm"></p>
+        <ul id="exp-errores" class="mt-3 hidden space-y-1 rounded-xl bg-red-50 p-4 text-sm text-red-700 ring-1 ring-inset ring-red-600/20"></ul>
+        </details>
+      </section>
+      <details id="plg-socias" data-me-apartado="socias" class="plegado-empresa">
         <summary class="plegado-empresa-titulo"><span class="min-w-0 flex-1">Socias y consorcio</span></summary>
         <div class="plegado-empresa-cuerpo">
       <!-- ══════ Fase 10 · Consorcio a la medida ══════
@@ -3257,7 +3512,7 @@
       </details>
 
       <!-- PLEGADO (3-nov-2026): el tablero del dueño —cuánto bajan, contra cuántos compite, por año—; solo para quien administra el sitio -->
-      <details id="plg-mercado" class="plegado-empresa">
+      <details id="plg-mercado" data-me-apartado="mercado" class="plegado-empresa">
         <summary class="plegado-empresa-titulo"><span class="min-w-0 flex-1">Cómo está el mercado</span></summary>
         <div class="plegado-empresa-cuerpo">
       <!-- ══════ EL TABLERO, AHORA DEBAJO (ago 2026 · reordenado el 31-ago-2026) ══════
@@ -3473,7 +3728,7 @@
            administra el sitio y entró sin su clave. Nace oculto con el ATRIBUTO
            `hidden` (el CDN de Tailwind está bloqueado en la red del dueño) y lo
            enseña vistaDeVisitante() en app.js. -->
-      <section id="aviso-visitante" hidden class="mt-10 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+      <section id="aviso-visitante" data-me-apartado="hoy" hidden class="mt-10 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
         <p class="text-sm" style="color: var(--text-secondary);">
           Aquí no se muestran el tablero de procesos, la actualización de datos, los parámetros de costo,
           los contratos ejecutados, la auditoría del registro ni la sincronización: configuran la empresa
@@ -3490,10 +3745,8 @@
            Nace CERRADO: nada de aquí hace falta para decidir a qué presentarse, y un
            acordeón abierto con seis paneles técnicos es lo que hacía que la pestaña
            pareciera imposible de manejar. -->
-      <details id="seccion-sistema" class="mt-10 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
-        <summary class="cursor-pointer font-semibold tracking-tight"><span class="min-w-0 flex-1">Ajustes
-          <span class="ml-2 text-sm font-normal text-gray-500">— costos, experiencia y sincronización.
-            No hace falta abrirlo.</span></span>
+      <details id="seccion-sistema" data-me-apartado="ajustes" class="mt-10 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+        <summary class="cursor-pointer font-semibold tracking-tight"><span class="min-w-0 flex-1">Ajustes</span>
         </summary>
 
         
@@ -3636,180 +3889,9 @@
              responde «con qué códigos renuevo el RUP» antes del quinto día
              hábil de abril: retirarla perdería una respuesta que no está en
              ningún otro sitio. Ningún id cambia. -->
-<section id="seccion-experiencia" class="mt-8 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
-        <h2 class="font-semibold tracking-tight">Obra que ya ejecutó</h2>
-        <p class="mt-1 text-sm text-gray-500">Sus contratos ejecutados: en qué <em>sabe</em> trabajar. Priorizan los códigos que le faltan.</p>
-        <!-- A QUIÉN PERTENECE (6-sep-2026, M-SEG-02): la memoria de ago-2026 decía que «la UI
-             lo dice» y solo lo decía un comentario del código. Se dice aquí, en pantalla. -->
-        <p id="exp-aviso-empresa" class="mt-1 text-xs text-gray-500">Esta carga es de la empresa que administra el sitio y vale para todos sus perfiles.</p>
 
-        <!-- Lo que hay HOY va arriba y a la vista; la carga, plegada -->
-        <div id="exp-actual" class="mt-3 text-sm text-gray-600">—</div>
 
-        <details id="exp-gestion" class="mt-4">
-          <summary class="cursor-pointer text-sm font-medium text-gray-700 hover:text-gray-900">Cargar o actualizar la experiencia</summary>
 
-        <!-- carga por CSV (formato estándar) — la cablea onboarding.js -->
-        <div id="exp-panel" class="mt-4 rounded-xl bg-gray-50 p-4 ring-1 ring-inset ring-gray-900/5">
-          <h3 class="text-sm font-semibold tracking-tight">Cargar experiencia desde CSV</h3>
-          <a href="/formato_experiencia.csv" download
-             class="mt-2 inline-block text-sm font-medium text-blue-600 hover:underline">Descargar formato (CSV) ↓</a>
-          <div class="mt-3 grid gap-2 sm:max-w-md">
-            <input id="exp-archivo" type="file" accept=".csv,text/csv" aria-label="Archivo CSV de experiencia"
-                   class="block w-full text-sm text-gray-600 file:mr-3 file:rounded-lg file:border-0 file:bg-gray-100 file:px-3 file:py-1.5 file:text-sm file:font-medium hover:file:bg-gray-200">
-            <button id="btn-exp-cargar" type="button"
-                    class="rounded-xl bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-700">
-              Cargar experiencia (CSV)
-            </button>
-          </div>
-          <p id="exp-mensaje" class="mt-3 hidden rounded-lg px-3 py-2 text-xs"></p>
-        </div>
-
-        <!-- «Puesta en producción» (los 3 pasos de Génesis) vivía aquí y era
-             el residuo más técnico VISIBLE de la pestaña: cuatro botones de
-             operador con el nombre de otra empresa y un script de shell, al
-             lado de la carga de experiencia del usuario. Hoy vive dentro de
-             «Sistema», junto a la sincronización que su paso 3 dispara. -->
-
-        <label class="mt-4 block">
-          <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Contratos (JSON)</span>
-          <textarea id="exp-json" rows="8" spellcheck="false"
-                    class="w-full rounded-xl border border-gray-300 p-4 font-mono text-xs outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10"
-                    placeholder='{"contratos": [{"no_contrato": "001-2024", "entidad": "ALCALDIA MUNICIPAL DE PURIFICACION", "objeto": "CONSTRUCCION DE PLACA HUELLA EN LA VEREDA EL PORVENIR", "modalidad": "Licitacion publica", "participacion": 100, "valor_cop": 350000000, "fecha_inicio": "2024-03-15", "fecha_fin": "2024-09-15", "valor_smmlv": 450.5}]}'></textarea>
-        </label>
-
-        <div class="mt-3 flex flex-wrap items-center gap-3">
-          <button id="btn-exp-validar" type="button"
-                  class="rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700 disabled:opacity-40">
-            Cargar experiencia (JSON)
-          </button>
-          <button id="btn-exp-descargar" type="button"
-                  class="rounded-xl border border-gray-300 px-4 py-2.5 text-sm font-medium transition hover:bg-gray-100">
-            Descargar experiencia actual
-          </button>
-        </div>
-
-        <div id="exp-vista" class="mt-5 hidden">
-          <h3 class="text-sm font-semibold tracking-tight">Vista previa</h3>
-          <p id="exp-vista-nota" class="mt-0.5 text-xs text-gray-400"></p>
-          <div class="mt-2 overflow-x-auto">
-            <table class="w-full text-sm">
-              <thead class="text-left text-xs uppercase tracking-wide text-gray-400">
-                <tr><th class="py-1 pr-2">N.º</th><th class="py-1 pr-2">Entidad</th><th class="py-1 pr-2">Objeto</th><th class="py-1 pr-2 text-right">Valor</th><th class="py-1 text-right">Salarios mínimos</th></tr>
-              </thead>
-              <tbody id="exp-preview" class="divide-y divide-gray-100"></tbody>
-            </table>
-          </div>
-          <div class="mt-4 flex flex-wrap items-center gap-3">
-            <button id="btn-exp-confirmar" type="button"
-                    class="rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700 disabled:opacity-40">
-              Confirmar carga
-            </button>
-            <button id="btn-exp-cancelar" type="button"
-                    class="rounded-xl border border-gray-300 px-4 py-2.5 text-sm font-medium transition hover:bg-gray-100">
-              Cancelar
-            </button>
-          </div>
-        </div>
-
-        <p id="exp-json-mensaje" class="mt-5 hidden rounded-xl px-4 py-3 text-sm"></p>
-        <ul id="exp-errores" class="mt-3 hidden space-y-1 rounded-xl bg-red-50 p-4 text-sm text-red-700 ring-1 ring-inset ring-red-600/20"></ul>
-        </details>
-      </section>
-
-<section id="seccion-cobertura" class="mt-8 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
-        <div class="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h2 class="font-semibold tracking-tight">Códigos que le faltan en su registro de proponente</h2>
-            <p class="mt-1 text-sm text-gray-500">Con qué códigos adjudica el mercado lo que usted hace, y cuáles no tiene inscritos. Se mira antes de renovar el registro (abril).</p>
-          </div>
-          <div class="flex flex-wrap items-end gap-3">
-            <label class="block">
-              <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Perfil</span>
-              <!-- SIN «Consorcio» (11-sep-2026): era el reparto fijo 50/50 que se
-                   eliminó, y ofrecerlo aquí sería reintroducir lo retirado. El
-                   valor sigue RESPONDIENDO en el servidor —un enlace guardado es
-                   inerte, jamás un error—; lo que desaparece es ofrecerlo. -->
-              <select id="c-perfil" class="rounded-lg border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900/10">
-                <option value="helder">Helder</option>
-                <option value="genesis">Génesis</option>
-              </select>
-            </label>
-            <button id="btn-cobertura" type="button"
-                    class="inline-flex items-center gap-2 rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700 disabled:opacity-40">
-              <span id="c-spin" class="hidden h-3 w-3 rounded-full border-2 border-white/40 border-t-white spin"></span>
-              Ejecutar auditoría
-            </button>
-            <button id="btn-cobertura-exportar" type="button" disabled
-                    class="rounded-xl border border-gray-300 px-4 py-2.5 text-sm font-medium transition hover:bg-gray-100 disabled:opacity-40">
-              Exportar a JSON ↓
-            </button>
-          </div>
-        </div>
-
-        <label class="mt-4 inline-flex items-center gap-2 text-sm text-gray-600">
-          <input id="c-usar-experiencia" type="checkbox" checked
-                 class="rounded border-gray-300 text-gray-900 focus:ring-gray-900/10">
-          Usar mi experiencia para priorizar
-        </label>
-
-        <p id="c-aviso" class="mt-5 hidden rounded-xl px-4 py-3 text-sm"></p>
-
-        <div id="c-skeleton" class="mt-6 hidden animate-pulse space-y-4">
-          <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
-            <div class="h-24 rounded-2xl bg-gray-100"></div><div class="h-24 rounded-2xl bg-gray-100"></div>
-            <div class="h-24 rounded-2xl bg-gray-100"></div><div class="h-24 rounded-2xl bg-gray-100"></div>
-          </div>
-          <div class="h-56 rounded-2xl bg-gray-100"></div>
-        </div>
-
-        <div id="c-contenido" class="mt-6 hidden">
-          <p id="c-alerta" class="mb-4 hidden rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 ring-1 ring-inset ring-red-600/20"></p>
-
-          <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
-            <div class="rounded-2xl bg-red-50 p-4">
-              <p class="text-xs font-medium uppercase tracking-wide text-red-900/60">Críticos</p>
-              <p id="c-criticos" class="mt-1 text-3xl font-semibold tabular-nums text-red-950">—</p>
-              <p class="text-xs text-red-900/60">inscribir ya</p>
-            </div>
-            <div class="rounded-2xl bg-orange-50 p-4">
-              <p class="text-xs font-medium uppercase tracking-wide text-orange-900/60">Altos</p>
-              <p id="c-altos" class="mt-1 text-3xl font-semibold tabular-nums text-orange-950">—</p>
-              <p class="text-xs text-orange-900/60">evaluar</p>
-            </div>
-            <div class="rounded-2xl bg-amber-50 p-4">
-              <p class="text-xs font-medium uppercase tracking-wide text-amber-900/60">Medios</p>
-              <p id="c-medios" class="mt-1 text-3xl font-semibold tabular-nums text-amber-950">—</p>
-              <p class="text-xs text-amber-900/60">vigilar</p>
-            </div>
-            <div class="rounded-2xl bg-gray-100 p-4">
-              <p class="text-xs font-medium uppercase tracking-wide text-gray-500">Bajos</p>
-              <p id="c-bajos" class="mt-1 text-3xl font-semibold tabular-nums text-gray-800">—</p>
-              <p class="text-xs text-gray-500">sin urgencia</p>
-            </div>
-          </div>
-
-          <p id="c-cobertura-nota" class="mt-4 text-sm text-gray-600"></p>
-
-          <div class="mt-4 overflow-x-auto">
-            <table class="w-full text-sm">
-              <thead class="text-left text-xs uppercase tracking-wide text-gray-400">
-                <tr>
-                  <th class="py-1 pr-2">Código</th><th class="py-1 pr-2">Criticidad</th>
-                  <th class="py-1 pr-2 text-right">Adjudicados</th><th class="py-1 pr-2 text-right">Muy similares</th>
-                  <th class="py-1 pr-2 text-right">Similitud</th><th class="py-1 pr-2 text-right">Cuantía media</th>
-                  <th class="py-1">Recomendación</th>
-                </tr>
-              </thead>
-              <tbody id="c-faltantes" class="divide-y divide-gray-100"></tbody>
-            </table>
-          </div>
-          <p class="mt-2 text-xs text-gray-400">Pulse una fila para ver los objetos de ejemplo y las entidades que más usan ese código.</p>
-
-          <div id="c-excluidos" class="mt-6"></div>
-          <p id="c-meta" class="mt-6 text-xs text-gray-400"></p>
-        </div>
-      </section>
 
         <div id="exp-produccion" class="mt-8 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
           <h3 class="font-semibold tracking-tight">Puesta en producción, sin terminal</h3>
@@ -3977,7 +4059,7 @@
            la pestaña de Mi empresa, en la parte de abajo.» Es una herramienta de
            quien licita, no de quien mantiene el programa: enterrarla en el
            acordeón técnico la hacía invisible. -->
-<details id="rastreo-wrap" class="mt-8 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+<details id="rastreo-wrap" data-me-apartado="noesta" class="mt-8 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
         <summary class="cursor-pointer font-semibold tracking-tight">¿Por qué no está este proceso?</summary>
         <section id="seccion-rastreo" class="mt-4">
           <p class="max-w-2xl text-sm text-gray-500">

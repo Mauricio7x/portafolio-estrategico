@@ -885,6 +885,9 @@
       "rup-gestion-titulo-dueno": "el rótulo del pliegue promete subir y descargar el registro",
       "seccion-sistema": "parámetros de costo, contratos ejecutados, auditoría, sincronización y reconstrucciones: configuración de la empresa que administra el sitio",
       "rastreo-wrap": "su selector de perfil solo conoce el del dueño y el de sus socias",
+      /* salieron de «Ajustes» a su apartado de la barra el 9-nov-2026: siguen siendo solo del dueño, como dentro */
+      "seccion-experiencia": "los contratos ejecutados son configuración compartida de la empresa que administra el sitio (op=experiencia); hasta el 9-nov-2026 vivía dentro de «Ajustes»",
+      "seccion-cobertura": "la auditoría de códigos usa la experiencia y los perfiles del dueño; hasta el 9-nov-2026 vivía dentro de «Ajustes»",
       "plg-mercado": "el plegado «Cómo está el mercado» solo guarda el tablero del dueño (op=resumen)",
       "btn-apu-cargar": "op=cargar-catalogo reescribe el catálogo de precios compartido (pestaña Precios)",
     },
@@ -908,13 +911,31 @@
       "plg-calendario": "plegado con el calendario de cierres del pulso: mismo perfil",
       "plg-rup": "plegado con su registro en cifras",
       "plg-socias": "plegado con el consorcio y la verificación del socio",
+      "empresa-datos": "los datos para los formatos de SU perfil (op=empresa-datos, por perfil): el visitante los veía igual dentro de su registro hasta el 9-nov-2026, cuando salieron a su apartado",
     },
   };
   let vistaVisitanteActiva = false;
+  /* LA BARRA NO OFRECE UN APARTADO QUE SE VERÍA VACÍO (9-nov-2026). Para el visitante, «Obra que ya ejecutó»,
+     «¿Por qué no está un proceso?» y «Ajustes» solo guardan bloques del dueño (arriba, `soloDueno`): su botón se
+     esconde, y si estaba en uno de ellos vuelve a Hoy. Se mira el `hidden` de cada bloque, no una lista aparte. */
+  function podarBarraMiEmpresa() {
+    let actualVacio = false;
+    const tab = document.getElementById("tab-admin");
+    document.querySelectorAll("#me-barra .me-ir").forEach((b) => {
+      const ap = b.getAttribute("data-me-ir");
+      if (ap === "hoy") return;
+      const bloques = [...document.querySelectorAll(`#tab-admin > [data-me-apartado="${ap}"]`)];
+      const vacio = bloques.length > 0 && bloques.every((el) => el.hidden);
+      b.hidden = vacio;
+      if (vacio && tab && tab.getAttribute("data-me") === ap) actualVacio = true;
+    });
+    if (actualVacio) elegirApartadoMiEmpresa("hoy", { enfocar: false });
+  }
   function vistaDeVisitante(activa) {
     vistaVisitanteActiva = !!activa;
     for (const id of Object.keys(VISTA_VISITANTE.soloDueno)) { const el = $(id); if (el) el.hidden = vistaVisitanteActiva; }
     for (const id of Object.keys(VISTA_VISITANTE.soloVisitante)) { const el = $(id); if (el) el.hidden = !vistaVisitanteActiva; }
+    podarBarraMiEmpresa();
     /* la marca de la barra dispara la misma sincronización que «Actualizar
        datos»: para el visitante deja de ser un control (sin mano, sin flecha,
        sin «Actualizar»), y pintarCorte lo sabe por la clase */
@@ -6328,6 +6349,36 @@
      pinta Mis procesos —ni una consulta más— y con las MISMAS piezas: la frase y la lista de avisos de
      public/casillero.js (`fraseAlertas`, `htmlAlertas`), los rótulos de etapa del servidor (`estados`) y la agenda
      (`agendaDe`, `rotuloEvento`, `fuenteEvento`). Un conteo que no viene no se pinta como 0. */
+  /* ══════ LOS APARTADOS DE MI EMPRESA (9-nov-2026, decisión del dueño sobre su maqueta) ══════
+     Qué apartado se ve lo decide la hoja por `data-me` (index.html): aquí solo se cambia, se marca la barra, se
+     pone el título y se abren sus plegados (dentro de un apartado su rótulo se esconde, y cerrado no se vería nada).
+     Un valor desconocido es INERTE: cae a «hoy», como un filtro desconocido. */
+  const APARTADOS_ME = Object.freeze(["hoy", "registro", "formatos", "obra", "socias", "mercado", "noesta", "ajustes"]);
+  function elegirApartadoMiEmpresa(pedido, { enfocar = true } = {}) {
+    const tab = document.getElementById("tab-admin");
+    if (!tab) return "hoy";
+    const id = APARTADOS_ME.includes(pedido) ? pedido : "hoy";
+    tab.setAttribute("data-me", id);
+    let rotulo = "";
+    document.querySelectorAll("#me-barra .me-ir").forEach((b) => {
+      const suyo = b.getAttribute("data-me-ir") === id;
+      if (suyo) { b.setAttribute("aria-current", "page"); rotulo = b.textContent.trim(); } else b.removeAttribute("aria-current");
+    });
+    if (id !== "hoy") tab.querySelectorAll(`:scope > details[data-me-apartado="${id}"]`).forEach((d) => { d.open = true; });
+    const titulo = document.getElementById("me-titulo");
+    if (titulo) { titulo.textContent = id === "hoy" ? "" : rotulo; titulo.hidden = id === "hoy"; }
+    if (enfocar) {
+      try { window.scrollTo({ top: 0 }); } catch { /* sin desplazamiento */ }
+      // ninguna pulsación sin respuesta visible: el foco va al título del apartado (o a la barra, al volver a Hoy)
+      const destino = id === "hoy" ? tab.querySelector('#me-barra .me-ir[aria-current="page"]') : titulo;
+      if (destino && typeof destino.focus === "function") { try { destino.focus({ preventScroll: true }); } catch { /* sin foco */ } }
+    }
+    return id;
+  }
+  document.addEventListener("click", (ev) => {
+    const b = ev.target && ev.target.closest ? ev.target.closest("[data-me-ir]") : null;
+    if (b) elegirApartadoMiEmpresa(b.getAttribute("data-me-ir"));
+  });
   let miAvisosAbierto = false;
   function pintarMiEmpresaSeguimiento(r) {
     const K = raizCasillero();
@@ -6335,6 +6386,14 @@
     if (!at && !pr) return;
     const procesos = r && Array.isArray(r.procesos) ? r.procesos : [];
     const as = r && Array.isArray(r.alertas) ? r.alertas : [];
+    /* «piden atención» en UNA línea dentro de sus procesos guardados (9-nov-2026): la frase es la de siempre
+       (`fraseAlertas`, la misma de Mis procesos) y la línea abre Mis procesos, donde vive la lista completa */
+    const linea = $("mi-atencion-linea");
+    if (linea) {
+      const frase = K && as.length ? K.fraseAlertas(as, 7) : "";
+      linea.innerHTML = frase ? `<span class="min-w-0">Piden atención: ${esc(frase)}</span><span class="mi-ir">Verlos</span>` : "";
+      linea.classList.toggle("hidden", !frase);
+    }
     if (at) {
       at.classList.toggle("hidden", !(K && as.length));
       if (K && as.length) {
@@ -6979,6 +7038,10 @@
      <details> por encima del destino, no solo el primero: el pliegue puede
      anidarse y un arreglo de un solo nivel dejaría el hermano vivo. */
   function abrirPliegues(destino) {
+    /* un destino de Mi empresa vive en un apartado de su barra (9-nov-2026): primero se abre ESE apartado, o el salto
+       («Armar este consorcio», «verificar socio») aterrizaría en un bloque escondido */
+    const ap = destino && destino.closest ? destino.closest("#tab-admin > [data-me-apartado]") : null;
+    if (ap) elegirApartadoMiEmpresa(ap.getAttribute("data-me-apartado"), { enfocar: false });
     for (let d = destino && destino.closest ? destino.closest("details") : null; d; d = d.parentElement && d.parentElement.closest("details")) d.open = true;
   }
   /* UNA PARTE FUERA DE RANGO NO SE SUSTITUYE EN SILENCIO (6-sep-2026). Escribir

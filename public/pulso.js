@@ -645,7 +645,21 @@
      alguno: un recuadro que dice «0» se deja de mirar. */
   function htmlManifestacion(p) {
     const m = p.manifestacion;
-    if (!m || !m.urgentes) return "";
+    if (!m) return "";
+    /* CUÁNTOS NO CONSTAN VENCIDOS (9-nov-2026, «manifestaciones de interés disponibles» en Hoy, decisión del dueño).
+       Es `sin_vencer` y NO `abiertas`: la tarjeta abre `manif=abierta`, cuyo predicado es `noConstaVencida` —el mismo
+       que cuenta `sin_vencer` en lib/filtros_lista—, y cada cifra de Mi empresa abre EXACTAMENTE su lista (4-nov).
+       `abiertas` deja fuera las que están por abrir o sin fecha, y la lista las trae: dos números para una tarjeta.
+       Sin el conteo no se dice nada; un 0 medido tampoco pinta tarjeta. */
+    const abiertas = Number.isFinite(m.sin_vencer) ? m.sin_vencer : null;
+    const fraseAbiertas = abiertas > 0 ? `en ${num(abiertas)} el plazo para avisar que le interesa no consta vencido` : "";
+    if (!m.urgentes) {
+      if (!fraseAbiertas) return "";
+      return `<a href="?${esc(conSolo("manif=abierta"))}#/licitaciones" data-filtro="${esc(conSolo("manif=abierta"))}" class="mi-tarea mi-tarea-neutra" role="link">
+      <span class="mi-punto" aria-hidden="true">&#9679;</span>
+      <span class="mi-tarea-texto"><b>${fraseAbiertas[0].toUpperCase()}${fraseAbiertas.slice(1)}</b><span class="mi-tarea-sub">Sin avisar que le interesa no puede presentar oferta.</span></span>
+      <span class="mi-ir">${abiertas === 1 ? "Verlo" : `Ver los ${num(abiertas)}`}</span></a>`;
+    }
     const n = m.urgentes;
     /* «en N, SECOP II no confirma» solo con ese conteo (lib/filtros_lista, `urgentes_por_confirmar`); sin él, no
        se dice: la frase de la maqueta («algunas no se sabe…») sin cifra detrás sería un supuesto */
@@ -657,8 +671,33 @@
     return `<a href="?${esc(conSolo("manif=urgente"))}#/licitaciones" data-filtro="${esc(conSolo("manif=urgente"))}" class="mi-tarea mi-tarea-rojo" role="link"
       title="Selección abreviada de menor cuantía: primero hay que avisar que le interesa y después se oferta. El plazo lo fija la entidad en el pliego y puede ser de solo unas horas.">
       <span class="mi-punto" aria-hidden="true">&#9679;</span>
-      <span class="mi-tarea-texto"><b>${titulo}</b><span class="mi-tarea-sub">Sin avisar que le interesa no puede presentar oferta.${pc ? ` En ${num(pc)}, SECOP II no confirma si el plazo sigue abierto.` : ""}</span></span>
+      <span class="mi-tarea-texto"><b>${titulo}</b><span class="mi-tarea-sub">Sin avisar que le interesa no puede presentar oferta.${pc ? ` En ${num(pc)}, SECOP II no confirma si el plazo sigue abierto.` : ""}${fraseAbiertas ? ` En total, ${fraseAbiertas}.` : ""}</span></span>
       <span class="mi-ir">${n === 1 ? "Verlo" : `Ver los ${num(n)}`}</span></a>`;
+  }
+
+  /* LA PLATA EN JUEGO VUELVE A HOY, CON QUIÉN LA PONE (9-nov-2026, decisión del dueño sobre su maqueta). Salió de
+     arriba el 3-nov porque UN departamento la mueve casi entera (en su captura del 27-oct, Bogotá ponía $17,6 de los
+     $18,9 billones); vuelve con ese hecho dicho al lado, calculado de la MISMA suma (lib/portada: total y reparto
+     salen del mismo recorrido de `cuantia_cop`). El porcentaje es para LEER, no decide nada; y un 100 % redondeado
+     que no es todo se dice 99 %. La suma usa la regla de siempre (`pesosCortos` con cuántas suman). */
+  function htmlTotal(p) {
+    if (!p.total) return "";
+    const enJuego = pesosCortos(p.valorTotal, p.total - (p.sinPresupuesto > 0 ? p.sinPresupuesto : 0));
+    if (!enJuego) return "";
+    const v = Number(p.valorTotal);
+    const top = (Array.isArray(p.porDepartamento) ? p.porDepartamento : []).find((x) => x && Number(x.valor) > 0);
+    let reparto = "";
+    if (top && v > 0) {
+      let pct = Math.round((Number(top.valor) / v) * 100);
+      if (pct === 100 && Number(top.valor) < v) pct = 99;
+      const suyo = pesosCortos(top.valor, top.n);
+      if (suyo) reparto = `${top.nombre} pone ${suyo} (${pct} %)${pct >= 50 ? ": un solo departamento mueve esta cifra" : ""}.`;
+    }
+    return `<div class="mi-tarea mi-tarea-neutra mi-tarea-col">
+      <span class="mi-tarea-texto"><span class="mi-tarea-sub">Total en juego</span><b class="mi-tarea-cifra">${esc(enJuego)}</b>
+      <span class="mi-tarea-sub">Suma de los presupuestos oficiales de esas ${num(p.total)}.${p.sinPresupuesto > 0 ? ` ${esc(fraseSinPresupuesto(p.sinPresupuesto))}` : ""}</span>
+      ${reparto ? `<span class="mi-aviso-reparto">${esc(reparto)}</span>` : ""}</span>
+      <button type="button" class="mi-enlace" data-me-ir="mercado">Ver dónde están</button></div>`;
   }
 
   function htmlNota(p) {
@@ -815,6 +854,8 @@
     if (manif) { manif.innerHTML = htmlManifestacion(p); manif.classList.toggle("hidden", !manif.innerHTML); }
     const cierran = d.getElementById("pu-cierran");
     if (cierran) { cierran.innerHTML = htmlCierran(p); cierran.classList.toggle("hidden", !cierran.innerHTML); }
+    const totalJ = d.getElementById("pu-total");
+    if (totalJ) { totalJ.innerHTML = htmlTotal(p); totalJ.classList.toggle("hidden", !totalJ.innerHTML); }
     const enJuego = d.getElementById("pu-enjuego");
     if (enJuego) enJuego.innerHTML = htmlEnJuego(p);
     /* ═══ EL CALENDARIO DE CIERRES ═══ Vive en su propia sección y en su propio
@@ -833,7 +874,8 @@
     d.getElementById("pu-departamentos").classList.toggle("hidden", !(p.porDepartamento || []).length);
     d.getElementById("pu-entidades").classList.toggle("hidden", !(p.topEntidades || []).length);
     mostrar(true);
-    if (plazo) plazo.classList.toggle("hidden", !((manif && manif.innerHTML) || (cierran && cierran.innerHTML)));
+    /* «Cierran esta semana» vive desde el 9-nov-2026 en «Cómo está el mercado»: esta fila de Hoy son los avisos y la plata */
+    if (plazo) plazo.classList.toggle("hidden", !((manif && manif.innerHTML) || (totalJ && totalJ.innerHTML)));
     perfilPintado = perfil;
     return true;
   }
@@ -843,5 +885,5 @@
   /* por qué no llegó la última respuesta del pulso, o null si llegó (o si era la sesión que terminó) */
   const ultimoFallo = () => falloUltimo;
 
-  return { arrancar, olvidar, ultimaEmpresa, ultimoFallo, fraseFallo, pesosCortos, pesosExactos, htmlHero, htmlEnJuego, htmlCierran, htmlEmpresa, htmlDepartamentos, htmlEntidades, htmlManifestacion, svgBarras, columnas, barrasRank, apilada, escalaPosicion, ticksRedondos, htmlNota, fraseSinPresupuesto };
+  return { arrancar, olvidar, ultimaEmpresa, ultimoFallo, fraseFallo, htmlTotal, pesosCortos, pesosExactos, htmlHero, htmlEnJuego, htmlCierran, htmlEmpresa, htmlDepartamentos, htmlEntidades, htmlManifestacion, svgBarras, columnas, barrasRank, apilada, escalaPosicion, ticksRedondos, htmlNota, fraseSinPresupuesto };
 });
