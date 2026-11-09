@@ -18,7 +18,9 @@ async function despachar(req, res) {
      censo declarado en lib/auth (entrar, salir y las tareas programadas). */
   // la MISMA acción que despacha el editor (query o, si falta, el path): revisión adversaria
   const accion = require("../lib/handlers/apu/accion.js").accionDe(req, req.query || {});
-  require("../lib/medidor_redis.js").etiquetar(`apu:${accion}`);   // la medición del ancho de banda
+  // la medición del ancho de banda: solo acciones declaradas (una inventada es «otra»: no crea campos)
+  const acciones = require("../lib/handlers/apu/editor.js").ACCIONES;
+  require("../lib/medidor_redis.js").etiquetar(`apu:${Array.isArray(acciones) && acciones.includes(accion) ? accion : "otra"}`);
   const puerta = await require("../lib/auth.js").autorizarPuerta(req, "apu", accion);
   if (!puerta.ok) return require("../lib/auth.js").responderPuerta(res, puerta);
   /* Un throw del editor responde JSON 500 con instrucción, no una promesa

@@ -22,7 +22,7 @@
   pliego.js                   Router del dominio PLIEGO (Fase 0 · consolidación a 6 funciones)
   procesos.js                 Router del dominio PROCESOS (Fase 0 · consolidación a 6 funciones)
 
-· lib/ — 111 módulos:
+· lib/ — 112 módulos:
   accesibilidad.js            Accesibilidad operativa de la zona de la obra
   adendas.js                  Vigía de adendas · lo que el DATASET dice que cambió (Fase 5)
   almacen.js                  Esquema de claves Redis + compresión de chunks
@@ -48,6 +48,7 @@
   competencia_detalle.js      Los procesos que SOSTIENEN el badge de competencia
   config_rup.js               Validación del RUP que sube el dueño (archivo JSON)
   consorcio.js                Consorcio a la medida (Fase 10 · Detekta v4)
+  contexto_vercel.js          El contexto de la petición de Vercel, o null (9-nov-2026)
   contratos_en_ejecucion.js   Los contratos que un perfil tiene en obra, también los de sus consorcios
   copia_datos.js              Copia de los datos que introduce el usuario (6-sep-2026, M-INF-15)
   correo.js                   Transporte de correo por REST — sin SDK, sin dependencias

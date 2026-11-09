@@ -23,6 +23,9 @@ const VISTA_POR_OP = {
   socio: "socio",
 };
 
+// las vistas que la medición anota por su nombre: las de VISTA_POR_OP y la de SECOP I (lib/handlers/inteligencia/detalle.js)
+const VISTAS_MEDIDAS = new Set([...Object.values(VISTA_POR_OP), "secop1"]);
+
 async function despachar(req, res) {
   const q = req.query || {};
   if (q.op && !q.vista) {
@@ -38,7 +41,9 @@ async function despachar(req, res) {
   /* LA PUERTA (9-nov-2026): sin la sesión ni la llave no pasa nada, salvo el
      censo declarado en lib/auth. Se evalúa la MISMA vista que se despacha (ya
      resuelta arriba): con `?op=a&vista=b` el handler usa `b` (revisión adversaria). */
-  require("../lib/medidor_redis.js").etiquetar(`inteligencia:${String((req.query || {}).vista || "")}`);   // la medición del ancho de banda
+  // la medición del ancho de banda: solo vistas declaradas (una inventada es «otra»: no crea campos)
+  const vistaMedida = String((req.query || {}).vista || "");
+  require("../lib/medidor_redis.js").etiquetar(`inteligencia:${VISTAS_MEDIDAS.has(vistaMedida) ? vistaMedida : "otra"}`);
   const puerta = await require("../lib/auth.js").autorizarPuerta(req, "inteligencia", (req.query || {}).vista);
   if (!puerta.ok) return require("../lib/auth.js").responderPuerta(res, puerta);
   /* Un throw del handler responde JSON 500 con instrucción, no una promesa

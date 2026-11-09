@@ -12686,10 +12686,38 @@ async function main() {
       assert.strictEqual(upstash.peticiones() - p1, 0, "la puerta sin credencial sigue sin gastar un comando, con el medidor encendido");
       assert.ok(!("procesos:listar|veces" in (await redis.hgetall(claveHoy))), "y no se anota");
       // (4) operación desconocida
-      // con una cookie de sesión inventada pero bien formada, la puerta consulta la base (1 MGET) y la petición se anota
-      const rInv = await invocar(rProc, "/api/procesos?op=Inventada-XYZ", { cookie: `${require("../lib/sesion.js").COOKIE_SESION}=${"ab".repeat(32)}` }); await quieto();
-      assert.strictEqual(rInv.status, 401, "la sesión inventada no pasa");
-      assert.strictEqual(Number((await redis.hgetall(claveHoy))["procesos:otra|veces"]), 1, "la operación desconocida que gastó se anota como «otra»");
+      /* (3b) una cookie de sesión inventada pero bien formada cuesta a la puerta un MGET, y NADA más: lo que la
+         puerta rechaza no se anota (revisión adversaria: hacía anotar 3-4 comandos y, en apu e inteligencia,
+         creaba un campo por valor inventado) */
+      const cookieFalsa = { cookie: `${require("../lib/sesion.js").COOKIE_SESION}=${"ab".repeat(32)}` };
+      for (const [r0, url] of [[rProc, "/api/procesos?op=Inventada-XYZ"], [require("../api/inteligencia.js"), "/api/inteligencia?vista=zz0abc"], [require("../api/apu.js"), "/api/apu/basura0"]]) {
+        const pF = upstash.peticiones();
+        assert.strictEqual((await invocar(r0, url, cookieFalsa)).status, 401, `${url}: la sesión inventada no pasa`); await quieto();
+        assert.strictEqual(upstash.peticiones() - pF, 1, `${url}: la sesión inventada cuesta UN comando (el de la puerta), sin anotación`);
+      }
+      assert.ok(!Object.keys(await redis.hgetall(claveHoy)).some((k) => /inventada|zz0abc|basura0|:otra\|/.test(k)), "lo rechazado no crea campos");
+      // con una sesión VÁLIDA, la operación desconocida se anota como «otra»
+      const SesM = require("../lib/sesion.js");
+      const idM = `cta_${"c3".repeat(10)}`;
+      await redis.set(SesM.CLAVE_DUENO, idM);
+      const tokM = await SesM.abrirSesion(redis, idM);
+      try {
+        const cookieBuena = { cookie: `${SesM.COOKIE_SESION}=${tokM}` };
+        assert.strictEqual((await invocar(rProc, "/api/procesos?op=Inventada-XYZ", cookieBuena)).status, 404); await quieto();
+        assert.strictEqual((await invocar(require("../api/inteligencia.js"), "/api/inteligencia?vista=zz0abc", cookieBuena)).status, 400); await quieto();
+        const h4b = await redis.hgetall(claveHoy);
+        assert.strictEqual(Number(h4b["procesos:otra|veces"]), 1, `la operación desconocida que gastó se anota como «otra»: ${Object.keys(h4b).join(", ")}`);
+        assert.strictEqual(Number(h4b["inteligencia:otra|veces"]), 1, "y la vista inventada, también como «otra»");
+        await invocar(require("../api/apu.js"), "/api/apu/basura0", cookieBuena); await quieto();
+        const h4c = await redis.hgetall(claveHoy);
+        assert.ok(Number(h4c["apu:otra|veces"]) === 1 && !Object.keys(h4c).some((k) => /basura0/.test(k)), `y la acción de Precios inventada, también: ${Object.keys(h4c).join(", ")}`);
+      } finally { await redis.del(SesM.CLAVE_DUENO, SesM.claveSesion(tokM)); }
+      // (3c) con waitUntil (Vercel congela la función al responder), la anotación se le entrega y no se espera
+      let entregada = null;
+      await M.medir("procesos", async () => { M.etiquetar("procesos:latido"); await redis.get("x"); }, { contexto: { waitUntil: (p) => { entregada = p; } } });
+      assert.ok(entregada && typeof entregada.then === "function", "la anotación se entrega a waitUntil");
+      await entregada;
+      assert.strictEqual(Number((await redis.hgetall(claveHoy))["procesos:latido|veces"]), 1, "y se completa por ahí");
       const h4 = await redis.hgetall(claveHoy);
       assert.ok(!Object.keys(h4).some((k) => /inventada/i.test(k)), `una operación desconocida no crea su campo: ${Object.keys(h4).join(", ")}`);
       // (5) la lectura
