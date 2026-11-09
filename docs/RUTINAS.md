@@ -153,24 +153,30 @@ Si no aparece ninguno no puedes hacer nada: termina diciendo que la rutina no ti
 adjunto y dónde se añade.
 
 PASO 0 bis · ¿SE ABRE LA PUERTA?
-curl -s -o /dev/null -w "%{http_code}\n" --max-time 20 -H "x-vercel-protection-bypass: $VERCEL_AUTOMATION_BYPASS_SECRET" "https://detekta-app.vercel.app/api/procesos?op=salud"
+curl -s -o /dev/null -w "%{http_code}\n" --max-time 20 -H "x-historico-token: $HISTORICO_TOKEN" -H "x-vercel-protection-bypass: $VERCEL_AUTOMATION_BYPASS_SECRET" "https://detekta-app.vercel.app/api/procesos?op=salud"
+(Desde el 9-nov-2026 toda operación de la aplicación pide la llave, también la salud: sin ella
+responde 401 con el JSON de la aplicación, que NO es el muro.)
 Si responde 000 o 403 del proxy de egreso, para y di solo: «La red del entorno sigue cerrada: abra
 claude.ai/code → el entorno → Red: Custom y permita detekta-app.vercel.app.»
 Si responde 302 (o 401 con «Protected deployment») es el muro de Vercel: para y di solo: «El muro de Vercel no deja pasar a esta rutina:
 falta VERCEL_AUTOMATION_BYPASS_SECRET en las variables de entorno de su entorno.»
 
-PASO 0 ter · ¿SIGUE PUESTO EL MURO? Esta llamada va SIN el pase, a propósito: con el pase siempre
-respondería 200 y no probaría nada.
-curl -q -s -o /tmp/portada.txt -w "%{http_code} %{redirect_url}\n" --max-time 20 "https://detekta-app.vercel.app/"  # SONDA DEL MURO: sin el pase, a propósito
+PASO 0 ter · ¿SIGUE CERRADA LA PUERTA? Esta llamada va SIN el pase y SIN la llave, a propósito: con
+cualquiera de los dos respondería 200 y no probaría nada. Desde el 9-nov-2026 la producción no está
+detrás del muro de Vercel: la cerradura es la puerta de la aplicación, que sin sesión ni llave
+responde 401 a toda operación.
+curl -q -s -o /tmp/portada.txt -w "%{http_code} %{redirect_url}\n" --max-time 20 "https://detekta-app.vercel.app/api/procesos?op=listar&perfil=helder"  # SONDA DEL MURO: sin el pase, a propósito
 grep -c "Protected by Vercel Authentication" /tmp/portada.txt
-- Si responde 302 seguido de una dirección que empieza por https://vercel.com/sso-api, o si el grep
-  cuenta 1 o más, el muro está puesto: no lo menciones.
-- Si responde 200 y el grep cuenta 0, la PRIMERA línea de tu informe es:
-  «EL MURO DE VERCEL ESTÁ APAGADO: cualquiera con la dirección puede entrar a Detekta. Vuelva a
-  ponerlo: Vercel → el proyecto → «Settings» → «Deployment Protection» → «Vercel Authentication» →
-  «All Deployments» → «Save».» Y sigue con lo demás.
+grep -c '"ok":false' /tmp/portada.txt
+- Si responde 302 hacia una dirección que empieza por https://vercel.com/sso-api, o el primer grep
+  cuenta 1 o más, el muro de Vercel sigue puesto: no lo menciones.
+- Si responde 401 y el segundo grep cuenta 1 o más, la puerta está cerrada: no lo menciones.
+- Si responde 200, la PRIMERA línea de tu informe es:
+  «LA PUERTA DE DETEKTA ESTÁ ABIERTA: sin entrar, la aplicación entregó la lista. Mientras se
+  arregla, vuelva a poner el muro: Vercel → el proyecto → «Settings» → «Deployment Protection» →
+  «Vercel Authentication» → «All Deployments» → «Save».» Y sigue con lo demás.
 - Cualquier otra respuesta (403, 429, 5xx, otra dirección, sin respuesta): di en una línea
-  «Muro: no medido (respondió X)» y sigue. Sin dato no es «apagado».
+  «Puerta: no medida (respondió X)» y sigue. Sin dato no es «abierta».
 
 LA LLAVE sale de la variable de entorno HISTORICO_TOKEN del entorno de esta rutina, como en las
 skills (desde el 17-oct-2026 ya no está escrita en el repositorio). No la imprimas nunca. Si falta,
@@ -179,6 +185,8 @@ el entorno → Edit → variables de entorno, con el mismo valor que tiene en Ve
 TOKEN="${HISTORICO_TOKEN:?Falta HISTORICO_TOKEN en el entorno de Claude Code: el dueño la añade en el entorno de la sesión o de la rutina (Edit → variables de entorno)}"
 Y EL PASE DEL MURO va en CADA llamada a la aplicación, también sin imprimirlo:
 -H "x-vercel-protection-bypass: $VERCEL_AUTOMATION_BYPASS_SECRET"
+LA LLAVE TAMBIÉN va en CADA llamada (desde el 9-nov-2026 la salud y todo lo demás la piden):
+-H "x-historico-token: $TOKEN"
 
 QUÉ MIRAR · todo es LECTURA: ni un POST, ninguna sincronización
 1. GET /api/procesos?op=salud — ok, motivo, edad_horas (umbral 30), ultimo_error,
