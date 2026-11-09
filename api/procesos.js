@@ -22,9 +22,10 @@
 
    Los `require` van DIFERIDOS por operación: servir el listado no puede
    pagar la carga del módulo de sincronización, y viceversa. La autorización
-   NO vive aquí: cada handler conserva la suya (historico exige token, sync
-   tiene sus modos, el listado lo tiene opcional) — un router que autorizara
-   por su cuenta sería una segunda copia de lib/auth que se desincroniza. */
+   NO se escribe aquí: cada handler conserva la suya (historico exige token,
+   sync tiene sus modos, el listado lo tiene opcional) y, desde el 9-nov-2026,
+   el router LLAMA a la puerta de lib/auth (`autorizarPuerta`) antes de
+   despachar — una llamada, no una segunda copia que se desincronice. */
 
 const OPS = {
   sync: () => require("../lib/handlers/procesos/sync.js"),           // era /api/sync
@@ -45,8 +46,14 @@ function opDe(req) {
   return m ? m[1].toLowerCase() : "";
 }
 
-module.exports = async function handler(req, res) {
+async function despachar(req, res) {
   const op = opDe(req);
+  // la operación, para la medición del ancho de banda (lib/medidor_redis); una desconocida se anota como «otra»
+  require("../lib/medidor_redis.js").etiquetar(`procesos:${Object.prototype.hasOwnProperty.call(OPS, op) ? op : "otra"}`);
+  /* LA PUERTA (9-nov-2026): sin la sesión ni la llave no pasa nada, salvo el
+     censo declarado en lib/auth (entrar, salir y las tareas programadas). */
+  const puerta = await require("../lib/auth.js").autorizarPuerta(req, "procesos", op);
+  if (!puerta.ok) return require("../lib/auth.js").responderPuerta(res, puerta);
   if (!op) {
     return res.status(400).json({
       ok: false,
@@ -73,3 +80,10 @@ module.exports = async function handler(req, res) {
     return require("../lib/error_interno.js").responderErrorInterno(res, "procesos", e);
   }
 };
+
+/* Cada petición se mide (lib/medidor_redis: cuánto ancho de banda de Upstash gasta, por operación).
+   Apagado fuera de Vercel: entonces solo llama a despachar. */
+module.exports = (req, res) => require("../lib/medidor_redis.js").medir("procesos", () => despachar(req, res));
+
+/* Las operaciones que despacha, para el censo de la puerta en la suite (9-nov-2026). */
+module.exports.OPS = Object.freeze(Object.keys(OPS));

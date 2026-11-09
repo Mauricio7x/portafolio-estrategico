@@ -43,17 +43,14 @@ en uno, cámbielo (§10).
    completa; §10).
 5. **Claude Code**: ponga el mismo valor en la variable de entorno `HISTORICO_TOKEN` del entorno de
    sus rutinas y de las skills `/dictamen` y `/precios` (claude.ai/code → el entorno → **Edit**).
-6. **El muro de Vercel sigue puesto** («Vercel Authentication» en «All Deployments»): no lo quite.
-   El pase `VERCEL_AUTOMATION_BYPASS_SECRET` (§3.5) debe estar en los secretos de GitHub y en el
-   entorno de Claude Code, junto a `HISTORICO_TOKEN`: sin él, flujos, rutinas y skills chocan con el
-   muro antes de llegar a la aplicación.
-7. Con el muro puesto, quien abra la aplicación necesita además acceso al proyecto en Vercel: su
-   correo y contraseña de Detekta solo sirven después de pasar el muro. Usted, dueño del proyecto,
-   pasa solo si su Chrome tiene abierta la sesión de Vercel (si no, Vercel le pide entrar y lo
-   devuelve a la aplicación); cualquier otra persona ve la pantalla de entrar de Vercel y, como
-   mucho, «pedir acceso» (documentación de Vercel, «Restrict access to deployments with Vercel
-   Authentication», leída el 18-oct-2026). Medido el mismo día en la vista previa: sin el pase,
-   302 hacia `vercel.com/sso-api`.
+6. **El muro de Vercel ya no hace falta en producción** (decisión del dueño, 9-nov-2026): la
+   aplicación tiene su propia puerta y toda operación exige su sesión o la llave (§9, «La puerta»).
+   El pase `VERCEL_AUTOMATION_BYPASS_SECRET` (§3.5) se queda en los secretos de GitHub y en el
+   entorno de Claude Code junto a `HISTORICO_TOKEN`: sin muro no estorba, y las vistas previas
+   siguen detrás de Vercel.
+7. Con «Standard Protection» en Vercel, quien abra la aplicación ve directamente la pantalla de
+   entrar de Detekta, sin cuenta de Vercel. Usted y Helder usan **la misma cuenta** (mismo correo y
+   contraseña): cada aparato abre su propia sesión de 30 días, y «Salir» en uno no saca al otro.
 
 ### 0.1 bis · Crear su cuenta (sin terminal)
 
@@ -72,12 +69,13 @@ en uno, cámbielo (§10).
 Desde ese momento esa pantalla **queda cerrada para siempre**: aunque alguien tenga la llave, ya no
 puede crear otra cuenta (la aplicación responde «La cuenta de esta aplicación ya existe»).
 
-**Dos capas, desde el 17-oct-2026.** Delante de todo sigue **el muro de Vercel**: «Vercel
-Authentication» en todo el sitio («All Deployments»), que pide iniciar sesión en Vercel antes de
-entrar. Es gratis en el plan Hobby; la contraseña de Vercel («Password Protection») no existe en
-Hobby (§9). Detrás del muro, **su sesión de dueño** (correo y contraseña): ninguna llave vive en la
-página. (Lo que antes se escribía aquí —«el gate de clave del navegador no protege nada»— valía para la
-clave que comparaba la pantalla; la entrada con correo y contraseña la comprueba el servidor.)
+**Una sola puerta, desde el 9-nov-2026.** Del 17-oct al 9-nov-2026 hubo dos capas: el muro de
+Vercel («Vercel Authentication» en «All Deployments», que pedía iniciar sesión en Vercel) y, detrás,
+su sesión. Para que usted y Helder entren sin cuenta de Vercel, la producción pasa a «Standard
+Protection» (las vistas previas siguen protegidas) y la cerradura es la puerta de la aplicación:
+sin su sesión o la llave, TODA operación responde 401 sin leer la base de datos, salvo entrar,
+salir, crear la cuenta y las tareas programadas (`lib/auth.js`, `PUERTA_ABIERTA` y
+`PUERTA_DE_MAQUINA`). Ninguna llave vive en la página.
 
 ### 0.2 · Entrar, salir y lo que pasa si se equivoca
 
@@ -364,7 +362,8 @@ por su cuenta: no llevan nada de esto.
   autorización y no es lo que leen las rutinas. La toma la sesión nueva siguiente, no la abierta.
 
 **¿Cómo sé si el muro está activo?** Abra `https://detekta-app.vercel.app` en una ventana de
-incógnito. Si le pide iniciar sesión en Vercel antes de ver nada, está activo.
+incógnito. Si le pide iniciar sesión en Vercel antes de ver nada, está activo. Desde el 9-nov-2026
+lo esperado en producción es lo contrario: la pantalla de entrar de Detekta (§9, «La puerta»).
 
 **Síntoma de que falta:** la extracción histórica avanza un mes y se detiene. Al consultar el estado
 (ver §7) dice `candado.tomado: false` y `extraccion.terminada: false`. Con la variable puesta, la
@@ -875,19 +874,24 @@ quedó. Cuando responde `done:true`, terminó.
 - **Su contraseña de Detekta y `HISTORICO_TOKEN` son contraseñas de verdad.** No van en ningún
   chat, correo, documento ni archivo del repositorio. `HISTORICO_TOKEN` solo vive en Vercel (y en
   GitHub y en el entorno de Claude Code si los usa).
-- **Mantener activo el muro de Vercel**: «Vercel Authentication» en «All Deployments» (Settings →
-  Deployment Protection). Es la primera de las dos capas; la segunda es su sesión. Con «Standard
-  Protection» —la que trae un proyecto nuevo— la dirección de producción queda abierta: así estuvo
-  la cuenta nueva del 16 al 17-oct-2026 (medido). La contraseña de Vercel no existe en el plan
-  Hobby; en Pro cuesta $20 al mes por proyecto (documentación de Vercel, consultada el 17-oct-2026).
-  **Lo vigilan dos sondas** que llaman a la portada SIN el pase: el paso «¿El muro de Vercel sigue
-  puesto?» del latido de GitHub (la corrida sale en rojo si la portada responde 200) y el vigilante
-  de la mañana (lo dice en su primera línea).
+- **La puerta (desde el 9-nov-2026).** La producción ya no está detrás del muro de Vercel: el
+  dueño y Helder entran con la misma cuenta de Detekta. Toda operación de `api/` exige la sesión o
+  la llave; sin ninguna, responde 401 sin tocar Upstash, salvo el censo declarado en `lib/auth.js`
+  (entrar, salir, crear la cuenta y las tareas programadas). **Lo vigilan dos sondas** que piden
+  la lista SIN el pase y sin credencial: el paso «¿La puerta de Detekta sigue cerrada?» del latido
+  de GitHub (rojo si la lista responde 200) y el vigilante de la mañana (lo dice en su primera línea).
+  Si alguna vez sale en rojo, vuelva a poner el muro mientras se arregla («All Deployments»).
+- **Antes de quitar el muro, una condición:** `op=salud` debe decir `"sincronizacion_protegida": true`
+  (es decir, `CRON_SECRET` existe en Vercel, §3.6). Sin ella las tareas programadas quedan abiertas
+  y cualquiera podría disparar la sincronización. Se mira pegando en el Chrome donde ya entró a
+  Detekta: `https://detekta-app.vercel.app/api/procesos?op=salud`.
+- **Cómo se quita el muro** (lo hace el dueño, después del despliegue de la puerta): Vercel → el
+  proyecto → «Settings» → «Deployment Protection» → «Vercel Authentication» → cambiar «All
+  Deployments» por «Standard Protection» → «Save». (Nombres de pantalla tomados de las capturas del
+  17-oct-2026.) Con «Standard Protection» las vistas previas siguen pidiendo Vercel; la producción
+  queda a cargo de la puerta.
 - **No pegar `UPSTASH_REDIS_REST_TOKEN` ni `OCRSPACE_API_KEY` en ningún chat, correo ni archivo del
   repositorio.** Solo van en Vercel.
-- **Mantener Vercel Password Protection mientras lo tenga puesto**: hoy ya no es la única puerta
-  (la sesión protege lo suyo en el servidor), pero quitarla es una decisión aparte, con su propio
-  plan (docs/PLAN_DE_ACCION.md, F3-11).
 - **Rotar `SOCRATA_APP_TOKEN`** si alguna vez se pegó en una URL pública.
 
 **Lo que no vale la pena:**

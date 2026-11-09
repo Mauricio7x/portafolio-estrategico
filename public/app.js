@@ -14240,6 +14240,18 @@
     sesionDueno = await preguntarSesion();
     prepararGate();
     pintarSalir();
+    /* SIN SESIÓN, LA PANTALLA DE ENTRAR (9-nov-2026). Producción dejó el muro de
+       Vercel y toda operación de api/ exige la sesión o la llave (la puerta de
+       lib/auth): la landing de visitante, el teaser y los perfiles por URL ya no
+       tienen nada que pedir sin entrar, y pintarlos acabaría en un 401 por cada
+       llamada. Se enseña el gate ENCIMA de la landing; al entrar, abrirApp. */
+    if (!sesionDueno) {
+      /* «#/inicio» se consume también aquí (B4a-H2): la recarga siguiente decide por sesión */
+      if (pideInicio) { try { history.replaceState(null, "", `${location.pathname}${location.search}`); } catch { /* entorno raro */ } }
+      ensenarGate();
+      try { const c = $(hayCuenta === false ? "alta-correo" : "gate-correo"); if (c && c.focus) c.focus(); } catch { /* sin foco */ }
+      return;
+    }
     if (pideInicio) {
       if (window.Portada) window.Portada.teaser();
       /* El hash se CONSUME al atenderlo (6-sep-2026, B4a-H2): quien entra
