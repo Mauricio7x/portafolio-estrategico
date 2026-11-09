@@ -677,6 +677,36 @@
      Se guarda lo que el servidor mandó, sin tocarlo: la regla del token la
      aplicó él. */
   let empresaPintada = null;
+  /* ═══ LO QUE NO LLEGÓ SE DICE (9-nov-2026) ═══
+     «Vacía y honesta antes que bonita y falsa» sigue mandando sobre los NÚMEROS: sin respuesta no se
+     pinta ni una cifra. Pero esconder el titular y las tres secciones de arriba SIN DECIRLO no era
+     honesto, era mudo: medido en Chromium con el servidor caído y sin conexión, Mi empresa quedaba
+     igual que una pantalla normal y el único «Reintentar» vivía dentro de un plegado cerrado. Aquí se
+     guarda POR QUÉ no llegó, en la frase de siempre (Glosario.fraseDeFallo, la misma de las otras tres
+     pestañas); quien pinta la pestaña lo enseña con su «Reintentar». Un 401 con cuerpo JSON es la sesión
+     del dueño que terminó: lo atiende la pantalla de entrar, y aquí no se repite. */
+  let falloUltimo = null;
+  function raizGlosario() {
+    if (typeof window !== "undefined" && window.Glosario) return window.Glosario;
+    try { return require("./glosario.js"); } catch { return null; }
+  }
+  function motivoDeFallo(errorRed, r, p) {
+    const G = raizGlosario();
+    if (!G) return "No se pudo saber por qué.";
+    if (errorRed || !r) return G.fraseDeFallo(errorRed || new TypeError("sin respuesta"));
+    return G.errorDelServidor(p) || G.fraseDeFallo({ status: r.status });
+  }
+  /* Una frase para lo que no llegó a Mi empresa: las cifras de hoy (este módulo) y lo que piden sus procesos
+     guardados (op=seguimiento, que pide app.js). Cada parte trae null (llegó) o la frase de su fallo; dos
+     frases iguales se dicen una vez. Sin nada que decir devuelve "": la caja no se enseña. */
+  function fraseFallo({ pulso = null, seguimiento = null } = {}) {
+    const que = pulso && seguimiento ? "No se pudieron traer las cifras de hoy ni lo que piden sus procesos guardados."
+      : pulso ? "No se pudieron traer las cifras de hoy."
+        : seguimiento ? "No se pudo traer lo que piden sus procesos guardados." : "";
+    if (!que) return "";
+    const motivos = [...new Set([pulso, seguimiento].filter(Boolean).map((x) => String(x).trim()))];
+    return `${que} ${motivos.join(" ")}`.trim();
+  }
   /* ═══ LA EMPRESA EN CIFRAS (Mi empresa como pestaña principal, ago 2026) ═══
      El registro de proponente en números, bajo el pulso: tipos de trabajo,
      familias, experiencia acreditada, contratos, tope; patrimonio y capacidad
@@ -764,12 +794,17 @@
        equivocado. Es la lección de la guarda de «auditoría EN VUELO»: la
        comprobación va ANTES de tocar un solo nodo. */
     const mio = ++peticion;
-    try {
-      const r = await fetch(url, { credentials: "same-origin" });
-      p = await r.json();
-    } catch { p = null; }
+    /* el parseo va APARTE del fetch (regla dura): así se distingue «no hubo red» de «respondió otra cosa» */
+    let r = null, errorRed = null;
+    try { r = await fetch(url, { credentials: "same-origin" }); } catch (e) { errorRed = e; }
+    if (r) { try { p = await r.json(); } catch { p = null; } }
     if (mio !== peticion) return false;                                        // llegó tarde: no pinta
-    if (!p || !p.ok) { mostrar(false); perfilPintado = null; empresaPintada = null; return false; }   // vacía y honesta
+    if (!p || !p.ok) {                                                         // vacía y honesta… y lo dice
+      mostrar(false); perfilPintado = null; empresaPintada = null;
+      falloUltimo = r && r.status === 401 && p ? null : motivoDeFallo(errorRed, r, p);
+      return false;
+    }
+    falloUltimo = null;
     empresaPintada = p.empresa || null;
     const rc = d.getElementById("rup-cifras");
     if (rc) { rc.innerHTML = htmlEmpresa(p.empresa); rc.classList.toggle("hidden", !rc.innerHTML); }
@@ -805,6 +840,8 @@
   const olvidar = () => { perfilPintado = null; empresaPintada = null; };
   /* lo último que el servidor dijo de la empresa, o null si no hay nada pintado */
   const ultimaEmpresa = () => empresaPintada;
+  /* por qué no llegó la última respuesta del pulso, o null si llegó (o si era la sesión que terminó) */
+  const ultimoFallo = () => falloUltimo;
 
-  return { arrancar, olvidar, ultimaEmpresa, pesosCortos, pesosExactos, htmlHero, htmlEnJuego, htmlCierran, htmlEmpresa, htmlDepartamentos, htmlEntidades, htmlManifestacion, svgBarras, columnas, barrasRank, apilada, escalaPosicion, ticksRedondos, htmlNota, fraseSinPresupuesto };
+  return { arrancar, olvidar, ultimaEmpresa, ultimoFallo, fraseFallo, pesosCortos, pesosExactos, htmlHero, htmlEnJuego, htmlCierran, htmlEmpresa, htmlDepartamentos, htmlEntidades, htmlManifestacion, svgBarras, columnas, barrasRank, apilada, escalaPosicion, ticksRedondos, htmlNota, fraseSinPresupuesto };
 });

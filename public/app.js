@@ -189,8 +189,6 @@
        Fase 8 (`?cierre=7d`, `?dep=73`) es un enlace A LA LISTA y abre
        Licitaciones aunque no traiga hash — la puerta de entrada y la portada
        los generan así. */
-    let conFiltros = false;
-    try { conFiltros = [...new URLSearchParams(location.search).keys()].some((k) => k !== "perfil"); } catch { conFiltros = false; }
     /* UN ENLACE A UN EXPEDIENTE ABRE ESE EXPEDIENTE (7-sep-2026). `#/proceso/…`
        no es una pestaña: el regex de arriba solo captura `proceso` (para en la
        barra, y un id de SECOP II lleva mayúsculas, dígitos y puntos), así que
@@ -199,7 +197,7 @@
        como ya se hacía con `#/inicio`. El dueño no tiene terminal: pegar una URL
        en Chrome es su única forma de volver a algo. */
     const expInicial = hashExpediente();
-    activarPestana(expInicial ? "seguimiento" : (hash || (conFiltros ? "licitaciones" : "admin")), { empujarHash: false });
+    activarPestana(expInicial ? "seguimiento" : (hash || pestanaSinDireccion()), { empujarHash: false });
     if (expInicial) abrirExpediente(decodeURIComponent(expInicial), { empujarHash: false });
     buscar();
     refrescarPulso();
@@ -302,7 +300,37 @@
     const perfil = sel ? sel.value : "";
     const nombre = sel && sel.selectedOptions[0] ? sel.selectedOptions[0].text.replace(/^Consorcio · /, "").replace(/^Mi RUP(?: \(subido en PDF\))?(?: · |$)/, "").trim() : "";
     // con la sesión del dueño viajan las cifras del perfil (patrimonio, capacidad) para «Tu registro»
-    window.Pulso.arrancar(perfil, { nombre, forzar: !!opciones.forzar }).catch(() => {});
+    return window.Pulso.arrancar(perfil, { nombre, forzar: !!opciones.forzar })
+      .then(() => { falloPulsoMi = window.Pulso.ultimoFallo ? window.Pulso.ultimoFallo() : null; pintarFalloMiEmpresa(); })
+      .catch(() => {});
+  }
+  /* ══════ LO QUE NO LLEGÓ A MI EMPRESA SE DICE ARRIBA, CON SU «REINTENTAR» (9-nov-2026) ══════
+     Medido en Chromium con el servidor caído (503) y sin conexión: el titular, «Lo que pide atención», «Con
+     plazo» y «Sus procesos» se escondían SIN UNA PALABRA —sus cifras no se inventan, y eso sigue igual— y el
+     único «Reintentar» quedaba dentro del plegado cerrado «Cómo está el mercado». Las otras tres pestañas ya
+     decían qué pasó. Las dos respuestas que alimentan la parte de arriba son el pulso (public/pulso.js) y
+     `op=seguimiento`; cada una deja aquí null (llegó) o la frase de su fallo, y la redacción es una sola
+     (`Pulso.fraseFallo`). La sesión que terminó no se repite: ya la dice la pantalla de entrar. */
+  let falloPulsoMi = null, falloSegMi = null;
+  function pintarFalloMiEmpresa() {
+    const caja = document.getElementById("mi-fallo"), texto = document.getElementById("mi-fallo-texto");
+    if (!caja || !texto || !window.Pulso || !window.Pulso.fraseFallo) return;
+    const frase = window.Pulso.fraseFallo({ pulso: falloPulsoMi, seguimiento: falloSegMi });
+    texto.textContent = frase;
+    caja.classList.toggle("hidden", !frase);
+  }
+  {
+    const boton = document.getElementById("mi-fallo-reintentar");
+    if (boton) boton.addEventListener("click", () => {
+      if (boton.disabled) return;
+      // ninguna pulsación sin respuesta visible: el botón dice que está en ello hasta que las dos respuestas vuelven
+      boton.disabled = true;
+      const antes = boton.textContent;
+      boton.textContent = "Reintentando…";
+      Promise.all([refrescarPulso({ forzar: true }), cargarSeguimiento({ forzar: true })])
+        .catch(() => {})
+        .then(() => { boton.disabled = false; boton.textContent = antes; });
+    });
   }
   /* «Con plazo» (3-nov-2026) vive en su propia sección: sus tarjetas filtran la lista con la MISMA función */
   /* y los repartos (4-nov-2026, revisión adversaria): «Dónde están» y «Quién las publica» viven en su plegado,
@@ -560,6 +588,14 @@
   const ALIAS_PESTANA = { empresa: "admin", "mi-empresa": "admin", precios: "apu", "mis-procesos": "seguimiento", procesos: "seguimiento" };
   const arrancadas = { apu: false, admin: false, pliego: false, seguimiento: false };
   let arranqueApu = null;   // la promesa del primer arranque de Precios: lo que necesita su catálogo cargado (el desplegable de departamentos) la espera
+  /* La pestaña de una dirección SIN pestaña: la del arranque y la de volver «Atrás» hasta ella son la misma regla
+     (9-nov-2026). Un enlace con filtros de la Fase 8 (`?cierre=7d`, `?dep=73`) es un enlace A LA LISTA y abre
+     Licitaciones; sin ellos, Mi empresa, la pestaña principal. */
+  function pestanaSinDireccion() {
+    let conFiltros = false;
+    try { conFiltros = [...new URLSearchParams(location.search).keys()].some((k) => k !== "perfil"); } catch { conFiltros = false; }
+    return conFiltros ? "licitaciones" : "admin";
+  }
   function activarPestana(nombre, { empujarHash = true } = {}) {
     const pedido = ALIAS_PESTANA[nombre] || nombre;
     const destino = PESTANAS.includes(pedido) ? pedido : "admin";
@@ -608,7 +644,18 @@
     const sinMovimiento = typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (typeof document.startViewTransition === "function" && !sinMovimiento) document.startViewTransition(pintarPestana);
     else pintarPestana();
-    if (empujarHash) { try { history.replaceState(null, "", `#/${destino}`); } catch { /* entorno raro */ } }
+    /* «ATRÁS» VUELVE A LA PESTAÑA ANTERIOR (9-nov-2026). Con `replaceState` cambiar de pestaña no dejaba rastro, y
+       medido en Chromium el botón «Atrás» del navegador SACABA de Detekta en vez de volver de Precios a Mi empresa.
+       Ahora un cambio de pestaña SUMA una entrada y volver a la misma la REEMPLAZA: el historial no se apila con
+       repetidas (la regla del expediente, 7-sep: «volver tiene que significar UNA cosa»). Atrás dispara
+       `hashchange`, que ya repinta con `empujarHash: false`. */
+    if (empujarHash) {
+      try {
+        const actual = (location.hash.match(/^#\/([a-z-]+)/) || [])[1] || "";
+        if (actual && (ALIAS_PESTANA[actual] || actual) === destino) history.replaceState(null, "", `#/${destino}`);
+        else history.pushState(null, "", `#/${destino}`);
+      } catch { /* entorno raro */ }
+    }
     /* En CADA apertura posterior de Precios el perfil del borrador se vuelve a
        tomar de la barra (6-sep-2026, V-B2a-01): la barra cambia por código en
        más sitios que el evento `change` (guardar o borrar un consorcio, el
@@ -692,7 +739,13 @@
          justo después de haberlos restaurado (medido en Chromium). */
       if (!hash || (ALIAS_PESTANA[hash] || hash) === "seguimiento") return;
     }
-    if (hash) activarPestana(hash, { empujarHash: false });
+    /* «Atrás» hasta la dirección del arranque (sin `#/…`) vuelve a la pestaña con la que se entró: sin esta rama la
+       dirección cambiaba y la pantalla se quedaba en la otra pestaña, dos verdades a la vez. Un ANCLA dentro de la
+       página (`#bitacora`, en Ajustes) no es una pestaña: se deja al navegador, o el salto subiría al principio */
+    let crudo = "";
+    try { crudo = location.hash || ""; } catch { crudo = ""; }
+    if (!hash && crudo && crudo !== "#") return;
+    activarPestana(hash || pestanaSinDireccion(), { empujarHash: false });
   });
 
   /* El botón «APU» de una tarjeta o de una fila del panel: precarga el proceso
@@ -5142,7 +5195,11 @@
     /* el parseo va APARTE del fetch: el muro del edge responde HTML */
     const cuerpo = await leerJson(r);
     if (r.status === 401) {
-      throw new Error(msg401(cuerpo));
+      /* `sesion` marca el 401 de la API (la sesión terminó: ya se abrió la pantalla de entrar), no el del muro
+         del edge: quien pinta un fallo en otra parte (Mi empresa, 9-nov-2026) no lo repite debajo de esa pantalla */
+      const vencida = new Error(msg401(cuerpo));
+      if (!(cuerpo && cuerpo.sinJson)) vencida.sesion = true;
+      throw vencida;
     }
     if (!r.ok) {
       // el «qué hacer» del servidor viaja con el error, como en pliego.js (6-sep-2026, V-B2a-02)
@@ -5313,6 +5370,9 @@
       cargandoSeguimiento(false);
       $("seg-vacio").classList.add("hidden");
       mensajeSeg(mensajeDeFallo(e, "cargar sus procesos guardados"), "error");
+      // Mi empresa lo dice también arriba (9-nov-2026), salvo la sesión que terminó: ya la dice la pantalla de entrar
+      falloSegMi = e && e.sesion ? null : fraseDeFallo(e);
+      pintarFalloMiEmpresa();
       return;
     }
     cargandoSeguimiento(false);
@@ -5323,8 +5383,12 @@
       mensajeSeg((r && r.error)
         || (r ? "No se pudo cargar sus procesos guardados: el servidor respondió, pero sin la lista. Vuelva a intentar."
               : mensajeDeFallo(null, "cargar sus procesos guardados")), "error");
+      falloSegMi = (r && r.error) || (r ? "El servidor respondió, pero sin la lista." : fraseDeFallo(null));
+      pintarFalloMiEmpresa();
       return;
     }
+    falloSegMi = null;
+    pintarFalloMiEmpresa();
     seguimientoCargadoPara = perfil;
     guardados.clear();
     /* `r.procesos` se RECORRE, así que un `ok:true` sin esa lista lanzaba y la
@@ -9949,6 +10013,8 @@
     $("imp-nota").textContent = "El precio del archivo MANDA y queda declarado. Una sugerencia en ámbar sin precio solo usa el catálogo si su casilla queda marcada.";
     $("modal-importar").classList.remove("hidden");
     $("modal-importar").classList.add("flex");
+    // una vista previa se LEE: el foco va a su título, que el lector de pantalla anuncia (9-nov-2026)
+    enfocarVentana("modal-importar", "modal-importar-titulo");
   }
 
   /* ══════════ Mapeo manual de columnas (respaldo del método 2) ══════════
@@ -10031,6 +10097,7 @@
   function cerrarModalImportar() {
     $("modal-importar").classList.add("hidden");
     $("modal-importar").classList.remove("flex");
+    devolverFoco("modal-importar");
   }
   $("btn-imp-cancelar").addEventListener("click", cerrarModalImportar);
   $("modal-importar").addEventListener("click", (e) => {
@@ -12437,12 +12504,38 @@
     $("modal-eliminar").classList.remove("hidden");
     $("modal-eliminar").classList.add("flex");
     $("modal-eliminar").style.display = "flex";
+    // lo que BORRA abre con el foco en «Cancelar»: un Enter de reflejo no puede eliminar nada (9-nov-2026)
+    enfocarVentana("modal-eliminar", "btn-eliminar-cancelar");
   }
   function cerrarModalEliminar() {
     $("modal-eliminar").classList.add("hidden");
     $("modal-eliminar").classList.remove("flex");
     $("modal-eliminar").style.display = "none";
+    devolverFoco("modal-eliminar");
   }
+  /* ══════ LAS VENTANAS SE PORTAN IGUAL: EL FOCO ENTRA, ESCAPE CIERRA Y EL FOCO VUELVE (9-nov-2026) ══════
+     Medido en Chromium: «¿Eliminar este RUP?» abría con el foco fuera de la ventana y Escape no la cerraba, y la
+     vista previa de importar tampoco cerraba con Escape; la hoja de filtros, la competencia y el expediente sí lo
+     hacían. Un solo oyente en el DOCUMENTO (tras pulsar un botón el foco puede quedar en el <body>, como se midió
+     con el expediente el 7-sep) y una sola pareja enfocar/devolver para las dos. Mientras se está borrando, Escape
+     no cierra: la petición ya salió y la ventana dice cómo terminó. */
+  const origenDeVentana = new Map();
+  function enfocarVentana(idVentana, idFoco) {
+    origenDeVentana.set(idVentana, document.activeElement);
+    const n = document.getElementById(idFoco);
+    if (n && typeof n.focus === "function") { try { n.focus(); } catch { /* sin foco */ } }
+  }
+  function devolverFoco(idVentana) {
+    const o = origenDeVentana.get(idVentana);
+    origenDeVentana.delete(idVentana);
+    if (o && o.isConnected && typeof o.focus === "function") { try { o.focus(); } catch { /* sin foco */ } }
+  }
+  document.addEventListener("keydown", (ev) => {
+    if (ev.key !== "Escape") return;
+    const abierta = (id) => { const n = document.getElementById(id); return !!n && !n.classList.contains("hidden"); };
+    if (abierta("modal-eliminar")) { if (!eliminarEnVuelo) cerrarModalEliminar(); return; }
+    if (abierta("modal-importar")) cerrarModalImportar();
+  });
 
   async function eliminarRupActivo() {
     if (eliminarEnVuelo) return;

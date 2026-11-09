@@ -44023,7 +44023,11 @@ async function main() {
       const fnPulso = appL.slice(appL.indexOf("function aplicarFiltroDelPulso"), appL.indexOf("function aplicarFiltroDelPulso") + 900);
       assert.ok(/activarPestana\("licitaciones"\)/.test(fnPulso), "aplicarFiltroDelPulso cambia a la pestaña Licitaciones");
       const fnAbrir = appL.slice(appL.indexOf("function abrirApp"), appL.indexOf("function abrirApp") + 1200);
-      assert.ok(/activarPestana\(expInicial \? "seguimiento" : \(hash \|\| \(conFiltros \? "licitaciones" : "admin"\)\)/.test(fnAbrir),
+      /* Desde el 9-nov-2026 la regla vive en `pestanaSinDireccion`, que el arranque y el «Atrás» hasta la dirección
+         sin pestaña llaman (antes eran dos copias); el bloque «unidad armazón» la EJECUTA con y sin filtros. */
+      const fnSinDir = appL.slice(appL.indexOf("function pestanaSinDireccion()"), appL.indexOf("function pestanaSinDireccion()") + 400);
+      assert.ok(/activarPestana\(expInicial \? "seguimiento" : \(hash \|\| pestanaSinDireccion\(\)\)/.test(fnAbrir)
+        && /conFiltros \? "licitaciones" : "admin"/.test(fnSinDir),
         "sin hash se abre Mi empresa; con filtros en la URL, la lista");
       /* UN ENLACE A UN EXPEDIENTE ABRE ESE EXPEDIENTE (7-sep-2026). `#/proceso/<id>`
          no es una pestaña —el regex de `hash` solo captura minúsculas y un id de
@@ -65459,6 +65463,194 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
     okCL(re.filas[0].cantidad === null && re.filas[0].item_id === limpio.item_id, `al volver a importar el libro, la cantidad sigue «sin dato» y el aviso no estorba al buscar el ítem: ${JSON.stringify([re.filas[0].cantidad, re.filas[0].item_id, limpio.item_id])}`);
     if (fallasCL.length) throw new Error(`unidad cantidad sin dato en el libro: ${fallasCL.length} comprobaciones fallan:\n  - ${fallasCL.join("\n  - ")}`);
     console.log("· unidad cantidad sin dato en el libro que se radica: una cantidad ilegible sale vacía y en rojo con su aviso, fuera del total, y al reimportar sigue «sin dato»; el 0 escrito sigue siendo 0");
+  }
+
+  bqArmazon: { if (!corre("unidad armazón · lo que no llega, atrás y las ventanas")) break bqArmazon;
+    /* EL ARMAZÓN, MEDIDO EN CHROMIUM ANTES DE TOCARLO (9-nov-2026, página 0 del rediseño). El censo ejecutado
+       con los routers reales sobre el Redis y el Socrata falsos encontró, entre otras, esta acción sin respuesta:
+       (a) con el servidor caído o sin conexión, Mi empresa escondía el titular y las secciones de arriba SIN UNA
+           PALABRA, y el único «Reintentar» vivía en un plegado cerrado. Las cifras siguen sin inventarse; ahora
+           se dice qué no llegó, con «Reintentar» arriba. Funciones REALES: el pulso con un `fetch` falso, la
+           frase, el pintado de app.js y la carga de Mis procesos recortados del fuente. */
+    const fallasAR = [];
+    const okAR = (c, que) => { if (!c) fallasAR.push(que); };
+    const jsAR = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+    const cortarAR = (firma) => { const i = jsAR.indexOf(firma); if (i < 0) { fallasAR.push(`app.js sin «${firma.trim()}»`); return ""; } return jsAR.slice(i, jsAR.indexOf("\n  }", i) + 4); };
+    const GAR = require("../public/glosario.js");
+    delete require.cache[require.resolve("../public/pulso.js")];
+    const PulAR = require("../public/pulso.js");
+    // (a.1) la frase: nada que decir es "", y cada combinación nombra lo que no llegó con su motivo, sin repetirlo
+    okAR(typeof PulAR.fraseFallo === "function" && typeof PulAR.ultimoFallo === "function", "(a) Pulso expone fraseFallo y ultimoFallo");
+    if (typeof PulAR.fraseFallo === "function") {
+      okAR(PulAR.fraseFallo({}) === "" && PulAR.fraseFallo({ pulso: null, seguimiento: null }) === "", "(a) sin fallos no hay frase (la caja no se enseña)");
+      okAR(PulAR.fraseFallo({ pulso: "M1." }) === "No se pudieron traer las cifras de hoy. M1.", `(a) solo el pulso: ${PulAR.fraseFallo({ pulso: "M1." })}`);
+      okAR(PulAR.fraseFallo({ seguimiento: "M2." }) === "No se pudo traer lo que piden sus procesos guardados. M2.", "(a) solo los procesos guardados");
+      okAR(PulAR.fraseFallo({ pulso: "M.", seguimiento: "M." }) === "No se pudieron traer las cifras de hoy ni lo que piden sus procesos guardados. M.", "(a) los dos con el mismo motivo lo dicen una vez");
+    }
+    // (a.2) el pulso REAL: por qué no llegó, con un documento y un fetch falsos
+    const nodoAR = () => ({ innerHTML: "", textContent: "", hidden: false, classList: { toggle() {}, add() {}, remove() {}, contains: () => false } });
+    const docAR = { getElementById: () => nodoAR() };
+    const fetchViejoAR = global.fetch;
+    const conFetchAR = async (impl) => { global.fetch = impl; try { await PulAR.arrancar("helder", { doc: docAR, forzar: true }); } catch (e) { fallasAR.push(`(a) arrancar lanzó: ${e.message}`); } finally { global.fetch = fetchViejoAR; } return PulAR.ultimoFallo ? PulAR.ultimoFallo() : undefined; };
+    const resp = (status, cuerpo) => ({ status, ok: status >= 200 && status < 300, json: async () => { if (cuerpo === undefined) throw new SyntaxError("no es JSON"); return cuerpo; } });
+    const sinRedAR = await conFetchAR(async () => { throw new TypeError("Failed to fetch"); });
+    okAR(sinRedAR === GAR.MSG_SIN_CONEXION, `(a) sin red, el pulso guarda la frase de siempre: ${sinRedAR}`);
+    const caidoAR = await conFetchAR(async () => resp(503, { ok: false, error: "El servidor no pudo leer los datos.", que_hacer: "Vuelva a intentarlo en unos minutos." }));
+    okAR(caidoAR === "El servidor no pudo leer los datos. Vuelva a intentarlo en unos minutos.", `(a) con el servidor caído, su error y su qué hacer: ${caidoAR}`);
+    const muroAR = await conFetchAR(async () => resp(401));
+    okAR(muroAR === GAR.MSG_MURO, `(a) un 401 SIN JSON es el muro del sitio y se dice: ${muroAR}`);
+    const sesionAR = await conFetchAR(async () => resp(401, { ok: false, error: "Sesión no válida." }));
+    okAR(sesionAR === null, `(a) un 401 con JSON es la sesión que terminó: lo dice la pantalla de entrar, no esta caja (${sesionAR})`);
+    // (a.3) el pintado de app.js: la caja se enseña con la frase y se esconde sin ella
+    const pintarAR = cortarAR("  function pintarFalloMiEmpresa() {");
+    if (pintarAR) {
+      const cajaAR = { hidden: true, classList: { toggle(c, v) { if (c === "hidden") cajaAR.hidden = !!v; } } }, textoAR = { textContent: "" };
+      const pinta = new Function("Pulso", "cajaAR", "textoAR", `let falloPulsoMi = null, falloSegMi = null;
+        const document = { getElementById: (id) => (id === "mi-fallo" ? cajaAR : id === "mi-fallo-texto" ? textoAR : null) };
+        const window = { Pulso };
+        ${pintarAR}
+        return (p, s) => { falloPulsoMi = p; falloSegMi = s; pintarFalloMiEmpresa(); return { visible: !cajaAR.hidden, texto: textoAR.textContent }; };`)(PulAR, cajaAR, textoAR);
+      const conFallo = pinta("Sin conexión.", null);
+      okAR(conFallo.visible && conFallo.texto === "No se pudieron traer las cifras de hoy. Sin conexión.", `(a) app.js enseña la caja con la frase: ${JSON.stringify(conFallo)}`);
+      const sinFallo = pinta(null, null);
+      okAR(!sinFallo.visible && sinFallo.texto === "", "(a) y la esconde cuando todo llegó");
+    }
+    // (a.4) la carga de Mis procesos deja su fallo para Mi empresa, salvo la sesión que terminó
+    const cargarAR = cortarAR("  async function cargarSeguimiento(");
+    if (cargarAR) {
+      const corre1 = async (comportamiento) => new Function("comportamiento", `
+        const nodo = () => ({ classList: { add() {}, remove() {}, toggle() {} }, value: "helder" });
+        const $ = () => nodo();
+        const document = { querySelectorAll: () => [] };
+        let falloSegMi = "sin tocar", pintadas = 0, seguimientoCargadoPara = null;
+        const guardados = new Map();
+        const pintarFalloMiEmpresa = () => { pintadas++; };
+        const cargandoSeguimiento = () => {}, mensajeSeg = () => {}, pintarSeguimiento = () => {};
+        const mensajeDeFallo = (e, c) => "No se pudo " + c + ".";
+        const fraseDeFallo = (e) => "FRASE(" + (e && e.message) + ")";
+        const api = async () => comportamiento();
+        ${cargarAR}
+        return cargarSeguimiento({ forzar: true }).then(() => ({ falloSegMi, pintadas }));`)(comportamiento);
+      const red = await corre1(() => { throw new Error("sin red"); });
+      okAR(red.falloSegMi === "FRASE(sin red)" && red.pintadas > 0, `(a) un fallo de Mis procesos llega a Mi empresa: ${JSON.stringify(red)}`);
+      const ses = await corre1(() => { const e = new Error("sesión"); e.sesion = true; throw e; });
+      okAR(ses.falloSegMi === null, `(a) la sesión que terminó no se repite en Mi empresa: ${JSON.stringify(ses)}`);
+      const bien = await corre1(() => ({ ok: true, procesos: [] }));
+      okAR(bien.falloSegMi === null && bien.pintadas > 0, `(a) cuando llega, la caja se limpia: ${JSON.stringify(bien)}`);
+    }
+    // (a.5) api() marca el 401 de la sesión, y no el del muro del sitio
+    const apiAR = cortarAR("  async function api(");
+    if (apiAR) {
+      const llamaApi = (cuerpo) => new Function("cuerpo", `
+        const conSesion = (o) => o, leerJson = async () => cuerpo, msg401 = () => "401";
+        const fraseDeFallo = () => "", errorDelServidor = () => null;
+        const fetch = async () => ({ status: 401, ok: false });
+        ${apiAR}
+        return api("/api/x").then(() => "sin error", (e) => e);`)(cuerpo);
+      const deSesion = await llamaApi({ ok: false, error: "x" });
+      okAR(deSesion instanceof Error && deSesion.sesion === true, "(a) api(): el 401 de la API lleva la marca de sesión");
+      const deMuro = await llamaApi({ sinJson: true, error: "muro" });
+      okAR(deMuro instanceof Error && !deMuro.sesion, "(a) api(): el 401 del muro del sitio NO la lleva (la caja de Mi empresa sí lo dice)");
+    }
+    // (a.6) la caja vive arriba de la pestaña, con su botón, y su botón tiene oyente
+    const htmlAR = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
+    const iCaja = htmlAR.indexOf('id="mi-fallo"'), iPulso = htmlAR.indexOf('<section id="pulso"'), iTab = htmlAR.indexOf('id="tab-admin"');
+    okAR(iCaja > iTab && iCaja < iPulso && /id="mi-fallo-reintentar"/.test(htmlAR) && /id="mi-fallo-texto"/.test(htmlAR), "(a) la caja va dentro de Mi empresa y ANTES del titular");
+    okAR(/getElementById\("mi-fallo-reintentar"\)[\s\S]{0,120}addEventListener\("click"/.test(jsAR), "(a) «Reintentar» de Mi empresa tiene oyente");
+    /* (b) «Atrás» del navegador: medido en Chromium, sacaba de Detekta porque cambiar de pestaña REEMPLAZABA la
+       dirección. Se ejecuta la `activarPestana` real con un historial falso, y el oyente real de `hashchange`. */
+    const lineaAR = (marca) => { const i = jsAR.indexOf(marca); if (i < 0) { fallasAR.push(`app.js sin «${marca.trim()}»`); return ""; } return jsAR.slice(i, jsAR.indexOf("\n", i)); };
+    const fuentePestAR = [lineaAR("  const PESTANAS = ["), lineaAR("  const ALIAS_PESTANA = "), cortarAR("  function pestanaSinDireccion() {"), cortarAR("  function activarPestana(")].join("\n");
+    const iHC = jsAR.indexOf('  window.addEventListener("hashchange", () => {');
+    const oyenteHC = iHC > 0 ? jsAR.slice(iHC, jsAR.indexOf("\n  });", iHC) + 6) : "";
+    okAR(!!oyenteHC, "(b) app.js tiene el oyente de hashchange");
+    if (fuentePestAR && oyenteHC) {
+      const hazPest = () => new Function(`
+        const loc = { hash: "", search: "" };
+        const historial = [];
+        const history = { pushState: (a, b, u) => { historial.push("push " + u); loc.hash = u; }, replaceState: (a, b, u) => { historial.push("replace " + u); loc.hash = u; } };
+        const location = loc;
+        const nodo = () => ({ classList: { toggle() {}, add() {}, remove() {}, contains: () => false }, getAttribute: () => null, setAttribute() {} });
+        const $ = () => nodo();
+        const document = { querySelectorAll: () => [], getElementById: () => nodo() };
+        const window = { scrollTo() {}, addEventListener: (t, f) => { oyentes[t] = f; } };
+        const oyentes = {};
+        const matchMedia = () => ({ matches: true });
+        const expedienteAbierto = () => false, cerrarExpediente = () => {}, moverIndicadorPestanas = () => {};
+        const arrancadas = { apu: true, admin: true, pliego: true, seguimiento: true };
+        let arranqueApu = null;
+        const arrancarPrecios = () => null, sincronizarPerfilBorrador = () => {}, arrancarPaneles = () => {}, cargarSeguimiento = () => {}, cargarCandidatosSocio = () => {};
+        ${fuentePestAR}
+        const llamadas = [];
+        const real = activarPestana;
+        let segExpId = null; const hashExpediente = () => null, abrirExpediente = () => {};
+        const espia = (n, o) => { llamadas.push(n); };
+        const oyente = new Function("activarPestana", "location", "segExpId", "cerrarExpediente", "hashExpediente", "abrirExpediente", "ALIAS_PESTANA", "pestanaSinDireccion", "window",
+          ${JSON.stringify(oyenteHC)});
+        oyente(espia, loc, null, cerrarExpediente, hashExpediente, abrirExpediente, ALIAS_PESTANA, pestanaSinDireccion, window);
+        return { real, loc, historial, llamadas, disparar: () => oyentes.hashchange() };`)();
+      const P = hazPest();
+      P.real("licitaciones"); P.real("licitaciones"); P.real("apu"); P.real("precios");
+      okAR(JSON.stringify(P.historial) === JSON.stringify(["push #/licitaciones", "replace #/licitaciones", "push #/apu", "replace #/apu"]),
+        `(b) cambiar de pestaña SUMA una entrada y volver a la misma (o a su alias) la reemplaza: ${JSON.stringify(P.historial)}`);
+      P.loc.hash = ""; P.loc.search = ""; P.disparar();
+      okAR(P.llamadas[P.llamadas.length - 1] === "admin", `(b) «Atrás» hasta la dirección sin pestaña vuelve a Mi empresa: ${JSON.stringify(P.llamadas)}`);
+      P.loc.search = "?dep=73"; P.disparar();
+      okAR(P.llamadas[P.llamadas.length - 1] === "licitaciones", "(b) …y con filtros en la dirección, a Licitaciones (la regla del arranque)");
+      const antesAncla = P.llamadas.length;
+      P.loc.hash = "#bitacora"; P.loc.search = ""; P.disparar();
+      okAR(P.llamadas.length === antesAncla, "(b) un ancla dentro de la página (#bitacora) no cambia de pestaña");
+      P.loc.hash = "#/apu"; P.disparar();
+      okAR(P.llamadas[P.llamadas.length - 1] === "apu", "(b) una dirección de pestaña abre esa pestaña");
+      const arranqueAR = jsAR.slice(jsAR.indexOf("    const expInicial = hashExpediente();"), jsAR.indexOf("    const expInicial = hashExpediente();") + 220);
+      okAR(/hash \|\| pestanaSinDireccion\(\)/.test(arranqueAR), "(b) el arranque llama a la MISMA regla de la pestaña sin dirección (no una copia)");
+    }
+    /* (c) Las ventanas se portan igual: medido en Chromium, «¿Eliminar este RUP?» abría con el foco fuera y Escape no
+       la cerraba, y la vista previa de importar tampoco. Se ejecutan las funciones reales de abrir y cerrar, la pareja
+       enfocar/devolver y el oyente de Escape del documento. */
+    const iEscV = jsAR.indexOf("    const abierta = (id) => { const n = document.getElementById(id);");
+    const iOyV = iEscV > 0 ? jsAR.lastIndexOf('  document.addEventListener("keydown", (ev) => {', iEscV) : -1;
+    const oyenteV = iOyV > 0 ? jsAR.slice(iOyV, jsAR.indexOf("\n  });", iEscV) + 6) : "";
+    okAR(!!oyenteV, "(c) app.js tiene el oyente de Escape de las ventanas");
+    const fuenteV = [lineaAR("  const origenDeVentana = new Map();"), cortarAR("  function enfocarVentana("), cortarAR("  function devolverFoco("),
+      cortarAR("  function abrirModalEliminar() {"), cortarAR("  function cerrarModalEliminar() {"), cortarAR("  function cerrarModalImportar() {"), oyenteV].join("\n");
+    if (oyenteV && fuenteV) {
+      const V = new Function(`
+        const enfocados = [];
+        const nodo = (id) => { const n = { id, isConnected: true, style: {}, textContent: "", value: "helder", selectedOptions: [{ text: "Helder (persona natural)" }],
+          clases: new Set(["hidden"]), focus() { document.activeElement = n; enfocados.push(id); } };
+          n.classList = { add: (c) => n.clases.add(c), remove: (c) => n.clases.delete(c), contains: (c) => n.clases.has(c), toggle: (c, v) => (v ? n.clases.add(c) : n.clases.delete(c)) };
+          return n; };
+        const nodos = {};
+        const oyentes = [];
+        const document = { activeElement: null, getElementById: (id) => (nodos[id] = nodos[id] || nodo(id)), addEventListener: (t, f) => { if (t === "keydown") oyentes.push(f); } };
+        const $ = (id) => document.getElementById(id);
+        const ID_RUP_RE = /^rup_/;
+        let eliminarEnVuelo = false;
+        ${fuenteV}
+        const origen = $("btn-eliminar-rup"); origen.clases.delete("hidden");
+        const tecla = (k) => oyentes.forEach((f) => f({ key: k }));
+        return { $, document, enfocados, origen, tecla, abrirModalEliminar, enVuelo: (v) => { eliminarEnVuelo = v; },
+          abrirImportar: () => { $("modal-importar").clases.delete("hidden"); enfocarVentana("modal-importar", "modal-importar-titulo"); } };`)();
+      V.document.activeElement = V.origen;
+      V.abrirModalEliminar();
+      okAR(!V.$("modal-eliminar").clases.has("hidden") && V.document.activeElement.id === "btn-eliminar-cancelar", `(c) «¿Eliminar…?» abre con el foco en «Cancelar»: ${V.document.activeElement && V.document.activeElement.id}`);
+      V.enVuelo(true); V.tecla("Escape");
+      okAR(!V.$("modal-eliminar").clases.has("hidden"), "(c) mientras se está borrando, Escape no cierra");
+      V.enVuelo(false); V.tecla("Escape");
+      okAR(V.$("modal-eliminar").clases.has("hidden") && V.document.activeElement === V.origen, `(c) Escape la cierra y el foco vuelve al botón que la abrió: ${V.document.activeElement && V.document.activeElement.id}`);
+      V.tecla("Enter");
+      okAR(V.$("modal-eliminar").clases.has("hidden"), "(c) otra tecla no abre nada");
+      V.document.activeElement = V.origen;
+      V.abrirImportar();
+      okAR(V.document.activeElement.id === "modal-importar-titulo", "(c) la vista previa de importar abre con el foco en su título");
+      V.tecla("Escape");
+      okAR(V.$("modal-importar").clases.has("hidden") && V.document.activeElement === V.origen, "(c) Escape cierra la vista previa y el foco vuelve");
+      okAR(/id="modal-importar-titulo"[^>]*tabindex="-1"/.test(htmlAR), "(c) el título de la vista previa puede recibir el foco (tabindex=-1)");
+      okAR(/\$\("modal-importar"\)\.classList\.add\("flex"\);\n\s*\/\/[^\n]*\n\s*enfocarVentana\("modal-importar", "modal-importar-titulo"\);/.test(jsAR), "(c) la apertura REAL de la vista previa llama a enfocarVentana");
+    }
+    if (fallasAR.length) throw new Error(`unidad armazón: ${fallasAR.length} comprobaciones fallan:\n  - ${fallasAR.join("\n  - ")}`);
+    console.log("· unidad armazón · lo que no llega, atrás y las ventanas: Mi empresa dice qué no llegó y ofrece «Reintentar» arriba (sin red, servidor caído y muro del sitio) y calla lo que ya dice la pantalla de entrar; «Atrás» vuelve a la pestaña anterior sin apilar repetidas ni tocar las anclas; «¿Eliminar…?» y la vista previa de importar meten el foco, cierran con Escape y lo devuelven");
   }
 
   bqIteraciones: {

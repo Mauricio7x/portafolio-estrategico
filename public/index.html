@@ -2857,6 +2857,17 @@
            partición no le cuesta nada; lo único que hay que mantener es que
            las DOS secciones se enseñen y se escondan juntas (lo hace
            `arrancar`, con `#pulso` y `#pulso-repartos`). -->
+      <!-- LO QUE NO LLEGÓ SE DICE ARRIBA (9-nov-2026): con el servidor caído o sin conexión, el titular y las
+           secciones de abajo se escondían sin una palabra. Las cifras siguen sin inventarse; lo que cambia es
+           que se dice qué no llegó y se ofrece «Reintentar» a la vista. Lo escribe `pintarFalloMiEmpresa`
+           (app.js) con la frase de `Pulso.fraseFallo`. Mismas clases que el mensaje y el botón de Mis procesos. -->
+      <div id="mi-fallo" class="mb-6 hidden rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
+        <p id="mi-fallo-texto"></p>
+        <button id="mi-fallo-reintentar" type="button"
+                class="mt-3 rounded-xl border border-gray-300 bg-white px-5 py-2 text-sm font-medium transition hover:bg-gray-50">
+          Reintentar
+        </button>
+      </div>
       <section id="pulso" class="hidden mb-6">
         <!-- ⚠️ TRANSLÚCIDO SIN BLUR ERA LO PEOR DE LOS DOS MUNDOS (24-ago-2026).
              Estos siete recuadros fijaban `var(--bg-card)` —que es
@@ -5408,7 +5419,7 @@
        role="dialog" aria-modal="true" aria-labelledby="modal-importar-titulo">
     <div class="flex max-h-[90vh] w-full max-w-5xl flex-col rounded-2xl bg-white p-6 shadow-xl">
       <div class="flex items-baseline justify-between gap-3">
-        <h3 id="modal-importar-titulo" class="font-semibold tracking-tight">Vista previa de la importación</h3>
+        <h3 id="modal-importar-titulo" class="font-semibold tracking-tight" tabindex="-1">Vista previa de la importación</h3>
         <span id="imp-resumen" class="text-xs text-gray-500"></span>
       </div>
       <div id="imp-avisos" class="mt-3 space-y-1"></div>
