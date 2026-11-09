@@ -21624,6 +21624,7 @@ En una línea: «Datos para los formatos del pliego» pide además la ciudad de 
     - Antes de admitir los corchetes, 21 de los 27 se quedaban sin firma.
     - Las 27 cédulas salen con su ciudad, y las 8 matrículas en el renglón del representante.
   - **33 ofertas presentadas** del Drive del dueño (sus consorcios 1A, HGR y ATENEA HGR, DRV INGENIERIA SAS y cuatro más, casi todas cartas de evaluación) dieron:
+    > Corrección del 9-nov-2026: los consorcios del dueño son solo «Consorcio Infraestructura 1A» y «Consorcio Infraestructura GR»; con GR todavía no ha presentado oferta, por eso no hay documentos suyos en el Drive. HGR y ATENEA HGR están en el Drive (carpetas «00 EMPRESA HGR» y «Analizar Proceso / Oferta») pero no son suyos («no sé quién es ATENEA HGR»): lo medido sobre las proformas de la UPN vale como formato, no como dato de su empresa.
     - el rótulo «Firma:» con «Nombre de quien firma» de las proformas de la UPN (8 documentos), ya admitido;
     - que la matrícula es siempre la del representante (5 de 5);
     - y los datos del PENDIENTE de arriba.
@@ -21961,3 +21962,11 @@ En una línea: en la guía de un proceso guardado con el pliego leído, el requi
 - **Verificado.**
   - «unidad códigos de la experiencia» y «socio por proceso», con el lector real sobre frases de 3.5.4, la guía real, el consorcio de `derivarPlural`, `lib/entregar` y el expediente.
   - 33 mutaciones, mueren 33. Dos sobrevivían por la prueba, no por el código: la frase de la inscripción que ni el lector lee (se cambió por una que sí lee) y el «del proponente» justo antes del verbo, que ninguna frase tenía (se añadió).
+
+### Los consorcios del dueño son 1A y GR; GR aún no ha presentado oferta (9-nov-2026)
+
+En una línea: el dueño tiene dos consorcios, «Consorcio Infraestructura 1A» y «Consorcio Infraestructura GR»; con GR todavía no ha presentado oferta, así que no hay documentos de GR en el Drive, y HGR y ATENEA HGR, aunque están allí, no son suyos.
+
+- **Por qué no hay que re-aprenderlo**: la base de ofertas del 7-nov tomó HGR y ATENEA HGR como suyos porque estaban en su Drive y nombraban a Helder; el dueño lo corrigió («nunca he usado consorcio infraestructura HGR, solo CONSORCIO INFRAESTRUCTURA GR»; «no sé quién es ATENEA HGR»). Un documento en su Drive no prueba que la oferta sea suya.
+- **Que no aparezca GR no es un error de lectura**: buscado por título y por texto el 9-nov, no hay nada, porque no se ha presentado. Sus datos se escriben en Mi empresa cuando se arme.
+
