@@ -6367,17 +6367,46 @@
     if (id !== "hoy") tab.querySelectorAll(`:scope > details[data-me-apartado="${id}"]`).forEach((d) => { d.open = true; });
     const titulo = document.getElementById("me-titulo");
     if (titulo) { titulo.textContent = id === "hoy" ? "" : rotulo; titulo.hidden = id === "hoy"; }
+    const rotuloBoton = document.getElementById("me-abrir-rotulo");
+    if (rotuloBoton) rotuloBoton.textContent = rotulo || "Hoy";
+    // en el teléfono el panel se cierra al elegir: el foco va al título (abajo), no de vuelta al botón
+    const estabaAbierto = tab.hasAttribute("data-panel");
+    if (estabaAbierto) panelMiEmpresa(false, { devolverFoco: false });
     if (enfocar) {
       try { window.scrollTo({ top: 0 }); } catch { /* sin desplazamiento */ }
       // ninguna pulsación sin respuesta visible: el foco va al título del apartado (o a la barra, al volver a Hoy)
-      const destino = id === "hoy" ? tab.querySelector('#me-barra .me-ir[aria-current="page"]') : titulo;
+      // en Hoy no hay título: el foco va a la barra (computador) o al botón que abre el panel, que ya se cerró (teléfono)
+      const destino = id !== "hoy" ? titulo : estabaAbierto ? document.getElementById("me-abrir-panel") : tab.querySelector('#me-barra .me-ir[aria-current="page"]');
       if (destino && typeof destino.focus === "function") { try { destino.focus({ preventScroll: true }); } catch { /* sin foco */ } }
     }
     return id;
   }
+  /* EL PANEL LATERAL DEL TELÉFONO (9-nov-2026, decisión del dueño): la misma barra, que en pantallas estrechas la hoja
+     convierte en un panel que entra desde la izquierda. Aquí solo se abre y se cierra; el foco entra al abrir (en el
+     apartado actual) y vuelve al botón al cerrar; Escape y el velo lo cierran. En el computador el atributo no hace nada. */
+  function panelMiEmpresa(abrir, { devolverFoco = true } = {}) {
+    const tab = document.getElementById("tab-admin"), velo = document.getElementById("me-velo"), boton = document.getElementById("me-abrir-panel");
+    if (!tab) return;
+    if (abrir) tab.setAttribute("data-panel", "abierto"); else tab.removeAttribute("data-panel");
+    if (velo) velo.hidden = !abrir;
+    if (boton) boton.setAttribute("aria-expanded", abrir ? "true" : "false");
+    if (abrir) {
+      const f = tab.querySelector('#me-barra .me-ir[aria-current="page"]') || tab.querySelector("#me-barra .me-ir");
+      if (f && typeof f.focus === "function") { try { f.focus(); } catch { /* sin foco */ } }
+    } else if (devolverFoco && boton && typeof boton.focus === "function") { try { boton.focus(); } catch { /* sin foco */ } }
+  }
   document.addEventListener("click", (ev) => {
-    const b = ev.target && ev.target.closest ? ev.target.closest("[data-me-ir]") : null;
+    const t = ev.target && ev.target.closest ? ev.target : null;
+    if (!t) return;
+    if (t.closest("#me-abrir-panel")) { panelMiEmpresa(true); return; }
+    if (t.closest("#me-velo") || t.closest("#me-barra .me-cerrar")) { panelMiEmpresa(false); return; }
+    const b = t.closest("[data-me-ir]");
     if (b) elegirApartadoMiEmpresa(b.getAttribute("data-me-ir"));
+  });
+  document.addEventListener("keydown", (ev) => {
+    if (ev.key !== "Escape") return;
+    const tab = document.getElementById("tab-admin");
+    if (tab && tab.hasAttribute("data-panel")) panelMiEmpresa(false);
   });
   let miAvisosAbierto = false;
   function pintarMiEmpresaSeguimiento(r) {

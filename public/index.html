@@ -2492,8 +2492,8 @@
     #app #tab-admin .me-barra button { min-height: 48px; padding: 8px 14px; border: 0; border-radius: 12px; background: transparent; color: var(--text-secondary);
       font-size: 17px; text-align: left; cursor: pointer; }
     #app #tab-admin .me-barra button:hover { background: var(--bg-inset); color: var(--text-primary); }
+    #tab-admin .me-ir { width: 100%; }
     #app #tab-admin .me-barra button[aria-current="page"] { background: var(--accent-light); color: var(--text-primary); font-weight: 700; }
-    #app #tab-admin .me-barra .me-volver { display: none; color: var(--accent); font-weight: 700; text-decoration: underline; text-underline-offset: 0.18em; padding-left: 4px; }
     /* «Próximas fechas» y la lista de avisos salen de Hoy: viven en Mis procesos. Sus nodos se quedan (app.js los pinta) */
     #app #tab-admin #mi-atencion, #app #tab-admin #mi-procesos .mi-col-fechas { display: none; }
     #app #tab-admin #mi-procesos > .grid { grid-template-columns: minmax(0, 1fr); }
@@ -2516,13 +2516,25 @@
       #tab-admin #pulso-plazo .mi-tareas { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       #tab-admin .me-barra-t { display: none; }
     }
-    /* Teléfono: en Hoy la lista va al final; en otro apartado solo queda «Volver a Hoy», arriba */
+    /* Teléfono: los apartados en un PANEL LATERAL (9-nov-2026, decisión del dueño al ver la maqueta de Licitaciones),
+       no en una lista al final de Hoy. Arriba queda un botón con el apartado en que está; el panel entra desde la
+       izquierda por encima de la barra de abajo, con velo. Cerrado no es enfocable (visibility). En el computador
+       ni el botón ni el velo existen: la barra va en su columna. */
+    #tab-admin .me-abrir-panel, #tab-admin .me-cerrar, #tab-admin .me-velo { display: none; }
     @media (max-width: 899px) {
-      #tab-admin[data-me="hoy"] > #me-barra { order: 99; margin-top: 18px; padding: 8px; border-radius: var(--radius-md); background: var(--bg-card); border: 1px solid var(--border); }
-      #tab-admin[data-me="hoy"] > #me-barra [data-me-ir="hoy"] { display: none; }
-      #tab-admin:not([data-me="hoy"]) > #me-barra .me-ir, #tab-admin:not([data-me="hoy"]) > #me-barra .me-barra-t { display: none; }
-      #app #tab-admin:not([data-me="hoy"]) > #me-barra .me-volver { display: block; }
+      #app #tab-admin .me-abrir-panel { display: flex; order: -1; align-items: center; gap: 10px; width: 100%; min-height: 52px; margin: 0 0 18px; padding: 0 16px;
+        border: 1px solid var(--border-fuerte); border-radius: 999px; background: var(--bg-card); color: var(--text-primary); font-size: 17px; font-weight: 700; text-align: left; cursor: pointer; }
+      #tab-admin .me-abrir-panel .me-abrir-mas { margin-left: auto; font-weight: 400; color: var(--text-secondary); }
+      #tab-admin[data-me] > #me-barra { position: fixed; top: 0; bottom: 0; left: 0; z-index: 60; width: min(330px, 86vw); box-sizing: border-box;
+        padding: max(16px, env(safe-area-inset-top, 0px)) 16px 24px max(16px, env(safe-area-inset-left, 0px)); overflow-y: auto; background: var(--bg-card);
+        box-shadow: 8px 0 32px rgba(0, 0, 0, 0.2); transform: translateX(-105%); visibility: hidden;
+        transition: transform 0.22s cubic-bezier(.2,0,.38,.9), visibility 0s linear 0.22s; }
+      #tab-admin[data-me][data-panel="abierto"] > #me-barra { transform: none; visibility: visible; transition: transform 0.22s cubic-bezier(.2,0,.38,.9); }
+      #tab-admin .me-barra-cab { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+      #app #tab-admin .me-barra .me-cerrar { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; padding: 0; color: var(--text-primary); }
+      #app #tab-admin .me-velo:not([hidden]) { display: block; position: fixed; inset: 0; z-index: 59; background: rgba(26, 25, 22, 0.45); }
     }
+    @media (max-width: 899px) and (prefers-reduced-motion: reduce) { #tab-admin[data-me] > #me-barra { transition: none; } }
   </style>
 </head>
 <body class="antialiased">
@@ -2868,10 +2880,15 @@
            juego con lo que pone el departamento que más pone, y sus procesos guardados con «piden atención» en una
            línea. Lo demás vive en su apartado. Cada bloque dice el suyo con `data-me-apartado`; `elegirApartadoMiEmpresa`
            (app.js) enseña uno y esconde los otros con `.me-otro`. Nada se borra: se mueve. En el computador la barra va
-           a la izquierda; en el teléfono la lista va al final de «Hoy» y en los demás apartados queda «Volver a Hoy». -->
+           a la izquierda; en el teléfono es un panel lateral que abre el botón de arriba (9-nov-2026). -->
+      <button type="button" id="me-abrir-panel" class="me-abrir-panel" aria-controls="me-barra" aria-expanded="false" aria-label="Abrir los apartados de Mi empresa">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+        <span id="me-abrir-rotulo">Hoy</span><span class="me-abrir-mas">Apartados</span>
+      </button>
+      <div id="me-velo" class="me-velo" hidden></div>
       <nav id="me-barra" class="me-barra" aria-label="Apartados de Mi empresa">
-        <button type="button" class="me-volver" data-me-ir="hoy">Volver a Hoy</button>
-        <p class="me-barra-t">Más de Mi empresa</p>
+        <div class="me-barra-cab"><p class="me-barra-t">Mi empresa</p>
+          <button type="button" class="me-cerrar" aria-label="Cerrar los apartados"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
         <button type="button" class="me-ir" data-me-ir="hoy" aria-current="page">Hoy</button>
         <button type="button" class="me-ir" data-me-ir="registro">Su registro</button>
         <button type="button" class="me-ir" data-me-ir="formatos">Datos para los formatos</button>

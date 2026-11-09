@@ -65698,20 +65698,23 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
     if (fuenteElegir.trim()) {
       const ME = new Function(`
         const atributos = {};
-        const tab = { setAttribute: (k, v) => { atributos[k] = v; }, getAttribute: (k) => atributos[k],
+        const tab = { setAttribute: (k, v) => { atributos[k] = v; }, getAttribute: (k) => atributos[k], hasAttribute: () => false,
           querySelectorAll: (sel) => (sel.includes('data-me-apartado="registro"') ? [detalles] : []), querySelector: () => null };
         const detalles = { open: false };
         const botones = ["hoy", "registro", "ajustes"].map((id) => { const b = { id, attrs: {}, textContent: { hoy: "Hoy", registro: "Su registro", ajustes: "Ajustes" }[id],
           getAttribute: (k) => (k === "data-me-ir" ? id : b.attrs[k]), setAttribute: (k, v) => { b.attrs[k] = v; }, removeAttribute: (k) => { delete b.attrs[k]; } }; return b; });
         const titulo = { textContent: "", hidden: true, focus() {} };
-        const document = { getElementById: (id) => (id === "tab-admin" ? tab : id === "me-titulo" ? titulo : null), querySelectorAll: () => botones };
+        const rotuloBoton = { textContent: "Hoy" };
+        const document = { getElementById: (id) => (id === "tab-admin" ? tab : id === "me-titulo" ? titulo : id === "me-abrir-rotulo" ? rotuloBoton : null), querySelectorAll: () => botones };
+        const panelMiEmpresa = () => {};
         const window = { scrollTo() {} };
         ${fuenteElegir}
-        return { elegirApartadoMiEmpresa, atributos, botones, titulo, detalles };`)();
+        return { elegirApartadoMiEmpresa, atributos, botones, titulo, detalles, rotuloBoton };`)();
       const r1 = ME.elegirApartadoMiEmpresa("registro", { enfocar: false });
       okME(r1 === "registro" && ME.atributos["data-me"] === "registro" && ME.titulo.textContent === "Su registro" && !ME.titulo.hidden && ME.detalles.open === true,
         `(c) elegir «Su registro» cambia data-me, pone el título y abre su plegado: ${JSON.stringify({ r1, d: ME.atributos["data-me"], t: ME.titulo.textContent })}`);
       okME(ME.botones.find((b) => b.id === "registro").attrs["aria-current"] === "page" && !ME.botones.find((b) => b.id === "hoy").attrs["aria-current"], "(c) la barra marca el apartado elegido y solo ese");
+      okME(ME.rotuloBoton.textContent === "Su registro", `(c) el botón del teléfono dice en qué apartado está: ${ME.rotuloBoton.textContent}`);
       const r2 = ME.elegirApartadoMiEmpresa("<script>", { enfocar: false });
       okME(r2 === "hoy" && ME.atributos["data-me"] === "hoy" && ME.titulo.hidden, "(c) un apartado desconocido es INERTE: cae a «hoy»");
     }
@@ -65728,7 +65731,8 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
       prof++;
     }
     const APS = (lineaME("  const APARTADOS_ME = ").match(/\[([^\]]+)\]/) || ["", ""])[1].split(",").map((x) => x.trim().replace(/"/g, "")).filter(Boolean);
-    const sinApartado = hijos.filter((h) => h.id && !h.ap && !["me-barra", "me-titulo"].includes(h.id) && h.tag !== "main");
+    // la barra, su título, el botón que abre el panel del teléfono y su velo no son de un apartado: son el armazón de la pestaña
+    const sinApartado = hijos.filter((h) => h.id && !h.ap && !["me-barra", "me-titulo", "me-abrir-panel", "me-velo"].includes(h.id) && h.tag !== "main");
     okME(hijos.length > 10 && sinApartado.length === 0, `(d) censo: cada bloque de primer nivel con id dice su apartado; sin él: ${sinApartado.map((h) => h.id).join(", ")}`);
     okME(hijos.every((h) => !h.ap || APS.includes(h.ap)), "(d) ningún bloque dice un apartado que no existe");
     for (const a of APS) {
@@ -65759,6 +65763,27 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
       okME(P.elegidos.join() === "hoy", "(f) si estaba en un apartado que quedó vacío, vuelve a Hoy");
     }
     okME(/podarBarraMiEmpresa\(\);/.test(cortarME("  function vistaDeVisitante(activa) {")), "(f) la vista de visitante poda la barra");
+    // (g) el panel lateral del teléfono: la función REAL abre, cierra, marca aria-expanded y mueve el foco
+    const fuentePanel = cortarME("  function panelMiEmpresa(abrir, { devolverFoco = true } = {}) {");
+    if (fuentePanel) {
+      const G = new Function(`
+        const atr = {}; const enfocados = [];
+        const tab = { setAttribute: (k, v) => { atr[k] = v; }, removeAttribute: (k) => { delete atr[k]; }, hasAttribute: (k) => k in atr,
+          querySelector: (sel) => (sel.includes("aria-current") ? actual : null) };
+        const actual = { focus: () => enfocados.push("apartado actual") };
+        const velo = { hidden: true }; const boton = { attrs: {}, setAttribute(k, v) { this.attrs[k] = v; }, focus: () => enfocados.push("botón") };
+        const document = { getElementById: (id) => ({ "tab-admin": tab, "me-velo": velo, "me-abrir-panel": boton }[id] || null) };
+        ${fuentePanel}
+        return { panelMiEmpresa, atr, velo, boton, enfocados };`)();
+      G.panelMiEmpresa(true);
+      okME(G.atr["data-panel"] === "abierto" && G.velo.hidden === false && G.boton.attrs["aria-expanded"] === "true" && G.enfocados.join() === "apartado actual", `(g) abrir: panel, velo, aria-expanded y foco en el apartado actual: ${JSON.stringify({ a: G.atr, v: G.velo.hidden, f: G.enfocados })}`);
+      G.panelMiEmpresa(false);
+      okME(!("data-panel" in G.atr) && G.velo.hidden === true && G.boton.attrs["aria-expanded"] === "false" && G.enfocados.join() === "apartado actual,botón", "(g) cerrar: se va el velo y el foco vuelve al botón");
+      G.panelMiEmpresa(true); G.panelMiEmpresa(false, { devolverFoco: false });
+      okME(G.enfocados.filter((x) => x === "botón").length === 1, "(g) al elegir un apartado el foco no vuelve al botón (va al título)");
+    }
+    okME(/t\.closest\("#me-abrir-panel"\)\) \{ panelMiEmpresa\(true\)/.test(jsME) && /tab\.hasAttribute\("data-panel"\)\) panelMiEmpresa\(false\)/.test(jsME), "(g) el botón abre el panel y Escape lo cierra");
+    okME(/@media \(max-width: 899px\)[\s\S]{0,1600}#tab-admin\[data-me\]\[data-panel="abierto"\] > #me-barra \{ transform: none; visibility: visible;/.test(htmlME), "(g) en el teléfono la barra es un panel que solo se ve abierto (cerrado no es enfocable)");
     if (fallasME.length) throw new Error(`unidad Mi empresa: ${fallasME.length} comprobaciones fallan:\n  - ${fallasME.join("\n  - ")}`);
     console.log("· unidad Mi empresa · Hoy y su barra: la plata en juego dice qué departamento la mueve (99 % si no es todo), los avisos cuentan lo que abre su lista, elegir un apartado es inerte ante lo desconocido y cada bloque de la pestaña dice su apartado (censo)");
   }
