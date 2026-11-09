@@ -22,7 +22,7 @@
   pliego.js                   Router del dominio PLIEGO (Fase 0 · consolidación a 6 funciones)
   procesos.js                 Router del dominio PROCESOS (Fase 0 · consolidación a 6 funciones)
 
-· lib/ — 110 módulos:
+· lib/ — 112 módulos:
   accesibilidad.js            Accesibilidad operativa de la zona de la obra
   adendas.js                  Vigía de adendas · lo que el DATASET dice que cambió (Fase 5)
   almacen.js                  Esquema de claves Redis + compresión de chunks
@@ -48,6 +48,7 @@
   competencia_detalle.js      Los procesos que SOSTIENEN el badge de competencia
   config_rup.js               Validación del RUP que sube el dueño (archivo JSON)
   consorcio.js                Consorcio a la medida (Fase 10 · Detekta v4)
+  contexto_vercel.js          El contexto de la petición de Vercel, o null (9-nov-2026)
   contratos_en_ejecucion.js   Los contratos que un perfil tiene en obra, también los de sus consorcios
   copia_datos.js              Copia de los datos que introduce el usuario (6-sep-2026, M-INF-15)
   correo.js                   Transporte de correo por REST — sin SDK, sin dependencias
@@ -90,6 +91,7 @@
   latido.js                   El reloj que termina solas las cargas cortadas (27-sep-2026)
   lenguaje_pantalla.js        las cercas de lenguaje y el número es-CO, en una sola copia
   manifestacion.js            La MANIFESTACIÓN DE INTERÉS de la selección abreviada de
+  medidor_redis.js            Cuánto ancho de banda de Upstash gasta cada operación
   modo.js                     EL INTERRUPTOR, y vive en un solo sitio
   negocio.js                  Reglas de negocio: enriquecer(licitacion)
   objetos.js                  El almacén de archivos (compatible con S3), sin dependencias
@@ -234,8 +236,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 450 secciones (49 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 21817  Lo que la entidad publicó como compra o servicio ya no sale verde por un verbo de obra, la …
+· MEMORIA · docs/MEMORIA.md — 451 secciones (49 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 21843  «No es obra» quita un proceso de su lista, con su otra publicación, y la lista dice cuántos…
   L 21857  Los datos de los formatos que ya son públicos se traen con el NIT: la identidad del RUES y …
   L 21873  Dos defectos de las fechas de los documentos, reproducidos y arreglados: el hito de adendas…
@@ -245,6 +246,7 @@
   L 21921  Con el pliego leído, la puerta del registro mira los contratos de experiencia con los códig…
   L 21968  Los consorcios del dueño son 1A y GR; GR aún no ha presentado oferta (9-nov-2026)
   L 21976  La puerta: producción sin el muro de Vercel, una cuenta compartida y toda operación detrás …
+  L 21999  El medidor del ancho de banda de Upstash: cada petición anota lo que gastó, por operación (…
 
 · DOCUMENTOS docs/ — 76 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)

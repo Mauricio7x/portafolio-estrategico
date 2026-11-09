@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 2528044 bytes · 450 secciones · 49 con marcador de superación.
+Derivado del árbol: 2532765 bytes · 451 secciones · 49 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -460,4 +460,5 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | En los pliegos tipo de obra que tiene el dueño, los códigos UNSPSC no piden inscripción en el RUP: piden que cada contrato de experiencia esté clasificado en alguno (7-nov-2026) | 7-nov-2026 | 21909-21920 | 3857 |  |
 | Con el pliego leído, la puerta del registro mira los contratos de experiencia con los códigos del pliego, no la inscripción (8-nov-2026) | 8-nov-2026 | 21921-21967 | 7681 |  |
 | Los consorcios del dueño son 1A y GR; GR aún no ha presentado oferta (9-nov-2026) | 9-nov-2026 | 21968-21975 | 892 |  |
-| La puerta: producción sin el muro de Vercel, una cuenta compartida y toda operación detrás de la sesión (9-nov-2026) | 9-nov-2026 | 21976-21997 | 7085 |  |
+| La puerta: producción sin el muro de Vercel, una cuenta compartida y toda operación detrás de la sesión (9-nov-2026) | 9-nov-2026 | 21976-21998 | 7292 |  |
+| El medidor del ancho de banda de Upstash: cada petición anota lo que gastó, por operación (9-nov-2026) | 9-nov-2026 | 21999-22016 | 4514 |  |
