@@ -21522,7 +21522,9 @@ async function main() {
         assert.deepStrictEqual(libroRT.hojas.map((h) => h.nombre), ["Presupuesto", "APU"]);
         const hojaApu = XLSXLectura.detectarFilasApu(libroRT.hojas[1].filas);
         const elegida = XLSXLectura.elegirHoja(libroRT);
-        assert.ok(hojaApu.filas.length > 3, `la hoja APU tiene más filas reconocibles (${hojaApu.filas.length}) que ítems tiene el presupuesto (3): sin el cuadre ganaría`);
+        /* 9-nov-2026: la hoja «APU» ya no se lee como formulario —sus insumos salían como ítems de obra— sino como
+           ANÁLISIS: aporta 0 filas, lo dice, y sus análisis casan con los ítems de «Presupuesto» (ver «unidad APU cargado») */
+        assert.ok(hojaApu.es_apu === true && hojaApu.filas.length === 0 && /análisis de precios unitarios/.test(hojaApu.avisos[0]), "la hoja APU del libro exportado es un análisis: 0 ítems y el aviso que lo dice");
         assert.strictEqual(elegida.hoja.nombre, "Presupuesto", "gana la hoja que cuadra con su total, no la que tiene más filas");
         assert.strictEqual(elegida.resultado.filas.length, 3);
         assert.deepStrictEqual([elegida.resultado.cuadre.estado, elegida.resultado.cuadre.etiqueta_total, elegida.resultado.cuadre.total_declarado], ["cuadra", "COSTOS DIRECTOS", presuRT.resumen.costo_directo_total], "el libro exportado se reimporta y cuadra AL PESO contra su propio COSTOS DIRECTOS");
@@ -23705,6 +23707,219 @@ async function main() {
       + `(«el catálogo la mide en M2; no se convierte») y «página 7 del PDF» se leen en el TEXTO · censo de ${censoTitles} title(s) `
       + `con 0 huérfanos · 0 marcadores de solo símbolo sin nombre accesible · «sin unidad del catálogo» se dice `
       + `«no se pudo comparar», nunca «otra unidad» · 0 emoji y 0 tuteo`);
+  }
+
+  /* ══════════ unidad APU cargado (9-nov-2026) ══════════
+     Encargo del dueño: «cargarle un APU y que Detekta lo elabore». Antes, una hoja de análisis de precios unitarios
+     se leía como formulario y sus INSUMOS salían como ítems de obra, sin aviso. Este bloque EJECUTA el lector real
+     sobre los APU reales de EPC (docs/insumos_2026_pendiente) y sobre el libro que exporta la propia aplicación, la
+     verificación real de la respuesta y el motor real; falla contra el árbol anterior (no existían `esHojaApu`,
+     `leerApusDeHoja`, `composicion_usuario` ni `ia_composicion`, y la hoja de cinco insumos daba cinco «ítems»). */
+  bq58: { if (!corre("unidad APU cargado")) break bq58;
+    const XL = require("../public/xlsx_lectura.js");
+    const IA = require("../lib/apu/precios_ia.js");
+    const calcAc = require("../lib/apu/calculo.js");
+    const LibAc = require("../public/apu_libro.js");
+    const XW = require("../public/xlsx.js");
+    const zlib = require("zlib");
+    const inflar = (u8) => zlib.inflateRawSync(Buffer.from(u8));
+
+    /* 1 · la hoja de cinco insumos ya no da cinco ítems, y un formulario con capítulos «MATERIALES»/«MANO DE OBRA» sigue siendo formulario */
+    const hojaApu = [
+      ["ANÁLISIS DE PRECIOS UNITARIOS"],
+      ["ÍTEM", "1.1", "DESCRIPCIÓN", "Concreto 3000 psi para placa", "UNIDAD", "m3"],
+      ["I. MATERIALES"],
+      ["DESCRIPCIÓN", "UNIDAD", "CANTIDAD", "DESPERDICIO", "PRECIO UNITARIO", "VALOR"],
+      ["Cemento gris", "kg", "350", "5%", "850", "312375"],
+      ["Arena de río", "m3", "0,56", "10%", "95000", "58520"],
+      ["II. MANO DE OBRA"],
+      ["Cuadrilla 1:4", "hc", "0,5", "", "95000", "47500"],
+      ["III. EQUIPO"],
+      ["Mezcladora", "día", "0,1", "", "80000", "8000"],
+    ];
+    const d1 = XL.detectarFilasApu(hojaApu);
+    assert.ok(d1.es_apu === true && d1.filas.length === 0, `una hoja de APU no da ítems de obra (dio ${d1.filas.length})`);
+    assert.ok(/análisis de precios unitarios/.test(d1.avisos[0]), "y lo dice");
+    const a1 = XL.leerApusDeHoja(hojaApu, "h").apus;
+    assert.strictEqual(a1.length, 1);
+    assert.deepStrictEqual([a1[0].codigo, a1[0].descripcion, a1[0].unidad, a1[0].componentes.length], ["1.1", "Concreto 3000 psi para placa", "m3", 4], "el ítem analizado y sus cuatro insumos");
+    const cem = a1[0].componentes[0];
+    assert.deepStrictEqual([cem.cantidad, cem.desperdicio_pct, cem.operacion, Math.round(cem.cantidad_total * 1000) / 1000], [350, 5, "cantidad_con_desperdicio", 367.5], "el desperdicio «5%» se lee y la cantidad que multiplica sale de las cifras del archivo (350 × 1,05 × 850 = 312.375)");
+    assert.deepStrictEqual(a1[0].componentes.map((c) => c.tipo), ["material", "material", "mano_obra", "equipo"], "la fila de columnas vale para las secciones que no la repiten");
+    const formulario = [
+      ["ITEM", "DESCRIPCION", "UNIDAD", "CANTIDAD", "VALOR UNITARIO", "VALOR TOTAL"],
+      ["", "MATERIALES"], ["1.1", "Suministro de cemento", "kg", 100, 800, 80000],
+      ["", "MANO DE OBRA"], ["2.1", "Oficial de obra", "día", 10, 90000, 900000],
+      ["", "COSTO DIRECTO", "", "", "", 980000],
+    ];
+    assert.strictEqual(XL.esHojaApu(formulario), false, "un formulario con capítulos MATERIALES y MANO DE OBRA no es un APU (sin título de análisis ni encabezado de ítem)");
+    assert.strictEqual(XL.detectarFilasApu(formulario).filas.length, 2, "y se sigue leyendo como formulario");
+
+    /* 2 · la columna RENDIMIENTO no se adivina: sin valor, la cantidad queda sin dato */
+    const sinPrecios = [["APU No. 2.3"], ["ÍTEM: 2.3"], ["DESCRIPCIÓN: Muro en bloque"], ["UNIDAD: m2"], ["MATERIALES"],
+      ["DESCRIPCIÓN", "UNIDAD", "CANTIDAD", "DESPERDICIO %", "VR UNITARIO", "VR TOTAL"], ["Bloque No. 5", "und", 13, 3, "", ""],
+      ["MANO DE OBRA"], ["DESCRIPCIÓN", "UNIDAD", "RENDIMIENTO", "VR UNITARIO", "VR TOTAL"], ["Cuadrilla 1 of + 1 ay", "jornal", 8, "", ""]];
+    const a2 = XL.leerApusDeHoja(sinPrecios, "h").apus[0];
+    assert.deepStrictEqual([a2.codigo, a2.unidad], ["2.3", "m2"]);
+    assert.deepStrictEqual([a2.componentes[1].rendimiento, a2.componentes[1].cantidad_total, a2.componentes[1].operacion], [8, null, null], "rendimiento sin valor: cantidad null y operación null, jamás un supuesto");
+    assert.deepStrictEqual([a2.componentes[0].cantidad, a2.componentes[0].desperdicio_pct, a2.componentes[0].cantidad_total], [13, 3, null], "cantidad con desperdicio y sin valor: se guardan las dos literales y la total queda sin dato (no se sabe si ya lo incluye)");
+    assert.ok(a2.avisos.some((x) => /no se puede saber si multiplica o divide/.test(x)), "y se dice");
+    const f2 = XL.filasDesdeApus({ apus: [a2] }, null);
+    assert.deepStrictEqual([f2.filas.length, f2.filas[0].cantidad, f2.filas[0].precio_archivo], [1, null, null], "sin formulario: la fila sin cantidad de obra (null, nunca 1) y sin precio (el análisis está a medias)");
+
+    /* 3 · los APU REALES de EPC: una hoja por ítem, «RENDIMIENTO» que multiplica en materiales y divide en mano de obra */
+    const libroEpc = await XL.leerLibro(fs.readFileSync(path.join(__dirname, "..", "docs", "insumos_2026_pendiente", "APUsEPC2026_Feb.xlsx")), { inflar });
+    const epc = XL.leerApusDelLibro(libroEpc);
+    assert.strictEqual(epc.apus.length, 440, `los 440 análisis de EPC (leyó ${epc.apus.length})`);
+    const cuadran = epc.apus.filter((a) => a.cuadra === true).length;
+    assert.ok(cuadran >= 437, `al menos 437 cuadran al peso contra su «TOTAL COSTO» (cuadran ${cuadran})`);
+    const anc = epc.apus.find((a) => a.codigo === "7.19.1");
+    const porNombre = (n) => anc.componentes.find((c) => c.insumo === n);
+    assert.deepStrictEqual([porNombre("CEMENTO GRIS").operacion, porNombre("CEMENTO GRIS").cantidad_total], ["multiplica", 350], "cemento: 350 kg × precio = valor");
+    assert.deepStrictEqual([porNombre("OFICIAL").operacion, porNombre("OFICIAL").cantidad_total], ["divide", 0.25], "oficial: jornal ÷ 4 = valor (la misma columna, el sentido contrario)");
+    assert.deepStrictEqual([porNombre("HERRAMIENTA MENOR").es_porcentaje, porNombre("HERRAMIENTA MENOR").fraccion], [true, 0.05], "la herramienta menor en «%» con su rótulo en una celda combinada");
+    for (const h of libroEpc.hojas.filter((x) => /^\d+(\.\d+)+$/.test(x.nombre)).slice(0, 40)) assert.strictEqual(XL.detectarFilasApu(h.filas).filas.length, 0, `la hoja ${h.nombre} no aporta ítems de obra`);
+    const fe = XL.filasDesdeApus(epc, XL.elegirHoja(libroEpc));
+    const fAnc = fe.filas.find((f) => f.codigo === "7.19.1");
+    assert.deepStrictEqual([fe.filas.length, fAnc.cantidad, fAnc.precio_archivo, fAnc.composicion_usuario.componentes.length], [400, null, 888760, 7], "cada análisis es una fila sin cantidad de obra, con su total como precio porque cuadra, y su composición (los 400 que admite la lista)");
+    assert.ok(/trae 440 ítems y la lista admite 400/.test(fe.avisos[0]), "y los 40 que no caben se dicen");
+
+    /* 4 · el libro que EXPORTA la aplicación: la hoja «APU» se lee como análisis y casa con «Presupuesto» */
+    const presuRT = calcAc.calcularPresupuesto({ items: [{ item_id: "NOG-A2", cantidad: 10, capitulo: "CUBIERTA" }, { item_id: "INV-210.1", cantidad: 20, capitulo: "CUBIERTA" }], departamento: "BOGOTA D.C.", config: {} });
+    const libroRT = await XL.leerLibro(XW.construirLibro(LibAc.construirLibroNogal(presuRT, { titulo: "T", fecha: "2026-11-09" })), { inflar });
+    const rt = XL.filasDesdeApus(XL.leerApusDelLibro(libroRT), XL.elegirHoja(libroRT));
+    assert.deepStrictEqual(rt.filas.map((f) => [f.cantidad, !!f.composicion_usuario]), [[10, true], [20, true]], "las filas son las del presupuesto (con su cantidad) y cada una lleva su análisis");
+    assert.strictEqual(rt.cuadre && rt.cuadre.estado, "cuadra", "el cuadre del formulario viaja");
+    assert.ok(rt.filas[1].composicion_usuario.componentes.some((c) => c.tipo === "herramienta_menor" && c.fraccion === 0.05), "la herramienta menor del libro exportado sale del texto «(5 % de la mano de obra)»");
+
+    /* 5 · el encargo lleva el APU del usuario SOLO cuando lo hay */
+    const comp = { componentes: [
+      { n: 1, tipo: "herramienta_menor", insumo: "HERRAMIENTA MENOR", unidad: "%", es_porcentaje: true, fraccion: 0.05 },
+      { n: 2, tipo: "material", insumo: "CEMENTO GRIS", unidad: "KG", rendimiento: 350, cantidad_total: 350, operacion: "multiplica", precio_unitario: 696.02, valor_total: 243607 },
+      { n: 3, tipo: "material", insumo: "ARENA", unidad: "M3", cantidad: 0.55, desperdicio_pct: 5 },
+      { n: 4, tipo: "mano_obra", insumo: "OFICIAL", unidad: "JN", rendimiento: 4 },
+    ] };
+    const presu = { id: "x", items: [{ descripcion: "Anclaje", unidad: "M3", cantidad: 3, composicion_usuario: comp }] };
+    const exp = IA.armarExpediente({ presupuesto: presu });
+    assert.ok(exp.entrada.filas[0].composicion_usuario && exp.entrada.filas[0].necesita_precio === true && exp.entrada.resumen.con_apu_del_usuario === 1, "la fila lleva su composición y necesita precio (le faltan dos)");
+    assert.ok(/APU DEL USUARIO/.test(exp.instrucciones) && /ref_usuario/.test(exp.instrucciones), "las instrucciones piden respetarlo");
+    const expSin = IA.armarExpediente({ presupuesto: { id: "y", items: [{ descripcion: "Anclaje", unidad: "M3", cantidad: 3 }] } });
+    assert.ok(!/APU DEL USUARIO/.test(expSin.instrucciones) && !("composicion_usuario" in expSin.entrada.filas[0]) && !("con_apu_del_usuario" in expSin.entrada.resumen), "sin APU cargado el expediente no cambia");
+    assert.strictEqual(expSin.instrucciones, IA.instruccionesDe(expSin.entrada.contexto), "ni una letra");
+    const enc = IA.encargoDe(exp);
+    assert.ok(/APU DEL USUARIO n=4 · mano_obra · OFICIAL · unidad: JN · rendimiento: 4 \(el archivo no dice si multiplica o divide\) · precio: SIN PRECIO/.test(enc), "el encargo para el chat lista cada insumo con lo que el archivo dice y nada más");
+
+    /* 6 · la verificación: se respeta o se aparta, y el ORIGEN de cada línea lo decide el servidor */
+    const fuente = { nombre: "Distribuidor X" };
+    const resp = () => ({ items: [{ fila: 0, unidad: "m3", subtotal_directo: 356857, alertas_rendimiento: ["El rendimiento 4 del oficial es alto"], componentes: [
+      { tipo: "herramienta_menor", insumo: "Herramienta menor", unidad: "%", cantidad: 0.05, cantidad_total: 0.05, precio_unitario: 50000, valor_total: 2500, ref_usuario: 1 },
+      { tipo: "material", insumo: "Cemento gris", unidad: "kg", cantidad: 350, desperdicio_pct: 0, cantidad_total: 350, precio_unitario: 696.02, valor_total: 243607, fuente, ref_usuario: 2 },
+      { tipo: "material", insumo: "Arena", unidad: "m3", cantidad: 0.55, desperdicio_pct: 5, cantidad_total: 0.5775, precio_unitario: 100000, valor_total: 57750, fuente, ref_usuario: 3 },
+      { tipo: "mano_obra", insumo: "Oficial", unidad: "jn", cantidad: 0.25, desperdicio_pct: 0, cantidad_total: 0.25, precio_unitario: 200000, valor_total: 50000, fuente: { nombre: "Salario mínimo 2026 y prestacional" }, ref_usuario: 4 },
+      { tipo: "transporte", insumo: "Flete", unidad: "viaje", cantidad: 0.01, desperdicio_pct: 0, cantidad_total: 0.01, precio_unitario: 300000, valor_total: 3000, ref_usuario: null },
+    ] }] });
+    const ver = (x) => IA.verificarPropuesta(x, presu);
+    const bien = ver(resp());
+    assert.strictEqual(bien.apartados.length, 0, `la respuesta que respeta el APU pasa (${JSON.stringify(bien.apartados)})`);
+    assert.deepStrictEqual(bien.propuesta.items[0].componentes.map((c) => c.origen), ["suyo", "suyo", "precio_buscado", "precio_buscado", "añadido"], "suyo · precio buscado · añadido, decidido por el servidor");
+    assert.deepStrictEqual(bien.propuesta.items[0].alertas_rendimiento, ["El rendimiento 4 del oficial es alto"], "la alerta de rendimiento viaja sin corregir nada");
+    assert.ok(bien.propuesta.items[0].componentes.every((c) => !("_valor" in c) && !("_cant_total" in c)), "las cifras crudas de la comparación no se guardan");
+    const mutar = (fn) => { const r = resp(); fn(r.items[0]); r.items[0].subtotal_directo = r.items[0].componentes.reduce((a, c) => a + c.valor_total, 0); return ver(r); };
+    const casos = [
+      ["quita un insumo", (it) => it.componentes.splice(2, 1), /quitó «ARENA»/],
+      ["cambia una cantidad", (it) => Object.assign(it.componentes[1], { cantidad: 300, cantidad_total: 300, valor_total: 208806 }), /cambió la cantidad de «CEMENTO GRIS»/],
+      ["cambia un precio del usuario", (it) => Object.assign(it.componentes[1], { precio_unitario: 800, valor_total: 280000 }), /cambió el precio de «CEMENTO GRIS»: el usuario trae \$696,02 y la respuesta \$800/],
+      ["cambia un rendimiento", (it) => { Object.assign(it.componentes[3], { cantidad: 0.5, cantidad_total: 0.5, valor_total: 100000 }); Object.assign(it.componentes[0], { precio_unitario: 100000, valor_total: 5000 }); }, /cambió el rendimiento de «OFICIAL»/],
+      ["cambia el desperdicio", (it) => Object.assign(it.componentes[2], { desperdicio_pct: 0, cantidad_total: 0.55, valor_total: 55000 }), /cambió el desperdicio de «ARENA»/],
+      ["cambia el % de herramienta menor", (it) => Object.assign(it.componentes[0], { cantidad: 0.1, cantidad_total: 0.1, valor_total: 5000 }), /no conserva ese porcentaje/],
+      ["precio buscado sin fuente", (it) => delete it.componentes[3].fuente, /precio buscado no trae fuente/],
+      ["señala un insumo que no existe", (it) => { it.componentes[4].ref_usuario = 9; }, /que no existe/],
+      ["repite un insumo", (it) => { it.componentes[4] = { ...it.componentes[1] }; }, /aparece dos veces/],
+      ["borra la referencia (lo da por añadido)", (it) => { it.componentes[1].ref_usuario = null; }, /quitó «CEMENTO GRIS»/],
+    ];
+    for (const [nombre, fn, re] of casos) {
+      const r = mutar(fn);
+      assert.ok(r.apartados.length === 1 && re.test(r.apartados[0].motivo) && r.propuesta.items[0].costo_directo_unitario == null, `${nombre}: se aparta con su motivo (${JSON.stringify(r.apartados)})`);
+    }
+    const rendAlReves = mutar((it) => { Object.assign(it.componentes[3], { cantidad: 4, cantidad_total: 4, valor_total: 800000 }); Object.assign(it.componentes[0], { precio_unitario: 800000, valor_total: 40000 }); });
+    assert.strictEqual(rendAlReves.apartados.length, 0, "el rendimiento sin operación vale en cualquiera de los dos sentidos (4 o 1 ÷ 4): el archivo no deja saber cuál");
+
+    /* 7 · el desglose aceptado llega al Excel con su origen, y solo si suma el precio */
+    const lineas = bien.propuesta.items[0].componentes.map((c) => ({ tipo: c.tipo, insumo: c.insumo, unidad: c.unidad, cantidad_total: c.cantidad_total, precio_unitario: c.precio_unitario, valor_total: c.valor_total, origen: c.origen, fuente: c.fuente && c.fuente.nombre }));
+    const pr = calcAc.calcularPresupuesto({ items: [
+      { codigo: "1", descripcion: "Anclaje", unidad: "m3", cantidad: 3, precio_manual: 356857, origen_precio: "ia", ia_fuente: { nombre: "APU generado por la IA" }, ia_composicion: lineas },
+      { codigo: "2", descripcion: "Otro", unidad: "m3", cantidad: 2, precio_manual: 500000, origen_precio: "ia", ia_composicion: lineas },
+    ], departamento: "BOGOTA D.C.", config: {} });
+    assert.deepStrictEqual(pr.items.map((i) => [i.costo_directo_unitario, Array.isArray(i.ia_composicion)]), [[356857, true], [500000, false]], "el desglose documenta el precio y no lo forma: el que no suma el precio no viaja");
+    assert.deepStrictEqual(pr.items.map((i) => LibAc.estadoComposicion(i).estado), ["con_composicion_propia", "solo_precio"]);
+    const hojaApuX = LibAc.construirLibroNogal(pr, { titulo: "T", fecha: "2026-11-09" })[1].filas.map((f) => f.map((c) => (c && typeof c === "object" ? c.v : c)));
+    const plano = hojaApuX.map((f) => f.join("|")).join("\n");
+    assert.ok(/ORIGEN/.test(plano) && /\|Suyo\|/.test(plano) && /\|Precio buscado\|/.test(plano) && /\|Añadido\|/.test(plano), "la hoja APU dice el origen de cada línea");
+    assert.ok(/APU BUSCADO POR LA IA \(sin su desglose guardado\)/.test(plano) && !/PRECIO TECLEADO A MANO/.test(plano), "un APU de la IA sin desglose ya no se rotula «tecleado a mano»");
+    const libroIa = await XL.leerLibro(XW.construirLibro(LibAc.construirLibroNogal(pr, { titulo: "T", fecha: "2026-11-09" })), { inflar });
+    const reIa = XL.leerApusDelLibro(libroIa).apus;
+    assert.deepStrictEqual(reIa.map((a) => [a.codigo, a.cuadra, a.componentes.length]), [["1", true, 5]], "y ese libro se vuelve a cargar como APU, cuadrado al peso");
+
+    /* 7b · lo que encontró la revisión adversaria del mismo día, con sus reproducciones (cada una fallaba antes) */
+    {
+      const cab = ["ITEM", "DESCRIPCION", "UNIDAD", "CANTIDAD", "VALOR UNITARIO", "VALOR TOTAL"];
+      const lote1 = [["FORMULARIO 1 - LOTE 1 OBRA CIVIL"], cab, ["1", "PRELIMINARES"], ["1.1", "Localización y replanteo", "M2", 500, 4000, 2000000], ["1.2", "Excavación manual", "M3", 80, 45000, 3600000],
+        ["2", "CONCRETOS"], ["2.1", "Concreto 3000 psi zapatas", "M3", 20, 900000, 18000000], ["2.2", "Acero de refuerzo 60000 psi", "KG", 1500, 6000, 9000000], [null, "COSTO DIRECTO", null, null, null, 32600000]];
+      const lote2 = [["FORMULARIO 1 - LOTE 2 REDES ELÉCTRICAS"], ["I", "MATERIALES"], cab, ["1.1", "Poste de concreto 12 m 750 kg", "UN", 10, 1500000, 15000000], ["1.2", "Cable ACSR 1/0", "ML", 1200, 8000, 9600000],
+        ["II", "MANO DE OBRA"], cab, ["2.1", "Hincada de poste 12 m", "UN", 10, 350000, 3500000], ["2.2", "Tendido de cable", "ML", 1200, 2500, 3000000], [null, "COSTO DIRECTO", null, null, null, 31100000],
+        ["Los precios unitarios deben estar soportados en el Análisis de Precios Unitarios (APU) de cada ítem."]];
+      assert.strictEqual(XL.esHojaApu(lote2), false, "un formulario con capítulos MATERIALES/MANO DE OBRA y la nota «… Análisis de Precios Unitarios (APU)» sigue siendo formulario");
+      const elegidaL = XL.elegirHoja({ hojas: [{ nombre: "LOTE 1", filas: lote1 }, { nombre: "LOTE 2", filas: lote2 }] });
+      assert.ok(/otra hoja con ítems «LOTE 2»|otra hoja con ítems \(«LOTE 2»/.test(XL.ambiguedadDelLibro(elegidaL) || ""), "y el servidor sigue objetando el libro de dos lotes: no publica el LOTE 1 como presupuesto completo");
+      const capConSubtotal = [["ANÁLISIS DE PRECIOS UNITARIOS"], cab, ["I", "MATERIALES", null, null, null, 24600000], ["1.1", "Poste", "UN", 10, 1500000, 15000000], ["II", "MANO DE OBRA", null, null, null, 6500000], ["2.1", "Hincada", "UN", 10, 650000, 6500000]];
+      assert.strictEqual(XL.esHojaApu(capConSubtotal), false, "un capítulo con su subtotal en la fila no es una sección de análisis");
+      assert.strictEqual(XL.esHojaApu([["APU"], ["ITEM", "UNIDAD", "ESPECIFICACIÓN TÉCNICA"], ["MATERIALES"], cab, ["1", "Tubo", "ML", 2, 3, 6], ["MANO DE OBRA"], ["2", "Oficial", "DIA", 1, 5, 5]]), false, "«UNIDAD | ESPECIFICACIÓN TÉCNICA» no es la unidad de un ítem");
+      const apuCon = (sub, extra = []) => [["ANÁLISIS DE PRECIOS UNITARIOS"], ["ÍTEM: 2.1"], ["DESCRIPCIÓN: Concreto 3000 psi para placa"], ["UNIDAD: M3"], ["MATERIALES"],
+        ["DESCRIPCIÓN", "UNIDAD", "CANTIDAD", "PRECIO UNITARIO", "VALOR TOTAL"], ["Cemento gris", "kg", 350, 850, 297500], ["Arena", "m3", 0.55, 95000, 52250], [sub, null, null, null, 349750],
+        ["MANO DE OBRA"], ["Cuadrilla 1:4", "día", 0.5, 200000, 100000], ...extra, ["TOTAL COSTO DIRECTO", null, null, null, 449750]];
+      for (const sub of ["COSTO TOTAL MATERIALES", "SUB-TOTAL", "SUB TOTAL"]) {
+        const a = XL.leerApusDeHoja(apuCon(sub), "h").apus[0];
+        assert.deepStrictEqual([a.componentes.map((c) => c.insumo), a.total_declarado, a.cuadra], [["Cemento gris", "Arena", "Cuadrilla 1:4"], 449750, true], `«${sub}» es un subtotal: ni cierra el análisis ni es un insumo`);
+      }
+      const hmGlobal = XL.leerApusDeHoja(apuCon("SUBTOTAL", [["EQUIPO"], ["Herramienta menor", "GL", 1, 1500, 1500]]), "h").apus[0].componentes.find((c) => /Herramienta/.test(c.insumo));
+      assert.deepStrictEqual([hmGlobal.es_porcentaje === true, hmGlobal.tipo, hmGlobal.cantidad_total, hmGlobal.precio_unitario], [false, "herramienta_menor", 1, 1500], "una herramienta menor «GL 1 1.500» es un valor global, no el 100 % de la mano de obra");
+      const hmUno = XL.leerApusDeHoja(apuCon("SUBTOTAL", [["EQUIPO"], ["Herramienta menor", "%", 1, 100000, 1000]]), "h").apus[0].componentes.find((c) => /Herramienta/.test(c.insumo));
+      assert.strictEqual(hmUno.fraccion, 0.01, "un «1» en una fila «%» es el 1 %, y cuadra con valor ÷ base");
+      const hmMal = XL.leerApusDeHoja(apuCon("SUBTOTAL", [["EQUIPO"], ["Herramienta menor", "%", 5, 100000, 1000]]), "h").apus[0].componentes.find((c) => /Herramienta/.test(c.insumo));
+      assert.strictEqual(hmMal.fraccion, null, "un porcentaje escrito que contradice valor ÷ base queda sin dato");
+      const vr = [["ANÁLISIS DE PRECIOS UNITARIOS"], ["ÍTEM: 1"], ["DESCRIPCIÓN: Placa"], ["UNIDAD: M3"], ["MATERIALES"], ["DESCRIPCIÓN", "UNIDAD", "CANTIDAD", "V/R UNITARIO", "V/R TOTAL"], ["Cemento gris", "kg", 350, 850, 297500], ["MANO DE OBRA"], ["Cuadrilla", "día", 0.5, 200000, 100000]];
+      assert.strictEqual(XL.leerApusDeHoja(vr, "h").apus[0].precios_completos, true, "«V/R UNITARIO» y «V/R TOTAL» son columnas de precio y de valor");
+      const form = [cab, ["1", "Excavación manual en material común", "M3", 120, null, null], ["2", "Relleno compactado con material seleccionado", "M3", 80, null, null]];
+      const apuDe = (cod, desc, precio) => [["ANÁLISIS DE PRECIOS UNITARIOS"], ["ÍTEM: " + cod], ["DESCRIPCIÓN: " + desc], ["UNIDAD: M3"], ["MATERIALES"], ["DESCRIPCIÓN", "UNIDAD", "CANTIDAD", "PRECIO UNITARIO", "VALOR TOTAL"], ["Herramienta", "gl", 1, 1000, 1000], ["MANO DE OBRA"], ["Cuadrilla", "día", 1, precio, precio], ["TOTAL COSTO DIRECTO", null, null, null, precio + 1000]];
+      const libroC = { hojas: [{ nombre: "Formulario", filas: form }, { nombre: "APU-01", filas: apuDe("APU-01", "Excavación manual en material común bajo nivel freático con bombeo", 98000) }, { nombre: "APU-02", filas: apuDe("APU-02", "Relleno compactado con material seleccionado", 45000) }] };
+      const rc = XL.filasDesdeApus(XL.leerApusDelLibro(libroC), XL.elegirHoja(libroC));
+      assert.deepStrictEqual(rc.filas.map((f) => [f.precio_archivo, f.composicion_usuario ? f.composicion_usuario.hoja : null]), [[null, null], [46000, "APU-02"]], "el análisis de otro ítem no se pega por empezar igual: la cola tiene que ser una marca, no palabras");
+      const muchos = { apus: Array.from({ length: 405 }, (_, k) => ({ codigo: `9.${k}`, descripcion: `Ítem ${k}`, unidad: "UN", componentes: [{ n: 1, tipo: "material", insumo: "X", precio_unitario: 1, valor_total: 1, cantidad_total: 1 }], precios_completos: true, cuadra: null, suma_componentes: 1, total_declarado: null, avisos: [] })) };
+      const fm = XL.filasDesdeApus(muchos, null);
+      assert.ok(fm.filas.length === 400 && /trae 405 ítems y la lista admite 400/.test(fm.avisos[0]), "más de 400 análisis: se cargan los 400 que admite la lista y se dice, en vez de que el servidor rechace el archivo");
+      // la verificación: el precio del usuario sin fuente pasa; el material con el rendimiento invertido no; la herramienta sobre base cero se puede omitir
+      const presuV = { items: [{ descripcion: "Placa", unidad: "M3", cantidad: 1, composicion_usuario: { componentes: [
+        { n: 1, tipo: "material", insumo: "CEMENTO GRIS", unidad: "KG", cantidad_total: 350, precio_unitario: 700 },
+        { n: 2, tipo: "material", insumo: "ARENA", unidad: "M3", rendimiento: 0.5 },
+        { n: 3, tipo: "herramienta_menor", insumo: "HERRAMIENTA MENOR", unidad: "%", es_porcentaje: true, fraccion: 0.05, valor_total: 0 } ] } }] };
+      const respV = (arena) => ({ items: [{ fila: 0, unidad: "m3", subtotal_directo: 245000 + arena * 100000, componentes: [
+        { tipo: "material", insumo: "Cemento gris", unidad: "kg", cantidad: 350, desperdicio_pct: 0, cantidad_total: 350, precio_unitario: 700, valor_total: 245000, ref_usuario: 1 },
+        { tipo: "material", insumo: "Arena", unidad: "m3", cantidad: arena, desperdicio_pct: 0, cantidad_total: arena, precio_unitario: 100000, valor_total: arena * 100000, fuente: { nombre: "Distribuidor" }, ref_usuario: 2 } ] }] });
+      const okV = IA.verificarPropuesta(respV(0.5), presuV);
+      assert.ok(okV.apartados.length === 0 && okV.propuesta.items[0].componentes[0].fuente.nombre === "APU del usuario", `el material con SU precio y sin fuente pasa, con la fuente «APU del usuario»; la herramienta en % sobre una mano de obra que no existe se puede omitir (${JSON.stringify(okV.apartados)})`);
+      const malV = IA.verificarPropuesta(respV(2), presuV);
+      assert.ok(malV.apartados.length === 1 && /cambió el rendimiento de «ARENA»/.test(malV.apartados[0].motivo), "en un material el rendimiento no se invierte: 0,5 no es 1 ÷ 0,5");
+    }
+
+    /* 8 · la pantalla está cableada */
+    const appAc = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8"));
+    assert.ok(/XLSXLectura\.leerApusDelLibro\(libro\)/.test(appAc) && /XLSXLectura\.esHojaApu\(grid\)/.test(appAc), "el Excel y el CSV pasan por el lector de APU");
+    assert.ok(/importacion\.composiciones\[f\.orden - 1\]/.test(appAc) && /composicion_usuario: composicion,/.test(appAc), "la composición vuelve a su fila por «orden» al aplicar la vista previa");
+    assert.ok(/const itemId = composicion && base\.precio_manual == null \? null : itemIdMapeado;/.test(appAc), "la fila con su APU y sin precio del archivo no toma el precio de un banco");
+    assert.ok(/filas\.map\(\(\{ composicion_usuario, \.\.\.resto \}\) => resto\)/.test(appAc), "y no viaja al mapeo");
+    assert.ok(/filas\[i\]\.ia_composicion = Array\.isArray\(p\.componentes\)/.test(appAc) && /ia_composicion: f\.origen_precio === "ia" && Array\.isArray\(f\.ia_composicion\)/.test(appAc), "el desglose aceptado viaja al motor");
+    assert.ok(/marcaOrigen\(c\)/.test(appAc) && /alertas_rendimiento/.test(appAc), "la pantalla marca el origen de cada línea y enseña las alertas de rendimiento");
+    console.log(`· unidad APU cargado: la hoja de análisis ya no da insumos como ítems · un formulario con capítulos de recurso, la nota «(APU)» o el subtotal en la fila sigue siendo formulario y el libro de dos lotes sigue objetado · EPC real ${epc.apus.length} análisis, ${cuadran} cuadran al peso, «RENDIMIENTO» multiplica en materiales y divide en mano de obra según las cifras · el libro exportado casa por descripción · el encargo solo cambia con APU cargado · ${casos.length} cambios en silencio apartados · suyo/precio buscado/añadido en pantalla y Excel`);
   }
 
 
