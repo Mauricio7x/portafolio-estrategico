@@ -7,7 +7,13 @@
 
 ## 1. LA SECUENCIA QUE NO SE PUEDE EQUIVOCAR
 
-**Hoy la única protección real de Detekta es el muro de Vercel** («Vercel Authentication» en «All
+> **Desde el 9-nov-2026** (decisión del dueño) la producción deja el muro de Vercel: el dueño y Helder
+> entran con UNA cuenta compartida y la cerradura es la puerta de la aplicación (`lib/auth.autorizarPuerta`:
+> toda operación exige la sesión o la llave, salvo un censo declarado). La regla de abajo se cumplió así:
+> la llave ya no vive en la página (17-oct) y la puerta cierra TODO antes de quitar el muro. Para vender
+> sigue haciendo falta lo de §2 y §3 (cuentas por cliente y autorización por recurso).
+
+**Hasta el 9-nov-2026 la única protección real de Detekta era el muro de Vercel** («Vercel Authentication» en «All
 Deployments», desde el 17-oct-2026: Password Protection no existe en el plan Hobby, y con la cuenta
 nueva del 16-oct la producción quedó abierta un día, medido). En lo que sigue, «Password Protection»
 se lee como «el muro». Detrás del muro está la segunda capa: **la sesión del dueño** (correo y

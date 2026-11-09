@@ -8,7 +8,9 @@
    catálogo de precios APU — era /api/admin/apu/cargar-catalogo), y desde el
    6-sep-2026 `exportar` e `importar` (la copia de los datos del usuario).
 
-   La autorización sigue viviendo en cada handler (lib/auth una sola vez), y
+   La autorización sigue viviendo en cada handler (lib/auth una sola vez),
+   con la puerta de lib/auth (`autorizarPuerta`, 9-nov-2026) llamada antes de
+   despachar, y
    la única escritura sin token del repositorio —el RUP por PDF del
    onboarding— conserva exactamente sus cerraduras: están en el handler, no
    en la ruta. */
@@ -51,6 +53,10 @@ function opDe(req) {
 
 module.exports = async function handler(req, res) {
   const op = opDe(req);
+  /* LA PUERTA (9-nov-2026): sin la sesión ni la llave no pasa nada, salvo el
+     censo declarado en lib/auth (entrar, salir y las tareas programadas). */
+  const puerta = await require("../lib/auth.js").autorizarPuerta(req, "admin", op);
+  if (!puerta.ok) return require("../lib/auth.js").responderPuerta(res, puerta);
   if (!op) {
     return res.status(400).json({
       ok: false,
@@ -78,3 +84,6 @@ module.exports = async function handler(req, res) {
     return require("../lib/error_interno.js").responderErrorInterno(res, "admin", e);
   }
 };
+
+/* Las operaciones que despacha, para el censo de la puerta en la suite (9-nov-2026). */
+module.exports.OPS = Object.freeze(Object.keys(OPS));

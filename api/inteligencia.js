@@ -35,6 +35,11 @@ module.exports = async function handler(req, res) {
        con la lista de vistas, que es el contrato ya probado. */
     req.query = { ...q, vista: vista || String(q.op).toLowerCase() };
   }
+  /* LA PUERTA (9-nov-2026): sin la sesión ni la llave no pasa nada, salvo el
+     censo declarado en lib/auth. Se evalúa la MISMA vista que se despacha (ya
+     resuelta arriba): con `?op=a&vista=b` el handler usa `b` (revisión adversaria). */
+  const puerta = await require("../lib/auth.js").autorizarPuerta(req, "inteligencia", (req.query || {}).vista);
+  if (!puerta.ok) return require("../lib/auth.js").responderPuerta(res, puerta);
   /* Un throw del handler responde JSON 500 con instrucción, no una promesa
      rechazada que la plataforma convierte en un 500 sin cuerpo (6-sep-2026). */
   try {
@@ -43,3 +48,6 @@ module.exports = async function handler(req, res) {
     return require("../lib/error_interno.js").responderErrorInterno(res, "inteligencia", e);
   }
 };
+
+/* Las operaciones que resuelve, para el censo de la puerta en la suite (9-nov-2026). */
+module.exports.OPS = Object.freeze(Object.keys(VISTA_POR_OP));

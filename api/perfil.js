@@ -52,6 +52,10 @@ function opDe(req) {
 
 module.exports = async function handler(req, res) {
   const op = opDe(req);
+  /* LA PUERTA (9-nov-2026): sin la sesión ni la llave no pasa nada, salvo el
+     censo declarado en lib/auth (entrar, salir y las tareas programadas). */
+  const puerta = await require("../lib/auth.js").autorizarPuerta(req, "perfil", op);
+  if (!puerta.ok) return require("../lib/auth.js").responderPuerta(res, puerta);
   if (!op) {
     return res.status(400).json({
       ok: false,
@@ -82,3 +86,6 @@ module.exports = async function handler(req, res) {
     return require("../lib/error_interno.js").responderErrorInterno(res, "perfil", e);
   }
 };
+
+/* Las operaciones que despacha, para el censo de la puerta en la suite (9-nov-2026). */
+module.exports.OPS = Object.freeze(Object.keys(OPS));

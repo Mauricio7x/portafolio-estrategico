@@ -6475,7 +6475,7 @@ async function main() {
     const nada = await invocar(APIp, "/api/pliego?op=evaluacion&entidad=Entidad%20sin%20lecturas", CAB_TOKEN);
     assert.ok(nada.status === 200 && nada.cuerpo.hechos.procesos === 0 && nada.cuerpo.hechos.rechazadas === 0, "una entidad sin lecturas: cero procesos leídos, sin inventar nada");
     assert.strictEqual((await invocar(APIp, "/api/pliego?op=evaluacion", CAB_TOKEN)).status, 400, "sin entidad ni NIT: 400 con qué falta");
-    assert.strictEqual((await invocar(APIp, "/api/pliego?op=evaluacion&entidad=X")).status, 401, "sin credencial no hay datos");
+    assert.strictEqual((await invocar(require("../lib/handlers/pliego/evaluacion.js"), "/api/pliego?op=evaluacion&entidad=X")).status, 401, "sin credencial no hay datos");
     /* UNA BASE QUE NO RESPONDE NO ES «NINGUNO» (28-oct-2026, medido en producción con Upstash al límite de su plan: la
        ventana de Pasto respondía 200 con 0 procesos teniendo una captura verificada). La base simulada responde lo que
        respondió Upstash, a todos los comandos o a uno solo, y cada camino del handler responde 503 */
@@ -9224,8 +9224,8 @@ async function main() {
     okNE(idx.esQuitado(fila("CO1.REQ.2", "Mantenimiento de la red de alcantarillado del barrio Centro", "890000111-2")), "MUTACIÓN: la otra publicación del mismo objeto y la misma entidad volvía a salir");
     okNE(!idx.esQuitado(fila("CO1.REQ.3", "MANTENIMIENTO DE LA RED DE ALCANTARILLADO DEL BARRIO CENTRO", "800999888")), "MUTACIÓN: el mismo objeto de otra entidad se escondía");
     // el manejador: credencial siempre, acciones y números válidos
-    okNE((await invocar(rPerfilNE, "/api/perfil?op=no-es-obra&perfil=helder", {})).status === 401, "sin credencial no se lee");
-    okNE((await invocar(rPerfilNE, "/api/perfil?op=no-es-obra", {}, { metodo: "POST", body: { perfil: "helder", accion: "quitar", id: "CO1.REQ.1" } })).status === 401, "MUTACIÓN: sin credencial se escribía");
+    okNE((await invocar(require("../lib/handlers/perfil/no_es_obra.js"), "/api/perfil?op=no-es-obra&perfil=helder", {})).status === 401, "sin credencial no se lee");
+    okNE((await invocar(require("../lib/handlers/perfil/no_es_obra.js"), "/api/perfil?op=no-es-obra", {}, { metodo: "POST", body: { perfil: "helder", accion: "quitar", id: "CO1.REQ.1" } })).status === 401, "MUTACIÓN: sin credencial se escribía");
     okNE((await invocar(rPerfilNE, "/api/perfil?op=no-es-obra", CAB_TOKEN, { metodo: "POST", body: { perfil: "helder", accion: "borrar", id: "CO1.REQ.1" } })).status === 400, "una acción desconocida es 400");
     okNE((await invocar(rPerfilNE, "/api/perfil?op=no-es-obra", CAB_TOKEN, { metodo: "POST", body: { perfil: "helder", accion: "quitar", id: "<x>" } })).status === 400, "un número inválido es 400");
     // de punta a punta con la lista real y el corpus simulado de la suite
@@ -9334,7 +9334,7 @@ async function main() {
     okDP(!(await DPE.datosPublicosPorNit("abc", { fetchImpl: stubDP([], []) })).ok, "un NIT que no se lee no consulta nada");
     // (5) el manejador: credencial, NIT, y cada sugerencia pasa por la forma del guardado
     const rP = require("../api/perfil.js");
-    okDP((await invocar(rP, "/api/perfil?op=empresa-datos&publicos=1&nit=900865276", {})).status === 401, "sin credencial no se consulta");
+    okDP((await invocar(require("../lib/handlers/perfil/empresa_datos.js"), "/api/perfil?op=empresa-datos&publicos=1&nit=900865276", {})).status === 401, "sin credencial no se consulta");
     const origDP = DPE.datosPublicosPorNit;
     try {
       DPE.datosPublicosPorNit = (nit) => origDP(nit, { fetchImpl: stubDP([FX.rues_icaro], [{ ...FX.qmzu_icaro, telefono: "LLAMAR AL GERENTE" }]), ahora: AHORA });
@@ -12302,10 +12302,13 @@ async function main() {
       // lo de token OPCIONAL: público sin nada, con cifras con la sesión, 401 con una sesión que no vale
       const rApu = require("../api/apu.js");
       const OPC = "/api/apu?accion=parametros";
-      const pub = await invocar(rApu, OPC);
+      /* desde el 9-nov-2026 el ROUTER exige la sesión o la llave (la puerta); la vista pública
+         sigue viva en el handler para el día en que se venda, y se prueba allí */
+      assert.strictEqual((await invocar(rApu, OPC)).status, 401, "por el router, sin nada, la puerta responde 401");
+      const pub = await invocar(require("../lib/handlers/apu/editor.js"), OPC);
       const conSes = await invocar(rApu, OPC, { cookie });
       const mal = await invocar(rApu, OPC, { cookie: `${Sesion.COOKIE_SESION}=${"cd".repeat(32)}` });
-      assert.strictEqual(pub.status, 200, `la lectura pública sigue abierta sin nada: ${JSON.stringify(pub.cuerpo).slice(0, 160)}`);
+      assert.strictEqual(pub.status, 200, `el handler conserva su lectura pública sin nada: ${JSON.stringify(pub.cuerpo).slice(0, 160)}`);
       assert.strictEqual(conSes.status, 200, "con la sesión del dueño, también");
       assert.strictEqual(mal.status, 401, "una sesión presente e inválida es 401, jamás la vista pública en silencio");
       const malLista = await invocar(rProcesos, "/api/procesos?op=listar&perfil=helder", { cookie: `${Sesion.COOKIE_SESION}=${"cd".repeat(32)}` });
@@ -12477,21 +12480,27 @@ async function main() {
       const sesionFalsa = await PD.guardaDeAltaPublica(redis, { headers: { "x-real-ip": ipCuota, cookie: `${Sesion.COOKIE_SESION}=${"ef".repeat(32)}` } }, {}, ahoraQ);
       assert.strictEqual(sesionFalsa.permitido, false, "una cookie inventada no exime");
 
-      // ── (8) LAS RUTAS PÚBLICAS SIGUEN ABIERTAS SIN NADA ──────────────────────
+      // ── (8) LAS VISTAS PÚBLICAS VIVEN EN SUS HANDLERS; EL ROUTER LAS CIERRA (9-nov-2026) ──
+      /* Producción dejó el muro de Vercel y los routers llaman a la puerta (bloque «unidad la
+         puerta»): por el router, sin nada, solo responde «¿hay sesión?». Los handlers conservan su
+         vista pública (para el día en que se venda) y se prueban directos. */
       for (const [nombre, h, url] of [
-        ["salud", rProcesos, "/api/procesos?op=salud"],
-        ["la lista pública", rProcesos, "/api/procesos?op=listar&perfil=helder"],
-        ["el pulso público", rPerfil, "/api/perfil?op=pulso&perfil=helder"],
-        ["las actividades de la entrada", rPerfil, "/api/perfil?op=entrada"],
-        ["el interruptor del modo cuenta", rPerfil, "/api/perfil?op=cuenta"],
+        ["salud", require("../lib/handlers/procesos/salud.js"), "/api/procesos?op=salud"],
+        ["la lista pública", require("../lib/handlers/procesos/listar.js"), "/api/procesos?op=listar&perfil=helder"],
+        ["el pulso público", require("../lib/handlers/perfil/pulso.js"), "/api/perfil?op=pulso&perfil=helder"],
+        ["las actividades de la entrada", require("../lib/handlers/perfil/entrada.js"), "/api/perfil?op=entrada"],
+        ["el interruptor del modo cuenta", require("../lib/handlers/perfil/cuenta.js"), "/api/perfil?op=cuenta"],
         ["¿hay sesión?", rAdmin, "/api/admin?op=sesion"],
       ]) {
         const x = await invocar(h, url);
-        assert.ok(![401, 403].includes(x.status), `${nombre} tiene que seguir sin pedir credencial: ${x.status}`);
+        assert.ok(![401, 403].includes(x.status), `${nombre} tiene que seguir sin pedir credencial en su handler: ${x.status}`);
       }
-      const altaRup = await invocar(rAdmin, "/api/admin?op=rup&origen=pdf", { "content-type": "application/json", "x-real-ip": "10.7.0.1" }, { metodo: "POST", body: {} });
+      for (const [h, url] of [[rProcesos, "/api/procesos?op=salud"], [rProcesos, "/api/procesos?op=listar&perfil=helder"], [rPerfil, "/api/perfil?op=pulso&perfil=helder"]]) {
+        assert.strictEqual((await invocar(h, url)).status, 401, `por el router, ${url} sin nada responde 401 (la puerta)`);
+      }
+      const altaRup = await invocar(require("../lib/handlers/admin/rup.js"), "/api/admin?op=rup&origen=pdf", { "content-type": "application/json", "x-real-ip": "10.7.0.1" }, { metodo: "POST", body: {} });
       assert.ok(![401, 403].includes(altaRup.status), `el alta pública del RUP sigue sin credencial: ${altaRup.status}`);
-      const altaManual = await invocar(rPerfil, "/api/perfil?op=entrada", { "content-type": "application/json", "x-real-ip": "10.7.0.2" }, { metodo: "POST", body: {} });
+      const altaManual = await invocar(require("../lib/handlers/perfil/entrada.js"), "/api/perfil?op=entrada", { "content-type": "application/json", "x-real-ip": "10.7.0.2" }, { metodo: "POST", body: {} });
       assert.ok(![401, 403].includes(altaManual.status), `el alta pública por tres datos sigue sin credencial: ${altaManual.status}`);
 
       /* ── (8b) CENSO: LA LLAVE RETIRADA NO VIVE EN NINGÚN ARCHIVO DEL REPOSITORIO (revisión
@@ -12548,6 +12557,89 @@ async function main() {
     }
   }
 
+  /* unidad: LA PUERTA (9-nov-2026). Producción deja el muro de Vercel para que el dueño y Helder
+     entren con una cuenta compartida sin cuenta de Vercel; la cerradura pasa a ser la puerta de
+     lib/auth, que los seis routers LLAMAN antes de despachar. Se defiende con un CENSO ejecutado:
+       (1) cada operación de cada router (y una vacía y una inventada), sin credencial alguna,
+           responde 401 y NO gasta ni un comando de Upstash — salvo el censo declarado;
+       (2) lo declarado es exactamente esto, y cada clave nombra una operación que existe:
+           añadir una excepción obliga a tocar esta prueba, con su motivo en lib/auth;
+       (3) con la sesión del dueño o la llave de servidor, la puerta deja pasar;
+       (4) las de máquina, con CRON_SECRET: sin nada 401, con el Bearer pasan; sin CRON_SECRET
+           quedan abiertas (DECLARADO: op=salud lo dice y el muro no se quita hasta que diga true). */
+  bqPuerta: { if (!corre("unidad la puerta")) break bqPuerta;
+    const Auth = require("../lib/auth.js");
+    const ROUTERS = {
+      procesos: require("../api/procesos.js"), admin: require("../api/admin.js"), perfil: require("../api/perfil.js"),
+      pliego: require("../api/pliego.js"), apu: require("../api/apu.js"), inteligencia: require("../api/inteligencia.js"),
+    };
+    const opsDe = (d) => d === "apu" ? [...require("../lib/handlers/apu/editor.js").ACCIONES] : [...ROUTERS[d].OPS];
+    const ABIERTAS = ["admin:crear-cuenta", "admin:entrar", "admin:salir", "admin:sesion"];
+    const DE_MAQUINA = ["admin:compactar", "admin:respaldo", "perfil:avisos", "procesos:latido", "procesos:sync"];
+    // (2) lo declarado es exactamente esto, y existe
+    assert.deepStrictEqual(Object.keys(Auth.PUERTA_ABIERTA).sort(), ABIERTAS, "la puerta abierta es SOLO entrar, salir, crear la cuenta y preguntar por la sesión");
+    assert.deepStrictEqual(Object.keys(Auth.PUERTA_DE_MAQUINA).sort(), DE_MAQUINA, "las de máquina son SOLO las tareas programadas de vercel.json");
+    for (const k of [...ABIERTAS, ...DE_MAQUINA]) {
+      const [d, op] = k.split(":");
+      assert.ok(opsDe(d).includes(op), `la excepción «${k}» nombra una operación que no existe en api/${d}.js`);
+      assert.ok(String(Auth.PUERTA_ABIERTA[k] || Auth.PUERTA_DE_MAQUINA[k]).length > 20, `la excepción «${k}» lleva su motivo`);
+    }
+    // las tareas programadas de vercel.json son exactamente las de máquina (cada ruta del cron, por su reescritura)
+    const vj = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "vercel.json"), "utf8"));
+    const destinoDe = (ruta) => { const rw = (vj.rewrites || []).find((x) => x.source === ruta); return rw ? rw.destination : ruta; };
+    const deCron = [...new Set((vj.crons || []).map((c) => { const u = new URL(destinoDe(c.path), "http://x"); return `${u.pathname.replace(/^\/api\//, "")}:${u.searchParams.get("op")}`; }))].sort();
+    assert.deepStrictEqual(deCron, DE_MAQUINA, `cada tarea programada pasa la puerta por su Bearer, y solo ellas: ${deCron.join(", ")}`);
+    const cronAntes = process.env.CRON_SECRET;
+    process.env.CRON_SECRET = "secreto-del-cron-de-prueba";
+    try {
+      // (1) el censo: todo, sin credencial, 401 y sin tocar la base
+      let barridas = 0;
+      const abiertas = [];
+      for (const d of Object.keys(ROUTERS)) {
+        for (const op of [...opsDe(d), "", "inventada-xyz", "constructor"]) {
+          const clave = `${d}:${op}`;
+          if (ABIERTAS.includes(clave)) continue;
+          for (const metodo of ["GET", "POST"]) {
+            const antes = upstash.peticiones();
+            const url = op ? `/api/${d}?op=${encodeURIComponent(op)}` : `/api/${d}`;
+            const r = await invocar(ROUTERS[d], url, { "content-type": "application/json" }, { metodo, body: metodo === "POST" ? {} : undefined });
+            if (r.status !== 401) abiertas.push(`${metodo} ${url} → ${r.status}`);
+            else assert.strictEqual(upstash.peticiones() - antes, 0, `${metodo} ${url} sin credencial gastó comandos de Upstash`);
+            assert.ok(!(r.cuerpo && r.cuerpo.operaciones), `${metodo} ${url}: a quien no entró no se le enseña la lista de operaciones`);
+            barridas++;
+          }
+        }
+      }
+      assert.deepStrictEqual(abiertas, [], `sin entrar, estas operaciones no respondieron 401: ${abiertas.join(" · ")}`);
+      // (3) con la llave o la sesión, la puerta deja pasar (la respuesta ya es la del handler)
+      const LLAVE = process.env.HISTORICO_TOKEN;
+      const conLlave = await Auth.autorizarPuerta({ headers: { "x-historico-token": LLAVE }, query: {} }, "procesos", "listar");
+      assert.deepStrictEqual([conLlave.ok, conLlave.via], [true, "llave"], "la llave de servidor pasa la puerta");
+      const malLlave = await Auth.autorizarPuerta({ headers: { "x-historico-token": "otra" }, query: {} }, "procesos", "listar");
+      assert.strictEqual(malLlave.status, 401, "una llave equivocada no pasa");
+      const rSalud = await invocar(ROUTERS.procesos, "/api/procesos?op=salud", { "x-historico-token": LLAVE });
+      assert.ok(rSalud.status === 200 && rSalud.cuerpo && "sincronizacion_protegida" in rSalud.cuerpo, `con la llave, la salud responde (pasó la puerta y llegó al handler): ${rSalud.status} ${JSON.stringify(rSalud.cuerpo).slice(0, 160)}`);
+      const rSesion = await invocar(ROUTERS.admin, "/api/admin?op=sesion");
+      assert.strictEqual(rSesion.status, 200, "preguntar por la sesión sigue abierto (la pantalla lo necesita antes de entrar)");
+      // (4) las de máquina
+      const sinNada = await Auth.autorizarPuerta({ headers: {}, query: {} }, "procesos", "sync");
+      assert.strictEqual(sinNada.status, 401, "con CRON_SECRET, la sincronización sin nada no pasa");
+      const conBearer = await Auth.autorizarPuerta({ headers: { authorization: "Bearer secreto-del-cron-de-prueba" }, query: {} }, "procesos", "sync");
+      assert.deepStrictEqual([conBearer.ok, conBearer.via], [true, "cron"], "el Bearer del cron pasa");
+      const bearerEnOtra = await Auth.autorizarPuerta({ headers: { authorization: "Bearer secreto-del-cron-de-prueba" }, query: {} }, "procesos", "listar");
+      assert.strictEqual(bearerEnOtra.status, 401, "el Bearer del cron NO abre lo que no es una tarea programada");
+      delete process.env.CRON_SECRET;
+      const sinGuarda = await Auth.autorizarPuerta({ headers: {}, query: {} }, "procesos", "sync");
+      assert.deepStrictEqual([sinGuarda.ok, sinGuarda.via], [true, "abierta"], "DECLARADO: sin CRON_SECRET la regla de la sincronización está abierta (salud lo dice)");
+      const sinGuardaOtra = await Auth.autorizarPuerta({ headers: {}, query: {} }, "procesos", "listar");
+      assert.strictEqual(sinGuardaOtra.status, 401, "…pero eso no abre nada más");
+      console.log(`· unidad la puerta: ${barridas} llamadas sin credencial a los seis routers → 401 sin un comando de Upstash · `
+        + `abiertas solo ${ABIERTAS.length} (entrar, salir, crear, sesión) · ${DE_MAQUINA.length} de máquina = las tareas de vercel.json, con Bearer · la llave pasa (la sesión, en «unidad sesión del dueño»)`);
+    } finally {
+      if (cronAntes === undefined) delete process.env.CRON_SECRET; else process.env.CRON_SECRET = cronAntes;
+    }
+  }
+
   /* unidad: EL MODO CUENTA, CONSTRUIDO Y APAGADO (11-sep-2026).
      Lo que esta cerradura defiende es sobre todo que el modo APAGADO no cambie
      nada: el dueño pidió la infraestructura, no el cambio de producto. Y que
@@ -12574,7 +12666,7 @@ async function main() {
     assert.strictEqual(cuerpo.modo_cuenta, false);
     assert.ok(cuerpo.error && cuerpo.como_encenderlo && cuerpo.como_encenderlo.includes(Modo.VARIABLE),
       "la respuesta de apagado tiene que decir qué hacer, no solo que no");
-    const rCuenta = await invocar(require("../api/perfil.js"), "/api/perfil?op=cuenta");
+    const rCuenta = await invocar(require("../lib/handlers/perfil/cuenta.js"), "/api/perfil?op=cuenta");
     assert.strictEqual(rCuenta.status, 503, "apagado responde 503 (existe pero no está disponible), jamás 404");
     assert.strictEqual(rCuenta.cuerpo.modo_cuenta, false);
     assert.ok(!/404|no existe/i.test(rCuenta.cuerpo.error || ""), "un 404 mandaría a buscar un fallo donde no lo hay");
@@ -14592,7 +14684,7 @@ async function main() {
     // un proceso sin registro se dice, y la llave y el método se exigen
     const nada = await invocar(routerA, "/api/pliego?op=auditoria&id_proceso=CO1.REQ.NOEXISTE", CAB_TOKEN);
     assert.ok(nada.status === 200 && nada.cuerpo.procesos[0].estado === "sin_registro" && nada.cuerpo.resumen.documentos === 0, JSON.stringify(nada.cuerpo.procesos));
-    assert.strictEqual((await invocar(routerA, `/api/pliego?op=auditoria&id_proceso=${idA}`)).status, 401);
+    assert.strictEqual((await invocar(require("../lib/handlers/pliego/auditoria.js"), `/api/pliego?op=auditoria&id_proceso=${idA}`)).status, 401);
     assert.strictEqual((await invocar(routerA, `/api/pliego?op=auditoria&id_proceso=${idA}`, CAB_TOKEN, { metodo: "POST", body: {} })).status, 405);
     assert.strictEqual((await invocar(routerA, "/api/pliego?op=auditoria&id_proceso=../x%20y", CAB_TOKEN)).status, 400);
     console.log("· unidad auditoría de la lectura: páginas en blanco, faltantes o de muy poco texto (calibrado con las cuentas reales del primer proceso), ruido, anclas por tipo y huella con la función real; un presupuesto no se juzga por su proporción de letras; los tiempos medidos salen con la frase de la pantalla; el op lee sin escribir, no devuelve texto y no dice «correcto»");
@@ -14914,7 +15006,7 @@ async function main() {
     assert.ok(g0.status === 200 && g0.cuerpo.ok && g0.cuerpo.hay_observaciones === false && /Redactar observaciones/.test(g0.cuerpo.que_hacer), `sin observaciones, se dice: ${JSON.stringify(g0.cuerpo).slice(0, 300)}`);
     const e0 = await pedirO(`id_proceso=${idO}&perfil=helder&expediente=1`);
     assert.ok(e0.cuerpo.hay_texto === false && /texto guardado del pliego/.test(e0.cuerpo.error), `sin texto, el expediente lo dice: ${JSON.stringify(e0.cuerpo).slice(0, 300)}`);
-    assert.strictEqual((await invocar(routerO, `/api/pliego?op=observaciones&id_proceso=${idO}&perfil=helder`, {})).status, 401, "sin credencial: 401 (viajan las cifras del perfil)");
+    assert.strictEqual((await invocar(require("../lib/handlers/pliego/observaciones.js"), `/api/pliego?op=observaciones&id_proceso=${idO}&perfil=helder`, {})).status, 401, "sin credencial: 401 (viajan las cifras del perfil)");
     assert.strictEqual((await pedirO(`id_proceso=${encodeURIComponent("no es <un> id")}&perfil=helder`)).status, 400, "un id sin la forma de SECOP II (la regla del dictamen, ID_RE): 400");
     await Dv.registrarVersion(redis, { idProceso: idO, texto: PLIEGO_O, origen: "lector" });
     // el expediente: las instrucciones, el esquema, la entrada del dictamen y el pliego paginado
@@ -18118,7 +18210,7 @@ async function main() {
     const desinflar = (obj) => zlib.deflateSync(Buffer.from(JSON.stringify(obj), "utf8")).toString("base64");
 
     // el «antes» de la ficha, medido: el router de hoy conoce las dos op
-    const sinOp = await invocar(rAdminCopia, "/api/admin");
+    const sinOp = await invocar(rAdminCopia, "/api/admin", CAB_TOKEN);
     for (const op of ["exportar", "importar"]) assert.ok(sinOp.cuerpo.operaciones.includes(op), `api/admin.js tiene que plegar op=${op} (antes: 404 «Operación «${op}» desconocida»)`);
 
     /* semilla: una clave por apartado, con un registro de proponente VÁLIDO
@@ -18195,14 +18287,14 @@ async function main() {
       for (const n of ["Registro de proponente y perfiles", "Contratos ejecutados", "Consorcios guardados", "Parámetros de costo", "Precios corregidos", "Borradores de precios", "Mis procesos", "Otros datos de configuración"]) assert.ok(nombresApartado.includes(n), `apartado «${n}» en el resumen`);
 
       // credencial y método
-      assert.strictEqual((await invocar(rAdminCopia, "/api/admin?op=exportar")).status, 401, "sin token: 401");
+      assert.strictEqual((await invocar(require("../lib/handlers/admin/exportar.js"), "/api/admin?op=exportar")).status, 401, "sin token: 401");
       assert.strictEqual((await invocar(rAdminCopia, "/api/admin?op=exportar", { "x-historico-token": "otro" })).status, 401, "token presente e inválido: 401, jamás degradación");
-      assert.strictEqual((await invocar(rAdminCopia, `/api/admin?op=exportar&token=${process.env.HISTORICO_TOKEN}`)).status, 200, "&token= en la URL vale (el dueño pega la URL en Chrome)");
+      assert.strictEqual((await invocar(require("../lib/handlers/admin/exportar.js"), `/api/admin?op=exportar&token=${process.env.HISTORICO_TOKEN}`)).status, 200, "&token= en la URL vale (el dueño pega la URL en Chrome)");
       assert.strictEqual((await invocar(rAdminCopia, "/api/admin?op=exportar", CAB_TOKEN, { metodo: "POST" })).status, 405, "exportar solo por GET");
       const getImp = await invocar(rAdminCopia, "/api/admin?op=importar", CAB_TOKEN);
       assert.strictEqual(getImp.status, 405, "un GET no restaura nada (pegar la URL no puede escribir)");
       assert.ok(getImp.cuerpo.como_hacerlo && !tuteoCD(getImp.cuerpo.como_hacerlo), "el 405 dice cómo hacerlo, de usted");
-      assert.strictEqual((await invocarPost(rAdminCopia, "/api/admin?op=importar", { copia: "x" })).status, 401, "importar sin token: 401");
+      assert.strictEqual((await invocarPost(require("../lib/handlers/admin/importar.js"), "/api/admin?op=importar", { copia: "x" })).status, 401, "importar sin token: 401");
 
       /* 2 · pérdida total → importar: todo vuelve con su valor, tipo y TTL, y
          la instancia caliente ve el registro restaurado */
@@ -18543,7 +18635,7 @@ async function main() {
       delete process.env.CRON_SECRET;
 
       // 3 · el router conoce la op; sin el almacén, 503 que nombra las cuatro variables
-      const sinOpR = await invocar(rAdminR, "/api/admin");
+      const sinOpR = await invocar(rAdminR, "/api/admin", CAB_TOKEN);
       assert.ok(sinOpR.cuerpo.operaciones.includes("respaldo"), "api/admin.js tiene que plegar op=respaldo (antes: 404 «Operación «respaldo» desconocida»)");
       const sinConf = await invocar(rAdminR, "/api/admin?op=respaldo", CAB_TOKEN);
       assert.strictEqual(sinConf.status, 503, "sin el almacén configurado la copia NO puede decir que salió bien");
@@ -18552,7 +18644,7 @@ async function main() {
       const estSin = await invocar(rAdminR, "/api/admin?op=respaldo&estado=1", CAB_TOKEN);
       assert.strictEqual(estSin.status, 200); assert.strictEqual(estSin.cuerpo.configurado, false);
       assert.strictEqual(estSin.cuerpo.ultima_completa, null, "sin copia, la última copia es null («no hay»), jamás una fecha inventada");
-      const saludSin = await invocar(rProcR, "/api/procesos?op=salud");
+      const saludSin = await invocar(require("../lib/handlers/procesos/salud.js"), "/api/procesos?op=salud");
       assert.strictEqual(saludSin.cuerpo.respaldo.configurado, false);
       assert.ok(!/copia fuera de Upstash/.test(saludSin.cuerpo.motivo || ""), "sin configurar, la copia no pone la salud en rojo (se dice qué falta, como el correo)");
 
@@ -18640,7 +18732,7 @@ async function main() {
       assert.ok(/403/.test(f.cuerpo.error) && !f.cuerpo.error.includes(SECRETO), `el error no puede enseñar el secreto: ${f.cuerpo.error}`);
       assert.ok((await leerJSONR(redis, CR.respaldoEstado)).ultimo_error, "el fallo queda escrito para op=salud y op=respaldo&estado=1");
       // la salud es pública: del fallo solo la fecha (el cuerpo del almacén puede traer la llave de acceso)
-      assert.deepStrictEqual(Object.keys((await invocar(rProcR, "/api/procesos?op=salud")).cuerpo.respaldo.ultimo_error), ["ts"]);
+      assert.deepStrictEqual(Object.keys((await invocar(require("../lib/handlers/procesos/salud.js"), "/api/procesos?op=salud")).cuerpo.respaldo.ultimo_error), ["ts"]);
       assert.ok((await invocar(rAdminR, "/api/admin?op=respaldo&estado=1", CAB_TOKEN)).cuerpo.ultimo_error.mensaje, "con credencial se lee el texto entero");
       assert.strictEqual(await redis.get(CR.lockRespaldo), null, "un fallo también suelta el candado");
 
@@ -18673,7 +18765,7 @@ async function main() {
       const perdida = await invocar(rAdminR, "/api/admin?op=respaldo", CAB_TOKEN);
       assert.deepStrictEqual(perdida.cuerpo.solo_en_copia, ["2019-01"]);
       assert.ok(/2019-01 ya no está en la base y solo queda en la copia/.test(perdida.cuerpo.mensaje));
-      assert.deepStrictEqual((await invocar(rProcR, "/api/procesos?op=salud")).cuerpo.respaldo.meses_solo_en_copia, ["2019-01"]);
+      assert.deepStrictEqual((await invocar(require("../lib/handlers/procesos/salud.js"), "/api/procesos?op=salud")).cuerpo.respaldo.meses_solo_en_copia, ["2019-01"]);
       for (const [k, v] of Object.entries(valsEne)) await redis.set(k, v);
       await RS.respaldar(redis, OB.crearObjetos(), {});
 
@@ -18681,13 +18773,13 @@ async function main() {
       const estV = await leerJSONR(redis, CR.respaldoEstado);
       estV.ultima_completa = new Date(Date.now() - (RS.HORAS_COPIA_VIEJA + 2) * 3600e3).toISOString();
       await escribirJSONR(redis, CR.respaldoEstado, estV);
-      const sV = await invocar(rProcR, "/api/procesos?op=salud");
+      const sV = await invocar(require("../lib/handlers/procesos/salud.js"), "/api/procesos?op=salud");
       assert.strictEqual(sV.cuerpo.respaldo.configurado, true); assert.strictEqual(sV.cuerpo.respaldo.vieja, true);
       assert.strictEqual(sV.cuerpo.ok, false); assert.ok(/copia completa fuera de Upstash/.test(sV.cuerpo.motivo));
       assert.ok(!JSON.stringify(sV.cuerpo).includes(SECRETO), "la salud es pública: jamás el secreto");
       estV.ultima_completa = new Date().toISOString();
       await escribirJSONR(redis, CR.respaldoEstado, estV);
-      assert.strictEqual((await invocar(rProcR, "/api/procesos?op=salud")).cuerpo.respaldo.vieja, false);
+      assert.strictEqual((await invocar(require("../lib/handlers/procesos/salud.js"), "/api/procesos?op=salud")).cuerpo.respaldo.vieja, false);
 
       // 14 · el cron existe, es diario, y su ruta llega a esta op
       const vj = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "vercel.json"), "utf8"));
@@ -18757,7 +18849,7 @@ async function main() {
     try {
       process.env.CRON_SECRET = "cron-latido";
       const BEARER = { authorization: "Bearer cron-latido" };
-      assert.ok((await invocar(rProcL, "/api/procesos")).cuerpo.operaciones.includes("latido"), "api/procesos.js tiene que plegar op=latido (antes: 404)");
+      assert.ok((await invocar(rProcL, "/api/procesos", CAB_TOKEN)).cuerpo.operaciones.includes("latido"), "api/procesos.js tiene que plegar op=latido (antes: 404)");
       assert.strictEqual((await invocar(rProcL, "/api/procesos?op=latido")).status, 401, "sin credencial, 401");
       // sin nada pendiente: nada, y un solo comando
       await redis.del(CL.progreso, CL.progresoHistorico, CL.lock, CL.lockHistorico);
@@ -18777,13 +18869,13 @@ async function main() {
       assert.strictEqual(quieto.cuerpo.accion, "nada"); assert.ok(upstash.peticiones() - c0 <= 4 && !vistosQ.some((c) => /^(SET|DEL|HSET)/.test(c)), `sin nada pendiente el latido cuesta ≤ 4 comandos, todos de lectura: ${JSON.stringify(vistosQ)}`);
       // la salud: el latido reciente no suena; de hace 13 h, sí; sin marca, null (no consta)
       const rSaludL = require("../api/procesos.js");
-      const salL = await invocar(rSaludL, "/api/procesos?op=salud");
+      const salL = await invocar(require("../lib/handlers/procesos/salud.js"), "/api/procesos?op=salud");
       assert.ok(salL.cuerpo.latido.ultimo && !/reloj que retoma/.test(salL.cuerpo.motivo || ""));
       await redis.set(CL.latidoUltimo, JSON.stringify(new Date(Date.now() - 13 * 3600e3).toISOString()));
-      const salV = await invocar(rSaludL, "/api/procesos?op=salud");
+      const salV = await invocar(require("../lib/handlers/procesos/salud.js"), "/api/procesos?op=salud");
       assert.strictEqual(salV.cuerpo.ok, false); assert.ok(/reloj que retoma las cargas cortadas no suena desde hace más de 12 horas/.test(salV.cuerpo.motivo), salV.cuerpo.motivo);
       await redis.del(CL.latidoUltimo);
-      assert.strictEqual((await invocar(rSaludL, "/api/procesos?op=salud")).cuerpo.latido.ultimo, null);
+      assert.strictEqual((await invocar(require("../lib/handlers/procesos/salud.js"), "/api/procesos?op=salud")).cuerpo.latido.ultimo, null);
       // la copia configurada que NUNCA corrió: el latido anota desde cuándo, y a las 48 h la salud lo dice
       const envOB = { OBJETOS_ENDPOINT: "http://127.0.0.1:9", OBJETOS_BUCKET: "b", OBJETOS_ACCESS_KEY_ID: "k", OBJETOS_SECRET_ACCESS_KEY: "secreto-latido" };
       const antesOB = Object.fromEntries(Object.keys(envOB).map((k) => [k, process.env[k]]));
@@ -18795,10 +18887,10 @@ async function main() {
         assert.ok(Number.isFinite(Date.parse(desde)), "con el almacén configurado, el latido anota desde cuándo");
         await invocar(rProcL, "/api/procesos?op=latido", BEARER);
         assert.strictEqual(JSON.parse(await redis.get(CL.respaldoConfiguradoDesde)), desde, "la fecha se anota UNA vez (NX), no se corre con cada latido");
-        const sNueva = await invocar(rSaludL, "/api/procesos?op=salud");
+        const sNueva = await invocar(require("../lib/handlers/procesos/salud.js"), "/api/procesos?op=salud");
         assert.strictEqual(sNueva.cuerpo.respaldo.nunca_corrio, true); assert.strictEqual(sNueva.cuerpo.respaldo.vieja, false);
         await redis.set(CL.respaldoConfiguradoDesde, JSON.stringify(new Date(Date.now() - 49 * 3600e3).toISOString()));
-        const sNunca = await invocar(rSaludL, "/api/procesos?op=salud");
+        const sNunca = await invocar(require("../lib/handlers/procesos/salud.js"), "/api/procesos?op=salud");
         assert.strictEqual(sNunca.cuerpo.respaldo.vieja, true); assert.strictEqual(sNunca.cuerpo.ok, false);
         assert.ok(/todavía no ha corrido ni una vez/.test(sNunca.cuerpo.motivo), sNunca.cuerpo.motivo);
       } finally {
@@ -19070,7 +19162,7 @@ async function main() {
       const ttlM = await redis.ttl(CLa.autoLlamada);
       assert.ok(ttlM > 0 && ttlM <= AL.TTL_SEG, `la anotación caduca sola (TTL ${ttlM} s)`);
       const c0A = upstash.peticiones();
-      const sM = await invocar(rProcA, "/api/procesos?op=salud");
+      const sM = await invocar(require("../lib/handlers/procesos/salud.js"), "/api/procesos?op=salud");
       assert.ok(upstash.peticiones() - c0A <= 2, `op=salud sigue en ≤ 2 comandos con la anotación en su MGET (${upstash.peticiones() - c0A})`);
       assert.strictEqual(sM.cuerpo.ok, false, "con la cadena rechazada por el muro la salud suena");
       assert.ok(/no pudo seguir sola.*porque el servidor no tiene el pase/.test(sM.cuerpo.motivo || ""), sM.cuerpo.motivo);
@@ -19085,7 +19177,7 @@ async function main() {
       const crudoP = await redis.get(CLa.autoLlamada);
       assert.ok(!crudoP.includes("pase-de-la-prueba-autollamada") && !crudoP.includes("llave-de-la-prueba-autollamada"), "la anotación no lleva el valor de ningún secreto");
       assert.deepStrictEqual([JSON.parse(crudoP).pase_en_el_servidor, JSON.parse(crudoP).destino], [true, "historico"]);
-      assert.ok(/aunque el servidor tiene un pase/.test((await invocar(rProcA, "/api/procesos?op=salud")).cuerpo.motivo || ""));
+      assert.ok(/aunque el servidor tiene un pase/.test((await invocar(require("../lib/handlers/procesos/salud.js"), "/api/procesos?op=salud")).cuerpo.motivo || ""));
 
       // 3 · la tanda que trabaja: sin respuesta en el plazo es «siguió», y la salud no suena por ella
       let soltarT = null;
@@ -19095,7 +19187,7 @@ async function main() {
       assert.ok(Date.now() - tT < 3000, "sin waitUntil se espera el plazo, no la tanda entera");
       const regT = await leerReg();
       assert.deepStrictEqual([regT.resultado, regT.status], ["siguio", null], JSON.stringify(regT));
-      const sT = await invocar(rProcA, "/api/procesos?op=salud");
+      const sT = await invocar(require("../lib/handlers/procesos/salud.js"), "/api/procesos?op=salud");
       assert.strictEqual(sT.cuerpo.autollamada.falla, false);
       assert.ok(!/no pudo seguir sola/.test(sT.cuerpo.motivo || ""), sT.cuerpo.motivo);
       if (soltarT) soltarT();
@@ -19108,7 +19200,7 @@ async function main() {
       await AL.autoLlamar({ headers: { host: `127.0.0.1:${pCerradoA}`, "x-forwarded-proto": "http" } }, "/api/procesos?op=sync&modo=auto", { origen: "listado" });
       const regC = await leerReg();
       assert.strictEqual(regC.resultado, "fallo_de_red"); assert.ok(regC.detalle, "el fallo de red dice qué pasó");
-      assert.ok(/no salió/.test((await invocar(rProcA, "/api/procesos?op=salud")).cuerpo.motivo || ""));
+      assert.ok(/no salió/.test((await invocar(require("../lib/handlers/procesos/salud.js"), "/api/procesos?op=salud")).cuerpo.motivo || ""));
       // sin dirección no hay llamada ni anotación
       await redis.del(CLa.autoLlamada);
       assert.strictEqual((await AL.autoLlamar({ headers: {} }, "/api/procesos?op=sync&modo=auto")).enviada, false);
@@ -19210,7 +19302,7 @@ async function main() {
       const saludCon = async (reg, meta) => {
         await redis.set(CLa.autoLlamada, JSON.stringify(reg), { ex: 600 });
         if (meta) await escribirJSONa(redis, CLa.meta, meta);
-        return (await invocar(rProcA, "/api/procesos?op=salud")).cuerpo;
+        return (await invocar(require("../lib/handlers/procesos/salud.js"), "/api/procesos?op=salud")).cuerpo;
       };
       const base6 = { origen: "cadena", destino: "sync", pase_en_el_servidor: true, con_waitUntil: true, ms: 10, status: 504 };
       let s6 = await saludCon({ ...base6, ts: hace3h, resultado: "otro_codigo" });
@@ -24355,7 +24447,7 @@ async function main() {
     /* a'''. op=salud con Redis vacío (6-sep-2026, M-INF-04): pública, a través del ROUTER real;
        «sin dato» es null —jamás 0— y `ok:false` dice por qué. */
     {
-      const rS = await invocar(require("../api/procesos.js"), "/api/procesos?op=salud");
+      const rS = await invocar(require("../lib/handlers/procesos/salud.js"), "/api/procesos?op=salud");
       assert.strictEqual(rS.status, 200, `op=salud con Redis vacío: ${JSON.stringify(rS.cuerpo)}`);
       assert.strictEqual(rS.cuerpo.ok, false);
       assert.strictEqual(rS.cuerpo.edad_horas, null, "sin corte la edad es null, jamás 0");
@@ -24411,7 +24503,7 @@ async function main() {
       const metaTrasFull = JSON.parse(await redis.get(CLAVES.meta));
       assert.strictEqual(metaTrasFull.ultimo_error, undefined, "la full que termina bien borra el fallo anterior de meta");
       assert.ok(metaTrasFull.last_full && metaTrasFull.last_sync, "…y conserva el sello de siempre");
-      const rS = await invocar(require("../api/procesos.js"), "/api/procesos?op=salud");
+      const rS = await invocar(require("../lib/handlers/procesos/salud.js"), "/api/procesos?op=salud");
       assert.strictEqual(rS.cuerpo.ok, true, `tras la full la salud es ok: ${rS.cuerpo.motivo}`);
       assert.strictEqual(rS.cuerpo.ultimo_error, null);
       assert.strictEqual(typeof rS.cuerpo.edad_horas, "number");
@@ -25196,7 +25288,10 @@ async function main() {
         const os = require("os");
         const dominio = require("../lib/glosario.js").MARCA.dominio;
         const MARCA_SONDA = "SONDA DEL MURO: sin el pase, a propósito";
-        const PORTADA = `"https://${dominio}/"`;
+        /* desde el 9-nov-2026 la sonda pide la LISTA (sin pase ni credencial): con el muro responde el
+           muro; sin él, la puerta de lib/auth tiene que responder 401 con el JSON de la aplicación */
+        const SONDA_URL = `https://${dominio}/api/procesos?op=listar&perfil=helder`;
+        const PORTADA = `"${SONDA_URL}"`;
         const dirWf = path.join(__dirname, "..", ".github", "workflows");
         const pasos = [];
         for (const f of fs.readdirSync(dirWf).filter((n) => /\.ya?ml$/.test(n)).sort()) {
@@ -25316,30 +25411,35 @@ async function main() {
           assert.strictEqual((sonda.guion.match(/\bcurl\b/g) || []).length, 1, `${sonda.donde}: la sonda hace UNA llamada`);
           assert.ok(!/VERCEL_AUTOMATION_BYPASS_SECRET|x-vercel-protection-bypass/.test(sonda.guion), `${sonda.donde}: la sonda no nombra el pase`);
           fs.writeFileSync(path.join(dir, "sonda.sh"), sonda.guion);
+          const ABIERTA = "::error title=Puerta de Detekta abierta::LA PUERTA DE DETEKTA ESTÁ ABIERTA";
+          const SIN_MEDIR = "::warning title=Puerta sin medir::";
           const ESCENARIOS = [
             // [código, destino de la redirección, cuerpo, salida de curl] → [salida del paso, lo que dice]
-            [["200", "", "<!doctype html><title>Detekta</title>", 0], [1, "::error title=Muro de Vercel apagado::EL MURO DE VERCEL ESTÁ APAGADO"]],
+            [["200", "", "<!doctype html><title>Detekta</title>", 0], [1, ABIERTA]],
+            [["200", "", '{"ok":true,"total":120,"oportunidades":[]}', 0], [1, ABIERTA]],
             [["302", "https://vercel.com/sso-api?url=https%3A%2F%2Fx%2F&nonce=1a2b", "Protected by Vercel Authentication", 0], [0, "está puesto"]],
             [["302", "https://vercel.com/sso-api?url=x", "", 0], [0, "está puesto"]],
             [["401", "", '{"message":"Protected by Vercel Authentication"}', 0], [0, "está puesto"]],
             [["200", "", "Protected by Vercel Authentication", 0], [0, "está puesto"]],
-            [["302", "https://otro-dominio.example/", "", 0], [0, "::warning title=Muro de Vercel sin medir::"]],
-            [["403", "", "Forbidden", 0], [0, "::warning title=Muro de Vercel sin medir::"]],
-            [["401", "", "", 0], [0, "::warning title=Muro de Vercel sin medir::"]],
-            [["307", "https://vercel.com/sso-api?url=x", "", 0], [0, "::warning title=Muro de Vercel sin medir::"]],
-            [["429", "", "", 0], [0, "::warning title=Muro de Vercel sin medir::"]],
-            [["503", "", "", 0], [0, "::warning title=Muro de Vercel sin medir::"]],
-            [["000", "", "", 28], [0, "::warning title=Muro de Vercel sin medir::"]],
+            [["401", "", '{"ok":false,"error":"Token ausente: este endpoint está protegido"}', 0], [0, "La puerta está cerrada"]],
+            [["302", "https://otro-dominio.example/", "", 0], [0, SIN_MEDIR]],
+            [["403", "", "Forbidden", 0], [0, SIN_MEDIR]],
+            [["401", "", "", 0], [0, SIN_MEDIR]],
+            [["401", "", "Unauthorized", 0], [0, SIN_MEDIR]],
+            [["307", "https://vercel.com/sso-api?url=x", "", 0], [0, SIN_MEDIR]],
+            [["429", "", "", 0], [0, SIN_MEDIR]],
+            [["503", "", "", 0], [0, SIN_MEDIR]],
+            [["000", "", "", 28], [0, SIN_MEDIR]],
           ];
           for (const [[codigo, destino, cuerpo, salidaCurl], [salida, esperado]] of ESCENARIOS) {
             const r = correrSonda(sonda.guion, { codigo, destino, cuerpo, salidaCurl });
             const caso = `${sonda.donde}: con ${codigo}${destino ? ` → ${destino.slice(0, 40)}` : ""}${cuerpo ? ` y «${cuerpo.slice(0, 30)}»` : ""}`;
             assert.strictEqual(r.violacion, "", `${caso}: la sonda usa una bandera de curl fuera de las permitidas (-q primero, -s, -S, --max-time, -o, -w): ${r.violacion}`);
-            assert.strictEqual(r.codigo, salida, `${caso} la sonda tiene que ${salida ? "FALLAR (muro apagado)" : "pasar"}: ${r.salida.slice(-300)}`);
+            assert.strictEqual(r.codigo, salida, `${caso} la sonda tiene que ${salida ? "FALLAR (puerta abierta)" : "pasar"}: ${r.salida.slice(-300)}`);
             assert.ok(r.salida.includes(esperado), `${caso} la sonda dice «${esperado}»: ${r.salida.slice(-300)}`);
             if (salida) assert.ok(r.salida.includes("All Deployments") && r.salida.includes("Deployment Protection"),
-              `${caso}: el aviso del muro apagado dice dónde se vuelve a poner: ${r.salida.slice(-300)}`);
-            assert.deepStrictEqual(r.llamadas, [`https://${dominio}/`], `${caso}: la sonda hace UNA llamada, exactamente a la portada: ${r.llamadas.join(" | ")}`);
+              `${caso}: el aviso de la puerta abierta dice dónde se vuelve a poner el muro: ${r.salida.slice(-300)}`);
+            assert.deepStrictEqual(r.llamadas, [SONDA_URL], `${caso}: la sonda hace UNA llamada, exactamente a la lista: ${r.llamadas.join(" | ")}`);
           }
         } finally { fs.rmSync(dir, { recursive: true, force: true }); }
 
@@ -25361,7 +25461,7 @@ async function main() {
                 `${donde}: la marca de la sonda solo vale en UN curl, sin el pase: ${o.trim().slice(0, 160)}`);
               // se ejecuta la línea tal cual, con el curl estricto: el muro puesto y el muro apagado
               const puesto = correrSonda(o, { codigo: "302", destino: "https://vercel.com/sso-api?url=x", cuerpo: "Protected by Vercel Authentication" });
-              assert.ok(puesto.violacion === "" && puesto.llamadas.length === 1 && puesto.llamadas[0] === `https://${dominio}/`,
+              assert.ok(puesto.violacion === "" && puesto.llamadas.length === 1 && puesto.llamadas[0] === SONDA_URL,
                 `${donde}: la marca de la sonda solo vale en UN curl a la portada ${PORTADA}, con las banderas permitidas (-q primero, -s, --max-time, -o, -w): ${puesto.violacion || puesto.llamadas.join(" | ")} · ${o.trim().slice(0, 160)}`);
               assert.ok(/^302 https:\/\/vercel\.com\/sso-api/.test(puesto.salida.trim()),
                 `${donde}: la sonda del vigilante enseña el código y el destino de la redirección: ${puesto.salida.slice(0, 120)}`);
@@ -25389,10 +25489,10 @@ async function main() {
         assert.deepStrictEqual(sondasRutinas, ["docs/RUTINAS.md"], `la sonda del muro va UNA vez, en el vigilante de la mañana: está en ${sondasRutinas.join(", ") || "ningún sitio"}`);
         {
           const vigilante = fs.readFileSync(instrucciones[0], "utf8").split(/^## /m).find((s) => s.startsWith("2 · El vigilante de la mañana"));
-          assert.ok(vigilante && vigilante.includes(MARCA_SONDA) && vigilante.includes("EL MURO DE VERCEL ESTÁ APAGADO")
+          assert.ok(vigilante && vigilante.includes(MARCA_SONDA) && vigilante.includes("LA PUERTA DE DETEKTA ESTÁ ABIERTA")
             && vigilante.includes("https://vercel.com/sso-api") && vigilante.includes("Protected by Vercel Authentication")
-            && vigilante.includes("Muro: no medido"),
-            "el vigilante de la mañana prueba el muro sin el pase, lo reconoce en positivo (la redirección a sso-api o su texto), si está apagado lo dice primero y lo demás lo da por «no medido»");
+            && vigilante.includes(`grep -c '"ok":false'`) && vigilante.includes("Puerta: no medida"),
+            "el vigilante de la mañana prueba la puerta sin el pase ni la llave, reconoce en positivo el muro (sso-api o su texto) o el 401 de la aplicación, si la lista sale la dice primero y lo demás lo da por «no medida»");
         }
       }
 
@@ -28716,7 +28816,7 @@ async function main() {
       {
         const routerPerfilSeg = require("../api/perfil.js");
         const seg = (qs, opts = {}) => invocar(routerPerfilSeg, `/api/perfil?op=seguimiento${qs}`, CAB_TOKEN, opts);
-        assert.strictEqual((await invocar(routerPerfilSeg, "/api/perfil?op=seguimiento&perfil=helder")).status, 401, "el seguimiento exige token");
+        assert.strictEqual((await invocar(require("../lib/handlers/perfil/seguimiento.js"), "/api/perfil?op=seguimiento&perfil=helder")).status, 401, "el seguimiento exige token");
         // un proceso ABIERTO del corpus activo (el listado lo sirve): se guarda con la foto de la tarjeta
         const li = await invocar(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=200", CAB_TOKEN);
         const fila = await filaDelListado(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=200", CAB_TOKEN, (f) => f.fecha_cierre);
@@ -30074,7 +30174,7 @@ async function main() {
           return { ok: true, status: 200, headers: { get: () => "application/json" }, json: async () => cuerpo, text: async () => JSON.stringify(cuerpo) };
         };
         try {
-          assert.strictEqual((await invocar(routerPliegoD, `/api/pliego?op=documentos&${qD}`)).status, 401, "sin token no hay documentos");
+          assert.strictEqual((await invocar(require("../lib/handlers/pliego/documentos.js"), `/api/pliego?op=documentos&${qD}`)).status, 401, "sin token no hay documentos");
           assert.strictEqual((await invocar(routerPliegoD, "/api/pliego?op=documentos&id_proceso=", CAB_TOKEN)).status, 400);
           const i1 = await invocar(routerPliegoD, `/api/pliego?op=documentos&${qD}`, CAB_TOKEN);
           assert.strictEqual(i1.status, 200);
@@ -30170,7 +30270,7 @@ async function main() {
             /* llevarlo a Precios: GET ?formulario= devuelve lo guardado, con su fila, sin consultar el índice */
             const gF = await invocar(routerPliegoD, `/api/pliego?op=documentos&${qD}&formulario=4`, CAB_TOKEN);
             assert.ok(gF.status === 200 && gF.cuerpo.ok === true && gF.cuerpo.id_documento === "4" && gF.cuerpo.total === 300000 && gF.cuerpo.hoja === "PRESUPUESTO OFICIAL" && gF.cuerpo.filas.length === 2 && gF.cuerpo.filas[0].fila_excel === 3 && gF.cuerpo.filas[1].cantidad === 10, `GET ?formulario= devuelve los ítems guardados con su fila: ${JSON.stringify(gF.cuerpo).slice(0, 240)}`);
-            assert.strictEqual((await invocar(routerPliegoD, `/api/pliego?op=documentos&${qD}&formulario=4`)).status, 401, "sin token no hay ítems");
+            assert.strictEqual((await invocar(require("../lib/handlers/pliego/documentos.js"), `/api/pliego?op=documentos&${qD}&formulario=4`)).status, 401, "sin token no hay ítems");
             assert.strictEqual((await invocar(routerPliegoD, `/api/pliego?op=documentos&${qD}&formulario=abc`, CAB_TOKEN)).status, 400, "un id_documento que no es un número es un 400");
             assert.strictEqual((await invocar(routerPliegoD, `/api/pliego?op=documentos&${qD}&formulario=`, CAB_TOKEN)).status, 400, "«formulario» vacío tampoco es «sin formulario»: no cae al índice");
             assert.strictEqual((await invocar(routerPliegoD, `/api/pliego?op=documentos&${qD}&formulario=2`, CAB_TOKEN)).status, 404, "un documento que no es un Formulario leído no devuelve ítems");
@@ -31000,7 +31100,7 @@ async function main() {
           invocar((rq, rs) => avisos(rq, rs, { ahora: AHORA, fetchImpl: transporte, ...extra }), `/api/perfil?op=avisos${qs}`, cab);
         try {
           // (1) el router lo despacha y sin credencial no hay nada — por el ROUTER, no por el módulo
-          const mala = await invocar(routerPerfilAv, "/api/perfil?op=inventada");
+          const mala = await invocar(routerPerfilAv, "/api/perfil?op=inventada", CAB_TOKEN);
           assert.strictEqual(mala.status, 404, "una op inventada del router de perfil es 404");
           assert.ok(mala.cuerpo.operaciones.includes("avisos"), "el 404 del router enseña la op «avisos»");
           const sinLlave = await invocar(routerPerfilAv, "/api/perfil?op=avisos");
@@ -32245,7 +32345,7 @@ async function main() {
       }
 
       const antesCmd = upstash.peticiones();
-      const rSalud = await invocar(rProcesosS, "/api/procesos?op=salud");
+      const rSalud = await invocar(require("../lib/handlers/procesos/salud.js"), "/api/procesos?op=salud");
       const gastados = upstash.peticiones() - antesCmd;
       assert.ok(gastados <= 2, `op=salud gastó ${gastados} comandos de Redis: el monitor la llama 2 880 veces al mes`);
       assert.strictEqual(rSalud.status, 200);
@@ -32289,7 +32389,7 @@ async function main() {
       assert.ok(!textosDe(rSalud.cuerpo).some((t) => /token-de-prueba|CO1\.|precio|patrimonio/i.test(t)), "op=salud no puede filtrar secretos ni datos del corpus");
       // candado ajeno: se ve como «sincronizando» con sus segundos, sin estorbar
       await redis.set(CLS.lock, "otro-proceso", { nx: true, ex: 60 });
-      const rConCandado = await invocar(rProcesosS, "/api/procesos?op=salud");
+      const rConCandado = await invocar(require("../lib/handlers/procesos/salud.js"), "/api/procesos?op=salud");
       assert.strictEqual(rConCandado.cuerpo.sincronizando, true);
       assert.ok(rConCandado.cuerpo.candado_segundos > 0 && rConCandado.cuerpo.candado_segundos <= 60);
       assert.strictEqual(await redis.get(CLS.lock), "otro-proceso", "op=salud no toca el candado ajeno");
@@ -32309,7 +32409,7 @@ async function main() {
       assert.ok(!("total" in med) && !("totalSinFiltros" in med), "la medición no reutiliza los nombres de los conteos de la lista");
       const rLista2 = await invocar(oportunidades, "/api/oportunidades?perfil=helder", CAB_TOKEN);
       assert.strictEqual(rLista2.cuerpo.medicion.instancia_caliente, true, "la segunda petición sirve el corpus desde la memoria de la instancia");
-      const rSalud2 = await invocar(rProcesosS, "/api/procesos?op=salud");
+      const rSalud2 = await invocar(require("../lib/handlers/procesos/salud.js"), "/api/procesos?op=salud");
       assert.strictEqual(rSalud2.cuerpo.medicion_listado.filas_corpus, rLista2.cuerpo.medicion.filas_corpus, "op=salud repite la última medición del listado de la instancia");
       assert.strictEqual(rSalud2.cuerpo.medicion_listado.instancia_caliente, true);
 
@@ -32354,7 +32454,7 @@ async function main() {
       /* la corrida BUENA siguiente borra el fallo: op=salud vuelve a ok y el listado deja de avisar */
       const rBien = await invocar(sync, "/api/sync?modo=delta&presupuesto=20000&chain=0");
       assert.strictEqual(rBien.cuerpo.ok, true, `el delta tras restaurar Socrata falló: ${JSON.stringify(rBien.cuerpo)}`);
-      const rSalud3 = await invocar(rProcesosS, "/api/procesos?op=salud");
+      const rSalud3 = await invocar(require("../lib/handlers/procesos/salud.js"), "/api/procesos?op=salud");
       assert.strictEqual(rSalud3.cuerpo.ok, true, `tras una corrida buena la salud es ok: ${rSalud3.cuerpo.motivo}`);
       assert.strictEqual(rSalud3.cuerpo.aviso_por_correo.configurado, false, "en la suite el aviso por correo no está configurado: es la condición de la comprobación de abajo");
       assert.strictEqual(rSalud3.cuerpo.ok, true, "el aviso por correo sin configurar NO pone `ok` en false: no es un fallo de la sincronización y el monitor no debe sonar por ello");
@@ -32395,7 +32495,7 @@ async function main() {
       try {
         assert.strictEqual(Auth.cabecerasDeAutoLlamada(), undefined, "sin secretos la auto-llamada no manda cabeceras, como hasta hoy");
       } finally { ponerG("VERCEL_AUTOMATION_BYPASS_SECRET", paseDelEntorno); }
-      assert.strictEqual((await invocar(rProcesosG, "/api/procesos?op=salud")).cuerpo.sincronizacion_protegida, false);
+      assert.strictEqual((await invocar(require("../lib/handlers/procesos/salud.js"), "/api/procesos?op=salud")).cuerpo.sincronizacion_protegida, false);
       ponerG("CRON_SECRET", SECRETO);
       let capturadas = [];
       try {
@@ -32428,7 +32528,7 @@ async function main() {
         }
         assert.strictEqual(await redis.get(CLG.lock), "otro-proceso", "ninguna llamada tocó el candado ajeno");
         await redis.del(CLG.lock);
-        assert.strictEqual((await invocar(rProcesosG, "/api/procesos?op=salud")).cuerpo.sincronizacion_protegida, true, "op=salud publica que la guarda está");
+        assert.strictEqual((await invocar(require("../lib/handlers/procesos/salud.js"), "/api/procesos?op=salud")).cuerpo.sincronizacion_protegida, true, "op=salud publica que la guarda está");
         /* la AUTO-LLAMADA REAL lleva el Bearer: un delta con presupuesto de 1 ms se corta antes de
            la primera página (done:false) y se re-invoca contra ESTE servidor, que captura la petición */
         const captura = http.createServer((req, res) => {
@@ -34603,7 +34703,7 @@ async function main() {
           // la puerta de entrada lo dice: `necesita[0].motivo` viaja y onboarding.js lo pinta
           {
             const routerPerfilP = require("../api/perfil.js");
-            const dP = await invocarPost(routerPerfilP, "/api/perfil?op=diagnostico", { texto: noUnible.join("\n") });
+            const dP = await invocarPost(require("../lib/handlers/perfil/entrada.js"), "/api/perfil?op=diagnostico", { texto: noUnible.join("\n") });
             assert.strictEqual(dP.status, 200, JSON.stringify(dP.cuerpo).slice(0, 200));
             assert.strictEqual(dP.cuerpo.siguiente, "completar");
             assert.strictEqual(dP.cuerpo.necesita[0].campo, "patrimonio");
@@ -34685,7 +34785,7 @@ async function main() {
         delete process.env.CUOTA_ALTAS_MODO;
         const IP_A = "203.0.113.41";
         const serie = [];
-        for (let i = 0; i < 3; i++) serie.push(await invocarPost(rPerfilQ, "/api/perfil?op=entrada", TRES_DATOS, cabIp(IP_A)));
+        for (let i = 0; i < 3; i++) serie.push(await invocarPost(require("../lib/handlers/perfil/entrada.js"), "/api/perfil?op=entrada", TRES_DATOS, cabIp(IP_A)));
         const bloqueadas = serie.filter((r) => r.status === 429);
         assert.ok(bloqueadas.length >= 1, `tres altas de tres datos con tope 1 desde una conexión: alguna tiene que ser 429, salieron ${JSON.stringify(serie.map((r) => r.status))}`);
         const b429 = bloqueadas[0].cuerpo;
@@ -34706,7 +34806,7 @@ async function main() {
         }
 
         // la MISMA conexión, la OTRA alta pública: un solo contador, porque es la misma puerta
-        const rRupQ = await invocarPost(rAdminQ, "/api/admin?op=rup&origen=pdf", { texto_extraido: CERT_CUOTA }, cabIp(IP_A));
+        const rRupQ = await invocarPost(require("../lib/handlers/admin/rup.js"), "/api/admin?op=rup&origen=pdf", { texto_extraido: CERT_CUOTA }, cabIp(IP_A));
         assert.strictEqual(rRupQ.status, 429, `la carga de RUP en PDF comparte el contador de la conexión: ${JSON.stringify(rRupQ.cuerpo).slice(0, 200)}`);
         assert.strictEqual(rRupQ.cuerpo.motivo, "limite_por_conexion");
 
@@ -34715,19 +34815,19 @@ async function main() {
            desvía al mismo handler por MÉTODO). La cuota tiene que morder también ahí. */
         {
           const serieD = [];
-          for (let i = 0; i < 3; i++) serieD.push(await invocarPost(rPerfilQ, "/api/perfil?op=diagnostico", TRES_DATOS, cabIp("203.0.113.46")));
+          for (let i = 0; i < 3; i++) serieD.push(await invocarPost(require("../lib/handlers/perfil/entrada.js"), "/api/perfil?op=diagnostico", TRES_DATOS, cabIp("203.0.113.46")));
           assert.ok(serieD.some((r) => r.status === 429), `la vía que usa la landing (POST op=diagnostico) también cuenta: ${JSON.stringify(serieD.map((r) => r.status))}`);
           const fuenteOnbQ = fs.readFileSync(path.join(__dirname, "..", "public", "onboarding.js"), "utf8");
           assert.ok(/const ENTRADA = "\/api\/perfil\?op=diagnostico"/.test(fuenteOnbQ), "si la landing cambiara de dirección, esta cerradura tiene que enterarse");
         }
 
         // OTRA conexión no paga lo de la primera
-        const rOtra = await invocarPost(rAdminQ, "/api/admin?op=rup&origen=pdf", { texto_extraido: CERT_CUOTA }, cabIp("203.0.113.42"));
+        const rOtra = await invocarPost(require("../lib/handlers/admin/rup.js"), "/api/admin?op=rup&origen=pdf", { texto_extraido: CERT_CUOTA }, cabIp("203.0.113.42"));
         assert.strictEqual(rOtra.status, 200, `otra conexión tiene su propia cuenta: ${JSON.stringify(rOtra.cuerpo).slice(0, 200)}`);
 
         // SIN cabecera de conexión la cuota es INERTE: nunca cierra la puerta de entrada para todos
         for (let i = 0; i < 3; i++) {
-          const rSin = await invocarPost(rPerfilQ, "/api/perfil?op=entrada", TRES_DATOS, {});
+          const rSin = await invocarPost(require("../lib/handlers/perfil/entrada.js"), "/api/perfil?op=entrada", TRES_DATOS, {});
           assert.strictEqual(rSin.status, 200, "sin dirección legible la cuota no puede bloquear a nadie");
         }
 
@@ -34741,17 +34841,17 @@ async function main() {
           const tokQ = await SesQ.abrirSesion(redis, idQ);
           try {
             for (let i = 0; i < 4; i++) {
-              const rD = await invocarPost(rPerfilQ, "/api/perfil?op=entrada", TRES_DATOS, { ...cabIp("203.0.113.43"), cookie: `${SesQ.COOKIE_SESION}=${tokQ}` });
+              const rD = await invocarPost(require("../lib/handlers/perfil/entrada.js"), "/api/perfil?op=entrada", TRES_DATOS, { ...cabIp("203.0.113.43"), cookie: `${SesQ.COOKIE_SESION}=${tokQ}` });
               assert.strictEqual(rD.status, 200, "con la sesión del dueño no hay límite por conexión");
             }
             const conLlaveBuena = [];
-            for (let i = 0; i < 3; i++) conLlaveBuena.push(await invocarPost(rPerfilQ, "/api/perfil?op=entrada", TRES_DATOS, { ...cabIp("203.0.113.47"), "x-historico-token": "token-historico-de-prueba" }));
+            for (let i = 0; i < 3; i++) conLlaveBuena.push(await invocarPost(require("../lib/handlers/perfil/entrada.js"), "/api/perfil?op=entrada", TRES_DATOS, { ...cabIp("203.0.113.47"), "x-historico-token": "token-historico-de-prueba" }));
             assert.ok(conLlaveBuena.some((r) => r.status === 429), `la llave del servidor ya no exime de la cuota: ${JSON.stringify(conLlaveBuena.map((r) => r.status))}`);
           } finally { await redis.del(SesQ.CLAVE_DUENO, SesQ.claveSesion(tokQ)); }
         }
         {
           const conLlaveMala = [];
-          for (let i = 0; i < 3; i++) conLlaveMala.push(await invocarPost(rPerfilQ, "/api/perfil?op=entrada", TRES_DATOS, { ...cabIp("203.0.113.44"), "x-historico-token": "no-es-la-llave" }));
+          for (let i = 0; i < 3; i++) conLlaveMala.push(await invocarPost(require("../lib/handlers/perfil/entrada.js"), "/api/perfil?op=entrada", TRES_DATOS, { ...cabIp("203.0.113.44"), "x-historico-token": "no-es-la-llave" }));
           const primerBloqueo = conLlaveMala.find((r) => r.status === 429);
           assert.ok(primerBloqueo, "una llave que no vale no exime de la cuota");
           assert.strictEqual(primerBloqueo.cuerpo.llave_recibida_no_valida, true, "y el 429 dice que llegó una llave que no vale, para que no sea mudo");
@@ -34760,7 +34860,7 @@ async function main() {
         // MODO MEDIR: cuenta y NO bloquea (es la semana de medición antes de fijar el tope)
         process.env.CUOTA_ALTAS_MODO = "medir";
         for (let i = 0; i < 4; i++) {
-          const rM = await invocarPost(rPerfilQ, "/api/perfil?op=entrada", TRES_DATOS, cabIp("203.0.113.45"));
+          const rM = await invocarPost(require("../lib/handlers/perfil/entrada.js"), "/api/perfil?op=entrada", TRES_DATOS, cabIp("203.0.113.45"));
           assert.strictEqual(rM.status, 200, "en modo medición se cuenta y no se bloquea");
         }
         delete process.env.CUOTA_ALTAS_MODO;
@@ -34769,7 +34869,7 @@ async function main() {
            SOLO se lee si se pide. El latido del monitor sigue en ≤ 2 comandos. */
         {
           const antes = upstash.peticiones();
-          const rS = await invocar(rProcesosQ, "/api/procesos?op=salud");
+          const rS = await invocar(require("../lib/handlers/procesos/salud.js"), "/api/procesos?op=salud");
           const gastadosS = upstash.peticiones() - antes;
           assert.ok(gastadosS <= 2, `op=salud sin pedir el máximo sigue en ≤ 2 comandos: gastó ${gastadosS}`);
           const lim = rS.cuerpo.limite_de_registros_por_conexion;
@@ -34779,7 +34879,7 @@ async function main() {
           assert.ok(/CUOTA_ALTAS_HORA/.test(lim.como_fijarlo) && /SUPUESTA/.test(lim.como_fijarlo), "y cómo reemplazar la cifra supuesta por una medida");
 
           const antes2 = upstash.peticiones();
-          const rS2 = await invocar(rProcesosQ, "/api/procesos?op=salud&cuota=1");
+          const rS2 = await invocar(require("../lib/handlers/procesos/salud.js"), "/api/procesos?op=salud&cuota=1");
           const gastadosS2 = upstash.peticiones() - antes2;
           assert.strictEqual(gastadosS2, gastadosS + 1, `pedir el máximo cuesta UN comando más: ${gastadosS2} contra ${gastadosS}`);
           const obs = rS2.cuerpo.limite_de_registros_por_conexion.maximo_por_dia;
@@ -34822,9 +34922,9 @@ async function main() {
         const { evaluarRup } = require("../lib/rup.js");
 
         // GET a la op es el embudo de siempre (con token) — la entrada solo existe por POST
-        assert.strictEqual((await invocar(routerPerfil, "/api/perfil?op=diagnostico")).status, 401,
+        assert.strictEqual((await invocar(require("../lib/handlers/perfil/diagnostico.js"), "/api/perfil?op=diagnostico")).status, 401,
           "GET diagnostico sigue siendo el embudo (401 sin token): la puerta de entrada es POST");
-        const getEnt = await invocar(routerPerfil, "/api/perfil?op=entrada");
+        const getEnt = await invocar(require("../lib/handlers/perfil/entrada.js"), "/api/perfil?op=entrada");
         assert.strictEqual(getEnt.status, 200, "GET entrada sirve las actividades y el contrato (lectura sin efectos)");
         assert.strictEqual(getEnt.cuerpo.analizado, false);
         assert.ok(Array.isArray(getEnt.cuerpo.actividades) && getEnt.cuerpo.actividades.length === 12, "las doce actividades viajan en el GET");
@@ -34833,7 +34933,7 @@ async function main() {
         // ── camino 1 · texto del RUP (pdf.js) → perfil, conteo y muestra ──
         const clavesAntes = new Set(await redis.scan("*"));
         const t1 = Date.now();
-        const d1 = await invocarPost(routerPerfil, "/api/perfil?op=diagnostico", { texto: TEXTO_RUP });
+        const d1 = await invocarPost(require("../lib/handlers/perfil/entrada.js"), "/api/perfil?op=diagnostico", { texto: TEXTO_RUP });
         assert.strictEqual(d1.status, 200, JSON.stringify(d1.cuerpo).slice(0, 300));
         assert.ok(Date.now() - t1 < 10000, "el camino de texto debe responder en menos de 10 s");
         assert.strictEqual(d1.cuerpo.origen, "texto");
@@ -34876,37 +34976,37 @@ async function main() {
         const ttlCache = await redis.ttl(kCache);
         assert.ok(ttlCache > 0 && ttlCache <= 24 * 3600, `la caché del diagnóstico debe expirar en 24 h (ttl ${ttlCache})`);
         // segunda llamada idéntica → caché
-        const d1b = await invocarPost(routerPerfil, "/api/perfil?op=diagnostico", { texto: TEXTO_RUP });
+        const d1b = await invocarPost(require("../lib/handlers/perfil/entrada.js"), "/api/perfil?op=diagnostico", { texto: TEXTO_RUP });
         assert.strictEqual(d1b.cuerpo.cache, true, "la segunda llamada con el mismo contenido sale de la caché");
         assert.strictEqual(d1b.cuerpo.perfil_id, d1.cuerpo.perfil_id);
         // si el perfil al que apunta la caché ya no existe, NO se sirve la caché: se recrea
         {
           const { CLAVES: CL } = require("../lib/almacen.js");
           await redis.del(CL.configPerfilDinamico(d1.cuerpo.perfil_id));
-          const d1c = await invocarPost(routerPerfil, "/api/perfil?op=diagnostico", { texto: TEXTO_RUP });
+          const d1c = await invocarPost(require("../lib/handlers/perfil/entrada.js"), "/api/perfil?op=diagnostico", { texto: TEXTO_RUP });
           assert.ok(!d1c.cuerpo.cache && d1c.cuerpo.perfil_id && d1c.cuerpo.perfil_id !== d1.cuerpo.perfil_id,
             "con el perfil borrado la caché no puede servirse: se recrea el perfil");
         }
 
         // ── texto sin patrimonio → se pide SOLO el patrimonio, y al completarlo sigue ──
         const sinPat = TEXTO_RUP.split("\n").filter((l) => !/^PATRIMONIO/.test(l)).join("\n");
-        const d2 = await invocarPost(routerPerfil, "/api/perfil?op=diagnostico", { texto: sinPat });
+        const d2 = await invocarPost(require("../lib/handlers/perfil/entrada.js"), "/api/perfil?op=diagnostico", { texto: sinPat });
         assert.strictEqual(d2.status, 200, "d2: " + JSON.stringify(d2.cuerpo).slice(0, 200));
         assert.strictEqual(d2.cuerpo.siguiente, "completar");
         assert.deepStrictEqual(d2.cuerpo.necesita.map((n) => n.campo), ["patrimonio"], "sin patrimonio se pide ESE campo y nada más");
-        const d2b = await invocarPost(routerPerfil, "/api/perfil?op=diagnostico", { texto: sinPat, completar: { patrimonio: 850000000, liquidez: 0 } });
+        const d2b = await invocarPost(require("../lib/handlers/perfil/entrada.js"), "/api/perfil?op=diagnostico", { texto: sinPat, completar: { patrimonio: 850000000, liquidez: 0 } });
         assert.strictEqual(d2b.status, 200, "d2b: " + JSON.stringify(d2b.cuerpo).slice(0, 200));
         assert.ok(d2b.cuerpo.perfil_id, JSON.stringify(d2b.cuerpo).slice(0, 200));
         assert.strictEqual(d2b.cuerpo.oportunidades.total, o1.total, "completado el patrimonio, cuenta lo mismo que el certificado completo");
         // un texto que no es un RUP → resultado con salida (manual), nunca un 4xx
-        const d3 = await invocarPost(routerPerfil, "/api/perfil?op=diagnostico", { texto: "esto no es un certificado, es una nota corta" });
+        const d3 = await invocarPost(require("../lib/handlers/perfil/entrada.js"), "/api/perfil?op=diagnostico", { texto: "esto no es un certificado, es una nota corta" });
         assert.strictEqual(d3.status, 200, "d3: " + JSON.stringify(d3.cuerpo).slice(0, 200));
         assert.strictEqual(d3.cuerpo.leido, false);
         assert.strictEqual(d3.cuerpo.siguiente, "manual");
         assert.deepStrictEqual(d3.cuerpo.camposNoLeidos, ["patrimonio", "mayorContrato", "actividad"]);
 
         // ── camino 3 · tres datos → perfil aproximado (K sin dato deja pasar) ──
-        const dm = await invocarPost(routerPerfil, "/api/perfil?op=diagnostico",
+        const dm = await invocarPost(require("../lib/handlers/perfil/entrada.js"), "/api/perfil?op=diagnostico",
           { manual: { patrimonio: 200000000, mayorContrato: 900000000, unidad: "COP", actividad: "vias" } });
         assert.strictEqual(dm.status, 200, JSON.stringify(dm.cuerpo).slice(0, 300));
         assert.strictEqual(dm.cuerpo.origen, "manual");
@@ -34930,7 +35030,7 @@ async function main() {
         assert.ok(clasesVias.length > 20 && clasesVias.every((c) => /^\d{6}00$/.test(c)));
         assert.ok(M.clasesDe("obra_general").length > clasesVias.length);
         // validación de los tres datos: 0 no es un dato
-        const dmMal = await invocarPost(routerPerfil, "/api/perfil?op=diagnostico", { manual: { patrimonio: 0, mayorContrato: 5, actividad: "vias" } });
+        const dmMal = await invocarPost(require("../lib/handlers/perfil/entrada.js"), "/api/perfil?op=diagnostico", { manual: { patrimonio: 0, mayorContrato: 5, actividad: "vias" } });
         assert.strictEqual(dmMal.status, 400);
         assert.ok(dmMal.cuerpo.campos.some((c) => c.campo === "patrimonio"));
         // K sin dato en el motor, directamente
@@ -34958,13 +35058,13 @@ async function main() {
 
         // ── camino 2 · OCR: sin clave configurada → siguiente: manual, jamás error ──
         const claveOcr = process.env.OCRSPACE_API_KEY; delete process.env.OCRSPACE_API_KEY;
-        const docr = await invocarPost(routerPerfil, "/api/perfil?op=diagnostico", { imagenes_base64: [{ base64: "aGVsbG8=", mime: "image/jpeg" }] });
+        const docr = await invocarPost(require("../lib/handlers/perfil/entrada.js"), "/api/perfil?op=diagnostico", { imagenes_base64: [{ base64: "aGVsbG8=", mime: "image/jpeg" }] });
         if (claveOcr) process.env.OCRSPACE_API_KEY = claveOcr;
         assert.strictEqual(docr.status, 200, "docr: " + JSON.stringify(docr.cuerpo).slice(0, 200));
         assert.strictEqual(docr.cuerpo.ocr_disponible, false);
         assert.strictEqual(docr.cuerpo.siguiente, "manual");
         // cuerpo vacío → 400 con instrucciones (eso sí es un error del cliente)
-        assert.strictEqual((await invocarPost(routerPerfil, "/api/perfil?op=diagnostico", {})).status, 400);
+        assert.strictEqual((await invocarPost(require("../lib/handlers/perfil/entrada.js"), "/api/perfil?op=diagnostico", {})).status, 400);
 
         // ── frontend: la landing nueva, el formulario de tres datos y la pantalla de resultado ──
         const htmlF2 = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
@@ -38277,11 +38377,11 @@ async function main() {
 
           // sin op → 400 con la lista; op desconocida → 404 con la lista
           for (const [r, base] of [[rProcesos, "procesos"], [rPerfil, "perfil"], [rAdmin, "admin"], [rPliego, "pliego"]]) {
-            const sin = await invocar(r, `/api/${base}`);
+            const sin = await invocar(r, `/api/${base}`, CAB_TOKEN);   // con la llave: sin ella responde la puerta (401)
             assert.strictEqual(sin.status, 400, `/api/${base} sin op debía ser 400`);
             assert.ok(Array.isArray(sin.cuerpo.operaciones) && sin.cuerpo.operaciones.length > 0,
               `el 400 de /api/${base} debe enseñar las operaciones disponibles`);
-            const mala = await invocar(r, `/api/${base}?op=inventada`);
+            const mala = await invocar(r, `/api/${base}?op=inventada`, CAB_TOKEN);
             assert.strictEqual(mala.status, 404, `/api/${base}?op=inventada debía ser 404`);
             assert.ok(Array.isArray(mala.cuerpo.operaciones), `el 404 de /api/${base} debe enseñar las operaciones`);
           }
@@ -38296,8 +38396,8 @@ async function main() {
 
           // router ≡ handler: el catálogo APU responde LO MISMO por las dos vías
           const editorApu = require("../lib/handlers/apu/editor.js");
-          const viaRouter = await invocar(rApu, "/api/apu?op=catalogo");
-          const viaHandler = await invocar(editorApu, "/api/apu/catalogo");
+          const viaRouter = await invocar(rApu, "/api/apu?op=catalogo", CAB_TOKEN);
+          const viaHandler = await invocar(editorApu, "/api/apu/catalogo", CAB_TOKEN);
           assert.strictEqual(viaRouter.status, viaHandler.status,
             "el router de APU no puede responder distinto que el handler para la misma acción");
           assert.strictEqual(viaRouter.cuerpo.cargado, viaHandler.cuerpo.cargado,
@@ -43106,7 +43206,7 @@ async function main() {
       for (const id of [gSin.cuerpo.id, gCon.cuerpo.id]) await redis.del(CLAVES.apuPresupuesto("helder", id));
 
       /* ---- (6) op=entidades por el router ---- */
-      const rE = await invocar(routerProcesos, `/api/procesos?op=entidades&q=${encodeURIComponent(ent0.entidad.slice(0, 8))}`);
+      const rE = await invocar(require("../lib/handlers/procesos/entidades.js"), `/api/procesos?op=entidades&q=${encodeURIComponent(ent0.entidad.slice(0, 8))}`);
       assert.strictEqual(rE.status, 200, "op=entidades responde 200 (F8)");
       assert.ok(Array.isArray(rE.cuerpo.entidades) && rE.cuerpo.entidades.length >= 1 && rE.cuerpo.entidades.length <= 10);
       assert.ok(rE.cuerpo.entidades.some((e) => e.nombre === ent0.entidad.trim()), "la entidad de la fila aparece en las sugerencias");
@@ -43114,12 +43214,12 @@ async function main() {
         assert.ok(Number.isInteger(e.procesosAbiertos) && e.procesosAbiertos >= 1, "cada entidad sugerida tiene procesos abiertos contados");
         assert.ok("nit" in e && "valorAbierto" in e);
       }
-      const rEt = await invocar(routerProcesos, "/api/procesos?op=entidades");
+      const rEt = await invocar(require("../lib/handlers/procesos/entidades.js"), "/api/procesos?op=entidades");
       assert.ok(rEt.cuerpo.entidades.length <= 10 && rEt.cuerpo.total_entidades >= rEt.cuerpo.entidades.length);
       assert.ok(/SECOP II/.test(rEt.cuerpo.fuente), "la lista dice de dónde sale");
       // por NIT (si el corpus abierto tiene alguno)
       if (conNit) {
-        const rEnit = await invocar(routerProcesos, `/api/procesos?op=entidades&q=${String(conNit.nit_entidad).replace(/\D/g, "").slice(0, 6)}`);
+        const rEnit = await invocar(require("../lib/handlers/procesos/entidades.js"), `/api/procesos?op=entidades&q=${String(conNit.nit_entidad).replace(/\D/g, "").slice(0, 6)}`);
         assert.ok(rEnit.cuerpo.entidades.length >= 1, "sugerencia de entidad por NIT (F8)");
       }
 
@@ -43401,10 +43501,10 @@ async function main() {
 
       /* ---- (3) handlers por el router ---- */
       await redis.del(Portada.CLAVE_PORTADA, Portada.CLAVE_MANIFESTACION, Portada.CLAVE_ENTIDADES);
-      const p0 = await invocar(routerP, "/api/procesos?op=portada");
+      const p0 = await invocar(require("../lib/handlers/procesos/portada.js"), "/api/procesos?op=portada");
       assert.strictEqual(p0.status, 200);
       assert.strictEqual(p0.cuerpo.disponible, false, "sin agregado la portada lo DICE en vez de calcular");
-      assert.strictEqual((await invocar(routerP, "/api/procesos?op=portada&reconstruir=1")).status, 401, "reconstruir exige token");
+      assert.strictEqual((await invocar(require("../lib/handlers/procesos/portada.js"), "/api/procesos?op=portada&reconstruir=1")).status, 401, "reconstruir exige token");
       const p1 = await invocar(routerP, "/api/procesos?op=portada&reconstruir=1", CAB_TOKEN);
       assert.strictEqual(p1.status, 200);
       assert.strictEqual(p1.cuerpo.disponible, true);
@@ -43419,7 +43519,7 @@ async function main() {
       assert.ok(p1.cuerpo.topEntidades.some((e) => e.baja != null), "el corpus de prueba tiene entidades con base de baja (índice construido)");
       assert.ok(/2\.2\.1\.2\.1\.2\.20/.test(p1.cuerpo.manifestacion.norma), "la norma citada viaja");
       // sin reconstruir se lee lo guardado
-      const p2 = await invocar(routerP, "/api/procesos?op=portada");
+      const p2 = await invocar(require("../lib/handlers/procesos/portada.js"), "/api/procesos?op=portada");
       assert.strictEqual(p2.cuerpo.generado, p1.cuerpo.generado, "op=portada solo LEE");
 
       /* ═══ LA HISTORIA DEL MERCADO (6-sep-2026, M-DGF-20) ═══
@@ -43435,7 +43535,7 @@ async function main() {
         const { selloReglaIngesta } = require("../lib/filtros.js");
         const dia = (iso, h = 15) => Date.parse(`${iso}T${String(h).padStart(2, "0")}:00:00-05:00`);
         await redis.del(Portada.CLAVE_HISTORIA);
-        assert.deepStrictEqual((await invocar(routerP, "/api/procesos?op=portada")).cuerpo.historia, [], "sin historia viaja una lista vacía: ningún punto no es «cero procesos»");
+        assert.deepStrictEqual((await invocar(require("../lib/handlers/procesos/portada.js"), "/api/procesos?op=portada")).cuerpo.historia, [], "sin historia viaja una lista vacía: ningún punto no es «cero procesos»");
         const r1 = await Portada.reconstruirPortada(redis, { cargarCorpus: cargarCorpusH, ahora: dia("2026-08-20") });
         const r2 = await Portada.reconstruirPortada(redis, { cargarCorpus: cargarCorpusH, ahora: dia("2026-08-21") });
         let hist = await Portada.leerHistoria(redis);
@@ -43451,7 +43551,7 @@ async function main() {
         hist = await Portada.leerHistoria(redis);
         assert.strictEqual(hist.length, 2, "la misma fecha sustituye el punto del día: no se duplica");
         // op=portada sirve la historia junto a la foto
-        const pH = await invocar(routerP, "/api/procesos?op=portada");
+        const pH = await invocar(require("../lib/handlers/procesos/portada.js"), "/api/procesos?op=portada");
         assert.strictEqual(pH.cuerpo.historia.length, 2, "op=portada sirve la historia sin op nueva");
         assert.strictEqual(pH.cuerpo.historia[1].fecha, "2026-08-21");
         // tope 120 por el principio (función pura, con lista sintética)
@@ -43515,7 +43615,7 @@ async function main() {
         assert.ok(/cuerpoHist\.innerHTML = htmlHistoria\(p\.historia\)/.test(sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", "portada.js"), "utf8"))), "teaser() pinta la historia con la respuesta que ya trajo");
         await redis.del(Portada.CLAVE_HISTORIA);
       }
-      const m0 = await invocar(routerP, "/api/procesos?op=manifestacion&estado=abierto");
+      const m0 = await invocar(require("../lib/handlers/procesos/manifestacion.js"), "/api/procesos?op=manifestacion&estado=abierto");
       assert.strictEqual(m0.status, 200);
       assert.strictEqual(m0.cuerpo.disponible, true);
       /* ══ LA VENTANA SE LLENA A PROPÓSITO ══
@@ -43554,7 +43654,7 @@ async function main() {
            app desplegada sobre una ventana que escribió la versión anterior tiene
            que seguir leyéndose. Desplegar no puede exigir reconstruir. */
         await redis.set(Portada.CLAVE_MANIFESTACION, JSON.stringify({ generado: hoyM, hoy: hoyM, abiertos: [filaSem, filaVieja, filaConsta, filaRecibe, filaAntes], proximos: 7 }));
-        const m1 = await invocar(routerP, "/api/procesos?op=manifestacion&estado=abierto");
+        const m1 = await invocar(require("../lib/handlers/procesos/manifestacion.js"), "/api/procesos?op=manifestacion&estado=abierto");
         assert.strictEqual(m1.status, 200, `el refresco de la ventana no puede reventar: ${JSON.stringify(m1.cuerpo).slice(0, 300)}`);
         /* ⚠️ ESTO PEDÍA 1 Y AHORA PIDE 2 (15-sep-2026, encargo del dueño). Se
            retiraba también `CO1.MANIF.CADUCA`, cuyo único pecado es que pasó el
@@ -43585,7 +43685,7 @@ async function main() {
         assert.ok(/M[ÁA]XIMO/.test(m1.cuerpo.como_leerlo.abierto), "la cabecera dice que 3 días es un techo, no un plazo");
         await redis.del(Portada.CLAVE_MANIFESTACION);
       }
-      const mp = await invocar(routerP, "/api/procesos?op=manifestacion&estado=proximo");
+      const mp = await invocar(require("../lib/handlers/procesos/manifestacion.js"), "/api/procesos?op=manifestacion&estado=proximo");
       assert.strictEqual(mp.status, 200);
       assert.ok("disponible" in mp.cuerpo && Array.isArray(mp.cuerpo.resultados));
       // la SYNC la escribe al terminar una corrida con datos
@@ -43597,7 +43697,7 @@ async function main() {
       const rdP = await invocar(sync, "/api/sync?modo=delta&presupuesto=20000&chain=0");
       assert.strictEqual(rdP.status, 200);
       assert.ok(rdP.cuerpo.portada && rdP.cuerpo.portada.generado, "la sincronización reconstruye la portada al terminar");
-      assert.strictEqual((await invocar(routerP, "/api/procesos?op=portada")).cuerpo.disponible, true);
+      assert.strictEqual((await invocar(require("../lib/handlers/procesos/portada.js"), "/api/procesos?op=portada")).cuerpo.disponible, true);
 
       /* ---- (4) frontend ---- */
       const htmlP = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
@@ -43697,7 +43797,7 @@ async function main() {
       const PulsoPub = require("../public/pulso.js");
       const PortadaPub2 = require("../public/portada.js");
       // (1) el endpoint
-      const pu = await invocar(routerPerfil, "/api/perfil?op=pulso&perfil=helder&refrescar=1");
+      const pu = await invocar(require("../lib/handlers/perfil/pulso.js"), "/api/perfil?op=pulso&perfil=helder&refrescar=1");
       assert.strictEqual(pu.status, 200, `pulso: ${JSON.stringify(pu.cuerpo).slice(0, 200)}`);
       const lh = await invocar(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=1");
       assert.strictEqual(pu.cuerpo.total, lh.cuerpo.total, "el pulso cuenta EXACTAMENTE lo que el listado sin filtros (misma cascada, mismas puertas)");
@@ -43752,11 +43852,11 @@ async function main() {
       assert.ok(pu.cuerpo.topEntidades.length > 0 && pu.cuerpo.topEntidades.every((e) => e.nombre && e.n >= 1 && (e.valor == null || e.valor >= 0)));
       assert.ok(pu.cuerpo.porDepartamento.every((d, i, arr) => i === 0 || arr[i - 1].n >= d.n), "el reparto por departamento va de más a menos");
       for (const k of ["patrimonio", "k_cop", "crpc", "utilidad"]) assert.ok(!(k in pu.cuerpo), `el pulso es público: no puede publicar «${k}»`);
-      const pu2 = await invocar(routerPerfil, "/api/perfil?op=pulso&perfil=helder");
+      const pu2 = await invocar(require("../lib/handlers/perfil/pulso.js"), "/api/perfil?op=pulso&perfil=helder");
       assert.strictEqual(pu2.cuerpo.cache, true, "la segunda lectura sale de caché");
       assert.strictEqual(pu2.cuerpo.total, pu.cuerpo.total);
-      assert.strictEqual((await invocar(routerPerfil, "/api/perfil?op=pulso")).status, 400);
-      const puCad = await invocar(routerPerfil, "/api/perfil?op=pulso&perfil=rup_noexiste0001");
+      assert.strictEqual((await invocar(require("../lib/handlers/perfil/pulso.js"), "/api/perfil?op=pulso")).status, 400);
+      const puCad = await invocar(require("../lib/handlers/perfil/pulso.js"), "/api/perfil?op=pulso&perfil=rup_noexiste0001");
       assert.strictEqual(puCad.status, 404); assert.strictEqual(puCad.cuerpo.perfil_caducado, true, "un rup_ inexistente responde caducado (la web olvida el guardado)");
       /* LOS FILTROS POR DEFECTO DEL LISTADO también cuentan aquí (17-ago-2026,
          destapado en producción: pulso 827 vs lista 771). Si el conteo de la
@@ -43781,11 +43881,11 @@ async function main() {
         assert.ok(/cuerpo\.totalPorDefecto != null \? cuerpo\.totalPorDefecto/.test(sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8"))), "«N de M» usa la base por defecto, la misma N del pulso");
       }
       // el rup_ recién creado por la puerta de entrada también tiene pulso, y su total es el de su listado
-      const ent = await invocarPost(routerPerfil, "/api/perfil?op=diagnostico", { manual: { patrimonio: 900000000, mayorContrato: 3000000000, unidad: "COP", actividad: "vias" } });
+      const ent = await invocarPost(require("../lib/handlers/perfil/entrada.js"), "/api/perfil?op=diagnostico", { manual: { patrimonio: 900000000, mayorContrato: 3000000000, unidad: "COP", actividad: "vias" } });
       if (ent.status === 200 && ent.cuerpo.perfil_id) {
         assert.ok(ent.cuerpo.oportunidades.agregados && typeof ent.cuerpo.oportunidades.agregados.total === "number", "la puerta de entrada devuelve los agregados (la pantalla de resultado los pinta en cifras)");
         assert.strictEqual(ent.cuerpo.oportunidades.agregados.total, ent.cuerpo.oportunidades.total, "los agregados cuentan sobre los MISMOS viables");
-        const puR = await invocar(routerPerfil, `/api/perfil?op=pulso&perfil=${ent.cuerpo.perfil_id}`);
+        const puR = await invocar(require("../lib/handlers/perfil/pulso.js"), `/api/perfil?op=pulso&perfil=${ent.cuerpo.perfil_id}`);
         const liR = await invocar(oportunidades, `/api/oportunidades?perfil=${ent.cuerpo.perfil_id}&por_pagina=1`);
         assert.strictEqual(puR.status, 200); assert.strictEqual(puR.cuerpo.total, liR.cuerpo.total, "para un perfil manual, pulso y listado cuentan lo mismo");
         /* Y NO PIERDE SUS PROPIAS CIFRAS (13-sep-2026): quien tiene el id de un
@@ -44036,7 +44136,7 @@ async function main() {
       assert.ok(/const destino = PESTANAS\.includes\(pedido\) \? pedido : "admin"/.test(appL) && /empresa: "admin"/.test(appL), "la pestaña por defecto es Mi empresa y #/empresa es su alias");
       // el bloque `empresa` del pulso: sin token no viajan patrimonio ni capacidad; con token sí; token inválido → 401
       {
-        const sinT = await invocar(routerPerfil, "/api/perfil?op=pulso&perfil=helder&refrescar=1");
+        const sinT = await invocar(require("../lib/handlers/perfil/pulso.js"), "/api/perfil?op=pulso&perfil=helder&refrescar=1");
         assert.strictEqual(sinT.status, 200);
         assert.ok(sinT.cuerpo.empresa && sinT.cuerpo.empresa.tipos_de_trabajo === 193 && sinT.cuerpo.empresa.experiencia_smmlv > 0 && sinT.cuerpo.empresa.contratos_acreditados === 33, `empresa en cifras: ${JSON.stringify(sinT.cuerpo.empresa)}`);
         assert.strictEqual(sinT.cuerpo.empresa.finanzas_visibles, false);
@@ -44100,7 +44200,7 @@ async function main() {
           // …y el tope vuelve CRUDO con credencial: lo que se cierra es la puerta, no el dato
           assert.strictEqual(conT.cuerpo.empresa.tope_smmlv, PERF_E.helder.topeSMMLV, "con token el tope en salarios mínimos viaja crudo");
         }
-        const cacheSin = await invocar(routerPerfil, "/api/perfil?op=pulso&perfil=helder");
+        const cacheSin = await invocar(require("../lib/handlers/perfil/pulso.js"), "/api/perfil?op=pulso&perfil=helder");
         assert.strictEqual(cacheSin.cuerpo.empresa.patrimonio, null, "la caché escrita por la petición con token no filtra el patrimonio a la siguiente sin token");
         const mal = await invocar(routerPerfil, "/api/perfil?op=pulso&perfil=helder", { "x-historico-token": "mal" });
         assert.strictEqual(mal.status, 401, "token presente e inválido → 401, no degradación silenciosa");
@@ -45155,8 +45255,8 @@ async function main() {
       const mal = await invocarPost(routerPerfil, "/api/perfil?op=consorcio-simular", { integrantes: [{ perfilId: "helder", participacion: 60 }, { perfilId: "genesis", participacion: 30 }] }, CAB_TOKEN);
       assert.strictEqual(mal.status, 400); assert.ok(/falta 10 %/.test(mal.cuerpo.error));
       // sin token, 401
-      assert.strictEqual((await invocarPost(routerPerfil, "/api/perfil?op=consorcio-simular", { integrantes: [] })).status, 401);
-      assert.strictEqual((await invocar(routerPerfil, "/api/perfil?op=consorcio")).status, 401);
+      assert.strictEqual((await invocarPost(((req, res) => require("../lib/handlers/perfil/consorcio.js")(req, res, { op: "consorcio-simular" })), "/api/perfil?op=consorcio-simular", { integrantes: [] })).status, 401);
+      assert.strictEqual((await invocar(require("../lib/handlers/perfil/consorcio.js"), "/api/perfil?op=consorcio")).status, 401);
       // con proceso: puertas de la app, y cumple sigue null
       const rL = await invocar(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=1", CAB_TOKEN);
       const idProc = rL.cuerpo.resultados[0].id_del_proceso;
@@ -45218,7 +45318,7 @@ async function main() {
         }
         /* y sin llave no sale nada de esto (ya lo fija el 401 de arriba, pero
            aquí se dice POR QUÉ importa: son nombres de empresas del dueño) */
-        assert.strictEqual((await invocar(routerPerfil, "/api/perfil?op=consorcio")).status, 401,
+        assert.strictEqual((await invocar(require("../lib/handlers/perfil/consorcio.js"), "/api/perfil?op=consorcio")).status, 401,
           "las socias del dueño no salen sin credencial");
       }
       const rCons = await invocar(oportunidades, `/api/oportunidades?perfil=${g1.cuerpo.id}&por_pagina=100`, CAB_TOKEN);
@@ -45448,7 +45548,7 @@ async function main() {
       // sin jerga en ninguna frase ni fundamento
       for (const r of [limpio, r1, r2, r3, r4, r5, r6, r7]) for (const v of r.veredictos) assert.ok(!/causal\s+o\b/i.test(`${v.titulo} ${v.mensaje} ${v.fundamento}`), "«causal O» no se muestra: se dice «motivo de rechazo automático»");
       // handler por el router: token, POST, guardado y GET
-      assert.strictEqual((await invocarPost(routerPliego, "/api/pliego?op=formulario1", { oferta: ofertaOk })).status, 401);
+      assert.strictEqual((await invocarPost(require("../lib/handlers/pliego/formulario1.js"), "/api/pliego?op=formulario1", { oferta: ofertaOk })).status, 401);
       const usoRevAntes = Number(((await require("../lib/redis.js").crearRedis({}).hgetall(require("../lib/uso.js").claveUso("helder", require("../lib/uso.js").mesDe(Date.now())))) || {})["revision"] || 0);
       const h1 = await invocarPost(routerPliego, "/api/pliego?op=formulario1", { oferta: ofertaOk, formulario: form, presupuesto_oficial: 30000000, tope_aiu_pct: 30, id_proceso: "CO1.F1.PRUEBA", perfil: "helder" }, CAB_TOKEN);
       assert.strictEqual(Number(((await require("../lib/redis.js").crearRedis({}).hgetall(require("../lib/uso.js").claveUso("helder", require("../lib/uso.js").mesDe(Date.now())))) || {})["revision"] || 0), usoRevAntes + 1, "revisar la oferta cuenta una (lib/uso)");
@@ -45826,7 +45926,7 @@ async function main() {
       const dp = D.diffParrafos(t1, t2);
       assert.ok(dp.modificados.some((m) => /650\.000\.000/.test(m.antes) && /800\.000\.000/.test(m.despues)), "el diff por párrafos empareja el párrafo modificado");
       // por el router: registrar, no-cambio, cambio, GET, retención, 401
-      assert.strictEqual((await invocarPost(routerPliego, "/api/pliego?op=diff", { id_proceso: "CO1.DIFF.1", nombre_archivo: "PLIEGO DE CONDICIONES.pdf", texto: t1 })).status, 401);
+      assert.strictEqual((await invocarPost(require("../lib/handlers/pliego/diff.js"), "/api/pliego?op=diff", { id_proceso: "CO1.DIFF.1", nombre_archivo: "PLIEGO DE CONDICIONES.pdf", texto: t1 })).status, 401);
       const d1 = await invocarPost(routerPliego, "/api/pliego?op=diff", { id_proceso: "CO1.DIFF.1", nombre_archivo: "PLIEGO DE CONDICIONES.pdf", texto: t1, perfil: "helder" }, CAB_TOKEN);
       assert.strictEqual(d1.status, 200); assert.strictEqual(d1.cuerpo.version, 1); assert.strictEqual(d1.cuerpo.cambio, false);
       const d1b = await invocarPost(routerPliego, "/api/pliego?op=diff", { id_proceso: "CO1.DIFF.1", nombre_archivo: "PLIEGO DE CONDICIONES.pdf", texto: t1 + "\n", perfil: "helder" }, CAB_TOKEN);
@@ -45850,19 +45950,19 @@ async function main() {
       assert.strictEqual(Cr.avisosDe(hitos, "2026-08-23").filter((a) => a.hito === "cierre").length, 1, "los avisos ya pasados no se emiten");
       assert.strictEqual(Cr.fechaEnLinea("cierre el 3 de septiembre del 2026"), "2026-09-03");
       assert.strictEqual(Cr.fechaEnLinea("sin fecha"), null);
-      const rc = await invocarPost(routerPliego, "/api/pliego?op=cronograma", { id_proceso: "CO1.CRONO.X", texto: t1 });
+      const rc = await invocarPost(require("../lib/handlers/pliego/cronograma.js"), "/api/pliego?op=cronograma", { id_proceso: "CO1.CRONO.X", texto: t1 });
       assert.strictEqual(rc.status, 200); assert.strictEqual(rc.cuerpo.hitos.length, 2); assert.ok(rc.cuerpo.avisos.length >= 0 && rc.cuerpo.ics_url);
-      const rics = await invocarPost(routerPliego, "/api/pliego?op=cronograma&formato=ics", { id_proceso: "CO1.CRONO.X", texto: t1 });
+      const rics = await invocarPost(require("../lib/handlers/pliego/cronograma.js"), "/api/pliego?op=cronograma&formato=ics", { id_proceso: "CO1.CRONO.X", texto: t1 });
       assert.strictEqual(rics.status, 200); assert.ok(/text\/calendar/.test(rics.cabeceras["content-type"]));
       assert.ok(/BEGIN:VCALENDAR/.test(rics.cuerpo) && /TRIGGER:-P7D/.test(rics.cuerpo) && /TRIGGER:-P3D/.test(rics.cuerpo) && /TRIGGER:-P1D/.test(rics.cuerpo) && /DTSTART;VALUE=DATE:20260825/.test(rics.cuerpo), "el .ics lleva los tres avisos como alarmas");
       /* LA PESTAÑA DEL PLIEGO Y SU .ICS MARCAN LA FECHA QUE NO CUADRA (6-nov-2026, el hermano de Mis procesos): un informe de evaluación
          antes del cierre sale con «Verifíquela en SECOP II», en la respuesta y en el calendario; nada se esconde */
       const tOrden = "Publicación del aviso de convocatoria 01/10/2026\nFecha de cierre [presentación de ofertas] 20/10/2026\nPublicación del informe de evaluación 18/10/2026\nAudiencia de adjudicación 30/10/2026";
-      const rOr = await invocarPost(routerPliego, "/api/pliego?op=cronograma", { id_proceso: "CO1.CRONO.ORDEN", texto: tOrden });
+      const rOr = await invocarPost(require("../lib/handlers/pliego/cronograma.js"), "/api/pliego?op=cronograma", { id_proceso: "CO1.CRONO.ORDEN", texto: tOrden });
       const inf = (rOr.cuerpo.hitos || []).find((h) => h.id === "informe_evaluacion");
       assert.ok(inf && inf.verificar === "no cuadra con las demás fechas de este pliego" && !(rOr.cuerpo.hitos || []).find((h) => h.id === "adjudicacion").verificar,
         `[MUT] la pestaña del pliego no marcaba la fecha fuera de orden (o marcaba las demás): ${JSON.stringify(rOr.cuerpo.hitos)}`.slice(0, 400));
-      const icsOr = await invocarPost(routerPliego, "/api/pliego?op=cronograma&formato=ics", { id_proceso: "CO1.CRONO.ORDEN", texto: tOrden });
+      const icsOr = await invocarPost(require("../lib/handlers/pliego/cronograma.js"), "/api/pliego?op=cronograma&formato=ics", { id_proceso: "CO1.CRONO.ORDEN", texto: tOrden });
       assert.ok(/Verifíquela en SECOP II: no cuadra con las demás fechas de este pliego/.test(String(icsOr.cuerpo).replace(/\r?\n /g, "")), "[MUT] el .ics del pliego no llevaba la marca");
       // y la del cierre desmentido, la MISMA regla de Mis procesos (lib/cronograma.verificarPorCierre)
       const mCierre = Cr.marcarDocumento(Cr.extraerHitos("Fecha de cierre 20/10/2026\nAudiencia de adjudicación 30/10/2026").hitos);
@@ -45870,7 +45970,7 @@ async function main() {
         && Cr.verificarPorCierre(mCierre[1], "2026-10-20", "este pliego") === null, "[MUT] el cierre desmentido marca, y el que coincide no");
       // con un proceso del corpus, el hito de cierre sale del dataset aunque no haya texto
       const idCorpus = (await filaDelListado(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=100&incluir_cerradas=1&solo_viables=false", CAB_TOKEN, (f) => f.fecha_cierre)).id_del_proceso;
-      const rd = await invocar(routerPliego, `/api/pliego?op=cronograma&id_proceso=${encodeURIComponent(idCorpus)}`);
+      const rd = await invocar(require("../lib/handlers/pliego/cronograma.js"), `/api/pliego?op=cronograma&id_proceso=${encodeURIComponent(idCorpus)}`);
       assert.ok(rd.cuerpo.hitos.some((h) => h.id === "cierre" && h.origen === "dataset"), "el cierre del dataset entra al cronograma");
       /* ---- (3-bis) EL PELDAÑO 1 DE LA MANIFESTACIÓN, EXTREMO A EXTREMO ----
          El pliego es la ÚNICA fuente de la fecha límite REAL para avisar que le
@@ -46032,7 +46132,7 @@ async function main() {
             "Audiencia de adjudicación: 1 de junio de 2027"].join("\n");
           try {
             // 1 · SIN credencial: la lectura sale entera, la escritura no ocurre y se DICE
-            const anonL1 = await invocarPost(routerPliego, "/api/pliego?op=cronograma", { id_proceso: idL1, texto: textoL1 });
+            const anonL1 = await invocarPost(require("../lib/handlers/pliego/cronograma.js"), "/api/pliego?op=cronograma", { id_proceso: idL1, texto: textoL1 });
             assert.strictEqual(anonL1.status, 200, `la lectura del cronograma sigue siendo pública: ${anonL1.status}`);
             assert.ok(anonL1.cuerpo.hitos.some((h) => h.id === "manifestacion" && h.fecha === "2026-09-13"),
               `los hitos leídos siguen viajando: ${JSON.stringify(anonL1.cuerpo.hitos)}`);
@@ -46053,16 +46153,16 @@ async function main() {
             assert.strictEqual(buenoL1.cuerpo.adjudicacion_fecha_guardada, "2027-06-01");
             assert.strictEqual((await Mn.leerFechasCronograma(redis))[idL1], "2026-09-13");
             assert.strictEqual((await Mn.leerFechasCronograma(redis, { clave: Mn.CLAVE_CRONOGRAMA_ADJUDICACION }))[idL1], "2027-06-01");
-            const urlL1 = await invocarPost(routerPliego, `/api/pliego?op=cronograma&token=${encodeURIComponent(process.env.HISTORICO_TOKEN)}`, { id_proceso: idL1url, texto: textoL1 });
+            const urlL1 = await invocarPost(require("../lib/handlers/pliego/cronograma.js"), `/api/pliego?op=cronograma&token=${encodeURIComponent(process.env.HISTORICO_TOKEN)}`, { id_proceso: idL1url, texto: textoL1 });
             assert.strictEqual(urlL1.cuerpo.manifestacion_fecha_guardada, "2026-09-13", `la doble vía del dueño sin terminal sigue viva: ${JSON.stringify(urlL1.cuerpo).slice(0, 200)}`);
             // 4 · el .ics anónimo sigue descargándose, y tampoco persiste
-            const icsL1 = await invocarPost(routerPliego, "/api/pliego?op=cronograma&formato=ics", { id_proceso: idL1ics, texto: textoL1 });
+            const icsL1 = await invocarPost(require("../lib/handlers/pliego/cronograma.js"), "/api/pliego?op=cronograma&formato=ics", { id_proceso: idL1ics, texto: textoL1 });
             assert.strictEqual(icsL1.status, 200);
             assert.ok(/BEGIN:VCALENDAR/.test(String(icsL1.cuerpo)), "el calendario anónimo sigue saliendo");
             assert.strictEqual(await redis.hget(Mn.CLAVE_CRONOGRAMA, idL1ics), null, "el .ics anónimo no persiste ninguna fecha");
             // 5 · HERMANO: op=deducciones comparte la puerta pero es SOLO LECTURA
             const antesDed = (await redis.scan("manifestacion:*")).concat(await redis.scan("cronograma:*")).sort().join(",");
-            const dedL1 = await invocarPost(routerPliego, "/api/pliego?op=deducciones", { id_proceso: "CO1.L1.DED.1", texto: "El contratista pagará estampilla prodesarrollo del 2 %." });
+            const dedL1 = await invocarPost(require("../lib/handlers/pliego/deducciones.js"), "/api/pliego?op=deducciones", { id_proceso: "CO1.L1.DED.1", texto: "El contratista pagará estampilla prodesarrollo del 2 %." });
             assert.strictEqual(dedL1.status, 200, `op=deducciones sigue pública: ${dedL1.status}`);
             assert.strictEqual((await redis.scan("manifestacion:*")).concat(await redis.scan("cronograma:*")).sort().join(","), antesDed,
               "un POST anónimo a op=deducciones no puede cambiar ninguna clave del cronograma");
@@ -50080,30 +50180,18 @@ async function main() {
            cierres—, y eso no es la vista de visitante: tiene que pasar igual con y sin clave) */
         const dueno = await arrancarAppEnNode({ search: "?perfil=rup_a1b2c3d4e5f6", dueno: true });
         const visitante = await arrancarAppEnNode({ search: "?perfil=rup_a1b2c3d4e5f6" });
-        for (const id of ids("soloDueno")) assert.strictEqual(visitante.el(id).hidden, true, `visitante: #${id} (${CENSO.soloDueno[id]}) tiene que quedar oculto con hidden`);
-        for (const id of ids("soloVisitante")) assert.strictEqual(visitante.el(id).hidden, false, `visitante: #${id} tiene que verse`);
-        for (const id of ids("deTodos")) {
-          /* solo el atributo, que es lo que toca vistaDeVisitante: las clases las gobierna cada
-             módulo con sus datos («Crear consorcio» se pliega sola con un solo perfil en la barra) */
-          assert.strictEqual(visitante.el(id).hidden, dueno.el(id).hidden, `visitante: #${id} es de todos y tiene que quedar como para el dueño`);
-        }
-        const ajenas = visitante.urls().filter((u) => /op=(resumen|rup|experiencia|consorcio|parametros)(&|$)/.test(u) || /perfil=(helder|genesis|juntos)\b/.test(u));
-        assert.deepStrictEqual(ajenas, [], `el navegador del visitante pidió datos del dueño: ${ajenas.join(" · ")}`);
-        for (const op of ["listar", "pulso", "seguimiento"]) {
-          assert.ok(visitante.urls().some((u) => new RegExp(`op=${op}&perfil=rup_a1b2c3d4e5f6`).test(u)), `el arranque tiene que pedir op=${op} con SU perfil (si no, la prueba pasaría en vacío)`);
-        }
-        assert.deepStrictEqual(visitante.el("f-perfil").options.map((o) => o.value), ["rup_a1b2c3d4e5f6"], "la barra sigue podada a su perfil");
-        const marca = visitante.el("btn-marca");
-        assert.ok(marca.classList.contains("marca-informativa") && marca.getAttribute("aria-disabled") === "true", "para el visitante la marca de la barra es informativa, no un control");
-        const sello = visitante.el("sello-sync").textContent;
-        assert.ok(/^Datos de/.test(sello) && !/Pulse|Actualizar/.test(sello), `el sello del visitante no invita a pulsar: «${sello}»`);
-        assert.ok(!/Pulse/.test(marca.title), `el título de la marca del visitante no dice «pulse»: «${marca.title}»`);
-        const antesMarca = visitante.fetches.length;
-        marca.click(); await visitante.esperar();
-        assert.deepStrictEqual(visitante.urls().slice(antesMarca).filter((u) => /op=sync/.test(u)), [], "pulsar la marca como visitante no puede disparar op=sync");
-        /* los nueve llamadores del tablero pasan por UNA guarda: ni el botón lo pide */
-        visitante.el("btn-actualizar").click(); await visitante.esperar();
-        assert.ok(!visitante.urls().some((u) => /op=resumen/.test(u)), "«Actualizar ahora» tampoco pide el tablero en la vista de visitante");
+        /* SIN SESIÓN, LA PANTALLA DE ENTRAR (9-nov-2026), EJECUTADO. Producción dejó el muro de Vercel
+           y toda operación de api/ exige la sesión o la llave (la puerta de lib/auth): un visitante con
+           un RUP en la URL ya no tiene nada que pedir. El arranque enseña el gate ENCIMA de la landing,
+           no abre la aplicación y no pide nada más que op=sesion (y el interruptor del modo cuenta de
+           onboarding.js). La vista de visitante (vistaDeVisitante) queda en el árbol para el día en
+           que se venda, sin camino desde el arranque. */
+        const gateVisible = (a) => a.el("gate").classList.contains("flex") && !a.el("gate").classList.contains("hidden");
+        assert.ok(gateVisible(visitante), "sin sesión, el arranque enseña la pantalla de entrar");
+        assert.ok(visitante.el("app").classList.contains("hidden"), "sin sesión, la aplicación no se abre");
+        const pedidasSinSesion = visitante.urls().filter((u) => /^\/api\//.test(u) && !/op=(sesion|cuenta)(&|$)/.test(u));
+        assert.deepStrictEqual(pedidasSinSesion, [], `sin sesión el navegador no pide nada a la aplicación (cada llamada sería un 401): ${pedidasSinSesion.join(" · ")}`);
+        assert.ok(!gateVisible(dueno) && !dueno.el("app").classList.contains("hidden"), "con sesión, la aplicación se abre y el gate no se ve");
         /* el aviso dice a quién pertenece y qué hacer, de usted */
         const iAv = htmlVVSin.indexOf('id="aviso-visitante"');
         const textoAviso = htmlVVSin.slice(iAv, htmlVVSin.indexOf("</section>", iAv)).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
@@ -50188,7 +50276,7 @@ async function main() {
 
         /* el consorcio a la medida por URL sin clave es visitante igual: el hermano del RUP */
         const cons = await arrancarAppEnNode({ search: "?perfil=cons_abc123def456" });
-        for (const id of ids("soloDueno")) assert.strictEqual(cons.el(id).hidden, true, `consorcio por URL sin clave: #${id} oculto`);
+        assert.ok(gateVisible(cons) && cons.el("app").classList.contains("hidden"), "consorcio por URL sin sesión: la pantalla de entrar, como el RUP");
         assert.deepStrictEqual(cons.urls().filter((u) => /op=(resumen|rup|experiencia|consorcio)(&|$)/.test(u)), [], "el consorcio por URL tampoco pide datos del dueño");
 
         /* (c-bis) EL CABLEADO DE LA CAJA DE BÚSQUEDA Y DE LAS FICHAS, EJECUTADO
@@ -50312,9 +50400,9 @@ async function main() {
             if (DISPLAY_RE.test(cls)) estaticos.push(`<${m[1]} id="${(m[2].match(/\sid="([^"]*)"/) || [, "?"])[1]}" … ${cls.match(DISPLAY_RE)[1]}>`);
           }
           assert.deepStrictEqual(estaticos, [], `nodos que nacen con \`hidden\` y llevan una utilidad de display: ${estaticos.join(", ")}`);
-          const antesCat = visitante.fetches.length;
-          visitante.el("btn-apu-cargar").click(); await visitante.esperar();
-          assert.deepStrictEqual(visitante.urls().slice(antesCat).filter((u) => /op=cargar-catalogo/.test(u)), [], "el clic del visitante en «Cargar catálogo APU» no puede disparar admin?op=cargar-catalogo");
+          /* desde el 9-nov-2026 sin sesión la aplicación no se abre (el gate va encima y la puerta del
+             servidor responde 401 a todo): el visitante no tiene el botón a la vista */
+          assert.ok(visitante.el("app").classList.contains("hidden"), "sin sesión, «Cargar catálogo APU» queda dentro de una aplicación cerrada");
           const antesCatD = dueno.fetches.length;
           dueno.el("btn-apu-cargar").click(); await dueno.esperar();
           assert.ok(dueno.urls().slice(antesCatD).some((u) => /op=cargar-catalogo/.test(u)), "con clave el mismo clic sí lo dispara (si no, la prueba de arriba pasaría en vacío)");
@@ -53388,7 +53476,7 @@ async function main() {
       /* ── 1 · router y censo ── */
       {
         assert.strictEqual((await invocar(routerPliego, URL_DC)).status, 401, "el dictamen sin token tiene que ser 401 a través del router");
-        const mala = await invocar(routerPliego, "/api/pliego?op=inventada");
+        const mala = await invocar(routerPliego, "/api/pliego?op=inventada", CAB_TOKEN);
         assert.strictEqual(mala.status, 404);
         assert.ok(mala.cuerpo.operaciones.includes("dictamen"), "el 404 enseña la op dictamen");
         assert.strictEqual(fs.readdirSync(path.join(RAIZ_DC, "api")).filter((f) => f.endsWith(".js")).length, 6, "el dictamen se pliega como op, jamás como función nueva");
@@ -54693,7 +54781,7 @@ async function main() {
       assert.ok(!sinF.familias.some((f) => f.formato_muestra) && !vistosF.includes("GETRANGE"), `sin formatos no se pide ninguno: ${[...new Set(vistosF)].join(",")}`);
       // (5) el endpoint: con llave, GET, solo lee
       const adminE = require("../api/admin.js");
-      const sinLlave = await invocar(adminE, "/api/admin?op=espacio");
+      const sinLlave = await invocar(require("../lib/handlers/admin/espacio.js"), "/api/admin?op=espacio");
       assert.strictEqual(sinLlave.status, 401, "sin la llave no se enseñan los nombres de las claves");
       const post = await invocar(adminE, "/api/admin?op=espacio", CAB_TOKEN, { metodo: "POST", body: {} });
       assert.strictEqual(post.status, 405);
@@ -55378,7 +55466,7 @@ async function main() {
     await segU({ id: "USO.1", oferta: "950 millones" });
     assert.strictEqual(await conteo(PU, "oferta"), 1);
     // (3) la op que lo lee: con credencial, con el 0 como dato y la mediana de días de guardar a ofertar
-    const sinLlave = await invocar(require("../api/admin.js"), "/api/admin?op=uso");
+    const sinLlave = await invocar(require("../lib/handlers/admin/uso.js"), "/api/admin?op=uso");
     assert.strictEqual(sinLlave.status, 401, "sin llave no se lee (la llave integrada en la página sí lo abre, como abre op=exportar: ver la memoria)");
     const rU = await invocar(require("../api/admin.js"), `/api/admin?op=uso&perfil=${PU}&meses=2`, CAB_TOKEN);
     assert.strictEqual(rU.status, 200, JSON.stringify(rU.cuerpo).slice(0, 200));
@@ -56679,7 +56767,7 @@ async function main() {
       assert.strictEqual(cuatro04.status, 404, "un proceso que no está en este perfil es 404, no una respuesta vacía creíble");
       assert.ok(/no está guardado/.test(cuatro04.cuerpo.error), cuatro04.cuerpo.error);
       /* y sin credencial no sale NADA del expediente */
-      assert.strictEqual((await invocar(routerPerfilExp, `/api/perfil?op=seguimiento&perfil=${PERF}&expediente=${encodeURIComponent(fila.id_del_proceso)}`, {})).status, 401,
+      assert.strictEqual((await invocar(require("../lib/handlers/perfil/seguimiento.js"), `/api/perfil?op=seguimiento&perfil=${PERF}&expediente=${encodeURIComponent(fila.id_del_proceso)}`, {})).status, 401,
         "el expediente lleva las cifras del perfil: sin token, 401, jamás una versión degradada");
     }
 
@@ -57827,7 +57915,7 @@ async function main() {
       const v = ED.validarDatos({ razon_social: "  Mi   empresa ", nit: "", correo: "a@b.co" });
       assert.ok(v.ok && v.datos.razon_social === "Mi empresa" && v.datos.nit === null && v.datos.correo === "a@b.co", "vacío = null (se borra), espacios limpios");
       const routerP = require("../api/perfil.js");
-      const sinToken = await invocar(routerP, "/api/perfil?op=empresa-datos&perfil=fmt_prueba", {});
+      const sinToken = await invocar(require("../lib/handlers/perfil/empresa_datos.js"), "/api/perfil?op=empresa-datos&perfil=fmt_prueba", {});
       assert.strictEqual(sinToken.status, 401, "sin credencial no sale ni entra nada: son datos de una persona");
       const g = await invocarPost(routerP, "/api/perfil?op=empresa-datos", { perfil: "fmt_prueba", datos: DATOS }, CAB_TOKEN);
       assert.strictEqual(g.status, 200, JSON.stringify(g.cuerpo));
@@ -58802,19 +58890,19 @@ async function main() {
         tipo: "historico", desde: "2019-01", hasta: "2026-09", meses: ["2019-01"], mesIdx: 1,
         porMes: { "2019-01": { esperados: 9, leidas: 9, guardadas: 9 } }, terminado: true,
       });
-      const s39 = await invocar(rProcesos39, "/api/procesos?op=salud");
+      const s39 = await invocar(require("../lib/handlers/procesos/salud.js"), "/api/procesos?op=salud");
       assert.strictEqual(s39.status, 200);
       assert.strictEqual(s39.cuerpo.historico_hace_dias, null, "sin sello la antigüedad es null, jamás 0");
       assert.ok(/hist[óo]ric/i.test(String(s39.cuerpo.motivo || "")),
         `el histórico sin sellar tiene que entrar en el motivo, no pasar mudo: ${JSON.stringify(s39.cuerpo.motivo)}`);
       assert.strictEqual(s39.cuerpo.ok, false, "con el histórico sin sellar el monitor tiene que sonar");
       await escribirJ39(redis, CLAVES.metaHistorico, { ts: ahora39, meses: 1, guardadas: 9, leidas: 9, porMes: {} });
-      const s39b = await invocar(rProcesos39, "/api/procesos?op=salud");
+      const s39b = await invocar(require("../lib/handlers/procesos/salud.js"), "/api/procesos?op=salud");
       assert.strictEqual(s39b.cuerpo.ok, true, `con el sello puesto la salud vuelve a ok: ${s39b.cuerpo.motivo}`);
       assert.strictEqual(s39b.cuerpo.historico_hace_dias, 0);
       // un despliegue SIN backfill (decisión manual del dueño) sigue mudo: no es un fallo
       await redis.del(CLAVES.progresoHistorico, CLAVES.metaHistorico);
-      const s39c = await invocar(rProcesos39, "/api/procesos?op=salud");
+      const s39c = await invocar(require("../lib/handlers/procesos/salud.js"), "/api/procesos?op=salud");
       assert.strictEqual(s39c.cuerpo.ok, true, `sin backfill hecho nunca, la salud NO puede sonar: ${s39c.cuerpo.motivo}`);
       assert.strictEqual(s39c.cuerpo.historico_hace_dias, null);
       // op=salud es PÚBLICA y su forma está cerrada: este arreglo no le añade ni le quita campos
@@ -58933,7 +59021,7 @@ async function main() {
       {
         const tramos = await leerJ39(redis, CLAVES.indiceBajaTramos);
         assert.ok(Array.isArray(tramos) && tramos.some((x) => x.resultado === "sin_cerradas"), `una actualización con datos y sin procesos cerrados queda anotada como tal: ${JSON.stringify(tramos && tramos.map((x) => x.resultado))}`);
-        const salud39 = await invocar(require("../api/procesos.js"), "/api/procesos?op=salud");
+        const salud39 = await invocar(require("../lib/handlers/procesos/salud.js"), "/api/procesos?op=salud");
         assert.deepStrictEqual(salud39.cuerpo.indice_baja && salud39.cuerpo.indice_baja.ultimas_actualizaciones && salud39.cuerpo.indice_baja.ultimas_actualizaciones.map((x) => x.resultado), tramos.map((x) => x.resultado),
           "la salud enseña lo anotado, la más reciente primero");
         // la lista no crece sin tope
@@ -61932,7 +62020,7 @@ async function main() {
          `Redis: ${e.message}` crudo; por el router real ya sale tachada. Contra el árbol anterior,
          el token aparece en el cuerpo. */
       romperR2 = () => `ERR todo roto (auth ${tokR2})`;
-      const portadaErrR2 = await invocar(require("../api/procesos.js"), "/api/procesos?op=portada");
+      const portadaErrR2 = await invocar(require("../api/procesos.js"), "/api/procesos?op=portada", CAB_TOKEN);
       romperR2 = null;
       okR2(portadaErrR2.status >= 400 && !JSON.stringify(portadaErrR2.cuerpo).includes(tokR2), `el error de la portada, por el router, no lleva el token: ${portadaErrR2.status} ${JSON.stringify(portadaErrR2.cuerpo).slice(0, 200)}`);
       okR2(/clave tachada/.test(JSON.stringify(portadaErrR2.cuerpo)), `y dice que lo tachó: ${JSON.stringify(portadaErrR2.cuerpo).slice(0, 200)}`);

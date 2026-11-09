@@ -22,9 +22,10 @@
 
    Los `require` van DIFERIDOS por operación: servir el listado no puede
    pagar la carga del módulo de sincronización, y viceversa. La autorización
-   NO vive aquí: cada handler conserva la suya (historico exige token, sync
-   tiene sus modos, el listado lo tiene opcional) — un router que autorizara
-   por su cuenta sería una segunda copia de lib/auth que se desincroniza. */
+   NO se escribe aquí: cada handler conserva la suya (historico exige token,
+   sync tiene sus modos, el listado lo tiene opcional) y, desde el 9-nov-2026,
+   el router LLAMA a la puerta de lib/auth (`autorizarPuerta`) antes de
+   despachar — una llamada, no una segunda copia que se desincronice. */
 
 const OPS = {
   sync: () => require("../lib/handlers/procesos/sync.js"),           // era /api/sync
@@ -47,6 +48,10 @@ function opDe(req) {
 
 module.exports = async function handler(req, res) {
   const op = opDe(req);
+  /* LA PUERTA (9-nov-2026): sin la sesión ni la llave no pasa nada, salvo el
+     censo declarado en lib/auth (entrar, salir y las tareas programadas). */
+  const puerta = await require("../lib/auth.js").autorizarPuerta(req, "procesos", op);
+  if (!puerta.ok) return require("../lib/auth.js").responderPuerta(res, puerta);
   if (!op) {
     return res.status(400).json({
       ok: false,
@@ -73,3 +78,6 @@ module.exports = async function handler(req, res) {
     return require("../lib/error_interno.js").responderErrorInterno(res, "procesos", e);
   }
 };
+
+/* Las operaciones que despacha, para el censo de la puerta en la suite (9-nov-2026). */
+module.exports.OPS = Object.freeze(Object.keys(OPS));

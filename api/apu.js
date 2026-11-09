@@ -14,6 +14,11 @@
 module.exports = async function handler(req, res) {
   const q = req.query || {};
   if (q.op && !q.accion) req.query = { ...q, accion: String(q.op).toLowerCase() };
+  /* LA PUERTA (9-nov-2026): sin la sesión ni la llave no pasa nada, salvo el
+     censo declarado en lib/auth (entrar, salir y las tareas programadas). */
+  // la MISMA acción que despacha el editor (query o, si falta, el path): revisión adversaria
+  const puerta = await require("../lib/auth.js").autorizarPuerta(req, "apu", require("../lib/handlers/apu/accion.js").accionDe(req, req.query || {}));
+  if (!puerta.ok) return require("../lib/auth.js").responderPuerta(res, puerta);
   /* Un throw del editor responde JSON 500 con instrucción, no una promesa
      rechazada que la plataforma convierte en un 500 sin cuerpo (6-sep-2026). */
   try {
