@@ -4026,6 +4026,9 @@
       precio: g.precio_esperado,
       variante_iva: varianteG,
       costo_directo: cdVigente,
+      // lo subcontratado a costo, como la tarjeta (revisión adversaria, 10-nov-2026: al abrir, el detalle decía «depende»
+      // donde la tarjeta decía «deja»); solo con el costo medido
+      costo_a_costo: g.base === "apu" ? g.costo_a_costo : null,
       administracion_pct: a.administracion_pct,
       imprevistos_pct: a.imprevistos_pct,
       utilidad_pct: a.utilidad_pct,
@@ -9339,28 +9342,37 @@
     const btn = $("btn-calcular");
     btn.disabled = true;
     btn.textContent = "Calculando…";
+    /* UN CÁLCULO QUE VUELVE CUANDO LA PANTALLA YA CAMBIÓ SE DESCARTA (revisión adversaria, 10-nov-2026): se pulsaba
+       «Calcular», se cambiaba la casilla de lo subcontratado mientras decía «Calculando…» y la respuesta revivía el
+       cálculo anulado; «Guardar» mandaba entonces el total y la base de la casilla anterior con la configuración nueva,
+       y la lista dejaba bajar 8,07 % donde Precios dejaba 3,91 %. El cuerpo se firma ANTES de la red y se compara al
+       volver, como la rentabilidad: cubre cualquier camino que cambie una entrada, sin censo de quién anula el cálculo. */
+    const cuerpoCalculo = () => ({
+      items: itemsParaElMotor(),
+      departamento: $("departamento").value,
+      config: leerConfig(),
+      /* EL PERFIL CON QUE SE TRABAJA (2-nov-2026, visto bueno del dueño), igual que
+         «Guardar» y Piso/Techo: sin él el servidor caía a «helder» y costeaba con los
+         precios corregidos de otro perfil, mientras «Guardar» los deja bajo este y el
+         Piso/Techo que se dispara después los lee de aquí. También dice de qué perfil
+         son los procesos guardados de «lo que presupuestaron las entidades». */
+      perfil: $("perfil").value,
+      /* EL TIPO DE TRABAJO (3-nov-2026, visto bueno del dueño), igual que Piso/Techo: la
+         contribución del 5 % es de los contratos de obra pública, y sin él «Calcular» la
+         pintaba en una interventoría donde Piso/Techo la dejaba en 0 */
+      tipo_trabajo: tipoProceso,
+      // el proceso que se cotiza, para no contarlo en lo que presupuestaron las entidades
+      id_proceso: ($("id-proceso") && $("id-proceso").value.trim()) || null,
+    });
     try {
-      const r = await api("/api/apu?op=calcular", {
-        method: "POST",
-        body: {
-          items: itemsParaElMotor(),
-          departamento: $("departamento").value,
-          config: leerConfig(),
-          /* EL PERFIL CON QUE SE TRABAJA (2-nov-2026, visto bueno del dueño), igual que
-             «Guardar» y Piso/Techo: sin él el servidor caía a «helder» y costeaba con los
-             precios corregidos de otro perfil, mientras «Guardar» los deja bajo este y el
-             Piso/Techo que se dispara después los lee de aquí. También dice de qué perfil
-             son los procesos guardados de «lo que presupuestaron las entidades». */
-          perfil: $("perfil").value,
-          /* EL TIPO DE TRABAJO (3-nov-2026, visto bueno del dueño), igual que Piso/Techo: la
-             contribución del 5 % es de los contratos de obra pública, y sin él «Calcular» la
-             pintaba en una interventoría donde Piso/Techo la dejaba en 0 */
-          tipo_trabajo: tipoProceso,
-          // el proceso que se cotiza, para no contarlo en lo que presupuestaron las entidades
-          id_proceso: ($("id-proceso") && $("id-proceso").value.trim()) || null,
-        },
-      });
+      const cuerpo = cuerpoCalculo();
+      const firma = JSON.stringify(cuerpo);
+      const r = await api("/api/apu?op=calcular", { method: "POST", body: cuerpo });
       if (!r) return false;
+      if (JSON.stringify(cuerpoCalculo()) !== firma) {
+        msgApu("Cambió algo mientras se calculaba: pulse «Calcular cuánto me cuesta» otra vez para ver la cifra de ahora.", "info");
+        return false;
+      }
       ultimoCalculo = r;
       olvidarRevision();   // la oferta cambió: la revisión pintada ya no es de ella (N11-A)
       pintarCalculoEnTabla(r);
@@ -9382,7 +9394,10 @@
     }
   }
 
-  $("btn-calcular").addEventListener("click", async () => {
+  /* CALCULAR CON SU MÍNIMO (10-nov-2026, decisión del dueño: «haz el 3»). «Calcular» ya pedía el piso, el techo y el
+     precio sugerido cuando hay proceso; subir un APU, usar los precios de la IA y aplicar el descuento sugerido
+     recalculaban solo el precio, y «Su mínimo» quedaba en «Recalcule» hasta otra pulsación. Los cuatro pasan por aquí. */
+  async function calcularConSuMinimo() {
     const ok = await calcularApu();
     /* EL PRECIO SUGERIDO SALE SOLO cuando el APU pertenece a un proceso. Es lo
        que pide el encargo y es lo que convierte el editor en una decisión: sin
@@ -9392,7 +9407,9 @@
        equivocado— y con proceso asociado, porque sin cuantía publicada no hay
        techo contra el que medir un descuento. */
     if (ok && $("id-proceso").value.trim()) await calcularRentabilidad({ auto: true });
-  });
+    return ok;
+  }
+  $("btn-calcular").addEventListener("click", () => calcularConSuMinimo());
 
   /* ══════ LA UNIDAD DEL PLIEGO Y LA DE LA REFERENCIA, EN UN SOLO SITIO ══════
      (13-sep-2026) Esta nota nació en la vista previa de la importación y ahora
@@ -9838,6 +9855,9 @@
           // el costo directo viaja para que la lista pueda ordenar por
           // «Dónde me queda más» sin recalcular (Fase 8)
           costo_directo: ultimoCalculo ? ultimoCalculo.resumen.costo_directo_total : null,
+          // la base del AIU y la fracción del IVA de ese cálculo: la lista y el expediente leen el mínimo como Precios
+          base_aiu: ultimoCalculo && ultimoCalculo.resumen.base_aiu != null ? ultimoCalculo.resumen.base_aiu : null,
+          iva_utilidad_fraccion: ultimoCalculo && ultimoCalculo.resumen.iva_utilidad_fraccion != null ? ultimoCalculo.resumen.iva_utilidad_fraccion : null,
         },
       });
       if (!r) return null;
@@ -10184,7 +10204,7 @@
     olvidarRevision();   // la oferta cambió: la revisión pintada ya no es de ella (N11-A)
     pintarTabla();
     msgApu(`${n} ${n === 1 ? "precio de la IA puesto" : "precios de la IA puestos"} en la lista. Calculando el presupuesto…`, "ok");
-    await calcularApu();
+    await calcularConSuMinimo();
   });
 
   /* ══════════ UNA SOLA PUERTA PARA EL ARCHIVO (4-sep-2026) ══════════
@@ -10780,7 +10800,7 @@
     cerrarModalImportar();
     pintarTabla();
     msgApu(`${nuevas.length} ítem(s) añadidos desde «${importacion.nombre_archivo}». Calculando…`, "ok");
-    await calcularApu();
+    await calcularConSuMinimo();
   });
 
   /* ─────────────────────────── arranque ─────────────────────────────── */
@@ -11751,8 +11771,7 @@
     $("baja-nota").textContent = `Del precio sugerido: ${num(punto.descuento_apu_pct)} % sobre su precio de venta, `
       + `que equivale a ${num(punto.descuento)} % de baja contra el presupuesto oficial.`;
     msgApu(`Descuento aplicado (${num(punto.descuento_apu_pct)} %), escrito en «Ajustes». Recalculando…`, "info");
-    const ok = await calcularApu();
-    if (ok && $("id-proceso").value.trim()) await calcularRentabilidad({ auto: true });
+    await calcularConSuMinimo();
   }
 
   $("btn-aplicar-descuento").addEventListener("click", () => {

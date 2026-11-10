@@ -180,9 +180,13 @@
     const factorCero = modo === "compuesto" ? (1 + A / 100) * (1 + I / 100) : 1 + (A + I) / 100;
     const factorSoloA = 1 + A / 100;   // idéntico en los dos modos
 
+    /* lo subcontratado a costo (10-nov-2026): la MISMA regla que `lib/apu/piso_techo` —sin su administración ni sus
+       imprevistos—, para que `costo_sin_ganancia` siga siendo exactamente su `costo_sin_utilidad`. Fuera de rango, 0 */
+    const aCostoCrudo = num(e.costo_a_costo);
+    const aCosto = aCostoCrudo != null && aCostoCrudo > 0 && aCostoCrudo <= CD ? aCostoCrudo : 0;
     const obra = red(CD);
-    const costoSinImprevisto = red(CD * factorSoloA);
-    const costoSinGanancia = red(CD * factorCero);
+    const costoSinImprevisto = red((CD - aCosto) * factorSoloA + aCosto);
+    const costoSinGanancia = red((CD - aCosto) * factorCero + aCosto);
     /* DERIVADAS, no recalculadas: así `obra + administración + imprevistos`
        es exactamente `costo_sin_ganancia` al peso, y la cascada que ve el
        usuario cuadra sin residuos de redondeo. */

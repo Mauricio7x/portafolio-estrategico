@@ -11772,6 +11772,28 @@ async function main() {
       assert.deepStrictEqual(cD.conteo_socio, tallyDeTarjetas(cD),
         `MUTACIÓN: la obra por encima del tope se contaba «solo» y la tarjeta decía «con socio»: ${JSON.stringify(cD.conteo_socio)} contra ${JSON.stringify(tallyDeTarjetas(cD))}`);
 
+      /* LO QUE DEJA, CON LO SUBCONTRATADO A COSTO, POR EL LISTADO REAL (10-nov-2026, revisión adversaria: la prueba
+         unitaria leía el texto de listar.js con una expresión regular). Un análisis guardado por `op=guardar` con la
+         casilla apagada: la tarjeta de la lista lleva la MISMA parte a costo que su mínimo y su costo cuadra al peso. */
+      {
+        const calcLS = require("../lib/apu/calculo.js");
+        const cfgLSs = { modo_aiu: "aditivo", aiu_pct: 10, imprevistos_pct: 5, utilidad_pct: 5, aiu_sobre_subcontratado: false, cuantia_cop: 900000000 };
+        const itemsLSs = [{ descripcion: "Obra propia", unidad: "gl", cantidad: 1, precio_manual: 400000000 }, { descripcion: "Drenajes", unidad: "gl", cantidad: 1, precio_manual: 200000000, subcontratado: true }];
+        const presLSs = calcLS.calcularPresupuesto({ items: itemsLSs, config: cfgLSs });
+        const idLSs = "pre-ls1-sub";
+        const gLSs = await invocar(require("../api/apu.js"), "/api/apu?op=guardar", CAB_TOKEN, { metodo: "POST", body: { perfil: "helder", id: idLSs, nombre: "LS1 con subcontrato", items: itemsLSs,
+          id_proceso: "CO1.REQ.LS1", cuantia: 900000000, config: cfgLSs, total: presLSs.resumen.precio_final, costo_directo: presLSs.resumen.costo_directo_total,
+          base_aiu: presLSs.resumen.base_aiu, iva_utilidad_fraccion: presLSs.resumen.iva_utilidad_fraccion } });
+        try {
+          assert.strictEqual(gLSs.status, 200, `guardar: ${JSON.stringify(gLSs.cuerpo).slice(0, 200)}`);
+          const gLS1 = porId(await listarLS("&solo_viables=false", CAB_TOKEN)).get("CO1.REQ.LS1").ganancia;
+          assert.ok(gLS1 && gLS1.base === "apu" && gLS1.costo_a_costo === 200000000 && gLS1.desglose && gLS1.desglose.costo_sin_ganancia === Math.round(400000000 * 1.15 + 200000000),
+            `MUTACIÓN: la lista le pasa a «lo que deja» la parte a costo de su borrador (sin ella, el AIU sobre todo): ${JSON.stringify(gLS1 && { b: gLS1.base, a: gLS1.costo_a_costo, c: gLS1.desglose && gLS1.desglose.costo_sin_ganancia })}`);
+        } finally {
+          await rLS.del(CLAVES.apuPresupuesto("helder", idLSs));
+        }
+      }
+
       console.log(`· unidad lista con socio por el listado real: ${OBRAS_LS.length} obras por el handler entero · el resumen cuenta lo que dicen las tarjetas (${JSON.stringify(cA.conteo_socio)}) `
         + "· lo que se toma con socio va antes de lo que solo se acerca · la obra que solo la caja deja fuera sigue en la lista · sin credencial, solo tipo y si cierra · por encima del tope, con socio");
     } finally {
@@ -40255,7 +40277,8 @@ async function main() {
           "tras calcular el APU con proceso asociado, el precio sugerido tiene que salir solo");
         // aplicar RECALCULA: rellenar el campo y no recalcular dejaría el
         // resumen enseñando el precio anterior
-        assert.ok(/async function aplicarDescuentoApu[\s\S]{0,900}await calcularApu\(\)/.test(js),
+        // desde el 10-nov-2026 por `calcularConSuMinimo`, la misma función del botón (calcula y, con proceso, el mínimo)
+        assert.ok(/async function aplicarDescuentoApu[\s\S]{0,900}await calcularConSuMinimo\(\)/.test(js) && /async function calcularConSuMinimo\(\) \{\n    const ok = await calcularApu\(\);/.test(js),
           "aplicar el descuento tiene que recalcular el presupuesto por el mismo camino que el botón");
         // el recuadro nunca queda mudo: si no hay con qué sugerir, DICE por qué
         assert.ok(/ps-sin-datos/.test(js), "el estado «no aplicable» tiene que pintarse con su motivo");
@@ -66366,14 +66389,18 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
            rentabilidad caída dejaban arriba el mínimo y el veredicto de antes junto al precio nuevo) */
         const PTl = require("../lib/apu/piso_techo.js");
         const pesosL = (n) => `$${new Intl.NumberFormat("es-CO", { maximumFractionDigits: 0 }).format(n)}`;
-        respuestaL = calculoRO.calcularPresupuesto({ items: [{ descripcion: "Excavación", unidad: "m3", cantidad: 10, precio_manual: 100000 }], config: cfgL });
-        F.fijar({ filas: [{ descripcion: "Excavación", unidad: "m3", cantidad: 10 }], ultimoCalculo: null });
+        // con un subcontrato y la casilla apagada: la base del AIU no es el costo directo (la prueba de «Guardar» lo necesita)
+        respuestaL = calculoRO.calcularPresupuesto({ items: [{ descripcion: "Excavación", unidad: "m3", cantidad: 10, precio_manual: 100000 },
+          { descripcion: "Pintura", unidad: "m2", cantidad: 10, precio_manual: 50000, subcontratado: true }], config: { ...cfgL, aiu_sobre_subcontratado: false } });
+        F.fijar({ filas: [{ descripcion: "Excavación", unidad: "m3", cantidad: 10 }, { descripcion: "Pintura", unidad: "m2", cantidad: 10, subcontratado: true }], ultimoCalculo: null });
+        porId.get("aiu-sobre-sub").checked = false;
         porId.get("id-proceso").value = "CO1.L";
         porId.get("cuantia").value = "2000000";
         const ptL = PTl.pisoTecho({ presupuesto_oficial: 2000000, costo_directo: respuestaL.resumen.costo_directo_total, aiu: { administracion_pct: 15, imprevistos_pct: 5, utilidad_pct: 5 }, precio_actual: respuestaL.resumen.precio_final });
-        let rentL = 0, rentCae = false;
+        let rentL = 0, rentCae = false, cuerpoGuardarL = null;
         ctx.fetch = (url, cfg) => {
           if (/op=calcular/.test(url)) return Promise.resolve(respuestaRO(200, { ok: true, ...respuestaL }));
+          if (/op=guardar/.test(url)) { cuerpoGuardarL = JSON.parse(cfg.body); return Promise.resolve(respuestaRO(200, { ok: true, id: "bl", nombre: "Borrador L", nota: "" })); }
           if (/op=rentabilidad/.test(url)) { rentL++; return rentCae ? Promise.reject(new TypeError("Failed to fetch")) : Promise.resolve(respuestaRO(200, { ok: true, presupuesto: respuestaL, piso_techo: ptL, rentabilidad: {} })); }
           return fetchL(url, cfg);
         };
@@ -66381,6 +66408,13 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
         const minL = () => porId.get("apu-c-minimo").textContent, verL = () => porId.get("apu-veredicto");
         okRO(ptL.aplicable && rentL === 1 && minL() === pesosL(ptL.cifras.piso_rentable) && String(verL().textContent).length > 0 && !/\bhidden\b/.test(verL().className),
           `(l) «Calcular» con proceso pinta arriba el mínimo y el veredicto de esa rentabilidad: ${JSON.stringify({ rentL, min: minL(), ver: verL().textContent })}`);
+        /* «Guardar» manda la base del AIU y la fracción del IVA del cálculo (10-nov-2026): con ellas la lista y el
+           expediente leen el mínimo como Precios cuando la casilla de lo subcontratado está apagada */
+        await disparar("btn-guardar", "click", {}); await asentarRO();
+        okRO(cuerpoGuardarL && cuerpoGuardarL.base_aiu === respuestaL.resumen.base_aiu && cuerpoGuardarL.base_aiu === 1000000 && cuerpoGuardarL.costo_directo === 1500000
+          && cuerpoGuardarL.iva_utilidad_fraccion === respuestaL.resumen.iva_utilidad_fraccion
+          && cuerpoGuardarL.costo_directo === respuestaL.resumen.costo_directo_total,
+          `(l) «Guardar» lleva la base del AIU y la fracción del IVA del último cálculo (MUTACIÓN: sin ellas, la lista y el expediente no saben qué va a costo): ${JSON.stringify(cuerpoGuardarL && { b: cuerpoGuardarL.base_aiu, f: cuerpoGuardarL.iva_utilidad_fraccion, cd: cuerpoGuardarL.costo_directo })}`);
         porId.get("cuantia").value = "3000000";
         await disparar("cuantia", "input", {});
         okRO(minL() === "Recalcule" && /\bhidden\b/.test(verL().className) && porId.get("apu-n-ofertar").textContent === "",
@@ -66389,6 +66423,30 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
         await disparar("btn-calcular", "click", {}); await asentarRO();
         okRO(rentL === 2 && /^\$/.test(porId.get("apu-c-precio").textContent) && minL() === "Recalcule" && /\bhidden\b/.test(verL().className),
           `(l) recalcular con la rentabilidad caída: el precio es el nuevo y el mínimo NO vuelve con el de antes: ${JSON.stringify({ rentL, precio: porId.get("apu-c-precio").textContent, min: minL() })}`);
+        /* LA CARRERA (revisión adversaria, 10-nov-2026): «Calcular», cambiar la casilla mientras dice «Calculando…» y que
+           la respuesta llegue después. La respuesta vieja NO revive el cálculo: arriba no hay precio y «Guardar» no manda
+           un total ni una base de la casilla anterior. */
+        let soltarCalc = null;
+        ctx.fetch = (url, cfg) => {
+          if (/op=calcular/.test(url)) return new Promise((ok) => { soltarCalc = () => ok(respuestaRO(200, { ok: true, ...respuestaL })); });
+          if (/op=guardar/.test(url)) { cuerpoGuardarL = JSON.parse(cfg.body); return Promise.resolve(respuestaRO(200, { ok: true, id: "bl", nombre: "Borrador L", nota: "" })); }
+          if (/op=rentabilidad/.test(url)) return new Promise(() => {});
+          return fetchL(url, cfg);
+        };
+        F.fijar({ ultimoCalculo: null });
+        await disparar("btn-calcular", "click", {});   // la red todavía no responde
+        porId.get("aiu-sobre-sub").checked = true;
+        await disparar("ajustes-wrap", "input", { target: porId.get("aiu-sobre-sub") });
+        if (soltarCalc) soltarCalc();
+        await asentarRO();
+        const avisoCarrera = String(porId.get("accion-mensaje").textContent);
+        cuerpoGuardarL = null;
+        await disparar("btn-guardar", "click", {}); await asentarRO();
+        okRO(soltarCalc && F.leer().ultimoCalculo === null && porId.get("apu-c-precio").textContent !== `$${new Intl.NumberFormat("es-CO", { maximumFractionDigits: 0 }).format(respuestaL.resumen.precio_final)}`
+          && cuerpoGuardarL && cuerpoGuardarL.total == null && cuerpoGuardarL.base_aiu == null,
+          `(l) un cálculo que vuelve cuando la casilla ya cambió se descarta: ni precio arriba ni total o base de la casilla anterior al guardar (MUTACIÓN: sin la firma, la lista bajaba el mínimo): ${JSON.stringify({ calc: !!F.leer().ultimoCalculo, precio: porId.get("apu-c-precio").textContent, g: cuerpoGuardarL && { t: cuerpoGuardarL.total, b: cuerpoGuardarL.base_aiu } })}`);
+        okRO(/Cambió algo mientras se calculaba/.test(avisoCarrera), `(l) …y lo dice: «${avisoCarrera}»`);
+        porId.get("aiu-sobre-sub").checked = false;
         porId.get("id-proceso").value = "";
         ctx.fetch = fetchL;
       }
@@ -67831,6 +67889,200 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
 
     if (fallasP.length) throw new Error(`unidad Precios: ${fallasP.length} comprobaciones fallan:\n  - ${fallasP.join("\n  - ")}`);
     console.log("· unidad Precios · la barra, las tres cifras y la casilla: siete apartados con lo desconocido inerte y la lista pedida al entrar en los guardados; las tres cifras de arriba salen de lo calculado y nunca son $0 («Sin calcular», «Recalcule», «Faltan N cantidades», «Sin proceso»), con el veredicto de Precios y su color; la casilla de lo subcontratado se lee, vuelve como la lee el motor y mueve el precio; «Subir un APU» entra por la misma puerta del archivo; cada aviso junto a su botón; tres cifras de rentabilidad a la vista y las nueve con el botón; el panel del teléfono y Escape");
+  }
+
+  bqMinimoSub: { if (!corre("unidad el mínimo sigue a la casilla de lo subcontratado")) break bqMinimoSub;
+    /* EL MÍNIMO USA LA MISMA BASE QUE EL PRECIO (10-nov-2026, decisión del dueño: «haz el 2 y el 3»). Con la casilla
+       «Aplicar mi administración, imprevistos y ganancia también a lo subcontratado» apagada, el motor pone lo
+       subcontratado al precio a costo, y el mínimo para no perder plata cargaba el AIU sobre TODO el costo: decía «No se
+       presente» a un precio armado como el usuario lo pidió (revisión adversaria: precio $33,5 M, mínimo $39,5 M). Se
+       prueba con las funciones reales: la regla de cuánto va a costo, la identidad con el motor (el mínimo con la
+       utilidad completa ES el precio del motor), el viaje entero —op=rentabilidad, op=guardar, la lectura del borrador
+       y el expediente, la lista y «lo que deja»— y que con la casilla encendida no cambia ni un peso. */
+    const fallasS = [];
+    const okS = (c, que) => { if (!c) fallasS.push(que); };
+    const PTs = require("../lib/apu/piso_techo.js");
+    const calcS = require("../lib/apu/calculo.js");
+    const BMs = require("../lib/baja_maxima.js");
+    const GANs = require("../lib/ganancia.js");
+    const RENs = require("../lib/apu/rentabilidad.js");
+    // (a) la regla, una vez: costo directo − base del AIU; sin base, fuera de rango o con texto vacío, 0 (el lado prudente)
+    const casosA = [[{ costo_directo_total: 100, base_aiu: 100 }, 0], [{ costo_directo_total: 100, base_aiu: 60 }, 40], [{ costo_directo_total: 100, base_aiu: null }, 0],
+      [{ costo_directo_total: 100, base_aiu: "" }, 0], [{ costo_directo_total: 100, base_aiu: 120 }, 0], [{ costo_directo_total: 100, base_aiu: -5 }, 0],
+      [{ costo_directo_total: null, base_aiu: 60 }, 0], [{ costo_directo_total: 0, base_aiu: 0 }, 0], [{}, 0]];
+    for (const [e, esperado] of casosA) okS(PTs.costoACostoDe(e) === esperado, `(a) costoACostoDe(${JSON.stringify(e)}) = ${PTs.costoACostoDe(e)}, se esperaba ${esperado} (MUTACIÓN: con Number(""), la base vacía pondría todo a costo)`);
+    // (b) la identidad con el motor: con la utilidad mínima = U, sin deducciones ni contribución, el costo total del piso ES el precio de venta
+    const itemsS = [
+      { descripcion: "Obra propia", unidad: "gl", cantidad: 1, precio_manual: 150000000 },
+      { descripcion: "Pintura subcontratada", unidad: "gl", cantidad: 1, precio_manual: 50000000, subcontratado: true, aiu_subcontratista_pct: 20 },
+    ];
+    for (const modo of ["aditivo", "compuesto"]) {
+      for (const casilla of [true, false]) {
+        const cfgB = { modo_aiu: modo, aiu_pct: 10, imprevistos_pct: 5, utilidad_pct: 5, aiu_sobre_subcontratado: casilla };
+        const pres = calcS.calcularPresupuesto({ items: itemsS, config: cfgB });
+        const aC = PTs.costoACostoDe(pres.resumen);
+        const ptB = PTs.pisoTecho({ presupuesto_oficial: 1e9, costo_directo: pres.resumen.costo_directo_total, aiu: { administracion_pct: 10, imprevistos_pct: 5, utilidad_pct: 5, modo },
+          utilidad_minima_pct: 5, deducciones_pct: 0, contribucion_pct: 0, costo_a_costo: aC });
+        okS(aC === (casilla ? 0 : pres.resumen.costo_directo_subcontratado), `(b) ${modo}, casilla ${casilla}: lo que va a costo es lo subcontratado solo con la casilla apagada: ${aC}`);
+        okS(ptB.cifras.costo_total === pres.resumen.precio_venta && ptB.cifras.costo_a_costo === aC,
+          `(b) ${modo}, casilla ${casilla}: el mínimo con la utilidad completa es EXACTAMENTE el precio de venta del motor (MUTACIÓN: el AIU sobre todo con la casilla apagada): ${JSON.stringify({ piso: ptB.cifras.costo_total, motor: pres.resumen.precio_venta })}`);
+      }
+    }
+    const ptSin = PTs.pisoTecho({ presupuesto_oficial: 1e9, costo_directo: 200000000, aiu: { administracion_pct: 10, imprevistos_pct: 5, utilidad_pct: 5 }, utilidad_minima_pct: 2 });
+    for (const raro of [null, 0, -1, 300000000, "", "abc"]) {
+      const ptR = PTs.pisoTecho({ presupuesto_oficial: 1e9, costo_directo: 200000000, aiu: { administracion_pct: 10, imprevistos_pct: 5, utilidad_pct: 5 }, utilidad_minima_pct: 2, costo_a_costo: raro });
+      okS(JSON.stringify(ptR.cifras) === JSON.stringify(ptSin.cifras), `(b) una parte a costo ${JSON.stringify(raro)} no se usa: el mínimo de siempre`);
+    }
+    const ptCon = PTs.pisoTecho({ presupuesto_oficial: 1e9, costo_directo: 200000000, aiu: { administracion_pct: 10, imprevistos_pct: 5, utilidad_pct: 5 }, utilidad_minima_pct: 2, costo_a_costo: 50000000 });
+    okS(ptCon.cifras.piso_rentable === Math.round(Math.round(150000000 * 1.17 + 50000000) / 0.95) && ptCon.cifras.piso_rentable < ptSin.cifras.piso_rentable
+      && /Lo subcontratado \(\$\s?50\.000\.000\) entra a costo/.test(ptCon.fuentes.piso),
+      `(b) el piso con $50 M a costo, con la contribución del 5 %: (150 M × 1,17 + 50 M) ÷ 0,95, y la fuente lo dice: ${JSON.stringify({ con: ptCon.cifras.piso_rentable, sin: ptSin.cifras.piso_rentable, f: ptCon.fuentes.piso.slice(-140) })}`);
+    // (c) el piso del optimizador, con la misma base
+    const ppSin = RENs.precioPiso({ costo_directo: 200000000, administracion_pct: 10, imprevistos_pct: 5 });
+    const ppCon = RENs.precioPiso({ costo_directo: 200000000, administracion_pct: 10, imprevistos_pct: 5, costo_a_costo: 50000000 });
+    okS(ppSin.c_esperado === 230000000 && ppCon.c_esperado === Math.round(150000000 * 1.15 + 50000000) && RENs.precioPiso({ costo_directo: 200000000, administracion_pct: 10, imprevistos_pct: 5, costo_a_costo: 900000000 }).c_esperado === 230000000,
+      `(c) el piso del precio sugerido carga su administración e imprevistos solo sobre lo propio (fuera de rango, sobre todo): ${JSON.stringify([ppSin.c_esperado, ppCon.c_esperado])}`);
+    // (d) «lo que deja»: la tarjeta sigue cuadrando con el panel al peso (costo_sin_ganancia = costo_sin_utilidad) y deja más
+    const gBase = { presupuesto_oficial: 260000000, tipo_trabajo: "obra", costo_directo: 200000000, aiu: { administracion_pct: 10, imprevistos_pct: 5, utilidad_pct: 5, modo: "aditivo" }, aiu_origen: "suyo", deducciones_pct: 0, contribucion_declarada: true };
+    const gSin = GANs.gananciaDeProceso(gBase), gCon = GANs.gananciaDeProceso({ ...gBase, costo_a_costo: 50000000 });
+    const dCon = gCon && gCon.desglose, ptG = PTs.pisoTecho({ presupuesto_oficial: 260000000, costo_directo: 200000000, aiu: gBase.aiu, deducciones_pct: 0, contribucion_pct: 5, costo_a_costo: 50000000 });
+    okS(gSin && gCon && gSin.valor != null && gCon.valor != null && gCon.valor > gSin.valor && dCon && dCon.costo_sin_ganancia === ptG.cifras.costo_sin_utilidad && dCon.costo_sin_ganancia === Math.round(150000000 * 1.15 + 50000000),
+      `(d) «lo que deja» con lo subcontratado a costo: más, y su costo es el del panel al peso: ${JSON.stringify({ sin: gSin && gSin.valor, con: gCon && gCon.valor, costo: dCon && dCon.costo_sin_ganancia, panel: ptG.cifras.costo_sin_utilidad })}`);
+    const gImpl = GANs.gananciaDeProceso({ ...gBase, costo_directo: null, costo_a_costo: 50000000 }), gImplSin = GANs.gananciaDeProceso({ ...gBase, costo_directo: null });
+    okS(gImpl && gImplSin && gImpl.valor === gImplSin.valor, "(d) sin costo medido no se sabe qué se subcontrató: la parte a costo no se usa");
+    // (e) EL VIAJE ENTERO con el servidor real: Precios (op=rentabilidad), guardar (op=guardar), leer el borrador (cargarCostosPorProceso), el expediente y la lista
+    const routerS = require("../api/apu.js");
+    const filaS = { id_del_proceso: "CO1.REQ.SUB", cuantia_cop: 265000000, modalidad_de_contratacion: "Licitación pública", objeto_del_contrato: "Construcción de pavimento" };
+    const viaje = async (casilla, { sinBase = false } = {}) => {
+      const cfgE = { modo_aiu: "aditivo", aiu_pct: 10, imprevistos_pct: 5, utilidad_pct: 5, aiu_sobre_subcontratado: casilla, cuantia_cop: 265000000 };
+      const rP = await invocar(routerS, "/api/apu?op=rentabilidad", CAB_TOKEN, { metodo: "POST", body: { perfil: "helder", departamento: "Cundinamarca", items: itemsS, config: { ...cfgE },
+        cuantia: 265000000, objeto: "Construcción de pavimento", modalidad: "Licitación pública", id_proceso: filaS.id_del_proceso } });
+      const ptP = rP.cuerpo && rP.cuerpo.piso_techo, presP = rP.cuerpo && rP.cuerpo.presupuesto;
+      if (!ptP || !presP) return { error: `${rP.status} ${JSON.stringify(rP.cuerpo).slice(0, 200)}` };
+      const idB = `pre-sub-${casilla ? "on" : "off"}${sinBase ? "-viejo" : ""}`;
+      // lo que manda «Guardar» (public/app.js): el total, el costo directo, la base del AIU y la fracción del IVA del cálculo
+      const gR = await invocar(routerS, "/api/apu?op=guardar", CAB_TOKEN, { metodo: "POST", body: { perfil: "helder", id: idB, nombre: "Obra con subcontrato", items: itemsS,
+        id_proceso: filaS.id_del_proceso, cuantia: 265000000, config: cfgE, total: presP.resumen.precio_final, costo_directo: presP.resumen.costo_directo_total,
+        ...(sinBase ? {} : { base_aiu: presP.resumen.base_aiu, iva_utilidad_fraccion: presP.resumen.iva_utilidad_fraccion }) } });
+      try {
+        if (gR.status !== 200) return { error: `guardar ${gR.status} ${JSON.stringify(gR.cuerpo).slice(0, 200)}` };
+        const costos = await BMs.cargarCostosPorProceso(redis, "helder");
+        const reg = costos.porProceso.get(filaS.id_del_proceso) || {};
+        const exp = BMs.precioDelExpediente(filaS, filaS.id_del_proceso, costos);
+        const bm = BMs.bajaMaximaDe(filaS, costos, {});
+        const ptL = BMs.pisoTechoDeBorrador(filaS, costos, {});
+        return { ptP, presP, reg, exp: exp && exp.piso_techo, bm, ptL, pp: rP.cuerpo.precio_piso, costosR: rP.cuerpo.rentabilidad && rP.cuerpo.rentabilidad.costos };
+      } finally {
+        await redis.del(require("../lib/almacen.js").CLAVES.apuPresupuesto("helder", idB));
+      }
+    };
+    const vOff = await viaje(false), vOn = await viaje(true), vViejo = await viaje(false, { sinBase: true });
+    for (const [nombre, v] of [["apagada", vOff], ["encendida", vOn], ["apagada, borrador sin base", vViejo]]) if (v.error) okS(false, `(e) ${nombre}: ${v.error}`);
+    if (!vOff.error && !vOn.error && !vViejo.error) {
+      okS(vOff.reg.base_aiu === vOff.presP.resumen.base_aiu && vOff.reg.base_aiu === 150000000 && vOff.reg.iva_utilidad_fraccion === vOff.presP.resumen.iva_utilidad_fraccion,
+        `(e) «Guardar» deja la base del AIU y la fracción del IVA de su cálculo, y la lista las lee: ${JSON.stringify({ base: vOff.reg.base_aiu, f: vOff.reg.iva_utilidad_fraccion })}`);
+      okS(vOff.ptP.cifras.costo_a_costo === 50000000 && vOff.ptP.cifras.piso_rentable < vOn.ptP.cifras.piso_rentable,
+        `(e) en Precios, con la casilla apagada, el mínimo deja lo subcontratado a costo y baja (MUTACIÓN: sin pasar la parte a costo, el mínimo de siempre): ${JSON.stringify({ off: vOff.ptP.cifras.piso_rentable, on: vOn.ptP.cifras.piso_rentable })}`);
+      const bmP = (pt) => (pt.cifras.piso_baja_pct != null ? Math.max(0, Math.round(Number(pt.cifras.piso_baja_pct) * 100) / 100) : null);
+      for (const [nombre, v] of [["apagada", vOff], ["encendida", vOn]]) {
+        okS(v.exp && v.exp.cifras.piso_rentable === v.ptP.cifras.piso_rentable && v.exp.cifras.precio_maximo === v.ptP.cifras.precio_maximo && v.exp.veredicto === v.ptP.veredicto,
+          `(e) casilla ${nombre}: el expediente dice el mismo mínimo y el mismo veredicto que Precios: ${JSON.stringify({ precios: [v.ptP.cifras.piso_rentable, v.ptP.veredicto], expediente: v.exp && [v.exp.cifras.piso_rentable, v.exp.veredicto] })}`);
+        okS(v.bm.origen === "apu" && v.bm.valor === bmP(v.ptP) && v.ptL.pt.veredicto === v.ptP.veredicto,
+          `(e) casilla ${nombre}: la lista usa la baja máxima y el veredicto de Precios: ${JSON.stringify({ precios: bmP(v.ptP), lista: [v.bm.valor, v.bm.origen] })}`);
+      }
+      okS(vViejo.reg.base_aiu == null && vViejo.exp.cifras.piso_rentable === vOn.ptP.cifras.piso_rentable && vViejo.exp.cifras.piso_rentable >= vOff.ptP.cifras.piso_rentable,
+        `(e) un borrador guardado sin la base (antes de este cambio) no adivina: el mínimo de siempre, el más alto: ${JSON.stringify({ viejo: vViejo.exp.cifras.piso_rentable, on: vOn.ptP.cifras.piso_rentable, off: vOff.ptP.cifras.piso_rentable })}`);
+      // (f) el piso del precio sugerido, en la misma respuesta de Precios, con la misma base
+      // c_esperado = costo con A e I + garantías + costo financiero (los dos últimos, los de la rentabilidad de la misma respuesta)
+      const extra = (v) => (Number(v.costosR && v.costosR.garantias) || 0) + (Number(v.costosR && v.costosR.financiero) || 0);
+      okS(vOff.pp && vOn.pp && vOff.pp.c_esperado === Math.round(150000000 * 1.15 + 50000000 + extra(vOff)) && vOn.pp.c_esperado === Math.round(200000000 * 1.15 + extra(vOn)),
+        `(f) el costo esperado del precio sugerido deja lo subcontratado a costo con la casilla apagada: ${JSON.stringify({ off: vOff.pp && vOff.pp.c_esperado, on: vOn.pp && vOn.pp.c_esperado })}`);
+    }
+    /* (g) «lo que deja» de la lista toma del borrador la MISMA parte a costo que su mínimo: la función que la lista llama
+           (gananciaDesdeBorrador), ejecutada, y su costo sin ganancia contra el costo sin utilidad del mínimo de la lista */
+    if (!vOff.error) {
+      const entradaG = BMs.gananciaDesdeBorrador(vOff.ptL);
+      const cfgG = vOff.ptL.borrador.config;
+      const gL = GANs.gananciaDeProceso({ presupuesto_oficial: vOff.ptL.presupuesto, tipo_trabajo: "obra", ...entradaG,
+        aiu: { administracion_pct: cfgG.aiu_pct, imprevistos_pct: cfgG.imprevistos_pct, utilidad_pct: cfgG.utilidad_pct, modo: cfgG.modo_aiu }, aiu_origen: "suyo", deducciones_pct: 0, contribucion_declarada: true });
+      okS(entradaG.costo_a_costo === 50000000 && gL && gL.desglose && gL.desglose.costo_sin_ganancia === vOff.ptL.pt.cifras.costo_sin_utilidad && gL.costo_a_costo === 50000000,
+        `(g) «lo que deja» de la lista cuadra al peso con su mínimo y devuelve la parte a costo para el detalle (MUTACIÓN: sin pasarla, cuadraba con el AIU sobre todo): ${JSON.stringify({ entrada: entradaG, deja: gL && gL.desglose && gL.desglose.costo_sin_ganancia, minimo: vOff.ptL.pt.cifras.costo_sin_utilidad })}`);
+      // la casilla manda sobre la base guardada: una base de la casilla apagada con la configuración encendida no se usa
+      const reg = vOff.reg;
+      const costosOn = { porProceso: new Map([[filaS.id_del_proceso, { ...reg, config: { ...reg.config, aiu_sobre_subcontratado: true } }]]), sin_costo_por_proceso: new Map(), leido: true, incompleto: false };
+      const ptOn = BMs.pisoTechoDeBorrador(filaS, costosOn, {});
+      // …y se lee como la lee el motor (normalizarConfig): "false" en texto también la apaga
+      const costosTxt = { porProceso: new Map([[filaS.id_del_proceso, { ...reg, config: { ...reg.config, aiu_sobre_subcontratado: "false" } }]]), sin_costo_por_proceso: new Map(), leido: true, incompleto: false };
+      okS(BMs.pisoTechoDeBorrador(filaS, costosTxt, {}).pt.cifras.costo_a_costo === 50000000, "(g) la casilla guardada como \"false\" se lee como la lee el motor: apagada");
+      okS(ptOn.pt.cifras.costo_a_costo === 0 && ptOn.pt.cifras.piso_rentable === vOn.ptP.cifras.piso_rentable && BMs.gananciaDesdeBorrador(ptOn).costo_a_costo === 0,
+        `(g) con la casilla encendida en la configuración, la base guardada no se usa (MUTACIÓN: la carrera Calcular → casilla → Guardar bajaba el mínimo de la lista): ${JSON.stringify({ aCosto: ptOn.pt.cifras.costo_a_costo, piso: ptOn.pt.cifras.piso_rentable, precios: vOn.ptP.cifras.piso_rentable })}`);
+    }
+    /* (i) con la administración POR TIEMPO la A se deriva sobre TODO el costo: la parte a costo no se usa (revisión
+           adversaria: 100 M propios + 100 M subcontratados dejaban el mínimo 20,57 M por debajo del costo real) */
+    {
+      const cfgT = { modo_aiu: "aditivo", aiu_pct: 10, imprevistos_pct: 3, utilidad_pct: 5, utilidad_minima_pct: 0, aiu_sobre_subcontratado: false, metodo_administracion: "tiempo", gastos_fijos_mensuales: 6000000, horas_proyecto: 1440 };
+      const itemsT = [{ descripcion: "Obra propia", unidad: "gl", cantidad: 1, precio_manual: 100000000 }, { descripcion: "Sub", unidad: "gl", cantidad: 1, precio_manual: 100000000, subcontratado: true }];
+      const rT = await invocar(routerS, "/api/apu?op=rentabilidad", CAB_TOKEN, { metodo: "POST", body: { perfil: "helder", departamento: "Cundinamarca", items: itemsT, config: cfgT, cuantia: 400000000,
+        objeto: "Construcción de pavimento", modalidad: "Licitación pública", tipo: "interventoria" } });
+      const ptT = rT.cuerpo && rT.cuerpo.piso_techo, presT = rT.cuerpo && rT.cuerpo.presupuesto;
+      okS(presT && presT.configuracion.metodo_administracion === "tiempo" && presT.resumen.base_aiu === 100000000,
+        `(i) premisa: el motor calculó por tiempo con la casilla apagada (base de 100 M): ${JSON.stringify(presT && { m: presT.configuracion.metodo_administracion, b: presT.resumen.base_aiu })}`);
+      const adminT = presT ? Number(presT.configuracion.administracion && presT.configuracion.administracion.valor) : NaN;
+      // con la A derivada (redondeada por el motor) sobre los 200 M; sin la guarda: 100 M × (1 + A + I) + 100 M
+      const aT = presT ? Number(presT.configuracion.aiu_pct) : NaN;
+      okS(ptT && ptT.cifras.costo_a_costo === 0 && ptT.cifras.costo_sin_utilidad === Math.round(200000000 * (1 + (aT + 3) / 100)) && Math.abs(ptT.cifras.costo_sin_utilidad - (200000000 + adminT + 6000000)) < 10000,
+        `(i) por tiempo, el mínimo carga la administración entera sobre todo el costo (MUTACIÓN: sin la guarda quedaba bajo el costo real): ${JSON.stringify(ptT && { aCosto: ptT.cifras.costo_a_costo, sinUtilidad: ptT.cifras.costo_sin_utilidad, admin: adminT })}`);
+    }
+    // (h) «haz el 3»: subir un APU, usar los precios de la IA y el descuento sugerido calculan con su mínimo, por la MISMA función del botón
+    const jsS = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+    const iCSM = jsS.indexOf("  async function calcularConSuMinimo() {");
+    okS(iCSM > 0, "(h) app.js tiene calcularConSuMinimo");
+    if (iCSM > 0) {
+      const fuenteCSM = jsS.slice(iCSM, jsS.indexOf("\n  }\n", iCSM) + 4);
+      const H = new Function(`
+        const hechos = []; let okCalc = true, idProc = "";
+        const calcularApu = async () => { hechos.push("calcular"); return okCalc; };
+        const calcularRentabilidad = async (o) => { hechos.push("minimo:" + JSON.stringify(o)); };
+        const $ = (id) => (id === "id-proceso" ? { value: idProc } : null);
+        ${fuenteCSM}
+        return async (ok, id) => { hechos.length = 0; okCalc = ok; idProc = id; const r = await calcularConSuMinimo(); return { r, hechos: hechos.join() }; };`)();
+      const h1 = await H(true, " CO1.X "), h2 = await H(true, ""), h3 = await H(false, "CO1.X");
+      okS(h1.r === true && h1.hechos === 'calcular,minimo:{"auto":true}' && h2.hechos === "calcular" && h3.r === false && h3.hechos === "calcular",
+        `(h) calcula y, con proceso y un cálculo que salió bien, pide el mínimo; sin proceso o si el cálculo falló, no: ${JSON.stringify([h1, h2, h3])}`);
+      const llamadas = [...jsS.matchAll(/await calcularConSuMinimo\(\);/g)].length;
+      const sueltas = [...jsS.matchAll(/await calcularApu\(\);/g)].length;
+      okS(llamadas === 3 && /addEventListener\("click", \(\) => calcularConSuMinimo\(\)\)/.test(jsS) && sueltas === 1,
+        `(h) el botón, la importación, la IA y el descuento pasan por ella; «calcularApu» solo se llama desde ella (censo: ${llamadas} llamadas, ${sueltas} sueltas)`);
+      const iImp = jsS.indexOf("ítem(s) añadidos desde «${importacion.nombre_archivo}». Calculando…");
+      const iIa = jsS.indexOf('"precios de la IA puestos"} en la lista. Calculando el presupuesto…');
+      okS(iImp > 0 && /await calcularConSuMinimo\(\);/.test(jsS.slice(iImp, iImp + 200)) && iIa > 0 && /await calcularConSuMinimo\(\);/.test(jsS.slice(iIa, iIa + 200)),
+        "(h) subir un APU (la importación) y aceptar los precios de la IA calculan con su mínimo");
+    }
+    /* (j) EL DETALLE DE «LO QUE DEJA» DICE LO MISMO QUE LA TARJETA (revisión adversaria, 10-nov-2026: al abrirlo, con
+           parte a costo, la tarjeta decía «deja» y el detalle «depende»). La función REAL del navegador, con la MISMA
+           desglose de public/ganancia.js: lo que le pasa, repetido, tiene que dar el valor de la tarjeta. */
+    {
+      const jsD = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+      const iD = jsD.indexOf("  function pintarDetalleGanancia() {");
+      okS(iD > 0, "(j) app.js tiene pintarDetalleGanancia");
+      if (iD > 0 && gCon) {
+        const GANb = require("../public/ganancia.js");
+        const fuenteD = jsD.slice(iD, jsD.indexOf("\n  }\n", iD) + 4);
+        const detalle = new Function("GANb", "estado", `
+          const window = { Ganancia: { ...GANb, desglose: (e) => { pedido = e; return null; } } };
+          let pedido = null; let gananciaEnDetalle = estado;
+          ${fuenteD}
+          pintarDetalleGanancia();
+          return pedido;`);
+        const ajustesD = { administracion_pct: 10, imprevistos_pct: 5, utilidad_pct: 5, contribucion_en_administracion: false, declarada: true };
+        const entradaD = detalle(GANb, { l: {}, g: gCon, ajustes: ajustesD });
+        const dD = entradaD ? GANb.desglose(entradaD) : null;
+        okS(dD && dD.valor === gCon.valor && dD.costo_sin_ganancia === gCon.desglose.costo_sin_ganancia && dD.veredicto === gCon.veredicto,
+          `(j) al abrir el detalle, la misma cifra y el mismo veredicto que la tarjeta con lo subcontratado a costo (MUTACIÓN: sin pasarle la parte a costo, «depende» donde la tarjeta dice «deja»): ${JSON.stringify({ tarjeta: [gCon.valor, gCon.veredicto], detalle: dD && [dD.valor, dD.veredicto] })}`);
+      }
+    }
+    if (fallasS.length) throw new Error(`unidad el mínimo sigue a la casilla: ${fallasS.length} comprobaciones fallan:\n  - ${fallasS.join("\n  - ")}`);
+    console.log("· unidad el mínimo sigue a la casilla de lo subcontratado: una regla de cuánto va a costo (costo − base del AIU; sin base, 0), el mínimo con la utilidad completa es el precio del motor en los dos modos y con la casilla en las dos posiciones, el piso del precio sugerido y «lo que deja» con la misma base (cuadra con el panel al peso), el viaje Precios → guardar → expediente y lista dice lo mismo con la casilla apagada y encendida, un borrador sin base no adivina, y subir un APU, la IA y el descuento calculan con su mínimo");
   }
 
   bqIteraciones: {
