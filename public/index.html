@@ -2761,6 +2761,91 @@
         background: var(--accent); color: var(--bg-card); font-size: 17px; font-weight: 700; cursor: pointer; }
     }
     @media (max-width: 899px) and (prefers-reduced-motion: reduce) { #seg-maestra[data-mp] > #mp-barra { transition: none; } }
+
+    /* ══════ PRECIOS CON SU BARRA (10-nov-2026, maqueta aprobada por el dueño) ══════
+       `data-apu` en #tab-apu decide el apartado; la barra, el botón del teléfono, el encabezado de la pestaña y la
+       cabecera del análisis (nombre, «Guardar», «Subir un APU», tres cifras y veredicto) son armazón y se ven siempre. */
+    #app #tab-apu[data-apu="ofertar"] > [data-apu-apartado]:not([data-apu-apartado="ofertar"]) { display: none; }
+    #app #tab-apu[data-apu="analisis"] > [data-apu-apartado]:not([data-apu-apartado="analisis"]) { display: none; }
+    #app #tab-apu[data-apu="cuesta"] > [data-apu-apartado]:not([data-apu-apartado="cuesta"]) { display: none; }
+    #app #tab-apu[data-apu="revisar"] > [data-apu-apartado]:not([data-apu-apartado="revisar"]) { display: none; }
+    #app #tab-apu[data-apu="guardados"] > [data-apu-apartado]:not([data-apu-apartado="guardados"]) { display: none; }
+    #app #tab-apu[data-apu="ajustes"] > [data-apu-apartado]:not([data-apu-apartado="ajustes"]) { display: none; }
+    #app #tab-apu[data-apu="catalogo"] > [data-apu-apartado]:not([data-apu-apartado="catalogo"]) { display: none; }
+    /* `:not(.hidden)` va SOLO con `display` (lección del 10-nov-2026): lo demás de la rejilla, aparte, para el @media */
+    #tab-apu[data-apu]:not(.hidden) { display: grid; }
+    #tab-apu[data-apu] { grid-template-columns: minmax(0, 1fr); align-content: start; }
+    #tab-apu .apu-barra { display: flex; flex-direction: column; gap: 2px; }
+    #tab-apu .apu-barra-t { margin: 0; font-size: 17px; font-weight: 700; color: var(--text-primary); }
+    #app #tab-apu .apu-barra .apu-ir { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 48px; padding: 8px 14px; border: 0; border-radius: 12px;
+      background: transparent; color: var(--text-secondary); font-size: 17px; text-align: left; cursor: pointer; }
+    #app #tab-apu .apu-barra .apu-ir:hover { background: var(--bg-inset); color: var(--text-primary); }
+    #app #tab-apu .apu-barra .apu-ir[aria-current="page"] { background: var(--accent-light); color: var(--text-primary); font-weight: 700; }
+    #tab-apu .apu-n { margin-left: auto; font-size: 15px; font-weight: 700; white-space: nowrap; }
+    #tab-apu .apu-n.apu-tono-ok { color: var(--ok-texto); }
+    #tab-apu .apu-n.apu-tono-mal { color: var(--danger-texto); }
+    #tab-apu .apu-n.apu-tono-ojo { color: var(--warn-texto); }
+    #tab-apu .apu-este { margin-top: 18px; }
+    /* el bloque del proceso en una columna: en la barra no caben tres campos lado a lado */
+    #tab-apu #apu-este #seccion-proceso .grid { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+    #tab-apu .apu-cabecera { margin: 0 0 20px; padding: 0 0 16px; border-bottom: 1px solid var(--border); }
+    #tab-apu .apu-cab-t { margin: 0; font-size: 13px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-secondary); }
+    #tab-apu .apu-cab-fila { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 6px; }
+    #app #tab-apu .apu-nombre { flex: 1 1 260px; min-width: 0; min-height: 48px; padding: 4px 12px; border: 1px solid transparent; border-radius: 12px; background: transparent;
+      color: var(--text-primary); font-family: var(--font-display, Georgia, "Times New Roman", serif); font-size: 28px; line-height: 1.2; }
+    #app #tab-apu .apu-nombre:hover, #app #tab-apu .apu-nombre:focus { border-color: var(--border-fuerte); background: var(--bg-card); }
+    #app #tab-apu .apu-subir { min-height: 44px; padding: 0 20px; border: 0; border-radius: 999px; background: var(--accent); color: var(--bg-card); font-weight: 700; cursor: pointer; }
+    #tab-apu .apu-subir-nota { margin: 6px 0 0; font-size: 15px; color: var(--text-secondary); }
+    #tab-apu .apu-cifras { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 16px 0 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+    #tab-apu .apu-cifras > div { padding: 12px 18px; border-left: 1px solid var(--border); }
+    #tab-apu .apu-cifras > div:first-child { padding-left: 0; border-left: 0; }
+    #tab-apu .apu-cifras dd { margin: 0; font-size: 24px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--text-primary); }
+    #tab-apu .apu-cifras dd.apu-sin { font-size: 18px; font-weight: 500; color: var(--text-secondary); }
+    #tab-apu .apu-cifras dt { font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-secondary); }
+    #tab-apu .apu-veredicto { margin: 12px 0 0; font-weight: 700; color: var(--text-primary); }
+    #tab-apu .apu-veredicto.apu-tono-ok { color: var(--ok-texto); }
+    #tab-apu .apu-veredicto.apu-tono-mal { color: var(--danger-texto); }
+    #tab-apu .apu-veredicto.apu-tono-ojo { color: var(--warn-texto); }
+    /* el aviso de una pulsación hecha fuera de «Su análisis» (msgApu con espejo) y la salvedad del mínimo, que se VE */
+    #tab-apu .apu-aviso { margin: 10px 0 0; font-size: 15px; }
+    #tab-apu .apu-cifra-nota { margin-top: 2px; font-size: 13px; letter-spacing: 0; text-transform: none; color: var(--warn-texto); }
+    #tab-apu .apu-cifra-nota:not(.hidden) { display: block; }
+    #tab-apu .apu-vacio { padding: 22px 24px; border-radius: 20px; background: var(--bg-card); box-shadow: 0 0 0 1px var(--border); color: var(--text-secondary); }
+    #tab-apu .apu-vacio-t { margin: 0 0 6px; font-size: 19px; font-weight: 700; color: var(--text-primary); }
+    #app #tab-apu .apu-vacio-ir { min-height: 44px; margin-top: 12px; padding: 0 20px; border: 1px solid var(--border-fuerte); border-radius: 999px; background: transparent;
+      color: var(--text-primary); font-weight: 700; cursor: pointer; }
+    #tab-apu [data-apu-apartado="ajustes"], #tab-apu [data-apu-apartado="guardados"], #tab-apu [data-apu-apartado="revisar"], #tab-apu [data-apu-apartado="catalogo"] { margin-top: 0; }
+    /* la rentabilidad: tres cifras a la vista y las demás con «Ver las 9 cifras» (app.js marca por rótulo) */
+    #tab-apu #seccion-rentabilidad:not([data-todas]) .apu-rent-extra { display: none; }
+    #app #tab-apu .apu-ver-todas { min-height: 44px; margin-top: 10px; padding: 0; border: 0; background: transparent; color: var(--accent); font-weight: 700;
+      text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+    #tab-apu .apu-abrir-panel, #tab-apu .apu-cerrar, #tab-apu .apu-velo { display: none; }
+    @media (min-width: 900px) {
+      #tab-apu[data-apu] { grid-template-columns: 270px minmax(0, 1fr); column-gap: 36px; }
+      #tab-apu[data-apu] > * { grid-column: 2; }
+      #tab-apu[data-apu] > #apu-barra { grid-column: 1; grid-row: 1 / span 30; align-self: start; position: sticky; top: 96px; max-height: calc(100vh - 112px); overflow-y: auto; }
+      #tab-apu .apu-barra-cab { display: none; }
+    }
+    @media (max-width: 899px) {
+      #app #tab-apu .apu-abrir-panel { display: flex; order: -1; align-items: center; gap: 10px; width: 100%; min-height: 52px; margin: 0 0 18px; padding: 0 16px;
+        border: 1px solid var(--border-fuerte); border-radius: 999px; background: var(--bg-card); color: var(--text-primary); font-size: 17px; font-weight: 700; text-align: left; cursor: pointer; }
+      #tab-apu .apu-abrir-panel .apu-abrir-mas { margin-left: auto; font-weight: 400; color: var(--text-secondary); }
+      #tab-apu[data-apu] > #apu-barra { position: fixed; top: 0; bottom: 0; left: 0; z-index: 60; width: min(330px, 86vw); box-sizing: border-box;
+        padding: max(16px, env(safe-area-inset-top, 0px)) 16px 24px max(16px, env(safe-area-inset-left, 0px)); overflow-y: auto; background: var(--bg-card);
+        box-shadow: 8px 0 32px rgba(0, 0, 0, 0.2); transform: translateX(-105%); visibility: hidden;
+        transition: transform 0.22s cubic-bezier(.2,0,.38,.9), visibility 0s linear 0.22s; }
+      #tab-apu[data-apu][data-panel="abierto"] > #apu-barra { transform: none; visibility: visible; transition: transform 0.22s cubic-bezier(.2,0,.38,.9); }
+      #tab-apu .apu-barra-cab { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+      #app #tab-apu .apu-barra .apu-cerrar { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; padding: 0; border: 0;
+        background: transparent; color: var(--text-primary); cursor: pointer; }
+      #app #tab-apu .apu-velo:not([hidden]) { display: block; position: fixed; inset: 0; z-index: 59; background: rgba(26, 25, 22, 0.45); }
+      /* tres cifras en dos filas: en una no caben a 390 px */
+      #tab-apu .apu-cifras { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 10px; }
+      #tab-apu .apu-cifras > div:nth-child(odd) { padding-left: 0; border-left: 0; }
+      #tab-apu .apu-cifras dd { font-size: 21px; }
+      #app #tab-apu .apu-nombre { font-size: 24px; }
+    }
+    @media (max-width: 899px) and (prefers-reduced-motion: reduce) { #tab-apu[data-apu] > #apu-barra { transition: none; } }
     /* LA VISTA PREVIA DE LA IMPORTACIÓN SE DESPLAZA ENTERA (10-nov-2026). Medido con el teléfono del dueño: con cinco
        avisos largos (un libro de APU) los avisos llenaban el 90 % de la altura, la tabla —lo único que se desplazaba—
        quedaba en cero, «Añadir al presupuesto» salía de la pantalla y el cuerpo está bloqueado mientras la ventana
@@ -4908,7 +4993,59 @@
     </main>
 
     <!-- ════════════════════ PESTAÑA 2 · APU ════════════════════ -->
-    <main id="tab-apu" role="tabpanel" tabindex="0" aria-labelledby="pest-apu" class="panel-pestana mx-auto hidden max-w-7xl px-5 py-8">
+    <main id="tab-apu" role="tabpanel" tabindex="0" aria-labelledby="pest-apu" data-apu="analisis" class="panel-pestana mx-auto hidden max-w-7xl px-5 py-8">
+      <!-- ══════ PRECIOS CON SU BARRA (10-nov-2026, maqueta aprobada por el dueño) ══════
+           Siete apartados a la izquierda; arriba, siempre a la vista, el análisis (nombre, «Guardar», «Subir un APU») y sus
+           tres cifras con el veredicto. Lo decide la hoja por `data-apu` en #tab-apu, como en Mi empresa y Licitaciones.
+           NADA SE BORRÓ Y NINGÚN ID CAMBIÓ: los bloques de los tres pasos de antes viven en su apartado
+           (`data-apu-apartado`); el proceso (id, presupuesto oficial, plazo) va al pie de la barra, en «Este proceso».
+           En el teléfono la barra es el mismo panel lateral de las otras pestañas. -->
+      <button type="button" id="apu-abrir-panel" class="apu-abrir-panel" aria-controls="apu-barra" aria-expanded="false" aria-label="Abrir los apartados de Precios">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+        <span id="apu-abrir-rotulo">Su análisis</span><span class="apu-abrir-mas">Apartados</span>
+      </button>
+      <div id="apu-velo" class="apu-velo" hidden></div>
+      <nav id="apu-barra" class="apu-barra" aria-label="Apartados de Precios">
+        <div class="apu-barra-cab"><p class="apu-barra-t">Precios</p>
+          <button type="button" class="apu-cerrar" aria-label="Cerrar los apartados"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+        <button type="button" class="apu-ir" data-apu-ir="ofertar"><span>¿A cuánto ofertar?</span><span id="apu-n-ofertar" class="apu-n"></span></button>
+        <button type="button" class="apu-ir" data-apu-ir="analisis" aria-current="page"><span>Su análisis</span><span id="apu-n-analisis" class="apu-n"></span></button>
+        <button type="button" class="apu-ir" data-apu-ir="cuesta"><span>Cuánto le cuesta</span></button>
+        <button type="button" class="apu-ir" data-apu-ir="revisar"><span>Revisar antes de subir</span></button>
+        <button type="button" class="apu-ir" data-apu-ir="guardados"><span>Sus análisis guardados<span id="borradores-resumen"></span></span></button>
+        <button type="button" class="apu-ir" data-apu-ir="ajustes"><span>Ajustes<span id="ajustes-resumen"></span></span></button>
+        <button type="button" class="apu-ir" data-apu-ir="catalogo"><span>Catálogo y cómo calculamos</span></button>
+        <!-- «Este proceso»: el bloque del proceso de SECOP II de siempre (id, presupuesto oficial = techo, plazo,
+             «Calcular rentabilidad»), que la precarga de la tarjeta o un borrador destapan -->
+        <div id="apu-este" class="apu-este">
+        <section id="seccion-proceso" class="hidden rounded-xl bg-gray-50 p-4 ring-1 ring-inset ring-gray-900/5">
+        <h3 class="text-sm font-medium">Este proceso</h3>
+        <div class="mt-4 grid gap-4 sm:grid-cols-3">
+          <label class="block">
+            <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Id del proceso</span>
+            <input id="id-proceso" type="text" class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm">
+          </label>
+          <label class="block">
+            <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Presupuesto oficial (COP)</span>
+            <input id="cuantia" type="number" min="0" step="1000" class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm num">
+            <span class="mt-1 block text-xs text-gray-400">Es el techo: la baja se mide contra él.</span>
+            <span id="cuantia-nota" class="mt-1 block text-xs hidden" style="color: var(--warn);"></span>
+          </label>
+          <label class="block">
+            <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Plazo (meses)</span>
+            <input id="plazo-meses" type="number" min="1" max="60" step="1" value="8" class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm num">
+          </label>
+        </div>
+        <div class="mt-4 flex flex-wrap items-center gap-3">
+          <button id="btn-rentabilidad" type="button"
+                  class="rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700 disabled:opacity-40">
+            Calcular rentabilidad
+          </button>
+          <span class="text-xs text-gray-500">Consulta cuánto suelen bajar el precio y qué tan peleada está esta entidad.</span>
+        </div>
+      </section>
+        </div>
+      </nav>
       <header class="cabecera-pestana">
         <h1 class="titulo-pestana">Precios</h1>
         <p class="subtitulo-pestana">Cuánto le cuesta la obra, cuánto le deja y a cuánto conviene presentarse.</p>
@@ -4923,8 +5060,33 @@
         <p id="perfil-borrador-rotulo" class="nota-pestana"></p>
       </header>
 
+      <!-- EL ANÁLISIS, SIEMPRE A LA VISTA (10-nov-2026): su nombre, «Guardar» con su aviso al lado (lo que se pulsa
+           responde aquí, regla del 10-nov del otro chat), «Subir un APU» —la puerta única del importador, para el archivo
+           de usted, de un subcontratista o de cualquier programa— y las tres cifras que deciden, con el veredicto. Las
+           cifras las pinta app.js (`pintarCifrasPrecios`) de lo que YA calculó la pantalla: aquí no se hace ninguna cuenta,
+           y sin cálculo dicen «Sin calcular», nunca $0. -->
+      <section id="apu-cabecera" class="apu-cabecera">
+        <p class="apu-cab-t">Su análisis de precios</p>
+        <div class="apu-cab-fila">
+              <input id="nombre-presupuesto" type="text" placeholder="Póngale nombre a su análisis" aria-label="Nombre del presupuesto"
+                     class="apu-nombre">
+              <button id="btn-guardar" type="button"
+                      class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium transition hover:bg-gray-50 disabled:opacity-40">Guardar</button>
+              <button id="btn-subir-apu" type="button" class="apu-subir" aria-describedby="apu-subir-nota">Subir un APU</button>
+        </div>
+        <p id="apu-subir-nota" class="apu-subir-nota">Excel o CSV con análisis de precios unitarios (suyo, de un subcontratista o de cualquier programa) o el PDF del pliego: se leen los ítems y se completa lo faltante.</p>
+        <p id="borrador-mensaje" class="mt-3 hidden text-sm" role="status"></p>
+        <dl id="apu-cifras" class="apu-cifras">
+          <div><dd id="apu-c-precio" class="num">Sin calcular</dd><dt>Su precio</dt></div>
+          <div><dd id="apu-c-minimo" class="num">Sin calcular</dd><dt>Su mínimo para no perder plata<span id="apu-c-minimo-nota" class="apu-cifra-nota hidden"></span></dt></div>
+          <div><dd id="apu-c-presupuesto" class="num">Sin proceso</dd><dt>Presupuesto oficial</dt></div>
+        </dl>
+        <p id="apu-veredicto" class="apu-veredicto hidden" role="status"></p>
+        <p id="apu-aviso" class="apu-aviso hidden" role="status"></p>
+      </section>
+
       <!-- ══════ PASO 1 · CARGUE (rediseño 4-sep-2026): una sola puerta, y lo demás plegado ══════ -->
-        <section id="seccion-pliego-wrap" class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+        <section id="seccion-pliego-wrap" data-apu-apartado="analisis" class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
           <h2 class="font-semibold tracking-tight"><span class="mr-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-gray-900 text-xs font-bold text-white">1</span>Cargue el pliego o su análisis de precios</h2>
           <p class="mt-1 text-sm text-gray-500">Los ítems, las unidades y las cantidades entran solos; la aplicación les busca precio en sus bancos y, si lo pide, una sesión de inteligencia artificial completa los que falten con su fuente. El resto de la pantalla es para cuando no tiene ningún archivo.</p>
 
@@ -5180,7 +5342,7 @@
            UN botón. Todo lo demás (calcular con el catálogo, Excel, ajustes,
            borradores, datos del proceso, cómo calculamos) vive plegado en «Más
            herramientas»: los ids NO cambian, app.js los busca por id. -->
-      <section id="seccion-items" class="mt-6 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+      <section id="seccion-items" data-apu-apartado="analisis" class="mt-6 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
         <h2 class="font-semibold tracking-tight"><span class="mr-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-gray-900 text-xs font-bold text-white">2</span>Buscar los precios y armar los APU</h2>
         <p class="mt-1 max-w-3xl text-sm text-gray-500">Revise la lista, diga dónde es la obra y pulse <strong>Buscar</strong>: cada ítem sale con su análisis de precios unitarios, sus fuentes y sus supuestos. Un precio que traía su archivo se respeta.</p>
         <!-- En una tabla de 150 filas lo que se lee es el resumen: cuántos ítems
@@ -5270,34 +5432,8 @@
                 class="mt-3 hidden rounded-xl border border-gray-300 bg-white px-5 py-2 text-sm font-medium transition hover:bg-gray-50">
           Reintentar
         </button>
-        <section id="seccion-proceso" class="mt-5 hidden rounded-xl bg-gray-50 p-4 ring-1 ring-inset ring-gray-900/5">
-        <h3 class="text-sm font-medium">Proceso de SECOP II</h3>
-        <div class="mt-4 grid gap-4 sm:grid-cols-3">
-          <label class="block">
-            <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Id del proceso</span>
-            <input id="id-proceso" type="text" class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm">
-          </label>
-          <label class="block">
-            <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Presupuesto oficial (COP)</span>
-            <input id="cuantia" type="number" min="0" step="1000" class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm num">
-            <span class="mt-1 block text-xs text-gray-400">Es el techo: la baja se mide contra él.</span>
-            <span id="cuantia-nota" class="mt-1 block text-xs hidden" style="color: var(--warn);"></span>
-          </label>
-          <label class="block">
-            <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Plazo (meses)</span>
-            <input id="plazo-meses" type="number" min="1" max="60" step="1" value="8" class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm num">
-          </label>
-        </div>
-        <div class="mt-4 flex flex-wrap items-center gap-3">
-          <button id="btn-rentabilidad" type="button"
-                  class="rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700 disabled:opacity-40">
-            Calcular rentabilidad
-          </button>
-          <span class="text-xs text-gray-500">Consulta cuánto suelen bajar el precio y qué tan peleada está esta entidad.</span>
-        </div>
-      </section>
         <details id="mas-herramientas" class="mt-5 rounded-xl bg-gray-50 p-4 ring-1 ring-inset ring-gray-900/5">
-          <summary class="cursor-pointer text-sm text-gray-500 hover:text-gray-700"><span class="min-w-0 flex-1">Más herramientas <span class="text-xs">— calcular con el catálogo de referencia, añadir ítems por nombre, ajustes, borradores y cómo calculamos</span></span></summary>
+          <summary class="cursor-pointer text-sm text-gray-500 hover:text-gray-700"><span class="min-w-0 flex-1">Más herramientas <span class="text-xs">— calcular con el catálogo de referencia y añadir ítems por nombre</span></span></summary>
           <div class="mt-4 flex flex-wrap items-center gap-3">
             <button id="btn-calcular" type="button"
                     class="rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700 disabled:opacity-40">
@@ -5322,11 +5458,357 @@
             </div>
             <p id="buscar-nota" class="mt-2 hidden text-xs"></p>
           </div>
-          <details id="ajustes-wrap" class="mt-5 rounded-xl bg-gray-50 p-4 ring-1 ring-inset ring-gray-900/5">
+        </details>
+      </section>
+
+      <!-- ══════ PASO 3 · SU PRECIO: solo aparece tras calcular; la decisión (piso/techo) va primero y el detalle después ══════ -->
+      <div id="paso-3-cabecera" data-apu-apartado="ofertar" class="hidden">
+        <h2 class="font-semibold tracking-tight">¿A cuánto ofertar?</h2>
+        <p class="mt-1 text-sm text-gray-500">Cuánto le cuesta, cuánto le deja y, si el proceso está identificado, a cuánto conviene presentarse.</p>
+        <button id="btn-exportar" type="button"
+                class="mt-3 rounded-xl border border-gray-300 px-5 py-2.5 text-sm font-medium transition hover:bg-gray-50 disabled:opacity-40">
+          Descargar mi presupuesto (Excel)
+        </button>
+      </div>
+<div id="apu-ofertar-viejo" data-apu-apartado="ofertar" class="apu-vacio hidden" role="status">
+        <p id="apu-ofertar-viejo-t" class="apu-vacio-t">Estas cifras son de un cálculo anterior</p>
+        <p id="apu-ofertar-viejo-p">Algo cambió después: vuelva a calcular en «Su análisis».</p>
+        <button type="button" class="apu-vacio-ir" data-apu-ir="analisis">Ir a Su análisis</button>
+      </div>
+<section id="seccion-piso-techo" data-apu-apartado="ofertar" class="mt-6 hidden rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+        <div class="flex flex-wrap items-baseline justify-between gap-3">
+          <h2 class="font-semibold tracking-tight">¿Me presento, y a cuánto?</h2>
+          <span id="pt-origen" class="text-xs text-gray-400"></span>
+        </div>
+
+        <div id="pt-sin-datos" class="mt-4 hidden rounded-xl bg-gray-100 px-4 py-3 text-sm text-gray-700"></div>
+
+        <div id="pt-cuerpo" class="hidden">
+          <!-- Máximo tres cifras por bloque, cada una con su origen debajo. -->
+          <dl class="mt-4 divide-y divide-gray-100 text-sm">
+            <div class="flex flex-wrap items-baseline justify-between gap-2 py-2">
+              <dt class="text-gray-600">Lo que la entidad tiene presupuestado</dt>
+              <dd class="text-right"><span id="pt-presupuesto" class="text-base font-semibold tabular-nums">—</span>
+                <span class="block text-xs text-gray-400">SECOP II</span></dd>
+            </div>
+            <div class="flex flex-wrap items-baseline justify-between gap-2 py-2">
+              <dt class="text-gray-600">Lo que a usted le cuesta hacerlo</dt>
+              <dd class="text-right"><span id="pt-costo" class="text-base font-semibold tabular-nums">—</span>
+                <span id="pt-costo-nota" class="block text-xs text-gray-400"></span></dd>
+            </div>
+            <div class="flex flex-wrap items-baseline justify-between gap-2 py-2">
+              <dt class="text-gray-600">Lo que suele bajar esta entidad</dt>
+              <dd class="text-right"><span id="pt-baja" class="text-base font-semibold tabular-nums">—</span>
+                <span id="pt-baja-nota" class="block text-xs text-gray-400"></span></dd>
+            </div>
+            <div class="flex flex-wrap items-baseline justify-between gap-2 py-2">
+              <dt class="text-gray-600">Cuántos suelen presentarse aquí</dt>
+              <dd class="text-right"><span id="pt-oferentes" class="text-base font-semibold tabular-nums">—</span>
+                <span id="pt-oferentes-nota" class="block text-xs text-gray-400"></span></dd>
+            </div>
+          </dl>
+
+          <div class="mt-4 grid gap-4 sm:grid-cols-2">
+            <div class="rounded-2xl bg-gray-100 p-4">
+              <p class="text-xs font-medium uppercase tracking-wide text-gray-500">Su precio mínimo para no perder plata</p>
+              <p id="pt-piso" class="mt-1 text-2xl font-semibold tabular-nums">—</p>
+              <p id="pt-piso-nota" class="text-xs text-gray-500"></p>
+            </div>
+            <div class="rounded-2xl bg-gray-100 p-4">
+              <p id="pt-techo-rotulo" class="text-xs font-medium uppercase tracking-wide text-gray-500">El precio al que probablemente se gana</p>
+              <p id="pt-techo" class="mt-1 text-2xl font-semibold tabular-nums">—</p>
+              <p id="pt-techo-nota" class="text-xs text-gray-500"></p>
+            </div>
+          </div>
+
+          <!-- Dónde cae su precio entre las cifras de arriba: UNA escala, sin
+               ninguna cifra nueva (las de la escala son las mismas del dl y de
+               los dos recuadros). Nace oculta: sin el precio al que suele
+               ganarse no se dibuja. -->
+          <div id="pt-escala" class="mt-4 hidden">
+            <div id="pt-escala-dibujo" class="overflow-x-auto"></div>
+            <p id="pt-escala-nota" class="mt-1 text-xs text-gray-500"></p>
+          </div>
+
+          <!-- El veredicto: punto de color + frase completa. Nunca un porcentaje suelto. -->
+          <div id="pt-veredicto" class="mt-5 rounded-2xl p-5 ring-1 ring-inset">
+            <p class="flex items-start gap-3 text-base font-semibold">
+              <span id="pt-punto" class="mt-1 inline-block h-3 w-3 shrink-0 rounded-full" aria-hidden="true"></span>
+              <span id="pt-frase"></span>
+            </p>
+            <p id="pt-detalle" class="mt-2 pl-6 text-sm text-gray-700"></p>
+            <p id="pt-precio-actual" class="mt-2 pl-6 text-sm text-gray-600"></p>
+            <p id="pt-limite-entidad" class="mt-2 hidden pl-6 text-xs text-gray-500"></p>
+          </div>
+
+          <div class="mt-4 flex flex-wrap items-center gap-3">
+            <button id="btn-justificacion" type="button"
+                    class="rounded-xl border border-gray-300 px-5 py-2.5 text-sm font-medium transition hover:bg-gray-50 disabled:opacity-40">
+              Descargar mi justificación de precio
+            </button>
+            <span class="text-xs text-gray-500">Si la entidad le pide sustentar el precio, este documento lleva su APU detrás.</span>
+          </div>
+
+          <details class="mt-4 rounded-xl bg-gray-50 p-3 ring-1 ring-inset ring-gray-900/5">
+            <summary class="cursor-pointer text-xs text-gray-500 hover:text-gray-700">De dónde sale cada cifra y qué se supuso</summary>
+            <ul id="pt-fuentes" class="mt-2 space-y-1 text-xs text-gray-600"></ul>
+          </details>
+        </div>
+      </section>
+
+<section id="seccion-resumen" data-apu-apartado="cuesta" class="hidden rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+        <h2 class="font-semibold tracking-tight">Resumen del presupuesto</h2>
+        <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div class="rounded-2xl bg-gray-100 p-4">
+            <p class="text-xs font-medium uppercase tracking-wide text-gray-500">Costo directo</p>
+            <p id="r-directo" class="mt-1 text-2xl font-semibold tabular-nums">—</p>
+            <p id="r-jornada" class="mt-1 hidden text-xs text-gray-500"></p>
+            <p id="r-subcontratado" class="mt-1 hidden text-xs text-gray-500"></p>
+          </div>
+          <div class="rounded-2xl bg-gray-100 p-4">
+            <p class="text-xs font-medium uppercase tracking-wide text-gray-500">Precio de venta</p>
+            <p id="r-venta" class="mt-1 text-2xl font-semibold tabular-nums">—</p>
+            <p id="r-aiu" class="text-xs text-gray-500"></p>
+          </div>
+          <div class="rounded-2xl bg-blue-50 p-4">
+            <p class="text-xs font-medium uppercase tracking-wide text-blue-900/60">Precio final</p>
+            <p id="r-final" class="mt-1 text-2xl font-semibold tabular-nums text-blue-950">—</p>
+            <p id="r-baja" class="text-xs text-blue-900/60"></p>
+          </div>
+          <div id="r-margen-caja" class="rounded-2xl bg-emerald-50 p-4">
+            <p class="text-xs font-medium uppercase tracking-wide text-emerald-900/60">Margen</p>
+            <p id="r-margen" class="mt-1 text-2xl font-semibold tabular-nums text-emerald-950">—</p>
+            <p id="r-margen-pct" class="text-xs text-emerald-900/60"></p>
+          </div>
+        </div>
+
+        <div class="mt-5 grid gap-4 lg:grid-cols-2">
+          <div>
+            <h3 class="text-xs font-medium uppercase tracking-wide text-gray-500">Reparto del costo directo</h3>
+            <table class="mt-2 w-full text-sm">
+              <tbody id="r-componentes" class="divide-y divide-gray-100"></tbody>
+            </table>
+          </div>
+          <div>
+            <h3 class="text-xs font-medium uppercase tracking-wide text-gray-500">Del costo directo al precio</h3>
+            <table class="mt-2 w-full text-sm">
+              <tbody id="r-aiu-detalle" class="divide-y divide-gray-100"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Las cinco validaciones automáticas (lib/apu/validaciones). Nace
+             OCULTO y solo aparece si hay hallazgos: un recuadro que dice
+             «0 problemas» en cada cálculo se deja de mirar a la tercera vez, y
+             entonces tampoco se ve el día que sí dice algo. -->
+        <div id="r-validaciones" class="mt-5 hidden"></div>
+
+        <div id="r-alertas" class="mt-5 space-y-2"></div>
+      </section>
+
+
+
+<section id="seccion-rentabilidad" data-apu-apartado="ofertar" class="mt-6 hidden rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+        <h2 class="font-semibold tracking-tight">Rentabilidad estimada</h2>
+        <p class="mt-1 max-w-3xl text-sm text-gray-500">
+          <strong data-glosario="veg"></strong> es lo que decide, no el margen: es lo único que descuenta el
+          costo de preparar una oferta, que se paga se gane o no.
+        </p>
+        <div id="rentabilidad" class="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3"></div>
+        <button id="rentabilidad-ver-todas" type="button" class="apu-ver-todas" aria-controls="rentabilidad" aria-expanded="false">Ver las 9 cifras</button>
+        <div id="rentabilidad-precio" class="mt-5 text-sm"></div>
+        <div id="rentabilidad-avisos" class="mt-4 space-y-2"></div>
+      </section>
+
+<section id="seccion-precio-sugerido" data-apu-apartado="ofertar" class="mt-6 hidden rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+        <div class="flex flex-wrap items-baseline justify-between gap-3">
+          <div>
+            <h2 id="ps-titulo" class="font-semibold tracking-tight">Precio sugerido</h2>
+            <!-- El párrafo explicaba el MODELO («cuatro métodos de ponderación —que se
+                 sortean en la audiencia—»): para entender el número había que leerlo
+                 entero. Se dice el hecho, y el segundo renglón lo calcula app.js con la
+                 meseta que ya devuelve el servidor; sin meseta, no hay frase. -->
+            <p class="mt-1 max-w-3xl text-sm text-gray-500">
+              El precio que <strong>deja más plata a la larga</strong>, contando las veces que no se gana.
+            </p>
+            <p id="ps-hecho" class="mt-1 max-w-3xl text-sm text-gray-500"></p>
+          </div>
+          <span id="ps-origen" class="text-xs text-gray-400"></span>
+        </div>
+
+        <div id="ps-sin-datos" class="mt-4 hidden rounded-xl bg-gray-100 px-4 py-3 text-sm text-gray-700"></div>
+
+        <div id="ps-cuerpo" class="hidden">
+          <div class="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div class="rounded-2xl bg-green-50 p-4 ring-1 ring-inset ring-green-600/20">
+              <p class="text-xs font-medium uppercase tracking-wide text-green-900/60">Precio óptimo</p>
+              <p id="ps-precio" class="mt-1 text-2xl font-semibold tabular-nums text-green-950">—</p>
+              <p id="ps-precio-nota" class="text-xs text-green-900/60"></p>
+            </div>
+            <div class="rounded-2xl bg-gray-100 p-4">
+              <p class="text-xs font-medium uppercase tracking-wide text-gray-500">Descuento sugerido</p>
+              <p id="ps-descuento" class="mt-1 text-2xl font-semibold tabular-nums">—</p>
+              <p class="text-xs text-gray-500">Sobre el presupuesto oficial</p>
+            </div>
+            <div class="rounded-2xl bg-gray-100 p-4">
+              <p class="text-xs font-medium uppercase tracking-wide text-gray-500" data-glosario="veg"></p>
+              <p id="ps-veg" class="mt-1 text-2xl font-semibold tabular-nums">—</p>
+              <p id="ps-veg-nota" class="text-xs text-gray-500"></p>
+            </div>
+            <div class="rounded-2xl bg-gray-100 p-4">
+              <p class="text-xs font-medium uppercase tracking-wide text-gray-500">Probabilidad a ese precio</p>
+              <p id="ps-prob" class="mt-1 text-2xl font-semibold tabular-nums">—</p>
+              <p id="ps-prob-nota" class="text-xs text-gray-500"></p>
+            </div>
+          </div>
+
+          <div class="mt-5 flex flex-wrap items-center gap-3">
+            <button id="btn-aplicar-descuento" type="button"
+                    class="rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700 disabled:opacity-40">
+              Aplicar este descuento al APU
+            </button>
+            <span id="ps-aplicar-nota" class="text-xs text-gray-500"></span>
+          </div>
+
+          <!-- Las tres opciones: Conservador | Óptimo | Agresivo (la óptima en verde) -->
+          <div class="mt-6 overflow-x-auto">
+            <table class="w-full min-w-[720px] text-sm">
+              <thead class="border-b border-gray-200 text-left text-xs uppercase tracking-wide text-gray-400">
+                <tr>
+                  <th class="py-2 pr-3">Opción</th>
+                  <th class="py-2 pr-3 text-right">Descuento</th>
+                  <th class="py-2 pr-3 text-right">Precio</th>
+                  <th class="py-2 pr-3 text-right">Probabilidad</th>
+                  <th class="py-2 pr-3 text-right">Margen</th>
+                  <th class="py-2 pr-3 text-right" data-glosario="veg" data-glosario-corto></th>
+                  <th class="py-2"></th>
+                </tr>
+              </thead>
+              <tbody id="ps-opciones" class="divide-y divide-gray-100"></tbody>
+            </table>
+          </div>
+          <p id="ps-meseta" class="mt-2 text-xs text-gray-500"></p>
+
+          <div class="mt-6">
+            <!-- el rótulo sale del glosario (la sigla del modelo no se muestra) -->
+            <h3 class="text-xs font-medium uppercase tracking-wide text-gray-500"><span data-glosario="veg"></span> según el descuento</h3>
+            <div id="ps-curva" class="mt-2 overflow-x-auto"></div>
+          </div>
+
+          <div id="ps-alertas" class="mt-4 space-y-2"></div>
+        </div>
+      </section>
+
+      <!-- ══════ Lo que se consulta de vez en cuando, al final: revisar antes de subir y el catálogo de precios ══════ -->
+      <div data-apu-apartado="revisar">
+<section id="seccion-revision" class="mt-4">
+  <h2 class="font-semibold tracking-tight">Revisar antes de subir</h2>
+  <p class="mt-1 max-w-2xl text-sm text-gray-500">Compara su oferta con el presupuesto oficial y con el Formulario 1 del pliego: qué es motivo de rechazo automático y qué solo conviene arreglar.</p>
+  <div class="mt-3 grid gap-3 sm:grid-cols-3">
+    <label class="block text-sm"><span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Tope de AIU del pliego (%)</span>
+      <input id="rev-tope-aiu" type="number" min="0" max="100" step="0.01" placeholder="Numeral 4.1 del pliego" class="w-full rounded-lg border-gray-300 text-sm"></label>
+    <label class="block text-sm"><span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Total que escribió en SECOP II ($)</span>
+      <input id="rev-secop-total" type="number" min="0" step="1" placeholder="Opcional" class="w-full rounded-lg border-gray-300 text-sm"></label>
+    <div class="flex items-end"><button id="btn-revisar-oferta" type="button" class="w-full rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700">Revisar antes de subir</button></div>
+  </div>
+  <p id="rev-nota" class="mt-2 text-xs text-gray-500">Sin pliego leído (paso 1), la comparación con el Formulario 1 queda pendiente y se dice.</p>
+  <div id="revision-oferta" class="mt-4 hidden"></div>
+</section>
+      </div>
+      <div data-apu-apartado="catalogo">
+<section id="seccion-apu" class="mt-4">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 class="font-semibold tracking-tight">Catálogo de precios APU</h2>
+            <p class="mt-1 max-w-2xl text-sm text-gray-500">
+              La base de precios con la que se costea un ítem de obra: insumos, ítems (INVIAS, edificación y
+              los 157 del contrato Nogal adjudicado) y factores por región. Son precios de
+              <b>referencia</b>, no cotizaciones.
+            </p>
+          </div>
+          <!-- el botón NO lleva utilidad de display (`inline-flex`): es un id del
+               censo de la vista de visitante y se oculta con `hidden`; la
+               disposición del giro y el texto va en el <span> de dentro -->
+          <button id="btn-apu-cargar" type="button"
+                  class="rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700 disabled:opacity-40">
+            <span class="inline-flex items-center gap-2"><span id="apu-spin" class="hidden h-3 w-3 rounded-full border-2 border-white/40 border-t-white spin"></span>Cargar catálogo APU</span>
+          </button>
+        </div>
+
+        <p id="apu-mensaje" class="mt-5 hidden rounded-xl px-4 py-3 text-sm"></p>
+
+        <div class="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
+          <div class="rounded-2xl bg-blue-50 p-4">
+            <p class="text-xs font-medium uppercase tracking-wide text-blue-700/70">Insumos</p>
+            <p id="apu-insumos" class="mt-1 text-3xl font-semibold tabular-nums text-blue-900">—</p>
+            <p class="text-xs text-blue-700/70">materiales, mano de obra, equipo</p>
+          </div>
+          <div class="rounded-2xl bg-green-50 p-4">
+            <p class="text-xs font-medium uppercase tracking-wide text-green-700/70">Ítems</p>
+            <p id="apu-items" class="mt-1 text-3xl font-semibold tabular-nums text-green-900">—</p>
+            <p class="text-xs text-green-700/70">actividades con composición</p>
+          </div>
+          <div class="rounded-2xl bg-amber-50 p-4">
+            <p class="text-xs font-medium uppercase tracking-wide text-amber-700/70">Regiones</p>
+            <p id="apu-regiones" class="mt-1 text-3xl font-semibold tabular-nums text-amber-900">—</p>
+            <p class="text-xs text-amber-700/70">factores de ajuste</p>
+          </div>
+          <div class="rounded-2xl bg-gray-100 p-4">
+            <p class="text-xs font-medium uppercase tracking-wide text-gray-500">Base de precios</p>
+            <p id="apu-base" class="mt-1 text-3xl font-semibold tabular-nums text-gray-800">—</p>
+            <p id="apu-icociv" class="text-xs text-gray-500">—</p>
+          </div>
+        </div>
+
+        <div id="apu-detalle" class="mt-6 hidden overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead class="text-left text-xs uppercase tracking-wide text-gray-400">
+              <tr>
+                <th class="py-1 pr-2">Región</th><th class="py-1 pr-2">Ciudad base</th>
+                <th class="py-1 pr-2 text-right">Materiales</th><th class="py-1 pr-2 text-right">Mano de obra</th>
+                <th class="py-1 pr-2 text-right">Equipo</th><th class="py-1 pr-2 text-right">Transporte</th>
+                <th class="py-1 text-right">AIU típico</th>
+              </tr>
+            </thead>
+            <tbody id="apu-regiones-tabla" class="divide-y divide-gray-100"></tbody>
+          </table>
+        </div>
+
+        <p id="apu-meta" class="mt-6 text-xs text-gray-400"></p>
+      </section>
+              <details id="normativa-wrap" open class="mt-4 rounded-xl bg-gray-50 p-4 ring-1 ring-inset ring-gray-900/5">
+            <summary class="cursor-pointer text-sm font-medium">Cómo calculamos · jornada, prestaciones, AIU, IVA y deducciones</summary>
+            <!-- Metodología PÚBLICA del costo (Fase 1): parámetros vigentes con su
+                 estado de verificación y un ejemplo rehecho en el navegador con
+                 public/costos.js — el MISMO módulo que usa el servidor. Nada de esto
+                 está escrito en el HTML: lo pinta `pintarMetodologia` desde
+                 /api/apu?op=parametros. -->
+            <div id="metodologia" class="mt-4 text-sm">
+              <p class="text-xs text-gray-400">Cargando los parámetros de costo…</p>
+            </div>
+            <div id="normativa" class="mt-6 text-sm">
+              <p class="text-xs text-gray-400">Cargando el catálogo…</p>
+            </div>
+          </details>
+      </div>
+      <!-- «¿A cuánto ofertar?» y «Cuánto le cuesta» sin cálculo: una pantalla vacía no es una respuesta; dice qué falta y lleva ahí -->
+      <div id="apu-ofertar-vacio" data-apu-apartado="ofertar" class="apu-vacio">
+        <p class="apu-vacio-t">Todavía no hay a cuánto ofertar</p>
+        <p>Hace falta calcular cuánto le cuesta la obra y un proceso con su presupuesto oficial: ábralo desde una licitación o un proceso guardado.</p>
+        <button type="button" class="apu-vacio-ir" data-apu-ir="analisis">Ir a Su análisis</button>
+      </div>
+      <div id="apu-cuesta-vacio" data-apu-apartado="cuesta" class="apu-vacio">
+        <p class="apu-vacio-t">Todavía no ha calculado cuánto le cuesta</p>
+        <p>Cargue el pliego o suba un APU en «Su análisis» y pulse «Buscar» o «Calcular cuánto me cuesta».</p>
+        <button type="button" class="apu-vacio-ir" data-apu-ir="analisis">Ir a Su análisis</button>
+      </div>
+      <section data-apu-apartado="ajustes" class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+        <h2 class="font-semibold tracking-tight">Ajustes</h2>
+        <p class="mt-1 text-sm text-gray-500">AIU, anticipo, deducciones y ajuste competitivo. Los valores por defecto sirven casi siempre.</p>
+          <div id="ajustes-wrap">
             <!-- «· N cambiados» lo escribe app.js (pintarResumenAjustes) contando los
                  campos de ESTE pliegue que difieren de su valor por defecto: sin ninguno
                  cambiado no dice nada. El nodo va DENTRO del span único del summary. -->
-            <summary class="cursor-pointer text-sm text-gray-500 hover:text-gray-700"><span class="min-w-0 flex-1">Ajustes<span id="ajustes-resumen"></span> <span class="text-xs">— AIU, anticipo, deducciones y ajuste competitivo (los valores por defecto sirven casi siempre)</span></span></summary>
             <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
 <label class="block">
               <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Administración (A) %</span>
@@ -5430,349 +5912,19 @@
                 <select id="perfil" class="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"></select>
               </label>
             </div>
-          </details>
-          <details class="mt-3 rounded-xl bg-gray-50 p-3 ring-1 ring-inset ring-gray-900/5">
-            <summary class="cursor-pointer text-sm text-gray-500 hover:text-gray-700"><span class="min-w-0 flex-1">Guardar o abrir un borrador<span id="borradores-resumen"></span></span></summary>
-            <div class="mt-3 flex flex-wrap items-center gap-3">
-              <input id="nombre-presupuesto" type="text" placeholder="Nombre del presupuesto" aria-label="Nombre del presupuesto"
-                     class="min-w-[220px] flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm">
-              <button id="btn-guardar" type="button"
-                      class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium transition hover:bg-gray-50 disabled:opacity-40">Guardar</button>
+          </div>
+      </section>
+      <section data-apu-apartado="guardados" class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+        <h2 class="font-semibold tracking-tight">Sus análisis guardados</h2>
+        <p class="mt-1 text-sm text-gray-500">Los de este perfil. «Cargar» abre uno en «Su análisis».</p>
+        <div class="mt-3 flex flex-wrap items-center gap-3">
               <button id="btn-listar" type="button"
-                      class="rounded-lg px-3 py-2 text-sm text-gray-500 transition hover:text-gray-900">Abrir un borrador…</button>
-            </div>
-            <!-- LO QUE SE PULSA AQUÍ RESPONDE AQUÍ (10-nov-2026): la lista y el aviso vivían encima del bloque del proceso,
-                 cientos de píxeles por encima del botón, y el dueño pulsaba «Abrir un borrador…» sin ver nada. -->
-            <p id="borrador-mensaje" class="mt-3 hidden text-sm"></p>
+                      class="rounded-lg px-3 py-2 text-sm text-gray-500 transition hover:text-gray-900">Volver a buscar</button>
+        </div>
+        <!-- LO QUE SE PULSA AQUÍ RESPONDE AQUÍ (10-nov-2026, regla del otro chat): la lista y su aviso, debajo del botón -->
+        <p id="borrador-lista-mensaje" class="mt-3 hidden text-sm" role="status"></p>
             <div id="lista-presupuestos" class="mt-3 hidden tabla-scroll"></div>
-          </details>
-          <details id="normativa-wrap" class="mt-4 rounded-xl bg-gray-50 p-4 ring-1 ring-inset ring-gray-900/5">
-            <summary class="cursor-pointer text-sm font-medium">Cómo calculamos · jornada, prestaciones, AIU, IVA y deducciones</summary>
-            <!-- Metodología PÚBLICA del costo (Fase 1): parámetros vigentes con su
-                 estado de verificación y un ejemplo rehecho en el navegador con
-                 public/costos.js — el MISMO módulo que usa el servidor. Nada de esto
-                 está escrito en el HTML: lo pinta `pintarMetodologia` desde
-                 /api/apu?op=parametros. -->
-            <div id="metodologia" class="mt-4 text-sm">
-              <p class="text-xs text-gray-400">Cargando los parámetros de costo…</p>
-            </div>
-            <div id="normativa" class="mt-6 text-sm">
-              <p class="text-xs text-gray-400">Cargando el catálogo…</p>
-            </div>
-          </details>
-        </details>
       </section>
-
-      <!-- ══════ PASO 3 · SU PRECIO: solo aparece tras calcular; la decisión (piso/techo) va primero y el detalle después ══════ -->
-      <div id="paso-3-cabecera" class="mt-8 hidden">
-        <h2 class="font-semibold tracking-tight"><span class="mr-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-gray-900 text-xs font-bold text-white">3</span>Su precio</h2>
-        <p class="mt-1 text-sm text-gray-500">Cuánto le cuesta, cuánto le deja y, si el proceso está identificado, a cuánto conviene presentarse.</p>
-        <button id="btn-exportar" type="button"
-                class="mt-3 rounded-xl border border-gray-300 px-5 py-2.5 text-sm font-medium transition hover:bg-gray-50 disabled:opacity-40">
-          Descargar mi presupuesto (Excel)
-        </button>
-      </div>
-<section id="seccion-piso-techo" class="mt-6 hidden rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
-        <div class="flex flex-wrap items-baseline justify-between gap-3">
-          <h2 class="font-semibold tracking-tight">¿Me presento, y a cuánto?</h2>
-          <span id="pt-origen" class="text-xs text-gray-400"></span>
-        </div>
-
-        <div id="pt-sin-datos" class="mt-4 hidden rounded-xl bg-gray-100 px-4 py-3 text-sm text-gray-700"></div>
-
-        <div id="pt-cuerpo" class="hidden">
-          <!-- Máximo tres cifras por bloque, cada una con su origen debajo. -->
-          <dl class="mt-4 divide-y divide-gray-100 text-sm">
-            <div class="flex flex-wrap items-baseline justify-between gap-2 py-2">
-              <dt class="text-gray-600">Lo que la entidad tiene presupuestado</dt>
-              <dd class="text-right"><span id="pt-presupuesto" class="text-base font-semibold tabular-nums">—</span>
-                <span class="block text-xs text-gray-400">SECOP II</span></dd>
-            </div>
-            <div class="flex flex-wrap items-baseline justify-between gap-2 py-2">
-              <dt class="text-gray-600">Lo que a usted le cuesta hacerlo</dt>
-              <dd class="text-right"><span id="pt-costo" class="text-base font-semibold tabular-nums">—</span>
-                <span id="pt-costo-nota" class="block text-xs text-gray-400"></span></dd>
-            </div>
-            <div class="flex flex-wrap items-baseline justify-between gap-2 py-2">
-              <dt class="text-gray-600">Lo que suele bajar esta entidad</dt>
-              <dd class="text-right"><span id="pt-baja" class="text-base font-semibold tabular-nums">—</span>
-                <span id="pt-baja-nota" class="block text-xs text-gray-400"></span></dd>
-            </div>
-            <div class="flex flex-wrap items-baseline justify-between gap-2 py-2">
-              <dt class="text-gray-600">Cuántos suelen presentarse aquí</dt>
-              <dd class="text-right"><span id="pt-oferentes" class="text-base font-semibold tabular-nums">—</span>
-                <span id="pt-oferentes-nota" class="block text-xs text-gray-400"></span></dd>
-            </div>
-          </dl>
-
-          <div class="mt-4 grid gap-4 sm:grid-cols-2">
-            <div class="rounded-2xl bg-gray-100 p-4">
-              <p class="text-xs font-medium uppercase tracking-wide text-gray-500">Su precio mínimo para no perder plata</p>
-              <p id="pt-piso" class="mt-1 text-2xl font-semibold tabular-nums">—</p>
-              <p id="pt-piso-nota" class="text-xs text-gray-500"></p>
-            </div>
-            <div class="rounded-2xl bg-gray-100 p-4">
-              <p id="pt-techo-rotulo" class="text-xs font-medium uppercase tracking-wide text-gray-500">El precio al que probablemente se gana</p>
-              <p id="pt-techo" class="mt-1 text-2xl font-semibold tabular-nums">—</p>
-              <p id="pt-techo-nota" class="text-xs text-gray-500"></p>
-            </div>
-          </div>
-
-          <!-- Dónde cae su precio entre las cifras de arriba: UNA escala, sin
-               ninguna cifra nueva (las de la escala son las mismas del dl y de
-               los dos recuadros). Nace oculta: sin el precio al que suele
-               ganarse no se dibuja. -->
-          <div id="pt-escala" class="mt-4 hidden">
-            <div id="pt-escala-dibujo" class="overflow-x-auto"></div>
-            <p id="pt-escala-nota" class="mt-1 text-xs text-gray-500"></p>
-          </div>
-
-          <!-- El veredicto: punto de color + frase completa. Nunca un porcentaje suelto. -->
-          <div id="pt-veredicto" class="mt-5 rounded-2xl p-5 ring-1 ring-inset">
-            <p class="flex items-start gap-3 text-base font-semibold">
-              <span id="pt-punto" class="mt-1 inline-block h-3 w-3 shrink-0 rounded-full" aria-hidden="true"></span>
-              <span id="pt-frase"></span>
-            </p>
-            <p id="pt-detalle" class="mt-2 pl-6 text-sm text-gray-700"></p>
-            <p id="pt-precio-actual" class="mt-2 pl-6 text-sm text-gray-600"></p>
-            <p id="pt-limite-entidad" class="mt-2 hidden pl-6 text-xs text-gray-500"></p>
-          </div>
-
-          <div class="mt-4 flex flex-wrap items-center gap-3">
-            <button id="btn-justificacion" type="button"
-                    class="rounded-xl border border-gray-300 px-5 py-2.5 text-sm font-medium transition hover:bg-gray-50 disabled:opacity-40">
-              Descargar mi justificación de precio
-            </button>
-            <span class="text-xs text-gray-500">Si la entidad le pide sustentar el precio, este documento lleva su APU detrás.</span>
-          </div>
-
-          <details class="mt-4 rounded-xl bg-gray-50 p-3 ring-1 ring-inset ring-gray-900/5">
-            <summary class="cursor-pointer text-xs text-gray-500 hover:text-gray-700">De dónde sale cada cifra y qué se supuso</summary>
-            <ul id="pt-fuentes" class="mt-2 space-y-1 text-xs text-gray-600"></ul>
-          </details>
-        </div>
-      </section>
-
-<section id="seccion-resumen" class="mt-6 hidden rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
-        <h2 class="font-semibold tracking-tight">Resumen del presupuesto</h2>
-        <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div class="rounded-2xl bg-gray-100 p-4">
-            <p class="text-xs font-medium uppercase tracking-wide text-gray-500">Costo directo</p>
-            <p id="r-directo" class="mt-1 text-2xl font-semibold tabular-nums">—</p>
-            <p id="r-jornada" class="mt-1 hidden text-xs text-gray-500"></p>
-            <p id="r-subcontratado" class="mt-1 hidden text-xs text-gray-500"></p>
-          </div>
-          <div class="rounded-2xl bg-gray-100 p-4">
-            <p class="text-xs font-medium uppercase tracking-wide text-gray-500">Precio de venta</p>
-            <p id="r-venta" class="mt-1 text-2xl font-semibold tabular-nums">—</p>
-            <p id="r-aiu" class="text-xs text-gray-500"></p>
-          </div>
-          <div class="rounded-2xl bg-blue-50 p-4">
-            <p class="text-xs font-medium uppercase tracking-wide text-blue-900/60">Precio final</p>
-            <p id="r-final" class="mt-1 text-2xl font-semibold tabular-nums text-blue-950">—</p>
-            <p id="r-baja" class="text-xs text-blue-900/60"></p>
-          </div>
-          <div id="r-margen-caja" class="rounded-2xl bg-emerald-50 p-4">
-            <p class="text-xs font-medium uppercase tracking-wide text-emerald-900/60">Margen</p>
-            <p id="r-margen" class="mt-1 text-2xl font-semibold tabular-nums text-emerald-950">—</p>
-            <p id="r-margen-pct" class="text-xs text-emerald-900/60"></p>
-          </div>
-        </div>
-
-        <div class="mt-5 grid gap-4 lg:grid-cols-2">
-          <div>
-            <h3 class="text-xs font-medium uppercase tracking-wide text-gray-500">Reparto del costo directo</h3>
-            <table class="mt-2 w-full text-sm">
-              <tbody id="r-componentes" class="divide-y divide-gray-100"></tbody>
-            </table>
-          </div>
-          <div>
-            <h3 class="text-xs font-medium uppercase tracking-wide text-gray-500">Del costo directo al precio</h3>
-            <table class="mt-2 w-full text-sm">
-              <tbody id="r-aiu-detalle" class="divide-y divide-gray-100"></tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- Las cinco validaciones automáticas (lib/apu/validaciones). Nace
-             OCULTO y solo aparece si hay hallazgos: un recuadro que dice
-             «0 problemas» en cada cálculo se deja de mirar a la tercera vez, y
-             entonces tampoco se ve el día que sí dice algo. -->
-        <div id="r-validaciones" class="mt-5 hidden"></div>
-
-        <div id="r-alertas" class="mt-5 space-y-2"></div>
-      </section>
-
-
-
-<section id="seccion-rentabilidad" class="mt-6 hidden rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
-        <h2 class="font-semibold tracking-tight">Rentabilidad estimada</h2>
-        <p class="mt-1 max-w-3xl text-sm text-gray-500">
-          <strong data-glosario="veg"></strong> es lo que decide, no el margen: es lo único que descuenta el
-          costo de preparar una oferta, que se paga se gane o no.
-        </p>
-        <div id="rentabilidad" class="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3"></div>
-        <div id="rentabilidad-precio" class="mt-5 text-sm"></div>
-        <div id="rentabilidad-avisos" class="mt-4 space-y-2"></div>
-      </section>
-
-<section id="seccion-precio-sugerido" class="mt-6 hidden rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
-        <div class="flex flex-wrap items-baseline justify-between gap-3">
-          <div>
-            <h2 id="ps-titulo" class="font-semibold tracking-tight">Precio sugerido</h2>
-            <!-- El párrafo explicaba el MODELO («cuatro métodos de ponderación —que se
-                 sortean en la audiencia—»): para entender el número había que leerlo
-                 entero. Se dice el hecho, y el segundo renglón lo calcula app.js con la
-                 meseta que ya devuelve el servidor; sin meseta, no hay frase. -->
-            <p class="mt-1 max-w-3xl text-sm text-gray-500">
-              El precio que <strong>deja más plata a la larga</strong>, contando las veces que no se gana.
-            </p>
-            <p id="ps-hecho" class="mt-1 max-w-3xl text-sm text-gray-500"></p>
-          </div>
-          <span id="ps-origen" class="text-xs text-gray-400"></span>
-        </div>
-
-        <div id="ps-sin-datos" class="mt-4 hidden rounded-xl bg-gray-100 px-4 py-3 text-sm text-gray-700"></div>
-
-        <div id="ps-cuerpo" class="hidden">
-          <div class="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <div class="rounded-2xl bg-green-50 p-4 ring-1 ring-inset ring-green-600/20">
-              <p class="text-xs font-medium uppercase tracking-wide text-green-900/60">Precio óptimo</p>
-              <p id="ps-precio" class="mt-1 text-2xl font-semibold tabular-nums text-green-950">—</p>
-              <p id="ps-precio-nota" class="text-xs text-green-900/60"></p>
-            </div>
-            <div class="rounded-2xl bg-gray-100 p-4">
-              <p class="text-xs font-medium uppercase tracking-wide text-gray-500">Descuento sugerido</p>
-              <p id="ps-descuento" class="mt-1 text-2xl font-semibold tabular-nums">—</p>
-              <p class="text-xs text-gray-500">Sobre el presupuesto oficial</p>
-            </div>
-            <div class="rounded-2xl bg-gray-100 p-4">
-              <p class="text-xs font-medium uppercase tracking-wide text-gray-500" data-glosario="veg"></p>
-              <p id="ps-veg" class="mt-1 text-2xl font-semibold tabular-nums">—</p>
-              <p id="ps-veg-nota" class="text-xs text-gray-500"></p>
-            </div>
-            <div class="rounded-2xl bg-gray-100 p-4">
-              <p class="text-xs font-medium uppercase tracking-wide text-gray-500">Probabilidad a ese precio</p>
-              <p id="ps-prob" class="mt-1 text-2xl font-semibold tabular-nums">—</p>
-              <p id="ps-prob-nota" class="text-xs text-gray-500"></p>
-            </div>
-          </div>
-
-          <div class="mt-5 flex flex-wrap items-center gap-3">
-            <button id="btn-aplicar-descuento" type="button"
-                    class="rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700 disabled:opacity-40">
-              Aplicar este descuento al APU
-            </button>
-            <span id="ps-aplicar-nota" class="text-xs text-gray-500"></span>
-          </div>
-
-          <!-- Las tres opciones: Conservador | Óptimo | Agresivo (la óptima en verde) -->
-          <div class="mt-6 overflow-x-auto">
-            <table class="w-full min-w-[720px] text-sm">
-              <thead class="border-b border-gray-200 text-left text-xs uppercase tracking-wide text-gray-400">
-                <tr>
-                  <th class="py-2 pr-3">Opción</th>
-                  <th class="py-2 pr-3 text-right">Descuento</th>
-                  <th class="py-2 pr-3 text-right">Precio</th>
-                  <th class="py-2 pr-3 text-right">Probabilidad</th>
-                  <th class="py-2 pr-3 text-right">Margen</th>
-                  <th class="py-2 pr-3 text-right" data-glosario="veg" data-glosario-corto></th>
-                  <th class="py-2"></th>
-                </tr>
-              </thead>
-              <tbody id="ps-opciones" class="divide-y divide-gray-100"></tbody>
-            </table>
-          </div>
-          <p id="ps-meseta" class="mt-2 text-xs text-gray-500"></p>
-
-          <div class="mt-6">
-            <!-- el rótulo sale del glosario (la sigla del modelo no se muestra) -->
-            <h3 class="text-xs font-medium uppercase tracking-wide text-gray-500"><span data-glosario="veg"></span> según el descuento</h3>
-            <div id="ps-curva" class="mt-2 overflow-x-auto"></div>
-          </div>
-
-          <div id="ps-alertas" class="mt-4 space-y-2"></div>
-        </div>
-      </section>
-
-      <!-- ══════ Lo que se consulta de vez en cuando, al final: revisar antes de subir y el catálogo de precios ══════ -->
-      <details class="mt-8 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5"><summary class="cursor-pointer text-sm font-semibold tracking-tight">Revisar la oferta antes de subirla a SECOP II</summary>
-<section id="seccion-revision" class="mt-4">
-  <h2 class="font-semibold tracking-tight">Revisar antes de subir</h2>
-  <p class="mt-1 max-w-2xl text-sm text-gray-500">Compara su oferta con el presupuesto oficial y con el Formulario 1 del pliego: qué es motivo de rechazo automático y qué solo conviene arreglar.</p>
-  <div class="mt-3 grid gap-3 sm:grid-cols-3">
-    <label class="block text-sm"><span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Tope de AIU del pliego (%)</span>
-      <input id="rev-tope-aiu" type="number" min="0" max="100" step="0.01" placeholder="Numeral 4.1 del pliego" class="w-full rounded-lg border-gray-300 text-sm"></label>
-    <label class="block text-sm"><span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Total que escribió en SECOP II ($)</span>
-      <input id="rev-secop-total" type="number" min="0" step="1" placeholder="Opcional" class="w-full rounded-lg border-gray-300 text-sm"></label>
-    <div class="flex items-end"><button id="btn-revisar-oferta" type="button" class="w-full rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700">Revisar antes de subir</button></div>
-  </div>
-  <p id="rev-nota" class="mt-2 text-xs text-gray-500">Sin pliego leído (paso 1), la comparación con el Formulario 1 queda pendiente y se dice.</p>
-  <div id="revision-oferta" class="mt-4 hidden"></div>
-</section>
-      </details>
-      <details class="mt-4 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5"><summary class="cursor-pointer text-sm font-semibold tracking-tight">Catálogo de precios de referencia</summary>
-<section id="seccion-apu" class="mt-4">
-        <div class="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h2 class="font-semibold tracking-tight">Catálogo de precios APU</h2>
-            <p class="mt-1 max-w-2xl text-sm text-gray-500">
-              La base de precios con la que se costea un ítem de obra: insumos, ítems (INVIAS, edificación y
-              los 157 del contrato Nogal adjudicado) y factores por región. Son precios de
-              <b>referencia</b>, no cotizaciones.
-            </p>
-          </div>
-          <!-- el botón NO lleva utilidad de display (`inline-flex`): es un id del
-               censo de la vista de visitante y se oculta con `hidden`; la
-               disposición del giro y el texto va en el <span> de dentro -->
-          <button id="btn-apu-cargar" type="button"
-                  class="rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700 disabled:opacity-40">
-            <span class="inline-flex items-center gap-2"><span id="apu-spin" class="hidden h-3 w-3 rounded-full border-2 border-white/40 border-t-white spin"></span>Cargar catálogo APU</span>
-          </button>
-        </div>
-
-        <p id="apu-mensaje" class="mt-5 hidden rounded-xl px-4 py-3 text-sm"></p>
-
-        <div class="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
-          <div class="rounded-2xl bg-blue-50 p-4">
-            <p class="text-xs font-medium uppercase tracking-wide text-blue-700/70">Insumos</p>
-            <p id="apu-insumos" class="mt-1 text-3xl font-semibold tabular-nums text-blue-900">—</p>
-            <p class="text-xs text-blue-700/70">materiales, mano de obra, equipo</p>
-          </div>
-          <div class="rounded-2xl bg-green-50 p-4">
-            <p class="text-xs font-medium uppercase tracking-wide text-green-700/70">Ítems</p>
-            <p id="apu-items" class="mt-1 text-3xl font-semibold tabular-nums text-green-900">—</p>
-            <p class="text-xs text-green-700/70">actividades con composición</p>
-          </div>
-          <div class="rounded-2xl bg-amber-50 p-4">
-            <p class="text-xs font-medium uppercase tracking-wide text-amber-700/70">Regiones</p>
-            <p id="apu-regiones" class="mt-1 text-3xl font-semibold tabular-nums text-amber-900">—</p>
-            <p class="text-xs text-amber-700/70">factores de ajuste</p>
-          </div>
-          <div class="rounded-2xl bg-gray-100 p-4">
-            <p class="text-xs font-medium uppercase tracking-wide text-gray-500">Base de precios</p>
-            <p id="apu-base" class="mt-1 text-3xl font-semibold tabular-nums text-gray-800">—</p>
-            <p id="apu-icociv" class="text-xs text-gray-500">—</p>
-          </div>
-        </div>
-
-        <div id="apu-detalle" class="mt-6 hidden overflow-x-auto">
-          <table class="w-full text-sm">
-            <thead class="text-left text-xs uppercase tracking-wide text-gray-400">
-              <tr>
-                <th class="py-1 pr-2">Región</th><th class="py-1 pr-2">Ciudad base</th>
-                <th class="py-1 pr-2 text-right">Materiales</th><th class="py-1 pr-2 text-right">Mano de obra</th>
-                <th class="py-1 pr-2 text-right">Equipo</th><th class="py-1 pr-2 text-right">Transporte</th>
-                <th class="py-1 text-right">AIU típico</th>
-              </tr>
-            </thead>
-            <tbody id="apu-regiones-tabla" class="divide-y divide-gray-100"></tbody>
-          </table>
-        </div>
-
-        <p id="apu-meta" class="mt-6 text-xs text-gray-400"></p>
-      </section>
-      </details>
     </main>
   </div>
 

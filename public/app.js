@@ -761,6 +761,7 @@
     const yaArrancado = arrancadas.apu;
     borradorAbierto = false;   // una tarjeta nueva manda sobre el borrador que estuviera abierto
     activarPestana("apu");
+    elegirApartadoPrecios("analisis", { enfocar: false });   // la tarjeta trae otro proceso: se ve su análisis, no el apartado de antes
     if (yaArrancado) precargarDesdeURL();
   }
 
@@ -6564,6 +6565,105 @@
     if (destino && typeof destino.focus === "function") { try { destino.focus({ preventScroll: true }); } catch { /* sin foco */ } }
     return id;
   }
+  /* ══════ LOS APARTADOS DE PRECIOS (10-nov-2026, maqueta aprobada por el dueño) ══════
+     Lo decide la hoja por `data-apu` en #tab-apu; aquí solo se marca la barra, el rótulo del botón del teléfono y, al
+     entrar en «Sus análisis guardados», se pide la lista (el mismo «Volver a buscar»). Un apartado desconocido es
+     INERTE: cae a «Su análisis». */
+  const PANEL_APU = Object.freeze({ tab: "tab-apu", velo: "apu-velo", boton: "apu-abrir-panel", foco: '#apu-barra .apu-ir[aria-current="page"]', primero: "#apu-barra .apu-ir" });
+  const NOMBRES_APU = Object.freeze({ ofertar: "¿A cuánto ofertar?", analisis: "Su análisis", cuesta: "Cuánto le cuesta", revisar: "Revisar antes de subir",
+    guardados: "Sus análisis guardados", ajustes: "Ajustes", catalogo: "Catálogo y cómo calculamos" });
+  function elegirApartadoPrecios(pedido, { enfocar = true } = {}) {
+    const id = Object.prototype.hasOwnProperty.call(NOMBRES_APU, pedido) ? pedido : "analisis";
+    const tab = document.getElementById("tab-apu");
+    if (!tab) return id;
+    tab.setAttribute("data-apu", id);
+    document.querySelectorAll("#apu-barra .apu-ir").forEach((b) => {
+      if (b.getAttribute("data-apu-ir") === id) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current");
+    });
+    const rot = document.getElementById("apu-abrir-rotulo");
+    if (rot) rot.textContent = NOMBRES_APU[id];
+    const esp = document.getElementById("apu-aviso");
+    if (esp) { esp.textContent = ""; esp.classList.add("hidden"); }
+    const estabaAbierto = tab.hasAttribute("data-panel");
+    if (estabaAbierto) panelLateral(PANEL_APU, false, { devolverFoco: false });
+    // entrar en «Sus análisis guardados» ES pedir la lista: un apartado que espera otra pulsación sería una pantalla muda
+    if (id === "guardados") {
+      const lista = document.getElementById("lista-presupuestos"), btn = document.getElementById("btn-listar");
+      if (lista && btn && (lista.classList.contains("hidden") || !lista.innerHTML.trim())) btn.click();
+    }
+    if (enfocar) {
+      try { window.scrollTo({ top: 0 }); } catch { /* sin desplazamiento */ }
+      const destino = estabaAbierto ? document.getElementById("apu-abrir-panel") : document.querySelector('#apu-barra .apu-ir[aria-current="page"]');
+      if (destino && typeof destino.focus === "function") { try { destino.focus({ preventScroll: true }); } catch { /* sin foco */ } }
+    }
+    return id;
+  }
+  /* LAS TRES CIFRAS DE ARRIBA Y EL VEREDICTO (10-nov-2026). Salen de lo que la pantalla YA calculó —el último «Calcular»
+     (`ultimoCalculo.resumen.precio_final`, el mismo total que se guarda y que Mis procesos llama «Su precio») y el
+     último piso/techo (`ultimaRentabilidad.piso_techo`)— y del presupuesto del proceso. Aquí no se hace ninguna cuenta.
+     Lo que no hay se dice: «Sin calcular», «Sin proceso», «Recalcule» (cambió algo y la cifra es la de antes) o «Faltan
+     N cantidades» (un total sin esas filas sería una cifra creíble y falsa); nunca $0.
+     EL MÍNIMO Y EL VEREDICTO VALEN SOLO PARA LAS ENTRADAS CON QUE SE PIDIERON (revisión adversaria del mismo día: tras
+     cambiar una cantidad, subir un APU, abrir otro análisis o escribir otro presupuesto, la cabecera enseñaba el mínimo
+     y el «Preséntese» del cálculo anterior junto al precio nuevo). El piso/techo se guarda con la firma del cuerpo que lo
+     pidió (`firmaRentabilidad`) y aquí se compara con la de ahora (`cuerpoRentabilidad`, la MISMA función que arma la
+     petición); además hace falta un cálculo vigente y sin cantidades que falten: un mínimo sobre un costo incompleto es
+     más bajo que el de verdad. */
+  const TONO_APU = Object.freeze({ presentarse: "apu-tono-ok", no_presentarse: "apu-tono-mal", no_presentarse_supera_presupuesto: "apu-tono-mal", confirmar_iva: "apu-tono-ojo" });
+  const CORTO_APU = Object.freeze({ presentarse: "● Preséntese", no_presentarse: "● No se presente", no_presentarse_supera_presupuesto: "● No se presente", confirmar_iva: "● Revise el IVA" });
+  function pintarCifrasPrecios() {
+    const poner = (id, texto, sinDato, titulo) => { const el = document.getElementById(id); if (!el) return; el.textContent = texto; el.classList.toggle("apu-sin", !!sinDato); el.title = titulo || ""; };
+    const resumenVisible = !!($("seccion-resumen") && !$("seccion-resumen").classList.contains("hidden"));
+    const calc = ultimoCalculo;
+    const sinCantidad = calc && Array.isArray(calc.items) ? calc.items.filter((i) => i && i.cantidad_ilegible).length : 0;
+    const faltan = `Faltan ${sinCantidad} cantidad${sinCantidad === 1 ? "" : "es"}`;
+    const pf = calc && calc.resumen && calc.resumen.precio_final != null && calc.resumen.precio_final !== "" ? Number(calc.resumen.precio_final) : NaN;
+    if (!calc) poner("apu-c-precio", resumenVisible ? "Recalcule" : "Sin calcular", true, resumenVisible ? "Cambió un ajuste o un ítem: el total de abajo es el de antes. Pulse «Calcular cuánto me cuesta»." : "Todavía no ha calculado cuánto le cuesta la obra.");
+    else if (sinCantidad) poner("apu-c-precio", faltan, true, "Hay ítems sin cantidad: el total no incluye esa obra. Escríbalas en «Su análisis».");
+    else if (Number.isFinite(pf) && pf > 0) poner("apu-c-precio", pesos(pf), false, "El precio final de su análisis: el total con administración, imprevistos, utilidad y su IVA.");
+    else poner("apu-c-precio", "Sin calcular", true, "Todavía no ha calculado cuánto le cuesta la obra.");
+    const pt = ultimaRentabilidad && ultimaRentabilidad.piso_techo ? ultimaRentabilidad.piso_techo : null;
+    let firmaAhora = null;
+    try { firmaAhora = JSON.stringify(cuerpoRentabilidad()); } catch { firmaAhora = null; }   // sin poder firmar, no se afirma que siga valiendo
+    const ptVigente = !!(pt && calc && !sinCantidad && firmaRentabilidad != null && firmaAhora === firmaRentabilidad);
+    const piso = ptVigente && pt.aplicable !== false && pt.cifras && pt.cifras.piso_rentable != null ? Number(pt.cifras.piso_rentable) : NaN;
+    const cota = Number.isFinite(piso) && piso > 0 && !!pt.cifras.piso_es_cota_inferior;
+    if (Number.isFinite(piso) && piso > 0) poner("apu-c-minimo", pesos(piso), false, cota ? "Cota inferior: faltan las deducciones de acta en Ajustes." : "Costo con administración, imprevistos y su utilidad mínima, más la contribución.");
+    else if (calc && sinCantidad) poner("apu-c-minimo", faltan, true, "Un mínimo sobre un costo incompleto sería más bajo que el de verdad.");
+    else if (pt && !ptVigente) poner("apu-c-minimo", "Recalcule", true, "Cambió algo desde el último cálculo: pulse «Calcular cuánto me cuesta».");
+    else poner("apu-c-minimo", "Sin calcular", true, "Sale con el costo calculado y el presupuesto oficial del proceso.");
+    // la salvedad se VE (en el teléfono no hay `title`): sin las deducciones de acta el mínimo de verdad es más alto
+    const notaMin = $("apu-c-minimo-nota");
+    if (notaMin) { notaMin.textContent = cota ? "Sin las deducciones de acta: el de verdad es más alto (Ajustes)." : ""; notaMin.classList.toggle("hidden", !cota); }
+    const cuantia = $("cuantia") && $("cuantia").value.trim() !== "" ? Number($("cuantia").value) : NaN;
+    if (Number.isFinite(cuantia) && cuantia > 0) poner("apu-c-presupuesto", pesos(cuantia), false, cuantiaDelPliego ? "El techo del pliego definitivo." : "El del proceso abierto, en «Este proceso».");
+    else poner("apu-c-presupuesto", "Sin proceso", true, "Abra Precios desde una licitación o desde un proceso guardado.");
+    const ver = $("apu-veredicto");
+    if (ver) {
+      const t = ptVigente && pt.veredicto ? String(pt.veredicto) : "";
+      // el punto de color va con un veredicto (preséntese / no se presente / revise el IVA); una explicación va sin él
+      const tono = t && TONO_APU[pt.estado] ? TONO_APU[pt.estado] : "";
+      ver.textContent = t ? `${tono ? "● " : ""}${t}` : "";
+      ver.className = `apu-veredicto${tono ? ` ${tono}` : ""}${t ? "" : " hidden"}`;
+    }
+    const nOf = $("apu-n-ofertar");
+    if (nOf) { nOf.textContent = ptVigente && CORTO_APU[pt.estado] ? CORTO_APU[pt.estado] : ""; nOf.className = `apu-n${ptVigente && TONO_APU[pt.estado] ? ` ${TONO_APU[pt.estado]}` : ""}`; }
+    const nAn = $("apu-n-analisis");
+    if (nAn) nAn.textContent = filas.length ? `${filas.length} ${filas.length === 1 ? "ítem" : "ítems"}` : "";
+    // los apartados sin resultado dicen qué falta y llevan ahí (una pantalla vacía no es una respuesta)
+    const ptVisible = !!($("seccion-piso-techo") && !$("seccion-piso-techo").classList.contains("hidden"));
+    const vOf = $("apu-ofertar-vacio"); if (vOf) vOf.classList.toggle("hidden", ptVisible);
+    // …y el panel de abajo, si es de un cálculo anterior, lo dice encima (venía así desde antes; ahora el mínimo de arriba ya no lo repite)
+    const vViejo = $("apu-ofertar-viejo");
+    if (vViejo) {
+      vViejo.classList.toggle("hidden", !(ptVisible && pt && !ptVigente));
+      // con cantidades que faltan no es «de antes»: es de ahora y le falta obra (dicho como es)
+      const faltaObra = !!(calc && sinCantidad);
+      if ($("apu-ofertar-viejo-t")) $("apu-ofertar-viejo-t").textContent = faltaObra ? `${faltan}: estas cifras no incluyen esa obra` : "Estas cifras son de un cálculo anterior";
+      if ($("apu-ofertar-viejo-p")) $("apu-ofertar-viejo-p").textContent = faltaObra ? "Escríbalas en «Su análisis» y vuelva a calcular." : "Algo cambió después: vuelva a calcular en «Su análisis».";
+    }
+    const vCu = $("apu-cuesta-vacio"); if (vCu) vCu.classList.toggle("hidden", resumenVisible);
+  }
   /* ══════ LOS APARTADOS DE LICITACIONES (9-nov-2026, decisión del dueño sobre su maqueta) ══════
      Lo decide la hoja por `data-lic` (index.html), como en Mi empresa. «Lo que viene» enciende el Plan Anual con la
      casilla de siempre (`f-ver-paa`, ya sin verse), que dispara su búsqueda; salir de ahí la apaga, porque la insignia
@@ -6629,7 +6729,12 @@
     if (t.closest("#mp-ver") && mpApartado === "avisos") { elegirApartadoMisProcesos("procesos"); return; }
     if (t.closest("#mp-velo") || t.closest("#mp-barra .mp-cerrar") || t.closest("#mp-ver")) { panelLateral(PANEL_MP, false); return; }
     const mp = t.closest("[data-mp-ir]");
-    if (mp) elegirApartadoMisProcesos(mp.getAttribute("data-mp-ir"));
+    if (mp) { elegirApartadoMisProcesos(mp.getAttribute("data-mp-ir")); return; }
+    // Precios (10-nov-2026): el panel del teléfono y los siete apartados
+    if (t.closest("#apu-abrir-panel")) { panelLateral(PANEL_APU, true); return; }
+    if (t.closest("#apu-velo") || t.closest("#apu-barra .apu-cerrar")) { panelLateral(PANEL_APU, false); return; }
+    const apuIr = t.closest("[data-apu-ir]");
+    if (apuIr) elegirApartadoPrecios(apuIr.getAttribute("data-apu-ir"));
   });
   document.addEventListener("keydown", (ev) => {
     if (ev.key !== "Escape") return;
@@ -6641,6 +6746,8 @@
     if (exp && exp.hasAttribute("data-panel")) { panelLateral(PANEL_EXP, false); ev.preventDefault(); }
     const mae = document.getElementById("seg-maestra");
     if (mae && mae.hasAttribute("data-panel")) { panelLateral(PANEL_MP, false); ev.preventDefault(); }
+    const apuT = document.getElementById("tab-apu");
+    if (apuT && apuT.hasAttribute("data-panel") && !apuT.classList.contains("hidden")) { panelLateral(PANEL_APU, false); ev.preventDefault(); }
   });
   /* La hoja de «Más filtros» se abre ENCIMA del panel de Licitaciones y su Escape la cierra primero. Su oyente se
      registró antes (bubble) y la cierra antes de que este la viera abierta: por eso este escucha en la fase de
@@ -8112,7 +8219,17 @@
   }
 
   /* ══════════════════════ EDITOR DE APU (pestaña 2) ══════════════════════ */
-  function msgApu(texto, tipo = "info") {
+  /* `espejo` (10-nov-2026, Precios con su barra): #accion-mensaje vive en «Su análisis»; pulsado desde otro apartado
+     («Calcular rentabilidad» de la barra, el Excel de «¿A cuánto ofertar?», el descuento sugerido) el aviso caía en un
+     apartado escondido y la pulsación quedaba muda. Fuera de «Su análisis» se repite arriba, en #apu-aviso. */
+  function msgApu(texto, tipo = "info", { espejo = true } = {}) {
+    const esp = $("apu-aviso"), tabA = $("tab-apu");
+    if (esp) {
+      const fuera = !!(espejo && texto && tabA && tabA.getAttribute("data-apu") !== "analisis");
+      esp.className = `apu-aviso ${{ info: "text-gray-600", ok: "text-emerald-700", error: "text-red-600" }[tipo] || "text-gray-600"}${fuera ? "" : " hidden"}`;
+      esp.setAttribute("aria-live", tipo === "error" ? "assertive" : "polite");
+      esp.textContent = fuera ? texto : "";
+    }
     const el = $("accion-mensaje");
     const colores = { info: "text-gray-600", ok: "text-emerald-700", error: "text-red-600" };
     el.className = `mt-3 text-sm ${colores[tipo] || colores.info}`;
@@ -8126,13 +8243,18 @@
   /* LO QUE SE PULSA EN «Guardar o abrir un borrador» RESPONDE AL LADO DEL BOTÓN (10-nov-2026). El aviso general
      vive encima del bloque del proceso, cientos de píxeles por encima del pliegue: el dueño pulsó «Abrir un
      borrador…» y no vio nada. El aviso general se conserva (lo anuncia el lector de pantalla); este se ve. */
-  function msgBorrador(texto, tipo = "info") {
-    if (texto) msgApu(texto, tipo);   // vacío solo limpia el del pliegue: no borra un aviso general que siga vigente
-    const el = $("borrador-mensaje");
+  /* `donde` (10-nov-2026, Precios con su barra): «Guardar» vive arriba, en la cabecera del análisis, y la lista en el
+     apartado «Sus análisis guardados»; cada uno responde junto a SU botón, que es la regla de este aviso */
+  function msgBorrador(texto, tipo = "info", donde = "arriba") {
+    if (texto) msgApu(texto, tipo, { espejo: false });   // vacío solo limpia el suyo: no borra un aviso general vigente; sin espejo: este ya se ve
+    const el = donde === "lista" ? $("borrador-lista-mensaje") : $("borrador-mensaje");
     if (!el) return;
     const colores = { info: "text-gray-600", ok: "text-emerald-700", error: "text-red-600" };
     el.className = `mt-3 text-sm ${colores[tipo] || colores.info}${texto ? "" : " hidden"}`;
+    el.setAttribute("aria-live", tipo === "error" ? "assertive" : "polite");
     el.textContent = texto;
+    // «Cargar» se pulsa al fondo de una lista larga y su aviso vive arriba: se trae a la vista (revisión adversaria)
+    if (texto && el.scrollIntoView) el.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }
 
   /* ─────────────────────────── estado ──────────────────────────────── */
@@ -8147,6 +8269,7 @@
   let iaSondeos = 0;        // cuántas veces se sondeó (tope: no se sondea para siempre)
   let ultimoOptimizador = null; // bloque `optimizador` de /api/apu/rentabilidad
   let ultimaRentabilidad = null; // respuesta ENTERA de /api/apu?op=rentabilidad (presupuesto + piso_techo): alimenta la justificación
+  let firmaRentabilidad = null;  // el cuerpo con que se pidió (JSON): el mínimo y el veredicto de arriba solo valen con las mismas entradas
   /* Guarda de reentrada: «Calcular APU» dispara la rentabilidad sola cuando hay
      proceso asociado, y aplicar un descuento vuelve a calcular el APU. Sin esto
      dos pulsaciones seguidas dejarían dos peticiones en vuelo pintando la misma
@@ -8189,6 +8312,10 @@
       contribucion_en_administracion: !!($("contribucion-en-admin") && $("contribucion-en-admin").checked),
       // administración por tiempo (IDU): solo si el usuario la eligió y dio los dos datos
       metodo_administracion: $("metodo-admin") ? $("metodo-admin").value : "porcentaje",
+      /* LA CASILLA DE LO SUBCONTRATADO (10-nov-2026, «arregla la casilla», decisión del dueño): nadie la leía y el
+         servidor la tomaba siempre encendida (lib/apu/calculo.normalizarConfig: ausente = true). Desmarcada, los ítems
+         subcontratados entran al precio a costo, sin su administración, imprevistos y ganancia encima. */
+      aiu_sobre_subcontratado: $("aiu-sobre-sub") ? $("aiu-sobre-sub").checked : true,
       gastos_fijos_mensuales: $("gastos-fijos") && $("gastos-fijos").value.trim() !== "" ? Number($("gastos-fijos").value) : null,
       horas_proyecto: $("horas-proyecto") && $("horas-proyecto").value.trim() !== "" ? Number($("horas-proyecto").value) : null,
       /* Techo del proceso, para la validación G.5. Sale del MISMO campo que
@@ -8226,6 +8353,9 @@
     if ($("gastos-fijos")) $("gastos-fijos").value = c.gastos_fijos_mensuales == null ? "" : c.gastos_fijos_mensuales;
     if ($("horas-proyecto")) $("horas-proyecto").value = c.horas_proyecto == null ? "" : c.horas_proyecto;
     if ($("utilidad-minima")) $("utilidad-minima").value = c.utilidad_minima_pct == null ? "" : c.utilidad_minima_pct;
+    /* ausente (borradores de antes) = encendida, que es lo que el servidor hacía siempre; la MISMA lectura que
+       lib/apu/calculo.normalizarConfig (solo `false` o "false" la apagan): la casilla dice lo que el motor calcula */
+    if ($("aiu-sobre-sub")) $("aiu-sobre-sub").checked = !(c.aiu_sobre_subcontratado === false || c.aiu_sobre_subcontratado === "false");
     sincronizarBaja();
   }
 
@@ -8549,7 +8679,7 @@
       /* Checkboxes atados a la tabla EN TIEMPO REAL: desmarcar quita la fila,
          volver a marcar la devuelve. Nacen todos marcados porque la detección
          es una propuesta que se revisa quitando, no un formulario que rellenar. */
-      html += `<p class="mt-3 text-xs font-medium">Ítems detectados — desmarque los que no apliquen; la tabla del paso 3 se actualiza sola:</p>`
+      html += `<p class="mt-3 text-xs font-medium">Ítems detectados — desmarque los que no apliquen; la tabla de «Su análisis» se actualiza sola:</p>`
         + `<div class="mt-2 space-y-1">`
         + r.items.map((i) => `<label class="flex cursor-pointer items-start gap-2 text-xs">
             <input type="checkbox" data-inf="${esc(i.codigo)}" checked class="mt-0.5 h-3.5 w-3.5 rounded border-gray-300">
@@ -8660,7 +8790,7 @@
     ultimoCalculo = null;
     olvidarRevision();   // la oferta cambió: la revisión pintada ya no es de ella (N11-A)
     pintarTabla();
-    notaBusqueda(`«${def.descripcion}» añadido a la tabla del paso 3. Escríbale la cantidad allí.`, "ok");
+    notaBusqueda(`«${def.descripcion}» añadido a la tabla de «Su análisis». Escríbale la cantidad allí.`, "ok");
     $("buscar-item").value = "";
     resultadosBusqueda = [];
     ocultarBusqueda();
@@ -8727,6 +8857,7 @@
   }
 
   function pintarTabla() {
+    pintarCifrasPrecios();   // «N ítems» en la barra de Precios
     const cuerpo = $("tabla");
     $("tabla-vacia").classList.toggle("hidden", filas.length > 0);
     $("btn-calcular").disabled = filas.length === 0;
@@ -8850,7 +8981,7 @@
      casillas y los precios del cálculo VIEJO (con un 35 % dentro salía «AIU de 25 %, dentro
      del tope»). Sin cálculo, la revisión y el Excel piden recalcular, y lo dicen. Los campos
      que escribe el código (un borrador, la precarga) no disparan estos eventos. */
-  function invalidarOferta() { ultimoCalculo = null; olvidarRevision(); }
+  function invalidarOferta() { ultimoCalculo = null; olvidarRevision(); pintarCifrasPrecios(); }
   const cajaAjustesOferta = $("ajustes-wrap");
   if (cajaAjustesOferta) { for (const ev of ["input", "change"]) cajaAjustesOferta.addEventListener(ev, invalidarOferta); }
   if ($("departamento")) $("departamento").addEventListener("change", invalidarOferta);
@@ -9231,6 +9362,7 @@
       olvidarRevision();   // la oferta cambió: la revisión pintada ya no es de ella (N11-A)
       pintarCalculoEnTabla(r);
       pintarResumen(r);
+      pintarCifrasPrecios();
       /* Repintar con la normativa del CÁLCULO: viene para la región que el
          motor usó de verdad, no para la región base del catálogo. */
       if (r.normativa) pintarNormativa(r.normativa);
@@ -9381,7 +9513,11 @@
     $("seccion-resumen").classList.remove("hidden");
     const s = r.resumen;
 
-    $("r-directo").textContent = pesos(s.costo_directo_total);
+    /* SIN COSTO NO HAY $0 (10-nov-2026): con los ítems sin cantidad, las cuatro cajas decían «$0» en grande —una cifra
+       creíble y falsa—; dicen «Sin calcular» y las validaciones de abajo dicen qué falta */
+    const sinCostoR = !(Number(s.costo_directo_total) > 0);
+    const pesosR = (v) => (sinCostoR ? "Sin calcular" : pesos(v));
+    $("r-directo").textContent = pesosR(s.costo_directo_total);
     /* Con qué jornada se costeó la mano de obra (Fase 1). Sin el bloque —cálculo
        sin parámetros— no se afirma nada: no se pinta «sin ajuste», que sería
        decir que se miró y no hacía falta. */
@@ -9404,16 +9540,16 @@
       }
       ps.classList.toggle("hidden", !(n > 0));
     }
-    $("r-venta").textContent = pesos(s.precio_venta);
+    $("r-venta").textContent = pesosR(s.precio_venta);
     $("r-aiu").textContent = `AIU ${num(r.configuracion.aiu_total_pct)} % (${r.configuracion.modo_aiu})`
       + (r.configuracion.metodo_administracion === "tiempo" && r.configuracion.administracion
         ? ` · administración por tiempo: ${pesos(r.configuracion.administracion.valor)} = A ${num(r.configuracion.aiu_pct)} %` : "");
-    $("r-final").textContent = pesos(s.precio_final);
+    $("r-final").textContent = pesosR(s.precio_final);
     $("r-baja").textContent = r.configuracion.aplicar_ajuste_competitivo
       ? `Baja aplicada: ${num(r.configuracion.factor_baja)} %`
       : "Sin ajuste competitivo";
-    $("r-margen").textContent = pesos(s.margen_final);
-    $("r-margen-pct").textContent = s.margen_pct == null
+    $("r-margen").textContent = pesosR(s.margen_final);
+    $("r-margen-pct").textContent = sinCostoR || s.margen_pct == null
       ? "—" : `${num(s.margen_pct)} % sobre el costo directo`;
 
     // el color del margen es información, no decoración: en rojo cuando el
@@ -9618,7 +9754,7 @@
   async function revisarOferta() {
     const caja = $("revision-oferta");
     caja.classList.remove("hidden");
-    if (!filas.length) { caja.innerHTML = `<p class="text-sm text-gray-600">No hay ítems en el paso 3: no hay oferta que revisar.</p>`; return; }
+    if (!filas.length) { caja.innerHTML = `<p class="text-sm text-gray-600">No hay ítems en «Su análisis»: no hay oferta que revisar.</p>`; return; }
     if (!ultimoCalculo) { caja.innerHTML = `<p class="text-sm text-gray-600">Primero pulse «Calcular cuánto me cuesta»: la revisión necesita el precio de cada ítem y el total.</p>`; return; }
     caja.innerHTML = `<p class="text-sm text-gray-500">Revisando…</p>`;
     /* EL PLIEGO LEÍDO TIENE QUE SER DE ESTE PROCESO (N11-A, 27-sep-2026): el
@@ -9663,7 +9799,7 @@
   }
   $("btn-revisar-oferta").addEventListener("click", revisarOferta);
   // la nota del techo del pliego se calla en cuanto el usuario cambia la cifra a mano (revisión adversaria, 17-oct-2026)
-  $("cuantia").addEventListener("input", () => { if (cuantiaDelPliego && !techoSigueDelPliego()) { cuantiaDelPliego = null; pintarNotaCuantia(""); } });
+  $("cuantia").addEventListener("input", () => { if (cuantiaDelPliego && !techoSigueDelPliego()) { cuantiaDelPliego = null; pintarNotaCuantia(""); } pintarCifrasPrecios(); });
 
   /* ──────────────────────── guardar / cargar ───────────────────────── */
   /* Guardar el borrador: lo pulsa el usuario, y también lo llama «Pedir precios»
@@ -10065,6 +10201,22 @@
     }
     msgApu(`No se reconoce «${archivo.name}»: suba un PDF, un Excel (.xlsx, .xls), un CSV o un archivo de texto (.txt).`, "error");
   }
+  /* «SUBIR UN APU» (10-nov-2026, lo pidió el dueño: «un botón para que haga un APU que cualquier persona le pueda
+     subir»). Es la MISMA puerta única de siempre (`enrutarArchivoEntrada`: Excel o CSV → el importador con su vista previa
+     y su mapeo de columnas, PDF → el lector de pliegos), con un botón a la vista arriba en vez de solo la zona de soltar
+     del paso 1. Detekta lee los ítems, y «Buscar» arma los APU que falten. No hay lector nuevo: el importador lo hace el
+     otro chat («APU propios de Detekta», PR #356, #358 y #360). Se pasa a «Su análisis», que es donde aparece lo leído. */
+  if ($("rentabilidad-ver-todas")) $("rentabilidad-ver-todas").addEventListener("click", () => {
+    const sec = $("seccion-rentabilidad"), abrir = !sec.hasAttribute("data-todas");
+    sec.toggleAttribute("data-todas", abrir);
+    $("rentabilidad-ver-todas").textContent = abrir ? "Ver solo las tres que deciden" : `Ver las ${$("rentabilidad").children.length} cifras`;
+    $("rentabilidad-ver-todas").setAttribute("aria-expanded", abrir ? "true" : "false");
+  });
+  if ($("btn-subir-apu")) $("btn-subir-apu").addEventListener("click", () => {
+    elegirApartadoPrecios("analisis", { enfocar: false });
+    const inp = $("entrada-archivo-input");
+    if (inp) inp.click();
+  });
   {
     const zona = $("entrada-archivo"), inp = $("entrada-archivo-input");
     if (zona && inp) {
@@ -10078,7 +10230,7 @@
   $("btn-listar").addEventListener("click", async () => {
     const caja = $("lista-presupuestos");
     // la pulsación se ve YA, junto al botón, aunque la red tarde
-    msgBorrador("");
+    msgBorrador("", "info", "lista");
     caja.classList.remove("hidden");
     caja.innerHTML = `<p class="text-sm text-gray-500">Buscando sus borradores guardados…</p>`;
     if (caja.scrollIntoView) caja.scrollIntoView({ behavior: "smooth", block: "nearest" });
@@ -10086,7 +10238,7 @@
       const r = await api(`/api/apu?op=listar&perfil=${encodeURIComponent($("perfil").value)}`);
       if (!r || !Array.isArray(r.presupuestos)) {
         caja.classList.add("hidden");
-        msgBorrador("No llegó la lista de borradores. Pulse «Abrir un borrador…» otra vez en unos segundos.", "error");
+        msgBorrador("No llegó la lista de sus análisis guardados. Pulse «Volver a buscar» en unos segundos.", "error", "lista");
         return;
       }
       caja.classList.remove("hidden");
@@ -10113,7 +10265,7 @@
       if (caja.scrollIntoView) caja.scrollIntoView({ behavior: "smooth", block: "nearest" });
     } catch (e) {
       caja.classList.add("hidden");
-      msgBorrador(mensajeDeFallo(e, "listar sus presupuestos guardados"), "error");
+      msgBorrador(mensajeDeFallo(e, "listar sus presupuestos guardados"), "error", "lista");
     }
   });
 
@@ -10180,11 +10332,15 @@
       consultarIa({ silencioso: true });   // si este borrador ya pidió precios, se pintan
       $("seccion-resumen").classList.add("hidden");
       $("lista-presupuestos").classList.add("hidden");
+      // el análisis abierto se ve en «Su análisis»; su aviso, arriba junto a «Guardar» y su nombre (10-nov-2026)
+      elegirApartadoPrecios("analisis", { enfocar: false });
+      pintarCifrasPrecios();
       msgBorrador(r.catalogo_cambiado
         ? `Cargado «${p.nombre}». Atención: ${r.nota}`
         : `Cargado «${p.nombre}». Pulse «Calcular cuánto me cuesta» para ver los totales.`, r.catalogo_cambiado ? "error" : "ok");
     } catch (err) {
-      msgBorrador(mensajeDeFallo(err, "cargar el presupuesto guardado"), "error");
+      const enLista = (document.getElementById("tab-apu") || { getAttribute: () => "" }).getAttribute("data-apu") === "guardados";
+      msgBorrador(mensajeDeFallo(err, "cargar el presupuesto guardado"), "error", enLista ? "lista" : "arriba");
     }
   }
 
@@ -10699,6 +10855,7 @@
       if ($(id)) $(id).classList.add("hidden");
     }
     ultimaRentabilidad = null;
+    firmaRentabilidad = null;
     const inf = $("inferencia");
     if (inf) { inf.classList.add("hidden"); inf.innerHTML = ""; }
     olvidarRevision({ campos: true });
@@ -10706,6 +10863,7 @@
        revisión lo usaba como Formulario 1 del proceso nuevo */
     if (typeof window.__pliegoOlvidar === "function") window.__pliegoOlvidar();
     else window.__pliegoUltimo = null;
+    pintarCifrasPrecios();   // las tres cifras de arriba eran del proceso anterior
   }
 
   /* ══ EL PERFIL DEL BORRADOR ES EL DE LA BARRA (6-sep-2026) ══
@@ -10827,6 +10985,7 @@
     }
     const hayProceso = !!(p.get("id_proceso") || p.get("objeto"));
     if (hayProceso) $("seccion-proceso").classList.remove("hidden");
+    pintarCifrasPrecios();   // el presupuesto de arriba era el de antes de la tarjeta (revisión adversaria, 10-nov-2026)
     return hayProceso;
   }
   const norml = (x) => String(x || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim();
@@ -10889,6 +11048,38 @@
     </div>`;
   }
 
+  /* EL CUERPO DE LA RENTABILIDAD, en una función (10-nov-2026): lo manda `calcularRentabilidad` y con él firma
+     `pintarCifrasPrecios` la vigencia del mínimo y del veredicto de arriba. Dos copias divergirían a la primera corrección. */
+  function cuerpoRentabilidad() {
+    return {
+      // LA MISMA proyección que «Calcular APU» (ver `itemsParaElMotor`): con
+      // filas recortadas, el panel decidía sobre otro costo directo
+      items: itemsParaElMotor(),
+      departamento: $("departamento").value,
+      config: leerConfig(),
+      entidad: $("entidad").value.trim(),
+      entidad_nit: nitProceso,
+      // sin esto la rentabilidad usaría la baja MEZCLADA de la entidad y
+      // discreparía de la tarjeta del panel para el mismo proceso
+      modalidad: modalidadProceso,
+      /* El TIPO DE TRABAJO viaja por el mismo motivo que la modalidad: la
+         contribución del 5 % es de los contratos de obra pública, no de una
+         interventoría, y sin este dato el piso del editor la cobraría donde
+         la tarjeta no — dos cifras del mismo proceso. */
+      tipo_trabajo: tipoProceso,
+      /* el OBJETO viaja para leer el tipo de obra (28-oct-2026): en licitación y menor cuantía, «dónde ofertaron
+         los que ganaron» es la referencia de su tipo (una vía y un acueducto se adjudican a precios distintos) */
+      objeto: $("objeto").value.trim().slice(0, 4000),
+      unspsc: $("codigos-unspsc").value.trim(),
+      cuantia: Number($("cuantia").value) || null,
+      plazo_meses: Number($("plazo-meses").value) || 12,
+      // etiqueta: viaja y vuelve, pero no condiciona el optimizador
+      id_proceso: $("id-proceso").value.trim() || null,
+      perfil: $("perfil").value,
+      // el % de la garantía que fija el pliego de este proceso: el costo de preparar la oferta es esa póliza
+      pct_seriedad: pctSeriedadVigente(),
+    };
+  }
   async function calcularRentabilidad({ auto = false } = {}) {
     if (!filas.length) {
       if (!auto) msgApu("Agregue ítems antes de calcular la rentabilidad.", "error");
@@ -10901,38 +11092,14 @@
     const antes = btn.textContent;
     btn.textContent = "Calculando…";
     try {
-      const cuerpo = {
-        // LA MISMA proyección que «Calcular APU» (ver `itemsParaElMotor`): con
-        // filas recortadas, el panel decidía sobre otro costo directo
-        items: itemsParaElMotor(),
-        departamento: $("departamento").value,
-        config: leerConfig(),
-        entidad: $("entidad").value.trim(),
-        entidad_nit: nitProceso,
-        // sin esto la rentabilidad usaría la baja MEZCLADA de la entidad y
-        // discreparía de la tarjeta del panel para el mismo proceso
-        modalidad: modalidadProceso,
-        /* El TIPO DE TRABAJO viaja por el mismo motivo que la modalidad: la
-           contribución del 5 % es de los contratos de obra pública, no de una
-           interventoría, y sin este dato el piso del editor la cobraría donde
-           la tarjeta no — dos cifras del mismo proceso. */
-        tipo_trabajo: tipoProceso,
-        /* el OBJETO viaja para leer el tipo de obra (28-oct-2026): en licitación y menor cuantía, «dónde ofertaron
-           los que ganaron» es la referencia de su tipo (una vía y un acueducto se adjudican a precios distintos) */
-        objeto: $("objeto").value.trim().slice(0, 4000),
-        unspsc: $("codigos-unspsc").value.trim(),
-        cuantia: Number($("cuantia").value) || null,
-        plazo_meses: Number($("plazo-meses").value) || 12,
-        // etiqueta: viaja y vuelve, pero no condiciona el optimizador
-        id_proceso: $("id-proceso").value.trim() || null,
-        perfil: $("perfil").value,
-        // el % de la garantía que fija el pliego de este proceso: el costo de preparar la oferta es esa póliza
-        pct_seriedad: pctSeriedadVigente(),
-      };
+      const cuerpo = cuerpoRentabilidad();
+      const firma = JSON.stringify(cuerpo);   // ANTES de la red: lo que se pidió, aunque algo lo toque por el camino
       const c = await api("/api/apu?op=rentabilidad", { method: "POST", body: cuerpo });
       if (!c) return; // el usuario canceló el diálogo del token
       ultimaRentabilidad = c;
+      firmaRentabilidad = firma;
       pintarPisoTecho(c);
+      pintarCifrasPrecios();
       pintarRentabilidad(c);
       // el piso y el techo viajan en `piso_techo`, no en el optimizador: la curva los marca;
       // y la marca de supuesto de la probabilidad, la misma del bloque de rentabilidad
@@ -10983,6 +11150,7 @@
     const b = ev.target.closest && ev.target.closest("[data-ir-paso]");
     if (!b) return;
     const aBuscar = b.getAttribute("data-ir-paso") === "buscar";
+    elegirApartadoPrecios("analisis", { enfocar: false });   // el paso vive en «Su análisis»: desde otro apartado no se veía
     const destino = aBuscar ? $("btn-ia-pedir") : $("seccion-pliego-wrap");
     if (destino && destino.scrollIntoView) destino.scrollIntoView({ behavior: "smooth", block: "center" });
     if (aBuscar && destino && destino.focus) destino.focus({ preventScroll: true });
@@ -11289,6 +11457,16 @@
       r.payback_meses != null ? `${r.payback_meses} ${r.payback_meses === 1 ? "mes" : "meses"}` : "no retorna",
       r.flujo && !r.flujo.anticipo_es_dato ? "Anticipo sin dato: es una cota" : "Hasta recuperar el capital expuesto"));
     $("rentabilidad").innerHTML = t.join("");
+    /* TRES A LA VISTA Y LAS NUEVE EN UN PLIEGUE (10-nov-2026, maqueta aprobada por el dueño): lo que decide —lo que
+       deja por intento, el margen neto y el capital que hay que poner— se ve; las otras seis se abren con el botón.
+       Se marcan por su RÓTULO, no por su posición: un cambio de orden arriba no esconde la cifra que decide. */
+    const A_LA_VISTA = ["Lo que deja por intento", "Margen neto esperado", "Capital de trabajo máximo"];
+    [...$("rentabilidad").children].forEach((tj) => {
+      const rot = tj.querySelector("p") ? tj.querySelector("p").textContent.trim() : "";
+      tj.classList.toggle("apu-rent-extra", !A_LA_VISTA.includes(rot));
+    });
+    const verTodas = $("rentabilidad-ver-todas");
+    if (verTodas) verTodas.textContent = $("seccion-rentabilidad").hasAttribute("data-todas") ? "Ver solo las tres que deciden" : `Ver las ${t.length} cifras`;
 
     const a = c.ajuste_competitivo || {};
     const piso = c.precio_piso || {};
@@ -11561,17 +11739,15 @@
         + "así que no es un descuento. Suba la utilidad o la administración si quiere que el APU lo refleje.";
       return;
     }
-    /* El campo que se escribe vive dentro del <details> de Ajustes, que nace
-       CERRADO: sin abrirlo, el usuario veía cambiar los totales sin ver qué se
-       tocó — una acción invisible parece magia o parece un error. */
-    const ajustes = document.getElementById("ajustes-wrap");
-    if (ajustes) ajustes.open = true;
+    /* El campo que se escribe vive en «Ajustes»: sin decirlo, el usuario veía cambiar los totales sin ver qué se
+       tocó — una acción invisible parece magia o parece un error. Desde el 10-nov-2026 «Ajustes» es un apartado de la
+       barra (ya no un plegado que se abría aquí): el aviso dice dónde quedó escrito. */
     $("ajuste-competitivo").checked = true;
     sincronizarBaja();
     $("factor-baja").value = punto.descuento_apu_pct;
     $("baja-nota").textContent = `Del precio sugerido: ${num(punto.descuento_apu_pct)} % sobre su precio de venta, `
       + `que equivale a ${num(punto.descuento)} % de baja contra el presupuesto oficial.`;
-    msgApu(`Descuento aplicado (${num(punto.descuento_apu_pct)} %). Recalculando…`, "info");
+    msgApu(`Descuento aplicado (${num(punto.descuento_apu_pct)} %), escrito en «Ajustes». Recalculando…`, "info");
     const ok = await calcularApu();
     if (ok && $("id-proceso").value.trim()) await calcularRentabilidad({ auto: true });
   }
