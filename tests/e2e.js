@@ -66777,6 +66777,19 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
         }
       }
       okL(malas.length === 0, `(o) estas reglas le dan display a una pestaña sin «:not(.hidden)» y la sacan aunque esté escondida: ${malas.join(" | ")}`);
+      /* …Y `:not(.hidden)` VA SOLO CON `display` (10-nov-2026). El arreglo de arriba puso la rejilla ENTERA bajo
+         `:not(.hidden)`: pesaba (1,2,0) y le ganaba a la columna de la barra del computador, que vive en un @media con
+         (1,1,0); en producción la barra de Mi empresa y de Licitaciones quedó en 0 px de ancho (medido en Chromium a
+         1280). Una regla que lleva `:not(.hidden)` declara `display` y nada más: lo demás va en otra regla, sin el
+         `:not`, para que las de @media lo puedan cambiar. */
+      const pesadas = [];
+      for (const m of estilos.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+        // solo las que ENCIENDEN con `:not(.hidden)` (dan display): las de opacidad o animación no pelean con la rejilla
+        if (!/:not\(\.hidden\)/.test(m[1]) || !/(^|;)\s*display\s*:/.test(m[2])) continue;
+        const props = m[2].split(";").map((d) => d.split(":")[0].trim()).filter(Boolean);
+        if (props.some((pr) => pr !== "display")) pesadas.push(`${m[1].trim()} { ${props.join(", ")} }`);
+      }
+      okL(pesadas.length === 0, `(o) estas reglas con «:not(.hidden)» declaran más que display y le ganan a las de @media: ${pesadas.join(" | ")}`);
     }
     // (k) los botones de la tarjeta: primero lo que se hace con un proceso que sirve, al final «No es obra»
     const pie = (jsL.match(/<div class="t-pie">([\s\S]*?)<\/div>/) || ["", ""])[1];

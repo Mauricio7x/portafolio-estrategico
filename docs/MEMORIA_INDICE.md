@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 2577606 bytes · 457 secciones · 52 con marcador de superación.
+Derivado del árbol: 2578881 bytes · 458 secciones · 52 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -466,5 +466,6 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | Mi empresa: «Hoy» con cuatro piezas y una barra con ocho apartados; la plata en juego vuelve con quién la pone (9-nov-2026) | 9-nov-2026 | 22034-22050 | 6188 | «Licitaciones con su barra: tres apartados, el valor y el aviso de interés a la vista, y el orden al revés de un toque sin subir lo que no tiene el dato (9-nov-2026)» |
 | Cargar su propio APU: la hoja de análisis ya no se lee como formulario, y «Buscar» lo elabora respetándolo (9-nov-2026) | 9-nov-2026 | 22051-22086 | 10710 |  |
 | Licitaciones con su barra: tres apartados, el valor y el aviso de interés a la vista, y el orden al revés de un toque sin subir lo que no tiene el dato (9-nov-2026) | 9-nov-2026 | 22087-22109 | 10854 |  |
-| El APU real del dueño: la unidad cortada en «Ubicación:», el costo directo en vez del precio con AIU y la vista previa que no bajaba en el teléfono (10-nov-2026) | 10-nov-2026 | 22110-22123 | 3533 |  |
-| APU propios de Detekta, primera entrega: el banco de prueba sin Claude, el alcance de la actividad, la biblioteca y el modelo abierto apagado (10-nov-2026) | 10-nov-2026 | 22124-22137 | 8171 |  |
+| El APU real del dueño: la unidad cortada en «Ubicación:», el costo directo en vez del precio con AIU y la vista previa que no bajaba en el teléfono (10-nov-2026) | 10-nov-2026 | 22110-22122 | 3532 |  |
+| La rejilla de una pestaña: `:not(.hidden)` va solo con `display` (10-nov-2026) | 10-nov-2026 | 22123-22130 | 1276 |  |
+| APU propios de Detekta, primera entrega: el banco de prueba sin Claude, el alcance de la actividad, la biblioteca y el modelo abierto apagado (10-nov-2026) | 10-nov-2026 | 22131-22144 | 8171 |  |

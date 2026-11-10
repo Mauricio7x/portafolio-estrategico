@@ -22120,6 +22120,13 @@ En una línea: el primer APU real del dueño (un libro con hoja «PRESUPUESTO» 
 - **Verificado.** Bloque «unidad APU cargado», apartado 7c: replica el formato sin copiar el archivo del dueño al repositorio. Mutaciones que mueren: el precio del formulario con AIU que vuelve a mandar y el «%» del nombre que vuelve a ser porcentaje. Con el archivo real del dueño (fuera del árbol): 7 de 7 análisis leídos, los 7 cuadran con su «COSTO DIRECTO», los 7 casan con «PRESUPUESTO» y cada fila queda con su cantidad y su costo directo sin AIU. En Chromium emulando un iPhone 13 con ese archivo: la ventana mide 598 px y su contenido 930; al bajar aparece «Añadir al presupuesto», que funciona; al cerrar, la página vuelve a desplazarse; sin errores de script y 390 px de ancho.
 - **Sin cambiar, anotado**: en la vista previa sigue saliendo el aviso de «unidad distinta a la del catálogo» para filas que ya traen su propio análisis con precio. El ítem del catálogo solo queda de referencia y no cobra, pero el aviso suena a otra cosa.
 
+### La rejilla de una pestaña: `:not(.hidden)` va solo con `display` (10-nov-2026)
+
+En una línea: el arreglo de las pestañas del 9-nov (Mi empresa encima de las demás) puso la rejilla ENTERA bajo `:not(.hidden)`; eso pesaba (1,2,0) y le ganó a la columna de la barra del computador, que vive en un @media con (1,1,0): en producción la barra de Mi empresa y de Licitaciones quedó en 0 px de ancho. Ahora la regla con `:not(.hidden)` declara solo `display` y las columnas van aparte, con el peso que el @media puede cambiar.
+
+- **Cómo se vio.** Armando la barra de Mis procesos, Chromium a 1280 px midió `grid-template-columns: 0px 1072px` en las tres pestañas con barra. Las comprobaciones del arreglo anterior miraron QUÉ pestaña se veía, no el ANCHO de la barra: una prueba de «se ve» no prueba «se ve bien».
+- **La cerradura** es un censo de la hoja (bloque «unidad Licitaciones…», (o)): toda regla que enciende algo con `:not(.hidden)` declara `display` y nada más. Cae contra la regla de producción. Las reglas de opacidad o animación con `:not(.hidden)` no cuentan: no dan `display` y no pelean con la rejilla.
+- **Verificado** en Chromium a 1280 y 390 px: la barra mide 240 px en Mi empresa y 260 px en Licitaciones, y cada pestaña se ve sola.
 
 ### APU propios de Detekta, primera entrega: el banco de prueba sin Claude, el alcance de la actividad, la biblioteca y el modelo abierto apagado (10-nov-2026)
 
