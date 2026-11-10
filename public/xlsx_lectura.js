@@ -422,7 +422,7 @@
      jamás un supuesto con cara de dato. */
   const SECCIONES_APU = [
     ["material", /^MATERIAL(ES)?( E INSUMOS| Y SUMINISTROS)?$|^SUMINISTROS?$|^INSUMOS$/],
-    ["equipo", /^EQUIPOS?( Y HERRAMIENTAS?)?$|^HERRAMIENTAS? Y EQUIPOS?$|^MAQUINARIA( Y EQUIPOS?)?$/],
+    ["equipo", /^EQUIPOS?( Y HERRAMIENTAS?)?$|^HERRAMIENTAS? Y EQUIPOS?$|^MAQUINARIA( Y EQUIPOS?)?$|^EQUIPOS?( HERRAMIENTAS?)? Y TRANSPORTES?$|^EQUIPOS? HERRAMIENTAS? Y TRANSPORTES?$/],
     ["mano_obra", /^MANO DE OBRA$/],
     ["transporte", /^TRANSPORTES?$|^ACARREOS?$/],
   ];
@@ -539,6 +539,10 @@
           break;
         }
       }
+      /* «Unidad: Gl    Ubicación: Bogotá D.C.    Rendimiento: …» (el formato de los APU que arma el chat): el valor
+         termina en dos espacios o en la siguiente «Clave:» — la unidad no es «Gl Ubicación: Bogotá…» (10-nov-2026) */
+      valor = valor.split(/\s{2,}|\s+(?=[A-Za-zÁÉÍÓÚÑáéíóúñ]+\s*:)/)[0].trim();
+      if (clave === "unidad" && (valor.length > 12 || /\s/.test(valor))) valor = "";
       if (valor && pares[clave] == null) pares[clave] = valor;
     }
     return pares;
@@ -700,7 +704,9 @@
       };
       /* porcentaje solo si la fila lo DICE (unidad «%» o «%» en el texto): una herramienta menor «GL 1 1.500» es un valor
          global, no el 100 % de la mano de obra (revisión adversaria, 9-nov-2026) */
-      const porcentaje = unidad === "%" || /%/.test(desc);
+      /* (10-nov-2026, el APU real del dueño) «Hipoclorito 5,25 %» es un MATERIAL: el «%» del nombre no lo vuelve
+         porcentaje. Lo es la unidad que empieza por «%» («%», «% MO») o un «%» junto a herramienta o mano de obra. */
+      const porcentaje = /^%/.test(unidad || "") || (/%/.test(desc) && /HERRAMIENTA|MANO DE OBRA|\bM ?O\b|PROTECCION PERSONAL/.test(textoDeRotulo(desc)));
       /* una fila «%» sobre una base en CERO (herramienta menor de un ítem sin mano de obra) vale 0 de verdad: es la
          excepción declarada a «sin dato ≠ cero», y solo cuando el archivo escribe las DOS cifras en cero */
       if (porcentaje && crudo.valor_total == null && leer(col.valor) === 0 && (col.precio < 0 || leer(col.precio) === 0 || leer(col.precio) == null)) crudo.valor_total = 0;
@@ -719,6 +725,9 @@
       actual.componentes.push(comp);
     }
     cerrar();
+    /* una hoja con UN análisis sin código: el código es el nombre de la hoja si lo parece («APU 1.1», «1.2.3») */
+    const deHoja = /^(?:APU\s*(?:N[OoºÚ°]?\.?\s*)?)?(\d+(?:[.,]\d+)*)$/i.exec(String(nombreHoja || "").trim());
+    if (deHoja && apus.length === 1 && !apus[0].codigo) apus[0].codigo = deHoja[1].replace(/,/g, ".");
     /* lo que se dice de cada análisis: el cuadre contra su total, las filas que no cuadran y las cantidades sin dato */
     for (const a of apus) {
       a.avisos = [];
@@ -814,13 +823,27 @@
     let filas;
     if (esFormulario) {
       const usados = new Set();
+      /* EL PRECIO DE LA FILA CON ANÁLISIS ES EL COSTO DIRECTO DEL ANÁLISIS (10-nov-2026, el APU real del dueño). Su hoja
+         «PRESUPUESTO» traía el «VALOR UNITARIO» CON el AIU del 30 % dentro (872.669 = 671.284 × 1,3) y la fila lo tomaba
+         como precio: Precios le habría vuelto a sumar el AIU. Un precio de la fila es costo directo; el del análisis lo
+         es por construcción. Con el análisis completo y comprobado manda su total; a medias, la fila queda SIN precio
+         (la completa «Buscar»), porque el del formulario puede llevar el AIU dentro y no hay cómo saberlo. */
+      let conAiuDentro = 0, sinPrecioPorMedias = 0;
+      const codigosForm = formulario.filas.filter((f) => f.unidad).map((f) => codigoComparable(f.codigo));
+      const codigosRepetidos = new Set(codigosForm).size < codigosForm.length;
       filas = formulario.filas.map((f) => {
         const a = f.unidad ? apuDeFila(f) : null;
         if (!a || usados.has(a)) return f;
         usados.add(a);
         const p = precioDe(a);
-        return { ...f, composicion_usuario: composicionDe(a), ...(f.precio_archivo == null && p != null ? { precio_archivo: p } : {}) };
+        if (p != null && f.precio_archivo != null && Math.abs(f.precio_archivo - p) > Math.max(1, p * 0.005)) conAiuDentro++;
+        if (p == null && f.precio_archivo != null) sinPrecioPorMedias++;
+        /* «1, 1, 1» en la columna de ítem (el capítulo): el código que identifica la fila es el del análisis */
+        const codigo = codigosRepetidos && a.codigo ? a.codigo : f.codigo;
+        return { ...f, codigo, composicion_usuario: composicionDe(a), precio_archivo: p };
       });
+      if (conAiuDentro) avisos.push(`En ${conAiuDentro} ítem(s) el precio de la hoja «${elegida.hoja.nombre}» no es el costo directo de su análisis (puede llevar el AIU dentro): se usa el costo directo del análisis, y el AIU lo pone Precios.`);
+      if (sinPrecioPorMedias) avisos.push(`${sinPrecioPorMedias} ítem(s) traen precio en la hoja «${elegida.hoja.nombre}» pero su análisis está incompleto: quedan sin precio hasta que «Buscar» complete el análisis.`);
       const sueltos = apus.filter((a) => !usados.has(a));
       avisos.push(`${usados.size} de ${apus.length} análisis de precios unitarios casaron con los ítems de la hoja «${elegida.hoja.nombre}».`);
       if (sueltos.length) avisos.push(`${sueltos.length} análisis no casan con ningún ítem del formulario (${sueltos.slice(0, 3).map((a) => a.codigo || a.descripcion || "sin código").join(", ")}${sueltos.length > 3 ? "…" : ""}): no se añadieron.`);

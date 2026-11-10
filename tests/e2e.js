@@ -23913,6 +23913,35 @@ async function main() {
       assert.ok(malV.apartados.length === 1 && /cambió el rendimiento de «ARENA»/.test(malV.apartados[0].motivo), "en un material el rendimiento no se invierte: 0,5 no es 1 ÷ 0,5");
     }
 
+    /* 7c · el formato del APU real del dueño (10-nov-2026): «Unidad: Gl    Ubicación: …», «Hipoclorito 5,25 %» que es un
+       material, «% MO», «III. EQUIPO Y TRANSPORTE», el código en el nombre de la hoja y un presupuesto con el AIU dentro */
+    {
+      const apuD = (desc, unidad, filasMat, mo) => [["ANÁLISIS DE PRECIO UNITARIO"], [`Actividad: ${desc}`], [`Unidad: ${unidad}    Ubicación: Bogotá D.C.    Rendimiento: 1 ${unidad}/día`], [],
+        ["I. MATERIALES"], ["Descripción", "Unidad", "Cantidad", "Desperdicio", "Valor unitario", "Valor parcial", "Nota"], ...filasMat, ["Subtotal materiales", null, null, null, null, 1, null], [],
+        ["II. MANO DE OBRA"], ["Descripción", "Unidad", "Cantidad", "Desperdicio", "Valor unitario", "Valor parcial", "Nota"], ["Oficial", "jornal", 1, 0, mo, mo, null], ["Subtotal mano de obra", null, null, null, null, mo, null], [],
+        ["III. EQUIPO Y TRANSPORTE"], ["Descripción", "Unidad", "Cantidad", "Desperdicio", "Valor unitario", "Valor parcial", "Nota"], ["Retiro de residuos en motocarga", "viaje", 1, 0, 100000, 100000, null],
+        ["Herramienta menor y consumibles", "% MO", 0.05, null, mo, mo * 0.05, null], ["Subtotal equipo y transporte", null, null, null, null, 1, null], [],
+        ["COSTO DIRECTO", null, null, null, null, 0, null]];
+      const h11 = apuD("Limpieza y desocupe de tanque", "Gl", [["Hipoclorito 5,25% Casalimpia 3.785 ml", "gal", 1, 0, 29900, 29900, null]], 160000);
+      h11[h11.length - 1][5] = 29900 + 160000 + 100000 + 8000;
+      const h12 = apuD("Enchape de baldosas para parqueadero", "m²", [["Piso porcelanato 50x100", "m²", 1, 7, 70000, 74900, null]], 20000);
+      h12[h12.length - 1][5] = 74900 + 20000 + 100000 + 1000;
+      const pres = [["PRESUPUESTO"], ["ÍTEM", "APU", "DESCRIPCIÓN", "UNIDAD", "CANTIDAD", "COSTO DIRECTO UNIT.", "VALOR UNITARIO (COP)", "VALOR TOTAL (COP)"],
+        ["1", "1.1", "Limpieza y desocupe de tanque", "Gl", 1, 297900, 387270, 387270], ["1", "1.2", "Enchape de baldosas para parqueadero", "m²", 18, 195900, 254670, 4584060],
+        [null, null, null, null, null, null, "TOTAL", 4971330]];
+      const libroD = { hojas: [{ nombre: "PRESUPUESTO", filas: pres }, { nombre: "APU 1.1", filas: h11 }, { nombre: "APU 1.2", filas: h12 }] };
+      const ld = XL.leerApusDelLibro(libroD);
+      assert.deepStrictEqual(ld.apus.map((a) => [a.codigo, a.unidad, a.cuadra]), [["1.1", "Gl", true], ["1.2", "m²", true]], "el código sale del nombre de la hoja, la unidad se corta en «Ubicación:» y los dos cuadran");
+      const hip = ld.apus[0].componentes.find((c) => /Hipoclorito/.test(c.insumo));
+      assert.deepStrictEqual([hip.tipo, hip.es_porcentaje === true, hip.precio_unitario], ["material", false, 29900], "«Hipoclorito 5,25 %» es un material, no un porcentaje");
+      const hm = ld.apus[0].componentes.find((c) => /Herramienta/.test(c.insumo));
+      assert.deepStrictEqual([hm.es_porcentaje, hm.fraccion], [true, 0.05], "«% MO» es porcentaje de la mano de obra");
+      assert.ok(ld.apus[0].componentes.some((c) => c.tipo === "equipo" && /motocarga/.test(c.insumo)), "«III. EQUIPO Y TRANSPORTE» es una sección");
+      const fd = XL.filasDesdeApus(ld, XL.elegirHoja(libroD));
+      assert.deepStrictEqual(fd.filas.map((f) => [f.codigo, f.cantidad, f.precio_archivo]), [["1.1", 1, 297900], ["1.2", 18, 195900]], "el precio es el COSTO DIRECTO del análisis, no el valor unitario con AIU del presupuesto (que Precios habría vuelto a cargar con AIU), y el código el del análisis");
+      assert.ok(fd.avisos.some((x) => /puede llevar el AIU dentro/.test(x)), "y se dice");
+    }
+
     /* 8 · la pantalla está cableada */
     const appAc = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8"));
     assert.ok(/XLSXLectura\.leerApusDelLibro\(libro\)/.test(appAc) && /XLSXLectura\.esHojaApu\(grid\)/.test(appAc), "el Excel y el CSV pasan por el lector de APU");
