@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 2555191 bytes · 454 secciones · 52 con marcador de superación.
+Derivado del árbol: 2565901 bytes · 455 secciones · 52 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -464,4 +464,5 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | El medidor del ancho de banda de Upstash: cada petición anota lo que gastó, por operación (9-nov-2026) | 9-nov-2026 | 22003-22021 | 4515 |  |
 | El armazón medido antes de rediseñarlo: Mi empresa dice qué no llegó, «Atrás» vuelve a la pestaña anterior y las dos ventanas que faltaban cierran con Escape (9-nov-2026) | 9-nov-2026 | 22022-22033 | 4456 |  |
 | Mi empresa: «Hoy» con cuatro piezas y una barra con ocho apartados; la plata en juego vuelve con quién la pone (9-nov-2026) | 9-nov-2026 | 22034-22050 | 6188 | «Licitaciones con su barra: tres apartados, el valor y el aviso de interés a la vista, y el orden al revés de un toque sin subir lo que no tiene el dato (9-nov-2026)» |
-| Licitaciones con su barra: tres apartados, el valor y el aviso de interés a la vista, y el orden al revés de un toque sin subir lo que no tiene el dato (9-nov-2026) | 9-nov-2026 | 22051-22072 | 10853 |  |
+| Cargar su propio APU: la hoja de análisis ya no se lee como formulario, y «Buscar» lo elabora respetándolo (9-nov-2026) | 9-nov-2026 | 22051-22086 | 10710 |  |
+| Licitaciones con su barra: tres apartados, el valor y el aviso de interés a la vista, y el orden al revés de un toque sin subir lo que no tiene el dato (9-nov-2026) | 9-nov-2026 | 22087-22108 | 10853 |  |

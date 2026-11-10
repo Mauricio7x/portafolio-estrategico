@@ -739,13 +739,51 @@
         continue;
       }
 
+      /* EL APU QUE BUSCÓ LA IA Y EL USUARIO ACEPTÓ (9-nov-2026): con su desglose, la hoja lo imprime entero —línea a
+         línea, con el ORIGEN de cada una: «suyo» (venía en el análisis que cargó el usuario), «precio buscado» (su
+         insumo y su cantidad, precio de mercado) o «añadido» (no estaba en su análisis)—. El VR COSTO DIRECTO es el
+         del motor, que es el precio aceptado: el desglose lo documenta y el motor solo lo deja pasar si suma ese precio. */
+      if (it.sin_apu && it.origen_precio === "ia" && Array.isArray(it.ia_composicion) && it.ia_composicion.length) {
+        const f = it.ia_fuente || {};
+        fusionA_G(fila([{ v: `APU BUSCADO POR LA IA Y ACEPTADO POR USTED${f.fecha ? ` (${f.fecha})` : ""}: referencia publicada, no cotización de su proveedor; verifique antes de presentar.`, s: "nota" }]));
+        const ORIGEN = { suyo: "Suyo", precio_buscado: "Precio buscado", "añadido": "Añadido" };
+        /* la herramienta menor va con el equipo, como en el resto de esta hoja: una sección propia sería un rótulo que
+           ningún lector de APU reconoce */
+        for (const [tipos, rotulo] of [[["material"], "MATERIALES:"], [["equipo", "herramienta_menor"], "EQUIPO y HERRAMIENTAS:"], [["transporte"], "TRANSPORTES:"], [["mano_obra"], "MANO de OBRA:"]]) {
+          const delTipo = it.ia_composicion.filter((l) => tipos.includes(l.tipo));
+          if (!delTipo.length) continue;
+          fila([{ v: rotulo, s: "negrita" }]);
+          fila(["DESCRIPCIÓN", "UNIDAD", "CANTIDAD", "VR UNITARIO", "VR PARCIAL", "ORIGEN", "FUENTE"].map((t) => ({ v: t, s: "encabezado" })));
+          const desde = filas.length + 1;
+          for (const l of delTipo) {
+            fila([
+              { v: l.insumo || "—", s: "texto" }, { v: l.unidad || "—", s: "texto" },
+              l.cantidad_total != null ? { v: l.cantidad_total, s: "cantidad" } : null,
+              l.precio_unitario != null ? { v: l.precio_unitario, s: "moneda2" } : null,
+              { v: fin(l.valor_total), s: "moneda2" },
+              { v: ORIGEN[l.origen] || "—", s: "texto" }, l.fuente ? { v: l.fuente, s: "texto" } : null,
+            ]);
+          }
+          const hasta = filas.length;
+          fila([null, null, null, { v: "Subtotal =", s: "moneda2Negrita" },
+            { v: Math.round(delTipo.reduce((a, l) => a + (l.valor_total || 0), 0) * 100) / 100, s: "moneda2Negrita", f: `=SUM(E${desde}:E${hasta})` }, null, null]);
+        }
+        const nCosto = fila([null, null, null, { v: "VR COSTO DIRECTO =", s: "resumenTexto" },
+          { v: fin(it.costo_directo_unitario), s: "resumenMoneda" }, null, null]);
+        lineasBaja(it, nCosto, "E");
+        fila([]);
+        continue;
+      }
+
       if (it.sin_apu) {
         const rf = it.origen_precio === "ffie" ? (it.referencia_ffie_apu || {}) : null;
         const ri = it.origen_precio === "idu" ? (it.referencia_idu_apu || {}) : null;
         const origen = ri ? `PRECIO DE REFERENCIA IDU ${ri.vigencia || ""} (${ri.ciudad || "Bogotá"}, APU ${ri.codigo_idu || "—"}, publicado ${ri.publicado || "—"})`
           : rf ? `PRECIO TOPE FFIE ${rf.vigencia || ""}${rf.departamento_usado ? ` (${rf.departamento_usado})` : ""} — TECHO RECONOCIDO POR LA ENTIDAD, NO PRECIO DE MERCADO; SIN COMPOSICIÓN`
           : it.origen_precio === "propio" ? "PRECIO PROPIO YA CORREGIDO (guardado en su perfil)"
-          : it.origen_precio === "archivo" ? "PRECIO SEGÚN ARCHIVO IMPORTADO" : "PRECIO TECLEADO A MANO";
+          : it.origen_precio === "archivo" ? "PRECIO SEGÚN ARCHIVO IMPORTADO"
+          /* un APU buscado por la IA SIN desglose (aceptado antes del 9-nov-2026) no es un precio tecleado a mano */
+          : it.origen_precio === "ia" ? "APU BUSCADO POR LA IA (sin su desglose guardado)" : "PRECIO TECLEADO A MANO";
         const n = fila([
           { v: ri ? `${origen} — SIN COMPOSICIÓN PUBLICADA${ri.ajuste_regional === "ninguno" ? "; SIN AJUSTE REGIONAL" : ""}` : `${origen} — SIN APU DE RESPALDO EN EL CATÁLOGO`, s: ri ? "texto" : "destacadoTexto" }, null, null,
           { v: "VR UNITARIO =", s: "destacadoTexto" },
@@ -944,6 +982,11 @@
     if (!it || it.incompleto || precioONull(it.costo_directo_unitario) == null) {
       return { estado: "sin_dato", ...ESTADOS_COMPOSICION.sin_dato, lineas_con_insumo: null,
         motivo: (it && it.mensaje) || "No hay precio para este ítem. No suma al total ni puede llevar hoja de APU." };
+    }
+    /* el APU buscado por la IA con su desglose aceptado lleva su composición en la hoja (9-nov-2026) */
+    if (it.origen_precio === "ia" && Array.isArray(it.ia_composicion) && it.ia_composicion.length) {
+      return { estado: "con_composicion_propia", ...ESTADOS_COMPOSICION.con_composicion_propia, lineas_con_insumo: it.ia_composicion.length,
+        motivo: "Lleva el desglose del APU buscado por la IA que usted aceptó, con el origen de cada línea: revíselo antes de radicarlo." };
     }
     const lineas = (it.detalle && Array.isArray(it.detalle.insumos)) ? it.detalle.insumos : [];
     const conInsumo = lineas.filter((l) => l && l.insumo_id);

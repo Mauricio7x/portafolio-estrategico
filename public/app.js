@@ -8671,10 +8671,12 @@
       if (filas[i].precio_manual != null && filas[i].origen_precio !== "archivo") {
         filas[i].origen_precio = "manual";
         filas[i].ia_fuente = null;          // un precio tecleado encima ya no es el que buscó la IA
+        filas[i].ia_composicion = null;     // …ni su desglose
       }
       if (filas[i].precio_manual == null && (filas[i].origen_precio === "manual" || filas[i].origen_precio === "ia")) {
         filas[i].origen_precio = null;
         filas[i].ia_fuente = null;
+        filas[i].ia_composicion = null;
       }
     } else {
       // vacío = usar el rendimiento del catálogo, no «rendimiento cero»
@@ -9002,6 +9004,8 @@
     origen_precio: f.origen_precio || null,
     // «ia»: el precio lo encontró una sesión de Claude Code y el usuario lo aceptó; su fuente viaja con él
     ia_fuente: f.origen_precio === "ia" && f.ia_fuente ? f.ia_fuente : null,
+    // …y su desglose, para la hoja del APU del Excel (el motor lo valida contra el precio y lo descarta si no suma)
+    ia_composicion: f.origen_precio === "ia" && Array.isArray(f.ia_composicion) ? f.ia_composicion : null,
     subcontratado: f.subcontratado || false,
     aiu_subcontratista_pct: f.aiu_subcontratista_pct == null ? null : f.aiu_subcontratista_pct,
   }));
@@ -9587,13 +9591,18 @@
     pintarIa(iaEstado);
   }
   function htmlApuItem(p, cantidad) {
-    const comps = (p.componentes || []).map((c) => `<tr><td class="py-1 pr-2 text-gray-500">${esc(TIPO_COMP_LEGIBLE[c.tipo] || c.tipo)}</td><td class="py-1 pr-2">${esc(c.insumo)}${c.observacion ? `<span class="block text-[11px] text-gray-400">${esc(c.observacion)}</span>` : ""}</td><td class="py-1 pr-2 text-gray-500">${esc(c.unidad || "")}</td><td class="py-1 pr-2 text-right num">${c.cantidad_total != null ? nf2.format(c.cantidad_total) : "—"}${c.desperdicio_pct ? `<span class="block text-xs text-gray-400">${nf2.format(c.desperdicio_pct)} % desp.</span>` : ""}</td><td class="py-1 pr-2 text-right num">${pesos(c.precio_unitario)}</td><td class="py-1 pr-2 text-right num font-medium">${pesos(c.valor_total)}</td><td class="py-1 text-[11px] text-gray-500">${c.fuente ? `${urlSegura(c.fuente.url) ? `<a href="${esc(urlSegura(c.fuente.url))}" target="_blank" rel="noopener noreferrer" class="underline">${esc(c.fuente.nombre)}</a>` : esc(c.fuente.nombre)}${c.fuente.fecha ? ` · ${esc(c.fuente.fecha)}` : ""}` : ""}</td></tr>`).join("");
+    /* el ORIGEN de cada línea cuando el ítem venía con su propio APU (9-nov-2026): lo decide la verificación del
+       servidor, no la respuesta; sin APU del usuario no se pinta nada */
+    const ORIGEN_LINEA = { suyo: "suyo", precio_buscado: "precio buscado", "añadido": "añadido" };
+    const marcaOrigen = (c) => (c.origen && ORIGEN_LINEA[c.origen] ? `<span class="ml-1 whitespace-nowrap rounded-full px-1.5 text-[11px] font-medium ${c.origen === "añadido" ? "bg-amber-50 text-amber-900" : c.origen === "suyo" ? "bg-gray-100 text-gray-700" : "bg-blue-50 text-blue-900"}">${ORIGEN_LINEA[c.origen]}</span>` : "");
+    const comps = (p.componentes || []).map((c) => `<tr><td class="py-1 pr-2 text-gray-500">${esc(TIPO_COMP_LEGIBLE[c.tipo] || c.tipo)}</td><td class="py-1 pr-2">${esc(c.insumo)}${marcaOrigen(c)}${c.observacion ? `<span class="block text-[11px] text-gray-400">${esc(c.observacion)}</span>` : ""}</td><td class="py-1 pr-2 text-gray-500">${esc(c.unidad || "")}</td><td class="py-1 pr-2 text-right num">${c.cantidad_total != null ? nf2.format(c.cantidad_total) : "—"}${c.desperdicio_pct ? `<span class="block text-xs text-gray-400">${nf2.format(c.desperdicio_pct)} % desp.</span>` : ""}</td><td class="py-1 pr-2 text-right num">${pesos(c.precio_unitario)}</td><td class="py-1 pr-2 text-right num font-medium">${pesos(c.valor_total)}</td><td class="py-1 text-[11px] text-gray-500">${c.fuente ? `${urlSegura(c.fuente.url) ? `<a href="${esc(urlSegura(c.fuente.url))}" target="_blank" rel="noopener noreferrer" class="underline">${esc(c.fuente.nombre)}</a>` : esc(c.fuente.nombre)}${c.fuente.fecha ? ` · ${esc(c.fuente.fecha)}` : ""}` : ""}</td></tr>`).join("");
     const r = p.resumen || {};
     const resumen = Object.keys(TIPO_COMP_LEGIBLE).map((k) => { const kk = k === "material" ? "materiales" : k; const v = r[kk]; return v ? `<span class="mr-3">${esc(TIPO_COMP_LEGIBLE[k])}: <span class="num font-medium">${pesos(v)}</span>${p.subtotal_directo ? ` <span class="text-gray-400">(${Math.round(100 * v / p.subtotal_directo)} %)</span>` : ""}</span>` : ""; }).join("");
     return `<div class="mt-2 overflow-x-auto rounded-lg bg-white p-3 ring-1 ring-inset ring-gray-900/5"><table class="w-full text-xs"><thead class="text-left text-[11px] uppercase tracking-wide text-gray-400"><tr><th class="pb-1 pr-2">Tipo</th><th class="pb-1 pr-2">Insumo o actividad</th><th class="pb-1 pr-2">Und.</th><th class="pb-1 pr-2 text-right">Cant. total</th><th class="pb-1 pr-2 text-right">Vr. unitario</th><th class="pb-1 pr-2 text-right">Valor</th><th class="pb-1">Fuente</th></tr></thead><tbody class="divide-y divide-gray-100">${comps}</tbody></table>
       <p class="mt-2 text-xs text-gray-600">${resumen}</p>
       ${p.rendimiento ? `<p class="mt-1 text-[11px] text-gray-500">Rendimiento: ${esc(p.rendimiento)}</p>` : ""}
       ${(p.supuestos || []).length ? `<ul class="mt-1 space-y-0.5 text-[11px] text-amber-900">${p.supuestos.map((s) => `<li>${esc(s)}</li>`).join("")}</ul>` : ""}
+      ${(p.alertas_rendimiento || []).length ? `<p class="mt-1 text-[11px] font-medium text-amber-900">Revise en su análisis (no se corrigió):</p><ul class="space-y-0.5 text-[11px] text-amber-900">${p.alertas_rendimiento.map((s) => `<li>${esc(s)}</li>`).join("")}</ul>` : ""}
       ${p.incluye_iva_materiales != null ? `<p class="mt-1 text-[11px] text-gray-400">Materiales ${p.incluye_iva_materiales ? "con" : "sin"} IVA.</p>` : ""}
       ${cantidad != null && p.costo_directo_unitario != null ? `<p class="mt-1 text-[11px] text-gray-400">Costo directo por ${esc(p.unidad || "unidad")}: ${pesos(p.costo_directo_unitario)} × ${nf2.format(cantidad)} = ${pesos(p.costo_directo_unitario * cantidad)}.</p>` : ""}
     </div>`;
@@ -9733,6 +9742,8 @@
     filas[i].precio_manual = p.costo_directo_unitario;
     filas[i].origen_precio = "ia";
     filas[i].ia_fuente = { nombre: "APU generado por la IA", url: null, fecha: (iaEstado && iaEstado.propuesta && iaEstado.propuesta.generado_el) || null };
+    /* su desglose viaja con el precio: es lo que el Excel imprime en la hoja del APU, con el origen de cada línea */
+    filas[i].ia_composicion = Array.isArray(p.componentes) && p.componentes.length ? p.componentes.map((c) => ({ tipo: c.tipo, insumo: c.insumo, unidad: c.unidad, cantidad_total: c.cantidad_total, precio_unitario: c.precio_unitario, valor_total: c.valor_total, origen: c.origen || null, fuente: c.fuente && c.fuente.nombre ? c.fuente.nombre : null })) : null;
     return true;
   }
   $("btn-ia-pedir").addEventListener("click", async () => {
@@ -9960,6 +9971,9 @@
           subcontratado: f.subcontratado === true,
           aiu_subcontratista_pct: f.subcontratado === true ? numONull(f.aiu_subcontratista_pct) : null,
           sugerencia: f.sugerencia == null ? null : String(f.sugerencia).slice(0, 200),
+          /* el APU que el usuario cargó y el desglose del que buscó la IA: el servidor los vuelve a validar donde los usa */
+          composicion_usuario: f.composicion_usuario && typeof f.composicion_usuario === "object" && Array.isArray(f.composicion_usuario.componentes) ? f.composicion_usuario : null,
+          ia_composicion: f.origen_precio === "ia" && Array.isArray(f.ia_composicion) ? f.ia_composicion : null,
         };
       });
       ultimoCalculo = null;
@@ -10032,12 +10046,15 @@
      la vía del mapeo manual tiene que cerrar el suyo antes, y sólo si el POST
      salió bien. */
   async function mapearParaPrevisualizar(filas, meta) {
+    /* el APU de cada fila (si el archivo era un análisis de precios unitarios) se queda en el navegador: el mapeo no
+       lo necesita, y vuelve a su fila por `orden` al aplicar */
+    const composiciones = filas.map((f) => f.composicion_usuario || null);
     const r = await api("/api/apu?op=importar", {
       method: "POST",
-      body: { filas, departamento: $("departamento").value },
+      body: { filas: filas.map(({ composicion_usuario, ...resto }) => resto), departamento: $("departamento").value },
     });
     if (!r) return false;                   // canceló el diálogo del token
-    importacion = { ...r, avisos_lectura: (meta && meta.avisos) || [], cuadre: (meta && meta.cuadre) || null, nombre_archivo: meta && meta.origen };
+    importacion = { ...r, composiciones, avisos_lectura: (meta && meta.avisos) || [], cuadre: (meta && meta.cuadre) || null, nombre_archivo: meta && meta.origen };
     return true;
   }
 
@@ -10140,6 +10157,11 @@
       let texto = new TextDecoder("utf-8").decode(bytes);
       if (texto.includes("�")) texto = new TextDecoder("windows-1252").decode(bytes);
       const grid = XLSXLectura.parsearCsv(texto);
+      /* un CSV que es un análisis de precios unitarios entra como APU, no como lista de insumos (9-nov-2026) */
+      if (XLSXLectura.esHojaApu(grid)) {
+        const leidos = XLSXLectura.leerApusDeHoja(grid, archivo.name);
+        if (leidos.apus.length) return { ...XLSXLectura.filasDesdeApus(leidos, null), grid };
+      }
       // la rejilla cruda viaja también: es lo que permite el mapeo manual de
       // columnas cuando la detección automática no encuentra la cabecera
       return { ...XLSXLectura.detectarFilasApu(grid), grid };
@@ -10148,6 +10170,10 @@
     const libro = await XLSXLectura.leerLibro(bytes, { inflar });
     const mejor = XLSXLectura.elegirHoja(libro);
     if (!mejor) return { filas: [], avisos: ["El libro no trae hojas."], grid: null };
+    /* EL LIBRO CON ANÁLISIS DE PRECIOS UNITARIOS (9-nov-2026): cada fila lleva la composición de su APU, y «Buscar»
+       la respeta y completa lo que falte. Sin análisis legibles, el camino de siempre. */
+    const apus = XLSXLectura.leerApusDelLibro(libro);
+    if (apus.apus.length) return { ...XLSXLectura.filasDesdeApus(apus, mejor), grid: mejor.hoja.filas };
     return { ...mejor.resultado, grid: mejor.hoja.filas };
   }
 
@@ -10362,9 +10388,15 @@
       const base = f.entrada_calculo || {};
       // en «revisar» la casilla decide si el ítem del catálogo entra (como
       // precio cuando no hay precio del archivo; como referencia cuando sí)
-      const itemId = f.nivel_mapeo === "revisar"
+      const itemIdMapeado = f.nivel_mapeo === "revisar"
         ? (aceptadas.has(f.orden) ? f.item_id : null)
         : base.item_id || null;
+      /* LA FILA QUE TRAE SU PROPIO APU NO TOMA EL PRECIO DE UN BANCO (9-nov-2026): sin precio del archivo, el ítem
+         del catálogo o del IDU pasaría a costear la fila en silencio, al lado de un análisis del usuario que nadie
+         miró. Queda sin precio hasta que «Buscar» lo elabore respetando su análisis; con precio del archivo, el ítem
+         mapeado solo sirve de referencia, como en cualquier fila importada. */
+      const composicion = (importacion.composiciones && importacion.composiciones[f.orden - 1]) || null;
+      const itemId = composicion && base.precio_manual == null ? null : itemIdMapeado;
       return {
         item_id: itemId,
         codigo: base.codigo || null,
@@ -10382,6 +10414,7 @@
         // el precio de tienda resuelto en la importación viaja a la tabla:
         // la columna se ve NADA MÁS pegar el Excel, sin esperar al cálculo
         referencia_tienda: f.referencia_tienda || null,
+        composicion_usuario: composicion,
       };
     });
     filas = filas.concat(nuevas);
