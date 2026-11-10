@@ -2669,8 +2669,10 @@
     #seg-expediente .exp-precio-veredicto { margin-top: var(--esp-4); padding: var(--esp-3) var(--esp-4); border-radius: 14px; box-shadow: 0 0 0 1px var(--border); }
     #seg-expediente .exp-precio-frase { margin: 0; display: flex; gap: 10px; font-weight: 700; color: var(--text-primary); }
     #seg-expediente .exp-tono-ok .exp-precio-frase { color: var(--ok-texto); }
-    #seg-expediente .exp-tono-mal .exp-precio-frase { color: var(--danger-texto); }
-    #seg-expediente .exp-tono-ojo .exp-precio-frase { color: var(--warn-texto); }
+    /* el texto de color es --danger / --warn; --danger-texto y --warn-texto son el texto que va ENCIMA de su fondo (blanco
+       en claro): como color sobre la tarjeta no se veían, 1,1:1 medido (revisión adversaria, 10-nov-2026) */
+    #seg-expediente .exp-tono-mal .exp-precio-frase { color: var(--danger); }
+    #seg-expediente .exp-tono-ojo .exp-precio-frase { color: var(--warn); }
     #seg-expediente .exp-precio-filas { margin: var(--esp-3) 0 0; padding-left: 1.1em; display: flex; flex-direction: column; gap: 6px; color: var(--text-primary); }
     #seg-expediente .exp-precio-supuestos { margin-top: var(--esp-4); }
     #seg-expediente .exp-precio-supuestos ul { margin: var(--esp-2) 0 0; padding-left: 1.1em; color: var(--text-secondary); }
@@ -2725,7 +2727,7 @@
     #app #seg-maestra .mp-barra .mp-ir:hover { background: var(--bg-inset); color: var(--text-primary); }
     #app #seg-maestra .mp-barra .mp-ir[aria-current="page"] { background: var(--accent-light); color: var(--text-primary); font-weight: 700; }
     #seg-maestra .mp-n { margin-left: auto; font-variant-numeric: tabular-nums; }
-    #seg-maestra .mp-n-aviso { color: var(--danger-texto); font-weight: 700; }
+    #seg-maestra .mp-n-aviso { color: var(--danger); font-weight: 700; }
     #seg-maestra .mp-filtros { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 16px; }
     #seg-maestra .mp-filtros-t { margin: 0; font-size: 17px; font-weight: 700; color: var(--text-primary); }
     #seg-maestra .mp-grupo { min-width: 0; }
@@ -2783,8 +2785,8 @@
     #app #tab-apu .apu-barra .apu-ir[aria-current="page"] { background: var(--accent-light); color: var(--text-primary); font-weight: 700; }
     #tab-apu .apu-n { margin-left: auto; font-size: 15px; font-weight: 700; white-space: nowrap; }
     #tab-apu .apu-n.apu-tono-ok { color: var(--ok-texto); }
-    #tab-apu .apu-n.apu-tono-mal { color: var(--danger-texto); }
-    #tab-apu .apu-n.apu-tono-ojo { color: var(--warn-texto); }
+    #tab-apu .apu-n.apu-tono-mal { color: var(--danger); }
+    #tab-apu .apu-n.apu-tono-ojo { color: var(--warn); }
     #tab-apu .apu-este { margin-top: 18px; }
     /* el bloque del proceso en una columna: en la barra no caben tres campos lado a lado */
     #tab-apu #apu-este #seccion-proceso .grid { grid-template-columns: minmax(0, 1fr); gap: 12px; }
@@ -2804,11 +2806,11 @@
     #tab-apu .apu-cifras dt { font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-secondary); }
     #tab-apu .apu-veredicto { margin: 12px 0 0; font-weight: 700; color: var(--text-primary); }
     #tab-apu .apu-veredicto.apu-tono-ok { color: var(--ok-texto); }
-    #tab-apu .apu-veredicto.apu-tono-mal { color: var(--danger-texto); }
-    #tab-apu .apu-veredicto.apu-tono-ojo { color: var(--warn-texto); }
+    #tab-apu .apu-veredicto.apu-tono-mal { color: var(--danger); }
+    #tab-apu .apu-veredicto.apu-tono-ojo { color: var(--warn); }
     /* el aviso de una pulsación hecha fuera de «Su análisis» (msgApu con espejo) y la salvedad del mínimo, que se VE */
     #tab-apu .apu-aviso { margin: 10px 0 0; font-size: 15px; }
-    #tab-apu .apu-cifra-nota { margin-top: 2px; font-size: 13px; letter-spacing: 0; text-transform: none; color: var(--warn-texto); }
+    #tab-apu .apu-cifra-nota { margin-top: 2px; font-size: 13px; letter-spacing: 0; text-transform: none; color: var(--warn); }
     #tab-apu .apu-cifra-nota:not(.hidden) { display: block; }
     #tab-apu .apu-vacio { padding: 22px 24px; border-radius: 20px; background: var(--bg-card); box-shadow: 0 0 0 1px var(--border); color: var(--text-secondary); }
     #tab-apu .apu-vacio-t { margin: 0 0 6px; font-size: 19px; font-weight: 700; color: var(--text-primary); }
@@ -5894,7 +5896,8 @@
                 <input id="aiu-sobre-sub" type="checkbox" checked class="mt-0.5">
                 <span class="text-sm">
                   <span class="block font-medium">Aplicar mi administración, imprevistos y ganancia también a lo subcontratado</span>
-                  <span class="block text-xs text-gray-500">Un ítem marcado como subcontratado entra por el precio del subcontratista (que ya trae el suyo). Con la casilla apagada, ese ítem va al precio a costo, sin recargo propio.</span>
+                  <span class="block text-xs text-gray-500">Lo subcontratado entra por el precio del subcontratista, que ya trae el suyo. Apagada, va a costo, sin recargo propio.</span>
+                  <span id="aiu-sobre-sub-tiempo" class="mt-1 block hidden text-xs font-medium" style="color: var(--warn);">Por tiempo va encendida: su precio cobra entera esa administración.</span>
                 </span>
               </label>
               <label class="block">

@@ -238,8 +238,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 464 secciones (56 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 22093  Licitaciones con su barra: tres apartados, el valor y el aviso de interés a la vista, y el …
+· MEMORIA · docs/MEMORIA.md — 465 secciones (57 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 22116  El APU real del dueño: la unidad cortada en «Ubicación:», el costo directo en vez del preci…
   L 22129  La rejilla de una pestaña: `:not(.hidden)` va solo con `display` (10-nov-2026)
   L 22137  APU propios de Detekta, primera entrega: el banco de prueba sin Claude, el alcance de la ac…
@@ -248,7 +247,8 @@
   L 22189  Detekta ocupa la pantalla entera (10-nov-2026)
   L 22196  El Excel de un presupuesto importado lleva el APU del archivo y no inventa capítulos (10-no…
   L 22206  Precios con su barra: siete apartados, tres cifras arriba que nunca son $0, la casilla de l…  (superada)
-  L 22230  El mínimo para no perder plata sigue a la casilla de lo subcontratado, y subir un APU calcu…
+  L 22230  El mínimo para no perder plata sigue a la casilla de lo subcontratado, y subir un APU calcu…  (superada)
+  L 22249  La administración por tiempo se cobra entera: la casilla de lo subcontratado va encendida y…
 
 · DOCUMENTOS docs/ — 77 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)
