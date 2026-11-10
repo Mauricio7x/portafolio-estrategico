@@ -21041,7 +21041,7 @@ async function main() {
         api: async (ruta, o) => { enviado = { ruta, body: o.body }; return { items: [], resumen: {}, referencia_entidades: { consultada: true, pendientes: 4 } }; },
         itemsParaElMotor: () => [{ item_id: "INV-200.1", descripcion: EXC, unidad: "m3", cantidad: 1 }],
         leerConfig: () => ({}), filas: [1], window: { Glosario: { VERBOS: { generar_apu: "Calcular cuánto me cuesta" } } },
-        msgApu: (t) => mensajes.push(t), mensajeDeFallo: () => "", olvidarRevision: () => {}, pintarCalculoEnTabla: () => {}, pintarResumen: () => {}, pintarNormativa: () => {},
+        msgApu: (t) => mensajes.push(t), mensajeDeFallo: () => "", olvidarRevision: () => {}, pintarCalculoEnTabla: () => {}, pintarResumen: () => {}, pintarNormativa: () => {}, pintarCifrasPrecios: () => {},
         tipoProceso: "interventoria",
       };
       const n = Object.keys(stubs);
@@ -37989,9 +37989,11 @@ async function main() {
           const iniAv = fuenteCalc.indexOf("  function avisosDePreciosCorregidos(");
           assert.ok(iniAv > 0 && iniAv < iniC, "los avisos del cálculo van justo antes de calcularApu");
           // Piso/Techo, la función real que «Calcular» dispara después: la igualdad se cierra por LOS DOS lados
-          const iniR = fuenteCalc.indexOf("  async function calcularRentabilidad(");
-          assert.ok(iniR > 0, "public/app.js tiene calcularRentabilidad");
-          const finR = fuenteCalc.indexOf("\n  }\n", iniR);
+          /* desde el 10-nov-2026 el cuerpo de la petición sale de `cuerpoRentabilidad`, justo encima (lo firma también la
+             cabecera de Precios para saber si el mínimo sigue valiendo): se corta desde ella */
+          const iniR = fuenteCalc.indexOf("  function cuerpoRentabilidad() {");
+          assert.ok(iniR > 0 && fuenteCalc.indexOf("  async function calcularRentabilidad(", iniR) > iniR, "public/app.js tiene cuerpoRentabilidad y, debajo, calcularRentabilidad");
+          const finR = fuenteCalc.indexOf("\n  }\n", fuenteCalc.indexOf("  async function calcularRentabilidad(", iniR));
           const PROPIO_GENESIS = 999990;
           const gpG = await invocarPost(apu, "/api/apu/guardar", {
             perfil: "genesis", nombre: "Precio propio de genesis", departamento: "ANTIOQUIA",
@@ -38030,14 +38032,14 @@ async function main() {
                 leerConfig: () => cfgBase, filas: [1], window: { Glosario: { VERBOS: { generar_apu: "Calcular cuánto me cuesta" } } },
                 msgApu: (m) => mensajes.push(m), mensajeDeFallo: (e) => { fallo = e; return ""; }, pintarPrecioSugerido: () => {},
                 pintarPisoTecho: () => {}, pintarRentabilidad: () => {}, supuestoDePrecios: () => null,
-                olvidarRevision: () => {}, pintarCalculoEnTabla: () => {}, pintarResumen: () => {}, pintarNormativa: () => {},
+                olvidarRevision: () => {}, pintarCalculoEnTabla: () => {}, pintarResumen: () => {}, pintarNormativa: () => {}, pintarCifrasPrecios: () => {},
                 nitProceso: "", modalidadProceso: "", tipoProceso: tipo,
                 // sin un % del pliego vigente (5-nov-2026): el cuerpo lleva `pct_seriedad: null` y vale el 10 % de los documentos tipo
                 pctSeriedadVigente: () => null,
               };
               const n = Object.keys(stubs);
               const { calcularApu, calcularRentabilidad } = new Function(...n,
-                `let ultimoCalculo = null, ultimaRentabilidad = null, rentabilidadEnVuelo = false;\n${fuenteCalc.slice(iniAv, finC + 4)}\n${fuenteCalc.slice(iniR, finR + 4)}\nreturn { calcularApu, calcularRentabilidad };`)(...n.map((k) => stubs[k]));
+                `let ultimoCalculo = null, ultimaRentabilidad = null, firmaRentabilidad = null, rentabilidadEnVuelo = false;\n${fuenteCalc.slice(iniAv, finC + 4)}\n${fuenteCalc.slice(iniR, finR + 4)}\nreturn { calcularApu, calcularRentabilidad };`)(...n.map((k) => stubs[k]));
               const ok = await calcularApu();
               if (fallo) throw fallo;
               assert.strictEqual(ok, true, "«Calcular» terminó sin presupuesto");
@@ -40808,10 +40810,14 @@ async function main() {
       assert.ok(htmlPT.includes('<script src="/justificacion.js">'), "index.html tiene que cargar justificacion.js");
       {
         const apuTab = htmlPT.slice(htmlPT.indexOf('<main id="tab-apu"'));
-        const p3 = apuTab.indexOf('white">3</span>Su precio');
+        /* 10-nov-2026 (Precios con su barra): el «3 · Su precio» es el apartado «¿A cuánto ofertar?»; el panel va el
+           primero en él, antes de la rentabilidad y del precio sugerido, y el resumen vive en «Cuánto le cuesta» */
+        const p3 = apuTab.indexOf('<div id="paso-3-cabecera" data-apu-apartado="ofertar"');
         const iPT = apuTab.indexOf('id="seccion-piso-techo"');
-        const iRes = apuTab.indexOf('id="seccion-resumen"');
-        assert.ok(p3 > 0 && iPT > p3 && iPT < iRes, "el panel va DESPUÉS del paso 3 y ANTES del resumen: es la decisión, lo demás es el detalle");
+        const iRent = apuTab.indexOf('id="seccion-rentabilidad"'), iSug = apuTab.indexOf('id="seccion-precio-sugerido"');
+        assert.ok(p3 > 0 && iPT > p3 && iPT < iRent && iPT < iSug && /<section id="seccion-piso-techo" data-apu-apartado="ofertar"/.test(apuTab),
+          "el panel va el primero en «¿A cuánto ofertar?», antes de la rentabilidad y del precio sugerido: es la decisión, lo demás es el detalle");
+        assert.ok(/<section id="seccion-resumen" data-apu-apartado="cuesta"/.test(apuTab), "el resumen del presupuesto vive en «Cuánto le cuesta»");
       }
       assert.ok(/function pintarPisoTecho\(/.test(jsPT), "app.js sin pintarPisoTecho");
       {
@@ -47989,8 +47995,11 @@ async function main() {
             for (const m of src.matchAll(/<(?:input|select|textarea)\b[^>]*min-w-\[\d+px\][^>]*>/g))
               conSuelo.push(`${f}:${src.slice(0, m.index).split("\n").length}`);
           }
-          assert.ok(conSuelo.length >= 2,
-            `el censo de campos con suelo fijo se quedó sin sujeto (${conSuelo.length} de los 2 medidos el 12-sep-2026)`);
+          /* 10-nov-2026 (Precios con su barra): #nombre-presupuesto subió a la cabecera del análisis con su propia regla
+             (`.apu-nombre`: `flex: 1 1 260px; min-width: 0`), sin suelo fijo: ya no es sujeto. Queda #codigos-unspsc. */
+          assert.ok(conSuelo.length >= 1,
+            `el censo de campos con suelo fijo se quedó sin sujeto (${conSuelo.length}; el 12-sep-2026 eran 2 y desde el 10-nov-2026, 1)`);
+          assert.ok(/#app #tab-apu \.apu-nombre \{[^}]*min-width: 0/.test(htmlPref), "el nombre del análisis, sin suelo fijo, sigue pudiendo encoger");
           assert.ok(!/#codigos-unspsc|#nombre-presupuesto/.test(reglaSuelo[0]),
             "la regla tiene que ir por FAMILIA y no por los dos identificadores que se reprodujeron: el tercer campo "
             + "con suelo fijo que nazca volvería a abrir el hueco");
@@ -48820,12 +48829,15 @@ async function main() {
            peor que ninguna. */
         const calcFuente = fs.readFileSync(path.join(__dirname, "..", "lib", "apu", "calculo.js"), "utf8");
         const mAlerta = calcFuente.match(/"El catálogo de precios de referencia no está cargado[^"]*"/);
-        assert.ok(mAlerta && /Precios → Catálogo de precios de referencia \(al final de la página\) → «Cargar catálogo APU»/.test(mAlerta[0]) && !/Redis|semilla/.test(mAlerta[0]),
+        /* 10-nov-2026, dos cambios del mismo día: sin jerga (va a las notas del Excel) y, con Precios en su barra, el
+           catálogo vive en su apartado «Catálogo y cómo calculamos» (la alerta decía «Mi empresa → Catálogo de precios
+           de referencia», el rótulo de un pliegue que ya no existe) */
+        assert.ok(mAlerta && /Precios → «Catálogo y cómo calculamos» → «Cargar catálogo APU»/.test(mAlerta[0]) && !/Redis|semilla/.test(mAlerta[0]),
           `la alerta del catálogo tiene que decir dónde se carga EN LA PANTALLA de hoy, sin jerga (va a las notas del Excel): ${mAlerta && mAlerta[0]}`);
         /* …y EN LA PESTAÑA QUE NOMBRA (10-nov-2026): decía «Mi empresa» y el pliegue vive en Precios; la prueba miraba
            que el rótulo existiera en la página, no dónde */
         const pestanaPrecios = (() => { const i = html6.indexOf('<main id="tab-apu"'); const f = html6.indexOf("</main>", i); return i > 0 && f > i ? html6.slice(i, f) : ""; })();
-        for (const rotulo of ["Catálogo de precios de referencia", "Cargar catálogo APU"]) {
+        for (const rotulo of ["Catálogo y cómo calculamos", "Cargar catálogo APU"]) {
           assert.ok(visibleHtml.includes(rotulo), `la alerta cita «${rotulo}» y ese rótulo tiene que existir tal cual en pantalla`);
           assert.ok(pestanaPrecios.includes(rotulo), `la alerta manda a Precios y «${rotulo}» tiene que estar en esa pestaña`);
         }
@@ -49318,33 +49330,80 @@ async function main() {
             "el nodo de la alarma debe existir en la sección Tu RUP");
         }
 
-        /* ═══ LA PESTAÑA DE PRECIOS SON DOS PASOS Y UN RESULTADO (rediseño 4-sep-2026, tercera pasada) ═══
-           Encargo del dueño: «paso 1 adjunta el APU; paso 2 un botón Buscar que le
-           dé la orden a Claude; en pantalla "buscando… completado x %"; el resto
-           sobra». 1 · Cargue (la puerta única; describir la obra plegado) · 2 ·
-           Buscar (la tabla, el lugar de la obra, UN botón, el avance y el
-           resultado; calcular con el catálogo, añadir por nombre, ajustes,
-           borradores y cómo calculamos PLEGADOS en «Más herramientas») · 3 · Su
-           precio (con el Excel). Revisar y el catálogo, al final y plegados. */
+        /* ═══ PRECIOS CON SU BARRA: SIETE APARTADOS (10-nov-2026, maqueta aprobada por el dueño) ═══
+           Sustituye el orden de «la pestaña de Precios son dos pasos y un resultado» (4-sep-2026). Los dos pasos
+           siguen juntos en «Su análisis»: 1 · Cargue (la puerta única; describir la obra plegado) · 2 · Buscar (la
+           tabla, el lugar de la obra, UN botón, el avance y el resultado; calcular con el catálogo y añadir por nombre
+           plegados en «Más herramientas»). Lo que iba plegado debajo pasó a SU apartado de la barra —el resultado a
+           «¿A cuánto ofertar?» y «Cuánto le cuesta», y los ajustes, los análisis guardados, la revisión y el catálogo
+           al suyo—; «Guardar» y «Subir un APU» van arriba con el nombre del análisis y las tres cifras, y el proceso al
+           pie de la barra («Este proceso»). Se defiende con un CENSO: cada bloque de primer nivel de la pestaña dice su
+           apartado, y el armazón que no es de ninguno se DECLARA. */
         {
-          const apu = html.slice(html.indexOf('<main id="tab-apu"'), html.indexOf("</main>", html.indexOf('<main id="tab-apu"')));
+          const apu = html.slice(html.indexOf('<main id="tab-apu"'), html.indexOf("</main>", html.indexOf('<main id="tab-apu"'))).replace(/<!--[\s\S]*?-->/g, "");
           const pos = (frag) => { const i = apu.indexOf(frag); assert.ok(i > 0, `no está: ${frag}`); return i; };
+          const appApu = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+          // los bloques de primer nivel, con su apartado y su tramo
+          const VACIOS_APU = ["br", "img", "input", "meta", "link", "hr", "source", "wbr", "path", "rect", "circle", "line", "polyline"];
+          const iniApu = apu.indexOf(">") + 1, bloquesApu = []; let profApu = 0, abiertoApu = null;
+          for (const m of apu.slice(iniApu).matchAll(/<(\/?)([a-z0-9]+)\b([^>]*?)(\/?)>/g)) {
+            const [, cierre, tag, attrs, auto] = m;
+            if (VACIOS_APU.includes(tag) || auto) continue;
+            if (cierre) { profApu--; if (profApu === 0 && abiertoApu) { abiertoApu.fin = iniApu + m.index + m[0].length; abiertoApu = null; } continue; }
+            if (profApu === 0) { abiertoApu = { tag, ini: iniApu + m.index, fin: apu.length, id: (attrs.match(/\bid="([^"]+)"/) || [])[1] || null, ap: (attrs.match(/data-apu-apartado="([^"]+)"/) || [])[1] || null, clase: (attrs.match(/\bclass="([^"]+)"/) || [])[1] || "" }; bloquesApu.push(abiertoApu); }
+            profApu++;
+          }
+          assert.strictEqual(profApu, 0, "las etiquetas de #tab-apu cierran todas (el censo cuenta bloques de primer nivel)");
+          const dondeVive = (id) => { const i = pos(`id="${id}"`); const b = bloquesApu.find((x) => x.ini <= i && i < x.fin); return b ? (b.ap || b.id || b.tag) : null; };
+          // los siete apartados: los de la barra, en su orden, son los que app.js sabe nombrar
+          const barraApu = apu.slice(pos('<nav id="apu-barra"'), apu.indexOf("</nav>", pos('<nav id="apu-barra"')));
+          const APS = [...barraApu.matchAll(/data-apu-ir="([a-z]+)"/g)].map((x) => x[1]);
+          assert.strictEqual(APS.join(), "ofertar,analisis,cuesta,revisar,guardados,ajustes,catalogo", "la barra trae los siete apartados de la maqueta, en su orden");
+          const nombresApu = (appApu.match(/const NOMBRES_APU = Object\.freeze\(\{([\s\S]*?)\}\);/) || ["", ""])[1];
+          assert.strictEqual([...nombresApu.matchAll(/(\w+): "/g)].map((x) => x[1]).join(), APS.join(), "app.js nombra los mismos siete (un apartado sin nombre caería a «Su análisis»)");
+          assert.ok(/<main id="tab-apu"[^>]*data-apu="analisis"/.test(html), "Precios nace en «Su análisis» desde el marcado (no depende del script)");
+          // censo: el armazón DECLARADO —el botón y el velo del panel, la barra, la cabecera de la pestaña y la del análisis—; todo lo demás dice su apartado
+          const ARMAZON_APU = ["apu-abrir-panel", "apu-velo", "apu-barra", "apu-cabecera"];
+          const sinAp = bloquesApu.filter((b) => !b.ap && !(b.id && ARMAZON_APU.includes(b.id)) && !(b.tag === "header" && /cabecera-pestana/.test(b.clase)));
+          assert.ok(bloquesApu.length >= 15 && sinAp.length === 0, `censo de Precios: cada bloque de primer nivel dice su apartado; sin él: ${sinAp.map((b) => b.id || b.tag).join(", ")}`);
+          assert.ok(bloquesApu.every((b) => !b.ap || APS.includes(b.ap)), "ningún bloque dice un apartado que no existe");
+          for (const a of APS) {
+            assert.ok(bloquesApu.some((b) => b.ap === a), `el apartado «${a}» tiene al menos un bloque`);
+            assert.ok(html.includes(`#app #tab-apu[data-apu="${a}"] > [data-apu-apartado]:not([data-apu-apartado="${a}"]) { display: none; }`), `el apartado «${a}» tiene su regla en la hoja`);
+          }
+          // el armazón es rejilla solo si la pestaña se ve: una regla por id le ganaba al .hidden (el defecto de las pestañas)
+          assert.ok(/#tab-apu\[data-apu\]:not\(\.hidden\) \{ display: grid; \}/.test(html) && !/#tab-apu\[data-apu\] \{[^}]*display/.test(html), "la rejilla de Precios no le gana al .hidden de la pestaña");
+          // cada cosa en su apartado
+          const VIVE = {
+            analisis: ["entrada-archivo", "sin-archivo-wrap", "mapeo-panel", "tabla", "departamento", "ia-ciudad", "ia-obra", "ia-condiciones", "btn-ia-pedir", "ia-estado", "ia-progreso", "ia-propuesta", "mas-herramientas", "btn-calcular", "buscar-item"],
+            ofertar: ["btn-exportar", "seccion-piso-techo", "seccion-rentabilidad", "rentabilidad-ver-todas", "seccion-precio-sugerido", "apu-ofertar-vacio"],
+            cuesta: ["seccion-resumen", "apu-cuesta-vacio"],
+            revisar: ["seccion-revision", "btn-revisar-oferta"],
+            guardados: ["btn-listar", "borrador-lista-mensaje", "lista-presupuestos"],
+            ajustes: ["ajustes-wrap", "aiu", "utilidad", "imprevistos", "anticipo", "deducciones", "aiu-sobre-sub", "btn-sugerir-baja", "perfil"],
+            catalogo: ["seccion-apu", "normativa-wrap"],
+            "apu-cabecera": ["nombre-presupuesto", "btn-guardar", "btn-subir-apu", "apu-subir-nota", "borrador-mensaje", "apu-c-precio", "apu-c-minimo", "apu-c-presupuesto", "apu-veredicto"],
+            "apu-barra": ["seccion-proceso", "id-proceso", "cuantia", "btn-rentabilidad", "borradores-resumen", "ajustes-resumen"],
+          };
+          for (const [donde, ids] of Object.entries(VIVE)) for (const id of ids) assert.strictEqual(dondeVive(id), donde, `«${id}» vive en «${donde}»`);
+          // «Su análisis» conserva los dos pasos y su orden
           const p1 = pos('white">1</span>Cargue el pliego o su análisis de precios');
           const p2 = pos('white">2</span>Buscar los precios y armar los APU');
-          const p3 = pos('white">3</span>Su precio');
-          assert.ok(p1 < p2 && p2 < p3, "los pasos van en orden: cargar, buscar, su precio");
-          assert.ok(pos('id="entrada-archivo"') > p1 && pos('id="entrada-archivo"') < p2, "la puerta única del archivo es el paso 1");
+          assert.ok(p1 < pos('id="entrada-archivo"') && pos('id="entrada-archivo"') < p2, "la puerta única del archivo es el paso 1");
           assert.ok(/<details id="sin-archivo-wrap"/.test(apu) && pos('id="objeto"') > pos('id="sin-archivo-wrap"') && pos('id="objeto"') < p2, "describir la obra va PLEGADO dentro del paso 1: es adivinar");
           assert.ok(pos('id="mapeo-panel"') < p2 && pos('id="mapeo-panel"') > apu.indexOf("</details>", pos('id="sin-archivo-wrap"')), "el mapeo de columnas vive FUERA del pliegue: tiene que verse cuando salta");
-          const mas = pos('<details id="mas-herramientas"');
+          const mas = pos('<details id="mas-herramientas"'), finMas = apu.indexOf("</details>", mas);
           for (const id of ["tabla", "departamento", "ia-ciudad", "ia-obra", "ia-condiciones", "btn-ia-pedir", "ia-estado", "ia-progreso", "ia-propuesta"]) { const i = pos(`id="${id}"`); assert.ok(i > p2 && i < mas, `«${id}» va a la vista en el paso 2, antes de «Más herramientas»`); }
           assert.ok(pos('id="tabla"') < pos('id="departamento"') && pos('id="departamento"') < pos('id="btn-ia-pedir"'), "la lista, después el lugar, después el botón");
           assert.ok(/id="btn-ia-pedir"[^>]*>\s*Buscar\s*</.test(apu), "el botón dice «Buscar» y nada más");
-          const finMas = apu.indexOf("</details>\n      </section>", mas);
-          for (const id of ["btn-calcular", "buscar-item", "ajustes-wrap", "aiu", "anticipo", "deducciones", "perfil", "btn-guardar", "normativa-wrap"]) { const i = pos(`id="${id}"`); assert.ok(i > mas && i < finMas, `«${id}» vive PLEGADO en «Más herramientas»`); }
-          assert.ok(pos('id="btn-exportar"') > p3 - 600 && pos('id="btn-exportar"') < pos('id="seccion-piso-techo"'), "el Excel va en el paso 3, con el resultado");
-          for (const res of ["seccion-piso-techo", "seccion-resumen", "seccion-rentabilidad", "seccion-precio-sugerido"]) assert.ok(pos(`id="${res}"`) > p3, `«${res}» va en el paso 3`);
-          assert.ok(pos('id="seccion-revision"') > pos('id="seccion-precio-sugerido"') && pos('id="seccion-apu"') > pos('id="seccion-revision"'), "revisar y el catálogo van al final");
+          for (const id of ["btn-calcular", "buscar-item"]) { const i = pos(`id="${id}"`); assert.ok(i > mas && i < finMas, `«${id}» vive PLEGADO en «Más herramientas»`); }
+          // lo que antes iba plegado ya no se pliega dos veces: su apartado ES el pliegue
+          assert.ok(!/<details id="ajustes-wrap"/.test(apu) && !/Guardar o abrir un borrador/.test(apu), "los ajustes y los borradores ya no van en un plegado: tienen su apartado");
+          // «Subir un APU»: un botón a la vista que abre la MISMA puerta única del archivo
+          assert.ok(/<button id="btn-subir-apu" type="button"[^>]*aria-describedby="apu-subir-nota"[^>]*>Subir un APU<\/button>/.test(apu), "«Subir un APU» está arriba, con su nota");
+          assert.ok(/Excel o CSV/.test(apu.slice(pos('id="apu-subir-nota"'), pos('id="apu-subir-nota"') + 400)) && /accept="[^"]*\.xlsx[^"]*\.csv[^"]*"/.test(apu.slice(pos('id="entrada-archivo-input"'), pos('id="entrada-archivo-input"') + 200)), "la nota dice qué archivo sirve y la puerta lo acepta");
+          // el estado vacío de los resultados lleva a «Su análisis» (una pantalla vacía no es una respuesta)
+          for (const id of ["apu-ofertar-vacio", "apu-cuesta-vacio"]) assert.ok(/data-apu-ir="analisis"/.test(apu.slice(pos(`id="${id}"`), apu.indexOf("</div>", apu.indexOf("<button", pos(`id="${id}"`))))), `«${id}» ofrece ir a «Su análisis»`);
 
           /* ═══ PRECIOS NO PUEDE VOLVER A CRECER, Y EL PRECIO SE DICE COMO
                 HECHO (5-sep-2026) ═══
@@ -49354,7 +49413,13 @@ async function main() {
              `<main id="tab-…">` hasta el siguiente `<main>`, sin comentarios,
              sin `<script>` y sin `<style>`— y se mide con ella. Con esta misma
              cuenta el árbol del 5-sep daba 1 368 palabras: el tope es lo medido
-             HOY, así que la pantalla ya solo puede adelgazar. */
+             HOY, así que la pantalla ya solo puede adelgazar.
+             10-nov-2026 (Precios con su barra, maqueta aprobada por el dueño): la pestaña entera creció de 1 346 a 1 497
+             palabras y de 30 a 44 botones —los siete apartados, el panel del teléfono, «Subir un APU», las tres cifras,
+             lo que dicen los apartados vacíos y el aviso de unas cifras de antes—, pero ya no se ve entera: se ve UN
+             apartado con la barra y la cabecera. Lo que se lee a la vez bajó de 1 346 palabras a 776 (el apartado más
+             pesado, «Su análisis»). Los dos topes son lo medido ese día y solo pueden bajar: el de la pestaña entera y
+             el de lo que se ve a la vez. */
           {
             const corte = (idPanel) => {
               const a = html.indexOf(`<main id="${idPanel}"`);
@@ -49368,9 +49433,18 @@ async function main() {
               .filter((w) => /[\wÁÉÍÓÚÜÑáéíóúüñ0-9]/.test(w)).length;
             const botonesApu = (panelApu.match(/<button\b/g) || []).length;
             const camposApu = (panelApu.match(/<(?:input|select|textarea)\b/g) || []).length;
-            assert.ok(palabrasApu <= 1346, `#tab-apu tiene ${palabrasApu} palabras: el tope es 1346 y solo puede bajar`);
-            assert.ok(botonesApu <= 30, `#tab-apu tiene ${botonesApu} botones: el tope es 30`);
+            assert.ok(palabrasApu <= 1497, `#tab-apu tiene ${palabrasApu} palabras: el tope es 1497 y solo puede bajar`);
+            assert.ok(botonesApu <= 44, `#tab-apu tiene ${botonesApu} botones: el tope es 44`);
             assert.ok(camposApu <= 42, `#tab-apu tiene ${camposApu} campos: el tope es 42`);
+            // lo que se ve A LA VEZ: el armazón (barra, cabecera) más el apartado más pesado, con los bloques del censo de arriba
+            const medirApu = (t) => ({ palabras: (t.replace(/<[^>]*>/g, " ").replace(/&[a-z]+;/g, " ").match(/[^\s]+/g) || []).filter((w) => /[\wÁÉÍÓÚÜÑáéíóúüñ0-9]/.test(w)).length,
+              botones: (t.match(/<button\b/g) || []).length, campos: (t.match(/<(?:input|select|textarea)\b/g) || []).length });
+            const armazonTxt = bloquesApu.filter((b) => !b.ap).map((b) => apu.slice(b.ini, b.fin)).join(" ");
+            const vistas = APS.map((a) => ({ a, ...medirApu(`${armazonTxt} ${bloquesApu.filter((b) => b.ap === a).map((b) => apu.slice(b.ini, b.fin)).join(" ")}`) }));
+            const peor = (k) => vistas.reduce((x, v) => (v[k] > x[k] ? v : x));
+            assert.ok(peor("palabras").palabras <= 776, `lo que se ve a la vez en Precios («${peor("palabras").a}») tiene ${peor("palabras").palabras} palabras: el tope es 776 y solo puede bajar`);
+            assert.ok(peor("botones").botones <= 33, `lo que se ve a la vez («${peor("botones").a}») tiene ${peor("botones").botones} botones: el tope es 33`);
+            assert.ok(peor("campos").campos <= 24, `lo que se ve a la vez («${peor("campos").a}») tiene ${peor("campos").campos} campos: el tope es 24`);
             /* El párrafo del precio sugerido explicaba el MODELO: si para
                entender un número hace falta leer un párrafo, el número está mal
                elegido. Se dice el hecho, calculado con la meseta que el
@@ -60710,8 +60784,9 @@ async function main() {
       /* (g) la página manda el objeto en el cálculo de Precios. Se lee el fuente de `calcularRentabilidad` porque armar
          esa petición necesita el DOM entero; la ejecución real se comprueba en Chromium contra producción (MEMORIA) */
       const jsR = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
-      const iRen = jsR.indexOf("async function calcularRentabilidad(");
-      const cuerpoRen = jsR.slice(iRen, jsR.indexOf('api("/api/apu?op=rentabilidad"', iRen));
+      // desde el 10-nov-2026 el cuerpo lo arma `cuerpoRentabilidad` (una sola función para la petición y su firma)
+      const iRen = jsR.indexOf("  function cuerpoRentabilidad() {");
+      const cuerpoRen = jsR.slice(iRen, jsR.indexOf("\n  }\n", iRen));
       assert.ok(iRen > 0 && /\n\s+objeto: \$\("objeto"\)\.value\.trim\(\)\.slice\(0, 4000\),/.test(cuerpoRen), "el cálculo de Precios manda el objeto del proceso");
     }
 
@@ -66209,12 +66284,16 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
       }
       /* (k) LO QUE SE PULSA EN «Guardar o abrir un borrador» RESPONDE AL LADO DEL BOTÓN (10-nov-2026): el dueño pulsó
              «Abrir un borrador…» y no vio nada. La lista y el aviso vivían encima del bloque del proceso, cientos de
-             píxeles por encima del pliegue (medido en Chromium a 1920×870 con el botón al pie: la lista quedaba a −719 px). */
+             píxeles por encima del pliegue (medido en Chromium a 1920×870 con el botón al pie: la lista quedaba a −719 px).
+             Con la barra de Precios (el mismo 10-nov) «Guardar» vive arriba, junto al nombre del análisis, y la lista en
+             su apartado «Sus análisis guardados»: cada uno responde junto a SU botón, con su propio aviso. */
       {
         const htmlK = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8").replace(/<!--[\s\S]*?-->/g, "");
-        const iK = htmlK.indexOf('id="btn-listar"'), finK = htmlK.indexOf("</details>", iK);
-        const pliegueK = iK > 0 && finK > iK ? htmlK.slice(iK, finK) : "";
-        okRO(/id="lista-presupuestos"/.test(pliegueK) && /id="borrador-mensaje"/.test(pliegueK), "(k) la lista de borradores y su aviso van DENTRO del pliegue, debajo de «Abrir un borrador…»");
+        const iK = htmlK.indexOf('id="btn-listar"'), finK = htmlK.indexOf("</section>", iK);
+        const apartadoK = iK > 0 && finK > iK ? htmlK.slice(iK, finK) : "";
+        okRO(/id="borrador-lista-mensaje"/.test(apartadoK) && /id="lista-presupuestos"/.test(apartadoK), "(k) la lista y su aviso van debajo de «Volver a buscar», en «Sus análisis guardados»");
+        const iG = htmlK.indexOf('id="btn-guardar"'), finG = htmlK.indexOf("</section>", iG);
+        okRO(iG > 0 && /id="borrador-mensaje"/.test(htmlK.slice(iG, finG)), "(k) el aviso de «Guardar» y de «Cargar» va junto a «Guardar», arriba en la cabecera del análisis");
         const fetchK = ctx.fetch;
         let soltarLista = null, cuerpoCalc = null;
         ctx.fetch = (url, cfg) => {
@@ -66226,7 +66305,7 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
             { descripcion: "Relleno", unidad: "m3", cantidad: 1, precio_manual: 9000, origen_precio: "manual", composicion_usuario: { componentes: [] } }] } }));
           return fetchK(url, cfg);
         };
-        const listaK = porId.get("lista-presupuestos"), avisoK = porId.get("borrador-mensaje");
+        const listaK = porId.get("lista-presupuestos"), avisoK = porId.get("borrador-mensaje"), avisoListaK = porId.get("borrador-lista-mensaje");
         listaK.innerHTML = ""; listaK.classList.add("hidden");
         await disparar("btn-listar", "click", {});   // la red todavía no responde
         okRO(!listaK.classList.contains("hidden") && /Buscando sus borradores/.test(String(listaK.innerHTML)), `(k) la pulsación se ve antes de que responda la red: «${textoRO(listaK.innerHTML)}»`);
@@ -66245,8 +66324,73 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
         okRO(/Guardado como «Borrador K».*7 APU completo/.test(String(avisoK.textContent)), `(k) «Guardar» responde en el pliegue, con lo que aprendió la biblioteca: «${avisoK.textContent}»`);
         ctx.fetch = (url, cfg) => (/op=listar/.test(url) ? Promise.reject(new TypeError("Failed to fetch")) : fetchK(url, cfg));
         await disparar("btn-listar", "click", {}); await asentarRO();
-        okRO(String(avisoK.textContent).length > 0 && /text-red-600/.test(String(avisoK.className)) && listaK.classList.contains("hidden"), `(k) un fallo de la red también se dice al lado: «${avisoK.textContent}»`);
+        okRO(/Volver a buscar|conexión|red/.test(String(avisoListaK.textContent)) && /text-red-600/.test(String(avisoListaK.className)) && listaK.classList.contains("hidden") && !/text-red-600/.test(String(avisoK.className)),
+          `(k) un fallo de la red se dice junto a la lista, no arriba junto a «Guardar»: «${avisoListaK.textContent}» / «${avisoK.textContent}»`);
+        ctx.fetch = (url, cfg) => (/op=listar/.test(url) ? Promise.resolve(respuestaRO(200, { ok: true })) : fetchK(url, cfg));
+        await disparar("btn-listar", "click", {}); await asentarRO();
+        okRO(/No llegó la lista de sus análisis guardados\. Pulse «Volver a buscar»/.test(String(avisoListaK.textContent)), `(k) una respuesta sin la lista manda a «Volver a buscar», el botón que existe: «${avisoListaK.textContent}»`);
         ctx.fetch = fetchK;
+      }
+      /* (l) LAS TRES CIFRAS DE ARRIBA EN LA PANTALLA REAL (10-nov-2026, Precios con su barra): «Calcular» las pinta con
+             la respuesta del motor real, cambiar un ajuste las pasa a «Recalcule» (la de abajo es la de antes) y un
+             cálculo sin costo dice «Sin calcular» en las cuatro cajas del resumen, nunca $0. */
+      {
+        const fetchL = ctx.fetch;
+        let respuestaL = null;
+        ctx.fetch = (url, cfg) => (/op=calcular/.test(url) ? Promise.resolve(respuestaRO(200, { ok: true, ...respuestaL })) : fetchL(url, cfg));
+        const cfgL = { aiu_pct: 15, imprevistos_pct: 5, utilidad_pct: 5 };
+        respuestaL = calculoRO.calcularPresupuesto({ items: [{ descripcion: "Excavación", unidad: "m3", cantidad: 10, precio_manual: 100000 }], config: cfgL });
+        F.fijar({ filas: [{ descripcion: "Excavación", unidad: "m3", cantidad: 10 }], ultimoCalculo: null });
+        porId.get("id-proceso").value = "";
+        porId.get("cuantia").value = "";
+        await disparar("btn-calcular", "click", {}); await asentarRO();
+        const precioL = porId.get("apu-c-precio").textContent;
+        okRO(precioL === `$${new Intl.NumberFormat("es-CO", { maximumFractionDigits: 0 }).format(respuestaL.resumen.precio_final)}` && !porId.get("apu-c-precio").classList.contains("apu-sin"),
+          `(l) «Calcular» pinta arriba el precio final del motor (MUTACIÓN: sin el repintado tras el cálculo, sigue «Sin calcular»): «${precioL}»`);
+        okRO(porId.get("apu-c-presupuesto").textContent === "Sin proceso", `(l) sin presupuesto escrito, «Sin proceso»: «${porId.get("apu-c-presupuesto").textContent}»`);
+        porId.get("cuantia").value = "2000000";
+        await disparar("cuantia", "input", {});
+        okRO(porId.get("apu-c-presupuesto").textContent === "$2.000.000", `(l) escribir el presupuesto lo pinta arriba al momento: «${porId.get("apu-c-presupuesto").textContent}»`);
+        await disparar("ajustes-wrap", "input", { target: porId.get("utilidad") });
+        okRO(porId.get("apu-c-precio").textContent === "Recalcule" && porId.get("apu-c-precio").classList.contains("apu-sin"),
+          `(l) cambiar un ajuste pasa la cifra a «Recalcule» (MUTACIÓN: sin el repintado al invalidar, se queda el precio viejo): «${porId.get("apu-c-precio").textContent}»`);
+        respuestaL = calculoRO.calcularPresupuesto({ items: [{ descripcion: "Excavación", unidad: "m3", cantidad: null, precio_manual: 100000 }], config: cfgL });
+        F.fijar({ filas: [{ descripcion: "Excavación", unidad: "m3", cantidad: null }] });
+        await disparar("btn-calcular", "click", {}); await asentarRO();
+        const cajasL = ["r-directo", "r-venta", "r-final", "r-margen"].map((id) => porId.get(id).textContent);
+        okRO(cajasL.every((t) => t === "Sin calcular") && porId.get("r-margen-pct").textContent === "—",
+          `(l) sin costo, las cuatro cajas del resumen dicen «Sin calcular», no $0 (MUTACIÓN: con pesos() de siempre, «$0»): ${JSON.stringify(cajasL)}`);
+        okRO(/^(Sin calcular|Faltan \d+ cantidad(es)?)$/.test(porId.get("apu-c-precio").textContent), `(l) …y arriba tampoco hay $0: «${porId.get("apu-c-precio").textContent}»`);
+        /* el mínimo y el veredicto de arriba, con la rentabilidad que la pantalla pide de verdad («Calcular» con proceso):
+           valen con las MISMAS entradas con que se pidieron (revisión adversaria del 10-nov-2026: otro presupuesto o una
+           rentabilidad caída dejaban arriba el mínimo y el veredicto de antes junto al precio nuevo) */
+        const PTl = require("../lib/apu/piso_techo.js");
+        const pesosL = (n) => `$${new Intl.NumberFormat("es-CO", { maximumFractionDigits: 0 }).format(n)}`;
+        respuestaL = calculoRO.calcularPresupuesto({ items: [{ descripcion: "Excavación", unidad: "m3", cantidad: 10, precio_manual: 100000 }], config: cfgL });
+        F.fijar({ filas: [{ descripcion: "Excavación", unidad: "m3", cantidad: 10 }], ultimoCalculo: null });
+        porId.get("id-proceso").value = "CO1.L";
+        porId.get("cuantia").value = "2000000";
+        const ptL = PTl.pisoTecho({ presupuesto_oficial: 2000000, costo_directo: respuestaL.resumen.costo_directo_total, aiu: { administracion_pct: 15, imprevistos_pct: 5, utilidad_pct: 5 }, precio_actual: respuestaL.resumen.precio_final });
+        let rentL = 0, rentCae = false;
+        ctx.fetch = (url, cfg) => {
+          if (/op=calcular/.test(url)) return Promise.resolve(respuestaRO(200, { ok: true, ...respuestaL }));
+          if (/op=rentabilidad/.test(url)) { rentL++; return rentCae ? Promise.reject(new TypeError("Failed to fetch")) : Promise.resolve(respuestaRO(200, { ok: true, presupuesto: respuestaL, piso_techo: ptL, rentabilidad: {} })); }
+          return fetchL(url, cfg);
+        };
+        await disparar("btn-calcular", "click", {}); await asentarRO();
+        const minL = () => porId.get("apu-c-minimo").textContent, verL = () => porId.get("apu-veredicto");
+        okRO(ptL.aplicable && rentL === 1 && minL() === pesosL(ptL.cifras.piso_rentable) && String(verL().textContent).length > 0 && !/\bhidden\b/.test(verL().className),
+          `(l) «Calcular» con proceso pinta arriba el mínimo y el veredicto de esa rentabilidad: ${JSON.stringify({ rentL, min: minL(), ver: verL().textContent })}`);
+        porId.get("cuantia").value = "3000000";
+        await disparar("cuantia", "input", {});
+        okRO(minL() === "Recalcule" && /\bhidden\b/.test(verL().className) && porId.get("apu-n-ofertar").textContent === "",
+          `(l) otro presupuesto: el mínimo dice «Recalcule» y el veredicto del presupuesto anterior se calla (MUTACIÓN: sin la firma, «No se presente… presupuesto ($2.000.000)» junto a $3.000.000): «${minL()}» «${verL().textContent}»`);
+        rentCae = true;
+        await disparar("btn-calcular", "click", {}); await asentarRO();
+        okRO(rentL === 2 && /^\$/.test(porId.get("apu-c-precio").textContent) && minL() === "Recalcule" && /\bhidden\b/.test(verL().className),
+          `(l) recalcular con la rentabilidad caída: el precio es el nuevo y el mínimo NO vuelve con el de antes: ${JSON.stringify({ rentL, precio: porId.get("apu-c-precio").textContent, min: minL() })}`);
+        porId.get("id-proceso").value = "";
+        ctx.fetch = fetchL;
       }
     } finally {
       if (tzRO === undefined) delete process.env.TZ; else process.env.TZ = tzRO;
@@ -67344,6 +67488,349 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
     }
     if (fallasM.length) throw new Error(`unidad Mis procesos: ${fallasM.length} comprobaciones fallan:\n  - ${fallasM.join("\n  - ")}`);
     console.log("· unidad Mis procesos · la barra, el expediente y su precio: el precio del expediente dice lo mismo que Precios (op=rentabilidad, cuatro casos) con el techo más bajo y la configuración como la acota Precios, cinco respuestas y ninguna es $0 (la lectura que falla lo dice), la cuarta cifra, «¿A cuánto ofertar?» y la sección con las frases de Precios, la barra con «Este proceso» y Quitar una vez, tres apartados con censo de bloques y la línea de atención con la frase de Mi empresa");
+  }
+
+  bqPreciosBarra: { if (!corre("unidad Precios · la barra, las tres cifras y la casilla")) break bqPreciosBarra;
+    /* PRECIOS CON SU BARRA (10-nov-2026, maqueta aprobada por el dueño: «apruebo, constrúyelo y arregla la casilla mete
+       un botón para que haga un APU que cualquier persona le pueda subir»). Se EJECUTAN las funciones reales de
+       public/app.js: elegir un apartado (lo desconocido es inerte, entrar en los guardados pide la lista, el panel del
+       teléfono se cierra), las tres cifras de arriba (ninguna es $0: «Sin calcular», «Recalcule», «Faltan N
+       cantidades», «Sin proceso»), la casilla de lo subcontratado (se lee, vuelve al abrir un análisis con la lectura
+       del motor y MUEVE el precio que calcula el motor), «Subir un APU» (la misma puerta del archivo), cada aviso junto
+       a su botón y las tres cifras de rentabilidad que deciden a la vista. La estructura (siete apartados, censo de
+       bloques, reglas de la hoja) la fija la prueba «PRECIOS CON SU BARRA: SIETE APARTADOS». */
+    const fallasP = [];
+    const okP = (c, que) => { if (!c) fallasP.push(que); };
+    const jsP = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+    const htmlP = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8").replace(/<!--[\s\S]*?-->/g, "");
+    const cortarP = (firma, fin = "\n  }") => { const i = jsP.indexOf(firma); if (i < 0) { fallasP.push(`app.js sin «${firma.trim().slice(0, 80)}»`); return ""; }
+      if (jsP.indexOf(firma, i + 1) >= 0) fallasP.push(`«${firma.trim().slice(0, 80)}» está dos veces en app.js: el corte no sabría cuál`); return jsP.slice(i, jsP.indexOf(fin, i) + fin.length); };
+    const lineaP = (marca) => { const i = jsP.indexOf(marca); if (i < 0) { fallasP.push(`app.js sin «${marca.trim()}»`); return ""; } return jsP.slice(i, jsP.indexOf("\n", i)); };
+    const pesosP = new Function(`${lineaP("  const nf = new Intl.NumberFormat(")}\n${lineaP("  const pesos = (n) =>")}\nreturn pesos;`)();
+    const APS_P = ["ofertar", "analisis", "cuesta", "revisar", "guardados", "ajustes", "catalogo"];
+
+    // (a) elegir un apartado: la función REAL con un documento falso
+    const fuenteAp = [lineaP("  const PANEL_APU = "), cortarP("  const NOMBRES_APU = Object.freeze({", "});"), cortarP("  function elegirApartadoPrecios(")].join("\n");
+    if (fuenteAp.trim()) {
+      const D = new Function("APS", `
+        const hechos = []; const atributos = {};
+        const tab = { setAttribute: (k, v) => { atributos[k] = v; }, getAttribute: (k) => atributos[k], hasAttribute: (k) => k in atributos };
+        const botones = APS.map((id) => { const b = { id, attrs: {}, getAttribute: (k) => (k === "data-apu-ir" ? id : b.attrs[k]), setAttribute: (k, v) => { b.attrs[k] = v; },
+          removeAttribute: (k) => { delete b.attrs[k]; }, focus: () => hechos.push("foco:" + id) }; return b; });
+        const rotulo = { textContent: "Su análisis" };
+        const clases = new Set(["hidden"]);
+        const lista = { innerHTML: "", classList: { contains: (c) => clases.has(c) } };
+        const otros = { "btn-listar": { click: () => hechos.push("listar") }, "apu-abrir-panel": { focus: () => hechos.push("foco:abrir-panel") } };
+        const document = { getElementById: (id) => ({ "tab-apu": tab, "apu-abrir-rotulo": rotulo, "lista-presupuestos": lista, ...otros }[id] || null),
+          querySelectorAll: (sel) => (sel === "#apu-barra .apu-ir" ? botones : []),
+          querySelector: (sel) => (sel === '#apu-barra .apu-ir[aria-current="page"]' ? botones.find((b) => b.attrs["aria-current"] === "page") || null : null) };
+        const panelLateral = (cfg, abrir, o) => { hechos.push("panel:" + cfg.tab + ":" + abrir + ":" + JSON.stringify(o || {})); if (!abrir) delete atributos["data-panel"]; };
+        const window = { scrollTo() {} };
+        ${fuenteAp}
+        return { elegirApartadoPrecios, atributos, botones, rotulo, hechos, lista, clases, PANEL_APU, NOMBRES_APU };`)(APS_P);
+      okP(Object.keys(D.NOMBRES_APU).join() === APS_P.join(), `(a) app.js nombra los siete apartados de la maqueta: ${Object.keys(D.NOMBRES_APU).join()}`);
+      const r1 = D.elegirApartadoPrecios("ofertar", { enfocar: false });
+      okP(r1 === "ofertar" && D.atributos["data-apu"] === "ofertar" && D.rotulo.textContent === "¿A cuánto ofertar?"
+        && D.botones.filter((b) => b.attrs["aria-current"] === "page").map((b) => b.id).join() === "ofertar", `(a) elegir marca el apartado, su botón (y solo ese) y el rótulo del teléfono: ${JSON.stringify({ r1, a: D.atributos, r: D.rotulo.textContent })}`);
+      for (const raro of ["<img src=x>", "constructor", "toString", "__proto__", "", undefined]) {
+        okP(D.elegirApartadoPrecios(raro, { enfocar: false }) === "analisis" && D.atributos["data-apu"] === "analisis", `(a) un apartado desconocido («${raro}») es INERTE: cae a «Su análisis»`);
+      }
+      D.hechos.length = 0;
+      D.elegirApartadoPrecios("guardados", { enfocar: false });
+      okP(D.hechos.includes("listar"), `(a) entrar en «Sus análisis guardados» ES pedir la lista (sin otra pulsación): ${D.hechos.join()}`);
+      D.clases.delete("hidden"); D.lista.innerHTML = "<li>Borrador</li>"; D.hechos.length = 0;
+      D.elegirApartadoPrecios("guardados", { enfocar: false });
+      okP(!D.hechos.includes("listar"), "(a) …y si la lista ya está a la vista no la vuelve a pedir");
+      D.atributos["data-panel"] = "abierto"; D.hechos.length = 0;
+      D.elegirApartadoPrecios("ajustes");
+      okP(D.hechos.includes('panel:tab-apu:false:{"devolverFoco":false}') && D.hechos.includes("foco:abrir-panel") && !("data-panel" in D.atributos),
+        `(a) con el panel del teléfono abierto, elegir lo cierra y el foco vuelve a su botón: ${D.hechos.join()}`);
+      D.hechos.length = 0;
+      D.elegirApartadoPrecios("cuesta");
+      okP(D.hechos.join() === "foco:cuesta", `(a) sin panel, el foco va al apartado elegido de la barra: ${D.hechos.join()}`);
+      okP(D.PANEL_APU.tab === "tab-apu" && ["velo", "boton"].every((k) => htmlP.includes(`id="${D.PANEL_APU[k]}"`)) && htmlP.includes('<nav id="apu-barra"'), "(a) el panel de Precios apunta a nodos que existen");
+    }
+
+    // (b) las tres cifras de arriba y el veredicto: la función REAL, con lo que la pantalla ya calculó
+    const iTono = jsP.indexOf("  const TONO_APU = Object.freeze("), iPintar = jsP.indexOf("  function pintarCifrasPrecios() {");
+    okP(iTono > 0 && iPintar > iTono, "(b) app.js tiene TONO_APU y pintarCifrasPrecios");
+    if (iTono > 0 && iPintar > iTono) {
+      const fuenteCifras = jsP.slice(iTono, jsP.indexOf("\n  }", iPintar) + 4);
+      const C = new Function("pesos", `
+        let ultimoCalculo = null, ultimaRentabilidad = null, filas = [], cuantiaDelPliego = null, firmaRentabilidad = null, entradas = "A", rompeFirma = false;
+        const cuerpoRentabilidad = () => { if (rompeFirma) throw new ReferenceError("aún no"); return { entradas }; };
+        const mk = (oculto) => { const s = new Set(oculto ? ["hidden"] : []); return { textContent: "x", title: "", className: "", value: "", _s: s,
+          classList: { toggle: (c, f) => (f ? s.add(c) : s.delete(c)), contains: (c) => s.has(c), add: (c) => s.add(c), remove: (c) => s.delete(c) } }; };
+        const els = { "apu-c-precio": mk(), "apu-c-minimo": mk(), "apu-c-presupuesto": mk(), "apu-veredicto": mk(true), "apu-n-ofertar": mk(), "apu-n-analisis": mk(),
+          "apu-ofertar-vacio": mk(), "apu-cuesta-vacio": mk(), "seccion-resumen": mk(true), "seccion-piso-techo": mk(true), cuantia: mk(), "apu-c-minimo-nota": mk(true), "apu-ofertar-viejo": mk(true),
+          "apu-ofertar-viejo-t": mk(), "apu-ofertar-viejo-p": mk() };
+        const $ = (id) => els[id] || null;
+        const document = { getElementById: $ };
+        ${fuenteCifras}
+        return (e) => {
+          ultimoCalculo = e.calc || null; ultimaRentabilidad = e.rent || null; filas = e.filas || []; cuantiaDelPliego = e.cdp || null;
+          // la rentabilidad se pidió con las entradas «A»; «ahora» dice con cuáles está la pantalla (por omisión, las mismas)
+          firmaRentabilidad = e.rent ? JSON.stringify({ entradas: "A" }) : null; entradas = e.ahora || "A"; rompeFirma = !!e.rompeFirma;
+          els.cuantia.value = e.cuantia == null ? "" : String(e.cuantia);
+          els["seccion-resumen"]._s[e.resumenVisible ? "delete" : "add"]("hidden"); els["seccion-piso-techo"]._s[e.ptVisible ? "delete" : "add"]("hidden");
+          pintarCifrasPrecios();
+          const v = (id) => ({ t: els[id].textContent, sin: els[id].classList.contains("apu-sin") });
+          return { precio: v("apu-c-precio"), minimo: v("apu-c-minimo"), presupuesto: v("apu-c-presupuesto"), veredicto: els["apu-veredicto"].textContent, verClase: els["apu-veredicto"].className,
+            nOf: els["apu-n-ofertar"].textContent, nOfClase: els["apu-n-ofertar"].className, nAn: els["apu-n-analisis"].textContent,
+            vacioOf: !els["apu-ofertar-vacio"].classList.contains("hidden"), vacioCu: !els["apu-cuesta-vacio"].classList.contains("hidden"),
+            nota: els["apu-c-minimo-nota"].classList.contains("hidden") ? "" : els["apu-c-minimo-nota"].textContent, viejo: !els["apu-ofertar-viejo"].classList.contains("hidden"),
+            viejoT: els["apu-ofertar-viejo-t"].textContent };
+        };`)(pesosP);
+      const nada = C({});
+      okP(nada.precio.t === "Sin calcular" && nada.precio.sin && nada.minimo.t === "Sin calcular" && nada.presupuesto.t === "Sin proceso" && nada.veredicto === "" && /hidden/.test(nada.verClase)
+        && nada.nOf === "" && nada.nAn === "" && nada.vacioOf && nada.vacioCu, `(b) sin nada: «Sin calcular», «Sin proceso», sin veredicto, y los apartados vacíos dicen qué falta: ${JSON.stringify(nada)}`);
+      const ptOk = { aplicable: true, estado: "presentarse", veredicto: "Preséntese: su precio cubre el mínimo y está en el rango en que se gana.", cifras: { piso_rentable: 58128816 } };
+      const todo = C({ calc: { items: [{}, {}], resumen: { precio_final: 241500000 } }, rent: { piso_techo: ptOk }, filas: [1, 2, 3], cuantia: 260000000, resumenVisible: true, ptVisible: true });
+      okP(todo.precio.t === pesosP(241500000) && !todo.precio.sin && todo.minimo.t === pesosP(58128816) && todo.presupuesto.t === pesosP(260000000)
+        && todo.veredicto === `● ${ptOk.veredicto}` && /apu-tono-ok/.test(todo.verClase) && !/hidden/.test(todo.verClase)
+        && todo.nOf === "● Preséntese" && /apu-tono-ok/.test(todo.nOfClase) && todo.nAn === "3 ítems" && !todo.vacioOf && !todo.vacioCu,
+        `(b) con el cálculo y el piso: las tres cifras del servidor sin rehacer cuentas, el veredicto de Precios con su color y la barra lo resume: ${JSON.stringify(todo)}`);
+      // LA REVISIÓN ADVERSARIA (10-nov-2026): el mínimo y el veredicto valen solo con las entradas con que se pidieron
+      const calcOk = { items: [{}, {}], resumen: { precio_final: 241500000 } };
+      const viejo = C({ calc: calcOk, rent: { piso_techo: ptOk }, cuantia: 300000000, ahora: "B", ptVisible: true });
+      okP(viejo.precio.t === pesosP(241500000) && viejo.minimo.t === "Recalcule" && viejo.minimo.sin && viejo.veredicto === "" && /hidden/.test(viejo.verClase) && viejo.nOf === "" && viejo.viejo,
+        `(b) cambió una entrada (otra cantidad, otro presupuesto, otro análisis) después del piso: el mínimo dice «Recalcule», sin veredicto ni «Preséntese» en la barra, y el panel de abajo avisa que es de antes (MUTACIÓN: sin la firma, el mínimo viejo junto al precio nuevo): ${JSON.stringify(viejo)}`);
+      const sinCalcVigente = C({ calc: null, rent: { piso_techo: ptOk }, cuantia: 260000000 });
+      okP(sinCalcVigente.minimo.t === "Recalcule" && sinCalcVigente.veredicto === "", `(b) sin un cálculo vigente tampoco hay mínimo ni veredicto: ${JSON.stringify(sinCalcVigente.minimo)}`);
+      const faltanPiso = C({ calc: { items: [{ cantidad_ilegible: true }, {}], resumen: { precio_final: 90000000 } }, rent: { piso_techo: ptOk }, cuantia: 260000000, ptVisible: true });
+      okP(faltanPiso.minimo.t === "Faltan 1 cantidad" && faltanPiso.veredicto === "" && faltanPiso.nOf === "" && faltanPiso.viejo && /^Faltan 1 cantidad: estas cifras no incluyen esa obra$/.test(faltanPiso.viejoT),
+        `(b) con cantidades que faltan, el mínimo sobre ese costo incompleto no se enseña ni decide, y el panel de abajo lo dice como es: ${JSON.stringify(faltanPiso)}`);
+      okP(/cálculo anterior/.test(viejo.viejoT), `(b) …y uno de antes dice que es de antes: «${viejo.viejoT}»`);
+      const sinFirma = C({ calc: calcOk, rent: { piso_techo: ptOk }, cuantia: 260000000, rompeFirma: true });
+      okP(sinFirma.minimo.t === "Recalcule" && sinFirma.veredicto === "", "(b) si no se puede firmar lo de ahora, no se afirma que el mínimo siga valiendo");
+      const cota = C({ calc: calcOk, rent: { piso_techo: { ...ptOk, cifras: { piso_rentable: 58128816, piso_es_cota_inferior: true } } }, cuantia: 260000000 });
+      okP(cota.minimo.t === pesosP(58128816) && /deducciones de acta/.test(cota.nota) && /más alto/.test(cota.nota) && todo.nota === "",
+        `(b) un mínimo sin las deducciones de acta lo dice a la vista, no solo en el title que el teléfono no enseña: «${cota.nota}»`);
+      const recal = C({ calc: null, resumenVisible: true, cuantia: 260000000 });
+      okP(recal.precio.t === "Recalcule" && recal.precio.sin, `(b) cambió un ajuste y el total de abajo es el de antes: arriba dice «Recalcule», no la cifra vieja: ${JSON.stringify(recal.precio)}`);
+      const faltan = C({ calc: { items: [{ cantidad_ilegible: true }, {}, { cantidad_ilegible: true }], resumen: { precio_final: 90000000 } }, cuantia: 260000000 });
+      okP(faltan.precio.t === "Faltan 2 cantidades" && faltan.precio.sin, `(b) con ítems sin cantidad el total no se enseña como precio: ${JSON.stringify(faltan.precio)}`);
+      const una = C({ calc: { items: [{ cantidad_ilegible: true }], resumen: { precio_final: 1 } } });
+      okP(una.precio.t === "Faltan 1 cantidad", `(b) en singular: ${una.precio.t}`);
+      for (const pf of [0, null, "", "abc"]) {
+        const r = C({ calc: { items: [], resumen: { precio_final: pf } } });
+        okP(r.precio.t === "Sin calcular" && r.precio.sin, `(b) un precio_final ${JSON.stringify(pf)} es «Sin calcular», nunca $0: ${r.precio.t}`);
+      }
+      for (const cu of ["", 0, "0", -5, "abc"]) {
+        const r = C({ cuantia: cu });
+        okP(r.presupuesto.t === "Sin proceso" && r.presupuesto.sin, `(b) un presupuesto ${JSON.stringify(cu)} es «Sin proceso»: ${r.presupuesto.t}`);
+      }
+      const sinPiso = C({ calc: { items: [], resumen: { precio_final: 100 } }, rent: { piso_techo: { aplicable: false, estado: "sin_presupuesto", veredicto: "Este presupuesto no está asociado a un proceso con presupuesto oficial: no hay contra qué comparar el piso.", cifras: {} } } });
+      okP(sinPiso.minimo.t === "Sin calcular" && sinPiso.veredicto.startsWith("Este presupuesto") && !/apu-tono/.test(sinPiso.verClase) && !/^●/.test(sinPiso.veredicto) && sinPiso.nOf === "",
+        `(b) una explicación no lleva el punto de color de un veredicto, y sin piso el mínimo es «Sin calcular»: ${JSON.stringify(sinPiso)}`);
+      const noAplica = C({ calc: calcOk, rent: { piso_techo: { aplicable: false, estado: "sin_costo", veredicto: "x", cifras: { piso_rentable: 5 } } } });
+      okP(noAplica.minimo.t === "Sin calcular", "(b) un piso que no aplica no se enseña aunque traiga cifra");
+      for (const [estado, tono, corto] of [["no_presentarse", "apu-tono-mal", "● No se presente"], ["no_presentarse_supera_presupuesto", "apu-tono-mal", "● No se presente"], ["confirmar_iva", "apu-tono-ojo", "● Revise el IVA"]]) {
+        const r = C({ calc: calcOk, rent: { piso_techo: { aplicable: true, estado, veredicto: "v", cifras: { piso_rentable: 10 } } } });
+        okP(r.verClase.includes(tono) && r.nOf === corto && r.veredicto === "● v", `(b) «${estado}» se pinta ${tono} y la barra dice «${corto}»: ${JSON.stringify(r)}`);
+      }
+      // los tonos y lo que dice la barra son los de los estados que el servidor publica (lib/apu/piso_techo)
+      const fuentePT = fs.readFileSync(path.join(__dirname, "..", "lib", "apu", "piso_techo.js"), "utf8");
+      const tonos = (jsP.match(/const TONO_APU = Object\.freeze\(\{([^}]*)\}\)/) || ["", ""])[1];
+      for (const est of [...tonos.matchAll(/(\w+): "/g)].map((m) => m[1])) okP(new RegExp(`estado\\s*[:=][^;\\n]*"${est}"`).test(fuentePT), `(b) «${est}» es un estado que lib/apu/piso_techo publica`);
+      okP(["apu-tono-ok", "apu-tono-mal", "apu-tono-ojo", "apu-sin"].every((c) => htmlP.includes(`.${c}`)), "(b) cada tono y el «sin dato» tienen su regla en la hoja");
+    }
+
+    // (c) la casilla de lo subcontratado: se lee, vuelve al abrir un análisis (con la lectura del motor) y MUEVE el precio
+    const fuenteLeerP = cortarP("  function leerConfig() {"), fuenteAplP = cortarP("  function aplicarConfig(c) {");
+    if (fuenteLeerP && fuenteAplP) {
+      const E = new Function(`
+        const els = {}; let falta = null;
+        const $ = (id) => (id === falta ? null : (els[id] = els[id] || { value: { aiu: "15", imprevistos: "5", utilidad: "5", "modo-aiu": "aditivo" }[id] || "", checked: false, disabled: false }));
+        const techoSigueDelPliego = () => false, varianteIvaActual = () => null, sincronizarBaja = () => {};
+        ${fuenteLeerP}
+        ${fuenteAplP}
+        return { leerConfig, aplicarConfig, els, faltar: (id) => { falta = id; } };`)();
+      E.leerConfig(); E.els["aiu-sobre-sub"].checked = false;
+      const cfgSin = E.leerConfig();
+      E.els["aiu-sobre-sub"].checked = true;
+      const cfgCon = E.leerConfig();
+      okP(cfgSin.aiu_sobre_subcontratado === false && cfgCon.aiu_sobre_subcontratado === true, `(c) leerConfig manda la casilla (nadie la leía y el servidor la tomaba siempre encendida): ${JSON.stringify([cfgSin.aiu_sobre_subcontratado, cfgCon.aiu_sobre_subcontratado])}`);
+      E.faltar("aiu-sobre-sub");
+      okP(E.leerConfig().aiu_sobre_subcontratado === true, "(c) sin la casilla en la página, lo de siempre: encendida");
+      E.faltar(null);
+      const calc = require("../lib/apu/calculo.js");
+      for (const v of [true, false, "true", "false", undefined, null, 0, 1, ""]) {
+        E.els["aiu-sobre-sub"].checked = "sin tocar";
+        E.aplicarConfig({ aiu_sobre_subcontratado: v });
+        const motor = calc.normalizarConfig({ aiu_sobre_subcontratado: v }).aiu_sobre_subcontratado;
+        okP(E.els["aiu-sobre-sub"].checked === motor, `(c) abrir un análisis con ${JSON.stringify(v)} marca la casilla como la lee el motor (${motor}): ${E.els["aiu-sobre-sub"].checked}`);
+      }
+      E.aplicarConfig({});
+      okP(E.els["aiu-sobre-sub"].checked === true, "(c) un análisis de antes (sin el campo) se abre con la casilla encendida, como se calculó");
+      // de la casilla al precio: lo que manda la pantalla, por el motor real
+      const itemsSubP = [
+        { descripcion: "Excavación", unidad: "m3", cantidad: 10, precio_manual: 1000 },
+        { descripcion: "Pintura (sub)", unidad: "m2", cantidad: 10, precio_manual: 2000, subcontratado: true, aiu_subcontratista_pct: 20 },
+      ];
+      const rCon = calc.calcularPresupuesto({ items: itemsSubP, config: cfgCon }), rSin = calc.calcularPresupuesto({ items: itemsSubP, config: cfgSin });
+      okP(rCon.configuracion.aiu_sobre_subcontratado === true && rSin.configuracion.aiu_sobre_subcontratado === false && rSin.resumen.precio_venta < rCon.resumen.precio_venta
+        && rSin.resumen.precio_venta === 10000 * 1.25 + 20000, `(c) desmarcada, lo subcontratado entra al precio a costo (antes la casilla no movía nada): ${JSON.stringify([rCon.resumen.precio_venta, rSin.resumen.precio_venta])}`);
+      const editorP = fs.readFileSync(path.join(__dirname, "..", "lib", "handlers", "apu", "editor.js"), "utf8");
+      okP(/config: \{ \.\.\.\(datos\.config \|\| \{\}\), contribucion_pct: contribucionPctDe\(datos\) \}/.test(editorP), "(c) op=calcular pasa la configuración de la pantalla al motor sin filtrarla");
+      okP(/id="aiu-sobre-sub" type="checkbox" checked/.test(htmlP), "(c) la casilla nace encendida, como el servidor la tomaba");
+    }
+
+    // (d) cada aviso junto a SU botón: «Guardar» y «Cargar» arriba, la lista en su apartado
+    const fuenteMsgB = cortarP("  function msgBorrador(");
+    if (fuenteMsgB) {
+      const M = new Function(`
+        const generales = []; const msgApu = (t, k, o) => generales.push(k + ":" + t + (o && o.espejo === false ? ":sin-espejo" : ""));
+        const mk = () => ({ className: "", textContent: "", attrs: {}, setAttribute(k, v) { this.attrs[k] = v; } });
+        const els = { "borrador-mensaje": mk(), "borrador-lista-mensaje": mk() };
+        const $ = (id) => els[id] || null;
+        ${fuenteMsgB}
+        return { msgBorrador, els, generales };`)();
+      M.msgBorrador("Guardado como «X».", "ok");
+      M.msgBorrador("No llegó la lista.", "error", "lista");
+      okP(M.els["borrador-mensaje"].textContent === "Guardado como «X»." && /emerald/.test(M.els["borrador-mensaje"].className)
+        && M.els["borrador-lista-mensaje"].textContent === "No llegó la lista." && /red/.test(M.els["borrador-lista-mensaje"].className)
+        && M.generales.join("|") === "ok:Guardado como «X».:sin-espejo|error:No llegó la lista.:sin-espejo" && M.els["borrador-lista-mensaje"].attrs["aria-live"] === "assertive",
+        `(d) «arriba» y «lista» escriben cada uno en su sitio (el error, con prisa para el lector de pantalla); el aviso general se conserva sin repetirse arriba: ${JSON.stringify(M.els)} ${M.generales.join("|")}`);
+      M.msgBorrador("", "info", "lista");
+      okP(/hidden/.test(M.els["borrador-lista-mensaje"].className) && M.els["borrador-mensaje"].textContent === "Guardado como «X».", "(d) limpiar el de la lista no borra el de arriba");
+    }
+    const fuenteMsgA = cortarP("  function msgApu(");
+    if (fuenteMsgA) {
+      const A = new Function(`
+        const mk = (oculto) => { const s = new Set(oculto ? ["hidden"] : []); return { className: "", textContent: "", attrs: {}, setAttribute(k, v) { this.attrs[k] = v; },
+          classList: { toggle: (c, f) => (f ? s.add(c) : s.delete(c)), contains: (c) => s.has(c), add: (c) => s.add(c) } }; };
+        const els = { "accion-mensaje": mk(), "apu-aviso": mk(true), "accion-reintentar": mk(true) };
+        let ap = "ofertar";
+        const tab = { getAttribute: () => ap };
+        const $ = (id) => (id === "tab-apu" ? tab : els[id] || null);
+        ${fuenteMsgA}
+        return (apartado, texto, tipo, o) => { ap = apartado; msgApu(texto, tipo, o); const e = els["apu-aviso"];
+          return { arriba: /hidden/.test(e.className) ? "" : e.textContent, abajo: els["accion-mensaje"].textContent, clase: e.className }; };`)();
+      const a1 = A("ofertar", "Calcule el presupuesto antes de exportarlo.", "error"), a2 = A("analisis", "Presupuesto calculado.", "ok"), a3 = A("guardados", "Guardado.", "ok", { espejo: false });
+      okP(a1.arriba === "Calcule el presupuesto antes de exportarlo." && /text-red-600/.test(a1.clase) && a2.arriba === "" && a2.abajo === "Presupuesto calculado." && a3.arriba === "",
+        `(d) pulsado fuera de «Su análisis», el aviso se ve arriba; en «Su análisis» queda en su sitio, y el de un borrador no se duplica (MUTACIÓN: sin espejo, el Excel de «¿A cuánto ofertar?» quedaba mudo): ${JSON.stringify([a1, a2, a3])}`);
+    }
+    okP(htmlP.includes('<p id="apu-aviso" class="apu-aviso hidden" role="status"></p>') && /id="apu-cabecera"[\s\S]*id="apu-aviso"[\s\S]*<\/section>/.test(htmlP.slice(htmlP.indexOf('id="apu-cabecera"'), htmlP.indexOf("</section>", htmlP.indexOf('id="apu-cabecera"')) + 10)),
+      "(d) el aviso de arriba vive en la cabecera del análisis, que se ve en todos los apartados");
+    const fuenteListar = cortarP('  $("btn-listar").addEventListener("click", async () => {', "\n  });");
+    okP((fuenteListar.match(/msgBorrador\([^;]*"lista"\)/g) || []).length === 3 && !/Abrir un borrador…/.test(fuenteListar), "(d) los tres avisos de «Volver a buscar» van junto a la lista y nombran un botón que existe");
+
+    // (e) «Subir un APU»: elige «Su análisis» y abre la MISMA puerta única del archivo
+    const fuenteSubir = cortarP('  if ($("btn-subir-apu")) $("btn-subir-apu").addEventListener("click", () => {', "\n  });");
+    const iZona = jsP.indexOf('    const zona = $("entrada-archivo"), inp = $("entrada-archivo-input");');
+    const fuenteZona = iZona > 0 ? jsP.slice(iZona, jsP.indexOf("\n    }\n", iZona) + 6) : "";
+    okP(!!fuenteZona, "(e) app.js tiene la puerta única del archivo");
+    if (fuenteSubir && fuenteZona) {
+      const S = new Function(`
+        const hechos = []; const oyentes = {};
+        const nodo = (id) => ({ id, files: [], value: "", classList: { add() {}, remove() {} }, addEventListener: (ev, fn) => { (oyentes[id + ":" + ev] = oyentes[id + ":" + ev] || []).push(fn); }, click: () => hechos.push("click:" + id) });
+        const els = { "btn-subir-apu": nodo("btn-subir-apu"), "entrada-archivo-input": nodo("entrada-archivo-input"), "entrada-archivo": nodo("entrada-archivo") };
+        const $ = (id) => els[id] || null;
+        const elegirApartadoPrecios = (id, o) => hechos.push("apartado:" + id + ":" + JSON.stringify(o || {}));
+        const enrutarArchivoEntrada = (a) => hechos.push("puerta:" + (a ? a.name : "nada"));
+        ${fuenteSubir}
+        ${fuenteZona}
+        return { hechos, oyentes, els };`)();
+      S.oyentes["btn-subir-apu:click"][0]();
+      okP(S.hechos.join() === 'apartado:analisis:{"enfocar":false},click:entrada-archivo-input', `(e) «Subir un APU» lleva a «Su análisis» y abre el selector de la puerta única: ${S.hechos.join()}`);
+      S.hechos.length = 0; S.els["entrada-archivo-input"].files = [{ name: "APU subcontratista.xlsx" }];
+      S.oyentes["entrada-archivo-input:change"][0]();
+      okP(S.hechos.join() === "puerta:APU subcontratista.xlsx" && S.els["entrada-archivo-input"].value === "", `(e) el archivo elegido entra por enrutarArchivoEntrada, el mismo camino de soltarlo (Excel → importador, PDF → lector): ${S.hechos.join()}`);
+    }
+    {
+      const abrirT = cortarP("  function abrirEditorConProceso(q) {");
+      const T2 = new Function(`
+        const hechos = []; let aperturasEditor = 0, paramsProceso = null, borradorAbierto = true; const arrancadas = { apu: true };
+        const activarPestana = (t) => hechos.push("pestana:" + t), precargarDesdeURL = () => hechos.push("precarga");
+        const elegirApartadoPrecios = (id, o) => hechos.push("apartado:" + id + ":" + JSON.stringify(o));
+        ${abrirT}
+        abrirEditorConProceso("id_proceso=X");
+        return hechos.join();`)();
+      okP(T2 === 'pestana:apu,apartado:analisis:{"enfocar":false},precarga', `(e) una tarjeta abre Precios en «Su análisis», no en el último apartado que se usó (MUTACIÓN: aterrizaba en el catálogo): ${T2}`);
+      const iPre = jsP.indexOf("  function precargarDesdeURL() {"), finPre = jsP.indexOf("\n  }\n", iPre);
+      okP(iPre > 0 && /pintarCifrasPrecios\(\);[^\n]*\n    return hayProceso;\n  \}$/.test(jsP.slice(iPre, finPre + 4)), "(e) la precarga repinta las cifras de arriba con el presupuesto que acaba de escribir");
+      const iPaso = jsP.indexOf('    const b = ev.target.closest && ev.target.closest("[data-ir-paso]");');
+      okP(iPaso > 0 && /elegirApartadoPrecios\("analisis", \{ enfocar: false \}\);[^\n]*\n    const destino = aBuscar/.test(jsP.slice(iPaso, iPaso + 600)), "(e) «Buscar los precios» o «Cargue el pliego» de un recuadro vacío llevan primero a «Su análisis»");
+      okP(/const enLista = [^\n]*"guardados";\n      msgBorrador\(mensajeDeFallo\(err, "cargar el presupuesto guardado"\), "error", enLista \? "lista" : "arriba"\);/.test(jsP),
+        "(e) un «Cargar» que falla fuera de «Sus análisis guardados» (desde el expediente) avisa arriba, donde se ve");
+      okP(!/ajustes\.open = true/.test(jsP) && /escrito en «Ajustes»/.test(jsP), "(e) el descuento sugerido ya no abre un plegado que no existe: dice dónde quedó escrito");
+    }
+    okP((jsP.match(/function enrutarArchivoEntrada\(/g) || []).length === 1 && !/function (importarApuSubido|leerApuSubido)/.test(jsP), "(e) no hay un lector nuevo: una sola puerta");
+
+    // (f) rentabilidad: las tres que deciden a la vista, las nueve con el botón
+    const iVista = jsP.indexOf("    const A_LA_VISTA = ["), finVista = jsP.indexOf("cifras`;", iVista);
+    okP(iVista > 0 && finVista > iVista, "(f) pintarRentabilidad marca las tres cifras a la vista");
+    if (iVista > 0 && finVista > iVista) {
+      const fuenteVista = jsP.slice(iVista, finVista + "cifras`;".length);
+      const R = new Function(`
+        const tarjeta = (rot) => { const s = new Set(); return { rot, s, querySelector: (sel) => (sel === "p" ? { textContent: " " + rot + " " } : null), classList: { toggle: (c, f) => (f ? s.add(c) : s.delete(c)) } }; };
+        return (rotulos, todas) => {
+          const hijos = rotulos.map(tarjeta); const t = rotulos.slice();
+          const sec = { hasAttribute: (k) => k === "data-todas" && todas };
+          const ver = { textContent: "" };
+          const $ = (id) => ({ rentabilidad: { children: hijos }, "seccion-rentabilidad": sec, "rentabilidad-ver-todas": ver }[id] || null);
+          ${fuenteVista}
+          return { vista: hijos.filter((h) => !h.s.has("apu-rent-extra")).map((h) => h.rot), ver: ver.textContent };
+        };`)();
+      // los rótulos de verdad: los que pintarRentabilidad pasa a tarjetaRent (el de «veg» sale del glosario)
+      const fuenteRent = cortarP("  function pintarRentabilidad(c) {");
+      const GlP = require("../public/glosario.js");
+      const rotulosReales = [...fuenteRent.matchAll(/tarjetaRent\(\s*(?:"([^"]+)"|window\.Glosario\.traducir\("([a-z_]+)"\))/g)].map((m) => m[1] || GlP.traducir(m[2]));
+      okP(rotulosReales.length === 9, `(f) premisa: la rentabilidad trae nueve cifras: ${rotulosReales.join(" | ")}`);
+      const r9 = R(rotulosReales, false);
+      okP(r9.vista.join("|") === "Margen neto esperado|Lo que deja por intento|Capital de trabajo máximo" && r9.ver === "Ver las 9 cifras",
+        `(f) a la vista, lo que deja por intento, el margen neto y el capital (por su rótulo, en cualquier orden); el botón cuenta las nueve: ${JSON.stringify(r9)}`);
+      okP(R(rotulosReales.slice().reverse(), true).ver === "Ver solo las tres que deciden", "(f) abierto, el botón ofrece volver a las tres");
+    }
+    const fuenteVerT = cortarP('  if ($("rentabilidad-ver-todas")) $("rentabilidad-ver-todas").addEventListener("click", () => {', "\n  });");
+    if (fuenteVerT) {
+      const V = new Function(`
+        const at = new Set(); let oyente = null;
+        const sec = { hasAttribute: (k) => at.has(k), toggleAttribute: (k, f) => (f ? at.add(k) : at.delete(k)) };
+        const btn = { textContent: "", attrs: {}, setAttribute(k, v) { this.attrs[k] = v; }, addEventListener: (ev, fn) => { oyente = fn; } };
+        const $ = (id) => ({ "seccion-rentabilidad": sec, "rentabilidad-ver-todas": btn, rentabilidad: { children: new Array(9) } }[id] || null);
+        ${fuenteVerT}
+        return () => { oyente(); return { abierta: at.has("data-todas"), t: btn.textContent, exp: btn.attrs["aria-expanded"] }; };`)();
+      const v1 = V(), v2 = V();
+      okP(v1.abierta && v1.t === "Ver solo las tres que deciden" && v1.exp === "true" && !v2.abierta && v2.t === "Ver las 9 cifras" && v2.exp === "false", `(f) el botón abre y cierra las nueve, y lo dice: ${JSON.stringify([v1, v2])}`);
+    }
+    okP(htmlP.includes("#tab-apu #seccion-rentabilidad:not([data-todas]) .apu-rent-extra { display: none; }"), "(f) la hoja esconde las seis de más mientras el pliegue está cerrado");
+
+    // (g) el panel del teléfono: el botón, el velo, la «x» y Escape (una capa por Escape)
+    const fuenteClicP = cortarP('  document.addEventListener("click", (ev) => {\n    const t = ev.target && ev.target.closest ? ev.target : null;', "\n  });");
+    if (fuenteClicP) {
+      const G = new Function(`
+        const hechos = []; let oyente = null;
+        const document = { addEventListener: (t, fn) => { oyente = fn; }, getElementById: () => null };
+        const PANEL_MP = { tab: "seg-maestra" }, PANEL_APU = { tab: "tab-apu" }; let mpApartado = "procesos";
+        const panelLateral = (cfg, abrir) => hechos.push(cfg.tab + ":" + abrir);
+        const panelMiEmpresa = () => hechos.push("me"), panelLicitaciones = () => hechos.push("lic");
+        const elegirApartadoMiEmpresa = () => hechos.push("me-ap"), elegirApartadoLicitaciones = () => hechos.push("lic-ap"), elegirApartadoMisProcesos = () => hechos.push("mp-ap");
+        const elegirApartadoPrecios = (id) => hechos.push("apu:" + id);
+        ${fuenteClicP}
+        return (casa, ir) => { hechos.length = 0; const t = { closest: (sel) => (sel === casa ? t : sel === "[data-apu-ir]" && ir ? { getAttribute: () => ir } : null) }; oyente({ target: t }); return hechos.join(); };`)();
+      okP(G("#apu-abrir-panel") === "tab-apu:true" && G("#apu-velo") === "tab-apu:false" && G("#apu-barra .apu-cerrar") === "tab-apu:false" && G("x", "revisar") === "apu:revisar",
+        `(g) el botón abre el panel, el velo y la «x» lo cierran y un apartado de la barra se elige: ${[G("#apu-abrir-panel"), G("#apu-velo"), G("x", "revisar")].join(" / ")}`);
+    }
+    const fuenteEscP = cortarP('  document.addEventListener("keydown", (ev) => {\n    if (ev.key !== "Escape") return;\n    const tab = document.getElementById("tab-admin");', "\n  });");
+    if (fuenteEscP) {
+      const J = new Function(`
+        const hechos = []; let oyente = null; const abiertos = new Set();
+        const ocultas = new Set();
+        const document = { addEventListener: (t, fn) => { oyente = fn; }, getElementById: (id) => ({ hasAttribute: () => abiertos.has(id), classList: { contains: (c) => c === "hidden" && ocultas.has(id) } }) };
+        const PANEL_EXP = { tab: "seg-expediente" }, PANEL_MP = { tab: "seg-maestra" }, PANEL_APU = { tab: "tab-apu" };
+        const panelLateral = (cfg, abrir) => hechos.push(cfg.tab + ":" + abrir);
+        const panelMiEmpresa = (abrir) => hechos.push("tab-admin:" + abrir);
+        ${fuenteEscP}
+        return (ids, esc = []) => { hechos.length = 0; abiertos.clear(); ocultas.clear(); ids.forEach((x) => abiertos.add(x)); esc.forEach((x) => ocultas.add(x)); oyente({ key: "Escape", preventDefault: () => hechos.push("marcado") }); return hechos.join(); };`)();
+      okP(J(["tab-apu"]) === "tab-apu:false,marcado" && J([]) === "", `(g) Escape cierra el panel de Precios y lo marca: ${J(["tab-apu"])}`);
+      okP(J(["tab-apu"], ["tab-apu"]) === "", "(g) …pero no el de Precios escondido tras otra pestaña: ese Escape es de la pestaña que se ve");
+    }
+    okP(/#tab-apu\[data-apu\]\[data-panel="abierto"\] > #apu-barra \{[^}]*transform: none/.test(htmlP), "(g) la hoja enseña el panel abierto");
+
+    if (fallasP.length) throw new Error(`unidad Precios: ${fallasP.length} comprobaciones fallan:\n  - ${fallasP.join("\n  - ")}`);
+    console.log("· unidad Precios · la barra, las tres cifras y la casilla: siete apartados con lo desconocido inerte y la lista pedida al entrar en los guardados; las tres cifras de arriba salen de lo calculado y nunca son $0 («Sin calcular», «Recalcule», «Faltan N cantidades», «Sin proceso»), con el veredicto de Precios y su color; la casilla de lo subcontratado se lee, vuelve como la lee el motor y mueve el precio; «Subir un APU» entra por la misma puerta del archivo; cada aviso junto a su botón; tres cifras de rentabilidad a la vista y las nueve con el botón; el panel del teléfono y Escape");
   }
 
   bqIteraciones: {
