@@ -250,6 +250,27 @@
       concepto: "Primero las entidades donde históricamente se presentan menos oferentes por proceso (promedio de dos años de adjudicaciones; sin base, al final). Ojo: poca competencia también puede ser señal de un pliego hecho a la medida — revise el pliego." },
   ]);
   const conceptoDe = (id) => { const o = ORDENES.find((x) => x.id === id); return o ? o.concepto : ""; };
+  /* QUÉ VA PRIMERO, EN LOS DOS SENTIDOS (9-nov-2026, rediseño de Licitaciones). El botón que invierte el orden dice el
+     HECHO con el orden elegido, no «de mayor a menor»: en «Las que cierran antes» el sentido normal va de MENOS a más
+     días y un rótulo de magnitud se leería al revés. `orden=desc` es el sentido normal de cada orden (el del servidor,
+     lib/handlers/procesos/listar.js) y `asc` el contrario; lo que no tiene el dato sigue al final en los dos. Un orden
+     desconocido cae al de «Las mejores para usted», como en el servidor. */
+  const DIRECCION_ORDEN = Object.freeze({
+    /* al revés solo se invierte el contrato esperado: las que no puede presentar siguen al final y las cercanas y las
+       urgentes siguen arriba (el servidor: viabilidad, zona y aviso de hoy mandan sobre el sentido). El rótulo lo dice. */
+    atractividad: ["Primero las que más le convienen", "El menor contrato esperado primero, sin bajar las cercanas ni las urgentes"],
+    ganancia: ["De la que más deja a la que menos", "De la que menos deja a la que más"],
+    margen: ["Del mayor recorrido al menor", "Del menor recorrido al mayor"],
+    cierre: ["Primero las que cierran antes", "Primero las que cierran más tarde"],
+    cuantia: ["De la más grande a la más pequeña", "De la más pequeña a la más grande"],
+    ve: ["Del mayor contrato esperado al menor", "Del menor contrato esperado al mayor"],
+    p_ganar: ["De la más ganable a la menos ganable", "De la menos ganable a la más ganable"],
+    competencia: ["Primero las menos peleadas", "Primero las más peleadas"],
+  });
+  const direccionDe = (id, orden) => {
+    const par = DIRECCION_ORDEN[id] || DIRECCION_ORDEN.atractividad;
+    return orden === "asc" ? par[1] : par[0];
+  };
 
   /* ─── Estado del filtro en la URL ────────────────────────────────────────
      Los nombres de los parámetros son cortos y estables (son un contrato: un
@@ -638,7 +659,7 @@
   }
 
   return {
-    TIPOS_TRABAJO, TIPOS_POR_DEFECTO, MODALIDADES, DEPARTAMENTOS, RANGOS_CUANTIA, VENTANAS_CIERRE, ORDENES, conceptoDe, PARAMS,
+    TIPOS_TRABAJO, TIPOS_POR_DEFECTO, MODALIDADES, DEPARTAMENTOS, RANGOS_CUANTIA, VENTANAS_CIERRE, ORDENES, conceptoDe, DIRECCION_ORDEN, direccionDe, PARAMS,
     claveDepartamento, departamento, rangoCuantiaDe, ventanaCierreDe, cumpleVentana, diasParaCierre, cierreSinHora,
     leerEstado, escribirEstado, fichas, sinFiltro, hayFiltros, etiquetaDe, cop,
     traducirConsulta, TIPO_FRASES, MODALIDAD_FRASES, CIERRE_FRASES, ALIAS_DEP,

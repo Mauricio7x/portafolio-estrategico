@@ -381,6 +381,8 @@
       // un enlace SIN orden devuelve el que había antes del «Ver por fecha»: el orden de un enlace no se queda pegado
       $("f-ordenar").value = ordenAntesDelEnlace; ordenAntesDelEnlace = null; pintarConceptoOrden();
     }
+    // la lista de una cifra abre en el sentido normal de su orden: un «al revés» que quedó puesto no la da vuelta
+    if ($("f-orden")) { $("f-orden").value = "desc"; pintarDireccionOrden(); }
     cambiarFiltros(window.Filtros.leerEstado(params));
     /* el pulso vive en Mi empresa y la lista en Licitaciones: la cifra LLEVA a la
        lista. Si hubo cambio de pestaña, basta el `scrollTo(0)` de activarPestana:
@@ -936,6 +938,14 @@
     for (const id of Object.keys(VISTA_VISITANTE.soloDueno)) { const el = $(id); if (el) el.hidden = vistaVisitanteActiva; }
     for (const id of Object.keys(VISTA_VISITANTE.soloVisitante)) { const el = $(id); if (el) el.hidden = !vistaVisitanteActiva; }
     podarBarraMiEmpresa();
+    /* Licitaciones (9-nov-2026): «¿Por qué no está un proceso?» es solo del dueño, así que al visitante no se le ofrece
+       un apartado que vería vacío (la regla de podarBarraMiEmpresa); si estaba en él, vuelve a la lista */
+    const botonNoEsta = document.querySelector('#lic-barra [data-lic-ir="noesta"]'), rastreo = $("rastreo-wrap");
+    if (botonNoEsta && rastreo) {
+      botonNoEsta.hidden = !!rastreo.hidden;
+      const tabL = document.getElementById("tab-licitaciones");
+      if (rastreo.hidden && tabL && tabL.getAttribute("data-lic") === "noesta") elegirApartadoLicitaciones("abiertas", { enfocar: false });
+    }
     /* la marca de la barra dispara la misma sincronización que «Actualizar
        datos»: para el visitante deja de ser un control (sin mano, sin flecha,
        sin «Actualizar»), y pintarCorte lo sabe por la clase */
@@ -1012,6 +1022,12 @@
      repintan fichas y controles y se busca de nuevo desde la página 1. */
   function cambiarFiltros(nuevo) {
     estadoFiltros = nuevo;
+    /* LA LISTA VIVE EN «ABIERTAS» (9-nov-2026, revisión adversaria): una cifra de Mi empresa, el aviso de interés o
+       «Ver las N» del consorcio cambian los filtros y llevan a Licitaciones; si la pestaña se quedó en «Lo que viene»
+       o en «¿Por qué no está?», la cifra abría el Plan Anual en vez de su lista. Se vuelve a la lista sin mover el
+       foco (cada llamador decide el suyo). Solo si hace falta: al arrancar ya está en «abiertas». */
+    const tabL = document.getElementById("tab-licitaciones");
+    if (tabL && tabL.getAttribute("data-lic") && tabL.getAttribute("data-lic") !== "abiertas") elegirApartadoLicitaciones("abiertas", { enfocar: false });
     escribirFiltrosEnURL();
     pintarControlesFiltros();
     pagina = 1;
@@ -1034,6 +1050,19 @@
     if (!sel || !p) return;
     for (const o of sel.options) { const c = FL.conceptoDe(o.value); if (c) o.title = c; }
     p.textContent = FL.conceptoDe(sel.value) || "";
+    pintarDireccionOrden();
+  }
+  /* EL ORDEN AL REVÉS, DE UN TOQUE (9-nov-2026, lo pidió el dueño). `#f-orden` es un botón cuyo `value` es el
+     `orden=desc|asc` de siempre (lo lee `parametros`); el rótulo dice qué va primero CON EL ORDEN ELEGIDO
+     (`FL.direccionDe`) y `data-al-reves` pinta el sentido contrario al normal. */
+  function pintarDireccionOrden() {
+    const b = $("f-orden"), sel = $("f-ordenar");
+    if (!b || !sel) return;
+    const asc = b.value === "asc";
+    // el rótulo ya dice el sentido: `aria-pressed` encima lo anunciaba dos veces (revisión adversaria); el color va por data-
+    b.setAttribute("data-al-reves", asc ? "true" : "false");
+    const r = $("f-orden-rotulo");
+    if (r) r.textContent = FL.direccionDe(sel.value, asc ? "asc" : "desc");
   }
   function pintarControlesFiltros() {
     const e = estadoFiltros;
@@ -1078,6 +1107,18 @@
     $("fl-rango-libre").classList.toggle("hidden", rangoId !== "libre");
     $("fl-rango-libre").classList.toggle("flex", rangoId === "libre");
     if (rangoId === "libre") { $("fl-min").value = e.min.min ?? ""; $("fl-max").value = e.min.max ?? ""; }
+    /* 4b · Valor en la barra de la izquierda (9-nov-2026): los MISMOS tramos y la MISMA cifra por tramo que el
+       selector de Más filtros, y la misma regla al pulsar (`estadoDeRango`). Un rango propio no enciende ningún
+       tramo: lo dice su ficha y se cambia en Más filtros. */
+    const valor = $("lic-valor");
+    if (valor) {
+      const opciones = [{ id: "", etiqueta: "Todas" }].concat(FL.RANGOS_CUANTIA.map((r) => ({ id: r.id, etiqueta: r.etiqueta + conteo("cuantia", r.id) })));
+      // repintar los botones no puede tirar el foco de quien los usa con el teclado (revisión adversaria)
+      const act = typeof document === "object" && document.activeElement;
+      const enfocado = act && valor.contains && valor.contains(act) && act.getAttribute ? act.getAttribute("data-lic-valor") : null;
+      valor.innerHTML = opciones.map((o) => `<button type="button" class="lic-chip" data-lic-valor="${esc(o.id)}" aria-pressed="${o.id === rangoId ? "true" : "false"}">${esc(o.etiqueta)}</button>`).join("");
+      if (enfocado != null) { const b = valor.querySelector(`[data-lic-valor="${enfocado}"]`); if (b && b.focus) { try { b.focus(); } catch { /* sin foco */ } } }
+    }
     // 5 · cierre
     const cierre = $("fl-cierre");
     if (cierre.options.length <= 1) {
@@ -1093,7 +1134,13 @@
     // 6 · manifestación de interés (casilla) + el aviso bajo la barra
     const fm = ultimasFacetas && ultimasFacetas.manifestacion;
     if ($("fl-manif")) {
+      /* tres opciones y una sola elección (9-nov-2026): «Todas», «Todavía se puede avisar» (`abierta`) y «Hay que
+         avisar hoy» (`urgente`). `manif=todas` de un enlace viejo no enciende ninguna: lo dice su ficha. */
       $("fl-manif").checked = e.manif === "abierta";
+      if ($("fl-manif-urgente")) $("fl-manif-urgente").checked = e.manif === "urgente";
+      if ($("fl-manif-sin")) $("fl-manif-sin").checked = !e.manif;
+      // la cifra de «hoy» es la misma cuenta que aplica el filtro (`urgentes`, lib/filtros_lista)
+      if ($("fl-manif-urgente-n")) $("fl-manif-urgente-n").textContent = fm && fm.urgentes != null ? `(${fm.urgentes})` : "";
       /* LA CIFRA DE LA CASILLA ES LA LISTA QUE LA CASILLA ABRE (15-sep-2026).
          Decía `abiertas` —los que se puede AFIRMAR que siguen vivos— y la
          casilla devuelve ahora todos aquellos en los que NO CONSTA que el plazo
@@ -1115,8 +1162,16 @@
       : "";
     /* el botón «Filtros» de la barra lleva el número de filtros activos: la hoja
        está cerrada casi siempre y sin la cifra no se sabría que hay algo puesto */
+    /* «Más filtros» cuenta solo lo puesto DENTRO de la hoja: el valor, el aviso y la casilla se ven en la barra.
+       El botón del teléfono, que es lo único que se ve con el panel cerrado, los cuenta todos. */
+    /* por DÓNDE vive el control (revisión adversaria): la palabra se escribe en la caja de la barra de arriba; el valor
+       se ve en la barra de la izquierda salvo un rango propio, que solo se cambia en la hoja */
+    const FUERA_DE_LA_HOJA = new Set(["q", "manif", "solo"]);
+    const enHoja = fichas.filter((f) => !FUERA_DE_LA_HOJA.has(f.filtro) && !(f.filtro === "min" && rangoId !== "libre")).length;
     const nBadge = $("btn-filtros-n");
-    if (nBadge) { nBadge.textContent = String(fichas.length); nBadge.classList.toggle("hidden", !fichas.length); }
+    if (nBadge) { nBadge.textContent = String(enHoja); nBadge.classList.toggle("hidden", !enHoja); }
+    const mas = $("lic-abrir-mas");
+    if (mas) mas.textContent = fichas.length ? `Filtros (${fichas.length})` : "Apartados y filtros";
   }
   /* El aviso bajo la barra: en cuántos procesos pequeños todavía se puede
      avisar que le interesa y en cuántos el plazo puede estar cerrando hoy
@@ -1143,7 +1198,16 @@
   $("aviso-manifestacion-ver").addEventListener("click", () => {
     cambiarFiltros({ ...estadoFiltros, manif: estadoFiltros.manif === "abierta" ? null : "abierta" });
   });
-  $("fl-manif").addEventListener("change", () => cambiarFiltros({ ...estadoFiltros, manif: $("fl-manif").checked ? "abierta" : null }));
+  /* las tres opciones del aviso de interés (9-nov-2026): la marcada es el filtro; un valor que no sea uno de los
+     dos conocidos es «Todas» (inerte) */
+  for (const id of ["fl-manif-sin", "fl-manif", "fl-manif-urgente"]) {
+    if (!$(id)) continue;
+    $(id).addEventListener("change", () => {
+      if (!$(id).checked) return;
+      const v = $(id).value;
+      cambiarFiltros({ ...estadoFiltros, manif: v === "abierta" || v === "urgente" ? v : null });
+    });
+  }
   /* ── UNA SOLA REGLA PARA EL DESPLAZAMIENTO DEL CUERPO (12-sep-2026) ──────
      Mientras haya una capa a pantalla completa abierta, el cuerpo NO se
      desplaza: si no, el dedo que arrastra dentro del diálogo arrastra la lista
@@ -1237,12 +1301,27 @@
     $("f-zona").value = $("fl-zona-cerca").checked ? "facil" : "";
     pagina = 1; buscar();
   });
+  /* un tramo de valor → el filtro `min` (una sola regla para el selector de Más filtros y los botones de la barra);
+     un id desconocido es «Todas», como un filtro desconocido */
+  const estadoDeRango = (id) => {
+    const r = FL.RANGOS_CUANTIA.find((x) => x.id === id);
+    return { ...estadoFiltros, min: r ? { min: r.min, max: r.max } : null };
+  };
   $("fl-rango").addEventListener("change", () => {
     const v = $("fl-rango").value;
     if (v === "libre") { $("fl-rango-libre").classList.remove("hidden"); $("fl-rango-libre").classList.add("flex"); $("fl-min").focus(); return; }
-    const r = FL.RANGOS_CUANTIA.find((x) => x.id === v);
-    cambiarFiltros({ ...estadoFiltros, min: r ? { min: r.min, max: r.max } : null });
+    cambiarFiltros(estadoDeRango(v));
   });
+  // los botones de Valor de la barra (pintados en pintarControlesFiltros): la misma regla que el selector
+  if ($("lic-valor")) {
+    $("lic-valor").addEventListener("click", (ev) => {
+      const b = ev.target && ev.target.closest ? ev.target.closest("[data-lic-valor]") : null;
+      // el tramo que ya está puesto se queda (una sola elección): pulsarlo no repite la búsqueda
+      if (b && b.getAttribute("aria-pressed") !== "true") cambiarFiltros(estadoDeRango(b.getAttribute("data-lic-valor")));
+    });
+  }
+  // «Quitar todos» de la barra hace lo mismo que el de la hoja y el de las fichas
+  if ($("lic-quitar-todos")) $("lic-quitar-todos").addEventListener("click", () => cambiarFiltros(FL.leerEstado({})));
   for (const id of ["fl-min", "fl-max"]) {
     $(id).addEventListener("change", () => {
       const min = $("fl-min").value === "" ? null : Number($("fl-min").value);
@@ -3176,10 +3255,10 @@
       ${l.quitado_por_usted ? `<p class="mt-2 text-xs text-gray-700">Usted lo quitó de su lista con «No es obra». Si se equivocó, devuélvalo.</p>` : ""}
       <div class="t-pie">
         ${botonGuardar(l)}
-        ${botonNoEsObra(l)}
         <button type="button" class="btn-apu rounded-lg border border-gray-300 px-3 py-1 text-xs font-semibold transition hover:bg-gray-50"
                 data-apu-q="${esc(qApu(l))}" title="Calcular cuánto me cuesta y qué me deja este proceso, en la pestaña Precios">Calcular mi precio</button>
         ${urlSegura(l.urlproceso) ? `<a href="${esc(urlSegura(l.urlproceso))}" target="_blank" rel="noopener noreferrer" class="font-medium text-blue-600 hover:underline">Ver en SECOP II ↗</a>` : ""}
+        ${botonNoEsObra(l)}
       </div>
     </article>`;
   }
@@ -3376,6 +3455,10 @@
       + (cuerpo.no_viables ? `, ${cuerpo.no_viables} que no alcanza por su cuenta` : "")
       + (reparto ? ` · ${reparto}` : "")
       + (cuerpo.incluye_sin_unspsc ? " · incluye procesos sin código de clasificación" : "");
+    /* el botón del panel del teléfono dice cuántas va a ver al cerrarlo: la MISMA cifra de la línea de arriba */
+    const ver = $("lic-ver");
+    // sin cifra no se pinta un 0 (`Number(null) === 0`): la ausencia se descarta antes de convertir
+    if (ver) ver.textContent = cuerpo.total != null && Number.isFinite(Number(cuerpo.total)) ? `Ver ${Number(cuerpo.total) === 1 ? "la licitación" : `las ${Number(cuerpo.total)} licitaciones`}` : "Ver la lista";
     $("lista").innerHTML = cuerpo.resultados.map(tarjeta).join("");
     {
       const n = Number(cuerpo.quitados_por_usted) || 0;
@@ -5170,8 +5253,16 @@
   $("btn-reintentar").addEventListener("click", () => { reintentosSync = 0; buscar(); });
   for (const id of ["f-perfil", "f-cuantia", "f-entidad", "f-ubicacion", "f-ordenar", "f-orden",
     "f-sin-unspsc", "f-zona"]) {
-    $(id).addEventListener("change", () => { pagina = 1; if (id === "f-ordenar" || id === "f-zona") { escribirFiltrosEnURL(); pintarControlesFiltros(); } if (id === "f-ordenar") { pintarConceptoOrden(); ordenAntesDelEnlace = null; } buscar(); if (id === "f-perfil") { refrescarPulso(); sincronizarPerfilBorrador(); guardados.clear(); seguimientoCargadoPara = null; cargarSeguimiento({ forzar: true }); } });
+    $(id).addEventListener("change", () => { pagina = 1; if (id === "f-ordenar") $("f-orden").value = "desc"; if (id === "f-ordenar" || id === "f-zona") { escribirFiltrosEnURL(); pintarControlesFiltros(); } if (id === "f-ordenar") { pintarConceptoOrden(); ordenAntesDelEnlace = null; } if (id === "f-orden") pintarDireccionOrden(); buscar(); if (id === "f-perfil") { refrescarPulso(); sincronizarPerfilBorrador(); guardados.clear(); seguimientoCargadoPara = null; cargarSeguimiento({ forzar: true }); } });
   }
+  /* El botón invierte y avisa con el mismo `change` de siempre: la búsqueda, la página 1 y el rótulo salen del
+     oyente de arriba. Cambiar de orden vuelve al sentido normal (arriba): quien elige «Las que cierran antes»
+     espera ver primero las que cierran antes, no lo que dejó invertido en otro orden. */
+  $("f-orden").addEventListener("click", () => {
+    const b = $("f-orden");
+    b.value = b.value === "asc" ? "desc" : "asc";
+    b.dispatchEvent(new Event("change"));
+  });
   /* LA CASILLA ES EL FILTRO `solo` (4-nov-2026): encenderla o apagarla cambia el estado de los filtros, que
      escribe la dirección, pinta la ficha y busca. Así la casilla, la ficha y un enlace pegado dicen lo mismo. */
   $("f-solo-viables").addEventListener("change", () => {
@@ -6353,7 +6444,8 @@
      Qué apartado se ve lo decide la hoja por `data-me` (index.html): aquí solo se cambia, se marca la barra, se
      pone el título y se abren sus plegados (dentro de un apartado su rótulo se esconde, y cerrado no se vería nada).
      Un valor desconocido es INERTE: cae a «hoy», como un filtro desconocido. */
-  const APARTADOS_ME = Object.freeze(["hoy", "registro", "formatos", "obra", "socias", "mercado", "noesta", "ajustes"]);
+  /* «¿Por qué no está un proceso?» salió de aquí a Licitaciones el 9-nov-2026 (APARTADOS_LIC, maqueta aprobada) */
+  const APARTADOS_ME = Object.freeze(["hoy", "registro", "formatos", "obra", "socias", "mercado", "ajustes"]);
   function elegirApartadoMiEmpresa(pedido, { enfocar = true } = {}) {
     const tab = document.getElementById("tab-admin");
     if (!tab) return "hoy";
@@ -6384,30 +6476,96 @@
   /* EL PANEL LATERAL DEL TELÉFONO (9-nov-2026, decisión del dueño): la misma barra, que en pantallas estrechas la hoja
      convierte en un panel que entra desde la izquierda. Aquí solo se abre y se cierra; el foco entra al abrir (en el
      apartado actual) y vuelve al botón al cerrar; Escape y el velo lo cierran. En el computador el atributo no hace nada. */
-  function panelMiEmpresa(abrir, { devolverFoco = true } = {}) {
-    const tab = document.getElementById("tab-admin"), velo = document.getElementById("me-velo"), boton = document.getElementById("me-abrir-panel");
+  /* UN SOLO PANEL LATERAL PARA LAS DOS PESTAÑAS (9-nov-2026): Licitaciones usa el mismo que Mi empresa. `cfg` nombra
+     la pestaña, su velo, su botón y el selector de lo que recibe el foco al abrir. */
+  const PANEL_ME = Object.freeze({ tab: "tab-admin", velo: "me-velo", boton: "me-abrir-panel", foco: '#me-barra .me-ir[aria-current="page"]', primero: "#me-barra .me-ir" });
+  const PANEL_LIC = Object.freeze({ tab: "tab-licitaciones", velo: "lic-velo", boton: "lic-abrir-panel", foco: '#lic-barra .lic-ir[aria-current="page"]', primero: "#lic-barra .lic-ir" });
+  function panelLateral(cfg, abrir, { devolverFoco = true } = {}) {
+    const tab = document.getElementById(cfg.tab), velo = document.getElementById(cfg.velo), boton = document.getElementById(cfg.boton);
     if (!tab) return;
     if (abrir) tab.setAttribute("data-panel", "abierto"); else tab.removeAttribute("data-panel");
     if (velo) velo.hidden = !abrir;
     if (boton) boton.setAttribute("aria-expanded", abrir ? "true" : "false");
     if (abrir) {
-      const f = tab.querySelector('#me-barra .me-ir[aria-current="page"]') || tab.querySelector("#me-barra .me-ir");
+      const f = tab.querySelector(cfg.foco) || tab.querySelector(cfg.primero);
       if (f && typeof f.focus === "function") { try { f.focus(); } catch { /* sin foco */ } }
     } else if (devolverFoco && boton && typeof boton.focus === "function") { try { boton.focus(); } catch { /* sin foco */ } }
+  }
+  function panelMiEmpresa(abrir, opciones) { return panelLateral(PANEL_ME, abrir, opciones); }
+  function panelLicitaciones(abrir, opciones) { return panelLateral(PANEL_LIC, abrir, opciones); }
+  /* ══════ LOS APARTADOS DE LICITACIONES (9-nov-2026, decisión del dueño sobre su maqueta) ══════
+     Lo decide la hoja por `data-lic` (index.html), como en Mi empresa. «Lo que viene» enciende el Plan Anual con la
+     casilla de siempre (`f-ver-paa`, ya sin verse), que dispara su búsqueda; salir de ahí la apaga, porque la insignia
+     «Activo · abierto» de las tarjetas solo tiene sentido con el plan en pantalla. «¿Por qué no está?» abre su
+     plegado y lleva el foco al campo donde se pega el enlace. Un valor desconocido es INERTE: cae a «abiertas». */
+  const APARTADOS_LIC = Object.freeze(["abiertas", "viene", "noesta"]);
+  const SUBTITULOS_LIC = Object.freeze({
+    abiertas: "Los procesos abiertos en SECOP II que encajan con su perfil, ordenados para usted.",
+    viene: "Las obras que las entidades anunciaron en su plan anual y que todavía no han salido a SECOP II.",
+    noesta: "Si vio un proceso en SECOP II y no lo encuentra en su lista, búsquelo aquí y le decimos por qué.",
+  });
+  function elegirApartadoLicitaciones(pedido, { enfocar = true } = {}) {
+    const tab = document.getElementById("tab-licitaciones");
+    if (!tab) return "abiertas";
+    const id = APARTADOS_LIC.includes(pedido) ? pedido : "abiertas";
+    tab.setAttribute("data-lic", id);
+    let rotulo = "";
+    document.querySelectorAll("#lic-barra .lic-ir").forEach((b) => {
+      const suyo = b.getAttribute("data-lic-ir") === id;
+      if (suyo) { b.setAttribute("aria-current", "page"); rotulo = b.textContent.trim(); } else b.removeAttribute("aria-current");
+    });
+    const rotuloBoton = document.getElementById("lic-abrir-rotulo");
+    if (rotuloBoton) rotuloBoton.textContent = rotulo || "Abiertas";
+    // el subtítulo de la pestaña dice lo que enseña el apartado: sobre el Plan Anual no puede decir «procesos abiertos»
+    const sub = document.getElementById("lic-subtitulo");
+    if (sub) sub.textContent = SUBTITULOS_LIC[id];
+    const paa = document.getElementById("f-ver-paa");
+    if (paa && paa.checked !== (id === "viene")) { paa.checked = id === "viene"; paa.dispatchEvent(new Event("change")); }
+    if (id === "noesta") tab.querySelectorAll(':scope > details[data-lic-apartado="noesta"]').forEach((d) => { d.open = true; });
+    const estabaAbierto = tab.hasAttribute("data-panel");
+    if (estabaAbierto) panelLicitaciones(false, { devolverFoco: false });
+    if (enfocar) {
+      try { window.scrollTo({ top: 0 }); } catch { /* sin desplazamiento */ }
+      // ninguna pulsación sin respuesta visible: el foco va a lo que se acaba de abrir
+      const destino = id === "noesta" ? document.getElementById("ra-consulta")
+        : id === "viene" ? document.getElementById("f-paa-entidad")
+        : estabaAbierto ? document.getElementById("lic-abrir-panel") : tab.querySelector('#lic-barra .lic-ir[aria-current="page"]');
+      if (destino && typeof destino.focus === "function") { try { destino.focus({ preventScroll: true }); } catch { /* sin foco */ } }
+    }
+    return id;
   }
   document.addEventListener("click", (ev) => {
     const t = ev.target && ev.target.closest ? ev.target : null;
     if (!t) return;
     if (t.closest("#me-abrir-panel")) { panelMiEmpresa(true); return; }
     if (t.closest("#me-velo") || t.closest("#me-barra .me-cerrar")) { panelMiEmpresa(false); return; }
+    if (t.closest("#lic-abrir-panel")) { panelLicitaciones(true); return; }
+    /* «Ver las N licitaciones» del teléfono: cierra el panel y deja el foco en el botón que lo abre (la lista está
+       debajo); fuera de «Abiertas» primero lleva a la lista, que es lo que promete (revisión adversaria) */
+    if (t.closest("#lic-ver")) {
+      const tabL = document.getElementById("tab-licitaciones");
+      if (tabL && tabL.getAttribute("data-lic") !== "abiertas") elegirApartadoLicitaciones("abiertas"); else panelLicitaciones(false);
+      return;
+    }
+    if (t.closest("#lic-velo") || t.closest("#lic-barra .lic-cerrar")) { panelLicitaciones(false); return; }
     const b = t.closest("[data-me-ir]");
-    if (b) elegirApartadoMiEmpresa(b.getAttribute("data-me-ir"));
+    if (b) { elegirApartadoMiEmpresa(b.getAttribute("data-me-ir")); return; }
+    const l = t.closest("[data-lic-ir]");
+    if (l) elegirApartadoLicitaciones(l.getAttribute("data-lic-ir"));
   });
   document.addEventListener("keydown", (ev) => {
     if (ev.key !== "Escape") return;
     const tab = document.getElementById("tab-admin");
     if (tab && tab.hasAttribute("data-panel")) panelMiEmpresa(false);
   });
+  /* La hoja de «Más filtros» se abre ENCIMA del panel de Licitaciones y su Escape la cierra primero. Su oyente se
+     registró antes (bubble) y la cierra antes de que este la viera abierta: por eso este escucha en la fase de
+     captura, que corre primero, y mira la hoja tal como estaba al pulsar. Un Escape cierra una capa, no dos. */
+  document.addEventListener("keydown", (ev) => {
+    if (ev.key !== "Escape") return;
+    const tabL = document.getElementById("tab-licitaciones"), hoja = document.getElementById("panel-filtros");
+    if (tabL && tabL.hasAttribute("data-panel") && !(hoja && !hoja.classList.contains("hidden"))) panelLicitaciones(false);
+  }, true);
   let miAvisosAbierto = false;
   function pintarMiEmpresaSeguimiento(r) {
     const K = raizCasillero();

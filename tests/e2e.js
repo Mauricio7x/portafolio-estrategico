@@ -31336,7 +31336,9 @@ async function main() {
         assert.ok(/PESTANAS = \["licitaciones", "seguimiento", "apu", "admin"\]/.test(appP) && /"mis-procesos": "seguimiento"/.test(appP), "la pestaña existe en app.js con su alias");
         assert.ok(/data-seg-enterado/.test(appP) && /enterado: true/.test(appP) && /data-seg-filtro/.test(appP) && /pintarInsigniaSeguimiento/.test(appP) && /pintarAlertasSeguimiento/.test(appP), "Enterado, filtros por etapa, insignia y centro de alertas cableados");
         assert.ok(/function chipManifestacion/.test(appP) && /function avisoManifestacion/.test(appP) && /chipManifestacion\(l\.manifestacion\)/.test(appP) && /avisoManifestacion\(l\.manifestacion\)/.test(appP), "la tarjeta pinta el chip y el aviso de manifestación");
-        assert.ok(/pintarAvisoManifestacion/.test(appP) && /manif: \$\("fl-manif"\)\.checked \? "abierta" : null/.test(appP), "el aviso bajo la barra y la casilla de la hoja aplican manif=abierta");
+        /* desde el 9-nov-2026 la casilla son tres opciones en la barra de Licitaciones («Todas», `abierta`, `urgente`): la
+           ejecución de su oyente vive en el bloque «unidad Licitaciones · barra, filtros a la vista y el orden al revés» */
+        assert.ok(/pintarAvisoManifestacion/.test(appP) && /manif: v === "abierta" \|\| v === "urgente" \? v : null/.test(appP), "el aviso bajo la barra y las opciones de la barra aplican manif=abierta|urgente");
         assert.ok(!/manif.*\|\| 0/.test(appP), "ningún «|| 0» sobre la manifestación");
         /* ══ LAS DOS CERRADURAS DEL FRONTEND (defecto del 19-ago-2026) ══
            (a) el campo `vencida` de la manifestación no puede volver a ningún
@@ -43328,6 +43330,56 @@ async function main() {
         if (diasV[i] == null) continue;
         assert.ok(diasV[i - 1] != null && diasV[i - 1] <= diasV[i], "«las que cierran antes» va de menos a más días");
       }
+      /* AL REVÉS, LO QUE NO TIENE EL DATO SIGUE AL FINAL (9-nov-2026). El botón que invierte el orden pasó a la vista
+         (rediseño de Licitaciones) y `orden=asc` multiplicaba también los centinelas «sin dato» (−1e9 sin fecha de
+         cierre, 0 sin valor): los procesos sin fecha o sin presupuesto encabezaban la lista como si fueran los que
+         cierran más lejos o los más pequeños. Se mira dentro de cada grupo de viabilidad, que manda sobre la dirección. */
+      {
+        /* el corpus de la suite trae más de 100 procesos sin fecha de cierre: con `asc` la primera página (100, el tope)
+           salía ENTERA sin fecha. Por eso se mira el primer puesto de cada grupo contra el sentido normal, además de
+           que dentro de la página nada con dato quede detrás de algo sin dato */
+        /* Solo las viables: forman UN grupo del orden (las que no alcanza se reparten entre «cierra con socio», que va
+           arriba, y el resto), y dentro de un grupo manda el campo. `AL_REVES` es el signo del dato en el sentido
+           contrario: «Las que cierran antes» al revés va de MÁS a menos días; «Las más grandes», de menor a mayor. */
+        const DATO = { cierre: (f) => (f.filtro && f.filtro.dias_cierre != null ? f.filtro.dias_cierre : null), cuantia: (f) => (Number(f.cuantia_cop) > 0 ? Number(f.cuantia_cop) : null) };
+        const AL_REVES = { cierre: -1, cuantia: 1 };
+        let casosConSinDato = 0;
+        for (const ord of Object.keys(DATO)) {
+          const porDir = {};
+          for (const dir of ["desc", "asc"]) {
+            const rO = await L(`tipo=todos&solo_viables=false&ordenar_por=${ord}&orden=${dir}`);
+            assert.strictEqual(rO.cuerpo.ordenado_por, ord);
+            porDir[dir] = rO.cuerpo.resultados.filter((f) => f.viable === true);
+            /* que existan viables SIN el dato se mira en la última página del sentido normal, donde van: si no hubiera
+               ninguna, «el primer puesto al revés tiene el dato» sería verdad vacía */
+            if (dir === "desc") {
+              const paginas = Math.min(20, Math.max(1, Math.ceil(rO.cuerpo.total / 100)));
+              for (let pg = 1; pg <= paginas; pg++) {
+                const rU = pg === 1 ? rO : await L(`tipo=todos&solo_viables=false&ordenar_por=${ord}&orden=desc&pagina=${pg}`);
+                if (rU.cuerpo.resultados.some((f) => f.viable === true && DATO[ord](f) == null)) { casosConSinDato++; break; }
+              }
+            }
+            const vals = porDir[dir].map(DATO[ord]);
+            const iPrimerSin = vals.findIndex((v) => v == null);
+            if (iPrimerSin >= 0) assert.ok(vals.slice(iPrimerSin).every((v) => v == null),
+              `${ord} con orden=${dir}: lo que no tiene el dato va al final, nunca delante (${JSON.stringify(vals.slice(0, 12))}…)`);
+          }
+          if (!porDir.desc.some((f) => DATO[ord](f) != null) || !porDir.asc.length) continue;
+          assert.ok(DATO[ord](porDir.asc[0]) != null, `${ord} al revés: el primer puesto tiene el dato (MUTACIÓN: sin dato delante con orden=asc)`);
+          const valsAsc = porDir.asc.map(DATO[ord]).filter((v) => v != null);
+          for (let i = 1; i < valsAsc.length; i++) assert.ok(AL_REVES[ord] * (valsAsc[i] - valsAsc[i - 1]) >= 0, `${ord} al revés sigue el sentido contrario del dato: ${JSON.stringify(valsAsc.slice(0, 12))}`);
+        }
+        assert.ok(casosConSinDato > 0, "la prueba tiene que ver al menos un orden con procesos sin el dato, o no prueba nada");
+      }
+      /* «LAS MENOS PELEADAS» PONE PRIMERO LAS MENOS PELEADAS (9-nov-2026): el botón que invierte dice el sentido de cada
+         orden, así que el sentido normal tiene que ser el que dice el nombre */
+      {
+        const rC = await L("tipo=todos&solo_viables=false&ordenar_por=competencia");
+        const rango = { baja: 1, media: 2, alta: 3 };
+        const nivelesV = rC.cuerpo.resultados.filter((f) => f.viable).map((f) => (f.competencia_entidad && rango[f.competencia_entidad.nivel]) || null);
+        const conNivel = nivelesV.filter((v) => v != null);
+        for (let i = 1; i < conNivel.length; i++) assert.ok(conNivel[i - 1] <= conNivel[i], `«Las menos peleadas» va de la competencia baja a la alta: ${JSON.stringify(conNivel)}`);
+      }
       // rendimiento (mock en memoria): la petición con filtros responde en < 800 ms
       const tF = Date.now();
       await L("tipo=obra&dep=73&modalidad=licitacion,abreviada&cierre=%2B15d&min=1&q=a");
@@ -44688,12 +44740,19 @@ async function main() {
         const iBarra = htmlL.indexOf('class="barra-herramientas'), iPanel = htmlL.indexOf('id="panel-filtros"'), iFB = htmlL.indexOf('id="filtros-barra"');
         assert.ok(iBarra > 0 && iPanel > iBarra && iFB > iPanel, "orden: barra de herramientas → hoja de filtros (que contiene filtros-barra)");
         const barraHtml = htmlL.slice(iBarra, iPanel);
-        for (const id of ["fl-q", "f-ordenar", "btn-filtros", "btn-filtros-n", "btn-buscar", "fl-fichas"]) assert.ok(barraHtml.includes(`id="${id}"`), `la barra de herramientas debe tener #${id}`);
+        /* «Más filtros» (el botón de la hoja, #btn-filtros) pasó a la barra de la izquierda el 9-nov-2026 (maqueta de
+           Licitaciones aprobada), junto a los filtros que más se usan; al lado del orden llegó el botón que lo invierte */
+        for (const id of ["fl-q", "f-ordenar", "f-orden", "btn-buscar", "fl-fichas"]) assert.ok(barraHtml.includes(`id="${id}"`), `la barra de herramientas debe tener #${id}`);
+        {
+          const iLB = htmlL.indexOf('<nav id="lic-barra"'), fLB = htmlL.indexOf("</nav>", iLB);
+          assert.ok(iLB > 0 && fLB > iLB && iLB < iBarra, "la barra de Licitaciones va antes de la barra de herramientas");
+          for (const id of ["btn-filtros", "btn-filtros-n"]) { const i = htmlL.indexOf(`id="${id}"`); assert.ok(i > iLB && i < fLB, `#${id} vive en la barra de la izquierda`); }
+        }
         assert.ok(!/id="fl-tipo"|id="fl-modalidad"|id="fl-dep"|id="f-ver-paa"/.test(barraHtml), "los filtros detallados NO viven en la barra: viven en la hoja");
         assert.ok(/<div id="panel-filtros" class="hidden" role="dialog"/.test(htmlL), "la hoja de filtros nace oculta y es un diálogo");
         for (const id of ["panel-filtros-velo", "panel-filtros-listo", "panel-filtros-limpiar"]) assert.ok(htmlL.includes(`id="${id}"`), `falta #${id}`);
         assert.ok(/function abrirPanelFiltros\(abrir\)/.test(appL) && /ev\.key === "Escape"/.test(appL) && /aria-expanded/.test(appL), "app.js abre/cierra la hoja (botón, Listo, velo, Esc) y marca aria-expanded");
-        assert.ok(/nBadge\.textContent = String\(fichas\.length\)/.test(appL), "el botón Filtros lleva el número de filtros activos");
+        assert.ok(/nBadge\.textContent = String\(enHoja\)/.test(appL), "el botón «Más filtros» lleva el número de filtros activos de la hoja (los de la barra se ven)");
         assert.ok(!/Sin filtros: se muestran todas/.test(appL), "la frase «Sin filtros: se muestran todas…» se fue: sin filtros no hay nada que decir");
         /* ⚠️ LOS CUATRO GRÁFICOS DEL PULSO SE RETIRARON (encargo del ingeniero,
            31-ago-2026): «Cuándo hay que entregar la oferta», «Cuánto valen»,
@@ -48571,10 +48630,22 @@ async function main() {
           assert.ok(iAv > 0, "sin el <details> de filtros avanzados, los nueve controles vuelven a la vista");
           const finAv = html.indexOf("</details>", iAv);
           assert.strictEqual(html.indexOf('id="f-anticipo"'), -1, "el filtro de anticipo ya no está en la pestaña (decisión del dueño, 15-sep-2026)");
-          for (const id of ["f-cuantia", "f-entidad", "f-ubicacion", "f-orden",
-            "f-sin-unspsc", "f-solo-viables"]) {
+          for (const id of ["f-cuantia", "f-entidad", "f-ubicacion", "f-sin-unspsc"]) {
             const i = html.indexOf(`id="${id}"`);
             assert.ok(i > iAv && i < finAv, `#${id} debe vivir plegado en filtros avanzados`);
+          }
+          /* LO QUE MÁS SE USA, A LA VISTA (9-nov-2026, decisión del dueño sobre la maqueta de Licitaciones: «los filtros más
+             usados son el valor, poder invertir el orden y lo de manifestaciones de interés»). La dirección del orden es el
+             botón al lado del orden, y la casilla de las que no alcanza va en la barra de la izquierda con el valor y el
+             aviso de interés. Ninguno vuelve a quedar plegado. */
+          {
+            const iLB = html.indexOf('<nav id="lic-barra"'), fLB = html.indexOf("</nav>", iLB);
+            for (const id of ["lic-valor", "fl-manif-sin", "fl-manif", "fl-manif-urgente", "f-solo-viables"]) {
+              const i = html.indexOf(`id="${id}"`);
+              assert.ok(i > iLB && i < fLB, `#${id} vive a la vista, en la barra de la izquierda de Licitaciones`);
+            }
+            const iOrd = html.indexOf('id="f-ordenar"'), iDir = html.indexOf('id="f-orden"');
+            assert.ok(iDir > iOrd && iDir < iAv && /<button id="f-orden" type="button" value="desc" data-al-reves="false"/.test(html), "el botón que invierte el orden va al lado del orden, nace en el sentido normal y no está plegado");
           }
           /* LA LISTA ABRE CON TODO (19-oct-2026, decisión del dueño): la casilla «Solo las que cumplen» nace APAGADA y, apagada, el navegador
              pide `solo_viables=false` (el servidor sigue con `true` por defecto). Se ejecuta `parametros()` de app.js con un DOM simulado. */
@@ -52849,9 +52920,12 @@ async function main() {
       assert.ok(!tabV.includes('id="seccion-apu"'), "…y ya no en Mi empresa");
       const iSis = tabV.indexOf('id="seccion-sistema"');
       assert.ok(iSis > 0);
-      for (const id of ["dashboard", "rastreo-wrap"]) {
-        assert.ok(tabV.includes(`id="${id}"`), `falta #${id} en Mi empresa`);
-        assert.ok(tabV.indexOf(`id="${id}"`) < iSis || id === "rastreo-wrap", `#${id} tiene que estar fuera de «Sistema»`);
+      assert.ok(tabV.includes('id="dashboard"'), "falta #dashboard en Mi empresa");
+      /* el rastreo sigue fuera de «Sistema» y a la vista de quien licita: desde el 9-nov-2026 vive en Licitaciones, en su
+         apartado «¿Por qué no está un proceso?» (maqueta aprobada por el dueño), donde se echa de menos el proceso */
+      {
+        const tabLicV = sinComV.slice(sinComV.indexOf('<main id="tab-licitaciones"'), sinComV.indexOf("</main>", sinComV.indexOf('<main id="tab-licitaciones"')));
+        assert.ok(tabLicV.includes('id="rastreo-wrap"') && !tabV.includes('id="rastreo-wrap"'), "«¿Por qué no está un proceso?» vive en Licitaciones y ya no en Mi empresa");
       }
       assert.ok(tabV.indexOf('id="dashboard"') < iSis, "el tablero está FUERA de Sistema y abre la pestaña");
 
@@ -66163,7 +66237,10 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
     }
     okME(/podarBarraMiEmpresa\(\);/.test(cortarME("  function vistaDeVisitante(activa) {")), "(f) la vista de visitante poda la barra");
     // (g) el panel lateral del teléfono: la función REAL abre, cierra, marca aria-expanded y mueve el foco
-    const fuentePanel = cortarME("  function panelMiEmpresa(abrir, { devolverFoco = true } = {}) {");
+    /* desde el 9-nov-2026 el panel es UNO para las dos pestañas (`panelLateral`, con la configuración de cada una):
+       se ejecuta la función real con la configuración real de Mi empresa */
+    const fuentePanel = [lineaME("  const PANEL_ME = "), cortarME("  function panelLateral(cfg, abrir, { devolverFoco = true } = {}) {"), lineaME("  function panelMiEmpresa(abrir, opciones) ")].filter(Boolean).length === 3
+      ? [lineaME("  const PANEL_ME = "), cortarME("  function panelLateral(cfg, abrir, { devolverFoco = true } = {}) {"), lineaME("  function panelMiEmpresa(abrir, opciones) ")].join("\n") : (fallasME.push("app.js sin PANEL_ME, panelLateral o panelMiEmpresa"), "");
     if (fuentePanel) {
       const G = new Function(`
         const atr = {}; const enfocados = [];
@@ -66185,6 +66262,323 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
     okME(/@media \(max-width: 899px\)[\s\S]{0,1600}#tab-admin\[data-me\]\[data-panel="abierto"\] > #me-barra \{ transform: none; visibility: visible;/.test(htmlME), "(g) en el teléfono la barra es un panel que solo se ve abierto (cerrado no es enfocable)");
     if (fallasME.length) throw new Error(`unidad Mi empresa: ${fallasME.length} comprobaciones fallan:\n  - ${fallasME.join("\n  - ")}`);
     console.log("· unidad Mi empresa · Hoy y su barra: la plata en juego dice qué departamento la mueve (99 % si no es todo), los avisos cuentan lo que abre su lista, elegir un apartado es inerte ante lo desconocido y cada bloque de la pestaña dice su apartado (censo)");
+  }
+
+  bqLicitacionesBarra: { if (!corre("unidad Licitaciones · barra, filtros a la vista y el orden al revés")) break bqLicitacionesBarra;
+    /* LICITACIONES CON SU BARRA (9-nov-2026, decisión del dueño sobre su maqueta): tres apartados (Abiertas · Lo que
+       viene · ¿Por qué no está un proceso?), a la vista el valor, el aviso de interés y la casilla de las que no alcanza,
+       el resto en «Más filtros», el orden con un botón que lo invierte y, en el teléfono, el mismo panel lateral de Mi
+       empresa. Funciones reales con documentos falsos; el servidor (lo sin dato al final en los dos sentidos) se
+       prueba con la lista real en el bloque de los siete filtros. */
+    const fallasL = [];
+    const okL = (c, que) => { if (!c) fallasL.push(que); };
+    const jsL = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+    const htmlL = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8").replace(/<!--[\s\S]*?-->/g, "");
+    const cortarL = (firma, fin = "\n  }") => { const i = jsL.indexOf(firma); if (i < 0) { fallasL.push(`app.js sin «${firma.trim()}»`); return ""; } return jsL.slice(i, jsL.indexOf(fin, i) + fin.length); };
+    const lineaL = (marca) => { const i = jsL.indexOf(marca); if (i < 0) { fallasL.push(`app.js sin «${marca.trim()}»`); return ""; } return jsL.slice(i, jsL.indexOf("\n", i)); };
+    delete require.cache[require.resolve("../public/filtros.js")];
+    const FLL = require("../public/filtros.js");
+    // (a) qué va primero en cada sentido: censo de los órdenes del selector contra el vocabulario
+    const opcionesOrden = [...(htmlL.match(/<select id="f-ordenar"[\s\S]*?<\/select>/) || [""])[0].matchAll(/<option value="([a-z_]+)"/g)].map((m) => m[1]);
+    okL(opcionesOrden.length === 8 && opcionesOrden.slice(0, 4).join() === "atractividad,cierre,ganancia,cuantia", `(a) a la vista los cuatro órdenes que más se usan, y los ocho siguen: ${opcionesOrden.join()}`);
+    okL(/<optgroup label="Más órdenes">[\s\S]*value="margen"[\s\S]*value="competencia"[\s\S]*<\/optgroup>/.test(htmlL), "(a) los otros cuatro van agrupados en «Más órdenes»");
+    okL(opcionesOrden.every((id) => Array.isArray(FLL.DIRECCION_ORDEN[id]) && FLL.DIRECCION_ORDEN[id].length === 2 && FLL.DIRECCION_ORDEN[id][0] !== FLL.DIRECCION_ORDEN[id][1]), "(a) cada orden del selector dice qué va primero en los dos sentidos (censo)");
+    okL(FLL.ORDENES.every((o) => FLL.DIRECCION_ORDEN[o.id]), "(a) y cada orden del vocabulario también");
+    okL(FLL.direccionDe("cierre", "desc") === "Primero las que cierran antes" && FLL.direccionDe("cierre", "asc") === "Primero las que cierran más tarde", "(a) «Las que cierran antes» no se rotula «de mayor a menor»: dice el hecho");
+    okL(FLL.direccionDe("cuantia", "asc") === "De la más pequeña a la más grande" && FLL.direccionDe("zzz", "desc") === FLL.direccionDe("atractividad", "desc") && FLL.direccionDe("cierre", "zzz") === FLL.direccionDe("cierre", "desc"), "(a) un orden o un sentido desconocido es inerte: cae al normal de «Las mejores para usted»");
+    // (b) el botón: su rótulo y su aria-pressed salen de la función REAL
+    const fuenteDir = cortarL("  function pintarDireccionOrden() {");
+    if (fuenteDir) {
+      const B = new Function("FL", `
+        const els = { "f-orden": { value: "desc", attrs: {}, setAttribute(k, v) { this.attrs[k] = v; } }, "f-ordenar": { value: "cierre" }, "f-orden-rotulo": { textContent: "" } };
+        /* sin aria-pressed: el rótulo ya dice el sentido y un lector anunciaría la inversión dos veces (revisión adversaria) */
+        const $ = (id) => els[id] || null;
+        ${fuenteDir}
+        return { pintarDireccionOrden, els };`)(FLL);
+      B.pintarDireccionOrden();
+      okL(B.els["f-orden"].attrs["data-al-reves"] === "false" && !("aria-pressed" in B.els["f-orden"].attrs) && B.els["f-orden-rotulo"].textContent === "Primero las que cierran antes", `(b) en el sentido normal: ${JSON.stringify(B.els["f-orden-rotulo"])}`);
+      B.els["f-orden"].value = "asc"; B.pintarDireccionOrden();
+      okL(B.els["f-orden"].attrs["data-al-reves"] === "true" && !("aria-pressed" in B.els["f-orden"].attrs) && B.els["f-orden-rotulo"].textContent === "Primero las que cierran más tarde", "(b) al revés: el rótulo del orden elegido, sin aria-pressed encima");
+      B.els["f-ordenar"].value = "atractividad"; B.pintarDireccionOrden();
+      okL(/sin bajar las cercanas ni las urgentes/.test(B.els["f-orden-rotulo"].textContent), "(b) «Las mejores para usted» al revés no promete «las que menos le convienen»: la zona y lo urgente siguen arriba");
+    }
+    // (c) el clic invierte con el MISMO `change` de siempre, y cambiar de orden vuelve al sentido normal
+    const fuenteClic = cortarL('  $("f-orden").addEventListener("click", () => {', "\n  });");
+    const fuenteCambio = cortarL('  for (const id of ["f-perfil", "f-cuantia", "f-entidad", "f-ubicacion", "f-ordenar", "f-orden",', "\n  }");
+    if (fuenteClic && fuenteCambio) {
+      const C = new Function(`
+        const oyentes = {}; const llamadas = [];
+        const el = (id) => ({ id, value: id === "f-orden" ? "desc" : "x", addEventListener(t, fn) { (oyentes[id + ":" + t] = oyentes[id + ":" + t] || []).push(fn); },
+          dispatchEvent(ev) { (oyentes[id + ":" + ev.type] || []).forEach((fn) => fn(ev)); } });
+        const els = {}; const $ = (id) => (els[id] = els[id] || el(id));
+        let pagina = 3, ordenAntesDelEnlace = "cierre";
+        const escribirFiltrosEnURL = () => llamadas.push("url"), pintarControlesFiltros = () => llamadas.push("controles"), pintarConceptoOrden = () => llamadas.push("concepto"),
+          pintarDireccionOrden = () => llamadas.push("direccion"), buscar = () => llamadas.push("buscar");
+        class Event { constructor(type) { this.type = type; } }
+        ${fuenteCambio}
+        ${fuenteClic}
+        return { $, oyentes, llamadas, pagina: () => pagina };`)();
+      C.oyentes["f-orden:click"][0]();
+      okL(C.$("f-orden").value === "asc" && C.llamadas.includes("buscar") && C.llamadas.includes("direccion") && C.pagina() === 1, `(c) el clic invierte, busca desde la página 1 y repinta el rótulo: ${C.llamadas.join()}`);
+      C.oyentes["f-orden:click"][0]();
+      okL(C.$("f-orden").value === "desc", "(c) un segundo clic lo devuelve al sentido normal");
+      C.oyentes["f-orden:click"][0]();
+      C.oyentes["f-ordenar:change"][0]();
+      okL(C.$("f-orden").value === "desc", "(c) elegir otro orden vuelve al sentido normal: no hereda el «al revés» del orden anterior");
+    }
+    okL(/if \(\$\("f-orden"\)\) \{ \$\("f-orden"\)\.value = "desc"; pintarDireccionOrden\(\); \}\s*cambiarFiltros\(window\.Filtros\.leerEstado\(params\)\);/.test(jsL), "(c) la lista de una cifra de Mi empresa abre en el sentido normal");
+    // (d) elegir un apartado: la función REAL con un documento falso
+    const fuenteAp = [lineaL("  const APARTADOS_LIC = "), cortarL("  function elegirApartadoLicitaciones(")].join("\n");
+    if (fuenteAp.trim()) {
+      const D = new Function(`
+        const atributos = {}; const eventos = [];
+        const detalles = { open: false };
+        const tab = { setAttribute: (k, v) => { atributos[k] = v; }, getAttribute: (k) => atributos[k], hasAttribute: () => false,
+          querySelectorAll: (sel) => (sel.includes('data-lic-apartado="noesta"') ? [detalles] : []), querySelector: () => null };
+        const botones = ["abiertas", "viene", "noesta"].map((id) => { const b = { id, attrs: {}, textContent: { abiertas: "Abiertas", viene: "Lo que viene", noesta: "¿Por qué no está un proceso?" }[id],
+          getAttribute: (k) => (k === "data-lic-ir" ? id : b.attrs[k]), setAttribute: (k, v) => { b.attrs[k] = v; }, removeAttribute: (k) => { delete b.attrs[k]; } }; return b; });
+        const rotuloBoton = { textContent: "Abiertas" };
+        const paa = { checked: false, dispatchEvent: (ev) => eventos.push(ev.type + ":" + paa.checked) };
+        const document = { getElementById: (id) => ({ "tab-licitaciones": tab, "lic-abrir-rotulo": rotuloBoton, "f-ver-paa": paa }[id] || null), querySelectorAll: () => botones };
+        const panelLicitaciones = () => {};
+        const window = { scrollTo() {} };
+        class Event { constructor(type) { this.type = type; } }
+        ${fuenteAp}
+        return { elegirApartadoLicitaciones, atributos, botones, rotuloBoton, paa, eventos, detalles };`)();
+      const r1 = D.elegirApartadoLicitaciones("viene", { enfocar: false });
+      okL(r1 === "viene" && D.atributos["data-lic"] === "viene" && D.paa.checked === true && D.eventos.join() === "change:true" && D.rotuloBoton.textContent === "Lo que viene",
+        `(d) «Lo que viene» enciende el Plan Anual con su casilla de siempre y avisa: ${JSON.stringify({ r1, e: D.eventos, r: D.rotuloBoton.textContent })}`);
+      okL(D.botones.find((b) => b.id === "viene").attrs["aria-current"] === "page" && !D.botones.find((b) => b.id === "abiertas").attrs["aria-current"], "(d) la barra marca el apartado elegido y solo ese");
+      D.elegirApartadoLicitaciones("noesta", { enfocar: false });
+      okL(D.atributos["data-lic"] === "noesta" && D.detalles.open === true && D.paa.checked === false && D.eventos.join() === "change:true,change:false", "(d) «¿Por qué no está?» abre su plegado y apaga el Plan Anual (la insignia «Activo» sobra sin él)");
+      const n = D.eventos.length;
+      D.elegirApartadoLicitaciones("abiertas", { enfocar: false });
+      okL(D.eventos.length === n, "(d) si la casilla ya estaba como debe, no se dispara otra búsqueda");
+      okL(D.elegirApartadoLicitaciones("<script>", { enfocar: false }) === "abiertas" && D.atributos["data-lic"] === "abiertas", "(d) un apartado desconocido es INERTE: cae a «abiertas»");
+    }
+    // (e) censo: todo bloque de primer nivel de Licitaciones con id dice su apartado; cada apartado tiene botón, regla y bloque
+    const iTabL = htmlL.indexOf('id="tab-licitaciones"'), iFinL = htmlL.indexOf('id="tab-apu"');
+    const tramoL = htmlL.slice(htmlL.indexOf(">", iTabL) + 1, iFinL);
+    const hijosL = []; let profL = 0;
+    for (const m of tramoL.matchAll(/<(\/?)([a-z0-9]+)\b([^>]*?)(\/?)>/g)) {
+      const [, cierre, tag, attrs, auto] = m;
+      if (["br", "img", "input", "meta", "link", "hr", "source", "wbr", "path", "rect", "circle", "line", "polyline"].includes(tag) || auto) continue;
+      if (cierre) { profL--; continue; }
+      if (profL === 0) hijosL.push({ tag, id: (attrs.match(/\bid="([^"]+)"/) || [])[1] || null, ap: (attrs.match(/data-lic-apartado="([^"]+)"/) || [])[1] || null, clase: (attrs.match(/\bclass="([^"]+)"/) || [])[1] || "" });
+      profL++;
+    }
+    const APSL = (lineaL("  const APARTADOS_LIC = ").match(/\[([^\]]+)\]/) || ["", ""])[1].split(",").map((x) => x.trim().replace(/"/g, "")).filter(Boolean);
+    okL(APSL.join() === "abiertas,viene,noesta", `(e) los tres apartados de la maqueta: ${APSL.join()}`);
+    /* el armazón de la pestaña no es de un apartado (DECLARADO): la barra, el botón y el velo del panel, la hoja de «Más
+       filtros» (un diálogo que se abre encima), la cabecera y el pie */
+    const ARMAZON_L = ["lic-barra", "lic-abrir-panel", "lic-velo", "panel-filtros"];
+    const sinApL = hijosL.filter((h) => !h.ap && !(h.id && ARMAZON_L.includes(h.id)) && !(h.tag === "header" && /cabecera-pestana/.test(h.clase)) && h.tag !== "footer" && h.tag !== "main");
+    okL(hijosL.length >= 10 && sinApL.length === 0, `(e) censo: cada bloque de primer nivel dice su apartado; sin él: ${sinApL.map((h) => h.id || h.tag).join(", ")}`);
+    okL(hijosL.every((h) => !h.ap || APSL.includes(h.ap)), "(e) ningún bloque dice un apartado que no existe");
+    for (const a of APSL) {
+      okL(new RegExp(`data-lic-ir="${a}"`).test(htmlL), `(e) el apartado «${a}» tiene botón en la barra`);
+      okL(htmlL.includes(`#app #tab-licitaciones[data-lic="${a}"] > [data-lic-apartado]:not([data-lic-apartado="${a}"]) { display: none; }`), `(e) el apartado «${a}» tiene su regla en la hoja`);
+      okL(hijosL.some((h) => h.ap === a), `(e) el apartado «${a}» tiene al menos un bloque`);
+    }
+    okL(/<main id="tab-licitaciones"[^>]*data-lic="abiertas"/.test(htmlL), "(e) Licitaciones nace en «Abiertas» desde el marcado (no depende del script)");
+    okL(htmlL.includes("#app #tab-licitaciones:not([data-lic=\"abiertas\"]) #lic-filtros { display: none; }"), "(e) los filtros solo se ven con la lista");
+    // «¿Por qué no está?» se MOVIÓ: vive en Licitaciones, ya no en Mi empresa, y sigue siendo solo del dueño
+    const iRa = htmlL.indexOf('id="rastreo-wrap"');
+    okL(iRa > iTabL && iRa < iFinL && /<details id="rastreo-wrap" data-lic-apartado="noesta"/.test(htmlL), "(e) «¿Por qué no está un proceso?» vive en Licitaciones, en su apartado");
+    okL(!/data-me-ir="noesta"/.test(htmlL) && !/data-me-apartado="noesta"/.test(htmlL), "(e) y ya no queda su apartado en Mi empresa (se mueve, no se duplica)");
+    okL(/"rastreo-wrap": "[^"]+"/.test(cortarL("  const VISTA_VISITANTE = {", "\n  };")), "(e) el visitante sigue sin verlo (VISTA_VISITANTE.soloDueno)");
+    // …y la barra no le ofrece ese apartado vacío: la vista de visitante REAL con un documento falso
+    const fuenteVisita = cortarL("  function vistaDeVisitante(activa) {");
+    if (fuenteVisita) {
+      const W = new Function(`
+        const els = { "rastreo-wrap": { hidden: false } };
+        const botonNoEsta = { hidden: false };
+        const tabL = { attrs: { "data-lic": "noesta" }, getAttribute(k) { return this.attrs[k]; } };
+        const elegidos = [];
+        const document = { querySelector: (sel) => (sel === '#lic-barra [data-lic-ir="noesta"]' ? botonNoEsta : null), getElementById: (id) => (id === "tab-licitaciones" ? tabL : null), querySelectorAll: () => [] };
+        const $ = (id) => els[id] || null;
+        const VISTA_VISITANTE = { soloDueno: { "rastreo-wrap": "x" }, soloVisitante: {} };
+        let vistaVisitanteActiva = false;
+        const podarBarraMiEmpresa = () => {}, elegirApartadoLicitaciones = (id) => { elegidos.push(id); tabL.attrs["data-lic"] = id; };
+        const pintarCorte = () => {}, pintarSalir = () => {};
+        ${fuenteVisita.replace(/\n    const marca = \$\("btn-marca"\);[\s\S]*$/, "\n  }")}
+        vistaDeVisitante(true);
+        const visitante = { boton: botonNoEsta.hidden, elegidos: elegidos.slice() };
+        vistaDeVisitante(false);
+        return { visitante, dueno: botonNoEsta.hidden };`)();
+      okL(W.visitante.boton === true && W.visitante.elegidos.join() === "abiertas" && W.dueno === false, `(e) al visitante se le esconde «¿Por qué no está?» y, si estaba ahí, vuelve a la lista; al dueño no: ${JSON.stringify(W)}`);
+    }
+    // (f) Valor: los botones salen de la MISMA lista de tramos con su cifra, y pulsarlos usa la MISMA regla que el selector
+    const fuenteRango = cortarL("  const estadoDeRango = (id) => {", "\n  };");
+    if (fuenteRango) {
+      const R = new Function("FL", `let estadoFiltros = { q: "vias", min: null }; ${fuenteRango} return { estadoDeRango };`)(FLL);
+      const r50 = R.estadoDeRango("50_200m");
+      okL(r50.min && r50.min.min === 50e6 && r50.min.max === 200e6 && r50.q === "vias", `(f) un tramo pone su mínimo y su máximo y conserva lo demás: ${JSON.stringify(r50)}`);
+      okL(R.estadoDeRango("").min === null && R.estadoDeRango("zzz").min === null, "(f) «Todas» y un tramo desconocido quitan el filtro (inerte, nunca una lista vacía)");
+    }
+    const fuenteValor = cortarL('    const valor = $("lic-valor");', "\n    }");
+    if (fuenteValor) {
+      const V = new Function("FL", "rangoId", `
+        const caja = { innerHTML: "" }; const $ = (id) => (id === "lic-valor" ? caja : null);
+        const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
+        const conteo = (f, id) => (f === "cuantia" && id === "50_200m" ? " (12)" : "");
+        ${fuenteValor}
+        return caja.innerHTML;`);
+      const h = V(FLL, "50_200m");
+      const botones = [...h.matchAll(/data-lic-valor="([^"]*)" aria-pressed="(true|false)">([^<]*)</g)].map((m) => ({ id: m[1], puesto: m[2], texto: m[3] }));
+      okL(botones.length === FLL.RANGOS_CUANTIA.length + 1 && botones[0].id === "" && botones[0].texto === "Todas", `(f) «Todas» y un botón por tramo: ${JSON.stringify(botones)}`);
+      okL(botones.filter((b) => b.puesto === "true").map((b) => b.id).join() === "50_200m" && botones.find((b) => b.id === "50_200m").texto === "De $50 a $200 millones (12)", "(f) solo el tramo puesto se marca, y lleva la cifra de la lista que abre");
+      okL([...V(FLL, "libre").matchAll(/aria-pressed="true"/g)].length === 0, "(f) un rango propio no enciende ningún tramo (lo dice su ficha)");
+      // repintar no tira el foco del teclado: el botón con el mismo tramo lo recupera
+      const VF = new Function("FL", `
+        const enfocados = [];
+        const caja = { innerHTML: "", contains: (el) => el === viejo, querySelector: (sel) => ({ sel, focus: () => enfocados.push(sel) }) };
+        const viejo = { getAttribute: (k) => (k === "data-lic-valor" ? "mas_1000m" : null) };
+        const document = { activeElement: viejo };
+        const $ = (id) => (id === "lic-valor" ? caja : null);
+        const esc = (s) => String(s); const conteo = () => ""; const rangoId = "mas_1000m";
+        ${fuenteValor}
+        return enfocados;`);
+      okL(VF(FLL).join() === '[data-lic-valor="mas_1000m"]', `(f) tras repintar, el foco vuelve al botón que se pulsó: ${VF(FLL).join()}`);
+    }
+    const fuenteClicValor = cortarL('    $("lic-valor").addEventListener("click", (ev) => {', "\n    });");
+    if (fuenteClicValor) {
+      const CV = new Function(`
+        let oyente = null; const pedidos = [];
+        const $ = () => ({ addEventListener: (t, fn) => { oyente = fn; } });
+        const cambiarFiltros = (e) => pedidos.push(e); const estadoDeRango = (id) => ({ min: id });
+        ${fuenteClicValor}
+        const boton = (id, puesto) => ({ target: { closest: () => ({ getAttribute: (k) => (k === "aria-pressed" ? puesto : id) }) } });
+        oyente(boton("50_200m", "false")); oyente(boton("50_200m", "true"));
+        return pedidos;`)();
+      okL(CV.length === 1 && CV[0].min === "50_200m", `(f) pulsar un tramo lo pone; pulsar el que ya está puesto no repite la búsqueda: ${JSON.stringify(CV)}`);
+    }
+    // (g) el aviso de interés: tres opciones y una sola elección, con la regla de siempre para lo desconocido
+    const fuenteManif = cortarL('  for (const id of ["fl-manif-sin", "fl-manif", "fl-manif-urgente"]) {', "\n  }");
+    if (fuenteManif) {
+      const M = new Function(`
+        const oyentes = {}; const pedidos = [];
+        const els = {}; for (const [id, v] of [["fl-manif-sin", ""], ["fl-manif", "abierta"], ["fl-manif-urgente", "urgente"]]) els[id] = { id, value: v, checked: false, addEventListener(t, fn) { oyentes[id] = fn; } };
+        const $ = (id) => els[id] || null;
+        let estadoFiltros = { q: "vias", manif: null };
+        const cambiarFiltros = (e) => pedidos.push(e.manif);
+        ${fuenteManif}
+        return { oyentes, els, pedidos };`)();
+      for (const id of ["fl-manif", "fl-manif-urgente", "fl-manif-sin"]) { M.els[id].checked = true; M.oyentes[id](); M.els[id].checked = false; }
+      okL(JSON.stringify(M.pedidos) === JSON.stringify(["abierta", "urgente", null]), `(g) «Todavía se puede avisar», «Hay que avisar hoy» y «Todas»: ${JSON.stringify(M.pedidos)}`);
+      M.els["fl-manif"].value = "zzz"; M.els["fl-manif"].checked = true; M.oyentes["fl-manif"]();
+      M.oyentes["fl-manif-urgente"]();
+      okL(M.pedidos[3] === null && M.pedidos.length === 4, "(g) un valor desconocido es «Todas» y una opción que se desmarca no pide nada");
+    }
+    okL(/\$\("fl-manif-urgente-n"\)\.textContent = fm && fm\.urgentes != null \? `\(\$\{fm\.urgentes\}\)` : ""/.test(jsL), "(g) la cifra de «hoy» es la cuenta de urgentes del servidor, y sin ella no se pinta un 0");
+    // (h) «Más filtros» cuenta lo de la hoja; el botón del teléfono, todo
+    const fuenteCuenta = cortarL('    const FUERA_DE_LA_HOJA = new Set(["q", "manif", "solo"]);', '"Apartados y filtros";');
+    if (fuenteCuenta) {
+      const N = new Function("fichas", "rangoId = \"50_200m\"", `
+        const els = { "btn-filtros-n": { textContent: "", classList: { ocultos: null, toggle(c, v) { this.ocultos = v; } } }, "lic-abrir-mas": { textContent: "" } };
+        const $ = (id) => els[id];
+        ${fuenteCuenta}
+        return els;`);
+      const e1 = N([{ filtro: "min" }, { filtro: "solo" }, { filtro: "dep" }]);
+      okL(e1["btn-filtros-n"].textContent === "1" && e1["btn-filtros-n"].classList.ocultos === false && e1["lic-abrir-mas"].textContent === "Filtros (3)", `(h) Más filtros cuenta 1 (el departamento) y el teléfono 3: ${JSON.stringify(e1)}`);
+      const e0 = N([{ filtro: "manif" }, { filtro: "q" }]);
+      okL(e0["btn-filtros-n"].classList.ocultos === true && e0["lic-abrir-mas"].textContent === "Filtros (2)", "(h) el aviso (barra izquierda) y la palabra (caja de arriba) no cuentan en «Más filtros»");
+      const eLibre = N([{ filtro: "min" }], "libre");
+      okL(eLibre["btn-filtros-n"].textContent === "1" && eLibre["btn-filtros-n"].classList.ocultos === false, "(h) un rango propio, que solo se cambia en la hoja, sí cuenta en «Más filtros»");
+    }
+    // (i) «Ver la lista» del teléfono dice la MISMA cifra de la lista, y sin cifra no pinta un 0
+    const fuenteVer = lineaL('    if (ver) ver.textContent = ');
+    if (fuenteVer) {
+      const T = (total) => new Function("cuerpo", `const ver = { textContent: "" }; ${fuenteVer} return ver.textContent;`)({ total });
+      okL(T(762) === "Ver las 762 licitaciones" && T(1) === "Ver la licitación" && T(null) === "Ver la lista" && T(undefined) === "Ver la lista", `(i) el botón del panel: ${[T(762), T(1), T(null)].join(" | ")}`);
+    }
+    // (j) el panel del teléfono es el MISMO de Mi empresa, con los ids de Licitaciones
+    const fuentePanelL = [lineaL("  const PANEL_LIC = "), cortarL("  function panelLateral(cfg, abrir, { devolverFoco = true } = {}) {"), lineaL("  function panelLicitaciones(abrir, opciones) ")].join("\n");
+    if (fuentePanelL.trim()) {
+      const G = new Function(`
+        const atr = {}; const enfocados = [];
+        const actual = { focus: () => enfocados.push("apartado actual") };
+        const tab = { setAttribute: (k, v) => { atr[k] = v; }, removeAttribute: (k) => { delete atr[k]; }, hasAttribute: (k) => k in atr,
+          querySelector: (sel) => (sel === '#lic-barra .lic-ir[aria-current="page"]' ? actual : null) };
+        const velo = { hidden: true }; const boton = { attrs: {}, setAttribute(k, v) { this.attrs[k] = v; }, focus: () => enfocados.push("botón") };
+        const document = { getElementById: (id) => ({ "tab-licitaciones": tab, "lic-velo": velo, "lic-abrir-panel": boton }[id] || null) };
+        ${fuentePanelL}
+        return { panelLicitaciones, atr, velo, boton, enfocados };`)();
+      G.panelLicitaciones(true);
+      okL(G.atr["data-panel"] === "abierto" && G.velo.hidden === false && G.boton.attrs["aria-expanded"] === "true" && G.enfocados.join() === "apartado actual", `(j) abrir el panel de Licitaciones: ${JSON.stringify({ a: G.atr, f: G.enfocados })}`);
+      G.panelLicitaciones(false);
+      okL(!("data-panel" in G.atr) && G.velo.hidden === true && G.enfocados.join() === "apartado actual,botón", "(j) cerrar: se va el velo y el foco vuelve al botón");
+    }
+    okL(/t\.closest\("#lic-velo"\) \|\| t\.closest\("#lic-barra \.lic-cerrar"\)\) \{ panelLicitaciones\(false\)/.test(jsL), "(j) el velo y la «X» cierran el panel («Ver las N», en (n))");
+    okL(/@media \(max-width: 899px\)[\s\S]{0,2200}#tab-licitaciones\[data-lic\]\[data-panel="abierto"\] > #lic-barra \{ transform: none; visibility: visible;/.test(htmlL), "(j) en el teléfono la barra es un panel que solo se ve abierto (cerrado no es enfocable)");
+    // (l) el servidor: la comparación REAL del orden (lib/handlers/procesos/listar) con sus campos reales
+    {
+      const LS = require("../lib/handlers/procesos/listar.js");
+      const ordenar = (ord, filas, dir) => filas.slice().sort((a, b) => LS.compararCampo(ord, LS.ORDEN_CAMPOS[ord](a.l, a.ctx), LS.ORDEN_CAMPOS[ord](b.l, b.ctx), dir)).map((f) => f.n);
+      const niveles = ["alta", "baja", "sin_dato", "media"].map((n) => ({ n, l: {}, ctx: { competencia_nivel: n } }));
+      okL(ordenar("competencia", niveles, -1).join() === "baja,media,alta,sin_dato", `(l) «Las menos peleadas» pone primero la competencia baja y sin base al final: ${ordenar("competencia", niveles, -1)}`);
+      okL(ordenar("competencia", niveles, 1).join() === "alta,media,baja,sin_dato", "(l) al revés, primero las más peleadas, y sin base sigue al final");
+      const cierres = [{ n: "sin fecha", l: {}, ctx: { dias_cierre: null } }, { n: "3", l: {}, ctx: { dias_cierre: 3 } }, { n: "20", l: {}, ctx: { dias_cierre: 20 } }];
+      okL(ordenar("cierre", cierres, -1).join() === "3,20,sin fecha" && ordenar("cierre", cierres, 1).join() === "20,3,sin fecha", `(l) «Las que cierran antes»: sin fecha al final en los dos sentidos: ${ordenar("cierre", cierres, 1)}`);
+      const valores = [{ n: "sin valor", l: { cuantia_cop: null }, ctx: {} }, { n: "100", l: { cuantia_cop: 100e6 }, ctx: {} }, { n: "900", l: { cuantia_cop: 900e6 }, ctx: {} }];
+      okL(ordenar("cuantia", valores, 1).join() === "100,900,sin valor", `(l) «Las más grandes» al revés no abre con lo que no publica valor: ${ordenar("cuantia", valores, 1)}`);
+      const ves = [{ n: "sin valor", l: { cuantia_cop: null }, ctx: { ve: 0 } }, { n: "10", l: { cuantia_cop: 100e6 }, ctx: { ve: 10e6 } }, { n: "cero con valor", l: { cuantia_cop: 100e6 }, ctx: { ve: 0 } }];
+      okL(ordenar("ve", ves, 1).join() === "cero con valor,10,sin valor" && ordenar("ve", ves, -1).join() === "10,cero con valor,sin valor", `(l) «Mayor contrato esperado»: sin presupuesto al final en los dos sentidos; con presupuesto, el 0 es un dato: ${ordenar("ve", ves, 1)}`);
+      okL(Object.keys(LS.SIN_DATO_EN_EL_ORDEN).every((o) => typeof LS.ORDEN_CAMPOS[o] === "function"), "(l) cada centinela declarado es de un orden que existe");
+      okL(!Object.prototype.hasOwnProperty.call(LS.SIN_DATO_EN_EL_ORDEN, "atractividad") && LS.compararCampo("atractividad", 0, 5, -1) > 0, "(l) un orden sin centinela declarado ordena su 0 como dato");
+    }
+    // (m) una cifra de Mi empresa (o cualquier cambio de filtros) lleva a la LISTA aunque la pestaña quedara en otro apartado
+    const fuenteCambiar = cortarL("  function cambiarFiltros(nuevo) {");
+    if (fuenteCambiar) {
+      const CF = new Function(`
+        const atr = { "data-lic": "viene" }; const elegidos = []; const hechos = [];
+        const document = { getElementById: (id) => (id === "tab-licitaciones" ? { getAttribute: (k) => atr[k] } : null) };
+        const elegirApartadoLicitaciones = (id, o) => { elegidos.push(id + (o && o.enfocar === false ? ":sin-foco" : "")); atr["data-lic"] = id; };
+        let estadoFiltros = null, pagina = 4;
+        const escribirFiltrosEnURL = () => hechos.push("url"), pintarControlesFiltros = () => hechos.push("controles"), buscar = () => hechos.push("buscar");
+        ${fuenteCambiar}
+        cambiarFiltros({ cierre: { ventana: "7d" } });
+        const primero = elegidos.slice();
+        cambiarFiltros({});
+        return { primero, elegidos, hechos, pagina };`)();
+      okL(CF.primero.join() === "abiertas:sin-foco" && CF.elegidos.length === 1 && CF.hechos.includes("buscar"), `(m) desde «Lo que viene», cambiar los filtros vuelve a la lista (y en la lista no hace nada más): ${JSON.stringify(CF)}`);
+    }
+    const fuenteVer2 = cortarL('    if (t.closest("#lic-ver")) {', "\n    }");
+    if (fuenteVer2) {
+      const LV = (enApartado) => new Function("enApartado", `
+        const hechos = []; const t = { closest: (sel) => sel === "#lic-ver" };
+        const document = { getElementById: () => ({ getAttribute: () => enApartado }) };
+        const elegirApartadoLicitaciones = (id) => hechos.push("elegir:" + id), panelLicitaciones = (a) => hechos.push("panel:" + a);
+        (() => { ${fuenteVer2} })();
+        return hechos.join();`)(enApartado);
+      okL(LV("viene") === "elegir:abiertas" && LV("abiertas") === "panel:false", `(n) «Ver las N licitaciones» fuera de la lista lleva a la lista; en la lista cierra el panel: ${LV("viene")} | ${LV("abiertas")}`);
+    }
+    /* (o) UNA PESTAÑA ESCONDIDA SE QUEDA ESCONDIDA (10-nov-2026). `#tab-admin[data-me] { display: grid }` pesa (1,1,0) y
+       `.panel-pestana.hidden { display: none }` (0,2,0): la rejilla ganaba y Mi empresa se veía encima de las otras tres
+       pestañas, en producción desde el 9-nov. Censo de TODA la hoja: cada regla que da `display` a una pestaña (el
+       propio <main id="tab-…">, no lo de dentro) tiene que decir `:not(.hidden)` en ese mismo selector. */
+    {
+      const htmlCrudo = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
+      const estilos = [...htmlCrudo.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)].map((m) => m[1]).join("\n").replace(/\/\*[\s\S]*?\*\//g, "");
+      const pestanas = [...htmlCrudo.matchAll(/<main id="(tab-[a-z]+)"[^>]*class="[^"]*panel-pestana/g)].map((m) => m[1]);
+      okL(pestanas.length >= 4, `(o) el censo encuentra las pestañas: ${pestanas.join()}`);
+      const malas = [];
+      for (const m of estilos.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+        if (!/(^|;)\s*display\s*:\s*(?!none)/.test(m[2])) continue;
+        for (const sel of m[1].split(",").map((x) => x.trim())) {
+          const ultimo = sel.split(/\s+|>|\+|~/).filter(Boolean).pop() || "";
+          const tab = pestanas.find((t) => new RegExp(`^(?:[a-z]+)?#${t}(?![\\w-])`).test(ultimo));
+          if (tab && !/:not\(\.hidden\)/.test(ultimo)) malas.push(sel);
+        }
+      }
+      okL(malas.length === 0, `(o) estas reglas le dan display a una pestaña sin «:not(.hidden)» y la sacan aunque esté escondida: ${malas.join(" | ")}`);
+    }
+    // (k) los botones de la tarjeta: primero lo que se hace con un proceso que sirve, al final «No es obra»
+    const pie = (jsL.match(/<div class="t-pie">([\s\S]*?)<\/div>/) || ["", ""])[1];
+    const iG = pie.indexOf("botonGuardar(l)"), iA = pie.indexOf("Calcular mi precio"), iS = pie.indexOf("Ver en SECOP II"), iN = pie.indexOf("botonNoEsObra(l)");
+    okL(iG >= 0 && iG < iA && iA < iS && iS < iN, `(k) el pie de la tarjeta: Guardar · Calcular mi precio · Ver en SECOP II · No es obra (${[iG, iA, iS, iN].join(",")})`);
+    if (fallasL.length) throw new Error(`unidad Licitaciones: ${fallasL.length} comprobaciones fallan:\n  - ${fallasL.join("\n  - ")}`);
+    console.log("· unidad Licitaciones · barra, filtros a la vista y el orden al revés: tres apartados con censo de bloques, el valor y el aviso de interés a la vista con la cifra de su lista, el botón que invierte dice qué va primero con cada orden y vuelve al normal al cambiar de orden, y el panel del teléfono es el mismo de Mi empresa");
   }
 
   bqIteraciones: {
