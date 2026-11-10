@@ -109,6 +109,9 @@
     Object.freeze({ id: "entregar", etiqueta: "Lo que tiene que entregar" }),
     Object.freeze({ id: "documentos", etiqueta: "Documentos" }),
     Object.freeze({ id: "exige", etiqueta: "Lo que exige" }),
+    /* el resultado de Precios para ESTE proceso (10-nov-2026, lo pidió el dueño sobre la maqueta): después de lo que
+       exige el pliego y antes de las fechas, que es el orden del trabajo */
+    Object.freeze({ id: "precio", etiqueta: "Su precio" }),
     Object.freeze({ id: "fechas", etiqueta: "Fechas" }),
     Object.freeze({ id: "cuaderno", etiqueta: "Cuaderno" }),
     Object.freeze({ id: "competencia", etiqueta: "Quiénes se presentaron" }),
@@ -152,7 +155,20 @@
       : dr.cuentan
         ? { valor: `${miles(dr.listos)} de ${miles(dr.cuentan)}`, rotulo: "Papeles listos", titulo: "Los documentos que marcó como listos", urgente: !!(dr.vencidos || dr.vencen_antes_del_cierre) }
         : { valor: "Sin abrir", rotulo: "Su papeleo", titulo: "Todavía no ha registrado ningún documento en este expediente", urgente: false },
+      ...(p.precio === undefined ? [] : [cifraSuPrecio(p.precio, K)]),
     ];
+  }
+  /* LA CUARTA CIFRA, «SU PRECIO» (10-nov-2026): el TOTAL que el usuario guardó en Precios para este proceso, con el
+     mismo formato que el presupuesto. Solo en el expediente (la lista no lo trae: `p.precio` undefined y la cabecera
+     sigue con tres). Sin borrador dice «Sin calcular»; si no se pudo leer, lo dice; NUNCA $0. */
+  function cifraSuPrecio(pc, K) {
+    const rotulo = "Su precio";
+    if (!pc || pc.estado === "no_se_leyo") return { valor: "No se pudo leer", rotulo, titulo: "Esta vez no se pudieron leer sus análisis de precios: vuelva a abrir el proceso", urgente: false };
+    // `en_precios` (administración por tiempo): el total guardado es suyo y vale; lo que no se repite aquí es el veredicto
+    if (pc.estado !== "calculado" && pc.estado !== "en_precios") return { valor: "Sin calcular", rotulo, titulo: "Todavía no ha calculado su precio para este proceso en Precios", urgente: false };
+    if (pc.su_precio == null) return { valor: "Sin total", rotulo, titulo: "Su análisis de precios no guardó el total: ábralo en Precios y guárdelo otra vez", urgente: false };
+    const txt = K ? K.presupuestoDelProceso(pc.su_precio).texto : `$ ${miles(pc.su_precio)}`;
+    return { valor: txt, rotulo, titulo: "El precio final de su análisis de precios guardado en Precios", urgente: false };
   }
 
   /* EL PRESUPUESTO DEL PLIEGO FRENTE AL DE SECOP II (Fase 2, 17-oct-2026): debajo de la cifra que publica SECOP II,
@@ -168,31 +184,66 @@
      luego quitarla»). El servidor siempre lo admitió (DELETE de op=seguimiento); lo que se habilita es el botón. Para
      retirarlo: poner esto en false (la suite lo dice) y cerrar el PENDIENTE de la memoria. */
   const QUITAR_PROCESOS_TEMPORAL = true;
+  /* ══ EL EXPEDIENTE CON SU BARRA (10-nov-2026, decisión del dueño sobre su maqueta de Mis procesos) ══
+     La cabecera entrega DOS piezas que la hoja acomoda: la BARRA (`#exp-barra`: las secciones y, al pie, «Este
+     proceso» con la carpeta, el número, SECOP II, las descargas y quitar) y la CABECERA de lo que hay que ver (el
+     nombre, la etapa, con quién se presenta —cambia el veredicto— y las cuatro cifras). En el computador la barra va a
+     la izquierda; en el teléfono es el mismo panel lateral de Mi empresa y Licitaciones (app.js, `panelLateral`), que
+     abre el botón de arriba. Nada se quitó: la carpeta, el número, SECOP II y «Quitar» se movieron a «Este proceso»,
+     y «Quitar» sale UNA vez (antes salía arriba y en el pie de Resumen). */
   function htmlCabecera(p, { estados = {}, seccion = "resumen", conteos = {}, carpetas = [], consorcios = [], perfilActual = null } = {}) {
     const pr = p.proceso || {};
     const etapa = estados[p.estado] || p.estado_etiqueta || "";
     const cifras = cifrasDe(p);
     const opciones = Object.keys(estados).length ? Object.entries(estados) : [];
     const secop = enlaceSecop(p);
-    return `<div class="exp-cabecera">
+    const actual = SECCIONES.find((s) => s.id === seccion) || SECCIONES[0];
+    const barra = `<nav id="exp-barra" class="exp-barra" aria-label="Secciones del expediente">
+      <div class="exp-barra-cab"><p class="exp-barra-t">${esc(pr.nombre || p.id)}</p>
+        <button type="button" class="exp-cerrar" aria-label="Cerrar las secciones"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+      <div class="exp-secciones">
+        ${SECCIONES.map((s) => `<button type="button" class="exp-seccion-btn" data-exp-seccion="${esc(s.id)}"${seccion === s.id ? ' aria-current="page"' : ""}><span>${esc(s.etiqueta)}</span>${conteos[s.id] ? `<span class="exp-seccion-n">${miles(conteos[s.id])}</span>` : ""}</button>`).join("")}
+      </div>
+      <div class="exp-este">
+        <p class="exp-este-t">Este proceso</p>
+        <label class="cas-carpeta-sel"><span class="cas-carpeta-rotulo">Carpeta</span>
+          <select class="control-select cas-carpeta-select" data-seg-carpeta="${esc(p.id)}" aria-label="Carpeta en la que guarda este proceso">
+            <option value="">Sin carpeta</option>
+            ${(carpetas || []).map((c) => `<option value="${esc(c.id)}"${p.carpeta === c.id ? " selected" : ""}>${esc(c.nombre)}</option>`).join("")}
+          </select></label>
+        <p class="exp-este-dato"><span class="cas-carpeta-rotulo">Número en SECOP II</span><span class="exp-id">${esc(p.id)}</span>
+          <button type="button" class="exp-doc-enlace" data-exp-copiar-id="${esc(p.id)}" aria-live="polite">Copiar número</button></p>
+        ${secop
+          ? `<a class="exp-boton exp-boton-suave exp-ir-secop" href="${esc(secop)}" target="_blank" rel="noopener noreferrer"
+               title="Abre el proceso en SECOP II, en una pestaña nueva">Abrir en SECOP II<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7"/><path d="M9 7h8v8"/></svg></a>`
+          : `<span class="exp-seccion-nota">La entidad no publicó el enlace a este proceso en SECOP II.</span>`}
+        <button type="button" class="exp-boton exp-boton-suave" data-seg-ics="${esc(p.id)}">Descargar las fechas (calendario)</button>
+        <button type="button" class="exp-boton exp-boton-suave" data-seg-ficha="${esc(p.id)}">Ficha de la empresa (Excel)</button>
+        ${QUITAR_PROCESOS_TEMPORAL ? `<p class="exp-seccion-nota"><button type="button" class="exp-doc-enlace" data-exp-quitar="${esc(p.id)}">Quitar este proceso de Mis procesos</button></p>
+        <p class="exp-seccion-nota hidden" data-exp-quitar-aviso="${esc(p.id)}" role="alert">Se borran sus notas, su papeleo y lo que apuntó de este proceso, y no se puede deshacer.
+          <button type="button" class="exp-boton exp-boton-suave" data-exp-quitar-confirmar="${esc(p.id)}">Sí, quitarlo</button>
+          <button type="button" class="exp-doc-enlace" data-exp-quitar-cancelar="${esc(p.id)}">No, dejarlo</button></p>`
+          : `<p class="exp-seccion-nota"><button type="button" class="exp-doc-enlace" data-seg-quitar="${esc(p.id)}">Quitar este proceso de Mis procesos</button></p>`}
+      </div>
+    </nav>`;
+    return `${barra}<div class="exp-cabecera">
       <button type="button" class="exp-volver" data-exp-volver="1">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
         Mis procesos
       </button>
+      <button type="button" id="exp-abrir-panel" class="exp-abrir-panel" aria-controls="exp-barra" aria-expanded="false" aria-label="Abrir las secciones del expediente">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+        <span>${esc(actual.etiqueta)}</span><span class="exp-abrir-mas">Secciones</span>
+      </button>
+      <div id="exp-velo" class="exp-velo" hidden></div>
       <h2 class="exp-nombre ${claseDeCaja(pr.nombre || p.id)}">${esc(pr.nombre || p.id)}</h2>
-      <p class="exp-entidad">${esc(pr.entidad || "Entidad no publicada")}${pr.departamento ? ` &middot; ${esc(pr.departamento)}` : ""} &middot; <span class="exp-id">${esc(p.id)}</span>
-        <button type="button" class="exp-doc-enlace" data-exp-copiar-id="${esc(p.id)}" aria-live="polite">Copiar número</button></p>
+      <p class="exp-entidad">${esc(pr.entidad || "Entidad no publicada")}${pr.departamento ? ` &middot; ${esc(pr.departamento)}` : ""}</p>
       <div class="exp-acciones">
         ${opciones.length ? `<label class="cas-carpeta-sel"><span class="cas-carpeta-rotulo">Etapa</span>
           <select class="control-select cas-carpeta-select" data-seg-estado="${esc(p.id)}" aria-label="Etapa de este proceso en su seguimiento">
             ${opciones.map(([k, v]) => `<option value="${esc(k)}"${p.estado === k ? " selected" : ""}>${esc(v)}</option>`).join("")}
           </select></label>` : ""}
         ${etapa && !opciones.length ? `<span class="exp-estado"><span class="exp-punto" aria-hidden="true">&#9679;</span>${esc(etapa)}</span>` : ""}
-        <label class="cas-carpeta-sel"><span class="cas-carpeta-rotulo">Carpeta</span>
-          <select class="control-select cas-carpeta-select" data-seg-carpeta="${esc(p.id)}" aria-label="Carpeta en la que guarda este proceso">
-            <option value="">Sin carpeta</option>
-            ${(carpetas || []).map((c) => `<option value="${esc(c.id)}"${p.carpeta === c.id ? " selected" : ""}>${esc(c.nombre)}</option>`).join("")}
-          </select></label>
         ${perfilActual ? `<label class="cas-carpeta-sel"><span class="cas-carpeta-rotulo">Se presenta con</span>
           <select class="control-select cas-carpeta-select" data-seg-presentado="${esc(p.id)}" aria-label="Con qué perfil o consorcio se presenta a este proceso">
             <option value="">Sin elegir</option>
@@ -200,26 +251,111 @@
             ${(consorcios || []).map((c) => `<option value="${esc(c.id)}"${p.presentado_con === c.id ? " selected" : ""}>${esc(c.nombre)}${(c.integrantes || []).length && (c.integrantes || []).every((i) => Number.isFinite(Number(i.participacion)) && i.participacion !== null && i.participacion !== "") ? ` · ${esc(c.integrantes.map((i) => `${Number(i.participacion).toLocaleString("es-CO", { maximumFractionDigits: 2 })} %`).join(" + "))}` : ""}</option>`).join("")}
             ${p.presentado_con && p.presentado_con !== perfilActual.id && !(consorcios || []).some((c) => c.id === p.presentado_con) ? `<option value="${esc(p.presentado_con)}" selected>Un consorcio que ya no existe en Mi empresa</option>` : ""}
           </select></label>` : ""}
-        ${secop
-          ? `<a class="exp-boton exp-boton-suave exp-ir-secop" href="${esc(secop)}" target="_blank" rel="noopener noreferrer"
-               title="Abre el proceso en SECOP II, en una pestaña nueva">Abrir en SECOP II<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7"/><path d="M9 7h8v8"/></svg></a>`
-          : `<span class="exp-seccion-nota">La entidad no publicó el enlace a este proceso en SECOP II.</span>`}
       </div>
       ${p.presentado_con_caducado ? `<p class="exp-seccion-nota">El consorcio elegido ya no existe en Mi empresa: la guía se calculó con su perfil. Ármelo de nuevo o elija otro.</p>` : ""}
       <p class="exp-seccion-nota" data-exp-etapa-mensaje="${esc(p.id)}" role="status"></p>
-      ${QUITAR_PROCESOS_TEMPORAL ? `<p class="exp-seccion-nota"><button type="button" class="exp-doc-enlace" data-exp-quitar="${esc(p.id)}">Quitar este proceso de Mis procesos</button></p>
-        <p class="exp-seccion-nota hidden" data-exp-quitar-aviso="${esc(p.id)}" role="alert">Se borran sus notas, su papeleo y lo que apuntó de este proceso, y no se puede deshacer.
-          <button type="button" class="exp-boton exp-boton-suave" data-exp-quitar-confirmar="${esc(p.id)}">Sí, quitarlo</button>
-          <button type="button" class="exp-doc-enlace" data-exp-quitar-cancelar="${esc(p.id)}">No, dejarlo</button></p>` : ""}
       <dl class="exp-cifras">
         ${cifras.map((c) => `<div class="exp-cifra${c.urgente ? " exp-cifra-urgente" : ""}"${c.titulo ? ` title="${esc(c.titulo)}"` : ""}>
           <dd class="exp-cifra-valor num">${cifraPartible(c.valor)}</dd><dt class="exp-cifra-rotulo">${esc(c.rotulo)}</dt></div>`).join("")}
       </dl>
       ${htmlAvisoPresupuesto(p)}
-      <nav class="exp-secciones" aria-label="Secciones del expediente">
-        ${SECCIONES.map((s) => `<button type="button" class="exp-seccion-btn" data-exp-seccion="${esc(s.id)}"${seccion === s.id ? ' aria-current="page"' : ""}>${esc(s.etiqueta)}${conteos[s.id] ? `<span class="exp-seccion-n">${miles(conteos[s.id])}</span>` : ""}</button>`).join("")}
-      </nav>
     </div>`;
+  }
+
+  /* ══ «SU PRECIO»: EL RESULTADO DE PRECIOS PARA ESTE PROCESO (10-nov-2026, encargo del dueño) ══
+     Todo sale de `p.precio`, que arma el servidor con la MISMA función que la lista (lib/baja_maxima,
+     `precioDelExpediente` → `pisoTechoDeBorrador` → lib/apu/piso_techo). Aquí no se calcula ninguna cifra: se pintan
+     las de `cifras` y las frases ya redactadas de `piso_techo`, con los rótulos de la sección «¿Me presento, y a
+     cuánto?» de Precios. Sin presupuesto o sin costo, la frase del servidor dice por qué; sin referencia de la
+     entidad, «Sin referencia», jamás un techo inventado. */
+  const TONO_PRECIO = { presentarse: "exp-tono-ok", no_presentarse: "exp-tono-mal", no_presentarse_supera_presupuesto: "exp-tono-mal", confirmar_iva: "exp-tono-ojo", sin_referencia: "exp-tono-neutro" };
+  const pesosExactos = (v, K) => (v == null || !Number.isFinite(Number(v)) || Number(v) <= 0 ? null : (K ? K.presupuestoDelProceso(Number(v)).texto : `$ ${miles(v)}`));
+  function botonesPrecio(p, pc) {
+    const abrir = pc && (pc.estado === "calculado" || pc.estado === "en_precios") && pc.borrador && pc.borrador.id
+      ? `<button type="button" class="exp-boton exp-boton-suave" data-seg-abrir-borrador="${esc(pc.borrador.id)}">Abrir su análisis en Precios</button>`
+      : `<button type="button" class="exp-boton" data-seg-abrir-lector="${esc(p.id)}">Calcular mi precio</button>`;
+    return `<div class="exp-campo-acciones">${abrir}</div>`;
+  }
+  function htmlSinPrecio(p, pc) {
+    if (pc && pc.estado === "no_se_leyo") {
+      return `<p class="exp-seccion-nota">Esta vez no se pudieron leer sus análisis de precios. No quiere decir que no lo haya calculado: vuelva a abrir el proceso en unos minutos.</p>`;
+    }
+    // los de ESTE proceso (el servidor los cuenta por proceso): los de otros procesos no dicen nada de este
+    const sinCosto = pc && Number(pc.borradores_sin_costo) > 0
+      ? ` Tiene ${miles(pc.borradores_sin_costo)} ${Number(pc.borradores_sin_costo) === 1 ? "análisis de este proceso guardado" : "análisis de este proceso guardados"} sin costo calculado: ábralo en Precios, calcule y guárdelo otra vez.` : "";
+    return `<p class="exp-seccion-nota">Todavía no ha calculado su precio para este proceso. En Precios se arma con el pliego y los precios de cada ítem, y aquí aparece el resultado.${sinCosto}</p>${botonesPrecio(p, pc)}`;
+  }
+  /* `en_precios` (administración por tiempo): Precios deriva la A con la jornada legal de sus parámetros y aquí no se
+     repite esa cuenta. Se enseña el total que guardó, que es suyo, y el veredicto se manda a Precios: un «preséntese»
+     calculado con otra A sería un falso positivo, que en precios es el error caro. */
+  function htmlEnPrecios(p, pc, K) {
+    const suyo = pesosExactos(pc.su_precio, K);
+    return `<p class="exp-precio-suyo"><span class="exp-seccion-nota">Su precio, según su análisis de precios</span><b class="num">${suyo ? cifraPartible(suyo) : "Sin total guardado"}</b></p>
+      <p class="exp-seccion-nota">Su análisis calcula la administración por tiempo. El precio mínimo y a cuánto ofertar se ven en Precios, con el análisis abierto.</p>
+      ${botonesPrecio(p, pc)}`;
+  }
+  function veredictoPrecio(pt) {
+    if (!pt) return "";
+    const tono = TONO_PRECIO[pt.estado] || "exp-tono-neutro";
+    return `<div class="exp-precio-veredicto ${tono}"><p class="exp-precio-frase"><span class="exp-punto" aria-hidden="true">&#9679;</span><span>${esc(pt.veredicto || "")}</span></p>
+      ${pt.frase_precio_actual ? `<p class="exp-seccion-nota">${esc(pt.frase_precio_actual)}</p>` : ""}
+      ${pt.detalle ? `<p class="exp-seccion-nota">${esc(pt.detalle)}</p>` : ""}</div>`;
+  }
+  function cajasPisoTecho(pt, K) {
+    const cf = (pt && pt.cifras) || {};
+    const piso = pesosExactos(cf.piso_rentable, K), techo = pesosExactos(cf.techo_competitivo, K);
+    return `<div class="exp-precio-cajas">
+      <div class="exp-precio-caja"><span class="exp-precio-rotulo">Su precio mínimo para no perder plata</span><b class="num">${piso ? cifraPartible(piso) : "Sin calcular"}</b>
+        ${cf.piso_es_cota_inferior ? `<span class="exp-seccion-nota">Cota inferior: cargue las deducciones de acta en Ajustes de Precios</span>` : ""}</div>
+      <div class="exp-precio-caja"><span class="exp-precio-rotulo">${pt && pt.techo_es_referencia ? "El precio al que se suele adjudicar aquí" : "El precio al que probablemente se gana"}</span><b class="num">${techo ? cifraPartible(techo) : "Sin referencia"}</b>
+        ${techo ? "" : `<span class="exp-seccion-nota">${cf.baja_motivo === "no_se_leyo" ? "No se pudo consultar esta vez" : "No hay historial suficiente para estimarlo"}</span>`}</div>
+    </div>`;
+  }
+  /* En «Resumen»: la respuesta corta a «¿a cuánto ofertar?» */
+  function htmlPrecioResumen(p) {
+    const pc = p && p.precio;
+    if (pc === undefined) return "";
+    const K = raizCasillero();
+    const titulo = `<h3 class="exp-seccion-titulo">¿A cuánto ofertar?</h3>`;
+    if (pc && pc.estado === "en_precios") return `<section class="exp-seccion">${titulo}${htmlEnPrecios(p, pc, K)}</section>`;
+    if (!pc || pc.estado !== "calculado") return `<section class="exp-seccion">${titulo}${htmlSinPrecio(p, pc)}</section>`;
+    const pt = pc.piso_techo || null;
+    const presupuesto = pt && pt.cifras ? Number(pt.cifras.presupuesto_oficial) : NaN;
+    const suyo = pesosExactos(pc.su_precio, K);
+    /* el % del presupuesto se calcula SOLO con las dos cifras presentes (sin dato no hay porcentaje) y se dice con una
+       coma decimal; es para leer, no decide nada */
+    let pctN = suyo && Number.isFinite(presupuesto) && presupuesto > 0 ? Math.round((pc.su_precio / presupuesto) * 1000) / 10 : null;
+    // redondear no puede cruzar el presupuesto: un precio que lo pasa por poco no se lee «100 %» (revisión adversaria)
+    if (pctN != null && pc.su_precio > presupuesto && pctN <= 100) pctN = 100.1;
+    if (pctN != null && pc.su_precio < presupuesto && pctN >= 100) pctN = 99.9;
+    const pct = pctN != null ? `${pctN.toLocaleString("es-CO", { maximumFractionDigits: 1 })} % del presupuesto` : "";
+    return `<section class="exp-seccion">${titulo}
+      <p class="exp-precio-suyo"><span class="exp-seccion-nota">Su precio, según su análisis de precios</span><b class="num">${suyo ? cifraPartible(suyo) : "Sin total guardado"}</b>${pct ? `<span class="exp-seccion-nota">${esc(pct)}</span>` : ""}</p>
+      ${pt && pt.aplicable !== false ? cajasPisoTecho(pt, K) + veredictoPrecio(pt) : `<p class="exp-seccion-nota">${esc((pt && pt.veredicto) || "No se pudo armar el resultado con lo guardado.")}</p>`}
+      <div class="exp-campo-acciones"><button type="button" class="exp-boton exp-boton-suave" data-exp-seccion="precio">Ver el detalle</button>
+        ${pc.borrador && pc.borrador.id ? `<button type="button" class="exp-boton exp-boton-suave" data-seg-abrir-borrador="${esc(pc.borrador.id)}">Abrir su análisis en Precios</button>` : ""}</div>
+    </section>`;
+  }
+  /* La sección «Su precio»: el bloque de Precios entero, con sus frases y sus supuestos */
+  function htmlPrecio(p) {
+    const pc = p && p.precio;
+    const K = raizCasillero();
+    const titulo = `<h3 class="exp-seccion-titulo">¿Me presento, y a cuánto?</h3>`;
+    if (pc === undefined) return `<section class="exp-seccion">${titulo}<p class="exp-seccion-nota">Este expediente se abrió antes de que la aplicación trajera su precio: vuelva a abrir el proceso.</p></section>`;
+    if (pc && pc.estado === "en_precios") return `<section class="exp-seccion">${titulo}${htmlEnPrecios(p, pc, K)}</section>`;
+    if (!pc || pc.estado !== "calculado") return `<section class="exp-seccion">${titulo}${htmlSinPrecio(p, pc)}</section>`;
+    const pt = pc.piso_techo || {};
+    const fr = pt.frases || {};
+    const guardado = pc.borrador && pc.borrador.guardado ? String(pc.borrador.guardado).slice(0, 10) : null;
+    const filas = [fr.presupuesto, fr.costo, fr.baja, fr.oferentes, fr.umbral].filter(Boolean);
+    return `<section class="exp-seccion">${titulo}
+      <p class="exp-seccion-nota">Sale del análisis de precios que guardó en Precios${guardado ? ` el ${esc(guardado)}` : ""}. Si lo cambió y no lo guardó, aquí no se ve el cambio.</p>
+      ${pt.aplicable === false ? `<p class="exp-precio-frase">${esc(pt.veredicto || "No se pudo armar el resultado con lo guardado.")}</p>`
+        : `<ul class="exp-precio-filas">${filas.map((f) => `<li>${esc(f)}</li>`).join("")}</ul>${cajasPisoTecho(pt, K)}${veredictoPrecio(pt)}`}
+      ${Array.isArray(pt.supuestos) && pt.supuestos.length ? `<details class="exp-precio-supuestos"><summary>Qué se supuso</summary><ul>${pt.supuestos.map((x) => `<li>${esc(x)}</li>`).join("")}</ul></details>` : ""}
+      ${botonesPrecio(p, pc)}
+      <p class="exp-seccion-nota">La justificación de precio para la entidad se descarga en Precios, con su análisis abierto.</p>
+    </section>`;
   }
 
   /* ══════════════════════ EL ÍNDICE DE DOCUMENTOS ══════════════════════
@@ -916,29 +1052,8 @@
     </section>`;
   }
 
-  /* EL PIE: lo que se hace de vez en cuando. Va al final y en tono discreto —
-     no compite con lo que hay que hacer hoy— y lo destructivo va separado y
-     dicho, nunca junto a una descarga y con el mismo peso, que es lo que hacía
-     la fila de acciones de la tarjeta anterior. */
-  /* EL PIE ES MANTENIMIENTO, NO CONTENIDO (13-sep-2026). Llevarse el
-     expediente y quitarlo de Mis procesos no compiten con lo que se viene a
-     mirar: bajan al nivel «lienzo» —sin tarjeta, con un filete que los separa—
-     para que la última caja blanca de la pantalla sea siempre la que importa.
-     Cuando todo resalta, nada resalta (la regla es del 7-sep). */
-  function htmlPie(p) {
-    return `<section class="exp-seccion exp-seccion-menor">
-      <h3 class="exp-seccion-titulo">Llevarse este expediente</h3>
-      <p class="exp-seccion-nota">Las fechas, para el calendario de su teléfono; y sus datos de empresa junto a los del proceso, en una hoja de cálculo, para copiarlos a los formatos del pliego.</p>
-      <div class="exp-campo-acciones">
-        <button type="button" class="exp-boton exp-boton-suave" data-seg-ics="${esc(p.id)}">Descargar las fechas (calendario)</button>
-        <button type="button" class="exp-boton exp-boton-suave" data-seg-ficha="${esc(p.id)}">Ficha de la empresa (Excel)</button>
-      </div>
-      <p class="exp-seccion-nota">Si ya no va a presentarse, puede sacarlo de Mis procesos. Se pierde lo que anotó aquí: sus notas, su papeleo y sus fechas.</p>
-      <div class="exp-campo-acciones">
-        <button type="button" class="exp-doc-enlace" data-seg-quitar="${esc(p.id)}">Quitar este proceso de Mis procesos</button>
-      </div>
-    </section>`;
-  }
+  /* EL PIE «Llevarse este expediente» (13-sep-2026) se retiró el 10-nov-2026: las descargas y «Quitar» viven en el pie
+     de la barra, «Este proceso» (`htmlCabecera`), con la misma regla de entonces —lo destructivo, separado y dicho—. */
 
   /* R-03 · CON CUÁNTO OFERTÓ (27-sep-2026). Solo en las etapas en que hubo
      oferta (`con_oferta` lo resuelve el servidor: la lista no se copia aquí).
@@ -1379,7 +1494,7 @@
   }
   return {
     htmlPuedePresentarse, opcionesPresentarse, veredictoPresentarse, casillasPresentarse, rojosDe,
-    QUITAR_PROCESOS_TEMPORAL, SECCIONES, seccionValida, cifrasDe, htmlEntregar, htmlFilaEntrega, htmlCabecera, htmlPie, htmlConQuien, urlSegura, enlaceSecop, htmlOferta, htmlOfertasTodos, frasesLlenado, nombreLleno,
+    QUITAR_PROCESOS_TEMPORAL, SECCIONES, seccionValida, cifrasDe, cifraSuPrecio, htmlPrecioResumen, htmlPrecio, htmlEntregar, htmlFilaEntrega, htmlCabecera, htmlConQuien, urlSegura, enlaceSecop, htmlOferta, htmlOfertasTodos, frasesLlenado, nombreLleno,
     documentosEntidad, formatosParaEntregar, htmlZipOferta, armarZipOferta, tiposSuyos, pesoLegible, formatoDe, textoAvance, fraccionAvance, htmlAvance, duracionLegible, frasesTiempo, htmlFilaDoc, htmlFilaDocSuyo, htmlDocumentos,
     lineaDeTiempo, htmlFechas, htmlDatosClave, htmlSiguientePaso,
   };

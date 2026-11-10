@@ -4446,6 +4446,39 @@ async function main() {
       const uno = (await invocar(routerPerfilCal, `/api/perfil?op=seguimiento&perfil=${PERF}&expediente=${encodeURIComponent(id)}`, CAB_TOKEN)).cuerpo;
       const pe = uno.proceso;
       assert.ok(pe && pe.id === id, `el expediente devuelve el proceso: ${JSON.stringify(uno).slice(0, 200)}`);
+      /* «SU PRECIO» DE PUNTA A PUNTA (10-nov-2026): sin análisis guardado el expediente dice «sin calcular» y la lista no lo
+         trae; con uno guardado en Precios para ESTE proceso trae su total y el piso con el presupuesto de la FOTO —este
+         proceso no está en el corpus—, por la función con que la lista calcula la baja máxima (unidad Mis procesos, (b)). */
+      assert.strictEqual(p.precio, undefined, "la lista viaja ligera: el precio va solo en el expediente");
+      assert.deepStrictEqual(pe.precio, { estado: "sin_calcular", borradores_sin_costo: 0 }, `[MUT] sin análisis guardado: ${JSON.stringify(pe.precio)}`);
+      {
+        /* Precios solo guarda análisis de un perfil de verdad («calendario» no lo es): el borrador se escribe con los campos que
+           escribe `op=guardar` (lib/handlers/apu/editor.js); el viaje por el botón real va en el bloque de Mis procesos de «helder» */
+        const idBorr = "pre-cal-punta";
+        const AlmCal = require("../lib/almacen.js");
+        await AlmCal.escribirJSONComprimido(redis, AlmCal.CLAVES.apuPresupuesto(PERF, idBorr), { id: idBorr, perfil: PERF, nombre: "Obra del calendario", id_proceso: id,
+          guardado: new Date().toISOString(), config: { aiu_pct: 15, imprevistos_pct: 5, utilidad_pct: 5, modo_aiu: "aiu" }, total_guardado: 236000000, costo_directo_guardado: 180000000 });
+        /* el CABLEADO del techo del pliego (revisión adversaria): el manejador le pasa a precioDelExpediente el techo de la
+           guía de ESTE proceso; un espía lo anota y se compara con la guía que viaja en la misma respuesta */
+        const BMcal = require("../lib/baja_maxima.js"), origPrecio = BMcal.precioDelExpediente, llamadasPrecio = [];
+        BMcal.precioDelExpediente = (...a) => { llamadasPrecio.push(a[3] || {}); return origPrecio(...a); };
+        let peP;
+        try { peP = (await invocar(routerPerfilCal, `/api/perfil?op=seguimiento&perfil=${PERF}&expediente=${encodeURIComponent(id)}`, CAB_TOKEN)).cuerpo.proceso; }
+        finally { BMcal.precioDelExpediente = origPrecio; }
+        const topeGuia = peP.guia && peP.guia.tope_oferta && peP.guia.tope_oferta.fuente === "pliego" ? peP.guia.tope_oferta.valor : null;
+        assert.ok(llamadasPrecio.length === 1 && Object.prototype.hasOwnProperty.call(llamadasPrecio[0], "techoPliego") && llamadasPrecio[0].techoPliego === topeGuia,
+          `[MUT] el expediente le pasa al precio el techo del pliego de su guía: ${JSON.stringify({ llamadas: llamadasPrecio, topeGuia })}`);
+        const prc = peP.precio || {};
+        assert.ok(prc.estado === "calculado" && prc.su_precio === 236000000 && prc.borrador && prc.borrador.id === idBorr, `[MUT] con su análisis guardado: ${JSON.stringify(prc).slice(0, 300)}`);
+        const cf = (prc.piso_techo && prc.piso_techo.cifras) || {};
+        assert.strictEqual(cf.presupuesto_oficial, 250000000, `[MUT] sin fila viva, el presupuesto sale de la foto guardada (precio_base): ${JSON.stringify(cf).slice(0, 200)}`);
+        assert.ok(cf.piso_rentable > 180000000 && cf.piso_rentable < 250000000 && typeof prc.piso_techo.veredicto === "string" && prc.piso_techo.veredicto,
+          `el piso y el veredicto de Precios: ${JSON.stringify(prc.piso_techo).slice(0, 300)}`);
+        const lista2 = (await invocar(routerPerfilCal, `/api/perfil?op=seguimiento&perfil=${PERF}`, CAB_TOKEN)).cuerpo;
+        assert.strictEqual(lista2.procesos.find((x) => x.id === id).precio, undefined, "y la lista sigue sin traerlo");
+        // se retira para no mover lo que este bloque mide después
+        await redis.del(AlmCal.CLAVES.apuPresupuesto(PERF, idBorr));
+      }
       const obs = (pe.hitos || []).find((h) => h.id === "observaciones_pliego");
       assert.ok(obs && /Cronograma «Anexo 2 - Cronograma\.pdf», pág\. 2/.test(obs.fuente), `[MUT] la fuente nombra el documento y la página: ${JSON.stringify(obs)}`);
       assert.strictEqual(obs.desde, d(1), "y el rango viaja");
@@ -29357,6 +29390,24 @@ async function main() {
            de alertas; en el CABLE de la lista ya no viajan (7-sep-2026), así que
            se miran donde están: en el expediente de ese proceso */
         const abiertoExp = (await seg(`&perfil=helder&expediente=${encodeURIComponent(fila.id_del_proceso)}`)).cuerpo.proceso;
+        /* «SU PRECIO» CON EL BOTÓN REAL DE PRECIOS (10-nov-2026): lo que `op=guardar` escribe es lo que el expediente lee —el
+           total, el costo directo y el proceso—, con la fila VIVA del corpus. Se retira enseguida: la lista de «helder» mide
+           después su baja máxima y su orden sin él. */
+        assert.strictEqual(abiertoExp.precio && abiertoExp.precio.estado, "sin_calcular", `sin análisis guardado: ${JSON.stringify(abiertoExp.precio)}`);
+        {
+          const idBorrH = "pre-seg-punta";
+          const gH = await invocar(require("../api/apu.js"), "/api/apu?op=guardar", CAB_TOKEN, { metodo: "POST", body: { perfil: "helder", id: idBorrH, nombre: "Obra guardada", items: [],
+            id_proceso: fila.id_del_proceso, cuantia: Number(fila.cuantia_cop) || null, config: { aiu_pct: 15, imprevistos_pct: 5, utilidad_pct: 5, modo_aiu: "aiu" }, total: 123456789, costo_directo: 90000000 } });
+          try {
+            assert.strictEqual(gH.status, 200, JSON.stringify(gH.cuerpo).slice(0, 200));
+            const prH = (await seg(`&perfil=helder&expediente=${encodeURIComponent(fila.id_del_proceso)}`)).cuerpo.proceso.precio || {};
+            assert.ok(prH.estado === "calculado" && prH.su_precio === 123456789 && prH.borrador && prH.borrador.id === idBorrH, `[MUT] lo que guardó Precios llega al expediente: ${JSON.stringify(prH).slice(0, 300)}`);
+            const poH = Number(fila.cuantia_cop) > 0 ? Number(fila.cuantia_cop) : null;
+            assert.strictEqual(prH.piso_techo && prH.piso_techo.cifras ? (prH.piso_techo.cifras.presupuesto_oficial ?? null) : null, poH, "con el presupuesto de la fila viva");
+          } finally {
+            await redis.del(require("../lib/almacen.js").CLAVES.apuPresupuesto("helder", idBorrH));
+          }
+        }
         assert.ok(abiertoExp.avisos.every((a) => [7, 3, 1].includes(a.dias_antes)), "avisos a 7/3/1 días");
         assert.strictEqual(abierto.proponentes_disponibles, false, "abierto: los proponentes no existen todavía");
         assert.strictEqual(cerrado.en_corpus, false); assert.strictEqual(cerrado.cerrado, true); assert.strictEqual(cerrado.proponentes_disponibles, true);
@@ -29512,7 +29563,12 @@ async function main() {
             assert.strictEqual(tuteoDes(textoDes), null, "habla de usted");
             /* y está CABLEADA: la caja existe, nace oculta, va arriba de los chips y la pinta pintarSeguimiento */
             assert.ok(/id="seg-desenlace"[^>]*\bhidden\b/.test(htmlSeg), "#seg-desenlace nace oculta: sin tres presentadas no hay caja vacía");
-            assert.ok(htmlSeg.indexOf('id="seg-desenlace"') < htmlSeg.indexOf('id="seg-filtros"'), "el resultado va ARRIBA de los chips-filtro");
+            /* los chips-filtro viven desde el 10-nov-2026 en la barra de la izquierda (a su lado, no encima): el resultado sigue
+               siendo lo primero de la sección de la lista */
+            const iSecSeg = htmlSeg.indexOf('id="seccion-seguimiento"'), iDesSeg = htmlSeg.indexOf('id="seg-desenlace"'), iListaSeg = htmlSeg.indexOf('id="seg-barra"');
+            assert.ok(iSecSeg >= 0 && iSecSeg < iDesSeg && iDesSeg < iListaSeg, "el resultado va ARRIBA de la lista, lo primero de su sección");
+            const iNavSeg = htmlSeg.indexOf('<nav id="mp-barra"'), iChips = htmlSeg.indexOf('id="seg-filtros"');
+            assert.ok(iNavSeg >= 0 && iNavSeg < iChips && iChips < htmlSeg.indexOf("</nav>", iNavSeg), "y los chips-filtro viven en la barra de la izquierda, no encima del resultado");
             assert.ok(/desenlace\.innerHTML = htmlDesenlaceSeguimiento\(r\.resumen \? r\.resumen\.por_estado : null\);\s*\n\s*desenlace\.classList\.toggle\("hidden", !desenlace\.innerHTML\);/.test(appSeg),
               "pintarSeguimiento pinta el desenlace desde resumen.por_estado y esconde la caja cuando no hay nada que decir");
             /* (4-ter) DÓNDE GANA (5-nov-2026, plan «Detekta a otro nivel», proceso 14): `resultadosPor` del servidor y
@@ -47038,8 +47094,10 @@ async function main() {
          lee). Y en la fila de acciones el MISMO botón cambiaba de forma al
          pulsarlo («Guardar» píldora, «Guardado ✓» a 10 px): lo que se pulsa
          tiene UN radio (--radius-accion). */
-      assert.ok(/#app main\.panel-pestana\s*\{[^}]*max-width:\s*72rem/.test(estiloPropio),
-        "las cuatro pestañas comparten ancho por regla propia `#app main.panel-pestana { max-width: 72rem }`");
+      /* …y desde el 10-nov-2026 ese ancho común es el de la pantalla entera (decisión del dueño: a 1.920 px veía Detekta
+         «cortada»), con la barra superior alineada */
+      assert.ok(/#app main\.panel-pestana\s*\{[^}]*max-width:\s*none/.test(estiloPropio) && /#app \.barra-superior \.cabecera-fila\s*\{[^}]*max-width:\s*none/.test(estiloPropio),
+        "las cuatro pestañas y la barra superior comparten ancho por regla propia (`max-width: none`: la pantalla entera)");
       assert.ok(/--radius-accion:\s*980px/.test(estiloPropio),
         "el radio de lo que se pulsa es un token (--radius-accion), no un literal repetido");
       assert.ok(/#app \.tarjeta \.btn-guardar[^{]*\{[^}]*border-radius:\s*var\(--radius-accion\)/.test(estiloPropio),
@@ -49306,7 +49364,10 @@ async function main() {
              mantener una lista a mano conserva intacto lo que esta prueba
              vigila —una referencia a un nodo que YA NO EXISTE— y deja de
              obligar a tocar la prueba cada vez que alguien pinta un formulario. */
-          const creados = new Set([...fuente.matchAll(/\bid="([a-zA-Z0-9_-]+)"/g)].map((m) => m[1]));
+          /* …o que pinta OTRO módulo de public/ cuyo marcado mete app.js en la página: el botón del panel del expediente
+             (`exp-abrir-panel`, 10-nov-2026) lo escribe public/expediente.js y lo enciende app.js */
+          const creados = new Set(fs.readdirSync(path.join(__dirname, "..", "public")).filter((f) => f.endsWith(".js"))
+            .flatMap((f) => [...sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", f), "utf8")).matchAll(/\bid="([a-zA-Z0-9_-]+)"/g)].map((m) => m[1])));
           const rotos = [...new Set(refs)]
             .filter((id) => !idsHtml.has(id) && !dinamicos.has(id) && !creados.has(id));
           assert.deepStrictEqual(rotos, [],
@@ -57544,8 +57605,11 @@ async function main() {
          índice de documentos en una rendija. En el teléfono se desplaza y lo que
          se queda es la tira de secciones, que es el mando. */
       const movil = html.slice(html.indexOf("A 390 px LA CABECERA DEJA DE SER PEGAJOSA"), html.indexOf("A 390 px LA CABECERA DEJA DE SER PEGAJOSA") + 900);
-      assert.ok(/\.exp-cabecera \{ position: static; \}/.test(movil) && /\.exp-secciones \{ position: sticky/.test(movil),
-        "en el teléfono la cabecera se desplaza y la tira de secciones toma el relevo");
+      assert.ok(/\.exp-cabecera \{ position: static; \}/.test(movil), "en el teléfono la cabecera se desplaza");
+      /* …y desde el 10-nov-2026 las secciones ya no son una tira pegada arriba: viven en la barra (#exp-barra), que en el
+         teléfono es el panel lateral de Mi empresa y Licitaciones, abierto por el botón que dice en qué sección está */
+      assert.ok(/#seg-expediente \.exp-rejilla > \.exp-cabecera \{ position: static;/.test(html) && html.includes('#seg-expediente[data-panel="abierto"] .exp-rejilla > #exp-barra { transform: none;'),
+        "en el teléfono las secciones son el panel lateral y la cabecera no se pega arriba");
       /* EL EXPEDIENTE VIVE DENTRO DE LA PESTAÑA. Fuera de `#tab-seguimiento` los
          oyentes delegados no reciben una sola pulsación: la navegación interna
          quedaba MUDA (medido en Chromium; lo causó un `</div>` de más). */
@@ -66758,25 +66822,57 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
         return hechos.join();`)(enApartado);
       okL(LV("viene") === "elegir:abiertas" && LV("abiertas") === "panel:false", `(n) «Ver las N licitaciones» fuera de la lista lleva a la lista; en la lista cierra el panel: ${LV("viene")} | ${LV("abiertas")}`);
     }
-    /* (o) UNA PESTAÑA ESCONDIDA SE QUEDA ESCONDIDA (10-nov-2026). `#tab-admin[data-me] { display: grid }` pesa (1,1,0) y
-       `.panel-pestana.hidden { display: none }` (0,2,0): la rejilla ganaba y Mi empresa se veía encima de las otras tres
-       pestañas, en producción desde el 9-nov. Censo de TODA la hoja: cada regla que da `display` a una pestaña (el
-       propio <main id="tab-…">, no lo de dentro) tiene que decir `:not(.hidden)` en ese mismo selector. */
+    /* (o) LO QUE SE ESCONDE CON `.hidden` SE QUEDA ESCONDIDO (10-nov-2026). `#tab-admin[data-me] { display: grid }` pesa
+       (1,1,0) y `.panel-pestana.hidden { display: none }` (0,2,0): la rejilla ganaba y Mi empresa se veía encima de las
+       otras tres pestañas, en producción desde el 9-nov. Al día siguiente la rejilla de la lista de Mis procesos iba a
+       repetirlo con `verVista` (la lista seguía a la vista bajo el expediente). CENSO, no lista: todo elemento que se
+       esconde con la clase —las pestañas, las dos vistas de Mis procesos, lo que CUALQUIER public/*.js esconde con
+       `$("id")`/`getElementById("id")` o con la variable que lo guarda unas líneas antes, y lo que nace con `hidden` en su
+       clase— y cada regla de la hoja entera que le dé `display` a ese id o a una de sus clases (el último compuesto del
+       selector) tiene que decir `:not(.hidden)` ahí mismo o tener su PAREJA (`<el mismo selector>.hidden { display:
+       none }`). El censo de clases encontró el mismo defecto en «Cierran esta semana» de Mi empresa (#pu-cierran). */
     {
       const htmlCrudo = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
+      const htmlSinC = htmlCrudo.replace(/<!--[\s\S]*?-->/g, "");
       const estilos = [...htmlCrudo.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)].map((m) => m[1]).join("\n").replace(/\/\*[\s\S]*?\*\//g, "");
-      const pestanas = [...htmlCrudo.matchAll(/<main id="(tab-[a-z]+)"[^>]*class="[^"]*panel-pestana/g)].map((m) => m[1]);
-      okL(pestanas.length >= 4, `(o) el censo encuentra las pestañas: ${pestanas.join()}`);
+      const dirPub = path.join(__dirname, "..", "public");
+      const jsTodo = fs.readdirSync(dirPub).filter((f) => f.endsWith(".js")).map((f) => fs.readFileSync(path.join(dirPub, f), "utf8")).join("\n");
+      const ids = new Set(["seg-maestra", "seg-expediente"]);
+      for (const m of htmlCrudo.matchAll(/<main id="(tab-[a-z]+)"[^>]*class="[^"]*panel-pestana/g)) ids.add(m[1]);
+      for (const m of jsTodo.matchAll(/(?:\$|getElementById)\("([a-z0-9-]+)"\)\.classList\.(?:toggle|add)\("hidden"/g)) ids.add(m[1]);
+      // la variable que guarda el elemento y, en el mismo trozo de función, lo esconde
+      for (const m of jsTodo.matchAll(/(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*(?:[\w$.]+\.)?(?:\$|getElementById)\("([a-z0-9-]+)"\)/g)) {
+        if (new RegExp(`\\b${m[1].replace(/\$/g, "\\$")}\\.classList\\.(?:toggle|add)\\("hidden"`).test(jsTodo.slice(m.index, m.index + 1500))) ids.add(m[2]);
+      }
+      for (const m of htmlSinC.matchAll(/<[a-z0-9]+\b[^>]*\bid="([a-z0-9-]+)"[^>]*\bclass="[^"]*\bhidden\b[^"]*"/g)) ids.add(m[1]);
+      for (const m of htmlSinC.matchAll(/<[a-z0-9]+\b[^>]*\bclass="[^"]*\bhidden\b[^"]*"[^>]*\bid="([a-z0-9-]+)"/g)) ids.add(m[1]);
+      okL(ids.size > 100 && ids.has("tab-licitaciones") && ids.has("seg-maestra") && ids.has("pu-cierran") && ids.has("pu-departamentos"), `(o) el censo encuentra lo que se esconde (también en pulso.js): ${ids.size} ids`);
+      // y sus CLASES: una regla por clase también le gana a la utilidad `.hidden` (0,1,0), que va antes en la cascada
+      const clasesEscondidas = new Set();
+      for (const m of htmlSinC.matchAll(/<[a-z0-9]+\b([^>]*)>/g)) {
+        const idE = (m[1].match(/\bid="([^"]+)"/) || [])[1], cls = ((m[1].match(/\bclass="([^"]+)"/) || [])[1] || "").split(/\s+/).filter(Boolean);
+        if (cls.includes("hidden") || (idE && ids.has(idE))) cls.filter((c) => c !== "hidden").forEach((c) => clasesEscondidas.add(c));
+      }
+      okL(clasesEscondidas.has("mi-tareas") && clasesEscondidas.has("mp-atencion-linea"), `(o) el censo encuentra sus clases: ${clasesEscondidas.size}`);
+      // las comas de primer nivel separan selectores; las de dentro de :is()/:not() no
+      const partir = (lista) => { const out = []; let prof = 0, cur = ""; for (const ch of lista) { if (ch === "(") prof++; if (ch === ")") prof--; if (ch === "," && !prof) { out.push(cur.trim()); cur = ""; } else cur += ch; } if (cur.trim()) out.push(cur.trim()); return out; };
+      const reglasO = [...estilos.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map((m) => ({ sels: partir(m[1]), cuerpo: m[2] }));
+      const apagan = new Set();
+      for (const r of reglasO) if (/(^|;)\s*display\s*:\s*none\b/.test(r.cuerpo)) r.sels.forEach((x) => apagan.add(x.replace(/\s+/g, " ")));
       const malas = [];
-      for (const m of estilos.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
-        if (!/(^|;)\s*display\s*:\s*(?!none)/.test(m[2])) continue;
-        for (const sel of m[1].split(",").map((x) => x.trim())) {
-          const ultimo = sel.split(/\s+|>|\+|~/).filter(Boolean).pop() || "";
-          const tab = pestanas.find((t) => new RegExp(`^(?:[a-z]+)?#${t}(?![\\w-])`).test(ultimo));
-          if (tab && !/:not\(\.hidden\)/.test(ultimo)) malas.push(sel);
+      for (const r of reglasO) {
+        if (!/(^|;)\s*display\s*:\s*(?!none\b)[a-z-]/.test(r.cuerpo)) continue;
+        for (const sel of r.sels) {
+          const sinParen = sel.replace(/\([^()]*\)/g, (x) => x.replace(/[\s>+~]/g, "_"));
+          const ultimo = sinParen.split(/\s+|>|\+|~/).filter(Boolean).pop() || "";
+          const id = (ultimo.match(/^[a-z0-9]*#([a-z0-9-]+)/) || [])[1];
+          const clase = id ? null : [...ultimo.matchAll(/\.([a-zA-Z0-9_-]+)/g)].map((x) => x[1]).find((c) => clasesEscondidas.has(c));
+          if (!(id && ids.has(id)) && !clase) continue;
+          if (/:not\(\.hidden\)/.test(ultimo) || apagan.has(sel.replace(/\s+/g, " ") + ".hidden")) continue;
+          malas.push(sel);
         }
       }
-      okL(malas.length === 0, `(o) estas reglas le dan display a una pestaña sin «:not(.hidden)» y la sacan aunque esté escondida: ${malas.join(" | ")}`);
+      okL(malas.length === 0, `(o) estas reglas le dan display a algo que se esconde con .hidden y lo sacan aunque esté escondido: ${malas.join(" | ")}`);
       /* …Y `:not(.hidden)` VA SOLO CON `display` (10-nov-2026). El arreglo de arriba puso la rejilla ENTERA bajo
          `:not(.hidden)`: pesaba (1,2,0) y le ganaba a la columna de la barra del computador, que vive en un @media con
          (1,1,0); en producción la barra de Mi empresa y de Licitaciones quedó en 0 px de ancho (medido en Chromium a
@@ -66797,6 +66893,373 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
     okL(iG >= 0 && iG < iA && iA < iS && iS < iN, `(k) el pie de la tarjeta: Guardar · Calcular mi precio · Ver en SECOP II · No es obra (${[iG, iA, iS, iN].join(",")})`);
     if (fallasL.length) throw new Error(`unidad Licitaciones: ${fallasL.length} comprobaciones fallan:\n  - ${fallasL.join("\n  - ")}`);
     console.log("· unidad Licitaciones · barra, filtros a la vista y el orden al revés: tres apartados con censo de bloques, el valor y el aviso de interés a la vista con la cifra de su lista, el botón que invierte dice qué va primero con cada orden y vuelve al normal al cambiar de orden, y el panel del teléfono es el mismo de Mi empresa");
+  }
+
+  bqMisProcesosBarra: { if (!corre("unidad Mis procesos · la barra, el expediente y su precio")) break bqMisProcesosBarra;
+    /* MIS PROCESOS CON SU BARRA (10-nov-2026, decisión del dueño sobre su maqueta): la lista con tres apartados (Sus
+       procesos · Calendario · Lo que pide atención) y sus filtros a la izquierda; el expediente con sus secciones y
+       «Este proceso» a la izquierda, cuatro cifras arriba —la cuarta, «Su precio»— y la respuesta corta a «¿A cuánto
+       ofertar?» en Resumen. El precio sale del servidor con la MISMA función de la lista (lib/baja_maxima); aquí se
+       prueban sus cuatro respuestas, que ninguna es un cero inventado y que la pantalla no calcula ninguna cifra. El viaje
+       entero (guardar un análisis en Precios → abrir el expediente) vive en el bloque del calendario, punto (10). */
+    const fallasM = [];
+    const okM = (c, que) => { if (!c) fallasM.push(que); };
+    const jsM = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+    const htmlM = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8").replace(/<!--[\s\S]*?-->/g, "");
+    const cortarM = (firma, fin = "\n  }") => { const i = jsM.indexOf(firma); if (i < 0) { fallasM.push(`app.js sin «${firma.trim()}»`); return ""; } return jsM.slice(i, jsM.indexOf(fin, i) + fin.length); };
+    const lineaM = (marca) => { const i = jsM.indexOf(marca); if (i < 0) { fallasM.push(`app.js sin «${marca.trim()}»`); return ""; } return jsM.slice(i, jsM.indexOf("\n", i)); };
+    const BMm = require("../lib/baja_maxima.js");
+    const { comprimir: comprimirM } = require("../lib/almacen.js");
+    delete require.cache[require.resolve("../public/expediente.js")];
+    const XM = require("../public/expediente.js");
+    const KM = require("../public/casillero.js");
+    const sinEtiquetas = (h) => String(h).replace(/<[^>]+>/g, "").replace(/\s+/g, " ");
+    // (a) leer los borradores: una lectura que FALLA no es un perfil sin borradores
+    const regM = (id, idp, cd, total, guardado = "2026-11-01T10:00:00.000Z") => comprimirM({ id, id_proceso: idp, costo_directo_guardado: cd, total_guardado: total, guardado,
+      config: { aiu_pct: 15, imprevistos_pct: 5, utilidad_pct: 5, modo_aiu: "aiu" } });
+    const redisM = (claves, valores, { scanFalla = false, mgetFalla = false } = {}) => ({
+      scan: async () => { if (scanFalla) throw new Error("Upstash no respondió"); return claves; },
+      mget: async (ks) => { if (mgetFalla) throw new Error("Upstash no respondió"); return ks.map((k) => (k in valores ? valores[k] : null)); } });
+    const valsM = { k1: regM("pre-a", "CO1.REQ.A", 190000000, 241500000), k2: regM("pre-sin", null, null, null), k3: regM("pre-cero", "CO1.REQ.C", 190000000, 0),
+      k4: regM("pre-zsin", "CO1.REQ.Z", null, null) };
+    const cOk = await BMm.cargarCostosPorProceso(redisM(["k1", "k2", "k3", "k4"], valsM), "helder");
+    const cScan = await BMm.cargarCostosPorProceso(redisM([], {}, { scanFalla: true }), "helder");
+    const cMget = await BMm.cargarCostosPorProceso(redisM(["k1"], valsM, { mgetFalla: true }), "helder");
+    okM(cOk.leido === true && cOk.incompleto === false && cOk.porProceso.has("CO1.REQ.A") && cOk.sin_costo === 2 && cOk.sin_costo_por_proceso.get("CO1.REQ.Z") === 1 && cOk.sin_costo_por_proceso.size === 1,
+      `(a) la lectura buena, y los que quedaron sin costo contados por proceso: ${JSON.stringify({ l: cOk.leido, i: cOk.incompleto, s: cOk.sin_costo, p: [...(cOk.sin_costo_por_proceso || [])] })}`);
+    okM(cScan.leido === false && cScan.porProceso.size === 0, "(a) si el SCAN falla, la respuesta lo dice (`leido: false`), no se parece a un perfil sin borradores");
+    okM(cMget.leido === true && cMget.incompleto === true, "(a) si un lote del MGET falla, `incompleto: true`");
+    // (b) las cuatro respuestas del precio del expediente, con la función REAL
+    const filaM = { id_del_proceso: "CO1.REQ.A", cuantia_cop: 260000000, modalidad_de_contratacion: "Licitación pública", objeto_del_contrato: "Construcción de jardín infantil" };
+    const pA = BMm.precioDelExpediente(filaM, "CO1.REQ.A", cOk);
+    okM(pA && pA.estado === "calculado" && pA.su_precio === 241500000 && pA.borrador.id === "pre-a" && pA.borrador.guardado === "2026-11-01T10:00:00.000Z",
+      `(b) calculado: el total que guardó en Precios y su borrador: ${JSON.stringify(pA).slice(0, 200)}`);
+    /* EL PRESUPUESTO CON QUE SE COMPARA es el más bajo entre SECOP II, el techo del pliego definitivo y la cuantía que el
+       borrador guardó (revisión adversaria: con la de SECOP II el expediente decía «Preséntese» donde Precios, con el
+       techo del pliego, decía «No se presente»; una oferta por encima del más bajo se rechaza) */
+    okM(BMm.precioDelExpediente(filaM, "CO1.REQ.A", cOk, { techoPliego: 250000000 }).piso_techo.cifras.presupuesto_oficial === 250000000, "(b) el techo del pliego, si es menor, manda");
+    okM(BMm.precioDelExpediente(filaM, "CO1.REQ.A", cOk, { techoPliego: 270000000 }).piso_techo.cifras.presupuesto_oficial === 260000000, "(b) un techo del pliego mayor no sube el de SECOP II");
+    const conCuantia = { ...cOk, porProceso: new Map([["CO1.REQ.A", { ...cOk.porProceso.get("CO1.REQ.A"), config: { ...cOk.porProceso.get("CO1.REQ.A").config, cuantia_cop: 255000000 } }]]) };
+    okM(BMm.precioDelExpediente(filaM, "CO1.REQ.A", conCuantia).piso_techo.cifras.presupuesto_oficial === 255000000, "(b) la cuantía que guardó el análisis (la que Precios usa al abrirlo), si es menor, manda");
+    // la configuración como la lee Precios: «por tiempo» no se repite aquí; el total sí es suyo
+    const porTiempo = { ...cOk, porProceso: new Map([["CO1.REQ.A", { ...cOk.porProceso.get("CO1.REQ.A"), config: { aiu_pct: 10, imprevistos_pct: 5, utilidad_pct: 5, metodo_administracion: "tiempo", gastos_fijos_mensuales: 10000000, horas_proyecto: 800 } }]]) };
+    const pT = BMm.precioDelExpediente(filaM, "CO1.REQ.A", porTiempo);
+    okM(pT.estado === "en_precios" && pT.su_precio === 241500000 && !pT.piso_techo && pT.borrador.id === "pre-a", `(b) administración por tiempo: el total guardado y el veredicto en Precios: ${JSON.stringify(pT)}`);
+    okM(BMm.precioDelExpediente(filaM, "CO1.REQ.A", { ...cOk, incompleto: true }).estado === "no_se_leyo", "(b) con un lote perdido, aunque aparezca un borrador, no se sabe si es el último: «no se pudo leer»");
+    // la lista con un análisis por tiempo: sin baja máxima del análisis (cae a la declarada o a nada) y el margen dice por qué
+    const bmT = BMm.bajaMaximaDe(filaM, porTiempo, { bajaDeclarada: 3 }), bmT0 = BMm.bajaMaximaDe(filaM, porTiempo, {});
+    okM(bmT.origen === "declarada" && bmT.valor === 3 && bmT0.valor === null && bmT0.origen === null, `(b) por tiempo, la lista no inventa una baja máxima del análisis: ${JSON.stringify([bmT.valor, bmT.origen, bmT0.valor])}`);
+    // sin cifra en la fila pero con la cuantía que guardó el análisis: la baja máxima se mide con esa (la del piso)
+    const bmSinFila = BMm.bajaMaximaDe({ id_del_proceso: "CO1.REQ.A", cuantia_cop: null }, conCuantia, {});
+    okM(bmSinFila.origen === "apu" && bmSinFila.valor != null, `(b) la baja máxima usa el presupuesto con que se midió el piso, no solo el de la fila: ${JSON.stringify([bmSinFila.valor, bmSinFila.origen])}`);
+    const jsListar = fs.readFileSync(path.join(__dirname, "..", "lib", "handlers", "procesos", "listar.js"), "utf8");
+    okM(/if \(r\.motivo === "administracion_por_tiempo"\) \{\s*return \{ valor: null, piso: null, techo: null, borrador: c\.id, motivo: "Sin referencia — su análisis calcula la administración por tiempo/.test(jsListar),
+      "(b) el margen de la lista dice que la administración por tiempo se ve en Precios, no «sin techo»");
+    okM(pA.piso_techo.cifras.presupuesto_oficial === 260000000 && pA.piso_techo.cifras.piso_rentable > 0, "(b) con el presupuesto de la fila viva");
+    okM(BMm.precioDelExpediente(filaM, "CO1.REQ.A", cScan).estado === "no_se_leyo" && BMm.precioDelExpediente(filaM, "CO1.REQ.A", null).estado === "no_se_leyo",
+      "(b) sin poder leer los borradores: «no se pudo leer», jamás «sin calcular»");
+    const pZ = BMm.precioDelExpediente({ id_del_proceso: "CO1.REQ.Z", cuantia_cop: 300000000 }, "CO1.REQ.Z", cOk);
+    okM(pZ.estado === "sin_calcular" && pZ.borradores_sin_costo === 1, `(b) leídos todos y ninguno de este proceso: «sin calcular», con cuántos DE ESTE proceso quedaron sin costo: ${JSON.stringify(pZ)}`);
+    okM(BMm.precioDelExpediente({ id_del_proceso: "CO1.REQ.Y", cuantia_cop: 300000000 }, "CO1.REQ.Y", cOk).borradores_sin_costo === 0, "(b) los sin costo de OTROS procesos no se le atribuyen a este");
+    okM(BMm.precioDelExpediente({ id_del_proceso: "CO1.REQ.Z", cuantia_cop: 300000000 }, "CO1.REQ.Z", cMget).estado === "no_se_leyo",
+      "(b) una lectura a medias sin el borrador de este proceso: «no se pudo leer» (el que faltó podía ser justo el suyo)");
+    okM(BMm.precioDelExpediente(filaM, null, cOk) === null, "(b) sin proceso no hay respuesta");
+    // la FOTO guardada trae el presupuesto en `precio_base` (lib/guia_proceso.filaDesdeFoto): la misma regla con que la foto lo guarda
+    const pF = BMm.precioDelExpediente({ id_del_proceso: "CO1.REQ.A", cuantia_cop: 0, precio_base: "260000000" }, "CO1.REQ.A", cOk);
+    okM(pF.estado === "calculado" && pF.piso_techo.cifras.presupuesto_oficial === 260000000, `(b) un proceso que ya no está en el corpus usa el presupuesto de su foto: ${JSON.stringify(pF.piso_techo && pF.piso_techo.cifras && pF.piso_techo.cifras.presupuesto_oficial)}`);
+    const pN = BMm.precioDelExpediente({ id_del_proceso: "CO1.REQ.A", cuantia_cop: null, precio_base: 0 }, "CO1.REQ.A", cOk);
+    okM(pN.piso_techo.aplicable === false && pN.piso_techo.cifras.presupuesto_oficial === undefined, "(b) sin presupuesto en ninguno de los dos, no hay presupuesto: un 0 es «sin dato», no $0");
+    const pC = BMm.precioDelExpediente({ id_del_proceso: "CO1.REQ.C", cuantia_cop: 260000000 }, "CO1.REQ.C", cOk);
+    okM(pC.estado === "calculado" && pC.su_precio === null, "(b) un total guardado de 0 es «sin total», no un precio de $0");
+    // (c) la cuarta cifra: nunca $0, y la lista sigue con tres
+    const pExp = { id: "CO1.REQ.A", proceso: { nombre: "OBRA DE PRUEBA", entidad: "ALCALDÍA", presupuesto_cop: 260000000 } };
+    okM(XM.cifrasDe(pExp).length === 3 && XM.cifrasDe({ ...pExp, precio: pA }).length === 4 && XM.cifrasDe({ ...pExp, precio: pA })[3].rotulo === "Su precio",
+      "(c) el expediente trae cuatro cifras y la lista (sin `precio`) sigue con tres");
+    const cifra = (pc) => XM.cifraSuPrecio(pc, KM).valor;
+    okM(cifra(pA) === KM.presupuestoDelProceso(241500000).texto, `(c) «Su precio» con el formato del presupuesto: ${cifra(pA)}`);
+    okM(cifra(pT) === KM.presupuestoDelProceso(241500000).texto, "(c) por tiempo: su total guardado, que es suyo");
+    okM(cifra({ estado: "sin_calcular" }) === "Sin calcular" && cifra({ estado: "no_se_leyo" }) === "No se pudo leer" && cifra(null) === "No se pudo leer" && cifra(pC) === "Sin total",
+      "(c) sin calcular, sin leer y sin total lo dicen con palabras");
+    okM([pA, pC, pZ, { estado: "no_se_leyo" }, null, { estado: "zzz" }].every((pc) => !/^\$\s*0$/.test(cifra(pc))), "(c) ninguna respuesta pinta «$ 0»");
+    // (d) «¿A cuánto ofertar?» y la sección «Su precio»: lo que pintan sale de `p.precio`, sin cuentas propias
+    const res = XM.htmlPrecioResumen({ ...pExp, precio: pA }), resT = sinEtiquetas(res);
+    okM(/¿A cuánto ofertar\?/.test(res) && resT.includes(KM.presupuestoDelProceso(241500000).texto) && resT.includes(pA.piso_techo.veredicto) && resT.includes(pA.piso_techo.frase_precio_actual),
+      `(d) Resumen: su precio, el veredicto y la frase de Precios: ${resT.slice(0, 300)}`);
+    okM(resT.includes("92,9 % del presupuesto"), `(d) Resumen: qué parte del presupuesto es su precio (241,5 de 260 millones): ${resT.slice(0, 300)}`);
+    okM(/data-seg-abrir-borrador="pre-a"/.test(res) && /data-exp-seccion="precio"/.test(res), "(d) Resumen lleva a su análisis guardado y al detalle");
+    okM(XM.htmlPrecioResumen(pExp) === "", "(d) sin `precio` (la lista) Resumen no pinta nada");
+    const resSin = XM.htmlPrecioResumen({ ...pExp, precio: pZ }), resNo = XM.htmlPrecioResumen({ ...pExp, precio: { estado: "no_se_leyo" } });
+    okM(/Calcular mi precio/.test(resSin) && /data-seg-abrir-lector="CO1\.REQ\.A"/.test(resSin) && !/data-seg-abrir-borrador/.test(resSin) && /1 análisis de este proceso guardado sin costo/.test(sinEtiquetas(resSin)),
+      "(d) sin calcular: invita a calcularlo y dice cuántos análisis quedaron sin costo");
+    okM(/no se pudieron leer/.test(resNo) && !/Todavía no ha calculado/.test(resNo) && !/Calcular mi precio/.test(resNo), "(d) sin leer: lo dice y no invita a calcular lo que quizá ya calculó");
+    okM(!/data-seg-abrir-borrador=""/.test(XM.htmlPrecioResumen({ ...pExp, precio: { ...pA, borrador: null } })), "(d) sin borrador que abrir no sale un botón que no hace nada");
+    okM(!/% del presupuesto/.test(XM.htmlPrecioResumen({ ...pExp, precio: { ...pA, piso_techo: pN.piso_techo } })), "(d) sin presupuesto no hay porcentaje");
+    const pctDe = (su) => (XM.htmlPrecioResumen({ ...pExp, precio: { ...pA, su_precio: su } }).match(/>([0-9.,]+) % del presupuesto</) || [])[1];
+    okM(pctDe(260100000) === "100,1" && pctDe(259900000) === "99,9", `(d) redondear no cruza el presupuesto: ${pctDe(260100000)} / ${pctDe(259900000)}`);
+    const resTiempo = XM.htmlPrecioResumen({ ...pExp, precio: pT }), resTT = sinEtiquetas(resTiempo);
+    okM(/por tiempo/.test(resTT) && resTT.includes(KM.presupuestoDelProceso(241500000).texto) && !/Preséntese|No se presente/.test(resTT) && /data-seg-abrir-borrador="pre-a"/.test(resTiempo),
+      `(d) por tiempo: su total, ningún veredicto y el botón a su análisis: ${resTT.slice(0, 200)}`);
+    okM(/por tiempo/.test(XM.htmlPrecio({ ...pExp, precio: pT })), "(d) y la sección lo dice igual");
+    const sec = XM.htmlPrecio({ ...pExp, precio: pA }), secT = sinEtiquetas(sec);
+    const frasesM = ["presupuesto", "costo", "baja", "oferentes", "umbral"].map((k) => pA.piso_techo.frases[k]).filter(Boolean);
+    okM(frasesM.length >= 4 && frasesM.every((f) => secT.includes(f)) && secT.includes(pA.piso_techo.veredicto), `(d) la sección: las frases de Precios, una por renglón, y el veredicto: ${secT.slice(0, 300)}`);
+    okM(/2026-11-01/.test(secT) && /data-seg-abrir-borrador="pre-a"/.test(sec), "(d) la sección dice qué análisis guardado usó y lo abre");
+    okM(/vuelva a abrir el proceso/.test(XM.htmlPrecio(pExp)), "(d) un expediente sin `precio` no se queda en blanco");
+    const malicioso = XM.htmlPrecio({ ...pExp, precio: { ...pA, borrador: { id: '"><img src=x onerror=alert(1)>' }, piso_techo: { ...pA.piso_techo, veredicto: "<script>x</script>" } } });
+    okM(!/<img src=x/.test(malicioso) && !/<script>x/.test(malicioso), "(d) lo que viene del servidor se escapa");
+    // (e) el expediente con su barra: las secciones y «Este proceso» a la izquierda; nada se perdió y «Quitar» sale UNA vez
+    const SECS = XM.SECCIONES.map((s) => s.id);
+    okM(SECS.indexOf("precio") === SECS.indexOf("exige") + 1 && SECS.indexOf("fechas") === SECS.indexOf("precio") + 1 && XM.seccionValida("precio") === "precio",
+      `(e) «Su precio» va después de «Lo que exige» y antes de «Fechas»: ${SECS.join()}`);
+    const cab = XM.htmlCabecera({ ...pExp, estado: "interesa", carpeta: "c1", precio: pA }, { estados: { interesa: "Me interesa" }, seccion: "precio", carpetas: [{ id: "c1", nombre: "Bogotá" }],
+      perfilActual: { id: "helder", nombre: "Helder" } });
+    const iBarra = cab.indexOf('<nav id="exp-barra"'), iFinBarra = cab.indexOf("</nav>", iBarra), barraM = cab.slice(iBarra, iFinBarra), restoM = cab.slice(iFinBarra);
+    okM(iBarra === 0 && SECS.every((id) => barraM.includes(`data-exp-seccion="${id}"`)) && /data-exp-seccion="precio" aria-current="page"/.test(barraM),
+      "(e) la barra lleva todas las secciones y marca la elegida");
+    okM(["data-seg-carpeta=", "data-exp-copiar-id=", "data-seg-ics=", "data-seg-ficha="].every((a) => barraM.includes(a) && !restoM.includes(a)), "(e) «Este proceso»: la carpeta, el número, las fechas y la ficha viven en la barra, una vez");
+    okM((cab.match(/data-exp-quitar="|data-seg-quitar="/g) || []).length === 1, "(e) «Quitar este proceso» sale una sola vez");
+    okM(/data-seg-estado=/.test(restoM) && /data-seg-presentado=/.test(restoM) && /<dl class="exp-cifras">/.test(restoM), "(e) arriba se queda lo que hay que ver: la etapa, con qué se presenta y las cuatro cifras");
+    okM(/id="exp-abrir-panel"[\s\S]*?<span>Su precio<\/span>/.test(restoM) && /id="exp-velo"/.test(restoM), "(e) el botón del teléfono dice en qué sección está");
+    // (f) app.js: Resumen pinta la respuesta corta, la sección pinta la suya, y «Abrir su análisis» abre el borrador GUARDADO
+    okM(/X\.htmlSiguientePaso\(p, \{ hoy: r\.hoy \|\| null \}\) \+ \(X\.htmlPrecioResumen \? X\.htmlPrecioResumen\(p\) : ""\)/.test(jsM), "(f) Resumen: «¿A cuánto ofertar?» va justo después del siguiente paso");
+    okM(/segExpSeccion === "precio"\) \{\s*cuerpo = X\.htmlPrecio\(p\);/.test(jsM), "(f) la sección «Su precio» pinta `htmlPrecio`");
+    const fuenteAbrir = cortarM('      const abrirBor = ev.target.closest("[data-seg-abrir-borrador]");', "\n      }");
+    if (fuenteAbrir) {
+      const F = new Function(`
+        const hechos = [];
+        const activarPestana = (t) => hechos.push("pestana:" + t);
+        const cargarPresupuestoGuardado = async (id) => { hechos.push("cargar:" + id); };
+        // el primer arranque de Precios reescribe el departamento y el mensaje: hay que esperarlo antes de cargar
+        const arranqueApu = new Promise((ok) => setTimeout(() => { hechos.push("arranque"); ok(); }, 5));
+        // con el borrador cargado, el techo del pliego de la guía de ESTE expediente (revisión adversaria)
+        const segExpDatos = { proceso: { id: "CO1.REQ.A", guia: { tope_oferta: { fuente: "pliego", valor: 250000000, secop: 260000000 } } } };
+        const aplicarTechoDelPliegoAlBorrador = (proc) => hechos.push("techo:" + (proc && proc.id));
+        // el fragmento termina en \`return;\` (el oyente acaba ahí): va en su propia función y lo hecho se lee después
+        return async (idB) => { hechos.length = 0; const ev = { target: { closest: (s) => (s === "[data-seg-abrir-borrador]" ? { getAttribute: () => idB } : null) } };
+          await (async () => { ${fuenteAbrir} })();
+          return hechos.join(); };`)();
+      okM((await F("pre-a")) === "pestana:apu,arranque,cargar:pre-a,techo:CO1.REQ.A", "(f) «Abrir su análisis en Precios» abre Precios, ESPERA su arranque, carga ESE borrador por el mismo camino que «Cargar» y le pone el techo del pliego del expediente");
+      okM((await F("")) === "", "(f) sin borrador no cambia de pestaña");
+    }
+    okM(/\$\("lista-presupuestos"\)\.addEventListener\("click", async \(e\) => \{\s*const id = e\.target\.getAttribute\("data-cargar"\);\s*if \(!id\) return;\s*await cargarPresupuestoGuardado\(id\);/.test(jsM),
+      "(f) «Cargar» de la lista de Precios usa la misma función");
+    // (g) los apartados de la lista: las funciones REALES con un documento falso
+    const fuenteMP = [lineaM("  let mpApartado = "), lineaM("  const PANEL_MP = "), lineaM("  function apartadoMisProcesos("), cortarM("  function pintarApartadoMisProcesos("), cortarM("  function elegirApartadoMisProcesos(")].join("\n");
+    if (fuenteMP.trim()) {
+      const G = new Function(`
+        const hechos = []; const attrs = {}; let ultimoSeguimiento = null;
+        const els = { "mp-abrir-rotulo": { textContent: "" }, "mp-abrir-mas": { textContent: "" }, "mp-n-procesos": { textContent: "" }, "mp-ver": { textContent: "" },
+          "mp-abrir-panel": { focus: () => hechos.push("foco:panel") } };
+        const maestra = { setAttribute: (k, v) => { attrs[k] = v; }, hasAttribute: (k) => k in attrs, removeAttribute: (k) => { delete attrs[k]; } };
+        const botones = ["procesos", "calendario", "avisos"].map((id) => { const b = { id, a: {}, getAttribute: (k) => (k === "data-mp-ir" ? id : b.a[k]), setAttribute: (k, v) => { b.a[k] = v; },
+          removeAttribute: (k) => { delete b.a[k]; }, querySelector: () => ({ textContent: { procesos: " Sus procesos ", calendario: "Calendario", avisos: "Lo que pide atención" }[id] }),
+          focus: () => hechos.push("foco:" + id) }; return b; });
+        const document = { getElementById: (id) => (id === "seg-maestra" ? maestra : els[id] || null), querySelectorAll: () => botones,
+          querySelector: () => botones.find((b) => b.a["aria-current"] === "page") || null };
+        const window = { scrollTo() {} };
+        const guardarPrefCasillero = (p) => hechos.push("pref:" + p.vista);
+        const panelLateral = (cfg, abrir) => { hechos.push("panel:" + cfg.tab + ":" + abrir); if (!abrir) delete attrs["data-panel"]; };
+        const pintarSeguimiento = () => hechos.push("repinta");
+        ${fuenteMP}
+        return { pintarApartadoMisProcesos, elegirApartadoMisProcesos, attrs, els, botones, hechos, ap: () => mpApartado };`)();
+      G.pintarApartadoMisProcesos({ total: 2, visibles: 1, enCalendario: false, filtros: 0 });
+      okM(G.attrs["data-mp"] === "procesos" && G.botones[0].a["aria-current"] === "page" && !G.botones[1].a["aria-current"] && G.els["mp-abrir-rotulo"].textContent === "Sus procesos",
+        `(g) la lista: el apartado, la barra marcada y el rótulo del botón del teléfono: ${JSON.stringify(G.attrs)} ${G.els["mp-abrir-rotulo"].textContent}`);
+      okM(G.els["mp-n-procesos"].textContent === "2" && G.els["mp-ver"].textContent === "Ver el proceso" && G.els["mp-abrir-mas"].textContent === "Apartados y filtros", "(g) las cifras de la barra y del panel");
+      G.pintarApartadoMisProcesos({ total: 0, visibles: null, enCalendario: true, filtros: 2 });
+      okM(G.attrs["data-mp"] === "calendario" && G.els["mp-n-procesos"].textContent === "" && G.els["mp-ver"].textContent === "Ver la lista" && G.els["mp-abrir-mas"].textContent === "Filtros (2)",
+        "(g) en el calendario; sin procesos la cifra no dice «0» y sin cuenta el botón no la inventa; con filtros, cuántos");
+      G.pintarApartadoMisProcesos({ total: null });
+      okM(G.els["mp-n-procesos"].textContent === "", "(g) sin cuenta del servidor no se pinta un número");
+      G.hechos.length = 0;
+      okM(G.elegirApartadoMisProcesos("calendario") === "calendario" && G.hechos.includes("pref:calendario") && G.ap() === "lista" && G.hechos.includes("foco:calendario"),
+        `(g) «Calendario» cambia la vista del casillero con la preferencia de siempre y el foco queda en el apartado: ${G.hechos.join()}`);
+      G.hechos.length = 0;
+      okM(G.elegirApartadoMisProcesos("avisos") === "avisos" && !G.hechos.some((h) => h.startsWith("pref:")) && G.ap() === "avisos" && G.attrs["data-mp"] === "avisos",
+        "(g) «Lo que pide atención» no toca la vista guardada");
+      G.attrs["data-panel"] = "abierto"; G.hechos.length = 0;
+      okM(G.elegirApartadoMisProcesos("<img>") === "procesos" && G.ap() === "lista" && G.hechos.includes("panel:seg-maestra:false") && G.hechos.includes("foco:panel"),
+        `(g) un apartado desconocido es INERTE (cae a la lista); con el panel abierto lo cierra y el foco vuelve a su botón: ${G.hechos.join()}`);
+    }
+    // (h) «Piden atención» en una línea, con la MISMA frase de Mi empresa
+    const fuenteAt = cortarM("    const as = r.alertas || [];", '    if (vacioAv) vacioAv.classList.toggle("hidden", !!as.length);');
+    if (fuenteAt) {
+      const H = new Function("Kreal", `
+        const cl = () => { const s = new Set(["hidden"]); return { toggle: (c, f) => (f ? s.add(c) : s.delete(c)), has: (c) => s.has(c) }; };
+        const els = { "seg-atencion-linea": { innerHTML: "x", classList: cl() }, "mp-n-avisos": { textContent: "x" }, "mp-avisos-vacio": { classList: cl() } };
+        const $ = (id) => els[id] || null; const raizCasillero = () => Kreal;
+        const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;");
+        const segFiltroEstado = "ganado";   // una etapa puesta en la barra, que «Lo que pide atención» no enseña
+        const sec = { classList: cl() };
+        return (r) => { ${fuenteAt}
+          return { linea: els["seg-atencion-linea"].innerHTML, oculta: els["seg-atencion-linea"].classList.has("hidden"), n: els["mp-n-avisos"].textContent, vacio: !els["mp-avisos-vacio"].classList.has("hidden") }; };`)(KM);
+      const avisosM = [{ id: "a", tipo: "cierre", dias: 2 }, { id: "b", tipo: "cierre", dias: 5 }];
+      const con = H({ alertas: avisosM, procesos: [{ id: "a", estado: "interesa" }, { id: "b", estado: "interesa" }] }), sin = H({ alertas: [], procesos: [] });
+      okM(con.oculta === false && sinEtiquetas(con.linea).startsWith(`Piden atención: ${KM.fraseAlertas(avisosM, 7)}`) && con.n === "2" && con.vacio === false,
+        `(h) con avisos —y con una etapa puesta que no es la suya—: la línea con la frase de Mi empresa y la cifra en la barra; un aviso no se calla por un filtro escondido: ${JSON.stringify(con)}`);
+      okM(sin.oculta === true && sin.linea === "" && sin.n === "" && sin.vacio === true, `(h) sin avisos: ni línea ni «0», y el apartado dice que no hay nada: ${JSON.stringify(sin)}`);
+    }
+    // (i) censo: cada bloque de primer nivel de la lista dice su apartado; cada apartado tiene botón y regla
+    const iMa = htmlM.indexOf('id="seg-maestra"'), tramoMa = htmlM.slice(htmlM.indexOf(">", iMa) + 1);
+    const hijosM = []; let profM = 0;
+    for (const m of tramoMa.matchAll(/<(\/?)([a-z0-9]+)\b([^>]*?)(\/?)>/g)) {
+      const [, cierre, tag, attrs, auto] = m;
+      if (["br", "img", "input", "meta", "link", "hr", "source", "wbr", "path", "rect", "circle", "line", "polyline"].includes(tag) || auto) continue;
+      if (cierre) { profM--; if (profM < 0) break; continue; }
+      if (profM === 0) hijosM.push({ tag, id: (attrs.match(/\bid="([^"]+)"/) || [])[1] || null, ap: (attrs.match(/data-mp-apartado="([^"]+)"/) || [])[1] || null, clase: (attrs.match(/\bclass="([^"]+)"/) || [])[1] || "" });
+      profM++;
+    }
+    /* el armazón no es de un apartado (DECLARADO): el botón y el velo del panel, la barra, la cabecera con los contadores
+       y la línea de atención (que se esconde sola en «Lo que pide atención») */
+    const ARMAZON_M = ["mp-abrir-panel", "mp-velo", "mp-barra", "seg-atencion-linea"];
+    const sinApM = hijosM.filter((h) => !h.ap && !(h.id && ARMAZON_M.includes(h.id)) && !/cabecera-pestana/.test(h.clase));
+    okM(hijosM.length >= 7 && sinApM.length === 0, `(i) censo: cada bloque de primer nivel dice su apartado; sin él: ${sinApM.map((h) => h.id || h.tag).join(", ")}`);
+    okM(hijosM.every((h) => !h.ap || ["procesos", "avisos"].includes(h.ap)), "(i) ningún bloque dice un apartado que no existe");
+    for (const a of ["procesos", "calendario", "avisos"]) okM(new RegExp(`data-mp-ir="${a}"`).test(htmlM), `(i) el apartado «${a}» tiene botón en la barra`);
+    okM(htmlM.includes('#app #seg-maestra[data-mp="avisos"] > [data-mp-apartado]:not([data-mp-apartado="avisos"]) { display: none; }')
+      && htmlM.includes('#app #seg-maestra:not([data-mp="avisos"]) > [data-mp-apartado="avisos"] { display: none; }'), "(i) la hoja enseña la lista o los avisos según el apartado");
+    okM(/<div id="seg-maestra" data-mp="procesos">/.test(htmlM), "(i) la lista nace en «Sus procesos» desde el marcado (no depende del script)");
+    const iBarraM = htmlM.indexOf('<nav id="mp-barra"'), barraHtml = htmlM.slice(iBarraM, htmlM.indexOf("</nav>", iBarraM));
+    okM(["seg-filtros", "seg-carpetas", "seg-presentados", "seg-orden", "seg-agrupar", "seg-ics-todos"].every((id) => barraHtml.includes(`id="${id}"`)), "(i) los filtros de siempre se MOVIERON a la barra, ninguno se perdió");
+    okM(barraHtml.includes('id="seg-organizar-mensaje"'), "(i) el mensaje de las carpetas va junto a sus mandos, en la barra (en el teléfono quedaba debajo del panel)");
+    const iTabSeg = htmlM.indexOf('<main id="tab-seguimiento"');
+    okM(["seg-mensaje", "seg-reintentar"].every((id) => { const i = htmlM.indexOf(`id="${id}"`); return i > iTabSeg && i < iMa; }),
+      "(i) el mensaje de error y «Reintentar» van arriba de la lista y del expediente: dentro de un apartado se escondían con él");
+    okM(/if \(t\.closest\("#mp-ver"\) && mpApartado === "avisos"\) \{ elegirApartadoMisProcesos\("procesos"\); return; \}/.test(jsM), "(i) «Ver los N procesos» desde los avisos lleva a la lista");
+    okM(/id="mi-atencion-linea"[^>]*data-mi-ir-seguimiento="avisos"/.test(htmlM) && /elegirApartadoMisProcesos\(destino === "calendario" \|\| destino === "avisos" \? destino : "procesos"\)/.test(jsM)
+      && /segFiltroEstado = et\.getAttribute\("data-mi-etapa"\); activarPestana\("seguimiento"\); elegirApartadoMisProcesos\("procesos"\);/.test(jsM),
+      "(i) desde Mi empresa, «Piden atención» abre los avisos, una etapa abre la lista y el calendario el calendario");
+    okM(/hasAttribute\("data-panel"\)\) panelLateral\(PANEL_EXP, false, \{ devolverFoco: false \}\);\s*decirEtapa\(id, fraseDeFallo\(e\), "error"\);/.test(jsM), "(i) un fallo al quitar cierra el panel del teléfono para que se vea");
+    // (j) Escape cierra el panel abierto del expediente y el de la lista
+    const fuenteEsc = cortarM('  document.addEventListener("keydown", (ev) => {\n    if (ev.key !== "Escape") return;', "\n  });");
+    if (fuenteEsc) {
+      const J = new Function(`
+        const hechos = []; let oyente = null;
+        const abiertos = new Set();
+        const document = { addEventListener: (t, fn) => { oyente = fn; }, getElementById: (id) => ({ hasAttribute: () => abiertos.has(id) }) };
+        const PANEL_EXP = { tab: "seg-expediente" }, PANEL_MP = { tab: "seg-maestra" };
+        const panelLateral = (cfg, abrir) => hechos.push(cfg.tab + ":" + abrir);
+        const panelMiEmpresa = (abrir) => hechos.push("tab-admin:" + abrir);
+        ${fuenteEsc}
+        return (ids) => { hechos.length = 0; abiertos.clear(); ids.forEach((x) => abiertos.add(x)); const ev = { key: "Escape", preventDefault: () => hechos.push("marcado") }; oyente(ev); return hechos.join(); };`)();
+      okM(J(["seg-expediente"]) === "seg-expediente:false,marcado" && J(["seg-maestra"]) === "seg-maestra:false,marcado" && J([]) === "", "(j) Escape cierra el panel abierto del expediente o de la lista, lo marca, y nada más");
+    }
+    const fuenteEscExp = cortarM('    document.addEventListener("keydown", (ev) => {\n      if (ev.key !== "Escape" || !expedienteAbierto()) return;', "\n    });");
+    if (fuenteEscExp) {
+      const JE = new Function(`
+        const hechos = []; let oyente = null; let conPanel = false;
+        const document = { addEventListener: (t, fn) => { oyente = fn; } };
+        const $ = (id) => (id === "seg-expediente" ? { hasAttribute: () => conPanel } : null);
+        const expedienteAbierto = () => true; const cerrarExpediente = () => hechos.push("cierra");
+        ${fuenteEscExp}
+        return ({ marcado, panel }) => { hechos.length = 0; conPanel = panel; oyente({ key: "Escape", defaultPrevented: marcado, target: { matches: () => false }, preventDefault() {} }); return hechos.join(); };`)();
+      okM(JE({ marcado: false, panel: false }) === "cierra" && JE({ marcado: true, panel: false }) === "" && JE({ marcado: false, panel: true }) === "",
+        "(j) el Escape del panel no cierra además el expediente, en cualquier orden de los oyentes (a menos de 900 px salía del expediente de un golpe)");
+    }
+    /* (m) LO QUE LA SEGUNDA REVISIÓN ADVERSARIA ENCONTRÓ (10-nov-2026), con las funciones reales */
+    {
+      // la configuración como la lee Precios, una sola lectura (la del borrador y la «más reciente» de la lista)
+      const cP = BMm.configComoPrecios({ aiu_pct: 120, deducciones_pct: 35, imprevistos_pct: 5, utilidad_pct: 5, variante_iva: "con_iva" });
+      okM(cP.aiu_pct === 100 && cP.deducciones_pct === 30 && cP.modo_aiu === "aditivo" && cP.variante_iva === "con_iva", `(m) la configuración acotada como en Precios, sin perder lo demás: ${JSON.stringify(cP)}`);
+      // «lo que deja» mide contra el MISMO presupuesto que el margen y la baja máxima, también por tiempo
+      const rP = BMm.pisoTechoDeBorrador(filaM, conCuantia), rT = BMm.pisoTechoDeBorrador(filaM, porTiempo);
+      okM(rP.presupuesto === 255000000 && rP.pt.cifras.presupuesto_oficial === 255000000 && rT.presupuesto === 260000000 && rT.pt === null,
+        `(m) el piso/techo devuelve el presupuesto con que midió, en las dos ramas: ${JSON.stringify([rP.presupuesto, rT.presupuesto])}`);
+      const GanM = require("../lib/ganancia.js");
+      const gT = GanM.gananciaDeProceso({ presupuesto_oficial: 260000000, tipo_trabajo: "obra", costo_directo: 190000000, administracion_por_tiempo: true });
+      okM(gT.valor === null && gT.motivo === "administracion_por_tiempo" && /se ve en Precios/.test(gT.frase), `(m) «lo que deja» por tiempo no sale con la A tecleada: ${JSON.stringify([gT.valor, gT.motivo])}`);
+      const jsLst = fs.readFileSync(path.join(__dirname, "..", "lib", "handlers", "procesos", "listar.js"), "utf8");
+      okM(/presupuesto_oficial: r && r\.presupuesto != null \? r\.presupuesto : presupuestoOficialDe\(l\),\s*administracion_por_tiempo: !!\(r && r\.motivo === "administracion_por_tiempo"\),/.test(jsLst)
+        && /const cfgReciente = costos && costos\.config_reciente \? configComoPrecios\(costos\.config_reciente\) : null;/.test(jsLst),
+        "(m) la lista le pasa a «lo que deja» el presupuesto del piso/techo, el caso por tiempo y la configuración reciente leída como Precios");
+      // Precios devuelve los cuatro ajustes que guardaba y no restituía
+      const fuenteAplicar = cortarM("  function aplicarConfig(c) {");
+      if (fuenteAplicar) {
+        const A = new Function(`
+          const els = {}; const $ = (id) => (els[id] = els[id] || { value: "x", checked: false, disabled: false });
+          const sincronizarBaja = () => {};
+          ${fuenteAplicar}
+          // lo que no se tocó sale como «no tocado»: la aserción falla limpia, sin leer de undefined
+          return (c) => { for (const k of Object.keys(els)) delete els[k]; aplicarConfig(c); const r = JSON.parse(JSON.stringify(els));
+            for (const k of ["metodo-admin", "gastos-fijos", "horas-proyecto", "utilidad-minima"]) if (!r[k]) r[k] = { value: "no tocado" }; return r; };`)();
+        const e1 = A({ metodo_administracion: "tiempo", gastos_fijos_mensuales: 5500000, horas_proyecto: 1800, utilidad_minima_pct: 2 });
+        const e2 = A({ metodo_administracion: null, gastos_fijos_mensuales: null, horas_proyecto: null, utilidad_minima_pct: null });
+        okM(e1["metodo-admin"].value === "tiempo" && e1["gastos-fijos"].value === 5500000 && e1["horas-proyecto"].value === 1800 && e1["utilidad-minima"].value === 2,
+          `(m) abrir un análisis devuelve el método de la administración, los gastos fijos, las horas y la utilidad mínima: ${JSON.stringify(Object.fromEntries(["metodo-admin", "gastos-fijos", "horas-proyecto", "utilidad-minima"].map((k) => [k, e1[k] && e1[k].value])))}`);
+        okM(e2["metodo-admin"].value === "porcentaje" && e2["gastos-fijos"].value === "" && e2["horas-proyecto"].value === "" && e2["utilidad-minima"].value === "", "(m) sin dato vuelven vacíos, nunca un cero ni lo que había en el campo");
+      }
+      // abrir otro proceso empieza un borrador nuevo: el anterior no se sobrescribe al guardar
+      const fuenteReinicio = cortarM("  function reiniciarEditorParaProceso() {");
+      if (fuenteReinicio) {
+        const R = new Function(`
+          let filas = [1], idActual = "pre-viejo", nitProceso = "x", modalidadProceso = "x";
+          const els = {}; const $ = (id) => (els[id] = els[id] || { value: "algo" });
+          const olvidarDerivadosDelProceso = () => {}, pintarTabla = () => {}, msgApu = () => {};
+          ${fuenteReinicio}
+          reiniciarEditorParaProceso();
+          return { idActual, nombre: els["nombre-presupuesto"] ? els["nombre-presupuesto"].value : "no tocado" };`)();
+        okM(R.idActual === null && R.nombre === "", `(m) abrir otro proceso suelta el borrador del anterior (su «Guardar» lo sobrescribía): ${JSON.stringify(R)}`);
+      }
+      // el techo del pliego al abrir el análisis desde el expediente
+      const fuenteTecho = [cortarM("  function techoDesdeGuia(g) {"), cortarM("  function aplicarTechoDelPliegoAlBorrador(proceso) {")].join("\n");
+      if (fuenteTecho.trim()) {
+        const T = new Function(`
+          const fmtCOP = new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
+          const campos = { cuantia: { value: "" }, "id-proceso": { value: "" } }; const $ = (id) => campos[id] || null;
+          let cuantiaDelPliego = null, nota = null, invalidada = 0;
+          const pintarNotaCuantia = (n) => { nota = n; }, invalidarOferta = () => { invalidada++; };
+          ${fuenteTecho}
+          return (cuantia, idCampo, proceso) => { campos.cuantia.value = cuantia; campos["id-proceso"].value = idCampo; cuantiaDelPliego = null; nota = null; invalidada = 0;
+            const r = aplicarTechoDelPliegoAlBorrador(proceso); return { r, cuantia: campos.cuantia.value, marca: cuantiaDelPliego, nota, invalidada }; };`)();
+        const procT = { id: "CO1.REQ.A", guia: { tope_oferta: { fuente: "pliego", valor: 250000000, secop: 260000000, pagina: 12 } } };
+        const t1 = T("260000000", "CO1.REQ.A", procT), t2 = T("240000000", "CO1.REQ.A", procT), t3 = T("260000000", "CO1.REQ.Z", procT), t4 = T("260000000", "CO1.REQ.A", { id: "CO1.REQ.A", guia: { tope_oferta: { fuente: "secop", valor: 260000000, secop: 260000000 } } });
+        okM(t1.r === true && t1.cuantia === "250000000" && t1.marca && t1.marca.valor === 250000000 && /del pliego definitivo/.test(t1.nota) && t1.invalidada === 1,
+          `(m) un análisis guardado con la cifra de SECOP II se abre con el techo del pliego, con su nota: ${JSON.stringify(t1)}`);
+        okM(t2.r === false && t2.cuantia === "240000000" && t3.r === false && t3.cuantia === "260000000" && t4.r === false,
+          "(m) un techo más alto no sube nada, el de otro proceso no se aplica y sin pliego no cambia");
+      }
+      okM(/:where\(#app main\.panel-pestana\) p:where\(:not\(\.flex\):not\(\.grid\):not\(\.text-center\)\) \{ max-width: 100ch; \}/.test(htmlM),
+        "(m) con la pestaña sin tope, el texto corrido conserva su medida de lectura (100ch)");
+    }
+    /* (k) FRENTE A PRECIOS DE VERDAD (revisión adversaria, 10-nov-2026): la prueba (b) comparaba el expediente consigo
+       mismo y no podía ver que daba el veredicto contrario al de Precios. Aquí el MISMO análisis pasa por `op=rentabilidad`
+       (lo que pinta Precios) y por `precioDelExpediente` con lo que ese cálculo guardaría: el piso, el precio máximo y el
+       veredicto tienen que ser los mismos, con AIU por porcentaje, con deducciones que Precios acota (35 → 30 %), con un
+       AIU que Precios acota (120 → 100 %) y con el techo del pliego por debajo de SECOP II. */
+    {
+      const routerApuK = require("../api/apu.js");
+      const casosK = [
+        ["porcentaje", { modo_aiu: "aditivo", aiu_pct: 10, imprevistos_pct: 5, utilidad_pct: 5 }, 265000000, 265000000, null],
+        ["deducciones 35 %", { modo_aiu: "aditivo", aiu_pct: 10, imprevistos_pct: 5, utilidad_pct: 5, deducciones_pct: 35 }, 400000000, 400000000, null],
+        ["AIU 120 %", { modo_aiu: "aditivo", aiu_pct: 120, imprevistos_pct: 5, utilidad_pct: 5 }, 600000000, 600000000, null],
+        ["techo del pliego bajo SECOP II", { modo_aiu: "aditivo", aiu_pct: 15, imprevistos_pct: 5, utilidad_pct: 5 }, 250000000, 260000000, 250000000],
+      ];
+      for (const [nombre, cfg, techoPrecios, secop, techoPliego] of casosK) {
+        const rK = await invocar(routerApuK, "/api/apu?op=rentabilidad", CAB_TOKEN, { metodo: "POST", body: { perfil: "helder", departamento: "Cundinamarca",
+          items: [{ descripcion: "Obra", unidad: "gl", cantidad: 1, precio_manual: 200000000 }], config: { ...cfg }, cuantia: techoPrecios,
+          objeto: "Construcción de pavimento", modalidad: "Licitación pública" } });
+        const ptK = rK.cuerpo && rK.cuerpo.piso_techo, presK = rK.cuerpo && rK.cuerpo.presupuesto;
+        if (!ptK || !presK) { okM(false, `(k) ${nombre}: Precios no respondió (${rK.status}): ${JSON.stringify(rK.cuerpo).slice(0, 200)}`); continue; }
+        // lo que Precios GUARDA: su configuración, con la cuantía con que calculó (leerConfig la lleva)
+        const costosK = { porProceso: new Map([["CO1.REQ.K", { id: "pre-k", guardado: "2026-11-10T00:00:00.000Z", costo_directo: presK.resumen.costo_directo_total, config: { ...cfg, cuantia_cop: techoPrecios }, total_guardado: presK.resumen.precio_final }]]),
+          sin_costo_por_proceso: new Map(), leido: true, incompleto: false };
+        const eK = BMm.precioDelExpediente({ id_del_proceso: "CO1.REQ.K", cuantia_cop: secop, modalidad_de_contratacion: "Licitación pública", objeto_del_contrato: "Construcción de pavimento" },
+          "CO1.REQ.K", costosK, { techoPliego }).piso_techo;
+        okM(eK && eK.cifras.piso_rentable === ptK.cifras.piso_rentable && eK.cifras.precio_maximo === ptK.cifras.precio_maximo && eK.veredicto === ptK.veredicto,
+          `(k) ${nombre}: el expediente dice lo mismo que Precios: ${JSON.stringify({ precios: [ptK.cifras.piso_rentable, ptK.cifras.precio_maximo, ptK.veredicto], expediente: eK && [eK.cifras.piso_rentable, eK.cifras.precio_maximo, eK.veredicto] })}`);
+        /* (l) Y LA LISTA (10-nov-2026, decisión del dueño): la baja máxima con que la lista y el desglose ajustan la
+           probabilidad sale de la MISMA lectura (bajaMaximaDe → pisoTechoDeBorrador), sin el techo del pliego a mano —la
+           lista no tiene los documentos—: le basta la cuantía que guardó el análisis. Tiene que ser la de Precios. */
+        const filaListaK = { id_del_proceso: "CO1.REQ.K", cuantia_cop: secop, modalidad_de_contratacion: "Licitación pública", objeto_del_contrato: "Construcción de pavimento" };
+        const bmK = BMm.bajaMaximaDe(filaListaK, costosK, {});
+        const bmPrecios = ptK.cifras.piso_baja_pct != null ? Math.max(0, Math.round(Number(ptK.cifras.piso_baja_pct) * 100) / 100) : null;
+        const ptListaK = BMm.pisoTechoDeBorrador(filaListaK, costosK, {});
+        okM(bmPrecios != null && bmK.origen === "apu" && bmK.valor === bmPrecios && ptListaK.pt.veredicto === ptK.veredicto,
+          `(l) ${nombre}: la lista usa la baja máxima y el veredicto de Precios: ${JSON.stringify({ precios: [bmPrecios, ptK.veredicto], lista: [bmK.valor, bmK.origen, ptListaK.pt.veredicto] })}`);
+      }
+    }
+    if (fallasM.length) throw new Error(`unidad Mis procesos: ${fallasM.length} comprobaciones fallan:\n  - ${fallasM.join("\n  - ")}`);
+    console.log("· unidad Mis procesos · la barra, el expediente y su precio: el precio del expediente dice lo mismo que Precios (op=rentabilidad, cuatro casos) con el techo más bajo y la configuración como la acota Precios, cinco respuestas y ninguna es $0 (la lectura que falla lo dice), la cuarta cifra, «¿A cuánto ofertar?» y la sección con las frases de Precios, la barra con «Este proceso» y Quitar una vez, tres apartados con censo de bloques y la línea de atención con la frase de Mi empresa");
   }
 
   bqIteraciones: {
