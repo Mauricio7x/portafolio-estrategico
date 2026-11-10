@@ -5518,7 +5518,7 @@
     const rein = $("seg-reintentar");
     if (rein) rein.classList.toggle("hidden", !(texto && tipo === "error"));
     if (!texto) return m.classList.add("hidden");
-    m.className = `mt-3 rounded-xl px-4 py-3 text-sm ${tipo === "error" ? "bg-red-50 text-red-700" : "bg-emerald-50 text-emerald-800"}`;
+    m.className = `mb-3 rounded-xl px-4 py-3 text-sm ${tipo === "error" ? "bg-red-50 text-red-700" : "bg-emerald-50 text-emerald-800"}`;
     m.textContent = texto; m.classList.remove("hidden");
   }
   const fechaCorta = (f) => { if (!f) return "—"; const d = new Date(String(f).slice(0, 10) + "T12:00:00"); return Number.isFinite(d.getTime()) ? d.toLocaleDateString("es-CO", { day: "numeric", month: "short", year: "numeric" }) : String(f).slice(0, 10); };
@@ -5546,6 +5546,9 @@
   /* CON QUÉ SE PRESENTA (5-nov-2026, encargo del dueño): el filtro de Mis procesos por su perfil o por uno de sus consorcios.
      Vive en memoria, como el de la etapa. `opcionesPresentado` arma las opciones con la lista que sirve el servidor */
   let segPresentado = "todo";
+  /* EL APARTADO DE MIS PROCESOS (10-nov-2026): «lista» (Sus procesos o Calendario, según la vista del casillero, que
+     es la de siempre) o «avisos» (Lo que pide atención). La vista sigue guardada en las preferencias del casillero. */
+  let mpApartado = "lista";
   function opcionesPresentado(r) {
     const sel = $("f-perfil");
     const perfil = (sel && sel.value) || (r && r.perfil) || "";
@@ -5983,14 +5986,15 @@
       /* una sección con título y sin nada dentro es una promesa rota: las citas
          del pliego solo se pintan cuando el pliego se leyó y dijo algo */
       const citas = g ? htmlCitasPliego(g) : "";
-      cuerpo = X.htmlSiguientePaso(p, { hoy: r.hoy || null }) + (X.htmlOferta ? X.htmlOferta(p) : "")
+      cuerpo = X.htmlSiguientePaso(p, { hoy: r.hoy || null }) + (X.htmlPrecioResumen ? X.htmlPrecioResumen(p) : "") + (X.htmlOferta ? X.htmlOferta(p) : "")
         + (X.htmlPuedePresentarse ? X.htmlPuedePresentarse(p, estadoPresentarse(p)) : "") + X.htmlConQuien(p) + X.htmlDatosClave(p)
         + (citas.trim() ? `<section class="exp-seccion"><h3 class="exp-seccion-titulo">Lo que dice el pliego</h3>${citas}</section>` : "")
         + `<section class="exp-seccion"><h3 class="exp-seccion-titulo">Dictamen del pliego</h3>
             <p class="exp-seccion-nota">Si conviene presentarse y por qué, con citas por página del pliego leído.</p>
             <div data-seg-dictamen="${esc(p.id)}"><div class="exp-campo-acciones"><button type="button" class="exp-boton" data-seg-dictamen-ver="${esc(p.id)}">Ver el dictamen del pliego</button></div></div>
             <p class="exp-seccion-nota">¿El pliego no se leyó solo? <button type="button" class="exp-doc-enlace" data-seg-abrir-lector="${esc(p.id)}">Cargue el pliego en Precios</button> y vuelva aquí.</p>
-          </section>` + X.htmlPie(p);
+          </section>`;
+      /* «Llevarse este expediente» (las descargas y quitar) pasó al pie de la barra, «Este proceso» (10-nov-2026) */
     } else if (segExpSeccion === "entregar") {
       /* la lista la arma el servidor (lib/entregar); si el pliego se está leyendo, el avance va arriba, como en «Documentos» */
       cuerpo = `<div data-exp-docs-avance="${esc(p.id)}" aria-live="polite">${htmlAvanceDocs(p.id)}</div>` + X.htmlEntregar(p, { estadosDoc: r.estados_documento || {}, hoy: r.hoy || null });
@@ -6002,6 +6006,8 @@
           <div data-seg-socio-caja="${esc(p.id)}" class="hidden"></div></section>`
         : `<section class="exp-seccion"><div class="exp-vacio"><p class="exp-vacio-titulo">Todavía no se ha leído ningún documento de este proceso</p>
             <p class="exp-vacio-texto">Lo que el pliego exige sale de sus documentos. Búsquelos en «Documentos» o cargue el pliego usted mismo.</p></div></section>`;
+    } else if (segExpSeccion === "precio") {
+      cuerpo = X.htmlPrecio(p);
     } else if (segExpSeccion === "fechas") {
       cuerpo = X.htmlFechas(p, { hoy: r.hoy || null });
     } else if (segExpSeccion === "cuaderno") {
@@ -6033,7 +6039,9 @@
     const abiertosEnt = [...caja.querySelectorAll("details[data-exp-ent-detalle][open]")].map((d) => d.getAttribute("data-exp-ent-detalle"));
     const focoEnt = document.activeElement && caja.contains(document.activeElement) && document.activeElement.getAttribute
       ? ["data-exp-ent-estado", "data-exp-ent-vence"].map((a) => (document.activeElement.getAttribute(a) ? `[${a}="${CSS.escape(document.activeElement.getAttribute(a))}"]` : null)).find(Boolean) : null;
-    caja.innerHTML = `${cabecera}<div class="exp-cuerpo">${cuerpo}</div>`;
+    caja.innerHTML = `<div class="exp-rejilla">${cabecera}<div class="exp-cuerpo">${cuerpo}</div></div>`;
+    // el panel del teléfono se pinta cerrado (repintar no puede dejar el velo sin el panel, ni al revés)
+    if (caja.hasAttribute("data-panel")) { caja.removeAttribute("data-panel"); }
     for (const b of enCurso) { const c = campoNueva(b.k); if (c) { c.value = b.valor; if (b.foco) c.focus(); } }
     if (dicho && avisoCuaderno()) { avisoCuaderno().textContent = dicho.texto; avisoCuaderno().className = dicho.clase; }
     if (dichoEnt && avisoEntrega()) { avisoEntrega().textContent = dichoEnt.texto; avisoEntrega().className = dichoEnt.clase; }
@@ -6480,6 +6488,8 @@
      la pestaña, su velo, su botón y el selector de lo que recibe el foco al abrir. */
   const PANEL_ME = Object.freeze({ tab: "tab-admin", velo: "me-velo", boton: "me-abrir-panel", foco: '#me-barra .me-ir[aria-current="page"]', primero: "#me-barra .me-ir" });
   const PANEL_LIC = Object.freeze({ tab: "tab-licitaciones", velo: "lic-velo", boton: "lic-abrir-panel", foco: '#lic-barra .lic-ir[aria-current="page"]', primero: "#lic-barra .lic-ir" });
+  // el expediente de Mis procesos (10-nov-2026): el atributo va en #seg-expediente, que no se repinta
+  const PANEL_EXP = Object.freeze({ tab: "seg-expediente", velo: "exp-velo", boton: "exp-abrir-panel", foco: '#exp-barra .exp-seccion-btn[aria-current="page"]', primero: "#exp-barra .exp-seccion-btn" });
   function panelLateral(cfg, abrir, { devolverFoco = true } = {}) {
     const tab = document.getElementById(cfg.tab), velo = document.getElementById(cfg.velo), boton = document.getElementById(cfg.boton);
     if (!tab) return;
@@ -6493,6 +6503,48 @@
   }
   function panelMiEmpresa(abrir, opciones) { return panelLateral(PANEL_ME, abrir, opciones); }
   function panelLicitaciones(abrir, opciones) { return panelLateral(PANEL_LIC, abrir, opciones); }
+  /* ══════ LOS APARTADOS DE MIS PROCESOS (10-nov-2026, decisión del dueño sobre su maqueta) ══════
+     Lo decide la hoja por `data-mp` en #seg-maestra: «procesos» y «calendario» son la vista del casillero de siempre
+     (`segPref.vista`), «avisos» la lista completa de lo que pide atención. Aquí solo se pinta: el atributo, la barra
+     marcada, el rótulo del botón del teléfono y las cifras. Un apartado desconocido es INERTE: cae a la lista. */
+  const PANEL_MP = Object.freeze({ tab: "seg-maestra", velo: "mp-velo", boton: "mp-abrir-panel", foco: '#mp-barra .mp-ir[aria-current="page"]', primero: "#mp-barra .mp-ir" });
+  function apartadoMisProcesos(enCalendario) { return mpApartado === "avisos" ? "avisos" : enCalendario ? "calendario" : "procesos"; }
+  function pintarApartadoMisProcesos({ total = null, visibles = null, enCalendario = false, filtros = 0 } = {}) {
+    const m = document.getElementById("seg-maestra");
+    if (!m) return;
+    const id = apartadoMisProcesos(enCalendario);
+    m.setAttribute("data-mp", id);
+    let rotulo = "";
+    document.querySelectorAll("#mp-barra .mp-ir").forEach((b) => {
+      const suyo = b.getAttribute("data-mp-ir") === id;
+      if (suyo) { b.setAttribute("aria-current", "page"); rotulo = (b.querySelector("span") || b).textContent.trim(); } else b.removeAttribute("aria-current");
+    });
+    const rot = document.getElementById("mp-abrir-rotulo");
+    if (rot) rot.textContent = rotulo || "Sus procesos";
+    const mas = document.getElementById("mp-abrir-mas");
+    if (mas) mas.textContent = filtros ? `Filtros (${filtros})` : "Apartados y filtros";
+    // sin cifra no se pinta un 0: la cuenta viene de la respuesta del servidor
+    const nP = document.getElementById("mp-n-procesos");
+    if (nP) nP.textContent = total != null && Number.isFinite(Number(total)) && Number(total) > 0 ? String(total) : "";
+    const ver = document.getElementById("mp-ver");
+    if (ver) ver.textContent = visibles != null && Number.isFinite(Number(visibles)) ? `Ver ${Number(visibles) === 1 ? "el proceso" : `los ${Number(visibles)} procesos`}` : "Ver la lista";
+  }
+  /* Elegir un apartado: «Sus procesos» y «Calendario» cambian la vista del casillero con la MISMA preferencia que el
+     selector de siempre (`guardarPrefCasillero`); «Lo que pide atención» solo cambia el apartado. */
+  function elegirApartadoMisProcesos(pedido) {
+    const id = ["procesos", "calendario", "avisos"].includes(pedido) ? pedido : "procesos";
+    mpApartado = id === "avisos" ? "avisos" : "lista";
+    if (id !== "avisos") guardarPrefCasillero({ vista: id === "calendario" ? "calendario" : "lista" });
+    const m = document.getElementById("seg-maestra");
+    const estabaAbierto = !!(m && m.hasAttribute("data-panel"));
+    if (estabaAbierto) panelLateral(PANEL_MP, false, { devolverFoco: false });
+    if (ultimoSeguimiento) pintarSeguimiento(ultimoSeguimiento); else pintarApartadoMisProcesos({ enCalendario: id === "calendario" });
+    try { window.scrollTo({ top: 0 }); } catch { /* sin desplazamiento */ }
+    // ninguna pulsación sin respuesta visible: el foco va al apartado (computador) o al botón del panel (teléfono)
+    const destino = estabaAbierto ? document.getElementById("mp-abrir-panel") : document.querySelector('#mp-barra .mp-ir[aria-current="page"]');
+    if (destino && typeof destino.focus === "function") { try { destino.focus({ preventScroll: true }); } catch { /* sin foco */ } }
+    return id;
+  }
   /* ══════ LOS APARTADOS DE LICITACIONES (9-nov-2026, decisión del dueño sobre su maqueta) ══════
      Lo decide la hoja por `data-lic` (index.html), como en Mi empresa. «Lo que viene» enciende el Plan Anual con la
      casilla de siempre (`f-ver-paa`, ya sin verse), que dispara su búsqueda; salir de ahí la apaga, porque la insignia
@@ -6551,12 +6603,25 @@
     const b = t.closest("[data-me-ir]");
     if (b) { elegirApartadoMiEmpresa(b.getAttribute("data-me-ir")); return; }
     const l = t.closest("[data-lic-ir]");
-    if (l) elegirApartadoLicitaciones(l.getAttribute("data-lic-ir"));
+    if (l) { elegirApartadoLicitaciones(l.getAttribute("data-lic-ir")); return; }
+    // Mis procesos (10-nov-2026): el panel del teléfono y los tres apartados
+    if (t.closest("#mp-abrir-panel")) { panelLateral(PANEL_MP, true); return; }
+    // «Ver los N procesos» desde «Lo que pide atención» lleva a la lista (cierra el panel al elegir), como en Licitaciones
+    if (t.closest("#mp-ver") && mpApartado === "avisos") { elegirApartadoMisProcesos("procesos"); return; }
+    if (t.closest("#mp-velo") || t.closest("#mp-barra .mp-cerrar") || t.closest("#mp-ver")) { panelLateral(PANEL_MP, false); return; }
+    const mp = t.closest("[data-mp-ir]");
+    if (mp) elegirApartadoMisProcesos(mp.getAttribute("data-mp-ir"));
   });
   document.addEventListener("keydown", (ev) => {
     if (ev.key !== "Escape") return;
     const tab = document.getElementById("tab-admin");
     if (tab && tab.hasAttribute("data-panel")) panelMiEmpresa(false);
+    /* un Escape cierra UNA capa: cerrar el panel lo marca (`preventDefault`) y el oyente del expediente, que lo cerraría
+       entero, lo respeta (revisión adversaria, 10-nov-2026: a menos de 900 px salía del expediente de un golpe) */
+    const exp = document.getElementById("seg-expediente");
+    if (exp && exp.hasAttribute("data-panel")) { panelLateral(PANEL_EXP, false); ev.preventDefault(); }
+    const mae = document.getElementById("seg-maestra");
+    if (mae && mae.hasAttribute("data-panel")) { panelLateral(PANEL_MP, false); ev.preventDefault(); }
   });
   /* La hoja de «Más filtros» se abre ENCIMA del panel de Licitaciones y su Escape la cierra primero. Su oyente se
      registró antes (bubble) y la cierra antes de que este la viera abierta: por eso este escucha en la fase de
@@ -6639,13 +6704,16 @@
         return;
       }
       const et = ev.target.closest("[data-mi-etapa]");
-      if (et) { segFiltroEstado = et.getAttribute("data-mi-etapa"); activarPestana("seguimiento"); if (ultimoSeguimiento) pintarSeguimiento(ultimoSeguimiento); return; }
+      /* CADA ENLACE LLEVA A SU APARTADO (10-nov-2026, revisión adversaria): una etapa abre la lista con esa etapa, «Piden
+         atención» la lista de avisos y «Ver el calendario» el calendario. Sin esto se abría el último apartado que quedó
+         puesto: una etapa podía caer en «Lo que pide atención», donde los filtros no se ven. */
+      if (et) { segFiltroEstado = et.getAttribute("data-mi-etapa"); activarPestana("seguimiento"); elegirApartadoMisProcesos("procesos"); return; }
       const vs = ev.target.closest("[data-mi-ir-seguimiento]");
       if (vs) {
         segFiltroEstado = "todos";
-        if (vs.getAttribute("data-mi-ir-seguimiento") === "calendario") guardarPrefCasillero({ vista: "calendario" });
+        const destino = vs.getAttribute("data-mi-ir-seguimiento");
         activarPestana("seguimiento");
-        if (ultimoSeguimiento) pintarSeguimiento(ultimoSeguimiento);
+        elegirApartadoMisProcesos(destino === "calendario" || destino === "avisos" ? destino : "procesos");
         return;
       }
     });
@@ -6653,8 +6721,24 @@
   function pintarAlertasSeguimiento(r) {
     const sec = $("seg-alertas"), ul = $("seg-alertas-lista"), n = $("seg-alertas-n");
     if (!sec) return;
-    const as = (r.alertas || []).filter((a) => segFiltroEstado === "todos" || (r.procesos.find((p) => p.id === a.id) || {}).estado === segFiltroEstado);
+    /* TODOS los avisos, sin el filtro de etapa (10-nov-2026, revisión adversaria): desde que los filtros viven en la barra,
+       «Lo que pide atención» los esconde, y con una etapa puesta el apartado decía «Nada pide atención» con un cierre
+       mañana. Un aviso callado es el error caro; Mi empresa tampoco filtra. */
+    const as = r.alertas || [];
     sec.classList.toggle("hidden", !as.length);
+    /* «Piden atención» en UNA línea arriba de la lista (10-nov-2026): la MISMA frase de Mi empresa (`fraseAlertas`);
+       la lista completa es el apartado «Lo que pide atención». Sin avisos, la línea no sale y el apartado lo dice. */
+    const Kl = raizCasillero();
+    const linea = $("seg-atencion-linea");
+    if (linea) {
+      const frase = Kl && as.length ? Kl.fraseAlertas(as, 7) : "";
+      linea.innerHTML = frase ? `<span class="min-w-0">Piden atención: ${esc(frase)}</span><span class="mp-ir-ver">Verlos</span>` : "";
+      linea.classList.toggle("hidden", !frase);
+    }
+    const nAv = $("mp-n-avisos");
+    if (nAv) nAv.textContent = as.length ? String(as.length) : "";
+    const vacioAv = $("mp-avisos-vacio");
+    if (vacioAv) vacioAv.classList.toggle("hidden", !!as.length);
     if (!as.length) return;
     /* «sorteo» (22-sep-2026): la alerta de la etapa «avisé · en espera del sorteo».
        Sin rótulo aquí la pantalla pintaba la clave cruda «sorteo:» (medido en Chromium). */
@@ -6847,6 +6931,8 @@
       lista.classList.toggle("hidden", enCalendario);
       if (enCalendario) pintarAgendaCasillero();
     }
+    pintarApartadoMisProcesos({ total: todos.length, visibles: ps.length, enCalendario,
+      filtros: (segFiltroEstado !== "todos" ? 1 : 0) + (segPref.carpeta && segPref.carpeta !== "todo" ? 1 : 0) + (segPresentado !== "todo" ? 1 : 0) + (busqueda.trim() ? 1 : 0) });
     /* AL GUARDAR UN PROCESO SE ABRE SU EXPEDIENTE (8-sep-2026). El encargo del
        dueño era que la guía del recién guardado se abriera «automáticamente»;
        se hacía desplazándose hasta su TARJETA, que ya no existe, así que no
@@ -7591,6 +7677,8 @@
        cancelar el alta), y robárselo sería sacar al usuario de lo que escribía. */
     document.addEventListener("keydown", (ev) => {
       if (ev.key !== "Escape" || !expedienteAbierto()) return;
+      // con el panel de las secciones abierto, este Escape es del panel (en cualquier orden de los oyentes)
+      if (ev.defaultPrevented || ($("seg-expediente") && $("seg-expediente").hasAttribute("data-panel"))) return;
       const t = ev.target;
       if (t && (t.matches("input, textarea, select") || t.isContentEditable)) return;
       ev.preventDefault();
@@ -7621,7 +7709,13 @@
           seguimientoCargadoPara = null;
           await cargarSeguimiento({ forzar: true });
           mensajeSeg("Proceso quitado de Mis procesos.", "ok"); setTimeout(() => mensajeSeg(""), 3000);
-        } catch (e) { qSi.disabled = false; qSi.textContent = "Sí, quitarlo"; decirEtapa(id, fraseDeFallo(e), "error"); }
+        } catch (e) {
+          qSi.disabled = false; qSi.textContent = "Sí, quitarlo";
+          /* «Quitar» vive en «Este proceso», dentro del panel del teléfono, y el fallo se dice en la cabecera: con el panel
+             abierto quedaba debajo de él (revisión adversaria, 10-nov-2026). Se cierra el panel para que se vea. */
+          if ($("seg-expediente") && $("seg-expediente").hasAttribute("data-panel")) panelLateral(PANEL_EXP, false, { devolverFoco: false });
+          decirEtapa(id, fraseDeFallo(e), "error");
+        }
         return;
       }
       /* el número del proceso, para pegarlo en SECOP II o en un mensaje: copiarlo a mano costaba (17-oct-2026) */
@@ -7634,7 +7728,33 @@
       }
       if (ev.target.closest("[data-exp-reintentar]")) { const id = segExpId; segExpDatos = null; await abrirExpediente(id, { empujarHash: false }); return; }
       const secBtn = ev.target.closest("[data-exp-seccion]");
-      if (secBtn) { segExpSeccion = secBtn.getAttribute("data-exp-seccion"); pintarExpediente(); try { window.scrollTo({ top: 0 }); } catch { /* sin scroll */ } return; }
+      if (secBtn) {
+        segExpSeccion = secBtn.getAttribute("data-exp-seccion");
+        // en el teléfono las secciones viven en el panel lateral (10-nov-2026): elegir una lo cierra
+        const estabaAbierto = $("seg-expediente") && $("seg-expediente").hasAttribute("data-panel");
+        if (estabaAbierto) panelLateral(PANEL_EXP, false, { devolverFoco: false });
+        pintarExpediente();
+        try { window.scrollTo({ top: 0 }); } catch { /* sin scroll */ }
+        if (estabaAbierto && $("exp-abrir-panel")) { try { $("exp-abrir-panel").focus({ preventScroll: true }); } catch { /* sin foco */ } }
+        return;
+      }
+      /* EL PANEL DEL TELÉFONO DEL EXPEDIENTE (10-nov-2026): el mismo de Mi empresa y Licitaciones */
+      if (ev.target.closest("#exp-abrir-panel")) { panelLateral(PANEL_EXP, true); return; }
+      if (ev.target.closest("#exp-velo") || ev.target.closest("#exp-barra .exp-cerrar")) { panelLateral(PANEL_EXP, false); return; }
+      /* «Abrir su análisis en Precios» (10-nov-2026): el borrador GUARDADO de este proceso, con la misma carga que la
+         lista de presupuestos de Precios (`cargarPresupuestoGuardado`), no un análisis en blanco */
+      const abrirBor = ev.target.closest("[data-seg-abrir-borrador]");
+      if (abrirBor) {
+        const idB = abrirBor.getAttribute("data-seg-abrir-borrador");
+        if (!idB) return;
+        activarPestana("apu");
+        /* el primer arranque de Precios carga su catálogo y REESCRIBE el desplegable de departamentos y el mensaje: cargar
+           el borrador antes de que termine dejaba el departamento en blanco (el siguiente «Calcular» usaba la región
+           base) y borraba el aviso de la carga (revisión adversaria, 10-nov-2026). La misma espera de la línea de arriba */
+        if (arranqueApu) await arranqueApu.catch(() => {});
+        await cargarPresupuestoGuardado(idB);
+        return;
+      }
       /* ══════════ LOS DOCUMENTOS DEL EXPEDIENTE ══════════ */
       /* DOS MANDOS, NO UNO (7-sep-2026). «Añadir un documento» abría el
          selector de archivo del sistema, y cancelarlo NO dispara ningún evento:
@@ -9929,6 +10049,12 @@
   $("lista-presupuestos").addEventListener("click", async (e) => {
     const id = e.target.getAttribute("data-cargar");
     if (!id) return;
+    await cargarPresupuestoGuardado(id);
+  });
+  /* CARGAR UN PRESUPUESTO GUARDADO (10-nov-2026): era el cuerpo del oyente de «Cargar» en la lista de Precios; es
+     función para que «Abrir su análisis en Precios» del expediente abra el MISMO borrador por el MISMO camino, y no
+     uno en blanco. */
+  async function cargarPresupuestoGuardado(id) {
     try {
       const r = await api(`/api/apu?op=cargar&id=${encodeURIComponent(id)}&perfil=${encodeURIComponent($("perfil").value)}`);
       if (!r) return;
@@ -9988,7 +10114,7 @@
     } catch (err) {
       msgApu(mensajeDeFallo(err, "cargar el presupuesto guardado"), "error");
     }
-  });
+  }
 
   /* ─────────────────────── exportación a Excel ────────────────────────
      El formato lo arma `public/apu_libro.js` (formato del Presupuesto Nogal 4:

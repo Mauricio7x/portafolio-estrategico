@@ -1893,7 +1893,15 @@
        max-w-*: la suite las lee y la memoria del 4-sep decidió no reescribir
        las clases que la suite lee. 72rem = 1152 px, el ancho de en medio; la
        tabla de Precios cabe porque tiene su propio overflow-x. */
-    #app main.panel-pestana { max-width: 72rem; }
+    /* …Y CRECE CON LA PANTALLA (10-nov-2026). El dueño, en un monitor de 1.920 px: «por qué Detekta aparece como si
+       estuviese "cortado"». Con 72rem quedaba vacío el 40 % del ancho, y la barra superior (max-w-7xl, 80rem) ni
+       siquiera alineaba con las pestañas. Las cuatro pestañas y la barra comparten ahora 100rem (1.600 px): con las
+       barras de la izquierda y las rejillas, el contenido crece; los párrafos largos conservan su medida de lectura
+       (`max-width` en ch donde la tienen). Más allá de 1.600 px las líneas dejan de leerse de un vistazo. */
+    #app main.panel-pestana { max-width: 100rem; }
+    #app .barra-superior .cabecera-fila { max-width: 100rem; }
+    /* la explicación del orden ocupa todo el ancho de la caja de búsqueda: a 1.920 px eran líneas de 200 caracteres */
+    #app #orden-concepto { max-width: 90ch; }
     #app main > section.mt-8, #app main > div.mt-8, #app main > details.mt-8 { margin-top: 40px; }
     @media (min-width: 768px) { #app .tarjeta.p-5 { padding: 24px; } }
     #app .bg-white .border.border-gray-200.rounded-2xl, #app .bg-white .border.border-gray-200.rounded-xl,
@@ -2438,6 +2446,9 @@
     @media (min-width: 640px) { #tab-admin .mi-titular-h { font-size: 34px; } }
     #tab-admin .mi-num { font-variant-numeric: tabular-nums; }
     #tab-admin .mi-tareas { display: grid; gap: 10px; }
+    /* su pareja (10-nov-2026): «Cierran esta semana» (#pu-cierran) se esconde con `.hidden` cuando no hay nada, y la regla de
+       arriba (1,1,0) le ganaba a la utilidad (0,1,0): la caja vacía seguía ocupando su hueco. Lo encontró el censo de clases. */
+    #tab-admin .mi-tareas.hidden { display: none; }
     #tab-admin .mi-tarea { display: flex; align-items: center; gap: 14px; min-height: 56px; padding: 14px 16px; border-radius: var(--radius-md); color: var(--text-primary); text-decoration: none; }
     /* la tarjeta entera es el enlace, pero solo «Ver…» va subrayado (la regla de enlaces de la piel subrayaba
        el texto entero de la tarjeta: medido en Chromium) */
@@ -2608,6 +2619,140 @@
         background: var(--accent); color: var(--bg-card); font-size: 17px; font-weight: 700; cursor: pointer; }
     }
     @media (max-width: 899px) and (prefers-reduced-motion: reduce) { #tab-licitaciones[data-lic] > #lic-barra { transition: none; } }
+
+    /* ══════ EL EXPEDIENTE CON SU BARRA (10-nov-2026, decisión del dueño sobre su maqueta de Mis procesos) ══════
+       `htmlCabecera` (public/expediente.js) entrega la barra (`#exp-barra`: secciones y «Este proceso») y la cabecera;
+       `pintarExpediente` (app.js) las mete con el cuerpo en `.exp-rejilla`. En el computador la barra va a la izquierda
+       y se queda a la vista al bajar; en el teléfono es el panel lateral de Mi empresa y Licitaciones (`data-panel` en
+       #seg-expediente, que no se repinta). La cabecera ya no se pega arriba: con la barra al lado, la identidad del
+       proceso y el mando no compiten por la misma franja. */
+    #seg-expediente .exp-rejilla { display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; }
+    #seg-expediente .exp-rejilla > .exp-cabecera { position: static; margin: 0; padding: 0 0 var(--esp-4); background: none;
+      -webkit-backdrop-filter: none; backdrop-filter: none; border-bottom: 1px solid var(--border); }
+    #seg-expediente .exp-barra { display: flex; flex-direction: column; gap: 2px; }
+    #seg-expediente .exp-barra .exp-secciones { display: flex; flex-direction: column; gap: 2px; margin: 0; overflow: visible;
+      background-image: none; background-color: transparent; -webkit-backdrop-filter: none; backdrop-filter: none; position: static; padding: 0; border: 0; }
+    #app #seg-expediente .exp-barra .exp-seccion-btn { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 48px; padding: 8px 14px;
+      border-radius: 12px; font-size: 17px; text-align: left; white-space: normal; color: var(--text-secondary); }
+    #app #seg-expediente .exp-barra .exp-seccion-btn:hover { background: var(--bg-inset); color: var(--text-primary); }
+    #app #seg-expediente .exp-barra .exp-seccion-btn[aria-current="page"] { background: var(--accent-light); color: var(--text-primary); font-weight: 700; }
+    #seg-expediente .exp-barra .exp-seccion-n { margin-left: auto; }
+    #seg-expediente .exp-barra-t { margin: 0; font-size: 17px; font-weight: 700; line-height: 1.3; color: var(--text-primary); }
+    #seg-expediente .exp-este { margin-top: 18px; padding: 16px; border-radius: 16px; background: var(--bg-card); box-shadow: 0 0 0 1px var(--border);
+      display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
+    #seg-expediente .exp-este-t { margin: 0; font-size: 17px; font-weight: 700; color: var(--text-primary); }
+    #seg-expediente .exp-este .cas-carpeta-sel { width: 100%; }
+    #seg-expediente .exp-este-dato { margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+    #seg-expediente .exp-este-dato .cas-carpeta-rotulo { flex-basis: 100%; }
+    /* «El proceso en una mirada» en FILAS (rótulo | valor): en cinco columnas, «Cómo lo adjudican» quedaba en una
+       columna angosta de 14 renglones (medido a 1280 px el 9-nov-2026) */
+    #seg-expediente .exp-datos { grid-template-columns: minmax(0, 1fr); gap: 0; }
+    #seg-expediente .exp-dato { display: grid; grid-template-columns: 190px minmax(0, 1fr); gap: var(--esp-4); align-items: baseline; padding: var(--esp-3) 0;
+      border-top: 1px solid var(--border); }
+    #seg-expediente .exp-dato:first-child { border-top: 0; }
+    #seg-expediente .exp-dato dd { margin-top: 0; }
+    /* «Su precio»: las cajas y el veredicto con los mismos rótulos de Precios */
+    #seg-expediente .exp-precio-suyo { margin: var(--esp-2) 0 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
+    #seg-expediente .exp-precio-suyo b { font-size: var(--tipo-5); font-weight: 700; font-variant-numeric: tabular-nums; color: var(--text-primary); }
+    #seg-expediente .exp-precio-cajas { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--esp-3); margin-top: var(--esp-4); }
+    #seg-expediente .exp-precio-caja { display: flex; flex-direction: column; gap: 4px; padding: var(--esp-3) var(--esp-4); border-radius: 14px; background: var(--bg-inset); }
+    #seg-expediente .exp-precio-caja b { font-size: var(--tipo-4); font-weight: 700; font-variant-numeric: tabular-nums; color: var(--text-primary); }
+    #seg-expediente .exp-precio-rotulo { font-size: var(--tipo-1); font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-secondary); }
+    #seg-expediente .exp-precio-veredicto { margin-top: var(--esp-4); padding: var(--esp-3) var(--esp-4); border-radius: 14px; box-shadow: 0 0 0 1px var(--border); }
+    #seg-expediente .exp-precio-frase { margin: 0; display: flex; gap: 10px; font-weight: 700; color: var(--text-primary); }
+    #seg-expediente .exp-tono-ok .exp-precio-frase { color: var(--ok-texto); }
+    #seg-expediente .exp-tono-mal .exp-precio-frase { color: var(--danger-texto); }
+    #seg-expediente .exp-tono-ojo .exp-precio-frase { color: var(--warn-texto); }
+    #seg-expediente .exp-precio-filas { margin: var(--esp-3) 0 0; padding-left: 1.1em; display: flex; flex-direction: column; gap: 6px; color: var(--text-primary); }
+    #seg-expediente .exp-precio-supuestos { margin-top: var(--esp-4); }
+    #seg-expediente .exp-precio-supuestos ul { margin: var(--esp-2) 0 0; padding-left: 1.1em; color: var(--text-secondary); }
+    #seg-expediente .exp-abrir-panel, #seg-expediente .exp-cerrar, #seg-expediente .exp-velo { display: none; }
+    @media (min-width: 900px) {
+      #seg-expediente .exp-rejilla { grid-template-columns: 250px minmax(0, 1fr); column-gap: 36px; }
+      #seg-expediente .exp-rejilla > * { grid-column: 2; }
+      #seg-expediente .exp-rejilla > #exp-barra { grid-column: 1; grid-row: 1 / span 4; align-self: start; position: sticky; top: 96px;
+        max-height: calc(100vh - 112px); overflow-y: auto; }
+      #seg-expediente .exp-barra-cab { display: none; }
+    }
+    @media (max-width: 899px) {
+      #app #seg-expediente .exp-abrir-panel { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 52px; margin: 12px 0; padding: 0 16px;
+        border: 1px solid var(--border-fuerte); border-radius: 999px; background: var(--bg-card); color: var(--text-primary); font-size: 17px; font-weight: 700;
+        text-align: left; cursor: pointer; }
+      #seg-expediente .exp-abrir-panel .exp-abrir-mas { margin-left: auto; font-weight: 400; color: var(--text-secondary); }
+      #seg-expediente .exp-rejilla > #exp-barra { position: fixed; top: 0; bottom: 0; left: 0; z-index: 60; width: min(330px, 86vw); box-sizing: border-box;
+        padding: max(16px, env(safe-area-inset-top, 0px)) 16px 24px max(16px, env(safe-area-inset-left, 0px)); overflow-y: auto; background: var(--bg-card);
+        box-shadow: 8px 0 32px rgba(0, 0, 0, 0.2); transform: translateX(-105%); visibility: hidden;
+        transition: transform 0.22s cubic-bezier(.2,0,.38,.9), visibility 0s linear 0.22s; }
+      #seg-expediente[data-panel="abierto"] .exp-rejilla > #exp-barra { transform: none; visibility: visible; transition: transform 0.22s cubic-bezier(.2,0,.38,.9); }
+      #seg-expediente .exp-barra-cab { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+      #app #seg-expediente .exp-barra .exp-cerrar { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 44px; height: 44px; padding: 0;
+        border: 0; background: transparent; color: var(--text-primary); cursor: pointer; }
+      #app #seg-expediente .exp-velo:not([hidden]) { display: block; position: fixed; inset: 0; z-index: 59; background: rgba(26, 25, 22, 0.45); }
+      #seg-expediente .exp-precio-cajas { grid-template-columns: minmax(0, 1fr); }
+      #seg-expediente .exp-dato { grid-template-columns: minmax(0, 1fr); gap: 2px; }
+      /* cuatro cifras en dos filas de dos: en una sola fila no caben a 390 px */
+      #seg-expediente .exp-cifras { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: var(--esp-3); }
+      #seg-expediente .exp-cifra:nth-child(odd) { border-left: 0; padding-left: 0; }
+      #seg-expediente .exp-cifra-valor { font-size: 21px; }
+    }
+    @media (max-width: 899px) and (prefers-reduced-motion: reduce) { #seg-expediente .exp-rejilla > #exp-barra { transition: none; } }
+
+    /* ══════ MIS PROCESOS CON SU BARRA (10-nov-2026, decisión del dueño sobre su maqueta) ══════
+       `#seg-maestra` nace con `data-mp="procesos"`; `pintarApartadoMisProcesos` (app.js) lo cambia. «procesos» y
+       «calendario» enseñan la sección de la lista (la vista la decide el casillero, como siempre); «avisos», la lista
+       completa de lo que pide atención. Los filtros solo se ven con la lista. El título «Sus procesos» y sus botones
+       Lista | Calendario se esconden: lo dicen ya los apartados (el título sigue nombrando la sección para el lector). */
+    #app #seg-maestra[data-mp="avisos"] > [data-mp-apartado]:not([data-mp-apartado="avisos"]) { display: none; }
+    #app #seg-maestra:not([data-mp="avisos"]) > [data-mp-apartado="avisos"] { display: none; }
+    #app #seg-maestra[data-mp="avisos"] #mp-filtros, #app #seg-maestra[data-mp="avisos"] > #seg-atencion-linea { display: none; }
+    #app #seg-maestra .seg-cab-procesos { display: none; }
+    /* `:not(.hidden)`: al entrar a un expediente la lista se esconde con la clase (`verVista`, app.js), y una regla con id
+       le gana a `.hidden` — la lección de la rejilla de Mi empresa del 9-nov-2026; la prueba barre todo lo que se esconde */
+    #seg-maestra[data-mp]:not(.hidden) { display: grid; }
+    #seg-maestra[data-mp] { grid-template-columns: minmax(0, 1fr); align-content: start; }
+    #seg-maestra .mp-barra { display: flex; flex-direction: column; gap: 2px; }
+    #seg-maestra .mp-barra-t { margin: 0; font-size: 17px; font-weight: 700; color: var(--text-primary); }
+    #app #seg-maestra .mp-barra .mp-ir { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 48px; padding: 8px 14px; border: 0; border-radius: 12px;
+      background: transparent; color: var(--text-secondary); font-size: 17px; text-align: left; cursor: pointer; }
+    #app #seg-maestra .mp-barra .mp-ir:hover { background: var(--bg-inset); color: var(--text-primary); }
+    #app #seg-maestra .mp-barra .mp-ir[aria-current="page"] { background: var(--accent-light); color: var(--text-primary); font-weight: 700; }
+    #seg-maestra .mp-n { margin-left: auto; font-variant-numeric: tabular-nums; }
+    #seg-maestra .mp-n-aviso { color: var(--danger-texto); font-weight: 700; }
+    #seg-maestra .mp-filtros { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 16px; }
+    #seg-maestra .mp-filtros-t { margin: 0; font-size: 17px; font-weight: 700; color: var(--text-primary); }
+    #seg-maestra .mp-grupo { min-width: 0; }
+    #seg-maestra .mp-grupo-t { margin: 0 0 8px; font-size: 15px; font-weight: 700; color: var(--text-primary); }
+    #seg-maestra .mp-filtros .seg-etapas, #seg-maestra .mp-filtros .cas-carpetas { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; }
+    #app #seg-maestra .mp-atencion-linea { display: flex; width: 100%; align-items: center; gap: 10px; min-height: 52px; margin: 0 0 14px; padding: 10px 14px; border: 0;
+      border-radius: var(--radius-md); background: var(--danger-light); color: var(--danger); font-size: 17px; font-weight: 700; text-align: left; cursor: pointer; }
+    #app #seg-maestra .mp-atencion-linea.hidden { display: none; }
+    #seg-maestra .mp-atencion-linea .mp-ir-ver { margin-left: auto; text-decoration: underline; text-underline-offset: 3px; }
+    #seg-maestra .mp-avisos-vacio { margin: 8px 0 0; padding: 18px; border-radius: 16px; background: var(--bg-card); box-shadow: 0 0 0 1px var(--border); color: var(--text-secondary); }
+    #seg-maestra .mp-avisos-vacio.hidden { display: none; }
+    #seg-maestra .mp-abrir-panel, #seg-maestra .mp-cerrar, #seg-maestra .mp-velo, #seg-maestra .mp-ver { display: none; }
+    @media (min-width: 900px) {
+      #seg-maestra[data-mp] { grid-template-columns: 250px minmax(0, 1fr); column-gap: 36px; }
+      #seg-maestra[data-mp] > * { grid-column: 2; }
+      #seg-maestra[data-mp] > #mp-barra { grid-column: 1; grid-row: 1 / span 12; align-self: start; position: sticky; top: 96px; max-height: calc(100vh - 112px); overflow-y: auto; }
+      #seg-maestra .mp-barra-cab { display: none; }
+    }
+    @media (max-width: 899px) {
+      #app #seg-maestra .mp-abrir-panel { display: flex; order: -1; align-items: center; gap: 10px; width: 100%; min-height: 52px; margin: 0 0 18px; padding: 0 16px;
+        border: 1px solid var(--border-fuerte); border-radius: 999px; background: var(--bg-card); color: var(--text-primary); font-size: 17px; font-weight: 700; text-align: left; cursor: pointer; }
+      #seg-maestra .mp-abrir-panel .mp-abrir-mas { margin-left: auto; font-weight: 400; color: var(--text-secondary); }
+      #seg-maestra[data-mp] > #mp-barra { position: fixed; top: 0; bottom: 0; left: 0; z-index: 60; width: min(330px, 86vw); box-sizing: border-box;
+        padding: max(16px, env(safe-area-inset-top, 0px)) 16px 24px max(16px, env(safe-area-inset-left, 0px)); overflow-y: auto; background: var(--bg-card);
+        box-shadow: 8px 0 32px rgba(0, 0, 0, 0.2); transform: translateX(-105%); visibility: hidden;
+        transition: transform 0.22s cubic-bezier(.2,0,.38,.9), visibility 0s linear 0.22s; }
+      #seg-maestra[data-mp][data-panel="abierto"] > #mp-barra { transform: none; visibility: visible; transition: transform 0.22s cubic-bezier(.2,0,.38,.9); }
+      #seg-maestra .mp-barra-cab { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+      #app #seg-maestra .mp-barra .mp-cerrar { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; padding: 0; border: 0;
+        background: transparent; color: var(--text-primary); cursor: pointer; }
+      #app #seg-maestra .mp-velo:not([hidden]) { display: block; position: fixed; inset: 0; z-index: 59; background: rgba(26, 25, 22, 0.45); }
+      #app #seg-maestra .mp-barra .mp-ver { display: block; width: 100%; min-height: 52px; margin-top: 20px; border: 0; border-radius: 999px;
+        background: var(--accent); color: var(--bg-card); font-size: 17px; font-weight: 700; cursor: pointer; }
+    }
+    @media (max-width: 899px) and (prefers-reduced-motion: reduce) { #seg-maestra[data-mp] > #mp-barra { transition: none; } }
     /* LA VISTA PREVIA DE LA IMPORTACIÓN SE DESPLAZA ENTERA (10-nov-2026). Medido con el teléfono del dueño: con cinco
        avisos largos (un libro de APU) los avisos llenaban el 90 % de la altura, la tabla —lo único que se desplazaba—
        quedaba en cero, «Añadir al presupuesto» salía de la pantalla y el cuerpo está bloqueado mientras la ventana
@@ -3085,7 +3230,7 @@
           <div class="min-w-0">
             <div class="mi-cab"><h2 class="mi-cab-t">Sus procesos</h2></div>
             <!-- «piden atención» en UNA línea (9-nov-2026): la lista completa vive en Mis procesos -->
-            <button type="button" id="mi-atencion-linea" class="mi-atencion-linea hidden" data-mi-ir-seguimiento="1"></button>
+            <button type="button" id="mi-atencion-linea" class="mi-atencion-linea hidden" data-mi-ir-seguimiento="avisos"></button>
             <div id="mi-etapas" class="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-gray-900/5"></div>
           </div>
           <!-- «Próximas fechas» sale de Hoy (9-nov-2026): sigue en el calendario de Mis procesos; el nodo se queda -->
@@ -4158,7 +4303,7 @@
          manifestación de interés que vence, cambios de cronograma, cierres,
          avisos a 7/3/1 días) y filtros por etapa. Los ids de la sección original
          (seccion-seguimiento, seg-*) se conservan: la suite los mira. -->
-    <main id="tab-seguimiento" role="tabpanel" tabindex="0" aria-labelledby="pest-seguimiento" class="panel-pestana mx-auto hidden max-w-5xl px-5 py-8">
+    <main id="tab-seguimiento" role="tabpanel" tabindex="0" aria-labelledby="pest-seguimiento" class="panel-pestana mx-auto hidden max-w-6xl px-5 py-8">
       <!-- ══════ DOS VISTAS EN LA MISMA PESTAÑA (7-sep-2026) ══════
            La MAESTRA (la lista de sus procesos) y el EXPEDIENTE (uno solo, con
            todo lo de esa contratación). El expediente NO es una quinta pestaña:
@@ -4166,7 +4311,60 @@
            `role="tab"`, y una quinta barra mentiría sobre lo que es. Además toda
            la interacción de la pestaña se delega desde `#tab-seguimiento`: fuera
            de aquí habría que duplicar los cuatro oyentes. -->
-      <div id="seg-maestra">
+      <!-- LO QUE SALIÓ MAL SE VE DONDE ESTÉ (10-nov-2026, revisión adversaria): vivían al final de la lista, que se esconde
+           en «Lo que pide atención» y con el expediente abierto; un fallo de «Enterado», de la carpeta del expediente o de
+           una descarga no se veía. Van arriba de las dos vistas. -->
+      <p id="seg-mensaje" class="mb-3 hidden rounded-xl px-4 py-3 text-sm" role="alert"></p>
+      <button id="seg-reintentar" type="button"
+              class="mb-3 hidden rounded-xl border border-gray-300 bg-white px-5 py-2 text-sm font-medium transition hover:bg-gray-50">
+        Reintentar
+      </button>
+      <div id="seg-maestra" data-mp="procesos">
+      <!-- ══════ LA BARRA DE MIS PROCESOS (10-nov-2026, decisión del dueño sobre su maqueta) ══════
+           Tres apartados —Sus procesos · Calendario · Lo que pide atención— y los filtros de siempre (etapa, carpeta,
+           con qué se presenta, y ordenar y agrupar), que se MOVIERON aquí desde encima de la lista. «Sus procesos» y
+           «Calendario» son las dos vistas del casillero (`data-cas-vista`, el mismo oyente); «Lo que pide atención» enseña
+           la lista completa de avisos, que arriba de la lista queda en una línea, como en Mi empresa. En el teléfono la
+           barra es el mismo panel lateral de Mi empresa y Licitaciones. -->
+      <button type="button" id="mp-abrir-panel" class="mp-abrir-panel" aria-controls="mp-barra" aria-expanded="false" aria-label="Abrir los apartados y los filtros de Mis procesos">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+        <span id="mp-abrir-rotulo">Sus procesos</span><span id="mp-abrir-mas" class="mp-abrir-mas">Apartados y filtros</span>
+      </button>
+      <div id="mp-velo" class="mp-velo" hidden></div>
+      <nav id="mp-barra" class="mp-barra" aria-label="Apartados y filtros de Mis procesos">
+        <div class="mp-barra-cab"><p class="mp-barra-t">Mis procesos</p>
+          <button type="button" class="mp-cerrar" aria-label="Cerrar los apartados y los filtros"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+        <button type="button" class="mp-ir" data-mp-ir="procesos" aria-current="page"><span>Sus procesos</span><span id="mp-n-procesos" class="mp-n"></span></button>
+        <button type="button" class="mp-ir" data-mp-ir="calendario"><span>Calendario</span></button>
+        <button type="button" class="mp-ir" data-mp-ir="avisos"><span>Lo que pide atención</span><span id="mp-n-avisos" class="mp-n mp-n-aviso"></span></button>
+        <section id="mp-filtros" class="mp-filtros" aria-labelledby="mp-filtros-t">
+          <p id="mp-filtros-t" class="mp-filtros-t">Filtros</p>
+          <div class="mp-grupo"><p class="mp-grupo-t">Etapa</p>
+            <!-- las etapas, «Nombre N» como en c07 -->
+            <div id="seg-filtros" class="seg-etapas"></div></div>
+          <div class="mp-grupo"><p class="mp-grupo-t">Carpeta</p>
+            <div id="seg-carpetas" class="cas-carpetas"></div></div>
+          <!-- CON QUÉ SE PRESENTA (5-nov-2026): el filtro por consorcio; vacío si no hay ninguno -->
+          <div id="seg-presentados" class="cas-carpetas mp-grupo"></div>
+          <details id="seg-organizar" class="cas-organizar">
+            <summary class="cas-organizar-titulo"><span class="min-w-0 flex-1">Ordenar, agrupar y organizar las carpetas</span></summary>
+            <div class="cas-organizar-caja">
+              <div class="cas-org-nueva">
+                <label class="exp-campo"><span class="exp-campo-rotulo">Ordenar</span>
+                  <select id="seg-orden" class="control-select rounded-xl text-sm" aria-label="Ordenar sus procesos"></select></label>
+                <label class="exp-campo"><span class="exp-campo-rotulo">Agrupar</span>
+                  <select id="seg-agrupar" class="control-select rounded-xl text-sm" aria-label="Agrupar sus procesos"></select></label>
+                <button type="button" id="seg-ics-todos" class="control-boton rounded-xl text-sm"
+                        title="Descargar en un solo archivo de calendario las fechas de los procesos que sigue en pie (no van los descartados ni los que ya ganó o perdió)">Descargar todas mis fechas</button>
+              </div>
+              <div id="seg-organizar-caja" class="cas-organizar-caja"></div>
+              <!-- junto a los mandos de las carpetas (10-nov-2026): en la lista quedaba debajo del panel del teléfono -->
+              <p id="seg-organizar-mensaje" class="cas-nota cas-organizar-mensaje hidden" role="status"></p>
+            </div>
+          </details>
+        </section>
+        <button id="mp-ver" type="button" class="mp-ver">Ver la lista</button>
+      </nav>
       <!-- LA CABECERA DE c07 (3-nov-2026): el título y tres cifras («guardados · siguen abiertos · cambios
            sin ver»). El párrafo de 27 palabras que explicaba la pestaña se retira: la pestaña se explica sola
            y el vacío ya dice qué hace. -->
@@ -4175,9 +4373,11 @@
         <div id="seg-resumen" class="seg-contadores"></div>
       </div>
 
+      <!-- «PIDEN ATENCIÓN» EN UNA LÍNEA (10-nov-2026): la misma frase de Mi empresa; la lista completa es su apartado -->
+      <button type="button" id="seg-atencion-linea" class="mp-atencion-linea hidden" data-mp-ir="avisos"></button>
       <!-- centro de alertas: nace oculto; aparece con la primera alerta. Se llama como en Mi empresa:
-           es la MISMA lista, pintada con las mismas piezas -->
-      <section id="seg-alertas" class="seg-bloque hidden" aria-labelledby="seg-alertas-t">
+           es la MISMA lista, pintada con las mismas piezas. Desde el 10-nov-2026 es el apartado «Lo que pide atención». -->
+      <section id="seg-alertas" class="seg-bloque hidden" aria-labelledby="seg-alertas-t" data-mp-apartado="avisos">
         <div class="seg-cab">
           <h2 id="seg-alertas-t" class="seg-cab-t">Lo que pide atención</h2>
           <p id="seg-alertas-n" class="seg-nota"></p>
@@ -4191,7 +4391,9 @@
            presentaron y qué dicen las fuentes abiertas de cada uno. Los datos
            salen de /api/perfil?op=seguimiento; nace oculto y aparece con el
            primer proceso guardado (o con el resumen si ya hay). -->
-      <section id="seccion-seguimiento" class="seg-bloque" aria-labelledby="seg-procesos-t">
+      <!-- el apartado sin nada que hacer lo DICE: una pantalla en blanco no es una respuesta -->
+      <p id="mp-avisos-vacio" class="mp-avisos-vacio hidden" data-mp-apartado="avisos" role="status">Nada pide atención en los próximos 7 días. Los cierres, los avisos de interés y los cambios de sus procesos guardados aparecen aquí.</p>
+      <section id="seccion-seguimiento" class="seg-bloque" aria-labelledby="seg-procesos-t" data-mp-apartado="procesos">
         <!-- «SUS PROCESOS» Y SUS DOS VISTAS JUNTO AL TÍTULO (3-nov-2026, c07): Lista | Calendario mandan
              sobre lo que viene debajo, y por eso van con su título y no al lado del buscador. -->
         <div class="seg-cab seg-cab-procesos">
@@ -4204,8 +4406,7 @@
         <!-- cómo le va de verdad: ganadas · perdidas · sin resultado, solo con
              tres o más presentadas; nace oculto y lo pinta pintarSeguimiento -->
         <div id="seg-desenlace" class="mb-4 hidden"></div>
-        <!-- las etapas, «Nombre N» como en c07 -->
-        <div id="seg-filtros" class="seg-etapas"></div>
+        <!-- las etapas, la carpeta, con qué se presenta y «Ordenar, agrupar» viven en la barra de la izquierda (10-nov-2026) -->
 
         <!-- ══════ EL CASILLERO (7-sep-2026) ══════
              Encargo del dueño: «que se parezca a un casillero, como un drive,
@@ -4230,24 +4431,6 @@
                3-nov va junto a «Sus procesos»— y el resto se pliega en «Ordenar
                y agrupar», que nace cerrado. -->
         </div>
-        <details id="seg-organizar" class="cas-organizar">
-          <summary class="cas-organizar-titulo"><span class="min-w-0 flex-1">Ordenar, agrupar y organizar las carpetas</span></summary>
-          <div class="cas-organizar-caja">
-            <div class="cas-org-nueva">
-              <label class="exp-campo"><span class="exp-campo-rotulo">Ordenar</span>
-                <select id="seg-orden" class="control-select rounded-xl text-sm" aria-label="Ordenar sus procesos"></select></label>
-              <label class="exp-campo"><span class="exp-campo-rotulo">Agrupar</span>
-                <select id="seg-agrupar" class="control-select rounded-xl text-sm" aria-label="Agrupar sus procesos"></select></label>
-              <button type="button" id="seg-ics-todos" class="control-boton rounded-xl text-sm"
-                      title="Descargar en un solo archivo de calendario las fechas de los procesos que sigue en pie (no van los descartados ni los que ya ganó o perdió)">Descargar todas mis fechas</button>
-            </div>
-            <div id="seg-organizar-caja" class="cas-organizar-caja"></div>
-          </div>
-        </details>
-        <div id="seg-carpetas" class="cas-carpetas"></div>
-        <!-- CON QUÉ SE PRESENTA (5-nov-2026): el filtro por consorcio; vacío si no hay ninguno -->
-        <div id="seg-presentados" class="cas-carpetas"></div>
-        <p id="seg-organizar-mensaje" class="cas-nota cas-organizar-mensaje hidden" role="status"></p>
         <!-- TRES ESTADOS DISTINTOS SE DICEN DISTINTO (5-sep-2026). Este bloque
              nacía VISIBLE y solo lo escondía `pintarSeguimiento`, así que con el
              servidor caído la ruta de fallo ni siquiera llegaba a esa línea: el
@@ -4282,11 +4465,6 @@
              public/app.js al cambiar de vista; la pinta public/casillero.js con
              la rejilla de public/calendario.js (una sola aritmética del mes) -->
         <div id="seg-agenda" class="mt-4 hidden"></div>
-        <p id="seg-mensaje" class="mt-3 hidden rounded-xl px-4 py-3 text-sm" role="alert"></p>
-        <button id="seg-reintentar" type="button"
-                class="mt-3 hidden rounded-xl border border-gray-300 bg-white px-5 py-2 text-sm font-medium transition hover:bg-gray-50">
-          Reintentar
-        </button>
       </section>
       </div><!-- /#seg-maestra -->
 
