@@ -67462,8 +67462,8 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
       const fuenteAplicar = cortarM("  function aplicarConfig(c) {");
       if (fuenteAplicar) {
         const A = new Function(`
-          const els = {}; const $ = (id) => (els[id] = els[id] || { value: "x", checked: false, disabled: false });
-          const sincronizarBaja = () => {};
+          const els = {}; const $ = (id) => (els[id] = els[id] || { value: "x", checked: false, disabled: false, dataset: {} });
+          const sincronizarBaja = () => {}, sincronizarCasillaSub = () => {};
           ${fuenteAplicar}
           // lo que no se tocó sale como «no tocado»: la aserción falla limpia, sin leer de undefined
           return (c) => { for (const k of Object.keys(els)) delete els[k]; aplicarConfig(c); const r = JSON.parse(JSON.stringify(els));
@@ -67696,14 +67696,47 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
 
     // (c) la casilla de lo subcontratado: se lee, vuelve al abrir un análisis (con la lectura del motor) y MUEVE el precio
     const fuenteLeerP = cortarP("  function leerConfig() {"), fuenteAplP = cortarP("  function aplicarConfig(c) {");
-    if (fuenteLeerP && fuenteAplP) {
+    const fuenteSyncP = cortarP("  function sincronizarCasillaSub() {");
+    const fuenteOyentesP = cortarP('  for (const id of ["metodo-admin", "gastos-fijos", "horas-proyecto"]) {');
+    if (fuenteLeerP && fuenteAplP && fuenteSyncP) {
       const E = new Function(`
-        const els = {}; let falta = null;
-        const $ = (id) => (id === falta ? null : (els[id] = els[id] || { value: { aiu: "15", imprevistos: "5", utilidad: "5", "modo-aiu": "aditivo" }[id] || "", checked: false, disabled: false }));
+        const els = {}; let falta = null; const oyentes = {};
+        const clase = () => { const c = new Set(["hidden"]); return { toggle: (k, f) => (f ? c.add(k) : c.delete(k)), contains: (k) => c.has(k) }; };
+        // como en el navegador, el valor de un campo es SIEMPRE texto (aplicarConfig escribe números)
+        const campo = (id) => { let v = { aiu: "15", imprevistos: "5", utilidad: "5", "modo-aiu": "aditivo" }[id] || "";
+          return { get value() { return v; }, set value(x) { v = String(x); }, checked: false, disabled: false,
+            dataset: {}, classList: clase(), addEventListener: (ev, fn) => { oyentes[id + ":" + ev] = fn; } }; };
+        const $ = (id) => (id === falta ? null : (els[id] = els[id] || campo(id)));
         const techoSigueDelPliego = () => false, varianteIvaActual = () => null, sincronizarBaja = () => {};
         ${fuenteLeerP}
         ${fuenteAplP}
-        return { leerConfig, aplicarConfig, els, faltar: (id) => { falta = id; } };`)();
+        ${fuenteSyncP}
+        ${fuenteOyentesP}
+        return { leerConfig, aplicarConfig, els, oyentes, faltar: (id) => { falta = id; } };`)();
+      /* «HAZ EL 1 Y 2» (10-nov-2026): con administración por tiempo la casilla de lo subcontratado va encendida, bloqueada
+         y con su porqué; un análisis guardado por tiempo con la casilla apagada se abre encendido */
+      E.aplicarConfig({ metodo_administracion: "tiempo", gastos_fijos_mensuales: 6000000, horas_proyecto: 1440, aiu_sobre_subcontratado: false });
+      const tiempoAbierto = { checked: E.els["aiu-sobre-sub"].checked, bloqueada: E.els["aiu-sobre-sub"].disabled, nota: !E.els["aiu-sobre-sub-tiempo"].classList.contains("hidden") };
+      okP(tiempoAbierto.checked === true && tiempoAbierto.bloqueada === true && tiempoAbierto.nota === true,
+        `(c) un análisis por tiempo con la casilla apagada se abre con la casilla encendida, bloqueada y con su porqué (MUTACIÓN: se abría apagada y el precio cobraba media administración): ${JSON.stringify(tiempoAbierto)}`);
+      okP(E.leerConfig().aiu_sobre_subcontratado === true, "(c) …y así viaja al cálculo");
+      E.els["metodo-admin"].value = "porcentaje";
+      E.oyentes["metodo-admin:change"]();
+      okP(E.els["aiu-sobre-sub"].disabled === false && E.els["aiu-sobre-sub-tiempo"].classList.contains("hidden") && E.els["aiu-sobre-sub"].checked === false,
+        `(c) al volver a porcentaje se desbloquea y vuelve la elección del análisis (apagada), no un «encendida» que nadie pidió: ${JSON.stringify({ c: E.els["aiu-sobre-sub"].checked, d: E.els["aiu-sobre-sub"].disabled })}`);
+      // por tiempo SIN las horas el motor calcula por porcentaje: la casilla no se bloquea (revisión adversaria: invertía el veredicto)
+      E.els["horas-proyecto"].value = "";
+      E.els["metodo-admin"].value = "tiempo"; E.oyentes["metodo-admin:change"]();
+      okP(E.els["aiu-sobre-sub"].checked === false && E.els["aiu-sobre-sub"].disabled === false, "(c) «por tiempo» sin las horas no bloquea la casilla: el motor calcula por porcentaje");
+      E.els["horas-proyecto"].value = "1440"; E.oyentes["horas-proyecto:input"]();
+      okP(E.els["aiu-sobre-sub"].checked === true && E.els["aiu-sobre-sub"].disabled === true, "(c) al escribir las horas el método ya es tiempo: enciende y bloquea al momento");
+      E.els["horas-proyecto"].value = ""; E.oyentes["horas-proyecto:input"]();
+      okP(E.els["aiu-sobre-sub"].checked === false && E.els["aiu-sobre-sub"].disabled === false, "(c) …y al borrarlas vuelve la elección");
+      // abrir otro análisis no hereda el «antes» del anterior
+      E.els["horas-proyecto"].value = "1440"; E.oyentes["horas-proyecto:input"]();
+      E.aplicarConfig({ metodo_administracion: "porcentaje", aiu_sobre_subcontratado: true });
+      okP(E.els["aiu-sobre-sub"].checked === true && E.els["aiu-sobre-sub"].disabled === false && E.els["aiu-sobre-sub"].dataset.antes == null, "(c) abrir otro análisis toma su elección, sin el «antes» del anterior");
+      for (const k of Object.keys(E.els)) delete E.els[k];
       E.leerConfig(); E.els["aiu-sobre-sub"].checked = false;
       const cfgSin = E.leerConfig();
       E.els["aiu-sobre-sub"].checked = true;
@@ -67732,6 +67765,7 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
       const editorP = fs.readFileSync(path.join(__dirname, "..", "lib", "handlers", "apu", "editor.js"), "utf8");
       okP(/config: \{ \.\.\.\(datos\.config \|\| \{\}\), contribucion_pct: contribucionPctDe\(datos\) \}/.test(editorP), "(c) op=calcular pasa la configuración de la pantalla al motor sin filtrarla");
       okP(/id="aiu-sobre-sub" type="checkbox" checked/.test(htmlP), "(c) la casilla nace encendida, como el servidor la tomaba");
+      okP(/id="aiu-sobre-sub-tiempo" class="[^"]*\bhidden\b/.test(htmlP), "(c) el porqué de la casilla por tiempo nace escondido");
     }
 
     // (d) cada aviso junto a SU botón: «Guardar» y «Cargar» arriba, la lista en su apartado
@@ -67887,6 +67921,19 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
     }
     okP(/#tab-apu\[data-apu\]\[data-panel="abierto"\] > #apu-barra \{[^}]*transform: none/.test(htmlP), "(g) la hoja enseña el panel abierto");
 
+    /* (m) CENSO DE LOS COLORES DE TEXTO (10-nov-2026, revisión adversaria): --danger-texto y --warn-texto son el texto que
+           va ENCIMA de su fondo (blanco en claro); usados como color de un texto sobre la tarjeta el veredicto «No se
+           presente» y la nota del mínimo no se veían (1,1:1 medido en Chromium). Cada bloque de estilo —regla o atributo
+           style— que los use como color tiene que poner también su fondo. Sin excepciones. */
+    {
+      const htmlC = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8").replace(/<!--[\s\S]*?-->/g, "").replace(/\/\*[\s\S]*?\*\//g, "");
+      const bloques = [...htmlC.matchAll(/\{([^{}]*)\}/g)].map((m) => m[1]).concat([...htmlC.matchAll(/style="([^"]*)"/g)].map((m) => m[1]));
+      const malos = bloques.filter((b) => /(^|[;\s])color:\s*var\(--(danger|warn)-texto\)/.test(b))
+        .filter((b) => { const t = b.match(/color:\s*var\(--(danger|warn)-texto\)/)[1]; return !new RegExp(`background(-color)?:\\s*var\\(--${t}\\)`).test(b); });
+      okP(malos.length === 0, `(m) un texto con --danger-texto o --warn-texto sin su fondo no se ve (MUTACIÓN: el veredicto rojo invisible): ${malos.map((b) => b.trim().slice(0, 80)).join(" | ")}`);
+      okP(bloques.some((b) => /color:\s*var\(--danger-texto\)/.test(b)), "(m) premisa: el censo encuentra el uso legítimo (la insignia, con su fondo)");
+      okP(/#tab-apu \.apu-veredicto\.apu-tono-mal \{ color: var\(--danger\); \}/.test(htmlC) && /#seg-expediente \.exp-tono-mal \.exp-precio-frase \{ color: var\(--danger\); \}/.test(htmlC), "(m) el veredicto rojo de Precios y del expediente con el color de texto");
+    }
     if (fallasP.length) throw new Error(`unidad Precios: ${fallasP.length} comprobaciones fallan:\n  - ${fallasP.join("\n  - ")}`);
     console.log("· unidad Precios · la barra, las tres cifras y la casilla: siete apartados con lo desconocido inerte y la lista pedida al entrar en los guardados; las tres cifras de arriba salen de lo calculado y nunca son $0 («Sin calcular», «Recalcule», «Faltan N cantidades», «Sin proceso»), con el veredicto de Precios y su color; la casilla de lo subcontratado se lee, vuelve como la lee el motor y mueve el precio; «Subir un APU» entra por la misma puerta del archivo; cada aviso junto a su botón; tres cifras de rentabilidad a la vista y las nueve con el botón; el panel del teléfono y Escape");
   }
@@ -67909,7 +67956,7 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
     // (a) la regla, una vez: costo directo − base del AIU; sin base, fuera de rango o con texto vacío, 0 (el lado prudente)
     const casosA = [[{ costo_directo_total: 100, base_aiu: 100 }, 0], [{ costo_directo_total: 100, base_aiu: 60 }, 40], [{ costo_directo_total: 100, base_aiu: null }, 0],
       [{ costo_directo_total: 100, base_aiu: "" }, 0], [{ costo_directo_total: 100, base_aiu: 120 }, 0], [{ costo_directo_total: 100, base_aiu: -5 }, 0],
-      [{ costo_directo_total: null, base_aiu: 60 }, 0], [{ costo_directo_total: 0, base_aiu: 0 }, 0], [{}, 0]];
+      [{ costo_directo_total: null, base_aiu: 60 }, 0], [{ costo_directo_total: 0, base_aiu: 0 }, 0], [{}, 0], [{ costo_directo_total: 100000002.36, base_aiu: 1.49 }, 100000002.36 - 1.49]];
     for (const [e, esperado] of casosA) okS(PTs.costoACostoDe(e) === esperado, `(a) costoACostoDe(${JSON.stringify(e)}) = ${PTs.costoACostoDe(e)}, se esperaba ${esperado} (MUTACIÓN: con Number(""), la base vacía pondría todo a costo)`);
     // (b) la identidad con el motor: con la utilidad mínima = U, sin deducciones ni contribución, el costo total del piso ES el precio de venta
     const itemsS = [
@@ -68017,8 +68064,9 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
       okS(ptOn.pt.cifras.costo_a_costo === 0 && ptOn.pt.cifras.piso_rentable === vOn.ptP.cifras.piso_rentable && BMs.gananciaDesdeBorrador(ptOn).costo_a_costo === 0,
         `(g) con la casilla encendida en la configuración, la base guardada no se usa (MUTACIÓN: la carrera Calcular → casilla → Guardar bajaba el mínimo de la lista): ${JSON.stringify({ aCosto: ptOn.pt.cifras.costo_a_costo, piso: ptOn.pt.cifras.piso_rentable, precios: vOn.ptP.cifras.piso_rentable })}`);
     }
-    /* (i) con la administración POR TIEMPO la A se deriva sobre TODO el costo: la parte a costo no se usa (revisión
-           adversaria: 100 M propios + 100 M subcontratados dejaban el mínimo 20,57 M por debajo del costo real) */
+    /* (i) con la administración POR TIEMPO, por el servidor real: desde el 10-nov-2026 («haz el 1 y 2») la A se reparte
+           sobre la base del AIU, así que el precio cobra la administración entera y el mínimo usa la misma base (la
+           revisión adversaria de la entrega anterior reprodujo el mínimo 20,57 M por debajo cuando la A era sobre todo) */
     {
       const cfgT = { modo_aiu: "aditivo", aiu_pct: 10, imprevistos_pct: 3, utilidad_pct: 5, utilidad_minima_pct: 0, aiu_sobre_subcontratado: false, metodo_administracion: "tiempo", gastos_fijos_mensuales: 6000000, horas_proyecto: 1440 };
       const itemsT = [{ descripcion: "Obra propia", unidad: "gl", cantidad: 1, precio_manual: 100000000 }, { descripcion: "Sub", unidad: "gl", cantidad: 1, precio_manual: 100000000, subcontratado: true }];
@@ -68028,10 +68076,15 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
       okS(presT && presT.configuracion.metodo_administracion === "tiempo" && presT.resumen.base_aiu === 100000000,
         `(i) premisa: el motor calculó por tiempo con la casilla apagada (base de 100 M): ${JSON.stringify(presT && { m: presT.configuracion.metodo_administracion, b: presT.resumen.base_aiu })}`);
       const adminT = presT ? Number(presT.configuracion.administracion && presT.configuracion.administracion.valor) : NaN;
-      // con la A derivada (redondeada por el motor) sobre los 200 M; sin la guarda: 100 M × (1 + A + I) + 100 M
+      /* «HAZ EL 1 Y 2» (10-nov-2026): la A se reparte sobre la base (los 100 M propios), así que el PRECIO cobra la
+         administración entera (antes 20,57 M de 41,14 M) y el mínimo usa la misma base que el precio, con lo subcontratado
+         a costo. La A del motor va redondeada a dos decimales: el peso de diferencia es ese redondeo. */
       const aT = presT ? Number(presT.configuracion.aiu_pct) : NaN;
-      okS(ptT && ptT.cifras.costo_a_costo === 0 && ptT.cifras.costo_sin_utilidad === Math.round(200000000 * (1 + (aT + 3) / 100)) && Math.abs(ptT.cifras.costo_sin_utilidad - (200000000 + adminT + 6000000)) < 10000,
-        `(i) por tiempo, el mínimo carga la administración entera sobre todo el costo (MUTACIÓN: sin la guarda quedaba bajo el costo real): ${JSON.stringify(ptT && { aCosto: ptT.cifras.costo_a_costo, sinUtilidad: ptT.cifras.costo_sin_utilidad, admin: adminT })}`);
+      okS(presT && Math.abs(Number(presT.resumen.administracion) - adminT) <= 100000000 * 0.00005 + 1 && aT > 40,
+        `(i) por tiempo con la casilla apagada, el precio cobra la administración entera (MUTACIÓN: con la A sobre todo el costo cobraba la mitad): ${JSON.stringify(presT && { enPrecio: presT.resumen.administracion, calculada: adminT, A: aT })}`);
+      okS(ptT && ptT.cifras.costo_a_costo === 100000000 && ptT.cifras.costo_sin_utilidad === Math.round(100000000 * (1 + (aT + 3) / 100) + 100000000)
+        && Math.abs(ptT.cifras.costo_sin_utilidad - (200000000 + adminT + 3000000)) <= 100000000 * 0.00005 + 1,
+        `(i) …y el mínimo, con la misma base: la obra, la administración entera y los imprevistos de lo propio: ${JSON.stringify(ptT && { aCosto: ptT.cifras.costo_a_costo, sinUtilidad: ptT.cifras.costo_sin_utilidad, admin: adminT })}`);
     }
     // (h) «haz el 3»: subir un APU, usar los precios de la IA y el descuento sugerido calculan con su mínimo, por la MISMA función del botón
     const jsS = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
@@ -68057,6 +68110,35 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
       const iIa = jsS.indexOf('"precios de la IA puestos"} en la lista. Calculando el presupuesto…');
       okS(iImp > 0 && /await calcularConSuMinimo\(\);/.test(jsS.slice(iImp, iImp + 200)) && iIa > 0 && /await calcularConSuMinimo\(\);/.test(jsS.slice(iIa, iIa + 200)),
         "(h) subir un APU (la importación) y aceptar los precios de la IA calculan con su mínimo");
+    }
+    /* (k) EL MOTOR POR TIEMPO (10-nov-2026, «haz el 1 y 2»), directo: la administración por tiempo es un valor en pesos
+           y el precio la cobra entera con la casilla en las dos posiciones; toda la obra subcontratada no la deja fuera */
+    {
+      const itemsK = [{ descripcion: "Propia", unidad: "gl", cantidad: 1, precio_manual: 100000000 }, { descripcion: "Sub", unidad: "gl", cantidad: 1, precio_manual: 100000000, subcontratado: true }];
+      const cfgK = (casilla) => ({ modo_aiu: "aditivo", aiu_pct: 10, imprevistos_pct: 3, utilidad_pct: 5, metodo_administracion: "tiempo", gastos_fijos_mensuales: 6000000, horas_proyecto: 1440, aiu_sobre_subcontratado: casilla });
+      const parK = { jornada_legal_mes: 210 };
+      const on = calcS.calcularPresupuesto({ items: itemsK, parametros: parK, config: cfgK(true) }), off = calcS.calcularPresupuesto({ items: itemsK, parametros: parK, config: cfgK(false) });
+      const valorK = Number(on.configuracion.administracion && on.configuracion.administracion.valor);
+      okS(on.configuracion.aiu_pct === 20.57 && on.resumen.administracion === 41140000 && Math.abs(valorK - 41142857.14) < 0.01,
+        `(k) premisa y casilla encendida: la A de siempre (20,57 % sobre los 200 M), sin cambio: ${JSON.stringify({ A: on.configuracion.aiu_pct, adm: on.resumen.administracion, valor: valorK })}`);
+      okS(off.configuracion.aiu_pct === 41.14 && off.resumen.administracion === 41140000 && off.resumen.base_aiu === 100000000 && off.resumen.precio_venta === Math.round(100000000 * (1 + (41.14 + 3 + 5) / 100) + 100000000),
+        `(k) casilla apagada: la A se reparte sobre los 100 M propios y el precio cobra la misma administración (MUTACIÓN: 20,57 M): ${JSON.stringify({ A: off.configuracion.aiu_pct, adm: off.resumen.administracion, precio: off.resumen.precio_venta })}`);
+      const todoSub = calcS.calcularPresupuesto({ items: [itemsK[1]], parametros: parK, config: cfgK(false) });
+      okS(todoSub.resumen.administracion === 41140000 && todoSub.resumen.base_aiu === 100000000 && (todoSub.alertas || []).some((a) => /no hay obra propia sobre la cual repartirla/.test(a)),
+        `(k) toda la obra subcontratada: la administración no queda fuera del precio, se carga sobre todo y se dice: ${JSON.stringify({ adm: todoSub.resumen.administracion, base: todoSub.resumen.base_aiu })}`);
+      // la alerta de la baja mide con la misma base que el precio: con la casilla apagada y baja 0 % no salta; con una baja grande sí
+      const conBaja = (casilla, baja) => calcS.calcularPresupuesto({ items: itemsK, config: { modo_aiu: "aditivo", aiu_pct: 10, imprevistos_pct: 3, utilidad_pct: 5, aiu_sobre_subcontratado: casilla, aplicar_ajuste_competitivo: true, factor_baja: baja } });
+      const comio = (r) => (r.alertas || []).some((a) => /la baja se comió toda la utilidad/.test(a));
+      okS(!comio(conBaja(false, 0)) && comio(conBaja(false, 8)) && !comio(conBaja(true, 0)) && comio(conBaja(true, 8)),
+        `(k) «la baja se comió la utilidad» con la misma base que el precio (MUTACIÓN: con la casilla apagada saltaba con baja 0 %): ${JSON.stringify([comio(conBaja(false, 0)), comio(conBaja(false, 8)), comio(conBaja(true, 0)), comio(conBaja(true, 8))])}`);
+      // y la parte a costo sin redondear: con una base propia diminuta el mínimo con la utilidad completa sigue siendo el precio del motor
+      const diminuta = calcS.calcularPresupuesto({ items: [{ descripcion: "Propia", unidad: "gl", cantidad: 1, precio_manual: 1.49 }, { descripcion: "Sub", unidad: "gl", cantidad: 1, precio_manual: 100000000.87, subcontratado: true }], parametros: parK, config: cfgK(false) });
+      const ptDim = PTs.pisoTecho({ presupuesto_oficial: 1e9, costo_directo: diminuta.resumen.costo_directo_total, aiu: { administracion_pct: diminuta.configuracion.aiu_pct, imprevistos_pct: 3, utilidad_pct: 5 },
+        utilidad_minima_pct: 5, deducciones_pct: 0, contribucion_pct: 0, costo_a_costo: PTs.costoACostoDe(diminuta.resumen) });
+      okS(Math.abs(ptDim.cifras.costo_total - diminuta.resumen.precio_venta) <= 1,
+        `(k) con 1,49 pesos propios el mínimo con la utilidad completa sigue siendo el precio (MUTACIÓN: con la parte a costo redondeada quedaba 3,59 M por debajo): ${JSON.stringify({ minimo: ptDim.cifras.costo_total, precio: diminuta.resumen.precio_venta })}`);
+      const porPct = calcS.calcularPresupuesto({ items: itemsK, config: { ...cfgK(false), metodo_administracion: "porcentaje" } });
+      okS(porPct.resumen.administracion === 10000000 && porPct.resumen.base_aiu === 100000000, "(k) con porcentaje, la casilla apagada sigue cargando la A solo sobre lo propio (sin cambio)");
     }
     /* (j) EL DETALLE DE «LO QUE DEJA» DICE LO MISMO QUE LA TARJETA (revisión adversaria, 10-nov-2026: al abrirlo, con
            parte a costo, la tarjeta decía «deja» y el detalle «depende»). La función REAL del navegador, con la MISMA

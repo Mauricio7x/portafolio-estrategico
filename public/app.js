@@ -8358,8 +8358,42 @@
     if ($("utilidad-minima")) $("utilidad-minima").value = c.utilidad_minima_pct == null ? "" : c.utilidad_minima_pct;
     /* ausente (borradores de antes) = encendida, que es lo que el servidor hacía siempre; la MISMA lectura que
        lib/apu/calculo.normalizarConfig (solo `false` o "false" la apagan): la casilla dice lo que el motor calcula */
-    if ($("aiu-sobre-sub")) $("aiu-sobre-sub").checked = !(c.aiu_sobre_subcontratado === false || c.aiu_sobre_subcontratado === "false");
+    if ($("aiu-sobre-sub")) {
+      $("aiu-sobre-sub").checked = !(c.aiu_sobre_subcontratado === false || c.aiu_sobre_subcontratado === "false");
+      $("aiu-sobre-sub").disabled = false;   // la elección de ESTE análisis es la que se recuerda, no la del anterior
+      delete $("aiu-sobre-sub").dataset.antes;
+    }
+    sincronizarCasillaSub();
     sincronizarBaja();
+  }
+
+  /* CON ADMINISTRACIÓN POR TIEMPO, LA CASILLA DE LO SUBCONTRATADO VA ENCENDIDA (10-nov-2026, decisión del dueño: «haz
+     el 1 y 2»). Por tiempo, la administración son los gastos fijos del plazo —un valor en pesos, no un porcentaje—; con
+     la casilla apagada el precio cobraba solo una parte (20,57 M de 41,14 M en el caso que reprodujo la revisión). Aquí
+     no se deja apagar y se dice por qué; el motor, además, reparte esa administración sobre la base si llega apagada (un
+     análisis guardado antes), para que el precio la cobre entera de todos modos. */
+  /* Por el método que DE VERDAD se calcula (revisión adversaria): el motor solo calcula por tiempo con los gastos fijos y
+     las horas (lib/apu/calculo.normalizarConfig); con el selector en «por tiempo» y las horas vacías calcula por
+     porcentaje, y bloquear ahí la casilla cambiaba el veredicto sin motivo. Al salir de tiempo vuelve lo que el usuario
+     tenía elegido (`data-antes`), no un «encendida» que nadie pidió. */
+  function sincronizarCasillaSub() {
+    const sub = $("aiu-sobre-sub"), met = $("metodo-admin");
+    if (!sub || !met) return;
+    const dato = (id) => { const el = $(id); return el && String(el.value).trim() !== "" && Number(el.value) > 0; };
+    const porTiempo = met.value === "tiempo" && dato("gastos-fijos") && dato("horas-proyecto");
+    if (porTiempo) {
+      if (!sub.disabled) sub.dataset.antes = sub.checked ? "1" : "0";
+      sub.checked = true;
+    } else if (sub.disabled && sub.dataset.antes != null) {
+      sub.checked = sub.dataset.antes === "1";
+      delete sub.dataset.antes;
+    }
+    sub.disabled = porTiempo;
+    const nota = $("aiu-sobre-sub-tiempo");
+    if (nota) nota.classList.toggle("hidden", !porTiempo);
+  }
+  for (const id of ["metodo-admin", "gastos-fijos", "horas-proyecto"]) {
+    if ($(id)) $(id).addEventListener(id === "metodo-admin" ? "change" : "input", sincronizarCasillaSub);
   }
 
   function sincronizarBaja() {
