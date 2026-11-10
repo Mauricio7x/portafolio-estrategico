@@ -5084,7 +5084,6 @@
                 class="mt-3 hidden rounded-xl border border-gray-300 bg-white px-5 py-2 text-sm font-medium transition hover:bg-gray-50">
           Reintentar
         </button>
-        <div id="lista-presupuestos" class="mt-4 hidden tabla-scroll"></div>
         <section id="seccion-proceso" class="mt-5 hidden rounded-xl bg-gray-50 p-4 ring-1 ring-inset ring-gray-900/5">
         <h3 class="text-sm font-medium">Proceso de SECOP II</h3>
         <div class="mt-4 grid gap-4 sm:grid-cols-3">
@@ -5256,6 +5255,10 @@
               <button id="btn-listar" type="button"
                       class="rounded-lg px-3 py-2 text-sm text-gray-500 transition hover:text-gray-900">Abrir un borrador…</button>
             </div>
+            <!-- LO QUE SE PULSA AQUÍ RESPONDE AQUÍ (10-nov-2026): la lista y el aviso vivían encima del bloque del proceso,
+                 cientos de píxeles por encima del botón, y el dueño pulsaba «Abrir un borrador…» sin ver nada. -->
+            <p id="borrador-mensaje" class="mt-3 hidden text-sm"></p>
+            <div id="lista-presupuestos" class="mt-3 hidden tabla-scroll"></div>
           </details>
           <details id="normativa-wrap" class="mt-4 rounded-xl bg-gray-50 p-4 ring-1 ring-inset ring-gray-900/5">
             <summary class="cursor-pointer text-sm font-medium">Cómo calculamos · jornada, prestaciones, AIU, IVA y deducciones</summary>
