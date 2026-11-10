@@ -189,8 +189,6 @@
        Fase 8 (`?cierre=7d`, `?dep=73`) es un enlace A LA LISTA y abre
        Licitaciones aunque no traiga hash — la puerta de entrada y la portada
        los generan así. */
-    let conFiltros = false;
-    try { conFiltros = [...new URLSearchParams(location.search).keys()].some((k) => k !== "perfil"); } catch { conFiltros = false; }
     /* UN ENLACE A UN EXPEDIENTE ABRE ESE EXPEDIENTE (7-sep-2026). `#/proceso/…`
        no es una pestaña: el regex de arriba solo captura `proceso` (para en la
        barra, y un id de SECOP II lleva mayúsculas, dígitos y puntos), así que
@@ -199,7 +197,7 @@
        como ya se hacía con `#/inicio`. El dueño no tiene terminal: pegar una URL
        en Chrome es su única forma de volver a algo. */
     const expInicial = hashExpediente();
-    activarPestana(expInicial ? "seguimiento" : (hash || (conFiltros ? "licitaciones" : "admin")), { empujarHash: false });
+    activarPestana(expInicial ? "seguimiento" : (hash || pestanaSinDireccion()), { empujarHash: false });
     if (expInicial) abrirExpediente(decodeURIComponent(expInicial), { empujarHash: false });
     buscar();
     refrescarPulso();
@@ -302,7 +300,37 @@
     const perfil = sel ? sel.value : "";
     const nombre = sel && sel.selectedOptions[0] ? sel.selectedOptions[0].text.replace(/^Consorcio · /, "").replace(/^Mi RUP(?: \(subido en PDF\))?(?: · |$)/, "").trim() : "";
     // con la sesión del dueño viajan las cifras del perfil (patrimonio, capacidad) para «Tu registro»
-    window.Pulso.arrancar(perfil, { nombre, forzar: !!opciones.forzar }).catch(() => {});
+    return window.Pulso.arrancar(perfil, { nombre, forzar: !!opciones.forzar })
+      .then(() => { falloPulsoMi = window.Pulso.ultimoFallo ? window.Pulso.ultimoFallo() : null; pintarFalloMiEmpresa(); })
+      .catch(() => {});
+  }
+  /* ══════ LO QUE NO LLEGÓ A MI EMPRESA SE DICE ARRIBA, CON SU «REINTENTAR» (9-nov-2026) ══════
+     Medido en Chromium con el servidor caído (503) y sin conexión: el titular, «Lo que pide atención», «Con
+     plazo» y «Sus procesos» se escondían SIN UNA PALABRA —sus cifras no se inventan, y eso sigue igual— y el
+     único «Reintentar» quedaba dentro del plegado cerrado «Cómo está el mercado». Las otras tres pestañas ya
+     decían qué pasó. Las dos respuestas que alimentan la parte de arriba son el pulso (public/pulso.js) y
+     `op=seguimiento`; cada una deja aquí null (llegó) o la frase de su fallo, y la redacción es una sola
+     (`Pulso.fraseFallo`). La sesión que terminó no se repite: ya la dice la pantalla de entrar. */
+  let falloPulsoMi = null, falloSegMi = null;
+  function pintarFalloMiEmpresa() {
+    const caja = document.getElementById("mi-fallo"), texto = document.getElementById("mi-fallo-texto");
+    if (!caja || !texto || !window.Pulso || !window.Pulso.fraseFallo) return;
+    const frase = window.Pulso.fraseFallo({ pulso: falloPulsoMi, seguimiento: falloSegMi });
+    texto.textContent = frase;
+    caja.classList.toggle("hidden", !frase);
+  }
+  {
+    const boton = document.getElementById("mi-fallo-reintentar");
+    if (boton) boton.addEventListener("click", () => {
+      if (boton.disabled) return;
+      // ninguna pulsación sin respuesta visible: el botón dice que está en ello hasta que las dos respuestas vuelven
+      boton.disabled = true;
+      const antes = boton.textContent;
+      boton.textContent = "Reintentando…";
+      Promise.all([refrescarPulso({ forzar: true }), cargarSeguimiento({ forzar: true })])
+        .catch(() => {})
+        .then(() => { boton.disabled = false; boton.textContent = antes; });
+    });
   }
   /* «Con plazo» (3-nov-2026) vive en su propia sección: sus tarjetas filtran la lista con la MISMA función */
   /* y los repartos (4-nov-2026, revisión adversaria): «Dónde están» y «Quién las publica» viven en su plegado,
@@ -560,6 +588,14 @@
   const ALIAS_PESTANA = { empresa: "admin", "mi-empresa": "admin", precios: "apu", "mis-procesos": "seguimiento", procesos: "seguimiento" };
   const arrancadas = { apu: false, admin: false, pliego: false, seguimiento: false };
   let arranqueApu = null;   // la promesa del primer arranque de Precios: lo que necesita su catálogo cargado (el desplegable de departamentos) la espera
+  /* La pestaña de una dirección SIN pestaña: la del arranque y la de volver «Atrás» hasta ella son la misma regla
+     (9-nov-2026). Un enlace con filtros de la Fase 8 (`?cierre=7d`, `?dep=73`) es un enlace A LA LISTA y abre
+     Licitaciones; sin ellos, Mi empresa, la pestaña principal. */
+  function pestanaSinDireccion() {
+    let conFiltros = false;
+    try { conFiltros = [...new URLSearchParams(location.search).keys()].some((k) => k !== "perfil"); } catch { conFiltros = false; }
+    return conFiltros ? "licitaciones" : "admin";
+  }
   function activarPestana(nombre, { empujarHash = true } = {}) {
     const pedido = ALIAS_PESTANA[nombre] || nombre;
     const destino = PESTANAS.includes(pedido) ? pedido : "admin";
@@ -608,7 +644,18 @@
     const sinMovimiento = typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (typeof document.startViewTransition === "function" && !sinMovimiento) document.startViewTransition(pintarPestana);
     else pintarPestana();
-    if (empujarHash) { try { history.replaceState(null, "", `#/${destino}`); } catch { /* entorno raro */ } }
+    /* «ATRÁS» VUELVE A LA PESTAÑA ANTERIOR (9-nov-2026). Con `replaceState` cambiar de pestaña no dejaba rastro, y
+       medido en Chromium el botón «Atrás» del navegador SACABA de Detekta en vez de volver de Precios a Mi empresa.
+       Ahora un cambio de pestaña SUMA una entrada y volver a la misma la REEMPLAZA: el historial no se apila con
+       repetidas (la regla del expediente, 7-sep: «volver tiene que significar UNA cosa»). Atrás dispara
+       `hashchange`, que ya repinta con `empujarHash: false`. */
+    if (empujarHash) {
+      try {
+        const actual = (location.hash.match(/^#\/([a-z-]+)/) || [])[1] || "";
+        if (actual && (ALIAS_PESTANA[actual] || actual) === destino) history.replaceState(null, "", `#/${destino}`);
+        else history.pushState(null, "", `#/${destino}`);
+      } catch { /* entorno raro */ }
+    }
     /* En CADA apertura posterior de Precios el perfil del borrador se vuelve a
        tomar de la barra (6-sep-2026, V-B2a-01): la barra cambia por código en
        más sitios que el evento `change` (guardar o borrar un consorcio, el
@@ -692,7 +739,13 @@
          justo después de haberlos restaurado (medido en Chromium). */
       if (!hash || (ALIAS_PESTANA[hash] || hash) === "seguimiento") return;
     }
-    if (hash) activarPestana(hash, { empujarHash: false });
+    /* «Atrás» hasta la dirección del arranque (sin `#/…`) vuelve a la pestaña con la que se entró: sin esta rama la
+       dirección cambiaba y la pantalla se quedaba en la otra pestaña, dos verdades a la vez. Un ANCLA dentro de la
+       página (`#bitacora`, en Ajustes) no es una pestaña: se deja al navegador, o el salto subiría al principio */
+    let crudo = "";
+    try { crudo = location.hash || ""; } catch { crudo = ""; }
+    if (!hash && crudo && crudo !== "#") return;
+    activarPestana(hash || pestanaSinDireccion(), { empujarHash: false });
   });
 
   /* El botón «APU» de una tarjeta o de una fila del panel: precarga el proceso
@@ -832,6 +885,9 @@
       "rup-gestion-titulo-dueno": "el rótulo del pliegue promete subir y descargar el registro",
       "seccion-sistema": "parámetros de costo, contratos ejecutados, auditoría, sincronización y reconstrucciones: configuración de la empresa que administra el sitio",
       "rastreo-wrap": "su selector de perfil solo conoce el del dueño y el de sus socias",
+      /* salieron de «Ajustes» a su apartado de la barra el 9-nov-2026: siguen siendo solo del dueño, como dentro */
+      "seccion-experiencia": "los contratos ejecutados son configuración compartida de la empresa que administra el sitio (op=experiencia); hasta el 9-nov-2026 vivía dentro de «Ajustes»",
+      "seccion-cobertura": "la auditoría de códigos usa la experiencia y los perfiles del dueño; hasta el 9-nov-2026 vivía dentro de «Ajustes»",
       "plg-mercado": "el plegado «Cómo está el mercado» solo guarda el tablero del dueño (op=resumen)",
       "btn-apu-cargar": "op=cargar-catalogo reescribe el catálogo de precios compartido (pestaña Precios)",
     },
@@ -855,13 +911,31 @@
       "plg-calendario": "plegado con el calendario de cierres del pulso: mismo perfil",
       "plg-rup": "plegado con su registro en cifras",
       "plg-socias": "plegado con el consorcio y la verificación del socio",
+      "empresa-datos": "los datos para los formatos de SU perfil (op=empresa-datos, por perfil): el visitante los veía igual dentro de su registro hasta el 9-nov-2026, cuando salieron a su apartado",
     },
   };
   let vistaVisitanteActiva = false;
+  /* LA BARRA NO OFRECE UN APARTADO QUE SE VERÍA VACÍO (9-nov-2026). Para el visitante, «Obra que ya ejecutó»,
+     «¿Por qué no está un proceso?» y «Ajustes» solo guardan bloques del dueño (arriba, `soloDueno`): su botón se
+     esconde, y si estaba en uno de ellos vuelve a Hoy. Se mira el `hidden` de cada bloque, no una lista aparte. */
+  function podarBarraMiEmpresa() {
+    let actualVacio = false;
+    const tab = document.getElementById("tab-admin");
+    document.querySelectorAll("#me-barra .me-ir").forEach((b) => {
+      const ap = b.getAttribute("data-me-ir");
+      if (ap === "hoy") return;
+      const bloques = [...document.querySelectorAll(`#tab-admin > [data-me-apartado="${ap}"]`)];
+      const vacio = bloques.length > 0 && bloques.every((el) => el.hidden);
+      b.hidden = vacio;
+      if (vacio && tab && tab.getAttribute("data-me") === ap) actualVacio = true;
+    });
+    if (actualVacio) elegirApartadoMiEmpresa("hoy", { enfocar: false });
+  }
   function vistaDeVisitante(activa) {
     vistaVisitanteActiva = !!activa;
     for (const id of Object.keys(VISTA_VISITANTE.soloDueno)) { const el = $(id); if (el) el.hidden = vistaVisitanteActiva; }
     for (const id of Object.keys(VISTA_VISITANTE.soloVisitante)) { const el = $(id); if (el) el.hidden = !vistaVisitanteActiva; }
+    podarBarraMiEmpresa();
     /* la marca de la barra dispara la misma sincronización que «Actualizar
        datos»: para el visitante deja de ser un control (sin mano, sin flecha,
        sin «Actualizar»), y pintarCorte lo sabe por la clase */
@@ -5142,7 +5216,11 @@
     /* el parseo va APARTE del fetch: el muro del edge responde HTML */
     const cuerpo = await leerJson(r);
     if (r.status === 401) {
-      throw new Error(msg401(cuerpo));
+      /* `sesion` marca el 401 de la API (la sesión terminó: ya se abrió la pantalla de entrar), no el del muro
+         del edge: quien pinta un fallo en otra parte (Mi empresa, 9-nov-2026) no lo repite debajo de esa pantalla */
+      const vencida = new Error(msg401(cuerpo));
+      if (!(cuerpo && cuerpo.sinJson)) vencida.sesion = true;
+      throw vencida;
     }
     if (!r.ok) {
       // el «qué hacer» del servidor viaja con el error, como en pliego.js (6-sep-2026, V-B2a-02)
@@ -5313,6 +5391,9 @@
       cargandoSeguimiento(false);
       $("seg-vacio").classList.add("hidden");
       mensajeSeg(mensajeDeFallo(e, "cargar sus procesos guardados"), "error");
+      // Mi empresa lo dice también arriba (9-nov-2026), salvo la sesión que terminó: ya la dice la pantalla de entrar
+      falloSegMi = e && e.sesion ? null : fraseDeFallo(e);
+      pintarFalloMiEmpresa();
       return;
     }
     cargandoSeguimiento(false);
@@ -5323,8 +5404,12 @@
       mensajeSeg((r && r.error)
         || (r ? "No se pudo cargar sus procesos guardados: el servidor respondió, pero sin la lista. Vuelva a intentar."
               : mensajeDeFallo(null, "cargar sus procesos guardados")), "error");
+      falloSegMi = (r && r.error) || (r ? "El servidor respondió, pero sin la lista." : fraseDeFallo(null));
+      pintarFalloMiEmpresa();
       return;
     }
+    falloSegMi = null;
+    pintarFalloMiEmpresa();
     seguimientoCargadoPara = perfil;
     guardados.clear();
     /* `r.procesos` se RECORRE, así que un `ok:true` sin esa lista lanzaba y la
@@ -6264,6 +6349,65 @@
      pinta Mis procesos —ni una consulta más— y con las MISMAS piezas: la frase y la lista de avisos de
      public/casillero.js (`fraseAlertas`, `htmlAlertas`), los rótulos de etapa del servidor (`estados`) y la agenda
      (`agendaDe`, `rotuloEvento`, `fuenteEvento`). Un conteo que no viene no se pinta como 0. */
+  /* ══════ LOS APARTADOS DE MI EMPRESA (9-nov-2026, decisión del dueño sobre su maqueta) ══════
+     Qué apartado se ve lo decide la hoja por `data-me` (index.html): aquí solo se cambia, se marca la barra, se
+     pone el título y se abren sus plegados (dentro de un apartado su rótulo se esconde, y cerrado no se vería nada).
+     Un valor desconocido es INERTE: cae a «hoy», como un filtro desconocido. */
+  const APARTADOS_ME = Object.freeze(["hoy", "registro", "formatos", "obra", "socias", "mercado", "noesta", "ajustes"]);
+  function elegirApartadoMiEmpresa(pedido, { enfocar = true } = {}) {
+    const tab = document.getElementById("tab-admin");
+    if (!tab) return "hoy";
+    const id = APARTADOS_ME.includes(pedido) ? pedido : "hoy";
+    tab.setAttribute("data-me", id);
+    let rotulo = "";
+    document.querySelectorAll("#me-barra .me-ir").forEach((b) => {
+      const suyo = b.getAttribute("data-me-ir") === id;
+      if (suyo) { b.setAttribute("aria-current", "page"); rotulo = b.textContent.trim(); } else b.removeAttribute("aria-current");
+    });
+    if (id !== "hoy") tab.querySelectorAll(`:scope > details[data-me-apartado="${id}"]`).forEach((d) => { d.open = true; });
+    const titulo = document.getElementById("me-titulo");
+    if (titulo) { titulo.textContent = id === "hoy" ? "" : rotulo; titulo.hidden = id === "hoy"; }
+    const rotuloBoton = document.getElementById("me-abrir-rotulo");
+    if (rotuloBoton) rotuloBoton.textContent = rotulo || "Hoy";
+    // en el teléfono el panel se cierra al elegir: el foco va al título (abajo), no de vuelta al botón
+    const estabaAbierto = tab.hasAttribute("data-panel");
+    if (estabaAbierto) panelMiEmpresa(false, { devolverFoco: false });
+    if (enfocar) {
+      try { window.scrollTo({ top: 0 }); } catch { /* sin desplazamiento */ }
+      // ninguna pulsación sin respuesta visible: el foco va al título del apartado (o a la barra, al volver a Hoy)
+      // en Hoy no hay título: el foco va a la barra (computador) o al botón que abre el panel, que ya se cerró (teléfono)
+      const destino = id !== "hoy" ? titulo : estabaAbierto ? document.getElementById("me-abrir-panel") : tab.querySelector('#me-barra .me-ir[aria-current="page"]');
+      if (destino && typeof destino.focus === "function") { try { destino.focus({ preventScroll: true }); } catch { /* sin foco */ } }
+    }
+    return id;
+  }
+  /* EL PANEL LATERAL DEL TELÉFONO (9-nov-2026, decisión del dueño): la misma barra, que en pantallas estrechas la hoja
+     convierte en un panel que entra desde la izquierda. Aquí solo se abre y se cierra; el foco entra al abrir (en el
+     apartado actual) y vuelve al botón al cerrar; Escape y el velo lo cierran. En el computador el atributo no hace nada. */
+  function panelMiEmpresa(abrir, { devolverFoco = true } = {}) {
+    const tab = document.getElementById("tab-admin"), velo = document.getElementById("me-velo"), boton = document.getElementById("me-abrir-panel");
+    if (!tab) return;
+    if (abrir) tab.setAttribute("data-panel", "abierto"); else tab.removeAttribute("data-panel");
+    if (velo) velo.hidden = !abrir;
+    if (boton) boton.setAttribute("aria-expanded", abrir ? "true" : "false");
+    if (abrir) {
+      const f = tab.querySelector('#me-barra .me-ir[aria-current="page"]') || tab.querySelector("#me-barra .me-ir");
+      if (f && typeof f.focus === "function") { try { f.focus(); } catch { /* sin foco */ } }
+    } else if (devolverFoco && boton && typeof boton.focus === "function") { try { boton.focus(); } catch { /* sin foco */ } }
+  }
+  document.addEventListener("click", (ev) => {
+    const t = ev.target && ev.target.closest ? ev.target : null;
+    if (!t) return;
+    if (t.closest("#me-abrir-panel")) { panelMiEmpresa(true); return; }
+    if (t.closest("#me-velo") || t.closest("#me-barra .me-cerrar")) { panelMiEmpresa(false); return; }
+    const b = t.closest("[data-me-ir]");
+    if (b) elegirApartadoMiEmpresa(b.getAttribute("data-me-ir"));
+  });
+  document.addEventListener("keydown", (ev) => {
+    if (ev.key !== "Escape") return;
+    const tab = document.getElementById("tab-admin");
+    if (tab && tab.hasAttribute("data-panel")) panelMiEmpresa(false);
+  });
   let miAvisosAbierto = false;
   function pintarMiEmpresaSeguimiento(r) {
     const K = raizCasillero();
@@ -6271,6 +6415,14 @@
     if (!at && !pr) return;
     const procesos = r && Array.isArray(r.procesos) ? r.procesos : [];
     const as = r && Array.isArray(r.alertas) ? r.alertas : [];
+    /* «piden atención» en UNA línea dentro de sus procesos guardados (9-nov-2026): la frase es la de siempre
+       (`fraseAlertas`, la misma de Mis procesos) y la línea abre Mis procesos, donde vive la lista completa */
+    const linea = $("mi-atencion-linea");
+    if (linea) {
+      const frase = K && as.length ? K.fraseAlertas(as, 7) : "";
+      linea.innerHTML = frase ? `<span class="min-w-0">Piden atención: ${esc(frase)}</span><span class="mi-ir">Verlos</span>` : "";
+      linea.classList.toggle("hidden", !frase);
+    }
     if (at) {
       at.classList.toggle("hidden", !(K && as.length));
       if (K && as.length) {
@@ -6915,6 +7067,10 @@
      <details> por encima del destino, no solo el primero: el pliegue puede
      anidarse y un arreglo de un solo nivel dejaría el hermano vivo. */
   function abrirPliegues(destino) {
+    /* un destino de Mi empresa vive en un apartado de su barra (9-nov-2026): primero se abre ESE apartado, o el salto
+       («Armar este consorcio», «verificar socio») aterrizaría en un bloque escondido */
+    const ap = destino && destino.closest ? destino.closest("#tab-admin > [data-me-apartado]") : null;
+    if (ap) elegirApartadoMiEmpresa(ap.getAttribute("data-me-apartado"), { enfocar: false });
     for (let d = destino && destino.closest ? destino.closest("details") : null; d; d = d.parentElement && d.parentElement.closest("details")) d.open = true;
   }
   /* UNA PARTE FUERA DE RANGO NO SE SUSTITUYE EN SILENCIO (6-sep-2026). Escribir
@@ -9975,6 +10131,8 @@
     $("imp-nota").textContent = "El precio del archivo MANDA y queda declarado. Una sugerencia en ámbar sin precio solo usa el catálogo si su casilla queda marcada.";
     $("modal-importar").classList.remove("hidden");
     $("modal-importar").classList.add("flex");
+    // una vista previa se LEE: el foco va a su título, que el lector de pantalla anuncia (9-nov-2026)
+    enfocarVentana("modal-importar", "modal-importar-titulo");
   }
 
   /* ══════════ Mapeo manual de columnas (respaldo del método 2) ══════════
@@ -10057,6 +10215,7 @@
   function cerrarModalImportar() {
     $("modal-importar").classList.add("hidden");
     $("modal-importar").classList.remove("flex");
+    devolverFoco("modal-importar");
   }
   $("btn-imp-cancelar").addEventListener("click", cerrarModalImportar);
   $("modal-importar").addEventListener("click", (e) => {
@@ -12470,12 +12629,38 @@
     $("modal-eliminar").classList.remove("hidden");
     $("modal-eliminar").classList.add("flex");
     $("modal-eliminar").style.display = "flex";
+    // lo que BORRA abre con el foco en «Cancelar»: un Enter de reflejo no puede eliminar nada (9-nov-2026)
+    enfocarVentana("modal-eliminar", "btn-eliminar-cancelar");
   }
   function cerrarModalEliminar() {
     $("modal-eliminar").classList.add("hidden");
     $("modal-eliminar").classList.remove("flex");
     $("modal-eliminar").style.display = "none";
+    devolverFoco("modal-eliminar");
   }
+  /* ══════ LAS VENTANAS SE PORTAN IGUAL: EL FOCO ENTRA, ESCAPE CIERRA Y EL FOCO VUELVE (9-nov-2026) ══════
+     Medido en Chromium: «¿Eliminar este RUP?» abría con el foco fuera de la ventana y Escape no la cerraba, y la
+     vista previa de importar tampoco cerraba con Escape; la hoja de filtros, la competencia y el expediente sí lo
+     hacían. Un solo oyente en el DOCUMENTO (tras pulsar un botón el foco puede quedar en el <body>, como se midió
+     con el expediente el 7-sep) y una sola pareja enfocar/devolver para las dos. Mientras se está borrando, Escape
+     no cierra: la petición ya salió y la ventana dice cómo terminó. */
+  const origenDeVentana = new Map();
+  function enfocarVentana(idVentana, idFoco) {
+    origenDeVentana.set(idVentana, document.activeElement);
+    const n = document.getElementById(idFoco);
+    if (n && typeof n.focus === "function") { try { n.focus(); } catch { /* sin foco */ } }
+  }
+  function devolverFoco(idVentana) {
+    const o = origenDeVentana.get(idVentana);
+    origenDeVentana.delete(idVentana);
+    if (o && o.isConnected && typeof o.focus === "function") { try { o.focus(); } catch { /* sin foco */ } }
+  }
+  document.addEventListener("keydown", (ev) => {
+    if (ev.key !== "Escape") return;
+    const abierta = (id) => { const n = document.getElementById(id); return !!n && !n.classList.contains("hidden"); };
+    if (abierta("modal-eliminar")) { if (!eliminarEnVuelo) cerrarModalEliminar(); return; }
+    if (abierta("modal-importar")) cerrarModalImportar();
+  });
 
   async function eliminarRupActivo() {
     if (eliminarEnVuelo) return;
