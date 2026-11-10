@@ -2603,6 +2603,13 @@
         background: var(--accent); color: var(--bg-card); font-size: 17px; font-weight: 700; cursor: pointer; }
     }
     @media (max-width: 899px) and (prefers-reduced-motion: reduce) { #tab-licitaciones[data-lic] > #lic-barra { transition: none; } }
+    /* LA VISTA PREVIA DE LA IMPORTACIÓN SE DESPLAZA ENTERA (10-nov-2026). Medido con el teléfono del dueño: con cinco
+       avisos largos (un libro de APU) los avisos llenaban el 90 % de la altura, la tabla —lo único que se desplazaba—
+       quedaba en cero, «Añadir al presupuesto» salía de la pantalla y el cuerpo está bloqueado mientras la ventana
+       está abierta: no había cómo bajar ni cómo salir. Ahora la ventana se desplaza entera, mide la pantalla VISIBLE
+       (dvh: en Safari la barra de direcciones se come el vh) y la tabla conserva una altura mínima. */
+    #modal-importar > div { max-height: 90vh; max-height: 90dvh; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+    #modal-importar > div > .overflow-auto { min-height: 14rem; }
   </style>
 </head>
 <body class="antialiased">
