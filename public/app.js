@@ -2978,6 +2978,25 @@
     return { cuantia_cop: t.valor, cuantia_fuente: "pliego",
       cuantia_nota: `Techo: ${fmtCOP.format(t.valor)}, del pliego definitivo${t.pagina != null ? ` (pág. ${t.pagina})` : ""}; SECOP II publica ${fmtCOP.format(t.secop)}. Su oferta no puede pasar la más baja.` };
   }
+  /* EL TECHO DEL PLIEGO TAMBIÉN AL ABRIR EL ANÁLISIS DESDE EL EXPEDIENTE (revisión adversaria, 10-nov-2026). Un análisis
+     guardado con la cifra de SECOP II —abierto desde Licitaciones, o antes de leerse el pliego definitivo— se reabría con
+     ella aunque el pliego diga menos: Precios decía «Preséntese» donde el expediente, con el techo del pliego, decía otra
+     cosa. Si la guía de ESTE proceso trae un techo del pliego más bajo que la cuantía cargada, se pone ese, con la misma
+     nota y la misma marca que la precarga desde la tarjeta (`techoDesdeGuia`), y al guardar las tres pantallas se alinean.
+     Un techo más alto no sube nada: una oferta por encima del más bajo se rechaza. */
+  function aplicarTechoDelPliegoAlBorrador(proceso) {
+    const t = techoDesdeGuia(proceso && proceso.guia);
+    const id = proceso && proceso.id ? String(proceso.id) : "";
+    const campo = $("cuantia"), idCampo = ($("id-proceso") && $("id-proceso").value.trim()) || "";
+    if (!t.cuantia_cop || !campo || !id || idCampo !== id) return false;
+    const actual = campo.value.trim() === "" ? null : Number(campo.value);
+    if (actual != null && Number.isFinite(actual) && actual > 0 && actual <= t.cuantia_cop) return false;
+    campo.value = String(t.cuantia_cop);
+    cuantiaDelPliego = { id, valor: Number(t.cuantia_cop) };
+    pintarNotaCuantia(t.cuantia_nota || "");
+    invalidarOferta();
+    return true;
+  }
   /* el % de la garantía que fija el pliego (lib/guia_proceso.garantiaParaPrecios): con él Precios calcula la póliza de
      ESTE pliego como costo de preparar la oferta (5-nov-2026); sin él, nada, y Precios usa el 10 % de los documentos tipo */
   const CLASES_SERIEDAD = ["pliego", "mipyme", "varias"];
@@ -7753,6 +7772,7 @@
            base) y borraba el aviso de la carga (revisión adversaria, 10-nov-2026). La misma espera de la línea de arriba */
         if (arranqueApu) await arranqueApu.catch(() => {});
         await cargarPresupuestoGuardado(idB);
+        aplicarTechoDelPliegoAlBorrador(segExpDatos && segExpDatos.proceso);
         return;
       }
       /* ══════════ LOS DOCUMENTOS DEL EXPEDIENTE ══════════ */
@@ -8187,6 +8207,14 @@
     $("ajuste-competitivo").checked = !!c.aplicar_ajuste_competitivo;
     if (c.factor_baja != null) $("factor-baja").value = c.factor_baja;
     $("deducciones").value = c.deducciones_pct == null ? "" : c.deducciones_pct;
+    /* LOS CUATRO QUE SE GUARDABAN Y NO VOLVÍAN (revisión adversaria, 10-nov-2026): `leerConfig` guarda el método de la
+       administración, los gastos fijos, las horas y la utilidad mínima, pero abrir el borrador no los devolvía: un
+       análisis «por tiempo» se reabría con la A tecleada (falso positivo de precio en la pantalla a la que Mis procesos
+       y la lista mandan a verlo) y, al volver a guardar, se perdían. Sin dato vuelve vacío, nunca un cero. */
+    if ($("metodo-admin")) $("metodo-admin").value = c.metodo_administracion === "tiempo" ? "tiempo" : "porcentaje";
+    if ($("gastos-fijos")) $("gastos-fijos").value = c.gastos_fijos_mensuales == null ? "" : c.gastos_fijos_mensuales;
+    if ($("horas-proyecto")) $("horas-proyecto").value = c.horas_proyecto == null ? "" : c.horas_proyecto;
+    if ($("utilidad-minima")) $("utilidad-minima").value = c.utilidad_minima_pct == null ? "" : c.utilidad_minima_pct;
     sincronizarBaja();
   }
 
@@ -10623,6 +10651,11 @@
      borradores guardados viven en Redis y no se tocan. */
   function reiniciarEditorParaProceso() {
     filas = [];
+    /* …Y EL BORRADOR ABIERTO ERA DEL OTRO PROCESO (revisión adversaria, 10-nov-2026): `idActual` seguía apuntando a él,
+       y el primer «Guardar» o «Buscar» del proceso nuevo lo SOBRESCRIBÍA (op=guardar con su id): el proceso anterior se
+       quedaba sin su análisis y Mis procesos decía «Sin calcular». Proceso nuevo, borrador nuevo; el nombre era del otro. */
+    idActual = null;
+    if ($("nombre-presupuesto")) $("nombre-presupuesto").value = "";
     nitProceso = "";
     modalidadProceso = "";
     for (const id of ["objeto", "codigos-unspsc", "entidad", "id-proceso", "cuantia", "plazo-meses"]) {

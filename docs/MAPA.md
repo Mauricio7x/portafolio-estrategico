@@ -238,8 +238,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 460 secciones (53 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 22005  El medidor del ancho de banda de Upstash: cada petición anota lo que gastó, por operación (…
+· MEMORIA · docs/MEMORIA.md — 461 secciones (53 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 22024  El armazón medido antes de rediseñarlo: Mi empresa dice qué no llegó, «Atrás» vuelve a la p…
   L 22036  Mi empresa: «Hoy» con cuatro piezas y una barra con ocho apartados; la plata en juego vuelv…  (superada)
   L 22053  Cargar su propio APU: la hoja de análisis ya no se lee como formulario, y «Buscar» lo elabo…
@@ -248,7 +247,8 @@
   L 22125  La rejilla de una pestaña: `:not(.hidden)` va solo con `display` (10-nov-2026)
   L 22133  APU propios de Detekta, primera entrega: el banco de prueba sin Claude, el alcance de la ac…
   L 22148  Mis procesos con su barra: tres apartados, el expediente con «Este proceso» a un lado y «Su…
-  L 22167  Detekta crece con la pantalla hasta 1.600 px (10-nov-2026)
+  L 22167  La lista lee el análisis guardado como Precios (10-nov-2026)
+  L 22185  Detekta ocupa la pantalla entera (10-nov-2026)
 
 · DOCUMENTOS docs/ — 77 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)

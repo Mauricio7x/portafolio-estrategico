@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 2589961 bytes · 460 secciones · 53 con marcador de superación.
+Derivado del árbol: 2595302 bytes · 461 secciones · 53 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -469,5 +469,6 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | El APU real del dueño: la unidad cortada en «Ubicación:», el costo directo en vez del precio con AIU y la vista previa que no bajaba en el teléfono (10-nov-2026) | 10-nov-2026 | 22112-22124 | 3532 |  |
 | La rejilla de una pestaña: `:not(.hidden)` va solo con `display` (10-nov-2026) | 10-nov-2026 | 22125-22132 | 1276 |  |
 | APU propios de Detekta, primera entrega: el banco de prueba sin Claude, el alcance de la actividad, la biblioteca y el modelo abierto apagado (10-nov-2026) | 10-nov-2026 | 22133-22147 | 8172 |  |
-| Mis procesos con su barra: tres apartados, el expediente con «Este proceso» a un lado y «Su precio» del análisis guardado (10-nov-2026) | 10-nov-2026 | 22148-22166 | 9643 |  |
-| Detekta crece con la pantalla hasta 1.600 px (10-nov-2026) | 10-nov-2026 | 22167-22172 | 1082 |  |
+| Mis procesos con su barra: tres apartados, el expediente con «Este proceso» a un lado y «Su precio» del análisis guardado (10-nov-2026) | 10-nov-2026 | 22148-22166 | 9616 |  |
+| La lista lee el análisis guardado como Precios (10-nov-2026) | 10-nov-2026 | 22167-22184 | 5445 |  |
+| Detekta ocupa la pantalla entera (10-nov-2026) | 10-nov-2026 | 22185-22190 | 1005 |  |

@@ -1898,10 +1898,18 @@
        siquiera alineaba con las pestañas. Las cuatro pestañas y la barra comparten ahora 100rem (1.600 px): con las
        barras de la izquierda y las rejillas, el contenido crece; los párrafos largos conservan su medida de lectura
        (`max-width` en ch donde la tienen). Más allá de 1.600 px las líneas dejan de leerse de un vistazo. */
-    #app main.panel-pestana { max-width: 100rem; }
-    #app .barra-superior .cabecera-fila { max-width: 100rem; }
+    /* …Y SIN TOPE (10-nov-2026, el mismo día, decisión del dueño): con 1.600 px quedaban 160 px vacíos a cada lado en su
+       monitor de 1.920, y pidió el 100 %, como SECOP II. Lo que cuida la lectura ya no es el ancho de la pestaña: son las
+       medidas en `ch` de los párrafos largos (como `#orden-concepto`) y las columnas de las barras y las rejillas. */
+    #app main.panel-pestana { max-width: none; }
+    #app .barra-superior .cabecera-fila { max-width: none; }
     /* la explicación del orden ocupa todo el ancho de la caja de búsqueda: a 1.920 px eran líneas de 200 caracteres */
     #app #orden-concepto { max-width: 90ch; }
+    /* LA MEDIDA DE LECTURA DEL TEXTO CORRIDO (revisión adversaria, 10-nov-2026): con la pestaña sin tope, un párrafo
+       llegaba a 255 caracteres por línea a 1.920 px y a 336 a 2.560. Los párrafos de las pestañas se cortan en 100ch;
+       `:where` le deja peso cero para que una regla propia (una fila con `display: flex` que reparte rótulo y cifra, un
+       recuadro) lo cambie, y las utilidades de fila de Tailwind quedan fuera. */
+    :where(#app main.panel-pestana) p:where(:not(.flex):not(.grid):not(.text-center)) { max-width: 100ch; }
     #app main > section.mt-8, #app main > div.mt-8, #app main > details.mt-8 { margin-top: 40px; }
     @media (min-width: 768px) { #app .tarjeta.p-5 { padding: 24px; } }
     #app .bg-white .border.border-gray-200.rounded-2xl, #app .bg-white .border.border-gray-200.rounded-xl,

@@ -47094,10 +47094,10 @@ async function main() {
          lee). Y en la fila de acciones el MISMO botón cambiaba de forma al
          pulsarlo («Guardar» píldora, «Guardado ✓» a 10 px): lo que se pulsa
          tiene UN radio (--radius-accion). */
-      /* …y desde el 10-nov-2026 ese ancho común crece con la pantalla hasta 100rem (1.600 px), con la barra superior
-         alineada: a 1.920 px el dueño veía Detekta «cortada» */
-      assert.ok(/#app main\.panel-pestana\s*\{[^}]*max-width:\s*100rem/.test(estiloPropio) && /#app \.barra-superior \.cabecera-fila\s*\{[^}]*max-width:\s*100rem/.test(estiloPropio),
-        "las cuatro pestañas y la barra superior comparten ancho por regla propia (`max-width: 100rem`)");
+      /* …y desde el 10-nov-2026 ese ancho común es el de la pantalla entera (decisión del dueño: a 1.920 px veía Detekta
+         «cortada»), con la barra superior alineada */
+      assert.ok(/#app main\.panel-pestana\s*\{[^}]*max-width:\s*none/.test(estiloPropio) && /#app \.barra-superior \.cabecera-fila\s*\{[^}]*max-width:\s*none/.test(estiloPropio),
+        "las cuatro pestañas y la barra superior comparten ancho por regla propia (`max-width: none`: la pantalla entera)");
       assert.ok(/--radius-accion:\s*980px/.test(estiloPropio),
         "el radio de lo que se pulsa es un token (--radius-accion), no un literal repetido");
       assert.ok(/#app \.tarjeta \.btn-guardar[^{]*\{[^}]*border-radius:\s*var\(--radius-accion\)/.test(estiloPropio),
@@ -66946,6 +66946,15 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
     const pT = BMm.precioDelExpediente(filaM, "CO1.REQ.A", porTiempo);
     okM(pT.estado === "en_precios" && pT.su_precio === 241500000 && !pT.piso_techo && pT.borrador.id === "pre-a", `(b) administración por tiempo: el total guardado y el veredicto en Precios: ${JSON.stringify(pT)}`);
     okM(BMm.precioDelExpediente(filaM, "CO1.REQ.A", { ...cOk, incompleto: true }).estado === "no_se_leyo", "(b) con un lote perdido, aunque aparezca un borrador, no se sabe si es el último: «no se pudo leer»");
+    // la lista con un análisis por tiempo: sin baja máxima del análisis (cae a la declarada o a nada) y el margen dice por qué
+    const bmT = BMm.bajaMaximaDe(filaM, porTiempo, { bajaDeclarada: 3 }), bmT0 = BMm.bajaMaximaDe(filaM, porTiempo, {});
+    okM(bmT.origen === "declarada" && bmT.valor === 3 && bmT0.valor === null && bmT0.origen === null, `(b) por tiempo, la lista no inventa una baja máxima del análisis: ${JSON.stringify([bmT.valor, bmT.origen, bmT0.valor])}`);
+    // sin cifra en la fila pero con la cuantía que guardó el análisis: la baja máxima se mide con esa (la del piso)
+    const bmSinFila = BMm.bajaMaximaDe({ id_del_proceso: "CO1.REQ.A", cuantia_cop: null }, conCuantia, {});
+    okM(bmSinFila.origen === "apu" && bmSinFila.valor != null, `(b) la baja máxima usa el presupuesto con que se midió el piso, no solo el de la fila: ${JSON.stringify([bmSinFila.valor, bmSinFila.origen])}`);
+    const jsListar = fs.readFileSync(path.join(__dirname, "..", "lib", "handlers", "procesos", "listar.js"), "utf8");
+    okM(/if \(r\.motivo === "administracion_por_tiempo"\) \{\s*return \{ valor: null, piso: null, techo: null, borrador: c\.id, motivo: "Sin referencia — su análisis calcula la administración por tiempo/.test(jsListar),
+      "(b) el margen de la lista dice que la administración por tiempo se ve en Precios, no «sin techo»");
     okM(pA.piso_techo.cifras.presupuesto_oficial === 260000000 && pA.piso_techo.cifras.piso_rentable > 0, "(b) con el presupuesto de la fila viva");
     okM(BMm.precioDelExpediente(filaM, "CO1.REQ.A", cScan).estado === "no_se_leyo" && BMm.precioDelExpediente(filaM, "CO1.REQ.A", null).estado === "no_se_leyo",
       "(b) sin poder leer los borradores: «no se pudo leer», jamás «sin calcular»");
@@ -67022,11 +67031,14 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
         const cargarPresupuestoGuardado = async (id) => { hechos.push("cargar:" + id); };
         // el primer arranque de Precios reescribe el departamento y el mensaje: hay que esperarlo antes de cargar
         const arranqueApu = new Promise((ok) => setTimeout(() => { hechos.push("arranque"); ok(); }, 5));
+        // con el borrador cargado, el techo del pliego de la guía de ESTE expediente (revisión adversaria)
+        const segExpDatos = { proceso: { id: "CO1.REQ.A", guia: { tope_oferta: { fuente: "pliego", valor: 250000000, secop: 260000000 } } } };
+        const aplicarTechoDelPliegoAlBorrador = (proc) => hechos.push("techo:" + (proc && proc.id));
         // el fragmento termina en \`return;\` (el oyente acaba ahí): va en su propia función y lo hecho se lee después
         return async (idB) => { hechos.length = 0; const ev = { target: { closest: (s) => (s === "[data-seg-abrir-borrador]" ? { getAttribute: () => idB } : null) } };
           await (async () => { ${fuenteAbrir} })();
           return hechos.join(); };`)();
-      okM((await F("pre-a")) === "pestana:apu,arranque,cargar:pre-a", "(f) «Abrir su análisis en Precios» abre Precios, ESPERA su arranque y carga ESE borrador por el mismo camino que «Cargar»");
+      okM((await F("pre-a")) === "pestana:apu,arranque,cargar:pre-a,techo:CO1.REQ.A", "(f) «Abrir su análisis en Precios» abre Precios, ESPERA su arranque, carga ESE borrador por el mismo camino que «Cargar» y le pone el techo del pliego del expediente");
       okM((await F("")) === "", "(f) sin borrador no cambia de pestaña");
     }
     okM(/\$\("lista-presupuestos"\)\.addEventListener\("click", async \(e\) => \{\s*const id = e\.target\.getAttribute\("data-cargar"\);\s*if \(!id\) return;\s*await cargarPresupuestoGuardado\(id\);/.test(jsM),
@@ -67144,6 +67156,71 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
       okM(JE({ marcado: false, panel: false }) === "cierra" && JE({ marcado: true, panel: false }) === "" && JE({ marcado: false, panel: true }) === "",
         "(j) el Escape del panel no cierra además el expediente, en cualquier orden de los oyentes (a menos de 900 px salía del expediente de un golpe)");
     }
+    /* (m) LO QUE LA SEGUNDA REVISIÓN ADVERSARIA ENCONTRÓ (10-nov-2026), con las funciones reales */
+    {
+      // la configuración como la lee Precios, una sola lectura (la del borrador y la «más reciente» de la lista)
+      const cP = BMm.configComoPrecios({ aiu_pct: 120, deducciones_pct: 35, imprevistos_pct: 5, utilidad_pct: 5, variante_iva: "con_iva" });
+      okM(cP.aiu_pct === 100 && cP.deducciones_pct === 30 && cP.modo_aiu === "aditivo" && cP.variante_iva === "con_iva", `(m) la configuración acotada como en Precios, sin perder lo demás: ${JSON.stringify(cP)}`);
+      // «lo que deja» mide contra el MISMO presupuesto que el margen y la baja máxima, también por tiempo
+      const rP = BMm.pisoTechoDeBorrador(filaM, conCuantia), rT = BMm.pisoTechoDeBorrador(filaM, porTiempo);
+      okM(rP.presupuesto === 255000000 && rP.pt.cifras.presupuesto_oficial === 255000000 && rT.presupuesto === 260000000 && rT.pt === null,
+        `(m) el piso/techo devuelve el presupuesto con que midió, en las dos ramas: ${JSON.stringify([rP.presupuesto, rT.presupuesto])}`);
+      const GanM = require("../lib/ganancia.js");
+      const gT = GanM.gananciaDeProceso({ presupuesto_oficial: 260000000, tipo_trabajo: "obra", costo_directo: 190000000, administracion_por_tiempo: true });
+      okM(gT.valor === null && gT.motivo === "administracion_por_tiempo" && /se ve en Precios/.test(gT.frase), `(m) «lo que deja» por tiempo no sale con la A tecleada: ${JSON.stringify([gT.valor, gT.motivo])}`);
+      const jsLst = fs.readFileSync(path.join(__dirname, "..", "lib", "handlers", "procesos", "listar.js"), "utf8");
+      okM(/presupuesto_oficial: r && r\.presupuesto != null \? r\.presupuesto : presupuestoOficialDe\(l\),\s*administracion_por_tiempo: !!\(r && r\.motivo === "administracion_por_tiempo"\),/.test(jsLst)
+        && /const cfgReciente = costos && costos\.config_reciente \? configComoPrecios\(costos\.config_reciente\) : null;/.test(jsLst),
+        "(m) la lista le pasa a «lo que deja» el presupuesto del piso/techo, el caso por tiempo y la configuración reciente leída como Precios");
+      // Precios devuelve los cuatro ajustes que guardaba y no restituía
+      const fuenteAplicar = cortarM("  function aplicarConfig(c) {");
+      if (fuenteAplicar) {
+        const A = new Function(`
+          const els = {}; const $ = (id) => (els[id] = els[id] || { value: "x", checked: false, disabled: false });
+          const sincronizarBaja = () => {};
+          ${fuenteAplicar}
+          // lo que no se tocó sale como «no tocado»: la aserción falla limpia, sin leer de undefined
+          return (c) => { for (const k of Object.keys(els)) delete els[k]; aplicarConfig(c); const r = JSON.parse(JSON.stringify(els));
+            for (const k of ["metodo-admin", "gastos-fijos", "horas-proyecto", "utilidad-minima"]) if (!r[k]) r[k] = { value: "no tocado" }; return r; };`)();
+        const e1 = A({ metodo_administracion: "tiempo", gastos_fijos_mensuales: 5500000, horas_proyecto: 1800, utilidad_minima_pct: 2 });
+        const e2 = A({ metodo_administracion: null, gastos_fijos_mensuales: null, horas_proyecto: null, utilidad_minima_pct: null });
+        okM(e1["metodo-admin"].value === "tiempo" && e1["gastos-fijos"].value === 5500000 && e1["horas-proyecto"].value === 1800 && e1["utilidad-minima"].value === 2,
+          `(m) abrir un análisis devuelve el método de la administración, los gastos fijos, las horas y la utilidad mínima: ${JSON.stringify(Object.fromEntries(["metodo-admin", "gastos-fijos", "horas-proyecto", "utilidad-minima"].map((k) => [k, e1[k] && e1[k].value])))}`);
+        okM(e2["metodo-admin"].value === "porcentaje" && e2["gastos-fijos"].value === "" && e2["horas-proyecto"].value === "" && e2["utilidad-minima"].value === "", "(m) sin dato vuelven vacíos, nunca un cero ni lo que había en el campo");
+      }
+      // abrir otro proceso empieza un borrador nuevo: el anterior no se sobrescribe al guardar
+      const fuenteReinicio = cortarM("  function reiniciarEditorParaProceso() {");
+      if (fuenteReinicio) {
+        const R = new Function(`
+          let filas = [1], idActual = "pre-viejo", nitProceso = "x", modalidadProceso = "x";
+          const els = {}; const $ = (id) => (els[id] = els[id] || { value: "algo" });
+          const olvidarDerivadosDelProceso = () => {}, pintarTabla = () => {}, msgApu = () => {};
+          ${fuenteReinicio}
+          reiniciarEditorParaProceso();
+          return { idActual, nombre: els["nombre-presupuesto"] ? els["nombre-presupuesto"].value : "no tocado" };`)();
+        okM(R.idActual === null && R.nombre === "", `(m) abrir otro proceso suelta el borrador del anterior (su «Guardar» lo sobrescribía): ${JSON.stringify(R)}`);
+      }
+      // el techo del pliego al abrir el análisis desde el expediente
+      const fuenteTecho = [cortarM("  function techoDesdeGuia(g) {"), cortarM("  function aplicarTechoDelPliegoAlBorrador(proceso) {")].join("\n");
+      if (fuenteTecho.trim()) {
+        const T = new Function(`
+          const fmtCOP = new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
+          const campos = { cuantia: { value: "" }, "id-proceso": { value: "" } }; const $ = (id) => campos[id] || null;
+          let cuantiaDelPliego = null, nota = null, invalidada = 0;
+          const pintarNotaCuantia = (n) => { nota = n; }, invalidarOferta = () => { invalidada++; };
+          ${fuenteTecho}
+          return (cuantia, idCampo, proceso) => { campos.cuantia.value = cuantia; campos["id-proceso"].value = idCampo; cuantiaDelPliego = null; nota = null; invalidada = 0;
+            const r = aplicarTechoDelPliegoAlBorrador(proceso); return { r, cuantia: campos.cuantia.value, marca: cuantiaDelPliego, nota, invalidada }; };`)();
+        const procT = { id: "CO1.REQ.A", guia: { tope_oferta: { fuente: "pliego", valor: 250000000, secop: 260000000, pagina: 12 } } };
+        const t1 = T("260000000", "CO1.REQ.A", procT), t2 = T("240000000", "CO1.REQ.A", procT), t3 = T("260000000", "CO1.REQ.Z", procT), t4 = T("260000000", "CO1.REQ.A", { id: "CO1.REQ.A", guia: { tope_oferta: { fuente: "secop", valor: 260000000, secop: 260000000 } } });
+        okM(t1.r === true && t1.cuantia === "250000000" && t1.marca && t1.marca.valor === 250000000 && /del pliego definitivo/.test(t1.nota) && t1.invalidada === 1,
+          `(m) un análisis guardado con la cifra de SECOP II se abre con el techo del pliego, con su nota: ${JSON.stringify(t1)}`);
+        okM(t2.r === false && t2.cuantia === "240000000" && t3.r === false && t3.cuantia === "260000000" && t4.r === false,
+          "(m) un techo más alto no sube nada, el de otro proceso no se aplica y sin pliego no cambia");
+      }
+      okM(/:where\(#app main\.panel-pestana\) p:where\(:not\(\.flex\):not\(\.grid\):not\(\.text-center\)\) \{ max-width: 100ch; \}/.test(htmlM),
+        "(m) con la pestaña sin tope, el texto corrido conserva su medida de lectura (100ch)");
+    }
     /* (k) FRENTE A PRECIOS DE VERDAD (revisión adversaria, 10-nov-2026): la prueba (b) comparaba el expediente consigo
        mismo y no podía ver que daba el veredicto contrario al de Precios. Aquí el MISMO análisis pasa por `op=rentabilidad`
        (lo que pinta Precios) y por `precioDelExpediente` con lo que ese cálculo guardaría: el piso, el precio máximo y el
@@ -67163,12 +67240,22 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
           objeto: "Construcción de pavimento", modalidad: "Licitación pública" } });
         const ptK = rK.cuerpo && rK.cuerpo.piso_techo, presK = rK.cuerpo && rK.cuerpo.presupuesto;
         if (!ptK || !presK) { okM(false, `(k) ${nombre}: Precios no respondió (${rK.status}): ${JSON.stringify(rK.cuerpo).slice(0, 200)}`); continue; }
-        const costosK = { porProceso: new Map([["CO1.REQ.K", { id: "pre-k", guardado: "2026-11-10T00:00:00.000Z", costo_directo: presK.resumen.costo_directo_total, config: { ...cfg }, total_guardado: presK.resumen.precio_final }]]),
+        // lo que Precios GUARDA: su configuración, con la cuantía con que calculó (leerConfig la lleva)
+        const costosK = { porProceso: new Map([["CO1.REQ.K", { id: "pre-k", guardado: "2026-11-10T00:00:00.000Z", costo_directo: presK.resumen.costo_directo_total, config: { ...cfg, cuantia_cop: techoPrecios }, total_guardado: presK.resumen.precio_final }]]),
           sin_costo_por_proceso: new Map(), leido: true, incompleto: false };
         const eK = BMm.precioDelExpediente({ id_del_proceso: "CO1.REQ.K", cuantia_cop: secop, modalidad_de_contratacion: "Licitación pública", objeto_del_contrato: "Construcción de pavimento" },
           "CO1.REQ.K", costosK, { techoPliego }).piso_techo;
         okM(eK && eK.cifras.piso_rentable === ptK.cifras.piso_rentable && eK.cifras.precio_maximo === ptK.cifras.precio_maximo && eK.veredicto === ptK.veredicto,
           `(k) ${nombre}: el expediente dice lo mismo que Precios: ${JSON.stringify({ precios: [ptK.cifras.piso_rentable, ptK.cifras.precio_maximo, ptK.veredicto], expediente: eK && [eK.cifras.piso_rentable, eK.cifras.precio_maximo, eK.veredicto] })}`);
+        /* (l) Y LA LISTA (10-nov-2026, decisión del dueño): la baja máxima con que la lista y el desglose ajustan la
+           probabilidad sale de la MISMA lectura (bajaMaximaDe → pisoTechoDeBorrador), sin el techo del pliego a mano —la
+           lista no tiene los documentos—: le basta la cuantía que guardó el análisis. Tiene que ser la de Precios. */
+        const filaListaK = { id_del_proceso: "CO1.REQ.K", cuantia_cop: secop, modalidad_de_contratacion: "Licitación pública", objeto_del_contrato: "Construcción de pavimento" };
+        const bmK = BMm.bajaMaximaDe(filaListaK, costosK, {});
+        const bmPrecios = ptK.cifras.piso_baja_pct != null ? Math.max(0, Math.round(Number(ptK.cifras.piso_baja_pct) * 100) / 100) : null;
+        const ptListaK = BMm.pisoTechoDeBorrador(filaListaK, costosK, {});
+        okM(bmPrecios != null && bmK.origen === "apu" && bmK.valor === bmPrecios && ptListaK.pt.veredicto === ptK.veredicto,
+          `(l) ${nombre}: la lista usa la baja máxima y el veredicto de Precios: ${JSON.stringify({ precios: [bmPrecios, ptK.veredicto], lista: [bmK.valor, bmK.origen, ptListaK.pt.veredicto] })}`);
       }
     }
     if (fallasM.length) throw new Error(`unidad Mis procesos: ${fallasM.length} comprobaciones fallan:\n  - ${fallasM.join("\n  - ")}`);
