@@ -23882,10 +23882,10 @@ async function main() {
     /* 7 · el desglose aceptado llega al Excel con su origen, y solo si suma el precio */
     const lineas = bien.propuesta.items[0].componentes.map((c) => ({ tipo: c.tipo, insumo: c.insumo, unidad: c.unidad, cantidad_total: c.cantidad_total, precio_unitario: c.precio_unitario, valor_total: c.valor_total, origen: c.origen, fuente: c.fuente && c.fuente.nombre }));
     const pr = calcAc.calcularPresupuesto({ items: [
-      { codigo: "1", descripcion: "Anclaje", unidad: "m3", cantidad: 3, precio_manual: 356857, origen_precio: "ia", ia_fuente: { nombre: "APU generado por la IA" }, ia_composicion: lineas },
-      { codigo: "2", descripcion: "Otro", unidad: "m3", cantidad: 2, precio_manual: 500000, origen_precio: "ia", ia_composicion: lineas },
+      { codigo: "1", descripcion: "Anclaje", unidad: "m3", cantidad: 3, precio_manual: 356857, origen_precio: "ia", ia_fuente: { nombre: "APU generado por la IA" }, composicion_aceptada: lineas },
+      { codigo: "2", descripcion: "Otro", unidad: "m3", cantidad: 2, precio_manual: 500000, origen_precio: "ia", ia_composicion: lineas },   // el nombre del 9-nov-2026 se sigue leyendo
     ], departamento: "BOGOTA D.C.", config: {} });
-    assert.deepStrictEqual(pr.items.map((i) => [i.costo_directo_unitario, Array.isArray(i.ia_composicion)]), [[356857, true], [500000, false]], "el desglose documenta el precio y no lo forma: el que no suma el precio no viaja");
+    assert.deepStrictEqual(pr.items.map((i) => [i.costo_directo_unitario, Array.isArray(i.composicion_aceptada)]), [[356857, true], [500000, false]], "el desglose documenta el precio y no lo forma: el que no suma el precio no viaja");
     assert.deepStrictEqual(pr.items.map((i) => LibAc.estadoComposicion(i).estado), ["con_composicion_propia", "solo_precio"]);
     const hojaApuX = LibAc.construirLibroNogal(pr, { titulo: "T", fecha: "2026-11-09" })[1].filas.map((f) => f.map((c) => (c && typeof c === "object" ? c.v : c)));
     const plano = hojaApuX.map((f) => f.join("|")).join("\n");
@@ -23981,9 +23981,185 @@ async function main() {
     assert.ok(/importacion\.composiciones\[f\.orden - 1\]/.test(appAc) && /composicion_usuario: composicion,/.test(appAc), "la composición vuelve a su fila por «orden» al aplicar la vista previa");
     assert.ok(/const itemId = composicion && base\.precio_manual == null \? null : itemIdMapeado;/.test(appAc), "la fila con su APU y sin precio del archivo no toma el precio de un banco");
     assert.ok(/filas\.map\(\(\{ composicion_usuario, \.\.\.resto \}\) => resto\)/.test(appAc), "y no viaja al mapeo");
-    assert.ok(/filas\[i\]\.ia_composicion = Array\.isArray\(p\.componentes\)/.test(appAc) && /ia_composicion: f\.origen_precio === "ia" && Array\.isArray\(f\.ia_composicion\)/.test(appAc), "el desglose aceptado viaja al motor");
+    assert.ok(/filas\[i\]\.composicion_aceptada = Array\.isArray\(p\.componentes\)/.test(appAc) && /composicion_aceptada: f\.origen_precio === "ia" && Array\.isArray\(f\.composicion_aceptada \|\| f\.ia_composicion\)/.test(appAc), "el desglose aceptado viaja al motor");
     assert.ok(/marcaOrigen\(c\)/.test(appAc) && /alertas_rendimiento/.test(appAc), "la pantalla marca el origen de cada línea y enseña las alertas de rendimiento");
     console.log(`· unidad APU cargado: la hoja de análisis ya no da insumos como ítems · un formulario con capítulos de recurso, la nota «(APU)» o el subtotal en la fila sigue siendo formulario y el libro de dos lotes sigue objetado · EPC real ${epc.apus.length} análisis, ${cuadran} cuadran al peso, «RENDIMIENTO» multiplica en materiales y divide en mano de obra según las cifras · el libro exportado casa por descripción · el encargo solo cambia con APU cargado · ${casos.length} cambios en silencio apartados · suyo/precio buscado/añadido en pantalla y Excel`);
+  }
+
+  /* ══════════ unidad APU propios (10-nov-2026) ══════════
+     El plan «APU propios de Detekta», primera entrega: (1) la guarda de ALCANCE en la regla de mapeo de los dos
+     lectores (el tubo no es su instalación), medida con el banco de prueba; (2) `excluir`, para que el banco de
+     prueba esconda el ítem que mide usando la regla de SIEMPRE; (3) la BIBLIOTECA: guardar un borrador aprende el
+     APU entero de las filas que lo traen y «Calcular» lo devuelve para la misma actividad, con su fecha, solo con
+     credencial. Falla contra el árbol anterior: no existían `alcanceCruzado`, `excluir`, `apuBiblioteca` ni el
+     origen «biblioteca». */
+  bq59: { if (!corre("unidad APU propios")) break bq59;
+    const M = require("../lib/apu_mapeo.js");
+    const { mapearFilasImportadas } = require("../lib/apu/importar.js");
+    const S = require("../lib/apu/catalogo.js").SEMILLA;
+
+    /* 1 · el alcance, en la regla única y en los dos lectores */
+    assert.strictEqual(M.alcanceCruzado('INSTALACIÓN TUBERÍA PVC UNIÓN MECÁNICA D=10"', 'TUBERÍA PVC UNIÓN MECÁNICA RDE 26 10"'), true, "instalar el tubo no es el tubo");
+    assert.strictEqual(M.alcanceCruzado("LIMPIEZA Y PINTURA DE ESTRUCTURA METÁLICA", "FABRICACIÓN DE LA ESTRUCTURA METÁLICA"), true, "limpiar y pintar no es fabricar");
+    assert.strictEqual(M.alcanceCruzado("Suministro e instalación de tubería PVC 4\"", "Suministro e instalación de tubería PVC 4\" sanitaria"), false, "el mismo alcance no se toca");
+    assert.strictEqual(M.alcanceCruzado("MEZCLA ASFÁLTICA RECICLADA EN CALIENTE DEL TIPO ______ aplicado para mezcla … incluye preparación, colocación y compactación", "MEZCLA ASFÁLTICA RECICLADA EN CALIENTE DEL TIPO ______ para bacheo"), false, "solo cuenta la CABECERA: la explicación del INVIAS («incluye … colocación») no es la actividad");
+    const tubo = mapearFilasImportadas([{ descripcion: 'INSTALACIÓN TUBERÍA PVC UNIÓN MECÁNICA D=10"', unidad: "ML" }], S, { departamento: "CUNDINAMARCA", excluir: new Set(["EPC:7.3.7"]) }).filas[0];
+    assert.ok(tubo.item_id && tubo.nivel_mapeo === "revisar" && tubo.alcance_distinto === true, `la importación ya no cobra sola el tubo por su instalación (${tubo.item_id} · ${tubo.nivel_mapeo})`);
+    for (const [q, u, cat] of [["Instalación de malla electrosoldada", "m2", "Malla electrosoldada"], ["Limpieza de cuneta en concreto", "ml", "Cuneta en concreto"]]) {
+      const pl = M.mapearItem({ descripcion_original: q, unidad: u });
+      assert.ok(pl.descripcion_catalogo === cat && pl.nivel === "revisar" && pl.alcance_distinto === true, `el lector de pliegos tampoco cobra solo «${cat}» por «${q}» (${pl.nivel})`);
+    }
+
+    /* 2 · excluir esconde el ítem: el banco de prueba mide la regla de siempre */
+    const conSi = mapearFilasImportadas([{ descripcion: "LOCALIZACIÓN Y REPLANTEO REDES", unidad: "ML" }], S, { departamento: "CUNDINAMARCA" }).filas[0];
+    const sinSi = mapearFilasImportadas([{ descripcion: "LOCALIZACIÓN Y REPLANTEO REDES", unidad: "ML" }], S, { departamento: "CUNDINAMARCA", excluir: new Set([conSi.item_id]) }).filas[0];
+    assert.ok(conSi.item_id === "EPC:1.1.1" && sinSi.item_id !== "EPC:1.1.1", "sin `excluir` encuentra el propio ítem; con él, a su vecino");
+    const Banco = require("./apu_banco_prueba.js");
+    const filasB = Banco.medir({ limite: 12 });
+    const rB = Banco.resumir(filasB);
+    assert.ok(rB.total.casos === 12 && filasB.every((f) => f.vecino !== f.codigo), "el banco de prueba nunca se compara consigo mismo");
+    assert.ok(filasB.every((f) => f.error == null || (f.real > 0 && f.precio_vecino > 0)), "y el error solo existe con los dos costos del motor");
+    assert.ok(/Ninguna cifra de este documento se escribe a mano/.test(Banco.informe(filasB, rB, "2026-11-10")), "el informe se genera");
+
+    /* 3 · la biblioteca: guardar aprende el APU entero, «Calcular» lo devuelve con su fecha, solo con credencial */
+    const apuH = require("../lib/handlers/apu/editor.js");
+    const B = require("../lib/apu/biblioteca.js");
+    const perfilB = "genesis";
+    const comp = { componentes: [
+      { n: 1, tipo: "material", insumo: "Cemento gris", unidad: "kg", cantidad: 350, cantidad_total: 350, precio_unitario: 700, valor_total: 245000 },
+      { n: 2, tipo: "mano_obra", insumo: "Oficial", unidad: "jornal", cantidad: 0.5, cantidad_total: 0.5, precio_unitario: 200000, valor_total: 100000 },
+      { n: 3, tipo: "herramienta_menor", insumo: "Herramienta menor", unidad: "%", es_porcentaje: true, fraccion: 0.05, valor_total: 5000 } ] };
+    const filaApu = { descripcion: "Anclaje de tubería en concreto 3000 psi", unidad: "m3", cantidad: 2, precio_manual: 350000, origen_precio: "archivo", composicion_usuario: comp };
+    const filaMedias = { descripcion: "Algo sin APU completo", unidad: "m2", cantidad: 1, precio_manual: 1000, origen_precio: "archivo", composicion_usuario: { componentes: [{ n: 1, tipo: "material", insumo: "X", unidad: "un", cantidad_total: 1 }] } };
+    const g = await invocarPost(apuH, "/api/apu/guardar", { perfil: perfilB, nombre: "biblioteca", departamento: "CUNDINAMARCA", items: [filaApu, filaMedias], config: {} }, CAB_TOKEN);
+    assert.strictEqual(g.status, 200);
+    assert.strictEqual(g.cuerpo.apus_aprendidos, 1, "solo se aprende el APU completo que explica su precio");
+    assert.ok(/1 APU completo\(s\) en su biblioteca/.test(g.cuerpo.nota), "y la nota lo dice");
+    const guardado = await redis.hgetall(require("../lib/almacen.js").CLAVES.apuBiblioteca(perfilB));
+    const ent = JSON.parse(Object.values(guardado)[0]);
+    assert.deepStrictEqual([ent.total, ent.origen, ent.componentes.length, /^\d{4}-\d{2}-\d{2}$/.test(ent.aprendido_el)], [350000, "archivo", 3, true], "el APU entero, con su origen y su fecha");
+    const filaNueva = { descripcion: "ANCLAJE DE TUBERÍA EN CONCRETO 3000 PSI", unidad: "M3", cantidad: 5 };
+    const c1 = await invocarPost(apuH, "/api/apu/calcular", { perfil: perfilB, items: [filaNueva, { descripcion: "Otra cosa", unidad: "m3", cantidad: 1 }], departamento: "CUNDINAMARCA", config: {} }, CAB_TOKEN);
+    assert.strictEqual(c1.status, 200);
+    const it0 = c1.cuerpo.items[0];
+    assert.deepStrictEqual([it0.costo_directo_unitario, it0.origen_precio, it0.biblioteca && it0.biblioteca.aprendido_el === ent.aprendido_el, Array.isArray(it0.composicion_aceptada) && it0.composicion_aceptada.length], [350000, "biblioteca", true, 3], "la misma actividad (mayúsculas y unidad aparte) vuelve con su APU, su precio y su fecha");
+    assert.ok(c1.cuerpo.items[1].origen_precio !== "biblioteca", "otra actividad no");
+    const c2 = await invocarPost(apuH, "/api/apu/calcular", { perfil: perfilB, items: [{ ...filaNueva, precio_manual: 999999, origen_precio: "manual" }], departamento: "CUNDINAMARCA", config: {} }, CAB_TOKEN);
+    assert.strictEqual(c2.cuerpo.items[0].costo_directo_unitario, 999999, "un precio tecleado manda sobre la biblioteca");
+    const c3 = await invocarPost(apuH, "/api/apu/calcular", { perfil: perfilB, items: [filaNueva], departamento: "CUNDINAMARCA", config: {} });
+    assert.ok(c3.cuerpo.items[0].origen_precio !== "biblioteca", "sin credencial no se leen los APU de nadie");
+    const libro = require("../public/apu_libro.js");
+    assert.strictEqual(libro.estadoComposicion(it0).estado, "con_composicion_propia", "el Excel lo da por APU desglosado");
+    const est = libro.clasificarOrigen(it0);
+    assert.ok(est.estado === "propio" && /Su APU/.test(est.etiqueta) && /aceptó/.test(est.motivo), "y la pantalla dice que es su APU y de cuándo");
+    const viejo = libro.clasificarOrigen({ ...it0, biblioteca: { aprendido_el: "2025-01-15" } });
+    assert.ok(/revise los precios/.test(viejo.motivo), "un APU de más de seis meses avisa");
+    const planoApu = libro.construirLibroNogal(c1.cuerpo, { titulo: "T", fecha: "2026-11-10" })[1].filas.map((f) => f.map((x) => (x && typeof x === "object" ? x.v : x)).join("|")).join("\n");
+    assert.ok(/APU DE SU BIBLIOTECA \(aceptado el /.test(planoApu) && /\|Suyo\|/.test(planoApu), "la hoja APU del Excel lo imprime desglosado");
+    // un borrador que ya viene de la biblioteca no la reaprende (su fecha no se renueva sola)
+    assert.strictEqual(B.entradaDe({ ...filaNueva, precio_manual: 350000, origen_precio: "biblioteca", composicion_aceptada: it0.composicion_aceptada }, "2026-11-10"), null);
+    // la copia de datos la incluye
+    assert.ok(require("../lib/copia_datos.js").PATRONES ? require("../lib/copia_datos.js").PATRONES.includes("apu:biblioteca:*") : /apu:biblioteca:\*/.test(fs.readFileSync(path.join(__dirname, "..", "lib", "copia_datos.js"), "utf8")), "la copia de los datos del usuario incluye su biblioteca");
+    /* 4 · el modelo abierto (capa 6): APAGADO sin las tres variables; con ellas arma por tandas desde los APU reales
+       parecidos, el precio es el del motor y lo que vuelve pasa por el mismo juez. Proveedor FALSO: ni una llamada fuera. */
+    {
+      const MA = require("../lib/apu/modelo_abierto.js");
+      const perfilM = "genesis";
+      const itemsM = [{ descripcion: "Instalación de tubería PVC sanitaria de 4 pulgadas", unidad: "ml", cantidad: 30 }, { descripcion: "Rubro sin unidad conocida", unidad: "zz", cantidad: 1 }];
+      const gm = await invocarPost(apuH, "/api/apu/guardar", { perfil: perfilM, nombre: "modelo abierto", departamento: "CUNDINAMARCA", items: itemsM, config: {} }, CAB_TOKEN);
+      const idM = gm.cuerpo.id;
+      const sinModelo = await invocarPost(apuH, "/api/apu/ia", { id: idM, perfil: perfilM, motor: "modelo" }, CAB_TOKEN);
+      assert.ok(sinModelo.status === 409 && sinModelo.cuerpo.motivo === "sin_modelo" && !MA.hayModelo(), "sin las tres variables el modelo está apagado y lo dice");
+      const env0 = { u: process.env.MODELO_APU_URL, c: process.env.MODELO_APU_CLAVE, n: process.env.MODELO_APU_NOMBRE };
+      const fetch0 = global.fetch;
+      const pedidas = [];
+      process.env.MODELO_APU_URL = "https://modelo.falso.test/v1/chat/completions"; process.env.MODELO_APU_CLAVE = "clave-secreta-falsa"; process.env.MODELO_APU_NOMBRE = "Qwen/Qwen3-32B";
+      global.fetch = async (url, op) => {
+        if (String(url) !== process.env.MODELO_APU_URL) return fetch0(url, op);
+        const cuerpo = JSON.parse(op.body);
+        pedidas.push({ auth: op.headers.Authorization, cuerpo });
+        const usuario = cuerpo.messages[1].content;
+        // copia el primer APU parecido, código por código, como lo haría un modelo prudente
+        const primera = (usuario.split("APU REALES PARECIDOS")[1].split("\n")[2] || "").trim();
+        const lineas = primera.split(",").map((x) => x.trim().split("×")).filter((x) => x.length === 2).map(([codigo, cantidad]) => ({ codigo, cantidad: Number(cantidad), desperdicio_pct: 0 }));
+        return { ok: true, status: 200, json: async () => ({ choices: [{ message: { content: JSON.stringify({ no_se_puede: null, lineas, herramienta_menor_pct: 0.05, rendimiento: "el del APU parecido", supuestos: [] }) } }] }) };
+      };
+      try {
+        const sol = await invocarPost(apuH, "/api/apu/ia", { id: idM, perfil: perfilM, solicitar: true }, CAB_TOKEN);
+        assert.ok(sol.status === 200 && sol.cuerpo.modelo === "Qwen/Qwen3-32B" && sol.cuerpo.estado === "buscando" && sol.cuerpo.solicitud.despertada === null, "con modelo, «Buscar» no despierta a nadie: la pantalla pide las tandas");
+        const t = await invocarPost(apuH, "/api/apu/ia", { id: idM, perfil: perfilM, motor: "modelo" }, CAB_TOKEN);
+        assert.strictEqual(t.status, 200, JSON.stringify(t.cuerpo).slice(0, 300));
+        assert.deepStrictEqual([t.cuerpo.atendidas, t.cuerpo.quedan, t.cuerpo.origen], [2, 0, "modelo:Qwen/Qwen3-32B"]);
+        assert.ok(pedidas.length === 1 && pedidas[0].auth === "Bearer clave-secreta-falsa" && pedidas[0].cuerpo.response_format.type === "json_schema" && pedidas[0].cuerpo.temperature === 0, "una sola pregunta (la fila sin vecinos de su unidad no se pregunta), con la clave en la cabecera y la salida forzada al esquema");
+        assert.ok(!JSON.stringify(t.cuerpo).includes("clave-secreta-falsa"), "la clave no sale en la respuesta");
+        const est = await invocar(apuH, `/api/apu/ia?id=${idM}&perfil=${perfilM}`, CAB_TOKEN, { metodo: "GET" });
+        const its = est.cuerpo.propuesta.items;
+        const tuberia = its.find((x) => x.fila === 0), raro = its.find((x) => x.fila === 1);
+        assert.ok(tuberia.costo_directo_unitario > 0 && tuberia.componentes.filter((c) => c.tipo !== "herramienta_menor").every((c) => c.fuente && /costeado por Detekta/.test(c.fuente.nombre)), "el ítem sale con precio, y cada línea con la fuente del APU real del que vino");
+        assert.ok(tuberia.supuestos.some((s) => /modelo abierto \(Qwen\/Qwen3-32B\) a partir de \d APU reales/.test(s)), "y dice que lo armó el modelo y desde qué APU");
+        assert.ok(raro.costo_directo_unitario == null && /No hay APU reales de la misma unidad/.test(raro.motivo_sin_precio), "sin vecinos de su unidad no se presupuesta, y se dice");
+        // un insumo que no está en la lista: no se presupuesta
+        const mal = MA.itemDePropuesta(0, { descripcion: "x", unidad: "ml" }, { vecinos: [{ codigo: "A" }], vocabulario: [{ codigo: "V1", tipo: "material", nombre: "Tubo", unidad: "ml", precio: 100, fuente: "F" }] }, { no_se_puede: null, lineas: [{ codigo: "V9", cantidad: 1, desperdicio_pct: 0 }], herramienta_menor_pct: 0, rendimiento: "", supuestos: [] }, "M");
+        assert.ok(mal.subtotal_directo === null && /no está en la lista/.test(mal.supuestos[0]), "un insumo inventado por el modelo no se presupuesta");
+        const sinSe = MA.itemDePropuesta(0, { descripcion: "x", unidad: "ml" }, { vecinos: [], vocabulario: [] }, { no_se_puede: "no aplica", lineas: [] }, "M");
+        assert.ok(sinSe.subtotal_directo === null && /no lo armó: no aplica/.test(sinSe.supuestos[0]), "y su «no se puede» se respeta");
+        // (1a) si el borrador cambia entre dos tandas, el APU viejo no se le pega a la fila nueva
+        await invocarPost(apuH, "/api/apu/guardar", { id: idM, perfil: perfilM, nombre: "modelo abierto", departamento: "CUNDINAMARCA", items: [{ descripcion: "Excavación manual en material común", unidad: "m3", cantidad: 10 }, itemsM[0]], config: {} }, CAB_TOKEN);
+        const t2 = await invocarPost(apuH, "/api/apu/ia", { id: idM, perfil: perfilM, motor: "modelo" }, CAB_TOKEN);
+        const est2 = await invocar(apuH, `/api/apu/ia?id=${idM}&perfil=${perfilM}`, CAB_TOKEN, { metodo: "GET" });
+        const f0 = est2.cuerpo.propuesta.items.find((x) => x.fila === 0);
+        assert.ok(t2.cuerpo.atendidas === 2 && f0 && f0.descripcion === "Excavación manual en material común" && !(f0.componentes || []).some((c) => /PVC/.test(c.insumo)), "la fila 0 cambió de actividad: se vuelve a pedir y no hereda el APU de la tubería");
+        // (7) sin nada que pedir, la solicitud se cierra (no queda «buscando» dos horas)
+        const gC = await invocarPost(apuH, "/api/apu/guardar", { perfil: perfilM, nombre: "solo con su APU", departamento: "CUNDINAMARCA", items: [{ descripcion: "Algo con su APU", unidad: "m2", cantidad: 1, composicion_usuario: { componentes: [{ n: 1, tipo: "material", insumo: "X", unidad: "un", cantidad_total: 1 }] } }], config: {} }, CAB_TOKEN);
+        await invocarPost(apuH, "/api/apu/ia", { id: gC.cuerpo.id, perfil: perfilM, solicitar: true }, CAB_TOKEN);
+        const tC = await invocarPost(apuH, "/api/apu/ia", { id: gC.cuerpo.id, perfil: perfilM, motor: "modelo" }, CAB_TOKEN);
+        const estC = await invocar(apuH, `/api/apu/ia?id=${gC.cuerpo.id}&perfil=${perfilM}`, CAB_TOKEN, { metodo: "GET" });
+        assert.ok(tC.cuerpo.atendidas === 0 && /su chat de inteligencia artificial/.test(tC.cuerpo.nota) && estC.cuerpo.estado === "listo", `sin filas que pedir la solicitud queda «listo» y dice qué hacer (${estC.cuerpo.estado})`);
+      } finally {
+        global.fetch = fetch0;
+        for (const [k, v] of [["MODELO_APU_URL", env0.u], ["MODELO_APU_CLAVE", env0.c], ["MODELO_APU_NOMBRE", env0.n]]) { if (v == null) delete process.env[k]; else process.env[k] = v; }
+      }
+      const appM = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8"));
+      assert.ok(/motor: "modelo"/.test(appM) && /if \(r\.modelo\)/.test(appM), "la pantalla pide las tandas del modelo cuando el servidor lo tiene");
+    }
+    /* 5 · lo que encontró la revisión adversaria del 10-nov-2026, una cerradura por hallazgo */
+    {
+      const MA = require("../lib/apu/modelo_abierto.js");
+      // (10) infinitivos, la coma y la pintura
+      assert.strictEqual(M.alcanceCruzado("Demoler andén en concreto", "Andén en concreto"), true, "«Demoler» es demolición");
+      assert.strictEqual(M.alcanceCruzado("Limpiar cuneta en concreto", "Cuneta en concreto"), true, "«Limpiar» es limpieza");
+      assert.strictEqual(M.alcanceCruzado("PINTURA VINILO TIPO 1 PARA INTERIORES", "SUMINISTRO E INSTALACION DE PINTURA EN VINILO TIPO 1"), false, "pintar y suministrar e instalar la pintura son lo mismo");
+      assert.strictEqual(M.alcanceCruzado("Suministro, transporte e instalación de tubería PVC 4\"", "Suministro e instalación de tubería PVC 4\""), false, "la coma no corta la cabecera");
+      // (8) el banco esconde los gemelos
+      const Bn = require("./apu_banco_prueba.js");
+      const nog = Bn.medir({ limite: 40 }).filter((f) => f.fuente === "nogal");
+      const { casos } = Bn.corpusReal();
+      const desc = Object.fromEntries(casos.map((c) => [c.codigo, `${c.descripcion}|${c.unidad}`.toLowerCase()]));
+      assert.ok(nog.length && nog.every((f) => !f.vecino || desc[f.vecino] !== desc[f.codigo]), "el vecino nunca es un gemelo (misma descripción y unidad, otro código)");
+      // (9) la clave de la biblioteca no corta la descripción
+      const larga = "TUBERÍA DE ACERO ".repeat(25);
+      assert.notStrictEqual(B.claveDe(larga + "150 PSI", "ml"), B.claveDe(larga + "330 PSI", "ml"), "dos descripciones que solo difieren después de 300 caracteres no comparten APU");
+      // (3) la fila que trae SU APU nuevo no toma el viejo de la biblioteca; (4) una corrección tecleada lo retira
+      const c4 = await invocarPost(apuH, "/api/apu/calcular", { perfil: perfilB, items: [{ ...filaNueva, con_apu_del_usuario: true }], departamento: "CUNDINAMARCA", config: {} }, CAB_TOKEN);
+      assert.ok(c4.cuerpo.items[0].origen_precio !== "biblioteca", "su APU nuevo manda sobre el de la biblioteca");
+      await invocarPost(apuH, "/api/apu/guardar", { perfil: perfilB, nombre: "corrige", departamento: "CUNDINAMARCA", items: [{ ...filaNueva, precio_manual: 300000, origen_precio: "manual" }], config: {} }, CAB_TOKEN);
+      const c5 = await invocarPost(apuH, "/api/apu/calcular", { perfil: perfilB, items: [filaNueva], departamento: "CUNDINAMARCA", config: {} }, CAB_TOKEN);
+      assert.ok(c5.cuerpo.items[0].origen_precio !== "biblioteca", "un precio tecleado y guardado para esa actividad retira el APU viejo de la biblioteca");
+      // (11) la explicación de la cascada lo dice
+      assert.strictEqual(require("../lib/apu/precios.js").explicarCascada("X", { elegido: "biblioteca" }).corto_por, "biblioteca", "«De dónde sale este precio» marca la biblioteca");
+      // (6) la cantidad del modelo tiene límite: fuera de [mín ÷ 3, máx × 3] de los vecinos no se presupuesta
+      const fuera = MA.dentroDeLosVecinos({ subtotal_directo: 15782, componentes: [{}], supuestos: [] }, { vecinos: [{ cd: 791471 }, { cd: 850000 }] });
+      assert.ok(fuera.subtotal_directo === null && /fuera de ese rango/.test(fuera.supuestos[0]), "un APU del modelo 50 veces más barato que sus vecinos no se presupuesta");
+      assert.strictEqual(MA.dentroDeLosVecinos({ subtotal_directo: 800000, componentes: [{}], supuestos: [] }, { vecinos: [{ cd: 791471 }] }).subtotal_directo, 800000, "dentro del rango pasa");
+      // (1) la cantidad redondeada no hace perder la fila al re-verificarla
+      const IA = require("../lib/apu/precios_ia.js");
+      const crudoUno = { items: [{ fila: 0, unidad: "ml", subtotal_directo: 272.01, componentes: [{ tipo: "mano_obra", insumo: "Obrero", unidad: "jornal", cantidad: 0.002164, desperdicio_pct: 0, cantidad_total: 0.002164, precio_unitario: 125695.7, valor_total: 272.01, fuente: { nombre: "F" } }] }] };
+      const presuUno = { items: [{ descripcion: "Algo", unidad: "ml", cantidad: 1 }] };
+      const v1 = IA.verificarPropuesta(crudoUno, presuUno);
+      const v2 = IA.verificarPropuesta({ items: v1.propuesta.items.map(MA.aCrudo) }, presuUno);
+      assert.ok(v1.apartados.length === 0 && v2.apartados.length === 0 && v2.propuesta.items[0].costo_directo_unitario === 272.01, "una fila buena sobrevive a la segunda verificación");
+    }
+    console.log(`· unidad APU propios: el alcance (instalar el tubo ≠ el tubo; limpiar ≠ fabricar) baja a «revisar» en los dos lectores · el banco de prueba esconde el ítem con la regla de siempre · la biblioteca aprende el APU entero al guardar y «Calcular» lo devuelve con su fecha, solo con credencial y por debajo del precio tecleado · el modelo abierto, apagado sin sus variables, arma por tandas con el vocabulario cerrado de los APU reales parecidos y pasa por el mismo juez`);
   }
 
 

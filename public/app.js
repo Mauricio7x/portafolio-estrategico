@@ -8791,12 +8791,12 @@
       if (filas[i].precio_manual != null && filas[i].origen_precio !== "archivo") {
         filas[i].origen_precio = "manual";
         filas[i].ia_fuente = null;          // un precio tecleado encima ya no es el que buscó la IA
-        filas[i].ia_composicion = null;     // …ni su desglose
+        filas[i].composicion_aceptada = null;     // …ni su desglose
       }
       if (filas[i].precio_manual == null && (filas[i].origen_precio === "manual" || filas[i].origen_precio === "ia")) {
         filas[i].origen_precio = null;
         filas[i].ia_fuente = null;
-        filas[i].ia_composicion = null;
+        filas[i].composicion_aceptada = null;
       }
     } else {
       // vacío = usar el rendimiento del catálogo, no «rendimiento cero»
@@ -9125,7 +9125,9 @@
     // «ia»: el precio lo encontró una sesión de Claude Code y el usuario lo aceptó; su fuente viaja con él
     ia_fuente: f.origen_precio === "ia" && f.ia_fuente ? f.ia_fuente : null,
     // …y su desglose, para la hoja del APU del Excel (el motor lo valida contra el precio y lo descarta si no suma)
-    ia_composicion: f.origen_precio === "ia" && Array.isArray(f.ia_composicion) ? f.ia_composicion : null,
+    composicion_aceptada: f.origen_precio === "ia" && Array.isArray(f.composicion_aceptada || f.ia_composicion) ? (f.composicion_aceptada || f.ia_composicion) : null,
+    // la fila trae SU APU: el de la biblioteca no la pisa
+    con_apu_del_usuario: !!f.composicion_usuario,
     subcontratado: f.subcontratado || false,
     aiu_subcontratista_pct: f.aiu_subcontratista_pct == null ? null : f.aiu_subcontratista_pct,
   }));
@@ -9139,6 +9141,7 @@
   function avisosDePreciosCorregidos(r) {
     const verbo = window.Glosario.VERBOS.generar_apu;
     if (r && r.precios_propios_fallo) return [`Esta vez no se pudieron leer sus precios corregidos: se usó el precio de referencia. Pulse otra vez «${verbo}» en un momento.`];
+    if (r && r.biblioteca_fallo) return [`Esta vez no se pudieron leer los APU que usted ya aceptó: se usó el precio de referencia. Pulse otra vez «${verbo}» en un momento.`];
     const h = r && r.precios_heredados;
     if (h && h.fallo) {
       return [h.de
@@ -9861,9 +9864,10 @@
     if (filas[i].origen_precio === "archivo" && filas[i].precio_manual > 0) return false;   // el precio del archivo manda
     filas[i].precio_manual = p.costo_directo_unitario;
     filas[i].origen_precio = "ia";
-    filas[i].ia_fuente = { nombre: "APU generado por la IA", url: null, fecha: (iaEstado && iaEstado.propuesta && iaEstado.propuesta.generado_el) || null };
+    const delModelo = String((iaEstado && iaEstado.propuesta && iaEstado.propuesta.origen) || "").startsWith("modelo:");
+    filas[i].ia_fuente = { nombre: delModelo ? "APU del modelo abierto" : "APU generado por la IA", url: null, fecha: (iaEstado && iaEstado.propuesta && iaEstado.propuesta.generado_el) || null };
     /* su desglose viaja con el precio: es lo que el Excel imprime en la hoja del APU, con el origen de cada línea */
-    filas[i].ia_composicion = Array.isArray(p.componentes) && p.componentes.length ? p.componentes.map((c) => ({ tipo: c.tipo, insumo: c.insumo, unidad: c.unidad, cantidad_total: c.cantidad_total, precio_unitario: c.precio_unitario, valor_total: c.valor_total, origen: c.origen || null, fuente: c.fuente && c.fuente.nombre ? c.fuente.nombre : null })) : null;
+    filas[i].composicion_aceptada = Array.isArray(p.componentes) && p.componentes.length ? p.componentes.map((c) => ({ tipo: c.tipo, insumo: c.insumo, unidad: c.unidad, cantidad_total: c.cantidad_total, precio_unitario: c.precio_unitario, valor_total: c.valor_total, origen: c.origen || null, fuente: c.fuente && c.fuente.nombre ? c.fuente.nombre : null })) : null;
     return true;
   }
   $("btn-ia-pedir").addEventListener("click", async () => {
@@ -9875,6 +9879,22 @@
       if (!g) { msgIa("No se pudo guardar el borrador, y sin él no hay dónde dejar los APU.", "error"); return; }
       const r = await api("/api/apu?op=ia", { method: "POST", body: { id: idActual, perfil: $("perfil").value, solicitar: true, ciudad: $("ia-ciudad").value.trim() || null, condiciones_sitio: $("ia-condiciones").value.trim() || null } });
       if (!r) return;
+      /* CON MODELO ABIERTO (10-nov-2026): la pantalla pide las tandas hasta que no quede ninguna y dice el avance */
+      if (r.modelo) {
+        let hechas = 0, vueltas = 0;
+        msgIa(`Armando los APU con el modelo abierto (${r.modelo})…`);
+        while (vueltas++ < 80) {
+          const t = await api("/api/apu?op=ia", { method: "POST", body: { id: idActual, perfil: $("perfil").value, motor: "modelo" } });
+          if (!t) break;
+          hechas += t.atendidas || 0;
+          if (t.ok === false) { msgIa(t.error || "El modelo abierto no respondió.", "error"); break; }
+          msgIa(`Armando los APU con el modelo abierto… ${hechas} ítem${hechas === 1 ? "" : "s"} listos${t.quedan ? `, faltan ${t.quedan}` : ""}.`);
+          if (!t.atendidas && t.nota) { msgIa(t.nota); break; }
+          if (!t.quedan || !t.atendidas) break;
+        }
+        await consultarIa({ silencioso: true });
+        return;
+      }
       iaSondeos = 0;
       iaEstado = { ...r, id: idActual };
       actualizarEstadoIa();
@@ -10099,7 +10119,8 @@
           sugerencia: f.sugerencia == null ? null : String(f.sugerencia).slice(0, 200),
           /* el APU que el usuario cargó y el desglose del que buscó la IA: el servidor los vuelve a validar donde los usa */
           composicion_usuario: f.composicion_usuario && typeof f.composicion_usuario === "object" && Array.isArray(f.composicion_usuario.componentes) ? f.composicion_usuario : null,
-          ia_composicion: f.origen_precio === "ia" && Array.isArray(f.ia_composicion) ? f.ia_composicion : null,
+          // «ia_composicion» es el nombre que tuvo el 9-nov-2026: los borradores guardados ese día se siguen leyendo
+          composicion_aceptada: f.origen_precio === "ia" && Array.isArray(f.composicion_aceptada || f.ia_composicion) ? (f.composicion_aceptada || f.ia_composicion) : null,
         };
       });
       ultimoCalculo = null;
@@ -10395,7 +10416,7 @@
         return `<label class="flex items-start gap-1.5">
           <input type="checkbox" data-aceptar="${f.orden}" ${marcada} class="mt-0.5 h-3.5 w-3.5 rounded border-gray-300">
           <span class="text-xs"><span class="rounded px-1.5 py-0.5 text-[11px] ring-1 ring-inset ${insignia("revisar").chip}">● ${esc(insignia("revisar").corto)} · ${Math.round((f.confianza ?? 0) * 100)} %</span>
-          ${origenMapeo(f)}</span></label>`;
+          ${origenMapeo(f)}${f.alcance_distinto ? ' <span class="block text-[11px] font-medium text-amber-900">Hace otra actividad (por ejemplo, el material y no su instalación): no se cobra solo. Márquelo solo si es el mismo trabajo.</span>' : ""}</span></label>`;
       }
       return `<span class="rounded px-1.5 py-0.5 text-[11px] ring-1 ring-inset ${insignia("personalizado").chip}">● ${esc(insignia("personalizado").corto)}</span>`
         + (f.precio_archivo == null ? ' <span class="text-[11px] font-medium text-red-600">sin precio: escríbalo en la tabla antes de calcular</span>' : "");

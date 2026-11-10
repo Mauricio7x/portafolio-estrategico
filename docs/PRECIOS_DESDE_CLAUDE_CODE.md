@@ -44,6 +44,40 @@ La columna «RENDIMIENTO» no se adivina: en unos archivos multiplica (materiale
 aplicación lo deduce de las cifras de la fila (valor ÷ precio). Cuando la fila no trae valor, la cantidad queda «sin
 dato» y el encargo lo dice.
 
+## Sus APU vuelven solos: la biblioteca (10-nov-2026)
+
+Cada vez que usted **guarda** un borrador, Detekta aprende el APU **completo** de las filas que lo traen: el que usted
+cargó en su Excel (completo y cuadrado) o el que buscó la IA y usted aceptó con «Usar estos N precios». La próxima
+vez que esa **misma actividad** (la misma descripción y la misma unidad) aparezca en cualquier presupuesto suyo,
+«Calcular» la arma con ese APU, sin Claude, y la tabla dice Su APU con la fecha en que lo aceptó.
+
+- Un precio que usted teclee, el de su archivo y el precio corregido por código mandan sobre la biblioteca.
+- Los precios del APU son los de la fecha en que lo aceptó: no se reajustan solos, y si tienen más de 6 meses la
+  pantalla le pide revisarlos.
+- La biblioteca entra en la copia de sus datos.
+
+## El modelo abierto: «Buscar» sin Claude (apagado hasta que usted lo encienda)
+
+Con tres variables en Vercel, «Buscar» deja de esperar a Claude y arma los APU con un **modelo de lenguaje abierto**
+(por ejemplo, Qwen3-32B, licencia Apache-2.0) servido por un proveedor de pago por uso:
+
+| Variable | Qué va |
+|---|---|
+| `MODELO_APU_URL` | la dirección de chat del proveedor (compatible con la API de OpenAI; por ejemplo, la de DeepInfra) |
+| `MODELO_APU_CLAVE` | la clave del proveedor (es una contraseña: solo en Vercel) |
+| `MODELO_APU_NOMBRE` | el modelo, por ejemplo `Qwen/Qwen3-32B` |
+
+Cómo trabaja: por cada ítem busca los 5 **APU reales** más parecidos y de la misma unidad (INVIAS, EPC, contrato
+Nogal), los costea con el motor en el departamento de la obra y le da al modelo una **lista cerrada** de insumos con
+su precio. El modelo solo elige insumos de esa lista y pone cantidades; **ningún precio lo escribe el modelo**. Lo
+que vuelve pasa por la misma verificación que la sesión y el chat. Sin APU reales de la misma unidad, el ítem
+queda sin precio y se dice. Las filas que traen su propio APU no las toca: esas las completa la sesión o el chat.
+
+Costo de referencia (no medido en uso real): DeepInfra publicaba el 10-nov-2026 0,08 USD por millón de tokens de
+entrada y 0,28 de salida para Qwen3-32B; un APU de unos 3.000 tokens de ida y 3.000 de vuelta ronda 0,001 USD.
+La calidad en español con APU colombianos **no está medida**: antes de usarlo para ofertar, pruébelo con 30 ítems
+suyos contra lo que arma Claude.
+
 ## Quién atiende «Buscar»: tres vías, de la más automática a la más manual
 
 El servidor no tiene clave de API y no la necesita: los APU los escribe **una sesión de Claude Code con la
