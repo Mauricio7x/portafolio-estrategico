@@ -110,3 +110,4 @@ con `node tests/estado.js`, y las coordenadas las da `node tests/mapa.js <térmi
 | `docs/marca.md` | referencia | — | `README.md` · `public` · `tests` | Marca · Detekta (Fase 7 del plan maestro v4 · ago 2026) |
 | `docs/MEMORIA.md` | referencia | — | `.claude` · `CLAUDE.md` · `README.md` · `lib` · `public` · `tests` | MEMORIA.md · la crónica completa de decisiones de Detekta |
 | `docs/PROMPT_INICIAL.md` | referencia | — | `CLAUDE.md` · `README.md` · `tests` | PROMPT INICIAL DE DETEKTA · protocolo vivo |
+| `docs/APU_BANCO_PRUEBA.md` | referencia (generado) | — | `tests` | Banco de prueba · el APU parecido, medido sin Claude |

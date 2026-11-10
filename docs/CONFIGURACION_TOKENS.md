@@ -701,6 +701,25 @@ mañana no tiene cómo identificarse.
 
 ---
 
+### 3.13 · `MODELO_APU_URL`, `MODELO_APU_CLAVE` y `MODELO_APU_NOMBRE` — «Buscar» con un modelo abierto, sin Claude (opcional, pago por uso)
+
+**Qué son.** Con las tres, «Buscar» en Precios arma los APU con un modelo de lenguaje de pesos abiertos (por ejemplo,
+Qwen3-32B, licencia Apache-2.0) servido por un proveedor compatible con la API de chat de OpenAI, en vez de esperar
+a una sesión de Claude Code o al chat. El modelo solo elige insumos de los APU reales más parecidos y pone cantidades;
+los precios los pone Detekta. Cómo trabaja: `docs/PRECIOS_DESDE_CLAUDE_CODE.md` § «El modelo abierto». Sin las tres,
+todo sigue como antes.
+
+- `MODELO_APU_URL`: la dirección de chat del proveedor (termina en `/chat/completions`). La de cada proveedor está en
+  su documentación; no se copia aquí porque no se verificó.
+- `MODELO_APU_CLAVE`: la clave que el proveedor le da al crear la cuenta. Es una contraseña: solo va en Vercel.
+- `MODELO_APU_NOMBRE`: el nombre exacto del modelo en ese proveedor, por ejemplo `Qwen/Qwen3-32B`.
+
+**Cuánto gasta.** Se paga por uso al proveedor. El 10-nov-2026 DeepInfra publicaba 0,08 USD por millón de tokens de
+entrada y 0,28 de salida para Qwen3-32B (del orden de 0,001 USD por APU, sin medir en uso real). Antes de ofertar con
+él, compárelo con 30 ítems suyos contra lo que arma Claude: su calidad con APU colombianos no está medida.
+
+Se pegan como cualquier otra variable (Parte C) y hay que volver a desplegar (Parte D).
+
 ## 4. Parte C · Cómo pegar una variable en Vercel (con clics)
 
 Este procedimiento es el mismo para todas.

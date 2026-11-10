@@ -266,6 +266,21 @@
           + "un contrato real puede estar por encima. Referencia, no cotización.",
       };
     }
+    /* SU BIBLIOTECA (10-nov-2026): el APU completo que usted aceptó antes para esta misma actividad. Comparte el
+       estado «propio» (es suyo y de su obra) y dice de cuándo es: sus precios no se reajustan solos. */
+    if (it.sin_apu && it.origen_precio === "biblioteca") {
+      const b = it.biblioteca || {};
+      const meses = b.aprendido_el ? Math.floor((Date.now() - Date.parse(b.aprendido_el + "T12:00:00Z")) / (30.44 * 86400e3)) : null;
+      return {
+        estado: "propio",
+        emoji: "★",
+        etiqueta: `${b.origen === "modelo" ? "Su APU (modelo abierto)" : "Su APU"}${b.aprendido_el ? ` · ${b.aprendido_el}` : ""}`,
+        suma: true,
+        motivo: `Es el APU que usted aceptó${b.aprendido_el ? ` el ${b.aprendido_el}` : " antes"} para esta misma actividad, con sus precios de esa fecha.`
+          + (b.origen === "modelo" ? " Lo armó el modelo abierto: su calidad no está medida, verifíquelo." : "")
+          + (meses != null && meses >= 6 ? ` Tiene ${meses} meses: revise los precios antes de presentar.` : ""),
+      };
+    }
     if (it.sin_apu) {
       /* «propio» es un estado APARTE de «manual»: no es un precio tecleado al
          vuelo en este presupuesto, sino uno que este contratista ya corrigió
@@ -743,14 +758,19 @@
          línea, con el ORIGEN de cada una: «suyo» (venía en el análisis que cargó el usuario), «precio buscado» (su
          insumo y su cantidad, precio de mercado) o «añadido» (no estaba en su análisis)—. El VR COSTO DIRECTO es el
          del motor, que es el precio aceptado: el desglose lo documenta y el motor solo lo deja pasar si suma ese precio. */
-      if (it.sin_apu && it.origen_precio === "ia" && Array.isArray(it.ia_composicion) && it.ia_composicion.length) {
+      /* …y el de SU BIBLIOTECA (10-nov-2026): el APU que usted aceptó antes para esta misma actividad */
+      const aceptada = Array.isArray(it.composicion_aceptada) ? it.composicion_aceptada : Array.isArray(it.ia_composicion) ? it.ia_composicion : null;
+      if (it.sin_apu && (it.origen_precio === "ia" || it.origen_precio === "biblioteca") && aceptada && aceptada.length) {
         const f = it.ia_fuente || {};
-        fusionA_G(fila([{ v: `APU BUSCADO POR LA IA Y ACEPTADO POR USTED${f.fecha ? ` (${f.fecha})` : ""}: referencia publicada, no cotización de su proveedor; verifique antes de presentar.`, s: "nota" }]));
+        const b = it.biblioteca || {};
+        fusionA_G(fila([{ v: it.origen_precio === "biblioteca"
+          ? `APU DE SU BIBLIOTECA${b.aprendido_el ? ` (aceptado el ${b.aprendido_el})` : ""}: el que usted aceptó antes para esta actividad, con sus precios de esa fecha; revíselos antes de presentar.`
+          : `APU BUSCADO POR LA IA Y ACEPTADO POR USTED${f.fecha ? ` (${f.fecha})` : ""}: referencia publicada, no cotización de su proveedor; verifique antes de presentar.`, s: "nota" }]));
         const ORIGEN = { suyo: "Suyo", precio_buscado: "Precio buscado", "añadido": "Añadido" };
         /* la herramienta menor va con el equipo, como en el resto de esta hoja: una sección propia sería un rótulo que
            ningún lector de APU reconoce */
         for (const [tipos, rotulo] of [[["material"], "MATERIALES:"], [["equipo", "herramienta_menor"], "EQUIPO y HERRAMIENTAS:"], [["transporte"], "TRANSPORTES:"], [["mano_obra"], "MANO de OBRA:"]]) {
-          const delTipo = it.ia_composicion.filter((l) => tipos.includes(l.tipo));
+          const delTipo = aceptada.filter((l) => tipos.includes(l.tipo));
           if (!delTipo.length) continue;
           fila([{ v: rotulo, s: "negrita" }]);
           fila(["DESCRIPCIÓN", "UNIDAD", "CANTIDAD", "VR UNITARIO", "VR PARCIAL", "ORIGEN", "FUENTE"].map((t) => ({ v: t, s: "encabezado" })));
@@ -984,8 +1004,13 @@
         motivo: (it && it.mensaje) || "No hay precio para este ítem. No suma al total ni puede llevar hoja de APU." };
     }
     /* el APU buscado por la IA con su desglose aceptado lleva su composición en la hoja (9-nov-2026) */
-    if (it.origen_precio === "ia" && Array.isArray(it.ia_composicion) && it.ia_composicion.length) {
-      return { estado: "con_composicion_propia", ...ESTADOS_COMPOSICION.con_composicion_propia, lineas_con_insumo: it.ia_composicion.length,
+    const aceptada = Array.isArray(it.composicion_aceptada) ? it.composicion_aceptada : Array.isArray(it.ia_composicion) ? it.ia_composicion : null;
+    if (it.origen_precio === "biblioteca" && aceptada && aceptada.length) {
+      return { estado: "con_composicion_propia", ...ESTADOS_COMPOSICION.con_composicion_propia, lineas_con_insumo: aceptada.length,
+        motivo: "Lleva el APU de su biblioteca, el que usted aceptó antes para esta actividad: revise sus precios antes de radicarlo." };
+    }
+    if (it.origen_precio === "ia" && aceptada && aceptada.length) {
+      return { estado: "con_composicion_propia", ...ESTADOS_COMPOSICION.con_composicion_propia, lineas_con_insumo: aceptada.length,
         motivo: "Lleva el desglose del APU buscado por la IA que usted aceptó, con el origen de cada línea: revíselo antes de radicarlo." };
     }
     const lineas = (it.detalle && Array.isArray(it.detalle.insumos)) ? it.detalle.insumos : [];
