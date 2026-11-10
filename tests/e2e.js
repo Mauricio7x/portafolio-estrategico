@@ -24159,6 +24159,16 @@ async function main() {
       const v2 = IA.verificarPropuesta({ items: v1.propuesta.items.map(MA.aCrudo) }, presuUno);
       assert.ok(v1.apartados.length === 0 && v2.apartados.length === 0 && v2.propuesta.items[0].costo_directo_unitario === 272.01, "una fila buena sobrevive a la segunda verificación");
     }
+    /* 5 · un borrador guardado SIN calcular (10-nov-2026): la pantalla manda `total: null` y `Number(null) === 0` lo
+       guardaba en $0, que la lista pintaba y el piso/techo tomaba como «precio actual». Sin dato es null. */
+    {
+      const perfilT = "genesis";
+      for (const [total, esperado] of [[null, null], ["", null], [undefined, null], [0, null], [6767755.01, 6767755.01]]) {
+        const g = await invocarPost(apuH, "/api/apu/guardar", { perfil: perfilT, nombre: "sin calcular", departamento: "CUNDINAMARCA", items: [{ descripcion: "Excavación", unidad: "m3", cantidad: 1 }], config: {}, total }, CAB_TOKEN);
+        const c = await invocar(apuH, `/api/apu/cargar?id=${g.cuerpo.id}&perfil=${perfilT}`, CAB_TOKEN);
+        assert.strictEqual(c.cuerpo.presupuesto.total_guardado, esperado, `un total ${JSON.stringify(total)} se guarda como ${JSON.stringify(esperado)}, no como ${JSON.stringify(c.cuerpo.presupuesto.total_guardado)}`);
+      }
+    }
     console.log(`· unidad APU propios: el alcance (instalar el tubo ≠ el tubo; limpiar ≠ fabricar) baja a «revisar» en los dos lectores · el banco de prueba esconde el ítem con la regla de siempre · la biblioteca aprende el APU entero al guardar y «Calcular» lo devuelve con su fecha, solo con credencial y por debajo del precio tecleado · el modelo abierto, apagado sin sus variables, arma por tandas con el vocabulario cerrado de los APU reales parecidos y pasa por el mismo juez`);
   }
 
@@ -66163,6 +66173,38 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
         pendientes.get("CO1.SE")(); await prSE; T.precargarDesdeURL();
         pendientes.get("CO1.C")(); await prC; T.precargarDesdeURL();
         okRO(P3.get("cuantia").value === "1900000000", `(h) de dos pulsaciones manda la última aunque la primera responda antes (MUTACIÓN: sin \`turnoTarjeta\`, la primera abre y la última no): «${P3.get("cuantia").value}»`);
+      }
+      /* (k) LO QUE SE PULSA EN «Guardar o abrir un borrador» RESPONDE AL LADO DEL BOTÓN (10-nov-2026): el dueño pulsó
+             «Abrir un borrador…» y no vio nada. La lista y el aviso vivían encima del bloque del proceso, cientos de
+             píxeles por encima del pliegue (medido en Chromium a 1920×870 con el botón al pie: la lista quedaba a −719 px). */
+      {
+        const htmlK = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8").replace(/<!--[\s\S]*?-->/g, "");
+        const iK = htmlK.indexOf('id="btn-listar"'), finK = htmlK.indexOf("</details>", iK);
+        const pliegueK = iK > 0 && finK > iK ? htmlK.slice(iK, finK) : "";
+        okRO(/id="lista-presupuestos"/.test(pliegueK) && /id="borrador-mensaje"/.test(pliegueK), "(k) la lista de borradores y su aviso van DENTRO del pliegue, debajo de «Abrir un borrador…»");
+        const fetchK = ctx.fetch;
+        let soltarLista = null;
+        ctx.fetch = (url, cfg) => {
+          if (/op=listar/.test(url)) return new Promise((ok) => { soltarLista = () => ok(respuestaRO(200, { ok: true, ttl_dias: 30, presupuestos: [{ id: "bk", nombre: "Borrador K", departamento: "", items: 1, total_guardado: null, guardado: "2026-11-10T12:00:00.000Z" }] })); });
+          if (/op=guardar/.test(url)) return Promise.resolve(respuestaRO(200, { ok: true, id: "bk", nombre: "Borrador K", nota: "Y 7 APU completo(s) en su biblioteca." }));
+          if (/op=cargar/.test(url)) return Promise.resolve(respuestaRO(200, { ok: true, catalogo_cambiado: false, presupuesto: { id: "bk", nombre: "Borrador K", items: [{ descripcion: "Excavación", unidad: "m3", cantidad: 1 }] } }));
+          return fetchK(url, cfg);
+        };
+        const listaK = porId.get("lista-presupuestos"), avisoK = porId.get("borrador-mensaje");
+        listaK.innerHTML = ""; listaK.classList.add("hidden");
+        await disparar("btn-listar", "click", {});   // la red todavía no responde
+        okRO(!listaK.classList.contains("hidden") && /Buscando sus borradores/.test(String(listaK.innerHTML)), `(k) la pulsación se ve antes de que responda la red: «${textoRO(listaK.innerHTML)}»`);
+        if (soltarLista) soltarLista();
+        await asentarRO();
+        okRO(/data-cargar="bk"/.test(String(listaK.innerHTML)) && !listaK.classList.contains("hidden"), `(k) y luego la lista, con su «Cargar»: «${textoRO(listaK.innerHTML).slice(0, 120)}»`);
+        await disparar("lista-presupuestos", "click", { target: { getAttribute: (k) => (k === "data-cargar" ? "bk" : null) } }); await asentarRO();
+        okRO(/Cargado «Borrador K»/.test(String(avisoK.textContent)) && !avisoK.classList.contains("hidden"), `(k) «Cargar» responde en el pliegue: «${avisoK.textContent}»`);
+        await disparar("btn-guardar", "click", {}); await asentarRO();
+        okRO(/Guardado como «Borrador K».*7 APU completo/.test(String(avisoK.textContent)), `(k) «Guardar» responde en el pliegue, con lo que aprendió la biblioteca: «${avisoK.textContent}»`);
+        ctx.fetch = (url, cfg) => (/op=listar/.test(url) ? Promise.reject(new TypeError("Failed to fetch")) : fetchK(url, cfg));
+        await disparar("btn-listar", "click", {}); await asentarRO();
+        okRO(String(avisoK.textContent).length > 0 && /text-red-600/.test(String(avisoK.className)) && listaK.classList.contains("hidden"), `(k) un fallo de la red también se dice al lado: «${avisoK.textContent}»`);
+        ctx.fetch = fetchK;
       }
     } finally {
       if (tzRO === undefined) delete process.env.TZ; else process.env.TZ = tzRO;

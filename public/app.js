@@ -8123,6 +8123,17 @@
     const rein = $("accion-reintentar");
     if (rein) rein.classList.toggle("hidden", !(texto && tipo === "error"));
   }
+  /* LO QUE SE PULSA EN «Guardar o abrir un borrador» RESPONDE AL LADO DEL BOTÓN (10-nov-2026). El aviso general
+     vive encima del bloque del proceso, cientos de píxeles por encima del pliegue: el dueño pulsó «Abrir un
+     borrador…» y no vio nada. El aviso general se conserva (lo anuncia el lector de pantalla); este se ve. */
+  function msgBorrador(texto, tipo = "info") {
+    if (texto) msgApu(texto, tipo);   // vacío solo limpia el del pliegue: no borra un aviso general que siga vigente
+    const el = $("borrador-mensaje");
+    if (!el) return;
+    const colores = { info: "text-gray-600", ok: "text-emerald-700", error: "text-red-600" };
+    el.className = `mt-3 text-sm ${colores[tipo] || colores.info}${texto ? "" : " hidden"}`;
+    el.textContent = texto;
+  }
 
   /* ─────────────────────────── estado ──────────────────────────────── */
   let CATALOGO = null;      // respuesta de /api/apu/catalogo
@@ -9657,8 +9668,9 @@
   /* ──────────────────────── guardar / cargar ───────────────────────── */
   /* Guardar el borrador: lo pulsa el usuario, y también lo llama «Pedir precios»
      (la solicitud necesita un borrador guardado donde dejar la respuesta). */
-  async function guardarBorrador({ silencioso = false } = {}) {
-    if (!filas.length) { msgApu("No hay ítems que guardar.", "error"); return null; }
+  async function guardarBorrador({ silencioso = false, desdePanel = false } = {}) {
+    const aviso = desdePanel ? msgBorrador : msgApu;   // el botón del pliegue responde en el pliegue
+    if (!filas.length) { aviso("No hay ítems que guardar.", "error"); return null; }
     const btn = $("btn-guardar");
     btn.disabled = true;
     try {
@@ -9691,17 +9703,17 @@
       });
       if (!r) return null;
       idActual = r.id;
-      if (!silencioso) msgApu(`Guardado como «${r.nombre}» (id ${r.id}). ${r.nota}`, "ok");
+      if (!silencioso) aviso(`Guardado como «${r.nombre}» (id ${r.id}). ${r.nota}`, "ok");
       contarBorradores();   // el pliegue dice cuántos hay sin abrirlo: acaba de cambiar
       return r;
     } catch (e) {
-      msgApu(mensajeDeFallo(e, "guardar el presupuesto"), "error");
+      aviso(mensajeDeFallo(e, "guardar el presupuesto"), "error");
       return null;
     } finally {
       btn.disabled = false;
     }
   }
-  $("btn-guardar").addEventListener("click", () => guardarBorrador());
+  $("btn-guardar").addEventListener("click", () => guardarBorrador({ desdePanel: true }));
 
   /* ══════════ LOS APU GENERADOS POR UNA SESIÓN DE CLAUDE CODE (4-sep-2026, tercera pasada) ══════════
      Encargo del dueño: «paso 1 adjunta el APU; paso 2 un botón Buscar que le
@@ -10065,9 +10077,18 @@
 
   $("btn-listar").addEventListener("click", async () => {
     const caja = $("lista-presupuestos");
+    // la pulsación se ve YA, junto al botón, aunque la red tarde
+    msgBorrador("");
+    caja.classList.remove("hidden");
+    caja.innerHTML = `<p class="text-sm text-gray-500">Buscando sus borradores guardados…</p>`;
+    if (caja.scrollIntoView) caja.scrollIntoView({ behavior: "smooth", block: "nearest" });
     try {
       const r = await api(`/api/apu?op=listar&perfil=${encodeURIComponent($("perfil").value)}`);
-      if (!r) return;
+      if (!r || !Array.isArray(r.presupuestos)) {
+        caja.classList.add("hidden");
+        msgBorrador("No llegó la lista de borradores. Pulse «Abrir un borrador…» otra vez en unos segundos.", "error");
+        return;
+      }
       caja.classList.remove("hidden");
       pintarResumenBorradores(r.presupuestos.length);
       if (!r.presupuestos.length) {
@@ -10089,8 +10110,10 @@
           <td class="py-2 text-right"><button type="button" data-cargar="${esc(p.id)}"
               class="rounded border border-gray-300 px-2 py-1 text-xs font-medium transition hover:bg-gray-50">Cargar</button></td>
         </tr>`).join("")}</tbody></table>`;
+      if (caja.scrollIntoView) caja.scrollIntoView({ behavior: "smooth", block: "nearest" });
     } catch (e) {
-      msgApu(mensajeDeFallo(e, "listar sus presupuestos guardados"), "error");
+      caja.classList.add("hidden");
+      msgBorrador(mensajeDeFallo(e, "listar sus presupuestos guardados"), "error");
     }
   });
 
@@ -10157,11 +10180,11 @@
       consultarIa({ silencioso: true });   // si este borrador ya pidió precios, se pintan
       $("seccion-resumen").classList.add("hidden");
       $("lista-presupuestos").classList.add("hidden");
-      msgApu(r.catalogo_cambiado
+      msgBorrador(r.catalogo_cambiado
         ? `Cargado «${p.nombre}». Atención: ${r.nota}`
         : `Cargado «${p.nombre}». Pulse «Calcular cuánto me cuesta» para ver los totales.`, r.catalogo_cambiado ? "error" : "ok");
     } catch (err) {
-      msgApu(mensajeDeFallo(err, "cargar el presupuesto guardado"), "error");
+      msgBorrador(mensajeDeFallo(err, "cargar el presupuesto guardado"), "error");
     }
   }
 
