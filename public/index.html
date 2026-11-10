@@ -2488,7 +2488,11 @@
        ganaba al «escondido» y Mi empresa se veía encima de Licitaciones, Mis procesos y Precios (entró en producción
        el 9-nov-2026 con la barra; lo cazó la captura del navegador de Licitaciones). Ninguna regla que dé `display` a
        una pestaña puede olvidarlo: la prueba barre la hoja entera. */
-    #tab-admin[data-me]:not(.hidden) { display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; }
+    /* …y `:not(.hidden)` SOLO en `display` (10-nov-2026): la rejilla entera con `:not(.hidden)` pesaba (1,2,0) y le ganaba
+       a la columna de 240 px del computador, que va abajo en un @media con (1,1,0): la barra quedó en 0 px. Las columnas
+       van aparte, con el mismo peso que la regla del @media, para que esta las pueda cambiar. */
+    #tab-admin[data-me]:not(.hidden) { display: grid; }
+    #tab-admin[data-me] { grid-template-columns: minmax(0, 1fr); align-content: start; }
     #tab-admin .me-titulo { margin: 0 0 18px; font-family: var(--font-display); font-size: 34px; font-weight: 500; line-height: 1.15; color: var(--text-primary); }
     #tab-admin .me-barra { display: flex; flex-direction: column; gap: 2px; }
     #tab-admin .me-barra-t { margin: 0 0 6px; font-size: 17px; font-weight: 700; color: var(--text-primary); }
@@ -2552,7 +2556,8 @@
     #app #tab-licitaciones:not([data-lic="abiertas"]) #lic-filtros { display: none; }
     #app #tab-licitaciones[data-lic="noesta"] > details[data-lic-apartado] > summary { display: none; }
     #app #tab-licitaciones[data-lic="noesta"] > details[data-lic-apartado] { margin-top: 0; }
-    #tab-licitaciones[data-lic]:not(.hidden) { display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; }
+    #tab-licitaciones[data-lic]:not(.hidden) { display: grid; }
+    #tab-licitaciones[data-lic] { grid-template-columns: minmax(0, 1fr); align-content: start; }
     #tab-licitaciones .lic-barra { display: flex; flex-direction: column; gap: 2px; }
     #tab-licitaciones .lic-barra-t { margin: 0 0 6px; font-size: 17px; font-weight: 700; color: var(--text-primary); }
     #app #tab-licitaciones .lic-barra .lic-ir { width: 100%; min-height: 48px; padding: 8px 14px; border: 0; border-radius: 12px; background: transparent;
