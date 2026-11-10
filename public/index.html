@@ -2481,11 +2481,14 @@
     #app #tab-admin[data-me="obra"] > [data-me-apartado]:not([data-me-apartado="obra"]) { display: none; }
     #app #tab-admin[data-me="socias"] > [data-me-apartado]:not([data-me-apartado="socias"]) { display: none; }
     #app #tab-admin[data-me="mercado"] > [data-me-apartado]:not([data-me-apartado="mercado"]) { display: none; }
-    #app #tab-admin[data-me="noesta"] > [data-me-apartado]:not([data-me-apartado="noesta"]) { display: none; }
     #app #tab-admin[data-me="ajustes"] > [data-me-apartado]:not([data-me-apartado="ajustes"]) { display: none; }
     #app #tab-admin:not([data-me="hoy"]) > details[data-me-apartado] > summary { display: none; }
     #app #tab-admin:not([data-me="hoy"]) > details[data-me-apartado] { border: 0; margin-top: 0; padding-top: 0; }
-    #tab-admin[data-me] { display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; }
+    /* `:not(.hidden)` (10-nov-2026): esta regla pesa (1,1,0) y `.panel-pestana.hidden` (0,2,0); sin él, la rejilla
+       ganaba al «escondido» y Mi empresa se veía encima de Licitaciones, Mis procesos y Precios (entró en producción
+       el 9-nov-2026 con la barra; lo cazó la captura del navegador de Licitaciones). Ninguna regla que dé `display` a
+       una pestaña puede olvidarlo: la prueba barre la hoja entera. */
+    #tab-admin[data-me]:not(.hidden) { display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; }
     #tab-admin .me-titulo { margin: 0 0 18px; font-family: var(--font-display); font-size: 34px; font-weight: 500; line-height: 1.15; color: var(--text-primary); }
     #tab-admin .me-barra { display: flex; flex-direction: column; gap: 2px; }
     #tab-admin .me-barra-t { margin: 0 0 6px; font-size: 17px; font-weight: 700; color: var(--text-primary); }
@@ -2535,6 +2538,71 @@
       #app #tab-admin .me-velo:not([hidden]) { display: block; position: fixed; inset: 0; z-index: 59; background: rgba(26, 25, 22, 0.45); }
     }
     @media (max-width: 899px) and (prefers-reduced-motion: reduce) { #tab-admin[data-me] > #me-barra { transition: none; } }
+
+    /* ══════ LICITACIONES CON SU BARRA (9-nov-2026, decisión del dueño sobre su maqueta) ══════
+       La misma idea que Mi empresa: `#tab-licitaciones` nace con `data-lic="abiertas"` y cada bloque dice su apartado con
+       `data-lic-apartado`; `elegirApartadoLicitaciones` (app.js) solo cambia el atributo. A la izquierda, los tres
+       apartados y los filtros que más se usan (Valor, Avisar que le interesa y la casilla de las que no alcanza); el
+       resto, en «Más filtros». En el teléfono la barra es un panel lateral que abre el botón de arriba, como en Mi
+       empresa (decisión del dueño: «el de celular se ve horrible, debe haber una pestaña lateral»). Los filtros solo
+       se ven con la lista: en «Lo que viene» y en «¿Por qué no está?» no filtran nada. */
+    #app #tab-licitaciones[data-lic="abiertas"] > [data-lic-apartado]:not([data-lic-apartado="abiertas"]) { display: none; }
+    #app #tab-licitaciones[data-lic="viene"] > [data-lic-apartado]:not([data-lic-apartado="viene"]) { display: none; }
+    #app #tab-licitaciones[data-lic="noesta"] > [data-lic-apartado]:not([data-lic-apartado="noesta"]) { display: none; }
+    #app #tab-licitaciones:not([data-lic="abiertas"]) #lic-filtros { display: none; }
+    #app #tab-licitaciones[data-lic="noesta"] > details[data-lic-apartado] > summary { display: none; }
+    #app #tab-licitaciones[data-lic="noesta"] > details[data-lic-apartado] { margin-top: 0; }
+    #tab-licitaciones[data-lic]:not(.hidden) { display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; }
+    #tab-licitaciones .lic-barra { display: flex; flex-direction: column; gap: 2px; }
+    #tab-licitaciones .lic-barra-t { margin: 0 0 6px; font-size: 17px; font-weight: 700; color: var(--text-primary); }
+    #app #tab-licitaciones .lic-barra .lic-ir { width: 100%; min-height: 48px; padding: 8px 14px; border: 0; border-radius: 12px; background: transparent;
+      color: var(--text-secondary); font-size: 17px; text-align: left; cursor: pointer; }
+    #app #tab-licitaciones .lic-barra .lic-ir:hover { background: var(--bg-inset); color: var(--text-primary); }
+    #app #tab-licitaciones .lic-barra .lic-ir[aria-current="page"] { background: var(--accent-light); color: var(--text-primary); font-weight: 700; }
+    #tab-licitaciones .lic-filtros { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 18px; }
+    #tab-licitaciones .lic-filtros-cab { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+    #tab-licitaciones .lic-filtros-t { margin: 0; font-size: 17px; font-weight: 700; color: var(--text-primary); }
+    #tab-licitaciones .lic-grupo { margin: 0; padding: 0; border: 0; min-width: 0; }
+    #tab-licitaciones .lic-grupo > legend { margin-bottom: 8px; padding: 0; font-size: 15px; font-weight: 700; color: var(--text-primary); }
+    #tab-licitaciones .lic-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    #app #tab-licitaciones .lic-chip { min-height: 40px; padding: 0 14px; border: 1px solid var(--border-fuerte); border-radius: 999px; background: transparent;
+      color: var(--text-primary); font-size: 15px; cursor: pointer; }
+    #app #tab-licitaciones .lic-chip[aria-pressed="true"] { border-color: var(--accent); background: var(--accent); color: var(--bg-card); font-weight: 700; }
+    #tab-licitaciones .lic-opcion { display: flex; align-items: center; gap: 10px; min-height: 40px; font-size: 16px; color: var(--text-primary); cursor: pointer; }
+    #tab-licitaciones .lic-opcion input { width: 20px; height: 20px; flex: none; }
+    #tab-licitaciones .lic-nota { margin: 6px 0 0; font-size: 14px; line-height: 1.4; color: var(--text-secondary); }
+    #tab-licitaciones .lic-casilla { align-items: flex-start; }
+    #tab-licitaciones .lic-casilla input { margin-top: 3px; }
+    #app #tab-licitaciones #btn-filtros { width: 100%; min-height: 48px; justify-content: center; }
+    #tab-licitaciones .lic-invertir svg { flex: none; }
+    #tab-licitaciones .lic-invertir[data-al-reves="true"] { background: var(--accent-light); }
+    #tab-licitaciones .lic-abrir-panel, #tab-licitaciones .lic-cerrar, #tab-licitaciones .lic-velo, #tab-licitaciones .lic-ver { display: none; }
+    /* Computador: la barra a la izquierda, sola en su columna; el contenido a la derecha */
+    @media (min-width: 900px) {
+      #tab-licitaciones[data-lic] { grid-template-columns: 260px minmax(0, 1fr); column-gap: 40px; }
+      #tab-licitaciones[data-lic] > * { grid-column: 2; }
+      #tab-licitaciones[data-lic] > #lic-barra { grid-column: 1; grid-row: 1 / span 40; align-self: start; position: sticky; top: 96px;
+        max-height: calc(100vh - 112px); overflow-y: auto; }
+      #tab-licitaciones .lic-barra-t { display: none; }
+    }
+    /* Teléfono: el panel lateral, con el mismo comportamiento que el de Mi empresa (panelLateral en app.js) */
+    @media (max-width: 899px) {
+      #app #tab-licitaciones .lic-abrir-panel { display: flex; order: -1; align-items: center; gap: 10px; width: 100%; min-height: 52px; margin: 0 0 18px; padding: 0 16px;
+        border: 1px solid var(--border-fuerte); border-radius: 999px; background: var(--bg-card); color: var(--text-primary); font-size: 17px; font-weight: 700; text-align: left; cursor: pointer; }
+      #tab-licitaciones .lic-abrir-panel .lic-abrir-mas { margin-left: auto; font-weight: 400; color: var(--text-secondary); }
+      #tab-licitaciones[data-lic] > #lic-barra { position: fixed; top: 0; bottom: 0; left: 0; z-index: 60; width: min(330px, 86vw); box-sizing: border-box;
+        padding: max(16px, env(safe-area-inset-top, 0px)) 16px 24px max(16px, env(safe-area-inset-left, 0px)); overflow-y: auto; background: var(--bg-card);
+        box-shadow: 8px 0 32px rgba(0, 0, 0, 0.2); transform: translateX(-105%); visibility: hidden;
+        transition: transform 0.22s cubic-bezier(.2,0,.38,.9), visibility 0s linear 0.22s; }
+      #tab-licitaciones[data-lic][data-panel="abierto"] > #lic-barra { transform: none; visibility: visible; transition: transform 0.22s cubic-bezier(.2,0,.38,.9); }
+      #tab-licitaciones .lic-barra-cab { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+      #app #tab-licitaciones .lic-barra .lic-cerrar { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; padding: 0;
+        border: 0; background: transparent; color: var(--text-primary); cursor: pointer; }
+      #app #tab-licitaciones .lic-velo:not([hidden]) { display: block; position: fixed; inset: 0; z-index: 59; background: rgba(26, 25, 22, 0.45); }
+      #app #tab-licitaciones .lic-barra .lic-ver { display: block; width: 100%; min-height: 52px; margin-top: 20px; border: 0; border-radius: 999px;
+        background: var(--accent); color: var(--bg-card); font-size: 17px; font-weight: 700; cursor: pointer; }
+    }
+    @media (max-width: 899px) and (prefers-reduced-motion: reduce) { #tab-licitaciones[data-lic] > #lic-barra { transition: none; } }
   </style>
 </head>
 <body class="antialiased">
@@ -2895,7 +2963,6 @@
         <button type="button" class="me-ir" data-me-ir="obra">Obra que ya ejecutó</button>
         <button type="button" class="me-ir" data-me-ir="socias">Socias y consorcio</button>
         <button type="button" class="me-ir" data-me-ir="mercado">Cómo está el mercado</button>
-        <button type="button" class="me-ir" data-me-ir="noesta">¿Por qué no está un proceso?</button>
         <button type="button" class="me-ir me-ir-pie" data-me-ir="ajustes">Ajustes</button>
       </nav>
       <h2 id="me-titulo" class="me-titulo" tabindex="-1" hidden></h2>
@@ -4070,62 +4137,6 @@
 </details>
       </details>
 
-    
-      <!-- ══════ FUERA DE «SISTEMA» (encargo del ingeniero, ago 2026) ══════
-           «Lo de "por qué no aparece mi proceso" déjalo por fuera de sistema, en
-           la pestaña de Mi empresa, en la parte de abajo.» Es una herramienta de
-           quien licita, no de quien mantiene el programa: enterrarla en el
-           acordeón técnico la hacía invisible. -->
-<details id="rastreo-wrap" data-me-apartado="noesta" class="mt-8 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
-        <summary class="cursor-pointer font-semibold tracking-tight">¿Por qué no está este proceso?</summary>
-        <section id="seccion-rastreo" class="mt-4">
-          <p class="max-w-2xl text-sm text-gray-500">
-            Si vio una convocatoria en SECOP II y no la encuentra aquí, pegue el enlace del proceso
-            o escriba su referencia (o el nombre de la entidad, o su NIT) y le decimos exactamente dónde está: si la app la enseña,
-            si está guardada pero apartada, si la descartó al leerla —y por qué regla— o si todavía no la ha leído.
-          </p>
-          <div class="mt-4 flex flex-wrap items-end gap-3">
-            <label class="block grow">
-              <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Enlace de SECOP II, referencia, entidad o NIT</span>
-              <input id="ra-consulta" type="text" placeholder="Pegue el enlace o escriba UPN-VAD-CP-011-2026"
-                     class="control-campo w-full rounded-lg border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900/10">
-            </label>
-            <!-- FILTROS (encargo del ingeniero, 24-ago-2026): la búsqueda ya
-                 miraba los cuatro campos, pero todos revueltos, así que
-                 «MOTAVITA» casaba también con un objeto que lo mencionara de
-                 pasada. Ahora se puede acotar. Un valor que no se reconoce es
-                 inerte: lo resuelve lib/rastreo, no esta pantalla. -->
-            <label class="block min-w-0 max-w-full">
-              <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Dónde buscar</span>
-              <select id="ra-campo" class="control-select rounded-lg border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900/10">
-                <option value="todo">En todo</option>
-                <option value="entidad">Solo la entidad</option>
-                <option value="objeto">Solo el objeto del contrato</option>
-                <option value="proceso">Solo el número del proceso</option>
-              </select>
-            </label>
-            <label class="block min-w-0 max-w-full">
-              <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Cómo lo adjudican</span>
-              <select id="ra-modalidad" class="control-select rounded-lg border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900/10">
-                <option value="">Cualquiera</option>
-              </select>
-            </label>
-            <label class="block min-w-0 max-w-full">
-              <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Perfil</span>
-              <select id="ra-perfil" class="control-select rounded-lg border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900/10">
-                <option value="helder">Helder</option>
-                <option value="genesis">Génesis</option>
-              </select>
-            </label>
-            <button id="btn-rastrear" type="button"
-                    class="rounded-xl bg-gray-900 px-5 py-2.5 font-medium text-white transition hover:bg-gray-700 disabled:opacity-40">
-              Buscarlo
-            </button>
-          </div>
-          <div id="ra-resultado" class="mt-5 hidden text-sm"></div>
-        </section>
-        </details>
-
     </main>
 
     <!-- ════════════════════ PESTAÑA · Mis procesos (18-ago-2026) ════════════════════
@@ -4279,10 +4290,61 @@
     </main>
 
     <!-- ════════════════════ PESTAÑA 2 · Licitaciones ════════════════════ -->
-    <main id="tab-licitaciones" role="tabpanel" tabindex="0" aria-labelledby="pest-licitaciones" class="panel-pestana mx-auto hidden max-w-5xl px-5 py-8">
+    <main id="tab-licitaciones" role="tabpanel" tabindex="0" aria-labelledby="pest-licitaciones" data-lic="abiertas" class="panel-pestana mx-auto hidden max-w-6xl px-5 py-8">
+      <!-- ══════ LA BARRA DE LICITACIONES (9-nov-2026, decisión del dueño sobre su maqueta) ══════
+           Tres apartados (Abiertas · Lo que viene · ¿Por qué no está un proceso?) y, con la lista, los filtros que más
+           usa: el valor, el aviso de interés y la casilla de las que no alcanza. Los demás siguen en «Más filtros» (la
+           hoja de siempre). Nada se borra: «Lo que viene» es el Plan Anual que antes se encendía con una casilla, y
+           «¿Por qué no está?» llegó desde Mi empresa. En el teléfono la barra es un panel lateral. -->
+      <button type="button" id="lic-abrir-panel" class="lic-abrir-panel" aria-controls="lic-barra" aria-expanded="false" aria-label="Abrir los apartados y los filtros de Licitaciones">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+        <span id="lic-abrir-rotulo">Abiertas</span><span id="lic-abrir-mas" class="lic-abrir-mas">Apartados y filtros</span>
+      </button>
+      <div id="lic-velo" class="lic-velo" hidden></div>
+      <nav id="lic-barra" class="lic-barra" aria-label="Apartados y filtros de Licitaciones">
+        <div class="lic-barra-cab"><p class="lic-barra-t">Licitaciones</p>
+          <button type="button" class="lic-cerrar" aria-label="Cerrar los apartados y los filtros"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+        <button type="button" class="lic-ir" data-lic-ir="abiertas" aria-current="page">Abiertas</button>
+        <button type="button" class="lic-ir" data-lic-ir="viene">Lo que viene</button>
+        <button type="button" class="lic-ir" data-lic-ir="noesta">¿Por qué no está un proceso?</button>
+        <!-- «Lo que viene» enciende el Plan Anual con esta casilla, que ya no se ve: la lee el resto del código
+             (paaEncendido, la insignia «Activo · abierto» de las tarjetas) y el apartado la marca y desmarca. -->
+        <input id="f-ver-paa" type="checkbox" hidden aria-label="Ver las obras que van a salir (planes anuales)">
+        <section id="lic-filtros" class="lic-filtros" aria-labelledby="lic-filtros-t">
+          <div class="lic-filtros-cab">
+            <h2 id="lic-filtros-t" class="lic-filtros-t">Filtros</h2>
+            <button id="lic-quitar-todos" type="button" class="enlace-discreto text-sm">Quitar todos</button>
+          </div>
+          <!-- Valor: los mismos tramos y la misma cifra por tramo que «Cuánto vale» de Más filtros (FL.RANGOS_CUANTIA);
+               app.js pinta los botones. Un rango propio se elige en Más filtros. -->
+          <fieldset class="lic-grupo">
+            <legend>Valor</legend>
+            <div id="lic-valor" class="lic-chips"></div>
+          </fieldset>
+          <!-- Avisar que le interesa: tres opciones, una sola elección. «Todavía se puede avisar» es `manif=abierta`
+               (el plazo no consta vencido) y «Hay que avisar hoy» es `manif=urgente`, el mismo predicado que la
+               cifra roja de Mi empresa. Cada una lleva la cifra de la lista que abre. -->
+          <fieldset class="lic-grupo">
+            <legend data-glosario="manifestacion_interes"></legend>
+            <label class="lic-opcion"><input id="fl-manif-sin" type="radio" name="fl-manif" value=""> Todas</label>
+            <label class="lic-opcion"><input id="fl-manif" type="radio" name="fl-manif" value="abierta"> <span>Todavía se puede avisar <span id="fl-manif-n"></span></span></label>
+            <label class="lic-opcion"><input id="fl-manif-urgente" type="radio" name="fl-manif" value="urgente"> <span>Hay que avisar hoy <span id="fl-manif-urgente-n"></span></span></label>
+            <p class="lic-nota">Solo en procesos de menor cuantía. Se retiran únicamente aquellos cuya fecha límite está publicada y ya pasó. La ley fija un máximo de 3 días de oficina desde la apertura, no un plazo, y la entidad puede cerrarlo antes, incluso en horas. Confírmelo en el cronograma del SECOP II.</p>
+          </fieldset>
+          <label class="lic-opcion lic-casilla">
+            <input id="f-solo-viables" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-900/10">
+            Ocultar las que su registro, su capacidad o su caja no alcanzan
+          </label>
+          <button id="btn-filtros" type="button" class="control-boton inline-flex items-center gap-2 rounded-xl text-sm" aria-haspopup="dialog" aria-controls="panel-filtros" aria-expanded="false">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"></path></svg>
+            Más filtros<span id="btn-filtros-n" class="hidden bg-gray-900 rounded-full px-1.5 text-[11px] font-semibold"></span>
+          </button>
+        </section>
+        <button id="lic-ver" type="button" class="lic-ver">Ver la lista</button>
+      </nav>
       <header class="cabecera-pestana">
         <h1 class="titulo-pestana">Licitaciones</h1>
-        <p class="subtitulo-pestana">Los procesos abiertos en SECOP II que encajan con su perfil, ordenados para usted.</p>
+        <p id="lic-subtitulo" class="subtitulo-pestana">Los procesos abiertos en SECOP II que encajan con su perfil, ordenados para usted.</p>
       </header>
       <!-- ══════ LA BARRA DE HERRAMIENTAS (ago 2026) ══════
            Una sola fila, estilo Apple: buscar · ordenar · «Filtros» (abre una
@@ -4292,7 +4354,7 @@
            los ids se conservan (app.js y media suite los cablean; un nodo
            movido conserva sus listeners): solo cambió DÓNDE viven. Lo activo
            se ve como fichas bajo la barra; el detalle vive en #panel-filtros. -->
-      <section class="barra-herramientas rounded-2xl bg-white p-3 shadow-sm ring-1 ring-gray-900/5">
+      <section class="barra-herramientas rounded-2xl bg-white p-3 shadow-sm ring-1 ring-gray-900/5" data-lic-apartado="abiertas">
         <div class="flex flex-wrap items-center gap-2">
           <label class="campo-buscar flex min-w-[220px] flex-1 items-center gap-2 rounded-xl px-3">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" style="color: var(--text-secondary);"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
@@ -4300,19 +4362,26 @@
                    aria-label="Buscar por palabra o entidad"
                    class="w-full border-0 bg-transparent py-2 text-sm focus:outline-none focus:ring-0">
           </label>
+          <!-- LOS CUATRO ÓRDENES QUE MÁS SE USAN, A LA VISTA (9-nov-2026, maqueta aprobada): los otros cuatro siguen,
+               agrupados en «Más órdenes». Los valores no cambian: son un contrato con el servidor y con los enlaces. -->
           <select id="f-ordenar" class="control-select max-w-full rounded-xl text-sm" aria-label="Ordenar por">
             <option value="atractividad">Las mejores para usted</option>
-            <option value="ganancia">Lo que más deja (solo las que ya costeó)</option>
-            <option value="margen">Más recorrido de precio (solo las que ya costeó)</option>
             <option value="cierre">Las que cierran antes</option>
-            <option value="ve">Mayor contrato esperado</option>
-            <option value="p_ganar">Las más ganables</option>
+            <option value="ganancia">Lo que más deja (solo las que ya costeó)</option>
             <option value="cuantia">Las más grandes</option>
-            <option value="competencia">Las menos peleadas</option>
+            <optgroup label="Más órdenes">
+              <option value="margen">Más recorrido de precio (solo las que ya costeó)</option>
+              <option value="ve">Mayor contrato esperado</option>
+              <option value="p_ganar">Las más ganables</option>
+              <option value="competencia">Las menos peleadas</option>
+            </optgroup>
           </select>
-          <button id="btn-filtros" type="button" class="control-boton inline-flex items-center gap-2 rounded-xl text-sm" aria-haspopup="dialog" aria-controls="panel-filtros" aria-expanded="false">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"></path></svg>
-            Filtros<span id="btn-filtros-n" class="hidden bg-gray-900 rounded-full px-1.5 text-[11px] font-semibold"></span>
+          <!-- EL ORDEN AL REVÉS, DE UN TOQUE (9-nov-2026, lo pidió el dueño): es el `orden=asc|desc` de siempre, que
+               antes vivía en un selector dentro de los filtros avanzados. El rótulo dice qué va primero con el orden
+               elegido (FL.direccionDe); lo que no tiene el dato sigue al final en los dos sentidos (el servidor). -->
+          <button id="f-orden" type="button" value="desc" data-al-reves="false" class="control-boton lic-invertir inline-flex items-center gap-2 rounded-xl text-sm" title="Invertir el orden">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M7 4v16M3 16l4 4 4-4M17 20V4M13 8l4-4 4 4"/></svg>
+            <span id="f-orden-rotulo">Primero las que más le convienen</span>
           </button>
           <button id="btn-buscar" class="rounded-xl bg-gray-900 px-5 py-2 text-sm font-medium text-white transition hover:bg-gray-700">Buscar</button>
           <!-- LA LISTA SALE EN EXCEL (6-sep-2026, M-COMP-04): las mismas filas y
@@ -4421,15 +4490,7 @@
                 </div>
               </div>
             </div>
-            <div>
-              <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500" data-glosario="manifestacion_interes"></span>
-              <label class="flex items-start gap-2 text-sm">
-                <input id="fl-manif" type="checkbox" class="mt-0.5 h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-900/10">
-                <span>Solo procesos de menor cuantía en los que <strong>el plazo para avisar no consta vencido</strong>
-                  <span id="fl-manif-n" class="text-gray-500"></span>
-                  <span class="block text-xs text-gray-500">Se retiran únicamente aquellos cuya fecha límite está publicada y ya pasó. Los demás se quedan: la ley fija un máximo de 3 días de oficina desde la apertura, no un plazo, y la entidad puede cerrarlo antes, incluso en horas. Confírmelo en el cronograma del SECOP II.</span></span>
-              </label>
-            </div>
+            <!-- «Avisar que le interesa» pasó a la barra de la izquierda (9-nov-2026), con «Hay que avisar hoy» al lado -->
             <div>
               <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Buscar entidad</span>
               <input id="fl-entidad" type="text" list="fl-entidades" placeholder="Alcaldía de…, Gobernación de…, INVÍAS" aria-label="Buscar entidad" autocomplete="off"
@@ -4437,14 +4498,7 @@
               <datalist id="fl-entidades"></datalist>
               <button id="fl-entidad-historial" type="button" class="mt-1.5 hidden text-xs font-medium hover:underline" style="color: var(--accent);">Ver el historial de esta entidad ›</button>
             </div>
-            <label class="flex items-center gap-2 text-sm" style="color: var(--text-primary);">
-              <input id="f-ver-paa" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-900/10">
-              Ver también las obras que van a salir (planes anuales, aparte)
-            </label>
-            <label id="f-paa-entidad-wrap" class="hidden block">
-              <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Obras planeadas · filtrar por entidad</span>
-              <input id="f-paa-entidad" type="text" placeholder="Alcaldía de Ibagué, INVÍAS…" autocomplete="off" class="control-campo w-full rounded-xl text-sm">
-            </label>
+            <!-- Las obras que van a salir (Plan Anual) son ahora el apartado «Lo que viene» de la barra (9-nov-2026) -->
           </div>
 
           <details id="filtros-avanzados" class="mt-5 rounded-xl p-4" style="background: var(--bg-inset);">
@@ -4489,20 +4543,11 @@
                   <option value="facil">Solo fácil acceso</option>
                 </select>
               </label>
-              <label class="block">
-                <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Dirección del orden</span>
-                <select id="f-orden" class="control-select w-full rounded-xl text-sm">
-                  <option value="desc">De mayor a menor</option>
-                  <option value="asc">De menor a mayor</option>
-                </select>
-              </label>
+              <!-- «Dirección del orden» es el botón al lado del orden, y la casilla de las que no alcanza vive en la
+                   barra de la izquierda (9-nov-2026): son de las decisiones de todos los días -->
               <label class="flex items-center gap-2 text-sm sm:col-span-2" style="color: var(--text-primary);">
                 <input id="f-sin-unspsc" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-900/10">
                 Incluir procesos mal clasificados por la entidad
-              </label>
-              <label class="flex items-center gap-2 text-sm sm:col-span-2" style="color: var(--text-primary);">
-                <input id="f-solo-viables" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-900/10">
-                Ocultar las que su registro, su capacidad o su caja no alcanzan
               </label>
             </div>
           </details>
@@ -4516,7 +4561,7 @@
            chips), con el mismo brillo de #d-skeleton, que `prefers-reduced-
            motion` deja quieto. Es decorativo: `aria-hidden`, y lo que se anuncia
            es la frase de estado. -->
-      <div id="estado-carga" class="mt-10 hidden">
+      <div id="estado-carga" class="mt-10 hidden" data-lic-apartado="abiertas">
         <div class="text-center">
           <div class="spin mx-auto h-8 w-8 rounded-full border-2" style="border-color: var(--border); border-top-color: var(--accent);"></div>
           <p id="estado-carga-msg" class="mt-3 text-sm text-gray-500">Buscando oportunidades…</p>
@@ -4540,7 +4585,7 @@
         </div>
       </div>
 
-      <div id="estado-error" class="mt-10 hidden text-center" role="alert">
+      <div id="estado-error" class="mt-10 hidden text-center" role="alert" data-lic-apartado="abiertas">
         <p id="estado-error-msg" class="mx-auto max-w-md text-sm text-gray-600"></p>
         <button id="btn-reintentar"
                 class="mt-4 rounded-xl border border-gray-300 bg-white px-5 py-2 text-sm font-medium transition hover:bg-gray-50">
@@ -4548,7 +4593,7 @@
         </button>
       </div>
 
-      <div id="estado-vacio" class="mt-10 hidden text-center text-sm text-gray-500" role="status">
+      <div id="estado-vacio" class="mt-10 hidden text-center text-sm text-gray-500" role="status" data-lic-apartado="abiertas">
         No se encontraron oportunidades con estos filtros.
       </div>
 
@@ -4556,7 +4601,7 @@
            abierto: un proceso del PAA no existe todavía en SECOP II, no tiene
            pliego que juzgar y no lleva probabilidad ni puertas. Ponerlo en la
            misma lista ordenada lo haría parecer comparable. -->
-      <section id="paa" class="mt-8 hidden">
+      <section id="paa" class="mt-8 hidden" data-lic-apartado="viene">
         <div class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-900/5">
           <div class="flex flex-wrap items-start justify-between gap-3">
             <div class="min-w-0">
@@ -4565,6 +4610,11 @@
             </div>
             <span class="shrink-0 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-800">PAA · planeado</span>
           </div>
+          <!-- el filtro por entidad del Plan Anual vivía en la hoja de filtros; con su apartado, va con la lista que filtra -->
+          <label id="f-paa-entidad-wrap" class="mt-4 hidden block">
+            <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Filtrar por entidad</span>
+            <input id="f-paa-entidad" type="text" placeholder="Alcaldía de Ibagué, INVÍAS…" autocomplete="off" class="control-campo w-full rounded-xl text-sm">
+          </label>
           <p id="paa-aviso" class="mt-3 rounded-xl bg-amber-50 p-3 text-xs text-amber-900 ring-1 ring-inset ring-amber-600/20"></p>
           <!-- lo previsto mes a mes (M-DGF-10): nace oculto; app.js lo pinta solo con algún mes con procesos -->
           <div id="paa-meses" class="mt-4 hidden"></div>
@@ -4576,7 +4626,7 @@
       </section>
 
       <!-- Resultados -->
-      <section id="resultados" class="mt-8 hidden">
+      <section id="resultados" class="mt-8 hidden" data-lic-apartado="abiertas">
         <!-- role="status": la línea «23 de 312 licitaciones…» cambia con cada
              filtro y era el único sitio donde el resultado de tocar un control
              se veía; quien no mira la pantalla ahora también lo oye. -->
@@ -4594,6 +4644,63 @@
         <!-- SECOP I (5-nov-2026): los procesos de obra que la lista no trae; app.js lo pinta con los departamentos del filtro -->
         <div id="secop1" class="mt-6"></div>
       </section>
+
+      <!-- ══════ FUERA DE «SISTEMA» (encargo del ingeniero, ago 2026) ══════
+           «Lo de "por qué no aparece mi proceso" déjalo por fuera de sistema, en
+           la pestaña de Mi empresa, en la parte de abajo.» Es una herramienta de
+           quien licita, no de quien mantiene el programa: enterrarla en el
+           acordeón técnico la hacía invisible. El 9-nov-2026 pasó a Licitaciones,
+           apartado «¿Por qué no está un proceso?» (maqueta aprobada por el dueño):
+           se busca justo donde se echa de menos el proceso. -->
+<details id="rastreo-wrap" data-lic-apartado="noesta" class="mt-8 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+        <summary class="cursor-pointer font-semibold tracking-tight">¿Por qué no está este proceso?</summary>
+        <section id="seccion-rastreo" class="mt-4">
+          <p class="max-w-2xl text-sm text-gray-500">
+            Si vio una convocatoria en SECOP II y no la encuentra aquí, pegue el enlace del proceso
+            o escriba su referencia (o el nombre de la entidad, o su NIT) y le decimos exactamente dónde está: si la app la enseña,
+            si está guardada pero apartada, si la descartó al leerla —y por qué regla— o si todavía no la ha leído.
+          </p>
+          <div class="mt-4 flex flex-wrap items-end gap-3">
+            <label class="block grow">
+              <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Enlace de SECOP II, referencia, entidad o NIT</span>
+              <input id="ra-consulta" type="text" placeholder="Pegue el enlace o escriba UPN-VAD-CP-011-2026"
+                     class="control-campo w-full rounded-lg border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900/10">
+            </label>
+            <!-- FILTROS (encargo del ingeniero, 24-ago-2026): la búsqueda ya
+                 miraba los cuatro campos, pero todos revueltos, así que
+                 «MOTAVITA» casaba también con un objeto que lo mencionara de
+                 pasada. Ahora se puede acotar. Un valor que no se reconoce es
+                 inerte: lo resuelve lib/rastreo, no esta pantalla. -->
+            <label class="block min-w-0 max-w-full">
+              <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Dónde buscar</span>
+              <select id="ra-campo" class="control-select rounded-lg border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900/10">
+                <option value="todo">En todo</option>
+                <option value="entidad">Solo la entidad</option>
+                <option value="objeto">Solo el objeto del contrato</option>
+                <option value="proceso">Solo el número del proceso</option>
+              </select>
+            </label>
+            <label class="block min-w-0 max-w-full">
+              <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Cómo lo adjudican</span>
+              <select id="ra-modalidad" class="control-select rounded-lg border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900/10">
+                <option value="">Cualquiera</option>
+              </select>
+            </label>
+            <label class="block min-w-0 max-w-full">
+              <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Perfil</span>
+              <select id="ra-perfil" class="control-select rounded-lg border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900/10">
+                <option value="helder">Helder</option>
+                <option value="genesis">Génesis</option>
+              </select>
+            </label>
+            <button id="btn-rastrear" type="button"
+                    class="rounded-xl bg-gray-900 px-5 py-2.5 font-medium text-white transition hover:bg-gray-700 disabled:opacity-40">
+              Buscarlo
+            </button>
+          </div>
+          <div id="ra-resultado" class="mt-5 hidden text-sm"></div>
+        </section>
+        </details>
 
       <footer class="pb-6 pt-10 text-center text-xs text-gray-400">
         Datos abiertos de SECOP II (Colombia Compra Eficiente). El orden recomendado pone primero
