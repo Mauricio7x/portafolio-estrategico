@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 2608270 bytes · 463 secciones · 55 con marcador de superación.
+Derivado del árbol: 2614873 bytes · 464 secciones · 56 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -473,4 +473,5 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | La lista lee el análisis guardado como Precios (10-nov-2026) | 10-nov-2026 | 22171-22188 | 5445 |  |
 | Detekta ocupa la pantalla entera (10-nov-2026) | 10-nov-2026 | 22189-22195 | 1006 |  |
 | El Excel de un presupuesto importado lleva el APU del archivo y no inventa capítulos (10-nov-2026) | 10-nov-2026 | 22196-22205 | 3066 |  |
-| Precios con su barra: siete apartados, tres cifras arriba que nunca son $0, la casilla de lo subcontratado que ahora mueve el precio y «Subir un APU» (10-nov-2026) | 10-nov-2026 | 22206-22226 | 8897 |  |
+| Precios con su barra: siete apartados, tres cifras arriba que nunca son $0, la casilla de lo subcontratado que ahora mueve el precio y «Subir un APU» (10-nov-2026) | 10-nov-2026 | 22206-22229 | 9305 | «El mínimo para no perder plata sigue a la casilla de lo subcontratado, y subir un APU calcula también el mínimo (10-nov-2026)» |
+| El mínimo para no perder plata sigue a la casilla de lo subcontratado, y subir un APU calcula también el mínimo (10-nov-2026) | 10-nov-2026 | 22230-22245 | 6195 |  |
