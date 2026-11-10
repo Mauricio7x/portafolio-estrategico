@@ -22,6 +22,28 @@ terminal: todo son URL y clics).
    precios y muestra el **Paso 3 · Su precio** (con AIU, y el botón «Descargar mi presupuesto (Excel)»).
    Un precio que ya venía en su archivo se respeta.
 
+## Si carga su propio APU (9-nov-2026)
+
+En el paso 1 también se puede soltar un Excel (o CSV) con **sus análisis de precios unitarios**: una hoja por ítem
+(como los APU de Empresas Públicas de Cundinamarca) o varios análisis en una hoja (como el libro que exporta Detekta).
+La aplicación reconoce que son análisis y no un formulario de cantidades, y:
+
+1. Lee cada análisis: el ítem (código, descripción, unidad) y sus insumos por sección (materiales, equipo, mano de
+   obra, transporte), con la cantidad, el desperdicio, el rendimiento y el precio que traigan.
+2. Si el libro trae también el formulario de cantidades, cada ítem del formulario se queda con el análisis que casa
+   por código (o por la descripción completa y la misma unidad). Si no lo trae, cada análisis es una fila **sin
+   cantidad de obra**: hay que escribirla en la tabla.
+3. Un análisis con todos sus precios y las cuentas cuadradas entra con su total como precio. Uno a medias entra
+   **sin precio** (no toma el precio de ningún banco) y se completa con «Buscar».
+4. «Buscar» (o el chat) recibe el análisis con la orden de **conservar sus insumos, cantidades y precios**, poner
+   precio de mercado con fuente solo a lo que no lo trae, añadir lo que falte y avisar, sin corregirlo, un rendimiento
+   fuera de rango. La aplicación **aparta** la respuesta que quite un insumo suyo o cambie su cantidad o su precio, y
+   marca cada línea como **«suyo»**, **«precio buscado»** o **«añadido»**, en pantalla y en la hoja «APU» del Excel.
+
+La columna «RENDIMIENTO» no se adivina: en unos archivos multiplica (materiales) y en otros divide (mano de obra). La
+aplicación lo deduce de las cifras de la fila (valor ÷ precio). Cuando la fila no trae valor, la cantidad queda «sin
+dato» y el encargo lo dice.
+
 ## Quién atiende «Buscar»: tres vías, de la más automática a la más manual
 
 El servidor no tiene clave de API y no la necesita: los APU los escribe **una sesión de Claude Code con la
@@ -153,6 +175,7 @@ cambia: allí la solicitud sigue siendo `en_cola`, que es lo que busca quien la 
 - La unidad del ítem (un APU en m² para una fila en m³ se aparta).
 - Cada material trae la fuente de su precio (nombre; dirección web y fecha cuando existen).
 - Nada entra al costo hasta que el usuario pulsa «Usar estos N precios y calcular».
+- Si el ítem traía el APU del usuario: que no falte ninguno de sus insumos, que su cantidad, su desperdicio, su precio y el porcentaje de la herramienta menor no hayan cambiado (0,5 % de tolerancia de redondeo), y que todo precio buscado traiga fuente. El origen de cada línea lo decide la aplicación, no la respuesta.
 
 ## Lo que NO hace
 

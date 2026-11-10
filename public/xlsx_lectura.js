@@ -397,10 +397,463 @@
     return null;
   }
 
+  /* ══════════ LA HOJA QUE ES UN APU · DETECCIÓN Y LECTOR (9-nov-2026) ══════════
+     Encargo del dueño: «que pueda cargarle un APU y que Detekta lo elabore». Antes de esto, una hoja de análisis de
+     precios unitarios pasaba por `detectarFilasApu` como si fuera un formulario de cantidades: su fila de columnas
+     (DESCRIPCIÓN · UNIDAD · CANTIDAD) es la misma, así que el cemento, la arena y la cuadrilla salían como ÍTEMS DE
+     OBRA y el ítem real se perdía, sin un solo aviso (reproducido el 9-nov-2026 con una hoja de cinco insumos: cinco
+     «ítems», cero avisos). Una lista de insumos presupuestada como obra es la cifra creíble y equivocada que este
+     repositorio existe para no producir.
+
+     QUÉ HACE A UNA HOJA «APU» (la regla es estricta a propósito: un falso positivo vaciaría un formulario de verdad):
+       · al menos DOS rótulos de sección distintos de los cuatro del análisis —MATERIALES, EQUIPO, MANO DE OBRA,
+         TRANSPORTE— solos en su fila (con su numeral romano o arábigo al lado, «I.» «II»…, que van en otra celda en
+         los APU de Empresas Públicas de Cundinamarca), y
+       · el título «ANÁLISIS DE PRECIOS UNITARIOS» (o «ANÁLISIS UNITARIO», «APU …») o el encabezado del ítem
+         analizado (ÍTEM/DESCRIPCIÓN/UNIDAD sin columnas de dinero, o «UNIDAD: m3» en la fila del ítem).
+     Un formulario con un capítulo que se llame «MATERIALES» no tiene además «MANO DE OBRA» como capítulo Y el título
+     de análisis; si algún día aparece uno, el aviso lo dice y el mapeo manual de columnas sigue abierto.
+
+     LA COLUMNA «RENDIMIENTO» NO SE ADIVINA. En los APU de EPC (docs/insumos_2026_pendiente/APUsEPC2026_Feb.xlsx,
+     medido) la misma columna MULTIPLICA en materiales (350 kg × $696 = $243.607) y DIVIDE en mano de obra
+     ($187.182 ÷ 4 = $46.796 por unidad de obra). La cantidad que multiplica al precio se DEDUCE de las cifras del
+     propio archivo cuando la fila trae precio y valor (valor ÷ precio, y se dice si el rendimiento multiplicaba o
+     dividía); sin valor, la cantidad queda `null` y el rendimiento viaja literal con `operacion: null`: «sin dato»,
+     jamás un supuesto con cara de dato. */
+  const SECCIONES_APU = [
+    ["material", /^MATERIAL(ES)?( E INSUMOS| Y SUMINISTROS)?$|^SUMINISTROS?$|^INSUMOS$/],
+    ["equipo", /^EQUIPOS?( Y HERRAMIENTAS?)?$|^HERRAMIENTAS? Y EQUIPOS?$|^MAQUINARIA( Y EQUIPOS?)?$/],
+    ["mano_obra", /^MANO DE OBRA$/],
+    ["transporte", /^TRANSPORTES?$|^ACARREOS?$/],
+  ];
+  const RE_NUMERAL_SECCION = /^([IVX]+|\d+(\s\d+)*|[A-H])$/;
+  const RE_TITULO_APU = /^(EL )?ANALISIS DE PRECIOS? UNITARIOS?\b|^ANALISIS UNITARIOS?\b|^A ?P ?U\b/;
+  /* la celda ES el título: corta y sin «NOTA» (la nota de un formulario «… soportados en el Análisis de Precios
+     Unitarios (APU)» lo menciona y no lo es — revisión adversaria, 9-nov-2026) */
+  const esTituloApu = (c) => { if (c == null || typeof c === "number") return false; const t = textoDeRotulo(c); return t.length <= 60 && !/\bNOTA\b/.test(t) && RE_TITULO_APU.test(t); };
+  /* una celda que termina en «:» es un rótulo («MATERIALES:» del libro que exporta la propia aplicación) */
+  const textoDeRotulo = (c) => normCab(c).replace(/\s+/g, " ").trim();
+
+  function seccionDeFila(fila) {
+    let tipo = null, otros = 0;
+    /* un capítulo de formulario lleva su subtotal en la fila («I MATERIALES … 12.500.000»); la sección de un APU no
+       (revisión adversaria, 9-nov-2026). Se tolera un entero pequeño suelto, como el «3» de la fila «III TRANSPORTE»
+       de los APU de EPC */
+    for (const c of fila || []) {
+      const n = typeof c === "number" ? c : (c != null && String(c).trim() !== "" ? numeroDeCelda(c) : null);
+      if (n != null && !(Number.isInteger(n) && n >= 0 && n <= 20)) return null;
+    }
+    for (const c of fila || []) {
+      if (c == null || typeof c === "number") continue;
+      const t = textoDeRotulo(c);
+      if (!t) continue;
+      if (RE_NUMERAL_SECCION.test(t)) continue;
+      /* «II MATERIALES» en una sola celda: se quita el numeral de delante */
+      const sinNumeral = t.replace(/^([IVX]+|\d+(\s\d+)*|[A-H])\s+(?=[A-Z])/, "");
+      const s = SECCIONES_APU.find(([, re]) => re.test(sinNumeral));
+      if (s && !tipo) { tipo = s[0]; continue; }
+      otros++;
+    }
+    return tipo && !otros ? tipo : null;
+  }
+
+  /* la fila de columnas de una sección: DESCRIPCIÓN + UNIDAD + al menos una columna de cifras */
+  const RE_COL_DESC = /^DESCRIPCION|^INSUMO|^CONCEPTO$|^DETALLE$|^NOMBRE$|^RECURSO$/;
+  const RE_COL_UNIDAD = /^UN[UI]DAD(ES)?$|^UND$|^UN$|^U M$|^UM$|^UNID$/;
+  const RE_COL_CANT_BASE = /^CANT(IDAD)? BASE$/;
+  const RE_COL_CANT = /^CANT(IDAD(ES)?)?\b/;
+  const RE_COL_REND = /^REND(IMIENTO)?\b/;
+  const RE_COL_DESP = /^DESP(ERDICIO)?\b|^% ?DESP/;
+  const RE_COL_PRECIO = /^(VALOR|VR|V R|PRECIO|COSTO)\s*(UNIT|POR UNIDAD)|^UNITARIO$|^TARIFA\b|^JORNAL\b|^PRECIO$|^VR UNIT/;
+  const RE_COL_VALOR = /^(VALOR|VR|V R|COSTO)\s*(TOTAL|PARCIAL)|^PARCIAL$|^TOTAL$|^SUBTOTAL$|^VALOR$|^VR$/;
+
+  function columnasDeSeccion(fila) {
+    const col = { descripcion: -1, unidad: -1, cantidad: -1, cantidad_base: -1, rendimiento: -1, desperdicio: -1, precio: -1, valor: -1 };
+    (fila || []).forEach((c, j) => {
+      if (c == null || typeof c === "number") return;
+      const t = textoDeRotulo(c);
+      if (!t) return;
+      if (col.descripcion < 0 && RE_COL_DESC.test(t)) col.descripcion = j;
+      else if (col.unidad < 0 && RE_COL_UNIDAD.test(t)) col.unidad = j;
+      else if (col.cantidad_base < 0 && RE_COL_CANT_BASE.test(t)) col.cantidad_base = j;
+      else if (col.cantidad < 0 && RE_COL_CANT.test(t)) col.cantidad = j;
+      else if (col.rendimiento < 0 && RE_COL_REND.test(t)) col.rendimiento = j;
+      else if (col.desperdicio < 0 && RE_COL_DESP.test(t)) col.desperdicio = j;
+      else if (col.precio < 0 && RE_COL_PRECIO.test(t)) col.precio = j;
+      else if (col.valor < 0 && RE_COL_VALOR.test(t)) col.valor = j;
+    });
+    const cifras = [col.cantidad, col.rendimiento, col.precio, col.valor].some((x) => x >= 0);
+    return col.descripcion >= 0 && col.unidad >= 0 && cifras ? col : null;
+  }
+
+  /* el encabezado del ítem analizado: «ÍTEM · DESCRIPCIÓN · UNIDAD» SIN columnas de cifras (las de una sección sí las tienen) */
+  function encabezadoDeItem(fila) {
+    const col = { codigo: -1, descripcion: -1, unidad: -1 };
+    let cifras = false;
+    (fila || []).forEach((c, j) => {
+      if (c == null || typeof c === "number") return;
+      const t = textoDeRotulo(c);
+      if (!t) return;
+      if (col.codigo < 0 && /^(ITEM|ITEMS|NUMERAL|CODIGO|ITEM NO|NO ITEM)$/.test(t)) col.codigo = j;
+      else if (col.descripcion < 0 && /^DESCRIPCION( DEL ITEM)?$|^ACTIVIDAD$/.test(t)) col.descripcion = j;
+      else if (col.unidad < 0 && RE_COL_UNIDAD.test(t)) col.unidad = j;
+      else if (RE_COL_CANT.test(t) || RE_COL_PRECIO.test(t) || RE_COL_VALOR.test(t) || RE_COL_REND.test(t)) cifras = true;
+    });
+    if (cifras || col.descripcion < 0 || col.unidad < 0 || col.codigo < 0) return null;
+    /* «ÍTEM | 1.1 | DESCRIPCIÓN | …»: rótulos con su valor al lado son datos del ítem, no un encabezado de columnas */
+    const enMedio = (a, b) => (fila || []).slice(Math.min(a, b) + 1, Math.max(a, b)).some((c) => c != null && String(c).trim() !== "");
+    if (enMedio(col.codigo, col.descripcion) || enMedio(col.descripcion, col.unidad)) return null;
+    return col;
+  }
+
+  /* «UNIDAD: m3» en una celda: la fila del ítem del libro que exporta la aplicación («1.1 · Concreto … | UNIDAD: m3»)
+     y de muchas plantillas («ÍTEM: 1.1», «DESCRIPCIÓN: …», «UNIDAD: m3» en filas sueltas). */
+  const RE_KV = /^\s*(ITEM|ÍTEM|ITEM N[Ooº°]\.?|N[UÚ]MERAL|C[OÓ]DIGO|DESCRIPCI[OÓ]N|ACTIVIDAD|UNIDAD(?: DE MEDIDA)?)\s*[:.]\s*(.*)$/i;
+  /* «ÍTEM | 1.1 | DESCRIPCIÓN | Concreto … | UNIDAD | m3»: el rótulo SIN dos puntos, con su valor en la celda siguiente */
+  const RE_ROTULO_SUELTO = /^(ITEM|NUMERAL|CODIGO|DESCRIPCION|ACTIVIDAD|UNIDAD|UNIDAD DE MEDIDA)$/;
+  function paresClaveValor(fila) {
+    const pares = {};
+    const celdas = fila || [];
+    const siguiente = (j) => { for (let k = j + 1; k < celdas.length; k++) { const v = celdas[k]; if (v != null && String(v).trim() !== "") return { v, k }; } return null; };
+    for (let j = 0; j < celdas.length; j++) {
+      const c = celdas[j];
+      if (c == null || typeof c === "number") continue;
+      let m = RE_KV.exec(String(c));
+      if (!m && RE_ROTULO_SUELTO.test(textoDeRotulo(c))) {
+        const sig = siguiente(j);
+        /* solo si lo que sigue es un VALOR y no otro rótulo (la fila de encabezado «ÍTEM | DESCRIPCIÓN | UNIDAD») */
+        const esUnidad = /^UNIDAD/.test(textoDeRotulo(c));
+        /* el valor de «UNIDAD» tiene que parecer una unidad (corto, sin espacios): «UNIDAD | ESPECIFICACIÓN TÉCNICA» es
+           una fila de columnas de formulario, no el ítem de un análisis (revisión adversaria, 9-nov-2026) */
+        const pareceUnidad = (v) => typeof v !== "number" && String(v).trim().length <= 10 && !/\s/.test(String(v).trim());
+        if (sig && !RE_ROTULO_SUELTO.test(textoDeRotulo(sig.v)) && !RE_COL_CANT.test(textoDeRotulo(sig.v)) && !RE_COL_PRECIO.test(textoDeRotulo(sig.v)) && (!esUnidad || pareceUnidad(sig.v))) m = [null, String(c), String(sig.v)];
+      }
+      if (!m) continue;
+      const clave = normCab(m[1]).startsWith("UNIDAD") ? "unidad" : normCab(m[1]).startsWith("DESCRIP") || normCab(m[1]) === "ACTIVIDAD" ? "descripcion" : "codigo";
+      let valor = m[2].trim();
+      if (!valor) {
+        for (let k = j + 1; k < celdas.length; k++) {
+          const v = celdas[k];
+          if (v == null || String(v).trim() === "") continue;
+          valor = String(v).trim();
+          break;
+        }
+      }
+      if (valor && pares[clave] == null) pares[clave] = valor;
+    }
+    return pares;
+  }
+
+  const RE_TOTAL_APU = /^(VR |VALOR )?(TOTAL )?COSTOS? DIRECTOS?\b|^TOTAL COSTO\b|^COSTO TOTAL\b|^PRECIO UNITARIO( TOTAL)?$|^VALOR UNITARIO( TOTAL)?$|^TOTAL (APU|ANALISIS|PRECIO UNITARIO)\b|^TOTAL ITEM\b|^VR UNITARIO$/;
+  const RE_NO_COMPONENTE = /^SUB ?TOTAL\b|^SUB TOTALES\b|^TOTAL\b|^BAJA COMERCIAL\b|^VR UNITARIO OFERTADO\b|^ANALIZO\b|^NOMBRE MATRICULA\b|^FIRMA\b|^LOS FACTORES\b|^PRECIO (SEGUN|TECLEADO|PROPIO|TOPE|DE REFERENCIA)\b/;
+
+  function esHojaApu(grid) {
+    if (!Array.isArray(grid) || !grid.length) return false;
+    const tipos = new Set();
+    let titulo = false, encabezado = false, columnas = false, despuesDeSeccion = false;
+    const tope = Math.min(grid.length, 4000);
+    for (let i = 0; i < tope; i++) {
+      const f = grid[i] || [];
+      const s = seccionDeFila(f);
+      if (s) { tipos.add(s); despuesDeSeccion = true; continue; }
+      if (!titulo && f.some(esTituloApu)) titulo = true;
+      if (!encabezado && (encabezadoDeItem(f) || paresClaveValor(f).unidad != null)) encabezado = true;
+      if (despuesDeSeccion && !columnas && columnasDeSeccion(f)) columnas = true;
+    }
+    if (!(tipos.size >= 2 && columnas && (titulo || encabezado))) return false;
+    /* LA CERRADURA (revisión adversaria, 9-nov-2026): la forma no basta. La hoja tiene que LEERSE como análisis —cada
+       uno con su ítem identificado (descripción o código) y al menos la mitad con unidad—. Un formulario que pasara la
+       forma se lee como UN «análisis» sin ítem y sin unidad, y así no vacía el formulario en el servidor ni deja de
+       objetar en `ambiguedadDelLibro`. */
+    const apus = leerApusDeHoja(grid, null).apus;
+    if (!apus.length) return false;
+    if (!apus.every((a) => a.descripcion || a.codigo)) return false;
+    return apus.filter((a) => a.unidad).length * 2 >= apus.length;
+  }
+
+  /* la cantidad que MULTIPLICA al precio, deducida de las cifras de la fila; `operacion` dice de dónde salió */
+  const cuadraValor = (q, precio, valor) => q != null && precio != null && valor != null && Math.abs(q * precio - valor) <= Math.max(1, Math.abs(valor) * 0.005);
+  function cantidadDeComponente(c) {
+    const { cantidad, rendimiento, desperdicio_pct: d, precio_unitario: p, valor_total: v } = c;
+    const conDesp = (q) => (q != null && d != null && d > 0 ? q * (1 + d / 100) : null);
+    if (p != null && p > 0 && v != null && v > 0) {
+      if (cuadraValor(cantidad, p, v)) return { cantidad_total: cantidad, operacion: "cantidad" };
+      if (cuadraValor(conDesp(cantidad), p, v)) return { cantidad_total: conDesp(cantidad), operacion: "cantidad_con_desperdicio" };
+      if (rendimiento != null && rendimiento > 0) {
+        if (cuadraValor(rendimiento, p, v)) return { cantidad_total: rendimiento, operacion: "multiplica" };
+        if (cuadraValor(1 / rendimiento, p, v)) return { cantidad_total: 1 / rendimiento, operacion: "divide" };
+      }
+      if (cantidad == null && rendimiento == null) return { cantidad_total: v / p, operacion: "valor_entre_precio" };
+      return { cantidad_total: null, operacion: null, no_cuadra: true };
+    }
+    /* sin las dos cifras no se puede comprobar: la cantidad literal vale si es la ÚNICA columna de cantidad (sin
+       desperdicio declarado, que dejaría abierto si ya viene incluido); el rendimiento solo, nunca */
+    if (cantidad != null && rendimiento == null && !(d != null && d > 0)) return { cantidad_total: cantidad, operacion: "cantidad" };
+    return { cantidad_total: null, operacion: null };
+  }
+
+  /* el porcentaje de una fila «%» (herramienta menor): del rendimiento o la cantidad (0,05 o 5) o del texto «(5 % …)» */
+  /* El literal: menor que 1 es fracción (0,05); de 1 a 100, por ciento («5», «1» = 1 %). Si la fila trae base y valor, la
+     fracción sale de valor ÷ base, y un literal que la contradice deja la fracción SIN DATO (revisión adversaria). */
+  function fraccionDePorcentaje(c, texto) {
+    let literal = null;
+    for (const x of [c.rendimiento, c.cantidad]) {
+      if (x != null && x > 0) { literal = x < 1 ? x : x <= 100 ? x / 100 : null; break; }
+    }
+    if (literal == null) {
+      const m = /\((\d+(?:[.,]\d+)?)\s*%/.exec(String(texto || ""));
+      if (m) { const n = Number(m[1].replace(",", ".")); if (n > 0 && n <= 100) literal = n / 100; }
+    }
+    const deCifras = c.precio_unitario != null && c.precio_unitario > 0 && c.valor_total != null && c.valor_total > 0 ? c.valor_total / c.precio_unitario : null;
+    if (deCifras != null && literal != null) return Math.abs(deCifras - literal) <= Math.max(0.0005, literal * 0.02) ? literal : null;
+    return literal != null ? literal : deCifras;
+  }
+
+  const MAX_COMPONENTES_APU = 40;
+  const MAX_FILAS_PRECIOS = 400;
+  function leerApusDeHoja(grid, nombreHoja) {
+    const apus = [];
+    const avisos = [];
+    if (!Array.isArray(grid)) return { apus, avisos };
+    let actual = null, tipo = null, col = null, pendiente = null, encabezadoCols = null;
+    const nuevo = (datos, fila) => ({ codigo: null, descripcion: null, unidad: null, total_declarado: null, componentes: [], hoja: nombreHoja || null, fila_inicio: fila + 1, ...datos });
+    const cerrar = () => {
+      /* un análisis SIN insumos (el «precio según archivo» del libro exportado, el «sin precio») no es una composición */
+      if (actual && actual.componentes.length) apus.push(actual);
+      actual = null; tipo = null; col = null;
+    };
+    const fijarEncabezado = (datos, i) => {
+      const tieneAlgo = Object.values(datos).some((v) => v != null && String(v).trim() !== "");
+      if (!tieneAlgo) return;
+      /* datos de ítem DESPUÉS de componentes = empieza otro APU (varias por hoja); antes, completan el mismo */
+      if (!actual || actual.componentes.length || actual.total_declarado != null) { cerrar(); actual = nuevo({}, i); }
+      for (const k of ["codigo", "descripcion", "unidad"]) if (datos[k] != null && String(datos[k]).trim() !== "" && actual[k] == null) actual[k] = String(datos[k]).trim().slice(0, k === "descripcion" ? 400 : 30);
+    };
+    for (let i = 0; i < Math.min(grid.length, 20000); i++) {
+      const f = grid[i] || [];
+      if (!f.some((c) => c != null && String(c).trim() !== "")) continue;
+      /* 1 · la fila de valores bajo un encabezado «ÍTEM | DESCRIPCIÓN | UNIDAD» */
+      if (encabezadoCols) {
+        const ec = encabezadoCols; encabezadoCols = null;
+        const d = { codigo: ec.codigo >= 0 ? f[ec.codigo] : null, descripcion: f[ec.descripcion], unidad: f[ec.unidad] };
+        if (d.descripcion != null && String(d.descripcion).trim() && !encabezadoDeItem(f) && !seccionDeFila(f)) { fijarEncabezado(d, i); continue; }
+      }
+      const ec = encabezadoDeItem(f);
+      if (ec) { encabezadoCols = ec; continue; }
+      /* 2 · sección */
+      const s = seccionDeFila(f);
+      if (s) {
+        if (!actual) actual = nuevo({}, i);
+        /* la fila de columnas puede ir UNA sola vez para todas las secciones: se conserva hasta que llegue otra */
+        tipo = s; continue;
+      }
+      /* 3 · columnas de la sección */
+      const cs = columnasDeSeccion(f);
+      if (cs) { col = cs; continue; }
+      /* 4 · total del análisis: cierra el APU */
+      const textos = f.filter((c) => c != null && typeof c !== "number" && String(c).trim()).map((c) => textoDeRotulo(c));
+      const rotuloTotal = textos.find((t) => RE_TOTAL_APU.test(t));
+      /* «COSTO TOTAL MATERIALES», «TOTAL COSTO MANO DE OBRA»: nombra una sección, es un SUBTOTAL y no cierra el análisis */
+      if (rotuloTotal && /\b(MATERIAL(ES)?|EQUIPOS?|MANO DE OBRA|TRANSPORTES?|HERRAMIENTAS?|INSUMOS)\b/.test(rotuloTotal)) continue;
+      if (rotuloTotal && actual) {
+        let v = null;
+        for (let j = f.length - 1; j >= 0; j--) { const n = numeroDeCelda(f[j]); if (n != null && n > 0) { v = n; break; } }
+        if (v != null) { actual.total_declarado = v; actual.rotulo_total = rotuloTotal; cerrar(); continue; }
+      }
+      /* 5 · datos del ítem en «CLAVE: valor» (o «1.1 · Descripción | UNIDAD: m3») */
+      const kv = paresClaveValor(f);
+      if (kv.unidad != null || kv.descripcion != null || kv.codigo != null) {
+        if (kv.descripcion == null) {
+          const primera = f.find((c) => c != null && typeof c !== "number" && String(c).trim() && !RE_KV.test(String(c)));
+          if (primera) {
+            const m = /^(\S{1,20})\s+·\s+(.+)$/.exec(String(primera).trim());
+            if (m) { kv.codigo = kv.codigo || m[1]; kv.descripcion = m[2]; } else kv.descripcion = String(primera).trim();
+          }
+        }
+        fijarEncabezado(kv, i);
+        continue;
+      }
+      if (RE_TITULO_APU.test(textos[0] || "")) continue;
+      /* 6 · componente */
+      if (!actual || !tipo || !col) continue;
+      const desc = String(f[col.descripcion] ?? "").trim();
+      if (!desc || !/[A-Za-zÁÉÍÓÚÑáéíóúñ]/.test(desc)) continue;
+      if (RE_NO_COMPONENTE.test(textoDeRotulo(desc))) continue;
+      /* un rótulo («ALGO:») sin una sola cifra en la fila no es un insumo */
+      if (/:\s*$/.test(desc) && !f.some((c) => typeof c === "number" || numeroDeCelda(c) != null)) continue;
+      const unidad = col.unidad >= 0 ? String(f[col.unidad] ?? "").trim() || null : null;
+      /* CELDAS COMBINADAS: el rótulo «RENDIMIENTO» de EPC ocupa dos columnas y la cifra va en la SEGUNDA. Se lee la
+         primera cifra entre la columna del rótulo y la del rótulo siguiente, nunca más allá. */
+      const mapeadas = Object.values(col).filter((x) => x >= 0).sort((a, b) => a - b);
+      const cifra = (v) => { const n = numeroDeCelda(v); if (n != null) return n; const m = /^\s*(\d+(?:[.,]\d+)?)\s*%\s*$/.exec(String(v == null ? "" : v)); return m ? Number(m[1].replace(",", ".")) : null; };
+      const leer = (j) => {
+        if (j < 0) return null;
+        const hasta = mapeadas.find((x) => x > j) ?? j + 1;
+        for (let k = j; k < hasta; k++) { const n = cifra(f[k]); if (n != null) return n; }
+        return null;
+      };
+      const positivo = (n) => (n != null && n > 0 ? n : null);
+      const crudo = {
+        cantidad: positivo(leer(col.cantidad)), rendimiento: positivo(leer(col.rendimiento)),
+        desperdicio_pct: (() => { const d = leer(col.desperdicio); if (d == null || d < 0) return null; return d > 0 && d < 1 && !/%/.test(String(f[col.desperdicio])) ? Math.round(d * 10000) / 100 : d; })(),
+        precio_unitario: positivo(leer(col.precio)), valor_total: positivo(leer(col.valor)),
+      };
+      /* porcentaje solo si la fila lo DICE (unidad «%» o «%» en el texto): una herramienta menor «GL 1 1.500» es un valor
+         global, no el 100 % de la mano de obra (revisión adversaria, 9-nov-2026) */
+      const porcentaje = unidad === "%" || /%/.test(desc);
+      /* una fila «%» sobre una base en CERO (herramienta menor de un ítem sin mano de obra) vale 0 de verdad: es la
+         excepción declarada a «sin dato ≠ cero», y solo cuando el archivo escribe las DOS cifras en cero */
+      if (porcentaje && crudo.valor_total == null && leer(col.valor) === 0 && (col.precio < 0 || leer(col.precio) === 0 || leer(col.precio) == null)) crudo.valor_total = 0;
+      const tipoComp = /^HERRAMIENTA MENOR\b/.test(textoDeRotulo(desc)) ? "herramienta_menor" : tipo;
+      if (actual.componentes.length >= MAX_COMPONENTES_APU) { actual.componentes_de_mas = (actual.componentes_de_mas || 0) + 1; continue; }
+      const comp = { n: actual.componentes.length + 1, tipo: tipoComp, insumo: desc.slice(0, 200), unidad: unidad ? unidad.slice(0, 20) : null, ...crudo, fila: i + 1 };
+      if (porcentaje) {
+        comp.es_porcentaje = true;
+        comp.fraccion = fraccionDePorcentaje(crudo, desc);
+        if (comp.fraccion == null) comp.porcentaje_contradictorio = (crudo.rendimiento != null || crudo.cantidad != null) && crudo.valor_total != null && crudo.precio_unitario != null;
+        comp.cantidad_total = comp.fraccion; comp.operacion = comp.fraccion != null ? "porcentaje" : null;
+        /* en la fila «%» el «precio» es la BASE (el subtotal de mano de obra): no es un precio del usuario que haya que respetar */
+      } else {
+        Object.assign(comp, cantidadDeComponente(crudo));
+      }
+      actual.componentes.push(comp);
+    }
+    cerrar();
+    /* lo que se dice de cada análisis: el cuadre contra su total, las filas que no cuadran y las cantidades sin dato */
+    for (const a of apus) {
+      a.avisos = [];
+      const valores = a.componentes.map((c) => c.valor_total);
+      const suma = valores.every((v) => v != null) ? valores.reduce((x, y) => x + y, 0) : null;
+      a.suma_componentes = suma != null ? Math.round(suma * 100) / 100 : null;
+      a.cuadra = suma != null && a.total_declarado != null ? Math.abs(suma - a.total_declarado) <= Math.max(2, a.total_declarado * 0.005) : null;
+      a.precios_completos = a.componentes.length > 0 && a.componentes.every((c) => c.es_porcentaje ? c.valor_total != null : c.precio_unitario != null && c.valor_total != null);
+      const malas = a.componentes.filter((c) => c.no_cuadra).map((c) => c.insumo);
+      if (malas.length) a.avisos.push(`en «${malas.slice(0, 3).join("», «")}» cantidad × precio no da el valor de la fila`);
+      const sinCant = a.componentes.filter((c) => !c.es_porcentaje && c.cantidad_total == null && !c.no_cuadra);
+      if (sinCant.some((c) => c.rendimiento != null)) a.avisos.push(`${sinCant.filter((c) => c.rendimiento != null).length} insumo(s) traen rendimiento sin valor: no se puede saber si multiplica o divide, y la cantidad queda sin dato`);
+      if (a.cuadra === false) a.avisos.push(`los insumos suman ${Math.round(suma).toLocaleString("es-CO")} y el análisis declara ${Math.round(a.total_declarado).toLocaleString("es-CO")}`);
+      const pctMalos = a.componentes.filter((c) => c.porcentaje_contradictorio).map((c) => c.insumo);
+      if (pctMalos.length) a.avisos.push(`en «${pctMalos.join("», «")}» el porcentaje escrito no es el valor ÷ la base: queda sin dato`);
+      if (a.componentes_de_mas) a.avisos.push(`${a.componentes_de_mas} insumo(s) más allá de ${MAX_COMPONENTES_APU} no se leyeron`);
+    }
+    return { apus, avisos };
+  }
+
+  /* El libro entero: cada hoja que sea APU aporta sus análisis (una hoja por ítem, o varios en una hoja). */
+  function leerApusDelLibro(libro) {
+    const apus = [], hojas = [];
+    for (const h of (libro && libro.hojas) || []) {
+      if (!esHojaApu(h.filas)) continue;
+      const r = leerApusDeHoja(h.filas, h.nombre);
+      const validos = r.apus.filter((a) => a.descripcion || a.codigo);
+      if (validos.length) { hojas.push(h.nombre); apus.push(...validos); }
+    }
+    return { apus, hojas };
+  }
+
+  /* el código del ítem comparable entre el formulario y el APU: «1,1», «1.1.», « 1.1 » son el mismo */
+  const descripcionComparable = (d) => normCab(d).replace(/\s+/g, " ").trim();
+  const codigoComparable = (c) => String(c == null ? "" : c).trim().replace(/,/g, ".").replace(/\.+$/, "").replace(/\s+/g, "");
+
+  /* ══════════ DEL LIBRO CON APU A LAS FILAS DE PRECIOS ══════════
+     Si el libro trae además el formulario de cantidades (una hoja de ítems que CUADRA con su total, o cuyos códigos
+     casan con los de los análisis), las filas son las del formulario y cada una lleva la composición del APU que casa
+     por código. Si no, cada APU es una fila SIN cantidad de obra (null, nunca 1: un APU no dice cuántas unidades se
+     ejecutan) y el aviso pide escribirla. Lo que el lector no pudo leer se dice. El precio del archivo sale del total
+     del análisis SOLO si todos sus insumos traen precio y la suma cuadra: un análisis a medias no tiene precio, lo
+     completa la búsqueda. */
+  function filasDesdeApus(lecturaApus, elegida) {
+    const apus = (lecturaApus && lecturaApus.apus) || [];
+    const avisos = [];
+    const composicionDe = (a) => ({
+      hoja: a.hoja, total_declarado: a.total_declarado, cuadra: a.cuadra, precios_completos: a.precios_completos,
+      componentes: a.componentes.map((c) => ({ n: c.n, tipo: c.tipo, insumo: c.insumo, unidad: c.unidad, cantidad: c.cantidad, rendimiento: c.rendimiento, desperdicio_pct: c.desperdicio_pct,
+        cantidad_total: c.cantidad_total != null ? Number(c.cantidad_total.toPrecision(12)) : null, operacion: c.operacion || null,
+        precio_unitario: c.es_porcentaje ? null : c.precio_unitario, valor_total: c.valor_total, es_porcentaje: c.es_porcentaje === true, fraccion: c.fraccion != null ? c.fraccion : null })),
+    });
+    /* con todos sus precios y cada fila comprobada (cantidad × precio = valor): el total que declara si cuadra, o la
+       suma si no declara ninguno; un total que NO cuadra deja el análisis sin precio, y lo completa la búsqueda */
+    const precioDe = (a) => {
+      if (!a.precios_completos || a.componentes.some((c) => c.no_cuadra) || a.suma_componentes == null || !(a.suma_componentes > 0)) return null;
+      if (a.cuadra === true) return a.total_declarado;
+      return a.total_declarado == null ? a.suma_componentes : null;
+    };
+    const formulario = elegida && elegida.resultado && !elegida.resultado.es_apu ? elegida.resultado : null;
+    const porCodigo = new Map(), porDescripcion = new Map();
+    for (const a of apus) {
+      const k = codigoComparable(a.codigo); if (k && !porCodigo.has(k)) porCodigo.set(k, a);
+      const d = descripcionComparable(a.descripcion); if (d.length >= 12 && !porDescripcion.has(d)) porDescripcion.set(d, a);
+    }
+    /* casa por CÓDIGO; si el código no casa (el libro exportado rotula el análisis con el código del catálogo y el
+       formulario con el numeral), por la DESCRIPCIÓN completa y la MISMA unidad. Nunca por parecido: un APU pegado al
+       ítem equivocado es un precio equivocado. */
+    const apuDeFila = (f) => {
+      const a = porCodigo.get(codigoComparable(f.codigo));
+      if (a && (!a.unidad || !f.unidad || normCab(a.unidad) === normCab(f.unidad))) return a;
+      const df = descripcionComparable(f.descripcion);
+      let b = porDescripcion.get(df) || null;
+      if (!b && df.length >= 20) {
+        /* el libro exportado cuelga marcas después de la descripción («… ⚠ Precio no verificado»): una descripción
+           que EMPIEZA por la otra (20 caracteres o más) vale, si es la única que lo hace */
+        /* …y solo si lo que sobra es una MARCA (empieza por un signo, no por una palabra): «Excavación manual en material
+           común» no es «… bajo nivel freático con bombeo» (revisión adversaria, 9-nov-2026) */
+        const crudoF = String(f.descripcion || "").trim();
+        const cand = apus.filter((x) => {
+          const crudoA = String(x.descripcion || "").trim();
+          const [corto, largo] = crudoA.length <= crudoF.length ? [crudoA, crudoF] : [crudoF, crudoA];
+          if (corto.length < 20 || !largo.toLowerCase().startsWith(corto.toLowerCase())) return false;
+          return /^\s*[^\p{L}\p{N}\s]/u.test(largo.slice(corto.length));
+        });
+        if (cand.length === 1) b = cand[0];
+      }
+      return b && b.unidad && f.unidad && normCab(b.unidad) === normCab(f.unidad) ? b : null;
+    };
+    const filasForm = formulario ? formulario.filas.filter((f) => f.unidad) : [];
+    const casan = filasForm.filter((f) => apuDeFila(f)).length;
+    const esFormulario = formulario && filasForm.length && (casan >= Math.max(1, Math.ceil(filasForm.length * 0.5)) || (formulario.cuadre && formulario.cuadre.estado === "cuadra"));
+    let filas;
+    if (esFormulario) {
+      const usados = new Set();
+      filas = formulario.filas.map((f) => {
+        const a = f.unidad ? apuDeFila(f) : null;
+        if (!a || usados.has(a)) return f;
+        usados.add(a);
+        const p = precioDe(a);
+        return { ...f, composicion_usuario: composicionDe(a), ...(f.precio_archivo == null && p != null ? { precio_archivo: p } : {}) };
+      });
+      const sueltos = apus.filter((a) => !usados.has(a));
+      avisos.push(`${usados.size} de ${apus.length} análisis de precios unitarios casaron con los ítems de la hoja «${elegida.hoja.nombre}».`);
+      if (sueltos.length) avisos.push(`${sueltos.length} análisis no casan con ningún ítem del formulario (${sueltos.slice(0, 3).map((a) => a.codigo || a.descripcion || "sin código").join(", ")}${sueltos.length > 3 ? "…" : ""}): no se añadieron.`);
+    } else {
+      filas = apus.map((a) => ({ codigo: a.codigo, capitulo: null, descripcion: a.descripcion || "(análisis sin descripción)", unidad: a.unidad, cantidad: null, precio_archivo: precioDe(a), composicion_usuario: composicionDe(a) }));
+      avisos.push(`El archivo trae ${apus.length} análisis de precios unitarios y ninguna hoja con las cantidades de obra: escriba la cantidad de cada ítem en la tabla (un análisis no dice cuántas unidades se ejecutan).`);
+      if (elegida && elegida.resultado && elegida.resultado.filas && elegida.resultado.filas.length) avisos.push(`La hoja «${elegida.hoja.nombre}» no se tomó como formulario: sus ítems no casan con los códigos de los análisis ni cuadran con un total.`);
+    }
+    const sinUnidad = apus.filter((a) => !a.unidad).length;
+    if (sinUnidad) avisos.push(`${sinUnidad} análisis sin unidad legible: revísela en la tabla.`);
+    const conAviso = apus.filter((a) => a.avisos && a.avisos.length);
+    for (const a of conAviso.slice(0, 5)) avisos.push(`Análisis ${a.codigo || a.descripcion || "sin código"}: ${a.avisos.join("; ")}.`);
+    if (conAviso.length > 5) avisos.push(`Otros ${conAviso.length - 5} análisis traen avisos parecidos.`);
+    const sinPrecio = apus.filter((a) => precioDe(a) == null).length;
+    if (sinPrecio) avisos.push(`${sinPrecio} análisis sin todos sus precios (o sin cuadrar con su total): se completan con «Buscar», que respeta sus insumos y cantidades. Mientras tanto quedan sin precio: no toman el de referencia de ningún banco aunque la tabla de abajo lo sugiera.`);
+    /* el tope de la lista de Precios (MAX_ITEMS de lib/handlers/apu/editor y MAX_FILAS de lib/apu/precios_ia): se corta
+       AQUÍ y se dice, en vez de que el servidor rechace el archivo entero (revisión adversaria: los 440 de EPC) */
+    if (filas.length > MAX_FILAS_PRECIOS) {
+      avisos.unshift(`El archivo trae ${filas.length} ítems y la lista admite ${MAX_FILAS_PRECIOS}: se cargaron los primeros ${MAX_FILAS_PRECIOS}. Cargue el resto en otro presupuesto (guarde este primero).`);
+      filas = filas.slice(0, MAX_FILAS_PRECIOS);
+    }
+    return { filas, avisos, es_apu: true, apus: apus.length, cuadre: esFormulario ? formulario.cuadre || null : null };
+  }
+
   function detectarFilasApu(grid) {
     const avisos = [];
     if (!Array.isArray(grid) || !grid.length) {
       return { filas: [], avisos: ["La hoja está vacía."], cabecera: null };
+    }
+    /* una hoja de ANÁLISIS no es un formulario: sus insumos no son ítems de obra (9-nov-2026) */
+    if (esHojaApu(grid)) {
+      return { filas: [], cabecera: null, es_apu: true,
+        avisos: ["La hoja es un análisis de precios unitarios (APU), no un formulario de cantidades: sus insumos no se toman como ítems de obra."] };
     }
     const cab = buscarCabecera(grid);
     if (!cab) {
@@ -808,6 +1261,7 @@
 
   return {
     leerLibro, leerZip, parsearCsv, detectarFilasApu, elegirHoja, clasificarRotuloTotal, verificarFormulario, cuadreDeControl, ambiguedadDelLibro,
+    esHojaApu, leerApusDeHoja, leerApusDelLibro, filasDesdeApus,
     numeroLocal, indiceColumna, desescaparXml,
   };
 });
