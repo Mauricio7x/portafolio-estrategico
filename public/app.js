@@ -9167,6 +9167,9 @@
     composicion_aceptada: f.origen_precio === "ia" && Array.isArray(f.composicion_aceptada || f.ia_composicion) ? (f.composicion_aceptada || f.ia_composicion) : null,
     // la fila trae SU APU: el de la biblioteca no la pisa
     con_apu_del_usuario: !!f.composicion_usuario,
+    /* …y el APU mismo, si el precio es el de su archivo: la hoja APU del Excel lo imprime (el motor lo valida contra el
+       precio y lo descarta si no suma). Antes no viajaba y la hoja decía «SIN APU DE RESPALDO» (10-nov-2026). */
+    composicion_usuario: f.origen_precio === "archivo" && f.composicion_usuario && Array.isArray(f.composicion_usuario.componentes) ? f.composicion_usuario : null,
     subcontratado: f.subcontratado || false,
     aiu_subcontratista_pct: f.aiu_subcontratista_pct == null ? null : f.aiu_subcontratista_pct,
   }));
