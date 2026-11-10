@@ -136,7 +136,8 @@
   unspsc.js                   Whitelists de los RUP + MATCHING JERÁRQUICO por niveles
   uso.js                      MEDIR EL USO, SIN ANALÍTICA DE TERCEROS (27-sep-2026)
 
-· lib/apu/ — 21 módulos:
+· lib/apu/ — 23 módulos:
+  biblioteca.js               Los APU que el usuario ya aceptó vuelven solos (10-nov-2026)
   calculo.js                  Del costo directo al precio de oferta
   catalogo.js                 Catálogo de precios APU en Redis
   epc_items.js                LOS APU DE EPC COMO ÍTEMS COSTEABLES (ago 2026)
@@ -148,6 +149,7 @@
   inferencia.js               Del objeto del proceso a los ítems de obra
   invias.js                   Referencia oficial INVIAS por insumo, por provincia
   invias_items.js             LOS APU DE REFERENCIA DEL INVIAS COMO ÍTEMS COSTEABLES (ago 2026)
+  modelo_abierto.js           El APU de un ítem NUEVO con un modelo abierto, sin Claude (10-nov-2026)
   normativa.js                Qué hay DETRÁS de los factores que multiplican el APU
   optimizador.js              ¿A QUÉ PRECIO HAY QUE OFERTAR?
   piso_techo.js               (sin cabecera)
@@ -236,8 +238,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 456 secciones (52 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 21913  En los pliegos tipo de obra que tiene el dueño, los códigos UNSPSC no piden inscripción en …
+· MEMORIA · docs/MEMORIA.md — 457 secciones (52 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 21925  Con el pliego leído, la puerta del registro mira los contratos de experiencia con los códig…
   L 21972  Los consorcios del dueño son 1A y GR; GR aún no ha presentado oferta (9-nov-2026)
   L 21980  La puerta: producción sin el muro de Vercel, una cuenta compartida y toda operación detrás …
@@ -247,11 +248,13 @@
   L 22051  Cargar su propio APU: la hoja de análisis ya no se lee como formulario, y «Buscar» lo elabo…
   L 22087  Licitaciones con su barra: tres apartados, el valor y el aviso de interés a la vista, y el …
   L 22110  El APU real del dueño: la unidad cortada en «Ubicación:», el costo directo en vez del preci…
+  L 22124  APU propios de Detekta, primera entrega: el banco de prueba sin Claude, el alcance de la ac…
 
-· DOCUMENTOS docs/ — 76 (y 3 en docs/archivo/, superados: `--archivo` los lista):
+· DOCUMENTOS docs/ — 77 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)
   ADJUDICACION_FASE0_2026-10-25.md        Probabilidad de adjudicación · Fase 0: qué datos abiertos hay para saber quién gana 
   ADJUDICACION_NIVEL3_DISENO_2026-10-26.md  Probabilidad de adjudicación · Nivel 3: capturar quién quedó hábil para poder calcul
+  APU_BANCO_PRUEBA.md                     Banco de prueba · el APU parecido, medido sin Claude
   APU_DIAGNOSTICO.md                      Diagnóstico del módulo APU frente a la especificación «APU profesional»
   APU_FUENTES.md                          Fuentes de precio del APU · qué se intentó, qué respondió y qué falta
   APU_INFORME_COMPLETO.md                 APU automatizado y rentabilidad real de contratos de obra pública en Colombia
