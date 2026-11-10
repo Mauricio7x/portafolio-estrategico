@@ -760,10 +760,14 @@
          del motor, que es el precio aceptado: el desglose lo documenta y el motor solo lo deja pasar si suma ese precio. */
       /* …y el de SU BIBLIOTECA (10-nov-2026): el APU que usted aceptó antes para esta misma actividad */
       const aceptada = Array.isArray(it.composicion_aceptada) ? it.composicion_aceptada : Array.isArray(it.ia_composicion) ? it.ia_composicion : null;
-      if (it.sin_apu && (it.origen_precio === "ia" || it.origen_precio === "biblioteca") && aceptada && aceptada.length) {
+      /* …y el que USTED CARGÓ EN SU ARCHIVO (10-nov-2026): sin esta rama la hoja decía «SIN APU DE RESPALDO» en filas
+         que traían el suyo, y la referencia de un vecino mal casado (un mesón de acero para un enchape) salía como nota */
+      if (it.sin_apu && (it.origen_precio === "ia" || it.origen_precio === "biblioteca" || it.origen_precio === "archivo") && aceptada && aceptada.length) {
         const f = it.ia_fuente || {};
         const b = it.biblioteca || {};
-        fusionA_G(fila([{ v: it.origen_precio === "biblioteca"
+        fusionA_G(fila([{ v: it.origen_precio === "archivo"
+          ? "APU DE SU ARCHIVO: el análisis que usted cargó con el presupuesto, con sus cantidades y sus precios."
+          : it.origen_precio === "biblioteca"
           ? `APU DE SU BIBLIOTECA${b.aprendido_el ? ` (aceptado el ${b.aprendido_el})` : ""}: el que usted aceptó antes para esta actividad, con sus precios de esa fecha; revíselos antes de presentar.`
           : `APU BUSCADO POR LA IA Y ACEPTADO POR USTED${f.fecha ? ` (${f.fecha})` : ""}: referencia publicada, no cotización de su proveedor; verifique antes de presentar.`, s: "nota" }]));
         const ORIGEN = { suyo: "Suyo", precio_buscado: "Precio buscado", "añadido": "Añadido" };
@@ -1008,6 +1012,10 @@
     if (it.origen_precio === "biblioteca" && aceptada && aceptada.length) {
       return { estado: "con_composicion_propia", ...ESTADOS_COMPOSICION.con_composicion_propia, lineas_con_insumo: aceptada.length,
         motivo: "Lleva el APU de su biblioteca, el que usted aceptó antes para esta actividad: revise sus precios antes de radicarlo." };
+    }
+    if (it.origen_precio === "archivo" && aceptada && aceptada.length) {
+      return { estado: "con_composicion_propia", ...ESTADOS_COMPOSICION.con_composicion_propia, lineas_con_insumo: aceptada.length,
+        motivo: "Lleva el APU que usted cargó en su archivo: produce la hoja de APU desglosada que pide el pliego." };
     }
     if (it.origen_precio === "ia" && aceptada && aceptada.length) {
       return { estado: "con_composicion_propia", ...ESTADOS_COMPOSICION.con_composicion_propia, lineas_con_insumo: aceptada.length,

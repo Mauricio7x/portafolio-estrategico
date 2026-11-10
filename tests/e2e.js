@@ -24169,6 +24169,35 @@ async function main() {
         assert.strictEqual(c.cuerpo.presupuesto.total_guardado, esperado, `un total ${JSON.stringify(total)} se guarda como ${JSON.stringify(esperado)}, no como ${JSON.stringify(c.cuerpo.presupuesto.total_guardado)}`);
       }
     }
+    /* 6 · EL EXCEL DE UN PRESUPUESTO IMPORTADO CON SUS APU (10-nov-2026, el archivo real del dueño, siete filas con su APU
+       y sin capítulos): la hoja APU decía «SIN APU DE RESPALDO» en las siete, y el presupuesto salía con capítulos de los
+       bancos de referencia que el mapeo les casó (una tapa metálica bajo «CONCRETO Y ACERO PARA ESTRUCTURAS»). */
+    {
+      const calcE = require("../lib/apu/calculo.js");
+      const libroE = require("../public/apu_libro.js");
+      const vecino = "IDU:6541";
+      const capVecino = calcE.calcularPresupuesto({ items: [{ item_id: vecino, cantidad: 1 }], departamento: "CUNDINAMARCA", config: {} }, S).items[0].capitulo;
+      assert.ok(capVecino, `premisa: el vecino ${vecino} trae capítulo de su banco («${capVecino}»)`);
+      const filaTapa = { item_id: vecino, codigo: "1.3", descripcion: "Anclaje de tubería en concreto 3000 psi", unidad: "m3", cantidad: 2, precio_manual: 350000, origen_precio: "archivo", composicion_usuario: comp };
+      const rE = calcE.calcularPresupuesto({ items: [filaTapa,
+        { ...filaTapa, codigo: "1.4", composicion_usuario: { componentes: comp.componentes.slice(0, 1) } },   // no suma el precio (245.000 de 350.000)
+        { item_id: vecino, codigo: "2", descripcion: "Sin precio del archivo", unidad: "m3", cantidad: 1 },   // importada, precio del vecino
+        { item_id: vecino, cantidad: 1, precio_manual: 1000 },                                                    // añadida del catálogo y tecleada
+        { ...filaTapa, codigo: "3", capitulo: "OBRAS DEL TANQUE" }], departamento: "CUNDINAMARCA", config: {} }, S);
+      const [eA, eB, eC, eD, eE] = rE.items;
+      assert.deepStrictEqual([eA.capitulo, eB.capitulo, eC.capitulo], [null, null, null], "una fila de su archivo no toma el capítulo del banco del vecino, con precio del archivo o sin él");
+      assert.deepStrictEqual([eD.capitulo, eE.capitulo], [capVecino, "OBRAS DEL TANQUE"], "la fila añadida del catálogo conserva el suyo, y el capítulo que trae el archivo manda");
+      assert.ok(Array.isArray(eA.composicion_aceptada) && eA.composicion_aceptada.length === 3 && eA.composicion_aceptada.every((l) => l.origen === "suyo"), "el APU de su archivo viaja a la hoja, línea por línea");
+      assert.ok(!eB.composicion_aceptada, "un APU que no suma el precio no se imprime: contradiría al presupuesto");
+      const planoE = (h) => h.filas.map((f) => f.map((x) => (x && typeof x === "object" ? x.v : x)).join("|")).join("\n");
+      const hojasE = libroE.construirLibroNogal({ ...rE, items: [eA, eB] }, { titulo: "T", fecha: "2026-11-10" });
+      const apuE = planoE(hojasE[1]);
+      assert.ok(/APU DE SU ARCHIVO/.test(apuE) && /Cemento gris\|kg\|350\|700\|245000\|Suyo/.test(apuE), "la hoja APU imprime su análisis");
+      assert.strictEqual((apuE.match(/SIN APU DE RESPALDO/g) || []).length, 1, "y «sin APU de respaldo» queda solo para la fila cuyo APU no suma");
+      assert.ok(!/^1\.\s/m.test(planoE(hojasE[0]).split("\n").map((l) => l.split("|")[0]).join("\n")), "sin capítulo en el archivo, el presupuesto no inventa títulos");
+      assert.deepStrictEqual(["con_composicion_propia", "solo_precio"], [libroE.estadoComposicion(eA).estado, libroE.estadoComposicion(eB).estado], "y el aviso antes de exportar la cuenta como APU propio");
+      // que la pantalla lo mande al motor lo EJECUTA «unidad revisor de la oferta» (k): «Cargar» y luego «Calcular»
+    }
     console.log(`· unidad APU propios: el alcance (instalar el tubo ≠ el tubo; limpiar ≠ fabricar) baja a «revisar» en los dos lectores · el banco de prueba esconde el ítem con la regla de siempre · la biblioteca aprende el APU entero al guardar y «Calcular» lo devuelve con su fecha, solo con credencial y por debajo del precio tecleado · el modelo abierto, apagado sin sus variables, arma por tandas con el vocabulario cerrado de los APU reales parecidos y pasa por el mismo juez`);
   }
 
@@ -36173,7 +36202,7 @@ async function main() {
 
         // sin catálogo en Redis se usa la SEMILLA, y se DICE
         assert.strictEqual(r.catalogo.fuente, "semilla");
-        assert.ok(r.alertas.some((a) => /no est. cargado en Redis/i.test(a)),
+        assert.ok(r.alertas.some((a) => /cat.logo de precios de referencia no est. cargado/i.test(a)),
           "si el precio sale de la semilla y no del catálogo cargado, hay que decirlo");
 
         // AIU ADITIVO por defecto (el de los pliegos tipo)
@@ -38552,7 +38581,7 @@ async function main() {
           { items: itemsPrueba, departamento: "ANTIOQUIA", config: cfgBase }, CAB_TOKEN);
         assert.strictEqual(desdeRedis.cuerpo.catalogo.fuente, "redis",
           "con el catálogo cargado el cálculo tiene que leerlo de Redis, no de la semilla");
-        assert.ok(!desdeRedis.cuerpo.alertas.some((a) => /no est. cargado en Redis/i.test(a)));
+        assert.ok(!desdeRedis.cuerpo.alertas.some((a) => /cat.logo de precios de referencia no est. cargado/i.test(a)));
 
         /* LA INVARIANTE FUERTE: catálogo cargado y semilla dan el MISMO precio.
            Son la misma tabla por dos caminos; si divergieran, el presupuesto
@@ -48799,13 +48828,18 @@ async function main() {
            tiene el botón en pantalla: una instrucción que no se puede seguir es
            peor que ninguna. */
         const calcFuente = fs.readFileSync(path.join(__dirname, "..", "lib", "apu", "calculo.js"), "utf8");
-        const mAlerta = calcFuente.match(/"El catálogo de precios NO está cargado[^"]*"/);
-        /* 10-nov-2026 (Precios con su barra): el catálogo vive en Precios, en su apartado «Catálogo y cómo calculamos»;
-           la alerta decía «Mi empresa → Catálogo de precios de referencia», el rótulo del pliegue que ya no existe */
-        assert.ok(mAlerta && /Precios → «Catálogo y cómo calculamos» → «Cargar catálogo APU»/.test(mAlerta[0]),
-          `la alerta del catálogo tiene que decir dónde se carga EN LA PANTALLA de hoy: ${mAlerta && mAlerta[0]}`);
+        const mAlerta = calcFuente.match(/"El catálogo de precios de referencia no está cargado[^"]*"/);
+        /* 10-nov-2026, dos cambios del mismo día: sin jerga (va a las notas del Excel) y, con Precios en su barra, el
+           catálogo vive en su apartado «Catálogo y cómo calculamos» (la alerta decía «Mi empresa → Catálogo de precios
+           de referencia», el rótulo de un pliegue que ya no existe) */
+        assert.ok(mAlerta && /Precios → «Catálogo y cómo calculamos» → «Cargar catálogo APU»/.test(mAlerta[0]) && !/Redis|semilla/.test(mAlerta[0]),
+          `la alerta del catálogo tiene que decir dónde se carga EN LA PANTALLA de hoy, sin jerga (va a las notas del Excel): ${mAlerta && mAlerta[0]}`);
+        /* …y EN LA PESTAÑA QUE NOMBRA (10-nov-2026): decía «Mi empresa» y el pliegue vive en Precios; la prueba miraba
+           que el rótulo existiera en la página, no dónde */
+        const pestanaPrecios = (() => { const i = html6.indexOf('<main id="tab-apu"'); const f = html6.indexOf("</main>", i); return i > 0 && f > i ? html6.slice(i, f) : ""; })();
         for (const rotulo of ["Catálogo y cómo calculamos", "Cargar catálogo APU"]) {
           assert.ok(visibleHtml.includes(rotulo), `la alerta cita «${rotulo}» y ese rótulo tiene que existir tal cual en pantalla`);
+          assert.ok(pestanaPrecios.includes(rotulo), `la alerta manda a Precios y «${rotulo}» tiene que estar en esa pestaña`);
         }
         assert.ok(/Estos\s+tres pasos se hacen con los botones de abajo/.test(html6),
           "Mi empresa dice que los tres pasos se dan con los botones, no con un script de terminal");
@@ -66261,11 +66295,14 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
         const iG = htmlK.indexOf('id="btn-guardar"'), finG = htmlK.indexOf("</section>", iG);
         okRO(iG > 0 && /id="borrador-mensaje"/.test(htmlK.slice(iG, finG)), "(k) el aviso de «Guardar» y de «Cargar» va junto a «Guardar», arriba en la cabecera del análisis");
         const fetchK = ctx.fetch;
-        let soltarLista = null;
+        let soltarLista = null, cuerpoCalc = null;
         ctx.fetch = (url, cfg) => {
+          if (/op=calcular/.test(url)) { cuerpoCalc = JSON.parse(cfg.body); return new Promise(() => {}); }
           if (/op=listar/.test(url)) return new Promise((ok) => { soltarLista = () => ok(respuestaRO(200, { ok: true, ttl_dias: 30, presupuestos: [{ id: "bk", nombre: "Borrador K", departamento: "", items: 1, total_guardado: null, guardado: "2026-11-10T12:00:00.000Z" }] })); });
           if (/op=guardar/.test(url)) return Promise.resolve(respuestaRO(200, { ok: true, id: "bk", nombre: "Borrador K", nota: "Y 7 APU completo(s) en su biblioteca." }));
-          if (/op=cargar/.test(url)) return Promise.resolve(respuestaRO(200, { ok: true, catalogo_cambiado: false, presupuesto: { id: "bk", nombre: "Borrador K", items: [{ descripcion: "Excavación", unidad: "m3", cantidad: 1 }] } }));
+          if (/op=cargar/.test(url)) return Promise.resolve(respuestaRO(200, { ok: true, catalogo_cambiado: false, presupuesto: { id: "bk", nombre: "Borrador K", items: [
+            { descripcion: "Excavación", unidad: "m3", cantidad: 1, precio_manual: 30000, origen_precio: "archivo", composicion_usuario: { componentes: [{ n: 1, tipo: "mano_obra", insumo: "Obrero", unidad: "jornal", cantidad_total: 0.3, precio_unitario: 100000, valor_total: 30000 }] } },
+            { descripcion: "Relleno", unidad: "m3", cantidad: 1, precio_manual: 9000, origen_precio: "manual", composicion_usuario: { componentes: [] } }] } }));
           return fetchK(url, cfg);
         };
         const listaK = porId.get("lista-presupuestos"), avisoK = porId.get("borrador-mensaje"), avisoListaK = porId.get("borrador-lista-mensaje");
@@ -66277,6 +66314,12 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
         okRO(/data-cargar="bk"/.test(String(listaK.innerHTML)) && !listaK.classList.contains("hidden"), `(k) y luego la lista, con su «Cargar»: «${textoRO(listaK.innerHTML).slice(0, 120)}»`);
         await disparar("lista-presupuestos", "click", { target: { getAttribute: (k) => (k === "data-cargar" ? "bk" : null) } }); await asentarRO();
         okRO(/Cargado «Borrador K»/.test(String(avisoK.textContent)) && !avisoK.classList.contains("hidden"), `(k) «Cargar» responde en el pliegue: «${avisoK.textContent}»`);
+        /* (k2) EL APU DE SU ARCHIVO VIAJA AL MOTOR (10-nov-2026): sin él, la hoja APU del Excel decía «SIN APU DE RESPALDO»
+               en las siete filas del dueño. Solo con el precio de su archivo: un precio tecleado no es el de su análisis. */
+        await disparar("btn-calcular", "click", {}); await asentarRO();
+        const itsK = (cuerpoCalc && cuerpoCalc.items) || [];
+        okRO(itsK.length === 2 && itsK[0].composicion_usuario && itsK[0].composicion_usuario.componentes.length === 1 && itsK[1].composicion_usuario === null,
+          `(k2) «Calcular» lleva al motor el APU de la fila con precio de su archivo, y no el de una con precio tecleado: ${JSON.stringify(itsK.map((x) => !!x.composicion_usuario))}`);
         await disparar("btn-guardar", "click", {}); await asentarRO();
         okRO(/Guardado como «Borrador K».*7 APU completo/.test(String(avisoK.textContent)), `(k) «Guardar» responde en el pliegue, con lo que aprendió la biblioteca: «${avisoK.textContent}»`);
         ctx.fetch = (url, cfg) => (/op=listar/.test(url) ? Promise.reject(new TypeError("Failed to fetch")) : fetchK(url, cfg));
