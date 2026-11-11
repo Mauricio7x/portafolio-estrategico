@@ -5731,7 +5731,8 @@ async function main() {
         // D6: la alerta de baja grande ya no cita una «banda típica de obra (5–12 %)» sin medición, y dice sobre qué se aplica
         const alD6 = require("../lib/apu/calculo.js").calcularPresupuesto({ items: [{ descripcion: "x", unidad: "m3", cantidad: 10, precio_unitario: 100000 }], config: { aplicar_ajuste_competitivo: true, factor_baja: 20 } }).alertas.find((a) => /Una baja del/.test(a));
         assert.ok(alD6 && /sobre su propio precio/.test(alD6) && !/5–12/.test(alD6), `D6: la alerta real → ${alD6}`);
-        assert.ok(!/Banda típica en obra/.test(fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8")), "D6: la nota del factor de baja tampoco");
+        { const htmlD6 = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
+          assert.ok(!/Banda típica en obra/.test(htmlD6) && /id="baja-nota"[^>]*>Se aplica sobre su precio propio\./.test(htmlD6), "D6: la nota del factor de baja dice sobre qué se aplica, sin la banda sin medición (y sin pasar el tope de palabras de Precios)"); }
         // D5: la fuente del presupuesto dice «pliego» cuando la cifra salió del pliego definitivo
         const PT5 = require("../lib/apu/piso_techo.js").pisoTecho;
         const b5 = { presupuesto_oficial: 1e9, costo_directo: 7e8, aiu: { administracion_pct: 20, imprevistos_pct: 5, utilidad_pct: 5, modo: "porcentaje" } };
