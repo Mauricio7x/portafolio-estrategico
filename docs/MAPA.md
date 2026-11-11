@@ -242,8 +242,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 472 secciones (58 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 22210  Precios con su barra: siete apartados, tres cifras arriba que nunca son $0, la casilla de l…  (superada)
+· MEMORIA · docs/MEMORIA.md — 473 secciones (58 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 22234  El mínimo para no perder plata sigue a la casilla de lo subcontratado, y subir un APU calcu…  (superada)
   L 22253  La administración por tiempo se cobra entera: la casilla de lo subcontratado va encendida y…
   L 22272  El plan x20: uso personal, ir donde llega una sola oferta, y sus ofertas se reconocen por e…
@@ -253,6 +252,7 @@
   L 22346  Las dos barreras se leen del pliego: limitada a Mipyme y a qué territorio, y si hay sorteo …
   L 22360  El simulacro del consorcio: cada cláusula de participación contra el reparto que se va a fi…
   L 22373  Con lista cargada, la capacidad también resta los contratos nuevos de SECOP II, por número …
+  L 22381  «Revisar antes de subir» también compara contra el Formulario 1 de Excel (11-nov-2026)
 
 · DOCUMENTOS docs/ — 78 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)

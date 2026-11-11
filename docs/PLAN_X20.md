@@ -430,6 +430,7 @@ Si en el paso 2 no ve lo descrito, no siga: dígalo y se revisa, porque ese orde
 ### 7.5 Entrega 4 · La fábrica de ofertas
 
 - **Tanda 10 · El Excel de la entidad, lleno, y el revisor leyéndolo.** Pieza 6.7 con D2. Plan previo con su visto bueno. Tamaño: 3 sesiones.
+  - *Hecho D2 el 11-nov-2026*: el revisor compara contra el Formulario de Excel. Falta llenar el Excel de la entidad (pieza 6.7). Memoria: «"Revisar antes de subir" también compara contra el Formulario 1 de Excel (11-nov-2026)».
 - **Tanda 11 · Los formatos que faltan.** Experiencia, capacidad financiera y capacidad residual desde la base de contratos por perfil. Decide el dueño antes: la decisión pendiente del 3-nov-2026. Tamaño: 3 sesiones.
 - **Tanda 12 · Leer sin pestaña y por contenido.** Las fases 2 a 5 de la lectura, con D9. Tamaño: 3 a 4 sesiones.
 

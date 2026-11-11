@@ -11255,6 +11255,31 @@ async function main() {
       + "y el que puede ser una entrada sin número va aparte con su motivo; la casilla de capacidad los nombra");
   }
 
+  /* unidad: EL REVISOR CON EL FORMULARIO DE EXCEL (PLAN_X20, tanda 10, D2, 11-nov-2026) ──
+     «Revisar antes de subir» compara contra el Formulario 1 que dejó el lector de PDF; el que viene del Excel de la
+     entidad («Cotizar en Precios») no se le pasaba y quedaba ciego. `formularioDesdeExcel` (app.js real en un vm)
+     arma la referencia con los nombres de lib/formulario_excel, y el validador REAL (lib/formulario1) la usa. */
+  bqRevisorExcel: { if (!corre("unidad revisor con el formulario de Excel")) break bqRevisorExcel;
+    const { formularioDesdeExcel } = appEnVm(["formularioDesdeExcel"]);
+    const F1 = require("../lib/formulario1.js");
+    const deExcel = [{ fila_excel: 12, codigo: "1.1", descripcion: "Excavación manual", unidad: "m3", cantidad: 100, precio_archivo: 50000, total_archivo: 5000000 },
+      { fila_excel: 13, codigo: "1.2", descripcion: "Relleno compactado", unidad: "m3", cantidad: 80, precio_archivo: 40000, total_archivo: 3200000 }];
+    const ref = formularioDesdeExcel(deExcel, "CO1.REQ.D2");
+    assert.ok(ref.items.length === 2 && ref.items[0].numeral === "1.1" && ref.items[0].unitario_oficial === 50000 && ref.items[1].total_oficial === 3200000 && ref.id_proceso === "CO1.REQ.D2" && ref.base_precio === null,
+      `la referencia con los nombres del lector de PDF → ${JSON.stringify(ref.items[0])}`);
+    // la oferta con la cantidad del ítem 1.2 cambiada (80 → 70): sin referencia pasaba sin verse
+    const oferta = { items: [{ codigo: "1.1", descripcion: "Excavación manual", unidad: "m3", cantidad: 100, precio_unitario: 60000, total: 6000000 },
+      { codigo: "1.2", descripcion: "Relleno compactado", unidad: "m3", cantidad: 70, precio_unitario: 45000, total: 3150000 }], total: 9150000, base_precio: "con_aiu" };
+    const sinRef = F1.validarFormulario1({ oferta, formulario: null, presupuesto_oficial: 10000000 });
+    const conRef = F1.validarFormulario1({ oferta, formulario: { items: ref.items, base_precio: ref.base_precio, aiu_total_pct: ref.aiu_total_pct }, presupuesto_oficial: 10000000 });
+    const cuentaSinRef = (r) => (r.veredictos || []).filter((x) => x.nivel === "sin_referencia").length;
+    assert.ok(cuentaSinRef(conRef) < cuentaSinRef(sinRef), `con el Formulario de Excel hay menos comprobaciones sin referencia → ${cuentaSinRef(sinRef)} → ${cuentaSinRef(conRef)}`);
+    const cant = (conRef.veredictos || []).find((x) => /cantidad/i.test(`${x.titulo} ${x.mensaje}`) && x.nivel !== "sin_referencia" && x.nivel !== "ok");
+    assert.ok(cant && /1\.2/.test(cant.mensaje), `la cantidad cambiada se ve, con su ítem → ${JSON.stringify(cant)}`);
+    console.log("· unidad revisor con el formulario de Excel: la referencia sale del Formulario de Excel con su unitario y su total oficiales, "
+      + "y el validador real ve la cantidad cambiada que sin ella pasaba");
+  }
+
   /* unidad: TEXTO como co-señal (vocabulario por familia + verbo de obra) */
   bq19: { if (!corre("unidad texto")) break bq19;
     const idx = unspsc.indiceDe(PERFILES.helder.unspsc);

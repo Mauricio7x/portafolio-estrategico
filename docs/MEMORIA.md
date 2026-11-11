@@ -22378,3 +22378,11 @@ En una línea: defecto D3 del plan x20 (tanda 15): con una lista de contratos en
 - **Lo que no hay que deshacer**: una entrada cargada sin número con la misma entidad o un valor a menos del 1 % hace que el contrato de SECOP II vaya aparte y NO se reste: restar dos veces escondería procesos a los que sí alcanza (en oportunidades cuesta el falso negativo); y `sce_fuente` sigue diciendo «cargada» para no cambiar a quien la lee.
 - Cerradura: «unidad capacidad con contratos nuevos» (la K real de Helder con un contrato nuevo, el mismo número, el parecido sin número y las líneas de la casilla); cuatro mutaciones, mueren todas.
 
+### «Revisar antes de subir» también compara contra el Formulario 1 de Excel (11-nov-2026)
+
+En una línea: defecto D2 del plan x20 (tanda 10, parte): el revisor de la oferta solo tenía referencia cuando el Formulario 1 se leía del PDF (`window.__pliegoUltimo`, que pone `public/pliego.js`); con el de Excel («Cotizar en Precios» en Mis procesos) quedaba ciego. Ahora `formularioDesdeExcel` deja ese Formulario como referencia, con el unitario y el total oficiales de cada ítem, y el revisor ve una cantidad cambiada.
+
+- **Lo que no hay que deshacer**: el AIU del Formulario de Excel no se conoce en esa pantalla: `base_precio` va en null y el servidor dice «sin referencia» en la comparación de unitarios (no se adivina la base, la regla del 27-sep-2026); las cantidades, los ítems que faltan y el total sí se comparan.
+- **Sin hacer de la tanda 10**: escribir los precios en el Excel que publicó la entidad (la pieza 6.7, que lleva plan previo con visto bueno, mutación y revisión adversaria porque es la cifra que se radica).
+- Cerradura: «unidad revisor con el formulario de Excel» (la función real de `app.js` en un vm y el validador real `lib/formulario1.validarFormulario1`); dos mutaciones, mueren las dos. La línea que la usa al aceptar la vista previa no tiene prueba de pantalla: se verificó leyendo que solo se borra al abrir otro proceso o borrador.
+

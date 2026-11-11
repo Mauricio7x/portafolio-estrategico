@@ -8188,7 +8188,12 @@
           /* los VALORES FIJOS fuera de los ítems (PMT, PGIO; 25-oct-2026) no son ítems y no entran a la tabla: se avisan con su cifra para que la oferta no quede corta */
           const fijosF1 = Array.isArray(r.valores_fijos) ? r.valores_fijos.filter((x) => x && x.valor != null) : [];
           const avisosF1 = fijosF1.length ? [aviso1, `El Formulario trae además ${fijosF1.length} valor(es) fijo(s) fuera de los ítems (${fijosF1.map((x) => `${x.etiqueta || "sin rótulo"} ${pesos(x.valor)}`).join("; ")}) por ${pesos(fijosF1.reduce((s, x) => s + x.valor, 0))}: no pasan a la tabla; súmelos tal cual a su oferta.`] : [aviso1];
-          if (await mapearParaPrevisualizar(filasF1, { avisos: avisosF1, origen: r.nombre ? `el Formulario 1 «${r.nombre}»` : "el Formulario 1 leído" })) { abrirModalImportar(); decirF("Los ítems están en Precios: revise la vista previa y acepte los que quiera llevar."); }
+          if (await mapearParaPrevisualizar(filasF1, { avisos: avisosF1, origen: r.nombre ? `el Formulario 1 «${r.nombre}»` : "el Formulario 1 leído" })) {
+            /* D2 (PLAN_X20, 11-nov-2026): el revisor («Revisar antes de subir») compara contra `window.__pliegoUltimo`,
+               que solo ponía el lector de PDF: con el Formulario de Excel quedaba ciego (4 de 8 comprobaciones sin
+               referencia). Se le deja ESTE Formulario, con su unitario y su total oficiales y su proceso. */
+            try { window.__pliegoUltimo = formularioDesdeExcel(items, idProc); } catch { /* sin ventana */ }
+            abrirModalImportar(); decirF("Los ítems están en Precios: revise la vista previa y acepte los que quiera llevar."); }
           else decirF("No se llevó nada: se canceló el acceso.", true);
         } catch (e) { decirF(`No se pudo traer el Formulario 1: ${fraseDeFallo(e)}`, true); }
         f1.disabled = false;
@@ -9767,6 +9772,17 @@
       $("baja-nota").textContent = mensajeDeFallo(err, "consultar cuánto suelen bajar el precio");
     }
   });
+
+  /* EL FORMULARIO 1 DE EXCEL COMO REFERENCIA DEL REVISOR (D2, PLAN_X20, 11-nov-2026): la misma forma que deja el lector
+     de PDF (public/pliego.js), con los nombres de lib/formulario_excel (`codigo`, `precio_archivo`, `total_archivo`). El
+     AIU del Formulario no se conoce aquí: `base_precio` va en null y el servidor dice «sin referencia» en la comparación
+     de unitarios (no se adivina la base); las cantidades, los ítems que faltan y el total sí se comparan. */
+  function formularioDesdeExcel(items, idProceso) {
+    const num = (v) => (v == null || v === "" ? null : Number.isFinite(Number(v)) ? Number(v) : null);
+    return { items: (items || []).map((i) => ({ numeral: i.codigo || null, pagina: null, descripcion: i.descripcion || null, unidad: i.unidad || null,
+      cantidad: num(i.cantidad), unitario_oficial: num(i.precio_archivo), total_oficial: num(i.total_archivo) })),
+    leido_el: new Date().toISOString(), id_proceso: idProceso || null, base_precio: null, aiu_total_pct: null, origen: "excel" };
+  }
 
   /* ══════════ Fase 4 (plan v3) · GUARDIÁN DEL FORMULARIO 1 ══════════
      «Revisar antes de subir»: manda la oferta del paso 3 (ítems con precio
