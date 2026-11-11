@@ -22370,3 +22370,11 @@ En una línea: tanda 4 del plan x20 (primera mitad): el simulador del consorcio 
 - **Sin hacer de la tanda 4**: juzgar a la vez indicadores y capital de trabajo con el reparto dado ya lo hace el simulador por sus casillas (`exigencias`), pero no hay una frase única «con este reparto cumple todo / falla X»; y la segunda mitad (los puntos fuera del precio, tanda 5) no se tocó.
 - Cerradura: «unidad simulacro del consorcio» (puro, el simulador real con la cláusula real leída por `hechosDeTexto`, la ficha con un consorcio pactado y con el supuesto, y la vista con `app.js` en un vm). Ocho mutaciones; mueren todas.
 
+### Con lista cargada, la capacidad también resta los contratos nuevos de SECOP II, por número de contrato (11-nov-2026)
+
+En una línea: defecto D3 del plan x20 (tanda 15): con una lista de contratos en ejecución cargada a mano, un contrato nuevo de SECOP II no se restaba de la capacidad; ahora `lib/capacidad.sceParaK` suma los de SECOP II cuyo número no está en la lista cargada, deja APARTE con su motivo el que puede ser una entrada cargada sin número, y la casilla de capacidad nombra los dos.
+
+- **Supera en parte** la regla del 27-sep-2026 «No se MEZCLAN» (cabecera de `sceParaK`): se mezclan por NÚMERO de contrato. Por qué ahora sí: la lista de Helder ya trae el número del contrato de la UPN (`CO1.PCCNTR.9413188`), que era la razón para no mezclar («la lista cargada no trae identificador»).
+- **Lo que no hay que deshacer**: una entrada cargada sin número con la misma entidad o un valor a menos del 1 % hace que el contrato de SECOP II vaya aparte y NO se reste: restar dos veces escondería procesos a los que sí alcanza (en oportunidades cuesta el falso negativo); y `sce_fuente` sigue diciendo «cargada» para no cambiar a quien la lee.
+- Cerradura: «unidad capacidad con contratos nuevos» (la K real de Helder con un contrato nuevo, el mismo número, el parecido sin número y las líneas de la casilla); cuatro mutaciones, mueren todas.
+

@@ -11032,19 +11032,16 @@ async function main() {
     assert.strictEqual(MX.modeloCompetencia([]).anuncia("E", "D", 2e8).pEnt, null, "sin nada aprendido: sin anuncio (null), no un error ni un 0");
     assert.ok(Math.abs(aMx.pEnt - aLib.entidad) < 1e-12 && Math.abs(aMx.pDep - aLib.depto) < 1e-12, `medir.js y la aplicación dan el mismo anuncio → ${aMx.pEnt} / ${aLib.entidad}`);
 
-    // un avance guardado por otra versión (sin contar los tramos) se descarta y se empieza de cero
+    /* un avance guardado por otra versión (sin contar los tramos) se descarta y se empieza de cero. El avance se
+       ESCRIBE a mano (sin `seg_meses`, con un mes contado): hacerlo con `presupuestoMs: 1` dependía del reloj y en
+       la suite completa a veces la construcción terminaba entera sin dejar avance (cuarta vuelta, 11-nov-2026) */
     const rP = redisT(filasT);
-    await IC.construirIndice(rP, { presupuestoMs: 1, reiniciar: true });
-    const prog = JSON.parse(require("zlib").inflateSync(Buffer.from(rP.kv.get(CLAVES.indiceProgreso), "base64")).toString());
-    if (prog && Array.isArray(prog.pendientes) && prog.pendientes.length) {
-      delete prog.seg_meses; rP.kv.set(CLAVES.indiceProgreso, comprimir(prog));
-      const rr = await IC.construirIndice(rP, { presupuestoMs: 60000 });
-      assert.ok(/por tamaño/.test(rr.progreso_descartado || ""), `el avance sin tramos se descarta → ${rr.progreso_descartado}`);
-      const rg = IC.registroDe(await IC.leerIndice(rP), { entidad: UNA, nit_entidad: "800111222" });
-      assert.deepStrictEqual(rg.por_tamano["abreviada|1"], [11, 10, 10], "y el índice se rehace entero, con todos los meses");
-    } else {
-      assert.fail(`el avance a medias no quedó guardado: no se pudo probar la guarda → ${JSON.stringify(prog && prog.pendientes)}`);
-    }
+    rP.kv.set(CLAVES.indiceProgreso, comprimir({ iniciado: "2026-11-11T00:00:00.000Z", pendientes: ["2025-09"], acc: {},
+      stats: { filas: 0, contados: 0, sin_adjudicacion: 0, sin_oferentes: 0, meses: 1 }, quienGana: { ...IC.nuevoQuienGana(), meses: 1 } }));
+    const rr = await IC.construirIndice(rP, { presupuestoMs: 60000 });
+    assert.ok(/por tamaño/.test(rr.progreso_descartado || ""), `el avance sin tramos se descarta → ${rr.progreso_descartado}`);
+    const rg = IC.registroDe(await IC.leerIndice(rP), { entidad: UNA, nit_entidad: "800111222" });
+    assert.deepStrictEqual(rg.por_tamano["abreviada|1"], [11, 10, 10], "y el índice se rehace entero, con todos los meses");
 
     // la tarjeta: app.js real en un vm pinta el hecho en la línea de competencia
     {
@@ -11230,6 +11227,32 @@ async function main() {
     assert.ok(/data-reparto-no-cumple/.test(html) && /text-red-700[^>]*>Con 65\/35 no cumple/.test(html) && /pág\. 27/.test(html), `la vista lo dice en rojo → ${(html.match(/<ul[^>]*data-reparto-no-cumple[\s\S]*?<\/ul>/) || ["(nada)"])[0].slice(0, 300)}`);
     console.log("· unidad simulacro del consorcio: cada cláusula contra el reparto dado (no cumple / cumple / depende de quién aporte), "
       + "y el caso real de la Universidad Pedagógica (65/35 con el 40 % pedido) dice «no» con la página 27, primero en las advertencias");
+  }
+
+  /* unidad: LA CAPACIDAD CON LOS CONTRATOS NUEVOS (PLAN_X20, tanda 15, D3, 11-nov-2026) ─
+     Con lista cargada, un contrato nuevo de SECOP II no se restaba de la K (reproducido con Helder). Ahora se suma
+     si su número no está en la lista; si una entrada cargada SIN número puede ser el mismo (misma entidad o valor a
+     menos del 1 %), va aparte con su motivo; nunca dos veces. Con las funciones REALES (detalleCrp → sceParaK). */
+  bqCapacidadNuevos: { if (!corre("unidad capacidad con contratos nuevos")) break bqCapacidadNuevos;
+    const cap = require("../lib/capacidad.js"), P = require("../lib/perfiles.js"), CE = require("../lib/contratos_en_ejecucion.js");
+    const { hoyColombia } = require("../lib/habiles.js");
+    const dia = (d) => new Date(Date.parse(`${hoyColombia()}T00:00:00Z`) + d * 864e5).toISOString().slice(0, 10);
+    const H = P.PERFILES_FALLBACK.helder;
+    assert.ok(H.sce.length > 0 && H.sce.some((c) => c.id_contrato), "el Helder del repositorio trae lista cargada, con el número del contrato de la UPN");
+    const nuevo = { id_contrato: "CO1.PCCNTR.99999", origen: "propio", entidad: "ALCALDIA DE PRUEBA", v: 500000000, pct: 100, inicio: dia(-10), fin: dia(170), obra: true, frase: "Alcaldía de prueba" };
+    const k = (sce, aparte = []) => cap.detalleCrp({ ...H, contratosSecop: { ok: true, sce, aparte } }, 1e9);
+    const k0 = cap.detalleCrp(H, 1e9).k;
+    assert.ok(Math.abs((k0 - k([nuevo]).k) - 500000000 * 170 / 180) < 1, `D3: el contrato nuevo de SECOP II se resta aunque haya lista cargada → restó ${Math.round(k0 - k([nuevo]).k)}`);
+    const upn = { ...nuevo, id_contrato: H.sce.find((c) => c.id_contrato).id_contrato };
+    assert.strictEqual(k([upn]).k, k0, "el mismo número que ya trae la lista cargada no se resta dos veces");
+    const comoSinNumero = { ...nuevo, id_contrato: "CO1.PCCNTR.88888", v: 379500000 * 1.005 };   // a menos del 1 % de la entrada cargada sin número
+    const r = k([comoSinNumero]);
+    assert.ok(r.k === k0 && r.sce_aparte >= 1, `puede ser el de la lista sin número: aparte, sin restar → ${JSON.stringify({ k: r.k === k0, aparte: r.sce_aparte })}`);
+    const lineas = CE.apartesDeLaListaCargada({ ...H, contratosSecop: { ok: true, sce: [nuevo, comoSinNumero], aparte: [] } }).lineas;
+    assert.ok(lineas.some((l) => /no estaba en su lista cargada y se restó/.test(l)) && lineas.some((l) => /puede ser el mismo contrato/.test(l)), `la casilla de capacidad nombra los dos → ${JSON.stringify(lineas)}`);
+    assert.strictEqual(k([nuevo]).sce_fuente, "cargada", "la fuente sigue siendo la lista cargada (quien la lee no cambia)");
+    console.log("· unidad capacidad con contratos nuevos: con lista cargada se resta el contrato nuevo de SECOP II, no el que ya está por número, "
+      + "y el que puede ser una entrada sin número va aparte con su motivo; la casilla de capacidad los nombra");
   }
 
   /* unidad: TEXTO como co-señal (vocabulario por familia + verbo de obra) */

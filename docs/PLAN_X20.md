@@ -441,6 +441,7 @@ Si en el paso 2 no ve lo descrito, no siga: dígalo y se revisa, porque ese orde
 ### 7.7 Entrega 6 · Cartera
 
 - **Tanda 15 · La capacidad con los contratos nuevos.** Pieza 6.9 con D3. Plan previo con su visto bueno: mueve la capacidad. Tamaño: 2 sesiones.
+  - *Hecha la parte de D3 el 11-nov-2026*: los contratos nuevos de SECOP II restan con lista cargada, por número de contrato. Falta proyectar la capacidad y la caja con las ofertas vivas. Memoria: «Con lista cargada, la capacidad también resta los contratos nuevos de SECOP II, por número de contrato (11-nov-2026)».
 
 ### 7.8 Entrega 7 · Más mercado
 
