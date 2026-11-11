@@ -11233,6 +11233,7 @@
          cabecera del nuevo sería «cifras viejas con aspecto de nuevas», el modo de
          fallo más caro de este panel. Las dos ramas la deciden; ninguna la olvida. */
       pintarEscalaPisoTecho(null);
+      pedirGrupo(null);   // la línea del grupo del proceso anterior tampoco se queda
       cuerpo.classList.add("hidden");
       sin.classList.remove("hidden");
       // el veredicto del servidor se conserva LITERAL; debajo, el paso que falta
@@ -11308,6 +11309,7 @@
     const lim = pt.limite_entidad_medido;
     $("pt-limite-entidad").textContent = lim && lim.frase ? lim.frase : "";
     $("pt-limite-entidad").classList.toggle("hidden", !(lim && lim.frase));
+    pedirGrupo(c);
     const fuentes = [];
     for (const [k, v] of Object.entries(pt.fuentes || {})) {
       fuentes.push(`<li><span class="font-medium">${esc(k.replace(/_/g, " "))}:</span> ${esc(v)}</li>`);
@@ -11315,6 +11317,47 @@
     for (const sup of pt.supuestos || []) fuentes.push(`<li>Supuesto: ${esc(sup)}</li>`);
     $("pt-fuentes").innerHTML = fuentes.join("");
     $("btn-justificacion").disabled = false;
+  }
+
+  /* ── SU PRECIO FRENTE AL GRUPO (PLAN_X20, D4, 11-nov-2026) ──────────────────
+     El aviso que faltó en Cali: en cuántos procesos anteriores de esta entidad su precio habría quedado por encima
+     de todas las ofertas y de la mitad (lib/grupo_ofertas, op=grupo). Va APARTE del cálculo porque datos.gov.co tarda
+     la primera vez (decenas de segundos; luego 24 h de memoria en el servidor): mientras tanto se dice que se está
+     consultando. Un pedido más nuevo manda sobre uno viejo (`grupoPedido`), y mientras uno de la misma entidad está en
+     camino el siguiente lo espera, para no abrir cinco consultas lentas iguales. No mueve ninguna cifra. */
+  let grupoPedido = 0;
+  const grupoEnCamino = new Map();
+  async function pedirGrupo(c) {
+    const p = $("pt-grupo");
+    if (!p) return;
+    const yo = ++grupoPedido;
+    const precio = c && c.presupuesto && c.presupuesto.resumen ? Number(c.presupuesto.resumen.precio_final) : NaN;
+    const po = c && c.piso_techo && c.piso_techo.cifras ? Number(c.piso_techo.cifras.presupuesto_oficial) : NaN;
+    if (!nitProceso || !modalidadProceso || !(precio > 0) || !(po > 0)) { p.textContent = ""; p.classList.add("hidden"); return; }
+    p.className = "mt-2 pl-6 text-sm text-gray-500";
+    p.textContent = "Consultando dónde quedaron las ofertas de los procesos anteriores de esta entidad…";
+    const llave = `${nitProceso}|${modalidadProceso}`;
+    try { await grupoEnCamino.get(llave); } catch { /* el anterior falló: este lo intenta de nuevo */ }
+    if (yo !== grupoPedido) return;
+    const qs = new URLSearchParams({ op: "grupo", entidad_nit: nitProceso, modalidad: modalidadProceso, precio_pct: String(Math.round((precio / po) * 1e6) / 1e4) });
+    const promesa = api(`/api/apu?${qs}`);
+    grupoEnCamino.set(llave, promesa);
+    let r;
+    try { r = await promesa; } catch (e) {
+      if (yo !== grupoPedido) return;
+      p.className = "mt-2 pl-6 text-sm text-gray-500";
+      p.textContent = `No se pudo consultar dónde quedaron las ofertas de los procesos anteriores: ${e && e.message ? e.message : "sin respuesta"}. Vuelva a calcular en unos minutos.`;
+      return;
+    } finally { if (grupoEnCamino.get(llave) === promesa) grupoEnCamino.delete(llave); }
+    if (yo !== grupoPedido) return;
+    const f = r && r.frente_al_grupo;
+    if (f && f.frase) {
+      p.className = f.alerta ? "mt-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900 ring-1 ring-inset ring-amber-600/20" : "mt-2 pl-6 text-sm text-gray-600";
+      p.textContent = f.alerta ? `Atención: ${f.frase} Con ese precio suele quedar por encima del grupo.` : f.frase;
+    } else {
+      p.className = "mt-2 pl-6 text-sm text-gray-500";
+      p.textContent = (r && r.motivo_texto) || "No hay procesos anteriores comparables de esta entidad para decir dónde quedaría su precio.";
+    }
   }
 
   /* ── DÓNDE CAE SU PRECIO (6-sep-2026, M-DGF-01 + M-IE-15) ──────────────────

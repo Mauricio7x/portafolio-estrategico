@@ -247,7 +247,7 @@
     { id: "p_ganar", etiqueta: "Las más ganables",
       concepto: "Las que más opción estimada de ganar tienen: sale de cuánta gente compite en esa entidad (histórico de dos años de adjudicaciones), ajustada por prórroga del cierre, por cierres simultáneos y por precio. Sin histórico se asume la competencia típica (5 rivales) y se dice." },
     { id: "competencia", etiqueta: "Las menos peleadas",
-      concepto: "Primero los procesos donde se espera una o dos ofertas: en menor cuantía se mira cuántas ofertas llegaron a los procesos de esa entidad del mismo tamaño de presupuesto; en lo demás, cuántos se presentan en promedio en esa entidad. Al final, donde llegan muchas y donde no hay base. Ojo: poca competencia también puede ser señal de un pliego hecho a la medida — revise el pliego." },
+      concepto: "Primero los procesos donde se espera una o dos ofertas: en menor cuantía, mínima cuantía y régimen especial se mira cuántas ofertas llegaron a los procesos de esa entidad del mismo tamaño de presupuesto; en lo demás, cuántos se presentan en promedio en esa entidad. Al final, donde llegan muchas y donde no hay base. Ojo: poca competencia también puede ser señal de un pliego hecho a la medida — revise el pliego." },
   ]);
   const conceptoDe = (id) => { const o = ORDENES.find((x) => x.id === id); return o ? o.concepto : ""; };
   /* QUÉ VA PRIMERO, EN LOS DOS SENTIDOS (9-nov-2026, rediseño de Licitaciones). El botón que invierte el orden dice el

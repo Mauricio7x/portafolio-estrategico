@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 2634279 bytes · 467 secciones · 58 con marcador de superación.
+Derivado del árbol: 2639951 bytes · 469 secciones · 58 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -477,4 +477,6 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | El mínimo para no perder plata sigue a la casilla de lo subcontratado, y subir un APU calcula también el mínimo (10-nov-2026) | 10-nov-2026 | 22232-22250 | 6691 | «La administración por tiempo se cobra entera: la casilla de lo subcontratado va encendida y el motor la reparte sobre la obra propia (10-nov-2026)» |
 | La administración por tiempo se cobra entera: la casilla de lo subcontratado va encendida y el motor la reparte sobre la obra propia (10-nov-2026) | 10-nov-2026 | 22251-22269 | 5420 |  |
 | El plan x20: uso personal, ir donde llega una sola oferta, y sus ofertas se reconocen por el integrante (11-nov-2026) | 11-nov-2026 | 22270-22297 | 5788 |  |
-| La competencia por tamaño ordena «Las menos peleadas» y el motor de los cuatro métodos vive en lib/ con el máximo de la media geométrica (11-nov-2026) | 11-nov-2026 | 22298-22318 | 7236 |  |
+| La competencia por tamaño ordena «Las menos peleadas» y el motor de los cuatro métodos vive en lib/ con el máximo de la media geométrica (11-nov-2026) | 11-nov-2026 | 22298-22319 | 7406 |  |
+| La regla del anuncio, medida con la población de Detekta, resiste en menor cuantía, mínima y régimen especial; en licitación no (11-nov-2026) | 11-nov-2026 | 22320-22328 | 1785 |  |
+| Precios dice dónde habría quedado su precio frente a todas las ofertas de la entidad, y cuatro textos que afirmaban de más (11-nov-2026) | 11-nov-2026 | 22329-22343 | 3717 |  |

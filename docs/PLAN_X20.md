@@ -407,7 +407,7 @@ Si en el paso 2 no ve lo descrito, no siga: dígalo y se revisa, porque ese orde
 ### 7.2 Entrega 1 · Dónde llega una sola oferta
 
 - **Tanda 1 · La competencia como hecho.** Pieza 6.1. Cambia `lib/indice_competencia.js`, la fila de la lista y la tarjeta. Cierre: en producción, la tarjeta de una entidad con historial dice cuántos de sus procesos de ese tamaño tuvieron una oferta, y el orden «Las menos peleadas» lo usa. Decide el dueño antes: nada. Tamaño: 2 sesiones.
-  - *Cerrada en código el 11-nov-2026* (rama `claude/zen-sagan-wgcf5z`): conteos por modalidad y tamaño en el índice, la frase en la tarjeta y el anuncio ordenando «Las menos peleadas», solo en menor cuantía. Falta para el cierre en producción: fusionar y que el índice se reconstruya. Memoria: «La competencia por tamaño ordena «Las menos peleadas» y el motor de los cuatro métodos vive en lib/ con el máximo de la media geométrica (11-nov-2026)».
+  - *Cerrada en código el 11-nov-2026* (rama `claude/zen-sagan-wgcf5z`): conteos por modalidad y tamaño en el índice, la frase en la tarjeta y el anuncio ordenando «Las menos peleadas» en menor cuantía, mínima y régimen especial (medido con la población de Detekta; en licitación no resistió). Falta para el cierre en producción: fusionar y que el índice se reconstruya. Memoria: «La competencia por tamaño ordena «Las menos peleadas» y el motor de los cuatro métodos vive en lib/ con el máximo de la media geométrica (11-nov-2026)».
 - **Tanda 2 · Las dos barreras.** Pieza 6.4. Cambia `lib/documentos_proceso.js` y la guía del proceso. Cierre: un proceso guardado dice «limitada a Mipyme de …», «con sorteo» o «no consta», con su página. Tamaño: 2 sesiones.
 - **Tanda 3 · El aviso diario.** Pieza 6.2. Cierre: usted recibe cada mañana la lista del día por el canal elegido. Decide el dueño antes: decisiones 1 y 4. Tamaño: 1 a 2 sesiones.
 
@@ -422,6 +422,7 @@ Si en el paso 2 no ve lo descrito, no siga: dígalo y se revisa, porque ese orde
 - **Tanda 7 · El motor en casa y D1.** Pieza 6.6. Cierre: el caso de Cali da 49,5 a la más cercana y la suite lo fija. Tamaño: 1 sesión.
   - *Cerrada el 11-nov-2026* (rama `claude/zen-sagan-wgcf5z`): `lib/metodos_ponderacion.js` es la casa única y el caso de Cali da 49,5 a la más cercana en la suite. Sin cambio visible en pantalla: el motor aún no se usa en la aplicación (eso es la pieza 6.5 y la tanda 14).
 - **Tanda 8 · La referencia por competencia y el aviso de fuera del grupo.** Pieza 6.5, con D4 a D8. Cierre: con los insumos de Cali, Precios dice que 96,75 % queda por encima del grupo de esa entidad. Lleva plan previo con su visto bueno. Decide el dueño antes: decisiones 3 y 6. Tamaño: 3 sesiones.
+  - *Hecha en parte el 11-nov-2026*: el aviso de fuera del grupo (con Cali: 9 de 24 por encima de todas, 13 de 24 por encima de la mitad) y D4 a D8, sin mover ninguna cifra; se tomaron las recomendaciones A de las decisiones 3 y 6. Falta la referencia «con una oferta aquí se adjudicó al 100 %; con 5 a 9, al 95 %» por entidad. Memoria: «Precios dice dónde habría quedado su precio frente a todas las ofertas de la entidad, y cuatro textos que afirmaban de más (11-nov-2026)».
 - **Tanda 9 · La tabla de métodos del pliego.** Para régimen especial. Tamaño: 2 sesiones.
 
 ### 7.5 Entrega 4 · La fábrica de ofertas

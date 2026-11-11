@@ -5694,6 +5694,18 @@ async function main() {
         assert.strictEqual(pc[2], 49.5, "D1: la más cercana a la media geométrica (Concretar 2026, la que ganó) recibe el MÁXIMO, 49,5 — no 49,1854 (DocBase menor cuantía V3, 4.1.4: «se otorgará el máximo puntaje al valor de la propuesta que se encuentre más cerca»)");
         assert.strictEqual(pc[4], 48.4396912, "la oferta propia (96,75 %) conserva el 48,4397 del informe de la entidad");
         assert.deepStrictEqual(ME.primeros(cali, "geometrica"), [2], "el orden por precio no cambia: primera la más cercana");
+        // D8 del plan: la respuesta REAL del optimizador ya no dice que la doble cuenta del precio sigue abierta
+        const limOpt = require("../lib/apu/optimizador.js").optimizarPrecioOferta({}).como_leerlo.limite;
+        assert.ok(/UNA sola vez/.test(limOpt) && !/NO corrige/.test(limOpt), `D8: el texto de lectura dice lo que hace el código → ${limOpt}`);
+        // D6: la alerta de baja grande ya no cita una «banda típica de obra (5–12 %)» sin medición, y dice sobre qué se aplica
+        const alD6 = require("../lib/apu/calculo.js").calcularPresupuesto({ items: [{ descripcion: "x", unidad: "m3", cantidad: 10, precio_unitario: 100000 }], config: { aplicar_ajuste_competitivo: true, factor_baja: 20 } }).alertas.find((a) => /Una baja del/.test(a));
+        assert.ok(alD6 && /sobre su propio precio/.test(alD6) && !/5–12/.test(alD6), `D6: la alerta real → ${alD6}`);
+        assert.ok(!/Banda típica en obra/.test(fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8")), "D6: la nota del factor de baja tampoco");
+        // D5: la fuente del presupuesto dice «pliego» cuando la cifra salió del pliego definitivo
+        const PT5 = require("../lib/apu/piso_techo.js").pisoTecho;
+        const b5 = { presupuesto_oficial: 1e9, costo_directo: 7e8, aiu: { administracion_pct: 20, imprevistos_pct: 5, utilidad_pct: 5, modo: "porcentaje" } };
+        assert.ok(/^SECOP II/.test(PT5(b5).fuentes.presupuesto_oficial) && /^El pliego definitivo/.test(PT5({ ...b5, presupuesto_fuente: "pliego" }).fuentes.presupuesto_oficial),
+          "D5: con el techo del pliego la fuente no dice «SECOP II»");
         assert.deepStrictEqual(ME.puntajes([90, 110], "geometrica"), [1, 0.8944584], "más cercana por defecto: máximo; la otra con la ecuación");
         assert.deepStrictEqual(ME.puntajes([95, 105, 140], "geometrica").filter((x) => x === 1).length, 1, "con tres valores distintos, un solo máximo");
         assert.deepStrictEqual(ME.primeros([100, 100, 200], "geometrica"), [0, 1], "dos ofertas iguales y las más cercanas: las dos con el máximo (el empate lo decide el desempate)");
@@ -10924,6 +10936,8 @@ async function main() {
     for (let i = 0; i < 11; i++) filasT[i < 6 ? "2025-03" : "2025-09"].push(adj(UNA, "800111222", "Tolima", 200e6 + i * 1e6, i < 10 ? 1 : 3, i < 6 ? "2025-03" : "2025-09"));
     filasT["2025-09"].push(adj(UNA, "800111222", "Tolima", 600e6, 5, "2025-09"), adj(UNA, "800111222", "Tolima", 650e6, 5, "2025-09"));
     for (let i = 0; i < 4; i++) filasT["2025-09"].push(adj(UNA, "800111222", "Tolima", 900e6 + i * 1e6, 6, "2025-09", "Licitación pública"));
+    // y 4 de mínima cuantía de menos de $150 M con una oferta (la regla se midió y resistió también allí)
+    for (let i = 0; i < 4; i++) filasT["2025-09"].push(adj(UNA, "800111222", "Tolima", 60e6 + i * 1e6, 1, "2025-09", "Mínima cuantía"));
     // VECINO (Tolima): 4 procesos del mismo tramo con cuatro ofertas
     for (let i = 0; i < 4; i++) filasT["2025-03"].push(adj("MUNICIPIO VECINO DE PRUEBA", "800333444", "Tolima", 220e6 + i * 1e6, 4, "2025-03"));
     // LEJANA (Huila): 4 procesos del mismo tramo con una oferta, para que el país y el departamento difieran
@@ -10938,13 +10952,14 @@ async function main() {
     assert.strictEqual(metaT.por_tamano.sin_segmento, 1, `la fila sin presupuesto no entra en ningún tramo y se cuenta → ${JSON.stringify(metaT.por_tamano)}`);
     const idxT = await IC.leerIndice(rT);
     const regUna = IC.registroDe(idxT, { entidad: UNA, nit_entidad: "800111222" });
-    assert.deepStrictEqual(regUna.por_tamano, { "abreviada|1": [11, 10, 10], "abreviada|3": [2, 0, 0], "licitacion|3": [4, 0, 0] }, `conteos por modalidad y tramo → ${JSON.stringify(regUna.por_tamano)}`);
+    assert.deepStrictEqual(regUna.por_tamano, { "abreviada|1": [11, 10, 10], "abreviada|3": [2, 0, 0], "licitacion|3": [4, 0, 0], "minima|0": [4, 4, 4] }, `conteos por modalidad y tramo → ${JSON.stringify(regUna.por_tamano)}`);
     /* el anuncio, a mano: tramo del país (UNA 11 + VECINO 4 + LEJANA 4 = 19, 14 con una o dos),
        departamento del Tolima en el tramo (15, 10), la entidad en menor cuantía (13, 10) y en el tramo (11, 10) */
     const pTam = 14 / 19, pDep = (10 + 4 * pTam) / 19, pGen = (10 + 4 * pDep) / 17, pEnt = (10 + 4 * pGen) / 15;
     assert.ok(new Set([pTam, pDep, pGen, pEnt].map((x) => x.toFixed(4))).size === 4, "el caso distingue los cuatro niveles");
     assert.ok(Math.abs(regUna.poca_anunciada.abreviada[1] - pEnt) < 1e-12, `el anuncio sigue la regla de cuatro niveles con K = 4, sin redondear (decide la banda) → ${JSON.stringify(regUna.poca_anunciada)}`);
-    assert.ok(!("licitacion" in regUna.poca_anunciada), "en licitación no se midió la regla: no hay anuncio, solo conteos");
+    assert.ok(!("licitacion" in regUna.poca_anunciada), "en licitación la regla no resistió la medición (72,7 %): no hay anuncio, solo conteos");
+    assert.ok(Array.isArray(regUna.poca_anunciada.minima) && regUna.poca_anunciada.minima[0] >= CT.UMBRAL_POCA, `en mínima cuantía sí (91,6 % medido) → ${JSON.stringify(regUna.poca_anunciada.minima)}`);
     const abierta = (entidad, nit, depto, pb, modalidad = MENOR) => ({ entidad, nit_entidad: nit, departamento_entidad: depto, modalidad_de_contratacion: modalidad, precio_base: pb == null ? undefined : String(pb), cuantia_cop: pb || 0 });
     const cUna = IC.competenciaDe(idxT, abierta(UNA, "800111222", "Tolima", 240e6));
     assert.strictEqual(cUna.por_tamano.frase, "Una sola oferta en 10 de sus 11 procesos de menor cuantía de $150 a $300 millones.", `el hecho, en una frase → ${JSON.stringify(cUna.por_tamano)}`);
@@ -10957,7 +10972,7 @@ async function main() {
     assert.ok(!("por_tamano" in cSinPb), "sin presupuesto en la fila no hay tramo: la respuesta no trae la clave");
     const cLic = IC.competenciaDe(idxT, abierta(UNA, "800111222", "Tolima", 900e6, "Licitación pública"));
     assert.ok(cLic.por_tamano.frase === "Tres ofertas o más en 4 de sus 4 procesos de licitación de $500 a $1.000 millones." && cLic.por_tamano.poca_anunciada === null,
-      `licitación: el hecho sí (cuatro procesos), el anuncio no (la regla no se midió en licitación) → ${JSON.stringify(cLic.por_tamano)}`);
+      `licitación: el hecho sí (cuatro procesos), el anuncio no (la regla no resistió en licitación) → ${JSON.stringify(cLic.por_tamano)}`);
     const cPel = IC.competenciaDe(idxT, abierta(PELEADA, "899999001", "Distrito Capital de Bogotá", 1.8e9));
     assert.strictEqual(cPel.por_tamano.frase, "Tres ofertas o más en 6 de sus 6 procesos de menor cuantía de más de $1.000 millones.");
     assert.ok(cPel.por_tamano.poca_anunciada <= CT.UMBRAL_MUCHA, `anuncio de mucha competencia → ${cPel.por_tamano.poca_anunciada}`);
@@ -10983,6 +10998,7 @@ async function main() {
     const filasMx = [{ ent: "E", dep: "D", pb: 2e8, n: 1 }, { ent: "E", dep: "D", pb: 2e8, n: 1 }, { ent: "E", dep: "D", pb: 6e8, n: 5 }, { ent: "F", dep: "D", pb: 2e8, n: 3 }, { ent: "F", dep: "G", pb: 6e8, n: 2 }];
     const aMx = MX.modeloCompetencia(filasMx).anuncia("E", "D", 2.5e8);
     const aLib = CT.anunciarPoca({ modalidad: [5, 3], tamano: [3, 2], depto: [3, 2], entidad: [3, 2], entidadTam: [2, 2] });
+    assert.strictEqual(MX.modeloCompetencia([]).anuncia("E", "D", 2e8).pEnt, null, "sin nada aprendido: sin anuncio (null), no un error ni un 0");
     assert.ok(Math.abs(aMx.pEnt - aLib.entidad) < 1e-12 && Math.abs(aMx.pDep - aLib.depto) < 1e-12, `medir.js y la aplicación dan el mismo anuncio → ${aMx.pEnt} / ${aLib.entidad}`);
 
     // un avance guardado por otra versión (sin contar los tramos) se descarta y se empieza de cero
@@ -11043,6 +11059,73 @@ async function main() {
       "sin presupuesto no hay tramo (no es el más chico); los cortes son los de la medición");
     console.log("· unidad competencia por tamaño: conteos por modalidad y tramo, el anuncio de cuatro niveles (el de la medición del plan), "
       + "la frase de la tarjeta, el orden «Las menos peleadas» en tres bandas, el hash viejo idéntico y el avance de otra versión descartado");
+  }
+
+  /* unidad: SU PRECIO FRENTE AL GRUPO (PLAN_X20, D4, 11-nov-2026) ──────────────
+     El aviso que faltó en Cali, con las funciones REALES: las ofertas de los procesos anteriores de la
+     entidad (con sus trampas: «Confidencial», dos valores de un proponente, fuera de rango), la cuenta
+     «por encima de todas / de la mitad», la consulta con un cliente de mentira (tandas, memoria de 24 h,
+     fuente caída) y la acción por el router real sin red. */
+  bqGrupo: { if (!corre("unidad precio frente al grupo")) break bqGrupo;
+    const G = require("../lib/grupo_ofertas.js");
+    const pres = new Map([["P1", 1000], ["P2", 1000], ["P3", 1000], ["P4", 1000], ["P5", 1000], ["P6", 1000], ["P7", 1000], ["P8", 1000]]);
+    const of = (id, nombre, v) => ({ id_del_proceso_de_compra: id, nombre_proveedor: nombre, valor_de_la_oferta: String(v) });
+    const filas = [
+      // P1..P5: grupos de tres en torno al 94-95 %
+      ...["P1", "P2", "P3", "P4", "P5"].flatMap((id, i) => [of(id, "A SAS", 930 + i), of(id, "B SAS", 945 + i), of(id, "C SAS", 955 + i)]),
+      of("P1", "Confidencial", 0),                                   // no es una oferta
+      of("P2", "Confidencial", 950),                                 // tampoco con valor: la medición del plan no la cuenta
+      of("P6", "A SAS", 940), of("P6", "A SAS", 950), of("P6", "B SAS", 960), of("P6", "C SAS", 970),   // A con dos valores: fuera
+      of("P7", "A SAS", 600), of("P7", "B SAS", 940), of("P7", "C SAS", 950),                          // 60 %: fuera de rango
+      of("P8", "A SAS", 940), of("P8", "B SAS", 950),                                                  // dos ofertas: fuera
+      of("P9", "A SAS", 940), of("P9", "B SAS", 950), of("P9", "C SAS", 960),                          // sin presupuesto: fuera
+    ];
+    const proc = G.procesosComparables(pres, filas);
+    assert.deepStrictEqual(proc.map((x) => x.id).sort(), ["P1", "P2", "P3", "P4", "P5"], `solo los comparables → ${proc.map((x) => x.id)}`);
+    assert.ok(proc.find((x) => x.id === "P1").ofertas_pct.length === 3 && proc.find((x) => x.id === "P2").ofertas_pct.length === 3, "las filas «Confidencial» no son ofertas, con o sin valor");
+    const alto = G.precioFrenteAlGrupo(proc, 96.75);
+    assert.ok(alto.por_encima_de_todas === 5 && alto.por_encima_de_la_mitad === 5 && alto.alerta === true
+      && alto.frase === "En 5 de los 5 procesos anteriores de esta entidad con tres o más ofertas, un precio del 96,75 % del presupuesto habría quedado por encima de todas las ofertas, y en 5, por encima de la mitad.",
+      `el caso de Cali en miniatura → ${JSON.stringify(alto)}`);
+    const dentro = G.precioFrenteAlGrupo(proc, 94.0);
+    assert.ok(dentro.por_encima_de_todas === 0 && dentro.por_encima_de_la_mitad === 0 && dentro.alerta === false, `dentro del grupo, sin alerta → ${JSON.stringify(dentro)}`);
+    const pocos = G.precioFrenteAlGrupo(proc.slice(0, 4), 96.75);
+    assert.ok(pocos.frase === null && pocos.por_encima_de_todas === null && pocos.alerta === false, "con menos de cinco procesos no se dice nada (null, no 0)");
+    assert.strictEqual(G.precioFrenteAlGrupo(proc, null), null, "sin precio, nada");
+    // la consulta: tandas de diez, memoria de 24 h, fuente caída
+    {
+      const kv = new Map(), sets = [];
+      const redisG = { get: async (k) => kv.get(k) ?? null, set: async (k, v, o) => { kv.set(k, v); sets.push(o); return "OK"; } };
+      let llamadas = 0;
+      const p6 = Array.from({ length: 25 }, (_, i) => ({ id_del_portafolio: `Q${i}`, precio_base: "1000", respuestas_al_procedimiento: "3" }));
+      const cliente = (base) => ({ pedir: async (params) => {
+        llamadas++;
+        if (/p6dx/.test(base)) return p6;
+        const ids = [...params.$where.matchAll(/'(Q\d+)'/g)].map((m) => m[1]);
+        return ids.flatMap((id) => [of(id, "A SAS", 940), of(id, "B SAS", 950), of(id, "C SAS", 960)]);
+      } });
+      const r1 = await G.leerGrupo(redisG, { nit: "890399011", literalModalidad: "Selección Abreviada de Menor Cuantía", cliente });
+      assert.ok(r1.ok && r1.procesos.length === 25 && llamadas === 1 + 3 && r1.desde === "datos.gov.co", `25 procesos en tres tandas de diez → ${llamadas} llamadas, ${r1.procesos && r1.procesos.length}`);
+      assert.strictEqual(sets[0] && sets[0].ex, G.TTL_SEG, "se guarda 24 h");
+      const r2 = await G.leerGrupo(redisG, { nit: "890399011", literalModalidad: "Selección Abreviada de Menor Cuantía", cliente });
+      assert.ok(r2.ok && r2.desde === "memoria" && llamadas === 4, "la segunda vez sale de la memoria, sin llamar a datos.gov.co");
+      const caido = (b) => ({ pedir: async () => { if (/wi7w/.test(b)) throw new Error("tiempo agotado"); return p6; } });
+      const r3 = await G.leerGrupo(null, { nit: "800111222", literalModalidad: "Selección Abreviada de Menor Cuantía", cliente: caido });
+      assert.ok(!r3.ok && r3.procesos === null && r3.motivo === "no_respondio", "una fuente caída es «no se pudo consultar», jamás una lista vacía");
+      assert.strictEqual((await G.leerGrupo(null, { nit: "", literalModalidad: "x" })).motivo, "sin_nit");
+    }
+    // la acción por el router REAL: sin precio y sin NIT responde su motivo sin tocar la red
+    {
+      const rA = require("../api/apu.js");
+      const s1 = await invocar(rA, "/api/apu?op=grupo&entidad_nit=890399011&modalidad=x", CAB_TOKEN);
+      assert.ok(s1.status === 200 && s1.cuerpo.ok && s1.cuerpo.frente_al_grupo === null && s1.cuerpo.motivo === "sin_precio", `sin precio → ${JSON.stringify(s1.cuerpo).slice(0, 200)}`);
+      const s2 = await invocar(rA, "/api/apu?op=grupo&modalidad=x&precio_pct=96.75", CAB_TOKEN);
+      assert.ok(s2.status === 200 && s2.cuerpo.motivo === "sin_nit" && /NIT/.test(s2.cuerpo.motivo_texto), `sin NIT → ${JSON.stringify(s2.cuerpo).slice(0, 200)}`);
+      const s3 = await invocar(rA, "/api/apu?op=grupo&entidad_nit=890399011&modalidad=x&precio_pct=96.75", {});
+      assert.strictEqual(s3.status, 401, "sin credencial no pasa la puerta");
+    }
+    console.log("· unidad precio frente al grupo: comparables (confidencial, dos valores, fuera de rango, sin presupuesto), "
+      + "por encima de todas y de la mitad con su alerta, nada bajo cinco procesos, tandas de diez con memoria de 24 h, fuente caída y la acción por el router");
   }
 
   /* unidad: TEXTO como co-señal (vocabulario por familia + verbo de obra) */
@@ -60573,6 +60656,14 @@ async function main() {
           `${clave}: «${c && c.detalle}»`);
       }
       assert.strictEqual(FP.masBajaGano("minima"), null, "la mínima no es de esta tabla");
+      // PLAN_X20, D7: con la base de la entidad EN ESTE TIPO DE OBRA el consejo dice lo mismo que con la de la entidad entera
+      {
+        const fD7 = { id_del_proceso: "CO1.D7", nombre_del_procedimiento: "MEJORAMIENTO DE VIA", modalidad_de_contratacion: "Selección Abreviada de Menor Cuantía", precio_base: "900000000", departamento_entidad: "Tolima", entidad: "ALCALDIA" };
+        const dD7 = (g) => ((Gg.guiaDe({ fila: fD7, perfil: "helder", ctx: { baja: { baja_mediana: 4.6, procesos_contados: 12, granularidad_utilizada: g } } }).consejos || []).find((x) => x.clave === "precio_no_al_piso") || {}).detalle || "";
+        assert.ok(/^Los que ganaron en esta entidad ofertaron/.test(dD7("entidad")) && /^Los que ganaron en esta entidad en obras de este tipo ofertaron/.test(dD7("entidad_familia")),
+          `D7: las dos bases de la entidad dicen cuánto bajaron los ganadores → «${dD7("entidad_familia").slice(0, 120)}»`);
+        assert.ok(!/Los que ganaron en esta entidad/.test(dD7("departamento")), "con la base del departamento no se atribuye a la entidad");
+      }
       // con el azar al lado (segunda revisión adversaria), y con la modalidad del respaldo
       const mbL = FP.masBajaGano("licitacion");
       const cT = (Gg.guiaDe({ fila: { id_del_proceso: "CO1.FPG2", nombre_del_procedimiento: "MEJORAMIENTO DE VIA", tipo_de_proceso: "Licitación pública", precio_base: "900000000", departamento_entidad: "Tolima", entidad: "ALCALDIA" }, perfil: "helder" }).consejos || [])

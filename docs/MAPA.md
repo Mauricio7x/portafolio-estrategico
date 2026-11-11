@@ -22,7 +22,7 @@
   pliego.js                   Router del dominio PLIEGO (Fase 0 · consolidación a 6 funciones)
   procesos.js                 Router del dominio PROCESOS (Fase 0 · consolidación a 6 funciones)
 
-· lib/ — 114 módulos:
+· lib/ — 115 módulos:
   accesibilidad.js            Accesibilidad operativa de la zona de la obra
   adendas.js                  Vigía de adendas · lo que el DATASET dice que cambió (Fase 5)
   almacen.js                  Esquema de claves Redis + compresión de chunks
@@ -84,6 +84,7 @@
   ganancia.js                 ¿CUÁNTA PLATA DEJA ESTE CONTRATO?
   garantia_seriedad.js        EL PORCENTAJE DE LA GARANTÍA DE SERIEDAD QUE FIJA EL PLIEGO (28-sep-2026)
   glosario.js                 la marca y el glosario viven en public/glosario.js (UMD) y
+  grupo_ofertas.js            ¿Dónde habría quedado su precio frente a TODAS las ofertas de los procesos anteriores de la enti
   guia_proceso.js             LA GUÍA «DON HÉCTOR» DE UN PROCESO GUARDADO (sep 2026)
   habiles.js                  Días hábiles y festivos de Colombia (Fase 9 · Detekta v4)
   huella_fila.js              La huella por proceso: el delta no reescribe lo que no cambió (28-sep-2026)
@@ -240,9 +241,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 467 secciones (58 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 22139  APU propios de Detekta, primera entrega: el banco de prueba sin Claude, el alcance de la ac…
-  L 22154  Mis procesos con su barra: tres apartados, el expediente con «Este proceso» a un lado y «Su…
+· MEMORIA · docs/MEMORIA.md — 469 secciones (58 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 22173  La lista lee el análisis guardado como Precios (10-nov-2026)
   L 22191  Detekta ocupa la pantalla entera (10-nov-2026)
   L 22198  El Excel de un presupuesto importado lleva el APU del archivo y no inventa capítulos (10-no…
@@ -251,6 +250,8 @@
   L 22251  La administración por tiempo se cobra entera: la casilla de lo subcontratado va encendida y…
   L 22270  El plan x20: uso personal, ir donde llega una sola oferta, y sus ofertas se reconocen por e…
   L 22298  La competencia por tamaño ordena «Las menos peleadas» y el motor de los cuatro métodos vive…
+  L 22320  La regla del anuncio, medida con la población de Detekta, resiste en menor cuantía, mínima …
+  L 22329  Precios dice dónde habría quedado su precio frente a todas las ofertas de la entidad, y cua…
 
 · DOCUMENTOS docs/ — 78 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)

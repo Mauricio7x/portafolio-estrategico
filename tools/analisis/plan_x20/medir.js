@@ -118,6 +118,8 @@ function modeloCompetencia(filasAprende) {
   function anuncia(ent, dep, pb) {
     const h = hist[ent] || [], hT = h.filter((x) => tamano(x.pb) === tamano(pb));
     const a = COMPETENCIA.anunciarPoca({ modalidad: todas, tamano: cuenta(porTam[tamano(pb)] || []), depto: cuenta(porDepTam[dep + "|" + tamano(pb)] || []), entidad: cuenta(h), entidadTam: cuenta(hT) });
+    // sin nada aprendido no hay base del país: «sin anuncio» (null), nunca un 0 que pase por «mucha competencia»
+    if (!a) return { base: null, pTam: null, pDep: null, pEnt: null, previos: h.slice() };
     return { base: a.base, pTam: a.tamano, pDep: a.depto, pEnt: a.entidad, previos: h.slice() };
   }
   return { anuncia, aprender: (r) => meter(hist, r.ent, r), poca };
@@ -233,11 +235,11 @@ function medir(dir, fechaConsulta) {
     aprende: aprende.length, prueba: prueba.length,
     perdida_logaritmica: Object.fromEntries(Object.entries(L).map(([k, v]) => [k, Math.round(media(v) * 10000) / 10000])),
     mejora_entidad_frente_a_tamano_pct: r1((1 - media(L.entidad) / media(L.tamano)) * 100),
-    calibracion: cubetas.map(([a, b]) => { const s = P.filter((x) => x.p >= a && x.p < b); return { dijo_entre: [a * 100, Math.min(b, 1) * 100], procesos: s.length, tuvieron_1_o_2_pct: pct(s.filter((x) => x.y).length, s.length), tuvieron_1_pct: pct(s.filter((x) => x.n === 1).length, s.length) }; }),
-    con_historial: { procesos: conH.length, de: P.length, dijo_poca_80: (() => { const s = conH.filter((x) => x.p >= 0.8); return { procesos: s.length, acierto_pct: pct(s.filter((x) => x.y).length, s.length), una_sola_pct: pct(s.filter((x) => x.n === 1).length, s.length) }; })(), dijo_poca_90: (() => { const s = conH.filter((x) => x.p >= 0.9); return { procesos: s.length, acierto_pct: pct(s.filter((x) => x.y).length, s.length), una_sola_pct: pct(s.filter((x) => x.n === 1).length, s.length) }; })(), dijo_mucha_30: (() => { const s = conH.filter((x) => x.p <= 0.3); return { procesos: s.length, tuvieron_3_o_mas_pct: pct(s.filter((x) => !x.y).length, s.length) }; })() },
+    calibracion: cubetas.map(([a, b]) => { const s = P.filter((x) => x.p != null && x.p >= a && x.p < b); return { dijo_entre: [a * 100, Math.min(b, 1) * 100], procesos: s.length, tuvieron_1_o_2_pct: pct(s.filter((x) => x.y).length, s.length), tuvieron_1_pct: pct(s.filter((x) => x.n === 1).length, s.length) }; }),
+    con_historial: { procesos: conH.length, de: P.length, dijo_poca_80: (() => { const s = conH.filter((x) => x.p != null && x.p >= 0.8); return { procesos: s.length, acierto_pct: pct(s.filter((x) => x.y).length, s.length), una_sola_pct: pct(s.filter((x) => x.n === 1).length, s.length) }; })(), dijo_poca_90: (() => { const s = conH.filter((x) => x.p != null && x.p >= 0.9); return { procesos: s.length, acierto_pct: pct(s.filter((x) => x.y).length, s.length), una_sola_pct: pct(s.filter((x) => x.n === 1).length, s.length) }; })(), dijo_mucha_30: (() => { const s = conH.filter((x) => x.p != null && x.p <= 0.3); return { procesos: s.length, tuvieron_3_o_mas_pct: pct(s.filter((x) => !x.y).length, s.length) }; })() },
   };
   const meses = (new Date(fechaConsulta + "T00:00:00Z") - new Date(CORTE_PRUEBA + "T00:00:00Z")) / 86400000 / 30.4375;
-  const anun = P.filter((x) => x.p >= UMBRAL_POCA && x.nh >= MIN_PREVIOS), mucha = P.filter((x) => x.p <= UMBRAL_MUCHA && x.nh >= MIN_PREVIOS);
+  const anun = P.filter((x) => x.p != null && x.p >= UMBRAL_POCA && x.nh >= MIN_PREVIOS), mucha = P.filter((x) => x.p != null && x.p <= UMBRAL_MUCHA && x.nh >= MIN_PREVIOS);
   const una = anun.filter((x) => x.n === 1);
   const depA = {};
   for (const x of anun) meter(depA, x.dep, x);
@@ -358,9 +360,9 @@ function medir(dir, fechaConsulta) {
     if (!vivos[k] || r.fase.indexOf("Manifestación") === 0) vivos[k] = r;
   }
   const V = Object.values(vivos).map((r) => { const a = mh.anuncia(r.nit_entidad, r.departamento_entidad, Number(r.precio_base)); return { dep: r.departamento_entidad, pb: Number(r.precio_base), fase: r.fase, p: a.pEnt, nh: a.previos.length }; });
-  const vp = V.filter((x) => x.p >= UMBRAL_POCA && x.nh >= MIN_PREVIOS), dv = {}, tv = {};
+  const vp = V.filter((x) => x.p != null && x.p >= UMBRAL_POCA && x.nh >= MIN_PREVIOS), dv = {}, tv = {};
   for (const x of vp) { dv[x.dep] = (dv[x.dep] || 0) + 1; tv[tamano(x.pb)] = (tv[tamano(x.pb)] || 0) + 1; }
-  R.F_foto_de_hoy = { sin_cerrar_manifestacion: V.length, con_la_ventana_publicada: V.filter((x) => x.fase.indexOf("Manifestación") === 0).length, en_observaciones: V.filter((x) => x.fase.indexOf("Manifestación") !== 0).length, anunciados_poca_competencia: vp.length, de_ellos_en_observaciones: vp.filter((x) => x.fase.indexOf("Manifestación") !== 0).length, de_ellos_bajo_500_millones: vp.filter((x) => x.pb < 500e6).length, suma_presupuesto: vp.reduce((a, x) => a + x.pb, 0), anunciados_mucha_competencia: V.filter((x) => x.p <= UMBRAL_MUCHA && x.nh >= MIN_PREVIOS).length, entidad_sin_historial: V.filter((x) => x.nh < MIN_PREVIOS).length, donde: Object.entries(dv).sort((a, b) => b[1] - a[1]).slice(0, 14).map(([d, n]) => ({ departamento: d, procesos: n })), por_tamano: tv };
+  R.F_foto_de_hoy = { sin_cerrar_manifestacion: V.length, con_la_ventana_publicada: V.filter((x) => x.fase.indexOf("Manifestación") === 0).length, en_observaciones: V.filter((x) => x.fase.indexOf("Manifestación") !== 0).length, anunciados_poca_competencia: vp.length, de_ellos_en_observaciones: vp.filter((x) => x.fase.indexOf("Manifestación") !== 0).length, de_ellos_bajo_500_millones: vp.filter((x) => x.pb < 500e6).length, suma_presupuesto: vp.reduce((a, x) => a + x.pb, 0), anunciados_mucha_competencia: V.filter((x) => x.p != null && x.p <= UMBRAL_MUCHA && x.nh >= MIN_PREVIOS).length, entidad_sin_historial: V.filter((x) => x.nh < MIN_PREVIOS).length, donde: Object.entries(dv).sort((a, b) => b[1] - a[1]).slice(0, 14).map(([d, n]) => ({ departamento: d, procesos: n })), por_tamano: tv };
 
   /* G · los dos procesos del diagnóstico. El presupuesto es el del PLIEGO, no el de SECOP II:
      Cali, $1.581.425.810 (detekta-lector/caso_santa_elena/LECCIONES.md); Universidad Pedagógica,
