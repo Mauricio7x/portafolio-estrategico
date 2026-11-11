@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 2620788 bytes · 465 secciones · 57 con marcador de superación.
+Derivado del árbol: 2627042 bytes · 466 secciones · 58 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -459,20 +459,21 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | La consultoría de ingeniería sin código se ve, en ámbar: estudios de suelos, geotecnia, patología estructural y vulnerabilidad sísmica (7-nov-2026) | 7-nov-2026 | 21905-21918 | 2406 |  |
 | En los pliegos tipo de obra que tiene el dueño, los códigos UNSPSC no piden inscripción en el RUP: piden que cada contrato de experiencia esté clasificado en alguno (7-nov-2026) | 7-nov-2026 | 21919-21930 | 3857 |  |
 | Con el pliego leído, la puerta del registro mira los contratos de experiencia con los códigos del pliego, no la inscripción (8-nov-2026) | 8-nov-2026 | 21931-21977 | 7681 |  |
-| Los consorcios del dueño son 1A y GR; GR aún no ha presentado oferta (9-nov-2026) | 9-nov-2026 | 21978-21985 | 892 |  |
-| La puerta: producción sin el muro de Vercel, una cuenta compartida y toda operación detrás de la sesión (9-nov-2026) | 9-nov-2026 | 21986-22008 | 7292 |  |
-| El medidor del ancho de banda de Upstash: cada petición anota lo que gastó, por operación (9-nov-2026) | 9-nov-2026 | 22009-22027 | 4515 |  |
-| El armazón medido antes de rediseñarlo: Mi empresa dice qué no llegó, «Atrás» vuelve a la pestaña anterior y las dos ventanas que faltaban cierran con Escape (9-nov-2026) | 9-nov-2026 | 22028-22039 | 4456 |  |
-| Mi empresa: «Hoy» con cuatro piezas y una barra con ocho apartados; la plata en juego vuelve con quién la pone (9-nov-2026) | 9-nov-2026 | 22040-22056 | 6188 | «Licitaciones con su barra: tres apartados, el valor y el aviso de interés a la vista, y el orden al revés de un toque sin subir lo que no tiene el dato (9-nov-2026)» |
-| Cargar su propio APU: la hoja de análisis ya no se lee como formulario, y «Buscar» lo elabora respetándolo (9-nov-2026) | 9-nov-2026 | 22057-22092 | 10710 |  |
-| Licitaciones con su barra: tres apartados, el valor y el aviso de interés a la vista, y el orden al revés de un toque sin subir lo que no tiene el dato (9-nov-2026) | 9-nov-2026 | 22093-22115 | 10854 |  |
-| El APU real del dueño: la unidad cortada en «Ubicación:», el costo directo en vez del precio con AIU y la vista previa que no bajaba en el teléfono (10-nov-2026) | 10-nov-2026 | 22116-22128 | 3532 |  |
-| La rejilla de una pestaña: `:not(.hidden)` va solo con `display` (10-nov-2026) | 10-nov-2026 | 22129-22136 | 1276 |  |
-| APU propios de Detekta, primera entrega: el banco de prueba sin Claude, el alcance de la actividad, la biblioteca y el modelo abierto apagado (10-nov-2026) | 10-nov-2026 | 22137-22151 | 8172 |  |
-| Mis procesos con su barra: tres apartados, el expediente con «Este proceso» a un lado y «Su precio» del análisis guardado (10-nov-2026) | 10-nov-2026 | 22152-22170 | 9616 |  |
-| La lista lee el análisis guardado como Precios (10-nov-2026) | 10-nov-2026 | 22171-22188 | 5445 |  |
-| Detekta ocupa la pantalla entera (10-nov-2026) | 10-nov-2026 | 22189-22195 | 1006 |  |
-| El Excel de un presupuesto importado lleva el APU del archivo y no inventa capítulos (10-nov-2026) | 10-nov-2026 | 22196-22205 | 3066 |  |
-| Precios con su barra: siete apartados, tres cifras arriba que nunca son $0, la casilla de lo subcontratado que ahora mueve el precio y «Subir un APU» (10-nov-2026) | 10-nov-2026 | 22206-22229 | 9305 | «El mínimo para no perder plata sigue a la casilla de lo subcontratado, y subir un APU calcula también el mínimo (10-nov-2026)» |
-| El mínimo para no perder plata sigue a la casilla de lo subcontratado, y subir un APU calcula también el mínimo (10-nov-2026) | 10-nov-2026 | 22230-22248 | 6691 | «La administración por tiempo se cobra entera: la casilla de lo subcontratado va encendida y el motor la reparte sobre la obra propia (10-nov-2026)» |
-| La administración por tiempo se cobra entera: la casilla de lo subcontratado va encendida y el motor la reparte sobre la obra propia (10-nov-2026) | 10-nov-2026 | 22249-22266 | 5419 |  |
+| Los consorcios del dueño son 1A y GR; GR aún no ha presentado oferta (9-nov-2026) | 9-nov-2026 | 21978-21987 | 1358 | «El plan x20: uso personal, ir donde llega una sola oferta, y sus ofertas se reconocen por el integrante (11-nov-2026)» |
+| La puerta: producción sin el muro de Vercel, una cuenta compartida y toda operación detrás de la sesión (9-nov-2026) | 9-nov-2026 | 21988-22010 | 7292 |  |
+| El medidor del ancho de banda de Upstash: cada petición anota lo que gastó, por operación (9-nov-2026) | 9-nov-2026 | 22011-22029 | 4515 |  |
+| El armazón medido antes de rediseñarlo: Mi empresa dice qué no llegó, «Atrás» vuelve a la pestaña anterior y las dos ventanas que faltaban cierran con Escape (9-nov-2026) | 9-nov-2026 | 22030-22041 | 4456 |  |
+| Mi empresa: «Hoy» con cuatro piezas y una barra con ocho apartados; la plata en juego vuelve con quién la pone (9-nov-2026) | 9-nov-2026 | 22042-22058 | 6188 | «Licitaciones con su barra: tres apartados, el valor y el aviso de interés a la vista, y el orden al revés de un toque sin subir lo que no tiene el dato (9-nov-2026)» |
+| Cargar su propio APU: la hoja de análisis ya no se lee como formulario, y «Buscar» lo elabora respetándolo (9-nov-2026) | 9-nov-2026 | 22059-22094 | 10710 |  |
+| Licitaciones con su barra: tres apartados, el valor y el aviso de interés a la vista, y el orden al revés de un toque sin subir lo que no tiene el dato (9-nov-2026) | 9-nov-2026 | 22095-22117 | 10854 |  |
+| El APU real del dueño: la unidad cortada en «Ubicación:», el costo directo en vez del precio con AIU y la vista previa que no bajaba en el teléfono (10-nov-2026) | 10-nov-2026 | 22118-22130 | 3532 |  |
+| La rejilla de una pestaña: `:not(.hidden)` va solo con `display` (10-nov-2026) | 10-nov-2026 | 22131-22138 | 1276 |  |
+| APU propios de Detekta, primera entrega: el banco de prueba sin Claude, el alcance de la actividad, la biblioteca y el modelo abierto apagado (10-nov-2026) | 10-nov-2026 | 22139-22153 | 8172 |  |
+| Mis procesos con su barra: tres apartados, el expediente con «Este proceso» a un lado y «Su precio» del análisis guardado (10-nov-2026) | 10-nov-2026 | 22154-22172 | 9616 |  |
+| La lista lee el análisis guardado como Precios (10-nov-2026) | 10-nov-2026 | 22173-22190 | 5445 |  |
+| Detekta ocupa la pantalla entera (10-nov-2026) | 10-nov-2026 | 22191-22197 | 1006 |  |
+| El Excel de un presupuesto importado lleva el APU del archivo y no inventa capítulos (10-nov-2026) | 10-nov-2026 | 22198-22207 | 3066 |  |
+| Precios con su barra: siete apartados, tres cifras arriba que nunca son $0, la casilla de lo subcontratado que ahora mueve el precio y «Subir un APU» (10-nov-2026) | 10-nov-2026 | 22208-22231 | 9305 | «El mínimo para no perder plata sigue a la casilla de lo subcontratado, y subir un APU calcula también el mínimo (10-nov-2026)» |
+| El mínimo para no perder plata sigue a la casilla de lo subcontratado, y subir un APU calcula también el mínimo (10-nov-2026) | 10-nov-2026 | 22232-22250 | 6691 | «La administración por tiempo se cobra entera: la casilla de lo subcontratado va encendida y el motor la reparte sobre la obra propia (10-nov-2026)» |
+| La administración por tiempo se cobra entera: la casilla de lo subcontratado va encendida y el motor la reparte sobre la obra propia (10-nov-2026) | 10-nov-2026 | 22251-22269 | 5420 |  |
+| El plan x20: uso personal, ir donde llega una sola oferta, y sus ofertas se reconocen por el integrante (11-nov-2026) | 11-nov-2026 | 22270-22296 | 5787 |  |

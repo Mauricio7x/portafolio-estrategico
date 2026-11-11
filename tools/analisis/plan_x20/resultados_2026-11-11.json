@@ -1,0 +1,1537 @@
+{
+ "consulta": "2026-11-11",
+ "fuente": "datos.gov.co · p6dx-8zbt (procesos de SECOP II) y wi7w-2nvm (ofertas por proceso)",
+ "poblacion": "Selección abreviada de menor cuantía, tipo de contrato «Obra», en fase de ofertas",
+ "cortes": {
+  "ultimo_ano_desde": "2025-11-01",
+  "prueba_desde": "2026-01-01",
+  "encogimiento_K": 4,
+  "previos_minimos": 4
+ },
+ "historial": {
+  "adjudicados_desde_2024": 6524,
+  "apartados": {
+   "sin_portafolio": 0,
+   "sin_ofertas_legibles": 2,
+   "sin_presupuesto": 0
+  },
+  "por_ano": {
+   "2024": 1803,
+   "2025": 2744,
+   "2026": 1977
+  }
+ },
+ "A_por_modalidad": [
+  {
+   "modalidad": "Selección Abreviada de Menor Cuantía",
+   "adjudicados": 2622,
+   "pct": {
+    "1": 50.9,
+    "2": 16.9,
+    "3-4": 13,
+    "5-9": 12.9,
+    "10+": 6.3
+   }
+  },
+  {
+   "modalidad": "Mínima cuantía",
+   "adjudicados": 1741,
+   "pct": {
+    "1": 44.2,
+    "2": 14.8,
+    "3-4": 16.1,
+    "5-9": 14.2,
+    "10+": 10.7
+   }
+  },
+  {
+   "modalidad": "Licitación pública Obra Publica",
+   "adjudicados": 1102,
+   "pct": {
+    "1": 18.5,
+    "2": 10.1,
+    "3-4": 8.9,
+    "5-9": 12.8,
+    "10+": 49.7
+   }
+  },
+  {
+   "modalidad": "Contratación régimen especial (con ofertas)",
+   "adjudicados": 652,
+   "pct": {
+    "1": 48,
+    "2": 19,
+    "3-4": 18.3,
+    "5-9": 9.5,
+    "10+": 5.2
+   }
+  },
+  {
+   "modalidad": "Contratación Directa (con ofertas)",
+   "adjudicados": 267,
+   "pct": {
+    "1": 93.6,
+    "2": 4.9,
+    "3-4": 1.5,
+    "5-9": 0,
+    "10+": 0
+   }
+  },
+  {
+   "modalidad": "Seleccion Abreviada Menor Cuantia Sin Manifestacion Interes",
+   "adjudicados": 27,
+   "pct": {
+    "1": 37,
+    "2": 25.9,
+    "3-4": 29.6,
+    "5-9": 3.7,
+    "10+": 3.7
+   }
+  },
+  {
+   "modalidad": "Licitación pública",
+   "adjudicados": 7,
+   "pct": {
+    "1": 57.1,
+    "2": 14.3,
+    "3-4": 14.3,
+    "5-9": 0,
+    "10+": 14.3
+   }
+  }
+ ],
+ "A_ultimo_ano": {
+  "en_fase_de_ofertas": 3328,
+  "adjudicados": 2622,
+  "adjudicados_con_dato": 2622,
+  "ofertas_por_proceso": {
+   "1": {
+    "n": 1335,
+    "pct": 50.9
+   },
+   "2": {
+    "n": 442,
+    "pct": 16.9
+   },
+   "3-4": {
+    "n": 342,
+    "pct": 13
+   },
+   "5-9": {
+    "n": 337,
+    "pct": 12.9
+   },
+   "10+": {
+    "n": 166,
+    "pct": 6.3
+   }
+  },
+  "con_una_o_dos_pct": 67.8,
+  "presupuesto": {
+   "p25": 150118237,
+   "mediana": 288250020,
+   "p75": 458099544,
+   "p90": 858000000,
+   "suma": 1256849337487
+  }
+ },
+ "A_por_tamano": [
+  {
+   "tamano": "<150M",
+   "n": 649,
+   "una_pct": 65.9,
+   "una_o_dos_pct": 82.6,
+   "tres_a_nueve_pct": 16.6,
+   "diez_o_mas_pct": 0.8,
+   "mediana_ofertas": 1
+  },
+  {
+   "tamano": "150-300M",
+   "n": 720,
+   "una_pct": 60.1,
+   "una_o_dos_pct": 75.7,
+   "tres_a_nueve_pct": 21.3,
+   "diez_o_mas_pct": 3.1,
+   "mediana_ofertas": 1
+  },
+  {
+   "tamano": "300-500M",
+   "n": 768,
+   "una_pct": 52.6,
+   "una_o_dos_pct": 73.3,
+   "tres_a_nueve_pct": 22.8,
+   "diez_o_mas_pct": 3.9,
+   "mediana_ofertas": 1
+  },
+  {
+   "tamano": "500M-1000M",
+   "n": 268,
+   "una_pct": 20.9,
+   "una_o_dos_pct": 33.2,
+   "tres_a_nueve_pct": 47.8,
+   "diez_o_mas_pct": 19,
+   "mediana_ofertas": 4
+  },
+  {
+   "tamano": ">1000M",
+   "n": 217,
+   "una_pct": 6.5,
+   "una_o_dos_pct": 20.3,
+   "tres_a_nueve_pct": 53,
+   "diez_o_mas_pct": 26.7,
+   "mediana_ofertas": 5
+  }
+ ],
+ "A_por_departamento": [
+  {
+   "departamento": "Cundinamarca",
+   "n": 413,
+   "una_pct": 45.8,
+   "una_o_dos_pct": 75.1,
+   "mediana_presupuesto": 265905297
+  },
+  {
+   "departamento": "Boyacá",
+   "n": 298,
+   "una_pct": 78.2,
+   "una_o_dos_pct": 86.9,
+   "mediana_presupuesto": 226872401
+  },
+  {
+   "departamento": "Distrito Capital de Bogotá",
+   "n": 262,
+   "una_pct": 3.8,
+   "una_o_dos_pct": 13,
+   "mediana_presupuesto": 507068758
+  },
+  {
+   "departamento": "Caldas",
+   "n": 173,
+   "una_pct": 18.5,
+   "una_o_dos_pct": 44.5,
+   "mediana_presupuesto": 359117234
+  },
+  {
+   "departamento": "Valle del Cauca",
+   "n": 162,
+   "una_pct": 65.4,
+   "una_o_dos_pct": 77.8,
+   "mediana_presupuesto": 285587704
+  },
+  {
+   "departamento": "Santander",
+   "n": 146,
+   "una_pct": 56.8,
+   "una_o_dos_pct": 74,
+   "mediana_presupuesto": 217479306
+  },
+  {
+   "departamento": "Antioquia",
+   "n": 102,
+   "una_pct": 50,
+   "una_o_dos_pct": 69.6,
+   "mediana_presupuesto": 213615543
+  },
+  {
+   "departamento": "Norte de Santander",
+   "n": 99,
+   "una_pct": 61.6,
+   "una_o_dos_pct": 82.8,
+   "mediana_presupuesto": 269978516
+  },
+  {
+   "departamento": "Huila",
+   "n": 90,
+   "una_pct": 47.8,
+   "una_o_dos_pct": 66.7,
+   "mediana_presupuesto": 204939278
+  },
+  {
+   "departamento": "Tolima",
+   "n": 80,
+   "una_pct": 55,
+   "una_o_dos_pct": 76.3,
+   "mediana_presupuesto": 284091980
+  },
+  {
+   "departamento": "Bolívar",
+   "n": 75,
+   "una_pct": 48,
+   "una_o_dos_pct": 64,
+   "mediana_presupuesto": 403690757
+  },
+  {
+   "departamento": "Arauca",
+   "n": 73,
+   "una_pct": 90.4,
+   "una_o_dos_pct": 94.5,
+   "mediana_presupuesto": 230000000
+  },
+  {
+   "departamento": "Casanare",
+   "n": 70,
+   "una_pct": 77.1,
+   "una_o_dos_pct": 87.1,
+   "mediana_presupuesto": 199386495
+  },
+  {
+   "departamento": "Caquetá",
+   "n": 68,
+   "una_pct": 83.8,
+   "una_o_dos_pct": 88.2,
+   "mediana_presupuesto": 249355688
+  },
+  {
+   "departamento": "Putumayo",
+   "n": 63,
+   "una_pct": 74.6,
+   "una_o_dos_pct": 93.7,
+   "mediana_presupuesto": 234870578
+  },
+  {
+   "departamento": "Cesar",
+   "n": 55,
+   "una_pct": 76.4,
+   "una_o_dos_pct": 90.9,
+   "mediana_presupuesto": 224268808
+  },
+  {
+   "departamento": "Meta",
+   "n": 47,
+   "una_pct": 68.1,
+   "una_o_dos_pct": 78.7,
+   "mediana_presupuesto": 312000000
+  },
+  {
+   "departamento": "Cauca",
+   "n": 42,
+   "una_pct": 45.2,
+   "una_o_dos_pct": 66.7,
+   "mediana_presupuesto": 220978162
+  }
+ ],
+ "A_ejemplos_por_entidad": [
+  {
+   "departamento": "Tolima",
+   "entidad": "MUNICIPIO DE EL GUAMO TOLIMA",
+   "adjudicados": 8,
+   "con_una_oferta": 7,
+   "con_dos": 1,
+   "ganadores_distintos": 7,
+   "mediana_presupuesto": 215694971.5
+  },
+  {
+   "departamento": "Tolima",
+   "entidad": "INSTITUCIÓN UNIVERSITARIA DE EL ESPINAL - UNIESPINAL",
+   "adjudicados": 12,
+   "con_una_oferta": 9,
+   "con_dos": 1,
+   "ganadores_distintos": 12,
+   "mediana_presupuesto": 327522305.5
+  },
+  {
+   "departamento": "Tolima",
+   "entidad": "CORTOLIMA",
+   "adjudicados": 15,
+   "con_una_oferta": 11,
+   "con_dos": 3,
+   "ganadores_distintos": 14,
+   "mediana_presupuesto": 287784717
+  },
+  {
+   "departamento": "Tolima",
+   "entidad": "ALCALDIA DE HONDA",
+   "adjudicados": 6,
+   "con_una_oferta": 4,
+   "con_dos": 1,
+   "ganadores_distintos": 4,
+   "mediana_presupuesto": 88379692.5
+  },
+  {
+   "departamento": "Tolima",
+   "entidad": "MUNICIPIO DE RIOBLANCO",
+   "adjudicados": 6,
+   "con_una_oferta": 4,
+   "con_dos": 1,
+   "ganadores_distintos": 6,
+   "mediana_presupuesto": 189389530
+  },
+  {
+   "departamento": "Tolima",
+   "entidad": "ALCALDIA MUNICIPAL DE ARMERO GUAYABAL",
+   "adjudicados": 8,
+   "con_una_oferta": 5,
+   "con_dos": 2,
+   "ganadores_distintos": 7,
+   "mediana_presupuesto": 326596529.5
+  },
+  {
+   "departamento": "Tolima",
+   "entidad": "ALCALDÍA MUNICIPAL DE CHAPARRAL",
+   "adjudicados": 15,
+   "con_una_oferta": 9,
+   "con_dos": 5,
+   "ganadores_distintos": 11,
+   "mediana_presupuesto": 245999498
+  },
+  {
+   "departamento": "Tolima",
+   "entidad": "MUNICIPIO DE MARIQUTA",
+   "adjudicados": 15,
+   "con_una_oferta": 9,
+   "con_dos": 4,
+   "ganadores_distintos": 12,
+   "mediana_presupuesto": 196199382
+  },
+  {
+   "departamento": "Tolima",
+   "entidad": "ALCALDÍA LIBANO",
+   "adjudicados": 7,
+   "con_una_oferta": 3,
+   "con_dos": 4,
+   "ganadores_distintos": 5,
+   "mediana_presupuesto": 219999920
+  },
+  {
+   "departamento": "Tolima",
+   "entidad": "ALCALDIA  MUNICIPIO DE IBAGUE*",
+   "adjudicados": 8,
+   "con_una_oferta": 3,
+   "con_dos": 2,
+   "ganadores_distintos": 8,
+   "mediana_presupuesto": 566616821.5
+  },
+  {
+   "departamento": "Tolima",
+   "entidad": "ALCALDÍA MUNICIPAL DE EL ESPINAL",
+   "adjudicados": 14,
+   "con_una_oferta": 5,
+   "con_dos": 3,
+   "ganadores_distintos": 13,
+   "mediana_presupuesto": 165018856.5
+  },
+  {
+   "departamento": "Tolima",
+   "entidad": "GOBIERNO DEPARTAMENTAL",
+   "adjudicados": 22,
+   "con_una_oferta": 5,
+   "con_dos": 1,
+   "ganadores_distintos": 20,
+   "mediana_presupuesto": 428929682
+  },
+  {
+   "departamento": "Tolima",
+   "entidad": "SENA TOLIMA 1",
+   "adjudicados": 18,
+   "con_una_oferta": 3,
+   "con_dos": 2,
+   "ganadores_distintos": 16,
+   "mediana_presupuesto": 362980547.5
+  },
+  {
+   "departamento": "Tolima",
+   "entidad": "CACOM-4",
+   "adjudicados": 5,
+   "con_una_oferta": 0,
+   "con_dos": 0,
+   "ganadores_distintos": 4,
+   "mediana_presupuesto": 1170000000
+  }
+ ],
+ "B_adjudicado_sobre_presupuesto": {
+  "fuera_de_rango_o_sin_dato": 33,
+  "por_ofertas": [
+   {
+    "ofertas": "1",
+    "n": 1324,
+    "p25": 99.9,
+    "mediana": 100,
+    "p75": 100
+   },
+   {
+    "ofertas": "2",
+    "n": 434,
+    "p25": 98.94,
+    "mediana": 99.86,
+    "p75": 100
+   },
+   {
+    "ofertas": "3-4",
+    "n": 339,
+    "p25": 94.75,
+    "mediana": 98.53,
+    "p75": 99.97
+   },
+   {
+    "ofertas": "5-9",
+    "n": 333,
+    "p25": 93.75,
+    "mediana": 95.09,
+    "p75": 100
+   },
+   {
+    "ofertas": "10+",
+    "n": 159,
+    "p25": 90.02,
+    "mediana": 92.44,
+    "p75": 95.09
+   }
+  ]
+ },
+ "C_anticipar_competencia": {
+  "aprende": 4547,
+  "prueba": 1977,
+  "perdida_logaritmica": {
+   "nacional": 0.6642,
+   "tamano": 0.5861,
+   "departamento_tamano": 0.484,
+   "entidad": 0.4211
+  },
+  "mejora_entidad_frente_a_tamano_pct": 28.1,
+  "calibracion": [
+   {
+    "dijo_entre": [
+     0,
+     20
+    ],
+    "procesos": 367,
+    "tuvieron_1_o_2_pct": 8.7,
+    "tuvieron_1_pct": 3.3
+   },
+   {
+    "dijo_entre": [
+     20,
+     40
+    ],
+    "procesos": 137,
+    "tuvieron_1_o_2_pct": 21.9,
+    "tuvieron_1_pct": 5.1
+   },
+   {
+    "dijo_entre": [
+     40,
+     60
+    ],
+    "procesos": 206,
+    "tuvieron_1_o_2_pct": 47.6,
+    "tuvieron_1_pct": 29.6
+   },
+   {
+    "dijo_entre": [
+     60,
+     80
+    ],
+    "procesos": 302,
+    "tuvieron_1_o_2_pct": 73.8,
+    "tuvieron_1_pct": 47.4
+   },
+   {
+    "dijo_entre": [
+     80,
+     90
+    ],
+    "procesos": 276,
+    "tuvieron_1_o_2_pct": 80.8,
+    "tuvieron_1_pct": 56.5
+   },
+   {
+    "dijo_entre": [
+     90,
+     100
+    ],
+    "procesos": 689,
+    "tuvieron_1_o_2_pct": 92.2,
+    "tuvieron_1_pct": 78.8
+   }
+  ],
+  "con_historial": {
+   "procesos": 1504,
+   "de": 1977,
+   "dijo_poca_80": {
+    "procesos": 760,
+    "acierto_pct": 90.7,
+    "una_sola_pct": 74.1
+   },
+   "dijo_poca_90": {
+    "procesos": 566,
+    "acierto_pct": 93.3,
+    "una_sola_pct": 80
+   },
+   "dijo_mucha_30": {
+    "procesos": 344,
+    "tuvieron_3_o_mas_pct": 91.6
+   }
+  }
+ },
+ "C_anunciados_2026": {
+  "meses_medidos": 10.3,
+  "poca_competencia": {
+   "procesos": 760,
+   "al_mes": 73.7,
+   "entidades": 220,
+   "bajo_umbral_mipyme_2026": 732,
+   "una_sola_pct": 74.1,
+   "una_o_dos_pct": 90.7,
+   "mediana_presupuesto": 249864997,
+   "suma_presupuesto": 216840959366,
+   "adjudicado_sobre_presupuesto_mediana": 100,
+   "de_una_sola": {
+    "procesos": 563,
+    "ganador_ya_habia_ganado_alli": 293,
+    "ganador_nuevo_alli": 270
+   }
+  },
+  "por_departamento": [
+   {
+    "departamento": "Boyacá",
+    "procesos": 142,
+    "al_mes": 13.8,
+    "una_sola_pct": 80.3,
+    "ganador_repetido_pct": 60.5,
+    "mediana_presupuesto": 226872401
+   },
+   {
+    "departamento": "Cundinamarca",
+    "procesos": 121,
+    "al_mes": 11.7,
+    "una_sola_pct": 50.4,
+    "ganador_repetido_pct": 34.4,
+    "mediana_presupuesto": 277700000
+   },
+   {
+    "departamento": "Valle del Cauca",
+    "procesos": 61,
+    "al_mes": 5.9,
+    "una_sola_pct": 85.2,
+    "ganador_repetido_pct": 76.9,
+    "mediana_presupuesto": 239863732
+   },
+   {
+    "departamento": "Arauca",
+    "procesos": 49,
+    "al_mes": 4.7,
+    "una_sola_pct": 91.8,
+    "ganador_repetido_pct": 35.6,
+    "mediana_presupuesto": 245567103
+   },
+   {
+    "departamento": "Norte de Santander",
+    "procesos": 43,
+    "al_mes": 4.2,
+    "una_sola_pct": 76.7,
+    "ganador_repetido_pct": 39.4,
+    "mediana_presupuesto": 214204261
+   },
+   {
+    "departamento": "Caquetá",
+    "procesos": 43,
+    "al_mes": 4.2,
+    "una_sola_pct": 93,
+    "ganador_repetido_pct": 70,
+    "mediana_presupuesto": 290880112
+   },
+   {
+    "departamento": "Santander",
+    "procesos": 39,
+    "al_mes": 3.8,
+    "una_sola_pct": 66.7,
+    "ganador_repetido_pct": 42.3,
+    "mediana_presupuesto": 197059015
+   },
+   {
+    "departamento": "Putumayo",
+    "procesos": 33,
+    "al_mes": 3.2,
+    "una_sola_pct": 81.8,
+    "ganador_repetido_pct": 63,
+    "mediana_presupuesto": 231342164
+   },
+   {
+    "departamento": "Casanare",
+    "procesos": 29,
+    "al_mes": 2.8,
+    "una_sola_pct": 82.8,
+    "ganador_repetido_pct": 41.7,
+    "mediana_presupuesto": 209948572
+   },
+   {
+    "departamento": "Tolima",
+    "procesos": 27,
+    "al_mes": 2.6,
+    "una_sola_pct": 63,
+    "ganador_repetido_pct": 35.3,
+    "mediana_presupuesto": 287784717
+   },
+   {
+    "departamento": "Huila",
+    "procesos": 26,
+    "al_mes": 2.5,
+    "una_sola_pct": 73.1,
+    "ganador_repetido_pct": 63.2,
+    "mediana_presupuesto": 204939278
+   },
+   {
+    "departamento": "Bolívar",
+    "procesos": 20,
+    "al_mes": 1.9,
+    "una_sola_pct": 60,
+    "ganador_repetido_pct": 41.7,
+    "mediana_presupuesto": 400170000
+   },
+   {
+    "departamento": "Cesar",
+    "procesos": 20,
+    "al_mes": 1.9,
+    "una_sola_pct": 95,
+    "ganador_repetido_pct": 42.1,
+    "mediana_presupuesto": 100000000
+   },
+   {
+    "departamento": "Antioquia",
+    "procesos": 19,
+    "al_mes": 1.8,
+    "una_sola_pct": 68.4,
+    "ganador_repetido_pct": 69.2,
+    "mediana_presupuesto": 204881199
+   },
+   {
+    "departamento": "Córdoba",
+    "procesos": 18,
+    "al_mes": 1.7,
+    "una_sola_pct": 50,
+    "ganador_repetido_pct": 22.2,
+    "mediana_presupuesto": 488000000
+   },
+   {
+    "departamento": "La Guajira",
+    "procesos": 17,
+    "al_mes": 1.6,
+    "una_sola_pct": 70.6,
+    "ganador_repetido_pct": 66.7,
+    "mediana_presupuesto": 484720258
+   },
+   {
+    "departamento": "Meta",
+    "procesos": 16,
+    "al_mes": 1.6,
+    "una_sola_pct": 87.5,
+    "ganador_repetido_pct": 21.4,
+    "mediana_presupuesto": 279261314
+   },
+   {
+    "departamento": "Magdalena",
+    "procesos": 8,
+    "al_mes": 0.8,
+    "una_sola_pct": 87.5,
+    "ganador_repetido_pct": 57.1,
+    "mediana_presupuesto": 349112994
+   },
+   {
+    "departamento": "Caldas",
+    "procesos": 8,
+    "al_mes": 0.8,
+    "una_sola_pct": 37.5,
+    "ganador_repetido_pct": 66.7,
+    "mediana_presupuesto": 131478842
+   },
+   {
+    "departamento": "No Definido",
+    "procesos": 7,
+    "al_mes": 0.7,
+    "una_sola_pct": 85.7,
+    "ganador_repetido_pct": 66.7,
+    "mediana_presupuesto": 225965273
+   }
+  ],
+  "mucha_competencia": {
+   "procesos": 344,
+   "mediana_ofertas": 7,
+   "adjudicado_sobre_presupuesto_mediana": 94.5,
+   "donde": [
+    {
+     "departamento": "Distrito Capital de Bogotá",
+     "procesos": 166
+    },
+    {
+     "departamento": "Caldas",
+     "procesos": 61
+    },
+    {
+     "departamento": "Bolívar",
+     "procesos": 19
+    },
+    {
+     "departamento": "Cundinamarca",
+     "procesos": 18
+    },
+    {
+     "departamento": "Quindío",
+     "procesos": 13
+    },
+    {
+     "departamento": "Nariño",
+     "procesos": 12
+    },
+    {
+     "departamento": "Antioquia",
+     "procesos": 8
+    },
+    {
+     "departamento": "Santander",
+     "procesos": 5
+    }
+   ]
+  }
+ },
+ "contraste_una_respuesta": {
+  "muestra": 200,
+  "proveedores_con_nombre": {
+   "0": 1,
+   "1": 199
+  }
+ },
+ "contraste_dos_a_nueve": {
+  "procesos": 1116,
+  "mismos_proveedores_que_respuestas": 1114,
+  "pct": 99.8
+ },
+ "D_el_de_casa": {
+  "procesos_con_ofertas": 1115,
+  "ganador_emparejado": 1098,
+  "sin_ninguno_de_casa": 697,
+  "todos_de_casa": 26,
+  "por_ofertas": [
+   {
+    "ofertas": "2",
+    "procesos": 138,
+    "gano_uno_de_casa": 97,
+    "gano_uno_de_casa_pct": 70.3,
+    "por_azar_pct": 50
+   },
+   {
+    "ofertas": "3-4",
+    "procesos": 107,
+    "gano_uno_de_casa": 74,
+    "gano_uno_de_casa_pct": 69.2,
+    "por_azar_pct": 42.4
+   },
+   {
+    "ofertas": "5-9",
+    "procesos": 130,
+    "gano_uno_de_casa": 49,
+    "gano_uno_de_casa_pct": 37.7,
+    "por_azar_pct": 26.6
+   }
+  ]
+ },
+ "E_precios": {
+  "procesos": 1009,
+  "por_ofertas": [
+   {
+    "ofertas": "2",
+    "procesos": 416,
+    "centro_del_grupo": {
+     "p25": 96.92,
+     "mediana": 99,
+     "p75": 99.82
+    },
+    "ancho_del_grupo_pp": {
+     "mediana": 0.87,
+     "p75": 3.54
+    },
+    "ganador_mediana": 99.86,
+    "gano_la_mas_baja_pct": 42.8,
+    "gano_la_mas_alta_pct": 61.8,
+    "todas_iguales_pct": 4.6,
+    "gano_estrictamente_la_mas_baja_pct": 38.2,
+    "gano_estrictamente_la_mas_alta_pct": 57.2,
+    "azar_cada_extremo_pct": 50,
+    "si_yo_entrara": {
+     "azar_pct": 33.3,
+     "por_precio": [
+      {
+       "pct_del_presupuesto": 88,
+       "quedo_primero_pct": 48.3
+      },
+      {
+       "pct_del_presupuesto": 90,
+       "quedo_primero_pct": 46.9
+      },
+      {
+       "pct_del_presupuesto": 92,
+       "quedo_primero_pct": 46.5
+      },
+      {
+       "pct_del_presupuesto": 93,
+       "quedo_primero_pct": 47.2
+      },
+      {
+       "pct_del_presupuesto": 94,
+       "quedo_primero_pct": 47.2
+      },
+      {
+       "pct_del_presupuesto": 95,
+       "quedo_primero_pct": 48.9
+      },
+      {
+       "pct_del_presupuesto": 96,
+       "quedo_primero_pct": 48.2
+      },
+      {
+       "pct_del_presupuesto": 96.75,
+       "quedo_primero_pct": 46.3
+      },
+      {
+       "pct_del_presupuesto": 97,
+       "quedo_primero_pct": 45.9
+      },
+      {
+       "pct_del_presupuesto": 98,
+       "quedo_primero_pct": 42.7
+      },
+      {
+       "pct_del_presupuesto": 99,
+       "quedo_primero_pct": 40.7
+      },
+      {
+       "pct_del_presupuesto": 99.5,
+       "quedo_primero_pct": 37.2
+      },
+      {
+       "pct_del_presupuesto": 100,
+       "quedo_primero_pct": 7
+      }
+     ],
+     "con_el_centro_real_menos": [
+      {
+       "puntos": 0,
+       "quedo_primero_pct": 61.2
+      },
+      {
+       "puntos": 0.25,
+       "quedo_primero_pct": 61.1
+      },
+      {
+       "puntos": 0.5,
+       "quedo_primero_pct": 57.3
+      },
+      {
+       "puntos": 1,
+       "quedo_primero_pct": 53.4
+      },
+      {
+       "puntos": 2,
+       "quedo_primero_pct": 50.7
+      }
+     ]
+    }
+   },
+   {
+    "ofertas": "3-4",
+    "procesos": 317,
+    "centro_del_grupo": {
+     "p25": 94.72,
+     "mediana": 96.71,
+     "p75": 99.52
+    },
+    "ancho_del_grupo_pp": {
+     "mediana": 3.5,
+     "p75": 5.79
+    },
+    "ganador_mediana": 98.4,
+    "gano_la_mas_baja_pct": 27.1,
+    "gano_la_mas_alta_pct": 38.2,
+    "todas_iguales_pct": 5.7,
+    "gano_estrictamente_la_mas_baja_pct": 21.5,
+    "gano_estrictamente_la_mas_alta_pct": 32.5,
+    "azar_cada_extremo_pct": 30.6,
+    "si_yo_entrara": {
+     "azar_pct": 23.3,
+     "por_precio": [
+      {
+       "pct_del_presupuesto": 88,
+       "quedo_primero_pct": 40.2
+      },
+      {
+       "pct_del_presupuesto": 90,
+       "quedo_primero_pct": 38.2
+      },
+      {
+       "pct_del_presupuesto": 92,
+       "quedo_primero_pct": 36.5
+      },
+      {
+       "pct_del_presupuesto": 93,
+       "quedo_primero_pct": 35.1
+      },
+      {
+       "pct_del_presupuesto": 94,
+       "quedo_primero_pct": 34.2
+      },
+      {
+       "pct_del_presupuesto": 95,
+       "quedo_primero_pct": 34.5
+      },
+      {
+       "pct_del_presupuesto": 96,
+       "quedo_primero_pct": 30.8
+      },
+      {
+       "pct_del_presupuesto": 96.75,
+       "quedo_primero_pct": 28.4
+      },
+      {
+       "pct_del_presupuesto": 97,
+       "quedo_primero_pct": 27.1
+      },
+      {
+       "pct_del_presupuesto": 98,
+       "quedo_primero_pct": 21.5
+      },
+      {
+       "pct_del_presupuesto": 99,
+       "quedo_primero_pct": 17.4
+      },
+      {
+       "pct_del_presupuesto": 99.5,
+       "quedo_primero_pct": 13.1
+      },
+      {
+       "pct_del_presupuesto": 100,
+       "quedo_primero_pct": 1.8
+      }
+     ],
+     "con_el_centro_real_menos": [
+      {
+       "puntos": 0,
+       "quedo_primero_pct": 31.1
+      },
+      {
+       "puntos": 0.25,
+       "quedo_primero_pct": 43.3
+      },
+      {
+       "puntos": 0.5,
+       "quedo_primero_pct": 42.8
+      },
+      {
+       "puntos": 1,
+       "quedo_primero_pct": 41.8
+      },
+      {
+       "puntos": 2,
+       "quedo_primero_pct": 41
+      }
+     ]
+    }
+   },
+   {
+    "ofertas": "5-9",
+    "procesos": 276,
+    "centro_del_grupo": {
+     "p25": 93.72,
+     "mediana": 94.75,
+     "p75": 96.05
+    },
+    "ancho_del_grupo_pp": {
+     "mediana": 4.47,
+     "p75": 7.15
+    },
+    "ganador_mediana": 94.61,
+    "gano_la_mas_baja_pct": 18.5,
+    "gano_la_mas_alta_pct": 17.8,
+    "todas_iguales_pct": 8,
+    "gano_estrictamente_la_mas_baja_pct": 10.5,
+    "gano_estrictamente_la_mas_alta_pct": 9.8,
+    "azar_cada_extremo_pct": 16.3,
+    "si_yo_entrara": {
+     "azar_pct": 14,
+     "por_precio": [
+      {
+       "pct_del_presupuesto": 88,
+       "quedo_primero_pct": 30
+      },
+      {
+       "pct_del_presupuesto": 90,
+       "quedo_primero_pct": 27.6
+      },
+      {
+       "pct_del_presupuesto": 92,
+       "quedo_primero_pct": 25.3
+      },
+      {
+       "pct_del_presupuesto": 93,
+       "quedo_primero_pct": 20.8
+      },
+      {
+       "pct_del_presupuesto": 94,
+       "quedo_primero_pct": 20.6
+      },
+      {
+       "pct_del_presupuesto": 95,
+       "quedo_primero_pct": 15.9
+      },
+      {
+       "pct_del_presupuesto": 96,
+       "quedo_primero_pct": 11.6
+      },
+      {
+       "pct_del_presupuesto": 96.75,
+       "quedo_primero_pct": 9.1
+      },
+      {
+       "pct_del_presupuesto": 97,
+       "quedo_primero_pct": 8.4
+      },
+      {
+       "pct_del_presupuesto": 98,
+       "quedo_primero_pct": 6.2
+      },
+      {
+       "pct_del_presupuesto": 99,
+       "quedo_primero_pct": 5.5
+      },
+      {
+       "pct_del_presupuesto": 99.5,
+       "quedo_primero_pct": 5.3
+      },
+      {
+       "pct_del_presupuesto": 100,
+       "quedo_primero_pct": 1.3
+      }
+     ],
+     "con_el_centro_real_menos": [
+      {
+       "puntos": 0,
+       "quedo_primero_pct": 24.3
+      },
+      {
+       "puntos": 0.25,
+       "quedo_primero_pct": 28.1
+      },
+      {
+       "puntos": 0.5,
+       "quedo_primero_pct": 24.5
+      },
+      {
+       "puntos": 1,
+       "quedo_primero_pct": 24.8
+      },
+      {
+       "puntos": 2,
+       "quedo_primero_pct": 24.3
+      }
+     ]
+    }
+   }
+  ]
+ },
+ "E_anticipar_el_grupo": {
+  "procesos_limpios": 1273,
+  "aprende": 760,
+  "prueba": 513,
+  "centro_aprendido": {
+   "3-4": 96.83,
+   "5-9": 95.38,
+   "10+": 94.17
+  },
+  "error_medio_pp": {
+   "segun_numero_de_ofertas": 2.22,
+   "con_historial_de_la_entidad": 1.93
+  },
+  "error_medio_pp_donde_hay_historial": {
+   "procesos": 301,
+   "segun_numero_de_ofertas": 2.15,
+   "con_historial_de_la_entidad": 1.71
+  },
+  "azar_pct": 18.8,
+  "reglas": [
+   {
+    "regla": "fijo 97 %",
+    "quedo_primero_pct": 17.4,
+    "precio_medio_pct": 97
+   },
+   {
+    "regla": "fijo 96 %",
+    "quedo_primero_pct": 21,
+    "precio_medio_pct": 96
+   },
+   {
+    "regla": "fijo 95 %",
+    "quedo_primero_pct": 25.2,
+    "precio_medio_pct": 95
+   },
+   {
+    "regla": "fijo 94 %",
+    "quedo_primero_pct": 27.3,
+    "precio_medio_pct": 94
+   },
+   {
+    "regla": "centro según número de ofertas − 0,25",
+    "quedo_primero_pct": 22.4,
+    "precio_medio_pct": 95.87
+   },
+   {
+    "regla": "centro según historial de la entidad − 0,25",
+    "quedo_primero_pct": 23.8,
+    "precio_medio_pct": 95.68
+   },
+   {
+    "regla": "[solo se sabe después] centro real de los rivales − 0,25",
+    "quedo_primero_pct": 35.9,
+    "precio_medio_pct": 95.53
+   }
+  ],
+  "reglas_donde_hay_historial": [
+   {
+    "regla": "fijo 97 %",
+    "quedo_primero_pct": 13.4,
+    "precio_medio_pct": 97
+   },
+   {
+    "regla": "fijo 96 %",
+    "quedo_primero_pct": 16.4,
+    "precio_medio_pct": 96
+   },
+   {
+    "regla": "fijo 95 %",
+    "quedo_primero_pct": 21.9,
+    "precio_medio_pct": 95
+   },
+   {
+    "regla": "fijo 94 %",
+    "quedo_primero_pct": 24.7,
+    "precio_medio_pct": 94
+   },
+   {
+    "regla": "centro según número de ofertas − 0,25",
+    "quedo_primero_pct": 18.9,
+    "precio_medio_pct": 95.81
+   },
+   {
+    "regla": "centro según historial de la entidad − 0,25",
+    "quedo_primero_pct": 20.8,
+    "precio_medio_pct": 95.44
+   },
+   {
+    "regla": "[solo se sabe después] centro real de los rivales − 0,25",
+    "quedo_primero_pct": 33.2,
+    "precio_medio_pct": 95.07
+   }
+  ]
+ },
+ "F_foto_de_hoy": {
+  "sin_cerrar_manifestacion": 212,
+  "con_la_ventana_publicada": 40,
+  "en_observaciones": 172,
+  "anunciados_poca_competencia": 107,
+  "de_ellos_en_observaciones": 90,
+  "de_ellos_bajo_500_millones": 101,
+  "suma_presupuesto": 27930667914,
+  "anunciados_mucha_competencia": 19,
+  "entidad_sin_historial": 39,
+  "donde": [
+   {
+    "departamento": "Boyacá",
+    "procesos": 25
+   },
+   {
+    "departamento": "Casanare",
+    "procesos": 11
+   },
+   {
+    "departamento": "Valle del Cauca",
+    "procesos": 9
+   },
+   {
+    "departamento": "Norte de Santander",
+    "procesos": 8
+   },
+   {
+    "departamento": "Cundinamarca",
+    "procesos": 7
+   },
+   {
+    "departamento": "Arauca",
+    "procesos": 7
+   },
+   {
+    "departamento": "Amazonas",
+    "procesos": 6
+   },
+   {
+    "departamento": "Santander",
+    "procesos": 5
+   },
+   {
+    "departamento": "Putumayo",
+    "procesos": 4
+   },
+   {
+    "departamento": "Tolima",
+    "procesos": 4
+   },
+   {
+    "departamento": "La Guajira",
+    "procesos": 3
+   },
+   {
+    "departamento": "Córdoba",
+    "procesos": 2
+   },
+   {
+    "departamento": "Antioquia",
+    "procesos": 2
+   },
+   {
+    "departamento": "Cauca",
+    "procesos": 2
+   }
+  ],
+  "por_tamano": {
+   "300-500M": 29,
+   "<150M": 33,
+   "150-300M": 39,
+   "500M-1000M": 6
+  }
+ },
+ "G_casos": {
+  "CO1.BDOS.10584652": {
+   "nombre": "Cali · 4151.010.32.1.1255-2026 (Santa Elena)",
+   "presupuesto_pliego": 1581425810,
+   "ofertas_publicadas": [
+    {
+     "proponente": "CONSORCIO C18",
+     "valor": 1475444680,
+     "pct_del_presupuesto": 93.3
+    },
+    {
+     "proponente": "CONSULCON PROYECTOS DE INGENIERIA SAS",
+     "valor": 1485289767,
+     "pct_del_presupuesto": 93.92
+    },
+    {
+     "proponente": "CONCRETAR 2026",
+     "valor": 1488423398,
+     "pct_del_presupuesto": 94.12
+    },
+    {
+     "proponente": "UT EMIMAJO INGENIERIA",
+     "valor": 1506519257,
+     "pct_del_presupuesto": 95.26
+    },
+    {
+     "proponente": "WORLDTEK SAS",
+     "valor": 1511179252,
+     "pct_del_presupuesto": 95.56
+    },
+    {
+     "proponente": "CONSORCIO INFRAESTRUCTURA 1A",
+     "valor": 1530029471,
+     "pct_del_presupuesto": 96.75
+    }
+   ],
+   "puesto_por_metodo_entre_habiles": {
+    "mediana": [
+     {
+      "proponente": "CONCRETAR 2026",
+      "puntaje": 49.5,
+      "puesto": 1
+     },
+     {
+      "proponente": "CONSULCON PROYECTOS DE INGENIERIA SAS",
+      "puntaje": 49.3957859,
+      "puesto": 2
+     },
+     {
+      "proponente": "CONSORCIO C18",
+      "puntaje": 49.0683711,
+      "puesto": 3
+     },
+     {
+      "proponente": "WORLDTEK SAS",
+      "puntaje": 48.7432162,
+      "puesto": 4
+     },
+     {
+      "proponente": "CONSORCIO INFRAESTRUCTURA 1A",
+      "puntaje": 48.1163207,
+      "puesto": 5
+     }
+    ],
+    "geometrica": [
+     {
+      "proponente": "CONCRETAR 2026",
+      "puntaje": 49.1854229,
+      "puesto": 1
+     },
+     {
+      "proponente": "CONSULCON PROYECTOS DE INGENIERIA SAS",
+      "puntaje": 49.0818711,
+      "puesto": 2
+     },
+     {
+      "proponente": "WORLDTEK SAS",
+      "puntaje": 49.0626027,
+      "puesto": 3
+     },
+     {
+      "proponente": "CONSORCIO C18",
+      "puntaje": 48.7565371,
+      "puesto": 4
+     },
+     {
+      "proponente": "CONSORCIO INFRAESTRUCTURA 1A",
+      "puntaje": 48.4396912,
+      "puesto": 5
+     }
+    ],
+    "aritmetica_baja": [
+     {
+      "proponente": "CONSULCON PROYECTOS DE INGENIERIA SAS",
+      "puntaje": 49.4510836,
+      "puesto": 1
+     },
+     {
+      "proponente": "CONCRETAR 2026",
+      "puntaje": 49.4445856,
+      "puesto": 2
+     },
+     {
+      "proponente": "CONSORCIO C18",
+      "puntaje": 49.1233023,
+      "puesto": 3
+     },
+     {
+      "proponente": "WORLDTEK SAS",
+      "puntaje": 48.6869546,
+      "puesto": 4
+     },
+     {
+      "proponente": "CONSORCIO INFRAESTRUCTURA 1A",
+      "puntaje": 48.0593573,
+      "puesto": 5
+     }
+    ],
+    "menor_valor": [
+     {
+      "proponente": "CONSORCIO C18",
+      "puntaje": 49.5,
+      "puesto": 1
+     },
+     {
+      "proponente": "CONSULCON PROYECTOS DE INGENIERIA SAS",
+      "puntaje": 49.1718945,
+      "puesto": 2
+     },
+     {
+      "proponente": "CONCRETAR 2026",
+      "puntaje": 49.0683711,
+      "puesto": 3
+     },
+     {
+      "proponente": "WORLDTEK SAS",
+      "puntaje": 48.3294828,
+      "puesto": 4
+     },
+     {
+      "proponente": "CONSORCIO INFRAESTRUCTURA 1A",
+      "puntaje": 47.7340555,
+      "puesto": 5
+     }
+    ]
+   }
+  },
+  "CO1.BDOS.10691742": {
+   "nombre": "Universidad Pedagógica · UPN-VAD-CP-011-2026",
+   "presupuesto_pliego": 1348958930.99,
+   "ofertas_publicadas": [
+    {
+     "proponente": "CONSORCIO LM.",
+     "valor": 1241249415.23,
+     "pct_del_presupuesto": 92.02
+    },
+    {
+     "proponente": "CONSORCIO ADECUACIONESUPN",
+     "valor": 1256361958,
+     "pct_del_presupuesto": 93.14
+    },
+    {
+     "proponente": "CONSORCIO MANTENIMIENTO AO",
+     "valor": 1259640872.41,
+     "pct_del_presupuesto": 93.38
+    },
+    {
+     "proponente": "CONSORCIO ATENEA 534",
+     "valor": 1268455397.42,
+     "pct_del_presupuesto": 94.03
+    },
+    {
+     "proponente": "CONSORCIOADECUACIONES",
+     "valor": 1280830416.55,
+     "pct_del_presupuesto": 94.95
+    },
+    {
+     "proponente": "CONSORCIO EJE ESTRATEGICO",
+     "valor": 1281510021.94,
+     "pct_del_presupuesto": 95
+    },
+    {
+     "proponente": "CONSORCIO ATENA",
+     "valor": 1292388523,
+     "pct_del_presupuesto": 95.81
+    },
+    {
+     "proponente": "CONSTRUCTORA CARSU S.A.S.",
+     "valor": 1298219720.88,
+     "pct_del_presupuesto": 96.24
+    },
+    {
+     "proponente": "HyD  S.A.S.",
+     "valor": 1300876844,
+     "pct_del_presupuesto": 96.44
+    },
+    {
+     "proponente": "CONSORCIO OBRAS UPN 2026",
+     "valor": 1307896607,
+     "pct_del_presupuesto": 96.96
+    },
+    {
+     "proponente": "CONSORCIO INFRAESTRUCTURA ATENEA HGR",
+     "valor": 1308060988,
+     "pct_del_presupuesto": 96.97
+    },
+    {
+     "proponente": "DIARQCO CONSTRUCTORES SAS",
+     "valor": 1311635449.26,
+     "pct_del_presupuesto": 97.23
+    },
+    {
+     "proponente": "CONSORCIO CBC 2026-02",
+     "valor": 1311878343.52,
+     "pct_del_presupuesto": 97.25
+    },
+    {
+     "proponente": "CONSORCIO INACAL PRO",
+     "valor": 1313271601,
+     "pct_del_presupuesto": 97.35
+    },
+    {
+     "proponente": "CONSORCIO ADECUACIONES 2 UPN 2026",
+     "valor": 1316803295,
+     "pct_del_presupuesto": 97.62
+    },
+    {
+     "proponente": "SAFRID INGENIERIA SAS",
+     "valor": 1323745676.47,
+     "pct_del_presupuesto": 98.13
+    },
+    {
+     "proponente": "R.R. Construciviles S.A.S.",
+     "valor": 1324933022.63,
+     "pct_del_presupuesto": 98.22
+    }
+   ]
+  }
+ }
+}

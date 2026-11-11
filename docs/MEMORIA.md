@@ -21977,6 +21977,8 @@ En una línea: en la guía de un proceso guardado con el pliego leído, el requi
 
 ### Los consorcios del dueño son 1A y GR; GR aún no ha presentado oferta (9-nov-2026)
 
+> SUPERADA el 11-nov-2026 por «El plan x20: uso personal, ir donde llega una sola oferta, y sus ofertas se reconocen por el integrante (11-nov-2026)» — solo en «HGR y ATENEA HGR no son suyos»: el dueño dijo el 11-nov que una oferta es suya cuando entre los integrantes figura Helder Gustavo Rodríguez Santana, y la del «Consorcio Infraestructura Atenea HGR» a UPN-VAD-CP-011-2026 lo trae con el 65 %. Que con GR no se haya presentado oferta sigue en pie.
+
 En una línea: el dueño tiene dos consorcios, «Consorcio Infraestructura 1A» y «Consorcio Infraestructura GR»; con GR todavía no ha presentado oferta, así que no hay documentos de GR en el Drive, y HGR y ATENEA HGR, aunque están allí, no son suyos.
 
 - **Por qué no hay que re-aprenderlo**: la base de ofertas del 7-nov tomó HGR y ATENEA HGR como suyos porque estaban en su Drive y nombraban a Helder; el dueño lo corrigió («nunca he usado consorcio infraestructura HGR, solo CONSORCIO INFRAESTRUCTURA GR»; «no sé quién es ATENEA HGR»). Un documento en su Drive no prueba que la oferta sea suya.
@@ -22264,3 +22266,31 @@ En una línea: decisión del dueño («haz el 1 y 2», sobre las tres salidas qu
   - **«La baja se comió toda la utilidad»** mide con la misma base que el precio: con la casilla apagada saltaba con baja 0 %.
   - **Sin cambiar, declarado**: con la casilla apagada y por tiempo, la alerta de AIU alto mide la A sobre la base (49,14 % en el caso de prueba, 24,57 % sobre todo el costo). Desde la pantalla ya no se llega: la casilla va encendida por tiempo.
 - Las cerraduras: (k) del bloque «unidad el mínimo sigue a la casilla de lo subcontratado» (el motor directo: encendida sin cambio, apagada cobra entera, toda subcontratada avisa, el porcentaje sin cambio), (i) del mismo bloque (por el servidor real: precio y mínimo con la administración entera) y (c) de «unidad Precios · la barra, las tres cifras y la casilla» (la función real de la pantalla con `aplicarConfig` y el select). Catorce mutaciones nuevas, una por pieza y por arreglo de la revisión: mueren las catorce. En Chromium, con los gastos y las horas, elegir «por tiempo» enciende y bloquea la casilla con su nota visible; volver a porcentaje la desbloquea y devuelve la casilla apagada que el usuario tenía.
+
+### El plan x20: uso personal, ir donde llega una sola oferta, y sus ofertas se reconocen por el integrante (11-nov-2026)
+
+En una línea: el dueño pidió la planeación para multiplicar por 20 lo que adjudica y fijó dos cosas —Detekta es de uso personal y no se vende, y una oferta es suya cuando entre los integrantes figura Helder Gustavo Rodríguez Santana—; el plan quedó en `docs/PLAN_X20.md` con su medición reproducible, y su tesis es que el salto no sale de afinar el precio donde llegan diez sino de ir donde llegan una o dos ofertas, que el historial de la entidad anuncia con nueve aciertos de cada diez (y con tres de cada cuatro que será una sola).
+
+> PENDIENTE · el dueño responde las ocho decisiones de docs/PLAN_X20.md § «9. Lo que decide usted» y da el visto bueno a la primera entrega; cada tanda cerrada se anota al pie de su ficha en el plan, y este marcador se cierra cuando la última entre en main.
+
+- **Lo que decidió el dueño (11-nov-2026)**:
+  - «Detekta será de uso personal, no será comercializado ni vendido». Los planes de producto (`docs/PLAN_SAAS.md`, `docs/PLAN_DE_ACCION.md` y sus anexos) salen de la ruta sin borrarse; sus pendientes se cierran cuando él lo confirme (decisión 8 del plan).
+  - «En el consorcio de nosotros siempre va a aparecer HELDER GUSTAVO RODRIGUEZ SANTANA»: una oferta es suya por el INTEGRANTE, no por el nombre del consorcio. Por eso la del «Consorcio Infraestructura Atenea HGR» a UPN-VAD-CP-011-2026 (Helder con el 65 % y Génesis con el 35 %) sí es suya, aunque el 9-nov se anotó lo contrario.
+- **Las dos premisas del encargo que los documentos corrigieron**:
+  - La oferta a la Universidad Pedagógica no se perdió por el precio: quedó no habilitada porque quien acreditaba la experiencia tenía el 35 % y los términos pedían el 40 % (informe de evaluación del 10-sep-2026, pág. 4; términos de referencia, numeral 4.2.2.2). El precio no se calificó.
+  - La de Cali (Santa Elena) no fue un rechazo: quedó última de cinco hábiles por estar por encima de todo el grupo, y con ninguno de los cuatro métodos ganaba.
+- **Lo medido el 11-nov-2026** (datos.gov.co; `tools/analisis/plan_x20/resultados_2026-11-11.json`, que se repite con `descargar.sh` y `medir.js` de esa carpeta):
+  - de 2.622 menores cuantías de obra adjudicadas con recepción desde el 1-nov-2025, el 50,9 % tuvo una sola oferta y el 67,8 % una o dos; con una se adjudica al 100,00 % del presupuesto (mediana), con 5 a 9 al 95,09 % y con 10 o más al 92,44 %;
+  - el historial de la entidad anuncia la competencia fuera de muestra (aprende con 2024 y 2025, se prueba con 2026): donde dijo «poca» con 80 % o más, en 760 procesos, el 90,7 % tuvo una o dos ofertas;
+  - cuando compiten uno que ya había ganado en esa entidad y uno nuevo, con dos ofertas gana el de casa el 70,3 % (138 procesos);
+  - con dos hábiles los cuatro métodos dan el mayor puntaje económico a la menor, y aun así en 416 procesos reales de dos ofertas ganó la estrictamente más alta el 57,2 %: donde llegan pocos deciden quedar hábil y los puntos fuera del precio (la ventaja de precio suele ser de menos de un punto);
+  - la tabla «si yo entrara» es una referencia con todas las ofertas hábiles, no un techo: quitando un rival al azar, sube (revisión adversaria del 11-nov-2026);
+  - anunciar el centro exacto del grupo con el pasado de la entidad mejora poco (el error baja de 2,15 a 1,71 puntos): se anuncia el nivel según la competencia, no un precio.
+- **Lo que no hay que deshacer**:
+  - la regla del 28-oct-2026 para dar un porcentaje por precio sigue igual: el plan propone hechos contados, no una probabilidad ni un precio sugerido;
+  - la estructura (solo o en consorcio, y con quién) se decide ANTES de manifestar interés: el documento tipo rechaza al proponente plural que oferta con integrantes distintos de los que manifestaron (causales AA, AB y AC del numeral 1.15, leídas el 11-nov-2026 en la versión 3 de menor cuantía de transporte);
+  - en `wi7w-2nvm` el mismo proponente sale a veces con y sin código, y una fila «Confidencial» de valor 0 acompaña a veces a la oferta real: se agrupa por el nombre y «Confidencial» no cuenta (en 200 procesos de una respuesta, 199 traen un solo proponente con nombre);
+  - `respuestas_al_procedimiento` de `p6dx-8zbt` vale como número de ofertas: coincide con los proponentes con nombre en 1.114 de 1.116 procesos de 2 a 9 ofertas.
+- **Defectos reproducidos y sin tocar** (sección 5.1 del plan): el motor de los cuatro métodos no da el máximo a la oferta más cercana a la media geométrica (49,1854 en vez de 49,5 en el caso de Cali); el revisor de la oferta queda con 4 de 8 comprobaciones sin referencia cuando el Formulario viene de Excel; con lista cargada, la capacidad no resta un contrato nuevo de SECOP II.
+- **Lo que tumbó la revisión adversaria** (un subagente que no escribió el plan, con reproducción): «nueve de cada diez» era de una O DOS ofertas; el 61,8 % contaba 19 procesos de precios idénticos; «techo» no era una cota; el precio base de $1.744.426.146 de Cali era el de la fila de observaciones y SECOP II ya trae el definitivo; tres medianas de la tabla del Tolima eran el valor central inferior; y «No definido» pasaba como código de proveedor. Todo quedó corregido en el plan y en `medir.js`.
+- **Sin verificar**: producción (responde 302 sin sesión); cuántas ofertas presentó el dueño además de las dos que constan; si en una limitación territorial todos los integrantes de un proponente plural deben tener el domicilio; que `ceth-n4bn` abra hoy los consorcios a sus integrantes. Tres subagentes se cortaron por el límite de uso de la cuenta: se usó solo lo que dejaron ejecutado y se volvió a correr lo que decide.

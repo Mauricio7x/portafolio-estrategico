@@ -2,7 +2,7 @@
      Es una FOTO para leer en GitHub; la fuente de verdad es ejecutar la herramienta. -->
 
 ```
-== MAPA DE DETEKTA · generado del árbol el 2026-11-10 ==
+== MAPA DE DETEKTA · generado del árbol el 2026-11-11 ==
 (no editar a mano: sale de `node tests/mapa.js --escribir`. Para ir a un sitio concreto,
  `node tests/mapa.js <término>` da la ruta, la línea y el sed exacto — más barato que leer esto)
 
@@ -238,19 +238,19 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 465 secciones (57 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 22116  El APU real del dueño: la unidad cortada en «Ubicación:», el costo directo en vez del preci…
-  L 22129  La rejilla de una pestaña: `:not(.hidden)` va solo con `display` (10-nov-2026)
-  L 22137  APU propios de Detekta, primera entrega: el banco de prueba sin Claude, el alcance de la ac…
-  L 22152  Mis procesos con su barra: tres apartados, el expediente con «Este proceso» a un lado y «Su…
-  L 22171  La lista lee el análisis guardado como Precios (10-nov-2026)
-  L 22189  Detekta ocupa la pantalla entera (10-nov-2026)
-  L 22196  El Excel de un presupuesto importado lleva el APU del archivo y no inventa capítulos (10-no…
-  L 22206  Precios con su barra: siete apartados, tres cifras arriba que nunca son $0, la casilla de l…  (superada)
-  L 22230  El mínimo para no perder plata sigue a la casilla de lo subcontratado, y subir un APU calcu…  (superada)
-  L 22249  La administración por tiempo se cobra entera: la casilla de lo subcontratado va encendida y…
+· MEMORIA · docs/MEMORIA.md — 466 secciones (58 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
+  L 22131  La rejilla de una pestaña: `:not(.hidden)` va solo con `display` (10-nov-2026)
+  L 22139  APU propios de Detekta, primera entrega: el banco de prueba sin Claude, el alcance de la ac…
+  L 22154  Mis procesos con su barra: tres apartados, el expediente con «Este proceso» a un lado y «Su…
+  L 22173  La lista lee el análisis guardado como Precios (10-nov-2026)
+  L 22191  Detekta ocupa la pantalla entera (10-nov-2026)
+  L 22198  El Excel de un presupuesto importado lleva el APU del archivo y no inventa capítulos (10-no…
+  L 22208  Precios con su barra: siete apartados, tres cifras arriba que nunca son $0, la casilla de l…  (superada)
+  L 22232  El mínimo para no perder plata sigue a la casilla de lo subcontratado, y subir un APU calcu…  (superada)
+  L 22251  La administración por tiempo se cobra entera: la casilla de lo subcontratado va encendida y…
+  L 22270  El plan x20: uso personal, ir donde llega una sola oferta, y sus ofertas se reconocen por e…
 
-· DOCUMENTOS docs/ — 77 (y 3 en docs/archivo/, superados: `--archivo` los lista):
+· DOCUMENTOS docs/ — 78 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)
   ADJUDICACION_FASE0_2026-10-25.md        Probabilidad de adjudicación · Fase 0: qué datos abiertos hay para saber quién gana 
   ADJUDICACION_NIVEL3_DISENO_2026-10-26.md  Probabilidad de adjudicación · Nivel 3: capturar quién quedó hábil para poder calcul
@@ -295,6 +295,7 @@
   PLAN_DE_ACCION.md                       PLAN DE ACCIÓN · Detekta, de herramienta interna a producto por suscripción
   PLAN_REFORMA_DATOS.md                   PLAN · Reforma de los datos que Detekta enseña (13-sep-2026)
   PLAN_SAAS.md                            PLAN SaaS · De herramienta interna a producto por suscripción
+  PLAN_X20.md                             PLAN X20 · Adjudicar más contratos con Detekta (11-nov-2026)
   PRECIO_Y_UNIT_ECONOMICS.md              Anexo B · Modelo de negocio, precio y economía unitaria
   PRECIOS_DESDE_CLAUDE_CODE.md            Precios · cómo funciona «Buscar» y quién lo atiende
   PROBABILIDAD_MEJORADA.md                Probabilidad de ganar — auditoría de la fórmula vigente y propuesta de mejora
