@@ -22,7 +22,7 @@
   pliego.js                   Router del dominio PLIEGO (Fase 0 · consolidación a 6 funciones)
   procesos.js                 Router del dominio PROCESOS (Fase 0 · consolidación a 6 funciones)
 
-· lib/ — 115 módulos:
+· lib/ — 116 módulos:
   accesibilidad.js            Accesibilidad operativa de la zona de la obra
   adendas.js                  Vigía de adendas · lo que el DATASET dice que cambió (Fase 5)
   almacen.js                  Esquema de claves Redis + compresión de chunks
@@ -51,6 +51,7 @@
   consorcio.js                Consorcio a la medida (Fase 10 · Detekta v4)
   contexto_vercel.js          El contexto de la petición de Vercel, o null (9-nov-2026)
   contratos_en_ejecucion.js   Los contratos que un perfil tiene en obra, también los de sus consorcios
+  convocatoria_limitada.js    ¿La convocatoria quedó limitada a Mipyme, a qué territorio, y hay sorteo?
   copia_datos.js              Copia de los datos que introduce el usuario (6-sep-2026, M-INF-15)
   correo.js                   Transporte de correo por REST — sin SDK, sin dependencias
   costos.js                   el motor de costo real vive en public/costos.js (UMD) y aquí
@@ -241,8 +242,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 469 secciones (58 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 22173  La lista lee el análisis guardado como Precios (10-nov-2026)
+· MEMORIA · docs/MEMORIA.md — 470 secciones (58 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 22191  Detekta ocupa la pantalla entera (10-nov-2026)
   L 22198  El Excel de un presupuesto importado lleva el APU del archivo y no inventa capítulos (10-no…
   L 22208  Precios con su barra: siete apartados, tres cifras arriba que nunca son $0, la casilla de l…  (superada)
@@ -252,6 +252,7 @@
   L 22298  La competencia por tamaño ordena «Las menos peleadas» y el motor de los cuatro métodos vive…
   L 22320  La regla del anuncio, medida con la población de Detekta, resiste en menor cuantía, mínima …
   L 22329  Precios dice dónde habría quedado su precio frente a todas las ofertas de la entidad, y cua…
+  L 22344  Las dos barreras se leen del pliego: limitada a Mipyme y a qué territorio, y si hay sorteo …
 
 · DOCUMENTOS docs/ — 78 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)

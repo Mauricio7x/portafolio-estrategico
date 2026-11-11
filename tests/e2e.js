@@ -11128,6 +11128,56 @@ async function main() {
       + "por encima de todas y de la mitad con su alerta, nada bajo cinco procesos, tandas de diez con memoria de 24 h, fuente caída y la acción por el router");
   }
 
+  /* unidad: LAS DOS BARRERAS (PLAN_X20, tanda 2, 11-nov-2026) ─────────────────
+     Si la convocatoria quedó limitada a Mipyme (y a qué territorio) y si hay sorteo, leído del pliego, la
+     adenda, la resolución o el aviso, con las frases REALES de las fichas de detekta-lector y del DocBase
+     oficial: lo que está entre corchetes es plantilla, las reglas generales no deciden, lo que no consta es
+     null y no bloquea, y entre documentos manda la adenda, luego el pliego. */
+  bqConvocatoria: { if (!corre("unidad convocatoria limitada")) break bqConvocatoria;
+    const CL = require("../lib/convocatoria_limitada.js");
+    const DP = require("../lib/documentos_proceso.js");
+    const L = (t) => CL.leerConvocatoria(t);
+    const neg = L("\f19\n2.5 LIMITACIÓN A MIPYME\nEl presente procedimiento de selección no es susceptible de limitarse a Mipyme.\n");
+    assert.ok(neg.mipyme === "no_limitada" && neg.citas.mipyme[0].pagina === 19, `frase real (SAMC-SI-020-2026, pág. 18) → ${JSON.stringify(neg)}`);
+    const tur = L("\f20\nEl presente proceso de selección se limitará a Mipyme Territorial Turbaco conforme a las solicitudes recibidas para tal fin.\n");
+    assert.ok(tur.mipyme === "limitada" && tur.territorio && tur.territorio.nombre === "Turbaco", `frase real de Turbaco → ${JSON.stringify(tur)}`);
+    const tol = L("\f7\nLa Entidad limita la convocatoria de este Proceso de Contratación a las Mipyme colombianas domiciliadas en el departamento del Tolima, por haberse verificado las condiciones.\n");
+    assert.deepStrictEqual(tol.territorio, { tipo: "departamento", nombre: "Tolima" }, "departamento con «del»");
+    const partida = L("\f20\nEl presente proceso de selección\nse limitará a Mipyme del\nmunicipio de San Luis.\n");
+    assert.deepStrictEqual([partida.mipyme, partida.territorio], ["limitada", { tipo: "municipio", nombre: "San Luis" }], "la frase partida en renglones se lee entera");
+    assert.strictEqual(L("\f3\nEn las convocatorias limitadas a Mipyme el puntaje por este concepto se trasladará al puntaje de oferta económica.\n").mipyme, null, "una regla general no dice si ESTA convocatoria quedó limitada");
+    assert.strictEqual(L("\f3\nCuando el proceso se limita a Mipyme, el puntaje de apoyo a la Mipyme se traslada a la oferta económica.\n").mipyme, null, "«cuando el proceso se limita…» es una regla, no una decisión");
+    assert.deepStrictEqual(L("\f8\nSe limita la convocatoria a Mipyme domiciliadas en el departamento de Norte de Santander.\n").territorio, { tipo: "departamento", nombre: "Norte de Santander" }, "un territorio de varias palabras se copia entero");
+    assert.strictEqual(L("\f2\n[En caso de que el proceso no sea susceptible de limitarse a Mipyme, la Entidad señalará lo siguiente en este numeral: el presente procedimiento de selección no es susceptible de limitarse a Mipyme.\n").mipyme, null,
+      "dentro de un corchete abierto (aunque la frase empiece tras «:») es plantilla");
+    const cerrado = L("\f19\n[Incluir esto] El presente procedimiento de selección no es susceptible de limitarse a Mipyme.\n");
+    assert.ok(cerrado.mipyme === "no_limitada" && !/\[/.test(cerrado.citas.mipyme[0].cita), "con la instrucción ya cerrada encima, la opción elegida cuenta y la cita sale sin el corchete");
+    const dos = L("\f19\n[Si procede] La Entidad limita la convocatoria de este Proceso de Contratación a las Mipyme colombianas por haberse verificado las condiciones. [Si no procede] La Entidad no limita el Proceso de Contratación a las Mipyme colombianas por no haberse cumplido las condiciones.\n");
+    assert.strictEqual(dos.mipyme, "contradictorio", "la plantilla con las dos opciones no escoge ninguna");
+    assert.strictEqual(L("\f21\nSi la entidad recibe más de diez (10) manifestaciones de interés realizará un sorteo a través de balotas.\n").sorteo, "si_mas_de_10");
+    assert.strictEqual(L("\f21\nLa entidad continuará el proceso con todos los interesados que manifestaron interés.\n").sorteo, "no");
+    assert.deepStrictEqual([L("").mipyme, L("").sorteo], [null, null], "sin texto: no consta (null), nunca «no limitada»");
+    // entre documentos: el aviso decía que no, el pliego definitivo que sí (el caso de Turbaco): manda el pliego
+    const lect = (tipo, lectura, fecha = "2026-06-30") => ({ tipo, fecha, documento: tipo, lectura });
+    const t1 = CL.convocatoriaDeDocumentos([lect("aviso", neg, "2026-06-25"), lect("pliego", tur)]);
+    assert.ok(t1.mipyme.valor === "limitada" && t1.territorio.nombre === "Turbaco", `el pliego definitivo gana al aviso → ${JSON.stringify(t1.mipyme)}`);
+    const t2 = CL.convocatoriaDeDocumentos([lect("pliego", tur), lect("adenda", neg, "2026-07-02")]);
+    assert.strictEqual(t2.mipyme.valor, "no_limitada", "la adenda gana al pliego");
+    const t3 = CL.convocatoriaDeDocumentos([lect("pliego", tur), lect("documento_base", neg)]);
+    assert.strictEqual(t3.mipyme.valor, "contradictorio", "dos documentos del mismo nivel que no coinciden: no se escoge");
+    // por la lectura REAL de documentos: el hecho llega a la guía con su página, y «no consta» también se dice
+    const h = DP.hechosDeTexto("\f20\nEl presente proceso de selección se limitará a Mipyme Territorial Turbaco conforme a las solicitudes recibidas para tal fin.\n", { tipo: "pliego" });
+    assert.strictEqual(h.convocatoria.mipyme, "limitada", "hechosDeTexto lee la convocatoria del pliego");
+    assert.strictEqual(DP.hechosDeTexto("texto cualquiera", { tipo: "formato" }).convocatoria, null, "en un formato no se busca");
+    const r = DP.loQueDicen({ leidos: { d1: { nombre: "pliego.pdf", tipo: "pliego", hechos: h, fecha_carga: "2026-06-30" } } }, {});
+    const hm = r.hechos.find((x) => x.clave === "convocatoria_mipyme"), hs = r.hechos.find((x) => x.clave === "sorteo");
+    assert.ok(hm && hm.pagina === 20 && /limitada a Mipyme de Turbaco/.test(hm.texto) && /una sucursal no cuenta/.test(hm.texto) && hm.estado === "revisar", `el hecho de la guía → ${JSON.stringify(hm)}`);
+    assert.ok(hs && hs.nivel === "no_consta" && /no consta/.test(hs.texto), "el sorteo que no consta se dice como tal");
+    assert.strictEqual(r.hechos[0].clave, "convocatoria_mipyme", "la limitación va AL FRENTE: la guía solo deja a la vista los cinco primeros");
+    console.log("· unidad convocatoria limitada: frases reales (no susceptible, Turbaco), departamento y municipio, renglones partidos, "
+      + "plantilla y reglas generales fuera, adenda > pliego > aviso, el hecho en la guía y «no consta» que no bloquea");
+  }
+
   /* unidad: TEXTO como co-señal (vocabulario por familia + verbo de obra) */
   bq19: { if (!corre("unidad texto")) break bq19;
     const idx = unspsc.indiceDe(PERFILES.helder.unspsc);

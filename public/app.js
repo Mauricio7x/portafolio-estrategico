@@ -11346,7 +11346,7 @@
     try { r = await promesa; } catch (e) {
       if (yo !== grupoPedido) return;
       p.className = "mt-2 pl-6 text-sm text-gray-500";
-      p.textContent = `No se pudo consultar dónde quedaron las ofertas de los procesos anteriores: ${e && e.message ? e.message : "sin respuesta"}. Vuelva a calcular en unos minutos.`;
+      p.textContent = mensajeDeFallo(e, "consultar dónde quedaron las ofertas de los procesos anteriores de esta entidad");
       return;
     } finally { if (grupoEnCamino.get(llave) === promesa) grupoEnCamino.delete(llave); }
     if (yo !== grupoPedido) return;

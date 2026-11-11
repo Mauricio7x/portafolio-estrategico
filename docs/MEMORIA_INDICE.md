@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 2639951 bytes · 469 secciones · 58 con marcador de superación.
+Derivado del árbol: 2642834 bytes · 470 secciones · 58 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -480,3 +480,4 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | La competencia por tamaño ordena «Las menos peleadas» y el motor de los cuatro métodos vive en lib/ con el máximo de la media geométrica (11-nov-2026) | 11-nov-2026 | 22298-22319 | 7406 |  |
 | La regla del anuncio, medida con la población de Detekta, resiste en menor cuantía, mínima y régimen especial; en licitación no (11-nov-2026) | 11-nov-2026 | 22320-22328 | 1785 |  |
 | Precios dice dónde habría quedado su precio frente a todas las ofertas de la entidad, y cuatro textos que afirmaban de más (11-nov-2026) | 11-nov-2026 | 22329-22343 | 3717 |  |
+| Las dos barreras se leen del pliego: limitada a Mipyme y a qué territorio, y si hay sorteo (11-nov-2026) | 11-nov-2026 | 22344-22357 | 2883 |  |
