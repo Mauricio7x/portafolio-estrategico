@@ -7636,11 +7636,16 @@
     const rec = r.recomendacion || null;
     /* con recomendación, sus avisos ya dicen lo del porcentaje mínimo: no se repite */
     const avisos = rec ? "" : (r.advertencias || []).filter((a) => /porcentaje mínimo/.test(a)).map((a) => `<li>Atención: ${esc(a)}</li>`).join("");
+    /* EL SIMULACRO (PLAN_X20, tanda 4): un reparto que el pliego prohíbe se dice EN ROJO y siempre, con o sin
+       recomendación: es lo que dejó no habilitada la oferta a la Universidad Pedagógica (65/35 con el 40 % pedido) */
+    const noCumpleReparto = (r.participacion_pliego || []).filter((j) => j && j.estado === "no_cumple")
+      .map((j) => `<li class="font-medium text-red-700">${esc(j.frase)}${j.pagina != null ? ` (pág. ${esc(String(j.pagina))})` : ""}</li>`).join("");
     const bloqueRec = bloqueRecDe(r);
     return `${encabezado}
       ${bloqueRec}
       ${filas ? `<ul class="mt-1.5 space-y-1 text-sm">${filas}</ul>` : ""}
       <p class="mt-2 text-sm font-medium">${esc(frase)}</p>
+      ${noCumpleReparto ? `<ul class="mt-2 space-y-1 text-sm" data-reparto-no-cumple>${noCumpleReparto}</ul>` : ""}
       ${verificado}
       ${avisos ? `<ul class="mt-2 space-y-1 text-[11px] text-gray-500">${avisos}</ul>` : ""}
       ${sinReparto ? "" : `<div class="mt-2 flex flex-wrap items-center gap-2">

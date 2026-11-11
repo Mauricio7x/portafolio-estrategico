@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 2642834 bytes · 470 secciones · 58 con marcador de superación.
+Derivado del árbol: 2645305 bytes · 471 secciones · 58 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -308,176 +308,177 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | La salud vigila los dos relojes: el latido que deja de sonar y la copia que nunca corrió (27-sep-2026) | 27-sep-2026 | 18268-18275 | 1938 |  |
 | La huella por proceso: el delta ya no reescribe lo que SECOP re-sella sin cambiar (28-sep-2026) | 28-sep-2026 | 18276-18293 | 3592 |  |
 | El revisor de la oferta deja de decir «lista» con errores: identificador, IVA, cantidad sin dato, otro proceso y lectura tardía (27/28-sep-2026, N11-A) | 27/28-sep-2026 | 18294-18303 | 3868 |  |
-| Los indicadores del consorcio se juzgan con la fórmula del pliego, y el 50/50 supuesto no niega (27/28-sep-2026, N21) | 27/28-sep-2026 | 18304-18317 | 4204 |  |
-| «Cómo se gana con el precio» por modalidad: sin sorteo en mínima cuantía ni en concurso de méritos (27/28-sep-2026, N13') | 27/28-sep-2026 | 18318-18329 | 3087 | «La mínima cuantía con su tabla medida: la probabilidad es en cuántas de cada 100 el ganador bajó menos que usted (30-sep-2026)» |
-| El formato de la entidad, lleno: solo lo inequívoco del proponente, en el Word que ella publicó (27-sep-2026) | 27-sep-2026 | 18330-18402 | 8302 | «Con qué consorcio se presenta cada proceso, el .zip de la oferta y quitar un proceso por un tiempo (5-nov-2026)» |
-| El rojo intermitente del listado era una conexión que el Redis simulado cerraba (27-sep-2026) | 27-sep-2026 | 18403-18416 | 1433 |  |
-| El veredicto en las palabras del dueño: «Puede ir solo», «Necesita socio» con cuál, y «No alcanza» con su porqué (27-sep-2026) | 27-sep-2026 | 18417-18447 | 3527 |  |
-| El IVA de la utilidad se cuenta con una sola regla en las cifras de precio, y sin saber si la entidad lo incluye, se cuenta (28-sep-2026) | 28-sep-2026 | 18448-18473 | 6049 | «El Excel dice el total que se escribe en SECOP II: la baja en cada fila, el IVA de la utilidad rebajada y su fila según el pliego (30-sep-2026)» |
-| El Excel dice el total que se escribe en SECOP II: la baja en cada fila, el IVA de la utilidad rebajada y su fila según el pliego (30-sep-2026) | 30-sep-2026 | 18474-18493 | 4686 |  |
-| Tres pendientes cerrados: la cantidad sin dato en el Excel que se radica, el proceso del borrador y la participación mínima en el reparto (30-sep-2026) | 30-sep-2026 | 18494-18503 | 4668 |  |
-| La actualización a las 7:50 a. m. y a las 8:00 p. m., y qué ocupa la base de datos medido desde la aplicación (30-sep-2026) | 30-sep-2026 | 18504-18511 | 3014 |  |
-| La mínima cuantía con su tabla medida: la probabilidad es en cuántas de cada 100 el ganador bajó menos que usted (30-sep-2026) | 30-sep-2026 | 18512-18525 | 5403 |  |
-| La base de datos deja de llenarse: el histórico sin versiones viejas, lo viejo se borra pasada una gracia y lo rehacible se libera solo si falta sitio (30-sep-2026) | 30-sep-2026 | 18526-18544 | 8411 |  |
-| El correo cuando la salud se pone en rojo, con el reloj y el correo que ya había (30-sep-2026) | 30-sep-2026 | 18545-18554 | 2069 |  |
-| La carga completa y el histórico tampoco piden lo que la cascada tira (30-sep-2026) | 30-sep-2026 | 18555-18569 | 2443 |  |
-| El tipo de contrato de obra sin códigos entra, en ámbar (30-sep-2026) | 30-sep-2026 | 18570-18589 | 3084 |  |
-| El corpus del año se recomprime en su sitio: no se junta como el histórico (30-sep-2026) | 30-sep-2026 | 18590-18606 | 7892 |  |
-| Consorcios de tres o más socios: no hay ninguno con reparto supuesto, y si llega a haberlo no niega (30-sep-2026) | 30-sep-2026 | 18607-18614 | 1396 |  |
-| La historia de un proceso sobrevive a quien reescribe su mes (1-oct-2026) | 1-oct-2026 | 18615-18625 | 3159 |  |
-| «Parque automotor» también es lo que se guarda bajo techo: el garaje y los hangares entran (30-sep-2026) | 30-sep-2026 | 18626-18638 | 3977 |  |
-| «Combustible» suelto también mataba obra: las redes de gas y los surtidores entran (1-oct-2026) | 1-oct-2026 | 18639-18652 | 5050 |  |
-| Tres pruebas con fecha fija tumbaron main al cambiar de mes, y la cuarta espera (1-oct-2026) | 1-oct-2026 | 18653-18664 | 2514 | «Las pruebas con fecha: la compactación caía el 31-oct y la lista se queda sin procesos con cierre en noviembre (16-oct-2026)» |
-| Vercel pausó Detekta por CPU: cuenta nueva y menos llamadas automáticas (16-oct-2026) | 16-oct-2026 | 18665-18715 | 6213 |  |
-| Las pruebas con fecha: la compactación caía el 31-oct y la lista se queda sin procesos con cierre en noviembre (16-oct-2026) | 16-oct-2026 | 18716-18727 | 2417 | «La fila de prueba se busca en todas las páginas del listado, y enero espera (16-oct-2026)» |
-| La fila de prueba se busca en todas las páginas del listado, y enero espera (16-oct-2026) | 16-oct-2026 | 18728-18740 | 2221 | «Enero de 2027: las pruebas caen en cadena cuando el año tiene pocos meses (17-oct-2026)» |
-| Enero de 2027: las pruebas caen en cadena cuando el año tiene pocos meses (17-oct-2026) | 17-oct-2026 | 18741-18750 | 1999 |  |
-| La entrada del dueño: correo y contraseña, y ninguna llave en el navegador (17-oct-2026) | 17-oct-2026 | 18751-18776 | 7985 |  |
-| La fila partida de la tabla de códigos de la experiencia (17-oct-2026) | 17-oct-2026 | 18777-18799 | 2305 |  |
-| El anticipo «N/A» bajo su título y el amparo «Devolución del pago anticipado» (17-oct-2026) | 17-oct-2026 | 18800-18822 | 2304 |  |
-| Lo que mostraron 5 procesos de menor cuantía ya adjudicados (17-oct-2026) | 17-oct-2026 | 18823-18861 | 3373 |  |
-| El anticipo «…PAGO ANTICIPADO: No aplica» en una sola línea (17-oct-2026) | 17-oct-2026 | 18862-18881 | 2022 |  |
-| El presupuesto del pliego frente al de SECOP II: un aviso, no un reemplazo (17-oct-2026) | 17-oct-2026 | 18882-18915 | 3541 |  |
-| El techo de la oferta en Precios: la cifra más baja entre SECOP II y el pliego definitivo (17-oct-2026) | 17-oct-2026 | 18916-18941 | 2755 | «El techo del pliego también desde la tarjeta de Licitaciones, para un proceso guardado (17-oct-2026)» |
-| Herramientas de terceros para las sesiones de Claude: lo que entró, lo que no y por qué (17-oct-2026) | 17-oct-2026 | 18942-18978 | 3729 |  |
-| El anticipo con el corchete de la plantilla y la frase modelo que remite al 8.3 (17-oct-2026) | 17-oct-2026 | 18979-19002 | 2527 |  |
-| El presupuesto del pliego en licitación pública: título sin número, «…Y ESPECIFICACIONES» y centavos con punto (17-oct-2026) | 17-oct-2026 | 19003-19025 | 2540 |  |
-| Precios deja de despertar la rutina cuando ya se despertó 3 veces sin dar señal (17-oct-2026) | 17-oct-2026 | 19026-19054 | 2807 |  |
-| El dictamen también deja de despertar la rutina tras 3 lecturas pedidas sin respuesta (17-oct-2026) | 17-oct-2026 | 19055-19076 | 2084 |  |
-| El anticipo negado para UNA parte numerada del contrato no es «no hay anticipo» (17-oct-2026) | 17-oct-2026 | 19077-19103 | 2958 |  |
-| El techo del pliego también desde la tarjeta de Licitaciones, para un proceso guardado (17-oct-2026) | 17-oct-2026 | 19104-19124 | 2063 |  |
-| Las pruebas de 2027: un corte que dependía de la velocidad de la máquina y una negación que miraba una sola página (17-oct-2026) | 17-oct-2026 | 19125-19132 | 1813 |  |
-| Pedir otro rango ya no vuelve a empezar el histórico: el servidor responde 409 y el botón continúa el rango guardado (17-oct-2026) | 17-oct-2026 | 19133-19174 | 7841 |  |
-| El límite que calculó la entidad, medido en 3 procesos cerrados, va debajo del aviso de precio bajo (17-oct-2026) | 17-oct-2026 | 19175-19186 | 3454 | «La alerta de precio bajo se corta por modalidad con lo medido en SECOP II (18-oct-2026)» |
-| El techo de la tarjeta, sin la guía entera: `solo=tope` (17-oct-2026) | 17-oct-2026 | 19187-19204 | 1835 |  |
-| El plazo del pliego por la columna de su tabla 1.1: medido, NO fusionado (18-oct-2026) | 18-oct-2026 | 19205-19231 | 3468 |  |
-| La negación del anticipo con la parte ANTES («Para la etapa 1 no se entregará anticipo») NO se cubre (18-oct-2026) | 18-oct-2026 | 19232-19254 | 2265 |  |
-| El muro de Vercel vuelve, gratis: «Vercel Authentication» en todo el sitio y el pase para lo automático (17-oct-2026) | 17-oct-2026 | 19255-19310 | 7782 |  |
-| Dos capas: el muro de Vercel delante y la sesión del dueño detrás (18-oct-2026) | 18-oct-2026 | 19311-19326 | 1492 | «La puerta: producción sin el muro de Vercel, una cuenta compartida y toda operación detrás de la sesión (9-nov-2026)» |
-| El muro de Vercel quedó puesto: las tareas de Vercel lo pasan, y cómo se mide (17-oct-2026) | 17-oct-2026 | 19327-19352 | 4487 |  |
-| El dictamen, el cronograma y los descuentos leen el documento que ES el pliego, no la última versión del vigía (18-oct-2026) | 18-oct-2026 | 19353-19418 | 9640 |  |
-| La sonda del muro: el latido y el vigilante prueban la portada sin el pase (18-oct-2026) | 18-oct-2026 | 19419-19457 | 4440 |  |
-| Base nacional de licitaciones de obra: un script que solo mide, fuera de la app (17-oct-2026) | 17-oct-2026 | 19458-19472 | 2538 | «Base nacional de obra: las ofertas se piden agrupadas, las filas repetidas de p6dx son fases y el proveedor se identifica por unión (17-oct-2026)» · «Las reglas de lotes y de rango de la base nacional: un presupuesto ajustado no es lote, una oferta doble tampoco y los centavos no pasan el tope (26-oct-2026)» |
-| Base nacional de obra: las ofertas se piden agrupadas, las filas repetidas de p6dx son fases y el proveedor se identifica por unión (17-oct-2026) | 17-oct-2026 | 19473-19482 | 2028 | «Las reglas de lotes y de rango de la base nacional: un presupuesto ajustado no es lote, una oferta doble tampoco y los centavos no pasan el tope (26-oct-2026)» |
-| El almacén R2 de la base nacional frena ANTES de pasar el gratis, porque Cloudflare no frena (17-oct-2026) | 17-oct-2026 | 19483-19491 | 3029 |  |
-| Base nacional de obra, Fase 1: una fila por proceso y cinco señales que solo invitan a revisar (17-oct-2026) | 17-oct-2026 | 19492-19504 | 2499 |  |
-| R2 rechazó el If-Match con el registro sin cambios, y la mínima cuantía no se mide con la vara de las demás (17-oct-2026) | 17-oct-2026 | 19505-19513 | 2420 |  |
-| Fase 2: el piso se reproduce, el ganador no — los datos abiertos no dicen quién quedó hábil (17-oct-2026) | 17-oct-2026 | 19514-19523 | 2664 |  |
-| Fase 3: la validación posible sin SECOP es coherencia interna, y se hace por censo, no por muestra (17-oct-2026) | 17-oct-2026 | 19524-19533 | 2114 |  |
-| La alerta de precio bajo se corta por modalidad con lo medido en SECOP II (18-oct-2026) | 18-oct-2026 | 19534-19548 | 3640 |  |
-| La fuente del corte se ve en la pantalla y la base se vuelve a medir cada mes, con un vigía que avisa y no corrige (18-oct-2026) | 18-oct-2026 | 19549-19561 | 4296 |  |
-| Las ganadoras que la base no cuenta: en licitación no mueven el corte; en mínima la regla del 50 % esconde ganadoras reales (18-oct-2026) | 18-oct-2026 | 19562-19571 | 2616 |  |
-| El rescate bajo el 50 %: la oferta ganadora que coincide con lo adjudicado y con su contrato cuenta, en todas las modalidades (18-oct-2026) | 18-oct-2026 | 19572-19583 | 3226 |  |
-| La llave del servidor no se copia de Vercel: se anota al ponerla (18-oct-2026) | 18-oct-2026 | 19584-19596 | 1833 |  |
-| Los pliegos de más de 20 MB que se midieron son escaneos: bajarlos por partes no da texto (18-oct-2026) | 18-oct-2026 | 19597-19628 | 3999 |  |
-| El tablero de pendientes mentía: la revisión del 18-oct, uno por uno contra el código (18-oct-2026) | 18-oct-2026 | 19629-19636 | 1742 |  |
-| Las tres lecturas del pliego del 18-oct: la versión que rige, el ejemplo entre corchetes y el techo con una versión sin tabla (18-oct-2026) | 18-oct-2026 | 19637-19644 | 1694 |  |
-| La carga en Precios no entra al vigía si el nombre dice que es otra cosa (18-oct-2026) | 18-oct-2026 | 19645-19685 | 5180 |  |
-| La Fase C se cierra: no se construye la descarga de pliegos de más de 20 MB (18-oct-2026) | 18-oct-2026 | 19686-19697 | 970 |  |
-| La cadena que no seguía con el muro: la llamada del servidor a sí mismo va con waitUntil y dice cómo le fue, y el latido hace hasta 3 tandas (18-oct-2026) | 18-oct-2026 | 19698-19732 | 9584 | «La carga completa ya no para con una actualización a medias, y el tiempo agotado de Upstash dice qué comando fue (18-oct-2026)» |
-| La fórmula en prosa no afirma el anticipo: «presupuesto oficial menos el anticipo…» es mención (18-oct-2026) | 18-oct-2026 | 19733-19761 | 2936 |  |
-| El clasificador lee los nombres con separadores y los nuevos de Colombia Compra («DocBase_…») (18-oct-2026) | 18-oct-2026 | 19762-19789 | 3687 |  |
-| La carga completa ya no para con una actualización a medias, y el tiempo agotado de Upstash dice qué comando fue (18-oct-2026) | 18-oct-2026 | 19790-19807 | 4215 |  |
-| La obra que copia el «aunar esfuerzos» del convenio que la financia no es un convenio (19-oct-2026) | 19-oct-2026 | 19808-19829 | 6718 |  |
-| El Formulario 1 en Excel: «VALOR TOTAL» es el total, y solo se da por leído lo que pasa la comprobación fila a fila (19-oct-2026) | 19-oct-2026 | 19830-19850 | 4939 | «La revisión adversaria del Formulario 1 en Excel: la hoja equivocada, la tolerancia, la caducidad y los topes (19-oct-2026)» |
-| El Formulario 1 en Excel se lee solo en el servidor, y solo se publica lo que pasa la puerta (19-oct-2026) | 19-oct-2026 | 19851-19874 | 5365 | «La revisión adversaria del Formulario 1 en Excel: la hoja equivocada, la tolerancia, la caducidad y los topes (19-oct-2026)» |
-| El Formulario 1 leído se lleva a Precios con «Cotizar en Precios» (19-oct-2026) | 19-oct-2026 | 19875-19894 | 4845 |  |
-| La revisión adversaria del Formulario 1 en Excel: la hoja equivocada, la tolerancia, la caducidad y los topes (19-oct-2026) | 19-oct-2026 | 19895-19916 | 6387 |  |
-| La lista abre con TODOS los procesos de obra abiertos, y los que no alcanzan van atenuados y al final (19-oct-2026) | 19-oct-2026 | 19917-19935 | 4193 |  |
-| La base de contratación estatal queda en docs/, sin cobertura medida, y el contador de uso ya existía (19-oct-2026) | 19-oct-2026 | 19936-19952 | 2582 |  |
-| El arranque de Precios estaba pisado por el de la app, y una función repetida en el mismo ámbito no avisa (19-oct-2026) | 19-oct-2026 | 19953-19967 | 3404 |  |
-| Lo verificado en producción el 19-oct-2026: el OCR ya está configurado; el respaldo en R2 y el correo de la mañana siguen sin configurar | 19-oct-2026 | 19968-19987 | 4610 |  |
-| Volver a buscar los documentos ya se puede pedir desde el expediente, y la aplicación no tenía ningún botón para hacerlo (19-oct-2026) | 19-oct-2026 | 19988-20006 | 3711 |  |
-| La causa real de un fallo de lectura se registra, se sanea y se dice, y una herramienta mide lo que Detekta no lee (19-oct-2026) | 19-oct-2026 | 20007-20034 | 8588 |  |
-| El Excel de la oferta económica se reconoce por más nombres y solo se publica lo que pasa la puerta; y un Excel de presupuesto subido tras el cierre es de un proponente (19-oct-2026) | 19-oct-2026 | 20035-20058 | 7598 |  |
-| Un escaneo leído a medias se guardaba como «Leído»: el OCR de los documentos ignoraba las páginas que el servicio no reconocía (20-oct-2026) | 20-oct-2026 | 20059-20085 | 8925 |  |
-| El avance de la lectura dice lo que la aplicación hace de verdad, y lo que el usuario pide pasa primero (20-oct-2026) | 20-oct-2026 | 20086-20114 | 7482 |  |
-| Las tandas de OCR se arman por PESO, no por 5 páginas fijas: el estudio previo del dueño falló con «código 413» (20-oct-2026) | 20-oct-2026 | 20115-20135 | 3916 |  |
-| La auditoría de lo leído: mide si hay INDICIOS de una lectura mala, jamás dice «correcto» (20-oct-2026) | 20-oct-2026 | 20136-20160 | 5723 |  |
-| La auditoría con su primer proceso real: lo casi vacío se marca, un presupuesto no se juzga por sus letras y los tiempos salen a la vista (21-oct-2026) | 21-oct-2026 | 20161-20191 | 8240 |  |
-| Cada subida cuesta un despliegue: una entrega, un envío (21-oct-2026) | 21-oct-2026 | 20192-20200 | 1688 |  |
-| El consejo de siete asesores entra al proyecto: sin la sala web, sin guardar nada en el repositorio y con lo que no sabe dicho (21-oct-2026) | 21-oct-2026 | 20201-20228 | 6048 |  |
-| Fase 0 de detekta-lector sobre los documentos que deciden en menor cuantía: cuatro causas medidas y cuatro arreglos (25-oct-2026) | 25-oct-2026 | 20229-20255 | 16663 |  |
-| Probabilidad de adjudicación, Fase 0: las ofertas abiertas sí existen desde 2020, quién quedó hábil no, y la regla del precio solo se sabe donde hubo documento tipo (25-oct-2026) | 25-oct-2026 | 20256-20293 | 6698 |  |
-| Las reglas de lotes y de rango de la base nacional: un presupuesto ajustado no es lote, una oferta doble tampoco y los centavos no pasan el tope (26-oct-2026) | 26-oct-2026 | 20294-20317 | 6142 |  |
-| La prueba de los 30 del Nivel 3: con los hábiles reales el motor acierta en 6 de 9, y lo que falla son los puntos distintos del precio (26-oct-2026) | 26-oct-2026 | 20318-20346 | 4546 | «Las evaluaciones de cada entidad entran a la aplicación: el navegador lee el documento, una sesión de madrugada lo interpreta y la aplicación verifica cada cita (26-oct-2026)» |
-| Las evaluaciones de cada entidad entran a la aplicación: el navegador lee el documento, una sesión de madrugada lo interpreta y la aplicación verifica cada cita (26-oct-2026) | 26-oct-2026 | 20347-20380 | 7282 |  |
-| La foto de los índices en el almacén de archivos: Upstash deja de bajar los índices enteros en cada instancia fría (27-oct-2026) | 27-oct-2026 | 20381-20406 | 9911 |  |
-| La lista dice con quién y con qué parte, y la caja ya no deja pasar lo que ni con el anticipo máximo alcanza (27-oct-2026) | 27-oct-2026 | 20407-20459 | 15582 |  |
-| Lo que pide atención dice lo que falta HOY, el cuaderno ya no se borra al marcar una nota y el calendario lee las fechas suyas (27-oct-2026) | 27-oct-2026 | 20460-20476 | 7963 |  |
-| El rótulo «Obra civil» ya no sale de una palabra genérica en un suministro, una compraventa o un servicio (28-oct-2026) | 28-oct-2026 | 20477-20501 | 8741 | «Lo que la entidad publicó como compra o servicio ya no sale verde por un verbo de obra, la «obra» fuera de contexto sale del tipo, y SECOP I marca lo que probablemente cerró (6-nov-2026)» |
-| La compra o el servicio que no es obra ya no sale con «Obra civil», y «Otro» y «Decreto 092» entran en la regla de la palabra genérica (28-oct-2026) | 28-oct-2026 | 20502-20531 | 10195 | «Lo que la lista daba como obra sin serlo sale del tipo «obra», y «Otro» y «Decreto 092» salen de la regla de la palabra genérica (28-oct-2026)» · «La cuenta de días al cierre es una sola y por fecha civil, y el chip sigue a la regla explícita de no-obra aunque haya clase de obra pura (28-oct-2026)» |
-| Lo que la lista daba como obra sin serlo sale del tipo «obra», y «Otro» y «Decreto 092» salen de la regla de la palabra genérica (28-oct-2026) | 28-oct-2026 | 20532-20558 | 10422 | «La cuenta de días al cierre es una sola y por fecha civil, y el chip sigue a la regla explícita de no-obra aunque haya clase de obra pura (28-oct-2026)» |
-| El % de adjudicación según el precio no se enseña porque se midió que no predice: en licitación y menor cuantía se dice cuántas ofertas ganaron a ese precio (28-oct-2026) | 28-oct-2026 | 20559-20612 | 14342 | «La verificación del precio normaliza en cada proceso: el precio predice quién gana apenas mejor que el azar, no peor (28-oct-2026)» |
-| La referencia de precio va por tipo de obra: una vía y un acueducto se adjudican a precios distintos, pero en ninguno el precio predice quién gana (28-oct-2026) | 28-oct-2026 | 20613-20679 | 11571 |  |
-| La verificación del precio normaliza en cada proceso: el precio predice quién gana apenas mejor que el azar, no peor (28-oct-2026) | 28-oct-2026 | 20680-20701 | 3177 |  |
-| La cuenta de días al cierre es una sola y por fecha civil, y el chip sigue a la regla explícita de no-obra aunque haya clase de obra pura (28-oct-2026) | 28-oct-2026 | 20702-20726 | 9228 |  |
-| La referencia de un tramo concentrado se dice sin la entidad que lo concentra, el vocabulario de tipos va en dos capas y la captura de hábiles arranca desde la sesión (28-oct-2026) | 28-oct-2026 | 20727-20777 | 8797 |  |
-| Lo siguiente tras presentarse sale de la etapa, la búsqueda encuentra sus notas, y seis de los siete defectos de plata del 26-sep ya estaban cerrados (28-oct-2026) | 28-oct-2026 | 20778-20815 | 7625 |  |
-| Una base que no responde no es «ninguno», y la madrugada lee sus propias evaluaciones con un cupo medido (28-oct-2026) | 28-oct-2026 | 20816-20841 | 8491 |  |
-| Una cifra de un informe de evaluación se lee por su último grupo: con dos cifras son centavos, con tres son miles (1-nov-2026) | 1-nov-2026 | 20842-20858 | 4388 |  |
-| Lo que llenó Upstash en octubre fue el ancho de banda de lo programado, y noviembre va justo (1-nov-2026) | 1-nov-2026 | 20859-20882 | 4681 |  |
-| El vigilante pide el tamaño y no el diagnóstico entero, y el lector deja de leer el corpus del año (1-nov-2026) | 1-nov-2026 | 20883-20909 | 5690 | «La tarea de la mañana busca las adendas de los procesos guardados, sin leer el corpus y con los topes medidos (4-nov-2026)» |
-| Lo que presupuestaron las entidades va al lado de cada ítem, el enlace de SECOP II pegado encuentra su proceso, y la tabla de la TRM de licitación pública coincide con la de menor cuantía (1-nov-2026) | 1-nov-2026 | 20910-20936 | 11684 |  |
-| Lo que no sale tampoco se calcula: los avisos sin correo, la baja como mucho un ciclo al día y el cupo del lector en documentos leídos (2-nov-2026) | 2-nov-2026 | 20937-20956 | 5440 | «La baja se publica cada 2 a 3 días, y una fila que no es un registro ya no tumba la lectura de los bloques (3-nov-2026)» |
-| «Calcular» costea con los precios corregidos del perfil con que se trabaja, como «Guardar» y Piso/Techo (2-nov-2026) | 2-nov-2026 | 20957-20978 | 7805 |  |
-| La baja se publica cada 2 a 3 días, y una fila que no es un registro ya no tumba la lectura de los bloques (3-nov-2026) | 3-nov-2026 | 20979-21002 | 6111 |  |
-| Un consorcio con Helder de integrante hereda sus precios corregidos, y «Calcular» manda el tipo de trabajo (3-nov-2026) | 3-nov-2026 | 21003-21020 | 7606 |  |
-| La 11 con la 3: la letra de leer, todo el texto a 7:1 y una sola tabla de tamaños (3-nov-2026) | 3-nov-2026 | 21021-21041 | 8386 |  |
-| El calendario del proceso: las fechas de los documentos llegan a Mis procesos, SECOP II manda sobre el documento y el lector deja de inventar plazos (3-nov-2026) | 3-nov-2026 | 21042-21082 | 15631 |  |
-| Lo que tiene que entregar: la lista del pliego con su página, marcable en el papeleo, y el papeleo en fila (3-nov-2026) | 3-nov-2026 | 21083-21113 | 12991 |  |
-| El OCR saturado ya no deja un documento incompleto para siempre, dos oferentes casi homónimos se separan por su número, y la cadencia de la baja se mide (3-nov-2026) | 3-nov-2026 | 21114-21164 | 13255 |  |
-| El cronograma en Excel se lee: el Anexo 2 de Colombia Compra entra a la línea de tiempo con su hoja y su celda, y de varias versiones habla solo la más nueva (3-nov-2026) | 3-nov-2026 | 21165-21190 | 13047 | «Dos filas con fechas distintas: choca la misma actividad o un plazo, no un aviso ni una adjudicación, y cada fila se lee sola; medido sobre los procesos guardados (4-nov-2026)» |
-| La tarjeta nueva: cinco renglones, con quién, y la competencia dentro con los contratos de obra aparte (3-nov-2026) | 3-nov-2026 | 21191-21209 | 11346 |  |
-| Mi empresa como la maqueta c07, «Por qué» sin siglas y las llantas fuera de «Obra» (3-nov-2026) | 3-nov-2026 | 21210-21228 | 8137 | «Mi empresa: «Hoy» con cuatro piezas y una barra con ocho apartados; la plata en juego vuelve con quién la pone (9-nov-2026)» |
-| Mis procesos como la maqueta c07 (4-nov-2026) | 4-nov-2026 | 21229-21245 | 5631 |  |
-| Dos filas con fechas distintas: choca la misma actividad o un plazo, no un aviso ni una adjudicación, y cada fila se lee sola; medido sobre los procesos guardados (4-nov-2026) | 4-nov-2026 | 21246-21288 | 9308 |  |
-| Cada cifra de Mi empresa abre exactamente su lista: el filtro «Solo las que puede presentarse» (4-nov-2026) | 4-nov-2026 | 21289-21300 | 4215 |  |
-| Una sola frase para la capacidad que le queda, y Mis procesos en dos renglones entre 641 y 860 px (4-nov-2026) | 4-nov-2026 | 21301-21309 | 2063 |  |
-| Las fechas que hay que confirmar: el Anexo 2 que rige pasa el tope, el cierre desmentido y la fecha que no cuadra dicen «verifíquela», y el traslado vence el último día (4-nov-2026) | 4-nov-2026 | 21310-21351 | 7107 |  |
-| La alerta de precio bajo dice lo que mide la base con las reglas del 26-oct: 33 de 2.190 en licitación (4-nov-2026) | 4-nov-2026 | 21352-21359 | 1589 |  |
-| La adenda que usted no ha visto avisa, y la que no se ha leído pone «verifíquela» en las fechas anteriores (4-nov-2026) | 4-nov-2026 | 21360-21387 | 5596 |  |
-| La tarea de la mañana busca las adendas de los procesos guardados, sin leer el corpus y con los topes medidos (4-nov-2026) | 4-nov-2026 | 21388-21431 | 9841 |  |
-| El aviso al teléfono por Telegram, sin leer el corpus, dónde gana el dueño y lo que midió la fase 0 (5-nov-2026) | 5-nov-2026 | 21432-21472 | 7990 |  |
-| La fase 2 del plan: la cita entera, el juicio que no depende del lote, cuánto falta, qué pesa cada requisito, el rastro de lectura y la búsqueda del oficio (5-nov-2026) | 5-nov-2026 | 21473-21493 | 7398 |  |
-| La fase 3 del plan: la oferta propia por el NIT, por qué quedó así, lo que el competidor tiene por ejecutar, qué se puede corregir después y los bancos de precios cerrados (5-nov-2026) | 5-nov-2026 | 21494-21513 | 5422 |  |
-| Las fases 4 y 5 del plan: cuáles contratos acreditar, los contratos que terminan pronto, lo que falta por conseguir, SECOP I a pedido y la carga en el teléfono medida (5-nov-2026) | 5-nov-2026 | 21514-21524 | 3942 |  |
-| El costo de preparar la oferta es la póliza de seriedad, y lo que el dueño decidió no hacer (5-nov-2026) | 5-nov-2026 | 21525-21537 | 5860 |  |
-| El % de la garantía del pliego llega a Precios, y las observaciones al pliego redactadas con su cita comprobada (5-nov-2026) | 5-nov-2026 | 21538-21561 | 6210 |  |
-| Las cifras en letras también se comprueban en el dictamen, y la prima mínima no se pedirá (5-nov-2026) | 5-nov-2026 | 21562-21581 | 3444 |  |
-| Con qué consorcio se presenta cada proceso, el .zip de la oferta y quitar un proceso por un tiempo (5-nov-2026) | 5-nov-2026 | 21582-21609 | 6261 |  |
-| Los datos completos para los formatos y la imagen de la firma en el .zip (5-nov-2026) | 5-nov-2026 | 21610-21653 | 7156 |  |
-| La plantilla de Colombia Compra completa y el .zip con todo lo que se entrega (5-nov-2026) | 5-nov-2026 | 21654-21734 | 12184 |  |
-| Cada integrante con su copia, la conformación del consorcio llena y la fecha real del .zip (6-nov-2026) | 6-nov-2026 | 21735-21754 | 5028 |  |
-| SECOP II dejó de publicar el código de actividad el 16-sep-2026: lo que se perdió, lo que se recupera por el objeto y lo que no tiene fuente (6-nov-2026) | 16-sep-2026 | 21755-21804 | 12133 |  |
-| El pliego definitivo tiene otro número: Mis procesos y el aviso de la mañana siguen la publicación vigente del expediente (6-nov-2026) | 6-nov-2026 | 21805-21826 | 4236 |  |
-| Lo que la entidad publicó como compra o servicio ya no sale verde por un verbo de obra, la «obra» fuera de contexto sale del tipo, y SECOP I marca lo que probablemente cerró (6-nov-2026) | 6-nov-2026 | 21827-21852 | 10137 |  |
-| «No es obra» quita un proceso de su lista, con su otra publicación, y la lista dice cuántos quitó (6-nov-2026) | 6-nov-2026 | 21853-21866 | 3223 |  |
-| Los datos de los formatos que ya son públicos se traen con el NIT: la identidad del RUES y el contacto de SECOP II (6-nov-2026) | 6-nov-2026 | 21867-21882 | 3974 |  |
-| Dos defectos de las fechas de los documentos, reproducidos y arreglados: el hito de adendas exige el acto, y un Gantt no calla al Anexo 2 (6-nov-2026) | 6-nov-2026 | 21883-21895 | 2449 |  |
-| La pestaña del pliego y su .ics marcan la fecha que no cuadra y el cierre desmentido, con la misma regla de Mis procesos (6-nov-2026) | 6-nov-2026 | 21896-21904 | 1803 |  |
-| La consultoría de ingeniería sin código se ve, en ámbar: estudios de suelos, geotecnia, patología estructural y vulnerabilidad sísmica (7-nov-2026) | 7-nov-2026 | 21905-21918 | 2406 |  |
-| En los pliegos tipo de obra que tiene el dueño, los códigos UNSPSC no piden inscripción en el RUP: piden que cada contrato de experiencia esté clasificado en alguno (7-nov-2026) | 7-nov-2026 | 21919-21930 | 3857 |  |
-| Con el pliego leído, la puerta del registro mira los contratos de experiencia con los códigos del pliego, no la inscripción (8-nov-2026) | 8-nov-2026 | 21931-21977 | 7681 |  |
-| Los consorcios del dueño son 1A y GR; GR aún no ha presentado oferta (9-nov-2026) | 9-nov-2026 | 21978-21987 | 1358 | «El plan x20: uso personal, ir donde llega una sola oferta, y sus ofertas se reconocen por el integrante (11-nov-2026)» |
-| La puerta: producción sin el muro de Vercel, una cuenta compartida y toda operación detrás de la sesión (9-nov-2026) | 9-nov-2026 | 21988-22010 | 7292 |  |
-| El medidor del ancho de banda de Upstash: cada petición anota lo que gastó, por operación (9-nov-2026) | 9-nov-2026 | 22011-22029 | 4515 |  |
-| El armazón medido antes de rediseñarlo: Mi empresa dice qué no llegó, «Atrás» vuelve a la pestaña anterior y las dos ventanas que faltaban cierran con Escape (9-nov-2026) | 9-nov-2026 | 22030-22041 | 4456 |  |
-| Mi empresa: «Hoy» con cuatro piezas y una barra con ocho apartados; la plata en juego vuelve con quién la pone (9-nov-2026) | 9-nov-2026 | 22042-22058 | 6188 | «Licitaciones con su barra: tres apartados, el valor y el aviso de interés a la vista, y el orden al revés de un toque sin subir lo que no tiene el dato (9-nov-2026)» |
-| Cargar su propio APU: la hoja de análisis ya no se lee como formulario, y «Buscar» lo elabora respetándolo (9-nov-2026) | 9-nov-2026 | 22059-22094 | 10710 |  |
-| Licitaciones con su barra: tres apartados, el valor y el aviso de interés a la vista, y el orden al revés de un toque sin subir lo que no tiene el dato (9-nov-2026) | 9-nov-2026 | 22095-22117 | 10854 |  |
-| El APU real del dueño: la unidad cortada en «Ubicación:», el costo directo en vez del precio con AIU y la vista previa que no bajaba en el teléfono (10-nov-2026) | 10-nov-2026 | 22118-22130 | 3532 |  |
-| La rejilla de una pestaña: `:not(.hidden)` va solo con `display` (10-nov-2026) | 10-nov-2026 | 22131-22138 | 1276 |  |
-| APU propios de Detekta, primera entrega: el banco de prueba sin Claude, el alcance de la actividad, la biblioteca y el modelo abierto apagado (10-nov-2026) | 10-nov-2026 | 22139-22153 | 8172 |  |
-| Mis procesos con su barra: tres apartados, el expediente con «Este proceso» a un lado y «Su precio» del análisis guardado (10-nov-2026) | 10-nov-2026 | 22154-22172 | 9616 |  |
-| La lista lee el análisis guardado como Precios (10-nov-2026) | 10-nov-2026 | 22173-22190 | 5445 |  |
-| Detekta ocupa la pantalla entera (10-nov-2026) | 10-nov-2026 | 22191-22197 | 1006 |  |
-| El Excel de un presupuesto importado lleva el APU del archivo y no inventa capítulos (10-nov-2026) | 10-nov-2026 | 22198-22207 | 3066 |  |
-| Precios con su barra: siete apartados, tres cifras arriba que nunca son $0, la casilla de lo subcontratado que ahora mueve el precio y «Subir un APU» (10-nov-2026) | 10-nov-2026 | 22208-22231 | 9305 | «El mínimo para no perder plata sigue a la casilla de lo subcontratado, y subir un APU calcula también el mínimo (10-nov-2026)» |
-| El mínimo para no perder plata sigue a la casilla de lo subcontratado, y subir un APU calcula también el mínimo (10-nov-2026) | 10-nov-2026 | 22232-22250 | 6691 | «La administración por tiempo se cobra entera: la casilla de lo subcontratado va encendida y el motor la reparte sobre la obra propia (10-nov-2026)» |
-| La administración por tiempo se cobra entera: la casilla de lo subcontratado va encendida y el motor la reparte sobre la obra propia (10-nov-2026) | 10-nov-2026 | 22251-22269 | 5420 |  |
-| El plan x20: uso personal, ir donde llega una sola oferta, y sus ofertas se reconocen por el integrante (11-nov-2026) | 11-nov-2026 | 22270-22297 | 5788 |  |
-| La competencia por tamaño ordena «Las menos peleadas» y el motor de los cuatro métodos vive en lib/ con el máximo de la media geométrica (11-nov-2026) | 11-nov-2026 | 22298-22319 | 7406 |  |
-| La regla del anuncio, medida con la población de Detekta, resiste en menor cuantía, mínima y régimen especial; en licitación no (11-nov-2026) | 11-nov-2026 | 22320-22328 | 1785 |  |
-| Precios dice dónde habría quedado su precio frente a todas las ofertas de la entidad, y cuatro textos que afirmaban de más (11-nov-2026) | 11-nov-2026 | 22329-22343 | 3717 |  |
-| Las dos barreras se leen del pliego: limitada a Mipyme y a qué territorio, y si hay sorteo (11-nov-2026) | 11-nov-2026 | 22344-22357 | 2883 |  |
+| Los indicadores del consorcio se juzgan con la fórmula del pliego, y el 50/50 supuesto no niega (27/28-sep-2026, N21) | 27/28-sep-2026 | 18304-18319 | 4378 |  |
+| «Cómo se gana con el precio» por modalidad: sin sorteo en mínima cuantía ni en concurso de méritos (27/28-sep-2026, N13') | 27/28-sep-2026 | 18320-18331 | 3087 | «La mínima cuantía con su tabla medida: la probabilidad es en cuántas de cada 100 el ganador bajó menos que usted (30-sep-2026)» |
+| El formato de la entidad, lleno: solo lo inequívoco del proponente, en el Word que ella publicó (27-sep-2026) | 27-sep-2026 | 18332-18404 | 8302 | «Con qué consorcio se presenta cada proceso, el .zip de la oferta y quitar un proceso por un tiempo (5-nov-2026)» |
+| El rojo intermitente del listado era una conexión que el Redis simulado cerraba (27-sep-2026) | 27-sep-2026 | 18405-18418 | 1433 |  |
+| El veredicto en las palabras del dueño: «Puede ir solo», «Necesita socio» con cuál, y «No alcanza» con su porqué (27-sep-2026) | 27-sep-2026 | 18419-18449 | 3527 |  |
+| El IVA de la utilidad se cuenta con una sola regla en las cifras de precio, y sin saber si la entidad lo incluye, se cuenta (28-sep-2026) | 28-sep-2026 | 18450-18475 | 6049 | «El Excel dice el total que se escribe en SECOP II: la baja en cada fila, el IVA de la utilidad rebajada y su fila según el pliego (30-sep-2026)» |
+| El Excel dice el total que se escribe en SECOP II: la baja en cada fila, el IVA de la utilidad rebajada y su fila según el pliego (30-sep-2026) | 30-sep-2026 | 18476-18495 | 4686 |  |
+| Tres pendientes cerrados: la cantidad sin dato en el Excel que se radica, el proceso del borrador y la participación mínima en el reparto (30-sep-2026) | 30-sep-2026 | 18496-18505 | 4668 |  |
+| La actualización a las 7:50 a. m. y a las 8:00 p. m., y qué ocupa la base de datos medido desde la aplicación (30-sep-2026) | 30-sep-2026 | 18506-18513 | 3014 |  |
+| La mínima cuantía con su tabla medida: la probabilidad es en cuántas de cada 100 el ganador bajó menos que usted (30-sep-2026) | 30-sep-2026 | 18514-18527 | 5403 |  |
+| La base de datos deja de llenarse: el histórico sin versiones viejas, lo viejo se borra pasada una gracia y lo rehacible se libera solo si falta sitio (30-sep-2026) | 30-sep-2026 | 18528-18546 | 8411 |  |
+| El correo cuando la salud se pone en rojo, con el reloj y el correo que ya había (30-sep-2026) | 30-sep-2026 | 18547-18556 | 2069 |  |
+| La carga completa y el histórico tampoco piden lo que la cascada tira (30-sep-2026) | 30-sep-2026 | 18557-18571 | 2443 |  |
+| El tipo de contrato de obra sin códigos entra, en ámbar (30-sep-2026) | 30-sep-2026 | 18572-18591 | 3084 |  |
+| El corpus del año se recomprime en su sitio: no se junta como el histórico (30-sep-2026) | 30-sep-2026 | 18592-18608 | 7892 |  |
+| Consorcios de tres o más socios: no hay ninguno con reparto supuesto, y si llega a haberlo no niega (30-sep-2026) | 30-sep-2026 | 18609-18616 | 1396 |  |
+| La historia de un proceso sobrevive a quien reescribe su mes (1-oct-2026) | 1-oct-2026 | 18617-18627 | 3159 |  |
+| «Parque automotor» también es lo que se guarda bajo techo: el garaje y los hangares entran (30-sep-2026) | 30-sep-2026 | 18628-18640 | 3977 |  |
+| «Combustible» suelto también mataba obra: las redes de gas y los surtidores entran (1-oct-2026) | 1-oct-2026 | 18641-18654 | 5050 |  |
+| Tres pruebas con fecha fija tumbaron main al cambiar de mes, y la cuarta espera (1-oct-2026) | 1-oct-2026 | 18655-18666 | 2514 | «Las pruebas con fecha: la compactación caía el 31-oct y la lista se queda sin procesos con cierre en noviembre (16-oct-2026)» |
+| Vercel pausó Detekta por CPU: cuenta nueva y menos llamadas automáticas (16-oct-2026) | 16-oct-2026 | 18667-18717 | 6213 |  |
+| Las pruebas con fecha: la compactación caía el 31-oct y la lista se queda sin procesos con cierre en noviembre (16-oct-2026) | 16-oct-2026 | 18718-18729 | 2417 | «La fila de prueba se busca en todas las páginas del listado, y enero espera (16-oct-2026)» |
+| La fila de prueba se busca en todas las páginas del listado, y enero espera (16-oct-2026) | 16-oct-2026 | 18730-18742 | 2221 | «Enero de 2027: las pruebas caen en cadena cuando el año tiene pocos meses (17-oct-2026)» |
+| Enero de 2027: las pruebas caen en cadena cuando el año tiene pocos meses (17-oct-2026) | 17-oct-2026 | 18743-18752 | 1999 |  |
+| La entrada del dueño: correo y contraseña, y ninguna llave en el navegador (17-oct-2026) | 17-oct-2026 | 18753-18778 | 7985 |  |
+| La fila partida de la tabla de códigos de la experiencia (17-oct-2026) | 17-oct-2026 | 18779-18801 | 2305 |  |
+| El anticipo «N/A» bajo su título y el amparo «Devolución del pago anticipado» (17-oct-2026) | 17-oct-2026 | 18802-18824 | 2304 |  |
+| Lo que mostraron 5 procesos de menor cuantía ya adjudicados (17-oct-2026) | 17-oct-2026 | 18825-18863 | 3373 |  |
+| El anticipo «…PAGO ANTICIPADO: No aplica» en una sola línea (17-oct-2026) | 17-oct-2026 | 18864-18883 | 2022 |  |
+| El presupuesto del pliego frente al de SECOP II: un aviso, no un reemplazo (17-oct-2026) | 17-oct-2026 | 18884-18917 | 3541 |  |
+| El techo de la oferta en Precios: la cifra más baja entre SECOP II y el pliego definitivo (17-oct-2026) | 17-oct-2026 | 18918-18943 | 2755 | «El techo del pliego también desde la tarjeta de Licitaciones, para un proceso guardado (17-oct-2026)» |
+| Herramientas de terceros para las sesiones de Claude: lo que entró, lo que no y por qué (17-oct-2026) | 17-oct-2026 | 18944-18980 | 3729 |  |
+| El anticipo con el corchete de la plantilla y la frase modelo que remite al 8.3 (17-oct-2026) | 17-oct-2026 | 18981-19004 | 2527 |  |
+| El presupuesto del pliego en licitación pública: título sin número, «…Y ESPECIFICACIONES» y centavos con punto (17-oct-2026) | 17-oct-2026 | 19005-19027 | 2540 |  |
+| Precios deja de despertar la rutina cuando ya se despertó 3 veces sin dar señal (17-oct-2026) | 17-oct-2026 | 19028-19056 | 2807 |  |
+| El dictamen también deja de despertar la rutina tras 3 lecturas pedidas sin respuesta (17-oct-2026) | 17-oct-2026 | 19057-19078 | 2084 |  |
+| El anticipo negado para UNA parte numerada del contrato no es «no hay anticipo» (17-oct-2026) | 17-oct-2026 | 19079-19105 | 2958 |  |
+| El techo del pliego también desde la tarjeta de Licitaciones, para un proceso guardado (17-oct-2026) | 17-oct-2026 | 19106-19126 | 2063 |  |
+| Las pruebas de 2027: un corte que dependía de la velocidad de la máquina y una negación que miraba una sola página (17-oct-2026) | 17-oct-2026 | 19127-19134 | 1813 |  |
+| Pedir otro rango ya no vuelve a empezar el histórico: el servidor responde 409 y el botón continúa el rango guardado (17-oct-2026) | 17-oct-2026 | 19135-19176 | 7841 |  |
+| El límite que calculó la entidad, medido en 3 procesos cerrados, va debajo del aviso de precio bajo (17-oct-2026) | 17-oct-2026 | 19177-19188 | 3454 | «La alerta de precio bajo se corta por modalidad con lo medido en SECOP II (18-oct-2026)» |
+| El techo de la tarjeta, sin la guía entera: `solo=tope` (17-oct-2026) | 17-oct-2026 | 19189-19206 | 1835 |  |
+| El plazo del pliego por la columna de su tabla 1.1: medido, NO fusionado (18-oct-2026) | 18-oct-2026 | 19207-19233 | 3468 |  |
+| La negación del anticipo con la parte ANTES («Para la etapa 1 no se entregará anticipo») NO se cubre (18-oct-2026) | 18-oct-2026 | 19234-19256 | 2265 |  |
+| El muro de Vercel vuelve, gratis: «Vercel Authentication» en todo el sitio y el pase para lo automático (17-oct-2026) | 17-oct-2026 | 19257-19312 | 7782 |  |
+| Dos capas: el muro de Vercel delante y la sesión del dueño detrás (18-oct-2026) | 18-oct-2026 | 19313-19328 | 1492 | «La puerta: producción sin el muro de Vercel, una cuenta compartida y toda operación detrás de la sesión (9-nov-2026)» |
+| El muro de Vercel quedó puesto: las tareas de Vercel lo pasan, y cómo se mide (17-oct-2026) | 17-oct-2026 | 19329-19354 | 4487 |  |
+| El dictamen, el cronograma y los descuentos leen el documento que ES el pliego, no la última versión del vigía (18-oct-2026) | 18-oct-2026 | 19355-19420 | 9640 |  |
+| La sonda del muro: el latido y el vigilante prueban la portada sin el pase (18-oct-2026) | 18-oct-2026 | 19421-19459 | 4440 |  |
+| Base nacional de licitaciones de obra: un script que solo mide, fuera de la app (17-oct-2026) | 17-oct-2026 | 19460-19474 | 2538 | «Base nacional de obra: las ofertas se piden agrupadas, las filas repetidas de p6dx son fases y el proveedor se identifica por unión (17-oct-2026)» · «Las reglas de lotes y de rango de la base nacional: un presupuesto ajustado no es lote, una oferta doble tampoco y los centavos no pasan el tope (26-oct-2026)» |
+| Base nacional de obra: las ofertas se piden agrupadas, las filas repetidas de p6dx son fases y el proveedor se identifica por unión (17-oct-2026) | 17-oct-2026 | 19475-19484 | 2028 | «Las reglas de lotes y de rango de la base nacional: un presupuesto ajustado no es lote, una oferta doble tampoco y los centavos no pasan el tope (26-oct-2026)» |
+| El almacén R2 de la base nacional frena ANTES de pasar el gratis, porque Cloudflare no frena (17-oct-2026) | 17-oct-2026 | 19485-19493 | 3029 |  |
+| Base nacional de obra, Fase 1: una fila por proceso y cinco señales que solo invitan a revisar (17-oct-2026) | 17-oct-2026 | 19494-19506 | 2499 |  |
+| R2 rechazó el If-Match con el registro sin cambios, y la mínima cuantía no se mide con la vara de las demás (17-oct-2026) | 17-oct-2026 | 19507-19515 | 2420 |  |
+| Fase 2: el piso se reproduce, el ganador no — los datos abiertos no dicen quién quedó hábil (17-oct-2026) | 17-oct-2026 | 19516-19525 | 2664 |  |
+| Fase 3: la validación posible sin SECOP es coherencia interna, y se hace por censo, no por muestra (17-oct-2026) | 17-oct-2026 | 19526-19535 | 2114 |  |
+| La alerta de precio bajo se corta por modalidad con lo medido en SECOP II (18-oct-2026) | 18-oct-2026 | 19536-19550 | 3640 |  |
+| La fuente del corte se ve en la pantalla y la base se vuelve a medir cada mes, con un vigía que avisa y no corrige (18-oct-2026) | 18-oct-2026 | 19551-19563 | 4296 |  |
+| Las ganadoras que la base no cuenta: en licitación no mueven el corte; en mínima la regla del 50 % esconde ganadoras reales (18-oct-2026) | 18-oct-2026 | 19564-19573 | 2616 |  |
+| El rescate bajo el 50 %: la oferta ganadora que coincide con lo adjudicado y con su contrato cuenta, en todas las modalidades (18-oct-2026) | 18-oct-2026 | 19574-19585 | 3226 |  |
+| La llave del servidor no se copia de Vercel: se anota al ponerla (18-oct-2026) | 18-oct-2026 | 19586-19598 | 1833 |  |
+| Los pliegos de más de 20 MB que se midieron son escaneos: bajarlos por partes no da texto (18-oct-2026) | 18-oct-2026 | 19599-19630 | 3999 |  |
+| El tablero de pendientes mentía: la revisión del 18-oct, uno por uno contra el código (18-oct-2026) | 18-oct-2026 | 19631-19638 | 1742 |  |
+| Las tres lecturas del pliego del 18-oct: la versión que rige, el ejemplo entre corchetes y el techo con una versión sin tabla (18-oct-2026) | 18-oct-2026 | 19639-19646 | 1694 |  |
+| La carga en Precios no entra al vigía si el nombre dice que es otra cosa (18-oct-2026) | 18-oct-2026 | 19647-19687 | 5180 |  |
+| La Fase C se cierra: no se construye la descarga de pliegos de más de 20 MB (18-oct-2026) | 18-oct-2026 | 19688-19699 | 970 |  |
+| La cadena que no seguía con el muro: la llamada del servidor a sí mismo va con waitUntil y dice cómo le fue, y el latido hace hasta 3 tandas (18-oct-2026) | 18-oct-2026 | 19700-19734 | 9584 | «La carga completa ya no para con una actualización a medias, y el tiempo agotado de Upstash dice qué comando fue (18-oct-2026)» |
+| La fórmula en prosa no afirma el anticipo: «presupuesto oficial menos el anticipo…» es mención (18-oct-2026) | 18-oct-2026 | 19735-19763 | 2936 |  |
+| El clasificador lee los nombres con separadores y los nuevos de Colombia Compra («DocBase_…») (18-oct-2026) | 18-oct-2026 | 19764-19791 | 3687 |  |
+| La carga completa ya no para con una actualización a medias, y el tiempo agotado de Upstash dice qué comando fue (18-oct-2026) | 18-oct-2026 | 19792-19809 | 4215 |  |
+| La obra que copia el «aunar esfuerzos» del convenio que la financia no es un convenio (19-oct-2026) | 19-oct-2026 | 19810-19831 | 6718 |  |
+| El Formulario 1 en Excel: «VALOR TOTAL» es el total, y solo se da por leído lo que pasa la comprobación fila a fila (19-oct-2026) | 19-oct-2026 | 19832-19852 | 4939 | «La revisión adversaria del Formulario 1 en Excel: la hoja equivocada, la tolerancia, la caducidad y los topes (19-oct-2026)» |
+| El Formulario 1 en Excel se lee solo en el servidor, y solo se publica lo que pasa la puerta (19-oct-2026) | 19-oct-2026 | 19853-19876 | 5365 | «La revisión adversaria del Formulario 1 en Excel: la hoja equivocada, la tolerancia, la caducidad y los topes (19-oct-2026)» |
+| El Formulario 1 leído se lleva a Precios con «Cotizar en Precios» (19-oct-2026) | 19-oct-2026 | 19877-19896 | 4845 |  |
+| La revisión adversaria del Formulario 1 en Excel: la hoja equivocada, la tolerancia, la caducidad y los topes (19-oct-2026) | 19-oct-2026 | 19897-19918 | 6387 |  |
+| La lista abre con TODOS los procesos de obra abiertos, y los que no alcanzan van atenuados y al final (19-oct-2026) | 19-oct-2026 | 19919-19937 | 4193 |  |
+| La base de contratación estatal queda en docs/, sin cobertura medida, y el contador de uso ya existía (19-oct-2026) | 19-oct-2026 | 19938-19954 | 2582 |  |
+| El arranque de Precios estaba pisado por el de la app, y una función repetida en el mismo ámbito no avisa (19-oct-2026) | 19-oct-2026 | 19955-19969 | 3404 |  |
+| Lo verificado en producción el 19-oct-2026: el OCR ya está configurado; el respaldo en R2 y el correo de la mañana siguen sin configurar | 19-oct-2026 | 19970-19989 | 4610 |  |
+| Volver a buscar los documentos ya se puede pedir desde el expediente, y la aplicación no tenía ningún botón para hacerlo (19-oct-2026) | 19-oct-2026 | 19990-20008 | 3711 |  |
+| La causa real de un fallo de lectura se registra, se sanea y se dice, y una herramienta mide lo que Detekta no lee (19-oct-2026) | 19-oct-2026 | 20009-20036 | 8588 |  |
+| El Excel de la oferta económica se reconoce por más nombres y solo se publica lo que pasa la puerta; y un Excel de presupuesto subido tras el cierre es de un proponente (19-oct-2026) | 19-oct-2026 | 20037-20060 | 7598 |  |
+| Un escaneo leído a medias se guardaba como «Leído»: el OCR de los documentos ignoraba las páginas que el servicio no reconocía (20-oct-2026) | 20-oct-2026 | 20061-20087 | 8925 |  |
+| El avance de la lectura dice lo que la aplicación hace de verdad, y lo que el usuario pide pasa primero (20-oct-2026) | 20-oct-2026 | 20088-20116 | 7482 |  |
+| Las tandas de OCR se arman por PESO, no por 5 páginas fijas: el estudio previo del dueño falló con «código 413» (20-oct-2026) | 20-oct-2026 | 20117-20137 | 3916 |  |
+| La auditoría de lo leído: mide si hay INDICIOS de una lectura mala, jamás dice «correcto» (20-oct-2026) | 20-oct-2026 | 20138-20162 | 5723 |  |
+| La auditoría con su primer proceso real: lo casi vacío se marca, un presupuesto no se juzga por sus letras y los tiempos salen a la vista (21-oct-2026) | 21-oct-2026 | 20163-20193 | 8240 |  |
+| Cada subida cuesta un despliegue: una entrega, un envío (21-oct-2026) | 21-oct-2026 | 20194-20202 | 1688 |  |
+| El consejo de siete asesores entra al proyecto: sin la sala web, sin guardar nada en el repositorio y con lo que no sabe dicho (21-oct-2026) | 21-oct-2026 | 20203-20230 | 6048 |  |
+| Fase 0 de detekta-lector sobre los documentos que deciden en menor cuantía: cuatro causas medidas y cuatro arreglos (25-oct-2026) | 25-oct-2026 | 20231-20257 | 16663 |  |
+| Probabilidad de adjudicación, Fase 0: las ofertas abiertas sí existen desde 2020, quién quedó hábil no, y la regla del precio solo se sabe donde hubo documento tipo (25-oct-2026) | 25-oct-2026 | 20258-20295 | 6698 |  |
+| Las reglas de lotes y de rango de la base nacional: un presupuesto ajustado no es lote, una oferta doble tampoco y los centavos no pasan el tope (26-oct-2026) | 26-oct-2026 | 20296-20319 | 6142 |  |
+| La prueba de los 30 del Nivel 3: con los hábiles reales el motor acierta en 6 de 9, y lo que falla son los puntos distintos del precio (26-oct-2026) | 26-oct-2026 | 20320-20348 | 4546 | «Las evaluaciones de cada entidad entran a la aplicación: el navegador lee el documento, una sesión de madrugada lo interpreta y la aplicación verifica cada cita (26-oct-2026)» |
+| Las evaluaciones de cada entidad entran a la aplicación: el navegador lee el documento, una sesión de madrugada lo interpreta y la aplicación verifica cada cita (26-oct-2026) | 26-oct-2026 | 20349-20382 | 7282 |  |
+| La foto de los índices en el almacén de archivos: Upstash deja de bajar los índices enteros en cada instancia fría (27-oct-2026) | 27-oct-2026 | 20383-20408 | 9911 |  |
+| La lista dice con quién y con qué parte, y la caja ya no deja pasar lo que ni con el anticipo máximo alcanza (27-oct-2026) | 27-oct-2026 | 20409-20461 | 15582 |  |
+| Lo que pide atención dice lo que falta HOY, el cuaderno ya no se borra al marcar una nota y el calendario lee las fechas suyas (27-oct-2026) | 27-oct-2026 | 20462-20478 | 7963 |  |
+| El rótulo «Obra civil» ya no sale de una palabra genérica en un suministro, una compraventa o un servicio (28-oct-2026) | 28-oct-2026 | 20479-20503 | 8741 | «Lo que la entidad publicó como compra o servicio ya no sale verde por un verbo de obra, la «obra» fuera de contexto sale del tipo, y SECOP I marca lo que probablemente cerró (6-nov-2026)» |
+| La compra o el servicio que no es obra ya no sale con «Obra civil», y «Otro» y «Decreto 092» entran en la regla de la palabra genérica (28-oct-2026) | 28-oct-2026 | 20504-20533 | 10195 | «Lo que la lista daba como obra sin serlo sale del tipo «obra», y «Otro» y «Decreto 092» salen de la regla de la palabra genérica (28-oct-2026)» · «La cuenta de días al cierre es una sola y por fecha civil, y el chip sigue a la regla explícita de no-obra aunque haya clase de obra pura (28-oct-2026)» |
+| Lo que la lista daba como obra sin serlo sale del tipo «obra», y «Otro» y «Decreto 092» salen de la regla de la palabra genérica (28-oct-2026) | 28-oct-2026 | 20534-20560 | 10422 | «La cuenta de días al cierre es una sola y por fecha civil, y el chip sigue a la regla explícita de no-obra aunque haya clase de obra pura (28-oct-2026)» |
+| El % de adjudicación según el precio no se enseña porque se midió que no predice: en licitación y menor cuantía se dice cuántas ofertas ganaron a ese precio (28-oct-2026) | 28-oct-2026 | 20561-20614 | 14342 | «La verificación del precio normaliza en cada proceso: el precio predice quién gana apenas mejor que el azar, no peor (28-oct-2026)» |
+| La referencia de precio va por tipo de obra: una vía y un acueducto se adjudican a precios distintos, pero en ninguno el precio predice quién gana (28-oct-2026) | 28-oct-2026 | 20615-20681 | 11571 |  |
+| La verificación del precio normaliza en cada proceso: el precio predice quién gana apenas mejor que el azar, no peor (28-oct-2026) | 28-oct-2026 | 20682-20703 | 3177 |  |
+| La cuenta de días al cierre es una sola y por fecha civil, y el chip sigue a la regla explícita de no-obra aunque haya clase de obra pura (28-oct-2026) | 28-oct-2026 | 20704-20728 | 9228 |  |
+| La referencia de un tramo concentrado se dice sin la entidad que lo concentra, el vocabulario de tipos va en dos capas y la captura de hábiles arranca desde la sesión (28-oct-2026) | 28-oct-2026 | 20729-20779 | 8797 |  |
+| Lo siguiente tras presentarse sale de la etapa, la búsqueda encuentra sus notas, y seis de los siete defectos de plata del 26-sep ya estaban cerrados (28-oct-2026) | 28-oct-2026 | 20780-20817 | 7625 |  |
+| Una base que no responde no es «ninguno», y la madrugada lee sus propias evaluaciones con un cupo medido (28-oct-2026) | 28-oct-2026 | 20818-20843 | 8491 |  |
+| Una cifra de un informe de evaluación se lee por su último grupo: con dos cifras son centavos, con tres son miles (1-nov-2026) | 1-nov-2026 | 20844-20860 | 4388 |  |
+| Lo que llenó Upstash en octubre fue el ancho de banda de lo programado, y noviembre va justo (1-nov-2026) | 1-nov-2026 | 20861-20884 | 4681 |  |
+| El vigilante pide el tamaño y no el diagnóstico entero, y el lector deja de leer el corpus del año (1-nov-2026) | 1-nov-2026 | 20885-20911 | 5690 | «La tarea de la mañana busca las adendas de los procesos guardados, sin leer el corpus y con los topes medidos (4-nov-2026)» |
+| Lo que presupuestaron las entidades va al lado de cada ítem, el enlace de SECOP II pegado encuentra su proceso, y la tabla de la TRM de licitación pública coincide con la de menor cuantía (1-nov-2026) | 1-nov-2026 | 20912-20938 | 11684 |  |
+| Lo que no sale tampoco se calcula: los avisos sin correo, la baja como mucho un ciclo al día y el cupo del lector en documentos leídos (2-nov-2026) | 2-nov-2026 | 20939-20958 | 5440 | «La baja se publica cada 2 a 3 días, y una fila que no es un registro ya no tumba la lectura de los bloques (3-nov-2026)» |
+| «Calcular» costea con los precios corregidos del perfil con que se trabaja, como «Guardar» y Piso/Techo (2-nov-2026) | 2-nov-2026 | 20959-20980 | 7805 |  |
+| La baja se publica cada 2 a 3 días, y una fila que no es un registro ya no tumba la lectura de los bloques (3-nov-2026) | 3-nov-2026 | 20981-21004 | 6111 |  |
+| Un consorcio con Helder de integrante hereda sus precios corregidos, y «Calcular» manda el tipo de trabajo (3-nov-2026) | 3-nov-2026 | 21005-21022 | 7606 |  |
+| La 11 con la 3: la letra de leer, todo el texto a 7:1 y una sola tabla de tamaños (3-nov-2026) | 3-nov-2026 | 21023-21043 | 8386 |  |
+| El calendario del proceso: las fechas de los documentos llegan a Mis procesos, SECOP II manda sobre el documento y el lector deja de inventar plazos (3-nov-2026) | 3-nov-2026 | 21044-21084 | 15631 |  |
+| Lo que tiene que entregar: la lista del pliego con su página, marcable en el papeleo, y el papeleo en fila (3-nov-2026) | 3-nov-2026 | 21085-21115 | 12991 |  |
+| El OCR saturado ya no deja un documento incompleto para siempre, dos oferentes casi homónimos se separan por su número, y la cadencia de la baja se mide (3-nov-2026) | 3-nov-2026 | 21116-21166 | 13255 |  |
+| El cronograma en Excel se lee: el Anexo 2 de Colombia Compra entra a la línea de tiempo con su hoja y su celda, y de varias versiones habla solo la más nueva (3-nov-2026) | 3-nov-2026 | 21167-21192 | 13047 | «Dos filas con fechas distintas: choca la misma actividad o un plazo, no un aviso ni una adjudicación, y cada fila se lee sola; medido sobre los procesos guardados (4-nov-2026)» |
+| La tarjeta nueva: cinco renglones, con quién, y la competencia dentro con los contratos de obra aparte (3-nov-2026) | 3-nov-2026 | 21193-21211 | 11346 |  |
+| Mi empresa como la maqueta c07, «Por qué» sin siglas y las llantas fuera de «Obra» (3-nov-2026) | 3-nov-2026 | 21212-21230 | 8137 | «Mi empresa: «Hoy» con cuatro piezas y una barra con ocho apartados; la plata en juego vuelve con quién la pone (9-nov-2026)» |
+| Mis procesos como la maqueta c07 (4-nov-2026) | 4-nov-2026 | 21231-21247 | 5631 |  |
+| Dos filas con fechas distintas: choca la misma actividad o un plazo, no un aviso ni una adjudicación, y cada fila se lee sola; medido sobre los procesos guardados (4-nov-2026) | 4-nov-2026 | 21248-21290 | 9308 |  |
+| Cada cifra de Mi empresa abre exactamente su lista: el filtro «Solo las que puede presentarse» (4-nov-2026) | 4-nov-2026 | 21291-21302 | 4215 |  |
+| Una sola frase para la capacidad que le queda, y Mis procesos en dos renglones entre 641 y 860 px (4-nov-2026) | 4-nov-2026 | 21303-21311 | 2063 |  |
+| Las fechas que hay que confirmar: el Anexo 2 que rige pasa el tope, el cierre desmentido y la fecha que no cuadra dicen «verifíquela», y el traslado vence el último día (4-nov-2026) | 4-nov-2026 | 21312-21353 | 7107 |  |
+| La alerta de precio bajo dice lo que mide la base con las reglas del 26-oct: 33 de 2.190 en licitación (4-nov-2026) | 4-nov-2026 | 21354-21361 | 1589 |  |
+| La adenda que usted no ha visto avisa, y la que no se ha leído pone «verifíquela» en las fechas anteriores (4-nov-2026) | 4-nov-2026 | 21362-21389 | 5596 |  |
+| La tarea de la mañana busca las adendas de los procesos guardados, sin leer el corpus y con los topes medidos (4-nov-2026) | 4-nov-2026 | 21390-21433 | 9841 |  |
+| El aviso al teléfono por Telegram, sin leer el corpus, dónde gana el dueño y lo que midió la fase 0 (5-nov-2026) | 5-nov-2026 | 21434-21474 | 7990 |  |
+| La fase 2 del plan: la cita entera, el juicio que no depende del lote, cuánto falta, qué pesa cada requisito, el rastro de lectura y la búsqueda del oficio (5-nov-2026) | 5-nov-2026 | 21475-21495 | 7398 |  |
+| La fase 3 del plan: la oferta propia por el NIT, por qué quedó así, lo que el competidor tiene por ejecutar, qué se puede corregir después y los bancos de precios cerrados (5-nov-2026) | 5-nov-2026 | 21496-21515 | 5422 |  |
+| Las fases 4 y 5 del plan: cuáles contratos acreditar, los contratos que terminan pronto, lo que falta por conseguir, SECOP I a pedido y la carga en el teléfono medida (5-nov-2026) | 5-nov-2026 | 21516-21526 | 3942 |  |
+| El costo de preparar la oferta es la póliza de seriedad, y lo que el dueño decidió no hacer (5-nov-2026) | 5-nov-2026 | 21527-21539 | 5860 |  |
+| El % de la garantía del pliego llega a Precios, y las observaciones al pliego redactadas con su cita comprobada (5-nov-2026) | 5-nov-2026 | 21540-21563 | 6210 |  |
+| Las cifras en letras también se comprueban en el dictamen, y la prima mínima no se pedirá (5-nov-2026) | 5-nov-2026 | 21564-21583 | 3444 |  |
+| Con qué consorcio se presenta cada proceso, el .zip de la oferta y quitar un proceso por un tiempo (5-nov-2026) | 5-nov-2026 | 21584-21611 | 6261 |  |
+| Los datos completos para los formatos y la imagen de la firma en el .zip (5-nov-2026) | 5-nov-2026 | 21612-21655 | 7156 |  |
+| La plantilla de Colombia Compra completa y el .zip con todo lo que se entrega (5-nov-2026) | 5-nov-2026 | 21656-21736 | 12184 |  |
+| Cada integrante con su copia, la conformación del consorcio llena y la fecha real del .zip (6-nov-2026) | 6-nov-2026 | 21737-21756 | 5028 |  |
+| SECOP II dejó de publicar el código de actividad el 16-sep-2026: lo que se perdió, lo que se recupera por el objeto y lo que no tiene fuente (6-nov-2026) | 16-sep-2026 | 21757-21806 | 12133 |  |
+| El pliego definitivo tiene otro número: Mis procesos y el aviso de la mañana siguen la publicación vigente del expediente (6-nov-2026) | 6-nov-2026 | 21807-21828 | 4236 |  |
+| Lo que la entidad publicó como compra o servicio ya no sale verde por un verbo de obra, la «obra» fuera de contexto sale del tipo, y SECOP I marca lo que probablemente cerró (6-nov-2026) | 6-nov-2026 | 21829-21854 | 10137 |  |
+| «No es obra» quita un proceso de su lista, con su otra publicación, y la lista dice cuántos quitó (6-nov-2026) | 6-nov-2026 | 21855-21868 | 3223 |  |
+| Los datos de los formatos que ya son públicos se traen con el NIT: la identidad del RUES y el contacto de SECOP II (6-nov-2026) | 6-nov-2026 | 21869-21884 | 3974 |  |
+| Dos defectos de las fechas de los documentos, reproducidos y arreglados: el hito de adendas exige el acto, y un Gantt no calla al Anexo 2 (6-nov-2026) | 6-nov-2026 | 21885-21897 | 2449 |  |
+| La pestaña del pliego y su .ics marcan la fecha que no cuadra y el cierre desmentido, con la misma regla de Mis procesos (6-nov-2026) | 6-nov-2026 | 21898-21906 | 1803 |  |
+| La consultoría de ingeniería sin código se ve, en ámbar: estudios de suelos, geotecnia, patología estructural y vulnerabilidad sísmica (7-nov-2026) | 7-nov-2026 | 21907-21920 | 2406 |  |
+| En los pliegos tipo de obra que tiene el dueño, los códigos UNSPSC no piden inscripción en el RUP: piden que cada contrato de experiencia esté clasificado en alguno (7-nov-2026) | 7-nov-2026 | 21921-21932 | 3857 |  |
+| Con el pliego leído, la puerta del registro mira los contratos de experiencia con los códigos del pliego, no la inscripción (8-nov-2026) | 8-nov-2026 | 21933-21979 | 7681 |  |
+| Los consorcios del dueño son 1A y GR; GR aún no ha presentado oferta (9-nov-2026) | 9-nov-2026 | 21980-21989 | 1358 | «El plan x20: uso personal, ir donde llega una sola oferta, y sus ofertas se reconocen por el integrante (11-nov-2026)» |
+| La puerta: producción sin el muro de Vercel, una cuenta compartida y toda operación detrás de la sesión (9-nov-2026) | 9-nov-2026 | 21990-22012 | 7292 |  |
+| El medidor del ancho de banda de Upstash: cada petición anota lo que gastó, por operación (9-nov-2026) | 9-nov-2026 | 22013-22031 | 4515 |  |
+| El armazón medido antes de rediseñarlo: Mi empresa dice qué no llegó, «Atrás» vuelve a la pestaña anterior y las dos ventanas que faltaban cierran con Escape (9-nov-2026) | 9-nov-2026 | 22032-22043 | 4456 |  |
+| Mi empresa: «Hoy» con cuatro piezas y una barra con ocho apartados; la plata en juego vuelve con quién la pone (9-nov-2026) | 9-nov-2026 | 22044-22060 | 6188 | «Licitaciones con su barra: tres apartados, el valor y el aviso de interés a la vista, y el orden al revés de un toque sin subir lo que no tiene el dato (9-nov-2026)» |
+| Cargar su propio APU: la hoja de análisis ya no se lee como formulario, y «Buscar» lo elabora respetándolo (9-nov-2026) | 9-nov-2026 | 22061-22096 | 10710 |  |
+| Licitaciones con su barra: tres apartados, el valor y el aviso de interés a la vista, y el orden al revés de un toque sin subir lo que no tiene el dato (9-nov-2026) | 9-nov-2026 | 22097-22119 | 10854 |  |
+| El APU real del dueño: la unidad cortada en «Ubicación:», el costo directo en vez del precio con AIU y la vista previa que no bajaba en el teléfono (10-nov-2026) | 10-nov-2026 | 22120-22132 | 3532 |  |
+| La rejilla de una pestaña: `:not(.hidden)` va solo con `display` (10-nov-2026) | 10-nov-2026 | 22133-22140 | 1276 |  |
+| APU propios de Detekta, primera entrega: el banco de prueba sin Claude, el alcance de la actividad, la biblioteca y el modelo abierto apagado (10-nov-2026) | 10-nov-2026 | 22141-22155 | 8172 |  |
+| Mis procesos con su barra: tres apartados, el expediente con «Este proceso» a un lado y «Su precio» del análisis guardado (10-nov-2026) | 10-nov-2026 | 22156-22174 | 9616 |  |
+| La lista lee el análisis guardado como Precios (10-nov-2026) | 10-nov-2026 | 22175-22192 | 5445 |  |
+| Detekta ocupa la pantalla entera (10-nov-2026) | 10-nov-2026 | 22193-22199 | 1006 |  |
+| El Excel de un presupuesto importado lleva el APU del archivo y no inventa capítulos (10-nov-2026) | 10-nov-2026 | 22200-22209 | 3066 |  |
+| Precios con su barra: siete apartados, tres cifras arriba que nunca son $0, la casilla de lo subcontratado que ahora mueve el precio y «Subir un APU» (10-nov-2026) | 10-nov-2026 | 22210-22233 | 9305 | «El mínimo para no perder plata sigue a la casilla de lo subcontratado, y subir un APU calcula también el mínimo (10-nov-2026)» |
+| El mínimo para no perder plata sigue a la casilla de lo subcontratado, y subir un APU calcula también el mínimo (10-nov-2026) | 10-nov-2026 | 22234-22252 | 6691 | «La administración por tiempo se cobra entera: la casilla de lo subcontratado va encendida y el motor la reparte sobre la obra propia (10-nov-2026)» |
+| La administración por tiempo se cobra entera: la casilla de lo subcontratado va encendida y el motor la reparte sobre la obra propia (10-nov-2026) | 10-nov-2026 | 22253-22271 | 5420 |  |
+| El plan x20: uso personal, ir donde llega una sola oferta, y sus ofertas se reconocen por el integrante (11-nov-2026) | 11-nov-2026 | 22272-22299 | 5788 |  |
+| La competencia por tamaño ordena «Las menos peleadas» y el motor de los cuatro métodos vive en lib/ con el máximo de la media geométrica (11-nov-2026) | 11-nov-2026 | 22300-22321 | 7406 |  |
+| La regla del anuncio, medida con la población de Detekta, resiste en menor cuantía, mínima y régimen especial; en licitación no (11-nov-2026) | 11-nov-2026 | 22322-22330 | 1785 |  |
+| Precios dice dónde habría quedado su precio frente a todas las ofertas de la entidad, y cuatro textos que afirmaban de más (11-nov-2026) | 11-nov-2026 | 22331-22345 | 3717 |  |
+| Las dos barreras se leen del pliego: limitada a Mipyme y a qué territorio, y si hay sorteo (11-nov-2026) | 11-nov-2026 | 22346-22359 | 2883 |  |
+| El simulacro del consorcio: cada cláusula de participación contra el reparto que se va a firmar (11-nov-2026) | 11-nov-2026 | 22360-22372 | 2297 |  |

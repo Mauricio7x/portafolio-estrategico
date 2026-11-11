@@ -1569,6 +1569,37 @@ const textosDe = (v, out = []) => {
 const SOLO = (process.env.E2E_SOLO || "").trim().toLowerCase();
 const SILENCIO = process.env.E2E_SILENCIO === "1";
 const BLOQUES = [];                       // censo de lo que el filtro conoce
+/* app.js REAL en un vm con todos los <script> de index.html, exponiendo las funciones pedidas al final del IIFE
+   (PLAN_X20, 11-nov-2026: lo usan «unidad competencia por tamaño» y «unidad simulacro del consorcio"). */
+function appEnVm(exponer) {
+  const vm = require("vm");
+  const pub = (f) => path.join(__dirname, "..", "public", f);
+  const orden = [...fs.readFileSync(pub("index.html"), "utf8").replace(/<!--[\s\S]*?-->/g, "").matchAll(/<script src="\/([a-z_]+\.js)"><\/script>/g)].map((x) => x[1]);
+  const nodo = () => new Proxy({ value: "", textContent: "", innerHTML: "", hidden: false, checked: false, disabled: false, dataset: {}, style: {}, options: [], children: [],
+    selectedOptions: [{ text: "", value: "" }], classList: { add() {}, remove() {}, toggle() {}, contains: () => false } },
+  { get: (t, k) => (k in t ? t[k] : k === Symbol.toPrimitive ? () => "" : typeof k === "symbol" || k === "then" ? undefined : () => nodo()), set: (t, k, val) => { t[k] = val; return true; } });
+  const almacen = () => { const m = new Map(); return { getItem: (k) => (m.has(k) ? m.get(k) : null), setItem: (k, val) => m.set(k, String(val)), removeItem: (k) => m.delete(k), clear: () => m.clear() }; };
+  const ctx = { console, URL, URLSearchParams, Intl, TextEncoder, TextDecoder, AbortController, structuredClone, queueMicrotask,
+    setTimeout: () => 1, setInterval: () => 1, clearTimeout() {}, clearInterval() {}, requestAnimationFrame: () => 1,
+    fetch: () => new Promise(() => {}), history: { replaceState() {}, pushState() {} }, navigator: { language: "es-CO", userAgent: "node", clipboard: {} },
+    location: { search: "", hash: "", href: "http://localhost/", pathname: "/", origin: "http://localhost", replace() {}, assign() {} },
+    sessionStorage: almacen(), localStorage: almacen(), matchMedia: () => ({ matches: false, addEventListener() {}, addListener() {} }),
+    getComputedStyle: () => ({ getPropertyValue: () => "" }), addEventListener() {}, removeEventListener() {}, scrollTo() {},
+    IntersectionObserver: class { observe() {} disconnect() {} }, ResizeObserver: class { observe() {} disconnect() {} }, MutationObserver: class { observe() {} disconnect() {} },
+    Event: class {}, CustomEvent: class {}, Blob: class {}, FormData: class {}, CSS: { supports: () => false, escape: (x) => x } };
+  ctx.document = { getElementById: () => nodo(), querySelector: () => nodo(), querySelectorAll: () => [], createElement: () => nodo(), addEventListener() {},
+    body: nodo(), documentElement: nodo(), readyState: "complete", visibilityState: "visible" };
+  ctx.window = ctx; ctx.self = ctx; ctx.globalThis = ctx;
+  vm.createContext(ctx);
+  for (const f of orden) {
+    let src = fs.readFileSync(pub(f), "utf8");
+    if (f === "app.js") { const i = src.lastIndexOf("})();"); src = `${src.slice(0, i)}window.__expuesto = { ${exponer.join(", ")} };\n${src.slice(i)}`; }
+    vm.runInContext(src, ctx, { filename: `public/${f}` });
+  }
+  assert.ok(ctx.__expuesto, "el arranque de app.js no llegó al final del IIFE");
+  return ctx.__expuesto;
+}
+
 function corre(rotulo) {
   const va = !SOLO || rotulo.toLowerCase().includes(SOLO);
   BLOQUES.push({ rotulo, corrio: va });
@@ -11017,31 +11048,7 @@ async function main() {
 
     // la tarjeta: app.js real en un vm pinta el hecho en la línea de competencia
     {
-      const vm = require("vm");
-      const pub = (f) => path.join(__dirname, "..", "public", f);
-      const orden = [...fs.readFileSync(pub("index.html"), "utf8").replace(/<!--[\s\S]*?-->/g, "").matchAll(/<script src="\/([a-z_]+\.js)"><\/script>/g)].map((x) => x[1]);
-      const nodo = () => new Proxy({ value: "", textContent: "", innerHTML: "", hidden: false, checked: false, disabled: false, dataset: {}, style: {}, options: [], children: [],
-        selectedOptions: [{ text: "", value: "" }], classList: { add() {}, remove() {}, toggle() {}, contains: () => false } },
-      { get: (t, k) => (k in t ? t[k] : k === Symbol.toPrimitive ? () => "" : typeof k === "symbol" || k === "then" ? undefined : () => nodo()), set: (t, k, val) => { t[k] = val; return true; } });
-      const almacen = () => { const m = new Map(); return { getItem: (k) => (m.has(k) ? m.get(k) : null), setItem: (k, val) => m.set(k, String(val)), removeItem: (k) => m.delete(k), clear: () => m.clear() }; };
-      const ctx = { console, URL, URLSearchParams, Intl, TextEncoder, TextDecoder, AbortController, structuredClone, queueMicrotask,
-        setTimeout: () => 1, setInterval: () => 1, clearTimeout() {}, clearInterval() {}, requestAnimationFrame: () => 1,
-        fetch: () => new Promise(() => {}), history: { replaceState() {}, pushState() {} }, navigator: { language: "es-CO", userAgent: "node", clipboard: {} },
-        location: { search: "", hash: "", href: "http://localhost/", pathname: "/", origin: "http://localhost", replace() {}, assign() {} },
-        sessionStorage: almacen(), localStorage: almacen(), matchMedia: () => ({ matches: false, addEventListener() {}, addListener() {} }),
-        getComputedStyle: () => ({ getPropertyValue: () => "" }), addEventListener() {}, removeEventListener() {}, scrollTo() {},
-        IntersectionObserver: class { observe() {} disconnect() {} }, ResizeObserver: class { observe() {} disconnect() {} }, MutationObserver: class { observe() {} disconnect() {} },
-        Event: class {}, CustomEvent: class {}, Blob: class {}, FormData: class {}, CSS: { supports: () => false, escape: (x) => x } };
-      ctx.document = { getElementById: () => nodo(), querySelector: () => nodo(), querySelectorAll: () => [], createElement: () => nodo(), addEventListener() {},
-        body: nodo(), documentElement: nodo(), readyState: "complete", visibilityState: "visible" };
-      ctx.window = ctx; ctx.self = ctx; ctx.globalThis = ctx;
-      vm.createContext(ctx);
-      for (const f of orden) {
-        let src = fs.readFileSync(pub(f), "utf8");
-        if (f === "app.js") { const i = src.lastIndexOf("})();"); src = `${src.slice(0, i)}window.__tam = { lineaCompiten };\n${src.slice(i)}`; }
-        vm.runInContext(src, ctx, { filename: `public/${f}` });
-      }
-      assert.ok(ctx.__tam, "el arranque de app.js no llegó al final del IIFE");
+      const ctx = { __tam: appEnVm(["lineaCompiten"]) };
       const linea = ctx.__tam.lineaCompiten({ competencia_entidad: cUna });
       assert.strictEqual(linea, "<span><b>Una sola oferta</b> en 10 de sus 11 procesos de menor cuantía de $150 a $300 millones.</span>", `la tarjeta dice el hecho → ${linea}`);
       const lineaSin = ctx.__tam.lineaCompiten({ competencia_entidad: cUnaGrande });
@@ -11172,10 +11179,57 @@ async function main() {
     const r = DP.loQueDicen({ leidos: { d1: { nombre: "pliego.pdf", tipo: "pliego", hechos: h, fecha_carga: "2026-06-30" } } }, {});
     const hm = r.hechos.find((x) => x.clave === "convocatoria_mipyme"), hs = r.hechos.find((x) => x.clave === "sorteo");
     assert.ok(hm && hm.pagina === 20 && /limitada a Mipyme de Turbaco/.test(hm.texto) && /una sucursal no cuenta/.test(hm.texto) && hm.estado === "revisar", `el hecho de la guía → ${JSON.stringify(hm)}`);
-    assert.ok(hs && hs.nivel === "no_consta" && /no consta/.test(hs.texto), "el sorteo que no consta se dice como tal");
+    assert.ok(hs && hs.nivel === "no_consta" && /no consta/.test(hs.texto) && /pliego\.pdf/.test(hs.documento), "el sorteo que no consta se dice como tal, con los documentos donde se buscó");
     assert.strictEqual(r.hechos[0].clave, "convocatoria_mipyme", "la limitación va AL FRENTE: la guía solo deja a la vista los cinco primeros");
     console.log("· unidad convocatoria limitada: frases reales (no susceptible, Turbaco), departamento y municipio, renglones partidos, "
       + "plantilla y reglas generales fuera, adenda > pliego > aviso, el hecho en la guía y «no consta» que no bloquea");
+  }
+
+  /* unidad: EL SIMULACRO DEL CONSORCIO (PLAN_X20, tanda 4, 11-nov-2026) ───────
+     La cerradura del plan: el caso REAL de la Universidad Pedagógica (UPN-VAD-CP-011-2026). Los términos
+     (numeral 4.2.2.2, pág. 27) pedían que el integrante que acredita la experiencia tenga al menos el 40 %; la
+     oferta fue Helder 65 % y Génesis 35 % con la experiencia de Génesis, y quedó NO HABILITADA. El simulador
+     real (lib/consorcio.simular) con el lector real de la cláusula tiene que decir «no» a ese reparto, con la
+     página, y primero en las advertencias; y «cumple» con un reparto que la respeta. */
+  bqSimulacro: { if (!corre("unidad simulacro del consorcio")) break bqSimulacro;
+    const R = require("../lib/reparto.js");
+    const C = require("../lib/consorcio.js");
+    const DP = require("../lib/documentos_proceso.js");
+    const c40 = [{ forma: "aporta_experiencia", porcentaje: 40 }];
+    const n = ["Helder", "Génesis"];
+    assert.strictEqual(R.clausulasEnReparto({ clausulas: c40, regla: { posibles: { ambos: false, solo_dueno: false, solo_socio: true } }, suya: 65, nombres: n })[0].estado, "no_cumple",
+      "la experiencia solo de Génesis con el 35 %: no cumple (el que no aporta, Helder, además pasaría del 10 % del pliego tipo)");
+    assert.strictEqual(R.clausulasEnReparto({ clausulas: c40, regla: { posibles: { ambos: true, solo_dueno: false, solo_socio: false } }, suya: 60, nombres: n })[0].estado, "cumple", "60/40 con los dos aportando: cumple");
+    const dep = R.clausulasEnReparto({ clausulas: c40, regla: { posibles: { ambos: true, solo_dueno: true, solo_socio: false } }, suya: 92, nombres: n })[0];
+    assert.ok(dep.estado === "depende" && /la aporta solo Helder/.test(dep.frase), `92/8: depende de quién aporte, y lo dice → ${dep.frase}`);
+    assert.deepStrictEqual(R.clausulasEnReparto({ clausulas: [{ forma: "otro" }], suya: 50 }), [], "una cláusula que no se sabe aplicar no se juzga (va como aviso con su cita, como siempre)");
+    assert.deepStrictEqual(R.clausulasEnReparto({ clausulas: c40, suya: 100 }), [], "con un solo integrante no hay reparto que juzgar");
+    const txt = "\f27\n4.2.2.2 EXPERIENCIA HABILITANTE\nEn caso de proponentes plurales, el (los) integrante(s) que acredite(n) la experiencia debe(n) contar con una participación mínima del cuarenta (40)% en la estructura plural.\n";
+    const h = DP.hechosDeTexto(txt, { tipo: "pliego" });
+    const docs = { leidos: { d1: { nombre: "Terminos de referencia.pdf", tipo: "pliego", hechos: h, fecha_carga: "2026-08-20" } } };
+    const proceso = { id_del_proceso: "UPN-VAD-CP-011-2026", modalidad_de_contratacion: "Contratación régimen especial (con ofertas)", tipo_de_contrato: "Obra", precio_base: "1348958930",
+      cuantia_cop: 1348958930, entidad: "UNIVERSIDAD PEDAGOGICA NACIONAL", departamento_entidad: "Distrito Capital de Bogotá", nombre_del_procedimiento: "Obra" };
+    const sim = (p1, p2) => C.simular(null, { integrantes: [{ perfilId: "helder", participacion: p1 }, { perfilId: "genesis", participacion: p2 }], proceso, documentos: docs });
+    const upn = await sim(65, 35);
+    const j = upn.participacion_pliego && upn.participacion_pliego[0];
+    assert.ok(j && j.estado === "no_cumple" && j.pagina === 27 && /40 %/.test(j.frase) && /65 %/.test(j.frase) && /35 %/.test(j.frase), `UPN 65/35 → ${JSON.stringify(upn.participacion_pliego)}`);
+    assert.ok(/^Con 65\/35 no cumple/.test(upn.advertencias[0]) && /pág\. 27/.test(upn.advertencias[0]), `y va PRIMERO en las advertencias → ${upn.advertencias[0]}`);
+    const bien = await sim(60, 40);
+    assert.ok(bien.participacion_pliego[0].estado === "cumple" && !/no cumple/.test(bien.advertencias[0]), `60/40 cumple → ${JSON.stringify(bien.participacion_pliego)}`);
+    const sinDocs = await C.simular(null, { integrantes: [{ perfilId: "helder", participacion: 65 }, { perfilId: "genesis", participacion: 35 }], proceso, documentos: null });
+    assert.ok(!("participacion_pliego" in sinDocs), "sin documentos leídos no se afirma nada del reparto");
+    // la FICHA del proceso con un consorcio de reparto pactado (el pendiente de la memoria): el mismo juicio, en el hecho
+    const pactado = C.derivarConsorcio("cons_upn", "Consorcio de prueba", [{ perfilId: "helder", participacion: 65 }, { perfilId: "genesis", participacion: 35 }]);
+    const hp = DP.loQueDicen(docs, { perfilObj: pactado, presupuestoCOP: 1348958930, tipoContrato: "Obra" }).hechos.find((x) => x.clave === "participacion_minima");
+    assert.ok(hp && hp.reparto === "no_cumple" && hp.estado === "riesgo" && /Con 65\/35 no cumple/.test(hp.texto), `la ficha del consorcio 65/35 → ${JSON.stringify(hp && { reparto: hp.reparto, estado: hp.estado, texto: hp.texto })}`);
+    const supuesto = DP.loQueDicen(docs, { perfilObj: { ...pactado, participacionAsumida: true }, presupuestoCOP: 1348958930, tipoContrato: "Obra" }).hechos.find((x) => x.clave === "participacion_minima");
+    assert.ok(supuesto && !("reparto" in supuesto) && supuesto.estado === "revisar", "con el reparto que SUPONE la aplicación no se juzga (no lo pactaron)");
+    // la vista del consorcio en Mis procesos: el «no cumple» se pinta EN ROJO aunque haya recomendación (antes solo pasaban las advertencias con «porcentaje mínimo»)
+    const { htmlResultadoSocio } = appEnVm(["htmlResultadoSocio"]);
+    const html = htmlResultadoSocio("CO1.UPN", { ...upn, exigencias: [{ clave: "experiencia_general", titulo: "Experiencia", exige: "x" }], recomendacion: { suya: 60 } }, { nombre: "Génesis" }, 35);
+    assert.ok(/data-reparto-no-cumple/.test(html) && /text-red-700[^>]*>Con 65\/35 no cumple/.test(html) && /pág\. 27/.test(html), `la vista lo dice en rojo → ${(html.match(/<ul[^>]*data-reparto-no-cumple[\s\S]*?<\/ul>/) || ["(nada)"])[0].slice(0, 300)}`);
+    console.log("· unidad simulacro del consorcio: cada cláusula contra el reparto dado (no cumple / cumple / depende de quién aporte), "
+      + "y el caso real de la Universidad Pedagógica (65/35 con el 40 % pedido) dice «no» con la página 27, primero en las advertencias");
   }
 
   /* unidad: TEXTO como co-señal (vocabulario por familia + verbo de obra) */

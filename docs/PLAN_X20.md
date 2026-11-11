@@ -415,6 +415,7 @@ Si en el paso 2 no ve lo descrito, no siga: dígalo y se revisa, porque ese orde
 ### 7.3 Entrega 2 · Que no nos tumben por estructura, papeles o puntos
 
 - **Tanda 4 · Simulacro de estructura.** Pieza 6.3, primera mitad: participación, indicadores, capital de trabajo y capacidad a la vez. Cierre: el caso de la Universidad Pedagógica dice «no» al 65/35 con su cita. Lleva plan previo con su visto bueno, mutación y revisión adversaria. Tamaño: 3 sesiones.
+  - *Hecha en parte el 11-nov-2026*: el simulacro de la participación mínima contra el reparto dado (simulador y ficha) con la cerradura de la Universidad Pedagógica. Falta la frase única «con este reparto cumple todo / falla X» que junte participación, indicadores y capital de trabajo. Memoria: «El simulacro del consorcio: cada cláusula de participación contra el reparto que se va a firmar (11-nov-2026)».
 - **Tanda 5 · Los puntos, uno por uno.** Pieza 6.3, segunda mitad: cada factor de puntaje con quién lo acredita y qué falta. Cierre: «Hoy obtendría N de M puntos fuera del precio; faltan …». Tamaño: 2 sesiones.
 - **Tanda 6 · Las causales de ESE pliego.** Lista final antes de radicar, leída del pliego y cruzada con el paquete. Tamaño: 2 sesiones.
 

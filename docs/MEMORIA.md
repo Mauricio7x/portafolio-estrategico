@@ -18313,7 +18313,9 @@ En una línea: la casilla de los indicadores del consorcio comparaba la cifra de
 
 > RESUELTO el 30-sep-2026 por «Consorcios de tres o más socios: no hay ninguno con reparto supuesto, y si llega a haberlo no niega (30-sep-2026)» · no existe hoy ningún consorcio de tres o más con reparto supuesto; una guarda impide que uno futuro niegue por ese reparto
 
-> PENDIENTE · las cláusulas que dependen de quién aporta la experiencia no descartan repartos en la ficha. Y la entrada del dictamen sigue enseñándole al modelo la cifra SUMADA en `perfil.capital_trabajo_cop`: lo corrige el juicio que va al lado y el ajuste al servir, no la cifra.
+> RESUELTO el 11-nov-2026 por «El simulacro del consorcio: cada cláusula de participación contra el reparto que se va a firmar (11-nov-2026)» · (solo la primera frase) las cláusulas que dependen de quién aporta la experiencia no descartaban repartos en la ficha.
+
+> PENDIENTE · La entrada del dictamen sigue enseñándole al modelo la cifra SUMADA en `perfil.capital_trabajo_cop`: lo corrige el juicio que va al lado y el ajuste al servir, no la cifra.
 
 ### «Cómo se gana con el precio» por modalidad: sin sorteo en mínima cuantía ni en concurso de méritos (27/28-sep-2026, N13')
 
@@ -22354,4 +22356,17 @@ En una línea: tanda 2 del plan x20: la lectura de documentos de un proceso guar
   - entre documentos: la adenda más reciente, luego el pliego definitivo o el documento base, la resolución de apertura, el aviso y, al final, el borrador; dos del mismo nivel que no coinciden, «contradictorio».
 - **Sin verificar**: si en una limitación territorial TODOS los integrantes de un consorcio deben tener el domicilio (la frase dice «en un consorcio todos los integrantes deben serlo» —ser Mipyme, que sí lo exige el parágrafo 3 del art. 2.2.1.2.4.2.4 según el Anexo B del plan—, no habla del domicilio). Tampoco se lee aún cuántos manifestaron interés (`proveedores_que_manifestaron` de p6dx).
 - Cerradura: «unidad convocatoria limitada» (frases reales, departamento, municipio y nombres de varias palabras, renglones partidos, plantilla, reglas generales, prioridad entre documentos y el hecho al frente de la guía). Nueve mutaciones; dos sobrevivieron al primer intento (faltaban una regla general que el patrón sí atrapa y un territorio de varias palabras) y se añadieron los casos: mueren todas.
+
+### El simulacro del consorcio: cada cláusula de participación contra el reparto que se va a firmar (11-nov-2026)
+
+En una línea: tanda 4 del plan x20 (primera mitad): el simulador del consorcio y la ficha del proceso juzgan cada cláusula de participación mínima del pliego contra EL reparto que se simula o que el consorcio pactó, con la regla de la frontera (`lib/reparto.clausulasEnReparto` sobre `clausulaCumple` y `manerasDeAportar`); el caso real de la Universidad Pedagógica (65/35 con el 40 % pedido para quien acredita la experiencia) sale «no cumple» con la página 27, primero en las advertencias y en rojo en Mis procesos.
+
+- **Lo que no hay que deshacer**:
+  - la frontera dice el MEJOR reparto y el simulacro juzga UNO DADO: son dos preguntas, pero la regla es una sola (`clausulaCumple`); no se escribió otra;
+  - por cláusula hay tres respuestas: «no cumple» (ninguna manera de aportar la experiencia que el reparto deja la cumple), «cumple» (todas) y «depende» (algunas: se dice cuáles, «cumple solo si la experiencia la aporta solo X»);
+  - en la ficha de Mis procesos solo se juzga un reparto PACTADO: con el 50/50 que la aplicación supone para «juntos» no, porque no lo firmó nadie; y si no se sabe quién puede aportar la experiencia (regla sin dato), un «no cumple» baja a «revisar» (en la guía cuesta el falso negativo);
+  - la vista del consorcio en Mis procesos filtraba las advertencias a las que dicen «porcentaje mínimo» y el «no cumple» se habría escondido: se pinta aparte, en rojo, con o sin recomendación.
+- **La experiencia exigida** del simulacro sale de las mismas casillas que la recomendación del reparto (`experienciaExigidaDe` en `lib/consorcio.js`, que ahora llaman los dos).
+- **Sin hacer de la tanda 4**: juzgar a la vez indicadores y capital de trabajo con el reparto dado ya lo hace el simulador por sus casillas (`exigencias`), pero no hay una frase única «con este reparto cumple todo / falla X»; y la segunda mitad (los puntos fuera del precio, tanda 5) no se tocó.
+- Cerradura: «unidad simulacro del consorcio» (puro, el simulador real con la cláusula real leída por `hechosDeTexto`, la ficha con un consorcio pactado y con el supuesto, y la vista con `app.js` en un vm). Ocho mutaciones; mueren todas.
 
