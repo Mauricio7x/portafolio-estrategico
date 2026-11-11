@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 2648066 bytes · 473 secciones · 58 con marcador de superación.
+Derivado del árbol: 2650195 bytes · 473 secciones · 58 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -478,9 +478,9 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | La administración por tiempo se cobra entera: la casilla de lo subcontratado va encendida y el motor la reparte sobre la obra propia (10-nov-2026) | 10-nov-2026 | 22253-22271 | 5420 |  |
 | El plan x20: uso personal, ir donde llega una sola oferta, y sus ofertas se reconocen por el integrante (11-nov-2026) | 11-nov-2026 | 22272-22299 | 5788 |  |
 | La competencia por tamaño ordena «Las menos peleadas» y el motor de los cuatro métodos vive en lib/ con el máximo de la media geométrica (11-nov-2026) | 11-nov-2026 | 22300-22321 | 7406 |  |
-| La regla del anuncio, medida con la población de Detekta, resiste en menor cuantía, mínima y régimen especial; en licitación no (11-nov-2026) | 11-nov-2026 | 22322-22330 | 1785 |  |
-| Precios dice dónde habría quedado su precio frente a todas las ofertas de la entidad, y cuatro textos que afirmaban de más (11-nov-2026) | 11-nov-2026 | 22331-22345 | 3717 |  |
-| Las dos barreras se leen del pliego: limitada a Mipyme y a qué territorio, y si hay sorteo (11-nov-2026) | 11-nov-2026 | 22346-22359 | 2883 |  |
-| El simulacro del consorcio: cada cláusula de participación contra el reparto que se va a firmar (11-nov-2026) | 11-nov-2026 | 22360-22372 | 2297 |  |
-| Con lista cargada, la capacidad también resta los contratos nuevos de SECOP II, por número de contrato (11-nov-2026) | 11-nov-2026 | 22373-22380 | 1377 |  |
-| «Revisar antes de subir» también compara contra el Formulario 1 de Excel (11-nov-2026) | 11-nov-2026 | 22381-22388 | 1384 |  |
+| La regla del anuncio, medida con la población de Detekta, resiste en menor cuantía, mínima y régimen especial; en licitación no (11-nov-2026) | 11-nov-2026 | 22322-22331 | 2261 |  |
+| Precios dice dónde habría quedado su precio frente a todas las ofertas de la entidad, y cuatro textos que afirmaban de más (11-nov-2026) | 11-nov-2026 | 22332-22346 | 4038 |  |
+| Las dos barreras se leen del pliego: limitada a Mipyme y a qué territorio, y si hay sorteo (11-nov-2026) | 11-nov-2026 | 22347-22361 | 3641 |  |
+| El simulacro del consorcio: cada cláusula de participación contra el reparto que se va a firmar (11-nov-2026) | 11-nov-2026 | 22362-22375 | 2871 |  |
+| Con lista cargada, la capacidad también resta los contratos nuevos de SECOP II, por número de contrato (11-nov-2026) | 11-nov-2026 | 22376-22383 | 1377 |  |
+| «Revisar antes de subir» también compara contra el Formulario 1 de Excel (11-nov-2026) | 11-nov-2026 | 22384-22391 | 1384 |  |

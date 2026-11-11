@@ -11158,6 +11158,17 @@ async function main() {
     assert.ok(cerrado.mipyme === "no_limitada" && !/\[/.test(cerrado.citas.mipyme[0].cita), "con la instrucción ya cerrada encima, la opción elegida cuenta y la cita sale sin el corchete");
     const dos = L("\f19\n[Si procede] La Entidad limita la convocatoria de este Proceso de Contratación a las Mipyme colombianas por haberse verificado las condiciones. [Si no procede] La Entidad no limita el Proceso de Contratación a las Mipyme colombianas por no haberse cumplido las condiciones.\n");
     assert.strictEqual(dos.mipyme, "contradictorio", "la plantilla con las dos opciones no escoge ninguna");
+    // revisión adversaria del 11-nov-2026: lo NEGADO no es «limitada», y el territorio va atado a «Mipyme»
+    for (const fr of ["El presente proceso no está limitado a Mipyme.", "La presente convocatoria NO está limitada a MIPYMES.", "Teniendo en cuenta que no se recibieron solicitudes, el proceso no queda limitado a Mipyme.",
+      "CONVOCATORIA LIMITADA A MIPYMES: NO", "Convocatoria limitada a Mipyme: No aplica.", "El proceso se limita a Mipyme? NO."])
+      assert.strictEqual(L(`\f5\n${fr}\n`).mipyme, "no_limitada", `negada: «${fr}»`);
+    for (const fr of ["La Alcaldía del municipio de Turbaco informa que el presente proceso se limita a Mipyme nacional.", "El proceso se limita a Mipyme colombianas, de acuerdo con las solicitudes de empresas del departamento de Bolívar."]) {
+      const r = L(`\f5\n${fr}\n`);
+      assert.ok(r.mipyme === "limitada" && r.territorio === null, `un municipio suelto en la frase no es la limitación: «${fr}» → ${JSON.stringify(r.territorio)}`);
+    }
+    assert.deepStrictEqual(L("\f5\nSe limita la convocatoria a Mipyme con domicilio en el Municipio de Ibagué.\n").territorio, { tipo: "municipio", nombre: "Ibagué" }, "con mayúscula en «Municipio» también");
+    for (const fr of ["Audiencia de sorteo: no aplica, la entidad no realizará el sorteo.", "En el presente proceso no se realizará sorteo.", "No se realizará sorteo y se continuará con todos los interesados."])
+      assert.strictEqual(L(`\f21\n${fr}\n`).sorteo, "no", `sorteo negado: «${fr}»`);
     assert.strictEqual(L("\f21\nSi la entidad recibe más de diez (10) manifestaciones de interés realizará un sorteo a través de balotas.\n").sorteo, "si_mas_de_10");
     assert.strictEqual(L("\f21\nLa entidad continuará el proceso con todos los interesados que manifestaron interés.\n").sorteo, "no");
     assert.deepStrictEqual([L("").mipyme, L("").sorteo], [null, null], "sin texto: no consta (null), nunca «no limitada»");
@@ -11194,8 +11205,9 @@ async function main() {
     const DP = require("../lib/documentos_proceso.js");
     const c40 = [{ forma: "aporta_experiencia", porcentaje: 40 }];
     const n = ["Helder", "Génesis"];
-    assert.strictEqual(R.clausulasEnReparto({ clausulas: c40, regla: { posibles: { ambos: false, solo_dueno: false, solo_socio: true } }, suya: 65, nombres: n })[0].estado, "no_cumple",
-      "la experiencia solo de Génesis con el 35 %: no cumple (el que no aporta, Helder, además pasaría del 10 % del pliego tipo)");
+    const soloG = R.clausulasEnReparto({ clausulas: c40, regla: { posibles: { ambos: false, solo_dueno: false, solo_socio: true } }, suya: 65, nombres: n });
+    assert.ok(soloG.length === 1 && soloG[0].forma === "regla_experiencia" && soloG[0].estado === "revisar" && /a lo sumo el 10 %/.test(soloG[0].frase),
+      `si solo Génesis puede aportar y Helder tiene el 65 %, falla la REGLA de experiencia, no cada cláusula: se dice una vez y como «revisar» (revisión adversaria) → ${JSON.stringify(soloG)}`);
     assert.strictEqual(R.clausulasEnReparto({ clausulas: c40, regla: { posibles: { ambos: true, solo_dueno: false, solo_socio: false } }, suya: 60, nombres: n })[0].estado, "cumple", "60/40 con los dos aportando: cumple");
     const dep = R.clausulasEnReparto({ clausulas: c40, regla: { posibles: { ambos: true, solo_dueno: true, solo_socio: false } }, suya: 92, nombres: n })[0];
     assert.ok(dep.estado === "depende" && /la aporta solo Helder/.test(dep.frase), `92/8: depende de quién aporte, y lo dice → ${dep.frase}`);
@@ -40858,13 +40870,14 @@ async function main() {
               const lineaApp = (marca) => { const i = js.indexOf(marca); assert.ok(i > 0, `app.js sin ${marca}`); return js.slice(i, js.indexOf("\n", i)); };
               const cajasPT = {};
               const dolarPT = (id) => (cajasPT[id] || (cajasPT[id] = nodoPS()));
-              const pintarPT = new Function("$", "esc", "botonPasoQueFalta", "pintarEscalaPisoTecho", `
+              // `pedirGrupo` (PLAN_X20, D4): la línea del grupo de ofertas se pide aparte; aquí no hay red
+              const pintarPT = new Function("$", "esc", "botonPasoQueFalta", "pintarEscalaPisoTecho", "pedirGrupo", `
                 ${lineaApp("  const nf = new Intl.NumberFormat(")}
                 ${lineaApp("  const nf2 = new Intl.NumberFormat(")}
                 ${lineaApp("  const copRent = (n) =>")}
                 ${lineaApp("  const pctRent = (n) =>")}
                 const TONO_VEREDICTO = new Proxy({}, { get: () => ({ caja: "", punto: "" }) });
-                ${extraerPS("pintarPisoTecho")}; return pintarPisoTecho;`)(dolarPT, (x) => String(x == null ? "" : x), () => "", () => {});
+                ${extraerPS("pintarPisoTecho")}; return pintarPisoTecho;`)(dolarPT, (x) => String(x == null ? "" : x), () => "", () => {}, () => {});
               const conBaja = (mediana, granularidad) => ptMod.pisoTecho({ ...entradaPT,
                 baja: { ...entradaPT.baja, baja_mediana: mediana, baja_p25: Math.min(mediana, 0), baja_p75: Math.max(mediana, 2), granularidad_utilizada: granularidad } });
               for (const mediana of [0, -2]) {

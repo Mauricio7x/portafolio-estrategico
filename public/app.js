@@ -11352,7 +11352,11 @@
     const p = $("pt-grupo");
     if (!p) return;
     const yo = ++grupoPedido;
-    const precio = c && c.presupuesto && c.presupuesto.resumen ? Number(c.presupuesto.resumen.precio_final) : NaN;
+    /* el TOTAL que se escribe en SECOP II (con el IVA de la utilidad cuando la entidad lo lleva o no se sabe), que es
+       con lo que compiten las ofertas publicadas; sin él, el precio final (revisión adversaria del 11-nov-2026: con el
+       precio sin IVA, el caso de Cali se pintaba 0,75 puntos más abajo y la alerta podía no salir) */
+    const res = c && c.presupuesto && c.presupuesto.resumen ? c.presupuesto.resumen : null;
+    const precio = res ? Number(res.oferta && res.oferta.total_para_secop != null ? res.oferta.total_para_secop : res.precio_final) : NaN;
     const po = c && c.piso_techo && c.piso_techo.cifras ? Number(c.piso_techo.cifras.presupuesto_oficial) : NaN;
     if (!nitProceso || !modalidadProceso || !(precio > 0) || !(po > 0)) { p.textContent = ""; p.classList.add("hidden"); return; }
     p.className = "mt-2 pl-6 text-sm text-gray-500";
@@ -11374,7 +11378,7 @@
     const f = r && r.frente_al_grupo;
     if (f && f.frase) {
       p.className = f.alerta ? "mt-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900 ring-1 ring-inset ring-amber-600/20" : "mt-2 pl-6 text-sm text-gray-600";
-      p.textContent = f.alerta ? `Atención: ${f.frase} Con ese precio suele quedar por encima del grupo.` : f.frase;
+      p.textContent = f.alerta ? `Atención: ${f.frase} Con ese precio suele quedar por encima de la mitad de las ofertas.` : f.frase;
     } else {
       p.className = "mt-2 pl-6 text-sm text-gray-500";
       p.textContent = (r && r.motivo_texto) || "No hay procesos anteriores comparables de esta entidad para decir dónde quedaría su precio.";
