@@ -22,7 +22,7 @@
   pliego.js                   Router del dominio PLIEGO (Fase 0 · consolidación a 6 funciones)
   procesos.js                 Router del dominio PROCESOS (Fase 0 · consolidación a 6 funciones)
 
-· lib/ — 112 módulos:
+· lib/ — 114 módulos:
   accesibilidad.js            Accesibilidad operativa de la zona de la obra
   adendas.js                  Vigía de adendas · lo que el DATASET dice que cambió (Fase 5)
   almacen.js                  Esquema de claves Redis + compresión de chunks
@@ -46,6 +46,7 @@
   columnas_historicas.js      ¿Qué columnas trae DE VERDAD el corpus histórico?
   compactar.js                La base de datos deja de llenarse (30-sep-2026)
   competencia_detalle.js      Los procesos que SOSTIENEN el badge de competencia
+  competencia_por_tamano.js   ¿Cuántas ofertas llegan a los procesos de este tamaño en esta entidad?
   config_rup.js               Validación del RUP que sube el dueño (archivo JSON)
   consorcio.js                Consorcio a la medida (Fase 10 · Detekta v4)
   contexto_vercel.js          El contexto de la petición de Vercel, o null (9-nov-2026)
@@ -92,6 +93,7 @@
   lenguaje_pantalla.js        las cercas de lenguaje y el número es-CO, en una sola copia
   manifestacion.js            La MANIFESTACIÓN DE INTERÉS de la selección abreviada de
   medidor_redis.js            Cuánto ancho de banda de Upstash gasta cada operación
+  metodos_ponderacion.js      Los 4 métodos de ponderación económica del documento tipo
   modo.js                     EL INTERRUPTOR, y vive en un solo sitio
   negocio.js                  Reglas de negocio: enriquecer(licitacion)
   objetos.js                  El almacén de archivos (compatible con S3), sin dependencias
@@ -238,8 +240,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 466 secciones (58 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 22131  La rejilla de una pestaña: `:not(.hidden)` va solo con `display` (10-nov-2026)
+· MEMORIA · docs/MEMORIA.md — 467 secciones (58 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 22139  APU propios de Detekta, primera entrega: el banco de prueba sin Claude, el alcance de la ac…
   L 22154  Mis procesos con su barra: tres apartados, el expediente con «Este proceso» a un lado y «Su…
   L 22173  La lista lee el análisis guardado como Precios (10-nov-2026)
@@ -249,6 +250,7 @@
   L 22232  El mínimo para no perder plata sigue a la casilla de lo subcontratado, y subir un APU calcu…  (superada)
   L 22251  La administración por tiempo se cobra entera: la casilla de lo subcontratado va encendida y…
   L 22270  El plan x20: uso personal, ir donde llega una sola oferta, y sus ofertas se reconocen por e…
+  L 22298  La competencia por tamaño ordena «Las menos peleadas» y el motor de los cuatro métodos vive…
 
 · DOCUMENTOS docs/ — 78 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)

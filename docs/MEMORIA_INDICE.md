@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 2627042 bytes · 466 secciones · 58 con marcador de superación.
+Derivado del árbol: 2634279 bytes · 467 secciones · 58 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -476,4 +476,5 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | Precios con su barra: siete apartados, tres cifras arriba que nunca son $0, la casilla de lo subcontratado que ahora mueve el precio y «Subir un APU» (10-nov-2026) | 10-nov-2026 | 22208-22231 | 9305 | «El mínimo para no perder plata sigue a la casilla de lo subcontratado, y subir un APU calcula también el mínimo (10-nov-2026)» |
 | El mínimo para no perder plata sigue a la casilla de lo subcontratado, y subir un APU calcula también el mínimo (10-nov-2026) | 10-nov-2026 | 22232-22250 | 6691 | «La administración por tiempo se cobra entera: la casilla de lo subcontratado va encendida y el motor la reparte sobre la obra propia (10-nov-2026)» |
 | La administración por tiempo se cobra entera: la casilla de lo subcontratado va encendida y el motor la reparte sobre la obra propia (10-nov-2026) | 10-nov-2026 | 22251-22269 | 5420 |  |
-| El plan x20: uso personal, ir donde llega una sola oferta, y sus ofertas se reconocen por el integrante (11-nov-2026) | 11-nov-2026 | 22270-22296 | 5787 |  |
+| El plan x20: uso personal, ir donde llega una sola oferta, y sus ofertas se reconocen por el integrante (11-nov-2026) | 11-nov-2026 | 22270-22297 | 5788 |  |
+| La competencia por tamaño ordena «Las menos peleadas» y el motor de los cuatro métodos vive en lib/ con el máximo de la media geométrica (11-nov-2026) | 11-nov-2026 | 22298-22318 | 7236 |  |

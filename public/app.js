@@ -3176,6 +3176,15 @@
     return `<p class="${clase}" data-accion-tarjeta${titulos ? ` title="${titulos}"` : ""}>${piezas.map((h) => esc(textoDeHtml(h))).join(" · ")}</p>`;
   }
   function lineaCompiten(l) {
+    /* EL HECHO POR TAMAÑO VA PRIMERO (PLAN_X20, tanda 1, 11-nov-2026): «Una sola oferta en 9 de sus 11
+       procesos de menor cuantía de $150 a $300 millones» dice lo que pasó en procesos como este, no un
+       promedio de toda la entidad. La frase la escribe el servidor (lib/competencia_por_tamano) y solo
+       llega con cuatro procesos o más de ese tamaño; sin ella, la línea de siempre. */
+    const pt = l.competencia_entidad && l.competencia_entidad.por_tamano;
+    if (pt && typeof pt.frase === "string" && pt.frase) {
+      const i = pt.frase.indexOf(" en ");
+      return i > 0 ? `<span><b>${esc(pt.frase.slice(0, i))}</b>${esc(pt.frase.slice(i))}</span>` : `<span>${esc(pt.frase)}</span>`;
+    }
     const c = cuantosCompiten(l);
     /* sin cifra, se dice POR QUÉ con las palabras del chip: con el índice sin leer no es «sin datos» (nadie lo
        miró), es «no se pudo consultar» — el mismo predicado `competenciaNoLeida` de la franja y del chip */

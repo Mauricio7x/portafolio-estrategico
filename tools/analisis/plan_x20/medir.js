@@ -29,16 +29,17 @@
        manifestación SECOP II trae el definitivo). Se apartan los procesos con ofertas sobre el 100 % o bajo el 70 %.
      · «De casa» = el oferente ya había ganado en esa entidad desde 2024, emparejado por código
        de proveedor, NIT o nombre. Un consorcio con nombre nuevo no se reconoce: es cota inferior.
-     · Los cuatro métodos se LLAMAN de scripts/base_obra/metodos.js (no se reescriben). Valen
+     · Los cuatro métodos se LLAMAN de lib/metodos_ponderacion.js (no se reescriben). Valen
        para los documentos tipo; un pliego de régimen especial puede traer otros.
    ============================================================================ */
 const fs = require("fs");
 const path = require("path");
-const METODOS = require(path.join(__dirname, "..", "..", "..", "scripts", "base_obra", "metodos.js"));
+const METODOS = require(path.join(__dirname, "..", "..", "..", "lib", "metodos_ponderacion.js"));
+const COMPETENCIA = require(path.join(__dirname, "..", "..", "..", "lib", "competencia_por_tamano.js"));
 
 const CORTE_PRUEBA = "2026-01-01";          // aprende antes, prueba después
 const CORTE_ULTIMO_ANO = "2025-11-01";      // «el último año» de la medición
-const K = 4;                                 // encogimiento: K procesos «virtuales» con la tasa del nivel de arriba
+const K = 4;                                 // encogimiento: K procesos «virtuales» (lo usa lib/competencia_por_tamano; aquí solo va a la ficha)
 const MIN_PREVIOS = 4;                       // una entidad «con historial» tiene 4 o más adjudicados antes
 const UMBRAL_POCA = 0.8, UMBRAL_MUCHA = 0.3;
 const UMBRAL_MIPYME_2026 = 511708497;       // US$125.000 (umbrales de Colombia Compra Eficiente para 2026)
@@ -105,21 +106,19 @@ function escribirTandas(dir) {
   console.log("   tandas: " + prueba.length + " procesos de prueba (2 a 9 ofertas), " + antes.length + " anteriores (3 a 30 ofertas) y " + muestra.length + " del contraste (1 respuesta)");
 }
 
-/* ── C · el modelo de competencia: tasa de «1 o 2 ofertas», encogida por niveles ── */
+/* ── C · el modelo de competencia: tasa de «1 o 2 ofertas», encogida por niveles ──
+   Desde el 11-nov-2026 (PLAN_X20, tanda 1) la regla vive en lib/competencia_por_tamano.js y aquí
+   se LLAMA: la aplicación ordena «Las menos peleadas» con la misma cuenta que esta medición prueba. */
 function modeloCompetencia(filasAprende) {
   const poca = (r) => (r.n <= 2 ? 1 : 0);
-  const tasa = (rs) => (rs.length ? rs.reduce((a, r) => a + poca(r), 0) / rs.length : null);
-  const base = tasa(filasAprende), porTam = {}, porDepTam = {}, hist = {};
+  const cuenta = (rs) => [rs.length, rs.reduce((a, r) => a + poca(r), 0)];
+  const porTam = {}, porDepTam = {}, hist = {};
   for (const r of filasAprende) { meter(porTam, tamano(r.pb), r); meter(porDepTam, r.dep + "|" + tamano(r.pb), r); meter(hist, r.ent, r); }
+  const todas = cuenta(filasAprende);
   function anuncia(ent, dep, pb) {
-    const tT = tasa(porTam[tamano(pb)] || []);
-    const pTam = tT == null ? base : tT;
-    const dt = porDepTam[dep + "|" + tamano(pb)] || [];
-    const pDep = (dt.reduce((a, x) => a + poca(x), 0) + K * pTam) / (dt.length + K);
     const h = hist[ent] || [], hT = h.filter((x) => tamano(x.pb) === tamano(pb));
-    const pEntGen = (h.reduce((a, x) => a + poca(x), 0) + K * pDep) / (h.length + K);
-    const pEnt = (hT.reduce((a, x) => a + poca(x), 0) + K * pEntGen) / (hT.length + K);
-    return { base, pTam, pDep, pEnt, previos: h.slice() };
+    const a = COMPETENCIA.anunciarPoca({ modalidad: todas, tamano: cuenta(porTam[tamano(pb)] || []), depto: cuenta(porDepTam[dep + "|" + tamano(pb)] || []), entidad: cuenta(h), entidadTam: cuenta(hT) });
+    return { base: a.base, pTam: a.tamano, pDep: a.depto, pEnt: a.entidad, previos: h.slice() };
   }
   return { anuncia, aprender: (r) => meter(hist, r.ent, r), poca };
 }

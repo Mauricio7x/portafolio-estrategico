@@ -5685,6 +5685,20 @@ async function main() {
       assert.strictEqual(CI2.sinPrecio({ ofertas_validas: ofs2([0.95, 1]) }), false);
       assert.deepStrictEqual(ME.puntajes([100, 300], "menor_valor", 49.5), [49.5, 16.5], "el séptimo decimal va sobre el puntaje real (49,5 en menor cuantía)");
       assert.strictEqual(ME.PUNTAJE_MAXIMO.menor_cuantia, 49.5); assert.strictEqual(ME.PUNTAJE_MAXIMO.licitacion, 48.5);
+      // PLAN_X20 tanda 7 (11-nov-2026): una sola casa y el defecto D1 de la media geométrica
+      assert.strictEqual(ME, require("../lib/metodos_ponderacion.js"), "scripts/base_obra/metodos.js re-exporta la casa única de lib/, no la copia");
+      {
+        // Cali · 4151.010.32.1.1255-2026 (Santa Elena): las cinco hábiles, método sorteado media geométrica
+        const cali = [1475444680, 1485289767, 1488423398, 1511179252, 1530029471];
+        const pc = ME.puntajes(cali, "geometrica", 49.5);
+        assert.strictEqual(pc[2], 49.5, "D1: la más cercana a la media geométrica (Concretar 2026, la que ganó) recibe el MÁXIMO, 49,5 — no 49,1854 (DocBase menor cuantía V3, 4.1.4: «se otorgará el máximo puntaje al valor de la propuesta que se encuentre más cerca»)");
+        assert.strictEqual(pc[4], 48.4396912, "la oferta propia (96,75 %) conserva el 48,4397 del informe de la entidad");
+        assert.deepStrictEqual(ME.primeros(cali, "geometrica"), [2], "el orden por precio no cambia: primera la más cercana");
+        assert.deepStrictEqual(ME.puntajes([90, 110], "geometrica"), [1, 0.8944584], "más cercana por defecto: máximo; la otra con la ecuación");
+        assert.deepStrictEqual(ME.puntajes([95, 105, 140], "geometrica").filter((x) => x === 1).length, 1, "con tres valores distintos, un solo máximo");
+        assert.deepStrictEqual(ME.primeros([100, 100, 200], "geometrica"), [0, 1], "dos ofertas iguales y las más cercanas: las dos con el máximo (el empate lo decide el desempate)");
+        assert.ok(ME.puntajes([100, 1000], "geometrica").every((x) => x >= 0), "un negativo sigue valiendo cero");
+      }
       const hab = new Set(["2026-06-01", "2026-06-02", "2026-06-04"]);   // el 3-jun festivo en esta serie de prueba
       assert.strictEqual(CI2.fechaTrmEstimada("2026-06-05T00:00:00.000", -2, hab), "2026-06-02", "con los días hábiles de la serie, el festivo no cuenta");
       assert.strictEqual(CI2.fechaTrmEstimada("2026-06-02T00:00:00.000", 1, hab), "2026-06-04", "licitación: el día hábil SIGUIENTE a la audiencia");
@@ -10861,6 +10875,174 @@ async function main() {
     console.log("· unidad índice de baja: 3 granularidades en cascada, filtros de lote parcial y dato malo, "
       + "el cero como dato, el ajuste de P(ganar) y la baja POR MODALIDAD (cubetas que suman, "
       + "mínimo respetado y degradación al hash sin `por_modalidad`)");
+  }
+
+  /* unidad: COMPETENCIA POR TAMAÑO (PLAN_X20, tanda 1, 11-nov-2026) ─────────────
+     El hecho «una sola oferta en N de sus M procesos de este tamaño» y el anuncio que ordena «Las
+     menos peleadas», con las funciones REALES: el índice se construye contra un Redis de mentira con
+     chunks históricos escritos a mano, `competenciaDe` lo lee, el orden del listado lo usa y la línea
+     de la tarjeta se pinta con app.js en un vm. La regla (lib/competencia_por_tamano) es la misma que
+     midió el plan: la medición la LLAMA, y aquí se ejecuta para comprobarlo. */
+  bqTam: { if (!corre("unidad competencia por tamaño")) break bqTam;
+    const CT = require("../lib/competencia_por_tamano.js");
+    const IC = require("../lib/indice_competencia.js");
+    const LI = require("../lib/handlers/procesos/listar.js");
+    const { comprimir, CLAVES } = require("../lib/almacen.js");
+    function redisT(filasPorMes, extra = {}) {
+      const kv = new Map(Object.entries(extra)), hashes = new Map();
+      for (const [mes, filas] of Object.entries(filasPorMes)) kv.set(`licitaciones:historico:mes:${mes}:chunk:0`, comprimir(filas));
+      const like = (p) => new RegExp("^" + p.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/\\\*/g, ".*") + "$");
+      return {
+        kv, hashes,
+        scan: async (p) => [...kv.keys()].filter((k) => like(p).test(k)),
+        mget: async (ks) => ks.map((k) => kv.get(k) ?? null),
+        get: async (k) => kv.get(k) ?? null,
+        set: async (k, v) => { kv.set(k, v); return "OK"; },
+        del: async (...ks) => { for (const k of ks.flat()) { kv.delete(k); hashes.delete(k); } return 1; },
+        hset: async (k, obj) => { const h = hashes.get(k) || {}; for (const [f, v] of Object.entries(obj)) h[f] = JSON.stringify(v); hashes.set(k, h); return 1; },
+        hgetall: async (k) => hashes.get(k) || {},
+        hgetallPorPartes: async (k) => ({ ...(hashes.get(k) || {}) }),
+        rename: async (a, b) => { hashes.set(b, hashes.get(a) || {}); hashes.delete(a); return "OK"; },
+      };
+    }
+    let kT = 0;
+    const MENOR = "Selección Abreviada de Menor Cuantía";
+    const adj = (entidad, nit, depto, pb, ofertas, mes, modalidad = MENOR) => ({
+      _k: `t-${++kT}`, ":updated_at": `${mes}-20T00:00:00.000`, id_del_proceso: `CO1.REQ.T${kT}`,
+      entidad, nit_entidad: nit, departamento_entidad: depto, modalidad_de_contratacion: modalidad,
+      estado_del_procedimiento: "Adjudicado", adjudicado: "Si", fase: "Presentación de oferta",
+      fecha_de_publicacion_del: `${mes}-01T00:00:00.000`, fecha_de_recepcion_de: `${mes}-10T00:00:00.000`, fecha_adjudicacion: `${mes}-18T00:00:00.000`,
+      precio_base: String(pb), valor_total_adjudicacion: String(Math.round(pb * 0.98)), respuestas_al_procedimiento: String(ofertas),
+      nombre_del_proveedor: `CONSTRUCTORA ${kT} SAS`, nit_del_proveedor_adjudicado: String(900500000 + kT), tipo_de_contrato: "Obra",
+    });
+    const UNA = "ALCALDIA DE PRUEBA DONDE LLEGA UNO", PELEADA = "INSTITUTO DE PRUEBA MUY PELEADO";
+    const filasT = { "2025-03": [], "2025-09": [] };
+    /* UNA (Tolima): 11 procesos de $150-300 M, 10 con una oferta y 1 con tres; 2 de menor cuantía de
+       $500-1.000 M con cinco; y 4 de licitación con seis. Los niveles del anuncio NO coinciden entre
+       sí (país, tramo, departamento y entidad dan tasas distintas): con todos iguales la regla no se
+       distingue de una copia que se salte un nivel (mutante que sobrevivió el 11-nov-2026). */
+    for (let i = 0; i < 11; i++) filasT[i < 6 ? "2025-03" : "2025-09"].push(adj(UNA, "800111222", "Tolima", 200e6 + i * 1e6, i < 10 ? 1 : 3, i < 6 ? "2025-03" : "2025-09"));
+    filasT["2025-09"].push(adj(UNA, "800111222", "Tolima", 600e6, 5, "2025-09"), adj(UNA, "800111222", "Tolima", 650e6, 5, "2025-09"));
+    for (let i = 0; i < 4; i++) filasT["2025-09"].push(adj(UNA, "800111222", "Tolima", 900e6 + i * 1e6, 6, "2025-09", "Licitación pública"));
+    // VECINO (Tolima): 4 procesos del mismo tramo con cuatro ofertas
+    for (let i = 0; i < 4; i++) filasT["2025-03"].push(adj("MUNICIPIO VECINO DE PRUEBA", "800333444", "Tolima", 220e6 + i * 1e6, 4, "2025-03"));
+    // LEJANA (Huila): 4 procesos del mismo tramo con una oferta, para que el país y el departamento difieran
+    for (let i = 0; i < 4; i++) filasT["2025-03"].push(adj("ALCALDIA LEJANA DE PRUEBA", "800555666", "Huila", 230e6 + i * 1e6, 1, "2025-03"));
+    // PELEADA (Bogotá): 6 procesos de más de $1.000 M con ocho ofertas
+    for (let i = 0; i < 6; i++) filasT["2025-03"].push(adj(PELEADA, "899999001", "Distrito Capital de Bogotá", 1.5e9 + i * 1e6, 8, "2025-03"));
+    // una fila sin presupuesto: cuenta para el promedio de siempre y para ningún tramo
+    filasT["2025-09"].push({ ...adj(PELEADA, "899999001", "Distrito Capital de Bogotá", 1, 8, "2025-09"), precio_base: "No Definido" });
+    const rT = redisT(filasT);
+    const metaT = await IC.construirIndice(rT, { presupuestoMs: 60000 });
+    assert.ok(metaT.done, "el índice se construyó entero");
+    assert.strictEqual(metaT.por_tamano.sin_segmento, 1, `la fila sin presupuesto no entra en ningún tramo y se cuenta → ${JSON.stringify(metaT.por_tamano)}`);
+    const idxT = await IC.leerIndice(rT);
+    const regUna = IC.registroDe(idxT, { entidad: UNA, nit_entidad: "800111222" });
+    assert.deepStrictEqual(regUna.por_tamano, { "abreviada|1": [11, 10, 10], "abreviada|3": [2, 0, 0], "licitacion|3": [4, 0, 0] }, `conteos por modalidad y tramo → ${JSON.stringify(regUna.por_tamano)}`);
+    /* el anuncio, a mano: tramo del país (UNA 11 + VECINO 4 + LEJANA 4 = 19, 14 con una o dos),
+       departamento del Tolima en el tramo (15, 10), la entidad en menor cuantía (13, 10) y en el tramo (11, 10) */
+    const pTam = 14 / 19, pDep = (10 + 4 * pTam) / 19, pGen = (10 + 4 * pDep) / 17, pEnt = (10 + 4 * pGen) / 15;
+    assert.ok(new Set([pTam, pDep, pGen, pEnt].map((x) => x.toFixed(4))).size === 4, "el caso distingue los cuatro niveles");
+    assert.ok(Math.abs(regUna.poca_anunciada.abreviada[1] - pEnt) < 1e-12, `el anuncio sigue la regla de cuatro niveles con K = 4, sin redondear (decide la banda) → ${JSON.stringify(regUna.poca_anunciada)}`);
+    assert.ok(!("licitacion" in regUna.poca_anunciada), "en licitación no se midió la regla: no hay anuncio, solo conteos");
+    const abierta = (entidad, nit, depto, pb, modalidad = MENOR) => ({ entidad, nit_entidad: nit, departamento_entidad: depto, modalidad_de_contratacion: modalidad, precio_base: pb == null ? undefined : String(pb), cuantia_cop: pb || 0 });
+    const cUna = IC.competenciaDe(idxT, abierta(UNA, "800111222", "Tolima", 240e6));
+    assert.strictEqual(cUna.por_tamano.frase, "Una sola oferta en 10 de sus 11 procesos de menor cuantía de $150 a $300 millones.", `el hecho, en una frase → ${JSON.stringify(cUna.por_tamano)}`);
+    assert.ok(cUna.por_tamano.poca_anunciada >= CT.UMBRAL_POCA, "y el anuncio de poca competencia");
+    assert.strictEqual(cUna.nivel, "baja", "el nivel de siempre sigue en su sitio");
+    const cUnaGrande = IC.competenciaDe(idxT, abierta(UNA, "800111222", "Tolima", 400e6));
+    assert.ok(cUnaGrande.por_tamano.procesos_tamano === null && cUnaGrande.por_tamano.una === null && cUnaGrande.por_tamano.frase === null && cUnaGrande.por_tamano.poca_anunciada > 0,
+      `otro tamaño en la misma entidad: sin conteo de ese tamaño es null, no 0 (pudo tenerlos sin presupuesto publicado), sin frase, y el anuncio apoyado en la entidad entera → ${JSON.stringify(cUnaGrande.por_tamano)}`);
+    const cSinPb = IC.competenciaDe(idxT, abierta(UNA, "800111222", "Tolima", null));
+    assert.ok(!("por_tamano" in cSinPb), "sin presupuesto en la fila no hay tramo: la respuesta no trae la clave");
+    const cLic = IC.competenciaDe(idxT, abierta(UNA, "800111222", "Tolima", 900e6, "Licitación pública"));
+    assert.ok(cLic.por_tamano.frase === "Tres ofertas o más en 4 de sus 4 procesos de licitación de $500 a $1.000 millones." && cLic.por_tamano.poca_anunciada === null,
+      `licitación: el hecho sí (cuatro procesos), el anuncio no (la regla no se midió en licitación) → ${JSON.stringify(cLic.por_tamano)}`);
+    const cPel = IC.competenciaDe(idxT, abierta(PELEADA, "899999001", "Distrito Capital de Bogotá", 1.8e9));
+    assert.strictEqual(cPel.por_tamano.frase, "Tres ofertas o más en 6 de sus 6 procesos de menor cuantía de más de $1.000 millones.");
+    assert.ok(cPel.por_tamano.poca_anunciada <= CT.UMBRAL_MUCHA, `anuncio de mucha competencia → ${cPel.por_tamano.poca_anunciada}`);
+    // un hash anterior a la tanda (sin por_tamano) responde EXACTAMENTE como antes
+    const viejo = Object.fromEntries(Object.entries(idxT).map(([k, v]) => { const { por_tamano: _a, poca_anunciada: _b, ...resto } = v || {}; return [k, v && v.ref ? v : resto]; }));
+    const cViejo = IC.competenciaDe(viejo, abierta(UNA, "800111222", "Tolima", 240e6));
+    const { por_tamano: _x, ...cUnaSin } = cUna;
+    assert.deepStrictEqual(cViejo, cUnaSin, "con el hash viejo, la misma respuesta de siempre y sin claves nuevas");
+    // un contador corrupto no se enseña
+    const roto = { ...idxT, [Object.keys(idxT).find((k) => idxT[k] && idxT[k].nombre === UNA)]: { ...regUna, por_tamano: { "abreviada|1": [3, 10, 10] } } };
+    assert.ok(!("por_tamano" in IC.competenciaDe(roto, abierta(UNA, "800111222", "Tolima", 240e6))), "un conteo imposible (10 de 3) no se enseña");
+
+    // el ORDEN «Las menos peleadas»: lo medido como poco peleado primero, lo medido como muy peleado al final
+    const v = (poca, nivel) => LI.ORDEN_CAMPOS.competencia({}, { competencia_poca: poca, competencia_nivel: nivel });
+    const ordenT = [["mucha medida", v(cPel.por_tamano.poca_anunciada, "alta")], ["sin base", v(null, "sin_dato")], ["baja sin anuncio", v(null, "baja")],
+      ["intermedia medida", v(0.5, "alta")], ["poca medida", v(cUna.por_tamano.poca_anunciada, "baja")], ["alta sin anuncio", v(null, "alta")]]
+      .sort((a, b) => LI.compararCampo("competencia", a[1], b[1], -1)).map((x) => x[0]);
+    assert.deepStrictEqual(ordenT, ["poca medida", "baja sin anuncio", "intermedia medida", "alta sin anuncio", "mucha medida", "sin base"], `orden → ${ordenT.join(" > ")}`);
+    assert.strictEqual(v(NaN, "baja"), 3, "un anuncio que no es número es inerte: vale el nivel");
+
+    // la medición del plan LLAMA esta regla: misma cifra con las mismas filas
+    const MX = require("../tools/analisis/plan_x20/medir.js");
+    const filasMx = [{ ent: "E", dep: "D", pb: 2e8, n: 1 }, { ent: "E", dep: "D", pb: 2e8, n: 1 }, { ent: "E", dep: "D", pb: 6e8, n: 5 }, { ent: "F", dep: "D", pb: 2e8, n: 3 }, { ent: "F", dep: "G", pb: 6e8, n: 2 }];
+    const aMx = MX.modeloCompetencia(filasMx).anuncia("E", "D", 2.5e8);
+    const aLib = CT.anunciarPoca({ modalidad: [5, 3], tamano: [3, 2], depto: [3, 2], entidad: [3, 2], entidadTam: [2, 2] });
+    assert.ok(Math.abs(aMx.pEnt - aLib.entidad) < 1e-12 && Math.abs(aMx.pDep - aLib.depto) < 1e-12, `medir.js y la aplicación dan el mismo anuncio → ${aMx.pEnt} / ${aLib.entidad}`);
+
+    // un avance guardado por otra versión (sin contar los tramos) se descarta y se empieza de cero
+    const rP = redisT(filasT);
+    await IC.construirIndice(rP, { presupuestoMs: 1, reiniciar: true });
+    const prog = JSON.parse(require("zlib").inflateSync(Buffer.from(rP.kv.get(CLAVES.indiceProgreso), "base64")).toString());
+    if (prog && Array.isArray(prog.pendientes) && prog.pendientes.length) {
+      delete prog.seg_meses; rP.kv.set(CLAVES.indiceProgreso, comprimir(prog));
+      const rr = await IC.construirIndice(rP, { presupuestoMs: 60000 });
+      assert.ok(/por tamaño/.test(rr.progreso_descartado || ""), `el avance sin tramos se descarta → ${rr.progreso_descartado}`);
+      const rg = IC.registroDe(await IC.leerIndice(rP), { entidad: UNA, nit_entidad: "800111222" });
+      assert.deepStrictEqual(rg.por_tamano["abreviada|1"], [11, 10, 10], "y el índice se rehace entero, con todos los meses");
+    } else {
+      assert.fail(`el avance a medias no quedó guardado: no se pudo probar la guarda → ${JSON.stringify(prog && prog.pendientes)}`);
+    }
+
+    // la tarjeta: app.js real en un vm pinta el hecho en la línea de competencia
+    {
+      const vm = require("vm");
+      const pub = (f) => path.join(__dirname, "..", "public", f);
+      const orden = [...fs.readFileSync(pub("index.html"), "utf8").replace(/<!--[\s\S]*?-->/g, "").matchAll(/<script src="\/([a-z_]+\.js)"><\/script>/g)].map((x) => x[1]);
+      const nodo = () => new Proxy({ value: "", textContent: "", innerHTML: "", hidden: false, checked: false, disabled: false, dataset: {}, style: {}, options: [], children: [],
+        selectedOptions: [{ text: "", value: "" }], classList: { add() {}, remove() {}, toggle() {}, contains: () => false } },
+      { get: (t, k) => (k in t ? t[k] : k === Symbol.toPrimitive ? () => "" : typeof k === "symbol" || k === "then" ? undefined : () => nodo()), set: (t, k, val) => { t[k] = val; return true; } });
+      const almacen = () => { const m = new Map(); return { getItem: (k) => (m.has(k) ? m.get(k) : null), setItem: (k, val) => m.set(k, String(val)), removeItem: (k) => m.delete(k), clear: () => m.clear() }; };
+      const ctx = { console, URL, URLSearchParams, Intl, TextEncoder, TextDecoder, AbortController, structuredClone, queueMicrotask,
+        setTimeout: () => 1, setInterval: () => 1, clearTimeout() {}, clearInterval() {}, requestAnimationFrame: () => 1,
+        fetch: () => new Promise(() => {}), history: { replaceState() {}, pushState() {} }, navigator: { language: "es-CO", userAgent: "node", clipboard: {} },
+        location: { search: "", hash: "", href: "http://localhost/", pathname: "/", origin: "http://localhost", replace() {}, assign() {} },
+        sessionStorage: almacen(), localStorage: almacen(), matchMedia: () => ({ matches: false, addEventListener() {}, addListener() {} }),
+        getComputedStyle: () => ({ getPropertyValue: () => "" }), addEventListener() {}, removeEventListener() {}, scrollTo() {},
+        IntersectionObserver: class { observe() {} disconnect() {} }, ResizeObserver: class { observe() {} disconnect() {} }, MutationObserver: class { observe() {} disconnect() {} },
+        Event: class {}, CustomEvent: class {}, Blob: class {}, FormData: class {}, CSS: { supports: () => false, escape: (x) => x } };
+      ctx.document = { getElementById: () => nodo(), querySelector: () => nodo(), querySelectorAll: () => [], createElement: () => nodo(), addEventListener() {},
+        body: nodo(), documentElement: nodo(), readyState: "complete", visibilityState: "visible" };
+      ctx.window = ctx; ctx.self = ctx; ctx.globalThis = ctx;
+      vm.createContext(ctx);
+      for (const f of orden) {
+        let src = fs.readFileSync(pub(f), "utf8");
+        if (f === "app.js") { const i = src.lastIndexOf("})();"); src = `${src.slice(0, i)}window.__tam = { lineaCompiten };\n${src.slice(i)}`; }
+        vm.runInContext(src, ctx, { filename: `public/${f}` });
+      }
+      assert.ok(ctx.__tam, "el arranque de app.js no llegó al final del IIFE");
+      const linea = ctx.__tam.lineaCompiten({ competencia_entidad: cUna });
+      assert.strictEqual(linea, "<span><b>Una sola oferta</b> en 10 de sus 11 procesos de menor cuantía de $150 a $300 millones.</span>", `la tarjeta dice el hecho → ${linea}`);
+      const lineaSin = ctx.__tam.lineaCompiten({ competencia_entidad: cUnaGrande });
+      assert.ok(!/de sus/.test(lineaSin) && /empresa/.test(lineaSin), `sin frase, la línea de siempre → ${lineaSin}`);
+    }
+    // las frases, sueltas
+    assert.strictEqual(CT.frasePorTamano([3, 3, 3], "abreviada", 0), null, "con menos de cuatro procesos no hay frase");
+    assert.strictEqual(CT.frasePorTamano([8, 5, 2], "abreviada", 2), "Una o dos ofertas en 5 de sus 8 procesos de menor cuantía de $300 a $500 millones.");
+    assert.strictEqual(CT.frasePorTamano([6, 3, 3], "abreviada", 1), "De sus 6 procesos de menor cuantía de $150 a $300 millones: 3 con una sola oferta y 3 con tres o más.",
+      "un empate a la mitad no se presenta como «una sola oferta en 3 de 6»: se dice el reparto (revisión adversaria del 11-nov-2026)");
+    assert.strictEqual(CT.frasePorTamano([8, 4, 1], "abreviada", 1), "De sus 8 procesos de menor cuantía de $150 a $300 millones: 1 con una sola oferta, 3 con dos y 4 con tres o más.");
+    assert.deepStrictEqual(["150000000.123", "$300,000,000", "1e9", "240000000"].map((pb) => IC.presupuestoDeFila({ precio_base: pb })), [150000000.123, null, 1e9, 240000000],
+      "el presupuesto se lee con Number estricto: «150000000.123» no son 150 mil millones y «$300,000,000» no son 300 pesos");
+    assert.deepStrictEqual([CT.tramoTamano(0), CT.tramoTamano(null), CT.tramoTamano(149999999), CT.tramoTamano(150e6), CT.tramoTamano(1e9), CT.tramoTamano("abc")], [null, null, 0, 1, 4, null],
+      "sin presupuesto no hay tramo (no es el más chico); los cortes son los de la medición");
+    console.log("· unidad competencia por tamaño: conteos por modalidad y tramo, el anuncio de cuatro niveles (el de la medición del plan), "
+      + "la frase de la tarjeta, el orden «Las menos peleadas» en tres bandas, el hash viejo idéntico y el avance de otra versión descartado");
   }
 
   /* unidad: TEXTO como co-señal (vocabulario por familia + verbo de obra) */
