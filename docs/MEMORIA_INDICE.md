@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 2672022 bytes · 483 secciones · 58 con marcador de superación.
+Derivado del árbol: 2676251 bytes · 485 secciones · 58 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -493,4 +493,6 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | Su oferta escrita en el Formulario de Excel de la entidad, con candados (12-nov-2026) | 12-nov-2026 | 22456-22482 | 5432 |  |
 | Sus ofertas en SECOP II y cómo le fue: a su nombre y de los consorcios donde figura (12-nov-2026) | 12-nov-2026 | 22483-22497 | 2499 |  |
 | El puntaje de precio del informe, recalculado con el motor, y el borrador de observación (12-nov-2026) | 12-nov-2026 | 22498-22512 | 1947 |  |
-| Sin pliego por nombre, se lee por contenido: el título de la primera página decide (12-nov-2026) | 12-nov-2026 | 22513-22520 | 1797 |  |
+| Sin pliego por nombre, se lee por contenido: el título de la primera página decide (12-nov-2026) | 12-nov-2026 | 22513-22521 | 1798 |  |
+| Leer los documentos de Mis procesos sin la pestaña abierta, con la MISMA lectura de la pestaña (12-nov-2026) | 12-nov-2026 | 22522-22534 | 2427 |  |
+| Sus ofertas anteriores en esa entidad, en Precios junto al grupo (12-nov-2026) | 12-nov-2026 | 22535-22543 | 1801 |  |
