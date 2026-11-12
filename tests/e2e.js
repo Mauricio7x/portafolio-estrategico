@@ -11442,7 +11442,8 @@ async function main() {
       return { ...e, metodo: 0, crc: zl.crc32(t) >>> 0, tamC: t.length, tamR: t.length, datos: t };
     })));
     const items = (cdu) => ITEMS.map(([c, d, u, q], i) => ({ codigo: c, descripcion: d, unidad: u, cantidad: q, costo_directo_unitario_ofertado: cdu[i] }));
-    const oferta = (k = 1.3, extra = {}) => ({ con_formulas: true, costo_directo: 1e6, precio_sin_iva: 1e6 * k, lleva_fila_iva: false, iva_sobre_utilidad: 0, total_para_secop: 1173000, ...extra });
+    const oferta = (k = 1.3, extra = {}) => ({ con_formulas: true, costo_directo: 1e6, precio_sin_iva: 1e6 * k, lleva_fila_iva: false, iva_sobre_utilidad: 0, total_para_secop: 1173000,
+      administracion: 180000, imprevistos: 50000, utilidad: 70000, ...extra });
     const CDU = [700, 15000, 300000];
     const leer = async (buf) => XL.leerLibro(new Uint8Array(buf), { inflar: async (u8) => new Uint8Array(zl.inflateRawSync(Buffer.from(u8))) });
     const celda = (lib, h, ref) => { const g = lib.hojas.find((x) => x.nombre === h).filas; const m = /^([A-Z]+)(\d+)$/.exec(ref); return (g[Number(m[2]) - 1] || [])[XL.indiceColumna(m[1])]; };
@@ -11461,7 +11462,7 @@ async function main() {
     assert.deepStrictEqual(["J3", "K6"].map((x) => celda(sal, ENT, x)), [1000, 1322501], "la hoja de la entidad queda como estaba");
     const partes = FO.entradasZip(r.archivo), wb = zl.inflateRawSync(partes.find((e) => e.nombre === "xl/workbook.xml").datos).toString();
     assert.ok(/<calcPr fullCalcOnLoad="1"\/>/.test(wb) && !partes.some((e) => e.nombre === "xl/calcChain.xml"), "el libro se recalcula al abrirse y sin la cadena de cálculo vieja");
-    assert.deepStrictEqual(r.a_mano.map((x) => [x.fila_excel, x.porcentaje]), [[8, 18], [9, 5]], "los porcentajes del AIU que el Formulario pide discriminar quedan a mano, con los suyos");
+    assert.deepStrictEqual(r.a_mano.map((x) => [x.fila_excel, x.porcentaje]), [[8, 18], [9, 7]], "los porcentajes del AIU que el Formulario pide discriminar quedan a mano, con los de la OFERTA (A, I y U ÷ costo directo), no los de la pantalla");
     const fr = FO.frasesLlenado(r);
     assert.ok(fr.some((t) => t.includes(`$${esperado.toLocaleString("es-CO")}: esa es la cifra que escribe en SECOP II`)) && fr.some((t) => /fila 8 «ADMINISTRACION A=» 18 %/.test(t)), `las frases → ${fr.join(" | ")}`);
     // el IVA de la utilidad entra al unitario solo si el pliego lo cuenta
@@ -11497,6 +11498,26 @@ async function main() {
     const maestra = retocar(libro([hoja(ENT, true)]), "xl/worksheets/sheet1.xml", (x) => x.replace(/<c r="J3"( s="\d+")?><v>1000<\/v><\/c>/, '<c r="J3"$1><f t="shared" ref="J3:J3" si="7">1000</f><v>1000</v></c>'));
     assert.match((await FO.llenarFormulario(maestra, { items: items(CDU), oferta: oferta() })).motivo, /celda maestra de una fórmula compartida/);
 
+    // 2b · lo que cazó la revisión adversaria (12-nov-2026), cada caso reproducido antes de corregir
+    const proVinculada = hoja(PRO, false); proVinculada.filas.forEach((f, i) => { if (i >= 2 && i <= 4) f[10] = { f: `'${ENT}'!K${i + 1}`, v: r0(ITEMS[i - 2][3] * ITEMS[i - 2][4]) }; if (i === 5) f[10] = { f: "SUM(K3:K5)", v: 1322501 }; });
+    const vinc = await FO.llenarFormulario(libro([hoja(ENT, true), proVinculada]), { items: items(CDU), oferta: oferta() });
+    assert.ok(!vinc.ok && /el total de la fila 3 \(100000\) no es su unitario por su cantidad \(91000\)/.test(vinc.motivo), `un total de fila que no toma el unitario (vinculado a la hoja de la entidad) entregaba el presupuesto oficial como oferta: ${vinc.motivo}`);
+    const conAiu = hoja(ENT, true); conAiu.filas[7][10] = { f: "ROUND(K6*L8,0)", v: 0 };
+    assert.match((await FO.llenarFormulario(libro([conAiu]), { items: items(CDU), oferta: oferta() })).motivo, /suma el AIU aparte/, "el AIU aparte con fórmulas y el porcentaje en blanco (vale 0) también se detecta");
+    const pref = [{ fila_excel: 3, codigo: null, descripcion: "Concreto 3000 psi", unidad: "m3", cantidad: 5 }, { fila_excel: 4, codigo: null, descripcion: "Concreto 3000 psi para vigas", unidad: "m3", cantidad: 5 }];
+    const em1 = FO.emparejar(pref, [{ descripcion: "Concreto 3000 psi para vigas", unidad: "m3", cantidad: 5, unitario: 364000 }, { descripcion: "Concreto 3000 psi", unidad: "m3", cantidad: 5, unitario: 325000 }]);
+    assert.deepStrictEqual(em1.pares.map((x) => [x.fila.fila_excel, x.item.unitario]), [[3, 325000], [4, 364000]], "dos descripciones que empiezan igual no se cruzan: manda la idéntica");
+    assert.ok(FO.emparejar(pref, [{ descripcion: "Concreto 3000 psi para vigas", unidad: "m3", cantidad: 5 }, { descripcion: "Concreto 3000", unidad: "m3", cantidad: 5 }]).problemas.length > 0, "por prefijo y sin código, con dos candidatas en el Formulario, no se elige");
+    const proVacia = hoja(PRO, false); proVacia.filas.forEach((f, i) => { if (i >= 2 && i <= 4) { f[9] = null; f[10] = null; } });
+    const rv = await FO.llenarFormulario(libro([hoja(ENT, true), proVacia]), { items: items(CDU), oferta: oferta() });
+    const x2 = (() => { const e = FO.entradasZip(rv.archivo).find((y) => y.nombre === "xl/worksheets/sheet2.xml"); return (e.metodo === 0 ? Buffer.from(e.datos) : zl.inflateRawSync(e.datos)).toString(); })();
+    assert.ok(rv.ok && /<c r="J3"[^>]*><v>910<\/v><\/c><c r="K3"[^>]*><v>91000<\/v><\/c>/.test(x2) && rv.total_formulario === esperado, `dos celdas nuevas en el mismo sitio van en orden de columna (K antes que J pide «reparar»): ${(x2.match(/<row r="3">[\s\S]*?<\/row>/) || [""])[0].slice(-160)}`);
+    const pantalla = retocar(base, "xl/workbook.xml", (x) => x.replace("</workbook>", "<calcPr fullPrecision=\"0\"/></workbook>"));
+    assert.match((await FO.llenarFormulario(pantalla, { items: items(CDU), oferta: oferta() })).motivo, /precisión de pantalla/);
+    assert.ok(/su análisis más los valores fijos daba \$1\.250\.000/.test(FO.frasesLlenado({ ok: true, hoja: "H", filas_llenas: 1, total_formulario: 1250003, total_motor: 1200000, suma_fijos: 50000, valores_fijos: [{ etiqueta: "PMT", valor: 50000 }], a_mano: [] })[1]),
+      "la diferencia con el análisis se cuenta con los valores fijos: no se atribuye al redondeo lo que es el PMT");
+    assert.ok(!/daba/.test(FO.frasesLlenado({ ok: true, hoja: "H", filas_llenas: 1, total_formulario: 1250000, total_motor: 1200000, suma_fijos: 50000, valores_fijos: [{ etiqueta: "PMT", valor: 50000 }], a_mano: [] })[1]),
+      "si el análisis más el PMT da el total, no hay diferencia que explicar");
     // 3 · un libro con el cálculo manual sale en automático; las fórmulas COMPARTIDAS de Excel se recalculan
     const conCadena = (buf) => { const es = FO.entradasZip(buf); const t = Buffer.from('<?xml version="1.0"?><calcChain xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><c r="K3" i="2"/></calcChain>');
       return retocar(retocar(FO.zipDesde([...es, { ...es[0], nombre: "xl/calcChain.xml", nombreBytes: Buffer.from("xl/calcChain.xml"), metodo: 0, crc: zl.crc32(t) >>> 0, tamC: t.length, tamR: t.length, datos: t }]),
