@@ -2,7 +2,7 @@
      Es una FOTO para leer en GitHub; la fuente de verdad es ejecutar la herramienta. -->
 
 ```
-== MAPA DE DETEKTA · generado del árbol el 2026-11-11 ==
+== MAPA DE DETEKTA · generado del árbol el 2026-11-12 ==
 (no editar a mano: sale de `node tests/mapa.js --escribir`. Para ir a un sitio concreto,
  `node tests/mapa.js <término>` da la ruta, la línea y el sed exacto — más barato que leer esto)
 
@@ -242,9 +242,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 473 secciones (58 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 22234  El mínimo para no perder plata sigue a la casilla de lo subcontratado, y subir un APU calcu…  (superada)
-  L 22253  La administración por tiempo se cobra entera: la casilla de lo subcontratado va encendida y…
+· MEMORIA · docs/MEMORIA.md — 475 secciones (58 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 22272  El plan x20: uso personal, ir donde llega una sola oferta, y sus ofertas se reconocen por e…
   L 22300  La competencia por tamaño ordena «Las menos peleadas» y el motor de los cuatro métodos vive…
   L 22322  La regla del anuncio, medida con la población de Detekta, resiste en menor cuantía, mínima …
@@ -253,6 +251,8 @@
   L 22362  El simulacro del consorcio: cada cláusula de participación contra el reparto que se va a fi…
   L 22376  Con lista cargada, la capacidad también resta los contratos nuevos de SECOP II, por número …
   L 22384  «Revisar antes de subir» también compara contra el Formulario 1 de Excel (11-nov-2026)
+  L 22392  Qué tan cerca se anticipa el precio ganador por modalidad, y la referencia de la entidad po…
+  L 22406  La lista del día va en el vigilante de la mañana (12-nov-2026)
 
 · DOCUMENTOS docs/ — 78 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)

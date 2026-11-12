@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 2650339 bytes · 473 secciones · 58 con marcador de superación.
+Derivado del árbol: 2653987 bytes · 475 secciones · 58 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -484,3 +484,5 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | El simulacro del consorcio: cada cláusula de participación contra el reparto que se va a firmar (11-nov-2026) | 11-nov-2026 | 22362-22375 | 2871 |  |
 | Con lista cargada, la capacidad también resta los contratos nuevos de SECOP II, por número de contrato (11-nov-2026) | 11-nov-2026 | 22376-22383 | 1377 |  |
 | «Revisar antes de subir» también compara contra el Formulario 1 de Excel (11-nov-2026) | 11-nov-2026 | 22384-22391 | 1384 |  |
+| Qué tan cerca se anticipa el precio ganador por modalidad, y la referencia de la entidad por competencia en Precios (12-nov-2026) | 12-nov-2026 | 22392-22405 | 2471 |  |
+| La lista del día va en el vigilante de la mañana (12-nov-2026) | 12-nov-2026 | 22406-22413 | 1177 |  |

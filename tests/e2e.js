@@ -11102,7 +11102,7 @@ async function main() {
       const kv = new Map(), sets = [];
       const redisG = { get: async (k) => kv.get(k) ?? null, set: async (k, v, o) => { kv.set(k, v); sets.push(o); return "OK"; } };
       let llamadas = 0;
-      const p6 = Array.from({ length: 25 }, (_, i) => ({ id_del_portafolio: `Q${i}`, precio_base: "1000", respuestas_al_procedimiento: "3" }));
+      const p6 = Array.from({ length: 25 }, (_, i) => ({ id_del_portafolio: `Q${i}`, precio_base: "1000", respuestas_al_procedimiento: i < 5 ? "1" : i < 10 ? "2" : "3", valor_total_adjudicacion: i < 10 ? "1000" : String(940 + i) }));
       const cliente = (base) => ({ pedir: async (params) => {
         llamadas++;
         if (/p6dx/.test(base)) return p6;
@@ -11110,10 +11110,18 @@ async function main() {
         return ids.flatMap((id) => [of(id, "A SAS", 940), of(id, "B SAS", 950), of(id, "C SAS", 960)]);
       } });
       const r1 = await G.leerGrupo(redisG, { nit: "890399011", literalModalidad: "Selección Abreviada de Menor Cuantía", cliente });
-      assert.ok(r1.ok && r1.procesos.length === 25 && llamadas === 1 + 3 && r1.desde === "datos.gov.co", `25 procesos en tres tandas de diez → ${llamadas} llamadas, ${r1.procesos && r1.procesos.length}`);
+      assert.ok(r1.ok && r1.procesos.length === 15 && llamadas === 1 + 2 && r1.desde === "datos.gov.co", `los 15 con tres o más ofertas, en dos tandas de diez → ${llamadas} llamadas, ${r1.procesos && r1.procesos.length}`);
+      // pieza 6.5: los adjudicados con su número de ofertas viajan y se guardan; la referencia por competencia sale de ellos
+      assert.strictEqual(r1.adjudicados.length, 25, "los 25 adjudicados, con su número de ofertas");
+      const rc = G.referenciaPorCompetencia(r1.adjudicados);
+      assert.ok(rc.poca.procesos === 10 && rc.poca.mediana_pct === 100 && rc.mucha.procesos === 15 && Math.abs(rc.mucha.mediana_pct - 95.7) < 1e-9
+        && rc.frase === "En esta entidad, con una o dos ofertas, se adjudicó cerca del 100 % del presupuesto (10 procesos); con tres o más, se adjudicó cerca del 95,7 % del presupuesto (15 procesos).",
+        `la referencia por competencia → ${JSON.stringify(rc)}`);
+      assert.strictEqual(G.referenciaPorCompetencia(r1.adjudicados.slice(0, 4)).frase, null, "con menos de cinco procesos en cada mitad no se dice nada");
+      assert.strictEqual(G.referenciaPorCompetencia(null), null, "sin adjudicados, nada (null, no 0)");
       assert.strictEqual(sets[0] && sets[0].ex, G.TTL_SEG, "se guarda 24 h");
       const r2 = await G.leerGrupo(redisG, { nit: "890399011", literalModalidad: "Selección Abreviada de Menor Cuantía", cliente });
-      assert.ok(r2.ok && r2.desde === "memoria" && llamadas === 4, "la segunda vez sale de la memoria, sin llamar a datos.gov.co");
+      assert.ok(r2.ok && r2.desde === "memoria" && llamadas === 3 && r2.adjudicados.length === 25, "la segunda vez sale de la memoria, con los adjudicados, sin llamar a datos.gov.co");
       const caido = (b) => ({ pedir: async () => { if (/wi7w/.test(b)) throw new Error("tiempo agotado"); return p6; } });
       const r3 = await G.leerGrupo(null, { nit: "800111222", literalModalidad: "Selección Abreviada de Menor Cuantía", cliente: caido });
       assert.ok(!r3.ok && r3.procesos === null && r3.motivo === "no_respondio", "una fuente caída es «no se pudo consultar», jamás una lista vacía");

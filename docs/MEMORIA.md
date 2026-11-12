@@ -22389,3 +22389,25 @@ En una línea: defecto D2 del plan x20 (tanda 10, parte): el revisor de la ofert
 - **Sin hacer de la tanda 10**: escribir los precios en el Excel que publicó la entidad (la pieza 6.7, que lleva plan previo con visto bueno, mutación y revisión adversaria porque es la cifra que se radica).
 - Cerradura: «unidad revisor con el formulario de Excel» (la función real de `app.js` en un vm y el validador real `lib/formulario1.validarFormulario1`); dos mutaciones, mueren las dos. La línea que la usa al aceptar la vista previa no tiene prueba de pantalla: se verificó leyendo que solo se borra al abrir otro proceso o borrador.
 
+### Qué tan cerca se anticipa el precio ganador por modalidad, y la referencia de la entidad por competencia en Precios (12-nov-2026)
+
+En una línea: el dueño preguntó si se puede mejorar la aproximación al precio por modalidad; medido fuera de muestra (aprender 2024-2025, probar 2026), la mediana de la entidad que Detekta ya usa está en el techo en menor cuantía, y separarla por competencia mejora en licitación y mínima cuantía; Precios dice ahora, como hecho, a cuánto se adjudicó en la entidad con una o dos ofertas y con tres o más.
+
+- **La medición** (`tools/analisis/plan_x20/aproximacion.js`, resultado en `aproximacion_2026-11-11.json`): error entre la referencia y el precio ganador, en puntos del presupuesto, y la parte de procesos a ±2 puntos.
+  - Menor cuantía: entidad 1,50 (75,9 %), con la competencia anunciada 1,52 (74,4 %), y el techo —sabiendo cuántos llegaron— 1,47 (75,3 %). Donde llegaron tres o más, entidad 2,97 frente a un techo de 3,02: con datos públicos no se puede anticipar mejor.
+  - Licitación: entidad 2,51 (47,5 %) → por competencia 2,40 (56,0 %); techo 1,99 (64,1 %).
+  - Mínima cuantía: entidad 5,25 (41,9 %) → por competencia 5,47 (51,5 %): más aciertos a ±2 y un error medio algo peor; techo 4,49 (54,8 %).
+  - Régimen especial: todo parecido (1,67 a 1,85).
+- **Lo que se construyó**, sin mover ningún precio: `referenciaPorCompetencia` en `lib/grupo_ofertas.js` sale de la MISMA consulta de `op=grupo` (ahora trae también el valor adjudicado) y dice «En esta entidad, con una o dos ofertas, se adjudicó cerca del X % (N procesos); con tres o más, cerca del Y % (M)», cada mitad con cinco procesos o más. Con Cali (menor cuantía, NIT 890399011): 99,1 % (75) y 97,4 % (75). Junta con la frase de la tarjeta («Una sola oferta en 10 de sus 11…»), Helder ve qué mitad aplica.
+- **Lo que no hay que deshacer**: no es un porcentaje de ganar ni un precio sugerido (regla del 28-oct-2026); y el precio ganador no es «lo que hay que ofertar»: donde llegan tres o más, el método se sortea y la distancia que queda (unos 3 puntos en menor cuantía) no la baja ningún dato público medido.
+- La memoria de 24 h de `op=grupo` pasó a `v2` (la anterior no traía los adjudicados).
+- Cerradura: «unidad precio frente al grupo» (la referencia con uno, dos y tres o más ofertas, bajo el mínimo, sin adjudicados, y que la memoria la devuelve); las mutaciones del mínimo y del corte mueren.
+
+### La lista del día va en el vigilante de la mañana (12-nov-2026)
+
+En una línea: tanda 3 del plan x20: el bloque «2 · El vigilante de la mañana» de `docs/RUTINAS.md` trae un paso 6 con los procesos abiertos en los que todavía se puede avisar que le interesa, en el Tolima, el Huila y Cundinamarca, de $100 a $500 millones, primero los menos peleados, con su frase de competencia y su enlace.
+
+- **Por qué en el vigilante y no una rutina nueva**: la rutina ejecuta su bloque de este documento cada mañana, así que el cambio entra solo cuando el bloque llega a `main`; una rutina creada desde una sesión no lleva el repositorio (medido el 13-sep-2026) y no funcionaría.
+- **Decisiones del dueño tomadas como aprobadas** con su «Apruebo» del 12-nov-2026, sobre la propuesta de la sesión: zona y tamaño (decisión 1, la recomendada) y canal (decisión 4, «A»: la tarea de Claude). Si el «Apruebo» era solo para seguir, se cambia la URL del paso 6.
+- **Sin verificar**: que la rutina del vigilante tenga encendido el aviso al teléfono (eso se ve en claude.ai/code → Routines → la rutina); el paso 6 no se ejecutó contra producción desde esta sesión.
+

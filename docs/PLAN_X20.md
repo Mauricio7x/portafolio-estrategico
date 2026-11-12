@@ -411,6 +411,7 @@ Si en el paso 2 no ve lo descrito, no siga: dígalo y se revisa, porque ese orde
 - **Tanda 2 · Las dos barreras.** Pieza 6.4. Cambia `lib/documentos_proceso.js` y la guía del proceso. Cierre: un proceso guardado dice «limitada a Mipyme de …», «con sorteo» o «no consta», con su página. Tamaño: 2 sesiones.
   - *Cerrada en código el 11-nov-2026*: `lib/convocatoria_limitada.js` y los dos hechos en la guía. Falta leer cuántos manifestaron interés. Memoria: «Las dos barreras se leen del pliego: limitada a Mipyme y a qué territorio, y si hay sorteo (11-nov-2026)».
 - **Tanda 3 · El aviso diario.** Pieza 6.2. Cierre: usted recibe cada mañana la lista del día por el canal elegido. Decide el dueño antes: decisiones 1 y 4. Tamaño: 1 a 2 sesiones.
+  - *Hecha en el bloque del vigilante el 12-nov-2026* (paso 6 de `docs/RUTINAS.md` § 2), con la zona y el canal recomendados que el dueño aprobó. Memoria: «La lista del día va en el vigilante de la mañana (12-nov-2026)».
 
 ### 7.3 Entrega 2 · Que no nos tumben por estructura, papeles o puntos
 
@@ -424,6 +425,7 @@ Si en el paso 2 no ve lo descrito, no siga: dígalo y se revisa, porque ese orde
 - **Tanda 7 · El motor en casa y D1.** Pieza 6.6. Cierre: el caso de Cali da 49,5 a la más cercana y la suite lo fija. Tamaño: 1 sesión.
   - *Cerrada el 11-nov-2026* (rama `claude/zen-sagan-wgcf5z`): `lib/metodos_ponderacion.js` es la casa única y el caso de Cali da 49,5 a la más cercana en la suite. Sin cambio visible en pantalla: el motor aún no se usa en la aplicación (eso es la pieza 6.5 y la tanda 14).
 - **Tanda 8 · La referencia por competencia y el aviso de fuera del grupo.** Pieza 6.5, con D4 a D8. Cierre: con los insumos de Cali, Precios dice que 96,75 % queda por encima del grupo de esa entidad. Lleva plan previo con su visto bueno. Decide el dueño antes: decisiones 3 y 6. Tamaño: 3 sesiones.
+  - *12-nov-2026*: la referencia por competencia de la entidad ya sale en Precios (medido: mejora en licitación y mínima cuantía; en menor cuantía la de la entidad ya está en el techo). Memoria: «Qué tan cerca se anticipa el precio ganador por modalidad, y la referencia de la entidad por competencia en Precios (12-nov-2026)».
   - *Hecha en parte el 11-nov-2026*: el aviso de fuera del grupo (con Cali: 9 de 24 por encima de todas, 13 de 24 por encima de la mitad) y D4 a D8, sin mover ninguna cifra; se tomaron las recomendaciones A de las decisiones 3 y 6. Falta la referencia «con una oferta aquí se adjudicó al 100 %; con 5 a 9, al 95 %» por entidad. Memoria: «Precios dice dónde habría quedado su precio frente a todas las ofertas de la entidad, y cuatro textos que afirmaban de más (11-nov-2026)».
 - **Tanda 9 · La tabla de métodos del pliego.** Para régimen especial. Tamaño: 2 sesiones.
 

@@ -11376,9 +11376,12 @@
     } finally { if (grupoEnCamino.get(llave) === promesa) grupoEnCamino.delete(llave); }
     if (yo !== grupoPedido) return;
     const f = r && r.frente_al_grupo;
+    // la referencia de la entidad por competencia (pieza 6.5) va detrás, como hecho; sola si no hay frase del grupo
+    const ref = r && r.por_competencia && r.por_competencia.frase ? ` ${r.por_competencia.frase}` : "";
+    if (!(f && f.frase) && ref) { p.className = "mt-2 pl-6 text-sm text-gray-600"; p.textContent = ref.trim(); return; }
     if (f && f.frase) {
       p.className = f.alerta ? "mt-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900 ring-1 ring-inset ring-amber-600/20" : "mt-2 pl-6 text-sm text-gray-600";
-      p.textContent = f.alerta ? `Atención: ${f.frase} Con ese precio suele quedar por encima de la mitad de las ofertas.` : f.frase;
+      p.textContent = (f.alerta ? `Atención: ${f.frase} Con ese precio suele quedar por encima de la mitad de las ofertas.` : f.frase) + ref;
     } else {
       p.className = "mt-2 pl-6 text-sm text-gray-500";
       p.textContent = (r && r.motivo_texto) || "No hay procesos anteriores comparables de esta entidad para decir dónde quedaría su precio.";
