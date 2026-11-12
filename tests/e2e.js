@@ -47493,10 +47493,11 @@ async function main() {
         const iR = appR01.indexOf("  function ofertaParaRevision() {");
         assert.ok(iR > 0, "existe ofertaParaRevision en public/app.js");
         const fuenteR = appR01.slice(iR, appR01.indexOf("\n  }", iR) + 4);
-        const ofertaParaRevisionR = new Function("ultimoCalculo", "filas", "leerConfig", `${fuenteR}; return ofertaParaRevision;`)(
+        // (12-nov-2026) sin Formulario lleno: la revisión usa la proyección de Precios, que es lo que esta prueba mira
+        const ofertaParaRevisionR = new Function("ultimoCalculo", "filas", "leerConfig", "formularioLlenoVigente", `${fuenteR}; return ofertaParaRevision;`)(
           { resumen: { costo_directo_total: 1000, precio_final: 1250, iva_sobre_utilidad: 9.5 }, items: [{ costo_directo_unitario: 100 }] },
           [{ numeral: "1", descripcion: "Excavación", unidad: "m3", cantidad: 10 }],
-          () => ({ aiu_pct: 15, imprevistos_pct: 5, utilidad_pct: 5 }));
+          () => ({ aiu_pct: 15, imprevistos_pct: 5, utilidad_pct: 5 }), () => ({ usar: null, motivo: null }));
         const ofR = ofertaParaRevisionR();
         assert.strictEqual(ofR.iva_sobre_utilidad, 9.5, "la pantalla manda el IVA sobre la utilidad que el Excel suma a su TOTAL");
         assert.strictEqual(ofR.base_precio, "con_aiu");
@@ -47546,10 +47547,10 @@ async function main() {
         const sinPrecioR = F1.validarFormulario1({ oferta: { items: [filasR(1000000, 1000000)[0], { numeral: "1.2", descripcion: "Relleno", unidad: "m3", cantidad: 10 }], aiu: aiuR, total: 10000000 }, formulario: formR, presupuesto_oficial: 30000000, tope_aiu_pct: 30, secop: { total: 10000000 } });
         assert.strictEqual(sinPrecioR.semaforo, "revisar");
         assert.strictEqual(sinPrecioR.veredictos.find((x) => x.id === "sin_precio").nivel, "rechazo");
-        const ofSinPrecio = new Function("ultimoCalculo", "filas", "leerConfig", `${fuenteR}; return ofertaParaRevision;`)(
+        const ofSinPrecio = new Function("ultimoCalculo", "filas", "leerConfig", "formularioLlenoVigente", `${fuenteR}; return ofertaParaRevision;`)(
           { resumen: { costo_directo_total: 1000, precio_final: 1250, iva_sobre_utilidad: 9.5 }, items: [{ costo_directo_unitario: 100 }, { costo_directo_unitario: null }] },
           [{ numeral: "1", descripcion: "a", unidad: "m3", cantidad: 10 }, { numeral: "2", descripcion: "b", unidad: "m3", cantidad: 5 }],
-          () => ({ aiu_pct: 15, imprevistos_pct: 5, utilidad_pct: 5 }))();
+          () => ({ aiu_pct: 15, imprevistos_pct: 5, utilidad_pct: 5 }), () => ({ usar: null, motivo: null }))();
         assert.strictEqual(ofSinPrecio.items[1].precio_unitario, null, "la pantalla manda el ítem sin precio como sin dato, no como $0");
         //   ítems del pliego que el lector no leyó completos: no se dice «lista»
         const noLeido = F1.validarFormulario1({ oferta: ofertaOk, formulario: { items: form.items.map((it, i) => (i === 0 ? { ...it, cantidad: null } : it)) }, presupuesto_oficial: 21000000, tope_aiu_pct: 30, secop: { total: 20000000 } });
