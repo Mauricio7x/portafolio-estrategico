@@ -22418,3 +22418,17 @@ En una línea: segunda mitad de la tanda 4 del plan x20: el simulador del consor
 - **Lo que no hay que deshacer**: la frase NO juzga nada nuevo, junta lo ya juzgado (la participación mínima, las casillas del pliego y el registro, la capacidad y la caja); una casilla por leer o sin dato es una duda, nunca un verde; y el «cumple» dice que lo demás (experiencia acreditada, firmas, garantía) se revisa en el pliego.
 - Cerradura: en «unidad simulacro del consorcio» (el 65/35 real, el 60/40 con el pliego por leer, todo bien, una sola duda y la vista con `app.js` en un vm); cuatro mutaciones, mueren todas.
 
+### Los puntos fuera del precio, uno por uno, desde la tabla del pliego (12-nov-2026)
+
+En una línea: tanda 5 del plan x20: la lectura del pliego (hechos versión 25) toma la tabla «Concepto / Puntaje máximo» y el descuento por multas (`lib/puntaje_pliego.js`), y la guía dice «Fuera del precio el pliego reparte 50,5 puntos: puede obtener 50,25 (factor de calidad 30, apoyo a la industria nacional 20, Mipyme 0,25); 0,25 por confirmar (empresas de mujeres)…», con la página.
+
+- **Por qué importa**: donde llegan una o dos ofertas, el precio casi no separa y 0,25 de Mipyme o de empresa de mujeres voltea el resultado (plan, § 2.5, hecho 2). En Cali todas las hábiles tenían 50,5 menos una con 50,25.
+- **Lo que no hay que deshacer**:
+  - la tabla se usa solo si sus filas suman su «Total»: una suma que no cuadra es una lectura mala;
+  - la tabla de las convocatorias limitadas (sin la fila de Mipyme, la económica en 49,75) se usa cuando `lib/convocatoria_limitada` leyó «limitada»;
+  - Mipyme sale de `lib/perfiles.esMipyme` (en un plural, un integrante Mipyme con el 10 % o más, como dice el numeral 4.5); sin tamaño en el registro es «por confirmar», nunca «no»;
+  - empresas de mujeres, discapacidad y multas no se saben desde aquí: «por confirmar»;
+  - el certificado del registro va CON la oferta: el documento tipo dice que subsanarlo no da el puntaje.
+- **Sin verificar**: tablas de pliegos que no siguen el documento tipo (régimen especial, otras versiones): si no suman su total no se dice nada.
+- Cerradura: «unidad puntos fuera del precio» (las dos tablas oficiales en renglones partidos, la que no suma, las multas, Mipyme sí/no/sin dato, la limitada y el hecho de la guía); cinco mutaciones, mueren todas.
+

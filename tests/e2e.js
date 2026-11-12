@@ -11313,6 +11313,41 @@ async function main() {
       + "y el validador real ve la cantidad cambiada que sin ella pasaba");
   }
 
+  /* unidad: LOS PUNTOS FUERA DEL PRECIO (PLAN_X20, tanda 5, 12-nov-2026) ────────
+     La tabla «Concepto / Puntaje máximo» del DocBase de menor cuantía V3 (capítulo IV, leído del paquete oficial el
+     11-nov-2026), la de las convocatorias limitadas, el descuento por multas y el juicio factor por factor con el perfil
+     (lib/perfiles.esMipyme, que se LLAMA): con las funciones REALES, hasta el hecho de la guía. */
+  bqPuntos: { if (!corre("unidad puntos fuera del precio")) break bqPuntos;
+    const PP = require("../lib/puntaje_pliego.js"), DP = require("../lib/documentos_proceso.js"), Pf = require("../lib/perfiles.js");
+    const tabla = "\f60\nCAPÍTULO IV\nLa Entidad calificará las ofertas que hayan cumplido con los requisitos habilitantes con los siguientes puntajes:\nConcepto\nPuntaje máximo\nOferta económica\n49,5\nFactor de calidad\n30\nApoyo a la industria nacional\n20\nEmprendimientos y empresas de mujeres\n0,25\nMipyme\n0,25\nTotal\n100\n"
+      + "En las convocatorias limitadas a Mipyme el puntaje por este concepto se trasladará al puntaje de oferta económica. En este caso, en el Pliego de Condiciones definitivo se incluirá el siguiente cuadro:\nConcepto\nPuntaje máximo\nOferta económica\n49,75\nFactor de calidad\n30\nApoyo a la industria nacional\n20\nEmprendimientos y empresas de mujeres\n0,25\nTotal\n100\n"
+      + "Las Entidades deberán reducir durante la evaluación de las ofertas dos (2) puntos a los Proponentes que se les haya impuesto una o más multas o cláusulas penales durante el último año.\n";
+    const ts = PP.leerTablasPuntaje(tabla);
+    assert.ok(ts.length === 2 && !ts[0].limitada_mipyme && ts[1].limitada_mipyme && ts[0].pagina === 60 && ts[0].filas.length === 5 && ts[1].filas[0].puntaje === 49.75,
+      `las dos tablas del documento tipo, en renglones partidos → ${JSON.stringify(ts.map((t) => [t.limitada_mipyme, t.filas.length]))}`);
+    assert.deepStrictEqual(PP.leerTablasPuntaje("\f5\nConcepto Puntaje máximo\nOferta económica 49,5\nFactor de calidad 30\nTotal 100\n"), [], "una tabla que no suma su total es una lectura mala: no se usa");
+    assert.deepStrictEqual(PP.leerDescuentoMultas(tabla), { puntos: 2 }, "el descuento por multas, con su cifra");
+    const H = Pf.PERFILES_FALLBACK.helder;
+    const conH = PP.puntosFueraDelPrecio({ tablas: ts, perfil: { ...H, tamanoEmpresa: "microempresa" } });
+    assert.ok(conH.total_fuera_del_precio === 50.5 && conH.a_su_alcance === 50.25 && conH.por_confirmar === 0.25 && conH.no_obtiene === 0,
+      `Mipyme: 50,25 de 50,5 a su alcance y la de mujeres por confirmar → ${conH.frase}`);
+    const grande = PP.puntosFueraDelPrecio({ tablas: ts, perfil: { ...H, tamanoEmpresa: "grande" } });
+    assert.ok(grande.no_obtiene === 0.25 && /no los obtiene \(mipyme 0,25\)/.test(grande.frase), `sin ser Mipyme, esos 0,25 no los obtiene → ${grande.frase}`);
+    const sinDato = PP.puntosFueraDelPrecio({ tablas: ts, perfil: { ...H, tamanoEmpresa: null } });
+    assert.ok(sinDato.factores.find((f) => f.clave === "mipyme").estado === "por_confirmar", "sin tamaño en el registro: por confirmar, nunca «no»");
+    const lim = PP.puntosFueraDelPrecio({ tablas: ts, perfil: { ...H, tamanoEmpresa: "microempresa" }, limitadaMipyme: true });
+    assert.ok(lim.tabla_limitada_mipyme && lim.total_fuera_del_precio === 50.25 && !lim.factores.some((f) => f.clave === "mipyme"), "convocatoria limitada: la tabla sin la fila de Mipyme");
+    // hasta la guía
+    const h = DP.hechosDeTexto(tabla, { tipo: "pliego" });
+    const r = DP.loQueDicen({ leidos: { d1: { nombre: "pliego.pdf", tipo: "pliego", hechos: h, fecha_carga: "2026-06-30" } } }, { perfilObj: { ...H, tamanoEmpresa: "microempresa" } });
+    const x = r.hechos.find((y) => y.clave === "puntos_fuera_del_precio");
+    assert.ok(x && x.pagina === 60 && /^Fuera del precio el pliego reparte 50,5 puntos: puede obtener 50,25/.test(x.texto) && /le restan 2 puntos/.test(x.texto) && /pliego\.pdf/.test(x.documento),
+      `el hecho de la guía → ${JSON.stringify(x && { texto: x.texto, pagina: x.pagina })}`);
+    assert.strictEqual(DP.hechosDeTexto(tabla, { tipo: "estudio_previo" }).tabla_puntaje, null, "fuera de la familia del pliego no se busca");
+    console.log("· unidad puntos fuera del precio: las dos tablas del documento tipo (normal y limitada), la que no suma fuera, el descuento por multas, "
+      + "Mipyme sí / no / sin dato con la regla de lib/perfiles, y el hecho en la guía con su página");
+  }
+
   /* unidad: TEXTO como co-señal (vocabulario por familia + verbo de obra) */
   bq19: { if (!corre("unidad texto")) break bq19;
     const idx = unspsc.indiceDe(PERFILES.helder.unspsc);

@@ -22,7 +22,7 @@
   pliego.js                   Router del dominio PLIEGO (Fase 0 · consolidación a 6 funciones)
   procesos.js                 Router del dominio PROCESOS (Fase 0 · consolidación a 6 funciones)
 
-· lib/ — 116 módulos:
+· lib/ — 117 módulos:
   accesibilidad.js            Accesibilidad operativa de la zona de la obra
   adendas.js                  Vigía de adendas · lo que el DATASET dice que cambió (Fase 5)
   almacen.js                  Esquema de claves Redis + compresión de chunks
@@ -119,6 +119,7 @@
   proyeccion.js               De fila cruda de Socrata a registro guardable
   publico.js                  lib/publico · Qué puede ver un cliente SIN credencial
   puertas.js                  Las cuatro puertas de viabilidad de un proceso
+  puntaje_pliego.js           Los puntos fuera del precio, uno por uno: cuáles da el pliego y cuáles puede acreditar usted
   rastreo.js                  «¿Por qué no está este proceso?»
   redis.js                    Cliente mínimo de Upstash Redis vía API REST — sin SDK ni deps
   reparto.js                  ¿Con qué porcentaje se queda el dueño en ESTE consorcio?
@@ -242,8 +243,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 476 secciones (58 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 22300  La competencia por tamaño ordena «Las menos peleadas» y el motor de los cuatro métodos vive…
+· MEMORIA · docs/MEMORIA.md — 477 secciones (58 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 22322  La regla del anuncio, medida con la población de Detekta, resiste en menor cuantía, mínima …
   L 22332  Precios dice dónde habría quedado su precio frente a todas las ofertas de la entidad, y cua…
   L 22347  Las dos barreras se leen del pliego: limitada a Mipyme y a qué territorio, y si hay sorteo …
@@ -253,6 +253,7 @@
   L 22392  Qué tan cerca se anticipa el precio ganador por modalidad, y la referencia de la entidad po…
   L 22406  La lista del día va en el vigilante de la mañana (12-nov-2026)
   L 22414  El reparto del consorcio en una frase: queda por fuera, falta confirmar o cumple lo medible…
+  L 22421  Los puntos fuera del precio, uno por uno, desde la tabla del pliego (12-nov-2026)
 
 · DOCUMENTOS docs/ — 78 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)

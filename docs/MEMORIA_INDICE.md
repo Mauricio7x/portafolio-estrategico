@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 2655210 bytes · 476 secciones · 58 con marcador de superación.
+Derivado del árbol: 2656966 bytes · 477 secciones · 58 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -487,3 +487,4 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | Qué tan cerca se anticipa el precio ganador por modalidad, y la referencia de la entidad por competencia en Precios (12-nov-2026) | 12-nov-2026 | 22392-22405 | 2471 |  |
 | La lista del día va en el vigilante de la mañana (12-nov-2026) | 12-nov-2026 | 22406-22413 | 1325 |  |
 | El reparto del consorcio en una frase: queda por fuera, falta confirmar o cumple lo medible (12-nov-2026) | 12-nov-2026 | 22414-22420 | 1075 |  |
+| Los puntos fuera del precio, uno por uno, desde la tabla del pliego (12-nov-2026) | 12-nov-2026 | 22421-22434 | 1756 |  |
