@@ -6393,7 +6393,7 @@ async function main() {
     // el handler real, contra el Redis simulado
     const APIp = require("../api/pliego.js");
     const P = "CO1.BDOS.88800001", ID = "CO1.REQ.88800001";
-    const pT = await invocarPost(APIp, "/api/pliego?op=evaluacion", { id_proceso: ID, portafolio: P, entidad: "Gobernación de Prueba", nit: "800.123.456-7", documento: { nombre: "Informe definitivo.pdf", papel: "informe_evaluacion", id_documento: "1" }, texto: textoEv, paginas_ocr: 0 }, CAB_TOKEN);
+    const pT = await invocarPost(APIp, "/api/pliego?op=evaluacion", { id_proceso: ID, portafolio: P, entidad: "Gobernación de Prueba", nit: "800.123.456-7", documento: { nombre: "Informe definitivo.pdf", papel: "informe_evaluacion", id_documento: "1", fecha_carga: "2026-11-13T19:00:00.000" }, modalidad: "Selección Abreviada de Menor Cuantía", texto: textoEv, paginas_ocr: 0 }, CAB_TOKEN);
     assert.ok(pT.status === 200 && pT.cuerpo.estado === "en_cola", `el texto se guarda y queda en cola: ${pT.status} ${JSON.stringify(pT.cuerpo)}`);
     const pend = await invocar(APIp, "/api/pliego?op=evaluacion&pendientes=1", CAB_TOKEN);
     assert.ok(pend.status === 200 && pend.cuerpo.pendientes.some((x) => x.portafolio === P), `pendiente para la sesión: ${JSON.stringify(pend.cuerpo)}`);
@@ -6410,6 +6410,11 @@ async function main() {
     // la sesión corrige y reenvía: la captura nueva reemplaza a la anterior
     const pC2 = await invocarPost(APIp, "/api/pliego?op=evaluacion", { portafolio: P, motor: "sesion", captura: capturaLimpia }, CAB_TOKEN);
     assert.ok(pC2.status === 200 && pC2.cuerpo.verificacion.completa === true, `reenviada y completa: ${JSON.stringify(pC2.cuerpo.verificacion)}`);
+    {
+      // (12-nov-2026, tanda 14) la fecha de publicación del documento y la modalidad se guardan con la lectura: de ahí sale el plazo para observarlo
+      const regP = await require("../lib/almacen.js").leerJSONComprimido(require("../lib/redis.js").crearRedis({}), require("../lib/evaluacion.js").claveCaptura(P));
+      assert.ok(regP && regP.documento.fecha_carga === "2026-11-13" && regP.modalidad === "Selección Abreviada de Menor Cuantía", `la lectura guarda la fecha y la modalidad → ${JSON.stringify(regP && { d: regP.documento, m: regP.modalidad })}`);
+    }
     const pend2 = await invocar(APIp, "/api/pliego?op=evaluacion&pendientes=1", CAB_TOKEN);
     assert.ok(!pend2.cuerpo.pendientes.some((x) => x.portafolio === P), "interpretado: deja de ser pendiente");
     assert.strictEqual((await invocar(APIp, `/api/pliego?op=evaluacion&expediente=1&portafolio=${P}`, CAB_TOKEN)).status, 200, "pero el texto sigue para poder corregir y reenviar");
@@ -6820,6 +6825,19 @@ async function main() {
 
       // (7) el lector de la madrugada: la vista ligera si basta, la lista entera si queda corta o el servidor no la conoce
       const L = require("./capturar_evaluaciones.js");
+      /* (7 bis, 12-nov-2026, decisión del dueño) SUS OFERTAS PERDIDAS PRIMERO: sus entidades y sus portafolios, y un proceso suyo entra
+         a la cola aunque no sirva para la regla del precio (dos ofertas, régimen especial) */
+      const pd = L.perdidasDeRespuesta({ ok: true, ofertas: [
+        { resultado: "otro", id_portafolio: "CO1.BDOS.1", entidad: "HOSPITAL A", nit_entidad: "800163519", causa: null },
+        { resultado: "otro", id_portafolio: "CO1.BDOS.2", entidad: "HOSPITAL A", nit_entidad: "800163519" },
+        { resultado: "otro", id_portafolio: "CO1.BDOS.3", entidad: "HOSPITAL B", nit_entidad: "800182136", causa: { frase: "Rechazada: experiencia." } },
+        { resultado: "gano", id_portafolio: "CO1.BDOS.4", entidad: "HOSPITAL C", nit_entidad: "1" }] });
+      assert.deepStrictEqual([pd.entidades, [...pd.portafolios]], [[{ entidad: "HOSPITAL A", nit: "800163519" }], ["CO1.BDOS.1", "CO1.BDOS.2"]], "solo las perdidas sin causa todavía, una entidad una vez");
+      assert.deepStrictEqual(L.perdidasDeRespuesta({ ok: false }), { entidades: [], portafolios: new Set() }, "una respuesta que no sirve no cambia nada");
+      const procs = [{ id: "CO1.REQ.A", portafolio: "CO1.BDOS.9", modalidad: "Licitación pública", fecha_adjudicacion: "2026-01-01", numero_ofertas: 5 },
+        { id: "CO1.REQ.B", portafolio: "CO1.BDOS.1", modalidad: "Contratación régimen especial (con ofertas)", fecha_adjudicacion: "2025-09-01", numero_ofertas: 2 }];
+      assert.deepStrictEqual(L.colaDeLaEntidad(procs, new Set(), new Set(), pd.portafolios).map((x) => x.id), ["CO1.REQ.B", "CO1.REQ.A"], "su proceso entra aunque no sirva para la regla del precio, y va primero");
+      assert.deepStrictEqual(L.colaDeLaEntidad(procs, new Set(), new Set()).map((x) => x.id), ["CO1.REQ.A"], "sin ofertas suyas, la cola de siempre");
       assert.deepStrictEqual(L.entidadesDeRespuesta(s1.cuerpo), { lista: s1.cuerpo.entidades, incompleta: true }, "con procesos sin foto, la vista ligera queda corta");
       assert.strictEqual(L.entidadesDeRespuesta({ entidades: [{ entidad: "X", nit: "1" }], sin_foto: 0 }).incompleta, false);
       assert.strictEqual(L.entidadesDeRespuesta({ entidades: [{ entidad: "X", nit: "1" }] }).incompleta, true, "si no dice cuántos faltan, no se da por completa");
@@ -11339,6 +11357,19 @@ async function main() {
     const caja = () => { const hijos = []; return { hijos, appendChild: (n) => hijos.push(n) }; };
     const casos = [[conArchivo, "CO1.REQ.D2", 1], [conArchivo, "CO1.REQ.OTRO", 0], [ref, "CO1.REQ.D2", 0], [{ ...conArchivo, origen: "pdf" }, "CO1.REQ.D2", 0], [null, "CO1.REQ.D2", 0]];
     for (const [leido, id, n] of casos) { const c = caja(); pintarBotonFormularioExcel(c, leido, id); assert.strictEqual(c.hijos.length, n, `botón de llenar con ${JSON.stringify(leido && { origen: leido.origen, url: leido.url })} en ${id}: ${c.hijos.length}`); }
+    /* (12-nov-2026) EL FORMULARIO LLENO MANDA en la revisión: sus unitarios y su total, sin volver a sumar el IVA de la utilidad */
+    const V = appEnVm(["ofertaParaRevision", "formularioLlenoVigente", "fijarCalculo: (r, f) => { ultimoCalculo = r; filas = f; }", "fijarLleno: (x) => { formularioLlenoActual = x; }", "huellaCalculo"]);
+    V.fijarCalculo({ resumen: { precio_final: 280000, costo_directo_total: 210000, oferta: { precio_sin_iva: 273000 } }, items: [{ costo_directo_unitario: 700 }, { costo_directo_unitario: 14000 }] },
+      [{ codigo: "1.1", descripcion: "Excavación manual", unidad: "m3", cantidad: 100 }, { codigo: "1.2", descripcion: "Relleno compactado", unidad: "m3", cantidad: 10 }]);
+    V.fijarLleno({ id_proceso: "CO1.REQ.D2", nombre: "F1.xlsx", total: 273000, huella: V.huellaCalculo(), items: [{ codigo: "1.1", descripcion: "Excavación manual", unidad: "m3", cantidad: 100, unitario: 910, total: 91000 }, { codigo: "1.2", descripcion: "Relleno compactado", unidad: "m3", cantidad: 10, unitario: 18200, total: 182000 }] });
+    const ofL = V.ofertaParaRevision();
+    assert.ok(ofL.origen === "formulario_lleno" && ofL.total === 273000 && ofL.iva_sobre_utilidad === 0 && ofL.filas_proyectadas === false && ofL.items[1].precio_unitario === 18200, `la revisión lleva el libro lleno → ${JSON.stringify(ofL).slice(0, 200)}`);
+    const vL = F1.validarFormulario1({ oferta: ofL, formulario: null, presupuesto_oficial: 300000 });
+    const pres = (vL.veredictos || []).find((x) => x.id === "presupuesto");
+    assert.ok(pres && pres.total_revisado === 273000, `el validador real revisa el total del libro, sin sumarle IVA → ${JSON.stringify(pres)}`);
+    V.fijarCalculo({ resumen: { precio_final: 290000, costo_directo_total: 210000, oferta: { precio_sin_iva: 283000 } }, items: [{ costo_directo_unitario: 700 }, { costo_directo_unitario: 14000 }] },
+      [{ codigo: "1.1", descripcion: "Excavación manual", unidad: "m3", cantidad: 100 }, { codigo: "1.2", descripcion: "Relleno compactado", unidad: "m3", cantidad: 10 }]);
+    assert.ok(V.ofertaParaRevision().origen !== "formulario_lleno" && /cálculo anterior/.test(V.formularioLlenoVigente().motivo), "con otro cálculo, el libro lleno quedó viejo: se revisa la proyección y se dice");
     console.log("· unidad revisor con el formulario de Excel: la referencia sale del Formulario de Excel con su unitario y su total oficiales, "
       + "y el validador real ve la cantidad cambiada que sin ella pasaba");
   }
@@ -11480,6 +11511,7 @@ async function main() {
     const esperado = r0(100 * 910) + r0(10.5 * 19500) + r0(2.25 * 390000);
     assert.strictEqual(r.total_formulario, esperado, `el total es el que calculan las fórmulas de la entidad: ${r.total_formulario} vs ${esperado}`);
     assert.deepStrictEqual([r.total_oficial, r.celda_total, r.fila_total], [1322501, "K6", 6]);
+    assert.deepStrictEqual(r.items_llenos.map((x) => [x.fila_excel, x.unitario, x.total]), [[3, 910, 91000], [4, 19500, 204750], [5, 390000, 877500]], "las filas del libro LLENO viajan, para que la revisión compare el archivo que se radica");
     const sal = await leer(r.archivo);
     assert.deepStrictEqual(["J3", "J4", "J5", "K3", "K4", "K5", "K6"].map((x) => celda(sal, PRO, x)), [910, 19500, 390000, 91000, 204750, 877500, esperado], "el libro que sale trae los unitarios y los cálculos guardados al día");
     assert.deepStrictEqual(["J3", "K6"].map((x) => celda(sal, ENT, x)), [1000, 1322501], "la hoja de la entidad queda como estaba");
@@ -11731,6 +11763,15 @@ async function main() {
     const H = EV.hechosDeEntidad([{ id_proceso: "CO1.REQ.1", captura: cap(mal) }, { id_proceso: "CO1.REQ.2", captura: cap(bien.map((x) => Math.round(x * 100) / 100)) }, { id_proceso: "CO1.REQ.3", captura: cap(mal, { completa: false }) }]);
     assert.deepStrictEqual(H.recalculo, { con_dato: 2, con_diferencias: 1, cambia_el_primero: 0 }, `los hechos cuentan solo los completos → ${JSON.stringify(H.recalculo)}`);
     assert.ok(H.procesos_detalle.find((x) => x.id_proceso === "CO1.REQ.1").recalculo.observacion && !H.procesos_detalle.find((x) => x.id_proceso === "CO1.REQ.3").recalculo, "el borrador viaja con su proceso");
+    // el plazo para observar el informe: la publicación más los días hábiles de traslado de la modalidad (la regla de la guía), con los festivos
+    const PL = RC.plazoDeObservacion;
+    assert.deepStrictEqual([PL({ fechaPublicacion: "2026-11-13", modalidad: "Selección Abreviada de Menor Cuantía", hoy: "2026-11-12" }).hasta, PL({ fechaPublicacion: "2026-11-06", modalidad: "Licitación pública", hoy: "2026-11-12" }).hasta],
+      ["2026-11-19", "2026-11-13"], "3 días hábiles en menor cuantía saltando el festivo del 16 de noviembre; 5 en licitación");
+    assert.ok(/^El plazo para observar el informe venció el miércoles 11 de noviembre/.test(PL({ fechaPublicacion: "2026-11-06", modalidad: "Selección Abreviada de Menor Cuantía", hoy: "2026-11-12" }).frase), "vencido se dice vencido");
+    assert.deepStrictEqual([PL({ fechaPublicacion: "2026-11-06", modalidad: "Selección Abreviada de Menor Cuantía", hoy: "2026-11-12" }).vencido, PL({ fechaPublicacion: "2026-11-13", modalidad: "Selección Abreviada de Menor Cuantía", hoy: "2026-11-12" }).vencido], [true, false]);
+    assert.deepStrictEqual([PL({ fechaPublicacion: null, modalidad: "Licitación pública" }).hasta, PL({ fechaPublicacion: "2026-11-06", modalidad: null }).hasta], [null, null], "sin fecha o sin modalidad no hay plazo: se manda al cronograma");
+    const Hp = EV.hechosDeEntidad([{ id_proceso: "CO1.REQ.9", captura: cap(mal), documento: { fecha_carga: "2026-11-13" }, modalidad: "Selección Abreviada de Menor Cuantía" }]);
+    assert.ok(/hasta el jueves 19 de noviembre|venció el jueves 19 de noviembre/.test(Hp.procesos_detalle[0].recalculo.plazo) && Hp.procesos_detalle[0].recalculo.plazo_hasta === "2026-11-19", `el borrador lleva su plazo → ${Hp.procesos_detalle[0].recalculo.plazo}`);
     console.log("· unidad recalculo del informe: el caso de Cali con D1 (49,5 y no 49,19), dos decimales que no son diferencia, el primer lugar que cambia, el método por la TRM, "
       + "lo que no se recalcula con su motivo y el borrador de observación sin normas y con corchetes");
   }

@@ -109,7 +109,7 @@ function candidatosDe(filas) {
   for (const f of Array.isArray(filas) ? filas : []) {
     const id = String((f && f.id_del_proceso) || "").trim();
     if (!id) continue;
-    const p = { id, modalidad: f.modalidad_de_contratacion || null, fecha_adjudicacion: primeraFecha(f), numero_ofertas: oferentesDe(f) };
+    const p = { id, portafolio: String((f && f.id_del_portafolio) || "").trim() || null, modalidad: f.modalidad_de_contratacion || null, fecha_adjudicacion: primeraFecha(f), numero_ofertas: oferentesDe(f) };
     const ya = por.get(id);
     if (!ya || (ya.numero_ofertas == null && p.numero_ofertas != null)) por.set(id, p);
   }
@@ -118,7 +118,7 @@ function candidatosDe(filas) {
 async function procesosDeLaEntidad(entidad, nit) {
   const donde = nit ? `starts_with(nit_entidad, '${escSoQL(String(nit).replace(/\D/g, ""))}')` : `entidad = '${escSoQL(entidad)}'`;
   const filas = await crearCliente({ baseUrl: process.env.SECOP_BASE_URL || "https://www.datos.gov.co/resource/p6dx-8zbt.json" }).pedir({
-    "$select": "id_del_proceso,modalidad_de_contratacion,fecha_adjudicacion,adjudicado,respuestas_al_procedimiento,proveedores_unicos_con,conteo_de_respuestas_a_ofertas,respuestas_externas",
+    "$select": "id_del_proceso,id_del_portafolio,modalidad_de_contratacion,fecha_adjudicacion,adjudicado,respuestas_al_procedimiento,proveedores_unicos_con,conteo_de_respuestas_a_ofertas,respuestas_externas",
     "$where": `${donde} AND adjudicado = 'Si' AND fecha_adjudicacion >= '2025-01-01T00:00:00'`, "$order": "fecha_adjudicacion DESC", "$limit": "1000",
   }, "procesos de la entidad", { plazoMs: 30000 });
   return candidatosDe(filas);
@@ -264,7 +264,20 @@ async function entidadesDeMisProcesos(perfil, { pedirA = pedir } = {}) {
    `consultar(p)` pide op=evaluacion&documento=1; `leerYGuardar(p, doc)` baja, lee y guarda, y devuelve la fila. */
 /* lo que queda por mirar de una entidad: lo útil para el precio que no se leyó ni se miró esta noche, ENTERO (el
    cupo por entidad cuenta documentos leídos, no candidatos: lo aplica `recorrerCola`) */
-const colaDeLaEntidad = (procesos, ya, vistos) => procesos.filter(util).filter((p) => !ya.has(p.id) && !vistos.has(p.id));
+/* SUS OFERTAS PERDIDAS PRIMERO (decisión del dueño, 12-nov-2026: «leer los informes de sus ofertas perdidas»): un proceso donde
+   él ofertó y ganó otro entra aunque no sirva para la regla del precio (Natagaima, MC-001-2025, tuvo 2 ofertas) y va delante */
+const colaDeLaEntidad = (procesos, ya, vistos, propios = new Set()) => procesos
+  .filter((p) => (propios.has(p.portafolio) || util(p)) && !ya.has(p.id) && !vistos.has(p.id))
+  .sort((x, y) => (propios.has(y.portafolio) ? 1 : 0) - (propios.has(x.portafolio) ? 1 : 0));
+/* Las ofertas perdidas del perfil sin causa todavía (op=ofertas-propias, PLAN_X20 tanda 13): sus entidades y sus portafolios.
+   Una respuesta que no sirve deja la lista vacía: la madrugada sigue con Mis procesos, como antes. */
+function perdidasDeRespuesta(j) {
+  const ofs = j && j.ok && Array.isArray(j.ofertas) ? j.ofertas : [];
+  const sinCausa = ofs.filter((o) => o && o.resultado === "otro" && !(o.causa && o.causa.frase) && /^CO1\.BDOS\.\d+$/.test(String(o.id_portafolio || "")));
+  const entidades = new Map();
+  for (const o of sinCausa) { const k = String(o.nit_entidad || o.entidad || ""); if (k && !entidades.has(k)) entidades.set(k, { entidad: String(o.entidad || "").trim(), nit: o.nit_entidad || null }); }
+  return { entidades: [...entidades.values()].filter((e) => e.entidad), portafolios: new Set(sinCausa.map((o) => o.id_portafolio)) };
+}
 async function recorrerCola(cola, { a, resumen, imagenes, consultar, leerYGuardar, pararPorBase, vistos, releer = new Map(), anotar = () => {} }) {
   let deLaEntidad = 0, consultasDeLaEntidad = 0;
   for (const p of cola) {
@@ -326,7 +339,7 @@ function crearFlujo({ a, resumen, obtenerLector, pedirApp, bajarDoc, pararPorBas
      el proceso no se relee para siempre (revisión adversaria, 3-nov-2026) */
   const guardarTexto = (p, doc, { entidad, nit, leido, pendiente }) => {
     const relectura = releerTodo.has(p.id), intento = (releerTodo.get(p.id) || 0) + 1;
-    return pedirApp("/api/pliego?op=evaluacion", { method: "POST", body: { id_proceso: p.id, portafolio: doc.j.portafolio, entidad, nit, documento: doc.j.documento,
+    return pedirApp("/api/pliego?op=evaluacion", { method: "POST", body: { id_proceso: p.id, portafolio: doc.j.portafolio, entidad, nit, documento: doc.j.documento, modalidad: p.modalidad || null,
       texto: leido ? leido.texto : "", paginas_ocr: leido ? leido.paginas_ocr : 0, paginas_sin_leer: leido ? leido.sin_ocr : [],
       ...(pendiente ? { ocr_pendiente: true } : {}), ...(pendiente || relectura ? { intento_ocr: intento } : {}), ...(relectura ? { relectura: true } : {}) } });
   };
@@ -392,10 +405,20 @@ async function principal() {
       if (baseCaida(salud)) { pararPorBase(salud.j.error); return; }
       if (salud.j && salud.j.escritura && salud.j.escritura.acepta === false) { pararPorBase(`no acepta escrituras: ${salud.j.escritura.motivo || ""}`); return; }
       let entidades = a.entidades.map((e) => { const [entidad, nit] = String(e).split("|"); return { entidad: entidad.trim(), nit: (nit || "").trim() || null }; });
-      if (!entidades.length) {
+      // sus ofertas perdidas: sus portafolios entran a la cola aunque no sirvan para la regla del precio, y sus entidades van primero
+      let propios = new Set();
+      try {
+        const op = await pedir(`/api/perfil?op=ofertas-propias&perfil=${encodeURIComponent(a.perfil)}`);
+        const pd = op.status === 200 ? perdidasDeRespuesta(op.j) : { entidades: [], portafolios: new Set() };
+        propios = pd.portafolios;
+        if (!entidades.length) entidades = pd.entidades;
+        if (pd.portafolios.size) console.log(`== ${pd.portafolios.size} ofertas suyas perdidas sin causa todavía, en ${pd.entidades.length} entidades`);
+      } catch (e) { console.log(`== sus ofertas no se pudieron consultar (${String((e && e.message) || e).slice(0, 120)}): sigue con Mis procesos`); }
+      if (!a.entidades.length) {
         const m = await entidadesDeMisProcesos(a.perfil);
         if (m.caida) { pararPorBase("Mis procesos"); return; }
-        entidades = m.lista;
+        const ya = new Set(entidades.map((e) => `${e.nit || ""}|${e.entidad}`));
+        entidades = [...entidades, ...m.lista.filter((e) => !ya.has(`${e.nit || ""}|${e.entidad}`))];
       }
       resumen.entidades = entidades.length;
       console.log(`== ${entidades.length} entidades · cupo: ${a.maxDocs} documentos, ${a.maxOcr} imágenes de OCR (tope duro ${tope}), ${a.porEntidad} por entidad, ${a.maxConsultas} consultas`);
@@ -416,7 +439,7 @@ async function principal() {
         const { ya, releer } = yaYReleer(ev.j.procesos);
         for (const [id, n] of releer) releerTodo.set(id, n);
         const utiles = procesos.filter(util);
-        const cola = colaDeLaEntidad(procesos, ya, vistos);
+        const cola = colaDeLaEntidad(procesos, ya, vistos, propios);
         console.log(`== ${entidad}${nit ? ` (${nit})` : ""}: ${procesos.length} adjudicados desde 2025, ${utiles.length} útiles para la regla del precio, ${ya.size} ya leídos${releer.size ? `, ${releer.size} por releer sin su OCR` : ""}; ${cola.length} por mirar, hasta ${a.porEntidad} documentos`);
         await recorrerCola(cola, { a, resumen, imagenes, vistos, releer, pararPorBase, anotar: (r) => console.log("  ", JSON.stringify(r)),
           consultar: (p) => pedir(`/api/pliego?op=evaluacion&documento=1&id_proceso=${encodeURIComponent(p.id)}`),
@@ -438,6 +461,6 @@ async function principal() {
   }
 }
 
-module.exports = { argumentos, util, reenviarAProduccion, servirPublic, baseCaida, llaveRechazada, cabenEnElCupo, candidatosDe, procesosDeLaEntidad, entidadesDeRespuesta, entidadesDeMisProcesos, recorrerCola, colaDeLaEntidad,
+module.exports = { perdidasDeRespuesta, argumentos, util, reenviarAProduccion, servirPublic, baseCaida, llaveRechazada, cabenEnElCupo, candidatosDe, procesosDeLaEntidad, entidadesDeRespuesta, entidadesDeMisProcesos, recorrerCola, colaDeLaEntidad,
   faltaOcrPasajero, yaYReleer, crearGuardiaOcr, queHacerConLaLectura, crearFlujo, abrirLector, PAUSA_OCR_MS, MAX_INTENTOS_OCR };
 if (require.main === module) principal().catch((e) => { console.log("FALLO:", String((e && e.message) || e).slice(0, 300)); console.log("RESUMEN", JSON.stringify({ fallo: true })); process.exitCode = 1; });

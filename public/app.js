@@ -4604,7 +4604,7 @@
         partes.push(R.con_diferencias
           ? `<p class="mt-1 text-sm" data-recalculo>En <strong>${R.con_diferencias}</strong> de ${plural(R.con_dato, "proceso", "procesos")} con valores y puntajes publicados, el puntaje de precio recalculado con el método del informe da distinto${R.cambia_el_primero ? `; en ${R.cambia_el_primero} cambiaría el primer lugar` : ""}.</p>`
             + conObs.map((x) => `<details class="mt-1"><summary class="cursor-pointer text-xs font-semibold text-gray-700">${esc(x.id_proceso || x.portafolio || "Proceso")}: borrador de observación</summary>
-              <p class="mt-1 text-xs text-gray-600">${esc(x.recalculo.frase)}</p><p class="mt-1 rounded-lg bg-gray-50 px-3 py-2 text-xs text-gray-800">${esc(x.recalculo.observacion)}</p></details>`).join("")
+              <p class="mt-1 text-xs text-gray-600">${esc(x.recalculo.frase)}</p>${x.recalculo.plazo ? `<p class="mt-1 text-xs font-medium text-gray-700" data-recalculo-plazo>${esc(x.recalculo.plazo)}</p>` : ""}<p class="mt-1 rounded-lg bg-gray-50 px-3 py-2 text-xs text-gray-800">${esc(x.recalculo.observacion)}</p></details>`).join("")
           : `<p class="mt-1 text-sm" data-recalculo>En ${R.con_dato === 1 ? "el proceso" : `los ${R.con_dato} procesos`} con valores y puntajes publicados, el puntaje de precio recalculado da lo mismo que publicó la entidad.</p>`);
       }
       const F = H.fuera_del_precio || {};
@@ -4658,7 +4658,7 @@
         pinta(`${rot}: bajando «${esc(doc.documento.nombre)}»…`);
         const bytes = await bajarPorTrozos(doc.documento.url, (llevan, total) => pinta(`${rot}: bajando «${esc(doc.documento.nombre)}» (${mbDe(llevan)}${total ? ` de ${mbDe(total)}` : ""})…`));
         const leido = await window.__pliegoLeerPdfMixto(bytes, (hecho, total, e) => pinta(`${rot}: ${ETAPA_EVAL[(e && e.etapa) || "leyendo"] || "leyendo la página"} ${(e && e.desde) || hecho + 1} de ${total}${e && e.espera_s ? ` (${e.espera_s} s)` : ""}…`));
-        await api("/api/pliego?op=evaluacion", { method: "POST", body: { id_proceso: p.id, portafolio: doc.portafolio, entidad, nit: nit || null, documento: doc.documento, texto: leido.texto, paginas_ocr: leido.paginas_ocr, paginas_sin_leer: leido.sin_ocr || [] } });
+        await api("/api/pliego?op=evaluacion", { method: "POST", body: { id_proceso: p.id, portafolio: doc.portafolio, entidad, nit: nit || null, documento: doc.documento, modalidad: p.modalidad || null, texto: leido.texto, paginas_ocr: leido.paginas_ocr, paginas_sin_leer: leido.sin_ocr || [] } });
         evalIntentados.add(p.id);
         leidos++;
         hechas.push(`${rot}: leído «${esc(doc.documento.nombre)}»${leido.sin_ocr && leido.sin_ocr.length ? ` (sin leer ${plural(leido.sin_ocr.length, "página con imagen", "páginas con imagen")}${leido.nota ? `: ${esc(leido.nota)}` : ""})` : ""}.`);
@@ -9819,7 +9819,27 @@
      SEMÁFORO con frases; los rechazos dicen «motivo de rechazo automático»,
      nunca «causal O». La justificación de precio sale del APU propio
      (mismo botón de siempre). */
+  /* EL FORMULARIO LLENO MANDA (PLAN_X20 pieza 6.7, 12-nov-2026): si se llenó el Formulario de Excel de la entidad para ESTE proceso,
+     con ESTE cálculo y las mismas filas, la revisión compara el archivo que se radica —sus unitarios, sus totales y su total— y no la
+     proyección de Precios. El IVA de la utilidad ya va dentro del unitario (o fuera, como confirmó el usuario): se manda 0, que la
+     revisión respeta como dato. Un cálculo distinto o filas distintas lo dejan de lado y se dice. */
+  let formularioLlenoActual = null;
+  const huellaCalculo = () => { const r = ultimoCalculo && ultimoCalculo.resumen; return r ? `${r.precio_final}|${r.oferta ? r.oferta.precio_sin_iva : ""}|${filas.length}` : null; };
+  function formularioLlenoVigente() {
+    const f = formularioLlenoActual, id = $("id-proceso") ? $("id-proceso").value.trim() : "";
+    if (!f) return { usar: null, motivo: null };
+    if (f.id_proceso && id && f.id_proceso !== id) return { usar: null, motivo: null };
+    if (f.huella !== huellaCalculo() || f.items.length !== filas.length || f.items.some((x, i) => Number(x.cantidad) !== Number(filas[i].cantidad)))
+      return { usar: null, motivo: "El Formulario que llenó es de un cálculo anterior o de otras filas: se revisó la proyección de Precios. Llénelo de nuevo para revisar el archivo que va a radicar." };
+    return { usar: f, motivo: null };
+  }
   function ofertaParaRevision() {
+    const lleno = formularioLlenoVigente().usar;
+    if (lleno) {
+      return { items: lleno.items.map((x) => ({ numeral: null, codigo: x.codigo || null, descripcion: x.descripcion, unidad: x.unidad, cantidad: x.cantidad, precio_unitario: x.unitario, total: Number.isFinite(x.total) ? x.total : null })),
+        aiu: { administracion_pct: leerConfig().aiu_pct, imprevistos_pct: leerConfig().imprevistos_pct, utilidad_pct: leerConfig().utilidad_pct },
+        base_precio: "con_aiu", iva_sobre_utilidad: 0, filas_proyectadas: false, total: lleno.total, origen: "formulario_lleno" };
+    }
     const r = ultimoCalculo && ultimoCalculo.resumen ? ultimoCalculo.resumen : null;
     const cd = r ? Number(r.costo_directo_total) : 0;
     const factor = r && cd > 0 && Number(r.precio_final) > 0 ? Number(r.precio_final) / cd : 1;
@@ -9891,12 +9911,14 @@
     /* «listo» con comparaciones pendientes va en GRIS: un verde junto a «no la dé
        por lista» son dos señales contrarias (navegador real, 27-sep-2026) */
     const tono = r.semaforo === "listo" && r.completa === false ? "incompleta" : r.semaforo;
+    const vigLleno = formularioLlenoVigente();
     const color = { listo: "text-emerald-700", revisar: "text-red-700", precaucion: "text-amber-700", incompleta: "text-gray-700" }[tono] || "text-gray-700";
     const punto = { listo: "bg-emerald-500", revisar: "bg-red-500", precaucion: "bg-amber-500", incompleta: "bg-gray-400" }[tono] || "bg-gray-400";
     const orden = { rechazo: 0, alerta: 1, informativo: 2, sin_referencia: 3, ok: 4 };
     const vs = [...(r.veredictos || [])].sort((a, b) => orden[a.nivel] - orden[b.nivel]);
     caja.innerHTML = `
       <p class="flex items-center gap-2 text-base font-medium ${color}"><span class="inline-block h-3 w-3 shrink-0 rounded-full ${punto}" aria-hidden="true"></span>${esc(r.frase)}</p>
+      ${vigLleno.usar ? `<p class="mt-2 text-sm text-gray-600" data-revision-formulario-lleno>Se revisó el Formulario que llenó${vigLleno.usar.nombre ? ` («${esc(vigLleno.usar.nombre)}»)` : ""}: sus unitarios y su total de ${esc(pesos(vigLleno.usar.total))}, el archivo que va a radicar.</p>` : vigLleno.motivo ? `<p class="mt-2 text-sm text-amber-800" data-revision-formulario-lleno>${esc(vigLleno.motivo)}</p>` : ""}
       ${deOtroProceso ? `<p class="mt-2 text-sm text-gray-600">El pliego que leyó es de otro proceso (${esc(leido.id_proceso)}): no se comparó con él. Lea el pliego de este proceso con el lector (arriba) y vuelva a revisar.</p>` : ""}
       <ul class="mt-3 space-y-2 text-sm">${vs.map((v) => `<li class="rounded-lg px-3 py-2 ${v.nivel === "rechazo" ? "bg-red-50 text-red-800" : v.nivel === "alerta" || v.marca === "justificar" ? "bg-amber-50 text-amber-900" : v.nivel === "informativo" ? "bg-blue-50 text-blue-900" : v.nivel === "sin_referencia" ? "bg-gray-50 text-gray-600" : "text-gray-600"}">
         <span class="font-medium">${esc(v.titulo)}${v.nivel === "sin_referencia" ? " · pendiente" : ""}:</span> ${esc(v.mensaje)}
@@ -9984,6 +10006,7 @@
       const frases = Array.isArray(ll.frases) && ll.frases.length ? ll.frases : ["El servidor no dijo qué pasó: intente de nuevo."];
       if (r && r.base64 && ll.ok) {
         const bytes = Uint8Array.from(atob(r.base64), (c) => c.charCodeAt(0));
+        if (Array.isArray(ll.items_llenos) && Number.isFinite(Number(ll.total_formulario))) formularioLlenoActual = { id_proceso: leido.id_proceso || null, nombre: leido.nombre || null, items: ll.items_llenos, total: Number(ll.total_formulario), huella: huellaCalculo() };
         const base = String(leido.nombre || "Formulario").replace(/\.xls[xm]?$/i, "");
         descargarBlob(new Blob([bytes], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }), `${base} - con su oferta.xlsx`);
         estado.className = "mt-2 text-sm text-emerald-800";

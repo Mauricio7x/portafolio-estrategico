@@ -248,8 +248,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 486 secciones (58 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 22421  Los puntos fuera del precio, uno por uno, desde la tabla del pliego (12-nov-2026)
+· MEMORIA · docs/MEMORIA.md — 487 secciones (58 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 22435  Las causales de rechazo de ESE pliego, una por una, con dónde las revisa la aplicación (12-…
   L 22443  La tabla de métodos de ponderación de ESE pliego, y las dos fórmulas del documento tipo V1 …
   L 22456  Su oferta escrita en el Formulario de Excel de la entidad, con candados (12-nov-2026)
@@ -259,6 +258,7 @@
   L 22522  Leer los documentos de Mis procesos sin la pestaña abierta, con la MISMA lectura de la pest…
   L 22535  Sus ofertas anteriores en esa entidad, en Precios junto al grupo (12-nov-2026)
   L 22545  El IVA de la utilidad en el Formulario lleno lo confirma el usuario; la lectura sin pestaña…
+  L 22555  Los informes de sus ofertas perdidas se leen primero, la revisión mira el Formulario lleno …
 
 · DOCUMENTOS docs/ — 78 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)
