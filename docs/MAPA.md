@@ -22,7 +22,7 @@
   pliego.js                   Router del dominio PLIEGO (Fase 0 · consolidación a 6 funciones)
   procesos.js                 Router del dominio PROCESOS (Fase 0 · consolidación a 6 funciones)
 
-· lib/ — 118 módulos:
+· lib/ — 119 módulos:
   accesibilidad.js            Accesibilidad operativa de la zona de la obra
   adendas.js                  Vigía de adendas · lo que el DATASET dice que cambió (Fase 5)
   almacen.js                  Esquema de claves Redis + compresión de chunks
@@ -81,6 +81,7 @@
   formato_entidad.js          LLENAR EL FORMATO QUE PUBLICÓ LA ENTIDAD (27-sep-2026)
   formulario1.js              Guardián del Formulario 1 (Fase 4 del plan v3)
   formulario_excel.js         EL FORMULARIO 1 DE UN .xlsx, LEÍDO SOLO Y CON PUERTA (19-oct-2026)
+  formulario_oferta.js        SU OFERTA ESCRITA EN EL FORMULARIO DE EXCEL QUE PUBLICÓ LA ENTIDAD (PLAN_X20, pieza 6.7, 12-nov-
   foto_indice.js              Los índices enteros, servidos desde el almacén de archivos
   frecuencia_precio.js        Cuántas ofertas ganaron a cada precio, dicho junto al precio
   ganancia.js                 ¿CUÁNTA PLATA DEJA ESTE CONTRATO?
@@ -244,8 +245,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 479 secciones (58 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 22347  Las dos barreras se leen del pliego: limitada a Mipyme y a qué territorio, y si hay sorteo …
+· MEMORIA · docs/MEMORIA.md — 480 secciones (58 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 22362  El simulacro del consorcio: cada cláusula de participación contra el reparto que se va a fi…
   L 22376  Con lista cargada, la capacidad también resta los contratos nuevos de SECOP II, por número …
   L 22384  «Revisar antes de subir» también compara contra el Formulario 1 de Excel (11-nov-2026)
@@ -255,6 +255,7 @@
   L 22421  Los puntos fuera del precio, uno por uno, desde la tabla del pliego (12-nov-2026)
   L 22435  Las causales de rechazo de ESE pliego, una por una, con dónde las revisa la aplicación (12-…
   L 22443  La tabla de métodos de ponderación de ESE pliego, y las dos fórmulas del documento tipo V1 …
+  L 22456  Su oferta escrita en el Formulario de Excel de la entidad, con candados (12-nov-2026)
 
 · DOCUMENTOS docs/ — 78 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)

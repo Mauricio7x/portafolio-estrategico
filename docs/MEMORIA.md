@@ -22452,3 +22452,22 @@ En una línea: tanda 9 del plan x20: la lectura del pliego (hechos versión 27) 
   - la tabla repetida (índice, anexo) se cuenta una vez.
 - **Sin verificar**: si el documento tipo V1 da el máximo a la propuesta más cercana a la media (la regla D1 del V3, 4.1.4); hoy las dos fórmulas V1 dan 1 solo a quien cae justo en la media. No mueve ninguna cifra en pantalla: estas fórmulas aún no las usa Precios ni el informe (tandas 13-14).
 - Cerradura: «unidad tabla de métodos del pliego» (fórmulas recalculadas a mano, la tabla en tres formas, la simple en null, el hecho y la versión); nueve mutaciones, mueren todas.
+
+### Su oferta escrita en el Formulario de Excel de la entidad, con candados (12-nov-2026)
+
+En una línea: pieza 6.7 del plan x20: «Revisar antes de subir» ofrece «Llenar el Formulario de la entidad» cuando el Formulario de Excel de ESE proceso se trajo con «Cotizar en Precios»; el servidor (`op=descargar`, formato `oferta_excel`, `lib/formulario_oferta.js`) baja el libro, escribe cada valor unitario y devuelve el MISMO libro con sus cálculos al día, o no entrega nada y dice por qué.
+
+- **El unitario**: costo directo ofertado × K, K = (precio sin IVA de la oferta + IVA de la utilidad solo si el pliego cuenta esa fila) ÷ costo directo de la oferta; es `oferta.total_para_secop` repartido por ítem. Al peso desde ,5 por exceso: nota 2 del Formulario 1 del documento tipo de menor cuantía V3 (paquete oficial de Colombia Compra, leído el 11-nov-2026), que dice además que el unitario incluye el AIU (nota 1). Solo con el AIU sobre todo el costo directo (`oferta.con_formulas`).
+- **La cifra de SECOP II es la del Formulario**, no la del análisis: el ajuste al peso de cada unitario y las fórmulas de la entidad la mueven, y se dice con sus centavos si los tiene (las fórmulas sin REDONDEAR dejan centavos).
+- **Lo que no hay que deshacer**:
+  - antes de escribir, el evaluador de aquí tiene que reproducir lo que Excel guardó en TODA celda que depende de los precios; una fórmula que no sabe calcular (SI, BUSCARV, nombres, otro libro) o que da otra cosa detiene todo; una rota al margen que no depende de los precios no estorba;
+  - el total no puede pasar del presupuesto oficial: no se entrega, sin opción;
+  - un unitario sobre el oficial se lista y solo se entrega si el usuario confirma que su pliego no lo prohíbe (la causal es de corchete en el documento tipo);
+  - un Formulario que suma el AIU aparte (pesos de administración, imprevistos o utilidad después del total) no se llena: ahí el unitario es costo directo;
+  - el total de la hoja tiene que ser la suma de los ítems más los valores fijos (PMT…) con los precios nuevos;
+  - se llena la hoja del proponente si es copia de los ítems de la entidad; si no, la de la entidad, y se dice;
+  - el libro sale marcado para recalcular al abrirse, en cálculo automático (870695577 venía en manual: LibreOffice lo abría todo en 0) y sin la cadena de cálculo vieja;
+  - los porcentajes del AIU que el Formulario pide discriminar quedan a mano, con los del análisis en la frase.
+- **Medido el 12-nov-2026** con 120 Formularios bajados de SECOP II (consulta a `dmgg-8hin`, cargados desde el 1-ago-2026, un archivo por proceso): 112 son libros, 27 pasan la puerta de lectura y 16 se llenan. En los 16, LibreOffice recalculó desde cero (sin ningún valor guardado) y dio el mismo total al centavo y los mismos unitarios; los 16 son XML bien formado. Los 11 que no se llenan se detienen con su motivo: 4 con fórmulas a otros libros o nombres, 4 con el total escrito a mano, 2 con una hoja que suma algo que la aplicación no ve, 1 con el unitario como celda maestra de una fórmula compartida.
+- **Sin verificar**: abrir los archivos en Microsoft Excel (se probó con LibreOffice); un proceso real de punta a punta en producción; formularios con el AIU aparte (no se llenan).
+- Cerradura: «unidad formulario de la oferta» (el documento tipo con las dos hojas, IVA dentro o fuera, al peso, REDONDEAR.MAS y .MENOS, los siete candados, cálculo manual, cadena de cálculo, fórmulas compartidas), el modo en «unidad APU» y la puerta del botón en «unidad revisor con el formulario de Excel»; 23 mutaciones, mueren todas. Chromium real: el clic sin cálculo dice qué hacer, el rechazo lista el unitario con su botón de confirmar y la confirmación descarga el libro, sin errores de página ni de consola.

@@ -11309,6 +11309,13 @@ async function main() {
     assert.ok(cuentaSinRef(conRef) < cuentaSinRef(sinRef), `con el Formulario de Excel hay menos comprobaciones sin referencia → ${cuentaSinRef(sinRef)} → ${cuentaSinRef(conRef)}`);
     const cant = (conRef.veredictos || []).find((x) => /cantidad/i.test(`${x.titulo} ${x.mensaje}`) && x.nivel !== "sin_referencia" && x.nivel !== "ok");
     assert.ok(cant && /1\.2/.test(cant.mensaje), `la cantidad cambiada se ve, con su ítem → ${JSON.stringify(cant)}`);
+    /* pieza 6.7 (12-nov-2026): la referencia lleva el archivo, y el botón de llenarlo sale solo con un Formulario de Excel de ESTE proceso */
+    const { pintarBotonFormularioExcel } = appEnVm(["pintarBotonFormularioExcel"]);
+    const conArchivo = formularioDesdeExcel(deExcel, "CO1.REQ.D2", { url: "https://community.secop.gov.co/x", nombre: "Formulario 1.xlsx" });
+    assert.deepStrictEqual([conArchivo.url, conArchivo.nombre, ref.url], ["https://community.secop.gov.co/x", "Formulario 1.xlsx", null], "sin dirección no hay archivo que llenar");
+    const caja = () => { const hijos = []; return { hijos, appendChild: (n) => hijos.push(n) }; };
+    const casos = [[conArchivo, "CO1.REQ.D2", 1], [conArchivo, "CO1.REQ.OTRO", 0], [ref, "CO1.REQ.D2", 0], [{ ...conArchivo, origen: "pdf" }, "CO1.REQ.D2", 0], [null, "CO1.REQ.D2", 0]];
+    for (const [leido, id, n] of casos) { const c = caja(); pintarBotonFormularioExcel(c, leido, id); assert.strictEqual(c.hijos.length, n, `botón de llenar con ${JSON.stringify(leido && { origen: leido.origen, url: leido.url })} en ${id}: ${c.hijos.length}`); }
     console.log("· unidad revisor con el formulario de Excel: la referencia sale del Formulario de Excel con su unitario y su total oficiales, "
       + "y el validador real ve la cantidad cambiada que sin ella pasaba");
   }
@@ -11409,6 +11416,107 @@ async function main() {
     assert.ok(Number(String(DP.hechosVersion()).split("|")[0]) >= 27, "[MUT] la versión de los hechos subió con la tabla de métodos: los pliegos ya leídos se rehacen desde su texto");
     console.log("· unidad tabla de métodos del pliego: media aritmética alta y geométrica con presupuesto oficial (V1) recalculadas a mano, la tabla en sus tres formas, "
       + "la «media aritmética» simple sin fórmula y el hecho de la guía");
+  }
+
+  bqFormularioOferta: { if (!corre("unidad formulario de la oferta")) break bqFormularioOferta;
+    /* PLAN_X20, pieza 6.7 (12-nov-2026): la oferta escrita en el Formulario de Excel de la entidad, con candados */
+    const FO = require("../lib/formulario_oferta.js"), XL = require("../public/xlsx_lectura.js"), XW = require("../public/xlsx.js"), zl = require("zlib");
+    const ENT = "PRESUPUESTO OFICIAL (Entidad)", PRO = "PROPUESTA ECONOMICA(Proponente)";
+    const cab = [null, null, "Nº", "ÍTEM", null, null, "DESCRIPCIÓN", "UND.", "CANTIDAD", "VALOR UNITARIO", "VALOR TOTAL"];
+    const ITEMS = [["1.1", "Localización y replanteo", "m2", 100, 1000], ["1.2", "Excavación manual", "m3", 10.5, 20000], ["1.3", "Concreto de 3000 psi", "m3", 2.25, 450000.4]];
+    const r0 = (x) => Math.floor(Number(x.toPrecision(15)) + 0.5);
+    const hoja = (nombre, conPrecio, { totalFijo = false, formulaK = (n) => `ROUND(I${n}*J${n},0)`, totalCache = null, aiuAparte = false, celdaRota = false } = {}) => {
+      const filas = [[null, null, "FORMULARIO 1", null, null, null, null, null, null, null, null, null, celdaRota ? { f: "#REF!+1" } : null], cab];
+      let suma = 0;
+      ITEMS.forEach(([c, d, u, q, p], i) => { const n = i + 3, t = conPrecio ? r0(q * p) : 0; suma += t; filas.push([null, null, c, null, null, null, d, u, q, conPrecio ? p : null, { f: formulaK(n), v: t }]); });
+      filas.push([null, null, null, null, null, null, "VALOR TOTAL", null, null, null, totalFijo ? suma : { f: "SUM(K3:K5)", v: totalCache == null ? suma : totalCache }]);
+      filas.push([]);
+      filas.push([null, null, null, null, null, null, null, "ADMINISTRACION", null, "A=", aiuAparte ? { f: "ROUND(K6*0.18,0)", v: r0(suma * 0.18) } : "[Ofrecimiento del Proponente]"]);
+      filas.push([null, null, null, null, null, null, null, "UTILIDAD", null, "U=", "[Ofrecimiento del Proponente]"]);
+      return { nombre, filas };
+    };
+    const libro = (hojas) => Buffer.from(XW.construirLibro(hojas));
+    const retocar = (buf, nombre, fn) => Buffer.from(FO.zipDesde(FO.entradasZip(buf).map((e) => {
+      if (e.nombre !== nombre) return e;
+      const t = Buffer.from(fn((e.metodo === 0 ? Buffer.from(e.datos) : zl.inflateRawSync(e.datos)).toString("utf8")), "utf8");
+      return { ...e, metodo: 0, crc: zl.crc32(t) >>> 0, tamC: t.length, tamR: t.length, datos: t };
+    })));
+    const items = (cdu) => ITEMS.map(([c, d, u, q], i) => ({ codigo: c, descripcion: d, unidad: u, cantidad: q, costo_directo_unitario_ofertado: cdu[i] }));
+    const oferta = (k = 1.3, extra = {}) => ({ con_formulas: true, costo_directo: 1e6, precio_sin_iva: 1e6 * k, lleva_fila_iva: false, iva_sobre_utilidad: 0, total_para_secop: 1173000, ...extra });
+    const CDU = [700, 15000, 300000];
+    const leer = async (buf) => XL.leerLibro(new Uint8Array(buf), { inflar: async (u8) => new Uint8Array(zl.inflateRawSync(Buffer.from(u8))) });
+    const celda = (lib, h, ref) => { const g = lib.hojas.find((x) => x.nombre === h).filas; const m = /^([A-Z]+)(\d+)$/.exec(ref); return (g[Number(m[2]) - 1] || [])[XL.indiceColumna(m[1])]; };
+
+    // 1 · el documento tipo con la hoja del proponente: se llena ESA hoja, la de la entidad no se toca
+    const base = libro([hoja(ENT, true), hoja(PRO, false)]);
+    const r = await FO.llenarFormulario(base, { items: items(CDU), oferta: oferta(), aiu: { administracion_pct: 18, imprevistos_pct: 5, utilidad_pct: 5 } });
+    assert.ok(r.ok, `se llena: ${r.motivo}`);
+    assert.deepStrictEqual([r.hoja, r.hoja_de_la_entidad, r.filas_llenas], [PRO, false, 3], "la hoja del proponente, con los tres ítems");
+    assert.deepStrictEqual(r.unitarios.map((x) => x.valor), [910, 19500, 390000], "unitario = costo directo ofertado × (precio sin IVA ÷ costo directo), al peso");
+    const esperado = r0(100 * 910) + r0(10.5 * 19500) + r0(2.25 * 390000);
+    assert.strictEqual(r.total_formulario, esperado, `el total es el que calculan las fórmulas de la entidad: ${r.total_formulario} vs ${esperado}`);
+    assert.deepStrictEqual([r.total_oficial, r.celda_total, r.fila_total], [1322501, "K6", 6]);
+    const sal = await leer(r.archivo);
+    assert.deepStrictEqual(["J3", "J4", "J5", "K3", "K4", "K5", "K6"].map((x) => celda(sal, PRO, x)), [910, 19500, 390000, 91000, 204750, 877500, esperado], "el libro que sale trae los unitarios y los cálculos guardados al día");
+    assert.deepStrictEqual(["J3", "K6"].map((x) => celda(sal, ENT, x)), [1000, 1322501], "la hoja de la entidad queda como estaba");
+    const partes = FO.entradasZip(r.archivo), wb = zl.inflateRawSync(partes.find((e) => e.nombre === "xl/workbook.xml").datos).toString();
+    assert.ok(/<calcPr fullCalcOnLoad="1"\/>/.test(wb) && !partes.some((e) => e.nombre === "xl/calcChain.xml"), "el libro se recalcula al abrirse y sin la cadena de cálculo vieja");
+    assert.deepStrictEqual(r.a_mano.map((x) => [x.fila_excel, x.porcentaje]), [[8, 18], [9, 5]], "los porcentajes del AIU que el Formulario pide discriminar quedan a mano, con los suyos");
+    const fr = FO.frasesLlenado(r);
+    assert.ok(fr.some((t) => t.includes(`$${esperado.toLocaleString("es-CO")}: esa es la cifra que escribe en SECOP II`)) && fr.some((t) => /fila 8 «ADMINISTRACION A=» 18 %/.test(t)), `las frases → ${fr.join(" | ")}`);
+    // el IVA de la utilidad entra al unitario solo si el pliego lo cuenta
+    const rIva = await FO.llenarFormulario(base, { items: items(CDU), oferta: oferta(1.3, { lleva_fila_iva: true, iva_sobre_utilidad: 19000 }) });
+    assert.deepStrictEqual(rIva.unitarios.map((x) => x.valor), [923, 19785, 395700], "con IVA sobre la utilidad: K = (1 300 000 + 19 000) ÷ 1 000 000");
+    assert.deepStrictEqual((await FO.llenarFormulario(base, { items: items(CDU), oferta: oferta(1.3, { lleva_fila_iva: false, iva_sobre_utilidad: 19000 }) })).unitarios.map((x) => x.valor), [910, 19500, 390000],
+      "si el pliego cuadra SIN la fila del IVA, el IVA no entra al unitario aunque el cálculo lo traiga");
+    // al peso: desde ,5 por exceso (nota 2 del Formulario 1 del documento tipo), sobre 15 cifras como Excel
+    assert.deepStrictEqual([FO.redondeoPeso(1234.5), FO.redondeoPeso(1234.4999999999998), FO.redondeoPeso(1234.49), FO.redondear(2.675, 2), FO.redondear(-2.5, 0)], [1235, 1235, 1234, 2.68, -3]);
+    assert.deepStrictEqual([FO.redondear(2.1, 0, "arriba"), FO.redondear(-2.1, 0, "arriba"), FO.redondear(2.9, 0, "abajo"), FO.redondear(1234.56, -2, "arriba")], [3, -3, 2, 1300], "REDONDEAR.MAS se aleja del cero y REDONDEAR.MENOS se acerca, como en Excel");
+
+    // 2 · los candados
+    const caro = await FO.llenarFormulario(base, { items: items([1400, 30000, 600000]), oferta: oferta() });
+    assert.ok(!caro.ok && /más que el presupuesto oficial/.test(caro.motivo) && !caro.archivo, `sobre el presupuesto no se entrega: ${caro.motivo}`);
+    const sobre = await FO.llenarFormulario(base, { items: items([800, 15000, 300000]), oferta: oferta() });
+    assert.ok(!sobre.ok && sobre.sobre_oficial.length === 1 && sobre.sobre_oficial[0].unitario === 1040 && sobre.sobre_oficial[0].oficial === 1000 && !sobre.archivo, `un unitario sobre el oficial se dice y no se entrega: ${sobre.motivo}`);
+    assert.ok((await FO.llenarFormulario(base, { items: items([800, 15000, 300000]), oferta: oferta(), aceptarSobreOficial: true })).ok, "con la confirmación del usuario, sí");
+    assert.match((await FO.llenarFormulario(base, { items: items(CDU), oferta: { ...oferta(), con_formulas: false } })).motivo, /AIU no va sobre todo el costo directo/);
+    assert.match((await FO.llenarFormulario(base, { items: items([700, null, 300000]), oferta: oferta() })).motivo, /no tienen precio o cantidad/, "un ítem sin precio no viaja como 0");
+    const otraCant = items(CDU); otraCant[1].cantidad = 11;
+    const rc = await FO.llenarFormulario(base, { items: otraCant, oferta: oferta() });
+    assert.ok(!rc.ok && rc.problemas.some((p) => /la cantidad del Formulario \(10\.5\)/.test(p)), `una cantidad distinta detiene todo: ${rc.motivo}`);
+    const noSabe = await FO.llenarFormulario(libro([hoja(ENT, true, { formulaK: (n) => `IF(J${n}>0,ROUND(I${n}*J${n},0),0)` })]), { items: items(CDU), oferta: oferta() });
+    assert.ok(!noSabe.ok && /no sabe recalcular \(celda K3: la función IF\)/.test(noSabe.motivo), `una fórmula que depende de los precios y no se sabe calcular: ${noSabe.motivo}`);
+    const rota = await FO.llenarFormulario(libro([hoja(ENT, true, { celdaRota: true })]), { items: items(CDU), oferta: oferta() });
+    assert.ok(rota.ok && rota.hoja_de_la_entidad === true, `una fórmula rota que no depende de los precios no estorba: ${rota.motivo}`);
+    const mienteExcel = await FO.llenarFormulario(libro([hoja(ENT, true, { totalCache: 1322502 })]), { items: items(CDU), oferta: oferta() });
+    assert.ok(!mienteExcel.ok && /no reproduce el de Excel en la celda K6/.test(mienteExcel.motivo), `si el cálculo de aquí no da lo que Excel guardó, no se llena: ${mienteExcel.motivo}`);
+    assert.match((await FO.llenarFormulario(libro([hoja(ENT, true, { aiuAparte: true })]), { items: items(CDU), oferta: oferta() })).motivo, /suma el AIU aparte/);
+    assert.match((await FO.llenarFormulario(libro([hoja(ENT, true, { totalFijo: true })]), { items: items(CDU), oferta: oferta() })).motivo, /no es una fórmula/);
+    const sumaOtra = await FO.llenarFormulario(libro([hoja(ENT, true)].map((h) => ({ ...h, filas: h.filas.map((f, i) => (i === 5 ? f.map((c, j) => (j === 10 ? { f: "SUM(K3:K5)+MAX(0,1000-J3)", v: 1322501 } : c)) : f)) }))), { items: items(CDU), oferta: oferta() });
+    assert.ok(!sumaOtra.ok && /no es la suma de los ítems/.test(sumaOtra.motivo), `un total que suma algo más que los ítems no se entrega: ${sumaOtra.motivo}`);
+    const maestra = retocar(libro([hoja(ENT, true)]), "xl/worksheets/sheet1.xml", (x) => x.replace(/<c r="J3"( s="\d+")?><v>1000<\/v><\/c>/, '<c r="J3"$1><f t="shared" ref="J3:J3" si="7">1000</f><v>1000</v></c>'));
+    assert.match((await FO.llenarFormulario(maestra, { items: items(CDU), oferta: oferta() })).motivo, /celda maestra de una fórmula compartida/);
+
+    // 3 · un libro con el cálculo manual sale en automático; las fórmulas COMPARTIDAS de Excel se recalculan
+    const conCadena = (buf) => { const es = FO.entradasZip(buf); const t = Buffer.from('<?xml version="1.0"?><calcChain xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><c r="K3" i="2"/></calcChain>');
+      return retocar(retocar(FO.zipDesde([...es, { ...es[0], nombre: "xl/calcChain.xml", nombreBytes: Buffer.from("xl/calcChain.xml"), metodo: 0, crc: zl.crc32(t) >>> 0, tamC: t.length, tamR: t.length, datos: t }]),
+        "[Content_Types].xml", (x) => x.replace("</Types>", '<Override PartName="/xl/calcChain.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.calcChain+xml"/></Types>')),
+        "xl/_rels/workbook.xml.rels", (x) => x.replace("</Relationships>", '<Relationship Id="rId99" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/calcChain" Target="calcChain.xml"/></Relationships>')); };
+    const manual = conCadena(retocar(base, "xl/workbook.xml", (x) => x.replace("</workbook>", "<calcPr calcId=\"191029\" calcMode=\"manual\"/></workbook>")));
+    const rm = await FO.llenarFormulario(manual, { items: items(CDU), oferta: oferta() });
+    const wbm = zl.inflateRawSync(FO.entradasZip(rm.archivo).find((e) => e.nombre === "xl/workbook.xml").datos).toString();
+    assert.ok(rm.ok && rm.calculo_era_manual === true && /<calcPr calcId="191029" fullCalcOnLoad="1"\/>/.test(wbm), `el cálculo manual se deja automático: ${wbm.match(/<calcPr[^>]*>/)}`);
+    const txt = (buf, n2) => { const e = FO.entradasZip(buf).find((x) => x.nombre === n2); return (e.metodo === 0 ? Buffer.from(e.datos) : zl.inflateRawSync(e.datos)).toString(); };
+    assert.ok(/calcChain/.test(txt(manual, "[Content_Types].xml")) && !FO.entradasZip(rm.archivo).some((e) => e.nombre === "xl/calcChain.xml") && !/calcChain/.test(txt(rm.archivo, "[Content_Types].xml")) && !/calcChain/.test(txt(rm.archivo, "xl/_rels/workbook.xml.rels")),
+      "la cadena de cálculo vieja sale entera: la parte, su tipo y su relación (con un unitario que era fórmula, la vieja hace pedir «reparar»)");
+    const compartida = retocar(base, "xl/worksheets/sheet2.xml", (x) => x.replace(/<f>ROUND\(I3\*J3,0\)<\/f>/, "<f t=\"shared\" ref=\"K3:K5\" si=\"0\">ROUND(I3*J3,0)</f>").replace(/<f>ROUND\(I4\*J4,0\)<\/f>/, "<f t=\"shared\" si=\"0\"/>").replace(/<f>ROUND\(I5\*J5,0\)<\/f>/, "<f t=\"shared\" si=\"0\"/>"));
+    const rs = await FO.llenarFormulario(compartida, { items: items(CDU), oferta: oferta() });
+    assert.ok(rs.ok && rs.total_formulario === esperado, `las fórmulas compartidas se corren fila a fila: ${rs.motivo || rs.total_formulario}`);
+    const salS = await leer(rs.archivo);
+    assert.deepStrictEqual(["K4", "K5"].map((x) => celda(salS, PRO, x)), [204750, 877500], "las hijas de la fórmula compartida guardan su valor nuevo");
+    assert.strictEqual(FO.desplazar("ROUND(I3*$J$3,0)+'Otra hoja'!A1", 2, 1), "ROUND(J5*$J$3,0)+'Otra hoja'!B3", "relativas se mueven; con $ no");
+    console.log("· unidad formulario de la oferta: la hoja del proponente del documento tipo llena con los unitarios al peso (AIU dentro, IVA solo si el pliego lo cuenta), el total de las fórmulas de la entidad, "
+      + "la de la entidad intacta, recálculo al abrir; no se entrega sobre el presupuesto, ni con unitarios sobre el oficial sin confirmación, ni con fórmulas que no se saben calcular o que Excel guardó distinto, ni con el AIU aparte o el total escrito a mano");
   }
 
   /* unidad: TEXTO como co-señal (vocabulario por familia + verbo de obra) */
@@ -21258,6 +21366,22 @@ async function main() {
           const x4 = await pedir({ formato: "xlsx" });
           assert.ok(x4.status === 200 && x4.cuerpo.lectura.ok === false && /no se pudo abrir el libro/.test(x4.cuerpo.lectura.motivo) && x4.cuerpo.lectura.filas === undefined,
             `un Word pedido como Excel NO es un error de la petición: es el resultado de leerlo (lectura.ok:false con su motivo), para que el navegador lo marque ilegible para siempre: ${x4.status} ${JSON.stringify(x4.cuerpo).slice(0, 200)}`);
+          /* SU OFERTA EN EL FORMULARIO DE EXCEL (PLAN_X20, pieza 6.7, 12-nov-2026): la misma descarga; el libro vuelve LLENO o con su motivo y sin bytes */
+          remoto = Buffer.from(require("../public/xlsx.js").construirLibro([{ nombre: "PRESUPUESTO OFICIAL", filas: [
+            [null, null, "FORMULARIO 1"], [null, null, "Nº", "ÍTEM", null, null, "DESCRIPCIÓN", "UND.", "CANTIDAD", "VALOR UNITARIO", "VALOR TOTAL"],
+            [null, null, "1.1", null, null, null, "Localización y replanteo", "m2", 100, 1000, { f: "ROUND(I3*J3,0)", v: 100000 }], [null, null, "1.2", null, null, null, "Excavación manual", "m3", 10, 20000, { f: "ROUND(I4*J4,0)", v: 200000 }],
+            [null, null, null, null, null, null, "VALOR TOTAL", null, null, null, { f: "SUM(K3:K4)", v: 300000 }]] }]));
+          const itsO = [{ codigo: "1.1", descripcion: "Localización y replanteo", unidad: "m2", cantidad: 100, costo_directo_unitario_ofertado: 700 }, { codigo: "1.2", descripcion: "Excavación manual", unidad: "m3", cantidad: 10, costo_directo_unitario_ofertado: 14000 }];
+          const ofO = { con_formulas: true, costo_directo: 210000, precio_sin_iva: 273000, lleva_fila_iva: false, iva_sobre_utilidad: 0, total_para_secop: 273000 };
+          const o1 = await pedir({ formato: "oferta_excel", items: itsO, oferta: ofO });
+          assert.ok(o1.status === 200 && o1.cuerpo.formato === "oferta_excel" && o1.cuerpo.llenado.ok === true && o1.cuerpo.llenado.total_formulario === 273000 && typeof o1.cuerpo.base64 === "string" && o1.cuerpo.llenado.archivo === undefined
+            && o1.cuerpo.llenado.frases.some((t) => /\$273\.000: esa es la cifra que escribe en SECOP II/.test(t)), `el Formulario lleno vuelve en base64 con su total: ${JSON.stringify(o1.cuerpo).slice(0, 300)}`);
+          const libO = await require("../public/xlsx_lectura.js").leerLibro(new Uint8Array(Buffer.from(o1.cuerpo.base64, "base64")), { inflar: async (u8) => new Uint8Array(require("zlib").inflateRawSync(Buffer.from(u8))) });
+          assert.deepStrictEqual([libO.hojas[0].filas[2][9], libO.hojas[0].filas[3][9], libO.hojas[0].filas[4][10]], [910, 18200, 273000], "los bytes que vuelven son el libro con los unitarios y el total al día");
+          const o2 = await pedir({ formato: "oferta_excel", items: itsO, oferta: { ...ofO, precio_sin_iva: 420000 } });
+          assert.ok(o2.status === 200 && o2.cuerpo.llenado.ok === false && o2.cuerpo.base64 === undefined && /más que el presupuesto oficial/.test(o2.cuerpo.llenado.motivo), `lo que no se puede entregar vuelve con su motivo y sin bytes: ${JSON.stringify(o2.cuerpo).slice(0, 200)}`);
+          assert.strictEqual((await pedir({ formato: "oferta_excel", oferta: ofO })).status, 400, "sin ítems es un 400, antes de bajar nada");
+          assert.strictEqual((await pedir({ formato: "oferta_excel", items: itsO })).status, 400, "sin la oferta calculada es un 400");
           /* EL CRONOGRAMA EN EXCEL (3-nov-2026): la misma descarga y la misma firma, OTRO lector (lib/cronograma_excel) con su puerta */
           const libroCr = Buffer.from(require("../public/xlsx.js").construirLibro([{ nombre: "Cronograma-Licitación Pública", filas: [
             [], [], [], [], [], [], [null, null, "Actividad", "Fecha"], [null, null, "Publicación del aviso de convocatoria pública", 46238], [null, null, "Plazo para manifestación de interés", 46265],

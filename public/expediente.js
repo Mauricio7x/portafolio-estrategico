@@ -487,7 +487,7 @@
       <span class="exp-doc-meta">${esc(meta || "Sin más datos publicados")}</span>
       <span class="exp-doc-mandos"><span class="exp-estado ${e.clase}"><span class="exp-punto" aria-hidden="true">&#9679;</span>${esc(e.texto)}</span>${llenable
         ? `<button type="button" class="exp-boton" data-seg-llenar="${esc(f.url)}" data-seg-llenar-nombre="${esc(f.nombre)}" data-seg-llenar-n="${miles(folio)}">Llenar con sus datos</button>` : ""}${f.formulario_de
-        ? `<button type="button" class="exp-boton" data-seg-f1="${esc(f.formulario_de)}" data-seg-f1-doc="${esc(f.id)}" data-seg-f1-n="${miles(folio)}">Cotizar en Precios</button>` : ""}</span>
+        ? `<button type="button" class="exp-boton" data-seg-f1="${esc(f.formulario_de)}" data-seg-f1-doc="${esc(f.id)}" data-seg-f1-n="${miles(folio)}"${f.url ? ` data-seg-f1-url="${esc(f.url)}"` : ""} data-seg-f1-nombre="${esc(f.nombre || "")}">Cotizar en Precios</button>` : ""}</span>
     </div>${llenable || f.formulario_de ? `<p class="exp-seccion-nota hidden" data-seg-${f.formulario_de ? "f1" : "llenar"}-estado="${miles(folio)}" role="status"></p>` : ""}`;
   }
 
