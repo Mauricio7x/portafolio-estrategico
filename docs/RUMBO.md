@@ -50,13 +50,13 @@ Este documento fija el nuevo rumbo de Detekta. Sale de 40 preguntas y de las res
 
 | N.º | Pregunta | Estado tras el 12-nov-2026 |
 |---|---|---|
-| 1 | Zona y tamaño | **Resuelta en parte.** Zona con base en Ibagué y Bogotá y poco desplazamiento. Tamaño: todos los rangos. [Falta decir si el Huila, que el plan recomendaba, entra o no.] |
-| 2 | Cuántos contratos a la vez | **Abierta.** |
+| 1 | Zona y tamaño | **Resuelta.** Zona: base en Ibagué y Bogotá, con el Tolima, el Huila, Cundinamarca y las zonas cercanas. Tamaño: todos los rangos. |
+| 2 | Cuántos contratos a la vez | **Sin tope fijo** (12-nov-2026): depende de la cuantía de cada contrato, y hay opciones de crédito. No se pone una meta de número de contratos a la vez. |
 | 3 | Qué se busca con el precio | **Resuelta: A** (más contratos, con precio dentro del grupo y nunca bajo su mínimo), según la respuesta sobre el punto medio. |
 | 4 | Canal del aviso diario | **Resuelta: C** (dentro de la aplicación). |
-| 5 | Ofertas de 2025 y 2026 | **Abierta**, aunque los datos ya dicen más que el plan: la memoria del 12-nov-2026 registra ofertas de Helder en el Hospital San Antonio de Natagaima (2) y en el Hospital San Juan de Dios (2). [Falta saber si la de Cartagena del 6-nov-2026 se radicó.] |
+| 5 | Ofertas de 2025 y 2026 | **Resuelta en lo que sabe el dueño.** Cartagena (6-nov-2026) no se radicó: exigía observaciones sin garantía y quedaba lejos. El dueño conoce solo las 3 ofertas del Drive; la consulta de datos abiertos del 12-nov-2026 registra además ofertas de Helder en los hospitales de Natagaima y San Juan de Dios, que salen de SECOP y no de su memoria. |
 | 6 | Porcentaje por precio | **Abierta.** |
-| 7 | Domicilio de las socias | **Abierta.** |
+| 7 | Domicilio de las socias | **Resuelta con los perfiles cargados** (`lib/perfiles.js`): Génesis y PRODIAC en Ibagué, PICS en Sogamoso (Boyacá). Helder figura en Purificación (Tolima), no en Ibagué: en una convocatoria limitada por domicilio cuenta el que dice el registro. [Confirmar con el RUP vigente de cada uno antes de una oferta.] |
 | 8 | Cerrar lo comercial | **Resuelta: sí.** Se cierra con el motivo «uso personal». |
 
 ## 3. Comprobar solo lo que se puede comprobar solo
@@ -86,9 +86,9 @@ Hoy, el dictamen del pliego, las observaciones, los precios y las evaluaciones s
 | **A. Tareas programadas de Claude en la nube** (las «rutinas»; ver `docs/RUTINAS.md`) | Una sesión de Claude arranca sola a una hora fija, toma la cola de Detekta y deja el resultado en la aplicación. | No cuesta más que la suscripción. No usa el portátil. El repositorio ya trae las habilidades. | Consume el cupo de uso de la suscripción. Una rutina creada DESDE una sesión arranca sin repositorio y no hace nada (medido el 13-sep-2026): hay que crearla en la web. No responde al instante: atiende en su próximo turno. |
 | **B. Claude Code en el portátil MSI, sin pantalla** | El portátil revisa la cola cada pocos minutos y corre Claude Code en modo automático con la suscripción. | Responde casi al instante. El portátil también podría leer SECOP II desde la conexión de la casa, que a la nube le devuelve 403 [inferencia: se prueba en el portátil]. | Depende de que el portátil esté encendido y con internet. Consume el mismo cupo. [Sin verificar en esta sesión: si los términos de la suscripción permiten este uso automático y con qué límites; se lee la documentación oficial antes de montarlo.] |
 | C. API de Claude pagada | La aplicación llama a Claude directamente. | Totalmente automático, sin portátil. | **Se cobra aparte por uso.** No cabe en el presupuesto actual. |
-| D. IA gratuita instalada en el portátil | Un modelo abierto corre en la GTX 1050 Ti (4 GB). | Gratis. | Solo caben modelos pequeños, que leen peor un pliego. Un error aquí cuesta plata. [Inferencia: se confirma con una prueba sobre un pliego real.] |
+| D. IA gratuita instalada en el portátil (Ollama, con Linux) | Un modelo abierto corre en la GTX 1050 Ti. Ollama la soporta (compute capability 6.1) con controlador de NVIDIA 570 o más nuevo (docs.ollama.com/gpu, leído el 12-nov-2026). | Gratis, sin internet para esas tareas, baja el uso del cupo de Claude. | Unos 3 GB útiles: solo modelos de 2 a 4 mil millones de parámetros, que leen peor un pliego (inferencia). Sin verificar si NVIDIA seguirá actualizando el controlador de esta tarjeta. |
 
-**Propuesta: A ahora y B cuando llegue el portátil**, con la misma cola, para que si uno falla atienda el otro. Lo que NO necesita IA (buscar procesos, cronograma, adendas, audiencias, adjudicaciones) se vuelve automático sin Claude (fase 1).
+**Propuesta: A ahora y B cuando llegue el portátil**, con la misma cola, para que si uno falla atienda el otro. **D como ayudante, no como reemplazo**: tareas cortas y comprobables contra un dato publicado (clasificar obra, interventoría o consultoría; sacar fechas y valores). Antes de usarla, una prueba de una tarde en el portátil con Ubuntu Server: 2 o 3 modelos, 20 pliegos reales del Drive, aciertos medidos contra lo que Detekta ya leyó, y tiempo por documento. Lo que NO necesita IA (buscar procesos, cronograma, adendas, audiencias, adjudicaciones) se vuelve automático sin Claude (fase 1).
 
 ## 5. La ruta
 
@@ -144,8 +144,5 @@ Están en `CLAUDE.md`. El dueño decide cuáles se quedan. La recomendación de 
 
 ## 7. Lo que sigue abierto (solo lo sabe el dueño)
 
-1. Cuántos contratos puede ejecutar Helder a la vez (decisión 2 del plan x20).
-2. Si el Huila entra en la zona.
-3. Si la oferta de Cartagena del 6-nov-2026 se radicó, y qué otras ofertas hubo en 2025 y 2026.
-4. Las decisiones 6 y 7 del plan x20.
-5. Si alguna regla dura sobra (sección 6).
+1. La decisión 6 del plan x20 (el porcentaje por precio).
+2. Si alguna regla dura sobra (sección 6).
