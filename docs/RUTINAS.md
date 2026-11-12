@@ -188,7 +188,7 @@ Y EL PASE DEL MURO va en CADA llamada a la aplicación, también sin imprimirlo:
 LA LLAVE TAMBIÉN va en CADA llamada (desde el 9-nov-2026 la salud y todo lo demás la piden):
 -H "x-historico-token: $TOKEN"
 
-QUÉ MIRAR · todo es LECTURA: ni un POST, ninguna sincronización
+QUÉ MIRAR · todo es LECTURA: ni un POST, ninguna sincronización (salvo el paso 7, que lo dice)
 1. GET /api/procesos?op=salud — ok, motivo, edad_horas (umbral 30), ultimo_error,
    historico_hace_dias, aviso_por_correo, revision_adendas.
    LO QUE MÁS IMPORTA: ok:true NO significa que la aplicación esté bien. Está medido que salud no
@@ -229,10 +229,18 @@ QUÉ MIRAR · todo es LECTURA: ni un POST, ninguna sincronización
    competencia_entidad.por_tamano.frase si viene (si no, nada), la nota de `manifestacion` y
    urlproceso. `total` dice cuántos hay; si es 0, di «Ninguno abierto hoy en esa zona y tamaño».
    No es «no hay oportunidades»: la lista solo mira esa zona y ese tamaño.
+7. LA ÚNICA ESCRITURA, Y A PROPÓSITO (plan x20, tanda 12; aprobada por el dueño el 12-nov-2026): leer los
+   documentos de sus procesos abiertos que la pestaña todavía no leyó, con la MISMA lectura de la pestaña.
+   Va al final, después de todo lo anterior, y solo si los pasos 0 a 1 salieron bien:
+   node tests/leer_documentos.js --perfil helder --max-procesos 5 --max-ocr 120
+   Termina con una línea «RESUMEN {json}». Copia de ella: abiertos, con_pendientes y, de cada proceso,
+   id, leidos y fallidos. Código 3 = la base no responde: dilo y no lo repitas. Si dice «FALLO», copia
+   la frase tal cual. «con_pendientes: 0» es un día normal (la pestaña ya los leyó), no una falla.
 
 CÓMO CERRAR
-- Todo bien: UNA línea con total_activo, edad_horas, en_cola, historico_hace_dias, y debajo la lista
-  del día del paso 6 (un renglón por proceso, en el orden en que llegó). Nada más.
+- Todo bien: UNA línea con total_activo, edad_horas, en_cola, historico_hace_dias, debajo la lista
+  del día del paso 6 (un renglón por proceso, en el orden en que llegó) y una línea con lo que leyó el
+  paso 7. Nada más.
 - Algo mal: qué está roto, desde cuándo si se puede saber, qué se rompe para el usuario, y el paso
   concreto para arreglarlo — con la URL completa y el nombre literal del botón si hay que tocar una
   pantalla.

@@ -11473,7 +11473,7 @@ async function main() {
 
     // 1 · el documento tipo con la hoja del proponente: se llena ESA hoja, la de la entidad no se toca
     const base = libro([hoja(ENT, true), hoja(PRO, false)]);
-    const r = await FO.llenarFormulario(base, { items: items(CDU), oferta: oferta(), aiu: { administracion_pct: 18, imprevistos_pct: 5, utilidad_pct: 5 } });
+    const r = await FO.llenarFormulario(base, { iva: "sin_iva", items: items(CDU), oferta: oferta(), aiu: { administracion_pct: 18, imprevistos_pct: 5, utilidad_pct: 5 } });
     assert.ok(r.ok, `se llena: ${r.motivo}`);
     assert.deepStrictEqual([r.hoja, r.hoja_de_la_entidad, r.filas_llenas], [PRO, false, 3], "la hoja del proponente, con los tres ítems");
     assert.deepStrictEqual(r.unitarios.map((x) => x.valor), [910, 19500, 390000], "unitario = costo directo ofertado × (precio sin IVA ÷ costo directo), al peso");
@@ -11489,54 +11489,61 @@ async function main() {
     const fr = FO.frasesLlenado(r);
     assert.ok(fr.some((t) => t.includes(`$${esperado.toLocaleString("es-CO")}: esa es la cifra que escribe en SECOP II`)) && fr.some((t) => /fila 8 «ADMINISTRACION A=» 18 %/.test(t)), `las frases → ${fr.join(" | ")}`);
     // el IVA de la utilidad entra al unitario solo si el pliego lo cuenta
-    const rIva = await FO.llenarFormulario(base, { items: items(CDU), oferta: oferta(1.3, { lleva_fila_iva: true, iva_sobre_utilidad: 19000 }) });
-    assert.deepStrictEqual(rIva.unitarios.map((x) => x.valor), [923, 19785, 395700], "con IVA sobre la utilidad: K = (1 300 000 + 19 000) ÷ 1 000 000");
-    assert.deepStrictEqual((await FO.llenarFormulario(base, { items: items(CDU), oferta: oferta(1.3, { lleva_fila_iva: false, iva_sobre_utilidad: 19000 }) })).unitarios.map((x) => x.valor), [910, 19500, 390000],
-      "si el pliego cuadra SIN la fila del IVA, el IVA no entra al unitario aunque el cálculo lo traiga");
+    const rIva = await FO.llenarFormulario(base, { iva: "con_iva", items: items(CDU), oferta: oferta(1.3, { lleva_fila_iva: false, iva_sobre_utilidad: 19000 }) });
+    assert.deepStrictEqual(rIva.unitarios.map((x) => x.valor), [923, 19785, 395700], "con el IVA que el USUARIO confirmó: K = (1 300 000 + 19 000) ÷ 1 000 000, diga lo que diga el cálculo");
+    assert.ok(FO.frasesLlenado(rIva).includes("Los unitarios llevan dentro el AIU y el IVA de la utilidad, como usted confirmó."), "la frase dice qué lleva el unitario");
+    // DECISIÓN DEL DUEÑO (12-nov-2026): sin su respuesta no se llena; se le propone lo que dice el Formulario
+    const sinResp = await FO.llenarFormulario(base, { items: items(CDU), oferta: oferta() });
+    assert.ok(!sinResp.ok && sinResp.pide_iva === true && sinResp.sugerencia_iva === null && /no dice nada del IVA/.test(sinResp.motivo) && !sinResp.archivo, `sin respuesta no se llena → ${sinResp.motivo}`);
+    const conRotulo = hoja(ENT, true); conRotulo.filas[6] = [null, null, null, null, null, null, "SUBTOTAL OBRAS (INCLUYE IVA)"];
+    const sug = await FO.llenarFormulario(libro([conRotulo]), { iva: "otra cosa", items: items(CDU), oferta: oferta() });
+    assert.ok(sug.pide_iva === true && sug.sugerencia_iva === "con_iva" && sug.evidencia_iva.fila === 7 && /dice «SUBTOTAL OBRAS \(INCLUYE IVA\)»/.test(sug.motivo), `el Formulario que dice «INCLUYE IVA» lo propone, con su fila → ${JSON.stringify(sug.evidencia_iva)}`);
+    assert.deepStrictEqual((await FO.llenarFormulario(base, { iva: "sin_iva", items: items(CDU), oferta: oferta(1.3, { lleva_fila_iva: true, iva_sobre_utilidad: 19000 }) })).unitarios.map((x) => x.valor), [910, 19500, 390000],
+      "si el usuario dice «sin IVA», el IVA no entra al unitario aunque el cálculo lo cuente por prudencia");
     // al peso: desde ,5 por exceso (nota 2 del Formulario 1 del documento tipo), sobre 15 cifras como Excel
     assert.deepStrictEqual([FO.redondeoPeso(1234.5), FO.redondeoPeso(1234.4999999999998), FO.redondeoPeso(1234.49), FO.redondear(2.675, 2), FO.redondear(-2.5, 0)], [1235, 1235, 1234, 2.68, -3]);
     assert.deepStrictEqual([FO.redondear(2.1, 0, "arriba"), FO.redondear(-2.1, 0, "arriba"), FO.redondear(2.9, 0, "abajo"), FO.redondear(1234.56, -2, "arriba")], [3, -3, 2, 1300], "REDONDEAR.MAS se aleja del cero y REDONDEAR.MENOS se acerca, como en Excel");
 
     // 2 · los candados
-    const caro = await FO.llenarFormulario(base, { items: items([1400, 30000, 600000]), oferta: oferta() });
+    const caro = await FO.llenarFormulario(base, { iva: "sin_iva", items: items([1400, 30000, 600000]), oferta: oferta() });
     assert.ok(!caro.ok && /más que el presupuesto oficial/.test(caro.motivo) && !caro.archivo, `sobre el presupuesto no se entrega: ${caro.motivo}`);
-    const sobre = await FO.llenarFormulario(base, { items: items([800, 15000, 300000]), oferta: oferta() });
+    const sobre = await FO.llenarFormulario(base, { iva: "sin_iva", items: items([800, 15000, 300000]), oferta: oferta() });
     assert.ok(!sobre.ok && sobre.sobre_oficial.length === 1 && sobre.sobre_oficial[0].unitario === 1040 && sobre.sobre_oficial[0].oficial === 1000 && !sobre.archivo, `un unitario sobre el oficial se dice y no se entrega: ${sobre.motivo}`);
-    assert.ok((await FO.llenarFormulario(base, { items: items([800, 15000, 300000]), oferta: oferta(), aceptarSobreOficial: true })).ok, "con la confirmación del usuario, sí");
-    assert.match((await FO.llenarFormulario(base, { items: items(CDU), oferta: { ...oferta(), con_formulas: false } })).motivo, /AIU no va sobre todo el costo directo/);
-    assert.match((await FO.llenarFormulario(base, { items: items([700, null, 300000]), oferta: oferta() })).motivo, /no tienen precio o cantidad/, "un ítem sin precio no viaja como 0");
+    assert.ok((await FO.llenarFormulario(base, { iva: "sin_iva", items: items([800, 15000, 300000]), oferta: oferta(), aceptarSobreOficial: true })).ok, "con la confirmación del usuario, sí");
+    assert.match((await FO.llenarFormulario(base, { iva: "sin_iva", items: items(CDU), oferta: { ...oferta(), con_formulas: false } })).motivo, /AIU no va sobre todo el costo directo/);
+    assert.match((await FO.llenarFormulario(base, { iva: "sin_iva", items: items([700, null, 300000]), oferta: oferta() })).motivo, /no tienen precio o cantidad/, "un ítem sin precio no viaja como 0");
     const otraCant = items(CDU); otraCant[1].cantidad = 11;
-    const rc = await FO.llenarFormulario(base, { items: otraCant, oferta: oferta() });
+    const rc = await FO.llenarFormulario(base, { iva: "sin_iva", items: otraCant, oferta: oferta() });
     assert.ok(!rc.ok && rc.problemas.some((p) => /la cantidad del Formulario \(10\.5\)/.test(p)), `una cantidad distinta detiene todo: ${rc.motivo}`);
-    const noSabe = await FO.llenarFormulario(libro([hoja(ENT, true, { formulaK: (n) => `IF(J${n}>0,ROUND(I${n}*J${n},0),0)` })]), { items: items(CDU), oferta: oferta() });
+    const noSabe = await FO.llenarFormulario(libro([hoja(ENT, true, { formulaK: (n) => `IF(J${n}>0,ROUND(I${n}*J${n},0),0)` })]), { iva: "sin_iva", items: items(CDU), oferta: oferta() });
     assert.ok(!noSabe.ok && /no sabe recalcular \(celda K3: la función IF\)/.test(noSabe.motivo), `una fórmula que depende de los precios y no se sabe calcular: ${noSabe.motivo}`);
-    const rota = await FO.llenarFormulario(libro([hoja(ENT, true, { celdaRota: true })]), { items: items(CDU), oferta: oferta() });
+    const rota = await FO.llenarFormulario(libro([hoja(ENT, true, { celdaRota: true })]), { iva: "sin_iva", items: items(CDU), oferta: oferta() });
     assert.ok(rota.ok && rota.hoja_de_la_entidad === true, `una fórmula rota que no depende de los precios no estorba: ${rota.motivo}`);
-    const mienteExcel = await FO.llenarFormulario(libro([hoja(ENT, true, { totalCache: 1322502 })]), { items: items(CDU), oferta: oferta() });
+    const mienteExcel = await FO.llenarFormulario(libro([hoja(ENT, true, { totalCache: 1322502 })]), { iva: "sin_iva", items: items(CDU), oferta: oferta() });
     assert.ok(!mienteExcel.ok && /no reproduce el de Excel en la celda K6/.test(mienteExcel.motivo), `si el cálculo de aquí no da lo que Excel guardó, no se llena: ${mienteExcel.motivo}`);
-    assert.match((await FO.llenarFormulario(libro([hoja(ENT, true, { aiuAparte: true })]), { items: items(CDU), oferta: oferta() })).motivo, /suma el AIU aparte/);
-    assert.match((await FO.llenarFormulario(libro([hoja(ENT, true, { totalFijo: true })]), { items: items(CDU), oferta: oferta() })).motivo, /no es una fórmula/);
-    const sumaOtra = await FO.llenarFormulario(libro([hoja(ENT, true)].map((h) => ({ ...h, filas: h.filas.map((f, i) => (i === 5 ? f.map((c, j) => (j === 10 ? { f: "SUM(K3:K5)+MAX(0,1000-J3)", v: 1322501 } : c)) : f)) }))), { items: items(CDU), oferta: oferta() });
+    assert.match((await FO.llenarFormulario(libro([hoja(ENT, true, { aiuAparte: true })]), { iva: "sin_iva", items: items(CDU), oferta: oferta() })).motivo, /suma el AIU aparte/);
+    assert.match((await FO.llenarFormulario(libro([hoja(ENT, true, { totalFijo: true })]), { iva: "sin_iva", items: items(CDU), oferta: oferta() })).motivo, /no es una fórmula/);
+    const sumaOtra = await FO.llenarFormulario(libro([hoja(ENT, true)].map((h) => ({ ...h, filas: h.filas.map((f, i) => (i === 5 ? f.map((c, j) => (j === 10 ? { f: "SUM(K3:K5)+MAX(0,1000-J3)", v: 1322501 } : c)) : f)) }))), { iva: "sin_iva", items: items(CDU), oferta: oferta() });
     assert.ok(!sumaOtra.ok && /no es la suma de los ítems/.test(sumaOtra.motivo), `un total que suma algo más que los ítems no se entrega: ${sumaOtra.motivo}`);
     const maestra = retocar(libro([hoja(ENT, true)]), "xl/worksheets/sheet1.xml", (x) => x.replace(/<c r="J3"( s="\d+")?><v>1000<\/v><\/c>/, '<c r="J3"$1><f t="shared" ref="J3:J3" si="7">1000</f><v>1000</v></c>'));
-    assert.match((await FO.llenarFormulario(maestra, { items: items(CDU), oferta: oferta() })).motivo, /celda maestra de una fórmula compartida/);
+    assert.match((await FO.llenarFormulario(maestra, { iva: "sin_iva", items: items(CDU), oferta: oferta() })).motivo, /celda maestra de una fórmula compartida/);
 
     // 2b · lo que cazó la revisión adversaria (12-nov-2026), cada caso reproducido antes de corregir
     const proVinculada = hoja(PRO, false); proVinculada.filas.forEach((f, i) => { if (i >= 2 && i <= 4) f[10] = { f: `'${ENT}'!K${i + 1}`, v: r0(ITEMS[i - 2][3] * ITEMS[i - 2][4]) }; if (i === 5) f[10] = { f: "SUM(K3:K5)", v: 1322501 }; });
-    const vinc = await FO.llenarFormulario(libro([hoja(ENT, true), proVinculada]), { items: items(CDU), oferta: oferta() });
+    const vinc = await FO.llenarFormulario(libro([hoja(ENT, true), proVinculada]), { iva: "sin_iva", items: items(CDU), oferta: oferta() });
     assert.ok(!vinc.ok && /el total de la fila 3 \(100000\) no es su unitario por su cantidad \(91000\)/.test(vinc.motivo), `un total de fila que no toma el unitario (vinculado a la hoja de la entidad) entregaba el presupuesto oficial como oferta: ${vinc.motivo}`);
     const conAiu = hoja(ENT, true); conAiu.filas[7][10] = { f: "ROUND(K6*L8,0)", v: 0 };
-    assert.match((await FO.llenarFormulario(libro([conAiu]), { items: items(CDU), oferta: oferta() })).motivo, /suma el AIU aparte/, "el AIU aparte con fórmulas y el porcentaje en blanco (vale 0) también se detecta");
+    assert.match((await FO.llenarFormulario(libro([conAiu]), { iva: "sin_iva", items: items(CDU), oferta: oferta() })).motivo, /suma el AIU aparte/, "el AIU aparte con fórmulas y el porcentaje en blanco (vale 0) también se detecta");
     const pref = [{ fila_excel: 3, codigo: null, descripcion: "Concreto 3000 psi", unidad: "m3", cantidad: 5 }, { fila_excel: 4, codigo: null, descripcion: "Concreto 3000 psi para vigas", unidad: "m3", cantidad: 5 }];
     const em1 = FO.emparejar(pref, [{ descripcion: "Concreto 3000 psi para vigas", unidad: "m3", cantidad: 5, unitario: 364000 }, { descripcion: "Concreto 3000 psi", unidad: "m3", cantidad: 5, unitario: 325000 }]);
     assert.deepStrictEqual(em1.pares.map((x) => [x.fila.fila_excel, x.item.unitario]), [[3, 325000], [4, 364000]], "dos descripciones que empiezan igual no se cruzan: manda la idéntica");
     assert.ok(FO.emparejar(pref, [{ descripcion: "Concreto 3000 psi para vigas", unidad: "m3", cantidad: 5 }, { descripcion: "Concreto 3000", unidad: "m3", cantidad: 5 }]).problemas.length > 0, "por prefijo y sin código, con dos candidatas en el Formulario, no se elige");
     const proVacia = hoja(PRO, false); proVacia.filas.forEach((f, i) => { if (i >= 2 && i <= 4) { f[9] = null; f[10] = null; } });
-    const rv = await FO.llenarFormulario(libro([hoja(ENT, true), proVacia]), { items: items(CDU), oferta: oferta() });
+    const rv = await FO.llenarFormulario(libro([hoja(ENT, true), proVacia]), { iva: "sin_iva", items: items(CDU), oferta: oferta() });
     const x2 = (() => { const e = FO.entradasZip(rv.archivo).find((y) => y.nombre === "xl/worksheets/sheet2.xml"); return (e.metodo === 0 ? Buffer.from(e.datos) : zl.inflateRawSync(e.datos)).toString(); })();
     assert.ok(rv.ok && /<c r="J3"[^>]*><v>910<\/v><\/c><c r="K3"[^>]*><v>91000<\/v><\/c>/.test(x2) && rv.total_formulario === esperado, `dos celdas nuevas en el mismo sitio van en orden de columna (K antes que J pide «reparar»): ${(x2.match(/<row r="3">[\s\S]*?<\/row>/) || [""])[0].slice(-160)}`);
     const pantalla = retocar(base, "xl/workbook.xml", (x) => x.replace("</workbook>", "<calcPr fullPrecision=\"0\"/></workbook>"));
-    assert.match((await FO.llenarFormulario(pantalla, { items: items(CDU), oferta: oferta() })).motivo, /precisión de pantalla/);
+    assert.match((await FO.llenarFormulario(pantalla, { iva: "sin_iva", items: items(CDU), oferta: oferta() })).motivo, /precisión de pantalla/);
     assert.ok(/su análisis más los valores fijos daba \$1\.250\.000/.test(FO.frasesLlenado({ ok: true, hoja: "H", filas_llenas: 1, total_formulario: 1250003, total_motor: 1200000, suma_fijos: 50000, valores_fijos: [{ etiqueta: "PMT", valor: 50000 }], a_mano: [] })[1]),
       "la diferencia con el análisis se cuenta con los valores fijos: no se atribuye al redondeo lo que es el PMT");
     assert.ok(!/daba/.test(FO.frasesLlenado({ ok: true, hoja: "H", filas_llenas: 1, total_formulario: 1250000, total_motor: 1200000, suma_fijos: 50000, valores_fijos: [{ etiqueta: "PMT", valor: 50000 }], a_mano: [] })[1]),
@@ -11547,14 +11554,14 @@ async function main() {
         "[Content_Types].xml", (x) => x.replace("</Types>", '<Override PartName="/xl/calcChain.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.calcChain+xml"/></Types>')),
         "xl/_rels/workbook.xml.rels", (x) => x.replace("</Relationships>", '<Relationship Id="rId99" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/calcChain" Target="calcChain.xml"/></Relationships>')); };
     const manual = conCadena(retocar(base, "xl/workbook.xml", (x) => x.replace("</workbook>", "<calcPr calcId=\"191029\" calcMode=\"manual\"/></workbook>")));
-    const rm = await FO.llenarFormulario(manual, { items: items(CDU), oferta: oferta() });
+    const rm = await FO.llenarFormulario(manual, { iva: "sin_iva", items: items(CDU), oferta: oferta() });
     const wbm = zl.inflateRawSync(FO.entradasZip(rm.archivo).find((e) => e.nombre === "xl/workbook.xml").datos).toString();
     assert.ok(rm.ok && rm.calculo_era_manual === true && /<calcPr calcId="191029" fullCalcOnLoad="1"\/>/.test(wbm), `el cálculo manual se deja automático: ${wbm.match(/<calcPr[^>]*>/)}`);
     const txt = (buf, n2) => { const e = FO.entradasZip(buf).find((x) => x.nombre === n2); return (e.metodo === 0 ? Buffer.from(e.datos) : zl.inflateRawSync(e.datos)).toString(); };
     assert.ok(/calcChain/.test(txt(manual, "[Content_Types].xml")) && !FO.entradasZip(rm.archivo).some((e) => e.nombre === "xl/calcChain.xml") && !/calcChain/.test(txt(rm.archivo, "[Content_Types].xml")) && !/calcChain/.test(txt(rm.archivo, "xl/_rels/workbook.xml.rels")),
       "la cadena de cálculo vieja sale entera: la parte, su tipo y su relación (con un unitario que era fórmula, la vieja hace pedir «reparar»)");
     const compartida = retocar(base, "xl/worksheets/sheet2.xml", (x) => x.replace(/<f>ROUND\(I3\*J3,0\)<\/f>/, "<f t=\"shared\" ref=\"K3:K5\" si=\"0\">ROUND(I3*J3,0)</f>").replace(/<f>ROUND\(I4\*J4,0\)<\/f>/, "<f t=\"shared\" si=\"0\"/>").replace(/<f>ROUND\(I5\*J5,0\)<\/f>/, "<f t=\"shared\" si=\"0\"/>"));
-    const rs = await FO.llenarFormulario(compartida, { items: items(CDU), oferta: oferta() });
+    const rs = await FO.llenarFormulario(compartida, { iva: "sin_iva", items: items(CDU), oferta: oferta() });
     assert.ok(rs.ok && rs.total_formulario === esperado, `las fórmulas compartidas se corren fila a fila: ${rs.motivo || rs.total_formulario}`);
     const salS = await leer(rs.archivo);
     assert.deepStrictEqual(["K4", "K5"].map((x) => celda(salS, PRO, x)), [204750, 877500], "las hijas de la fórmula compartida guardan su valor nuevo");
@@ -11655,8 +11662,30 @@ async function main() {
     await invocar(hParcial, "/api/perfil?op=ofertas-propias&perfil=prodiac", CAB_TOKEN); await invocar(hParcial, "/api/perfil?op=ofertas-propias&perfil=prodiac", CAB_TOKEN);
     assert.strictEqual(llamadas - antes2, 2, "uno a medias (sin puesto ni resultado) tampoco: no se sirven 12 horas de «sin resultado»");
     assert.strictEqual((await invocar(require("../api/perfil.js"), "/api/perfil?op=ofertas-propias&perfil=helder", {})).status, 401, "por el router real, sin credencial tampoco");
+    // LA CAUSA DE CADA OFERTA (tanda 13): de la captura VERIFICADA de su informe, sin adivinar
+    const cap = (ofertas, extra = {}) => ({ captura: { documento_util: true, completa: true, adjudicatario: { nombre: "YESID NINCO POLANIA" }, ofertas, ...extra } });
+    const yo = { proponente: "CONSORCIO INFRAESTRUCTURA 1A", via: { tipo: "consorcio", nombre: "CONSORCIO INFRAESTRUCTURA 1A" } };
+    const gana = { oferente: "YESID NINCO POLANIA", estado: "habil", puntaje_precio: 49.5, puntaje_total: 99.5, otros_puntos: [{ criterio: "mipyme", puntos: 0.25 }, { criterio: "calidad", puntos: 30 }] };
+    const c1 = OP.causaDeLaOferta(yo, cap([gana, { oferente: "CONSORCIO INFRAESTRUCTURA 1A", estado: "habil", puntaje_precio: 49.1, puntaje_total: 98.85, otros_puntos: [{ criterio: "mipyme", puntos: 0 }, { criterio: "calidad", puntos: 30 }] }]));
+    assert.ok(c1 && c1.tipo === "puntos" && c1.diferencia_precio === 0.4 && c1.diferencia_fuera === 0.25 && /le sacó 0,40 puntos por precio y 0,25 puntos fuera del precio \(pequeña empresa\)/.test(c1.frase), `por cuánto y en qué perdió → ${c1 && c1.frase}`);
+    const c2 = OP.causaDeLaOferta(yo, cap([gana, { oferente: "Consorcio Infraestructura 1A.", estado: "rechazada", motivo: "experiencia", motivo_texto: "no acreditó la experiencia en vías" }]));
+    assert.ok(c2.tipo === "rechazada" && /^Rechazada: experiencia \(«no acreditó la experiencia en vías»\)\.$/.test(c2.frase), `rechazada, con su motivo (el nombre escrito de otra forma) → ${c2.frase}`);
+    assert.strictEqual(OP.causaDeLaOferta(yo, cap([gana, { oferente: "CONSORCIO INFRAESTRUCTURA 1A", estado: "habil", puntaje_precio: 49.1, puntaje_total: 98.85 }], { completa: false })).tipo, "habil", "con la lectura incompleta no se compara contra el ganador");
+    assert.strictEqual(OP.causaDeLaOferta(yo, cap([gana])).tipo, "no_encontrada", "si su oferta no está en lo leído, se dice");
+    assert.strictEqual(OP.causaDeLaOferta(yo, cap([gana, { oferente: "INFRAESTRUCTURA 1A SAS", estado: "rechazada", motivo: "juridica" }])).tipo, "rechazada", "el mismo nombre con otra forma jurídica se reconoce (regla de oferentes de lib/evaluacion)");
+    assert.ok(/más de una oferta/.test(OP.causaDeLaOferta(yo, cap([gana, { oferente: "INFRAESTRUCTURA 1A SAS", estado: "habil" }, { oferente: "INFRAESTRUCTURA 1A LTDA", estado: "rechazada" }])).frase), "dos parecidas: no se elige una");
+    assert.strictEqual(OP.causaDeLaOferta(yo, { captura: { documento_util: false } }), null, "un documento que no sirvió no da causa");
+    // por el manejador: la causa se calcula en cada respuesta, también desde lo guardado
+    const { escribirJSONComprimido } = require("../lib/almacen.js");
+    const redisC = require("../lib/redis.js").crearRedis({});
+    await escribirJSONComprimido(redisC, require("../lib/evaluacion.js").claveCaptura("CO1.BDOS.2"), cap([{ ...gana, estado: "habil" }, { oferente: "CONSORCIO INFRAESTRUCTURA 1A", estado: "rechazada", motivo: "financiera" }]));
+    const hC = await invocar(h, "/api/perfil?op=ofertas-propias&perfil=helder", CAB_TOKEN);
+    const o2c = hC.cuerpo.ofertas.find((x) => x.identificador === "CO1.RPL.2"), o1c = hC.cuerpo.ofertas.find((x) => x.identificador === "CO1.RPL.1");
+    assert.ok(hC.cuerpo.desde_cache === true && o2c.causa && /^Rechazada: indicadores financieros/.test(o2c.causa.frase) && o1c.causa === null, `la causa sale aunque la consulta venga de lo guardado → ${JSON.stringify(o2c.causa)}`);
+    await redisC.del(require("../lib/evaluacion.js").claveCaptura("CO1.BDOS.2"));
     console.log("· unidad ofertas propias: su NIT o su consorcio con su código (la de la socia y la de otro con el mismo nombre no), el porcentaje solo si el consorcio es uno, "
-      + "puesto por precio y resultado de la fase adjudicada, «sin dato» que no es «perdió», el tablero por año, una consulta por columna, el detalle caído dicho, credencial y lo guardado");
+      + "puesto por precio y resultado de la fase adjudicada, «sin dato» que no es «perdió», el tablero por año, una consulta por columna, el detalle caído dicho, credencial y lo guardado, "
+      + "y la causa de cada oferta desde su informe verificado (rechazo con motivo, puntos por precio y fuera del precio)");
   }
 
   bqRecalculoInforme: { if (!corre("unidad recalculo del informe")) break bqRecalculoInforme;
@@ -21627,12 +21656,14 @@ async function main() {
             [null, null, null, null, null, null, "VALOR TOTAL", null, null, null, { f: "SUM(K3:K4)", v: 300000 }]] }]));
           const itsO = [{ codigo: "1.1", descripcion: "Localización y replanteo", unidad: "m2", cantidad: 100, costo_directo_unitario_ofertado: 700 }, { codigo: "1.2", descripcion: "Excavación manual", unidad: "m3", cantidad: 10, costo_directo_unitario_ofertado: 14000 }];
           const ofO = { con_formulas: true, costo_directo: 210000, precio_sin_iva: 273000, lleva_fila_iva: false, iva_sobre_utilidad: 0, total_para_secop: 273000 };
-          const o1 = await pedir({ formato: "oferta_excel", items: itsO, oferta: ofO });
+          const o0 = await pedir({ formato: "oferta_excel", items: itsO, oferta: ofO });
+          assert.ok(o0.status === 200 && o0.cuerpo.llenado.pide_iva === true && o0.cuerpo.base64 === undefined, "sin decir si lleva IVA, el servidor pregunta y no entrega nada");
+          const o1 = await pedir({ formato: "oferta_excel", items: itsO, oferta: ofO, iva: "sin_iva" });
           assert.ok(o1.status === 200 && o1.cuerpo.formato === "oferta_excel" && o1.cuerpo.llenado.ok === true && o1.cuerpo.llenado.total_formulario === 273000 && typeof o1.cuerpo.base64 === "string" && o1.cuerpo.llenado.archivo === undefined
             && o1.cuerpo.llenado.frases.some((t) => /\$273\.000: esa es la cifra que escribe en SECOP II/.test(t)), `el Formulario lleno vuelve en base64 con su total: ${JSON.stringify(o1.cuerpo).slice(0, 300)}`);
           const libO = await require("../public/xlsx_lectura.js").leerLibro(new Uint8Array(Buffer.from(o1.cuerpo.base64, "base64")), { inflar: async (u8) => new Uint8Array(require("zlib").inflateRawSync(Buffer.from(u8))) });
           assert.deepStrictEqual([libO.hojas[0].filas[2][9], libO.hojas[0].filas[3][9], libO.hojas[0].filas[4][10]], [910, 18200, 273000], "los bytes que vuelven son el libro con los unitarios y el total al día");
-          const o2 = await pedir({ formato: "oferta_excel", items: itsO, oferta: { ...ofO, precio_sin_iva: 420000 } });
+          const o2 = await pedir({ formato: "oferta_excel", items: itsO, oferta: { ...ofO, precio_sin_iva: 420000 }, iva: "sin_iva" });
           assert.ok(o2.status === 200 && o2.cuerpo.llenado.ok === false && o2.cuerpo.base64 === undefined && /más que el presupuesto oficial/.test(o2.cuerpo.llenado.motivo), `lo que no se puede entregar vuelve con su motivo y sin bytes: ${JSON.stringify(o2.cuerpo).slice(0, 200)}`);
           assert.strictEqual((await pedir({ formato: "oferta_excel", oferta: ofO })).status, 400, "sin ítems es un 400, antes de bajar nada");
           assert.strictEqual((await pedir({ formato: "oferta_excel", items: itsO })).status, 400, "sin la oferta calculada es un 400");
