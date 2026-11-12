@@ -11348,6 +11348,35 @@ async function main() {
       + "Mipyme sí / no / sin dato con la regla de lib/perfiles, y el hecho en la guía con su página");
   }
 
+  /* unidad: LAS CAUSALES DE RECHAZO DE ESE PLIEGO (PLAN_X20, tanda 6, 12-nov-2026) ─
+     El numeral 1.15 del documento tipo, separado en causales (letras, renglones partidos, instrucciones de plantilla
+     fuera), cada una con DÓNDE la revisa la aplicación o qué comprueba usted, y el hecho en la guía en vez del aviso
+     genérico. Funciones REALES hasta loQueDicen. */
+  bqCausales: { if (!corre("unidad causales de rechazo")) break bqCausales;
+    const CR = require("../lib/causales_rechazo.js"), DP = require("../lib/documentos_proceso.js");
+    const t = "\f2\n1.15 CAUSALES DE RECHAZO ........ 13\n\f13\n1.15 CAUSALES DE RECHAZO\nSon causales de rechazo de las propuestas las siguientes [Las entidades no podrán incluir causales de rechazo distintas]:\n"
+      + "A. Que el valor total de la oferta o el obtenido de la corrección aritmética exceda el presupuesto oficial estimado para el proceso de contratación.\n"
+      + "B. No entregar la Garantía de seriedad de la oferta junto con la propuesta.\n"
+      + "C. Que el proponente no haya presentado la manifestación de interés para participar en el proceso de selección,\ny aun así haya presentado propuesta.\n"
+      + "[Incluir solo cuando la forma de pago sea por precios unitarios] D. No ofrecer el valor de un precio unitario u ofrecerlo en cero (0) pesos.\n"
+      + "E. Cuando se presente propuesta condicionada para la adjudicación del contrato.\n"
+      + "1.16 CAUSALES PARA DECLARAR DESIERTO EL PROCESO DE SELECCIÓN\nLa entidad podrá declarar desierto el procedimiento cuando no se presenten ofertas.\n";
+    const cs = CR.leerCausales(t);
+    assert.deepStrictEqual(cs.map((c) => c.clave), ["presupuesto", "garantia", "manifestacion", "unitario_cero", "otra"], `cinco causales, la del índice fuera, el desierto fuera → ${JSON.stringify(cs.map((c) => c.clave))}`);
+    assert.ok(cs[2].texto.endsWith("y aun así haya presentado propuesta.") && cs[2].pagina === 13 && !/\[/.test(cs[3].texto), "el renglón partido se une, con su página; la instrucción de plantilla sale");
+    const f = CR.fraseCausales(cs);
+    assert.strictEqual(f, "El pliego trae 5 causales de rechazo. La aplicación le ayuda a revisar 3 (presupuesto, garantía de seriedad, ítems sin precio). Antes de radicar compruebe usted: avise que le interesa a tiempo y con la MISMA estructura (solo o en consorcio, y con quién) con que va a ofertar. Y lea la otra en el pliego.",
+      `la frase → ${f}`);
+    assert.deepStrictEqual(CR.leerCausales("\f3\nUn pliego sin la sección.\n"), [], "sin sección: nada (no «cero causales»)");
+    const h = DP.hechosDeTexto(t, { tipo: "pliego" });
+    const r = DP.loQueDicen({ leidos: { d1: { nombre: "pliego.pdf", tipo: "pliego", hechos: h, fecha_carga: "2026-06-30" } } }, {});
+    const x = r.hechos.find((y) => y.clave === "causales_rechazo");
+    assert.ok(x && x.estado === "riesgo" && x.causales.length === 5 && x.texto === f && x.pagina === 13, `el hecho de la guía → ${JSON.stringify(x && { estado: x.estado, n: x.causales.length })}`);
+    assert.ok(!r.hechos.some((y) => y.clave === "causal_de_rechazo"), "con la lista leída, el aviso genérico «el pliego enumera causales» no se repite");
+    console.log("· unidad causales de rechazo: la lista del pliego separada (letras, renglones partidos, plantilla e índice fuera), dónde las revisa la aplicación, "
+      + "lo que comprueba usted y el hecho en la guía en vez del aviso genérico");
+  }
+
   /* unidad: TEXTO como co-señal (vocabulario por familia + verbo de obra) */
   bq19: { if (!corre("unidad texto")) break bq19;
     const idx = unspsc.indiceDe(PERFILES.helder.unspsc);

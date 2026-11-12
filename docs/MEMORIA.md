@@ -22432,3 +22432,11 @@ En una línea: tanda 5 del plan x20: la lectura del pliego (hechos versión 25) 
 - **Sin verificar**: tablas de pliegos que no siguen el documento tipo (régimen especial, otras versiones): si no suman su total no se dice nada.
 - Cerradura: «unidad puntos fuera del precio» (las dos tablas oficiales en renglones partidos, la que no suma, las multas, Mipyme sí/no/sin dato, la limitada y el hecho de la guía); cinco mutaciones, mueren todas.
 
+### Las causales de rechazo de ESE pliego, una por una, con dónde las revisa la aplicación (12-nov-2026)
+
+En una línea: tanda 6 del plan x20: la lectura del pliego (hechos versión 26) separa la lista de causales de rechazo (`lib/causales_rechazo.js`) y la guía dice cuántas trae, cuáles ayuda a revisar la aplicación (presupuesto, Formulario 1, AIU, total de SECOP II, precio bajo, garantía, Mipyme) y qué comprueba usted antes de radicar (la manifestación con la MISMA estructura, no dos consorcios suyos, los contratos en ejecución, el plazo, el registro en firme, la hora); la lista entera viaja en `causales`.
+
+- **Lo que no hay que deshacer**: la causal que no se reconoce va como «léala en el pliego», nunca como revisada; el módulo NO juzga si la oferta cumple (eso lo hacen «Revisar antes de subir», Precios y la guía, con su regla); la instrucción de plantilla entre corchetes sale de la causal; la línea del índice («CAUSALES DE RECHAZO …… 13») no abre la sección; y con la lista leída no se repite el aviso genérico de `dictamen_reglas` («el pliego enumera causales»).
+- Medido con el DocBase oficial de menor cuantía V3: 34 causales separadas, 10 que la aplicación ayuda a revisar y 11 con consejo concreto.
+- Cerradura: «unidad causales de rechazo»; cinco mutaciones, mueren todas.
+

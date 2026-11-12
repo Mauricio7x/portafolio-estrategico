@@ -420,6 +420,7 @@ Si en el paso 2 no ve lo descrito, no siga: dígalo y se revisa, porque ese orde
 - **Tanda 5 · Los puntos, uno por uno.** Pieza 6.3, segunda mitad: cada factor de puntaje con quién lo acredita y qué falta. Cierre: «Hoy obtendría N de M puntos fuera del precio; faltan …». Tamaño: 2 sesiones.
   - *Hecha el 12-nov-2026* con la tabla del documento tipo; los pliegos que no la siguen no dicen nada. Memoria: «Los puntos fuera del precio, uno por uno, desde la tabla del pliego (12-nov-2026)».
 - **Tanda 6 · Las causales de ESE pliego.** Lista final antes de radicar, leída del pliego y cruzada con el paquete. Tamaño: 2 sesiones.
+  - *Hecha el 12-nov-2026*: la lista del pliego con dónde la revisa la aplicación y lo que comprueba usted. Memoria: «Las causales de rechazo de ESE pliego, una por una, con dónde las revisa la aplicación (12-nov-2026)».
 
 ### 7.4 Entrega 3 · El precio según cuántos compiten
 

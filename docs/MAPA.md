@@ -22,7 +22,7 @@
   pliego.js                   Router del dominio PLIEGO (Fase 0 · consolidación a 6 funciones)
   procesos.js                 Router del dominio PROCESOS (Fase 0 · consolidación a 6 funciones)
 
-· lib/ — 117 módulos:
+· lib/ — 118 módulos:
   accesibilidad.js            Accesibilidad operativa de la zona de la obra
   adendas.js                  Vigía de adendas · lo que el DATASET dice que cambió (Fase 5)
   almacen.js                  Esquema de claves Redis + compresión de chunks
@@ -40,6 +40,7 @@
   capacidad.js                K de contratación (capacidad residual) — FÓRMULA ÚNICA
   capital_trabajo.js          EL CAPITAL DE TRABAJO QUE EXIGE EL PLIEGO (27-sep-2026, N31)
   causa_descarga.js           LA CAUSA REAL DE UN FALLO DE LECTURA (19-oct-2026) — capa PURA, sin red ni Redis.
+  causales_rechazo.js         Las causales de rechazo de ESE pliego, y cuáles revisa la aplicación antes de radicar
   censo_ingesta.js            Por qué NO entró un proceso al corpus
   cobertura_rup.js            ¿Qué códigos UNSPSC le FALTAN al RUP?
   codigos_experiencia.js      Los CÓDIGOS con que el pliego pide la experiencia
@@ -243,8 +244,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 477 secciones (58 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 22322  La regla del anuncio, medida con la población de Detekta, resiste en menor cuantía, mínima …
+· MEMORIA · docs/MEMORIA.md — 478 secciones (58 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 22332  Precios dice dónde habría quedado su precio frente a todas las ofertas de la entidad, y cua…
   L 22347  Las dos barreras se leen del pliego: limitada a Mipyme y a qué territorio, y si hay sorteo …
   L 22362  El simulacro del consorcio: cada cláusula de participación contra el reparto que se va a fi…
@@ -254,6 +254,7 @@
   L 22406  La lista del día va en el vigilante de la mañana (12-nov-2026)
   L 22414  El reparto del consorcio en una frase: queda por fuera, falta confirmar o cumple lo medible…
   L 22421  Los puntos fuera del precio, uno por uno, desde la tabla del pliego (12-nov-2026)
+  L 22435  Las causales de rechazo de ESE pliego, una por una, con dónde las revisa la aplicación (12-…
 
 · DOCUMENTOS docs/ — 78 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)
