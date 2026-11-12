@@ -22440,3 +22440,15 @@ En una línea: tanda 6 del plan x20: la lectura del pliego (hechos versión 26) 
 - Medido con el DocBase oficial de menor cuantía V3: 34 causales separadas, 10 que la aplicación ayuda a revisar y 11 con consejo concreto.
 - Cerradura: «unidad causales de rechazo»; cinco mutaciones, mueren todas.
 
+### La tabla de métodos de ponderación de ESE pliego, y las dos fórmulas del documento tipo V1 (12-nov-2026)
+
+En una línea: tanda 9 del plan x20: la lectura del pliego (hechos versión 27) reconoce la tabla «De 0,00 a 0,24 … método» (`lib/metodos_ponderacion.leerTablaMetodos`) y la guía dice qué método le toca a cada rango de centavos de la TRM; el motor suma las dos fórmulas del documento tipo V1 de licitación que siguen usando pliegos de régimen especial (media geométrica con presupuesto oficial y media aritmética alta).
+
+- **Fuente de las fórmulas**: «Documento Base o Pliegos Tipo.docx» del paquete oficial de Colombia Compra (descarga 29961, documento tipo de licitación V1), leído el 12-nov-2026. Con presupuesto oficial: el presupuesto entra 1 vez con 1 a 3 propuestas, 2 con 4 a 6, 3 con 7 a 9 («y así sucesivamente»): `ceil(n/3)`. Por encima de la media, ambas restan el DOBLE de la distancia.
+- **Lo que no hay que deshacer**:
+  - la «media aritmética» simple (la usó la Universidad Pedagógica en 2026) no está en ningún documento tipo leído: no tiene fórmula en el motor (`metodo: null`) y la guía manda a leerla en el pliego; inventarla sería poner una fórmula sin fuente en una cifra de precio;
+  - sin presupuesto oficial, la media geométrica con presupuesto da `null`, no puntajes;
+  - el método de cada fila es el PRIMER nombre después del rango, y la ventana se corta en el rango siguiente: una fila sin método no toma el de la siguiente;
+  - la tabla repetida (índice, anexo) se cuenta una vez.
+- **Sin verificar**: si el documento tipo V1 da el máximo a la propuesta más cercana a la media (la regla D1 del V3, 4.1.4); hoy las dos fórmulas V1 dan 1 solo a quien cae justo en la media. No mueve ninguna cifra en pantalla: estas fórmulas aún no las usa Precios ni el informe (tandas 13-14).
+- Cerradura: «unidad tabla de métodos del pliego» (fórmulas recalculadas a mano, la tabla en tres formas, la simple en null, el hecho y la versión); nueve mutaciones, mueren todas.

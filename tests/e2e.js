@@ -11377,6 +11377,40 @@ async function main() {
       + "lo que comprueba usted y el hecho en la guía en vez del aviso genérico");
   }
 
+  bqMetodosPliego: { if (!corre("unidad tabla de métodos del pliego")) break bqMetodosPliego;
+    const ME = require("../lib/metodos_ponderacion.js"), DP = require("../lib/documentos_proceso.js");
+    // fórmulas del documento tipo V1 de licitación (descarga 29961 de Colombia Compra), recalculadas a mano
+    const v = [90, 100, 110], xa = (110 + 100) / 2;
+    assert.deepStrictEqual(ME.puntajes(v, "aritmetica_alta", 1), [1 - (xa - 90) / xa, 1 - (xa - 100) / xa, 1 - (2 * (110 - xa)) / xa].map((x) => Math.round(x * 1e7) / 1e7),
+      "media aritmética alta: XA = (Vmax + promedio)/2; por encima de XA resta el doble");
+    const mg = Math.pow(120 * 90 * 100 * 110, 1 / 4);
+    assert.deepStrictEqual(ME.puntajes(v, "geometrica_po", 1, { presupuesto: 120 }), [1 - (mg - 90) / mg, 1 - (mg - 100) / mg, 1 - (2 * (110 - mg)) / mg].map((x) => Math.round(x * 1e7) / 1e7),
+      "media geométrica con presupuesto oficial: con 1 a 3 propuestas el presupuesto entra una vez");
+    const v4 = [90, 95, 100, 130], mg4 = Math.pow(120 * 120 * 90 * 95 * 100 * 130, 1 / 6);
+    assert.strictEqual(ME.puntajes(v4, "geometrica_po", 1, { presupuesto: 120 })[3], Math.round((1 - (2 * (130 - mg4)) / mg4) * 1e7) / 1e7, "con 4 a 6 propuestas el presupuesto entra dos veces");
+    assert.strictEqual(ME.puntajes(v, "geometrica_po", 1), null, "sin presupuesto oficial no hay media geométrica con presupuesto: null, no un puntaje");
+    // la tabla del pliego, en sus tres formas
+    const V1 = "De 0.00 a 0.24\n1\nMediana con valor absoluto\nDe 0.25 a 0.49\n2\nMedia geométrica con presupuesto oficial\nDe 0.50 a 0.74\n3\nMedia aritmética alta\nDe 0.75 a 0.99\n4\nMenor valor\n";
+    assert.deepStrictEqual(ME.leerTablaMetodos(V1).map((x) => [x.desde, x.hasta, x.metodo]), [[0, 0.24, "mediana"], [0.25, 0.49, "geometrica_po"], [0.5, 0.74, "aritmetica_alta"], [0.75, 0.99, "menor_valor"]],
+      "tabla en renglones partidos (rango / número / método)");
+    assert.deepStrictEqual(ME.leerTablaMetodos("De 0,00 a 0,24\nDe 0,25 a 0,49 Media aritmética alta\nDe 0,50 a 0,99 Menor valor\n").map((x) => [x.desde, x.metodo]), [[0.25, "aritmetica_alta"], [0.5, "menor_valor"]],
+      "una fila sin método no toma prestado el de la fila siguiente");
+    assert.deepStrictEqual(ME.leerTablaMetodos("De 0,00 a 0,49 Mediana\nDe 0,50 a 0,99 Menor valor\nAnexo\nDe 0,00 a 0,49 Mediana\nDe 0,50 a 0,99 Menor valor\n").length, 2, "la tabla repetida en un anexo no se cuenta dos veces");
+    const una = "\f30\nDe 0,00 a 0,24 Media aritmética\nDe 0,25 a 0,49 Media aritmética alta\nDe 0,50 a 0,74 Media geométrica con presupuesto oficial\nDe 0,75 a 0,99 Menor valor\n";
+    assert.deepStrictEqual(ME.leerTablaMetodos(una).map((x) => x.metodo), [null, "aritmetica_alta", "geometrica_po", "menor_valor"], "la «media aritmética» simple no tiene fórmula en ningún documento tipo leído: null");
+    assert.deepStrictEqual(ME.leerTablaMetodos("Un pliego sin tabla de métodos."), [], "sin tabla: nada");
+    // el hecho de la guía
+    const r = DP.loQueDicen({ leidos: { d1: { nombre: "terminos.pdf", tipo: "pliego", hechos: DP.hechosDeTexto(una, { tipo: "pliego" }), fecha_carga: "2026-08-20" } } }, {});
+    const x = r.hechos.find((y) => y.clave === "metodos_precio");
+    assert.ok(x && x.estado === "revisar" && x.metodos.length === 4 && /0,25 a 0,49/.test(x.texto) && /no tiene la fórmula de «media aritmética»/.test(x.texto), `el hecho de la guía → ${x && x.texto}`);
+    const r3 = DP.loQueDicen({ leidos: { d1: { nombre: "pliego.pdf", tipo: "pliego", hechos: DP.hechosDeTexto(V1, { tipo: "pliego" }), fecha_carga: "2026-08-20" } } }, {});
+    const x3 = r3.hechos.find((y) => y.clave === "metodos_precio");
+    assert.ok(x3 && x3.estado === "dato" && !/no tiene la fórmula/.test(x3.texto), "con todos los métodos conocidos, el hecho es un dato sin aviso");
+    assert.ok(Number(String(DP.hechosVersion()).split("|")[0]) >= 27, "[MUT] la versión de los hechos subió con la tabla de métodos: los pliegos ya leídos se rehacen desde su texto");
+    console.log("· unidad tabla de métodos del pliego: media aritmética alta y geométrica con presupuesto oficial (V1) recalculadas a mano, la tabla en sus tres formas, "
+      + "la «media aritmética» simple sin fórmula y el hecho de la guía");
+  }
+
   /* unidad: TEXTO como co-señal (vocabulario por familia + verbo de obra) */
   bq19: { if (!corre("unidad texto")) break bq19;
     const idx = unspsc.indiceDe(PERFILES.helder.unspsc);

@@ -430,6 +430,7 @@ Si en el paso 2 no ve lo descrito, no siga: dígalo y se revisa, porque ese orde
   - *12-nov-2026*: la referencia por competencia de la entidad ya sale en Precios (medido: mejora en licitación y mínima cuantía; en menor cuantía la de la entidad ya está en el techo). Memoria: «Qué tan cerca se anticipa el precio ganador por modalidad, y la referencia de la entidad por competencia en Precios (12-nov-2026)».
   - *Hecha en parte el 11-nov-2026*: el aviso de fuera del grupo (con Cali: 9 de 24 por encima de todas, 13 de 24 por encima de la mitad) y D4 a D8, sin mover ninguna cifra; se tomaron las recomendaciones A de las decisiones 3 y 6. Falta la referencia «con una oferta aquí se adjudicó al 100 %; con 5 a 9, al 95 %» por entidad. Memoria: «Precios dice dónde habría quedado su precio frente a todas las ofertas de la entidad, y cuatro textos que afirmaban de más (11-nov-2026)».
 - **Tanda 9 · La tabla de métodos del pliego.** Para régimen especial. Tamaño: 2 sesiones.
+  - *Hecha en parte el 12-nov-2026*: la guía dice la tabla de métodos de ese pliego y el motor tiene las dos fórmulas del documento tipo V1 (media geométrica con presupuesto oficial, media aritmética alta). Falta: usarlas en Precios y en el informe (tandas 13-14); la «media aritmética» simple no tiene fuente y no se calcula. Memoria: «La tabla de métodos de ponderación de ESE pliego, y las dos fórmulas del documento tipo V1 (12-nov-2026)».
 
 ### 7.5 Entrega 4 · La fábrica de ofertas
 
