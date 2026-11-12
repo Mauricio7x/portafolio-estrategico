@@ -116,7 +116,7 @@ falta sitio, libera primero solo lo que la aplicación rehace sola (`lib/compact
 con esa medición (toda `op` real está aquí; nada de aquí es inventado):
 
 - `/api/procesos?op=` sync · historico · listar · baja · entidades · portada · manifestacion · salud · latido
-- `/api/perfil?op=` resumen · diagnostico · entrada · pulso · consorcio · consorcio-simular · seguimiento · avisos · cuenta · empresa-datos · no-es-obra
+- `/api/perfil?op=` resumen · diagnostico · entrada · pulso · consorcio · consorcio-simular · seguimiento · avisos · cuenta · empresa-datos · no-es-obra · ofertas-propias
   (`cuenta` es la puerta del modo con usuarios: construida y APAGADA — responde que lo está y cómo encenderla)
 - `/api/pliego?op=` extraer-texto · parsear · descargar · formulario1 · diff · cronograma · deducciones · dictamen · documentos · auditoria · evaluacion · observaciones
 - `/api/admin?op=` rup · experiencia · cobertura · cargar-catalogo · exportar · importar · uso · respaldo · espacio · compactar · sesion · entrar · salir · crear-cuenta

@@ -6,9 +6,9 @@
 (no editar a mano: sale de `node tests/mapa.js --escribir`. Para ir a un sitio concreto,
  `node tests/mapa.js <término>` da la ruta, la línea y el sed exacto — más barato que leer esto)
 
-· SUPERFICIE HTTP — 46 op declaradas en los mapas de los routers:
+· SUPERFICIE HTTP — 47 op declaradas en los mapas de los routers:
   /api/admin?op=  rup · experiencia · cobertura · cargar-catalogo · exportar · importar · uso · respaldo · espacio · compactar · sesion · entrar · salir · crear-cuenta
-  /api/perfil?op=  resumen · diagnostico · entrada · pulso · consorcio · consorcio-simular · seguimiento · cuenta · avisos · empresa-datos · no-es-obra
+  /api/perfil?op=  resumen · diagnostico · entrada · pulso · consorcio · consorcio-simular · seguimiento · cuenta · avisos · empresa-datos · no-es-obra · ofertas-propias
   /api/pliego?op=  extraer-texto · parsear · descargar · formulario1 · diff · cronograma · deducciones · dictamen · documentos · auditoria · evaluacion · observaciones
   /api/procesos?op=  sync · historico · listar · baja · entidades · portada · manifestacion · latido · salud
   (api/apu.js e api/inteligencia.js despachan por accion/vista desde su handler:
@@ -22,7 +22,7 @@
   pliego.js                   Router del dominio PLIEGO (Fase 0 · consolidación a 6 funciones)
   procesos.js                 Router del dominio PROCESOS (Fase 0 · consolidación a 6 funciones)
 
-· lib/ — 119 módulos:
+· lib/ — 120 módulos:
   accesibilidad.js            Accesibilidad operativa de la zona de la obra
   adendas.js                  Vigía de adendas · lo que el DATASET dice que cambió (Fase 5)
   almacen.js                  Esquema de claves Redis + compresión de chunks
@@ -103,6 +103,7 @@
   objetos.js                  El almacén de archivos (compatible con S3), sin dependencias
   observaciones.js            Las observaciones al pliego, redactadas (5-nov-2026)
   ofertas.js                  CON CUÁNTO OFERTARON TODOS (27-sep-2026, R-11)
+  ofertas_propias.js          SUS OFERTAS EN SECOP II Y CÓMO LE FUE (PLAN_X20, tanda 13, pieza 6.8, 12-nov-2026)
   paa.js                      Plan Anual de Adquisiciones (dataset Socrata `9sue-ezhx`)
   paa_acierto.js              ¿Cuánto de lo que el PAA anuncia acaba saliendo?
   paginas.js                  la PÁGINA viaja con el texto del pliego (ago 2026)
@@ -188,7 +189,7 @@
 · lib/handlers/inteligencia/ — 1 módulos:
   detalle.js                  Consultas de SOLO LECTURA sobre el mercado
 
-· lib/handlers/perfil/ — 10 módulos:
+· lib/handlers/perfil/ — 11 módulos:
   avisos.js                   /api/perfil?op=avisos (6-sep-2026, M-COMP-03)
   consorcio.js                /api/perfil?op=consorcio | op=consorcio-simular (Fase 10)
   cuenta.js                   (sin cabecera)
@@ -196,6 +197,7 @@
   empresa_datos.js            (sin cabecera)
   entrada.js                  /api/perfil?op=diagnostico (POST) · PUERTA DE ENTRADA DE 60 SEGUNDOS (Fase 2)
   no_es_obra.js               (sin cabecera)
+  ofertas_propias.js          (sin cabecera)
   pulso.js                    GET /api/perfil?op=pulso&perfil=… (ago 2026)
   resumen.js                  El dashboard: ¿qué SON los procesos que hoy se ven?
   seguimiento.js              /api/perfil?op=seguimiento (ago 2026)
@@ -245,8 +247,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 480 secciones (58 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 22362  El simulacro del consorcio: cada cláusula de participación contra el reparto que se va a fi…
+· MEMORIA · docs/MEMORIA.md — 481 secciones (58 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 22376  Con lista cargada, la capacidad también resta los contratos nuevos de SECOP II, por número …
   L 22384  «Revisar antes de subir» también compara contra el Formulario 1 de Excel (11-nov-2026)
   L 22392  Qué tan cerca se anticipa el precio ganador por modalidad, y la referencia de la entidad po…
@@ -256,6 +257,7 @@
   L 22435  Las causales de rechazo de ESE pliego, una por una, con dónde las revisa la aplicación (12-…
   L 22443  La tabla de métodos de ponderación de ESE pliego, y las dos fórmulas del documento tipo V1 …
   L 22456  Su oferta escrita en el Formulario de Excel de la entidad, con candados (12-nov-2026)
+  L 22475  Sus ofertas en SECOP II y cómo le fue: a su nombre y de los consorcios donde figura (12-nov…
 
 · DOCUMENTOS docs/ — 78 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)

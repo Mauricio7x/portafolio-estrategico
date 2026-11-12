@@ -892,6 +892,7 @@
       "seccion-experiencia": "los contratos ejecutados son configuración compartida de la empresa que administra el sitio (op=experiencia); hasta el 9-nov-2026 vivía dentro de «Ajustes»",
       "seccion-cobertura": "la auditoría de códigos usa la experiencia y los perfiles del dueño; hasta el 9-nov-2026 vivía dentro de «Ajustes»",
       "plg-mercado": "el plegado «Cómo está el mercado» solo guarda el tablero del dueño (op=resumen)",
+      "plg-mis-ofertas": "las ofertas del dueño en SECOP II y cómo le fue (op=ofertas-propias, con credencial)",
       "btn-apu-cargar": "op=cargar-catalogo reescribe el catálogo de precios compartido (pestaña Precios)",
     },
     /* lo que solo ve el visitante */
@@ -9892,6 +9893,38 @@
   }
   $("btn-revisar-oferta").addEventListener("click", revisarOferta);
 
+  /* SUS OFERTAS EN SECOP II Y CÓMO LE FUE (PLAN_X20, tanda 13, 12-nov-2026): se consulta al pulsar (lib/ofertas_propias, con
+     credencial). Cada oferta dice el HECHO publicado: con cuánto, en qué puesto por precio entre cuántas, a quién se adjudicó. */
+  function htmlMisOfertas(r) {
+    const frases = Array.isArray(r && r.frases) ? r.frases : [];
+    const lista = Array.isArray(r && r.ofertas) ? r.ofertas : [];
+    const res = (o) => (o.resultado === "gano" ? `<span class="font-medium text-emerald-700">Adjudicado a usted</span>`
+      : o.resultado === "otro" ? `Adjudicado a ${esc(o.adjudicatario || "otro proponente")}${o.valor_adjudicado != null ? ` por ${esc(pesos(o.valor_adjudicado))}` : ""}`
+        : o.resultado === "sin_adjudicar" ? "Sin adjudicar según SECOP II" : "Resultado sin consultar");
+    const quien = (o) => (o.via && o.via.tipo === "consorcio" ? `En ${esc(o.via.nombre || "consorcio")}${o.via.participacion_pct != null ? ` (usted ${esc(String(o.via.participacion_pct).replace(".", ","))} %)` : ""}` : esc(o.proponente || "A su nombre"));
+    return `${frases.map((t) => `<p class="text-gray-700">${esc(t)}</p>`).join("")}
+      ${lista.length ? `<ul class="mt-3 space-y-2">${lista.map((o) => `<li class="rounded-lg border border-gray-200 px-3 py-2" data-mi-oferta="${esc(o.identificador)}">
+        <p class="font-medium text-gray-900">${esc(o.entidad || "Entidad sin nombre")} · ${esc(o.referencia || o.id_portafolio)}</p>
+        <p class="text-gray-600">${esc(o.fecha || "sin fecha")} · ${quien(o)} · ${o.valor_cop != null ? esc(pesos(o.valor_cop)) : "valor sin dato"}${o.puesto_por_precio != null && o.ofertas_en_el_proceso ? ` · puesto ${o.puesto_por_precio} por precio de ${o.ofertas_en_el_proceso}` : ""}</p>
+        <p class="text-gray-600">${res(o)}</p></li>`).join("")}</ul>` : ""}`;
+  }
+  async function buscarMisOfertas(refrescar) {
+    const caja = $("mis-ofertas"), btn = $("btn-mis-ofertas");
+    if (!caja || !btn) return;
+    btn.disabled = true;
+    caja.innerHTML = `<p class="text-gray-500">Consultando SECOP II: puede tardar hasta un minuto…</p>`;
+    try {
+      const r = await api(`/api/perfil?op=ofertas-propias&perfil=${encodeURIComponent($("f-perfil").value)}${refrescar ? "&refrescar=1" : ""}`);
+      caja.innerHTML = htmlMisOfertas(r);
+      if (r && r.desde_cache) caja.insertAdjacentHTML("beforeend", `<p class="mt-2 text-xs text-gray-500">Consulta guardada${r.consultado_el ? ` del ${esc(String(r.consultado_el).slice(0, 10))}` : ""}. <button type="button" data-mis-ofertas-refrescar class="underline">Consultar de nuevo</button></p>`);
+    } catch (e) { caja.innerHTML = `<p class="text-red-700">No se pudo consultar: ${esc(fraseDeFallo(e))}</p>`; }
+    btn.disabled = false;
+  }
+  if ($("btn-mis-ofertas")) {
+    $("btn-mis-ofertas").addEventListener("click", () => buscarMisOfertas(false));
+    $("mis-ofertas").addEventListener("click", (ev) => { if (ev.target.closest("[data-mis-ofertas-refrescar]")) buscarMisOfertas(true); });
+  }
+
   /* SU OFERTA EN EL FORMULARIO DE EXCEL DE LA ENTIDAD (PLAN_X20, pieza 6.7, 12-nov-2026). Solo cuando el Formulario de ESTE
      proceso se trajo de Mis procesos («Cotizar en Precios»): el servidor baja el archivo, escribe cada unitario de la oferta
      (con el AIU y, si el pliego lo cuenta, el IVA de la utilidad dentro) y devuelve el MISMO libro. Lo que no puede comprobar
@@ -9935,7 +9968,7 @@
         const sobre = Array.isArray(ll.sobre_oficial) ? ll.sobre_oficial : [];
         estado.className = "mt-2 text-sm text-red-700";
         estado.innerHTML = `<p>No se llenó. ${esc(frases.join(" "))}</p>${sobre.length ? `<ul class="mt-1 list-disc space-y-1 pl-5 text-gray-700">${sobre.slice(0, 12).map((x) => `<li>Fila ${esc(String(x.fila_excel))} «${esc(x.descripcion)}»: su unitario ${esc(pesos(x.unitario))}, el oficial ${esc(pesos(x.oficial))}</li>`).join("")}</ul>
-          <button type="button" data-formulario-excel-aceptar class="mt-2 rounded-lg border border-red-300 bg-white px-3 py-1.5 text-sm font-medium text-red-800 hover:bg-red-50">Mi pliego no lo prohíbe: llenarlo así</button>` : ""}`;
+          <button type="button" data-formulario-excel-aceptar class="mt-2 rounded-lg border border-red-200 bg-white px-3 py-1.5 text-sm font-medium text-red-800 hover:bg-red-50">Mi pliego no lo prohíbe: llenarlo así</button>` : ""}`;
         const ac = estado.querySelector("[data-formulario-excel-aceptar]");
         if (ac) ac.addEventListener("click", () => llenar(true));
       }

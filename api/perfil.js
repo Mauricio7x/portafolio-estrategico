@@ -41,6 +41,8 @@ const OPS = {
   "empresa-datos": () => require("../lib/handlers/perfil/empresa_datos.js"),
   /* LO QUE EL DUEÑO QUITÓ DE SU LISTA con «No es obra» (6-nov-2026): por número y por objeto de la misma entidad */
   "no-es-obra": () => require("../lib/handlers/perfil/no_es_obra.js"),
+  /* SUS OFERTAS EN SECOP II Y CÓMO LE FUE (12-nov-2026, PLAN_X20 tanda 13): a su nombre y de los consorcios donde figura; credencial siempre */
+  "ofertas-propias": () => require("../lib/handlers/perfil/ofertas_propias.js"),
 };
 
 function opDe(req) {

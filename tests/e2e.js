@@ -11519,6 +11519,97 @@ async function main() {
       + "la de la entidad intacta, recálculo al abrir; no se entrega sobre el presupuesto, ni con unitarios sobre el oficial sin confirmación, ni con fórmulas que no se saben calcular o que Excel guardó distinto, ni con el AIU aparte o el total escrito a mano");
   }
 
+  bqOfertasPropias: { if (!corre("unidad ofertas propias")) break bqOfertasPropias;
+    /* PLAN_X20, tanda 13 (12-nov-2026): sus ofertas en SECOP II, a su nombre y de los consorcios donde figura */
+    const OP = require("../lib/ofertas_propias.js");
+    const H = "9396710", G = "901096271";
+    const grupos = [
+      { codigo_grupo: "732018932", nombre_grupo: "CONSORCIO INFRAESTRUCTURA 1A", nit_participante: H, participacion: "90.000000" },
+      { codigo_grupo: "735233496", nombre_grupo: "CONSORCIO INFRAESTRUCTURA 1A", nit_participante: H, participacion: "60.000000" },
+      { codigo_grupo: "731740114", nombre_grupo: "CONSORCIO SEDES SOCIALES HGR", nit_participante: H, participacion: "90.000000" },
+      { codigo_grupo: "736380759", nombre_grupo: "CONSORCIO PRIMERA INFANCIA HGR", nit_participante: H, participacion: "40.000000" },
+      { codigo_grupo: "731740114", nombre_grupo: "CONSORCIO SEDES SOCIALES HGR", nit_participante: G, participacion: "10.000000" },
+    ];
+    // la fila de una oferta se repite una vez por cada código asociado a la cuenta que la presentó (medido en CO1.BDOS.8927339)
+    const fila = (id, proc, nombre, nit, cod, valor, fecha, ref) => ({ identificador_de_la_oferta: id, id_del_proceso_de_compra: proc, referencia_del_proceso: ref || proc, entidad_compradora: "E.S.E. HOSPITAL",
+      fecha_de_registro: `${fecha}T10:00:00.000`, modalidad: "Selección Abreviada de Menor Cuantía", nombre_proveedor: nombre, nit_del_proveedor: nit, c_digo_proveedor: cod, valor_de_la_oferta: String(valor), moneda: "COP" });
+    const propias = [
+      fila("CO1.RPL.1", "CO1.BDOS.1", "Helder Gustavo Rodriguez", H, "705244309", 20943175, "2025-10-15", "CP-002-2025"),
+      fila("CO1.RPL.1", "CO1.BDOS.1", "Helder Gustavo Rodriguez", H, "732018932", 20943175, "2025-10-15", "CP-002-2025"),
+      fila("CO1.RPL.2", "CO1.BDOS.2", "CONSORCIO INFRAESTRUCTURA 1A", H, "732018932", 209791151, "2025-10-06"),
+      fila("CO1.RPL.3", "CO1.BDOS.3", "GENESIS INGENIERIA Y CONSTRUCCION SAS", G, "731740114", 420160987, "2026-07-24"),   // de la socia: trae el código del consorcio compartido
+      fila("CO1.RPL.4", "CO1.BDOS.4", "CONSORCIO PRIMERA INFANCIA HGR", "No Definido", "736380759", 300000000, "2026-05-10"),
+      fila("CO1.RPL.5", "CO1.BDOS.5", "CONSORCIO PRIMERA INFANCIA HGR", "902000111", "799999999", 310000000, "2026-05-11"),   // mismo nombre, sin su código: no es suya
+      fila("Confidencial", "CO1.BDOS.6", "Confidencial", H, "705244309", 0, "2026-01-01"),
+    ];
+    const otras = (proc, valores) => valores.map((v, i) => fila(`X.${proc}.${i}`, proc, `OTRO ${i}`, String(800000000 + i), "1", v, "2025-10-01"));
+    const delProceso = { "CO1.BDOS.1": [propias[0]], "CO1.BDOS.2": [propias[2], ...otras("CO1.BDOS.2", [200000000, 205000000, 213879191])], "CO1.BDOS.4": [propias[4], ...otras("CO1.BDOS.4", [280000000])] };
+    const procesos = [
+      { id_del_portafolio: "CO1.BDOS.1", adjudicado: "No", estado_del_procedimiento: "Evaluación", precio_base: "20943247" },
+      { id_del_portafolio: "CO1.BDOS.1", adjudicado: "Si", nombre_del_proveedor: "Helder Gustavo Rodriguez", nit_del_proveedor_adjudicado: "No Definido", valor_total_adjudicacion: "20943175", precio_base: "20943247", estado_del_procedimiento: "Seleccionado" },
+      { id_del_portafolio: "CO1.BDOS.2", adjudicado: "Si", nombre_del_proveedor: "YESID NINCO POLANIA", nit_del_proveedor_adjudicado: "No Definido", valor_total_adjudicacion: "213879191", precio_base: "213883725" },
+      { id_del_portafolio: "CO1.BDOS.2", adjudicado: "No", estado_del_procedimiento: "Evaluación", precio_base: "213883725" },   // otra fase, después: no borra la adjudicada
+    ];
+    const r = OP.ofertasPropiasDe({ grupos, propias, delProceso, procesos, nits: [`${H}-3`] });
+    assert.deepStrictEqual(r.ofertas.map((o) => o.identificador).sort(), ["CO1.RPL.1", "CO1.RPL.2", "CO1.RPL.4"], `las suyas: su NIT o su consorcio con su código; la de la socia y la de otro con el mismo nombre no → ${r.ofertas.map((o) => o.identificador)}`);
+    const o1 = r.ofertas.find((o) => o.identificador === "CO1.RPL.1"), o2 = r.ofertas.find((o) => o.identificador === "CO1.RPL.2"), o4 = r.ofertas.find((o) => o.identificador === "CO1.RPL.4");
+    assert.deepStrictEqual([o1.via.tipo, o1.resultado, o1.puesto_por_precio, o1.ofertas_en_el_proceso], ["nit", "gano", 1, 1], "a su nombre, sola y adjudicada a usted (la fase adjudicada manda sobre la que no)");
+    assert.deepStrictEqual([o2.via.tipo, o2.via.participacion_pct, o2.resultado, o2.adjudicatario, o2.puesto_por_precio, o2.ofertas_en_el_proceso], ["consorcio", null, "otro", "YESID NINCO POLANIA", 3, 4],
+      "en consorcio, sin porcentaje porque usted tiene dos consorcios con ese nombre (90 % y 60 %): no se elige");
+    assert.deepStrictEqual([o4.via.participacion_pct, o4.resultado], [40, "sin_dato"], "un consorcio único con ese nombre lleva su porcentaje; sin fila de resultado es «sin dato», no «perdió»");
+    assert.deepStrictEqual(r.tablero, [{ ano: "2026", ofertas: 1, ganadas: 0, con_resultado: 0, sin_resultado: 1, puesto_mediano: 2 }, { ano: "2025", ofertas: 2, ganadas: 1, con_resultado: 2, sin_resultado: 0, puesto_mediano: 3 }],
+      `el tablero por año (el puesto mediano solo con dos o más ofertas en el proceso) → ${JSON.stringify(r.tablero)}`);
+    const conSocia = OP.ofertasPropiasDe({ grupos, propias, delProceso, procesos, nits: [H, G] });
+    assert.ok(conSocia.ofertas.some((o) => o.identificador === "CO1.RPL.3" && o.via.tipo === "nit" && o.via.nit === G), "con el perfil de los dos, la de la socia sí cuenta, por su NIT");
+    const fr = OP.frasesOfertasPropias({ ok: true, ...r });
+    assert.ok(/2026: 1 oferta, 1 sin resultado conocido · 2025: 2 ofertas, 1 adjudicada a usted, 1 a otro/.test(fr[0]) && !/2026: 1 oferta, 0 adjudicadas/.test(fr[0]), `«sin dato» no se cuenta como «0 adjudicadas» → ${fr[0]}`);
+    assert.ok(fr.some((t) => /La fuente está incompleta/.test(t)), "la frase dice que la fuente está incompleta");
+    // la consulta: dos pedidos en paralelo por columna, el detalle aparte, y nunca lanza
+    const pedidos = [];
+    const falsa = (fallaDetalle = false) => async (url) => {
+      const u = new URL(url), w = u.searchParams.get("$where") || ""; pedidos.push(w.slice(0, 40));
+      const resp = (j) => ({ ok: true, status: 200, headers: { get: () => "application/json" }, text: async () => JSON.stringify(j), json: async () => j });
+      // la suite redirige las direcciones de las fuentes: se reconoce la consulta por lo que pide
+      if (/^nit_participante/.test(w)) return resp(grupos);
+      if (/^nit_del_proveedor/.test(w)) return resp(propias.filter((f) => f.nit_del_proveedor === H));
+      if (/^c_digo_proveedor/.test(w)) return resp(propias.filter((f) => /732018932|736380759|731740114/.test(f.c_digo_proveedor)));
+      if (fallaDetalle) return { ok: false, status: 503, headers: { get: () => "text/html" }, text: async () => "caído", json: async () => { throw new Error("x"); } };
+      if (/^id_del_proceso_de_compra/.test(w)) return resp(Object.values(delProceso).flat());
+      if (/^id_del_portafolio/.test(w)) return resp(procesos);
+      return resp([]);
+    };
+    const c = await OP.consultarOfertasPropias([`${H}-3`], { fetchImpl: falsa(), tiempoMs: 3000 });
+    assert.ok(c.ok && c.ofertas.length === 3 && pedidos.some((p) => /^nit_del_proveedor/.test(p)) && pedidos.some((p) => /^c_digo_proveedor/.test(p)) && !pedidos.some((p) => / OR /.test(p)), `una consulta por columna, sin «O» → ${pedidos.join(" | ")}`);
+    const cd = await OP.consultarOfertasPropias([H], { fetchImpl: falsa(true), tiempoMs: 3000 });
+    assert.ok(cd.ok && cd.aviso && cd.ofertas.every((o) => o.resultado === "sin_dato") && OP.frasesOfertasPropias(cd).some((t) => /no se pudieron traer esta vez/.test(t)) && !/adjudicada/.test(OP.frasesOfertasPropias(cd)[0]),
+      "si el detalle falla, las ofertas salen igual, sin resultado, y se dice");
+    assert.match((await OP.consultarOfertasPropias([], { fetchImpl: falsa() })).motivo, /no tiene NIT/);
+    assert.match((await OP.consultarOfertasPropias([H], { fetchImpl: async () => { throw new Error("red caída"); }, tiempoMs: 2000 })).motivo, /No se pudo consultar SECOP II/);
+    // el manejador: credencial siempre, perfil obligatorio, y el resultado que salió bien se guarda; el que falló, no
+    const HOP = require("../lib/handlers/perfil/ofertas_propias.js");
+    let llamadas = 0;
+    const consultar = async () => { llamadas++; return { ok: true, ofertas: r.ofertas, tablero: r.tablero, consultado_el: "2026-11-12T00:00:00.000Z" }; };
+    const h = (req, res) => HOP(req, res, { consultar });
+    assert.strictEqual((await invocar(h, "/api/perfil?op=ofertas-propias&perfil=helder", {})).status, 401, "sin credencial no se lee");
+    assert.strictEqual((await invocar(h, "/api/perfil?op=ofertas-propias", CAB_TOKEN)).status, 400, "sin perfil es 400");
+    const h1 = await invocar(h, "/api/perfil?op=ofertas-propias&perfil=helder", CAB_TOKEN);
+    const h2 = await invocar(h, "/api/perfil?op=ofertas-propias&perfil=helder", CAB_TOKEN);
+    assert.ok(h1.status === 200 && h1.cuerpo.desde_cache === false && h2.cuerpo.desde_cache === true && llamadas === 1 && h2.cuerpo.ofertas.length === 3 && h2.cuerpo.frases.length >= 2, `la segunda vez sale de lo guardado → ${llamadas} ${h2.cuerpo.desde_cache}`);
+    await invocar(h, "/api/perfil?op=ofertas-propias&perfil=helder&refrescar=1", CAB_TOKEN);
+    assert.strictEqual(llamadas, 2, "«refrescar» consulta otra vez");
+    const hFalla = (req, res) => HOP(req, res, { consultar: async () => { llamadas++; return { ok: false, motivo: "caído", ofertas: [], tablero: [] }; } });
+    const antes = llamadas;
+    await invocar(hFalla, "/api/perfil?op=ofertas-propias&perfil=pics", CAB_TOKEN); await invocar(hFalla, "/api/perfil?op=ofertas-propias&perfil=pics", CAB_TOKEN);
+    assert.strictEqual(llamadas - antes, 2, "un resultado que falló no se guarda: el siguiente intento consulta");
+    const hParcial = (req, res) => HOP(req, res, { consultar: async () => { llamadas++; return { ok: true, aviso: "no se pudo traer el puesto ni el resultado", ofertas: r.ofertas, tablero: r.tablero }; } });
+    const antes2 = llamadas;
+    await invocar(hParcial, "/api/perfil?op=ofertas-propias&perfil=prodiac", CAB_TOKEN); await invocar(hParcial, "/api/perfil?op=ofertas-propias&perfil=prodiac", CAB_TOKEN);
+    assert.strictEqual(llamadas - antes2, 2, "uno a medias (sin puesto ni resultado) tampoco: no se sirven 12 horas de «sin resultado»");
+    assert.strictEqual((await invocar(require("../api/perfil.js"), "/api/perfil?op=ofertas-propias&perfil=helder", {})).status, 401, "por el router real, sin credencial tampoco");
+    console.log("· unidad ofertas propias: su NIT o su consorcio con su código (la de la socia y la de otro con el mismo nombre no), el porcentaje solo si el consorcio es uno, "
+      + "puesto por precio y resultado de la fase adjudicada, «sin dato» que no es «perdió», el tablero por año, una consulta por columna, el detalle caído dicho, credencial y lo guardado");
+  }
+
   /* unidad: TEXTO como co-señal (vocabulario por familia + verbo de obra) */
   bq19: { if (!corre("unidad texto")) break bq19;
     const idx = unspsc.indiceDe(PERFILES.helder.unspsc);
