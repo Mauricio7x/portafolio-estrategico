@@ -9924,7 +9924,7 @@
       ${lista.length ? `<ul class="mt-3 space-y-2">${lista.map((o) => `<li class="rounded-lg border border-gray-200 px-3 py-2" data-mi-oferta="${esc(o.identificador)}">
         <p class="font-medium text-gray-900">${esc(o.entidad || "Entidad sin nombre")} · ${esc(o.referencia || o.id_portafolio)}</p>
         <p class="text-gray-600">${esc(o.fecha || "sin fecha")} · ${quien(o)} · ${o.valor_cop != null ? esc(pesos(o.valor_cop)) : "valor sin dato"}${o.puesto_por_precio != null && o.ofertas_en_el_proceso ? ` · puesto ${o.puesto_por_precio} por precio de ${o.ofertas_en_el_proceso}` : ""}</p>
-        <p class="text-gray-600">${res(o)}</p></li>`).join("")}</ul>` : ""}`;
+        <p class="text-gray-600">${res(o)}</p>${o.resultado === "otro" ? `<p class="text-gray-600" data-mi-oferta-causa>${o.causa && o.causa.frase ? esc(o.causa.frase) : "El informe de evaluación de este proceso no se ha leído en la aplicación: se lee desde la ventana de la entidad."}</p>` : ""}</li>`).join("")}</ul>` : ""}`;
   }
   async function buscarMisOfertas(refrescar) {
     const caja = $("mis-ofertas"), btn = $("btn-mis-ofertas");
@@ -9960,6 +9960,9 @@
     const div = document.createElement("div");
     div.className = "mt-4 rounded-lg border border-gray-200 px-3 py-3";
     div.innerHTML = `<p class="text-sm text-gray-700">Puede descargar el Formulario de Excel de la entidad${leido.nombre ? ` («${esc(leido.nombre)}»)` : ""} con sus valores unitarios escritos.</p>
+      <fieldset class="mt-2 text-sm text-gray-700"><legend class="text-sm">¿Sus valores unitarios llevan dentro el IVA de la utilidad?</legend>
+        <label class="mr-3"><input type="radio" name="formulario-iva" value="con_iva" data-formulario-iva> Sí, con IVA</label>
+        <label><input type="radio" name="formulario-iva" value="sin_iva" data-formulario-iva> No, sin IVA</label></fieldset>
       <button type="button" data-formulario-excel class="mt-2 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium hover:bg-gray-50">Llenar el Formulario de la entidad</button>
       <div data-formulario-excel-estado class="mt-2 text-sm" role="status"></div>`;
     caja.appendChild(div);
@@ -9969,9 +9972,12 @@
       btn.disabled = true;
       estado.className = "mt-2 text-sm text-gray-500"; estado.textContent = "Bajando el Formulario de la entidad y escribiendo sus precios…";
       const cfg = leerConfig();
+      /* el IVA de la utilidad lo CONFIRMA el usuario (decisión del dueño, 12-nov-2026); sin respuesta, el servidor dice qué dice el Formulario */
+      const marcada = div.querySelector("[data-formulario-iva]:checked");
       let r;
       try {
         r = await api("/api/pliego?op=descargar", { method: "POST", body: { url: leido.url, formato: "oferta_excel", items: itemsParaFormulario(), oferta: ultimoCalculo.resumen.oferta,
+          iva: marcada ? marcada.value : null,
           aiu: { administracion_pct: cfg.aiu_pct, imprevistos_pct: cfg.imprevistos_pct, utilidad_pct: cfg.utilidad_pct }, aceptar_sobre_oficial: aceptar === true } });
       } catch (e) { estado.className = "mt-2 text-sm text-red-700"; estado.textContent = `No se pudo llenar: ${fraseDeFallo(e)}`; btn.disabled = false; return; }
       const ll = (r && r.llenado) || {};
@@ -9982,6 +9988,12 @@
         descargarBlob(new Blob([bytes], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }), `${base} - con su oferta.xlsx`);
         estado.className = "mt-2 text-sm text-emerald-800";
         estado.innerHTML = `<p>Descargado.</p><ul class="mt-1 list-disc space-y-1 pl-5">${frases.map((t) => `<li>${esc(t)}</li>`).join("")}</ul>`;
+      } else if (ll.pide_iva) {
+        /* la propuesta del Formulario queda marcada; el usuario la confirma con otra pulsación */
+        const sug = ll.sugerencia_iva === "con_iva" || ll.sugerencia_iva === "sin_iva" ? div.querySelector(`[data-formulario-iva][value="${ll.sugerencia_iva}"]`) : null;
+        if (sug) sug.checked = true;
+        estado.className = "mt-2 text-sm text-amber-800";
+        estado.textContent = `${frases.join(" ")}${sug ? " Quedó marcada esa opción: confírmela o cámbiela, y pulse otra vez «Llenar el Formulario de la entidad»." : " Marque una opción y pulse otra vez «Llenar el Formulario de la entidad»."}`;
       } else {
         const sobre = Array.isArray(ll.sobre_oficial) ? ll.sobre_oficial : [];
         estado.className = "mt-2 text-sm text-red-700";

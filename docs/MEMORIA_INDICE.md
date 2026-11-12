@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 2676251 bytes · 485 secciones · 58 con marcador de superación.
+Derivado del árbol: 2678839 bytes · 486 secciones · 58 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -495,4 +495,5 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | El puntaje de precio del informe, recalculado con el motor, y el borrador de observación (12-nov-2026) | 12-nov-2026 | 22498-22512 | 1947 |  |
 | Sin pliego por nombre, se lee por contenido: el título de la primera página decide (12-nov-2026) | 12-nov-2026 | 22513-22521 | 1798 |  |
 | Leer los documentos de Mis procesos sin la pestaña abierta, con la MISMA lectura de la pestaña (12-nov-2026) | 12-nov-2026 | 22522-22534 | 2427 |  |
-| Sus ofertas anteriores en esa entidad, en Precios junto al grupo (12-nov-2026) | 12-nov-2026 | 22535-22543 | 1801 |  |
+| Sus ofertas anteriores en esa entidad, en Precios junto al grupo (12-nov-2026) | 12-nov-2026 | 22535-22544 | 1802 |  |
+| El IVA de la utilidad en el Formulario lleno lo confirma el usuario; la lectura sin pestaña entra a la tarea de la mañana; y la causa de cada oferta perdida (12-nov-2026) | 12-nov-2026 | 22545-22553 | 2587 |  |
