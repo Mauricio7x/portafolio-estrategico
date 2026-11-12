@@ -22509,3 +22509,12 @@ En una línea: tanda 14 del plan x20 (pieza 6.6, uso): sobre la captura verifica
 - **Sin hacer**: el plazo de traslado (no se lee del cronograma todavía) y el puntaje máximo tomado de la tabla de ESE pliego (tanda 5) para los informes donde nadie recibió el máximo.
 - **Sin verificar**: con capturas reales de producción (no hay acceso desde aquí); se probó con los valores del caso de Cali.
 - Cerradura: «unidad recalculo del informe»; 10 mutaciones, mueren todas.
+
+### Sin pliego por nombre, se lee por contenido: el título de la primera página decide (12-nov-2026)
+
+En una línea: defecto D9 del plan x20 (tanda 12, una de sus cuatro fases): «3 PPC CDV ADULTO MAYOR DT CARTAGENA.pdf» es el proyecto de pliego y caía como «Otro documento», así que el proceso se quedaba sin pliego leído; ahora, sin ningún pliego, borrador ni documento base legible por nombre, el plan (`planDeLectura`) lee hasta 2 PDF «otros» de la entidad, los más nuevos, y el servidor (`op=documentos`) los guarda con el tipo que dice el título de su primera página (`tipoPorContenido`), marcados `tipo_por_contenido` (hechos versión 28: los índices guardados se vuelven a planear).
+
+- **Lo que no hay que deshacer**: solo cuando no hay pliego por nombre (con uno reconocido no se baja ningún «otro»: cada lectura cuesta descarga y OCR); solo el título (los primeros 600 caracteres): un estudio previo habla del pliego en el cuerpo; un título que habla DEL pliego (observaciones, respuestas, adendas, avisos, actas, resoluciones, informes, estudios previos, certificados, formatos, anexos, matrices, cronogramas) no es el pliego.
+- **Sin hacer de la tanda 12**: una sola descarga por documento, decir qué documento crítico no se leyó y leer sin la pestaña abierta (mover la lectura al servidor). Y el pliego leído por contenido no entra al vigía de adendas (`esVersionDelPliego` mira el nombre).
+- **Sin verificar**: con el archivo real de Cartagena (la búsqueda por nombre en `dmgg-8hin` agotó el tiempo el 12-nov-2026); se probó con textos armados.
+- Cerradura: «unidad leer por contenido» (el plan, los títulos, y por el servidor el «3 PPC» guardado como proyecto de pliego y unas observaciones que siguen siendo «otro»); 8 mutaciones, mueren todas.

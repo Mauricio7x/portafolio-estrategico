@@ -248,8 +248,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 482 secciones (58 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 22384  «Revisar antes de subir» también compara contra el Formulario 1 de Excel (11-nov-2026)
+· MEMORIA · docs/MEMORIA.md — 483 secciones (58 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 22392  Qué tan cerca se anticipa el precio ganador por modalidad, y la referencia de la entidad po…
   L 22406  La lista del día va en el vigilante de la mañana (12-nov-2026)
   L 22414  El reparto del consorcio en una frase: queda por fuera, falta confirmar o cumple lo medible…
@@ -259,6 +258,7 @@
   L 22456  Su oferta escrita en el Formulario de Excel de la entidad, con candados (12-nov-2026)
   L 22483  Sus ofertas en SECOP II y cómo le fue: a su nombre y de los consorcios donde figura (12-nov…
   L 22498  El puntaje de precio del informe, recalculado con el motor, y el borrador de observación (1…
+  L 22513  Sin pliego por nombre, se lee por contenido: el título de la primera página decide (12-nov-…
 
 · DOCUMENTOS docs/ — 78 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)

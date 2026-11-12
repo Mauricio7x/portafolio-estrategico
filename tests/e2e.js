@@ -11678,6 +11678,39 @@ async function main() {
       + "lo que no se recalcula con su motivo y el borrador de observación sin normas y con corchetes");
   }
 
+  bqPorContenido: { if (!corre("unidad leer por contenido")) break bqPorContenido;
+    /* PLAN_X20, tanda 12, defecto D9 (12-nov-2026): el pliego con un nombre poco usual se lee por lo que dice su primera página */
+    const Dp = require("../lib/documentos_proceso.js");
+    const f = (id, n, fecha, bytes = "100000") => ({ id_documento: id, nombre_archivo: n, extensi_n: n.split(".").pop(), tamanno_archivo: bytes, fecha_carga: `${fecha}T00:00:00.000`, url_descarga_documento: { url: `https://community.secop.gov.co/x?DocumentId=${id}` } });
+    const p = Dp.planDeLectura([f("1", "3 PPC CDV ADULTO MAYOR DT CARTAGENA.pdf", "2026-08-01"), f("2", "OTRA COSA.pdf", "2026-08-02"), f("3", "TERCERO.pdf", "2026-07-01"), f("4", "ESTUDIOS PREVIOS.pdf", "2026-07-01"), f("5", "PLANOS.dwg", "2026-08-03")]);
+    assert.deepStrictEqual([...p.plan].sort(), ["1", "2", "4"], `sin pliego por nombre, se leen los ${Dp.MAX_POR_CONTENIDO} «otros» PDF más nuevos → ${p.plan}`);
+    assert.ok(p.archivos.find((a) => a.id_documento === "1").por_contenido === true && p.archivos.find((a) => a.id_documento === "3").en_plan === false, "el tercero no: el cupo es de dos");
+    assert.deepStrictEqual(Dp.planDeLectura([f("1", "3 PPC CDV.pdf", "2026-08-01"), f("6", "PLIEGO DE CONDICIONES.pdf", "2026-08-01")]).plan, ["6"], "con un pliego reconocido por nombre no se lee ningún «otro»");
+    const casos = [["PROYECTO DE PLIEGO DE CONDICIONES\nSELECCIÓN ABREVIADA DE MENOR CUANTÍA", "pliego_borrador"], ["PLIEGO DE CONDICIONES DEFINITIVO\nLICITACIÓN PÚBLICA", "pliego"],
+      ["Documento Base\nProceso de Contratación de obra pública", "documento_base"], ["OBSERVACIONES AL PROYECTO DE PLIEGO DE CONDICIONES", null], ["RESPUESTA A OBSERVACIONES DEL PLIEGO DE CONDICIONES", null],
+      ["ESTUDIOS PREVIOS\nlos requisitos del pliego de condiciones", null], ["ADENDA No. 1 AL PLIEGO DE CONDICIONES", null], ["CERTIFICADO DE DISPONIBILIDAD PRESUPUESTAL", null]];
+    for (const [t, tipo] of casos) assert.strictEqual(Dp.tipoPorContenido(`\f1\n${t}\n`), tipo, `«${t.split("\n")[0]}» → ${tipo}`);
+    assert.strictEqual(Dp.tipoPorContenido(`\f1\nESPECIFICACIONES TÉCNICAS DE LA OBRA\n${"texto ".repeat(150)}\nsegún el PLIEGO DE CONDICIONES`), null, "lo que dice más abajo del título no cuenta");
+    // por el servidor: el «otro» del plan se guarda como el pliego que dice ser, y sus hechos son los de un pliego
+    const redis = require("../lib/redis.js").crearRedis({});
+    const DocsH = require("../lib/handlers/pliego/documentos.js"), routerP = require("../api/pliego.js");
+    const id = "CO1.REQ.D9-CONTENIDO";
+    const arch = p.archivos.filter((a) => a.en_plan);
+    await DocsH.escribirDocs(redis, id, { id_proceso: id, indice: { version: Dp.VERSION, consultado_el: new Date().toISOString(), fuente: "dmgg-8hin", archivos: p.archivos, plan: p.plan }, leidos: {}, ilegibles: {} });
+    const post = (cuerpo) => invocarPost(routerP, "/api/pliego?op=documentos", { id_proceso: id, ...cuerpo }, CAB_TOKEN);
+    const textoP = "\f1\nPROYECTO DE PLIEGO DE CONDICIONES\nSELECCIÓN ABREVIADA DE MENOR CUANTÍA No. SAMC-07-2026\n\f2\nEl proponente deberá acreditar un índice de liquidez mayor o igual a 1,5.\n";
+    const r1 = await post({ id_documento: "1", texto: textoP, paginas_total: 2 });
+    const textoO = "\f1\nOBSERVACIONES AL PROYECTO DE PLIEGO DE CONDICIONES\nEl interesado solicita aclarar el índice de liquidez.\n\f2\nSe solicita ampliar el plazo de la obra pública.\n";
+    const r2 = await post({ id_documento: "2", texto: textoO, paginas_total: 2 });
+    const docs = await DocsH.leerDocs(redis, id);
+    assert.ok(r1.status === 200 && r2.status === 200 && arch.length === 3, `se guardan los dos: ${r1.status} ${r2.status}`);
+    assert.deepStrictEqual([docs.leidos["1"].tipo, docs.leidos["1"].tipo_por_contenido, docs.leidos["2"].tipo, docs.leidos["2"].tipo_por_contenido], ["pliego_borrador", true, "otro", undefined],
+      `el proyecto de pliego se guarda como tal; las observaciones siguen siendo «otro» → ${JSON.stringify([docs.leidos["1"].tipo, docs.leidos["2"].tipo])}`);
+    await redis.del(Dp.claveDocs(id));
+    console.log("· unidad leer por contenido: sin pliego por nombre se leen los dos «otros» PDF más nuevos, el título de la primera página decide (proyecto, definitivo, documento base; "
+      + "observaciones, respuestas, adendas y estudios previos no), y por el servidor el «3 PPC» se guarda como proyecto de pliego");
+  }
+
   /* unidad: TEXTO como co-señal (vocabulario por familia + verbo de obra) */
   bq19: { if (!corre("unidad texto")) break bq19;
     const idx = unspsc.indiceDe(PERFILES.helder.unspsc);

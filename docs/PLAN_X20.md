@@ -439,6 +439,7 @@ Si en el paso 2 no ve lo descrito, no siga: dígalo y se revisa, porque ese orde
   - *Hecha la pieza 6.7 el 12-nov-2026*: «Llenar el Formulario de la entidad» escribe los unitarios en el Excel de la entidad y devuelve el mismo libro, o no entrega nada y dice por qué. Medido: de 27 Formularios reales que pasan la lectura, 16 se llenan con el total igual al de LibreOffice. Falta: que el revisor lea el libro lleno (hoy compara la proyección de Precios) y los formularios con el AIU aparte. Memoria: «Su oferta escrita en el Formulario de Excel de la entidad, con candados (12-nov-2026)».
 - **Tanda 11 · Los formatos que faltan.** Experiencia, capacidad financiera y capacidad residual desde la base de contratos por perfil. Decide el dueño antes: la decisión pendiente del 3-nov-2026. Tamaño: 3 sesiones.
 - **Tanda 12 · Leer sin pestaña y por contenido.** Las fases 2 a 5 de la lectura, con D9. Tamaño: 3 a 4 sesiones.
+  - *Hecha en parte el 12-nov-2026*: D9 y la lectura por contenido cuando no hay pliego por nombre. Falta: una sola descarga, decir qué documento crítico no se leyó y leer sin la pestaña abierta. Memoria: «Sin pliego por nombre, se lee por contenido: el título de la primera página decide (12-nov-2026)».
 
 ### 7.6 Entrega 5 · Aprender de cada resultado
 
