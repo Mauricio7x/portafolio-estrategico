@@ -2,10 +2,17 @@
 
 > Para: sesión · Estado: referencia · Sustituido por: —
 
-**Detekta**: app privada, EN PRODUCCIÓN, para decidir a qué licitaciones de obra civil presentarse
-en Colombia. Su usuario es real, **no tiene terminal** (opera pegando URLs en Chrome) y fija el
-precio de una oferta con la cifra que se ponga en pantalla: una cifra equivocada, creíble y bien
-maquetada hace más daño que una que falta.
+**Detekta**: herramienta PERSONAL y privada (no se vende; hasta 3 usuarios, Chrome y celular), EN
+PRODUCCIÓN, que hace de oficina de contratación para que Helder —ingeniero civil, persona natural
+sin capital, con base en Ibagué y Bogotá— compita en obra civil, interventoría y consultoría con
+empresas que pagan un equipo entero. Detekta hace el trabajo y el usuario solo revisa y decide
+«presentar oferta». Se mide en horas administrativas ahorradas y licitaciones ganadas. El rumbo,
+sus decisiones y la ruta: `docs/RUMBO.md` (12-nov-2026), que manda sobre todo texto anterior que
+hable de vender Detekta. El usuario **no tiene terminal** y fija el precio de una oferta con la
+cifra que se ponga en pantalla: una cifra equivocada, creíble y bien maquetada hace más daño que
+una que falta, y un error puede quebrarlo. Lo que una máquina puede comprobar (un reloj, una suma,
+un dato publicado) se comprueba solo y no se le pasa al usuario como «verificar»; lo que queda
+como «verificar» dice por qué (`docs/RUMBO.md § 3`).
 
 **Stack:** Vercel serverless (CommonJS) + Upstash Redis por REST + frontend estático en `public/`
 (una sola página). **Sin build, sin package.json, cero dependencias** — `fetch`/`zlib`/`crypto`
@@ -109,6 +116,11 @@ de la sesión.
   que pida; un trabajo que se repite cada semana, la que lo vuelva comando propio del repositorio.
   Ninguna sustituye al mapa ni a la suite. Una habilidad que escribe en producción no se dispara para
   diagnosticar: una cifra rara se reproduce leyendo.
+
+**Cómo se explica** (decisión del dueño, 12-nov-2026): la sesión planea paso a paso y, con
+«ejecuta», hace todo de principio a fin. Después lo explica como a alguien que no sabe del tema.
+Cada propuesta lleva lo bueno y lo malo de tomarla, y lo que salió mal se dice primero, sin
+suavizarlo: se corrige entre los dos.
 
 **El cierre**, corto porque el dueño lo lee en el teléfono (el detalle, en
 `docs/PROMPT_INICIAL.md § «10. Reglas de respuesta (obligatorias)»`): **Pidió** (el encargo y su

@@ -52,6 +52,7 @@ con `node tests/estado.js`, y las coordenadas las da `node tests/mapa.js <térmi
 | `docs/LEGAL_COLOMBIA.md` | referencia | — | — | Anexo A · Frente jurídico y regulatorio (Colombia) |
 | `docs/PRECIOS_DESDE_CLAUDE_CODE.md` | referencia | — | `README.md` · `tests` | Precios · cómo funciona «Buscar» y quién lo atiende |
 | `docs/RUTINAS.md` | referencia | — | `lib` · `tests` | Rutinas programadas · qué pueden hacer, qué no, y cómo se crea una que funcione |
+| `docs/RUMBO.md` | vigente | — | `CLAUDE.md` | RUMBO · Detekta como oficina de contratación personal de Helder (12-nov-2026) |
 
 ## Para ingeniero
 

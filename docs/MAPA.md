@@ -248,8 +248,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 485 secciones (58 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 22414  El reparto del consorcio en una frase: queda por fuera, falta confirmar o cumple lo medible…
+· MEMORIA · docs/MEMORIA.md — 486 secciones (58 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 22421  Los puntos fuera del precio, uno por uno, desde la tabla del pliego (12-nov-2026)
   L 22435  Las causales de rechazo de ESE pliego, una por una, con dónde las revisa la aplicación (12-…
   L 22443  La tabla de métodos de ponderación de ESE pliego, y las dos fórmulas del documento tipo V1 …
@@ -259,8 +258,9 @@
   L 22513  Sin pliego por nombre, se lee por contenido: el título de la primera página decide (12-nov-…
   L 22522  Leer los documentos de Mis procesos sin la pestaña abierta, con la MISMA lectura de la pest…
   L 22535  Sus ofertas anteriores en esa entidad, en Precios junto al grupo (12-nov-2026)
+  L 22545  El nuevo rumbo: Detekta es la oficina de contratación personal de Helder (12-nov-2026)
 
-· DOCUMENTOS docs/ — 78 (y 3 en docs/archivo/, superados: `--archivo` los lista):
+· DOCUMENTOS docs/ — 79 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)
   ADJUDICACION_FASE0_2026-10-25.md        Probabilidad de adjudicación · Fase 0: qué datos abiertos hay para saber quién gana 
   ADJUDICACION_NIVEL3_DISENO_2026-10-26.md  Probabilidad de adjudicación · Nivel 3: capturar quién quedó hábil para poder calcul
@@ -336,6 +336,7 @@
   reforma_datos/V-D57-D64-verificacion.md  Verificación adversaria de D-57 … D-64 (13/14-sep-2026)
   reforma_datos/V-D65-D72-verificacion.md  Verificación adversaria · D-65 a D-72 (13/14-sep-2026)
   RIESGOS.md                              Anexo G · Registro de riesgos
+  RUMBO.md                                RUMBO · Detekta como oficina de contratación personal de Helder (12-nov-2026)
   RUTINAS.md                              Rutinas programadas · qué pueden hacer, qué no, y cómo se crea una que funcione
   SEGURIDAD_Y_CUENTAS.md                  Anexo D · Identidad, autorización, seguridad y cobro
   VALIDACION_MODELOS.md                   Anexo E · Ciencia de datos: calibración, validación y vigilancia

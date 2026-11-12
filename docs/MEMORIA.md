@@ -22541,3 +22541,14 @@ En una línea: resto de la tanda 13 del plan x20: `op=grupo` (Precios, «dónde 
 - **Y la consulta aguanta una fuente lenta**: si una de las dos (por NIT o por código de consorcio) no responde, salen las de la otra y se dice cuál faltó (el 12-nov-2026 la de los consorcios pasó dos veces de 15 s).
 - **Sin hacer**: la causa de cada resultado (no está en datos abiertos: sale del informe que lee /evaluaciones). Sin verificar en pantalla la frase en Precios con un proceso real (la prueba es por el router con la consulta guardada simulada).
 - Cerradura: «unidad precio frente al grupo» (la acción por el router con y sin consulta guardada) y «unidad ofertas propias»; 5 mutaciones, mueren todas.
+
+### El nuevo rumbo: Detekta es la oficina de contratación personal de Helder (12-nov-2026)
+
+En una línea: el dueño respondió 40 preguntas y Detekta deja de pensarse como producto. Es una herramienta privada (hasta 3 usuarios, sin venta ni cobro, presupuesto = la suscripción de Claude) para que Helder, persona natural, compita en obra civil, interventoría y consultoría con base en Ibagué y Bogotá. Todo queda en `docs/RUMBO.md`.
+
+- **Lo que no hay que deshacer**: un solo perfil (Helder), y los consorcios se guardan como historial y como aviso «con este socio sí o no», no como perfiles (más perfiles estorban la búsqueda); avisos solo dentro de la aplicación; nada sale a una entidad sin la revisión del usuario, aunque todo lo prepare Detekta; el stack se mantiene y producción no se rompe.
+- **Por qué «comprobar solo»**: el dueño no quiere un «verificar» en todo. Lo calculable (reloj, sumas, SMMLV del año) y lo publicado se muestran sin aviso; solo lo juzgado lleva «verificar», con su motivo, y el motivo más frecuente se convierte en regla (`docs/RUMBO.md § 3`).
+- **IA sin abrir Claude Code**: propuesta A (tareas programadas en la nube, creadas desde la web porque las creadas desde una sesión arrancan sin repositorio) y B (Claude Code sin pantalla en el portátil MSI que llega hacia el 22-nov-2026). Se descartan por ahora la API pagada (presupuesto) y una IA local en la GTX 1050 Ti (lee peor; inferencia sin probar). Sin verificar si los términos de la suscripción permiten B.
+- **Decisiones del plan x20 que quedan resueltas**: 3 = A, 4 = C, 8 = sí; la 1, en parte. Siguen abiertas la 2, la 5, la 6 y la 7 (`docs/RUMBO.md § 2.1`).
+- **Sin cifra de plazo**: la fase 1 empieza midiendo cuánto ya existe de cronograma, adendas, audiencias y adjudicación; dar un plazo antes de eso sería inventarlo.
+- **Pendiente**: el dueño dice si alguna regla dura sobra (`docs/RUMBO.md § 6`) y responde lo de `docs/RUMBO.md § 7`; la fase 1 empieza con su «ejecuta».
