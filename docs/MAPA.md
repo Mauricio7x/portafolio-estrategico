@@ -2,7 +2,7 @@
      Es una FOTO para leer en GitHub; la fuente de verdad es ejecutar la herramienta. -->
 
 ```
-== MAPA DE DETEKTA · generado del árbol el 2026-11-10 ==
+== MAPA DE DETEKTA · generado del árbol el 2026-11-12 ==
 (no editar a mano: sale de `node tests/mapa.js --escribir`. Para ir a un sitio concreto,
  `node tests/mapa.js <término>` da la ruta, la línea y el sed exacto — más barato que leer esto)
 
@@ -22,7 +22,7 @@
   pliego.js                   Router del dominio PLIEGO (Fase 0 · consolidación a 6 funciones)
   procesos.js                 Router del dominio PROCESOS (Fase 0 · consolidación a 6 funciones)
 
-· lib/ — 112 módulos:
+· lib/ — 116 módulos:
   accesibilidad.js            Accesibilidad operativa de la zona de la obra
   adendas.js                  Vigía de adendas · lo que el DATASET dice que cambió (Fase 5)
   almacen.js                  Esquema de claves Redis + compresión de chunks
@@ -46,10 +46,12 @@
   columnas_historicas.js      ¿Qué columnas trae DE VERDAD el corpus histórico?
   compactar.js                La base de datos deja de llenarse (30-sep-2026)
   competencia_detalle.js      Los procesos que SOSTIENEN el badge de competencia
+  competencia_por_tamano.js   ¿Cuántas ofertas llegan a los procesos de este tamaño en esta entidad?
   config_rup.js               Validación del RUP que sube el dueño (archivo JSON)
   consorcio.js                Consorcio a la medida (Fase 10 · Detekta v4)
   contexto_vercel.js          El contexto de la petición de Vercel, o null (9-nov-2026)
   contratos_en_ejecucion.js   Los contratos que un perfil tiene en obra, también los de sus consorcios
+  convocatoria_limitada.js    ¿La convocatoria quedó limitada a Mipyme, a qué territorio, y hay sorteo?
   copia_datos.js              Copia de los datos que introduce el usuario (6-sep-2026, M-INF-15)
   correo.js                   Transporte de correo por REST — sin SDK, sin dependencias
   costos.js                   el motor de costo real vive en public/costos.js (UMD) y aquí
@@ -83,6 +85,7 @@
   ganancia.js                 ¿CUÁNTA PLATA DEJA ESTE CONTRATO?
   garantia_seriedad.js        EL PORCENTAJE DE LA GARANTÍA DE SERIEDAD QUE FIJA EL PLIEGO (28-sep-2026)
   glosario.js                 la marca y el glosario viven en public/glosario.js (UMD) y
+  grupo_ofertas.js            ¿Dónde habría quedado su precio frente a TODAS las ofertas de los procesos anteriores de la enti
   guia_proceso.js             LA GUÍA «DON HÉCTOR» DE UN PROCESO GUARDADO (sep 2026)
   habiles.js                  Días hábiles y festivos de Colombia (Fase 9 · Detekta v4)
   huella_fila.js              La huella por proceso: el delta no reescribe lo que no cambió (28-sep-2026)
@@ -92,6 +95,7 @@
   lenguaje_pantalla.js        las cercas de lenguaje y el número es-CO, en una sola copia
   manifestacion.js            La MANIFESTACIÓN DE INTERÉS de la selección abreviada de
   medidor_redis.js            Cuánto ancho de banda de Upstash gasta cada operación
+  metodos_ponderacion.js      Los 4 métodos de ponderación económica del documento tipo
   modo.js                     EL INTERRUPTOR, y vive en un solo sitio
   negocio.js                  Reglas de negocio: enriquecer(licitacion)
   objetos.js                  El almacén de archivos (compatible con S3), sin dependencias
@@ -238,19 +242,19 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 465 secciones (57 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 22116  El APU real del dueño: la unidad cortada en «Ubicación:», el costo directo en vez del preci…
-  L 22129  La rejilla de una pestaña: `:not(.hidden)` va solo con `display` (10-nov-2026)
-  L 22137  APU propios de Detekta, primera entrega: el banco de prueba sin Claude, el alcance de la ac…
-  L 22152  Mis procesos con su barra: tres apartados, el expediente con «Este proceso» a un lado y «Su…
-  L 22171  La lista lee el análisis guardado como Precios (10-nov-2026)
-  L 22189  Detekta ocupa la pantalla entera (10-nov-2026)
-  L 22196  El Excel de un presupuesto importado lleva el APU del archivo y no inventa capítulos (10-no…
-  L 22206  Precios con su barra: siete apartados, tres cifras arriba que nunca son $0, la casilla de l…  (superada)
-  L 22230  El mínimo para no perder plata sigue a la casilla de lo subcontratado, y subir un APU calcu…  (superada)
-  L 22249  La administración por tiempo se cobra entera: la casilla de lo subcontratado va encendida y…
+· MEMORIA · docs/MEMORIA.md — 475 secciones (58 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
+  L 22272  El plan x20: uso personal, ir donde llega una sola oferta, y sus ofertas se reconocen por e…
+  L 22300  La competencia por tamaño ordena «Las menos peleadas» y el motor de los cuatro métodos vive…
+  L 22322  La regla del anuncio, medida con la población de Detekta, resiste en menor cuantía, mínima …
+  L 22332  Precios dice dónde habría quedado su precio frente a todas las ofertas de la entidad, y cua…
+  L 22347  Las dos barreras se leen del pliego: limitada a Mipyme y a qué territorio, y si hay sorteo …
+  L 22362  El simulacro del consorcio: cada cláusula de participación contra el reparto que se va a fi…
+  L 22376  Con lista cargada, la capacidad también resta los contratos nuevos de SECOP II, por número …
+  L 22384  «Revisar antes de subir» también compara contra el Formulario 1 de Excel (11-nov-2026)
+  L 22392  Qué tan cerca se anticipa el precio ganador por modalidad, y la referencia de la entidad po…
+  L 22406  La lista del día va en el vigilante de la mañana (12-nov-2026)
 
-· DOCUMENTOS docs/ — 77 (y 3 en docs/archivo/, superados: `--archivo` los lista):
+· DOCUMENTOS docs/ — 78 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)
   ADJUDICACION_FASE0_2026-10-25.md        Probabilidad de adjudicación · Fase 0: qué datos abiertos hay para saber quién gana 
   ADJUDICACION_NIVEL3_DISENO_2026-10-26.md  Probabilidad de adjudicación · Nivel 3: capturar quién quedó hábil para poder calcul
@@ -295,6 +299,7 @@
   PLAN_DE_ACCION.md                       PLAN DE ACCIÓN · Detekta, de herramienta interna a producto por suscripción
   PLAN_REFORMA_DATOS.md                   PLAN · Reforma de los datos que Detekta enseña (13-sep-2026)
   PLAN_SAAS.md                            PLAN SaaS · De herramienta interna a producto por suscripción
+  PLAN_X20.md                             PLAN X20 · Adjudicar más contratos con Detekta (11-nov-2026)
   PRECIO_Y_UNIT_ECONOMICS.md              Anexo B · Modelo de negocio, precio y economía unitaria
   PRECIOS_DESDE_CLAUDE_CODE.md            Precios · cómo funciona «Buscar» y quién lo atiende
   PROBABILIDAD_MEJORADA.md                Probabilidad de ganar — auditoría de la fórmula vigente y propuesta de mejora

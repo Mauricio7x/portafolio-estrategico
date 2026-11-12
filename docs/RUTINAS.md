@@ -218,10 +218,21 @@ QUÉ MIRAR · todo es LECTURA: ni un POST, ninguna sincronización
    es «cero adendas»). `fallos`, `sin_tiempo` o `detenida: true` se dicen tal cual. Tu llamada a
    avisos con «enviar=no» NO dispara la revisión: no la repitas por tu cuenta.
 5. GitHub, con las herramientas mcp__github__*: la última corrida de «Suite» y la de «Actualización
-   de la tarde». Si alguna está en failure, di la causa en una frase.
+   de la tarde». Si alguna está en failure, di la causa en una frase. Si una lleva más de una hora
+   «queued» sin trabajos, dilo: la fusión automática de los pull request espera ese check.
+6. LA LISTA DEL DÍA (plan x20, tanda 3; zona y canal aprobados por el dueño el 12-nov-2026): los
+   procesos abiertos en los que TODAVÍA se puede avisar que le interesa, en el Tolima, el Huila y
+   Cundinamarca, de $100 a $500 millones, primero los menos peleados. Una sola llamada:
+   GET /api/procesos?op=listar&perfil=helder&dep=73,41,25&min=100000000&max=500000000&manif=abierta&ordenar_por=competencia&por_pagina=10
+   De cada resultado copia TAL CUAL, sin calcular nada: nombre_del_procedimiento (recortado a 90
+   caracteres), entidad, departamento_entidad, cuantia_cop en pesos, la frase de
+   competencia_entidad.por_tamano.frase si viene (si no, nada), la nota de `manifestacion` y
+   urlproceso. `total` dice cuántos hay; si es 0, di «Ninguno abierto hoy en esa zona y tamaño».
+   No es «no hay oportunidades»: la lista solo mira esa zona y ese tamaño.
 
 CÓMO CERRAR
-- Todo bien: UNA línea con total_activo, edad_horas, en_cola, historico_hace_dias. Nada más.
+- Todo bien: UNA línea con total_activo, edad_horas, en_cola, historico_hace_dias, y debajo la lista
+  del día del paso 6 (un renglón por proceso, en el orden en que llegó). Nada más.
 - Algo mal: qué está roto, desde cuándo si se puede saber, qué se rompe para el usuario, y el paso
   concreto para arreglarlo — con la URL completa y el nombre literal del botón si hay que tocar una
   pantalla.

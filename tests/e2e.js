@@ -1569,6 +1569,37 @@ const textosDe = (v, out = []) => {
 const SOLO = (process.env.E2E_SOLO || "").trim().toLowerCase();
 const SILENCIO = process.env.E2E_SILENCIO === "1";
 const BLOQUES = [];                       // censo de lo que el filtro conoce
+/* app.js REAL en un vm con todos los <script> de index.html, exponiendo las funciones pedidas al final del IIFE
+   (PLAN_X20, 11-nov-2026: lo usan «unidad competencia por tamaño» y «unidad simulacro del consorcio"). */
+function appEnVm(exponer) {
+  const vm = require("vm");
+  const pub = (f) => path.join(__dirname, "..", "public", f);
+  const orden = [...fs.readFileSync(pub("index.html"), "utf8").replace(/<!--[\s\S]*?-->/g, "").matchAll(/<script src="\/([a-z_]+\.js)"><\/script>/g)].map((x) => x[1]);
+  const nodo = () => new Proxy({ value: "", textContent: "", innerHTML: "", hidden: false, checked: false, disabled: false, dataset: {}, style: {}, options: [], children: [],
+    selectedOptions: [{ text: "", value: "" }], classList: { add() {}, remove() {}, toggle() {}, contains: () => false } },
+  { get: (t, k) => (k in t ? t[k] : k === Symbol.toPrimitive ? () => "" : typeof k === "symbol" || k === "then" ? undefined : () => nodo()), set: (t, k, val) => { t[k] = val; return true; } });
+  const almacen = () => { const m = new Map(); return { getItem: (k) => (m.has(k) ? m.get(k) : null), setItem: (k, val) => m.set(k, String(val)), removeItem: (k) => m.delete(k), clear: () => m.clear() }; };
+  const ctx = { console, URL, URLSearchParams, Intl, TextEncoder, TextDecoder, AbortController, structuredClone, queueMicrotask,
+    setTimeout: () => 1, setInterval: () => 1, clearTimeout() {}, clearInterval() {}, requestAnimationFrame: () => 1,
+    fetch: () => new Promise(() => {}), history: { replaceState() {}, pushState() {} }, navigator: { language: "es-CO", userAgent: "node", clipboard: {} },
+    location: { search: "", hash: "", href: "http://localhost/", pathname: "/", origin: "http://localhost", replace() {}, assign() {} },
+    sessionStorage: almacen(), localStorage: almacen(), matchMedia: () => ({ matches: false, addEventListener() {}, addListener() {} }),
+    getComputedStyle: () => ({ getPropertyValue: () => "" }), addEventListener() {}, removeEventListener() {}, scrollTo() {},
+    IntersectionObserver: class { observe() {} disconnect() {} }, ResizeObserver: class { observe() {} disconnect() {} }, MutationObserver: class { observe() {} disconnect() {} },
+    Event: class {}, CustomEvent: class {}, Blob: class {}, FormData: class {}, CSS: { supports: () => false, escape: (x) => x } };
+  ctx.document = { getElementById: () => nodo(), querySelector: () => nodo(), querySelectorAll: () => [], createElement: () => nodo(), addEventListener() {},
+    body: nodo(), documentElement: nodo(), readyState: "complete", visibilityState: "visible" };
+  ctx.window = ctx; ctx.self = ctx; ctx.globalThis = ctx;
+  vm.createContext(ctx);
+  for (const f of orden) {
+    let src = fs.readFileSync(pub(f), "utf8");
+    if (f === "app.js") { const i = src.lastIndexOf("})();"); src = `${src.slice(0, i)}window.__expuesto = { ${exponer.join(", ")} };\n${src.slice(i)}`; }
+    vm.runInContext(src, ctx, { filename: `public/${f}` });
+  }
+  assert.ok(ctx.__expuesto, "el arranque de app.js no llegó al final del IIFE");
+  return ctx.__expuesto;
+}
+
 function corre(rotulo) {
   const va = !SOLO || rotulo.toLowerCase().includes(SOLO);
   BLOQUES.push({ rotulo, corrio: va });
@@ -5685,6 +5716,33 @@ async function main() {
       assert.strictEqual(CI2.sinPrecio({ ofertas_validas: ofs2([0.95, 1]) }), false);
       assert.deepStrictEqual(ME.puntajes([100, 300], "menor_valor", 49.5), [49.5, 16.5], "el séptimo decimal va sobre el puntaje real (49,5 en menor cuantía)");
       assert.strictEqual(ME.PUNTAJE_MAXIMO.menor_cuantia, 49.5); assert.strictEqual(ME.PUNTAJE_MAXIMO.licitacion, 48.5);
+      // PLAN_X20 tanda 7 (11-nov-2026): una sola casa y el defecto D1 de la media geométrica
+      assert.strictEqual(ME, require("../lib/metodos_ponderacion.js"), "scripts/base_obra/metodos.js re-exporta la casa única de lib/, no la copia");
+      {
+        // Cali · 4151.010.32.1.1255-2026 (Santa Elena): las cinco hábiles, método sorteado media geométrica
+        const cali = [1475444680, 1485289767, 1488423398, 1511179252, 1530029471];
+        const pc = ME.puntajes(cali, "geometrica", 49.5);
+        assert.strictEqual(pc[2], 49.5, "D1: la más cercana a la media geométrica (Concretar 2026, la que ganó) recibe el MÁXIMO, 49,5 — no 49,1854 (DocBase menor cuantía V3, 4.1.4: «se otorgará el máximo puntaje al valor de la propuesta que se encuentre más cerca»)");
+        assert.strictEqual(pc[4], 48.4396912, "la oferta propia (96,75 %) conserva el 48,4397 del informe de la entidad");
+        assert.deepStrictEqual(ME.primeros(cali, "geometrica"), [2], "el orden por precio no cambia: primera la más cercana");
+        // D8 del plan: la respuesta REAL del optimizador ya no dice que la doble cuenta del precio sigue abierta
+        const limOpt = require("../lib/apu/optimizador.js").optimizarPrecioOferta({}).como_leerlo.limite;
+        assert.ok(/UNA sola vez/.test(limOpt) && !/NO corrige/.test(limOpt), `D8: el texto de lectura dice lo que hace el código → ${limOpt}`);
+        // D6: la alerta de baja grande ya no cita una «banda típica de obra (5–12 %)» sin medición, y dice sobre qué se aplica
+        const alD6 = require("../lib/apu/calculo.js").calcularPresupuesto({ items: [{ descripcion: "x", unidad: "m3", cantidad: 10, precio_unitario: 100000 }], config: { aplicar_ajuste_competitivo: true, factor_baja: 20 } }).alertas.find((a) => /Una baja del/.test(a));
+        assert.ok(alD6 && /sobre su propio precio/.test(alD6) && !/5–12/.test(alD6), `D6: la alerta real → ${alD6}`);
+        { const htmlD6 = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
+          assert.ok(!/Banda típica en obra/.test(htmlD6) && /id="baja-nota"[^>]*>Se aplica sobre su precio\./.test(htmlD6), "D6: la nota del factor de baja dice sobre qué se aplica, sin la banda sin medición (y sin pasar el tope de palabras de Precios)"); }
+        // D5: la fuente del presupuesto dice «pliego» cuando la cifra salió del pliego definitivo
+        const PT5 = require("../lib/apu/piso_techo.js").pisoTecho;
+        const b5 = { presupuesto_oficial: 1e9, costo_directo: 7e8, aiu: { administracion_pct: 20, imprevistos_pct: 5, utilidad_pct: 5, modo: "porcentaje" } };
+        assert.ok(/^SECOP II/.test(PT5(b5).fuentes.presupuesto_oficial) && /^El pliego definitivo/.test(PT5({ ...b5, presupuesto_fuente: "pliego" }).fuentes.presupuesto_oficial),
+          "D5: con el techo del pliego la fuente no dice «SECOP II»");
+        assert.deepStrictEqual(ME.puntajes([90, 110], "geometrica"), [1, 0.8944584], "más cercana por defecto: máximo; la otra con la ecuación");
+        assert.deepStrictEqual(ME.puntajes([95, 105, 140], "geometrica").filter((x) => x === 1).length, 1, "con tres valores distintos, un solo máximo");
+        assert.deepStrictEqual(ME.primeros([100, 100, 200], "geometrica"), [0, 1], "dos ofertas iguales y las más cercanas: las dos con el máximo (el empate lo decide el desempate)");
+        assert.ok(ME.puntajes([100, 1000], "geometrica").every((x) => x >= 0), "un negativo sigue valiendo cero");
+      }
       const hab = new Set(["2026-06-01", "2026-06-02", "2026-06-04"]);   // el 3-jun festivo en esta serie de prueba
       assert.strictEqual(CI2.fechaTrmEstimada("2026-06-05T00:00:00.000", -2, hab), "2026-06-02", "con los días hábiles de la serie, el festivo no cuenta");
       assert.strictEqual(CI2.fechaTrmEstimada("2026-06-02T00:00:00.000", 1, hab), "2026-06-04", "licitación: el día hábil SIGUIENTE a la audiencia");
@@ -10861,6 +10919,386 @@ async function main() {
     console.log("· unidad índice de baja: 3 granularidades en cascada, filtros de lote parcial y dato malo, "
       + "el cero como dato, el ajuste de P(ganar) y la baja POR MODALIDAD (cubetas que suman, "
       + "mínimo respetado y degradación al hash sin `por_modalidad`)");
+  }
+
+  /* unidad: COMPETENCIA POR TAMAÑO (PLAN_X20, tanda 1, 11-nov-2026) ─────────────
+     El hecho «una sola oferta en N de sus M procesos de este tamaño» y el anuncio que ordena «Las
+     menos peleadas», con las funciones REALES: el índice se construye contra un Redis de mentira con
+     chunks históricos escritos a mano, `competenciaDe` lo lee, el orden del listado lo usa y la línea
+     de la tarjeta se pinta con app.js en un vm. La regla (lib/competencia_por_tamano) es la misma que
+     midió el plan: la medición la LLAMA, y aquí se ejecuta para comprobarlo. */
+  bqTam: { if (!corre("unidad competencia por tamaño")) break bqTam;
+    const CT = require("../lib/competencia_por_tamano.js");
+    const IC = require("../lib/indice_competencia.js");
+    const LI = require("../lib/handlers/procesos/listar.js");
+    const { comprimir, CLAVES } = require("../lib/almacen.js");
+    function redisT(filasPorMes, extra = {}) {
+      const kv = new Map(Object.entries(extra)), hashes = new Map();
+      for (const [mes, filas] of Object.entries(filasPorMes)) kv.set(`licitaciones:historico:mes:${mes}:chunk:0`, comprimir(filas));
+      const like = (p) => new RegExp("^" + p.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/\\\*/g, ".*") + "$");
+      return {
+        kv, hashes,
+        scan: async (p) => [...kv.keys()].filter((k) => like(p).test(k)),
+        mget: async (ks) => ks.map((k) => kv.get(k) ?? null),
+        get: async (k) => kv.get(k) ?? null,
+        set: async (k, v) => { kv.set(k, v); return "OK"; },
+        del: async (...ks) => { for (const k of ks.flat()) { kv.delete(k); hashes.delete(k); } return 1; },
+        hset: async (k, obj) => { const h = hashes.get(k) || {}; for (const [f, v] of Object.entries(obj)) h[f] = JSON.stringify(v); hashes.set(k, h); return 1; },
+        hgetall: async (k) => hashes.get(k) || {},
+        hgetallPorPartes: async (k) => ({ ...(hashes.get(k) || {}) }),
+        rename: async (a, b) => { hashes.set(b, hashes.get(a) || {}); hashes.delete(a); return "OK"; },
+      };
+    }
+    let kT = 0;
+    const MENOR = "Selección Abreviada de Menor Cuantía";
+    const adj = (entidad, nit, depto, pb, ofertas, mes, modalidad = MENOR) => ({
+      _k: `t-${++kT}`, ":updated_at": `${mes}-20T00:00:00.000`, id_del_proceso: `CO1.REQ.T${kT}`,
+      entidad, nit_entidad: nit, departamento_entidad: depto, modalidad_de_contratacion: modalidad,
+      estado_del_procedimiento: "Adjudicado", adjudicado: "Si", fase: "Presentación de oferta",
+      fecha_de_publicacion_del: `${mes}-01T00:00:00.000`, fecha_de_recepcion_de: `${mes}-10T00:00:00.000`, fecha_adjudicacion: `${mes}-18T00:00:00.000`,
+      precio_base: String(pb), valor_total_adjudicacion: String(Math.round(pb * 0.98)), respuestas_al_procedimiento: String(ofertas),
+      nombre_del_proveedor: `CONSTRUCTORA ${kT} SAS`, nit_del_proveedor_adjudicado: String(900500000 + kT), tipo_de_contrato: "Obra",
+    });
+    const UNA = "ALCALDIA DE PRUEBA DONDE LLEGA UNO", PELEADA = "INSTITUTO DE PRUEBA MUY PELEADO";
+    const filasT = { "2025-03": [], "2025-09": [] };
+    /* UNA (Tolima): 11 procesos de $150-300 M, 10 con una oferta y 1 con tres; 2 de menor cuantía de
+       $500-1.000 M con cinco; y 4 de licitación con seis. Los niveles del anuncio NO coinciden entre
+       sí (país, tramo, departamento y entidad dan tasas distintas): con todos iguales la regla no se
+       distingue de una copia que se salte un nivel (mutante que sobrevivió el 11-nov-2026). */
+    for (let i = 0; i < 11; i++) filasT[i < 6 ? "2025-03" : "2025-09"].push(adj(UNA, "800111222", "Tolima", 200e6 + i * 1e6, i < 10 ? 1 : 3, i < 6 ? "2025-03" : "2025-09"));
+    filasT["2025-09"].push(adj(UNA, "800111222", "Tolima", 600e6, 5, "2025-09"), adj(UNA, "800111222", "Tolima", 650e6, 5, "2025-09"));
+    for (let i = 0; i < 4; i++) filasT["2025-09"].push(adj(UNA, "800111222", "Tolima", 900e6 + i * 1e6, 6, "2025-09", "Licitación pública"));
+    // y 4 de mínima cuantía de menos de $150 M con una oferta (la regla se midió y resistió también allí)
+    for (let i = 0; i < 4; i++) filasT["2025-09"].push(adj(UNA, "800111222", "Tolima", 60e6 + i * 1e6, 1, "2025-09", "Mínima cuantía"));
+    // VECINO (Tolima): 4 procesos del mismo tramo con cuatro ofertas
+    for (let i = 0; i < 4; i++) filasT["2025-03"].push(adj("MUNICIPIO VECINO DE PRUEBA", "800333444", "Tolima", 220e6 + i * 1e6, 4, "2025-03"));
+    // LEJANA (Huila): 4 procesos del mismo tramo con una oferta, para que el país y el departamento difieran
+    for (let i = 0; i < 4; i++) filasT["2025-03"].push(adj("ALCALDIA LEJANA DE PRUEBA", "800555666", "Huila", 230e6 + i * 1e6, 1, "2025-03"));
+    // PELEADA (Bogotá): 6 procesos de más de $1.000 M con ocho ofertas
+    for (let i = 0; i < 6; i++) filasT["2025-03"].push(adj(PELEADA, "899999001", "Distrito Capital de Bogotá", 1.5e9 + i * 1e6, 8, "2025-03"));
+    // una fila sin presupuesto: cuenta para el promedio de siempre y para ningún tramo
+    filasT["2025-09"].push({ ...adj(PELEADA, "899999001", "Distrito Capital de Bogotá", 1, 8, "2025-09"), precio_base: "No Definido" });
+    const rT = redisT(filasT);
+    const metaT = await IC.construirIndice(rT, { presupuestoMs: 60000 });
+    assert.ok(metaT.done, "el índice se construyó entero");
+    assert.strictEqual(metaT.por_tamano.sin_segmento, 1, `la fila sin presupuesto no entra en ningún tramo y se cuenta → ${JSON.stringify(metaT.por_tamano)}`);
+    const idxT = await IC.leerIndice(rT);
+    const regUna = IC.registroDe(idxT, { entidad: UNA, nit_entidad: "800111222" });
+    assert.deepStrictEqual(regUna.por_tamano, { "abreviada|1": [11, 10, 10], "abreviada|3": [2, 0, 0], "licitacion|3": [4, 0, 0], "minima|0": [4, 4, 4] }, `conteos por modalidad y tramo → ${JSON.stringify(regUna.por_tamano)}`);
+    /* el anuncio, a mano: tramo del país (UNA 11 + VECINO 4 + LEJANA 4 = 19, 14 con una o dos),
+       departamento del Tolima en el tramo (15, 10), la entidad en menor cuantía (13, 10) y en el tramo (11, 10) */
+    const pTam = 14 / 19, pDep = (10 + 4 * pTam) / 19, pGen = (10 + 4 * pDep) / 17, pEnt = (10 + 4 * pGen) / 15;
+    assert.ok(new Set([pTam, pDep, pGen, pEnt].map((x) => x.toFixed(4))).size === 4, "el caso distingue los cuatro niveles");
+    assert.ok(Math.abs(regUna.poca_anunciada.abreviada[1] - pEnt) < 1e-12, `el anuncio sigue la regla de cuatro niveles con K = 4, sin redondear (decide la banda) → ${JSON.stringify(regUna.poca_anunciada)}`);
+    assert.ok(!("licitacion" in regUna.poca_anunciada), "en licitación la regla no resistió la medición (72,7 %): no hay anuncio, solo conteos");
+    assert.ok(Array.isArray(regUna.poca_anunciada.minima) && regUna.poca_anunciada.minima[0] >= CT.UMBRAL_POCA, `en mínima cuantía sí (91,6 % medido) → ${JSON.stringify(regUna.poca_anunciada.minima)}`);
+    const abierta = (entidad, nit, depto, pb, modalidad = MENOR) => ({ entidad, nit_entidad: nit, departamento_entidad: depto, modalidad_de_contratacion: modalidad, precio_base: pb == null ? undefined : String(pb), cuantia_cop: pb || 0 });
+    const cUna = IC.competenciaDe(idxT, abierta(UNA, "800111222", "Tolima", 240e6));
+    assert.strictEqual(cUna.por_tamano.frase, "Una sola oferta en 10 de sus 11 procesos de menor cuantía de $150 a $300 millones.", `el hecho, en una frase → ${JSON.stringify(cUna.por_tamano)}`);
+    assert.ok(cUna.por_tamano.poca_anunciada >= CT.UMBRAL_POCA, "y el anuncio de poca competencia");
+    assert.strictEqual(cUna.nivel, "baja", "el nivel de siempre sigue en su sitio");
+    const cUnaGrande = IC.competenciaDe(idxT, abierta(UNA, "800111222", "Tolima", 400e6));
+    assert.ok(cUnaGrande.por_tamano.procesos_tamano === null && cUnaGrande.por_tamano.una === null && cUnaGrande.por_tamano.frase === null && cUnaGrande.por_tamano.poca_anunciada > 0,
+      `otro tamaño en la misma entidad: sin conteo de ese tamaño es null, no 0 (pudo tenerlos sin presupuesto publicado), sin frase, y el anuncio apoyado en la entidad entera → ${JSON.stringify(cUnaGrande.por_tamano)}`);
+    const cSinPb = IC.competenciaDe(idxT, abierta(UNA, "800111222", "Tolima", null));
+    assert.ok(!("por_tamano" in cSinPb), "sin presupuesto en la fila no hay tramo: la respuesta no trae la clave");
+    const cLic = IC.competenciaDe(idxT, abierta(UNA, "800111222", "Tolima", 900e6, "Licitación pública"));
+    assert.ok(cLic.por_tamano.frase === "Tres ofertas o más en 4 de sus 4 procesos de licitación de $500 a $1.000 millones." && cLic.por_tamano.poca_anunciada === null,
+      `licitación: el hecho sí (cuatro procesos), el anuncio no (la regla no resistió en licitación) → ${JSON.stringify(cLic.por_tamano)}`);
+    const cPel = IC.competenciaDe(idxT, abierta(PELEADA, "899999001", "Distrito Capital de Bogotá", 1.8e9));
+    assert.strictEqual(cPel.por_tamano.frase, "Tres ofertas o más en 6 de sus 6 procesos de menor cuantía de más de $1.000 millones.");
+    assert.ok(cPel.por_tamano.poca_anunciada <= CT.UMBRAL_MUCHA, `anuncio de mucha competencia → ${cPel.por_tamano.poca_anunciada}`);
+    // un hash anterior a la tanda (sin por_tamano) responde EXACTAMENTE como antes
+    const viejo = Object.fromEntries(Object.entries(idxT).map(([k, v]) => { const { por_tamano: _a, poca_anunciada: _b, ...resto } = v || {}; return [k, v && v.ref ? v : resto]; }));
+    const cViejo = IC.competenciaDe(viejo, abierta(UNA, "800111222", "Tolima", 240e6));
+    const { por_tamano: _x, ...cUnaSin } = cUna;
+    assert.deepStrictEqual(cViejo, cUnaSin, "con el hash viejo, la misma respuesta de siempre y sin claves nuevas");
+    // un contador corrupto no se enseña
+    const roto = { ...idxT, [Object.keys(idxT).find((k) => idxT[k] && idxT[k].nombre === UNA)]: { ...regUna, por_tamano: { "abreviada|1": [3, 10, 10] } } };
+    assert.ok(!("por_tamano" in IC.competenciaDe(roto, abierta(UNA, "800111222", "Tolima", 240e6))), "un conteo imposible (10 de 3) no se enseña");
+
+    // el ORDEN «Las menos peleadas»: lo medido como poco peleado primero, lo medido como muy peleado al final
+    const v = (poca, nivel) => LI.ORDEN_CAMPOS.competencia({}, { competencia_poca: poca, competencia_nivel: nivel });
+    const ordenT = [["mucha medida", v(cPel.por_tamano.poca_anunciada, "alta")], ["sin base", v(null, "sin_dato")], ["baja sin anuncio", v(null, "baja")],
+      ["intermedia medida", v(0.5, "alta")], ["poca medida", v(cUna.por_tamano.poca_anunciada, "baja")], ["alta sin anuncio", v(null, "alta")]]
+      .sort((a, b) => LI.compararCampo("competencia", a[1], b[1], -1)).map((x) => x[0]);
+    assert.deepStrictEqual(ordenT, ["poca medida", "baja sin anuncio", "intermedia medida", "alta sin anuncio", "mucha medida", "sin base"], `orden → ${ordenT.join(" > ")}`);
+    assert.strictEqual(v(NaN, "baja"), 3, "un anuncio que no es número es inerte: vale el nivel");
+
+    // la medición del plan LLAMA esta regla: misma cifra con las mismas filas
+    const MX = require("../tools/analisis/plan_x20/medir.js");
+    const filasMx = [{ ent: "E", dep: "D", pb: 2e8, n: 1 }, { ent: "E", dep: "D", pb: 2e8, n: 1 }, { ent: "E", dep: "D", pb: 6e8, n: 5 }, { ent: "F", dep: "D", pb: 2e8, n: 3 }, { ent: "F", dep: "G", pb: 6e8, n: 2 }];
+    const aMx = MX.modeloCompetencia(filasMx).anuncia("E", "D", 2.5e8);
+    const aLib = CT.anunciarPoca({ modalidad: [5, 3], tamano: [3, 2], depto: [3, 2], entidad: [3, 2], entidadTam: [2, 2] });
+    assert.strictEqual(MX.modeloCompetencia([]).anuncia("E", "D", 2e8).pEnt, null, "sin nada aprendido: sin anuncio (null), no un error ni un 0");
+    assert.ok(Math.abs(aMx.pEnt - aLib.entidad) < 1e-12 && Math.abs(aMx.pDep - aLib.depto) < 1e-12, `medir.js y la aplicación dan el mismo anuncio → ${aMx.pEnt} / ${aLib.entidad}`);
+
+    /* un avance guardado por otra versión (sin contar los tramos) se descarta y se empieza de cero. El avance se
+       ESCRIBE a mano (sin `seg_meses`, con un mes contado): hacerlo con `presupuestoMs: 1` dependía del reloj y en
+       la suite completa a veces la construcción terminaba entera sin dejar avance (cuarta vuelta, 11-nov-2026) */
+    const rP = redisT(filasT);
+    rP.kv.set(CLAVES.indiceProgreso, comprimir({ iniciado: "2026-11-11T00:00:00.000Z", pendientes: ["2025-09"], acc: {},
+      stats: { filas: 0, contados: 0, sin_adjudicacion: 0, sin_oferentes: 0, meses: 1 }, quienGana: { ...IC.nuevoQuienGana(), meses: 1 } }));
+    const rr = await IC.construirIndice(rP, { presupuestoMs: 60000 });
+    assert.ok(/por tamaño/.test(rr.progreso_descartado || ""), `el avance sin tramos se descarta → ${rr.progreso_descartado}`);
+    const rg = IC.registroDe(await IC.leerIndice(rP), { entidad: UNA, nit_entidad: "800111222" });
+    assert.deepStrictEqual(rg.por_tamano["abreviada|1"], [11, 10, 10], "y el índice se rehace entero, con todos los meses");
+
+    // la tarjeta: app.js real en un vm pinta el hecho en la línea de competencia
+    {
+      const ctx = { __tam: appEnVm(["lineaCompiten"]) };
+      const linea = ctx.__tam.lineaCompiten({ competencia_entidad: cUna });
+      assert.strictEqual(linea, "<span><b>Una sola oferta</b> en 10 de sus 11 procesos de menor cuantía de $150 a $300 millones.</span>", `la tarjeta dice el hecho → ${linea}`);
+      const lineaSin = ctx.__tam.lineaCompiten({ competencia_entidad: cUnaGrande });
+      assert.ok(!/de sus/.test(lineaSin) && /empresa/.test(lineaSin), `sin frase, la línea de siempre → ${lineaSin}`);
+    }
+    // las frases, sueltas
+    assert.strictEqual(CT.frasePorTamano([3, 3, 3], "abreviada", 0), null, "con menos de cuatro procesos no hay frase");
+    assert.strictEqual(CT.frasePorTamano([8, 5, 2], "abreviada", 2), "Una o dos ofertas en 5 de sus 8 procesos de menor cuantía de $300 a $500 millones.");
+    assert.strictEqual(CT.frasePorTamano([6, 3, 3], "abreviada", 1), "De sus 6 procesos de menor cuantía de $150 a $300 millones: 3 con una sola oferta y 3 con tres o más.",
+      "un empate a la mitad no se presenta como «una sola oferta en 3 de 6»: se dice el reparto (revisión adversaria del 11-nov-2026)");
+    assert.strictEqual(CT.frasePorTamano([8, 4, 1], "abreviada", 1), "De sus 8 procesos de menor cuantía de $150 a $300 millones: 1 con una sola oferta, 3 con dos y 4 con tres o más.");
+    assert.deepStrictEqual(["150000000.123", "$300,000,000", "1e9", "240000000"].map((pb) => IC.presupuestoDeFila({ precio_base: pb })), [150000000.123, null, 1e9, 240000000],
+      "el presupuesto se lee con Number estricto: «150000000.123» no son 150 mil millones y «$300,000,000» no son 300 pesos");
+    assert.deepStrictEqual([CT.tramoTamano(0), CT.tramoTamano(null), CT.tramoTamano(149999999), CT.tramoTamano(150e6), CT.tramoTamano(1e9), CT.tramoTamano("abc")], [null, null, 0, 1, 4, null],
+      "sin presupuesto no hay tramo (no es el más chico); los cortes son los de la medición");
+    console.log("· unidad competencia por tamaño: conteos por modalidad y tramo, el anuncio de cuatro niveles (el de la medición del plan), "
+      + "la frase de la tarjeta, el orden «Las menos peleadas» en tres bandas, el hash viejo idéntico y el avance de otra versión descartado");
+  }
+
+  /* unidad: SU PRECIO FRENTE AL GRUPO (PLAN_X20, D4, 11-nov-2026) ──────────────
+     El aviso que faltó en Cali, con las funciones REALES: las ofertas de los procesos anteriores de la
+     entidad (con sus trampas: «Confidencial», dos valores de un proponente, fuera de rango), la cuenta
+     «por encima de todas / de la mitad», la consulta con un cliente de mentira (tandas, memoria de 24 h,
+     fuente caída) y la acción por el router real sin red. */
+  bqGrupo: { if (!corre("unidad precio frente al grupo")) break bqGrupo;
+    const G = require("../lib/grupo_ofertas.js");
+    const pres = new Map([["P1", 1000], ["P2", 1000], ["P3", 1000], ["P4", 1000], ["P5", 1000], ["P6", 1000], ["P7", 1000], ["P8", 1000]]);
+    const of = (id, nombre, v) => ({ id_del_proceso_de_compra: id, nombre_proveedor: nombre, valor_de_la_oferta: String(v) });
+    const filas = [
+      // P1..P5: grupos de tres en torno al 94-95 %
+      ...["P1", "P2", "P3", "P4", "P5"].flatMap((id, i) => [of(id, "A SAS", 930 + i), of(id, "B SAS", 945 + i), of(id, "C SAS", 955 + i)]),
+      of("P1", "Confidencial", 0),                                   // no es una oferta
+      of("P2", "Confidencial", 950),                                 // tampoco con valor: la medición del plan no la cuenta
+      of("P6", "A SAS", 940), of("P6", "A SAS", 950), of("P6", "B SAS", 960), of("P6", "C SAS", 970),   // A con dos valores: fuera
+      of("P7", "A SAS", 600), of("P7", "B SAS", 940), of("P7", "C SAS", 950),                          // 60 %: fuera de rango
+      of("P8", "A SAS", 940), of("P8", "B SAS", 950),                                                  // dos ofertas: fuera
+      of("P9", "A SAS", 940), of("P9", "B SAS", 950), of("P9", "C SAS", 960),                          // sin presupuesto: fuera
+    ];
+    const proc = G.procesosComparables(pres, filas);
+    assert.deepStrictEqual(proc.map((x) => x.id).sort(), ["P1", "P2", "P3", "P4", "P5"], `solo los comparables → ${proc.map((x) => x.id)}`);
+    assert.ok(proc.find((x) => x.id === "P1").ofertas_pct.length === 3 && proc.find((x) => x.id === "P2").ofertas_pct.length === 3, "las filas «Confidencial» no son ofertas, con o sin valor");
+    const alto = G.precioFrenteAlGrupo(proc, 96.75);
+    assert.ok(alto.por_encima_de_todas === 5 && alto.por_encima_de_la_mitad === 5 && alto.alerta === true
+      && alto.frase === "En 5 de los 5 procesos anteriores de esta entidad con tres o más ofertas, un precio del 96,75 % del presupuesto habría quedado por encima de todas las ofertas, y en 5, por encima de la mitad.",
+      `el caso de Cali en miniatura → ${JSON.stringify(alto)}`);
+    const dentro = G.precioFrenteAlGrupo(proc, 94.0);
+    assert.ok(dentro.por_encima_de_todas === 0 && dentro.por_encima_de_la_mitad === 0 && dentro.alerta === false, `dentro del grupo, sin alerta → ${JSON.stringify(dentro)}`);
+    const pocos = G.precioFrenteAlGrupo(proc.slice(0, 4), 96.75);
+    assert.ok(pocos.frase === null && pocos.por_encima_de_todas === null && pocos.alerta === false, "con menos de cinco procesos no se dice nada (null, no 0)");
+    assert.strictEqual(G.precioFrenteAlGrupo(proc, null), null, "sin precio, nada");
+    // la consulta: tandas de diez, memoria de 24 h, fuente caída
+    {
+      const kv = new Map(), sets = [];
+      const redisG = { get: async (k) => kv.get(k) ?? null, set: async (k, v, o) => { kv.set(k, v); sets.push(o); return "OK"; } };
+      let llamadas = 0;
+      const p6 = Array.from({ length: 25 }, (_, i) => ({ id_del_portafolio: `Q${i}`, precio_base: "1000", respuestas_al_procedimiento: i < 5 ? "1" : i < 10 ? "2" : "3", valor_total_adjudicacion: i < 10 ? "1000" : String(940 + i) }));
+      const cliente = (base) => ({ pedir: async (params) => {
+        llamadas++;
+        if (/p6dx/.test(base)) return p6;
+        const ids = [...params.$where.matchAll(/'(Q\d+)'/g)].map((m) => m[1]);
+        return ids.flatMap((id) => [of(id, "A SAS", 940), of(id, "B SAS", 950), of(id, "C SAS", 960)]);
+      } });
+      const r1 = await G.leerGrupo(redisG, { nit: "890399011", literalModalidad: "Selección Abreviada de Menor Cuantía", cliente });
+      assert.ok(r1.ok && r1.procesos.length === 15 && llamadas === 1 + 2 && r1.desde === "datos.gov.co", `los 15 con tres o más ofertas, en dos tandas de diez → ${llamadas} llamadas, ${r1.procesos && r1.procesos.length}`);
+      // pieza 6.5: los adjudicados con su número de ofertas viajan y se guardan; la referencia por competencia sale de ellos
+      assert.strictEqual(r1.adjudicados.length, 25, "los 25 adjudicados, con su número de ofertas");
+      const rc = G.referenciaPorCompetencia(r1.adjudicados);
+      assert.ok(rc.poca.procesos === 10 && rc.poca.mediana_pct === 100 && rc.mucha.procesos === 15 && Math.abs(rc.mucha.mediana_pct - 95.7) < 1e-9
+        && rc.frase === "En esta entidad, con una o dos ofertas, se adjudicó cerca del 100 % del presupuesto (10 procesos); con tres o más, se adjudicó cerca del 95,7 % del presupuesto (15 procesos).",
+        `la referencia por competencia → ${JSON.stringify(rc)}`);
+      assert.strictEqual(G.referenciaPorCompetencia(r1.adjudicados.slice(0, 4)).frase, null, "con menos de cinco procesos en cada mitad no se dice nada");
+      assert.strictEqual(G.referenciaPorCompetencia(null), null, "sin adjudicados, nada (null, no 0)");
+      assert.strictEqual(sets[0] && sets[0].ex, G.TTL_SEG, "se guarda 24 h");
+      const r2 = await G.leerGrupo(redisG, { nit: "890399011", literalModalidad: "Selección Abreviada de Menor Cuantía", cliente });
+      assert.ok(r2.ok && r2.desde === "memoria" && llamadas === 3 && r2.adjudicados.length === 25, "la segunda vez sale de la memoria, con los adjudicados, sin llamar a datos.gov.co");
+      const caido = (b) => ({ pedir: async () => { if (/wi7w/.test(b)) throw new Error("tiempo agotado"); return p6; } });
+      const r3 = await G.leerGrupo(null, { nit: "800111222", literalModalidad: "Selección Abreviada de Menor Cuantía", cliente: caido });
+      assert.ok(!r3.ok && r3.procesos === null && r3.motivo === "no_respondio", "una fuente caída es «no se pudo consultar», jamás una lista vacía");
+      assert.strictEqual((await G.leerGrupo(null, { nit: "", literalModalidad: "x" })).motivo, "sin_nit");
+    }
+    // la acción por el router REAL: sin precio y sin NIT responde su motivo sin tocar la red
+    {
+      const rA = require("../api/apu.js");
+      const s1 = await invocar(rA, "/api/apu?op=grupo&entidad_nit=890399011&modalidad=x", CAB_TOKEN);
+      assert.ok(s1.status === 200 && s1.cuerpo.ok && s1.cuerpo.frente_al_grupo === null && s1.cuerpo.motivo === "sin_precio", `sin precio → ${JSON.stringify(s1.cuerpo).slice(0, 200)}`);
+      const s2 = await invocar(rA, "/api/apu?op=grupo&modalidad=x&precio_pct=96.75", CAB_TOKEN);
+      assert.ok(s2.status === 200 && s2.cuerpo.motivo === "sin_nit" && /NIT/.test(s2.cuerpo.motivo_texto), `sin NIT → ${JSON.stringify(s2.cuerpo).slice(0, 200)}`);
+      const s3 = await invocar(rA, "/api/apu?op=grupo&entidad_nit=890399011&modalidad=x&precio_pct=96.75", {});
+      assert.strictEqual(s3.status, 401, "sin credencial no pasa la puerta");
+    }
+    console.log("· unidad precio frente al grupo: comparables (confidencial, dos valores, fuera de rango, sin presupuesto), "
+      + "por encima de todas y de la mitad con su alerta, nada bajo cinco procesos, tandas de diez con memoria de 24 h, fuente caída y la acción por el router");
+  }
+
+  /* unidad: LAS DOS BARRERAS (PLAN_X20, tanda 2, 11-nov-2026) ─────────────────
+     Si la convocatoria quedó limitada a Mipyme (y a qué territorio) y si hay sorteo, leído del pliego, la
+     adenda, la resolución o el aviso, con las frases REALES de las fichas de detekta-lector y del DocBase
+     oficial: lo que está entre corchetes es plantilla, las reglas generales no deciden, lo que no consta es
+     null y no bloquea, y entre documentos manda la adenda, luego el pliego. */
+  bqConvocatoria: { if (!corre("unidad convocatoria limitada")) break bqConvocatoria;
+    const CL = require("../lib/convocatoria_limitada.js");
+    const DP = require("../lib/documentos_proceso.js");
+    const L = (t) => CL.leerConvocatoria(t);
+    const neg = L("\f19\n2.5 LIMITACIÓN A MIPYME\nEl presente procedimiento de selección no es susceptible de limitarse a Mipyme.\n");
+    assert.ok(neg.mipyme === "no_limitada" && neg.citas.mipyme[0].pagina === 19, `frase real (SAMC-SI-020-2026, pág. 18) → ${JSON.stringify(neg)}`);
+    const tur = L("\f20\nEl presente proceso de selección se limitará a Mipyme Territorial Turbaco conforme a las solicitudes recibidas para tal fin.\n");
+    assert.ok(tur.mipyme === "limitada" && tur.territorio && tur.territorio.nombre === "Turbaco", `frase real de Turbaco → ${JSON.stringify(tur)}`);
+    const tol = L("\f7\nLa Entidad limita la convocatoria de este Proceso de Contratación a las Mipyme colombianas domiciliadas en el departamento del Tolima, por haberse verificado las condiciones.\n");
+    assert.deepStrictEqual(tol.territorio, { tipo: "departamento", nombre: "Tolima" }, "departamento con «del»");
+    const partida = L("\f20\nEl presente proceso de selección\nse limitará a Mipyme del\nmunicipio de San Luis.\n");
+    assert.deepStrictEqual([partida.mipyme, partida.territorio], ["limitada", { tipo: "municipio", nombre: "San Luis" }], "la frase partida en renglones se lee entera");
+    assert.strictEqual(L("\f3\nEn las convocatorias limitadas a Mipyme el puntaje por este concepto se trasladará al puntaje de oferta económica.\n").mipyme, null, "una regla general no dice si ESTA convocatoria quedó limitada");
+    assert.strictEqual(L("\f3\nCuando el proceso se limita a Mipyme, el puntaje de apoyo a la Mipyme se traslada a la oferta económica.\n").mipyme, null, "«cuando el proceso se limita…» es una regla, no una decisión");
+    assert.deepStrictEqual(L("\f8\nSe limita la convocatoria a Mipyme domiciliadas en el departamento de Norte de Santander.\n").territorio, { tipo: "departamento", nombre: "Norte de Santander" }, "un territorio de varias palabras se copia entero");
+    assert.strictEqual(L("\f2\n[En caso de que el proceso no sea susceptible de limitarse a Mipyme, la Entidad señalará lo siguiente en este numeral: el presente procedimiento de selección no es susceptible de limitarse a Mipyme.\n").mipyme, null,
+      "dentro de un corchete abierto (aunque la frase empiece tras «:») es plantilla");
+    const cerrado = L("\f19\n[Incluir esto] El presente procedimiento de selección no es susceptible de limitarse a Mipyme.\n");
+    assert.ok(cerrado.mipyme === "no_limitada" && !/\[/.test(cerrado.citas.mipyme[0].cita), "con la instrucción ya cerrada encima, la opción elegida cuenta y la cita sale sin el corchete");
+    const dos = L("\f19\n[Si procede] La Entidad limita la convocatoria de este Proceso de Contratación a las Mipyme colombianas por haberse verificado las condiciones. [Si no procede] La Entidad no limita el Proceso de Contratación a las Mipyme colombianas por no haberse cumplido las condiciones.\n");
+    assert.strictEqual(dos.mipyme, "contradictorio", "la plantilla con las dos opciones no escoge ninguna");
+    // revisión adversaria del 11-nov-2026: lo NEGADO no es «limitada», y el territorio va atado a «Mipyme»
+    for (const fr of ["El presente proceso no está limitado a Mipyme.", "La presente convocatoria NO está limitada a MIPYMES.", "Teniendo en cuenta que no se recibieron solicitudes, el proceso no queda limitado a Mipyme.",
+      "CONVOCATORIA LIMITADA A MIPYMES: NO", "Convocatoria limitada a Mipyme: No aplica.", "El proceso se limita a Mipyme? NO."])
+      assert.strictEqual(L(`\f5\n${fr}\n`).mipyme, "no_limitada", `negada: «${fr}»`);
+    for (const fr of ["La Alcaldía del municipio de Turbaco informa que el presente proceso se limita a Mipyme nacional.", "El proceso se limita a Mipyme colombianas, de acuerdo con las solicitudes de empresas del departamento de Bolívar."]) {
+      const r = L(`\f5\n${fr}\n`);
+      assert.ok(r.mipyme === "limitada" && r.territorio === null, `un municipio suelto en la frase no es la limitación: «${fr}» → ${JSON.stringify(r.territorio)}`);
+    }
+    assert.deepStrictEqual(L("\f5\nSe limita la convocatoria a Mipyme con domicilio en el Municipio de Ibagué.\n").territorio, { tipo: "municipio", nombre: "Ibagué" }, "con mayúscula en «Municipio» también");
+    for (const fr of ["Audiencia de sorteo: no aplica, la entidad no realizará el sorteo.", "En el presente proceso no se realizará sorteo.", "No se realizará sorteo y se continuará con todos los interesados."])
+      assert.strictEqual(L(`\f21\n${fr}\n`).sorteo, "no", `sorteo negado: «${fr}»`);
+    assert.strictEqual(L("\f21\nSi la entidad recibe más de diez (10) manifestaciones de interés realizará un sorteo a través de balotas.\n").sorteo, "si_mas_de_10");
+    assert.strictEqual(L("\f21\nLa entidad continuará el proceso con todos los interesados que manifestaron interés.\n").sorteo, "no");
+    assert.deepStrictEqual([L("").mipyme, L("").sorteo], [null, null], "sin texto: no consta (null), nunca «no limitada»");
+    // entre documentos: el aviso decía que no, el pliego definitivo que sí (el caso de Turbaco): manda el pliego
+    const lect = (tipo, lectura, fecha = "2026-06-30") => ({ tipo, fecha, documento: tipo, lectura });
+    const t1 = CL.convocatoriaDeDocumentos([lect("aviso", neg, "2026-06-25"), lect("pliego", tur)]);
+    assert.ok(t1.mipyme.valor === "limitada" && t1.territorio.nombre === "Turbaco", `el pliego definitivo gana al aviso → ${JSON.stringify(t1.mipyme)}`);
+    const t2 = CL.convocatoriaDeDocumentos([lect("pliego", tur), lect("adenda", neg, "2026-07-02")]);
+    assert.strictEqual(t2.mipyme.valor, "no_limitada", "la adenda gana al pliego");
+    const t3 = CL.convocatoriaDeDocumentos([lect("pliego", tur), lect("documento_base", neg)]);
+    assert.strictEqual(t3.mipyme.valor, "contradictorio", "dos documentos del mismo nivel que no coinciden: no se escoge");
+    // por la lectura REAL de documentos: el hecho llega a la guía con su página, y «no consta» también se dice
+    const h = DP.hechosDeTexto("\f20\nEl presente proceso de selección se limitará a Mipyme Territorial Turbaco conforme a las solicitudes recibidas para tal fin.\n", { tipo: "pliego" });
+    assert.strictEqual(h.convocatoria.mipyme, "limitada", "hechosDeTexto lee la convocatoria del pliego");
+    assert.strictEqual(DP.hechosDeTexto("texto cualquiera", { tipo: "formato" }).convocatoria, null, "en un formato no se busca");
+    const r = DP.loQueDicen({ leidos: { d1: { nombre: "pliego.pdf", tipo: "pliego", hechos: h, fecha_carga: "2026-06-30" } } }, {});
+    const hm = r.hechos.find((x) => x.clave === "convocatoria_mipyme"), hs = r.hechos.find((x) => x.clave === "sorteo");
+    assert.ok(hm && hm.pagina === 20 && /limitada a Mipyme de Turbaco/.test(hm.texto) && /una sucursal no cuenta/.test(hm.texto) && hm.estado === "revisar", `el hecho de la guía → ${JSON.stringify(hm)}`);
+    assert.ok(hs && hs.nivel === "no_consta" && /no consta/.test(hs.texto) && /pliego\.pdf/.test(hs.documento), "el sorteo que no consta se dice como tal, con los documentos donde se buscó");
+    assert.strictEqual(r.hechos[0].clave, "convocatoria_mipyme", "la limitación va AL FRENTE: la guía solo deja a la vista los cinco primeros");
+    console.log("· unidad convocatoria limitada: frases reales (no susceptible, Turbaco), departamento y municipio, renglones partidos, "
+      + "plantilla y reglas generales fuera, adenda > pliego > aviso, el hecho en la guía y «no consta» que no bloquea");
+  }
+
+  /* unidad: EL SIMULACRO DEL CONSORCIO (PLAN_X20, tanda 4, 11-nov-2026) ───────
+     La cerradura del plan: el caso REAL de la Universidad Pedagógica (UPN-VAD-CP-011-2026). Los términos
+     (numeral 4.2.2.2, pág. 27) pedían que el integrante que acredita la experiencia tenga al menos el 40 %; la
+     oferta fue Helder 65 % y Génesis 35 % con la experiencia de Génesis, y quedó NO HABILITADA. El simulador
+     real (lib/consorcio.simular) con el lector real de la cláusula tiene que decir «no» a ese reparto, con la
+     página, y primero en las advertencias; y «cumple» con un reparto que la respeta. */
+  bqSimulacro: { if (!corre("unidad simulacro del consorcio")) break bqSimulacro;
+    const R = require("../lib/reparto.js");
+    const C = require("../lib/consorcio.js");
+    const DP = require("../lib/documentos_proceso.js");
+    const c40 = [{ forma: "aporta_experiencia", porcentaje: 40 }];
+    const n = ["Helder", "Génesis"];
+    const soloG = R.clausulasEnReparto({ clausulas: c40, regla: { posibles: { ambos: false, solo_dueno: false, solo_socio: true } }, suya: 65, nombres: n });
+    assert.ok(soloG.length === 1 && soloG[0].forma === "regla_experiencia" && soloG[0].estado === "revisar" && /a lo sumo el 10 %/.test(soloG[0].frase),
+      `si solo Génesis puede aportar y Helder tiene el 65 %, falla la REGLA de experiencia, no cada cláusula: se dice una vez y como «revisar» (revisión adversaria) → ${JSON.stringify(soloG)}`);
+    assert.strictEqual(R.clausulasEnReparto({ clausulas: c40, regla: { posibles: { ambos: true, solo_dueno: false, solo_socio: false } }, suya: 60, nombres: n })[0].estado, "cumple", "60/40 con los dos aportando: cumple");
+    const dep = R.clausulasEnReparto({ clausulas: c40, regla: { posibles: { ambos: true, solo_dueno: true, solo_socio: false } }, suya: 92, nombres: n })[0];
+    assert.ok(dep.estado === "depende" && /la aporta solo Helder/.test(dep.frase), `92/8: depende de quién aporte, y lo dice → ${dep.frase}`);
+    assert.deepStrictEqual(R.clausulasEnReparto({ clausulas: [{ forma: "otro" }], suya: 50 }), [], "una cláusula que no se sabe aplicar no se juzga (va como aviso con su cita, como siempre)");
+    assert.deepStrictEqual(R.clausulasEnReparto({ clausulas: c40, suya: 100 }), [], "con un solo integrante no hay reparto que juzgar");
+    const txt = "\f27\n4.2.2.2 EXPERIENCIA HABILITANTE\nEn caso de proponentes plurales, el (los) integrante(s) que acredite(n) la experiencia debe(n) contar con una participación mínima del cuarenta (40)% en la estructura plural.\n";
+    const h = DP.hechosDeTexto(txt, { tipo: "pliego" });
+    const docs = { leidos: { d1: { nombre: "Terminos de referencia.pdf", tipo: "pliego", hechos: h, fecha_carga: "2026-08-20" } } };
+    const proceso = { id_del_proceso: "UPN-VAD-CP-011-2026", modalidad_de_contratacion: "Contratación régimen especial (con ofertas)", tipo_de_contrato: "Obra", precio_base: "1348958930",
+      cuantia_cop: 1348958930, entidad: "UNIVERSIDAD PEDAGOGICA NACIONAL", departamento_entidad: "Distrito Capital de Bogotá", nombre_del_procedimiento: "Obra" };
+    const sim = (p1, p2) => C.simular(null, { integrantes: [{ perfilId: "helder", participacion: p1 }, { perfilId: "genesis", participacion: p2 }], proceso, documentos: docs });
+    const upn = await sim(65, 35);
+    const j = upn.participacion_pliego && upn.participacion_pliego[0];
+    assert.ok(j && j.estado === "no_cumple" && j.pagina === 27 && /40 %/.test(j.frase) && /65 %/.test(j.frase) && /35 %/.test(j.frase), `UPN 65/35 → ${JSON.stringify(upn.participacion_pliego)}`);
+    assert.ok(/^Con 65\/35 no cumple/.test(upn.advertencias[0]) && /pág\. 27/.test(upn.advertencias[0]), `y va PRIMERO en las advertencias → ${upn.advertencias[0]}`);
+    const bien = await sim(60, 40);
+    assert.ok(bien.participacion_pliego[0].estado === "cumple" && !/no cumple/.test(bien.advertencias[0]), `60/40 cumple → ${JSON.stringify(bien.participacion_pliego)}`);
+    const sinDocs = await C.simular(null, { integrantes: [{ perfilId: "helder", participacion: 65 }, { perfilId: "genesis", participacion: 35 }], proceso, documentos: null });
+    assert.ok(!("participacion_pliego" in sinDocs), "sin documentos leídos no se afirma nada del reparto");
+    // la FICHA del proceso con un consorcio de reparto pactado (el pendiente de la memoria): el mismo juicio, en el hecho
+    const pactado = C.derivarConsorcio("cons_upn", "Consorcio de prueba", [{ perfilId: "helder", participacion: 65 }, { perfilId: "genesis", participacion: 35 }]);
+    const hp = DP.loQueDicen(docs, { perfilObj: pactado, presupuestoCOP: 1348958930, tipoContrato: "Obra" }).hechos.find((x) => x.clave === "participacion_minima");
+    assert.ok(hp && hp.reparto === "no_cumple" && hp.estado === "riesgo" && /Con 65\/35 no cumple/.test(hp.texto), `la ficha del consorcio 65/35 → ${JSON.stringify(hp && { reparto: hp.reparto, estado: hp.estado, texto: hp.texto })}`);
+    const supuesto = DP.loQueDicen(docs, { perfilObj: { ...pactado, participacionAsumida: true }, presupuestoCOP: 1348958930, tipoContrato: "Obra" }).hechos.find((x) => x.clave === "participacion_minima");
+    assert.ok(supuesto && !("reparto" in supuesto) && supuesto.estado === "revisar", "con el reparto que SUPONE la aplicación no se juzga (no lo pactaron)");
+    // la vista del consorcio en Mis procesos: el «no cumple» se pinta EN ROJO aunque haya recomendación (antes solo pasaban las advertencias con «porcentaje mínimo»)
+    const { htmlResultadoSocio } = appEnVm(["htmlResultadoSocio"]);
+    const html = htmlResultadoSocio("CO1.UPN", { ...upn, exigencias: [{ clave: "experiencia_general", titulo: "Experiencia", exige: "x" }], recomendacion: { suya: 60 } }, { nombre: "Génesis" }, 35);
+    assert.ok(/data-reparto-no-cumple/.test(html) && /text-red-700[^>]*>Con 65\/35 no cumple/.test(html) && /pág\. 27/.test(html), `la vista lo dice en rojo → ${(html.match(/<ul[^>]*data-reparto-no-cumple[\s\S]*?<\/ul>/) || ["(nada)"])[0].slice(0, 300)}`);
+    console.log("· unidad simulacro del consorcio: cada cláusula contra el reparto dado (no cumple / cumple / depende de quién aporte), "
+      + "y el caso real de la Universidad Pedagógica (65/35 con el 40 % pedido) dice «no» con la página 27, primero en las advertencias");
+  }
+
+  /* unidad: LA CAPACIDAD CON LOS CONTRATOS NUEVOS (PLAN_X20, tanda 15, D3, 11-nov-2026) ─
+     Con lista cargada, un contrato nuevo de SECOP II no se restaba de la K (reproducido con Helder). Ahora se suma
+     si su número no está en la lista; si una entrada cargada SIN número puede ser el mismo (misma entidad o valor a
+     menos del 1 %), va aparte con su motivo; nunca dos veces. Con las funciones REALES (detalleCrp → sceParaK). */
+  bqCapacidadNuevos: { if (!corre("unidad capacidad con contratos nuevos")) break bqCapacidadNuevos;
+    const cap = require("../lib/capacidad.js"), P = require("../lib/perfiles.js"), CE = require("../lib/contratos_en_ejecucion.js");
+    const { hoyColombia } = require("../lib/habiles.js");
+    const dia = (d) => new Date(Date.parse(`${hoyColombia()}T00:00:00Z`) + d * 864e5).toISOString().slice(0, 10);
+    const H = P.PERFILES_FALLBACK.helder;
+    assert.ok(H.sce.length > 0 && H.sce.some((c) => c.id_contrato), "el Helder del repositorio trae lista cargada, con el número del contrato de la UPN");
+    const nuevo = { id_contrato: "CO1.PCCNTR.99999", origen: "propio", entidad: "ALCALDIA DE PRUEBA", v: 500000000, pct: 100, inicio: dia(-10), fin: dia(170), obra: true, frase: "Alcaldía de prueba" };
+    const k = (sce, aparte = []) => cap.detalleCrp({ ...H, contratosSecop: { ok: true, sce, aparte } }, 1e9);
+    const k0 = cap.detalleCrp(H, 1e9).k;
+    assert.ok(Math.abs((k0 - k([nuevo]).k) - 500000000 * 170 / 180) < 1, `D3: el contrato nuevo de SECOP II se resta aunque haya lista cargada → restó ${Math.round(k0 - k([nuevo]).k)}`);
+    const upn = { ...nuevo, id_contrato: H.sce.find((c) => c.id_contrato).id_contrato };
+    assert.strictEqual(k([upn]).k, k0, "el mismo número que ya trae la lista cargada no se resta dos veces");
+    const comoSinNumero = { ...nuevo, id_contrato: "CO1.PCCNTR.88888", v: 379500000 * 1.005 };   // a menos del 1 % de la entrada cargada sin número
+    const r = k([comoSinNumero]);
+    assert.ok(r.k === k0 && r.sce_aparte >= 1, `puede ser el de la lista sin número: aparte, sin restar → ${JSON.stringify({ k: r.k === k0, aparte: r.sce_aparte })}`);
+    const lineas = CE.apartesDeLaListaCargada({ ...H, contratosSecop: { ok: true, sce: [nuevo, comoSinNumero], aparte: [] } }).lineas;
+    assert.ok(lineas.some((l) => /no estaba en su lista cargada y se restó/.test(l)) && lineas.some((l) => /puede ser el mismo contrato/.test(l)), `la casilla de capacidad nombra los dos → ${JSON.stringify(lineas)}`);
+    assert.strictEqual(k([nuevo]).sce_fuente, "cargada", "la fuente sigue siendo la lista cargada (quien la lee no cambia)");
+    console.log("· unidad capacidad con contratos nuevos: con lista cargada se resta el contrato nuevo de SECOP II, no el que ya está por número, "
+      + "y el que puede ser una entrada sin número va aparte con su motivo; la casilla de capacidad los nombra");
+  }
+
+  /* unidad: EL REVISOR CON EL FORMULARIO DE EXCEL (PLAN_X20, tanda 10, D2, 11-nov-2026) ──
+     «Revisar antes de subir» compara contra el Formulario 1 que dejó el lector de PDF; el que viene del Excel de la
+     entidad («Cotizar en Precios») no se le pasaba y quedaba ciego. `formularioDesdeExcel` (app.js real en un vm)
+     arma la referencia con los nombres de lib/formulario_excel, y el validador REAL (lib/formulario1) la usa. */
+  bqRevisorExcel: { if (!corre("unidad revisor con el formulario de Excel")) break bqRevisorExcel;
+    const { formularioDesdeExcel } = appEnVm(["formularioDesdeExcel"]);
+    const F1 = require("../lib/formulario1.js");
+    const deExcel = [{ fila_excel: 12, codigo: "1.1", descripcion: "Excavación manual", unidad: "m3", cantidad: 100, precio_archivo: 50000, total_archivo: 5000000 },
+      { fila_excel: 13, codigo: "1.2", descripcion: "Relleno compactado", unidad: "m3", cantidad: 80, precio_archivo: 40000, total_archivo: 3200000 }];
+    const ref = formularioDesdeExcel(deExcel, "CO1.REQ.D2");
+    assert.ok(ref.items.length === 2 && ref.items[0].numeral === "1.1" && ref.items[0].unitario_oficial === 50000 && ref.items[1].total_oficial === 3200000 && ref.id_proceso === "CO1.REQ.D2" && ref.base_precio === null,
+      `la referencia con los nombres del lector de PDF → ${JSON.stringify(ref.items[0])}`);
+    // la oferta con la cantidad del ítem 1.2 cambiada (80 → 70): sin referencia pasaba sin verse
+    const oferta = { items: [{ codigo: "1.1", descripcion: "Excavación manual", unidad: "m3", cantidad: 100, precio_unitario: 60000, total: 6000000 },
+      { codigo: "1.2", descripcion: "Relleno compactado", unidad: "m3", cantidad: 70, precio_unitario: 45000, total: 3150000 }], total: 9150000, base_precio: "con_aiu" };
+    const sinRef = F1.validarFormulario1({ oferta, formulario: null, presupuesto_oficial: 10000000 });
+    const conRef = F1.validarFormulario1({ oferta, formulario: { items: ref.items, base_precio: ref.base_precio, aiu_total_pct: ref.aiu_total_pct }, presupuesto_oficial: 10000000 });
+    const cuentaSinRef = (r) => (r.veredictos || []).filter((x) => x.nivel === "sin_referencia").length;
+    assert.ok(cuentaSinRef(conRef) < cuentaSinRef(sinRef), `con el Formulario de Excel hay menos comprobaciones sin referencia → ${cuentaSinRef(sinRef)} → ${cuentaSinRef(conRef)}`);
+    const cant = (conRef.veredictos || []).find((x) => /cantidad/i.test(`${x.titulo} ${x.mensaje}`) && x.nivel !== "sin_referencia" && x.nivel !== "ok");
+    assert.ok(cant && /1\.2/.test(cant.mensaje), `la cantidad cambiada se ve, con su ítem → ${JSON.stringify(cant)}`);
+    console.log("· unidad revisor con el formulario de Excel: la referencia sale del Formulario de Excel con su unitario y su total oficiales, "
+      + "y el validador real ve la cantidad cambiada que sin ella pasaba");
   }
 
   /* unidad: TEXTO como co-señal (vocabulario por familia + verbo de obra) */
@@ -40441,13 +40879,14 @@ async function main() {
               const lineaApp = (marca) => { const i = js.indexOf(marca); assert.ok(i > 0, `app.js sin ${marca}`); return js.slice(i, js.indexOf("\n", i)); };
               const cajasPT = {};
               const dolarPT = (id) => (cajasPT[id] || (cajasPT[id] = nodoPS()));
-              const pintarPT = new Function("$", "esc", "botonPasoQueFalta", "pintarEscalaPisoTecho", `
+              // `pedirGrupo` (PLAN_X20, D4): la línea del grupo de ofertas se pide aparte; aquí no hay red
+              const pintarPT = new Function("$", "esc", "botonPasoQueFalta", "pintarEscalaPisoTecho", "pedirGrupo", `
                 ${lineaApp("  const nf = new Intl.NumberFormat(")}
                 ${lineaApp("  const nf2 = new Intl.NumberFormat(")}
                 ${lineaApp("  const copRent = (n) =>")}
                 ${lineaApp("  const pctRent = (n) =>")}
                 const TONO_VEREDICTO = new Proxy({}, { get: () => ({ caja: "", punto: "" }) });
-                ${extraerPS("pintarPisoTecho")}; return pintarPisoTecho;`)(dolarPT, (x) => String(x == null ? "" : x), () => "", () => {});
+                ${extraerPS("pintarPisoTecho")}; return pintarPisoTecho;`)(dolarPT, (x) => String(x == null ? "" : x), () => "", () => {}, () => {});
               const conBaja = (mediana, granularidad) => ptMod.pisoTecho({ ...entradaPT,
                 baja: { ...entradaPT.baja, baja_mediana: mediana, baja_p25: Math.min(mediana, 0), baja_p75: Math.max(mediana, 2), granularidad_utilizada: granularidad } });
               for (const mediana of [0, -2]) {
@@ -60391,6 +60830,14 @@ async function main() {
           `${clave}: «${c && c.detalle}»`);
       }
       assert.strictEqual(FP.masBajaGano("minima"), null, "la mínima no es de esta tabla");
+      // PLAN_X20, D7: con la base de la entidad EN ESTE TIPO DE OBRA el consejo dice lo mismo que con la de la entidad entera
+      {
+        const fD7 = { id_del_proceso: "CO1.D7", nombre_del_procedimiento: "MEJORAMIENTO DE VIA", modalidad_de_contratacion: "Selección Abreviada de Menor Cuantía", precio_base: "900000000", departamento_entidad: "Tolima", entidad: "ALCALDIA" };
+        const dD7 = (g) => ((Gg.guiaDe({ fila: fD7, perfil: "helder", ctx: { baja: { baja_mediana: 4.6, procesos_contados: 12, granularidad_utilizada: g } } }).consejos || []).find((x) => x.clave === "precio_no_al_piso") || {}).detalle || "";
+        assert.ok(/^Los que ganaron en esta entidad ofertaron/.test(dD7("entidad")) && /^Los que ganaron en esta entidad en obras de este tipo ofertaron/.test(dD7("entidad_familia")),
+          `D7: las dos bases de la entidad dicen cuánto bajaron los ganadores → «${dD7("entidad_familia").slice(0, 120)}»`);
+        assert.ok(!/Los que ganaron en esta entidad/.test(dD7("departamento")), "con la base del departamento no se atribuye a la entidad");
+      }
       // con el azar al lado (segunda revisión adversaria), y con la modalidad del respaldo
       const mbL = FP.masBajaGano("licitacion");
       const cT = (Gg.guiaDe({ fila: { id_del_proceso: "CO1.FPG2", nombre_del_procedimiento: "MEJORAMIENTO DE VIA", tipo_de_proceso: "Licitación pública", precio_base: "900000000", departamento_entidad: "Tolima", entidad: "ALCALDIA" }, perfil: "helder" }).consejos || [])

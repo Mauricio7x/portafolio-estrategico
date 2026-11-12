@@ -1,0 +1,376 @@
+{
+ "consulta": "2026-11-11",
+ "procesos": 15101,
+ "corte_prueba": "2026-01-01",
+ "min_entidad": 5,
+ "por_modalidad": {
+  "abreviada": {
+   "aprende": 4538,
+   "prueba": 1970,
+   "todas": {
+    "nacional": {
+     "procesos": 1970,
+     "error_medio": 2,
+     "error_mediano": 0.23,
+     "a_1_punto_pct": 69.09,
+     "a_2_puntos_pct": 72.74
+    },
+    "tamano": {
+     "procesos": 1970,
+     "error_medio": 1.94,
+     "error_mediano": 0.21,
+     "a_1_punto_pct": 65.89,
+     "a_2_puntos_pct": 69.8
+    },
+    "entidad": {
+     "procesos": 1970,
+     "error_medio": 1.5,
+     "error_mediano": 0.2,
+     "a_1_punto_pct": 68.48,
+     "a_2_puntos_pct": 75.89
+    },
+    "competencia": {
+     "procesos": 1970,
+     "error_medio": 1.77,
+     "error_mediano": 0.19,
+     "a_1_punto_pct": 60.51,
+     "a_2_puntos_pct": 69.64
+    },
+    "entidad_comp": {
+     "procesos": 1970,
+     "error_medio": 1.52,
+     "error_mediano": 0.18,
+     "a_1_punto_pct": 66.5,
+     "a_2_puntos_pct": 74.42
+    },
+    "oraculo": {
+     "procesos": 1970,
+     "error_medio": 1.47,
+     "error_mediano": 0.29,
+     "a_1_punto_pct": 63.1,
+     "a_2_puntos_pct": 75.33
+    }
+   },
+   "con_3_o_mas_ofertas": {
+    "nacional": {
+     "procesos": 732,
+     "error_medio": 4.33,
+     "error_mediano": 4.49,
+     "a_1_punto_pct": 35.11,
+     "a_2_puntos_pct": 39.34
+    },
+    "tamano": {
+     "procesos": 732,
+     "error_medio": 4.14,
+     "error_mediano": 3.6,
+     "a_1_punto_pct": 31.28,
+     "a_2_puntos_pct": 35.93
+    },
+    "entidad": {
+     "procesos": 732,
+     "error_medio": 2.97,
+     "error_mediano": 1.93,
+     "a_1_punto_pct": 38.93,
+     "a_2_puntos_pct": 51.09
+    },
+    "competencia": {
+     "procesos": 732,
+     "error_medio": 3.64,
+     "error_mediano": 3.24,
+     "a_1_punto_pct": 20.36,
+     "a_2_puntos_pct": 38.52
+    },
+    "entidad_comp": {
+     "procesos": 732,
+     "error_medio": 2.99,
+     "error_mediano": 2.04,
+     "a_1_punto_pct": 34.15,
+     "a_2_puntos_pct": 49.45
+    },
+    "oraculo": {
+     "procesos": 732,
+     "error_medio": 3.02,
+     "error_mediano": 2.24,
+     "a_1_punto_pct": 19.95,
+     "a_2_puntos_pct": 46.99
+    }
+   }
+  },
+  "minima": {
+   "aprende": 2933,
+   "prueba": 1095,
+   "todas": {
+    "nacional": {
+     "procesos": 1095,
+     "error_medio": 6.5,
+     "error_mediano": 2,
+     "a_1_punto_pct": 4.11,
+     "a_2_puntos_pct": 24.11
+    },
+    "tamano": {
+     "procesos": 1095,
+     "error_medio": 6.5,
+     "error_mediano": 2.03,
+     "a_1_punto_pct": 3.84,
+     "a_2_puntos_pct": 20.64
+    },
+    "entidad": {
+     "procesos": 1095,
+     "error_medio": 5.25,
+     "error_mediano": 2.03,
+     "a_1_punto_pct": 32.88,
+     "a_2_puntos_pct": 41.92
+    },
+    "competencia": {
+     "procesos": 1095,
+     "error_medio": 5.74,
+     "error_mediano": 2,
+     "a_1_punto_pct": 45.75,
+     "a_2_puntos_pct": 49.22
+    },
+    "entidad_comp": {
+     "procesos": 1095,
+     "error_medio": 5.47,
+     "error_mediano": 1.67,
+     "a_1_punto_pct": 47.03,
+     "a_2_puntos_pct": 51.51
+    },
+    "oraculo": {
+     "procesos": 1095,
+     "error_medio": 4.49,
+     "error_mediano": 1.01,
+     "a_1_punto_pct": 45.66,
+     "a_2_puntos_pct": 54.79
+    }
+   },
+   "con_3_o_mas_ofertas": {
+    "nacional": {
+     "procesos": 441,
+     "error_medio": 11.7,
+     "error_mediano": 12.38,
+     "a_1_punto_pct": 2.49,
+     "a_2_puntos_pct": 9.07
+    },
+    "tamano": {
+     "procesos": 441,
+     "error_medio": 11.69,
+     "error_mediano": 12.35,
+     "a_1_punto_pct": 2.27,
+     "a_2_puntos_pct": 7.03
+    },
+    "entidad": {
+     "procesos": 441,
+     "error_medio": 9.11,
+     "error_mediano": 8.14,
+     "a_1_punto_pct": 11.34,
+     "a_2_puntos_pct": 16.33
+    },
+    "competencia": {
+     "procesos": 441,
+     "error_medio": 9.98,
+     "error_mediano": 10.59,
+     "a_1_punto_pct": 8.84,
+     "a_2_puntos_pct": 12.02
+    },
+    "entidad_comp": {
+     "procesos": 441,
+     "error_medio": 9,
+     "error_mediano": 8.68,
+     "a_1_punto_pct": 14.06,
+     "a_2_puntos_pct": 19.5
+    },
+    "oraculo": {
+     "procesos": 441,
+     "error_medio": 8.34,
+     "error_mediano": 8.25,
+     "a_1_punto_pct": 5.9,
+     "a_2_puntos_pct": 11.56
+    }
+   }
+  },
+  "licitacion": {
+   "aprende": 1818,
+   "prueba": 729,
+   "todas": {
+    "nacional": {
+     "procesos": 729,
+     "error_medio": 3.32,
+     "error_mediano": 2.1,
+     "a_1_punto_pct": 7.96,
+     "a_2_puntos_pct": 20.3
+    },
+    "tamano": {
+     "procesos": 729,
+     "error_medio": 3.15,
+     "error_mediano": 3.05,
+     "a_1_punto_pct": 16.87,
+     "a_2_puntos_pct": 25.79
+    },
+    "entidad": {
+     "procesos": 729,
+     "error_medio": 2.51,
+     "error_mediano": 2.33,
+     "a_1_punto_pct": 33.33,
+     "a_2_puntos_pct": 47.46
+    },
+    "competencia": {
+     "procesos": 729,
+     "error_medio": 2.81,
+     "error_mediano": 2.29,
+     "a_1_punto_pct": 24.55,
+     "a_2_puntos_pct": 44.17
+    },
+    "entidad_comp": {
+     "procesos": 729,
+     "error_medio": 2.4,
+     "error_mediano": 1.64,
+     "a_1_punto_pct": 36.21,
+     "a_2_puntos_pct": 55.97
+    },
+    "oraculo": {
+     "procesos": 729,
+     "error_medio": 1.99,
+     "error_mediano": 1.32,
+     "a_1_punto_pct": 42.94,
+     "a_2_puntos_pct": 64.06
+    }
+   },
+   "con_3_o_mas_ofertas": {
+    "nacional": {
+     "procesos": 525,
+     "error_medio": 3.77,
+     "error_mediano": 3.62,
+     "a_1_punto_pct": 9.52,
+     "a_2_puntos_pct": 16.38
+    },
+    "tamano": {
+     "procesos": 525,
+     "error_medio": 3.47,
+     "error_mediano": 3.07,
+     "a_1_punto_pct": 12.57,
+     "a_2_puntos_pct": 23.05
+    },
+    "entidad": {
+     "procesos": 525,
+     "error_medio": 2.81,
+     "error_mediano": 2.59,
+     "a_1_punto_pct": 27.24,
+     "a_2_puntos_pct": 43.05
+    },
+    "competencia": {
+     "procesos": 525,
+     "error_medio": 2.99,
+     "error_mediano": 2.39,
+     "a_1_punto_pct": 14.86,
+     "a_2_puntos_pct": 40.95
+    },
+    "entidad_comp": {
+     "procesos": 525,
+     "error_medio": 2.55,
+     "error_mediano": 1.84,
+     "a_1_punto_pct": 28.57,
+     "a_2_puntos_pct": 53.52
+    },
+    "oraculo": {
+     "procesos": 525,
+     "error_medio": 2.46,
+     "error_mediano": 1.82,
+     "a_1_punto_pct": 25.52,
+     "a_2_puntos_pct": 53.9
+    }
+   }
+  },
+  "especial": {
+   "aprende": 918,
+   "prueba": 488,
+   "todas": {
+    "nacional": {
+     "procesos": 488,
+     "error_medio": 1.85,
+     "error_mediano": 0.03,
+     "a_1_punto_pct": 76.64,
+     "a_2_puntos_pct": 82.79
+    },
+    "tamano": {
+     "procesos": 488,
+     "error_medio": 1.85,
+     "error_mediano": 0.07,
+     "a_1_punto_pct": 76.64,
+     "a_2_puntos_pct": 82.79
+    },
+    "entidad": {
+     "procesos": 488,
+     "error_medio": 1.67,
+     "error_mediano": 0.08,
+     "a_1_punto_pct": 78.07,
+     "a_2_puntos_pct": 83.81
+    },
+    "competencia": {
+     "procesos": 488,
+     "error_medio": 1.83,
+     "error_mediano": 0.12,
+     "a_1_punto_pct": 77.66,
+     "a_2_puntos_pct": 83.61
+    },
+    "entidad_comp": {
+     "procesos": 488,
+     "error_medio": 1.69,
+     "error_mediano": 0.1,
+     "a_1_punto_pct": 77.87,
+     "a_2_puntos_pct": 84.63
+    },
+    "oraculo": {
+     "procesos": 488,
+     "error_medio": 1.71,
+     "error_mediano": 0.07,
+     "a_1_punto_pct": 77.46,
+     "a_2_puntos_pct": 83.61
+    }
+   },
+   "con_3_o_mas_ofertas": {
+    "nacional": {
+     "procesos": 164,
+     "error_medio": 3.29,
+     "error_mediano": 0.85,
+     "a_1_punto_pct": 53.66,
+     "a_2_puntos_pct": 65.85
+    },
+    "tamano": {
+     "procesos": 164,
+     "error_medio": 3.28,
+     "error_mediano": 0.86,
+     "a_1_punto_pct": 53.66,
+     "a_2_puntos_pct": 66.46
+    },
+    "entidad": {
+     "procesos": 164,
+     "error_medio": 2.92,
+     "error_mediano": 0.61,
+     "a_1_punto_pct": 58.54,
+     "a_2_puntos_pct": 67.68
+    },
+    "competencia": {
+     "procesos": 164,
+     "error_medio": 3.19,
+     "error_mediano": 0.63,
+     "a_1_punto_pct": 57.93,
+     "a_2_puntos_pct": 68.9
+    },
+    "entidad_comp": {
+     "procesos": 164,
+     "error_medio": 2.81,
+     "error_mediano": 0.55,
+     "a_1_punto_pct": 58.54,
+     "a_2_puntos_pct": 71.34
+    },
+    "oraculo": {
+     "procesos": 164,
+     "error_medio": 2.88,
+     "error_mediano": 0.55,
+     "a_1_punto_pct": 56.1,
+     "a_2_puntos_pct": 68.29
+    }
+   }
+  }
+ }
+}

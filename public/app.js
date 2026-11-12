@@ -3176,6 +3176,15 @@
     return `<p class="${clase}" data-accion-tarjeta${titulos ? ` title="${titulos}"` : ""}>${piezas.map((h) => esc(textoDeHtml(h))).join(" · ")}</p>`;
   }
   function lineaCompiten(l) {
+    /* EL HECHO POR TAMAÑO VA PRIMERO (PLAN_X20, tanda 1, 11-nov-2026): «Una sola oferta en 9 de sus 11
+       procesos de menor cuantía de $150 a $300 millones» dice lo que pasó en procesos como este, no un
+       promedio de toda la entidad. La frase la escribe el servidor (lib/competencia_por_tamano) y solo
+       llega con cuatro procesos o más de ese tamaño; sin ella, la línea de siempre. */
+    const pt = l.competencia_entidad && l.competencia_entidad.por_tamano;
+    if (pt && typeof pt.frase === "string" && pt.frase) {
+      const i = pt.frase.indexOf(" en ");
+      return i > 0 ? `<span><b>${esc(pt.frase.slice(0, i))}</b>${esc(pt.frase.slice(i))}</span>` : `<span>${esc(pt.frase)}</span>`;
+    }
     const c = cuantosCompiten(l);
     /* sin cifra, se dice POR QUÉ con las palabras del chip: con el índice sin leer no es «sin datos» (nadie lo
        miró), es «no se pudo consultar» — el mismo predicado `competenciaNoLeida` de la franja y del chip */
@@ -7627,11 +7636,16 @@
     const rec = r.recomendacion || null;
     /* con recomendación, sus avisos ya dicen lo del porcentaje mínimo: no se repite */
     const avisos = rec ? "" : (r.advertencias || []).filter((a) => /porcentaje mínimo/.test(a)).map((a) => `<li>Atención: ${esc(a)}</li>`).join("");
+    /* EL SIMULACRO (PLAN_X20, tanda 4): un reparto que el pliego prohíbe se dice EN ROJO y siempre, con o sin
+       recomendación: es lo que dejó no habilitada la oferta a la Universidad Pedagógica (65/35 con el 40 % pedido) */
+    const noCumpleReparto = (r.participacion_pliego || []).filter((j) => j && j.estado === "no_cumple")
+      .map((j) => `<li class="font-medium text-red-700">${esc(j.frase)}${j.pagina != null ? ` (pág. ${esc(String(j.pagina))})` : ""}</li>`).join("");
     const bloqueRec = bloqueRecDe(r);
     return `${encabezado}
       ${bloqueRec}
       ${filas ? `<ul class="mt-1.5 space-y-1 text-sm">${filas}</ul>` : ""}
       <p class="mt-2 text-sm font-medium">${esc(frase)}</p>
+      ${noCumpleReparto ? `<ul class="mt-2 space-y-1 text-sm" data-reparto-no-cumple>${noCumpleReparto}</ul>` : ""}
       ${verificado}
       ${avisos ? `<ul class="mt-2 space-y-1 text-[11px] text-gray-500">${avisos}</ul>` : ""}
       ${sinReparto ? "" : `<div class="mt-2 flex flex-wrap items-center gap-2">
@@ -8174,7 +8188,12 @@
           /* los VALORES FIJOS fuera de los ítems (PMT, PGIO; 25-oct-2026) no son ítems y no entran a la tabla: se avisan con su cifra para que la oferta no quede corta */
           const fijosF1 = Array.isArray(r.valores_fijos) ? r.valores_fijos.filter((x) => x && x.valor != null) : [];
           const avisosF1 = fijosF1.length ? [aviso1, `El Formulario trae además ${fijosF1.length} valor(es) fijo(s) fuera de los ítems (${fijosF1.map((x) => `${x.etiqueta || "sin rótulo"} ${pesos(x.valor)}`).join("; ")}) por ${pesos(fijosF1.reduce((s, x) => s + x.valor, 0))}: no pasan a la tabla; súmelos tal cual a su oferta.`] : [aviso1];
-          if (await mapearParaPrevisualizar(filasF1, { avisos: avisosF1, origen: r.nombre ? `el Formulario 1 «${r.nombre}»` : "el Formulario 1 leído" })) { abrirModalImportar(); decirF("Los ítems están en Precios: revise la vista previa y acepte los que quiera llevar."); }
+          if (await mapearParaPrevisualizar(filasF1, { avisos: avisosF1, origen: r.nombre ? `el Formulario 1 «${r.nombre}»` : "el Formulario 1 leído" })) {
+            /* D2 (PLAN_X20, 11-nov-2026): el revisor («Revisar antes de subir») compara contra `window.__pliegoUltimo`,
+               que solo ponía el lector de PDF: con el Formulario de Excel quedaba ciego (4 de 8 comprobaciones sin
+               referencia). Se le deja ESTE Formulario, con su unitario y su total oficiales y su proceso. */
+            try { window.__pliegoUltimo = formularioDesdeExcel(items, idProc); } catch { /* sin ventana */ }
+            abrirModalImportar(); decirF("Los ítems están en Precios: revise la vista previa y acepte los que quiera llevar."); }
           else decirF("No se llevó nada: se canceló el acceso.", true);
         } catch (e) { decirF(`No se pudo traer el Formulario 1: ${fraseDeFallo(e)}`, true); }
         f1.disabled = false;
@@ -9754,6 +9773,17 @@
     }
   });
 
+  /* EL FORMULARIO 1 DE EXCEL COMO REFERENCIA DEL REVISOR (D2, PLAN_X20, 11-nov-2026): la misma forma que deja el lector
+     de PDF (public/pliego.js), con los nombres de lib/formulario_excel (`codigo`, `precio_archivo`, `total_archivo`). El
+     AIU del Formulario no se conoce aquí: `base_precio` va en null y el servidor dice «sin referencia» en la comparación
+     de unitarios (no se adivina la base); las cantidades, los ítems que faltan y el total sí se comparan. */
+  function formularioDesdeExcel(items, idProceso) {
+    const num = (v) => (v == null || v === "" ? null : Number.isFinite(Number(v)) ? Number(v) : null);
+    return { items: (items || []).map((i) => ({ numeral: i.codigo || null, pagina: null, descripcion: i.descripcion || null, unidad: i.unidad || null,
+      cantidad: num(i.cantidad), unitario_oficial: num(i.precio_archivo), total_oficial: num(i.total_archivo) })),
+    leido_el: new Date().toISOString(), id_proceso: idProceso || null, base_precio: null, aiu_total_pct: null, origen: "excel" };
+  }
+
   /* ══════════ Fase 4 (plan v3) · GUARDIÁN DEL FORMULARIO 1 ══════════
      «Revisar antes de subir»: manda la oferta del paso 3 (ítems con precio
      unitario de venta y total, AIU, total), el Formulario 1 leído en el
@@ -11224,6 +11254,7 @@
          cabecera del nuevo sería «cifras viejas con aspecto de nuevas», el modo de
          fallo más caro de este panel. Las dos ramas la deciden; ninguna la olvida. */
       pintarEscalaPisoTecho(null);
+      pedirGrupo(null);   // la línea del grupo del proceso anterior tampoco se queda
       cuerpo.classList.add("hidden");
       sin.classList.remove("hidden");
       // el veredicto del servidor se conserva LITERAL; debajo, el paso que falta
@@ -11299,6 +11330,7 @@
     const lim = pt.limite_entidad_medido;
     $("pt-limite-entidad").textContent = lim && lim.frase ? lim.frase : "";
     $("pt-limite-entidad").classList.toggle("hidden", !(lim && lim.frase));
+    pedirGrupo(c);
     const fuentes = [];
     for (const [k, v] of Object.entries(pt.fuentes || {})) {
       fuentes.push(`<li><span class="font-medium">${esc(k.replace(/_/g, " "))}:</span> ${esc(v)}</li>`);
@@ -11306,6 +11338,54 @@
     for (const sup of pt.supuestos || []) fuentes.push(`<li>Supuesto: ${esc(sup)}</li>`);
     $("pt-fuentes").innerHTML = fuentes.join("");
     $("btn-justificacion").disabled = false;
+  }
+
+  /* ── SU PRECIO FRENTE AL GRUPO (PLAN_X20, D4, 11-nov-2026) ──────────────────
+     El aviso que faltó en Cali: en cuántos procesos anteriores de esta entidad su precio habría quedado por encima
+     de todas las ofertas y de la mitad (lib/grupo_ofertas, op=grupo). Va APARTE del cálculo porque datos.gov.co tarda
+     la primera vez (decenas de segundos; luego 24 h de memoria en el servidor): mientras tanto se dice que se está
+     consultando. Un pedido más nuevo manda sobre uno viejo (`grupoPedido`), y mientras uno de la misma entidad está en
+     camino el siguiente lo espera, para no abrir cinco consultas lentas iguales. No mueve ninguna cifra. */
+  let grupoPedido = 0;
+  const grupoEnCamino = new Map();
+  async function pedirGrupo(c) {
+    const p = $("pt-grupo");
+    if (!p) return;
+    const yo = ++grupoPedido;
+    /* el TOTAL que se escribe en SECOP II (con el IVA de la utilidad cuando la entidad lo lleva o no se sabe), que es
+       con lo que compiten las ofertas publicadas; sin él, el precio final (revisión adversaria del 11-nov-2026: con el
+       precio sin IVA, el caso de Cali se pintaba 0,75 puntos más abajo y la alerta podía no salir) */
+    const res = c && c.presupuesto && c.presupuesto.resumen ? c.presupuesto.resumen : null;
+    const precio = res ? Number(res.oferta && res.oferta.total_para_secop != null ? res.oferta.total_para_secop : res.precio_final) : NaN;
+    const po = c && c.piso_techo && c.piso_techo.cifras ? Number(c.piso_techo.cifras.presupuesto_oficial) : NaN;
+    if (!nitProceso || !modalidadProceso || !(precio > 0) || !(po > 0)) { p.textContent = ""; p.classList.add("hidden"); return; }
+    p.className = "mt-2 pl-6 text-sm text-gray-500";
+    p.textContent = "Consultando dónde quedaron las ofertas de los procesos anteriores de esta entidad…";
+    const llave = `${nitProceso}|${modalidadProceso}`;
+    try { await grupoEnCamino.get(llave); } catch { /* el anterior falló: este lo intenta de nuevo */ }
+    if (yo !== grupoPedido) return;
+    const qs = new URLSearchParams({ op: "grupo", entidad_nit: nitProceso, modalidad: modalidadProceso, precio_pct: String(Math.round((precio / po) * 1e6) / 1e4) });
+    const promesa = api(`/api/apu?${qs}`);
+    grupoEnCamino.set(llave, promesa);
+    let r;
+    try { r = await promesa; } catch (e) {
+      if (yo !== grupoPedido) return;
+      p.className = "mt-2 pl-6 text-sm text-gray-500";
+      p.textContent = mensajeDeFallo(e, "consultar dónde quedaron las ofertas de los procesos anteriores de esta entidad");
+      return;
+    } finally { if (grupoEnCamino.get(llave) === promesa) grupoEnCamino.delete(llave); }
+    if (yo !== grupoPedido) return;
+    const f = r && r.frente_al_grupo;
+    // la referencia de la entidad por competencia (pieza 6.5) va detrás, como hecho; sola si no hay frase del grupo
+    const ref = r && r.por_competencia && r.por_competencia.frase ? ` ${r.por_competencia.frase}` : "";
+    if (!(f && f.frase) && ref) { p.className = "mt-2 pl-6 text-sm text-gray-600"; p.textContent = ref.trim(); return; }
+    if (f && f.frase) {
+      p.className = f.alerta ? "mt-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900 ring-1 ring-inset ring-amber-600/20" : "mt-2 pl-6 text-sm text-gray-600";
+      p.textContent = (f.alerta ? `Atención: ${f.frase} Con ese precio suele quedar por encima de la mitad de las ofertas.` : f.frase) + ref;
+    } else {
+      p.className = "mt-2 pl-6 text-sm text-gray-500";
+      p.textContent = (r && r.motivo_texto) || "No hay procesos anteriores comparables de esta entidad para decir dónde quedaría su precio.";
+    }
   }
 
   /* ── DÓNDE CAE SU PRECIO (6-sep-2026, M-DGF-01 + M-IE-15) ──────────────────

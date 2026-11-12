@@ -1,0 +1,115 @@
+{
+ "consulta": "2026-11-11",
+ "filas_leidas": 46086,
+ "corte_prueba": "2026-01-01",
+ "umbral_poca": 0.8,
+ "previos_minimos": 4,
+ "resultados": {
+  "plan": {
+   "procesos": 15779,
+   "abreviada": {
+    "aprende": 4597,
+    "prueba": 1994,
+    "prueba_una_o_dos_pct": 62.7,
+    "anunciados_poca": 770,
+    "acierto_una_o_dos_pct": 90.6,
+    "una_sola_pct": 73.9,
+    "anunciados_mucha": 346,
+    "mucha_con_3_o_mas_pct": 91.3
+   },
+   "licitacion": {
+    "aprende": 1985,
+    "prueba": 785,
+    "prueba_una_o_dos_pct": 26.1,
+    "anunciados_poca": 31,
+    "acierto_una_o_dos_pct": 77.4,
+    "una_sola_pct": 48.4,
+    "anunciados_mucha": 323,
+    "mucha_con_3_o_mas_pct": 92.3
+   },
+   "minima": {
+    "aprende": 3164,
+    "prueba": 1187,
+    "prueba_una_o_dos_pct": 55.4,
+    "anunciados_poca": 280,
+    "acierto_una_o_dos_pct": 91.1,
+    "una_sola_pct": 76.1,
+    "anunciados_mucha": 296,
+    "mucha_con_3_o_mas_pct": 85.1
+   },
+   "especial": {
+    "aprende": 943,
+    "prueba": 500,
+    "prueba_una_o_dos_pct": 65.8,
+    "anunciados_poca": 99,
+    "acierto_una_o_dos_pct": 96,
+    "una_sola_pct": 88.9,
+    "anunciados_mucha": 109,
+    "mucha_con_3_o_mas_pct": 83.5
+   },
+   "directa": {
+    "aprende": 471,
+    "prueba": 153,
+    "prueba_una_o_dos_pct": 98.7,
+    "anunciados_poca": 107,
+    "acierto_una_o_dos_pct": 98.1,
+    "una_sola_pct": 92.5,
+    "anunciados_mucha": 0,
+    "mucha_con_3_o_mas_pct": null
+   }
+  },
+  "aplicacion": {
+   "procesos": 17106,
+   "abreviada": {
+    "aprende": 4809,
+    "prueba": 2344,
+    "prueba_una_o_dos_pct": 62.5,
+    "anunciados_poca": 907,
+    "acierto_una_o_dos_pct": 89.9,
+    "una_sola_pct": 73.6,
+    "anunciados_mucha": 398,
+    "mucha_con_3_o_mas_pct": 89.9
+   },
+   "licitacion": {
+    "aprende": 2076,
+    "prueba": 1002,
+    "prueba_una_o_dos_pct": 24.9,
+    "anunciados_poca": 44,
+    "acierto_una_o_dos_pct": 72.7,
+    "una_sola_pct": 47.7,
+    "anunciados_mucha": 420,
+    "mucha_con_3_o_mas_pct": 92.1
+   },
+   "minima": {
+    "aprende": 3334,
+    "prueba": 1344,
+    "prueba_una_o_dos_pct": 55.1,
+    "anunciados_poca": 311,
+    "acierto_una_o_dos_pct": 91.6,
+    "una_sola_pct": 76.2,
+    "anunciados_mucha": 255,
+    "mucha_con_3_o_mas_pct": 87.8
+   },
+   "especial": {
+    "aprende": 987,
+    "prueba": 544,
+    "prueba_una_o_dos_pct": 66,
+    "anunciados_poca": 110,
+    "acierto_una_o_dos_pct": 96.4,
+    "una_sola_pct": 87.3,
+    "anunciados_mucha": 117,
+    "mucha_con_3_o_mas_pct": 84.6
+   },
+   "directa": {
+    "aprende": 498,
+    "prueba": 168,
+    "prueba_una_o_dos_pct": 98.8,
+    "anunciados_poca": 116,
+    "acierto_una_o_dos_pct": 98.3,
+    "una_sola_pct": 94.8,
+    "anunciados_mucha": 0,
+    "mucha_con_3_o_mas_pct": null
+   }
+  }
+ }
+}
