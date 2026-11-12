@@ -445,6 +445,7 @@ Si en el paso 2 no ve lo descrito, no siga: dígalo y se revisa, porque ese orde
 - **Tanda 13 · Las ofertas propias por integrante y el tablero.** Pieza 6.8 y sección 8. Tamaño: 2 sesiones.
   - *Hecha en parte el 12-nov-2026*: «Sus ofertas en SECOP II» en Mi empresa reconoce sus ofertas a su nombre y de sus consorcios, con el puesto por precio, el resultado y el tablero por año. Medido: 5 ofertas de Helder publicadas (2025), una adjudicada. Falta: sumarlas al historial de cada entidad y la causa de cada resultado. Memoria: «Sus ofertas en SECOP II y cómo le fue: a su nombre y de los consorcios donde figura (12-nov-2026)».
 - **Tanda 14 · Recalcular el informe y el borrador de observación.** Pieza 6.6, dentro del plazo de traslado. Tamaño: 2 sesiones.
+  - *Hecha en parte el 12-nov-2026*: la ventana de la entidad dice, por proceso leído, si el puntaje de precio recalculado con el método del informe da distinto y si cambiaría el primer lugar, con un borrador de observación. Falta: el plazo de traslado y el máximo tomado del pliego. Memoria: «El puntaje de precio del informe, recalculado con el motor, y el borrador de observación (12-nov-2026)».
 
 ### 7.7 Entrega 6 · Cartera
 

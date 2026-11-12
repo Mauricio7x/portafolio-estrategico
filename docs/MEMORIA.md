@@ -22486,3 +22486,18 @@ En una línea: tanda 13 del plan x20 (pieza 6.8): Mi empresa → «Cómo está e
   - dos consultas en paralelo, una por columna (NIT y código): con «O» entre las dos la fuente pasaba de 15 s; separadas, de 4 a 6 s. Se guarda 12 horas solo lo que salió completo.
 - **Sin hacer de la tanda 13**: sumar estas ofertas al historial de cada entidad y guardar la causa de cada resultado (la causa no está en los datos abiertos: sale del informe de evaluación, que lee la habilidad /evaluaciones).
 - Cerradura: «unidad ofertas propias»; 13 mutaciones, mueren todas. Chromium real a 390 px: el plegado consulta, pinta las ofertas con su resultado y «Consultar de nuevo» pide `refrescar=1`, sin errores ni desborde.
+
+### El puntaje de precio del informe, recalculado con el motor, y el borrador de observación (12-nov-2026)
+
+En una línea: tanda 14 del plan x20 (pieza 6.6, uso): sobre la captura verificada de un informe de evaluación, `lib/recalculo_informe.js` recalcula el puntaje de precio de los hábiles con `lib/metodos_ponderacion` (el método del informe o, si no lo dice, el de la TRM que cita), dice si difiere de lo publicado en más de 0,01 y si cambiaría el primer lugar, y arma un borrador de observación; la ventana de la entidad («Lo que dicen sus evaluaciones») lo enseña por proceso.
+
+- **Lo que no hay que deshacer**:
+  - solo con la captura COMPLETA, dos o más hábiles y el valor y el puntaje de precio de todos (la misma regla de las comparaciones entre ofertas de `hechosDeEntidad`);
+  - el máximo es el mayor puntaje publicado SOLO si es uno del documento tipo (49,5; 48,5; 49,75): si la entidad no le dio el máximo a nadie, escalar con el mayor publicado marcaría como erradas a todas las demás, un falso positivo dentro de una observación;
+  - una diferencia de hasta 0,01 es el redondeo a dos decimales de los informes, no un error;
+  - el orden se recalcula cambiando solo el puntaje de precio en el total publicado, y solo si todos traen su total; un empate arriba no se dice como cambio;
+  - un método «otro» no se calcula aquí: lo de régimen especial lo lee la guía (tanda 9);
+  - el borrador va en tercera persona, con cifras, sin citar normas, y con lo que no se sabe entre corchetes (número y fecha del informe).
+- **Sin hacer**: el plazo de traslado (no se lee del cronograma todavía) y el puntaje máximo tomado de la tabla de ESE pliego (tanda 5) para los informes donde nadie recibió el máximo.
+- **Sin verificar**: con capturas reales de producción (no hay acceso desde aquí); se probó con los valores del caso de Cali.
+- Cerradura: «unidad recalculo del informe»; 10 mutaciones, mueren todas.

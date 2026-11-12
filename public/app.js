@@ -4596,6 +4596,17 @@
       if (P.con_dato) partes.push(P.gano_sin_el_mejor_precio
         ? `<p class="mt-1 text-sm">En <strong>${P.gano_sin_el_mejor_precio}</strong> de ${plural(P.con_dato, "proceso", "procesos")} con puntajes publicados ganó una oferta que no tenía el mejor puntaje de precio: la decidieron los puntos fuera del precio.</p>`
         : `<p class="mt-1 text-sm">En ${P.con_dato === 1 ? "el proceso" : `los ${P.con_dato} procesos`} con puntajes publicados ganó la oferta con el mejor puntaje de precio.</p>`);
+      /* ¿CALCULÓ BIEN EL PRECIO? (PLAN_X20 tanda 14): el puntaje de precio recalculado con el método del informe y, donde
+         difiere, el borrador de observación para revisarlo dentro del plazo de traslado */
+      const R = H.recalculo || {};
+      if (R.con_dato) {
+        const conObs = (H.procesos_detalle || []).filter((x) => x && x.recalculo && x.recalculo.observacion);
+        partes.push(R.con_diferencias
+          ? `<p class="mt-1 text-sm" data-recalculo>En <strong>${R.con_diferencias}</strong> de ${plural(R.con_dato, "proceso", "procesos")} con valores y puntajes publicados, el puntaje de precio recalculado con el método del informe da distinto${R.cambia_el_primero ? `; en ${R.cambia_el_primero} cambiaría el primer lugar` : ""}.</p>`
+            + conObs.map((x) => `<details class="mt-1"><summary class="cursor-pointer text-xs font-semibold text-gray-700">${esc(x.id_proceso || x.portafolio || "Proceso")}: borrador de observación</summary>
+              <p class="mt-1 text-xs text-gray-600">${esc(x.recalculo.frase)}</p><p class="mt-1 rounded-lg bg-gray-50 px-3 py-2 text-xs text-gray-800">${esc(x.recalculo.observacion)}</p></details>`).join("")
+          : `<p class="mt-1 text-sm" data-recalculo>En ${R.con_dato === 1 ? "el proceso" : `los ${R.con_dato} procesos`} con valores y puntajes publicados, el puntaje de precio recalculado da lo mismo que publicó la entidad.</p>`);
+      }
       const F = H.fuera_del_precio || {};
       if (F.con_dato) {
         const crit = Object.entries(F.criterios || {}).sort((a, b) => b[1] - a[1]).map(([k, n]) => `${esc(criterios[k] || k)} (${n})`).join(", ");

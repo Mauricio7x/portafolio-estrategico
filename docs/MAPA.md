@@ -22,7 +22,7 @@
   pliego.js                   Router del dominio PLIEGO (Fase 0 · consolidación a 6 funciones)
   procesos.js                 Router del dominio PROCESOS (Fase 0 · consolidación a 6 funciones)
 
-· lib/ — 120 módulos:
+· lib/ — 121 módulos:
   accesibilidad.js            Accesibilidad operativa de la zona de la obra
   adendas.js                  Vigía de adendas · lo que el DATASET dice que cambió (Fase 5)
   almacen.js                  Esquema de claves Redis + compresión de chunks
@@ -124,6 +124,7 @@
   puertas.js                  Las cuatro puertas de viabilidad de un proceso
   puntaje_pliego.js           Los puntos fuera del precio, uno por uno: cuáles da el pliego y cuáles puede acreditar usted
   rastreo.js                  «¿Por qué no está este proceso?»
+  recalculo_informe.js        ¿CALCULÓ BIEN LA ENTIDAD EL PUNTAJE DE PRECIO? (PLAN_X20, tanda 14, pieza 6.6, 12-nov-2026)
   redis.js                    Cliente mínimo de Upstash Redis vía API REST — sin SDK ni deps
   reparto.js                  ¿Con qué porcentaje se queda el dueño en ESTE consorcio?
   requisitos_ley.js           Qué requisito pide la LEY según el tipo de contrato y la modalidad
@@ -247,8 +248,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 481 secciones (58 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 22376  Con lista cargada, la capacidad también resta los contratos nuevos de SECOP II, por número …
+· MEMORIA · docs/MEMORIA.md — 482 secciones (58 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 22384  «Revisar antes de subir» también compara contra el Formulario 1 de Excel (11-nov-2026)
   L 22392  Qué tan cerca se anticipa el precio ganador por modalidad, y la referencia de la entidad po…
   L 22406  La lista del día va en el vigilante de la mañana (12-nov-2026)
@@ -258,6 +258,7 @@
   L 22443  La tabla de métodos de ponderación de ESE pliego, y las dos fórmulas del documento tipo V1 …
   L 22456  Su oferta escrita en el Formulario de Excel de la entidad, con candados (12-nov-2026)
   L 22475  Sus ofertas en SECOP II y cómo le fue: a su nombre y de los consorcios donde figura (12-nov…
+  L 22490  El puntaje de precio del informe, recalculado con el motor, y el borrador de observación (1…
 
 · DOCUMENTOS docs/ — 78 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)

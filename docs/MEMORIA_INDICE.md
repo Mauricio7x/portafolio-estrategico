@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 2666648 bytes · 481 secciones · 58 con marcador de superación.
+Derivado del árbol: 2668595 bytes · 482 secciones · 58 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -491,4 +491,5 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | Las causales de rechazo de ESE pliego, una por una, con dónde las revisa la aplicación (12-nov-2026) | 12-nov-2026 | 22435-22442 | 1333 |  |
 | La tabla de métodos de ponderación de ESE pliego, y las dos fórmulas del documento tipo V1 (12-nov-2026) | 12-nov-2026 | 22443-22455 | 2048 |  |
 | Su oferta escrita en el Formulario de Excel de la entidad, con candados (12-nov-2026) | 12-nov-2026 | 22456-22474 | 3803 |  |
-| Sus ofertas en SECOP II y cómo le fue: a su nombre y de los consorcios donde figura (12-nov-2026) | 12-nov-2026 | 22475-22488 | 2498 |  |
+| Sus ofertas en SECOP II y cómo le fue: a su nombre y de los consorcios donde figura (12-nov-2026) | 12-nov-2026 | 22475-22489 | 2499 |  |
+| El puntaje de precio del informe, recalculado con el motor, y el borrador de observación (12-nov-2026) | 12-nov-2026 | 22490-22503 | 1946 |  |

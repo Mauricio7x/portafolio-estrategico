@@ -11610,6 +11610,53 @@ async function main() {
       + "puesto por precio y resultado de la fase adjudicada, «sin dato» que no es «perdió», el tablero por año, una consulta por columna, el detalle caído dicho, credencial y lo guardado");
   }
 
+  bqRecalculoInforme: { if (!corre("unidad recalculo del informe")) break bqRecalculoInforme;
+    /* PLAN_X20, tanda 14 (12-nov-2026): el puntaje de precio del informe, recalculado con el motor de la aplicación */
+    const RC = require("../lib/recalculo_informe.js"), ME = require("../lib/metodos_ponderacion.js"), EV = require("../lib/evaluacion.js");
+    // Cali · Santa Elena: cinco hábiles, media geométrica; el motor da 49,5 a la más cercana (D1)
+    const cali = [1475444680, 1485289767, 1488423398, 1511179252, 1530029471];
+    const bien = ME.puntajes(cali, "geometrica", 49.5);
+    const nom = ["A SAS", "B SAS", "CONCRETAR 2026", "D SAS", "E SAS"];
+    const cap = (pp, extra = {}) => ({ documento_util: true, completa: true, metodo: "geometrica", ofertas: nom.map((n, i) => ({ oferente: n, estado: "habil", valor: cali[i], puntaje_precio: pp[i], puntaje_total: pp[i] + 50 })), ...extra });
+    const r0 = RC.recalcularInforme(cap(bien.map((x) => Math.round(x * 100) / 100)));
+    assert.ok(r0.recalculable && r0.difieren === 0 && r0.observacion === null && /da lo mismo que publicó la entidad/.test(r0.frase), `publicado con dos decimales y bien calculado: sin diferencias → ${r0.frase}`);
+    // la entidad publicó mal el puntaje de B SAS (48,50 en vez de 49,08)
+    const mal = bien.map((x) => Math.round(x * 100) / 100); mal[1] = 48.5;
+    const r1 = RC.recalcularInforme(cap(mal));
+    assert.ok(r1.recalculable && r1.difieren === 1 && Math.abs(r1.filas[1].calculado - bien[1]) < 1e-6 && /B SAS, publicado 48,50 y recalculado 49,08/.test(r1.frase), `la diferencia se dice con sus cifras → ${r1.frase}`);
+    // si nadie recibió un máximo del documento tipo (la media geométrica sin la regla del más cercano: 49,19 al mejor), no se sabe sobre cuánto se calculó
+    const sinMax = bien.slice(); sinMax[2] = 49.1854;
+    assert.match(RC.recalcularInforme(cap(sinMax)).motivo, /no es un máximo del documento tipo/, "sin un máximo conocido no se recalcula: escalar con el mayor publicado marcaría todas las demás");
+    assert.ok(/^Se solicita a la entidad revisar el puntaje asignado al factor precio en el informe de evaluación \[número y fecha del informe\]\./.test(r1.observacion) && /a B SAS le corresponden 49,08\d\d puntos y no 48,50/.test(r1.observacion) && !/Ley|Decreto|artículo/i.test(r1.observacion),
+      `el borrador: tercera persona, cifras, lo que no se sabe entre corchetes, sin normas → ${r1.observacion}`);
+    // el primer lugar cambia cuando la diferencia de precio voltea el total
+    // A SAS publicada con 49,50 de precio (le tocaban 48,45) y 0,3 puntos más fuera del precio que CONCRETAR: gana por el error
+    const casi = bien.map((x) => Math.round(x * 100) / 100); casi[0] = 49.5;
+    const c2 = cap(casi); c2.ofertas[0].puntaje_total = 49.5 + 50.3;
+    const r2 = RC.recalcularInforme(c2);
+    assert.ok(r2.cambia_el_primero === true && r2.orden_publicado[0] === "A SAS" && r2.orden_recalculado[0] === "CONCRETAR 2026" && /pasaría de A SAS a CONCRETAR 2026/.test(r2.frase) && /Adicionalmente, con esa corrección el primer lugar/.test(r2.observacion),
+      `el primer lugar que cambia se dice → ${JSON.stringify([r2.orden_publicado, r2.orden_recalculado])}`);
+    // sin método en el informe: el de la TRM citada (centavos 30 → media geométrica)
+    const r3 = RC.recalcularInforme(cap(mal, { metodo: undefined, trm: { valor: 3678.30 } }));
+    assert.ok(r3.recalculable && r3.metodo === "geometrica" && r3.fuente_metodo === "trm" && /corresponde a la TRM/.test(r3.frase), "sin método en el informe, el de su TRM");
+    // lo que no se recalcula, con su motivo
+    assert.match(RC.recalcularInforme(cap(mal, { completa: false })).motivo, /no está completa/);
+    assert.match(RC.recalcularInforme(cap(mal, { metodo: "otro" })).motivo, /no es de los cuatro del documento tipo/);
+    assert.match(RC.recalcularInforme(cap(mal, { metodo: undefined })).motivo, /no dice el método ni la TRM/);
+    const sinValor = cap(mal); delete sinValor.ofertas[1].valor;
+    assert.match(RC.recalcularInforme(sinValor).motivo, /le falta el valor o el puntaje/);
+    const unaHabil = cap(mal); unaHabil.ofertas.slice(1).forEach((o) => { o.estado = "rechazada"; });
+    assert.match(RC.recalcularInforme(unaHabil).motivo, /menos de dos ofertas hábiles/);
+    const sinTotal = cap(mal); delete sinTotal.ofertas[4].puntaje_total;
+    assert.strictEqual(RC.recalcularInforme(sinTotal).cambia_el_primero, null, "sin el total de todos, no se dice si cambia el orden");
+    // en los hechos de la entidad
+    const H = EV.hechosDeEntidad([{ id_proceso: "CO1.REQ.1", captura: cap(mal) }, { id_proceso: "CO1.REQ.2", captura: cap(bien.map((x) => Math.round(x * 100) / 100)) }, { id_proceso: "CO1.REQ.3", captura: cap(mal, { completa: false }) }]);
+    assert.deepStrictEqual(H.recalculo, { con_dato: 2, con_diferencias: 1, cambia_el_primero: 0 }, `los hechos cuentan solo los completos → ${JSON.stringify(H.recalculo)}`);
+    assert.ok(H.procesos_detalle.find((x) => x.id_proceso === "CO1.REQ.1").recalculo.observacion && !H.procesos_detalle.find((x) => x.id_proceso === "CO1.REQ.3").recalculo, "el borrador viaja con su proceso");
+    console.log("· unidad recalculo del informe: el caso de Cali con D1 (49,5 y no 49,19), dos decimales que no son diferencia, el primer lugar que cambia, el método por la TRM, "
+      + "lo que no se recalcula con su motivo y el borrador de observación sin normas y con corchetes");
+  }
+
   /* unidad: TEXTO como co-señal (vocabulario por familia + verbo de obra) */
   bq19: { if (!corre("unidad texto")) break bq19;
     const idx = unspsc.indiceDe(PERFILES.helder.unspsc);
