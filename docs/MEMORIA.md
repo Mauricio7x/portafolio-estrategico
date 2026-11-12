@@ -22409,5 +22409,5 @@ En una línea: tanda 3 del plan x20: el bloque «2 · El vigilante de la mañana
 
 - **Por qué en el vigilante y no una rutina nueva**: la rutina ejecuta su bloque de este documento cada mañana, así que el cambio entra solo cuando el bloque llega a `main`; una rutina creada desde una sesión no lleva el repositorio (medido el 13-sep-2026) y no funcionaría.
 - **Decisiones del dueño tomadas como aprobadas** con su «Apruebo» del 12-nov-2026, sobre la propuesta de la sesión: zona y tamaño (decisión 1, la recomendada) y canal (decisión 4, «A»: la tarea de Claude). Si el «Apruebo» era solo para seguir, se cambia la URL del paso 6.
-- **Sin verificar**: que la rutina del vigilante tenga encendido el aviso al teléfono (eso se ve en claude.ai/code → Routines → la rutina); el paso 6 no se ejecutó contra producción desde esta sesión.
+- **Verificado el 12-nov-2026** (lista de tareas programadas de la cuenta): la rutina «Dirección · vigilante de la mañana» corre cada día a las 12:01 UTC (7:01 en Colombia), apunta a este bloque, tiene el aviso al teléfono encendido y su corrida de hoy terminó bien. **Sin verificar**: el paso 6 contra producción (esta sesión no tiene la llave).
 
