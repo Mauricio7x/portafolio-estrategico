@@ -6,9 +6,9 @@
 (no editar a mano: sale de `node tests/mapa.js --escribir`. Para ir a un sitio concreto,
  `node tests/mapa.js <término>` da la ruta, la línea y el sed exacto — más barato que leer esto)
 
-· SUPERFICIE HTTP — 46 op declaradas en los mapas de los routers:
+· SUPERFICIE HTTP — 47 op declaradas en los mapas de los routers:
   /api/admin?op=  rup · experiencia · cobertura · cargar-catalogo · exportar · importar · uso · respaldo · espacio · compactar · sesion · entrar · salir · crear-cuenta
-  /api/perfil?op=  resumen · diagnostico · entrada · pulso · consorcio · consorcio-simular · seguimiento · cuenta · avisos · empresa-datos · no-es-obra
+  /api/perfil?op=  resumen · diagnostico · entrada · pulso · consorcio · consorcio-simular · seguimiento · cuenta · avisos · empresa-datos · no-es-obra · ofertas-propias
   /api/pliego?op=  extraer-texto · parsear · descargar · formulario1 · diff · cronograma · deducciones · dictamen · documentos · auditoria · evaluacion · observaciones
   /api/procesos?op=  sync · historico · listar · baja · entidades · portada · manifestacion · latido · salud
   (api/apu.js e api/inteligencia.js despachan por accion/vista desde su handler:
@@ -22,7 +22,7 @@
   pliego.js                   Router del dominio PLIEGO (Fase 0 · consolidación a 6 funciones)
   procesos.js                 Router del dominio PROCESOS (Fase 0 · consolidación a 6 funciones)
 
-· lib/ — 116 módulos:
+· lib/ — 121 módulos:
   accesibilidad.js            Accesibilidad operativa de la zona de la obra
   adendas.js                  Vigía de adendas · lo que el DATASET dice que cambió (Fase 5)
   almacen.js                  Esquema de claves Redis + compresión de chunks
@@ -40,6 +40,7 @@
   capacidad.js                K de contratación (capacidad residual) — FÓRMULA ÚNICA
   capital_trabajo.js          EL CAPITAL DE TRABAJO QUE EXIGE EL PLIEGO (27-sep-2026, N31)
   causa_descarga.js           LA CAUSA REAL DE UN FALLO DE LECTURA (19-oct-2026) — capa PURA, sin red ni Redis.
+  causales_rechazo.js         Las causales de rechazo de ESE pliego, y cuáles revisa la aplicación antes de radicar
   censo_ingesta.js            Por qué NO entró un proceso al corpus
   cobertura_rup.js            ¿Qué códigos UNSPSC le FALTAN al RUP?
   codigos_experiencia.js      Los CÓDIGOS con que el pliego pide la experiencia
@@ -80,6 +81,7 @@
   formato_entidad.js          LLENAR EL FORMATO QUE PUBLICÓ LA ENTIDAD (27-sep-2026)
   formulario1.js              Guardián del Formulario 1 (Fase 4 del plan v3)
   formulario_excel.js         EL FORMULARIO 1 DE UN .xlsx, LEÍDO SOLO Y CON PUERTA (19-oct-2026)
+  formulario_oferta.js        SU OFERTA ESCRITA EN EL FORMULARIO DE EXCEL QUE PUBLICÓ LA ENTIDAD (PLAN_X20, pieza 6.7, 12-nov-
   foto_indice.js              Los índices enteros, servidos desde el almacén de archivos
   frecuencia_precio.js        Cuántas ofertas ganaron a cada precio, dicho junto al precio
   ganancia.js                 ¿CUÁNTA PLATA DEJA ESTE CONTRATO?
@@ -101,6 +103,7 @@
   objetos.js                  El almacén de archivos (compatible con S3), sin dependencias
   observaciones.js            Las observaciones al pliego, redactadas (5-nov-2026)
   ofertas.js                  CON CUÁNTO OFERTARON TODOS (27-sep-2026, R-11)
+  ofertas_propias.js          SUS OFERTAS EN SECOP II Y CÓMO LE FUE (PLAN_X20, tanda 13, pieza 6.8, 12-nov-2026)
   paa.js                      Plan Anual de Adquisiciones (dataset Socrata `9sue-ezhx`)
   paa_acierto.js              ¿Cuánto de lo que el PAA anuncia acaba saliendo?
   paginas.js                  la PÁGINA viaja con el texto del pliego (ago 2026)
@@ -119,7 +122,9 @@
   proyeccion.js               De fila cruda de Socrata a registro guardable
   publico.js                  lib/publico · Qué puede ver un cliente SIN credencial
   puertas.js                  Las cuatro puertas de viabilidad de un proceso
+  puntaje_pliego.js           Los puntos fuera del precio, uno por uno: cuáles da el pliego y cuáles puede acreditar usted
   rastreo.js                  «¿Por qué no está este proceso?»
+  recalculo_informe.js        ¿CALCULÓ BIEN LA ENTIDAD EL PUNTAJE DE PRECIO? (PLAN_X20, tanda 14, pieza 6.6, 12-nov-2026)
   redis.js                    Cliente mínimo de Upstash Redis vía API REST — sin SDK ni deps
   reparto.js                  ¿Con qué porcentaje se queda el dueño en ESTE consorcio?
   requisitos_ley.js           Qué requisito pide la LEY según el tipo de contrato y la modalidad
@@ -185,7 +190,7 @@
 · lib/handlers/inteligencia/ — 1 módulos:
   detalle.js                  Consultas de SOLO LECTURA sobre el mercado
 
-· lib/handlers/perfil/ — 10 módulos:
+· lib/handlers/perfil/ — 11 módulos:
   avisos.js                   /api/perfil?op=avisos (6-sep-2026, M-COMP-03)
   consorcio.js                /api/perfil?op=consorcio | op=consorcio-simular (Fase 10)
   cuenta.js                   (sin cabecera)
@@ -193,6 +198,7 @@
   empresa_datos.js            (sin cabecera)
   entrada.js                  /api/perfil?op=diagnostico (POST) · PUERTA DE ENTRADA DE 60 SEGUNDOS (Fase 2)
   no_es_obra.js               (sin cabecera)
+  ofertas_propias.js          (sin cabecera)
   pulso.js                    GET /api/perfil?op=pulso&perfil=… (ago 2026)
   resumen.js                  El dashboard: ¿qué SON los procesos que hoy se ven?
   seguimiento.js              /api/perfil?op=seguimiento (ago 2026)
@@ -242,17 +248,17 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 475 secciones (58 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 22272  El plan x20: uso personal, ir donde llega una sola oferta, y sus ofertas se reconocen por e…
-  L 22300  La competencia por tamaño ordena «Las menos peleadas» y el motor de los cuatro métodos vive…
-  L 22322  La regla del anuncio, medida con la población de Detekta, resiste en menor cuantía, mínima …
-  L 22332  Precios dice dónde habría quedado su precio frente a todas las ofertas de la entidad, y cua…
-  L 22347  Las dos barreras se leen del pliego: limitada a Mipyme y a qué territorio, y si hay sorteo …
-  L 22362  El simulacro del consorcio: cada cláusula de participación contra el reparto que se va a fi…
-  L 22376  Con lista cargada, la capacidad también resta los contratos nuevos de SECOP II, por número …
-  L 22384  «Revisar antes de subir» también compara contra el Formulario 1 de Excel (11-nov-2026)
+· MEMORIA · docs/MEMORIA.md — 483 secciones (58 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 22392  Qué tan cerca se anticipa el precio ganador por modalidad, y la referencia de la entidad po…
   L 22406  La lista del día va en el vigilante de la mañana (12-nov-2026)
+  L 22414  El reparto del consorcio en una frase: queda por fuera, falta confirmar o cumple lo medible…
+  L 22421  Los puntos fuera del precio, uno por uno, desde la tabla del pliego (12-nov-2026)
+  L 22435  Las causales de rechazo de ESE pliego, una por una, con dónde las revisa la aplicación (12-…
+  L 22443  La tabla de métodos de ponderación de ESE pliego, y las dos fórmulas del documento tipo V1 …
+  L 22456  Su oferta escrita en el Formulario de Excel de la entidad, con candados (12-nov-2026)
+  L 22483  Sus ofertas en SECOP II y cómo le fue: a su nombre y de los consorcios donde figura (12-nov…
+  L 22498  El puntaje de precio del informe, recalculado con el motor, y el borrador de observación (1…
+  L 22513  Sin pliego por nombre, se lee por contenido: el título de la primera página decide (12-nov-…
 
 · DOCUMENTOS docs/ — 78 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)

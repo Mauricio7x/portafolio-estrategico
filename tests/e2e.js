@@ -11246,6 +11246,18 @@ async function main() {
     const { htmlResultadoSocio } = appEnVm(["htmlResultadoSocio"]);
     const html = htmlResultadoSocio("CO1.UPN", { ...upn, exigencias: [{ clave: "experiencia_general", titulo: "Experiencia", exige: "x" }], recomendacion: { suya: 60 } }, { nombre: "Génesis" }, 35);
     assert.ok(/data-reparto-no-cumple/.test(html) && /text-red-700[^>]*>Con 65\/35 no cumple/.test(html) && /pág\. 27/.test(html), `la vista lo dice en rojo → ${(html.match(/<ul[^>]*data-reparto-no-cumple[\s\S]*?<\/ul>/) || ["(nada)"])[0].slice(0, 300)}`);
+    // tanda 4, segunda mitad: UNA frase que junta participación, casillas del pliego y lo que verifica la aplicación
+    assert.ok(upn.veredicto_reparto && upn.veredicto_reparto.estado === "falla" && upn.veredicto_reparto.frase === "Con 65/35 queda por fuera: no cumple la participación mínima del pliego (pág. 27).",
+      `el veredicto del 65/35 → ${JSON.stringify(upn.veredicto_reparto)}`);
+    assert.ok(bien.veredicto_reparto.estado === "revisar" && /^Con 60\/40 no se encontró nada que lo deje por fuera, pero falta confirmar/.test(bien.veredicto_reparto.frase) && /todavía se están leyendo/.test(bien.veredicto_reparto.frase),
+      `60/40 con las cifras del pliego por leer NO es «cumple» → ${bien.veredicto_reparto.frase}`);
+    const todoBien = C.veredictoReparto({ ok: true, integrantes: [{ participacion: 60 }, { participacion: 40 }], participacion_pliego: [{ estado: "cumple" }],
+      exigencias: [{ titulo: "Liquidez mínima", estado: "cumple" }], puertas_app: { estados: { registro: { estado: "cumple" }, capacidad: { estado: "cumple" }, caja: { estado: "cumple" } } } });
+    assert.ok(todoBien.estado === "cumple" && /^Con 60\/40 cumple lo que la aplicación pudo medir: la participación mínima del pliego, liquidez mínima, el registro/.test(todoBien.frase), `con todo medido y bien → ${todoBien.frase}`);
+    const unaDuda = C.veredictoReparto({ ok: true, integrantes: [{ participacion: 60 }, { participacion: 40 }], participacion_pliego: [{ estado: "cumple" }],
+      exigencias: [{ titulo: "Liquidez mínima", estado: "sin_dato" }], puertas_app: { estados: { registro: { estado: "cumple" }, capacidad: { estado: "cumple" }, caja: { estado: "cumple" } } } });
+    assert.strictEqual(unaDuda.estado, "revisar", "una sola casilla sin dato basta para no decir «cumple»");
+    assert.ok(/data-veredicto-reparto/.test(html) && /text-red-700[^>]*data-veredicto-reparto>Con 65\/35 queda por fuera/.test(html), "la vista pinta la frase en rojo, arriba");
     console.log("· unidad simulacro del consorcio: cada cláusula contra el reparto dado (no cumple / cumple / depende de quién aporte), "
       + "y el caso real de la Universidad Pedagógica (65/35 con el 40 % pedido) dice «no» con la página 27, primero en las advertencias");
   }
@@ -11297,8 +11309,406 @@ async function main() {
     assert.ok(cuentaSinRef(conRef) < cuentaSinRef(sinRef), `con el Formulario de Excel hay menos comprobaciones sin referencia → ${cuentaSinRef(sinRef)} → ${cuentaSinRef(conRef)}`);
     const cant = (conRef.veredictos || []).find((x) => /cantidad/i.test(`${x.titulo} ${x.mensaje}`) && x.nivel !== "sin_referencia" && x.nivel !== "ok");
     assert.ok(cant && /1\.2/.test(cant.mensaje), `la cantidad cambiada se ve, con su ítem → ${JSON.stringify(cant)}`);
+    /* pieza 6.7 (12-nov-2026): la referencia lleva el archivo, y el botón de llenarlo sale solo con un Formulario de Excel de ESTE proceso */
+    const { pintarBotonFormularioExcel } = appEnVm(["pintarBotonFormularioExcel"]);
+    const conArchivo = formularioDesdeExcel(deExcel, "CO1.REQ.D2", { url: "https://community.secop.gov.co/x", nombre: "Formulario 1.xlsx" });
+    assert.deepStrictEqual([conArchivo.url, conArchivo.nombre, ref.url], ["https://community.secop.gov.co/x", "Formulario 1.xlsx", null], "sin dirección no hay archivo que llenar");
+    const caja = () => { const hijos = []; return { hijos, appendChild: (n) => hijos.push(n) }; };
+    const casos = [[conArchivo, "CO1.REQ.D2", 1], [conArchivo, "CO1.REQ.OTRO", 0], [ref, "CO1.REQ.D2", 0], [{ ...conArchivo, origen: "pdf" }, "CO1.REQ.D2", 0], [null, "CO1.REQ.D2", 0]];
+    for (const [leido, id, n] of casos) { const c = caja(); pintarBotonFormularioExcel(c, leido, id); assert.strictEqual(c.hijos.length, n, `botón de llenar con ${JSON.stringify(leido && { origen: leido.origen, url: leido.url })} en ${id}: ${c.hijos.length}`); }
     console.log("· unidad revisor con el formulario de Excel: la referencia sale del Formulario de Excel con su unitario y su total oficiales, "
       + "y el validador real ve la cantidad cambiada que sin ella pasaba");
+  }
+
+  /* unidad: LOS PUNTOS FUERA DEL PRECIO (PLAN_X20, tanda 5, 12-nov-2026) ────────
+     La tabla «Concepto / Puntaje máximo» del DocBase de menor cuantía V3 (capítulo IV, leído del paquete oficial el
+     11-nov-2026), la de las convocatorias limitadas, el descuento por multas y el juicio factor por factor con el perfil
+     (lib/perfiles.esMipyme, que se LLAMA): con las funciones REALES, hasta el hecho de la guía. */
+  bqPuntos: { if (!corre("unidad puntos fuera del precio")) break bqPuntos;
+    const PP = require("../lib/puntaje_pliego.js"), DP = require("../lib/documentos_proceso.js"), Pf = require("../lib/perfiles.js");
+    const tabla = "\f60\nCAPÍTULO IV\nLa Entidad calificará las ofertas que hayan cumplido con los requisitos habilitantes con los siguientes puntajes:\nConcepto\nPuntaje máximo\nOferta económica\n49,5\nFactor de calidad\n30\nApoyo a la industria nacional\n20\nEmprendimientos y empresas de mujeres\n0,25\nMipyme\n0,25\nTotal\n100\n"
+      + "En las convocatorias limitadas a Mipyme el puntaje por este concepto se trasladará al puntaje de oferta económica. En este caso, en el Pliego de Condiciones definitivo se incluirá el siguiente cuadro:\nConcepto\nPuntaje máximo\nOferta económica\n49,75\nFactor de calidad\n30\nApoyo a la industria nacional\n20\nEmprendimientos y empresas de mujeres\n0,25\nTotal\n100\n"
+      + "Las Entidades deberán reducir durante la evaluación de las ofertas dos (2) puntos a los Proponentes que se les haya impuesto una o más multas o cláusulas penales durante el último año.\n";
+    const ts = PP.leerTablasPuntaje(tabla);
+    assert.ok(ts.length === 2 && !ts[0].limitada_mipyme && ts[1].limitada_mipyme && ts[0].pagina === 60 && ts[0].filas.length === 5 && ts[1].filas[0].puntaje === 49.75,
+      `las dos tablas del documento tipo, en renglones partidos → ${JSON.stringify(ts.map((t) => [t.limitada_mipyme, t.filas.length]))}`);
+    assert.deepStrictEqual(PP.leerTablasPuntaje("\f5\nConcepto Puntaje máximo\nOferta económica 49,5\nFactor de calidad 30\nTotal 100\n"), [], "una tabla que no suma su total es una lectura mala: no se usa");
+    assert.deepStrictEqual(PP.leerDescuentoMultas(tabla), { puntos: 2 }, "el descuento por multas, con su cifra");
+    const H = Pf.PERFILES_FALLBACK.helder;
+    const conH = PP.puntosFueraDelPrecio({ tablas: ts, perfil: { ...H, tamanoEmpresa: "microempresa" } });
+    assert.ok(conH.total_fuera_del_precio === 50.5 && conH.a_su_alcance === 50.25 && conH.por_confirmar === 0.25 && conH.no_obtiene === 0,
+      `Mipyme: 50,25 de 50,5 a su alcance y la de mujeres por confirmar → ${conH.frase}`);
+    const grande = PP.puntosFueraDelPrecio({ tablas: ts, perfil: { ...H, tamanoEmpresa: "grande" } });
+    assert.ok(grande.no_obtiene === 0.25 && /no los obtiene \(mipyme 0,25\)/.test(grande.frase), `sin ser Mipyme, esos 0,25 no los obtiene → ${grande.frase}`);
+    const sinDato = PP.puntosFueraDelPrecio({ tablas: ts, perfil: { ...H, tamanoEmpresa: null } });
+    assert.ok(sinDato.factores.find((f) => f.clave === "mipyme").estado === "por_confirmar", "sin tamaño en el registro: por confirmar, nunca «no»");
+    const lim = PP.puntosFueraDelPrecio({ tablas: ts, perfil: { ...H, tamanoEmpresa: "microempresa" }, limitadaMipyme: true });
+    assert.ok(lim.tabla_limitada_mipyme && lim.total_fuera_del_precio === 50.25 && !lim.factores.some((f) => f.clave === "mipyme"), "convocatoria limitada: la tabla sin la fila de Mipyme");
+    // hasta la guía
+    const h = DP.hechosDeTexto(tabla, { tipo: "pliego" });
+    const r = DP.loQueDicen({ leidos: { d1: { nombre: "pliego.pdf", tipo: "pliego", hechos: h, fecha_carga: "2026-06-30" } } }, { perfilObj: { ...H, tamanoEmpresa: "microempresa" } });
+    const x = r.hechos.find((y) => y.clave === "puntos_fuera_del_precio");
+    assert.ok(x && x.pagina === 60 && /^Fuera del precio el pliego reparte 50,5 puntos: puede obtener 50,25/.test(x.texto) && /le restan 2 puntos/.test(x.texto) && /pliego\.pdf/.test(x.documento),
+      `el hecho de la guía → ${JSON.stringify(x && { texto: x.texto, pagina: x.pagina })}`);
+    assert.strictEqual(DP.hechosDeTexto(tabla, { tipo: "estudio_previo" }).tabla_puntaje, null, "fuera de la familia del pliego no se busca");
+    console.log("· unidad puntos fuera del precio: las dos tablas del documento tipo (normal y limitada), la que no suma fuera, el descuento por multas, "
+      + "Mipyme sí / no / sin dato con la regla de lib/perfiles, y el hecho en la guía con su página");
+  }
+
+  /* unidad: LAS CAUSALES DE RECHAZO DE ESE PLIEGO (PLAN_X20, tanda 6, 12-nov-2026) ─
+     El numeral 1.15 del documento tipo, separado en causales (letras, renglones partidos, instrucciones de plantilla
+     fuera), cada una con DÓNDE la revisa la aplicación o qué comprueba usted, y el hecho en la guía en vez del aviso
+     genérico. Funciones REALES hasta loQueDicen. */
+  bqCausales: { if (!corre("unidad causales de rechazo")) break bqCausales;
+    const CR = require("../lib/causales_rechazo.js"), DP = require("../lib/documentos_proceso.js");
+    const t = "\f2\n1.15 CAUSALES DE RECHAZO ........ 13\n\f13\n1.15 CAUSALES DE RECHAZO\nSon causales de rechazo de las propuestas las siguientes [Las entidades no podrán incluir causales de rechazo distintas]:\n"
+      + "A. Que el valor total de la oferta o el obtenido de la corrección aritmética exceda el presupuesto oficial estimado para el proceso de contratación.\n"
+      + "B. No entregar la Garantía de seriedad de la oferta junto con la propuesta.\n"
+      + "C. Que el proponente no haya presentado la manifestación de interés para participar en el proceso de selección,\ny aun así haya presentado propuesta.\n"
+      + "[Incluir solo cuando la forma de pago sea por precios unitarios] D. No ofrecer el valor de un precio unitario u ofrecerlo en cero (0) pesos.\n"
+      + "E. Cuando se presente propuesta condicionada para la adjudicación del contrato.\n"
+      + "1.16 CAUSALES PARA DECLARAR DESIERTO EL PROCESO DE SELECCIÓN\nLa entidad podrá declarar desierto el procedimiento cuando no se presenten ofertas.\n";
+    const cs = CR.leerCausales(t);
+    assert.deepStrictEqual(cs.map((c) => c.clave), ["presupuesto", "garantia", "manifestacion", "unitario_cero", "otra"], `cinco causales, la del índice fuera, el desierto fuera → ${JSON.stringify(cs.map((c) => c.clave))}`);
+    assert.ok(cs[2].texto.endsWith("y aun así haya presentado propuesta.") && cs[2].pagina === 13 && !/\[/.test(cs[3].texto), "el renglón partido se une, con su página; la instrucción de plantilla sale");
+    const f = CR.fraseCausales(cs);
+    assert.strictEqual(f, "El pliego trae 5 causales de rechazo. La aplicación le ayuda a revisar 3 (presupuesto, garantía de seriedad, ítems sin precio). Antes de radicar compruebe usted: avise que le interesa a tiempo y con la MISMA estructura (solo o en consorcio, y con quién) con que va a ofertar. Y lea la otra en el pliego.",
+      `la frase → ${f}`);
+    assert.deepStrictEqual(CR.leerCausales("\f3\nUn pliego sin la sección.\n"), [], "sin sección: nada (no «cero causales»)");
+    const h = DP.hechosDeTexto(t, { tipo: "pliego" });
+    const r = DP.loQueDicen({ leidos: { d1: { nombre: "pliego.pdf", tipo: "pliego", hechos: h, fecha_carga: "2026-06-30" } } }, {});
+    const x = r.hechos.find((y) => y.clave === "causales_rechazo");
+    assert.ok(x && x.estado === "riesgo" && x.causales.length === 5 && x.texto === f && x.pagina === 13, `el hecho de la guía → ${JSON.stringify(x && { estado: x.estado, n: x.causales.length })}`);
+    assert.ok(!r.hechos.some((y) => y.clave === "causal_de_rechazo"), "con la lista leída, el aviso genérico «el pliego enumera causales» no se repite");
+    console.log("· unidad causales de rechazo: la lista del pliego separada (letras, renglones partidos, plantilla e índice fuera), dónde las revisa la aplicación, "
+      + "lo que comprueba usted y el hecho en la guía en vez del aviso genérico");
+  }
+
+  bqMetodosPliego: { if (!corre("unidad tabla de métodos del pliego")) break bqMetodosPliego;
+    const ME = require("../lib/metodos_ponderacion.js"), DP = require("../lib/documentos_proceso.js");
+    // fórmulas del documento tipo V1 de licitación (descarga 29961 de Colombia Compra), recalculadas a mano
+    const v = [90, 100, 110], xa = (110 + 100) / 2;
+    assert.deepStrictEqual(ME.puntajes(v, "aritmetica_alta", 1), [1 - (xa - 90) / xa, 1 - (xa - 100) / xa, 1 - (2 * (110 - xa)) / xa].map((x) => Math.round(x * 1e7) / 1e7),
+      "media aritmética alta: XA = (Vmax + promedio)/2; por encima de XA resta el doble");
+    const mg = Math.pow(120 * 90 * 100 * 110, 1 / 4);
+    assert.deepStrictEqual(ME.puntajes(v, "geometrica_po", 1, { presupuesto: 120 }), [1 - (mg - 90) / mg, 1 - (mg - 100) / mg, 1 - (2 * (110 - mg)) / mg].map((x) => Math.round(x * 1e7) / 1e7),
+      "media geométrica con presupuesto oficial: con 1 a 3 propuestas el presupuesto entra una vez");
+    const v4 = [90, 95, 100, 130], mg4 = Math.pow(120 * 120 * 90 * 95 * 100 * 130, 1 / 6);
+    assert.strictEqual(ME.puntajes(v4, "geometrica_po", 1, { presupuesto: 120 })[3], Math.round((1 - (2 * (130 - mg4)) / mg4) * 1e7) / 1e7, "con 4 a 6 propuestas el presupuesto entra dos veces");
+    assert.strictEqual(ME.puntajes(v, "geometrica_po", 1), null, "sin presupuesto oficial no hay media geométrica con presupuesto: null, no un puntaje");
+    // la tabla del pliego, en sus tres formas
+    const V1 = "De 0.00 a 0.24\n1\nMediana con valor absoluto\nDe 0.25 a 0.49\n2\nMedia geométrica con presupuesto oficial\nDe 0.50 a 0.74\n3\nMedia aritmética alta\nDe 0.75 a 0.99\n4\nMenor valor\n";
+    assert.deepStrictEqual(ME.leerTablaMetodos(V1).map((x) => [x.desde, x.hasta, x.metodo]), [[0, 0.24, "mediana"], [0.25, 0.49, "geometrica_po"], [0.5, 0.74, "aritmetica_alta"], [0.75, 0.99, "menor_valor"]],
+      "tabla en renglones partidos (rango / número / método)");
+    assert.deepStrictEqual(ME.leerTablaMetodos("De 0,00 a 0,24\nDe 0,25 a 0,49 Media aritmética alta\nDe 0,50 a 0,99 Menor valor\n").map((x) => [x.desde, x.metodo]), [[0.25, "aritmetica_alta"], [0.5, "menor_valor"]],
+      "una fila sin método no toma prestado el de la fila siguiente");
+    assert.deepStrictEqual(ME.leerTablaMetodos("De 0,00 a 0,49 Mediana\nDe 0,50 a 0,99 Menor valor\nAnexo\nDe 0,00 a 0,49 Mediana\nDe 0,50 a 0,99 Menor valor\n").length, 2, "la tabla repetida en un anexo no se cuenta dos veces");
+    const una = "\f30\nDe 0,00 a 0,24 Media aritmética\nDe 0,25 a 0,49 Media aritmética alta\nDe 0,50 a 0,74 Media geométrica con presupuesto oficial\nDe 0,75 a 0,99 Menor valor\n";
+    assert.deepStrictEqual(ME.leerTablaMetodos(una).map((x) => x.metodo), [null, "aritmetica_alta", "geometrica_po", "menor_valor"], "la «media aritmética» simple no tiene fórmula en ningún documento tipo leído: null");
+    assert.deepStrictEqual(ME.leerTablaMetodos("Un pliego sin tabla de métodos."), [], "sin tabla: nada");
+    // el hecho de la guía
+    const r = DP.loQueDicen({ leidos: { d1: { nombre: "terminos.pdf", tipo: "pliego", hechos: DP.hechosDeTexto(una, { tipo: "pliego" }), fecha_carga: "2026-08-20" } } }, {});
+    const x = r.hechos.find((y) => y.clave === "metodos_precio");
+    assert.ok(x && x.estado === "revisar" && x.metodos.length === 4 && /0,25 a 0,49/.test(x.texto) && /no tiene la fórmula de «media aritmética»/.test(x.texto), `el hecho de la guía → ${x && x.texto}`);
+    const r3 = DP.loQueDicen({ leidos: { d1: { nombre: "pliego.pdf", tipo: "pliego", hechos: DP.hechosDeTexto(V1, { tipo: "pliego" }), fecha_carga: "2026-08-20" } } }, {});
+    const x3 = r3.hechos.find((y) => y.clave === "metodos_precio");
+    assert.ok(x3 && x3.estado === "dato" && !/no tiene la fórmula/.test(x3.texto), "con todos los métodos conocidos, el hecho es un dato sin aviso");
+    assert.ok(Number(String(DP.hechosVersion()).split("|")[0]) >= 27, "[MUT] la versión de los hechos subió con la tabla de métodos: los pliegos ya leídos se rehacen desde su texto");
+    console.log("· unidad tabla de métodos del pliego: media aritmética alta y geométrica con presupuesto oficial (V1) recalculadas a mano, la tabla en sus tres formas, "
+      + "la «media aritmética» simple sin fórmula y el hecho de la guía");
+  }
+
+  bqFormularioOferta: { if (!corre("unidad formulario de la oferta")) break bqFormularioOferta;
+    /* PLAN_X20, pieza 6.7 (12-nov-2026): la oferta escrita en el Formulario de Excel de la entidad, con candados */
+    const FO = require("../lib/formulario_oferta.js"), XL = require("../public/xlsx_lectura.js"), XW = require("../public/xlsx.js"), zl = require("zlib");
+    const ENT = "PRESUPUESTO OFICIAL (Entidad)", PRO = "PROPUESTA ECONOMICA(Proponente)";
+    const cab = [null, null, "Nº", "ÍTEM", null, null, "DESCRIPCIÓN", "UND.", "CANTIDAD", "VALOR UNITARIO", "VALOR TOTAL"];
+    const ITEMS = [["1.1", "Localización y replanteo", "m2", 100, 1000], ["1.2", "Excavación manual", "m3", 10.5, 20000], ["1.3", "Concreto de 3000 psi", "m3", 2.25, 450000.4]];
+    const r0 = (x) => Math.floor(Number(x.toPrecision(15)) + 0.5);
+    const hoja = (nombre, conPrecio, { totalFijo = false, formulaK = (n) => `ROUND(I${n}*J${n},0)`, totalCache = null, aiuAparte = false, celdaRota = false } = {}) => {
+      const filas = [[null, null, "FORMULARIO 1", null, null, null, null, null, null, null, null, null, celdaRota ? { f: "#REF!+1" } : null], cab];
+      let suma = 0;
+      ITEMS.forEach(([c, d, u, q, p], i) => { const n = i + 3, t = conPrecio ? r0(q * p) : 0; suma += t; filas.push([null, null, c, null, null, null, d, u, q, conPrecio ? p : null, { f: formulaK(n), v: t }]); });
+      filas.push([null, null, null, null, null, null, "VALOR TOTAL", null, null, null, totalFijo ? suma : { f: "SUM(K3:K5)", v: totalCache == null ? suma : totalCache }]);
+      filas.push([]);
+      filas.push([null, null, null, null, null, null, null, "ADMINISTRACION", null, "A=", aiuAparte ? { f: "ROUND(K6*0.18,0)", v: r0(suma * 0.18) } : "[Ofrecimiento del Proponente]"]);
+      filas.push([null, null, null, null, null, null, null, "UTILIDAD", null, "U=", "[Ofrecimiento del Proponente]"]);
+      return { nombre, filas };
+    };
+    const libro = (hojas) => Buffer.from(XW.construirLibro(hojas));
+    const retocar = (buf, nombre, fn) => Buffer.from(FO.zipDesde(FO.entradasZip(buf).map((e) => {
+      if (e.nombre !== nombre) return e;
+      const t = Buffer.from(fn((e.metodo === 0 ? Buffer.from(e.datos) : zl.inflateRawSync(e.datos)).toString("utf8")), "utf8");
+      return { ...e, metodo: 0, crc: zl.crc32(t) >>> 0, tamC: t.length, tamR: t.length, datos: t };
+    })));
+    const items = (cdu) => ITEMS.map(([c, d, u, q], i) => ({ codigo: c, descripcion: d, unidad: u, cantidad: q, costo_directo_unitario_ofertado: cdu[i] }));
+    const oferta = (k = 1.3, extra = {}) => ({ con_formulas: true, costo_directo: 1e6, precio_sin_iva: 1e6 * k, lleva_fila_iva: false, iva_sobre_utilidad: 0, total_para_secop: 1173000,
+      administracion: 180000, imprevistos: 50000, utilidad: 70000, ...extra });
+    const CDU = [700, 15000, 300000];
+    const leer = async (buf) => XL.leerLibro(new Uint8Array(buf), { inflar: async (u8) => new Uint8Array(zl.inflateRawSync(Buffer.from(u8))) });
+    const celda = (lib, h, ref) => { const g = lib.hojas.find((x) => x.nombre === h).filas; const m = /^([A-Z]+)(\d+)$/.exec(ref); return (g[Number(m[2]) - 1] || [])[XL.indiceColumna(m[1])]; };
+
+    // 1 · el documento tipo con la hoja del proponente: se llena ESA hoja, la de la entidad no se toca
+    const base = libro([hoja(ENT, true), hoja(PRO, false)]);
+    const r = await FO.llenarFormulario(base, { items: items(CDU), oferta: oferta(), aiu: { administracion_pct: 18, imprevistos_pct: 5, utilidad_pct: 5 } });
+    assert.ok(r.ok, `se llena: ${r.motivo}`);
+    assert.deepStrictEqual([r.hoja, r.hoja_de_la_entidad, r.filas_llenas], [PRO, false, 3], "la hoja del proponente, con los tres ítems");
+    assert.deepStrictEqual(r.unitarios.map((x) => x.valor), [910, 19500, 390000], "unitario = costo directo ofertado × (precio sin IVA ÷ costo directo), al peso");
+    const esperado = r0(100 * 910) + r0(10.5 * 19500) + r0(2.25 * 390000);
+    assert.strictEqual(r.total_formulario, esperado, `el total es el que calculan las fórmulas de la entidad: ${r.total_formulario} vs ${esperado}`);
+    assert.deepStrictEqual([r.total_oficial, r.celda_total, r.fila_total], [1322501, "K6", 6]);
+    const sal = await leer(r.archivo);
+    assert.deepStrictEqual(["J3", "J4", "J5", "K3", "K4", "K5", "K6"].map((x) => celda(sal, PRO, x)), [910, 19500, 390000, 91000, 204750, 877500, esperado], "el libro que sale trae los unitarios y los cálculos guardados al día");
+    assert.deepStrictEqual(["J3", "K6"].map((x) => celda(sal, ENT, x)), [1000, 1322501], "la hoja de la entidad queda como estaba");
+    const partes = FO.entradasZip(r.archivo), wb = zl.inflateRawSync(partes.find((e) => e.nombre === "xl/workbook.xml").datos).toString();
+    assert.ok(/<calcPr fullCalcOnLoad="1"\/>/.test(wb) && !partes.some((e) => e.nombre === "xl/calcChain.xml"), "el libro se recalcula al abrirse y sin la cadena de cálculo vieja");
+    assert.deepStrictEqual(r.a_mano.map((x) => [x.fila_excel, x.porcentaje]), [[8, 18], [9, 7]], "los porcentajes del AIU que el Formulario pide discriminar quedan a mano, con los de la OFERTA (A, I y U ÷ costo directo), no los de la pantalla");
+    const fr = FO.frasesLlenado(r);
+    assert.ok(fr.some((t) => t.includes(`$${esperado.toLocaleString("es-CO")}: esa es la cifra que escribe en SECOP II`)) && fr.some((t) => /fila 8 «ADMINISTRACION A=» 18 %/.test(t)), `las frases → ${fr.join(" | ")}`);
+    // el IVA de la utilidad entra al unitario solo si el pliego lo cuenta
+    const rIva = await FO.llenarFormulario(base, { items: items(CDU), oferta: oferta(1.3, { lleva_fila_iva: true, iva_sobre_utilidad: 19000 }) });
+    assert.deepStrictEqual(rIva.unitarios.map((x) => x.valor), [923, 19785, 395700], "con IVA sobre la utilidad: K = (1 300 000 + 19 000) ÷ 1 000 000");
+    assert.deepStrictEqual((await FO.llenarFormulario(base, { items: items(CDU), oferta: oferta(1.3, { lleva_fila_iva: false, iva_sobre_utilidad: 19000 }) })).unitarios.map((x) => x.valor), [910, 19500, 390000],
+      "si el pliego cuadra SIN la fila del IVA, el IVA no entra al unitario aunque el cálculo lo traiga");
+    // al peso: desde ,5 por exceso (nota 2 del Formulario 1 del documento tipo), sobre 15 cifras como Excel
+    assert.deepStrictEqual([FO.redondeoPeso(1234.5), FO.redondeoPeso(1234.4999999999998), FO.redondeoPeso(1234.49), FO.redondear(2.675, 2), FO.redondear(-2.5, 0)], [1235, 1235, 1234, 2.68, -3]);
+    assert.deepStrictEqual([FO.redondear(2.1, 0, "arriba"), FO.redondear(-2.1, 0, "arriba"), FO.redondear(2.9, 0, "abajo"), FO.redondear(1234.56, -2, "arriba")], [3, -3, 2, 1300], "REDONDEAR.MAS se aleja del cero y REDONDEAR.MENOS se acerca, como en Excel");
+
+    // 2 · los candados
+    const caro = await FO.llenarFormulario(base, { items: items([1400, 30000, 600000]), oferta: oferta() });
+    assert.ok(!caro.ok && /más que el presupuesto oficial/.test(caro.motivo) && !caro.archivo, `sobre el presupuesto no se entrega: ${caro.motivo}`);
+    const sobre = await FO.llenarFormulario(base, { items: items([800, 15000, 300000]), oferta: oferta() });
+    assert.ok(!sobre.ok && sobre.sobre_oficial.length === 1 && sobre.sobre_oficial[0].unitario === 1040 && sobre.sobre_oficial[0].oficial === 1000 && !sobre.archivo, `un unitario sobre el oficial se dice y no se entrega: ${sobre.motivo}`);
+    assert.ok((await FO.llenarFormulario(base, { items: items([800, 15000, 300000]), oferta: oferta(), aceptarSobreOficial: true })).ok, "con la confirmación del usuario, sí");
+    assert.match((await FO.llenarFormulario(base, { items: items(CDU), oferta: { ...oferta(), con_formulas: false } })).motivo, /AIU no va sobre todo el costo directo/);
+    assert.match((await FO.llenarFormulario(base, { items: items([700, null, 300000]), oferta: oferta() })).motivo, /no tienen precio o cantidad/, "un ítem sin precio no viaja como 0");
+    const otraCant = items(CDU); otraCant[1].cantidad = 11;
+    const rc = await FO.llenarFormulario(base, { items: otraCant, oferta: oferta() });
+    assert.ok(!rc.ok && rc.problemas.some((p) => /la cantidad del Formulario \(10\.5\)/.test(p)), `una cantidad distinta detiene todo: ${rc.motivo}`);
+    const noSabe = await FO.llenarFormulario(libro([hoja(ENT, true, { formulaK: (n) => `IF(J${n}>0,ROUND(I${n}*J${n},0),0)` })]), { items: items(CDU), oferta: oferta() });
+    assert.ok(!noSabe.ok && /no sabe recalcular \(celda K3: la función IF\)/.test(noSabe.motivo), `una fórmula que depende de los precios y no se sabe calcular: ${noSabe.motivo}`);
+    const rota = await FO.llenarFormulario(libro([hoja(ENT, true, { celdaRota: true })]), { items: items(CDU), oferta: oferta() });
+    assert.ok(rota.ok && rota.hoja_de_la_entidad === true, `una fórmula rota que no depende de los precios no estorba: ${rota.motivo}`);
+    const mienteExcel = await FO.llenarFormulario(libro([hoja(ENT, true, { totalCache: 1322502 })]), { items: items(CDU), oferta: oferta() });
+    assert.ok(!mienteExcel.ok && /no reproduce el de Excel en la celda K6/.test(mienteExcel.motivo), `si el cálculo de aquí no da lo que Excel guardó, no se llena: ${mienteExcel.motivo}`);
+    assert.match((await FO.llenarFormulario(libro([hoja(ENT, true, { aiuAparte: true })]), { items: items(CDU), oferta: oferta() })).motivo, /suma el AIU aparte/);
+    assert.match((await FO.llenarFormulario(libro([hoja(ENT, true, { totalFijo: true })]), { items: items(CDU), oferta: oferta() })).motivo, /no es una fórmula/);
+    const sumaOtra = await FO.llenarFormulario(libro([hoja(ENT, true)].map((h) => ({ ...h, filas: h.filas.map((f, i) => (i === 5 ? f.map((c, j) => (j === 10 ? { f: "SUM(K3:K5)+MAX(0,1000-J3)", v: 1322501 } : c)) : f)) }))), { items: items(CDU), oferta: oferta() });
+    assert.ok(!sumaOtra.ok && /no es la suma de los ítems/.test(sumaOtra.motivo), `un total que suma algo más que los ítems no se entrega: ${sumaOtra.motivo}`);
+    const maestra = retocar(libro([hoja(ENT, true)]), "xl/worksheets/sheet1.xml", (x) => x.replace(/<c r="J3"( s="\d+")?><v>1000<\/v><\/c>/, '<c r="J3"$1><f t="shared" ref="J3:J3" si="7">1000</f><v>1000</v></c>'));
+    assert.match((await FO.llenarFormulario(maestra, { items: items(CDU), oferta: oferta() })).motivo, /celda maestra de una fórmula compartida/);
+
+    // 2b · lo que cazó la revisión adversaria (12-nov-2026), cada caso reproducido antes de corregir
+    const proVinculada = hoja(PRO, false); proVinculada.filas.forEach((f, i) => { if (i >= 2 && i <= 4) f[10] = { f: `'${ENT}'!K${i + 1}`, v: r0(ITEMS[i - 2][3] * ITEMS[i - 2][4]) }; if (i === 5) f[10] = { f: "SUM(K3:K5)", v: 1322501 }; });
+    const vinc = await FO.llenarFormulario(libro([hoja(ENT, true), proVinculada]), { items: items(CDU), oferta: oferta() });
+    assert.ok(!vinc.ok && /el total de la fila 3 \(100000\) no es su unitario por su cantidad \(91000\)/.test(vinc.motivo), `un total de fila que no toma el unitario (vinculado a la hoja de la entidad) entregaba el presupuesto oficial como oferta: ${vinc.motivo}`);
+    const conAiu = hoja(ENT, true); conAiu.filas[7][10] = { f: "ROUND(K6*L8,0)", v: 0 };
+    assert.match((await FO.llenarFormulario(libro([conAiu]), { items: items(CDU), oferta: oferta() })).motivo, /suma el AIU aparte/, "el AIU aparte con fórmulas y el porcentaje en blanco (vale 0) también se detecta");
+    const pref = [{ fila_excel: 3, codigo: null, descripcion: "Concreto 3000 psi", unidad: "m3", cantidad: 5 }, { fila_excel: 4, codigo: null, descripcion: "Concreto 3000 psi para vigas", unidad: "m3", cantidad: 5 }];
+    const em1 = FO.emparejar(pref, [{ descripcion: "Concreto 3000 psi para vigas", unidad: "m3", cantidad: 5, unitario: 364000 }, { descripcion: "Concreto 3000 psi", unidad: "m3", cantidad: 5, unitario: 325000 }]);
+    assert.deepStrictEqual(em1.pares.map((x) => [x.fila.fila_excel, x.item.unitario]), [[3, 325000], [4, 364000]], "dos descripciones que empiezan igual no se cruzan: manda la idéntica");
+    assert.ok(FO.emparejar(pref, [{ descripcion: "Concreto 3000 psi para vigas", unidad: "m3", cantidad: 5 }, { descripcion: "Concreto 3000", unidad: "m3", cantidad: 5 }]).problemas.length > 0, "por prefijo y sin código, con dos candidatas en el Formulario, no se elige");
+    const proVacia = hoja(PRO, false); proVacia.filas.forEach((f, i) => { if (i >= 2 && i <= 4) { f[9] = null; f[10] = null; } });
+    const rv = await FO.llenarFormulario(libro([hoja(ENT, true), proVacia]), { items: items(CDU), oferta: oferta() });
+    const x2 = (() => { const e = FO.entradasZip(rv.archivo).find((y) => y.nombre === "xl/worksheets/sheet2.xml"); return (e.metodo === 0 ? Buffer.from(e.datos) : zl.inflateRawSync(e.datos)).toString(); })();
+    assert.ok(rv.ok && /<c r="J3"[^>]*><v>910<\/v><\/c><c r="K3"[^>]*><v>91000<\/v><\/c>/.test(x2) && rv.total_formulario === esperado, `dos celdas nuevas en el mismo sitio van en orden de columna (K antes que J pide «reparar»): ${(x2.match(/<row r="3">[\s\S]*?<\/row>/) || [""])[0].slice(-160)}`);
+    const pantalla = retocar(base, "xl/workbook.xml", (x) => x.replace("</workbook>", "<calcPr fullPrecision=\"0\"/></workbook>"));
+    assert.match((await FO.llenarFormulario(pantalla, { items: items(CDU), oferta: oferta() })).motivo, /precisión de pantalla/);
+    assert.ok(/su análisis más los valores fijos daba \$1\.250\.000/.test(FO.frasesLlenado({ ok: true, hoja: "H", filas_llenas: 1, total_formulario: 1250003, total_motor: 1200000, suma_fijos: 50000, valores_fijos: [{ etiqueta: "PMT", valor: 50000 }], a_mano: [] })[1]),
+      "la diferencia con el análisis se cuenta con los valores fijos: no se atribuye al redondeo lo que es el PMT");
+    assert.ok(!/daba/.test(FO.frasesLlenado({ ok: true, hoja: "H", filas_llenas: 1, total_formulario: 1250000, total_motor: 1200000, suma_fijos: 50000, valores_fijos: [{ etiqueta: "PMT", valor: 50000 }], a_mano: [] })[1]),
+      "si el análisis más el PMT da el total, no hay diferencia que explicar");
+    // 3 · un libro con el cálculo manual sale en automático; las fórmulas COMPARTIDAS de Excel se recalculan
+    const conCadena = (buf) => { const es = FO.entradasZip(buf); const t = Buffer.from('<?xml version="1.0"?><calcChain xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><c r="K3" i="2"/></calcChain>');
+      return retocar(retocar(FO.zipDesde([...es, { ...es[0], nombre: "xl/calcChain.xml", nombreBytes: Buffer.from("xl/calcChain.xml"), metodo: 0, crc: zl.crc32(t) >>> 0, tamC: t.length, tamR: t.length, datos: t }]),
+        "[Content_Types].xml", (x) => x.replace("</Types>", '<Override PartName="/xl/calcChain.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.calcChain+xml"/></Types>')),
+        "xl/_rels/workbook.xml.rels", (x) => x.replace("</Relationships>", '<Relationship Id="rId99" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/calcChain" Target="calcChain.xml"/></Relationships>')); };
+    const manual = conCadena(retocar(base, "xl/workbook.xml", (x) => x.replace("</workbook>", "<calcPr calcId=\"191029\" calcMode=\"manual\"/></workbook>")));
+    const rm = await FO.llenarFormulario(manual, { items: items(CDU), oferta: oferta() });
+    const wbm = zl.inflateRawSync(FO.entradasZip(rm.archivo).find((e) => e.nombre === "xl/workbook.xml").datos).toString();
+    assert.ok(rm.ok && rm.calculo_era_manual === true && /<calcPr calcId="191029" fullCalcOnLoad="1"\/>/.test(wbm), `el cálculo manual se deja automático: ${wbm.match(/<calcPr[^>]*>/)}`);
+    const txt = (buf, n2) => { const e = FO.entradasZip(buf).find((x) => x.nombre === n2); return (e.metodo === 0 ? Buffer.from(e.datos) : zl.inflateRawSync(e.datos)).toString(); };
+    assert.ok(/calcChain/.test(txt(manual, "[Content_Types].xml")) && !FO.entradasZip(rm.archivo).some((e) => e.nombre === "xl/calcChain.xml") && !/calcChain/.test(txt(rm.archivo, "[Content_Types].xml")) && !/calcChain/.test(txt(rm.archivo, "xl/_rels/workbook.xml.rels")),
+      "la cadena de cálculo vieja sale entera: la parte, su tipo y su relación (con un unitario que era fórmula, la vieja hace pedir «reparar»)");
+    const compartida = retocar(base, "xl/worksheets/sheet2.xml", (x) => x.replace(/<f>ROUND\(I3\*J3,0\)<\/f>/, "<f t=\"shared\" ref=\"K3:K5\" si=\"0\">ROUND(I3*J3,0)</f>").replace(/<f>ROUND\(I4\*J4,0\)<\/f>/, "<f t=\"shared\" si=\"0\"/>").replace(/<f>ROUND\(I5\*J5,0\)<\/f>/, "<f t=\"shared\" si=\"0\"/>"));
+    const rs = await FO.llenarFormulario(compartida, { items: items(CDU), oferta: oferta() });
+    assert.ok(rs.ok && rs.total_formulario === esperado, `las fórmulas compartidas se corren fila a fila: ${rs.motivo || rs.total_formulario}`);
+    const salS = await leer(rs.archivo);
+    assert.deepStrictEqual(["K4", "K5"].map((x) => celda(salS, PRO, x)), [204750, 877500], "las hijas de la fórmula compartida guardan su valor nuevo");
+    assert.strictEqual(FO.desplazar("ROUND(I3*$J$3,0)+'Otra hoja'!A1", 2, 1), "ROUND(J5*$J$3,0)+'Otra hoja'!B3", "relativas se mueven; con $ no");
+    console.log("· unidad formulario de la oferta: la hoja del proponente del documento tipo llena con los unitarios al peso (AIU dentro, IVA solo si el pliego lo cuenta), el total de las fórmulas de la entidad, "
+      + "la de la entidad intacta, recálculo al abrir; no se entrega sobre el presupuesto, ni con unitarios sobre el oficial sin confirmación, ni con fórmulas que no se saben calcular o que Excel guardó distinto, ni con el AIU aparte o el total escrito a mano");
+  }
+
+  bqOfertasPropias: { if (!corre("unidad ofertas propias")) break bqOfertasPropias;
+    /* PLAN_X20, tanda 13 (12-nov-2026): sus ofertas en SECOP II, a su nombre y de los consorcios donde figura */
+    const OP = require("../lib/ofertas_propias.js");
+    const H = "9396710", G = "901096271";
+    const grupos = [
+      { codigo_grupo: "732018932", nombre_grupo: "CONSORCIO INFRAESTRUCTURA 1A", nit_participante: H, participacion: "90.000000" },
+      { codigo_grupo: "735233496", nombre_grupo: "CONSORCIO INFRAESTRUCTURA 1A", nit_participante: H, participacion: "60.000000" },
+      { codigo_grupo: "731740114", nombre_grupo: "CONSORCIO SEDES SOCIALES HGR", nit_participante: H, participacion: "90.000000" },
+      { codigo_grupo: "736380759", nombre_grupo: "CONSORCIO PRIMERA INFANCIA HGR", nit_participante: H, participacion: "40.000000" },
+      { codigo_grupo: "731740114", nombre_grupo: "CONSORCIO SEDES SOCIALES HGR", nit_participante: G, participacion: "10.000000" },
+    ];
+    // la fila de una oferta se repite una vez por cada código asociado a la cuenta que la presentó (medido en CO1.BDOS.8927339)
+    const fila = (id, proc, nombre, nit, cod, valor, fecha, ref) => ({ identificador_de_la_oferta: id, id_del_proceso_de_compra: proc, referencia_del_proceso: ref || proc, entidad_compradora: "E.S.E. HOSPITAL",
+      fecha_de_registro: `${fecha}T10:00:00.000`, modalidad: "Selección Abreviada de Menor Cuantía", nombre_proveedor: nombre, nit_del_proveedor: nit, c_digo_proveedor: cod, valor_de_la_oferta: String(valor), moneda: "COP" });
+    const propias = [
+      fila("CO1.RPL.1", "CO1.BDOS.1", "Helder Gustavo Rodriguez", H, "705244309", 20943175, "2025-10-15", "CP-002-2025"),
+      fila("CO1.RPL.1", "CO1.BDOS.1", "Helder Gustavo Rodriguez", H, "732018932", 20943175, "2025-10-15", "CP-002-2025"),
+      fila("CO1.RPL.2", "CO1.BDOS.2", "CONSORCIO INFRAESTRUCTURA 1A", H, "732018932", 209791151, "2025-10-06"),
+      fila("CO1.RPL.3", "CO1.BDOS.3", "GENESIS INGENIERIA Y CONSTRUCCION SAS", G, "731740114", 420160987, "2026-07-24"),   // de la socia: trae el código del consorcio compartido
+      fila("CO1.RPL.4", "CO1.BDOS.4", "CONSORCIO PRIMERA INFANCIA HGR", "No Definido", "736380759", 300000000, "2026-05-10"),
+      fila("CO1.RPL.5", "CO1.BDOS.5", "CONSORCIO PRIMERA INFANCIA HGR", "902000111", "799999999", 310000000, "2026-05-11"),   // mismo nombre, sin su código: no es suya
+      fila("Confidencial", "CO1.BDOS.6", "Confidencial", H, "705244309", 0, "2026-01-01"),
+    ];
+    const otras = (proc, valores) => valores.map((v, i) => fila(`X.${proc}.${i}`, proc, `OTRO ${i}`, String(800000000 + i), "1", v, "2025-10-01"));
+    const delProceso = { "CO1.BDOS.1": [propias[0]], "CO1.BDOS.2": [propias[2], ...otras("CO1.BDOS.2", [200000000, 205000000, 213879191])], "CO1.BDOS.4": [propias[4], ...otras("CO1.BDOS.4", [280000000])] };
+    const procesos = [
+      { id_del_portafolio: "CO1.BDOS.1", adjudicado: "No", estado_del_procedimiento: "Evaluación", precio_base: "20943247" },
+      { id_del_portafolio: "CO1.BDOS.1", adjudicado: "Si", nombre_del_proveedor: "Helder Gustavo Rodriguez", nit_del_proveedor_adjudicado: "No Definido", valor_total_adjudicacion: "20943175", precio_base: "20943247", estado_del_procedimiento: "Seleccionado" },
+      { id_del_portafolio: "CO1.BDOS.2", adjudicado: "Si", nombre_del_proveedor: "YESID NINCO POLANIA", nit_del_proveedor_adjudicado: "No Definido", valor_total_adjudicacion: "213879191", precio_base: "213883725" },
+      { id_del_portafolio: "CO1.BDOS.2", adjudicado: "No", estado_del_procedimiento: "Evaluación", precio_base: "213883725" },   // otra fase, después: no borra la adjudicada
+    ];
+    const r = OP.ofertasPropiasDe({ grupos, propias, delProceso, procesos, nits: [`${H}-3`] });
+    assert.deepStrictEqual(r.ofertas.map((o) => o.identificador).sort(), ["CO1.RPL.1", "CO1.RPL.2", "CO1.RPL.4"], `las suyas: su NIT o su consorcio con su código; la de la socia y la de otro con el mismo nombre no → ${r.ofertas.map((o) => o.identificador)}`);
+    const o1 = r.ofertas.find((o) => o.identificador === "CO1.RPL.1"), o2 = r.ofertas.find((o) => o.identificador === "CO1.RPL.2"), o4 = r.ofertas.find((o) => o.identificador === "CO1.RPL.4");
+    assert.deepStrictEqual([o1.via.tipo, o1.resultado, o1.puesto_por_precio, o1.ofertas_en_el_proceso], ["nit", "gano", 1, 1], "a su nombre, sola y adjudicada a usted (la fase adjudicada manda sobre la que no)");
+    assert.deepStrictEqual([o2.via.tipo, o2.via.participacion_pct, o2.resultado, o2.adjudicatario, o2.puesto_por_precio, o2.ofertas_en_el_proceso], ["consorcio", null, "otro", "YESID NINCO POLANIA", 3, 4],
+      "en consorcio, sin porcentaje porque usted tiene dos consorcios con ese nombre (90 % y 60 %): no se elige");
+    assert.deepStrictEqual([o4.via.participacion_pct, o4.resultado], [40, "sin_dato"], "un consorcio único con ese nombre lleva su porcentaje; sin fila de resultado es «sin dato», no «perdió»");
+    assert.deepStrictEqual(r.tablero, [{ ano: "2026", ofertas: 1, ganadas: 0, con_resultado: 0, sin_resultado: 1, puesto_mediano: 2 }, { ano: "2025", ofertas: 2, ganadas: 1, con_resultado: 2, sin_resultado: 0, puesto_mediano: 3 }],
+      `el tablero por año (el puesto mediano solo con dos o más ofertas en el proceso) → ${JSON.stringify(r.tablero)}`);
+    const conSocia = OP.ofertasPropiasDe({ grupos, propias, delProceso, procesos, nits: [H, G] });
+    assert.ok(conSocia.ofertas.some((o) => o.identificador === "CO1.RPL.3" && o.via.tipo === "nit" && o.via.nit === G), "con el perfil de los dos, la de la socia sí cuenta, por su NIT");
+    const fr = OP.frasesOfertasPropias({ ok: true, ...r });
+    assert.ok(/2026: 1 oferta, 1 sin resultado conocido · 2025: 2 ofertas, 1 adjudicada a usted, 1 a otro/.test(fr[0]) && !/2026: 1 oferta, 0 adjudicadas/.test(fr[0]), `«sin dato» no se cuenta como «0 adjudicadas» → ${fr[0]}`);
+    assert.ok(fr.some((t) => /La fuente está incompleta/.test(t)), "la frase dice que la fuente está incompleta");
+    // la consulta: dos pedidos en paralelo por columna, el detalle aparte, y nunca lanza
+    const pedidos = [];
+    const falsa = (fallaDetalle = false) => async (url) => {
+      const u = new URL(url), w = u.searchParams.get("$where") || ""; pedidos.push(w.slice(0, 40));
+      const resp = (j) => ({ ok: true, status: 200, headers: { get: () => "application/json" }, text: async () => JSON.stringify(j), json: async () => j });
+      // la suite redirige las direcciones de las fuentes: se reconoce la consulta por lo que pide
+      if (/^nit_participante/.test(w)) return resp(grupos);
+      if (/^nit_del_proveedor/.test(w)) return resp(propias.filter((f) => f.nit_del_proveedor === H));
+      if (/^c_digo_proveedor/.test(w)) return resp(propias.filter((f) => /732018932|736380759|731740114/.test(f.c_digo_proveedor)));
+      if (fallaDetalle) return { ok: false, status: 503, headers: { get: () => "text/html" }, text: async () => "caído", json: async () => { throw new Error("x"); } };
+      if (/^id_del_proceso_de_compra/.test(w)) return resp(Object.values(delProceso).flat());
+      if (/^id_del_portafolio/.test(w)) return resp(procesos);
+      return resp([]);
+    };
+    const c = await OP.consultarOfertasPropias([`${H}-3`], { fetchImpl: falsa(), tiempoMs: 3000 });
+    assert.ok(c.ok && c.ofertas.length === 3 && pedidos.some((p) => /^nit_del_proveedor/.test(p)) && pedidos.some((p) => /^c_digo_proveedor/.test(p)) && !pedidos.some((p) => / OR /.test(p)), `una consulta por columna, sin «O» → ${pedidos.join(" | ")}`);
+    const cd = await OP.consultarOfertasPropias([H], { fetchImpl: falsa(true), tiempoMs: 3000 });
+    assert.ok(cd.ok && cd.aviso && cd.ofertas.every((o) => o.resultado === "sin_dato") && OP.frasesOfertasPropias(cd).some((t) => /no se pudieron traer esta vez/.test(t)) && !/adjudicada/.test(OP.frasesOfertasPropias(cd)[0]),
+      "si el detalle falla, las ofertas salen igual, sin resultado, y se dice");
+    assert.match((await OP.consultarOfertasPropias([], { fetchImpl: falsa() })).motivo, /no tiene NIT/);
+    assert.match((await OP.consultarOfertasPropias([H], { fetchImpl: async () => { throw new Error("red caída"); }, tiempoMs: 2000 })).motivo, /No se pudo consultar SECOP II/);
+    // el manejador: credencial siempre, perfil obligatorio, y el resultado que salió bien se guarda; el que falló, no
+    const HOP = require("../lib/handlers/perfil/ofertas_propias.js");
+    let llamadas = 0;
+    const consultar = async () => { llamadas++; return { ok: true, ofertas: r.ofertas, tablero: r.tablero, consultado_el: "2026-11-12T00:00:00.000Z" }; };
+    const h = (req, res) => HOP(req, res, { consultar });
+    assert.strictEqual((await invocar(h, "/api/perfil?op=ofertas-propias&perfil=helder", {})).status, 401, "sin credencial no se lee");
+    assert.strictEqual((await invocar(h, "/api/perfil?op=ofertas-propias", CAB_TOKEN)).status, 400, "sin perfil es 400");
+    const h1 = await invocar(h, "/api/perfil?op=ofertas-propias&perfil=helder", CAB_TOKEN);
+    const h2 = await invocar(h, "/api/perfil?op=ofertas-propias&perfil=helder", CAB_TOKEN);
+    assert.ok(h1.status === 200 && h1.cuerpo.desde_cache === false && h2.cuerpo.desde_cache === true && llamadas === 1 && h2.cuerpo.ofertas.length === 3 && h2.cuerpo.frases.length >= 2, `la segunda vez sale de lo guardado → ${llamadas} ${h2.cuerpo.desde_cache}`);
+    await invocar(h, "/api/perfil?op=ofertas-propias&perfil=helder&refrescar=1", CAB_TOKEN);
+    assert.strictEqual(llamadas, 2, "«refrescar» consulta otra vez");
+    const hFalla = (req, res) => HOP(req, res, { consultar: async () => { llamadas++; return { ok: false, motivo: "caído", ofertas: [], tablero: [] }; } });
+    const antes = llamadas;
+    await invocar(hFalla, "/api/perfil?op=ofertas-propias&perfil=pics", CAB_TOKEN); await invocar(hFalla, "/api/perfil?op=ofertas-propias&perfil=pics", CAB_TOKEN);
+    assert.strictEqual(llamadas - antes, 2, "un resultado que falló no se guarda: el siguiente intento consulta");
+    const hParcial = (req, res) => HOP(req, res, { consultar: async () => { llamadas++; return { ok: true, aviso: "no se pudo traer el puesto ni el resultado", ofertas: r.ofertas, tablero: r.tablero }; } });
+    const antes2 = llamadas;
+    await invocar(hParcial, "/api/perfil?op=ofertas-propias&perfil=prodiac", CAB_TOKEN); await invocar(hParcial, "/api/perfil?op=ofertas-propias&perfil=prodiac", CAB_TOKEN);
+    assert.strictEqual(llamadas - antes2, 2, "uno a medias (sin puesto ni resultado) tampoco: no se sirven 12 horas de «sin resultado»");
+    assert.strictEqual((await invocar(require("../api/perfil.js"), "/api/perfil?op=ofertas-propias&perfil=helder", {})).status, 401, "por el router real, sin credencial tampoco");
+    console.log("· unidad ofertas propias: su NIT o su consorcio con su código (la de la socia y la de otro con el mismo nombre no), el porcentaje solo si el consorcio es uno, "
+      + "puesto por precio y resultado de la fase adjudicada, «sin dato» que no es «perdió», el tablero por año, una consulta por columna, el detalle caído dicho, credencial y lo guardado");
+  }
+
+  bqRecalculoInforme: { if (!corre("unidad recalculo del informe")) break bqRecalculoInforme;
+    /* PLAN_X20, tanda 14 (12-nov-2026): el puntaje de precio del informe, recalculado con el motor de la aplicación */
+    const RC = require("../lib/recalculo_informe.js"), ME = require("../lib/metodos_ponderacion.js"), EV = require("../lib/evaluacion.js");
+    // Cali · Santa Elena: cinco hábiles, media geométrica; el motor da 49,5 a la más cercana (D1)
+    const cali = [1475444680, 1485289767, 1488423398, 1511179252, 1530029471];
+    const bien = ME.puntajes(cali, "geometrica", 49.5);
+    const nom = ["A SAS", "B SAS", "CONCRETAR 2026", "D SAS", "E SAS"];
+    const cap = (pp, extra = {}) => ({ documento_util: true, completa: true, metodo: "geometrica", ofertas: nom.map((n, i) => ({ oferente: n, estado: "habil", valor: cali[i], puntaje_precio: pp[i], puntaje_total: pp[i] + 50 })), ...extra });
+    const r0 = RC.recalcularInforme(cap(bien.map((x) => Math.round(x * 100) / 100)));
+    assert.ok(r0.recalculable && r0.difieren === 0 && r0.observacion === null && /da lo mismo que publicó la entidad/.test(r0.frase), `publicado con dos decimales y bien calculado: sin diferencias → ${r0.frase}`);
+    // la entidad publicó mal el puntaje de B SAS (48,50 en vez de 49,08)
+    const mal = bien.map((x) => Math.round(x * 100) / 100); mal[1] = 48.5;
+    const r1 = RC.recalcularInforme(cap(mal));
+    assert.ok(r1.recalculable && r1.difieren === 1 && Math.abs(r1.filas[1].calculado - bien[1]) < 1e-6 && /B SAS, publicado 48,50 y recalculado 49,08/.test(r1.frase), `la diferencia se dice con sus cifras → ${r1.frase}`);
+    // si nadie recibió un máximo del documento tipo (la media geométrica sin la regla del más cercano: 49,19 al mejor), no se sabe sobre cuánto se calculó
+    const sinMax = bien.slice(); sinMax[2] = 49.1854;
+    assert.match(RC.recalcularInforme(cap(sinMax)).motivo, /no es un máximo del documento tipo/, "sin un máximo conocido no se recalcula: escalar con el mayor publicado marcaría todas las demás");
+    assert.ok(/^Se solicita a la entidad revisar el puntaje asignado al factor precio en el informe de evaluación \[número y fecha del informe\]\./.test(r1.observacion) && /a B SAS le corresponden 49,08\d\d puntos y no 48,50/.test(r1.observacion) && !/Ley|Decreto|artículo/i.test(r1.observacion),
+      `el borrador: tercera persona, cifras, lo que no se sabe entre corchetes, sin normas → ${r1.observacion}`);
+    // el primer lugar cambia cuando la diferencia de precio voltea el total
+    // A SAS publicada con 49,50 de precio (le tocaban 48,45) y 0,3 puntos más fuera del precio que CONCRETAR: gana por el error
+    const casi = bien.map((x) => Math.round(x * 100) / 100); casi[0] = 49.5;
+    const c2 = cap(casi); c2.ofertas[0].puntaje_total = 49.5 + 50.3;
+    const r2 = RC.recalcularInforme(c2);
+    assert.ok(r2.cambia_el_primero === true && r2.orden_publicado[0] === "A SAS" && r2.orden_recalculado[0] === "CONCRETAR 2026" && /pasaría de A SAS a CONCRETAR 2026/.test(r2.frase) && /Adicionalmente, con esa corrección el primer lugar/.test(r2.observacion),
+      `el primer lugar que cambia se dice → ${JSON.stringify([r2.orden_publicado, r2.orden_recalculado])}`);
+    // sin método en el informe: el de la TRM citada (centavos 30 → media geométrica)
+    const r3 = RC.recalcularInforme(cap(mal, { metodo: undefined, trm: { valor: 3678.30 } }));
+    assert.ok(r3.recalculable && r3.metodo === "geometrica" && r3.fuente_metodo === "trm" && /corresponde a la TRM/.test(r3.frase), "sin método en el informe, el de su TRM");
+    // lo que no se recalcula, con su motivo
+    assert.match(RC.recalcularInforme(cap(mal, { completa: false })).motivo, /no está completa/);
+    assert.match(RC.recalcularInforme(cap(mal, { metodo: "otro" })).motivo, /no es de los cuatro del documento tipo/);
+    assert.match(RC.recalcularInforme(cap(mal, { metodo: undefined })).motivo, /no dice el método ni la TRM/);
+    const sinValor = cap(mal); delete sinValor.ofertas[1].valor;
+    assert.match(RC.recalcularInforme(sinValor).motivo, /le falta el valor o el puntaje/);
+    const unaHabil = cap(mal); unaHabil.ofertas.slice(1).forEach((o) => { o.estado = "rechazada"; });
+    assert.match(RC.recalcularInforme(unaHabil).motivo, /menos de dos ofertas hábiles/);
+    const sinTotal = cap(mal); delete sinTotal.ofertas[4].puntaje_total;
+    assert.strictEqual(RC.recalcularInforme(sinTotal).cambia_el_primero, null, "sin el total de todos, no se dice si cambia el orden");
+    // en los hechos de la entidad
+    const H = EV.hechosDeEntidad([{ id_proceso: "CO1.REQ.1", captura: cap(mal) }, { id_proceso: "CO1.REQ.2", captura: cap(bien.map((x) => Math.round(x * 100) / 100)) }, { id_proceso: "CO1.REQ.3", captura: cap(mal, { completa: false }) }]);
+    assert.deepStrictEqual(H.recalculo, { con_dato: 2, con_diferencias: 1, cambia_el_primero: 0 }, `los hechos cuentan solo los completos → ${JSON.stringify(H.recalculo)}`);
+    assert.ok(H.procesos_detalle.find((x) => x.id_proceso === "CO1.REQ.1").recalculo.observacion && !H.procesos_detalle.find((x) => x.id_proceso === "CO1.REQ.3").recalculo, "el borrador viaja con su proceso");
+    console.log("· unidad recalculo del informe: el caso de Cali con D1 (49,5 y no 49,19), dos decimales que no son diferencia, el primer lugar que cambia, el método por la TRM, "
+      + "lo que no se recalcula con su motivo y el borrador de observación sin normas y con corchetes");
+  }
+
+  bqPorContenido: { if (!corre("unidad leer por contenido")) break bqPorContenido;
+    /* PLAN_X20, tanda 12, defecto D9 (12-nov-2026): el pliego con un nombre poco usual se lee por lo que dice su primera página */
+    const Dp = require("../lib/documentos_proceso.js");
+    const f = (id, n, fecha, bytes = "100000") => ({ id_documento: id, nombre_archivo: n, extensi_n: n.split(".").pop(), tamanno_archivo: bytes, fecha_carga: `${fecha}T00:00:00.000`, url_descarga_documento: { url: `https://community.secop.gov.co/x?DocumentId=${id}` } });
+    const p = Dp.planDeLectura([f("1", "3 PPC CDV ADULTO MAYOR DT CARTAGENA.pdf", "2026-08-01"), f("2", "OTRA COSA.pdf", "2026-08-02"), f("3", "TERCERO.pdf", "2026-07-01"), f("4", "ESTUDIOS PREVIOS.pdf", "2026-07-01"), f("5", "PLANOS.dwg", "2026-08-03")]);
+    assert.deepStrictEqual([...p.plan].sort(), ["1", "2", "4"], `sin pliego por nombre, se leen los ${Dp.MAX_POR_CONTENIDO} «otros» PDF más nuevos → ${p.plan}`);
+    assert.ok(p.archivos.find((a) => a.id_documento === "1").por_contenido === true && p.archivos.find((a) => a.id_documento === "3").en_plan === false, "el tercero no: el cupo es de dos");
+    assert.deepStrictEqual(Dp.planDeLectura([f("1", "3 PPC CDV.pdf", "2026-08-01"), f("6", "PLIEGO DE CONDICIONES.pdf", "2026-08-01")]).plan, ["6"], "con un pliego reconocido por nombre no se lee ningún «otro»");
+    const casos = [["PROYECTO DE PLIEGO DE CONDICIONES\nSELECCIÓN ABREVIADA DE MENOR CUANTÍA", "pliego_borrador"], ["PLIEGO DE CONDICIONES DEFINITIVO\nLICITACIÓN PÚBLICA", "pliego"],
+      ["Documento Base\nProceso de Contratación de obra pública", "documento_base"], ["OBSERVACIONES AL PROYECTO DE PLIEGO DE CONDICIONES", null], ["RESPUESTA A OBSERVACIONES DEL PLIEGO DE CONDICIONES", null],
+      ["ESTUDIOS PREVIOS\nlos requisitos del pliego de condiciones", null], ["ADENDA No. 1 AL PLIEGO DE CONDICIONES", null], ["CERTIFICADO DE DISPONIBILIDAD PRESUPUESTAL", null]];
+    for (const [t, tipo] of casos) assert.strictEqual(Dp.tipoPorContenido(`\f1\n${t}\n`), tipo, `«${t.split("\n")[0]}» → ${tipo}`);
+    assert.strictEqual(Dp.tipoPorContenido(`\f1\nESPECIFICACIONES TÉCNICAS DE LA OBRA\n${"texto ".repeat(150)}\nsegún el PLIEGO DE CONDICIONES`), null, "lo que dice más abajo del título no cuenta");
+    // por el servidor: el «otro» del plan se guarda como el pliego que dice ser, y sus hechos son los de un pliego
+    const redis = require("../lib/redis.js").crearRedis({});
+    const DocsH = require("../lib/handlers/pliego/documentos.js"), routerP = require("../api/pliego.js");
+    const id = "CO1.REQ.D9-CONTENIDO";
+    const arch = p.archivos.filter((a) => a.en_plan);
+    await DocsH.escribirDocs(redis, id, { id_proceso: id, indice: { version: Dp.VERSION, consultado_el: new Date().toISOString(), fuente: "dmgg-8hin", archivos: p.archivos, plan: p.plan }, leidos: {}, ilegibles: {} });
+    const post = (cuerpo) => invocarPost(routerP, "/api/pliego?op=documentos", { id_proceso: id, ...cuerpo }, CAB_TOKEN);
+    const textoP = "\f1\nPROYECTO DE PLIEGO DE CONDICIONES\nSELECCIÓN ABREVIADA DE MENOR CUANTÍA No. SAMC-07-2026\n\f2\nEl proponente deberá acreditar un índice de liquidez mayor o igual a 1,5.\n";
+    const r1 = await post({ id_documento: "1", texto: textoP, paginas_total: 2 });
+    const textoO = "\f1\nOBSERVACIONES AL PROYECTO DE PLIEGO DE CONDICIONES\nEl interesado solicita aclarar el índice de liquidez.\n\f2\nSe solicita ampliar el plazo de la obra pública.\n";
+    const r2 = await post({ id_documento: "2", texto: textoO, paginas_total: 2 });
+    const docs = await DocsH.leerDocs(redis, id);
+    assert.ok(r1.status === 200 && r2.status === 200 && arch.length === 3, `se guardan los dos: ${r1.status} ${r2.status}`);
+    assert.deepStrictEqual([docs.leidos["1"].tipo, docs.leidos["1"].tipo_por_contenido, docs.leidos["2"].tipo, docs.leidos["2"].tipo_por_contenido], ["pliego_borrador", true, "otro", undefined],
+      `el proyecto de pliego se guarda como tal; las observaciones siguen siendo «otro» → ${JSON.stringify([docs.leidos["1"].tipo, docs.leidos["2"].tipo])}`);
+    await redis.del(Dp.claveDocs(id));
+    console.log("· unidad leer por contenido: sin pliego por nombre se leen los dos «otros» PDF más nuevos, el título de la primera página decide (proyecto, definitivo, documento base; "
+      + "observaciones, respuestas, adendas y estudios previos no), y por el servidor el «3 PPC» se guarda como proyecto de pliego");
   }
 
   /* unidad: TEXTO como co-señal (vocabulario por familia + verbo de obra) */
@@ -21148,6 +21558,22 @@ async function main() {
           const x4 = await pedir({ formato: "xlsx" });
           assert.ok(x4.status === 200 && x4.cuerpo.lectura.ok === false && /no se pudo abrir el libro/.test(x4.cuerpo.lectura.motivo) && x4.cuerpo.lectura.filas === undefined,
             `un Word pedido como Excel NO es un error de la petición: es el resultado de leerlo (lectura.ok:false con su motivo), para que el navegador lo marque ilegible para siempre: ${x4.status} ${JSON.stringify(x4.cuerpo).slice(0, 200)}`);
+          /* SU OFERTA EN EL FORMULARIO DE EXCEL (PLAN_X20, pieza 6.7, 12-nov-2026): la misma descarga; el libro vuelve LLENO o con su motivo y sin bytes */
+          remoto = Buffer.from(require("../public/xlsx.js").construirLibro([{ nombre: "PRESUPUESTO OFICIAL", filas: [
+            [null, null, "FORMULARIO 1"], [null, null, "Nº", "ÍTEM", null, null, "DESCRIPCIÓN", "UND.", "CANTIDAD", "VALOR UNITARIO", "VALOR TOTAL"],
+            [null, null, "1.1", null, null, null, "Localización y replanteo", "m2", 100, 1000, { f: "ROUND(I3*J3,0)", v: 100000 }], [null, null, "1.2", null, null, null, "Excavación manual", "m3", 10, 20000, { f: "ROUND(I4*J4,0)", v: 200000 }],
+            [null, null, null, null, null, null, "VALOR TOTAL", null, null, null, { f: "SUM(K3:K4)", v: 300000 }]] }]));
+          const itsO = [{ codigo: "1.1", descripcion: "Localización y replanteo", unidad: "m2", cantidad: 100, costo_directo_unitario_ofertado: 700 }, { codigo: "1.2", descripcion: "Excavación manual", unidad: "m3", cantidad: 10, costo_directo_unitario_ofertado: 14000 }];
+          const ofO = { con_formulas: true, costo_directo: 210000, precio_sin_iva: 273000, lleva_fila_iva: false, iva_sobre_utilidad: 0, total_para_secop: 273000 };
+          const o1 = await pedir({ formato: "oferta_excel", items: itsO, oferta: ofO });
+          assert.ok(o1.status === 200 && o1.cuerpo.formato === "oferta_excel" && o1.cuerpo.llenado.ok === true && o1.cuerpo.llenado.total_formulario === 273000 && typeof o1.cuerpo.base64 === "string" && o1.cuerpo.llenado.archivo === undefined
+            && o1.cuerpo.llenado.frases.some((t) => /\$273\.000: esa es la cifra que escribe en SECOP II/.test(t)), `el Formulario lleno vuelve en base64 con su total: ${JSON.stringify(o1.cuerpo).slice(0, 300)}`);
+          const libO = await require("../public/xlsx_lectura.js").leerLibro(new Uint8Array(Buffer.from(o1.cuerpo.base64, "base64")), { inflar: async (u8) => new Uint8Array(require("zlib").inflateRawSync(Buffer.from(u8))) });
+          assert.deepStrictEqual([libO.hojas[0].filas[2][9], libO.hojas[0].filas[3][9], libO.hojas[0].filas[4][10]], [910, 18200, 273000], "los bytes que vuelven son el libro con los unitarios y el total al día");
+          const o2 = await pedir({ formato: "oferta_excel", items: itsO, oferta: { ...ofO, precio_sin_iva: 420000 } });
+          assert.ok(o2.status === 200 && o2.cuerpo.llenado.ok === false && o2.cuerpo.base64 === undefined && /más que el presupuesto oficial/.test(o2.cuerpo.llenado.motivo), `lo que no se puede entregar vuelve con su motivo y sin bytes: ${JSON.stringify(o2.cuerpo).slice(0, 200)}`);
+          assert.strictEqual((await pedir({ formato: "oferta_excel", oferta: ofO })).status, 400, "sin ítems es un 400, antes de bajar nada");
+          assert.strictEqual((await pedir({ formato: "oferta_excel", items: itsO })).status, 400, "sin la oferta calculada es un 400");
           /* EL CRONOGRAMA EN EXCEL (3-nov-2026): la misma descarga y la misma firma, OTRO lector (lib/cronograma_excel) con su puerta */
           const libroCr = Buffer.from(require("../public/xlsx.js").construirLibro([{ nombre: "Cronograma-Licitación Pública", filas: [
             [], [], [], [], [], [], [null, null, "Actividad", "Fecha"], [null, null, "Publicación del aviso de convocatoria pública", 46238], [null, null, "Plazo para manifestación de interés", 46265],
@@ -59640,7 +60066,10 @@ async function main() {
       const filasF = Xf.documentosEntidad({ id: "CO1.REQ.9", guia: { documentos: bF } });
       const leidoF = filasF.find((f) => f.id === "5"), noF = filasF.find((f) => f.id === "6");
       assert.strictEqual(leidoF.formulario_de, "CO1.REQ.9");
-      assert.ok(/data-seg-f1="CO1\.REQ\.9" data-seg-f1-doc="5" data-seg-f1-n="1">Cotizar en Precios</.test(Xf.htmlFilaDoc(leidoF, 1)) && /data-seg-f1-estado="1"/.test(Xf.htmlFilaDoc(leidoF, 1)), "el Formulario leído lleva su botón y su renglón de aviso");
+      assert.ok(/data-seg-f1="CO1\.REQ\.9" data-seg-f1-doc="5" data-seg-f1-n="1"[^>]*>Cotizar en Precios</.test(Xf.htmlFilaDoc(leidoF, 1)) && /data-seg-f1-estado="1"/.test(Xf.htmlFilaDoc(leidoF, 1)), "el Formulario leído lleva su botón y su renglón de aviso");
+      // pieza 6.7: el botón lleva la dirección del archivo, para llenarlo después en Precios (sin dirección, no la inventa)
+      assert.ok(/data-seg-f1-url="https:\/\/x\/f\.xlsx" data-seg-f1-nombre="F1\.xlsx"/.test(Xf.htmlFilaDoc({ ...leidoF, url: "https://x/f.xlsx", nombre: "F1.xlsx" }, 1)) && !/data-seg-f1-url/.test(Xf.htmlFilaDoc({ ...leidoF, url: null }, 1)),
+        "el botón lleva la dirección del Formulario solo si la hay");
       assert.ok(!/data-seg-f1/.test(Xf.htmlFilaDoc(noF, 2)), "el que no pasó la puerta no ofrece llevar nada a Precios");
       assert.ok(!/data-seg-f1/.test(Xf.htmlFilaDoc({ origen: "entidad", id: "1", nombre: "PLIEGO.pdf", formato: "PDF", estado: "leido" }, 3)), "un PDF leído tampoco");
       // el clic: el bloque real de app.js

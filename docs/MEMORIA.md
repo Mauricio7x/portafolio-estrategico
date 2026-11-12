@@ -22411,3 +22411,110 @@ En una línea: tanda 3 del plan x20: el bloque «2 · El vigilante de la mañana
 - **Decisiones del dueño tomadas como aprobadas** con su «Apruebo» del 12-nov-2026, sobre la propuesta de la sesión: zona y tamaño (decisión 1, la recomendada) y canal (decisión 4, «A»: la tarea de Claude). Si el «Apruebo» era solo para seguir, se cambia la URL del paso 6.
 - **Verificado el 12-nov-2026** (lista de tareas programadas de la cuenta): la rutina «Dirección · vigilante de la mañana» corre cada día a las 12:01 UTC (7:01 en Colombia), apunta a este bloque, tiene el aviso al teléfono encendido y su corrida de hoy terminó bien. **Sin verificar**: el paso 6 contra producción (esta sesión no tiene la llave).
 
+### El reparto del consorcio en una frase: queda por fuera, falta confirmar o cumple lo medible (12-nov-2026)
+
+En una línea: segunda mitad de la tanda 4 del plan x20: el simulador del consorcio devuelve `veredicto_reparto` (`lib/consorcio.veredictoReparto`) y Mis procesos lo pinta arriba, en rojo, ámbar o verde: «Con 65/35 queda por fuera: no cumple la participación mínima del pliego (pág. 27).», «… no se encontró nada que lo deje por fuera, pero falta confirmar …» o «… cumple lo que la aplicación pudo medir: …».
+
+- **Lo que no hay que deshacer**: la frase NO juzga nada nuevo, junta lo ya juzgado (la participación mínima, las casillas del pliego y el registro, la capacidad y la caja); una casilla por leer o sin dato es una duda, nunca un verde; y el «cumple» dice que lo demás (experiencia acreditada, firmas, garantía) se revisa en el pliego.
+- Cerradura: en «unidad simulacro del consorcio» (el 65/35 real, el 60/40 con el pliego por leer, todo bien, una sola duda y la vista con `app.js` en un vm); cuatro mutaciones, mueren todas.
+
+### Los puntos fuera del precio, uno por uno, desde la tabla del pliego (12-nov-2026)
+
+En una línea: tanda 5 del plan x20: la lectura del pliego (hechos versión 25) toma la tabla «Concepto / Puntaje máximo» y el descuento por multas (`lib/puntaje_pliego.js`), y la guía dice «Fuera del precio el pliego reparte 50,5 puntos: puede obtener 50,25 (factor de calidad 30, apoyo a la industria nacional 20, Mipyme 0,25); 0,25 por confirmar (empresas de mujeres)…», con la página.
+
+- **Por qué importa**: donde llegan una o dos ofertas, el precio casi no separa y 0,25 de Mipyme o de empresa de mujeres voltea el resultado (plan, § 2.5, hecho 2). En Cali todas las hábiles tenían 50,5 menos una con 50,25.
+- **Lo que no hay que deshacer**:
+  - la tabla se usa solo si sus filas suman su «Total»: una suma que no cuadra es una lectura mala;
+  - la tabla de las convocatorias limitadas (sin la fila de Mipyme, la económica en 49,75) se usa cuando `lib/convocatoria_limitada` leyó «limitada»;
+  - Mipyme sale de `lib/perfiles.esMipyme` (en un plural, un integrante Mipyme con el 10 % o más, como dice el numeral 4.5); sin tamaño en el registro es «por confirmar», nunca «no»;
+  - empresas de mujeres, discapacidad y multas no se saben desde aquí: «por confirmar»;
+  - el certificado del registro va CON la oferta: el documento tipo dice que subsanarlo no da el puntaje.
+- **Sin verificar**: tablas de pliegos que no siguen el documento tipo (régimen especial, otras versiones): si no suman su total no se dice nada.
+- Cerradura: «unidad puntos fuera del precio» (las dos tablas oficiales en renglones partidos, la que no suma, las multas, Mipyme sí/no/sin dato, la limitada y el hecho de la guía); cinco mutaciones, mueren todas.
+
+### Las causales de rechazo de ESE pliego, una por una, con dónde las revisa la aplicación (12-nov-2026)
+
+En una línea: tanda 6 del plan x20: la lectura del pliego (hechos versión 26) separa la lista de causales de rechazo (`lib/causales_rechazo.js`) y la guía dice cuántas trae, cuáles ayuda a revisar la aplicación (presupuesto, Formulario 1, AIU, total de SECOP II, precio bajo, garantía, Mipyme) y qué comprueba usted antes de radicar (la manifestación con la MISMA estructura, no dos consorcios suyos, los contratos en ejecución, el plazo, el registro en firme, la hora); la lista entera viaja en `causales`.
+
+- **Lo que no hay que deshacer**: la causal que no se reconoce va como «léala en el pliego», nunca como revisada; el módulo NO juzga si la oferta cumple (eso lo hacen «Revisar antes de subir», Precios y la guía, con su regla); la instrucción de plantilla entre corchetes sale de la causal; la línea del índice («CAUSALES DE RECHAZO …… 13») no abre la sección; y con la lista leída no se repite el aviso genérico de `dictamen_reglas` («el pliego enumera causales»).
+- Medido con el DocBase oficial de menor cuantía V3: 34 causales separadas, 10 que la aplicación ayuda a revisar y 11 con consejo concreto.
+- Cerradura: «unidad causales de rechazo»; cinco mutaciones, mueren todas.
+
+### La tabla de métodos de ponderación de ESE pliego, y las dos fórmulas del documento tipo V1 (12-nov-2026)
+
+En una línea: tanda 9 del plan x20: la lectura del pliego (hechos versión 27) reconoce la tabla «De 0,00 a 0,24 … método» (`lib/metodos_ponderacion.leerTablaMetodos`) y la guía dice qué método le toca a cada rango de centavos de la TRM; el motor suma las dos fórmulas del documento tipo V1 de licitación que siguen usando pliegos de régimen especial (media geométrica con presupuesto oficial y media aritmética alta).
+
+- **Fuente de las fórmulas**: «Documento Base o Pliegos Tipo.docx» del paquete oficial de Colombia Compra (descarga 29961, documento tipo de licitación V1), leído el 12-nov-2026. Con presupuesto oficial: el presupuesto entra 1 vez con 1 a 3 propuestas, 2 con 4 a 6, 3 con 7 a 9 («y así sucesivamente»): `ceil(n/3)`. Por encima de la media, ambas restan el DOBLE de la distancia.
+- **Lo que no hay que deshacer**:
+  - la «media aritmética» simple (la usó la Universidad Pedagógica en 2026) no está en ningún documento tipo leído: no tiene fórmula en el motor (`metodo: null`) y la guía manda a leerla en el pliego; inventarla sería poner una fórmula sin fuente en una cifra de precio;
+  - sin presupuesto oficial, la media geométrica con presupuesto da `null`, no puntajes;
+  - el método de cada fila es el PRIMER nombre después del rango, y la ventana se corta en el rango siguiente: una fila sin método no toma el de la siguiente;
+  - la tabla repetida (índice, anexo) se cuenta una vez.
+- **Sin verificar**: si el documento tipo V1 da el máximo a la propuesta más cercana a la media (la regla D1 del V3, 4.1.4); hoy las dos fórmulas V1 dan 1 solo a quien cae justo en la media. No mueve ninguna cifra en pantalla: estas fórmulas aún no las usa Precios ni el informe (tandas 13-14).
+- Cerradura: «unidad tabla de métodos del pliego» (fórmulas recalculadas a mano, la tabla en tres formas, la simple en null, el hecho y la versión); nueve mutaciones, mueren todas.
+
+### Su oferta escrita en el Formulario de Excel de la entidad, con candados (12-nov-2026)
+
+En una línea: pieza 6.7 del plan x20: «Revisar antes de subir» ofrece «Llenar el Formulario de la entidad» cuando el Formulario de Excel de ESE proceso se trajo con «Cotizar en Precios»; el servidor (`op=descargar`, formato `oferta_excel`, `lib/formulario_oferta.js`) baja el libro, escribe cada valor unitario y devuelve el MISMO libro con sus cálculos al día, o no entrega nada y dice por qué.
+
+- **El unitario**: costo directo ofertado × K, K = (precio sin IVA de la oferta + IVA de la utilidad solo si el pliego cuenta esa fila) ÷ costo directo de la oferta; es `oferta.total_para_secop` repartido por ítem. Al peso desde ,5 por exceso: nota 2 del Formulario 1 del documento tipo de menor cuantía V3 (paquete oficial de Colombia Compra, leído el 11-nov-2026), que dice además que el unitario incluye el AIU (nota 1). Solo con el AIU sobre todo el costo directo (`oferta.con_formulas`).
+- **La cifra de SECOP II es la del Formulario**, no la del análisis: el ajuste al peso de cada unitario y las fórmulas de la entidad la mueven, y se dice con sus centavos si los tiene (las fórmulas sin REDONDEAR dejan centavos).
+- **Lo que no hay que deshacer**:
+  - antes de escribir, el evaluador de aquí tiene que reproducir lo que Excel guardó en TODA celda que depende de los precios; una fórmula que no sabe calcular (SI, BUSCARV, nombres, otro libro) o que da otra cosa detiene todo; una rota al margen que no depende de los precios no estorba;
+  - el total no puede pasar del presupuesto oficial: no se entrega, sin opción;
+  - un unitario sobre el oficial se lista y solo se entrega si el usuario confirma que su pliego no lo prohíbe (la causal es de corchete en el documento tipo);
+  - un Formulario que suma el AIU aparte (pesos de administración, imprevistos o utilidad después del total) no se llena: ahí el unitario es costo directo;
+  - el total de la hoja tiene que ser la suma de los ítems más los valores fijos (PMT…) con los precios nuevos;
+  - se llena la hoja del proponente si es copia de los ítems de la entidad; si no, la de la entidad, y se dice;
+  - el libro sale marcado para recalcular al abrirse, en cálculo automático (870695577 venía en manual: LibreOffice lo abría todo en 0) y sin la cadena de cálculo vieja;
+  - los porcentajes del AIU que el Formulario pide discriminar quedan a mano, con los del análisis en la frase.
+- **Medido el 12-nov-2026** con 120 Formularios bajados de SECOP II (consulta a `dmgg-8hin`, cargados desde el 1-ago-2026, un archivo por proceso): 112 son libros, 27 pasan la puerta de lectura y 16 se llenan. En los 16, LibreOffice recalculó desde cero (sin ningún valor guardado) y dio el mismo total al centavo y los mismos unitarios; los 16 son XML bien formado. Los 11 que no se llenan se detienen con su motivo: 4 con fórmulas a otros libros o nombres, 4 con el total escrito a mano, 2 con una hoja que suma algo que la aplicación no ve, 1 con el unitario como celda maestra de una fórmula compartida.
+- **Sin verificar**: abrir los archivos en Microsoft Excel (se probó con LibreOffice); un proceso real de punta a punta en producción; formularios con el AIU aparte (no se llenan).
+- **La revisión adversaria (12-nov-2026, un subagente que no escribió el código)** reprodujo seis defectos con libros fabricados; ninguno salía en los 112 reales. Corregidos, cada uno con su prueba:
+  - un total de fila que no cita la celda del unitario (vinculado a la hoja de la entidad o a otra hoja) dejaba el presupuesto oficial como «la cifra de SECOP II»: ahora el total de CADA fila tiene que ser unitario × cantidad (±1 peso);
+  - el AIU aparte con fórmulas y los porcentajes en blanco valía 0 y pasaba: ahora se mira también por fórmulas que dependen de los precios, en la hoja que se llena;
+  - dos descripciones que empiezan igual («Concreto 3000 psi» y «… para vigas») cruzaban sus unitarios: una fila no se queda con el ítem de su posición si otro tiene su descripción idéntica (exigir siempre la idéntica dejaba fuera 839024728, cuya hoja del proponente recorta las descripciones);
+  - dos celdas nuevas en el mismo sitio quedaban K antes que J (Excel pediría «reparar»): van en una sola edición, en orden;
+  - los porcentajes del AIU de la frase salían de la pantalla y no de la oferta: ahora A, I y U en pesos ÷ costo directo de la oferta;
+  - un libro con «precisión de pantalla» (`fullPrecision="0"`) no se llena; y la diferencia con el análisis se cuenta con los valores fijos.
+  Medido otra vez: 16 de 27 se llenan, y LibreOffice da el mismo total en los 16. Queda sin decidir lo que el revisor dejó como plausible: con el IVA «no se sabe», el IVA de la utilidad entra al unitario por prudencia (R-01b), y la frase no lo dice.
+- Cerradura: «unidad formulario de la oferta» (el documento tipo con las dos hojas, IVA dentro o fuera, al peso, REDONDEAR.MAS y .MENOS, los siete candados, cálculo manual, cadena de cálculo, fórmulas compartidas), el modo en «unidad APU» y la puerta del botón en «unidad revisor con el formulario de Excel»; 23 mutaciones y 8 más de las correcciones de la revisión, mueren todas. Chromium real: el clic sin cálculo dice qué hacer, el rechazo lista el unitario con su botón de confirmar y la confirmación descarga el libro, sin errores de página ni de consola.
+
+### Sus ofertas en SECOP II y cómo le fue: a su nombre y de los consorcios donde figura (12-nov-2026)
+
+En una línea: tanda 13 del plan x20 (pieza 6.8): Mi empresa → «Cómo está el mercado» → «Sus ofertas en SECOP II» consulta (`op=ofertas-propias`, `lib/ofertas_propias.js`) las ofertas del perfil en `wi7w-2nvm`, a su nombre y de los consorcios donde figura según `ceth-n4bn`, con el puesto por precio entre todas las ofertas del proceso y a quién se adjudicó según `p6dx-8zbt`, y un tablero por año.
+
+- **Medido el 12-nov-2026** con el NIT de Helder: 51 consorcios en el registro y 5 ofertas suyas publicadas, todas de 2025, una adjudicada a él (Hospital San Antonio de Natagaima, CP-002-2025, única oferta); en las otras quedó 1.º de 2, 3.º de 12, 4.º de 7 y 5.º de 8 por precio. Las de Cali y de la Universidad Pedagógica que constan en el plan no están en `wi7w-2nvm`: la fuente está incompleta y la pantalla lo dice.
+- **Lo que no hay que deshacer**:
+  - el código de proveedor de una oferta NO basta para decir que es suya: la fila se repite una vez por cada código asociado a la cuenta que la presentó, y la oferta de una socia (Génesis en MEN-115-2026 y MEN-096-2026) trae el código del consorcio que comparte con Helder. Es suya si va con su NIT, o a nombre de uno de sus consorcios Y con el código de ese consorcio;
+  - el porcentaje de participación solo se dice si en el registro hay UN consorcio suyo con ese nombre (Helder tiene dos «CONSORCIO INFRAESTRUCTURA 1A», al 90 y al 60 %);
+  - una oferta sin resultado consultado es «sin dato», nunca «no adjudicada a usted»: el tablero cuenta aparte las que no tienen resultado;
+  - de las fases de un mismo portafolio manda la adjudicada;
+  - el puesto es por precio entre TODAS las ofertas publicadas, porque no se sabe cuáles quedaron hábiles, y así se dice;
+  - dos consultas en paralelo, una por columna (NIT y código): con «O» entre las dos la fuente pasaba de 15 s; separadas, de 4 a 6 s. Se guarda 12 horas solo lo que salió completo.
+- **Sin hacer de la tanda 13**: sumar estas ofertas al historial de cada entidad y guardar la causa de cada resultado (la causa no está en los datos abiertos: sale del informe de evaluación, que lee la habilidad /evaluaciones).
+- Cerradura: «unidad ofertas propias»; 13 mutaciones, mueren todas. Chromium real a 390 px: el plegado consulta, pinta las ofertas con su resultado y «Consultar de nuevo» pide `refrescar=1`, sin errores ni desborde.
+
+### El puntaje de precio del informe, recalculado con el motor, y el borrador de observación (12-nov-2026)
+
+En una línea: tanda 14 del plan x20 (pieza 6.6, uso): sobre la captura verificada de un informe de evaluación, `lib/recalculo_informe.js` recalcula el puntaje de precio de los hábiles con `lib/metodos_ponderacion` (el método del informe o, si no lo dice, el de la TRM que cita), dice si difiere de lo publicado en más de 0,01 y si cambiaría el primer lugar, y arma un borrador de observación; la ventana de la entidad («Lo que dicen sus evaluaciones») lo enseña por proceso.
+
+- **Lo que no hay que deshacer**:
+  - solo con la captura COMPLETA, dos o más hábiles y el valor y el puntaje de precio de todos (la misma regla de las comparaciones entre ofertas de `hechosDeEntidad`);
+  - el máximo es el mayor puntaje publicado SOLO si es uno del documento tipo (49,5; 48,5; 49,75): si la entidad no le dio el máximo a nadie, escalar con el mayor publicado marcaría como erradas a todas las demás, un falso positivo dentro de una observación;
+  - una diferencia de hasta 0,01 es el redondeo a dos decimales de los informes, no un error;
+  - el orden se recalcula cambiando solo el puntaje de precio en el total publicado, y solo si todos traen su total; un empate arriba no se dice como cambio;
+  - un método «otro» no se calcula aquí: lo de régimen especial lo lee la guía (tanda 9);
+  - el borrador va en tercera persona, con cifras, sin citar normas, y con lo que no se sabe entre corchetes (número y fecha del informe).
+- **Sin hacer**: el plazo de traslado (no se lee del cronograma todavía) y el puntaje máximo tomado de la tabla de ESE pliego (tanda 5) para los informes donde nadie recibió el máximo.
+- **Sin verificar**: con capturas reales de producción (no hay acceso desde aquí); se probó con los valores del caso de Cali.
+- Cerradura: «unidad recalculo del informe»; 10 mutaciones, mueren todas.
+
+### Sin pliego por nombre, se lee por contenido: el título de la primera página decide (12-nov-2026)
+
+En una línea: defecto D9 del plan x20 (tanda 12, una de sus cuatro fases): «3 PPC CDV ADULTO MAYOR DT CARTAGENA.pdf» es el proyecto de pliego y caía como «Otro documento», así que el proceso se quedaba sin pliego leído; ahora, sin ningún pliego, borrador ni documento base legible por nombre, el plan (`planDeLectura`) lee hasta 2 PDF «otros» de la entidad, los más nuevos, y el servidor (`op=documentos`) los guarda con el tipo que dice el título de su primera página (`tipoPorContenido`), marcados `tipo_por_contenido` (hechos versión 28: los índices guardados se vuelven a planear).
+
+- **Lo que no hay que deshacer**: solo cuando no hay pliego por nombre (con uno reconocido no se baja ningún «otro»: cada lectura cuesta descarga y OCR); solo el título (los primeros 600 caracteres): un estudio previo habla del pliego en el cuerpo; un título que habla DEL pliego (observaciones, respuestas, adendas, avisos, actas, resoluciones, informes, estudios previos, certificados, formatos, anexos, matrices, cronogramas) no es el pliego.
+- **Sin hacer de la tanda 12**: una sola descarga por documento, decir qué documento crítico no se leyó y leer sin la pestaña abierta (mover la lectura al servidor). Y el pliego leído por contenido no entra al vigía de adendas (`esVersionDelPliego` mira el nombre).
+- **Sin verificar**: con el archivo real de Cartagena (la búsqueda por nombre en `dmgg-8hin` agotó el tiempo el 12-nov-2026); se probó con textos armados.
+- Cerradura: «unidad leer por contenido» (el plan, los títulos, y por el servidor el «3 PPC» guardado como proyecto de pliego y unas observaciones que siguen siendo «otro»); 8 mutaciones, mueren todas.

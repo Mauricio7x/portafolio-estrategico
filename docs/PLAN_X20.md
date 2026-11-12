@@ -416,9 +416,11 @@ Si en el paso 2 no ve lo descrito, no siga: dígalo y se revisa, porque ese orde
 ### 7.3 Entrega 2 · Que no nos tumben por estructura, papeles o puntos
 
 - **Tanda 4 · Simulacro de estructura.** Pieza 6.3, primera mitad: participación, indicadores, capital de trabajo y capacidad a la vez. Cierre: el caso de la Universidad Pedagógica dice «no» al 65/35 con su cita. Lleva plan previo con su visto bueno, mutación y revisión adversaria. Tamaño: 3 sesiones.
-  - *Hecha en parte el 11-nov-2026*: el simulacro de la participación mínima contra el reparto dado (simulador y ficha) con la cerradura de la Universidad Pedagógica. Falta la frase única «con este reparto cumple todo / falla X» que junte participación, indicadores y capital de trabajo. Memoria: «El simulacro del consorcio: cada cláusula de participación contra el reparto que se va a firmar (11-nov-2026)».
+  - *Hecha en parte el 11-nov-2026*: el simulacro de la participación mínima contra el reparto dado (simulador y ficha) con la cerradura de la Universidad Pedagógica. La frase única quedó el 12-nov-2026 (memoria: «El reparto del consorcio en una frase: queda por fuera, falta confirmar o cumple lo medible (12-nov-2026)»). Memoria: «El simulacro del consorcio: cada cláusula de participación contra el reparto que se va a firmar (11-nov-2026)».
 - **Tanda 5 · Los puntos, uno por uno.** Pieza 6.3, segunda mitad: cada factor de puntaje con quién lo acredita y qué falta. Cierre: «Hoy obtendría N de M puntos fuera del precio; faltan …». Tamaño: 2 sesiones.
+  - *Hecha el 12-nov-2026* con la tabla del documento tipo; los pliegos que no la siguen no dicen nada. Memoria: «Los puntos fuera del precio, uno por uno, desde la tabla del pliego (12-nov-2026)».
 - **Tanda 6 · Las causales de ESE pliego.** Lista final antes de radicar, leída del pliego y cruzada con el paquete. Tamaño: 2 sesiones.
+  - *Hecha el 12-nov-2026*: la lista del pliego con dónde la revisa la aplicación y lo que comprueba usted. Memoria: «Las causales de rechazo de ESE pliego, una por una, con dónde las revisa la aplicación (12-nov-2026)».
 
 ### 7.4 Entrega 3 · El precio según cuántos compiten
 
@@ -428,18 +430,23 @@ Si en el paso 2 no ve lo descrito, no siga: dígalo y se revisa, porque ese orde
   - *12-nov-2026*: la referencia por competencia de la entidad ya sale en Precios (medido: mejora en licitación y mínima cuantía; en menor cuantía la de la entidad ya está en el techo). Memoria: «Qué tan cerca se anticipa el precio ganador por modalidad, y la referencia de la entidad por competencia en Precios (12-nov-2026)».
   - *Hecha en parte el 11-nov-2026*: el aviso de fuera del grupo (con Cali: 9 de 24 por encima de todas, 13 de 24 por encima de la mitad) y D4 a D8, sin mover ninguna cifra; se tomaron las recomendaciones A de las decisiones 3 y 6. Falta la referencia «con una oferta aquí se adjudicó al 100 %; con 5 a 9, al 95 %» por entidad. Memoria: «Precios dice dónde habría quedado su precio frente a todas las ofertas de la entidad, y cuatro textos que afirmaban de más (11-nov-2026)».
 - **Tanda 9 · La tabla de métodos del pliego.** Para régimen especial. Tamaño: 2 sesiones.
+  - *Hecha en parte el 12-nov-2026*: la guía dice la tabla de métodos de ese pliego y el motor tiene las dos fórmulas del documento tipo V1 (media geométrica con presupuesto oficial, media aritmética alta). Falta: usarlas en Precios y en el informe (tandas 13-14); la «media aritmética» simple no tiene fuente y no se calcula. Memoria: «La tabla de métodos de ponderación de ESE pliego, y las dos fórmulas del documento tipo V1 (12-nov-2026)».
 
 ### 7.5 Entrega 4 · La fábrica de ofertas
 
 - **Tanda 10 · El Excel de la entidad, lleno, y el revisor leyéndolo.** Pieza 6.7 con D2. Plan previo con su visto bueno. Tamaño: 3 sesiones.
   - *Hecho D2 el 11-nov-2026*: el revisor compara contra el Formulario de Excel. Falta llenar el Excel de la entidad (pieza 6.7). Memoria: «"Revisar antes de subir" también compara contra el Formulario 1 de Excel (11-nov-2026)».
+  - *Hecha la pieza 6.7 el 12-nov-2026*: «Llenar el Formulario de la entidad» escribe los unitarios en el Excel de la entidad y devuelve el mismo libro, o no entrega nada y dice por qué. Medido: de 27 Formularios reales que pasan la lectura, 16 se llenan con el total igual al de LibreOffice. Falta: que el revisor lea el libro lleno (hoy compara la proyección de Precios) y los formularios con el AIU aparte. Memoria: «Su oferta escrita en el Formulario de Excel de la entidad, con candados (12-nov-2026)».
 - **Tanda 11 · Los formatos que faltan.** Experiencia, capacidad financiera y capacidad residual desde la base de contratos por perfil. Decide el dueño antes: la decisión pendiente del 3-nov-2026. Tamaño: 3 sesiones.
 - **Tanda 12 · Leer sin pestaña y por contenido.** Las fases 2 a 5 de la lectura, con D9. Tamaño: 3 a 4 sesiones.
+  - *Hecha en parte el 12-nov-2026*: D9 y la lectura por contenido cuando no hay pliego por nombre. Falta: una sola descarga, decir qué documento crítico no se leyó y leer sin la pestaña abierta. Memoria: «Sin pliego por nombre, se lee por contenido: el título de la primera página decide (12-nov-2026)».
 
 ### 7.6 Entrega 5 · Aprender de cada resultado
 
 - **Tanda 13 · Las ofertas propias por integrante y el tablero.** Pieza 6.8 y sección 8. Tamaño: 2 sesiones.
+  - *Hecha en parte el 12-nov-2026*: «Sus ofertas en SECOP II» en Mi empresa reconoce sus ofertas a su nombre y de sus consorcios, con el puesto por precio, el resultado y el tablero por año. Medido: 5 ofertas de Helder publicadas (2025), una adjudicada. Falta: sumarlas al historial de cada entidad y la causa de cada resultado. Memoria: «Sus ofertas en SECOP II y cómo le fue: a su nombre y de los consorcios donde figura (12-nov-2026)».
 - **Tanda 14 · Recalcular el informe y el borrador de observación.** Pieza 6.6, dentro del plazo de traslado. Tamaño: 2 sesiones.
+  - *Hecha en parte el 12-nov-2026*: la ventana de la entidad dice, por proceso leído, si el puntaje de precio recalculado con el método del informe da distinto y si cambiaría el primer lugar, con un borrador de observación. Falta: el plazo de traslado y el máximo tomado del pliego. Memoria: «El puntaje de precio del informe, recalculado con el motor, y el borrador de observación (12-nov-2026)».
 
 ### 7.7 Entrega 6 · Cartera
 

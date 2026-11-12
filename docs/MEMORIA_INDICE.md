@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 2654135 bytes · 475 secciones · 58 con marcador de superación.
+Derivado del árbol: 2672022 bytes · 483 secciones · 58 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -486,3 +486,11 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | «Revisar antes de subir» también compara contra el Formulario 1 de Excel (11-nov-2026) | 11-nov-2026 | 22384-22391 | 1384 |  |
 | Qué tan cerca se anticipa el precio ganador por modalidad, y la referencia de la entidad por competencia en Precios (12-nov-2026) | 12-nov-2026 | 22392-22405 | 2471 |  |
 | La lista del día va en el vigilante de la mañana (12-nov-2026) | 12-nov-2026 | 22406-22413 | 1325 |  |
+| El reparto del consorcio en una frase: queda por fuera, falta confirmar o cumple lo medible (12-nov-2026) | 12-nov-2026 | 22414-22420 | 1075 |  |
+| Los puntos fuera del precio, uno por uno, desde la tabla del pliego (12-nov-2026) | 12-nov-2026 | 22421-22434 | 1756 |  |
+| Las causales de rechazo de ESE pliego, una por una, con dónde las revisa la aplicación (12-nov-2026) | 12-nov-2026 | 22435-22442 | 1333 |  |
+| La tabla de métodos de ponderación de ESE pliego, y las dos fórmulas del documento tipo V1 (12-nov-2026) | 12-nov-2026 | 22443-22455 | 2048 |  |
+| Su oferta escrita en el Formulario de Excel de la entidad, con candados (12-nov-2026) | 12-nov-2026 | 22456-22482 | 5432 |  |
+| Sus ofertas en SECOP II y cómo le fue: a su nombre y de los consorcios donde figura (12-nov-2026) | 12-nov-2026 | 22483-22497 | 2499 |  |
+| El puntaje de precio del informe, recalculado con el motor, y el borrador de observación (12-nov-2026) | 12-nov-2026 | 22498-22512 | 1947 |  |
+| Sin pliego por nombre, se lee por contenido: el título de la primera página decide (12-nov-2026) | 12-nov-2026 | 22513-22520 | 1797 |  |

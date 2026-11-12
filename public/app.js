@@ -892,6 +892,7 @@
       "seccion-experiencia": "los contratos ejecutados son configuración compartida de la empresa que administra el sitio (op=experiencia); hasta el 9-nov-2026 vivía dentro de «Ajustes»",
       "seccion-cobertura": "la auditoría de códigos usa la experiencia y los perfiles del dueño; hasta el 9-nov-2026 vivía dentro de «Ajustes»",
       "plg-mercado": "el plegado «Cómo está el mercado» solo guarda el tablero del dueño (op=resumen)",
+      "plg-mis-ofertas": "las ofertas del dueño en SECOP II y cómo le fue (op=ofertas-propias, con credencial)",
       "btn-apu-cargar": "op=cargar-catalogo reescribe el catálogo de precios compartido (pestaña Precios)",
     },
     /* lo que solo ve el visitante */
@@ -4595,6 +4596,17 @@
       if (P.con_dato) partes.push(P.gano_sin_el_mejor_precio
         ? `<p class="mt-1 text-sm">En <strong>${P.gano_sin_el_mejor_precio}</strong> de ${plural(P.con_dato, "proceso", "procesos")} con puntajes publicados ganó una oferta que no tenía el mejor puntaje de precio: la decidieron los puntos fuera del precio.</p>`
         : `<p class="mt-1 text-sm">En ${P.con_dato === 1 ? "el proceso" : `los ${P.con_dato} procesos`} con puntajes publicados ganó la oferta con el mejor puntaje de precio.</p>`);
+      /* ¿CALCULÓ BIEN EL PRECIO? (PLAN_X20 tanda 14): el puntaje de precio recalculado con el método del informe y, donde
+         difiere, el borrador de observación para revisarlo dentro del plazo de traslado */
+      const R = H.recalculo || {};
+      if (R.con_dato) {
+        const conObs = (H.procesos_detalle || []).filter((x) => x && x.recalculo && x.recalculo.observacion);
+        partes.push(R.con_diferencias
+          ? `<p class="mt-1 text-sm" data-recalculo>En <strong>${R.con_diferencias}</strong> de ${plural(R.con_dato, "proceso", "procesos")} con valores y puntajes publicados, el puntaje de precio recalculado con el método del informe da distinto${R.cambia_el_primero ? `; en ${R.cambia_el_primero} cambiaría el primer lugar` : ""}.</p>`
+            + conObs.map((x) => `<details class="mt-1"><summary class="cursor-pointer text-xs font-semibold text-gray-700">${esc(x.id_proceso || x.portafolio || "Proceso")}: borrador de observación</summary>
+              <p class="mt-1 text-xs text-gray-600">${esc(x.recalculo.frase)}</p><p class="mt-1 rounded-lg bg-gray-50 px-3 py-2 text-xs text-gray-800">${esc(x.recalculo.observacion)}</p></details>`).join("")
+          : `<p class="mt-1 text-sm" data-recalculo>En ${R.con_dato === 1 ? "el proceso" : `los ${R.con_dato} procesos`} con valores y puntajes publicados, el puntaje de precio recalculado da lo mismo que publicó la entidad.</p>`);
+      }
       const F = H.fuera_del_precio || {};
       if (F.con_dato) {
         const crit = Object.entries(F.criterios || {}).sort((a, b) => b[1] - a[1]).map(([k, n]) => `${esc(criterios[k] || k)} (${n})`).join(", ");
@@ -7641,7 +7653,13 @@
     const noCumpleReparto = (r.participacion_pliego || []).filter((j) => j && j.estado === "no_cumple")
       .map((j) => `<li class="font-medium text-red-700">${esc(j.frase)}${j.pagina != null ? ` (pág. ${esc(String(j.pagina))})` : ""}</li>`).join("");
     const bloqueRec = bloqueRecDe(r);
+    /* EL VEREDICTO DEL REPARTO EN UNA FRASE (PLAN_X20, tanda 4): lo que falla en rojo, lo que falta confirmar en ámbar,
+       lo que cumple en verde; la frase la escribe el servidor (lib/consorcio.veredictoReparto) */
+    const vr = r.veredicto_reparto;
+    const claseVr = vr ? (vr.estado === "falla" ? "text-red-700" : vr.estado === "revisar" ? "text-amber-800" : "text-emerald-700") : "";
+    const lineaVr = vr && vr.frase ? `<p class="mt-1 text-sm font-medium ${claseVr}" data-veredicto-reparto>${esc(vr.frase)}</p>` : "";
     return `${encabezado}
+      ${lineaVr}
       ${bloqueRec}
       ${filas ? `<ul class="mt-1.5 space-y-1 text-sm">${filas}</ul>` : ""}
       <p class="mt-2 text-sm font-medium">${esc(frase)}</p>
@@ -8192,7 +8210,7 @@
             /* D2 (PLAN_X20, 11-nov-2026): el revisor («Revisar antes de subir») compara contra `window.__pliegoUltimo`,
                que solo ponía el lector de PDF: con el Formulario de Excel quedaba ciego (4 de 8 comprobaciones sin
                referencia). Se le deja ESTE Formulario, con su unitario y su total oficiales y su proceso. */
-            try { window.__pliegoUltimo = formularioDesdeExcel(items, idProc); } catch { /* sin ventana */ }
+            try { window.__pliegoUltimo = formularioDesdeExcel(items, idProc, { url: f1.getAttribute("data-seg-f1-url"), nombre: f1.getAttribute("data-seg-f1-nombre") }); } catch { /* sin ventana */ }
             abrirModalImportar(); decirF("Los ítems están en Precios: revise la vista previa y acepte los que quiera llevar."); }
           else decirF("No se llevó nada: se canceló el acceso.", true);
         } catch (e) { decirF(`No se pudo traer el Formulario 1: ${fraseDeFallo(e)}`, true); }
@@ -9777,11 +9795,13 @@
      de PDF (public/pliego.js), con los nombres de lib/formulario_excel (`codigo`, `precio_archivo`, `total_archivo`). El
      AIU del Formulario no se conoce aquí: `base_precio` va en null y el servidor dice «sin referencia» en la comparación
      de unitarios (no se adivina la base); las cantidades, los ítems que faltan y el total sí se comparan. */
-  function formularioDesdeExcel(items, idProceso) {
+  function formularioDesdeExcel(items, idProceso, archivo = {}) {
     const num = (v) => (v == null || v === "" ? null : Number.isFinite(Number(v)) ? Number(v) : null);
     return { items: (items || []).map((i) => ({ numeral: i.codigo || null, pagina: null, descripcion: i.descripcion || null, unidad: i.unidad || null,
       cantidad: num(i.cantidad), unitario_oficial: num(i.precio_archivo), total_oficial: num(i.total_archivo) })),
-    leido_el: new Date().toISOString(), id_proceso: idProceso || null, base_precio: null, aiu_total_pct: null, origen: "excel" };
+    leido_el: new Date().toISOString(), id_proceso: idProceso || null, base_precio: null, aiu_total_pct: null, origen: "excel",
+    /* el archivo de la entidad, para escribir en él la oferta (pieza 6.7): sin su dirección no se ofrece llenarlo */
+    url: archivo && typeof archivo.url === "string" && archivo.url ? archivo.url : null, nombre: archivo && archivo.nombre ? String(archivo.nombre) : null };
   }
 
   /* ══════════ Fase 4 (plan v3) · GUARDIÁN DEL FORMULARIO 1 ══════════
@@ -9878,10 +9898,95 @@
         ${v.id === "temeraria" && v.nivel === "alerta" ? `<button type="button" id="rev-btn-justificacion" class="mt-2 rounded-lg border border-amber-700/30 bg-white px-3 py-1 text-xs font-medium hover:bg-amber-100">Descargar mi justificación</button>` : ""}
       </li>`).join("")}</ul>
       <p class="mt-2 text-xs text-gray-500">${r.rechazos} motivo${r.rechazos === 1 ? "" : "s"} de rechazo automático · ${r.por_confirmar_en_pliego ? `${r.por_confirmar_en_pliego} diferencia con SECOP II que el pliego decide · ` : ""}${r.alertas} alerta${r.alertas === 1 ? "" : "s"} · ${r.para_justificar ? `Tenga lista la justificación (${r.para_justificar}) · ` : ""}${r.informativos} para arreglar sin riesgo · ${(r.pendientes || []).length} sin referencia.${r.guardado ? " Revisión guardada para este proceso." : ""}</p>`;
+    pintarBotonFormularioExcel(caja, deOtroProceso ? null : leido, idAhora);
     const bj = $("rev-btn-justificacion");
     if (bj) bj.addEventListener("click", () => { const b = $("btn-justificacion"); if (b && !b.disabled) b.click(); else msgApu("Para generar la justificación calcule primero la rentabilidad del proceso (sección de arriba).", "info"); });
   }
   $("btn-revisar-oferta").addEventListener("click", revisarOferta);
+
+  /* SUS OFERTAS EN SECOP II Y CÓMO LE FUE (PLAN_X20, tanda 13, 12-nov-2026): se consulta al pulsar (lib/ofertas_propias, con
+     credencial). Cada oferta dice el HECHO publicado: con cuánto, en qué puesto por precio entre cuántas, a quién se adjudicó. */
+  function htmlMisOfertas(r) {
+    const frases = Array.isArray(r && r.frases) ? r.frases : [];
+    const lista = Array.isArray(r && r.ofertas) ? r.ofertas : [];
+    const res = (o) => (o.resultado === "gano" ? `<span class="font-medium text-emerald-700">Adjudicado a usted</span>`
+      : o.resultado === "otro" ? `Adjudicado a ${esc(o.adjudicatario || "otro proponente")}${o.valor_adjudicado != null ? ` por ${esc(pesos(o.valor_adjudicado))}` : ""}`
+        : o.resultado === "sin_adjudicar" ? "Sin adjudicar según SECOP II" : "Resultado sin consultar");
+    const quien = (o) => (o.via && o.via.tipo === "consorcio" ? `En ${esc(o.via.nombre || "consorcio")}${o.via.participacion_pct != null ? ` (usted ${esc(String(o.via.participacion_pct).replace(".", ","))} %)` : ""}` : esc(o.proponente || "A su nombre"));
+    return `${frases.map((t) => `<p class="text-gray-700">${esc(t)}</p>`).join("")}
+      ${lista.length ? `<ul class="mt-3 space-y-2">${lista.map((o) => `<li class="rounded-lg border border-gray-200 px-3 py-2" data-mi-oferta="${esc(o.identificador)}">
+        <p class="font-medium text-gray-900">${esc(o.entidad || "Entidad sin nombre")} · ${esc(o.referencia || o.id_portafolio)}</p>
+        <p class="text-gray-600">${esc(o.fecha || "sin fecha")} · ${quien(o)} · ${o.valor_cop != null ? esc(pesos(o.valor_cop)) : "valor sin dato"}${o.puesto_por_precio != null && o.ofertas_en_el_proceso ? ` · puesto ${o.puesto_por_precio} por precio de ${o.ofertas_en_el_proceso}` : ""}</p>
+        <p class="text-gray-600">${res(o)}</p></li>`).join("")}</ul>` : ""}`;
+  }
+  async function buscarMisOfertas(refrescar) {
+    const caja = $("mis-ofertas"), btn = $("btn-mis-ofertas");
+    if (!caja || !btn) return;
+    btn.disabled = true;
+    caja.innerHTML = `<p class="text-gray-500">Consultando SECOP II: puede tardar hasta un minuto…</p>`;
+    try {
+      const r = await api(`/api/perfil?op=ofertas-propias&perfil=${encodeURIComponent($("f-perfil").value)}${refrescar ? "&refrescar=1" : ""}`);
+      caja.innerHTML = htmlMisOfertas(r);
+      if (r && r.desde_cache) caja.insertAdjacentHTML("beforeend", `<p class="mt-2 text-xs text-gray-500">Consulta guardada${r.consultado_el ? ` del ${esc(String(r.consultado_el).slice(0, 10))}` : ""}. <button type="button" data-mis-ofertas-refrescar class="underline">Consultar de nuevo</button></p>`);
+    } catch (e) { caja.innerHTML = `<p class="text-red-700">No se pudo consultar: ${esc(fraseDeFallo(e))}</p>`; }
+    btn.disabled = false;
+  }
+  if ($("btn-mis-ofertas")) {
+    $("btn-mis-ofertas").addEventListener("click", () => buscarMisOfertas(false));
+    $("mis-ofertas").addEventListener("click", (ev) => { if (ev.target.closest("[data-mis-ofertas-refrescar]")) buscarMisOfertas(true); });
+  }
+
+  /* SU OFERTA EN EL FORMULARIO DE EXCEL DE LA ENTIDAD (PLAN_X20, pieza 6.7, 12-nov-2026). Solo cuando el Formulario de ESTE
+     proceso se trajo de Mis procesos («Cotizar en Precios»): el servidor baja el archivo, escribe cada unitario de la oferta
+     (con el AIU y, si el pliego lo cuenta, el IVA de la utilidad dentro) y devuelve el MISMO libro. Lo que no puede comprobar
+     no lo escribe y dice por qué (lib/formulario_oferta). */
+  function itemsParaFormulario() {
+    return filas.map((f, i) => {
+      const it = ultimoCalculo && ultimoCalculo.items ? ultimoCalculo.items[i] : null;
+      const cdu = it && it.costo_directo_unitario_ofertado != null && Number.isFinite(Number(it.costo_directo_unitario_ofertado)) ? Number(it.costo_directo_unitario_ofertado) : null;
+      const cant = f.cantidad == null || f.cantidad === "" ? NaN : Number(f.cantidad);
+      return { codigo: f.codigo || f.numeral || null, descripcion: f.descripcion || "", unidad: f.unidad || null, cantidad: Number.isFinite(cant) ? cant : null, costo_directo_unitario_ofertado: cdu };
+    });
+  }
+  function pintarBotonFormularioExcel(caja, leido, idAhora) {
+    if (!caja || !leido || leido.origen !== "excel" || !leido.url || (leido.id_proceso && idAhora && leido.id_proceso !== idAhora)) return;
+    const div = document.createElement("div");
+    div.className = "mt-4 rounded-lg border border-gray-200 px-3 py-3";
+    div.innerHTML = `<p class="text-sm text-gray-700">Puede descargar el Formulario de Excel de la entidad${leido.nombre ? ` («${esc(leido.nombre)}»)` : ""} con sus valores unitarios escritos.</p>
+      <button type="button" data-formulario-excel class="mt-2 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium hover:bg-gray-50">Llenar el Formulario de la entidad</button>
+      <div data-formulario-excel-estado class="mt-2 text-sm" role="status"></div>`;
+    caja.appendChild(div);
+    const btn = div.querySelector("[data-formulario-excel]"), estado = div.querySelector("[data-formulario-excel-estado]");
+    const llenar = async (aceptar) => {
+      if (!ultimoCalculo || !ultimoCalculo.resumen || !ultimoCalculo.resumen.oferta) { estado.className = "mt-2 text-sm text-red-700"; estado.textContent = "Primero pulse «Calcular cuánto me cuesta»: sin la oferta calculada no hay unitarios que escribir."; return; }
+      btn.disabled = true;
+      estado.className = "mt-2 text-sm text-gray-500"; estado.textContent = "Bajando el Formulario de la entidad y escribiendo sus precios…";
+      const cfg = leerConfig();
+      let r;
+      try {
+        r = await api("/api/pliego?op=descargar", { method: "POST", body: { url: leido.url, formato: "oferta_excel", items: itemsParaFormulario(), oferta: ultimoCalculo.resumen.oferta,
+          aiu: { administracion_pct: cfg.aiu_pct, imprevistos_pct: cfg.imprevistos_pct, utilidad_pct: cfg.utilidad_pct }, aceptar_sobre_oficial: aceptar === true } });
+      } catch (e) { estado.className = "mt-2 text-sm text-red-700"; estado.textContent = `No se pudo llenar: ${fraseDeFallo(e)}`; btn.disabled = false; return; }
+      const ll = (r && r.llenado) || {};
+      const frases = Array.isArray(ll.frases) && ll.frases.length ? ll.frases : ["El servidor no dijo qué pasó: intente de nuevo."];
+      if (r && r.base64 && ll.ok) {
+        const bytes = Uint8Array.from(atob(r.base64), (c) => c.charCodeAt(0));
+        const base = String(leido.nombre || "Formulario").replace(/\.xls[xm]?$/i, "");
+        descargarBlob(new Blob([bytes], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }), `${base} - con su oferta.xlsx`);
+        estado.className = "mt-2 text-sm text-emerald-800";
+        estado.innerHTML = `<p>Descargado.</p><ul class="mt-1 list-disc space-y-1 pl-5">${frases.map((t) => `<li>${esc(t)}</li>`).join("")}</ul>`;
+      } else {
+        const sobre = Array.isArray(ll.sobre_oficial) ? ll.sobre_oficial : [];
+        estado.className = "mt-2 text-sm text-red-700";
+        estado.innerHTML = `<p>No se llenó. ${esc(frases.join(" "))}</p>${sobre.length ? `<ul class="mt-1 list-disc space-y-1 pl-5 text-gray-700">${sobre.slice(0, 12).map((x) => `<li>Fila ${esc(String(x.fila_excel))} «${esc(x.descripcion)}»: su unitario ${esc(pesos(x.unitario))}, el oficial ${esc(pesos(x.oficial))}</li>`).join("")}</ul>
+          <button type="button" data-formulario-excel-aceptar class="mt-2 rounded-lg border border-red-200 bg-white px-3 py-1.5 text-sm font-medium text-red-800 hover:bg-red-50">Mi pliego no lo prohíbe: llenarlo así</button>` : ""}`;
+        const ac = estado.querySelector("[data-formulario-excel-aceptar]");
+        if (ac) ac.addEventListener("click", () => llenar(true));
+      }
+      btn.disabled = false;
+    };
+    btn.addEventListener("click", () => llenar(false));
+  }
   // la nota del techo del pliego se calla en cuanto el usuario cambia la cifra a mano (revisión adversaria, 17-oct-2026)
   $("cuantia").addEventListener("input", () => { if (cuantiaDelPliego && !techoSigueDelPliego()) { cuantiaDelPliego = null; pintarNotaCuantia(""); } pintarCifrasPrecios(); });
 
