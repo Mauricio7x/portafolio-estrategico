@@ -7641,7 +7641,13 @@
     const noCumpleReparto = (r.participacion_pliego || []).filter((j) => j && j.estado === "no_cumple")
       .map((j) => `<li class="font-medium text-red-700">${esc(j.frase)}${j.pagina != null ? ` (pág. ${esc(String(j.pagina))})` : ""}</li>`).join("");
     const bloqueRec = bloqueRecDe(r);
+    /* EL VEREDICTO DEL REPARTO EN UNA FRASE (PLAN_X20, tanda 4): lo que falla en rojo, lo que falta confirmar en ámbar,
+       lo que cumple en verde; la frase la escribe el servidor (lib/consorcio.veredictoReparto) */
+    const vr = r.veredicto_reparto;
+    const claseVr = vr ? (vr.estado === "falla" ? "text-red-700" : vr.estado === "revisar" ? "text-amber-800" : "text-emerald-700") : "";
+    const lineaVr = vr && vr.frase ? `<p class="mt-1 text-sm font-medium ${claseVr}" data-veredicto-reparto>${esc(vr.frase)}</p>` : "";
     return `${encabezado}
+      ${lineaVr}
       ${bloqueRec}
       ${filas ? `<ul class="mt-1.5 space-y-1 text-sm">${filas}</ul>` : ""}
       <p class="mt-2 text-sm font-medium">${esc(frase)}</p>

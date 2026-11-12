@@ -22411,3 +22411,10 @@ En una línea: tanda 3 del plan x20: el bloque «2 · El vigilante de la mañana
 - **Decisiones del dueño tomadas como aprobadas** con su «Apruebo» del 12-nov-2026, sobre la propuesta de la sesión: zona y tamaño (decisión 1, la recomendada) y canal (decisión 4, «A»: la tarea de Claude). Si el «Apruebo» era solo para seguir, se cambia la URL del paso 6.
 - **Verificado el 12-nov-2026** (lista de tareas programadas de la cuenta): la rutina «Dirección · vigilante de la mañana» corre cada día a las 12:01 UTC (7:01 en Colombia), apunta a este bloque, tiene el aviso al teléfono encendido y su corrida de hoy terminó bien. **Sin verificar**: el paso 6 contra producción (esta sesión no tiene la llave).
 
+### El reparto del consorcio en una frase: queda por fuera, falta confirmar o cumple lo medible (12-nov-2026)
+
+En una línea: segunda mitad de la tanda 4 del plan x20: el simulador del consorcio devuelve `veredicto_reparto` (`lib/consorcio.veredictoReparto`) y Mis procesos lo pinta arriba, en rojo, ámbar o verde: «Con 65/35 queda por fuera: no cumple la participación mínima del pliego (pág. 27).», «… no se encontró nada que lo deje por fuera, pero falta confirmar …» o «… cumple lo que la aplicación pudo medir: …».
+
+- **Lo que no hay que deshacer**: la frase NO juzga nada nuevo, junta lo ya juzgado (la participación mínima, las casillas del pliego y el registro, la capacidad y la caja); una casilla por leer o sin dato es una duda, nunca un verde; y el «cumple» dice que lo demás (experiencia acreditada, firmas, garantía) se revisa en el pliego.
+- Cerradura: en «unidad simulacro del consorcio» (el 65/35 real, el 60/40 con el pliego por leer, todo bien, una sola duda y la vista con `app.js` en un vm); cuatro mutaciones, mueren todas.
+

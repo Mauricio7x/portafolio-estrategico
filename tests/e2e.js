@@ -11246,6 +11246,18 @@ async function main() {
     const { htmlResultadoSocio } = appEnVm(["htmlResultadoSocio"]);
     const html = htmlResultadoSocio("CO1.UPN", { ...upn, exigencias: [{ clave: "experiencia_general", titulo: "Experiencia", exige: "x" }], recomendacion: { suya: 60 } }, { nombre: "Génesis" }, 35);
     assert.ok(/data-reparto-no-cumple/.test(html) && /text-red-700[^>]*>Con 65\/35 no cumple/.test(html) && /pág\. 27/.test(html), `la vista lo dice en rojo → ${(html.match(/<ul[^>]*data-reparto-no-cumple[\s\S]*?<\/ul>/) || ["(nada)"])[0].slice(0, 300)}`);
+    // tanda 4, segunda mitad: UNA frase que junta participación, casillas del pliego y lo que verifica la aplicación
+    assert.ok(upn.veredicto_reparto && upn.veredicto_reparto.estado === "falla" && upn.veredicto_reparto.frase === "Con 65/35 queda por fuera: no cumple la participación mínima del pliego (pág. 27).",
+      `el veredicto del 65/35 → ${JSON.stringify(upn.veredicto_reparto)}`);
+    assert.ok(bien.veredicto_reparto.estado === "revisar" && /^Con 60\/40 no se encontró nada que lo deje por fuera, pero falta confirmar/.test(bien.veredicto_reparto.frase) && /todavía se están leyendo/.test(bien.veredicto_reparto.frase),
+      `60/40 con las cifras del pliego por leer NO es «cumple» → ${bien.veredicto_reparto.frase}`);
+    const todoBien = C.veredictoReparto({ ok: true, integrantes: [{ participacion: 60 }, { participacion: 40 }], participacion_pliego: [{ estado: "cumple" }],
+      exigencias: [{ titulo: "Liquidez mínima", estado: "cumple" }], puertas_app: { estados: { registro: { estado: "cumple" }, capacidad: { estado: "cumple" }, caja: { estado: "cumple" } } } });
+    assert.ok(todoBien.estado === "cumple" && /^Con 60\/40 cumple lo que la aplicación pudo medir: la participación mínima del pliego, liquidez mínima, el registro/.test(todoBien.frase), `con todo medido y bien → ${todoBien.frase}`);
+    const unaDuda = C.veredictoReparto({ ok: true, integrantes: [{ participacion: 60 }, { participacion: 40 }], participacion_pliego: [{ estado: "cumple" }],
+      exigencias: [{ titulo: "Liquidez mínima", estado: "sin_dato" }], puertas_app: { estados: { registro: { estado: "cumple" }, capacidad: { estado: "cumple" }, caja: { estado: "cumple" } } } });
+    assert.strictEqual(unaDuda.estado, "revisar", "una sola casilla sin dato basta para no decir «cumple»");
+    assert.ok(/data-veredicto-reparto/.test(html) && /text-red-700[^>]*data-veredicto-reparto>Con 65\/35 queda por fuera/.test(html), "la vista pinta la frase en rojo, arriba");
     console.log("· unidad simulacro del consorcio: cada cláusula contra el reparto dado (no cumple / cumple / depende de quién aporte), "
       + "y el caso real de la Universidad Pedagógica (65/35 con el 40 % pedido) dice «no» con la página 27, primero en las advertencias");
   }
