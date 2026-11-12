@@ -22518,3 +22518,26 @@ En una línea: defecto D9 del plan x20 (tanda 12, una de sus cuatro fases): «3 
 - **Sin hacer de la tanda 12**: una sola descarga por documento, decir qué documento crítico no se leyó y leer sin la pestaña abierta (mover la lectura al servidor). Y el pliego leído por contenido no entra al vigía de adendas (`esVersionDelPliego` mira el nombre).
 - **Sin verificar**: con el archivo real de Cartagena (la búsqueda por nombre en `dmgg-8hin` agotó el tiempo el 12-nov-2026); se probó con textos armados.
 - Cerradura: «unidad leer por contenido» (el plan, los títulos, y por el servidor el «3 PPC» guardado como proyecto de pliego y unas observaciones que siguen siendo «otro»); 8 mutaciones, mueren todas.
+
+### Leer los documentos de Mis procesos sin la pestaña abierta, con la MISMA lectura de la pestaña (12-nov-2026)
+
+En una línea: tanda 12 del plan x20 (la fase «leer sin pestaña»): `tests/leer_documentos.js` abre la página del propio repositorio en Chromium y llama a la misma `leerDocumentos` de la pestaña (`window.__detektaLeerDocumentos`), para cada proceso abierto de Mis procesos (`op=seguimiento&solo=abiertos`, de la foto y sin el corpus) que tenga documentos por leer; la llave la pone Node y a producción solo salen los pedidos de la lectura.
+
+- **Por qué así y no un lector en el servidor**: el servidor no tiene lector de PDF, y escribir otro sería tener dos reglas de qué se lee y cómo (cuándo un escaneo a medias no se da por leído, cuándo un fallo es definitivo, el Formulario y el cronograma de Excel). Es el diseño de `tests/capturar_evaluaciones.js` (de donde se reutilizan el servidor local y el cupo de OCR).
+- **Lo que no hay que deshacer**:
+  - la llave nunca entra a la página: los pedidos de la página los reenvía Node, y solo `op=documentos`, `op=descargar` y `op=extraer-texto` del router pliego; lo demás recibe el 404 local (cargar la página no gasta Upstash);
+  - `leerDocumentos` recibe el perfil y, sin pestaña, no repinta Mis procesos y devuelve lo que hizo;
+  - `--probar` lee de verdad y no guarda nada.
+- **Medido el 12-nov-2026 contra producción**: Helder tiene 11 procesos abiertos y los 11 sin documentos por leer (la pestaña ya los leyó). Con `--probar` sobre MEN-115-2026 (CO1.REQ.10723062): 8 pendientes bajados por la vía de producción; 2 Excel leídos (un Formulario que cuadra); 6 PDF eran escaneos y quedaron sin leer porque la prueba iba con cupo de OCR cero, como se pidió; sin errores de página.
+- **Sin hacer**: que la tarea de la mañana lo corra. Se intentó agregar el paso al vigilante (docs/RUTINAS.md) y el clasificador de permisos lo bloqueó: «Permission for this action was denied by the Claude Code auto mode classifier. Reason: [Account & Standing-Rule Changes]». Cambiar lo que hace una tarea programada (y que escriba cada día) lo decide el dueño.
+- Cerradura: «unidad leer sin pestana» (qué sale a producción, los argumentos, lo que se anota en --probar y la lectura de la pestaña ejecutada desde fuera con un Word) y, en «unidad cuota de Upstash», la vista `solo=abiertos` por el router real; 6 mutaciones, mueren todas.
+
+### Sus ofertas anteriores en esa entidad, en Precios junto al grupo (12-nov-2026)
+
+En una línea: resto de la tanda 13 del plan x20: `op=grupo` (Precios, «dónde quedaron las ofertas de esta entidad») añade «Usted ya ofertó en esta entidad N veces: referencia (mes), puesto por precio, % por encima o por debajo de lo adjudicado» (`lib/ofertas_propias.suyasEnLaEntidad`), leído de la consulta GUARDADA de «Sus ofertas en SECOP II» (Mi empresa), sin preguntar otra vez a datos.gov.co.
+
+- **Medido el 12-nov-2026 con Helder**: en el Hospital San Antonio de Natagaima ofertó 2 veces (una adjudicada a él; en MC-001-2025 quedó 1.º de 2 por precio, 2,9 % por debajo de lo adjudicado, y no ganó); en el Hospital San Juan de Dios, 5.º de 8 y 4.º de 7, 1,9 % y 1 % por debajo de lo adjudicado.
+- **Lo que no hay que deshacer**: es un HECHO de su historia, no un precio sugerido ni una cifra que entre a un cálculo; sin consulta guardada dice dónde hacerla; el NIT se compara sin dígito de verificación; sale aunque el grupo de la entidad no se pueda leer; la consulta guardada pasa a `cache:ofertas_propias:v2` porque cada oferta trae ahora el NIT de la entidad.
+- **Y la consulta aguanta una fuente lenta**: si una de las dos (por NIT o por código de consorcio) no responde, salen las de la otra y se dice cuál faltó (el 12-nov-2026 la de los consorcios pasó dos veces de 15 s).
+- **Sin hacer**: la causa de cada resultado (no está en datos abiertos: sale del informe que lee /evaluaciones). Sin verificar en pantalla la frase en Precios con un proceso real (la prueba es por el router con la consulta guardada simulada).
+- Cerradura: «unidad precio frente al grupo» (la acción por el router con y sin consulta guardada) y «unidad ofertas propias»; 5 mutaciones, mueren todas.

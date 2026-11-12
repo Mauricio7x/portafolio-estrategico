@@ -440,11 +440,13 @@ Si en el paso 2 no ve lo descrito, no siga: dígalo y se revisa, porque ese orde
 - **Tanda 11 · Los formatos que faltan.** Experiencia, capacidad financiera y capacidad residual desde la base de contratos por perfil. Decide el dueño antes: la decisión pendiente del 3-nov-2026. Tamaño: 3 sesiones.
 - **Tanda 12 · Leer sin pestaña y por contenido.** Las fases 2 a 5 de la lectura, con D9. Tamaño: 3 a 4 sesiones.
   - *Hecha en parte el 12-nov-2026*: D9 y la lectura por contenido cuando no hay pliego por nombre. Falta: una sola descarga, decir qué documento crítico no se leyó y leer sin la pestaña abierta. Memoria: «Sin pliego por nombre, se lee por contenido: el título de la primera página decide (12-nov-2026)».
+  - *Hecha en parte el 12-nov-2026 (2)*: leer sin pestaña con `tests/leer_documentos.js` (la misma lectura de la pestaña, desde Chromium); falta que la tarea de la mañana lo corra (decisión del dueño). Memoria: «Leer los documentos de Mis procesos sin la pestaña abierta, con la MISMA lectura de la pestaña (12-nov-2026)».
 
 ### 7.6 Entrega 5 · Aprender de cada resultado
 
 - **Tanda 13 · Las ofertas propias por integrante y el tablero.** Pieza 6.8 y sección 8. Tamaño: 2 sesiones.
   - *Hecha en parte el 12-nov-2026*: «Sus ofertas en SECOP II» en Mi empresa reconoce sus ofertas a su nombre y de sus consorcios, con el puesto por precio, el resultado y el tablero por año. Medido: 5 ofertas de Helder publicadas (2025), una adjudicada. Falta: sumarlas al historial de cada entidad y la causa de cada resultado. Memoria: «Sus ofertas en SECOP II y cómo le fue: a su nombre y de los consorcios donde figura (12-nov-2026)».
+  - *Y el 12-nov-2026 (2)*: sus ofertas anteriores en cada entidad salen en Precios junto al grupo. Falta la causa de cada resultado. Memoria: «Sus ofertas anteriores en esa entidad, en Precios junto al grupo (12-nov-2026)».
 - **Tanda 14 · Recalcular el informe y el borrador de observación.** Pieza 6.6, dentro del plazo de traslado. Tamaño: 2 sesiones.
   - *Hecha en parte el 12-nov-2026*: la ventana de la entidad dice, por proceso leído, si el puntaje de precio recalculado con el método del informe da distinto y si cambiaría el primer lugar, con un borrador de observación. Falta: el plazo de traslado y el máximo tomado del pliego. Memoria: «El puntaje de precio del informe, recalculado con el motor, y el borrador de observación (12-nov-2026)».
 

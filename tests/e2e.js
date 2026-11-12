@@ -1571,7 +1571,7 @@ const SILENCIO = process.env.E2E_SILENCIO === "1";
 const BLOQUES = [];                       // censo de lo que el filtro conoce
 /* app.js REAL en un vm con todos los <script> de index.html, exponiendo las funciones pedidas al final del IIFE
    (PLAN_X20, 11-nov-2026: lo usan «unidad competencia por tamaño» y «unidad simulacro del consorcio"). */
-function appEnVm(exponer) {
+function appEnVm(exponer, { fetch: fetchDado = null, conVentana = false } = {}) {
   const vm = require("vm");
   const pub = (f) => path.join(__dirname, "..", "public", f);
   const orden = [...fs.readFileSync(pub("index.html"), "utf8").replace(/<!--[\s\S]*?-->/g, "").matchAll(/<script src="\/([a-z_]+\.js)"><\/script>/g)].map((x) => x[1]);
@@ -1581,7 +1581,7 @@ function appEnVm(exponer) {
   const almacen = () => { const m = new Map(); return { getItem: (k) => (m.has(k) ? m.get(k) : null), setItem: (k, val) => m.set(k, String(val)), removeItem: (k) => m.delete(k), clear: () => m.clear() }; };
   const ctx = { console, URL, URLSearchParams, Intl, TextEncoder, TextDecoder, AbortController, structuredClone, queueMicrotask,
     setTimeout: () => 1, setInterval: () => 1, clearTimeout() {}, clearInterval() {}, requestAnimationFrame: () => 1,
-    fetch: () => new Promise(() => {}), history: { replaceState() {}, pushState() {} }, navigator: { language: "es-CO", userAgent: "node", clipboard: {} },
+    fetch: fetchDado || (() => new Promise(() => {})), history: { replaceState() {}, pushState() {} }, navigator: { language: "es-CO", userAgent: "node", clipboard: {} },
     location: { search: "", hash: "", href: "http://localhost/", pathname: "/", origin: "http://localhost", replace() {}, assign() {} },
     sessionStorage: almacen(), localStorage: almacen(), matchMedia: () => ({ matches: false, addEventListener() {}, addListener() {} }),
     getComputedStyle: () => ({ getPropertyValue: () => "" }), addEventListener() {}, removeEventListener() {}, scrollTo() {},
@@ -1597,7 +1597,7 @@ function appEnVm(exponer) {
     vm.runInContext(src, ctx, { filename: `public/${f}` });
   }
   assert.ok(ctx.__expuesto, "el arranque de app.js no llegó al final del IIFE");
-  return ctx.__expuesto;
+  return conVentana ? { expuesto: ctx.__expuesto, ventana: ctx } : ctx.__expuesto;
 }
 
 function corre(rotulo) {
@@ -6805,6 +6805,18 @@ async function main() {
       const nombresDe = (r) => require("./capturar_evaluaciones.js").entidadesDeRespuesta(r.cuerpo).lista.map((x) => x.entidad);
       assert.deepStrictEqual(nombresDe(oL), nombresDe(oE), "la vista ligera da las entidades en el orden de la lista entera");
       assert.deepStrictEqual(nombresDe(oL), ["ENTIDAD QUE CIERRA MAÑANA", "GOBERNACIÓN QUE CIERRA EL MARTES", "ALCALDÍA VIEJA B", "ALCALDÍA VIEJA A"], "lo abierto que cierra antes, y después lo cerrado más reciente");
+      /* (6 ter, PLAN_X20 tanda 12) los procesos ABIERTOS para leer sus documentos sin pestaña: de la foto, sin el corpus, en el orden de
+         la lista; y la herramienta saca los mismos de la vista ligera y de la lista entera (un servidor que no conoce la vista) */
+      espiar();
+      const aL = await invocar(seguimientoQ, "/api/perfil?op=seguimiento&perfil=pruebaorden&solo=abiertos", CAB_TOKEN);
+      mockQ.romper(null);
+      assert.ok(aL.status === 200 && !pesados.length, `la vista de abiertos no toca el corpus: ${pesados.join(", ")}`);
+      assert.deepStrictEqual(aL.cuerpo.procesos.map((x) => x.id), ["CO1.REQ.W4", "CO1.REQ.W3"], `solo los que no han cerrado, el que cierra antes primero → ${JSON.stringify(aL.cuerpo.procesos)}`);
+      const LD = require("./leer_documentos.js");
+      assert.deepStrictEqual(LD.idsAbiertos(aL.cuerpo), ["CO1.REQ.W4", "CO1.REQ.W3"], "la herramienta lee la vista ligera");
+      assert.deepStrictEqual(LD.idsAbiertos({ procesos: [{ id: "CO1.REQ.A", cerrado: false, es_historia: false }, { id: "CO1.REQ.B", cerrado: true }, { id: "CO1.REQ.C", es_historia: true }, { cerrado: false }] }), ["CO1.REQ.A"],
+        "y la lista entera de un servidor que no conoce la vista: sin los cerrados, la historia ni los que no traen número");
+      assert.strictEqual((await invocar(seguimientoQ, "/api/perfil?op=seguimiento&perfil=pruebaorden&solo=abiertos")).status, 401, "sin la llave no hay lista");
 
       // (7) el lector de la madrugada: la vista ligera si basta, la lista entera si queda corta o el servidor no la conoce
       const L = require("./capturar_evaluaciones.js");
@@ -11136,6 +11148,17 @@ async function main() {
       assert.ok(s2.status === 200 && s2.cuerpo.motivo === "sin_nit" && /NIT/.test(s2.cuerpo.motivo_texto), `sin NIT → ${JSON.stringify(s2.cuerpo).slice(0, 200)}`);
       const s3 = await invocar(rA, "/api/apu?op=grupo&entidad_nit=890399011&modalidad=x&precio_pct=96.75", {});
       assert.strictEqual(s3.status, 401, "sin credencial no pasa la puerta");
+      /* PLAN_X20 tanda 13: sus ofertas en esta entidad, de la consulta GUARDADA de «Sus ofertas en SECOP II», sin preguntar otra vez */
+      const redisG = require("../lib/redis.js").crearRedis({}), HOPg = require("../lib/handlers/perfil/ofertas_propias.js");
+      await redisG.del(HOPg.clave("prodiac"));
+      const s5 = await invocar(rA, "/api/apu?op=grupo&modalidad=x&precio_pct=96.75&perfil=prodiac", CAB_TOKEN);
+      assert.ok(s5.cuerpo.suyas && s5.cuerpo.suyas.sin_consultar === true && /Mi empresa, en «Sus ofertas en SECOP II»/.test(s5.cuerpo.suyas.frase), `sin consulta guardada, dice dónde hacerla → ${JSON.stringify(s5.cuerpo.suyas)}`);
+      await redisG.set(HOPg.clave("prodiac"), JSON.stringify({ ok: true, ofertas: [{ identificador: "R1", nit_entidad: "890399011", referencia: "SAMC-004-2025 (Manifestación de interés)", fecha: "2025-10-06", puesto_por_precio: 5, ofertas_en_el_proceso: 8, resultado: "otro", valor_cop: 209791151, valor_adjudicado: 213879191 }] }));
+      const s6 = await invocar(rA, "/api/apu?op=grupo&entidad_nit=890399011-2&modalidad=x&precio_pct=96.75&perfil=prodiac", CAB_TOKEN);
+      assert.ok(s6.status === 200 && s6.cuerpo.suyas && /Usted ya ofertó en esta entidad una vez: SAMC-004-2025 \(2025-10\), 5\.º de 8 por precio, 1,9 % por debajo de lo adjudicado\./.test(s6.cuerpo.suyas.frase),
+        `con la consulta guardada, la frase con su puesto y su distancia a lo adjudicado (el NIT con o sin dígito de verificación) → ${JSON.stringify(s6.cuerpo.suyas)}`);
+      assert.strictEqual((await invocar(rA, "/api/apu?op=grupo&modalidad=x&precio_pct=96.75&perfil=..%2Fx", CAB_TOKEN)).cuerpo.suyas, null, "un perfil que no es un nombre válido es inerte");
+      await redisG.del(HOPg.clave("prodiac"));
     }
     console.log("· unidad precio frente al grupo: comparables (confidencial, dos valores, fuera de rango, sin presupuesto), "
       + "por encima de todas y de la mitad con su alerta, nada bajo cinco procesos, tandas de diez con memoria de 24 h, fuente caída y la acción por el router");
@@ -11602,8 +11625,13 @@ async function main() {
     const c = await OP.consultarOfertasPropias([`${H}-3`], { fetchImpl: falsa(), tiempoMs: 3000 });
     assert.ok(c.ok && c.ofertas.length === 3 && pedidos.some((p) => /^nit_del_proveedor/.test(p)) && pedidos.some((p) => /^c_digo_proveedor/.test(p)) && !pedidos.some((p) => / OR /.test(p)), `una consulta por columna, sin «O» → ${pedidos.join(" | ")}`);
     const cd = await OP.consultarOfertasPropias([H], { fetchImpl: falsa(true), tiempoMs: 3000 });
-    assert.ok(cd.ok && cd.aviso && cd.ofertas.every((o) => o.resultado === "sin_dato") && OP.frasesOfertasPropias(cd).some((t) => /no se pudieron traer esta vez/.test(t)) && !/adjudicada/.test(OP.frasesOfertasPropias(cd)[0]),
+    assert.ok(cd.ok && cd.aviso && cd.ofertas.every((o) => o.resultado === "sin_dato") && OP.frasesOfertasPropias(cd).some((t) => /Esta vez no se pudo traer el puesto ni el resultado/.test(t)) && !/adjudicada/.test(OP.frasesOfertasPropias(cd)[0]),
       "si el detalle falla, las ofertas salen igual, sin resultado, y se dice");
+    // si una de las dos consultas falla (la de los consorcios es la lenta), salen las de la otra y se dice cuál faltó
+    const sinCod = async (url, op) => { const w = new URL(url).searchParams.get("$where") || ""; if (/^c_digo_proveedor/.test(w)) throw new Error("tiempo agotado"); return falsa()(url, op); };
+    const cc = await OP.consultarOfertasPropias([H], { fetchImpl: sinCod, tiempoMs: 3000 });
+    assert.ok(cc.ok && cc.ofertas.map((o) => o.identificador).join() === "CO1.RPL.1,CO1.RPL.2" && /no se pudieron traer las ofertas de sus consorcios/.test(cc.aviso) && OP.frasesOfertasPropias(cc).some((t) => /la lista puede estar corta/.test(t)),
+      `una consulta caída no tumba la otra, y se dice → ${cc.aviso} ${cc.ofertas.map((o) => o.identificador)}`);
     assert.match((await OP.consultarOfertasPropias([], { fetchImpl: falsa() })).motivo, /no tiene NIT/);
     assert.match((await OP.consultarOfertasPropias([H], { fetchImpl: async () => { throw new Error("red caída"); }, tiempoMs: 2000 })).motivo, /No se pudo consultar SECOP II/);
     // el manejador: credencial siempre, perfil obligatorio, y el resultado que salió bien se guarda; el que falló, no
@@ -11709,6 +11737,40 @@ async function main() {
     await redis.del(Dp.claveDocs(id));
     console.log("· unidad leer por contenido: sin pliego por nombre se leen los dos «otros» PDF más nuevos, el título de la primera página decide (proyecto, definitivo, documento base; "
       + "observaciones, respuestas, adendas y estudios previos no), y por el servidor el «3 PPC» se guarda como proyecto de pliego");
+  }
+
+  bqLeerSinPestana: { if (!corre("unidad leer sin pestana")) break bqLeerSinPestana;
+    /* PLAN_X20, tanda 12 (12-nov-2026): la tarea de la mañana lee los documentos de Mis procesos con la MISMA lectura de la pestaña */
+    const LD = require("./leer_documentos.js");
+    // qué sale a producción: solo la lectura del router pliego
+    const O = "http://127.0.0.1:9999";
+    assert.deepStrictEqual([["GET", `${O}/api/pliego?op=documentos&id_proceso=X`], ["POST", `${O}/api/pliego?op=documentos`], ["POST", `${O}/api/pliego?op=descargar`], ["POST", `${O}/api/pliego?op=extraer-texto`],
+      ["GET", `${O}/api/procesos?op=listar`], ["GET", `${O}/api/perfil?op=seguimiento`], ["GET", `${O}/api/pliego?op=descargar`], ["POST", `${O}/api/pliego?op=dictamen`], ["DELETE", `${O}/api/pliego?op=documentos`], ["GET", "no es una url"], ["POST", `${O}/api/apu?op=descargar`], ["GET", `${O}/api/perfil?op=documentos`]].map(([m, u]) => LD.reenviable(m, u)),
+      [true, true, true, true, false, false, false, false, false, false, false, false], "a producción salen solo los pedidos de la lectura; la lista, el arranque y lo demás reciben el 404 local");
+    assert.deepStrictEqual(LD.argumentos(["--perfil", "pics", "--max-procesos", "2", "--probar", "CO1.REQ.123"]), { perfil: "pics", maxProcesos: 2, maxOcr: 120, probar: true, ids: ["CO1.REQ.123"] });
+    assert.throws(() => LD.argumentos(["--max-procesos", "-1"]), /entero/); assert.throws(() => LD.argumentos(["--perfil", "../x"]), /perfil/); assert.throws(() => LD.argumentos(["rm"]), /desconocido/);
+    assert.deepStrictEqual(LD.resumenDelGuardado(JSON.stringify({ id_documento: "7", texto: "x".repeat(120), paginas_total: 3, origen: "texto" })), { id_documento: "7", caracteres: 120, paginas: 3, origen: "texto" }, "en --probar se anota qué se habría guardado, sin el texto");
+    // la MISMA lectura de la pestaña, ejecutada: un Word del plan se baja, se lee y se guarda con el perfil dado, y devuelve lo que hizo
+    const pedidos = [];
+    const resp = (j, status = 200) => ({ ok: status < 400, status, headers: { get: () => "application/json" }, json: async () => j, text: async () => JSON.stringify(j) });
+    const fetchFalso = async (ruta, cfg = {}) => {
+      const u = String(ruta), cuerpo = cfg.body ? JSON.parse(cfg.body) : null;
+      pedidos.push({ u, metodo: cfg.method || "GET", cuerpo });
+      if (/op=documentos/.test(u) && (cfg.method || "GET") === "GET") return resp({ ok: true, pendientes: [{ id_documento: "11", extension: "docx", url: "https://community.secop.gov.co/x?DocumentId=11", nombre: "Pliego.docx", tipo_legible: "Pliego de condiciones" }], max_caracteres: 900000 });
+      if (/op=descargar/.test(u)) return resp({ ok: true, formato: "docx", texto: "PLIEGO DE CONDICIONES. ".repeat(10), recortado: false });
+      if (/op=documentos/.test(u)) return resp({ ok: true, pendientes: [] });
+      return resp({ ok: false, error: "no simulado" }, 404);
+    };
+    const { ventana } = appEnVm([], { fetch: fetchFalso, conVentana: true });
+    assert.strictEqual(typeof ventana.__detektaLeerDocumentos, "function", "la página ofrece la lectura a quien la abre desde fuera");
+    const hecho = await ventana.__detektaLeerDocumentos("CO1.REQ.555", "pics");
+    assert.deepStrictEqual({ ...hecho }, { buscado: true, leidos: 1, fallidos: 0, rehechos: 0 }, `devuelve lo que hizo → ${JSON.stringify(hecho)}`);
+    const guardado = pedidos.find((p) => p.metodo === "POST" && /op=documentos/.test(p.u));
+    assert.ok(guardado && guardado.cuerpo.id_proceso === "CO1.REQ.555" && guardado.cuerpo.id_documento === "11" && guardado.cuerpo.perfil === "pics" && /PLIEGO DE CONDICIONES/.test(guardado.cuerpo.texto),
+      `guarda el texto con el perfil dado (no el de la barra) → ${JSON.stringify(guardado && { ...guardado.cuerpo, texto: undefined })}`);
+    assert.ok(!pedidos.some((p) => /op=seguimiento/.test(p.u)), "sin pestaña no repinta Mis procesos (no pide la lista)");
+    console.log("· unidad leer sin pestana: a producción solo salen los pedidos de la lectura, los argumentos de la herramienta, lo que se anota en --probar, "
+      + "y la MISMA lectura de la pestaña ejecutada desde fuera: baja el Word, lo guarda con el perfil dado, no pide la lista y devuelve lo que hizo");
   }
 
   /* unidad: TEXTO como co-señal (vocabulario por familia + verbo de obra) */

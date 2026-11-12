@@ -7238,12 +7238,16 @@
     return datos;
   }
   const mbDe = (bytes) => `${(bytes / 1048576).toFixed(1).replace(".", ",")} MB`;
-  async function leerDocumentos(id, { refrescar = false } = {}) {
+  /* LEER SIN PESTAÑA (PLAN_X20 tanda 12, 12-nov-2026): la tarea de la mañana abre ESTA página servida en local y llama a la MISMA
+     lectura de la pestaña, para no tener dos reglas de qué se lee y cómo. La llave no entra a la página: la pone quien reenvía
+     los pedidos (tests/leer_documentos.js). */
+  window.__detektaLeerDocumentos = (id, perfil) => leerDocumentos(id, { perfil, sinRepintar: true });
+  async function leerDocumentos(id, { refrescar = false, perfil: perfilDado = null, sinRepintar = false } = {}) {
     /* el avance dice la ETAPA y lo que de verdad se sabe (expediente.js textoAvance/fraccionAvance): megabytes traídos, páginas ya reconocidas */
     const XA = raizExpediente();
     const avanzar = (p) => { const prog = { ...p }; prog.texto = XA && XA.textoAvance ? XA.textoAvance(prog) : ""; docsProgreso.set(id, prog); pintarProgresoDocs(id); };
     const ahoraMs = () => (typeof performance !== "undefined" && performance.now ? performance.now() : Date.now());
-    const perfil = $("f-perfil").value;
+    const perfil = perfilDado || $("f-perfil").value;
     let leidos = 0, fallidos = 0, buscado = false, rehechos = 0, indiceDeCache = false;
     /* el OCR no atendió ni tras esperar: los escaneos que siguen en esta vuelta se dejan
        para más tarde sin volver a esperar dos minutos cada uno */
@@ -7363,6 +7367,9 @@
        esa guía está abierta, consultar el dictamen (ahora ya hay pliego) */
     /* sin nada leído, fallido ni rehecho, y con el índice de siempre, no cambió nada: con la lectura
        automática de cada proceso abierto, repintar la lista tras cada consulta era trabajo de más */
+    /* la lectura SIN PESTAÑA (tests/leer_documentos.js) no repinta Mis procesos: no hay lista que repintar y la página no
+       tiene la sesión del dueño; devuelve lo que hizo */
+    if (sinRepintar) { docsProgreso.delete(id); return { buscado, leidos, fallidos, rehechos }; }
     if (buscado && !leidos && !fallidos && !rehechos && indiceDeCache) pintarProgresoDocs(id);
     else if (buscado) {
       seguimientoCargadoPara = null;
@@ -11469,7 +11476,7 @@
     const llave = `${nitProceso}|${modalidadProceso}`;
     try { await grupoEnCamino.get(llave); } catch { /* el anterior falló: este lo intenta de nuevo */ }
     if (yo !== grupoPedido) return;
-    const qs = new URLSearchParams({ op: "grupo", entidad_nit: nitProceso, modalidad: modalidadProceso, precio_pct: String(Math.round((precio / po) * 1e6) / 1e4) });
+    const qs = new URLSearchParams({ op: "grupo", entidad_nit: nitProceso, modalidad: modalidadProceso, precio_pct: String(Math.round((precio / po) * 1e6) / 1e4), perfil: ($("perfil") && $("perfil").value) || "" });
     const promesa = api(`/api/apu?${qs}`);
     grupoEnCamino.set(llave, promesa);
     let r;
@@ -11482,7 +11489,8 @@
     if (yo !== grupoPedido) return;
     const f = r && r.frente_al_grupo;
     // la referencia de la entidad por competencia (pieza 6.5) va detrás, como hecho; sola si no hay frase del grupo
-    const ref = r && r.por_competencia && r.por_competencia.frase ? ` ${r.por_competencia.frase}` : "";
+    /* …y sus propias ofertas en esta entidad (PLAN_X20 tanda 13), también como hecho */
+    const ref = (r && r.por_competencia && r.por_competencia.frase ? ` ${r.por_competencia.frase}` : "") + (r && r.suyas && r.suyas.frase ? ` ${r.suyas.frase}` : "");
     if (!(f && f.frase) && ref) { p.className = "mt-2 pl-6 text-sm text-gray-600"; p.textContent = ref.trim(); return; }
     if (f && f.frase) {
       p.className = f.alerta ? "mt-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900 ring-1 ring-inset ring-amber-600/20" : "mt-2 pl-6 text-sm text-gray-600";
