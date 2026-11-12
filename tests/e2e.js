@@ -59874,7 +59874,10 @@ async function main() {
       const filasF = Xf.documentosEntidad({ id: "CO1.REQ.9", guia: { documentos: bF } });
       const leidoF = filasF.find((f) => f.id === "5"), noF = filasF.find((f) => f.id === "6");
       assert.strictEqual(leidoF.formulario_de, "CO1.REQ.9");
-      assert.ok(/data-seg-f1="CO1\.REQ\.9" data-seg-f1-doc="5" data-seg-f1-n="1">Cotizar en Precios</.test(Xf.htmlFilaDoc(leidoF, 1)) && /data-seg-f1-estado="1"/.test(Xf.htmlFilaDoc(leidoF, 1)), "el Formulario leído lleva su botón y su renglón de aviso");
+      assert.ok(/data-seg-f1="CO1\.REQ\.9" data-seg-f1-doc="5" data-seg-f1-n="1"[^>]*>Cotizar en Precios</.test(Xf.htmlFilaDoc(leidoF, 1)) && /data-seg-f1-estado="1"/.test(Xf.htmlFilaDoc(leidoF, 1)), "el Formulario leído lleva su botón y su renglón de aviso");
+      // pieza 6.7: el botón lleva la dirección del archivo, para llenarlo después en Precios (sin dirección, no la inventa)
+      assert.ok(/data-seg-f1-url="https:\/\/x\/f\.xlsx" data-seg-f1-nombre="F1\.xlsx"/.test(Xf.htmlFilaDoc({ ...leidoF, url: "https://x/f.xlsx", nombre: "F1.xlsx" }, 1)) && !/data-seg-f1-url/.test(Xf.htmlFilaDoc({ ...leidoF, url: null }, 1)),
+        "el botón lleva la dirección del Formulario solo si la hay");
       assert.ok(!/data-seg-f1/.test(Xf.htmlFilaDoc(noF, 2)), "el que no pasó la puerta no ofrece llevar nada a Precios");
       assert.ok(!/data-seg-f1/.test(Xf.htmlFilaDoc({ origen: "entidad", id: "1", nombre: "PLIEGO.pdf", formato: "PDF", estado: "leido" }, 3)), "un PDF leído tampoco");
       // el clic: el bloque real de app.js
