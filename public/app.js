@@ -9941,12 +9941,12 @@
     const res = (o) => (o.resultado === "gano" ? `<span class="font-medium text-emerald-700">Adjudicado a usted</span>`
       : o.resultado === "otro" ? `Adjudicado a ${esc(o.adjudicatario || "otro proponente")}${o.valor_adjudicado != null ? ` por ${esc(pesos(o.valor_adjudicado))}` : ""}`
         : o.resultado === "sin_adjudicar" ? "Sin adjudicar según SECOP II" : "Resultado sin consultar");
-    const quien = (o) => (o.via && o.via.tipo === "consorcio" ? `En ${esc(o.via.nombre || "consorcio")}${o.via.participacion_pct != null ? ` (usted ${esc(String(o.via.participacion_pct).replace(".", ","))} %)` : ""}` : esc(o.proponente || "A su nombre"));
+    const quien = (o) => (o.via && o.via.tipo === "consorcio" ? `En ${esc(o.via.nombre || "consorcio")}${o.via.participacion_pct != null ? ` (usted ${esc(String(o.via.participacion_pct).replace(".", ","))} %)` : ""}${o.via.por_nombre ? " · reconocida por el nombre del consorcio" : ""}` : esc(o.proponente || "A su nombre"));
     return `${frases.map((t) => `<p class="text-gray-700">${esc(t)}</p>`).join("")}
       ${lista.length ? `<ul class="mt-3 space-y-2">${lista.map((o) => `<li class="rounded-lg border border-gray-200 px-3 py-2" data-mi-oferta="${esc(o.identificador)}">
         <p class="font-medium text-gray-900">${esc(o.entidad || "Entidad sin nombre")} · ${esc(o.referencia || o.id_portafolio)}</p>
         <p class="text-gray-600">${esc(o.fecha || "sin fecha")} · ${quien(o)} · ${o.valor_cop != null ? esc(pesos(o.valor_cop)) : "valor sin dato"}${o.puesto_por_precio != null && o.ofertas_en_el_proceso ? ` · puesto ${o.puesto_por_precio} por precio de ${o.ofertas_en_el_proceso}` : ""}</p>
-        <p class="text-gray-600">${res(o)}</p>${o.resultado === "otro" ? `<p class="text-gray-600" data-mi-oferta-causa>${o.causa && o.causa.frase ? esc(o.causa.frase) : "El informe de evaluación de este proceso no se ha leído en la aplicación: se lee desde la ventana de la entidad."}</p>` : ""}</li>`).join("")}</ul>` : ""}`;
+        <p class="text-gray-600">${res(o)}</p>${o.resultado === "otro" || (o.resultado !== "gano" && o.causa && o.causa.frase) ? `<p class="text-gray-600" data-mi-oferta-causa>${o.causa && o.causa.frase ? esc(o.causa.frase) : "El informe de evaluación de este proceso no se ha leído en la aplicación: se lee desde la ventana de la entidad."}</p>` : ""}</li>`).join("")}</ul>` : ""}`;
   }
   async function buscarMisOfertas(refrescar) {
     const caja = $("mis-ofertas"), btn = $("btn-mis-ofertas");

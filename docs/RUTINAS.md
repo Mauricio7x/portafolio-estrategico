@@ -229,6 +229,14 @@ QUÉ MIRAR · todo es LECTURA: ni un POST, ninguna sincronización (salvo el pas
    competencia_entidad.por_tamano.frase si viene (si no, nada), la nota de `manifestacion` y
    urlproceso. `total` dice cuántos hay; si es 0, di «Ninguno abierto hoy en esa zona y tamaño».
    No es «no hay oportunidades»: la lista solo mira esa zona y ese tamaño.
+6 bis. LOS PLAZOS DE SUS PROCESOS (encargo del dueño, 13-nov-2026): el próximo plazo de cada proceso
+   suyo que sigue en curso, según la etapa en que lo tiene. Una sola llamada, de lectura:
+   GET /api/perfil?op=seguimiento&perfil=helder&solo=plazos
+   De cada proceso copia TAL CUAL, en el orden en que llegó: nombre (90 caracteres), entidad, etapa y
+   `frase`. No calcules ni reordenes nada: la frase ya trae la fecha, cuántos días faltan y si la
+   fecha es calculada. Si `procesos` viene vacío, di «Ningún proceso suyo en curso en Mis procesos».
+   La lista sale de lo guardado, sin la fila viva de SECOP II: una prórroga publicada hoy puede no
+   verse; no lo digas como falla.
 7. LA ÚNICA ESCRITURA, Y A PROPÓSITO (plan x20, tanda 12; aprobada por el dueño el 12-nov-2026): leer los
    documentos de sus procesos abiertos que la pestaña todavía no leyó, con la MISMA lectura de la pestaña.
    Va al final, después de todo lo anterior, y solo si los pasos 0 a 1 salieron bien:
@@ -239,8 +247,9 @@ QUÉ MIRAR · todo es LECTURA: ni un POST, ninguna sincronización (salvo el pas
 
 CÓMO CERRAR
 - Todo bien: UNA línea con total_activo, edad_horas, en_cola, historico_hace_dias, debajo la lista
-  del día del paso 6 (un renglón por proceso, en el orden en que llegó) y una línea con lo que leyó el
-  paso 7. Nada más.
+  del día del paso 6 (un renglón por proceso, en el orden en que llegó), debajo los plazos de sus
+  procesos del paso 6 bis (un renglón por proceso: nombre · entidad · frase) y una línea con lo que
+  leyó el paso 7. Nada más.
 - Algo mal: qué está roto, desde cuándo si se puede saber, qué se rompe para el usuario, y el paso
   concreto para arreglarlo — con la URL completa y el nombre literal del botón si hay que tocar una
   pantalla.

@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 2683546 bytes · 488 secciones · 59 con marcador de superación.
+Derivado del árbol: 2689248 bytes · 489 secciones · 60 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -491,11 +491,12 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | Las causales de rechazo de ESE pliego, una por una, con dónde las revisa la aplicación (12-nov-2026) | 12-nov-2026 | 22435-22442 | 1333 |  |
 | La tabla de métodos de ponderación de ESE pliego, y las dos fórmulas del documento tipo V1 (12-nov-2026) | 12-nov-2026 | 22443-22455 | 2048 |  |
 | Su oferta escrita en el Formulario de Excel de la entidad, con candados (12-nov-2026) | 12-nov-2026 | 22456-22482 | 5432 |  |
-| Sus ofertas en SECOP II y cómo le fue: a su nombre y de los consorcios donde figura (12-nov-2026) | 12-nov-2026 | 22483-22497 | 2499 |  |
-| El puntaje de precio del informe, recalculado con el motor, y el borrador de observación (12-nov-2026) | 12-nov-2026 | 22498-22512 | 1947 |  |
-| Sin pliego por nombre, se lee por contenido: el título de la primera página decide (12-nov-2026) | 12-nov-2026 | 22513-22523 | 2106 | «El fin del traslado del informe, calculado, en el calendario de Mis procesos; y el pliego leído por contenido sí entra al vigía (13-nov-2026)» |
-| Leer los documentos de Mis procesos sin la pestaña abierta, con la MISMA lectura de la pestaña (12-nov-2026) | 12-nov-2026 | 22524-22536 | 2427 |  |
-| Sus ofertas anteriores en esa entidad, en Precios junto al grupo (12-nov-2026) | 12-nov-2026 | 22537-22546 | 1802 |  |
-| El IVA de la utilidad en el Formulario lleno lo confirma el usuario; la lectura sin pestaña entra a la tarea de la mañana; y la causa de cada oferta perdida (12-nov-2026) | 12-nov-2026 | 22547-22556 | 2588 |  |
-| Los informes de sus ofertas perdidas se leen primero, la revisión mira el Formulario lleno y el borrador de observación lleva su plazo (12-nov-2026) | 12-nov-2026 | 22557-22565 | 2351 |  |
-| El fin del traslado del informe, calculado, en el calendario de Mis procesos; y el pliego leído por contenido sí entra al vigía (13-nov-2026) | 13-nov-2026 | 22566-22573 | 2047 |  |
+| Sus ofertas en SECOP II y cómo le fue: a su nombre y de los consorcios donde figura (12-nov-2026) | 12-nov-2026 | 22483-22499 | 2920 | «Sus ofertas sin NIT ni código, por el nombre exacto de su consorcio; la causa de sus derrotas de Cali y de la Universidad Pedagógica; y los plazos de sus procesos en la lista de la mañana (13-nov-2026)» |
+| El puntaje de precio del informe, recalculado con el motor, y el borrador de observación (12-nov-2026) | 12-nov-2026 | 22500-22514 | 1947 |  |
+| Sin pliego por nombre, se lee por contenido: el título de la primera página decide (12-nov-2026) | 12-nov-2026 | 22515-22525 | 2106 | «El fin del traslado del informe, calculado, en el calendario de Mis procesos; y el pliego leído por contenido sí entra al vigía (13-nov-2026)» |
+| Leer los documentos de Mis procesos sin la pestaña abierta, con la MISMA lectura de la pestaña (12-nov-2026) | 12-nov-2026 | 22526-22538 | 2427 |  |
+| Sus ofertas anteriores en esa entidad, en Precios junto al grupo (12-nov-2026) | 12-nov-2026 | 22539-22548 | 1802 |  |
+| El IVA de la utilidad en el Formulario lleno lo confirma el usuario; la lectura sin pestaña entra a la tarea de la mañana; y la causa de cada oferta perdida (12-nov-2026) | 12-nov-2026 | 22549-22558 | 2588 |  |
+| Los informes de sus ofertas perdidas se leen primero, la revisión mira el Formulario lleno y el borrador de observación lleva su plazo (12-nov-2026) | 12-nov-2026 | 22559-22567 | 2351 |  |
+| El fin del traslado del informe, calculado, en el calendario de Mis procesos; y el pliego leído por contenido sí entra al vigía (13-nov-2026) | 13-nov-2026 | 22568-22576 | 2048 |  |
+| Sus ofertas sin NIT ni código, por el nombre exacto de su consorcio; la causa de sus derrotas de Cali y de la Universidad Pedagógica; y los plazos de sus procesos en la lista de la mañana (13-nov-2026) | 13-nov-2026 | 22577-22596 | 5280 |  |
