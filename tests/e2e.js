@@ -4601,6 +4601,22 @@ async function main() {
         { hitosDocumentos: { hitos: Cr.compactarHitos(Cr.extraerHitos("Plazo para subsanar 05/11/2026").hitos.map((h) => ({ ...h, documento: "C.pdf" }))) } });
       const alHoy = Sg.alertasDe([eHoy], { hoy: hoyS }).filter((a) => a.hito === "subsanacion");
       assert.ok(alHoy.length === 1 && alHoy[0].urgencia === "alta" && /^Es hoy: /.test(alHoy[0].mensaje), `[MUT] el día del plazo para subsanar avisa «Es hoy»: ${JSON.stringify(alHoy)}`);
+      /* (13-nov-2026, pedido del dueño) EL FIN DEL TRASLADO DEL INFORME, CALCULADO cuando el documento trae la publicación del informe y no
+         el traslado: publicación + días hábiles de la modalidad, con festivos (el 16-nov-2026 es festivo), como fecha CALCULADA */
+      const conInforme = (extra = []) => Sg.enriquecer({ id: "TR-1", estado: "presentado", foto: { nombre: "OBRA TR", fecha_cierre: "2026-11-05T17:00:00.000", fecha_publicacion: "2026-10-20", modalidad: "Selección Abreviada de Menor Cuantía" } }, null, Date.parse("2026-11-19T15:00:00Z"),
+        { hitosDocumentos: { hitos: [{ id: "informe_evaluacion", etiqueta: "Publicación del informe de evaluación", fecha: "2026-11-13", origen: "pliego", documento: "Pliego.pdf" }, ...extra] } });
+      const tr = conInforme().hitos.find((h) => h.id === "traslado");
+      assert.ok(tr && tr.fecha === "2026-11-19" && tr.origen === "calculado" && /CALCULADA/.test(tr.fuente) && /verifíquelo en el cronograma/.test(tr.etiqueta), `[MUT] el traslado calculado, saltando el festivo → ${JSON.stringify(tr)}`);
+      const alTr = Sg.alertasDe([conInforme()], { hoy: "2026-11-19" }).filter((a) => a.hito === "traslado");
+      assert.ok(alTr.length === 1 && /^Es hoy: /.test(alTr[0].mensaje), `[MUT] avisa el día que vence: ${JSON.stringify(alTr)}`);
+      const sinOferta = Sg.enriquecer({ id: "TR-2", estado: "interesa", foto: { nombre: "OBRA TR2", fecha_cierre: "2026-11-05T17:00:00.000", fecha_publicacion: "2026-10-20", modalidad: "Selección Abreviada de Menor Cuantía" } }, null, Date.parse("2026-11-17T15:00:00Z"),
+        { hitosDocumentos: { hitos: [{ id: "informe_evaluacion", etiqueta: "Publicación del informe de evaluación", fecha: "2026-11-13", origen: "pliego", documento: "Pliego.pdf" }] } });
+      assert.strictEqual(Sg.alertasDe([sinOferta], { hoy: "2026-11-17" }).filter((a) => a.hito === "traslado").length, 0, "[MUT] a quien no presentó oferta el traslado no le pide nada");
+      const conOfertaAntes = Sg.enriquecer({ id: "TR-3", estado: "presentado", foto: { nombre: "OBRA TR3", fecha_cierre: "2026-11-05T17:00:00.000", fecha_publicacion: "2026-10-20", modalidad: "Selección Abreviada de Menor Cuantía" } }, null, Date.parse("2026-11-17T15:00:00Z"),
+        { hitosDocumentos: { hitos: [{ id: "informe_evaluacion", etiqueta: "Publicación del informe de evaluación", fecha: "2026-11-13", origen: "pliego", documento: "Pliego.pdf" }] } });
+      assert.ok(Sg.alertasDe([conOfertaAntes], { hoy: "2026-11-17" }).some((a) => a.hito === "traslado" && /Faltan 2 días/.test(a.mensaje)), "[MUT] y a quien sí, días antes");
+      const publicado = conInforme([{ id: "traslado", etiqueta: "Traslado del informe", fecha: "2026-11-20", origen: "pliego", documento: "Pliego.pdf" }]).hitos.filter((h) => h.id === "traslado");
+      assert.ok(publicado.length === 1 && publicado[0].fecha === "2026-11-20" && publicado[0].origen === "pliego", "[MUT] si el cronograma publica el traslado, manda ese y no se calcula otro");
       // en la fila, el aviso de interés va antes que un plazo opcional que vence mañana
       const sManif = Ks.senalDe({ estado: "interesa", ya_aviso: false, manifestacion: { aplica: true, estado: "abierta" }, cerrado: false, dias_para_cierre: 12,
         proximo_vencimiento: { id: "observaciones_pliego", corta: "Observaciones al pliego", fecha: "2026-11-04", dias: 1 } });
@@ -11804,6 +11820,9 @@ async function main() {
     assert.ok(r1.status === 200 && r2.status === 200 && arch.length === 3, `se guardan los dos: ${r1.status} ${r2.status}`);
     assert.deepStrictEqual([docs.leidos["1"].tipo, docs.leidos["1"].tipo_por_contenido, docs.leidos["2"].tipo, docs.leidos["2"].tipo_por_contenido], ["pliego_borrador", true, "otro", undefined],
       `el proyecto de pliego se guarda como tal; las observaciones siguen siendo «otro» → ${JSON.stringify([docs.leidos["1"].tipo, docs.leidos["2"].tipo])}`);
+    /* (13-nov-2026) y entra al VIGÍA DE ADENDAS como versión del pliego (la memoria del 12-nov-2026 decía que no: era falso,
+       `esVersionDelPliego` solo descarta lo que el nombre dice que es anexo, formato u observaciones); las observaciones no */
+    assert.ok(Number.isInteger(docs.leidos["1"].version_pliego) && docs.leidos["2"].version_pliego == null, `el pliego leído por contenido es una versión del vigía → ${JSON.stringify([docs.leidos["1"].version_pliego, docs.leidos["2"].version_pliego])}`);
     await redis.del(Dp.claveDocs(id));
     console.log("· unidad leer por contenido: sin pliego por nombre se leen los dos «otros» PDF más nuevos, el título de la primera página decide (proyecto, definitivo, documento base; "
       + "observaciones, respuestas, adendas y estudios previos no), y por el servidor el «3 PPC» se guarda como proyecto de pliego");
