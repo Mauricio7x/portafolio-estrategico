@@ -6838,6 +6838,31 @@ async function main() {
       assert.deepStrictEqual(LD.idsAbiertos({ procesos: [{ id: "CO1.REQ.A", cerrado: false, es_historia: false }, { id: "CO1.REQ.B", cerrado: true }, { id: "CO1.REQ.C", es_historia: true }, { cerrado: false }] }), ["CO1.REQ.A"],
         "y la lista entera de un servidor que no conoce la vista: sin los cerrados, la historia ni los que no traen número");
       assert.strictEqual((await invocar(seguimientoQ, "/api/perfil?op=seguimiento&perfil=pruebaorden&solo=abiertos")).status, 401, "sin la llave no hay lista");
+      /* (6 quater, 13-nov-2026, encargo del dueño) EL PRÓXIMO PLAZO DE CADA PROCESO SUYO para la lista de la mañana: de la foto y de
+         las fechas leídas de sus documentos, sin el corpus; con la regla de la lista (proximoVencimiento por etapa), el fin del
+         traslado calculado incluido; sin la historia, y el que no tiene plazo conocido sale y lo dice */
+      const hoyQ = require("../lib/habiles.js").hoyColombia();
+      await escribirQ(rQ, "seguimiento:pruebaplazos", { procesos: {
+        "CO1.REQ.P1": { estado: "presentado", foto: { nombre: "OBRA PRESENTADA", entidad: "ALCALDÍA P1", fecha_cierre: enDias(-10), modalidad: "Selección Abreviada de Menor Cuantía" } },
+        "CO1.REQ.P2": { estado: "preparando", foto: { nombre: "OBRA QUE CIERRA", entidad: "ALCALDÍA P2", fecha_cierre: enDias(3) } },
+        "CO1.REQ.P3": { estado: "ganado", foto: { nombre: "OBRA GANADA", entidad: "ALCALDÍA P3", fecha_cierre: enDias(-20) } },
+        "CO1.REQ.P4": { estado: "interesa", foto: { nombre: "OBRA SIN FECHAS", entidad: "ALCALDÍA P4" } } } });
+      await require("../lib/manifestacion.js").guardarHitosCronograma(rQ, "CO1.REQ.P1", { hitos: [{ id: "informe_evaluacion", fecha: hoyQ, documento: "Informe de evaluación.pdf", tipo_documento: "informe" }] });
+      espiar();
+      const pL = await invocar(seguimientoQ, "/api/perfil?op=seguimiento&perfil=pruebaplazos&solo=plazos", CAB_TOKEN);
+      mockQ.romper(null);
+      assert.ok(pL.status === 200 && !pesados.length, `la vista de plazos no toca el corpus: ${pL.status} · ${pesados.join(", ")}`);
+      const pPor = Object.fromEntries((pL.cuerpo.procesos || []).map((x) => [x.id, x]));
+      const finTraslado = require("../lib/habiles.js").sumarHabiles(hoyQ, 3);
+      assert.ok(!pPor["CO1.REQ.P3"] && pL.cuerpo.guardados === 4, `lo ganado es historia: no sale → ${Object.keys(pPor)}`);
+      assert.ok(pPor["CO1.REQ.P1"].proximo && pPor["CO1.REQ.P1"].proximo.fecha === finTraslado && pPor["CO1.REQ.P1"].proximo.origen === "calculado" && /confírmela en el cronograma/.test(pPor["CO1.REQ.P1"].frase),
+        `presentada: su próximo plazo es el fin del traslado calculado, y se dice que es calculado → ${JSON.stringify(pPor["CO1.REQ.P1"])}`);
+      assert.ok(pPor["CO1.REQ.P2"].proximo && pPor["CO1.REQ.P2"].proximo.dias === 3 && /\(en 3 días\)/.test(pPor["CO1.REQ.P2"].frase), `preparando: el cierre, en cuántos días → ${JSON.stringify(pPor["CO1.REQ.P2"])}`);
+      assert.ok(pPor["CO1.REQ.P4"].proximo === null && /Sin plazo próximo conocido/.test(pPor["CO1.REQ.P4"].frase), "sin fechas: sale y lo dice (la ausencia no es «nada que hacer»)");
+      const ordenP = pL.cuerpo.procesos.map((x) => x.id);
+      assert.deepStrictEqual(ordenP[ordenP.length - 1], "CO1.REQ.P4", `el que no tiene plazo va al final → ${ordenP}`);
+      assert.ok(ordenP.indexOf(finTraslado < pPor["CO1.REQ.P2"].proximo.fecha ? "CO1.REQ.P1" : "CO1.REQ.P2") === 0, `primero el que vence antes → ${ordenP}`);
+      assert.strictEqual((await invocar(seguimientoQ, "/api/perfil?op=seguimiento&perfil=pruebaplazos&solo=plazos")).status, 401, "sin la llave no hay plazos");
 
       // (7) el lector de la madrugada: la vista ligera si basta, la lista entera si queda corta o el servidor no la conoce
       const L = require("./capturar_evaluaciones.js");
@@ -11672,6 +11697,7 @@ async function main() {
       if (/^nit_participante/.test(w)) return resp(grupos);
       if (/^nit_del_proveedor/.test(w)) return resp(propias.filter((f) => f.nit_del_proveedor === H));
       if (/^c_digo_proveedor/.test(w)) return resp(propias.filter((f) => /732018932|736380759|731740114/.test(f.c_digo_proveedor)));
+      if (/^nombre_proveedor in/.test(w)) return resp([]);   // sus consorcios sin código: ninguna en este juego
       if (fallaDetalle) return { ok: false, status: 503, headers: { get: () => "text/html" }, text: async () => "caído", json: async () => { throw new Error("x"); } };
       if (/^id_del_proceso_de_compra/.test(w)) return resp(Object.values(delProceso).flat());
       if (/^id_del_portafolio/.test(w)) return resp(procesos);
@@ -11689,6 +11715,53 @@ async function main() {
       `una consulta caída no tumba la otra, y se dice → ${cc.aviso} ${cc.ofertas.map((o) => o.identificador)}`);
     assert.match((await OP.consultarOfertasPropias([], { fetchImpl: falsa() })).motivo, /no tiene NIT/);
     assert.match((await OP.consultarOfertasPropias([H], { fetchImpl: async () => { throw new Error("red caída"); }, tiempoMs: 2000 })).motivo, /No se pudo consultar SECOP II/);
+    /* SIN NIT NI CÓDIGO, A NOMBRE EXACTO DE SU CONSORCIO (13-nov-2026): así publica SECOP II las de la Universidad Pedagógica y
+       la de Cali (medido: «No Definido» y «No definido» en la fila), y sin esto «Sus ofertas» traía 5 de 22 */
+    const sinCodigo = (id, proc, nombre) => fila(id, proc, nombre, "No Definido", "No definido", 250000000, "2026-08-19");
+    const conSinCodigo = [...propias, sinCodigo("CO1.RPL.7", "CO1.BDOS.7", "CONSORCIO PRIMERA INFANCIA HGR"), sinCodigo("CO1.RPL.8", "CO1.BDOS.8", "Consorcio Infraestructura 1A"),
+      sinCodigo("CO1.RPL.9", "CO1.BDOS.9", "CONSORCIO AJENO"), fila("CO1.RPL.10", "CO1.BDOS.10", "CONSORCIO SEDES SOCIALES HGR", "902000111", "No definido", 1, "2026-08-20")];
+    const rs = OP.ofertasPropiasDe({ grupos, propias: conSinCodigo, delProceso, procesos, nits: [H] });
+    const o7 = rs.ofertas.find((o) => o.identificador === "CO1.RPL.7"), o8 = rs.ofertas.find((o) => o.identificador === "CO1.RPL.8");
+    assert.ok(o7 && o7.via.tipo === "consorcio" && o7.via.por_nombre === true && o7.via.participacion_pct === 40, `sin NIT ni código, con el nombre exacto de su consorcio: suya, con su porcentaje → ${JSON.stringify(o7 && o7.via)}`);
+    assert.ok(o8 && o8.via.por_nombre === true && o8.via.participacion_pct === null, "con dos consorcios suyos de ese nombre, suya y sin porcentaje (no se elige)");
+    assert.ok(!rs.ofertas.some((o) => ["CO1.RPL.9", "CO1.RPL.10", "CO1.RPL.5", "CO1.RPL.3"].includes(o.identificador)),
+      `un nombre que no es de sus consorcios, o el suyo con un NIT ajeno en la fila, no → ${rs.ofertas.map((o) => o.identificador)}`);
+    assert.ok(rs.ofertas.filter((o) => o.via.por_nombre).length === 2 && !rs.ofertas.find((o) => o.identificador === "CO1.RPL.2").via.por_nombre, "la de su código no se marca «por nombre»");
+    /* (revisión adversaria, 13-nov-2026) un homónimo ANTERIOR a la creación de su consorcio no es suyo (ni «adjudicada a usted»); el
+       NIT ajeno en CUALQUIER fila de la oferta, o uno corto, tampoco deja reconocerla por el nombre; y la frase dice cuántas van por nombre */
+    const gruposF = [...grupos, { codigo_grupo: "738000001", nombre_grupo: "CONSORCIO VIAL 2025", nit_participante: H, participacion: "50", fecha_creaci_n_grupo: "2025-03-01T10:00:00.000" }];
+    const homonimos = [fila("CO1.RPL.20", "CO1.BDOS.20", "CONSORCIO VIAL 2025", "No Definido", "No definido", 1, "2019-03-01"), fila("CO1.RPL.21", "CO1.BDOS.21", "CONSORCIO VIAL 2025", "No Definido", "No definido", 1, "2025-02-01"),   // un mes ANTES del registro: así llega en SECOP II
+      fila("CO1.RPL.24", "CO1.BDOS.24", "CONSORCIO VIAL 2025", "No Definido", "No definido", 1, "2024-11-01"),   // cuatro meses antes: de otra firma
+      fila("CO1.RPL.22", "CO1.BDOS.22", "CONSORCIO PRIMERA INFANCIA HGR", "No Definido", "No definido", 1, "2026-06-01"), fila("CO1.RPL.22", "CO1.BDOS.22", "CONSORCIO PRIMERA INFANCIA HGR", "901555666", "No definido", 1, "2026-06-01"),
+      fila("CO1.RPL.23", "CO1.BDOS.23", "CONSORCIO PRIMERA INFANCIA HGR", "12345", "No definido", 1, "2026-06-02")];
+    const rh = OP.ofertasPropiasDe({ grupos: gruposF, propias: homonimos, delProceso: {}, procesos: [{ id_del_portafolio: "CO1.BDOS.20", adjudicado: "Si", nombre_del_proveedor: "CONSORCIO VIAL 2025", valor_total_adjudicacion: "1" }], nits: [H] });
+    assert.deepStrictEqual(rh.ofertas.map((o) => o.identificador), ["CO1.RPL.21"], `solo la que cabe en el margen del registro de su consorcio y sin NIT en ninguna fila → ${rh.ofertas.map((o) => o.identificador)}`);
+    assert.ok(!rh.tablero.some((t) => t.ano === "2019"), "la de 2019 (de otra firma con su nombre) no cuenta como adjudicada a usted");
+    assert.ok(OP.frasesOfertasPropias({ ok: true, ...rh }).some((t) => /1 de ellas se reconoce solo por el nombre del consorcio/.test(t)), "la frase dice cuántas se reconocen solo por el nombre");
+    assert.ok(!OP.frasesOfertasPropias({ ok: true, ...r }).some((t) => /solo por el nombre/.test(t)), "sin ninguna por nombre, no se dice");
+    const pedidosN = [];
+    const conNombres = async (url, op) => { const u = new URL(url), w = u.searchParams.get("$where") || ""; pedidosN.push({ w, g: u.searchParams.get("$group") || "" });
+      if (/^nombre_proveedor in/.test(w)) return { ok: true, status: 200, headers: { get: () => "application/json" }, text: async () => JSON.stringify(conSinCodigo.filter((f) => f.c_digo_proveedor === "No definido")), json: async () => conSinCodigo.filter((f) => f.c_digo_proveedor === "No definido") };
+      return falsa()(url, op); };
+    const cn = await OP.consultarOfertasPropias([H], { fetchImpl: conNombres, tiempoMs: 3000 });
+    assert.ok(cn.ok && ["CO1.RPL.7", "CO1.RPL.8"].every((id) => cn.ofertas.some((o) => o.identificador === id)) && !cn.ofertas.some((o) => o.identificador === "CO1.RPL.9"),
+      `la tercera consulta trae las de sus consorcios sin código → ${cn.ofertas.map((o) => o.identificador)}`);
+    const wN = pedidosN.find((p) => /^nombre_proveedor in/.test(p.w));
+    assert.ok(wN && /CONSORCIO PRIMERA INFANCIA HGR/.test(wN.w) && /c_digo_proveedor in \('No definido','No Definido'\)/.test(wN.w), `pide por los nombres de sus consorcios y solo sin código → ${wN && wN.w.slice(0, 160)}`);
+    const wT = pedidosN.find((p) => /^id_del_proceso_de_compra in/.test(p.w));
+    assert.ok(wT && /identificador_de_la_oferta/.test(wT.g), "las ofertas de sus procesos se piden agrupadas (la fila se repite por ítem y por código: sueltas pasaban del tope)");
+    const sinNom = async (url, op) => { const w = new URL(url).searchParams.get("$where") || ""; if (/^nombre_proveedor in/.test(w)) throw new Error("tiempo agotado"); return falsa()(url, op); };
+    const cs = await OP.consultarOfertasPropias([H], { fetchImpl: sinNom, tiempoMs: 3000 });
+    assert.ok(cs.ok && /las ofertas de sus consorcios sin código/.test(cs.aviso), `si la tercera falla, se dice → ${cs.aviso}`);
+    /* LA CAUSA SE VE aunque SECOP II no haya marcado la adjudicación (Cali: la resolución 228 de 2026 adjudicó, la fila seguía «en
+       Evaluación» el 13-nov-2026); una ganada no lleva línea de causa, y una perdida sin informe leído dice cómo leerlo */
+    const { htmlMisOfertas } = appEnVm(["htmlMisOfertas"]);
+    const ofM = (resultado, causa) => ({ identificador: `X.${resultado}`, entidad: "E", referencia: "R", fecha: "2026-09-10", via: { tipo: "consorcio", nombre: "CONSORCIO INFRAESTRUCTURA 1A" }, valor_cop: 1, resultado, causa });
+    const hM = htmlMisOfertas({ frases: [], ofertas: [ofM("sin_adjudicar", { frase: "Quedó hábil y ganó CONSORCIO CONCRETAR 2026, que le sacó 0,74 puntos por precio." }), ofM("gano", { frase: "no debe salir" }), ofM("otro", null), ofM("sin_dato", null)] });
+    const causas = [...hM.matchAll(/data-mi-oferta-causa>([^<]*)</g)].map((m) => m[1]);
+    assert.ok(/reconocida por el nombre del consorcio/.test(htmlMisOfertas({ frases: [], ofertas: [{ ...ofM("otro", null), via: { tipo: "consorcio", nombre: "C", por_nombre: true } }] })) && !/reconocida por el nombre/.test(hM), "la pantalla marca la que se reconoció solo por el nombre");
+    assert.deepStrictEqual([causas.length, /0,74 puntos por precio/.test(causas[0]), /no se ha leído/.test(causas[1]), /no debe salir/.test(hM)], [2, true, true, false],
+      `la causa sale aunque SECOP II diga «sin adjudicar»; la ganada y la que no tiene resultado ni causa, sin línea → ${JSON.stringify(causas)}`);
     // el manejador: credencial siempre, perfil obligatorio, y el resultado que salió bien se guarda; el que falló, no
     const HOP = require("../lib/handlers/perfil/ofertas_propias.js");
     let llamadas = 0;
