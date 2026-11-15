@@ -362,6 +362,21 @@ Fuentes:
 - `docs/MEMORIA.md § «Lo que mostraron 5 procesos de menor cuantía ya adjudicados (17-oct-2026)»`
 - `docs/MEMORIA.md § «Las evaluaciones de cada entidad entran a la aplicación: el navegador lee el documento, una sesión de madrugada lo interpreta y la aplicación verifica cada cita (26-oct-2026)»`
 
+### 4.7 Lo que estos hechos dicen de un proceso concreto
+
+Una tabla de bolsillo con lo medido. No es un precio sugerido: donde la columna del medio no alcanza para decidir, lo dice. Las cuentas de «quedaría primero» suponen todas las ofertas hábiles.
+
+| Su proceso | Lo que pasó en procesos así | Qué pesa más |
+|---|---|---|
+| Menor cuantía con 5 invitados o menos | Una o dos ofertas en 96,14 % de 311 procesos de 2026. Se adjudicó al tope del presupuesto (mediana de 99,99 % a 100,00 %) | Quedar hábil. El precio casi no compite |
+| Menor cuantía con 6 a 9 invitados | Una o dos ofertas en 86,17 % de 622 procesos | Quedar hábil; con un rival, el puntaje del precio favorece al más bajo |
+| Menor cuantía con 10 invitados o más, y el historial de la entidad anuncia poca competencia | Una o dos ofertas en 86,59 % de 455 procesos de 2026 | Lo mismo, con menos certeza |
+| Menor cuantía con 10 invitados o más, sin anuncio | Tres o más ofertas en 60,81 % de 1.059 procesos de 2026. Un precio fijo del 95 % quedaría primero en 21,3 % de los peleados; uno entre todos, al azar, en 16,1 % | No hay precio medido que recomendar. El aviso de Precios sobre dónde quedaría frente a las ofertas de la entidad, y su mínimo |
+| Licitación (la mitad tiene 10 oferentes o más) | Un precio fijo del 95 % quedaría primero en 8,4 %; al azar, en 8,2 %. Bajar al 92 % lo sube a 15,7 % | Quedar hábil y tener todos los puntos. El precio, dentro del grupo; ahí es casi una lotería |
+| Mínima cuantía donde suele llegar uno | Se adjudica al 100 % (mediana); en 2026 el 43,0 % tuvo una sola oferta | Presentarse y quedar hábil |
+| Mínima cuantía con 5 a 9 ofertas | Se adjudica al 83,0 % (mediana), y entre todas las mínimas con dos ofertas o más la más barata no es la adjudicada dos de cada tres veces | Si su costo no cabe ahí, no es su proceso |
+| Concurso de méritos | El precio no da puntos | La experiencia y el equipo; la oferta económica, dentro del presupuesto |
+
 ## 5. Qué dice hoy Detekta del precio
 
 Inventario leído en el código el 14-nov-2026 (commit `8a112b0`). La última columna se ejecutó: se llamó a `lib/apu/optimizador.js:optimizarPrecioOferta` con el mismo proceso y solo se cambió la modalidad.
@@ -431,10 +446,11 @@ Doce tandas en el orden en que más rinden: primero lo que ya está medido y cue
 
 - **Tanda 1 · El número de invitados en menor cuantía.**
   - Decide: una vez publicada la invitación, si el proceso va a tener una o dos ofertas. Con eso se decide si vale la pena terminar la oferta y en qué mercado se está para el precio. No decide dónde manifestar interés: el número sale después.
-  - Se construye: guardar el número de invitados de los procesos abiertos (hoy `lib/proyeccion.js` solo lo conserva en el histórico) y decirlo como hecho en Mis procesos y en Precios: «Fueron invitados 4 proveedores. Con 5 invitados o menos, en 96 de cada 100 procesos llegaron una o dos ofertas». Un 0 en ese campo se trata como «sin dato». Se mide además el caso sin señal: qué precio rinde más cuando hay 10 invitados o más y el historial no anuncia nada.
+  - Se construye: guardar el número de invitados de los procesos abiertos (hoy `lib/proyeccion.js` solo lo conserva en el histórico) y decirlo como hecho en Mis procesos y en Precios: «Invitados a ofertar: 4. Con 4 o 5 invitados llegaron una o dos ofertas en 92 de cada 100 procesos; en general, en 60 de cada 100». Un 0 en ese campo se trata como «sin dato». Se mide además el caso sin señal: qué precio rinde más cuando hay 10 invitados o más y el historial no anuncia nada.
   - Mueve: un hecho nuevo en pantalla. Ningún precio y ningún orden.
   - Cierre: la medición de la sección 4.2 corre dentro de la suite con la regla real y da lo publicado (96,14 % con 5 invitados o menos; 95,20 % donde coinciden las dos señales). Además se guarda el número el día de la invitación y se compara al adjudicar: si cambia, la señal se retira.
   - Tamaño: 2 sesiones.
+  - *Hecha en parte el 15-nov-2026*: Precios ya dice cuántos proveedores fueron invitados a ofertar y, con ese número, en cuántos de cada 100 procesos llegaron una o dos ofertas, con la cifra general al lado. La tabla sale de `data/invitados_menor_cuantia.json`, que se genera con la medición, y la primera vez que se ve el número queda guardada con su fecha para comprobar después que no cambia. Una invitación cancelada no cuenta: la revisión del cambio encontró un proceso real que decía 269 invitados donde los vigentes eran 10. Falta: decirlo en Mis procesos (pide que la sincronización conserve el campo en los procesos abiertos), la comparación al adjudicar y la medición del caso sin señal. Memoria: «El número de invitados en Precios, el índice de archivos entero y tres arreglos de la auditoría (15-nov-2026)».
 
 ### 7.2 Entrega 2 · Una referencia que no envejezca donde hay pelea
 
@@ -734,3 +750,34 @@ Solo se leyó el resumen, no el texto completo: Chang, Chen y Salmon (2015), Man
 | `ANCP-CCE-Analitica/datos_abiertos` | MIT | Cuadernos de la propia Agencia para consultar datos.gov.co (2022) | Patrón de consulta que el proyecto ya usa |
 
 Nada de lo anterior se recomienda para coordinar ofertas ni para presentar más de una al mismo proceso: está prohibido (Anexo B) y este plan trata de una sola oferta independiente.
+
+## Anexo E · Auditoría de Detekta del 15-nov-2026
+
+Usted pidió auditar el plan y toda la aplicación. La suite completa pasa, pero «pasa la suite» no es «no falta nada»: el proyecto lleva su propia lista de pendientes abiertos, y esa lista es el mapa honesto de lo que falta. Se clasificaron los 109 que había ese día (un asistente los leyó uno por uno y verificó contra el código los que se podían arreglar).
+
+| Clase | Cuántos | Qué significa |
+|---|---|---|
+| Esperan una decisión o un dato suyo | 36 | Nada de código los resuelve |
+| Necesitan producción o un servicio externo | 25 | Hay que leer la aplicación publicada, Vercel, Upstash o el correo |
+| Piden medir o leer documentos | 19 | No son cambios de código |
+| Defectos arreglables sin mover cifras | 15 | Se pueden cerrar en sesiones de trabajo |
+| Arreglables, pero mueven una cifra o un orden | 11 | Llevan plan corto y su visto bueno |
+| Comerciales o sin objeto desde que Detekta es de uso propio | 3 | Se pueden cerrar con esa razón |
+
+**Lo que se arregló el 15-nov-2026**, cada cosa con su prueba y su prueba por mutación:
+
+- En un proceso con más de 400 archivos, las adendas más nuevas quedaban fuera del índice sin aviso. Ahora el índice trae siempre lo más viejo y lo más nuevo; en los pocos procesos con más de 2.400 archivos puede faltar el medio, y se dice.
+- Cuando la base de datos llega al límite de su plan, la aplicación lo dice en español y con qué hacer, en vez de un error en inglés.
+- Una llamada de la pantalla o del lector de documentos que no recibe respuesta ya no espera para siempre: se corta a los 5 minutos y 20 segundos y lo dice.
+- El error de «lo que envió pesa demasiado» ya no manda a volver a intentar.
+- Una prueba de la suite fallaba todas las noches entre las 7 p. m. y la medianoche de Colombia (corregida el 14-nov-2026).
+
+**Las cinco decisiones suyas que más frenan el objetivo de adjudicar más contratos**, según la lista de pendientes del proyecto:
+
+1. Las siete de la sección 9 de este plan.
+2. Las ocho de `docs/PLAN_X20.md § «9. Lo que decide usted»`, entre ellas ir donde llega una sola oferta.
+3. Qué hacer con los archivos de Excel de presupuesto que hoy no pasan la puerta de lectura: esos procesos no llegan a Precios.
+4. Si la base de experiencia por perfil solo propone contratos o también mueve el veredicto de «cumple».
+5. Los certificados RUP nuevos de los tres socios: sin ellos no se puede ofertar en consorcio.
+
+**Lo que la auditoría no pudo ver.** Producción: la aplicación publicada pide ingreso desde esta sesión, así que no se comprobó que el sitio en vivo responda, ni cuántas evaluaciones hay capturadas, ni el estado del correo. Y los 25 pendientes que dependen de producción siguen como estaban.

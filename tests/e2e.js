@@ -7524,9 +7524,10 @@ async function main() {
     const entero = await bajarPorTrozos(async () => { q++; return { ok: true, base64: b64(100), completo: q === 2, total: 200 }; }, deB64, 8)("https://community.secop.gov.co/x");
     assert.strictEqual(entero.length, 200, "lo que ya funcionaba sigue funcionando: dos partes, un archivo entero");
 
-    const api = new Function("conSesion", "fetch", "leerJson", "errorDelServidor", "msg401", "fraseDeFallo", funcion("  async function api(ruta, opciones = {}) {") + "\nreturn api;");
+    // desde el 15-nov-2026 api() tiene tiempo máximo: su tope vive fuera de la función y se le pasa aquí como las demás dependencias
+    const api = new Function("conSesion", "fetch", "leerJson", "errorDelServidor", "msg401", "fraseDeFallo", "TIEMPO_MAX_API_MS", funcion("  async function api(ruta, opciones = {}) {") + "\nreturn api;");
     const cuerpoMalo = { ok: false, error: "No se pudo descargar: fetch failed (código ECONNRESET).", causa: { clase: "conexion", codigo: "ECONNRESET", http: null, ms: 9 } };
-    const apiSim = (status, cuerpo) => api((c) => c, async () => ({ status, ok: status < 400 }), async () => cuerpo, (c) => c && c.error, () => "sesión", () => "frase");
+    const apiSim = (status, cuerpo) => api((c) => c, async () => ({ status, ok: status < 400 }), async () => cuerpo, (c) => c && c.error, () => "sesión", () => "frase", 320000);
     const eApi = await apiSim(502, cuerpoMalo)("/api/pliego?op=descargar", { method: "POST", body: {} }).then(() => null, (e) => e);
     assert.ok(eApi && eApi.cuerpo === cuerpoMalo && /fetch failed/.test(eApi.message), "api() devuelve el CUERPO con el error: la causa estructurada ya no se pierde en el texto (MUTACIÓN: sin `falla.cuerpo`)");
     assert.strictEqual("status" in eApi, false, "y NO añade `status` al error: cambiaría la redacción de fraseDeFallo (401/403 → «el muro»)");
@@ -11224,6 +11225,508 @@ async function main() {
     }
     console.log("· unidad precio frente al grupo: comparables (confidencial, dos valores, fuera de rango, sin presupuesto), "
       + "por encima de todas y de la mitad con su alerta, nada bajo cinco procesos, tandas de diez con memoria de 24 h, fuente caída y la acción por el router");
+  }
+
+  /* unidad: CUÁNTOS FUERON INVITADOS A OFERTAR (docs/PLAN_PRECIO.md, tanda 1, 15-nov-2026) ─────────────────
+     En menor cuantía solo ofertan los invitados y SECOP II publica cuántos son con la invitación (lib/invitados).
+     Lo que estas aserciones cierran: 0 o vacío es «todavía sin publicar» y no «cero invitados»; el número se lee
+     del expediente entero (la fila de la fase de oferta) y no de la fila que el usuario guardó; más respuestas que
+     invitados no dice nada; la cuenta «de cada 100» sale de los CONTEOS del archivo generado, con la general al
+     lado; una fuente caída no es «sin publicar»; solo lo publicado se recuerda, y la primera vez que se vio no se
+     pisa; y en la pantalla un pedido viejo no pinta sobre el nuevo ni se pregunta donde no es menor cuantía. */
+  bqInvitados: { if (!corre("unidad invitados a ofertar")) break bqInvitados;
+    const I = require("../lib/invitados.js");
+    const MC = "Selección Abreviada de Menor Cuantía";
+    const fase = (o) => ({ modalidad_de_contratacion: MC, ...o });
+    // (1) de las fases del expediente al hecho
+    assert.deepStrictEqual(I.invitadosDeFilas([fase({ fase: "Presentación de observaciones", proveedores_invitados: "0" }), fase({ fase: "Presentación de oferta", proveedores_invitados: "23", respuestas_al_procedimiento: "0" }),
+      fase({ fase: "Manifestación de interés (Menor Cuantía)", proveedores_invitados: "0" })]), { estado: "publicado", invitados: 23 }, "el número está en la fila de la fase de oferta: se toma el mayor del expediente");
+    for (const vacio of ["0", "", null, undefined, "4.5", "muchos", "-3", "1e2", "0x10", "4.0", " "]) {
+      assert.deepStrictEqual(I.invitadosDeFilas([fase({ proveedores_invitados: vacio })]), { estado: "sin_publicar", invitados: null }, `«${vacio}» es «todavía sin publicar», no «cero invitados» ni un número`);
+    }
+    assert.deepStrictEqual(I.invitadosDeFilas([fase({ proveedores_invitados: "3", respuestas_al_procedimiento: "5" })]), { estado: "contradictorio", invitados: null }, "más respuestas que invitados: el campo se contradice y no se dice nada");
+    assert.deepStrictEqual(I.invitadosDeFilas([fase({ proveedores_invitados: "5", respuestas_al_procedimiento: "5" })]), { estado: "publicado", invitados: 5 }, "tantas respuestas como invitados no se contradice");
+    assert.strictEqual(I.invitadosDeFilas([{ modalidad_de_contratacion: "Licitación pública Obra Publica", proveedores_invitados: "5" }]).estado, "no_aplica", "en licitación no hay invitación");
+    assert.strictEqual(I.invitadosDeFilas([{ modalidad_de_contratacion: "Seleccion Abreviada Menor Cuantia Sin Manifestacion Interes", proveedores_invitados: "4" }]).estado, "no_aplica", "la menor cuantía sin manifestación tampoco invita");
+    assert.strictEqual(I.invitadosDeFilas([{ modalidad_de_contratacion: "Mínima cuantía", proveedores_invitados: "9" }, fase({ proveedores_invitados: "7" })]).invitados, 7, "solo cuentan las filas de menor cuantía con manifestación, aunque otra fila traiga un número mayor");
+    assert.strictEqual(I.invitadosDeFilas([fase({ proveedores_invitados: "10" }), fase({ proveedores_invitados: "23" }), fase({ proveedores_invitados: "0" })]).invitados, 23, "con dos fases vigentes con número, el mayor");
+    assert.strictEqual(I.invitadosDeFilas([fase({ proveedores_invitados: "23" }), fase({ proveedores_invitados: "10" })]).invitados, 23, "el mayor, vaya primero o vaya último");
+    /* UNA INVITACIÓN CANCELADA NO CUENTA (revisión adversaria del 15-nov-2026): las filas son las del expediente real CO1.BDOS.10090460 */
+    const realCancelada = [
+      fase({ fase: "Presentación de oferta", estado_del_procedimiento: "Seleccionado", proveedores_invitados: "10", respuestas_al_procedimiento: "8" }),
+      fase({ fase: "Manifestación de interés (Menor Cuantía)", estado_del_procedimiento: "Evaluación", proveedores_invitados: "0", respuestas_al_procedimiento: "0" }),
+      fase({ fase: "Presentación de oferta", estado_del_procedimiento: "Cancelado", proveedores_invitados: "269", respuestas_al_procedimiento: "0" }),
+      fase({ fase: "Manifestación de interés (Menor Cuantía)", estado_del_procedimiento: "Cancelado", proveedores_invitados: "0", respuestas_al_procedimiento: "0" })];
+    assert.deepStrictEqual(I.invitadosDeFilas(realCancelada), { estado: "publicado", invitados: 10 }, "la invitación cancelada (269) no cuenta: vale la vigente (10)");
+    assert.deepStrictEqual(I.invitadosDeFilas([fase({ estado_del_procedimiento: "Evaluación", proveedores_invitados: "0" }), fase({ estado_del_procedimiento: "Cancelado", proveedores_invitados: "7" })]), { estado: "cancelada", invitados: null },
+      "si el único número es de una invitación cancelada, no hay número vigente (el caso real CO1.BDOS.11048937)");
+    assert.deepStrictEqual(I.invitadosDeFilas([fase({ estado_del_procedimiento: "CANCELADA", proveedores_invitados: "7" })]).estado, "cancelada", "cancelado o cancelada, en cualquier caja");
+    assert.deepStrictEqual(I.invitadosDeFilas([fase({ estado_del_procedimiento: "Cancelado", proveedores_invitados: "3", respuestas_al_procedimiento: "40" }), fase({ estado_del_procedimiento: "Publicado", proveedores_invitados: "12", respuestas_al_procedimiento: "5" })]),
+      { estado: "publicado", invitados: 12 }, "las respuestas de la fase cancelada no vuelven contradictoria a la vigente");
+    assert.strictEqual(I.invitadosDeFilas([]).estado, "no_encontrado");
+    assert.strictEqual(I.invitadosDeFilas(null).estado, "no_encontrado");
+
+    // (2) la tabla generada: conteos que cuadran, clases contiguas desde 1 y sin tope al final
+    const t = I.tabla();
+    assert.ok(t && t.formato === 1 && /^\d{4}-\d{2}-\d{2}$/.test(t.generado) && /p6dx-8zbt/.test(t.fuente), "data/invitados_menor_cuantia.json existe, con su formato, su fecha y su fuente");
+    const suma = (k) => t.clases.reduce((a, c) => a + c[k], 0);
+    assert.ok(suma("procesos") === t.total.procesos && suma("con_una") === t.total.con_una && suma("con_una_o_dos") === t.total.con_una_o_dos, "las clases suman el total, en las tres cuentas");
+    assert.ok(t.clases.every((c) => Number.isInteger(c.procesos) && c.con_una <= c.con_una_o_dos && c.con_una_o_dos <= c.procesos), "en cada clase: una sola ≤ una o dos ≤ procesos");
+    assert.ok(t.clases[0].desde === 1 && t.clases.every((c, i) => i === 0 || c.desde === t.clases[i - 1].hasta + 1) && t.clases[t.clases.length - 1].hasta === null, "las clases van seguidas desde 1 y la última no tiene tope");
+    assert.ok(t.clases.filter((c) => c.desde === 1 || c.desde === 2).every((c) => c.con_una_o_dos === c.procesos), "con uno o dos invitados no pueden llegar tres ofertas: las contradictorias quedaron fuera al generar");
+    /* la tabla y el resultado versionado de la medición salen de la MISMA corrida: una cifra retocada a mano en uno de los dos
+       archivos, aunque quede coherente por dentro, no cuadra con el otro (revisión adversaria del 15-nov-2026) */
+    {
+      const resultado = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "tools", "analisis", "plan_precio", `resultados_invitados_${t.generado}.json`), "utf8"));
+      for (const c of t.clases) {
+        const m = resultado.por_invitados_todo[c.clave];
+        assert.ok(m && m.procesos === c.procesos && Math.abs(m.una_oferta_pct - (c.con_una * 100) / c.procesos) < 0.006 && Math.abs(m.una_o_dos_pct - (c.con_una_o_dos * 100) / c.procesos) < 0.006,
+          `la clase «${c.clave}» de la tabla cuadra con el resultado de la medición del ${t.generado} → ${JSON.stringify(c)} · ${JSON.stringify(m && { procesos: m.procesos, una: m.una_oferta_pct, una_o_dos: m.una_o_dos_pct })}`);
+      }
+      assert.strictEqual(resultado.poblacion.usados, t.total.procesos, "y el total de procesos es el de esa medición");
+    }
+    // la frase, con una tabla de prueba (no depende de la próxima medición) …
+    const tp = { formato: 1, recepcion_desde: "2024-01-01", total: { procesos: 1000, con_una: 400, con_una_o_dos: 600 }, clases: [
+      { clave: "1", desde: 1, hasta: 1, procesos: 200, con_una: 200, con_una_o_dos: 200 }, { clave: "2", desde: 2, hasta: 2, procesos: 150, con_una: 120, con_una_o_dos: 150 },
+      { clave: "3", desde: 3, hasta: 3, procesos: 50, con_una: 30, con_una_o_dos: 45 }, { clave: "4-5", desde: 4, hasta: 5, procesos: 300, con_una: 240, con_una_o_dos: 276 },
+      { clave: "6-9", desde: 6, hasta: 9, procesos: 100, con_una: 60, con_una_o_dos: 80 }, { clave: "10", desde: 10, hasta: 10, procesos: 2400, con_una: 700, con_una_o_dos: 1128 },
+      { clave: "11+", desde: 11, hasta: null, procesos: 100, con_una: 10, con_una_o_dos: 29 }] };
+    assert.strictEqual(I.fraseInvitados(4, tp), "Invitados a ofertar: 4 (SECOP II). Solo ellos pueden presentar oferta. Con 4 o 5 invitados llegaron una o dos ofertas en 92 de cada 100 procesos (300 desde 2024); en general, en 60 de cada 100.",
+      "el número, la cuenta de su clase y la general al lado");
+    assert.strictEqual(I.fraseInvitados(5, tp), I.fraseInvitados(4, tp).replace("ofertar: 4 (", "ofertar: 5 ("), "4 y 5 invitados son la misma clase");
+    assert.strictEqual(I.fraseInvitados(1, tp), "Invitados a ofertar: 1 (SECOP II). Solo ese proveedor puede presentar oferta.", "con un invitado, solo el número: que llegue una oferta es obvio");
+    assert.strictEqual(I.fraseInvitados(2, tp), "Invitados a ofertar: 2 (SECOP II). Solo ellos pueden presentar oferta. Con 2 invitados llegó una sola oferta en 80 de cada 100 procesos (150 desde 2024); en general, en 40 de cada 100.",
+      "con dos invitados se dice en cuántos llegó UNA sola, con su general: «una o dos» sería decir nada");
+    assert.strictEqual(I.fraseInvitados(10, tp), "Invitados a ofertar: 10 (SECOP II). Solo ellos pueden presentar oferta. Con 10 invitados llegaron una o dos ofertas en 47 de cada 100 procesos (2.400 desde 2024); en general, en 60 de cada 100. Diez es el tope si hubo sorteo.",
+      "con diez se dice que es también el tope del sorteo, y los miles van con punto");
+    assert.ok(/Con 11 invitados o más llegaron una o dos ofertas en 29 de cada 100 procesos \(100 desde 2024\)/.test(I.fraseInvitados(26, tp)) && !/tope/.test(I.fraseInvitados(26, tp)), "más de diez: la última clase, sin la nota del tope");
+    assert.strictEqual(I.fraseInvitados(3, tp), "Invitados a ofertar: 3 (SECOP II). Solo ellos pueden presentar oferta.", "una clase con menos de 100 procesos dice el número y calla la cuenta");
+    assert.strictEqual(I.fraseInvitados(4, null), "Invitados a ofertar: 4 (SECOP II). Solo ellos pueden presentar oferta.", "sin tabla, el número sin cuenta: nunca una cifra inventada");
+    for (const malo of [0, -1, 2.5, null, "4"]) assert.strictEqual(I.fraseInvitados(malo, tp), null, `«${malo}» no es un número de invitados`);
+    assert.ok([1, 2, 3, 5, 9, 10, 40].every((n) => I.fraseInvitados(n).length <= 230), `la frase de producción cabe en pocos renglones del teléfono → ${[1, 2, 3, 5, 9, 10, 40].map((n) => I.fraseInvitados(n).length)}`);
+    // … y con la tabla REAL, la cuenta sale de los conteos del archivo, no de una cifra escrita en el código
+    const c45 = t.clases.find((c) => c.clave === "4-5"), c2 = t.clases.find((c) => c.clave === "2");
+    assert.ok(I.fraseInvitados(5).includes(`llegaron una o dos ofertas en ${Math.round((c45.con_una_o_dos * 100) / c45.procesos)} de cada 100 procesos (${c45.procesos} desde ${t.recepcion_desde.slice(0, 4)}); en general, en ${Math.round((t.total.con_una_o_dos * 100) / t.total.procesos)} de cada 100.`),
+      `la frase de producción lee los conteos del archivo → ${I.fraseInvitados(5)}`);
+    assert.ok(I.fraseInvitados(2).includes(`llegó una sola oferta en ${Math.round((c2.con_una * 100) / c2.procesos)} de cada 100 procesos (${c2.procesos} desde ${t.recepcion_desde.slice(0, 4)}); en general, en ${Math.round((t.total.con_una * 100) / t.total.procesos)} de cada 100.`),
+      `con dos invitados, la cuenta de una sola oferta sale de los conteos → ${I.fraseInvitados(2)}`);
+    assert.strictEqual(I.claseDe(4, tp).clave, "4-5"); assert.strictEqual(I.claseDe(3, tp), null); assert.strictEqual(I.claseDe(0, tp), null);
+
+    // (3) la consulta: dos consultas chicas, memoria solo de lo publicado, la primera vista no se pisa, fuente caída
+    {
+      const kv = new Map(), sets = [];
+      const redisI = { get: async (k) => kv.get(k) ?? null, set: async (k, v, o = {}) => { sets.push({ k, v, o }); if (o.nx && kv.has(k)) return null; kv.set(k, v); return "OK"; } };
+      const donde = [];
+      const cliente = (fases, portafolio = "CO1.BDOS.777") => () => ({ pedir: async (params) => { donde.push(params.$where); return /id_del_proceso=/.test(params.$where) ? (portafolio ? [{ id_del_portafolio: portafolio }] : []) : fases; } });
+      const publicadas = [fase({ proveedores_invitados: "0" }), fase({ proveedores_invitados: "4", respuestas_al_procedimiento: "0" })];
+      const r1 = await I.leerInvitados(redisI, { idProceso: " co1.req.123456 ", cliente: cliente(publicadas), ahora: Date.parse("2026-11-15T12:00:00Z") });
+      assert.deepStrictEqual(r1, { ok: true, estado: "publicado", invitados: 4, desde: "datos.gov.co" }, `el proceso → su expediente → sus fases → ${JSON.stringify(r1)}`);
+      assert.deepStrictEqual(donde, ["id_del_proceso='CO1.REQ.123456'", "id_del_portafolio='CO1.BDOS.777'"], "dos consultas: la fila del proceso da el expediente, y el expediente sus fases");
+      {
+        const vistas = [];
+        await I.leerInvitados(null, { idProceso: "CO1.REQ.123456", cliente: () => ({ pedir: async (params) => { vistas.push(params); return /id_del_proceso=/.test(params.$where) ? [{ id_del_portafolio: "CO1.BDOS.777" }] : publicadas; } }) });
+        assert.ok(/estado_del_procedimiento/.test(vistas[1].$select) && /proveedores_invitados/.test(vistas[1].$select) && /respuestas_al_procedimiento/.test(vistas[1].$select) && /modalidad_de_contratacion/.test(vistas[1].$select),
+          "las fases se piden con su estado: sin él no se distingue una invitación cancelada");
+        assert.ok(Number(vistas[1].$limit) >= 50 && Number(vistas[0].$limit) >= 1, "se piden todas las fases del expediente, no una");
+      }
+      assert.ok(sets.length === 2 && sets[0].k === I.clave("CO1.REQ.123456") && sets[0].o.ex === I.TTL_SEG && !sets[0].o.nx, "lo publicado se recuerda 6 h");
+      assert.ok(sets[1].k === I.claveVisto("CO1.BDOS.777") && sets[1].o.nx === true && sets[1].o.ex === I.TTL_VISTO_SEG && JSON.parse(sets[1].v).invitados === 4 && JSON.parse(sets[1].v).visto === "2026-11-15",
+        `la primera vez que se vio el número, con su fecha y sin pisar → ${JSON.stringify(sets[1])}`);
+      const r2 = await I.leerInvitados(redisI, { idProceso: "CO1.REQ.123456", cliente: cliente(publicadas) });
+      assert.ok(r2.ok && r2.desde === "memoria" && r2.invitados === 4 && donde.length === 2, "la segunda vez sale de la memoria, sin llamar a datos.gov.co");
+      kv.delete(I.clave("CO1.REQ.123456"));
+      const r3 = await I.leerInvitados(redisI, { idProceso: "CO1.REQ.123456", cliente: cliente([fase({ proveedores_invitados: "6" })]), ahora: Date.parse("2026-12-01T12:00:00Z") });
+      assert.ok(r3.invitados === 6 && JSON.parse(kv.get(I.claveVisto("CO1.BDOS.777"))).invitados === 4 && JSON.parse(kv.get(I.claveVisto("CO1.BDOS.777"))).visto === "2026-11-15",
+        "si el número cambia después, la primera vista queda como estaba: es lo que permite comprobarlo");
+      donde.length = 0;
+      const r4 = await I.leerInvitados(redisI, { idProceso: "CO1.BDOS.888", cliente: cliente([fase({ proveedores_invitados: "0" })]) });
+      assert.ok(r4.ok && r4.estado === "sin_publicar" && r4.invitados === null && donde.length === 1 && donde[0] === "id_del_portafolio='CO1.BDOS.888'", "con el expediente en la mano basta una consulta");
+      const guardado888 = sets.find((x) => x.k === I.clave("CO1.BDOS.888"));
+      assert.ok(guardado888 && guardado888.o.ex === I.TTL_CORTO_SEG && I.TTL_CORTO_SEG <= 1800 && !sets.some((x) => x.k === I.claveVisto("CO1.BDOS.888")),
+        "«sin publicar» se recuerda poco (un cuarto de hora): puede salir en cualquier momento, y no deja primera vista");
+      const r4b = await I.leerInvitados(redisI, { idProceso: "CO1.BDOS.888", cliente: cliente([fase({ proveedores_invitados: "9" })]) });
+      assert.ok(r4b.estado === "sin_publicar" && r4b.desde === "memoria" && donde.length === 1, "dentro de ese cuarto de hora no se vuelve a preguntar: cinco cálculos seguidos no son diez consultas");
+      const rCan = await I.leerInvitados(redisI, { idProceso: "CO1.BDOS.889", cliente: cliente([fase({ estado_del_procedimiento: "Cancelado", proveedores_invitados: "7" })]) });
+      assert.ok(rCan.estado === "cancelada" && rCan.invitados === null && sets.find((x) => x.k === I.clave("CO1.BDOS.889")).o.ex === I.TTL_CORTO_SEG && !sets.some((x) => x.k === I.claveVisto("CO1.BDOS.889")),
+        "una invitación cancelada no deja número, ni primera vista");
+      donde.length = 0;
+      const r5 = await I.leerInvitados(redisI, { idProceso: "CO1.REQ.999", cliente: cliente(publicadas, null) });
+      assert.ok(r5.ok && r5.estado === "no_encontrado" && r5.invitados === null, "un proceso que SECOP II no trae: no encontrado");
+      const caido = () => ({ pedir: async () => { throw new Error("tiempo agotado"); } });
+      const r6 = await I.leerInvitados(redisI, { idProceso: "CO1.REQ.555", cliente: caido });
+      assert.deepStrictEqual(r6, { ok: false, motivo: "no_respondio" }, "una fuente caída es «no se pudo consultar», jamás «sin publicar»");
+      const noLlamar = () => ({ pedir: async () => { throw new Error("no debía tocar la red"); } });
+      for (const malo of ["", null, "x", "CO1.REQ.", "CO1.NTC.123456", "CO1.REQ.123' or '1'='1"]) {
+        assert.deepStrictEqual(await I.leerInvitados(redisI, { idProceso: malo, cliente: noLlamar }), { ok: false, motivo: "sin_proceso" }, `«${malo}» no es un número de proceso: no se consulta`);
+      }
+      assert.ok((await I.leerInvitados(null, { idProceso: "CO1.REQ.123456", cliente: cliente(publicadas) })).invitados === 4, "sin Redis consulta igual");
+      const redisRoto = { get: async () => { throw new Error("Redis caído"); }, set: async () => { throw new Error("Redis caído"); } };
+      assert.deepStrictEqual(await I.leerInvitados(redisRoto, { idProceso: "CO1.REQ.123456", cliente: cliente(publicadas) }), { ok: true, estado: "publicado", invitados: 4, desde: "datos.gov.co" }, "si la memoria falla, se consulta y se responde igual");
+      const memoriaRara = { get: async () => JSON.stringify({ estado: "publicado", invitados: "muchos" }), set: async () => "OK" };
+      assert.strictEqual((await I.leerInvitados(memoriaRara, { idProceso: "CO1.REQ.123456", cliente: cliente(publicadas) })).desde, "datos.gov.co", "una memoria con un número que no es un número no se cree: se consulta");
+      const portafolioRaro = () => ({ pedir: async (params) => (/id_del_proceso=/.test(params.$where) ? [{ id_del_portafolio: "x' or '1'='1" }] : (() => { throw new Error("no debía pedir las fases con un expediente ilegible"); })()) });
+      assert.strictEqual((await I.leerInvitados(null, { idProceso: "CO1.REQ.123456", cliente: portafolioRaro })).estado, "no_encontrado", "un expediente que no es un identificador no se usa en la segunda consulta");
+    }
+    // (4) lo que viaja a la pantalla
+    assert.deepStrictEqual(I.paraPantalla({ ok: true, estado: "publicado", invitados: 4, desde: "memoria" }), { estado: "publicado", invitados: 4, frase: I.fraseInvitados(4), desde: "memoria", motivo: null, motivo_texto: null });
+    assert.strictEqual(I.paraPantalla({ ok: true, estado: "sin_publicar", invitados: null }).frase, I.FRASE_SIN_PUBLICAR);
+    assert.ok(I.paraPantalla({ ok: true, estado: "cancelada", invitados: null }).frase === I.FRASE_CANCELADA && /cancelada la invitación/.test(I.FRASE_CANCELADA) && I.paraPantalla({ ok: true, estado: "cancelada", invitados: null }).invitados === null, "la invitación cancelada se dice, sin número");
+    for (const mudo of ["no_aplica", "no_encontrado", "contradictorio"]) assert.strictEqual(I.paraPantalla({ ok: true, estado: mudo, invitados: null }).frase, null, `${mudo}: no hay nada que decir`);
+    assert.ok(/datos\.gov\.co no respondió a tiempo/.test(I.paraPantalla({ ok: false, motivo: "no_respondio" }).motivo_texto) && I.paraPantalla({ ok: false, motivo: "no_respondio" }).frase === null, "una fuente caída se dice, sin frase de hecho");
+    assert.strictEqual(I.paraPantalla({ ok: false, motivo: "sin_proceso" }).motivo_texto, null, "sin número de proceso no hay fallo que contar");
+    assert.ok(/no respondió a tiempo/.test(I.paraPantalla(null).motivo_texto), "sin respuesta: se dice que no se pudo consultar");
+    // (5) la acción por el router REAL: sin número de proceso responde sin tocar la red; sin credencial no pasa; otro `solo` es inerte
+    {
+      const rA = require("../api/apu.js");
+      const s1 = await invocar(rA, "/api/apu?op=grupo&solo=invitados&id_proceso=xx", CAB_TOKEN);
+      assert.ok(s1.status === 200 && s1.cuerpo.ok === true && s1.cuerpo.invitados && s1.cuerpo.invitados.motivo === "sin_proceso" && s1.cuerpo.invitados.frase === null && !("frente_al_grupo" in s1.cuerpo),
+        `solo=invitados responde solo ese hecho, sin exigir precio ni NIT → ${JSON.stringify(s1.cuerpo).slice(0, 200)}`);
+      assert.strictEqual((await invocar(rA, "/api/apu?op=grupo&solo=invitados&id_proceso=CO1.REQ.123456", {})).status, 401, "sin credencial no pasa la puerta");
+      const s3 = await invocar(rA, "/api/apu?op=grupo&solo=otra-cosa&entidad_nit=890399011&modalidad=x", CAB_TOKEN);
+      assert.ok(s3.status === 200 && s3.cuerpo.motivo === "sin_precio" && !("invitados" in s3.cuerpo), "un valor desconocido de `solo` es inerte: responde el grupo de siempre");
+    }
+    // (6) la pantalla REAL (app.js en un vm): pinta la frase, calla donde no es menor cuantía y un pedido viejo no pisa al nuevo
+    {
+      const pedidos = [], pendientes = [];
+      const respuesta = (cuerpo) => ({ ok: true, status: 200, headers: { get: () => "application/json" }, json: async () => cuerpo, text: async () => JSON.stringify(cuerpo) });
+      // lo que la página pide sola al arrancar (la cuenta, el perfil…) se queda sin respuesta: aquí solo se cuentan los pedidos de invitados
+      const fetchP = (ruta) => (/solo=invitados/.test(String(ruta)) ? new Promise((resolver, rechazar) => { pedidos.push(String(ruta)); pendientes.push({ resolver: (c) => resolver(respuesta(c)), rechazar }); }) : new Promise(() => {}));
+      const { expuesto, ventana } = appEnVm(["pedirInvitados", "ponerModalidadDePrueba: (m) => { modalidadProceso = m; }"], { fetch: fetchP, conVentana: true });
+      const nodos = {};
+      // un nodo de mentira con clases de verdad: «oculto» es llevar la clase `hidden`, se ponga con classList o escribiendo className
+      const nodoFijo = () => {
+        let clase = ""; const tiene = (c) => clase.split(/\s+/).includes(c);
+        const n = { value: "", textContent: "" };
+        Object.defineProperty(n, "className", { get: () => clase, set: (v) => { clase = String(v); } });
+        n.classList = { add: (c) => { if (!tiene(c)) clase = `${clase} ${c}`.trim(); }, remove: (c) => { clase = clase.split(/\s+/).filter((x) => x && x !== c).join(" "); }, toggle() {}, contains: tiene };
+        Object.defineProperty(n, "oculto", { get: () => tiene("hidden"), set: (v) => { if (v) n.classList.add("hidden"); else n.classList.remove("hidden"); } });
+        return n;
+      };
+      ventana.document.getElementById = (id) => nodos[id] || (nodos[id] = nodoFijo());
+      const linea = ventana.document.getElementById("pt-invitados"), campoId = ventana.document.getElementById("id-proceso");
+      const tic = () => new Promise((r) => setImmediate(r));
+      campoId.value = "CO1.REQ.123456"; expuesto.ponerModalidadDePrueba(MC);
+      const p1 = expuesto.pedirInvitados({});
+      await tic();
+      assert.ok(pedidos.length === 1 && /\/api\/apu\?op=grupo&solo=invitados&id_proceso=CO1\.REQ\.123456$/.test(pedidos[0]) && linea.textContent === "" && linea.oculto === true, `pregunta por el proceso abierto y no enseña nada mientras tanto → ${pedidos[0]}`);
+      pendientes[0].resolver({ ok: true, invitados: { estado: "publicado", invitados: 4, frase: "FRASE DEL SERVIDOR", motivo: null, motivo_texto: null } });
+      await p1;
+      assert.ok(linea.textContent === "FRASE DEL SERVIDOR" && !/hidden/.test(linea.className), "pinta la frase que escribió el servidor, tal cual");
+      // otra modalidad conocida: no pregunta y borra lo anterior
+      // (sin esperar a la función: si preguntara, su pedido no se contesta y la prueba debe fallar por la aserción, no colgarse)
+      for (const otra of ["Licitación pública Obra Publica", "Mínima cuantía", "Concurso de méritos abierto", "Contratación régimen especial (con ofertas)", "Contratación Directa (con ofertas)", "Selección abreviada subasta inversa", "LICITACIÓN PÚBLICA"]) {
+        linea.textContent = "ALGO DE ANTES"; linea.oculto = false;
+        expuesto.ponerModalidadDePrueba(otra);
+        expuesto.pedirInvitados({}); await tic();
+        assert.ok(pedidos.length === 1 && linea.textContent === "" && linea.oculto === true, `en «${otra}» no pregunta, y lo que hubiera no se queda`);
+      }
+      // sin proceso (o con el panel apagado): nada
+      expuesto.ponerModalidadDePrueba(MC); campoId.value = "";
+      expuesto.pedirInvitados({}); await tic();
+      assert.strictEqual(pedidos.length, 1, "sin número de proceso no pregunta");
+      campoId.value = "CO1.REQ.123456";
+      expuesto.pedirInvitados(null); await tic();
+      assert.strictEqual(pedidos.length, 1, "con el panel apagado no pregunta");
+      // sin modalidad conocida decide el servidor; y un pedido viejo no pinta sobre el nuevo
+      expuesto.ponerModalidadDePrueba("");
+      const viejo = expuesto.pedirInvitados({});
+      await tic();
+      campoId.value = "CO1.REQ.654321";
+      const nuevo = expuesto.pedirInvitados({});
+      await tic();
+      assert.strictEqual(pedidos.length, 3, "sin modalidad conocida pregunta: la decide el servidor, que la lee de SECOP II");
+      pendientes[2].resolver({ ok: true, invitados: { estado: "sin_publicar", invitados: null, frase: "TODAVÍA SIN PUBLICAR", motivo: null, motivo_texto: null } });
+      await nuevo;
+      pendientes[1].resolver({ ok: true, invitados: { estado: "publicado", invitados: 9, frase: "LA DEL PROCESO ANTERIOR", motivo: null, motivo_texto: null } });
+      await viejo;
+      assert.strictEqual(linea.textContent, "TODAVÍA SIN PUBLICAR", "la respuesta tardía del proceso anterior no pisa la del proceso abierto");
+      // sin nada que decir se calla; una fuente caída lo dice
+      const p4 = expuesto.pedirInvitados({}); await tic();
+      pendientes[3].resolver({ ok: true, invitados: { estado: "no_aplica", invitados: null, frase: null, motivo: null, motivo_texto: null } });
+      await p4;
+      assert.ok(linea.textContent === "" && linea.oculto === true, "donde no aplica, la línea no sale");
+      const p5 = expuesto.pedirInvitados({}); await tic();
+      pendientes[4].resolver({ ok: true, invitados: { estado: null, invitados: null, frase: null, motivo: "no_respondio", motivo_texto: "NO SE PUDO CONSULTAR" } });
+      await p5;
+      assert.strictEqual(linea.textContent, "NO SE PUDO CONSULTAR", "una fuente caída se dice en la línea");
+      // el MISMO proceso recalculado: la línea no parpadea mientras llega la respuesta, y se actualiza al llegar
+      const p6 = expuesto.pedirInvitados({}); await tic();
+      assert.ok(linea.textContent === "NO SE PUDO CONSULTAR" && linea.oculto === false, "al recalcular el mismo proceso, lo que se lee no desaparece mientras llega la respuesta");
+      pendientes[5].resolver({ ok: true, invitados: { estado: "publicado", invitados: 6, frase: "AHORA SÍ", motivo: null, motivo_texto: null } });
+      await p6;
+      assert.strictEqual(linea.textContent, "AHORA SÍ");
+      // si la llamada misma falla (sin red), se dice con qué se estaba haciendo, no se calla
+      const p7 = expuesto.pedirInvitados({}); await tic();
+      pendientes[6].rechazar(new TypeError("Failed to fetch"));
+      await p7;
+      assert.ok(/^No se pudo consultar cuántos proveedores fueron invitados a ofertar\./.test(linea.textContent) && linea.textContent.length > 70, `un fallo de la llamada se dice en la línea → ${linea.textContent}`);
+      assert.ok(/id="pt-invitados"[^>]*class="[^"]*\bhidden\b/.test(fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8")), "la línea existe en la página y nace oculta");
+    }
+    console.log("· unidad invitados a ofertar: 0 o vacío es «sin publicar», el mayor del expediente, la contradicción, solo menor cuantía con manifestación, "
+      + "la tabla generada cuadra y la frase sale de sus conteos con la general al lado, dos consultas con memoria solo de lo publicado y la primera vista sin pisar, "
+      + "fuente caída, el router con `solo` inerte y la pantalla real sin pedidos viejos");
+  }
+
+  /* unidad: EL ÍNDICE DE ARCHIVOS DEL PROCESO, ENTERO (15-nov-2026) ─────────────────
+     `consultarIndice` pedía una sola página de 400 archivos en orden de carga ascendente: con más de 400, lo más nuevo
+     (adendas, evaluación, resolución) quedaba fuera sin aviso. Ahora: la primera página; si llegó llena, la cola (los 400
+     más nuevos); y el medio hasta cruzarse con la cola. Un solo plazo para todo. El índice tiene siempre lo más viejo y
+     lo más nuevo, y lo que pueda faltar es el medio, dicho con `cortado`. */
+  bqIndicePaginas: { if (!corre("unidad índice de archivos por páginas")) break bqIndicePaginas;
+    const DocsP = require("../lib/handlers/pliego/documentos.js");
+    const { filasDelIndice, MAX_FILAS_INDICE: POR_PAGINA, MAX_PAGINAS_INDICE: PAGINAS, PLAZO_INDICE_MS } = DocsP;
+    assert.ok(POR_PAGINA === 400 && PAGINAS === 5 && PLAZO_INDICE_MS === 16000, "400 por página, cinco páginas desde el principio y 16 s para todo el índice");
+    const doc = (i) => ({ id_documento: String(i), nombre_archivo: `ANEXO ${i}.pdf`, tamanno_archivo: "1000", extensi_n: "pdf", fecha_carga: `2026-10-${String(1 + (i % 28)).padStart(2, "0")}T10:00:00.000`, url_descarga_documento: { url: `https://example.org/${i}` } });
+    // una fuente de mentira con `total` archivos: páginas hacia delante y la cola (los 400 más nuevos, del más nuevo al más viejo)
+    const fuente = (total, { colaFalla = false, fallaEn = null } = {}) => {
+      const pedidas = [], plazos = [];
+      return { pedidas, plazos,
+        pagina: async (desde, ms) => { pedidas.push(`p${desde}`); plazos.push(ms); if (fallaEn === desde) throw new Error("tiempo agotado"); return Array.from({ length: Math.max(0, Math.min(POR_PAGINA, total - desde)) }, (_, k) => doc(desde + k)); },
+        cola: async (ms) => { pedidas.push("cola"); plazos.push(ms); if (colaFalla) throw new Error("tiempo agotado"); return Array.from({ length: Math.min(POR_PAGINA, total) }, (_, k) => doc(total - 1 - k)); } };
+    };
+    const leer = async (total, opc = {}, extra = {}) => { const f = fuente(total, opc); const r = await filasDelIndice(f.pagina, { pedirCola: f.cola, ...extra }); return { ...r, ids: r.filas.map((x) => Number(x.id_documento)), pedidas: f.pedidas.join(","), plazos: f.plazos }; };
+    const enOrdenYSinRepetir = (r) => r.ids.every((x, k) => k === 0 || x > r.ids[k - 1]);
+    const r30 = await leer(30);
+    assert.ok(r30.filas.length === 30 && r30.cortado === false && r30.pedidas === "p0", `el proceso de siempre: una sola consulta, como antes → ${r30.pedidas}`);
+    const r0 = await leer(0);
+    assert.ok(r0.filas.length === 0 && r0.cortado === false && r0.pedidas === "p0", "sin archivos: lista vacía, no cortada");
+    const r400 = await leer(400);
+    assert.ok(r400.filas.length === 400 && r400.cortado === false && r400.pedidas === "p0,cola", `una página justa llena no dice si hay más: se pide la cola y ella lo aclara → ${r400.pedidas}`);
+    const r450 = await leer(450);
+    assert.ok(r450.filas.length === 450 && r450.cortado === false && r450.pedidas === "p0,cola" && r450.ids[449] === 449 && enOrdenYSinRepetir(r450), `450 archivos en dos consultas, el más nuevo incluido → ${r450.pedidas}`);
+    const r950 = await leer(950);
+    assert.ok(r950.filas.length === 950 && r950.cortado === false && r950.pedidas === "p0,cola,p400" && enOrdenYSinRepetir(r950), `950 archivos: la página del medio se cruza con la cola y ahí se para → ${r950.pedidas}`);
+    const r2300 = await leer(2300);
+    assert.ok(r2300.filas.length === 2300 && r2300.cortado === false && r2300.pedidas === "p0,cola,p400,p800,p1200,p1600" && enOrdenYSinRepetir(r2300), `2.300 archivos caben enteros: la quinta página se cruza con la cola → ${r2300.pedidas}`);
+    const r4013 = await leer(4013);
+    assert.ok(r4013.cortado === true && r4013.filas.length === POR_PAGINA * PAGINAS + POR_PAGINA && r4013.ids[0] === 0 && r4013.ids[r4013.ids.length - 1] === 4012 && r4013.ids.includes(1999) && !r4013.ids.includes(2000) && r4013.ids.includes(3613) && enOrdenYSinRepetir(r4013),
+      `con 4.013 archivos (el caso real CO1.REQ.10181430) falta el medio y se dice, pero están los 2.000 más viejos y los 400 más nuevos → ${r4013.filas.length}`);
+    // la cola falla: se sigue hacia delante, como si no existiera
+    const sinCola = await leer(950, { colaFalla: true });
+    assert.ok(sinCola.filas.length === 950 && sinCola.cortado === false && sinCola.pedidas === "p0,cola,p400,p800", `si la cola no responde, se avanza página a página hasta la incompleta → ${sinCola.pedidas}`);
+    const sinColaYLargo = await leer(4013, { colaFalla: true });
+    assert.ok(sinColaYLargo.cortado === true && sinColaYLargo.filas.length === POR_PAGINA * PAGINAS, "sin cola y con más de 2.000, lo leído y cortado");
+    // una página del medio falla: se devuelve lo leído (lo más viejo y lo más nuevo), cortado; la PRIMERA manda y tumba la consulta
+    const medioCae = await leer(2300, { fallaEn: 800 });
+    assert.ok(medioCae.cortado === true && medioCae.filas.length === 1200 && medioCae.ids[0] === 0 && medioCae.ids[medioCae.ids.length - 1] === 2299 && medioCae.pedidas === "p0,cola,p400,p800",
+      `si falla una página del medio, queda lo leído con «cortado»: no se pierde lo que ya se tenía → ${medioCae.filas.length} · ${medioCae.pedidas}`);
+    await assert.rejects(leer(950, { fallaEn: 0 }), /tiempo agotado/, "si falla la primera página, falla la consulta, como siempre");
+    // UN SOLO PLAZO: cada consulta lleva lo que queda, y sin tiempo no se empieza otra
+    {
+      let t = 0; const f = fuente(2300);
+      const lenta = (fn) => async (...a) => { const r = await fn(...a); t += 5000; return r; };   // cada consulta «tarda» 5 s
+      const r = await filasDelIndice(lenta(f.pagina), { pedirCola: lenta(f.cola), reloj: () => t });
+      assert.ok(f.pedidas.join() === "p0,cola,p400" && r.cortado === true && r.filas.length === 1200, `con consultas de 5 s caben tres en 16 s, y la cuarta no se empieza → ${f.pedidas.join()}`);
+      assert.deepStrictEqual(f.plazos, [8000, 8000, 6000], "cada consulta lleva como tope lo que queda del plazo, nunca su plazo entero");
+      // la cola también lleva lo que queda: si la primera página tardó 10 s, a la cola le quedan 6
+      let t3 = 0; const f3 = fuente(950);
+      await filasDelIndice(async (...a) => { const x = await f3.pagina(...a); t3 += 10000; return x; }, { pedirCola: f3.cola, reloj: () => t3 });
+      assert.ok(f3.pedidas[1] === "cola" && f3.plazos[1] === 6000, `la cola no lleva su plazo entero, lleva lo que queda → ${f3.plazos}`);
+      let t2 = 0; const f2 = fuente(950);
+      const r2 = await filasDelIndice(async (...a) => { const x = await f2.pagina(...a); t2 += 15500; return x; }, { pedirCola: f2.cola, reloj: () => t2 });
+      assert.ok(f2.pedidas.join() === "p0" && r2.cortado === true && r2.filas.length === 400, "si la primera página se come el plazo, ni la cola se pide: lo leído, cortado");
+    }
+    // filas repetidas: dentro de una página van como llegan (el conteo de un proceso de siempre no cambia); entre páginas, una vez
+    const conRepetidas = await filasDelIndice(async () => [doc(1), doc(1), doc(2), { nombre_archivo: "SIN ID.pdf" }, { id_documento: "  ", nombre_archivo: "ID EN BLANCO.pdf" }, { id_documento: "  ", nombre_archivo: "OTRO EN BLANCO.pdf" }]);
+    assert.strictEqual(conRepetidas.filas.length, 6, "en un proceso de una sola página no se quita nada: el índice es el de antes, fila por fila");
+    const entrePaginas = await filasDelIndice(async (desde) => (desde === 0 ? Array.from({ length: POR_PAGINA }, (_, k) => doc(k)) : [doc(399), doc(400)]), { pedirCola: async () => [] });
+    assert.ok(entrePaginas.filas.length === 401 && entrePaginas.filas.filter((x) => x.id_documento === "399").length === 1, "un documento que se repite entre dos páginas cuenta una vez");
+    assert.deepStrictEqual(await filasDelIndice(async () => null), { filas: [], cortado: false }, "una página que no es una lista es una página vacía");
+    // por la función REAL: 450 archivos, con una adenda como el más nuevo
+    const conFetch = async (total, fn) => {
+      const pedidas = [], fetchAntes = globalThis.fetch;
+      globalThis.fetch = async (u) => {
+        const url = new URL(String(u));
+        if (!/dmgg-8hin/.test(url.pathname)) return { ok: true, status: 200, json: async () => [{ id_del_portafolio: "CO1.BDOS.450450" }] };
+        const desde = Number(url.searchParams.get("$offset") || 0), orden = url.searchParams.get("$order");
+        pedidas.push({ desde: url.searchParams.get("$offset"), orden, limite: url.searchParams.get("$limit") });
+        const fila = (i) => (i === total - 1 ? { ...doc(i), nombre_archivo: "ADENDA No 3.pdf", fecha_carga: "2026-11-10T10:00:00.000" } : doc(i));
+        const filas = /DESC/.test(orden) ? Array.from({ length: Math.min(POR_PAGINA, total) }, (_, k) => fila(total - 1 - k)) : Array.from({ length: Math.max(0, Math.min(POR_PAGINA, total - desde)) }, (_, k) => fila(desde + k));
+        return { ok: true, status: 200, json: async () => filas };
+      };
+      try { return { ci: await fn(), pedidas }; } finally { globalThis.fetch = fetchAntes; }
+    };
+    {
+      const { ci, pedidas } = await conFetch(450, () => DocsP.consultarIndice(null, "CO1.BDOS.450450"));
+      assert.ok(ci.ok && ci.indice.resumen.publicados === 450 && !("cortado" in ci.indice), `el índice vio los 450 archivos publicados y no se dice cortado → ${ci.ok && JSON.stringify(ci.indice.resumen)} · ${ci.motivo || ""}`);
+      assert.deepStrictEqual(pedidas, [{ desde: null, orden: "fecha_carga,id_documento", limite: "400" }, { desde: null, orden: "fecha_carga DESC,id_documento DESC", limite: "400" }],
+        "la primera página sin `$offset` y con el orden de desempate; después la cola, del más nuevo al más viejo");
+      const adenda = ci.indice.archivos.find((a) => a.id_documento === "449");
+      assert.ok(adenda && adenda.tipo === "adenda" && ci.indice.resumen.adendas === 1, `la adenda más nueva, que es el archivo 450, está en el índice y se cuenta → ${JSON.stringify(ci.indice.resumen)}`);
+      // …y con solo la primera página (lo de antes) esa adenda no existía para el plan
+      const soloPrimera = require("../lib/documentos_proceso.js").planDeLectura(Array.from({ length: POR_PAGINA }, (_, k) => doc(k)), { cierre: null });
+      assert.strictEqual(soloPrimera.resumen.adendas, 0, "control: con las primeras 400 filas no hay adenda que leer");
+    }
+    {
+      const { ci, pedidas } = await conFetch(5000, () => DocsP.consultarIndice(null, "CO1.BDOS.450450"));
+      assert.ok(ci.ok && ci.indice.cortado === true && ci.indice.resumen.publicados === 2400 && ci.indice.resumen.adendas === 1 && pedidas.length === 6 && pedidas[2].desde === "400" && pedidas[5].desde === "1600",
+        `con 5.000 archivos el índice viaja con «cortado», y aun así trae la adenda más nueva → ${ci.ok && JSON.stringify(ci.indice.resumen)} · ${pedidas.length} consultas`);
+    }
+    // la evaluación de un proceso con el índice cortado no afirma que la entidad «no publicó»
+    {
+      const EvH = require("../lib/handlers/pliego/evaluacion.js"), consultarAntes = DocsP.consultarIndice;
+      const indiceDe = (cortado) => async () => ({ ok: true, indice: { id_del_portafolio: "CO1.BDOS.999001", archivos: [{ id_documento: "1", nombre: "ANEXO 1.pdf", extension: "pdf", url: "https://example.org/1" }], ...(cortado ? { cortado: true } : {}) } });
+      const pedirDocumento = async () => invocar(require("../api/pliego.js"), "/api/pliego?op=evaluacion&documento=1&id_proceso=CO1.BDOS.999001", CAB_TOKEN);
+      try {
+        DocsP.consultarIndice = indiceDe(true);
+        const cortadoR = await pedirDocumento();
+        assert.ok(cortadoR.status === 200 && cortadoR.cuerpo.documento === null && cortadoR.cuerpo.indice_cortado === true && /no se alcanzó a ver su índice completo/.test(cortadoR.cuerpo.motivo) && !/no publicó/.test(cortadoR.cuerpo.motivo),
+          `con el índice cortado no se afirma que la entidad no publicó la evaluación → ${JSON.stringify(cortadoR.cuerpo).slice(0, 260)}`);
+        DocsP.consultarIndice = indiceDe(false);
+        const enteroR = await pedirDocumento();
+        assert.ok(enteroR.status === 200 && enteroR.cuerpo.documento === null && /no publicó informe de evaluación/.test(enteroR.cuerpo.motivo) && !("indice_cortado" in enteroR.cuerpo), "con el índice entero sí se dice, como siempre");
+      } finally { DocsP.consultarIndice = consultarAntes; }
+    }
+    console.log("· unidad índice de archivos por páginas: una consulta en el proceso de siempre, la cola aclara la página justa llena, el medio se cruza con la cola, "
+      + "con 4.013 archivos quedan lo más viejo y lo más nuevo y se dice «cortado», un solo plazo repartido, la primera página manda, la función real y la evaluación que no afirma de más");
+  }
+
+  /* unidad: TRES ARREGLOS DE LA AUDITORÍA DEL 15-nov-2026 ─────────────────
+     (a) el límite del plan de la base de datos se dice con su nombre y con qué hacer, en el único sitio por donde pasan
+     las respuestas de error; (b) un 413 no manda a «volver a intentar»; (c) las llamadas de la pantalla tienen un tiempo
+     máximo, mayor que lo más que tarda una función en el servidor. */
+  bqAuditoria15: { if (!corre("unidad arreglos de la auditoría del 15-nov")) break bqAuditoria15;
+    // (a) el límite del plan
+    {
+      const E = require("../lib/error_interno.js");
+      const UPSTASH = "403: ERR This database has reached current Fixed plan limits. Please upgrade manually or enable auto upgrade on Upstash Console";
+      const fabricar = () => { const visto = {}; const res = E.conLlavesTachadas({ status(n) { visto.estado = n; return this; }, json(o) { visto.cuerpo = o; } }); return { res, visto }; };
+      assert.ok(E.limiteDelPlanDe(UPSTASH) && E.limiteDelPlanDe(`Redis: ${UPSTASH}`) && E.limiteDelPlanDe("ERR this database has reached current Free plan limits"), "el texto de Upstash, con el nombre de plan que traiga");
+      for (const otro of ["ERR DB capacity quota exceeded. Threshold: 268435456 bytes, Usage: 276006634 bytes", "tiempo agotado", "", null, undefined,
+        "OCR: 429 Your account has reached current plan limits", "el servicio de reconocimiento reached current Free plan limits"]) assert.strictEqual(E.limiteDelPlanDe(otro), false, `«${otro}» no es el límite del plan de la base de datos`);
+      {
+        const ocr = fabricar();
+        ocr.res.status(429).json({ ok: false, error: "OCR: 429 Your account has reached current plan limits", que_hacer: "Espere y reintente." });
+        assert.deepStrictEqual(ocr.visto.cuerpo, { ok: false, error: "OCR: 429 Your account has reached current plan limits", que_hacer: "Espere y reintente." }, "otro servicio que hable de su plan no se confunde con la base de datos (revisión adversaria)");
+      }
+      const a = fabricar();
+      a.res.status(502).json({ ok: false, error: `Redis: ${UPSTASH}`, que_hacer: "Si persiste en unos minutos, revise el estado de Upstash.", dominio: "procesos" });
+      assert.ok(a.visto.estado === 502 && a.visto.cuerpo.ok === false && a.visto.cuerpo.motivo === "limite_del_plan" && a.visto.cuerpo.error === E.MENSAJE_LIMITE_PLAN.error && a.visto.cuerpo.que_hacer === E.MENSAJE_LIMITE_PLAN.que_hacer && a.visto.cuerpo.dominio === "procesos",
+        `la lista y la portada dejan de enseñarlo en inglés: mensaje claro, qué hacer, y lo demás se conserva → ${JSON.stringify(a.visto.cuerpo)}`);
+      assert.ok(!/Fixed plan limits|ERR /.test(a.visto.cuerpo.error) && /límite de su plan/.test(a.visto.cuerpo.error) && /no puede leer ni guardar/.test(a.visto.cuerpo.error) && /consola de Upstash/.test(a.visto.cuerpo.que_hacer), "dice el hecho (no lee ni guarda) y a dónde ir");
+      const anidado = fabricar();
+      anidado.res.status(500).json({ ok: false, error: "Error interno", detalle: { fuentes: [{ motivo: UPSTASH }] } });
+      assert.strictEqual(anidado.visto.cuerpo.motivo, "limite_del_plan", "el texto de Upstash en cualquier campo de la respuesta, no solo en `error`");
+      const lista = fabricar();
+      lista.res.status(502).json([UPSTASH]);
+      assert.ok(lista.visto.cuerpo && lista.visto.cuerpo.motivo === "limite_del_plan" && lista.visto.cuerpo.error === E.MENSAJE_LIMITE_PLAN.error, "una respuesta que no es un objeto sale como objeto con el mensaje");
+      const otro = fabricar();
+      otro.res.status(502).json({ ok: false, error: "Redis: tiempo agotado", que_hacer: "Reintente." });
+      assert.deepStrictEqual(otro.visto.cuerpo, { ok: false, error: "Redis: tiempo agotado", que_hacer: "Reintente." }, "otro fallo de Redis sale como venía");
+      const bien = fabricar();
+      bien.res.status(200).json({ ok: true, nota: UPSTASH });
+      assert.deepStrictEqual(bien.visto.cuerpo, { ok: true, nota: UPSTASH }, "una respuesta buena no se toca, traiga el texto que traiga");
+      const sueltoV = {}; const suelto = { headersSent: false, status(n) { sueltoV.estado = n; return this; }, json(o) { sueltoV.cuerpo = o; } };
+      const errAntes = console.error; console.error = () => {};
+      try {
+        E.responderErrorInterno(suelto, "procesos", new Error(UPSTASH));
+        assert.ok(sueltoV.estado === 503 && sueltoV.cuerpo.motivo === "limite_del_plan" && sueltoV.cuerpo.error === E.MENSAJE_LIMITE_PLAN.error, "un fallo no capturado con ese texto responde 503 con el mensaje, no «Error interno»");
+        const llenaV = {}; E.responderErrorInterno({ headersSent: false, status(n) { llenaV.estado = n; return this; }, json(o) { llenaV.cuerpo = o; } }, "procesos", new Error("ERR DB capacity quota exceeded. Threshold: 268435456 bytes, Usage: 276006634 bytes"));
+        assert.ok(llenaV.estado === 503 && llenaV.cuerpo.motivo === "base_llena" && llenaV.cuerpo.uso_bytes === 276006634, "la base llena sigue siendo la base llena");
+        const genV = {}; E.responderErrorInterno({ headersSent: false, status(n) { genV.estado = n; return this; }, json(o) { genV.cuerpo = o; } }, "procesos", new Error("otra cosa"));
+        assert.ok(genV.estado === 500 && genV.cuerpo.error === E.MENSAJE_ERROR_INTERNO, "lo demás sigue siendo un error interno");
+      } finally { console.error = errAntes; }
+    }
+    // (a bis) el botón «Actualizar» ante el límite del plan: no reintenta, como con la base llena (el gemelo que la revisión adversaria encontró vivo)
+    {
+      const Gl = require("../public/glosario.js"), E = require("../lib/error_interno.js");
+      const UPSTASH = "Redis: 403: ERR This database has reached current Fixed plan limits. Please upgrade manually or enable auto upgrade on Upstash Console";
+      for (const [detalle, cuerpo, como] of [[UPSTASH, null, "el texto crudo de Upstash"], ["x", { ok: false, motivo: "limite_del_plan" }, "solo el motivo que publica el servidor"], ["x", { ok: false, motivo: "limite_del_plan", ...E.MENSAJE_LIMITE_PLAN }, "el motivo y el mensaje del servidor"], [E.MENSAJE_LIMITE_PLAN.error, { error: E.MENSAJE_LIMITE_PLAN.error }, "el mensaje ya traducido"]]) {
+        const c = Gl.causaDeActualizacion(detalle, cuerpo);
+        assert.ok(c.reintentar === false && /límite de su plan/.test(c.frase) && /Upstash/.test(c.frase) && !/vuelva a intentarlo/.test(c.frase), `con ${como}: no se reintenta y se dice por qué → ${JSON.stringify(c)}`);
+      }
+      assert.strictEqual(Gl.causaDeActualizacion("Redis: The operation was aborted due to timeout", null).reintentar, true, "un fallo pasajero de la base sí se reintenta");
+      assert.strictEqual(Gl.causaDeActualizacion("x", { motivo: "base_llena" }).reintentar, false, "la base llena sigue sin reintentarse");
+      assert.strictEqual(Gl.errorDelServidor({ error: E.MENSAJE_LIMITE_PLAN.error, que_hacer: E.MENSAJE_LIMITE_PLAN.que_hacer }), `${E.MENSAJE_LIMITE_PLAN.error} ${E.MENSAJE_LIMITE_PLAN.que_hacer}`, "el «qué hacer» viaja pegado al error, que es lo que ahora pinta la lista");
+      // cerradura de TEXTO (no hay arnés para la búsqueda entera): el fallo genérico de la lista pinta el error CON su «qué hacer»
+      assert.ok(/if \(!r\.ok \|\| !cuerpo \|\| !cuerpo\.ok\) \{[^}]*?mostrar\("estado-error", errorDelServidor\(cuerpo\)\s*\|\|/.test(sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8"))),
+        "la lista de procesos pinta errorDelServidor(cuerpo), no solo cuerpo.error");
+    }
+    // (b) el 413
+    {
+      const Gl = require("../public/glosario.js");
+      const f413 = Gl.fraseDeFallo({ status: 413 });
+      assert.ok(/pesa más de lo que el servidor admite/.test(f413) && /código 413/.test(f413) && /Reintentar lo mismo no sirve/.test(f413) && /si era un archivo suyo/.test(f413) && !/iniciar sesión/.test(f413), `un 413 dice que pesó de más y que reintentar lo mismo no sirve → ${f413}`);
+      assert.ok(/Si acaba de iniciar sesión/.test(Gl.fraseDeFallo({ status: 418 })) && /tardó más de lo que el servidor permite/.test(Gl.fraseDeFallo({ status: 504 })), "los demás códigos dicen lo de siempre");
+      assert.ok(/^No se pudo leer el documento\. Lo que se envió pesa más/.test(Gl.mensajeDeFallo({ status: 413 }, "leer el documento")), "con contexto, el contexto va delante");
+    }
+    // (c) el tiempo máximo de api(), con la pantalla REAL
+    {
+      const visto = { senales: [], rechazos: [] }, relojes = [];
+      const fetchC = (ruta, cfg) => (/op=prueba-de-tiempo/.test(String(ruta)) ? new Promise((resolver, rechazar) => {
+        visto.senales.push(cfg && cfg.signal); visto.resolver = resolver;
+        if (cfg && cfg.signal) cfg.signal.addEventListener("abort", () => { const e = new Error("The operation was aborted."); e.name = "AbortError"; rechazar(e); });
+      }) : new Promise(() => {}));
+      const { expuesto, ventana } = appEnVm(["api", "TIEMPO_MAX_API_MS"], { fetch: fetchC, conVentana: true });
+      const TARDO_API = require("../public/glosario.js").MSG_TARDO;
+      const funciones = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "vercel.json"), "utf8")).functions;
+      const masLarga = Math.max(...Object.values(funciones).map((f) => f.maxDuration));
+      assert.ok(expuesto.TIEMPO_MAX_API_MS > masLarga * 1000 && expuesto.TIEMPO_MAX_API_MS <= (masLarga + 60) * 1000, `el tope (${expuesto.TIEMPO_MAX_API_MS} ms) es mayor que la función más larga del servidor (${masLarga} s) y no mucho más`);
+      let cancelados = 0;
+      ventana.setTimeout = (fn, ms) => { relojes.push({ fn, ms }); return relojes.length; };
+      ventana.clearTimeout = () => { cancelados++; };
+      const tic = () => new Promise((r) => setImmediate(r));
+      // una petición que no contesta: al cumplirse el tope se corta y lo dice
+      const colgada = expuesto.api("/api/apu?op=prueba-de-tiempo").then(() => "respondió", (e) => e.message);
+      await tic();
+      assert.ok(visto.senales.length === 1 && visto.senales[0] && visto.senales[0].aborted === false && relojes.length === 1 && relojes[0].ms === expuesto.TIEMPO_MAX_API_MS, "la petición viaja con su señal de corte y el reloj queda puesto al tope");
+      relojes[0].fn();
+      assert.strictEqual(await colgada, TARDO_API, "al cumplirse el tope la petición se corta y se dice que tardó (la copia única del Glosario), no un fallo de red");
+      assert.ok(/más de cinco minutos sin responder/.test(TARDO_API) && /Vuelva a intentarlo/.test(TARDO_API), "el mensaje dice qué pasó y qué hacer");
+      // una petición que contesta: el reloj se quita y la respuesta llega igual
+      const antes = cancelados;
+      const buena = expuesto.api("/api/apu?op=prueba-de-tiempo");
+      await tic();
+      visto.resolver({ ok: true, status: 200, headers: { get: () => "application/json" }, json: async () => ({ ok: true, dato: 7 }), text: async () => "{}" });
+      const cuerpo = await buena;
+      assert.ok(cuerpo.dato === 7 && cancelados === antes + 1 && visto.senales[1].aborted === false, "con respuesta, el reloj se cancela y nada se corta");
+      // el corte llega cuando ya hay cabeceras y se está leyendo el cuerpo: también se dice que tardó
+      const aMedias = expuesto.api("/api/apu?op=prueba-de-tiempo").then(() => "respondió", (e) => e.message);
+      await tic();
+      visto.resolver({ ok: true, status: 200, headers: { get: () => "application/json" }, json: () => new Promise((_, rechazar) => visto.senales[2].addEventListener("abort", () => rechazar(new Error("aborted")))), text: async () => "" });
+      await tic();
+      relojes[relojes.length - 1].fn();
+      assert.strictEqual(await aMedias, TARDO_API, "si el corte llega leyendo el cuerpo, no se da por buena una respuesta a medias");
+    }
+    // (d) el mismo tope en las llamadas del lector de documentos (public/pliego.js: por ahí va la fila de lectura)
+    {
+      const fuenteP = fs.readFileSync(path.join(__dirname, "..", "public", "pliego.js"), "utf8");
+      const iP = fuenteP.indexOf("  const TIEMPO_MAX_PEDIR_MS = "), fP = fuenteP.indexOf("\n  }\n", fuenteP.indexOf("  async function pedir(ruta, cuerpo) {")) + 5;
+      assert.ok(iP > 0 && fP > iP, "pedir() y su tope se encuentran en pliego.js");
+      const fabricarPedir = (fetchP, relojesP) => new Function("fetch", "setTimeout", "clearTimeout", "AbortController", "window",
+        `${fuenteP.slice(iP, fP)}; return { pedir, TIEMPO_MAX_PEDIR_MS };`)(fetchP, (fn, ms) => { relojesP.push({ fn, ms }); return relojesP.length; }, () => { relojesP.cancelados = (relojesP.cancelados || 0) + 1; }, AbortController, { Glosario: require("../public/glosario.js") });
+      const relojesP = [], senales = [];
+      const TARDO = require("../public/glosario.js").MSG_TARDO;
+      assert.ok(/más de cinco minutos sin responder/.test(TARDO) && require("../public/glosario.js").fraseDeFallo({ corte_por_tiempo: true }) === TARDO && require("../public/glosario.js").fraseDeFallo({ corte_por_tiempo: "sí" }) !== TARDO,
+        "el aviso de «tardó» vive en el Glosario, una sola copia, y solo sale con la marca del corte");
+      let resolverP;
+      const colgado = (ruta, cfg) => new Promise((resolver, rechazar) => { senales.push(cfg.signal); resolverP = resolver; cfg.signal.addEventListener("abort", () => { const e = new Error("aborted"); e.name = "AbortError"; rechazar(e); }); });
+      const P = fabricarPedir(colgado, relojesP);
+      const masLargaP = Math.max(...Object.values(JSON.parse(fs.readFileSync(path.join(__dirname, "..", "vercel.json"), "utf8")).functions).map((f) => f.maxDuration));
+      assert.ok(P.TIEMPO_MAX_PEDIR_MS > masLargaP * 1000 && P.TIEMPO_MAX_PEDIR_MS <= (masLargaP + 60) * 1000, "el tope del lector también es mayor que la función más larga del servidor, y no mucho más");
+      const cuelga = P.pedir("/api/pliego?op=extraer-texto", { texto_extraido: "" });
+      await new Promise((r) => setImmediate(r));
+      assert.ok(senales[0] && senales[0].aborted === false && relojesP[0].ms === P.TIEMPO_MAX_PEDIR_MS, "la llamada del lector viaja con su señal de corte y su reloj");
+      relojesP[0].fn();
+      assert.deepStrictEqual(await cuelga, { estado: 0, cuerpo: null, red: TARDO }, "una lectura colgada se corta y devuelve el aviso de que tardó: la fila de lectura no espera para siempre");
+      // el corte que llega cuando ya hay cabeceras y se lee el cuerpo
+      const aMediasP = P.pedir("/api/pliego?op=extraer-texto", { texto_extraido: "" });
+      await new Promise((r) => setImmediate(r));
+      resolverP({ status: 200, json: () => new Promise((_, rechazar) => senales[1].addEventListener("abort", () => rechazar(new Error("aborted")))) });
+      await new Promise((r) => setImmediate(r));
+      relojesP[1].fn();
+      assert.deepStrictEqual(await aMediasP, { estado: 0, cuerpo: null, red: TARDO }, "si el corte llega leyendo el cuerpo, tampoco se da por buena una respuesta a medias");
+      const buenaP = P.pedir("/api/pliego?op=extraer-texto", { texto_extraido: "" });
+      await new Promise((r) => setImmediate(r));
+      resolverP({ status: 200, json: async () => ({ ok: true, texto: "hola" }) });
+      assert.deepStrictEqual(await buenaP, { estado: 200, cuerpo: { ok: true, texto: "hola" } }, "con respuesta, lo de siempre");
+      assert.ok(relojesP.cancelados >= 3, "y el reloj se quita en todos los casos");
+      const sinRed = fabricarPedir(async () => { throw new TypeError("Failed to fetch"); }, []);
+      const rSin = await sinRed.pedir("/x", {});
+      assert.ok(rSin.estado === 0 && rSin.red === require("../public/glosario.js").MSG_SIN_CONEXION, "un fallo de red sigue siendo un fallo de red, no «tardó»");
+    }
+    console.log("· unidad arreglos de la auditoría del 15-nov: el límite del plan de la base se dice claro en toda respuesta de error (y la base llena sigue siendo otra cosa), "
+      + "el botón de actualizar no reintenta contra una base en su límite, el 413 no manda a reintentar, y api() y las llamadas del lector se cortan al cumplirse un tope mayor que la función más larga del servidor");
   }
 
   /* unidad: LAS DOS BARRERAS (PLAN_X20, tanda 2, 11-nov-2026) ─────────────────
@@ -41535,13 +42038,14 @@ async function main() {
               const cajasPT = {};
               const dolarPT = (id) => (cajasPT[id] || (cajasPT[id] = nodoPS()));
               // `pedirGrupo` (PLAN_X20, D4): la línea del grupo de ofertas se pide aparte; aquí no hay red
-              const pintarPT = new Function("$", "esc", "botonPasoQueFalta", "pintarEscalaPisoTecho", "pedirGrupo", `
+              // …y `pedirInvitados` (docs/PLAN_PRECIO.md, tanda 1): la línea de invitados también se pide aparte
+              const pintarPT = new Function("$", "esc", "botonPasoQueFalta", "pintarEscalaPisoTecho", "pedirGrupo", "pedirInvitados", `
                 ${lineaApp("  const nf = new Intl.NumberFormat(")}
                 ${lineaApp("  const nf2 = new Intl.NumberFormat(")}
                 ${lineaApp("  const copRent = (n) =>")}
                 ${lineaApp("  const pctRent = (n) =>")}
                 const TONO_VEREDICTO = new Proxy({}, { get: () => ({ caja: "", punto: "" }) });
-                ${extraerPS("pintarPisoTecho")}; return pintarPisoTecho;`)(dolarPT, (x) => String(x == null ? "" : x), () => "", () => {}, () => {});
+                ${extraerPS("pintarPisoTecho")}; return pintarPisoTecho;`)(dolarPT, (x) => String(x == null ? "" : x), () => "", () => {}, () => {}, () => {});
               const conBaja = (mediana, granularidad) => ptMod.pisoTecho({ ...entradaPT,
                 baja: { ...entradaPT.baja, baja_mediana: mediana, baja_p25: Math.min(mediana, 0), baja_p75: Math.max(mediana, 2), granularidad_utilizada: granularidad } });
               for (const mediana of [0, -2]) {
@@ -53766,8 +54270,9 @@ async function main() {
         const iApi = appFallo.indexOf("  async function api(ruta, opciones = {}) {"), fApi = appFallo.indexOf("\n  }", iApi) + 4;
         assert.ok(iApi > 0, "app.js sin api()");
         const respuestaDe = (status, cuerpo) => async () => ({ ok: status < 400, status, headers: { get: () => "application/json" }, json: async () => cuerpo, text: async () => JSON.stringify(cuerpo) });
-        const armarApi = (fetchFalso) => new Function("fetch", "conSesion", "fraseDeFallo", "leerJson", "msg401", "errorDelServidor",
-          `${appFallo.slice(iApi, fApi)}; return api;`)(fetchFalso, (o) => ({ ...(o || {}), credentials: "same-origin" }), Gf.fraseDeFallo, leerJsonFn, () => "401", Gf.errorDelServidor);
+        // desde el 15-nov-2026 api() tiene tiempo máximo: su tope vive fuera de la función y se le pasa como las demás dependencias
+        const armarApi = (fetchFalso) => new Function("fetch", "conSesion", "fraseDeFallo", "leerJson", "msg401", "errorDelServidor", "TIEMPO_MAX_API_MS",
+          `${appFallo.slice(iApi, fApi)}; return api;`)(fetchFalso, (o) => ({ ...(o || {}), credentials: "same-origin" }), Gf.fraseDeFallo, leerJsonFn, () => "401", Gf.errorDelServidor, 320000);
         const mensajeDe = async (fn) => { try { await fn("/api/x", { method: "POST", body: {} }); return null; } catch (e) { return e.message; } };
         const c409 = { ok: false, error: "No se pudo guardar el proceso porque otra acción estaba en curso sobre los mismos datos.", que_hacer: "Espere unos segundos y vuelva a intentarlo." };
         assert.strictEqual(await mensajeDe(armarApi(respuestaDe(409, c409))), `${c409.error} ${c409.que_hacer}`, "el 409 llega a la pantalla CON su «qué hacer»");
@@ -67690,6 +68195,7 @@ okIP(/no los permite el pliego|pliego no lo permite/.test(cP30.nota || ""), `el 
       const llamaApi = (cuerpo) => new Function("cuerpo", `
         const conSesion = (o) => o, leerJson = async () => cuerpo, msg401 = () => "401";
         const fraseDeFallo = () => "", errorDelServidor = () => null;
+        const TIEMPO_MAX_API_MS = 320000;   // desde el 15-nov-2026 api() tiene tiempo máximo: su tope vive fuera de la función
         const fetch = async () => ({ status: 401, ok: false });
         ${apiAR}
         return api("/api/x").then(() => "sin error", (e) => e);`)(cuerpo);

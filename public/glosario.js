@@ -221,6 +221,10 @@
      entre paréntesis: es el único dato del fallo que sirve para pedir ayuda.
      Acepta un Error, una Response o el cuerpo que devuelve `leerJson`. */
   const MSG_SIN_CONEXION = "Sin conexión con el servidor. Revise su red y vuelva a intentar.";
+  /* EL CORTE POR TIEMPO (15-nov-2026): las llamadas de la pantalla (`api()` en app.js, `pedir()` en pliego.js) se cortan
+     solas a los 320 s, más que la función más larga del servidor. Una sola copia del aviso, aquí: quien corta marca el
+     fallo con `corte_por_tiempo` y `fraseDeFallo` lo dice. No es «sin conexión»: la conexión existía y nadie contestó. */
+  const MSG_TARDO = "La consulta lleva más de cinco minutos sin responder y se cortó. Vuelva a intentarlo.";
   const MSG_MURO = "El sitio pidió iniciar sesión (protección por contraseña). Inicie sesión y reintente.";
   /* «Revise su red» cuando la red FUNCIONA es una instrucción imposible: lo que
      falta es un dominio de TERCEROS (el lector de PDF se descarga de un CDN que
@@ -244,6 +248,7 @@
     return m ? Number(m[1]) : null;
   }
   function fraseDeFallo(e) {
+    if (e && e.corte_por_tiempo === true) return MSG_TARDO;       // ANTES que todo: no es un fallo de red ni tiene código
     if (e && e.recurso === "lector-pdf") return MSG_LECTOR_PDF;   // ANTES que la regla de red
     const codigo = codigoDeFallo(e);
     if (codigo === 401 || codigo === 403) return MSG_MURO;
@@ -262,6 +267,9 @@
     if (codigo === 504 || codigo === 502 || codigo === 408) {
       return `La consulta tardó más de lo que el servidor permite y se cortó (código ${codigo}). Vuelva a intentarlo.`;
     }
+    /* Un 413 es «lo que se envió pesa de más», y no tiene nada que ver con la sesión (15-nov-2026): la frase genérica
+       de abajo mandaba a «volver a intentar» algo que va a fallar igual todas las veces. */
+    if (codigo === 413) return "Lo que se envió pesa más de lo que el servidor admite y no se recibió (código 413). Reintentar lo mismo no sirve; si era un archivo suyo, envíe uno más liviano o divídalo en partes.";
     if (codigo) return `El servidor no respondió como se esperaba (código ${codigo}). Si acaba de iniciar sesión, vuelva a intentar.`;
     /* Sin código: o es el fallo de red del `fetch` (un TypeError cuyo texto
        escribe cada navegador en su idioma) o es un mensaje que YA viene
@@ -330,6 +338,11 @@
     if ((cuerpo && cuerpo.motivo === "base_llena") || /capacity quota exceeded|base de datos[^.]*llena/i.test(t)) {
       return { reintentar: false, frase: "la base de datos de la aplicación está llena y no guarda nada nuevo; quien la administra tiene que ampliarla o liberar espacio" };
     }
+    /* EL LÍMITE DEL PLAN DE LA BASE (15-nov-2026, gemelo de la base llena): Upstash deja de responder a todo, y volver
+       a pedirlo en segundos no puede servir. Va antes de las reglas de Upstash y de SECOP, que lo mandarían a reintentar. */
+    if ((cuerpo && cuerpo.motivo === "limite_del_plan") || /reached current (?:\w+ )?plan limits|límite de su plan/i.test(t)) {
+      return { reintentar: false, frase: "la base de datos de la aplicación llegó al límite de su plan y dejó de responder; quien la administra tiene que ampliarlo en Upstash" };
+    }
     /* el error de la base dice su comando y su clave desde el 18-oct-2026 («(Upstash: GET secop:…»):
        esa marca va ANTES de la regla de SECOP, o una clave con «secop» culparía a SECOP II */
     if (/\(Upstash: /.test(t)) return { reintentar: true, frase: "el servidor no pudo leer o guardar los datos; vuelva a intentarlo en unos minutos" };
@@ -339,6 +352,6 @@
   }
 
   return { MARCA, TERMINOS, VERBOS, ESTADO, MAPEO, SIN_REFERENCIA, sinReferencia, traducir, corto, titulo, descripcion, estampar,
-    MSG_SIN_CONEXION, MSG_MURO, MSG_LECTOR_PDF, fraseDeFallo, mensajeDeFallo, errorDelServidor,
+    MSG_SIN_CONEXION, MSG_MURO, MSG_LECTOR_PDF, MSG_TARDO, fraseDeFallo, mensajeDeFallo, errorDelServidor,
     enMayusculas, claseDeCaja, causaDeActualizacion };
 });
