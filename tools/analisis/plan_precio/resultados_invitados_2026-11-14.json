@@ -1,0 +1,402 @@
+{
+ "que_es": "Menor cuantía de obra adjudicada (recepción desde 2024-01-01): ofertas recibidas y precio de adjudicación según el número de invitados que publica SECOP II antes del cierre.",
+ "consulta": "2026-11-14",
+ "fuente": "datos.gov.co · p6dx-8zbt",
+ "corte_aprendizaje_prueba": "2026-01-01",
+ "poblacion": {
+  "filas_leidas": 21028,
+  "procesos_de_menor_cuantia_adjudicados": 6578,
+  "con_invitados_publicados": 6578,
+  "con_invitados_publicados_pct": 100,
+  "contradictorios_mas_ofertas_que_invitados": 4,
+  "usados": 6574,
+  "aprendizaje": 4543,
+  "prueba_2026": 2031
+ },
+ "por_invitados_todo": {
+  "1": {
+   "procesos": 218,
+   "una_oferta_pct": 100,
+   "una_o_dos_pct": 100,
+   "tres_o_mas_pct": 0,
+   "ofertas_mediana": 1,
+   "ofertas_por_invitado_mediana": 1,
+   "adjudicado_pct_del_presupuesto": {
+    "procesos": 217,
+    "p25": 99.97,
+    "mediana": 100,
+    "p75": 100
+   }
+  },
+  "2": {
+   "procesos": 202,
+   "una_oferta_pct": 88.12,
+   "una_o_dos_pct": 100,
+   "tres_o_mas_pct": 0,
+   "ofertas_mediana": 1,
+   "ofertas_por_invitado_mediana": 0.5,
+   "adjudicado_pct_del_presupuesto": {
+    "procesos": 201,
+    "p25": 99.9,
+    "mediana": 100,
+    "p75": 100
+   }
+  },
+  "3": {
+   "procesos": 182,
+   "una_oferta_pct": 76.92,
+   "una_o_dos_pct": 92.31,
+   "tres_o_mas_pct": 7.69,
+   "ofertas_mediana": 1,
+   "ofertas_por_invitado_mediana": 0.33,
+   "adjudicado_pct_del_presupuesto": {
+    "procesos": 181,
+    "p25": 99.82,
+    "mediana": 99.99,
+    "p75": 100
+   }
+  },
+  "10": {
+   "procesos": 2414,
+   "una_oferta_pct": 28.62,
+   "una_o_dos_pct": 47.02,
+   "tres_o_mas_pct": 52.98,
+   "ofertas_mediana": 3,
+   "ofertas_por_invitado_mediana": 0.3,
+   "adjudicado_pct_del_presupuesto": {
+    "procesos": 2392,
+    "p25": 95.29,
+    "mediana": 99.51,
+    "p75": 100
+   }
+  },
+  "4-5": {
+   "procesos": 335,
+   "una_oferta_pct": 83.88,
+   "una_o_dos_pct": 92.24,
+   "tres_o_mas_pct": 7.76,
+   "ofertas_mediana": 1,
+   "ofertas_por_invitado_mediana": 0.25,
+   "adjudicado_pct_del_presupuesto": {
+    "procesos": 335,
+    "p25": 99.82,
+    "mediana": 100,
+    "p75": 100
+   }
+  },
+  "6-9": {
+   "procesos": 622,
+   "una_oferta_pct": 73.47,
+   "una_o_dos_pct": 86.17,
+   "tres_o_mas_pct": 13.83,
+   "ofertas_mediana": 1,
+   "ofertas_por_invitado_mediana": 0.14,
+   "adjudicado_pct_del_presupuesto": {
+    "procesos": 620,
+    "p25": 99.6,
+    "mediana": 99.99,
+    "p75": 100
+   }
+  },
+  "11+": {
+   "procesos": 2601,
+   "una_oferta_pct": 37.68,
+   "una_o_dos_pct": 52.52,
+   "tres_o_mas_pct": 47.48,
+   "ofertas_mediana": 2,
+   "ofertas_por_invitado_mediana": 0.08,
+   "adjudicado_pct_del_presupuesto": {
+    "procesos": 2536,
+    "p25": 95.04,
+    "mediana": 99.59,
+    "p75": 100
+   }
+  }
+ },
+ "por_invitados_prueba_2026": {
+  "1": {
+   "procesos": 59,
+   "una_oferta_pct": 100,
+   "una_o_dos_pct": 100,
+   "tres_o_mas_pct": 0,
+   "ofertas_mediana": 1,
+   "ofertas_por_invitado_mediana": 1,
+   "adjudicado_pct_del_presupuesto": {
+    "procesos": 59,
+    "p25": 99.98,
+    "mediana": 100,
+    "p75": 100
+   }
+  },
+  "2": {
+   "procesos": 57,
+   "una_oferta_pct": 84.21,
+   "una_o_dos_pct": 100,
+   "tres_o_mas_pct": 0,
+   "ofertas_mediana": 1,
+   "ofertas_por_invitado_mediana": 0.5,
+   "adjudicado_pct_del_presupuesto": {
+    "procesos": 57,
+    "p25": 99.89,
+    "mediana": 100,
+    "p75": 100
+   }
+  },
+  "3": {
+   "procesos": 67,
+   "una_oferta_pct": 74.63,
+   "una_o_dos_pct": 92.54,
+   "tres_o_mas_pct": 7.46,
+   "ofertas_mediana": 1,
+   "ofertas_por_invitado_mediana": 0.33,
+   "adjudicado_pct_del_presupuesto": {
+    "procesos": 66,
+    "p25": 99.94,
+    "mediana": 100,
+    "p75": 100
+   }
+  },
+  "10": {
+   "procesos": 791,
+   "una_oferta_pct": 30.59,
+   "una_o_dos_pct": 51.07,
+   "tres_o_mas_pct": 48.93,
+   "ofertas_mediana": 2,
+   "ofertas_por_invitado_mediana": 0.2,
+   "adjudicado_pct_del_presupuesto": {
+    "procesos": 783,
+    "p25": 95.48,
+    "mediana": 99.85,
+    "p75": 100
+   }
+  },
+  "4-5": {
+   "procesos": 128,
+   "una_oferta_pct": 85.94,
+   "una_o_dos_pct": 94.53,
+   "tres_o_mas_pct": 5.47,
+   "ofertas_mediana": 1,
+   "ofertas_por_invitado_mediana": 0.25,
+   "adjudicado_pct_del_presupuesto": {
+    "procesos": 128,
+    "p25": 99.9,
+    "mediana": 100,
+    "p75": 100
+   }
+  },
+  "6-9": {
+   "procesos": 206,
+   "una_oferta_pct": 74.27,
+   "una_o_dos_pct": 84.47,
+   "tres_o_mas_pct": 15.53,
+   "ofertas_mediana": 1,
+   "ofertas_por_invitado_mediana": 0.14,
+   "adjudicado_pct_del_presupuesto": {
+    "procesos": 206,
+    "p25": 99.58,
+    "mediana": 99.99,
+    "p75": 100
+   }
+  },
+  "11+": {
+   "procesos": 723,
+   "una_oferta_pct": 40.25,
+   "una_o_dos_pct": 56.02,
+   "tres_o_mas_pct": 43.98,
+   "ofertas_mediana": 2,
+   "ofertas_por_invitado_mediana": 0.08,
+   "adjudicado_pct_del_presupuesto": {
+    "procesos": 704,
+    "p25": 94.78,
+    "mediana": 99.85,
+    "p75": 100
+   }
+  }
+ },
+ "regla_una_o_dos_ofertas": [
+  {
+   "invitados_hasta": 1,
+   "aprendizaje": {
+    "procesos": 159,
+    "una_o_dos_pct": 100,
+    "una_pct": 100
+   },
+   "prueba_2026": {
+    "procesos": 59,
+    "parte_de_la_prueba_pct": 2.9,
+    "una_o_dos_pct": 100,
+    "una_pct": 100
+   }
+  },
+  {
+   "invitados_hasta": 2,
+   "aprendizaje": {
+    "procesos": 304,
+    "una_o_dos_pct": 100,
+    "una_pct": 95.07
+   },
+   "prueba_2026": {
+    "procesos": 116,
+    "parte_de_la_prueba_pct": 5.71,
+    "una_o_dos_pct": 100,
+    "una_pct": 92.24
+   }
+  },
+  {
+   "invitados_hasta": 3,
+   "aprendizaje": {
+    "procesos": 419,
+    "una_o_dos_pct": 97.85,
+    "una_pct": 90.45
+   },
+   "prueba_2026": {
+    "procesos": 183,
+    "parte_de_la_prueba_pct": 9.01,
+    "una_o_dos_pct": 97.27,
+    "una_pct": 85.79
+   }
+  },
+  {
+   "invitados_hasta": 4,
+   "aprendizaje": {
+    "procesos": 523,
+    "una_o_dos_pct": 96.37,
+    "una_pct": 89.48
+   },
+   "prueba_2026": {
+    "procesos": 244,
+    "parte_de_la_prueba_pct": 12.01,
+    "una_o_dos_pct": 96.31,
+    "una_pct": 84.84
+   }
+  },
+  {
+   "invitados_hasta": 5,
+   "aprendizaje": {
+    "procesos": 626,
+    "una_o_dos_pct": 95.53,
+    "una_pct": 87.86
+   },
+   "prueba_2026": {
+    "procesos": 311,
+    "parte_de_la_prueba_pct": 15.31,
+    "una_o_dos_pct": 96.14,
+    "una_pct": 85.85
+   }
+  },
+  {
+   "invitados_hasta": 6,
+   "aprendizaje": {
+    "procesos": 730,
+    "una_o_dos_pct": 94.66,
+    "una_pct": 86.3
+   },
+   "prueba_2026": {
+    "procesos": 362,
+    "parte_de_la_prueba_pct": 17.82,
+    "una_o_dos_pct": 94.75,
+    "una_pct": 84.25
+   }
+  },
+  {
+   "invitados_hasta": 7,
+   "aprendizaje": {
+    "procesos": 819,
+    "una_o_dos_pct": 94.38,
+    "una_pct": 85.23
+   },
+   "prueba_2026": {
+    "procesos": 413,
+    "parte_de_la_prueba_pct": 20.33,
+    "una_o_dos_pct": 94.19,
+    "una_pct": 83.54
+   }
+  },
+  {
+   "invitados_hasta": 8,
+   "aprendizaje": {
+    "procesos": 930,
+    "una_o_dos_pct": 93.55,
+    "una_pct": 83.55
+   },
+   "prueba_2026": {
+    "procesos": 463,
+    "parte_de_la_prueba_pct": 22.8,
+    "una_o_dos_pct": 92.22,
+    "una_pct": 81.64
+   }
+  },
+  {
+   "invitados_hasta": 9,
+   "aprendizaje": {
+    "procesos": 1042,
+    "una_o_dos_pct": 92.13,
+    "una_pct": 81.96
+   },
+   "prueba_2026": {
+    "procesos": 517,
+    "parte_de_la_prueba_pct": 25.46,
+    "una_o_dos_pct": 91.49,
+    "una_pct": 81.24
+   }
+  }
+ ],
+ "junto_al_anuncio_por_historial_prueba_2026": {
+  "min_historial": 4,
+  "umbral_poca": 0.8,
+  "grupos": {
+   "historial": {
+    "procesos": 788,
+    "parte_de_la_prueba_pct": 38.8,
+    "una_o_dos_pct": 90.23,
+    "una_pct": 73.86
+   },
+   "invitados_9": {
+    "procesos": 517,
+    "parte_de_la_prueba_pct": 25.46,
+    "una_o_dos_pct": 91.49,
+    "una_pct": 81.24
+   },
+   "los_dos": {
+    "procesos": 333,
+    "parte_de_la_prueba_pct": 16.4,
+    "una_o_dos_pct": 95.2,
+    "una_pct": 87.99
+   },
+   "solo_historial": {
+    "procesos": 455,
+    "parte_de_la_prueba_pct": 22.4,
+    "una_o_dos_pct": 86.59,
+    "una_pct": 63.52
+   },
+   "solo_invitados_9": {
+    "procesos": 184,
+    "parte_de_la_prueba_pct": 9.06,
+    "una_o_dos_pct": 84.78,
+    "una_pct": 69.02
+   },
+   "alguno": {
+    "procesos": 972,
+    "parte_de_la_prueba_pct": 47.86,
+    "una_o_dos_pct": 89.2,
+    "una_pct": 72.94
+   },
+   "ninguno": {
+    "procesos": 1059,
+    "parte_de_la_prueba_pct": 52.14,
+    "una_o_dos_pct": 39.19,
+    "una_pct": 23.04
+   },
+   "todos": {
+    "procesos": 2031,
+    "parte_de_la_prueba_pct": 100,
+    "una_o_dos_pct": 63.12,
+    "una_pct": 46.92
+   }
+  }
+ },
+ "supuestos": [
+  "«invitados» = quienes pudieron ofertar tras la manifestación de interés y el sorteo [inferencia del flujo de la modalidad, como en scripts/base_obra/fila.js]",
+  "el campo no cambia después del cierre [sin verificar: se midió el valor que hoy publica un proceso ya adjudicado]"
+ ]
+}

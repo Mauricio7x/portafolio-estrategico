@@ -36,6 +36,7 @@ con `node tests/estado.js`, y las coordenadas las da `node tests/mapa.js <térmi
 | `docs/EMPEZAR_AQUI.md` | pendiente del dueño | — | `README.md` | EMPEZAR AQUÍ · Guía de cero para convertir Detekta en un negocio |
 | `docs/ORGANIZACION_AGENTES.md` | pendiente del dueño | — | `tests` | Detekta como organización de agentes: cómo funciona, cómo mejora y cómo se construye |
 | `docs/PLAN_DE_ACCION.md` | pendiente del dueño | — | — | PLAN DE ACCIÓN · Detekta, de herramienta interna a producto por suscripción |
+| `docs/PLAN_PRECIO.md` | pendiente del dueño | — | — | PLAN PRECIO · A qué precio ofertar, por modalidad (14-nov-2026) |
 | `docs/PLAN_REFORMA_DATOS.md` | pendiente del dueño | — | `lib` | PLAN · Reforma de los datos que Detekta enseña (13-sep-2026) |
 | `docs/PLAN_SAAS.md` | pendiente del dueño | — | — | PLAN SaaS · De herramienta interna a producto por suscripción |
 | `docs/PLAN_X20.md` | pendiente del dueño | — | `lib` | PLAN X20 · Adjudicar más contratos con Detekta (11-nov-2026) |

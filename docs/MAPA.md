@@ -2,7 +2,7 @@
      Es una FOTO para leer en GitHub; la fuente de verdad es ejecutar la herramienta. -->
 
 ```
-== MAPA DE DETEKTA · generado del árbol el 2026-11-13 ==
+== MAPA DE DETEKTA · generado del árbol el 2026-11-15 ==
 (no editar a mano: sale de `node tests/mapa.js --escribir`. Para ir a un sitio concreto,
  `node tests/mapa.js <término>` da la ruta, la línea y el sed exacto — más barato que leer esto)
 
@@ -248,8 +248,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 489 secciones (60 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 22456  Su oferta escrita en el Formulario de Excel de la entidad, con candados (12-nov-2026)
+· MEMORIA · docs/MEMORIA.md — 490 secciones (60 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 22483  Sus ofertas en SECOP II y cómo le fue: a su nombre y de los consorcios donde figura (12-nov…  (superada)
   L 22500  El puntaje de precio del informe, recalculado con el motor, y el borrador de observación (1…
   L 22515  Sin pliego por nombre, se lee por contenido: el título de la primera página decide (12-nov-…  (superada)
@@ -259,8 +258,9 @@
   L 22559  Los informes de sus ofertas perdidas se leen primero, la revisión mira el Formulario lleno …
   L 22568  El fin del traslado del informe, calculado, en el calendario de Mis procesos; y el pliego l…
   L 22577  Sus ofertas sin NIT ni código, por el nombre exacto de su consorcio; la causa de sus derrot…
+  L 22598  El plan de precio: dónde se puede decir un precio casi exacto y dónde no, el número de invi…
 
-· DOCUMENTOS docs/ — 78 (y 3 en docs/archivo/, superados: `--archivo` los lista):
+· DOCUMENTOS docs/ — 79 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)
   ADJUDICACION_FASE0_2026-10-25.md        Probabilidad de adjudicación · Fase 0: qué datos abiertos hay para saber quién gana 
   ADJUDICACION_NIVEL3_DISENO_2026-10-26.md  Probabilidad de adjudicación · Nivel 3: capturar quién quedó hábil para poder calcul
@@ -303,6 +303,7 @@
   ORGANIZACION_AGENTES.md                 Detekta como organización de agentes: cómo funciona, cómo mejora y cómo se construye
   PERFILES.md                             El perfil del dueño y sus socias — resumen técnico
   PLAN_DE_ACCION.md                       PLAN DE ACCIÓN · Detekta, de herramienta interna a producto por suscripción
+  PLAN_PRECIO.md                          PLAN PRECIO · A qué precio ofertar, por modalidad (14-nov-2026)
   PLAN_REFORMA_DATOS.md                   PLAN · Reforma de los datos que Detekta enseña (13-sep-2026)
   PLAN_SAAS.md                            PLAN SaaS · De herramienta interna a producto por suscripción
   PLAN_X20.md                             PLAN X20 · Adjudicar más contratos con Detekta (11-nov-2026)
