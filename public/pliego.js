@@ -446,20 +446,30 @@
   }
 
   /* ══════════ Llamadas al servidor ══════════ */
+  /* TIEMPO MÁXIMO (15-nov-2026): el mismo de `api()` en app.js y por lo mismo. Por aquí va la fila de lectura de
+     documentos (un proceso a la vez): una petición colgada la dejaba esperando para siempre. El tope es mayor que lo
+     más que tarda una función en el servidor (300 s en vercel.json), así que no corta una respuesta que puede llegar. */
+  const TIEMPO_MAX_PEDIR_MS = 320000;
   async function pedir(ruta, cuerpo) {
     /* la credencial es la sesión del dueño, que viaja en la cookie (el fetch de
        arriba): aquí no hay ninguna rama «sin token» que pintar */
     let r = null, datos = null;
+    const corte = typeof AbortController === "function" ? new AbortController() : null;
+    const reloj = corte ? setTimeout(() => corte.abort(), TIEMPO_MAX_PEDIR_MS) : null;
     try {
       r = await fetch(ruta, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(cuerpo),
+        ...(corte ? { signal: corte.signal } : {}),
       });
-    } catch (e) {
+      try { datos = await r.json(); } catch { datos = null; }
+    } catch (fallo) {
+      // el corte por tiempo se dice como lo que es; el texto lo pone el Glosario (una sola copia, la misma de api() en app.js)
+      const e = corte && corte.signal.aborted ? { corte_por_tiempo: true } : fallo;
       return { estado: 0, cuerpo: null, red: window.Glosario.fraseDeFallo(e) };
-    }
-    try { datos = await r.json(); } catch { datos = null; }
+    } finally { if (reloj) clearTimeout(reloj); }
+    if (corte && corte.signal.aborted) { const e = { corte_por_tiempo: true }; return { estado: 0, cuerpo: null, red: window.Glosario.fraseDeFallo(e) }; }   // el corte llegó leyendo el cuerpo
     return { estado: r.status, cuerpo: datos };
   }
 

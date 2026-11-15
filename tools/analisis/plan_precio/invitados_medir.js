@@ -15,7 +15,15 @@
        --data-urlencode "$where=tipo_de_contrato='Obra' and adjudicado='Si' and fecha_de_recepcion_de >= '2024-01-01T00:00:00'" \
        --data-urlencode "$order=id_del_portafolio" --data-urlencode "$limit=50000" -o <carpeta>/obra_0.json
 
-     node tools/analisis/plan_precio/invitados_medir.js <carpeta> [AAAA-MM-DD]
+     node tools/analisis/plan_precio/invitados_medir.js <carpeta> [AAAA-MM-DD] [--data]
+
+   Con `--data` escribe además `data/invitados_menor_cuantia.json`, la tabla que lee la aplicación
+   (lib/invitados.js) para decir el hecho en Precios: conteos por número de invitados, no porcentajes
+   redondeados, con la fecha de la consulta y la verificación fuera de muestra. Esa tabla no se escribe a
+   mano: se regenera con este comando.
+
+   Población: solo filas ADJUDICADAS (la consulta de abajo). Una invitación cancelada no llega aquí; en la aplicación,
+   que lee todas las filas del expediente, la regla las descarta por su estado (lib/invitados.invitadosDeFilas).
 
    Lo que NO mide: quiénes son los invitados (el dato abierto da el número, no los nombres) ni
    cuántos de ellos quedan hábiles. El campo tiene un techo en 10 cuando hubo sorteo, así que «10»
@@ -26,6 +34,9 @@ const path = require("path");
 const RAIZ = path.join(__dirname, "..", "..", "..");
 const { modalidadDe } = require(path.join(RAIZ, "lib", "filtros_lista.js"));
 const CT = require(path.join(RAIZ, "lib", "competencia_por_tamano.js"));
+// la regla del número de invitados es la de la aplicación, LLAMADA (lib/invitados.invitadosDeFilas): la tabla que se
+// genera aquí y el número que Precios enseña salen de la misma lectura de las filas
+const INV = require(path.join(RAIZ, "lib", "invitados.js"));
 
 const CORTE = "2026-01-01";
 const numero = (v) => { if (v == null || v === "") return null; const x = Number(v); return Number.isFinite(x) ? x : null; };
@@ -35,6 +46,8 @@ const r2 = (x) => (x == null ? null : Math.round(x * 100) / 100);
 const pct = (a, b) => (b ? r2((a * 100) / b) : null);
 const claseInv = (n) => (n === 1 ? "1" : n === 2 ? "2" : n === 3 ? "3" : n <= 5 ? "4-5" : n <= 9 ? "6-9" : n === 10 ? "10" : "11+");
 const ORDEN = ["1", "2", "3", "4-5", "6-9", "10", "11+"];
+// los límites de cada clase, para la tabla de la aplicación (hasta = null: sin tope)
+const LIMITES = { "1": [1, 1], "2": [2, 2], "3": [3, 3], "4-5": [4, 5], "6-9": [6, 9], "10": [10, 10], "11+": [11, null] };
 
 function procesos(dir) {
   const porId = new Map();
@@ -46,15 +59,21 @@ function procesos(dir) {
       // modalidadDe devuelve «abreviada» para la menor cuantía (comprobado con las filas reales el 14-nov-2026);
       // la variante «sin manifestación de interés» no tiene invitación: fuera.
       if (modalidadDe(r) !== "abreviada" || /sin manifestaci/i.test(String(r.modalidad_de_contratacion || "").normalize("NFD").replace(/[\u0300-\u036f]/g, ""))) continue;
-      const p = porId.get(r.id_del_portafolio) || { id: r.id_del_portafolio, ent: r.nit_entidad || null, dep: String(r.departamento_entidad || "").toUpperCase(), f: "", inv: null, n: null, pb: null, va: null };
-      const inv = numero(r.proveedores_invitados), n = numero(r.respuestas_al_procedimiento), pb = numero(r.precio_base), va = numero(r.valor_total_adjudicacion);
-      if (inv != null && inv > 0 && (p.inv == null || inv > p.inv)) p.inv = inv;
+      const p = porId.get(r.id_del_portafolio) || { id: r.id_del_portafolio, ent: r.nit_entidad || null, dep: String(r.departamento_entidad || "").toUpperCase(), f: "", inv: null, contradice: false, filas: [], n: null, pb: null, va: null };
+      p.filas.push(r);
+      const n = numero(r.respuestas_al_procedimiento), pb = numero(r.precio_base), va = numero(r.valor_total_adjudicacion);
       if (n != null && n >= 1 && (p.n == null || n > p.n)) p.n = n;
       if (pb != null && pb > 0) p.pb = pb;
       if (va != null && va > 0) p.va = va;
       if (r.fecha_de_recepcion_de && r.fecha_de_recepcion_de > p.f) p.f = r.fecha_de_recepcion_de;
       porId.set(p.id, p);
     }
+  }
+  for (const p of porId.values()) {
+    const h = INV.invitadosDeFilas(p.filas);
+    p.inv = h.estado === "publicado" ? h.invitados : null;
+    p.contradice = h.estado === "contradictorio";
+    delete p.filas;
   }
   return { filas, lista: [...porId.values()].filter((p) => p.f && p.n != null) };
 }
@@ -79,13 +98,15 @@ function tabla(P) {
 }
 
 function main() {
-  const dir = process.argv[2];
-  if (!dir) { console.error("uso: node tools/analisis/plan_precio/invitados_medir.js <carpeta> [AAAA-MM-DD]"); process.exit(1); }
-  const fecha = process.argv[3] || new Date().toISOString().slice(0, 10);
+  const args = process.argv.slice(2).filter((a) => a !== "--data");
+  const escribirData = process.argv.includes("--data");
+  const dir = args[0];
+  if (!dir) { console.error("uso: node tools/analisis/plan_precio/invitados_medir.js <carpeta> [AAAA-MM-DD] [--data]"); process.exit(1); }
+  const fecha = args[1] || new Date().toISOString().slice(0, 10);
   const { filas, lista } = procesos(dir);
-  const conInv = lista.filter((p) => p.inv != null);
-  const contradice = conInv.filter((p) => p.n > p.inv);
-  const buenos = conInv.filter((p) => p.n <= p.inv);
+  const contradice = lista.filter((p) => p.contradice);
+  const buenos = lista.filter((p) => p.inv != null);
+  const conInv = [...buenos, ...contradice];
   const A = buenos.filter((p) => p.f < CORTE), T = buenos.filter((p) => p.f >= CORTE);
 
   // La regla más simple, aprendida con el pasado y probada en 2026: «con K invitados o menos llegan una o dos ofertas».
@@ -149,5 +170,25 @@ function main() {
   console.log("junto al anuncio por historial (prueba 2026): grupo · procesos · parte % · una o dos % · una %");
   for (const [k, v] of Object.entries(juntos)) console.log("  " + k.padEnd(17), String(v.procesos).padStart(5), String(v.parte_de_la_prueba_pct).padStart(7), String(v.una_o_dos_pct).padStart(7), String(v.una_pct).padStart(7));
   console.log("escrito:", destino);
+  if (escribirData) {
+    const cuenta = (g) => ({ procesos: g.length, con_una: g.filter((p) => p.n === 1).length, con_una_o_dos: g.filter((p) => p.n <= 2).length });
+    const data = {
+      formato: 1,
+      que_es: "Menor cuantía de obra adjudicada: cuántas ofertas llegaron según el número de proveedores invitados a ofertar que publica SECOP II. Conteos, no porcentajes. La lee lib/invitados.js.",
+      generado: fecha, fuente: "datos.gov.co · p6dx-8zbt", recepcion_desde: "2024-01-01",
+      generador: "node tools/analisis/plan_precio/invitados_medir.js <carpeta> AAAA-MM-DD --data",
+      total: cuenta(buenos),
+      clases: ORDEN.map((k) => ({ clave: k, desde: LIMITES[k][0], hasta: LIMITES[k][1], ...cuenta(buenos.filter((p) => claseInv(p.inv) === k)) })),
+      verificacion: {
+        que_es: "La regla «K invitados o menos → una o dos ofertas», con lo recibido desde el corte (no entró en ninguna decisión: la tabla cuenta todo el periodo).",
+        prueba_desde: CORTE, prueba_procesos: T.length,
+        reglas: [2, 5, 9].map((k) => ({ invitados_hasta: k, ...cuenta(T.filter((p) => p.inv <= k)) })),
+      },
+      descartados: { mas_ofertas_que_invitados: contradice.length },
+    };
+    const dData = path.join(RAIZ, "data", "invitados_menor_cuantia.json");
+    fs.writeFileSync(dData, JSON.stringify(data, null, 1) + "\n");
+    console.log("escrito:", dData);
+  }
 }
 main();

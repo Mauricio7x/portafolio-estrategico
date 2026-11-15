@@ -1570,7 +1570,8 @@
       return terminarBusqueda("error", peticion);
     }
     if (!r.ok || !cuerpo || !cuerpo.ok) {
-      mostrar("estado-error", (cuerpo && cuerpo.error)
+      // el «qué hacer» del servidor viaja con el error (errorDelServidor): sin él, la base en su límite decía qué pasó y no a quién acudir
+      mostrar("estado-error", errorDelServidor(cuerpo)
         || (cuerpo === null
           ? fraseDeFallo({ status: r.status })
           : fraseDeFallo({ status: r.status })));
@@ -5333,6 +5334,9 @@
   /* Llamada autenticada del editor: viaja con la sesión del dueño (la cookie
      la manda el navegador). Un 401 solo puede significar que la sesión terminó:
      msg401 lo dice y abre la pantalla de entrar. */
+  // (la suite extrae api() sola en tres sitios y le pasa esta constante como dependencia: si se renombra, allí también.
+  //  El aviso del corte lo pone el Glosario, por `fraseDeFallo`: aquí no se lee nada de otro archivo al cargar.)
+  const TIEMPO_MAX_API_MS = 320000;
   async function api(ruta, opciones = {}) {
     const cfg = conSesion({
       method: opciones.method || "GET",
@@ -5342,14 +5346,21 @@
       cfg.headers["Content-Type"] = "application/json";
       cfg.body = JSON.stringify(opciones.body);
     }
-    let r;
+    /* TIEMPO MÁXIMO (15-nov-2026): una petición colgada dejaba esperando para siempre a quien la pidió, y a la fila de
+       lectura, que va de un proceso a la vez. El tope es mayor que lo más que puede tardar una función en el servidor
+       (300 s en vercel.json): nunca corta una respuesta que todavía puede llegar. Cubre también la lectura del cuerpo. */
+    const corte = typeof AbortController === "function" ? new AbortController() : null;
+    const reloj = corte ? setTimeout(() => corte.abort(), TIEMPO_MAX_API_MS) : null;
+    if (corte) cfg.signal = corte.signal;
+    let r, cuerpo;
     try {
       r = await fetch(ruta, cfg);
+      /* el parseo va APARTE del fetch: el muro del edge responde HTML */
+      cuerpo = await leerJson(r);
     } catch (e) {
-      throw new Error(fraseDeFallo(e));
-    }
-    /* el parseo va APARTE del fetch: el muro del edge responde HTML */
-    const cuerpo = await leerJson(r);
+      throw new Error(fraseDeFallo(corte && corte.signal.aborted ? { corte_por_tiempo: true } : e));
+    } finally { if (reloj) clearTimeout(reloj); }
+    if (corte && corte.signal.aborted) throw new Error(fraseDeFallo({ corte_por_tiempo: true }));   // el corte llegó leyendo el cuerpo
     if (r.status === 401) {
       /* `sesion` marca el 401 de la API (la sesión terminó: ya se abrió la pantalla de entrar), no el del muro
          del edge: quien pinta un fallo en otra parte (Mi empresa, 9-nov-2026) no lo repite debajo de esa pantalla */
@@ -11402,6 +11413,7 @@
          fallo más caro de este panel. Las dos ramas la deciden; ninguna la olvida. */
       pintarEscalaPisoTecho(null);
       pedirGrupo(null);   // la línea del grupo del proceso anterior tampoco se queda
+      pedirInvitados(null);
       cuerpo.classList.add("hidden");
       sin.classList.remove("hidden");
       // el veredicto del servidor se conserva LITERAL; debajo, el paso que falta
@@ -11477,6 +11489,7 @@
     const lim = pt.limite_entidad_medido;
     $("pt-limite-entidad").textContent = lim && lim.frase ? lim.frase : "";
     $("pt-limite-entidad").classList.toggle("hidden", !(lim && lim.frase));
+    pedirInvitados(c);
     pedirGrupo(c);
     const fuentes = [];
     for (const [k, v] of Object.entries(pt.fuentes || {})) {
@@ -11485,6 +11498,35 @@
     for (const sup of pt.supuestos || []) fuentes.push(`<li>Supuesto: ${esc(sup)}</li>`);
     $("pt-fuentes").innerHTML = fuentes.join("");
     $("btn-justificacion").disabled = false;
+  }
+
+  /* ── CUÁNTOS FUERON INVITADOS A OFERTAR (docs/PLAN_PRECIO.md, tanda 1, 15-nov-2026) ──────────────────
+     En menor cuantía solo ofertan los invitados, y SECOP II publica cuántos son cuando sale la invitación, pocos días
+     antes del cierre (lib/invitados, op=grupo con solo=invitados). Es un hecho del proceso: no espera el precio ni la
+     consulta lenta del grupo, y no mueve ninguna cifra. Un pedido más nuevo manda sobre uno viejo. Donde la modalidad
+     ya se sabe y no es menor cuantía no se pregunta; si no se sabe, decide el servidor, que la lee de SECOP II. */
+  let invitadosPedido = 0, invitadosPintado = "";
+  async function pedirInvitados(c) {
+    const p = $("pt-invitados");
+    if (!p) return;
+    const yo = ++invitadosPedido;
+    const id = c ? String(($("id-proceso") && $("id-proceso").value) || "").trim() : "";
+    const pregunta = !!id && !/LICITACION|MINIMA CUANTIA|CONCURSO|REGIMEN ESPECIAL|DIRECTA|SUBASTA/.test(norml(modalidadProceso));
+    /* lo del proceso ANTERIOR no se queda mientras llega lo nuevo; lo del MISMO proceso sí, para que la línea no
+       parpadee en cada cálculo (revisión adversaria del 15-nov-2026) */
+    if (!pregunta || id !== invitadosPintado) { p.textContent = ""; p.classList.add("hidden"); invitadosPintado = ""; }
+    if (!pregunta) return;
+    let texto = "";
+    try {
+      const r = await api(`/api/apu?${new URLSearchParams({ op: "grupo", solo: "invitados", id_proceso: id })}`);
+      const i = r && r.invitados;
+      texto = (i && (i.frase || i.motivo_texto)) || "";
+    } catch (e) { texto = mensajeDeFallo(e, "consultar cuántos proveedores fueron invitados a ofertar"); }
+    if (yo !== invitadosPedido) return;
+    if (!texto) { p.textContent = ""; p.classList.add("hidden"); invitadosPintado = ""; return; }
+    p.className = "mt-2 pl-6 text-sm text-gray-600";
+    p.textContent = texto;
+    invitadosPintado = id;
   }
 
   /* ── SU PRECIO FRENTE AL GRUPO (PLAN_X20, D4, 11-nov-2026) ──────────────────

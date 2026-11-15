@@ -22,7 +22,7 @@
   pliego.js                   Router del dominio PLIEGO (Fase 0 · consolidación a 6 funciones)
   procesos.js                 Router del dominio PROCESOS (Fase 0 · consolidación a 6 funciones)
 
-· lib/ — 121 módulos:
+· lib/ — 122 módulos:
   accesibilidad.js            Accesibilidad operativa de la zona de la obra
   adendas.js                  Vigía de adendas · lo que el DATASET dice que cambió (Fase 5)
   almacen.js                  Esquema de claves Redis + compresión de chunks
@@ -93,6 +93,7 @@
   huella_fila.js              La huella por proceso: el delta no reescribe lo que no cambió (28-sep-2026)
   indice_baja.js              ¿Cuánto descuentan los ganadores frente al presupuesto?
   indice_competencia.js       ¿En qué entidades se presenta menos gente?
+  invitados.js                ¿Cuántos proveedores fueron invitados a ofertar? (menor cuantía)
   latido.js                   El reloj que termina solas las cargas cortadas (27-sep-2026)
   lenguaje_pantalla.js        las cercas de lenguaje y el número es-CO, en una sola copia
   manifestacion.js            La MANIFESTACIÓN DE INTERÉS de la selección abreviada de
@@ -248,8 +249,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 490 secciones (60 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L 22483  Sus ofertas en SECOP II y cómo le fue: a su nombre y de los consorcios donde figura (12-nov…  (superada)
+· MEMORIA · docs/MEMORIA.md — 491 secciones (60 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L 22500  El puntaje de precio del informe, recalculado con el motor, y el borrador de observación (1…
   L 22515  Sin pliego por nombre, se lee por contenido: el título de la primera página decide (12-nov-…  (superada)
   L 22526  Leer los documentos de Mis procesos sin la pestaña abierta, con la MISMA lectura de la pest…
@@ -259,6 +259,7 @@
   L 22568  El fin del traslado del informe, calculado, en el calendario de Mis procesos; y el pliego l…
   L 22577  Sus ofertas sin NIT ni código, por el nombre exacto de su consorcio; la causa de sus derrot…
   L 22598  El plan de precio: dónde se puede decir un precio casi exacto y dónde no, el número de invi…
+  L 22630  El número de invitados en Precios, el índice de archivos entero y tres arreglos de la audit…
 
 · DOCUMENTOS docs/ — 79 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)

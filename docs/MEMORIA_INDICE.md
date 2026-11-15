@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 2699449 bytes · 490 secciones · 60 con marcador de superación.
+Derivado del árbol: 2711988 bytes · 491 secciones · 60 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -391,8 +391,8 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | La causa real de un fallo de lectura se registra, se sanea y se dice, y una herramienta mide lo que Detekta no lee (19-oct-2026) | 19-oct-2026 | 20009-20036 | 8588 |  |
 | El Excel de la oferta económica se reconoce por más nombres y solo se publica lo que pasa la puerta; y un Excel de presupuesto subido tras el cierre es de un proponente (19-oct-2026) | 19-oct-2026 | 20037-20060 | 7598 |  |
 | Un escaneo leído a medias se guardaba como «Leído»: el OCR de los documentos ignoraba las páginas que el servicio no reconocía (20-oct-2026) | 20-oct-2026 | 20061-20087 | 8925 |  |
-| El avance de la lectura dice lo que la aplicación hace de verdad, y lo que el usuario pide pasa primero (20-oct-2026) | 20-oct-2026 | 20088-20116 | 7482 |  |
-| Las tandas de OCR se arman por PESO, no por 5 páginas fijas: el estudio previo del dueño falló con «código 413» (20-oct-2026) | 20-oct-2026 | 20117-20137 | 3916 |  |
+| El avance de la lectura dice lo que la aplicación hace de verdad, y lo que el usuario pide pasa primero (20-oct-2026) | 20-oct-2026 | 20088-20116 | 7802 |  |
+| Las tandas de OCR se arman por PESO, no por 5 páginas fijas: el estudio previo del dueño falló con «código 413» (20-oct-2026) | 20-oct-2026 | 20117-20137 | 4135 |  |
 | La auditoría de lo leído: mide si hay INDICIOS de una lectura mala, jamás dice «correcto» (20-oct-2026) | 20-oct-2026 | 20138-20162 | 5723 |  |
 | La auditoría con su primer proceso real: lo casi vacío se marca, un presupuesto no se juzga por sus letras y los tiempos salen a la vista (21-oct-2026) | 21-oct-2026 | 20163-20193 | 8240 |  |
 | Cada subida cuesta un despliegue: una entrega, un envío (21-oct-2026) | 21-oct-2026 | 20194-20202 | 1688 |  |
@@ -414,7 +414,7 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | La cuenta de días al cierre es una sola y por fecha civil, y el chip sigue a la regla explícita de no-obra aunque haya clase de obra pura (28-oct-2026) | 28-oct-2026 | 20704-20728 | 9228 |  |
 | La referencia de un tramo concentrado se dice sin la entidad que lo concentra, el vocabulario de tipos va en dos capas y la captura de hábiles arranca desde la sesión (28-oct-2026) | 28-oct-2026 | 20729-20779 | 8797 |  |
 | Lo siguiente tras presentarse sale de la etapa, la búsqueda encuentra sus notas, y seis de los siete defectos de plata del 26-sep ya estaban cerrados (28-oct-2026) | 28-oct-2026 | 20780-20817 | 7625 |  |
-| Una base que no responde no es «ninguno», y la madrugada lee sus propias evaluaciones con un cupo medido (28-oct-2026) | 28-oct-2026 | 20818-20843 | 8491 |  |
+| Una base que no responde no es «ninguno», y la madrugada lee sus propias evaluaciones con un cupo medido (28-oct-2026) | 28-oct-2026 | 20818-20843 | 8741 |  |
 | Una cifra de un informe de evaluación se lee por su último grupo: con dos cifras son centavos, con tres son miles (1-nov-2026) | 1-nov-2026 | 20844-20860 | 4388 |  |
 | Lo que llenó Upstash en octubre fue el ancho de banda de lo programado, y noviembre va justo (1-nov-2026) | 1-nov-2026 | 20861-20884 | 4681 |  |
 | El vigilante pide el tamaño y no el diagnóstico entero, y el lector deja de leer el corpus del año (1-nov-2026) | 1-nov-2026 | 20885-20911 | 5690 | «La tarea de la mañana busca las adendas de los procesos guardados, sin leer el corpus y con los topes medidos (4-nov-2026)» |
@@ -437,7 +437,7 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | Las fechas que hay que confirmar: el Anexo 2 que rige pasa el tope, el cierre desmentido y la fecha que no cuadra dicen «verifíquela», y el traslado vence el último día (4-nov-2026) | 4-nov-2026 | 21312-21353 | 7107 |  |
 | La alerta de precio bajo dice lo que mide la base con las reglas del 26-oct: 33 de 2.190 en licitación (4-nov-2026) | 4-nov-2026 | 21354-21361 | 1589 |  |
 | La adenda que usted no ha visto avisa, y la que no se ha leído pone «verifíquela» en las fechas anteriores (4-nov-2026) | 4-nov-2026 | 21362-21389 | 5596 |  |
-| La tarea de la mañana busca las adendas de los procesos guardados, sin leer el corpus y con los topes medidos (4-nov-2026) | 4-nov-2026 | 21390-21433 | 9841 |  |
+| La tarea de la mañana busca las adendas de los procesos guardados, sin leer el corpus y con los topes medidos (4-nov-2026) | 4-nov-2026 | 21390-21433 | 10164 |  |
 | El aviso al teléfono por Telegram, sin leer el corpus, dónde gana el dueño y lo que midió la fase 0 (5-nov-2026) | 5-nov-2026 | 21434-21474 | 7990 |  |
 | La fase 2 del plan: la cita entera, el juicio que no depende del lote, cuánto falta, qué pesa cada requisito, el rastro de lectura y la búsqueda del oficio (5-nov-2026) | 5-nov-2026 | 21475-21495 | 7398 |  |
 | La fase 3 del plan: la oferta propia por el NIT, por qué quedó así, lo que el competidor tiene por ejecutar, qué se puede corregir después y los bancos de precios cerrados (5-nov-2026) | 5-nov-2026 | 21496-21515 | 5422 |  |
@@ -500,4 +500,5 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | Los informes de sus ofertas perdidas se leen primero, la revisión mira el Formulario lleno y el borrador de observación lleva su plazo (12-nov-2026) | 12-nov-2026 | 22559-22567 | 2351 |  |
 | El fin del traslado del informe, calculado, en el calendario de Mis procesos; y el pliego leído por contenido sí entra al vigía (13-nov-2026) | 13-nov-2026 | 22568-22576 | 2048 |  |
 | Sus ofertas sin NIT ni código, por el nombre exacto de su consorcio; la causa de sus derrotas de Cali y de la Universidad Pedagógica; y los plazos de sus procesos en la lista de la mañana (13-nov-2026) | 13-nov-2026 | 22577-22597 | 5281 |  |
-| El plan de precio: dónde se puede decir un precio casi exacto y dónde no, el número de invitados y la referencia que envejece donde hay pelea (14-nov-2026) | 14-nov-2026 | 22598-22628 | 10200 |  |
+| El plan de precio: dónde se puede decir un precio casi exacto y dónde no, el número de invitados y la referencia que envejece donde hay pelea (14-nov-2026) | 14-nov-2026 | 22598-22629 | 10201 |  |
+| El número de invitados en Precios, el índice de archivos entero y tres arreglos de la auditoría (15-nov-2026) | 15-nov-2026 | 22630-22660 | 11426 |  |
