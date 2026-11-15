@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 2689248 bytes · 489 secciones · 60 con marcador de superación.
+Derivado del árbol: 2699449 bytes · 490 secciones · 60 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -499,4 +499,5 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | El IVA de la utilidad en el Formulario lleno lo confirma el usuario; la lectura sin pestaña entra a la tarea de la mañana; y la causa de cada oferta perdida (12-nov-2026) | 12-nov-2026 | 22549-22558 | 2588 |  |
 | Los informes de sus ofertas perdidas se leen primero, la revisión mira el Formulario lleno y el borrador de observación lleva su plazo (12-nov-2026) | 12-nov-2026 | 22559-22567 | 2351 |  |
 | El fin del traslado del informe, calculado, en el calendario de Mis procesos; y el pliego leído por contenido sí entra al vigía (13-nov-2026) | 13-nov-2026 | 22568-22576 | 2048 |  |
-| Sus ofertas sin NIT ni código, por el nombre exacto de su consorcio; la causa de sus derrotas de Cali y de la Universidad Pedagógica; y los plazos de sus procesos en la lista de la mañana (13-nov-2026) | 13-nov-2026 | 22577-22596 | 5280 |  |
+| Sus ofertas sin NIT ni código, por el nombre exacto de su consorcio; la causa de sus derrotas de Cali y de la Universidad Pedagógica; y los plazos de sus procesos en la lista de la mañana (13-nov-2026) | 13-nov-2026 | 22577-22597 | 5281 |  |
+| El plan de precio: dónde se puede decir un precio casi exacto y dónde no, el número de invitados y la referencia que envejece donde hay pelea (14-nov-2026) | 14-nov-2026 | 22598-22628 | 10200 |  |

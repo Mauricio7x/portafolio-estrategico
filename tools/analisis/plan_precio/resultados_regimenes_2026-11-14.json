@@ -1,0 +1,83 @@
+{
+ "que_es": "Obra adjudicada por modalidad: reparto por número de ofertas y precio de adjudicación en % del presupuesto oficial (entre 70 % y 100 %; en mínima cuantía, entre 30 % y 100 %).",
+ "consulta": "2026-11-14",
+ "fuente": "datos.gov.co · p6dx-8zbt",
+ "recepcion_desde": "2025-11-01",
+ "por_modalidad": {
+  "abreviada": {
+   "procesos": 2703,
+   "una_oferta_pct": 50.91,
+   "una_o_dos_pct": 67.89,
+   "de_3_a_9_pct": 25.86,
+   "diez_o_mas_pct": 6.25,
+   "adjudicado_con_una_o_dos": {
+    "procesos": 1817,
+    "mediana": 99.99
+   },
+   "adjudicado_con_tres_o_mas": {
+    "procesos": 853,
+    "mediana": 95.8
+   }
+  },
+  "minima": {
+   "procesos": 1770,
+   "una_oferta_pct": 44.35,
+   "una_o_dos_pct": 59.04,
+   "de_3_a_9_pct": 30.23,
+   "diez_o_mas_pct": 10.73,
+   "adjudicado_con_una_o_dos": {
+    "procesos": 1043,
+    "mediana": 99.99
+   },
+   "adjudicado_con_tres_o_mas": {
+    "procesos": 721,
+    "mediana": 83.85
+   }
+  },
+  "licitacion": {
+   "procesos": 1125,
+   "una_oferta_pct": 18.58,
+   "una_o_dos_pct": 28.89,
+   "de_3_a_9_pct": 21.6,
+   "diez_o_mas_pct": 49.51,
+   "adjudicado_con_una_o_dos": {
+    "procesos": 320,
+    "mediana": 99.97
+   },
+   "adjudicado_con_tres_o_mas": {
+    "procesos": 718,
+    "mediana": 94.41
+   }
+  },
+  "especial": {
+   "procesos": 652,
+   "una_oferta_pct": 48.01,
+   "una_o_dos_pct": 67.02,
+   "de_3_a_9_pct": 27.76,
+   "diez_o_mas_pct": 5.21,
+   "adjudicado_con_una_o_dos": {
+    "procesos": 430,
+    "mediana": 99.99
+   },
+   "adjudicado_con_tres_o_mas": {
+    "procesos": 202,
+    "mediana": 99.43
+   }
+  },
+  "directa": {
+   "procesos": 270,
+   "una_oferta_pct": 93.7,
+   "una_o_dos_pct": 98.52,
+   "de_3_a_9_pct": 1.48,
+   "diez_o_mas_pct": 0,
+   "adjudicado_con_una_o_dos": {
+    "procesos": 260,
+    "mediana": 100
+   },
+   "adjudicado_con_tres_o_mas": {
+    "procesos": 4,
+    "mediana": 100
+   }
+  }
+ }
+}

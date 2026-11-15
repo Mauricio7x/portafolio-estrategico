@@ -6844,7 +6844,10 @@ async function main() {
       const hoyQ = require("../lib/habiles.js").hoyColombia();
       await escribirQ(rQ, "seguimiento:pruebaplazos", { procesos: {
         "CO1.REQ.P1": { estado: "presentado", foto: { nombre: "OBRA PRESENTADA", entidad: "ALCALDÍA P1", fecha_cierre: enDias(-10), modalidad: "Selección Abreviada de Menor Cuantía" } },
-        "CO1.REQ.P2": { estado: "preparando", foto: { nombre: "OBRA QUE CIERRA", entidad: "ALCALDÍA P2", fecha_cierre: enDias(3) } },
+        /* el cierre a 3 días CIVILES de Colombia, que es como los cuenta la aplicación: con `enDias(3)` (72 horas en UTC) la prueba
+           fallaba todas las noches entre las 7 p. m. y la medianoche de Colombia, cuando en UTC ya es el día siguiente
+           (visto el 14-nov-2026 a las 7:32 p. m.: la aplicación decía 4 días, con razón). La aserción no cambia. */
+        "CO1.REQ.P2": { estado: "preparando", foto: { nombre: "OBRA QUE CIERRA", entidad: "ALCALDÍA P2", fecha_cierre: `${require("../lib/habiles.js").sumarDias(hoyQ, 3)}T10:00:00` } },
         "CO1.REQ.P3": { estado: "ganado", foto: { nombre: "OBRA GANADA", entidad: "ALCALDÍA P3", fecha_cierre: enDias(-20) } },
         "CO1.REQ.P4": { estado: "interesa", foto: { nombre: "OBRA SIN FECHAS", entidad: "ALCALDÍA P4" } } } });
       await require("../lib/manifestacion.js").guardarHitosCronograma(rQ, "CO1.REQ.P1", { hitos: [{ id: "informe_evaluacion", fecha: hoyQ, documento: "Informe de evaluación.pdf", tipo_documento: "informe" }] });
